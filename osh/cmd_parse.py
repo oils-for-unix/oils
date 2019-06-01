@@ -201,10 +201,10 @@ def _MakeAssignPair(parse_ctx,  # type: ParseContext
     a_parser = parse_ctx.MakeArithParser(code_str)
     arena.PushSource(source.LValue(left_token.span_id, close_token.span_id))
     try:
-      expr = a_parser.Parse()  # may raise util.ParseError
+      index_node = a_parser.Parse()  # may raise util.ParseError
     finally:
       arena.PopSource()
-    lhs = lhs_expr.LhsIndexedName(var_name, expr)
+    lhs = lhs_expr.LhsIndexedName(var_name, index_node)
     lhs.spids.append(left_token.span_id)
 
   else:
@@ -1287,6 +1287,21 @@ class CommandParser(object):
     pipeline = self.ParsePipeline()
     return command.TimeBlock(pipeline)
 
+  def ParseOilAssign(self):
+    # type: () -> command_t
+    """
+    oil_assign: keyword name = EXPR
+
+    Where can be checked with IsValidVarName
+    """
+    kw_token = word.LiteralToken(self.cur_word)
+    assert kw_token is not None, self.cur_word
+
+    self._Next()  # skip 'var' or 'setvar'
+
+    child = self.w_parser.ReadExpr()
+    return command.OilAssign(kw_token, child)
+
   def ParseCompoundCommand(self):
     # type: () -> command_t
     """
@@ -1327,6 +1342,9 @@ class CommandParser(object):
     if self.c_id == Id.Op_DLeftParen:
       return self.ParseDParen()
 
+    if self.c_id in (Id.KW_Var, Id.KW_SetVar):
+      return self.ParseOilAssign()
+
     # This never happens?
     p_die('Unexpected word while parsing compound command', word=self.cur_word)
 
@@ -1335,14 +1353,8 @@ class CommandParser(object):
     """
     function_body    : compound_command io_redirect* ; /* Apply rule 9 */
     """
-    body = self.ParseCompoundCommand()
-    assert body is not None
-
-    redirects = self._ParseRedirectList()
-    assert redirects is not None
-
-    func.body = body
-    func.redirects = redirects
+    func.body = self.ParseCompoundCommand()
+    func.redirects = self._ParseRedirectList()
 
   def ParseFunctionDef(self):
     # type: () -> command__FuncDef
@@ -1506,11 +1518,12 @@ class CommandParser(object):
     if self.c_id == Id.KW_Function:
       return self.ParseKshFunctionDef()
 
-    # NOTE: We should have another Kind for "initial keywords".  And then
+    # TODO: We should have another Kind for "initial keywords".  And then
     # NOT_FIRST_WORDS are "secondary keywords".
     if self.c_id in (
         Id.KW_DLeftBracket, Id.Op_DLeftParen, Id.Op_LParen, Id.Lit_LBrace,
-        Id.KW_For, Id.KW_While, Id.KW_Until, Id.KW_If, Id.KW_Case, Id.KW_Time):
+        Id.KW_For, Id.KW_While, Id.KW_Until, Id.KW_If, Id.KW_Case, Id.KW_Time,
+        Id.KW_Var, Id.KW_SetVar):
       node = self.ParseCompoundCommand()
 
       # This is unsafe within the type system!  Because redirects aren't on the

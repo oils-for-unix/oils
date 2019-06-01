@@ -10,10 +10,12 @@ from _devbuild.gen.syntax_asdl import source
 from asdl import format as fmt
 from core import alloc
 from core import main_loop
+from core import pyutil
 from core import ui
 from core import util
 from frontend import parse_lib
 from frontend import reader
+from pgen2 import grammar
 
 from typing import List, Dict, Any
 
@@ -27,7 +29,15 @@ def main(argv):
   # Dummy value; not respecting aliases!
   aliases = {}  # type: Dict[str, Any]
   # parse `` and a[x+1]=bar differently
-  parse_ctx = parse_lib.ParseContext(arena, aliases, one_pass_parse=True)
+
+  loader = pyutil.GetResourceLoader()
+  oil_grammar = grammar.Grammar()
+  f = loader.open('_build/oil/grammar.marshal')
+  oil_grammar.load(f)
+  f.close()
+
+  parse_ctx = parse_lib.ParseContext(arena, aliases, oil_grammar,
+                                     one_pass_parse=True)
   c_parser = parse_ctx.MakeOshParser(line_reader)
 
   try:

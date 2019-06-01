@@ -65,6 +65,10 @@ from core import ui
 from core import util
 from core.util import log
 
+from frontend import args
+from frontend import reader
+from frontend import parse_lib
+
 from oil_lang import cmd_exec as oil_cmd_exec
 
 from osh import builtin
@@ -79,10 +83,7 @@ from osh import split
 from osh import state
 from osh import word_eval
 
-from frontend import args
-from frontend import reader
-from frontend import parse_lib
-
+from pgen2 import grammar
 from pylib import os_path
 
 from tools import deps
@@ -312,9 +313,14 @@ def ShellMain(lang, argv0, argv, login_shell):
   builtin.SetExecOpts(exec_opts, opts.opt_changes)
   aliases = {}  # feedback between runtime and parser
 
+  oil_grammar = grammar.Grammar()
+  f = loader.open('_build/oil/grammar.marshal')
+  oil_grammar.load(f)
+  f.close()
+
   if opts.one_pass_parse and not exec_opts.noexec:
     raise args.UsageError('--one-pass-parse requires noexec (-n)')
-  parse_ctx = parse_lib.ParseContext(arena, aliases,
+  parse_ctx = parse_lib.ParseContext(arena, aliases, oil_grammar,
                                      one_pass_parse=opts.one_pass_parse)
 
   # Three ParseContext instances SHARE aliases.
@@ -324,13 +330,15 @@ def ShellMain(lang, argv0, argv, login_shell):
   # one_pass_parse needs to be turned on to complete inside backticks.  TODO:
   # fix the issue where ` gets erased because it's not part of
   # set_completer_delims().
-  comp_ctx = parse_lib.ParseContext(comp_arena, aliases, trail=trail1,
+  comp_ctx = parse_lib.ParseContext(comp_arena, aliases, oil_grammar,
+                                    trail=trail1,
                                     one_pass_parse=True)
 
   hist_arena = alloc.Arena()
   hist_arena.PushSource(source.Unused('history'))
   trail2 = parse_lib.Trail()
-  hist_ctx = parse_lib.ParseContext(hist_arena, aliases, trail=trail2)
+  hist_ctx = parse_lib.ParseContext(hist_arena, aliases, oil_grammar,
+                                    trail=trail2)
 
   # Deps helps manages dependencies.  These dependencies are circular:
   # - ex and word_ev, arith_ev -- for command sub, arith sub

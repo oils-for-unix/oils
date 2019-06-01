@@ -162,10 +162,6 @@ yield_arg: 'from' test | testlist
 # Oil Expressions
 #
 
-# TODO: Should this be test_list?  With commas?  Tuples have the least
-# precedence, even lower than comparisons.
-test_input: test NEWLINE* ENDMARKER
-
 word_part: Lit_Chars | Lit_Other | Glob_Star | char_class
 word: word_part*
 array_literal: (
@@ -197,3 +193,7 @@ command_sub: (
 expr_sub: '$(' expr Op_RParen
 
 var_sub: '${' expr Op_RBrace
+
+#
+# Assignment / Type Variables
+#

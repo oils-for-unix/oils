@@ -770,6 +770,13 @@ class WordParser(object):
     cs_part.spids.append(right_spid)
     return cs_part
 
+  def ReadExpr(self):
+    # Change lex mode
+    self._Next(lex_mode_e.Expr)
+    e_parser = self.parse_ctx.MakeExprParser(self.lexer)
+    enode = e_parser.Parse()
+    return enode
+
   def _ReadArithExpr(self):
     # type: () -> arith_expr_t
     """Read and parse an arithmetic expression in various contexts.
@@ -794,7 +801,7 @@ class WordParser(object):
     # calls self.ReadWord(lex_mode_e.Arith)
     a_parser = tdop.TdopParser(arith_parse.SPEC, self)
     anode = a_parser.Parse()
-    return anode  # could be None
+    return anode
 
   def _ReadArithSubPart(self):
     # type: () -> word_part__ArithSubPart

@@ -394,11 +394,11 @@ def AddKinds(spec):
                                  # will be under Expr1/Plus vs Expr2/Plus.
 
      # Oil Command nodes?  Not used yet.
-     'Command', 'Assign', 'AndOr', 'Block', 'Subshell', 'Fork',
-     'FuncDef', 'ForEach', 'ForExpr', 'NoOp',
+     #'Command', 'Assign', 'AndOr', 'Block', 'Subshell', 'Fork',
+     #'FuncDef', 'ForEach', 'ForExpr', 'NoOp',
 
-     'UnaryExpr', 'BinaryExpr', 'TernaryExpr', 'FuncCall',
-     'ConstInt',  # for arithmetic.  There is no ConstBool.
+     #'UnaryExpr', 'BinaryExpr', 'TernaryExpr', 'FuncCall',
+     #'ConstInt',  # for arithmetic.  There is no ConstBool.
                   # Could be Lit_Digits?  But oil will need
                   # ConstFloat/ConstNum.
   ])
@@ -418,6 +418,7 @@ def AddKinds(spec):
 
       # Oil keywords.
       'Const', 'Set', 'SetGlobal', 'Var',  # assignment
+      'SetVar',  # for OSH compatibility
       'Fork', 'Shell',  # blocks
       'Proc', 'Func',
       'Match', 'With',  # matching

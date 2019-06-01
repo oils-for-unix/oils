@@ -40,7 +40,7 @@ def _Detect(test, word_str, expected):
 
   test.assertEqual(expected_part_offset, part_offset)
 
-  parse_ctx = parse_lib.ParseContext(arena, {})
+  parse_ctx = parse_lib.ParseContext(arena, {}, None)
 
   if left_token and left_token.id in (Id.Lit_VarLike, Id.Lit_ArrayLhsOpen):
     more_env = []

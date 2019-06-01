@@ -4,14 +4,40 @@ expr_parse.py
 """
 from __future__ import print_function
 
+import sys
+
+from _devbuild.gen import syntax_asdl
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.types_asdl import lex_mode_e
 
 from core import meta
 from core.util import log
 from oil_lang import expr_to_ast
-from opy import opy_main
 from pgen2 import parse
+
+
+class ParseTreePrinter(object):
+  """Prints a tree of PNode instances."""
+  def __init__(self, names):
+    self.names = names
+
+  def Print(self, pnode, f=sys.stdout, indent=0, i=0):
+    ind = '  ' * indent
+    # NOTE:
+    # - value is filled in for TOKENS, but it's always None for PRODUCTIONS.
+    # - context is (prefix, (lineno, column)), where lineno is 1-based, and
+    #   'prefix' is a string of whitespace.
+    #   e.g. for 'f(1, 3)', the "3" token has a prefix of ' '.
+    if isinstance(pnode.tok, tuple):
+      v = pnode.tok[0]
+    elif isinstance(pnode.tok, syntax_asdl.token):
+      v = pnode.tok.val
+    else:
+      v = '-'
+    f.write('%s%d %s %s\n' % (ind, i, self.names[pnode.typ], v))
+    if pnode.children:  # could be None
+      for i, child in enumerate(pnode.children):
+        self.Print(child, indent=indent+1, i=i)
 
 
 def _Classify(gr, tok):
@@ -42,9 +68,7 @@ def _Classify(gr, tok):
   raise AssertionError('%d not a keyword and not in gr.tokens: %s' % (typ, tok))
 
 
-POP = lex_mode_e.Undefined
-
-# NOTE: thiis model is not NOT expressive enough for:
+# NOTE: this model is not NOT expressive enough for:
 #
 # x = func(x, y='default', z={}) {
 #   echo hi
@@ -60,20 +84,33 @@ POP = lex_mode_e.Undefined
 # vs.
 #   echo hi = 1
 
+# Other issues:
+# - Command and Array could be combined?  The parsing of { is different, not
+# the lexing.
+# - What about SingleLine mode?  With a % prefix?
+#   - Assumes {} means brace sub, and also makes trailing \ unnecessary?
+#   - Allows you to align pipes on the left
+#   - does it mean that only \n\n is a newline?
+
+POP = lex_mode_e.Undefined
 
 _MODE_TRANSITIONS = {
-    # Expr -> X
-    (lex_mode_e.Expr, Id.Left_AtBracket): lex_mode_e.Array,  # x + @[1 2]
-    (lex_mode_e.Array, Id.Op_RBracket): POP,
-
+    # DQ_Oil -> ...
     (lex_mode_e.DQ_Oil, Id.Left_DollarSlash): lex_mode_e.Regex,  # "$/ any + /"
+    # TODO: Add a token for $/ 'foo' /i .
+    # Long version is RegExp($/ 'foo' /, ICASE|DOTALL) ?  Or maybe Regular()
     (lex_mode_e.Regex, Id.Arith_Slash): POP,
+
     (lex_mode_e.DQ_Oil, Id.Left_DollarBrace): lex_mode_e.VSub_Oil,  # "${x|html}"
     (lex_mode_e.VSub_Oil, Id.Op_RBrace): POP,
     (lex_mode_e.DQ_Oil, Id.Left_DollarBracket): lex_mode_e.Command,  # "$[echo hi]"
     (lex_mode_e.Command, Id.Op_RBracket): POP,
     (lex_mode_e.DQ_Oil, Id.Left_DollarParen): lex_mode_e.Expr,  # "$(1 + 2)"
     (lex_mode_e.Expr, Id.Op_RParen): POP,
+
+    # Expr -> ...
+    (lex_mode_e.Expr, Id.Left_AtBracket): lex_mode_e.Array,  # x + @[1 2]
+    (lex_mode_e.Array, Id.Op_RBracket): POP,
 
     (lex_mode_e.Expr, Id.Left_DollarSlash): lex_mode_e.Regex,  # $/ any + /
     (lex_mode_e.Expr, Id.Left_DollarBrace): lex_mode_e.VSub_Oil,  # ${x|html}
@@ -91,12 +128,12 @@ _MODE_TRANSITIONS = {
     (lex_mode_e.Regex, Id.Left_DoubleQuote): lex_mode_e.DQ_Oil,  # $/ "foo" /
     # POP is done above
 
-    (lex_mode_e.Array, Id.Op_LBracket): lex_mode_e.CharClass,  # $/ "foo" /
+    (lex_mode_e.Array, Id.Op_LBracket): lex_mode_e.CharClass,  # @[ a *.[c h] ]
     # POP is done above
 }
 
 
-def PushOilTokens(p, lex, gr, debug=False):
+def PushOilTokens(p, lex, gr):
   """Parse a series of tokens and return the syntax tree."""
   #log('keywords = %s', gr.keywords)
   #log('tokens = %s', gr.tokens)
@@ -122,22 +159,23 @@ def PushOilTokens(p, lex, gr, debug=False):
       mode_stack.append(new_mode)
       mode = new_mode
       log('PUSHED to %s', mode)
-
     # otherwise leave it alone
 
     #if tok.id == Id.Expr_Name and tok.val in KEYWORDS:
     #  tok.id = KEYWORDS[tok.val]
     #  log('Replaced with %s', tok.id)
 
+    if tok.id.enum_id >= 256:
+      raise AssertionError(str(tok))
+
     ilabel = _Classify(gr, tok)
     #log('tok = %s, ilabel = %d', tok, ilabel)
     if p.addtoken(tok.id.enum_id, tok, ilabel):
-        if debug:
-            log("Stop.")
-        break
+      break
+
   else:
-      # We never broke out -- EOF is too soon (how can this happen???)
-      raise parse.ParseError("incomplete input", tok.id.enum_id, tok)
+    # We never broke out -- EOF is too soon (how can this happen???)
+    raise parse.ParseError("incomplete input", tok.id.enum_id, tok)
 
 
 def NoSingletonAction(gr, pnode):
@@ -153,14 +191,14 @@ def NoSingletonAction(gr, pnode):
 class ExprParser(object):
   """A wrapper around a pgen2 parser."""
 
-  def __init__(self, lexer, gr, start_symbol='test_input'):
+  def __init__(self, lexer, gr, start_symbol='eval_input'):
     self.lexer = lexer
     self.gr = gr
     self.push_parser = parse.Parser(gr, convert=NoSingletonAction)
     # TODO: change start symbol?
     self.push_parser.setup(gr.symbol2number[start_symbol])
 
-  def Parse(self, transform=False):
+  def Parse(self, transform=True, print_parse_tree=False):
     try:
       PushOilTokens(self.push_parser, self.lexer, self.gr)
     except parse.ParseError as e:
@@ -169,7 +207,7 @@ class ExprParser(object):
 
     pnode = self.push_parser.rootnode
 
-    if 1:
+    if print_parse_tree:
       # Calculate names for pretty-printing.  TODO: Move this into TOK_DEF?
       names = {}
 
@@ -189,7 +227,7 @@ class ExprParser(object):
         assert k >= 256, (k, v)
         names[k] = v
 
-      printer = opy_main.ParseTreePrinter(names)  # print raw nodes
+      printer = ParseTreePrinter(names)  # print raw nodes
       printer.Print(pnode)
 
     # TODO: Remove transform boolean

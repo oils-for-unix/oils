@@ -271,6 +271,10 @@ _KEYWORDS = [
   C('elif',     Id.KW_Elif),
   C('function', Id.KW_Function),
   C('time',     Id.KW_Time),
+
+  # Oil integration
+  C('var',      Id.KW_Var),
+  C('setvar',   Id.KW_SetVar),
 ]
 
 # These are treated like builtins in bash, but keywords in OSH.  However, we

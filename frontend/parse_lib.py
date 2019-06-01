@@ -12,6 +12,7 @@ from frontend import reader
 from frontend import tdop
 from frontend import match
 
+from oil_lang import expr_parse
 from osh import arith_parse
 from osh import cmd_parse
 from osh import word_parse
@@ -27,6 +28,7 @@ if TYPE_CHECKING:
   from frontend.tdop import TdopParser
   from osh.word_parse import WordParser
   from osh.cmd_parse import CommandParser
+  from pgen2.grammar import Grammar
 
 
 class _BaseTrail(object):
@@ -169,10 +171,11 @@ class ParseContext(object):
   In constrast, STATE is stored in the CommandParser and WordParser instances.
   """
 
-  def __init__(self, arena, aliases, trail=None, one_pass_parse=False):
-    # type: (Arena, Dict[str, Any], Optional[_BaseTrail], bool) -> None
+  def __init__(self, arena, aliases, oil_grammar, trail=None, one_pass_parse=False):
+    # type: (Arena, Dict[str, Any], Grammar, Optional[_BaseTrail], bool) -> None
     self.arena = arena
     self.aliases = aliases
+    self.oil_grammar = oil_grammar
     # Completion state lives here since it may span multiple parsers.
     self.trail = trail or _NullTrail()
     self.one_pass_parse = one_pass_parse
@@ -181,7 +184,8 @@ class ParseContext(object):
     # type: (_Reader) -> Lexer
     """Helper function.
 
-    TODO: should we combine the LineLexer and Lexer?  And the matcher?
+    NOTE: I tried to combine the LineLexer and Lexer, and it didn't perform
+    better.
     """
     line_lexer = lexer.LineLexer(match.MATCHER, '', self.arena)
     return lexer.Lexer(line_lexer, line_reader)
@@ -212,11 +216,7 @@ class ParseContext(object):
 
   def MakeArithParser(self, code_str):
     # type: (str) -> TdopParser
-    """Used for a[x+1]=foo in the CommandParser.
-
-    NOTE: We add tokens to a different arena, so we don't mess up the
-    invariants for translation.
-    """
+    """Used for a[x+1]=foo in the CommandParser."""
     line_reader = reader.StringLineReader(code_str, self.arena)
     lx = self._MakeLexer(line_reader)
     w_parser = word_parse.WordParser(self, lx, line_reader,
@@ -226,10 +226,7 @@ class ParseContext(object):
 
   def MakeParserForCommandSub(self, line_reader, lexer, eof_id):
     # type: (_Reader, Lexer, Id_t) -> CommandParser
-    """To parse command sub, we want a fresh word parser state.
-
-    It's a new instance based on same lexer and arena.
-    """
+    """To parse command sub, we want a fresh word parser state."""
     w_parser = word_parse.WordParser(self, lexer, line_reader)
     c_parser = cmd_parse.CommandParser(self, w_parser, lexer, line_reader,
                                        eof_id=eof_id)
@@ -237,13 +234,16 @@ class ParseContext(object):
 
   def MakeWordParserForPlugin(self, code_str):
     # type: (str) -> WordParser
-    """FOr $PS1, etc.
-
-    NOTE: Uses its own arena!  I think that does nothing though?
-    """
+    """For $PS1, $PS4, etc."""
     line_reader = reader.StringLineReader(code_str, self.arena)
     lx = self._MakeLexer(line_reader)
     return word_parse.WordParser(self, lx, line_reader)
+
+  def MakeExprParser(self, lexer):
+    # type: (Lexer) -> ExprParser
+    """Used for var a = 1 + 2"""
+    e_parser = expr_parse.ExprParser(lexer, self.oil_grammar)
+    return e_parser
 
   # Another parser instantiation:
   # - For Array Literal in word_parse.py WordParser:

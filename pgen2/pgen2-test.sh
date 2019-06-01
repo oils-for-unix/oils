@@ -1,82 +1,9 @@
 #!/bin/bash
 #
-# Figuring out if we can use pgen2 for Oil syntax.
+# Proof of concept for pgen2 and Oil syntax.
 #
 # Usage:
 #   ./pgen2-test.sh <function name>
-
-# Things to parse:
-# - Expressions
-#   - same difficulties in shell arith parser: f(x,y), a[i+1], b ? a : b
-#     - and our function calls will be more elaborate
-#   - python features:
-#     - list and dict comprehensions
-#     - a not in b, a is not b
-#     - a[1, 2] -- this is equivalent to tuple indexing?
-#   - function literals, including the arg list syntax (which is complex)
-#   - dict, set, tuple, list literals, which C parser doesn't have
-#   - string and array literals, which need to invoke WordParser
-#     - "${foo:-}" and [a b "$foo"]
-#     - although disallow ${} and prefer $[] for expressions?
-#   - floating point literals?
-#   - including regex dialect?  (But that changes lexer modes)
-# - Types:
-#   - Optional type declarations with MyPy-ish syntax
-#   - casting ("x as Int" like Rust?)
-# - Other:
-#   - classes, record, enum declarations!  Unlike funcs and procs, these do
-#     NOT call back into the OSH parser.  There can be no statements inside
-#     "class", etc.
-#   - awk dialect: BEGIN / END / when.  Ditto, no arbitrary statements.
-#   - 'rule' blocks: colon and other bells and whistles
-#   - find dialect: fs ()
-#
-# Entry points:
-# - var a = ...             # once you see var/const/set, switch
-# - proc copy [src dest] {  # once you see proc, switch.  { switches back.
-# - func f(name Str, age List<int>) List<int> {     # ditto, { switches back.
-# - $stringfunc(x, y)       # once you see SmipleVarSub and look ahead to '('
-#                           # then switch
-# - @arrayfunc(x, y)        # hm this is harder?  Because oil-splice is
-#                           # detected
-#
-# Exit Points:
-# - a = [foo bar]                       # array literals go back to word parser
-#   - but NOT a = List [
-# - a = '    and "
-#   a = $'   or %c''                    # not sure if we want $''
-#   a = '''  # multiline?               # string literals back to word parser
-# - block {                             # goes back to CommandParser
-#   - but NOT { for dicts/sets
-#
-# Lexer Modes
-#
-# - lex_mode_e.Expr -- newlines are whitespace
-# - lex_mode_e.Block -- newlines are terminators
-# - lex_mode_e.CharClass -- regex char classes have different rules
-#   (outer regexes use Expr mode, I believe)
-# - lex_mode_e.TypeExpr -- because I hit the >> problem! 
-#                          >> is not an operator in type expressions
-# - lex_mode_e.Str    # simple double-quoted string literal?
-#                     # I don't want all the mess
-#                     # or you can post-process the LST and eliminate
-#                     # undesirable shellc onstructs
-#
-# Extensions to pgen:
-# - take tokens from a different lexer -- see NOTES-pgen2.txt for syntax ideas
-# - callbacks to invoke the parser
-#   - hm actually the "driver" can do this because it sees all the tokens?
-#   - it's pushing rather than pulling.
-#
-# TODO: 
-# - get rid of cruft and see what happens
-# - write exhaustive test cases and get rid of arglist problem
-#   - although you are going to change it to be honest
-# - hook it up to Zephyr ASDL.  Create a convert= function.
-#   - This is called on shift() and pop() in pgen2/parse.py.  You can look
-#     at (typ, value) to figure out what to put in the LST.
-#
-# Construct an ambiguous grammar and see what happens?
 
 set -o nounset
 set -o pipefail
@@ -88,12 +15,13 @@ banner() {
   echo
 }
 
-pgen2() {
-  PYTHONPATH=. pgen2/pgen2_main.py "$@"
+grammar-gen() {
+  PYTHONPATH=. oil_lang/grammar_gen.py "$@"
 }
 
+# Build the grammar and parse code.  Outside of the Oil binary.
 parse() {
-  pgen2 parse "$@"
+  grammar-gen parse "$@"
 }
 
 parse-exprs() {
@@ -183,6 +111,10 @@ calc-test() {
     'a + 2'
     '1 + 2*3/4'  # operator precedence and left assoc
 
+    # Tuple
+    'x+1, y+1'
+    #'(x+1, y+1)'  # TODO: atom
+
     # Associative
     '-1+2+3'
     '4*5*6'
@@ -210,7 +142,7 @@ calc-test() {
 
   for e in "${exprs[@]}"; do
     echo "$e"
-    parse $OIL_GRAMMAR test_input "$e"
+    parse $OIL_GRAMMAR eval_input "$e"
   done
 }
 
@@ -280,7 +212,7 @@ mode-test() {
 
   for e in "${exprs[@]}"; do
     echo "$e"
-    parse $OIL_GRAMMAR test_input "$e"
+    parse $OIL_GRAMMAR eval_input "$e"
   done
 
   # Command stuff.  TODO: we don't have a parser for this!

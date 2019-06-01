@@ -53,7 +53,7 @@ def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
     arena = alloc.Arena()
     arena.PushSource('<_MakeRootCompleter>')
     trail = parse_lib.Trail()
-    parse_ctx = parse_lib.ParseContext(arena, {}, trail=trail,
+    parse_ctx = parse_lib.ParseContext(arena, {}, None, trail=trail,
                                        one_pass_parse=True)
 
   if 1:  # enable for details
@@ -420,7 +420,7 @@ class RootCompleterTest(unittest.TestCase):
       code_str = f.read()
     trail = parse_lib.Trail()
     arena = test_lib.MakeArena('<completion_test.py>')
-    parse_ctx = parse_lib.ParseContext(arena, {}, trail=trail)
+    parse_ctx = parse_lib.ParseContext(arena, {}, None, trail=trail)
     comp_lookup = completion.Lookup()
     ex = test_lib.EvalCode(code_str, parse_ctx, comp_lookup=comp_lookup)
 
@@ -478,7 +478,7 @@ class RootCompleterTest(unittest.TestCase):
     trail = parse_lib.Trail()
     arena = test_lib.MakeArena('<completion_test.py>')
     aliases = {}
-    parse_ctx = parse_lib.ParseContext(arena, aliases, trail=trail)
+    parse_ctx = parse_lib.ParseContext(arena, aliases, None, trail=trail)
     comp_lookup = completion.Lookup()
 
     ex = test_lib.EvalCode(code_str, parse_ctx, comp_lookup=comp_lookup,
@@ -514,7 +514,7 @@ class RootCompleterTest(unittest.TestCase):
       code_str = f.read()
     trail = parse_lib.Trail()
     arena = test_lib.MakeArena('<completion_test.py>')
-    parse_ctx = parse_lib.ParseContext(arena, {}, trail=trail)
+    parse_ctx = parse_lib.ParseContext(arena, {}, None, trail=trail)
     comp_lookup = completion.Lookup()
     ex = test_lib.EvalCode(code_str, parse_ctx, comp_lookup=comp_lookup)
 
@@ -713,7 +713,7 @@ class InitCompletionTest(unittest.TestCase):
       }
 
       arena = test_lib.MakeArena('<InitCompletionTest>')
-      parse_ctx = parse_lib.ParseContext(arena, {})
+      parse_ctx = parse_lib.ParseContext(arena, {}, None)
       mem = state.Mem('', [], {}, arena)
 
       #

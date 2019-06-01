@@ -12,8 +12,6 @@ import sys
 import marshal
 import types
 
-from _devbuild.gen import syntax_asdl
-
 from . import pytree
 from . import skeleton
 
@@ -34,6 +32,7 @@ from frontend import args
 from core.util import log
 from core import pyutil
 
+from oil_lang import expr_parse  # for ParseTreePrinter
 from ovm2 import oheap2
 
 
@@ -66,17 +65,17 @@ def HostStdlibNames():
 
 
 def WriteGrammar(grammar_path, marshal_path):
-  log("Generating grammar tables from %s", grammar_path)
-
+  """Used for py27.grammar.
+  
+  oil_lang/grammar.pgen2 uses oil_lang/grammar_gen.py
+  """
   with open(grammar_path) as f:
     gr = pgen.MakeGrammar(f)
 
-  log("Writing grammar tables to %s", marshal_path)
-  try:
-    # calls pickle.dump on self.__dict__ after making it deterministic
-    gr.dump(marshal_path)
-  except OSError as e:
-    log("Writing failed: %s", e)
+  with open(marshal_path, 'wb') as out_f:
+    gr.dump(out_f)
+
+  log('Compiled %s -> grammar tables in %s', grammar_path, marshal_path)
 
 
 def CountTupleTree(tu):
@@ -121,32 +120,6 @@ class TupleTreePrinter(object):
       f.write('\n')
     else:
       raise AssertionError(tu)
-
-
-class ParseTreePrinter(object):
-  """Prints a tree of PNode instances."""
-  def __init__(self, names):
-    self.names = names
-    # TODO: parameterize by grammar.
-    self.max_token_index = max(token.tok_name)
-
-  def Print(self, pnode, f=sys.stdout, indent=0, i=0):
-    ind = '  ' * indent
-    # NOTE:
-    # - value is filled in for TOKENS, but it's always None for PRODUCTIONS.
-    # - context is (prefix, (lineno, column)), where lineno is 1-based, and
-    #   'prefix' is a string of whitespace.
-    #   e.g. for 'f(1, 3)', the "3" token has a prefix of ' '.
-    if isinstance(pnode.tok, tuple):
-      v = pnode.tok[0]
-    elif isinstance(pnode.tok, syntax_asdl.token):
-      v = pnode.tok.val
-    else:
-      v = '-'
-    f.write('%s%d %s %s\n' % (ind, i, self.names[pnode.typ], v))
-    if pnode.children:  # could be None
-      for i, child in enumerate(pnode.children):
-        self.Print(child, indent=indent+1, i=i)
 
 
 class TableOutput(object):
@@ -390,7 +363,7 @@ def OpyCommandMain(argv):
       log('  %s^', ' '*offset)
       log('Parse Error: %s', e)
       return 1
-    printer = ParseTreePrinter(transformer._names)  # print raw nodes
+    printer = expr_parse.ParseTreePrinter(transformer._names)  # print raw nodes
     printer.Print(pnode)
 
   elif action == 'ast':  # output AST

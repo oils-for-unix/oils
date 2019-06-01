@@ -494,6 +494,24 @@ def KeywordToken(w):
   return err
 
 
+def LiteralToken(w):
+  # type: (word_t) -> Optional[token]
+  """If a word consists of a literal token, return it.
+  
+  Otherwise return None.
+  """
+  assert isinstance(w, word__CompoundWord)
+
+  if len(w.parts) != 1:
+    return None
+
+  part0 = w.parts[0]
+  if isinstance(part0, word_part__LiteralPart):
+    return part0.token
+
+  return None
+
+
 #
 # Polymorphic between TokenWord and CompoundWord
 #

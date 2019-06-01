@@ -1,10 +1,9 @@
 #!/usr/bin/python
 """
-pgen2_main.py
+grammar_gen.py - Use pgen2 to generate tables from Oil's grammar.
 """
 from __future__ import print_function
 
-import cStringIO
 import os
 import sys
 
@@ -16,9 +15,7 @@ from core import meta
 from core.util import log
 from frontend import lexer, match, reader
 from oil_lang import expr_parse
-from pgen2 import token
-from pgen2 import tokenize
-from pgen2 import driver, parse, pgen, grammar
+from pgen2 import parse, pgen
 
 
 # Used at grammar BUILD time.
@@ -109,7 +106,26 @@ def main(argv):
   action = argv[1]
   argv = argv[2:]
 
-  if action == 'parse':
+  # Common initialization
+  arith_ops = {}
+  for _, token_str, id_ in meta.ID_SPEC.LexerPairs(Kind.Arith):
+    arith_ops[token_str] = id_
+  #print(self.arith)
+  tok_def = OilTokenDef(arith_ops)
+
+  if action == 'marshal':  # generate the grammar and parse it
+    grammar_path = argv[0]
+    marshal_path = argv[1]
+
+    with open(grammar_path) as f:
+      gr = pgen.MakeGrammar(f, tok_def=tok_def)
+
+    with open(marshal_path, 'wb') as out_f:
+      gr.dump(out_f)
+
+    log('Compiled %s -> grammar tables in %s', grammar_path, marshal_path)
+
+  elif action == 'parse':  # generate the grammar and parse it
     grammar_path = argv[0]
     start_symbol = argv[1]
     code_str = argv[2]
@@ -117,12 +133,6 @@ def main(argv):
     # For choosing lexer and semantic actions
     grammar_name, _ = os.path.splitext(os.path.basename(grammar_path))
 
-    arith_ops = {}
-    for _, token_str, id_ in meta.ID_SPEC.LexerPairs(Kind.Arith):
-      arith_ops[token_str] = id_
-    #print(self.arith)
-
-    tok_def = OilTokenDef(arith_ops)
     with open(grammar_path) as f:
       gr = pgen.MakeGrammar(f, tok_def=tok_def)
 
@@ -133,7 +143,7 @@ def main(argv):
 
     p = expr_parse.ExprParser(lex, gr, start_symbol=start_symbol)
     try:
-      ast_node = p.Parse(transform=is_expr)
+      ast_node = p.Parse(transform=is_expr, print_parse_tree=True)
     except parse.ParseError as e:
       log('Parse Error: %s', e)
       return 1

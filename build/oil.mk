@@ -8,6 +8,9 @@ _build/oil/main_name.c:
 
 OIL_PYPATH := $(REPO_ROOT):$(REPO_ROOT)/vendor
 
+_build/oil/grammar.marshal: oil_lang/grammar.pgen2
+	PYTHONPATH=. oil_lang/grammar_gen.py marshal $^ $@
+
 # Dependencies calculated by importing main.
 # NOTE: The list of files is used both to compile and to make a tarball.
 # - For compiling, we should respect _HAVE_READLINE in detected_config

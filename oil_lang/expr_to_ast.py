@@ -8,7 +8,7 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen import syntax_asdl
 from _devbuild.gen.syntax_asdl import (
-    command, oil_expr, oil_word_part, regex
+    command, expr, oil_word_part, regex
 )
 
 
@@ -36,7 +36,7 @@ class Transformer(object):
       right = self._AssocBinary(children[2:])
 
     assert isinstance(op.tok, syntax_asdl.token)
-    return oil_expr.Binary(op.tok, self.Transform(left), right)
+    return expr.Binary(op.tok, self.Transform(left), right)
 
   def _Trailer(self, base, p_trailer):
     children = p_trailer.children
@@ -52,7 +52,7 @@ class Transformer(object):
        else:
          arg = children[1]
          arglist = [arg]
-       return oil_expr.FuncCall(base, [self.Transform(a) for a in arglist])
+       return expr.FuncCall(base, [self.Transform(a) for a in arglist])
 
     if op_tok.id == Id.Op_LBracket:
        p_args = children[1]
@@ -64,7 +64,7 @@ class Transformer(object):
        else:
          arg = children[1]
          arglist = [arg]
-       return oil_expr.Subscript(base, [self.Transform(a) for a in arglist])
+       return expr.Subscript(base, [self.Transform(a) for a in arglist])
 
     if op_tok.id == Id.Expr_Dot:
       #return self._GetAttr(base, nodelist[2])
@@ -88,9 +88,13 @@ class Transformer(object):
       c = '-' if not children else len(children)
       #log('non-terminal %s %s', nt_name, c)
 
-      if nt_name == 'test_input':
-        # test_input: test NEWLINE* ENDMARKER
+      if nt_name == 'eval_input':
+        # testlist_input: testlist NEWLINE* ENDMARKER
         return self.Transform(children[0])
+
+      if nt_name == 'testlist':
+        # testlist: test (',' test)* [',']
+        return self._AssocBinary(children)
 
       elif nt_name == 'arith_expr':
         # expr: term (('+'|'-') term)*
@@ -118,7 +122,7 @@ class Transformer(object):
         assert len(children) == 2, children
         op, e = children
         assert isinstance(op.tok, syntax_asdl.token)
-        return oil_expr.Unary(op.tok, self.Transform(e))
+        return expr.Unary(op.tok, self.Transform(e))
 
       elif nt_name == 'atom_expr':
         # atom_expr: ['await'] atom trailer*
@@ -149,7 +153,7 @@ class Transformer(object):
             Id.Lit_Chars
         ]
 
-        return oil_expr.ArrayLiteral(left_tok, items)
+        return expr.ArrayLiteral(left_tok, items)
 
       elif nt_name == 'regex_literal':
         left_tok = children[0].tok
@@ -160,7 +164,7 @@ class Transformer(object):
             Id.Expr_Name
         ]
 
-        return oil_expr.RegexLiteral(left_tok, regex.Concat(items))
+        return expr.RegexLiteral(left_tok, regex.Concat(items))
 
       elif nt_name == 'command_sub':
         left_tok = children[0].tok
@@ -173,23 +177,23 @@ class Transformer(object):
 
         # TODO: Fix this approximation.
         words = items
-        return oil_expr.CommandSub(left_tok, command.SimpleCommand(words))
+        return expr.CommandSub(left_tok, command.SimpleCommand(words))
 
       elif nt_name == 'expr_sub':
         left_tok = children[0].tok
 
-        return oil_expr.ExprSub(left_tok, self.Transform(children[1]))
+        return expr.ExprSub(left_tok, self.Transform(children[1]))
 
       elif nt_name == 'var_sub':
         left_tok = children[0].tok
 
-        return oil_expr.VarSub(left_tok, self.Transform(children[1]))
+        return expr.VarSub(left_tok, self.Transform(children[1]))
 
       elif nt_name == 'dq_string':
         left_tok = children[0].tok
 
         parts = [self.Transform(c) for c in children[1:-1]]
-        return oil_expr.DoubleQuoted(left_tok, parts)
+        return expr.DoubleQuoted(left_tok, parts)
 
       else:
         raise AssertionError(nt_name)
@@ -198,9 +202,9 @@ class Transformer(object):
       #log('terminal %s', tok)
 
       if tok.id == Id.Expr_Name:
-        return oil_expr.Var(tok)
+        return expr.Var(tok)
       elif tok.id == Id.Expr_Digits:
-        return oil_expr.Const(tok)
+        return expr.Const(tok)
 
       # Hm just use word_part.Literal for all these?  Or token?
       # Id.Lit_EscapedChar is assumed to need \ removed on evaluation.

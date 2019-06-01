@@ -209,6 +209,7 @@ module syntax
   | ExpandedAlias(command child, redir* redirects, env_pair* more_env)
   | Sentence(command child, token terminator)
   | Assignment(id keyword, string* flags, assign_pair* pairs)
+  | OilAssign(token keyword, expr child)
   | ControlFlow(token token, word? arg_word)
   | Pipeline(command* children, bool negated, int* stderr_indices)
   | AndOr(id* ops, command* children)
@@ -279,7 +280,7 @@ module syntax
   | RepeatRange(token min, token max, regex child)  -- x^{1,2}
   | Concat(regex* parts)
 
-  oil_expr =
+  expr =
     Var(token name)  -- a variable name to evaluate
     -- words can look like "$foo" or '1' or '3.14159' or '1e-19'
     -- also note that ArrayLiterals could appear in command mode.
@@ -289,18 +290,18 @@ module syntax
   | RegexLiteral(token left, regex regex)
 
     -- These are duplicated as "parts" too
-  | VarSub(token left, oil_expr e)  -- might be a variant for ${x %02d}
+  | VarSub(token left, expr e)  -- might be a variant for ${x %02d}
   | CommandSub(token left, command cmd)
-  | ExprSub(token left, oil_expr e)
+  | ExprSub(token left, expr  e)
   | SingleQuoted(token left, token* tokens)
   | DoubleQuoted(token left, oil_word_part* parts)
 
-  | Unary(token op, oil_expr child)
-  | Binary(token op, oil_expr left, oil_expr right)
-  | FuncCall(oil_expr func, oil_expr* args)
+  | Unary(token op, expr child)
+  | Binary(token op, expr left, expr right)
+  | FuncCall(expr func, expr* args)
     -- a[1, 2] or a[1:2]
     -- should 1:2 be an expression then?
-  | Subscript(oil_expr collection, oil_expr* indices)
+  | Subscript(expr collection, expr* indices)
 
   -- NOTE: Remove these for the first cut?  We could mostly reuse OSH nodes.
   -- And then we can share the evaluator to have identical semantics?

@@ -28,7 +28,7 @@ from osh import word
 
 def _InitWordParser(s, arena=None):
   arena = arena or test_lib.MakeArena('word_parse_test.py')
-  parse_ctx = parse_lib.ParseContext(arena, {})
+  parse_ctx = parse_lib.ParseContext(arena, {}, None)
   line_reader, lexer = test_lib.InitLexer(s, arena)
   c_parser = parse_ctx.MakeOshParser(line_reader)
   return c_parser.w_parser  # hack

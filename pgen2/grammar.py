@@ -19,6 +19,9 @@ import marshal
 from . import token
 from core.util import log
 
+if TYPE_CHECKING:
+  from typing import IO
+
 
 class Grammar(object):
     """Pgen parsing tables conversion class.
@@ -78,6 +81,7 @@ class Grammar(object):
     """
 
     def __init__(self):
+        # type: () -> None
         self.symbol2number = {}
         self.number2symbol = {}
         self.states = []
@@ -90,7 +94,7 @@ class Grammar(object):
         self.symbol2label = {}
         self.start = 256
 
-    def dump(self, filename):
+    def dump(self, f):
         """Dump the grammar tables to a marshal file.
 
         Oil patch: changed pickle to marshal.
@@ -106,21 +110,21 @@ class Grammar(object):
         between.
         """
         #self.report()
-        with open(filename, "wb") as f:
-            f.write(self.MARSHAL_HEADER)
-            marshal.dump(self.symbol2number, f)
-            marshal.dump(self.number2symbol, f)
-            marshal.dump(self.states, f)
-            marshal.dump(self.dfas, f)
-            marshal.dump(self.labels, f)
-            marshal.dump(self.keywords, f)
-            marshal.dump(self.tokens, f)
-            marshal.dump(self.symbol2label, f)
-            marshal.dump(self.start, f)
+        f.write(self.MARSHAL_HEADER)
+        marshal.dump(self.symbol2number, f)
+        marshal.dump(self.number2symbol, f)
+        marshal.dump(self.states, f)
+        marshal.dump(self.dfas, f)
+        marshal.dump(self.labels, f)
+        marshal.dump(self.keywords, f)
+        marshal.dump(self.tokens, f)
+        marshal.dump(self.symbol2label, f)
+        marshal.dump(self.start, f)
 
     MARSHAL_HEADER = 'PGEN2\n'  # arbitrary header
 
     def load(self, f):
+        # type: (IO[str]) -> None
         h = f.read(len(self.MARSHAL_HEADER))
         if h != self.MARSHAL_HEADER:
           raise RuntimeError('Invalid header %r' % h)

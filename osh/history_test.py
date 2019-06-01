@@ -31,7 +31,7 @@ class _MockReadlineHistory(object):
 def _MakeHistoryEvaluator(history_items):
   arena = test_lib.MakeArena('<reader_test.py>')
   trail = parse_lib.Trail()
-  parse_ctx = parse_lib.ParseContext(arena, {}, trail=trail)
+  parse_ctx = parse_lib.ParseContext(arena, {}, None, trail=trail)
   debug_f = util.DebugFile(sys.stdout)
   readline = _MockReadlineHistory(history_items)
   return history.Evaluator(readline, parse_ctx, debug_f)
