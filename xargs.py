@@ -38,7 +38,7 @@ xargs.add_argument('initial_arguments', nargs=argparse.REMAINDER)
 ArgWithInfo = collections.namedtuple('ArgWithInfo', 'arg, charc, argc, linec')
 
 def str_memsize(*strings):
-	"""Calculate the amount of memory required to store the string in an argv."""
+	"""Calculate the amount of memory required to store the strings in an argv."""
 	return sum(len(s) + 1 for s in strings)
 
 def read_lines_eof(eof_str, input):
@@ -97,21 +97,23 @@ def group_args(max_chars, max_args, max_lines, arg_iter):
 		)
 	# group args and drop meta-info
 	arggroup_iter = ((m.arg for m in g) for _, g in itertools.groupby(arg_iter, kf))
+	# if there is no input, return an empty group
+	# to run the command without additional arguments
 	arggroup = next(arggroup_iter, None)
 	yield arggroup if arggroup is not None else []
 	for arggroup in arggroup_iter:
 		yield arggroup
 
-def replace_args(init_args, replace_str, add_args):
-	add_args = list(add_args)
-	for arg in init_args:
+def replace_args(initial_arguments, replace_str, additional_arguments):
+	additional_arguments = list(additional_arguments)
+	for arg in initial_arguments:
 		if arg == replace_str:
-			for x in add_args:
+			for x in additional_arguments:
 				yield x
 		else:
 			yield arg
 
-def build_cmdline_replace(command, initial_arguments, replace_str, arggroup_iter):
+def build_cmdlines_replace(command, initial_arguments, replace_str, arggroup_iter):
 	"""
 	Build command-lines suitable for subprocess.Popen,
 	replacing instances of replace_str in initial_arguments.
@@ -128,7 +130,7 @@ def build_cmdline_replace(command, initial_arguments, replace_str, arggroup_iter
 		)
 		yield cmdline
 
-def build_cmdline(command, initial_arguments, arggroup_iter):
+def build_cmdlines(command, initial_arguments, arggroup_iter):
 	"""Build command-lines suitable for subprocess.Popen."""
 	command = [command]
 	for additional_arguments in arggroup_iter:
@@ -187,10 +189,10 @@ def main(xargs_args):
 		arg_iter = argsplit_ws(xargs_input)
 
 	if xargs_args.no_run_if_empty:
-		ag = next(arg_iter, None)
-		if ag is None:
+		arg = next(arg_iter, None)
+		if arg is None:
 			return 0
-		arg_iter = itertools.chain([ag], arg_iter)
+		arg_iter = itertools.chain([arg], arg_iter)
 
 	# if -I, max_chars might be 0 at this point, so check against None
 	if xargs_args.max_chars is not None and xargs_args.exit:
@@ -208,14 +210,14 @@ def main(xargs_args):
 
 	# phase 4: build command-lines
 	if xargs_args.replace_str:
-		cmdline_iter = build_cmdline_replace(
+		cmdline_iter = build_cmdlines_replace(
 			xargs_args.command,
 			xargs_args.initial_arguments,
 			xargs_args.replace_str,
 			arggroup_iter
 		)
 	else:
-		cmdline_iter = build_cmdline(
+		cmdline_iter = build_cmdlines(
 			xargs_args.command,
 			xargs_args.initial_arguments,
 			arggroup_iter
