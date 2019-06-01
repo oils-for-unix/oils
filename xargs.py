@@ -37,6 +37,9 @@ xargs.add_argument('initial_arguments', nargs=argparse.REMAINDER)
 
 ArgWithInfo = collections.namedtuple('ArgWithInfo', 'arg, charc, argc, linec')
 
+def str_memsize(*strings):
+	return sum(len(s) + 1 for s in strings)
+
 def read_lines_eof(eof_str, input):
 	eof_str = eof_str + '\n'
 	return itertools.takewhile(lambda l: l != eof_str, input)
@@ -77,29 +80,6 @@ def argsplit_delim(delim, lines):
 		charc += str_memsize(arg)
 		yield ArgWithInfo(arg, charc, argc, linec)
 
-def replace_args(init_args, replace_str, add_args):
-	add_args = list(add_args)
-	for arg in init_args:
-		if arg == replace_str:
-			for x in add_args:
-				yield x
-		else:
-			yield arg
-
-def str_memsize(*strings):
-	return sum(len(s) + 1 for s in strings)
-
-def map_errcode(rc):
-	if rc == 0:
-		return 0
-	if rc >= 0 and rc <= 125:
-		return 123
-	if rc == 255:
-		return 124
-	if rc < 0:
-		return 125
-	return 1
-
 def group_args(max_chars, max_args, max_lines, arg_iter):
 	def kf(a):
 		return (
@@ -113,6 +93,15 @@ def group_args(max_chars, max_args, max_lines, arg_iter):
 	yield arggroup if arggroup is not None else []
 	for arggroup in arggroup_iter:
 		yield arggroup
+
+def replace_args(init_args, replace_str, add_args):
+	add_args = list(add_args)
+	for arg in init_args:
+		if arg == replace_str:
+			for x in add_args:
+				yield x
+		else:
+			yield arg
 
 def build_cmdline_replace(command, initial_arguments, replace_str, arggroup_iter):
 	command = [command]
@@ -150,6 +139,16 @@ def prompt_user(interactive, cmdline_iter):
 			print(*cmdline, file=sys.stderr)
 		yield cmdline
 
+def map_errcode(rc):
+	if rc == 0:
+		return 0
+	if rc >= 0 and rc <= 125:
+		return 123
+	if rc == 255:
+		return 124
+	if rc < 0:
+		return 125
+	return 1
 
 def main(xargs_args):
 	# phase 1: read input
