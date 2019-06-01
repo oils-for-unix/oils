@@ -363,50 +363,45 @@ def make_first(tok_def, rawfirst, gr):
     return first
 
 
-def make_grammar(tok_def, dfas, first, startsymbol):
-    gr = grammar.Grammar()
-
-    # TODO: startsymbol support could be removed.  The call to p.setup() in
-    # PushTokens() can always specify it explicitly.
-    names = sorted(dfas)
-    names.remove(startsymbol)
-    names.insert(0, startsymbol)
-
-    for name in names:
-        i = 256 + len(gr.symbol2number)
-        gr.symbol2number[name] = i
-        gr.number2symbol[i] = name
-
-    for name in names:
-        dfa = dfas[name]
-        states = []
-        for state in dfa:
-            arcs = []
-            for label, next_ in sorted(state.arcs.items()):
-                arcs.append((make_label(tok_def, gr, label), dfa.index(next_)))
-            if state.isfinal:
-                arcs.append((0, dfa.index(state)))
-            states.append(arcs)
-        gr.states.append(states)
-        fi = make_first(tok_def, first[name], gr)
-        gr.dfas[gr.symbol2number[name]] = (states, fi)
-
-    gr.start = gr.symbol2number[startsymbol]
-    return gr
-
-
 def MakeGrammar(f, tok_def=None):
-  """Construct a Grammr object from a file."""
+  """Construct a Grammar object from a file."""
 
   lexer = tokenize.generate_tokens(f.readline)
   p = ParserGenerator(lexer)
   dfas, startsymbol = p.parse()
 
-  first = {} # map from symbol name to set of tokens
+  first = {}  # map from symbol name to set of tokens
   for name in sorted(dfas):
     if name not in first:
       calcfirst(dfas, first, name)
       #print name, self.first[name].keys()
 
+  # TODO: startsymbol support could be removed.  The call to p.setup() in
+  # PushTokens() can always specify it explicitly.
+  names = sorted(dfas)
+  names.remove(startsymbol)
+  names.insert(0, startsymbol)
+
+  gr = grammar.Grammar()
+  for name in names:
+      i = 256 + len(gr.symbol2number)
+      gr.symbol2number[name] = i
+      gr.number2symbol[i] = name
+
   tok_def = tok_def or PythonTokDef()
-  return make_grammar(tok_def, dfas, first, startsymbol)
+  for name in names:
+      dfa = dfas[name]
+      states = []
+      for state in dfa:
+          arcs = []
+          for label, next_ in sorted(state.arcs.items()):
+              arcs.append((make_label(tok_def, gr, label), dfa.index(next_)))
+          if state.isfinal:
+              arcs.append((0, dfa.index(state)))
+          states.append(arcs)
+      gr.states.append(states)
+      fi = make_first(tok_def, first[name], gr)
+      gr.dfas[gr.symbol2number[name]] = (states, fi)
+
+  gr.start = gr.symbol2number[startsymbol]
+  return gr

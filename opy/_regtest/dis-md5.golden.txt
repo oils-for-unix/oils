@@ -172,7 +172,7 @@
  13604 4eefbd52c2231537fd5014f41f4b7486 _tmp/regtest/textwrap.pyc
  13677 2c60c3eff642e1e82b819d8fc206e3e5 _tmp/regtest/sre_compile.pyc
  14104 478bb25df4da94a82db8aadb1740af39 _tmp/regtest/copy.pyc
- 14203 0819ec8bdcf6b38ded20f3d3e978f6da _tmp/regtest/opy/pgen2/pgen.pyc
+ 14191 7b2b7db6861d8dc52238eed66adadf12 _tmp/regtest/opy/pgen2/pgen.pyc
  14254 de29ea617a6a7a9329530d6112273f99 _tmp/regtest/opy/byterun/test_functions.pyc
  14555 513aa44211628ef3d807b400e2b94fa5 _tmp/regtest/core/word.pyc
  14598 6946887d52866e020fb73c92bff2349d _tmp/regtest/re.pyc
