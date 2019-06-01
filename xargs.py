@@ -232,7 +232,7 @@ def main(xargs_args):
 
 	# phase 5: execute command-lines
 	err = 0
-	if xargs_args.max_procs and xargs_args.max_procs > 1:
+	if xargs_args.max_procs > 1:
 		subprocs = []
 		environ = os.environ.copy()
 		for i, cmdline in enumerate(itertools.islice(cmdline_iter, xargs_args.max_procs)):
