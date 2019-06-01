@@ -25,143 +25,12 @@ class PythonTokDef(object):
 
 class ParserGenerator(object):
 
-    def __init__(self, f, tok_def=None):
-        self.tok_def = tok_def or PythonTokDef()
-
-        self.generator = tokenize.generate_tokens(f.readline)
-        self.gettoken() # Initialize lookahead
-        self.dfas, self.startsymbol = self.parse()
-
-        self.first = {} # map from symbol name to set of tokens
-        self.addfirstsets()
-
-    def make_grammar(self):
-        gr = grammar.Grammar()
-        names = list(self.dfas.keys())
-        names.sort()
-        names.remove(self.startsymbol)
-        names.insert(0, self.startsymbol)
-        for name in names:
-            i = 256 + len(gr.symbol2number)
-            gr.symbol2number[name] = i
-            gr.number2symbol[i] = name
-        for name in names:
-            dfa = self.dfas[name]
-            states = []
-            for state in dfa:
-                arcs = []
-                for label, next_ in sorted(state.arcs.items()):
-                    arcs.append((self.make_label(gr, label), dfa.index(next_)))
-                if state.isfinal:
-                    arcs.append((0, dfa.index(state)))
-                states.append(arcs)
-            gr.states.append(states)
-            gr.dfas[gr.symbol2number[name]] = (states, self.make_first(gr, name))
-        gr.start = gr.symbol2number[self.startsymbol]
-        return gr
-
-    def make_first(self, gr, name):
-        rawfirst = self.first[name]
-        first = {}
-        for label in sorted(rawfirst):
-            ilabel = self.make_label(gr, label)
-            ##assert ilabel not in first # XXX failed on <> ... !=
-            first[ilabel] = 1
-        return first
-
-    def make_label(self, gr, label):
-        """Given a grammar item, return a unique integer representing it.
-
-        It could be:
-        1. 'expr'  - a non-terminal
-        2. NAME    - a terminal
-        3. 'for'   - keyword
-        4. '>='    - operator
-
-        Oil addition
-        5. Op_RBracket -- anything with _ is assumed to be in the Id namespace.
-        """
-        #log('make_label %r', label)
-        # XXX Maybe this should be a method on a subclass of converter?
-        ilabel = len(gr.labels)
-        if label[0].isalpha():
-            if label in gr.symbol2number:  # NON-TERMINAL
-                if label in gr.symbol2label:
-                    return gr.symbol2label[label]
-                else:
-                    gr.labels.append(gr.symbol2number[label])
-                    gr.symbol2label[label] = ilabel
-                    return ilabel
-            else:  # TERMINAL like (NAME, NUMBER, STRING)
-                itoken = self.tok_def.GetTerminalNum(label)
-                if itoken in gr.tokens:
-                    return gr.tokens[itoken]
-                else:
-                    gr.labels.append(itoken)
-                    #log('%s %d -> %s', token.tok_name[itoken], itoken, ilabel)
-                    gr.tokens[itoken] = ilabel
-                    return ilabel
-        else:
-            # Either a keyword or an operator
-            assert label[0] in ('"', "'"), label
-            value = eval(label)
-            if value[0].isalpha():
-                # A keyword
-                if value in gr.keywords:
-                    return gr.keywords[value]
-                else:
-                    gr.labels.append(token.NAME)  # arbitrary number < 256
-                    gr.keywords[value] = ilabel
-                    return ilabel
-            else:
-                # An operator (any non-numeric token)
-                itoken = self.tok_def.GetOpNum(value)
-                if itoken in gr.tokens:
-                    return gr.tokens[itoken]
-                else:
-                    gr.labels.append(itoken)
-                    gr.tokens[itoken] = ilabel
-                    return ilabel
-
-    def addfirstsets(self):
-        names = list(self.dfas.keys())
-        names.sort()
-        for name in names:
-            if name not in self.first:
-                self.calcfirst(name)
-            #print name, self.first[name].keys()
-
-    def calcfirst(self, name):
-        dfa = self.dfas[name]
-        self.first[name] = None # dummy to detect left recursion
-        state = dfa[0]
-        totalset = {}
-        overlapcheck = {}
-        for label, next in state.arcs.items():
-            if label in self.dfas:
-                if label in self.first:
-                    fset = self.first[label]
-                    if fset is None:
-                        raise ValueError("recursion for rule %r" % name)
-                else:
-                    self.calcfirst(label)
-                    fset = self.first[label]
-                totalset.update(fset)
-                overlapcheck[label] = fset
-            else:
-                totalset[label] = 1
-                overlapcheck[label] = {label: 1}
-        inverse = {}
-        for label, itsfirst in overlapcheck.items():
-            for symbol in itsfirst:
-                if symbol in inverse:
-                    raise ValueError("rule %s is ambiguous; %s is in the"
-                                     " first sets of %s as well as %s" %
-                                     (name, symbol, label, inverse[symbol]))
-                inverse[symbol] = label
-        self.first[name] = totalset
+    def __init__(self, lexer):
+        self.lexer = lexer
 
     def parse(self):
+        self.gettoken()  # Initialize lookahead
+
         dfas = {}
         startsymbol = None
         # MSTART: (NEWLINE | RULE)* ENDMARKER
@@ -338,9 +207,9 @@ class ParserGenerator(object):
         return value
 
     def gettoken(self):
-        tup = next(self.generator)
+        tup = next(self.lexer)
         while tup[0] in (tokenize.COMMENT, tokenize.NL):
-            tup = next(self.generator)
+            tup = next(self.lexer)
         self.type, self.value, self.begin, self.end, self.line = tup
         #print token.tok_name[self.type], repr(self.value)
 
@@ -398,5 +267,146 @@ class DFAState(object):
     __hash__ = None # For Py3 compatibility.
 
 
-if __name__ == '__main__':
-    main()
+def calcfirst(dfas, first, name):
+    """Recursive function that mutates first."""
+    dfa = dfas[name]
+    first[name] = None # dummy to detect left recursion
+    state = dfa[0]
+    totalset = {}
+    overlapcheck = {}
+    for label, _ in state.arcs.items():
+        if label in dfas:
+            if label in first:
+                fset = first[label]
+                if fset is None:
+                    raise ValueError("recursion for rule %r" % name)
+            else:
+                calcfirst(dfas, first, label)
+                fset = first[label]
+            totalset.update(fset)
+            overlapcheck[label] = fset
+        else:
+            totalset[label] = 1
+            overlapcheck[label] = {label: 1}
+    inverse = {}
+    for label, itsfirst in overlapcheck.items():
+        for symbol in itsfirst:
+            if symbol in inverse:
+                raise ValueError("rule %s is ambiguous; %s is in the"
+                                 " first sets of %s as well as %s" %
+                                 (name, symbol, label, inverse[symbol]))
+            inverse[symbol] = label
+    first[name] = totalset
+
+
+def make_label(tok_def, gr, label):
+    """Given a grammar item, return a unique integer representing it.
+
+    It could be:
+    1. 'expr'  - a non-terminal
+    2. NAME    - a terminal
+    3. 'for'   - keyword
+    4. '>='    - operator
+
+    Oil addition
+    5. Op_RBracket -- anything with _ is assumed to be in the Id namespace.
+    """
+    #log('make_label %r', label)
+    # XXX Maybe this should be a method on a subclass of converter?
+    ilabel = len(gr.labels)
+    if label[0].isalpha():
+        if label in gr.symbol2number:  # NON-TERMINAL
+            if label in gr.symbol2label:
+                return gr.symbol2label[label]
+            else:
+                gr.labels.append(gr.symbol2number[label])
+                gr.symbol2label[label] = ilabel
+                return ilabel
+        else:  # TERMINAL like (NAME, NUMBER, STRING)
+            itoken = tok_def.GetTerminalNum(label)
+            if itoken in gr.tokens:
+                return gr.tokens[itoken]
+            else:
+                gr.labels.append(itoken)
+                #log('%s %d -> %s', token.tok_name[itoken], itoken, ilabel)
+                gr.tokens[itoken] = ilabel
+                return ilabel
+    else:
+        # Either a keyword or an operator
+        assert label[0] in ('"', "'"), label
+        value = eval(label)
+        if value[0].isalpha():
+            # A keyword
+            if value in gr.keywords:
+                return gr.keywords[value]
+            else:
+                gr.labels.append(token.NAME)  # arbitrary number < 256
+                gr.keywords[value] = ilabel
+                return ilabel
+        else:
+            # An operator (any non-numeric token)
+            itoken = tok_def.GetOpNum(value)
+            if itoken in gr.tokens:
+                return gr.tokens[itoken]
+            else:
+                gr.labels.append(itoken)
+                gr.tokens[itoken] = ilabel
+                return ilabel
+
+
+def make_first(tok_def, rawfirst, gr):
+    first = {}
+    for label in sorted(rawfirst):
+        ilabel = make_label(tok_def, gr, label)
+        ##assert ilabel not in first # XXX failed on <> ... !=
+        first[ilabel] = 1
+    return first
+
+
+def make_grammar(tok_def, dfas, first, startsymbol):
+    gr = grammar.Grammar()
+
+    # TODO: startsymbol support could be removed.  The call to p.setup() in
+    # PushTokens() can always specify it explicitly.
+    names = sorted(dfas)
+    names.remove(startsymbol)
+    names.insert(0, startsymbol)
+
+    for name in names:
+        i = 256 + len(gr.symbol2number)
+        gr.symbol2number[name] = i
+        gr.number2symbol[i] = name
+
+    for name in names:
+        dfa = dfas[name]
+        states = []
+        for state in dfa:
+            arcs = []
+            for label, next_ in sorted(state.arcs.items()):
+                arcs.append((make_label(tok_def, gr, label), dfa.index(next_)))
+            if state.isfinal:
+                arcs.append((0, dfa.index(state)))
+            states.append(arcs)
+        gr.states.append(states)
+        fi = make_first(tok_def, first[name], gr)
+        gr.dfas[gr.symbol2number[name]] = (states, fi)
+
+    gr.start = gr.symbol2number[startsymbol]
+    return gr
+
+
+def MakeGrammar(f, tok_def=None):
+  """Construct a Grammr object from a file."""
+
+  lexer = tokenize.generate_tokens(f.readline)
+  p = ParserGenerator(lexer)
+  dfas, startsymbol = p.parse()
+
+  first = {} # map from symbol name to set of tokens
+  for name in sorted(dfas):
+    if name not in first:
+      calcfirst(dfas, first, name)
+      #print name, self.first[name].keys()
+
+  tok_def = tok_def or PythonTokDef()
+  return make_grammar(tok_def, dfas, first, startsymbol)

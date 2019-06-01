@@ -69,9 +69,8 @@ def WriteGrammar(grammar_path, marshal_path):
   log("Generating grammar tables from %s", grammar_path)
 
   with open(grammar_path) as f:
-    p = pgen.ParserGenerator(f)
+    gr = pgen.MakeGrammar(f)
 
-  gr = p.make_grammar()
   log("Writing grammar tables to %s", marshal_path)
   try:
     # calls pickle.dump on self.__dict__ after making it deterministic
@@ -373,8 +372,7 @@ def OpyCommandMain(argv):
     code_str = argv[2]
 
     with open(grammar_path) as f:
-      p = pgen.ParserGenerator(f)
-    gr = p.make_grammar()
+      gr = pgen.MakeGrammar(f)
 
     f = cStringIO.StringIO(code_str)
     tokens = tokenize.generate_tokens(f.readline)

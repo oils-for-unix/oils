@@ -124,8 +124,7 @@ def main(argv):
 
     tok_def = OilTokenDef(arith_ops)
     with open(grammar_path) as f:
-      pg = pgen.ParserGenerator(f, tok_def=tok_def)
-    gr = pg.make_grammar()
+      gr = pgen.MakeGrammar(f, tok_def=tok_def)
 
     arena = alloc.Arena()
     lex = MakeOilLexer(code_str, arena)
