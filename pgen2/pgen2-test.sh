@@ -413,7 +413,7 @@ all() {
 diff-grammars() {
   wc -l ~/src/languages/Python-*/Grammar/Grammar
 
-  cdiff ~/src/languages/Python-{2.7.15,3.6.7}/Grammar/Grammar
+  cdiff ~/src/languages/Python-{2.7.15,3.7.3}/Grammar/Grammar
 }
 
 "$@"
