@@ -11,15 +11,14 @@ import sys
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import source
 
-from opy.pgen2 import token
-from opy.pgen2 import tokenize
-from opy.pgen2 import driver, parse, pgen, grammar
-
 from core import alloc
 from core import meta
 from core.util import log
 from frontend import lexer, match, reader
 from oil_lang import expr_parse
+from pgen2 import token
+from pgen2 import tokenize
+from pgen2 import driver, parse, pgen, grammar
 
 
 # Used at grammar BUILD time.

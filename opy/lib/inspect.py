@@ -40,7 +40,7 @@ from operator import attrgetter
 from collections import namedtuple
 
 from opy.lib import dis
-from opy.pgen2 import tokenize
+from pgen2 import tokenize
 
 # These constants are from Include/code.h.
 CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS, CO_VARKEYWORDS = 0x1, 0x2, 0x4, 0x8

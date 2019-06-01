@@ -29,8 +29,8 @@ from .ast import *
 from .consts import CO_VARARGS, CO_VARKEYWORDS
 from .consts import OP_ASSIGN, OP_DELETE, OP_APPLY
 
-from ..pgen2 import token
 from ..pytree import type_repr
+from pgen2 import token
 
 
 symbol = None

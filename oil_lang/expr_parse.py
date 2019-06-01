@@ -11,7 +11,7 @@ from core import meta
 from core.util import log
 from oil_lang import expr_to_ast
 from opy import opy_main
-from opy.pgen2 import parse
+from pgen2 import parse
 
 
 def _Classify(gr, tok):

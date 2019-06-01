@@ -17,10 +17,6 @@ from _devbuild.gen import syntax_asdl
 from . import pytree
 from . import skeleton
 
-from .pgen2 import driver, parse, pgen, grammar
-from .pgen2 import token
-from .pgen2 import tokenize
-
 from .compiler2 import consts
 from .compiler2 import dis_tool
 from .compiler2 import misc
@@ -29,6 +25,10 @@ from .compiler2 import transformer
 # Disabled for now because byterun imports 'six', and that breaks the build.
 from .byterun import execfile
 from .byterun import ovm
+
+from pgen2 import driver, parse, pgen, grammar
+from pgen2 import token
+from pgen2 import tokenize
 
 from frontend import args
 from core.util import log

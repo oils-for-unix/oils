@@ -6,10 +6,6 @@ from __future__ import print_function
 
 import cStringIO
 
-from .pgen2 import tokenize
-from .pgen2 import driver
-from .pgen2 import parse
-
 from .compiler2 import future
 from .compiler2 import pyassem
 from .compiler2 import pycodegen
@@ -17,6 +13,9 @@ from .compiler2 import syntax
 from .compiler2 import symbols
 from .compiler2 import transformer
 
+from pgen2 import tokenize
+from pgen2 import driver
+from pgen2 import parse
 
 
 def _PrintScopes(scopes):
