@@ -12,9 +12,9 @@ single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
 file_input: (NEWLINE | stmt)* ENDMARKER
 eval_input: testlist NEWLINE* ENDMARKER
 
-decorator: '@' dotted_name [ '(' [arglist] ')' ] NEWLINE
-decorators: decorator+
-decorated: decorators (classdef | funcdef | async_funcdef)
+#decorator: '@' dotted_name [ '(' [arglist] ')' ] NEWLINE
+#decorators: decorator+
+#decorated: decorators (classdef | funcdef | async_funcdef)
 
 async_funcdef: 'async' funcdef
 funcdef: 'def' NAME parameters ['->' test] ':' suite
@@ -42,8 +42,9 @@ expr_stmt: testlist_star_expr (annassign | augassign (yield_expr|testlist) |
                      ('=' (yield_expr|testlist_star_expr))*)
 annassign: ':' test ['=' test]
 testlist_star_expr: (test|star_expr) (',' (test|star_expr))* [',']
-augassign: ('+=' | '-=' | '*=' | '@=' | '/=' | '%=' | '&=' | '|=' | '^=' |
-            '<<=' | '>>=' | '**=' | '//=')
+# Oil patch: removed @= **= //=
+augassign: ('+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=' |
+            '<<=' | '>>=' )
 # For normal and annotated assignments, additional restrictions enforced by the interpreter
 del_stmt: 'del' exprlist
 pass_stmt: 'pass'
@@ -67,7 +68,7 @@ global_stmt: 'global' NAME (',' NAME)*
 nonlocal_stmt: 'nonlocal' NAME (',' NAME)*
 assert_stmt: 'assert' test [',' test]
 
-compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | with_stmt | funcdef | classdef | decorated | async_stmt
+compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | with_stmt | funcdef | classdef | async_stmt
 async_stmt: 'async' (funcdef | with_stmt | for_stmt)
 if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
 while_stmt: 'while' test ':' suite ['else' ':' suite]
@@ -81,7 +82,8 @@ with_stmt: 'with' with_item (',' with_item)*  ':' suite
 with_item: test ['as' expr]
 # NB compile.c makes sure that the default except clause is last
 except_clause: 'except' [test ['as' NAME]]
-suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT
+# Oil patch: removed INDENT/DEDENT
+suite: simple_stmt
 
 test: or_test ['if' or_test 'else' test] | lambdef
 test_nocond: or_test | lambdef_nocond
@@ -91,23 +93,29 @@ or_test: and_test ('or' and_test)*
 and_test: not_test ('and' not_test)*
 not_test: 'not' not_test | comparison
 comparison: expr (comp_op expr)*
-# <> isn't actually a valid comparison operator in Python. It's here for the
-# sake of a __future__ import described in PEP 401 (which really works :-)
-comp_op: '<'|'>'|'=='|'>='|'<='|'<>'|'!='|'in'|'not' 'in'|'is'|'is' 'not'
+# Oil patch: removed legacy <>
+comp_op: '<'|'>'|'=='|'>='|'<='|'!='|'in'|'not' 'in'|'is'|'is' 'not'
 star_expr: '*' expr
 expr: xor_expr ('|' xor_expr)*
 xor_expr: and_expr ('^' and_expr)*
 and_expr: shift_expr ('&' shift_expr)*
 shift_expr: arith_expr (('<<'|'>>') arith_expr)*
 arith_expr: term (('+'|'-') term)*
-term: factor (('*'|'@'|'/'|'%'|'//') factor)*
+# Oil patch: removed '@' and '//' -> div
+term: factor (('*'|'/'|'%'|'div') factor)*
 factor: ('+'|'-'|'~') factor | power
-power: atom_expr ['**' factor]
+# Oil patch: ** -> ^
+power: atom_expr ['^' factor]
 atom_expr: ['await'] atom trailer*
+# Oil patch: removed STRING.  TODO: Add back Oil strings.
 atom: ('(' [yield_expr|testlist_comp] ')' |
        '[' [testlist_comp] ']' |
        '{' [dictorsetmaker] '}' |
-       NAME | NUMBER | STRING+ | '...' | 'None' | 'True' | 'False')
+       NAME | NUMBER | '...' | 'None' | 'True' | 'False' |
+       array_literal | regex_literal |
+       dq_string |
+       command_sub | var_sub | expr_sub
+)
 testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
 trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
 subscriptlist: subscript (',' subscript)* [',']
@@ -148,3 +156,44 @@ encoding_decl: NAME
 
 yield_expr: 'yield' [yield_arg]
 yield_arg: 'from' test | testlist
+
+
+#
+# Oil Expressions
+#
+
+# TODO: Should this be test_list?  With commas?  Tuples have the least
+# precedence, even lower than comparisons.
+test_input: test NEWLINE* ENDMARKER
+
+word_part: Lit_Chars | Lit_Other | Glob_Star | char_class
+word: word_part*
+array_literal: (
+  '@[' [WS_Space] [word] (WS_Space word)* [WS_Space] Op_RBracket
+)
+
+char_class_part: Lit_Chars  # TODO: letters, escaped, and ranges
+char_class: (
+  Op_LBracket [WS_Space]
+  [char_class_part] (WS_Space char_class_part)*
+  [WS_Space] Op_RBracket
+)
+
+regex_part: Expr_Name | dq_string | char_class
+# empty regex invalid for now
+regex_literal: '$/' regex_part+ Arith_Slash
+
+# line continuation is ignored by lexer
+dq_part: (
+  Lit_EscapedChar | Lit_Chars | Lit_Other | VSub_DollarName | VSub_Number |
+  command_sub | expr_sub | var_sub
+)
+dq_string: Left_DoubleQuote dq_part* Right_DoubleQuote
+
+command_sub: (
+  '$[' [WS_Space] [word] (WS_Space word)* [WS_Space] Op_RBracket
+)
+
+expr_sub: '$(' expr Op_RParen
+
+var_sub: '${' expr Op_RBrace

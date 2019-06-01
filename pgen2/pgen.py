@@ -347,7 +347,7 @@ class ParserGenerator(object):
     def raise_error(self, msg, *args):
         if args:
             msg = msg % args
-        raise SyntaxError(msg, (self.filename, self.end[0],
+        raise SyntaxError(msg, ('<grammar>', self.end[0],
                                 self.end[1], self.line))
 
 class NFAState(object):

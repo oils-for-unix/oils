@@ -41,6 +41,10 @@ OPS = {
     '@[': Id.Left_AtBracket,
 
     '.': Id.Expr_Dot,
+    '->': Id.Expr_RArrow,
+
+    # TODO: Add Ellipsis.
+    '...': Id.Expr_Dot,
 
     # TODO: do we need div= and xor= ?
 }
@@ -126,15 +130,18 @@ def main(argv):
     arena = alloc.Arena()
     lex = MakeOilLexer(code_str, arena)
 
+    is_expr = grammar_name in ('calc', 'grammar')
+
     p = expr_parse.ExprParser(lex, gr, start_symbol=start_symbol)
     try:
-      ast_node = p.Parse(transform=(grammar_name == 'calc'))
+      ast_node = p.Parse(transform=is_expr)
     except parse.ParseError as e:
       log('Parse Error: %s', e)
       return 1
 
-    if grammar_name == 'calc':
+    if is_expr:
       ast_node.PrettyPrint()
+      print()
 
   elif action == 'stdlib-test':
     # This shows how deep Python's parse tree is.  It doesn't use semantic

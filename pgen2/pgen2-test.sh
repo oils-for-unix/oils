@@ -88,9 +88,12 @@ banner() {
   echo
 }
 
-# Copied from run.sh
+pgen2() {
+  PYTHONPATH=. pgen2/pgen2_main.py "$@"
+}
+
 parse() {
-  PYTHONPATH=. pgen2/pgen2_main.py parse "$@"
+  pgen2 parse "$@"
 }
 
 parse-exprs() {
@@ -111,6 +114,9 @@ parse-exprs() {
   )
   for expr in "${exprs[@]}"; do
     parse pgen2/oil.grammar eval_input "$expr"
+
+    # TODO: switch to Oil
+    #parse $OIL_GRAMMAR test_input "$expr"
   done
 }
 
@@ -150,6 +156,7 @@ parse-arglists() {
   done
 }
 
+# NOTE: Unused small demo.
 parse-types() {
   readonly -a types=(
     'int'
@@ -168,6 +175,8 @@ parse-types() {
     parse pgen2/oil.grammar type_input "$expr"
   done
 }
+
+readonly OIL_GRAMMAR='oil_lang/grammar.pgen2'
 
 calc-test() {
   local -a exprs=(
@@ -201,7 +210,7 @@ calc-test() {
 
   for e in "${exprs[@]}"; do
     echo "$e"
-    parse pgen2/calc.grammar test_input "$e"
+    parse $OIL_GRAMMAR test_input "$e"
   done
 }
 
@@ -271,7 +280,7 @@ mode-test() {
 
   for e in "${exprs[@]}"; do
     echo "$e"
-    parse pgen2/calc.grammar test_input "$e"
+    parse $OIL_GRAMMAR test_input "$e"
   done
 
   # Command stuff.  TODO: we don't have a parser for this!
@@ -393,9 +402,6 @@ all() {
   #banner 'arglists'
   #parse-arglists
 
-  banner 'types'
-  parse-types
-
   banner 'calc'
   calc-test
 
@@ -414,6 +420,10 @@ diff-grammars() {
   wc -l ~/src/languages/Python-*/Grammar/Grammar
 
   cdiff ~/src/languages/Python-{2.7.15,3.7.3}/Grammar/Grammar
+}
+
+stdlib-test() {
+  pgen2 stdlib-test
 }
 
 "$@"

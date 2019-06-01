@@ -92,12 +92,24 @@ class Transformer(object):
         # test_input: test NEWLINE* ENDMARKER
         return self.Transform(children[0])
 
-      elif nt_name == 'expr':
+      elif nt_name == 'arith_expr':
         # expr: term (('+'|'-') term)*
         return self._AssocBinary(children)
 
       elif nt_name == 'term':
         # term: factor (('*'|'/'|'div'|'mod') factor)*
+        return self._AssocBinary(children)
+
+      elif nt_name == 'expr':
+        # expr: xor_expr ('|' xor_expr)*
+        return self._AssocBinary(children)
+
+      elif nt_name == 'shift_expr':
+        # shift_expr: arith_expr (('<<'|'>>') arith_expr)*
+        return self._AssocBinary(children)
+
+      elif nt_name == 'comparison':
+        # comparison: expr (comp_op expr)*
         return self._AssocBinary(children)
 
       elif nt_name == 'factor':
@@ -108,23 +120,25 @@ class Transformer(object):
         assert isinstance(op.tok, syntax_asdl.token)
         return oil_expr.Unary(op.tok, self.Transform(e))
 
-      elif nt_name == 'power':
-        # power: atom trailer* ['^' factor]
-
-        # atom is already reduced to a token
+      elif nt_name == 'atom_expr':
+        # atom_expr: ['await'] atom trailer*
 
         # NOTE: This would be shorter in a recursive style.
-
         base = self.Transform(children[0])
         n = len(children)
         for i in xrange(1, n):
           pnode = children[i]
           tok = pnode.tok
-          if tok and tok.id == Id.Arith_Caret:
-            return oil_expr.Binary(tok, base, self.Transform(children[i+1]))
           base = self._Trailer(base, pnode)
 
         return base
+
+      elif nt_name == 'power':
+        # power: atom_expr ['^' factor]
+
+        # This doesn't repeat, so it doesn't matter if it's left or right
+        # associative.
+        return self._AssocBinary(children)
 
       elif nt_name == 'array_literal':
         left_tok = children[0].tok
