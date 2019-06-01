@@ -38,9 +38,11 @@ xargs.add_argument('initial_arguments', nargs=argparse.REMAINDER)
 ArgWithInfo = collections.namedtuple('ArgWithInfo', 'arg, charc, argc, linec')
 
 def str_memsize(*strings):
+	"""Calculate the amount of memory required to store the string in an argv."""
 	return sum(len(s) + 1 for s in strings)
 
 def read_lines_eof(eof_str, input):
+	"""Read lines from input until a line equals eof_str or EOF is reached"""
 	eof_str = eof_str + '\n'
 	return itertools.takewhile(lambda l: l != eof_str, input)
 
@@ -48,6 +50,7 @@ def is_complete_line(line):
 	return len(line) > 1 and line[-2] not in (' ', '\t')
 
 def argsplit_ws(lines):
+	"""Split lines into arguments and append metainfo to each argument."""
 	charc = 0
 	argc = 0
 	linec = 0
@@ -61,6 +64,7 @@ def argsplit_ws(lines):
 			linec += 1
 
 def argsplit_delim(delim, lines):
+	"""Split lines into arguments and append metainfo to each argument."""
 	charc = 0
 	argc = 0
 	linec = 0
@@ -81,6 +85,10 @@ def argsplit_delim(delim, lines):
 		yield ArgWithInfo(arg, charc, argc, linec)
 
 def group_args(max_chars, max_args, max_lines, arg_iter):
+	"""
+	Group arguments from arg_iter, so that no group exceeds either
+	max_chars, max_args or max_lines.
+	"""
 	def kf(a):
 		return (
 			(a.charc-1) / max_chars if max_chars else None,
@@ -104,6 +112,10 @@ def replace_args(init_args, replace_str, add_args):
 			yield arg
 
 def build_cmdline_replace(command, initial_arguments, replace_str, arggroup_iter):
+	"""
+	Build command-lines suitable for subprocess.Popen,
+	replacing instances of replace_str in initial_arguments.
+	"""
 	command = [command]
 	for additional_arguments in arggroup_iter:
 		cmdline = itertools.chain(
@@ -117,6 +129,7 @@ def build_cmdline_replace(command, initial_arguments, replace_str, arggroup_iter
 		yield cmdline
 
 def build_cmdline(command, initial_arguments, arggroup_iter):
+	"""Build command-lines suitable for subprocess.Popen."""
 	command = [command]
 	for additional_arguments in arggroup_iter:
 		cmdline = itertools.chain(
@@ -127,6 +140,10 @@ def build_cmdline(command, initial_arguments, arggroup_iter):
 		yield cmdline
 
 def prompt_user(interactive, cmdline_iter):
+	"""
+	Go over each cmdline and print them to stderr.
+	If interactive is True, prompt the user for each invocation.
+	"""
 	for cmdline in cmdline_iter:
 		cmdline = list(cmdline)
 		if interactive:
@@ -140,6 +157,7 @@ def prompt_user(interactive, cmdline_iter):
 		yield cmdline
 
 def map_errcode(rc):
+	"""map the returncode of a child-process to the returncode of the main process."""
 	if rc == 0:
 		return 0
 	if rc >= 0 and rc <= 125:
