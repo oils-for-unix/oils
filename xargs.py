@@ -216,8 +216,11 @@ def main(xargs_args):
 	err = 0
 	if xargs_args.max_procs and xargs_args.max_procs > 1:
 		subprocs = []
-		for cmdline in itertools.islice(cmdline_iter, xargs_args.max_procs):
-			p = subprocess.Popen(cmdline, stdin=cmd_input)
+		environ = os.environ.copy()
+		for i, cmdline in enumerate(itertools.islice(cmdline_iter, xargs_args.max_procs)):
+			if xargs_args.process_slot_var:
+				environ[xargs_args.process_slot_var] = str(i)
+			p = subprocess.Popen(cmdline, stdin=cmd_input, env=environ)
 			subprocs.append(p)
 		i = 0
 		for cmdline in cmdline_iter:
@@ -227,7 +230,9 @@ def main(xargs_args):
 			if subprocs[i].returncode:
 				err = map_errcode(subprocs[i].returncode)
 				break
-			subprocs[i] = subprocess.Popen(cmdline, stdin=cmd_input)
+			if xargs_args.process_slot_var:
+				environ[xargs_args.process_slot_var] = str(i)
+			subprocs[i] = subprocess.Popen(cmdline, stdin=cmd_input, env=environ)
 		for p in subprocs:
 			if not err:
 				err = map_errcode(p.wait())
