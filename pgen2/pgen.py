@@ -25,21 +25,13 @@ class PythonTokDef(object):
 
 class ParserGenerator(object):
 
-    def __init__(self, filename, stream=None, tok_def=None):
-        close_stream = None
-        if stream is None:
-            stream = open(filename)
-            close_stream = stream.close
-        self.filename = filename
-        self.stream = stream
-
+    def __init__(self, f, tok_def=None):
         self.tok_def = tok_def or PythonTokDef()
 
-        self.generator = tokenize.generate_tokens(stream.readline)
+        self.generator = tokenize.generate_tokens(f.readline)
         self.gettoken() # Initialize lookahead
         self.dfas, self.startsymbol = self.parse()
-        if close_stream is not None:
-            close_stream()
+
         self.first = {} # map from symbol name to set of tokens
         self.addfirstsets()
 
@@ -404,17 +396,6 @@ class DFAState(object):
         return True
 
     __hash__ = None # For Py3 compatibility.
-
-
-def generate_grammar(filename="Grammar.txt"):
-    # NOTE: This builds the dfa/nfa on the fly.  It doesn't make an AST.
-    # I think I want pgen.asdl, and then I can interpret that.
-    p = ParserGenerator(filename)
-    return p.make_grammar()
-
-
-def main():
-    print(generate_grammar())
 
 
 if __name__ == '__main__':

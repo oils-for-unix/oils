@@ -119,7 +119,8 @@ def main(argv):
     #print(self.arith)
 
     tok_def = OilTokenDef(arith_ops)
-    pg = pgen.ParserGenerator(grammar_path, tok_def=tok_def)
+    with open(grammar_path) as f:
+      pg = pgen.ParserGenerator(f, tok_def=tok_def)
     gr = pg.make_grammar()
 
     arena = alloc.Arena()

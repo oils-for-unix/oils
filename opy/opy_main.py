@@ -65,13 +65,17 @@ def HostStdlibNames():
   return names
 
 
-def WriteGrammar(grammar_path, pickle_path):
+def WriteGrammar(grammar_path, marshal_path):
   log("Generating grammar tables from %s", grammar_path)
-  g = pgen.generate_grammar(grammar_path)
-  log("Writing grammar tables to %s", pickle_path)
+
+  with open(grammar_path) as f:
+    p = pgen.ParserGenerator(f)
+
+  gr = p.make_grammar()
+  log("Writing grammar tables to %s", marshal_path)
   try:
     # calls pickle.dump on self.__dict__ after making it deterministic
-    g.dump(pickle_path)
+    gr.dump(marshal_path)
   except OSError as e:
     log("Writing failed: %s", e)
 
@@ -311,8 +315,8 @@ def OpyCommandMain(argv):
 
   if action == 'pgen2':
     grammar_path = argv[0]
-    pickle_path = argv[1]
-    WriteGrammar(grammar_path, pickle_path)
+    marshal_path = argv[1]
+    WriteGrammar(grammar_path, marshal_path)
 
   elif action == 'stdlib-parse':
     # This is what the compiler/ package was written against.
@@ -368,7 +372,9 @@ def OpyCommandMain(argv):
     start_symbol = argv[1]
     code_str = argv[2]
 
-    gr = pgen.generate_grammar(grammar_path)
+    with open(grammar_path) as f:
+      p = pgen.ParserGenerator(f)
+    gr = p.make_grammar()
 
     f = cStringIO.StringIO(code_str)
     tokens = tokenize.generate_tokens(f.readline)
