@@ -1290,17 +1290,22 @@ class CommandParser(object):
   def ParseOilAssign(self):
     # type: () -> command_t
     """
-    oil_assign: keyword name = EXPR
+    oil_assign: keyword <'assign' in grammar.pgen2>
 
-    Where can be checked with IsValidVarName
+    Note that assignments must end with a newline or a semicolon.  Unlike shell
+    assignments, we disallow:
+    
+    var x = 42 | wc -l
+    var x = 42 && echo hi
     """
     kw_token = word.LiteralToken(self.cur_word)
     assert kw_token is not None, self.cur_word
 
     self._Next()  # skip 'var' or 'setvar'
 
-    child = self.w_parser.ReadExpr()
-    return command.OilAssign(kw_token, child)
+    node = self.w_parser.ReadAssignment()
+    node.keyword = kw_token
+    return node
 
   def ParseCompoundCommand(self):
     # type: () -> command_t
@@ -1526,9 +1531,9 @@ class CommandParser(object):
         Id.KW_Var, Id.KW_SetVar):
       node = self.ParseCompoundCommand()
 
-      # This is unsafe within the type system!  Because redirects aren't on the
-      # base class.
-      if node.tag != command_e.TimeBlock:  # The only one without redirects
+      # NOTE: this is unsafe within the type system because redirects aren't on
+      # the base class.
+      if node.tag not in (command_e.TimeBlock, command_e.OilAssign):
         node.redirects = self._ParseRedirectList()  # type: ignore
       return node
 
@@ -1700,7 +1705,6 @@ class CommandParser(object):
       child = self.ParseAndOr()
 
       self._Peek()
-      #log('c_id after ParseAndOr = %s', self.c_id)
       if self.c_id in (Id.Op_Semi, Id.Op_Amp):  # also Id.Op_Amp.
         w = cast(word__TokenWord, self.cur_word)  # for MyPy
         child = command.Sentence(child, w.token)

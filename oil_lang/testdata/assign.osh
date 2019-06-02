@@ -1,0 +1,27 @@
+echo $'one\ntwo'
+
+# This ignores whitespace.  Gah.
+
+#var x = {a: 1}
+
+var a = 1 + 2*3
+echo hi
+
+setvar a = b; echo hi
+# not allowed -- has to be Semi or Newline.
+#setvar x = y && echo hi
+setvar x = y
+
+  # comment
+setvar d = 1
+
+var x, y = a, b
+
+
+echo hi
+#var a[i] = a
+
+# TODO:
+# - comments
+# - multiline
+

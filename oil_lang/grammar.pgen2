@@ -197,3 +197,39 @@ var_sub: '${' expr Op_RBrace
 #
 # Assignment / Type Variables
 #
+# Several differences vs. Python:
+#
+# - no yield expression on RHS
+# - no star expressions on either side (Python 3)    *x, y = 2, *b
+# - no multiple assignments like: var x = y = 3
+# - type annotation syntax is more restrictive    # a: (1+2) = 3 is OK in python
+# - We're validating the lvalue here, instead of doing it in the "transformer".
+#   We have the 'var' prefix which helps.
+
+lvalue_trailer: '[' subscriptlist ']' | '.' NAME
+lvalue: NAME trailer*
+lvalue_list: lvalue (',' lvalue)*
+
+type_expr: NAME [ '[' type_expr (',' type_expr)* ']' ]
+
+# Problem: we can't end it on a newline because say dict literals will have
+# multiple lines.  But EOF isn't right either.
+assign: lvalue_list [type_expr] (augassign | '=') testlist (Op_Semi | Op_Newline)
+
+#
+# Blocks
+# 
+# Hard to parse:
+#
+# echo = 1
+# echo -x +y  # is this allowed?
+# echo('x' + 'y')
+# echo.method()
+# 
+# hard_stmt: NAME ('=' | '('_ | word*)
+# 
+# Should you allow hyphens in names?  A minus sign will never appear first.
+# x-1  # this is always a command
+# must be expr x-1 or so forth
+
+

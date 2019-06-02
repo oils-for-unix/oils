@@ -559,16 +559,16 @@ LEXER_DEF[lex_mode_e.VSub_2] = \
 ]
 
 _EXPR_OTHER = [
-  # newline is ignored space, unlike in Outer
-  R(r'[ \t\r\n]+', Id.Ignored_Space),
   C('\\\n', Id.Ignored_LineCont),
   R(r'[^\0]', Id.Unknown_Tok)  # any char.  This should be a syntax error.
 ]
 
-
 # https://www.gnu.org/software/bash/manual/html_node/Shell-Arithmetic.html#Shell-Arithmetic
 LEXER_DEF[lex_mode_e.Arith] = \
     _LEFT_SUBS + _VARS + _LEFT_UNQUOTED + [
+
+  # Arithmetic expressions can cross newlines.
+  R(r'[ \t\r\n]+', Id.Ignored_Space),
 
   # Examples of arith constants:
   #   64#azAZ
@@ -806,6 +806,13 @@ LEXER_DEF[lex_mode_e.Array] = (
   R(r'[^\0]', Id.Lit_Other),  # any other single char is a literal
 ])
 
+
+# Newline is significant, but sometimes elided by expr_parse.py.
+_EXPR_NEWLINE = [
+  C('\n', Id.Op_Newline),
+  R(r'[ \t\r]+', Id.Ignored_Space),
+]
+
 # TODO: Should all of these be Kind.Op instead of Kind.Arith?  And Kind.Expr?
 
 # NOTE: Borrowing tokens from Arith (i.e. $(( )) ), but not using LexerPairs().
@@ -825,7 +832,6 @@ LEXER_DEF[lex_mode_e.Expr] = _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + [
 
   R(r'[0-9]+', Id.Expr_Digits),  # mode -> OilNumericConst ?
 
-  C(';', Id.Arith_Semi),
   C(',', Id.Arith_Comma),
   C(':', Id.Arith_Colon),   # for slicing a[1:2]
 
@@ -847,6 +853,8 @@ LEXER_DEF[lex_mode_e.Expr] = _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + [
                             # note: other languages use |>
                             # R/dplyr uses %>%
 
+  # Terminator
+  C(';', Id.Op_Semi),
   C('(', Id.Op_LParen),
   C(')', Id.Op_RParen),
   # NOTE: type expressions are expressions, e.g. Dict[Str, Int]
@@ -877,9 +885,13 @@ LEXER_DEF[lex_mode_e.Expr] = _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + [
   C('@@', Id.Expr_DoubleAt),
 
   # Left out for now:
-  # % ++ --
-  # ! && || 
+  # ++ --       -- needed for loops, awk?
+  # ! && ||     -- needed for find dialect
   # = += etc.
+
+  # TODO: Augmented assignments
+  C('=', Id.Arith_Equal),
+
 
   # NOTE: % could be string interpolation with a context other than locals?
   # like '$foo $bar' % {foo: 'X', bar: 'Y'}
@@ -892,7 +904,7 @@ LEXER_DEF[lex_mode_e.Expr] = _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + [
   # x = [] : Array<Int>
   #
   # inc = |x| x+1 for simple lambdas.
-] + _EXPR_OTHER
+] + _EXPR_NEWLINE + _EXPR_OTHER
 
 
 # FOR NOW, ${x|html} is the same!
@@ -938,7 +950,7 @@ LEXER_DEF[lex_mode_e.Regex] = _OIL_LEFT_UNQUOTED + [
   C('}', Id.Op_RBrace),
 
   C('/', Id.Arith_Slash),  # Ends the regex.  TODO: Op_Slash?
-] + _EXPR_OTHER
+] + _EXPR_NEWLINE + _EXPR_OTHER
 
 LEXER_DEF[lex_mode_e.CharClass] = [
   # placeholder.  Need a-z A-Z, NOT, \n, \x00, etc.

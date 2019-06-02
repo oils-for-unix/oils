@@ -4,13 +4,17 @@ expr_to_ast.py
 """
 from __future__ import print_function
 
-
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen import syntax_asdl
 from _devbuild.gen.syntax_asdl import (
-    command, expr, oil_word_part, regex
+    command, expr, expr_t, oil_word_part, regex
 )
 
+from core.util import log
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+  from pgen2.parse import PNode
 
 # TODO: We need a _devbuild/gen/nonterm.py file generated from grammar.pgen2.
 # Instead of all the string comparisons.
@@ -73,6 +77,7 @@ class Transformer(object):
     raise AssertionError(op_tok)
 
   def Transform(self, pnode):
+    # type: (PNode) -> expr_t
     """Walk the homogeneous parse tree and create a typed AST."""
     typ = pnode.typ
     if pnode.tok:
@@ -87,6 +92,19 @@ class Transformer(object):
 
       c = '-' if not children else len(children)
       #log('non-terminal %s %s', nt_name, c)
+
+      if nt_name == 'assign':
+        # assign: lvalue_list type_expr? (augassign | '=') testlist
+        lvalue = self.Transform(children[0])  # could be a tuple
+        log('lvalue %s', lvalue)
+        op = children[1].tok
+        log('op %s', op)
+        rhs = self.Transform(children[2])
+        # The caller should fill in the keyword token.
+        return command.OilAssign(None, lvalue, op, rhs)
+
+      if nt_name == 'lvalue_list':
+        return self._AssocBinary(children)
 
       if nt_name == 'eval_input':
         # testlist_input: testlist NEWLINE* ENDMARKER

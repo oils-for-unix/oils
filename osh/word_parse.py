@@ -111,6 +111,8 @@ class WordParser(object):
     self.cursor = None  # type: word_t
     self.cursor_was_newline = False
 
+    self.buffered_word = None
+
   def _Peek(self):
     # type: () -> token
     """Helper method."""
@@ -770,11 +772,17 @@ class WordParser(object):
     cs_part.spids.append(right_spid)
     return cs_part
 
-  def ReadExpr(self):
+  def ReadAssignment(self):
     # Change lex mode
     self._Next(lex_mode_e.Expr)
+
     e_parser = self.parse_ctx.MakeExprParser(self.lexer)
     enode = e_parser.Parse()
+
+    # Let the CommandParesr see the Op_Semi or Op_Newline.
+    self.buffered_word = osh_word.TokenWord(e_parser.LastToken())
+
+    self._Next(lex_mode_e.ShCommand)  # always back to this
     return enode
 
   def _ReadArithExpr(self):
@@ -1187,19 +1195,24 @@ class WordParser(object):
     Returns:
       Word, or None if there was an error
     """
-    # Implementation note: This is an stateful/iterative function that calls
-    # the stateless "_ReadWord" function.
-    while True:
-      if lex_mode == lex_mode_e.Arith:
-        # TODO: Can this be unified?
-        w, need_more = self._ReadArithWord()
-      elif lex_mode in (
-          lex_mode_e.ShCommand, lex_mode_e.DBracket, lex_mode_e.BashRegex):
-        w, need_more = self._ReadWord(lex_mode)
-      else:
-        raise AssertionError('Invalid lex state %s' % lex_mode)
-      if not need_more:
-        break
+    # For integration with pgen2
+    if self.buffered_word:
+      w = self.buffered_word
+      self.buffered_word = None
+    else:
+      # Implementation note: This is an stateful/iterative function that calls
+      # the stateless "_ReadWord" function.
+      while True:
+        if lex_mode == lex_mode_e.Arith:
+          # TODO: Can this be unified?
+          w, need_more = self._ReadArithWord()
+        elif lex_mode in (
+            lex_mode_e.ShCommand, lex_mode_e.DBracket, lex_mode_e.BashRegex):
+          w, need_more = self._ReadWord(lex_mode)
+        else:
+          raise AssertionError('Invalid lex state %s' % lex_mode)
+        if not need_more:
+          break
 
     self.cursor = w
 

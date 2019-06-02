@@ -6,7 +6,7 @@ from __future__ import print_function
 
 import sys
 
-from _devbuild.gen import syntax_asdl
+from _devbuild.gen.syntax_asdl import token
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.types_asdl import lex_mode_e
 
@@ -30,7 +30,7 @@ class ParseTreePrinter(object):
     #   e.g. for 'f(1, 3)', the "3" token has a prefix of ' '.
     if isinstance(pnode.tok, tuple):
       v = pnode.tok[0]
-    elif isinstance(pnode.tok, syntax_asdl.token):
+    elif isinstance(pnode.tok, token):
       v = pnode.tok.val
     else:
       v = '-'
@@ -132,14 +132,31 @@ _MODE_TRANSITIONS = {
     # POP is done above
 }
 
+# For ignoring newlines.
+_OTHER_BALANCE = {
+    Id.Op_LParen:  1,
+    Id.Op_RParen: -1,
 
-def PushOilTokens(p, lex, gr):
-  """Parse a series of tokens and return the syntax tree."""
+    Id.Op_LBracket:  1,
+    Id.Op_RBracket: -1,
+
+    Id.Op_LBrace:  1,
+    Id.Op_RBrace: -1
+}
+
+
+def _PushOilTokens(p, lex, gr):
+  """Push tokens onto pgen2's parser.
+
+  Returns the last token so it can be reused/seen by the CommandParser.
+  """
   #log('keywords = %s', gr.keywords)
   #log('tokens = %s', gr.tokens)
 
   mode = lex_mode_e.Expr
   mode_stack = [mode]
+
+  balance = 0
 
   while True:
     tok = lex.Read(mode)
@@ -149,17 +166,31 @@ def PushOilTokens(p, lex, gr):
     if tok.id == Id.Ignored_Space:
       continue
 
+    # For var x = {
+    #   a: 1, b: 2
+    # }
+    if balance > 0 and tok.id == Id.Op_Newline:
+      continue
+
+    # NOTE: We have to handle comments here.
+    # In shell, comments require leading space.  In Python, then don't.
+    # It's easiest for us to follow Python.
+
     action = _MODE_TRANSITIONS.get((mode, tok.id))
     if action == POP:
       mode_stack.pop()
       mode = mode_stack[-1]
+      balance += 1  # e.g. var x = $/ NEWLINE /
       log('POPPED to %s', mode)
     elif action:  # it's an Id
       new_mode = action
       mode_stack.append(new_mode)
       mode = new_mode
+      balance -= 1
       log('PUSHED to %s', mode)
     # otherwise leave it alone
+
+    balance += _OTHER_BALANCE.get(tok.id, 0)
 
     #if tok.id == Id.Expr_Name and tok.val in KEYWORDS:
     #  tok.id = KEYWORDS[tok.val]
@@ -170,8 +201,25 @@ def PushOilTokens(p, lex, gr):
 
     ilabel = _Classify(gr, tok)
     #log('tok = %s, ilabel = %d', tok, ilabel)
+
+    # May raise ParseError.
+    # There could be to much input too.
+    # I guess that's in the case of repetitions?  Do you have to
+    # MaybeUnreadOne()?
+    # Where do expressions end?
+    # $() $// 
+    # var x = 1 + 2
+    # var x = 1 + \
+    #         2
+    # var x = {
+    #   a: 1,
+    #   b: 2,
+    # } 
+    #
+    # Problem: you can't just unread one!  You might have done newlines!
+
     if p.addtoken(tok.id.enum_id, tok, ilabel):
-      break
+      return tok
 
   else:
     # We never broke out -- EOF is too soon (how can this happen???)
@@ -191,16 +239,23 @@ def NoSingletonAction(gr, pnode):
 class ExprParser(object):
   """A wrapper around a pgen2 parser."""
 
-  def __init__(self, lexer, gr, start_symbol='eval_input'):
+  def __init__(self, lexer, gr, start_symbol='assign'):
     self.lexer = lexer
     self.gr = gr
     self.push_parser = parse.Parser(gr, convert=NoSingletonAction)
     # TODO: change start symbol?
     self.push_parser.setup(gr.symbol2number[start_symbol])
+    self.last_token = None
+
+  def LastToken(self):
+    # type: () -> token
+    assert self.last_token is not None
+    return self.last_token
 
   def Parse(self, transform=True, print_parse_tree=False):
+    print_parse_tree = True
     try:
-      PushOilTokens(self.push_parser, self.lexer, self.gr)
+      self.last_token = _PushOilTokens(self.push_parser, self.lexer, self.gr)
     except parse.ParseError as e:
       log('Parse Error: %s', e)
       raise
