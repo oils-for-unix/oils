@@ -365,3 +365,26 @@ echo $(( 2**-1 * 5 ))
 ## OK zsh status: 0
 ## N-I dash stdout-json: ""
 ## N-I dash status: 2
+
+#### Comment not allowed in the middle of multiline arithmetic
+echo $((
+1 +
+2 + \
+3
+))
+echo $((
+1 + 2  # not a comment
+))
+(( a = 3 + 4  # comment
+))
+echo [$a]
+## status: 1
+## STDOUT:
+6
+## END
+## OK dash/osh status: 2
+## OK bash STDOUT:
+6
+[]
+## END
+## OK bash status: 0

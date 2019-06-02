@@ -558,7 +558,7 @@ LEXER_DEF[lex_mode_e.VSub_2] = \
   R(r'[^\0]', Id.Unknown_Tok),  # any char except newline
 ]
 
-_EXPR_OTHER = [
+_EXPR_ARITH_SHARED = [
   C('\\\n', Id.Ignored_LineCont),
   R(r'[^\0]', Id.Unknown_Tok)  # any char.  This should be a syntax error.
 ]
@@ -582,7 +582,7 @@ LEXER_DEF[lex_mode_e.Arith] = \
   C('#', Id.Lit_Pound),  # for 64#a
 
 # TODO: 64#@ interferes with VS_AT.  Hm.
-] + ID_SPEC.LexerPairs(Kind.Arith) + _EXPR_OTHER
+] + ID_SPEC.LexerPairs(Kind.Arith) + _EXPR_ARITH_SHARED
 
 # A lexer for the parser that converts globs to extended regexes.  Since we're
 # only parsing character classes ([^[:space:][:alpha:]]) as opaque blobs, we
@@ -808,8 +808,9 @@ LEXER_DEF[lex_mode_e.Array] = (
 
 
 # Newline is significant, but sometimes elided by expr_parse.py.
-_EXPR_NEWLINE = [
+_EXPR_NEWLINE_COMMENT = [
   C('\n', Id.Op_Newline),
+  R(r'#[^\n\0]*', Id.Ignored_Comment),
   R(r'[ \t\r]+', Id.Ignored_Space),
 ]
 
@@ -904,7 +905,7 @@ LEXER_DEF[lex_mode_e.Expr] = _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + [
   # x = [] : Array<Int>
   #
   # inc = |x| x+1 for simple lambdas.
-] + _EXPR_NEWLINE + _EXPR_OTHER
+] + _EXPR_NEWLINE_COMMENT + _EXPR_ARITH_SHARED
 
 
 # FOR NOW, ${x|html} is the same!
@@ -950,7 +951,7 @@ LEXER_DEF[lex_mode_e.Regex] = _OIL_LEFT_UNQUOTED + [
   C('}', Id.Op_RBrace),
 
   C('/', Id.Arith_Slash),  # Ends the regex.  TODO: Op_Slash?
-] + _EXPR_NEWLINE + _EXPR_OTHER
+] + _EXPR_NEWLINE_COMMENT + _EXPR_ARITH_SHARED
 
 LEXER_DEF[lex_mode_e.CharClass] = [
   # placeholder.  Need a-z A-Z, NOT, \n, \x00, etc.

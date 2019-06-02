@@ -12,9 +12,10 @@ from _devbuild.gen.syntax_asdl import (
 
 from core.util import log
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 if TYPE_CHECKING:
   from pgen2.parse import PNode
+  from pgen2.grammar import Grammar
 
 # TODO: We need a _devbuild/gen/nonterm.py file generated from grammar.pgen2.
 # Instead of all the string comparisons.
@@ -22,9 +23,11 @@ if TYPE_CHECKING:
 class Transformer(object):
   
   def __init__(self, gr):
+    # type: (Grammar) -> None
     self.number2symbol = gr.number2symbol
 
   def _AssocBinary(self, children):
+    # type: (List[PNode]) -> expr_t
     """For an associative binary operation.
 
     We don't care if it's (1+2)+3 or 1+(2+3).
@@ -43,6 +46,7 @@ class Transformer(object):
     return expr.Binary(op.tok, self.Transform(left), right)
 
   def _Trailer(self, base, p_trailer):
+    # type: (expr_t, PNode) -> expr_t
     children = p_trailer.children
     op_tok = children[0].tok
 
@@ -97,11 +101,11 @@ class Transformer(object):
         # assign: lvalue_list type_expr? (augassign | '=') testlist
         lvalue = self.Transform(children[0])  # could be a tuple
         log('lvalue %s', lvalue)
-        op = children[1].tok
-        log('op %s', op)
+        op_tok = children[1].tok
+        log('op %s', op_tok)
         rhs = self.Transform(children[2])
         # The caller should fill in the keyword token.
-        return command.OilAssign(None, lvalue, op, rhs)
+        return command.OilAssign(None, lvalue, op_tok, rhs)
 
       if nt_name == 'lvalue_list':
         return self._AssocBinary(children)

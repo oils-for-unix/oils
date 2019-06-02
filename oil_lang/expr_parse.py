@@ -6,8 +6,8 @@ from __future__ import print_function
 
 import sys
 
-from _devbuild.gen.syntax_asdl import token
-from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.syntax_asdl import token, command_t
+from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.types_asdl import lex_mode_e
 
 from core import meta
@@ -15,13 +15,22 @@ from core.util import log
 from oil_lang import expr_to_ast
 from pgen2 import parse
 
+from typing import TYPE_CHECKING, IO, Dict
+if TYPE_CHECKING:
+  from frontend.lexer import Lexer
+  from pgen2.grammar import Grammar
+  from pgen2.parse import PNode
+
 
 class ParseTreePrinter(object):
   """Prints a tree of PNode instances."""
   def __init__(self, names):
+    # type: (Dict[int, str]) -> None
     self.names = names
 
   def Print(self, pnode, f=sys.stdout, indent=0, i=0):
+    # type: (PNode, IO[str], int, int) -> None
+
     ind = '  ' * indent
     # NOTE:
     # - value is filled in for TOKENS, but it's always None for PRODUCTIONS.
@@ -41,6 +50,8 @@ class ParseTreePrinter(object):
 
 
 def _Classify(gr, tok):
+  # type: (Grammar, token) -> int
+
   # We have to match up what ParserGenerator.make_grammar() did when
   # calling make_label() and make_first().  See classify() in
   # opy/pgen2/driver.py.
@@ -146,6 +157,7 @@ _OTHER_BALANCE = {
 
 
 def _PushOilTokens(p, lex, gr):
+  # type: (parse.Parser, Lexer, Grammar) -> token
   """Push tokens onto pgen2's parser.
 
   Returns the last token so it can be reused/seen by the CommandParser.
@@ -162,8 +174,8 @@ def _PushOilTokens(p, lex, gr):
     tok = lex.Read(mode)
     #log('tok = %s', tok)
 
-    # TODO: Use Kind.Ignored
-    if tok.id == Id.Ignored_Space:
+    # Comments and whitespace.  Newlines aren't ignored.
+    if meta.LookupKind(tok.id) == Kind.Ignored:
       continue
 
     # For var x = {
@@ -181,13 +193,14 @@ def _PushOilTokens(p, lex, gr):
       mode_stack.pop()
       mode = mode_stack[-1]
       balance += 1  # e.g. var x = $/ NEWLINE /
-      log('POPPED to %s', mode)
+      #log('POPPED to %s', mode)
     elif action:  # it's an Id
       new_mode = action
       mode_stack.append(new_mode)
       mode = new_mode
       balance -= 1
-      log('PUSHED to %s', mode)
+      #log('PUSHED to %s', mode)
+
     # otherwise leave it alone
 
     balance += _OTHER_BALANCE.get(tok.id, 0)
@@ -240,6 +253,7 @@ class ExprParser(object):
   """A wrapper around a pgen2 parser."""
 
   def __init__(self, lexer, gr, start_symbol='assign'):
+    # type: (Lexer, Grammar, str) -> None
     self.lexer = lexer
     self.gr = gr
     self.push_parser = parse.Parser(gr, convert=NoSingletonAction)
@@ -253,7 +267,9 @@ class ExprParser(object):
     return self.last_token
 
   def Parse(self, transform=True, print_parse_tree=False):
-    print_parse_tree = True
+    # type: (bool, bool) -> command_t
+
+    #print_parse_tree = True
     try:
       self.last_token = _PushOilTokens(self.push_parser, self.lexer, self.gr)
     except parse.ParseError as e:

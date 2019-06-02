@@ -20,7 +20,7 @@ from core.util import log
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-  from typing import IO
+  from typing import IO, Dict, List
 
 
 class Grammar(object):
@@ -82,15 +82,15 @@ class Grammar(object):
 
     def __init__(self):
         # type: () -> None
-        self.symbol2number = {}
-        self.number2symbol = {}
+        self.symbol2number = {}  # type: Dict[str, int]
+        self.number2symbol = {}  # type: Dict[int, str]
         self.states = []
         self.dfas = {}
         # Oil patch: used to be [(0, "EMPTY")].  I suppose 0 is a special value?
         # Or is it ENDMARKER?
-        self.labels = [0]
-        self.keywords = {}
-        self.tokens = {}
+        self.labels = [0]  # type: List[int]
+        self.keywords = {}  # type: Dict[str, int]
+        self.tokens = {}  # type: Dict[str, int]
         self.symbol2label = {}
         self.start = 256
 

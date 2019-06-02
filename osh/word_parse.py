@@ -63,7 +63,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part__ArithSubPart, word_part__DoubleQuotedPart,
     word_part__CommandSubPart, word_part__ExtGlobPart,
 
-    command, command__ForExpr,
+    command, command_t, command__ForExpr,
     suffix_op, bracket_op,
 
     source,
@@ -773,6 +773,8 @@ class WordParser(object):
     return cs_part
 
   def ReadAssignment(self):
+    # type: () -> command_t
+
     # Change lex mode
     self._Next(lex_mode_e.Expr)
 

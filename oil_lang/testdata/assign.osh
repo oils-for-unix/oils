@@ -12,14 +12,16 @@ setvar a = b; echo hi
 #setvar x = y && echo hi
 setvar x = y
 
-  # comment
-setvar d = 1
+setvar d = 1  # comment
 
 var x, y = a, b
 
 
 echo hi
 #var a[i] = a
+
+# We don't have a type that supports this?
+#setvar a[i, j] = 1
 
 # TODO:
 # - comments
