@@ -158,6 +158,14 @@ def prompt_user(interactive, cmdline_iter):
 			print(*cmdline, file=sys.stderr)
 		yield cmdline
 
+def wait_open_slot(processes):
+	while processes:
+		for i, p in enumerate(processes):
+			# process doesn't yet exist or has finished
+			if p is None or p.poll() is not None:
+				return i
+		os.wait()
+
 def map_errcode(rc):
 	"""map the returncode of a child-process to the returncode of the main process."""
 	if rc == 0:
@@ -233,38 +241,24 @@ def main(xargs_args):
 		cmdline_iter = prompt_user(xargs_args.interactive, cmdline_iter)
 
 	# phase 5: execute command-lines
-	err = 0
 	if xargs_args.max_procs > 1:
-		subprocs = []
+		ps = [None] * xargs_args.max_procs
 		environ = os.environ.copy()
-		for i, cmdline in enumerate(itertools.islice(cmdline_iter, xargs_args.max_procs)):
-			if xargs_args.process_slot_var:
-				environ[xargs_args.process_slot_var] = str(i)
-			p = subprocess.Popen(cmdline, stdin=cmd_input, env=environ)
-			subprocs.append(p)
-		i = 0
 		for cmdline in cmdline_iter:
-			os.wait()
-			while subprocs[i].poll() is not None:
-				i = (i + 1) % len(subprocs)
-			if subprocs[i].returncode:
-				err = map_errcode(subprocs[i].returncode)
+			i = wait_open_slot(ps)
+			if ps[i] is not None and ps[i].returncode:
+				err = map_errcode(ps[i].returncode)
 				break
 			if xargs_args.process_slot_var:
 				environ[xargs_args.process_slot_var] = str(i)
-			subprocs[i] = subprocess.Popen(cmdline, stdin=cmd_input, env=environ)
-		for p in subprocs:
-			if not err:
-				err = map_errcode(p.wait())
-			else:
-				p.wait()
+			ps[i] = subprocess.Popen(cmdline, stdin=cmd_input, env=environ)
+		return max(map_errcode(p.wait()) for p in ps if p is not None)
 	else:
 		for cmdline in cmdline_iter:
 			p = subprocess.Popen(cmdline, stdin=cmd_input)
 			if p.wait():
-				err = map_errcode(p.returncode)
-				break
-	return err
+				return map_errcode(p.returncode)
+	return 0
 
 if __name__ == "__main__":
 	xargs_args = xargs.parse_args()
