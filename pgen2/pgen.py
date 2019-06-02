@@ -20,7 +20,7 @@ class PythonTokDef(object):
 
   def GetOpNum(self, value):
     """ e.g '(' -> LPAR """
-    return grammar.opmap[value]
+    return token.opmap[value]
 
 
 class ParserGenerator(object):

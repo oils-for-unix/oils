@@ -76,10 +76,76 @@ for _name, _value in list(globals().items()):
 
 
 def ISTERMINAL(x):
+    # type: (int) -> bool
     return x < NT_OFFSET
 
 def ISNONTERMINAL(x):
+    # type: (int) -> bool
     return x >= NT_OFFSET
 
 def ISEOF(x):
+    # type: (int) -> bool
     return x == ENDMARKER
+
+
+# Map from operator to number.  NOTE: This was moved here from
+# pgen2/grammar.py.  Oil doesn't need this; only parsers that use Python's
+# tokenizer (like pgen itself) need it.
+
+opmap_raw = """
+( LPAR
+) RPAR
+[ LSQB
+] RSQB
+: COLON
+, COMMA
+; SEMI
++ PLUS
+- MINUS
+* STAR
+/ SLASH
+| VBAR
+& AMPER
+< LESS
+> GREATER
+= EQUAL
+. DOT
+% PERCENT
+` BACKQUOTE
+{ LBRACE
+} RBRACE
+@ AT
+@= ATEQUAL
+== EQEQUAL
+!= NOTEQUAL
+<> NOTEQUAL
+<= LESSEQUAL
+>= GREATEREQUAL
+~ TILDE
+^ CIRCUMFLEX
+<< LEFTSHIFT
+>> RIGHTSHIFT
+** DOUBLESTAR
++= PLUSEQUAL
+-= MINEQUAL
+*= STAREQUAL
+/= SLASHEQUAL
+%= PERCENTEQUAL
+&= AMPEREQUAL
+|= VBAREQUAL
+^= CIRCUMFLEXEQUAL
+<<= LEFTSHIFTEQUAL
+>>= RIGHTSHIFTEQUAL
+**= DOUBLESTAREQUAL
+// DOUBLESLASH
+//= DOUBLESLASHEQUAL
+-> RARROW
+"""
+
+import sys
+this_module = sys.modules[__name__]
+opmap = {}
+for line in opmap_raw.splitlines():
+    if line:
+        op, name = line.split()
+        opmap[op] = getattr(this_module, name)

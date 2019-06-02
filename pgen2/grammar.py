@@ -12,12 +12,12 @@ fallback token code OP, but the parser needs the actual token code.
 
 """
 
-# Python imports
-import collections
 import marshal
+from pprint import pprint
 
-from . import token
 from core.util import log
+
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
   from typing import IO
@@ -95,6 +95,7 @@ class Grammar(object):
         self.start = 256
 
     def dump(self, f):
+        # type: (IO[str]) -> None
         """Dump the grammar tables to a marshal file.
 
         Oil patch: changed pickle to marshal.
@@ -142,22 +143,9 @@ class Grammar(object):
         self.start = marshal.load(f)
         #self.report()
 
-    def copy(self):
-        """
-        Copy the grammar.
-        """
-        new = self.__class__()
-        for dict_attr in ("symbol2number", "number2symbol", "dfas", "keywords",
-                          "tokens", "symbol2label"):
-            setattr(new, dict_attr, getattr(self, dict_attr).copy())
-        new.labels = self.labels[:]
-        new.states = self.states[:]
-        new.start = self.start
-        return new
-
     def report(self):
+        # type: () -> None
         """Dump the grammar tables to standard output, for debugging."""
-        from pprint import pprint
         log("symbol2number: %d entries", len(self.symbol2number))
         log("number2symbol: %d entries", len(self.number2symbol))
         log("states: %d entries", len(self.states))
@@ -172,73 +160,3 @@ class Grammar(object):
         print("symbol2label")
         pprint(self.symbol2label)
         print("start", self.start)
-
-
-def _make_deterministic(top):
-    if isinstance(top, dict):
-        return collections.OrderedDict(
-            sorted(((k, _make_deterministic(v)) for k, v in top.items())))
-    if isinstance(top, list):
-        return [_make_deterministic(e) for e in top]
-    if isinstance(top, tuple):
-        return tuple(_make_deterministic(e) for e in top)
-    return top
-
-
-# Map from operator to number (since tokenize doesn't do this)
-
-opmap_raw = """
-( LPAR
-) RPAR
-[ LSQB
-] RSQB
-: COLON
-, COMMA
-; SEMI
-+ PLUS
-- MINUS
-* STAR
-/ SLASH
-| VBAR
-& AMPER
-< LESS
-> GREATER
-= EQUAL
-. DOT
-% PERCENT
-` BACKQUOTE
-{ LBRACE
-} RBRACE
-@ AT
-@= ATEQUAL
-== EQEQUAL
-!= NOTEQUAL
-<> NOTEQUAL
-<= LESSEQUAL
->= GREATEREQUAL
-~ TILDE
-^ CIRCUMFLEX
-<< LEFTSHIFT
->> RIGHTSHIFT
-** DOUBLESTAR
-+= PLUSEQUAL
--= MINEQUAL
-*= STAREQUAL
-/= SLASHEQUAL
-%= PERCENTEQUAL
-&= AMPEREQUAL
-|= VBAREQUAL
-^= CIRCUMFLEXEQUAL
-<<= LEFTSHIFTEQUAL
->>= RIGHTSHIFTEQUAL
-**= DOUBLESTAREQUAL
-// DOUBLESLASH
-//= DOUBLESLASHEQUAL
--> RARROW
-"""
-
-opmap = {}
-for line in opmap_raw.splitlines():
-    if line:
-        op, name = line.split()
-        opmap[op] = getattr(token, name)

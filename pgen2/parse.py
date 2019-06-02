@@ -9,10 +9,18 @@ See Parser/parser.c in the Python distribution for additional info on
 how this parsing engine works.
 """
 
+from typing import TYPE_CHECKING, Any, List
+
+if TYPE_CHECKING:
+  from _devbuild.gen.syntax_asdl import token
+  from pgen2.grammar import Grammar
+
+
 class ParseError(Exception):
     """Exception to signal the parser is stuck."""
 
     def __init__(self, msg, typ, opaque):
+        # type: (str, int, token) -> None
         Exception.__init__(self, "%s: type=%r, opaque=%r" % (msg, typ, opaque))
         self.msg = msg
         self.type = typ
@@ -23,6 +31,7 @@ class PNode(object):
   __slots__ = ('typ', 'tok', 'children')
 
   def __init__(self, typ, tok, children):
+    # type: (int, token, List[PNode]) -> None
     self.typ = typ  # token or non-terminal
     self.tok = tok  # opaque object that is passed back to "convert" callback.
                     # In Oil, this is syntax_asdl.token.  In OPy, it's a
@@ -31,6 +40,7 @@ class PNode(object):
     self.children = children
 
   def __str__(self):
+    # type: () -> str
     tok_str = str(self.tok) if self.tok else '-'
     ch_str = 'with %d children' % len(self.children) \
         if self.children is not None else ''
@@ -67,6 +77,7 @@ class Parser(object):
     """
 
     def __init__(self, grammar, convert=None):
+        # type: (Grammar, Any) -> None
         """Constructor.
 
         The grammar argument is a grammar.Grammar instance; see the
@@ -98,6 +109,7 @@ class Parser(object):
         self.convert = convert or (lambda grammar, node: node)
 
     def setup(self, start=None):
+        # type: (int) -> None
         """Prepare for parsing.
 
         This *must* be called before starting to parse.
@@ -117,6 +129,7 @@ class Parser(object):
         self.rootnode = None
 
     def addtoken(self, typ, opaque, ilabel):
+        # type: (int, token, int) -> bool
         """Add a token; return True iff this is the end of the program."""
         # Loop until the token is shifted; may raise exceptions
 
@@ -168,6 +181,7 @@ class Parser(object):
                     raise ParseError("bad input", typ, opaque)
 
     def shift(self, typ, opaque, newstate):
+        # type: (int, token, int) -> None
         """Shift a token.  (Internal)"""
         dfa, _, node = self.stack[-1]
         newnode = PNode(typ, opaque, None)
@@ -177,6 +191,7 @@ class Parser(object):
         self.stack[-1] = (dfa, newstate, node)
 
     def push(self, typ, opaque, newdfa, newstate):
+        # type: (int, token, Any, int) -> None
         """Push a nonterminal.  (Internal)"""
         dfa, _, node = self.stack[-1]
         newnode = PNode(typ, opaque, [])
@@ -184,6 +199,7 @@ class Parser(object):
         self.stack.append((newdfa, 0, newnode))
 
     def pop(self):
+        # type: () -> None
         """Pop a nonterminal.  (Internal)"""
         popdfa, popstate, popnode = self.stack.pop()
         newnode = self.convert(self.grammar, popnode)

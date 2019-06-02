@@ -16,7 +16,7 @@ __author__ = "Guido van Rossum <guido@python.org>"
 
 import sys
 
-from . import grammar, parse, token, tokenize
+from . import parse, token, tokenize
 
 
 def log(msg, *args):
@@ -78,7 +78,7 @@ def PushTokens(p, tokens, gr, start_symbol, debug=False):
             continue
 
         if type_ == token.OP:
-            type_ = grammar.opmap[value]
+            type_ = token.opmap[value]
 
         if debug:
             log("%s %r (prefix=%r)", token.tok_name[type_], value, prefix)
