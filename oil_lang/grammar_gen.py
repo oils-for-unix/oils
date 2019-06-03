@@ -115,13 +115,18 @@ def main(argv):
 
   if action == 'marshal':  # generate the grammar and parse it
     grammar_path = argv[0]
-    marshal_path = argv[1]
+    out_dir = argv[1]
 
     with open(grammar_path) as f:
       gr = pgen.MakeGrammar(f, tok_def=tok_def)
 
+    marshal_path = os.path.join(out_dir, 'grammar.marshal')
     with open(marshal_path, 'wb') as out_f:
       gr.dump(out_f)
+
+    nonterm_path = os.path.join(out_dir, 'grammar_nt.py')
+    with open(nonterm_path, 'w') as out_f:
+      gr.dump_nonterminals(out_f)
 
     log('Compiled %s -> grammar tables in %s', grammar_path, marshal_path)
 

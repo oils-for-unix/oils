@@ -16,9 +16,8 @@ setvar d = 1  # comment
 
 var x, y = a, b
 
-
 echo hi
-#var a[i] = a
+#var a[i] = c
 
 # We don't have a type that supports this?
 #setvar a[i, j] = 1

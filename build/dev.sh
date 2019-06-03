@@ -188,10 +188,17 @@ minimal() {
   line-input
 }
 
+grammar() {
+  #local flags='-d --no-builtin-rules'
+  local flags=''
+  make $flags _devbuild/gen/grammar.marshal _devbuild/gen/grammar_nt.py
+}
+
 # Prerequisites: build/codegen.sh {download,install}-re2c
 all() {
   minimal
   fastlex
+  grammar
 }
 
 "$@"

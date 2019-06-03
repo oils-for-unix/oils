@@ -240,7 +240,7 @@ class ParseContext(object):
     return word_parse.WordParser(self, lx, line_reader)
 
   def MakeExprParser(self, lexer):
-    # type: (Lexer) -> ExprParser
+    # type: (Lexer) -> expr_parse.ExprParser
     """Used for var a = 1 + 2"""
     e_parser = expr_parse.ExprParser(lexer, self.oil_grammar)
     return e_parser

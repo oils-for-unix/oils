@@ -9,6 +9,7 @@ from _devbuild.gen import syntax_asdl
 from _devbuild.gen.syntax_asdl import (
     command, expr, expr_t, oil_word_part, regex
 )
+from _devbuild.gen import grammar_nt
 
 from core.util import log
 
@@ -17,8 +18,14 @@ if TYPE_CHECKING:
   from pgen2.parse import PNode
   from pgen2.grammar import Grammar
 
-# TODO: We need a _devbuild/gen/nonterm.py file generated from grammar.pgen2.
-# Instead of all the string comparisons.
+
+# Copied from pgen2/token.py to avoid dependency.
+NT_OFFSET = 256
+
+def ISNONTERMINAL(x):
+    # type: (int) -> bool
+    return x >= NT_OFFSET
+
 
 class Transformer(object):
   
@@ -91,13 +98,12 @@ class Transformer(object):
     tok = pnode.tok
     children = pnode.children
 
-    if typ in self.number2symbol:  # non-terminal
-      nt_name = self.number2symbol[typ]
-
+    #if typ in self.number2symbol:  # non-terminal
+    if ISNONTERMINAL(typ):
       c = '-' if not children else len(children)
       #log('non-terminal %s %s', nt_name, c)
 
-      if nt_name == 'assign':
+      if typ == grammar_nt.assign:
         # assign: lvalue_list type_expr? (augassign | '=') testlist
         lvalue = self.Transform(children[0])  # could be a tuple
         log('lvalue %s', lvalue)
@@ -107,38 +113,38 @@ class Transformer(object):
         # The caller should fill in the keyword token.
         return command.OilAssign(None, lvalue, op_tok, rhs)
 
-      if nt_name == 'lvalue_list':
+      if typ == grammar_nt.lvalue_list:
         return self._AssocBinary(children)
 
-      if nt_name == 'eval_input':
+      if typ == grammar_nt.eval_input:
         # testlist_input: testlist NEWLINE* ENDMARKER
         return self.Transform(children[0])
 
-      if nt_name == 'testlist':
+      if typ == grammar_nt.testlist:
         # testlist: test (',' test)* [',']
         return self._AssocBinary(children)
 
-      elif nt_name == 'arith_expr':
+      elif typ == grammar_nt.arith_expr:
         # expr: term (('+'|'-') term)*
         return self._AssocBinary(children)
 
-      elif nt_name == 'term':
+      elif typ == grammar_nt.term:
         # term: factor (('*'|'/'|'div'|'mod') factor)*
         return self._AssocBinary(children)
 
-      elif nt_name == 'expr':
+      elif typ == grammar_nt.expr:
         # expr: xor_expr ('|' xor_expr)*
         return self._AssocBinary(children)
 
-      elif nt_name == 'shift_expr':
+      elif typ == grammar_nt.shift_expr:
         # shift_expr: arith_expr (('<<'|'>>') arith_expr)*
         return self._AssocBinary(children)
 
-      elif nt_name == 'comparison':
+      elif typ == grammar_nt.comparison:
         # comparison: expr (comp_op expr)*
         return self._AssocBinary(children)
 
-      elif nt_name == 'factor':
+      elif typ == grammar_nt.factor:
         # factor: ('+'|'-'|'~') factor | power
         # the power would have already been reduced
         assert len(children) == 2, children
@@ -146,7 +152,7 @@ class Transformer(object):
         assert isinstance(op.tok, syntax_asdl.token)
         return expr.Unary(op.tok, self.Transform(e))
 
-      elif nt_name == 'atom_expr':
+      elif typ == grammar_nt.atom_expr:
         # atom_expr: ['await'] atom trailer*
 
         # NOTE: This would be shorter in a recursive style.
@@ -159,14 +165,14 @@ class Transformer(object):
 
         return base
 
-      elif nt_name == 'power':
+      elif typ == grammar_nt.power:
         # power: atom_expr ['^' factor]
 
         # This doesn't repeat, so it doesn't matter if it's left or right
         # associative.
         return self._AssocBinary(children)
 
-      elif nt_name == 'array_literal':
+      elif typ == grammar_nt.array_literal:
         left_tok = children[0].tok
 
         # Approximation for now.
@@ -177,7 +183,7 @@ class Transformer(object):
 
         return expr.ArrayLiteral(left_tok, items)
 
-      elif nt_name == 'regex_literal':
+      elif typ == grammar_nt.regex_literal:
         left_tok = children[0].tok
 
         # Approximation for now.
@@ -188,7 +194,7 @@ class Transformer(object):
 
         return expr.RegexLiteral(left_tok, regex.Concat(items))
 
-      elif nt_name == 'command_sub':
+      elif typ == grammar_nt.command_sub:
         left_tok = children[0].tok
 
         # Approximation for now.
@@ -201,24 +207,26 @@ class Transformer(object):
         words = items
         return expr.CommandSub(left_tok, command.SimpleCommand(words))
 
-      elif nt_name == 'expr_sub':
+      elif typ == grammar_nt.expr_sub:
         left_tok = children[0].tok
 
         return expr.ExprSub(left_tok, self.Transform(children[1]))
 
-      elif nt_name == 'var_sub':
+      elif typ == grammar_nt.var_sub:
         left_tok = children[0].tok
 
         return expr.VarSub(left_tok, self.Transform(children[1]))
 
-      elif nt_name == 'dq_string':
+      elif typ == grammar_nt.dq_string:
         left_tok = children[0].tok
 
         parts = [self.Transform(c) for c in children[1:-1]]
         return expr.DoubleQuoted(left_tok, parts)
 
       else:
-        raise AssertionError(nt_name)
+        nt_name = self.number2symbol[typ]
+        raise AssertionError(
+            "PNode type %d (%s) wasn't handled" % (typ, nt_name))
 
     else:  # Terminals should have a token
       #log('terminal %s', tok)

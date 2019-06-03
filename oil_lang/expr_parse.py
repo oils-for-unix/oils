@@ -240,6 +240,7 @@ def _PushOilTokens(p, lex, gr):
 
 
 def NoSingletonAction(gr, pnode):
+  # type: (Grammar, PNode) -> PNode
   """Collapse parse tree."""
   # hm this was so easy!  Why do CPython and pgen2 materialize so much then?
   children = pnode.children
@@ -259,7 +260,7 @@ class ExprParser(object):
     self.push_parser = parse.Parser(gr, convert=NoSingletonAction)
     # TODO: change start symbol?
     self.push_parser.setup(gr.symbol2number[start_symbol])
-    self.last_token = None
+    self.last_token = None  # type: token
 
   def LastToken(self):
     # type: () -> token
