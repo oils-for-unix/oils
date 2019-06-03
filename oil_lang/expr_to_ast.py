@@ -116,6 +116,12 @@ class Transformer(object):
       if typ == grammar_nt.lvalue_list:
         return self._AssocBinary(children)
 
+      if typ == grammar_nt.atom:
+        if children[0].tok.id == Id.Op_LParen:
+          return self.Transform(children[1])
+        else:
+          raise NotImplementedError
+
       if typ == grammar_nt.eval_input:
         # testlist_input: testlist NEWLINE* ENDMARKER
         return self.Transform(children[0])
@@ -238,7 +244,9 @@ class Transformer(object):
 
       # Hm just use word_part.Literal for all these?  Or token?
       # Id.Lit_EscapedChar is assumed to need \ removed on evaluation.
+
       elif tok.id in (Id.Lit_Chars, Id.Lit_Other, Id.Lit_EscapedChar):
+        # TODO: Should return expr
         return oil_word_part.Literal(tok)
       else:
         raise AssertionError(tok.id)

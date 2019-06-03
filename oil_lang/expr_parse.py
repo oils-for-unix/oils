@@ -182,28 +182,25 @@ def _PushOilTokens(p, lex, gr):
     #   a: 1, b: 2
     # }
     if balance > 0 and tok.id == Id.Op_Newline:
+      #log('*** SKIPPING NEWLINE')
       continue
-
-    # NOTE: We have to handle comments here.
-    # In shell, comments require leading space.  In Python, then don't.
-    # It's easiest for us to follow Python.
 
     action = _MODE_TRANSITIONS.get((mode, tok.id))
     if action == POP:
       mode_stack.pop()
       mode = mode_stack[-1]
-      balance += 1  # e.g. var x = $/ NEWLINE /
+      balance -= 1
       #log('POPPED to %s', mode)
     elif action:  # it's an Id
       new_mode = action
       mode_stack.append(new_mode)
       mode = new_mode
-      balance -= 1
+      balance += 1  # e.g. var x = $/ NEWLINE /
       #log('PUSHED to %s', mode)
-
-    # otherwise leave it alone
-
-    balance += _OTHER_BALANCE.get(tok.id, 0)
+    else:
+      # If we didn't already so something with the balance, look at another table.
+      balance += _OTHER_BALANCE.get(tok.id, 0)
+      #log('BALANCE after seeing %s = %d', tok.id, balance)
 
     #if tok.id == Id.Expr_Name and tok.val in KEYWORDS:
     #  tok.id = KEYWORDS[tok.val]
@@ -214,22 +211,6 @@ def _PushOilTokens(p, lex, gr):
 
     ilabel = _Classify(gr, tok)
     #log('tok = %s, ilabel = %d', tok, ilabel)
-
-    # May raise ParseError.
-    # There could be to much input too.
-    # I guess that's in the case of repetitions?  Do you have to
-    # MaybeUnreadOne()?
-    # Where do expressions end?
-    # $() $// 
-    # var x = 1 + 2
-    # var x = 1 + \
-    #         2
-    # var x = {
-    #   a: 1,
-    #   b: 2,
-    # } 
-    #
-    # Problem: you can't just unread one!  You might have done newlines!
 
     if p.addtoken(tok.id.enum_id, tok, ilabel):
       return tok

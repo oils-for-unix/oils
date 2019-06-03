@@ -43,6 +43,8 @@ expr_stmt: testlist_star_expr (annassign | augassign (yield_expr|testlist) |
 annassign: ':' test ['=' test]
 testlist_star_expr: (test|star_expr) (',' (test|star_expr))* [',']
 # Oil patch: removed @= **= //=
+# Note that we're missing div= and xor=, which now look weird.  ^= is
+# exponentiation.  Honestly I don't even like '%='.  |= has a use case.
 augassign: ('+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=' |
             '<<=' | '>>=' )
 # For normal and annotated assignments, additional restrictions enforced by the interpreter

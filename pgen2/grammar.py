@@ -90,7 +90,7 @@ class Grammar(object):
         # Or is it ENDMARKER?
         self.labels = [0]  # type: List[int]
         self.keywords = {}  # type: Dict[str, int]
-        self.tokens = {}  # type: Dict[str, int]
+        self.tokens = {}  # type: Dict[int, int]
         self.symbol2label = {}  # type: Dict[str, int]
         self.start = 256
 

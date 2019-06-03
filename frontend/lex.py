@@ -890,8 +890,20 @@ LEXER_DEF[lex_mode_e.Expr] = _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + [
   # ! && ||     -- needed for find dialect
   # = += etc.
 
-  # TODO: Augmented assignments
   C('=', Id.Arith_Equal),
+
+  C('+=', Id.Arith_PlusEqual), 
+  C('-=', Id.Arith_MinusEqual), 
+  C('*=', Id.Arith_StarEqual),
+  C('/=', Id.Arith_SlashEqual),
+  C('%=', Id.Arith_PercentEqual),
+
+  C('&=', Id.Arith_AmpEqual),
+  C('|=', Id.Arith_PipeEqual),
+  C('^=', Id.Arith_CaretEqual),  # Exponentiation
+
+  C('>>=', Id.Arith_DGreatEqual),
+  C('<<=', Id.Arith_DLessEqual),
 
 
   # NOTE: % could be string interpolation with a context other than locals?

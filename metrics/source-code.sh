@@ -132,7 +132,7 @@ all() {
   echo
 
   echo 'Oil Language'
-  ls oil_lang/*.py | filter-py | xargs wc -l | sort --numeric
+  ls oil_lang/*.{py,pgen2} | filter-py | xargs wc -l | sort --numeric
   echo
 
   echo 'OVM2'

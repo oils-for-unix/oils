@@ -14,7 +14,6 @@ from core import alloc
 from core import meta
 from core.util import log
 from frontend import lexer, match, reader
-from oil_lang import expr_parse
 from pgen2 import parse, pgen
 
 
@@ -131,6 +130,9 @@ def main(argv):
     log('Compiled %s -> grammar tables in %s', grammar_path, marshal_path)
 
   elif action == 'parse':  # generate the grammar and parse it
+    # Remove build dependency
+    from oil_lang import expr_parse
+
     grammar_path = argv[0]
     start_symbol = argv[1]
     code_str = argv[2]

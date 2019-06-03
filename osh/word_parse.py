@@ -111,7 +111,7 @@ class WordParser(object):
     self.cursor = None  # type: word_t
     self.cursor_was_newline = False
 
-    self.buffered_word = None
+    self.buffered_word = None  # type: word_t
 
   def _Peek(self):
     # type: () -> token
