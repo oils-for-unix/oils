@@ -11,6 +11,12 @@ set -o errexit
 
 source test/common.sh
 
+# Option to use our xargs implementation.
+#xargs() {
+#  echo "Using ~/git/oilshell/xargs.py/xargs.py"
+#  ~/git/oilshell/xargs.py/xargs.py "$@"
+#}
+
 #
 # Test Runner
 #
@@ -309,7 +315,7 @@ test-to-html() {
 
 all-tests-to-html() {
   head -n $NUM_TASKS _tmp/spec/MANIFEST.txt \
-    | xargs -n 1 -P 8 --verbose -- $0 test-to-html || true
+    | xargs -n 1 -P $JOBS --verbose -- $0 test-to-html || true
 }
 
 if test "$(basename $0)" = 'spec-runner.sh'; then
