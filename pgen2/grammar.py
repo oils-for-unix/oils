@@ -110,20 +110,19 @@ class Grammar(object):
         between.
         """
         #self.report()
-        f.write(self.MARSHAL_HEADER)
-        def dump(x):
-          # type: (Any) -> None
-          marshal.dump(x, f, 2)  # version 2 is the latest
-
-        dump(self.symbol2number)
-        dump(self.number2symbol)
-        dump(self.states)
-        dump(self.dfas)
-        dump(self.labels)
-        dump(self.keywords)
-        dump(self.tokens)
-        dump(self.symbol2label)
-        dump(self.start)
+        payload = (
+          self.MARSHAL_HEADER,
+          self.symbol2number,
+          self.number2symbol,
+          self.states,
+          self.dfas,
+          self.labels,
+          self.keywords,
+          self.tokens,
+          self.symbol2label,
+          self.start,
+        )  # tuple
+        marshal.dump(payload, f)  # version 2 is latest
 
     def dump_nonterminals(self, f):
         # type: (IO[str]) -> None
@@ -138,24 +137,32 @@ class Grammar(object):
 
     MARSHAL_HEADER = 'PGEN2\n'  # arbitrary header
 
-    def load(self, f):
-        # type: (IO[str]) -> None
-        h = f.read(len(self.MARSHAL_HEADER))
-        if h != self.MARSHAL_HEADER:
+    def loads(self, s):
+        # type: (str) -> None
+        """Load the grammar from a string.
+
+        We have to use a string rather than a file because the marshal module
+        doesn't "fake" support zipimport files.
+        """
+        payload = marshal.loads(s)
+        if payload[0] != self.MARSHAL_HEADER:
           raise RuntimeError('Invalid header %r' % h)
 
-        self.symbol2number = marshal.load(f)
-        assert isinstance(self.symbol2number, dict), self.symbol2number
-        self.number2symbol = marshal.load(f)
-        assert isinstance(self.number2symbol, dict), self.number2symbol
-        self.states = marshal.load(f)
-        self.dfas = marshal.load(f)
-        self.labels = marshal.load(f)
-        self.keywords = marshal.load(f)
-        self.tokens = marshal.load(f)
-        self.symbol2label = marshal.load(f)
-        self.start = marshal.load(f)
+        ( _,
+          self.symbol2number,
+          self.number2symbol,
+          self.states,
+          self.dfas,
+          self.labels,
+          self.keywords,
+          self.tokens,
+          self.symbol2label,
+          self.start,
+        ) = payload
         #self.report()
+
+        assert isinstance(self.symbol2number, dict), self.symbol2number
+        assert isinstance(self.number2symbol, dict), self.number2symbol
 
     def report(self):
         # type: () -> None

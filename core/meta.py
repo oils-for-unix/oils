@@ -114,6 +114,7 @@ def LoadOilGrammar(loader):
   # type: (_ResourceLoader) -> grammar.Grammar
   oil_grammar = grammar.Grammar()
   f = loader.open('_devbuild/gen/grammar.marshal')
-  oil_grammar.load(f)
+  contents = f.read()
   f.close()
+  oil_grammar.loads(contents)
   return oil_grammar
