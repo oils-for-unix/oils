@@ -10,7 +10,7 @@ set -o pipefail
 set -o errexit
 
 filter-py() {
-  grep -E -v '__init__.py$|_test.py$'
+  grep -E -v '__init__.py$|_gen.py|_test.py$'
 }
 
 readonly -a ASDL_FILES=( {frontend,osh}/*.asdl )
@@ -97,6 +97,10 @@ all() {
   echo 'ASDL'
   ls asdl/*.py | filter-py | grep -v -E 'arith_|tdop|_demo' |
     xargs wc -l | sort --numeric
+  echo
+
+  echo 'PEN2 (parser generator)'
+  ls pgen2/*.py | filter-py | xargs wc -l | sort --numeric
   echo
 
   echo 'CODE GENERATORS'

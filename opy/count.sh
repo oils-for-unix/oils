@@ -18,8 +18,8 @@ all() {
   echo opy_main.py | _count
   echo
 
-  echo LEXER, PARSER GENERATOR, AND GRAMMR
-  echo pytree.py pgen2/*.py py27.grammar | _count
+  echo GRAMMAR
+  echo py27.grammar | _count
   echo
 
   # ast is generated
