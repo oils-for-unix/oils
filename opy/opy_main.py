@@ -250,9 +250,10 @@ def OpyCommandMain(argv):
       'compile-ovm', 'eval', 'repl', 'run', 'run-ovm'):
     loader = pyutil.GetResourceLoader()
     f = loader.open(GRAMMAR_REL_PATH)
-    gr = grammar.Grammar()
-    gr.load(f)
+    contents = f.read()
     f.close()
+    gr = grammar.Grammar()
+    gr.loads(contents)
 
     # In Python 2 code, always use from __future__ import print_function.
     try:
