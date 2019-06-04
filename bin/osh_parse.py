@@ -16,7 +16,6 @@ from core import ui
 from core import util
 from frontend import parse_lib
 from frontend import reader
-from pgen2 import grammar
 
 from typing import List, Dict, Any
 

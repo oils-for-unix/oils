@@ -146,7 +146,7 @@ class Grammar(object):
         """
         payload = marshal.loads(s)
         if payload[0] != self.MARSHAL_HEADER:
-          raise RuntimeError('Invalid header %r' % h)
+          raise RuntimeError('Invalid header %r' % payload[0])
 
         ( _,
           self.symbol2number,
