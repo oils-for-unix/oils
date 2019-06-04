@@ -10,6 +10,7 @@ from _devbuild.gen.syntax_asdl import source
 from asdl import format as fmt
 from core import alloc
 from core import main_loop
+from core import meta
 from core import pyutil
 from core import ui
 from core import util
@@ -31,10 +32,7 @@ def main(argv):
   # parse `` and a[x+1]=bar differently
 
   loader = pyutil.GetResourceLoader()
-  oil_grammar = grammar.Grammar()
-  f = loader.open('_build/oil/grammar.marshal')
-  oil_grammar.load(f)
-  f.close()
+  oil_grammar = meta.LoadOilGrammar(loader)
 
   parse_ctx = parse_lib.ParseContext(arena, aliases, oil_grammar,
                                      one_pass_parse=True)

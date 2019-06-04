@@ -16,8 +16,11 @@ from _devbuild.gen.id_kind_asdl import (
     Id, Id_t, Kind_t, ID_INSTANCES, KIND_INSTANCES
 )
 from core import id_kind
+from pgen2 import grammar
 
-from typing import Dict
+from typing import Dict, TYPE_CHECKING
+if TYPE_CHECKING:
+  from core.pyutil import _ResourceLoader
 
 
 _ID_TO_KIND_INTEGERS = {}  # type: Dict[int, int]
@@ -105,3 +108,12 @@ REDIR_ARG_TYPES = {
     Id.Redir_TLess: redir_arg_type_e.Here,  # here word
     # note: here docs aren't included
 }
+
+
+def LoadOilGrammar(loader):
+  # type: (_ResourceLoader) -> grammar.Grammar
+  oil_grammar = grammar.Grammar()
+  f = loader.open('_build/oil/grammar.marshal')
+  oil_grammar.load(f)
+  f.close()
+  return oil_grammar

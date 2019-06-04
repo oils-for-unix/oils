@@ -59,6 +59,7 @@ from core import comp_ui
 from core import dev
 from core import completion
 from core import main_loop
+from core import meta
 from core import process
 from core import pyutil
 from core import ui
@@ -313,10 +314,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   builtin.SetExecOpts(exec_opts, opts.opt_changes)
   aliases = {}  # feedback between runtime and parser
 
-  oil_grammar = grammar.Grammar()
-  f = loader.open('_devbuild/gen/grammar.marshal')
-  oil_grammar.load(f)
-  f.close()
+  oil_grammar = meta.LoadOilGrammar(loader)
 
   if opts.one_pass_parse and not exec_opts.noexec:
     raise args.UsageError('--one-pass-parse requires noexec (-n)')
@@ -715,10 +713,14 @@ def OshCommandMain(argv):
                 posix.strerror(e.errno))
       return 2
 
-  line_reader = reader.FileLineReader(f, arena)
   aliases = {}  # Dummy value; not respecting aliases!
+  oil_grammar = meta.LoadOilGrammar(loader)
+
   # parse `` and a[x+1]=bar differently
-  parse_ctx = parse_lib.ParseContext(arena, aliases, one_pass_parse=True)
+  parse_ctx = parse_lib.ParseContext(arena, aliases, oil_grammar,
+                                     one_pass_parse=True)
+
+  line_reader = reader.FileLineReader(f, arena)
   c_parser = parse_ctx.MakeOshParser(line_reader)
 
   try:
