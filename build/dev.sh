@@ -184,6 +184,9 @@ minimal() {
   asdl/run.sh gen-typed-demo-asdl
   asdl/run.sh gen-typed-arith-asdl
 
+  # Needed on Travis.
+  grammar
+
   pylibc
   line-input
 }
@@ -196,7 +199,6 @@ grammar() {
 all() {
   minimal
   fastlex
-  grammar
 }
 
 "$@"
