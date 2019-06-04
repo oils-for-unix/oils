@@ -113,7 +113,7 @@ REDIR_ARG_TYPES = {
 def LoadOilGrammar(loader):
   # type: (_ResourceLoader) -> grammar.Grammar
   oil_grammar = grammar.Grammar()
-  f = loader.open('_build/oil/grammar.marshal')
+  f = loader.open('_devbuild/gen/grammar.marshal')
   oil_grammar.load(f)
   f.close()
   return oil_grammar
