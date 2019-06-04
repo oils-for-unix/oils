@@ -205,13 +205,17 @@ class ParseContext(object):
 
     self.e_parser = expr_parse.ExprParser(oil_grammar)
     # NOTE: The transformer is really a pure function.
-    self.tr = expr_to_ast.Transformer(oil_grammar)
+    if oil_grammar:
+      self.tr = expr_to_ast.Transformer(oil_grammar)
+      names = MakeGrammarNames(oil_grammar)
+    else:  # hack for unit tests, which pass None
+      self.tr = None
+      names = {}
 
     # Completion state lives here since it may span multiple parsers.
     self.trail = trail or _NullTrail()
     self.one_pass_parse = one_pass_parse
 
-    names = MakeGrammarNames(oil_grammar)
     self.p_printer = expr_parse.ParseTreePrinter(names)  # print raw nodes
 
   def _MakeLexer(self, line_reader):
