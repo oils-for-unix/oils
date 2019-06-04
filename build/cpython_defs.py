@@ -299,8 +299,8 @@ class OilMethodFilter(object):
     #   __getnewargs__.
     # - Do we need __sizeof__?  Is that for sys.getsizeof()?
 
-    # NOTE: asdl/unpickle.py needs marshal.loads.
-    if basename == 'marshal.c' and method_name in ('dump', 'dumps', 'load'):
+    # NOTE: LoadOilGrammar needs marshal.loads().
+    if basename == 'marshal.c' and method_name == 'dump':
       return False
 
     # Auto-filtering gave false-positives here.
