@@ -13,7 +13,6 @@ fallback token code OP, but the parser needs the actual token code.
 """
 
 import marshal
-from pprint import pprint
 
 from core.util import log
 
@@ -166,6 +165,7 @@ class Grammar(object):
         log("states: %d entries", len(self.states))
         log("dfas: %d entries", len(self.dfas))
         return
+        from pprint import pprint
         print("labels")
         pprint(self.labels)
         print("keywords")
