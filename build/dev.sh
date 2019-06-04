@@ -189,9 +189,7 @@ minimal() {
 }
 
 grammar() {
-  #local flags='-d --no-builtin-rules'
-  local flags=''
-  make $flags _devbuild/gen/grammar.marshal _devbuild/gen/grammar_nt.py
+  oil_lang/grammar_gen.py marshal oil_lang/grammar.pgen2 _devbuild/gen
 }
 
 # Prerequisites: build/codegen.sh {download,install}-re2c

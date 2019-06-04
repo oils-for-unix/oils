@@ -85,11 +85,17 @@ class OilTokenDef(object):
     self.arith_ops = arith_ops
 
   def GetTerminalNum(self, label):
+    """
+    e.g. translate Expr_Name in the grammar to 178
+    """
     id_ = TERMINALS.get(label) or getattr(Id, label)
+    #log('Id %s = %d', id_, id_.enum_id)
+    assert id_.enum_id < 256, id_
     return id_.enum_id
 
   def GetOpNum(self, value):
     id_ = OPS.get(value) or self.arith_ops[value]
+    assert id_.enum_id < 256, id_
     return id_.enum_id
 
 
@@ -109,7 +115,11 @@ def main(argv):
   arith_ops = {}
   for _, token_str, id_ in meta.ID_SPEC.LexerPairs(Kind.Arith):
     arith_ops[token_str] = id_
-  #print(self.arith)
+
+  if 0:
+    from pprint import pprint
+    pprint(arith_ops)
+
   tok_def = OilTokenDef(arith_ops)
 
   if action == 'marshal':  # generate the grammar and parse it
@@ -127,7 +137,8 @@ def main(argv):
     with open(nonterm_path, 'w') as out_f:
       gr.dump_nonterminals(out_f)
 
-    log('Compiled %s -> grammar tables in %s', grammar_path, marshal_path)
+    log('Compiled %s -> %s and %s', grammar_path, marshal_path, nonterm_path)
+    #gr.report()
 
   elif action == 'parse':  # generate the grammar and parse it
     # Remove build dependency
@@ -148,9 +159,10 @@ def main(argv):
 
     is_expr = grammar_name in ('calc', 'grammar')
 
-    p = expr_parse.ExprParser(lex, gr, start_symbol=start_symbol)
+    p = expr_parse.ExprParser(gr)
     try:
-      ast_node = p.Parse(transform=is_expr, print_parse_tree=True)
+      ast_node, _ = p.Parse(lex, gr.symbol2number[start_symbol],
+                            transform=is_expr, print_parse_tree=True)
     except parse.ParseError as e:
       log('Parse Error: %s', e)
       return 1

@@ -1287,26 +1287,6 @@ class CommandParser(object):
     pipeline = self.ParsePipeline()
     return command.TimeBlock(pipeline)
 
-  def ParseOilAssign(self):
-    # type: () -> command_t
-    """
-    oil_assign: keyword <'assign' in grammar.pgen2>
-
-    Note that assignments must end with a newline or a semicolon.  Unlike shell
-    assignments, we disallow:
-    
-    var x = 42 | wc -l
-    var x = 42 && echo hi
-    """
-    kw_token = word.LiteralToken(self.cur_word)
-    assert kw_token is not None, self.cur_word
-
-    self._Next()  # skip 'var' or 'setvar'
-
-    node = self.w_parser.ReadAssignment()
-    node.keyword = kw_token
-    return node
-
   def ParseCompoundCommand(self):
     # type: () -> command_t
     """
@@ -1347,8 +1327,15 @@ class CommandParser(object):
     if self.c_id == Id.Op_DLeftParen:
       return self.ParseDParen()
 
-    if self.c_id in (Id.KW_Var, Id.KW_SetVar):
-      return self.ParseOilAssign()
+    if self.c_id == Id.KW_Var:
+      kw_token = word.LiteralToken(self.cur_word)
+      self._Next()
+      return self.w_parser.ParseVar(kw_token)
+
+    if self.c_id == Id.KW_SetVar:
+      kw_token = word.LiteralToken(self.cur_word)
+      self._Next()
+      return self.w_parser.ParseSetVar(kw_token)
 
     # This never happens?
     p_die('Unexpected word while parsing compound command', word=self.cur_word)

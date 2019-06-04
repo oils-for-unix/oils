@@ -11,6 +11,7 @@ from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.types_asdl import lex_mode_e
 
 from core import meta
+from core import util
 from core.util import log
 from oil_lang import expr_to_ast
 from pgen2 import parse
@@ -251,8 +252,12 @@ class ExprParser(object):
     try:
       last_token = _PushOilTokens(self.push_parser, lexer, self.gr)
     except parse.ParseError as e:
-      log('Parse Error: %s', e)
-      raise
+      #log('ERROR %s', e)
+      # TODO:
+      # - Describe what lexer mode we're in (Invalid syntax in regex)
+      #   - Maybe say where the mode started
+      # - Id.Unknown_Tok could say "This character is invalid"
+      raise util.ParseError('Invalid syntax', token=e.opaque)
 
     pnode = self.push_parser.rootnode
 

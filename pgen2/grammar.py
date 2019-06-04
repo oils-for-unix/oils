@@ -112,15 +112,18 @@ class Grammar(object):
         """
         #self.report()
         f.write(self.MARSHAL_HEADER)
-        marshal.dump(self.symbol2number, f)
-        marshal.dump(self.number2symbol, f)
-        marshal.dump(self.states, f)
-        marshal.dump(self.dfas, f)
-        marshal.dump(self.labels, f)
-        marshal.dump(self.keywords, f)
-        marshal.dump(self.tokens, f)
-        marshal.dump(self.symbol2label, f)
-        marshal.dump(self.start, f)
+        def dump(x):
+          marshal.dump(x, f, 2)  # version 2 is the latest
+
+        dump(self.symbol2number)
+        dump(self.number2symbol)
+        dump(self.states)
+        dump(self.dfas)
+        dump(self.labels)
+        dump(self.keywords)
+        dump(self.tokens)
+        dump(self.symbol2label)
+        dump(self.start)
 
     def dump_nonterminals(self, f):
         # type: (IO[str]) -> None

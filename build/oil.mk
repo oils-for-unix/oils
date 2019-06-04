@@ -8,11 +8,6 @@ _build/oil/main_name.c:
 
 OIL_PYPATH := $(REPO_ROOT):$(REPO_ROOT)/vendor
 
-# This pattern rule is the idiom for multiple outputs using a single rule in
-# GNU make.
-_devbuild/gen/%.marshal _devbuild/gen/%_nt.py: oil_lang/%.pgen2
-	PYTHONPATH=. oil_lang/grammar_gen.py marshal $^ _devbuild/gen
-
 # Dependencies calculated by importing main.
 # NOTE: The list of files is used both to compile and to make a tarball.
 # - For compiling, we should respect _HAVE_READLINE in detected_config

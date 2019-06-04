@@ -4,7 +4,11 @@ echo $'one\ntwo'
 
 #var x = {a: 1}
 
+#setvar x += 1
+
 var a = 1 + 2*3
+var b Int = 5 / 6
+
 echo hi
 
 setvar a = b; echo hi
@@ -30,7 +34,10 @@ var line_cont = 1 + \
 var multiline = ( 1 + 
   2)
 
-var aug += 1
+# Augmented assignment
+#var aug += 1
+setvar aug += 1
+setvar aug -= 2
 
 #var a[i] = c
 

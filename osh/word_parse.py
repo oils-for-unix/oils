@@ -773,17 +773,36 @@ class WordParser(object):
     cs_part.spids.append(right_spid)
     return cs_part
 
-  def ReadAssignment(self):
+  def ParseVar(self, kw_token):
     # type: () -> command_t
+    """
+    oil_var: 'var' <'oil_var' in grammar.pgen2>
 
-    # Change lex mode
+    Note that assignments must end with a newline or a semicolon.  Unlike shell
+    assignments, we disallow:
+    
+    var x = 42 | wc -l
+    var x = 42 && echo hi
+    """
     self._Next(lex_mode_e.Expr)
-
-    enode, last_token = self.parse_ctx.ParseExpr(self.lexer, grammar_nt.assign)
-
-    # Let the CommandParesr see the Op_Semi or Op_Newline.
+    enode, last_token = self.parse_ctx.ParseExpr(self.lexer, grammar_nt.oil_var)
+    # Let the CommandParser see the Op_Semi or Op_Newline.
     self.buffered_word = osh_word.TokenWord(last_token)
+    self._Next(lex_mode_e.ShCommand)  # always back to this
+    return enode
 
+  def ParseSetVar(self, kw_token):
+    # type: () -> command_t
+    """
+    setvar a[i] = 1
+    setvar i += 1
+    setvar i++
+    """
+    self._Next(lex_mode_e.Expr)
+    enode, last_token = self.parse_ctx.ParseExpr(self.lexer,
+                                                 grammar_nt.oil_setvar)
+    # Let the CommandParser see the Op_Semi or Op_Newline.
+    self.buffered_word = osh_word.TokenWord(last_token)
     self._Next(lex_mode_e.ShCommand)  # always back to this
     return enode
 

@@ -103,15 +103,36 @@ class Transformer(object):
       c = '-' if not children else len(children)
       #log('non-terminal %s %s', nt_name, c)
 
-      if typ == grammar_nt.assign:
-        # assign: lvalue_list type_expr? (augassign | '=') testlist
+      if typ == grammar_nt.oil_var:
+        # assign: lvalue_list [type_expr] '=' testlist (';' | '\n')
+
+        #log('len(children) = %d', len(children))
+
         lvalue = self.Transform(children[0])  # could be a tuple
-        log('lvalue %s', lvalue)
-        op_tok = children[1].tok
-        log('op %s', op_tok)
-        rhs = self.Transform(children[2])
+        #log('lvalue %s', lvalue)
+
+        n = len(children)
+        if n == 4:
+          op_tok = children[1].tok
+          rhs = children[2]
+        elif n == 5:
+          # TODO: translate type expression
+          op_tok = children[2].tok
+          rhs = children[3]
+
+        else:
+          raise AssertionError(n)
+
         # The caller should fill in the keyword token.
-        return command.OilAssign(None, lvalue, op_tok, rhs)
+        # TODO: type expression
+        return command.OilAssign(None, lvalue, op_tok, self.Transform(rhs))
+
+      if typ == grammar_nt.oil_setvar:
+        # oil_setvar: lvalue_list (augassign | '=') testlist (Op_Semi | Op_Newline)
+        lvalue = self.Transform(children[0])  # could be a tuple
+        op_tok = children[1].tok
+        rhs = children[2]
+        return command.OilAssign(None, lvalue, op_tok, self.Transform(rhs))
 
       if typ == grammar_nt.lvalue_list:
         return self._AssocBinary(children)

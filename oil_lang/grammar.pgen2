@@ -214,9 +214,17 @@ lvalue_list: lvalue (',' lvalue)*
 
 type_expr: NAME [ '[' type_expr (',' type_expr)* ']' ]
 
+# TODO: Eof should be allowed too.
+
+oil_var: lvalue_list [type_expr] '=' testlist (Op_Semi | Op_Newline)
+oil_setvar: lvalue_list (augassign | '=') testlist (Op_Semi | Op_Newline)
+
 # Problem: we can't end it on a newline because say dict literals will have
 # multiple lines.  But EOF isn't right either.
-assign: lvalue_list [type_expr] (augassign | '=') testlist (Op_Semi | Op_Newline)
+#oil_var: lvalue_list [type_expr] '=' testlist (Op_Semi | Op_Newline)
+
+#oil_setvar: lvalue_list (augassign | '=') testlist (Op_Semi | Op_Newline)
+
 
 #
 # Blocks

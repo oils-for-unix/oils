@@ -146,6 +146,20 @@ calc-test() {
   done
 }
 
+oil-productions() {
+  parse $OIL_GRAMMAR oil_var 'a = 1;'
+  parse $OIL_GRAMMAR oil_var 'a Int = 2;'
+
+  # Invalid because += now allowed
+  #parse $OIL_GRAMMAR oil_var 'a += 1;'
+
+  parse $OIL_GRAMMAR oil_setvar 'x = 3;'
+  parse $OIL_GRAMMAR oil_setvar 'x += 4;'
+
+  # Invalid because type expression isn't allowed (it could conflict)
+  #parse $OIL_GRAMMAR oil_setvar 'x Int += 4;'
+}
+
 mode-test() {
   # Test all the mode transitions
   local -a exprs=(
@@ -339,6 +353,9 @@ all() {
 
   banner 'mode-test'
   mode-test
+
+  banner 'oil-productions'
+  oil-productions
 
   # enum-test doesn't work?
 }
