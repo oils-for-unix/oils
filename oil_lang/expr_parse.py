@@ -6,13 +6,13 @@ from __future__ import print_function
 
 import sys
 
-from _devbuild.gen.syntax_asdl import token, command_t
+from _devbuild.gen.syntax_asdl import token
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.types_asdl import lex_mode_e
 
 from core import meta
 from core import util
-from core.util import log
+#from core.util import log
 from pgen2 import parse
 
 from typing import TYPE_CHECKING, IO, Dict, Tuple

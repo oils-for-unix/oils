@@ -12,8 +12,7 @@ from _devbuild.gen.syntax_asdl import (
     oil_word_part, oil_word_part_t,
 )
 from _devbuild.gen import grammar_nt
-
-from core.util import log
+#from core.util import log
 
 from typing import TYPE_CHECKING, List
 if TYPE_CHECKING:
