@@ -48,6 +48,7 @@ lex_mode_e.VSub_ArgDQ
   e.g. "${x:-a  "b"}".
 """
 
+from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
@@ -778,11 +779,10 @@ class WordParser(object):
     # Change lex mode
     self._Next(lex_mode_e.Expr)
 
-    e_parser = self.parse_ctx.MakeExprParser(self.lexer)
-    enode = e_parser.Parse()
+    enode, last_token = self.parse_ctx.ParseExpr(self.lexer, grammar_nt.assign)
 
     # Let the CommandParesr see the Op_Semi or Op_Newline.
-    self.buffered_word = osh_word.TokenWord(e_parser.LastToken())
+    self.buffered_word = osh_word.TokenWord(last_token)
 
     self._Next(lex_mode_e.ShCommand)  # always back to this
     return enode

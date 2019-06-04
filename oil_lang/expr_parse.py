@@ -15,7 +15,7 @@ from core.util import log
 from oil_lang import expr_to_ast
 from pgen2 import parse
 
-from typing import TYPE_CHECKING, IO, Dict
+from typing import TYPE_CHECKING, IO, Dict, Tuple
 if TYPE_CHECKING:
   from frontend.lexer import Lexer
   from pgen2.grammar import Grammar
@@ -234,26 +234,22 @@ def NoSingletonAction(gr, pnode):
 class ExprParser(object):
   """A wrapper around a pgen2 parser."""
 
-  def __init__(self, lexer, gr, start_symbol='assign'):
-    # type: (Lexer, Grammar, str) -> None
-    self.lexer = lexer
+  def __init__(self, gr):
+    # type: (Grammar) -> None
     self.gr = gr
+    # Reused multiple times.
     self.push_parser = parse.Parser(gr, convert=NoSingletonAction)
-    # TODO: change start symbol?
-    self.push_parser.setup(gr.symbol2number[start_symbol])
-    self.last_token = None  # type: token
 
-  def LastToken(self):
-    # type: () -> token
-    assert self.last_token is not None
-    return self.last_token
-
-  def Parse(self, transform=True, print_parse_tree=False):
-    # type: (bool, bool) -> command_t
+  def Parse(self, lexer, start_symbol, transform=True, print_parse_tree=False):
+    # type: (Lexer, int, bool, bool) -> Tuple[command_t, token]
 
     #print_parse_tree = True
+
+    # Reuse the parser
+    self.push_parser.setup(start_symbol)
+
     try:
-      self.last_token = _PushOilTokens(self.push_parser, self.lexer, self.gr)
+      last_token = _PushOilTokens(self.push_parser, lexer, self.gr)
     except parse.ParseError as e:
       log('Parse Error: %s', e)
       raise
@@ -287,6 +283,6 @@ class ExprParser(object):
     if transform:
       tr = expr_to_ast.Transformer(self.gr)
       ast_node = tr.Transform(pnode)
-      return ast_node
+      return ast_node, last_token
 
-    return pnode
+    return pnode, last_token

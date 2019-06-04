@@ -175,7 +175,9 @@ class ParseContext(object):
     # type: (Arena, Dict[str, Any], Grammar, Optional[_BaseTrail], bool) -> None
     self.arena = arena
     self.aliases = aliases
-    self.oil_grammar = oil_grammar
+
+    self.e_parser = expr_parse.ExprParser(oil_grammar)
+
     # Completion state lives here since it may span multiple parsers.
     self.trail = trail or _NullTrail()
     self.one_pass_parse = one_pass_parse
@@ -239,11 +241,9 @@ class ParseContext(object):
     lx = self._MakeLexer(line_reader)
     return word_parse.WordParser(self, lx, line_reader)
 
-  def MakeExprParser(self, lexer):
-    # type: (Lexer) -> expr_parse.ExprParser
-    """Used for var a = 1 + 2"""
-    e_parser = expr_parse.ExprParser(lexer, self.oil_grammar)
-    return e_parser
+  def ParseExpr(self, lexer, start_symbol):
+    # type: (Lexer, int) -> Tuple[command_t, token]
+    return self.e_parser.Parse(lexer, start_symbol)
 
   # Another parser instantiation:
   # - For Array Literal in word_parse.py WordParser:
