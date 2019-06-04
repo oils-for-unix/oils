@@ -4,15 +4,17 @@ parse_lib.py - Consolidate various parser instantiations here.
 
 from _devbuild.gen.id_kind_asdl import Id_t
 from _devbuild.gen.syntax_asdl import (
-    token, word_t, redir_t, word__CompoundWord)
+    token, command_t, expr_t, word_t, redir_t, word__CompoundWord)
 from _devbuild.gen.types_asdl import lex_mode_e
 
+from core import meta
 from frontend import lexer
 from frontend import reader
 from frontend import tdop
 from frontend import match
 
 from oil_lang import expr_parse
+from oil_lang import expr_to_ast
 from osh import arith_parse
 from osh import cmd_parse
 from osh import word_parse
@@ -165,6 +167,31 @@ class Trail(_BaseTrail):
 if TYPE_CHECKING:
   AliasesInFlight = List[Tuple[str, int]]
 
+
+def MakeGrammarNames(oil_grammar):
+  # type: (Grammar) -> Dict[int, str]
+
+  names = {}
+
+  for id_name, k in meta.ID_SPEC.id_str2int.items():
+    # Hm some are out of range
+    #assert k < 256, (k, id_name)
+
+    # HACK: Cut it off at 256 now!  Expr/Arith/Op doesn't go higher than
+    # that.  TODO: Change NT_OFFSET?  That might affect C code though.
+    # Best to keep everything fed to pgen under 256.  This only affects
+    # pretty printing.
+    if k < 256:
+      names[k] = id_name
+
+  for k, v in oil_grammar.number2symbol.items():
+    # eval_input == 256.  Remove?
+    assert k >= 256, (k, v)
+    names[k] = v
+
+  return names
+
+
 class ParseContext(object):
   """Context shared between the mutually recursive Command and Word parsers.
 
@@ -177,10 +204,15 @@ class ParseContext(object):
     self.aliases = aliases
 
     self.e_parser = expr_parse.ExprParser(oil_grammar)
+    # NOTE: The transformer is really a pure function.
+    self.tr = expr_to_ast.Transformer(oil_grammar)
 
     # Completion state lives here since it may span multiple parsers.
     self.trail = trail or _NullTrail()
     self.one_pass_parse = one_pass_parse
+
+    names = MakeGrammarNames(oil_grammar)
+    self.p_printer = expr_parse.ParseTreePrinter(names)  # print raw nodes
 
   def _MakeLexer(self, line_reader):
     # type: (_Reader) -> Lexer
@@ -241,9 +273,25 @@ class ParseContext(object):
     lx = self._MakeLexer(line_reader)
     return word_parse.WordParser(self, lx, line_reader)
 
-  def ParseExpr(self, lexer, start_symbol):
-    # type: (Lexer, int) -> Tuple[command_t, token]
-    return self.e_parser.Parse(lexer, start_symbol)
+  def ParseOilAssign(self, lexer, start_symbol, print_parse_tree=False):
+    # type: (Lexer, int, bool) -> Tuple[command_t, token]
+    pnode, last_token = self.e_parser.Parse(lexer, start_symbol)
+
+    if print_parse_tree:
+      self.p_printer.Print(pnode)
+
+    ast_node = self.tr.OilAssign(pnode)
+    return ast_node, last_token
+
+  def ParseOilExpr(self, lexer, start_symbol, print_parse_tree=False):
+    # type: (Lexer, int, bool) -> Tuple[expr_t, token]
+    pnode, last_token = self.e_parser.Parse(lexer, start_symbol)
+
+    if print_parse_tree:
+      self.p_printer.Print(pnode)
+
+    ast_node = self.tr.Expr(pnode)
+    return ast_node, last_token
 
   # Another parser instantiation:
   # - For Array Literal in word_parse.py WordParser:

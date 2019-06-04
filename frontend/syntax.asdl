@@ -208,7 +208,9 @@ module syntax
     -- execution
   | ExpandedAlias(command child, redir* redirects, env_pair* more_env)
   | Sentence(command child, token terminator)
+    -- TODO: Rename ShAssign
   | Assignment(id keyword, string* flags, assign_pair* pairs)
+    -- TODO: add optional type_expr (only appears in var/const)
   | OilAssign(token? keyword, expr lvalue, token op, expr rhs)
   | ControlFlow(token token, word? arg_word)
   | Pipeline(command* children, bool negated, int* stderr_indices)

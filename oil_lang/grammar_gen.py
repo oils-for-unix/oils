@@ -161,13 +161,23 @@ def main(argv):
 
     p = expr_parse.ExprParser(gr)
     try:
-      ast_node, _ = p.Parse(lex, gr.symbol2number[start_symbol],
-                            transform=is_expr, print_parse_tree=True)
+      pnode, _ = p.Parse(lex, gr.symbol2number[start_symbol])
     except parse.ParseError as e:
       log('Parse Error: %s', e)
       return 1
 
+    from frontend import parse_lib
+    names = parse_lib.MakeGrammarNames(gr)
+    p_printer = expr_parse.ParseTreePrinter(names)  # print raw nodes
+    p_printer.Print(pnode)
+
     if is_expr:
+      from oil_lang import expr_to_ast
+      tr = expr_to_ast.Transformer(gr)
+      if start_symbol == 'eval_input':
+        ast_node = tr.Expr(pnode)
+      else:
+        ast_node = tr.OilAssign(pnode)
       ast_node.PrettyPrint()
       print()
 

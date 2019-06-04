@@ -7,7 +7,9 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen import syntax_asdl
 from _devbuild.gen.syntax_asdl import (
-    command, expr, expr_t, oil_word_part, regex
+    command, command__OilAssign,
+    expr, expr_t, regex, regex_t, word, word_t, word_part,
+    oil_word_part, oil_word_part_t,
 )
 from _devbuild.gen import grammar_nt
 
@@ -45,12 +47,12 @@ class Transformer(object):
 
     left, op = children[0], children[1]
     if len(children) == 3:
-      right = self.Transform(children[2])
+      right = self.Expr(children[2])
     else:
       right = self._AssocBinary(children[2:])
 
     assert isinstance(op.tok, syntax_asdl.token)
-    return expr.Binary(op.tok, self.Transform(left), right)
+    return expr.Binary(op.tok, self.Expr(left), right)
 
   def _Trailer(self, base, p_trailer):
     # type: (expr_t, PNode) -> expr_t
@@ -67,7 +69,7 @@ class Transformer(object):
        else:
          arg = children[1]
          arglist = [arg]
-       return expr.FuncCall(base, [self.Transform(a) for a in arglist])
+       return expr.FuncCall(base, [self.Expr(a) for a in arglist])
 
     if op_tok.id == Id.Op_LBracket:
        p_args = children[1]
@@ -79,7 +81,7 @@ class Transformer(object):
        else:
          arg = children[1]
          arglist = [arg]
-       return expr.Subscript(base, [self.Transform(a) for a in arglist])
+       return expr.Subscript(base, [self.Expr(a) for a in arglist])
 
     if op_tok.id == Id.Expr_Dot:
       #return self._GetAttr(base, nodelist[2])
@@ -87,14 +89,50 @@ class Transformer(object):
 
     raise AssertionError(op_tok)
 
-  def Transform(self, pnode):
+  def OilAssign(self, pnode):
+    # type: (PNode) -> command__OilAssign
+    typ = pnode.typ
+    children = pnode.children
+
+    if typ == grammar_nt.oil_var:
+      # assign: lvalue_list [type_expr] '=' testlist (';' | '\n')
+
+      #log('len(children) = %d', len(children))
+
+      lvalue = self.Expr(children[0])  # could be a tuple
+      #log('lvalue %s', lvalue)
+
+      n = len(children)
+      if n == 4:
+        op_tok = children[1].tok
+        rhs = children[2]
+      elif n == 5:
+        # TODO: translate type expression
+        op_tok = children[2].tok
+        rhs = children[3]
+
+      else:
+        raise AssertionError(n)
+
+      # The caller should fill in the keyword token.
+      # TODO: type expression
+      return command.OilAssign(None, lvalue, op_tok, self.Expr(rhs))
+
+    if typ == grammar_nt.oil_setvar:
+      # oil_setvar: lvalue_list (augassign | '=') testlist (Op_Semi | Op_Newline)
+      lvalue = self.Expr(children[0])  # could be a tuple
+      op_tok = children[1].tok
+      rhs = children[2]
+      return command.OilAssign(None, lvalue, op_tok, self.Expr(rhs))
+
+    nt_name = self.number2symbol[typ]
+    raise AssertionError(
+        "PNode type %d (%s) wasn't handled" % (typ, nt_name))
+
+  def Expr(self, pnode):
     # type: (PNode) -> expr_t
     """Walk the homogeneous parse tree and create a typed AST."""
     typ = pnode.typ
-    if pnode.tok:
-      value = pnode.tok.val
-    else:
-      value = None
     tok = pnode.tok
     children = pnode.children
 
@@ -103,49 +141,18 @@ class Transformer(object):
       c = '-' if not children else len(children)
       #log('non-terminal %s %s', nt_name, c)
 
-      if typ == grammar_nt.oil_var:
-        # assign: lvalue_list [type_expr] '=' testlist (';' | '\n')
-
-        #log('len(children) = %d', len(children))
-
-        lvalue = self.Transform(children[0])  # could be a tuple
-        #log('lvalue %s', lvalue)
-
-        n = len(children)
-        if n == 4:
-          op_tok = children[1].tok
-          rhs = children[2]
-        elif n == 5:
-          # TODO: translate type expression
-          op_tok = children[2].tok
-          rhs = children[3]
-
-        else:
-          raise AssertionError(n)
-
-        # The caller should fill in the keyword token.
-        # TODO: type expression
-        return command.OilAssign(None, lvalue, op_tok, self.Transform(rhs))
-
-      if typ == grammar_nt.oil_setvar:
-        # oil_setvar: lvalue_list (augassign | '=') testlist (Op_Semi | Op_Newline)
-        lvalue = self.Transform(children[0])  # could be a tuple
-        op_tok = children[1].tok
-        rhs = children[2]
-        return command.OilAssign(None, lvalue, op_tok, self.Transform(rhs))
-
       if typ == grammar_nt.lvalue_list:
         return self._AssocBinary(children)
 
       if typ == grammar_nt.atom:
         if children[0].tok.id == Id.Op_LParen:
-          return self.Transform(children[1])
+          return self.Expr(children[1])
         else:
           raise NotImplementedError
 
       if typ == grammar_nt.eval_input:
         # testlist_input: testlist NEWLINE* ENDMARKER
-        return self.Transform(children[0])
+        return self.Expr(children[0])
 
       if typ == grammar_nt.testlist:
         # testlist: test (',' test)* [',']
@@ -177,13 +184,13 @@ class Transformer(object):
         assert len(children) == 2, children
         op, e = children
         assert isinstance(op.tok, syntax_asdl.token)
-        return expr.Unary(op.tok, self.Transform(e))
+        return expr.Unary(op.tok, self.Expr(e))
 
       elif typ == grammar_nt.atom_expr:
         # atom_expr: ['await'] atom trailer*
 
         # NOTE: This would be shorter in a recursive style.
-        base = self.Transform(children[0])
+        base = self.Expr(children[0])
         n = len(children)
         for i in xrange(1, n):
           pnode = children[i]
@@ -203,52 +210,61 @@ class Transformer(object):
         left_tok = children[0].tok
 
         # Approximation for now.
-        items = [
+        tokens = [
             pnode.tok for pnode in children[1:-1] if pnode.tok.id ==
             Id.Lit_Chars
         ]
-
-        return expr.ArrayLiteral(left_tok, items)
+        array_words = [
+            word.CompoundWord([word_part.LiteralPart(t)]) for t in tokens
+        ]  # type: List[word_t]
+        return expr.ArrayLiteral(left_tok, array_words)
 
       elif typ == grammar_nt.regex_literal:
         left_tok = children[0].tok
 
         # Approximation for now.
-        items = [
+        tokens = [
             pnode.tok for pnode in children[1:-1] if pnode.tok.id ==
             Id.Expr_Name
         ]
+        parts = [regex.Var(t) for t in tokens]  # type: List[regex_t]
 
-        return expr.RegexLiteral(left_tok, regex.Concat(items))
+        return expr.RegexLiteral(left_tok, regex.Concat(parts))
 
       elif typ == grammar_nt.command_sub:
         left_tok = children[0].tok
 
         # Approximation for now.
-        items = [
+        tokens = [
             pnode.tok for pnode in children[1:-1] if pnode.tok.id ==
             Id.Lit_Chars
         ]
-
-        # TODO: Fix this approximation.
-        words = items
+        words = [
+            word.CompoundWord([word_part.LiteralPart(t)]) for t in tokens
+        ]  # type: List[word_t]
         return expr.CommandSub(left_tok, command.SimpleCommand(words))
 
       elif typ == grammar_nt.expr_sub:
         left_tok = children[0].tok
 
-        return expr.ExprSub(left_tok, self.Transform(children[1]))
+        return expr.ExprSub(left_tok, self.Expr(children[1]))
 
       elif typ == grammar_nt.var_sub:
         left_tok = children[0].tok
 
-        return expr.VarSub(left_tok, self.Transform(children[1]))
+        return expr.VarSub(left_tok, self.Expr(children[1]))
 
       elif typ == grammar_nt.dq_string:
         left_tok = children[0].tok
 
-        parts = [self.Transform(c) for c in children[1:-1]]
-        return expr.DoubleQuoted(left_tok, parts)
+        tokens = [
+            pnode.tok for pnode in children[1:-1] if pnode.tok.id ==
+            Id.Lit_Chars
+        ]
+        parts2 = [
+            oil_word_part.Literal(t) for t in tokens
+        ]  # type: List[oil_word_part_t]
+        return expr.DoubleQuoted(left_tok, parts2)
 
       else:
         nt_name = self.number2symbol[typ]
@@ -263,12 +279,6 @@ class Transformer(object):
       elif tok.id == Id.Expr_Digits:
         return expr.Const(tok)
 
-      # Hm just use word_part.Literal for all these?  Or token?
-      # Id.Lit_EscapedChar is assumed to need \ removed on evaluation.
-
-      elif tok.id in (Id.Lit_Chars, Id.Lit_Other, Id.Lit_EscapedChar):
-        # TODO: Should return expr
-        return oil_word_part.Literal(tok)
       else:
         raise AssertionError(tok.id)
 

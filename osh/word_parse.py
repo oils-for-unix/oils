@@ -774,7 +774,7 @@ class WordParser(object):
     return cs_part
 
   def ParseVar(self, kw_token):
-    # type: () -> command_t
+    # type: (token) -> command_t
     """
     oil_var: 'var' <'oil_var' in grammar.pgen2>
 
@@ -785,22 +785,22 @@ class WordParser(object):
     var x = 42 && echo hi
     """
     self._Next(lex_mode_e.Expr)
-    enode, last_token = self.parse_ctx.ParseExpr(self.lexer, grammar_nt.oil_var)
+    enode, last_token = self.parse_ctx.ParseOilAssign(self.lexer, grammar_nt.oil_var)
     # Let the CommandParser see the Op_Semi or Op_Newline.
     self.buffered_word = osh_word.TokenWord(last_token)
     self._Next(lex_mode_e.ShCommand)  # always back to this
     return enode
 
   def ParseSetVar(self, kw_token):
-    # type: () -> command_t
+    # type: (token) -> command_t
     """
     setvar a[i] = 1
     setvar i += 1
     setvar i++
     """
     self._Next(lex_mode_e.Expr)
-    enode, last_token = self.parse_ctx.ParseExpr(self.lexer,
-                                                 grammar_nt.oil_setvar)
+    enode, last_token = self.parse_ctx.ParseOilAssign(self.lexer,
+                                                      grammar_nt.oil_setvar)
     # Let the CommandParser see the Op_Semi or Op_Newline.
     self.buffered_word = osh_word.TokenWord(last_token)
     self._Next(lex_mode_e.ShCommand)  # always back to this

@@ -113,6 +113,7 @@ class Grammar(object):
         #self.report()
         f.write(self.MARSHAL_HEADER)
         def dump(x):
+          # type: (Any) -> None
           marshal.dump(x, f, 2)  # version 2 is the latest
 
         dump(self.symbol2number)

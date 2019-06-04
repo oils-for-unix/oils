@@ -13,7 +13,6 @@ from _devbuild.gen.types_asdl import lex_mode_e
 from core import meta
 from core import util
 from core.util import log
-from oil_lang import expr_to_ast
 from pgen2 import parse
 
 from typing import TYPE_CHECKING, IO, Dict, Tuple
@@ -241,14 +240,11 @@ class ExprParser(object):
     # Reused multiple times.
     self.push_parser = parse.Parser(gr, convert=NoSingletonAction)
 
-  def Parse(self, lexer, start_symbol, transform=True, print_parse_tree=False):
-    # type: (Lexer, int, bool, bool) -> Tuple[command_t, token]
-
-    #print_parse_tree = True
+  def Parse(self, lexer, start_symbol):
+    # type: (Lexer, int) -> Tuple[PNode, token]
 
     # Reuse the parser
     self.push_parser.setup(start_symbol)
-
     try:
       last_token = _PushOilTokens(self.push_parser, lexer, self.gr)
     except parse.ParseError as e:
@@ -259,35 +255,4 @@ class ExprParser(object):
       # - Id.Unknown_Tok could say "This character is invalid"
       raise util.ParseError('Invalid syntax', token=e.opaque)
 
-    pnode = self.push_parser.rootnode
-
-    if print_parse_tree:
-      # Calculate names for pretty-printing.  TODO: Move this into TOK_DEF?
-      names = {}
-
-      for id_name, k in meta.ID_SPEC.id_str2int.items():
-        # Hm some are out of range
-        #assert k < 256, (k, id_name)
-
-        # HACK: Cut it off at 256 now!  Expr/Arith/Op doesn't go higher than
-        # that.  TODO: Change NT_OFFSET?  That might affect C code though.
-        # Best to keep everything fed to pgen under 256.  This only affects
-        # pretty printing.
-        if k < 256:
-          names[k] = id_name
-
-      for k, v in self.gr.number2symbol.items():
-        # eval_input == 256.  Remove?
-        assert k >= 256, (k, v)
-        names[k] = v
-
-      printer = ParseTreePrinter(names)  # print raw nodes
-      printer.Print(pnode)
-
-    # TODO: Remove transform boolean
-    if transform:
-      tr = expr_to_ast.Transformer(self.gr)
-      ast_node = tr.Transform(pnode)
-      return ast_node, last_token
-
-    return pnode, last_token
+    return self.push_parser.rootnode, last_token
