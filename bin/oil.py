@@ -84,7 +84,6 @@ from osh import split
 from osh import state
 from osh import word_eval
 
-from pgen2 import grammar
 from pylib import os_path
 
 from tools import deps
@@ -714,6 +713,8 @@ def OshCommandMain(argv):
       return 2
 
   aliases = {}  # Dummy value; not respecting aliases!
+
+  loader = pyutil.GetResourceLoader()
   oil_grammar = meta.LoadOilGrammar(loader)
 
   # parse `` and a[x+1]=bar differently
