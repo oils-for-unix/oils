@@ -147,9 +147,13 @@ travis() {
 #
 
 find-py() {
+  # don't touch mycpp yet because it's in Python 3
+  # build has build/app_deps.py which needs the -S
   find \
     -name '_*' -a -prune -o \
     -name 'Python-*' -a -prune -o \
+    -name 'mycpp' -a -prune -o \
+    -name 'build' -a -prune -o \
     -name '*.py' "$@"
 }
 
@@ -160,6 +164,10 @@ print-if-has-shebang() {
 
 not-executable() {
   find-py -a ! -executable -a -print | xargs -n 1 -- $0 print-if-has-shebang
+}
+
+executable-py() {
+  find-py -a -executable -a -print | xargs -n 1 -- grep -l python3  #head -n 1 #echo
 }
 
 "$@"
