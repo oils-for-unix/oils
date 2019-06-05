@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/env python2
 """
 lexer_gen_test.py: Tests for lexer_gen.py
 """

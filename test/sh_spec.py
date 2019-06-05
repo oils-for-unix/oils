@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 from __future__ import print_function
 """
 sh_spec.py -- Test framework to compare shells.

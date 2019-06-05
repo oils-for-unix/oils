@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/env python2
 """
 wild_report_test.py: Tests for wild_report.py
 """

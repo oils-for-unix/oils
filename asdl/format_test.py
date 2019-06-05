@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/env python2
 """
 format_test.py: Tests for format.py
 """

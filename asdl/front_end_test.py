@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/env python2
 """
 front_end_test.py: Tests for front_end.py
 """

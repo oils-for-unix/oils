@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/env python2
 """Generate ast module from specification
 
 This script generates the ast module from a simple specification,

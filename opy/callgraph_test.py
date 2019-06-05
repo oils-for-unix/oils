@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/env python2
 from __future__ import print_function
 """
 callgraph_test.py: Tests for callgraph.py

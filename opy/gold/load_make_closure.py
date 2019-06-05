@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python2
 """
 load_make_closure.py - A generator expression should not generate the
 LOAD_CLOSURE or MAKE_CLOSURE bytecodes.

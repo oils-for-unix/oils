@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 """
 alloc_test.py: Tests for alloc.py
 """

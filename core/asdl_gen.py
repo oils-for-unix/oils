@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 """
 asdl_gen.py - Generate Python and C from OSH ASDL schemas.
 """

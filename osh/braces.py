@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 """
 braces.py - Implementation of {andy,bob}@example.com
 

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python2
 from __future__ import print_function
 """
 class_vs_closure.py

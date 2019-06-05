@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/env python2
 """
 os_path_test.py: Tests for os_path.py
 """

@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/env python2
 """
 expr_parse_test.py: Tests for expr_parse.py
 """

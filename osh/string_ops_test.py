@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/env python2
 """
 string_ops_test.py: Tests for string_ops.py
 """

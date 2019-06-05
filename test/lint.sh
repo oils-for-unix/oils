@@ -167,7 +167,17 @@ not-executable() {
 }
 
 executable-py() {
-  find-py -a -executable -a -print | xargs -n 1 -- grep -l python3  #head -n 1 #echo
+  find-py -a -executable -a -print | xargs -n 1 -- echo
+}
+
+# Make all shebangs consistent.
+# - Specify python2 because on some distros 'python' is python3
+# - Use /usr/bin/env because it works better with virtualenv?
+#
+# https://stackoverflow.com/questions/9309940/sed-replace-first-line
+replace-shebang() {
+  # e.g. cat edit.list, change the first line
+  sed -i '1c#!/usr/bin/env python2' "$@"
 }
 
 "$@"

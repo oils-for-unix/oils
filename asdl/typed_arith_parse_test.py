@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 from __future__ import print_function
 
 from _devbuild.gen.typed_arith_asdl import arith_expr_t

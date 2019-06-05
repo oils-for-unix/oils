@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 """
 grammar_gen.py - Use pgen2 to generate tables from Oil's grammar.
 """

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 """
 ccompile.py - Compile with builtin compile() function, which uses compile.c.
 """

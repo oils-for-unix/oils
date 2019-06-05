@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/env python2
 """
 oheap2_test.py: Tests for oheap2.py
 """

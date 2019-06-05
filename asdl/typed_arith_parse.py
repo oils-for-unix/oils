@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 """
 typed_arith_parse.py: Parse shell-like and C-like arithmetic.
 """

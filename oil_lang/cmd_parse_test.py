@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/env python2
 """
 oil_parse_test.py: Tests for oil_parse.py
 """

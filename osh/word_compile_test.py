@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/env python2
 """
 word_compile_test.py: Tests for word_compile.py
 """

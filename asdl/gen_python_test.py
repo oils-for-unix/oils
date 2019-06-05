@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 """
 demo_asdl_test.py: Tests for demo_asdl.py
 """

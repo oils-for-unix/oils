@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/env python2
 """
 builtin_bracket_test.py: Tests for builtin_bracket.py
 """

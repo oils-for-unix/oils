@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 from __future__ import print_function
 """Run the Python regression test using the compiler
 

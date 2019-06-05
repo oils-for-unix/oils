@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python2
 i = 0
 while i < 20:
   i = i + 1
