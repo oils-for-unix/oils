@@ -34,6 +34,8 @@ unit-tests() {
 
   find-demo -type f -a -exec echo {} ';'
 
+  find-demo -type f -a -fprintf out '%P\n' -a -quit
+
   #find-demo -type f -a -name '*.py' 
 }
 

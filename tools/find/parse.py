@@ -6,7 +6,7 @@ from __future__ import print_function
 
 import sys
 
-from core.util import log
+#from core.util import log
 
 from pgen2 import driver
 from pgen2 import pgen
@@ -14,6 +14,10 @@ from pgen2 import parse
 from pgen2 import token
 
 from oil_lang.expr_parse import NoSingletonAction
+
+from typing import TYPE_CHECKING, Dict, IO
+if TYPE_CHECKING:
+  from pgen2.parse import PNode
 
 
 def Tokens(strs):
@@ -30,26 +34,36 @@ def Tokens(strs):
 
 
 # NOTE: should be disjoint from Python's
-OPMAP = {
-    '!': 101,
-    '(': 102,
-    ')': 103,
-    '-o': 104,
-    '-a': 105,
-    ',': 106,
-    ';': 107,
-    '+': 108,
+OPS = [
+    '!',
+    '(', ')',
+    '-o', '-a',
+    ',',
+    ';', '+',
 
-    '-true': 190,
-    '-false': 191,
+    '-true', '-false',
 
-    '-name': 200,
-    '-type': 201,
-    '-print': 202,
-    '-print0': 203,
-    '-printf': 204,
-    '-exec': 205,
-}
+    '-name', '-iname', 
+    '-lname', '-ilname', 
+    '-regex', '-iregex', 
+    '-path', '-ipath', 
+
+    '-size', '-type', '-xtype', '-perm',
+    '-empty', '-executable', '-readable', '-writable',
+
+    '-delete',
+    '-prune', '-quit',
+
+    '-print', '-print0', '-printf',
+    '-fprint', '-fprint0', '-fprintf',
+
+    '-exec', '-execdir',
+]
+
+OPMAP = {}
+for i, op in enumerate(OPS):
+  # Start at 100 so it doesn't overlap with Python tokens
+  OPMAP[op] = i + 100
 
 
 class TokenDef(object):
@@ -119,7 +133,7 @@ def main(argv):
     assert num not in names, num
     names[num] = name
 
-  print(pnode)
+  #print(pnode)
   printer = ParseTreePrinter(names)
   printer.Print(pnode)
 

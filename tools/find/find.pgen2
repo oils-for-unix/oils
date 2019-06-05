@@ -1,5 +1,13 @@
 # Grammar for find
 
+# TODO: Could we encode numeric arguments into the grammar?
+# find apparently supports n +n -n.
+# #
+# Separately parsed:
+# - printf format string
+# - perm mode string
+# - regex and glob (passed through to libc, most likely)
+
 eval_input: expr ENDMARKER
 
 expr: term ('-o' term)*
@@ -15,15 +23,51 @@ factor: (
   '(' expr ')'
 | '-true'
 | '-false'
+
+# TESTS
+#   for filenames / paths
 | '-name' STRING
+| '-iname' STRING
+
+| '-lname' STRING
+| '-ilname' STRING
+
+| '-regex' STRING
+| '-iregex' STRING
+
+| '-path' STRING
+| '-ipath' STRING
+
+#   for attributes
+| '-size' STRING
 | '-type' STRING
+| '-xtype' STRING
+| '-perm' STRING
+
+| '-empty'
+| '-executable'
+| '-readable'
+| '-writable'
+
+#   for time (TODO)
+
+# Actions
+| '-delete'
+| '-prune'
+| '-quit'
+
 | '-print'
 | '-print0'
 | '-printf' STRING
 
+| '-fprint' STRING
+| '-fprint0' STRING
+| '-fprintf' STRING STRING
+
   # TODO: can the command be empty?
-  # parse {}?
+  # parse {}?  That is replaced with the current filename.
 | '-exec' STRING* terminator
+| '-execdir' STRING* terminator
 )
 
 terminator: ';' | '+'
