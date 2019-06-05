@@ -44,12 +44,31 @@ factor: (
 | '-xtype' STRING
 | '-perm' STRING
 
+| '-group' STRING
+| '-user' STRING
+| '-gid' STRING
+| '-uid' STRING
+| '-nogroup'
+| '-nouser' STRING
+
 | '-empty'
 | '-executable'
 | '-readable'
 | '-writable'
 
 #   for time (TODO)
+| '-amin' STRING
+| '-anewer' STRING
+| '-atime' STRING
+
+| '-cmin' STRING
+| '-cnewer' STRING
+| '-ctime' STRING
+
+| '-mmin' STRING
+| '-newer' STRING  # note -newer not -mnewer
+| '-mtime' STRING
+| '-newerXY' STRING
 
 # Actions
 | '-delete'
@@ -59,15 +78,19 @@ factor: (
 | '-print'
 | '-print0'
 | '-printf' STRING
+| '-ls'
 
 | '-fprint' STRING
 | '-fprint0' STRING
 | '-fprintf' STRING STRING
+| '-fls' STRING
 
   # TODO: can the command be empty?
   # parse {}?  That is replaced with the current filename.
 | '-exec' STRING* terminator
 | '-execdir' STRING* terminator
+| '-ok' STRING* terminator
+| '-okdir' STRING* terminator
 )
 
 terminator: ';' | '+'

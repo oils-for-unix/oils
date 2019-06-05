@@ -49,15 +49,25 @@ OPS = [
     '-path', '-ipath', 
 
     '-size', '-type', '-xtype', '-perm',
+
+    '-group', '-user',
+    '-gid', '-uid',
+    '-nogroup', '-nouser',
+
     '-empty', '-executable', '-readable', '-writable',
+
+    '-amin', '-anewer', '-atime',
+    '-cmin', '-cnewer', '-ctime',
+    '-mmin', '-newer', '-mtime',  # note -newer not -mnewer
+    '-newerXY',
 
     '-delete',
     '-prune', '-quit',
 
-    '-print', '-print0', '-printf',
-    '-fprint', '-fprint0', '-fprintf',
+    '-print', '-print0', '-printf', '-ls',
+    '-fprint', '-fprint0', '-fprintf', '-fls',
 
-    '-exec', '-execdir',
+    '-exec', '-execdir', '-ok', '-okdir',
 ]
 
 OPMAP = {}
