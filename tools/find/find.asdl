@@ -1,0 +1,26 @@
+-- Abstract representation of a 'find' expression.
+
+module find
+{
+  op = And | Or | Comma  -- comma does sequencing
+
+  expr =
+    Negation(expr child)  -- unary negation
+  | Binary(op op, expr left, expr right)
+
+  | True_   -- avoid name conflict with Python
+  | False_
+
+  | NameTest(bool icase, bool l, string glob)
+  | NameRegexTest(bool icase, string regex)
+  | PathTest(bool icase, string glob)
+  | TimeTest(string arg)  -- TODO: should be parsed further
+  -- TODO: fill out more tests
+
+  | DeleteAction
+  | PruneAction
+  | QuitAction
+  | PrintAction(string? file, bool zero, string? format)
+  | LsAction(string? file)
+  | ExecAction(bool dir, bool ok, string* argv)
+}

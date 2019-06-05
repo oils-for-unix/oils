@@ -8,9 +8,9 @@
 # - perm mode string
 # - regex and glob (passed through to libc, most likely)
 
-eval_input: expr ENDMARKER
+start: find_expr ENDMARKER
 
-expr: term ('-o' term)*
+find_expr: term ('-o' term)*
 
 # implicit and is allowed
 term: list (['-a'] list)*
@@ -20,7 +20,7 @@ list: negated (',' negated)*
 negated: ['!'] factor
 
 factor: (
-  '(' expr ')'
+  '(' find_expr ')'
 | '-true'
 | '-false'
 

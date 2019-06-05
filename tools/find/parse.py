@@ -8,6 +8,12 @@ import sys
 
 #from core.util import log
 
+# build/dev.sh minimal generates this
+from _devbuild.gen.find_asdl import (
+    expr, op_e
+)
+#from _devbuild.gen import find_nt  # non-terminals for the 'transformer'
+
 from pgen2 import driver
 from pgen2 import pgen
 from pgen2 import parse
@@ -33,7 +39,6 @@ def Tokens(strs):
   yield (token.ENDMARKER, '', start, end, line_text)
 
 
-# NOTE: should be disjoint from Python's
 OPS = [
     '!',
     '(', ')',
@@ -90,7 +95,11 @@ class TokenDef(object):
 
 
 class ParseTreePrinter(object):
-  """Prints a tree of PNode instances."""
+  """Prints a tree of PNode instances.
+
+  Copied from oil_lang/expr_parse.py
+  """
+
   def __init__(self, names):
     # type: (Dict[int, str]) -> None
     self.names = names
@@ -99,11 +108,6 @@ class ParseTreePrinter(object):
     # type: (PNode, IO[str], int, int) -> None
 
     ind = '  ' * indent
-    # NOTE:
-    # - value is filled in for TOKENS, but it's always None for PRODUCTIONS.
-    # - context is (prefix, (lineno, column)), where lineno is 1-based, and
-    #   'prefix' is a string of whitespace.
-    #   e.g. for 'f(1, 3)', the "3" token has a prefix of ' '.
     if isinstance(pnode.tok, tuple):
       v = pnode.tok[0]
     else:
@@ -124,8 +128,7 @@ def main(argv):
   tokens = Tokens(argv[1:])
 
   #print(list(tokens))
-  start_symbol = 'eval_input'
-  #start_symbol = 'factor_input'
+  start_symbol = 'start'
   pnode = driver.PushTokens(p, tokens, gr, start_symbol, opmap=OPMAP)
 
   names = {}
@@ -146,6 +149,13 @@ def main(argv):
   #print(pnode)
   printer = ParseTreePrinter(names)
   printer.Print(pnode)
+
+  # TODO: Translate pnode into a tree like this.
+  left = expr.True_()
+  right = expr.PathTest(False, '*.py')
+  ast_node = expr.Binary(op_e.And, left, right)
+  ast_node.PrettyPrint()
+  print()
 
 
 if __name__ == '__main__':

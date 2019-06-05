@@ -12,7 +12,7 @@ find-demo() {
   echo --- "$@" ---
   echo
 
-  PYTHONPATH=. tools/find/parse.py "$@"
+  PYTHONPATH='.:vendor' tools/find/parse.py "$@"
 }
 
 unit-tests() {

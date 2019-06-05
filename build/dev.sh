@@ -111,6 +111,10 @@ gen-runtime-asdl() {
   gen-asdl-py osh/runtime.asdl
 }
 
+gen-find-asdl() {
+  gen-asdl-py 'tools/find/find.asdl'
+}
+
 # TODO: should fastlex.c be part of the dev build?  It means you need re2c
 # installed?  I don't think it makes sense to have 3 builds, so yes I think we
 # can put it here for simplicity.
@@ -179,6 +183,7 @@ minimal() {
 
   gen-syntax-asdl   # depends on Id
   gen-runtime-asdl  # ditto
+  gen-find-asdl
 
   # Only for testing.
   asdl/run.sh gen-typed-demo-asdl
