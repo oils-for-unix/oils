@@ -1,0 +1,29 @@
+# Grammar for find
+
+eval_input: expr ENDMARKER
+
+expr: term ('-o' term)*
+
+# implicit and is allowed
+term: list (['-a'] list)*
+
+list: negated (',' negated)*
+
+negated: ['!'] factor
+
+factor: (
+  '(' expr ')'
+| '-true'
+| '-false'
+| '-name' STRING
+| '-type' STRING
+| '-print'
+| '-print0'
+| '-printf' STRING
+
+  # TODO: can the command be empty?
+  # parse {}?
+| '-exec' STRING* terminator
+)
+
+terminator: ';' | '+'

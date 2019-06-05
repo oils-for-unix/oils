@@ -42,7 +42,7 @@ def classify(gr, typ, value):
     return ilabel
 
 
-def PushTokens(p, tokens, gr, start_symbol, debug=False):
+def PushTokens(p, tokens, gr, start_symbol, opmap=token.opmap, debug=False):
     """Parse a series of tokens and return the syntax tree.
 
     NOTE: This function is specific to Python's lexer.
@@ -78,7 +78,7 @@ def PushTokens(p, tokens, gr, start_symbol, debug=False):
             continue
 
         if type_ == token.OP:
-            type_ = token.opmap[value]
+            type_ = opmap[value]
 
         if debug:
             log("%s %r (prefix=%r)", token.tok_name[type_], value, prefix)
@@ -96,6 +96,6 @@ def PushTokens(p, tokens, gr, start_symbol, debug=False):
             column = 0
     else:
         # We never broke out -- EOF is too soon (how can this happen???)
-        raise parse.ParseError("incomplete input",
-                               type_, value, (prefix, start))
+        opaque = (value, prefix, start)
+        raise parse.ParseError("incomplete input", type_, opaque)
     return p.rootnode
