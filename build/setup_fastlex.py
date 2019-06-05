@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 from distutils.core import setup, Extension
 
 # https://stackoverflow.com/questions/4541565/how-can-i-assert-from-python-c-code

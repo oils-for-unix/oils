@@ -1,4 +1,4 @@
-#!/usr/bin/python -S
+#!/usr/bin/python2 -S
 """
 app_deps.py
 
