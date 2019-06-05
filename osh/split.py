@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 split.py - Word Splitting
 

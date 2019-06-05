@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 string_ops.py - String library functions that can be exposed with a saner syntax.
 

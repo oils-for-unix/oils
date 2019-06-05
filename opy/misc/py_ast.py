@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Wrapper for Python.asdl.
 """

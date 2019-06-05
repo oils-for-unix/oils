@@ -1,4 +1,3 @@
-#!/usr/bin/python -S
 """
 resolve.py
 

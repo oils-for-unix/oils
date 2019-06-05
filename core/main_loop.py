@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 main_loop.py
 

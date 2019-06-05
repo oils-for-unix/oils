@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 match.py - match with generated re2c code or Python regexes.
 """

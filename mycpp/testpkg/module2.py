@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 module2.py
 """

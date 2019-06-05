@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 expr_parse.py
 """

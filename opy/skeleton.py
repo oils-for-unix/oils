@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 skeleton.py: The compiler pipeline.
 """

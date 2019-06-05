@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 const_pass.py - AST pass that collects constants.
 

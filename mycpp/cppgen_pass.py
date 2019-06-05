@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 cppgen.py - AST pass to that prints C++ code
 """

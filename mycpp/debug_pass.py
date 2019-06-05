@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 debug.py - Pretty-print the AST
 """

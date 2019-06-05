@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 meta.py
 

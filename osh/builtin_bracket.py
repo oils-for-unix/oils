@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 builtin_bracket.py
 """

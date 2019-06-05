@@ -142,4 +142,24 @@ travis() {
   flake8-all
 }
 
+#
+# Adjust and Check shebang lines.  It matters for developers on different distros.
+#
+
+find-py() {
+  find \
+    -name '_*' -a -prune -o \
+    -name 'Python-*' -a -prune -o \
+    -name '*.py' "$@"
+}
+
+print-if-has-shebang() {
+  read first < $1
+  [[ "$first" == '#!'* ]]  && echo $1
+}
+
+not-executable() {
+  find-py -a ! -executable -a -print | xargs -n 1 -- $0 print-if-has-shebang
+}
+
 "$@"

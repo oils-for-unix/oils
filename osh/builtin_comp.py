@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 builtin_comp.py - Completion builtins
 """

@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 cgi.py - Copied from Python stdlib.
 

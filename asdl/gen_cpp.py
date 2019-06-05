@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 gen_cpp.py
 

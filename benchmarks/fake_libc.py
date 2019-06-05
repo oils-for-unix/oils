@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 fake_libc.py
 

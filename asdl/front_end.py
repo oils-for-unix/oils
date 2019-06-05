@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 front_end.py: Lexer and parser for the ASDL schema language.
 """

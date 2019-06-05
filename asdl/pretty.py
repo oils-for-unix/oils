@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 pretty.py
 """

@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 runtime.py: Objects and types needed at runtime.
 

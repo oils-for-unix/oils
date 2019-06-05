@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 os_.py - Copy of code from Python's os module, which we don't want to include.
 """

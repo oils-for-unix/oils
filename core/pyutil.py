@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 pyutil.py: Code that's only needed in Python.  C++ will use other mechanisms.
 """

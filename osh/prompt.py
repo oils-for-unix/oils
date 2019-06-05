@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 prompt.py: A LIBRARY for prompt evaluation.
 

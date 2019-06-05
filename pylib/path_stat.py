@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 path_stat.py - Functions from os.path that import 'stat'.
 

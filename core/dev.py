@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 dev.py - Devtools / introspection.
 """

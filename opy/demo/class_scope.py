@@ -1,4 +1,3 @@
-#!/usr/bin/python
 
 class Foo(object):
   a = 1

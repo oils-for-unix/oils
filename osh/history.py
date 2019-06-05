@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 history.py: A LIBRARY for history evaluation.
 

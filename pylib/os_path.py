@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 os_path.py - Copy of code from Python's posixpath.py and genericpath.py.
 """

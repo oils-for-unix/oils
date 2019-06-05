@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 opy_main.py
 """
