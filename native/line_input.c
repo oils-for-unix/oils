@@ -876,12 +876,6 @@ readline_sigwinch_handler(int signum)
     if (sigwinch_ohandler &&
             sigwinch_ohandler != SIG_IGN && sigwinch_ohandler != SIG_DFL)
         sigwinch_ohandler(signum);
-
-#ifndef HAVE_SIGACTION
-    /* If the handler was installed with signal() rather than sigaction(),
-    we need to reinstall it. */
-    PyOS_setsig(SIGWINCH, readline_sigwinch_handler);
-#endif
 }
 #endif
 
