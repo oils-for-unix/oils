@@ -41,6 +41,59 @@ def GetHomeDir():
     return e.pw_dir
 
 
+class SignalState(object):
+  """All changes to global signal state go through this object."""
+
+  def __init__(self):
+    # Before doing anything else, save the original handler that raises
+    # KeyboardInterrupt.
+    self.orig_sigint_handler = signal.getsignal(signal.SIGINT)
+
+  def InitShell(self):
+    """Always called when initializing the shell process."""
+
+    # NOTE: SIGINT is temporarily enabled during readline() by
+    # frontend/reader.py.
+    # It's treated differently than SIGQUIT and SIGTSTP because Python handles it
+    # with KeyboardInterrupt.  We don't want KeyboardInterrupt at arbitrary
+    # points in a non-interactive shell.  (e.g. osh -c 'sleep 5' then Ctrl-C)
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+  def InitInteractiveShell(self, display):
+    """Called when initializing an interactive shell."""
+    # The shell itself should ignore Ctrl-\.
+    signal.signal(signal.SIGQUIT, signal.SIG_IGN)
+
+    # This prevents Ctrl-Z from suspending OSH in interactive mode.  But we're
+    # not getting notification via wait() that the child stopped?
+    signal.signal(signal.SIGTSTP, signal.SIG_IGN)
+
+    # Register a callback to receive terminal width changes.
+    signal.signal(signal.SIGWINCH, lambda x, y: display.OnWindowChange())
+
+  def AfterForkingChild(self):
+    pass
+
+  def BeginReadline(self):
+    """Called before invoking GNU readline()."""
+    signal.signal(signal.SIGINT, self.orig_sigint_handler)
+
+  def EndReadline(self):
+    """Called after GNU readline() returns."""
+    # When we're not waiting for input, ignore Ctrl-C so we don't get
+    # KeyboardInterrupt in weird places.
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    # TODO: Should we restore the user-registered handler?
+
+  def AddUserTrap(self):
+    """For user-defined handlers registered with the 'trap' builtin."""
+    pass
+
+  def RemoveUserTrap(self):
+    """For user-defined handlers registered with the 'trap' builtin."""
+    pass
+
+
 class _FdFrame(object):
   def __init__(self):
     self.saved = []

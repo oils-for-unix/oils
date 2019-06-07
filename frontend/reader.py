@@ -14,6 +14,10 @@ import signal
 from typing import Optional, Tuple, List, IO, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
+  # TODO: Hook these up when they have types.
+  #from core.process import SignalState
+  #from osh.prompt import PromptEvaluator
+  #from osh import history
 
 
 class _Reader(object):
@@ -45,8 +49,10 @@ class _Reader(object):
 _PS2 = '> '
 
 class InteractiveLineReader(_Reader):
-  def __init__(self, arena, prompt_ev, hist_ev, line_input, prompt_state):
-    # type: (Arena, Any, Any, Any, Any) -> None
+  def __init__(self, arena, prompt_ev, hist_ev, line_input, prompt_state,
+               sig_state):
+    # type: (Arena, Any, Any, Any, Any, Any) -> None
+    # TODO: Hook up PromptEvaluator and history.Evaluator when they have types.
     """
     Args:
       prompt_state: Current prompt is PUBLISHED here.
@@ -56,8 +62,7 @@ class InteractiveLineReader(_Reader):
     self.hist_ev = hist_ev
     self.line_input = line_input  # may be None!
     self.prompt_state = prompt_state
-
-    self.orig_handler = signal.getsignal(signal.SIGINT)
+    self.sig_state = sig_state
 
     self.prev_line = None  # type: str
     self.prompt_str = ''
@@ -69,7 +74,7 @@ class InteractiveLineReader(_Reader):
     # problems with readline?  It needs to know about the prompt.
     #sys.stderr.write(self.prompt_str)
 
-    signal.signal(signal.SIGINT, self.orig_handler)  # raise KeyboardInterrupt
+    self.sig_state.BeginReadline()
     try:
       line = raw_input(self.prompt_str) + '\n'  # newline required
     except EOFError:
@@ -84,11 +89,7 @@ class InteractiveLineReader(_Reader):
       # can't just remember a number -- I have to type 'hi' again.
       line = self.hist_ev.Eval(line)
     finally:
-      # When we're not waiting for input, ignore Ctrl-C so we don't get
-      # KeyboardInterrupt in weird places.  NOTE: This can't be SIG_IGN,
-      # because that affects the child process.
-      signal.signal(signal.SIGINT, signal.SIG_IGN)
-      # TODO: Should we restore the user-registered handler?
+      self.sig_state.EndReadline()
 
     # Add the line if it's not EOL, not whitespace-only, not the same as the
     # previous line, and we have line_input.

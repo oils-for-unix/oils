@@ -22,7 +22,6 @@ Builtins that can be exposed:
 from __future__ import print_function
 
 import posix
-import signal
 import sys
 import time  # for perf measurement
 
@@ -513,16 +512,8 @@ def ShellMain(lang, argv0, argv, login_shell):
   # History evaluation is a no-op if line_input is None.
   hist_ev = history.Evaluator(line_input, hist_ctx, debug_f)
 
-  # Calculate ~/.config/oil/oshrc or oilrc
-  # Use ~/.config/oil to avoid cluttering the user's home directory.  Some
-  # users may want to ln -s ~/.config/oil/oshrc ~/oshrc or ~/.oshrc.
-
-  # https://unix.stackexchange.com/questions/24347/why-do-some-applications-use-config-appname-for-their-config-data-while-other
-  home_dir = process.GetHomeDir()
-  assert home_dir is not None
-  rc_path = opts.rcfile or os_path.join(home_dir, '.config/oil', lang + 'rc')
-
-  history_filename = os_path.join(home_dir, '.config/oil', 'history_' + lang)
+  sig_state = process.SignalState()
+  sig_state.InitShell()
 
   if opts.c is not None:
     arena.PushSource(source.CFlag())
@@ -532,9 +523,9 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   elif opts.i:  # force interactive
     arena.PushSource(source.Stdin(' -i'))
-    # interactive shell only
     line_reader = reader.InteractiveLineReader(arena, prompt_ev, hist_ev,
-                                               line_input, prompt_state)
+                                               line_input, prompt_state,
+                                               sig_state)
     exec_opts.interactive = True
 
   else:
@@ -543,9 +534,9 @@ def ShellMain(lang, argv0, argv, login_shell):
     except IndexError:
       if sys.stdin.isatty():
         arena.PushSource(source.Interactive())
-        # interactive shell only
         line_reader = reader.InteractiveLineReader(arena, prompt_ev, hist_ev,
-                                                   line_input, prompt_state)
+                                                   line_input, prompt_state,
+                                                   sig_state)
         exec_opts.interactive = True
       else:
         arena.PushSource(source.Stdin(''))
@@ -567,14 +558,18 @@ def ShellMain(lang, argv0, argv, login_shell):
   else:
     c_parser = parse_ctx.MakeOilParser(line_reader)
 
-  # NOTE: SIGINT is temporarily enabled during readline() by
-  # frontend/reader.py.
-  # It's treated differently than SIGQUIT and SIGTSTP because Python handles it
-  # with KeyboardInterrupt.  We don't want KeyboardInterrupt at arbitrary
-  # points in a non-interactive shell.  (e.g. osh -c 'sleep 5' then Ctrl-C)
-  signal.signal(signal.SIGINT, signal.SIG_IGN)
-
   if exec_opts.interactive:
+    # Calculate ~/.config/oil/oshrc or oilrc
+    # Use ~/.config/oil to avoid cluttering the user's home directory.  Some
+    # users may want to ln -s ~/.config/oil/oshrc ~/oshrc or ~/.oshrc.
+
+    # https://unix.stackexchange.com/questions/24347/why-do-some-applications-use-config-appname-for-their-config-data-while-other
+    home_dir = process.GetHomeDir()
+    assert home_dir is not None
+    rc_path = opts.rcfile or os_path.join(home_dir, '.config/oil', lang + 'rc')
+
+    history_filename = os_path.join(home_dir, '.config/oil', 'history_' + lang)
+
     if line_input:
       # NOTE: We're using a different WordEvaluator here.
       ev = word_eval.CompletionWordEvaluator(mem, exec_opts, exec_deps, arena)
@@ -600,15 +595,7 @@ def ShellMain(lang, argv0, argv, login_shell):
     else:  # Without readline module
       display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 
-    # The shell itself should ignore Ctrl-\.
-    signal.signal(signal.SIGQUIT, signal.SIG_IGN)
-
-    # This prevents Ctrl-Z from suspending OSH in interactive mode.  But we're
-    # not getting notification via wait() that the child stopped?
-    signal.signal(signal.SIGTSTP, signal.SIG_IGN)
-
-    # Register a callback to receive terminal width changes.
-    signal.signal(signal.SIGWINCH, lambda x, y: display.OnWindowChange())
+    sig_state.InitInteractiveShell(display)
 
     # NOTE: Call this AFTER _InitDefaultCompletions.
     SourceStartupFile(rc_path, lang, parse_ctx, ex)
