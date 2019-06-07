@@ -403,10 +403,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   comp_lookup = completion.Lookup()
 
-  #
   # Various Global State objects to work around readline interfaces
-  #
-
   compopt_state = completion.OptionState()
   comp_ui_state = comp_ui.State()
   prompt_state = comp_ui.PromptState()
@@ -496,7 +493,10 @@ def ShellMain(lang, argv0, argv, login_shell):
   builtins[builtin_e.COMPLETE] = complete_builtin
   builtins[builtin_e.COMPGEN] = builtin_comp.CompGen(spec_builder)
 
-  builtins[builtin_e.TRAP] = builtin.Trap(exec_deps.traps,
+  sig_state = process.SignalState()
+  sig_state.InitShell()
+
+  builtins[builtin_e.TRAP] = builtin.Trap(sig_state, exec_deps.traps,
                                           exec_deps.trap_nodes, ex, errfmt)
 
   if lang == 'oil':
@@ -511,9 +511,6 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   # History evaluation is a no-op if line_input is None.
   hist_ev = history.Evaluator(line_input, hist_ctx, debug_f)
-
-  sig_state = process.SignalState()
-  sig_state.InitShell()
 
   if opts.c is not None:
     arena.PushSource(source.CFlag())

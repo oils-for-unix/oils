@@ -49,15 +49,17 @@ class SignalState(object):
     # KeyboardInterrupt.
     self.orig_sigint_handler = signal.getsignal(signal.SIGINT)
 
-  def InitShell(self):
-    """Always called when initializing the shell process."""
-
+  def _IgnoreSigInt(self):
     # NOTE: SIGINT is temporarily enabled during readline() by
     # frontend/reader.py.
     # It's treated differently than SIGQUIT and SIGTSTP because Python handles it
     # with KeyboardInterrupt.  We don't want KeyboardInterrupt at arbitrary
     # points in a non-interactive shell.  (e.g. osh -c 'sleep 5' then Ctrl-C)
     signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+  def InitShell(self):
+    """Always called when initializing the shell process."""
+    self._IgnoreSigInt()
 
   def InitInteractiveShell(self, display):
     """Called when initializing an interactive shell."""
@@ -80,18 +82,24 @@ class SignalState(object):
 
   def EndReadline(self):
     """Called after GNU readline() returns."""
-    # When we're not waiting for input, ignore Ctrl-C so we don't get
-    # KeyboardInterrupt in weird places.
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
     # TODO: Should we restore the user-registered handler?
+    self._IgnoreSigInt()
 
-  def AddUserTrap(self):
+  def AddUserTrap(self, sig_num, handler):
     """For user-defined handlers registered with the 'trap' builtin."""
-    pass
+    if sig_num == signal.SIGINT:
+      # TODO:
+      # Is this different if the shell is interactive?
+      pass
+    signal.signal(sig_num, handler)
 
-  def RemoveUserTrap(self):
+  def RemoveUserTrap(self, sig_num):
     """For user-defined handlers registered with the 'trap' builtin."""
-    pass
+    # Restore default
+    if sig_num == signal.SIGINT:
+      self._IgnoreSigInt()
+    else:
+      signal.signal(sig_num, signal.SIG_DFL)
 
 
 class _FdFrame(object):

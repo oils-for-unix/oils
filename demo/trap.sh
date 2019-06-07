@@ -2,6 +2,18 @@
 #
 # Demo of traps.
 
+sigint-batch() {
+  trap 'echo [got SIGINT]' INT
+  echo "Registered SIGINT trap.  Run 'kill -INT $$' to see a message."
+  sleep 5
+}
+
+sigterm-batch() {
+  trap 'echo [got SIGTERM]' TERM
+  echo "Registered SIGTERM trap.  Run 'kill -TERM $$' to see a message."
+  sleep 5
+}
+
 sigterm() {
   echo "sigterm [$@] $?"
   # quit the process -- otherwise we resume!

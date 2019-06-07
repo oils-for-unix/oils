@@ -27,7 +27,7 @@ http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_
 from __future__ import print_function
 
 import posix
-import signal
+import signal  # for calculating numbers
 import sys
 
 from _devbuild.gen import osh_help  # generated file
@@ -1213,26 +1213,6 @@ class UnAlias(object):
     return status
 
 
-def _SigIntHandler(unused, unused_frame):
-  """
-  Either this handler is installed, or the user's handler is installed.
-  Python's default handler of raising KeyboardInterrupt should never be
-  installed.
-  """
-  # TODO: It might be nice to write diagnostic messages when invokved with
-  # 'osh --debug-pipe=/path'.
-  #
-  # NOTE: I think dash and POSIX somehow set the exit code to 128 + exit code?
-
-  #print('Ctrl-C')
-  pass
-
-
-def RegisterSigIntHandler():
-  #log('Registering')
-  signal.signal(signal.SIGINT, _SigIntHandler)
-
-
 class _TrapHandler(object):
   """A function that is called by Python's signal module.
 
@@ -1303,7 +1283,8 @@ TRAP_SPEC.ShortFlag('-l')
 # OVM match sh/bash more closely.
 
 class Trap(object):
-  def __init__(self, traps, nodes_to_run, ex, errfmt):
+  def __init__(self, sig_state, traps, nodes_to_run, ex, errfmt):
+    self.sig_state = sig_state
     self.traps = traps
     self.nodes_to_run = nodes_to_run
     self.ex = ex  # TODO: ParseTrapCode could be inlined below
@@ -1369,11 +1350,7 @@ class Trap(object):
         except KeyError:
           pass
 
-        # Restore default
-        if sig_num == signal.SIGINT:
-          RegisterSigIntHandler()
-        else:
-          signal.signal(sig_num, signal.SIG_DFL)
+        self.sig_state.RemoveUserTrap(sig_num)
         return 0
 
       raise AssertionError('Signal or trap')
@@ -1397,8 +1374,7 @@ class Trap(object):
       handler = _TrapHandler(node, self.nodes_to_run)
       # For signal handlers, the traps dictionary is used only for debugging.
       self.traps[sig_key] = handler
-
-      signal.signal(sig_num, handler)
+      self.sig_state.AddUserTrap(sig_num, handler)
       return 0
 
     raise AssertionError('Signal or trap')
