@@ -11,6 +11,9 @@ set -o errexit
 # - Catalog all the "slow" syscalls?
 # - read() and wait() are definitely there.
 #   - And write(), but that appears to be handled at the Python level.
+# - Catalog all the cases where CPython handles EINTR
+#   - e.g. sys.stdout.write() ?
+#   - see demo/cpython-signals.sh
 
 # More test cases:
 # https://github.com/oilshell/oil/wiki/Testing-the-Interactive-Shell
