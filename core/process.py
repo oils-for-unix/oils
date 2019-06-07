@@ -41,6 +41,14 @@ def GetHomeDir():
     return e.pw_dir
 
 
+def SignalState_AfterForkingChild():
+  """Not a member of SignalState since we didn't do dependency injection."""
+  # Respond to Ctrl-\ (core dump)
+  signal.signal(signal.SIGQUIT, signal.SIG_DFL)
+  # Respond to Ctrl-C
+  signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+
 class SignalState(object):
   """All changes to global signal state go through this object."""
 
@@ -50,15 +58,15 @@ class SignalState(object):
     self.orig_sigint_handler = signal.getsignal(signal.SIGINT)
 
   def _IgnoreSigInt(self):
-    # NOTE: SIGINT is temporarily enabled during readline() by
-    # frontend/reader.py.
-    # It's treated differently than SIGQUIT and SIGTSTP because Python handles it
-    # with KeyboardInterrupt.  We don't want KeyboardInterrupt at arbitrary
-    # points in a non-interactive shell.  (e.g. osh -c 'sleep 5' then Ctrl-C)
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
   def InitShell(self):
     """Always called when initializing the shell process."""
+
+    # SIGINT is treated differently than SIGQUIT and SIGTSTP because Python
+    # handles it with KeyboardInterrupt.  We don't want KeyboardInterrupt at
+    # arbitrary points in a non-interactive shell.  (e.g. osh -c 'sleep 5' then
+    # Ctrl-C raises KeyboardInterrupt in posix.wait()).
     self._IgnoreSigInt()
 
   def InitInteractiveShell(self, display):
@@ -73,9 +81,7 @@ class SignalState(object):
     # Register a callback to receive terminal width changes.
     signal.signal(signal.SIGWINCH, lambda x, y: display.OnWindowChange())
 
-  def AfterForkingChild(self):
-    pass
-
+  # NOTE: SIGINT is temporarily enabled during readline().
   def BeginReadline(self):
     """Called before invoking GNU readline()."""
     signal.signal(signal.SIGINT, self.orig_sigint_handler)
@@ -647,10 +653,7 @@ class Process(Job):
       raise RuntimeError('Fatal error in posix.fork()')
 
     elif pid == 0:  # child
-      # Respond to Ctrl-\ (core dump)
-      signal.signal(signal.SIGQUIT, signal.SIG_DFL)
-      # Respond to Ctrl-C
-      signal.signal(signal.SIGINT, signal.SIG_DFL)
+      SignalState_AfterForkingChild()
 
       # This doesn't make the child respond to Ctrl-Z?  Why not?  Is there
       # something at the Python level?  signalmodule.c has PyOS_AfterFork but
