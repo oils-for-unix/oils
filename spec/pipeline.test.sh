@@ -144,3 +144,20 @@ echo i=$i
 ## stdout: i=3
 ## N-I dash/mksh stdout: i=0
 
+
+#### SIGPIPE causes pipeline to die (regression for issue #295)
+cat /dev/urandom | sleep 0.1
+echo ${PIPESTATUS[@]}
+
+# hm bash gives '1 0' which seems wrong
+
+## STDOUT:
+141 0
+## END
+## BUG bash STDOUT:
+1 0
+## END
+## N-I zsh STDOUT:
+## END
+## N-I dash status: 2
+## N-I dash stdout-json: ""

@@ -957,10 +957,14 @@ class Waiter(object):
 
     #log('WAIT got %s %s', pid, status)
 
-    # TODO: change status in more cases.
+    # TODO: Also handle WIFSTOPPED case?
     if posix.WIFSIGNALED(status):
+      status = 128 + posix.WTERMSIG(status)
+
+      # Print newline after Ctrl-C.
       if posix.WTERMSIG(status) == signal.SIGINT:
         print()
+
     elif posix.WIFEXITED(status):
       status = posix.WEXITSTATUS(status)
       #log('exit status: %s', status)
