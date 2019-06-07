@@ -48,6 +48,12 @@ def SignalState_AfterForkingChild():
   # Respond to Ctrl-C
   signal.signal(signal.SIGINT, signal.SIG_DFL)
 
+  # Python sets SIGPIPE handler to SIG_IGN by default.  Child processes
+  # shouldn't have this.
+  # https://docs.python.org/2/library/signal.html
+  # See Python/pythonrun.c.
+  signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
 
 class SignalState(object):
   """All changes to global signal state go through this object."""
@@ -626,7 +632,7 @@ class Process(Job):
     self.close_r = r
     self.close_w = w
 
-  def ClosePipe(self):
+  def MaybeClosePipe(self):
     if self.close_r != -1:
       posix.close(self.close_r)
       posix.close(self.close_w)
@@ -746,7 +752,7 @@ class Pipeline(Job):
     prev.AddStateChange(StdoutToPipe(r, w))  # applied on Start()
     p.AddStateChange(StdinFromPipe(r, w))  # applied on Start()
 
-    p.AddPipeToClose(r, w)  # ClosePipe() on Start()
+    p.AddPipeToClose(r, w)  # MaybeClosePipe() on Start()
 
     self.procs.append(p)
 
@@ -781,9 +787,10 @@ class Pipeline(Job):
       self.pipe_status.append(-1)  # uninitialized
       waiter.Register(pid, self.WhenDone)
 
-      # NOTE: This has to be done after every fork() call.  Otherwise processes
-      # will have descriptors from non-adjacent pipes.
-      proc.ClosePipe()
+      # NOTE: This is done in the SHELL PROCESS after every fork() call.
+      # It can't be done at the end; otherwise processes will have descriptors
+      # from non-adjacent pipes.
+      proc.MaybeClosePipe()
 
     if self.last_thunk:
       self.pipe_status.append(-1)  # for self.last_thunk
@@ -825,7 +832,11 @@ class Pipeline(Job):
         ex.ExecuteAndCatch(node)
       finally:
         fd_state.Pop()
-    else:
+      # We won't read anymore.  If we don't do this, then 'cat' in 'cat
+      # /dev/urandom | sleep 1' will never get SIGPIPE.
+      posix.close(r)
+
+    else:  # Background pipe
       ex.ExecuteAndCatch(node)
 
     self.pipe_status[-1] = ex.LastStatus()
