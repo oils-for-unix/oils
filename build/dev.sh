@@ -190,14 +190,19 @@ minimal() {
   asdl/run.sh gen-typed-arith-asdl
 
   # Needed on Travis.
-  grammar
+  oil-grammar
+  find-grammar
 
   pylibc
   line-input
 }
 
-grammar() {
+oil-grammar() {
   oil_lang/grammar_gen.py marshal oil_lang/grammar.pgen2 _devbuild/gen
+}
+
+find-grammar() {
+  oil_lang/grammar_gen.py marshal tools/find/find.pgen2 _devbuild/gen
 }
 
 # Prerequisites: build/codegen.sh {download,install}-re2c

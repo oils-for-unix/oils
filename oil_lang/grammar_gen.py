@@ -126,14 +126,21 @@ def main(argv):
     grammar_path = argv[0]
     out_dir = argv[1]
 
+    basename, _ = os.path.splitext(os.path.basename(grammar_path))
+
+    # HACK for find:
+    if basename == 'find':
+      from tools.find import parse as find_parse
+      tok_def = find_parse.TokenDef()
+
     with open(grammar_path) as f:
       gr = pgen.MakeGrammar(f, tok_def=tok_def)
 
-    marshal_path = os.path.join(out_dir, 'grammar.marshal')
+    marshal_path = os.path.join(out_dir, basename + '.marshal')
     with open(marshal_path, 'wb') as out_f:
       gr.dump(out_f)
 
-    nonterm_path = os.path.join(out_dir, 'grammar_nt.py')
+    nonterm_path = os.path.join(out_dir, basename + '_nt.py')
     with open(nonterm_path, 'w') as out_f:
       gr.dump_nonterminals(out_f)
 
