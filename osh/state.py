@@ -340,52 +340,35 @@ class _ArgFrame(object):
     self.num_shifted = 0
 
 
-class _StackFrame(object):
-  def __init__(self):
-    self.vars = {}  # string -> runtime_asdl.cell
+def _DumpVarFrame(frame):
+  """Dump the stack frame as reasonably compact and readable JSON."""
 
-  def Dump(self):
-    """Dump the stack frame as reasonably compact and readable JSON."""
+  vars_json = {}
+  for name, cell in frame.iteritems():
+    cell_json = {}
 
-    vars_json = {}
-    for name, cell in self.vars.iteritems():
-      cell_json = {}
+    flags = ''
+    if cell.exported:
+      flags += 'x'
+    if cell.readonly:
+      flags += 'r'
+    if flags:
+      cell_json['flags'] = flags
 
-      flags = ''
-      if cell.exported:
-        flags += 'x'
-      if cell.readonly:
-        flags += 'r'
-      if flags:
-        cell_json['flags'] = flags
+    # For compactness, just put the value right in the cell.
+    tag = cell.val.tag
+    if tag == value_e.Undef:
+      cell_json['type'] = 'Undef'
+    elif tag == value_e.Str:
+      cell_json['type'] = 'Str'
+      cell_json['value'] = cell.val.s
+    elif tag == value_e.StrArray:
+      cell_json['type'] = 'StrArray'
+      cell_json['value'] = cell.val.strs
 
-      # For compactness, just put the value right in the cell.
-      tag = cell.val.tag
-      if tag == value_e.Undef:
-        cell_json['type'] = 'Undef'
-      elif tag == value_e.Str:
-        cell_json['type'] = 'Str'
-        cell_json['value'] = cell.val.s
-      elif tag == value_e.StrArray:
-        cell_json['type'] = 'StrArray'
-        cell_json['value'] = cell.val.strs
+    vars_json[name] = cell_json
 
-      vars_json[name] = cell_json
-
-    return {
-        'vars': vars_json,
-        'mutable': self.mutable,
-    }
-
-  def __repr__(self):
-    f = cStringIO.StringIO()
-    f.write('<_StackFrame ')
-    for name, cell in self.vars.iteritems():
-      f.write('  %s = ' % name)
-      f.write('  %s' % cell)
-      f.write('\n')
-    f.write('>')
-    return f.getvalue()
+  return vars_json
 
 
 class DirStack(object):
@@ -441,7 +424,7 @@ class Mem(object):
   def __init__(self, dollar0, argv, environ, arena, has_main=False):
     self.dollar0 = dollar0
     self.argv_stack = [_ArgFrame(argv)]
-    self.var_stack = [_StackFrame()]
+    self.var_stack = [{}]
 
     # The debug_stack isn't strictly necessary for execution.  We use it for
     # crash dumps and for 3 parallel arrays: FUNCNAME, CALL_SOURCE,
@@ -476,14 +459,14 @@ class Mem(object):
     parts.append('<Mem')
     for i, frame in enumerate(self.var_stack):
       parts.append('  -- %d --' % i)
-      for n, v in frame.vars.iteritems():
+      for n, v in frame.iteritems():
         parts.append('  %s %s' % (n, v))
     parts.append('>')
     return '\n'.join(parts) + '\n'
 
   def Dump(self):
     """Copy state before unwinding the stack."""
-    var_stack = [frame.Dump() for frame in self.var_stack]
+    var_stack = [_DumpVarFrame(frame) for frame in self.var_stack]
     argv_stack = [frame.Dump() for frame in self.argv_stack]
     debug_stack = []
     for func_name, source_name, call_spid, argv_i, var_i in self.debug_stack:
@@ -623,7 +606,7 @@ class Mem(object):
   def PushCall(self, func_name, def_spid, argv):
     """For function calls."""
     self.argv_stack.append(_ArgFrame(argv))
-    self.var_stack.append(_StackFrame())
+    self.var_stack.append({})
 
     # bash uses this order: top of stack first.
     self._PushDebugStack(func_name, None)
@@ -657,7 +640,7 @@ class Mem(object):
   def PushTemp(self):
     """For the temporary scope in 'FOO=bar BAR=baz echo'."""
     # We don't want the 'read' builtin to write to this frame!
-    self.var_stack.append(_StackFrame())
+    self.var_stack.append({})
     self._PushDebugStack(None, None)
 
   def PopTemp(self):
@@ -756,20 +739,18 @@ class Mem(object):
     """
     if lookup_mode == scope_e.Dynamic:
       for i in xrange(len(self.var_stack) - 1, -1, -1):
-        frame = self.var_stack[i]
-        namespace = frame.vars
+        namespace = self.var_stack[i]
         if name in namespace:
           cell = namespace[name]
           return cell, namespace
-      return None, self.var_stack[0].vars  # set in global namespace
+      return None, self.var_stack[0]  # set in global namespace
 
     elif lookup_mode == scope_e.LocalOnly:
-      frame = self.var_stack[-1]
-      namespace = frame.vars
+      namespace = self.var_stack[-1]
       return namespace.get(name), namespace
 
     elif lookup_mode == scope_e.GlobalOnly:
-      namespace = self.var_stack[0].vars
+      namespace = self.var_stack[0]
       return namespace.get(name), namespace
 
     else:
@@ -958,7 +939,7 @@ class Mem(object):
 
     Use case: SHELLOPTS.
     """
-    cell = self.var_stack[0].vars[name]
+    cell = self.var_stack[0][name]
     cell.val = new_val
 
   def GetVar(self, name, lookup_mode=scope_e.Dynamic):
@@ -1096,7 +1077,7 @@ class Mem(object):
     # Search from globals up.  Names higher on the stack will overwrite names
     # lower on the stack.
     for scope in self.var_stack:
-      for name, cell in scope.vars.iteritems():
+      for name, cell in scope.iteritems():
         # TODO: Disallow exporting at assignment time.  If an exported Str is
         # changed to StrArray, also clear its 'exported' flag.
         if cell.exported and cell.val.tag == value_e.Str:
@@ -1110,14 +1091,14 @@ class Mem(object):
     """
     # Look up the stack, yielding all variables.  Bash seems to do this.
     for scope in self.var_stack:
-      for name, _ in scope.vars.iteritems():
+      for name, _ in scope.iteritems():
         yield name
 
   def GetAllVars(self):
     """Get all variables and their values, for 'set' builtin. """
     result = {}
     for scope in self.var_stack:
-      for name, cell in scope.vars.iteritems():
+      for name, cell in scope.iteritems():
         if isinstance(cell.val, value__Str):
           result[name] = cell.val.s
     return result

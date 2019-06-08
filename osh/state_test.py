@@ -36,7 +36,7 @@ class MemTest(unittest.TestCase):
     # x=1
     mem.SetVar(
         lvalue.LhsName('x'), value.Str('1'), (), scope_e.Dynamic)
-    self.assertEqual('1', mem.var_stack[-1].vars['x'].val.s)
+    self.assertEqual('1', mem.var_stack[-1]['x'].val.s)
 
     mem.PushTemp()
 
@@ -50,13 +50,13 @@ class MemTest(unittest.TestCase):
     mem.SetVar(
         lvalue.LhsName('x'), value.Str('line'), (), scope_e.LocalOnly)
 
-    self.assertEqual('3', mem.var_stack[-1].vars['E'].val.s)
-    self.assertEqual('line', mem.var_stack[-1].vars['x'].val.s)
-    self.assertEqual('1', mem.var_stack[-2].vars['x'].val.s)
+    self.assertEqual('3', mem.var_stack[-1]['E'].val.s)
+    self.assertEqual('line', mem.var_stack[-1]['x'].val.s)
+    self.assertEqual('1', mem.var_stack[-2]['x'].val.s)
 
     mem.PopTemp()
     self.assertEqual(1, len(mem.var_stack))
-    self.assertEqual('1', mem.var_stack[-1].vars['x'].val.s)
+    self.assertEqual('1', mem.var_stack[-1]['x'].val.s)
 
   def testSetVarClearFlag(self):
     mem = _InitMem()
@@ -68,7 +68,7 @@ class MemTest(unittest.TestCase):
     # local x=y
     mem.SetVar(
         lvalue.LhsName('x'), value.Str('y'), (), scope_e.LocalOnly)
-    self.assertEqual('y', mem.var_stack[-1].vars['x'].val.s)
+    self.assertEqual('y', mem.var_stack[-1]['x'].val.s)
 
     # New frame
     mem.PushCall('my-func', 0, ['TWO'])
@@ -77,21 +77,21 @@ class MemTest(unittest.TestCase):
     # x=y -- test out dynamic scope
     mem.SetVar(
         lvalue.LhsName('x'), value.Str('YYY'), (), scope_e.Dynamic)
-    self.assertEqual('YYY', mem.var_stack[-2].vars['x'].val.s)
-    self.assertEqual(None, mem.var_stack[-1].vars.get('x'))
+    self.assertEqual('YYY', mem.var_stack[-2]['x'].val.s)
+    self.assertEqual(None, mem.var_stack[-1].get('x'))
 
     # myglobal=g
     mem.SetVar(
         lvalue.LhsName('myglobal'), value.Str('g'), (), scope_e.Dynamic)
-    self.assertEqual('g', mem.var_stack[0].vars['myglobal'].val.s)
-    self.assertEqual(False, mem.var_stack[0].vars['myglobal'].exported)
+    self.assertEqual('g', mem.var_stack[0]['myglobal'].val.s)
+    self.assertEqual(False, mem.var_stack[0]['myglobal'].exported)
 
     # 'export PYTHONPATH=/'
     mem.SetVar(
         lvalue.LhsName('PYTHONPATH'), value.Str('/'),
         (var_flags_e.Exported,), scope_e.Dynamic)
-    self.assertEqual('/', mem.var_stack[0].vars['PYTHONPATH'].val.s)
-    self.assertEqual(True, mem.var_stack[0].vars['PYTHONPATH'].exported)
+    self.assertEqual('/', mem.var_stack[0]['PYTHONPATH'].val.s)
+    self.assertEqual(True, mem.var_stack[0]['PYTHONPATH'].exported)
 
     ex = mem.GetExported()
     self.assertEqual('/', ex['PYTHONPATH'])
@@ -99,34 +99,34 @@ class MemTest(unittest.TestCase):
     mem.SetVar(
         lvalue.LhsName('PYTHONPATH'), None, (var_flags_e.Exported,),
         scope_e.Dynamic)
-    self.assertEqual(True, mem.var_stack[0].vars['PYTHONPATH'].exported)
+    self.assertEqual(True, mem.var_stack[0]['PYTHONPATH'].exported)
 
     # 'export myglobal'.  None means don't touch it.  Undef would be confusing
     # because it might mean "unset", but we have a separated API for that.
     mem.SetVar(
         lvalue.LhsName('myglobal'), None, (var_flags_e.Exported,),
         scope_e.Dynamic)
-    self.assertEqual(True, mem.var_stack[0].vars['myglobal'].exported)
+    self.assertEqual(True, mem.var_stack[0]['myglobal'].exported)
 
     # export g2  -- define and export empty
     mem.SetVar(
         lvalue.LhsName('g2'), None, (var_flags_e.Exported,),
         scope_e.Dynamic)
-    self.assertEqual(value_e.Undef, mem.var_stack[0].vars['g2'].val.tag)
-    self.assertEqual(True, mem.var_stack[0].vars['g2'].exported)
+    self.assertEqual(value_e.Undef, mem.var_stack[0]['g2'].val.tag)
+    self.assertEqual(True, mem.var_stack[0]['g2'].exported)
 
     # readonly myglobal
-    self.assertEqual(False, mem.var_stack[0].vars['myglobal'].readonly)
+    self.assertEqual(False, mem.var_stack[0]['myglobal'].readonly)
     mem.SetVar(
         lvalue.LhsName('myglobal'), None, (var_flags_e.ReadOnly,),
         scope_e.Dynamic)
-    self.assertEqual(True, mem.var_stack[0].vars['myglobal'].readonly)
+    self.assertEqual(True, mem.var_stack[0]['myglobal'].readonly)
 
     mem.SetVar(
         lvalue.LhsName('PYTHONPATH'), value.Str('/lib'), (),
         scope_e.Dynamic)
-    self.assertEqual('/lib', mem.var_stack[0].vars['PYTHONPATH'].val.s)
-    self.assertEqual(True, mem.var_stack[0].vars['PYTHONPATH'].exported)
+    self.assertEqual('/lib', mem.var_stack[0]['PYTHONPATH'].val.s)
+    self.assertEqual(True, mem.var_stack[0]['PYTHONPATH'].exported)
 
     # COMPREPLY=(1 2 3)
     # invariant to enforce: arrays can't be exported
@@ -134,7 +134,7 @@ class MemTest(unittest.TestCase):
         lvalue.LhsName('COMPREPLY'), value.StrArray(['1', '2', '3']),
         (), scope_e.GlobalOnly)
     self.assertEqual(
-        ['1', '2', '3'], mem.var_stack[0].vars['COMPREPLY'].val.strs)
+        ['1', '2', '3'], mem.var_stack[0]['COMPREPLY'].val.strs)
 
     # export COMPREPLY
     try:
@@ -150,9 +150,9 @@ class MemTest(unittest.TestCase):
     mem.SetVar(
         lvalue.LhsName('r'), value.Str('1'), (var_flags_e.ReadOnly,),
         scope_e.Dynamic)
-    self.assertEqual('1', mem.var_stack[0].vars['r'].val.s)
-    self.assertEqual(False, mem.var_stack[0].vars['r'].exported)
-    self.assertEqual(True, mem.var_stack[0].vars['r'].readonly)
+    self.assertEqual('1', mem.var_stack[0]['r'].val.s)
+    self.assertEqual(False, mem.var_stack[0]['r'].exported)
+    self.assertEqual(True, mem.var_stack[0]['r'].readonly)
     print(mem)
 
     # r=newvalue
@@ -168,24 +168,24 @@ class MemTest(unittest.TestCase):
     mem.SetVar(
         lvalue.LhsName('r2'), None, (var_flags_e.ReadOnly,),
         scope_e.Dynamic)
-    self.assertEqual(value_e.Undef, mem.var_stack[0].vars['r2'].val.tag)
-    self.assertEqual(True, mem.var_stack[0].vars['r2'].readonly)
+    self.assertEqual(value_e.Undef, mem.var_stack[0]['r2'].val.tag)
+    self.assertEqual(True, mem.var_stack[0]['r2'].readonly)
 
     # export -n PYTHONPATH
     # Remove the exported property.  NOTE: scope is LocalOnly for Oil?
-    self.assertEqual(True, mem.var_stack[0].vars['PYTHONPATH'].exported)
+    self.assertEqual(True, mem.var_stack[0]['PYTHONPATH'].exported)
     mem.ClearFlag('PYTHONPATH', var_flags_e.Exported, scope_e.Dynamic)
-    self.assertEqual(False, mem.var_stack[0].vars['PYTHONPATH'].exported)
+    self.assertEqual(False, mem.var_stack[0]['PYTHONPATH'].exported)
 
     lhs = lvalue.LhsIndexedName('a', 1)
     lhs.spids.append(0)
     # a[1]=2
     mem.SetVar(lhs, value.Str('2'), (), scope_e.Dynamic)
-    self.assertEqual([None, '2'], mem.var_stack[0].vars['a'].val.strs)
+    self.assertEqual([None, '2'], mem.var_stack[0]['a'].val.strs)
 
     # a[1]=3
     mem.SetVar(lhs, value.Str('3'), (), scope_e.Dynamic)
-    self.assertEqual([None, '3'], mem.var_stack[0].vars['a'].val.strs)
+    self.assertEqual([None, '3'], mem.var_stack[0]['a'].val.strs)
 
     # a[1]=(x y z)  # illegal
     try:
@@ -199,7 +199,7 @@ class MemTest(unittest.TestCase):
     mem.SetVar(
         lvalue.LhsName('a'), None, (var_flags_e.ReadOnly,),
         scope_e.Dynamic)
-    self.assertEqual(True, mem.var_stack[0].vars['a'].readonly)
+    self.assertEqual(True, mem.var_stack[0]['a'].readonly)
 
     try:
       # a[1]=3
