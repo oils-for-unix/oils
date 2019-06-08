@@ -42,25 +42,21 @@ class MemTest(unittest.TestCase):
 
     self.assertEqual(2, len(mem.var_stack))
 
-    # Temporary frame is immutable
-    self.assertEqual(False, mem.var_stack[-1].mutable)
-    self.assertEqual(True, mem.var_stack[-2].mutable)
-
     # x=temp E=3 read x <<< 'line'
     mem.SetVar(
-        lvalue.LhsName('x'), value.Str('temp'), (), scope_e.TempEnv)
+        lvalue.LhsName('x'), value.Str('temp'), (), scope_e.LocalOnly)
     mem.SetVar(
-        lvalue.LhsName('E'), value.Str('3'), (), scope_e.TempEnv)
+        lvalue.LhsName('E'), value.Str('3'), (), scope_e.LocalOnly)
     mem.SetVar(
         lvalue.LhsName('x'), value.Str('line'), (), scope_e.LocalOnly)
 
     self.assertEqual('3', mem.var_stack[-1].vars['E'].val.s)
-    self.assertEqual('temp', mem.var_stack[-1].vars['x'].val.s)
-    self.assertEqual('line', mem.var_stack[-2].vars['x'].val.s)
+    self.assertEqual('line', mem.var_stack[-1].vars['x'].val.s)
+    self.assertEqual('1', mem.var_stack[-2].vars['x'].val.s)
 
     mem.PopTemp()
     self.assertEqual(1, len(mem.var_stack))
-    self.assertEqual('line', mem.var_stack[-1].vars['x'].val.s)
+    self.assertEqual('1', mem.var_stack[-1].vars['x'].val.s)
 
   def testSetVarClearFlag(self):
     mem = _InitMem()

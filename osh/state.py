@@ -341,9 +341,8 @@ class _ArgFrame(object):
 
 
 class _StackFrame(object):
-  def __init__(self, mutable=True):
+  def __init__(self):
     self.vars = {}  # string -> runtime_asdl.cell
-    self.mutable = mutable
 
   def Dump(self):
     """Dump the stack frame as reasonably compact and readable JSON."""
@@ -380,7 +379,7 @@ class _StackFrame(object):
 
   def __repr__(self):
     f = cStringIO.StringIO()
-    f.write('<_StackFrame mutable:%s' % self.mutable)
+    f.write('<_StackFrame ')
     for name, cell in self.vars.iteritems():
       f.write('  %s = ' % name)
       f.write('  %s' % cell)
@@ -658,7 +657,7 @@ class Mem(object):
   def PushTemp(self):
     """For the temporary scope in 'FOO=bar BAR=baz echo'."""
     # We don't want the 'read' builtin to write to this frame!
-    self.var_stack.append(_StackFrame(mutable=False))
+    self.var_stack.append(_StackFrame())
     self._PushDebugStack(None, None)
 
   def PopTemp(self):
@@ -674,7 +673,7 @@ class Mem(object):
     var_i = len(self.var_stack) - 1
 
     # The stack is a 5-tuple, where func_name and source_name are optional.  If
-    # both are unset, then it's aTemp frame'.
+    # both are unset, then it's a "temp frame".
     self.debug_stack.append(
         (func_name, source_name, self.current_spid, argv_i, var_i)
     )
@@ -758,8 +757,6 @@ class Mem(object):
     if lookup_mode == scope_e.Dynamic:
       for i in xrange(len(self.var_stack) - 1, -1, -1):
         frame = self.var_stack[i]
-        if not frame.mutable and writing:
-          continue
         namespace = frame.vars
         if name in namespace:
           cell = namespace[name]
@@ -767,15 +764,6 @@ class Mem(object):
       return None, self.var_stack[0].vars  # set in global namespace
 
     elif lookup_mode == scope_e.LocalOnly:
-      frame = self.var_stack[-1]
-      if not frame.mutable and writing:
-        frame = self.var_stack[-2]
-        # The frame below a readonly one should be mutable.
-        assert frame.mutable, frame
-      namespace = frame.vars
-      return namespace.get(name), namespace
-
-    elif lookup_mode == scope_e.TempEnv:
       frame = self.var_stack[-1]
       namespace = frame.vars
       return namespace.get(name), namespace

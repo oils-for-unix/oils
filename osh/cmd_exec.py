@@ -614,7 +614,7 @@ class Executor(object):
       # Set each var so the next one can reference it.  Example:
       # FOO=1 BAR=$FOO ls /
       self.mem.SetVar(lvalue.LhsName(env_pair.name), val,
-                      (var_flags_e.Exported,), scope_e.TempEnv)
+                      (var_flags_e.Exported,), scope_e.LocalOnly)
 
   def _Dispatch(self, node, fork_external):
     # If we call RunCommandSub in a recursive call to the executor, this will
