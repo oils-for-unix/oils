@@ -266,9 +266,16 @@ word-eval() {
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
+# These cases apply to many shells.
 assign() {
-  sh-spec spec/assign.test.sh --osh-failures-allowed 2 \
-    ${REF_SHELLS[@]} $OSH_LIST "$@" 
+  sh-spec spec/assign.test.sh --osh-failures-allowed 1 \
+    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@" 
+}
+
+# These cases apply to a few shells.
+assign-extended() {
+  sh-spec spec/assign-extended.test.sh --osh-failures-allowed 1 \
+    $BASH $MKSH $OSH_LIST "$@" 
 }
 
 background() {

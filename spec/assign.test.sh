@@ -2,10 +2,10 @@
 
 #### Env value doesn't persist
 FOO=foo printenv.py FOO
-echo [$FOO]
+echo -$FOO-
 ## STDOUT:
 foo
-[]
+--
 ## END
 
 #### Env value with equals
@@ -120,12 +120,13 @@ foo\=bar
 # mksh gives acceptable error of 1.
 FOO=bar for i in a b; do printenv.py $FOO; done
 ## BUG dash status: 0
-## OK  mksh status: 1
+## OK  mksh/zsh status: 1
 ## status: 2
 
 #### Trying to run keyword 'for'
 FOO=bar for
 ## status: 127
+## OK zsh status: 1
 
 #### Empty env binding
 EMPTY= printenv.py EMPTY
@@ -150,306 +151,41 @@ argv.py "$a"
 # existing implementations.
 FOO=foo readonly v=$(printenv.py FOO)
 echo "v=$v"
-## OK bash/dash/mksh stdout: v=None
-## OK bash/dash/mksh status: 0
+## OK bash/dash/mksh/zsh stdout: v=None
+## OK bash/dash/mksh/zsh status: 0
 ## status: 2
 
-#### local -a
-# nixpkgs setup.sh uses this (issue #26)
-f() {
-  local -a array=(x y z)
-  argv.py "${array[@]}"
-}
-f
-## stdout: ['x', 'y', 'z']
-## N-I dash stdout-json: ""
-## N-I dash status: 2
-## N-I mksh stdout-json: ""
-## N-I mksh status: 1
-
-#### declare -a
-# nixpkgs setup.sh uses this (issue #26)
-declare -a array=(x y z)
-argv.py "${array[@]}"
-## stdout: ['x', 'y', 'z']
-## N-I dash stdout-json: ""
-## N-I dash status: 2
-## N-I mksh stdout-json: ""
-## N-I mksh status: 1
-
-#### typeset -a a[1]=a a[3]=c
-# declare works the same way in bash, but not mksh.
-# spaces are NOT allowed here.
-typeset -a a[1*1]=x a[1+2]=z
-argv.py "${a[@]}"
-## stdout: ['x', 'z']
-## N-I dash stdout-json: ""
-## N-I dash status: 2
-
-#### indexed LHS without spaces is allowed
-a[1 * 1]=x a[ 1 + 2 ]=z
-argv.py "${a[@]}"
-## stdout: ['x', 'z']
-## N-I dash stdout-json: ""
-## N-I dash status: 2
-
-#### declare -f exit code indicates function existence
-func2=x  # var names are NOT found
-declare -f myfunc func2
-echo $?
-
-myfunc() { echo myfunc; }
-# This prints the source code.
-declare -f myfunc func2 > /dev/null
-echo $?
-
-func2() { echo func2; }
-declare -f myfunc func2 > /dev/null
-echo $?
-## STDOUT:
-1
-1
-0
-## END
-## N-I dash/mksh STDOUT:
-127
-127
-127
-## END
-
-#### declare -F prints function names
-add () { expr 4 + 4; }
-div () { expr 6 / 2; }
-ek () { echo hello; }
-__ec () { echo hi; }
-_ab () { expr 10 % 3; }
-
-declare -F
-## STDOUT:
-declare -f __ec
-declare -f _ab
-declare -f add
-declare -f div
-declare -f ek
-## END
-## N-I dash/mksh stdout-json: ""
-## N-I dash/mksh status: 127
-
-#### declare -p 
-var1() { echo func; }  # function names are NOT found.
-declare -p var1 var2 >/dev/null
-echo $?
-
-var1=x
-declare -p var1 var2 >/dev/null
-echo $?
-
-var2=y
-declare -p var1 var2 >/dev/null
-echo $?
-## STDOUT:
-1
-1
-0
-## N-I dash/mksh STDOUT:
-127
-127
-127
-## END
-
-#### typeset -f 
-# mksh implement typeset but not declare
-typeset  -f myfunc func2
-echo $?
-
-myfunc() { echo myfunc; }
-# This prints the source code.
-typeset  -f myfunc func2 > /dev/null
-echo $?
-
-func2() { echo func2; }
-typeset  -f myfunc func2 > /dev/null
-echo $?
-## STDOUT:
-1
-1
-0
-## END
-## N-I dash STDOUT:
-127
-127
-127
-## END
-
-#### typeset -p 
-var1() { echo func; }  # function names are NOT found.
-typeset -p var1 var2 >/dev/null
-echo $?
-
-var1=x
-typeset -p var1 var2 >/dev/null
-echo $?
-
-var2=y
-typeset -p var1 var2 >/dev/null
-echo $?
-## STDOUT:
-1
-1
-0
-## BUG mksh STDOUT:
-# mksh doesn't respect exit codes
-0
-0
-0
-## END
-## N-I dash STDOUT:
-127
-127
-127
-## END
-
-#### typeset -r makes a string readonly
-typeset -r s1='12'
-typeset -r s2='34'
-
-s1='c'
-echo status=$?
-s2='d'
-echo status=$?
-
-s1+='e'
-echo status=$?
-s2+='f'
-echo status=$?
-
-unset s1
-echo status=$?
-unset s2
-echo status=$?
-
-## status: 1
-## stdout-json: ""
-## OK mksh status: 2
-## OK bash status: 0
-## OK bash STDOUT:
-status=1
-status=1
-status=1
-status=1
-status=1
-status=1
-## END
-## OK dash status: 0
-## N-I dash STDOUT:
-status=0
-status=0
-status=127
-status=127
-status=0
-status=0
-## END
-
-#### typeset -ar makes it readonly
-typeset -a -r array1=(1 2)
-typeset -ar array2=(3 4)
-
-array1=('c')
-echo status=$?
-array2=('d')
-echo status=$?
-
-array1+=('e')
-echo status=$?
-array2+=('f')
-echo status=$?
-
-unset array1
-echo status=$?
-unset array2
-echo status=$?
-
-## status: 1
-## stdout-json: ""
-## OK bash status: 0
-## OK bash STDOUT:
-status=1
-status=1
-status=1
-status=1
-status=1
-status=1
-## END
-## N-I dash status: 2
-## N-I dash stdout-json: ""
-## N-I mksh status: 1
-## N-I mksh stdout-json: ""
-
-#### typeset -x makes it exported
-typeset -rx PYTHONPATH=lib/
-printenv.py PYTHONPATH
-## STDOUT:
-lib/
-## END
-## N-I dash stdout: None
-
-#### Multiple assignments / array assignments on a line
-a=1 b[0+0]=2 c=3
-echo $a $b $c
-## stdout: 1 2 3
-## N-I dash stdout:
 
 #### assignments / array assignments not interpreted after 'echo'
 a=1 echo b[0]=2 c=3
 ## stdout: b[0]=2 c=3
-
-#### Env bindings shouldn't contain array assignments
-a=1 b[0]=2 c=3 printenv.py a b c
-## status: 2
-## stdout-json: ""
-## OK bash STDOUT:
-1
-None
-3
-## END
-## OK bash status: 0
-## BUG mksh STDOUT:
-1
-2
-3
-## END
-## OK mksh status: 0
-## N-I dash stdout-json: ""
-## N-I dash status: 127
-
-#### syntax error in array assignment
-a=x b[0+]=y c=z
-echo $a $b $c
-## status: 2
-## stdout-json: ""
-## BUG bash stdout: x
-## BUG bash status: 0
-## OK mksh stdout-json: ""
-## OK mksh status: 1
-## N-I dash stdout:
-## N-I dash status: 0
+# zsh interprets [0] as some kind of glob
+## OK zsh stdout-json: ""
+## OK zsh status: 1
 
 #### dynamic local variables
 f() {
   local "$1"  # Only x is assigned here
-  echo [$x]
-  echo [$a]
+  echo -$x-
+  echo -$a-
 
   local $1  # x and a are assigned here
-  echo [$x]
-  echo [$a]
+  echo -$x-
+  echo -$a-
 }
 f 'x=y a=b'
 ## STDOUT:
-[y a=b]
-[]
-[y]
-[b]
+-y a=b-
+--
+-y-
+-b-
+## END
+# zsh doesn't do word splitting
+## OK zsh STDOUT:
+-y a=b-
+--
+-y a=b-
+--
 ## END
 
 #### 'local x' does not set variable
@@ -461,6 +197,7 @@ f() {
 f
 ## status: 1
 ## OK dash status: 2
+## BUG zsh status: 0
 
 #### 'local -a x' does not set variable
 set -o nounset
@@ -471,6 +208,7 @@ f() {
 f
 ## status: 1
 ## OK dash status: 2
+## BUG zsh status: 0
 
 #### 'local x' and then array assignment
 f() {
@@ -483,6 +221,7 @@ f
 ## stdout: foo
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
+## BUG zsh stdout: o
 
 #### 'declare -A' and then dict assignment
 declare -A foo
@@ -495,41 +234,6 @@ echo ${foo["bar"]}
 ## N-I dash stdout-json: ""
 ## N-I mksh status: 1
 ## N-I mksh stdout-json: ""
-
-#### declare -g (bash-specific; bash-completion uses it)
-f() {
-  declare -g G=42
-  declare L=99
-
-  declare -Ag dict
-  dict["foo"]=bar
-
-  declare -A localdict
-  localdict["spam"]=Eggs
-
-  # For bash-completion
-  eval 'declare -Ag ev'
-  ev["ev1"]=ev2
-}
-f
-argv.py "$G" "$L"
-argv.py "${dict["foo"]}" "${localdict["spam"]}"
-argv.py "${ev["ev1"]}"
-## STDOUT:
-['42', '']
-['bar', '']
-['ev2']
-## END
-## N-I dash STDOUT:
-['', '']
-
-## END
-## N-I dash status: 2
-## N-I mksh STDOUT:
-['', '']
-
-## END
-## N-I mksh status: 1
 
 #### declare in an if statement
 # bug caught by my feature detection snippet in bash-completion
@@ -546,6 +250,7 @@ bar
 eggs
 ## END
 
+
 #### Modify a temporary binding
 # (regression for bug found by Michael Greenberg)
 f() {
@@ -558,3 +263,103 @@ x=5 f
 x before = 5
 x after  = 6
 ## END
+
+#### Reveal existence of "temp frame" (All shells disagree here!!!)
+f() {
+  echo "x=$x"
+
+  x=mutated-temp  # mutate temp frame
+  echo "x=$x"
+
+  # Declare a new local
+  local x='local'
+  echo "x=$x"
+
+  # Unset it
+  unset x
+  echo "x=$x"
+}
+
+x=global
+x=temp-binding f
+echo "x=$x"
+
+## STDOUT:
+x=temp-binding
+x=mutated-temp
+x=local
+x=mutated-temp
+x=global
+## END
+## OK dash STDOUT:
+x=temp-binding
+x=mutated-temp
+x=local
+x=
+x=mutated-temp
+## END
+## OK bash STDOUT:
+x=temp-binding
+x=mutated-temp
+x=local
+x=global
+x=global
+## END
+## OK mksh STDOUT:
+x=temp-binding
+x=mutated-temp
+x=local
+x=mutated-temp
+x=mutated-temp
+## END
+## OK zsh STDOUT:
+x=temp-binding
+x=mutated-temp
+x=local
+x=
+x=global
+## END
+## OK yash STDOUT:
+# yash has no locals
+x=temp-binding
+x=mutated-temp
+x=mutated-temp
+x=
+x=
+## END
+
+#### Test above without 'local' (which is not POSIX)
+f() {
+  echo "x=$x"
+
+  x=mutated-temp  # mutate temp frame
+  echo "x=$x"
+
+  # Unset it
+  unset x
+  echo "x=$x"
+}
+
+x=global
+x=temp-binding f
+echo "x=$x"
+
+## STDOUT:
+x=temp-binding
+x=mutated-temp
+x=global
+x=global
+## END
+## BUG dash/mksh/yash STDOUT:
+x=temp-binding
+x=mutated-temp
+x=
+x=
+## END
+## BUG zsh STDOUT:
+x=temp-binding
+x=mutated-temp
+x=
+x=global
+## END
+
