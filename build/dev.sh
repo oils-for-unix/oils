@@ -160,8 +160,15 @@ line-input() {
   native/line_input_test.py "$@"
 }
 
+posix() {
+  rm -f _devbuild/py-ext/x86_64/posix_.so
+
+  py-ext posix_ build/setup_posix.py
+  native/posix_test.py "$@"
+}
+
 clean() {
-  rm -f --verbose libc.so fastlex.so
+  rm -f --verbose libc.so fastlex.so line_input.so posix_.so
   rm -r -f --verbose _devbuild/py-ext
 }
 
