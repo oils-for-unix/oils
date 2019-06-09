@@ -14,8 +14,6 @@ import sys
 
 from asdl import const
 
-import posix_ as posix
-
 from typing import IO, NoReturn, Any, TYPE_CHECKING
 if TYPE_CHECKING:  # avoid circular build deps
   from _devbuild.gen.syntax_asdl import token, word_part_t, word_t
@@ -169,7 +167,8 @@ def BackslashEscape(s, meta_chars):
 def ShowFdState():
   # type: () -> None
   import subprocess
-  subprocess.call(['ls', '-l', '/proc/%d/fd' % posix.getpid()])
+  import posix_ as posix
+  #subprocess.call(['ls', '-l', '/proc/%d/fd' % posix.getpid()])
 
 
 class DebugFile(object):

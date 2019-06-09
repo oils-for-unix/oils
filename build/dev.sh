@@ -160,7 +160,7 @@ line-input() {
   native/line_input_test.py "$@"
 }
 
-posix() {
+posix_() {
   rm -f _devbuild/py-ext/x86_64/posix_.so
 
   py-ext posix_ build/setup_posix.py
@@ -202,6 +202,7 @@ minimal() {
 
   pylibc
   line-input
+  posix_
 }
 
 oil-grammar() {

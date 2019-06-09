@@ -10,7 +10,6 @@ from frontend import lex
 
 from typing import Iterator, Tuple, Callable, Dict, List, Any, TYPE_CHECKING
 
-import posix_ as posix
 # bin/osh should work without compiling fastlex?  But we want all the unit
 # tests to run with a known version of it.
 try:
