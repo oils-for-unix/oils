@@ -23,7 +23,7 @@ osh-files() {
   # - test library
 
   ls {bin,osh,core,frontend}/*.py native/*.c "${ASDL_FILES[@]}" \
-    | filter-py | grep -E -v 'line_input.c$|_gen.py$|test_lib.py$'
+    | filter-py | grep -E -v 'posixmodule.c$|line_input.c$|_gen.py$|test_lib.py$'
 }
 
 # cloc doesn't understand ASDL files.
