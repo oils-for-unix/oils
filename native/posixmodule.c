@@ -47,62 +47,9 @@ corresponding Unix manual entries for more information on calls.");
 #include <fcntl.h>
 #endif /* HAVE_FCNTL_H */
 
-#ifdef HAVE_GRP_H
-#include <grp.h>
-#endif
-
-#ifdef HAVE_SYSEXITS_H
-#include <sysexits.h>
-#endif /* HAVE_SYSEXITS_H */
-
-#ifdef HAVE_SYS_LOADAVG_H
-#include <sys/loadavg.h>
-#endif
-
-/* Various compilers have only certain posix functions */
-/* XXX Gosh I wish these were all moved into pyconfig.h */
-#if defined(PYCC_VACPP) && defined(PYOS_OS2)
-#include <process.h>
-#else
-#if defined(__WATCOMC__) && !defined(__QNX__)           /* Watcom compiler */
-#define HAVE_GETCWD     1
-#define HAVE_OPENDIR    1
-#define HAVE_SYSTEM     1
-#if defined(__OS2__)
-#define HAVE_EXECV      1
-#define HAVE_WAIT       1
-#endif
-#include <process.h>
-#else
-#ifdef __BORLANDC__             /* Borland compiler */
-#define HAVE_EXECV      1
-#define HAVE_GETCWD     1
-#define HAVE_OPENDIR    1
-#define HAVE_PIPE       1
-#define HAVE_POPEN      1
-#define HAVE_SYSTEM     1
-#define HAVE_WAIT       1
-#else
-#ifdef _MSC_VER         /* Microsoft compiler */
-#define HAVE_GETCWD     1
-#define HAVE_SPAWNV     1
-#define HAVE_EXECV      1
-#define HAVE_PIPE       1
-#define HAVE_POPEN      1
-#define HAVE_SYSTEM     1
-#define HAVE_CWAIT      1
-#define HAVE_FSYNC      1
-#define fsync _commit
-#else
-#if defined(PYOS_OS2) && defined(PYCC_GCC) || defined(__VMS)
-/* Everything needed is defined in PC/os2emx/pyconfig.h or vms/pyconfig.h */
-#else                   /* all other compilers */
 /* Unix functions that the configure script doesn't check for */
 #define HAVE_EXECV      1
 #define HAVE_FORK       1
-#if defined(__USLC__) && defined(__SCO_VERSION__)       /* SCO UDK Compiler */
-#define HAVE_FORK1      1
-#endif
 #define HAVE_GETCWD     1
 #define HAVE_GETEGID    1
 #define HAVE_GETEUID    1
@@ -110,31 +57,14 @@ corresponding Unix manual entries for more information on calls.");
 #define HAVE_GETPPID    1
 #define HAVE_GETUID     1
 #define HAVE_KILL       1
-#define HAVE_OPENDIR    1
 #define HAVE_PIPE       1
-#ifndef __rtems__
-#define HAVE_POPEN      1
-#endif
-#define HAVE_SYSTEM     1
 #define HAVE_WAIT       1
-#define HAVE_TTYNAME    1
-#endif  /* PYOS_OS2 && PYCC_GCC && __VMS */
-#endif  /* _MSC_VER */
-#endif  /* __BORLANDC__ */
-#endif  /* ! __WATCOMC__ || __QNX__ */
-#endif /* ! __IBMC__ */
 
 #ifndef HAVE_UNISTD_H
 extern int mkdir(const char *, mode_t);
 extern int chdir(const char *);
 extern int rmdir(const char *);
 extern int chmod(const char *, mode_t);
-/*#ifdef HAVE_FCHMOD
-extern int fchmod(int, mode_t);
-#endif*/
-/*#ifdef HAVE_LCHMOD
-extern int lchmod(const char *, mode_t);
-#endif*/
 extern int chown(const char *, uid_t, gid_t);
 extern char *getcwd(char *, int);
 extern char *strerror(int);
@@ -1360,40 +1290,6 @@ posix_execve(PyObject *self, PyObject *args)
     return NULL;
 }
 #endif /* HAVE_EXECV */
-
-#ifdef HAVE_FORK1
-PyDoc_STRVAR_remove(posix_fork1__doc__,
-"fork1() -> pid\n\n\
-Fork a child process with a single multiplexed (i.e., not bound) thread.\n\
-\n\
-Return 0 to child process and PID of child to parent process.");
-
-static PyObject *
-posix_fork1(PyObject *self, PyObject *noargs)
-{
-    pid_t pid;
-    int result = 0;
-    _PyImport_AcquireLock();
-    pid = fork1();
-    if (pid == 0) {
-        /* child: this clobbers and resets the import lock. */
-        PyOS_AfterFork();
-    } else {
-        /* parent: release the import lock. */
-        result = _PyImport_ReleaseLock();
-    }
-    if (pid == -1)
-        return posix_error();
-    if (result < 0) {
-        /* Don't clobber the OSError if the fork failed. */
-        PyErr_SetString(PyExc_RuntimeError,
-                        "not holding the import lock");
-        return NULL;
-    }
-    return PyLong_FromPid(pid);
-}
-#endif
-
 
 #ifdef HAVE_FORK
 PyDoc_STRVAR_remove(posix_fork__doc__,

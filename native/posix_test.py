@@ -21,9 +21,7 @@ I left in:
   - getppid - I think for $PPID
   - setpgrp, getpgrp
 
-  - fork1() -- what is this for?
   - mkdir, rmdir() -- might be useful for tools
-
 
 Other notes:
 
@@ -31,9 +29,12 @@ Other notes:
 """
 from __future__ import print_function
 
+import signal
+import subprocess
 import unittest
 
 import posix_  # module under test
+from core.util import log
 
 
 # Taken from build/oil-defs/.../posix_methods.def
@@ -83,7 +84,7 @@ FUNCS = [
     'O_WRONLY',
 ]
 
-class FooTest(unittest.TestCase):
+class PosixTest(unittest.TestCase):
 
   def testFoo(self):
     print(posix_.getcwd())
@@ -95,6 +96,73 @@ class FooTest(unittest.TestCase):
     for name in FUNCS:
       func = getattr(posix_, name)
       print(func)
+
+  def testRead(self):
+    if posix_.environ.get('EINTR_TEST'):
+      # Now we can do kill -TERM PID can get EINTR.
+      # Or Ctrl-C for KeyboardInterrupt
+
+      signal.signal(signal.SIGTERM, _Handler)
+      log('Hanging on read in pid %d', posix_.getpid())
+      posix_.read(0, 1)
+
+  def testWait(self):
+    if posix_.environ.get('EINTR_TEST'):
+      # Now we can do kill -TERM PID can get EINTR.
+      signal.signal(signal.SIGTERM, _Handler)
+
+      p = subprocess.Popen(['sleep', '5'])
+      log('started sleep pid %d', p.pid)
+
+      log('Hanging on wait in pid %d', posix_.getpid())
+      posix_.wait()
+
+  def testWrite(self):
+    if posix_.environ.get('EINTR_TEST'):
+
+      signal.signal(signal.SIGTERM, _Handler)
+      r, w = posix_.pipe()
+      log('Hanging on write in pid %d', posix_.getpid())
+
+      # 1 byte bigger than pipe size
+      n = posix_.write(w, 'x'*65537)
+      log('1: Wrote %d bytes', n)
+
+      # write returns early when a signal interrupts it, and we read at least
+      # one byte!  We do NOT get EINTR>
+
+      # On the second try, it didn't write anything, and we get EINTR!
+
+      log('Second try (pid %d)', posix_.getpid())
+      n = posix_.write(w, 'x'*65537)
+      log('2: Wrote %d bytes', n)
+
+  def testPrint(self):
+    # Conclusion: print CAN raise IOError with EINTR.
+
+    if posix_.environ.get('EINTR_TEST'):
+
+      signal.signal(signal.SIGTERM, _Handler)
+      r, w = posix_.pipe()
+      log('Hanging on write in pid %d', posix_.getpid())
+      f = posix_.fdopen(w, 'w')
+
+      # 1 byte bigger than pipe size
+      print('x'*65537, file=f)
+      log('1: done')
+
+      # write returns early when a signal interrupts it, and we read at least
+      # one byte!  We do NOT get EINTR>
+
+      # On the second try, it didn't write anything, and we get EINTR!
+
+      log('Second try (pid %d)', posix_.getpid())
+      print('x'*65537, file=f)
+      log('2: done')
+
+
+def _Handler(x, y):
+  log('Got signal %s %s', x, y)
 
 
 if __name__ == '__main__':
