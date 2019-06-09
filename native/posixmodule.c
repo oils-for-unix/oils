@@ -47,6 +47,11 @@ corresponding Unix manual entries for more information on calls.");
 #include <fcntl.h>
 #endif /* HAVE_FCNTL_H */
 
+/* sys/resource.h is needed for at least: wait3(), wait4(), broken nice. */
+#if defined(HAVE_SYS_RESOURCE_H)
+#include <sys/resource.h>
+#endif
+
 /* Unix functions that the configure script doesn't check for */
 #define HAVE_EXECV      1
 #define HAVE_FORK       1
@@ -132,28 +137,8 @@ extern int lstat(const char *, struct stat *);
 #endif
 #endif /* MAXPATHLEN */
 
-#ifdef UNION_WAIT
-/* Emulate some macros on systems that have a union instead of macros */
-
-#ifndef WIFEXITED
-#define WIFEXITED(u_wait) (!(u_wait).w_termsig && !(u_wait).w_coredump)
-#endif
-
-#ifndef WEXITSTATUS
-#define WEXITSTATUS(u_wait) (WIFEXITED(u_wait)?((u_wait).w_retcode):-1)
-#endif
-
-#ifndef WTERMSIG
-#define WTERMSIG(u_wait) ((u_wait).w_termsig)
-#endif
-
-#define WAIT_TYPE union wait
-#define WAIT_STATUS_INT(s) (s.w_status)
-
-#else /* !UNION_WAIT */
 #define WAIT_TYPE int
 #define WAIT_STATUS_INT(s) (s)
-#endif /* UNION_WAIT */
 
 /* Issue #1983: pid_t can be longer than a C long on some systems */
 #if !defined(SIZEOF_PID_T) || SIZEOF_PID_T == SIZEOF_INT
@@ -961,11 +946,6 @@ posix_mkdir(PyObject *self, PyObject *args)
 }
 
 
-/* sys/resource.h is needed for at least: wait3(), wait4(), broken nice. */
-#if defined(HAVE_SYS_RESOURCE_H)
-#include <sys/resource.h>
-#endif
-
 PyDoc_STRVAR_remove(posix_rename__doc__,
 "rename(old, new)\n\n\
 Rename a file or directory.");
@@ -1764,11 +1744,24 @@ posix_wait(PyObject *self, PyObject *noargs)
     WAIT_TYPE status;
     WAIT_STATUS_INT(status) = 0;
 
-    Py_BEGIN_ALLOW_THREADS
-    pid = wait(&status);
-    Py_END_ALLOW_THREADS
-    if (pid == -1)
-        return posix_error();
+    while (1) {
+        Py_BEGIN_ALLOW_THREADS
+        pid = wait(&status);
+        Py_END_ALLOW_THREADS
+
+        if (pid >= 0) {  // succes
+            break;
+        }
+        if (pid < 0) {
+            if (PyErr_CheckSignals()) {
+                return NULL;  // Propagate KeyboardInterrupt
+            }
+            if (errno != EINTR) {  // e.g. ECHILD
+                return posix_error();
+            }
+        }
+        // Otherwise, try again on EINTR.
+    }
 
     return Py_BuildValue("Ni", PyLong_FromPid(pid), WAIT_STATUS_INT(status));
 }
