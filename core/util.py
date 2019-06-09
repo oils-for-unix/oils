@@ -168,7 +168,7 @@ def ShowFdState():
   # type: () -> None
   import subprocess
   import posix_ as posix
-  #subprocess.call(['ls', '-l', '/proc/%d/fd' % posix.getpid()])
+  subprocess.call(['ls', '-l', '/proc/%d/fd' % posix.getpid()])
 
 
 class DebugFile(object):
