@@ -2,7 +2,6 @@
 word_eval.py - Evaluator for the word language.
 """
 
-import posix
 import pwd
 import sys
 
@@ -24,6 +23,8 @@ from osh import string_ops
 from osh import state
 from osh import word
 from osh import word_compile
+
+import posix_ as posix
 
 
 # NOTE: Could be done with util.BackslashEscape like glob_.GlobEscape().

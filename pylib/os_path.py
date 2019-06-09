@@ -2,7 +2,8 @@
 os_path.py - Copy of code from Python's posixpath.py and genericpath.py.
 """
 
-import posix
+import posix_ as posix
+
 from typing import Tuple, List
 
 extsep = '.'

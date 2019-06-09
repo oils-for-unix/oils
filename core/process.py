@@ -11,7 +11,6 @@ from __future__ import print_function
 
 import errno
 import fcntl
-import posix
 import pwd
 import signal
 import sys
@@ -21,6 +20,8 @@ from _devbuild.gen.runtime_asdl import redirect_e, process_state_e
 from core import ui
 from core.util import log
 from pylib import os_
+
+import posix_ as posix
 
 from typing import Optional
 

@@ -33,7 +33,6 @@ Uses ITEMLIST with a bunch of flags.
 """
 from __future__ import print_function
 
-import posix
 import pwd
 import time
 
@@ -53,6 +52,7 @@ from osh import state
 from osh.string_ops import ShellQuoteB
 
 import libc
+import posix_ as posix
 
 
 # To quote completion candidates.

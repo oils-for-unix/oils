@@ -4,11 +4,12 @@ pyutil.py: Code that's only needed in Python.  C++ will use other mechanisms.
 from __future__ import print_function
 
 import cStringIO
-import posix
 import sys
 import zipimport  # NOT the zipfile module.
 
 from pylib import os_path
+
+import posix_ as posix
 
 from typing import IO
 

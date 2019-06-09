@@ -5,7 +5,6 @@ User interface details should go in core/ui.py.
 """
 from __future__ import print_function
 
-import posix
 import pwd
 
 from _devbuild.gen.id_kind_asdl import Id
@@ -17,6 +16,7 @@ from osh import word
 from pylib import os_path
 
 import libc  # gethostname()
+import posix_ as posix
 
 #
 # Prompt Evaluation

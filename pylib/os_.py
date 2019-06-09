@@ -4,10 +4,10 @@ os_.py - Copy of code from Python's os module, which we don't want to include.
 from __future__ import print_function
 
 import errno
-import posix
 import sys
 
 from pylib import os_path
+import posix_ as posix
 
 #
 # From os.py

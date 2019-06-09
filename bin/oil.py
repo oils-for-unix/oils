@@ -21,7 +21,7 @@ Builtins that can be exposed:
 """
 from __future__ import print_function
 
-import posix
+import posix_ as posix
 import sys
 import time  # for perf measurement
 

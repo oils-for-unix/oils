@@ -26,7 +26,6 @@ http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_
 """
 from __future__ import print_function
 
-import posix
 import signal  # for calculating numbers
 import sys
 
@@ -48,6 +47,7 @@ from osh import string_ops
 from osh import word_compile
 
 import libc
+import posix_ as posix
 
 from typing import Dict
 

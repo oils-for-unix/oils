@@ -3,7 +3,7 @@ path_stat.py - Functions from os.path that import 'stat'.
 
 We want to keep bin/osh_parse free of I/O.  It's a pure stdin/stdout filter.
 """
-import posix
+import posix_ as posix
 import stat
 
 

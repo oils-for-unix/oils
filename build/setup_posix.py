@@ -12,4 +12,6 @@ module = Extension('posix_',
 setup(name = 'posix_',
       version = '1.0',
       description = 'Our fork of the stdlib module',
+      # For posix_methods.def
+      include_dirs = ['build/oil-defs'],
       ext_modules = [module])

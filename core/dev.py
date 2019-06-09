@@ -3,8 +3,6 @@ dev.py - Devtools / introspection.
 """
 from __future__ import print_function
 
-import posix
-
 from _devbuild.gen.runtime_asdl import value_e
 from _devbuild.gen.syntax_asdl import assign_op_e
 
@@ -14,6 +12,8 @@ from core import util
 from core.util import log
 from osh import word
 from pylib import os_path
+
+import posix_ as posix
 
 from typing import Dict, Any, TYPE_CHECKING
 if TYPE_CHECKING:

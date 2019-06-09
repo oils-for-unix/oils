@@ -241,11 +241,11 @@ build
 ## END
 
 #### compgen -o default completes files and dirs
-compgen -o default p
+compgen -o default spec/t
 ## STDOUT:
-portable-rules.mk
-pgen2
-pylib
+spec/tilde.test.sh
+spec/type-compat.test.sh
+spec/testdata
 ## END
 
 #### compgen doesn't respect -X for user-defined functions

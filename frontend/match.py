@@ -2,8 +2,6 @@
 match.py - match with generated re2c code or Python regexes.
 """
 
-import posix
-
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.types_asdl import lex_mode_t
 #from core import util
@@ -12,6 +10,7 @@ from frontend import lex
 
 from typing import Iterator, Tuple, Callable, Dict, List, Any, TYPE_CHECKING
 
+import posix_ as posix
 # bin/osh should work without compiling fastlex?  But we want all the unit
 # tests to run with a known version of it.
 try:

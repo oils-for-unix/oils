@@ -9,13 +9,7 @@
 expr_eval.py -- Currently used for boolean and arithmetic expressions.
 """
 
-import posix
 import stat
-
-try:
-  import libc  # for fnmatch
-except ImportError:
-  from benchmarks import fake_libc as libc  # type: ignore
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
@@ -31,6 +25,12 @@ from core import util
 from core.util import e_die
 from osh import state
 from osh import word
+
+import posix_ as posix
+try:
+  import libc  # for fnmatch
+except ImportError:
+  from benchmarks import fake_libc as libc  # type: ignore
 
 
 def _StringToInteger(s, span_id=const.NO_INTEGER):

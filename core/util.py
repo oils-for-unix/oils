@@ -10,10 +10,11 @@ util.py - Common infrastructure.
 """
 from __future__ import print_function
 
-import posix
 import sys
 
 from asdl import const
+
+import posix_ as posix
 
 from typing import IO, NoReturn, Any, TYPE_CHECKING
 if TYPE_CHECKING:  # avoid circular build deps

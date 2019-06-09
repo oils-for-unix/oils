@@ -15,7 +15,6 @@ This just does head?  Last one wins.
 """
 from __future__ import print_function
 
-import posix
 import resource
 import time
 import sys
@@ -50,6 +49,7 @@ from osh import state
 from osh import word
 from osh import word_compile
 
+import posix_ as posix
 try:
   import libc  # for fnmatch
 except ImportError:

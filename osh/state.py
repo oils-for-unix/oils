@@ -10,7 +10,6 @@ state.py - Interpreter state
 from __future__ import print_function
 
 import cStringIO
-import posix
 
 from typing import List
 
@@ -27,6 +26,7 @@ from frontend import args
 from osh import split
 
 import libc
+import posix_ as posix
 
 
 # This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".
