@@ -139,7 +139,7 @@ py-ext() {
 
 pylibc() {
   py-ext libc build/setup.py
-  native/libc_test.py "$@"
+  native/libc_test.py "$@" > /dev/null
 }
 
 fastlex() {
@@ -149,7 +149,7 @@ fastlex() {
   rm -f _devbuild/py-ext/x86_64/fastlex.so
 
   py-ext fastlex build/setup_fastlex.py
-  native/fastlex_test.py
+  native/fastlex_test.py "$@" > /dev/null
 }
 
 line-input() {
@@ -157,14 +157,14 @@ line-input() {
   rm -f _devbuild/py-ext/x86_64/line_input.so
 
   py-ext line_input build/setup_line_input.py
-  native/line_input_test.py "$@"
+  native/line_input_test.py "$@" > /dev/null
 }
 
 posix_() {
   rm -f _devbuild/py-ext/x86_64/posix_.so
 
   py-ext posix_ build/setup_posix.py
-  native/posix_test.py "$@"
+  native/posix_test.py "$@" > /dev/null
 }
 
 clean() {

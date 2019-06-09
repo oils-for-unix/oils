@@ -88,7 +88,8 @@ class FooTest(unittest.TestCase):
   def testFoo(self):
     print(posix_.getcwd())
     # Testing this because I removed a lot of #ifdef
-    print(posix_.listdir('.'))
+    entries = posix_.listdir('.')
+    self.assert_('doc' in entries)
 
   def testFunctionsExist(self):
     for name in FUNCS:
