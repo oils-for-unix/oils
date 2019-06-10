@@ -97,6 +97,11 @@ class PosixTest(unittest.TestCase):
       func = getattr(posix_, name)
       print(func)
 
+  def testEmptyReadAndWrite(self):
+    # Regression for bug where this would hang
+    posix_.read(0, 0)
+    posix_.write(1, '')
+
   def testRead(self):
     if posix_.environ.get('EINTR_TEST'):
       # Now we can do kill -TERM PID can get EINTR.

@@ -2106,7 +2106,7 @@ posix_read(PyObject *self, PyObject *args)
         n = read(fd, PyString_AsString(buffer), size);
         Py_END_ALLOW_THREADS
 
-        if (n > 0) {  // success
+        if (n >= 0) {  // success
             break;
         }
         if (n < 0) {
@@ -2151,7 +2151,7 @@ posix_write(PyObject *self, PyObject *args)
         size = write(fd, pbuf.buf, len);
         Py_END_ALLOW_THREADS
 
-        if (size > 0) {  // success
+        if (size >= 0) {  // success
             break;
         }
         if (size < 0) {
