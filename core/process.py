@@ -943,15 +943,10 @@ class Waiter(object):
         #log('wait() error: %s', e)
         if e.errno == errno.ECHILD:
           return False  # nothing to wait for caller should stop
-        elif e.errno == errno.EINTR:
-          # This happens when we register a handler for SIGINT, and thus never
-          # get the KeyboardInterrupt exception?  Not sure why.
-          # Try
-          # $ cat   # Now hit Ctrl-C
-          #log('Continuing')
-          continue  # try again
         else:
-          # An error we don't know about.
+          # We should never get here.  EINTR was handled by the 'posix'
+          # module.  The only other error is EINVAL, which doesn't apply to
+          # this call.
           raise
       else:
         break  # no exception thrown, so no need to retry
