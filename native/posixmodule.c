@@ -1744,6 +1744,7 @@ posix_wait(PyObject *self, PyObject *noargs)
     WAIT_TYPE status;
     WAIT_STATUS_INT(status) = 0;
 
+    // OVM_MAIN patch: Retry on EINTR.
     while (1) {
         Py_BEGIN_ALLOW_THREADS
         pid = wait(&status);
@@ -2099,12 +2100,25 @@ posix_read(PyObject *self, PyObject *args)
         Py_DECREF(buffer);
         return posix_error();
     }
-    Py_BEGIN_ALLOW_THREADS
-    n = read(fd, PyString_AsString(buffer), size);
-    Py_END_ALLOW_THREADS
-    if (n < 0) {
-        Py_DECREF(buffer);
-        return posix_error();
+    // OVM_MAIN patch: Retry on EINTR.
+    while (1) {
+        Py_BEGIN_ALLOW_THREADS
+        n = read(fd, PyString_AsString(buffer), size);
+        Py_END_ALLOW_THREADS
+
+        if (n > 0) {  // success
+            break;
+        }
+        if (n < 0) {
+            if (PyErr_CheckSignals()) {
+                return NULL;  // Propagate KeyboardInterrupt
+            }
+            if (errno != EINTR) {
+                Py_DECREF(buffer);
+                return posix_error();
+            }
+        }
+        // Otherwise, try again on EINTR.
     }
     if (n != size)
         _PyString_Resize(&buffer, n);
@@ -2130,12 +2144,26 @@ posix_write(PyObject *self, PyObject *args)
         return posix_error();
     }
     len = pbuf.len;
-    Py_BEGIN_ALLOW_THREADS
-    size = write(fd, pbuf.buf, len);
-    Py_END_ALLOW_THREADS
+
+    // OVM_MAIN patch: Retry on EINTR.
+    while (1) {
+        Py_BEGIN_ALLOW_THREADS
+        size = write(fd, pbuf.buf, len);
+        Py_END_ALLOW_THREADS
+
+        if (size > 0) {  // success
+            break;
+        }
+        if (size < 0) {
+            if (PyErr_CheckSignals()) {
+                return NULL;  // Propagate KeyboardInterrupt
+            }
+            if (errno != EINTR) {
+                return posix_error();
+            }
+        }
+    }
     PyBuffer_Release(&pbuf);
-    if (size < 0)
-        return posix_error();
     return PyInt_FromSsize_t(size);
 }
 
