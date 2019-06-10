@@ -1044,7 +1044,7 @@ class Mem(object):
         found = True
         if cell.readonly:
           return False, found
-        del namespace[lval.name]  # it must be here
+        namespace[lval.name].val = value.Undef()
         return True, found # found
       else:
         return True, False

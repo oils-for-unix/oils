@@ -288,38 +288,31 @@ echo "x=$x"
 x=temp-binding
 x=mutated-temp
 x=local
-x=mutated-temp
+x=
 x=global
 ## END
-## OK dash STDOUT:
+## BUG dash STDOUT:
 x=temp-binding
 x=mutated-temp
 x=local
 x=
 x=mutated-temp
 ## END
-## OK bash STDOUT:
+## BUG bash STDOUT:
 x=temp-binding
 x=mutated-temp
 x=local
 x=global
 x=global
 ## END
-## OK mksh STDOUT:
+## BUG mksh STDOUT:
 x=temp-binding
 x=mutated-temp
 x=local
 x=mutated-temp
 x=mutated-temp
 ## END
-## OK zsh STDOUT:
-x=temp-binding
-x=mutated-temp
-x=local
-x=
-x=global
-## END
-## OK yash STDOUT:
+## BUG yash STDOUT:
 # yash has no locals
 x=temp-binding
 x=mutated-temp
@@ -347,7 +340,7 @@ echo "x=$x"
 ## STDOUT:
 x=temp-binding
 x=mutated-temp
-x=global
+x=
 x=global
 ## END
 ## BUG dash/mksh/yash STDOUT:
@@ -356,10 +349,63 @@ x=mutated-temp
 x=
 x=
 ## END
-## BUG zsh STDOUT:
+## BUG bash STDOUT:
 x=temp-binding
 x=mutated-temp
-x=
+x=global
 x=global
 ## END
 
+#### Using ${x-default} after unsetting local shadowing a global
+f() {
+  echo "x=$x"
+  local x='local'
+  echo "x=$x"
+  unset x
+  echo "- operator = ${x-default}"
+  echo ":- operator = ${x:-default}"
+}
+x=global
+f
+## STDOUT:
+x=global
+x=local
+- operator = default
+:- operator = default
+## END
+## BUG mksh STDOUT:
+x=global
+x=local
+- operator = global
+:- operator = global
+## END
+
+#### Using ${x-default} after unsetting a temp binding shadowing a global
+f() {
+  echo "x=$x"
+  local x='local'
+  echo "x=$x"
+  unset x
+  echo "- operator = ${x-default}"
+  echo ":- operator = ${x:-default}"
+}
+x=global
+x=temp-binding f
+## STDOUT:
+x=temp-binding
+x=local
+- operator = default
+:- operator = default
+## END
+## BUG mksh STDOUT:
+x=temp-binding
+x=local
+- operator = temp-binding
+:- operator = temp-binding
+## END
+## BUG bash STDOUT:
+x=temp-binding
+x=local
+- operator = global
+:- operator = global
+## END
