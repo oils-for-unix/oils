@@ -463,6 +463,17 @@ class NiceDisplay(_IDisplay):
     # display to be shown with different widths.
     self.width_is_dirty = True
 
-    # Update readline's internal state.
-    self.readline_mod.resize_terminal()
+    # NOTE: This readline function will REDRAW the prompt, which we don't want
+    # to happen when we get SIGWINCH (e.g. in the middle of read()).
+    #
+    # Should we call rl_set_screen_size or rl_get_screen_size() instead?
+    # Oil is handling all the drawing, so I don't see why readline needs to
+    # know about the terminal size.
+    #
+    # https://tiswww.case.edu/php/chet/readline/readline.html
+    #
+    # TODO: Should we also turn off rl_catch_sigwinch in line_input.c?
+    # 'strace' reveals that the signal state is being constantly changed.
+
+    #self.readline_mod.resize_terminal()
 
