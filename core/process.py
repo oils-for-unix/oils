@@ -86,6 +86,7 @@ class SignalState(object):
     signal.signal(signal.SIGTSTP, signal.SIG_IGN)
 
     # Register a callback to receive terminal width changes.
+    # NOTE: In line_input.c, we turned off rl_catch_sigwinch.
     signal.signal(signal.SIGWINCH, lambda x, y: display.OnWindowChange())
 
   # NOTE: SIGINT is temporarily enabled during readline().

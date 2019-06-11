@@ -1055,6 +1055,11 @@ readline_until_enter_or_signal(char *prompt, int *signal)
 #ifdef HAVE_RL_CATCH_SIGNAL
     rl_catch_signals = 0;
 #endif
+    /* OVM_MAIN: Oil is handling SIGWINCH, so readline shouldn't handle it.
+     * Without this line, strace reveals that GNU readline is constantly
+     * turning it on and off.
+     * */
+    rl_catch_sigwinch = 0;
 
     rl_callback_handler_install (prompt, rlhandler);
     FD_ZERO(&selectset);
