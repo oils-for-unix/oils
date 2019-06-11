@@ -1750,10 +1750,9 @@ posix_wait(PyObject *self, PyObject *noargs)
         pid = wait(&status);
         Py_END_ALLOW_THREADS
 
-        if (pid >= 0) {  // succes
+        if (pid >= 0) {  // success
             break;
-        }
-        if (pid < 0) {
+        } else {
             if (PyErr_CheckSignals()) {
                 return NULL;  // Propagate KeyboardInterrupt
             }
@@ -2108,8 +2107,7 @@ posix_read(PyObject *self, PyObject *args)
 
         if (n >= 0) {  // success
             break;
-        }
-        if (n < 0) {
+        } else {
             if (PyErr_CheckSignals()) {
                 return NULL;  // Propagate KeyboardInterrupt
             }
@@ -2153,8 +2151,7 @@ posix_write(PyObject *self, PyObject *args)
 
         if (size >= 0) {  // success
             break;
-        }
-        if (size < 0) {
+        } else {
             if (PyErr_CheckSignals()) {
                 return NULL;  // Propagate KeyboardInterrupt
             }
