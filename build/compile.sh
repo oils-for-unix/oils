@@ -96,7 +96,6 @@ Modules/gcmodule.c
 # signalmodule.c is specified in Modules/Setup.config, which comes from
 # 'configure' output.
 MODOBJS='
-Modules/posixmodule.c
 Modules/errnomodule.c
 Modules/pwdmodule.c
 Modules/_weakref.c

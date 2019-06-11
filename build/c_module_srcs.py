@@ -30,6 +30,9 @@ def main(argv):
         # Relative to Python-2.7.13 dir
         print('../native/%s.c' % mod_name)
 
+      elif mod_name == 'posix_':
+        print('../native/posixmodule.c')
+
       elif mod_name == 'math':
         print('Modules/mathmodule.c')
         print('Modules/_math.c')

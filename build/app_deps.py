@@ -1,4 +1,4 @@
-#!/usr/bin/python2 -S
+# NO SHEBANG because we call it directly.
 """
 app_deps.py
 

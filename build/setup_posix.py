@@ -6,7 +6,6 @@ from distutils.core import setup, Extension
 
 module = Extension('posix_',
                     sources = ['native/posixmodule.c'],
-                    #undef_macros = ['NDEBUG']
                     )
 
 setup(name = 'posix_',

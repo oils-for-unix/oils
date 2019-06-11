@@ -21,6 +21,11 @@ standardized by the C Standard and the POSIX standard (a thinly\n\
 disguised Unix interface).  Refer to the library manual and\n\
 corresponding Unix manual entries for more information on calls.");
 
+/* OVM_MAIN: Turning off Unicode in build/setup_posix.py didn't work.
+ *
+ * If we don't turn it off we get build errors.
+ * */
+#undef Py_USING_UNICODE
 
 #ifndef Py_USING_UNICODE
 /* This is used in signatures of functions. */
