@@ -91,7 +91,7 @@ gen-asdl-py() {
 
   # abbrev module is optional
   core/asdl_gen.py mypy "$@" > $tmp
-  
+
   # BUG: MUST BE DONE ATOMICALLY ATOMIC; otherwise the Python interpreter can
   # import an empty file!
   mv -v $tmp $out
@@ -218,5 +218,10 @@ all() {
   minimal
   fastlex
 }
+
+if [ $# -eq 0 ]; then
+  echo "usage: $0 <function name>"
+  exit 1
+fi
 
 "$@"
