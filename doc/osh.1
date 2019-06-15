@@ -1,42 +1,82 @@
-.TH OSH "1" "November 2017" "OSH version 0.2.0" "User Commands"
-.SH NAME
-osh \- A bash-compatible UNIX shell
-.SH SYNOPSIS
-.B osh
-[\fI\,options\/\fR] \fI\,script \/\fR[\fI\,args\/\fR]
-.br
-.B osh
-[\fI\,options\/\fR] -c [\fI\,command_string\/\fR] [\fI\,args\/\fR]
-.SH DESCRIPTION
-.PP
-OSH is a command-line shell. It behaves like busybox and `osh` is a symlink to it.
-.PP
-.SH OPTIONS
-OSH accepts POSIX \fBsh\fR flags, with the following differences:
-.TP
-\fB\-n\fR
-only validate the syntax.  Also prints the AST.
-.TP
-\fB\-\-show\-ast\fR
-print the AST in addition to executing.
-.TP
-\fB\-\-ast\-format\fR
-what format the AST should be in
-.SH AUTHOR
-Written by Andy Chu.
-.SH REPORTING BUGS
-Please report bugs to <https://github.com/oilshell/oil/issues>
-.SH COPYRIGHT
-Copyright © 2016 Andy Chu. All rights reserved.
-.br
-Licensed under the Apache License, Version 2.0 (the "License");
-.br
-You may not use this file except in compliance with the License. You may obtain a copy of the License at
-.IP
-http://www.apache.org/licenses/LICENSE-2.0
-.SH SEE ALSO
-Developer documentation for
-.B OSH
-may be found online at
-.IP
-http://www.oilshell.org/release/0.2.0/doc/osh-quick-ref.html
+.\" Copyright © 2016 Andy Chu. All rights reserved.
+.\"
+.\" Licensed under the Apache License, Version 2.0 (the "License");
+.\" You may not use this file except in compliance with the License.
+.\"
+.\" You may obtain a copy of the License at:
+.\" http://www.apache.org/licenses/LICENSE-2.0
+.Dd June 28, 2019
+.Dt OSH 1
+.Os
+.Sh NAME
+.Nm osh
+.Nd command language interpreter
+.Sh SYNOPSIS
+.Nm
+.Op Ar options
+.Ar script
+.Op Ar args
+.Nm
+.Op Ar options
+.Fl c
+.Op command_string
+.Op args
+.Sh DESCRIPTION
+The
+.Nm
+utility is a
+.Xr bash 1 Ns -compatible
+command language intepreter:
+it reads commands either from standard input, a
+.Ar script
+file or command-line arguments and executes them.
+.Pp
+.Nm
+accepts POSIX
+.Xr sh 1
+arguments, with the following differences:
+.Bl -tag -width Ds
+.It Fl n
+Only validate the syntax.
+Also prints the AST.
+.It Fl -show-ast
+Print the AST in addition to executing.
+.It Fl -ast-format
+What format the AST should be in.
+.El
+.Sh ENVIRONMENT
+.Bl -tag -width "OSH_CRASH_DUMP_DIR"
+.It Ev OSH_HIJACK_SHEBANG
+.It Ev OSH_CRASH_DUMP_DIR
+.El
+.Sh FILES
+The interactive shell only sources
+.Pa ~/.config/oil/oshrc
+on startup.
+.Sh EXIT STATUS
+The
+.Nm
+utility exits with one of the following values:
+.Bl -tag -width 3n
+.It 1
+One or more runtime errors occurred.
+.It 2
+One or more parsing errors occurred,
+either due to incorrect script syntax or improper invocation of a shell
+builtin.
+.It 126
+Permission was denied when running a command.
+.It 127
+The referenced command or script could not be found.
+.El
+.Sh SEE ALSO
+.Xr bash 1 ,
+.Xr busybox 1 ,
+.Xr sh 1
+.Pp
+.Lk http://www.oilshell.org/release/0.6.pre22/doc/osh-quick-ref.html OSH Quick Reference
+.Sh AUTHORS
+The
+.Nm
+utility was written by
+.An Andy Chu Aq Mt andy@oilshell.org
