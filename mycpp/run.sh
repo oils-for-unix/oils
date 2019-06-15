@@ -376,8 +376,22 @@ benchmark-parse() {
 should-skip() {
   case $1 in
     # not passing yet!
-    # parse needs asdl/format.py, and the other 2 are testing features it
-    # uses.
+    #
+    # - prereqs for parse
+    #   - files: no runtime for cStringIO
+    #   - classes: TextOutput needs to inherit fields from ColorOutput
+    #
+    # - parse needs to translate asdl/format.py to pretty print.
+    #     Also fails on expr.asdl.h.
+    #
+    # - prereqs for evaluation:
+    #   - switch1: typeswitch.  Needs casting?
+    #   - switch2: primitive switch.  Translation crashes
+    # - later
+    #   - scoped_resource: Not translated at all.  No RuntimeError.
+
+    # Other problematic constructs: **kwargs, named args
+
     parse|files|classes|switch1|switch2|scoped_resource)
       return 0
       ;;

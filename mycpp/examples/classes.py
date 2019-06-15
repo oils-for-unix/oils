@@ -10,6 +10,8 @@ import sys
 
 from runtime import log
 
+from typing import IO
+
 
 class ColorOutput(object):
   """Abstract base class for plain text, ANSI color, and HTML color."""
