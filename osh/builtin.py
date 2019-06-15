@@ -1466,9 +1466,6 @@ def _GetOpts(spec, argv, optind, errfmt):
   return 0, opt_char, optarg, optind
 
 
-# spec string -> {flag, arity}
-_GETOPTS_CACHE = {}  # type: Dict[str, Dict[str, bool]]
-
 class GetOpts(object):
   """
   Vars used:
@@ -1482,6 +1479,7 @@ class GetOpts(object):
   def __init__(self, mem, errfmt):
     self.mem = mem
     self.errfmt = errfmt
+    self.spec_cache = {}  # type: Dict[str, Dict[str, bool]]
 
   def __call__(self, arg_vec):
     arg_r = args.Reader(arg_vec.strs, spids=arg_vec.spids)
@@ -1495,10 +1493,10 @@ class GetOpts(object):
         'requires the name of a variable to set')
 
     try:
-      spec = _GETOPTS_CACHE[spec_str]
+      spec = self.spec_cache[spec_str]
     except KeyError:
       spec = _ParseOptSpec(spec_str)
-      _GETOPTS_CACHE[spec_str] = spec
+      self.spec_cache[spec_str] = spec
 
     # These errors are fatal errors, not like the builtin exiting with code 1.
     # Because the invariants of the shell have been violated!
@@ -1510,7 +1508,8 @@ class GetOpts(object):
     except ValueError:
       e_die("OPTIND doesn't look like an integer, got %r", v.s)
 
-    user_argv = arg_vec.strs[3:] or self.mem.GetArgv()
+    user_argv = arg_r.Rest() or self.mem.GetArgv()
+    #util.log('user_argv %s', user_argv)
     status, opt_char, optarg, optind = _GetOpts(spec, user_argv, optind,
                                                 self.errfmt)
 

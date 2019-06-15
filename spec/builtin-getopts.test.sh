@@ -219,3 +219,20 @@ min() {
 min -s
 ## stdout: loop 2
 
+#### Flags can be smooshed together, e.g. -ab
+getopts "ab:c:" opt -ab hi -c hello
+echo OPTIND=$OPTIND opt=$opt OPTARG=$OPTARG
+getopts "ab:c:" opt -ab hi -c hello
+echo OPTIND=$OPTIND opt=$opt OPTARG=$OPTARG
+getopts "ab:c:" opt -ab hi -c hello
+echo OPTIND=$OPTIND opt=$opt OPTARG=$OPTARG
+## STDOUT:
+OPTIND=2 opt=a OPTARG=
+OPTIND=3 opt=b OPTARG=hi
+OPTIND=5 opt=c OPTARG=hello
+## END
+## BUG bash STDOUT:
+OPTIND=1 opt=a OPTARG=
+OPTIND=3 opt=b OPTARG=hi
+OPTIND=5 opt=c OPTARG=hello
+## END

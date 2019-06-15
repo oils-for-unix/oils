@@ -344,7 +344,7 @@ builtin-vars() {
 }
 
 builtin-getopts() {
-  sh-spec spec/builtin-getopts.test.sh \
+  sh-spec spec/builtin-getopts.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
