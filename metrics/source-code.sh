@@ -232,4 +232,6 @@ NotImplementedError() {
   grep NotImplementedError */*.py
 }
 
-"$@"
+if test $(basename $0) = 'source-code.sh'; then
+  "$@"
+fi

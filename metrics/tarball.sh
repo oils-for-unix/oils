@@ -9,6 +9,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source metrics/source-code.sh  # for ASDL counts
+
 _banner() {
   echo
   echo "$@"
@@ -51,6 +53,28 @@ linecount-pydeps() {
 
   _wc-header
   _py-deps | sort | uniq | xargs wc -l | sort -n
+
+}
+
+# Without generated code.  This is a fair comparison against bash, because
+# we include everything shipped with the tarball, but count source files
+# rather than generated code.
+_py-deps-src-only() {
+  metrics/tarball.sh _py-deps | grep -v _devbuild
+}
+
+linecount-pydeps-src-only() {
+  _cloc-header
+  _py-deps-src-only | xargs cloc
+
+  # Copied from osh-cloc in metrics/source-code.sh
+  echo
+  echo 'ASDL SCHEMAS (non-blank non-comment lines)'
+  asdl-cloc "${ASDL_FILES[@]}"
+
+  echo
+  _wc-header
+  _py-deps-src-only | sort | uniq | xargs wc -l | sort -n
 }
 
 # hello: 1.41 MB native + 145 KB = 1.56 MB bundle
