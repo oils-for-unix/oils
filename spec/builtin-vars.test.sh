@@ -246,22 +246,41 @@ echo status=$?
 #### Unset array member
 a=(x y z)
 unset 'a[1]'
+echo status=$?
 echo "${a[@]}" len="${#a[@]}"
-## stdout: x z len=2
+## STDOUT:
+status=0
+x z len=2
+## END
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
-## OK zsh stdout-json: " y z len=3\n"
+## OK zsh STDOUT:
+status=0
+ y z len=3
+## END
+## N-I osh STDOUT:
+status=2
+x y z len=3
+## END
 
 #### Unset array member with expression
 i=1
 a=(w x y z)
 unset 'a[ i - 1 ]' a[i+1]  # note: can't have space between a and [
+echo status=$?
 echo "${a[@]}" len="${#a[@]}"
-## stdout: x z len=2
+## STDOUT:
+status=0
+x z len=2
+## END
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 ## N-I zsh status: 1
 ## N-I zsh stdout-json: ""
+## N-I osh STDOUT:
+status=2
+w x y z len=4
+## END
 
 #### Use local twice
 f() {

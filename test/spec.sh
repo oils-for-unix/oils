@@ -339,7 +339,7 @@ builtin-dirs() {
 }
 
 builtin-vars() {
-  sh-spec spec/builtin-vars.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/builtin-vars.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
