@@ -5,9 +5,9 @@
 
 #### pass array by reference
 show_value() {
-  local -n array=$1
+  local -n array_name=$1
   local idx=$2
-  echo "${array[$idx]}"
+  echo "${array_name[$idx]}"
 }
 shadock=(ga bu zo meu)
 show_value shadock 2
@@ -15,9 +15,9 @@ show_value shadock 2
 
 #### pass assoc array by reference
 show_value() {
-  local -n array=$1
+  local -n array_name=$1
   local idx=$2
-  echo "${array[$idx]}"
+  echo "${array_name[$idx]}"
 }
 days=([monday]=eggs [tuesday]=bread [sunday]=jam)
 show_value days sunday
@@ -27,9 +27,9 @@ show_value days sunday
 
 #### pass local array by reference, relying on DYNAMIC SCOPING
 show_value() {
-  local -n array=$1
+  local -n array_name=$1
   local idx=$2
-  echo "${array[$idx]}"
+  echo "${array_name[$idx]}"
 }
 caller() {
   local shadock=(ga bu zo meu)

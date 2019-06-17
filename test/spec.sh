@@ -570,7 +570,7 @@ assoc-zsh() {
 # NOTE: zsh passes about half and fails about half.  It supports a subset of [[
 # I guess.
 dbracket() {
-  sh-spec spec/dbracket.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/dbracket.test.sh \
     $BASH $MKSH $OSH_LIST "$@"
   #sh-spec spec/dbracket.test.sh $BASH $MKSH $OSH_LIST $ZSH "$@"
 }
@@ -616,10 +616,10 @@ var-ref() {
 }
 
 # local -n
-# mksh appears to implement this.
+# mksh implements some of this.  OSH doesn't implement it at all.
 named-ref() {
   sh-spec spec/named-ref.test.sh --osh-failures-allowed 3 \
-    $BASH $MKSH $OSH_LIST "$@"
+    $BASH $MKSH "$@"
 }
 
 let() {

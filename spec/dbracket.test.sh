@@ -202,7 +202,7 @@ false
 [[ '3' -eq 3 ]] && echo true
 ## stdout-json: "true\ntrue\n"
 
-#### -eq with arithmetic expression!
+#### -eq does dynamic arithmetic parsing (not supported in OSH)
 [[ 1+2 -eq 3 ]] && echo true
 expr='1+2'
 [[ $expr -eq 3 ]] && echo true  # must be dynamically parsed
@@ -210,6 +210,8 @@ expr='1+2'
 true
 true
 ## END
+## N-I osh stdout-json: ""
+## N-I osh status: 1
 
 #### -eq coercion produces weird results
 [[ '' -eq 0 ]] && echo true

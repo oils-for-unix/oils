@@ -65,7 +65,7 @@ if `true` X; then echo TRUE; else echo FALSE; fi
 ## stdout: FALSE
 ## status: 0
 
-#### If subshell false
+#### If subshell false -- exit code is propagated in a weird way.
 if `false`; then echo TRUE; else echo FALSE; fi
 ## stdout: FALSE
 ## status: 0

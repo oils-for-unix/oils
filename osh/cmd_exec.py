@@ -697,7 +697,7 @@ class Executor(object):
     elif node.tag == command_e.Pipeline:
       check_errexit = True
       if node.stderr_indices:
-        raise NotImplementedError('|&')
+        e_die("|& isn't supported", span_id=node.spids[0])
 
       if node.negated:
         self._PushErrExit()
