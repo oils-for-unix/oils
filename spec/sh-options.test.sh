@@ -164,7 +164,10 @@ set -n
 echo 2
 set +n
 echo 3
-## stdout-json: "1\n"
+# osh doesn't work because it only checks -n in bin/oil.py?
+## STDOUT:
+1
+## END
 ## status: 0
 
 #### pipefail
@@ -235,11 +238,15 @@ echo status=$?
 ## stdout: status=1
 ## N-I dash/mksh stdout: status=0
 
+# Setting a readonly variable in osh is a hard failure.
+## OK osh status: 1
+## OK osh stdout-json: ""
+
 #### set -o lists options
 # NOTE: osh doesn't use the same format yet.
-set -o | grep -o errexit
+set -o | grep -o noexec
 ## STDOUT:
-errexit
+noexec
 ## END
 
 #### set without args lists variables
@@ -313,7 +320,7 @@ OK
 OK
 ## END
 
-#### set without args lists array variables
+#### set without args and array variables (not in OSH)
 declare -a __array
 __array=(1 2 '3 4')
 set | grep '^__'
@@ -326,8 +333,10 @@ __array[1]=2
 __array[2]='3 4'
 ## N-I dash stdout-json: ""
 ## N-I dash status: 2
+## N-I osh stdout-json: ""
+## N-I osh status: 1
 
-#### set without args lists assoc array variables
+#### set without args and assoc array variables (not in OSH)
 typeset -A __assoc
 __assoc['k e y']='v a l'
 __assoc[a]=b
@@ -339,6 +348,8 @@ __assoc=(["k e y"]="v a l" [a]="b" )
 ## N-I mksh status: 1
 ## N-I dash stdout-json: ""
 ## N-I dash status: 1
+## N-I osh stdout-json: ""
+## N-I osh status: 1
 
 #### shopt -q
 shopt -q nullglob

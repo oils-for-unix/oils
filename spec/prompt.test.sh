@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-#
-# For testing the Python sketch
 
 #### sh -i
-echo 'echo foo' | PS1='$ ' $SH -i
+# This fails because OSH prompt goes to stdout, and other differences. It's
+# probably OK to be honest.
+echo 'echo foo' | PS1='$ ' $SH --rcfile /dev/null -i
 ## STDOUT:
 foo
 ## END
