@@ -409,7 +409,7 @@ command_() {
 }
 
 pipeline() {
-  sh-spec spec/pipeline.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/pipeline.test.sh \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
@@ -459,7 +459,7 @@ tilde() {
 }
 
 var-op-test() {
-  sh-spec spec/var-op-test.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/var-op-test.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -618,7 +618,7 @@ var-ref() {
 # local -n
 # mksh implements some of this.  OSH doesn't implement it at all.
 named-ref() {
-  sh-spec spec/named-ref.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/named-ref.test.sh \
     $BASH $MKSH "$@"
 }
 

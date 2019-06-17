@@ -223,7 +223,7 @@ class _WordEvaluator(object):
   def _ApplyTestOp(self, val, op, quoted, part_vals):
     """
     Returns:
-      assign_part_vals, effect_e
+      effect_part_vals, effect_e
 
       ${a:-} returns part_value[]
       ${a:+} returns part_value[]
@@ -285,15 +285,14 @@ class _WordEvaluator(object):
         return None, effect_e.NoOp
 
     elif op.op_id in (Id.VTest_ColonQMark, Id.VTest_QMark):
-      # TODO: Construct error
-      # So the test fails!  Exit code 1 makes it pass.
-      sys.exit(33)
-      raise NotImplementedError
+      if is_falsey:
+        # The arg is the error mesage
+        error_part_vals = []
+        self._EvalWordToParts(op.arg_word, quoted, error_part_vals)
+        return error_part_vals, effect_e.Error
+      else:
+        return None, effect_e.NoOp
 
-    # TODO:
-    # +  -- inverted test -- assign to default
-    # ?  -- error
-    # =  -- side effect assignment
     else:
       raise NotImplementedError(id)
 
@@ -627,7 +626,7 @@ class _WordEvaluator(object):
           # It should return whether anything was done.  If not, we continue to
           # the end, where we might throw an error.
 
-          assign_part_vals, effect = self._ApplyTestOp(val, part.suffix_op,
+          effect_part_vals, effect = self._ApplyTestOp(val, part.suffix_op,
                                                        quoted, part_vals)
 
           # NOTE: Splicing part_values is necessary because of code like
@@ -643,17 +642,17 @@ class _WordEvaluator(object):
             else:
               # NOTE: This decays arrays too!  'set -o strict_array' could
               # avoid it.
-              rhs_str = _DecayPartValuesToString(assign_part_vals,
+              rhs_str = _DecayPartValuesToString(effect_part_vals,
                                                  self.splitter.GetJoinChar())
               state.SetLocalString(self.mem, var_name, rhs_str)
             return  # EARLY RETURN, part_vals mutated
 
           elif effect == effect_e.Error:
-            raise NotImplementedError
+            error_str = _DecayPartValuesToString(effect_part_vals,
+                                                 self.splitter.GetJoinChar())
+            e_die("unset variable %r", error_str, token=part.token)
 
           else:
-            # The old one
-            #val = self._EmptyStringPartOrError(part_val, quoted)
             pass  # do nothing, may still be undefined
 
         else:
