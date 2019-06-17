@@ -394,7 +394,7 @@ glob() {
 }
 
 arith() {
-  sh-spec spec/arith.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/arith.test.sh \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
@@ -542,7 +542,7 @@ array() {
 }
 
 array-compat() {
-  sh-spec spec/array-compat.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/array-compat.test.sh --osh-failures-allowed 2 \
     $BASH $MKSH $OSH_LIST "$@"
 }
 

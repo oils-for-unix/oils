@@ -147,7 +147,7 @@ argv.py "${!a[1]}"
 ## stdout: ['bar']
 ## N-I mksh stdout: ['a[1]']
 
-#### ${!a} on array
+#### ${!a} on array (TODO: OSH should disallow)
 # bash gives empty string?
 # mksh gives the name of the variable with !.  Very weird.
 a=(1 '2 3')

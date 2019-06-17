@@ -27,7 +27,7 @@ b="${a[@]}"  # this collapses to a string
 c=("${a[@]}")  # this preserves the array
 c[1]=YYY  # mutate a copy -- doesn't affect the original
 argv.py "${a[@]}"
-argv.py "${b[@]}"
+argv.py "${b}"
 argv.py "${c[@]}"
 ## STDOUT:
 ['x', 'y', 'z']
@@ -35,7 +35,7 @@ argv.py "${c[@]}"
 ['x', 'YYY', 'z']
 ## END
 
-#### $a gives first element of array
+#### $a gives first element of array (TODO: osh should disallow)
 a=(1 '2 3')
 echo $a
 ## stdout: 1
@@ -64,11 +64,13 @@ echo ${#a[@]} ${#s}
 EQUAL
 ## END
 
-#### Increment array variables
-a=(1 2)
+#### ++ on a whole array increments the first element (disallowed in OSH)
+a=(1 10)
 (( a++ ))  # doesn't make sense
 echo "${a[@]}"
-## stdout: 2 2
+## stdout: 2 10
+## OK osh status: 1
+## OK osh stdout-json: ""
 
 #### Apply vectorized operations on ${a[*]}
 a=('-x-' 'y-y' '-z-')

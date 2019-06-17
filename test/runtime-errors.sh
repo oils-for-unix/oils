@@ -437,6 +437,12 @@ multiple_assign_2() {
   echo $y
 }
 
+string_as_array() {
+  local str='foo'
+  echo $str
+  echo "${str[@]}"
+}
+
 #
 # BUILTINS
 #
@@ -623,7 +629,7 @@ all() {
     nounset_arith divzero divzero_var array_arith undef_arith undef_arith2 \
     undef_assoc_array \
     string_to_int_arith string_to_hex string_to_octal \
-    string_to_intbase string_to_int_bool \
+    string_to_intbase string_to_int_bool string_as_array \
     array_assign_1 array_assign_2 readonly_assign \
     multiple_assign multiple_assign_2 patsub_bad_glob \
     builtin_bracket builtin_builtin builtin_source builtin_cd builtin_pushd \

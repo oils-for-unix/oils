@@ -75,6 +75,10 @@ linecount-pydeps-src-only() {
   echo
   _wc-header
   _py-deps-src-only | sort | uniq | xargs wc -l | sort -n
+
+  echo
+  echo 'ASDL SCHEMAS'
+  wc -l "${ASDL_FILES[@]}"
 }
 
 # hello: 1.41 MB native + 145 KB = 1.56 MB bundle

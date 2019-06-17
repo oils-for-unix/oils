@@ -264,6 +264,7 @@ foo=5
 x=oo
 echo $(( foo + f$x + 1 ))
 ## stdout: 11
+## OK osh stdout: 6
 
 #### Bizarre recursive name evaluation - result of runtime parse/eval
 foo=5
@@ -272,6 +273,7 @@ spam=bar
 eggs=spam
 echo $((foo+1)) $((bar+1)) $((spam+1)) $((eggs+1))
 ## stdout: 6 6 6 6
+## OK osh stdout: 6 1 1 1
 ## N-I dash stdout-json: ""
 ## N-I dash status: 2
 
