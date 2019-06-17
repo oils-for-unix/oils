@@ -23,7 +23,7 @@ ref=*; printf "|%s" "${!ref}" $'\n'
 |x y|
 ## END
 
-#### var ref with special vars
+#### var ref to $? with '?'
 myfunc() {
   local ref=$1
   echo ${!ref}
@@ -34,6 +34,10 @@ myfunc '?'  # osh doesn't do this dynamically
 myfunc
 0
 ## END
+## N-I osh STDOUT: 
+myfunc
+## END
+## N-I osh status: 1
 
 #### indirection, *then* fancy expansion features
 check_eq() {
@@ -186,6 +190,8 @@ echo done
 ## OK bash stdout: done
 
 #### declare -n and ${!a}
+# NOTE: This is like named-ref.test.sh.  OSH doesn't implement it at all.
+# Maybe we should throw an error on '-n'.
 declare -n a
 a=b
 b=c
@@ -193,13 +199,16 @@ echo ${!a} ${a}
 ## stdout: b c
 
 #### Bad var ref with ${!a}
-#set -o nounset
 a='bad var name'
 echo ref ${!a}
 echo status=$?
 ## STDOUT:
 status=1
 ## END
+
+# this error is fatal in osh
+## OK osh stdout-json: ""
+## OK osh status: 1
 
 #### ${!OPTIND} (used by bash completion
 set -- a b c

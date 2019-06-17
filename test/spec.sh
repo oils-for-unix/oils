@@ -611,7 +611,7 @@ extglob-match() {
 # ${!var} syntax -- oil should replace this with associative arrays.
 # mksh has completely different behavior for this syntax.  Not worth testing.
 var-ref() {
-  sh-spec spec/var-ref.test.sh --osh-failures-allowed 6 \
+  sh-spec spec/var-ref.test.sh --osh-failures-allowed 4 \
     $BASH $OSH_LIST "$@"
 }
 
