@@ -643,6 +643,11 @@ class BoolEvaluator(_ExprEvaluator):
             # TODO: Need location information of [
             e_die('Invalid file descriptor %r', s, word=node.child)
           return posix.isatty(fd)
+        # See whether `set -o` options have been set
+        if op_id == Id.BoolUnary_o:
+          if hasattr(self.exec_opts, s):
+            return getattr(self.exec_opts, s)
+          return False
 
         raise NotImplementedError(op_id)
 
