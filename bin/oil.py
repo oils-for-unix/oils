@@ -445,6 +445,8 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.ALIAS: builtin.Alias(aliases, errfmt),
       builtin_e.UNALIAS: builtin.UnAlias(aliases, errfmt),
 
+      builtin_e.BIND: builtin.Bind(line_input),
+
       builtin_e.HELP: builtin.Help(loader, errfmt),
 
       builtin_e.TYPE: builtin.Type(funcs, aliases, mem),

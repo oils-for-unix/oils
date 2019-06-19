@@ -122,6 +122,8 @@ _NORMAL_BUILTINS = {
     "alias": builtin_e.ALIAS,
     "unalias": builtin_e.UNALIAS,
 
+    "bind": builtin_e.BIND,
+
     # OSH only
     "repr": builtin_e.REPR,
 }
@@ -1210,6 +1212,25 @@ class UnAlias(object):
       except KeyError:
         self.errfmt.Print('No alias named %r', name, span_id=arg_vec.spids[i])
         status = 1
+    return status
+
+
+BIND_SPEC = _Register('bind')
+
+
+class Bind(object):
+  def __init__(self, readline_mod):
+    self.readline_mod = readline_mod
+
+  def __call__(self, arg_vec):
+    if len(arg_vec.strs) == 1:
+      raise args.UsageError('bind keyseq:function-name')
+
+    status = 0
+    for i in xrange(1, len(arg_vec.strs)):
+      readline_option = arg_vec.strs[i]
+      self.readline_mod.parse_and_bind(readline_option)
+
     return status
 
 
