@@ -590,7 +590,7 @@ class Executor(object):
       job_id = pi.StartInBackground(self.waiter, self.job_state)
 
       self.mem.last_job_id = job_id  # for $!
-      self.job_state.Register(job_id, pi)
+      self.job_state.Add(job_id, pi)  # show in 'jobs' list
       log('Started background pipeline with job ID %d', job_id)
 
     else:
@@ -602,7 +602,7 @@ class Executor(object):
       p = self._MakeProcess(node, job_state=self.job_state)
       pid = p.Start()
       self.mem.last_job_id = pid  # for $!
-      self.job_state.Register(pid, p)
+      self.job_state.Add(pid, p)  # show in 'jobs' list
       self.waiter.Register(pid, p.WhenDone)
       log('Started background job with pid %d', pid)
     return 0

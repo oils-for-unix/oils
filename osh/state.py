@@ -237,7 +237,7 @@ class ExecOpts(object):
     """Private version for synchronizing from SHELLOPTS."""
     assert '_' not in opt_name
     if opt_name not in SET_OPTION_NAMES:
-      raise args.UsageError('Invalid option %r' % opt_name)
+      raise args.UsageError('got invalid option %r' % opt_name)
     if opt_name == 'errexit':
       self.errexit.Set(b)
     elif opt_name in ('vi', 'emacs'):
@@ -283,7 +283,7 @@ class ExecOpts(object):
   def SetShoptOption(self, opt_name, b):
     """ For shopt -s/-u. """
     if opt_name not in SHOPT_OPTION_NAMES:
-      raise args.UsageError('Invalid option %r' % opt_name)
+      raise args.UsageError('got invalid option %r' % opt_name)
     setattr(self, opt_name, b)
 
   def ShowOptions(self, opt_names):

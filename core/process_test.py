@@ -24,7 +24,8 @@ def Banner(msg):
   print(msg)
 
 
-_WAITER = process.Waiter()
+job_state = process.JobState()
+_WAITER = process.Waiter(job_state)
 _ARENA = test_lib.MakeArena('process_test.py')
 _ERRFMT = ui.ErrorFormatter(_ARENA)
 _FD_STATE = process.FdState(_ERRFMT)
@@ -45,7 +46,7 @@ def _ExtProc(argv):
 class ProcessTest(unittest.TestCase):
 
   def testStdinRedirect(self):
-    waiter = process.Waiter()
+    waiter = process.Waiter(job_state)
     fd_state = process.FdState(_ERRFMT)
 
     PATH = '_tmp/one-two.txt'

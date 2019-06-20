@@ -29,6 +29,7 @@ static PyMethodDef posix_methods[] = {
   {"isatty", posix_isatty, METH_VARARGS},
   {"pipe", posix_pipe, METH_NOARGS},
   {"strerror", posix_strerror, METH_VARARGS},
+  {"kill", posix_kill, METH_VARARGS},
   {"WIFSIGNALED", posix_WIFSIGNALED, METH_VARARGS},
   {"WIFEXITED", posix_WIFEXITED, METH_VARARGS},
   {"WEXITSTATUS", posix_WEXITSTATUS, METH_VARARGS},

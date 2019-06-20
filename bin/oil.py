@@ -348,8 +348,10 @@ def ShellMain(lang, argv0, argv, login_shell):
   # the Executor, so we could put them somewhere else.
   exec_deps.traps = {}
   exec_deps.trap_nodes = []
-  exec_deps.job_state = process.JobState()
-  exec_deps.waiter = process.Waiter()
+
+  job_state = process.JobState()
+  exec_deps.job_state = job_state
+  exec_deps.waiter = process.Waiter(job_state)
   exec_deps.errfmt = errfmt
 
   my_pid = posix.getpid()
@@ -455,6 +457,9 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.WAIT: builtin.Wait(exec_deps.waiter, exec_deps.job_state, mem,
                                    errfmt),
       builtin_e.JOBS: builtin.Jobs(exec_deps.job_state),
+      builtin_e.FG: builtin.Fg(exec_deps.job_state, exec_deps.waiter),
+      builtin_e.BG: builtin.Bg(exec_deps.job_state),
+
       builtin_e.UMASK: builtin.Umask,
 
       builtin_e.COLON: lambda arg_vec: 0,  # a "special" builtin 

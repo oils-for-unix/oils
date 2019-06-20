@@ -55,12 +55,7 @@ def SignalState_AfterForkingChild():
   # See Python/pythonrun.c.
   signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
-  # Child processes should get Ctrl-Z
-
-  # This doesn't make the child respond to Ctrl-Z?  Why not?  Is there
-  # something at the Python level?  signalmodule.c has PyOS_AfterFork but
-  # it seems OK.
-  # If we add it then somehow the process stop responding to Ctrl-C too.
+  # Child processes should get Ctrl-Z.
   signal.signal(signal.SIGTSTP, signal.SIG_DFL)
 
 
@@ -589,6 +584,11 @@ class _HereDocWriterThunk(Thunk):
 
 
 class Job(object):
+  """Interface for both Process and Pipeline.
+
+  They both can be put in the background and waited on.
+  """
+
   def __init__(self):
     self.state = process_state_e.Init
 
@@ -683,6 +683,7 @@ class Process(Job):
     return pid
 
   def WaitUntilDone(self, waiter):
+    """Wait for this process to finish."""
     while True:
       #log('WAITING')
       if not waiter.Wait():
@@ -692,12 +693,14 @@ class Process(Job):
     return self.status
 
   def WhenDone(self, pid, status):
+    """Called by the Waiter when this Process finishes."""
+
     #log('WhenDone %d %d', pid, status)
     assert pid == self.pid, 'Expected %d, got %d' % (self.pid, pid)
     self.status = status
     self.state = process_state_e.Done
     if self.job_state:
-      self.job_state.WhenDone(pid)
+      self.job_state.MaybeRemove(pid)
 
   def Run(self, waiter):
     """Run this process synchronously."""
@@ -805,6 +808,7 @@ class Pipeline(Job):
     return self.pids[-1]  # the last PID is the job ID
 
   def WaitUntilDone(self, waiter):
+    """Wait for this pipeline to finish."""
     while True:
       #log('WAIT pipeline')
       if not waiter.Wait():
@@ -848,15 +852,20 @@ class Pipeline(Job):
     return self.WaitUntilDone(waiter)  # returns pipe_status
 
   def WhenDone(self, pid, status):
+    """Called by the Waiter when this Pipeline finishes."""
     #log('Pipeline WhenDone %d %d', pid, status)
     i = self.pids.index(pid)
     assert i != -1, 'Unexpected PID %d' % pid
     self.pipe_status[i] = status
     if all(status != -1 for status in self.pipe_status):
-      self.status = self.pipe_status[-1]  # last one
+      # status of pipeline is status of last process
+      self.status = self.pipe_status[-1]
       self.state = process_state_e.Done
+
+      # NOTE: This never happens!  Only processes have job state.
       if self.job_state:
-        self.job_state.WhenDone(self.pipe_status[-1])
+        #self.job_state.MaybeRemove(self.pids[-1])
+        pass
 
 
 class JobState(object):
@@ -867,9 +876,22 @@ class JobState(object):
     # A pipeline that is backgrounded is always run in a SubProgramThunk?  So
     # you can wait for it once?
     self.jobs = {}
+    self.last_stopped_pid = None  # for basic 'fg' implementation
 
-  def Register(self, pid, job):
-    """ Used by 'sleep 1 &' """
+  def SetLastStopped(self, pid):
+    self.last_stopped_pid = pid
+
+  def GetLastStopped(self):
+    return self.last_stopped_pid
+
+  def Add(self, pid, job):
+    """Add a job to the list, so it can be listed and possibly resumed.
+
+    Two cases:
+    
+    1. async jobs: sleep 5 | sleep 4 &
+    2. stopped jobs: sleep 5; then Ctrl-Z
+    """
     self.jobs[pid] = job
 
   def List(self):
@@ -898,10 +920,19 @@ class JobState(object):
         return False
     return True
 
-  def WhenDone(self, pid):
+  def MaybeRemove(self, pid):
     """Process and Pipeline can call this."""
-    log('JobState WhenDone %d', pid)
-    # TODO: Update the list
+    # Problem: This only happens after an explicit wait()?
+    # I think the main_loop in bash waits without blocking?
+    log('JobState MaybeRemove %d', pid)
+
+    # TODO: Enabling this causes a failure in spec/background.
+    return
+    try:
+      del self.jobs[pid]
+    except KeyError:
+      # This should never happen?
+      log("AssertionError: PID %d should have never been in the job list", pid)
 
 
 class Waiter(object):
@@ -924,12 +955,9 @@ class Waiter(object):
 
   Now when you do wait() after starting the pipeline, you might get a pipeline
   process OR a background process!  So you have to distinguish between them.
-
-  NOTE: strace reveals that all shells call wait4(-1), which waits for ANY
-  process.  posix.wait() ends up calling that too.  This is the only way to
-  support the processes we need.
   """
-  def __init__(self):
+  def __init__(self, job_state):
+    self.job_state = job_state
     self.callbacks = {}  # pid -> callback
     self.last_status = 127  # wait -n error code
 
@@ -940,6 +968,7 @@ class Waiter(object):
     # This is a list of async jobs
     while True:
       try:
+        # -1 makes it like wait(), which waits for any process.
         # NOTE: WUNTRACED is necessary to get stopped jobs.  What about
         # WCONTINUED?
         pid, status = posix.waitpid(-1, posix.WUNTRACED)
@@ -975,6 +1004,7 @@ class Waiter(object):
       # Show in jobs list.
       log('')
       log('[PID %d stopped]', pid)
+      self.job_state.SetLastStopped(pid)  # show in 'jobs' list, enable 'fg'
 
     # This could happen via coding error.  But this may legitimately happen
     # if a grandchild outlives the child (its parent).  Then it is reparented

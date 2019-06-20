@@ -96,6 +96,8 @@ _NORMAL_BUILTINS = {
     "umask": builtin_e.UMASK,
     "wait": builtin_e.WAIT,
     "jobs": builtin_e.JOBS,
+    "fg": builtin_e.FG,
+    "bg": builtin_e.BG,
 
     "shopt": builtin_e.SHOPT,
     "complete": builtin_e.COMPLETE,
@@ -335,6 +337,42 @@ class Jobs(object):
   def __call__(self, arg_vec):
     self.job_state.List()
     return 0
+
+
+class Fg(object):
+  """Put a job in the foreground"""
+  def __init__(self, job_state, waiter):
+    self.job_state = job_state
+    self.waiter = waiter
+
+  def __call__(self, arg_vec):
+    # Get job instead of PID, and then do
+    #
+    # Should we also have job.SendContinueSignal() ?
+    # - posix.killpg()
+    #
+    # job.WaitUntilDone(self.waiter)
+    # - waitpid() under the hood
+
+    pid = self.job_state.GetLastStopped()
+    if pid is None:
+      log('No job to put in the foreground')
+      return 1
+
+    # Continue!
+    log('Continue PID %d', pid)
+    posix.kill(pid, signal.SIGCONT)
+
+    return 0
+
+
+class Bg(object):
+  """Put a job in the background"""
+  def __init__(self, job_state):
+    self.job_state = job_state
+
+  def __call__(self, arg_vec):
+    raise args.UsageError("isn't implemented")
 
 
 # Summary:
