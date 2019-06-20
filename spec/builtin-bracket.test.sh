@@ -286,3 +286,25 @@ status=1
 status=1
 status=0
 ## END
+
+#### test -o for options
+# note: it's lame that the 'false' case is confused with the 'typo' case.
+# but checking for error code 2 is unlikely anyway.
+test -o nounset
+echo status=$?
+
+set -o nounset
+echo status=$?
+
+test -o _bad_name_
+echo status=$?
+## STDOUT:
+status=1
+status=0
+status=1
+## END
+## N-I dash STDOUT:
+status=2
+status=0
+status=2
+## END
