@@ -55,6 +55,14 @@ def SignalState_AfterForkingChild():
   # See Python/pythonrun.c.
   signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
+  # Child processes should get Ctrl-Z
+
+  # This doesn't make the child respond to Ctrl-Z?  Why not?  Is there
+  # something at the Python level?  signalmodule.c has PyOS_AfterFork but
+  # it seems OK.
+  # If we add it then somehow the process stop responding to Ctrl-C too.
+  signal.signal(signal.SIGTSTP, signal.SIG_DFL)
+
 
 class SignalState(object):
   """All changes to global signal state go through this object."""
@@ -81,8 +89,7 @@ class SignalState(object):
     # The shell itself should ignore Ctrl-\.
     signal.signal(signal.SIGQUIT, signal.SIG_IGN)
 
-    # This prevents Ctrl-Z from suspending OSH in interactive mode.  But we're
-    # not getting notification via wait() that the child stopped?
+    # This prevents Ctrl-Z from suspending OSH in interactive mode.
     signal.signal(signal.SIGTSTP, signal.SIG_IGN)
 
     # Register a callback to receive terminal width changes.
@@ -663,12 +670,6 @@ class Process(Job):
     elif pid == 0:  # child
       SignalState_AfterForkingChild()
 
-      # This doesn't make the child respond to Ctrl-Z?  Why not?  Is there
-      # something at the Python level?  signalmodule.c has PyOS_AfterFork but
-      # it seems OK.
-      # If we add it then somehow the process stop responding to Ctrl-C too.
-      #signal.signal(signal.SIGTSTP, signal.SIG_DFL)
-
       for st in self.state_changes:
         st.Apply()
 
@@ -939,7 +940,9 @@ class Waiter(object):
     # This is a list of async jobs
     while True:
       try:
-        pid, status = posix.wait()
+        # NOTE: WUNTRACED is necessary to get stopped jobs.  What about
+        # WCONTINUED?
+        pid, status = posix.waitpid(-1, posix.WUNTRACED)
       except OSError as e:
         #log('wait() error: %s', e)
         if e.errno == errno.ECHILD:
@@ -954,7 +957,6 @@ class Waiter(object):
 
     #log('WAIT got %s %s', pid, status)
 
-    # TODO: Also handle WIFSTOPPED case?
     if posix.WIFSIGNALED(status):
       status = 128 + posix.WTERMSIG(status)
 
@@ -965,6 +967,14 @@ class Waiter(object):
     elif posix.WIFEXITED(status):
       status = posix.WEXITSTATUS(status)
       #log('exit status: %s', status)
+
+    elif posix.WIFSTOPPED(status):
+      #sig = posix.WSTOPSIG(status)
+
+      # TODO: Do something nicer here.  Implement 'fg' command.
+      # Show in jobs list.
+      log('')
+      log('[PID %d stopped]', pid)
 
     # This could happen via coding error.  But this may legitimately happen
     # if a grandchild outlives the child (its parent).  Then it is reparented
