@@ -212,6 +212,10 @@ class Test(object):
     try:
       b = bool_ev.Eval(bool_node)
     except util.FatalRuntimeError as e:
+      # Hack: we don't get the (test) prefix but we get location info.  We
+      # don't have access to mem.CurrentSpanId() here.
+      if not e.HasLocation():
+        raise
       self.errfmt.PrettyPrintError(e, prefix='(test) ')
       return 2  # 1 means 'false', and this usage error is like a parse error.
 

@@ -362,7 +362,7 @@ class ArithEvaluator(_ExprEvaluator):
         ret = new_int
 
       else:
-        raise NotImplementedError(op_id)
+        raise AssertionError(op_id)
 
       #log('old %d new %d ret %d', old_int, new_int, ret)
       self._Store(lval, new_int)
@@ -644,14 +644,14 @@ class BoolEvaluator(_ExprEvaluator):
             e_die('Invalid file descriptor %r', s, word=node.child)
           return posix.isatty(fd)
 
-        # See whether `set -o` options have been set
+        # See whether 'set -o' options have been set
         if op_id == Id.BoolUnary_o:
           b = getattr(self.exec_opts, s, None)
           return False if b is None else b
 
-        raise NotImplementedError(op_id)
+        e_die("%s isn't implemented", op_id)  # implicit location
 
-      raise NotImplementedError(arg_type)
+      raise AssertionError(arg_type)
 
     if node.tag == bool_expr_e.BoolBinary:
       op_id = node.op_id
