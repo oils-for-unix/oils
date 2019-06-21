@@ -473,7 +473,7 @@ class Executor(object):
     """
     return [self._EvalRedirect(redir) for redir in node.redirects]
 
-  def _MakeProcess(self, node, job_state=None, disable_errexit=False):
+  def _MakeProcess(self, node, disable_errexit=False):
     """
     Assume we will run the node in another process.  Return a process.
     """
@@ -496,7 +496,7 @@ class Executor(object):
     # get this check for "free".
     thunk = process.SubProgramThunk(self, node,
                                     disable_errexit=disable_errexit)
-    p = process.Process(thunk, job_state=job_state)
+    p = process.Process(thunk)
     return p
 
   def RunSimpleCommand(self, arg_vec, fork_external, funcs=True):
@@ -588,10 +588,9 @@ class Executor(object):
     if node.tag == command_e.Pipeline:
       pi = process.Pipeline()
       for child in node.children:
-        pi.Add(self._MakeProcess(child, job_state=self.job_state))
+        pi.Add(self._MakeProcess(child))
 
-      last_pid = pi.StartInBackground(self.waiter, self.job_state)
-
+      last_pid = pi.Start(self.waiter)
       self.mem.last_bg_pid = last_pid   # for $!
 
       # NOTE: Does this need a different ID?
@@ -606,7 +605,7 @@ class Executor(object):
       # If we haven't called Register yet, then we won't know who to notify.
 
       #log('job state %s', self.job_state)
-      p = self._MakeProcess(node, job_state=self.job_state)
+      p = self._MakeProcess(node)
       pid = p.Start()
       self.mem.last_bg_pid = pid  # for $!
       self.job_state.Add(pid, p)  # show in 'jobs' list

@@ -630,7 +630,7 @@ class Process(Job):
 
   It provides an API to manipulate file descriptor state in parent and child.
   """
-  def __init__(self, thunk, job_state=None):
+  def __init__(self, thunk):
     """
     Args:
       thunk: Thunk instance
@@ -639,7 +639,6 @@ class Process(Job):
     Job.__init__(self)
     assert not isinstance(thunk, list), thunk
     self.thunk = thunk
-    self.job_state = job_state
 
     # For pipelines
     self.state_changes = []
@@ -717,8 +716,6 @@ class Process(Job):
     assert pid == self.pid, 'Expected %d, got %d' % (self.pid, pid)
     self.status = status
     self.state = job_state_e.Done
-    if self.job_state:
-      self.job_state.MaybeRemove(pid)
 
   def Run(self, waiter):
     """Run this process synchronously."""
@@ -752,9 +749,6 @@ class Pipeline(Job):
     self.pids = []  # pids in order
     self.pipe_status = []  # status in order
     self.status = -1  # for 'wait' jobs
-
-    # optional for background
-    self.job_state = None
 
     # Optional for foregroud
     self.last_thunk = None
@@ -819,12 +813,8 @@ class Pipeline(Job):
     if self.last_thunk:
       self.pipe_status.append(-1)  # for self.last_thunk
 
-  def StartInBackground(self, waiter, job_state):
-    """Returns the last PID, to put in $! """
-    self.job_state = job_state
-    self.Start(waiter)
-    # the last PID is what bash prints.  Confusingly, it's not the process
-    # group ID or the job ID!
+    # The last PID is what bash prints after &, and is put in $!.  Confusingly,
+    # it's not the process group ID or the job ID!
     return self.pids[-1]
 
   def WaitUntilDone(self, waiter):
@@ -883,11 +873,6 @@ class Pipeline(Job):
       self.status = self.pipe_status[-1]
       self.state = job_state_e.Done
 
-      # NOTE: This never happens!  Only processes have job state.
-      if self.job_state:
-        #self.job_state.MaybeRemove(self.pids[-1])
-        pass
-
 
 class JobState(object):
   """Global list of jobs, used by a few builtins."""
@@ -926,13 +911,6 @@ class JobState(object):
     #self.callbacks[pid]
     for pid, job in self.jobs.iteritems():
       print(pid, job.State(), job)
-
-  def IsDone(self, jid):
-    """Test if a specific job is done."""
-    if jid not in self.jobs:
-      return False, False
-    job = self.jobs[jid]
-    return True, job.State() == job_state_e.Done
 
   def AllDone(self):
     """Test if all jobs are done.  Used by 'wait' builtin."""
