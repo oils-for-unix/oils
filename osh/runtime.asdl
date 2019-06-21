@@ -90,7 +90,8 @@ module runtime
   effect = SpliceParts | Error | SpliceAndAssign | NoOp
 
   -- core/process.py
-  process_state = Init | Done
+  -- Most jobs go from Init to Done, unless Ctrl-Z stops them.
+  job_state = Running | Done | Stopped
 
   -- tools/osh2oil.py
   word_style = Expr | Unquoted | DQ | SQ

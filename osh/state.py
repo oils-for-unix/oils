@@ -445,7 +445,7 @@ class Mem(object):
 
     self.last_status = [0]  # type: List[int]  # a stack
     self.pipe_status = [[]]  # type: List[List[int]]  # stack
-    self.last_job_id = -1  # Uninitialized value mutable public variable
+    self.last_bg_pid = -1  # Uninitialized value mutable public variable
 
     # Done ONCE on initialization
     self.root_pid = posix.getpid()
@@ -699,7 +699,7 @@ class Mem(object):
 
   def GetSpecialVar(self, op_id):
     if op_id == Id.VSub_Bang:  # $!
-      n = self.last_job_id
+      n = self.last_bg_pid
       if n == -1:
         return value.Undef()  # could be an error
 

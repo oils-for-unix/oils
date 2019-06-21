@@ -16,7 +16,7 @@ import signal
 import sys
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import redirect_e, process_state_e
+from _devbuild.gen.runtime_asdl import redirect_e, job_state_e
 from core import ui
 from core.util import log
 from pylib import os_
@@ -329,7 +329,7 @@ class FdState(object):
         # here_proc.StateChange()
         pid = here_proc.Start()
         # no-op callback
-        waiter.Register(pid, here_proc.WhenDone)
+        waiter.Register(pid, here_proc.OnStateChange)
         #log('Started %s as %d', here_proc, pid)
         self._PushWait(here_proc, waiter)
 
@@ -587,13 +587,31 @@ class Job(object):
   """Interface for both Process and Pipeline.
 
   They both can be put in the background and waited on.
+
+  Confusing thing about pipelines in the background: They have TOO MANY NAMES.
+
+  sleep 1 | sleep 2 &
+
+  - The LAST PID is what's printed at the prompt.  This is $!, a PROCESS ID and
+    not a JOB ID.
+    # https://www.gnu.org/software/bash/manual/html_node/Special-Parameters.html#Special-Parameters
+  - The process group leader (setpgid) is the FIRST PID.
+  - It's also %1 or %+.  The last job started.
   """
 
   def __init__(self):
-    self.state = process_state_e.Init
+    # Initial state with & or Ctrl-Z is Running.
+    self.state = job_state_e.Running
 
   def State(self):
     return self.state
+
+  def Send_SIGCONT(self, waiter):
+    """Resume the job -- for 'fg' and 'bg' builtins.
+
+    We need to know the process group.
+    """
+    pass
 
   def WaitUntilDone(self, waiter):
     """
@@ -688,17 +706,17 @@ class Process(Job):
       #log('WAITING')
       if not waiter.Wait():
         break
-      if self.state == process_state_e.Done:
+      if self.state == job_state_e.Done:
         break
     return self.status
 
-  def WhenDone(self, pid, status):
+  def OnStateChange(self, pid, status):
     """Called by the Waiter when this Process finishes."""
 
-    #log('WhenDone %d %d', pid, status)
+    #log('OnStateChange %d %d', pid, status)
     assert pid == self.pid, 'Expected %d, got %d' % (self.pid, pid)
     self.status = status
-    self.state = process_state_e.Done
+    self.state = job_state_e.Done
     if self.job_state:
       self.job_state.MaybeRemove(pid)
 
@@ -708,7 +726,7 @@ class Process(Job):
     # NOTE: No race condition between start and Register, because the shell is
     # single-threaded and nothing else can call Wait() before we do!
 
-    waiter.Register(self.pid, self.WhenDone)
+    waiter.Register(self.pid, self.OnStateChange)
 
     # TODO: Can collect garbage here, and record timing stats.  The process
     # will likely take longer than the GC?  Although I guess some processes can
@@ -791,7 +809,7 @@ class Pipeline(Job):
       pid = proc.Start()
       self.pids.append(pid)
       self.pipe_status.append(-1)  # uninitialized
-      waiter.Register(pid, self.WhenDone)
+      waiter.Register(pid, self.OnStateChange)
 
       # NOTE: This is done in the SHELL PROCESS after every fork() call.
       # It can't be done at the end; otherwise processes will have descriptors
@@ -802,10 +820,12 @@ class Pipeline(Job):
       self.pipe_status.append(-1)  # for self.last_thunk
 
   def StartInBackground(self, waiter, job_state):
-    """Returns a job ID."""
+    """Returns the last PID, to put in $! """
     self.job_state = job_state
     self.Start(waiter)
-    return self.pids[-1]  # the last PID is the job ID
+    # the last PID is what bash prints.  Confusingly, it's not the process
+    # group ID or the job ID!
+    return self.pids[-1]
 
   def WaitUntilDone(self, waiter):
     """Wait for this pipeline to finish."""
@@ -813,7 +833,7 @@ class Pipeline(Job):
       #log('WAIT pipeline')
       if not waiter.Wait():
         break
-      if self.state == process_state_e.Done:
+      if self.state == job_state_e.Done:
         #log('Pipeline DONE')
         break
 
@@ -851,16 +871,17 @@ class Pipeline(Job):
 
     return self.WaitUntilDone(waiter)  # returns pipe_status
 
-  def WhenDone(self, pid, status):
-    """Called by the Waiter when this Pipeline finishes."""
-    #log('Pipeline WhenDone %d %d', pid, status)
+  def OnStateChange(self, pid, status):
+    """TODO: When is Pipeline.OnStateChange this called?"""
+
+    #log('Pipeline OnStateChange %d %d', pid, status)
     i = self.pids.index(pid)
     assert i != -1, 'Unexpected PID %d' % pid
     self.pipe_status[i] = status
     if all(status != -1 for status in self.pipe_status):
       # status of pipeline is status of last process
       self.status = self.pipe_status[-1]
-      self.state = process_state_e.Done
+      self.state = job_state_e.Done
 
       # NOTE: This never happens!  Only processes have job state.
       if self.job_state:
@@ -911,12 +932,12 @@ class JobState(object):
     if jid not in self.jobs:
       return False, False
     job = self.jobs[jid]
-    return True, job.State() == process_state_e.Done
+    return True, job.State() == job_state_e.Done
 
   def AllDone(self):
     """Test if all jobs are done.  Used by 'wait' builtin."""
     for job in self.jobs.itervalues():
-      if job.State() != process_state_e.Done:
+      if job.State() != job_state_e.Done:
         return False
     return True
 

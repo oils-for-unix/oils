@@ -270,6 +270,11 @@ class Wait(object):
     if arg.n:
       # wait -n returns the exit status of the process.  But how do you know
       # WHICH process?  That doesn't seem useful.
+
+      # TODO: this should wait for the next JOB, which may be multiple
+      # processes.
+      # Bash has a wait_for_any_job() function, which loops until the jobs
+      # table changes.
       log('wait next')
       if self.waiter.Wait():
         return self.waiter.last_status
@@ -335,6 +340,13 @@ class Jobs(object):
     self.job_state = job_state
 
   def __call__(self, arg_vec):
+    # NOTE: the + and - in the jobs list mean 'current' and 'previous', and are
+    # addressed with %+ and %-.
+
+    # [6]   Running                 sleep 5 | sleep 5 &
+    # [7]-  Running                 sleep 5 | sleep 5 &
+    # [8]+  Running                 sleep 5 | sleep 5 &
+
     self.job_state.List()
     return 0
 

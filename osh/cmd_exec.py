@@ -574,6 +574,9 @@ class Executor(object):
     return status
 
   def _RunJobInBackground(self, node):
+    # TODO: Remove job_state from Process.  It should be done in the Waiter
+    # instead.
+
     # Special case for pipeline.  There is some evidence here:
     # https://www.gnu.org/software/libc/manual/html_node/Launching-Jobs.html#Launching-Jobs
     #
@@ -587,11 +590,15 @@ class Executor(object):
       for child in node.children:
         pi.Add(self._MakeProcess(child, job_state=self.job_state))
 
-      job_id = pi.StartInBackground(self.waiter, self.job_state)
+      last_pid = pi.StartInBackground(self.waiter, self.job_state)
 
-      self.mem.last_job_id = job_id  # for $!
-      self.job_state.Add(job_id, pi)  # show in 'jobs' list
-      log('Started background pipeline with job ID %d', job_id)
+      self.mem.last_bg_pid = last_pid   # for $!
+
+      # NOTE: Does this need a different ID?
+      self.job_state.Add(last_pid , pi)  # show in 'jobs' list
+      log('Started background pipeline with last process ID %d', last_pid)
+
+      # NOTE: We don't have OnStateChange() here?
 
     else:
       # Problem: to get the 'set -b' behavior of immediate notifications, we
@@ -601,9 +608,9 @@ class Executor(object):
       #log('job state %s', self.job_state)
       p = self._MakeProcess(node, job_state=self.job_state)
       pid = p.Start()
-      self.mem.last_job_id = pid  # for $!
+      self.mem.last_bg_pid = pid  # for $!
       self.job_state.Add(pid, p)  # show in 'jobs' list
-      self.waiter.Register(pid, p.WhenDone)
+      self.waiter.Register(pid, p.OnStateChange)
       log('Started background job with pid %d', pid)
     return 0
 
@@ -1246,7 +1253,7 @@ class Executor(object):
     p.AddStateChange(process.StdoutToPipe(r, w))
     pid = p.Start()
     #log('Command sub started %d', pid)
-    self.waiter.Register(pid, p.WhenDone)
+    self.waiter.Register(pid, p.OnStateChange)
 
     chunks = []
     posix.close(w)  # not going to write
@@ -1291,7 +1298,7 @@ class Executor(object):
     sane-proc-sub:
     - wait for all the words
 
-    Otherwise, set $!  (mem.last_job_id)
+    Otherwise, set $!  (mem.last_bg_pid)
 
     strict-proc-sub:
     - Don't allow it anywhere except SimpleCommand, any redirect, or
@@ -1336,7 +1343,7 @@ class Executor(object):
 
     #log('I am %d', posix.getpid())
     #log('Process sub started %d', pid)
-    self.waiter.Register(pid, p.WhenDone)
+    self.waiter.Register(pid, p.OnStateChange)
 
     # NOTE: Like bash, we never actually wait on it!
     # TODO: At least set $! ?
