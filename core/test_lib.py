@@ -128,7 +128,8 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
 
   mem = mem or state.Mem('', [], {}, arena)
   errfmt = ui.ErrorFormatter(arena)
-  fd_state = process.FdState(errfmt)
+  job_state = process.JobState()
+  fd_state = process.FdState(errfmt, job_state)
   funcs = {}
   aliases = {} if aliases is None else aliases
 
@@ -155,7 +156,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   debug_f = util.DebugFile(sys.stderr)
   exec_deps = cmd_exec.Deps()
   exec_deps.errfmt = errfmt
-  exec_deps.job_state = process.JobState()
+  exec_deps.job_state = job_state
   exec_deps.waiter = process.Waiter(exec_deps.job_state)
 
   exec_deps.ext_prog = \

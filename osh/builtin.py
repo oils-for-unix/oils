@@ -293,7 +293,7 @@ class Wait(object):
         if self.job_state.AllDone():
           break
 
-      log('waited for %d processes', i)
+      log('Waited for %d processes', i)
       return 0
 
     # Get list of jobs.  Then we need to check if they are ALL stopped.
@@ -318,7 +318,7 @@ class Wait(object):
         raise args.UsageError('expected PID or jobspec, got %r' % job_id,
                               span_id=span_id)
 
-      job = self.job_state.jobs.get(pid)
+      job = self.job_state.JobFromPid(pid)
       if job is None:
         self.errfmt.Print("%s isn't a child of this shell", pid,
                           span_id=span_id)

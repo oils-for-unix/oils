@@ -53,17 +53,22 @@ wait $!
 echo status=$?
 ## stdout: status=99
 
-#### Wait sets PIPESTATUS
+#### Wait for job doesn't support PIPESTATUS
+
+# foreground works
+{ echo hi; exit 55; } | { exit 99; }
+echo pipestatus=${PIPESTATUS[@]}
+
+# background doesn't work
 { echo hi; exit 55; } | { exit 99; } &
-echo "pipestatus=${PIPESTATUS[@]}"
-wait $!
-echo status=$?
-echo "pipestatus=${PIPESTATUS[@]}"
-## stdout-json: "pipestatus=\nstatus=99\npipestatus=55 99\n"
-## BUG bash stdout-json: "pipestatus=\nstatus=99\npipestatus=0\n"
-## N-I mksh stdout-json: "pipestatus=0\nstatus=99\npipestatus=0\n"
-## N-I dash stdout-json: ""
+wait %+
+echo pipestatus=${PIPESTATUS[@]}
+## STDOUT:
+pipestatus=55 99
+pipestatus=99
+##
 ## N-I dash status: 2
+## N-I dash stdout-json: ""
 
 #### Brace group in background, wait all
 { sleep 0.09; exit 9; } &

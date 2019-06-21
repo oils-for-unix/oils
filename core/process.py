@@ -17,6 +17,7 @@ import sys
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import redirect_e, job_state_e
+from asdl import pretty
 from core import ui
 from core.util import log
 from pylib import os_
@@ -139,8 +140,14 @@ class FdState(object):
 
   For example, you can do 'myfunc > out.txt' without forking.
   """
-  def __init__(self, errfmt):
+  def __init__(self, errfmt, job_state):
+    """
+    Args:
+      errfmt: for errors
+      job_state: For keeping track of _HereDocWriterThunk
+    """
     self.errfmt = errfmt
+    self.job_state = job_state
     self.cur_frame = _FdFrame()  # for the top level
     self.stack = [self.cur_frame]
 
@@ -322,11 +329,10 @@ class FdState(object):
       #start_process = False
 
       if start_process:
-        here_proc = Process(thunk)
+        here_proc = Process(thunk, self.job_state)
 
         # NOTE: we could close the read pipe here, but it doesn't really
         # matter because we control the code.
-        # here_proc.StateChange()
         pid = here_proc.Start()
         # no-op callback
         waiter.Register(pid, here_proc.OnStateChange)
@@ -440,14 +446,6 @@ class StdoutToPipe(ChildStateChange):
     #log('child CLOSE r %d pid=%d', self.r, posix.getpid())
 
 
-class Thunk(object):
-  """Abstract base class for things runnable in another process."""
-
-  def Run(self):
-    """Returns a status code."""
-    raise NotImplementedError
-
-
 def _ShouldHijack(line):
   if not line.startswith('#!'):
     return False
@@ -525,13 +523,37 @@ class ExternalProgram(object):
     # NO RETURN
 
 
-class ExternalThunk(object):
+class Thunk(object):
+  """Abstract base class for things runnable in another process."""
+
+  def Run(self):
+    """Returns a status code."""
+    raise NotImplementedError
+
+  def DisplayLine(self):
+    """Display for the 'jobs' list."""
+    pass
+
+  def __str__(self):
+    # For debugging
+    return self.DisplayLine()
+
+
+class ExternalThunk(Thunk):
   """An external executable."""
 
   def __init__(self, ext_prog, arg_vec, environ):
     self.ext_prog = ext_prog
     self.arg_vec = arg_vec
     self.environ = environ
+
+  def DisplayLine(self):
+    # NOTE: This is the format the Tracer uses.
+
+    # bash displays        sleep $n & (code)
+    # but OSH displays     sleep 1 &  (argv array)
+    # We could switch the former but I'm not sure it's necessary.
+    return '[process] %s' % ' '.join(pretty.Str(a) for a in self.arg_vec.strs)
 
   def Run(self):
     """
@@ -540,13 +562,18 @@ class ExternalThunk(object):
     self.ext_prog.Exec(self.arg_vec, self.environ)
 
 
-class SubProgramThunk(object):
+class SubProgramThunk(Thunk):
   """A subprogram that can be executed in another process."""
 
   def __init__(self, ex, node, disable_errexit=False):
     self.ex = ex
     self.node = node
     self.disable_errexit = disable_errexit  # for bash errexit compatibility
+
+  def DisplayLine(self):
+    # NOTE: These can be pieces of a pipeline, so they're arbitrary nodes.
+    # TODO: We should extract the SPIDS from each node!
+    return '[subprog] %s' % self.node.__class__.__name__
 
   def Run(self):
     # NOTE: may NOT return due to exec().
@@ -569,6 +596,12 @@ class _HereDocWriterThunk(Thunk):
   def __init__(self, w, body_str):
     self.w = w
     self.body_str = body_str
+
+  def DisplayLine(self):
+    # You can hit Ctrl-Z and the here doc writer will be suspended!  Other
+    # shells don't have this problem because they use temp files!  That's a bit
+    # unfortunate.
+    return '[here doc writer]'
 
   def Run(self):
     """
@@ -630,15 +663,16 @@ class Process(Job):
 
   It provides an API to manipulate file descriptor state in parent and child.
   """
-  def __init__(self, thunk):
+  def __init__(self, thunk, job_state):
     """
     Args:
       thunk: Thunk instance
-      job_state: notify upon completion
+      job_state: for process bookkeeping
     """
     Job.__init__(self)
-    assert not isinstance(thunk, list), thunk
+    assert isinstance(thunk, Thunk), thunk
     self.thunk = thunk
+    self.job_state = job_state
 
     # For pipelines
     self.state_changes = []
@@ -664,7 +698,7 @@ class Process(Job):
       posix.close(self.close_w)
 
   def Start(self):
-    """Start this process with fork(), haandling redirects."""
+    """Start this process with fork(), handling redirects."""
     # TODO: If OSH were a job control shell, we might need to call some of
     # these here.  They control the distribution of signals, some of which
     # originate from a terminal.  All the processes in a pipeline should be in
@@ -695,8 +729,11 @@ class Process(Job):
 
     #log('STARTED process %s, pid = %d', self, pid)
 
-    # Invariant, after the process is started, it stores its PID.
+    # Class invariant: after the process is started, it stores its PID.
     self.pid = pid
+    # Program invariant: We keep track of every child process!
+    self.job_state.AddChildProcess(pid, self)
+
     return pid
 
   def WaitUntilDone(self, waiter):
@@ -720,7 +757,7 @@ class Process(Job):
   def Run(self, waiter):
     """Run this process synchronously."""
     self.Start()
-    # NOTE: No race condition between start and Register, because the shell is
+    # NOTE: No race condition between Start and Register, because the shell is
     # single-threaded and nothing else can call Wait() before we do!
 
     waiter.Register(self.pid, self.OnStateChange)
@@ -803,7 +840,11 @@ class Pipeline(Job):
       pid = proc.Start()
       self.pids.append(pid)
       self.pipe_status.append(-1)  # uninitialized
+
+      # When each process in the pipeline exists, notify THIS pipeline.
       waiter.Register(pid, self.OnStateChange)
+      # Also notify the process itself, so the exit code is updated.
+      waiter.Register(pid, proc.OnStateChange)
 
       # NOTE: This is done in the SHELL PROCESS after every fork() call.
       # It can't be done at the end; otherwise processes will have descriptors
@@ -865,7 +906,10 @@ class Pipeline(Job):
     return self.WaitUntilDone(waiter)  # returns pipe_status
 
   def OnStateChange(self, pid, status):
-    """TODO: When is Pipeline.OnStateChange this called?"""
+    """Called by the Waiter on EVERY process exit."""
+
+    # BUG: self.pipe_status is duplicating self.procs[i].status!  So then we
+    # always need two callbacks!
 
     #log('Pipeline OnStateChange %d %d', pid, status)
     i = self.pids.index(pid)
@@ -882,10 +926,14 @@ class JobState(object):
 
   def __init__(self):
     # pid -> Job instance
-    # A pipeline that is backgrounded is always run in a SubProgramThunk?  So
-    # you can wait for it once?
+    # This is for display in 'jobs' builtin and for %+ %1 lookup.
     self.jobs = {}
+
+    # pid -> Process.  This is for STOP notification.
+    self.child_procs = {}
+
     self.last_stopped_pid = None  # for basic 'fg' implementation
+    self.job_id = 1  # Strictly increasing
 
   # TODO: This isn't a PID.  This is a process group ID?
   #
@@ -900,24 +948,61 @@ class JobState(object):
   #
   # [job_id, flag, pgid, job_state, node]
 
-  def SetLastStopped(self, pid):
+  def NotifyStopped(self, pid):
+    # TODO: Look up the PID.
+    # And display it in the table?
+    # What if it's not here?
+    # We need a table of processes state.
+    # Every time we do Process.Start() we need to record it, in case we get a
+    # notification that it stopped?  Then we look up what process it was.
+    # And we can find what part of the pipeline it's in.
+
     self.last_stopped_pid = pid
 
   def GetLastStopped(self):
+    # This be GetCurrent()?  %+ in bash?  That's what 'fg' takes.
     return self.last_stopped_pid
 
-  def Add(self, pid, job):
+  def AddJob(self, job):
     """Add a job to the list, so it can be listed and possibly resumed.
+
+    A job is either a process or pipeline.
 
     Two cases:
     
     1. async jobs: sleep 5 | sleep 4 &
     2. stopped jobs: sleep 5; then Ctrl-Z
     """
-    self.jobs[pid] = job
+    job_id = self.job_id
+    self.jobs[job_id] = job
+    self.job_id += 1  # For now, the ID is ever-increasing.
+    return job_id
+
+  def AddChildProcess(self, pid, proc):
+    """Every child process should be added here as soon as we know its PID.
+
+    When the Waiter gets an EXITED or STOPPED notification, we need to know
+    about it so 'jobs' can work.
+    """
+    self.child_procs[pid] = proc
+
+  def JobFromPid(self, pid):
+    """For wait $PID.
+
+    There's no way to wait for a pipeline with a PID.  That uses job syntax, e.g. 
+    %1.  Not a great interface.
+    """
+    return self.child_procs.get(pid)
 
   def List(self):
-    """Used by the 'jobs' builtin."""
+    """Used by the 'jobs' builtin.
+
+    https://pubs.opengroup.org/onlinepubs/9699919799/utilities/jobs.html
+
+    "By default, the jobs utility shall display the status of all stopped jobs,
+    running background jobs and all jobs whose status has changed and have not
+    been reported by the shell."
+    """
     # NOTE: A job is a background process or pipeline.
     #
     # echo hi | wc -l    -- this starts two processes.  Wait for TWO
@@ -935,9 +1020,24 @@ class JobState(object):
     # [3]- 24508 Running                 sleep 6
     #      24509                       | sleep 6
     #      24510                       | sleep 5 &
+    #
+    # zsh has VERY similar UI.
 
+    # NOTE: Jobs don't need to show state?  Because pipelines are never stopped
+    # -- only the jobs within them are.
+    print('Jobs:')
     for pid, job in self.jobs.iteritems():
-      print(pid, job.State(), job)
+      # Use the %1 syntax
+      print('%%%d %s %s' % (pid, job.State(), job))
+
+    print('')
+    print('Processes:')
+    for pid, proc in self.child_procs.iteritems():
+      print('%d %s' % (pid, proc.thunk.DisplayLine()))
+
+  def ListRecent(self):
+    """For jobs -n, which I think is also used in the interactive prompt."""
+    pass
 
   def AllDone(self):
     """Test if all jobs are done.  Used by 'wait' builtin."""
@@ -988,7 +1088,11 @@ class Waiter(object):
     self.last_status = 127  # wait -n error code
 
   def Register(self, pid, callback):
-    self.callbacks[pid] = callback
+    #if pid in self.callbacks:
+    #  raise AssertionError('clobbering %d' % pid)
+    if pid not in self.callbacks:
+      self.callbacks[pid] = []
+    self.callbacks[pid].append(callback)
 
   def Wait(self):
     # This is a list of async jobs
@@ -1030,7 +1134,7 @@ class Waiter(object):
       # Show in jobs list.
       log('')
       log('[PID %d stopped]', pid)
-      self.job_state.SetLastStopped(pid)  # show in 'jobs' list, enable 'fg'
+      self.job_state.NotifyStopped(pid)  # show in 'jobs' list, enable 'fg'
 
     # This could happen via coding error.  But this may legitimately happen
     # if a grandchild outlives the child (its parent).  Then it is reparented
@@ -1041,8 +1145,10 @@ class Waiter(object):
       ui.Stderr("osh: PID %d stopped, but osh didn't start it", pid)
       return True  # caller should keep waiting
 
-    callback = self.callbacks.pop(pid)
-    callback(pid, status)
+    callbacks = self.callbacks.pop(pid)
+    #log('[%d] calling %s', pid, callback)
+    for cb in callbacks:
+      cb(pid, status)
     self.last_status = status  # for wait -n
 
     return True  # caller should keep waiting

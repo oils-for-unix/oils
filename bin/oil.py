@@ -302,7 +302,8 @@ def ShellMain(lang, argv0, argv, login_shell):
                   has_main=has_main)
   funcs = {}
 
-  fd_state = process.FdState(errfmt)
+  job_state = process.JobState()
+  fd_state = process.FdState(errfmt, job_state)
   exec_opts = state.ExecOpts(mem, line_input)
 
   if opts.show_options:  # special case: sh -o
@@ -349,7 +350,6 @@ def ShellMain(lang, argv0, argv, login_shell):
   exec_deps.traps = {}
   exec_deps.trap_nodes = []
 
-  job_state = process.JobState()
   exec_deps.job_state = job_state
   exec_deps.waiter = process.Waiter(job_state)
   exec_deps.errfmt = errfmt

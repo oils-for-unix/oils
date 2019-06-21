@@ -90,7 +90,11 @@ module runtime
   effect = SpliceParts | Error | SpliceAndAssign | NoOp
 
   -- core/process.py
-  -- Most jobs go from Init to Done, unless Ctrl-Z stops them.
+  -- A Job is a Process or Pipeline.
+  -- * Proceses usually go from Running to Stopped, unless unless Ctrl-Z stops
+  --   them.
+  -- * Pipelines go Running to Done.  They are never stopped; only the processes
+  --   inside them are stopped.
   job_state = Running | Done | Stopped
 
   -- tools/osh2oil.py

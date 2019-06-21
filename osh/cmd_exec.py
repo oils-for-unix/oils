@@ -496,7 +496,7 @@ class Executor(object):
     # get this check for "free".
     thunk = process.SubProgramThunk(self, node,
                                     disable_errexit=disable_errexit)
-    p = process.Process(thunk)
+    p = process.Process(thunk, self.job_state)
     return p
 
   def RunSimpleCommand(self, arg_vec, fork_external, funcs=True):
@@ -541,7 +541,7 @@ class Executor(object):
 
     if fork_external:
       thunk = process.ExternalThunk(self.ext_prog, arg_vec, environ)
-      p = process.Process(thunk)
+      p = process.Process(thunk, self.job_state)
       status = p.Run(self.waiter)
       return status
 
@@ -574,9 +574,6 @@ class Executor(object):
     return status
 
   def _RunJobInBackground(self, node):
-    # TODO: Remove job_state from Process.  It should be done in the Waiter
-    # instead.
-
     # Special case for pipeline.  There is some evidence here:
     # https://www.gnu.org/software/libc/manual/html_node/Launching-Jobs.html#Launching-Jobs
     #
@@ -590,15 +587,12 @@ class Executor(object):
       for child in node.children:
         pi.Add(self._MakeProcess(child))
 
-      pi.Start(self.waiter)
+      pi.Start(self.waiter)  # Registers OnStateChange
       last_pid = pi.LastPid()
       self.mem.last_bg_pid = last_pid   # for $!
 
-      # NOTE: Does this need a different ID?
-      self.job_state.Add(last_pid , pi)  # show in 'jobs' list
+      self.job_state.AddJob(pi)  # show in 'jobs' list
       log('Started background pipeline with last process ID %d', last_pid)
-
-      # NOTE: We don't have OnStateChange() here?
 
     else:
       # Problem: to get the 'set -b' behavior of immediate notifications, we
@@ -609,7 +603,7 @@ class Executor(object):
       p = self._MakeProcess(node)
       pid = p.Start()
       self.mem.last_bg_pid = pid  # for $!
-      self.job_state.Add(pid, p)  # show in 'jobs' list
+      self.job_state.AddJob(p)  # show in 'jobs' list
       self.waiter.Register(pid, p.OnStateChange)
       log('Started background process with pid %d', pid)
     return 0

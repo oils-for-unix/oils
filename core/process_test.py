@@ -24,11 +24,11 @@ def Banner(msg):
   print(msg)
 
 
-job_state = process.JobState()
-_WAITER = process.Waiter(job_state)
+_JOB_STATE = process.JobState()
+_WAITER = process.Waiter(_JOB_STATE)
 _ARENA = test_lib.MakeArena('process_test.py')
 _ERRFMT = ui.ErrorFormatter(_ARENA)
-_FD_STATE = process.FdState(_ERRFMT)
+_FD_STATE = process.FdState(_ERRFMT, _JOB_STATE)
 _EXT_PROG = process.ExternalProgram(False, _FD_STATE, _ERRFMT,
                                     util.NullDebugFile())
 
@@ -40,14 +40,14 @@ def _CommandNode(code_str, arena):
 
 def _ExtProc(argv):
   arg_vec = arg_vector(argv, [0] * len(argv))
-  return Process(ExternalThunk(_EXT_PROG, arg_vec, {}))
+  return Process(ExternalThunk(_EXT_PROG, arg_vec, {}), _JOB_STATE)
 
 
 class ProcessTest(unittest.TestCase):
 
   def testStdinRedirect(self):
-    waiter = process.Waiter(job_state)
-    fd_state = process.FdState(_ERRFMT)
+    waiter = process.Waiter(_JOB_STATE)
+    fd_state = process.FdState(_ERRFMT, _JOB_STATE)
 
     PATH = '_tmp/one-two.txt'
     # Write two lines
@@ -116,7 +116,7 @@ class ProcessTest(unittest.TestCase):
     node = _CommandNode('head', _ARENA)
     p.AddLast((ex, node))
 
-    fd_state = process.FdState(_ERRFMT)
+    fd_state = process.FdState(_ERRFMT, _JOB_STATE)
     print(p.Run(_WAITER, _FD_STATE))
 
     # Simulating subshell for each command
@@ -125,9 +125,9 @@ class ProcessTest(unittest.TestCase):
     node3 = _CommandNode('sort --reverse', _ARENA)
 
     p = process.Pipeline()
-    p.Add(Process(process.SubProgramThunk(ex, node1)))
-    p.Add(Process(process.SubProgramThunk(ex, node2)))
-    p.Add(Process(process.SubProgramThunk(ex, node3)))
+    p.Add(Process(process.SubProgramThunk(ex, node1), _JOB_STATE))
+    p.Add(Process(process.SubProgramThunk(ex, node2), _JOB_STATE))
+    p.Add(Process(process.SubProgramThunk(ex, node3), _JOB_STATE))
 
     last_thunk = (ex, _CommandNode('cat', _ARENA))
     p.AddLast(last_thunk)
@@ -150,7 +150,7 @@ class ProcessTest(unittest.TestCase):
     # capture stdout of that interpreter.
 
   def testOpen(self):
-    fd_state = process.FdState(_ERRFMT)
+    fd_state = process.FdState(_ERRFMT, _JOB_STATE)
 
     # This function used to raise BOTH OSError and IOError because Python 2 is
     # inconsistent.

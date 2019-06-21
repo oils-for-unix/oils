@@ -31,8 +31,12 @@ def Str(s):
   # type: (str) -> str
   """Return a human-friendly representation of an arbitrary shell string.
 
-  Used for ASDL pretty printing as well as the 'xtrace' feature in
-  core/cmd_exec.py.
+  Used for:
+
+  - ASDL pretty printing
+  - the 'xtrace' feature (core/devtools.py)
+  - 'getopts' builtin error messages
+  - Displaying argv in 'jobs'
   """
   if IsPlainWord(s):
     return s

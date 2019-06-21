@@ -17,9 +17,7 @@ static PyMethodDef posix_methods[] = {
   {"geteuid", posix_geteuid, METH_NOARGS},
   {"getpid", posix_getpid, METH_NOARGS},
   {"getuid", posix_getuid, METH_NOARGS},
-  /* note: replaced wait() call with waitpid() */
-  {"wait", posix_wait, METH_NOARGS},
-  {"waitpid", posix_waitpid, METH_VARARGS},
+
   {"open", posix_open, METH_VARARGS},
   {"close", posix_close_, METH_VARARGS},
   {"dup2", posix_dup2, METH_VARARGS},
@@ -29,7 +27,20 @@ static PyMethodDef posix_methods[] = {
   {"isatty", posix_isatty, METH_VARARGS},
   {"pipe", posix_pipe, METH_NOARGS},
   {"strerror", posix_strerror, METH_VARARGS},
+
+  /* job control stuff */
+  {"setpgid", posix_setpgid, METH_VARARGS},
+  {"setpgrp", posix_setpgrp, METH_NOARGS},
+  {"tcsetpgrp", posix_tcsetpgrp, METH_VARARGS},
+
+  /* note: replaced wait() call with waitpid() */
+  {"wait", posix_wait, METH_NOARGS},
+  {"waitpid", posix_waitpid, METH_VARARGS},
+
+  /* note: may only need killpg(), not kill() */
   {"kill", posix_kill, METH_VARARGS},
+  {"killpg", posix_killpg, METH_VARARGS},
+
   {"WIFSIGNALED", posix_WIFSIGNALED, METH_VARARGS},
   {"WIFEXITED", posix_WIFEXITED, METH_VARARGS},
   {"WEXITSTATUS", posix_WEXITSTATUS, METH_VARARGS},
