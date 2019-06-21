@@ -590,7 +590,8 @@ class Executor(object):
       for child in node.children:
         pi.Add(self._MakeProcess(child))
 
-      last_pid = pi.Start(self.waiter)
+      pi.Start(self.waiter)
+      last_pid = pi.LastPid()
       self.mem.last_bg_pid = last_pid   # for $!
 
       # NOTE: Does this need a different ID?
@@ -610,7 +611,7 @@ class Executor(object):
       self.mem.last_bg_pid = pid  # for $!
       self.job_state.Add(pid, p)  # show in 'jobs' list
       self.waiter.Register(pid, p.OnStateChange)
-      log('Started background job with pid %d', pid)
+      log('Started background process with pid %d', pid)
     return 0
 
   def _EvalTempEnv(self, more_env):

@@ -813,8 +813,11 @@ class Pipeline(Job):
     if self.last_thunk:
       self.pipe_status.append(-1)  # for self.last_thunk
 
-    # The last PID is what bash prints after &, and is put in $!.  Confusingly,
-    # it's not the process group ID or the job ID!
+  def LastPid(self):
+    """For the odd $! variable.
+
+    It would be better if job IDs or PGIDs were used consistently.
+    """
     return self.pids[-1]
 
   def WaitUntilDone(self, waiter):
@@ -884,6 +887,19 @@ class JobState(object):
     self.jobs = {}
     self.last_stopped_pid = None  # for basic 'fg' implementation
 
+  # TODO: This isn't a PID.  This is a process group ID?
+  #
+  # What should the table look like?
+  #
+  # Do we need the last PID?  I don't know why bash prints that.  Probably so
+  # you can do wait $!
+  # wait -n waits for any node to go from job_state.Running to job_state.Done?
+  #
+  # And it needs a flag for CURRENT, for the implicit arg to 'fg'.
+  # job_id is just an integer.  This is sort of lame.
+  #
+  # [job_id, flag, pgid, job_state, node]
+
   def SetLastStopped(self, pid):
     self.last_stopped_pid = pid
 
@@ -902,13 +918,24 @@ class JobState(object):
 
   def List(self):
     """Used by the 'jobs' builtin."""
-    # NOTE: A job is a background process.
+    # NOTE: A job is a background process or pipeline.
     #
     # echo hi | wc -l    -- this starts two processes.  Wait for TWO
     # echo hi | wc -l &   -- this starts a process which starts two processes
     #                        Wait for ONE.
+    #
+    # bash GROUPS the PIDs by job.  And it has their state and code.
 
-    #self.callbacks[pid]
+    # $ jobs -l
+    # [1]+ 24414 Stopped                 sleep 5
+    #      24415                       | sleep 5
+    # [2]  24502 Running                 sleep 6
+    #      24503                       | sleep 6
+    #      24504                       | sleep 5 &
+    # [3]- 24508 Running                 sleep 6
+    #      24509                       | sleep 6
+    #      24510                       | sleep 5 &
+
     for pid, job in self.jobs.iteritems():
       print(pid, job.State(), job)
 
