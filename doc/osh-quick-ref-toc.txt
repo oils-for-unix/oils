@@ -98,7 +98,7 @@ BUILTIN COMMANDS
   [Shell Process] exec   X logout 
                   umask   X ulimit   X times
   [Child Process] jobs   wait   ampersand &
-                  X fg   X bg   X disown 
+                  fg   X bg   X disown 
   [External]      test [   printf   getopts   X kill
   [Introspection] help   X hash   type   X caller
   [Word Lookup]   command   builtin

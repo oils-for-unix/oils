@@ -1256,7 +1256,7 @@ class Executor(object):
       chunks.append(byte_str)
     posix.close(r)
 
-    status = p.WaitUntilDone(self.waiter)
+    status = p.Wait(self.waiter)
 
     # OSH has the concept of aborting in the middle of a WORD.  We're not
     # waiting until the command is over!

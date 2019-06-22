@@ -403,7 +403,7 @@ class FdState(object):
 
     # Wait for here doc processes to finish.
     for proc, waiter in frame.need_wait:
-      unused_status = proc.WaitUntilDone(waiter)
+      unused_status = proc.Wait(waiter)
 
 
 class ChildStateChange(object):
@@ -644,8 +644,9 @@ class Job(object):
     """
     pass
 
-  def WaitUntilDone(self, waiter):
-    """
+  def Wait(self, waiter):
+    """Wait for this process/pipeline to be stopped or finished.
+
     Returns:
       An int for a process
       A list of ints for a pipeline
@@ -736,15 +737,18 @@ class Process(Job):
 
     return pid
 
-  def WaitUntilDone(self, waiter):
+  def Wait(self, waiter):
     """Wait for this process to finish."""
     while True:
       #log('WAITING')
-      if not waiter.Wait():
+      if not waiter.WaitForOne():
         break
-      if self.state == job_state_e.Done:
+      if self.state != job_state_e.Running:
         break
     return self.status
+
+  def WhenStopped(self):
+    self.state = job_state_e.Stopped
 
   def WhenDone(self, pid, status):
     """Called by the Waiter when this Process finishes."""
@@ -766,7 +770,7 @@ class Process(Job):
     # Maybe you can have a separate GC thread, and only start it after 100ms,
     # and then cancel when done?
 
-    return self.WaitUntilDone(waiter)
+    return self.Wait(waiter)
 
 
 class Pipeline(Job):
@@ -854,13 +858,13 @@ class Pipeline(Job):
     """
     return self.pids[-1]
 
-  def WaitUntilDone(self, waiter):
+  def Wait(self, waiter):
     """Wait for this pipeline to finish."""
     while True:
       #log('WAIT pipeline')
-      if not waiter.Wait():
+      if not waiter.WaitForOne():
         break
-      if self.state == job_state_e.Done:
+      if self.state != job_state_e.Running:
         #log('Pipeline DONE')
         break
 
@@ -896,7 +900,7 @@ class Pipeline(Job):
     self.pipe_status[-1] = ex.LastStatus()
     #log('pipestatus before all have finished = %s', self.pipe_status)
 
-    return self.WaitUntilDone(waiter)  # returns pipe_status
+    return self.Wait(waiter)  # returns pipe_status
 
   def WhenDone(self, pid, status):
     """Called by Process.WhenDone. """
@@ -1022,7 +1026,7 @@ class JobState(object):
     print('')
     print('Processes:')
     for pid, proc in self.child_procs.iteritems():
-      print('%d %s' % (pid, proc.thunk.DisplayLine()))
+      print('%d %s %s' % (pid, proc.state, proc.thunk.DisplayLine()))
 
   def ListRecent(self):
     """For jobs -n, which I think is also used in the interactive prompt."""
@@ -1075,25 +1079,27 @@ class Waiter(object):
     self.job_state = job_state
     self.last_status = 127  # wait -n error code
 
-  def Wait(self):
+  def WaitForOne(self):
+    """Wait until the next process returns.
+
+    Returns:
+      True if we got a notification, or False if there was nothing to wait for.
+    """
     # This is a list of async jobs
-    while True:
-      try:
-        # -1 makes it like wait(), which waits for any process.
-        # NOTE: WUNTRACED is necessary to get stopped jobs.  What about
-        # WCONTINUED?
-        pid, status = posix.waitpid(-1, posix.WUNTRACED)
-      except OSError as e:
-        #log('wait() error: %s', e)
-        if e.errno == errno.ECHILD:
-          return False  # nothing to wait for caller should stop
-        else:
-          # We should never get here.  EINTR was handled by the 'posix'
-          # module.  The only other error is EINVAL, which doesn't apply to
-          # this call.
-          raise
+    try:
+      # -1 makes it like wait(), which waits for any process.
+      # NOTE: WUNTRACED is necessary to get stopped jobs.  What about
+      # WCONTINUED?
+      pid, status = posix.waitpid(-1, posix.WUNTRACED)
+    except OSError as e:
+      #log('wait() error: %s', e)
+      if e.errno == errno.ECHILD:
+        return False  # nothing to wait for caller should stop
       else:
-        break  # no exception thrown, so no need to retry
+        # We should never get here.  EINTR was handled by the 'posix'
+        # module.  The only other error is EINVAL, which doesn't apply to
+        # this call.
+        raise
 
     #log('WAIT got %s %s', pid, status)
 
@@ -1130,6 +1136,7 @@ class Waiter(object):
       log('')
       log('[PID %d stopped]', pid)
       self.job_state.NotifyStopped(pid)  # show in 'jobs' list, enable 'fg'
+      proc.WhenStopped()
 
     self.last_status = status  # for wait -n
 

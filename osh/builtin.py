@@ -276,7 +276,7 @@ class Wait(object):
       # Bash has a wait_for_any_job() function, which loops until the jobs
       # table changes.
       log('wait next')
-      if self.waiter.Wait():
+      if self.waiter.WaitForOne():
         return self.waiter.last_status
       else:
         return 127  # nothing to wait for
@@ -287,7 +287,7 @@ class Wait(object):
       # TODO: get all background jobs from JobState?
       i = 0
       while True:
-        if not self.waiter.Wait():
+        if not self.waiter.WaitForOne():
           break  # nothing to wait for
         i += 1
         if self.job_state.AllDone():
@@ -324,12 +324,7 @@ class Wait(object):
                           span_id=span_id)
         return 127
 
-      st = job.WaitUntilDone(self.waiter)
-      if isinstance(st, list):
-        status = st[-1]
-        self.mem.SetPipeStatus(st)
-      else:
-        status = st
+      status = job.Wait(self.waiter)
 
     return status
 
@@ -375,7 +370,10 @@ class Fg(object):
     log('Continue PID %d', pid)
     posix.kill(pid, signal.SIGCONT)
 
-    return 0
+    job = self.job_state.JobFromPid(pid)
+    status = job.Wait(self.waiter)
+    #log('status = %d', status)
+    return status
 
 
 class Bg(object):
@@ -384,6 +382,9 @@ class Bg(object):
     self.job_state = job_state
 
   def __call__(self, arg_vec):
+    # How does this differ from 'fg'?  It doesn't wait and it sets controlling
+    # terminal?
+
     raise args.UsageError("isn't implemented")
 
 
