@@ -287,6 +287,53 @@ status=1
 status=0
 ## END
 
+#### test -b -c -S (block, character, socket)
+# NOTE: we do not have the "true" case
+
+echo -b
+test -b nonexistent
+echo status=$?
+test -b testdata
+echo status=$?
+
+echo -c
+test -c nonexistent
+echo status=$?
+test -c testdata
+echo status=$?
+
+echo -S
+test -S nonexistent
+echo status=$?
+test -S testdata
+echo status=$?
+
+## STDOUT:
+-b
+status=1
+status=1
+-c
+status=1
+status=1
+-S
+status=1
+status=1
+## END
+
+
+#### test -p named pipe
+mkfifo $TMP/fifo
+test -p $TMP/fifo
+echo status=$?
+
+test -p testdata
+echo status=$?
+
+## STDOUT:
+status=0
+status=1
+## END
+
 #### test -o for options
 # note: it's lame that the 'false' case is confused with the 'typo' case.
 # but checking for error code 2 is unlikely anyway.
@@ -308,3 +355,4 @@ status=2
 status=0
 status=2
 ## END
+

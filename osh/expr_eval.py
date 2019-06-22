@@ -424,7 +424,7 @@ class ArithEvaluator(_ExprEvaluator):
       if op_id == Id.Arith_Tilde:  # bitwise complement
         return ~self.Eval(node.child)
 
-      raise NotImplementedError(op_id)
+      raise AssertionError(op_id)
 
     if node.tag == arith_expr_e.ArithBinary:
       op_id = node.op_id
@@ -613,6 +613,18 @@ class BoolEvaluator(_ExprEvaluator):
         if op_id == Id.BoolUnary_d:
           return stat.S_ISDIR(mode)
 
+        if op_id == Id.BoolUnary_b:
+          return stat.S_ISBLK(mode)
+
+        if op_id == Id.BoolUnary_c:
+          return stat.S_ISCHR(mode)
+
+        if op_id == Id.BoolUnary_p:
+          return stat.S_ISFIFO(mode)
+
+        if op_id == Id.BoolUnary_S:
+          return stat.S_ISSOCK(mode)
+
         if op_id == Id.BoolUnary_x:
           return posix.access(s, posix.X_OK)
 
@@ -625,7 +637,7 @@ class BoolEvaluator(_ExprEvaluator):
         if op_id == Id.BoolUnary_s:
           return st.st_size != 0
 
-        raise NotImplementedError(op_id)
+        e_die("%s isn't implemented", op_id)  # implicit location
 
       if arg_type == bool_arg_type_e.Str:
         if op_id == Id.BoolUnary_z:
@@ -633,7 +645,7 @@ class BoolEvaluator(_ExprEvaluator):
         if op_id == Id.BoolUnary_n:
           return bool(s)
 
-        raise NotImplementedError(op_id)
+        raise AssertionError(op_id)  # should never happen
 
       if arg_type == bool_arg_type_e.Other:
         if op_id == Id.BoolUnary_t:
@@ -651,7 +663,7 @@ class BoolEvaluator(_ExprEvaluator):
 
         e_die("%s isn't implemented", op_id)  # implicit location
 
-      raise AssertionError(arg_type)
+      raise AssertionError(arg_type)  # should never happen
 
     if node.tag == bool_expr_e.BoolBinary:
       op_id = node.op_id
@@ -677,7 +689,7 @@ class BoolEvaluator(_ExprEvaluator):
         if op_id == Id.BoolBinary_ot:
           return st1[stat.ST_MTIME] < st2[stat.ST_MTIME]
 
-        raise NotImplementedError(op_id)
+        e_die("%s isn't implemented", op_id)  # implicit location
 
       if arg_type == bool_arg_type_e.Int:
         # NOTE: We assume they are constants like [[ 3 -eq 3 ]].
@@ -698,15 +710,12 @@ class BoolEvaluator(_ExprEvaluator):
         if op_id == Id.BoolBinary_le:
           return i1 <= i2
 
-        raise NotImplementedError(op_id)
+        raise AssertionError(op_id)  # should never happen
 
       if arg_type == bool_arg_type_e.Str:
 
         if op_id in (Id.BoolBinary_GlobEqual, Id.BoolBinary_GlobDEqual):
           #log('Matching %s against pattern %s', s1, s2)
-
-          # TODO: Respect extended glob?  * and ! and ? are quoted improperly.
-          # But @ and + are OK.
           return libc.fnmatch(s2, s1)
 
         if op_id == Id.BoolBinary_GlobNEqual:
@@ -740,6 +749,6 @@ class BoolEvaluator(_ExprEvaluator):
         if op_id == Id.Redir_Great:  # pun
           return s1 > s2
 
-        raise NotImplementedError(op_id)
+        raise AssertionError(op_id)  # should never happen
 
     raise AssertionError(node.tag)
