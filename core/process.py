@@ -334,8 +334,6 @@ class FdState(object):
         # NOTE: we could close the read pipe here, but it doesn't really
         # matter because we control the code.
         pid = here_proc.Start()
-        # no-op callback
-        waiter.Register(pid, here_proc.OnStateChange)
         #log('Started %s as %d', here_proc, pid)
         self._PushWait(here_proc, waiter)
 
@@ -663,16 +661,18 @@ class Process(Job):
 
   It provides an API to manipulate file descriptor state in parent and child.
   """
-  def __init__(self, thunk, job_state):
+  def __init__(self, thunk, job_state, parent_pipeline=None):
     """
     Args:
       thunk: Thunk instance
       job_state: for process bookkeeping
+      parent_pipeline: For updating PIPESTATUS
     """
     Job.__init__(self)
     assert isinstance(thunk, Thunk), thunk
     self.thunk = thunk
     self.job_state = job_state
+    self.parent_pipeline = parent_pipeline
 
     # For pipelines
     self.state_changes = []
@@ -746,21 +746,19 @@ class Process(Job):
         break
     return self.status
 
-  def OnStateChange(self, pid, status):
+  def WhenDone(self, pid, status):
     """Called by the Waiter when this Process finishes."""
 
-    #log('OnStateChange %d %d', pid, status)
+    #log('WhenDone %d %d', pid, status)
     assert pid == self.pid, 'Expected %d, got %d' % (self.pid, pid)
     self.status = status
     self.state = job_state_e.Done
+    if self.parent_pipeline:
+      self.parent_pipeline.WhenDone(pid, status)
 
   def Run(self, waiter):
     """Run this process synchronously."""
     self.Start()
-    # NOTE: No race condition between Start and Register, because the shell is
-    # single-threaded and nothing else can call Wait() before we do!
-
-    waiter.Register(self.pid, self.OnStateChange)
 
     # TODO: Can collect garbage here, and record timing stats.  The process
     # will likely take longer than the GC?  Although I guess some processes can
@@ -841,11 +839,6 @@ class Pipeline(Job):
       self.pids.append(pid)
       self.pipe_status.append(-1)  # uninitialized
 
-      # When each process in the pipeline exists, notify THIS pipeline.
-      waiter.Register(pid, self.OnStateChange)
-      # Also notify the process itself, so the exit code is updated.
-      waiter.Register(pid, proc.OnStateChange)
-
       # NOTE: This is done in the SHELL PROCESS after every fork() call.
       # It can't be done at the end; otherwise processes will have descriptors
       # from non-adjacent pipes.
@@ -905,13 +898,9 @@ class Pipeline(Job):
 
     return self.WaitUntilDone(waiter)  # returns pipe_status
 
-  def OnStateChange(self, pid, status):
-    """Called by the Waiter on EVERY process exit."""
-
-    # BUG: self.pipe_status is duplicating self.procs[i].status!  So then we
-    # always need two callbacks!
-
-    #log('Pipeline OnStateChange %d %d', pid, status)
+  def WhenDone(self, pid, status):
+    """Called by Process.WhenDone. """
+    #log('Pipeline WhenDone %d %d', pid, status)
     i = self.pids.index(pid)
     assert i != -1, 'Unexpected PID %d' % pid
     self.pipe_status[i] = status
@@ -1084,15 +1073,7 @@ class Waiter(object):
   """
   def __init__(self, job_state):
     self.job_state = job_state
-    self.callbacks = {}  # pid -> callback
     self.last_status = 127  # wait -n error code
-
-  def Register(self, pid, callback):
-    #if pid in self.callbacks:
-    #  raise AssertionError('clobbering %d' % pid)
-    if pid not in self.callbacks:
-      self.callbacks[pid] = []
-    self.callbacks[pid].append(callback)
 
   def Wait(self):
     # This is a list of async jobs
@@ -1116,6 +1097,17 @@ class Waiter(object):
 
     #log('WAIT got %s %s', pid, status)
 
+    # All child processes are suppoed to be in this doc.  But this may
+    # legitimately happen if a grandchild outlives the child (its parent).
+    # Then it is reparented under this process, so we might receive
+    # notification of its exit, even though we didn't start it.  We can't have
+    # any knowledge of such processes, so print a warning.
+    if pid not in self.job_state.child_procs:
+      ui.Stderr("osh: PID %d stopped, but osh didn't start it", pid)
+      return True  # caller should keep waiting
+
+    proc = self.job_state.child_procs[pid]
+
     if posix.WIFSIGNALED(status):
       status = 128 + posix.WTERMSIG(status)
 
@@ -1123,9 +1115,12 @@ class Waiter(object):
       if posix.WTERMSIG(status) == signal.SIGINT:
         print()
 
+      proc.WhenDone(pid, status)
+
     elif posix.WIFEXITED(status):
       status = posix.WEXITSTATUS(status)
       #log('exit status: %s', status)
+      proc.WhenDone(pid, status)
 
     elif posix.WIFSTOPPED(status):
       #sig = posix.WSTOPSIG(status)
@@ -1136,19 +1131,6 @@ class Waiter(object):
       log('[PID %d stopped]', pid)
       self.job_state.NotifyStopped(pid)  # show in 'jobs' list, enable 'fg'
 
-    # This could happen via coding error.  But this may legitimately happen
-    # if a grandchild outlives the child (its parent).  Then it is reparented
-    # under this process, so we might receive notification of its exit, even
-    # though we didn't start it.  We can't have any knowledge of such
-    # processes, so print a warning.
-    if pid not in self.callbacks:
-      ui.Stderr("osh: PID %d stopped, but osh didn't start it", pid)
-      return True  # caller should keep waiting
-
-    callbacks = self.callbacks.pop(pid)
-    #log('[%d] calling %s', pid, callback)
-    for cb in callbacks:
-      cb(pid, status)
     self.last_status = status  # for wait -n
 
     return True  # caller should keep waiting

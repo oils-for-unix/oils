@@ -473,7 +473,7 @@ class Executor(object):
     """
     return [self._EvalRedirect(redir) for redir in node.redirects]
 
-  def _MakeProcess(self, node, disable_errexit=False):
+  def _MakeProcess(self, node, parent_pipeline=None, disable_errexit=False):
     """
     Assume we will run the node in another process.  Return a process.
     """
@@ -496,7 +496,7 @@ class Executor(object):
     # get this check for "free".
     thunk = process.SubProgramThunk(self, node,
                                     disable_errexit=disable_errexit)
-    p = process.Process(thunk, self.job_state)
+    p = process.Process(thunk, self.job_state, parent_pipeline=parent_pipeline)
     return p
 
   def RunSimpleCommand(self, arg_vec, fork_external, funcs=True):
@@ -553,7 +553,7 @@ class Executor(object):
     # First n-1 processes (which is empty when n == 1)
     n = len(node.children)
     for i in xrange(n - 1):
-      p = self._MakeProcess(node.children[i])
+      p = self._MakeProcess(node.children[i], parent_pipeline=pi)
       pi.Add(p)
 
     # Last piece of code is in THIS PROCESS.  'echo foo | read line; echo $line'
@@ -585,9 +585,9 @@ class Executor(object):
     if node.tag == command_e.Pipeline:
       pi = process.Pipeline()
       for child in node.children:
-        pi.Add(self._MakeProcess(child))
+        pi.Add(self._MakeProcess(child, parent_pipeline=pi))
 
-      pi.Start(self.waiter)  # Registers OnStateChange
+      pi.Start(self.waiter)
       last_pid = pi.LastPid()
       self.mem.last_bg_pid = last_pid   # for $!
 
@@ -604,7 +604,6 @@ class Executor(object):
       pid = p.Start()
       self.mem.last_bg_pid = pid  # for $!
       self.job_state.AddJob(p)  # show in 'jobs' list
-      self.waiter.Register(pid, p.OnStateChange)
       log('Started background process with pid %d', pid)
     return 0
 
@@ -1247,7 +1246,6 @@ class Executor(object):
     p.AddStateChange(process.StdoutToPipe(r, w))
     pid = p.Start()
     #log('Command sub started %d', pid)
-    self.waiter.Register(pid, p.OnStateChange)
 
     chunks = []
     posix.close(w)  # not going to write
@@ -1334,10 +1332,6 @@ class Executor(object):
       posix.close(r)
     else:
       raise AssertionError
-
-    #log('I am %d', posix.getpid())
-    #log('Process sub started %d', pid)
-    self.waiter.Register(pid, p.OnStateChange)
 
     # NOTE: Like bash, we never actually wait on it!
     # TODO: At least set $! ?

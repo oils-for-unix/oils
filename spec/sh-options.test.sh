@@ -178,9 +178,14 @@ echo $?
 set -o pipefail
 { sleep 0.01; exit 9; } | { sleep 0.02; exit 2; } | { sleep 0.03; exit 0; }
 echo $?
-## stdout-json: "0\n2\n"
+## STDOUT:
+0
+2
+## END
 ## status: 0
-## N-I dash stdout-json: "0\n"
+## N-I dash STDOUT:
+0
+## END
 ## N-I dash status: 2
 
 #### shopt -p -o
