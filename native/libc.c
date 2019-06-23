@@ -5,7 +5,6 @@
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>  // printf
 #include <limits.h>
-#define _XOPEN_SOURCE
 #include <wchar.h>
 #include <stdlib.h>
 #include <sys/ioctl.h>
@@ -400,7 +399,8 @@ func_wcswidth(PyObject *self, PyObject *args){
     }
     int len = mbstowcs(NULL, string, 0);
     if (len == -1) {
-        PyErr_SetString(PyExc_UnicodeError, "Invalid UTF-8 string");
+        PyErr_SetString(PyExc_UnicodeError, "mbstowcs error: Invalid UTF-8 string");
+        setlocale(LC_CTYPE, old_locale);
         return NULL;
     }
     wchar_t unicode[len + 1];

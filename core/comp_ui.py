@@ -43,10 +43,10 @@ def _PromptLen(prompt_str):
     elif not escaped:
       display_str += c
   try:
-      return libc.wcswidth(display_str)
+    return libc.wcswidth(display_str)
   # en_US.UTF-8 locale missing, just return the number of bytes
-  except SystemError:
-      return len(display_str)
+  except (SystemError, UnicodeError):
+    return len(display_str)
 
 
 class PromptState(object):
