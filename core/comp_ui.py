@@ -6,7 +6,6 @@ from __future__ import print_function
 import sys
 
 import libc
-import wcwidth
 
 _RESET = '\033[0;0m'
 _BOLD = '\033[1m'
@@ -36,14 +35,17 @@ def _PromptLen(prompt_str):
   number of bytes or the number of unicode characters."""
   escaped = False
   length = 0
-  for c in unicode(prompt_str, 'utf-8'):
+  chunk = ""
+  for c in prompt_str:
     if c == '\x01':
       escaped = True
+      length += libc.wcswidth(chunk)
+      chunk = ""
     elif c == '\x02':
       escaped = False
     elif not escaped:
-        length += wcwidth.wcwidth(c)
-  return length
+      chunk += c
+  return length + libc.wcswidth(chunk)
 
 
 class PromptState(object):

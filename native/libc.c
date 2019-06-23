@@ -5,8 +5,11 @@
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>  // printf
 #include <limits.h>
+#define _XOPEN_SOURCE
+#include <wchar.h>
 #include <stdlib.h>
 #include <sys/ioctl.h>
+#include <locale.h>
 
 // Enable GNU extensions in fnmatch.h.
 // TODO: Need a configure option for this.
@@ -383,6 +386,30 @@ func_get_terminal_width(PyObject *self, PyObject *unused) {
   return PyLong_FromLong(w.ws_col);
 }
 
+static PyObject *
+func_wcswidth(PyObject *self, PyObject *args){
+    char *string;
+    if (!PyArg_ParseTuple(args, "s", &string)) {
+        return NULL;
+    }
+
+    const char *old_locale = getenv("LC_CTYPE");
+    if (setlocale(LC_CTYPE, "en_US.UTF-8") == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "en_US.UTF-8 is not a valid locale");
+        return NULL;
+    }
+    int len = mbstowcs(NULL, string, 0);
+    if (len == -1) {
+        PyErr_SetString(PyExc_UnicodeError, "Invalid UTF-8 string");
+        return NULL;
+    }
+    wchar_t unicode[len + 1];
+    mbstowcs(unicode, string, len + 1);
+    int width = wcswidth(unicode, len + 1);
+
+    setlocale(LC_CTYPE, old_locale);
+    return PyInt_FromLong(width);
+}
 
 #ifdef OVM_MAIN
 #include "native/libc.c/methods.def"
@@ -418,6 +445,9 @@ static PyMethodDef methods[] = {
 
   // ioctl() to get the terminal width.
   {"get_terminal_width", func_get_terminal_width, METH_NOARGS, ""},
+
+  // Get the display width of a string. Throw an exception if the string is invalid UTF8.
+  {"wcswidth", func_wcswidth, METH_VARARGS, ""},
   {NULL, NULL},
 };
 #endif
