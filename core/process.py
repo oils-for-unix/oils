@@ -17,7 +17,7 @@ import sys
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import redirect_e, job_state_e
-from asdl import pretty
+from asdl import const, pretty
 from core import ui
 from core.util import log
 from pylib import os_
@@ -496,13 +496,14 @@ class ExternalProgram(object):
       os_.execvpe(argv[0], argv, environ)
     except OSError as e:
       # Run with /bin/sh when ENOEXEC error (no shebang). Because all shells do it.
-      if e.errno == errno.ENOEXEC:
+      if e.errno == errno.ENOEXEC and argv[0] != "/bin/sh":  # avoid infinite loops
         _, realpath = _ResolveFile(argv[0], environ["PATH"].split(':'))
         # Check if file was deleted in the meantime
         if realpath is None:
           e.errno = errno.ENOENT
         else:
           arg_vec.strs = ["/bin/sh", realpath] + argv[1:]
+          arg_vec.spids = [const.NO_INTEGER] + arg_vec.spids
           # Never returns
           self.Exec(arg_vec, environ)
 
