@@ -34,3 +34,10 @@ chmod +x $TMP/no-shebang
 $SH -c '$TMP/no-shebang'
 ## stdout: hi
 ## status: 0
+
+#### File with relative path and no shebang is executed
+echo 'echo hi' > no-shebang
+chmod +x no-shebang
+$SH -c ./no-shebang
+## stdout: hi
+## status: 0

@@ -21,6 +21,7 @@ from asdl import pretty
 from core import ui
 from core.util import log
 from pylib import os_
+from osh.builtin import _ResolveFile
 
 import posix_ as posix
 
@@ -494,8 +495,16 @@ class ExternalProgram(object):
     try:
       os_.execvpe(argv[0], argv, environ)
     except OSError as e:
-      # TODO: Run with /bin/sh when ENOEXEC error (noshebang).  Because all
-      # shells do it.
+      # Run with /bin/sh when ENOEXEC error (no shebang). Because all shells do it.
+      if e.errno == errno.ENOEXEC:
+        _, realpath = _ResolveFile(argv[0], environ["PATH"].split(':'))
+        # Check if file was deleted in the meantime
+        if realpath is None:
+          e.errno = errno.ENOENT
+        else:
+          arg_vec.strs = ["/bin/sh", realpath] + argv[1:]
+          # Never returns
+          self.Exec(arg_vec, environ)
 
       # Would be nice: when the path is relative and ENOENT: print PWD and do
       # spelling correction?
