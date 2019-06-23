@@ -122,6 +122,17 @@ class PosixTest(unittest.TestCase):
       log('Hanging on wait in pid %d', posix_.getpid())
       posix_.wait()
 
+  def testWaitpid(self):
+    if posix_.environ.get('EINTR_TEST'):
+      # Now we can do kill -TERM PID can get EINTR.
+      signal.signal(signal.SIGTERM, _Handler)
+
+      p = subprocess.Popen(['sleep', '5'])
+      log('started sleep pid %d', p.pid)
+
+      log('Hanging on waitpid in pid %d', posix_.getpid())
+      posix_.waitpid(-1, 0)
+
   def testWrite(self):
     if posix_.environ.get('EINTR_TEST'):
 

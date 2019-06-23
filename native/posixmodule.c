@@ -1727,11 +1727,23 @@ posix_waitpid(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, PARSE_PID "i:waitpid", &pid, &options))
         return NULL;
-    Py_BEGIN_ALLOW_THREADS
-    pid = waitpid(pid, &status, options);
-    Py_END_ALLOW_THREADS
-    if (pid == -1)
-        return posix_error();
+    while (1) {
+        Py_BEGIN_ALLOW_THREADS
+        pid = waitpid(pid, &status, options);
+        Py_END_ALLOW_THREADS
+
+        if (pid >= 0) {  // success
+            break;
+        } else {
+            if (PyErr_CheckSignals()) {
+                return NULL;  // Propagate KeyboardInterrupt
+            }
+            if (errno != EINTR) {  // e.g. ECHILD
+                return posix_error();
+            }
+        }
+        // Otherwise, try again on EINTR.
+    }
 
     return Py_BuildValue("Ni", PyLong_FromPid(pid), WAIT_STATUS_INT(status));
 }

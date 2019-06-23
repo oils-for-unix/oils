@@ -16,6 +16,7 @@ posix-test() {
 
 test-read() { posix-test PosixTest.testRead; }
 test-wait() { posix-test PosixTest.testWait; }
+test-waitpid() { posix-test PosixTest.testWaitpid; }
 test-write() { posix-test PosixTest.testWrite; }
 
 # Conclusion: print CAN raise IOError with EINTR.
