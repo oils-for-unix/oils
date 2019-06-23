@@ -34,18 +34,19 @@ def _PromptLen(prompt_str):
   In particular, the display width of a string may be different from either the
   number of bytes or the number of unicode characters."""
   escaped = False
-  length = 0
-  chunk = ""
+  display_str = ""
   for c in prompt_str:
     if c == '\x01':
       escaped = True
-      length += libc.wcswidth(chunk)
-      chunk = ""
     elif c == '\x02':
       escaped = False
     elif not escaped:
-      chunk += c
-  return length + libc.wcswidth(chunk)
+      display_str += c
+  try:
+      return libc.wcswidth(display_str)
+  # en_US.UTF-8 locale missing, just return the number of bytes
+  except SystemError:
+      return len(display_str)
 
 
 class PromptState(object):

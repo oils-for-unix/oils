@@ -395,7 +395,7 @@ func_wcswidth(PyObject *self, PyObject *args){
 
     const char *old_locale = setlocale(LC_CTYPE, "en_US.UTF-8");
     if (old_locale == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "en_US.UTF-8 is not a valid locale");
+        PyErr_SetString(PyExc_SystemError, "en_US.UTF-8 is not a valid locale");
         return NULL;
     }
     int len = mbstowcs(NULL, string, 0);
