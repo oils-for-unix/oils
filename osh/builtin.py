@@ -1032,7 +1032,8 @@ def _ParsePath(path_val):
 def _ResolveFile(name, path_list):
   # Now look for files.
   # Relative path, won't be found by looking in PATH
-  if name.startswith('./') or name.startswith('../'):
+  # Note this will not look for files in the current directory unless prefixed with ./
+  if '/' in name:
     if path_stat.exists(name):
       return ('file', name)
     else:
