@@ -1124,6 +1124,10 @@ class ReadlineCallback(object):
     except (IOError, OSError) as e:
       # test this with prlimit --nproc=1 --pid=$$
       ui.Stderr('I/O error in osh completion: %s', posix.strerror(e.errno))
+    except KeyboardInterrupt:
+      # It appears GNU readline handles Ctrl-C to cancel a long completion.
+      # So this may never happen?
+      ui.Stderr('Ctrl-C in completion')
     except Exception as e:  # ESSENTIAL because readline swallows exceptions.
       import traceback
       traceback.print_exc()

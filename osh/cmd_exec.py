@@ -331,6 +331,13 @@ class Executor(object):
       # e.g. 'type' doesn't accept flag '-x'
       self.errfmt.Print(e.msg, prefix='%r ' % arg0, span_id=e.span_id)
       status = 2  # consistent error code for usage error
+    except KeyboardInterrupt:
+      if self.exec_opts.interactive:
+        print()  # newline after ^C
+        status = 130  # 128 + 2 for SIGINT
+      else:
+        # Abort a batch script
+        raise
     finally:
       # Flush stdout after running ANY builtin.  This is very important!
       # Silence errors like we did from 'echo'.
@@ -591,8 +598,8 @@ class Executor(object):
       last_pid = pi.LastPid()
       self.mem.last_bg_pid = last_pid   # for $!
 
-      self.job_state.AddJob(pi)  # show in 'jobs' list
-      log('Started background pipeline with last process ID %d', last_pid)
+      job_id = self.job_state.AddJob(pi)  # show in 'jobs' list
+      log('[%%%d] Started Pipeline with PID %d', job_id, last_pid)
 
     else:
       # Problem: to get the 'set -b' behavior of immediate notifications, we
@@ -603,8 +610,8 @@ class Executor(object):
       p = self._MakeProcess(node)
       pid = p.Start()
       self.mem.last_bg_pid = pid  # for $!
-      self.job_state.AddJob(p)  # show in 'jobs' list
-      log('Started background process with pid %d', pid)
+      job_id = self.job_state.AddJob(p)  # show in 'jobs' list
+      log('[%%%d] Started PID %d', job_id, pid)
     return 0
 
   def _EvalTempEnv(self, more_env):
@@ -1097,8 +1104,8 @@ class Executor(object):
       # Make a copy and clear it so we don't cause an infinite loop.
       to_run = list(self.trap_nodes)
       del self.trap_nodes[:]
-      for node in to_run:
-        self._Execute(node)
+      for trap_node in to_run:  # NOTE: Don't call this 'node'!
+        self._Execute(trap_node)
 
     # These nodes have no redirects.  NOTE: Function definitions have
     # redirects, but we do NOT want to evaluate them yet!  They're evaluated
@@ -1216,6 +1223,9 @@ class Executor(object):
       # test this with prlimit --nproc=1 --pid=$$
       ui.Stderr('osh I/O error: %s', posix.strerror(e.errno))
       status = 2  # dash gives status 2
+    except KeyboardInterrupt:
+      print()
+      status = 130  # 128 + 2
 
     self.dumper.MaybeDump(status)
 

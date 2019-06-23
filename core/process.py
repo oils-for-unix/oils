@@ -47,8 +47,6 @@ def SignalState_AfterForkingChild():
   """Not a member of SignalState since we didn't do dependency injection."""
   # Respond to Ctrl-\ (core dump)
   signal.signal(signal.SIGQUIT, signal.SIG_DFL)
-  # Respond to Ctrl-C
-  signal.signal(signal.SIGINT, signal.SIG_DFL)
 
   # Python sets SIGPIPE handler to SIG_IGN by default.  Child processes
   # shouldn't have this.
@@ -68,17 +66,9 @@ class SignalState(object):
     # KeyboardInterrupt.
     self.orig_sigint_handler = signal.getsignal(signal.SIGINT)
 
-  def _IgnoreSigInt(self):
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
-
   def InitShell(self):
     """Always called when initializing the shell process."""
-
-    # SIGINT is treated differently than SIGQUIT and SIGTSTP because Python
-    # handles it with KeyboardInterrupt.  We don't want KeyboardInterrupt at
-    # arbitrary points in a non-interactive shell.  (e.g. osh -c 'sleep 5' then
-    # Ctrl-C raises KeyboardInterrupt in posix.wait()).
-    self._IgnoreSigInt()
+    pass
 
   def InitInteractiveShell(self, display):
     """Called when initializing an interactive shell."""
@@ -92,31 +82,14 @@ class SignalState(object):
     # NOTE: In line_input.c, we turned off rl_catch_sigwinch.
     signal.signal(signal.SIGWINCH, lambda x, y: display.OnWindowChange())
 
-  # NOTE: SIGINT is temporarily enabled during readline().
-  def BeginReadline(self):
-    """Called before invoking GNU readline()."""
-    signal.signal(signal.SIGINT, self.orig_sigint_handler)
-
-  def EndReadline(self):
-    """Called after GNU readline() returns."""
-    # TODO: Should we restore the user-registered handler?
-    self._IgnoreSigInt()
-
   def AddUserTrap(self, sig_num, handler):
     """For user-defined handlers registered with the 'trap' builtin."""
-    if sig_num == signal.SIGINT:
-      # TODO:
-      # Is this different if the shell is interactive?
-      pass
     signal.signal(sig_num, handler)
 
   def RemoveUserTrap(self, sig_num):
     """For user-defined handlers registered with the 'trap' builtin."""
     # Restore default
-    if sig_num == signal.SIGINT:
-      self._IgnoreSigInt()
-    else:
-      signal.signal(sig_num, signal.SIG_DFL)
+    signal.signal(sig_num, signal.SIG_DFL)
 
 
 class _FdFrame(object):
@@ -1032,10 +1005,10 @@ class JobState(object):
     """For jobs -n, which I think is also used in the interactive prompt."""
     pass
 
-  def AllDone(self):
+  def NoneAreRunning(self):
     """Test if all jobs are done.  Used by 'wait' builtin."""
     for job in self.jobs.itervalues():
-      if job.State() != job_state_e.Done:
+      if job.State() == job_state_e.Running:
         return False
     return True
 
@@ -1075,15 +1048,19 @@ class Waiter(object):
   Now when you do wait() after starting the pipeline, you might get a pipeline
   process OR a background process!  So you have to distinguish between them.
   """
-  def __init__(self, job_state):
+  def __init__(self, job_state, exec_opts):
     self.job_state = job_state
+    self.exec_opts = exec_opts
     self.last_status = 127  # wait -n error code
 
   def WaitForOne(self):
-    """Wait until the next process returns.
+    """Wait until the next process returns (or maybe Ctrl-C).
 
     Returns:
       True if we got a notification, or False if there was nothing to wait for.
+
+      In the interactive shell, we return True if we get a Ctrl-C, so the
+      caller will try again.
     """
     # This is a list of async jobs
     try:
@@ -1100,6 +1077,17 @@ class Waiter(object):
         # module.  The only other error is EINVAL, which doesn't apply to
         # this call.
         raise
+    except KeyboardInterrupt:
+      # NOTE: Another way to handle this is to disable SIGINT when a process is
+      # running.  Not sure if there's any real difference.  bash and dash
+      # handle SIGINT pretty differently.
+      if self.exec_opts.interactive:
+        # Caller should keep waiting.  If we run 'sleep 3' and hit Ctrl-C, both
+        # processes will get SIGINT, but the shell has to wait again to get the
+        # exit code.
+        return True
+      else:
+        raise  # abort a batch script
 
     #log('WAIT got %s %s', pid, status)
 
@@ -1134,7 +1122,7 @@ class Waiter(object):
       # TODO: Do something nicer here.  Implement 'fg' command.
       # Show in jobs list.
       log('')
-      log('[PID %d stopped]', pid)
+      log('[PID %d] Stopped', pid)
       self.job_state.NotifyStopped(pid)  # show in 'jobs' list, enable 'fg'
       proc.WhenStopped()
 

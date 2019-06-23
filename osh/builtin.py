@@ -268,14 +268,24 @@ class Wait(object):
     arg_count = len(arg_vec.strs)
 
     if arg.n:
-      # wait -n returns the exit status of the process.  But how do you know
-      # WHICH process?  That doesn't seem useful.
+      # wait -n returns the exit status of the JOB.
+      # You don't know WHICH process, which is odd.
 
       # TODO: this should wait for the next JOB, which may be multiple
       # processes.
       # Bash has a wait_for_any_job() function, which loops until the jobs
       # table changes.
-      log('wait next')
+      #
+      # target_count = self.job_state.NumRunning() - 1
+      # while True:
+      #   if not self.waiter.WaitForOne():
+      #     break
+      #
+      #   if self.job_state.NumRunning == target_count:
+      #     break
+      #    
+      #log('wait next')
+
       if self.waiter.WaitForOne():
         return self.waiter.last_status
       else:
@@ -284,13 +294,16 @@ class Wait(object):
     if arg_index == arg_count:  # no arguments
       #log('wait all')
 
-      # TODO: get all background jobs from JobState?
       i = 0
       while True:
+        # BUG: If there is a STOPPED process, this will hang forever, because
+        # we don't get ECHILD.
+        # Not sure it matters since you can now Ctrl-C it.
+
         if not self.waiter.WaitForOne():
           break  # nothing to wait for
         i += 1
-        if self.job_state.AllDone():
+        if self.job_state.NoneAreRunning():
           break
 
       log('Waited for %d processes', i)
@@ -366,7 +379,7 @@ class Fg(object):
       log('No job to put in the foreground')
       return 1
 
-    # Continue!
+    # TODO: Print job ID rather than the PID
     log('Continue PID %d', pid)
     posix.kill(pid, signal.SIGCONT)
 

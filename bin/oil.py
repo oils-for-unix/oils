@@ -348,10 +348,11 @@ def ShellMain(lang, argv0, argv, login_shell):
   # evaluators.  Some of the four below are only shared between a builtin and
   # the Executor, so we could put them somewhere else.
   exec_deps.traps = {}
-  exec_deps.trap_nodes = []
+  exec_deps.trap_nodes = []  # TODO: Clear on fork() to avoid duplicates
 
   exec_deps.job_state = job_state
-  exec_deps.waiter = process.Waiter(job_state)
+  # note: exec_opts.interactive set later
+  exec_deps.waiter = process.Waiter(job_state, exec_opts)
   exec_deps.errfmt = errfmt
 
   my_pid = posix.getpid()

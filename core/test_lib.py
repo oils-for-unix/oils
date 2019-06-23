@@ -157,7 +157,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   exec_deps = cmd_exec.Deps()
   exec_deps.errfmt = errfmt
   exec_deps.job_state = job_state
-  exec_deps.waiter = process.Waiter(exec_deps.job_state)
+  exec_deps.waiter = process.Waiter(exec_deps.job_state, exec_opts)
 
   exec_deps.ext_prog = \
       ext_prog or process.ExternalProgram('', fd_state, errfmt, debug_f)

@@ -79,6 +79,9 @@ class _ErrExit(object):
 
 # Used by builtin
 SET_OPTIONS = [
+    # NOTE: set -i and +i is explicitly disallowed.  Only osh -i or +i is valid
+    # https://unix.stackexchange.com/questions/339506/can-an-interactive-shell-become-non-interactive-or-vice-versa
+
     ('e', 'errexit'),
     ('n', 'noexec'),
     ('u', 'nounset'),

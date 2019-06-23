@@ -8,12 +8,13 @@ import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import redirect, arg_vector
-from osh import builtin
 from core import process  # module under test
+from core import test_lib
 from core import ui
 from core import util
 from core.util import log
-from core import test_lib
+from osh import builtin
+from osh import state
 
 Process = process.Process
 ExternalThunk = process.ExternalThunk
@@ -24,9 +25,12 @@ def Banner(msg):
   print(msg)
 
 
-_JOB_STATE = process.JobState()
-_WAITER = process.Waiter(_JOB_STATE)
+# TODO: Put these all in a function.
 _ARENA = test_lib.MakeArena('process_test.py')
+_MEM = state.Mem('', [], {}, _ARENA)
+_EXEC_OPTS = state.ExecOpts(_MEM, None)
+_JOB_STATE = process.JobState()
+_WAITER = process.Waiter(_JOB_STATE, _EXEC_OPTS)
 _ERRFMT = ui.ErrorFormatter(_ARENA)
 _FD_STATE = process.FdState(_ERRFMT, _JOB_STATE)
 _EXT_PROG = process.ExternalProgram(False, _FD_STATE, _ERRFMT,
@@ -46,7 +50,7 @@ def _ExtProc(argv):
 class ProcessTest(unittest.TestCase):
 
   def testStdinRedirect(self):
-    waiter = process.Waiter(_JOB_STATE)
+    waiter = process.Waiter(_JOB_STATE, _EXEC_OPTS)
     fd_state = process.FdState(_ERRFMT, _JOB_STATE)
 
     PATH = '_tmp/one-two.txt'

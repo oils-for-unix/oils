@@ -74,7 +74,6 @@ class InteractiveLineReader(_Reader):
     # problems with readline?  It needs to know about the prompt.
     #sys.stderr.write(self.prompt_str)
 
-    self.sig_state.BeginReadline()
     try:
       line = raw_input(self.prompt_str) + '\n'  # newline required
     except EOFError:
@@ -88,8 +87,6 @@ class InteractiveLineReader(_Reader):
       # realized I don't like that behavior because it changes the numbers!  I
       # can't just remember a number -- I have to type 'hi' again.
       line = self.hist_ev.Eval(line)
-    finally:
-      self.sig_state.EndReadline()
 
     # Add the line if it's not EOL, not whitespace-only, not the same as the
     # previous line, and we have line_input.

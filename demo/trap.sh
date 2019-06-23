@@ -22,7 +22,7 @@ sigterm-then-kill-test() {
     echo $$ > _tmp/pid.txt;
     trap "echo SIGTERM" TERM;
     sleep 1;
-    echo < "PID $$ done"' &
+    echo "< PID $$ done"' &
 
   sleep 0.5
   local pid=$(cat _tmp/pid.txt)
