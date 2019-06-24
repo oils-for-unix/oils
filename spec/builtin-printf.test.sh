@@ -183,19 +183,31 @@ printf '[%6.4d]\n' 42
 ## N-I osh stdout-json: ""
 ## N-I osh status: 2
 
-#### printf %6.4s is overspecified, behaves like %6s
-printf '[%6s]\n' 42
-printf '[%6.4s]\n' 42
-echo status=$?
+#### printf %6.4s does both truncation and padding
+printf '[%6s]\n' foo
+printf '[%6.4s]\n' foo
+printf '[%-6.4s]\n' foo
+printf '[%6s]\n' spam-eggs
+printf '[%6.4s]\n' spam-eggs
+printf '[%-6.4s]\n' spam-eggs
 ## STDOUT:
-[    42]
-[    42]
-status=0
+[   foo]
+[   foo]
+[foo   ]
+[spam-eggs]
+[  spam]
+[spam  ]
 ## END
-## N-I osh STDOUT:
-[    42]
-status=2
+
+#### printf %6.0s and %0.0s
+printf '[%6.0s]\n' foo
+printf '[%0.0s]\n' foo
+## STDOUT:
+[      ]
+[]
 ## END
+## N-I mksh stdout-json: "[      ]\n["
+## N-I mksh status: 1
 
 #### %u prints unsigned integers
 printf '[%u]\n' -42

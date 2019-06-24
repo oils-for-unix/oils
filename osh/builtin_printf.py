@@ -102,8 +102,8 @@ class _FormatStringParser(object):
       p_die(msg, token=self.cur_token)
 
     # Do this check AFTER the floating point checks
-    if part.precision:
-      p_die("precision can't be specified when type isn't floating point",
+    if part.precision and part.type.val not in 'fs':
+      p_die("precision can't be specified when here",
             token=part.precision)
 
     return part
@@ -205,7 +205,9 @@ class Printf(object):
 
           typ = part.type.val
           if typ == 's':
-            pass  # val remains the same
+            if part.precision:
+              precision = int(part.precision.val)
+              s = s[:precision]  # truncate
           elif typ == 'q':
             s = string_ops.ShellQuoteOneLine(s)
           elif typ in 'di':
