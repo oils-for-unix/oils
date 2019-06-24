@@ -1196,7 +1196,7 @@ class DeclareTypeset(object):
         for func_name in sorted(self.funcs):
           print('declare -f %s' % (func_name))
       else:
-        raise NotImplementedError('declare/typeset -f without args')
+        raise args.UsageError('declare/typeset -f without args')
 
     elif arg.p:  # Lookup and print variables.
       if names:
@@ -1209,10 +1209,10 @@ class DeclareTypeset(object):
           else:
             status = 1
       else:
-        raise NotImplementedError('declare/typeset -p without args')
+        raise args.UsageError('declare/typeset -p without args')
 
     else:
-      raise NotImplementedError
+      raise args.UsageError("doesn't understand %s" % arg_vec.strs[1:])
 
     return status
 

@@ -274,7 +274,7 @@ assign() {
 
 # These cases apply to a few shells.
 assign-extended() {
-  sh-spec spec/assign-extended.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/assign-extended.test.sh --osh-failures-allowed 2 \
     $BASH $MKSH $OSH_LIST "$@" 
 }
 
