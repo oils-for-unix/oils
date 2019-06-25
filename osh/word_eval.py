@@ -59,10 +59,9 @@ def _ValueToPartValue(val, quoted):
 
 def _MakeWordFrames(part_vals):
   """
-  A word evaluates to a flat list of word parts (StringPartValue or
-  ArrayPartValue).  A frame is a portion that results in zero or more args.  It
-  can never be joined.  This idea exists because of arrays like "$@" and
-  "${a[@]}".
+  A word evaluates to a flat list of part_value (String or Array).  frame is a
+  portion that results in zero or more args.  It can never be joined.  This
+  idea exists because of arrays like "$@" and "${a[@]}".
 
   Args:
     part_vals: array of part_value.
@@ -772,8 +771,8 @@ class _WordEvaluator(object):
     # For the case where there are no prefix or suffix ops.
     val = self._EmptyStrOrError(val)
 
-    # For example, ${a} evaluates to value_t.Str(), but we want a
-    # part_value.StringPartValue.
+    # For example, ${a} evaluates to value.Str(), but we want a
+    # part_value.String().
     part_val = _ValueToPartValue(val, quoted)
     part_vals.append(part_val)
 
