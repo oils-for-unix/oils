@@ -203,6 +203,32 @@ We've only *parsed* it.
 
 (mksh agrees with OSH, but zsh agrees with bash.)
 
+(13) **Arrays aren't split inside ${}**
+
+Most shells split the entries of arrays like `"$@"` and `"${a[@]}"` here:
+
+    echo ${undef:-"$@"}
+
+In OSH, write this if you want splitting:
+
+    echo ${undef:-$@}
+
+I think OSH is more consistent, but it disagrees with other shells.
+
+
+(14) **No spaces in LHS indexes**
+
+Bash allows:
+
+    a[1 + 2 * 3]=value
+
+Because OSH parses with limited lookahead, it only allows:
+
+    a[1+2*3]=value
+
+The former would try to run a command named `a[1`.
+
+
 ## Runtime
 
 ### set -o errexit
