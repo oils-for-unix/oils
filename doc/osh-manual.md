@@ -3,6 +3,16 @@ OSH Reference Manual
 
 NOTE: This document is in progress.
 
+### Setup
+
+After running the instructions in `INSTALL.txt` (web version linked from
+[releases.html](https://www.oilshell.org/releases.html)), run:
+
+    mkdir -p ~/.config/oil
+
+- An `osh_history` file will be created there to store you history.
+- You can create your own `oshrc` there.
+
 ### Startup Files
 
 On startup, the interactive shell sources **only** `~/.config/oil/oshrc`.  Oil
