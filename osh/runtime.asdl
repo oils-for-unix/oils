@@ -16,7 +16,7 @@ module runtime
     -- do_split really means do_split_elide.
 
     -- TODO: (string s, bool, quoted, bool do_split)
-    String(string s, bool do_split_glob)
+    String(string s, bool quoted, bool do_split)
     -- "$@" or "${a[@]}" -- never split or globbed since double quoted.
   | Array(string* strs)
 

@@ -43,7 +43,7 @@ def _ValueToPartValue(val, quoted):
   assert isinstance(val, value_t), val
 
   if val.tag == value_e.Str:
-    return part_value.String(val.s, not quoted)
+    return part_value.String(val.s, quoted, not quoted)
 
   elif val.tag == value_e.StrArray:
     return part_value.Array(val.strs)
@@ -68,7 +68,7 @@ def _MakeWordFrames(part_vals):
     part_vals: array of part_value.
 
   Returns:
-    List[Tuple[str, do_split_glob]].  Each Tuple is called a "frame".
+    List[Tuple[str, quoted]].  Each Tuple is called a "frame".
 
   Example:
 
@@ -87,14 +87,16 @@ def _MakeWordFrames(part_vals):
 
   for p in part_vals:
     if p.tag == part_value_e.String:
-      current.append((p.s, p.do_split_glob))
+      current.append((p.s, p.quoted))
 
     elif p.tag == part_value_e.Array:
       for i, s in enumerate(s for s in p.strs if s is not None):
+        # Arrays parts are always quoted; otherwise they would have decayed to
+        # a string.
         if i == 0:
-          current.append((s, False))  # don't split or glob
+          current.append((s, True))
         else:
-          new = (s, False)
+          new = (s, True)
           current = [new]
           frames.append(current)  # singleton frame
 
@@ -456,7 +458,7 @@ class _WordEvaluator(object):
     # of (DoubleQuotedPart [LiteralPart '']).  This is better but it means we
     # have to check for it.
     if not part.parts:
-      v = part_value.String('', False)
+      v = part_value.String('', True, False)
       part_vals.append(v)
       return
 
@@ -787,7 +789,8 @@ class _WordEvaluator(object):
           'Array literal should have been handled at word level')
 
     elif part.tag == word_part_e.LiteralPart:
-      v = part_value.String(part.token.val, not quoted)
+      # NOT split whether it's quoted or unquoted.
+      v = part_value.String(part.token.val, quoted, False)
       part_vals.append(v)
 
     elif part.tag == word_part_e.EscapedLiteralPart:
@@ -795,7 +798,7 @@ class _WordEvaluator(object):
       assert len(val) == 2, val  # e.g. \*
       assert val[0] == '\\'
       s = val[1]
-      v = part_value.String(s, False)
+      v = part_value.String(s, True, False)
       part_vals.append(v)
 
     elif part.tag == word_part_e.SingleQuotedPart:
@@ -809,7 +812,7 @@ class _WordEvaluator(object):
       else:
         raise AssertionError(part.left.id)
 
-      v = part_value.String(s, False)
+      v = part_value.String(s, True, False)
       part_vals.append(v)
 
     elif part.tag == word_part_e.DoubleQuotedPart:
@@ -854,24 +857,23 @@ class _WordEvaluator(object):
       # We never parse a quoted string into a TildeSubPart.
       assert not quoted
       s = self._EvalTildeSub(part.token)
-      v = part_value.String(s, False)
+      v = part_value.String(s, True, False)  # NOT split even when unquoted!
       part_vals.append(v)
 
     elif part.tag == word_part_e.ArithSubPart:
       num = self.arith_ev.Eval(part.anode)
-      v = part_value.String(str(num), False)
+      v = part_value.String(str(num), quoted, not quoted)
       part_vals.append(v)
 
     elif part.tag == word_part_e.ExtGlobPart:
-      # do_split_glob should be renamed 'unquoted'?  or inverted and renamed
-      # 'quoted'?
-      part_vals.append(part_value.String(part.op.val, True))
+      # Do NOT split these.
+      part_vals.append(part_value.String(part.op.val, False, False))
       for i, w in enumerate(part.arms):
         if i != 0:
-          part_vals.append(part_value.String('|', True))  # separator
+          part_vals.append(part_value.String('|', False, False))  # separator
         # This flattens the tree!
         self._EvalWordToParts(w, False, part_vals)  # eval like not quoted?
-      part_vals.append(part_value.String(')', True))  # closing )
+      part_vals.append(part_value.String(')', False, False))  # closing )
 
     else:
       raise AssertionError(part.__class__.__name__)
@@ -888,7 +890,7 @@ class _WordEvaluator(object):
         self._EvalWordPart(p, part_vals, quoted=quoted)
 
     elif word.tag == word_e.EmptyWord:
-      part_vals.append(part_value.String('', False))
+      part_vals.append(part_value.String('', quoted, not quoted))
 
     else:
       raise AssertionError(word.__class__.__name__)
@@ -931,9 +933,9 @@ class _WordEvaluator(object):
     for part_val in part_vals:
       if part_val.tag == part_value_e.String:
         # [[ foo == */"*".py ]] or case *.py) ... esac
-        if do_fnmatch and not part_val.do_split_glob:
+        if do_fnmatch and part_val.quoted:
           s = glob_.GlobEscape(part_val.s)
-        elif do_ere and not part_val.do_split_glob:
+        elif do_ere and part_val.quoted:
           s = glob_.ExtendedRegexEscape(part_val.s)
         else:
           s = part_val.s
@@ -1003,28 +1005,27 @@ class _WordEvaluator(object):
 
   def _EvalWordFrame(self, frame, argv):
     all_empty = True
-    all_split_glob = True
-    any_split_glob = False
+    all_quoted = True
+    any_quoted = False
 
     #log('--- frame %s', frame)
 
-    for s, do_split_glob in frame:
-      #log('-- %r %r', s, do_split_glob)
+    for s, quoted in frame:
       if s:
         all_empty = False
 
-      if do_split_glob:
-        any_split_glob = True
+      if quoted:
+        any_quoted = True
       else:
-        all_split_glob = False
+        all_quoted = False
 
     # Elision of ${empty}${empty} but not $empty"$empty" or $empty""
-    if all_empty and all_split_glob:
+    if all_empty and not any_quoted:
       return
 
     # If every frag is quoted, e.g. "$a$b" or any part in "${a[@]}"x, then
     # don't do word splitting or globbing.
-    if not any_split_glob:
+    if all_quoted:
       a = ''.join(s for s, _ in frame)
       argv.append(a)
       return
@@ -1033,30 +1034,20 @@ class _WordEvaluator(object):
 
     # Array of strings, some of which are BOTH IFS-escaped and GLOB escaped!
     frags = []
-    for frag, do_split_glob in frame:
-      #log('frag %r do_split_glob %s', frag, do_split_glob)
+    for frag, quoted in frame:
+      if quoted:
+        if will_glob:
+          frag = glob_.GlobEscape(frag)
+        frag = self.splitter.Escape(frag)
+      else:
+        # We're going to both split and glob, so backslash escape TWICE.
 
-      # If it was quoted, then
-
-      if do_split_glob:
-        # We're going to both split and glob.  So we want to backslash
-        # escape twice?
-
-        # Suppose we get a literal \.
-        # \ -> \\
-        # \\ -> \\\\
+        # If we have a literal \, then we turn it into \\\\.
         # Splitting takes \\\\ -> \\
         # Globbing takes \\ to \ if it doesn't match
         if will_glob:
           frag = _BackslashEscape(frag)
         frag = _BackslashEscape(frag)
-      else:
-        if will_glob:
-          frag = glob_.GlobEscape(frag)
-          #log('GLOB ESCAPED %r', p2)
-
-        frag = self.splitter.Escape(frag)
-        #log('IFS ESCAPED %r', p2)
 
       frags.append(frag)
 
@@ -1067,7 +1058,7 @@ class _WordEvaluator(object):
 
     # space=' '; argv $space"".  We have a quoted part, but we CANNOT elide.
     # Add it back and don't bother globbing.
-    if not args and not all_split_glob:
+    if not args and any_quoted:
       argv.append('')
       return
 
@@ -1121,7 +1112,7 @@ class _WordEvaluator(object):
         for entry in frames:
           log('  %s', entry)
 
-      # Now each frame will append zero or more args.
+      # Do splitting and globbing.  Each frame will append zero or more args.
       for frame in frames:
         self._EvalWordFrame(frame, strs)
 
@@ -1148,11 +1139,12 @@ class NormalWordEvaluator(_WordEvaluator):
 
   def _EvalCommandSub(self, node, quoted):
     stdout = self.ex.RunCommandSub(node)
-    return part_value.String(stdout, not quoted)
+    return part_value.String(stdout, quoted, not quoted)
 
   def _EvalProcessSub(self, node, id_):
     dev_path = self.ex.RunProcessSub(node, id_)
-    return part_value.String(dev_path, False)  # no split or glob
+    # pretend it's quoted; no split or glob
+    return part_value.String(dev_path, True, False)
 
 
 class CompletionWordEvaluator(_WordEvaluator):
@@ -1164,7 +1156,7 @@ class CompletionWordEvaluator(_WordEvaluator):
   line.
   """
   def _EvalCommandSub(self, node, quoted):
-    return part_value.String('__COMMAND_SUB_NOT_EXECUTED__', not quoted)
+    return part_value.String('__NO_COMMAND_SUB__', quoted, not quoted)
 
   def _EvalProcessSub(self, node, id_):
-    return part_value.String('__PROCESS_SUB_NOT_EXECUTED__', False)
+    return part_value.String('__NO_PROCESS_SUB__', quoted, not quoted)
