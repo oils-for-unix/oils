@@ -68,7 +68,7 @@ def _MakeWordFrames(part_vals):
     part_vals: array of part_value.
 
   Returns:
-    List[Tuple[str, quoted]].  Each Tuple is called a "frame".
+    List[Tuple[str, quoted, do_split]].  Each Tuple is called a "frame".
 
   Example:
 
@@ -87,16 +87,16 @@ def _MakeWordFrames(part_vals):
 
   for p in part_vals:
     if p.tag == part_value_e.String:
-      current.append((p.s, p.quoted))
+      current.append((p.s, p.quoted, p.do_split))
 
     elif p.tag == part_value_e.Array:
       for i, s in enumerate(s for s in p.strs if s is not None):
         # Arrays parts are always quoted; otherwise they would have decayed to
         # a string.
+        new = (s, True, False)
         if i == 0:
-          current.append((s, True))
+          current.append(new)
         else:
-          new = (s, True)
           current = [new]
           frames.append(current)  # singleton frame
 
@@ -260,7 +260,7 @@ class _WordEvaluator(object):
     #print('!!',id, is_falsey)
     if op.op_id in (Id.VTest_ColonHyphen, Id.VTest_Hyphen):
       if is_falsey:
-        self._EvalWordToParts(op.arg_word, quoted, part_vals)
+        self._EvalWordToParts(op.arg_word, quoted, part_vals, is_subst=True)
         return None, effect_e.SpliceParts
       else:
         return None, effect_e.NoOp
@@ -270,16 +270,17 @@ class _WordEvaluator(object):
       if is_falsey:
         return None, effect_e.NoOp
       else:
-        self._EvalWordToParts(op.arg_word, quoted, part_vals)
+        self._EvalWordToParts(op.arg_word, quoted, part_vals, is_subst=True)
         return None, effect_e.SpliceParts
 
     elif op.op_id in (Id.VTest_ColonEquals, Id.VTest_Equals):
       if is_falsey:
         # Collect new part vals.
         assign_part_vals = []
-        self._EvalWordToParts(op.arg_word, quoted, assign_part_vals)
+        self._EvalWordToParts(op.arg_word, quoted, assign_part_vals,
+                              is_subst=True)
 
-        # Append them to out param and return them.
+        # Append them to out param AND return them.
         part_vals.extend(assign_part_vals)
         return assign_part_vals, effect_e.SpliceAndAssign
       else:
@@ -289,7 +290,8 @@ class _WordEvaluator(object):
       if is_falsey:
         # The arg is the error mesage
         error_part_vals = []
-        self._EvalWordToParts(op.arg_word, quoted, error_part_vals)
+        self._EvalWordToParts(op.arg_word, quoted, error_part_vals,
+                              is_subst=True)
         return error_part_vals, effect_e.Error
       else:
         return None, effect_e.NoOp
@@ -775,7 +777,7 @@ class _WordEvaluator(object):
     part_val = _ValueToPartValue(val, quoted)
     part_vals.append(part_val)
 
-  def _EvalWordPart(self, part, part_vals, quoted=False):
+  def _EvalWordPart(self, part, part_vals, quoted=False, is_subst=False):
     """Evaluate a word part.
 
     Args:
@@ -789,8 +791,9 @@ class _WordEvaluator(object):
           'Array literal should have been handled at word level')
 
     elif part.tag == word_part_e.LiteralPart:
-      # NOT split whether it's quoted or unquoted.
-      v = part_value.String(part.token.val, quoted, False)
+      # Split if it's in a substitution.
+      # That is: echo is not split, but ${foo:-echo} is split
+      v = part_value.String(part.token.val, quoted, is_subst)
       part_vals.append(v)
 
     elif part.tag == word_part_e.EscapedLiteralPart:
@@ -878,7 +881,7 @@ class _WordEvaluator(object):
     else:
       raise AssertionError(part.__class__.__name__)
 
-  def _EvalWordToParts(self, word, quoted, part_vals):
+  def _EvalWordToParts(self, word, quoted, part_vals, is_subst=False):
     """Helper for EvalRhsWord, EvalWordSequence, etc.
 
     Returns:
@@ -887,7 +890,7 @@ class _WordEvaluator(object):
     """
     if word.tag == word_e.CompoundWord:
       for p in word.parts:
-        self._EvalWordPart(p, part_vals, quoted=quoted)
+        self._EvalWordPart(p, part_vals, quoted=quoted, is_subst=is_subst)
 
     elif word.tag == word_e.EmptyWord:
       part_vals.append(part_value.String('', quoted, not quoted))
@@ -901,7 +904,7 @@ class _WordEvaluator(object):
     Given a word, returns pattern.ERE if has an ExtGlobPart, or pattern.Fnmatch
     otherwise.
 
-    NOTE: Have ot handle nested extglob like: [[ foo == ${empty:-@(foo|bar) ]]
+    NOTE: Have to handle nested extglob like: [[ foo == ${empty:-@(foo|bar) ]]
     """
     pass
 
@@ -1010,7 +1013,7 @@ class _WordEvaluator(object):
 
     #log('--- frame %s', frame)
 
-    for s, quoted in frame:
+    for s, quoted, _ in frame:
       if s:
         all_empty = False
 
@@ -1026,7 +1029,7 @@ class _WordEvaluator(object):
     # If every frag is quoted, e.g. "$a$b" or any part in "${a[@]}"x, then
     # don't do word splitting or globbing.
     if all_quoted:
-      a = ''.join(s for s, _ in frame)
+      a = ''.join(s for s, _, _ in frame)
       argv.append(a)
       return
 
@@ -1034,20 +1037,22 @@ class _WordEvaluator(object):
 
     # Array of strings, some of which are BOTH IFS-escaped and GLOB escaped!
     frags = []
-    for frag, quoted in frame:
-      if quoted:
-        if will_glob:
+    for frag, quoted, do_split in frame:
+      if will_glob:
+        if quoted:
           frag = glob_.GlobEscape(frag)
-        frag = self.splitter.Escape(frag)
-      else:
-        # We're going to both split and glob, so backslash escape TWICE.
+        else:
+          # We're going to both split and glob, so backslash escape TWICE.
 
-        # If we have a literal \, then we turn it into \\\\.
-        # Splitting takes \\\\ -> \\
-        # Globbing takes \\ to \ if it doesn't match
-        if will_glob:
+          # If we have a literal \, then we turn it into \\\\.
+          # Splitting takes \\\\ -> \\
+          # Globbing takes \\ to \ if it doesn't match
           frag = _BackslashEscape(frag)
+
+      if do_split:
         frag = _BackslashEscape(frag)
+      else:
+        frag = self.splitter.Escape(frag)
 
       frags.append(frag)
 
@@ -1159,4 +1164,5 @@ class CompletionWordEvaluator(_WordEvaluator):
     return part_value.String('__NO_COMMAND_SUB__', quoted, not quoted)
 
   def _EvalProcessSub(self, node, id_):
-    return part_value.String('__NO_PROCESS_SUB__', quoted, not quoted)
+    # pretend it's quoted; no split or glob
+    return part_value.String('__NO_PROCESS_SUB__', True, False)

@@ -257,7 +257,7 @@ comments() {
 }
 
 word-split() {
-  sh-spec spec/word-split.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/word-split.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -542,7 +542,7 @@ array() {
 }
 
 array-compat() {
-  sh-spec spec/array-compat.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/array-compat.test.sh --osh-failures-allowed 1 \
     $BASH $MKSH $OSH_LIST "$@"
 }
 
