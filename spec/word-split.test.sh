@@ -220,6 +220,21 @@ argv.py X"ec  ho "
 ['Xec  ho ']
 ## END
 
+#### Empty IFS (regression for bug)
+IFS=
+echo a"$*"b
+## STDOUT:
+ab
+## END
+
+#### Unset IFS (regression for bug)
+set a b c
+unset IFS
+echo ["$*"]
+## STDOUT:
+[a b c]
+## END
+
 
 # TODO:
 # - unquoted args of whitespace are not elided (when IFS = null)

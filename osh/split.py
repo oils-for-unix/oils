@@ -134,9 +134,12 @@ class SplitContext(object):
     # the parameter values are concatenated."
     val = self.mem.GetVar('IFS')
     if val.tag == value_e.Undef:
-      return ''
+      return ' '
     elif val.tag == value_e.Str:
-      return val.s[0]
+      if val.s:
+        return val.s[0]
+      else:
+        return ' '
     else:
       # TODO: Raise proper error
       raise AssertionError("IFS shouldn't be an array")
