@@ -7,17 +7,17 @@ module runtime
   -- argv entries.
   arg_vector = (string* strs, int* spids)
 
-  -- A static word_part from osh.asdl is evaluated to a dynamic part_value.
+  -- A parse-time word_part from syntax.asdl is evaluated to a runtime
+  -- part_value.
   part_value = 
-    -- * Unquoted Substitutions get split and globbed.
-    -- * Single or double quoted parts get neither split or globbed.
-    -- * Globbing applies to bare words like echo or *.py.  But they are NOT
-    --   split with IFS!
-    -- do_split really means do_split_elide.
 
-    -- TODO: (string s, bool, quoted, bool do_split)
+    -- * Single or double quoted parts get neither split or globbed.
+    -- * Bare words like echo or *.py are globbed, but NOT split with IFS.
+    -- * Unquoted Substitutions are split and globbed.
     String(string s, bool quoted, bool do_split)
-    -- "$@" or "${a[@]}" -- never split or globbed since double quoted.
+
+    -- "$@" or "${a[@]}" -- never globbed or split (though other shells
+    -- split them)
   | Array(string* strs)
 
   -- A static word from osh.asdl is evaluted to a dynamic value.  value
