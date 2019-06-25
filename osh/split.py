@@ -139,7 +139,7 @@ class SplitContext(object):
       if val.s:
         return val.s[0]
       else:
-        return ' '
+        return ''
     else:
       # TODO: Raise proper error
       raise AssertionError("IFS shouldn't be an array")

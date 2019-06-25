@@ -222,9 +222,12 @@ argv.py X"ec  ho "
 
 #### Empty IFS (regression for bug)
 IFS=
-echo a"$*"b
+echo ["$*"]
+set a b c
+echo ["$*"]
 ## STDOUT:
-ab
+[]
+[abc]
 ## END
 
 #### Unset IFS (regression for bug)
@@ -234,6 +237,13 @@ echo ["$*"]
 ## STDOUT:
 [a b c]
 ## END
+
+#### IFS=o (regression for bug)
+IFS=o
+echo hi
+## STDOUT:
+hi
+##
 
 
 # TODO:

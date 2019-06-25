@@ -65,10 +65,10 @@ def _MakeWordFrames(part_vals):
   "${a[@]}".
 
   Args:
-    part_vals: array of part_value.  Either StringPartValue or ArrayPartValue.
+    part_vals: array of part_value.
 
   Returns:
-    An array of frames.  Each frame is a tuple.
+    List[Tuple[str, do_split_glob]].  Each Tuple is called a "frame".
 
   Example:
 
