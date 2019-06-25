@@ -17,6 +17,8 @@ Oil Version 0.6.pre22
 - [OSH Quick Reference](doc/osh-quick-ref.html), with Examples (in progress).
   This document underlies the OSH `help` builtin.  It also gives a rough
   overview of what features OSH implements.
+- Latest [doc/osh-manual.md](https://github.com/oilshell/oil/blob/master/doc/osh-manual.md)
+  on Github.  (TODO: This should be versioned.)
 
 ### Docs For Developers
 

@@ -45,6 +45,13 @@ This parses and prints a syntax tree for the 'configure' script.
 
     osh -n configure
 
+More Documentation
+------------------
+
+Every release has a home page with links, e.g.
+
+    https://oilshell.org/release/0.6.pre22/
+
 System Requirements
 -------------------
 
