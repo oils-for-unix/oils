@@ -24,25 +24,46 @@ echo ${unset-is unset}
 #### Unquoted with array as default value
 set -- '1 2' '3 4'
 argv.py X${unset=x"$@"x}X
-## stdout: ['Xx1', '2', '3', '4xX']
+argv.py X${unset=x$@x}X  # If you want OSH to split, write this
+# osh
+## STDOUT:
+['Xx1', '2', '3', '4xX']
+['Xx1', '2', '3', '4xX']
+## END
+## OK osh STDOUT:
+['Xx1 2', '3 4xX']
+['Xx1', '2', '3', '4xX']
+## END
 
 #### Quoted with array as default value
 set -- '1 2' '3 4'
 argv.py "X${unset=x"$@"x}X"
-## stdout: ['Xx1 2 3 4xX']
-## BUG bash stdout: ['Xx1', '2', '3', '4xX']
+argv.py "X${unset=x$@x}X"  # OSH is the same here
+## STDOUT:
+['Xx1 2 3 4xX']
+['Xx1 2 3 4xX']
+## END
+## BUG bash STDOUT:
+['Xx1', '2', '3', '4xX']
+['Xx1 2 3 4xX']
+## END
+## OK osh STDOUT:
+['Xx1 2', '3 4xX']
+['Xx1 2 3 4xX']
+## END
 
 #### Assign default with array
-#    HMMMM osh stdout-json: "['Xx1 2', '3 4xX']\n['x1 2 3 4x']\n"
-#    I think OSH diverges here because VTest is different than VOp1?
-#    I parse all the arg words the same way.
 set -- '1 2' '3 4'
 argv.py X${unset=x"$@"x}X
 argv.py "$unset"
 ## STDOUT:
 ['Xx1', '2', '3', '4xX']
 ['x1 2 3 4x']
-## #END
+## END
+## OK osh STDOUT:
+['Xx1 2', '3 4xX']
+['x1 2 3 4x']
+## END
 
 #### Assign default value when empty
 empty=''
