@@ -127,11 +127,32 @@ Instead, use `[\[]` and `[\]]`.
 
 TODO: Explanation.
 
-(8) **Evaluation model of backticks**
+(8) **Backslashes Within Backticks**
 
-TODO: It's largly compatible but differs in case #25 of spec/command-sub.
+In rare cases, OSH processes backslashes within backticks differently than
+other shells.  However there are always **two workarounds** that are compatible
+with every shell:
 
-Shells start to disagree on case #26.
+1. Use `$(echo \")` instead of `` `echo \"` ``.  There's no downside to using
+   `$()` **everywhere** -- it works in all shells and has no special quoting
+   behavior.  Backticks are a "legacy" syntax precisely because of their
+   unintuitive quoting rules (the bash project agrees).
+2. Use `` `echo \\"` `` rather than `` `echo \"` ``.  Although there are
+   different number of backslashes, these two statements **evaluate to the same
+   thing** in all shells.
+   - OSH accepts only the former.  The latter is interpreted as the start of a
+     quoted string, and results in a syntax error.
+
+Notes:
+
+- This is tested in [spec/command-sub][].  (Case #25 fails for OSH, and all
+  shells start to disagree on case #26.)
+- The basic reason for the disagreement is that OSH doesn't have special cases
+  for a particular number of backslashes.  The rules are consistent for any
+    level of quoting, although incompatible in this edge case.
+
+[spec/command-sub]: http://www.oilshell.org/release/0.6.pre22/test/spec.wwz/command-sub.html
+
 
 (9) **Evaluation model of aliases**
 
