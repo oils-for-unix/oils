@@ -414,32 +414,10 @@ announcement-0.6.pre15() {
   html-redirect '/blog/2019/02/18.html' > $SITE_DEPLOY_DIR/release/0.6.pre15/announcement.html
 }
 
-announcement-0.6.pre16() {
-  write-no-announcement
-}
-
-announcement-0.6.pre17() {
-  write-no-announcement
-}
-
-announcement-0.6.pre18() {
-  write-no-announcement
-}
-
-announcement-0.6.pre19() {
-  write-no-announcement
-}
-
-announcement-0.6.pre20() {
-  write-no-announcement
-}
-
-announcement-0.6.pre21() {
-  write-no-announcement
-}
-
-announcement-0.6.pre22() {
-  write-no-announcement
+announcement-0.6.pre16-to-22() {
+  for i in {16..22}; do
+    html-redirect '/blog/2019/06/13.html' > $SITE_DEPLOY_DIR/release/0.6.pre$i/announcement.html
+  done
 }
 
 announcement-0.6.pre23() {
