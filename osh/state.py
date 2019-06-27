@@ -92,12 +92,24 @@ SET_OPTIONS = [
     ('h', 'hashall'),
     (None, 'pipefail'),
 
-    # TODO: Could any of these be on by default?
+    # NOTE: strict-errexit CANNOT be on by default.
+    # - some are PARSING:
+    #   - strict-glob-parse
+    #   - strict-backslash-parse
+    # - some are runtime:
+    #   - strict-arith-eval
+    #   - strict-word-eval
+    #
+    # Syntax idea:
+    # shopt -s 'strict-*' 2>/dev/null || true
+    # You could apply LooksLikeGlob to the argument and then match it against
+    # SHOPT_OPTION_NAMES.
+
     (None, 'strict-argv'),  # empty argv not allowed
     (None, 'strict-arith'),  # string to integer conversions
     (None, 'strict-array'),  # EvalWordToString, e.g. echo 1 > "$@" or x="$@"
     (None, 'strict-backslash'),  # BadBackslash
-    (None, 'strict-control-flow'),  # misuse of break/continue is fatal
+    (None, 'strict-control-flow'),  # break/continue at top level is fatal
     (None, 'strict-errexit'),  # inherited to command subs, etc.
     (None, 'strict-glob'),  # GlobParser
 
@@ -118,10 +130,10 @@ SET_OPTION_NAMES = set(name for _, name in SET_OPTIONS)
 
 SHOPT_OPTION_NAMES = (
     'nullglob', 'failglob',
+
     # No-ops for bash compatibility
     'expand_aliases', 'extglob', 'lastpipe',  # language features always on
-
-    'progcomp', 'histappend', 'hostcomplete',  # not sure
+    'progcomp', 'histappend', 'hostcomplete',  # not sure what these are
     'cmdhist',  # multi-line commands in history
 )
 

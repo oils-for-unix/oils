@@ -3,30 +3,40 @@
 Oil Version 0.6.0
 -----------------
 
-### What's New
+<span class="date">
+<!-- REPLACE_WITH_DATE -->
+</span>
 
-- The [Release announcement](announcement.html) has a high-level summary of
-  changes.
-- Details are in the [raw git change log](changelog.html).  Some of these
-  changes may not affect the release tarball (e.g. tool changes).
+Oil is a Unix shell.  To use it, download the source below, and then follow the
+instructions in [INSTALL][].
 
-### Docs For End Users
-
-- [INSTALL](doc/INSTALL.html).  How to install OSH.  This text file is also at
-  the root of the tarball.
-- [OSH Quick Reference](doc/osh-quick-ref.html), with Examples (in progress).
-  This document underlies the OSH `help` builtin.  It also gives a rough
-  overview of what features OSH implements.
-- Latest [doc/osh-manual.md](https://github.com/oilshell/oil/blob/master/doc/osh-manual.md)
-  on Github.  (TODO: This should be versioned.)
-
-### Docs For Developers
-
-- [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
+[INSTALL]: doc/INSTALL.html
 
 ### Download
 
 <!-- REPLACE_WITH_DOWNLOAD_LINKS -->
+
+### What's New
+
+- Details are in the [raw git change log](changelog.html).  Not all changes
+  affect the release tarball.
+- I sometimes write a [release announcement](announcement.html) with a
+  higher-level description of changes.
+
+### Documentation
+
+- [INSTALL][].  How to install OSH.  This text file is also at the root of the
+  tarball.
+- [OSH Quick Reference](doc/osh-quick-ref.html), with Examples (in progress).
+  This document underlies the OSH `help` builtin, and gives a rough overview of
+  what features OSH implements.
+- Latest
+  [doc/osh-manual.md](https://github.com/oilshell/oil/blob/master/doc/osh-manual.md)
+  on Github.  (TODO: This should be versioned.)
+- [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
+  - The [Oil Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments)
+    wiki page has other ways of getting Oil.  These versions may not be
+    up-to-date.
 
 ### Metrics
 

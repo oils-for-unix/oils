@@ -28,3 +28,9 @@
   font-weight: bold;
 }
 
+.date {
+  font-size: medium;
+  color: #555;
+  padding-left: 1em;
+  padding-right: 1em;
+}

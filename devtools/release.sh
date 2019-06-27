@@ -462,10 +462,15 @@ this-release-links() {
 }
 
 # Turn HTML comment into a download link
-add-download-links() {
-  awk -v snippet="$(this-release-links)" '
+add-date-and-links() {
+  awk -v date=$1 -v snippet="$(this-release-links)" '
     /<!-- REPLACE_WITH_DOWNLOAD_LINKS -->/ {
       print(snippet)
+      next
+    }
+
+    /<!-- REPLACE_WITH_DATE -->/ {
+      print(date)
       next
     }
 
@@ -496,7 +501,8 @@ build-tree() {
 
   build/doc.sh install
   build/doc.sh release-index _tmp/release-index.html
-  add-download-links < _tmp/release-index.html > $root/index.html
+  add-date-and-links $(cat _build/release-date.txt) \
+    < _tmp/release-index.html > $root/index.html
 
   # Problem: You can't preview it without .wwz!
   # Maybe have local redirects VERSION/test/wild/ to 
