@@ -318,6 +318,17 @@ _PyInt_FromDev(PY_LONG_LONG v)
 #  define _PyInt_FromDev PyInt_FromLong
 #endif
 
+#if defined(WITH_NEXT_FRAMEWORK) || (defined(__APPLE__) && defined(Py_ENABLE_SHARED))
+/* On Darwin/MacOSX a shared library or framework has no access to
+** environ directly, we must obtain it with _NSGetEnviron(). See also
+** man environ(7).
+*/
+#include <crt_externs.h>
+static char **environ;
+#elif !defined(_MSC_VER) && ( !defined(__WATCOMC__) || defined(__QNX__) )
+extern char **environ;
+#endif /* !_MSC_VER */
+
 static PyObject *
 convertenviron(void)
 {
