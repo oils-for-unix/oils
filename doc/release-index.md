@@ -1,14 +1,21 @@
 <!-- NOTE: This file is at /release/$VERSION/index.html -->
 
-Oil Version 0.6.0
------------------
+Oil 0.6.0
+---------
 
 <span class="date">
 <!-- REPLACE_WITH_DATE -->
 </span>
 
-Oil is a Unix shell.  To use it, download the source below, and then follow the
-instructions in [INSTALL][].
+This is the home page for version 0.6.0 of Oil, a Unix shell.  To use it,
+
+1. Download a source tarball.
+2. Build and install it, as described in [INSTALL][].
+
+These steps take 30 to 60 seconds on most machines.  After that, you may want
+to assemble an `oshrc` file, which is described in the manual.
+
+Test results, metrics, and benchmarks are shown below.
 
 [INSTALL]: doc/INSTALL.html
 
@@ -21,7 +28,7 @@ instructions in [INSTALL][].
 - Details are in the [raw git change log](changelog.html).  Not all changes
   affect the release tarball.
 - I sometimes write a [release announcement](announcement.html) with a
-  higher-level description of changes.
+  high-level description of changes.
 
 ### Documentation
 
@@ -37,6 +44,7 @@ instructions in [INSTALL][].
   - The [Oil Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments)
     wiki page has other ways of getting Oil.  These versions may not be
     up-to-date.
+
 
 ### Metrics
 

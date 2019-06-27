@@ -34,6 +34,9 @@ Similarly, if you get tired of typing `~/.config/oil/oshrc`, symlink it to
 
 [original]: http://www.solipsys.co.uk/new/BashInitialisationFiles.html
 
+I describe my own `oshrc` file on the wiki: [How To Test
+OSH](https://github.com/oilshell/oil/wiki/How-To-Test-OSH).
+
 
 ### Unicode
 
