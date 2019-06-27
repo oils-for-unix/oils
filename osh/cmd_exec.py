@@ -640,8 +640,9 @@ class Executor(object):
       # NOTE: osh2oil uses node.more_env, but we don't need that.
       span_id = const.NO_INTEGER
       if node.words:
-        first_word = node.words[0]
-        span_id = word.LeftMostSpanForWord(first_word)
+        span_id = word.LeftMostSpanForWord(node.words[0])
+      elif node.redirects:
+        span_id = node.redirects[0].op  # note: this could be a here doc?
 
       self.mem.SetCurrentSpanId(span_id)
 
