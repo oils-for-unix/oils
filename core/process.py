@@ -20,6 +20,7 @@ from _devbuild.gen.runtime_asdl import redirect_e, job_state_e
 from asdl import pretty
 from core import ui
 from core.util import log
+from frontend import match
 from pylib import os_
 
 import posix_ as posix
@@ -417,13 +418,6 @@ class StdoutToPipe(ChildStateChange):
     #log('child CLOSE r %d pid=%d', self.r, posix.getpid())
 
 
-def _ShouldHijack(line):
-  if not line.startswith('#!'):
-    return False
-  # hijack /bin/sh and also /usr/bin/env bash
-  return line.endswith('/sh') or line.endswith('bash')
-
-
 class ExternalProgram(object):
   def __init__(self, hijack_shebang, fd_state, errfmt, debug_f):
     """
@@ -452,8 +446,8 @@ class ExternalProgram(object):
         pass
       else:
         try:
-          line = f.read(40)
-          if _ShouldHijack(line):
+          line = f.readline()
+          if match.ShouldHijack(line):
             self.debug_f.log('Hijacked: %s with %s', argv, self.hijack_shebang)
             argv = [self.hijack_shebang] + argv
           else:

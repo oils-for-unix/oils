@@ -331,6 +331,8 @@ static inline int %s(const char* s, int len) {
   const char* p = s;  /* modified by re2c */
   const char* end = s + len;
 
+  unsigned char* YYMARKER;  /* why do we need this? For SHOULD_HIJACK_RE */
+
   /*!re2c
   re2c:define:YYCURSOR = p;
   %-30s { return p == end; }  // Match must be anchored right, like $
@@ -358,6 +360,7 @@ def main(argv):
     TranslateSimpleLexer('MatchBraceRangeToken', lex.BRACE_RANGE_DEF)
     TranslateRegexToPredicate(lex.VAR_NAME_RE, 'IsValidVarName')
     TranslateRegexToPredicate(pretty.PLAIN_WORD_RE, 'IsPlainWord')
+    TranslateRegexToPredicate(lex.SHOULD_HIJACK_RE, 'ShouldHijack')
 
   elif action == 'print-all':
     # Top level is a switch statement.

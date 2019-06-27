@@ -153,6 +153,7 @@ if fastlex:
   HISTORY_MATCHER = _MatchHistoryToken_Fast
   BRACE_RANGE_MATCHER = _MatchBraceRangeToken_Fast
   IsValidVarName = fastlex.IsValidVarName
+  ShouldHijack = fastlex.ShouldHijack
 else:
   MATCHER = _MatchOshToken_Slow(lex.LEXER_DEF)
   ECHO_MATCHER = _MatchTokenSlow(lex.ECHO_E_DEF)
@@ -168,6 +169,12 @@ else:
   def IsValidVarName(s):
     # type: (str) -> bool
     return bool(_VAR_NAME_RE.match(s))
+
+  _SHOULD_HIJACK_RE = re.compile(lex.SHOULD_HIJACK_RE + '$')  # type: ignore
+
+  def ShouldHijack(s):
+    # type: (str) -> bool
+    return bool(_SHOULD_HIJACK_RE.match(s))
 
 ECHO_LEXER = SimpleLexer(ECHO_MATCHER)
 GLOB_LEXER = SimpleLexer(GLOB_MATCHER)

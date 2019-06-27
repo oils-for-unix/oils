@@ -105,23 +105,10 @@ from _devbuild.gen.types_asdl import lex_mode_e
 from core.meta import ID_SPEC
 from frontend.lexer import C, R
 
+# See unit tests in frontend/match_test.py.
+# We need the [^\0]* because the re2c translation assumes it's anchored like $.
+SHOULD_HIJACK_RE = r'#!.*sh[ \t\r\n][^\0]*'
 
-# In oil, I hope to have these lexer modes:
-# COMMAND
-# EXPRESSION (takes place of ARITH, VSub_ArgUnquoted, VSub_ArgDQ)
-# SQ  RAW_SQ  DQ  RAW_DQ
-# VS    -- a single state here?  Or switches into expression state, because }
-#          is an operator
-# Problem: DICT_KEY might be a different state, to accept either a bare word
-# foo, or an expression (X=a+2), which is allowed in shell.  Python doesn't
-# allowed unquoted words, but we want to.
-
-# TODO: There are 4 shared groups here.  I think you should test if that
-# structure should be preserved through re2c.  Do a benchmark.
-#
-# If a group has no matches, then return Id.Unknown_Tok?  And then you can
-# chain the groups in order.  It might make sense to experiment with the order
-# too.
 
 _SIGNIFICANT_SPACE = R(r'[ \t\r]+', Id.WS_Space)
 
