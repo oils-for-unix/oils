@@ -117,9 +117,9 @@ SHELL OPTIONS
   [Interactive]   emacs   vi
   [Other]         X noclobber
   [Parsing]       TODO
-  [OSH Strict]    STRICT   strict-array   strict-arith
-                  strict-errexit   strict-control-flow   X strict-scope
-                  strict-word-eval   strict-var-eval
+  [OSH Strict]    strict-argv   strict-array   strict-arith
+                  X strict-backslash   strict-errexit   strict-control-flow
+                  X strict-glob   strict-word-eval
   [OSH Sane]      SANE   X sane-no-word-split   X sane-glob
                   X sane-echo   X sane-read   X sane-eval   X sane-trap
 
@@ -149,8 +149,8 @@ PLUGINS AND HOOKS
   [Signals]       SIGTERM   X SIGINT   X SIGABRT   SIG...
   [Traps]         EXIT   X ERR   X DEBUG   X RETURN
   [Words]         PS1   X PS2   X PS3   PS4
-  [Prompts]       complete
-X [Other]         command_not_found
+  [Completion]    complete
+X [Other]         command_not_found   PROMPT_COMMAND
 
 OIL EXTENSIONS
 

@@ -92,13 +92,18 @@ SET_OPTIONS = [
     ('h', 'hashall'),
     (None, 'pipefail'),
 
+    # TODO: Could any of these be on by default?
+    (None, 'strict-argv'),  # empty argv not allowed
+    (None, 'strict-arith'),  # string to integer conversions
+    (None, 'strict-array'),  # EvalWordToString, e.g. echo 1 > "$@" or x="$@"
+    (None, 'strict-backslash'),  # BadBackslash
     (None, 'strict-control-flow'),  # misuse of break/continue is fatal
     (None, 'strict-errexit'),  # inherited to command subs, etc.
-    (None, 'strict-array'),
-    (None, 'strict-arith'),
+    (None, 'strict-glob'),  # GlobParser
+
+    # strict-arith-eval?
+    # TODO: strict-array could be in here?  And turn it on by default?
     (None, 'strict-word-eval'),  # negative slices, unicode
-    (None, 'strict-var-eval'),
-    (None, 'strict-argv'),  # empty argv not allowed
 
     (None, 'vi'),
     (None, 'emacs'),
@@ -112,8 +117,13 @@ SET_OPTIONS = [
 SET_OPTION_NAMES = set(name for _, name in SET_OPTIONS)
 
 SHOPT_OPTION_NAMES = (
-    'nullglob', 'failglob', 'expand_aliases', 'extglob', 'progcomp',
-    'histappend', 'hostcomplete', 'lastpipe')
+    'nullglob', 'failglob',
+    # No-ops for bash compatibility
+    'expand_aliases', 'extglob', 'lastpipe',  # language features always on
+
+    'progcomp', 'histappend', 'hostcomplete',  # not sure
+    'cmdhist',  # multi-line commands in history
+)
 
 
 class ExecOpts(object):
@@ -145,6 +155,18 @@ class ExecOpts(object):
 
     # OSH-specific options.
 
+    self.strict_argv = False
+
+    # e.g. $(( x )) where x doesn't look like integer is fatal
+    self.strict_arith = False
+
+    # Several problems (not all implemented):
+    # - foo="$@" not allowed because it decays.  Should be foo=( "$@" ).
+    # - ${a} not ${a[0]}
+    # - possibly disallow $* "$*" altogether.
+    # - do not allow [[ "$@" == "${a[@]}" ]]
+    self.strict_array = False
+
     self.strict_control_flow = False  # break at top level is fatal, etc.
 
     # strict_errexit makes 'local foo=$(false)' and echo $(false) fail.
@@ -156,11 +178,7 @@ class ExecOpts(object):
     # local still needs to fail.
     self.strict_errexit = False
 
-    # e.g. $(( x )) where x doesn't look like integer is fatal
-    self.strict_arith = False
-
-    # Bad slices and bad unicode
-    self.strict_word_eval = False
+    self.strict_word_eval = False  # Bad slices and bad unicode
 
     # This comes after all the 'set' options.
     shellopts = self.mem.GetVar('SHELLOPTS')
@@ -175,10 +193,12 @@ class ExecOpts(object):
     # No-ops for bash compatibility.
     self.expand_aliases = False  # We always expand aliases.
     self.extglob = False  # extended globs are always on (where implemented)
-    self.progcomp = False  # ditto
+    self.lastpipe = False  # Always on in our pipeline implementation.
+
+    self.cmdhist = False  # multi-line commands in history
     self.histappend = False  # stubbed out for issue #218
     self.hostcomplete = False  # complete words with '@' ?
-    self.lastpipe = False  # Always on in our pipeline implementation.
+    self.progcomp = False
 
     self.vi = False
     self.emacs = False
@@ -187,20 +207,8 @@ class ExecOpts(object):
     # OSH-specific options that are NOT YET IMPLEMENTED.
     #
 
-    self.strict_argv = False
-    # Several problems (NOT implemented):
-    # - foo="$@" not allowed because it decays.  Should be foo=( "$@" ).
-    # - ${a} not ${a[0]}
-    # - possibly disallow $* "$*" altogether.
-    # - do not allow [[ "$@" == "${a[@]}" ]]
-    self.strict_array = False
-
-    # Whether we statically know variables, e.g. $PYTHONPATH vs.
-    # $ENV['PYTHONPATH'], and behavior of 'or' and 'if' expressions.
-    # This is off by default because we want the interactive shell to match.
-    self.strict_var_eval = False
-    self.strict_scope = False  # disable dynamic scope
-    # TODO: strict_bool.  Some of this is covered by arithmetic, e.g. -eq.
+    self.strict_glob = False  # glob_.py GlobParser has warnings
+    self.strict_backslash = False  # BadBackslash for echo -e, printf, PS1, etc.
 
     # Don't need flags -e and -n.  -e is $'\n', and -n is write.
     self.sane_echo = False
