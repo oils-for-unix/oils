@@ -320,3 +320,47 @@ echo done
 ## STDOUT:
 done
 ## END
+
+#### >$file touches a file
+cd $TMP
+rm -f myfile
+test -f myfile
+echo status=$?
+>myfile
+test -f myfile
+echo status=$?
+## STDOUT:
+status=1
+status=0
+## END
+# regression for OSH
+## stderr-json: ""
+
+#### $(< $file) yields the contents of the file
+# note that it doesn't do this without a command sub!
+cd $TMP
+echo FOO > myfile
+foo=$(< myfile)
+echo $foo
+## STDOUT:
+FOO
+## END
+## N-I dash STDOUT:
+## END
+
+#### 2>&1 with no command
+cd $TMP
+2>&1
+## stdout-json: ""
+## stderr-json: ""
+
+#### 2&>1 (is it a redirect or is it like a&>1)
+cd $TMP
+2&>1
+echo status=$?
+## STDOUT:
+status=127
+## END
+## OK mksh/dash STDOUT:
+status=0
+## END
