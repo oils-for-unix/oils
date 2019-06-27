@@ -350,8 +350,14 @@ FOO
 
 #### 2>&1 with no command
 cd $TMP
+( exit 42 )  # status is reset after this
+echo status=$?
 2>&1
-## stdout-json: ""
+echo status=$?
+## STDOUT:
+status=42
+status=0
+## END
 ## stderr-json: ""
 
 #### 2&>1 (is it a redirect or is it like a&>1)
