@@ -16,7 +16,7 @@ import sys
 from asdl import const
 from core import meta
 from core import util
-from core.util import p_die
+from core.util import p_die, e_die
 from frontend import args
 from frontend import match
 from frontend import reader
@@ -81,13 +81,6 @@ class _FormatStringParser(object):
       # ADDITIONAL VALIDATION outside the "grammar".
       if part.type.val in 'eEfFgG':
         p_die("osh printf doesn't support floating point", token=part.type)
-      if part.type.val in 'u':
-        p_die("osh printf doesn't supported unsigned integers", token=part.type)
-      # octal/hex imply unsigned, so we're not supporting them.
-      if part.type.val in 'oxX':
-        p_die("osh printf doesn't support %r (because it implies unsigned integers)",
-              part.type.val, token=part.type)
-
       # These two could be implemented.  %c needs utf-8 decoding.
       if part.type.val == 'b':
         p_die("osh printf doesn't support backslash escaping (try $'\\n')", token=part.type)
@@ -210,7 +203,7 @@ class Printf(object):
               s = s[:precision]  # truncate
           elif typ == 'q':
             s = string_ops.ShellQuoteOneLine(s)
-          elif typ in 'di':
+          elif typ in 'diouxX':
             try:
               d = int(s)
             except ValueError:
@@ -223,7 +216,24 @@ class Printf(object):
                                   span_id=word_spid)
 
               return 1
-            s = str(d)
+
+            if typ in 'di':
+              s = str(d)
+            elif typ in 'ouxX':
+              if d < 0:
+                e_die("Can't format negative number %d with %%%s",
+                      d, typ, span_id=part.type.span_id)
+              if typ == 'u':
+                s = str(d)
+              elif typ == 'o':
+                s = '%o' % d
+              elif typ == 'x':
+                s = '%x' % d
+              elif typ == 'X':
+                s = '%X' % d
+            else:
+              raise AssertionError
+
           else:
             raise AssertionError
 

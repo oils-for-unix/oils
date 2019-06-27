@@ -209,36 +209,33 @@ printf '[%0.0s]\n' foo
 ## N-I mksh stdout-json: "[      ]\n["
 ## N-I mksh status: 1
 
-#### %u prints unsigned integers
-printf '[%u]\n' -42
-## STDOUT:
-[18446744073709551574]
-## END
-## N-I osh stdout-json: ""
-## N-I osh status: 2
-
-#### integer octal hex
+#### unsigned / octal / hex
+printf '[%u]\n' 42
 printf '[%o]\n' 42
 printf '[%x]\n' 42
 printf '[%X]\n' 42
-echo ---
-# implies unsigned
+## STDOUT:
+[42]
+[52]
+[2a]
+[2A]
+## END
+
+#### negative numbers with unsigned / octal / hex
+printf '[%u]\n' -42
 printf '[%o]\n' -42
 printf '[%x]\n' -42
 printf '[%X]\n' -42
 ## STDOUT:
-[52]
-[2a]
-[2A]
----
+[18446744073709551574]
 [1777777777777777777726]
 [ffffffffffffffd6]
 [FFFFFFFFFFFFFFD6]
 ## END
-## N-I osh STDOUT:
----
-## END
-## N-I osh status: 2
+
+# osh DISALLOWS this because the output depends on the machine architecture.
+## N-I osh stdout-json: ""
+## N-I osh status: 1
 
 #### printf floating point (not required, but they all implement it)
 printf '[%f]\n' 3.14159
