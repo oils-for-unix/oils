@@ -6,6 +6,9 @@
 #   devtools/release.sh <function name>
 #
 # Pre-release:
+#   $0 quick-oil-tarball
+#   build/test.sh oil-tar  # at least EXTRACT the tar, because cpython-defs
+#                          # reads from there
 #   demo/osh-debug.sh osh-for-release: Start a shell to dogfood
 #   opy/regtest.sh verify-golden, because that one tends to be flaky
 #   build/cpython-defs.sh {rebuild-manifest,oil-py-names,filter-methods}
@@ -757,6 +760,7 @@ quick-oil-tarball() {
 
   make $in
   time gzip -c $in > $out
+  ls -l $out
 }
 
 upload-tmp() {

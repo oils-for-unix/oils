@@ -4,9 +4,17 @@
 #   ./cpython-defs.sh <function name>
 #
 # Example:
-#   ./cpython-defs.sh rebuild-manifest  # figure out where to extract names from
-#   ./cpython-defs.sh oil-py-names  # extract names
-#   ./cpython-defs.sh filter-methods
+#
+#   # make clean tree of .c files
+#   devtools/release.sh quick-oil-tarball
+#   build/test.sh oil-tar
+#
+#   build/cpython-defs.sh rebuild-manifest  # figure out where to extract names from
+#   build/cpython-defs.sh oil-py-names  # extract names
+#   build/cpython-defs.sh filter-methods
+#
+# NOTE: 'build/compile.sh make-tar' is complex, so it's easier to just extract
+# the tarball, even though it leads to a weird dependency.
 
 set -o nounset
 set -o pipefail
