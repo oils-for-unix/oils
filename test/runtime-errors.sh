@@ -291,7 +291,7 @@ string_to_int_arith() {
   local x='ZZZ'
   echo $(( x + 5 ))
 
-  set -o strict-arith
+  shopt -s strict-arith
 
   echo $(( x + 5 ))
 
@@ -375,7 +375,7 @@ patsub_bad_glob() {
 string_to_int_bool() {
   [[ a -eq 0 ]]
 
-  set -o strict-arith
+  shopt -s strict-arith
 
   [[ a -eq 0 ]]
   echo 'SHOULD NOT GET HERE'
@@ -384,19 +384,19 @@ string_to_int_bool() {
 strict_array() {
   set -- 1 2
   echo foo > _tmp/"$@"
-  set -o strict-array
+  shopt -s strict-array
   echo foo > _tmp/"$@"
 }
 
 strict_array_2() {
   local foo="$@"
-  set -o strict-array
+  shopt -s strict-array
   local foo="$@"
 }
 
 strict_array_3() {
   local foo=${1:- "[$@]" }
-  set -o strict-array
+  shopt -s strict-array
   local foo=${1:- "[$@]" }
 }
 
@@ -405,7 +405,8 @@ strict_array_4() {
   x[42]=99
   echo "x[42] = ${x[42]}"
 
-  set -o strict-array
+  # Not implemented yet
+  shopt -s strict-array
   local -a y
   y[42]=99
 }

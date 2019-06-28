@@ -444,3 +444,35 @@ RCFILE
 ## END
 ## N-I dash status: 2
 ## N-I mksh status: 1
+
+#### shopt -s all:strict
+n=2
+
+show-strict() {
+  shopt -p | grep 'strict-' | head -n $n
+  echo -
+}
+
+show-strict
+shopt -s all:strict
+show-strict
+shopt -u all:strict
+show-strict
+## STDOUT:
+shopt -u strict-argv
+shopt -u strict-arith
+-
+shopt -s strict-argv
+shopt -s strict-arith
+-
+shopt -u strict-argv
+shopt -u strict-arith
+-
+## END
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+## N-I bash/mksh STDOUT:
+-
+-
+-
+## END

@@ -303,11 +303,19 @@ class ExecOpts(object):
 
   def SetShoptOption(self, opt_name, b):
     """ For shopt -s/-u. """
+
+    # shopt -s all:strict turns on all optoins
+    if opt_name == 'all:strict':
+      for opt_name in SHOPT_OPTION_NAMES:
+        if opt_name.startswith('strict-'):
+          attr = opt_name.replace('-', '_')  # for strict-*
+          setattr(self, attr, b)
+      return
+
     if opt_name not in SHOPT_OPTION_NAMES:
       raise args.UsageError('got invalid option %r' % opt_name)
-    # strict-control-flow -> strict_control_flow
-    opt_name = opt_name.replace('-', '_')
-    setattr(self, opt_name, b)
+    attr = opt_name.replace('-', '_')  # for strict-*
+    setattr(self, attr, b)
 
   def ShowOptions(self, opt_names):
     """ For 'set -o' and 'shopt -p -o' """
@@ -317,15 +325,14 @@ class ExecOpts(object):
       if opt_name == 'errexit':
         b = self.errexit.errexit
       else:
-        attr = opt_name.replace('-', '_')
-        b = getattr(self, attr)
+        b = getattr(self, opt_name)
       print('set %so %s' % ('-' if b else '+', opt_name))
 
   def ShowShoptOptions(self, opt_names):
     """ For 'shopt -p' """
     opt_names = opt_names or SHOPT_OPTION_NAMES  # show all
     for opt_name in opt_names:
-      attr = opt_name.replace('-', '_')
+      attr = opt_name.replace('-', '_')  # for strict-*
       b = getattr(self, attr)
       print('shopt -%s %s' % ('s' if b else 'u', opt_name))
 
