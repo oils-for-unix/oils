@@ -150,6 +150,10 @@ markdown2html() {
         color: green;
         margin-left: 4em;
       }
+      code {
+        color: green;
+      }
+
       #home-link {
         text-align: right;
       }
@@ -187,6 +191,17 @@ release-index() {
   # Not monospace
   local css_link='<link rel="stylesheet" type="text/css" href="web/release-index.css" />'
   markdown2html doc/release-index.md $out "$css_link" ''
+}
+
+# TODO:
+# - Move cmark.py from oilshell.org repo to devtools/, and generate TOC.
+# - Write your own stylesheet.
+manual() {
+  local css_link='<link rel="stylesheet" type="text/css" href="web/release-index.css" />'
+  for d in osh-manual known-differences; do
+    markdown2html doc/$d.md _build/doc/$d.html "$css_link" ''
+  done
+  ls -l _build/doc
 }
 
 # I want to ship the INSTALL file literally, so just mutate things

@@ -61,8 +61,7 @@ Roughly speaking, you need:
   - GNU Bash
   - GNU Make.
 
-(I want to eventually remove the GNU requirements and require just POSIX sh
-instead).
+(I want to remove the GNU requirements and require only POSIX sh instead).
 
 Optional:
 
@@ -77,8 +76,10 @@ Alpine Linux:
 
     apk add libc-dev gcc bash make readline-dev
 
-OSH hasn't been tested on non-Linux systems, but eventually it should run on
-any POSIX-compatible system.
+OSH has been tested several Linux distros and OS X.  It aims to run on any
+POSIX system.  If it doesn't, file a bug here:
+
+    https://github.com/oilshell/oil/issues
 
 Build Options
 -------------
@@ -89,10 +90,9 @@ options are --prefix and --{with,without}-readline.
 Notes
 -----
 
-- The oil executable behaves like busybox, and osh is a symlink to it.  Compare
-  oil --help vs. osh --help.
-- OSH uses a slight fork of the Python 2.7 runtime, so it should
-  compile with most popular compiler/OS combinations.
+- The oil.ovm executable behaves like busybox, and osh is a symlink to it.
+- Oil contains a fork of the Python 2.7 runtime, so it should compile with most
+  popular compiler/OS combinations.
 
 TODO
 ----

@@ -72,6 +72,7 @@ Directory Structure
     benchmarks/       # Benchmarks should be run on multiple machines.
     metrics/          # Metrics don't change between machines (e.g. code size)
     build/            # Build automation
+      oil-defs/       # Files that define our slice of CPython.
       dev.sh          # For development builds, running CPython
     devtools/         # For Oil developers (not end users)
       release.sh      # Documents the release process.
@@ -94,27 +95,32 @@ Directory Structure
       bin/            # tools used in many spec tests
       testdata/       # scripts for specific test cases
       errors/         # TODO: migrate these bad shell scripts
+    types/            # Scripts for running MyPy and PyAnnotate, etc.
+
+    # DSLs / Code Generators
+
+    asdl/             # ASDL implementation, derived from CPython
+    pgen2/            # Parser Generator, borrowed from CPython
+    mycpp/            # Experimental translator from typed Python to C++.
+                      # Depends on MyPy.
+    opy/              # Python compiler in Python
+      lib/            # Common code
+      compiler2/      # Bytecode compiler
+      byterun/        # Metacircular bytecode VM in Python
+      gold/           # tests
+      byterun/        # Unused bytecode interpreter
 
     # Oil Code
 
     Python-2.7.13/    # CPython is the initial basis for the Oil VM
-    asdl/             # ASDL implementation
     bin/              # Programs to run (bin/osh)
     core/             # Most of the Oil and OSH implementation.
     native/           # Native code for Oil, e.g. libc.c
     frontend/         # Lexing/Parsing code common to Oil and OSH.
-    oil_lang/         # Oil language definition.
-    osh/              # OSH language definition.
-    opy/              # Python compiler in Python
-      lib/            # Common code
-      pgen2/          # Parsing library
-      compiler2/      # Bytecode compiler
-      byterun/        # Metacircular bytecode VM in Python
-      gold/           # tests
-    ovm2/             # A nascent VM to run Oil.  Perhaps a target for
-                      # metaprogramming.
+    oil_lang/         # Oil parser and evaluator.
+    osh/              # OSH parser and evaluator.
     pylib/            # Borrowed from the Python standard library.
-    tools/            # osh2oil translator
+    tools/            # User-facing tools, e.g. the osh2oil translator
 
     # Temporary Directories
 

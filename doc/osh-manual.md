@@ -106,6 +106,8 @@ TODO:
 
 See [doc/known-differences.md][].
 
+[doc/known-differences.md]: ./known-differences.md
+
 ### Completion API
 
 One important incompatibility is that it deals with `argv` entries and not
@@ -131,27 +133,18 @@ plugins should not do it.
 
 ### Unicode
 
-Encoding of programs should be utf-8.
+Shell programs should be encoded in UTF-8 (or its ASCII subset).
 
-As an alternative, ASCII can be used like this:
+To express Unicode characters while not worrying about the encoding of the
+program, use C-escaped strings, i.e. `$''`:
 
-    echo $'[\u03bc]'  # C-escaped string
+    echo $'[\u03bc]'
 
-- `$''` is preferred over `echo -e` because it's statically parsed.
+(This construct is preferred over `echo -e` because it's statically parsed.)
 
-List of operations that are Unicode-aware:
+Also see [Notes on Unicode in Shell](unicode.md).
 
-- ${#s} -- number of characters in a string
-  - TOOD: provide an option to change this
-- slice: ${s:0:1}
-- any operations that uses glob, which has '.' and [[:alpha:]] expressions
-  - case
-  - [[ $x == . ]]
-  - ${s/./x}
-  - ${s#.}  # remove one character
-- sorting [[ $a < $b ]] -- should use current locale?  I guess that is like the
-  'sort' command.
-- prompt string has time, which is locale-specific.
+### Other Resources
 
-[doc/known-differences.md]: ./known-differences.md
+TODO: Link to bash manual, etc.?
 
