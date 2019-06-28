@@ -117,6 +117,60 @@ def _DecayPartValuesToString(part_vals, join_char):
   return ''.join(out)
 
 
+def _PerformSlice(val, begin, length, part):
+  if val.tag == value_e.Str:  # Slice UTF-8 characters in a string.
+    s = val.s
+
+    if begin < 0:
+      # It could be negative if we compute unicode length, but that's
+      # confusing.
+
+      # TODO: Instead of attributing it to the word part, it would be
+      # better if we attributed it to arith_expr begin.
+      raise util.InvalidSlice(
+          "The start index of a string slice can't be negative: %d",
+          begin, part=part)
+
+    byte_begin = string_ops.AdvanceUtf8Chars(s, begin, 0)
+
+    if length is None:
+      byte_end = len(s)
+    else:
+      if length < 0:
+        # TODO: Instead of attributing it to the word part, it would be
+        # better if we attributed it to arith_expr begin.
+        raise util.InvalidSlice(
+            "The length of a string slice can't be negative: %d",
+            length, part=part)
+
+      byte_end = string_ops.AdvanceUtf8Chars(s, length, byte_begin)
+
+    substr = s[byte_begin : byte_end]
+    val = value.Str(substr)
+
+  elif val.tag == value_e.StrArray:  # Slice array entries.
+    # NOTE: This error is ALWAYS fatal in bash.  It's inconsistent with
+    # strings.
+    if length and length < 0:
+      raise util.FatalRuntimeError(
+          "The length index of a array slice can't be negative: %d",
+          length, part=part)
+
+    # NOTE: unset elements don't count towards the length.
+    strs = []
+    for s in val.strs[begin:]:
+      if s is not None:
+        strs.append(s)
+        if len(strs) == length:  # never true for unspecified length
+          break
+    val = value.StrArray(strs)
+
+  else:  # TODO: AssocArray
+    raise AssertionError(val.__class__.__name__)
+
+  return val
+
+
 class _WordEvaluator(object):
   """Abstract base class for word evaluators.
 
@@ -712,57 +766,19 @@ class _WordEvaluator(object):
         else:
           length = None
 
-        if val.tag == value_e.Str:  # Slice UTF-8 characters in a string.
-          s = val.s
-
-          try:
-            if begin < 0:
-              # It could be negative if we compute unicode length, but that's
-              # confusing.
-
-              # TODO: Instead of attributing it to the word part, it would be
-              # better if we attributed it to arith_expr begin.
-              raise util.InvalidSlice(
-                  "The start index of a string slice can't be negative: %d",
-                  begin, part=part)
-
-            byte_begin = string_ops.AdvanceUtf8Chars(s, begin, 0)
-
-            if length is None:
-              byte_end = len(s)
-            else:
-              if length < 0:
-                # TODO: Instead of attributing it to the word part, it would be
-                # better if we attributed it to arith_expr begin.
-                raise util.InvalidSlice(
-                    "The length of a string slice can't be negative: %d",
-                    length, part=part)
-
-              byte_end = string_ops.AdvanceUtf8Chars(s, length, byte_begin)
-
-          except (util.InvalidSlice, util.InvalidUtf8) as e:
-            if self.exec_opts.strict_word_eval:
-              raise
-            else:
-              self.errfmt.PrettyPrintError(e, prefix='warning: ')
-              substr = ''  # non-fatal
+        try:
+          val = _PerformSlice(val, begin, length, part)
+        except (util.InvalidSlice, util.InvalidUtf8) as e:
+          if self.exec_opts.strict_word_eval:
+            raise
           else:
-            substr = s[byte_begin : byte_end]
-
-          val = value.Str(substr)
-
-        elif val.tag == value_e.StrArray:  # Slice array entries.
-          # NOTE: unset elements don't count towards the length.
-          strs = []
-          for s in val.strs[begin:]:
-            if s is not None:
-              strs.append(s)
-              if len(strs) == length:  # never true for unspecified length
-                break
-          val = value.StrArray(strs)
-
-        else:
-          raise AssertionError(val.__class__.__name__)  # Not possible
+            self.errfmt.PrettyPrintError(e, prefix='warning: ')
+            if val.tag == value_e.Str:
+              val = value.Str('')
+            elif val.tag == value_e.StrArray:
+              val = value.StrArray([])
+            else:
+              raise NotImplementedError
 
     # After applying suffixes, process maybe_decay_array here.
     if maybe_decay_array and val.tag == value_e.StrArray:

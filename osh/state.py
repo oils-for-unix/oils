@@ -126,7 +126,7 @@ SHOPT_OPTION_NAMES = (
 
     'strict-argv',  # empty argv not allowed
     'strict-arith',  # string to integer conversions
-    'strict-array',  # EvalWordToString, e.g. echo 1 > "$@" or x="$@"
+    'strict-array',  # no implicit conversion between string and array
     'strict-backslash',  # BadBackslash
     'strict-control-flow',  # break/continue at top level is fatal
     'strict-errexit',  # inherited to command subs, etc.
@@ -172,12 +172,14 @@ class ExecOpts(object):
     # e.g. $(( x )) where x doesn't look like integer is fatal
     self.strict_arith = False
 
+    # No implicit conversions between string and array.
     # Several problems (not all implemented):
     # - foo="$@" not allowed because it decays.  Should be foo=( "$@" ).
     # - ${a} not ${a[0]}
-    # - possibly disallow $* "$*" altogether.
-    # - do not allow [[ "$@" == "${a[@]}" ]]
     self.strict_array = False
+    # default:    do not allow [[ "$@" == "${a[@]}" ]]
+    # sane-array: allow it
+    # different lint error:
 
     self.strict_control_flow = False  # break at top level is fatal, etc.
 

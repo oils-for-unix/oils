@@ -149,7 +149,6 @@ class Executor(object):
     self.errfmt = exec_deps.errfmt
     self.debug_f = exec_deps.debug_f  # Used by ShellFuncAction too
 
-    self.splitter = exec_deps.splitter
     self.word_ev = exec_deps.word_ev
     self.arith_ev = exec_deps.arith_ev
     self.bool_ev = exec_deps.bool_ev

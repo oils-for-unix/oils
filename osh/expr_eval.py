@@ -105,7 +105,7 @@ class _ExprEvaluator(object):
 
   They both:
 
-  1. Convert strings to integers, respecting set -o strict_arith.
+  1. Convert strings to integers, respecting shopt -s strict_arith.
   2. Look up variables and evaluate words.
   """
 
@@ -176,10 +176,7 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts):
       e_die("Can't assign to characters of string %r", node.name)
 
     elif val.tag == value_e.Undef:
-      # It would make more sense for 'nounset' to control this, but bash
-      # doesn't work that way.
-      #if self.exec_opts.strict_arith:
-      #  e_die('Undefined array %r', node.name)
+      # (( a[undefined_var]=1 ))
       val = value.Str('')
 
     elif val.tag == value_e.StrArray:

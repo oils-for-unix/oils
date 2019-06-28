@@ -87,6 +87,38 @@ plugins should not do it.
   `bash-completion` project.
 
 
+### Strict Options
+
+There are various strict options, which are used like this:
+
+    shopt -s strict-array  # set
+    shopt -u strict-array  # unset
+
+You can turn all of them on or off at once:
+
+    shopt -s all:strict
+    shopt -u all:strict
+
+Each strict option **disallows** certain parts of the language with fatal
+errors.
+
+- `strict-argv`.  Empty argv arrays are disallowed, since there's no practical
+  use for them.  The second statement in `x=''; $x` results in a fatal error.
+- `strict-arith`.  Strings that don't look like integers cause a fatal error in
+  arithmetic expressions.
+  - TODO: This could be the default like dash?
+- `strict-array` - No implicit conversions between string an array.  That is,
+  turn this on if you want a "real" array type.  (NOTE: Only partially
+  implemented.)
+- `strict-control-flow` - `break` and `continue` outside of a loop are fatal
+  errors.
+- `strict-errexit` - TODO
+- `strict-word-eval` - More word evaluation errors are fatal.  For example:
+  - Negative arguments to slices like `${s: -1} aren't allowed
+  - UTF-8 decoding errors are fatal when computing lengths (`${#s}`) and
+    slices.
+
+
 ### Additional Features in OSH
 
 TODO:
@@ -95,10 +127,6 @@ TODO:
 - `OSH_CRASH_DUMP_DIR`
 - `--debug-file`
 - `--xtrace-to-debug-file`
-
-#### Strict Options
-
-- TODO: `strict-control-flow`, etc.
 
 ### Known Differences Between OSH and Other Shells
 

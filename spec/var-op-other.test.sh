@@ -57,6 +57,7 @@ echo ${foo:3:-1} ${foo: 3: -2} ${foo:3 :-3 }
 ## stdout: def de d
 ## BUG mksh stdout: defg defg defg
 
+
 #### strict-word-eval with string slice
 shopt -s strict-word-eval || true
 echo slice

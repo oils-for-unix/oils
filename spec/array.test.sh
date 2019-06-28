@@ -242,15 +242,21 @@ argv.py "${a[@]:1:2}"
 ## N-I mksh status: 1
 ## N-I mksh stdout-json: ""
 
-#### Negative slice
+#### Negative slice begin
 # mksh doesn't support this syntax!  It's a bash extension.
 # NOTE: for some reason -2) has to be in parens?  Ah that's because it
 # conflicts with :-!  That's silly.  You can also add a space.
-a=(1 2 3)
-argv.py "${a[@]:(-2):1}"
-## stdout: ['2']
+a=(1 2 3 4 5)
+argv.py "${a[@]:(-4)}"
+## stdout: ['2', '3', '4', '5']
 ## N-I mksh status: 1
 ## N-I mksh stdout-json: ""
+
+#### Negative slice length
+a=(1 2 3 4 5)
+argv.py "${a[@]: 1: -3}"
+## status: 1
+## stdout-json: ""
 
 #### Slice with arithmetic
 a=(1 2 3)
