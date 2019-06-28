@@ -245,6 +245,52 @@ echo hi
 hi
 ##
 
+#### IFS and joining arrays
+IFS=:
+set -- x 'y z'
+argv.py "$@"
+argv.py $@
+argv.py "$*"
+argv.py $*
+## STDOUT:
+['x', 'y z']
+['x', 'y z']
+['x:y z']
+['x', 'y z']
+## END
+
+#### IFS and joining arrays by assignments
+IFS=:
+set -- x 'y z'
+
+s="$@"
+argv.py "$s"
+
+s=$@
+argv.py "$s"
+
+s"$*"
+argv.py "$s"
+
+s=$*
+argv.py "$s"
+
+# bash and mksh agree, but this doesn't really make sense to me.
+# In OSH, "$@" is the only real array, so that's why it behaves differently.
+
+## STDOUT:
+['x y z']
+['x y z']
+['x y z']
+['x:y z']
+## END
+## OK dash STDOUT:
+['x:y z']
+['x:y z']
+['x:y z']
+['x:y z']
+## END
+
 
 # TODO:
 # - unquoted args of whitespace are not elided (when IFS = null)

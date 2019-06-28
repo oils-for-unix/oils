@@ -99,24 +99,35 @@ You can turn all of them on or off at once:
     shopt -s all:strict
     shopt -u all:strict
 
+To use all strict modes in a script that must also run under other shells:
+
+    shopt -s all:strict 2>/dev/null || true  # supress errors
+
 Each strict option **disallows** certain parts of the language with fatal
 errors.
 
 - `strict-argv`.  Empty argv arrays are disallowed, since there's no practical
-  use for them.  The second statement in `x=''; $x` results in a fatal error.
-- `strict-arith`.  Strings that don't look like integers cause a fatal error in
-  arithmetic expressions.
-  - TODO: This could be the default like dash?
-- `strict-array` - No implicit conversions between string an array.  That is,
+  use for them.
+  - Example: The second statement in `x=''; $x` results in a fatal error.
+- `strict-array`. No implicit conversions between string an array.  That is,
   turn this on if you want a "real" array type.  (NOTE: Only partially
   implemented.)
-- `strict-control-flow` - `break` and `continue` outside of a loop are fatal
+- `strict-control-flow`. `break` and `continue` outside of a loop are fatal
   errors.
 - `strict-errexit` - TODO
-- `strict-word-eval` - More word evaluation errors are fatal.  For example:
-  - Negative arguments to slices like `${s: -1} aren't allowed
+  - inherit_errexit?
+- `strict-word-eval`.  More word evaluation errors are fatal.  For example:
+  - String slices with negative arguments like `${s: -1}` and `${s: 1 : -1}`
+    result in a fatal error.  (note: Array slices allow negative start indices,
+    but negative lengths are always fatal, regardless of `strict-word-eval`.)
   - UTF-8 decoding errors are fatal when computing lengths (`${#s}`) and
     slices.
+
+On by default:
+
+- `strict-arith`.  Strings that don't look like integers cause a fatal error in
+  arithmetic expressions.
+  - NOTE: This may be removed if no scripts rely on the old, bad behavior.
 
 
 ### Additional Features in OSH
