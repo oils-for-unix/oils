@@ -9,10 +9,15 @@
 # different.
 # - ash has copied bash behavior!
 
-#### command sub: errexit ignored
+#### command sub: errexit is NOT inherited
+
 # This is the bash-specific bug here:
 # https://blogs.janestreet.com/when-bash-scripts-bite/
-# In bash 4.4, inherit_errexit should fix this.
+# See inherit_errexit below.
+#
+# I remember finding a script that relies on bash's bad behavior, so OSH copies
+# it.  Instead strict-errexit, is recommended.
+
 set -o errexit
 echo $(echo one; false; echo two)  # bash/ash keep going
 echo status=$?
@@ -28,6 +33,10 @@ status=0
 
 #### command sub: errexit not ignored with strict-errexit
 set -o errexit
+
+# bash implements inherit_errexit, but it's not as strict as OSH.
+shopt -s inherit_errexit || true
+
 shopt -s strict-errexit || true
 echo zero
 echo $(echo one; false; echo two)  # bash/ash keep going
@@ -36,14 +45,14 @@ echo status=$?
 zero
 ## END
 ## status: 1
-## N-I dash/mksh status: 0
-## N-I dash/mksh STDOUT:
+## N-I dash/mksh/bash status: 0
+## N-I dash/mksh/bash STDOUT:
 zero
 one
 status=0
 ## END
-## N-I ash/bash status: 0
-## N-I ash/bash STDOUT:
+## N-I ash status: 0
+## N-I ash STDOUT:
 zero
 one two
 status=0
