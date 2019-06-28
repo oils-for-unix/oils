@@ -152,9 +152,8 @@ def _PerformSlice(val, begin, length, part):
     # NOTE: This error is ALWAYS fatal in bash.  It's inconsistent with
     # strings.
     if length and length < 0:
-      raise util.FatalRuntimeError(
-          "The length index of a array slice can't be negative: %d",
-          length, part=part)
+      e_die("The length index of a array slice can't be negative: %d",
+            length, part=part)
 
     # NOTE: unset elements don't count towards the length.
     strs = []
@@ -165,8 +164,11 @@ def _PerformSlice(val, begin, length, part):
           break
     val = value.StrArray(strs)
 
-  else:  # TODO: AssocArray
-    raise AssertionError(val.__class__.__name__)
+  elif val.tag == value_e.AssocArray:
+    e_die("Can't slice associative arrays", part=part)
+
+  else:
+    raise NotImplementedError(val.__class__.__name__)
 
   return val
 
