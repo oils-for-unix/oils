@@ -92,31 +92,6 @@ SET_OPTIONS = [
     ('h', 'hashall'),
     (None, 'pipefail'),
 
-    # NOTE: strict-errexit CANNOT be on by default.
-    # - some are PARSING:
-    #   - strict-glob-parse
-    #   - strict-backslash-parse
-    # - some are runtime:
-    #   - strict-arith-eval
-    #   - strict-word-eval
-    #
-    # Syntax idea:
-    # shopt -s 'strict-*' 2>/dev/null || true
-    # You could apply LooksLikeGlob to the argument and then match it against
-    # SHOPT_OPTION_NAMES.
-
-    (None, 'strict-argv'),  # empty argv not allowed
-    (None, 'strict-arith'),  # string to integer conversions
-    (None, 'strict-array'),  # EvalWordToString, e.g. echo 1 > "$@" or x="$@"
-    (None, 'strict-backslash'),  # BadBackslash
-    (None, 'strict-control-flow'),  # break/continue at top level is fatal
-    (None, 'strict-errexit'),  # inherited to command subs, etc.
-    (None, 'strict-glob'),  # GlobParser
-
-    # strict-arith-eval?
-    # TODO: strict-array could be in here?  And turn it on by default?
-    (None, 'strict-word-eval'),  # negative slices, unicode
-
     (None, 'vi'),
     (None, 'emacs'),
 
@@ -135,6 +110,31 @@ SHOPT_OPTION_NAMES = (
     'expand_aliases', 'extglob', 'lastpipe',  # language features always on
     'progcomp', 'histappend', 'hostcomplete',  # not sure what these are
     'cmdhist',  # multi-line commands in history
+
+    # NOTE: strict-errexit CANNOT be on by default.
+    # - some are PARSING:
+    #   - strict-glob-parse
+    #   - strict-backslash-parse
+    # - some are runtime:
+    #   - strict-arith-eval
+    #   - strict-word-eval
+    #
+    # Syntax idea:
+    # shopt -s 'strict-*' 2>/dev/null || true
+    # You could apply LooksLikeGlob to the argument and then match it against
+    # SHOPT_OPTION_NAMES.
+
+    'strict-argv',  # empty argv not allowed
+    'strict-arith',  # string to integer conversions
+    'strict-array',  # EvalWordToString, e.g. echo 1 > "$@" or x="$@"
+    'strict-backslash',  # BadBackslash
+    'strict-control-flow',  # break/continue at top level is fatal
+    'strict-errexit',  # inherited to command subs, etc.
+    'strict-glob',  # GlobParser
+
+    # strict-arith-eval?
+    # TODO: strict-array could be in here?  And turn it on by default?
+    'strict-word-eval',  # negative slices, unicode
 )
 
 
@@ -270,8 +270,6 @@ class ExecOpts(object):
         e_die("Can't set option %r because Oil wasn't built with the readline "
               "library.", opt_name)
     else:
-      # strict-control-flow -> strict_control_flow
-      opt_name = opt_name.replace('-', '_')
       if opt_name == 'verbose' and b:
         log('Warning: set -o verbose not implemented')
       setattr(self, opt_name, b)
@@ -307,6 +305,8 @@ class ExecOpts(object):
     """ For shopt -s/-u. """
     if opt_name not in SHOPT_OPTION_NAMES:
       raise args.UsageError('got invalid option %r' % opt_name)
+    # strict-control-flow -> strict_control_flow
+    opt_name = opt_name.replace('-', '_')
     setattr(self, opt_name, b)
 
   def ShowOptions(self, opt_names):
@@ -325,7 +325,8 @@ class ExecOpts(object):
     """ For 'shopt -p' """
     opt_names = opt_names or SHOPT_OPTION_NAMES  # show all
     for opt_name in opt_names:
-      b = getattr(self, opt_name)
+      attr = opt_name.replace('-', '_')
+      b = getattr(self, attr)
       print('shopt -%s %s' % ('s' if b else 'u', opt_name))
 
 

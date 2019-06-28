@@ -5,14 +5,6 @@ $SH --debug-file $TMP/debug.txt -c 'true'
 grep 'OSH started with' $TMP/debug.txt >/dev/null && echo yes
 ## stdout: yes
 
-#### strict-arith option
-set -o strict-arith
-## status: 0
-
-#### strict-arith from command line
-$SH -o strict-arith
-## status: 0
-
 #### repr
 x=42
 repr x

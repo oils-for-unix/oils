@@ -25,7 +25,25 @@ echo status=$?
 ## status: 1
 ## OK dash status: 2
 ## BUG bash status: 0
-## BUG bash stdout-json: "status=1\n"
+## BUG bash STDOUT:
+status=1
+## END
+
+#### set is special and fails, even if using || true
+shopt -s invalid_ || true
+echo ok
+set -o invalid_ || true
+echo should not get here
+## STDOUT:
+ok
+## END
+## status: 1
+## OK dash status: 2
+## BUG bash status: 0
+## BUG bash STDOUT:
+ok
+should not get here
+## END
 
 #### Special builtins can't be redefined as functions
 # bash manual says they are 'found before' functions.
@@ -46,4 +64,7 @@ true() {
 }
 true hi
 echo status=$?
-## stdout-json: "true func\nstatus=0\n"
+## STDOUT:
+true func
+status=0
+## END

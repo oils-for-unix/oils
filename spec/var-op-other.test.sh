@@ -58,7 +58,7 @@ echo ${foo:3:-1} ${foo: 3: -2} ${foo:3 :-3 }
 ## BUG mksh stdout: defg defg defg
 
 #### strict-word-eval with string slice
-set -o strict-word-eval || true
+shopt -s strict-word-eval || true
 echo slice
 s='abc'
 echo -${s: -2}-
@@ -66,13 +66,11 @@ echo -${s: -2}-
 slice
 ## END
 ## status: 1
-## N-I bash status: 0
-## N-I bash STDOUT:
+## N-I bash/mksh/zsh status: 0
+## N-I bash/mksh/zsh STDOUT:
 slice
 -bc-
 # END
-## N-I mksh/zsh status: 1
-## N-I mksh/zsh stdout-json: ""
 
 #### String slice with math
 # I think this is the $(()) language inside?
@@ -123,16 +121,19 @@ echo -${s:1:3}-
 
 
 #### Slice string with invalid UTF-8 with strict-word-eval
-set -o strict-word-eval || true
+shopt -s strict-word-eval || true
 echo slice
 s=$(echo -e "\xFF")bcdef
 echo -${s:1:3}-
 ## status: 1
-## stdout-json: "slice\n"
-## N-I mksh/zsh status: 1
-## N-I mksh/zsh stdout-json: ""
-## N-I bash status: 0
-## N-I bash stdout-json: "slice\n-bcd-\n"
+## STDOUT: 
+slice
+## END
+## N-I bash/mksh/zsh status: 0
+## N-I bash/mksh/zsh STDOUT:
+slice
+-bcd-
+## END
 
 #### Lower Case with , and ,,
 x='ABC DEF'

@@ -967,9 +967,13 @@ class Shopt(object):
     elif arg.u:
       b = False
 
-    if b is None:
-      raise NotImplementedError  # Display options
+    if b is None:  # Print options
+      # bash prints uses a different format for 'shopt', but we use the
+      # same format as 'shopt -p'.
+      self.exec_opts.ShowShoptOptions(opt_names)
+      return 0
 
+    # Otherwise, set options.
     for name in opt_names:
       if arg.o:
         self.exec_opts.SetOption(name, b)

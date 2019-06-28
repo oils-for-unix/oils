@@ -188,21 +188,49 @@ echo $?
 ## END
 ## N-I dash status: 2
 
-#### shopt -p -o
+#### shopt -p -o prints 'set' options
 shopt -po nounset
-set -u
+set -o nounset
 shopt -po nounset
-## stdout-json: "set +o nounset\nset -o nounset\n"
+## STDOUT: 
+set +o nounset
+set -o nounset
+## END
 ## N-I dash/mksh stdout-json: ""
 ## N-I dash/mksh status: 127
 
-#### shopt -p
+#### shopt -p prints 'shopt' options
 shopt -p nullglob
 shopt -s nullglob
 shopt -p nullglob
-## stdout-json: "shopt -u nullglob\nshopt -s nullglob\n"
+## STDOUT:
+shopt -u nullglob
+shopt -s nullglob
+## END
 ## N-I dash/mksh stdout-json: ""
 ## N-I dash/mksh status: 127
+
+#### shopt with no flags prints options
+cd $TMP
+
+# print specific options.  OSH does it in a different format.
+shopt nullglob failglob > one.txt
+wc -l one.txt
+grep -o nullglob one.txt
+grep -o failglob one.txt
+
+# print all options
+shopt | grep nullglob | wc -l
+## STDOUT:
+2 one.txt
+nullglob
+failglob
+1
+## END
+## N-I dash/mksh STDOUT:
+0 one.txt
+0
+## END
 
 #### noclobber off
 set -o errexit

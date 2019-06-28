@@ -371,7 +371,7 @@ builtin-completion() {
 }
 
 builtins-special() {
-  sh-spec spec/builtins-special.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/builtins-special.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 

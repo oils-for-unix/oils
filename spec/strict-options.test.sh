@@ -27,6 +27,13 @@
 #
 # One that can't: strict-scope disables dynamic scope.
 
+
+#### strict-arith option
+shopt -s strict-arith
+## status: 0
+## N-I bash status: 1
+## N-I dash/mksh status: 127
+
 #### Sourcing a script that returns at the top level
 echo one
 . spec/testdata/return-helper.sh
@@ -63,14 +70,20 @@ $SH -o errexit spec/testdata/top-level-control-flow.sh
 SUBSHELL
 ## END
 
-#### set -o strict-control-flow
-$SH -o strict-control-flow -c 'echo break; break; echo hi'
-## stdout: break
+#### shopt -s strict-control-flow
+shopt -s strict-control-flow || true
+echo break
+break
+echo hi
+## STDOUT:
+break
+## END
 ## status: 1
-## N-I dash/bash status: 2
-## N-I dash/bash stdout-json: ""
-## N-I mksh status: 1
-## N-I mksh stdout-json: ""
+## N-I dash/bash/mksh STDOUT:
+break
+hi
+# END
+## N-I dash/bash/mksh status: 0
 
 #### return at top level is an error
 return
@@ -124,7 +137,7 @@ VarSub FAILED
 CommandSub FAILED
 ## END
 
-#### strict-argv: no first word but exit code
+#### strict-argv: no first word but exit code (DUPE of if `false` ??)
 
 # POSIX has a special rule for this.  In OSH strict-argv is preferred so it
 # becomes a moot point.  I think this is an artifact of the
@@ -142,7 +155,7 @@ FALSE
 ## END
 
 #### empty argv WITH strict-argv
-set -o strict-argv || true
+shopt -s strict-argv || true
 echo empty
 x=''
 $x
@@ -151,14 +164,11 @@ echo status=$?
 ## STDOUT:
 empty
 ## END
-## N-I bash status: 0
-## N-I bash STDOUT:
+## N-I dash/bash/mksh status: 0
+## N-I dash/bash/mksh STDOUT:
 empty
 status=0
 ## END
-## N-I dash status: 2
-## N-I mksh status: 1
-## N-I dash/mksh stdout-json: ""
 
 #### Arrays should not be incorrectly compared like bash/mksh
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Cases relevant to set -o strict-errexit in OSH.
+# Cases relevant to shopt -s strict-errexit in OSH.
 #
 # Summary:
 # - errexit is reset to false in ash/bash -- completely ignored!
@@ -28,7 +28,7 @@ status=0
 
 #### command sub: errexit not ignored with strict-errexit
 set -o errexit
-set -o strict-errexit || true
+shopt -s strict-errexit || true
 echo zero
 echo $(echo one; false; echo two)  # bash/ash keep going
 echo status=$?
@@ -36,9 +36,12 @@ echo status=$?
 zero
 ## END
 ## status: 1
-## N-I dash status: 2
-## N-I dash stdout-json: ""
-## N-I mksh stdout-json: ""
+## N-I dash/mksh status: 0
+## N-I dash/mksh STDOUT:
+zero
+one
+status=0
+## END
 ## N-I ash/bash status: 0
 ## N-I ash/bash STDOUT:
 zero
@@ -114,7 +117,7 @@ one
 #### local and strict-errexit
 # I've run into this problem a lot.
 set -o errexit
-set -o strict-errexit || true  # ignore error
+shopt -s strict-errexit || true  # ignore error
 f() {
   echo good
   local x=$(echo one; false; echo two)
@@ -132,10 +135,12 @@ good
 status=0
 one two
 ## END
-## N-I dash status: 2
-## N-I dash stdout-json: ""
-## N-I mksh status: 1
-## N-I mksh stdout-json: ""
+## N-I dash/mksh  status: 0
+## N-I dash/mksh STDOUT:
+good
+status=0
+one
+## END
 
 #### global assignment when last status is failure
 # this is a bug I introduced
