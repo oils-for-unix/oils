@@ -3,6 +3,26 @@
  * built into /releases.html.
  */
 
+/* COMMON */
+body {
+  margin: 0 auto;
+  width: 40em;  /* overridden in devtools/release.sh for releases.html */
+}
+
+pre {
+  color: green;
+  margin-left: 4em;
+}
+
+code {
+  color: green;
+}
+
+#home-link {
+  text-align: right;
+}
+/* END COMMON */
+
 .file-table {
   width: 100%;
 }

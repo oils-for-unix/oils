@@ -704,27 +704,16 @@ _releases-html-header() {
   <head>
     <title>Oil Releases</title>
     <style>
-      /* Make it centered and skinny for readability */
-      body {
-        margin: 0 auto;
-        width: 50em;
-      }
-      h1 {
-        text-align: center;
-      }
 EOF
 
   cat web/release-index.css
 
 cat <<EOF
-      /* Copied from oilshell.org bundle.css */
-      .date {
-        font-size: medium;
-        color: #555;
-        padding-left: 1em;
+      body {
+        width: 50em;  /* override width */
       }
-      #home-link {
-        text-align: right;
+      h1 {
+        text-align: center;
       }
     </style>
   </head>

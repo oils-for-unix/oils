@@ -1,7 +1,15 @@
 OSH User Manual
 ---------------
 
-NOTE: This document is in progress.
+<p style="text-align: right">
+  Version 0.6.0
+  <!-- REPLACE_WITH_DATE -->
+</p>
+
+
+OSH is a POSIX- and bash-compatible Unix shell.
+
+This document is in progress.
 
 <!-- cmark.py expands this -->
 <div id="toc">

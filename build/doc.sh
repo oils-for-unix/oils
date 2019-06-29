@@ -132,30 +132,11 @@ markdown2html() {
   local src=$1
   local out=$2
   local more_css_link=${3:-}
-  local monospace=${4:-}
 
   { cat <<EOF
 <!DOCTYPE html>
 <html>
   <head>
-    <style>
-      body {
-        margin: 0 auto;
-        width: 40em;
-        $monospace
-      }
-      pre {
-        color: green;
-        margin-left: 4em;
-      }
-      code {
-        color: green;
-      }
-
-      #home-link {
-        text-align: right;
-      }
-    </style>
     $more_css_link
   </head>
   <body>
@@ -175,13 +156,6 @@ EOF
   } > $out
 }
 
-readonly MONOSPACE='font-family: monospace;'
-
-install() {
-  local root_dir=${1:-_release/VERSION}
-  markdown2html INSTALL.txt $root_dir/doc/INSTALL.html '' "$MONOSPACE"
-}
-
 release-index() {
   local out=${1:-_tmp/release-index.html}
   # NOTE: We're at /release/0.6.pre10/index.html, and then there is a
@@ -190,6 +164,12 @@ release-index() {
   # Not monospace
   local css_link='<link rel="stylesheet" type="text/css" href="web/release-index.css" />'
   markdown2html doc/release-index.md $out "$css_link" ''
+}
+
+install() {
+  local root_dir=${1:-_release/VERSION}
+  local css_link='<link rel="stylesheet" type="text/css" href="../web/install.css" />'
+  markdown2html INSTALL.txt $root_dir/doc/INSTALL.html "$css_link"
 }
 
 manual() {

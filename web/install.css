@@ -1,9 +1,10 @@
-/* Style for manual
- * Some of this is copied from oilshell.org/css/base.css */
+/* For INSTALL.txt as HTML */
 
+/* COMMON */
 body {
   margin: 0 auto;
   width: 40em;
+  font-family: monospace;
 }
 
 pre {
@@ -18,9 +19,4 @@ code {
 #home-link {
   text-align: right;
 }
-
-h4 {
-  margin: 0em;
-  color: darkgreen;
-}
-
+/* END COMMON */
