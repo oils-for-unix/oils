@@ -201,3 +201,22 @@ argv.py "${var%"${var#?}"}"
 ['a']
 ['a']
 ## END
+
+#### strip * (bug regression)
+x=abc
+argv.py "${x#*}"
+argv.py "${x##}"
+argv.py "${x%*}"
+argv.py "${x%%}"
+## STDOUT:
+['abc']
+['abc']
+['abc']
+['abc']
+## END
+## BUG zsh STDOUT:
+['abc']
+['abc']
+['ab']
+['abc']
+## END

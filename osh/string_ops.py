@@ -212,15 +212,14 @@ def DoUnarySuffixOp(s, op, arg):
 
   # For patterns, do fnmatch() in a loop.
   #
-  # TODO: The loop needs to iterate over code points, not bytes!
-  # - The forward case can probably be handled in a similar manner.
-  # - The backward case might be handled by pre-calculating an array of start
-  #   positions with _NextUtf8Char.
-  #
-  # TODO: Another potential fast path:
-  #
-  # v=aabbccdd
-  # echo ${v#*b}  # strip shortest prefix
+  # TODO:
+  # - The loop needs to iterate over code points, not bytes!
+  #   - The forward case can probably be handled in a similar manner.
+  #   - The backward case might be handled by pre-calculating an array of start
+  #     positions with _NextUtf8Char.
+  # - Another potential fast path:
+  #   v=aabbccdd
+  #   echo ${v#*b}  # strip shortest prefix
   #
   # If the whole thing doesn't match '*b*', then no test can succeed.  So we
   # can fail early.  Conversely echo ${v%%c*} and '*c*'.
@@ -228,41 +227,46 @@ def DoUnarySuffixOp(s, op, arg):
   # (Although honestly this whole construct is nuts and should be deprecated.)
 
   n = len(s)
+
   if op.op_id == Id.VOp1_Pound:  # shortest prefix
-    # 'abcd': match 'a', 'ab', 'abc', ...
-    for i in xrange(1, n+1):
+    # 'abcd': match '', 'a', 'ab', 'abc', ...
+    i = 0
+    while i <= n:
       #log('Matching pattern %r with %r', arg, s[:i])
       if libc.fnmatch(arg, s[:i]):
         return s[i:]
-    else:
-      return s
+      i += 1
+    return s
 
   elif op.op_id == Id.VOp1_DPound:  # longest prefix
     # 'abcd': match 'abc', 'ab', 'a'
-    for i in xrange(n, 0, -1):
+    i = n
+    while i >= 0:
       #log('Matching pattern %r with %r', arg, s[:i])
       if libc.fnmatch(arg, s[:i]):
         return s[i:]
-    else:
-      return s
+      i -= 1
+    return s
 
   elif op.op_id == Id.VOp1_Percent:  # shortest suffix
-    # 'abcd': match 'abc', 'ab', 'a'
-    for i in xrange(n-1, -1, -1):
+    # 'abcd': match 'abcd', 'abc', 'ab', 'a'
+    i = n
+    while i >= 0:
       #log('Matching pattern %r with %r', arg, s[:i])
       if libc.fnmatch(arg, s[i:]):
         return s[:i]
-    else:
-      return s
+      i -= 1
+    return s
 
   elif op.op_id == Id.VOp1_DPercent:  # longest suffix
     # 'abcd': match 'abc', 'bc', 'c', ...
-    for i in xrange(0, n):
+    i = 0
+    while i <= n:
       #log('Matching pattern %r with %r', arg, s[:i])
       if libc.fnmatch(arg, s[i:]):
         return s[:i]
-    else:
-      return s
+      i += 1
+    return s
 
   else:
     raise NotImplementedError("Can't use %s with pattern" % op.op_id)
