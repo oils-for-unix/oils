@@ -47,7 +47,6 @@ class _ErrExit(object):
 
   An _ErrExit object prevents these two mechanisms from clobbering each other.
   """
-
   def __init__(self):
     self.errexit = False  # the setting
     self.stack = []
@@ -161,20 +160,19 @@ class ExecOpts(object):
 
     # OSH-specific options.
 
-    # The only one that's ON by default.
-    # e.g. $(( x )) where x doesn't look like integer is fatal
-    self.strict_arith = True
+    # e.g. x=foo; echo $(( x )) is fatal
+    self.strict_arith = True  # The only one that's ON by default.
 
     self.strict_argv = False
 
     # No implicit conversions between string and array.
-    # Several problems (not all implemented):
     # - foo="$@" not allowed because it decays.  Should be foo=( "$@" ).
-    # - ${a} not ${a[0]}
+    # - ${a} not ${a[0]} (not implemented)
     self.strict_array = False
-    # default:    do not allow [[ "$@" == "${a[@]}" ]]
-    # sane-array: allow it
-    # different lint error:
+
+    # sane-array: compare arrays like [[ "$@" == "${a[@]}" ]], which is
+    #             incompatible because bash coerces
+    # default:    do not allow
 
     self.strict_control_flow = False  # break at top level is fatal, etc.
 
@@ -448,7 +446,6 @@ class Mem(object):
 
   Modules: cmd_exec, word_eval, expr_eval, completion
   """
-
   def __init__(self, dollar0, argv, environ, arena, has_main=False):
     self.dollar0 = dollar0
     self.argv_stack = [_ArgFrame(argv)]
@@ -1035,13 +1032,7 @@ class Mem(object):
       span = self.arena.GetLineSpan(self.current_spid)
       # TODO: maybe use interned GetLineNumStr?
       s = str(self.arena.GetLineNumber(span.line_id))
-
-      # Perf bug: why is this slow?  Commenting it out reduces line count by
-      if 1:
-        self.line_num.s = s  # Python's configure takes 75 seconds!
-      else:
-        # WTF this does not show the per bug?
-        self.line_num.s2 = s  # Python's configure takes 13 seconds!
+      self.line_num.s = s
       return self.line_num
 
     # This is OSH-specific.  Get rid of it in favor of ${BASH_SOURCE[0]} ?
