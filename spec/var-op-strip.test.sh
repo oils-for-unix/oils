@@ -205,18 +205,57 @@ argv.py "${var%"${var#?}"}"
 #### strip * (bug regression)
 x=abc
 argv.py "${x#*}"
-argv.py "${x##}"
+argv.py "${x##*}"
 argv.py "${x%*}"
+argv.py "${x%%*}"
+## STDOUT:
+['abc']
+['']
+['abc']
+['']
+## END
+## BUG zsh STDOUT:
+['abc']
+['']
+['ab']
+['']
+## END
+
+#### strip ?
+x=abc
+argv.py "${x#?}"
+argv.py "${x##?}"
+argv.py "${x%?}"
+argv.py "${x%%?}"
+## STDOUT:
+['bc']
+['bc']
+['ab']
+['ab']
+## END
+
+#### strip all
+x=abc
+argv.py "${x#abc}"
+argv.py "${x##abc}"
+argv.py "${x%abc}"
+argv.py "${x%%abc}"
+## STDOUT:
+['']
+['']
+['']
+['']
+## END
+
+#### strip none
+x=abc
+argv.py "${x#}"
+argv.py "${x##}"
+argv.py "${x%}"
 argv.py "${x%%}"
 ## STDOUT:
 ['abc']
 ['abc']
 ['abc']
-['abc']
-## END
-## BUG zsh STDOUT:
-['abc']
-['abc']
-['ab']
 ['abc']
 ## END
