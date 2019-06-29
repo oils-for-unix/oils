@@ -174,12 +174,14 @@ install() {
 
 manual() {
   local root_dir=${1:-_release/VERSION}
+  local release_date=${2:-}
 
-  # NOTE: toc.css copied from oilshell.org repo.
   local css_link='
     <link rel="stylesheet" type="text/css" href="../web/manual.css" />
     <link rel="stylesheet" type="text/css" href="../web/toc.css" />
   '
+
+  # TODO: cmark.py could replace <span class="date"></span> with -v date=?
   for d in osh-manual known-differences; do
     markdown2html doc/$d.md $root_dir/doc/$d.html "$css_link" ''
   done
@@ -194,7 +196,7 @@ _sed-ext() {
 update-src-versions() {
   _sed-ext \
     "s/Version [0-9]+.[0-9]+.[a-z0-9]+/Version $OIL_VERSION/g" \
-    doc/release-index.md
+    doc/release-index.md doc/osh-manual.md
 
   _sed-ext \
     "s/oil-[0-9]+.[0-9]+.[a-z0-9]+/oil-$OIL_VERSION/g" INSTALL.txt

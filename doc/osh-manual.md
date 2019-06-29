@@ -1,15 +1,43 @@
+<div style="float:right;">
+  <span id="version-in-header">Version 0.6.0</span> <br/>
+
+  <!-- TODO: date support in cmark.py -->
+  <span style="" class="date">
+  <!-- REPLACE_WITH_DATE -->
+  </span>
+</div>
+
 OSH User Manual
 ---------------
 
-<p style="text-align: right">
-  Version 0.6.0
-  <!-- REPLACE_WITH_DATE -->
-</p>
+OSH is a **Unix shell** designed to run existing shell scripts.  More
+precisely, it's
+
+1. POSIX-compatible
+2. Has features from GNU Bash, the most commonly used shell.
+
+It's also designed to be "stricter" than other shells.  To avoid programs that
+don't behave as intended,
+
+1. It produces more errors.
+2. It produces them earlier, e.g. at parse time, if possible.
+
+"Batch" programs are most likely to run unmodified under OSH.  Interactive
+programs like `.bashrc` and bash completion scripts may require changes.
+
+This manual mainly covers the **differences** between OSH and other shells.
+It leaves the details of each construct to the `help` builtin and the [Quick
+Reference](osh-quick-ref.html) (*Warning: both are incomplete*).  It also
+doesn't cover the [Oil language][oil-language], which is a newer part of the
+Oil project.
+
+Existing educational materials for the Unix shell apply to OSH, because they
+generally don't teach the quirks that OSH disallows.  For example, most of the
+information and advice in [BashGuide][] can be used without worrying about
+which shell you're using.  See the end of this manual for more resources.
 
 
-OSH is a POSIX- and bash-compatible Unix shell.
-
-This document is in progress.
+[oil-language]: https://oilshell.org/cross-ref.html?tag=oil-language#oil-language
 
 <!-- cmark.py expands this -->
 <div id="toc">
@@ -105,7 +133,7 @@ arithmetic expressions.  NOTE: This option may be removed if no scripts rely on
 the old, bad behavior.
 
 
-### Additional Features in OSH
+### Features Unique to OSH
 
 TODO:
 
@@ -156,7 +184,12 @@ Also see [Notes on Unicode in Shell][unicode.md].
 
 [unicode.md]: https://github.com/oilshell/oil/blob/master/doc/unicode.md
 
-### Other Resources
+### Links
 
-TODO: Link to bash manual, etc.?
+- [GNU Bash Manual](https://www.gnu.org/software/bash/manual/) -- I frequently
+  referred to this document when implementing OSH.
+- [BashGuide][]
+
+
+[BashGuide]: https://mywiki.wooledge.org/BashGuide
 

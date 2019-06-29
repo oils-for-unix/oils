@@ -4,6 +4,10 @@
 body {
   margin: 0 auto;
   width: 40em;
+
+  font-size: large;
+  line-height: 1.4;
+  color: #444;
 }
 
 pre {
@@ -24,3 +28,7 @@ h4 {
   color: darkgreen;
 }
 
+#version-in-header {
+  color: darkgreen;
+  font-weight: bold;
+}
