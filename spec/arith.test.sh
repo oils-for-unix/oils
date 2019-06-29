@@ -32,8 +32,9 @@ echo $((i+1))
 ## stdout: 2
 
 #### SimpleVarSub within arith
-echo $(($j + 1))
-## stdout: 1
+j=0
+echo $(($j + 42))
+## stdout: 42
 
 #### BracedVarSub within ArithSub
 echo $((${j:-5} + 1))
@@ -68,6 +69,7 @@ echo $((`echo 1` + 2))
 
 #### Invalid string to int
 # bash, mksh, and zsh all treat strings that don't look like numbers as zero.
+shopt -u strict-arith || true
 s=foo
 echo $((s+5))
 ## OK dash stdout-json: ""
@@ -121,13 +123,15 @@ echo $a
 ## N-I dash stdout-json: ""
 
 #### Increment undefined variables
+shopt -u strict-arith || true
 (( undef1++ ))
 (( ++undef2 ))
 echo "[$undef1][$undef2]"
 ## stdout: [1][1]
-## N-I dash stdout-json: "[][]\n"
+## N-I dash stdout: [][]
 
 #### Increment and decrement array
+shopt -u strict-arith || true
 a=(5 6 7 8)
 (( a[0]++, ++a[1], a[2]--, --a[3] ))
 (( undef[0]++, ++undef[1], undef[2]--, --undef[3] ))
@@ -261,7 +265,8 @@ foo=5
 x=oo
 echo $(( foo + f$x + 1 ))
 ## stdout: 11
-## OK osh stdout: 6
+## OK osh stdout-json: ""
+## OK osh status: 1
 
 #### Bizarre recursive name evaluation - result of runtime parse/eval
 foo=5
@@ -270,7 +275,8 @@ spam=bar
 eggs=spam
 echo $((foo+1)) $((bar+1)) $((spam+1)) $((eggs+1))
 ## stdout: 6 6 6 6
-## OK osh stdout: 6 1 1 1
+## OK osh stdout-json: ""
+## OK osh status: 1
 ## N-I dash stdout-json: ""
 ## N-I dash status: 2
 

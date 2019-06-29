@@ -460,7 +460,7 @@ shopt -u all:strict
 show-strict
 ## STDOUT:
 shopt -u strict-argv
-shopt -u strict-arith
+shopt -s strict-arith
 -
 shopt -s strict-argv
 shopt -s strict-arith

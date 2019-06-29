@@ -36,22 +36,20 @@ except ImportError:
 def _StringToInteger(s, span_id=const.NO_INTEGER):
   """Use bash-like rules to coerce a string to an integer.
 
+  Runtime parsing enables silly stuff like $(( $(echo 1)$(echo 2) + 1 )) => 13
+
   0xAB -- hex constant
-  010 -- octable constant
+  042  -- octal constant
+  42   -- decimal constant
   64#z -- arbitary base constant
+
   bare word: variable
-  quoted word: string
-
-  Dumb stuff like $(( $(echo 1)$(echo 2) + 1 ))  =>  13  is possible.
+  quoted word: string (not done?)
   """
-  # TODO: In non-strict mode, empty string becomes zero.  In strict mode, it's
-  # a runtime error.
-
   if s.startswith('0x'):
     try:
       integer = int(s, 16)
     except ValueError:
-      # TODO: Show line number
       e_die('Invalid hex constant %r', s, span_id=span_id)
     return integer
 
@@ -59,7 +57,7 @@ def _StringToInteger(s, span_id=const.NO_INTEGER):
     try:
       integer = int(s, 8)
     except ValueError:
-      e_die('Invalid octal constant %r', s, span_id=span_id)  # TODO: Show line number
+      e_die('Invalid octal constant %r', s, span_id=span_id)
     return integer
 
   if '#' in s:
@@ -92,7 +90,7 @@ def _StringToInteger(s, span_id=const.NO_INTEGER):
       n *= base
     return integer
 
-  # Plain integer
+  # Normal base 10 integer
   try:
     integer = int(s)
   except ValueError:
@@ -220,13 +218,12 @@ class ArithEvaluator(_ExprEvaluator):
       if val.tag == value_e.Undef:  # 'nounset' already handled before got here
         # Happens upon a[undefined]=42, which unfortunately turns into a[0]=42.
         #log('blame_word %s   arena %s', blame_word, self.arena)
-        e_die('Coercing undefined value to 0 in arithmetic context',
-              span_id=span_id)
+        e_die('Undefined value in arithmetic context '
+              '(0 if shopt -u strict-arith)', span_id=span_id)
         return 0
 
       if val.tag == value_e.Str:
-        # may raise FatalRuntimeError
-        return _StringToInteger(val.s, span_id=span_id)
+        return _StringToInteger(val.s, span_id=span_id)  # calls e_die
 
       if val.tag == value_e.StrArray:  # array is valid on RHS, but not on left
         return val.strs

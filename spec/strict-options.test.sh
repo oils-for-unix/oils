@@ -206,6 +206,7 @@ argv "${undef[@]}"
 ## N-I dash stdout-json: ""
 
 #### automatically creating arrays are INDEXED, not associative
+shopt -u strict-arith || true
 
 undef[2]=x
 undef[3]=y

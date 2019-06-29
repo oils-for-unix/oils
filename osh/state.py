@@ -113,28 +113,22 @@ SHOPT_OPTION_NAMES = (
 
     # NOTE: strict-errexit CANNOT be on by default.
     # - some are PARSING:
-    #   - strict-glob-parse
-    #   - strict-backslash-parse
+    #   - strict-glob
+    #   - strict-backslash
     # - some are runtime:
-    #   - strict-arith-eval
+    #   - strict-arith
     #   - strict-word-eval
-    #
-    # Syntax idea:
-    # shopt -s 'strict-*' 2>/dev/null || true
-    # You could apply LooksLikeGlob to the argument and then match it against
-    # SHOPT_OPTION_NAMES.
 
     'strict-argv',  # empty argv not allowed
     'strict-arith',  # string to integer conversions
     'strict-array',  # no implicit conversion between string and array
-    'strict-backslash',  # BadBackslash
     'strict-control-flow',  # break/continue at top level is fatal
     'strict-errexit',  # inherited to command subs, etc.
-    'strict-glob',  # GlobParser
-
-    # strict-arith-eval?
-    # TODO: strict-array could be in here?  And turn it on by default?
     'strict-word-eval',  # negative slices, unicode
+
+    # Not implemented
+    'strict-backslash',  # BadBackslash
+    'strict-glob',  # GlobParser
 )
 
 
@@ -167,10 +161,11 @@ class ExecOpts(object):
 
     # OSH-specific options.
 
-    self.strict_argv = False
-
+    # The only one that's ON by default.
     # e.g. $(( x )) where x doesn't look like integer is fatal
-    self.strict_arith = False
+    self.strict_arith = True
+
+    self.strict_argv = False
 
     # No implicit conversions between string and array.
     # Several problems (not all implemented):

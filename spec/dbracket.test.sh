@@ -87,15 +87,20 @@ fi
 # http://tldp.org/LDP/abs/html/testconstructs.html#DBLBRACKETS
 
 #### Octal literals with -eq
+shopt -u strict-arith || true
 decimal=15
 octal=017   # = 15 (decimal)
 [[ $decimal -eq $octal ]] && echo true
 [[ $decimal -eq ZZZ$octal ]] || echo false
-## stdout-json: "true\nfalse\n"
+## STDOUT:
+true
+false
+## END
 ## N-I mksh stdout: false
 # mksh doesn't implement this syntax for literals.
 
 #### Hex literals with -eq
+shopt -u strict-arith || true
 decimal=15
 hex=0x0f    # = 15 (decimal)
 [[ $decimal -eq $hex ]] && echo true
@@ -122,10 +127,13 @@ hex=0x0f    # = 15 (decimal)
 
 #### -eq on strings 
 # This is lame behavior: it does a conversion to 0 first for any string
+shopt -u strict-arith || true
 [[ a -eq a ]] && echo true
 [[ a -eq b ]] && echo true
-## stdout-json: "true\ntrue\n"
-## OK bash/mksh stdout-json: "true\ntrue\n"
+## STDOUT: 
+true
+true
+## END
 
 #### [[ compare with literal -f (compare with test-builtin.test.sh)
 var=-f
@@ -214,6 +222,7 @@ true
 ## N-I osh status: 1
 
 #### -eq coercion produces weird results
+shopt -u strict-arith || true
 [[ '' -eq 0 ]] && echo true
 ## stdout: true
 
