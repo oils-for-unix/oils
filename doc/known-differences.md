@@ -6,9 +6,13 @@ programs.  But it's also designed to be more strict -- i.e. it's [statically
 parsed](http://www.oilshell.org/blog/2016/10/22.html) rather than dynamically
 parsed.
 
+<!-- cmark.py expands this -->
+<div id="toc">
+</div>
+
 Here is a list of differences from sh/bash:
 
-## Parsing
+### Parsing
 
 (NOTE: This section should encompass all the failures from the [wild
 tests](http://oilshell.org/cross-ref.html?tag=wild-test#wild-test) and spec
@@ -229,9 +233,9 @@ Because OSH parses with limited lookahead, it only allows:
 The former would try to run a command named `a[1`.
 
 
-## Runtime
+### Runtime
 
-### set -o errexit
+#### set -o errexit
 
 It largely follows the logic of bash.  Any non-zero exit code causes a fatal
 error, except in:
@@ -261,7 +265,7 @@ Very good articles on bash errexit:
   - http://mywiki.wooledge.org/BashFAQ/105
   - http://fvue.nl/wiki/Bash:_Error_handling
 
-### Completion
+#### Completion
 
 The OSH completion API is heavily based on the bash completion API, and
 designed to be largely compatible.
@@ -270,15 +274,15 @@ See [doc/osh-manual.md][] for details.
 
 [doc/osh-manual.md]: ./osh-manual.md 
 
-## Interactive
+### Interactive
 
-### History Substitution Language
+#### History Substitution Language
 
 The rules for history substitution like `!echo` are simpler.  There are no
 special cases to avoid clashes with `${!indirect}` and so forth.  TODO: See the
 history lexer.
 
-## Links
+### Links
 
 - [Bash POSIX
   Mode](https://www.gnu.org/software/bash/manual/html_node/Bash-POSIX-Mode.html)

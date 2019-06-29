@@ -66,7 +66,7 @@ x-quick-ref() {
   local text_out_dir=_devbuild/$prog-quick-ref
   local py_out=_devbuild/gen/${prog}_help.py
 
-  mkdir -p _build/doc $text_out_dir
+  mkdir -p $text_out_dir
 
   {
     cat <<EOF
@@ -134,8 +134,6 @@ markdown2html() {
   local more_css_link=${3:-}
   local monospace=${4:-}
 
-  mkdir -p _build/doc
-
   { cat <<EOF
 <!DOCTYPE html>
 <html>
@@ -167,7 +165,7 @@ markdown2html() {
     </p>
 EOF
   
-    markdown < $src  # TODO: CommonMark
+    devtools/cmark.py < $src
 
     _build-timestamp
     cat <<EOF
@@ -180,11 +178,12 @@ EOF
 readonly MONOSPACE='font-family: monospace;'
 
 install() {
-  markdown2html INSTALL.txt _release/VERSION/doc/INSTALL.html '' "$MONOSPACE"
+  local root_dir=${1:-_release/VERSION}
+  markdown2html INSTALL.txt $root_dir/doc/INSTALL.html '' "$MONOSPACE"
 }
 
 release-index() {
-  local out=${1:-_build/doc/release-index.html}
+  local out=${1:-_tmp/release-index.html}
   # NOTE: We're at /release/0.6.pre10/index.html, and then there is a
   # web/release-index.css file in each release tree.
 
@@ -193,15 +192,18 @@ release-index() {
   markdown2html doc/release-index.md $out "$css_link" ''
 }
 
-# TODO:
-# - Move cmark.py from oilshell.org repo to devtools/, and generate TOC.
-# - Write your own stylesheet.
 manual() {
-  local css_link='<link rel="stylesheet" type="text/css" href="web/release-index.css" />'
+  local root_dir=${1:-_release/VERSION}
+
+  # NOTE: toc.css copied from oilshell.org repo.
+  local css_link='
+    <link rel="stylesheet" type="text/css" href="../web/manual.css" />
+    <link rel="stylesheet" type="text/css" href="../web/toc.css" />
+  '
   for d in osh-manual known-differences; do
-    markdown2html doc/$d.md _build/doc/$d.html "$css_link" ''
+    markdown2html doc/$d.md $root_dir/doc/$d.html "$css_link" ''
   done
-  ls -l _build/doc
+  ls -l $root_dir/doc
 }
 
 # I want to ship the INSTALL file literally, so just mutate things

@@ -12,8 +12,9 @@ This is the home page for version 0.6.0 of Oil, a Unix shell.  To use it,
 1. Download a source tarball.
 2. Build and install it, as described in [INSTALL][].
 
-These steps take 30 to 60 seconds on most machines.  After that, you may want
-to assemble an `oshrc` file, which is described in the manual.
+These steps take 30 to 60 seconds on most machines.  After that, you can
+assemble an `oshrc` file, which is described in [the
+manual](doc/osh-manual.html).
 
 Test results, metrics, and benchmarks are shown below.
 
@@ -32,14 +33,13 @@ Test results, metrics, and benchmarks are shown below.
 
 ### Documentation
 
-- [INSTALL][].  How to install OSH.  This text file is also at the root of the
-  tarball.
-- [OSH Quick Reference](doc/osh-quick-ref.html), with Examples (in progress).
-  This document underlies the OSH `help` builtin, and gives a rough overview of
-  what features OSH implements.
-- Latest
-  [doc/osh-manual.md](https://github.com/oilshell/oil/blob/master/doc/osh-manual.md)
-  on Github.  (TODO: This should be versioned.)
+- [INSTALL][]: How do I install Oil?  This text file is also in the tarball.
+- [OSH User Manual](doc/osh-manual.html): How do I use it?
+  - [Known Differences](doc/known-differences.html) is trivia for advanced
+    users.  It lists differences between Oil and other
+  - [OSH Quick Reference](doc/osh-quick-ref.html), with examples (in progress).
+    This document underlies the `help` builtin, and gives a rough overview of
+    what features OSH implements.
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
   - The [Oil Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments)
     wiki page has other ways of getting Oil.  These versions may not be

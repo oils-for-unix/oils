@@ -497,9 +497,10 @@ build-tree() {
 
   # NOTE: This action is also run in the build.  It generates code that goes in
   # the binary.
-  build/doc.sh osh-quick-ref _release/VERSION
+  build/doc.sh osh-quick-ref $root
+  build/doc.sh install $root
+  build/doc.sh manual $root
 
-  build/doc.sh install
   build/doc.sh release-index _tmp/release-index.html
   add-date-and-links $(cat _build/release-date.txt) \
     < _tmp/release-index.html > $root/index.html

@@ -1,7 +1,11 @@
-OSH Reference Manual
---------------------
+OSH User Manual
+---------------
 
 NOTE: This document is in progress.
+
+<!-- cmark.py expands this -->
+<div id="toc">
+</div>
 
 ### Setup
 
@@ -104,9 +108,7 @@ TODO:
 
 ### Known Differences Between OSH and Other Shells
 
-See [doc/known-differences.md][].
-
-[doc/known-differences.md]: ./known-differences.md
+See the [Known Differences](known-differences.html) doc.
 
 ### Completion API
 
@@ -142,7 +144,9 @@ program, use C-escaped strings, i.e. `$''`:
 
 (This construct is preferred over `echo -e` because it's statically parsed.)
 
-Also see [Notes on Unicode in Shell](unicode.md).
+Also see [Notes on Unicode in Shell][unicode.md].
+
+[unicode.md]: https://github.com/oilshell/oil/blob/master/doc/unicode.md
 
 ### Other Resources
 
