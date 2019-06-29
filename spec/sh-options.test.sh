@@ -476,3 +476,26 @@ shopt -u strict-arith
 -
 -
 ## END
+
+#### shopt allows for backward compatibility like bash
+
+# doesn't have to be on, but just for testing
+set -o errexit
+
+shopt -p nullglob || true  # bash returns 1 here?  Like -q.
+
+# This should set strict-array, and return 1, which can be ignored
+shopt -s nullglob strict-OPTION_NOT_YET_IMPLEMENTED 2>/dev/null || true
+echo status=$?
+
+shopt -p nullglob || true
+
+## STDOUT:
+shopt -u nullglob
+status=0
+shopt -s nullglob
+## END
+## N-I dash/mksh STDOUT:
+status=0
+## END
+## N-I dash/mksh status: 0
