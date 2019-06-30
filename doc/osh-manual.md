@@ -62,7 +62,7 @@ With most shells, it's very hard to tell when and if `/etc/profile`,
 `~/.bashrc`, `~/.bash_profile`, etc. are executed.  (TODO: OSH could use some
 tracing features to help users untangle this rat's nest.)
 
-If you want those files, simply add `source <FILE>` to your `oshrc`.
+If you want those files, simply `source` them in your `oshrc`.
 
 For example, `$LANG` may not get set without `/etc/profile` (e.g. on Arch
 Linux).  So you can add `source /etc/profile` to your `oshrc`.
@@ -78,7 +78,7 @@ I describe my own `oshrc` file on the wiki: [How To Test
 OSH](https://github.com/oilshell/oil/wiki/How-To-Test-OSH).
 
 
-### Strict Options
+### Strict Options To Produce More Errors
 
 Strict options **disallow** certain parts of the language with **fatal runtime
 errors**.
@@ -142,10 +142,6 @@ TODO:
 - `--debug-file`
 - `--xtrace-to-debug-file`
 
-### Known Differences Between OSH and Other Shells
-
-See the [Known Differences](known-differences.html) doc.
-
 ### Completion API
 
 One important incompatibility is that it deals with `argv` entries and not
@@ -171,20 +167,43 @@ plugins should not do it.
 
 ### Unicode
 
-Shell programs should be encoded in UTF-8 (or its ASCII subset).
+(1) Shell **programs** should be encoded in UTF-8 (or its ASCII subset).
 
-To express Unicode characters while not worrying about the encoding of the
-program, use C-escaped strings, i.e. `$''`:
+Unicode characters can be encoded directly in the source:
+
+<pre>
+echo '&#x03bc;'
+</pre>
+
+or denoted in ASCII with C-escaped strings, i.e.  `$''`:
 
     echo $'[\u03bc]'
 
 (This construct is preferred over `echo -e` because it's statically parsed.)
 
+(2) The **data** they operate on should also be UTF-8 / ASCII.
+
+For example, the length operator `${#s}` and slicing `${s:1:3}` perform UTF-8
+decoding.  Decoding errors are fatal if `shopt -s strict-word-eval` is on.
+
+The GNU `iconv` program converts text from one encoding to another.
+
 Also see [Notes on Unicode in Shell][unicode.md].
+
 
 [unicode.md]: https://github.com/oilshell/oil/blob/master/doc/unicode.md
 
+### Bugs
+
+- OSH runs shell scripts too slowly.  Speeding it up is a top priority.
+
 ### Links
+
+- [Known Differences](known-differences.html) lists incompatibilities between
+  OSH and other shells.  They are unlikely to appear in real programs, or
+  there is a trivial workaround.
+
+External:
 
 - [GNU Bash Manual](https://www.gnu.org/software/bash/manual/) -- I frequently
   referred to this document when implementing OSH.

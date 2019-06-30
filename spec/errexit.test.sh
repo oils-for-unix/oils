@@ -152,7 +152,7 @@ one
 three
 ## END
 
-#### setting errexit while it's being ignored
+#### set -o errexit while it's being ignored
 # ignored and then set again
 set -o errexit
 # osh aborts early here
@@ -167,6 +167,29 @@ echo 7
 1
 2
 ## END
+## OK dash/bash/mksh/ash STDOUT:
+1
+2
+3
+4
+5
+6
+## END
+
+#### set +o errexit while it's being ignored
+# ignored and then set again
+set -o errexit
+# osh aborts early here
+if { echo 1; false; echo 2; set +o errexit; echo 3; false; echo 4; }; then
+  echo 5;
+fi
+echo 6
+## status: 1
+## STDOUT:
+1
+2
+## END
+## OK dash/bash/mksh/ash status: 0
 ## OK dash/bash/mksh/ash STDOUT:
 1
 2

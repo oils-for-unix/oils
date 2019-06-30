@@ -10,22 +10,35 @@ body {
   color: #444;
 }
 
-pre {
-  color: green;
-  margin-left: 4em;
+p, ul, ol {
+  margin-left: 2em;
 }
 
+h4 {
+  margin-left: 2em;
+  color: darkblue;  /* different than blog */
+}
+
+
+/* blocks of code */
+pre {
+  /* font-size: medium; */
+  /* background-color: #f6f8fa; */
+  background-color: #eee;
+  padding: 1em;
+  margin-left: 2em;
+}
+
+/* inline code */
 code {
-  color: green;
+  /* color: darkgreen; */
+  background-color: #eee;
+  padding: 3px;
+  /* background-color: #f6f8fa; */
 }
 
 #home-link {
   text-align: right;
-}
-
-h4 {
-  margin: 0em;
-  color: darkgreen;
 }
 
 #version-in-header {
