@@ -66,7 +66,7 @@ x-quick-ref() {
   local text_out_dir=_devbuild/$prog-quick-ref
   local py_out=_devbuild/gen/${prog}_help.py
 
-  mkdir -p $text_out_dir
+  mkdir -p $out_dir/doc $text_out_dir
 
   {
     cat <<EOF
@@ -111,7 +111,7 @@ EOF
 
     _quick-ref toc doc/${prog}-quick-ref-toc.txt
 
-    # Also generate _build/osh-quick-ref/ dir
+    # Also generate the _devbuild/osh-quick-ref/ dir
     _quick-ref pages doc/${prog}-quick-ref-pages.txt $text_out_dir $py_out
 
     _build-timestamp
@@ -124,7 +124,7 @@ EOF
 }
 
 osh-quick-ref() {
-  local out_dir=${1:-_build}
+  local out_dir=${1:-_release/VERSION}
   x-quick-ref osh $out_dir
 }
 
