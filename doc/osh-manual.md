@@ -232,8 +232,13 @@ Then run this in another window to see logs as you type:
 
     cat _tmp/debug
 
-The `--xtrace-to-debug-file` sends `set -o xtrace` output to that file instead
-of to `stderr`.
+Related:
+
+- The `OSH_DEBUG_DIR` environment variable is the inherited version of
+  `--debug-file`.  A file named `$PID-osh.log` will be written in that
+  directory for every shell process.
+- The `--xtrace-to-debug-file` flag sends `set -o xtrace` output to that file
+  instead of to `stderr`.
 
 #### Crash Dumps
 
