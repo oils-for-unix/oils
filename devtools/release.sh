@@ -40,7 +40,6 @@
 #   devtools/release-version.sh git-changelog-$VERSION
 #   devtools/release-version.sh announcement-$VERSION
 #   MAYBE: ./local.sh test-release-tree if you want to preview it
-#   $0 sync-old-tar (for releases.html)
 #   $0 deploy-doc
 #
 #   demo/osh-debug.sh analyze  # see what you ran
