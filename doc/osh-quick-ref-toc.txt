@@ -65,6 +65,7 @@ WORD LANGUAGE
                   op-unary      ${x%%suffix}  etc.
                   op-str        ${x//y/z}
                   op-slice      ${a[@]:0:1}
+                  op-format     ${x@P}
 X [Oil Quotes]    c-string      c'1\t2\n'    c"1\t$two\n"
                   safe-subst    h"<p>$[name]</p>"
 

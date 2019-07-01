@@ -154,18 +154,16 @@ _LEFT_UNQUOTED = [
   C('>(', Id.Left_ProcSubOut),
 ]
 
-# Constructs used:
-# Character classes [] with simple ranges and negation, +, *, \n, \0
-# It would be nice to express this as CRE ... ?  And then compile to re2c
-# syntax.  And Python syntax.
-
-# NOTE: Should remain compatible with re2c syntax, for code gen.
-# http://re2c.org/manual/syntax/syntax.html
-
-# PROBLEM: \0 in Python re vs \000 in re2?  Can this be unified?
-# Yes, Python allows \000 octal escapes.
+# The regexes below are in Python syntax, but are translate to re2c syntax by
+# frontend/lexer_gen.py.
 #
+# http://re2c.org/manual/syntax/syntax.html
 # https://docs.python.org/2/library/re.html
+#
+# We use a limited set of constructs:
+# - + and * for repetition
+# - Character classes [] with simple ranges and negation
+# - Escapes like \n \0
 
 LEXER_DEF = {}  # TODO: Should be a list so we enforce order.
 

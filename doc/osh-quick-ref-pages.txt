@@ -241,6 +241,10 @@ For conditionals.
 
 #### <Var-Ops> Operations on Variables
 
+### <op-format> Variable Formatting Operators
+
+${x@P} evaluates x as a prompt string, e.g. the string that would be printed if
+PS1=$x.
 
 ##### <OTHER-SHELL-SUBLANGUAGES> Other Shell Sublanguages
 
