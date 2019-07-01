@@ -446,7 +446,9 @@ class ExternalProgram(object):
         pass
       else:
         try:
-          line = f.readline()
+          # Test if the shebang looks like a shell.  The file might be binary
+          # with no newlines, so read 80 bytes instead of readline().
+          line = f.read(80)
           if match.ShouldHijack(line):
             self.debug_f.log('Hijacked: %s with %s', argv, self.hijack_shebang)
             argv = [self.hijack_shebang] + argv

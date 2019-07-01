@@ -13,7 +13,7 @@ class MatchTest(unittest.TestCase):
 
   def testShouldHijack(self):
     self.assertEqual(
-        False, match.ShouldHijack('# comment\n'))
+        False, match.ShouldHijack('# comment\n[line 2]'))
     self.assertEqual(
         False, match.ShouldHijack('#!/usr/bin/python\n'))
     self.assertEqual(
@@ -25,13 +25,13 @@ class MatchTest(unittest.TestCase):
         True, match.ShouldHijack('#!/usr/bin/env bash\n'))
 
     self.assertEqual(
-        True, match.ShouldHijack('#!/bin/bash\n'))
+        True, match.ShouldHijack('#!/bin/bash\n[line 2]'))
     self.assertEqual(
-        True, match.ShouldHijack('#!/bin/bash -e\n'))
+        True, match.ShouldHijack('#!/bin/bash -e\n[line 2]'))
     self.assertEqual(
-        True, match.ShouldHijack('#!/bin/sh\n'))
+        True, match.ShouldHijack('#!/bin/sh\n[line 2]\n'))
     self.assertEqual(
-        True, match.ShouldHijack('#!/bin/sh -e\n'))
+        True, match.ShouldHijack('#!/bin/sh -e\n[line 2]\n'))
 
     # Unlikely but OK
     self.assertEqual(
