@@ -7,8 +7,8 @@ echo hi 1>&2
 #### <&
 # Is there a simpler test case for this?
 echo foo > $TMP/lessamp.txt
-exec 5< $TMP/lessamp.txt
-read line <&5
+exec 6< $TMP/lessamp.txt
+read line <&6
 echo "[$line]"
 ## stdout: [foo]
 

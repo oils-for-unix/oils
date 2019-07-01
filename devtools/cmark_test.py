@@ -2,6 +2,7 @@
 """
 cmark_test.py: Tests for cmark.py
 """
+from __future__ import print_function
 
 import cStringIO
 import unittest
@@ -62,7 +63,7 @@ class RenderTest(unittest.TestCase):
 
     out_file = cStringIO.StringIO()
     cmark.Render(TOC_DOC, out_file)
-    print out_file.getvalue()
+    print(out_file.getvalue())
 
 
 if __name__ == '__main__':

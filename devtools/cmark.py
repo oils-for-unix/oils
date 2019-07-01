@@ -5,6 +5,7 @@ insert anchors.
 
 I started from cmark-0.28.3/wrappers/wrapper.py.
 """
+from __future__ import print_function
 
 import ctypes
 import sys
