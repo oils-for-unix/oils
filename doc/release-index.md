@@ -37,7 +37,7 @@ Test results, metrics, and benchmarks are shown below.
 - [OSH User Manual](doc/osh-manual.html): How do I use it?
   - [Known Differences](doc/known-differences.html) is trivia for advanced
     users.  It lists differences between Oil and other
-  - [OSH Quick Reference](doc/osh-quick-ref.html), with examples (in progress).
+  - [OSH Quick Reference](doc/osh-quick-ref.html), with examples (incomplete).
     This document underlies the `help` builtin, and gives a rough overview of
     what features OSH implements.
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
