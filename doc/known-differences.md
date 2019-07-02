@@ -18,6 +18,10 @@ TODO:
 
 - `` as comments in sandstorm
   # This relates to comments being EOL or not
+
+- Document when declare / local / readonly/ export are KEYWORDS, and when they
+  are BUILTINS.
+
 -->
 
 ### Numbers and Arithmetic
@@ -84,7 +88,7 @@ No:
 Yes:
 
     $( (cd / && ls) )   # Valid but usually doesn't make sense.
-    $({ cd / && ls; })  # Use {} for grouping, not {}.  Note trailing ;
+    $({ cd / && ls; })  # Use {} for grouping, not ().  Note trailing ;
     $(cd / && ls)       # Even better
 
 
