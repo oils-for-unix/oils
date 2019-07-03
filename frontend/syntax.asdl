@@ -305,6 +305,49 @@ module syntax
     -- should 1:2 be an expression then?
   | Subscript(expr collection, expr* indices)
 
+  -- COPIED from Python-3.7/Parser/Python.asdl and lightly modified.
+  -- Will need more changes.
+
+  | IfExp(expr test, expr body, expr orelse)
+  | Dict(expr* keys, expr* values)
+  | Set(expr* elts)
+  | ListComp(expr elt, comprehension* generators)
+  | SetComp(expr elt, comprehension* generators)
+  | DictComp(expr key, expr value, comprehension* generators)
+  | GeneratorExp(expr elt, comprehension* generators)
+  -- need sequences for compare to distinguish between
+  -- x < 4 < 3 and (x < 4) < 3 (NOTE: unused; Oil currently uses Binary)
+  | Compare(expr left, cmpop* ops, expr* comparators)
+  | Call(expr func, expr* args, keyword* keywords)
+  | Num(int n) -- do we need this for Oil?
+  | Str(string s) -- need to specify raw, unicode, etc?
+  | FormattedValue(expr value, int? conversion, expr? format_spec)
+  | JoinedStr(expr* values)
+  | Ellipsis -- do we need this?
+
+  -- the following expressions can appear in assignment context
+  | Attribute(expr value, token attr, expr_context ctx)
+    -- TODO: we used Subscript() above, might want to migrate?
+  | Subscript_PYTHON(expr value, slice slice, expr_context ctx)
+  | Starred(expr value, expr_context ctx)
+  | Name(token identifier, expr_context ctx)
+  | List(expr* elts, expr_context ctx)
+  | Tuple(expr* elts, expr_context ctx)
+
+  expr_context = Load | Store | Del | AugLoad | AugStore | Param
+
+  slice = Slice(expr? lower, expr? upper, expr? step)
+        | ExtSlice(slice* dims)
+        | Index(expr value)
+
+  comprehension = (expr target, expr iter, expr* ifs, int is_async)
+
+  cmpop = Eq | NotEq | Lt | LtE | Gt | GtE | Is | IsNot | In | NotIn
+
+  -- keyword arguments supplied to call (NULL identifier for **kwargs)
+  keyword = (token? arg, expr value)
+
+
   -- NOTE: Remove these for the first cut?  We could mostly reuse OSH nodes.
   -- And then we can share the evaluator to have identical semantics?
 

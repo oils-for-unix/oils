@@ -232,10 +232,10 @@ def InitCommandParser(code_str, arena=None):
   return c_parser
 
 
-def InitOilParser(code_str, arena=None):
+def InitOilCommandParser(code_str, arena=None):
   # NOTE: aliases don't exist in the Oil parser?
-  arena = arena or MakeArena('<cmd_exec_test.py>')
+  arena = arena or MakeArena('')
   parse_ctx = parse_lib.ParseContext(arena, {}, None)
   line_reader, _ = InitLexer(code_str, arena)
-  c_parser = parse_ctx.MakeOilParser(line_reader)
+  c_parser = parse_ctx.MakeOilCommandParser(line_reader)
   return arena, c_parser

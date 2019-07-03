@@ -239,7 +239,7 @@ class ParseContext(object):
                                        aliases_in_flight=aliases_in_flight)
     return c_parser
 
-  def MakeOilParser(self, line_reader):
+  def MakeOilCommandParser(self, line_reader):
     # type: (_Reader) -> None
     # Same lexer as Oil?  It just doesn't start in the OUTER state?
     lx = self._MakeLexer(line_reader)
@@ -279,6 +279,7 @@ class ParseContext(object):
 
   def ParseOilAssign(self, lexer, start_symbol, print_parse_tree=False):
     # type: (Lexer, int, bool) -> Tuple[command_t, token]
+    """e.g. var mylist = [1, 2, 3]"""
     pnode, last_token = self.e_parser.Parse(lexer, start_symbol)
 
     if print_parse_tree:
@@ -289,6 +290,7 @@ class ParseContext(object):
 
   def ParseOilExpr(self, lexer, start_symbol, print_parse_tree=False):
     # type: (Lexer, int, bool) -> Tuple[expr_t, token]
+    """For Oil expressions that aren't assignments.  Currently unused."""
     pnode, last_token = self.e_parser.Parse(lexer, start_symbol)
 
     if print_parse_tree:

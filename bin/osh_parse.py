@@ -25,7 +25,6 @@ def main(argv):
   arena = alloc.Arena()
   arena.PushSource(source.Stdin(''))
 
-  line_reader = reader.FileLineReader(sys.stdin, arena)
   # Dummy value; not respecting aliases!
   aliases = {}  # type: Dict[str, Any]
   # parse `` and a[x+1]=bar differently
@@ -35,6 +34,8 @@ def main(argv):
 
   parse_ctx = parse_lib.ParseContext(arena, aliases, oil_grammar,
                                      one_pass_parse=True)
+
+  line_reader = reader.FileLineReader(sys.stdin, arena)
   c_parser = parse_ctx.MakeOshParser(line_reader)
 
   try:

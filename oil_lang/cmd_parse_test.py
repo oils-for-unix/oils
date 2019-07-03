@@ -16,7 +16,7 @@ class OilParseTest(unittest.TestCase):
   #
   # That could be part of 'wild'?  Or oil-wild?
   def testSimple(self):
-    _, c_parser = test_lib.InitOilParser('echo hi')
+    _, c_parser = test_lib.InitOilCommandParser('echo hi')
     node = c_parser.ParseLogicalLine()
     print(node)
 
