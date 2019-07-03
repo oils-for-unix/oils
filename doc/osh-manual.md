@@ -295,15 +295,17 @@ or denoted in ASCII with C-escaped strings, i.e.  `$''`:
 
 #### Data Encoding
 
-The **data** they operate on should also be UTF-8 / ASCII.
+Strings in OSH are arbitrary sequences of **bytes**.  Caveats:
 
-For example, the length operator `${#s}` and slicing `${s:1:3}` perform UTF-8
-decoding.  Decoding errors are fatal if `shopt -s strict-word-eval` is on.
+- When passed to external programs, strings are truncated at the first `NUL`
+  (`'\0'`) byte.  This is just how Unix and C work.
+- The length operator `${#s}` and slicing `${s:1:3}` require their input to be
+  **valid UTF-8**.  Decoding errors are fatal if `shopt -s strict-word-eval` is
+  on.
 
 The GNU `iconv` program converts text from one encoding to another.
 
 Also see [Notes on Unicode in Shell][unicode.md].
-
 
 [unicode.md]: https://github.com/oilshell/oil/blob/master/doc/unicode.md
 
@@ -313,6 +315,8 @@ Also see [Notes on Unicode in Shell][unicode.md].
 
 ### Links
 
+- [Blog Posts Tagged #FAQ](http://www.oilshell.org/blog/tags.html?tag=FAQ#FAQ)
+  tell you why OSH exists and how it's designed.
 - [Known Differences](known-differences.html) lists incompatibilities between
   OSH and other shells.  They are unlikely to appear in real programs, or
   there is a trivial workaround.
