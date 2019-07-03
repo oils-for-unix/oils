@@ -220,8 +220,11 @@ class Executor(object):
     except IndexError:
       raise args.UsageError('missing required argument')
 
+    (_, resolved) = builtin._ResolveFile(path, self.mem.GetVar('PATH').s.split(':'))
+    if resolved is None:
+       resolved = path
     try:
-      f = self.fd_state.Open(path)  # Shell can't use descriptors 3-9
+      f = self.fd_state.Open(resolved)  # Shell can't use descriptors 3-9
     except OSError as e:
       self.errfmt.Print('source %r failed: %s', path, posix.strerror(e.errno),
                         span_id=arg_vec.spids[1])

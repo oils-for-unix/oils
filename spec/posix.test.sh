@@ -142,3 +142,40 @@ three
 EOF2
 ## stdout-json: "one\ntwo\nthree\n"
 
+#### source works for files in subdirectory
+mkdir -p dir
+echo "echo path" > dir/cmd
+. dir/cmd
+rm dir/cmd
+## STDOUT:
+path
+
+#### source looks in PATH for files
+mkdir -p dir
+echo "echo hi" > dir/cmd
+PATH="dir:$PATH"
+. cmd
+rm dir/cmd
+## STDOUT:
+hi
+## END
+
+#### source gives precendence to PATH
+mkdir -p dir
+echo "echo path" > dir/cmd
+echo "echo current dir" > cmd
+PATH="dir:$PATH"
+. cmd
+rm dir/cmd
+## STDOUT:
+path
+
+#### source works for files in current directory
+echo "echo current dir" > cmd
+. cmd
+## STDOUT:
+current dir
+## N-I dash stdout-json: ""
+## N-I dash status: 2
+## N-I mksh stdout-json: ""
+## N-I mksh status: 1
