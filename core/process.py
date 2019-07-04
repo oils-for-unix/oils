@@ -435,11 +435,14 @@ class ExternalProgram(object):
     """Execute a program and exit this process.
 
     Called by:
-    ls /
-    exec ls /
-    ( ls / )
+      ls /
+      exec ls /
+      ( ls / )
     """
-    argv = arg_vec.strs
+    self._Exec(arg_vec.strs, arg_vec.spids[0], environ)
+    # NO RETURN
+
+  def _Exec(self, argv, argv0_spid, environ):
     if self.hijack_shebang:
       try:
         f = self.fd_state.Open(argv[0])
@@ -464,33 +467,37 @@ class ExternalProgram(object):
     try:
       os_.execvpe(argv[0], argv, environ)
     except OSError as e:
-      # Run with /bin/sh when ENOEXEC error (no shebang). Because all shells do it.
-      if e.errno == errno.ENOEXEC and argv[0] != "/bin/sh":  # avoid infinite loops
+      # Run with /bin/sh when ENOEXEC error (no shebang).  All shells do this.
+      if e.errno == errno.ENOEXEC and argv[0] != '/bin/sh':  # no infinite loop
+        # TODO:
+        # - Use search_path in the NON-ERROR case ('hash' builtin).
+        # - Get rid of pylib/os_.py, which was copied from the Python standard
+        #   library.
         realpath = self.search_path.Lookup(argv[0])
-        # Check if file was deleted in the meantime
-        if realpath is None:
+        if realpath is None:  # Check if file was deleted in the meantime
           e.errno = errno.ENOENT
         else:
-          arg_vec.strs = ["/bin/sh", realpath] + argv[1:]
-          arg_vec.spids = [const.NO_INTEGER] + arg_vec.spids
-          # Never returns
-          self.Exec(arg_vec, environ)
+          self._Exec(['/bin/sh'] + argv, argv0_spid, environ)
+          # NO RETURN
 
       # Would be nice: when the path is relative and ENOENT: print PWD and do
       # spelling correction?
 
       self.errfmt.Print(
           "Can't execute %r: %s", argv[0], posix.strerror(e.errno),
-          span_id=arg_vec.spids[0])
+          span_id=argv0_spid)
+
       # POSIX mentions 126 and 127 for two specific errors.  The rest are
       # unspecified.
       #
       # http://pubs.opengroup.org/onlinepubs/9699919799.2016edition/utilities/V3_chap02.html#tag_18_08_02
-
       if e.errno == errno.EACCES:
         status = 126
       elif e.errno == errno.ENOENT:
-        status = 127  # e.g. command not found should be 127.
+        # TODO: most shells print 'command not found', rather than strerror()
+        # == "No such file or directory".  That's better because it's at the
+        # end of the path search, and we're never searching for a directory.
+        status = 127
       else:
         # dash uses 2, but we use that for parse errors.  This seems to be
         # consistent with mksh and zsh.
