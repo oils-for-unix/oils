@@ -159,24 +159,3 @@ rm dir/cmd
 ## STDOUT:
 hi
 ## END
-
-#### source gives precendence to PATH
-mkdir -p dir
-echo "echo path" > dir/cmd
-echo "echo current dir" > cmd
-PATH="dir:$PATH"
-. cmd
-rm -r dir cmd
-## STDOUT:
-path
-
-#### source works for files in current directory
-echo "echo current dir" > cmd
-. cmd
-rm cmd
-## STDOUT:
-current dir
-## N-I dash stdout-json: ""
-## N-I dash status: 2
-## N-I mksh stdout-json: ""
-## N-I mksh status: 1
