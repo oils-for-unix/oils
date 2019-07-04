@@ -7,7 +7,6 @@ import sys
 
 import libc
 
-
 _RESET = '\033[0;0m'
 _BOLD = '\033[1m'
 _UNDERLINE = '\033[4m'
@@ -31,17 +30,23 @@ PROMPT_REVERSE = '\x01%s\x02' % _REVERSE
 
 
 def _PromptLen(prompt_str):
-  """Ignore all characters between \x01 and \x02."""
+  """Ignore all characters between \x01 and \x02 and handle unicode characters.
+  In particular, the display width of a string may be different from either the
+  number of bytes or the number of unicode characters."""
   escaped = False
-  length = 0
+  display_str = ""
   for c in prompt_str:
     if c == '\x01':
       escaped = True
     elif c == '\x02':
       escaped = False
     elif not escaped:
-      length += 1
-  return length
+      display_str += c
+  try:
+    return libc.wcswidth(display_str)
+  # en_US.UTF-8 locale missing, just return the number of bytes
+  except (SystemError, UnicodeError):
+    return len(display_str)
 
 
 class PromptState(object):
