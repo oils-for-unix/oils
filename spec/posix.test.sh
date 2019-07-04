@@ -142,3 +142,20 @@ three
 EOF2
 ## stdout-json: "one\ntwo\nthree\n"
 
+#### source works for files in subdirectory
+mkdir -p dir
+echo "echo path" > dir/cmd
+. dir/cmd
+rm dir/cmd
+## STDOUT:
+path
+
+#### source looks in PATH for files
+mkdir -p dir
+echo "echo hi" > dir/cmd
+PATH="dir:$PATH"
+. cmd
+rm dir/cmd
+## STDOUT:
+hi
+## END
