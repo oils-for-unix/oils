@@ -41,7 +41,6 @@ from frontend import args
 from frontend import lex
 from frontend import match
 from pylib import os_path
-from pylib import path_stat
 from osh import state
 from osh import string_ops
 from osh import word_compile
@@ -1039,33 +1038,8 @@ class Unset(object):
     return 0
 
 
-def _ParsePath(path_val):
-  if path_val.tag == value_e.Str:
-    return path_val.s.split(':')
-  else:
-    return []  # treat as empty path
-
-
-def _ResolveFile(name, path_list):
-  # Now look for files.
-  # Relative path, won't be found by looking in PATH
-  # Note this will not look for files in the current directory unless prefixed with ./
-  if '/' in name:
-    if path_stat.exists(name):
-      return ('file', name)
-    else:
-      return (None, None)
-  for path_dir in path_list:
-    full_path = os_path.join(path_dir, name)
-    if path_stat.exists(full_path):
-      return ('file', full_path)
-  # Nothing printed, but status is 1.
-  return (None, None)
-
-
-def _ResolveNames(names, funcs, aliases, path_val):
+def _ResolveNames(names, funcs, aliases, search_path):
   results = []
-  path_list = _ParsePath(path_val)
   for name in names:
     if name in funcs:
       kind = ('function', name)
@@ -1080,7 +1054,11 @@ def _ResolveNames(names, funcs, aliases, path_val):
     elif lex.IsKeyword(name):
       kind = ('keyword', name)
     else:
-      kind = _ResolveFile(name, path_list)
+      resolved = search_path.Lookup(name)
+      if resolved is None:
+        kind = (None, None)
+      else:
+        kind = ('file', resolved) 
     results.append(kind)
 
   return results
@@ -1092,20 +1070,19 @@ COMMAND_SPEC.ShortFlag('-v')
 
 
 class Command(object):
-  def __init__(self, ex, funcs, aliases, mem):
+  def __init__(self, ex, funcs, aliases, search_path):
     self.ex = ex
     self.funcs = funcs
     self.aliases = aliases
-    self.mem = mem
+    self.search_path = search_path
 
   def __call__(self, arg_vec, fork_external):
     arg, arg_index = COMMAND_SPEC.ParseVec(arg_vec)
     if arg.v:
-      path_val = self.mem.GetVar('PATH')
       status = 0
       names = arg_vec.strs[arg_index:]
       for kind, arg in _ResolveNames(names, self.funcs, self.aliases,
-                                     path_val):
+                                     self.search_path):
         if kind is None:
           status = 1  # nothing printed, but we fail
         else:
@@ -1126,14 +1103,13 @@ TYPE_SPEC.ShortFlag('-P')
 
 
 class Type(object):
-  def __init__(self, funcs, aliases, mem):
+  def __init__(self, funcs, aliases, search_path):
     self.funcs = funcs
     self.aliases = aliases
-    self.mem = mem
+    self.search_path = search_path
 
   def __call__(self, arg_vec):
     arg, i = TYPE_SPEC.ParseVec(arg_vec)
-    path_val = self.mem.GetVar('PATH')
 
     if arg.f:
       funcs = []
@@ -1141,7 +1117,7 @@ class Type(object):
       funcs = self.funcs
 
     status = 0
-    r = _ResolveNames(arg_vec.strs[i:], funcs, self.aliases, path_val)
+    r = _ResolveNames(arg_vec.strs[i:], funcs, self.aliases, self.search_path)
     for kind, name in r:
       if kind is None:
         status = 1  # nothing printed, but we fail
@@ -1155,11 +1131,11 @@ class Type(object):
           if kind == 'file':
             print(name)
           else:
-            kind, path = _ResolveFile(name, _ParsePath(path_val))
-            if kind is None:
+            resolved = self.search_path.Lookup(name)
+            if resolved is None:
               status = 1
             else:
-              print(path)
+              print(resolved)
 
         else:
           # Alpine's abuild relies on this text because busybox ash doesn't have

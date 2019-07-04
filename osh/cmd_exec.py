@@ -100,6 +100,7 @@ class Deps(object):
     self.ex = None
     self.prompt_ev = None
 
+    self.search_path = None
     self.ext_prog = None
 
     self.dumper = None
@@ -153,6 +154,7 @@ class Executor(object):
     self.arith_ev = exec_deps.arith_ev
     self.bool_ev = exec_deps.bool_ev
 
+    self.search_path = exec_deps.search_path
     self.ext_prog = exec_deps.ext_prog
     self.traps = exec_deps.traps
     self.trap_nodes = exec_deps.trap_nodes
@@ -220,9 +222,9 @@ class Executor(object):
     except IndexError:
       raise args.UsageError('missing required argument')
 
-    (_, resolved) = builtin._ResolveFile(path, self.mem.GetVar('PATH').s.split(':'))
+    resolved = self.search_path.Lookup(path)
     if resolved is None:
-       resolved = path
+      resolved = path
     try:
       f = self.fd_state.Open(resolved)  # Shell can't use descriptors 3-9
     except OSError as e:
@@ -294,7 +296,7 @@ class Executor(object):
     elif builtin_id == builtin_e.COMMAND:
       # TODO: How do we hadnle fork_external?  It doesn't fit the common
       # signature.
-      b = builtin.Command(self, self.funcs, self.aliases, self.mem)
+      b = builtin.Command(self, self.funcs, self.aliases, self.search_path)
       status = b(arg_vec, fork_external)
 
     elif builtin_id == builtin_e.BUILTIN:  # NOTE: uses early return style

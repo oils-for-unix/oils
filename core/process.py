@@ -22,7 +22,6 @@ from core import ui
 from core.util import log
 from frontend import match
 from pylib import os_
-from osh.builtin import _ResolveFile
 
 import posix_ as posix
 
@@ -420,7 +419,7 @@ class StdoutToPipe(ChildStateChange):
 
 
 class ExternalProgram(object):
-  def __init__(self, hijack_shebang, fd_state, errfmt, debug_f):
+  def __init__(self, hijack_shebang, fd_state, search_path, errfmt, debug_f):
     """
     Args:
       hijack_shebang: The path of an interpreter to run instead of the one
@@ -428,6 +427,7 @@ class ExternalProgram(object):
     """
     self.hijack_shebang = hijack_shebang
     self.fd_state = fd_state
+    self.search_path = search_path
     self.errfmt = errfmt
     self.debug_f = debug_f
 
@@ -466,7 +466,7 @@ class ExternalProgram(object):
     except OSError as e:
       # Run with /bin/sh when ENOEXEC error (no shebang). Because all shells do it.
       if e.errno == errno.ENOEXEC and argv[0] != "/bin/sh":  # avoid infinite loops
-        _, realpath = _ResolveFile(argv[0], environ["PATH"].split(':'))
+        realpath = self.search_path.Lookup(argv[0])
         # Check if file was deleted in the meantime
         if realpath is None:
           e.errno = errno.ENOENT

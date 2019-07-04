@@ -19,11 +19,14 @@ from _devbuild.gen.runtime_asdl import (
     value, value_e, lvalue_e, scope_e, var_flags_e, value__Str
 )
 from _devbuild.gen import runtime_asdl  # for cell
+
 from asdl import const
 from core import util
 from core.util import log, e_die
 from frontend import args
 from osh import split
+from pylib import os_path
+from pylib import path_stat
 
 import libc
 import posix_ as posix
@@ -34,6 +37,38 @@ import posix_ as posix
 # we have to set it back!
 # Used in both core/competion.py and osh/state.py
 _READLINE_DELIMS = ' \t\n"\'><=;|&(:'
+
+
+class SearchPath(object):
+  """For looking up files in $PATH."""
+
+  def __init__(self, mem):
+    self.mem = mem
+
+  def Lookup(self, name):
+    """
+    Returns the path itself (for relative path), the resolve path, or None.
+    """
+    if '/' in name:
+      if path_stat.exists(name):
+        return name
+      else:
+        return None
+
+    # TODO: Could cache this computation to avoid allocating every time for all
+    # the splitting.
+    path_val = self.mem.GetVar('PATH')
+    if path_val.tag == value_e.Str and path_val.s:
+      path_list = path_val.s.split(':')
+    else:
+      path_list = []  # treat as empty path
+
+    for path_dir in path_list:
+      full_path = os_path.join(path_dir, name)
+      if path_stat.exists(full_path):
+        return full_path
+
+    return None
 
 
 class _ErrExit(object):

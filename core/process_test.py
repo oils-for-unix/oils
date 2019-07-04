@@ -33,7 +33,8 @@ _JOB_STATE = process.JobState()
 _WAITER = process.Waiter(_JOB_STATE, _EXEC_OPTS)
 _ERRFMT = ui.ErrorFormatter(_ARENA)
 _FD_STATE = process.FdState(_ERRFMT, _JOB_STATE)
-_EXT_PROG = process.ExternalProgram(False, _FD_STATE, _ERRFMT,
+_SEARCH_PATH = state.SearchPath(_MEM)
+_EXT_PROG = process.ExternalProgram(False, _FD_STATE, _SEARCH_PATH, _ERRFMT,
                                     util.NullDebugFile())
 
 

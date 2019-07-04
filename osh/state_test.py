@@ -30,6 +30,26 @@ class MemTest(unittest.TestCase):
     mem.PopCall()
     print(mem.GetVar('NONEXISTENT'))
 
+  def testSearchPath(self):
+    mem = _InitMem()
+    #print(mem)
+    search_path = state.SearchPath(mem)
+
+    # Relative path works without $PATH
+    self.assertEqual(None, search_path.Lookup('__nonexistent__'))
+    self.assertEqual('bin/osh', search_path.Lookup('bin/osh'))
+    self.assertEqual(None, search_path.Lookup('grep'))
+
+    # Set $PATH
+    mem.SetVar(lvalue.LhsName('PATH'), value.Str('/bin:/usr/bin'),
+               (), scope_e.GlobalOnly)
+
+    self.assertEqual(None, search_path.Lookup('__nonexistent__'))
+    self.assertEqual('bin/osh', search_path.Lookup('bin/osh'))
+
+    # Not hermetic, but should be true on POSIX systems.
+    self.assertEqual('/usr/bin/env', search_path.Lookup('env'))
+
   def testPushTemp(self):
     mem = _InitMem()
 

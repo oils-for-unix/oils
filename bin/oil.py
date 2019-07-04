@@ -388,7 +388,10 @@ def ShellMain(lang, argv0, argv, login_shell):
     debug_f.log('Writing logs to %r', debug_path)
 
   interp = posix.environ.get('OSH_HIJACK_SHEBANG', '')
-  exec_deps.ext_prog = process.ExternalProgram(interp, fd_state, errfmt, debug_f)
+  exec_deps.search_path = state.SearchPath(mem)
+  exec_deps.ext_prog = process.ExternalProgram(interp, fd_state,
+                                               exec_deps.search_path,
+                                               errfmt, debug_f)
 
   splitter = split.SplitContext(mem)
   exec_deps.splitter = splitter
@@ -450,7 +453,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
       builtin_e.HELP: builtin.Help(loader, errfmt),
 
-      builtin_e.TYPE: builtin.Type(funcs, aliases, mem),
+      builtin_e.TYPE: builtin.Type(funcs, aliases, exec_deps.search_path),
       builtin_e.REPR: builtin.Repr(mem, errfmt),
 
       builtin_e.GETOPTS: builtin.GetOpts(mem, errfmt),
