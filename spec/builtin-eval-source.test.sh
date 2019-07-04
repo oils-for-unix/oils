@@ -135,23 +135,35 @@ FALSE
 FALSE
 ## END
 
-#### source works for files in current directory
+#### source works for files in current directory (bash only)
+cd $TMP
 echo "echo current dir" > cmd
 . cmd
-rm cmd
+echo status=$?
 ## STDOUT:
 current dir
+status=0
+## END
+## N-I zsh STDOUT:
+status=127
+## END
+
+# This is a special builtin so failure is fatal.
+
 ## N-I dash stdout-json: ""
 ## N-I dash status: 2
 ## N-I mksh stdout-json: ""
 ## N-I mksh status: 1
 
-#### source gives precendence to PATH
+#### source finds files in PATH before current dir
+cd $TMP
 mkdir -p dir
 echo "echo path" > dir/cmd
 echo "echo current dir" > cmd
 PATH="dir:$PATH"
 . cmd
-rm -r dir cmd
+echo status=$?
 ## STDOUT:
 path
+status=0
+## END
