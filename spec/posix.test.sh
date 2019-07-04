@@ -166,13 +166,14 @@ echo "echo path" > dir/cmd
 echo "echo current dir" > cmd
 PATH="dir:$PATH"
 . cmd
-rm dir/cmd
+rm -r dir cmd
 ## STDOUT:
 path
 
 #### source works for files in current directory
 echo "echo current dir" > cmd
 . cmd
+rm cmd
 ## STDOUT:
 current dir
 ## N-I dash stdout-json: ""
