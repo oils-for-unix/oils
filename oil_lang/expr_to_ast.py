@@ -301,7 +301,7 @@ class Transformer(object):
     children = pnode.children
 
     if typ == grammar_nt.oil_var:
-      # assign: lvalue_list [type_expr] '=' testlist (';' | '\n')
+      # oil_var: lvalue_list [type_expr] '=' testlist (Op_Semi | Op_Newline)
 
       #log('len(children) = %d', len(children))
 
