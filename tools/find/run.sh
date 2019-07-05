@@ -1,21 +1,26 @@
 #!/bin/bash
 #
 # Usage:
-#   ./run.sh <function name>
+#   tools/find//run.sh <function name>
 
 set -o nounset
 set -o pipefail
 set -o errexit
+
+readonly REPO_ROOT=$(cd $(dirname $0)/../.. && pwd)
 
 find-demo() {
   echo
   echo --- "$@" ---
   echo
 
-  PYTHONPATH='.:vendor' tools/find/find.py "$@"
+  # Add 'tools' dir to prevent it from walking the whole repo
+  PYTHONPATH="$REPO_ROOT:$REPO_ROOT/vendor" \
+    $REPO_ROOT/tools/find/find.py tools "$@"
 }
 
 unit-tests() {
+
   find-demo -true
   find-demo -false -o -true
   find-demo -true -a -false
