@@ -1244,7 +1244,7 @@ class Executor(object):
       Whether we should use the status of the handler.
 
       This is odd behavior, but all bash/dash/mksh seem to agree on it.
-      See cases 11 and 12 in builtin-trap.test.sh.
+      See cases 7-10 in builtin-trap.test.sh.
     """
     handler = self.traps.get('EXIT')
     if handler:

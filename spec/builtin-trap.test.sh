@@ -50,7 +50,7 @@ echo status=$?
 ## BUG dash/bash status: 0
 ## BUG dash/bash stdout: status=0
 
-#### trap EXIT
+#### trap EXIT calling exit
 cleanup() {
   echo "cleanup [$@]"
   exit 42
@@ -58,6 +58,28 @@ cleanup() {
 trap 'cleanup x y z' EXIT
 ## stdout: cleanup [x y z]
 ## status: 42
+
+#### trap EXIT return status ignored
+cleanup() {
+  echo "cleanup [$@]"
+  return 42
+}
+trap 'cleanup x y z' EXIT
+## stdout: cleanup [x y z]
+## status: 0
+
+#### trap EXIT with PARSE error
+trap 'echo FAILED' EXIT
+for
+## stdout: FAILED
+## status: 2
+## OK mksh status: 1
+
+#### trap EXIT with PARSE error and explicit exit
+trap 'echo FAILED; exit 0' EXIT
+for
+## stdout: FAILED
+## status: 0
 
 #### trap DEBUG
 debuglog() {
@@ -141,19 +163,6 @@ err [x y] 1
 2
 3
 ## END
-
-#### trap with PARSE error (implicit exit)
-trap 'echo FAILED' EXIT
-for
-## stdout: FAILED
-## status: 2
-## OK mksh status: 1
-
-#### trap with PARSE error with explicit exit
-trap 'echo FAILED; exit 0' EXIT
-for
-## stdout: FAILED
-## status: 0
 
 #### trap 0 is equivalent to EXIT
 # not sure why this is, but POSIX wants it.

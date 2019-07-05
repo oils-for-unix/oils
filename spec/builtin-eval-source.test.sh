@@ -167,3 +167,18 @@ echo status=$?
 path
 status=0
 ## END
+ 
+#### exit within eval (regression)
+eval 'exit 42'
+echo 'should not get here'
+## stdout-json: ""
+## status: 42
+
+
+#### exit within source (regression)
+cd $TMP
+echo 'exit 42' > lib.sh
+. ./lib.sh
+echo 'should not get here'
+## stdout-json: ""
+## status: 42
