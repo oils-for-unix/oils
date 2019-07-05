@@ -46,6 +46,9 @@ class Transformer(object):
   Other:
     frontend/parse_lib.py  (turn on print_parse_tree)
 
+  Public methods:
+    Expr, OilAssign
+    atom, trailer, etc. are private, named after productions in grammar.pgen2.
   """
   def __init__(self, gr):
     # type: (Grammar) -> None
@@ -70,7 +73,7 @@ class Transformer(object):
     assert isinstance(op.tok, syntax_asdl.token)
     return expr.Binary(op.tok, self.Expr(left), right)
 
-  def _Trailer(self, base, p_trailer):
+  def trailer(self, base, p_trailer):
     # type: (expr_t, PNode) -> expr_t
     children = p_trailer.children
     op_tok = children[0].tok
@@ -104,47 +107,6 @@ class Transformer(object):
       raise NotImplementedError
 
     raise AssertionError(op_tok)
-
-  def OilAssign(self, pnode):
-    # type: (PNode) -> command__OilAssign
-    """Transform an Oil assignment statement."""
-    typ = pnode.typ
-    children = pnode.children
-
-    if typ == grammar_nt.oil_var:
-      # assign: lvalue_list [type_expr] '=' testlist (';' | '\n')
-
-      #log('len(children) = %d', len(children))
-
-      lvalue = self.Expr(children[0])  # could be a tuple
-      #log('lvalue %s', lvalue)
-
-      n = len(children)
-      if n == 4:
-        op_tok = children[1].tok
-        rhs = children[2]
-      elif n == 5:
-        # TODO: translate type expression
-        op_tok = children[2].tok
-        rhs = children[3]
-
-      else:
-        raise AssertionError(n)
-
-      # The caller should fill in the keyword token.
-      # TODO: type expression
-      return command.OilAssign(None, lvalue, op_tok, self.Expr(rhs))
-
-    if typ == grammar_nt.oil_setvar:
-      # oil_setvar: lvalue_list (augassign | '=') testlist (Op_Semi | Op_Newline)
-      lvalue = self.Expr(children[0])  # could be a tuple
-      op_tok = children[1].tok
-      rhs = children[2]
-      return command.OilAssign(None, lvalue, op_tok, self.Expr(rhs))
-
-    nt_name = self.number2symbol[typ]
-    raise AssertionError(
-        "PNode type %d (%s) wasn't handled" % (typ, nt_name))
 
   def atom(self, children):
     # type: (List[PNode]) -> expr_t
@@ -245,7 +207,7 @@ class Transformer(object):
         for i in xrange(1, n):
           pnode = children[i]
           tok = pnode.tok
-          base = self._Trailer(base, pnode)
+          base = self.trailer(base, pnode)
 
         return base
 
@@ -332,3 +294,43 @@ class Transformer(object):
       else:
         raise AssertionError(tok.id)
 
+  def OilAssign(self, pnode):
+    # type: (PNode) -> command__OilAssign
+    """Transform an Oil assignment statement."""
+    typ = pnode.typ
+    children = pnode.children
+
+    if typ == grammar_nt.oil_var:
+      # assign: lvalue_list [type_expr] '=' testlist (';' | '\n')
+
+      #log('len(children) = %d', len(children))
+
+      lvalue = self.Expr(children[0])  # could be a tuple
+      #log('lvalue %s', lvalue)
+
+      n = len(children)
+      if n == 4:
+        op_tok = children[1].tok
+        rhs = children[2]
+      elif n == 5:
+        # TODO: translate type expression
+        op_tok = children[2].tok
+        rhs = children[3]
+
+      else:
+        raise AssertionError(n)
+
+      # The caller should fill in the keyword token.
+      # TODO: type expression
+      return command.OilAssign(None, lvalue, op_tok, self.Expr(rhs))
+
+    if typ == grammar_nt.oil_setvar:
+      # oil_setvar: lvalue_list (augassign | '=') testlist (Op_Semi | Op_Newline)
+      lvalue = self.Expr(children[0])  # could be a tuple
+      op_tok = children[1].tok
+      rhs = children[2]
+      return command.OilAssign(None, lvalue, op_tok, self.Expr(rhs))
+
+    nt_name = self.number2symbol[typ]
+    raise AssertionError(
+        "PNode type %d (%s) wasn't handled" % (typ, nt_name))
