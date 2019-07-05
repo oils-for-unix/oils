@@ -10,9 +10,12 @@ _build/
 _devbuild/
 !opy/_regtest/src/_devbuild/
 _deps/
+# for mycpp
+_gen/
 _release/
-libc.so
 fastlex.so
+libc.so
 line_input.so
+posix_.so
 # Python build support
 build/temp.*

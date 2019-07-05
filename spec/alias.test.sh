@@ -478,6 +478,7 @@ four
 ## END
 
 #### Alias and command sub (bug regression)
+cd $TMP
 shopt -s expand_aliases
 echo foo bar > tmp.txt
 alias a=argv.py
