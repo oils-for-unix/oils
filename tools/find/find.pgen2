@@ -8,37 +8,44 @@
 # - perm mode string
 # - regex and glob (passed through to libc, most likely)
 
-start: find_expr ENDMARKER
+start: concatenation ENDMARKER
 
-find_expr: term ('-o' term)*
+concatenation: disjunction (',' disjunction)*
+
+disjunction: conjunction ('-o' conjunction)*
 
 # implicit and is allowed
-term: list (['-a'] list)*
+conjunction: negation (['-a'] negation)*
 
-list: negated (',' negated)*
+negation: ['!'] group
 
-negated: ['!'] factor
+group: '(' concatenation ')' | expr
 
-factor: (
-  '(' find_expr ')'
-| '-true'
+expr: (
+# atoms
+  '-true'
 | '-false'
 
-# TESTS
-#   for filenames / paths
+# paths
 | '-name' STRING
 | '-iname' STRING
 
 | '-lname' STRING
 | '-ilname' STRING
 
-| '-regex' STRING
-| '-iregex' STRING
-
 | '-path' STRING
 | '-ipath' STRING
 
-#   for attributes
+| '-regex' STRING
+| '-iregex' STRING
+
+| '-readable'
+| '-writable'
+| '-executable'
+
+# stat
+| '-empty'
+
 | '-size' STRING
 | '-type' STRING
 | '-xtype' STRING
@@ -49,12 +56,7 @@ factor: (
 | '-gid' STRING
 | '-uid' STRING
 | '-nogroup'
-| '-nouser' STRING
-
-| '-empty'
-| '-executable'
-| '-readable'
-| '-writable'
+| '-nouser'
 
 #   for time (TODO)
 | '-amin' STRING
@@ -70,7 +72,7 @@ factor: (
 | '-mtime' STRING
 | '-newerXY' STRING
 
-# Actions
+# actions
 | '-delete'
 | '-prune'
 | '-quit'

@@ -20,7 +20,7 @@ export PYTHONPATH='.:vendor/'
 
 # In some distros, 'python' is python3, which confuses first-time developers.
 # https://github.com/oilshell/oil/issues/97
-readonly PYTHON_VERSION="$(python --version 2>&1)"
+readonly PYTHON_VERSION="$(python2 --version 2>&1)"
 
 # bash weirdness: VERSION_REGEX must NOT be inline in the expression, and must
 # NOT be quoted.

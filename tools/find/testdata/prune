@@ -1,0 +1,1 @@
+-name 'dir_b' -prune -o -name 'dir_c' -prune -o -true

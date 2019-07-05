@@ -1,0 +1,1 @@
+--process-slot-var ok -n 1 -P 2 sh -c ': ${ok?}' ARGV0

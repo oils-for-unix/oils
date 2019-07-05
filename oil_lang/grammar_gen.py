@@ -130,8 +130,8 @@ def main(argv):
 
     # HACK for find:
     if basename == 'find':
-      from tools.find import parse as find_parse
-      tok_def = find_parse.TokenDef()
+      from tools.find import tokenizer as find_tokenizer
+      tok_def = find_tokenizer.TokenDef()
 
     with open(grammar_path) as f:
       gr = pgen.MakeGrammar(f, tok_def=tok_def)

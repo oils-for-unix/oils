@@ -2,25 +2,52 @@
 
 module find
 {
-  op = And | Or | Comma  -- comma does sequencing
-
   expr =
-    Negation(expr child)  -- unary negation
-  | Binary(op op, expr left, expr right)
+    Concatenation(expr* exprs)
+  | Disjunction(expr* exprs)
+  | Conjunction(expr* exprs)
+  | Negation(expr expr)
 
-  | True_   -- avoid name conflict with Python
+  | True_
   | False_
 
-  | NameTest(bool icase, bool l, string glob)
-  | NameRegexTest(bool icase, string regex)
-  | PathTest(bool icase, string glob)
-  | TimeTest(string arg)  -- TODO: should be parsed further
-  -- TODO: fill out more tests
+  | PathTest(pathAccessor a, predicate p)
+  | StatTest(statAccessor a, predicate p)
 
   | DeleteAction
   | PruneAction
   | QuitAction
-  | PrintAction(string? file, bool zero, string? format)
+  | PrintAction(string? file, string? format)
   | LsAction(string? file)
-  | ExecAction(bool dir, bool ok, string* argv)
+  | ExecAction(bool batch, bool dir, bool ok, string* argv)
+
+  pathAccessor =
+    FullPath
+  | Filename
+
+  statAccessor =
+    AccessTime
+  | CreationTime
+  | ModificationTime
+  | Filesystem
+  | Inode
+  | LinkCount
+  | Mode
+  | Filetype
+  | Uid
+  | Gid
+  | Username
+  | Groupname
+  | Size
+
+  predicate =
+    EQ(int n)
+  | GE(int n)
+  | LE(int n)
+  | StringMatch(string str, bool? ignoreCase)
+  | GlobMatch(string glob, bool? ignoreCase)
+  | RegexMatch(string re, bool? ignoreCase)
+  | Readable
+  | Writable
+  | Executable
 }
