@@ -282,6 +282,7 @@ class ParseContext(object):
     """e.g. var mylist = [1, 2, 3]"""
     pnode, last_token = self.e_parser.Parse(lexer, start_symbol)
 
+    #print_parse_tree = True
     if print_parse_tree:
       self.p_printer.Print(pnode)
 

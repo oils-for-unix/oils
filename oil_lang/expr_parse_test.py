@@ -14,6 +14,7 @@ from core.meta import ID_SPEC
 from core import alloc
 from core import meta
 from core import pyutil
+from core.util import log
 from frontend import parse_lib
 from frontend import reader
 
@@ -37,7 +38,10 @@ class ExprParseTest(unittest.TestCase):
     # the OSH parser hooks into the Oil parser
     c_parser = self.parse_ctx.MakeOshParser(line_reader)
     node = c_parser.ParseLogicalLine()
+    print('')
+    log('\t%s', code_str)
     node.PrettyPrint()
+    print('')
     return node
 
   def _ParseOilExpression(self, code_str):
@@ -56,8 +60,11 @@ class ExprParseTest(unittest.TestCase):
 
     # These raise NotImplementedError
 
-    #node = self._ParseOsh('var x = [1,2,3];')
-    #node = self._ParseOilExpression('[]')
+    node = self._ParseOsh('var x = [1,2,3];')
+    node = self._ParseOilExpression('[4+5, 6+7*8]')
+    node = self._ParseOilExpression('[]')
+
+    node = self._ParseOilExpression('[x for x in y]')
     #node = self._ParseOilExpression('{foo: bar}')
 
   def testOtherExpr(self):

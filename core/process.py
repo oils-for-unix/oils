@@ -17,7 +17,7 @@ import sys
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import redirect_e, job_state_e
-from asdl import const, pretty
+from asdl import pretty
 from core import ui
 from core.util import log
 from frontend import match

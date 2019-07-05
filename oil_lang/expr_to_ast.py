@@ -7,15 +7,15 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen import syntax_asdl
 from _devbuild.gen.syntax_asdl import (
     command, command__OilAssign,
-    expr, expr_t, regex, regex_t, word, word_t, word_part,
+    expr, expr_t, expr_context_e, regex, regex_t, word, word_t, word_part,
     oil_word_part, oil_word_part_t,
 )
 from _devbuild.gen import grammar_nt
+from pgen2.parse import PNode
 #from core.util import log
 
 from typing import TYPE_CHECKING, List
 if TYPE_CHECKING:
-  from pgen2.parse import PNode
   from pgen2.grammar import Grammar
 
 
@@ -28,7 +28,25 @@ def ISNONTERMINAL(x):
 
 
 class Transformer(object):
-  
+  """Homogeneous parse tree -> heterogeneous AST ("lossless syntax tree")
+
+  pgen2 (Python's LL parser generator) doesn't have semantic actions like yacc,
+  so this "transformer" is the equivalent.
+
+  Files to refer to when modifying this function:
+
+    oil_lang/grammar.pgen2 (generates _devbuild/gen/grammar_nt.py)
+    frontend/syntax.asdl   (generates _devbuild/gen/syntax_asdl.py)
+
+  Related examples:
+
+    opy/compiler2/transformer.py (Python's parse tree -> AST, ~1500 lines)
+    Python-2.7.13/Python/ast.c   (the "real" CPython version, ~3600 lines)
+
+  Other:
+    frontend/parse_lib.py  (turn on print_parse_tree)
+
+  """
   def __init__(self, gr):
     # type: (Grammar) -> None
     self.number2symbol = gr.number2symbol
@@ -40,8 +58,8 @@ class Transformer(object):
     We don't care if it's (1+2)+3 or 1+(2+3).
     """
     assert len(children) >= 3, children
-    # NOTE: opy/compiler2/transformer.py has an interative version of this in
-    # com_binary.
+    # Note: Compare the iteractive com_binary() method in
+    # opy/compiler2/transformer.py.
 
     left, op = children[0], children[1]
     if len(children) == 3:
@@ -89,6 +107,7 @@ class Transformer(object):
 
   def OilAssign(self, pnode):
     # type: (PNode) -> command__OilAssign
+    """Transform an Oil assignment statement."""
     typ = pnode.typ
     children = pnode.children
 
@@ -127,9 +146,45 @@ class Transformer(object):
     raise AssertionError(
         "PNode type %d (%s) wasn't handled" % (typ, nt_name))
 
+  def atom(self, children):
+    # type: (List[PNode]) -> expr_t
+    """Handles alternatives of 'atom' where there is more than one child."""
+
+    id_ = children[0].tok.id
+
+    if id_ == Id.Op_LParen:
+      # atom: '(' [yield_expr|testlist_comp] ')' | ...
+      return self.Expr(children[1])
+
+    if id_ == Id.Op_LBracket:
+      # atom: ... | '[' [testlist_comp] ']' | ...
+
+      if len(children) == 2:  # []
+        return expr.List([], expr_context_e.Store)  # unused expr_context_e
+
+      p_list = children[1].children  # what's between [ and ]
+
+      # [x for x in y]
+      if len(p_list) == 2 and p_list[1].typ == grammar_nt.sync_comp_for:
+        elt = self.Expr(p_list[0])
+
+        # TODO: transform 'for', 'if', etc.
+        return expr.ListComp(elt, [])
+
+      # [1, 2, 3]
+      n = len(p_list)
+      elts = []
+      for i in xrange(0, n, 2):  # skip commas
+        p_node = p_list[i]
+        elts.append(self.Expr(p_node))
+
+      return expr.List(elts, expr_context_e.Store)  # unused expr_context_e
+
+    raise NotImplementedError
+
   def Expr(self, pnode):
     # type: (PNode) -> expr_t
-    """Walk the homogeneous parse tree and create a typed AST."""
+    """Transform expressions (as opposed to statements)."""
     typ = pnode.typ
     tok = pnode.tok
     children = pnode.children
@@ -143,10 +198,7 @@ class Transformer(object):
         return self._AssocBinary(children)
 
       if typ == grammar_nt.atom:
-        if children[0].tok.id == Id.Op_LParen:
-          return self.Expr(children[1])
-        else:
-          raise NotImplementedError
+        return self.atom(children)
 
       if typ == grammar_nt.eval_input:
         # testlist_input: testlist NEWLINE* ENDMARKER
