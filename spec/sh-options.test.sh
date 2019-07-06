@@ -428,23 +428,6 @@ invalidZZ=1
 invalidZZ=127
 ## END
 
-#### sh -i loads rcfile (when combined with -c)
-$SH -c 'echo 1'
-cat >$TMP/rcfile <<EOF
-echo RCFILE
-EOF
-$SH --rcfile $TMP/rcfile -i -c 'echo 2'
-## STDOUT:
-1
-RCFILE
-2
-## END
-## N-I dash/mksh STDOUT:
-1
-## END
-## N-I dash status: 2
-## N-I mksh status: 1
-
 #### shopt -s all:strict
 n=2
 

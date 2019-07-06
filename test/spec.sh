@@ -216,6 +216,10 @@ smoke() {
   sh-spec spec/smoke.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
+interactive() {
+  sh-spec spec/interactive.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
+}
+
 prompt() {
   sh-spec spec/prompt.test.sh --osh-failures-allowed 1 \
     $BASH $OSH_LIST "$@"
