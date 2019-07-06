@@ -90,8 +90,7 @@ bin-flake8() {
   if test -f "$ubuntu_flake8"; then
     $ubuntu_flake8 "$@"
   else
-    # Assume it's in $PATH, like on Travis.
-    flake8 "$@"
+    python2 -m flake8 "$@"
   fi
 }
 
