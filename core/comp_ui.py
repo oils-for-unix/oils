@@ -36,16 +36,16 @@ def _PromptLen(prompt_str):
   Additionally, if there are multiple lines in the prompt, only give the length of the last line."""
   escaped = False
   display_str = ""
-  last_line = prompt_str.split('\n')[-1]
-  for c in last_line:
+  for c in prompt_str:
     if c == '\x01':
       escaped = True
     elif c == '\x02':
       escaped = False
     elif not escaped:
       display_str += c
+  last_line = display_str.split('\n')[-1]
   try:
-    width = libc.wcswidth(display_str)
+    width = libc.wcswidth(last_line)
   # en_US.UTF-8 locale missing, just return the number of bytes
   except (SystemError, UnicodeError):
     return len(display_str)
