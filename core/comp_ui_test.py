@@ -165,6 +165,10 @@ class PromptTest(unittest.TestCase):
         comp_ui._PromptLen("\x01\x02 hi \x01hi\x02 \x01\x02 hello"),
         len(" hi   hello"))
 
+  def testNewline(self):
+    self.assertEqual(comp_ui._PromptLen("\n"), 0)
+    self.assertEqual(comp_ui._PromptLen("abc\ndef"), 3)
+    self.assertEqual(comp_ui._PromptLen(""), 0)
 
 if __name__ == '__main__':
   unittest.main()
