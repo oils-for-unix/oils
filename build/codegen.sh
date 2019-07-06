@@ -38,9 +38,13 @@ export PYTHONPATH='.:vendor/'
 #    osh-lex.c
 
 download-re2c() {
+  URL=https://github.com/skvadrik/re2c/releases/download/1.0.3/re2c-1.0.3.tar.gz
   mkdir -p _deps
-  wget --directory _deps \
-    https://github.com/skvadrik/re2c/releases/download/1.0.3/re2c-1.0.3.tar.gz
+  if which wget >/dev/null 2>&1; then
+    wget --directory _deps "$URL"
+  else
+    cd _deps && curl -OL "$URL"
+  fi
 }
 
 install-re2c() {
