@@ -49,7 +49,7 @@ download-re2c() {
 
 install-re2c() {
   cd _deps
-  tar -x -z < re2c-1.0.3.tar.gz
+  tar -x -z -f re2c-1.0.3.tar.gz
   cd re2c-1.0.3
   ./configure
   make
@@ -64,7 +64,7 @@ download-clang() {
 
 extract-clang() {
   cd _deps
-  time tar -x --xz < clang*.tar.xz
+  time tar -x --xz -f clang*.tar.xz
 }
 
 types-gen() {
