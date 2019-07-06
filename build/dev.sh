@@ -151,8 +151,8 @@ posix_() {
 }
 
 clean() {
-  rm -f --verbose libc.so fastlex.so line_input.so posix_.so
-  rm -r -f --verbose _devbuild/py-ext
+  rm -f -v libc.so fastlex.so line_input.so posix_.so
+  rm -r -f -v _devbuild/py-ext
 }
 
 # No fastlex, because we don't want to require re2c installation.
