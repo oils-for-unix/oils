@@ -1223,13 +1223,6 @@ class Executor(object):
       ui.PrettyPrintError(e, self.arena, prefix='fatal: ')
       is_fatal = True
       status = e.exit_status if e.exit_status is not None else 1
-    except (IOError, OSError) as e:
-      # test this with prlimit --nproc=1 --pid=$$
-      ui.Stderr('osh I/O error: %s', posix.strerror(e.errno))
-      status = 2  # dash gives status 2
-    except KeyboardInterrupt:
-      print()
-      status = 130  # 128 + 2
 
     self.dumper.MaybeDump(status)
 

@@ -845,17 +845,24 @@ def AppBundleMain(argv):
 
 def main(argv):
   try:
-    sys.exit(AppBundleMain(argv))
+    return AppBundleMain(argv)
   except NotImplementedError as e:
     raise
   except args.UsageError as e:
     #builtin.Help(['oil-usage'], util.GetResourceLoader())
     log('oil: %s', e.msg)
-    sys.exit(2)
+    return 2
   except RuntimeError as e:
     # NOTE: The Python interpreter can cause this, e.g. on stack overflow.
     log('FATAL: %r', e)
-    sys.exit(1)
+    return 1
+  except KeyboardInterrupt:
+    print()
+    return 130  # 128 + 2
+  except (IOError, OSError) as e:
+    # test this with prlimit --nproc=1 --pid=$$
+    ui.Stderr('osh I/O error: %s', posix.strerror(e.errno))
+    return 2  # dash gives status 2
   finally:
     _tlog('Exiting main()')
     if _trace_path:
@@ -864,7 +871,7 @@ def main(argv):
 
 # Called from Python-2.7.13/Modules/main.c.
 def _cpython_main_hook():
-  main(sys.argv)
+  sys.exit(main(sys.argv))
 
 
 if __name__ == '__main__':
@@ -877,4 +884,4 @@ if __name__ == '__main__':
     from opy import callgraph
     callgraph.Walk(main, sys.modules)
   else:
-    main(sys.argv)
+    sys.exit(main(sys.argv))
