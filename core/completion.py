@@ -1114,16 +1114,19 @@ class ReadlineCallback(object):
     """Return a single match."""
     try:
       return self._GetNextCompletion(state)
+    except util.UserExit as e:
+      # TODO: Could use errfmt to show this
+      ui.Stderr("osh: Ignoring 'exit' in completion plugin")
     except util.FatalRuntimeError as e:
       # From -W.  TODO: -F is swallowed now.
       # We should have a nicer UI for displaying errors.  Maybe they shouldn't
       # print it to stderr.  That messes up the completion display.  We could
       # print what WOULD have been COMPREPLY here.
-      log('Runtime error while completing: %s', e)
+      ui.Stderr('osh: Runtime error while completing: %s', e)
       self.debug_f.log('Runtime error while completing: %s', e)
     except (IOError, OSError) as e:
       # test this with prlimit --nproc=1 --pid=$$
-      ui.Stderr('I/O error in osh completion: %s', posix.strerror(e.errno))
+      ui.Stderr('osh: I/O error in completion: %s', posix.strerror(e.errno))
     except KeyboardInterrupt:
       # It appears GNU readline handles Ctrl-C to cancel a long completion.
       # So this may never happen?
@@ -1131,7 +1134,7 @@ class ReadlineCallback(object):
     except Exception as e:  # ESSENTIAL because readline swallows exceptions.
       import traceback
       traceback.print_exc()
-      log('Unhandled exception while completing: %s', e)
+      ui.Stderr('osh: Unhandled exception while completing: %s', e)
       self.debug_f.log('Unhandled exception while completing: %s', e)
     except SystemExit as e:
       # Because readline ignores SystemExit!

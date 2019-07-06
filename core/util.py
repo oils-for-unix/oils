@@ -19,6 +19,13 @@ if TYPE_CHECKING:  # avoid circular build deps
   from _devbuild.gen.syntax_asdl import token, word_part_t, word_t
 
 
+class UserExit(Exception):
+  """For explicit 'exit'."""
+  def __init__(self, status):
+    # type: (int) -> None
+    self.status = status
+
+
 class HistoryError(Exception):
 
   def __init__(self, msg, *args):
@@ -89,7 +96,6 @@ class ParseError(_ErrorWithLocation):
       e.AddErrorInfo('hi', token=t)
       raise
   """
-  pass
 
 
 class RedirectEvalError(_ErrorWithLocation):
@@ -98,7 +104,6 @@ class RedirectEvalError(_ErrorWithLocation):
   A bad redirect causes the SimpleCommand to return with status 1.  To make it
   fatal, use set -o errexit.
   """
-  pass
 
 
 class FatalRuntimeError(_ErrorWithLocation):
@@ -107,19 +112,16 @@ class FatalRuntimeError(_ErrorWithLocation):
   Used in the evaluators, and also also used in test builtin for invalid
   argument.
   """
-  pass
 
 
 class InvalidSlice(FatalRuntimeError):
   """Whether this is fatal depends on set -o strict-word-eval.
   """
-  pass
 
 
 class InvalidUtf8(FatalRuntimeError):
   """Whether this is fatal depends on set -o strict-word-eval.
   """
-  pass
 
 
 class ErrExitFailure(FatalRuntimeError):
@@ -127,7 +129,6 @@ class ErrExitFailure(FatalRuntimeError):
 
   Travels between WordEvaluator and Executor.
   """
-  pass
 
 
 def p_die(msg, *args, **kwargs):

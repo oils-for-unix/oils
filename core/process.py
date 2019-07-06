@@ -18,6 +18,7 @@ import sys
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import redirect_e, job_state_e
 from asdl import pretty
+from core import util
 from core import ui
 from core.util import log
 from frontend import match
@@ -564,12 +565,16 @@ class SubProgramThunk(Thunk):
     if self.disable_errexit:
       self.ex.exec_opts.errexit.Disable()
 
-    self.ex.ExecuteAndCatch(self.node, fork_external=False)
+    try:
+      self.ex.ExecuteAndCatch(self.node, fork_external=False)
+      status = self.ex.LastStatus()
+    except util.UserExit as e:
+      status = e.status
     # NOTE: We ignore the is_fatal return value.  The user should set -o
     # errexit so failures in subprocesses cause failures in the parent.
 
     # Raises SystemExit, so we still have time to write a crash dump.
-    sys.exit(self.ex.LastStatus())
+    sys.exit(status)
 
 
 class _HereDocWriterThunk(Thunk):

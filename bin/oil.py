@@ -604,11 +604,20 @@ def ShellMain(lang, argv0, argv, login_shell):
     sig_state.InitInteractiveShell(display)
 
     # NOTE: Call this AFTER _InitDefaultCompletions.
-    SourceStartupFile(rc_path, lang, parse_ctx, ex)
+    try:
+      SourceStartupFile(rc_path, lang, parse_ctx, ex)
+    except util.UserExit as e:
+      return e.status
 
     line_reader.Reset()  # After sourcing startup file, render $PS1
 
-    return main_loop.Interactive(opts, ex, c_parser, display, errfmt)
+    try:
+      status = main_loop.Interactive(opts, ex, c_parser, display, errfmt)
+      if ex.MaybeRunExitTrap():
+        status = ex.LastStatus()
+    except util.UserExit as e:
+      status = e.status
+    return status
 
   nodes_out = [] if exec_opts.noexec else None
 
@@ -616,9 +625,12 @@ def ShellMain(lang, argv0, argv, login_shell):
     raise args.UsageError('--parser-mem-dump can only be used with -n')
 
   _tlog('Execute(node)')
-  status = main_loop.Batch(ex, c_parser, arena, nodes_out=nodes_out)
-  if ex.MaybeRunExitTrap():
-    status = ex.LastStatus()
+  try:
+    status = main_loop.Batch(ex, c_parser, arena, nodes_out=nodes_out)
+    if ex.MaybeRunExitTrap():
+      status = ex.LastStatus()
+  except util.UserExit as e:
+    status = e.status
 
   # Only print nodes if the whole parse succeeded.
   if nodes_out is not None and status == 0:
@@ -842,7 +854,7 @@ def main(argv):
     sys.exit(2)
   except RuntimeError as e:
     # NOTE: The Python interpreter can cause this, e.g. on stack overflow.
-    log('FATAL: %s', e)
+    log('FATAL: %r', e)
     sys.exit(1)
   finally:
     _tlog('Exiting main()')

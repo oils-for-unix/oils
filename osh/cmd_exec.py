@@ -73,9 +73,6 @@ class _ControlFlow(RuntimeError):
   def IsReturn(self):
     return self.token.id == Id.ControlFlow_Return
 
-  def IsExit(self):
-    return self.token.id == Id.ControlFlow_Exit
-
   def IsBreak(self):
     return self.token.id == Id.ControlFlow_Break
 
@@ -83,7 +80,7 @@ class _ControlFlow(RuntimeError):
     return self.token.id == Id.ControlFlow_Continue
 
   def StatusCode(self):
-    assert self.IsReturn() or self.IsExit()
+    assert self.IsReturn()
     return self.arg
 
   def __repr__(self):
@@ -847,26 +844,28 @@ class Executor(object):
       else:
         arg = 0  # return 0, exit 0, break 0 levels, etc.
 
-      # NOTE: We don't do anything about a top-level 'return' here.  Unlike in
-      # bash, that is OK.  If you can return from a sourced script, it makes
-      # sense to return from a main script.
+      # NOTE: A top-level 'return' is OK, unlike in bash.  If you can return
+      # from a sourced script, it makes sense to return from a main script.
       ok = True
       tok = node.token
       if (tok.id in (Id.ControlFlow_Break, Id.ControlFlow_Continue) and
           self.loop_level == 0):
         ok = False
-        msg = 'Invalid control flow at top level'
 
       if ok:
-        raise _ControlFlow(tok, arg)
-
-      if self.exec_opts.strict_control_flow:
-        e_die(msg, token=tok)
+        if tok.id == Id.ControlFlow_Exit:
+          raise util.UserExit(arg)  # handled differently than other control flow
+        else:
+          raise _ControlFlow(tok, arg)
       else:
-        # Only print warnings, never fatal.
-        # Bash oddly only exits 1 for 'return', but no other shell does.
-        self.errfmt.Print(msg, prefix='warning: ', span_id=tok.span_id)
-        status = 0
+        if self.exec_opts.strict_control_flow:
+          e_die(msg, token=tok)
+        else:
+          msg = 'Invalid control flow at top level'
+          # Only print warnings, never fatal.
+          # Bash oddly only exits 1 for 'return', but no other shell does.
+          self.errfmt.Print(msg, prefix='warning: ', span_id=tok.span_id)
+          status = 0
 
     # The only difference between these two is that CommandList has no
     # redirects.  We already took care of that above.
@@ -1200,7 +1199,7 @@ class Executor(object):
       status = self._Execute(node, fork_external=fork_external)
     except _ControlFlow as e:
       # Return at top level is OK, unlike in bash.
-      if e.IsReturn() or e.IsExit():
+      if e.IsReturn():
         is_control_flow = True
         status = e.StatusCode()
       else:
@@ -1388,8 +1387,6 @@ class Executor(object):
     except _ControlFlow as e:
       if e.IsReturn():
         status = e.StatusCode()
-      elif e.IsExit():
-        raise
       else:
         # break/continue used in the wrong place.
         e_die('Unexpected %r (in function call)', e.token.val, token=e.token)

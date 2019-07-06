@@ -88,6 +88,7 @@ def Interactive(opts, ex, c_parser, display, errfmt):
         break
 
       is_control_flow, is_fatal = ex.ExecuteAndCatch(node)
+
       status = ex.LastStatus()
       if is_control_flow:  # e.g. 'exit' in the middle of a script
         done = True
@@ -111,10 +112,7 @@ def Interactive(opts, ex, c_parser, display, errfmt):
     if opts.print_status:
       print('STATUS', repr(status))
 
-  if ex.MaybeRunExitTrap():
-    return ex.LastStatus()
-  else:
-    return status  # could be a parse error
+  return status
 
 
 def Batch(ex, c_parser, arena, nodes_out=None):
