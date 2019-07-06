@@ -10,6 +10,9 @@
 # if TYPE_CHECKING:
 #   NullFunc = Callable[[int, int], int]
 
+TypingMeta = None
+TypeVar = None
+_ForwardRef = None
 List = None
 Tuple = None
 Optional = None
