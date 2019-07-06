@@ -474,11 +474,11 @@ class ExternalProgram(object):
         # - Use search_path in the NON-ERROR case ('hash' builtin).
         # - Get rid of pylib/os_.py, which was copied from the Python standard
         #   library.
-        realpath = self.search_path.Lookup(argv[0])
-        if realpath is None:  # Check if file was deleted in the meantime
+        abs_path = self.search_path.Lookup(argv[0])
+        if abs_path is None:  # Check if file was deleted in the meantime
           e.errno = errno.ENOENT
         else:
-          self._Exec(['/bin/sh'] + argv, argv0_spid, environ)
+          self._Exec(['/bin/sh', abs_path] + argv[1:], argv0_spid, environ)
           # NO RETURN
 
       # Would be nice: when the path is relative and ENOENT: print PWD and do
