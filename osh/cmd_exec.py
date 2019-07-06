@@ -858,10 +858,10 @@ class Executor(object):
         else:
           raise _ControlFlow(tok, arg)
       else:
+        msg = 'Invalid control flow at top level'
         if self.exec_opts.strict_control_flow:
           e_die(msg, token=tok)
         else:
-          msg = 'Invalid control flow at top level'
           # Only print warnings, never fatal.
           # Bash oddly only exits 1 for 'return', but no other shell does.
           self.errfmt.Print(msg, prefix='warning: ', span_id=tok.span_id)
