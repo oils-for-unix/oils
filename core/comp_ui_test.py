@@ -170,5 +170,9 @@ class PromptTest(unittest.TestCase):
     self.assertEqual(comp_ui._PromptLen("abc\ndef"), 3)
     self.assertEqual(comp_ui._PromptLen(""), 0)
 
+  def testControlCharacters(self):
+    self.assertEqual(comp_ui._PromptLen("\xef"), 1)
+    self.assertEqual(comp_ui._PromptLen("\x03\x05"), 2)
+
 if __name__ == '__main__':
   unittest.main()
