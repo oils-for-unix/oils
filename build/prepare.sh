@@ -34,8 +34,15 @@ configure() {
 # -O2, 30 s with -O0.  The Make part of the build is parallelized, but the
 # setup.py part is not!
 
-readonly NPROC=$(nproc)
-readonly JOBS=$(( NPROC == 1 ? NPROC : NPROC-1 ))
+_num_processors() {
+	if which nproc >/dev/null 2>&1; then
+		nproc
+	else
+		sysctl -n hw.ncpu
+	fi
+}
+readonly NPROC=$(_num_processors)
+readonly JOBS=$(( NPROC > 1 ? NPROC-1 : 1 ))
 
 build-python() {
   local dir=${1:-$PREPARE_DIR}
