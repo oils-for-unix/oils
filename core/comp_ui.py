@@ -32,7 +32,8 @@ PROMPT_REVERSE = '\x01%s\x02' % _REVERSE
 def _PromptLen(prompt_str):
   """Ignore all characters between \x01 and \x02 and handle unicode characters.
   In particular, the display width of a string may be different from either the
-  number of bytes or the number of unicode characters."""
+  number of bytes or the number of unicode characters.
+  Additionally, if there are multiple lines in the prompt, only give the length of the last line."""
   escaped = False
   display_str = ""
   for c in prompt_str:
@@ -42,11 +43,15 @@ def _PromptLen(prompt_str):
       escaped = False
     elif not escaped:
       display_str += c
+  last_line = display_str.split('\n')[-1]
   try:
-    return libc.wcswidth(display_str)
+    width = libc.wcswidth(last_line)
   # en_US.UTF-8 locale missing, just return the number of bytes
   except (SystemError, UnicodeError):
     return len(display_str)
+  if width == -1:
+    return len(display_str)
+  return width
 
 
 class PromptState(object):

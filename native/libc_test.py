@@ -193,6 +193,7 @@ class LibcTest(unittest.TestCase):
   def testWcsWidth(self):
     self.assertEqual(1, libc.wcswidth("▶️"))
     self.assertEqual(28, libc.wcswidth("(osh) ~/.../unchanged/oil ▶️ "))
+    self.assertEqual(2, libc.wcswidth("→ "))
     self.assertRaises(UnicodeError, libc.wcswidth, "\xfe")
 
 if __name__ == '__main__':
