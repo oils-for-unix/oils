@@ -1193,14 +1193,14 @@ class Executor(object):
     - _Eval() for eval builtin
     - _RunFunc() for function call
     """
-    is_control_flow = False
+    is_return = False
     is_fatal = False
     try:
       status = self._Execute(node, fork_external=fork_external)
     except _ControlFlow as e:
       # Return at top level is OK, unlike in bash.
       if e.IsReturn():
-        is_control_flow = True
+        is_return = True
         status = e.StatusCode()
       else:
         # Invalid control flow
@@ -1234,7 +1234,7 @@ class Executor(object):
     self.dumper.MaybeDump(status)
 
     self.mem.SetLastStatus(status)
-    return is_control_flow, is_fatal
+    return is_return, is_fatal
 
   def MaybeRunExitTrap(self):
     """If an EXIT trap exists, run it.
@@ -1247,8 +1247,8 @@ class Executor(object):
     """
     handler = self.traps.get('EXIT')
     if handler:
-      is_control_flow, is_fatal = self.ExecuteAndCatch(handler.node)
-      return is_control_flow  # explicit exit/return in the trap handler!
+      is_return, is_fatal = self.ExecuteAndCatch(handler.node)
+      return is_return  # explicit 'return' in the trap handler!
     else:
       return False  # nothing run, don't use its status
 

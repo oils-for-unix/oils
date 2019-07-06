@@ -87,13 +87,11 @@ def Interactive(opts, ex, c_parser, display, errfmt):
         ui.PrintAst([node], opts)
         break
 
-      is_control_flow, is_fatal = ex.ExecuteAndCatch(node)
+      is_return, _ = ex.ExecuteAndCatch(node)
 
       status = ex.LastStatus()
-      if is_control_flow:  # e.g. 'exit' in the middle of a script
+      if is_return:
         done = True
-        break
-      if is_fatal:  # e.g. divide by zero 
         break
 
       break  # QUIT LOOP after one iteration.
@@ -157,10 +155,10 @@ def Batch(ex, c_parser, arena, nodes_out=None):
 
     #log('parsed %s', node)
 
-    is_control_flow, is_fatal = ex.ExecuteAndCatch(node)
+    is_return, is_fatal = ex.ExecuteAndCatch(node)
     status = ex.LastStatus()
-    # e.g. divide by zero or 'exit' in the middle of a script
-    if is_control_flow or is_fatal:
+    # e.g. 'return' in middle of script, or divide by zero
+    if is_return or is_fatal:
       break
 
   return status
