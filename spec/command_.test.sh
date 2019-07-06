@@ -102,7 +102,7 @@ one
 cd $TMP
 PATH="one:two:$PATH"
 mkdir -p one two
-rm -f one/mycmd two/cmd
+rm -f one/mycmd two/mycmd
 
 echo 'echo two' > two/mycmd
 chmod +x two/mycmd
@@ -127,5 +127,26 @@ status=127
 two
 status=0
 one
+status=0
+## END
+
+#### Non-executable on $PATH
+
+# shells differ in whether they actually execve('one/cmd') and get EPERM
+
+cd $TMP
+PATH="one:two:$PATH"
+mkdir -p one two
+rm -f one/mycmd two/mycmd
+
+echo 'echo one' > one/mycmd
+echo 'echo two' > two/mycmd
+
+# only make the second one executable
+chmod +x two/mycmd
+mycmd
+echo status=$?
+## STDOUT:
+two
 status=0
 ## END
