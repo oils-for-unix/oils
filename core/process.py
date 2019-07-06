@@ -568,10 +568,19 @@ class SubProgramThunk(Thunk):
     try:
       self.ex.ExecuteAndCatch(self.node, fork_external=False)
       status = self.ex.LastStatus()
+      # NOTE: We ignore the is_fatal return value.  The user should set -o
+      # errexit so failures in subprocesses cause failures in the parent.
     except util.UserExit as e:
       status = e.status
-    # NOTE: We ignore the is_fatal return value.  The user should set -o
-    # errexit so failures in subprocesses cause failures in the parent.
+
+    # Handle errors in a subshell.  These two cases are repeated from main()
+    # and the core/completion.py hook.
+    except KeyboardInterrupt:
+      print()
+      status = 130  # 128 + 2
+    except (IOError, OSError) as e:
+      ui.Stderr('osh I/O error: %s', posix.strerror(e.errno))
+      status = 2
 
     # Raises SystemExit, so we still have time to write a crash dump.
     sys.exit(status)
