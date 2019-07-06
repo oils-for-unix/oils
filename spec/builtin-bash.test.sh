@@ -15,20 +15,56 @@ type -t foo
 
 #### type -t -> builtin
 type -t echo read : [ declare local break continue
-## stdout-json: "builtin\nbuiltin\nbuiltin\nbuiltin\nbuiltin\nbuiltin\nbuiltin\nbuiltin\n"
+## STDOUT:
+builtin
+builtin
+builtin
+builtin
+builtin
+builtin
+builtin
+builtin
+## END
 
-#### type -t builtin -> keyword
+#### type -t -> keyword
 type -t for time ! fi do {
-## stdout-json: "keyword\nkeyword\nkeyword\nkeyword\nkeyword\nkeyword\n"
+## STDOUT: 
+keyword
+keyword
+keyword
+keyword
+keyword
+keyword
+## END
 
-#### type -t builtin -> file
+#### type -t -> file
 type -t find xargs
-## stdout-json: "file\nfile\n"
+## STDOUT: 
+file
+file
+## END
 
-#### type -t builtin -> not found
+#### type -t and command -v with non-executable file still finds it
+
+# PATH resolution is different
+
+PATH="$TMP:$PATH"
+touch $TMP/non-executable
+type -t non-executable
+command -v not-executable | grep -o /not-executable
+## STDOUT:
+file
+/not-executable
+## END
+
+#### type -t -> not found
 type -t echo ZZZ find =
 echo status=$?
-## stdout-json: "builtin\nfile\nstatus=1\n"
+## STDOUT: 
+builtin
+file
+status=1
+## END
 
 #### help
 help
@@ -40,7 +76,10 @@ help ZZZ 2>$TMP/err.txt
 echo "help=$?"
 cat $TMP/err.txt | grep -i 'no help topics' >/dev/null
 echo "grep=$?"
-## stdout-json: "help=1\ngrep=0\n"
+## STDOUT: 
+help=1
+grep=0
+## END
 
 #### type -p builtin -> file
 type -p mv tar grep
