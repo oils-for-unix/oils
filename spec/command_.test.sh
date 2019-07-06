@@ -60,9 +60,72 @@ mkdir -p one two
 echo 'echo one' > one/mycmd
 echo 'echo two' > two/mycmd
 chmod +x one/mycmd two/mycmd
+
 PATH='one:two'
 mycmd
 ## STDOUT:
 one
 ## END
 
+#### filling $PATH cache, then insert the same command earlier in cache
+cd $TMP
+PATH="one:two:$PATH"
+mkdir -p one two
+rm -f one/* two/*
+echo 'echo two' > two/mycmd
+chmod +x two/mycmd
+mycmd
+
+# Insert earlier in the path
+echo 'echo one' > one/mycmd
+chmod +x one/mycmd
+mycmd  # still runs the cached 'two'
+
+# clear the cache
+hash -r
+mycmd  # now it runs the new 'one'
+
+## STDOUT:
+two
+two
+one
+## END
+
+# zsh doesn't do caching!
+## OK zsh STDOUT:
+two
+one
+one
+## END
+
+#### filling $PATH cache, then deleting command
+cd $TMP
+PATH="one:two:$PATH"
+mkdir -p one two
+rm -f one/mycmd two/cmd
+
+echo 'echo two' > two/mycmd
+chmod +x two/mycmd
+mycmd
+echo status=$?
+
+# Insert earlier in the path
+echo 'echo one' > one/mycmd
+chmod +x one/mycmd
+rm two/mycmd
+mycmd  # still runs the cached 'two'
+echo status=$?
+
+## STDOUT:
+two
+status=0
+status=127
+## END
+
+# mksh and zsh correctly searches for the executable again!
+## OK zsh/mksh STDOUT:
+two
+status=0
+one
+status=0
+## END
