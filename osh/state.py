@@ -91,6 +91,10 @@ class SearchPath(object):
     """For hash -r."""
     self.cache.clear()
 
+  def CachedCommands(self):
+    """For hash -r."""
+    return sorted(self.cache.values())
+
 
 class _ErrExit(object):
   """Manages the errexit setting.

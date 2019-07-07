@@ -114,6 +114,7 @@ _NORMAL_BUILTINS = {
 
     "command": builtin_e.COMMAND,
     "type": builtin_e.TYPE,
+    "hash": builtin_e.HASH,
     "help": builtin_e.HELP,
     "history": builtin_e.HISTORY,
 
@@ -1146,6 +1147,40 @@ class Type(object):
           if kind == 'function':
             # bash prints the function body, busybox ash doesn't.
             pass
+
+    return status
+
+
+HASH_SPEC = _Register('hash')
+HASH_SPEC.ShortFlag('-r')
+
+
+class Hash(object):
+  def __init__(self, search_path):
+    self.search_path = search_path
+
+  def __call__(self, arg_vec):
+    arg_r = args.Reader(arg_vec.strs, spids=arg_vec.spids)
+    arg_r.Next()  # skip 'hash'
+    arg, i = HASH_SPEC.Parse(arg_r)
+
+    rest = arg_r.Rest()
+    if arg.r:
+      if rest:
+        raise args.UsageError('got extra arguments after -r')
+      self.search_path.ClearCache()
+      return 0
+
+    status = 0
+    if rest:
+      for cmd in rest:  # enter in cache
+        full_path = self.search_path.CachedLookup(cmd)
+        if full_path is None:
+          ui.Stderr('hash: %r not found', cmd)
+          status = 1
+    else:  # print cache
+      for cmd in self.search_path.CachedCommands():
+        print(cmd)
 
     return status
 

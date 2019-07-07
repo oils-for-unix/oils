@@ -454,6 +454,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.HELP: builtin.Help(loader, errfmt),
 
       builtin_e.TYPE: builtin.Type(funcs, aliases, exec_deps.search_path),
+      builtin_e.HASH: builtin.Hash(exec_deps.search_path),
       builtin_e.REPR: builtin.Repr(mem, errfmt),
 
       builtin_e.GETOPTS: builtin.GetOpts(mem, errfmt),

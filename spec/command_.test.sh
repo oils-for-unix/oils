@@ -150,3 +150,46 @@ echo status=$?
 two
 status=0
 ## END
+
+#### hash without args prints the cache
+whoami >/dev/null
+hash
+echo status=$?
+## STDOUT:
+/usr/bin/whoami
+status=0
+## END
+
+# bash uses a weird table.  Although we could use TSV2.
+## OK bash stdout-json: "hits\tcommand\n   1\t/usr/bin/whoami\nstatus=0\n"
+
+## OK mksh/zsh STDOUT:
+whoami=/usr/bin/whoami
+status=0
+## END
+
+#### hash with args
+hash whoami
+echo status=$?
+hash | grep -o /whoami  # prints it twice
+hash _nonexistent_
+echo status=$?
+## STDOUT:
+status=0
+/whoami
+status=1
+## END
+
+# mksh doesn't fail
+## BUG mksh STDOUT:
+status=0
+/whoami
+status=0
+## END
+
+#### hash -r with additional args
+hash -r extra >/dev/null  # avoid weird output with mksh
+echo status=$?
+## stdout: status=1
+## OK osh stdout: status=2
+## BUG dash stdout: status=0
