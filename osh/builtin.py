@@ -54,6 +54,7 @@ from typing import Dict
 # CAN be redefined.
 #
 # http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_14
+# https://www.gnu.org/software/bash/manual/html_node/Special-Builtins.html
 
 _SPECIAL_BUILTINS = {
     ":": builtin_e.COLON,

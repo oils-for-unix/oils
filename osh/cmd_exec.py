@@ -326,7 +326,7 @@ class Executor(object):
     assert isinstance(status, int)
     return status
 
-  def _RunBuiltin(self, builtin_id, arg_vec, fork_external):
+  def _RunBuiltin(self, builtin_id, is_special, arg_vec, fork_external):
     self.errfmt.PushLocation(arg_vec.spids[0])
     try:
       status = self._RunBuiltinAndRaise(builtin_id, arg_vec, fork_external)
@@ -355,6 +355,12 @@ class Executor(object):
         pass
 
       self.errfmt.PopLocation()
+
+    # TODO: Enable this and fix spec test failures.
+    # Also update _SPECIAL_BUILTINS in osh/builtin.py.
+    #if is_special and status != 0:
+    #  e_die('special builtin failed', status=status)
+
     return status
 
   def _PushErrExit(self):
@@ -537,7 +543,7 @@ class Executor(object):
 
     builtin_id = builtin.ResolveSpecial(arg0)
     if builtin_id != builtin_e.NONE:
-      return self._RunBuiltin(builtin_id, arg_vec, fork_external)
+      return self._RunBuiltin(builtin_id, True, arg_vec, fork_external)
 
     # Builtins like 'true' can be redefined as functions.
     if funcs:
@@ -550,7 +556,7 @@ class Executor(object):
     builtin_id = builtin.Resolve(arg0)
 
     if builtin_id != builtin_e.NONE:
-      return self._RunBuiltin(builtin_id, arg_vec, fork_external)
+      return self._RunBuiltin(builtin_id, False, arg_vec, fork_external)
 
     environ = self.mem.GetExported()  # Include temporary variables
 

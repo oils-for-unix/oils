@@ -6,10 +6,22 @@
 
 #### : is special and prefix assignments persist after special builtins
 # Bash only implements it behind the posix option
-test -n "$BASH_VERSION" && set -o posix
+#test -n "$BASH_VERSION" && set -o posix
+case $SH in
+  *dash|*zsh|*osh)
+    ;;
+  *)
+    set -o posix
+    ;;
+esac
 foo=bar :
-echo $foo
-## stdout: bar
+echo -$foo-
+## STDOUT:
+-bar-
+## END
+## BUG zsh STDOUT:
+--
+## END
 
 #### true is not special
 foo=bar true
@@ -24,8 +36,8 @@ echo status=$?
 ## stdout-json: ""
 ## status: 1
 ## OK dash status: 2
-## BUG bash status: 0
-## BUG bash STDOUT:
+## BUG bash/zsh status: 0
+## BUG bash/zsh STDOUT:
 status=1
 ## END
 
@@ -54,8 +66,8 @@ export() {
 export hi
 echo status=$?
 ## status: 2
-## BUG mksh status: 0
-## BUG mksh stdout: status=0
+## BUG mksh/zsh status: 0
+## BUG mksh/zsh stdout: status=0
 
 #### Non-special builtins CAN be redefined as functions
 test -n "$BASH_VERSION" && set -o posix
