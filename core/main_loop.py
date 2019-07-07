@@ -18,11 +18,9 @@ from _devbuild.gen.syntax_asdl import (
     command_t, command,
     parse_result__EmptyLine, parse_result__Eof, parse_result__Node
 )
-from _devbuild.gen.runtime_asdl import value__Undef, arg_vector
+from _devbuild.gen.runtime_asdl import value_e, arg_vector
 from core import ui
 from core import util
-from frontend import reader
-#from core.util import log
 
 from typing import Any, Optional, List, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -31,6 +29,25 @@ if TYPE_CHECKING:
   from osh.cmd_parse import CommandParser
   # commented out so --strict doesn't follow all
   #from osh.cmd_exec import Executor
+
+
+def _ExecutePromptCommand(ex):
+  command = None
+  prompt_var = ex.mem.GetVar('PROMPT_COMMAND')
+  if prompt_var.tag == value_e.Undef:
+    return
+  elif prompt_var.tag == value_e.AssocArray:
+    command = prompt_var.d['0']
+  elif prompt_var.tag == value_e.StrArray:
+    command = prompt_var.strs[0]
+  elif prompt_var.tag == value_e.Str:
+    command = prompt_var.s
+
+  # save this so PROMPT_COMMAND can't set $?
+  old_status = ex.LastStatus()
+  arg_vec = arg_vector(['PROMPT_COMMAND', command], [0, 0])
+  ex._Eval(arg_vec)
+  ex.mem.SetLastStatus(old_status)
 
 
 def Interactive(opts, ex, c_parser, display, errfmt):
@@ -44,11 +61,8 @@ def Interactive(opts, ex, c_parser, display, errfmt):
     # it appears in all branches.
 
     while True:  # ONLY EXECUTES ONCE
+      _ExecutePromptCommand(ex)
       try:
-        prompt_command = ex.mem.GetVar('PROMPT_COMMAND')
-        if not isinstance(prompt_command, value__Undef):
-            arg_vec = arg_vector(['', prompt_command.s], [0, 0])
-            ex._Eval(arg_vec)
         # may raise HistoryError or ParseError
         result = c_parser.ParseInteractiveLine()
         if isinstance(result, parse_result__EmptyLine):
