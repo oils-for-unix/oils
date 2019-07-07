@@ -12,7 +12,7 @@
 # Other settings: LTO, PGO?  Consider moving prefix, LTO, PGO to build and
 # install steps.
 
-TMP=${TMP:-/tmp}  # Assume that any system has $TMP set or /tmp exists
+TMP=${TMPDIR:-/tmp}  # Assume that any system has $TMP set or /tmp exists
 readonly TMP  # POSIX sh supports 'readonly'
 
 log() {
