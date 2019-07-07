@@ -1,7 +1,6 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 set -o nounset
-set -o pipefail
 set -o errexit
 
 # TODO: This changes depending on the version.  Maybe there should be a 'clang'
@@ -33,7 +32,7 @@ die() {
 }
 
 source-detected-config-or-die() {
-  if ! source _build/detected-config.sh; then
+  if ! . _build/detected-config.sh; then
     # Make this error stand out.
     echo
     echo "FATAL: can't find _build/detected-config.h.  Run './configure'"

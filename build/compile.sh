@@ -1,13 +1,12 @@
-#!/usr/bin/env bash
+#!/bin/sh
 #
 # Usage:
 #   ./compile.sh <function name>
 
 set -o nounset
-set -o pipefail
 set -o errexit
 
-source build/common.sh
+. build/common.sh
 
 # NOTES on trying to delete certain modules:
 #
@@ -117,20 +116,20 @@ $MODOBJS
 readonly EMPTY_STR='""'
 
 # Stub out a few variables
-readonly PREPROC_FLAGS=(
+# Python already has support for disabling complex numbers!
+readonly PREPROC_FLAGS="\
   -D OVM_MAIN \
-  -D PYTHONPATH="$EMPTY_STR" \
-  -D VERSION="$EMPTY_STR" \
-  -D VPATH="$EMPTY_STR" \
+  -D PYTHONPATH=\"$EMPTY_STR\" \
+  -D VERSION=\"$EMPTY_STR\" \
+  -D VPATH=\"$EMPTY_STR\" \
   -D Py_BUILD_CORE \
-  # Python already has support for disabling complex numbers!
   -D WITHOUT_COMPLEX
-)
+"
 
 # NOTE: build/oil-defs is hard-coded to the oil.ovm app.  We're abandoning
 # hello.ovm and opy.ovm for now, but those can easily be added later.  We
 # haven't mangled the CPython source!
-readonly INCLUDE_PATHS=(-I . -I Include -I ../_devbuild/gen -I ../build/oil-defs)
+readonly INCLUDE_PATHS="-I . -I Include -I ../_devbuild/gen -I ../build/oil-defs"
 readonly CC=${CC:-cc}  # cc should be on POSIX systems
 
 # BASE_CFLAGS is copied by observation from what configure.ac does on my Ubuntu
@@ -183,17 +182,17 @@ build() {
   # HAVE_READLINE defined in detected-config.sh.
   source-detected-config-or-die
 
-  pushd $PY27
+  cd $PY27
 
   local readline_flags=''
-  if [[ "$HAVE_READLINE" -eq 1 ]]; then
+  if [ "$HAVE_READLINE" = 1 ]; then
     # Readline interface for tokenizer.c and [raw_]input() in bltinmodule.c.
     # For now, we are using raw_input() for the REPL.  TODO: Parameterize this!
     # We should create a special no_readline_raw_input().
 
     c_module_src_list=$(cat $abs_c_module_srcs)
 
-    if [[ -n "$READLINE_DIR" ]]; then
+    if [ -n "$READLINE_DIR" ]; then
       readline_flags+="-L $READLINE_DIR/lib -I $READLINE_DIR/include "
     fi
 
@@ -211,8 +210,8 @@ build() {
   time $CC \
     ${BASE_CFLAGS} \
     ${CFLAGS} \
-    "${INCLUDE_PATHS[@]}" \
-    "${PREPROC_FLAGS[@]}" \
+    $INCLUDE_PATHS \
+    $PREPROC_FLAGS \
     -D PREFIX="\"$PREFIX\"" \
     -D EXEC_PREFIX="\"$PREFIX\"" \
     -o $abs_out \
@@ -226,7 +225,7 @@ build() {
     $readline_flags \
     "$@" \
     || true
-  popd
+  cd "$OLDPWD"
 
   # TODO: Return proper exit code from this action
   return 0
@@ -281,8 +280,8 @@ _headers() {
 
   # -MM: no system headers
   gcc \
-    "${INCLUDE_PATHS[@]}" \
-    "${PREPROC_FLAGS[@]}" \
+    "$INCLUDE_PATHS" \
+    "$PREPROC_FLAGS" \
     -MM $OVM_LIBRARY_OBJS \
     Modules/ovm.c \
     $(cat $abs_c_module_srcs)

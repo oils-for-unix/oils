@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 #
 # Build actions used in the Makefile.
 #
@@ -6,10 +6,9 @@
 #   ./actions.sh <function name>
 
 set -o nounset
-set -o pipefail
 set -o errexit
 
-source build/common.sh
+. build/common.sh
 
 write-release-date() {
   mkdir -p _build  # Makefile makes this, but scripts/release.sh needs it too
