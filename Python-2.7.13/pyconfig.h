@@ -259,9 +259,6 @@
 /* Define to 1 if you have the `ftello' function. */
 #define HAVE_FTELLO 1
 
-/* Define to 1 if you have the `ftime' function. */
-#define HAVE_FTIME 1
-
 /* Define to 1 if you have the `ftruncate' function. */
 #define HAVE_FTRUNCATE 1
 
