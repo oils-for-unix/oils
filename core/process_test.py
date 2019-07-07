@@ -45,7 +45,15 @@ def _CommandNode(code_str, arena):
 
 def _ExtProc(argv):
   arg_vec = arg_vector(argv, [0] * len(argv))
-  return Process(ExternalThunk(_EXT_PROG, arg_vec, {}), _JOB_STATE)
+  argv0_path = None
+  for path_entry in ['/bin', '/usr/bin']:
+    full_path = os.path.join(path_entry, argv[0])
+    if os.path.exists(full_path):
+      argv0_path = full_path
+      break
+  if not argv0_path:
+    argv0_path = argv[0]  # fallback that tests failure case
+  return Process(ExternalThunk(_EXT_PROG, argv0_path, arg_vec, {}), _JOB_STATE)
 
 
 class ProcessTest(unittest.TestCase):

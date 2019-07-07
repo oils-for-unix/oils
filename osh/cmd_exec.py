@@ -259,9 +259,16 @@ class Executor(object):
       return 0
 
     environ = self.mem.GetExported()
+    cmd = arg_vec.strs[1]
+    argv0_path = self.search_path.CachedLookup(cmd)
+    if argv0_path is None:
+      self.errfmt.Print('exec: %r not found', cmd,
+                        span_id=arg_vec.spids[1])
+      sys.exit(127)  # exec never returns
+
     # shift off 'exec'
     arg_vec2 = arg_vector(arg_vec.strs[1:], arg_vec.spids[1:])
-    self.ext_prog.Exec(arg_vec2, environ)  # NEVER RETURNS
+    self.ext_prog.Exec(argv0_path, arg_vec2, environ)  # NEVER RETURNS
 
   def _RunBuiltinAndRaise(self, builtin_id, arg_vec, fork_external):
     """
@@ -291,7 +298,7 @@ class Executor(object):
       status = self._Source(arg_vec)
 
     elif builtin_id == builtin_e.COMMAND:
-      # TODO: How do we hadnle fork_external?  It doesn't fit the common
+      # TODO: How do we handle fork_external?  It doesn't fit the common
       # signature.
       b = builtin.Command(self, self.funcs, self.aliases, self.search_path)
       status = b(arg_vec, fork_external)
@@ -547,13 +554,19 @@ class Executor(object):
 
     environ = self.mem.GetExported()  # Include temporary variables
 
+    # Resolve argv[0] BEFORE forking.
+    argv0_path = self.search_path.CachedLookup(argv[0])
+    if argv0_path is None:
+      self.errfmt.Print('%r not found', argv[0], span_id=span_id)
+      return 127
+
     if fork_external:
-      thunk = process.ExternalThunk(self.ext_prog, arg_vec, environ)
+      thunk = process.ExternalThunk(self.ext_prog, argv0_path, arg_vec, environ)
       p = process.Process(thunk, self.job_state)
       status = p.Run(self.waiter)
       return status
 
-    self.ext_prog.Exec(arg_vec, environ)  # NEVER RETURNS
+    self.ext_prog.Exec(argv0_path, arg_vec, environ)  # NEVER RETURNS
 
   def _RunPipeline(self, node):
     pi = process.Pipeline()

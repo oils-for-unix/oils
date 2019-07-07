@@ -549,6 +549,11 @@ builtin_wait() {
   wait 1234578
 }
 
+builtin_exec() {
+  exec nonexistent-command 1 2 3
+  echo $?
+}
+
 #
 # Strict options (see spec/strict-options.sh)
 #
@@ -636,6 +641,7 @@ all() {
     builtin_bracket builtin_builtin builtin_source builtin_cd builtin_pushd \
     builtin_popd builtin_unset builtin_alias_unalias builtin_help \
     builtin_trap builtin_getopts builtin_wait \
+    builtin_exec \
     strict_word_eval_warnings strict_arith_warnings \
     strict_control_flow_warnings control_flow_subshell; do
     _run_test $t

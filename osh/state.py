@@ -44,6 +44,7 @@ class SearchPath(object):
 
   def __init__(self, mem):
     self.mem = mem
+    self.cache = {}
 
   def Lookup(self, name):
     """
@@ -69,6 +70,26 @@ class SearchPath(object):
         return full_path
 
     return None
+
+  def CachedLookup(self, name):
+    if name in self.cache:
+      return self.cache[name]
+
+    full_path = self.Lookup(name)
+    if full_path is not None:
+      self.cache[name] = full_path
+    return full_path
+
+  def MaybeRemoveEntry(self, name):
+    """When the file system changes."""
+    try:
+      del self.cache[name]
+    except KeyError:
+      pass
+
+  def ClearCache(self):
+    """For hash -r."""
+    self.cache.clear()
 
 
 class _ErrExit(object):

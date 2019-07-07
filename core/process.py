@@ -22,7 +22,6 @@ from core import util
 from core import ui
 from core.util import log
 from frontend import match
-from pylib import os_
 
 import posix_ as posix
 
@@ -432,7 +431,7 @@ class ExternalProgram(object):
     self.errfmt = errfmt
     self.debug_f = debug_f
 
-  def Exec(self, arg_vec, environ):
+  def Exec(self, argv0_path, arg_vec, environ):
     """Execute a program and exit this process.
 
     Called by:
@@ -440,13 +439,13 @@ class ExternalProgram(object):
       exec ls /
       ( ls / )
     """
-    self._Exec(arg_vec.strs, arg_vec.spids[0], environ)
+    self._Exec(argv0_path, arg_vec.strs, arg_vec.spids[0], environ, True)
     # NO RETURN
 
-  def _Exec(self, argv, argv0_spid, environ):
+  def _Exec(self, argv0_path, argv, argv0_spid, environ, should_retry):
     if self.hijack_shebang:
       try:
-        f = self.fd_state.Open(argv[0])
+        f = self.fd_state.Open(argv0_path)
       except OSError as e:
         pass
       else:
@@ -466,26 +465,19 @@ class ExternalProgram(object):
     # TODO: If there is an error, like the file isn't executable, then we should
     # exit, and the parent will reap it.  Should it capture stderr?
     try:
-      os_.execvpe(argv[0], argv, environ)
+      posix.execve(argv0_path, argv, environ)
     except OSError as e:
       # Run with /bin/sh when ENOEXEC error (no shebang).  All shells do this.
-      if e.errno == errno.ENOEXEC and argv[0] != '/bin/sh':  # no infinite loop
-        # TODO:
-        # - Use search_path in the NON-ERROR case ('hash' builtin).
-        # - Get rid of pylib/os_.py, which was copied from the Python standard
-        #   library.
-        abs_path = self.search_path.Lookup(argv[0])
-        if abs_path is None:  # Check if file was deleted in the meantime
-          e.errno = errno.ENOENT
-        else:
-          self._Exec(['/bin/sh', abs_path] + argv[1:], argv0_spid, environ)
-          # NO RETURN
+      if e.errno == errno.ENOEXEC and should_retry:
+        self._Exec('/bin/sh', ['/bin/sh', argv0_path] + argv[1:], argv0_spid,
+                   environ, False)
+        # NO RETURN
 
       # Would be nice: when the path is relative and ENOENT: print PWD and do
       # spelling correction?
 
       self.errfmt.Print(
-          "Can't execute %r: %s", argv[0], posix.strerror(e.errno),
+          "Can't execute %r: %s", argv0_path, posix.strerror(e.errno),
           span_id=argv0_spid)
 
       # POSIX mentions 126 and 127 for two specific errors.  The rest are
@@ -527,8 +519,9 @@ class Thunk(object):
 class ExternalThunk(Thunk):
   """An external executable."""
 
-  def __init__(self, ext_prog, arg_vec, environ):
+  def __init__(self, ext_prog, argv0_path, arg_vec, environ):
     self.ext_prog = ext_prog
+    self.argv0_path = argv0_path
     self.arg_vec = arg_vec
     self.environ = environ
 
@@ -544,7 +537,7 @@ class ExternalThunk(Thunk):
     """
     An ExternalThunk is run in parent for the exec builtin.
     """
-    self.ext_prog.Exec(self.arg_vec, self.environ)
+    self.ext_prog.Exec(self.argv0_path, self.arg_vec, self.environ)
 
 
 class SubProgramThunk(Thunk):
