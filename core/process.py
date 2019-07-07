@@ -469,8 +469,9 @@ class ExternalProgram(object):
     except OSError as e:
       # Run with /bin/sh when ENOEXEC error (no shebang).  All shells do this.
       if e.errno == errno.ENOEXEC and should_retry:
-        self._Exec('/bin/sh', ['/bin/sh', argv0_path] + argv[1:], argv0_spid,
-                   environ, False)
+        new_argv = ['/bin/sh', argv0_path]
+        new_argv.extend(argv[1:])
+        self._Exec('/bin/sh', new_argv, argv0_spid, environ, False)
         # NO RETURN
 
       # Would be nice: when the path is relative and ENOENT: print PWD and do

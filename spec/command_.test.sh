@@ -187,9 +187,9 @@ status=0
 status=0
 ## END
 
-#### hash -r with additional args
-hash -r extra >/dev/null  # avoid weird output with mksh
+#### hash -r doesn't allow additional args
+hash -r whoami >/dev/null  # avoid weird output with mksh
 echo status=$?
 ## stdout: status=1
 ## OK osh stdout: status=2
-## BUG dash stdout: status=0
+## BUG dash/bash stdout: status=0

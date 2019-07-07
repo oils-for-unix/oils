@@ -57,6 +57,32 @@ myfunc
 status=1
 ## END
 
+#### command -v doesn't find non-executable file
+# PATH resolution is different
+
+PATH="$TMP:$PATH"
+touch $TMP/non-executable $TMP/executable
+chmod +x $TMP/executable
+
+command -v non-executable | grep -o /non-executable
+echo status=$?
+
+command -v executable | grep -o /executable
+echo status=$?
+
+## STDOUT:
+status=1
+/executable
+status=0
+## END
+
+## BUG bash/dash STDOUT:
+/non-executable
+status=0
+/executable
+status=0
+## END
+
 #### command skips function lookup
 seq() {
   echo "$@"

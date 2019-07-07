@@ -46,7 +46,7 @@ class SearchPath(object):
     self.mem = mem
     self.cache = {}
 
-  def Lookup(self, name):
+  def Lookup(self, name, exec_required=True):
     """
     Returns the path itself (for relative path), the resolve path, or None.
     """
@@ -66,7 +66,16 @@ class SearchPath(object):
 
     for path_dir in path_list:
       full_path = os_path.join(path_dir, name)
-      if path_stat.exists(full_path):
+
+      # NOTE: dash and bash only check for EXISTENCE in 'command -v' (and 'type
+      # -t').  OSH follows mksh and zsh.  Note that we can still get EPERM if
+      # the permissions are changed between check and use.
+      if exec_required:
+        found = posix.access(full_path, posix.X_OK)
+      else:
+        found = path_stat.exists(full_path)  # for 'source'
+
+      if found:
         return full_path
 
     return None

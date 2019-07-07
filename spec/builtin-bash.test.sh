@@ -44,18 +44,16 @@ file
 file
 ## END
 
-#### type -t and command -v with non-executable file still finds it
-
-# PATH resolution is different
-
+#### type -t doesn't find non-executable (like command -v)
 PATH="$TMP:$PATH"
 touch $TMP/non-executable
 type -t non-executable
-command -v not-executable | grep -o /not-executable
-## STDOUT:
+## stdout-json: ""
+## status: 1
+## BUG bash STDOUT:
 file
-/not-executable
 ## END
+## BUG bash status: 0
 
 #### type -t -> not found
 type -t echo ZZZ find =

@@ -155,6 +155,16 @@ status=127
 ## N-I mksh stdout-json: ""
 ## N-I mksh status: 1
 
+#### source looks in PATH for files
+mkdir -p dir
+echo "echo hi" > dir/cmd
+PATH="dir:$PATH"
+. cmd
+rm dir/cmd
+## STDOUT:
+hi
+## END
+
 #### source finds files in PATH before current dir
 cd $TMP
 mkdir -p dir
@@ -166,6 +176,15 @@ echo status=$?
 ## STDOUT:
 path
 status=0
+## END
+
+#### source works for files in subdirectory
+mkdir -p dir
+echo "echo path" > dir/cmd
+. dir/cmd
+rm dir/cmd
+## STDOUT:
+path
 ## END
  
 #### exit within eval (regression)

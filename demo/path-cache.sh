@@ -13,7 +13,7 @@ set -o errexit
 
 sh-demo() {
   local sh=$1
-  local syscalls='execve,stat,lstat'
+  local syscalls='execve,stat,lstat,access'
   #local syscalls='execve'
   strace -ff -e $syscalls  -- $sh -c 'whoami; whoami'
 }

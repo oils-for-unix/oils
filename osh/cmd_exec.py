@@ -219,7 +219,7 @@ class Executor(object):
     except IndexError:
       raise args.UsageError('missing required argument')
 
-    resolved = self.search_path.Lookup(path)
+    resolved = self.search_path.Lookup(path, exec_required=False)
     if resolved is None:
       resolved = path
     try:
