@@ -16,11 +16,7 @@
 
 #include <fnmatch.h>
 #include <glob.h>
-#ifdef __FreeBSD__
-#include <gnu/posix/regex.h>
-#else
 #include <regex.h>
-#endif
 
 #include <Python.h>
 
