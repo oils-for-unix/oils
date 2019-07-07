@@ -155,7 +155,7 @@ def LeftMostSpanForPart(part):
     return part.spids[0]
 
   elif isinstance(part, word_part__TildeSubPart):
-    return const.NO_INTEGER
+    return part.token.span_id
 
   elif isinstance(part, word_part__ArithSubPart):
     # begin, end
