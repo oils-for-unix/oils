@@ -19,7 +19,6 @@ I left in:
   - set*uid, etc. - for container tools?
   - kill, killpg - would the kill builtin need these?
   - getppid - I think for $PPID
-  - setpgrp, getpgrp
 
   - mkdir, rmdir() -- might be useful for tools
 

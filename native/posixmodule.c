@@ -1387,43 +1387,6 @@ posix_getpgid(PyObject *self, PyObject *args)
 #endif /* HAVE_GETPGID */
 
 
-#ifdef HAVE_GETPGRP
-PyDoc_STRVAR_remove(posix_getpgrp__doc__,
-"getpgrp() -> pgrp\n\n\
-Return the current process group id.");
-
-static PyObject *
-posix_getpgrp(PyObject *self, PyObject *noargs)
-{
-#ifdef GETPGRP_HAVE_ARG
-    return PyLong_FromPid(getpgrp(0));
-#else /* GETPGRP_HAVE_ARG */
-    return PyLong_FromPid(getpgrp());
-#endif /* GETPGRP_HAVE_ARG */
-}
-#endif /* HAVE_GETPGRP */
-
-
-#ifdef HAVE_SETPGRP
-PyDoc_STRVAR_remove(posix_setpgrp__doc__,
-"setpgrp()\n\n\
-Make this process the process group leader.");
-
-static PyObject *
-posix_setpgrp(PyObject *self, PyObject *noargs)
-{
-#ifdef SETPGRP_HAVE_ARG
-    if (setpgrp(0, 0) < 0)
-#else /* SETPGRP_HAVE_ARG */
-    if (setpgrp() < 0)
-#endif /* SETPGRP_HAVE_ARG */
-        return posix_error();
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
-#endif /* HAVE_SETPGRP */
-
 #ifdef HAVE_GETPPID
 PyDoc_STRVAR_remove(posix_getppid__doc__,
 "getppid() -> ppid\n\n\

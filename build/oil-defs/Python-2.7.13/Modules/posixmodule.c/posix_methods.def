@@ -30,7 +30,6 @@ static PyMethodDef posix_methods[] = {
 
   /* job control stuff */
   {"setpgid", posix_setpgid, METH_VARARGS},
-  {"setpgrp", posix_setpgrp, METH_NOARGS},
   {"tcsetpgrp", posix_tcsetpgrp, METH_VARARGS},
 
   /* note: replaced wait() call with waitpid() */
