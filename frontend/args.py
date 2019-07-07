@@ -125,12 +125,12 @@ class Reader(object):
     return arg
 
   def ReadRequired2(self, error_msg):
-    spid = self.spids[self.i]
     try:
       arg = self.Peek()
     except IndexError:
       # point at argv[0]
       raise UsageError(error_msg, span_id=self._FirstSpanId())
+    spid = self.spids[self.i]
     self.Next()
     return arg, spid
 

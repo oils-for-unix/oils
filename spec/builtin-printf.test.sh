@@ -14,6 +14,12 @@
 #
 # I suppose it is technically correct, but it looks very ugly.
 
+#### printf with no args
+printf
+## status: 2
+## OK dash/mksh/zsh status: 1
+## stdout-json: ""
+
 #### printf -v %s
 var=foo
 printf -v $var %s 'hello there'
