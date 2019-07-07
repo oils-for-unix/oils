@@ -18,8 +18,10 @@ from _devbuild.gen.syntax_asdl import (
     command_t, command,
     parse_result__EmptyLine, parse_result__Eof, parse_result__Node
 )
+from _devbuild.gen.runtime_asdl import value__Undef, arg_vector
 from core import ui
 from core import util
+from frontend import reader
 #from core.util import log
 
 from typing import Any, Optional, List, TYPE_CHECKING
@@ -43,6 +45,10 @@ def Interactive(opts, ex, c_parser, display, errfmt):
 
     while True:  # ONLY EXECUTES ONCE
       try:
+        prompt_command = ex.mem.GetVar('PROMPT_COMMAND')
+        if not isinstance(prompt_command, value__Undef):
+            arg_vec = arg_vector(['', prompt_command.s], [0, 0])
+            ex._Eval(arg_vec)
         # may raise HistoryError or ParseError
         result = c_parser.ParseInteractiveLine()
         if isinstance(result, parse_result__EmptyLine):
