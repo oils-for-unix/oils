@@ -192,7 +192,7 @@ join-modules() {
 clean-pyc() {
   # skip _chroot, _tmp, etc.  But delete __init__.pyc
   find . \( -type d -a -name '_*' -a -prune \) -o -name '*.pyc' -a -print |
-    xargs --no-run-if-empty -- rm --verbose
+    xargs -- rm -f -v
 }
 
 # NOTE: Not deleting _devbuild, including cpython-full.  Maybe we should, or
