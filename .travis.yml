@@ -41,6 +41,7 @@ script:
     - test/unit.sh all
     # Spec tests
     - test/spec.sh smoke
+    - test/spec.sh interactive
     # TODO: get other spec tests running on Travis.
     # - test/spec.sh all
 
