@@ -409,3 +409,63 @@ x=local
 - operator = global
 :- operator = global
 ## END
+
+#### static assignment doesn't split
+words='a b c'
+export ex=$words
+glo=$words
+readonly ro=$words
+argv.py "$ex" "$glo" "$ro"
+
+## STDOUT:
+['a b c', 'a b c', 'a b c']
+## END
+## BUG dash STDOUT:
+['a', 'a b c', 'a']
+## END
+
+
+#### aliased assignment doesn't split
+shopt -s expand_aliases || true
+words='a b c'
+alias e=export
+alias r=readonly
+e ex=$words
+r ro=$words
+argv.py "$ex" "$ro"
+## BUG dash STDOUT:
+['a', 'a']
+## END
+## STDOUT:
+['a b c', 'a b c']
+## END
+
+
+#### assignment using dynamic keyword splits
+words='a b c'
+e=export
+r=readonly
+$e ex=$words
+$r ro=$words
+argv.py "$ex" "$ro"
+## STDOUT:
+['a', 'a']
+## END
+
+# zsh is smart??  How does it do this?
+## BUG zsh STDOUT:
+['a b c', 'a b c']
+## END
+
+#### assignment using dynamic var names doesn't split
+words='a b c'
+arg_ex=ex=$words
+arg_ro=ro=$words
+
+export "$arg_ex"
+readonly "$arg_ro"
+
+argv.py "$ex" "$ro"
+## STDOUT:
+['a b c', 'a b c']
+## END
