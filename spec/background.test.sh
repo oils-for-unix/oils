@@ -126,3 +126,20 @@ echo ${bar=2} &
 wait
 echo $bar  # bar is NOT SET in the parent process
 ## stdout-json: "1\n1\n2\n\n"
+
+#### Background process and then a singleton pipeline
+
+# This was inspired by #416, although that symptom there was timing, so it's
+# technically not a regression test.  It's hard to test timing.
+
+{ sleep 0.1; exit 42; } &
+echo begin
+! true
+echo end
+wait $!
+echo status=$?
+## STDOUT:
+begin
+end
+status=42
+## END

@@ -853,7 +853,13 @@ class Pipeline(Job):
     return self.pids[-1]
 
   def Wait(self, waiter):
-    """Wait for this pipeline to finish."""
+    """Wait for this pipeline to finish.
+
+    Called by the 'wait' builtin.
+    """
+    # This is ONLY for background pipelines.  Foreground pipelines use Run(),
+    # and must account for lastpipe!
+    assert self.procs, "no procs for Wait()"
     while True:
       #log('WAIT pipeline')
       if not waiter.WaitForOne():
@@ -865,7 +871,11 @@ class Pipeline(Job):
     return self.pipe_status
 
   def Run(self, waiter, fd_state):
-    """Run this pipeline synchronously."""
+    """Run this pipeline synchronously (foreground pipeline).
+
+    Returns:
+      pipe_status (list of integers).
+    """
     self.Start(waiter)
 
     # Run our portion IN PARALLEL with other processes.  This may or may not
@@ -894,7 +904,10 @@ class Pipeline(Job):
     self.pipe_status[-1] = ex.LastStatus()
     #log('pipestatus before all have finished = %s', self.pipe_status)
 
-    return self.Wait(waiter)  # returns pipe_status
+    if self.procs:
+      return self.Wait(waiter)
+    else:
+      return self.pipe_status  # singleton foreground pipeline
 
   def WhenDone(self, pid, status):
     """Called by Process.WhenDone. """

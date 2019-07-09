@@ -338,6 +338,7 @@ class Wait(object):
                           span_id=span_id)
         return 127
 
+      # TODO: Wait for pipelines, and handle PIPESTATUS from Pipeline.Wait().
       status = job.Wait(self.waiter)
 
     return status
