@@ -41,6 +41,28 @@ log() {
   echo "$@" 1>&2
 }
 
+#
+# Deps (similar to devtools/cmark.sh and build/codegen.sh)
+#
+
+readonly MANDOC_DIR='_deps/mdocml-1.14.1'
+
+download-mandoc() {
+  mkdir -p _deps
+  wget --no-clobber --directory _deps \
+    https://mandoc.bsd.lv/snapshots/mdocml-1.14.1.tar.gz
+}
+
+build-mandoc() {
+  cd $MANDOC_DIR
+  ./configure
+  make
+}
+
+mandoc() {
+  $MANDOC_DIR/mandoc "$@"
+}
+
 _build-timestamp() {
   echo '<hr/>'
   echo "<i>Generated on $(date)</i>"
@@ -188,6 +210,13 @@ manual() {
   ls -l $root_dir/doc
 }
 
+# TODO: This could use some CSS.
+man-page() {
+  local root_dir=${1:-_release/VERSION}
+  mandoc -T html doc/osh.1 > $root_dir/osh.1.html
+  ls -l $root_dir
+}
+
 # I want to ship the INSTALL file literally, so just mutate things
 _sed-ext() {
   sed --regexp-extended -i "$@"
@@ -203,7 +232,7 @@ update-src-versions() {
 
   _sed-ext \
     "s;/release/[0-9]+\.[0-9]+\.[a-z0-9]+/;/release/$OIL_VERSION/;g" \
-    INSTALL.txt doc/osh-quick-ref-toc.txt
+    INSTALL.txt doc/osh-quick-ref-toc.txt doc/osh.1
 }
 
 oil-grammar() {

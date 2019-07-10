@@ -8,11 +8,12 @@ set -o pipefail
 set -o errexit
 
 download() {
-  wget --directory _tmp \
+  mkdir -p _deps
+  wget --no-clobber --directory _deps \
     https://github.com/commonmark/cmark/archive/0.28.3.tar.gz
 }
 
-readonly CMARK_DIR=_tmp/cmark-0.28.3
+readonly CMARK_DIR=_deps/cmark-0.28.3
 
 build() {
   pushd $CMARK_DIR
