@@ -69,8 +69,8 @@ module runtime
   emit = Part | Delim | Empty | Escape | Nothing
   state = Invalid | Start | DE_White1 | DE_Gray | DE_White2 | Black | Backslash
 
-  -- Edges are characters.  CH_DE_ is the delimiter prefix.  WHITE is for
-  -- whitespace; GRAY is for other IFS chars; Black is for significant
+  -- Edges are characters.  DE_ is the delimiter prefix.  DE_White is for
+  -- whitespace; DE_Gray is for other IFS chars; Black is for significant
   -- characters.
   char_kind = DE_White | DE_Gray | Black | Backslash
 

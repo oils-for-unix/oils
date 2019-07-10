@@ -211,7 +211,7 @@ module syntax
     -- TODO: Rename ShAssign
   | Assignment(id keyword, string* flags, assign_pair* pairs)
     -- TODO: add optional type_expr (only appears in var/const)
-  | OilAssign(token? keyword, expr lvalue, token op, expr rhs)
+  | OilAssign(token? keyword, expr lhs, token op, expr rhs)
   | ControlFlow(token token, word? arg_word)
   | Pipeline(command* children, bool negated, int* stderr_indices)
   | AndOr(id* ops, command* children)

@@ -70,13 +70,14 @@ from frontend import reader
 from frontend import parse_lib
 
 from oil_lang import cmd_exec as oil_cmd_exec
+from oil_lang import expr_eval
 
 from osh import builtin
 from osh import builtin_bracket
 from osh import builtin_comp
 from osh import builtin_printf
 from osh import cmd_exec
-from osh import expr_eval
+from osh import expr_eval as osh_expr_eval
 from osh import history
 from osh import prompt
 from osh import split
@@ -479,12 +480,15 @@ def ShellMain(lang, argv0, argv, login_shell):
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, exec_deps, arena)
   exec_deps.word_ev = word_ev
 
-  arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, word_ev, errfmt)
+  arith_ev = osh_expr_eval.ArithEvaluator(mem, exec_opts, word_ev, errfmt)
   exec_deps.arith_ev = arith_ev
   word_ev.arith_ev = arith_ev  # Another circular dependency
 
-  bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, word_ev, errfmt)
+  bool_ev = osh_expr_eval.BoolEvaluator(mem, exec_opts, word_ev, errfmt)
   exec_deps.bool_ev = bool_ev
+
+  expr_ev = expr_eval.OilEvaluator(mem, errfmt)
+  exec_deps.expr_ev = expr_ev
 
   tracer = dev.Tracer(parse_ctx, exec_opts, mem, word_ev, trace_f)
   exec_deps.tracer = tracer
@@ -493,6 +497,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   ex.word_ev = word_ev
   ex.arith_ev = arith_ev
   ex.bool_ev = bool_ev
+  ex.expr_ev = expr_ev
   ex.tracer = tracer
 
   spec_builder = builtin_comp.SpecBuilder(ex, parse_ctx, word_ev, splitter,

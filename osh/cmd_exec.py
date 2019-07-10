@@ -94,6 +94,7 @@ class Deps(object):
     self.word_ev = None
     self.arith_ev = None
     self.bool_ev = None
+    self.expr_ev = None  # for Oil expressions
     self.ex = None
     self.prompt_ev = None
 
@@ -150,6 +151,7 @@ class Executor(object):
     self.word_ev = exec_deps.word_ev
     self.arith_ev = exec_deps.arith_ev
     self.bool_ev = exec_deps.bool_ev
+    self.expr_ev = exec_deps.expr_ev
 
     self.search_path = exec_deps.search_path
     self.ext_prog = exec_deps.ext_prog
@@ -762,6 +764,20 @@ class Executor(object):
       i = self.arith_ev.Eval(node.child)
       status = 0 if i != 0 else 1
 
+    elif node.tag == command_e.OilAssign:
+      # TODO: maybe pick out LHS and RHS here.
+      # And then use mem and everything.
+
+      assert node.op.id == Id.Arith_Equal, node.op
+
+      lval = self.expr_ev.EvalLHS(node.lhs)
+      py_val = self.expr_ev.EvalRHS(node.rhs)
+      val = value.Str(str(py_val))
+      flags = ()
+      self.mem.SetVar(lval, val, flags, scope_e.LocalOnly)
+
+      status = 0  # TODO: what should status be?
+
     elif node.tag == command_e.Assignment:
       # TODO: Also do dynamic assignment here
       flags = word_compile.ParseAssignFlags(node.flags)
@@ -1137,7 +1153,7 @@ class Executor(object):
         command_e.NoOp, command_e.Assignment, command_e.ControlFlow,
         command_e.Pipeline, command_e.AndOr, command_e.CommandList,
         command_e.Sentence, command_e.TimeBlock,
-        command_e.FuncDef
+        command_e.FuncDef, command_e.OilAssign,
         ):
       redirects = []
     else:

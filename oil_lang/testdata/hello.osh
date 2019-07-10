@@ -1,0 +1,13 @@
+
+echo 'This is a shell script with OSH extensions!'
+echo
+
+var x = 1 + 2*3
+
+echo "x: $x"
+
+
+# TODO:
+# - Mutate variables
+# - Demo lists and dicts
+
