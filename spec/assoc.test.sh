@@ -27,11 +27,18 @@ echo ${d['foo']}
 #### retrieve indices with !
 declare -A a
 #a=([aa]=b [foo]=bar ['a+1']=c)
-a[aa]=b
-a[foo]=bar
+var='x'
+a["$var"]=b
+a['foo']=bar
 a['a+1']=c
-argv.py "${!a[@]}"
-## stdout: ['foo', 'aa', 'a+1']
+for key in "${!a[@]}"; do
+  echo $key
+done | sort
+## STDOUT:
+a+1
+foo
+x
+## END
 
 #### $a gives nothing
 declare -A a
