@@ -9,8 +9,9 @@ from _devbuild.gen.syntax_asdl import (
     expr_e, oil_word_part_e
 )
 from _devbuild.gen.runtime_asdl import (
-    lvalue, value_e
+    lvalue, value_e, scope_e,
 )
+from core.util import e_die
 
 
 class OilEvaluator(object):
@@ -26,11 +27,17 @@ class OilEvaluator(object):
     self.mem = mem
     self.errfmt = errfmt
 
-  def ToAny(self, val):
+  def LookupVar(self, var_name):
     """Convert to a Python object so we can calculate on it natively."""
+
+    # Lookup WITHOUT dynamic scope.
+    val = self.mem.GetVar(var_name, lookup_mode=scope_e.LocalOnly)
     if val.tag == value_e.Undef:
-      # TODO: e_die with token
-      raise NameError('undefined')
+      val = self.mem.GetVar(var_name, lookup_mode=scope_e.GlobalOnly)
+      if val.tag == value_e.Undef:
+        # TODO: Location info
+        e_die('Undefined variable %r', var_name)
+
     if val.tag == value_e.Str:
       return val.s
     if val.tag == value_e.StrArray:
@@ -81,8 +88,7 @@ class OilEvaluator(object):
       return int(node.c.val)
 
     if node.tag == expr_e.Var:
-      val = self.mem.GetVar(node.name.val)
-      return self.ToAny(val)
+      return self.LookupVar(node.name.val)
 
     if node.tag == expr_e.DoubleQuoted:
       s = ''.join(self.EvalWordPart(part) for part in node.parts)

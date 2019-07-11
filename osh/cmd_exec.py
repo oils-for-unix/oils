@@ -777,8 +777,7 @@ class Executor(object):
         self.mem.SetVar(lval, val, flags, scope_e.LocalOnly)
 
       elif node.op.id == Id.Arith_PlusEqual:
-        old_val = self.mem.GetVar(lval.name)
-        old_py_val = self.expr_ev.ToAny(old_val)
+        old_py_val = self.expr_ev.LookupVar(lval.name)
 
         val = value.Obj(old_py_val + py_val)
         flags = ()

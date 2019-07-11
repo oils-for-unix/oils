@@ -1,0 +1,23 @@
+global_var=global
+
+g() {
+  local g_var=f
+  echo $g_var
+  echo $f_var
+
+  var oil_var = global_var
+  echo $oil_var
+
+  # should not work!
+  var oil_var = f_var
+  echo $oil_var
+}
+
+f() {
+  local f_var=f
+  echo $f_var
+  g
+}
+
+f
+
