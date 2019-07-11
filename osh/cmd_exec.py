@@ -772,7 +772,7 @@ class Executor(object):
 
       lval = self.expr_ev.EvalLHS(node.lhs)
       py_val = self.expr_ev.EvalRHS(node.rhs)
-      val = value.Str(str(py_val))
+      val = value.Obj(py_val)
       flags = ()
       self.mem.SetVar(lval, val, flags, scope_e.LocalOnly)
 

@@ -30,6 +30,8 @@ module runtime
   | Str(string s)
   | StrArray(string* strs)
   | AssocArray(dict d)
+    -- A Python-style object.  'any' is not currently type checked.
+  | Obj(any obj)
 
   -- For Oil?
   -- | ArrayInt(int* array_int)

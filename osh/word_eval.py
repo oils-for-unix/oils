@@ -52,6 +52,9 @@ def _ValueToPartValue(val, quoted):
     # TODO: Is this correct?
     return part_value.Array(val.d.values())
 
+  elif val.tag == value_e.Obj:
+    return part_value.String(repr(val.obj), quoted, not quoted)
+
   else:
     # Undef should be caught by _EmptyStrOrError().
     raise AssertionError(val.__class__.__name__)

@@ -55,6 +55,10 @@ class OilEvaluator(object):
     if node.tag == expr_e.Const:
       return int(node.c.val)
 
+    if node.tag == expr_e.Var:
+      val = self.mem.GetVar(node.name.val)
+      return val.obj
+
     if node.tag == expr_e.Binary:
       left = self.EvalRHS(node.left)
       right = self.EvalRHS(node.right)
@@ -69,5 +73,15 @@ class OilEvaluator(object):
         return left * right
 
       raise NotImplementedError(node.op.id)
+
+    if node.tag == expr_e.List:
+      return [self.EvalRHS(e) for e in node.elts]
+
+    if node.tag == expr_e.Subscript:
+      collection = self.EvalRHS(node.collection)
+
+      # TODO: handle multiple indices like a[i, j]
+      index = self.EvalRHS(node.indices[0])
+      return collection[index]
 
     raise NotImplementedError(node.__class__.__name__)

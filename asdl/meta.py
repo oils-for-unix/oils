@@ -109,5 +109,9 @@ BUILTIN_TYPES = {
     'int': IntType(),
     'bool': BoolType(),
     'dict': DictType(),
+
+    # TODO: This is a hack for the Oil expression evaluator.  We're not doing
+    # any dynamic or static checking now.
+    'any': StrType(),
 }
 

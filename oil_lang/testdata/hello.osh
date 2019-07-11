@@ -6,8 +6,14 @@ var x = 1 + 2*3
 
 echo "x: $x"
 
+var mylist = [1, 2, 3]
+
+var y = mylist[1] * 10
+
+echo "y: $y"
+
 
 # TODO:
 # - Mutate variables
-# - Demo lists and dicts
+# - Demo dicts
 
