@@ -88,6 +88,7 @@ module runtime
   | TEST | BRACKET | GETOPTS
   | COMMAND | TYPE | HASH | HELP | HISTORY
   | DECLARE | TYPESET | ALIAS | UNALIAS
+  | BIND
   | REPR
   | BUILTIN
 
