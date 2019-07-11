@@ -6,6 +6,11 @@ var x = 1 + 2*3
 
 echo "x: $x"
 
+# NOTE: we will take over 'set'
+setvar x += 1   
+
+echo "x: $x"
+
 var mylist = [1, 2, 3]
 
 var y = mylist[1] * 10
@@ -31,7 +36,18 @@ echo "str3 = $str3"
 
 
 
+#var f1 = 1.23
+#var f2 = 3.45
+
+
+
 # TODO:
-# - Mutate variables
-# - Demo dicts
+# - lexing
+#   - single-quoted strings
+#   - floats 
+# - parsing
+#   - dicts
+#   - comments at end of line
+# - eval
+#   - Mutate variables with 'setvar'
 

@@ -768,13 +768,24 @@ class Executor(object):
       # TODO: maybe pick out LHS and RHS here.
       # And then use mem and everything.
 
-      assert node.op.id == Id.Arith_Equal, node.op
-
       lval = self.expr_ev.EvalLHS(node.lhs)
       py_val = self.expr_ev.EvalRHS(node.rhs)
-      val = value.Obj(py_val)
-      flags = ()
-      self.mem.SetVar(lval, val, flags, scope_e.LocalOnly)
+
+      if node.op.id == Id.Arith_Equal:
+        val = value.Obj(py_val)
+        flags = ()
+        self.mem.SetVar(lval, val, flags, scope_e.LocalOnly)
+
+      elif node.op.id == Id.Arith_PlusEqual:
+        old_val = self.mem.GetVar(lval.name)
+        old_py_val = self.expr_ev.ToAny(old_val)
+
+        val = value.Obj(old_py_val + py_val)
+        flags = ()
+        self.mem.SetVar(lval, val, flags, scope_e.LocalOnly)
+
+      else:
+        raise NotImplementedError(node.op)
 
       status = 0  # TODO: what should status be?
 

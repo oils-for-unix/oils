@@ -26,6 +26,20 @@ class OilEvaluator(object):
     self.mem = mem
     self.errfmt = errfmt
 
+  def ToAny(self, val):
+    """Convert to a Python object so we can calculate on it natively."""
+    if val.tag == value_e.Undef:
+      # TODO: e_die with token
+      raise NameError('undefined')
+    if val.tag == value_e.Str:
+      return val.s
+    if val.tag == value_e.StrArray:
+      return val.strs  # node: has None
+    if val.tag == value_e.AssocArray:
+      return val.d
+    if val.tag == value_e.Obj:
+      return val.obj
+
   def EvalLHS(self, node):
     if 0:
       print('EvalLHS()')
@@ -68,17 +82,7 @@ class OilEvaluator(object):
 
     if node.tag == expr_e.Var:
       val = self.mem.GetVar(node.name.val)
-      if val.tag == value_e.Undef:
-        # TODO: e_die with token
-        raise NameError('undefined')
-      if val.tag == value_e.Str:
-        return val.s
-      if val.tag == value_e.StrArray:
-        return val.strs  # node: has None
-      if val.tag == value_e.AssocArray:
-        return val.d
-      if val.tag == value_e.Obj:
-        return val.obj
+      return self.ToAny(val)
 
     if node.tag == expr_e.DoubleQuoted:
       s = ''.join(self.EvalWordPart(part) for part in node.parts)
