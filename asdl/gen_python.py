@@ -51,6 +51,9 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     elif isinstance(desc, meta.StrType):
       code_str = 'PrettyLeaf(%s, Color_StringConst)' % var_name
 
+    elif isinstance(desc, meta.AnyType):
+      code_str = 'PrettyLeaf(str(%s), Color_OtherConst)' % var_name
+
     elif isinstance(desc, meta.DictType):
       # Dicts are used for AssocArray in osh/runtime.asdl
       # I think it makes sense to treat it as a leaf.
@@ -144,6 +147,9 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
       elif isinstance(field_desc, meta.StrType):
         type_str = 'str'
+
+      elif isinstance(field_desc, meta.AnyType):
+        type_str = 'Any'
 
       elif isinstance(field_desc, meta.UserType):
         type_str = field_desc.type_name

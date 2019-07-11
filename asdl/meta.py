@@ -15,6 +15,11 @@ class _RuntimeType(object):
   pass
 
 
+class AnyType(_RuntimeType):
+  def __repr__(self):
+    return '<Any>'
+
+
 class StrType(_RuntimeType):
   def __repr__(self):
     return '<Str>'
@@ -112,6 +117,6 @@ BUILTIN_TYPES = {
 
     # TODO: This is a hack for the Oil expression evaluator.  We're not doing
     # any dynamic or static checking now.
-    'any': StrType(),
+    'any': AnyType(),
 }
 

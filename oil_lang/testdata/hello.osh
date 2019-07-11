@@ -12,6 +12,24 @@ var y = mylist[1] * 10
 
 echo "y: $y"
 
+var list2 = mylist + [4, 5]
+
+# This prints [1,2,3,4,5], not sure if we want a different representation
+echo $list2
+
+# This is a more explicit representation.
+repr list2
+
+str1='shell string'  # traditinoal shell-style assignment
+
+# Oil assignment
+var str2 = "Oil string"
+
+var str3 = str1 + str2
+
+echo "str3 = $str3"
+
+
 
 # TODO:
 # - Mutate variables

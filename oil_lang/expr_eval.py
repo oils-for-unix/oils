@@ -4,14 +4,12 @@ expr_eval.py
 """
 from __future__ import print_function
 
-import sys
-
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    expr_e,
+    expr_e, oil_word_part_e
 )
 from _devbuild.gen.runtime_asdl import (
-    lvalue, value
+    lvalue, value_e
 )
 
 
@@ -42,10 +40,23 @@ class OilEvaluator(object):
 
       raise NotImplementedError(node.__class__.__name__)
 
+  def EvalWordPart(self, part):
+    """
+    TODO: We might not want oil_word_part_e?  Just use OSH word_part?
+    """
+    if part.tag == oil_word_part_e.Literal:
+      return part.token.val
+
+    raise NotImplementedError(part.__class__.__name__)
+
   def EvalRHS(self, node):
     """
     This is a naive PyObject evaluator!  It uses the type dispatch of the host
     Python interpreter.
+
+    Returns:
+      A Python object of ANY type.  Should be wrapped in value.Obj() for
+      storing in Mem.
     """
     if 0:
       print('EvalRHS()')
@@ -57,7 +68,21 @@ class OilEvaluator(object):
 
     if node.tag == expr_e.Var:
       val = self.mem.GetVar(node.name.val)
-      return val.obj
+      if val.tag == value_e.Undef:
+        # TODO: e_die with token
+        raise NameError('undefined')
+      if val.tag == value_e.Str:
+        return val.s
+      if val.tag == value_e.StrArray:
+        return val.strs  # node: has None
+      if val.tag == value_e.AssocArray:
+        return val.d
+      if val.tag == value_e.Obj:
+        return val.obj
+
+    if node.tag == expr_e.DoubleQuoted:
+      s = ''.join(self.EvalWordPart(part) for part in node.parts)
+      return s
 
     if node.tag == expr_e.Binary:
       left = self.EvalRHS(node.left)
