@@ -937,7 +937,8 @@ class Mem(object):
                                  var_flags_e.AssocArray in new_flags)
         namespace[lval.name] = cell
 
-      if (cell.val is not None and cell.val.tag == value_e.StrArray and
+      if (cell.val is not None and
+          cell.val.tag not in (value_e.Undef, value_e.Str) and
           cell.exported):
         e_die("Can't export array")  # TODO: error context
 

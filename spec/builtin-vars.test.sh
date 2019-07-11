@@ -10,7 +10,10 @@ f() { export GLOBAL=X; }
 f
 echo $GLOBAL
 printenv.py GLOBAL
-## stdout-json: "X\nX\n"
+## STDOUT:
+X
+X
+## END
 
 #### Export sets a global variable that persists after export -n
 f() { export GLOBAL=X; }
@@ -55,16 +58,24 @@ f
 echo $GLOBAL
 printenv.py GLOBAL
 unset GLOBAL
-echo $GLOBAL
+echo g=$GLOBAL
 printenv.py GLOBAL
-## stdout-json: "X\nX\n\nNone\n"
+## STDOUT: 
+X
+X
+g=
+None
+## END
 
 #### Export existing global variables
 G1=g1
 G2=g2
 export G1 G2
 printenv.py G1 G2
-## stdout-json: "g1\ng2\n"
+## STDOUT: 
+g1
+g2
+## END
 
 #### Export existing local variable
 f() {
@@ -74,7 +85,10 @@ f() {
 }
 f
 printenv.py L1
-## stdout-json: "local1\nNone\n"
+## STDOUT: 
+local1
+None
+## END
 
 #### Export a local that shadows a global
 V=global
@@ -87,13 +101,33 @@ f
 printenv.py V  # exported local out of scope; global isn't exported yet
 export V
 printenv.py V  # now it's exported
-## stdout-json: "local1\nNone\nglobal\n"
+## STDOUT: 
+local1
+None
+global
+## END
 
 #### Export a variable before defining it
 export U
 U=u
 printenv.py U
 ## stdout: u
+
+#### Unset exported variable, then define it again.  It's NOT still exported.
+export U
+U=u
+printenv.py U
+unset U
+printenv.py U
+U=newvalue
+echo $U
+printenv.py U
+## STDOUT:
+u
+None
+newvalue
+None
+## END
 
 #### Exporting a parent func variable (dynamic scope)
 # The algorithm is to walk up the stack and export that one.
@@ -111,7 +145,14 @@ outer() {
   printenv.py outer_var
 }
 outer
-## stdout-json: "before inner\nNone\ninner: X\nX\nafter inner\nX\n"
+## STDOUT:
+before inner
+None
+inner: X
+X
+after inner
+X
+## END
 
 #### Dependent export setting
 # FOO is not respected here either.
@@ -125,6 +166,35 @@ export PATH
 new=$PATH
 test "$old" = "$new" && echo "not changed"
 ## stdout: not changed
+
+#### can't export array
+typeset -a a
+a=(1 2 3)
+export a
+printenv.py a
+## STDOUT:
+None
+## END
+## BUG mksh STDOUT:
+1
+## END
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+## OK osh status: 1
+## OK osh stdout-json: ""
+
+#### can't export associative array
+typeset -A a
+a["foo"]=bar
+export a
+printenv.py a
+## STDOUT:
+None
+## END
+## N-I mksh status: 1
+## N-I mksh stdout-json: ""
+## OK osh status: 1
+## OK osh stdout-json: ""
 
 #### assign to readonly variable
 # bash doesn't abort unless errexit!
@@ -149,7 +219,10 @@ foo=bar
 echo foo=$foo
 unset foo
 echo foo=$foo
-## stdout-json: "foo=bar\nfoo=\n"
+## STDOUT:
+foo=bar
+foo=
+## END
 
 #### Unset exit status
 V=123
@@ -197,7 +270,10 @@ foo=bar
 echo foo=$foo
 f
 echo foo=$foo
-## stdout-json: "foo=bar\nfoo=\n"
+## STDOUT:
+foo=bar
+foo=
+## END
 
 #### Unset invalid variable name
 unset %
@@ -230,7 +306,10 @@ foo=bar
 unset -v foo
 echo foo=$foo
 foo
-## stdout-json: "foo=\nfunction foo\n"
+## STDOUT: 
+foo=
+function foo
+## END
 
 #### Unset -f
 foo() {
@@ -241,7 +320,10 @@ unset -f foo
 echo foo=$foo
 foo
 echo status=$?
-## stdout-json: "foo=bar\nstatus=127\n"
+## STDOUT: 
+foo=bar
+status=127
+## END
 
 #### Unset array member
 a=(x y z)
