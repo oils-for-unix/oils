@@ -177,3 +177,25 @@ argv.py ${a[@]: 5: 3}
 ['3']
 ## END
 ## BUG bash status: 0
+
+#### bash variable can have an associative array part and a string part
+
+# and $assoc is equivalent to ${assoc[0]}, just like regular arrays
+declare -A assoc
+assoc[1]=1
+assoc[2]=2
+echo ${assoc[1]} ${assoc[2]} ${assoc}
+assoc[0]=zero
+echo ${assoc[1]} ${assoc[2]} ${assoc}
+assoc=string
+echo ${assoc[1]} ${assoc[2]} ${assoc}
+## STDOUT:
+1 2
+1 2 zero
+1 2 string
+## END
+## N-I osh STDOUT:
+1 2 1 2
+1 2 1 zero 2
+## END
+## N-I osh status: 1

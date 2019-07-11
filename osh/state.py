@@ -923,15 +923,22 @@ class Mem(object):
         if var_flags_e.ReadOnly in new_flags:
           cell.readonly = True
         if var_flags_e.AssocArray in new_flags:
-          cell.is_assoc_array = True
+          # doesn't do anything
+          #cell.is_assoc_array = True
+          pass
       else:
         if val is None:
           # set -o nounset; local foo; echo $foo  # It's still undefined!
           val = value.Undef()  # export foo, readonly foo
+
+        if var_flags_e.AssocArray in new_flags:
+          val = value.AssocArray({})
+
         cell = runtime_asdl.cell(val,
                                  var_flags_e.Exported in new_flags,
                                  var_flags_e.ReadOnly in new_flags,
-                                 var_flags_e.AssocArray in new_flags)
+                                 #var_flags_e.AssocArray in new_flags)
+                                 False)
         namespace[lval.name] = cell
 
       if (cell.val is not None and
@@ -1115,6 +1122,11 @@ class Mem(object):
       return cell.val
 
     return value.Undef()
+
+  def GetCell(self, name):
+    """For the 'repr' builtin."""
+    cell, _ = self._FindCellAndNamespace(name, scope_e.Dynamic)
+    return cell
 
   def Unset(self, lval, lookup_mode):
     """

@@ -1722,11 +1722,10 @@ class Repr(object):
         raise args.UsageError('got invalid variable name %r' % name,
                               span_id=arg_vec.spids[i])
 
-      # TODO: Should we print the variable's flags too?
-      val = self.mem.GetVar(name)
-      if val.tag == value_e.Undef:
+      cell = self.mem.GetCell(name)
+      if cell is None:
         print('%r is not defined' % name)
         status = 1
       else:
-        print('%s = %s' % (name, val))
+        print('%s = %s' % (name, cell))
     return status

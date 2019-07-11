@@ -262,9 +262,6 @@ class ArithEvaluator(_ExprEvaluator):
         self.errfmt.PrettyPrintError(e, prefix='warning: ')
     return i
 
-  def _LookupVar(self, name):
-    return _LookupVar(name, self.mem, self.exec_opts)
-
   def _EvalLhsAndLookupArith(self, node):
     """
     Args:
@@ -327,7 +324,7 @@ class ArithEvaluator(_ExprEvaluator):
 
     if node.tag == arith_expr_e.ArithVarRef:  # $(( x ))  (can be array)
       tok = node.token
-      val = self._LookupVar(tok.val)
+      val = _LookupVar(tok.val, self.mem, self.exec_opts)
       return self._ValToArithOrError(val, int_coerce=int_coerce,
                                      span_id=tok.span_id)
 
