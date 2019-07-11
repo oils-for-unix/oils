@@ -465,8 +465,10 @@ class _WordEvaluator(object):
       elif val.tag == value_e.StrArray:
         indices = [str(i) for i, s in enumerate(val.strs) if s is not None]
         return value.StrArray(indices)
-      else:
-        raise AssertionError
+
+      elif val.tag == value_e.AssocArray:
+        indices = [str(k) for k in val.d]
+        return value.StrArray(indices)
 
     else:
       raise AssertionError(op_id)

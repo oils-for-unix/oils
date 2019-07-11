@@ -26,9 +26,11 @@ echo ${d['foo']}
 
 #### retrieve indices with !
 declare -A a
-a=([aa]=b [foo]=bar ['a+1']=c)
+#a=([aa]=b [foo]=bar ['a+1']=c)
+a[aa]=b
+a[foo]=bar
+a['a+1']=c
 argv.py "${!a[@]}"
-# Is this invalid on associative arrays?  Makes no sense.
 ## stdout: ['foo', 'aa', 'a+1']
 
 #### $a gives nothing
@@ -93,6 +95,33 @@ declare -A d
 d[a]="${array[@]}"
 argv.py "${d[a]}"
 ## stdout: ['1 2 3']
+
+#### Using indexed array as key of associative array coerces to string
+declare -a array=(1 2 3)
+declare -A assoc
+assoc[42]=43
+assoc["${array[@]}"]=foo
+echo "${assoc["${array[@]}"]}"
+argv "${!assoc[@]}"
+# TODO: This should fail!
+## status: 1
+## BUG bash status: 0
+## BUG bash STDOUT:
+foo
+['1 2 3', '42']
+##
+
+#### Using indexed array as key of associative array coerces to string
+declare -a array=(1 2 3)
+declare -A assoc
+assoc[42]=43
+assoc[array]=foo
+echo "${assoc[array]}"
+argv "${!assoc[@]}"
+## STDOUT:
+foo
+['array', '42']
+##
 
 #### Can't initialize assoc array with indexed array
 declare -A A=(1 2 3)
