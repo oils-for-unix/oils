@@ -816,15 +816,12 @@ class Mem(object):
   # Named Vars
   #
 
-  def _FindCellAndNamespace(self, name, lookup_mode, writing=True):
+  def _FindCellAndNamespace(self, name, lookup_mode):
     """Helper for getting and setting variable.
-
-    Need a mode to skip Temp scopes.  For Setting.
 
     Args:
       name: the variable name
       lookup_mode: scope_e
-      writing: Is this lookup for a read or a write?
 
     Returns:
       cell: The cell corresponding to looking up 'name' with the given mode, or
@@ -1112,7 +1109,7 @@ class Mem(object):
       self.source_name.s = self.arena.GetLineSourceString(span.line_id)
       return self.source_name
 
-    cell, _ = self._FindCellAndNamespace(name, lookup_mode, writing=False)
+    cell, _ = self._FindCellAndNamespace(name, lookup_mode)
 
     if cell:
       return cell.val
