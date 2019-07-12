@@ -628,6 +628,12 @@ class BoolEvaluator(_ExprEvaluator):
         if op_id == Id.BoolUnary_s:
           return st.st_size != 0
 
+        if op_id == Id.BoolUnary_O:
+          return st.st_uid == posix.geteuid()
+
+        if op_id == Id.BoolUnary_G:
+          return st.st_gid == posix.getegid()
+
         e_die("%s isn't implemented", op_id)  # implicit location
 
       if arg_type == bool_arg_type_e.Str:

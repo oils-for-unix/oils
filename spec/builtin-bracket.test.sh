@@ -334,6 +334,25 @@ status=0
 status=1
 ## END
 
+#### -G and -O for effective user ID and group ID
+
+test -O bin
+echo status=$?
+test -O __nonexistent__
+echo status=$?
+
+test -G bin
+echo status=$?
+test -G __nonexistent__
+echo status=$?
+
+## STDOUT:
+status=0
+status=1
+status=0
+status=1
+## END
+
 #### test -o for options
 # note: it's lame that the 'false' case is confused with the 'typo' case.
 # but checking for error code 2 is unlikely anyway.

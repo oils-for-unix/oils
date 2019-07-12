@@ -14,6 +14,7 @@ static PyMethodDef posix_methods[] = {
   {"execv", posix_execv, METH_VARARGS},
   {"execve", posix_execve, METH_VARARGS},
   {"fork", posix_fork, METH_NOARGS},
+  {"getegid", posix_getegid, METH_NOARGS},
   {"geteuid", posix_geteuid, METH_NOARGS},
   {"getpid", posix_getpid, METH_NOARGS},
   {"getuid", posix_getuid, METH_NOARGS},
