@@ -12,7 +12,7 @@
 # Other settings: LTO, PGO?  Consider moving prefix, LTO, PGO to build and
 # install steps.
 
-TMP=${TMP:-/tmp}  # Assume that any system has $TMP set or /tmp exists
+TMP=${TMPDIR:-/tmp}  # Assume that any system has $TMPDIR set or /tmp exists
 readonly TMP  # POSIX sh supports 'readonly'
 
 log() {
@@ -66,7 +66,10 @@ while true; do
       ;;
 
     --readline=*)
-      FLAG_readline=$(expr "$1" : '--readline=\(.*\)')
+      # \( is required for non-GNU expr, which doesn't like leading dashes
+      # See https://www.freebsd.org/cgi/man.cgi?query=expr&sektion=&n=1,
+      # specifically the section on 'Compatibility with previous implementations'
+      FLAG_readline=$(expr \( "$1" : '--readline=\(.*\)' \) )
       ;;
     --readline)
       if test $# -eq 1; then

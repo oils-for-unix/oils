@@ -165,6 +165,7 @@ BASE_LDFLAGS=''
 # The user should be able to customize CFLAGS, but it shouldn't disable what's
 # in BASE_CFLAGS.
 readonly CFLAGS=${CFLAGS:-}
+readonly LDFLAGS=${LDFLAGS:-}
 
 build() {
   local out=${1:-$PY27/ovm2}
@@ -223,6 +224,7 @@ build() {
     Modules/ovm.c \
     -l m \
     ${BASE_LDFLAGS} \
+    ${LDFLAGS} \
     $readline_flags \
     "$@" \
     || true
