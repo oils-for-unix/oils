@@ -878,6 +878,8 @@ class Executor(object):
         # false; echo $?; local f=x; echo $?
 
     elif node.tag == command_e.ControlFlow:
+      tok = node.token
+
       if node.arg_word:  # Evaluate the argument
         val = self.word_ev.EvalWordToString(node.arg_word)
         assert val.tag == value_e.Str
@@ -887,12 +889,14 @@ class Executor(object):
           e_die('%r expected a number, got %r',
               node.token.val, val.s, word=node.arg_word)
       else:
-        arg = 0  # return 0, exit 0, break 0 levels, etc.
+        if tok.id in (Id.ControlFlow_Exit, Id.ControlFlow_Return):
+          arg = self.mem.LastStatus()
+        else:
+          arg = 0  # break 0 levels, nothing for continue
 
       # NOTE: A top-level 'return' is OK, unlike in bash.  If you can return
       # from a sourced script, it makes sense to return from a main script.
       ok = True
-      tok = node.token
       if (tok.id in (Id.ControlFlow_Break, Id.ControlFlow_Continue) and
           self.loop_level == 0):
         ok = False

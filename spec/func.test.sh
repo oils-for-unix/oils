@@ -70,3 +70,14 @@ f
 echo "[$mylocal $myglobal]"
 ## stdout-json: "[L G]\n[ G]\n"
 ## status: 0
+
+#### Return without args gives previous
+f() {
+  ( exit 42 )
+  return
+}
+f
+echo status=$?
+## STDOUT:
+status=42
+## END
