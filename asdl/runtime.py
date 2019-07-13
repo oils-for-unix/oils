@@ -136,9 +136,13 @@ class PrettyLeaf(_PrettyBase):
 
   def __init__(self, s, e_color):
     # type: (Optional[str], int) -> None
-    assert isinstance(s, str), s
-    self.s = s
-    self.e_color = e_color
+    if s is None:  # hack for repr of StrArray, which can have 'None'
+      self.s = '_'
+      self.e_color = Color_OtherConst
+    else:
+      assert isinstance(s, str), s
+      self.s = s
+      self.e_color = e_color
 
   def __repr__(self):
     # type: () -> str

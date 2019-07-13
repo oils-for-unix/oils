@@ -20,10 +20,10 @@ status=1
 
 #### repr on indexed array with hole
 declare -a array
-array[5]=5
+array[3]=42
 repr array
 ## STDOUT:
-a
+array = (cell val:(value.StrArray strs:[_ _ _ 42]) exported:F readonly:F)
 ## END
 
 
