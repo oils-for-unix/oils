@@ -40,11 +40,13 @@ foo
 x
 ## END
 
-#### $a gives nothing
+#### ${assoc} disallowed in OSH, like ${assoc[0]} in bash
 declare -A a
 a=([aa]=b [foo]=bar ['a+1']=c)
 echo "${a}"
 ## stdout-json: "\n"
+## OK osh stdout-json: ""
+## OK osh status: 1
 
 #### length of dict does not work
 declare -A a

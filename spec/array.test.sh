@@ -147,13 +147,17 @@ argv.py "${!a[1]}"
 ## stdout: ['bar']
 ## N-I mksh stdout: ['a[1]']
 
-#### ${!a} on array (TODO: OSH should disallow)
-# bash gives empty string?
+#### ${!a} on array is disallowed
+# bash gives empty string because it's like a[0]
 # mksh gives the name of the variable with !.  Very weird.
 a=(1 '2 3')
 argv.py "${!a}"
-## stdout: ['']
-## OK mksh stdout: ['a']
+## stdout-json: ""
+## status: 1
+## BUG bash stdout: ['']
+## BUG bash status: 0
+## BUG mksh stdout: ['a']
+## BUG mksh status: 0
 
 #### All elements unquoted
 a=(1 '2 3')
@@ -373,16 +377,18 @@ default=('1 2' '3')
 argv.py "${undef[@]:-${default[@]}}"
 ## stdout: ['1 2', '3']
 
-#### Singleton Array Copy and Assign.  Can't index string with int.
+#### Singleton Array Copy and Assign.  OSH can't index strings with ints
 a=( '12 3' )
 b=( "${a[@]}" )
 c="${a[@]}"  # This decays it to a string
-d=$a  # This decays it to a string
+d=${a[*]}  # This decays it to a string
 echo ${#a[0]} ${#b[0]}
 echo ${#a[@]} ${#b[@]}
-# osh is intentionally stricter about arrays, and these fail.
+
+# osh is intentionally stricter, and these fail.
 echo ${#c[0]} ${#d[0]}
 echo ${#c[@]} ${#d[@]}
+
 ## status: 1
 ## STDOUT:
 4 4
@@ -469,6 +475,7 @@ argv.py "${a[@]:15:2}"
 
 #### Using an array itself as the index
 # TODO: Fix OSH crash.
+shopt -u strict-arith
 a[a]=42
 a[a]=99
 argv "${a[@]}" "${a[0]}" "${a[42]}" "${a[99]}"

@@ -548,12 +548,12 @@ arith-context() {
 }
 
 array() {
-  sh-spec spec/array.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/array.test.sh --osh-failures-allowed 2 \
     $BASH $MKSH $OSH_LIST "$@"
 }
 
 array-compat() {
-  sh-spec spec/array-compat.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/array-compat.test.sh \
     $BASH $MKSH $OSH_LIST "$@"
 }
 

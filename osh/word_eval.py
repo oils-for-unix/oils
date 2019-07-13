@@ -662,6 +662,12 @@ class _WordEvaluator(object):
       else:
         raise AssertionError(part.bracket_op.tag)
 
+    else:  # no bracket op
+      # When the array is "$@", var_name is None
+      if var_name and val.tag in (value_e.StrArray, value_e.AssocArray):
+        e_die("Array %r can't be referred to as a scalar (without @ or *)",
+              var_name, part=part)
+
     if part.prefix_op:
       val = self._EmptyStrOrError(val)  # maybe error
       val = self._ApplyPrefixOp(val, part.prefix_op, token=part.token)
@@ -862,6 +868,10 @@ class _WordEvaluator(object):
       if part.token.id == Id.VSub_DollarName:
         var_name = part.token.val[1:]
         val = self.mem.GetVar(var_name)
+        if val.tag in (value_e.StrArray, value_e.AssocArray):
+          e_die("Array %r can't be referred to as a scalar (without @ or *)",
+                var_name, part=part)
+
       elif part.token.id == Id.VSub_Number:
         var_num = int(part.token.val[1:])
         val = self._EvalVarNum(var_num)

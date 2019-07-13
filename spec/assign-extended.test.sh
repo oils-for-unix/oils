@@ -214,7 +214,7 @@ lib/
 
 #### Multiple assignments / array assignments on a line
 a=1 b[0+0]=2 c=3
-echo $a $b $c
+echo $a ${b[@]} $c
 ## stdout: 1 2 3
 
 #### Env bindings shouldn't contain array assignments

@@ -35,10 +35,23 @@ argv.py "${c[@]}"
 ['x', 'YYY', 'z']
 ## END
 
-#### $a gives first element of array (TODO: osh should disallow)
+#### $array is not valid in OSH, is ${array[0]} in ksh/bash
 a=(1 '2 3')
 echo $a
-## stdout: 1
+## STDOUT:
+1
+## END
+## OK osh status: 1
+## OK osh stdout-json: ""
+
+#### ${array} is not valid in OSH, is ${array[0]} in ksh/bash
+a=(1 '2 3')
+echo ${a}
+## STDOUT:
+1
+## END
+## OK osh status: 1
+## OK osh stdout-json: ""
 
 #### Assign to array index without initialization
 a[5]=5
