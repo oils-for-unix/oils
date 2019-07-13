@@ -771,6 +771,12 @@ class _WordEvaluator(object):
               strs.append(replacer.Replace(s, op))
           val = value.StrArray(strs)
 
+        elif val.tag == value_e.AssocArray:
+          strs = []
+          for s in val.d.itervalues():
+            strs.append(replacer.Replace(s, op))
+          val = value.StrArray(strs)
+
         else:
           raise AssertionError(val.__class__.__name__)
 
