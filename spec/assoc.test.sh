@@ -26,6 +26,24 @@ bar
 c
 ## END
 
+#### set associative array to indexed array literal (bash anomaly)
+declare -A assoc=([k1]=foo [k2]='spam eggs')
+argv.py "${assoc[@]}"
+argv.py "${!assoc[@]}"
+
+# shouldn't this be disallowed?  You're losing information.
+
+assoc=(foo 'spam eggs')
+argv.py "${assoc[@]}"
+argv.py "${!assoc[@]}"
+
+## STDOUT:
+['foo', 'spam eggs']
+['k1', 'k2']
+[]
+[]
+## END
+
 #### create empty assoc array, put, then get
 declare -A A  # still undefined
 argv.py "${A[@]}"

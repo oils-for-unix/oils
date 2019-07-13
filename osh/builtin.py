@@ -1727,5 +1727,7 @@ class Repr(object):
         print('%r is not defined' % name)
         status = 1
       else:
-        print('%s = %s' % (name, cell))
+        sys.stdout.write('%s = ' % name)
+        cell.PrettyPrint()  # may be color
+        sys.stdout.write('\n')
     return status

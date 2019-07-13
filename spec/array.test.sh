@@ -482,3 +482,19 @@ argv "${a[@]}" "${a[0]}" "${a[42]}" "${a[99]}"
 ## STDOUT:
 ['42', '99', '42', '99', '']
 ## END
+
+#### a[$x$y] on LHS and RHS
+x=1
+y=2
+a[$x$y]=foo
+
+# not allowed by OSH parsing
+#echo ${a[$x$y]}
+
+echo ${a[12]}
+echo ${#a[@]}
+
+## STDOUT:
+foo
+1
+## END

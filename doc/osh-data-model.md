@@ -191,6 +191,8 @@ Note that since a for loop takes an array of words, evaluating/splicing works:
     a['x'] a["x"]
     a["$x"]
     a[$x]
+    a[${x}]
+    a[${x#a}]
 
     a[x] -- allowed
     A[x] -- NOT allowed?  It should be a string
