@@ -796,7 +796,8 @@ class Executor(object):
           assert pair.rhs, pair.rhs  # I don't think a+= is valid?
           val = self.word_ev.EvalRhsWord(pair.rhs)
           old_val, lval = expr_eval.EvalLhsAndLookup(pair.lhs, self.arith_ev,
-                                                     self.mem, self.exec_opts)
+                                                     self.mem, self.exec_opts,
+                                                     lookup_mode=lookup_mode)
           sig = (old_val.tag, val.tag)
           if sig == (value_e.Undef, value_e.Str):
             pass  # val is RHS

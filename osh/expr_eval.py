@@ -152,7 +152,8 @@ def EvalLhs(node, arith_ev, mem, spid, lookup_mode):
   raise AssertionError(node.tag)
 
 
-def EvalLhsAndLookup(node, arith_ev, mem, exec_opts):
+def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
+                     lookup_mode=scope_e.Dynamic):
   """Evaluate the operand for i++, a[0]++, i+=2, a[0]+=2 as an R-value.
 
   Also used by the Executor for s+='x' and a[42]+='x'.
@@ -164,6 +165,7 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts):
     value_t, lvalue_t
   """
   #log('lhs_expr NODE %s', node)
+
   assert isinstance(node, lhs_expr_t), node
 
   if node.tag == lhs_expr_e.LhsName:  # a = b
@@ -179,10 +181,12 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts):
     # - FuncCall: f(x), 1
     # - ArithBinary LBracket: f[1][1] -- no semantics for this?
 
-    index = arith_ev.Eval(node.index)
+    int_coerce = not mem.IsAssocArray(node.name, lookup_mode)
+    index = arith_ev.Eval(node.index, int_coerce=int_coerce)
     lval = lvalue.LhsIndexedName(node.name, index)
 
     val = mem.GetVar(node.name)
+
     if val.tag == value_e.Str:
       e_die("Can't assign to characters of string %r", node.name)
 
@@ -196,21 +200,26 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts):
       array = val.strs
       # NOTE: Similar logic in RHS Arith_LBracket
       try:
-        item = array[index]
+        s = array[index]
       except IndexError:
-        item = None
+        s = None
 
-      if item is None:
-        val = value.Str('')
+      if s is None:
+        val = value.Str('')  # NOTE: Other logic is value.Undef()?  0?
       else:
-        assert isinstance(item, str), item
-        val = value.Str(item)
+        assert isinstance(s, str), s
+        val = value.Str(s)
 
     elif val.tag == value_e.AssocArray:  # declare -A a; a['x']+=1
       # TODO: Also need IsAssocArray() check?
       index = arith_ev.Eval(node.index, int_coerce=False)
       lval = lvalue.LhsIndexedName(node.name, index)
-      raise NotImplementedError
+
+      s = val.d.get(index)
+      if s is None:
+        val = value.Str('')
+      else:
+        val = value.Str(s)
 
     else:
       raise AssertionError(val.tag)
