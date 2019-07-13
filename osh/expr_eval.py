@@ -98,36 +98,21 @@ def _StringToInteger(s, span_id=const.NO_INTEGER):
   return integer
 
 
-class _ExprEvaluator(object):
-  """Shared between arith and bool evaluators.
-
-  They both:
-
-  1. Convert strings to integers, respecting shopt -s strict_arith.
-  2. Look up variables and evaluate words.
-  """
-
-  def __init__(self, mem, exec_opts, word_ev, errfmt):
-    self.mem = mem
-    self.exec_opts = exec_opts
-    self.word_ev = word_ev  # type = word_eval.WordEvaluator
-    self.errfmt = errfmt
-
-  def _StringToIntegerOrError(self, s, blame_word=None,
-                              span_id=const.NO_INTEGER):
-    """Used by both [[ $x -gt 3 ]] and (( $x ))."""
-    if span_id == const.NO_INTEGER and blame_word:
-      span_id = word.LeftMostSpanForWord(blame_word)
-
-    try:
-      i = _StringToInteger(s, span_id=span_id)
-    except util.FatalRuntimeError as e:
-      if self.exec_opts.strict_arith:
-        raise
-      else:
-        self.errfmt.PrettyPrintError(e, prefix='warning: ')
-        i = 0
-    return i
+#
+# Common logic for Arith and Command/Word variants of the same expression
+#
+# Calls EvalLhs()
+#   a[$key]=$val                 # osh/cmd_exec.py:814  (command_e.Assignment)
+#   (( a[key] = val ))           # osh/expr_eval.py:326 (_EvalLhsArith)
+#
+# Calls EvalLhsAndLookup():
+#   a[$key]+=$val                # osh/cmd_exec.py:795  (assign_op_e.PlusEqual)
+#   (( a[key] += val ))          # osh/expr_eval.py:308 (_EvalLhsAndLookupArith)
+#
+# Uses Python's [] operator
+#   val=${a[$key]}               # osh/word_eval.py:633 (bracket_op_e.ArrayIndex)
+#   (( val = a[key] ))           # osh/expr_eval.py:490 (Id.Arith_LBracket)
+#
 
 
 def _LookupVar(name, mem, exec_opts):
@@ -137,6 +122,34 @@ def _LookupVar(name, mem, exec_opts):
   if val.tag == value_e.Undef and exec_opts.nounset:
     e_die('Undefined variable %r', name)  # TODO: need token
   return val
+
+
+def EvalLhs(node, arith_ev, mem, spid, lookup_mode):
+  """lhs_expr -> lvalue.
+
+  Used for a=b and a[x]=b
+
+  TODO: Rationalize with expr_eval EvalLhsAndLookup, which is used for a+=b
+  and a[x]+=b.
+  """
+  assert isinstance(node, lhs_expr_t), node
+
+  if node.tag == lhs_expr_e.LhsName:  # a=x
+    lval = lvalue.LhsName(node.name)
+    lval.spids.append(spid)
+    return lval
+
+  if node.tag == lhs_expr_e.LhsIndexedName:  # a[1+2]=x
+    # The index of StrArray needs to be coerced to int, but not the index of
+    # an AssocArray.
+    int_coerce = not mem.IsAssocArray(node.name, lookup_mode)
+    index = arith_ev.Eval(node.index, int_coerce=int_coerce)
+
+    lval = lvalue.LhsIndexedName(node.name, index)
+    lval.spids.append(node.spids[0])  # copy left-most token over
+    return lval
+
+  raise AssertionError(node.tag)
 
 
 def EvalLhsAndLookup(node, arith_ev, mem, exec_opts):
@@ -206,6 +219,40 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts):
     raise AssertionError(node.tag)
 
   return val, lval
+
+
+
+
+class _ExprEvaluator(object):
+  """Shared between arith and bool evaluators.
+
+  They both:
+
+  1. Convert strings to integers, respecting shopt -s strict_arith.
+  2. Look up variables and evaluate words.
+  """
+
+  def __init__(self, mem, exec_opts, word_ev, errfmt):
+    self.mem = mem
+    self.exec_opts = exec_opts
+    self.word_ev = word_ev  # type = word_eval.WordEvaluator
+    self.errfmt = errfmt
+
+  def _StringToIntegerOrError(self, s, blame_word=None,
+                              span_id=const.NO_INTEGER):
+    """Used by both [[ $x -gt 3 ]] and (( $x ))."""
+    if span_id == const.NO_INTEGER and blame_word:
+      span_id = word.LeftMostSpanForWord(blame_word)
+
+    try:
+      i = _StringToInteger(s, span_id=span_id)
+    except util.FatalRuntimeError as e:
+      if self.exec_opts.strict_arith:
+        raise
+      else:
+        self.errfmt.PrettyPrintError(e, prefix='warning: ')
+        i = 0
+    return i
 
 
 class ArithEvaluator(_ExprEvaluator):

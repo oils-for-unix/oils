@@ -657,10 +657,12 @@ class _WordEvaluator(object):
 
         elif val.tag == value_e.AssocArray:
           key = self.arith_ev.Eval(anode, int_coerce=False)
-          try:
-            val = value.Str(val.d[key])
-          except KeyError:
+          s = val.d.get(key)
+
+          if s is None:
             val = value.Undef()
+          else:
+            val = value.Str(s)
 
         else:
           raise AssertionError(val.__class__.__name__)
