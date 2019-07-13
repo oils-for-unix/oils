@@ -117,6 +117,20 @@ ccc
 ddd
 ## END
 
+#### ${A[@]#prefix}
+declare -A A
+A['aa']=one
+A['bb']=two
+A['cc']=three
+for val in "${A[@]#t}"; do
+  echo $val
+done | sort
+## STDOUT:
+hree
+one
+wo
+## END
+
 #### ${assoc} disallowed in OSH, like ${assoc[0]} in bash
 declare -A a
 a=([aa]=b [foo]=bar ['a+1']=c)

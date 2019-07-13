@@ -493,12 +493,19 @@ class _WordEvaluator(object):
         s = string_ops.DoUnarySuffixOp(val.s, op, arg_val.s)
         #log('%r %r -> %r', val.s, arg_val.s, s)
         new_val = value.Str(s)
-      else:  # val.tag == value_e.StrArray:
+
+      elif val.tag == value_e.StrArray:
         # ${a[@]#prefix} is VECTORIZED on arrays.  Oil should have this too.
         strs = []
         for s in val.strs:
           if s is not None:
             strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s))
+        new_val = value.StrArray(strs)
+
+      elif val.tag == value_e.AssocArray:
+        strs = []
+        for s in val.d.itervalues():
+          strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s))
         new_val = value.StrArray(strs)
 
     else:
