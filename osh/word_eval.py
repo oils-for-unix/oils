@@ -613,8 +613,7 @@ class _WordEvaluator(object):
         op_id = part.bracket_op.op_id
 
         if op_id == Id.Lit_At:
-          if not quoted:
-            maybe_decay_array = True  # ${a[@]} decays but "${a[@]}" doesn't
+          maybe_decay_array = not quoted  # ${a[@]} decays but "${a[@]}" doesn't
           if val.tag == value_e.Undef:
             val = self._EmptyStrArrayOrError(part.token)
           elif val.tag == value_e.Str:
@@ -685,6 +684,8 @@ class _WordEvaluator(object):
 
     if part.prefix_op:
       val = self._EmptyStrOrError(val)  # maybe error
+
+      # TODO: maybe_decay_array for "${!assoc[@]}" vs. ${!assoc[*]}
       val = self._ApplyPrefixOp(val, part.prefix_op, token=part.token)
       # NOTE: When applying the length operator, we can't have a test or
       # suffix afterward.  And we don't want to decay the array
