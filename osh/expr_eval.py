@@ -438,13 +438,21 @@ class ArithEvaluator(_ExprEvaluator):
 
       rhs = self.Eval(node.right)  # eager evaluation for the rest
 
+      # TODO: Validate that in lhs + rhs, both are STRINGS and not [] or {}.
+
       if op_id == Id.Arith_LBracket:
-        if not isinstance(lhs, list):
+        # StrArray or AssocArray
+        if not isinstance(lhs, (list, dict)):
           # TODO: Add error context
           e_die('Expected array in index expression, got %s', lhs)
 
         try:
           item = lhs[rhs]
+        except KeyError:
+          if self.exec_opts.nounset:
+            e_die('Invalid key %r' % rhs)
+          else:
+            return 0  # If not fatal, return 0
         except IndexError:
           if self.exec_opts.nounset:
             e_die('Index out of bounds')

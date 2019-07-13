@@ -425,6 +425,12 @@ class _WordEvaluator(object):
         # There can be empty placeholder values in the array.
         length = sum(1 for s in val.strs if s is not None)
 
+      elif val.tag == value_e.AssocArray:
+        length = len(val.d)
+
+      else:
+        raise AssertionError(val.__class__.__name__)
+
       return value.Str(str(length))
 
     elif op_id == Id.VSub_Bang:  # ${!foo}, "indirect expansion"

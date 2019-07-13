@@ -41,7 +41,7 @@ module runtime
   -- TODO:
   -- * add spid for last-assigned location
   -- * use a bitfield for flags.
-  cell = (value val, bool exported, bool readonly, bool is_assoc_array)
+  cell = (value val, bool exported, bool readonly)
 
   -- An undefined variable can become an indexed array with s[x]=1.  But if we
   -- 'declare -A' it, it will be undefined and waiting to turn into an

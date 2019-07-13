@@ -14,9 +14,17 @@
 # http://www.gnu.org/software/bash/manual/html_node/Arrays.html
 # TODO: Need a SETUP section.
 
-#### TODO: SETUP should be share
+#### Literal syntax ([x]=y)
 declare -A a
 a=([aa]=b [foo]=bar ['a+1']=c)
+echo ${a["aa"]}
+echo ${a["foo"]}
+echo ${a["a+1"]}
+## STDOUT:
+b
+bar
+c
+## END
 
 #### create empty assoc array, put, then get
 declare -A d  # still undefined
@@ -26,7 +34,6 @@ echo ${d['foo']}
 
 #### retrieve indices with !
 declare -A a
-#a=([aa]=b [foo]=bar ['a+1']=c)
 var='x'
 a["$var"]=b
 a['foo']=bar
@@ -48,55 +55,79 @@ echo "${a}"
 ## OK osh stdout-json: ""
 ## OK osh status: 1
 
-#### length of dict does not work
+#### length ${#a[@]}
 declare -A a
-a=([aa]=b [foo]=bar ['a+1']=c)
-echo "${#a}"
-## stdout: 0
+a["x"]=1
+a["y"]=2
+a["z"]=3
+echo "${#a[@]}"
+## stdout: 3
 
-#### index by number doesn't work
+#### retrieve values with numeric keys
 declare -A a
-a=([aa]=b [foo]=bar ['a+1']=c)
+a["0"]=a
+a["1"]=b
+a["2"]=c
 echo 0 "${a[0]}" 1 "${a[1]}" 2 "${a[2]}"
-## stdout-json: "0  1  2 \n"
+## STDOUT:
+0 a 1 b 2 c
+## END
 
-#### index by key name
+#### retrieve values with string keys
 declare -A a
-a=([aa]=b [foo]=bar ['a+1']=c)
-echo "${a[aa]}" "${a[foo]}" "${a['a+1']}"
-# WTF: Why do we get bar bar c?
-## stdout-json: "b bar c\n"
+a["aa"]=b
+a["foo"]=bar
+a['a+1']=c
+echo "${a["aa"]}" "${a["foo"]}" "${a["a+1"]}"
+## STDOUT:
+b bar c
+## END
 
-#### index by quoted string
+#### retrieve value with single quoted string
 declare -A a
-a=([aa]=b [foo]=bar ['a+1']=c)
+a["aa"]=b
+a["foo"]=bar
+a['a+1']=c
 echo "${a['a+1']}"
 ## stdout: c
 
-#### index by unquoted string
+#### index by unquoted string doesn't work in OSH because it's a variable
 declare -A a
-a=([aa]=b [foo]=bar ['a+1']=c)
+a["aa"]=b
+a["foo"]=bar
+a['a+1']=c
 echo "${a[a+1]}"
 ## stdout: c
 
 #### index by unquoted string as arithmetic
-# For assoc arrays, unquoted string is just raw.
-# For regular arrays, unquoted string is an arithmetic expression!
-# How do I parse this?
-declare -A assoc
-assoc=([a+1]=c)
-array=(5 6 7)
-a=1
-echo "${assoc[a]}" 
-echo "${assoc[a+1]}"  # This works
-echo "${array[a+1]}"
-## stdout-json: "\nc\n7\n"
 
-#### WTF index by key name
-declare -A a
-a=([xx]=bb [cc]=dd)
-echo "${a[xx]}" "${a[cc]}"
-## stdout-json: "bb dd\n"
+i=1
+array=(5 6 7)
+echo array[i]="${array[i]}"
+echo array[i+1]="${array[i+1]}"
+
+# arithmetic does NOT work here in bash.  These are unquoted strings!
+declare -A assoc
+assoc[i]=$i
+assoc[i+1]=$i+1
+
+assoc["i"]=string
+assoc["i+1"]=string+1
+
+echo assoc[i]="${assoc[i]}" 
+echo assoc[i+1]="${assoc[i+1]}"
+
+echo assoc[i]="${assoc["i"]}" 
+echo assoc[i+1]="${assoc["i+1"]}"
+
+## STDOUT:
+array[i]=6
+array[i+1]=7
+assoc[i]=string
+assoc[i+1]=string+1
+assoc[i]=string
+assoc[i+1]=string+1
+## END
 
 #### Array stored in associative array gets converted to string
 array=('1 2' 3)
@@ -201,3 +232,15 @@ echo ${assoc[1]} ${assoc[2]} ${assoc}
 1 2 1 zero 2
 ## END
 ## N-I osh status: 1
+
+#### Associative array expressions inside (( ))
+declare -A assoc
+assoc[0]=42
+(( var = ${assoc[0]} ))
+echo $var
+(( var = assoc[0] ))
+echo $var
+## STDOUT:
+42
+42
+## END

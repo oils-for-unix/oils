@@ -569,7 +569,7 @@ append() {
 
 # associative array -- mksh and zsh implement different associative arrays.
 assoc() {
-  sh-spec spec/assoc.test.sh --osh-failures-allowed 12 \
+  sh-spec spec/assoc.test.sh --osh-failures-allowed 9 \
     $BASH $OSH_LIST "$@"
 }
 

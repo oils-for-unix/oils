@@ -276,9 +276,10 @@ argv.py "${ev["ev1"]}"
 
 #### myvar=typeset (another form of dynamic assignment)
 myvar=typeset
-$myvar x=42
+x='a b'
+$myvar x=$x
 echo $x
 ## STDOUT:
-42
+a
 ## END
 
