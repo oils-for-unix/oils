@@ -169,25 +169,29 @@ FOO=bar [[ foo == foo ]]
 && bar == bar
 ]] && echo true
 ## status: 0
-## stdout-json: "true\n"
+## STDOUT:
+true
+## END
 
 #### Argument that looks like a command word operator
 [[ -f -f ]] || echo false
 [[ -f == ]] || echo false
-## stdout-json: "false\nfalse\n"
+## STDOUT:
+false
+false
+## END
 
 #### Argument that looks like a real operator
 [[ -f < ]] && echo 'should be parse error'
 ## status: 2
 ## OK mksh status: 1
 
-#### Does user array equal "$@" ?
-# Oh it coerces both to a string.  Lame.
-# I think it disobeys "${a[@]}", and treats it like an UNQUOTED ${a[@]}.
-# NOTE: set -o strict-array should make this invalid
-a=(1 3 5)
+#### User array compared to "$@" (broken unless shopt -s strict-array)
+# Both are coerced to string!  It treats it more like an  UNQUOTED ${a[@]}.
+
+a=('1 3' 5)
 b=(1 2 3)
-set -- 1 3 5
+set -- 1 '3 5'
 [[ "$@" = "${a[@]}" ]] && echo true
 [[ "$@" = "${b[@]}" ]] || echo false
 ## STDOUT:
@@ -195,9 +199,8 @@ true
 false
 ## END
 
-#### Array coerces to string
-# TODO: set -o strict-array should make this invalid
-a=(1 3 5)
+#### Array coerces to string (shopt -s strict-array to disallow)
+a=('1 3' 5)
 [[ '1 3 5' = "${a[@]}" ]] && echo true
 [[ '1 3 4' = "${a[@]}" ]] || echo false
 ## STDOUT:
@@ -205,10 +208,42 @@ true
 false
 ## END
 
+#### (( array1 == array2 ))
+a=('1 3' 5)
+b=('1 3' 5)
+c=('1' '3 5')
+d=('1' '3 6')
+
+# shells EXPAND a and b first
+(( a == b ))
+echo status=$?
+
+(( a == c ))
+echo status=$?
+
+(( a == d ))
+echo status=$?
+
+## STDOUT:
+status=0
+status=1
+status=1
+## END
+## N-I bash STDOUT:
+status=1
+status=1
+status=1
+## END
+## N-I mksh stdout-json: ""
+## N-I mksh status: 1
+
 #### Quotes don't matter in comparison
 [[ '3' = 3 ]] && echo true
 [[ '3' -eq 3 ]] && echo true
-## stdout-json: "true\ntrue\n"
+## STDOUT:
+true
+true
+## END
 
 #### -eq does dynamic arithmetic parsing (not supported in OSH)
 [[ 1+2 -eq 3 ]] && echo true
