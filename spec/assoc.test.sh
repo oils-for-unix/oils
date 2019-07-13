@@ -27,12 +27,18 @@ c
 ## END
 
 #### create empty assoc array, put, then get
-declare -A d  # still undefined
-d['foo']=bar
-echo ${d['foo']}
-## stdout: bar
+declare -A A  # still undefined
+argv.py "${A[@]}"
+argv.py "${!A[@]}"
+A['foo']=bar
+echo ${A['foo']}
+## STDOUT:
+[]
+[]
+bar
+## END
 
-#### retrieve indices with !
+#### retrieve keys with !
 declare -A a
 var='x'
 a["$var"]=b
@@ -45,6 +51,52 @@ done | sort
 a+1
 foo
 x
+## END
+
+#### retrieve values with ${A[@]}
+declare -A A
+var='x'
+A["$var"]=b
+A['foo']=bar
+A['a+1']=c
+for val in "${A[@]}"; do
+  echo $val
+done | sort
+## STDOUT:
+b
+bar
+c
+## END
+
+#### coerce to string with ${A[*]}, etc.
+declare -A A
+A['X X']=xx
+A['Y Y']=yy
+argv.py "${A[*]}"
+argv.py "${!A[*]}"
+
+argv.py ${A[@]}
+argv.py ${!A[@]}
+## STDOUT:
+['xx yy']
+['X X Y Y']
+['xx', 'yy']
+['X', 'X', 'Y', 'Y']
+## END
+
+#### ${A[@]/b/B} 
+# but ${!A[@]/b/B} doesn't work
+declare -A A
+A['aa']=bbb
+A['bb']=ccc
+A['cc']=ddd
+for val in "${A[@]//b/B}"; do
+  echo $val
+done | sort
+## STDOUT:
+BBB
+ccc
+ddd
 ## END
 
 #### ${assoc} disallowed in OSH, like ${assoc[0]} in bash
@@ -63,7 +115,7 @@ a["z"]=3
 echo "${#a[@]}"
 ## stdout: 3
 
-#### retrieve values with numeric keys
+#### lookup with ${a[0]} -- "0" is a string
 declare -A a
 a["0"]=a
 a["1"]=b
@@ -73,7 +125,7 @@ echo 0 "${a[0]}" 1 "${a[1]}" 2 "${a[2]}"
 0 a 1 b 2 c
 ## END
 
-#### retrieve values with string keys
+#### lookup with double quoted strings "mykey"
 declare -A a
 a["aa"]=b
 a["foo"]=bar
@@ -83,7 +135,7 @@ echo "${a["aa"]}" "${a["foo"]}" "${a["a+1"]}"
 b bar c
 ## END
 
-#### retrieve value with single quoted string
+#### lookup with single quoted string
 declare -A a
 a["aa"]=b
 a["foo"]=bar
@@ -91,7 +143,21 @@ a['a+1']=c
 echo "${a['a+1']}"
 ## stdout: c
 
-#### index by unquoted string doesn't work in OSH because it's a variable
+#### lookup with unquoted $key and quoted "$i$i"
+declare -A A
+A["aa"]=b
+A["foo"]=bar
+
+key=foo
+echo ${A[$key]}
+i=a
+echo ${A["$i$i"]}   # note: ${A[$i$i]} doesn't work in OSH
+## STDOUT:
+bar
+b
+## END
+
+#### lookup by unquoted string doesn't work in OSH because it's a variable
 declare -A a
 a["aa"]=b
 a["foo"]=bar
@@ -99,7 +165,7 @@ a['a+1']=c
 echo "${a[a+1]}"
 ## stdout: c
 
-#### index by unquoted string as arithmetic
+#### lookup by unquoted string as arithmetic
 
 i=1
 array=(5 6 7)
@@ -136,31 +202,22 @@ d[a]="${array[@]}"
 argv.py "${d[a]}"
 ## stdout: ['1 2 3']
 
-#### Using indexed array as key of associative array coerces to string
+#### Indexed array as key of associative array coerces to string (without shopt -s strict-array)
+
 declare -a array=(1 2 3)
 declare -A assoc
 assoc[42]=43
 assoc["${array[@]}"]=foo
-echo "${assoc["${array[@]}"]}"
-argv "${!assoc[@]}"
-# TODO: This should fail!
-## status: 1
-## BUG bash status: 0
-## BUG bash STDOUT:
-foo
-['1 2 3', '42']
-##
 
-#### Using indexed array as key of associative array coerces to string
-declare -a array=(1 2 3)
-declare -A assoc
-assoc[42]=43
-assoc[array]=foo
-echo "${assoc[array]}"
-argv "${!assoc[@]}"
+echo "${assoc["${array[@]}"]}"
+for entry in "${!assoc[@]}"; do
+  echo $entry
+done | sort
+
 ## STDOUT:
 foo
-['array', '42']
+1 2 3
+42
 ##
 
 #### Can't initialize assoc array with indexed array
@@ -176,13 +233,14 @@ echo "${a[@]}"
 ## N-I mksh stdout-json: ""
 ## BUG bash stdout-json: "3\n"
 
-#### Append to associative array value
-declare -A a
-a['x']+='foo'
-a['x']+='bar'
-argv.py "${a["x"]}"
+#### Append to associative array value A['x']+='suffix'
+declare -A A
+A['x']='foo'
+A['x']+='bar'
+A['x']+='bar'
+argv.py "${A["x"]}"
 ## STDOUT:
-['foobar']
+['foobarbar']
 ## END
 
 #### Slice of associative array doesn't make sense in bash
@@ -244,3 +302,12 @@ echo $var
 42
 42
 ## END
+
+#### (( A[5] += 1 ))
+declare -A A
+(( A[5] += 6 ))
+echo ${A[5]}
+## STDOUT:
+6
+## END
+

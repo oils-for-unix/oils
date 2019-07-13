@@ -284,6 +284,12 @@ assign-extended() {
     $BASH $MKSH $OSH_LIST "$@" 
 }
 
+# These test associative arrays
+assign-dialects() {
+  sh-spec spec/assign-dialects.test.sh --osh-failures-allowed 1 \
+    $BASH $MKSH $OSH_LIST "$@" 
+}
+
 background() {
   sh-spec spec/background.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $OSH_LIST "$@" 
@@ -569,7 +575,7 @@ append() {
 
 # associative array -- mksh and zsh implement different associative arrays.
 assoc() {
-  sh-spec spec/assoc.test.sh --osh-failures-allowed 9 \
+  sh-spec spec/assoc.test.sh --osh-failures-allowed 10 \
     $BASH $OSH_LIST "$@"
 }
 
@@ -587,7 +593,7 @@ dbracket() {
 }
 
 dparen() {
-  sh-spec spec/dparen.test.sh \
+  sh-spec spec/dparen.test.sh --osh-failures-allowed 4 \
     $BASH $MKSH $ZSH $OSH_LIST "$@"
 }
 

@@ -406,7 +406,13 @@ class Executor(object):
           span_id=span_id, status=status)
 
   def _EvalLhs(self, node, spid, lookup_mode):
-    """lhs_expr -> lvalue."""
+    """lhs_expr -> lvalue.
+
+    Used for a=b and a[x]=b
+
+    TODO: Rationalize with expr_eval EvalLhsAndLookup, which is used for a+=b
+    and a[x]+=b.
+    """
     assert isinstance(node, lhs_expr_t), node
 
     if node.tag == lhs_expr_e.LhsName:  # a=x

@@ -34,4 +34,88 @@ echo $sum
 (( b = 1 )) && echo true
 (( c = -1 )) && echo true
 echo $((a + b + c))
-## stdout-json: "false\ntrue\ntrue\n0\n"
+## STDOUT:
+false
+true
+true
+0
+## END
+
+
+#### bash and mksh: V in (( a[K] = V )) gets coerced to integer 
+K=key
+V=value
+typeset -a a
+(( a[K] = V ))
+
+# not there!
+echo a[\"key\"]=${a[$K]}
+
+echo keys = ${!a[@]}
+echo values = ${a[@]}
+## STDOUT:
+a["key"]=0
+keys = 0
+values = 0
+## END
+## N-I zsh status: 1
+## N-I zsh stdout-json: ""
+
+#### bash: K in (( A[K] = V )) is a constant string
+K=5
+V=42
+typeset -A A
+(( A[K] = V ))
+
+echo A["5"]=${A["5"]}
+echo keys = ${!A[@]}
+echo values = ${A[@]}
+## STDOUT:
+A[5]=
+keys = K
+values = 42
+## END
+## N-I zsh status: 1
+## N-I zsh stdout-json: ""
+## N-I mksh status: 1
+## N-I mksh stdout-json: ""
+
+#### BUG: (( V = A[K] )) doesn't retrieve the right value
+typeset -A A
+K=5
+V=42
+A["$K"]=$V
+A["K"]=oops
+A[K]=oops2
+
+# We don't neither 42 nor "oops".  Bad!
+(( V = A[K] ))
+
+echo V=$V
+## status: 1
+## stdout-json: ""
+## BUG bash/zsh status: 0
+## BUG bash/zsh STDOUT:
+V=0
+## END
+
+#### bash: V in (( A[K] = V )) gets coerced to integer
+K=key
+V=value
+typeset -A A || exit 1
+(( A[K] = V ))
+
+# not there!
+echo A[\"key\"]=${A[$K]}
+
+echo keys = ${!A[@]}
+echo values = ${A[@]}
+## STDOUT:
+A["key"]=
+keys = K
+values = 0
+## END
+## N-I zsh stdout-json: ""
+## N-I zsh status: 1
+## N-I mksh stdout-json: ""
+## N-I mksh status: 1

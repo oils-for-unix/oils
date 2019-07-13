@@ -18,6 +18,14 @@ status=0
 status=1
 ## END
 
+#### repr on indexed array with hole
+declare -a array
+array[5]=5
+repr array
+## STDOUT:
+a
+## END
+
 
 #### crash dump
 rm -f $TMP/*.json
