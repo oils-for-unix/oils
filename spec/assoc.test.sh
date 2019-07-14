@@ -320,10 +320,7 @@ echo ${assoc[1]} ${assoc[2]} ${assoc}
 1 2 zero
 1 2 string
 ## END
-## N-I osh STDOUT:
-1 2 1 2
-1 2 1 zero 2
-## END
+## N-I osh stdout-json: ""
 ## N-I osh status: 1
 
 #### Associative array expressions inside (( ))
