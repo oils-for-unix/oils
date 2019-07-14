@@ -649,7 +649,7 @@ class _WordEvaluator(object):
                 token=part.token)
 
         elif val.tag == value_e.StrArray:
-          index = self.arith_ev.Eval(anode)
+          index = self.arith_ev.EvalToIndex(anode)
           try:
             # could be None because representation is sparse
             s = val.strs[index]

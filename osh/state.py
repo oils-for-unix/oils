@@ -989,9 +989,15 @@ class Mem(object):
           strs[lval.index] = val.s
         return
 
-      if cell_tag == value_e.AssocArray:
-        cell.val.d[lval.index] = val.s
-        return
+      # AssocArray shouldn't happen because we query IsAssocArray before
+      # evaluating lhs_expr.
+      e_die("Object of this type can't be indexed: %s", cell.val)
+
+    elif lval.tag == lvalue_e.Keyed:
+      cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
+      assert cell.val.tag == value_e.AssocArray, cell
+
+      cell.val.d[lval.key] = val.s
 
     else:
       raise AssertionError(lval.__class__.__name__)

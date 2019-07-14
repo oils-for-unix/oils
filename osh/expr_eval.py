@@ -135,24 +135,22 @@ def EvalLhs(node, arith_ev, mem, spid, lookup_mode):
   if node.tag == lhs_expr_e.LhsName:  # a=x
     lval = lvalue.Named(node.name)
     lval.spids.append(spid)
-    return lval
 
-  if node.tag == lhs_expr_e.LhsIndexedName:  # a[1+2]=x
-    # The index of StrArray needs to be coerced to int, but not the index of
-    # an AssocArray.
+  elif node.tag == lhs_expr_e.LhsIndexedName:  # a[1+2]=x
 
-    # TODO: instead of int_coerce, return either
-    # - lvalue.Indexed
-    # - lvalue.Keyed
+    if mem.IsAssocArray(node.name, lookup_mode):
+      key = arith_ev.EvalWordToString(node.index)
+      lval = lvalue.Keyed(node.name, key)
+      lval.spids.append(node.spids[0])  # copy left-most token over
+    else:
+      index = arith_ev.EvalToIndex(node.index)
+      lval = lvalue.Indexed(node.name, index)
+      lval.spids.append(node.spids[0])  # copy left-most token over
 
-    int_coerce = not mem.IsAssocArray(node.name, lookup_mode)
-    index = arith_ev.Eval(node.index, int_coerce=int_coerce)
+  else:
+    raise AssertionError(node.tag)
 
-    lval = lvalue.Indexed(node.name, index)
-    lval.spids.append(node.spids[0])  # copy left-most token over
-    return lval
-
-  raise AssertionError(node.tag)
+  return lval
 
 
 def _EvalLhsArith(node, mem, arith_ev):
@@ -168,18 +166,22 @@ def _EvalLhsArith(node, mem, arith_ev):
     #lval.spids.append(spid)
     return lval
 
-  if node.tag == lhs_expr_e.LhsIndexedName:  # (( a[42] = 42 ))
+  elif node.tag == lhs_expr_e.LhsIndexedName:  # (( a[42] = 42 ))
     # The index of StrArray needs to be coerced to int, but not the index of
     # an AssocArray.
-    int_coerce = not mem.IsAssocArray(node.name, scope_e.Dynamic)
-    index = arith_ev.Eval(node.index, int_coerce=int_coerce)
+    if mem.IsAssocArray(node.name, scope_e.Dynamic):
+      key = arith_ev.EvalWordToString(node.index)
+      lval = lvalue.Keyed(node.name, key)
+    else:
+      index = arith_ev.EvalToIndex(node.index)
+      lval = lvalue.Indexed(node.name, index)
+      # TODO: location info.  Use the = token?
+      #lval.spids.append(node.spids[0])
 
-    lval = lvalue.Indexed(node.name, index)
-    # TODO: location info.  Use the = token?
-    #lval.spids.append(node.spids[0])
-    return lval
+  else:
+    raise AssertionError(node.tag)
 
-  raise AssertionError(node.tag)
+  return lval
 
 
 def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
@@ -211,23 +213,29 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
     # - FuncCall: f(x), 1
     # - ArithBinary LBracket: f[1][1] -- no semantics for this?
 
-    int_coerce = not mem.IsAssocArray(node.name, lookup_mode)
-    index = arith_ev.Eval(node.index, int_coerce=int_coerce)
-    lval = lvalue.Indexed(node.name, index)
-
     val = mem.GetVar(node.name)
 
     if val.tag == value_e.Str:
       e_die("Can't assign to characters of string %r", node.name)
 
     elif val.tag == value_e.Undef:
-      # (( a[undefined_var]=1 ))
-      val = value.Str('')
+      # compatible behavior: Treat it like an array.
+      # TODO: Does this code ever get triggered?  It seems like the error is
+      # caught earlier.
+
+      index = arith_ev.Eval(node.index)
+      lval = lvalue.Indexed(node.name, index)
+      if exec_opts.nounset:
+        e_die("Undefined variable can't be indexed")
+      else:
+        val = value.Str('')
 
     elif val.tag == value_e.StrArray:
 
       #log('ARRAY %s -> %s, index %d', node.name, array, index)
       array = val.strs
+      index = arith_ev.Eval(node.index)
+      lval = lvalue.Indexed(node.name, index)
       # NOTE: Similar logic in RHS Arith_LBracket
       try:
         s = array[index]
@@ -241,10 +249,10 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
         val = value.Str(s)
 
     elif val.tag == value_e.AssocArray:  # declare -A a; a['x']+=1
-      index = arith_ev.Eval(node.index, int_coerce=False)
-      lval = lvalue.Indexed(node.name, index)
+      key = arith_ev.EvalWordToString(node.index)
+      lval = lvalue.Keyed(node.name, key)
 
-      s = val.d.get(index)
+      s = val.d.get(key)
       if s is None:
         val = value.Str('')
       else:
@@ -369,29 +377,6 @@ class ArithEvaluator(_ExprEvaluator):
   def _Store(self, lval, new_int):
     val = value.Str(str(new_int))
     self.mem.SetVar(lval, val, (), scope_e.Dynamic)
-
-  def EvalWordToString(self, node):
-    """
-    Args:
-      node: arith_expr_t
-
-    Returns:
-      str
-
-    Raises:
-      util.FatalRuntimeError if the expression isn't a string
-      Or if it contains a bare variable like a[x]
-
-    These are allowed because they're unambiguous, unlike a[x]
-
-    a[$x] a["$x"] a["x"] a['x']
-    """
-    if node.tag != arith_expr_e.ArithWord:  # $(( $x )) $(( ${x}${y} )), etc.
-      # TODO: location info for orginal
-      e_die("Associative array keys must be strings: $x 'x' \"$x\" etc.")
-
-    val = self.word_ev.EvalWordToString(node.w)
-    return val.s
 
   def Eval(self, node, int_coerce=True):
     """
@@ -643,6 +628,35 @@ class ArithEvaluator(_ExprEvaluator):
         return self.Eval(node.false_expr)
 
     raise NotImplementedError("Unhandled node %r" % node.__class__.__name__)
+
+  def EvalWordToString(self, node):
+    """
+    Args:
+      node: arith_expr_t
+
+    Returns:
+      str
+
+    Raises:
+      util.FatalRuntimeError if the expression isn't a string
+      Or if it contains a bare variable like a[x]
+
+    These are allowed because they're unambiguous, unlike a[x]
+
+    a[$x] a["$x"] a["x"] a['x']
+    """
+    if node.tag != arith_expr_e.ArithWord:  # $(( $x )) $(( ${x}${y} )), etc.
+      # TODO: location info for orginal
+      e_die("Associative array keys must be strings: $x 'x' \"$x\" etc.")
+
+    val = self.word_ev.EvalWordToString(node.w)
+    return val.s
+
+  def EvalToIndex(self, node):
+    index = self.Eval(node)
+    if not isinstance(index, int):
+      e_die("Expected integer for array index, got %r", index)
+    return index
 
 
 class BoolEvaluator(_ExprEvaluator):

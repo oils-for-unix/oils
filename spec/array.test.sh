@@ -474,12 +474,16 @@ argv.py "${a[@]:15:2}"
 ## N-I mksh stdout-json: ""
 
 #### Using an array itself as the index on LHS
-# TODO: Fix OSH crash.
 shopt -u strict-arith
 a[a]=42
 a[a]=99
 argv "${a[@]}" "${a[0]}" "${a[42]}" "${a[99]}"
-## STDOUT:
+
+## status: 1
+## stdout-json: ""
+
+## BUG bash/mksh status: 0
+## BUG bash/mksh STDOUT:
 ['42', '99', '42', '99', '']
 ## END
 
