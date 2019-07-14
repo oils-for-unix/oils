@@ -214,7 +214,7 @@ echo "${a[a+1]}"
 ## BUG bash stdout: c
 ## BUG bash status: 0
 
-#### lookup by unquoted string as arithmetic
+#### bash bug: "i+1" and i+1 are the same key
 
 i=1
 array=(5 6 7)
@@ -235,7 +235,13 @@ echo assoc[i+1]="${assoc[i+1]}"
 echo assoc[i]="${assoc["i"]}" 
 echo assoc[i+1]="${assoc["i+1"]}"
 
+## status: 1
 ## STDOUT:
+array[i]=6
+array[i+1]=7
+## END
+## BUG bash status: 0
+## BUG bash STDOUT:
 array[i]=6
 array[i+1]=7
 assoc[i]=string
