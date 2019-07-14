@@ -521,6 +521,12 @@ class ArithEvaluator(_ExprEvaluator):
       if op_id == Id.Arith_Comma:
         return rhs
 
+      # Do additional type checking after indexing and comma.
+      if not isinstance(lhs, int):
+        e_die('LHS should be an integer, got %s', lhs)
+      if not isinstance(rhs, int):
+        e_die('RHS should be an integer, got %s', rhs)
+
       if op_id == Id.Arith_Plus:
         return lhs + rhs
       if op_id == Id.Arith_Minus:

@@ -195,7 +195,10 @@ a["aa"]=b
 a["foo"]=bar
 a['a+1']=c
 echo "${a[a+1]}"
-## stdout: c
+## stdout-json: ""
+## status: 1
+## BUG bash stdout: c
+## BUG bash status: 0
 
 #### lookup by unquoted string as arithmetic
 

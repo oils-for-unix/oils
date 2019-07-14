@@ -130,7 +130,7 @@ echo "[$undef1][$undef2]"
 ## stdout: [1][1]
 ## N-I dash stdout: [][]
 
-#### Increment and decrement array
+#### Increment and decrement array elements
 shopt -u strict-arith || true
 a=(5 6 7 8)
 (( a[0]++, ++a[1], a[2]--, --a[3] ))
@@ -393,3 +393,25 @@ echo [$a]
 []
 ## END
 ## OK bash status: 0
+
+#### Can't add integer to indexed array
+declare -a array=(1 2 3)
+echo $((array + 5))
+## status: 1
+## stdout-json: ""
+## BUG bash status: 0
+## BUG bash STDOUT:
+6
+## END
+## N-I dash status: 2
+
+#### Can't add integer to associative array
+typeset -A assoc
+assoc[0]=42
+echo $((assoc + 5))
+## status: 1
+## stdout-json: ""
+## BUG bash/mksh/zsh status: 0
+## BUG bash/mksh/zsh stdout: 47
+## BUG dash status: 0
+## BUG dash stdout: 5
