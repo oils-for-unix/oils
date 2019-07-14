@@ -103,6 +103,7 @@ def _StringToInteger(s, span_id=const.NO_INTEGER):
 #
 # Calls EvalLhs()
 #   a[$key]=$val                 # osh/cmd_exec.py:814  (command_e.Assignment)
+# Calls _EvalLhsArith()
 #   (( a[key] = val ))           # osh/expr_eval.py:326 (_EvalLhsArith)
 #
 # Calls EvalLhsAndLookup():
@@ -369,16 +370,33 @@ class ArithEvaluator(_ExprEvaluator):
     val = value.Str(str(new_int))
     self.mem.SetVar(lval, val, (), scope_e.Dynamic)
 
-  def EvalToIndex(self, node):
-    # TODO:
-    # - For StrArray, Check that you got an integer (not None, etc.)
-    # - For AssocArray, do something else?  Get rid of int_coerce?
-    pass
+  def EvalWordToString(self, node):
+    """
+    Args:
+      node: arith_expr_t
+
+    Returns:
+      str
+
+    Raises:
+      util.FatalRuntimeError if the expression isn't a string
+      Or if it contains a bare variable like a[x]
+
+    These are allowed because they're unambiguous, unlike a[x]
+
+    a[$x] a["$x"] a["x"] a['x']
+    """
+    if node.tag != arith_expr_e.ArithWord:  # $(( $x )) $(( ${x}${y} )), etc.
+      # TODO: location info for orginal
+      e_die("Associative array keys must be strings: $x 'x' \"$x\" etc.")
+
+    val = self.word_ev.EvalWordToString(node.w)
+    return val.s
 
   def Eval(self, node, int_coerce=True):
     """
     Args:
-      node: osh_ast.arith_expr
+      node: arith_expr_t
 
     Returns:
       None for Undef  (e.g. empty cell)  TODO: Don't return 0!

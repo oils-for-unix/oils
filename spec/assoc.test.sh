@@ -244,11 +244,12 @@ assoc[i]=string
 assoc[i+1]=string+1
 ## END
 
-#### Array stored in associative array gets converted to string
+#### Array stored in associative array gets converted to string (without strict-array)
+
 array=('1 2' 3)
 declare -A d
-d[a]="${array[@]}"
-argv.py "${d[a]}"
+d['key']="${array[@]}"
+argv.py "${d['key']}"
 ## stdout: ['1 2 3']
 
 #### Indexed array as key of associative array coerces to string (without shopt -s strict-array)

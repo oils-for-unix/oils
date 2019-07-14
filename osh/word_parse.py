@@ -963,6 +963,23 @@ class WordParser(object):
 
   def _ReadArrayLiteralPart(self):
     # type: () -> word_part__ArrayLiteralPart
+    """
+    a=(1 2 3)
+
+    TODO: See osh/cmd_parse.py:164 for Id.Lit_ArrayLhsOpen, for a[x++]=1
+
+    We want:
+
+    A=(['x']=1 ["x"]=2 [$x$y]=3)
+
+    Maybe allow this as a literal string?  Because I think I've seen it before?
+    Or maybe force people to patch to learn the rule.
+
+    A=([x]=4)
+
+    Starts with Lit_Other '[', and then it has Lit_ArrayLhsClose
+    Maybe enforce that ALL have keys or NONE of have keys.
+    """
     self._Next(lex_mode_e.ShCommand)  # advance past (
     self._Peek()
     if self.cur_token.id != Id.Op_LParen:

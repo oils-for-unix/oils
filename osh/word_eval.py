@@ -662,7 +662,7 @@ class _WordEvaluator(object):
             val = value.Str(s)
 
         elif val.tag == value_e.AssocArray:
-          key = self.arith_ev.Eval(anode, int_coerce=False)
+          key = self.arith_ev.EvalWordToString(anode)
           s = val.d.get(key)
 
           if s is None:

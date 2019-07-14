@@ -208,7 +208,7 @@ true
 false
 ## END
 
-#### (( array1 == array2 ))
+#### (( array1 == array2 )) doesn't work
 a=('1 3' 5)
 b=('1 3' 5)
 c=('1' '3 5')
@@ -224,18 +224,14 @@ echo status=$?
 (( a == d ))
 echo status=$?
 
-## STDOUT:
-status=0
-status=1
-status=1
-## END
-## N-I bash STDOUT:
+## stdout-json: ""
+## status: 1
+## BUG bash STDOUT:
 status=1
 status=1
 status=1
 ## END
-## N-I mksh stdout-json: ""
-## N-I mksh status: 1
+## BUG bash status: 0
 
 #### Quotes don't matter in comparison
 [[ '3' = 3 ]] && echo true
