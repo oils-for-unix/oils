@@ -331,7 +331,7 @@ echo ${assoc[1]} ${assoc[2]} ${assoc}
 ## N-I osh stdout-json: ""
 ## N-I osh status: 1
 
-#### Associative array expressions inside (( ))
+#### Associative array expressions inside (( )) with keys that look like numbers
 declare -A assoc
 assoc[0]=42
 (( var = ${assoc[0]} ))
@@ -340,6 +340,10 @@ echo $var
 echo $var
 ## STDOUT:
 42
+42
+## END
+## N-I osh status: 1
+## N-I osh STDOUT:
 42
 ## END
 

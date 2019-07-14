@@ -498,10 +498,6 @@ class ArithEvaluator(_ExprEvaluator):
 
       rhs = self.Eval(node.right)  # eager evaluation for the rest
 
-      # TODO:
-      # - More type checks
-      # - How do we blame arith_expr?  Really we need the OPERATOR.
-
       if op_id == Id.Arith_LBracket:
         # StrArray or AssocArray
         if isinstance(lhs, list):
@@ -516,15 +512,15 @@ class ArithEvaluator(_ExprEvaluator):
               # TODO: Should be None for Undef instead?  Or ''?
               return 0
 
+        # Quirk: (( A[$key] = 42 )) works
+        #        (( x = A[$key] )) doesn't work because $key is coerced to
+        #        an integer
+        # We could relax this restriction by using value_t here instead of the
+        # None/int/list representation.
+
         elif isinstance(lhs, dict):
-          try:
-            item = lhs[str(rhs)]  # 0 -> '0'
-          except KeyError:
-            if self.exec_opts.nounset:
-              e_die('Invalid key %r' % rhs)
-            else:
-              # TODO: Should be None for Undef instead?  Or ''?
-              return 0
+          e_die("Can't evaluate associative arrays in arithmetic contexts")
+
         else:
           # TODO: Add error context
           e_die('Expected array in index expression, got %s', lhs)
