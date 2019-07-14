@@ -1091,7 +1091,7 @@ class WordParser(object):
 
   def _ReadArithWord(self):
     # type: () -> Tuple[word_t, bool]
-    """Helper function for ReadArithWord."""
+    """Helper function for ReadWord."""
     self._Peek()
 
     if self.token_kind == Kind.Unknown:
@@ -1114,14 +1114,8 @@ class WordParser(object):
       w = osh_word.TokenWord(self.cur_token)
       return w, False
 
-    elif self.token_kind in (Kind.Lit, Kind.Left):
+    elif self.token_kind in (Kind.Lit, Kind.Left, Kind.VSub):
       w = self._ReadCompoundWord(lex_mode=lex_mode_e.Arith)
-      return w, False
-
-    elif self.token_kind == Kind.VSub:
-      part = word_part.SimpleVarSub(self.cur_token)
-      self._Next(lex_mode_e.Arith)
-      w = osh_word.CompoundWord([part])
       return w, False
 
     else:
