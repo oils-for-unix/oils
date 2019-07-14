@@ -891,7 +891,7 @@ class Mem(object):
 
     assert new_flags is not None
 
-    if lval.tag == lvalue_e.LhsName:
+    if lval.tag == lvalue_e.Named:
       #if lval.name == 'ldflags':
       # TODO: Turn this into a tracing feature.  Like osh --tracevar ldflags
       # --tracevar foo.  Has to respect environment variables too.
@@ -938,7 +938,7 @@ class Mem(object):
           cell.exported):
         e_die("Can't export array")  # TODO: error context
 
-    elif lval.tag == lvalue_e.LhsIndexedName:
+    elif lval.tag == lvalue_e.Indexed:
       # TODO: All paths should have this?  We can get here by a[x]=1 or
       # (( a[ x ] = 1 )).  Maybe we should make them different?
       if lval.spids:
@@ -1124,7 +1124,7 @@ class Mem(object):
       ok is false if the cell is read-only.
       found is false if the name is not there.
     """
-    if lval.tag == lvalue_e.LhsName:  # unset x
+    if lval.tag == lvalue_e.Named:  # unset x
       cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
       if cell:
         found = True
@@ -1135,7 +1135,7 @@ class Mem(object):
       else:
         return True, False
 
-    elif lval.tag == lvalue_e.LhsIndexedName:  # unset a[1]
+    elif lval.tag == lvalue_e.Indexed:  # unset a[1]
       raise NotImplementedError
 
     else:

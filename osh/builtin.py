@@ -835,7 +835,7 @@ class Export(object):
 
         #log('%s %s', name, val)
         self.mem.SetVar(
-            lvalue.LhsName(name), val, (var_flags_e.Exported,), scope_e.Dynamic)
+            lvalue.Named(name), val, (var_flags_e.Exported,), scope_e.Dynamic)
 
     return 0
 
@@ -1006,7 +1006,7 @@ class Unset(object):
       raise args.UsageError(
           'got invalid variable name %r' % name, span_id=spid)
 
-    ok, found = self.mem.Unset(lvalue.LhsName(name), scope_e.Dynamic)
+    ok, found = self.mem.Unset(lvalue.Named(name), scope_e.Dynamic)
     if not ok:
       self.errfmt.Print("Can't unset readonly variable %r", name,
                         span_id=spid)

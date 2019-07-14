@@ -51,9 +51,9 @@ module runtime
 
   -- For assignment, evaluated to osh_ast.lhs_expr
   lvalue = 
-    LhsName(string name)
-  | LhsIndexedName(string name, int index)
-  | LhsStringKey(string name, string key)
+    Named(string name)
+  | Indexed(string name, int index)
+  | Keyed(string name, string key)
 
   -- evaluated version of syntax.redir
   redirect = 

@@ -621,7 +621,7 @@ class Executor(object):
       val = self.word_ev.EvalWordToString(env_pair.val)
       # Set each var so the next one can reference it.  Example:
       # FOO=1 BAR=$FOO ls /
-      self.mem.SetVar(lvalue.LhsName(env_pair.name), val,
+      self.mem.SetVar(lvalue.Named(env_pair.name), val,
                       (var_flags_e.Exported,), scope_e.LocalOnly)
 
   def _Dispatch(self, node, fork_external):

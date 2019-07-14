@@ -54,7 +54,7 @@ class OilEvaluator(object):
       print('')
 
     if node.tag == expr_e.Var:
-      return lvalue.LhsName(node.name.val)
+      return lvalue.Named(node.name.val)
     else:
       # TODO:
       # subscripts, tuple unpacking, starred expressions, etc.

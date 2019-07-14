@@ -132,17 +132,22 @@ def EvalLhs(node, arith_ev, mem, spid, lookup_mode):
   assert isinstance(node, lhs_expr_t), node
 
   if node.tag == lhs_expr_e.LhsName:  # a=x
-    lval = lvalue.LhsName(node.name)
+    lval = lvalue.Named(node.name)
     lval.spids.append(spid)
     return lval
 
   if node.tag == lhs_expr_e.LhsIndexedName:  # a[1+2]=x
     # The index of StrArray needs to be coerced to int, but not the index of
     # an AssocArray.
+
+    # TODO: instead of int_coerce, return either
+    # - lvalue.Indexed
+    # - lvalue.Keyed
+
     int_coerce = not mem.IsAssocArray(node.name, lookup_mode)
     index = arith_ev.Eval(node.index, int_coerce=int_coerce)
 
-    lval = lvalue.LhsIndexedName(node.name, index)
+    lval = lvalue.Indexed(node.name, index)
     lval.spids.append(node.spids[0])  # copy left-most token over
     return lval
 
@@ -157,7 +162,7 @@ def _EvalLhsArith(node, mem, arith_ev):
   assert isinstance(node, lhs_expr_t), node
 
   if node.tag == lhs_expr_e.LhsName:  # (( i = 42 ))
-    lval = lvalue.LhsName(node.name)
+    lval = lvalue.Named(node.name)
     # TODO: location info.  Use the = token?
     #lval.spids.append(spid)
     return lval
@@ -168,7 +173,7 @@ def _EvalLhsArith(node, mem, arith_ev):
     int_coerce = not mem.IsAssocArray(node.name, scope_e.Dynamic)
     index = arith_ev.Eval(node.index, int_coerce=int_coerce)
 
-    lval = lvalue.LhsIndexedName(node.name, index)
+    lval = lvalue.Indexed(node.name, index)
     # TODO: location info.  Use the = token?
     #lval.spids.append(node.spids[0])
     return lval
@@ -196,7 +201,7 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
     # Problem: It can't be an array?
     # a=(1 2)
     # (( a++ ))
-    lval = lvalue.LhsName(node.name)
+    lval = lvalue.Named(node.name)
     val = _LookupVar(node.name, mem, exec_opts)
 
   elif node.tag == lhs_expr_e.LhsIndexedName:  # a[1] = b
@@ -207,7 +212,7 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
 
     int_coerce = not mem.IsAssocArray(node.name, lookup_mode)
     index = arith_ev.Eval(node.index, int_coerce=int_coerce)
-    lval = lvalue.LhsIndexedName(node.name, index)
+    lval = lvalue.Indexed(node.name, index)
 
     val = mem.GetVar(node.name)
 
@@ -236,7 +241,7 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
 
     elif val.tag == value_e.AssocArray:  # declare -A a; a['x']+=1
       index = arith_ev.Eval(node.index, int_coerce=False)
-      lval = lvalue.LhsIndexedName(node.name, index)
+      lval = lvalue.Indexed(node.name, index)
 
       s = val.d.get(index)
       if s is None:
