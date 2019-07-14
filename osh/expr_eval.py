@@ -110,8 +110,8 @@ def _StringToInteger(s, span_id=const.NO_INTEGER):
 #   (( a[key] += val ))          # osh/expr_eval.py:308 (_EvalLhsAndLookupArith)
 #
 # Uses Python's [] operator
-#   val=${a[$key]}               # osh/word_eval.py:633 (bracket_op_e.ArrayIndex)
-#   (( val = a[key] ))           # osh/expr_eval.py:490 (Id.Arith_LBracket)
+#   val=${a[$key]}               # osh/word_eval.py:639 (bracket_op_e.ArrayIndex)
+#   (( val = a[key] ))           # osh/expr_eval.py:509 (Id.Arith_LBracket)
 #
 
 
@@ -235,7 +235,6 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
         val = value.Str(s)
 
     elif val.tag == value_e.AssocArray:  # declare -A a; a['x']+=1
-      # TODO: Also need IsAssocArray() check?
       index = arith_ev.Eval(node.index, int_coerce=False)
       lval = lvalue.LhsIndexedName(node.name, index)
 
@@ -508,22 +507,26 @@ class ArithEvaluator(_ExprEvaluator):
 
       if op_id == Id.Arith_LBracket:
         # StrArray or AssocArray
-        if not isinstance(lhs, (list, dict)):
+        if isinstance(lhs, list):
+          try:
+            item = lhs[rhs]
+          except IndexError:
+            if self.exec_opts.nounset:
+              e_die('Index out of bounds')
+            else:
+              return 0  # If not fatal, return 0
+
+        elif isinstance(lhs, dict):
+          try:
+            item = lhs[str(rhs)]  # 0 -> '0'
+          except KeyError:
+            if self.exec_opts.nounset:
+              e_die('Invalid key %r' % rhs)
+            else:
+              return 0  # If not fatal, return 0
+        else:
           # TODO: Add error context
           e_die('Expected array in index expression, got %s', lhs)
-
-        try:
-          item = lhs[rhs]
-        except KeyError:
-          if self.exec_opts.nounset:
-            e_die('Invalid key %r' % rhs)
-          else:
-            return 0  # If not fatal, return 0
-        except IndexError:
-          if self.exec_opts.nounset:
-            e_die('Index out of bounds')
-          else:
-            return 0  # If not fatal, return 0
 
         assert isinstance(item, str), item
         return self._StringToIntegerOrError(item)
