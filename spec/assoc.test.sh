@@ -338,11 +338,19 @@ echo $var
 42
 ## END
 
-#### (( A[5] += 1 ))
+#### (( A[5] += 42 ))
+declare -A A
+(( A[5] = 10 ))
+(( A[5] += 6 ))
+echo ${A[5]}
+## STDOUT:
+16
+## END
+
+#### (( A[5] += 42 )) with empty cell
 declare -A A
 (( A[5] += 6 ))
 echo ${A[5]}
 ## STDOUT:
 6
 ## END
-

@@ -128,9 +128,6 @@ def EvalLhs(node, arith_ev, mem, spid, lookup_mode):
   """lhs_expr -> lvalue.
 
   Used for a=b and a[x]=b
-
-  TODO: Rationalize with expr_eval EvalLhsAndLookup, which is used for a+=b
-  and a[x]+=b.
   """
   assert isinstance(node, lhs_expr_t), node
 
@@ -147,6 +144,33 @@ def EvalLhs(node, arith_ev, mem, spid, lookup_mode):
 
     lval = lvalue.LhsIndexedName(node.name, index)
     lval.spids.append(node.spids[0])  # copy left-most token over
+    return lval
+
+  raise AssertionError(node.tag)
+
+
+def _EvalLhsArith(node, mem, arith_ev):
+  """lhs_expr -> lvalue.
+  
+  Very similar to EvalLhs above in core/cmd_exec.
+  """
+  assert isinstance(node, lhs_expr_t), node
+
+  if node.tag == lhs_expr_e.LhsName:  # (( i = 42 ))
+    lval = lvalue.LhsName(node.name)
+    # TODO: location info.  Use the = token?
+    #lval.spids.append(spid)
+    return lval
+
+  if node.tag == lhs_expr_e.LhsIndexedName:  # (( a[42] = 42 ))
+    # The index of StrArray needs to be coerced to int, but not the index of
+    # an AssocArray.
+    int_coerce = not mem.IsAssocArray(node.name, scope_e.Dynamic)
+    index = arith_ev.Eval(node.index, int_coerce=int_coerce)
+
+    lval = lvalue.LhsIndexedName(node.name, index)
+    # TODO: location info.  Use the = token?
+    #lval.spids.append(node.spids[0])
     return lval
 
   raise AssertionError(node.tag)
@@ -336,32 +360,6 @@ class ArithEvaluator(_ExprEvaluator):
     i = self._ValToArithOrError(val, span_id=span_id)
     return i, lval
 
-  def _EvalLhsArith(self, node):
-    """lhs_expr -> lvalue.
-    
-    Very similar to _EvalLhs in core/cmd_exec.
-    """
-    assert isinstance(node, lhs_expr_t), node
-
-    if node.tag == lhs_expr_e.LhsName:  # (( i = 42 ))
-      lval = lvalue.LhsName(node.name)
-      # TODO: location info.  Use the = token?
-      #lval.spids.append(spid)
-      return lval
-
-    if node.tag == lhs_expr_e.LhsIndexedName:  # (( a[42] = 42 ))
-      # The index of StrArray needs to be coerced to int, but not the index of
-      # an AssocArray.
-      int_coerce = not self.mem.IsAssocArray(node.name, scope_e.Dynamic)
-      index = self.Eval(node.index, int_coerce=int_coerce)
-
-      lval = lvalue.LhsIndexedName(node.name, index)
-      # TODO: location info.  Use the = token?
-      #lval.spids.append(node.spids[0])
-      return lval
-
-    raise AssertionError(node.tag)
-
   def _Store(self, lval, new_int):
     val = value.Str(str(new_int))
     self.mem.SetVar(lval, val, (), scope_e.Dynamic)
@@ -372,7 +370,7 @@ class ArithEvaluator(_ExprEvaluator):
       node: osh_ast.arith_expr
 
     Returns:
-      int or list of strings
+      int or list of strings (or dict?)
     """
     # OSH semantics: Variable NAMES cannot be formed dynamically; but INTEGERS
     # can.  ${foo:-3}4 is OK.  $? will be a compound word too, so we don't have
@@ -420,7 +418,7 @@ class ArithEvaluator(_ExprEvaluator):
 
       if op_id == Id.Arith_Equal:
         rhs = self.Eval(node.right)
-        lval = self._EvalLhsArith(node.left)
+        lval = _EvalLhsArith(node.left, self.mem, self)
         self._Store(lval, rhs)
         return rhs
 

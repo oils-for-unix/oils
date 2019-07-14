@@ -473,7 +473,7 @@ argv.py "${a[@]:15:2}"
 ## N-I mksh status: 1
 ## N-I mksh stdout-json: ""
 
-#### Using an array itself as the index
+#### Using an array itself as the index on LHS
 # TODO: Fix OSH crash.
 shopt -u strict-arith
 a[a]=42
@@ -481,6 +481,16 @@ a[a]=99
 argv "${a[@]}" "${a[0]}" "${a[42]}" "${a[99]}"
 ## STDOUT:
 ['42', '99', '42', '99', '']
+## END
+
+#### Using an array itself as the index on RHS
+shopt -u strict-arith
+a=(1 2 3)
+(( x = a[a] ))
+echo $x
+## stdout-json: ""
+## BUG bash/mksh STDOUT:
+2
 ## END
 
 #### a[$x$y] on LHS and RHS
