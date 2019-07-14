@@ -380,6 +380,10 @@ class ArithEvaluator(_ExprEvaluator):
       int for Str
       List[int] for StrArray
       Dict[str, str] for AssocArray (TODO: Should we support this?)
+
+    NOTE: (( A['x'] = 'x' )) and (( x = A['x'] )) are syntactically valid in
+    bash, but don't do what you'd think.  'x' sometimes a variable name and
+    sometimes a key.
     """
     # OSH semantics: Variable NAMES cannot be formed dynamically; but INTEGERS
     # can.  ${foo:-3}4 is OK.  $? will be a compound word too, so we don't have
@@ -508,13 +512,16 @@ class ArithEvaluator(_ExprEvaluator):
       if op_id == Id.Arith_LBracket:
         # StrArray or AssocArray
         if isinstance(lhs, list):
+          if not isinstance(rhs, int):
+            e_die('Expected index to be an integer, got %r', rhs)
           try:
             item = lhs[rhs]
           except IndexError:
             if self.exec_opts.nounset:
               e_die('Index out of bounds')
             else:
-              return 0  # If not fatal, return 0
+              # TODO: Should be None for Undef instead?  Or ''?
+              return 0
 
         elif isinstance(lhs, dict):
           try:
@@ -523,7 +530,8 @@ class ArithEvaluator(_ExprEvaluator):
             if self.exec_opts.nounset:
               e_die('Invalid key %r' % rhs)
             else:
-              return 0  # If not fatal, return 0
+              # TODO: Should be None for Undef instead?  Or ''?
+              return 0
         else:
           # TODO: Add error context
           e_die('Expected array in index expression, got %s', lhs)

@@ -53,6 +53,7 @@ module runtime
   lvalue = 
     LhsName(string name)
   | LhsIndexedName(string name, int index)
+  | LhsStringKey(string name, string key)
 
   -- evaluated version of syntax.redir
   redirect = 

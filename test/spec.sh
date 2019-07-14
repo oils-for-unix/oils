@@ -554,7 +554,7 @@ arith-context() {
 }
 
 array() {
-  sh-spec spec/array.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/array.test.sh --osh-failures-allowed 2 \
     $BASH $MKSH $OSH_LIST "$@"
 }
 
@@ -593,7 +593,7 @@ dbracket() {
 }
 
 dparen() {
-  sh-spec spec/dparen.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/dparen.test.sh --osh-failures-allowed 5 \
     $BASH $MKSH $ZSH $OSH_LIST "$@"
 }
 

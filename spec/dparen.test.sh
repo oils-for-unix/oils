@@ -119,3 +119,16 @@ values = 0
 ## N-I zsh status: 1
 ## N-I mksh stdout-json: ""
 ## N-I mksh status: 1
+
+#### literal strings not properly supported
+declare -A A
+A['x']=x
+(( x = A['x'] ))
+(( A['y'] = 'y' ))  # y is a variable, gets coerced to 0
+echo $x ${A['y']}
+## STDOUT:
+0 0
+## END
+## N-I zsh/mksh STDOUT:
+0
+## END

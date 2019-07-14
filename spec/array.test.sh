@@ -488,7 +488,9 @@ shopt -u strict-arith
 a=(1 2 3)
 (( x = a[a] ))
 echo $x
+## status: 1
 ## stdout-json: ""
+## BUG bash/mksh status: 0
 ## BUG bash/mksh STDOUT:
 2
 ## END
