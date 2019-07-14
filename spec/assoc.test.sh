@@ -44,6 +44,20 @@ argv.py "${!assoc[@]}"
 []
 ## END
 
+#### Can't initialize assoc array with indexed array
+declare -A A=(1 2 3)
+## status: 1
+## BUG bash status: 0
+
+#### Initializing indexed array with with assoc array drops the constants
+declare -a a=([xx]=1 [yy]=2 [zz]=3)
+#declare -a a=(1 2 3)
+echo "${a[@]}"
+## stdout-json: ""
+## BUG bash STDOUT:
+3
+## END
+
 #### create empty assoc array, put, then get
 declare -A A  # still undefined
 argv.py "${A[@]}"
@@ -254,19 +268,6 @@ foo
 1 2 3
 42
 ##
-
-#### Can't initialize assoc array with indexed array
-declare -A A=(1 2 3)
-## status: 1
-## BUG bash status: 0
-
-#### Initializing indexed array with with assoc array drops the constants
-declare -a a=([xx]=1 [yy]=2 [zz]=3)
-#declare -a a=(1 2 3)
-echo "${a[@]}"
-#echo "${!a[@]}"
-## N-I mksh stdout-json: ""
-## BUG bash stdout-json: "3\n"
 
 #### Append to associative array value A['x']+='suffix'
 declare -A A
