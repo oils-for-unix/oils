@@ -303,34 +303,19 @@ class _ExprEvaluator(object):
 
 class ArithEvaluator(_ExprEvaluator):
 
-  def _ValToArith(self, val, span_id, int_coerce=True):
+  def _ValToArith(self, val, span_id):
     """Convert value_t to a Python int or list of strings."""
     assert isinstance(val, value_t), '%r %r' % (val, type(val))
 
-    if int_coerce:
-      if val.tag == value_e.Undef:  # 'nounset' already handled before got here
-        # Happens upon a[undefined]=42, which unfortunately turns into a[0]=42.
-        #log('blame_word %s   arena %s', blame_word, self.arena)
-        e_die('Undefined value in arithmetic context '
-              '(0 if shopt -u strict-arith)', span_id=span_id)
-        return 0
-
-      if val.tag == value_e.Str:
-        return _StringToInteger(val.s, span_id=span_id)  # calls e_die
-
-      if val.tag == value_e.StrArray:  # array is valid on RHS, but not on left
-        return val.strs
-
-      if val.tag == value_e.AssocArray:
-        return val.d
-
-      raise AssertionError(val)
-
     if val.tag == value_e.Undef:  # 'nounset' already handled before got here
-      return ''  # I think nounset is handled elsewhere
+      # Happens upon a[undefined]=42, which unfortunately turns into a[0]=42.
+      #log('blame_word %s   arena %s', blame_word, self.arena)
+      e_die('Undefined value in arithmetic context '
+            '(0 if shopt -u strict-arith)', span_id=span_id)
+      return 0
 
     if val.tag == value_e.Str:
-      return val.s
+      return _StringToInteger(val.s, span_id=span_id)  # calls e_die
 
     if val.tag == value_e.StrArray:  # array is valid on RHS, but not on left
       return val.strs
@@ -338,14 +323,15 @@ class ArithEvaluator(_ExprEvaluator):
     if val.tag == value_e.AssocArray:
       return val.d
 
-  def _ValToArithOrError(self, val, int_coerce=True, blame_word=None,
-                         span_id=const.NO_INTEGER):
+    raise AssertionError(val)
+
+  def _ValToArithOrError(self, val, blame_word=None, span_id=const.NO_INTEGER):
     if span_id == const.NO_INTEGER and blame_word:
       span_id = word.LeftMostSpanForWord(blame_word)
     #log('_ValToArithOrError span=%s blame=%s', span_id, blame_word)
 
     try:
-      i = self._ValToArith(val, span_id, int_coerce=int_coerce)
+      i = self._ValToArith(val, span_id)
     except util.FatalRuntimeError as e:
       if self.exec_opts.strict_arith:
         raise
@@ -378,7 +364,7 @@ class ArithEvaluator(_ExprEvaluator):
     val = value.Str(str(new_int))
     self.mem.SetVar(lval, val, (), scope_e.Dynamic)
 
-  def Eval(self, node, int_coerce=True):
+  def Eval(self, node):
     """
     Args:
       node: arith_expr_t
@@ -400,12 +386,11 @@ class ArithEvaluator(_ExprEvaluator):
     if node.tag == arith_expr_e.ArithVarRef:  # $(( x ))  (can be array)
       tok = node.token
       val = _LookupVar(tok.val, self.mem, self.exec_opts)
-      return self._ValToArithOrError(val, int_coerce=int_coerce,
-                                     span_id=tok.span_id)
+      return self._ValToArithOrError(val, span_id=tok.span_id)
 
     if node.tag == arith_expr_e.ArithWord:  # $(( $x )) $(( ${x}${y} )), etc.
       val = self.word_ev.EvalWordToString(node.w)
-      return self._ValToArithOrError(val, int_coerce=int_coerce, blame_word=node.w)
+      return self._ValToArithOrError(val, blame_word=node.w)
 
     if node.tag == arith_expr_e.UnaryAssign:  # a++
       op_id = node.op_id
