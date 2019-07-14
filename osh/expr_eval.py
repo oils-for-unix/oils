@@ -346,8 +346,9 @@ class ArithEvaluator(_ExprEvaluator):
     """
     Args:
       node: lhs_expr
+
     Returns:
-      int or list of strings, lvalue_t
+      (Python object, lvalue_t)
     """
     val, lval = EvalLhsAndLookup(node, self, self.mem, self.exec_opts)
 
@@ -364,13 +365,22 @@ class ArithEvaluator(_ExprEvaluator):
     val = value.Str(str(new_int))
     self.mem.SetVar(lval, val, (), scope_e.Dynamic)
 
+  def EvalToIndex(self, node):
+    # TODO:
+    # - For StrArray, Check that you got an integer (not None, etc.)
+    # - For AssocArray, do something else?  Get rid of int_coerce?
+    pass
+
   def Eval(self, node, int_coerce=True):
     """
     Args:
       node: osh_ast.arith_expr
 
     Returns:
-      int or list of strings (or dict?)
+      None for Undef  (e.g. empty cell)  TODO: Don't return 0!
+      int for Str
+      List[int] for StrArray
+      Dict[str, str] for AssocArray (TODO: Should we support this?)
     """
     # OSH semantics: Variable NAMES cannot be formed dynamically; but INTEGERS
     # can.  ${foo:-3}4 is OK.  $? will be a compound word too, so we don't have
@@ -492,7 +502,9 @@ class ArithEvaluator(_ExprEvaluator):
 
       rhs = self.Eval(node.right)  # eager evaluation for the rest
 
-      # TODO: Validate that in lhs + rhs, both are STRINGS and not [] or {}.
+      # TODO:
+      # - More type checks
+      # - How do we blame arith_expr?  Really we need the OPERATOR.
 
       if op_id == Id.Arith_LBracket:
         # StrArray or AssocArray

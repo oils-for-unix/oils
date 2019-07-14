@@ -348,6 +348,7 @@ echo ${A[5]}
 ## END
 
 #### (( A[5] += 42 )) with empty cell
+shopt -u strict-arith  # default zero cell
 declare -A A
 (( A[5] += 6 ))
 echo ${A[5]}
