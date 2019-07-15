@@ -49,13 +49,15 @@ declare -A A=(1 2 3)
 ## status: 1
 ## BUG bash status: 0
 
-#### Initializing indexed array with with assoc array drops the constants
+#### Initializing indexed array with assoc array
 declare -a a=([xx]=1 [yy]=2 [zz]=3)
 #declare -a a=(1 2 3)
-echo "${a[@]}"
+argv.py "${a[@]}"
+## status: 1
 ## stdout-json: ""
+## BUG bash status: 0
 ## BUG bash STDOUT:
-3
+['3']
 ## END
 
 #### create empty assoc array, put, then get

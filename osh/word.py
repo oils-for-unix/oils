@@ -6,12 +6,12 @@ from _devbuild.gen.id_kind_asdl import (Id, Kind, Id_t, Kind_t)
 from _devbuild.gen.syntax_asdl import (
     token,
     word_part, word_part_t, word_part_e,
-    word_part__ArrayLiteralPart, word_part__LiteralPart,
-    word_part__EscapedLiteralPart, word_part__SingleQuotedPart,
-    word_part__DoubleQuotedPart, word_part__SimpleVarSub,
-    word_part__BracedVarSub, word_part__TildeSubPart,
-    word_part__CommandSubPart, word_part__ArithSubPart,
-    word_part__BracedTuple, word_part__ExtGlobPart,
+    word_part__ArrayLiteralPart, word_part__AssocArrayLiteral,
+    word_part__LiteralPart, word_part__EscapedLiteralPart,
+    word_part__SingleQuotedPart, word_part__DoubleQuotedPart,
+    word_part__SimpleVarSub, word_part__BracedVarSub, word_part__TildeSubPart,
+    word_part__CommandSubPart, word_part__ArithSubPart, word_part__BracedTuple,
+    word_part__ExtGlobPart,
 
     word, word_t, 
     word__CompoundWord, word__TokenWord, word__EmptyWord, word__BracedWordTree,
@@ -65,6 +65,9 @@ def _EvalWordPart(part):
   if isinstance(part, word_part__ArrayLiteralPart):
     # Array literals aren't good for any of our use cases.  TODO: Rename
     # EvalWordToString?
+    return False, '', False
+
+  elif isinstance(part, word_part__AssocArrayLiteral):
     return False, '', False
 
   elif isinstance(part, word_part__LiteralPart):
