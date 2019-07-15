@@ -962,7 +962,7 @@ class WordParser(object):
     return command.ForExpr(init_node, cond_node, update_node)
 
   def _ReadArrayLiteralPart(self):
-    # type: () -> word_part__ArrayLiteralPart
+    # type: () -> word_part_t
     """
     a=(1 2 3)
 
@@ -1006,9 +1006,28 @@ class WordParser(object):
       assert isinstance(w, word__CompoundWord)  # for MyPy
       words.append(w)
 
+    if not words:  # a=() is empty indexed array
+      return word_part.ArrayLiteralPart(words)  # type: ignore  # invariant List?
+ 
+    # If the first one is a key/value pair, then the rest are assumed to be.
+    pair = word.DetectAssocPair(words[0])
+    if pair:
+      pairs = [pair[0], pair[1]]  # flat representation
+
+      n = len(words)
+      for i in xrange(1, n):
+        w = words[i]
+        pair = word.DetectAssocPair(w)
+        if not pair:
+          p_die("Expected associative array pair", word=w)
+
+        pairs.append(pair[0])  # flat representation
+        pairs.append(pair[1])
+
+      return word_part.AssocArrayLiteral(pairs)  # type: ignore  # invariant List?
+
     words2 = braces.BraceDetectAll(words)
     words3 = word.TildeDetectAll(words2)
-
     return word_part.ArrayLiteralPart(words3)
 
   def _ReadCompoundWord(self, eof_type=Id.Undefined_Tok,

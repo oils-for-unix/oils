@@ -467,6 +467,31 @@ def DetectAssignment(w):
   return None, None, 0
 
 
+def DetectAssocPair(w):
+  # type: (word__CompoundWord) -> Optional[Tuple[word__CompoundWord, word__CompoundWord]]
+  """
+  Like DetectAssignment, but for A=(['k']=v ['k2']=v)
+
+  The key and the value are both strings.  So we just pick out word_part.
+  Unlike a[k]=v, A=([k]=v) is NOT ambiguous, because the [k] syntax is only used
+  for associative array literals, as opposed to indexed array literals.
+  """
+  parts = w.parts
+  if _LiteralPartId(parts[0]) != Id.Lit_LBracket:
+    return None
+
+  n = len(parts)
+  for i in xrange(n):
+    id_ = _LiteralPartId(parts[i])
+    if id_ == Id.Lit_ArrayLhsClose: # ]=
+      # e.g. if we have [$x$y]=$a$b
+      key = word.CompoundWord(parts[1:i])  # $x$y 
+      value = word.CompoundWord(parts[i+1:])  # $a$b from
+      return key, value
+
+  return None
+
+
 def KeywordToken(w):
   # type: (word_t) -> Tuple[Kind_t, Optional[token]]
   """Tests if a word is an assignment or control flow word.

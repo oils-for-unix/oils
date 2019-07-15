@@ -192,6 +192,9 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
 
   C('#', Id.Lit_Pound),  # For comments
 
+  C('[', Id.Lit_LBracket),  # e.g. A=(['x']=1)
+  C(']', Id.Lit_RBracket),  # e.g. *.[ch]
+
   # For brace expansion {a,b}
   C('{', Id.Lit_LBrace),
   C('}', Id.Lit_RBrace),  # Also for var sub ${a}
@@ -301,7 +304,7 @@ def IsKeyword(name):
 # Keywords have to be checked before _UNQUOTED so we get <KW_If "if"> instead
 # of <Lit_Chars "if">.
 LEXER_DEF[lex_mode_e.ShCommand] = [
-  # These four are not allowed within [[, so they are in Outer but not
+  # These four are not allowed within [[, so they are in ShCommand but not
   # _UNQUOTED.
 
   # e.g. beginning of NAME=val, which will always be longer than

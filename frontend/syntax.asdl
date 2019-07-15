@@ -19,11 +19,7 @@
 -- * 1>&2- to close redirect
 -- * case fallthrough ;& and ;;&
 
--- Represented but Not Parsed:
--- * ArrayPair -- ([foo]=bar)
-
 -- Parsed but Not Implemented
--- * extended glob
 -- * <> redirect
 
 -- TODO: Preserve these source differences:
@@ -99,18 +95,13 @@ module syntax
   -- begin is optional with ${array::1}
   | Slice(arith_expr? begin, arith_expr? length)
 
-  -- TODO: Constructors should be scoped?  array_item::Pair?
-  array_item = 
-    ArrayWord(word w)
-  | ArrayPair(word key, word value)
-
   word_part = 
-    -- TODO: should be array_item* items.  They CAN be mixed, like a=([x]=y z)
     ArrayLiteralPart(word* words)
+    -- alternating key and value (saving some space)
+  | AssocArrayLiteral(word* pairs)
   | LiteralPart(token token)
     -- escaped case is separate so the evaluator doesn't have to check token ID
   | EscapedLiteralPart(token token)
-    -- for 'foo=' and "${a:-}"
   | SingleQuotedPart(token left, token* tokens)
   | DoubleQuotedPart(word_part* parts)
   | SimpleVarSub(token token)
@@ -133,7 +124,7 @@ module syntax
   | ExtGlobPart(token op, word* arms)
 
   word = 
-    -- for RHS of 'x=' and the argument in ${x:-}
+    -- for RHS of 'x=' and the argument in "${x:-}"
     EmptyWord
   | TokenWord(token token)
     -- A CompoundWord can contain any word_part except the Braced*Part.

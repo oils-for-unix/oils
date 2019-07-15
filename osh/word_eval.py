@@ -1046,16 +1046,28 @@ class _WordEvaluator(object):
     if word.tag == word_e.EmptyWord:
       return value.Str('')
 
-    # Special case for a=(1 2).  ArrayLiteralPart won't appear in words that
-    # don't look like assignments.
-    if (len(word.parts) == 1 and
-        word.parts[0].tag == word_part_e.ArrayLiteralPart):
+    if len(word.parts) == 1:
+      part0 = word.parts[0]
 
-      array_words = word.parts[0].words
-      words = braces.BraceExpandWords(array_words)
-      strs = self.EvalWordSequence(words)
-      #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
-      return value.StrArray(strs)
+      # Special case for a=(1 2).  ArrayLiteralPart won't appear in words that
+      # don't look like assignments.
+      if part0.tag == word_part_e.ArrayLiteralPart:
+        array_words = part0.words
+        words = braces.BraceExpandWords(array_words)
+        strs = self.EvalWordSequence(words)
+        #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
+        return value.StrArray(strs)
+
+      if part0.tag == word_part_e.AssocArrayLiteral:
+        d = {}
+        n = len(part0.pairs)
+        i = 0
+        while i < n:
+          k = self.EvalWordToString(part0.pairs[i])
+          v = self.EvalWordToString(part0.pairs[i+1])
+          d[k.s] = v.s
+          i += 2
+        return value.AssocArray(d)
 
     # If RHS doens't look like a=( ... ), then it must be a string.
     return self.EvalWordToString(word)
