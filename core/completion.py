@@ -1132,8 +1132,9 @@ class ReadlineCallback(object):
       # So this may never happen?
       ui.Stderr('Ctrl-C in completion')
     except Exception as e:  # ESSENTIAL because readline swallows exceptions.
-      import traceback
-      traceback.print_exc()
+      if 0:
+        import traceback
+        traceback.print_exc()
       ui.Stderr('osh: Unhandled exception while completing: %s', e)
       self.debug_f.log('Unhandled exception while completing: %s', e)
     except SystemExit as e:

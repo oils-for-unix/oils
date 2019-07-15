@@ -93,8 +93,10 @@ class _IDisplay(object):
     try:
       self._PrintCandidates(*args)
     except Exception as e:
-      import traceback
-      traceback.print_exc()
+      if 0:
+        import traceback
+        traceback.print_exc()
+
 
   def Reset(self):
     """Call this in between commands."""
