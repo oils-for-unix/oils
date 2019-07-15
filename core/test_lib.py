@@ -26,6 +26,7 @@ from frontend import match
 from frontend import parse_lib
 from frontend import reader
 from osh import builtin
+from osh import builtin_assign
 from osh import builtin_comp
 from osh import cmd_exec
 from osh import expr_eval
@@ -139,7 +140,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   readline = None  # simulate not having it
   builtins = {  # Lookup
       builtin_e.ECHO: builtin.Echo,
-      builtin_e.SHIFT: builtin.Shift(mem),
+      builtin_e.SHIFT: builtin_assign.Shift(mem),
 
       builtin_e.HISTORY: builtin.History(readline),
 

@@ -58,7 +58,7 @@ from _devbuild.gen.syntax_asdl import (
     word_t, word__CompoundWord, word__TokenWord,
 
     word_part, word_part_t,
-    word_part__ArrayLiteralPart, word_part__LiteralPart,
+    word_part__LiteralPart,
     word_part__BracedVarSub, word_part__SingleQuotedPart,
     word_part__ArithSubPart, word_part__DoubleQuotedPart,
     word_part__CommandSubPart, word_part__ExtGlobPart,

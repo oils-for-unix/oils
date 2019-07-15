@@ -73,6 +73,7 @@ from oil_lang import cmd_exec as oil_cmd_exec
 from oil_lang import expr_eval
 
 from osh import builtin
+from osh import builtin_assign
 from osh import builtin_bracket
 from osh import builtin_comp
 from osh import builtin_printf
@@ -417,7 +418,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   dir_stack = state.DirStack()
 
-  declare_typeset = builtin.DeclareTypeset(mem, funcs)
+  declare_typeset = builtin_assign.DeclareTypeset(mem, funcs)
 
   builtins = {  # Lookup
       builtin_e.ECHO: builtin.Echo,
@@ -442,12 +443,12 @@ def ShellMain(lang, argv0, argv, login_shell):
 
       builtin_e.SET: builtin.Set(exec_opts, mem),
       builtin_e.SHOPT: builtin.Shopt(exec_opts),
-      builtin_e.UNSET: builtin.Unset(mem, funcs, errfmt),
 
-      builtin_e.SHIFT: builtin.Shift(mem),
-      builtin_e.EXPORT: builtin.Export(mem),
+      builtin_e.EXPORT: builtin_assign.Export(mem),
       builtin_e.DECLARE: declare_typeset,
       builtin_e.TYPESET: declare_typeset,
+      builtin_e.UNSET: builtin_assign.Unset(mem, funcs, errfmt),
+      builtin_e.SHIFT: builtin_assign.Shift(mem),
 
       builtin_e.ALIAS: builtin.Alias(aliases, errfmt),
       builtin_e.UNALIAS: builtin.UnAlias(aliases, errfmt),
