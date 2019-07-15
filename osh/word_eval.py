@@ -839,6 +839,9 @@ class _WordEvaluator(object):
     if part.tag == word_part_e.ArrayLiteralPart:
       raise AssertionError(
           'Array literal should have been handled at word level')
+    elif part.tag == word_part_e.AssocArrayLiteral:
+      raise AssertionError(
+          'Assoc Array literal should have been handled at word level')
 
     elif part.tag == word_part_e.LiteralPart:
       # Split if it's in a substitution.
@@ -1169,6 +1172,10 @@ class _WordEvaluator(object):
     for w in words:
       part_vals = []
       self._EvalWordToParts(w, False, part_vals)  # not double quoted
+
+      # TODO: Detect whether any parts are ArrayLiteralPart /
+      # AssocArrayLiteral.  If so, then append directly to arg_vec.strs,
+      # spids, array_rhs, and skip the rest.
 
       if 0:
         log('')

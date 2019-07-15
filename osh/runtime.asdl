@@ -5,7 +5,8 @@ module runtime
   -- The spids array is parallel to strs, the argv values.  Note that each
   -- entry in argv came from a single word, but a word can produce multiple
   -- argv entries.
-  arg_vector = (string* strs, int* spids)
+  -- 'rhs' is for assignment builtins.
+  arg_vector = (string* strs, int* spids, value* rhs)
 
   -- A parse-time word_part from syntax.asdl is evaluated to a runtime
   -- part_value.

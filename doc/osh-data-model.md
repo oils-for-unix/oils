@@ -147,6 +147,16 @@ Respects the normal rules of argv.
       $(1 + 2 * 3)
     )
 
+#### Associative Array Literals
+
+    (['k']=v)
+
+    Unlike bash, ([0]=v) is still an associative array literal.
+
+    It's not an indexed array literal.  This matters when you take slices and
+    so forth?
+
+
 #### "${a[@]}" is Evaluating (Splicing)
 
     echo "${array[@]}"

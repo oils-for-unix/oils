@@ -485,3 +485,36 @@ argv.py "$ex2" "$ro2"
 ['a b c', 'a b c']
 ['a b c', 'a b c']
 ## END
+
+#### assign and glob
+cd $TMP
+touch foo=a foo=b
+foo=*
+argv "$foo"
+unset foo
+
+export foo=*
+argv "$foo"
+unset foo
+
+## STDOUT:
+['*']
+['*']
+## END
+## BUG dash STDOUT:
+['*']
+['b']
+## END
+
+#### declare and glob
+cd $TMP
+touch foo=a foo=b
+typeset foo=*
+argv "$foo"
+unset foo
+## STDOUT:
+['*']
+## END
+## N-I dash STDOUT:
+['']
+## END
