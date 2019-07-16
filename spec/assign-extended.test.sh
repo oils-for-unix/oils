@@ -283,3 +283,13 @@ echo $x
 a
 ## END
 
+#### dynamic array parsing in bash is not allowed
+code='x=(1 2 3)'
+typeset -a "$code"  # note: -a flag is required
+argv.py "${x[@]}"
+## STDOUT:
+['(1 2 3)']
+## END
+## OK bash STDOUT:
+['1', '2', '3']
+## END

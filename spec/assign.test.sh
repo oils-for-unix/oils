@@ -518,3 +518,64 @@ unset foo
 ## N-I dash STDOUT:
 ['']
 ## END
+
+#### readonly $x where x='b c' makes them readonly (but NOT defined)
+one=a
+two='b c'
+readonly $two $one
+a=new
+echo status=$?
+b=new
+echo status=$?
+c=new
+echo status=$?
+
+## status: 2
+## stdout-json: ""
+## OK zsh status: 1
+## OK bash status: 0
+## OK bash STDOUT:
+status=1
+status=1
+status=1
+## END
+
+#### readonly a=(1 2) no_value c=(3 4) makes 'no_value' readonly
+readonly a=(1 2) no_value c=(3 4)
+no_value=x
+## status: 1
+## stdout-json: ""
+## OK dash status: 2
+
+#### export a=1 no_value c=2
+no_value=foo
+export a=1 no_value c=2
+printenv.py no_value
+## STDOUT:
+foo
+## END
+
+#### local a=loc $vars d=loc (splitting in local)
+vars='b c'
+b=global
+c=global
+echo $b $c
+f() {
+  local a=loc $vars d=loc
+  argv.py "$a" "$b" "$c" "$d"
+}
+f
+## STDOUT:
+global global
+['loc', '', '', 'loc']
+## END
+## BUG dash STDOUT:
+global global
+['loc', 'global', 'global', 'loc']
+## END
+
+# zsh gives error, doesn't have splitting!
+## OK zsh STDOUT:
+global global
+## END
+## OK zsh status: 1
