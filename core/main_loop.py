@@ -32,6 +32,7 @@ if TYPE_CHECKING:
 
 
 def _ExecutePromptCommand(ex):
+  # type: (Any) -> None
   command = None
   prompt_var = ex.mem.GetVar('PROMPT_COMMAND')
   if prompt_var.tag == value_e.Undef:
