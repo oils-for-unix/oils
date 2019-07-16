@@ -55,3 +55,13 @@ RCFILE
 ## N-I dash status: 2
 ## N-I mksh status: 1
 
+#### interactive shell runs PROMPT_COMMAND after each command
+TEST_CASE='PROMPT_COMMAND="echo hi"'
+case $SH in
+	*bash) echo "$TEST_CASE" | $SH --noprofile --norc -i;;
+	*osh) $SH --rcfile /dev/null -i -c "$TEST_CASE";;
+	*) $SH -i -c "$TEST_CASE";;
+esac
+## STDOUT:
+hi
+## N-I dash/mksh stdout-json: ""
