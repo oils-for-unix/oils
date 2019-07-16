@@ -69,6 +69,11 @@ class InteractiveLineReader(_Reader):
 
     self.Reset()
 
+  def Reset(self):
+    # type: () -> None
+    """Called after command execution."""
+    self.render_ps1 = True
+
   def _GetLine(self):
     # type: () -> Optional[str]
 
@@ -105,11 +110,6 @@ class InteractiveLineReader(_Reader):
     self.prompt_state.SetLastPrompt(self.prompt_str)
     self.render_ps1 = False
     return line
-
-  def Reset(self):
-    # type: () -> None
-    """Called after command execution."""
-    self.render_ps1 = True
 
 
 class FileLineReader(_Reader):
