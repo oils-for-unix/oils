@@ -67,12 +67,18 @@ class InteractiveLineReader(_Reader):
     self.prev_line = None  # type: str
     self.prompt_str = ''
 
+    self.Reset()
+
   def _GetLine(self):
     # type: () -> Optional[str]
 
     # NOTE: In bash, the prompt goes to stderr, but this seems to cause drawing
     # problems with readline?  It needs to know about the prompt.
     #sys.stderr.write(self.prompt_str)
+
+    if self.render_ps1:
+      self.prompt_str = self.prompt_ev.EvalFirstPrompt()
+      self.prompt_state.SetLastPrompt(self.prompt_str)
 
     try:
       line = raw_input(self.prompt_str) + '\n'  # newline required
@@ -97,15 +103,13 @@ class InteractiveLineReader(_Reader):
 
     self.prompt_str = _PS2  # TODO: Do we need $PS2?  Would be easy.
     self.prompt_state.SetLastPrompt(self.prompt_str)
+    self.render_ps1 = False
     return line
 
   def Reset(self):
     # type: () -> None
-    """Call this after command execution, to free memory taken up by the lines,
-    and reset prompt string back to PS1.
-    """
-    self.prompt_str = self.prompt_ev.FirstPromptEvaluator()
-    self.prompt_state.SetLastPrompt(self.prompt_str)
+    """Called after command execution."""
+    self.render_ps1 = True
 
 
 class FileLineReader(_Reader):

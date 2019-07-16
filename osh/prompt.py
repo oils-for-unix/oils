@@ -202,7 +202,7 @@ class Evaluator(object):
     val2 = self.ex.word_ev.EvalForPlugin(ps1_word)
     return val2.s
 
-  def FirstPromptEvaluator(self):
+  def EvalFirstPrompt(self):
     if self.lang == 'osh':
       val = self.mem.GetVar('PS1')
       return self.EvalPrompt(val)
