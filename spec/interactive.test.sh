@@ -20,7 +20,11 @@ one
 #### fatal errors continue
 
 # NOTE: tried here doc, but sys.stdin.isatty() fails.  Could we fake it?
-$SH -i -c '
+case "$SH" in
+	*bash) FLAGS='--noprofile --norc';;
+	*osh) FLAGS='--rcfile /dev/null';;
+esac
+$SH $FLAGS -i -c '
 echo $(( 1 / 0 ))
 echo one
 exit 42
