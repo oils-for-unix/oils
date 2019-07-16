@@ -34,67 +34,53 @@ if TYPE_CHECKING:
 def Interactive(opts, ex, c_parser, display, errfmt):
   # type: (Any, Any, CommandParser, Any, ErrorFormatter) -> Any
   status = 0
-  done = False
-  while not done:
-    # - This loop has a an odd structure because we want to do cleanup after
-    # every 'break'.  (The ones without 'done = True' were 'continue')
-    # - display.EraseLines() needs to be called BEFORE displaying anything, so
+  while True:
+    # display.EraseLines() needs to be called BEFORE displaying anything, so
     # it appears in all branches.
+    try:
+      # may raise HistoryError or ParseError
+      result = c_parser.ParseInteractiveLine()
+      display.EraseLines()
+      if isinstance(result, parse_result__EmptyLine):
+        pass
+      elif isinstance(result, parse_result__Eof):
+        return status
+      elif isinstance(result, parse_result__Node):
+        node = result.cmd
 
-    while True:  # ONLY EXECUTES ONCE
-      try:
-        # may raise HistoryError or ParseError
-        result = c_parser.ParseInteractiveLine()
-        if isinstance(result, parse_result__EmptyLine):
-          display.EraseLines()
-          break  # quit shell
-        elif isinstance(result, parse_result__Eof):
-          display.EraseLines()
-          done = True
-          break  # quit shell
-        elif isinstance(result, parse_result__Node):
-          node = result.cmd
-        else:
-          raise AssertionError
+        # to debug the slightly different interactive parsing
+        if ex.exec_opts.noexec:
+          ui.PrintAst([node], opts)
 
-      except util.HistoryError as e:  # e.g. expansion failed
-        # Where this happens:
-        # for i in 1 2 3; do
-        #   !invalid
-        # done
-        display.EraseLines()
-        print(e.UserErrorString())
-        break
-      except util.ParseError as e:
-        display.EraseLines()
-        errfmt.PrettyPrintError(e)
-        # NOTE: This should set the status interactively!  Bash does this.
-        status = 2
-        break
-      except KeyboardInterrupt:  # thrown by InteractiveLineReader._GetLine()
-        # Here we must print a newline BEFORE EraseLines()
-        print('^C')
-        display.EraseLines()
-        # http://www.tldp.org/LDP/abs/html/exitcodes.html
-        # bash gives 130, dash gives 0, zsh gives 1.
-        # Unless we SET ex.last_status, scripts see it, so don't bother now.
-        break
+        is_return, _ = ex.ExecuteAndCatch(node)
 
-      display.EraseLines()  # Clear candidates right before executing
+        status = ex.LastStatus()
+        if is_return:
+          # skip over Reset so PS1 isn't evaluated again
+          return status
+      else:
+        raise AssertionError(result)
 
-      # to debug the slightly different interactive prasing
-      if ex.exec_opts.noexec:
-        ui.PrintAst([node], opts)
-        break
-
-      is_return, _ = ex.ExecuteAndCatch(node)
-
-      status = ex.LastStatus()
-      if is_return:
-        done = True
-        break
-
-      break  # QUIT LOOP after one iteration.
+    except util.HistoryError as e:  # e.g. expansion failed
+      # Where this happens:
+      # for i in 1 2 3; do
+      #   !invalid
+      # done
+      display.EraseLines()
+      print(e.UserErrorString())
+    except util.ParseError as e:
+      display.EraseLines()
+      errfmt.PrettyPrintError(e)
+      # NOTE: This should set the status interactively!  Bash does this.
+      status = 2
+    except KeyboardInterrupt:  # thrown by InteractiveLineReader._GetLine()
+      # Here we must print a newline BEFORE EraseLines()
+      print('^C')
+      display.EraseLines()
+      # http://www.tldp.org/LDP/abs/html/exitcodes.html
+      # bash gives 130, dash gives 0, zsh gives 1.
+      # Unless we SET ex.last_status, scripts see it, so don't bother now.
+      pass
 
     # Cleanup after every command (or failed command).
 
@@ -109,8 +95,6 @@ def Interactive(opts, ex, c_parser, display, errfmt):
     # complicated, i.e. with timetamps.
     if opts.print_status:
       print('STATUS', repr(status))
-
-  return status
 
 
 def Batch(ex, c_parser, arena, nodes_out=None):
