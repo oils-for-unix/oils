@@ -51,25 +51,29 @@ RCFILE
 ## N-I mksh status: 1
 
 #### interactive shell runs PROMPT_COMMAND after each command
-test_case='
-PROMPT_COMMAND="echo PROMPT"
-echo one
-echo two'
+export PS1=''  # OSH prints prompt to stdout
 
-# TODO: Fix bash and osh to be invoked the same way?
 case $SH in
-  *bash)
-    echo "$test_case" | $SH --rcfile /dev/null --noprofile -i
-    ;;
-  *osh)
-    $SH --rcfile /dev/null -i -c "$test_case"
+  *bash|*osh)
+    $SH --rcfile /dev/null -i << EOF
+PROMPT_COMMAND='echo PROMPT'
+echo one
+echo two
+EOF
     ;;
 esac
+
+# Paper over difference with OSH
+case $SH in
+  *bash) echo '^D'
+esac
+
 ## STDOUT:
 PROMPT
 one
 PROMPT
 two
 PROMPT
+^D
 ## END
 ## N-I dash/mksh stdout-json: ""
