@@ -31,24 +31,7 @@ if TYPE_CHECKING:
   #from osh.cmd_exec import Executor
 
 
-def _ExecutePromptCommand(ex):
-  # type: (Any) -> None
-  prompt_var = ex.mem.GetVar('PROMPT_COMMAND')
-  # Undefined, Array, or AssociativeArray
-  if prompt_var.tag != value_e.Str:
-    return
-  command = prompt_var.s
-
-  # save this so PROMPT_COMMAND can't set $?
-  ex.mem.PushStatusFrame()
-  arg_vec = arg_vector(['PROMPT_COMMAND', command], [0, 0])
-  try:
-    ex._Eval(arg_vec)
-  finally:
-    ex.mem.PopStatusFrame()
-
-
-def Interactive(opts, ex, c_parser, display, errfmt):
+def Interactive(opts, ex, c_parser, display, prompt_plugin, errfmt):
   # type: (Any, Any, CommandParser, Any, ErrorFormatter) -> Any
   status = 0
   done = False
@@ -59,7 +42,7 @@ def Interactive(opts, ex, c_parser, display, errfmt):
     # it appears in all branches.
 
     while True:  # ONLY EXECUTES ONCE
-      _ExecutePromptCommand(ex)
+      prompt_plugin.Run()
       try:
         # may raise HistoryError or ParseError
         result = c_parser.ParseInteractiveLine()

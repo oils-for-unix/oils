@@ -618,8 +618,10 @@ def ShellMain(lang, argv0, argv, login_shell):
 
     line_reader.Reset()  # After sourcing startup file, render $PS1
 
+    prompt_plugin = prompt.UserPlugin(mem, parse_ctx, ex)
     try:
-      status = main_loop.Interactive(opts, ex, c_parser, display, errfmt)
+      status = main_loop.Interactive(opts, ex, c_parser, display,
+                                     prompt_plugin, errfmt)
       if ex.MaybeRunExitTrap():
         status = ex.LastStatus()
     except util.UserExit as e:

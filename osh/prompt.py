@@ -9,9 +9,13 @@ import pwd
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import value_e
+from _devbuild.gen.syntax_asdl import source
+from asdl import const
+from core import main_loop
 from core import ui
 from core import util
 from frontend import match
+from frontend import reader
 from osh import word
 from pylib import os_path
 
@@ -210,3 +214,53 @@ class Evaluator(object):
       # TODO: If the lang is Oil, we should use a better prompt language than
       # $PS1!!!
       return self.default_prompt
+
+
+class UserPlugin(object):
+  """For executing PROMPT_COMMAND and caching its parse tree.
+
+  Similar to core/dev.py:Tracer, which caches $PS4.
+  """
+  def __init__(self, mem, parse_ctx, ex):
+    self.mem = mem
+    self.parse_ctx = parse_ctx
+    self.ex = ex
+
+    self.arena = parse_ctx.arena
+    self.parse_cache = {}
+
+  def Run(self):
+    val = self.mem.GetVar('PROMPT_COMMAND')
+    if val.tag != value_e.Str:
+      return
+
+    # PROMPT_COMMAND almost never changes, so we try to cache its parsing.
+    # This avoids memory allocations.
+    prompt_cmd = val.s
+    try:
+      node = self.parse_cache[prompt_cmd]
+    except KeyError:
+      line_reader = reader.StringLineReader(prompt_cmd, self.arena)
+      c_parser = self.parse_ctx.MakeOshParser(line_reader)
+
+      # NOTE: This is similar to Executor.ParseTrapCode().
+      # TODO: Add spid
+      self.arena.PushSource(source.PromptCommand(const.NO_INTEGER))
+      try:
+        try:
+          node = main_loop.ParseWholeFile(c_parser)
+        except util.ParseError as e:
+          ui.PrettyPrintError(e, self.arena)
+          return  # don't execute
+      finally:
+        self.arena.PopSource()
+
+      self.parse_cache[prompt_cmd] = node
+
+    # Save this so PROMPT_COMMAND can't set $?
+    self.mem.PushStatusFrame()
+    try:
+      # Catches fatal execution error
+      self.ex.ExecuteAndCatch(node)
+    finally:
+      self.mem.PopStatusFrame()
