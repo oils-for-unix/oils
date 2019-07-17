@@ -1,13 +1,13 @@
 <!-- NOTE: This file is at /release/$VERSION/index.html -->
 
-Oil 0.6.0
+Oil 0.7.pre1
 ---------
 
 <span class="date">
 <!-- REPLACE_WITH_DATE -->
 </span>
 
-This is the home page for version 0.6.0 of Oil, a Unix shell.  To use it,
+This is the home page for version 0.7.pre1 of Oil, a Unix shell.  To use it,
 
 1. Download a source tarball.
 2. Build and install it, as described in [INSTALL][].

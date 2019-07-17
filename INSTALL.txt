@@ -12,8 +12,8 @@ Quick Start
 
 If you haven't already done so, extract the tarball:
  
-    tar -x --xz < oil-0.6.0.tar.xz
-    cd oil-0.6.0
+    tar -x --xz < oil-0.7.pre1.tar.xz
+    cd oil-0.7.pre1
 
 Either install as /usr/local/bin/osh:
 
@@ -31,7 +31,7 @@ The latter doesn't require root access, but it requires ~/bin to be in your
 PATH.
 
 NOTE: Out-of-tree builds are NOT currently supported, so you have to be in the
-oil-0.6.0 directory.
+oil-0.7.pre1 directory.
 
 Smoke Test
 ----------
@@ -50,7 +50,7 @@ More Documentation
 
 Every release has a home page with links, e.g.
 
-    https://oilshell.org/release/0.6.0/
+    https://oilshell.org/release/0.7.pre1/
 
 System Requirements
 -------------------
