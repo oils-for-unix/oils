@@ -33,16 +33,11 @@ if TYPE_CHECKING:
 
 def _ExecutePromptCommand(ex):
   # type: (Any) -> None
-  command = None
   prompt_var = ex.mem.GetVar('PROMPT_COMMAND')
-  if prompt_var.tag == value_e.Undef:
+  # Undefined, Array, or AssociativeArray
+  if prompt_var.tag != value_e.Str:
     return
-  elif prompt_var.tag == value_e.AssocArray:
-    command = prompt_var.d['0']
-  elif prompt_var.tag == value_e.StrArray:
-    command = prompt_var.strs[0]
-  elif prompt_var.tag == value_e.Str:
-    command = prompt_var.s
+  command = prompt_var.s
 
   # save this so PROMPT_COMMAND can't set $?
   old_status = ex.LastStatus()
