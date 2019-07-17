@@ -36,7 +36,7 @@ Test results, metrics, and benchmarks are shown below.
 - [INSTALL][]: How do I install Oil?  This text file is also in the tarball.
 - [OSH User Manual](doc/osh-manual.html): How do I use it?
   - [Known Differences](doc/known-differences.html) is trivia for advanced
-    users.  It lists differences between Oil and other
+    users.  It lists differences between Oil and other shells.
   - [OSH Quick Reference](doc/osh-quick-ref.html), with examples (incomplete).
     This document underlies the `help` builtin, and gives a rough overview of
     what features OSH implements.

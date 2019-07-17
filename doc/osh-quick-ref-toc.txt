@@ -151,7 +151,7 @@ PLUGINS AND HOOKS
   [Traps]         EXIT   X ERR   X DEBUG   X RETURN
   [Words]         PS1   X PS2   X PS3   PS4
   [Completion]    complete
-X [Other]         command_not_found   PROMPT_COMMAND
+  [Other]         X command_not_found   PROMPT_COMMAND
 
 OIL EXTENSIONS
 
