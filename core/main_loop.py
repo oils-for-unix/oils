@@ -18,7 +18,6 @@ from _devbuild.gen.syntax_asdl import (
     command_t, command,
     parse_result__EmptyLine, parse_result__Eof, parse_result__Node
 )
-from _devbuild.gen.runtime_asdl import value_e, arg_vector
 from core import ui
 from core import util
 
@@ -28,11 +27,12 @@ if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from osh.cmd_parse import CommandParser
   # commented out so --strict doesn't follow all
+  #from osh import prompt
   #from osh.cmd_exec import Executor
 
 
 def Interactive(opts, ex, c_parser, display, prompt_plugin, errfmt):
-  # type: (Any, Any, CommandParser, Any, ErrorFormatter) -> Any
+  # type: (Any, Any, CommandParser, Any, Any, ErrorFormatter) -> Any
   status = 0
   done = False
   while not done:

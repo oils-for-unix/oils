@@ -8,8 +8,10 @@ from __future__ import print_function
 import pwd
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import value_e
-from _devbuild.gen.syntax_asdl import source
+from _devbuild.gen.runtime_asdl import value_e, value_t
+from _devbuild.gen.syntax_asdl import (
+    command_t, source, word__CompoundWord
+)
 from asdl import const
 from core import main_loop
 from core import ui
@@ -21,6 +23,13 @@ from pylib import os_path
 
 import libc  # gethostname()
 import posix_ as posix
+
+from typing import Any, Dict, List, Tuple, TYPE_CHECKING
+if TYPE_CHECKING:
+  #from osh.state import Mem
+  from frontend.parse_lib import ParseContext
+  # commented out so --strict doesn't follow all
+  #from osh.cmd_exec import Executor
 
 #
 # Prompt Evaluation
@@ -39,6 +48,7 @@ _ONE_CHAR = {
 
 
 def _GetUserName(uid):
+  # type: (int) -> str
   try:
     e = pwd.getpwuid(uid)
   except KeyError:
@@ -51,9 +61,11 @@ class _PromptEvaluatorCache(object):
   """Cache some values we don't expect to change for the life of a process."""
 
   def __init__(self):
-    self.cache = {}
+    # type: () -> None
+    self.cache = {}  # type: Dict[str, Any]
 
   def Get(self, name):
+    # type: (str) -> Any
     if name in self.cache:
       return self.cache[name]
 
@@ -87,6 +99,7 @@ class Evaluator(object):
   prompt.
   """
   def __init__(self, lang, parse_ctx, ex, mem):
+    # type: (str, ParseContext, Any, Any) -> None
     assert lang in ('osh', 'oil'), lang
     self.lang = lang
     self.parse_ctx = parse_ctx
@@ -100,10 +113,11 @@ class Evaluator(object):
 
     # These caches should reduce memory pressure a bit.  We don't want to
     # reparse the prompt twice every time you hit enter.
-    self.tokens_cache = {}  # string -> list of tokens
-    self.parse_cache = {}  # string -> CompoundWord.
+    self.tokens_cache = {}  # type: Dict[str, List[Tuple[Id, str]]]
+    self.parse_cache = {}  # type: Dict[str, word__CompoundWord]
 
   def _ReplaceBackslashCodes(self, tokens):
+    # type: (List[Tuple[Id, str]]) -> str
     ret = []
     non_printing = 0
     for id_, value in tokens:
@@ -175,6 +189,7 @@ class Evaluator(object):
     return ''.join(ret)
 
   def EvalPrompt(self, val):
+    # type: (value_t) -> str
     """Perform the two evaluations that bash does.  Used by $PS1 and ${x@P}."""
     if val.tag != value_e.Str:
       return self.default_prompt  # no evaluation necessary
@@ -207,6 +222,7 @@ class Evaluator(object):
     return val2.s
 
   def EvalFirstPrompt(self):
+    # type: () -> str
     if self.lang == 'osh':
       val = self.mem.GetVar('PS1')
       return self.EvalPrompt(val)
@@ -222,14 +238,16 @@ class UserPlugin(object):
   Similar to core/dev.py:Tracer, which caches $PS4.
   """
   def __init__(self, mem, parse_ctx, ex):
+    # type: (Any, ParseContext, Any) -> None
     self.mem = mem
     self.parse_ctx = parse_ctx
     self.ex = ex
 
     self.arena = parse_ctx.arena
-    self.parse_cache = {}
+    self.parse_cache = {}  # type: Dict[str, command_t]
 
   def Run(self):
+    # type: () -> None
     val = self.mem.GetVar('PROMPT_COMMAND')
     if val.tag != value_e.Str:
       return
