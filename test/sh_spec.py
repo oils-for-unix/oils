@@ -957,7 +957,6 @@ def main(argv):
     # Copied from my own environment.  For now, we want to test bash and other
     # shells in utf-8 mode.
     'LANG': 'en_US.UTF-8',
-    'HOME': os.path.expanduser('~')
   }
   stats = RunCases(cases, case_predicate, shell_pairs, env, out)
   out.EndCases(stats)
