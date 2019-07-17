@@ -2,6 +2,12 @@
  * Python interface to libc functions.
  */
 
+// - Enable GNU extensions in fnmatch.h for extended glob.
+// - It's also apparently needed for wchar.h in combination with Python.
+//   https://github.com/python-pillow/Pillow/issues/1850
+//   - It's currently hard-coded in pyconfig.h.
+#define _GNU_SOURCE 1
+
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>  // printf
 #include <limits.h>
@@ -9,11 +15,6 @@
 #include <stdlib.h>
 #include <sys/ioctl.h>
 #include <locale.h>
-
-// Enable GNU extensions in fnmatch.h.
-// TODO: Need a configure option for this.
-#define _GNU_SOURCE 1
-
 #include <fnmatch.h>
 #include <glob.h>
 #include <regex.h>
