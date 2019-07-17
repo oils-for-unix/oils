@@ -18,9 +18,9 @@ from _devbuild.gen.syntax_asdl import (
     command_t, command,
     parse_result__EmptyLine, parse_result__Eof, parse_result__Node
 )
+from _devbuild.gen.runtime_asdl import value_e, arg_vector
 from core import ui
 from core import util
-#from core.util import log
 
 from typing import Any, Optional, List, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -29,6 +29,23 @@ if TYPE_CHECKING:
   from osh.cmd_parse import CommandParser
   # commented out so --strict doesn't follow all
   #from osh.cmd_exec import Executor
+
+
+def _ExecutePromptCommand(ex):
+  # type: (Any) -> None
+  prompt_var = ex.mem.GetVar('PROMPT_COMMAND')
+  # Undefined, Array, or AssociativeArray
+  if prompt_var.tag != value_e.Str:
+    return
+  command = prompt_var.s
+
+  # save this so PROMPT_COMMAND can't set $?
+  ex.mem.PushStatusFrame()
+  arg_vec = arg_vector(['PROMPT_COMMAND', command], [0, 0])
+  try:
+    ex._Eval(arg_vec)
+  finally:
+    ex.mem.PopStatusFrame()
 
 
 def Interactive(opts, ex, c_parser, display, errfmt):
@@ -42,6 +59,7 @@ def Interactive(opts, ex, c_parser, display, errfmt):
     # it appears in all branches.
 
     while True:  # ONLY EXECUTES ONCE
+      _ExecutePromptCommand(ex)
       try:
         # may raise HistoryError or ParseError
         result = c_parser.ParseInteractiveLine()

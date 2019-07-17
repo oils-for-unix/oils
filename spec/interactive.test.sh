@@ -20,7 +20,11 @@ one
 #### fatal errors continue
 
 # NOTE: tried here doc, but sys.stdin.isatty() fails.  Could we fake it?
-$SH -i -c '
+case "$SH" in
+	*bash) FLAGS='--noprofile --norc';;
+	*osh) FLAGS='--rcfile /dev/null';;
+esac
+$SH $FLAGS -i -c '
 echo $(( 1 / 0 ))
 echo one
 exit 42
@@ -51,3 +55,13 @@ RCFILE
 ## N-I dash status: 2
 ## N-I mksh status: 1
 
+#### interactive shell runs PROMPT_COMMAND after each command
+TEST_CASE='PROMPT_COMMAND="echo hi"'
+case $SH in
+	*bash) echo "$TEST_CASE" | $SH --noprofile --norc -i;;
+	*osh) $SH --rcfile /dev/null -i -c "$TEST_CASE";;
+	*) $SH -i -c "$TEST_CASE";;
+esac
+## STDOUT:
+hi
+## N-I dash/mksh stdout-json: ""
