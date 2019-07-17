@@ -36,21 +36,21 @@ $SH -c '$TMP/no-shebang'
 ## status: 0
 
 #### File with relative path and no shebang is executed
-SH="$(realpath "$SH")"
+SH=$PWD/$SH
 cd $TMP
 echo 'echo hi' > no-shebang
 chmod +x no-shebang
-"$SH" -c ./no-shebang
+"$SH" -c './no-shebang'
 ## stdout: hi
 ## status: 0
 
 #### File in relative subdirectory and no shebang is executed
-SH="$(realpath "$SH")"
+SH=$PWD/$SH
 cd $TMP
-mkdir test-no-shebang
+mkdir -p test-no-shebang
 echo 'echo hi' > test-no-shebang/script
 chmod +x test-no-shebang/script
-"$SH" -c test-no-shebang/script
+"$SH" -c 'test-no-shebang/script'
 ## stdout: hi
 ## status: 0
 
