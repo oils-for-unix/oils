@@ -40,10 +40,12 @@ def _ExecutePromptCommand(ex):
   command = prompt_var.s
 
   # save this so PROMPT_COMMAND can't set $?
-  old_status = ex.LastStatus()
+  ex.mem.PushStatusFrame()
   arg_vec = arg_vector(['PROMPT_COMMAND', command], [0, 0])
-  ex._Eval(arg_vec)
-  ex.mem.SetLastStatus(old_status)
+  try:
+    ex._Eval(arg_vec)
+  finally:
+    ex.mem.PopStatusFrame()
 
 
 def Interactive(opts, ex, c_parser, display, errfmt):
