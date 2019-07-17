@@ -18,13 +18,8 @@ one
 ## N-I mksh stdout-json: ""
 
 #### fatal errors continue
-
 # NOTE: tried here doc, but sys.stdin.isatty() fails.  Could we fake it?
-case "$SH" in
-	*bash) FLAGS='--noprofile --norc';;
-	*osh) FLAGS='--rcfile /dev/null';;
-esac
-$SH $FLAGS -i -c '
+$SH --rcfile /dev/null -i -c '
 echo $(( 1 / 0 ))
 echo one
 exit 42
@@ -56,12 +51,25 @@ RCFILE
 ## N-I mksh status: 1
 
 #### interactive shell runs PROMPT_COMMAND after each command
-TEST_CASE='PROMPT_COMMAND="echo hi"'
+test_case='
+PROMPT_COMMAND="echo PROMPT"
+echo one
+echo two'
+
+# TODO: Fix bash and osh to be invoked the same way?
 case $SH in
-	*bash) echo "$TEST_CASE" | $SH --noprofile --norc -i;;
-	*osh) $SH --rcfile /dev/null -i -c "$TEST_CASE";;
-	*) $SH -i -c "$TEST_CASE";;
+  *bash)
+    echo "$test_case" | $SH --rcfile /dev/null --noprofile -i
+    ;;
+  *osh)
+    $SH --rcfile /dev/null -i -c "$test_case"
+    ;;
 esac
 ## STDOUT:
-hi
+PROMPT
+one
+PROMPT
+two
+PROMPT
+## END
 ## N-I dash/mksh stdout-json: ""
