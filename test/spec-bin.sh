@@ -13,6 +13,9 @@
 #   test/spec-bin.sh copy-all     # Put them in _tmp/spec-bin
 #   test/spec-bin.sh test-all     # Run a small smoke test
 #
+# To run all commands at once (with minimal error-checking):
+#   test/spec-bin.sh all-steps     # Download, extract, compile, and test all shells
+#
 # Could also build these:
 # - coreutils
 # - re2c for the OSH build (now in build/codegen.sh)
@@ -174,6 +177,15 @@ publish-tmp() {
   local dest=oilshell.org/share/2018-10-06-tmp/
   ssh ${name}@${name}.org mkdir -p $dest
   scp _deps/re2c-1.0.3/re2c ${name}@${name}.org:$dest
+}
+
+all-steps() {
+  set -e
+  download     # Get the right version of every tarball
+  extract-all  # Extract source
+  build-all    # Compile
+  copy-all     # Put them in _tmp/spec-bin
+  test-all     # Run a small smoke test
 }
 
 "$@"
