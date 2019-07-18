@@ -366,3 +366,20 @@ echo ${A[5]}
 ## STDOUT:
 6
 ## END
+
+#### setting key to itself (from bash-bug mailing list)
+declare -A foo
+foo=(["key"]="value1")
+echo ${foo["key"]}
+foo=(["key"]="${foo["key"]} value2")
+echo ${foo["key"]}
+## STDOUT:
+value1
+value1 value2
+## END
+## BUG bash STDOUT:
+value1
+value2
+## END
+
+
