@@ -518,13 +518,13 @@ class Read(object):
         name = names[0]
       except IndexError:
         name = 'REPLY'  # default variable name
+      s = ""
       if sys.stdin.isatty():  # set stdin to read in unbuffered mode
         orig_attrs = termios.tcgetattr(stdin)
         attrs = termios.tcgetattr(stdin)
         # disable canonical (buffered) mode
         # see `man termios` for an extended discussion
         attrs[3] &= ~termios.ICANON
-        s = ""
         try:
           termios.tcsetattr(stdin, termios.TCSANOW, attrs)
           # posix.read always returns a single character in unbuffered mode
@@ -534,7 +534,14 @@ class Read(object):
         finally:
           termios.tcsetattr(stdin, termios.TCSANOW, orig_attrs)
       else:
-        s = posix.read(stdin, arg.n)
+        s_len = 0
+        while arg.n > 0:
+          buf = posix.read(stdin, arg.n)
+          # EOF
+          if buf == '':
+            break
+          arg.n -= len(buf)
+          s += buf
 
       state.SetLocalString(self.mem, name, s)
       # NOTE: Even if we don't get n bytes back, there is no error?

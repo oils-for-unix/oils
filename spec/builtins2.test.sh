@@ -210,3 +210,11 @@ builtin command echo hi
 ## stdout: hi
 ## N-I dash status: 127
 ## N-I dash stdout-json: ""
+
+#### read returns correct number of bytes without EOF
+# zsh goes into an infinite loop!
+timeout 1s $SH -c 'while true; do echo -n x; done | { read -n 3; echo $REPLY; }'
+## status: 124
+## stdout: xxx
+## N-I dash stdout:
+## BUG zsh stdout-json: ""
