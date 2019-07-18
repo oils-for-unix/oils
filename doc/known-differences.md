@@ -297,6 +297,24 @@ These don't:
 - `{ echo one; echo two; }`
 - `for`, `while`, `case`, functions, etc.
 
+#### Array References Must be Explicit
+
+In bash, `$array` is equivalent to `${array[0]}`, which is very confusing
+(especially when combined with `set -o nounset`).
+
+No:
+
+    array=(1 2 3)
+    echo $array         # Runtime error in OSH
+
+Yes:
+
+    echo ${array[0]}    # explicitly choose the first element
+    echo "${array[@]}"  # explicitly choose the whole array
+
+NOTE: Setting `shopt -s strict-array` further reduces the confusion between
+strings and arrays.  See [the manual](osh-manual.html) for details.
+
 #### Arrays aren't split inside ${}
 
 Most shells split the entries of arrays like `"$@"` and `"${a[@]}"` here:
