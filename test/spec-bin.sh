@@ -13,12 +13,15 @@
 #   test/spec-bin.sh copy-all     # Put them in _tmp/spec-bin
 #   test/spec-bin.sh test-all     # Run a small smoke test
 #
-# To run all commands at once (with minimal error-checking):
-#   test/spec-bin.sh all-steps     # Download, extract, compile, and test all shells
+# Once you've run all steps manually and understand how they work, run them
+# all at once with:
+#
+#   test/spec-bin.sh all-steps
 #
 # Could also build these:
 # - coreutils
 # - re2c for the OSH build (now in build/codegen.sh)
+# - cmark
 
 set -o nounset
 set -o pipefail
@@ -180,7 +183,6 @@ publish-tmp() {
 }
 
 all-steps() {
-  set -e
   download     # Get the right version of every tarball
   extract-all  # Extract source
   build-all    # Compile
