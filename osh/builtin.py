@@ -26,6 +26,7 @@ http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_
 """
 from __future__ import print_function
 
+import termios # for read -n
 import signal  # for calculating numbers
 import sys
 
@@ -512,12 +513,28 @@ class Read(object):
 
     names = arg_vec.strs[i:]
     if arg.n is not None:  # read a certain number of bytes
+      stdin = sys.stdin.fileno()
       try:
         name = names[0]
       except IndexError:
         name = 'REPLY'  # default variable name
-      s = posix.read(sys.stdin.fileno(), arg.n)
-      #log('read -n: %s = %s', name, s)
+      if sys.stdin.isatty():  # set stdin to read in unbuffered mode
+        orig_attrs = termios.tcgetattr(stdin)
+        attrs = termios.tcgetattr(stdin)
+        # disable canonical (buffered) mode
+        # see `man termios` for an extended discussion
+        attrs[3] &= ~termios.ICANON
+        s = ""
+        try:
+          termios.tcsetattr(stdin, termios.TCSANOW, attrs)
+          # posix.read always returns a single character in unbuffered mode
+          while arg.n > 0:
+            s += posix.read(stdin, 1)
+            arg.n -= 1
+        finally:
+          termios.tcsetattr(stdin, termios.TCSANOW, orig_attrs)
+      else:
+        s = posix.read(stdin, arg.n)
 
       state.SetLocalString(self.mem, name, s)
       # NOTE: Even if we don't get n bytes back, there is no error?
