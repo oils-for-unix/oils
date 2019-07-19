@@ -82,7 +82,7 @@ while true; do
     # TODO: Maybe prefix only needs to be part of the install step?  I'm not
     # sure if we need it for building anything.
     --prefix=*)
-      FLAG_prefix=$(expr "$1" : '--prefix=\(.*\)')
+      FLAG_prefix=$(expr \( "$1" : '--prefix=\(.*\)' \) )
       ;;
     --prefix)
       if test $# -eq 1; then
