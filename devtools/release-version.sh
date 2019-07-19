@@ -431,15 +431,15 @@ announcement-0.6.pre16-to-22() {
 }
 
 announcement-0.6.pre23() {
-  write-no-announcement
+  html-redirect '/blog/2019/07/19.html' > $SITE_DEPLOY_DIR/release/0.6.pre23/announcement.html
 }
 
 announcement-0.6.0() {
-  write-no-announcement
+  html-redirect '/blog/2019/07/19.html' > $SITE_DEPLOY_DIR/release/0.6.0/announcement.html
 }
 
 announcement-0.7.pre1() {
-  write-no-announcement
+  html-redirect '/blog/2019/07/19.html' > $SITE_DEPLOY_DIR/release/0.7.pre1/announcement.html
 }
 
 "$@"
