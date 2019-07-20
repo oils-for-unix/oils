@@ -212,8 +212,16 @@ builtin command echo hi
 ## N-I dash stdout-json: ""
 
 #### read returns correct number of bytes without EOF
-# zsh goes into an infinite loop!
-timeout 1s $SH -c 'while true; do echo -n x; done | { read -n 3; echo $REPLY; }'
+case $SH in
+  # the flag for zsh is different from bash and osh
+  *zsh) FLAG=k;;
+  # mksh returns as soon as _any_ bytes are read if you use -n
+  *mksh) FLAG=N;;
+  *) FLAG=n;;
+esac
+# redirect to /dev/null is because `mksh` prints 'broken pipe error' repeatedly
+# timeout is because `mksh` and `zsh` don't kill builtin loops on SIGPIPE
+timeout 1s $SH -c "while true; do printf x 2>/dev/null; done | { read -$FLAG 3; echo \$REPLY; }"
 ## status: 124
 ## stdout: xxx
 ## N-I dash stdout:
