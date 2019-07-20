@@ -62,7 +62,6 @@ _SPECIAL_BUILTINS = {
     ".": builtin_e.DOT,
     "eval": builtin_e.EVAL,
     "exec": builtin_e.EXEC,
-    "export": builtin_e.EXPORT,
 
     "set": builtin_e.SET,
     "shift": builtin_e.SHIFT,
@@ -70,15 +69,19 @@ _SPECIAL_BUILTINS = {
     "trap": builtin_e.TRAP,
     "unset": builtin_e.UNSET,
 
-    # May be a builtin or an assignment
-    #"readonly": builtin_e.READONLY,
-    #"local": builtin_e.LOCAL,
-    "declare": builtin_e.DECLARE,
-    "typeset": builtin_e.TYPESET,
     "builtin": builtin_e.BUILTIN,
 
     # Not treated as builtins by OSH.  TODO: Need to auto-complete these
     # break continue return
+}
+
+_SPECIAL_ASSIGN_BUILTINS = {
+    # May be a builtin or an assignment
+    "readonly": builtin_e.READONLY,
+    "local": builtin_e.LOCAL,
+    "declare": builtin_e.DECLARE,
+    "typeset": builtin_e.TYPESET,
+    "export": builtin_e.EXPORT,
 }
 
 _NORMAL_BUILTINS = {
@@ -131,7 +134,10 @@ _NORMAL_BUILTINS = {
 }
 
 # This is used by completion.
-BUILTIN_NAMES = _SPECIAL_BUILTINS.keys() + _NORMAL_BUILTINS.keys()
+BUILTIN_NAMES = (
+    _SPECIAL_BUILTINS.keys() + _SPECIAL_ASSIGN_BUILTINS.keys() +
+    _NORMAL_BUILTINS.keys()
+)
 
 
 class BuiltinDef(object):
@@ -146,6 +152,7 @@ class BuiltinDef(object):
     names = set()
     names.update(_NORMAL_BUILTINS.keys())
     names.update(_SPECIAL_BUILTINS.keys())
+    names.update(_SPECIAL_ASSIGN_BUILTINS.keys())
     # TODO: Also complete keywords first for, while, etc.  Bash/zsh/fish/yash
     # all do this.  See osh/lex/{_KEYWORDS, _MORE_KEYWORDS}.
 
@@ -169,10 +176,18 @@ def _Register(name, help_topic=None):
 
 
 def ResolveSpecial(argv0):
-  return _SPECIAL_BUILTINS.get(argv0, builtin_e.NONE)
+  """Is it a special builtin?"""
+  return _SPECIAL_BUILTINS.get(argv0,
+      _SPECIAL_ASSIGN_BUILTINS.get(argv0, builtin_e.NONE))
+
+
+def ResolveAssign(argv0):
+  """Is it an assignment builtin?"""
+  return _SPECIAL_ASSIGN_BUILTINS.get(argv0, builtin_e.NONE)
 
 
 def Resolve(argv0):
+  """Is it any other builtin?"""
   return _NORMAL_BUILTINS.get(argv0, builtin_e.NONE)
 
 

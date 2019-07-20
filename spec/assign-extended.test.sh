@@ -350,3 +350,94 @@ status=0
 ['7', '8']
 None
 ## END
+
+#### array literal inside array is a parse error
+a=( inside=() )
+echo len=${#a[@]}
+## status: 2
+## stdout-json: ""
+## OK mksh status: 1
+## BUG bash status: 0
+## BUG bash stdout: len=0
+
+#### array literal inside loop is a parse error
+for x in a=(); do
+  echo $x
+done
+echo done
+## status: 2
+## stdout-json: ""
+## OK mksh status: 1
+## BUG bash stdout-json: ""
+
+#### 'builtin' prefix is allowed on assignments
+builtin export e='E'
+echo e=$e
+## STDOUT:
+e=E
+## END
+## N-I dash STDOUT:
+e=
+## END
+
+#### 'command' prefix is allowed on assignments
+readonly r1='R1'  # zsh has this
+command readonly r2='R2'  # but not this
+echo r1=$r1
+echo r2=$r2
+## STDOUT:
+r1=R1
+r2=R2
+## END
+## N-I zsh STDOUT:
+r1=R1
+r2=
+## END
+
+#### 'builtin' prefix and array is a parse error
+builtin typeset a=(1 2 3)
+echo len=${#a[@]}
+## stdout-json: ""
+## status: 2
+## OK mksh status: 1
+
+#### 'command' prefix and array is a parse error
+command typeset a=(1 2 3)
+echo len=${#a[@]}
+## stdout-json: ""
+## status: 2
+## OK mksh status: 1
+
+#### dynamic flag in array in assign builtin
+typeset b
+b=(unused1 unused2)  # this works in mksh
+
+a=(x 'foo=F' 'bar=B')
+typeset -"${a[@]}"
+echo foo=$foo
+echo bar=$bar
+printenv.py foo
+printenv.py bar
+
+# syntax error in mksh!  But works in bash and zsh.
+typeset -"${a[@]}" b=(spam eggs)
+
+echo "length of b = ${#b[@]}"
+
+#echo "b[0]=${b[0]}"
+#echo "b[1]=${b[1]}"
+
+## STDOUT:
+foo=F
+bar=B
+F
+B
+length of b = 2
+## END
+## OK mksh status: 1
+## N-I mksh STDOUT:
+foo=F
+bar=B
+F
+B
+## END

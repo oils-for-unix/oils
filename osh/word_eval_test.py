@@ -12,6 +12,7 @@ from __future__ import print_function
 
 import unittest
 
+from core import util
 from core import test_lib
 from osh.cmd_parse_test import assertParseSimpleCommand
 from osh import state
@@ -22,26 +23,96 @@ def InitEvaluator():
   state.SetLocalString(word_ev.mem, 'x', '- -- ---')
   state.SetLocalString(word_ev.mem, 'y', 'y yy')
   state.SetLocalString(word_ev.mem, 'empty', '')
+  state.SetLocalString(word_ev.mem, 'binding', 'spam=eggs')
+  state.SetLocalString(
+      word_ev.mem, 'binding_with_spaces', 'x=green eggs and ham')
+
+  word_ev.mem.SetArgv(['x', 'foo', 'spam=eggs'])
   return word_ev
 
 
 class WordEvalTest(unittest.TestCase):
 
+  def testEvalWordSequence_Errors(self):
+    # TODO: Enable when Assignment parsing is disabled
+    return
+
+    CASES = [
+        'readonly a+=1',
+        'readonly a[x]=1',
+        'readonly $binding a[x]=1',
+        # There's no word elision!  This will be a parse error
+        'declare $empty',
+    ]
+
+    for case in CASES:
+      print()
+      print('\t%s' % case)
+      node = assertParseSimpleCommand(self, case)
+      ev = InitEvaluator()
+      try:
+        argv = ev.EvalWordSequence2(node.words, allow_assign=True)
+      except util.ParseError:
+        pass
+      else:
+        self.fail("%r should have raised ParseError", case)
+
+
   def testEvalWordSequence(self):
+    # TODO: Enable when Assignment parsing is disabled
+    return
+
     node = assertParseSimpleCommand(self, 'ls foo')
     self.assertEqual(2, len(node.words), node.words)
-
-    ev = InitEvaluator()
-    argv = ev.EvalWordSequence2(node.words)
     print()
-    print(argv)
-
-    node = assertParseSimpleCommand(self, 'ls [$x] $y core/a*.py')
-    print(node)
-    ev = InitEvaluator()
-    argv = ev.EvalWordSequence2(node.words)
     print()
-    print(argv)
+
+    CASES = [
+        'ls [$x] $y core/a*.py',
+        'local a=1',
+
+        # What to do about these?
+        # Resolve second word then?
+        'builtin local a=1',
+        'command local a=1',
+
+        'typeset -"$@"',
+        # array=(b c)',
+
+        'local a=(1 2) "$@"',  # static then dynamic
+
+        'readonly "$@" a=(1 2)',  # dynamic then static
+
+        'declare -rx foo=bar spam=eggs a=(1 2)',
+
+        'declare $binding',
+        'declare $binding_with_spaces',
+
+        # This can be parsed, but the builtin should reject it
+        'export a=(1 2)',
+        'export A=(["k"]=v)',
+
+        # Hard test cases:
+        #
+        # command export foo=bar
+        # builtin export foo=bar
+        #
+        # b=builtin c=command e=export binding='foo=bar'
+        # $c $e $binding
+        # $b $e $binding
+    ]
+
+    for case in CASES:
+      print()
+      print('\t%s' % case)
+      node = assertParseSimpleCommand(self, case)
+      ev = InitEvaluator()
+      argv = ev.EvalWordSequence2(node.words, allow_assign=True)
+
+      print()
+      print('\tcmd_value:')
+      print(argv)
+      print()
 
 
 if __name__ == '__main__':

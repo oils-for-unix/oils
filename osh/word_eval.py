@@ -6,17 +6,26 @@ import pwd
 
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import (
-    word_e, bracket_op_e, suffix_op_e, word_part_e,
+    word_e, bracket_op_e, suffix_op_e,
+    word_part_e, word_part__ArrayLiteralPart, word_part__AssocArrayLiteral
 )
+from _devbuild.gen.syntax_asdl import word as osh_word
 from _devbuild.gen.runtime_asdl import (
-    part_value, part_value_e, value, value_e, value_t, effect_e, arg_vector
+    builtin_e,
+    part_value, part_value_e, part_value__String,
+    value, value_e, value_t,
+    lvalue,
+    effect_e, arg_vector,
+    assign_arg, cmd_value, cmd_value__Assign,
 )
+from asdl import const
 from core import process
 from core.meta import LookupKind
 from core import util
-from core.util import log, e_die
+from core.util import log, p_die, e_die
 from frontend import match
 from osh import braces
+from osh import builtin
 from osh import glob_
 from osh import string_ops
 from osh import state
@@ -1142,7 +1151,105 @@ class _WordEvaluator(object):
       results = self.globber.Expand(a)
       argv.extend(results)
 
-  def EvalWordSequence2(self, words):
+  def _EvalWordToArgv(self, w):
+    # type: (word__CompoundWord) -> List[str]
+    """Helper for _EvalAssignBuiltin.
+
+    Splitting and globbing are disabled for assignment builtins.
+
+    Example: declare -"${a[@]}" b=(1 2)
+    where a is [x b=a d=a]
+    """
+    part_vals = []
+    self._EvalWordToParts(w, False, part_vals)  # not double quoted
+    frames = _MakeWordFrames(part_vals)
+    argv = []
+    for frame in frames:
+      argv.append(''.join(s for (s, _, _) in frame))  # no split or glob
+    #log('argv: %s', argv)
+    return argv
+
+  def _EvalAssignBuiltin(self, builtin_id, words):
+    # type: (List[word__CompoundWord]) -> cmd_value__Assign
+    """
+    Handles both static and dynamic assignment, e.g.
+
+      x='foo=bar'
+      local a=(1 2) $x
+    """
+    # Grammar:
+    #
+    # ('builtin' | 'command')* keyword flag* pair*
+    # flag = [-+].*
+    #
+    # There is also command -p, but we haven't implemented it.  Maybe just punt
+    # on it.  Punted on 'builtin' and 'command' for now too.
+
+    def _SplitAssignArg(arg, w):
+      i = arg.find('=')
+      prefix = arg[:i]
+      if i != -1 and match.IsValidVarName(prefix):
+        return lvalue.Named(prefix), value.Str(arg[i+1:]),
+      else:
+        if match.IsValidVarName(arg):  # local foo   # foo becomes undefined
+          return lvalue.Named(arg), value.Undef()
+        else:
+          p_die("Invalid variable name %r", arg, word=w)
+
+    started_pairs = False
+
+    flags = []
+    flag_spids = []
+    assign_args = []
+
+    n = len(words)
+    for i in xrange(1, n):  # skip first word
+      w = words[i]
+      word_spid = word.LeftMostSpanForWord(w)
+
+      if word.IsVarLike(w):
+        started_pairs = True  # Everything from now on is an assign_pair
+
+      if started_pairs:
+        left_token, close_token, part_offset = word.DetectAssignment(w)
+        if left_token:  # Detected statically
+          if left_token.id != Id.Lit_VarLike:
+            # (not guaranteed since started_pairs is set twice)
+            p_die('LHS array not allowed in assignment builtin', word=w)
+          tok_val = left_token.val
+          if tok_val[-2] == '+':
+            p_die('+= not allowed in assignment builtin', word=w)
+
+          left = lvalue.Named(tok_val[:-1])
+          rhs_word = osh_word.CompoundWord(w.parts[part_offset:])
+          right = self.EvalRhsWord(rhs_word)
+          arg2 = assign_arg(left, right, word_spid)
+          assign_args.append(arg2)
+
+        else:  # e.g. export $dynamic
+          argv = self._EvalWordToArgv(w)
+          for arg in argv:
+            left, right = _SplitAssignArg(arg, w)
+            arg2 = assign_arg(left, right, word_spid)
+            assign_args.append(arg2)
+
+      else:
+        argv = self._EvalWordToArgv(w)
+        for arg in argv:
+          if arg.startswith('-') or arg.startswith('+'):  # e.g. declare -r +r
+            flags.append(arg)
+            flag_spids.append(word_spid)
+          else:  # e.g. export $dynamic 
+            left, right = _SplitAssignArg(arg, w)
+            arg2 = assign_arg(left, right, word_spid)
+            assign_args.append(arg2)
+            started_pairs = True
+
+    keyword_spid = word.LeftMostSpanForWord(words[0])
+    return cmd_value.Assign(builtin_id, keyword_spid, flags, flag_spids,
+                            assign_args)
+
+  def EvalWordSequence2(self, words, allow_assign=False):
     """Turns a list of Words into a list of strings.
 
     Unlike the EvalWord*() methods, it does globbing.
@@ -1167,15 +1274,30 @@ class _WordEvaluator(object):
 
     #log('W %s', words)
     arg_vec = arg_vector()
-    strs = arg_vec.strs
+    strs = []
+    spids = []
+
     n = 0
-    for w in words:
+    for i, w in enumerate(words):
       part_vals = []
       self._EvalWordToParts(w, False, part_vals)  # not double quoted
 
-      # TODO: Detect whether any parts are ArrayLiteralPart /
-      # AssocArrayLiteral.  If so, then append directly to arg_vec.strs,
-      # spids, array_rhs, and skip the rest.
+      # DYNAMICALLY detect if we're going to run an assignment builtin, and
+      # change the rest of the evaluation algorithm if so.
+      #
+      # We want to allow:
+      #   e=export
+      #   $e foo=bar
+      #
+      # But we don't want to evaluate the first word twice in the case of:
+      #   $(some-command) --flag
+
+      if allow_assign and i == 0 and len(part_vals) == 1:
+        val0 = part_vals[0]
+        if isinstance(val0, part_value__String) and not val0.quoted:
+          builtin_id = builtin.ResolveAssign(val0.s)
+          if builtin_id != builtin_e.NONE:
+            return self._EvalAssignBuiltin(builtin_id, words)
 
       if 0:
         log('')
@@ -1198,15 +1320,17 @@ class _WordEvaluator(object):
       n_next = len(strs)
       spid = word.LeftMostSpanForWord(w)
       for _ in xrange(n_next - n):
-        arg_vec.spids.append(spid)
+        spids.append(spid)
       n = n_next
 
-    #log('ARGV %s', argv)
-    return arg_vec
+    # A non-assignment command
+    return cmd_value.Argv(strs, spids)
 
   def EvalWordSequence(self, words):
-    arg_vec = self.EvalWordSequence2(words)
-    return arg_vec.strs
+    # type: (List[word__CompoundWord]) -> List[str]
+    """For arrays and for loops.  They don't allow assignment builtins."""
+    cmd_val = self.EvalWordSequence2(words)
+    return cmd_val.strs
 
 
 class NormalWordEvaluator(_WordEvaluator):

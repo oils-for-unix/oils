@@ -8,6 +8,14 @@ module runtime
   -- 'rhs' is for assignment builtins.
   arg_vector = (string* strs, int* spids, value* rhs)
 
+  -- Evaluating SimpleCommand results in either an argv array or an assignment.
+  assign_arg = (lvalue lval, value rval, int spid)
+  cmd_value =
+    Argv(string* strs, int* arg_spids)
+  | Assign(builtin keyword, int keyword_spid,
+           string* flags, int* flag_spids,
+           assign_arg* args)
+
   -- A parse-time word_part from syntax.asdl is evaluated to a runtime
   -- part_value.
   part_value = 
@@ -33,10 +41,6 @@ module runtime
   | AssocArray(dict d)
     -- A Python-style object.  'any' is not currently type checked.
   | Obj(any obj)
-
-  -- For Oil?
-  -- | ArrayInt(int* array_int)
-  -- | ArrayBool(bool* a)
 
   -- For storing a variable.
   -- TODO:
@@ -81,7 +85,8 @@ module runtime
   builtin = 
     NONE | READ | ECHO | PRINTF | SHIFT
   | CD | PWD | PUSHD | POPD | DIRS
-  | EXPORT | UNSET | SET | SHOPT
+  | EXPORT | READONLY | LOCAL | DECLARE | TYPESET 
+  | UNSET | SET | SHOPT
   | TRAP | UMASK
   | SOURCE | DOT | EVAL | EXEC | WAIT | JOBS | FG | BG
   | COMPLETE | COMPGEN | COMPOPT | COMPADJUST
@@ -89,9 +94,9 @@ module runtime
   | COLON
   | TEST | BRACKET | GETOPTS
   | COMMAND | TYPE | HASH | HELP | HISTORY
-  | DECLARE | TYPESET | ALIAS | UNALIAS
-  | REPR
   | BUILTIN
+  | ALIAS | UNALIAS
+  | REPR
 
   -- word_eval.py: SliceParts is for ${a-} and ${a+}, Error is for ${a?}, and
   -- SliceAndAssign is for ${a=}.

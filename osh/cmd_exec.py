@@ -26,7 +26,7 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.syntax_asdl import word as osh_word  # TODO: Rename
 from _devbuild.gen.runtime_asdl import (
     lvalue, redirect, value, value_e, value_t, scope_e, var_flags_e, builtin_e,
-    arg_vector
+    arg_vector, cmd_value_e,
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
@@ -660,7 +660,11 @@ class Executor(object):
       # to print the filename too.
 
       words = braces.BraceExpandWords(node.words)
-      arg_vec = self.word_ev.EvalWordSequence2(words)
+      cmd_val = self.word_ev.EvalWordSequence2(words)
+
+      # STUB for compatibility.  TODO: Handle cmd_value_e.Assign.
+      assert cmd_val.tag == cmd_value_e.Argv
+      arg_vec = arg_vector(cmd_val.strs, cmd_val.arg_spids)
       argv = arg_vec.strs
 
       # This comes before evaluating env, in case there are problems evaluating
