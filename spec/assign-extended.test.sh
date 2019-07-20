@@ -293,3 +293,60 @@ argv.py "${x[@]}"
 ## OK bash STDOUT:
 ['1', '2', '3']
 ## END
+
+#### typeset a[3]=4 
+typeset a[3]=4 a[5]=6
+echo status=$?
+argv.py "${!a[@]}" "${a[@]}"
+## STDOUT:
+status=0
+['3', '5', '4', '6']
+## END
+
+#### local a[3]=4 
+f() {
+  local a[3]=4 a[5]=6
+  echo status=$?
+  argv.py "${!a[@]}" "${a[@]}"
+}
+f
+## STDOUT:
+status=0
+['3', '5', '4', '6']
+## END
+
+#### readonly a[7]=8
+readonly b[7]=8
+echo status=$?
+argv.py "${!b[@]}" "${b[@]}"
+## STDOUT:
+status=0
+['7', '8']
+## END
+
+# bash doesn't like this variable name!
+## N-I bash STDOUT:
+status=1
+[]
+## END
+
+#### export a[7]=8
+export a[7]=8
+echo status=$?
+argv.py "${!a[@]}" "${a[@]}"
+printenv.py a
+## STDOUT:
+status=1
+[]
+None
+## END
+## OK osh STDOUT:
+status=2
+[]
+None
+## END
+## BUG mksh STDOUT:
+status=0
+['7', '8']
+None
+## END
