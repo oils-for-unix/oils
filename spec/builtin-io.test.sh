@@ -405,3 +405,28 @@ echo status=$?
 ## stdout: status=2
 ## OK bash stdout: status=1
 ## N-I zsh stdout-json: ""
+
+#### read returns correct number of bytes without EOF
+case $SH in
+  *bash|*osh) FLAG=n ;;
+  *mksh)      FLAG=N ;;
+  *) exit ;;  # other shells don't implement it
+esac
+
+i=0
+while true; do
+  echo -n x
+
+  # TODO: SIGPIGE is broken in bin/osh!  Hangs without this test.
+  (( i++ ))
+  if test $i = 100; then
+    break
+  fi
+done | { read -$FLAG 3; echo $REPLY; }
+
+## status: 0
+## stdout: xxx
+## N-I dash/ash stdout-json: ""
+
+# zsh appears to hang with -k
+## N-I zsh stdout-json: ""
