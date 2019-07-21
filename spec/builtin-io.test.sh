@@ -410,17 +410,20 @@ echo status=$?
 case $SH in
   *bash|*osh) FLAG=n ;;
   *mksh)      FLAG=N ;;
-  *) exit ;;  # other shells don't implement it
+  *) exit ;;  # other shells don't implement it, or hang
 esac
 
 i=0
 while true; do
   echo -n x
 
-  # TODO: SIGPIGE is broken in bin/osh!  Hangs without this test.
   (( i++ ))
+
+  # TODO: Why does OSH hang without this test?  Other shells are fine.  I can't
+  # reproduce outside of sh_spec.py.
   if test $i = 100; then
     break
+    #true
   fi
 done | { read -$FLAG 3; echo $REPLY; }
 
