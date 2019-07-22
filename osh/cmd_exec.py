@@ -301,7 +301,7 @@ class Executor(object):
 
     elif builtin_id == builtin_e.COMMAND:
       # TODO: How do we handle fork_external?  It doesn't fit the common
-      # signature.
+      # signature.  We also don't handle 'command local', etc.
       b = builtin.Command(self, self.funcs, self.aliases, self.search_path)
       status = b(arg_vec, fork_external)
 
@@ -310,13 +310,19 @@ class Executor(object):
         return 0  # this could be an error in strict mode?
 
       name = arg_vec.strs[1]
+
       # Run regular builtin or special builtin
       to_run = builtin.Resolve(name)
       if to_run == builtin_e.NONE:
         to_run = builtin.ResolveSpecial(name)
       if to_run == builtin_e.NONE:
-        self.errfmt.Print("%r isn't a shell builtin", name,
-                          span_id=arg_vec.spids[1])
+        span_id = arg_vec.spids[1]
+        if builtin.ResolveAssign(name) != builtin_e.NONE:
+          # NOTE: There's a similar restriction for 'command'
+          self.errfmt.Print("Can't run assignment builtin recursively",
+                            span_id=span_id)
+        else:
+          self.errfmt.Print("%r isn't a shell builtin", span_id=span_id)
         return 1
 
       arg_vec2 = arg_vector(arg_vec.strs[1:], arg_vec.spids[1:])
@@ -328,7 +334,7 @@ class Executor(object):
     assert isinstance(status, int)
     return status
 
-  def _RunBuiltin(self, builtin_id, is_special, arg_vec, fork_external):
+  def _RunBuiltin(self, builtin_id, arg_vec, fork_external):
     self.errfmt.PushLocation(arg_vec.spids[0])
     try:
       status = self._RunBuiltinAndRaise(builtin_id, arg_vec, fork_external)
@@ -358,10 +364,33 @@ class Executor(object):
 
       self.errfmt.PopLocation()
 
-    # TODO: Enable this and fix spec test failures.
-    # Also update _SPECIAL_BUILTINS in osh/builtin.py.
-    #if is_special and status != 0:
-    #  e_die('special builtin failed', status=status)
+    return status
+
+  def _RunAssignBuiltin(self, cmd_val):
+    """Run an assignment builtin.  Except blocks copied from _RunBuiltin above."""
+    self.errfmt.PushLocation(cmd_val.arg_spids[0])  # defult
+    builtin_func = self.builtins[cmd_val.builtin_id]  # must be there
+    try:
+      status = builtin_func(cmd_val)
+    except args.UsageError as e:  # Copied from _RunBuiltin
+      arg0 = cmd_val.argv[0]
+      if e.span_id == const.NO_INTEGER:  # fill in default location.
+        e.span_id = self.errfmt.CurrentLocation()
+      self.errfmt.Print(e.msg, prefix='%r ' % arg0, span_id=e.span_id)
+      status = 2  # consistent error code for usage error
+    except KeyboardInterrupt:
+      if self.exec_opts.interactive:
+        print()  # newline after ^C
+        status = 130  # 128 + 2 for SIGINT
+      else:
+        raise
+    finally:
+      try:
+        sys.stdout.flush()
+      except IOError as e:
+        pass
+
+      self.errfmt.PopLocation()
 
     return status
 
@@ -501,8 +530,21 @@ class Executor(object):
     p = process.Process(thunk, self.job_state, parent_pipeline=parent_pipeline)
     return p
 
+  def _RunSimpleCommand(self, cmd_val, fork_external):
+    """Private interface to run a simple command (including assignment)."""
+
+    if cmd_val.tag == cmd_value_e.Argv:
+      arg_vec = arg_vector(cmd_val.argv, cmd_val.arg_spids)
+      return self.RunSimpleCommand(arg_vec, fork_external)
+
+    elif cmd_val.tag == cmd_value_e.Assign:
+      return self._RunAssignBuiltin(cmd_val)
+    else:
+      raise AssertionError
+
   def RunSimpleCommand(self, arg_vec, fork_external, funcs=True):
-    """
+    """Public interface to run a simple command (excluding assignment)
+
     Args:
       fork_external: for subshell ( ls / ) or ( command ls / )
     """
@@ -522,9 +564,22 @@ class Executor(object):
 
     arg0 = argv[0]
 
+    builtin_id = builtin.ResolveAssign(arg0)
+    if builtin_id != builtin_e.NONE:
+      # command readonly is disallowed, for technical reasons.  Could relax it
+      # later.
+      self.errfmt.Print("Can't run assignment builtin recursively",
+                        span_id=span_id)
+      return 1
+
     builtin_id = builtin.ResolveSpecial(arg0)
     if builtin_id != builtin_e.NONE:
-      return self._RunBuiltin(builtin_id, True, arg_vec, fork_external)
+      status = self._RunBuiltin(builtin_id, arg_vec, fork_external)
+      # TODO: Enable this and fix spec test failures.
+      # Also update _SPECIAL_BUILTINS in osh/builtin.py.
+      #if status != 0:
+      #  e_die('special builtin failed', status=status)
+      return status
 
     # Builtins like 'true' can be redefined as functions.
     if funcs:
@@ -537,7 +592,7 @@ class Executor(object):
     builtin_id = builtin.Resolve(arg0)
 
     if builtin_id != builtin_e.NONE:
-      return self._RunBuiltin(builtin_id, False, arg_vec, fork_external)
+      return self._RunBuiltin(builtin_id, arg_vec, fork_external)
 
     environ = self.mem.GetExported()  # Include temporary variables
 
@@ -660,12 +715,13 @@ class Executor(object):
       # to print the filename too.
 
       words = braces.BraceExpandWords(node.words)
-      cmd_val = self.word_ev.EvalWordSequence2(words)
+      cmd_val = self.word_ev.EvalWordSequence2(words, allow_assign=True)
 
       # STUB for compatibility.  TODO: Handle cmd_value_e.Assign.
-      assert cmd_val.tag == cmd_value_e.Argv
-      arg_vec = arg_vector(cmd_val.strs, cmd_val.arg_spids)
-      argv = arg_vec.strs
+      if cmd_val.tag == cmd_value_e.Argv:
+        argv = cmd_val.argv
+      else:
+        argv = ['TODO: assignment builtin']
 
       # This comes before evaluating env, in case there are problems evaluating
       # it.  We could trace the env separately?  Also trace unevaluated code
@@ -674,14 +730,20 @@ class Executor(object):
 
       # NOTE: RunSimpleCommand never returns when fork_external=False!
       if node.more_env:  # I think this guard is necessary?
-        self.mem.PushTemp()
-        try:
+        is_other_special = False  # TODO: There are other special builtins too!
+        if cmd_val.tag == cmd_value_e.Assign or is_other_special:
+          # Special builtins have their temp env persisted.
           self._EvalTempEnv(node.more_env)
-          status = self.RunSimpleCommand(arg_vec, fork_external)
-        finally:
-          self.mem.PopTemp()
+          status = self._RunSimpleCommand(cmd_val, fork_external)
+        else:
+          self.mem.PushTemp()
+          try:
+            self._EvalTempEnv(node.more_env)
+            status = self._RunSimpleCommand(cmd_val, fork_external)
+          finally:
+            self.mem.PopTemp()
       else:
-        status = self.RunSimpleCommand(arg_vec, fork_external)
+        status = self._RunSimpleCommand(cmd_val, fork_external)
 
     elif node.tag == command_e.ExpandedAlias:
       # Expanded aliases need redirects and env bindings from the calling

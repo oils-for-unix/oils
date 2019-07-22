@@ -34,9 +34,6 @@ def InitEvaluator():
 class WordEvalTest(unittest.TestCase):
 
   def testEvalWordSequence_Errors(self):
-    # TODO: Enable when Assignment parsing is disabled
-    return
-
     CASES = [
         'readonly a+=1',
         'readonly a[x]=1',
@@ -52,16 +49,13 @@ class WordEvalTest(unittest.TestCase):
       ev = InitEvaluator()
       try:
         argv = ev.EvalWordSequence2(node.words, allow_assign=True)
-      except util.ParseError:
+      except util.FatalRuntimeError:
         pass
       else:
         self.fail("%r should have raised ParseError", case)
 
 
   def testEvalWordSequence(self):
-    # TODO: Enable when Assignment parsing is disabled
-    return
-
     node = assertParseSimpleCommand(self, 'ls foo')
     self.assertEqual(2, len(node.words), node.words)
     print()

@@ -138,6 +138,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   comp_lookup = comp_lookup or completion.Lookup()
 
   readline = None  # simulate not having it
+  new_var = builtin_assign.NewVar(mem, funcs)
   builtins = {  # Lookup
       builtin_e.ECHO: builtin.Echo,
       builtin_e.SHIFT: builtin_assign.Shift(mem),
@@ -149,6 +150,13 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
 
       builtin_e.ALIAS: builtin.Alias(aliases, errfmt),
       builtin_e.UNALIAS: builtin.UnAlias(aliases, errfmt),
+
+      builtin_e.DECLARE: new_var,
+      builtin_e.TYPESET: new_var,
+      builtin_e.LOCAL: new_var,
+
+      builtin_e.EXPORT: builtin_assign.Export(mem, errfmt),
+      builtin_e.READONLY: builtin_assign.Readonly(mem),
   }
 
   # For the tests, we do not use 'readline'.

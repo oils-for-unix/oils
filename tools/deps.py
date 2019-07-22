@@ -107,6 +107,7 @@ class DepsVisitor(Visitor):
         return
 
       if (builtin.ResolveSpecial(argv0) == builtin_e.NONE and
+          builtin.ResolveAssign(argv0) == builtin_e.NONE and
           builtin.Resolve(argv0) == builtin_e.NONE):
         self.progs_used[argv0] = True
 

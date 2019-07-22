@@ -52,6 +52,28 @@ echo status=$?
 ## N-I dash status: 2
 ## N-I zsh status: 1
 
+#### export -n foo=bar not allowed
+foo=old
+export -n foo=new
+echo status=$?
+echo $foo
+## STDOUT:
+status=2
+old
+## END
+## OK bash STDOUT:
+status=0
+new
+## END
+## N-I zsh STDOUT:
+status=1
+old
+## END
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+## N-I mksh status: 1
+## N-I mksh stdout-json: ""
+
 #### Export a global variable and unset it
 f() { export GLOBAL=X; }
 f
@@ -205,6 +227,33 @@ echo "status=$?"  # nothing happens
 ## BUG bash stdout: status=1
 ## BUG bash status: 0
 ## OK dash/mksh status: 2
+
+#### Make an existing local variable readonly
+f() {
+	local x=local
+	readonly x
+	echo $x
+	eval 'x=bar'  # Wrap in eval so it's not fatal
+	echo status=$?
+}
+x=global
+f
+echo $x
+## STDOUT:
+local
+status=1
+global
+## END
+## OK dash STDOUT:
+local
+## END
+## OK dash status: 2
+
+# mksh aborts the function, weird
+## OK mksh STDOUT:
+local
+global
+## END
 
 #### assign to readonly variable - errexit
 set -o errexit

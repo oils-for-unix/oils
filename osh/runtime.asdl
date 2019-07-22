@@ -6,15 +6,16 @@ module runtime
   -- entry in argv came from a single word, but a word can produce multiple
   -- argv entries.
   -- 'rhs' is for assignment builtins.
-  arg_vector = (string* strs, int* spids, value* rhs)
+  arg_vector = (string* strs, int* spids)
 
   -- Evaluating SimpleCommand results in either an argv array or an assignment.
-  assign_arg = (lvalue lval, value rval, int spid)
+  -- in 'local foo', rval is None
+  assign_arg = (lvalue lval, value? rval, int spid)
   cmd_value =
-    Argv(string* strs, int* arg_spids)
-  | Assign(builtin keyword, int keyword_spid,
-           string* flags, int* flag_spids,
-           assign_arg* args)
+    Argv(string* argv, int* arg_spids)
+  | Assign(builtin builtin_id,
+           string* argv, int* arg_spids,
+           assign_arg* pairs)
 
   -- A parse-time word_part from syntax.asdl is evaluated to a runtime
   -- part_value.

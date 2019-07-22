@@ -353,10 +353,13 @@ def _MakeSimpleCommand(preparsed_list, suffix_words, redirects):
     if word.HasArrayPart(w):
       p_die("Environment bindings can't contain array literals", word=w)
 
+  # NOTE: It would be possible to add this check back.  But it already happens
+  # at runtime in EvalWordSequence2.
   # echo FOO=(1 2 3) is not allowed (but we should NOT fail on echo FOO[x]=1).
-  for w in suffix_words:
-    if word.HasArrayPart(w):
-      p_die("Commands can't contain array literals", word=w)
+  if 0:
+    for w in suffix_words:
+      if word.HasArrayPart(w):
+        p_die("Commands can't contain array literals", word=w)
 
   # NOTE: We only do brace DETECTION here, not brace EXPANSION.  Therefore we
   # can't implement bash's behavior of having say {~bob,~jane}/src work,
@@ -854,7 +857,8 @@ class CommandParser(object):
 
     kind, kw_token = word.KeywordToken(suffix_words[0])
 
-    if kind == Kind.Assign:
+    #if kind == Kind.Assign:
+    if 0:
       # Here we StaticEval suffix_words[1] to see if we have an ASSIGNMENT COMMAND
       # like 'typeset -p', which lists variables -- a SimpleCommand rather than
       # an Assignment.

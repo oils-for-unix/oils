@@ -88,16 +88,17 @@ FOO-BAR=foo
 #### bad var name in export
 # bash and dash disagree on exit code.
 export FOO-BAR=foo
-## status: 2
-## OK bash/mksh status: 1
+## status: 1
+## OK dash status: 2
 
 #### bad var name in local
 # bash and dash disagree on exit code.
 f() {
   local FOO-BAR=foo
 }
-## status: 2
-## BUG dash/bash/mksh status: 0
+f
+## status: 1
+## OK dash status: 2
 
 #### misplaced parentheses are not a subshell
 echo a(b)

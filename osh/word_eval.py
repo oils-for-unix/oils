@@ -6,8 +6,8 @@ import pwd
 
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import (
-    word_e, bracket_op_e, suffix_op_e,
-    word_part_e, word_part__ArrayLiteralPart, word_part__AssocArrayLiteral
+    word_e, word__CompoundWord,
+    bracket_op_e, suffix_op_e, word_part_e
 )
 from _devbuild.gen.syntax_asdl import word as osh_word
 from _devbuild.gen.runtime_asdl import (
@@ -18,11 +18,10 @@ from _devbuild.gen.runtime_asdl import (
     effect_e, arg_vector,
     assign_arg, cmd_value, cmd_value__Assign,
 )
-from asdl import const
 from core import process
 from core.meta import LookupKind
 from core import util
-from core.util import log, p_die, e_die
+from core.util import log, e_die
 from frontend import match
 from osh import braces
 from osh import builtin
@@ -33,6 +32,8 @@ from osh import word
 from osh import word_compile
 
 import posix_ as posix
+
+from typing import List
 
 
 # NOTE: Could be done with util.BackslashEscape like glob_.GlobEscape().
@@ -845,12 +846,10 @@ class _WordEvaluator(object):
     Returns:
       None
     """
-    if part.tag == word_part_e.ArrayLiteralPart:
-      raise AssertionError(
-          'Array literal should have been handled at word level')
+    if part.tag == word_part_e.ArrayLiteralPart:  # e.g. ls a=(1 2)
+      e_die("Unexpected array literal", part=part)
     elif part.tag == word_part_e.AssocArrayLiteral:
-      raise AssertionError(
-          'Assoc Array literal should have been handled at word level')
+      e_die("Unexpected associative array literal", part=part)
 
     elif part.tag == word_part_e.LiteralPart:
       # Split if it's in a substitution.
@@ -1169,7 +1168,7 @@ class _WordEvaluator(object):
     #log('argv: %s', argv)
     return argv
 
-  def _EvalAssignBuiltin(self, builtin_id, words):
+  def _EvalAssignBuiltin(self, builtin_id, arg0, words):
     # type: (List[word__CompoundWord]) -> cmd_value__Assign
     """
     Handles both static and dynamic assignment, e.g.
@@ -1192,14 +1191,14 @@ class _WordEvaluator(object):
         return lvalue.Named(prefix), value.Str(arg[i+1:]),
       else:
         if match.IsValidVarName(arg):  # local foo   # foo becomes undefined
-          return lvalue.Named(arg), value.Undef()
+          return lvalue.Named(arg), None
         else:
-          p_die("Invalid variable name %r", arg, word=w)
+          e_die("Invalid variable name %r", arg, word=w)
 
     started_pairs = False
 
-    flags = []
-    flag_spids = []
+    flags = [arg0]
+    flag_spids = [word.LeftMostSpanForWord(words[0])]
     assign_args = []
 
     n = len(words)
@@ -1215,13 +1214,15 @@ class _WordEvaluator(object):
         if left_token:  # Detected statically
           if left_token.id != Id.Lit_VarLike:
             # (not guaranteed since started_pairs is set twice)
-            p_die('LHS array not allowed in assignment builtin', word=w)
+            e_die('LHS array not allowed in assignment builtin', word=w)
           tok_val = left_token.val
           if tok_val[-2] == '+':
-            p_die('+= not allowed in assignment builtin', word=w)
+            e_die('+= not allowed in assignment builtin', word=w)
 
           left = lvalue.Named(tok_val[:-1])
           rhs_word = osh_word.CompoundWord(w.parts[part_offset:])
+          # tilde detection only happens on static assignments!
+          rhs_word = word.TildeDetect(rhs_word) or rhs_word
           right = self.EvalRhsWord(rhs_word)
           arg2 = assign_arg(left, right, word_spid)
           assign_args.append(arg2)
@@ -1245,9 +1246,7 @@ class _WordEvaluator(object):
             assign_args.append(arg2)
             started_pairs = True
 
-    keyword_spid = word.LeftMostSpanForWord(words[0])
-    return cmd_value.Assign(builtin_id, keyword_spid, flags, flag_spids,
-                            assign_args)
+    return cmd_value.Assign(builtin_id, flags, flag_spids, assign_args)
 
   def EvalWordSequence2(self, words, allow_assign=False):
     """Turns a list of Words into a list of strings.
@@ -1297,7 +1296,7 @@ class _WordEvaluator(object):
         if isinstance(val0, part_value__String) and not val0.quoted:
           builtin_id = builtin.ResolveAssign(val0.s)
           if builtin_id != builtin_e.NONE:
-            return self._EvalAssignBuiltin(builtin_id, words)
+            return self._EvalAssignBuiltin(builtin_id, val0.s, words)
 
       if 0:
         log('')
@@ -1323,14 +1322,16 @@ class _WordEvaluator(object):
         spids.append(spid)
       n = n_next
 
-    # A non-assignment command
+    # A non-assignment command.
+    # NOTE: Can't look up builtins here like we did for assignment, because
+    # functions can override builtins.
     return cmd_value.Argv(strs, spids)
 
   def EvalWordSequence(self, words):
     # type: (List[word__CompoundWord]) -> List[str]
     """For arrays and for loops.  They don't allow assignment builtins."""
     cmd_val = self.EvalWordSequence2(words)
-    return cmd_val.strs
+    return cmd_val.argv
 
 
 class NormalWordEvaluator(_WordEvaluator):

@@ -22,13 +22,6 @@ argv.py "${array[@]}"
 ## N-I mksh stdout-json: ""
 ## N-I mksh status: 1
 
-#### typeset -a a[1]=a a[3]=c
-# declare works the same way in bash, but not mksh.
-# spaces are NOT allowed here.
-typeset -a a[1*1]=x a[1+2]=z
-argv.py "${a[@]}"
-## stdout: ['x', 'z']
-
 #### indexed LHS without spaces is allowed
 a[1 * 1]=x a[ 1 + 2 ]=z
 argv.py "${a[@]}"
@@ -282,73 +275,20 @@ echo $x
 ## STDOUT:
 a
 ## END
+## OK osh STDOUT:
+a b
+## END
 
-#### dynamic array parsing in bash is not allowed
+#### dynamic array parsing is not allowed
 code='x=(1 2 3)'
 typeset -a "$code"  # note: -a flag is required
-argv.py "${x[@]}"
+argv.py "$x"
 ## STDOUT:
 ['(1 2 3)']
 ## END
+# bash allows it
 ## OK bash STDOUT:
-['1', '2', '3']
-## END
-
-#### typeset a[3]=4 
-typeset a[3]=4 a[5]=6
-echo status=$?
-argv.py "${!a[@]}" "${a[@]}"
-## STDOUT:
-status=0
-['3', '5', '4', '6']
-## END
-
-#### local a[3]=4 
-f() {
-  local a[3]=4 a[5]=6
-  echo status=$?
-  argv.py "${!a[@]}" "${a[@]}"
-}
-f
-## STDOUT:
-status=0
-['3', '5', '4', '6']
-## END
-
-#### readonly a[7]=8
-readonly b[7]=8
-echo status=$?
-argv.py "${!b[@]}" "${b[@]}"
-## STDOUT:
-status=0
-['7', '8']
-## END
-
-# bash doesn't like this variable name!
-## N-I bash STDOUT:
-status=1
-[]
-## END
-
-#### export a[7]=8
-export a[7]=8
-echo status=$?
-argv.py "${!a[@]}" "${a[@]}"
-printenv.py a
-## STDOUT:
-status=1
-[]
-None
-## END
-## OK osh STDOUT:
-status=2
-[]
-None
-## END
-## BUG mksh STDOUT:
-status=0
-['7', '8']
-None
+['1']
 ## END
 
 #### array literal inside array is a parse error
@@ -370,44 +310,6 @@ echo done
 ## OK mksh status: 1
 ## BUG bash stdout-json: ""
 
-#### 'builtin' prefix is allowed on assignments
-builtin export e='E'
-echo e=$e
-## STDOUT:
-e=E
-## END
-## N-I dash STDOUT:
-e=
-## END
-
-#### 'command' prefix is allowed on assignments
-readonly r1='R1'  # zsh has this
-command readonly r2='R2'  # but not this
-echo r1=$r1
-echo r2=$r2
-## STDOUT:
-r1=R1
-r2=R2
-## END
-## N-I zsh STDOUT:
-r1=R1
-r2=
-## END
-
-#### 'builtin' prefix and array is a parse error
-builtin typeset a=(1 2 3)
-echo len=${#a[@]}
-## stdout-json: ""
-## status: 2
-## OK mksh status: 1
-
-#### 'command' prefix and array is a parse error
-command typeset a=(1 2 3)
-echo len=${#a[@]}
-## stdout-json: ""
-## status: 2
-## OK mksh status: 1
-
 #### dynamic flag in array in assign builtin
 typeset b
 b=(unused1 unused2)  # this works in mksh
@@ -420,22 +322,12 @@ printenv.py foo
 printenv.py bar
 
 # syntax error in mksh!  But works in bash and zsh.
-typeset -"${a[@]}" b=(spam eggs)
-
-echo "length of b = ${#b[@]}"
-
+#typeset -"${a[@]}" b=(spam eggs)
+#echo "length of b = ${#b[@]}"
 #echo "b[0]=${b[0]}"
 #echo "b[1]=${b[1]}"
 
 ## STDOUT:
-foo=F
-bar=B
-F
-B
-length of b = 2
-## END
-## OK mksh status: 1
-## N-I mksh STDOUT:
 foo=F
 bar=B
 F

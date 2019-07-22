@@ -15,10 +15,8 @@ f
 ## status: 0
 ## stdout: env var
 ## OK bash stdout: var
-## OK osh status: 2
-## OK osh stdout-json: ""
 
-#### Redirect on assignment
+#### Redirect on assignment (enabled 7/2019)
 f() {
   # NOTE: local treated like a special builtin!
   local E=env > _tmp/r.txt
@@ -28,8 +26,6 @@ f
 test -f _tmp/r.txt && echo REDIRECTED
 ## status: 0
 ## stdout: REDIRECTED
-## OK osh status: 2
-## OK osh stdout-json: ""
 
 #### Prefix env on control flow
 for x in a b c; do

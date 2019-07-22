@@ -177,8 +177,7 @@ def _Register(name, help_topic=None):
 
 def ResolveSpecial(argv0):
   """Is it a special builtin?"""
-  return _SPECIAL_BUILTINS.get(argv0,
-      _SPECIAL_ASSIGN_BUILTINS.get(argv0, builtin_e.NONE))
+  return _SPECIAL_BUILTINS.get(argv0, builtin_e.NONE)
 
 
 def ResolveAssign(argv0):
@@ -975,7 +974,9 @@ def _ResolveNames(names, funcs, aliases, search_path):
       kind = ('builtin', name)
     elif ResolveSpecial(name) != builtin_e.NONE:
       kind = ('builtin', name)
-    elif lex.IsOtherBuiltin(name):  # declare, continue, etc.
+    elif ResolveAssign(name) != builtin_e.NONE:
+      kind = ('builtin', name)
+    elif lex.IsOtherBuiltin(name):  # continue, etc.
       kind = ('builtin', name)
     elif lex.IsKeyword(name):
       kind = ('keyword', name)

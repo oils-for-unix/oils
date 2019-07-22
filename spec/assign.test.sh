@@ -163,29 +163,29 @@ a=1 echo b[0]=2 c=3
 ## OK zsh stdout-json: ""
 ## OK zsh status: 1
 
-#### dynamic local variables
+#### dynamic local variables (and splitting)
 f() {
   local "$1"  # Only x is assigned here
-  echo -$x-
-  echo -$a-
+  echo x=\'$x\'
+  echo a=\'$a\'
 
   local $1  # x and a are assigned here
-  echo -$x-
-  echo -$a-
+  echo x=\'$x\'
+  echo a=\'$a\'
 }
 f 'x=y a=b'
-## STDOUT:
--y a=b-
---
--y-
--b-
+## OK dash/bash/mksh STDOUT:
+x='y a=b'
+a=''
+x='y'
+a='b'
 ## END
-# zsh doesn't do word splitting
-## OK zsh STDOUT:
--y a=b-
---
--y a=b-
---
+# osh and zsh don't do word splitting
+## STDOUT:
+x='y a=b'
+a=''
+x='y a=b'
+a=''
 ## END
 
 #### 'local x' does not set variable
@@ -478,11 +478,11 @@ readonly "$arg_ro2"
 argv.py "$ex2" "$ro2"
 
 ## STDOUT:
-['a', 'a']
+['a b c', 'a b c']
 ['a b c', 'a b c']
 ## END
-## BUG zsh STDOUT:
-['a b c', 'a b c']
+## OK dash/bash/mksh STDOUT:
+['a', 'a']
 ['a b c', 'a b c']
 ## END
 

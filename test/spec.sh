@@ -274,14 +274,20 @@ word-eval() {
 
 # These cases apply to many shells.
 assign() {
-  sh-spec spec/assign.test.sh --osh-failures-allowed 7 \
+  sh-spec spec/assign.test.sh --osh-failures-allowed 5 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@" 
 }
 
 # These cases apply to a few shells.
 assign-extended() {
-  sh-spec spec/assign-extended.test.sh --osh-failures-allowed 7 \
+  sh-spec spec/assign-extended.test.sh --osh-failures-allowed 3 \
     $BASH $MKSH $OSH_LIST "$@" 
+}
+
+# Corner cases that OSH doesn't handle
+assign-deferred() {
+  sh-spec spec/assign-deferred.test.sh \
+    $BASH $MKSH "$@" 
 }
 
 # These test associative arrays

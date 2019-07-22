@@ -123,18 +123,6 @@ class SimpleCommandTest(unittest.TestCase):
     self.assertEqual(command_e.Assignment, node.tag)
     self.assertEqual(2, len(node.pairs))
 
-  def testExport(self):
-    # This is the old static parsing.  Probably need to revisit.
-    return
-    node = assert_ParseCommandList(self, 'export ONE=1 TWO=2 THREE')
-    self.assertEqual(command_e.Assignment, node.tag)
-    self.assertEqual(3, len(node.pairs))
-
-  def testReadonly(self):
-    node = assert_ParseCommandList(self, 'readonly ONE=1 TWO=2 THREE')
-    self.assertEqual(command_e.Assignment, node.tag)
-    self.assertEqual(3, len(node.pairs))
-
   def testOnlyRedirect(self):
     # This just touches the file
     node = assert_ParseCommandList(self, '>out.txt')
@@ -156,6 +144,18 @@ class SimpleCommandTest(unittest.TestCase):
     self.assertEqual(1, len(node.redirects))
     self.assertEqual(1, len(node.more_env))
 
+  def testParseAdjacentDoubleQuotedWords(self):
+    node = assertParseSimpleCommand(self, 'echo "one"two "three""four" five')
+    self.assertEqual(4, len(node.words))
+
+
+class OldStaticParsing(object):
+
+  def testRedirectsInAssignment(self):
+    err = _assert_ParseCommandListError(self, 'x=1 >/dev/null')
+    err = _assert_ParseCommandListError(self, 'echo hi; x=1 >/dev/null')
+    err = _assert_ParseCommandListError(self, 'declare  x=1 >/dev/null')
+
   def testParseAssignment(self):
     node = assert_ParseCommandList(self, 'local foo=bar spam eggs one=1')
     self.assertEqual(4, len(node.pairs))
@@ -166,9 +166,19 @@ class SimpleCommandTest(unittest.TestCase):
     # This is not valid since env isn't respected
     assertFailCommandList(self, 'FOO=bar local foo=$(env)')
 
-  def testParseAdjacentDoubleQuotedWords(self):
-    node = assertParseSimpleCommand(self, 'echo "one"two "three""four" five')
-    self.assertEqual(4, len(node.words))
+
+  def testExport(self):
+    # This is the old static parsing.  Probably need to revisit.
+    return
+    node = assert_ParseCommandList(self, 'export ONE=1 TWO=2 THREE')
+    self.assertEqual(command_e.Assignment, node.tag)
+    self.assertEqual(3, len(node.pairs))
+
+  def testReadonly(self):
+    return
+    node = assert_ParseCommandList(self, 'readonly ONE=1 TWO=2 THREE')
+    self.assertEqual(command_e.Assignment, node.tag)
+    self.assertEqual(3, len(node.pairs))
 
 
 def assertHereDocToken(test, expected_token_val, node):
@@ -366,8 +376,9 @@ class ArrayTest(unittest.TestCase):
     self.assertEqual(command_e.Assignment, node.tag)
 
     # Array literal can't come after word
-    assertFailCommandList(self,
-        'ls array=(a b c)')
+    # Now caught at runtime
+    #assertFailCommandList(self,
+    #    'ls array=(a b c)')
 
     # Word can't come after array literal
     assertFailCommandList(self,
@@ -1164,8 +1175,6 @@ class ErrorLocationsTest(unittest.TestCase):
     err = _assert_ParseCommandListError(self, r'echo foo$(ls <)bar')
 
     err = _assert_ParseCommandListError(self, r'BAD_ENV=(1 2 3) ls')
-    err = _assert_ParseCommandListError(self, r'ls BAD_ENV=(1 2 3)')
-    err = _assert_ParseCommandListError(self, r'ENV1=A ENV2=B local foo=bar')
 
     # This needs more context
     err = _assert_ParseCommandListError(self,
@@ -1216,11 +1225,6 @@ EOF
 
   def testArraySyntax(self):
     err = _assert_ParseCommandListError(self, 'A= (1 2)')
-
-  def testRedirectsInAssignment(self):
-    err = _assert_ParseCommandListError(self, 'x=1 >/dev/null')
-    err = _assert_ParseCommandListError(self, 'echo hi; x=1 >/dev/null')
-    err = _assert_ParseCommandListError(self, 'declare  x=1 >/dev/null')
 
   def testEofInDoubleQuoted(self):
     err = _assert_ParseCommandListError(self, 'foo="" echo "bar  ')

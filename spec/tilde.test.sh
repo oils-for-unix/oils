@@ -15,6 +15,13 @@ echo $const
 ## stdout: /home/bob/src
 ## BUG dash stdout: ~/src
 
+#### No ~ expansion in dynamic assignment
+HOME=/home/bob
+binding='const=~/src'
+readonly "$binding"
+echo $const
+## stdout: ~/src
+
 #### No tilde expansion in word that looks like assignment but isn't
 # bash and mksh mistakenly expand here!
 # bash fixes this in POSIX mode (gah).

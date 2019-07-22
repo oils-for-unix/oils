@@ -192,11 +192,10 @@ argv.py "${a[@]}"
 export PYTHONPATH=(a b c)
 export PYTHONPATH=a  # NOTE: in bash, this doesn't work afterward!
 printenv.py PYTHONPATH
-## stdout: None
-## OK mksh stdout-json: ""
-## OK mksh status: 1
-## OK osh stdout-json: ""
-## OK osh status: 2
+## stdout-json: ""
+## status: 1
+## OK bash stdout: None
+## OK bash status: 0
 
 #### Arrays can't be used as env bindings
 # Hm bash it treats it as a string!
@@ -302,8 +301,8 @@ argv.py "${array[@]}"
 
 #### Array syntax in wrong place
 ls foo=(1 2)
-## status: 2
-## OK mksh status: 1
+## status: 1
+## OK bash status: 2
 
 #### Single array with :-
 # bash does EMPTY ELISION here, unless it's double quoted.  mksh has

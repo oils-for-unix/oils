@@ -418,7 +418,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   dir_stack = state.DirStack()
 
-  declare_typeset = builtin_assign.DeclareTypeset(mem, funcs)
+  new_var = builtin_assign.NewVar(mem, funcs)
 
   builtins = {  # Lookup
       builtin_e.ECHO: builtin.Echo,
@@ -444,9 +444,13 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.SET: builtin.Set(exec_opts, mem),
       builtin_e.SHOPT: builtin.Shopt(exec_opts),
 
-      builtin_e.EXPORT: builtin_assign.Export(mem),
-      builtin_e.DECLARE: declare_typeset,
-      builtin_e.TYPESET: declare_typeset,
+      builtin_e.DECLARE: new_var,
+      builtin_e.TYPESET: new_var,
+      builtin_e.LOCAL: new_var,
+
+      builtin_e.EXPORT: builtin_assign.Export(mem, errfmt),
+      builtin_e.READONLY: builtin_assign.Readonly(mem),
+
       builtin_e.UNSET: builtin_assign.Unset(mem, funcs, errfmt),
       builtin_e.SHIFT: builtin_assign.Shift(mem),
 

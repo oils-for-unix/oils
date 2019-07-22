@@ -94,7 +94,18 @@ f() {
   #echo $e
 }
 f
-## stdout-json: "a\nb\nc\nd\ne\n"
+## STDOUT:
+a
+b
+c
+d
+e
+## END
+
+# += is invalid on assignment builtins
+## OK osh stdout-json: ""
+## OK osh status: 1
+
 
 #### Append to nonexistent array
 f() {
