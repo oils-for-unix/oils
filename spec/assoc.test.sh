@@ -59,12 +59,14 @@ status=0
 
 #### Initializing indexed array with assoc array
 declare -a a=([xx]=1 [yy]=2 [zz]=3)
-#declare -a a=(1 2 3)
+echo status=$?
 argv.py "${a[@]}"
-## status: 1
-## stdout-json: ""
-## BUG bash status: 0
+## STDOUT:
+status=1
+[]
+## END
 ## BUG bash STDOUT:
+status=0
 ['3']
 ## END
 
