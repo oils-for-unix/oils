@@ -925,9 +925,6 @@ class Mem(object):
           # set -o nounset; local foo; echo $foo  # It's still undefined!
           val = value.Undef()  # export foo, readonly foo
 
-        if var_flags_e.AssocArray in new_flags:
-          val = value.AssocArray({})
-
         cell = runtime_asdl.cell(val,
                                  var_flags_e.Exported in new_flags,
                                  var_flags_e.ReadOnly in new_flags)

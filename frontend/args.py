@@ -266,7 +266,11 @@ class SetShortOption(_Action):
     self.name = name
 
   def OnMatch(self, prefix, suffix, arg_r, out):
-    """Called when the flag matches."""
+    """Called when the flag matches.
+
+    Args:
+      suffix: - or + (not really a suffix)
+    """
     out.Set(self.name, suffix)
 
 

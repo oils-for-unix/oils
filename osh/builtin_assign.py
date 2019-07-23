@@ -5,7 +5,7 @@ builtin_assign.py
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import (
-    value_e, lvalue, scope_e, var_flags_e, builtin_e
+    value, value_e, lvalue, scope_e, var_flags_e, builtin_e
 )
 #from core.util import log
 from frontend import args
@@ -61,9 +61,19 @@ class Readonly(object):
     arg, arg_index = READONLY_SPEC.Parse(arg_r)
 
     for pair in cmd_val.pairs:
+      if pair.rval is None:
+        if arg.a:
+          rval = value.StrArray([])
+        elif arg.A:
+          rval = value.AssocArray({})
+        else:
+          rval = None
+      else:
+        rval = pair.rval
+
       flags = (var_flags_e.ReadOnly,)
       # NOTE: when rval is None, only flags are changed
-      self.mem.SetVar(pair.lval, pair.rval, flags, scope_e.GlobalOnly)
+      self.mem.SetVar(pair.lval, rval, flags, scope_e.GlobalOnly)
 
     return 0
 
@@ -154,11 +164,17 @@ class NewVar(object):
     if arg.r == '-':
       flags.append(var_flags_e.ReadOnly)
 
-    if arg.A:
-      flags.append(var_flags_e.AssocArray)
-
     for pair in cmd_val.pairs:
-      self.mem.SetVar(pair.lval, pair.rval, tuple(flags), lookup_mode)
+      if pair.rval is None:
+        if arg.a:
+          rval = value.StrArray([])
+        elif arg.A:
+          rval = value.AssocArray({})
+        else:
+          rval = None
+      else:
+        rval = pair.rval
+      self.mem.SetVar(pair.lval, rval, tuple(flags), lookup_mode)
 
     return status
 
