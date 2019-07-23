@@ -15,12 +15,42 @@ case $SH in
     ;;
 esac
 foo=bar :
-echo -$foo-
+echo foo=$foo
 ## STDOUT:
--bar-
+foo=bar
 ## END
 ## BUG zsh STDOUT:
---
+foo=
+## END
+
+#### readonly is special and prefix assignments persist
+# Bash only implements it behind the posix option
+#test -n "$BASH_VERSION" && set -o posix
+case $SH in
+  *dash|*zsh|*osh)
+    ;;
+  *)
+    set -o posix
+    ;;
+esac
+foo=bar readonly spam=eggs
+echo foo=$foo
+echo spam=$spam
+
+# should NOT be exported
+printenv.py foo
+printenv.py spam
+## STDOUT:
+foo=bar
+spam=eggs
+None
+None
+## END
+## BUG bash STDOUT:
+foo=bar
+spam=eggs
+bar
+None
 ## END
 
 #### true is not special

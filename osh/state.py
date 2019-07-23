@@ -1113,6 +1113,7 @@ class Mem(object):
         if cell.readonly:
           return False, found
         namespace[lval.name].val = value.Undef()
+        cell.exported = False
         return True, found # found
       else:
         return True, False
@@ -1124,6 +1125,10 @@ class Mem(object):
       raise AssertionError
 
   def ClearFlag(self, name, flag, lookup_mode):
+    """Used for export -n.
+
+    TODO: SetVar could do it as well.
+    """
     cell, namespace = self._FindCellAndNamespace(name, lookup_mode)
     if cell:
       if flag == var_flags_e.Exported:

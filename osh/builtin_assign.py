@@ -72,8 +72,10 @@ class Readonly(object):
         rval = pair.rval
 
       flags = (var_flags_e.ReadOnly,)
-      # NOTE: when rval is None, only flags are changed
-      self.mem.SetVar(pair.lval, rval, flags, scope_e.GlobalOnly)
+      # NOTE:
+      # - when rval is None, only flags are changed
+      # - dynamic scope because flags on locals can be changed, etc.
+      self.mem.SetVar(pair.lval, rval, flags, scope_e.Dynamic)
 
     return 0
 

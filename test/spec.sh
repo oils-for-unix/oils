@@ -357,7 +357,7 @@ builtin-dirs() {
 }
 
 builtin-vars() {
-  sh-spec spec/builtin-vars.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/builtin-vars.test.sh \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
@@ -389,7 +389,7 @@ builtin-completion() {
 }
 
 builtins-special() {
-  sh-spec spec/builtins-special.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/builtins-special.test.sh --osh-failures-allowed 5 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
