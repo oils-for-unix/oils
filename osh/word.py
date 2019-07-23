@@ -516,7 +516,7 @@ def KeywordToken(w):
   assert isinstance(part0, word_part__LiteralPart)  # for MyPy
 
   token_kind = LookupKind(token_type)
-  if token_kind in (Kind.Assign, Kind.ControlFlow):
+  if token_kind == Kind.ControlFlow:
     return token_kind, part0.token
 
   return err

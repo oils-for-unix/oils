@@ -252,72 +252,6 @@ def _AppendMoreEnv(preparsed_list, more_env):
     more_env.append(pair)
 
 
-def _MakeAssignment(parse_ctx,  # type: ParseContext
-                    assign_kw,  # type: Id_t
-                    suffix_words  # type: List[word__CompoundWord]
-                    ):
-  # type: (...) -> command__Assignment
-  """Create an command.Assignment node from a keyword and a list of words.
-
-  NOTE: We don't allow dynamic assignments like:
-
-  local $1
-
-  This can be replaced with eval 'local $1'
-  """
-  # First parse flags, e.g. -r -x -a -A.  None of the flags have arguments.
-  flags = []
-  n = len(suffix_words)
-  i = 1
-  while i < n:
-    w = suffix_words[i]
-    ok, static_val, quoted = word.StaticEval(w)
-    if not ok or quoted:
-      break  # can't statically evaluate
-
-    if static_val.startswith('-'):
-      flags.append(static_val)
-    else:
-      break  # not a flag, rest are args
-    i += 1
-
-  # Now parse bindings or variable names
-  pairs = []
-  while i < n:
-    w = suffix_words[i]
-    # declare x[y]=1 is valid
-    left_token, close_token, part_offset = word.DetectAssignment(w)
-    if left_token:
-      preparsed = (left_token, close_token, part_offset, w)
-      pair = _MakeAssignPair(parse_ctx, preparsed, parse_ctx.arena)
-    else:
-      # In aboriginal in variables/sources: export_if_blank does export "$1".
-      # We should allow that.
-
-      # Parse this differently then?  # dynamic-export?  It sets global
-      # variables.
-      ok, static_val, quoted = word.StaticEval(w)
-      if not ok or quoted:
-        p_die("Variable names must be unquoted constants", word=w)
-
-      # No value is equivalent to ''
-      if not match.IsValidVarName(static_val):
-        p_die('Invalid variable name %r', static_val, word=w)
-
-      lhs = lhs_expr.LhsName(static_val)
-      lhs.spids.append(word.LeftMostSpanForWord(w))
-      pair = syntax_asdl.assign_pair(lhs, assign_op_e.Equal, None)
-
-      left_spid = word.LeftMostSpanForWord(w)
-      pair.spids.append(left_spid)
-    pairs.append(pair)
-
-    i += 1
-
-  node = command.Assignment(assign_kw, flags, pairs)
-  return node
-
-
 if TYPE_CHECKING:
   PreParsedList = List[Tuple[token, Optional[token], int, word__CompoundWord]]
 
@@ -739,25 +673,6 @@ class CommandParser(object):
 
     return node
 
-  # Flags that indicate an assignment should be parsed like a command.
-  _ASSIGN_COMMANDS = set([
-      (Id.Assign_Declare, '-f'),  # function defs
-      (Id.Assign_Declare, '-F'),  # function names
-      (Id.Assign_Declare, '-p'),  # print
-
-      (Id.Assign_Typeset, '-f'),
-      (Id.Assign_Typeset, '-F'),
-      (Id.Assign_Typeset, '-p'),
-
-      (Id.Assign_Local, '-p'),
-      (Id.Assign_Readonly, '-p'),
-      # Hm 'export -p' is more like a command.  But we're parsing it
-      # dynamically now because of some wrappers.
-      # Maybe we could change this.
-      #(Id.Assign_Export, '-p'),
-  ])
-  # Flags to parse like assignments: -a -r -x (and maybe -i)
-
   def ParseSimpleCommand(self):
     # type: () -> command_t
     """
@@ -850,47 +765,12 @@ class CommandParser(object):
       for preparsed in preparsed_list:
         pairs.append(_MakeAssignPair(self.parse_ctx, preparsed, self.arena))
 
-      node = command.Assignment(Id.Assign_None, [], pairs)
+      node = command.Assignment(pairs)
       left_spid = word.LeftMostSpanForWord(words[0])
       node.spids.append(left_spid)  # no keyword spid to skip past
       return node
 
     kind, kw_token = word.KeywordToken(suffix_words[0])
-
-    #if kind == Kind.Assign:
-    if 0:
-      # Here we StaticEval suffix_words[1] to see if we have an ASSIGNMENT COMMAND
-      # like 'typeset -p', which lists variables -- a SimpleCommand rather than
-      # an Assignment.
-      #
-      # Note we're not handling duplicate flags like 'typeset -pf'.  I see this
-      # in bashdb (bash debugger) but it can just be changed to 'typeset -p
-      # -f'.
-      is_command = False
-      if len(suffix_words) > 1:
-        ok, val, _ = word.StaticEval(suffix_words[1])
-        if ok and (kw_token.id, val) in self._ASSIGN_COMMANDS:
-          is_command = True
-
-      if is_command:  # declare -f, declare -p, typeset -p, etc.
-        node = _MakeSimpleCommand(preparsed_list, suffix_words, redirects)
-        return node
-
-      if redirects:
-        # Attach the error location to the keyword.  It would be more precise
-        # to attach it to the
-        p_die("Assignments shouldn't have redirects", token=kw_token)
-
-      if preparsed_list:  # FOO=bar local spam=eggs not allowed
-        # Use the location of the first value.  TODO: Use the whole word
-        # before splitting.
-        left_token, _, _, _ = preparsed_list[0]
-        p_die("Assignments shouldn't have environment bindings", token=left_token)
-
-      # declare str='', declare -a array=()
-      node = _MakeAssignment(self.parse_ctx, kw_token.id, suffix_words)
-      node.spids.append(kw_token.span_id)
-      return node
 
     if kind == Kind.ControlFlow:
       if redirects:

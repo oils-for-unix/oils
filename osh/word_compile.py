@@ -86,36 +86,3 @@ def EvalCStringToken(id_, value):
 
   else:
     raise AssertionError
-
-
-#
-# Assignment
-#
-
-def ParseAssignFlags(flag_args):
-  """
-  Args:
-    flag_args looks like ['-r', '-x'] or ['-rx'], etc.
-
-  Returns:
-    A list of var_flags_e
-
-  NOTE: Any errors should be caught at PARSE TIME, not compile time.
-  """
-  flags = []
-  for arg in flag_args:
-    assert arg[0] == '-', arg
-    for char in arg[1:]:
-      if char == 'x':
-        flags.append(var_flags_e.Exported)
-      elif char == 'r':
-        flags.append(var_flags_e.ReadOnly)
-      elif char == 'A':
-        flags.append(var_flags_e.AssocArray)
-      elif char == 'g':  # useful for 'declare -Ag'
-        flags.append(var_flags_e.Global)
-      else:
-        # TODO: Throw an error?
-        pass
-  return flags
-

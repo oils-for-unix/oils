@@ -268,13 +268,8 @@ _KEYWORDS = [
 ]
 
 # These are treated like builtins in bash, but keywords in OSH.  However, we
-# main compatibility with bash for the 'type' builtin.
+# maintain compatibility with bash for the 'type' builtin.
 _MORE_KEYWORDS = [
-  C('declare',  Id.Assign_Declare),
-  C('typeset',  Id.Assign_Typeset),
-  C('local',    Id.Assign_Local),
-  C('readonly', Id.Assign_Readonly),
-
   C('break',    Id.ControlFlow_Break),
   C('continue', Id.ControlFlow_Continue),
   C('return',   Id.ControlFlow_Return),

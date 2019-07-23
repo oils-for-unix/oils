@@ -833,27 +833,9 @@ class Executor(object):
 
       status = 0  # TODO: what should status be?
 
-    elif node.tag == command_e.Assignment:
-      # TODO: Also do dynamic assignment here
-      flags = word_compile.ParseAssignFlags(node.flags)
+    elif node.tag == command_e.Assignment:  # Only unqualified assignment
 
-      if node.keyword == Id.Assign_Local:
-        lookup_mode = scope_e.LocalOnly
-      # typeset and declare are synonyms?  I see typeset -a a=() the most.
-      elif node.keyword in (Id.Assign_Declare, Id.Assign_Typeset):
-        # declare is like local, except it can also be used outside functions?
-        if var_flags_e.Global in flags:
-          lookup_mode = scope_e.GlobalOnly
-        else:
-          lookup_mode = scope_e.LocalOnly
-      elif node.keyword == Id.Assign_Readonly:
-        lookup_mode = scope_e.Dynamic
-        flags.append(var_flags_e.ReadOnly)
-      elif node.keyword == Id.Assign_None:  # mutate existing local or global
-        lookup_mode = scope_e.Dynamic
-      else:
-        raise AssertionError(node.keyword)
-
+      lookup_mode = scope_e.Dynamic
       for pair in node.pairs:
         # Use the spid of each pair.
         self.mem.SetCurrentSpanId(pair.spids[0])
@@ -895,6 +877,7 @@ class Executor(object):
         # Undef value, but the 'array' attribute.
 
         #log('setting %s to %s with flags %s', lval, val, flags)
+        flags = ()
         self.mem.SetVar(lval, val, flags, lookup_mode)
         self.tracer.OnAssignment(lval, pair.op, val, flags, lookup_mode)
 
@@ -906,23 +889,15 @@ class Executor(object):
       # then its status will be in mem.last_status, and we can check it here.
       # If there was NOT a command sub in the assignment, then we don't want to
       # check it.
-      if node.keyword == Id.Assign_None:  # mutate existing local or global
-        # Only do this if there was a command sub?  How?  Look at node?
-        # Set a flag in mem?   self.mem.last_status or
-        if self.check_command_sub_status:
-          last_status = self.mem.LastStatus()
-          self._CheckStatus(last_status, node)
-          status = last_status  # A global assignment shouldn't clear $?.
-        else:
-          status = 0
+
+      # Only do this if there was a command sub?  How?  Look at node?
+      # Set a flag in mem?   self.mem.last_status or
+      if self.check_command_sub_status:
+        last_status = self.mem.LastStatus()
+        self._CheckStatus(last_status, node)
+        status = last_status  # A global assignment shouldn't clear $?.
       else:
-        # To be compatible with existing shells, local assignments DO clear
-        # $?.  Even in strict mode, we don't need to bother setting
-        # check_errexit = True, because we would have already checked the
-        # command sub in RunCommandSub.
         status = 0
-        # TODO: maybe we should have a "sane-status" that respects this:
-        # false; echo $?; local f=x; echo $?
 
     elif node.tag == command_e.ControlFlow:
       tok = node.token
