@@ -382,4 +382,12 @@ value1
 value2
 ## END
 
-
+#### readonly associative array can't be modified
+declare -Ar A
+A['x']=1
+echo status=$?
+## OK osh status: 1
+## OK osh stdout-json: ""
+## STDOUT:
+status=1
+## END

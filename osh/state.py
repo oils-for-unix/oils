@@ -890,28 +890,10 @@ class Mem(object):
     # - Other validity: $HOME could be checked for existence
 
     assert new_flags is not None
-
     if lval.tag == lvalue_e.Named:
-      #if lval.name == 'ldflags':
-      # TODO: Turn this into a tracing feature.  Like osh --tracevar ldflags
-      # --tracevar foo.  Has to respect environment variables too.
-      if 0:
-        util.log('--- SETTING ldflags to %s', val)
-        if lval.spids:
-          span_id = lval.spids[0]
-          line_span = self.arena.GetLineSpan(span_id)
-          line_id = line_span.line_id
-          source_str = self.arena.GetLineSourceString(line_id)
-          line_num = self.arena.GetLineNumber(line_id)
-          #length = line_span.length
-          util.log('--- spid %s: %s, line %d, col %d', span_id, source_str,
-                   line_num+1, line_span.col)
-
-          # TODO: Need the arena to look it up the line spid and line number.
-
       cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
       if cell:
-        if val is not None:
+        if val is not None:  # e.g. declare -rx existing
           if cell.readonly:
             # TODO: error context
             e_die("Can't assign to readonly value %r", lval.name)
@@ -921,7 +903,7 @@ class Mem(object):
         if var_flags_e.ReadOnly in new_flags:
           cell.readonly = True
       else:
-        if val is None:
+        if val is None:  # declare -rx nonexistent
           # set -o nounset; local foo; echo $foo  # It's still undefined!
           val = value.Undef()  # export foo, readonly foo
 
@@ -930,23 +912,20 @@ class Mem(object):
                                  var_flags_e.ReadOnly in new_flags)
         namespace[lval.name] = cell
 
+      # Maintain invariant that only strings and undefined cells can be
+      # exported.
       if (cell.val is not None and
           cell.val.tag not in (value_e.Undef, value_e.Str) and
           cell.exported):
         e_die("Can't export array")  # TODO: error context
 
     elif lval.tag == lvalue_e.Indexed:
+      # There is no syntax 'declare a[x]'
+      assert val is not None, val
+
       # TODO: All paths should have this?  We can get here by a[x]=1 or
       # (( a[ x ] = 1 )).  Maybe we should make them different?
-      if lval.spids:
-        left_spid = lval.spids[0]
-      else:
-        left_spid = const.NO_INTEGER
-
-      # TODO: This is a parse error!
-      # a[1]=(1 2 3)
-      if val.tag == value_e.StrArray:
-        e_die("Can't assign array to array member", span_id=left_spid)
+      left_spid = lval.spids[0] if lval.spids else const.NO_INTEGER
 
       # bash/mksh have annoying behavior of letting you do LHS assignment to
       # Undef, which then turns into an INDEXED array.  (Undef means that set
@@ -956,20 +935,21 @@ class Mem(object):
         self._BindNewArrayWithEntry(namespace, lval, val, new_flags)
         return
 
-      cell_tag = cell.val.tag
-      if cell_tag == value_e.Str:
-        # s=x
-        # s[1]=y  # invalid
-        e_die("Entries in value of type %s can't be assigned to",
-              cell.val.__class__.__name__, span_id=left_spid)
-
       if cell.readonly:
-        e_die("Can't assign to readonly value", span_id=left_spid)
+        e_die("Can't assign to readonly array", span_id=left_spid)
+
+      cell_tag = cell.val.tag
 
       # undef[0]=y is allowed
       if cell_tag == value_e.Undef:
         self._BindNewArrayWithEntry(namespace, lval, val, new_flags)
         return
+
+      if cell_tag == value_e.Str:
+        # s=x
+        # s[1]=y  # invalid
+        e_die("Entries in value of type %s can't be assigned to",
+              cell.val.__class__.__name__, span_id=left_spid)
 
       if cell_tag == value_e.StrArray:
         strs = cell.val.strs
@@ -991,8 +971,16 @@ class Mem(object):
       e_die("Object of this type can't be indexed: %s", cell.val)
 
     elif lval.tag == lvalue_e.Keyed:
+      left_spid = lval.spids[0] if lval.spids else const.NO_INTEGER
+
+      # There is no syntax 'declare A["x"]'
+      assert val is not None, val
+
       cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
+      # We already looked it up
       assert cell.val.tag == value_e.AssocArray, cell
+      if cell.readonly:
+        e_die("Can't assign to readonly associative array", span_id=left_spid)
 
       cell.val.d[lval.key] = val.s
 
@@ -1006,15 +994,6 @@ class Mem(object):
     new_value = value.StrArray(items)
 
     # arrays can't be exported; can't have AssocArray flag
-    readonly = var_flags_e.ReadOnly in new_flags
-    namespace[lval.name] = runtime_asdl.cell(new_value, False, readonly)
-
-  def _BindNewAssocArrayWithEntry(self, namespace, lval, val, new_flags):
-    """Fill 'namespace' with a new indexed array entry."""
-    d = {lval.index: val.s}  # TODO: RHS has to be string?
-    new_value = value.AssocArray(d)
-
-    # associative arrays can't be exported; don't need AssocArray flag
     readonly = var_flags_e.ReadOnly in new_flags
     namespace[lval.name] = runtime_asdl.cell(new_value, False, readonly)
 

@@ -207,13 +207,14 @@ class MemTest(unittest.TestCase):
     mem.SetVar(lhs, value.Str('3'), (), scope_e.Dynamic)
     self.assertEqual([None, '3'], mem.var_stack[0]['a'].val.strs)
 
-    # a[1]=(x y z)  # illegal
-    try:
-      mem.SetVar(lhs, value.StrArray(['x', 'y', 'z']), (), scope_e.Dynamic)
-    except util.FatalRuntimeError as e:
-      pass
-    else:
-      self.fail("Expected failure")
+    # a[1]=(x y z)  # illegal but doesn't parse anyway
+    if 0:
+      try:
+        mem.SetVar(lhs, value.StrArray(['x', 'y', 'z']), (), scope_e.Dynamic)
+      except util.FatalRuntimeError as e:
+        pass
+      else:
+        self.fail("Expected failure")
 
     # readonly a
     mem.SetVar(
