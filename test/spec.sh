@@ -388,8 +388,8 @@ builtin-completion() {
     $BASH $OSH_LIST "$@"
 }
 
-builtins-special() {
-  sh-spec spec/builtins-special.test.sh --osh-failures-allowed 5 \
+builtin-special() {
+  sh-spec spec/builtin-special.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 

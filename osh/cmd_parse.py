@@ -13,7 +13,7 @@ from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
     command, command_e, command_t,
-    command__Assignment, command__SimpleCommand, command__BraceGroup,
+    command__SimpleCommand, command__BraceGroup,
     command__DoGroup, command__ForExpr, command__ForEach, command__WhileUntil,
     command__Case, command__If, command__FuncDef, command__Subshell,
     command__DBracket, command__DParen, command__CommandList,

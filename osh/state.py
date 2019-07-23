@@ -21,7 +21,6 @@ from _devbuild.gen.runtime_asdl import (
 from _devbuild.gen import runtime_asdl  # for cell
 
 from asdl import const
-from core import util
 from core.util import log, e_die
 from frontend import args
 from osh import split

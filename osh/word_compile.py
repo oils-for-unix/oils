@@ -7,7 +7,6 @@ doesn't depend on any values at runtime.
 """
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import var_flags_e
 from core import ui
 from osh import string_ops
 

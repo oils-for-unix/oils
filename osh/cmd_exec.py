@@ -47,7 +47,6 @@ from osh import builtin
 from osh import expr_eval
 from osh import state
 from osh import word
-from osh import word_compile
 
 import posix_ as posix
 try:
@@ -670,14 +669,14 @@ class Executor(object):
       log('[%%%d] Started PID %d', job_id, pid)
     return 0
 
-  def _EvalTempEnv(self, more_env):
+  def _EvalTempEnv(self, more_env, flags):
     """For FOO=1 cmd."""
     for env_pair in more_env:
       val = self.word_ev.EvalWordToString(env_pair.val)
       # Set each var so the next one can reference it.  Example:
       # FOO=1 BAR=$FOO ls /
-      self.mem.SetVar(lvalue.Named(env_pair.name), val,
-                      (var_flags_e.Exported,), scope_e.LocalOnly)
+      self.mem.SetVar(lvalue.Named(env_pair.name), val, flags,
+                      scope_e.LocalOnly)
 
   def _Dispatch(self, node, fork_external):
     # If we call RunCommandSub in a recursive call to the executor, this will
@@ -733,12 +732,12 @@ class Executor(object):
         is_other_special = False  # TODO: There are other special builtins too!
         if cmd_val.tag == cmd_value_e.Assign or is_other_special:
           # Special builtins have their temp env persisted.
-          self._EvalTempEnv(node.more_env)
+          self._EvalTempEnv(node.more_env, ())
           status = self._RunSimpleCommand(cmd_val, fork_external)
         else:
           self.mem.PushTemp()
           try:
-            self._EvalTempEnv(node.more_env)
+            self._EvalTempEnv(node.more_env, (var_flags_e.Exported,))
             status = self._RunSimpleCommand(cmd_val, fork_external)
           finally:
             self.mem.PopTemp()
@@ -755,7 +754,7 @@ class Executor(object):
       if node.more_env:
         self.mem.PushTemp()
         try:
-          self._EvalTempEnv(node.more_env)
+          self._EvalTempEnv(node.more_env, (var_flags_e.Exported,))
           status = self._Execute(node.child)
         finally:
           self.mem.PopTemp()
