@@ -322,3 +322,37 @@ bar=B
 F
 B
 ## END
+
+#### typeset +x
+export e=E
+printenv.py e
+typeset +x e=E2
+printenv.py e  # no longer exported
+## STDOUT:
+E
+None
+## END
+
+#### typeset +r doesn't work after setting (it only works in zsh)
+readonly r=r1
+echo r=$r
+typeset +r r=r2
+echo r=$r
+r=r3
+echo r=$r
+## status: 2
+## STDOUT:
+r=r1
+## END
+## OK bash status: 0
+## OK bash STDOUT:
+r=r1
+r=r1
+r=r1
+## END
+## BUG zsh status: 0
+## BUG zsh STDOUT:
+r=r1
+r=r2
+r=r3
+## END

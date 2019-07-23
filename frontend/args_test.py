@@ -113,6 +113,10 @@ class ArgsTest(unittest.TestCase):
     s.ShortFlag('-n')
     s.ShortFlag('-d', args.Str)  # delimiter
 
+    # like declare +rx
+    s.ShortOption('r')
+    s.ShortOption('x')
+
     arg, i = s.ParseVec(_MakeArgVector(['-f', 'foo', 'bar']))
     self.assertEqual(1, i-1)
     self.assertEqual(True, arg.f)
@@ -128,6 +132,19 @@ class ArgsTest(unittest.TestCase):
     arg, i = s.ParseVec(_MakeArgVector(['-d,',  'foo']))
     self.assertEqual(1, i-1)
     self.assertEqual(',', arg.d)
+    self.assertEqual(None, arg.r)
+
+    arg, i = s.ParseVec(_MakeArgVector(['-d,', '-r', '-x']))
+    self.assertEqual(4, i)
+    self.assertEqual(',', arg.d)
+    self.assertEqual('-', arg.r)
+    self.assertEqual('-', arg.x)
+
+    arg, i = s.ParseVec(_MakeArgVector(['-d,', '+rx']))
+    self.assertEqual(3, i)
+    self.assertEqual(',', arg.d)
+    self.assertEqual('+', arg.r)
+    self.assertEqual('+', arg.x)
 
   def testReadBuiltinFlags(self):
     s = args.BuiltinFlags()

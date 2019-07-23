@@ -75,9 +75,11 @@ NEW_VAR_SPEC.ShortFlag('-f')
 NEW_VAR_SPEC.ShortFlag('-F')
 NEW_VAR_SPEC.ShortFlag('-p')
 
-NEW_VAR_SPEC.ShortFlag('-x')  # export
-NEW_VAR_SPEC.ShortFlag('-r')  # readonly
-NEW_VAR_SPEC.ShortFlag('-g')  # global
+NEW_VAR_SPEC.ShortFlag('-g')  # Look up in global scope
+
+# Options +r +x
+NEW_VAR_SPEC.ShortOption('x')  # export
+NEW_VAR_SPEC.ShortOption('r')  # readonly
 
 # Common between readonly/declare
 NEW_VAR_SPEC.ShortFlag('-a')
@@ -146,14 +148,14 @@ class NewVar(object):
         lookup_mode = scope_e.LocalOnly
 
     flags = []
-    if arg.x:
+    # TODO: Handle '+'
+    if arg.x == '-': 
       flags.append(var_flags_e.Exported)
-    if arg.r:
+    if arg.r == '-':
       flags.append(var_flags_e.ReadOnly)
+
     if arg.A:
       flags.append(var_flags_e.AssocArray)
-    if arg.g:  # e.g. 'declare -Ag'
-      flags.append(var_flags_e.Global)
 
     for pair in cmd_val.pairs:
       self.mem.SetVar(pair.lval, pair.rval, tuple(flags), lookup_mode)

@@ -260,6 +260,16 @@ class SetBoolToArg(_Action):
     out.Set(self.name, value)
 
 
+class SetShortOption(_Action):
+
+  def __init__(self, name):
+    self.name = name
+
+  def OnMatch(self, prefix, suffix, arg_r, out):
+    """Called when the flag matches."""
+    out.Set(self.name, suffix)
+
+
 class SetToTrue(_Action):
 
   def __init__(self, name):
@@ -503,6 +513,7 @@ class BuiltinFlags(object):
   def __init__(self):
     self.arity0 = {}  # {'r': _Action}  e.g. read -r
     self.arity1 = {}  # {'t': _Action}  e.g. read -t 1.0
+    self.options = {}
 
     self.attr_names = {}
 
@@ -531,6 +542,11 @@ class BuiltinFlags(object):
     else:
       self.arity1[char] = SetToArg(char, arg_type)
 
+    self.attr_names[char] = None
+
+  def ShortOption(self, char, help=None):
+    assert len(char) == 1  # 'r' for -r +r
+    self.options[char] = SetShortOption(char)
     self.attr_names[char] = None
 
   def ParseLikeEcho(self, argv):
@@ -587,6 +603,11 @@ class BuiltinFlags(object):
         for i in xrange(1, n):  # parse flag combos like -rx
           char = arg[i]
 
+          if char in self.options:
+            action = self.options[char]
+            action.OnMatch(None, '-', arg_r, out)
+            continue
+
           if char in self.arity0:  # e.g. read -r
             action = self.arity0[char]
             action.OnMatch(None, None, arg_r, out)
@@ -600,6 +621,21 @@ class BuiltinFlags(object):
 
           raise UsageError(
               "doesn't accept flag %r" % ('-' + char), span_id=arg_r.SpanId())
+
+        arg_r.Next()  # next arg
+
+      # Only accept + if there are ANY options defined, e.g. for declare +rx.
+      elif self.options and arg.startswith('+') and len(arg) > 1:
+        n = len(arg)
+        for i in xrange(1, n):  # parse flag combos like -rx
+          char = arg[i]
+          if char in self.options:
+            action = self.options[char]
+            action.OnMatch(None, '+', arg_r, out)
+            continue
+
+          raise UsageError(
+              "doesn't accept option %r" % ('+' + char), span_id=arg_r.SpanId())
 
         arg_r.Next()  # next arg
 
