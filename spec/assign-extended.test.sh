@@ -291,25 +291,6 @@ argv.py "$x"
 ['1']
 ## END
 
-#### array literal inside array is a parse error
-a=( inside=() )
-echo len=${#a[@]}
-## status: 2
-## stdout-json: ""
-## OK mksh status: 1
-## BUG bash status: 0
-## BUG bash stdout: len=0
-
-#### array literal inside loop is a parse error
-for x in a=(); do
-  echo $x
-done
-echo done
-## status: 2
-## stdout-json: ""
-## OK mksh status: 1
-## BUG bash stdout-json: ""
-
 #### dynamic flag in array in assign builtin
 typeset b
 b=(unused1 unused2)  # this works in mksh

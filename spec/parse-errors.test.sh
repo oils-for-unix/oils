@@ -139,3 +139,47 @@ $SH $flags -i -c 'var=)'
 
 ## status: 2
 ## OK bash/mksh status: 1
+
+#### array literal inside array is a parse error
+a=( inside=() )
+echo len=${#a[@]}
+## status: 2
+## stdout-json: ""
+## OK mksh status: 1
+## BUG bash status: 0
+## BUG bash stdout: len=0
+
+#### array literal inside loop is a parse error
+f() {
+  for x in a=(); do
+    echo $x
+  done
+  echo done
+}
+## status: 2
+## stdout-json: ""
+## OK mksh status: 1
+
+#### array literal in case
+f() {
+  case a=() in
+    foo)
+      echo hi
+      ;;
+  esac
+}
+## status: 2
+## stdout-json: ""
+## OK mksh status: 1
+
+#### %foo=() is parse error (regression)
+
+# Lit_VarLike and then (, but NOT at the beginning of a word.
+
+f() {
+  %foo=()
+}
+## status: 2
+## stdout-json: ""
+## OK mksh status: 1
+

@@ -130,10 +130,7 @@ def LeftMostSpanForPart(part):
   # TODO: Write unit tests in ui.py for error values
 
   if isinstance(part, word_part__ArrayLiteralPart):
-    if not part.words:
-      return const.NO_INTEGER
-    else:
-      return LeftMostSpanForWord(part.words[0])  # Hm this is a=(1 2 3)
+    return part.spids[0]  # ( location
 
   elif isinstance(part, word_part__LiteralPart):
     # Just use the token

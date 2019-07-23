@@ -280,7 +280,7 @@ assign() {
 
 # These cases apply to a few shells.
 assign-extended() {
-  sh-spec spec/assign-extended.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/assign-extended.test.sh --osh-failures-allowed 1 \
     $BASH $MKSH $OSH_LIST "$@" 
 }
 
@@ -437,7 +437,8 @@ explore-parsing() {
 }
 
 parse-errors() {
-  sh-spec spec/parse-errors.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
+  sh-spec spec/parse-errors.test.sh --osh-failures-allowed 3 \
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 here-doc() {

@@ -985,6 +985,7 @@ class WordParser(object):
     if self.cur_token.id != Id.Op_LParen:
       p_die('Expected ( after =, got %r', self.cur_token.val,
             token=self.cur_token)
+    paren_spid = self.cur_token.span_id
 
     # MUST use a new word parser (with same lexer).
     w_parser = WordParser(self.parse_ctx, self.lexer, self.line_reader)
@@ -1007,7 +1008,9 @@ class WordParser(object):
       words.append(w)
 
     if not words:  # a=() is empty indexed array
-      return word_part.ArrayLiteralPart(words)  # type: ignore  # invariant List?
+      node = word_part.ArrayLiteralPart(words)  # type: ignore  # invariant List?
+      node.spids.append(paren_spid)
+      return node
  
     # If the first one is a key/value pair, then the rest are assumed to be.
     pair = word.DetectAssocPair(words[0])
@@ -1024,11 +1027,15 @@ class WordParser(object):
         pairs.append(pair[0])  # flat representation
         pairs.append(pair[1])
 
-      return word_part.AssocArrayLiteral(pairs)  # type: ignore  # invariant List?
+      node = word_part.AssocArrayLiteral(pairs)  # type: ignore  # invariant List?
+      node.spids.append(paren_spid)
+      return node
 
     words2 = braces.BraceDetectAll(words)
     words3 = word.TildeDetectAll(words2)
-    return word_part.ArrayLiteralPart(words3)
+    node = word_part.ArrayLiteralPart(words3)
+    node.spids.append(paren_spid)
+    return node
 
   def _ReadCompoundWord(self, eof_type=Id.Undefined_Tok,
                         lex_mode=lex_mode_e.ShCommand, empty_ok=True):
@@ -1063,11 +1070,16 @@ class WordParser(object):
         word.parts.append(part)
 
         if self.token_type == Id.Lit_VarLike:  # foo=
+          # Unfortunately it's awkward to pull the check for a=(1 2) up to _ReadWord.
           t = self.lexer.LookAhead(lex_mode_e.ShCommand)
           if t.id == Id.Op_LParen:
+            if num_parts != 0:
+              p_die("Unexpected ( after this token", token=self.cur_token)
             self.lexer.PushHint(Id.Op_RParen, Id.Right_ArrayLiteral)
             part2 = self._ReadArrayLiteralPart()
             word.parts.append(part2)
+            self._Next(lex_mode)
+            done = True  # array literal is the last part of a word
 
       elif self.token_kind == Kind.VSub:
         part = word_part.SimpleVarSub(self.cur_token)
