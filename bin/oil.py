@@ -418,7 +418,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   dir_stack = state.DirStack()
 
-  new_var = builtin_assign.NewVar(mem, funcs)
+  new_var = builtin_assign.NewVar(mem, funcs, errfmt)
 
   builtins = {  # Lookup
       builtin_e.ECHO: builtin.Echo,
@@ -449,7 +449,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.LOCAL: new_var,
 
       builtin_e.EXPORT: builtin_assign.Export(mem, errfmt),
-      builtin_e.READONLY: builtin_assign.Readonly(mem),
+      builtin_e.READONLY: builtin_assign.Readonly(mem, errfmt),
 
       builtin_e.UNSET: builtin_assign.Unset(mem, funcs, errfmt),
       builtin_e.SHIFT: builtin_assign.Shift(mem),

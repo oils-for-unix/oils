@@ -970,13 +970,13 @@ class Mem(object):
       e_die("Object of this type can't be indexed: %s", cell.val)
 
     elif lval.tag == lvalue_e.Keyed:
-      left_spid = lval.spids[0] if lval.spids else const.NO_INTEGER
-
       # There is no syntax 'declare A["x"]'
       assert val is not None, val
 
+      left_spid = lval.spids[0] if lval.spids else const.NO_INTEGER
+
       cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
-      # We already looked it up
+      # We already looked it up before making the lvalue
       assert cell.val.tag == value_e.AssocArray, cell
       if cell.readonly:
         e_die("Can't assign to readonly associative array", span_id=left_spid)

@@ -44,6 +44,17 @@ class Export(object):
     return 0
 
 
+def _CheckType(rval, arg, errfmt, span_id):
+  """Shared between NewVar and Readonly."""
+  if arg.a and rval and rval.tag != value_e.StrArray:
+    errfmt.Print("Got -a but RHS isn't an array", span_id=span_id)
+    return False
+  if arg.A and rval and rval.tag != value_e.AssocArray:
+    errfmt.Print("Got -A but RHS isn't an associative array", span_id=span_id)
+    return False
+  return True
+
+
 READONLY_SPEC = _Register('readonly')
 
 # TODO: Check the consistency of -a and -A against values, here and below.
@@ -52,8 +63,9 @@ READONLY_SPEC.ShortFlag('-A')
 
 
 class Readonly(object):
-  def __init__(self, mem):
+  def __init__(self, mem, errfmt):
     self.mem = mem
+    self.errfmt = errfmt
 
   def __call__(self, cmd_val):
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
@@ -71,11 +83,13 @@ class Readonly(object):
       else:
         rval = pair.rval
 
-      flags = (var_flags_e.ReadOnly,)
+      if not _CheckType(rval, arg, self.errfmt, pair.spid):
+        return 1
+
       # NOTE:
       # - when rval is None, only flags are changed
       # - dynamic scope because flags on locals can be changed, etc.
-      self.mem.SetVar(pair.lval, rval, flags, scope_e.Dynamic)
+      self.mem.SetVar(pair.lval, rval, (var_flags_e.ReadOnly,), scope_e.Dynamic)
 
     return 0
 
@@ -101,9 +115,10 @@ NEW_VAR_SPEC.ShortFlag('-A')
 class NewVar(object):
   """declare/typeset/local."""
 
-  def __init__(self, mem, funcs):
+  def __init__(self, mem, funcs, errfmt):
     self.mem = mem
     self.funcs = funcs
+    self.errfmt = errfmt
 
   def __call__(self, cmd_val):
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
@@ -176,6 +191,9 @@ class NewVar(object):
           rval = None
       else:
         rval = pair.rval
+
+      if not _CheckType(rval, arg, self.errfmt, pair.spid):
+        return 1
       self.mem.SetVar(pair.lval, rval, tuple(flags), lookup_mode)
 
     return status

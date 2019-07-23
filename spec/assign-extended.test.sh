@@ -290,12 +290,19 @@ a b
 #### dynamic array parsing is not allowed
 code='x=(1 2 3)'
 typeset -a "$code"  # note: -a flag is required
+echo status=$?
 argv.py "$x"
 ## STDOUT:
+status=1
+['']
+## END
+## OK mksh STDOUT:
+status=0
 ['(1 2 3)']
 ## END
 # bash allows it
 ## OK bash STDOUT:
+status=0
 ['1']
 ## END
 

@@ -31,7 +31,7 @@ declare -A assoc=([k1]=foo [k2]='spam eggs')
 argv.py "${assoc[@]}"
 argv.py "${!assoc[@]}"
 
-# shouldn't this be disallowed?  You're losing information.
+# disallow this in OSH?  Changing type?
 
 assoc=(foo 'spam eggs')
 argv.py "${assoc[@]}"
@@ -46,8 +46,16 @@ argv.py "${!assoc[@]}"
 
 #### Can't initialize assoc array with indexed array
 declare -A A=(1 2 3)
-## status: 1
-## BUG bash status: 0
+echo status=$?
+## STDOUT:
+status=1
+## END
+
+# bash prints warnings to stderr but gives no indication of the problem
+## BUG bash STDOUT:
+status=0
+## END
+
 
 #### Initializing indexed array with assoc array
 declare -a a=([xx]=1 [yy]=2 [zz]=3)
