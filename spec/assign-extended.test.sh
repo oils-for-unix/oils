@@ -24,8 +24,16 @@ argv.py "${array[@]}"
 
 #### indexed LHS without spaces is allowed
 a[1 * 1]=x a[ 1 + 2 ]=z
+echo status=$?
 argv.py "${a[@]}"
-## stdout: ['x', 'z']
+## STDOUT:
+status=0
+['x', 'z']
+## END
+## N-I osh STDOUT:
+status=127
+[]
+## END
 
 #### declare -f exit code indicates function existence
 func2=x  # var names are NOT found
