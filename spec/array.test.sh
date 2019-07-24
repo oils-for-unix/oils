@@ -232,10 +232,11 @@ argv.py "${a[@]}"
 a=(1 2)
 a[0]=(3 4)
 echo "status=$?"
-## stdout: status=1
-## status: 0
-## N-I mksh stdout-json: ""
+## stdout-json: ""
+## status: 2
 ## N-I mksh status: 1
+## BUG bash stdout: status=1
+## BUG bash status: 0
 
 #### Slice of array with [@]
 # mksh doesn't support this syntax!  It's a bash extension.

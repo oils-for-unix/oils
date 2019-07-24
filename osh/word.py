@@ -367,6 +367,13 @@ def AsFuncName(w):
   # type: (word__CompoundWord) -> str
   """
   Returns a valid function name, or the empty string.
+
+  TODO: Maybe use this regex to validate:
+
+  FUNCTION_NAME_RE = r'[^{}\[\]=]*'
+  
+  Bash is very lenient, but that would disallow confusing characters, for
+  better error messages on a[x]=(), etc.
   """
   assert isinstance(w, word__CompoundWord)
 
