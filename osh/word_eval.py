@@ -1015,8 +1015,8 @@ class _WordEvaluator(object):
           # parts.  Problem: the word is a TREE of parts, but we only have a
           # flat list of part_vals.  The only case where we really get arrays
           # is "$@", "${a[@]}", "${a[@]//pat/replace}", etc.
-          e_die("This word should evaluate to a string, but part of it was an "
-                "array", word=word)
+          e_die("This word should yield a string, but it contains an array",
+                word=word)
 
           # TODO: Maybe add detail like this.
           #e_die('RHS of assignment should only have strings.  '

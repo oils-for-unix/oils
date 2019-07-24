@@ -153,7 +153,7 @@ empty
 status=0
 ## END
 
-#### Arrays should not be incorrectly compared like bash/mksh
+#### Arrays are incorrectly compared, but strict-array prevents it
 
 # NOTE: from spec/dbracket has a test case like this
 # sane-array should turn this ON.
@@ -164,15 +164,21 @@ b=('a' 'b' 'c' 'd')
 echo ${#a[@]}
 echo ${#b[@]}
 [[ "${a[@]}" == "${b[@]}" ]] && echo EQUAL
+
+shopt -s strict-array || true
+[[ "${a[@]}" == "${b[@]}" ]] && echo EQUAL
+
 ## status: 1
 ## STDOUT:
 2
 4
+EQUAL
 ## END
-## BUG bash/mksh status: 0
-## BUG bash/mksh STDOUT:
+## OK bash/mksh status: 0
+## OK bash/mksh STDOUT:
 2
 4
+EQUAL
 EQUAL
 ## END
 ## N-I dash status: 2
