@@ -556,7 +556,7 @@ errexit-strict() {
 
 # There as many non-POSIX arithmetic contexts.
 arith-context() {
-  sh-spec spec/arith-context.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/arith-context.test.sh \
     $BASH $MKSH $ZSH $OSH_LIST "$@"
 }
 

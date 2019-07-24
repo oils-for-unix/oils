@@ -22,7 +22,7 @@ argv.py "${array[@]}"
 ## N-I mksh stdout-json: ""
 ## N-I mksh status: 1
 
-#### indexed LHS without spaces is allowed
+#### indexed LHS with spaces (not allowed in OSH)
 a[1 * 1]=x a[ 1 + 2 ]=z
 echo status=$?
 argv.py "${a[@]}"

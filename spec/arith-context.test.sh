@@ -35,16 +35,6 @@ echo ${a[@]}
 ## stdout: 1 X 3
 ## OK zsh stdout: X 2 3
 
-#### Array index on LHS with spaces
-# zsh fails to parse this  because of the spaces.
-a=(1 2 3)
-zero=0
-a[zero + 5 - 4]=X
-echo ${a[@]}
-## stdout: 1 X 3
-## BUG zsh stdout-json: ""
-## BUG zsh status: 1
-
 #### Array index on LHS with indices
 a=(1 2 3)
 a[a[1]]=X
