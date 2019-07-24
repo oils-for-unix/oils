@@ -592,8 +592,17 @@ echo done
 ## STDOUT:
 done
 ## END
-## stderr-json: ""
-## OK dash/bash/mksh STDERR:
+## STDERR:
+STDERR
+## END
+## BUG zsh stderr-json: ""
+
+#### redirect after command sub (like case above but without assignment builtin)
+echo stdout=$(stdout_stderr.py) 2>/dev/null
+## STDOUT:
+stdout=STDOUT
+## END
+## STDERR:
 STDERR
 ## END
 
