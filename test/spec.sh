@@ -322,7 +322,7 @@ case_() {
 }
 
 if_() {
-  sh-spec spec/if_.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/if_.test.sh \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
@@ -536,7 +536,12 @@ xtrace() {
 }
 
 strict-options() {
-  sh-spec spec/strict-options.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/strict-options.test.sh --osh-failures-allowed 1 \
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
+}
+
+exit-status() {
+  sh-spec spec/exit-status.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
