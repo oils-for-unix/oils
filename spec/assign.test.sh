@@ -144,17 +144,24 @@ a=_tmp/*.Z
 argv.py "$a"
 ## stdout: ['_tmp/*.Z']
 
-#### Env binding in readonly/declare disallowed
-# I'm disallowing this in the oil shell, because it doesn't work in bash!
-# (v=None vs v=foo)
-# assert status 2 for parse error, but allow stdout v=None/status 0 for
-# existing implementations.
+#### Env binding in readonly/declare is NOT exported!  (pitfall)
+
+# All shells agree on this, but it's very confusing behavior.
 FOO=foo readonly v=$(printenv.py FOO)
 echo "v=$v"
-## OK bash/dash/mksh/zsh stdout: v=None
-## OK bash/dash/mksh/zsh status: 0
-## status: 2
 
+# bash has probems here:
+FOO=foo readonly v2=$FOO
+echo "v2=$v2"
+
+## STDOUT:
+v=None
+v2=foo
+## END
+## BUG bash STDOUT:
+v=None
+v2=
+## END
 
 #### assignments / array assignments not interpreted after 'echo'
 a=1 echo b[0]=2 c=3
@@ -441,21 +448,23 @@ argv.py "$ex" "$ro"
 ## END
 
 
-#### assignment using dynamic keyword splits
+#### assignment using dynamic keyword (splits in most shells, not in zsh/osh)
 words='a b c'
 e=export
 r=readonly
 $e ex=$words
 $r ro=$words
 argv.py "$ex" "$ro"
+
+# zsh and OSH are smart
 ## STDOUT:
+['a b c', 'a b c']
+## END
+
+## OK dash/bash/mksh STDOUT:
 ['a', 'a']
 ## END
 
-# zsh is smart??  How does it do this?
-## BUG zsh STDOUT:
-['a b c', 'a b c']
-## END
 
 #### assignment using dynamic var names doesn't split
 words='a b c'
@@ -519,7 +528,7 @@ unset foo
 ['']
 ## END
 
-#### readonly $x where x='b c' makes them readonly (but NOT defined)
+#### readonly $x where x='b c'
 one=a
 two='b c'
 readonly $two $one
@@ -530,9 +539,13 @@ echo status=$?
 c=new
 echo status=$?
 
-## status: 2
+# in OSH and zsh, this is an invalid variable name
+## status: 1
 ## stdout-json: ""
-## OK zsh status: 1
+
+# most shells make two variable read-only
+
+## OK dash/mksh status: 2
 ## OK bash status: 0
 ## OK bash STDOUT:
 status=1
@@ -555,28 +568,21 @@ printenv.py no_value
 foo
 ## END
 
-#### local a=loc $vars d=loc (splitting in local)
-vars='b c'
+#### local a=loc $var c=loc
+var='b'
 b=global
-c=global
-echo $b $c
+echo $b
 f() {
-  local a=loc $vars d=loc
-  argv.py "$a" "$b" "$c" "$d"
+  local a=loc $var c=loc
+  argv.py "$a" "$b" "$c"
 }
 f
 ## STDOUT:
-global global
-['loc', '', '', 'loc']
+global
+['loc', '', 'loc']
 ## END
 ## BUG dash STDOUT:
-global global
-['loc', 'global', 'global', 'loc']
+global
+['loc', 'global', 'loc']
 ## END
-
-# zsh gives error, doesn't have splitting!
-## OK zsh STDOUT:
-global global
-## END
-## OK zsh status: 1
 

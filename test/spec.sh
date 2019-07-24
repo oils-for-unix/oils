@@ -274,7 +274,7 @@ word-eval() {
 
 # These cases apply to many shells.
 assign() {
-  sh-spec spec/assign.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/assign.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@" 
 }
 
