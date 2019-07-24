@@ -343,7 +343,7 @@ builtin-io() {
 
 # Special bash printf things like -v and %q.  Portable stuff goes in builtin-io.
 builtin-printf() {
-  sh-spec spec/builtin-printf.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/builtin-printf.test.sh \
     ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
@@ -417,7 +417,7 @@ arith() {
 }
 
 command-sub() {
-  sh-spec spec/command-sub.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/command-sub.test.sh \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
