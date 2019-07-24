@@ -648,7 +648,7 @@ class CommandParser(object):
 
     # NOTE: self.arena isn't correct here.  Breaks line invariant.
     line_reader = reader.StringLineReader(code_str, self.arena)
-    cp = self.parse_ctx.MakeOshParser(line_reader, emit_comp_dummy=True,
+    cp = self.parse_ctx.MakeOshParser(line_reader,
                                       aliases_in_flight=aliases_in_flight)
 
     # The interaction between COMPLETION and ALIASES requires special care.
