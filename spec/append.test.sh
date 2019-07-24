@@ -107,22 +107,14 @@ e
 ## OK osh status: 1
 
 
-#### Append to nonexistent array
-f() {
-  # NOTE: mksh doesn't like a=() after keyword.  Doesn't allow local arrays!
-  local x+=(a b)
-  argv.py "${x[@]}"
+#### Append to nonexistent array is allowed
 
-  y+=(c d)
-  argv.py "${y[@]}"
-
-  readonly z+=(e f)
-  argv.py "${z[@]}"
-}
-f
-## stdout-json: "['a', 'b']\n['c', 'd']\n['e', 'f']\n"
-## N-I mksh stdout-json: ""
-## N-I mksh status: 1
+## TODO: strict-array could get rid of this?
+y+=(c d)
+argv.py "${y[@]}"
+## STDOUT:
+['c', 'd']
+## END
 
 #### Append used like env prefix is a parse error
 # This should be an error in other shells but it's not.
