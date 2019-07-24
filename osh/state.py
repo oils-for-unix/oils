@@ -858,14 +858,13 @@ class Mem(object):
         return True
     return False
 
-  def SetVar(self, lval, val, new_flags, lookup_mode):
+  def SetVar(self, lval, val, flags_to_set, lookup_mode, flags_to_clear=()):
     """
     Args:
       lval: lvalue
       val: value, or None if only changing flags
-      new_flags: tuple of flags to set: ReadOnly | Exported
+      flags_to_set: tuple of flags to set: ReadOnly | Exported
         () means no flags to start with
-        None means unchanged?
       scope:
         Local | Global | Dynamic - for builtins, PWD, etc.
 
@@ -878,7 +877,7 @@ class Mem(object):
     # (not sh, for compatibility).  set -o strict-types or something.  That
     # means arrays have to be initialized with let arr = [], which is fine.
     # This helps with stuff like IFS.  It starts off as a string, and assigning
-    # it to a list is en error.  I guess you will have to turn this no for
+    # it to a list is an error.  I guess you will have to turn this no for
     # bash?
     #
     # TODO:
@@ -888,27 +887,37 @@ class Mem(object):
     # - $PS1 and $PS4 should be PARSED when they are set, to avoid the error on use
     # - Other validity: $HOME could be checked for existence
 
-    assert new_flags is not None
+    assert flags_to_set is not None
     if lval.tag == lvalue_e.Named:
       cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
       if cell:
+        # Clear before checking readonly bit.
+        # NOTE: Could be cell.flags &= flag_clear_mask 
+        if var_flags_e.Exported in flags_to_clear:
+          cell.exported = False
+        if var_flags_e.ReadOnly in flags_to_clear:
+          cell.readonly = False
+
         if val is not None:  # e.g. declare -rx existing
           if cell.readonly:
             # TODO: error context
             e_die("Can't assign to readonly value %r", lval.name)
           cell.val = val
-        if var_flags_e.Exported in new_flags:
+
+        # NOTE: Could be cell.flags |= flag_set_mask 
+        if var_flags_e.Exported in flags_to_set:
           cell.exported = True
-        if var_flags_e.ReadOnly in new_flags:
+        if var_flags_e.ReadOnly in flags_to_set:
           cell.readonly = True
+
       else:
         if val is None:  # declare -rx nonexistent
           # set -o nounset; local foo; echo $foo  # It's still undefined!
           val = value.Undef()  # export foo, readonly foo
 
         cell = runtime_asdl.cell(val,
-                                 var_flags_e.Exported in new_flags,
-                                 var_flags_e.ReadOnly in new_flags)
+                                 var_flags_e.Exported in flags_to_set,
+                                 var_flags_e.ReadOnly in flags_to_set)
         namespace[lval.name] = cell
 
       # Maintain invariant that only strings and undefined cells can be
@@ -931,7 +940,7 @@ class Mem(object):
       # -o nounset fails.)
       cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
       if not cell:
-        self._BindNewArrayWithEntry(namespace, lval, val, new_flags)
+        self._BindNewArrayWithEntry(namespace, lval, val, flags_to_set)
         return
 
       if cell.readonly:
@@ -941,7 +950,7 @@ class Mem(object):
 
       # undef[0]=y is allowed
       if cell_tag == value_e.Undef:
-        self._BindNewArrayWithEntry(namespace, lval, val, new_flags)
+        self._BindNewArrayWithEntry(namespace, lval, val, flags_to_set)
         return
 
       if cell_tag == value_e.Str:
@@ -986,14 +995,14 @@ class Mem(object):
     else:
       raise AssertionError(lval.__class__.__name__)
 
-  def _BindNewArrayWithEntry(self, namespace, lval, val, new_flags):
+  def _BindNewArrayWithEntry(self, namespace, lval, val, flags_to_set):
     """Fill 'namespace' with a new indexed array entry."""
     items = [None] * lval.index
     items.append(val.s)
     new_value = value.StrArray(items)
 
     # arrays can't be exported; can't have AssocArray flag
-    readonly = var_flags_e.ReadOnly in new_flags
+    readonly = var_flags_e.ReadOnly in flags_to_set
     namespace[lval.name] = runtime_asdl.cell(new_value, False, readonly)
 
   def InternalSetGlobal(self, name, new_val):

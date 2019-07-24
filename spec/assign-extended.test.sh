@@ -340,26 +340,35 @@ E
 None
 ## END
 
-#### typeset +r doesn't work after setting (it only works in zsh)
+#### typeset +r removes read-only attribute
 readonly r=r1
 echo r=$r
-typeset +r r=r2
+
+# clear the readonly flag.  Why is this accepted in bash/mksh, but doesn't do
+# anything?
+typeset +r r=r2 
 echo r=$r
+
 r=r3
 echo r=$r
-## status: 2
+
+## status: 0
 ## STDOUT:
 r=r1
+r=r2
+r=r3
 ## END
+
+# bash doesn't allow you to unset
+## OK mksh status: 2
+## OK mksh STDOUT:
+r=r1
+## END
+
+# bash doesn't allow you to unset
 ## OK bash status: 0
 ## OK bash STDOUT:
 r=r1
 r=r1
 r=r1
-## END
-## BUG zsh status: 0
-## BUG zsh STDOUT:
-r=r1
-r=r2
-r=r3
 ## END

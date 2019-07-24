@@ -174,12 +174,17 @@ class NewVar(object):
       else:
         lookup_mode = scope_e.LocalOnly
 
-    flags = []
-    # TODO: Handle '+'
+    flags_to_set = []
     if arg.x == '-': 
-      flags.append(var_flags_e.Exported)
+      flags_to_set.append(var_flags_e.Exported)
     if arg.r == '-':
-      flags.append(var_flags_e.ReadOnly)
+      flags_to_set.append(var_flags_e.ReadOnly)
+
+    flags_to_clear = []
+    if arg.x == '+': 
+      flags_to_clear.append(var_flags_e.Exported)
+    if arg.r == '+':
+      flags_to_clear.append(var_flags_e.ReadOnly)
 
     for pair in cmd_val.pairs:
       if pair.rval is None:
@@ -194,7 +199,8 @@ class NewVar(object):
 
       if not _CheckType(rval, arg, self.errfmt, pair.spid):
         return 1
-      self.mem.SetVar(pair.lval, rval, tuple(flags), lookup_mode)
+      self.mem.SetVar(pair.lval, rval, flags_to_set, lookup_mode,
+                      flags_to_clear=flags_to_clear)
 
     return status
 
