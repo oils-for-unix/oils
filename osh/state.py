@@ -1135,7 +1135,8 @@ class Mem(object):
   def ClearFlag(self, name, flag, lookup_mode):
     """Used for export -n.
 
-    TODO: SetVar could do it as well.
+    We don't use SetVar() because even if rval is None, it will make an Undef
+    value in a scope.
     """
     cell, namespace = self._FindCellAndNamespace(name, lookup_mode)
     if cell:

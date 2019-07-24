@@ -33,7 +33,7 @@ class Export(object):
         if pair.rval is not None:
           raise args.UsageError("doesn't accept RHS with -n", span_id=pair.spid)
 
-        # NOTE: bash doesn't care if it wasn't found.
+        # NOTE: we don't care if it wasn't found, like bash.
         self.mem.ClearFlag(pair.lval.name, var_flags_e.Exported, scope_e.Dynamic)
     else:
       for pair in cmd_val.pairs:

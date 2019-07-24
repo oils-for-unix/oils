@@ -1,4 +1,4 @@
--- Data types for the osh AST, aka "Lossless Syntax Tree".
+-- Data types for the Oil AST, aka "Lossless Syntax Tree".
 --
 -- Invariant: the source text can be reconstructed byte-for-byte from this
 -- tree.

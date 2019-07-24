@@ -1,13 +1,7 @@
--- Data types for evaluating an AST (or LST at the moment.)
+-- Data types for evaluating the syntax tree
 
 module runtime
 {
-  -- The spids array is parallel to strs, the argv values.  Note that each
-  -- entry in argv came from a single word, but a word can produce multiple
-  -- argv entries.
-  -- 'rhs' is for assignment builtins.
-  arg_vector = (string* strs, int* spids)
-
   -- Evaluating SimpleCommand results in either an argv array or an assignment.
   -- in 'local foo', rval is None
   assign_arg = (lvalue lval, value? rval, int spid)
@@ -16,6 +10,13 @@ module runtime
   | Assign(builtin builtin_id,
            string* argv, int* arg_spids,
            assign_arg* pairs)
+
+  -- TODO: Remove arg_vector in favor of cmd_value.Argv.
+  -- The spids array is parallel to strs, the argv values.  Note that each
+  -- entry in argv came from a single word, but a word can produce multiple
+  -- argv entries.
+  -- 'rhs' is for assignment builtins.
+  arg_vector = (string* strs, int* spids)
 
   -- A parse-time word_part from syntax.asdl is evaluated to a runtime
   -- part_value.
@@ -33,9 +34,7 @@ module runtime
   -- A static word from osh.asdl is evaluted to a dynamic value.  value
   -- instances are stored in state.Mem().
   value =
-    -- Undef isn't visible at the language level.  We model it as a value
-    -- rather than an error code because it's manipulated with ${a:-default}
-    -- and such.
+    -- An Undef value is different than "no binding" because of dynamic scope.
     Undef
   | Str(string s)
   | StrArray(string* strs)
