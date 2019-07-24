@@ -26,10 +26,10 @@ bar
 c
 ## END
 
-#### set associative array to indexed array literal (bash anomaly)
+#### set associative array to indexed array literal (very surprising bash behavior)
 declare -A assoc=([k1]=foo [k2]='spam eggs')
-argv.py "${assoc[@]}"
-argv.py "${!assoc[@]}"
+for v in "${assoc[@]}"; do echo $v; done | sort
+for v in "${!assoc[@]}"; do echo $v; done | sort
 
 # disallow this in OSH?  Changing type?
 
@@ -38,8 +38,18 @@ argv.py "${assoc[@]}"
 argv.py "${!assoc[@]}"
 
 ## STDOUT:
+foo
+spam eggs
+k1
+k2
 ['foo', 'spam eggs']
-['k1', 'k2']
+['0', '1']
+## END
+## BUG bash STDOUT:
+foo
+spam eggs
+k1
+k2
 []
 []
 ## END
