@@ -400,20 +400,23 @@ class CommandParser(object):
       self.c_id = word.CommandId(self.cur_word)
       self.next_lex_mode = lex_mode_e.Undefined
 
-  def _Eat(self, c_id):
-    # type: (Id_t) -> None
+  def _Eat(self, c_id, msg=None):
+    # type: (Id_t, str) -> None
     """Consume a word of a type.  If it doesn't match, return False.
 
     Args:
-      c_id: either EKeyword.* or a token type like Id.Right_Subshell.
-      TODO: Rationalize / type check this.
+      c_id: the Id we expected
+      msg: optional improved error message
     """
     self._Peek()
     # TODO: Printing something like KW_Do is not friendly.  We can map
     # backwards using the _KEYWORDS list in osh/lex.py.
     if self.c_id != c_id:
-      p_die('Expected word type %s, got %s', c_id,
-            word.CommandId(self.cur_word), word=self.cur_word)
+      if msg:
+        p_die(msg, word=self.cur_word)
+      else:
+        p_die('Expected word type %s, got %s', c_id,
+              word.CommandId(self.cur_word), word=self.cur_word)
 
     self._Next()
 
@@ -1251,8 +1254,8 @@ class CommandParser(object):
 
     # for MyPy, caller ensures
     assert isinstance(self.cur_word, word__CompoundWord)
-    ok, name = word.AsFuncName(self.cur_word)
-    if not ok:
+    name = word.AsFuncName(self.cur_word)
+    if not name:
       p_die('Invalid function name', word=self.cur_word)
 
     self._Next()  # skip function name
@@ -1264,7 +1267,8 @@ class CommandParser(object):
     self.lexer.PushHint(Id.Op_RParen, Id.Right_FuncDef)
     self._Next()
 
-    self._Eat(Id.Right_FuncDef)
+    self._Eat(Id.Right_FuncDef, msg='Expected ) in function definition')
+
     after_name_spid = word.LeftMostSpanForWord(self.cur_word) + 1
 
     self._NewlineOk()
@@ -1290,8 +1294,8 @@ class CommandParser(object):
     # for MyPy, caller ensures
     assert isinstance(self.cur_word, word__CompoundWord)
     self._Peek()
-    ok, name = word.AsFuncName(self.cur_word)
-    if not ok:
+    name = word.AsFuncName(self.cur_word)
+    if not name:
       p_die('Invalid KSH-style function name', word=self.cur_word)
 
     after_name_spid = word.LeftMostSpanForWord(self.cur_word) + 1

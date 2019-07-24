@@ -106,8 +106,7 @@ def _EvalWordPart(part):
 
 def StaticEval(w):
   # type: (word_t) -> Tuple[bool, str, bool]
-  """Evaluate a CompoundWord at PARSE TIME.
-  """
+  """Evaluate a CompoundWord at PARSE TIME."""
   ret = ''
   quoted = False
 
@@ -365,17 +364,17 @@ def HasArrayPart(w):
 
 
 def AsFuncName(w):
-  # type: (word__CompoundWord) -> Tuple[bool, str]
+  # type: (word__CompoundWord) -> str
+  """
+  Returns a valid function name, or the empty string.
+  """
   assert isinstance(w, word__CompoundWord)
 
   ok, s, quoted = StaticEval(w)
-  if not ok:
-    return False, ''
-  if quoted:
-    # Function names should not have quotes
-    if len(w.parts) != 1:
-      return False, ''
-  return True, s
+  # Function names should not have quotes
+  if not ok or quoted:
+    return ''
+  return s
 
 
 def LooksLikeArithVar(w):
