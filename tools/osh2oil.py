@@ -423,7 +423,12 @@ class OilPrinter(object):
     # files are in the program.
     defined_locally = False  # is it a local variable in this function?
                              # can't tell if global
-    if node.keyword == Id.Assign_Local:
+
+    # DISABLED after doing dynamic assignments.  We could reconstruct these
+    # from SimpleCommand?  Look at argv[0] and then do static parsing to
+    # assign_pair?
+
+    if 0:
       # Assume that 'local' it's a declaration.  In osh, it's an error if
       # locals are redefined.  In bash, it's OK to do 'local f=1; local f=2'.
       # Could have a flag if enough people do this.
@@ -445,7 +450,7 @@ class OilPrinter(object):
             #print("REGISTERED %s" % pair.lhs.name)
             local_symbols[pair.lhs.name] = True
 
-    elif node.keyword == Id.Assign_None:
+    elif 1:
       self.cursor.PrintUntil(node.spids[0])
 
       # For now, just detect whether the FIRST assignment on the line has been
@@ -474,7 +479,7 @@ class OilPrinter(object):
         # mutatting a global.
         self.f.write('setglobal ')
 
-    elif node.keyword == Id.Assign_Readonly:
+    elif 0:
       # Explicit const.  Assume it can't be redefined.
       # Verb.
       #
@@ -499,7 +504,7 @@ class OilPrinter(object):
         self.cursor.SkipUntil(keyword_spid + 1)
         self.f.write('const')
 
-    elif node.keyword == Id.Assign_Declare:
+    elif 0:
       # declare -rx foo spam=eggs
       # export foo
       # setconst foo

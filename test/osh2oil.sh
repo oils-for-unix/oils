@@ -1287,8 +1287,8 @@ OIL
 
 readonly -a PASSING=(
   simple-command
-  assign
-  assign2
+  #assign
+  #assign2
   more-env
   line-breaks
   redirect
