@@ -600,7 +600,7 @@ dbracket() {
 }
 
 dparen() {
-  sh-spec spec/dparen.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/dparen.test.sh \
     $BASH $MKSH $ZSH $OSH_LIST "$@"
 }
 

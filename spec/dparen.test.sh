@@ -43,6 +43,7 @@ true
 
 
 #### bash and mksh: V in (( a[K] = V )) gets coerced to integer 
+shopt -u strict-arith || true
 K=key
 V=value
 typeset -a a
@@ -75,6 +76,8 @@ A[5]=
 keys = K
 values = 42
 ## END
+## OK osh status: 1
+## OK osh stdout-json: ""
 ## N-I zsh status: 1
 ## N-I zsh stdout-json: ""
 ## N-I mksh status: 1
@@ -99,11 +102,12 @@ echo V=$V
 V=0
 ## END
 
-#### bash: V in (( A[K] = V )) gets coerced to integer
+#### bash: V in (( A["K"] = V )) gets coerced to integer
+shopt -u strict-arith || true
 K=key
 V=value
 typeset -A A || exit 1
-(( A[K] = V ))
+(( A["K"] = V ))
 
 # not there!
 echo A[\"key\"]=${A[$K]}
@@ -120,15 +124,21 @@ values = 0
 ## N-I mksh stdout-json: ""
 ## N-I mksh status: 1
 
-#### literal strings not properly supported
+#### literal strings not properly supported in ( ))
 declare -A A
 A['x']=x
 (( x = A['x'] ))
 (( A['y'] = 'y' ))  # y is a variable, gets coerced to 0
 echo $x ${A['y']}
-## STDOUT:
+## status: 1
+## stdout-json: ""
+
+# bash behavior is very confusing
+## BUG bash status: 0
+## BUG bash STDOUT:
 0 0
 ## END
+## BUG zsh/mksh status: 0
 ## N-I zsh/mksh STDOUT:
 0
 ## END
