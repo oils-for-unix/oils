@@ -586,3 +586,42 @@ global
 ['loc', 'global', 'loc']
 ## END
 
+#### redirect after assignment builtin (what's going on with dash/bash/mksh here?)
+readonly x=$(stdout_stderr.py) 2>/dev/null
+echo done
+## STDOUT:
+done
+## END
+## stderr-json: ""
+## OK dash/bash/mksh STDERR:
+STDERR
+## END
+
+#### redirect after bare assignment
+x=$(stdout_stderr.py) 2>/dev/null
+echo done
+## STDOUT:
+done
+## END
+## stderr-json: ""
+## BUG bash STDERR:
+STDERR
+## END
+
+#### redirect after declare -p
+case $SH in *dash) exit 99 ;; esac  # stderr unpredictable
+
+foo=bar
+typeset -p foo 1>&2
+## STDERR:
+typeset foo=bar
+## END
+## OK bash STDERR:
+declare -- foo="bar"
+## END
+## OK osh STDERR:
+foo
+## END
+## N-I dash status: 99
+## N-I dash stderr-json: ""
+## stdout-json: ""
