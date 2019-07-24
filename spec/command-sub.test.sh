@@ -238,6 +238,14 @@ echo `echo \\"foo\\"`
 "foo"
 ## END
 
+# Documented in doc/known-differences.md (and Morbig paper brought up the same
+# issue)
+## OK osh STDOUT:
+"foo"
+foo
+"foo"
+## END
+
 #### More levels of double quotes in backticks
 # Shells don't agree here, some of them give you form feeds!
 # There are two levels of processing I don't understand.
