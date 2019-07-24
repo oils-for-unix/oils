@@ -760,15 +760,11 @@ class CommandParser(object):
     self.parse_ctx.trail.SetLatestWords(suffix_words, redirects)
 
     if not suffix_words:  # ONE=1 a[x]=1 TWO=2  (with no other words)
-      if redirects:
-        left_token, _, _, _ = preparsed_list[0]
-        p_die("Global assignment shouldn't have redirects", token=left_token)
-
       pairs = []
       for preparsed in preparsed_list:
         pairs.append(_MakeAssignPair(self.parse_ctx, preparsed, self.arena))
 
-      node = command.Assignment(pairs)
+      node = command.Assignment(pairs, redirects)
       left_spid = word.LeftMostSpanForWord(words[0])
       node.spids.append(left_spid)  # no keyword spid to skip past
       return node

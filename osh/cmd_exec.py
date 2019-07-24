@@ -1185,10 +1185,9 @@ class Executor(object):
     # redirects, but we do NOT want to evaluate them yet!  They're evaluated
     # on every invocation.
     if node.tag in (
-        command_e.NoOp, command_e.Assignment, command_e.ControlFlow,
-        command_e.Pipeline, command_e.AndOr, command_e.CommandList,
-        command_e.Sentence, command_e.TimeBlock,
-        command_e.FuncDef, command_e.OilAssign,
+        command_e.NoOp, command_e.ControlFlow, command_e.Pipeline,
+        command_e.AndOr, command_e.CommandList, command_e.Sentence,
+        command_e.TimeBlock, command_e.FuncDef, command_e.OilAssign,
         ):
       redirects = []
     else:
