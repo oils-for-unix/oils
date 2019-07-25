@@ -1220,9 +1220,13 @@ class _WordEvaluator(object):
             e_die('+= not allowed in assignment builtin', word=w)
 
           left = lvalue.Named(tok_val[:-1])
-          rhs_word = osh_word.CompoundWord(w.parts[part_offset:])
-          # tilde detection only happens on static assignments!
-          rhs_word = word.TildeDetect(rhs_word) or rhs_word
+          if part_offset == len(w.parts):
+            rhs_word = osh_word.EmptyWord()  # type: word_t
+          else:
+            rhs_word = osh_word.CompoundWord(w.parts[part_offset:])
+            # tilde detection only happens on static assignments!
+            rhs_word = word.TildeDetect(rhs_word) or rhs_word
+
           right = self.EvalRhsWord(rhs_word)
           arg2 = assign_arg(left, right, word_spid)
           assign_args.append(arg2)

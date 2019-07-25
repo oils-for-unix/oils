@@ -195,6 +195,13 @@ x='y a=b'
 a=''
 ## END
 
+#### readonly x= gives empty string (regression)
+readonly x=
+argv.py "$x"
+## STDOUT:
+['']
+## END
+
 #### 'local x' does not set variable
 set -o nounset
 f() {
@@ -634,3 +641,4 @@ foo
 ## N-I dash status: 99
 ## N-I dash stderr-json: ""
 ## stdout-json: ""
+

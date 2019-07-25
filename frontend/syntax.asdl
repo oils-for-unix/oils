@@ -125,7 +125,8 @@ module syntax
   | ExtGlobPart(token op, word* arms)
 
   word = 
-    -- for RHS of 'x=' and the argument in "${x:-}"
+    -- for RHS of 'x=', 'declare x=', and the argument in "${x:-}"
+    -- In contrast, a CompoundWord always has at least one part.
     EmptyWord
   | TokenWord(token token)
     -- A CompoundWord can contain any word_part except the Braced*Part.
