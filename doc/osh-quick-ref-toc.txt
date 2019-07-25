@@ -1,7 +1,7 @@
 OSH Quick Reference
 
 - Below is a list of topics, organized into [Sections].
-- The X prefix means "unimplemented".  Oil features are all unimplemented!
+- The X prefix means "unimplemented".
 - HTML version: https://www.oilshell.org/release/0.7.pre2/doc/osh-quick-ref.html
 
 INTRO
@@ -9,7 +9,7 @@ INTRO
   [Usage]         bundle-usage   osh-usage   oil-usage   config   startup
                   line-editing   prompt
   [Lexing]        comments #   line-continuation \
-  [Oil Lexing]    single-command %   docstring?
+  [Oil Lexing]    single-command %   docstring ###
 
 COMMAND LANGUAGE
   [Commands]      simple-command   semicolon ;
@@ -25,33 +25,34 @@ COMMAND LANGUAGE
                   here-doc    <<  <<-  <<<
   [Other]         dparen ((   time   X coproc   X select
 
-OIL COMMAND LANGUAGE
-
-X [Conditional]   match-with   match-case   if-expr (
-X [Iteration]     for-expr (   while-expr (
-X [Grouping]      proc   func   lazy   pure   do {   shell {  
-X [Context]       with-cd   with-redir   with-env   with-vars   with-file
-                  with-logger
-X [Concurrency]   fork
-X [Redirects]     multiline-string '''_"""   file-descriptor !0
+OIL EXPRESSION LANGUAGE
+X [Data Types]    Str           c'\n'  r'\'
+                  Bool          true false
+                  Int           1_000_000
+                  Float         3.14
+                  Array<>       @[ls -l]  @[T F F]  @[1 2 3]  @[1.5 2.5] 
+                  Dict<>        {name: 'oil'}  {['name']: 'oil'}  {name}
+                  List          [1, 'str', false]  (for JSON compatibility)
+                  Null          null
+                  Regex         $/ d+ /
+X [Comprehension] Array, List, Dict
+X [Operators]     unary         -a
+                  binary        a+b   base^exp  a xor b  p div q
+                  ternary       a if cond else b
+                  subscript     a[b, c]   a[start:end]
+                  rhs-assign    =>
+                  getattr       d->key is like d['key'] or d.key
+                  scope-attr    module::name
+X [Functions]     function      func inc(a Int, b Int = 1) Int { ... }
 
 ASSIGNING VARIABLES
-  [Keywords]      local   readonly   export   unset   shift
-                  declare   typeset   X let
   [Operators]     assign        str='xyz'
                   append        str+='abc'
   [Compound Data] array         array=(a b c)   array[1]=B   "${a[@]}"
-                  assoc         declare -A assoc=([a]=1 [b]=2)
-
-OIL VARIABLES
-
-X [Keywords]      var   const   set   setglobal
-                  setargv   setenv   setoption
-X [Operators]     pass ->   rhs-assign =>
-X [Compound Data] oil-array     array = [a b c]
-                  splice        a = [a @middle b]
-X [Data Types]    Str   Int   Float   Bool   Array<>   Map<>    Table
-                  (JSON compat: Null, List)
+                  assoc         assoc=(['a']=1 ['b']=2)   assoc['x']=b
+  [Builtins]      local   readonly   export   unset   shift
+                  declare   typeset   X let
+  [Oil Keywords]  var   setvar
 
 WORD LANGUAGE
   [Quotes]        quotes        'abc'  $'\n'  "$var"
@@ -66,11 +67,11 @@ WORD LANGUAGE
                   op-str        ${x//y/z}
                   op-slice      ${a[@]:0:1}
                   op-format     ${x@P}
-X [Oil Quotes]    c-string      c'1\t2\n'    c"1\t$two\n"
-                  safe-subst    h"<p>$[name]</p>"
+X [Oil Word]      oil-printf    ${x %.3f}
+                  oil-format    ${x|html}
 
 OTHER SHELL SUBLANGUAGES
-  [Arithmetic]    arith-intro   Contexts where math is allowed
+  [Arithmetic]    arith-context Where legacy arithmetic is allowed
                   num-literals  0xFF  0755  etc.
                   math          1 + 2*3
                   arith-logical !a && b
@@ -105,11 +106,11 @@ BUILTIN COMMANDS
   [Word Lookup]   command   builtin
   [Interactive]   alias   unalias   history   X fc   X bind
 X [Unsupported]   enable
-
-OIL BUILTINS
-  [Compatibility] sh-builtin   sh-eval   sh-expr
-  [I/O]           write   readline
-  [External]      dirname   basename   env ?
+X [Oil Builtins]  write          replaces echo -n
+                  env            compatible but also takes a block
+                  fork           block replaces &
+                  wait           block replaces (subshell)
+                  dirname   basename   (a simple optimization)
 
 SHELL OPTIONS
   [Errors]        nounset   errexit   pipefail
@@ -118,11 +119,19 @@ SHELL OPTIONS
   [Interactive]   emacs   vi
   [Other]         X noclobber
   [Parsing]       TODO
-  [OSH Strict]    strict-argv   strict-array   strict-arith
+  [OSH Strict]    all:strict   strict-argv   strict-array   strict-arith
                   X strict-backslash   strict-errexit   strict-control-flow
                   X strict-glob   strict-word-eval
-  [OSH Sane]      SANE   X sane-no-word-split   X sane-glob
-                  X sane-echo   X sane-read   X sane-eval   X sane-trap
+                  X strict-eval-builtin   X strict-trap-builtin
+  [Oil Semantics] all:oil
+                  X oil-word-eval     No splitting, static globbing
+                  X oil-echo          No -e or -n
+                  X oil-read          Don't read a byte at a time
+  [Syntax Pragma] all:oil
+                  oil-splice     echo @array @arrayfunc(x, y)
+                  oil-brace      cd ~/src { ... }
+                  oil-paren      if (x > 0) ...
+                  oil-set        instead of setvar
 
 ENVIRONMENT VARIABLES
   [Shell Options] SHELLOPTS   X BASHOPTS
@@ -152,22 +161,3 @@ PLUGINS AND HOOKS
   [Words]         PS1   X PS2   X PS3   PS4
   [Completion]    complete
   [Other]         X command_not_found   PROMPT_COMMAND
-
-OIL EXTENSIONS
-
-X [Static]        :use   :option
-X [awk]           BEGIN   END   when
-X [make]          rule
-X [find]          fs
-X [xargs]         each
-
-OIL LIBRARIES
-
-X [Compatibility] shExpr()   shEval()   
-X [Builtin Procs] log   die
-X [Builtin Funcs] join()   split()   strftime()
-X [getopts]       ?
-X [Testing]       ?
-X [Data Formats]  json   csv   tsv2
-X [Hash Functions]
-

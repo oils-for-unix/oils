@@ -1,0 +1,78 @@
+Old stuff (maybe delete)
+---------
+
+OIL COMMAND LANGUAGE
+
+X [Conditional]   match-with   match-case   if-expr (
+X [Iteration]     for-expr (   while-expr (
+X [Grouping]      proc   func   lazy   pure   do {   shell {  
+X [Context]       with-cd   with-redir   with-env   with-vars   with-file
+                  with-logger
+X [Concurrency]   fork
+X [Redirects]     multiline-string '''_"""   file-descriptor !0
+
+
+OIL VARIABLES
+
+X [Keywords]      var   const   set   setglobal
+                  setargv   setenv   setoption
+X [Operators]     pass ->   rhs-assign =>
+X [Compound Data] oil-array     array = [a b c]
+                  splice        a = [a @middle b]
+X [Data Types]    Str   Int   Float   Bool   Array<>   Map<>    Table
+                  (JSON compat: Null, List)
+
+
+OIL EXPRESSION LANGUAGE
+
+X [Oil Quotes]    c-string      c'1\t2\n'    c"1\t$two\n"
+                  safe-subst    h"<p>$[name]</p>"
+
+
+OIL BUILTINS
+  [Compatibility] sh-builtin   sh-eval   sh-expr
+  [I/O]           write   readline
+  [External]      dirname   basename   env ?
+
+
+OIL EXTENSIONS
+
+X [Static]        :use   :option
+X [awk]           BEGIN   END   when
+X [make]          rule
+X [find]          fs
+X [xargs]         each
+
+OIL LIBRARIES
+
+X [Compatibility] shExpr()   shEval()   
+X [Builtin Procs] log   die
+X [Builtin Funcs] join()   split()   strftime()
+X [getopts]       ?
+X [Testing]       ?
+X [Data Formats]  json   csv   tsv2
+X [Hash Functions]
+
+
+- LATER for command language
+
+context managers / block arguments
+
+cd ~/git/oilshell {
+  ls bin
+  ls doc
+}
+
+wait {
+  cd /    # is there a better use case than this?  It seems to
+          # be what people use subshellsf or
+  global=FOO
+  set -o errexit
+
+}
+
+env PYTHONPATH=~/myrepo {
+  ./foo.py
+  ./bar.py
+}
+

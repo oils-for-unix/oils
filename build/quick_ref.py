@@ -15,11 +15,16 @@ import sys
 CAPS_RE = re.compile(r'^[A-Z ]+$')
 
 # 1. Optional X, then a SINGLE space
-# 2. lower-case or upper-case topic
+# 2. lower-case or UPPER_CASE topic
 # 3. Optional: A SINGLE space, then punctuation
+#
+# Special chars:
+#
+# @ for BASH_SOURCE
+# : for all:strict and all:oil
 
 TOPIC_RE = re.compile(
-    r'\b(X[ ])?\@?([a-z_\-]+|[A-Z0-9_]+)([ ]\S+)?', re.VERBOSE)
+    r'\b(X[ ])?\@?([a-zA-Z0-9_\-:]+)([ ]\S+)?', re.VERBOSE)
 
 # Sections have alphabetical characters, spaces, and '/' for I/O.  They are
 # turned into anchors.
