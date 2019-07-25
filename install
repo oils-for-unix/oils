@@ -3,12 +3,7 @@
 # POSIX shell script to install a build oil into the proper directory.
 # Distributed with the source tarball.
 
-# TODO:
-# - copy bin/oil with the right permissions.
-# - make dummy man page that points to HTML docs?
-#   - or just a cheat sheet for flags, usage, etc.
-
-# NOTE: install is part of coreutils and busybox.
+# NOTE: 'install' is part of coreutils and busybox.
 
 die() {
   echo "FATAL install error: $@" 1>&2
@@ -23,15 +18,17 @@ main() {
 
   # Now $PREFIX should be defined
 
-  #local exec_filename=oil.ovm-dbg  # Should this go in configure output?
+  #local exec_filename=oil.ovm-dbg
   local exec_filename=oil.ovm  # Should this go in configure output?
 
-  local dest=$PREFIX/bin/$exec_filename
+  local dest="$PREFIX/bin/$exec_filename"
 
-  echo "Installing to $dest"
-  if ! install _bin/$exec_filename $dest; then
+  echo "Installing executables in $dest"
+  if ! install -v _bin/$exec_filename $dest; then
     die "Couldn't install oil binary"
   fi
+
+  local working_dir=$PWD  # save for later
 
   cd $PREFIX/bin
   for link in osh oshc; do
@@ -39,6 +36,29 @@ main() {
       die "Couldn't create $link symlink"
     fi
   done
+
+  #
+  # Install man page
+  #
+
+  # relevant:
+  # https://unix.stackexchange.com/questions/90759/where-should-i-install-manual-pages-in-user-directory
+  # https://www.freebsd.org/cgi/man.cgi?query=install
+
+  cd $working_dir
+
+  # e.g. /usr/share/man/man1
+  local man_dest="$DATAROOTDIR/man/man1"
+
+  echo "Installing man page osh.1 in $man_dest"
+  if ! install -v -d $man_dest; then
+    die "Couldn't create $man_dest"
+  fi
+
+  # -t to install to a directory and make them, -m so it's not executable
+  if ! install -v -m 644 doc/osh.1 $man_dest; then
+    die "Couldn't install man page"
+  fi
 }
 
 main "$@"

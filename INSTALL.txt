@@ -21,14 +21,17 @@ Either install as /usr/local/bin/osh:
     make             # 30-60 seconds
     sudo ./install
 
-or install as ~/bin/osh:
+or install as ~/bin/osh and the man page as ~/.local/share/man/man1/osh.1:
 
-    ./configure --prefix ~
+    ./configure --prefix ~ --datarootdir ~/.local/share
     make
     ./install
 
-The latter doesn't require root access, but it requires ~/bin to be in your
-PATH.
+The latter doesn't require root access, but it requires:
+
+- ~/bin to be in your $PATH
+- Pages under ~/.local/share/man to be found by 'man'.
+  (See manpath or $MANPATH.)
 
 NOTE: Out-of-tree builds are NOT currently supported, so you have to be in the
 oil-0.7.pre1 directory.

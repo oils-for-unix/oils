@@ -25,12 +25,13 @@ die() {
 }
 
 show_help() {
-  cat <<EOF
+  cat <<'EOF'
 Usage: ./configure [OPTION]
 
 Detects system settings before a build of Oil.
 
   --prefix            Prefix for the bin/ directory [/usr/local]
+  --datarootdir       Prefix for data files, including man page [$PREFIX/share]
   --with-readline     Fail unless readline is available.
   --without-readline  Don't compile with readline, even if it's available.
 		      The shell won't have any interactive features.
@@ -42,8 +43,9 @@ EOF
 # --prefix.  We roughly follow GNU:
 # https://www.gnu.org/prep/standards/html_node/Directory-Variables.html
 FLAG_prefix='/usr/local'
+FLAG_datarootdir=''  # default initialized after processing flags
 FLAG_with_readline=''  # Fail if it's not available.
-FLAG_without_readline=''  # Don't even check if it's available>
+FLAG_without_readline=''  # Don't even check if it's available
 FLAG_readline=''
 
 while true; do
@@ -91,12 +93,29 @@ while true; do
       shift
       FLAG_prefix=$1
       ;;
+
+    # Following autoconf's spelling of --mandir
+    --datarootdir=*)
+      FLAG_datarootdir=$(expr \( "$1" : '--datarootdir=\(.*\)' \) )
+      ;;
+    --datarootdir)
+      if test $# -eq 1; then
+        die "--datarootdir requires an argument"
+      fi
+      shift
+      FLAG_datarootdir=$1
+      ;;
+
     *)
       die "Invalid argument '$1'"
       ;;
   esac
   shift
 done
+
+# If not set, fallback to --prefix
+FLAG_datarootdir=${FLAG_datarootdir:-$FLAG_prefix/share}
+
 
 # No output file, no logging, no stderr.
 # TODO: Maybe send stdout/stderr to config.log?
@@ -175,6 +194,7 @@ detect_and_echo_vars() {
     detect_readline
   fi
   echo "PREFIX=$FLAG_prefix"
+  echo "DATAROOTDIR=$FLAG_datarootdir"
 }
 
 # c.m4 AC_LANG_INT_SAVE

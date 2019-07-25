@@ -356,6 +356,7 @@ make-tar() {
     configure \
     install \
     Makefile \
+    doc/osh.1 \
     build/compile.sh \
     build/actions.sh \
     build/common.sh \
