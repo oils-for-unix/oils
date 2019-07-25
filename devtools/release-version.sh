@@ -291,7 +291,12 @@ git-changelog-0.6.0() {
 }
 
 git-changelog-0.7.pre1() {
-  _git-changelog origin/release/0.6.0 release/0.7.pre1  \
+  _git-changelog origin/release/0.6.0 release/0.7.pre1 \
+    > _release/VERSION/changelog.html
+}
+
+git-changelog-0.7.pre2() {
+  _git-changelog origin/release/0.7.pre1 release/0.7.pre2 \
     > _release/VERSION/changelog.html
 }
 
@@ -440,6 +445,10 @@ announcement-0.6.0() {
 
 announcement-0.7.pre1() {
   html-redirect '/blog/2019/07/19.html' > $SITE_DEPLOY_DIR/release/0.7.pre1/announcement.html
+}
+
+announcement-0.7.pre2() {
+  write-no-announcement
 }
 
 "$@"
