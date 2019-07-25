@@ -6,7 +6,7 @@ import pwd
 
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import (
-    word_e, word__CompoundWord,
+    word_e, word_t, word__CompoundWord,
     bracket_op_e, suffix_op_e, word_part_e
 )
 from _devbuild.gen.syntax_asdl import word as osh_word
