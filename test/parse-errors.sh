@@ -26,7 +26,7 @@ _error-case() {
   # NOTE: This works with osh, not others.
   local status=$?
   if test $status != 2; then
-    die "Expected status 2, got $?"
+    die "Expected status 2, got $status"
   fi
 }
 
@@ -332,18 +332,14 @@ redirect() {
 
   _error-case 'echo < <<'
   _error-case 'echo $( echo > >>  )'
-
-  _error-case 'FOO=1 BAR=2 > out'
-  _error-case '> out FOO=1 BAR=2'
-
-  _error-case 'local BAR=2 > out'
 }
 
 simple-command() {
   set +o errexit
 
   _error-case 'PYTHONPATH=. FOO=(1 2) python'
-  _error-case 'echo foo FOO=(1 2)'
+  # not statically detected after dynamic assignment
+  #_error-case 'echo foo FOO=(1 2)'
 
   _error-case 'PYTHONPATH+=1 python'
 }

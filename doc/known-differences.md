@@ -155,24 +155,6 @@ execution of a command named `a[1`.
 
 These differences occur in subsequent stages of parsing, or in runtime parsing.
 
-#### Assignments can't have redirects
-
-No:
-
-    x=abc >out.txt
-    x=${y} >out.txt
-    x=$((1 + 2)) >out.txt
-
-    # This is the only one that makes sense, but is still disallowed.
-    x=$(echo hi) >out.txt
-
-Yes:
-
-    x=$(echo hi >out.txt)
-
-The first three constructs don't make sense, and the fourth has a clearer
-alternative spelling, so OSH disallows such redirects altogether.
-
 #### Variable names in assignments must be constants
 
 That is, they can't be variables themselves.
