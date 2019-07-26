@@ -1,5 +1,7 @@
-True Arrays, Splicing, And the !QEFS Problem
---------------------------------------------
+True Arrays and Splicing
+------------------------
+
+Consequence of oil-word-eval and the !QEFS Problem
 
 ### Turn off Word Splitting and Dynamic Globbing
 

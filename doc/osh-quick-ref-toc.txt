@@ -24,6 +24,18 @@ COMMAND LANGUAGE
                   redir-desc  >&  <&
                   here-doc    <<  <<-  <<<
   [Other]         dparen ((   time   X coproc   X select
+  [Oil Keywords]  func   call   pass   fs
+                  (Change parsing so they can't be builtins)
+
+ASSIGNING VARIABLES
+  [Operators]     assign        str='xyz'
+                  append        str+='abc'
+  [Compound Data] array         array=(a b c)   array[1]=B   "${a[@]}"
+                  assoc         assoc=(['a']=1 ['b']=2)   assoc['x']=b
+  [Builtins]      local   readonly   export   unset   shift
+                  declare   typeset   X let
+  [Oil Keywords]  var   setvar
+
 
 OIL EXPRESSION LANGUAGE
 X [Data Types]    Str           r'\'   c"\n"   multiline r""" c'''
@@ -47,15 +59,6 @@ X [Operators]     unary         -a
 X [Functions]     func-decl     func inc(a Int, b Int = 1) Int { ... }
                   cmd-call      call f(x, y); echo $foo
                   word-call     echo $strfunc(x, y) @arrayfunc(z)
-
-ASSIGNING VARIABLES
-  [Operators]     assign        str='xyz'
-                  append        str+='abc'
-  [Compound Data] array         array=(a b c)   array[1]=B   "${a[@]}"
-                  assoc         assoc=(['a']=1 ['b']=2)   assoc['x']=b
-  [Builtins]      local   readonly   export   unset   shift
-                  declare   typeset   X let
-  [Oil Keywords]  var   setvar
 
 WORD LANGUAGE
   [Quotes]        quotes        'abc'  $'\n'  "$var"
@@ -143,6 +146,7 @@ X [Syntax Pragma] all:oil
                   oil-brace              cd ~/src { ... }
                   oil-paren              if (x > 0) ...
                   oil-set                instead of setvar
+                  oil-equals             for cleaner config snippets
 
 ENVIRONMENT VARIABLES
   [Shell Options] SHELLOPTS   X BASHOPTS
@@ -177,9 +181,9 @@ PLUGINS AND HOOKS
 OIL EXTENSIONS
 
 X [awk]           BEGIN   END   when
-X [make]          rule
+X [make]          rule (builtin)
+X [xargs]         each (builtin)
 X [find]          fs
-X [xargs]         each
 
 OIL LIBRARIES
 
