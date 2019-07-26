@@ -293,22 +293,20 @@ termios_tcflow(PyObject *self, PyObject *args)
     return Py_None;
 }
 
+#ifdef OVM_MAIN
+#include "Python-2.7.13/Modules/termios.c/termios_methods.def"
+#else
 static PyMethodDef termios_methods[] =
 {
-    {"tcgetattr", termios_tcgetattr,
-     METH_VARARGS, termios_tcgetattr__doc__},
-    {"tcsetattr", termios_tcsetattr,
-     METH_VARARGS, termios_tcsetattr__doc__},
-    {"tcsendbreak", termios_tcsendbreak,
-     METH_VARARGS, termios_tcsendbreak__doc__},
-    {"tcdrain", termios_tcdrain,
-     METH_VARARGS, termios_tcdrain__doc__},
-    {"tcflush", termios_tcflush,
-     METH_VARARGS, termios_tcflush__doc__},
-    {"tcflow", termios_tcflow,
-     METH_VARARGS, termios_tcflow__doc__},
+    {"tcgetattr", termios_tcgetattr, METH_VARARGS, termios_tcgetattr__doc__},
+    {"tcsetattr", termios_tcsetattr, METH_VARARGS, termios_tcsetattr__doc__},
+    {"tcsendbreak", termios_tcsendbreak, METH_VARARGS, termios_tcsendbreak__doc__},
+    {"tcdrain", termios_tcdrain, METH_VARARGS, termios_tcdrain__doc__},
+    {"tcflush", termios_tcflush, METH_VARARGS, termios_tcflush__doc__},
+    {"tcflow", termios_tcflow, METH_VARARGS, termios_tcflow__doc__},
     {NULL, NULL}
 };
+#endif
 
 
 #if defined(VSWTCH) && !defined(VSWTC)

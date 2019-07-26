@@ -3,9 +3,5 @@
 static PyMethodDef termios_methods[] = {
   {"tcgetattr", termios_tcgetattr, METH_VARARGS},
   {"tcsetattr", termios_tcsetattr, METH_VARARGS},
-  {"tcsendbreak", termios_tcsendbreak, METH_VARARGS},
-  {"tcdrain", termios_tcdrain, METH_VARARGS},
-  {"tcflush", termios_tcflush, METH_VARARGS},
-  {"tcflow", termios_tcflow, METH_VARARGS},
   {0},
 };

@@ -280,6 +280,7 @@ MODULES_TO_FILTER = [
     'resource.c',
     'signalmodule.c',
     'timemodule.c',
+    'termios.c',
 ]
 
 
