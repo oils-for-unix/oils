@@ -375,3 +375,7 @@ status=0
 status=2
 ## END
 
+#### -nt -ot
+[ present -nt absent ] || exit 1
+[ absent -ot present ] || exit 2
+## status: 1

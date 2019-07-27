@@ -786,8 +786,11 @@ class BoolEvaluator(_ExprEvaluator):
       arg_type = BOOL_ARG_TYPES[op_id.enum_id]
 
       if arg_type == bool_arg_type_e.Path:
-        st1 = posix.stat(s1)
-        st2 = posix.stat(s2)
+        try:
+          st1 = posix.stat(s1)
+          st2 = posix.stat(s2)
+        except OSError:
+          return False
 
         # TODO: test newer than (mtime)
         if op_id == Id.BoolBinary_nt:
