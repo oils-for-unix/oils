@@ -131,6 +131,9 @@ def LeftMostSpanForPart(part):
   if isinstance(part, word_part__ArrayLiteralPart):
     return part.spids[0]  # ( location
 
+  elif isinstance(part, word_part__AssocArrayLiteral):
+    return part.spids[0]  # ( location
+
   elif isinstance(part, word_part__LiteralPart):
     # Just use the token
     return part.token.span_id

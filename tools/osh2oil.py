@@ -529,7 +529,7 @@ class OilPrinter(object):
         self.f.write(' = ')
 
         # TODO: This should be translated from EmptyWord.
-        if pair.rhs is None:
+        if pair.rhs.tag == word_e.EmptyWord:
           self.f.write("''")  # local i -> var i = ''
         else:
           self.DoWordAsExpr(pair.rhs, local_symbols)
@@ -550,8 +550,7 @@ class OilPrinter(object):
         # assignments.
         self.f.write("array-assign %s '%s' " % (pair.lhs.name, pair.lhs.index))
 
-        # TODO: This should be translated from EmptyWord.
-        if pair.rhs is None:
+        if pair.rhs.tag == word_e.EmptyWord:
           self.f.write("''")  # local i -> var i = ''
         else:
           rhs_spid = word.LeftMostSpanForWord(pair.rhs)
@@ -1137,6 +1136,9 @@ class OilPrinter(object):
       self.cursor.PrintUntil(span_id)
 
     if node.tag == word_part_e.ArrayLiteralPart:
+      pass
+
+    elif node.tag == word_part_e.AssocArrayLiteral:
       pass
 
     elif node.tag == word_part_e.EscapedLiteralPart:
