@@ -15,12 +15,13 @@ Index of Oil Enhancement Proposals
    - Status of command sub, assignments builtins, "bare" assignment, etc.
 - [0005-oil-word-eval](0005-oil-word-eval.md)
   - The "!QEFS" problem.
-  - `shopt -s oil-word-eval`
+  - `shopt -s oil-word-eval` or `shopt -s static-word-eval`
     - no splitting
     - static globbing
     - are these separate options or not?  maybe just make it one option
+    - keep `oil` out of the name so other shells can implement it
 - [0006-splicing-arrays](0006-splicing-arrays.md)
-  - `__syntax__ oil-splice` -- syntax hcange @a @f(x, y) syntax
+  - `__syntax__ oil-splice` -- syntax change @a @f(x, y) syntax
     - @(...) makes since in OSH but not Oil... doh.  I guess it's not used, so you
       can use it.
     - also add argv in addition to repr?  yeah I think that's a good addition
