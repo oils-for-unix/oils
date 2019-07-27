@@ -866,6 +866,9 @@ def main(argv):
     log('oil: %s', e.msg)
     return 2
   except RuntimeError as e:
+    if 0:
+      import traceback
+      traceback.print_exc()
     # NOTE: The Python interpreter can cause this, e.g. on stack overflow.
     log('FATAL: %r', e)
     return 1

@@ -1189,7 +1189,7 @@ class _TrapHandler(object):
   def __str__(self):
     # Used by trap -p
     # TODO: Abbreviate with fmt.PrettyPrint?
-    return str(self.node)
+    return '<Trap %s>' % self.node
 
 
 def _MakeSignals():
@@ -1273,7 +1273,7 @@ class Trap(object):
     arg_r = args.Reader(arg_vec.strs, spids=arg_vec.spids)
     arg_r.Next()  # skip argv[0]
     code_str = arg_r.ReadRequired('requires a code string')
-    sig_spec = arg_r.ReadRequired('requires a signal or hook name')
+    sig_spec, sig_spid = arg_r.ReadRequired2('requires a signal or hook name')
 
     # sig_key is NORMALIZED sig_spec: and integer signal number or string hook
     # name.
@@ -1332,6 +1332,11 @@ class Trap(object):
       handler = _TrapHandler(node, self.nodes_to_run)
       # For signal handlers, the traps dictionary is used only for debugging.
       self.traps[sig_key] = handler
+      if sig_num in (signal.SIGKILL, signal.SIGSTOP):
+        self.errfmt.Print("Signal %r can't be handled", sig_spec,
+                          span_id=sig_spid)
+        # Other shells return 0, but this seems like an obvious error
+        return 1
       self.sig_state.AddUserTrap(sig_num, handler)
       return 0
 

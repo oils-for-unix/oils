@@ -5,6 +5,28 @@ trap -l | grep INT >/dev/null
 ## status: 0
 ## N-I dash/mksh status: 1
 
+#### trap 'echo hi' KILL (regression test, caught by smoosh suite)
+trap 'echo hi' 9
+echo status=$?
+trap 'echo hi' KILL
+echo status=$?
+trap 'echo hi' STOP
+echo status=$?
+trap 'echo hi' TERM
+echo status=$?
+## STDOUT:
+status=0
+status=0
+status=0
+status=0
+## END
+## OK osh STDOUT:
+status=1
+status=1
+status=1
+status=0
+## END
+
 #### trap -p
 trap 'echo exit' EXIT
 trap -p | grep EXIT >/dev/null
