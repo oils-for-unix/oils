@@ -624,7 +624,7 @@ class BuiltinFlags(object):
             break
 
           raise UsageError(
-              "doesn't accept flag %r" % ('-' + char), span_id=arg_r.SpanId())
+              "doesn't accept flag %s" % ('-' + char), span_id=arg_r.SpanId())
 
         arg_r.Next()  # next arg
 
@@ -639,7 +639,7 @@ class BuiltinFlags(object):
             continue
 
           raise UsageError(
-              "doesn't accept option %r" % ('+' + char), span_id=arg_r.SpanId())
+              "doesn't accept option %s" % ('+' + char), span_id=arg_r.SpanId())
 
         arg_r.Next()  # next arg
 

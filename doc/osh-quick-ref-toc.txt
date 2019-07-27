@@ -125,7 +125,7 @@ SHELL OPTIONS
   [Debugging]     xtrace   X verbose   X extdebug
   [Interactive]   emacs   vi
   [Other]         X noclobber
-  [OSH Strict]    all:strict
+  [OSH Strict]    all:strict             All options starting with 'strict-'
                   strict-argv            No empty argv
                   strict-array           Arrays don't decay to strings
                   strict-arith           Fatal parse errors (on by default)
@@ -136,17 +136,17 @@ SHELL OPTIONS
                   X strict-glob          Parse the sublanguage more strictly
                   X strict-eval-builtin  Single arg
                   X strict-trap          Function name only
-X [Oil Semantics] all:oil
-                  oil-word-eval          No splitting, static globbing
+X [Oil Semantics] all:oil                All options below, plus POSIX and bash
+                  static-word-eval       No splitting, static globbing
+                  longopts               test -file, shopt -unset, etc.
                   oil-echo               No -e or -n, one arg per line
-                  oil-longopts           test -file, shopt -unset, etc.
                   oil-test-builtin       Only file tests (no strings), remove [
 X [Syntax Pragma] all:oil
                   oil-splice             echo @array @arrayfunc(x, y)
                   oil-brace              cd ~/src { ... }
                   oil-paren              if (x > 0) ...
                   oil-set                instead of setvar
-                  oil-equals             for cleaner config snippets
+                  oil-equals             x = 's' (for cleaner config snippets)
 
 ENVIRONMENT VARIABLES
   [Shell Options] SHELLOPTS   X BASHOPTS

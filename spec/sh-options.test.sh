@@ -449,3 +449,46 @@ shopt -s nullglob
 status=0
 ## END
 ## N-I dash/mksh status: 0
+
+#### shopt -p validates option names
+shopt -p nullglob invalid failglob
+echo status=$?
+# same thing as -p, slightly different format in bash
+shopt nullglob invalid failglob > $TMP/out.txt
+status=$?
+sed --regexp-extended 's/\s+/ /' $TMP/out.txt  # make it easier to assert
+echo status=$status
+## STDOUT:
+shopt -u nullglob
+status=2
+shopt -u nullglob
+status=2
+## END
+## OK bash STDOUT:
+shopt -u nullglob
+shopt -u failglob
+status=1
+nullglob off
+failglob off
+status=1
+## END
+## N-I dash/mksh STDOUT:
+status=127
+status=127
+## END
+
+#### shopt -p -o validates option names
+shopt -p -o errexit invalid nounset
+echo status=$?
+## STDOUT:
+set +o errexit
+status=2
+## END
+## OK bash STDOUT:
+set +o errexit
+set +o nounset
+status=1
+## END
+## N-I dash/mksh STDOUT:
+status=127
+## END

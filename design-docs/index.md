@@ -42,6 +42,7 @@ Index of Oil Enhancement Proposals
 - [0008-expr-string-literals](0008-expr-string-literals.md)
   - Balancing compatibility with shell vs. a legacy-free Oil language.
 - `__syntax__ oil-equals` for config dialect
+- `shopt -s longopts` -- for builtins
 
 
 ### TODO

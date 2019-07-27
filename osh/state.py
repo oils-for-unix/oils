@@ -385,6 +385,9 @@ class ExecOpts(object):
     # TODO: Maybe sort them differently?
     opt_names = opt_names or SET_OPTION_NAMES
     for opt_name in opt_names:
+      if opt_name not in SET_OPTION_NAMES:
+        raise args.UsageError('got invalid option %r' % opt_name)
+
       if opt_name == 'errexit':
         b = self.errexit.errexit
       else:
@@ -395,6 +398,9 @@ class ExecOpts(object):
     """ For 'shopt -p' """
     opt_names = opt_names or SHOPT_OPTION_NAMES  # show all
     for opt_name in opt_names:
+      if opt_name not in SHOPT_OPTION_NAMES:
+        raise args.UsageError('got invalid option %r' % opt_name)
+
       attr = opt_name.replace('-', '_')  # for strict-*
       b = getattr(self, attr)
       print('shopt -%s %s' % ('s' if b else 'u', opt_name))
