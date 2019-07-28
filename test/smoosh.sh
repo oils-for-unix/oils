@@ -154,9 +154,13 @@ test-cases() {
 
       local stdout="$prefix.out"
       if test -f "$stdout"; then
-        echo '## STDOUT:'
-        cat $stdout
-        echo '## END'
+        if test -s "$stdout"; then  # non-empty stdout
+          echo '## STDOUT:'
+          cat $stdout
+          echo '## END'
+        else
+          echo '## stdout-json: ""'  # must use stdout-json
+        fi
       fi
 
       if false; then

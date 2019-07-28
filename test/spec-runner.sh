@@ -260,7 +260,7 @@ all-serial() {
 #   - but doesn't link to individual # ones yet?
 
 _test-to-html() {
-  local spec_name=$1
+  local src=$1
 
   # A row per line makes sense for highlighting with ":target".
 
@@ -278,7 +278,7 @@ _test-to-html() {
   <body>
     <table>
 EOF
-  awk < spec/${spec_name}.test.sh '
+  awk < $src '
   { 
     # & is the substitution character.  Why is \\& a literal backslash instead
     # of \&?  This changed on the gawk between Ubuntu 14.04 and 16.04.
@@ -310,7 +310,7 @@ EOF
 
 test-to-html() {
   local spec_name=$1
-  _test-to-html $spec_name > _tmp/spec/${spec_name}.test.html
+  _test-to-html spec/${spec_name}.test.sh > _tmp/spec/${spec_name}.test.html
 }
 
 all-tests-to-html() {

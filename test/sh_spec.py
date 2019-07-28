@@ -399,16 +399,17 @@ def CreateAssertions(case, sh_label):
 
 
 class Result(object):
-  """Possible test results.
+  """Result of an stdout/stderr/status assertion or of a (case, shell) cell.
 
   Order is important: the result of a cell is the minimum of the results of
-  each assertions.
+  each assertion.
   """
-  FAIL = 0
-  BUG = 1
-  NI = 2
-  OK = 3
-  PASS = 4
+  TIMEOUT = 0  # ONLY a cell result, not an assertion result
+  FAIL = 1
+  BUG = 2
+  NI = 3
+  OK = 4
+  PASS = 5
 
 
 class EqualAssertion(object):
@@ -485,11 +486,6 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
     result_row = []
 
     for shell_index, (sh_label, sh_path) in enumerate(shells):
-      # TODO: Add
-      # --posix (but not for dash)
-      # timeout 1s
-      # And then check exit code == 143 and print timeout
-
       if opts.timeout:
         argv = ['timeout', opts.timeout]
       else:
@@ -522,28 +518,33 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
 
       actual['status'] = p.wait()
 
-      messages = []
-      cell_result = Result.PASS
+      if actual['status'] == 124:
+        cell_result = Result.TIMEOUT
+      else:
+        messages = []
+        cell_result = Result.PASS
 
-      # TODO: Warn about no assertions?  Well it will always test the error
-      # code.
-      assertions = CreateAssertions(case, sh_label)
-      for a in assertions:
-        result, msg = a.Check(sh_label, actual)
-        # The minimum one wins.
-        # If any failed, then the result is FAIL.
-        # If any are OK, but none are FAIL, the result is OK.
-        cell_result = min(cell_result, result)
-        if msg:
-          messages.append(msg)
+        # TODO: Warn about no assertions?  Well it will always test the error
+        # code.
+        assertions = CreateAssertions(case, sh_label)
+        for a in assertions:
+          result, msg = a.Check(sh_label, actual)
+          # The minimum one wins.
+          # If any failed, then the result is FAIL.
+          # If any are OK, but none are FAIL, the result is OK.
+          cell_result = min(cell_result, result)
+          if msg:
+            messages.append(msg)
 
-      if cell_result != Result.PASS:
-        d = (i, sh_label, actual['stdout'], actual['stderr'], messages)
-        out.AddDetails(d)
+        if cell_result != Result.PASS:
+          d = (i, sh_label, actual['stdout'], actual['stderr'], messages)
+          out.AddDetails(d)
 
       result_row.append(cell_result)
 
-      if cell_result == Result.FAIL:
+      if cell_result == Result.TIMEOUT:
+        stats['num_timeout'] += 1
+      elif cell_result == Result.FAIL:
         # Special logic: don't count osh_ALT beacuse its failures will be
         # counted in the delta.
         if sh_label not in OTHER_OSH:
@@ -622,8 +623,10 @@ _BOLD = '\033[1m'
 _RED = '\033[31m'
 _GREEN = '\033[32m'
 _YELLOW = '\033[33m'
+_PURPLE = '\033[35m'
 
 
+COLOR_TIMEOUT = ''.join([_PURPLE, _BOLD, 'TIME', _RESET])
 COLOR_FAIL = ''.join([_RED, _BOLD, 'FAIL', _RESET])
 COLOR_BUG = ''.join([_YELLOW, _BOLD, 'BUG', _RESET])
 COLOR_NI = ''.join([_YELLOW, _BOLD, 'N-I', _RESET])
@@ -632,6 +635,7 @@ COLOR_PASS = ''.join([_GREEN, _BOLD, 'pass', _RESET])
 
 
 ANSI_CELLS = {
+    Result.TIMEOUT: COLOR_TIMEOUT,
     Result.FAIL: COLOR_FAIL,
     Result.BUG: COLOR_BUG,
     Result.NI: COLOR_NI,
@@ -640,6 +644,7 @@ ANSI_CELLS = {
 }
 
 HTML_CELLS = {
+    Result.TIMEOUT: '<td class="timeout">TIME',
     Result.FAIL: '<td class="fail">FAIL',
     Result.BUG: '<td class="bug">BUG',
     Result.NI: '<td class="n-i">N-I',
@@ -704,9 +709,10 @@ class ColorOutput(object):
 
   def _WriteStats(self, stats):
     self.f.write(
-        '%(num_passed)d passed, %(num_ok)d ok, '
-        '%(num_ni)d known unimplemented, %(num_bug)d known bugs, '
-        '%(num_failed)d failed, %(num_skipped)d skipped\n' % stats)
+        '%(num_passed)d passed, %(num_ok)d OK, '
+        '%(num_ni)d not implemented, %(num_bug)d BUG, '
+        '%(num_failed)d failed, %(num_timeout)d timeouts, '
+        '%(num_skipped)d cases skipped\n' % stats)
 
   def EndCases(self, stats):
     self._WriteStats(stats)
@@ -747,9 +753,11 @@ class HtmlOutput(ColorOutput):
 
   def EndCases(self, stats):
     self.f.write('</table>\n')
-    self.f.write('<p>')
+    self.f.write('<pre>')
     self._WriteStats(stats)
-    self.f.write('</p>')
+    if stats['osh_num_failed']:
+      self.f.write('%(osh_num_failed)d failed under osh\n' % stats)
+    self.f.write('</pre>')
 
     if self.details:
       self._WriteDetails()
@@ -825,12 +833,12 @@ class HtmlOutput(ColorOutput):
     self.f.write('<tr>')
     self.f.write('<td>%3d</td>' % i)
 
-    non_passing = False
+    show_details = False
 
     for result in row:
       c = HTML_CELLS[result]
-      if result != Result.PASS:
-        non_passing = True
+      if result not in (Result.PASS, Result.TIMEOUT):  # nothing to show
+        show_details = True
 
       self.f.write(c)
       self.f.write('</td>')
@@ -842,7 +850,7 @@ class HtmlOutput(ColorOutput):
     self.f.write('</tr>\n')
 
     # Show row with details link.
-    if non_passing:
+    if show_details:
       self.f.write('<tr>')
       self.f.write('<td class="details-row"></td>')  # for the number
 
@@ -888,12 +896,17 @@ def Options():
   p.add_option(
       '--osh-failures-allowed', dest='osh_failures_allowed', type='int',
       default=0, help="Allow this number of osh failures")
+
   p.add_option(
       '--path-env', dest='path_env', default='',
       help="The full PATH, for finding binaries used in tests.")
   p.add_option(
       '--tmp-env', dest='tmp_env', default='',
       help="A temporary directory that the tests can use.")
+  p.add_option(
+      '--env-pair', dest='env_pair', default=[], action='append',
+      help='A key=value pair to add to the environment')
+
   p.add_option(
       '--posix', dest='posix', default=False, action='store_true',
       help='Pass -o posix to the shell (when applicable)')
@@ -992,6 +1005,10 @@ def main(argv):
     # shells in utf-8 mode.
     'LANG': 'en_US.UTF-8',
   }
+  for p in opts.env_pair:
+    name, value = p.split('=', 1)
+    env[name] = value
+
   stats = RunCases(cases, case_predicate, shell_pairs, env, out, opts)
 
   out.EndCases(stats)

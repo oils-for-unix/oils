@@ -61,6 +61,7 @@ td {
 .n-i  { color: #660; font-size: large; }
 .bug  { color: #660; font-size: large; }
 .fail { color: darkred; font-size: large; }
+.timeout { color: purple; font-size: large; }
 
 .failed {
   background-color: #ffe0e0;

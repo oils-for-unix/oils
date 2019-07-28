@@ -677,12 +677,30 @@ smoosh() {
   # - cd $TMP to avoid littering repo
   # - pass -o posix
   # - timeout of 1 second
+  # - Some tests in smoosh use $HOME and $LOGNAME
+
+  local smoosh_repo=~/git/languages/smoosh
+
   sh-spec _tmp/smoosh.test.sh \
     --sh-env-var-name TEST_SHELL \
     --timeout 1s \
     --posix \
     --cd-tmp \
+    --env-pair "TEST_UTIL=$smoosh_repo/tests/util" \
+    --env-pair "LOGNAME=$LOGNAME" \
+    --env-pair "HOME=$HOME" \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
+}
+
+smoosh-html() {
+  test/spec-runner.sh _test-to-html _tmp/smoosh.test.sh > \
+    _tmp/spec/smoosh.test.html
+
+  local out=_tmp/spec/smoosh.html
+  { smoosh --format html "$@" || true; } | tee $out
+
+  echo
+  echo "Wrote $out"
 }
 
 "$@"
