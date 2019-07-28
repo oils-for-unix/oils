@@ -162,7 +162,6 @@ echo ${PIPESTATUS[@]}
 ## BUG bash STDOUT:
 1 0
 ## END
-## N-I zsh STDOUT:
-## END
+## N-I zsh stdout:
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""

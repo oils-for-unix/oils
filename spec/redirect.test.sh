@@ -342,8 +342,7 @@ echo $foo
 ## STDOUT:
 FOO
 ## END
-## N-I dash STDOUT:
-## END
+## N-I dash stdout:
 
 #### 2>&1 with no command
 cd $TMP

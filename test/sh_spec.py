@@ -156,7 +156,7 @@ class Tokenizer(object):
     # Non-empty line that doesn't start with '#'
     # NOTE: We need the original line to test the whitespace sensitive <<-.
     # And we need rstrip because we add newlines back below.
-    return self.line_num, PLAIN_LINE, line.rstrip('\n')
+    return self.line_num, PLAIN_LINE, line
 
   def next(self, lex_mode=LEX_OUTER):
     """Raises StopIteration when exhausted."""
@@ -232,7 +232,7 @@ def ParseKeyValue(tokens, case):
           break
         value_lines.append(item2)
 
-      value = '\n'.join(value_lines) + '\n'
+      value = ''.join(value_lines)
 
       name = name.lower()  # STDOUT -> stdout
       if qualifier:
@@ -267,7 +267,7 @@ def ParseCodeLines(tokens, case):
   while True:
     _, kind, item = tokens.peek()
     if kind != PLAIN_LINE:
-      case['code'] = '\n'.join(code_lines) + '\n'
+      case['code'] = ''.join(code_lines)
       return
     code_lines.append(item)
     tokens.next()
