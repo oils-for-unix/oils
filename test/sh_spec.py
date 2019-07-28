@@ -106,19 +106,32 @@ END_MULTILINE = 3  # STDOUT STDERR
 PLAIN_LINE = 4  # Uncommented
 EOF = 5
 
+LEX_OUTER = 0  # Ignore blank lines
+LEX_KV = 1     # Blank lines are significant
 
-def LineIter(f):
-  """Iterate over lines, classify them by token type, and parse token value."""
-  for i, line in enumerate(f):
+
+class Tokenizer(object):
+  """Modal lexer!"""
+
+  def __init__(self, f):
+    self.f = f
+
+    self.cursor = None
+    self.line_num = 0
+
+    self.next()
+
+  def _ClassifyLine(self, line):
+    if not line:  # empty
+      return self.line_num, EOF, ''
+
+    # TODO: Get rid of
     if not line.strip():
-      continue
-
-    line_num = i+1  # 1-based
+      return None
 
     if line.startswith('####'):
       desc = line[4:].strip()
-      yield line_num, TEST_CASE_BEGIN, desc
-      continue
+      return self.line_num, TEST_CASE_BEGIN, desc
 
     m = KEY_VALUE_RE.match(line)
     if m:
@@ -131,38 +144,31 @@ def LineIter(f):
         token_type = KEY_VALUE_MULTILINE
       else:
         token_type = KEY_VALUE
-      yield line_num, token_type, (qualifier, shells, name, value)
-      continue
+      return self.line_num, token_type, (qualifier, shells, name, value)
 
     m = END_MULTILINE_RE.match(line)
     if m:
-      yield line_num, END_MULTILINE, None
-      continue
+      return self.line_num, END_MULTILINE, None
 
-    if line.lstrip().startswith('#'):
-      # Ignore comments
-      #yield COMMENT, line
-      continue
+    if line.lstrip().startswith('#'):  # Ignore comments
+      return None  # try again
 
     # Non-empty line that doesn't start with '#'
     # NOTE: We need the original line to test the whitespace sensitive <<-.
     # And we need rstrip because we add newlines back below.
-    yield line_num, PLAIN_LINE, line.rstrip('\n')
+    return self.line_num, PLAIN_LINE, line.rstrip('\n')
 
-  yield line_num, EOF, None
-
-
-class Tokenizer(object):
-  """Wrap a token iterator in a Tokenizer interface."""
-
-  def __init__(self, it):
-    self.it = it
-    self.cursor = None
-    self.next()
-
-  def next(self):
+  def next(self, lex_mode=LEX_OUTER):
     """Raises StopIteration when exhausted."""
-    self.cursor = self.it.next()
+    while True:
+      line = self.f.readline()
+      self.line_num += 1
+
+      tok = self._ClassifyLine(line)
+      if tok is not None:
+        break
+
+    self.cursor = tok
     return self.cursor
 
   def peek(self):
@@ -276,7 +282,10 @@ def ParseTestCase(tokens):
   if kind == EOF:
     return None
 
-  assert kind == TEST_CASE_BEGIN, (line_num, kind, item)  # Invariant
+  if kind != TEST_CASE_BEGIN:
+    raise RuntimeError(
+        "line %d: Expected TEST_CASE_BEGIN, got %r" % (line_num, [kind, item]))
+
   tokens.next()
 
   case = {'desc': item, 'line_num': line_num}
@@ -437,6 +446,54 @@ class EqualAssertion(object):
     return Result.PASS, ''  # ideal behavior
 
 
+class Stats(object):
+  def __init__(self, num_cases):
+    self.counters = collections.defaultdict(int)
+    c = self.counters
+    c['num_cases'] = num_cases
+    c['osh_num_passed'] = 0
+    c['osh_num_failed'] = 0
+    # Number of osh_ALT results that differed from osh.
+    c['osh_ALT_delta'] = 0
+
+  def Inc(self, counter_name):
+    self.counters[counter_name] += 1
+
+  def Get(self, counter_name):
+    return self.counters[counter_name]
+
+  def Set(self, counter_name, val):
+    self.counters[counter_name] = val
+
+  def ReportCell(self, cell_result, sh_label):
+    # TODO: Total by sh_label too, and then show a table at the end Only
+    # non-zero
+
+    c = self.counters
+    if cell_result == Result.TIMEOUT:
+      c['num_timeout'] += 1
+    elif cell_result == Result.FAIL:
+      # Special logic: don't count osh_ALT beacuse its failures will be
+      # counted in the delta.
+      if sh_label not in OTHER_OSH:
+        c['num_failed'] += 1
+
+      if sh_label in OSH_CPYTHON:
+        c['osh_num_failed'] += 1
+    elif cell_result == Result.BUG:
+      c['num_bug'] += 1
+    elif cell_result == Result.NI:
+      c['num_ni'] += 1
+    elif cell_result == Result.OK:
+      c['num_ok'] += 1
+    elif cell_result == Result.PASS:
+      c['num_passed'] += 1
+      if sh_label in OSH_CPYTHON:
+        c['osh_num_passed'] += 1
+    else:
+      raise AssertionError
+
+
 PIPE = subprocess.PIPE
 
 def RunCases(cases, case_predicate, shells, env, out, opts):
@@ -447,12 +504,7 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
 
   out.WriteHeader(shells)
 
-  stats = collections.defaultdict(int)
-  stats['num_cases'] = len(cases)
-  stats['osh_num_passed'] = 0
-  stats['osh_num_failed'] = 0
-  # Number of osh_ALT results that differed from osh.
-  stats['osh_ALT_delta'] = 0
+  stats = Stats(len(cases))
 
   # Make an environment for each shell.  $SH is the path to the shell, so we
   # can test flags, etc.
@@ -480,7 +532,7 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
       log('case %s', desc)
 
     if not case_predicate(i, case):
-      stats['num_skipped'] += 1
+      stats.Inc('num_skipped')
       continue
 
     result_row = []
@@ -542,28 +594,7 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
 
       result_row.append(cell_result)
 
-      if cell_result == Result.TIMEOUT:
-        stats['num_timeout'] += 1
-      elif cell_result == Result.FAIL:
-        # Special logic: don't count osh_ALT beacuse its failures will be
-        # counted in the delta.
-        if sh_label not in OTHER_OSH:
-          stats['num_failed'] += 1
-
-        if sh_label in OSH_CPYTHON:
-          stats['osh_num_failed'] += 1
-      elif cell_result == Result.BUG:
-        stats['num_bug'] += 1
-      elif cell_result == Result.NI:
-        stats['num_ni'] += 1
-      elif cell_result == Result.OK:
-        stats['num_ok'] += 1
-      elif cell_result == Result.PASS:
-        stats['num_passed'] += 1
-        if sh_label in OSH_CPYTHON:
-          stats['osh_num_passed'] += 1
-      else:
-        raise AssertionError
+      stats.ReportCell(cell_result, sh_label)
 
       if sh_label in OTHER_OSH:
         # This is only an error if we tried to run ANY OSH.
@@ -573,7 +604,7 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
         other_result = result_row[shell_index]
         cpython_result = result_row[osh_cpython_index]
         if other_result != cpython_result:
-          stats['osh_ALT_delta'] += 1
+          stats.Inc('osh_ALT_delta')
 
     out.WriteRow(i, line_num, result_row, desc)
 
@@ -712,7 +743,7 @@ class ColorOutput(object):
         '%(num_passed)d passed, %(num_ok)d OK, '
         '%(num_ni)d not implemented, %(num_bug)d BUG, '
         '%(num_failed)d failed, %(num_timeout)d timeouts, '
-        '%(num_skipped)d cases skipped\n' % stats)
+        '%(num_skipped)d cases skipped\n' % stats.counters)
 
   def EndCases(self, stats):
     self._WriteStats(stats)
@@ -755,8 +786,8 @@ class HtmlOutput(ColorOutput):
     self.f.write('</table>\n')
     self.f.write('<pre>')
     self._WriteStats(stats)
-    if stats['osh_num_failed']:
-      self.f.write('%(osh_num_failed)d failed under osh\n' % stats)
+    if stats.Get('osh_num_failed'):
+      self.f.write('%(osh_num_failed)d failed under osh\n' % stats.counters)
     self.f.write('</pre>')
 
     if self.details:
@@ -958,7 +989,7 @@ def main(argv):
     shell_pairs.append((label, path))
 
   with open(test_file) as f:
-    tokens = Tokenizer(LineIter(f))
+    tokens = Tokenizer(f)
     cases = ParseTestFile(tokens)
 
   # List test cases and return
@@ -1013,18 +1044,18 @@ def main(argv):
 
   out.EndCases(stats)
 
-  stats['osh_failures_allowed'] = opts.osh_failures_allowed
+  stats.Set('osh_failures_allowed', opts.osh_failures_allowed)
   if opts.stats_file:
     with open(opts.stats_file, 'w') as f:
-      f.write(opts.stats_template % stats)
+      f.write(opts.stats_template % stats.counters)
       f.write('\n')  # bash 'read' requires a newline
 
-  if stats['num_failed'] == 0:
+  if stats.Get('num_failed') == 0:
     return 0
 
   allowed = opts.osh_failures_allowed
-  all_count = stats['num_failed']
-  osh_count = stats['osh_num_failed']
+  all_count = stats.Get('num_failed')
+  osh_count = stats.Get('osh_num_failed')
   if allowed == 0:
     log('')
     log('FATAL: %d tests failed (%d osh failures)', all_count, osh_count)
