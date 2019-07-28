@@ -225,6 +225,7 @@ class ExecOpts(object):
     self.noglob = False  # -f
     self.noexec = False  # -n
     self.noclobber = False  # -C
+    self.posix = False
     # We don't do anything with this yet.  But Aboriginal calls 'set +h'.
     self.hashall = True  # -h is true by default.
 

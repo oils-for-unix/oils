@@ -11,11 +11,13 @@ shopt -s all:strict 2>/dev/null || true  # dogfood for OSH
 
 source test/common.sh
 
+readonly REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
+
 # For now, fall back to the shell in $PATH.
 shell-path() {
   local name=$1
   if test -f _tmp/spec-bin/$name; then
-    echo _tmp/spec-bin/$name
+    echo $REPO_ROOT/_tmp/spec-bin/$name
   else
     which $name
   fi
@@ -37,8 +39,8 @@ fi
 # Example:
 # OSH_LIST='bin/osh _bin/osh' test/spec.sh all
 
-readonly OSH_CPYTHON='bin/osh'
-readonly OSH_OVM=${OSH_OVM:-_bin/osh}
+readonly OSH_CPYTHON="$REPO_ROOT/bin/osh"
+readonly OSH_OVM=${OSH_OVM:-$REPO_ROOT/_bin/osh}
 
 OSH_LIST=${OSH_LIST:-}  # A space-separated list.
 
@@ -668,6 +670,19 @@ empty-bodies() {
 # osh has infinite loop?
 shell-grammar() {
   sh-spec spec/shell-grammar.test.sh $BASH $MKSH $ZSH "$@"
+}
+
+smoosh() {
+  # - smoosh tests use $TEST_SHELL instead of $SH
+  # - cd $TMP to avoid littering repo
+  # - pass -o posix
+  # - timeout of 1 second
+  sh-spec _tmp/smoosh.test.sh \
+    --sh-env-var-name TEST_SHELL \
+    --timeout 1s \
+    --posix \
+    --cd-tmp \
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 "$@"

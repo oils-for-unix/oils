@@ -277,14 +277,13 @@ three
 ## END
 
 #### compgen -f -X filter -- $cur
-abs_sh=$PWD/$SH
 cd $TMP
 touch spam.py spam.sh
 compgen -f -- sp
 echo --
 # WORKAROUND: wrap in bash -i -c because non-interactive bash behaves
 # differently!
-$abs_sh  -i -c 'compgen -f -X "!*.@(py)" -- sp'
+$SH -i -c 'compgen -f -X "!*.@(py)" -- sp'
 ## STDOUT:
 spam.py
 spam.sh

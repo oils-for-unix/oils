@@ -438,7 +438,7 @@ class EqualAssertion(object):
 
 PIPE = subprocess.PIPE
 
-def RunCases(cases, case_predicate, shells, env, out):
+def RunCases(cases, case_predicate, shells, env, out, opts):
   """
   Run a list of test 'cases' for all 'shells' and write output to 'out'.
   """
@@ -458,7 +458,7 @@ def RunCases(cases, case_predicate, shells, env, out):
   sh_env = []
   for _, sh_path in shells:
     e = dict(env)
-    e['SH'] = sh_path
+    e[opts.sh_env_var_name] = sh_path
     sh_env.append(e)
 
   # Determine which one (if any) is osh-cpython, for comparison against other
@@ -475,18 +475,37 @@ def RunCases(cases, case_predicate, shells, env, out):
     desc = case['desc']
     code = case['code']
 
+    if opts.trace:
+      log('case %s', desc)
+
     if not case_predicate(i, case):
       stats['num_skipped'] += 1
       continue
 
-    #print code
-
     result_row = []
 
     for shell_index, (sh_label, sh_path) in enumerate(shells):
-      argv = [sh_path]  # TODO: Be able to test shell flags?
+      # TODO: Add
+      # --posix (but not for dash)
+      # timeout 1s
+      # And then check exit code == 143 and print timeout
+
+      if opts.timeout:
+        argv = ['timeout', opts.timeout]
+      else:
+        argv = []
+      argv.append(sh_path)
+
+      # dash doesn't support -o posix
+      if opts.posix and sh_label != 'dash':
+        argv.extend(['-o', 'posix'])
+
+      if opts.trace:
+        log('Running %s', argv)
+
+      cwd = env['TMP'] if opts.cd_tmp else None
       try:
-        p = subprocess.Popen(argv, env=sh_env[shell_index],
+        p = subprocess.Popen(argv, env=sh_env[shell_index], cwd=cwd,
                              stdin=PIPE, stdout=PIPE, stderr=PIPE)
       except OSError as e:
         print('Error running %r: %s' % (sh_path, e), file=sys.stderr)
@@ -843,7 +862,10 @@ def Options():
   p = optparse.OptionParser('sh_spec.py [options] TEST_FILE shell...')
   p.add_option(
       '-v', '--verbose', dest='verbose', action='store_true', default=False,
-      help='Show details about test execution')
+      help='Show details about test failures')
+  p.add_option(
+      '-t', '--trace', dest='trace', action='store_true', default=False,
+      help='trace execution of shells to diagnose hangs')
   p.add_option(
       '--range', dest='range', default=None,
       help='Execute only a given test range, e.g. 5-10, 5-, -10, or 5')
@@ -872,6 +894,18 @@ def Options():
   p.add_option(
       '--tmp-env', dest='tmp_env', default='',
       help="A temporary directory that the tests can use.")
+  p.add_option(
+      '--posix', dest='posix', default=False, action='store_true',
+      help='Pass -o posix to the shell (when applicable)')
+  p.add_option(
+      '--timeout', dest='timeout', default='',
+      help="Prefix shell invocation with 'timeout N'")
+  p.add_option(
+      '--sh-env-var-name', dest='sh_env_var_name', default='SH',
+      help="Set this environment variable to the path of the shell")
+  p.add_option(
+      '--cd-tmp', dest='cd_tmp', default=False, action='store_true',
+      help="cd to the $TMP dir first")
 
   return p
 
@@ -887,7 +921,7 @@ def main(argv):
     raise AssertionError('got $PPID = %s' % v)
 
   o = Options()
-  (opts, argv) = o.parse_args(argv)
+  opts, argv = o.parse_args(argv)
 
   try:
     test_file = argv[1]
@@ -958,7 +992,8 @@ def main(argv):
     # shells in utf-8 mode.
     'LANG': 'en_US.UTF-8',
   }
-  stats = RunCases(cases, case_predicate, shell_pairs, env, out)
+  stats = RunCases(cases, case_predicate, shell_pairs, env, out, opts)
+
   out.EndCases(stats)
 
   stats['osh_failures_allowed'] = opts.osh_failures_allowed

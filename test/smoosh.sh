@@ -111,4 +111,77 @@ build-smoosh() {
   popd
 }
 
+#
+# Translate tests to our spec test format
+#
+
+test-cases() {
+  local translate=${1:-}
+
+  local i=0
+
+  pushd ~/git/languages/smoosh/tests/shell >/dev/null
+  for t in *.test; do 
+    case $t in
+      # causes a problem for the sh_spec parser
+      semantics.empty.test)
+        continue
+        ;;
+      # hangs on BASH even with 'timeout 1s'?  How?
+      builtin.history.nonposix.test|parse.error.test|semantics.interactive.expansion.exit.test|sh.interactive.ps1.test|sh.ps1.override.test)
+        continue
+        ;;
+      # hangs on DASH even with 'timeout 1s'?  How?
+      builtin.readonly.assign.interactive.test)
+        continue
+        ;;
+    esac
+
+    local prefix=${t%.test}
+
+    if test -z "$translate"; then
+      echo $t
+    else
+      echo "#### $t"
+      cat $t
+      echo
+
+      # If no file, it's zero
+      local ec="$prefix.ec"
+      if test -f "$ec"; then
+        echo "## status: $(cat $ec)"
+      fi
+
+      local stdout="$prefix.out"
+      if test -f "$stdout"; then
+        echo '## STDOUT:'
+        cat $stdout
+        echo '## END'
+      fi
+
+      if false; then
+        local stderr="$prefix.err"
+        if test -f "$stderr"; then
+          echo '## STDERR:'
+          cat $stderr
+          echo '## END'
+        fi
+      fi
+
+      echo
+
+      i=$((i + 1))
+    fi
+  done
+  popd >/dev/null
+
+  echo "Translated $i test cases" >&2
+}
+
+make-spec() {
+  test-cases T > _tmp/smoosh.test.sh
+}
+
+
+
 "$@"
