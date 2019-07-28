@@ -18,6 +18,7 @@ static PyMethodDef posix_methods[] = {
   {"geteuid", posix_geteuid, METH_NOARGS},
   {"getpid", posix_getpid, METH_NOARGS},
   {"getuid", posix_getuid, METH_NOARGS},
+  {"getppid", posix_getppid, METH_NOARGS},
 
   {"open", posix_open, METH_VARARGS},
   {"close", posix_close_, METH_VARARGS},

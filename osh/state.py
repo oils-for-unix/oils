@@ -158,6 +158,8 @@ SET_OPTIONS = [
     ('C', 'noclobber'),
     ('h', 'hashall'),
     (None, 'pipefail'),
+    # A no-op for modernish.  TODO: could do shopt -u strict-arith?
+    (None, 'posix'),
 
     (None, 'vi'),
     (None, 'emacs'),
@@ -367,7 +369,11 @@ class ExecOpts(object):
   def SetShoptOption(self, opt_name, b):
     """ For shopt -s/-u. """
 
-    # shopt -s all:strict turns on all optoins
+    # TODO: all:oil
+    # shopt -s -o nounset -o errexit -o pipefail
+    # shopt -s static-word-eval  # no splitting, static globbing
+
+    # shopt -s all:strict turns on all strict options
     if opt_name == 'all:strict':
       for opt_name in SHOPT_OPTION_NAMES:
         if opt_name.startswith('strict-'):
@@ -604,6 +610,7 @@ class Mem(object):
     # NOTE: Should we put these in a namespace for Oil?
     SetGlobalString(self, 'UID', str(posix.getuid()))
     SetGlobalString(self, 'EUID', str(posix.geteuid()))
+    SetGlobalString(self, 'PPID', str(posix.getppid()))
 
     SetGlobalString(self, 'HOSTNAME', str(libc.gethostname()))
 
