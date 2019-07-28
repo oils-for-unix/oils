@@ -672,23 +672,32 @@ shell-grammar() {
   sh-spec spec/shell-grammar.test.sh $BASH $MKSH $ZSH "$@"
 }
 
-smoosh() {
+readonly SMOOSH_REPO=~/git/languages/smoosh
+
+sh-spec-smoosh-env() {
+  local test_file=$1
+  shift
+
   # - smoosh tests use $TEST_SHELL instead of $SH
   # - cd $TMP to avoid littering repo
   # - pass -o posix
   # - timeout of 1 second
   # - Some tests in smoosh use $HOME and $LOGNAME
 
-  local smoosh_repo=~/git/languages/smoosh
-
-  sh-spec _tmp/smoosh.test.sh \
+  sh-spec $test_file \
     --sh-env-var-name TEST_SHELL \
-    --timeout 1s \
+    --timeout 1 \
     --posix \
     --cd-tmp \
-    --env-pair "TEST_UTIL=$smoosh_repo/tests/util" \
+    --rm-tmp \
+    --env-pair "TEST_UTIL=$SMOOSH_REPO/tests/util" \
     --env-pair "LOGNAME=$LOGNAME" \
     --env-pair "HOME=$HOME" \
+    "$@"
+}
+
+smoosh() {
+  sh-spec-smoosh-env _tmp/smoosh.test.sh \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -701,6 +710,14 @@ smoosh-html() {
 
   echo
   echo "Wrote $out"
+}
+
+smoosh-hang() {
+  # Need the smoosh timeout tool to run correctly.
+
+  sh-spec-smoosh-env _tmp/smoosh-hang.test.sh \
+    --timeout-bin "$SMOOSH_REPO/tests/util/timeout" \
+    ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 "$@"

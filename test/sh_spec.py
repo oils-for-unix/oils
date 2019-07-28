@@ -55,6 +55,7 @@ import optparse
 import os
 import pprint
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -538,7 +539,16 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
 
     for shell_index, (sh_label, sh_path) in enumerate(shells):
       if opts.timeout:
-        argv = ['timeout', opts.timeout]
+        if opts.timeout_bin:
+          # This is what smoosh itself uses.  See smoosh/tests/shell_tests.sh
+          argv = [opts.timeout_bin, '-t', '1', '-l', '_tmp/spec-tmp/%d' % i]
+        else:
+          # This kills hanging tests properly, but somehow they fail with code
+          # -9?
+          #argv = ['timeout', '-s', 'KILL', opts.timeout]
+
+          # s suffix for seconds
+          argv = ['timeout', opts.timeout + 's']
       else:
         argv = []
       argv.append(sh_path)
@@ -568,6 +578,10 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
       p.stderr.close()
 
       actual['status'] = p.wait()
+
+      if opts.rm_tmp:
+        shutil.rmtree(env['TMP'])
+        os.mkdir(env['TMP'])
 
       if actual['status'] == 124:
         cell_result = Result.TIMEOUT
@@ -938,17 +952,25 @@ def Options():
       help='A key=value pair to add to the environment')
 
   p.add_option(
-      '--posix', dest='posix', default=False, action='store_true',
-      help='Pass -o posix to the shell (when applicable)')
-  p.add_option(
       '--timeout', dest='timeout', default='',
       help="Prefix shell invocation with 'timeout N'")
+  p.add_option(
+      '--timeout-bin', dest='timeout_bin', default=None,
+      help="Use the smoosh timeout binary at this location.")
+
+  p.add_option(
+      '--posix', dest='posix', default=False, action='store_true',
+      help='Pass -o posix to the shell (when applicable)')
+
   p.add_option(
       '--sh-env-var-name', dest='sh_env_var_name', default='SH',
       help="Set this environment variable to the path of the shell")
   p.add_option(
       '--cd-tmp', dest='cd_tmp', default=False, action='store_true',
-      help="cd to the $TMP dir first")
+      help='cd to the $TMP dir first')
+  p.add_option(
+      '--rm-tmp', dest='rm_tmp', default=False, action='store_true',
+      help='clear the tmp dir after running each test case')
 
   return p
 

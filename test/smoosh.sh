@@ -11,6 +11,8 @@ set -o errexit
 
 readonly OPAM=~/.opam
 
+readonly REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
+
 # Copies of lem we built inside the repo.
 export PATH="$PWD/lem/bin:${PATH}"
 export LEMLIB="$PWD/lem/library"
@@ -115,27 +117,46 @@ build-smoosh() {
 # Translate tests to our spec test format
 #
 
+test-hangs() {
+  case $1 in
+    # causes a problem for the sh_spec parser
+    semantics.empty.test)
+      return 0
+      ;;
+    # hangs on BASH even with 'timeout 1s'?  How?
+    builtin.history.nonposix.test|parse.error.test|semantics.interactive.expansion.exit.test|sh.interactive.ps1.test|sh.ps1.override.test)
+      return 0
+      ;;
+    # hangs on DASH even with 'timeout 1s'?  How?
+    builtin.readonly.assign.interactive.test)
+      return 0
+      ;;
+  esac
+  return 1
+}
+
+
 test-cases() {
   local translate=${1:-}
+  local hang=${2:-}
 
   local i=0
 
   pushd ~/git/languages/smoosh/tests/shell >/dev/null
   for t in *.test; do 
-    case $t in
-      # causes a problem for the sh_spec parser
-      semantics.empty.test)
+    if [[ $t == semantics.empty.test ]]; then
+      continue;
+    fi
+
+    if test -n "$hang"; then
+      if ! test-hangs $t; then
         continue
-        ;;
-      # hangs on BASH even with 'timeout 1s'?  How?
-      builtin.history.nonposix.test|parse.error.test|semantics.interactive.expansion.exit.test|sh.interactive.ps1.test|sh.ps1.override.test)
+      fi
+    else
+      if test-hangs $t; then
         continue
-        ;;
-      # hangs on DASH even with 'timeout 1s'?  How?
-      builtin.readonly.assign.interactive.test)
-        continue
-        ;;
-    esac
+      fi
+    fi
 
     local prefix=${t%.test}
 
@@ -154,13 +175,8 @@ test-cases() {
 
       local stdout="$prefix.out"
       if test -f "$stdout"; then
-        if test -s "$stdout"; then  # non-empty stdout
-          echo '## STDOUT:'
-          cat $stdout
-          echo '## END'
-        else
-          echo '## stdout-json: ""'  # must use stdout-json
-        fi
+        # Choose between STDOUT and stdout-json assertions.
+        $REPO_ROOT/test/smoosh_import.py "$stdout"
       fi
 
       if false; then
@@ -183,9 +199,14 @@ test-cases() {
 }
 
 make-spec() {
-  test-cases T > _tmp/smoosh.test.sh
-}
+  local out=_tmp/smoosh.test.sh
+  test-cases translate > $out
+  echo "Wrote $out"
 
+  out=_tmp/smoosh-hang.test.sh
+  test-cases translate hang > $out
+  echo "Wrote $out"
+}
 
 
 "$@"
