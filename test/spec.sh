@@ -686,13 +686,13 @@ sh-spec-smoosh-env() {
 
   sh-spec $test_file \
     --sh-env-var-name TEST_SHELL \
-    --timeout 1 \
     --posix \
     --cd-tmp \
     --rm-tmp \
     --env-pair "TEST_UTIL=$SMOOSH_REPO/tests/util" \
     --env-pair "LOGNAME=$LOGNAME" \
     --env-pair "HOME=$HOME" \
+    --timeout 1 \
     "$@"
 }
 
@@ -702,8 +702,8 @@ smoosh() {
 }
 
 smoosh-html() {
-  test/spec-runner.sh _test-to-html _tmp/smoosh.test.sh > \
-    _tmp/spec/smoosh.test.html
+  test/spec-runner.sh _test-to-html _tmp/smoosh.test.sh \
+    > _tmp/spec/smoosh.test.html
 
   local out=_tmp/spec/smoosh.html
   { smoosh --format html "$@" || true; } | tee $out
@@ -717,7 +717,16 @@ smoosh-hang() {
 
   sh-spec-smoosh-env _tmp/smoosh-hang.test.sh \
     --timeout-bin "$SMOOSH_REPO/tests/util/timeout" \
+    --timeout 1 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
+}
+
+html-demo() {
+  local out=_tmp/spec/demo.html
+  { builtin-special --format html "$@" || true; } | tee $out
+
+  echo
+  echo "Wrote $out"
 }
 
 "$@"

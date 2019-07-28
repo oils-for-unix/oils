@@ -50,6 +50,7 @@ world
 
 import collections
 import cgi
+import cStringIO
 import json
 import optparse
 import os
@@ -447,7 +448,7 @@ class EqualAssertion(object):
 
 
 class Stats(object):
-  def __init__(self, num_cases):
+  def __init__(self, num_cases, sh_labels):
     self.counters = collections.defaultdict(int)
     c = self.counters
     c['num_cases'] = num_cases
@@ -455,6 +456,11 @@ class Stats(object):
     c['osh_num_failed'] = 0
     # Number of osh_ALT results that differed from osh.
     c['osh_ALT_delta'] = 0
+
+    self.by_shell = {}
+    for sh in sh_labels:
+      self.by_shell[sh] = collections.defaultdict(int)
+    self.nonzero_results = collections.defaultdict(int)
 
   def Inc(self, counter_name):
     self.counters[counter_name] += 1
@@ -466,8 +472,8 @@ class Stats(object):
     self.counters[counter_name] = val
 
   def ReportCell(self, cell_result, sh_label):
-    # TODO: Total by sh_label too, and then show a table at the end Only
-    # non-zero
+    self.by_shell[sh_label][cell_result] += 1
+    self.nonzero_results[cell_result] += 1
 
     c = self.counters
     if cell_result == Result.TIMEOUT:
@@ -504,7 +510,7 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
 
   out.WriteHeader(shells)
 
-  stats = Stats(len(cases))
+  stats = Stats(len(cases), [sh_label for sh_label, _ in shells])
 
   # Make an environment for each shell.  $SH is the path to the shell, so we
   # can test flags, etc.
@@ -522,6 +528,14 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
       osh_cpython_index = i
       break
 
+  timeout_dir = os.path.abspath('_tmp/spec/timeouts')
+  try:
+    os.mkdir(timeout_dir)
+  except OSError:
+    pass
+  shutil.rmtree(timeout_dir)
+  os.mkdir(timeout_dir)
+
   # Now run each case, and print a table.
   for i, case in enumerate(cases):
     line_num = case['line_num']
@@ -538,10 +552,21 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
     result_row = []
 
     for shell_index, (sh_label, sh_path) in enumerate(shells):
+      timeout_file = os.path.join(timeout_dir, '%s-%d' % (sh_label, i))
       if opts.timeout:
         if opts.timeout_bin:
           # This is what smoosh itself uses.  See smoosh/tests/shell_tests.sh
-          argv = [opts.timeout_bin, '-t', '1', '-l', '_tmp/spec-tmp/%d' % i]
+          # QUIRK: interval can only be a whole number
+          argv = [
+              opts.timeout_bin,
+              '-t', opts.timeout,
+              # Somehow I'm not able to get this timeout file working?  I think
+              # it has a bug when using stdin.  It waits for the background
+              # process too.
+
+              #'-i', '1',
+              #'-l', timeout_file
+          ]
         else:
           # This kills hanging tests properly, but somehow they fail with code
           # -9?
@@ -583,7 +608,9 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
         shutil.rmtree(env['TMP'])
         os.mkdir(env['TMP'])
 
-      if actual['status'] == 124:
+      if opts.timeout_bin and os.path.exists(timeout_file):
+        cell_result = Result.TIMEOUT
+      elif not opts.timeout_bin and actual['status'] == 124:
         cell_result = Result.TIMEOUT
       else:
         messages = []
@@ -758,8 +785,34 @@ class ColorOutput(object):
         '%(num_failed)d failed, %(num_timeout)d timeouts, '
         '%(num_skipped)d cases skipped\n' % stats.counters)
 
-  def EndCases(self, stats):
-    self._WriteStats(stats)
+  def _WriteShellSummary(self, sh_labels, stats):
+    # Reiterate header
+    self.f.write(_BOLD)
+    self.f.write('\t\t')
+    for sh_label in sh_labels:
+      self.f.write(sh_label)
+      self.f.write('\t')
+    self.f.write(_RESET)
+    self.f.write('\n')
+
+    # Write totals by cell.  TODO: Switch to spaces instead of tabs and
+    # right-justify?
+
+    for result in sorted(stats.nonzero_results):
+      self.f.write('\t%s' % ANSI_CELLS[result])
+      for sh_label in sh_labels:
+        self.f.write('\t%d' % stats.by_shell[sh_label][result])
+      self.f.write('\n')
+
+    # The bottom row is all the same, but it helps readability.
+    self.f.write('\ttotal')
+    for sh_label in sh_labels:
+      self.f.write('\t%d' % stats.counters['num_cases'])
+    self.f.write('\n')
+
+  def EndCases(self, sh_labels, stats):
+    print()
+    self._WriteShellSummary(sh_labels, stats)
 
 
 class AnsiOutput(ColorOutput):
@@ -773,6 +826,7 @@ class HtmlOutput(ColorOutput):
     self.spec_name = spec_name
     self.sh_labels = sh_labels  # saved from header
     self.cases = cases  # for linking to code
+    self.row_html = []  # buffered
 
   def _SourceLink(self, line_num, desc):
     return '<a href="%s.test.html#L%d">%s</a>' % (
@@ -795,7 +849,74 @@ class HtmlOutput(ColorOutput):
     <table>
     ''' % test_file)
 
-  def EndCases(self, stats):
+  def _WriteShellSummary(self, sh_labels, stats):
+    pass
+
+  def WriteHeader(self, shells):
+    f = cStringIO.StringIO()
+
+    f.write('''
+<thead>
+  <tr>
+  ''')
+
+    columns = ['case'] + [sh_label for sh_label, _ in shells]
+    for c in columns:
+      f.write('<td>%s</td>' % c)
+    f.write('<td class="case-desc">description</td>')
+
+    f.write('''
+  </tr>
+</thead>
+''')
+
+    self.row_html.append(f.getvalue())
+
+  def WriteRow(self, i, line_num, row, desc):
+    f = cStringIO.StringIO()
+    f.write('<tr>')
+    f.write('<td>%3d</td>' % i)
+
+    show_details = False
+
+    for result in row:
+      c = HTML_CELLS[result]
+      if result not in (Result.PASS, Result.TIMEOUT):  # nothing to show
+        show_details = True
+
+      f.write(c)
+      f.write('</td>')
+      f.write('\t')
+
+    f.write('<td class="case-desc">')
+    f.write(self._SourceLink(line_num, desc))
+    f.write('</td>')
+    f.write('</tr>\n')
+
+    # Show row with details link.
+    if show_details:
+      f.write('<tr>')
+      f.write('<td class="details-row"></td>')  # for the number
+
+      for col_index, result in enumerate(row):
+        f.write('<td class="details-row">')
+        if result != Result.PASS:
+          sh_label = self.sh_labels[col_index]
+          f.write('<a href="#details-%s-%s">details</a>' % (i, sh_label))
+        f.write('</td>')
+
+      f.write('<td class="details-row"></td>')  # for the description
+      f.write('</tr>\n')
+
+    self.row_html.append(f.getvalue())  # buffer it
+
+  def EndCases(self, sh_labels, stats):
+    self._WriteShellSummary(sh_labels, stats)
+
+    # Write all the buffered rows
+    for h in self.row_html:
+      self.f.write(h)
+
     self.f.write('</table>\n')
     self.f.write('<pre>')
     self._WriteStats(stats)
@@ -856,57 +977,23 @@ class HtmlOutput(ColorOutput):
 
     self.f.write('</table>')
 
-  def WriteHeader(self, shells):
-    # TODO: Use oil template language for this...
-    self.f.write('''
-<thead>
-  <tr>
-  ''')
 
-    columns = ['case'] + [sh_label for sh_label, _ in shells]
-    for c in columns:
-      self.f.write('<td>%s</td>' % c)
-    self.f.write('<td class="case-desc">description</td>')
-
-    self.f.write('''
-  </tr>
-</thead>
-''')
-
-  def WriteRow(self, i, line_num, row, desc):
-    self.f.write('<tr>')
-    self.f.write('<td>%3d</td>' % i)
-
-    show_details = False
-
-    for result in row:
-      c = HTML_CELLS[result]
-      if result not in (Result.PASS, Result.TIMEOUT):  # nothing to show
-        show_details = True
-
-      self.f.write(c)
-      self.f.write('</td>')
-      self.f.write('\t')
-
-    self.f.write('<td class="case-desc">')
-    self.f.write(self._SourceLink(line_num, desc))
-    self.f.write('</td>')
-    self.f.write('</tr>\n')
-
-    # Show row with details link.
-    if show_details:
-      self.f.write('<tr>')
-      self.f.write('<td class="details-row"></td>')  # for the number
-
-      for col_index, result in enumerate(row):
-        self.f.write('<td class="details-row">')
-        if result != Result.PASS:
-          sh_label = self.sh_labels[col_index]
-          self.f.write('<a href="#details-%s-%s">details</a>' % (i, sh_label))
-        self.f.write('</td>')
-
-      self.f.write('<td class="details-row"></td>')  # for the description
-      self.f.write('</tr>\n')
+def MakeTestEnv(opts):
+  if not opts.tmp_env:
+    raise RuntimeError('--tmp-env required')
+  if not opts.path_env:
+    raise RuntimeError('--path-env required')
+  env = {
+    'TMP': os.path.normpath(opts.tmp_env),  # no .. or .
+    'PATH': opts.path_env,
+    # Copied from my own environment.  For now, we want to test bash and other
+    # shells in utf-8 mode.
+    'LANG': 'en_US.UTF-8',
+  }
+  for p in opts.env_pair:
+    name, value = p.split('=', 1)
+    env[name] = value
+  return env
 
 
 def Options():
@@ -1046,24 +1133,10 @@ def main(argv):
 
   out.BeginCases(os.path.basename(test_file))
 
-  if not opts.tmp_env:
-    raise RuntimeError('--tmp-env required')
-  if not opts.path_env:
-    raise RuntimeError('--path-env required')
-  env = {
-    'TMP': os.path.normpath(opts.tmp_env),  # no .. or .
-    'PATH': opts.path_env,
-    # Copied from my own environment.  For now, we want to test bash and other
-    # shells in utf-8 mode.
-    'LANG': 'en_US.UTF-8',
-  }
-  for p in opts.env_pair:
-    name, value = p.split('=', 1)
-    env[name] = value
-
+  env = MakeTestEnv(opts)
   stats = RunCases(cases, case_predicate, shell_pairs, env, out, opts)
 
-  out.EndCases(stats)
+  out.EndCases([sh_label for sh_label, _ in shell_pairs], stats)
 
   stats.Set('osh_failures_allowed', opts.osh_failures_allowed)
   if opts.stats_file:
