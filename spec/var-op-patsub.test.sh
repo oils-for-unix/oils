@@ -70,7 +70,7 @@ echo status=$?
 ## BUG bash/mksh/zsh STDOUT:
 -abcde-
 status=0
-# END
+## END
 
 #### Pattern replacement ${v//} is not valid
 v='a/b/c'
@@ -82,7 +82,7 @@ echo status=$?
 ## BUG bash/mksh/zsh STDOUT:
 -a/b/c-
 status=0
-# END
+## END
 
 #### ${v/a} is the same as ${v/a/}  -- no replacement string
 v='aabb'

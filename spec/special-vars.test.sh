@@ -154,7 +154,7 @@ argv.py "${PIPESTATUS[@]}"
 ## N-I dash status: 2
 ## N-I zsh STDOUT:
 ['']
-## EN
+## END
 
 #### $RANDOM
 expr $0 : '.*/osh$' && exit 99  # Disabled because of spec-runner.sh issue

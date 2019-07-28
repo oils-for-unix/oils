@@ -271,7 +271,6 @@ argv.py "${ev["ev1"]}"
 ## END
 ## N-I mksh STDOUT:
 ['', '']
-
 ## END
 ## N-I mksh status: 1
 

@@ -121,12 +121,11 @@ class Tokenizer(object):
 
     self.next()
 
-  def _ClassifyLine(self, line):
+  def _ClassifyLine(self, line, lex_mode):
     if not line:  # empty
       return self.line_num, EOF, ''
 
-    # TODO: Get rid of
-    if not line.strip():
+    if lex_mode == LEX_OUTER and not line.strip() :
       return None
 
     if line.startswith('####'):
@@ -164,7 +163,7 @@ class Tokenizer(object):
       line = self.f.readline()
       self.line_num += 1
 
-      tok = self._ClassifyLine(line)
+      tok = self._ClassifyLine(line, lex_mode)
       if tok is not None:
         break
 
@@ -226,7 +225,7 @@ def ParseKeyValue(tokens, case):
 
       value_lines = []
       while True:
-        tokens.next()
+        tokens.next(lex_mode=LEX_KV)  # empty lines aren't skipped
         _, kind2, item2 = tokens.peek()
         if kind2 != PLAIN_LINE:
           break

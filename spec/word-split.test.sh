@@ -243,7 +243,7 @@ IFS=o
 echo hi
 ## STDOUT:
 hi
-##
+## END
 
 #### IFS and joining arrays
 IFS=:

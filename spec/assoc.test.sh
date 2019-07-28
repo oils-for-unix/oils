@@ -296,7 +296,7 @@ done | sort
 foo
 1 2 3
 42
-##
+## END
 
 #### Append to associative array value A['x']+='suffix'
 declare -A A
