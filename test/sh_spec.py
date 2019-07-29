@@ -789,6 +789,9 @@ class ColorOutput(object):
         '%(num_skipped)d cases skipped\n' % stats.counters)
 
   def _WriteShellSummary(self, sh_labels, stats):
+    if len(stats.nonzero_results) <= 1:  # Skip trivial summaries
+      return
+
     # Reiterate header
     self.f.write(_BOLD)
     self.f.write('\t\t')

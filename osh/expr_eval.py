@@ -558,9 +558,10 @@ class ArithEvaluator(_ExprEvaluator):
             e_die('Divide by zero', word=node.right.w)
           else:
             e_die('Divide by zero')
-      if op_id == Id.Arith_Percent:
 
+      if op_id == Id.Arith_Percent:
         return lhs % rhs
+
       if op_id == Id.Arith_DStar:
         # OVM is stripped of certain functions that are somehow necessary for
         # exponentiation.
@@ -599,7 +600,7 @@ class ArithEvaluator(_ExprEvaluator):
       if op_id == Id.Arith_DGreat:
         return lhs >> rhs
 
-      raise NotImplementedError(op_id)
+      raise AssertionError(op_id)
 
     if node.tag == arith_expr_e.TernaryOp:
       cond = self.Eval(node.cond)
@@ -608,7 +609,7 @@ class ArithEvaluator(_ExprEvaluator):
       else:
         return self.Eval(node.false_expr)
 
-    raise NotImplementedError("Unhandled node %r" % node.__class__.__name__)
+    raise AssertionError("Unhandled node %r" % node.__class__.__name__)
 
   def EvalWordToString(self, node):
     """
@@ -815,7 +816,7 @@ class BoolEvaluator(_ExprEvaluator):
             return False
           return st1.st_dev == st2.st_dev and st1.st_ino == st2.st_ino
 
-        e_die("%s isn't implemented", op_id)  # implicit location
+        raise AssertionError(op_id)
 
       if arg_type == bool_arg_type_e.Int:
         # NOTE: We assume they are constants like [[ 3 -eq 3 ]].

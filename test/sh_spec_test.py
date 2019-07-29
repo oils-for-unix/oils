@@ -9,7 +9,7 @@ import unittest
 
 from sh_spec import *  # module under test
 
-TEST1 = cStringIO.StringIO("""\
+TEST1 = """\
 #### Env binding in readonly/declare disallowed
 FOO=foo readonly v=$(tests/printenv.py FOO)
 echo "v=$v"
@@ -18,13 +18,10 @@ echo "v=$v"
 ## OK bash/dash/mksh stdout: v=None
 ## OK bash/dash/mksh status: 0
 ## status: 2
-""")
-
-TOKENS1 = list(LineIter(TEST1))
-CASE1 = ParseTestCase(Tokenizer(iter(TOKENS1)))
+"""
 
 
-TEST2 = cStringIO.StringIO("""\
+TEST2 = """\
 #### Multiline test case
 echo one
 echo two
@@ -41,24 +38,46 @@ dash2
 mksh1
 mksh2
 ## END
-""")
-TOKENS2 = list(LineIter(TEST2))
-CASE2 = ParseTestCase(Tokenizer(iter(TOKENS2)))
+"""
+
+
+def Slurp(s):
+  t = Tokenizer(cStringIO.StringIO(s))
+  tokens = []
+  while True:
+    tok = t.peek()
+    print(tok)
+    tokens.append(tok)
+    if tok[1] == EOF:
+      break
+    t.next()
+  return tokens
 
 
 class ShSpecTest(unittest.TestCase):
 
-  def testLineIter(self):
+  def setUp(self):
+    self.TOKENS1 = Slurp(TEST1)
+    t = Tokenizer(cStringIO.StringIO(TEST1))
+    self.CASE1 = ParseTestCase(t)
+    assert self.CASE1 is not None
+
+    self.TOKENS2 = Slurp(TEST2)
+    t = Tokenizer(cStringIO.StringIO(TEST2))
+    self.CASE2 = ParseTestCase(t)
+    assert self.CASE2 is not None
+
+  def testTokenizer(self):
     #pprint.pprint(TOKENS1)
 
-    types = [type_ for line_num, type_, value in TOKENS1]
+    types = [type_ for line_num, type_, value in self.TOKENS1]
     self.assertEqual(
         [ TEST_CASE_BEGIN, PLAIN_LINE, PLAIN_LINE,
           KEY_VALUE, KEY_VALUE, KEY_VALUE,
           EOF], types)
 
     #pprint.pprint(TOKENS2)
-    types2 = [type_ for line_num, type_, value in TOKENS2]
+    types2 = [type_ for line_num, type_, value in self.TOKENS2]
     self.assertEqual(
         [ TEST_CASE_BEGIN, PLAIN_LINE, PLAIN_LINE,
           KEY_VALUE, KEY_VALUE,
@@ -68,6 +87,9 @@ class ShSpecTest(unittest.TestCase):
           EOF], types2)
 
   def testParsed(self):
+    CASE1 = self.CASE1
+    CASE2 = self.CASE2
+
     print('CASE1')
     pprint.pprint(CASE1)
     print()
@@ -91,7 +113,7 @@ class ShSpecTest(unittest.TestCase):
         {'qualifier': 'OK', 'stdout': 'mksh1\nmksh2\n'}, CASE2['mksh'])
 
   def testCreateAssertions(self):
-    print(CreateAssertions(CASE1, 'bash'))
+    print(CreateAssertions(self.CASE1, 'bash'))
 
   def testRunCases(self):
     o = Options()
@@ -104,7 +126,7 @@ class ShSpecTest(unittest.TestCase):
     else:
       out_f = cStringIO.StringIO()
     out = AnsiOutput(out_f, False)
-    RunCases([CASE1], lambda i, case: True, shells, env, out, opts)
+    RunCases([self.CASE1], lambda i, case: True, shells, env, out, opts)
     print(repr(out.f.getvalue()))
 
 
