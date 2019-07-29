@@ -706,7 +706,7 @@ smoosh-html() {
     > _tmp/spec/smoosh.test.html
 
   local out=_tmp/spec/smoosh.html
-  time { smoosh --format html "$@" || true; } | tee $out
+  time { smoosh --format html --trace "$@" || true; } | tee $out
 
   echo
   echo "Wrote $out"

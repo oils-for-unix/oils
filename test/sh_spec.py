@@ -544,7 +544,7 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
     code = case['code']
 
     if opts.trace:
-      log('case %s', desc)
+      log('case %d: %s', i, desc)
 
     if not case_predicate(i, case):
       stats.Inc('num_skipped')
@@ -584,7 +584,7 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
         argv.extend(['-o', 'posix'])
 
       if opts.trace:
-        log('Running %s', argv)
+        log('\t%s', argv)
 
       cwd = env['TMP'] if opts.cd_tmp else None
       try:
@@ -799,7 +799,7 @@ class ColorOutput(object):
     # Write totals by cell.  TODO: Switch to spaces instead of tabs and
     # right-justify?
 
-    for result in sorted(stats.nonzero_results):
+    for result in sorted(stats.nonzero_results, reverse=True):
       self.f.write('\t%s' % ANSI_CELLS[result])
       for sh_label in sh_labels:
         self.f.write('\t%d' % stats.by_shell[sh_label][result])
@@ -851,7 +851,9 @@ class HtmlOutput(ColorOutput):
     ''' % test_file)
 
   def _WriteShellSummary(self, sh_labels, stats):
+    # NOTE: This table has multiple <thead>, which seems OK.
     self.f.write('''
+<thead>
   <tr class="table-header">
   ''')
 
@@ -861,6 +863,7 @@ class HtmlOutput(ColorOutput):
 
     self.f.write('''
   </tr>
+</thead>
 ''')
     # Write totals by cell.  TODO: Switch to spaces instead of tabs and
     # right-justify?
@@ -895,6 +898,7 @@ class HtmlOutput(ColorOutput):
     f = cStringIO.StringIO()
 
     f.write('''
+<thead>
   <tr class="table-header">
   ''')
 
@@ -905,14 +909,12 @@ class HtmlOutput(ColorOutput):
 
     f.write('''
   </tr>
+</thead>
 ''')
 
     self.row_html.append(f.getvalue())
 
   def WriteRow(self, i, line_num, row, desc):
-    # Show progress for HTML
-    log('Done with case %d', i)
-
     f = cStringIO.StringIO()
     f.write('<tr>')
     f.write('<td>%3d</td>' % i)
