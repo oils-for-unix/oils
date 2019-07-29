@@ -792,15 +792,24 @@ class BoolEvaluator(_ExprEvaluator):
       if arg_type == bool_arg_type_e.Path:
         try:
           st1 = posix.stat(s1)
+        except OSError:
+          st1 = None
+        try:
           st2 = posix.stat(s2)
         except OSError:
-          return False
+          st2 = None
 
-        # TODO: test newer than (mtime)
-        if op_id == Id.BoolBinary_nt:
-          return st1[stat.ST_MTIME] > st2[stat.ST_MTIME]
-        if op_id == Id.BoolBinary_ot:
-          return st1[stat.ST_MTIME] < st2[stat.ST_MTIME]
+        if op_id in (Id.BoolBinary_nt, Id.BoolBinary_ot):
+          # pretend it's a very old file
+          m1 = 0 if st1 is None else st1[stat.ST_MTIME]
+          m2 = 0 if st2 is None else st2[stat.ST_MTIME]
+          if op_id == Id.BoolBinary_nt:
+            return m1 > m2
+          else:
+            return m1 < m2
+
+        if op_id == Id.BoolBinary_ef:
+          raise NotImplementedError
 
         e_die("%s isn't implemented", op_id)  # implicit location
 
