@@ -24,7 +24,7 @@ tbody tr:hover {
   background-color: #eee;
 }
 
-tfoot {  /* summary row */
+.totals {
   font-weight: bold;
 }
 

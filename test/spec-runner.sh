@@ -68,6 +68,8 @@ readonly NUM_TASKS=400
 # - Sum columns in the table.
 
 _html-summary() {
+  local totals=$1
+
   # TODO: I think the style should be shared
   cat <<EOF
 <!DOCTYPE html>
@@ -85,13 +87,14 @@ _html-summary() {
 
 <table>
   <thead>
-    <tr>
-      <td>name</td> <td>Exit Code</td> <td>Elapsed Seconds</td>
-      <td># cases</td> <td>osh # passed</td> <td>osh # failed</td>
-      <td>osh failures allowed</td>
-      <td>osh ALT delta</td>
-    </tr>
+  <tr>
+    <td>name</td> <td>Exit Code</td> <td>Elapsed Seconds</td>
+    <td># cases</td> <td>osh # passed</td> <td>osh # failed</td>
+    <td>osh failures allowed</td>
+    <td>osh ALT delta</td>
+  </tr>
   </thead>
+  <!-- TOTALS -->
 EOF
 
   # Awk notes:
@@ -99,7 +102,7 @@ EOF
   # specify variable names.  You have to destructure it yourself.
   # - Lack of string interpolation is very annoying
 
-  head -n $NUM_TASKS _tmp/spec/MANIFEST.txt | awk '
+  head -n $NUM_TASKS _tmp/spec/MANIFEST.txt | awk -v totals=$totals '
   # Awk problem: getline errors are ignored by default!
   function error(path) {
     print "Error reading line from file: " path > "/dev/stderr"
@@ -168,17 +171,19 @@ EOF
   }
 
   END {
+    print "<tr class=totals>" >totals
+    print "<td>TOTAL (" num_rows " rows) </td>" >totals
+    print "<td>" sum_status "</td>" >totals
+    print "<td>" sum_wall_secs "</td>" >totals
+    print "<td>" sum_num_cases "</td>" >totals
+    print "<td>" sum_osh_num_passed "</td>" >totals
+    print "<td>" sum_osh_num_failed "</td>" >totals
+    print "<td>" sum_osh_failures_allowed "</td>" >totals
+    print "<td>" sum_osh_ALT_delta "</td>" >totals
+    print "</tr>" >totals
+
     print "<tfoot>"
-    print "<tr>"
-    print "<td>TOTAL (" num_rows " rows) </td>"
-    print "<td>" sum_status "</td>"
-    print "<td>" sum_wall_secs "</td>"
-    print "<td>" sum_num_cases "</td>"
-    print "<td>" sum_osh_num_passed "</td>"
-    print "<td>" sum_osh_num_failed "</td>"
-    print "<td>" sum_osh_failures_allowed "</td>"
-    print "<td>" sum_osh_ALT_delta "</td>"
-    print "</tr>"
+    print "<!-- TOTALS -->"
     print "</tfoot>"
 
     # For the console
@@ -208,7 +213,18 @@ EOF
 }
 
 html-summary() {
-  _html-summary > _tmp/spec/index.html
+  local totals=_tmp/spec/totals.html
+  local tmp=_tmp/spec/tmp.html
+
+  _html-summary $totals > $tmp
+
+  awk -v totals="$(cat $totals)" '
+  /<!-- TOTALS -->/ {
+    print totals
+    next
+  }
+  { print }
+  ' < $tmp > _tmp/spec/index.html
 
   echo
   echo "Results: file://$PWD/_tmp/spec/index.html"
