@@ -550,6 +550,8 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
       stats.Inc('num_skipped')
       continue
 
+    stats.Inc('num_cases_run')
+
     result_row = []
 
     for shell_index, (sh_label, sh_path) in enumerate(shells):
@@ -586,7 +588,11 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
       if opts.trace:
         log('\t%s', ' '.join(argv))
 
+      if opts.rm_tmp:  # Remove BEFORE the test case runs.
+        shutil.rmtree(env['TMP'])
+        os.mkdir(env['TMP'])
       cwd = env['TMP'] if opts.cd_tmp else None
+
       try:
         p = subprocess.Popen(argv, env=sh_env[shell_index], cwd=cwd,
                              stdin=PIPE, stdout=PIPE, stderr=PIPE)
@@ -604,10 +610,6 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
       p.stderr.close()
 
       actual['status'] = p.wait()
-
-      if opts.rm_tmp:
-        shutil.rmtree(env['TMP'])
-        os.mkdir(env['TMP'])
 
       if opts.timeout_bin and os.path.exists(timeout_file):
         cell_result = Result.TIMEOUT
@@ -808,7 +810,7 @@ class ColorOutput(object):
     # The bottom row is all the same, but it helps readability.
     self.f.write('\ttotal')
     for sh_label in sh_labels:
-      self.f.write('\t%d' % stats.counters['num_cases'])
+      self.f.write('\t%d' % stats.counters['num_cases_run'])
     self.f.write('\n')
 
   def EndCases(self, sh_labels, stats):
@@ -884,7 +886,7 @@ class HtmlOutput(ColorOutput):
     self.f.write('<tr>')
     self.f.write('<td>total</td>')
     for sh_label in sh_labels:
-      self.f.write('<td>%d</td>' % stats.counters['num_cases'])
+      self.f.write('<td>%d</td>' % stats.counters['num_cases_run'])
     self.f.write('<td></td>')
     self.f.write('</tr>\n')
 
