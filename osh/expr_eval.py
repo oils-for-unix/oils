@@ -760,7 +760,11 @@ class BoolEvaluator(_ExprEvaluator):
           except ValueError:
             # TODO: Need location information of [
             e_die('Invalid file descriptor %r', s, word=node.child)
-          return posix.isatty(fd)
+          try:
+            return posix.isatty(fd)
+          # fd is user input, and causes this exception in the binding.
+          except OverflowError:
+            return 1
 
         # See whether 'set -o' options have been set
         if op_id == Id.BoolUnary_o:
