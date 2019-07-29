@@ -132,6 +132,7 @@ SHELL OPTIONS
                   strict-errexit         Fail earlier, at command sub 
                   strict-control-flow    Do we need this?  Special builtins?
                   strict-word-eval       Expose unicode and slicing errors
+                  X strict-tilde         Tilde subst can result in error
                   X strict-backslash     Parse the sublanguage more strictly
                   X strict-glob          Parse the sublanguage more strictly
                   X strict-eval-builtin  Single arg
