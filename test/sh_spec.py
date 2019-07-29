@@ -531,11 +531,10 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
 
   timeout_dir = os.path.abspath('_tmp/spec/timeouts')
   try:
+    shutil.rmtree(timeout_dir)
     os.mkdir(timeout_dir)
   except OSError:
     pass
-  shutil.rmtree(timeout_dir)
-  os.mkdir(timeout_dir)
 
   # Now run each case, and print a table.
   for i, case in enumerate(cases):
