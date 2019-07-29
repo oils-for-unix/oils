@@ -88,10 +88,11 @@ _html-summary() {
 <table>
   <thead>
   <tr>
-    <td>name</td> <td>Exit Code</td> <td>Elapsed Seconds</td>
+    <td>name</td>
     <td># cases</td> <td>osh # passed</td> <td>osh # failed</td>
     <td>osh failures allowed</td>
     <td>osh ALT delta</td>
+    <td>Elapsed Seconds</td>
   </tr>
   </thead>
   <!-- TOTALS -->
@@ -160,26 +161,24 @@ EOF
     }
     print "<tr class=" css_class ">"
     print "<td><a href=" spec_name ".html>" spec_name "</a></td>"
-    print "<td>" status "</td>"
-    print "<td>" wall_secs "</td>"
     print "<td>" num_cases "</td>"
     print "<td>" osh_num_passed "</td>"
     print "<td>" osh_num_failed "</td>"
     print "<td>" osh_failures_allowed "</td>"
     print "<td>" osh_ALT_delta "</td>"
+    print "<td>" wall_secs "</td>"
     print "</tr>"
   }
 
   END {
     print "<tr class=totals>" >totals
     print "<td>TOTAL (" num_rows " rows) </td>" >totals
-    print "<td>" sum_status "</td>" >totals
-    print "<td>" sum_wall_secs "</td>" >totals
     print "<td>" sum_num_cases "</td>" >totals
     print "<td>" sum_osh_num_passed "</td>" >totals
     print "<td>" sum_osh_num_failed "</td>" >totals
     print "<td>" sum_osh_failures_allowed "</td>" >totals
     print "<td>" sum_osh_ALT_delta "</td>" >totals
+    print "<td>" sum_wall_secs "</td>" >totals
     print "</tr>" >totals
 
     print "<tfoot>"
