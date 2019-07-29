@@ -379,3 +379,20 @@ status=2
 [ present -nt absent ] || exit 1
 [ absent -ot present ] || exit 2
 ## status: 1
+
+#### -ef
+left=$TMP/left
+right=$TMP/right
+touch $left $right
+
+ln $TMP/left $TMP/hardlink
+
+test $left -ef $left && echo same
+test $left -ef $TMP/hardlink && echo same
+test $left -ef $right || echo different
+
+## STDOUT:
+same
+same
+different
+## END

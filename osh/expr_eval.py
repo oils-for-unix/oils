@@ -801,15 +801,19 @@ class BoolEvaluator(_ExprEvaluator):
 
         if op_id in (Id.BoolBinary_nt, Id.BoolBinary_ot):
           # pretend it's a very old file
-          m1 = 0 if st1 is None else st1[stat.ST_MTIME]
-          m2 = 0 if st2 is None else st2[stat.ST_MTIME]
+          m1 = 0 if st1 is None else st1.st_mtime
+          m2 = 0 if st2 is None else st2.st_mtime
           if op_id == Id.BoolBinary_nt:
             return m1 > m2
           else:
             return m1 < m2
 
         if op_id == Id.BoolBinary_ef:
-          raise NotImplementedError
+          if st1 is None:
+            return 1
+          if st2 is None:
+            return 1
+          return st1.st_dev == st2.st_dev and st1.st_ino == st2.st_ino
 
         e_die("%s isn't implemented", op_id)  # implicit location
 
