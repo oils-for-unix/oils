@@ -810,9 +810,9 @@ class BoolEvaluator(_ExprEvaluator):
 
         if op_id == Id.BoolBinary_ef:
           if st1 is None:
-            return 1
+            return False
           if st2 is None:
-            return 1
+            return False
           return st1.st_dev == st2.st_dev and st1.st_ino == st2.st_ino
 
         e_die("%s isn't implemented", op_id)  # implicit location
