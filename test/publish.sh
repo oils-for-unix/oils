@@ -37,6 +37,8 @@ versioned-dest() {
 }
 
 spec() {
+  ### Publish spec tests to a versioned directory on a web server
+
   local user=$1
   local host=$2
 
@@ -84,8 +86,9 @@ wild() {
   echo "Visit http://$dest/wild.wwz/"
 }
 
-# Publish static assets needed for the wild HTML pages.
 web-dir() {
+  ### Publish static assets needed for the wild HTML pages.
+
   local user=$1
   local host=${2:-${user}.org}  # default host looks like the name
   local branch=${3:-$(current-branch-name)}

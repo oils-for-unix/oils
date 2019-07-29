@@ -697,37 +697,63 @@ sh-spec-smoosh-env() {
 }
 
 smoosh() {
+  ### Run case smoosh from the console
+
   sh-spec-smoosh-env _tmp/smoosh.test.sh \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
-smoosh-html() {
-  test/spec-runner.sh _test-to-html _tmp/smoosh.test.sh \
-    > _tmp/spec/smoosh.test.html
-
-  local out=_tmp/spec/smoosh.html
-  time { smoosh --format html --trace "$@" || true; } | tee $out
-
-  echo
-  echo "Wrote $out"
-}
-
 smoosh-hang() {
-  # Need the smoosh timeout tool to run correctly.
+  ### Run case smoosh-hang from the console
 
+  # Need the smoosh timeout tool to run correctly.
   sh-spec-smoosh-env _tmp/smoosh-hang.test.sh \
     --timeout-bin "$SMOOSH_REPO/tests/util/timeout" \
     --timeout 1 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
+_one-html() {
+  local spec_name=$1
+  shift
+
+  test/spec-runner.sh _test-to-html _tmp/${spec_name}.test.sh \
+    > _tmp/spec/${spec_name}.test.html
+
+  local out=_tmp/spec/${spec_name}.html
+  time { $spec_name --format html --trace "$@" || true; } | tee $out
+
+  echo
+  echo "Wrote $out"
+}
+
+smoosh-html() {
+  _one-html smoosh
+}
+
+smoosh-hang-html() {
+  _one-html smoosh-hang
+}
+
 html-demo() {
+  ### Test for --format html
+
   local out=_tmp/spec/demo.html
   { builtin-special --format html "$@" || true; } | tee $out
   #{ array --format html "$@" || true; } | tee $out
 
   echo
   echo "Wrote $out"
+}
+
+all-and-smoosh() {
+  ### Run everything that we can publish
+
+  all
+
+  # These aren't all green/yellow yet, and are slow.
+  smoosh-html
+  smoosh-hang-html
 }
 
 "$@"

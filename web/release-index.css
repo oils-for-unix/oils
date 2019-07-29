@@ -24,13 +24,20 @@ code {
 /* END COMMON */
 
 .file-table {
-  width: 100%;
+  padding: 1em;
+  background-color: oldlace;
 }
+
+.file-table table {
+  width: 100%
+}
+
 .file-table-heading {
   color: darkgreen;
 }
 
 .filename {
+  font-size: large;
   font-family: monospace;
 }
 
@@ -40,7 +47,7 @@ code {
 .checksum {
   font-family: monospace;
   font-size: small;
-  color: #555;
+  color: #444;
 }
 
 .version-number {

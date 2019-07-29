@@ -584,7 +584,7 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
         argv.extend(['-o', 'posix'])
 
       if opts.trace:
-        log('\t%s', argv)
+        log('\t%s', ' '.join(argv))
 
       cwd = env['TMP'] if opts.cd_tmp else None
       try:

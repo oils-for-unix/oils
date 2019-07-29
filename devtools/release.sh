@@ -455,8 +455,8 @@ copy-web() {
 }
 
 this-release-links() {
-  echo '<div style="margin-left: 2em;">'
-  echo '<table class="file-table">'
+  echo '<div class="file-table">'
+  echo '<table>'
   _tarball-links-row-html "$OIL_VERSION"
   echo '</table>'
   echo '</div>'
