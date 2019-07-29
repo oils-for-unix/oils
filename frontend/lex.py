@@ -629,12 +629,16 @@ HISTORY_DEF = [
   # frontend/lex_test.py.
   R(r'!\??[a-zA-Z_/.][0-9a-zA-Z_/.]+[ \t\r\n]', Id.History_Search),
 
+  # Comment is until end of line
+  R(r"#[^\0]*", Id.History_Other),
+
   # Single quoted, e.g. 'a' or $'\n'.  Terminated by another single quote or
   # end of string.
   R(r"'[^'\0]*'?", Id.History_Other),
 
   # Runs of chars that are definitely not special
-  R(r"[^!\\'\0]+", Id.History_Other),
+  R(r"[^!\\'#\0]+", Id.History_Other),
+
   # Escaped characters.  \! disables history
   R(r'\\[^\0]', Id.History_Other),
   # Other single chars, like a trailing \ or !

@@ -78,6 +78,15 @@ class HistoryEvaluatorTest(unittest.TestCase):
     ])
     self.assertEqual('echo ${two:-}', hist_ev.Eval('echo !$'))
 
+    # Commented out
+    self.assertEqual('echo hi  # !$', hist_ev.Eval('echo hi  # !$'))
+
+    # This is not technically a comment, but it's hard to re-lex.
+    self.assertEqual('echo hi#!$', hist_ev.Eval('echo hi#!$'))
+
+    # Workaround: the comment char can be single-quoted.
+    self.assertEqual("echo 'hi#'${two:-}", hist_ev.Eval("echo 'hi#'!$"))
+
   def testParsing(self):
     hist_ev = _MakeHistoryEvaluator([
       'echo 1',
