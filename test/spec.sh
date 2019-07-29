@@ -706,7 +706,7 @@ smoosh-html() {
     > _tmp/spec/smoosh.test.html
 
   local out=_tmp/spec/smoosh.html
-  { smoosh --format html "$@" || true; } | tee $out
+  time { smoosh --format html "$@" || true; } | tee $out
 
   echo
   echo "Wrote $out"
@@ -724,6 +724,7 @@ smoosh-hang() {
 html-demo() {
   local out=_tmp/spec/demo.html
   { builtin-special --format html "$@" || true; } | tee $out
+  #{ array --format html "$@" || true; } | tee $out
 
   echo
   echo "Wrote $out"

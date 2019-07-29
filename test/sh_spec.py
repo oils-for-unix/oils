@@ -508,9 +508,10 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
   """
   #pprint.pprint(cases)
 
-  out.WriteHeader(shells)
+  sh_labels = [sh_label for sh_label, _ in shells]
 
-  stats = Stats(len(cases), [sh_label for sh_label, _ in shells])
+  out.WriteHeader(sh_labels)
+  stats = Stats(len(cases), sh_labels)
 
   # Make an environment for each shell.  $SH is the path to the shell, so we
   # can test flags, etc.
@@ -737,10 +738,10 @@ class ColorOutput(object):
   def BeginCases(self, test_file):
     self.f.write('%s\n' % test_file)
 
-  def WriteHeader(self, shells):
+  def WriteHeader(self, sh_labels):
     self.f.write(_BOLD)
     self.f.write('case\tline\t')  # for line number and test number
-    for sh_label, _ in shells:
+    for sh_label in sh_labels:
       self.f.write(sh_label)
       self.f.write('\t')
     self.f.write(_RESET)
@@ -850,29 +851,68 @@ class HtmlOutput(ColorOutput):
     ''' % test_file)
 
   def _WriteShellSummary(self, sh_labels, stats):
-    pass
+    self.f.write('''
+  <tr class="table-header">
+  ''')
 
-  def WriteHeader(self, shells):
+    columns = ['status'] + sh_labels + ['']
+    for c in columns:
+      self.f.write('<td>%s</td>' % c)
+
+    self.f.write('''
+  </tr>
+''')
+    # Write totals by cell.  TODO: Switch to spaces instead of tabs and
+    # right-justify?
+
+    for result in sorted(stats.nonzero_results, reverse=True):
+      self.f.write('<tr>')
+
+      self.f.write(HTML_CELLS[result])
+      self.f.write('</td> ')
+
+      for sh_label in sh_labels:
+        self.f.write('<td>%d</td>' % stats.by_shell[sh_label][result])
+
+      self.f.write('<td></td>')
+      self.f.write('</tr>\n')
+
+    # The bottom row is all the same, but it helps readability.
+    self.f.write('<tr>')
+    self.f.write('<td>total</td>')
+    for sh_label in sh_labels:
+      self.f.write('<td>%d</td>' % stats.counters['num_cases'])
+    self.f.write('<td></td>')
+    self.f.write('</tr>\n')
+
+    # Blank row for space.
+    self.f.write('<tr>')
+    for i in xrange(len(sh_labels) + 2):
+      self.f.write('<td style="height: 2em"></td>')
+    self.f.write('</tr>\n')
+
+  def WriteHeader(self, sh_labels):
     f = cStringIO.StringIO()
 
     f.write('''
-<thead>
-  <tr>
+  <tr class="table-header">
   ''')
 
-    columns = ['case'] + [sh_label for sh_label, _ in shells]
+    columns = ['case'] + sh_labels
     for c in columns:
       f.write('<td>%s</td>' % c)
     f.write('<td class="case-desc">description</td>')
 
     f.write('''
   </tr>
-</thead>
 ''')
 
     self.row_html.append(f.getvalue())
 
   def WriteRow(self, i, line_num, row, desc):
+    # Show progress for HTML
+    log('Done with case %d', i)
+
     f = cStringIO.StringIO()
     f.write('<tr>')
     f.write('<td>%3d</td>' % i)
