@@ -206,22 +206,6 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   C('(', Id.Op_LParen),
   C(')', Id.Op_RParen),
 
-  # TODO: Move into ShCommand state.  DBracket should use its own.
-  R(r'[0-9]*<', Id.Redir_Less),
-  R(r'[0-9]*>', Id.Redir_Great),
-  R(r'[0-9]*<<', Id.Redir_DLess),
-  R(r'[0-9]*<<<', Id.Redir_TLess),
-  R(r'[0-9]*>>', Id.Redir_DGreat),
-  R(r'[0-9]*<<-', Id.Redir_DLessDash),
-  R(r'[0-9]*>&', Id.Redir_GreatAnd),
-  R(r'[0-9]*<&', Id.Redir_LessAnd),
-  R(r'[0-9]*<>', Id.Redir_LessGreat),
-  R(r'[0-9]*>\|', Id.Redir_Clobber),
-
-  # No leading descriptor (2 is implied)
-  C(r'&>', Id.Redir_AndGreat),
-  C(r'&>>', Id.Redir_AndDGreat),
-
   R(r'[^\0]', Id.Lit_Other),  # any other single char is a literal
 ]
 
@@ -313,6 +297,22 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
   C('{', Id.Lit_LBrace),
   C('}', Id.Lit_RBrace),  # Also for var sub ${a}
   C(',', Id.Lit_Comma),
+
+  R(r'[0-9]*<', Id.Redir_Less),
+  R(r'[0-9]*>', Id.Redir_Great),
+  R(r'[0-9]*<<', Id.Redir_DLess),
+  R(r'[0-9]*<<<', Id.Redir_TLess),
+  R(r'[0-9]*>>', Id.Redir_DGreat),
+  R(r'[0-9]*<<-', Id.Redir_DLessDash),
+  R(r'[0-9]*>&', Id.Redir_GreatAnd),
+  R(r'[0-9]*<&', Id.Redir_LessAnd),
+  R(r'[0-9]*<>', Id.Redir_LessGreat),
+  R(r'[0-9]*>\|', Id.Redir_Clobber),
+
+  # No leading descriptor (2 is implied)
+  C(r'&>', Id.Redir_AndGreat),
+  C(r'&>>', Id.Redir_AndDGreat),
+
 ] + _KEYWORDS + _MORE_KEYWORDS + _UNQUOTED + _EXTGLOB_BEGIN
 
 # Preprocessing before Outer
@@ -330,6 +330,8 @@ LEXER_DEF[lex_mode_e.Backtick] = [
 LEXER_DEF[lex_mode_e.DBracket] = [
   C(']]', Id.Lit_DRightBracket),
   C('!', Id.KW_Bang),
+  C('<', Id.Op_Less),
+  C('>', Id.Op_Great),
 ] + ID_SPEC.LexerPairs(Kind.BoolUnary) + \
     ID_SPEC.LexerPairs(Kind.BoolBinary) + \
     _UNQUOTED + _EXTGLOB_BEGIN

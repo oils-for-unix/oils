@@ -870,10 +870,10 @@ class BoolEvaluator(_ExprEvaluator):
           self._SetRegexMatches(matches)
           return True
 
-        if op_id == Id.Redir_Less:  # pun
+        if op_id == Id.Op_Less:
           return s1 < s2
 
-        if op_id == Id.Redir_Great:  # pun
+        if op_id == Id.Op_Great:
           return s1 > s2
 
         raise AssertionError(op_id)  # should never happen

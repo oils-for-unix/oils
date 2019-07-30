@@ -204,6 +204,9 @@ def AddKinds(spec):
       'DLeftParen',
       'DRightParen',
 
+      'Less',     # <
+      'Great',    # >
+
       # Oil [] {}
       'LBracket',
       'RBracket',
@@ -512,8 +515,8 @@ def AddBoolKinds(spec):
   spec.AddBoolOp(Id['Op_DPipe'], bool_arg_type_e.Undefined)
   spec.AddBoolOp(Id['KW_Bang'], bool_arg_type_e.Undefined)
 
-  spec.AddBoolOp(Id['Redir_Less'], bool_arg_type_e.Str)
-  spec.AddBoolOp(Id['Redir_Great'], bool_arg_type_e.Str)
+  spec.AddBoolOp(Id['Op_Less'], bool_arg_type_e.Str)
+  spec.AddBoolOp(Id['Op_Great'], bool_arg_type_e.Str)
 
 
 def SetupTestBuiltin(id_spec,  # type: IdSpec
@@ -549,8 +552,8 @@ def SetupTestBuiltin(id_spec,  # type: IdSpec
     binary_lookup[token_str] = id_int
 
   # Some of these names don't quite match, but it keeps the BoolParser simple.
-  binary_lookup['<'] = Id['Redir_Less']
-  binary_lookup['>'] = Id['Redir_Great']
+  binary_lookup['<'] = Id['Op_Less']
+  binary_lookup['>'] = Id['Op_Great']
 
   # NOTE: -a and -o overloaded as unary prefix operators BoolUnary_a and
   # BoolUnary_o.  The parser rather than the tokenizer handles this.

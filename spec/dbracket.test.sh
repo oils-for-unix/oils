@@ -307,3 +307,19 @@ echo status=$?
 ## stdout-json: ""
 ## status: 2
 ## OK mksh status: 1
+
+#### [[ a 3< b ]] doesn't work (bug regression)
+[[ a 3< b ]]
+echo status=$?
+[[ a 3> b ]]
+echo status=$?
+## status: 2
+
+# Hm these shells use the same redirect trick that OSH used to!
+
+## BUG mksh/zsh status: 0
+## BUG mksh/zsh STDOUT:
+status=0
+status=1
+## END
+

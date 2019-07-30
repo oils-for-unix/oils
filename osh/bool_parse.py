@@ -215,8 +215,8 @@ class BoolParser(object):
       t2_b_kind = LookupKind(t2_op_id)
 
       #log('t2 %s / t2_op_id %s / t2_b_kind %s', t2, t2_op_id, t2_b_kind)
-      # Redir pun for < and >, -a and -o pun
-      if t2_b_kind in (Kind.BoolBinary, Kind.Redir):
+      # Op for < and >, -a and -o pun
+      if t2_b_kind == Kind.BoolBinary or t2_op_id in (Id.Op_Less, Id.Op_Great):
         left = self.cur_word
 
         self._Next()
