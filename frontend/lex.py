@@ -302,8 +302,12 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
 
   C('#', Id.Lit_Pound),  # For comments
 
+  # For static globbing, and [] for array literals
   C('[', Id.Lit_LBracket),  # e.g. A=(['x']=1)
   C(']', Id.Lit_RBracket),  # e.g. *.[ch]
+  # NOTE: Glob_Star and Glob_QMark are for dynamic parsing
+  C('*', Id.Lit_Star),
+  C('?', Id.Lit_QMark),
 
   # For brace expansion {a,b}
   C('{', Id.Lit_LBrace),
