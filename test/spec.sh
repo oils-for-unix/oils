@@ -235,6 +235,11 @@ osh-only() {
     $OSH_LIST "$@"
 }
 
+oil-options() {
+  sh-spec spec/oil-options.test.sh --cd-tmp \
+    $OSH_LIST "$@"
+}
+
 # Regress bugs
 bugs() {
   sh-spec spec/bugs.test.sh ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"

@@ -323,3 +323,19 @@ status=0
 status=1
 ## END
 
+#### tilde expansion in [[
+HOME=/home/bob
+[[ ~ == /home/bob ]]
+echo status=$?
+
+[[ ~ == */bob ]]
+echo status=$?
+
+[[ ~ == */z ]]
+echo status=$?
+
+## STDOUT:
+status=0
+status=0
+status=1
+## END

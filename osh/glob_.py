@@ -55,7 +55,7 @@ def LooksLikeStaticGlob(w):
 
   left_bracket = False
   for part in w.parts:
-    if isinstance(w.part, word_part__LiteralPart):
+    if isinstance(part, word_part__LiteralPart):
       id_ = part.token.id
       if id_ in (Id.Lit_Star, Id.Lit_QMark):
         return True

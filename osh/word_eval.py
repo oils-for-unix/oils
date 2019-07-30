@@ -11,11 +11,9 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.syntax_asdl import word as osh_word
 from _devbuild.gen.runtime_asdl import (
-    builtin_e,
+    builtin_e, effect_e,
     part_value, part_value_e, part_value__String,
-    value, value_e, value_t,
-    lvalue,
-    effect_e, arg_vector,
+    value, value_e, value_t, lvalue,
     assign_arg, cmd_value, cmd_value__Assign,
 )
 from core import process
@@ -1252,6 +1250,57 @@ class _WordEvaluator(object):
 
     return cmd_value.Assign(builtin_id, flags, flag_spids, assign_args)
 
+  def StaticEvalWordSequence2(self, words, allow_assign):
+    """Static word evaluation for Oil."""
+    #log('W %s', words)
+    strs = []
+    spids = []
+
+    n = 0
+    for i, w in enumerate(words):
+      # No globbing in the first arg!  That seems like a feature, not a bug.
+      if i == 0:
+        arg0 = self.EvalWordToString(w)  # respects strict-array
+        builtin_id = builtin.ResolveAssign(arg0.s)
+        if builtin_id != builtin_e.NONE:
+          # Same logic as legacy word eval, with no splitting
+          return self._EvalAssignBuiltin(builtin_id, arg0.s, words)
+
+      word_spid = word.LeftMostSpanForWord(w)
+      if glob_.LooksLikeStaticGlob(w):
+        val = self.EvalWordToString(w)  # respects strict-array
+        results = self.globber.Expand(val.s)
+        strs.extend(results)
+        for _ in results:
+          spids.append(word_spid)
+        continue
+
+      part_vals = []
+      self._EvalWordToParts(w, False, part_vals)  # not double quoted
+
+      if 0:
+        log('')
+        log('part_vals after _EvalWordToParts:')
+        for entry in part_vals:
+          log('  %s', entry)
+
+      # Still need to process
+      frames = _MakeWordFrames(part_vals)
+
+      if 0:
+        log('')
+        log('frames after _MakeWordFrames:')
+        for entry in frames:
+          log('  %s', entry)
+
+      # We will still allow x"${a[@]"x, though it's deprecated by @a, which
+      # disallows such expressions at parse time.
+      for frame in frames:
+        strs.append(''.join(s for (s, _, _) in frame))  # no split or glob
+        spids.append(word_spid)
+
+    return cmd_value.Argv(strs, spids)
+
   def EvalWordSequence2(self, words, allow_assign=False):
     """Turns a list of Words into a list of strings.
 
@@ -1263,6 +1312,9 @@ class _WordEvaluator(object):
     Returns:
       argv: list of string arguments, or None if there was an eval error
     """
+    if self.exec_opts.static_word_eval:
+      return self.StaticEvalWordSequence2(words, allow_assign)
+
     # Parse time:
     # 1. brace expansion.  TODO: Do at parse time.
     # 2. Tilde detection.  DONE at parse time.  Only if Id.Lit_Tilde is the
@@ -1276,7 +1328,6 @@ class _WordEvaluator(object):
     # 5. globbing -- several exec_opts affect this: nullglob, safeglob, etc.
 
     #log('W %s', words)
-    arg_vec = arg_vector()
     strs = []
     spids = []
 

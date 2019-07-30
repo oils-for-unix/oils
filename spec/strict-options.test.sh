@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-#
 # In this file:
 #
 # - strict-control-flow: break/continue at the top level should be fatal!
