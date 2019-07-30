@@ -188,17 +188,8 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
 
   # For tilde expansion. The list of chars is Lit_Chars, but WITHOUT the /.  We
   # want the next token after the tilde TildeLike token start with a /.
+  # NOTE: Happens in both ShCommand and DBracket modes.
   R(r'~[a-zA-Z0-9_.-]*', Id.Lit_TildeLike),
-
-  C('#', Id.Lit_Pound),  # For comments
-
-  C('[', Id.Lit_LBracket),  # e.g. A=(['x']=1)
-  C(']', Id.Lit_RBracket),  # e.g. *.[ch]
-
-  # For brace expansion {a,b}
-  C('{', Id.Lit_LBrace),
-  C('}', Id.Lit_RBrace),  # Also for var sub ${a}
-  C(',', Id.Lit_Comma),
 
   _SIGNIFICANT_SPACE,
 
@@ -215,6 +206,7 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   C('(', Id.Op_LParen),
   C(')', Id.Op_RParen),
 
+  # TODO: Move into ShCommand state.  DBracket should use its own.
   R(r'[0-9]*<', Id.Redir_Less),
   R(r'[0-9]*>', Id.Redir_Great),
   R(r'[0-9]*<<', Id.Redir_DLess),
@@ -233,7 +225,7 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   R(r'[^\0]', Id.Lit_Other),  # any other single char is a literal
 ]
 
-# In Outer and DBracket states.
+# In ShCommand and DBracket states.
 _EXTGLOB_BEGIN = [
   C('@(', Id.ExtGlob_At),
   C('*(', Id.ExtGlob_Star),
@@ -293,7 +285,6 @@ def IsKeyword(name):
   return name in OSH_KEYWORD_NAMES
 
 
-
 # These two can must be recognized in the Outer state, but can't nested within
 # [[.
 # Keywords have to be checked before _UNQUOTED so we get <KW_If "if"> instead
@@ -308,6 +299,16 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
   R(r'[a-zA-Z_][a-zA-Z0-9_]*\[', Id.Lit_ArrayLhsOpen),
   R(r'\]\+?=', Id.Lit_ArrayLhsClose),
   C('((', Id.Op_DLeftParen),
+
+  C('#', Id.Lit_Pound),  # For comments
+
+  C('[', Id.Lit_LBracket),  # e.g. A=(['x']=1)
+  C(']', Id.Lit_RBracket),  # e.g. *.[ch]
+
+  # For brace expansion {a,b}
+  C('{', Id.Lit_LBrace),
+  C('}', Id.Lit_RBrace),  # Also for var sub ${a}
+  C(',', Id.Lit_Comma),
 ] + _KEYWORDS + _MORE_KEYWORDS + _UNQUOTED + _EXTGLOB_BEGIN
 
 # Preprocessing before Outer
