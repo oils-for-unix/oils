@@ -329,7 +329,7 @@ LEXER_DEF[lex_mode_e.Backtick] = [
 # - Id.Op_DLeftParen can't be nested inside.
 LEXER_DEF[lex_mode_e.DBracket] = [
   C(']]', Id.Lit_DRightBracket),
-  C('!', Id.KW_Bang),
+  C('!', Id.Op_Bang),
   C('<', Id.Op_Less),
   C('>', Id.Op_Great),
 ] + ID_SPEC.LexerPairs(Kind.BoolUnary) + \

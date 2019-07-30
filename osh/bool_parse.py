@@ -181,7 +181,7 @@ class BoolParser(object):
     """
     Negated : '!'? Factor
     """
-    if self.op_id == Id.KW_Bang:
+    if self.op_id == Id.Op_Bang:
       self._Next()
       child = self.ParseFactor()
       return bool_expr.LogicalNot(child)

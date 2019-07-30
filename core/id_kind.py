@@ -204,15 +204,16 @@ def AddKinds(spec):
       'DLeftParen',
       'DRightParen',
 
+      # for [[ ]] language
       'Less',     # <
       'Great',    # >
+      'Bang',
 
       # Oil [] {}
       'LBracket',
       'RBracket',
       'LBrace',
       'RBrace',
-      'Bang',  # In Oil, this is an operator, not a keyword.  if !ls.
   ])
 
   spec.AddKind('Redir', [
@@ -513,7 +514,7 @@ def AddBoolKinds(spec):
   # logical, arity, arg_type
   spec.AddBoolOp(Id['Op_DAmp'], bool_arg_type_e.Undefined)
   spec.AddBoolOp(Id['Op_DPipe'], bool_arg_type_e.Undefined)
-  spec.AddBoolOp(Id['KW_Bang'], bool_arg_type_e.Undefined)
+  spec.AddBoolOp(Id['Op_Bang'], bool_arg_type_e.Undefined)
 
   spec.AddBoolOp(Id['Op_Less'], bool_arg_type_e.Str)
   spec.AddBoolOp(Id['Op_Great'], bool_arg_type_e.Str)
@@ -557,7 +558,7 @@ def SetupTestBuiltin(id_spec,  # type: IdSpec
 
   # NOTE: -a and -o overloaded as unary prefix operators BoolUnary_a and
   # BoolUnary_o.  The parser rather than the tokenizer handles this.
-  other_lookup['!'] = Id['KW_Bang']  # like [[ !
+  other_lookup['!'] = Id['Op_Bang']  # like [[ !
   other_lookup['('] = Id['Op_LParen']
   other_lookup[')'] = Id['Op_RParen']
 
