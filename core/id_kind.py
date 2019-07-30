@@ -169,6 +169,7 @@ def AddKinds(spec):
       'Chars', 'VarLike', 'ArrayLhsOpen', 'ArrayLhsClose',
       'Other', 'EscapedChar', 'RegexMeta',
       'LBracket', 'RBracket',  # for assoc array literals, static globs
+      'Star', 'QMark',
       # Either brace expansion or keyword for { and }
       'LBrace', 'RBrace', 'Comma',
       'DRightBracket',     # the ]] that matches [[, NOT a keyword

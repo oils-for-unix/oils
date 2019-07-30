@@ -8,32 +8,27 @@ except ImportError:
   from benchmarks import fake_libc as libc  # type: ignore
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import glob_part_e, glob_part
+from _devbuild.gen.syntax_asdl import (
+    glob_part_e, glob_part, word__CompoundWord, word_part__LiteralPart
+)
 from core import util
 #from core.util import log
 from frontend import match
 
 
-# TODO: Need LooksLikeExtGlob?
-#
-# pat='@(foo|bar)'
-# [[ foo == $pat ]] -- this works.
-#
-# Problem with extended glob -> ERE
-# x!(foo|bar)y
-
 def LooksLikeGlob(s):
-  """
+  # type: (str) -> bool
+  """Does this string look like a glob pattern?
+
+  Like other shells, OSH avoids calls to glob() unless there are glob
+  metacharacters.
+
   TODO: Reference lib/glob /   glob_pattern functions in bash
-  grep glob_pattern lib/glob/*
+  $ grep glob_pattern lib/glob/*
 
-  NOTE: Dash has CTLESC = -127.
-  Does that mean a string is an array of ints or shorts?  Not bytes?
-  How does it handle unicode/utf-8 then?
-  Nope it's using it with char* p.
-  So it dash only ASCII or what?  TODO: test it
-
-  Still need this for slow path / fast path of prefix/suffix/patsub ops.
+  Used:
+  1. in Globber below
+  2. for the slow path / fast path of prefix/suffix/patsub ops.
   """
   left_bracket = False
   i = 0
@@ -47,8 +42,27 @@ def LooksLikeGlob(s):
     elif c == '[':
       left_bracket = True
     elif c == ']' and left_bracket:
+      # It has at least one pair of balanced [].  Not bothering to check stray
+      # [ or ].
       return True
     i += 1
+  return False
+
+
+def LooksLikeStaticGlob(w):
+  # type: (word__CompoundWord) -> bool
+  """Like LooksLikeGlob, but for static words."""
+
+  left_bracket = False
+  for part in w.parts:
+    if isinstance(w.part, word_part__LiteralPart):
+      id_ = part.token.id
+      if id_ in (Id.Lit_Star, Id.Lit_QMark):
+        return True
+      elif id_ == Id.Lit_LBracket:
+        left_bracket = True
+      elif id_ == Id.Lit_RBracket and left_bracket:
+        return True
   return False
 
 

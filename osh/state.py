@@ -198,6 +198,9 @@ SHOPT_OPTION_NAMES = (
     # Not implemented
     'strict-backslash',  # BadBackslash
     'strict-glob',  # GlobParser
+
+    'static-word-eval',  # No splitting (arity isn't data-dependent)
+                         # Don't reparse program data as globs
 )
 
 
@@ -287,6 +290,8 @@ class ExecOpts(object):
 
     self.strict_glob = False  # glob_.py GlobParser has warnings
     self.strict_backslash = False  # BadBackslash for echo -e, printf, PS1, etc.
+
+    self.static_word_eval = False
 
     # Don't need flags -e and -n.  -e is $'\n', and -n is write.
     self.sane_echo = False
