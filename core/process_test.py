@@ -13,6 +13,7 @@ from core import test_lib
 from core import ui
 from core import util
 from core.util import log
+from frontend import parse_lib
 from osh import builtin
 from osh import state
 
@@ -28,7 +29,8 @@ def Banner(msg):
 # TODO: Put these all in a function.
 _ARENA = test_lib.MakeArena('process_test.py')
 _MEM = state.Mem('', [], {}, _ARENA)
-_EXEC_OPTS = state.ExecOpts(_MEM, None)
+_PARSE_OPTS = parse_lib.OilParseOptions()
+_EXEC_OPTS = state.ExecOpts(_MEM, _PARSE_OPTS, None)
 _JOB_STATE = process.JobState()
 _WAITER = process.Waiter(_JOB_STATE, _EXEC_OPTS)
 _ERRFMT = ui.ErrorFormatter(_ARENA)

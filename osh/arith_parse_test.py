@@ -14,7 +14,7 @@ import unittest
 from _devbuild.gen.types_asdl import lex_mode_e
 from core import test_lib
 from core import util
-
+from frontend import parse_lib
 from osh import cmd_exec
 from osh import expr_eval
 from osh import split
@@ -32,7 +32,8 @@ def ParseAndEval(code_str):
   print('node:', anode)
 
   mem = state.Mem('', [], {}, arena)
-  exec_opts = state.ExecOpts(mem, None)
+  parse_opts = parse_lib.OilParseOptions()
+  exec_opts = state.ExecOpts(mem, parse_opts, None)
 
   exec_deps = cmd_exec.Deps()
   splitter = split.SplitContext(mem)

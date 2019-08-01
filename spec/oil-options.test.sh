@@ -43,3 +43,18 @@ argv.py "$@"*.txt
 ['foo.txt']
 ['foo.txt']
 ## END
+
+#### oil-at
+words=(a 'b c')
+argv.py @words
+
+# TODO: This should be parse-oil-at, and only allowed at the top of the file?
+# Going midway is weird?  Then you can't bin/osh -n?
+
+shopt -s oil-at
+argv.py @words
+
+## STDOUT:
+['@words']
+['a', 'b c']
+## END

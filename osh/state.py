@@ -203,15 +203,18 @@ SHOPT_OPTION_NAMES = (
                          # Don't reparse program data as globs
 )
 
+SYNTAX_OPTION_NAMES = ('oil-at',)
+
 
 class ExecOpts(object):
 
-  def __init__(self, mem, readline):
+  def __init__(self, mem, syntax_opts, readline):
     """
     Args:
       mem: state.Mem, for SHELLOPTS
     """
     self.mem = mem
+    self.syntax_opts = syntax_opts
     # Used for 'set -o vi/emacs'
     self.readline = readline
 
@@ -387,10 +390,13 @@ class ExecOpts(object):
           setattr(self, attr, b)
       return
 
-    if opt_name not in SHOPT_OPTION_NAMES:
-      raise args.UsageError('got invalid option %r' % opt_name)
     attr = opt_name.replace('-', '_')  # for strict-*
-    setattr(self, attr, b)
+    if opt_name in SHOPT_OPTION_NAMES:
+      setattr(self, attr, b)
+    elif opt_name in SYNTAX_OPTION_NAMES:
+      setattr(self.syntax_opts, attr, b)
+    else:
+      raise args.UsageError('got invalid option %r' % opt_name)
 
   def ShowOptions(self, opt_names):
     """ For 'set -o' and 'shopt -p -o' """

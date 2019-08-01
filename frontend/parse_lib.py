@@ -192,11 +192,11 @@ def MakeGrammarNames(oil_grammar):
   return names
 
 
-class SyntaxOptions(object):
+class OilParseOptions(object):
   def __init__(self):
     # type: () -> None
     self.oil_at = False  # @foo, @array(a, b)
-    self.oil_at = True
+    #self.oil_at = True
 
 
 class ParseContext(object):
@@ -205,10 +205,11 @@ class ParseContext(object):
   In constrast, STATE is stored in the CommandParser and WordParser instances.
   """
 
-  def __init__(self, arena, aliases, oil_grammar, trail=None,
+  def __init__(self, arena, parse_opts, aliases, oil_grammar, trail=None,
                one_pass_parse=False):
     # type: (Arena, Dict[str, Any], Grammar, Optional[_BaseTrail], bool) -> None
     self.arena = arena
+    self.parse_opts = parse_opts
     self.aliases = aliases
 
     self.e_parser = expr_parse.ExprParser(oil_grammar)
@@ -225,10 +226,6 @@ class ParseContext(object):
     self.one_pass_parse = one_pass_parse
 
     self.p_printer = expr_parse.ParseTreePrinter(names)  # print raw nodes
-
-    # TODO: PushSyntax for each file according to __syntax__ pragmas.
-    # Have some way to set the global syntax for plugins, etc.
-    self.syntax = SyntaxOptions()
 
   def _MakeLexer(self, line_reader):
     # type: (_Reader) -> Lexer

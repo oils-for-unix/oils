@@ -110,7 +110,8 @@ def InitLexer(s, arena):
 def MakeTestEvaluator():
   arena = MakeArena('<MakeTestEvaluator>')
   mem = state.Mem('', [], {}, arena)
-  exec_opts = state.ExecOpts(mem, None)
+  parse_opts = parse_lib.OilParseOptions()
+  exec_opts = state.ExecOpts(mem, parse_opts, None)
 
   exec_deps = cmd_exec.Deps()
   exec_deps.splitter = split.SplitContext(mem)
@@ -123,9 +124,11 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
                  aliases=None, ext_prog=None):
   if parse_ctx:
     arena = parse_ctx.arena
+    parse_opts = parse_ctx.parse_opts
   else:
     arena or MakeArena('<InitExecutor>')
-    parse_ctx = parse_lib.ParseContext(arena, {}, None)
+    parse_opts = parse_lib.OilParseOptions()
+    parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
 
   mem = mem or state.Mem('', [], {}, arena)
   errfmt = ui.ErrorFormatter(arena)
@@ -160,7 +163,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   }
 
   # For the tests, we do not use 'readline'.
-  exec_opts = state.ExecOpts(mem, None)
+  exec_opts = state.ExecOpts(mem, parse_opts, None)
 
   debug_f = util.DebugFile(sys.stderr)
   exec_deps = cmd_exec.Deps()
@@ -229,7 +232,8 @@ def EvalCode(code_str, parse_ctx, comp_lookup=None, mem=None, aliases=None):
 
 def InitWordParser(code_str, arena=None):
   arena = arena or MakeArena('<test_lib>')
-  parse_ctx = parse_lib.ParseContext(arena, {}, None)
+  parse_opts = parse_lib.OilParseOptions()
+  parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
   line_reader, _ = InitLexer(code_str, arena)
   c_parser = parse_ctx.MakeOshParser(line_reader)
   # Hack
@@ -238,7 +242,8 @@ def InitWordParser(code_str, arena=None):
 
 def InitCommandParser(code_str, arena=None):
   arena = arena or MakeArena('<test_lib>')
-  parse_ctx = parse_lib.ParseContext(arena, {}, None)
+  parse_opts = parse_lib.OilParseOptions()
+  parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
   line_reader, _ = InitLexer(code_str, arena)
   c_parser = parse_ctx.MakeOshParser(line_reader)
   return c_parser
@@ -247,7 +252,8 @@ def InitCommandParser(code_str, arena=None):
 def InitOilCommandParser(code_str, arena=None):
   # NOTE: aliases don't exist in the Oil parser?
   arena = arena or MakeArena('')
-  parse_ctx = parse_lib.ParseContext(arena, {}, None)
+  parse_opts = parse_lib.OilParseOptions()
+  parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
   line_reader, _ = InitLexer(code_str, arena)
   c_parser = parse_ctx.MakeOilCommandParser(line_reader)
   return arena, c_parser

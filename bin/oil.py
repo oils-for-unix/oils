@@ -306,7 +306,8 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   job_state = process.JobState()
   fd_state = process.FdState(errfmt, job_state)
-  exec_opts = state.ExecOpts(mem, line_input)
+  parse_opts = parse_lib.OilParseOptions()
+  exec_opts = state.ExecOpts(mem, parse_opts, line_input)
 
   if opts.show_options:  # special case: sh -o
     exec_opts.ShowOptions([])
@@ -319,7 +320,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   if opts.one_pass_parse and not exec_opts.noexec:
     raise args.UsageError('--one-pass-parse requires noexec (-n)')
-  parse_ctx = parse_lib.ParseContext(arena, aliases, oil_grammar,
+  parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar,
                                      one_pass_parse=opts.one_pass_parse)
 
   # Three ParseContext instances SHARE aliases.
@@ -329,14 +330,15 @@ def ShellMain(lang, argv0, argv, login_shell):
   # one_pass_parse needs to be turned on to complete inside backticks.  TODO:
   # fix the issue where ` gets erased because it's not part of
   # set_completer_delims().
-  comp_ctx = parse_lib.ParseContext(comp_arena, aliases, oil_grammar,
-                                    trail=trail1,
+  comp_ctx = parse_lib.ParseContext(comp_arena, parse_opts, aliases,
+                                    oil_grammar, trail=trail1,
                                     one_pass_parse=True)
 
   hist_arena = alloc.Arena()
   hist_arena.PushSource(source.Unused('history'))
   trail2 = parse_lib.Trail()
-  hist_ctx = parse_lib.ParseContext(hist_arena, aliases, oil_grammar,
+  hist_ctx = parse_lib.ParseContext(hist_arena, parse_opts, aliases,
+                                    oil_grammar, 
                                     trail=trail2)
 
   # Deps helps manages dependencies.  These dependencies are circular:
@@ -735,8 +737,9 @@ def OshCommandMain(argv):
   loader = pyutil.GetResourceLoader()
   oil_grammar = meta.LoadOilGrammar(loader)
 
+  parse_opts = parse_lib.OilParseOptions()
   # parse `` and a[x+1]=bar differently
-  parse_ctx = parse_lib.ParseContext(arena, aliases, oil_grammar,
+  parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar,
                                      one_pass_parse=True)
 
   line_reader = reader.FileLineReader(f, arena)

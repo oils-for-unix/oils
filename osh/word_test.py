@@ -6,6 +6,7 @@ from __future__ import print_function
 
 import unittest
 
+from core import test_lib
 from core.meta import Id
 from core.util import log
 from frontend import parse_lib
@@ -18,7 +19,7 @@ from osh import word  # module under test
 def _Detect(test, word_str, expected):
   # TODO: This function could be moved to test_lib.
   log('-'*80)
-  arena, w = word_parse_test._assertReadWordWithArena(test, word_str)
+  w = word_parse_test._assertReadWord(test, word_str)
 
   actual = word.DetectAssignment(w)
   left_token, close_token, part_offset = actual
@@ -40,7 +41,9 @@ def _Detect(test, word_str, expected):
 
   test.assertEqual(expected_part_offset, part_offset)
 
-  parse_ctx = parse_lib.ParseContext(arena, {}, None)
+  arena = test_lib.MakeArena('word_test.py')
+  parse_opts = parse_lib.OilParseOptions()
+  parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
 
   if left_token and left_token.id in (Id.Lit_VarLike, Id.Lit_ArrayLhsOpen):
     more_env = []

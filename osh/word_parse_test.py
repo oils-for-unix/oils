@@ -26,18 +26,17 @@ from frontend import parse_lib
 from osh import word
 
 
-def _InitWordParser(s, arena=None):
+def _InitWordParser(s, oil_at=False, arena=None):
   arena = arena or test_lib.MakeArena('word_parse_test.py')
-  parse_ctx = parse_lib.ParseContext(arena, {}, None)
+  parse_opts = parse_lib.OilParseOptions()
+  parse_opts.oil_at = oil_at
+  parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
   line_reader, lexer = test_lib.InitLexer(s, arena)
   c_parser = parse_ctx.MakeOshParser(line_reader)
   return c_parser.w_parser  # hack
 
 
-def _assertReadWordWithArena(test, word_str):
-  print('\n---', word_str)
-  arena = test_lib.MakeArena('word_parse_test.py')
-  w_parser = _InitWordParser(word_str, arena=arena)
+def _assertReadWordWithArena(test, w_parser):
   w = w_parser.ReadWord(lex_mode_e.ShCommand)
   assert w is not None
   w.PrettyPrint()
@@ -48,30 +47,20 @@ def _assertReadWordWithArena(test, word_str):
       test_lib.TokenWordsEqual(
           osh_word.TokenWord(token(Id.Eof_Real, '')), w2),
       w2)
-
-  return arena, w
-
-
-def _assertReadWord(test, word_str):
-  _, w = _assertReadWordWithArena(test, word_str)
   return w
 
 
-def _assertSpanForWord(test, code_str):
-  arena, w = _assertReadWordWithArena(test, code_str)
-  span_id = word.LeftMostSpanForWord(w)
-
-  print(code_str)
-  print(span_id)
-
-  if span_id != const.NO_INTEGER:
-    span = arena.GetLineSpan(span_id)
-    print(span)
-
-
-def _assertReadWordFailure(test, word_str):
+def _assertReadWord(test, word_str, oil_at=False):
   print('\n---', word_str)
-  w_parser = _InitWordParser(word_str)
+  arena = test_lib.MakeArena('word_parse_test.py')
+  w_parser = _InitWordParser(word_str, arena=arena, oil_at=oil_at)
+  w = _assertReadWordWithArena(test, w_parser)
+  return w
+
+
+def _assertReadWordFailure(test, word_str, oil_at=False):
+  print('\n---', word_str)
+  w_parser = _InitWordParser(word_str, oil_at=oil_at)
   try:
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
   except util.ParseError as e:
@@ -79,6 +68,20 @@ def _assertReadWordFailure(test, word_str):
   else:
     w.PrettyPrint()
     test.fail('Expected a parser error, got %r' % w)
+
+
+def _assertSpanForWord(test, word_str):
+  arena = test_lib.MakeArena('word_parse_test.py')
+  w_parser = _InitWordParser(word_str, arena=arena)
+  w = _assertReadWordWithArena(test, w_parser)
+  span_id = word.LeftMostSpanForWord(w)
+
+  print(word_str)
+  print(span_id)
+
+  if span_id != const.NO_INTEGER:
+    span = arena.GetLineSpan(span_id)
+    print(span)
 
 
 def _GetSuffixOp(test, w):
@@ -370,26 +373,33 @@ class WordParserTest(unittest.TestCase):
     # Enable after checking __syntax__
     #return
 
-    w = _assertReadWord(self, '@words')
+    w = _assertReadWord(self, '@words', oil_at=True)
 
     # These are normal words
-    w = _assertReadWord(self, '.@words')
-    w = _assertReadWord(self, '.@words.')
+    w = _assertReadWord(self, '.@words', oil_at=True)
+    w = _assertReadWord(self, '.@words.', oil_at=True)
 
     # Errors
-    _assertReadWordFailure(self, '@words[')
-    _assertReadWordFailure(self, '@words.')
+    _assertReadWordFailure(self, '@words[', oil_at=True)
+    _assertReadWordFailure(self, '@words.', oil_at=True)
 
     # can't have parens unless it's the first token
     #_assertReadWordFailure(self, '.@notfunc()')
 
-    w = _assertReadWord(self, '@func()')
+    w = _assertReadWord(self, '@func()', oil_at=True)
 
-    w = _assertReadWord(self, '$(echo @func())')
-    w = _assertReadWord(self, '$(($(echo @func())))')
+    w = _assertReadWord(self, '$(echo @func())', oil_at=True)
+    w = _assertReadWord(self, '$(($(echo @func())))', oil_at=True)
 
-    # Can't have trailing
-    _assertReadWordFailure(self, '@func().')
+    # Can't have trailing chars
+    _assertReadWordFailure(self, '@func().', oil_at=True)
+
+  def testInlineFuncCall(self):
+    # Leading chars don't make sense
+    #_assertReadWordFailure(self, '.$func()', oil_at=True)
+
+    # Can't have trailing chars
+    _assertReadWordFailure(self, '$func().', oil_at=True)
 
   def testReadComment(self):
     # Test that we get Id.Op_Newline

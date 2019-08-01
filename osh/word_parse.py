@@ -94,9 +94,10 @@ class WordParser(object):
                lex_mode=lex_mode_e.ShCommand):
     # type: (ParseContext, Lexer, _Reader, lex_mode_t) -> None
     self.parse_ctx = parse_ctx
-    self.syntax = parse_ctx.syntax
     self.lexer = lexer
     self.line_reader = line_reader
+
+    self.parse_opts = parse_ctx.parse_opts
     self.Reset(lex_mode=lex_mode)
 
   def Reset(self, lex_mode=lex_mode_e.ShCommand):
@@ -1110,7 +1111,7 @@ class WordParser(object):
                     token=self.cur_token)
             done = True
 
-        elif (self.syntax.oil_at and self.token_type == Id.Lit_Splice and
+        elif (self.parse_opts.oil_at and self.token_type == Id.Lit_Splice and
               num_parts == 0):
 
           splice_token = self.cur_token
@@ -1124,14 +1125,13 @@ class WordParser(object):
 
           word.parts.append(part)
 
-          # Array literal must be the last part of the word.
+          # @words or @arrayfunc() must be the last part of the word
           self._Next(lex_mode)
           self._Peek()
           # EOF, whitespace, newline, Right_Subshell
           if self.token_kind not in self.KINDS_THAT_END_WORDS:
             p_die('Unexpected token after array splice',
                   token=self.cur_token)
-
           done = True
 
         else:  # not a literal with lookahead; append it
@@ -1140,12 +1140,28 @@ class WordParser(object):
       elif self.token_kind == Kind.VSub:
         vsub_token = self.cur_token
 
-        t = self.lexer.LookAhead(lex_mode_e.ShCommand)
-        if t.id == Id.Op_LParen:  # $strfunc(x)
-          arguments = self._ParseCallArguments(lex_mode)
-          part = word_part.FuncCall(vsub_token, arguments)
-        else:
-          part = word_part.SimpleVarSub(vsub_token)
+        part = word_part.SimpleVarSub(vsub_token)
+        if self.token_type == Id.VSub_DollarName and num_parts == 0:
+          t = self.lexer.LookAhead(lex_mode_e.ShCommand)
+          if t.id == Id.Op_LParen:  # $strfunc(x)
+            arguments = self._ParseCallArguments(lex_mode)
+            part = word_part.FuncCall(vsub_token, arguments)
+
+            # $strfunc() must be the last part of the word
+            #
+            # Unlike @splice, it makes some sense to allow this, but I feel
+            # it's too confusing?
+            #
+            # $f(1)$f(2) ->
+            # var a = f(1); var b = f(2); echo $a$b
+
+            self._Next(lex_mode)
+            self._Peek()
+            # EOF, whitespace, newline, Right_Subshell
+            if self.token_kind not in self.KINDS_THAT_END_WORDS:
+              p_die('Unexpected token after inline function call',
+                    token=self.cur_token)
+
         word.parts.append(part)
 
       elif self.token_kind == Kind.ExtGlob:
