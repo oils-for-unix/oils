@@ -196,7 +196,7 @@ class SyntaxOptions(object):
   def __init__(self):
     # type: () -> None
     self.oil_at = False  # @foo, @array(a, b)
-    #self.oil_at = True
+    self.oil_at = True
 
 
 class ParseContext(object):

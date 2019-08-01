@@ -191,6 +191,7 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   # NOTE: Happens in both ShCommand and DBracket modes.
   R(r'~[a-zA-Z0-9_.-]*', Id.Lit_TildeLike),
 
+  C('#', Id.Lit_Pound),  # For comments
   _SIGNIFICANT_SPACE,
 
   C('\n', Id.Op_Newline),
@@ -283,8 +284,6 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
   R(VAR_NAME_RE + '\[', Id.Lit_ArrayLhsOpen),
   R(r'\]\+?=', Id.Lit_ArrayLhsClose),
   C('((', Id.Op_DLeftParen),
-
-  C('#', Id.Lit_Pound),  # For comments
 
   # For static globbing, and [] for array literals
   C('[', Id.Lit_LBracket),  # e.g. A=(['x']=1)

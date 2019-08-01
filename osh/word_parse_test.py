@@ -368,7 +368,7 @@ class WordParserTest(unittest.TestCase):
 
   def testOilSplice(self):
     # Enable after checking __syntax__
-    return
+    #return
 
     w = _assertReadWord(self, '@words')
 
@@ -384,6 +384,9 @@ class WordParserTest(unittest.TestCase):
     #_assertReadWordFailure(self, '.@notfunc()')
 
     w = _assertReadWord(self, '@func()')
+
+    w = _assertReadWord(self, '$(echo @func())')
+    w = _assertReadWord(self, '$(($(echo @func())))')
 
     # Can't have trailing
     _assertReadWordFailure(self, '@func().')

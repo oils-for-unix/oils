@@ -1043,10 +1043,13 @@ class WordParser(object):
   def _ParseCallArguments(self, lex_mode):
     # type: (lex_mode_t) -> List[expr_t]
 
+    # Needed so ) doesn't get translated to something else
+    self.lexer.PushHint(Id.Op_RParen, Id.Op_RParen)
+
     arguments = []  # type: List[expr_t]
 
-    self._Next(lex_mode)  # Skip (
-    self._Peek()
+    self._Next(lex_mode)
+    self._Peek()  # We already looked ahead to assert this is (
     # TODO: Call into expression language.
     self._Next(lex_mode)  # Get )
     self._Peek()
