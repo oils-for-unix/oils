@@ -66,7 +66,7 @@ from _devbuild.gen.syntax_asdl import (
     command, command_t, command__ForExpr,
     suffix_op, bracket_op,
 
-    expr,
+    expr, expr_t,
     source,
 )
 # TODO: rename word -> osh_word in syntax.asdl
@@ -1070,9 +1070,13 @@ class WordParser(object):
         else:
           part = word_part.LiteralPart(self.cur_token)
 
-        word.parts.append(part)
+        # TODO: check __syntax__ oil-at
+        # @array or @func(a, b)
+        oil_at = False
+        #oil_at = True
 
         if self.token_type == Id.Lit_VarLike and num_parts == 0:  # foo=
+          word.parts.append(part)
           # Unfortunately it's awkward to pull the check for a=(1 2) up to
           # _ReadWord.
           t = self.lexer.LookAhead(lex_mode_e.ShCommand)
@@ -1090,12 +1094,8 @@ class WordParser(object):
                     token=self.cur_token)
             done = True
 
-        # TODO: check __syntax__ oil-at
-        # @array or @func(a, b)
-        oil_at = False
-        #oil_at = True
-        if oil_at and self.token_type == Id.Lit_Splice and num_parts == 0:
-          arguments = []
+        elif oil_at and self.token_type == Id.Lit_Splice and num_parts == 0:
+          arguments = []  # type: List[expr_t]
 
           splice_token = self.cur_token
           t = self.lexer.LookAhead(lex_mode_e.ShCommand)
@@ -1121,11 +1121,14 @@ class WordParser(object):
             p_die('Unexpected token after spliced function',
                   token=self.cur_token)
 
-          del word.parts[:]  # clear the literal
           word.parts.append(word_part.Splice(splice_token, arguments))
           done = True
 
+        else:  # not a literal with lookahead; append it
+          word.parts.append(part)
+
       elif self.token_kind == Kind.VSub:
+        # TODO: Also check for $stringfunc(a, b)
         part = word_part.SimpleVarSub(self.cur_token)
         word.parts.append(part)
 
