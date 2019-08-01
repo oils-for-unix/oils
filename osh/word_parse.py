@@ -90,9 +90,11 @@ if TYPE_CHECKING:
 
 class WordParser(object):
 
-  def __init__(self, parse_ctx, lexer, line_reader, lex_mode=lex_mode_e.ShCommand):
+  def __init__(self, parse_ctx, lexer, line_reader,
+               lex_mode=lex_mode_e.ShCommand):
     # type: (ParseContext, Lexer, _Reader, lex_mode_t) -> None
     self.parse_ctx = parse_ctx
+    self.syntax = parse_ctx.syntax
     self.lexer = lexer
     self.line_reader = line_reader
     self.Reset(lex_mode=lex_mode)
@@ -1038,6 +1040,22 @@ class WordParser(object):
     node.spids.append(paren_spid)
     return node
 
+  def _ParseCallArguments(self, lex_mode):
+    # type: (lex_mode_t) -> List[expr_t]
+
+    arguments = []  # type: List[expr_t]
+
+    self._Next(lex_mode)  # Skip (
+    self._Peek()
+    # TODO: Call into expression language.
+    self._Next(lex_mode)  # Get )
+    self._Peek()
+    if self.token_type != Id.Op_RParen:
+      p_die("Expected ), got %r", self.cur_token)
+
+    arguments.append(expr.Str('TODO'))
+    return arguments
+
   KINDS_THAT_END_WORDS = (Kind.Eof, Kind.WS, Kind.Op, Kind.Right)
 
   def _ReadCompoundWord(self, eof_type=Id.Undefined_Tok,
@@ -1070,11 +1088,6 @@ class WordParser(object):
         else:
           part = word_part.LiteralPart(self.cur_token)
 
-        # TODO: check __syntax__ oil-at
-        # @array or @func(a, b)
-        oil_at = False
-        #oil_at = True
-
         if self.token_type == Id.Lit_VarLike and num_parts == 0:  # foo=
           word.parts.append(part)
           # Unfortunately it's awkward to pull the check for a=(1 2) up to
@@ -1094,42 +1107,42 @@ class WordParser(object):
                     token=self.cur_token)
             done = True
 
-        elif oil_at and self.token_type == Id.Lit_Splice and num_parts == 0:
-          arguments = []  # type: List[expr_t]
+        elif (self.syntax.oil_at and self.token_type == Id.Lit_Splice and
+              num_parts == 0):
 
           splice_token = self.cur_token
+
           t = self.lexer.LookAhead(lex_mode_e.ShCommand)
-          if t.id == Id.Op_LParen:  # @func(
-            if num_parts != 0:
-              p_die("Unexpected ( after this token", token=self.cur_token)
+          if t.id == Id.Op_LParen:  # @arrayfunc(x)
+            arguments = self._ParseCallArguments(lex_mode)
+            part = word_part.FuncCall(splice_token, arguments)
+          else:
+            part = word_part.Splice(splice_token)
 
-            self._Next(lex_mode)  # Skip (
-            self._Peek()
-            # TODO: Call into expression language.
-            self._Next(lex_mode)  # Get )
-            self._Peek()
-            if self.token_type != Id.Op_RParen:
-              p_die("Expected ), got %r", self.cur_token)
-
-            arguments.append(expr.Str('TODO'))
+          word.parts.append(part)
 
           # Array literal must be the last part of the word.
           self._Next(lex_mode)
           self._Peek()
           # EOF, whitespace, newline, Right_Subshell
           if self.token_kind not in self.KINDS_THAT_END_WORDS:
-            p_die('Unexpected token after spliced function',
+            p_die('Unexpected token after array splice',
                   token=self.cur_token)
 
-          word.parts.append(word_part.Splice(splice_token, arguments))
           done = True
 
         else:  # not a literal with lookahead; append it
           word.parts.append(part)
 
       elif self.token_kind == Kind.VSub:
-        # TODO: Also check for $stringfunc(a, b)
-        part = word_part.SimpleVarSub(self.cur_token)
+        vsub_token = self.cur_token
+
+        t = self.lexer.LookAhead(lex_mode_e.ShCommand)
+        if t.id == Id.Op_LParen:  # $strfunc(x)
+          arguments = self._ParseCallArguments(lex_mode)
+          part = word_part.FuncCall(vsub_token, arguments)
+        else:
+          part = word_part.SimpleVarSub(vsub_token)
         word.parts.append(part)
 
       elif self.token_kind == Kind.ExtGlob:

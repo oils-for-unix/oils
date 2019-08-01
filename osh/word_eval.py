@@ -941,6 +941,28 @@ class _WordEvaluator(object):
         self._EvalWordToParts(w, False, part_vals)  # eval like not quoted?
       part_vals.append(part_value.String(')', False, False))  # closing )
 
+    elif part.tag == word_part_e.Splice:
+      var_name = part.name.val[1:]
+      val = self.mem.GetVar(var_name)
+      if val.tag != value_e.StrArray:
+        e_die("Can't splice non-array %r", var_name, part=part)
+
+      v = part_value.Array(val.strs)
+      part_vals.append(v)
+
+    elif part.tag == word_part_e.FuncCall:
+      func_name = part.name.val[1:]
+      id_ = part.name.id
+      if id_ == Id.VSub_DollarName:
+        typ = value_e.Str
+      elif id_ == Id.Lit_Splice:
+        # No dict?
+        typ = value_e.StrArray
+      else:
+        raise AssertionError(id_)
+
+      raise NotImplementedError('FuncCall')
+
     else:
       raise AssertionError(part.__class__.__name__)
 

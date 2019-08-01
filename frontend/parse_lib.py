@@ -192,13 +192,21 @@ def MakeGrammarNames(oil_grammar):
   return names
 
 
+class SyntaxOptions(object):
+  def __init__(self):
+    # type: () -> None
+    self.oil_at = False  # @foo, @array(a, b)
+    #self.oil_at = True
+
+
 class ParseContext(object):
   """Context shared between the mutually recursive Command and Word parsers.
 
   In constrast, STATE is stored in the CommandParser and WordParser instances.
   """
 
-  def __init__(self, arena, aliases, oil_grammar, trail=None, one_pass_parse=False):
+  def __init__(self, arena, aliases, oil_grammar, trail=None,
+               one_pass_parse=False):
     # type: (Arena, Dict[str, Any], Grammar, Optional[_BaseTrail], bool) -> None
     self.arena = arena
     self.aliases = aliases
@@ -218,6 +226,10 @@ class ParseContext(object):
 
     self.p_printer = expr_parse.ParseTreePrinter(names)  # print raw nodes
 
+    # TODO: PushSyntax for each file according to __syntax__ pragmas.
+    # Have some way to set the global syntax for plugins, etc.
+    self.syntax = SyntaxOptions()
+
   def _MakeLexer(self, line_reader):
     # type: (_Reader) -> Lexer
     """Helper function.
@@ -234,6 +246,7 @@ class ParseContext(object):
     lx = self._MakeLexer(line_reader)
     if emit_comp_dummy:
       lx.EmitCompDummy()  # A special token before EOF!
+
     w_parser = word_parse.WordParser(self, lx, line_reader)
     c_parser = cmd_parse.CommandParser(self, w_parser, lx, line_reader,
                                        aliases_in_flight=aliases_in_flight)

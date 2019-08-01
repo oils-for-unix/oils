@@ -123,8 +123,10 @@ module syntax
     -- note: optional int may need special handling in ASDL
   -- extended globs are parsed statically, unlike globs
   | ExtGlobPart(token op, word* arms)
-    -- @array or @arrayfunc(1, 2)
-  | Splice(token name, expr* arguments)
+    -- @array
+  | Splice(token name)
+    -- $strfunc(x) and @arrayfunc(x)
+  | FuncCall(token name, expr* arguments)
 
   word = 
     -- for RHS of 'x=', 'declare x=', and the argument in "${x:-}"
