@@ -167,6 +167,7 @@ def AddKinds(spec):
 
   spec.AddKind('Lit', [
       'Chars', 'VarLike', 'ArrayLhsOpen', 'ArrayLhsClose',
+      'Splice',  # @func(a, b)
       'Other', 'EscapedChar', 'RegexMeta',
       'LBracket', 'RBracket',  # for assoc array literals, static globs
       'Star', 'QMark',

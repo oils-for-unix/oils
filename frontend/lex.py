@@ -279,8 +279,8 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
 
   # e.g. beginning of NAME=val, which will always be longer than
   # _LITERAL_WHITELIST_REGEX.
-  R(r'[a-zA-Z_][a-zA-Z0-9_]*\+?=', Id.Lit_VarLike),
-  R(r'[a-zA-Z_][a-zA-Z0-9_]*\[', Id.Lit_ArrayLhsOpen),
+  R(VAR_NAME_RE + '\+?=', Id.Lit_VarLike),
+  R(VAR_NAME_RE + '\[', Id.Lit_ArrayLhsOpen),
   R(r'\]\+?=', Id.Lit_ArrayLhsClose),
   C('((', Id.Op_DLeftParen),
 
@@ -298,7 +298,8 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
   C('}', Id.Lit_RBrace),  # Also for var sub ${a}
   C(',', Id.Lit_Comma),
 
-  C('@', Id.Lit_At),  # for Oil splicing
+  # @array and @func(1, c)
+  R('@' + VAR_NAME_RE, Id.Lit_Splice),  # for Oil splicing
 
   R(r'[0-9]*<', Id.Redir_Less),
   R(r'[0-9]*>', Id.Redir_Great),

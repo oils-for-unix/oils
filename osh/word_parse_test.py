@@ -348,6 +348,7 @@ class WordParserTest(unittest.TestCase):
         '${foo\\\n}',  # VSub_2
         '${foo#\\\nyo}',  # VS_ARG_UNQ
         '"${foo#\\\nyo}"',  # VS_ARG_DQ
+
     ]
     for expr in CASES:
       print('---')
@@ -364,6 +365,28 @@ class WordParserTest(unittest.TestCase):
 
         if word.CommandId(w) == Id.Eof_Real:
           break
+
+  def testOilSplice(self):
+    # Enable after checking __syntax__
+    return
+
+    w = _assertReadWord(self, '@words')
+
+    # These are normal words
+    w = _assertReadWord(self, '.@words')
+    w = _assertReadWord(self, '.@words.')
+
+    # Errors
+    _assertReadWordFailure(self, '@words[')
+    _assertReadWordFailure(self, '@words.')
+
+    # can't have parens unless it's the first token
+    #_assertReadWordFailure(self, '.@notfunc()')
+
+    w = _assertReadWord(self, '@func()')
+
+    # Can't have trailing
+    _assertReadWordFailure(self, '@func().')
 
   def testReadComment(self):
     # Test that we get Id.Op_Newline

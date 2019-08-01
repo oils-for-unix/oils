@@ -66,6 +66,7 @@ from _devbuild.gen.syntax_asdl import (
     command, command_t, command__ForExpr,
     suffix_op, bracket_op,
 
+    expr,
     source,
 )
 # TODO: rename word -> osh_word in syntax.asdl
@@ -1037,6 +1038,8 @@ class WordParser(object):
     node.spids.append(paren_spid)
     return node
 
+  KINDS_THAT_END_WORDS = (Kind.Eof, Kind.WS, Kind.Op, Kind.Right)
+
   def _ReadCompoundWord(self, eof_type=Id.Undefined_Tok,
                         lex_mode=lex_mode_e.ShCommand, empty_ok=True):
     # type: (Id_t, lex_mode_t, bool) -> word__CompoundWord
@@ -1069,13 +1072,11 @@ class WordParser(object):
 
         word.parts.append(part)
 
-        if self.token_type == Id.Lit_VarLike:  # foo=
+        if self.token_type == Id.Lit_VarLike and num_parts == 0:  # foo=
           # Unfortunately it's awkward to pull the check for a=(1 2) up to
           # _ReadWord.
           t = self.lexer.LookAhead(lex_mode_e.ShCommand)
           if t.id == Id.Op_LParen:
-            if num_parts != 0:
-              p_die("Unexpected ( after this token", token=self.cur_token)
             self.lexer.PushHint(Id.Op_RParen, Id.Right_ArrayLiteral)
             part2 = self._ReadArrayLiteralPart()
             word.parts.append(part2)
@@ -1084,10 +1085,45 @@ class WordParser(object):
             self._Next(lex_mode)
             self._Peek()
             # EOF, whitespace, newline, Right_Subshell
-            if self.token_kind not in (Kind.Eof, Kind.WS, Kind.Op, Kind.Right):
+            if self.token_kind not in self.KINDS_THAT_END_WORDS:
               p_die('Unexpected token after array literal',
                     token=self.cur_token)
             done = True
+
+        # TODO: check __syntax__ oil-at
+        # @array or @func(a, b)
+        oil_at = False
+        #oil_at = True
+        if oil_at and self.token_type == Id.Lit_Splice and num_parts == 0:
+          arguments = []
+
+          splice_token = self.cur_token
+          t = self.lexer.LookAhead(lex_mode_e.ShCommand)
+          if t.id == Id.Op_LParen:  # @func(
+            if num_parts != 0:
+              p_die("Unexpected ( after this token", token=self.cur_token)
+
+            self._Next(lex_mode)  # Skip (
+            self._Peek()
+            # TODO: Call into expression language.
+            self._Next(lex_mode)  # Get )
+            self._Peek()
+            if self.token_type != Id.Op_RParen:
+              p_die("Expected ), got %r", self.cur_token)
+
+            arguments.append(expr.Str('TODO'))
+
+          # Array literal must be the last part of the word.
+          self._Next(lex_mode)
+          self._Peek()
+          # EOF, whitespace, newline, Right_Subshell
+          if self.token_kind not in self.KINDS_THAT_END_WORDS:
+            p_die('Unexpected token after spliced function',
+                  token=self.cur_token)
+
+          del word.parts[:]  # clear the literal
+          word.parts.append(word_part.Splice(splice_token, arguments))
+          done = True
 
       elif self.token_kind == Kind.VSub:
         part = word_part.SimpleVarSub(self.cur_token)
