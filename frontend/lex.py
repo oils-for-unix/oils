@@ -298,6 +298,8 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
   C('}', Id.Lit_RBrace),  # Also for var sub ${a}
   C(',', Id.Lit_Comma),
 
+  C('@', Id.Lit_At),  # for Oil splicing
+
   R(r'[0-9]*<', Id.Redir_Less),
   R(r'[0-9]*>', Id.Redir_Great),
   R(r'[0-9]*<<', Id.Redir_DLess),

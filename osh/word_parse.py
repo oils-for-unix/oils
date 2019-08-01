@@ -1070,7 +1070,8 @@ class WordParser(object):
         word.parts.append(part)
 
         if self.token_type == Id.Lit_VarLike:  # foo=
-          # Unfortunately it's awkward to pull the check for a=(1 2) up to _ReadWord.
+          # Unfortunately it's awkward to pull the check for a=(1 2) up to
+          # _ReadWord.
           t = self.lexer.LookAhead(lex_mode_e.ShCommand)
           if t.id == Id.Op_LParen:
             if num_parts != 0:
@@ -1078,8 +1079,15 @@ class WordParser(object):
             self.lexer.PushHint(Id.Op_RParen, Id.Right_ArrayLiteral)
             part2 = self._ReadArrayLiteralPart()
             word.parts.append(part2)
+
+            # Array literal must be the last part of the word.
             self._Next(lex_mode)
-            done = True  # array literal is the last part of a word
+            self._Peek()
+            # EOF, whitespace, newline, Right_Subshell
+            if self.token_kind not in (Kind.Eof, Kind.WS, Kind.Op, Kind.Right):
+              p_die('Unexpected token after array literal',
+                    token=self.cur_token)
+            done = True
 
       elif self.token_kind == Kind.VSub:
         part = word_part.SimpleVarSub(self.cur_token)

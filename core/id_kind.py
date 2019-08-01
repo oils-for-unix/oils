@@ -177,7 +177,7 @@ def AddKinds(spec):
       'Pound',             #  for comment or VAROP state
       'Slash', 'Percent',  #  / # % for patsub, NOT unary op
       'Digits',            # for lex_mode_e.Arith
-      'At',                # for ${a[@]}, in lex_mode_e.Arith
+      'At',                # for ${a[@]}, in lex_mode_e.Arith, and Oil splice
       'ArithVarLike',      # for $((var+1)).  Distinct from Lit_VarLike 'var='
       'CompDummy',        # A fake Lit_* token to get partial words during
                            # completion
