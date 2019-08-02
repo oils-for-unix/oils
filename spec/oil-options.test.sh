@@ -100,3 +100,21 @@ $SH -O oil-parse-at -c 'words=(a "b c"); argv.py @words'
 ['@words']
 ['a', 'b c']
 ## END
+
+#### @a splices into $0
+shopt -s static-word-eval oil-parse-at
+a=(echo hi)
+"${a[@]}"
+@a
+
+# Bug fix
+shopt -s strict-array
+
+"${a[@]}"
+@a
+## STDOUT:
+hi
+hi
+hi
+hi
+## END

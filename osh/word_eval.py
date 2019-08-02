@@ -1280,15 +1280,23 @@ class _WordEvaluator(object):
 
     n = 0
     for i, w in enumerate(words):
+      word_spid = word.LeftMostSpanForWord(w)
+
       # No globbing in the first arg!  That seems like a feature, not a bug.
       if i == 0:
-        arg0 = self.EvalWordToString(w)  # respects strict-array
-        builtin_id = builtin.ResolveAssign(arg0.s)
-        if builtin_id != builtin_e.NONE:
-          # Same logic as legacy word eval, with no splitting
-          return self._EvalAssignBuiltin(builtin_id, arg0.s, words)
+        strs0 = self._EvalWordToArgv(w)  # respects strict-array
+        if len(strs0) == 1:
+          arg0 = strs0[0]
+          builtin_id = builtin.ResolveAssign(arg0)
+          if builtin_id != builtin_e.NONE:
+            # Same logic as legacy word eval, with no splitting
+            return self._EvalAssignBuiltin(builtin_id, arg0, words)
 
-      word_spid = word.LeftMostSpanForWord(w)
+        strs.extend(strs0)
+        for _ in strs0:
+          spids.append(word_spid)
+        continue
+
       if glob_.LooksLikeStaticGlob(w):
         val = self.EvalWordToString(w)  # respects strict-array
         results = self.globber.Expand(val.s)

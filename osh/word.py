@@ -97,7 +97,8 @@ def _EvalWordPart(part):
   elif part.tag in (
       word_part_e.CommandSubPart, word_part_e.SimpleVarSub,
       word_part_e.BracedVarSub, word_part_e.TildeSubPart,
-      word_part_e.ArithSubPart, word_part_e.ExtGlobPart):
+      word_part_e.ArithSubPart, word_part_e.ExtGlobPart,
+      word_part_e.Splice):
     return False, '', False
 
   else:
