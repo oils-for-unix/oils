@@ -27,15 +27,26 @@ $SH -i -c 'echo $-' | grep -q i && echo TRUE
 FALSE
 TRUE
 ## END
-#### pass short options on command line
+#### pass short options like sh -e
 $SH -e -c 'false; echo status=$?'
 ## stdout-json: ""
 ## status: 1
 
-#### pass long options on command line
+#### pass long options like sh -o errexit
 $SH -o errexit -c 'false; echo status=$?'
 ## stdout-json: ""
 ## status: 1
+
+#### pass shopt options like sh -O nullglob
+$SH +O nullglob -c 'echo foo *.nonexistent bar'
+$SH -O nullglob -c 'echo foo *.nonexistent bar'
+## STDOUT:
+foo *.nonexistent bar
+foo bar
+## END
+## N-I dash/mksh stdout-json: ""
+## N-I dash status: 2
+## N-I mksh status: 1
 
 #### can continue after unknown option
 # dash and mksh make this a fatal error no matter what.

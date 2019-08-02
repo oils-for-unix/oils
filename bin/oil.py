@@ -313,7 +313,7 @@ def ShellMain(lang, argv0, argv, login_shell):
     exec_opts.ShowOptions([])
     return 0
 
-  builtin.SetExecOpts(exec_opts, opts.opt_changes)
+  builtin.SetExecOpts(exec_opts, opts.opt_changes, opts.shopt_changes)
   aliases = {}  # feedback between runtime and parser
 
   oil_grammar = meta.LoadOilGrammar(loader)

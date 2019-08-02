@@ -92,3 +92,11 @@ lib.sh
 main.sh
 ['a', 'b c']
 ## END
+
+#### oil-parse-at can be specified through sh -O
+$SH +O oil-parse-at -c 'words=(a "b c"); argv.py @words'
+$SH -O oil-parse-at -c 'words=(a "b c"); argv.py @words'
+## STDOUT:
+['@words']
+['a', 'b c']
+## END

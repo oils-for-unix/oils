@@ -77,6 +77,7 @@ class _Attributes(object):
 
   def __init__(self, defaults):
     self.opt_changes = []  # e.g. set -o errexit +o nounset
+    self.shopt_changes = []  # e.g. -O nullglob +O nullglob
     self.show_options = False  # 'set -o' without an argument
     self.actions = []  # for compgen -A
     self.saw_double_dash = False  # for set --
@@ -299,8 +300,9 @@ class SetOption(_Action):
 class SetNamedOption(_Action):
   """Set a named option to a boolean, for 'set +o errexit' """
 
-  def __init__(self):
+  def __init__(self, shopt=False):
     self.names = []
+    self.shopt = shopt
 
   def Add(self, name):
     self.names.append(name)
@@ -320,7 +322,9 @@ class SetNamedOption(_Action):
     # Validate the option name against a list of valid names.
     if attr_name not in self.names:
       raise UsageError('got invalid option %r' % arg, span_id=arg_r.SpanId())
-    out.opt_changes.append((attr_name, b))
+
+    changes = out.shopt_changes if self.shopt else out.opt_changes
+    changes.append((attr_name, b))
 
 
 class SetAction(_Action):
@@ -383,6 +387,7 @@ class FlagsAndOptions(object):
     self.defaults = {}
 
     self.actions_short['o'] = SetNamedOption()  # -o and +o
+    self.actions_short['O'] = SetNamedOption(shopt=True)  # -O and +O
 
   def InitActions(self):
     self.actions_short['A'] = SetNamedAction()  # -A
@@ -428,6 +433,15 @@ class FlagsAndOptions(object):
       self.actions_short[short_flag] = SetOption(attr_name)
 
     self.actions_short['o'].Add(attr_name)
+
+  def ShoptOption(self, name, help=None):
+    """Register an option like shopt -s nullglob
+
+    Args:
+      name: 'nullglob'
+    """
+    attr_name = name
+    self.actions_short['O'].Add(attr_name)
 
   def Action(self, short_flag, name):
     """Register an action that can be -f or -A file.

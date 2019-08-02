@@ -823,15 +823,22 @@ def AddOptionsToArgSpec(spec):
   for short_flag, opt_name in state.SET_OPTIONS:
     spec.Option(short_flag, opt_name)
 
+  for shopt_name in state.ALL_SHOPT_OPTIONS:
+    spec.ShoptOption(shopt_name)
+
 
 SET_SPEC = args.FlagsAndOptions()
 AddOptionsToArgSpec(SET_SPEC)
 
 
-def SetExecOpts(exec_opts, opt_changes):
+def SetExecOpts(exec_opts, opt_changes, shopt_changes):
   """Used by bin/oil.py too."""
+
   for opt_name, b in opt_changes:
     exec_opts.SetOption(opt_name, b)
+
+  for opt_name, b in shopt_changes:
+    exec_opts.SetShoptOption(opt_name, b)
 
 
 class Set(object):
@@ -869,7 +876,7 @@ class Set(object):
       self.exec_opts.ShowOptions([])
       return 0
 
-    SetExecOpts(self.exec_opts, arg.opt_changes)
+    SetExecOpts(self.exec_opts, arg.opt_changes, arg.shopt_changes)
     # Hm do we need saw_double_dash?
     if arg.saw_double_dash or not arg_r.AtEnd():
       self.mem.SetArgv(arg_r.Rest())

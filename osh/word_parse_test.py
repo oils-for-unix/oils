@@ -29,7 +29,7 @@ from osh import word
 def _InitWordParser(s, oil_at=False, arena=None):
   arena = arena or test_lib.MakeArena('word_parse_test.py')
   parse_opts = parse_lib.OilParseOptions()
-  parse_opts.oil_at = oil_at
+  parse_opts.at = oil_at
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
   line_reader, lexer = test_lib.InitLexer(s, arena)
   c_parser = parse_ctx.MakeOshParser(line_reader)
