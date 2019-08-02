@@ -44,17 +44,51 @@ argv.py "$@"*.txt
 ['foo.txt']
 ## END
 
-#### oil-at
+#### oil-parse-at
 words=(a 'b c')
 argv.py @words
 
 # TODO: This should be parse-oil-at, and only allowed at the top of the file?
 # Going midway is weird?  Then you can't bin/osh -n?
 
-shopt -s oil-at
+shopt -s oil-parse-at
 argv.py @words
 
 ## STDOUT:
 ['@words']
+['a', 'b c']
+## END
+
+#### oil-parse-at can't be used outside top level
+f() {
+  shopt -s oil-parse-at
+  echo status=$?
+}
+f
+echo 'should not get here'
+## status: 1
+## stdout-json: ""
+
+
+#### sourcing a file that sets oil-parse-at
+cat >lib.sh <<EOF
+shopt -s oil-parse-at
+echo lib.sh
+EOF
+
+words=(a 'b c')
+argv.py @words
+
+# This has a side effect, which is a bit weird, but not sure how to avoid it.
+# Maybe we should say that libraries aren't allowed to change it?
+
+source lib.sh
+echo 'main.sh'
+
+argv.py @words
+## STDOUT:
+['@words']
+lib.sh
+main.sh
 ['a', 'b c']
 ## END

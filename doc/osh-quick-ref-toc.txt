@@ -141,12 +141,12 @@ X [Oil Semantics] all:oil                All options below, plus POSIX and bash
                   longopts               test -file, shopt -unset, etc.
                   oil-echo               No -e or -n, one arg per line
                   oil-test-builtin       Only file tests (no strings), remove [
-X [Syntax Pragma] all:oil
-                  oil-splice             echo @array @arrayfunc(x, y)
-                  oil-brace              cd ~/src { ... }
-                  oil-paren              if (x > 0) ...
-                  oil-set                instead of setvar
-                  oil-equals             x = 's' (for cleaner config snippets)
+X [Oil Syntax]    all:oil-parse
+                  oil-parse-at           echo @array @arrayfunc(x, y)
+                  oil-parse-brace        cd ~/src { ... }
+                  oil-parse-equals       x = 's' (for cleaner config snippets)
+                  oil-parse-paren        if (x > 0) ...
+                  oil-parse-set          instead of setvar
 
 ENVIRONMENT VARIABLES
   [Shell Options] SHELLOPTS   X BASHOPTS

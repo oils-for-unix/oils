@@ -195,8 +195,7 @@ def MakeGrammarNames(oil_grammar):
 class OilParseOptions(object):
   def __init__(self):
     # type: () -> None
-    self.oil_at = False  # @foo, @array(a, b)
-    #self.oil_at = True
+    self.at = False  # @foo, @array(a, b)
 
 
 class ParseContext(object):

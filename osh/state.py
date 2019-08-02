@@ -203,18 +203,20 @@ SHOPT_OPTION_NAMES = (
                          # Don't reparse program data as globs
 )
 
-SYNTAX_OPTION_NAMES = ('oil-at',)
+SYNTAX_OPTION_NAMES = ('oil-parse-at',)
+
+ALL_SHOPT_OPTIONS = SHOPT_OPTION_NAMES + SYNTAX_OPTION_NAMES
 
 
 class ExecOpts(object):
 
-  def __init__(self, mem, syntax_opts, readline):
+  def __init__(self, mem, parse_opts, readline):
     """
     Args:
       mem: state.Mem, for SHELLOPTS
     """
     self.mem = mem
-    self.syntax_opts = syntax_opts
+    self.parse_opts = parse_opts
     # Used for 'set -o vi/emacs'
     self.readline = readline
 
@@ -394,7 +396,11 @@ class ExecOpts(object):
     if opt_name in SHOPT_OPTION_NAMES:
       setattr(self, attr, b)
     elif opt_name in SYNTAX_OPTION_NAMES:
-      setattr(self.syntax_opts, attr, b)
+      if not self.mem.InGlobalNamespace():
+        e_die('Syntax options must be set at the top level '
+              '(outside any function)')
+      attr = attr[len('oil_parse_'):]  # oil_parse_at -> at
+      setattr(self.parse_opts, attr, b)
     else:
       raise args.UsageError('got invalid option %r' % opt_name)
 
@@ -414,13 +420,16 @@ class ExecOpts(object):
 
   def ShowShoptOptions(self, opt_names):
     """ For 'shopt -p' """
-    opt_names = opt_names or SHOPT_OPTION_NAMES  # show all
+    opt_names = opt_names or ALL_SHOPT_OPTIONS  # show all
     for opt_name in opt_names:
-      if opt_name not in SHOPT_OPTION_NAMES:
-        raise args.UsageError('got invalid option %r' % opt_name)
-
       attr = opt_name.replace('-', '_')  # for strict-*
-      b = getattr(self, attr)
+      if opt_name in SHOPT_OPTION_NAMES:
+        b = getattr(self, attr)
+      elif opt_name in SYNTAX_OPTION_NAMES:
+        attr = attr[len('oil_parse_'):]  # oil_parse_at -> at
+        b = getattr(self.parse_opts, attr)
+      else:
+        raise args.UsageError('got invalid option %r' % opt_name)
       print('shopt -%s %s' % ('s' if b else 'u', opt_name))
 
 
@@ -580,6 +589,10 @@ class Mem(object):
         parts.append('  %s %s' % (n, v))
     parts.append('>')
     return '\n'.join(parts) + '\n'
+
+  def InGlobalNamespace(self):
+    """For checking that syntax options are only used at the top level."""
+    return len(self.argv_stack) == 1
 
   def Dump(self):
     """Copy state before unwinding the stack."""

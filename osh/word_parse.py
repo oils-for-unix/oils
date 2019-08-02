@@ -1111,7 +1111,7 @@ class WordParser(object):
                     token=self.cur_token)
             done = True
 
-        elif (self.parse_opts.oil_at and self.token_type == Id.Lit_Splice and
+        elif (self.parse_opts.at and self.token_type == Id.Lit_Splice and
               num_parts == 0):
 
           splice_token = self.cur_token
