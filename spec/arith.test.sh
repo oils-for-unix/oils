@@ -415,3 +415,18 @@ echo $((assoc + 5))
 ## BUG bash/mksh/zsh stdout: 47
 ## BUG dash status: 0
 ## BUG dash stdout: 5
+
+#### Double subscript
+a=(1 2 3)
+echo $(( a[1] ))
+echo $(( a[1][1] ))
+## status: 1
+## OK osh status: 2
+## STDOUT:
+2
+## END
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+## OK zsh STDOUT:
+1
+## END

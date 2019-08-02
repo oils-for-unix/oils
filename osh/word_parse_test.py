@@ -445,14 +445,13 @@ class WordParserTest(unittest.TestCase):
     self.assertEqual(Id.Eof_Real, w.token.id)
 
   def testReadArithWord(self):
-    w = _assertReadWord(self, '$(( f(x) ))')
+    w = _assertReadWord(self, '$(( (1+2) ))')
     child = w.parts[0].anode
-    self.assertEqual(arith_expr_e.FuncCall, child.tag)
+    self.assertEqual(arith_expr_e.ArithBinary, child.tag)
 
-    w = _assertReadWord(self, '$(( f(1, 2, 3, 4) ))')
+    w = _assertReadWord(self, '$(( (1+2) ))')
     child = w.parts[0].anode
-    self.assertEqual(arith_expr_e.FuncCall, child.tag)
-    self.assertEqual(4, len(child.args))
+    self.assertEqual(arith_expr_e.ArithBinary, child.tag)
 
   def testReadArith(self):
     CASES = [

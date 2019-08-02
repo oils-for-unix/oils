@@ -165,7 +165,6 @@ module syntax
   -- TODO: add token for divide by zero
   | ArithBinary(id op_id, arith_expr left, arith_expr right)
   | TernaryOp(arith_expr cond, arith_expr true_expr, arith_expr false_expr)
-  | FuncCall(arith_expr func, arith_expr* args)
 
   bool_expr =
     WordTest(word w)  -- e.g. [[ myword ]]

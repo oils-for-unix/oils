@@ -76,7 +76,7 @@ def LeftIndex(p, w, left, unused_bp):
   3. strings don't have mutable characters.
   """
   if not tdop.IsIndexable(left):
-    p_die("%s can't be indexed", left, word=w)
+    p_die("The [ operarator doesn't apply to this expression", word=w)
   index = p.ParseUntil(0)
   p.Eat(Id.Arith_RBracket)
 
@@ -93,25 +93,6 @@ def LeftTernary(p, t, left, bp):
 
 
 # For overloading of , inside function calls
-COMMA_PREC = 1
-
-def LeftFuncCall(p, t, left, unused_bp):
-  # type: (TdopParser, word_t, arith_expr_t, int) -> arith_expr_t
-  """ Function call f(a, b). """
-  children = []
-  # f(x) or f[i](x)
-  if not tdop.IsCallable(left):
-    p_die("%s can't be called", left, word=t)
-  while not p.AtToken(Id.Arith_RParen):
-    # We don't want to grab the comma, e.g. it is NOT a sequence operator.  So
-    # set the precedence to 5.
-    children.append(p.ParseUntil(COMMA_PREC))
-    if p.AtToken(Id.Arith_Comma):
-      p.Next()
-  p.Eat(Id.Arith_RParen)
-  return arith_expr.FuncCall(left, children)
-
-
 def MakeShellSpec():
   # type: () -> tdop.ParserSpec
   """
@@ -148,7 +129,6 @@ def MakeShellSpec():
   spec.Null(0, tdop.NullParen, [Id.Arith_LParen])  # for grouping
 
   spec.Left(33, LeftIncDec, [Id.Arith_DPlus, Id.Arith_DMinus])
-  spec.Left(33, LeftFuncCall, [Id.Arith_LParen])
   spec.Left(33, LeftIndex, [Id.Arith_LBracket])
 
   # 31 -- binds to everything except function call, indexing, postfix ops
@@ -193,7 +173,7 @@ def MakeShellSpec():
       Id.Arith_PipeEqual
   ])
 
-  spec.Left(COMMA_PREC, tdop.LeftBinaryOp, [Id.Arith_Comma])
+  spec.Left(1, tdop.LeftBinaryOp, [Id.Arith_Comma])
 
   return spec
 

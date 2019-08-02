@@ -6,7 +6,7 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
     arith_expr, arith_expr_t,
     arith_expr__ArithWord, arith_expr__UnaryAssign, arith_expr__ArithVarRef,
-    arith_expr__ArithBinary, arith_expr__BinaryAssign, arith_expr__FuncCall,
+    arith_expr__ArithBinary, arith_expr__BinaryAssign,
     lhs_expr, lhs_expr_t, lhs_expr__LhsName,
     word_t,
 )
@@ -24,23 +24,6 @@ if TYPE_CHECKING:  # break circular dep
 p_die = util.p_die
 
 
-def IsCallable(node):
-  # type: (arith_expr_t) -> bool
-  """Is the word callable or indexable?
-
-  Args:
-    node: ExprNode
-  """
-  # f(x), or f[1](x)
-  # I guess function calls can be callable?  Return a function later.  Not
-  # sure.  Python allows f(3)(4).
-  if isinstance(node, arith_expr__ArithVarRef):
-    return True
-  if isinstance(node, arith_expr__ArithBinary):
-    return node.op_id == Id.Arith_LBracket
-  return False
-
-
 def IsIndexable(node):
   # type: (arith_expr_t) -> bool
   """Is the word callable or indexable?
@@ -48,16 +31,9 @@ def IsIndexable(node):
   Args:
     node: ExprNode
   """
-  # f[1], or f(x)[1], or f[1][1]
   if isinstance(node, arith_expr__ArithVarRef):
-    return True
-  if isinstance(node, arith_expr__FuncCall):
-    return True
+    return True  # f[1] is allowed
 
-  # Hm f[1][1] is not allowed in shell, but might be in Oil.  There are no
-  # nested arrays, or mutable strings.
-  if isinstance(node, arith_expr__ArithBinary):
-    return node.op_id == Id.Arith_LBracket
   return False
 
 
@@ -149,7 +125,10 @@ def LeftAssign(p, w, left, rbp):
   # x += 1, or a[i] += 1
   lhs = ToLValue(left)
   if lhs is None:
-    p_die("Can't assign to %r", lhs, word=w)
+    # TODO: It would be nice to point at 'left', but osh/word.py doesn't
+    # support arbitrary arith_expr_t.
+    #p_die("Can't assign to this expression", word=w)
+    p_die("Left-hand side of this assignment is invalid", word=w)
   return arith_expr.BinaryAssign(word.ArithId(w), lhs, p.ParseUntil(rbp))
 
 
