@@ -80,3 +80,5 @@ echo $a $((1 + (2 * (3+4))))
 echo $[1 + 2] "$[3 * 4]"
 ## stdout: 3 12
 ## N-I mksh stdout: $[1 + 2] $[3 * 4]
+## N-I osh status: 2
+## N-I osh stdout-json: ""

@@ -536,7 +536,7 @@ class WordParser(object):
       return self._ReadArithSubPart()
 
     if self.token_type == Id.Left_DollarBracket:
-      return self._ReadArithSub2Part()
+      return self._DollarBracketIsReserved()
 
     raise AssertionError(self.cur_token)
 
@@ -570,7 +570,7 @@ class WordParser(object):
       return self._ReadArithSubPart()
 
     if self.token_type == Id.Left_DollarBracket:
-      return self._ReadArithSub2Part()
+      return self._DollarBracketIsReserved()
 
     raise AssertionError('%s not handled' % self.cur_token)
 
@@ -876,22 +876,11 @@ class WordParser(object):
     node.spids.append(right_span_id)
     return node
 
-  def _ReadArithSub2Part(self):
+  def _DollarBracketIsReserved(self):
     # type: () -> word_part__ArithSubPart
     """Non-standard arith sub $[a + 1]."""
     left_span_id = self.cur_token.span_id
-
-    self._Next(lex_mode_e.Arith)
-    anode = self._ReadArithExpr()
-    if self.token_type != Id.Arith_RBracket:
-      p_die('Expected ], got %r', self.cur_token.val, token=self.cur_token)
-
-    right_span_id = self.cur_token.span_id
-
-    node = word_part.ArithSubPart(anode)
-    node.spids.append(left_span_id)
-    node.spids.append(right_span_id)
-    return node
+    p_die('Use $(( instead of $[', token=self.cur_token)
 
   def ReadDParen(self):
     # type: () -> Tuple[arith_expr_t, int]

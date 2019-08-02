@@ -203,7 +203,13 @@ SHOPT_OPTION_NAMES = (
                          # Don't reparse program data as globs
 )
 
-SYNTAX_OPTION_NAMES = ('oil-parse-at',)
+SYNTAX_OPTION_NAMES = (
+    'oil-parse-at',
+    'oil-parse-brace',
+    'oil-parse-equals',
+    'oil-parse-paren',
+    'oil-parse-set',
+)
 
 ALL_SHOPT_OPTIONS = SHOPT_OPTION_NAMES + SYNTAX_OPTION_NAMES
 

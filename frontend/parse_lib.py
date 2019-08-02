@@ -193,9 +193,14 @@ def MakeGrammarNames(oil_grammar):
 
 
 class OilParseOptions(object):
+
   def __init__(self):
     # type: () -> None
     self.at = False  # @foo, @array(a, b)
+    self.brace = False  # cd /bin { ... }
+    self.equals = False  # x = 'var'
+    self.paren = False  # if (x > 0) ...
+    self.set = False  # set x = 'var'
 
 
 class ParseContext(object):
