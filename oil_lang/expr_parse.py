@@ -5,18 +5,23 @@ from __future__ import print_function
 
 import sys
 
-from _devbuild.gen.syntax_asdl import token
+from _devbuild.gen.syntax_asdl import (
+    token, word__TokenWord, word__CompoundWord
+)
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.types_asdl import lex_mode_e
 
 from core import meta
 from core import util
 #from core.util import log
+from core.util import p_die
+from osh import word
 from pgen2 import parse
 
 from typing import TYPE_CHECKING, IO, Dict, Tuple
 if TYPE_CHECKING:
   from frontend.lexer import Lexer
+  from frontend.parse_lib import ParseContext
   from pgen2.grammar import Grammar
   from pgen2.parse import PNode
 
@@ -155,8 +160,8 @@ _OTHER_BALANCE = {
 }
 
 
-def _PushOilTokens(p, lex, gr):
-  # type: (parse.Parser, Lexer, Grammar) -> token
+def _PushOilTokens(parse_ctx, gr, p, lex):
+  # type: (ParseContext, Grammar, parse.Parser, Lexer) -> token
   """Push tokens onto pgen2's parser.
 
   Returns the last token so it can be reused/seen by the CommandParser.
@@ -169,12 +174,41 @@ def _PushOilTokens(p, lex, gr):
 
   balance = 0
 
+  from core.util import log
   while True:
     tok = lex.Read(mode)
     #log('tok = %s', tok)
 
     # Comments and whitespace.  Newlines aren't ignored.
     if meta.LookupKind(tok.id) == Kind.Ignored:
+      continue
+
+    #if tok.id in (Id.Left_AtParen, Id.Left_DollarParen):
+    if 0:
+      lex.PushHint(Id.Op_RParen, Id.Right_ArrayLiteral)
+
+      line_reader = None
+      w_parser = parse_ctx.MakeWordParser(lex, line_reader)
+      words = []
+      while True:
+        w = w_parser.ReadWord(lex_mode_e.ShCommand)
+        log('w = %s', w)
+
+        if isinstance(w, word__TokenWord):
+          word_id = word.CommandId(w)
+          if word_id == Id.Right_ArrayLiteral:
+            break
+          # Unlike command parsing, array parsing allows embedded \n.
+          elif word_id == Id.Op_Newline:
+            continue
+          else:
+            # TokenWord
+            p_die('Unexpected token in array literal: %r', w.token.val, word=w)
+
+        assert isinstance(w, word__CompoundWord)  # for MyPy
+        words.append(w)
+
+      log('words = %s', words)
       continue
 
     # For var x = {
@@ -233,8 +267,9 @@ def NoSingletonAction(gr, pnode):
 class ExprParser(object):
   """A wrapper around a pgen2 parser."""
 
-  def __init__(self, gr):
-    # type: (Grammar) -> None
+  def __init__(self, parse_ctx, gr):
+    # type: (ParseContext, Grammar) -> None
+    self.parse_ctx = parse_ctx
     self.gr = gr
     # Reused multiple times.
     self.push_parser = parse.Parser(gr, convert=NoSingletonAction)
@@ -245,7 +280,8 @@ class ExprParser(object):
     # Reuse the parser
     self.push_parser.setup(start_symbol)
     try:
-      last_token = _PushOilTokens(self.push_parser, lexer, self.gr)
+      last_token = _PushOilTokens(self.parse_ctx, self.gr, self.push_parser,
+                                  lexer)
     except parse.ParseError as e:
       #log('ERROR %s', e)
       # TODO:

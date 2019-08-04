@@ -710,7 +710,6 @@ _OIL_LEFT_SUBS = [
   C('$/', Id.Left_DollarSlash),
 
   # TODO: $stringfunc(x, y)
-  # TODO: @arrayfunc(x, y)
 ]
 
 # Valid in lex_mode_e.{Command,Array,Expr}
@@ -722,9 +721,8 @@ _OIL_LEFT_UNQUOTED = [
   C("'", Id.Left_SingleQuote),
 
   # Not valid in DQ_Oil
-  C('@[', Id.Left_AtBracket),
-  # Not sure if I want this as a synonym.
-  #C('@(', Id.Left_AtParen),
+  C('@(', Id.Left_AtParen),  # Legacy shell arrays.
+  C('@[', Id.Left_AtBracket),  # Oil arrays.  Not used yet.
 ]
 
 _OIL_VARS = [

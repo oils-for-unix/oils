@@ -116,7 +116,7 @@ atom: ('(' [yield_expr|testlist_comp] ')' |
        NAME | NUMBER | '...' | 'None' | 'True' | 'False' |
        array_literal | regex_literal |
        dq_string |
-       command_sub | var_sub | expr_sub
+       command_sub | var_sub | expr_sub | sh_array_literal
 )
 testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
 trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
@@ -169,6 +169,8 @@ word: word_part*
 array_literal: (
   '@[' [WS_Space] [word] (WS_Space word)* [WS_Space] Op_RBracket
 )
+
+sh_array_literal: '@(' Expr_WordsDummy Op_RParen
 
 char_class_part: Lit_Chars  # TODO: letters, escaped, and ranges
 char_class: (

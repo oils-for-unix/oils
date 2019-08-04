@@ -25,12 +25,13 @@ class ExprParseTest(unittest.TestCase):
     """Done on every test."""
     self.arena = alloc.Arena()
     self.arena.PushSource(source.Unused(''))
+    parse_opts = parse_lib.OilParseOptions()
 
     loader = pyutil.GetResourceLoader()
     oil_grammar = meta.LoadOilGrammar(loader)
 
-    self.parse_ctx = parse_lib.ParseContext(self.arena, {}, oil_grammar,
-                                            one_pass_parse=True)
+    self.parse_ctx = parse_lib.ParseContext(self.arena, parse_opts, {},
+                                            oil_grammar, one_pass_parse=True)
 
   def _ParseOsh(self, code_str):
     """Parse a line of OSH, which can include Oil assignments."""
@@ -66,6 +67,11 @@ class ExprParseTest(unittest.TestCase):
 
     node = self._ParseOilExpression('[x for x in y]')
     #node = self._ParseOilExpression('{foo: bar}')
+
+  def testShellArrays(self):
+    return
+    node = self._ParseOsh('var x = @(a b);')
+    node = self._ParseOsh('var x = $(echo hi);')
 
   def testOtherExpr(self):
     """Some examples copied from pgen2/pgen2-test.sh mode-test."""

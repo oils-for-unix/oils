@@ -255,6 +255,7 @@ def AddKinds(spec):
 
       'DollarSlash',        # $/ for Oil regex
       'AtBracket',          # @[ for Oil arrays
+      'AtParen',            # @( for legacy shell arrays
   ])
 
   spec.AddKind('Right', [
@@ -380,6 +381,8 @@ def AddKinds(spec):
     'At', 'DoubleAt',  # splice operators
 
     'NotTilde',  # !~
+
+    'WordsDummy',  # Used for @() and $() (ShCommmand words)
 
     # Keywords are resolved after lexing, but otherwise behave like tokens.
     # NOTE: These are not used because pgen2 automatically creates a

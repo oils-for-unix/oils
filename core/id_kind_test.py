@@ -14,7 +14,6 @@ import unittest
 
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen import syntax_asdl 
-from core import id_kind
 from core.meta import (
     IdInstance, LookupKind, ID_SPEC, BOOL_ARG_TYPES, _kind_sizes
 )
@@ -23,7 +22,7 @@ from core.meta import (
 class TokensTest(unittest.TestCase):
 
   def testId(self):
-    print(dir(Id))
+    #print(dir(Id))
     print(Id.Op_Newline)
     print(Id.Undefined_Tok)
 
@@ -35,19 +34,27 @@ class TokensTest(unittest.TestCase):
 
     print(Kind.Eof)
     print(Kind.Left)
+
     print('--')
     num_kinds = 0
     for name in dir(Kind):
       if name[0].isupper():
-        print(name, getattr(Kind, name))
+        kind = getattr(Kind, name)
+        print('%-20s %s' % (name, kind))
         num_kinds += 1
 
+    print()
     print('Number of Kinds:', num_kinds)
-    # 233 out of 256 tokens now
-    print('Number of IDs:', len(ID_SPEC.id_str2int))
+    print()
 
-    # Make sure we're not exporting too much
-    print(dir(id_kind))
+    for name in dir(Id):
+      if name[0].isupper():
+        id_ = getattr(Id, name)
+        print('%-30s %s' % (name, id_))
+
+    # 309 out of 256 tokens now
+    print()
+    print('Number of IDs:', len(ID_SPEC.id_str2int))
 
     t = syntax_asdl.token(Id.Arith_Plus, '+')
     self.assertEqual(Kind.Arith, LookupKind(t.id))
@@ -66,7 +73,6 @@ class TokensTest(unittest.TestCase):
     left = IdInstance(198)
     right = IdInstance(198)
     print(left, right)
-    print(left == right)
     self.assertEqual(left, right)
 
   def testLexerPairs(self):
@@ -74,7 +80,7 @@ class TokensTest(unittest.TestCase):
       return dict((pat, tok) for _, pat, tok in p)
 
     lookup = MakeLookup(ID_SPEC.LexerPairs(Kind.BoolUnary))
-    print(lookup)
+    #print(lookup)
     self.assertEqual(Id.BoolUnary_e, lookup['-e'])
     self.assertEqual(Id.BoolUnary_z, lookup['-z'])
 
@@ -83,6 +89,7 @@ class TokensTest(unittest.TestCase):
     #print(lookup2)
 
   def testPrintStats(self):
+    print('---')
     k = _kind_sizes
     print('STATS: %d tokens in %d groups: %s' % (sum(k), len(k), k))
     # Thinking about switching
@@ -90,12 +97,12 @@ class TokensTest(unittest.TestCase):
     print('%d BIG groups: %s' % (len(big), sorted(big)))
 
     PrintBoolTable()
+    print('---')
 
 
 def PrintBoolTable():
   for i, arg_type in BOOL_ARG_TYPES.items():
-    row = (IdInstance(i), arg_type)
-    print('\t'.join(str(c) for c in row))
+    print('%-40s %s' % (IdInstance(i), arg_type))
 
 
 if __name__ == '__main__':

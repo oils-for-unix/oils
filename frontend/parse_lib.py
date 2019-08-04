@@ -216,7 +216,7 @@ class ParseContext(object):
     self.parse_opts = parse_opts
     self.aliases = aliases
 
-    self.e_parser = expr_parse.ExprParser(oil_grammar)
+    self.e_parser = expr_parse.ExprParser(self, oil_grammar)
     # NOTE: The transformer is really a pure function.
     if oil_grammar:
       self.tr = expr_to_ast.Transformer(oil_grammar)
@@ -264,6 +264,10 @@ class ParseContext(object):
   def MakeWordParserForHereDoc(self, line_reader):
     # type: (_Reader) -> WordParser
     lx = self._MakeLexer(line_reader)
+    return word_parse.WordParser(self, lx, line_reader)
+
+  def MakeWordParser(self, lx, line_reader):
+    # type: (Lexer, _Reader) -> WordParser
     return word_parse.WordParser(self, lx, line_reader)
 
   def MakeArithParser(self, code_str):

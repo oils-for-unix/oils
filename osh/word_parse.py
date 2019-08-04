@@ -981,7 +981,7 @@ class WordParser(object):
     paren_spid = self.cur_token.span_id
 
     # MUST use a new word parser (with same lexer).
-    w_parser = WordParser(self.parse_ctx, self.lexer, self.line_reader)
+    w_parser = self.parse_ctx.MakeWordParser(self.lexer, self.line_reader)
     words = []
     while True:
       w = w_parser.ReadWord(lex_mode_e.ShCommand)

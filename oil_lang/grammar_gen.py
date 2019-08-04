@@ -35,6 +35,7 @@ OPS = {
     '$(': Id.Left_DollarParen,
     '$/': Id.Left_DollarSlash,
     '@[': Id.Left_AtBracket,
+    '@(': Id.Left_AtParen,
 
     '.': Id.Expr_Dot,
     '->': Id.Expr_RArrow,
@@ -149,6 +150,7 @@ def main(argv):
 
   elif action == 'parse':  # generate the grammar and parse it
     # Remove build dependency
+    from frontend import parse_lib
     from oil_lang import expr_parse
 
     grammar_path = argv[0]
@@ -166,14 +168,15 @@ def main(argv):
 
     is_expr = grammar_name in ('calc', 'grammar')
 
-    p = expr_parse.ExprParser(gr)
+    parse_opts = parse_lib.OilParseOptions()
+    parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, gr)
+    p = expr_parse.ExprParser(parse_ctx, gr)
     try:
       pnode, _ = p.Parse(lex, gr.symbol2number[start_symbol])
     except parse.ParseError as e:
       log('Parse Error: %s', e)
       return 1
 
-    from frontend import parse_lib
     names = parse_lib.MakeGrammarNames(gr)
     p_printer = expr_parse.ParseTreePrinter(names)  # print raw nodes
     p_printer.Print(pnode)
