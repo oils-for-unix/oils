@@ -211,7 +211,7 @@ class ParseContext(object):
 
   def __init__(self, arena, parse_opts, aliases, oil_grammar, trail=None,
                one_pass_parse=False):
-    # type: (Arena, Dict[str, Any], Grammar, Optional[_BaseTrail], bool) -> None
+    # type: (Arena, OilParseOptions, Dict[str, Any], Grammar, Optional[_BaseTrail], bool) -> None
     self.arena = arena
     self.parse_opts = parse_opts
     self.aliases = aliases

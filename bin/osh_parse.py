@@ -25,6 +25,7 @@ def main(argv):
   arena = alloc.Arena()
   arena.PushSource(source.Stdin(''))
 
+  parse_opts = parse_lib.OilParseOptions()
   # Dummy value; not respecting aliases!
   aliases = {}  # type: Dict[str, Any]
   # parse `` and a[x+1]=bar differently
@@ -32,7 +33,7 @@ def main(argv):
   loader = pyutil.GetResourceLoader()
   oil_grammar = meta.LoadOilGrammar(loader)
 
-  parse_ctx = parse_lib.ParseContext(arena, aliases, oil_grammar,
+  parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar,
                                      one_pass_parse=True)
 
   line_reader = reader.FileLineReader(sys.stdin, arena)

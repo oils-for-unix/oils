@@ -201,7 +201,7 @@ class Parser(object):
     def pop(self):
         # type: () -> None
         """Pop a nonterminal.  (Internal)"""
-        popdfa, popstate, popnode = self.stack.pop()
+        _, _, popnode = self.stack.pop()
         newnode = self.convert(self.grammar, popnode)
         if newnode is not None:
             if self.stack:
