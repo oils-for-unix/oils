@@ -14,6 +14,7 @@ from core.meta import ID_SPEC
 from core import alloc
 from core import meta
 from core import pyutil
+from core import util
 from core.util import log
 from frontend import parse_lib
 from frontend import reader
@@ -69,13 +70,22 @@ class ExprParseTest(unittest.TestCase):
     #node = self._ParseOilExpression('{foo: bar}')
 
   def testShellArrays(self):
-    #return
     node = self._ParseOsh('var x = @(a b);')
     node = self._ParseOsh(r"var x = @('c' $'string\n');")
     node = self._ParseOsh(r"var x = @($(echo command) $(echo sub));")
 
+    # Can parse multiple arrays (this is a runtime error)
+    node = self._ParseOsh(r"var x = @(a b) * @($c ${d});")
+
+    # Can parse over multiple lines
+    node = self._ParseOsh(r"""var x = @(
+    a
+    b
+    c
+    );""")
+
     # Test out the DisallowedLineReader
-    node = self._ParseOsh(r"""var x = @($(echo command <<EOF
+    self.assertRaises(util.ParseError, self._ParseOsh, r"""var x = @($(echo command <<EOF
 EOF
 ))""")
     return
