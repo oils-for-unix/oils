@@ -98,15 +98,21 @@ EOF
 hi)
     """)
 
-    node = self._ParseOsh('var x = $(echo $((1+2)));')
-    #node = self._ParseOsh('var x = $(var x = @(a b));')
-
     # Here docs use the Reader, so aren't allowed
-    return
-    node = self._ParseOsh("""var x = $(cat <<EOF
+    self.assertRaises(util.ParseError, self._ParseOsh, """var x = $(cat <<EOF
 hi
 EOF)
     """)
+
+    node = self._ParseOsh('var x = $(echo $((1+2)));')
+    node = self._ParseOsh('var x = $(for i in 1 2 3; do echo $i; done);')
+
+    node = self._ParseOsh('var x = @(a b)')
+
+    # TODO: Recursive 'var' shouldn't be allowed!
+    return
+    node = self._ParseOsh('var x = $(var x = @(a b););')
+    node = self._ParseOsh('var x = $(var x = @(a b));')
 
   def testOtherExpr(self):
     """Some examples copied from pgen2/pgen2-test.sh mode-test."""

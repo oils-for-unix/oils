@@ -227,7 +227,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
     if tok.id == Id.Left_AtParen:
       # NOTE: Not using Right_ArrayLiteral like command mode one.  That is only
       # for command sub I believe.
-      lex.PushHint(Id.Op_RParen, Id.Op_RParen)
+      lex.PushHint(Id.Op_RParen, Id.Right_ArrayLiteral)
 
       # Blame the opening token
       line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
@@ -240,7 +240,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
 
         if isinstance(w, word__TokenWord):
           word_id = word.CommandId(w)
-          if word_id == Id.Op_RParen:
+          if word_id == Id.Right_ArrayLiteral:
             break
           elif word_id == Id.Op_Newline:  # internal newlines allowed
             continue
