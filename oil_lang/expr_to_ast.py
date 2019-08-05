@@ -14,7 +14,7 @@ from _devbuild.gen import grammar_nt
 from pgen2.parse import PNode
 #from core.util import log
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, cast
 if TYPE_CHECKING:
   from pgen2.grammar import Grammar
 
@@ -229,6 +229,17 @@ class Transformer(object):
         array_words = [
             word.CompoundWord([word_part.LiteralPart(t)]) for t in tokens
         ]  # type: List[word_t]
+        return expr.ArrayLiteral(left_tok, array_words)
+
+      elif typ == grammar_nt.sh_array_literal:
+        left_tok = children[0].tok
+
+        # HACK: When typ is Id.Expr_WordsDummy, the 'tok' field ('opaque')
+        # actually has a list of words!
+        typ1 = children[1].typ
+        assert typ1 == Id.Expr_WordsDummy.enum_id, typ1
+        array_words = cast('List[word_t]', children[1].tok)
+
         return expr.ArrayLiteral(left_tok, array_words)
 
       elif typ == grammar_nt.regex_literal:

@@ -170,7 +170,8 @@ array_literal: (
   '@[' [WS_Space] [word] (WS_Space word)* [WS_Space] Op_RBracket
 )
 
-sh_array_literal: '@(' Expr_WordsDummy Op_RParen
+sh_array_literal: '@(' Expr_WordsDummy Right_ArrayLiteral
+#sh_array_literal: '@(' Right_ArrayLiteral
 
 char_class_part: Lit_Chars  # TODO: letters, escaped, and ranges
 char_class: (

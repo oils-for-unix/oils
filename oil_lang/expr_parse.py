@@ -15,10 +15,11 @@ from core import meta
 from core import util
 #from core.util import log
 from core.util import p_die
+from frontend import reader
 from osh import word
 from pgen2 import parse
 
-from typing import TYPE_CHECKING, IO, Dict, Tuple
+from typing import TYPE_CHECKING, IO, Dict, Tuple, cast
 if TYPE_CHECKING:
   from frontend.lexer import Lexer
   from frontend.parse_lib import ParseContext
@@ -183,34 +184,6 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
     if meta.LookupKind(tok.id) == Kind.Ignored:
       continue
 
-    #if tok.id in (Id.Left_AtParen, Id.Left_DollarParen):
-    if 0:
-      lex.PushHint(Id.Op_RParen, Id.Right_ArrayLiteral)
-
-      line_reader = None
-      w_parser = parse_ctx.MakeWordParser(lex, line_reader)
-      words = []
-      while True:
-        w = w_parser.ReadWord(lex_mode_e.ShCommand)
-        log('w = %s', w)
-
-        if isinstance(w, word__TokenWord):
-          word_id = word.CommandId(w)
-          if word_id == Id.Right_ArrayLiteral:
-            break
-          # Unlike command parsing, array parsing allows embedded \n.
-          elif word_id == Id.Op_Newline:
-            continue
-          else:
-            # TokenWord
-            p_die('Unexpected token in array literal: %r', w.token.val, word=w)
-
-        assert isinstance(w, word__CompoundWord)  # for MyPy
-        words.append(w)
-
-      log('words = %s', words)
-      continue
-
     # For var x = {
     #   a: 1, b: 2
     # }
@@ -247,6 +220,62 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
 
     if p.addtoken(tok.id.enum_id, tok, ilabel):
       return tok
+
+    #
+    # Extra handling of the body of @() and $().  Lex in the ShCommand mode.
+    #
+
+    if tok.id in (Id.Left_AtParen, Id.Left_DollarParen):
+      # TODO: Do we really need Right_ArrayLiteral?  Why not just OP_RParen?
+      # Especially for $().
+      lex.PushHint(Id.Op_RParen, Id.Right_ArrayLiteral)
+
+      # Blame the opening token
+      line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
+      w_parser = parse_ctx.MakeWordParser(lex, line_reader)
+      words = []
+      while True:
+        w = w_parser.ReadWord(lex_mode_e.ShCommand)
+        if 0:
+          log('w = %s', w)
+
+        if isinstance(w, word__TokenWord):
+          word_id = word.CommandId(w)
+          if word_id == Id.Right_ArrayLiteral:
+            break
+          # Unlike command parsing, array parsing allows embedded \n.
+          elif word_id == Id.Op_Newline:
+            continue
+          else:
+            # TokenWord
+            p_die('Unexpected token in array literal: %r', w.token.val, word=w)
+
+        assert isinstance(w, word__CompoundWord)  # for MyPy
+        words.append(w)
+
+      if 0:
+        log('words = %s', words)
+        log('pushing tok = %s', w.token)
+
+      # Push a dummy
+      if 1:
+        #log('pushing Expr_WordsDummy')
+        typ = Id.Expr_WordsDummy.enum_id
+        # HACK for expr_to_ast
+        opaque = cast(token, words)
+        ilabel = gr.tokens[typ]
+        if p.addtoken(typ, opaque, ilabel):
+          # Supposed to return the last token ... hm.
+          return tok
+
+      # Now push the closing )
+      tok = w.token
+      ilabel = _Classify(gr, tok)
+      if p.addtoken(tok.id.enum_id, tok, ilabel):
+        # Supposed to return the last token ... hm.
+        return tok
+
+      continue
 
   else:
     # We never broke out -- EOF is too soon (how can this happen???)

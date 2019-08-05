@@ -69,8 +69,17 @@ class ExprParseTest(unittest.TestCase):
     #node = self._ParseOilExpression('{foo: bar}')
 
   def testShellArrays(self):
-    return
+    #return
     node = self._ParseOsh('var x = @(a b);')
+    node = self._ParseOsh(r"var x = @('c' $'string\n');")
+    node = self._ParseOsh(r"var x = @($(echo command) $(echo sub));")
+
+    # Test out the DisallowedLineReader
+    node = self._ParseOsh(r"""var x = @($(echo command <<EOF
+EOF
+))""")
+    return
+
     node = self._ParseOsh('var x = $(echo hi);')
 
   def testOtherExpr(self):
@@ -83,7 +92,7 @@ class ExprParseTest(unittest.TestCase):
       '$/ x /',
       '$/ "." [a-z A-Z] y /',
       '$[echo hi]',
-      '$(1 + 2)',
+      #'$(1 + 2)',
       '${x}',
       '"quoted ${x}"',
     ]

@@ -11,8 +11,11 @@ reader.py - Read lines of input.
 import cStringIO
 import signal
 
+from core.util import p_die
+
 from typing import Optional, Tuple, List, IO, Any, TYPE_CHECKING
 if TYPE_CHECKING:
+  from _devbuild.gen.syntax_asdl import token
   from core.alloc import Arena
   # TODO: Hook these up when they have types.
   #from core.process import SignalState
@@ -44,6 +47,19 @@ class _Reader(object):
     # type: () -> None
     """Called after command execution in main_loop.py."""
     pass
+
+
+class DisallowedLineReader(_Reader):
+  """For CommandParser in Oil expressions."""
+
+  def __init__(self, arena, blame_token):
+    # type: (Arena, token) -> None
+    _Reader.__init__(self, arena)  # TODO: This arena is useless
+    self.blame_token = blame_token
+
+  def _GetLine(self):
+    # type: () -> Optional[str]
+    p_die("Here docs aren't allowed in expressions", token=self.blame_token)
 
 
 _PS2 = '> '
