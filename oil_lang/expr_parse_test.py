@@ -88,9 +88,25 @@ class ExprParseTest(unittest.TestCase):
     self.assertRaises(util.ParseError, self._ParseOsh, r"""var x = @($(echo command <<EOF
 EOF
 ))""")
-    return
 
+  def testShellCommandSub(self):
     node = self._ParseOsh('var x = $(echo hi);')
+    node = self._ParseOsh('var x = $(echo $(echo hi));')
+
+    # This doesn't use the Reader, so it's allowed
+    node = self._ParseOsh("""var x = $(echo
+hi)
+    """)
+
+    node = self._ParseOsh('var x = $(echo $((1+2)));')
+    #node = self._ParseOsh('var x = $(var x = @(a b));')
+
+    # Here docs use the Reader, so aren't allowed
+    return
+    node = self._ParseOsh("""var x = $(cat <<EOF
+hi
+EOF)
+    """)
 
   def testOtherExpr(self):
     """Some examples copied from pgen2/pgen2-test.sh mode-test."""
@@ -102,7 +118,7 @@ EOF
       '$/ x /',
       '$/ "." [a-z A-Z] y /',
       '$[echo hi]',
-      #'$(1 + 2)',
+      '$(echo hi)',
       '${x}',
       '"quoted ${x}"',
     ]

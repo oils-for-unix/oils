@@ -114,9 +114,10 @@ atom: ('(' [yield_expr|testlist_comp] ')' |
        '[' [testlist_comp] ']' |
        '{' [dictorsetmaker] '}' |
        NAME | NUMBER | '...' | 'None' | 'True' | 'False' |
-       array_literal | regex_literal |
-       dq_string |
-       command_sub | var_sub | expr_sub | sh_array_literal
+       array_literal | sh_array_literal |
+       command_sub | sh_command_sub |
+       regex_literal |
+       dq_string | var_sub
 )
 testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
 trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
@@ -171,6 +172,7 @@ array_literal: (
 )
 
 sh_array_literal: '@(' Expr_WordsDummy Op_RParen
+sh_command_sub: '$(' Expr_CommandDummy Eof_RParen
 
 char_class_part: Lit_Chars  # TODO: letters, escaped, and ranges
 char_class: (
@@ -186,15 +188,13 @@ regex_literal: '$/' regex_part+ Arith_Slash
 # line continuation is ignored by lexer
 dq_part: (
   Lit_EscapedChar | Lit_Chars | Lit_Other | VSub_DollarName | VSub_Number |
-  command_sub | expr_sub | var_sub
+  command_sub | sh_command_sub | var_sub
 )
 dq_string: Left_DoubleQuote dq_part* Right_DoubleQuote
 
 command_sub: (
   '$[' [WS_Space] [word] (WS_Space word)* [WS_Space] Op_RBracket
 )
-
-expr_sub: '$(' expr Op_RParen
 
 var_sub: '${' expr Op_RBrace
 

@@ -8,6 +8,7 @@ from _devbuild.gen import syntax_asdl
 from _devbuild.gen.syntax_asdl import (
     command, command__OilAssign,
     expr, expr_t, expr_context_e, regex, regex_t, word, word_t, word_part,
+    word_part__CommandSubPart,
     oil_word_part, oil_word_part_t,
 )
 from _devbuild.gen import grammar_nt
@@ -267,10 +268,19 @@ class Transformer(object):
         ]  # type: List[word_t]
         return expr.CommandSub(left_tok, command.SimpleCommand(words))
 
-      elif typ == grammar_nt.expr_sub:
+      elif typ == grammar_nt.sh_command_sub:
         left_tok = children[0].tok
 
-        return expr.ExprSub(left_tok, self.Expr(children[1]))
+        # HACK: When typ is Id.Expr_CommandDummy, the 'tok' field ('opaque')
+        # actually has a word_part.CommandSub!
+        typ1 = children[1].typ
+        assert typ1 == Id.Expr_CommandDummy.enum_id, typ1
+        cs_part = cast(word_part__CommandSubPart, children[1].tok)
+
+        # Awkward: the schemas are different
+        expr_part = expr.CommandSub(cs_part.left_token, cs_part.command_list)
+        expr_part.spids.extend(cs_part.spids)
+        return expr_part
 
       elif typ == grammar_nt.var_sub:
         left_tok = children[0].tok

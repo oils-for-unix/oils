@@ -6,7 +6,7 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.syntax_asdl import (
-    token, word__TokenWord, word__CompoundWord
+    token, word__TokenWord, word__CompoundWord, word_part
 )
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.types_asdl import lex_mode_e
@@ -131,7 +131,6 @@ _MODE_TRANSITIONS = {
     (lex_mode_e.Expr, Id.Left_DollarSlash): lex_mode_e.Regex,  # $/ any + /
     (lex_mode_e.Expr, Id.Left_DollarBrace): lex_mode_e.VSub_Oil,  # ${x|html}
     (lex_mode_e.Expr, Id.Left_DollarBracket): lex_mode_e.Command,  # $[echo hi]
-    (lex_mode_e.Expr, Id.Left_DollarParen): lex_mode_e.Expr,  # $(1 + 2)
     (lex_mode_e.Expr, Id.Op_LParen): lex_mode_e.Expr,  # $( f(x) )
 
     (lex_mode_e.Expr, Id.Left_DoubleQuote): lex_mode_e.DQ_Oil,  # x + "foo"
@@ -243,8 +242,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
           word_id = word.CommandId(w)
           if word_id == Id.Op_RParen:
             break
-          # Unlike command parsing, array parsing allows embedded \n.
-          elif word_id == Id.Op_Newline:
+          elif word_id == Id.Op_Newline:  # internal newlines allowed
             continue
           else:
             # TokenWord
@@ -275,6 +273,31 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
       continue
 
     if tok.id == Id.Left_DollarParen:
+      left_token = tok
+
+      lex.PushHint(Id.Op_RParen, Id.Eof_RParen)
+      line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
+      c_parser = parse_ctx.MakeParserForCommandSub(line_reader, lex,
+                                                   Id.Eof_RParen)
+      node = c_parser.ParseCommandSub()
+      # A little gross: Copied from osh/word_parse.py
+      right_token = c_parser.w_parser.cur_token
+
+      cs_part = word_part.CommandSubPart(node, left_token)
+      cs_part.spids.append(left_token.span_id)
+      cs_part.spids.append(right_token.span_id)
+
+      typ = Id.Expr_CommandDummy.enum_id
+      opaque = cast(token, cs_part)  # HACK for expr_to_ast
+      ilabel = gr.tokens[typ]
+      done = p.addtoken(typ, opaque, ilabel)
+      assert not done  # can't end the expression
+
+      # Now push the closing )
+      ilabel = _Classify(gr, right_token)
+      done = p.addtoken(right_token.id.enum_id, right_token, ilabel)
+      assert not done  # can't end the expression
+
       continue
 
   else:
