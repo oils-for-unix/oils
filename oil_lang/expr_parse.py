@@ -225,10 +225,10 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
     # Extra handling of the body of @() and $().  Lex in the ShCommand mode.
     #
 
-    if tok.id in (Id.Left_AtParen, Id.Left_DollarParen):
-      # TODO: Do we really need Right_ArrayLiteral?  Why not just OP_RParen?
-      # Especially for $().
-      lex.PushHint(Id.Op_RParen, Id.Right_ArrayLiteral)
+    if tok.id == Id.Left_AtParen:
+      # NOTE: Not using Right_ArrayLiteral like command mode one.  That is only
+      # for command sub I believe.
+      lex.PushHint(Id.Op_RParen, Id.Op_RParen)
 
       # Blame the opening token
       line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
@@ -241,7 +241,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
 
         if isinstance(w, word__TokenWord):
           word_id = word.CommandId(w)
-          if word_id == Id.Right_ArrayLiteral:
+          if word_id == Id.Op_RParen:
             break
           # Unlike command parsing, array parsing allows embedded \n.
           elif word_id == Id.Op_Newline:
@@ -257,24 +257,24 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
         log('words = %s', words)
         log('pushing tok = %s', w.token)
 
-      # Push a dummy
-      if 1:
-        #log('pushing Expr_WordsDummy')
-        typ = Id.Expr_WordsDummy.enum_id
-        # HACK for expr_to_ast
-        opaque = cast(token, words)
-        ilabel = gr.tokens[typ]
-        if p.addtoken(typ, opaque, ilabel):
-          # Supposed to return the last token ... hm.
-          return tok
+      # Push a dummy with the whole subtree
+
+      #log('pushing Expr_WordsDummy')
+      typ = Id.Expr_WordsDummy.enum_id
+      opaque = cast(token, words)  # HACK for expr_to_ast
+      ilabel = gr.tokens[typ]
+      done = p.addtoken(typ, opaque, ilabel)
+      assert not done  # can't end the expression
 
       # Now push the closing )
       tok = w.token
       ilabel = _Classify(gr, tok)
-      if p.addtoken(tok.id.enum_id, tok, ilabel):
-        # Supposed to return the last token ... hm.
-        return tok
+      done = p.addtoken(tok.id.enum_id, tok, ilabel)
+      assert not done  # can't end the expression
 
+      continue
+
+    if tok.id == Id.Left_DollarParen:
       continue
 
   else:
