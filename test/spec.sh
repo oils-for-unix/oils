@@ -240,6 +240,11 @@ oil-options() {
     $OSH_LIST "$@"
 }
 
+oil-assign() {
+  sh-spec spec/oil-assign.test.sh --cd-tmp --osh-failures-allowed 3 \
+    $OSH_LIST "$@"
+}
+
 # Regress bugs
 bugs() {
   sh-spec spec/bugs.test.sh ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"

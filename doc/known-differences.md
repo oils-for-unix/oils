@@ -309,6 +309,47 @@ In OSH, omit the quotes if you want splitting:
 
 I think OSH is more consistent, but it disagrees with other shells.
 
+#### Indexed and Associative Arrays are Distinct
+
+OSH has bash-compatible arrays, which are created like this:
+
+    local indexed=(foo bar)
+    local -a indexed=(foo bar)            # -a is redundant
+    echo ${indexed[1]}                    # bar
+
+    local assoc=(['one']=1 ['two']=2)
+    local -A assoc=(['one']=1 ['two']=2)  # -A is redundant
+    echo ${assoc['one']}                  # 1
+
+In bash, the distinction between the two is blurry, e.g. in cases like this:
+
+    local -A x=(foo bar)                  # -A disagrees with literal
+    local -a y=(['one']=1 ['two']=2)      # -a disagrees with literal
+
+#### Args to Assignment Builtins Aren't Split or Globbed
+
+The assignment builtins are `export`, `readonly`, `local`, and
+`declare`/`typeset`.
+
+In bash, you can do unusual things with them:
+
+    vars='a=b x=y'
+    touch foo=bar.py spam=eggs.py
+
+    declare $vars *.py       # assigns at least 4 variables
+    echo $a       # b
+    echo $x       # y
+    echo $foo     # bar.py
+    echo $spam    # eggs.py
+
+In contrast, OSH disables splitting and globbing within assignment builtins.
+This is more like the behavior of zsh.
+
+On a related note, assignment builtins are both statically and dynamically
+parsed:
+
+- Statically: to avoid splitting `declare x=$y` when `$y` contains spaces.
+- Dynamically: to handle expressions like `declare $1` where `$1` is `a=b`
 
 #### Touching `errexit` while it's temporarily disabled
 

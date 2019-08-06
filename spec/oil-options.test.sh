@@ -1,7 +1,4 @@
-#!/bin/bash
-#
-# Usage:
-#   ./oil-options.test.sh <function name>
+# Test shell execution options.
 
 #### static-word-eval doesn't split, glob, or elide empty
 mkdir mydir
