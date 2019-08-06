@@ -788,7 +788,8 @@ class WordParser(object):
     var x = 42 && echo hi
     """
     self._Next(lex_mode_e.Expr)
-    enode, last_token = self.parse_ctx.ParseOilAssign(self.lexer, grammar_nt.oil_var)
+    enode, last_token = self.parse_ctx.ParseOilAssign(kw_token, self.lexer,
+                                                      grammar_nt.oil_var)
     # Let the CommandParser see the Op_Semi or Op_Newline.
     self.buffered_word = osh_word.TokenWord(last_token)
     self._Next(lex_mode_e.ShCommand)  # always back to this
@@ -802,7 +803,7 @@ class WordParser(object):
     setvar i++
     """
     self._Next(lex_mode_e.Expr)
-    enode, last_token = self.parse_ctx.ParseOilAssign(self.lexer,
+    enode, last_token = self.parse_ctx.ParseOilAssign(kw_token, self.lexer,
                                                       grammar_nt.oil_setvar)
     # Let the CommandParser see the Op_Semi or Op_Newline.
     self.buffered_word = osh_word.TokenWord(last_token)

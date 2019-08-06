@@ -448,6 +448,22 @@ invalid-brace-ranges() {
   _error-case 'echo {z..a..1}'
 }
 
+oil-language() {
+  set +o errexit
+
+  # Unterminated
+  _error-case 'var x = 1 + '
+
+  _error-case 'var x = * '
+
+  _error-case 'var x = @($(cat <<EOF
+here doc
+EOF
+))'
+
+  _error-case 'var x = $(var x = 1))'
+}
+
 cases-in-strings() {
   set +o errexit
 
@@ -479,6 +495,8 @@ cases-in-strings() {
   args-parse-main
 
   invalid-brace-ranges  # osh/braces.py
+
+  oil-language  # oil_lang/
 }
 
 # Cases in their own file

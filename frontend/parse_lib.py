@@ -8,6 +8,7 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.types_asdl import lex_mode_e
 
 from core import meta
+from core.util import p_die
 from frontend import lexer
 from frontend import reader
 from frontend import tdop
@@ -225,6 +226,8 @@ class ParseContext(object):
       self.tr = None
       names = {}
 
+    self.parsing_expr = False  # "single-threaded" state
+
     # Completion state lives here since it may span multiple parsers.
     self.trail = trail or _NullTrail()
     self.one_pass_parse = one_pass_parse
@@ -295,16 +298,25 @@ class ParseContext(object):
     lx = self._MakeLexer(line_reader)
     return word_parse.WordParser(self, lx, line_reader)
 
-  def ParseOilAssign(self, lexer, start_symbol, print_parse_tree=False):
-    # type: (Lexer, int, bool) -> Tuple[command_t, token]
+  def ParseOilAssign(self, kw_token, lexer, start_symbol,
+                     print_parse_tree=False):
+    # type: (token, Lexer, int, bool) -> Tuple[command_t, token]
     """e.g. var mylist = [1, 2, 3]"""
-    pnode, last_token = self.e_parser.Parse(lexer, start_symbol)
+    if self.parsing_expr:
+      p_die("Assignment expression can't be nested like this", token=kw_token)
+
+    self.parsing_expr = True
+    try:
+      pnode, last_token = self.e_parser.Parse(lexer, start_symbol)
+    finally:
+      self.parsing_expr = False
 
     #print_parse_tree = True
     if print_parse_tree:
       self.p_printer.Print(pnode)
 
     ast_node = self.tr.OilAssign(pnode)
+    ast_node.keyword = kw_token  # OilAssign didn't fill this in
     return ast_node, last_token
 
   def ParseOilExpr(self, lexer, start_symbol, print_parse_tree=False):
