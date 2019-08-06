@@ -1071,6 +1071,12 @@ class Mem(object):
     # COMPUTED_VARS = {'PIPESTATUS': 1, 'FUNCNAME': 1, ...}
     # if name not in COMPUTED_VARS: ...
 
+    if name == 'ARGV':
+      # TODO:
+      # - Reuse the StrArray?
+      # - @@ could be an alias for ARGV (in command mode, but not expr mode)
+      return value.StrArray(self.GetArgv())
+
     if name == 'PIPESTATUS':
       return value.StrArray([str(i) for i in self.pipe_status[-1]])
 

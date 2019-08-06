@@ -24,7 +24,7 @@ COMMAND LANGUAGE
                   redir-desc  >&  <&
                   here-doc    <<  <<-  <<<
   [Other]         dparen ((   time   X coproc   X select
-  [Oil Keywords]  func   call   pass   fs
+  [Oil Keywords]  func   do   pass   fs
                   (Change parsing so they can't be builtins)
 
 ASSIGNING VARIABLES
@@ -116,7 +116,7 @@ X [Oil Builtins]  log   die              common functions
                   env   shopt            compatible, and takes a block
                   fork   wait            replaces & and (), takes a block
                   use                    source with namespace, file-relative 
-                  write                  like 'call write(s)'
+                  write                  like 'do write(s)'
 
 SHELL OPTIONS
   [Errors]        nounset   errexit   pipefail
@@ -154,6 +154,7 @@ ENVIRONMENT VARIABLES
   [Oil Paths]     ?builtins   ?completion_plugins   ?coprocesses
 
 SPECIAL VARIABLES
+  [Oil]           ARGV
 X [Platform]      HOSTNAME   OSTYPE   BASH_VERSION   @BASH_VERSINFO
   [Call Stack]    @BASH_SOURCE   @FUNCNAME   @BASH_LINENO   
                   X @BASH_ARGV   X @BASH_ARGC
