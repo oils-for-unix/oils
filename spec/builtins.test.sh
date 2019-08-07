@@ -36,6 +36,10 @@ OLDPWD=/
 old: /
 /
 ## END
+## BUG zsh STDOUT:
+old: /
+OLDPWD=/
+## END
 
 #### pwd
 cd /
@@ -56,19 +60,27 @@ dir-two
 dir-one
 ## END
 
-#### pwd -P
+#### pwd with symlink and -P
 tmp=$TMP/builtins-pwd-1
-mkdir -p $tmp
-mkdir -p $tmp/symtarg
-ln -s $tmp/symtarg $tmp/symlink
-cd $tmp/symlink
-basename $(pwd -P)
-cd $tmp
-rmdir $tmp/symtarg
-rm $tmp/symlink
-## stdout: symtarg
+mkdir -p $tmp/target
+ln -s -f $tmp/target $tmp/symlink
 
-#### set PWD to something different, invoke pwd
+cd $tmp/symlink
+
+echo pwd:
+basename $(pwd)
+
+echo pwd -P:
+basename $(pwd -P)
+
+## STDOUT:
+pwd:
+symlink
+pwd -P:
+target
+## END
+
+#### setting $PWD doesn't affect the value of 'pwd' builtin
 dir=/tmp/oil-spec-test/pwd
 mkdir -p $dir
 cd $dir
@@ -89,15 +101,38 @@ mkdir -p $dir
 cd $dir
 
 unset PWD
-echo [$PWD]
+echo PWD=$PWD
 pwd
-echo [$PWD]
+echo PWD=$PWD
 ## STDOUT:
-[]
+PWD=
 /tmp/oil-spec-test/pwd
-[]
+PWD=
 ## END
 
+#### 'unset PWD; pwd' before any cd (tickles a rare corner case)
+dir=/tmp/oil-spec-test/pwd-2
+mkdir -p $dir
+cd $dir
+
+# ensure clean shell process state
+$SH -c 'unset PWD; pwd'
+
+## STDOUT:
+/tmp/oil-spec-test/pwd-2
+## END
+
+#### lie about PWD; pwd before any cd
+dir=/tmp/oil-spec-test/pwd-3
+mkdir -p $dir
+cd $dir
+
+# ensure clean shell process state
+$SH -c 'PWD=foo; pwd'
+
+## STDOUT:
+/tmp/oil-spec-test/pwd-3
+## END
 
 #### remove pwd dir
 dir=/tmp/oil-spec-test/pwd
@@ -114,12 +149,32 @@ status=0
 /tmp/oil-spec-test/pwd
 status=0
 ## END
-## OK mksh/osh STDOUT:
+## OK mksh STDOUT:
 /tmp/oil-spec-test/pwd
 status=0
 status=1
 ## END
 
+#### pwd in symlinked dir on shell initialization
+tmp=$TMP/builtins-pwd-2
+mkdir -p $tmp
+mkdir -p $tmp/target
+ln -s -f $tmp/target $tmp/symlink
+
+cd $tmp/symlink
+$SH -c 'basename $(pwd)'
+unset PWD
+$SH -c 'basename $(pwd)'
+
+## STDOUT:
+symlink
+target
+## END
+## OK mksh STDOUT:
+target
+target
+## END
+## stderr-json: ""
 
 #### Test the current directory after 'cd ..' involving symlinks
 dir=$TMP/symlinktest
@@ -230,6 +285,7 @@ exit invalid
 # Rationale: runtime errors are 1
 ## status: 1
 ## OK dash/bash status: 2
+## BUG zsh status: 0
 
 #### Exit builtin with too many args
 # This is a parse error in OSH.
@@ -237,8 +293,8 @@ exit 7 8 9
 echo status=$?
 ## status: 2
 ## stdout-json: ""
-## BUG bash status: 0
-## BUG bash stdout: status=1
+## BUG bash/zsh status: 0
+## BUG bash/zsh stdout: status=1
 ## BUG dash status: 7
 ## BUG dash stdout-json: ""
 ## OK mksh status: 1
@@ -254,15 +310,21 @@ err=_tmp/time-$(basename $SH).txt
     sleep 0.02
   }
 } 2> $err
-cat $err | grep --only-matching real
-# Just check that we found 'real'.
+cat $err | grep --only-matching user
+# Just check that we found 'user'.
 # This is fiddly:
 # | sed -n -E -e 's/.*(0m0\.03).*/\1/'
 #
 ## status: 0
-## stdout: real
+## stdout: user
+
+# not parsed
 ## BUG dash status: 2
 ## BUG dash stdout-json: ""
+
+# time is a builtin in zsh?
+## BUG zsh status: 1
+## BUG zsh stdout-json: ""
 
 #### time pipeline
 time echo hi | wc -c
@@ -288,7 +350,7 @@ shift 2
 shift ZZZ
 ## status: 2
 ## OK bash status: 1
-## BUG mksh status: 0
+## BUG mksh/zsh status: 0
 
 #### get umask
 umask | grep '[0-9]\+'  # check for digits

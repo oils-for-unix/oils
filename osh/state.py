@@ -540,6 +540,14 @@ def _FormatStack(var_stack):
   return f.getvalue()
 
 
+def _GetWorkingDir():
+  """Fallback for pwd and $PWD when there's no 'cd' and no inherited $PWD."""
+  try:
+    return posix.getcwd()
+  except OSError as e:
+    e_die("Can't determine working directory: %s", posix.strerror(e.errno))
+
+
 class Mem(object):
   """For storing variables.
 
@@ -584,6 +592,10 @@ class Mem(object):
 
     self._InitDefaults()
     self._InitVarsFromEnv(environ)
+    # MUTABLE GLOBAL that's SEPARATE from $PWD.  Used by the 'pwd' builtin, but
+    # it can't be modified by users.
+    self.pwd = self.GetVar('PWD').s
+
     self.arena = arena
 
   def __repr__(self):
@@ -595,6 +607,10 @@ class Mem(object):
         parts.append('  %s %s' % (n, v))
     parts.append('>')
     return '\n'.join(parts) + '\n'
+
+  def SetPwd(self, pwd):
+    """Used by builtins."""
+    self.pwd = pwd
 
   def InGlobalNamespace(self):
     """For checking that syntax options are only used at the top level."""
@@ -629,9 +645,6 @@ class Mem(object):
     return var_stack, argv_stack, debug_stack
 
   def _InitDefaults(self):
-    # For some reason this is one of few variables EXPORTED.  bash and dash
-    # both do it.  (e.g. env -i -- dash -c env)
-    ExportGlobalString(self, 'PWD', posix.getcwd())
 
     # Default value; user may unset it.
     # $ echo -n "$IFS" | python -c 'import sys;print repr(sys.stdin.read())'
@@ -675,7 +688,7 @@ class Mem(object):
     # If it's not in the environment, initialize it.  This makes it easier to
     # update later in ExecOpts.
 
-    # TODO: IFS, PWD, etc. should follow this pattern.  Maybe need a SysCall
+    # TODO: IFS, etc. should follow this pattern.  Maybe need a SysCall
     # interface?  self.syscall.getcwd() etc.
 
     v = self.GetVar('SHELLOPTS')
@@ -684,6 +697,17 @@ class Mem(object):
     # Now make it readonly
     self.SetVar(
         lhs_expr.LhsName('SHELLOPTS'), None, (var_flags_e.ReadOnly,),
+        scope_e.GlobalOnly)
+
+    # Usually we inherit PWD from the parent shell.  When it's not set, we may
+    # compute it.
+    v = self.GetVar('PWD')
+    if v.tag == value_e.Undef:
+      SetGlobalString(self, 'PWD', _GetWorkingDir())
+    # Now mark it exported, no matter what.  This is one of few variables
+    # EXPORTED.  bash and dash both do it.  (e.g. env -i -- dash -c env)
+    self.SetVar(
+        lhs_expr.LhsName('PWD'), None, (var_flags_e.Exported,),
         scope_e.GlobalOnly)
 
   def SetCurrentSpanId(self, span_id):

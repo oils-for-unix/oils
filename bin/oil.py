@@ -304,6 +304,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   # required arg.
   mem = state.Mem(dollar0, argv[arg_r.i + 1:], posix.environ, arena,
                   has_main=has_main)
+
   funcs = {}
 
   job_state = process.JobState()
@@ -432,7 +433,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.PUSHD: builtin.Pushd(mem, dir_stack, errfmt),
       builtin_e.POPD: builtin.Popd(mem, dir_stack, errfmt),
       builtin_e.DIRS: builtin.Dirs(mem, dir_stack, errfmt),
-      builtin_e.PWD: builtin.Pwd(errfmt),
+      builtin_e.PWD: builtin.Pwd(mem, errfmt),
 
       builtin_e.READ: builtin.Read(splitter, mem),
       builtin_e.HELP: builtin.Help(loader, errfmt),

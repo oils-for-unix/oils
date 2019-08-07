@@ -28,7 +28,6 @@ from frontend import reader
 from osh import builtin
 from osh import builtin_assign
 from osh import builtin_comp
-from osh import builtin_process
 from osh import builtin_pure
 from osh import cmd_exec
 from osh import expr_eval

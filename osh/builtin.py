@@ -405,7 +405,7 @@ class Cd(object):
     if dest_dir == '-':
       old = self.mem.GetVar('OLDPWD', scope_e.GlobalOnly)
       if old.tag == value_e.Undef:
-        self.errfmt.Print('OLDPWD not set')
+        self.errfmt.Print('$OLDPWD not set')
         return 1
       elif old.tag == value_e.Str:
         dest_dir = old.s
@@ -413,7 +413,7 @@ class Cd(object):
       elif old.tag == value_e.StrArray:
         # TODO: Prevent the user from setting OLDPWD to array (or maybe they
         # can't even set it at all.)
-        raise AssertionError('Invalid OLDPWD')
+        raise AssertionError('Invalid $OLDPWD')
 
     pwd = self.mem.GetVar('PWD')
     assert pwd.tag == value_e.Str, pwd  # TODO: Need a general scheme to avoid
@@ -439,6 +439,11 @@ class Cd(object):
 
     state.ExportGlobalString(self.mem, 'OLDPWD', pwd.s)
     state.ExportGlobalString(self.mem, 'PWD', real_dest_dir)
+
+    # WEIRD: We need a copy that is NOT PWD, because the user could mutate PWD.
+    # Other shells use global variables.
+    self.mem.SetPwd(real_dest_dir)
+
     self.dir_stack.Reset()  # for pushd/popd/dirs
     return 0
 
@@ -478,6 +483,7 @@ class Pushd(object):
     elif num_args > 1:
       raise args.UsageError('got too many arguments')
 
+    # TODO: 'cd' uses normpath?  Is that inconsistent?
     dest_dir = os_path.abspath(arg_vec.strs[1])
     try:
       posix.chdir(dest_dir)
@@ -488,7 +494,8 @@ class Pushd(object):
 
     self.dir_stack.Push(dest_dir)
     _PrintDirStack(self.dir_stack, SINGLE_LINE, self.mem.GetVar('HOME'))
-    state.SetGlobalString(self.mem, 'PWD', dest_dir)
+    state.ExportGlobalString(self.mem, 'PWD', dest_dir)
+    self.mem.SetPwd(dest_dir)
     return 0
 
 
@@ -513,6 +520,7 @@ class Popd(object):
 
     _PrintDirStack(self.dir_stack, SINGLE_LINE, self.mem.GetVar('HOME'))
     state.SetGlobalString(self.mem, 'PWD', dest_dir)
+    self.mem.SetPwd(dest_dir)
     return 0
 
 
@@ -556,20 +564,20 @@ PWD_SPEC.ShortFlag('-P')
 
 
 class Pwd(object):
-  def __init__(self, errfmt):
+  """
+  NOTE: pwd doesn't just call getcwd(), which returns a "physical" dir (not a
+  symlink).
+  """
+  def __init__(self, mem, errfmt):
+    self.mem = mem
     self.errfmt = errfmt
 
   def __call__(self, arg_vec):
     arg, _ = PWD_SPEC.ParseVec(arg_vec)
 
-    try:
-      # This comes FIRST, even if you change $PWD.
-      pwd = posix.getcwd()
-    except OSError as e:
-      # Happens when the directory is unlinked.
-      self.errfmt.Print("Can't determine working directory: %s",
-                        posix.strerror(e.errno))
-      return 1
+    # NOTE: 'pwd' will succeed even if the directory has disappeared.  Other
+    # shells behave that way too.
+    pwd = self.mem.pwd
 
     # '-L' is the default behavior; no need to check it
     # TODO: ensure that if multiple flags are provided, the *last* one overrides
