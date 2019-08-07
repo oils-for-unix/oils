@@ -77,6 +77,7 @@ from osh import builtin_assign
 from osh import builtin_bracket
 from osh import builtin_comp
 from osh import builtin_printf
+from osh import builtin_pure
 from osh import cmd_exec
 from osh import expr_eval as osh_expr_eval
 from osh import history
@@ -140,7 +141,7 @@ OSH_SPEC.LongFlag('--runtime-mem-dump', args.Str)
 # it can simply by --rcfile /dev/null.
 OSH_SPEC.LongFlag('--rcfile', args.Str)
 
-builtin.AddOptionsToArgSpec(OSH_SPEC)
+builtin_pure.AddOptionsToArgSpec(OSH_SPEC)
 
 
 def _MakeArgVector(argv):
@@ -313,7 +314,7 @@ def ShellMain(lang, argv0, argv, login_shell):
     exec_opts.ShowOptions([])
     return 0
 
-  builtin.SetExecOpts(exec_opts, opts.opt_changes, opts.shopt_changes)
+  builtin_pure.SetExecOpts(exec_opts, opts.opt_changes, opts.shopt_changes)
   aliases = {}  # feedback between runtime and parser
 
   oil_grammar = meta.LoadOilGrammar(loader)
@@ -443,8 +444,8 @@ def ShellMain(lang, argv0, argv, login_shell):
 
       builtin_e.READ: builtin.Read(splitter, mem),
 
-      builtin_e.SET: builtin.Set(exec_opts, mem),
-      builtin_e.SHOPT: builtin.Shopt(exec_opts),
+      builtin_e.SET: builtin_pure.Set(exec_opts, mem),
+      builtin_e.SHOPT: builtin_pure.Shopt(exec_opts),
 
       builtin_e.DECLARE: new_var,
       builtin_e.TYPESET: new_var,
@@ -456,16 +457,16 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.UNSET: builtin_assign.Unset(mem, funcs, errfmt),
       builtin_e.SHIFT: builtin_assign.Shift(mem),
 
-      builtin_e.ALIAS: builtin.Alias(aliases, errfmt),
-      builtin_e.UNALIAS: builtin.UnAlias(aliases, errfmt),
+      builtin_e.ALIAS: builtin_pure.Alias(aliases, errfmt),
+      builtin_e.UNALIAS: builtin_pure.UnAlias(aliases, errfmt),
 
       builtin_e.HELP: builtin.Help(loader, errfmt),
 
-      builtin_e.TYPE: builtin.Type(funcs, aliases, exec_deps.search_path),
-      builtin_e.HASH: builtin.Hash(exec_deps.search_path),
+      builtin_e.TYPE: builtin_pure.Type(funcs, aliases, exec_deps.search_path),
+      builtin_e.HASH: builtin_pure.Hash(exec_deps.search_path),
       builtin_e.REPR: builtin.Repr(mem, errfmt),
 
-      builtin_e.GETOPTS: builtin.GetOpts(mem, errfmt),
+      builtin_e.GETOPTS: builtin_pure.GetOpts(mem, errfmt),
 
       builtin_e.WAIT: builtin.Wait(exec_deps.waiter, exec_deps.job_state, mem,
                                    errfmt),

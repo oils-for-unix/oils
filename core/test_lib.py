@@ -28,6 +28,7 @@ from frontend import reader
 from osh import builtin
 from osh import builtin_assign
 from osh import builtin_comp
+from osh import builtin_pure
 from osh import cmd_exec
 from osh import expr_eval
 from osh import split
@@ -151,8 +152,8 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
       builtin_e.COMPOPT: builtin_comp.CompOpt(compopt_state, errfmt),
       builtin_e.COMPADJUST: builtin_comp.CompAdjust(mem),
 
-      builtin_e.ALIAS: builtin.Alias(aliases, errfmt),
-      builtin_e.UNALIAS: builtin.UnAlias(aliases, errfmt),
+      builtin_e.ALIAS: builtin_pure.Alias(aliases, errfmt),
+      builtin_e.UNALIAS: builtin_pure.UnAlias(aliases, errfmt),
 
       builtin_e.DECLARE: new_var,
       builtin_e.TYPESET: new_var,
@@ -204,7 +205,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   spec_builder = builtin_comp.SpecBuilder(ex, parse_ctx, word_ev, splitter,
                                           comp_lookup)
   # Add some builtins that depend on the executor!
-  complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)  # used later
+  complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
   builtins[builtin_e.COMPLETE] = complete_builtin
   builtins[builtin_e.COMPGEN] = builtin_comp.CompGen(spec_builder)
 

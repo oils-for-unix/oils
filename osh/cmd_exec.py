@@ -44,6 +44,7 @@ from frontend import reader
 
 from osh import braces
 from osh import builtin
+from osh import builtin_pure
 from osh import expr_eval
 from osh import state
 from osh import word
@@ -301,7 +302,8 @@ class Executor(object):
     elif builtin_id == builtin_e.COMMAND:
       # TODO: How do we handle fork_external?  It doesn't fit the common
       # signature.  We also don't handle 'command local', etc.
-      b = builtin.Command(self, self.funcs, self.aliases, self.search_path)
+      b = builtin_pure.Command(self, self.funcs, self.aliases,
+                               self.search_path)
       status = b(arg_vec, fork_external)
 
     elif builtin_id == builtin_e.BUILTIN:  # NOTE: uses early return style
