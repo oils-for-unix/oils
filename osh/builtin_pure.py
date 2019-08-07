@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-builtin_pure.py -- Builtins that don't do any I/O.
+builtin_pure.py - Builtins that don't do any I/O.
 
 If the OSH interpreter were embedded in another program, these builtins can be
 safely used, e.g. without worrying about modifying the file system.
@@ -10,9 +10,11 @@ NOTE: There can be spew on stdout, e.g. for shopt -p and so forth.
 builtin_printf.py and builtin_bracket.py also fall in this category.  And
 arguably builtin_comp.py, though it's less useful without GNU readline.
 
-Others to move here: help, repr, echo?
+Others to move here: help
 """
 from __future__ import print_function
+
+import sys  # for sys.sdtout
 
 from _devbuild.gen.runtime_asdl import builtin_e, arg_vector, value_e
 
@@ -26,6 +28,7 @@ from osh.builtin import Resolve, ResolveSpecial, ResolveAssign
 from osh.builtin import _Register  # TODO: Remove this
 from osh import state
 from osh import string_ops
+from osh import word_compile
 
 from typing import Dict
 
@@ -472,3 +475,87 @@ class GetOpts(object):
       raise args.UsageError('got invalid variable name %r' % var_name,
                             span_id=var_spid)
     return status
+
+
+class Repr(object):
+  """Given a list of variable names, print their values.
+
+  'repr a' is a lot easier to type than 'argv.py "${a[@]}"'.
+  """
+  def __init__(self, mem, errfmt):
+    self.mem = mem
+    self.errfmt = errfmt
+
+  def __call__(self, arg_vec):
+    status = 0
+    for i in xrange(1, len(arg_vec.strs)):
+      name = arg_vec.strs[i]
+      if not match.IsValidVarName(name):
+        raise args.UsageError('got invalid variable name %r' % name,
+                              span_id=arg_vec.spids[i])
+
+      cell = self.mem.GetCell(name)
+      if cell is None:
+        print('%r is not defined' % name)
+        status = 1
+      else:
+        sys.stdout.write('%s = ' % name)
+        cell.PrettyPrint()  # may be color
+        sys.stdout.write('\n')
+    return status
+
+
+ECHO_SPEC = _Register('echo')
+ECHO_SPEC.ShortFlag('-e')  # no backslash escapes
+ECHO_SPEC.ShortFlag('-n')
+
+
+def Echo(arg_vec):
+  """echo builtin.
+
+  set -o sane-echo could do the following:
+  - only one arg, no implicit joining.
+  - no -e: should be echo c'one\ttwo\t'
+  - no -n: should be write 'one'
+
+  multiple args on a line:
+  echo-lines one two three
+  """
+  # NOTE: both getopt and optparse are unsuitable for 'echo' because:
+  # - 'echo -c' should print '-c', not fail
+  # - echo '---' should print ---, not fail
+
+  argv = arg_vec.strs[1:]
+  arg, arg_index = ECHO_SPEC.ParseLikeEcho(argv)
+  argv = argv[arg_index:]
+  if arg.e:
+    new_argv = []
+    for a in argv:
+      parts = []
+      for id_, value in match.ECHO_LEXER.Tokens(a):
+        p = word_compile.EvalCStringToken(id_, value)
+
+        # Unusual behavior: '\c' prints what is there and aborts processing!
+        if p is None:
+          new_argv.append(''.join(parts))
+          for i, a in enumerate(new_argv):
+            if i != 0:
+              sys.stdout.write(' ')  # arg separator
+            sys.stdout.write(a)
+          return 0  # EARLY RETURN
+
+        parts.append(p)
+      new_argv.append(''.join(parts))
+
+    # Replace it
+    argv = new_argv
+
+  #log('echo argv %s', argv)
+  for i, a in enumerate(argv):
+    if i != 0:
+      sys.stdout.write(' ')  # arg separator
+    sys.stdout.write(a)
+  if not arg.n:
+    sys.stdout.write('\n')
+
+  return 0

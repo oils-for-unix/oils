@@ -77,6 +77,7 @@ from osh import builtin_assign
 from osh import builtin_bracket
 from osh import builtin_comp
 from osh import builtin_printf
+from osh import builtin_process
 from osh import builtin_pure
 from osh import cmd_exec
 from osh import expr_eval as osh_expr_eval
@@ -424,7 +425,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   new_var = builtin_assign.NewVar(mem, funcs, errfmt)
 
   builtins = {  # Lookup
-      builtin_e.ECHO: builtin.Echo,
+      builtin_e.ECHO: builtin_pure.Echo,
       builtin_e.PRINTF: builtin_printf.Printf(mem, parse_ctx, errfmt),
 
       builtin_e.CD: builtin.Cd(mem, dir_stack, errfmt),
@@ -433,20 +434,19 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.DIRS: builtin.Dirs(mem, dir_stack, errfmt),
       builtin_e.PWD: builtin.Pwd(errfmt),
 
+      builtin_e.READ: builtin.Read(splitter, mem),
+      builtin_e.HELP: builtin.Help(loader, errfmt),
       builtin_e.HISTORY: builtin.History(line_input),
 
+      # Completion (more added below)
       builtin_e.COMPOPT: builtin_comp.CompOpt(compopt_state, errfmt),
       builtin_e.COMPADJUST: builtin_comp.CompAdjust(mem),
 
-      # need_right_bracket
+      # test / [ differ by need_right_bracket
       builtin_e.TEST: builtin_bracket.Test(False, errfmt),
       builtin_e.BRACKET: builtin_bracket.Test(True, errfmt),
 
-      builtin_e.READ: builtin.Read(splitter, mem),
-
-      builtin_e.SET: builtin_pure.Set(exec_opts, mem),
-      builtin_e.SHOPT: builtin_pure.Shopt(exec_opts),
-
+      # Assignment (which are pure)
       builtin_e.DECLARE: new_var,
       builtin_e.TYPESET: new_var,
       builtin_e.LOCAL: new_var,
@@ -457,28 +457,29 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.UNSET: builtin_assign.Unset(mem, funcs, errfmt),
       builtin_e.SHIFT: builtin_assign.Shift(mem),
 
+      # Pure
+      builtin_e.SET: builtin_pure.Set(exec_opts, mem),
+      builtin_e.SHOPT: builtin_pure.Shopt(exec_opts),
+
       builtin_e.ALIAS: builtin_pure.Alias(aliases, errfmt),
       builtin_e.UNALIAS: builtin_pure.UnAlias(aliases, errfmt),
 
-      builtin_e.HELP: builtin.Help(loader, errfmt),
-
       builtin_e.TYPE: builtin_pure.Type(funcs, aliases, exec_deps.search_path),
       builtin_e.HASH: builtin_pure.Hash(exec_deps.search_path),
-      builtin_e.REPR: builtin.Repr(mem, errfmt),
-
+      builtin_e.REPR: builtin_pure.Repr(mem, errfmt),
       builtin_e.GETOPTS: builtin_pure.GetOpts(mem, errfmt),
-
-      builtin_e.WAIT: builtin.Wait(exec_deps.waiter, exec_deps.job_state, mem,
-                                   errfmt),
-      builtin_e.JOBS: builtin.Jobs(exec_deps.job_state),
-      builtin_e.FG: builtin.Fg(exec_deps.job_state, exec_deps.waiter),
-      builtin_e.BG: builtin.Bg(exec_deps.job_state),
-
-      builtin_e.UMASK: builtin.Umask,
 
       builtin_e.COLON: lambda arg_vec: 0,  # a "special" builtin 
       builtin_e.TRUE: lambda arg_vec: 0,
       builtin_e.FALSE: lambda arg_vec: 1,
+
+      # Process
+      builtin_e.WAIT: builtin_process.Wait(exec_deps.waiter,
+                                           exec_deps.job_state, mem, errfmt),
+      builtin_e.JOBS: builtin_process.Jobs(exec_deps.job_state),
+      builtin_e.FG: builtin_process.Fg(exec_deps.job_state, exec_deps.waiter),
+      builtin_e.BG: builtin_process.Bg(exec_deps.job_state),
+      builtin_e.UMASK: builtin_process.Umask,
   }
 
   ex = cmd_exec.Executor(mem, fd_state, funcs, builtins, exec_opts,
@@ -519,8 +520,9 @@ def ShellMain(lang, argv0, argv, login_shell):
   sig_state = process.SignalState()
   sig_state.InitShell()
 
-  builtins[builtin_e.TRAP] = builtin.Trap(sig_state, exec_deps.traps,
-                                          exec_deps.trap_nodes, ex, errfmt)
+  builtins[builtin_e.TRAP] = builtin_process.Trap(sig_state, exec_deps.traps,
+                                                  exec_deps.trap_nodes, ex,
+                                                  errfmt)
 
   if lang == 'oil':
     # The Oil executor wraps an OSH executor?  It needs to be able to source

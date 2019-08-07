@@ -48,3 +48,20 @@ echo $length
 ## STDOUT:
 3
 ## END
+
+#### Length in two different contexts
+x=(a b c)
+x[10]=A
+x[20]=B
+
+# shell style: length is 5
+echo shell=${#x[@]}
+
+# Oil function call: length is 20.  I think that makes sense?  It's just a
+# different notion of length.
+echo oil= $len(x)
+
+## STDOUT:
+shell=5
+oil=20
+## END
