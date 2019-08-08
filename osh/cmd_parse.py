@@ -156,7 +156,7 @@ def _MakeAssignPair(parse_ctx,  # type: ParseContext
       var_name = left_token.val[:-1]
       op = assign_op_e.Equal
 
-    lhs_= lhs_expr.LhsName(var_name)
+    lhs_ = lhs_expr.LhsName(var_name)
     lhs_.spids.append(left_token.span_id)
 
     lhs = cast(lhs_expr_t, lhs_)  # for MyPy

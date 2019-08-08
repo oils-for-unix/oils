@@ -130,7 +130,6 @@ class FdState(object):
 
   def _GetFreeDescriptor(self):
     """Return a free file descriptor above 10 that isn't used."""
-    done = False
     fd = 10
     while True:
       try:
@@ -307,7 +306,7 @@ class FdState(object):
 
         # NOTE: we could close the read pipe here, but it doesn't really
         # matter because we control the code.
-        pid = here_proc.Start()
+        _ = here_proc.Start()
         #log('Started %s as %d', here_proc, pid)
         self._PushWait(here_proc, waiter)
 

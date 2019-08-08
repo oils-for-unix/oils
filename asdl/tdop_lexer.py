@@ -18,7 +18,7 @@ else:
 #
 
 # NOTE: () and [] need to be on their own so (-1+2) works
-TOKEN_RE = re.compile("""
+TOKEN_RE = re.compile(r"""
 \s* (?: (\d+) | (\w+) | ( [\-\+\*/%!~<>=&^|?:,]+ ) | ([\(\)\[\]]) )
 """, re.VERBOSE)
 

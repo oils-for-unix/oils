@@ -220,7 +220,7 @@ class OilParser(object):
       children.append(child)
 
       self._Peek()
-      if self.token_type  not in (Id.Op_Pipe,):
+      if self.token_type not in (Id.Op_Pipe,):
         break
 
     node = oil_cmd.Pipeline(children, negated)
@@ -235,7 +235,7 @@ class OilParser(object):
     assert child is not None
 
     self._Peek()
-    if self.token_type  not in (Id.Op_DPipe, Id.Op_DAmp):
+    if self.token_type not in (Id.Op_DPipe, Id.Op_DAmp):
       return child
 
     ops = []

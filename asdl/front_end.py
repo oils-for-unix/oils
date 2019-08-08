@@ -274,7 +274,7 @@ def _AppendFields(field_ast_nodes, type_lookup, out):
 def _MakeReflection(module, app_types):
   # Types that fields are declared with: int, id, word_part, etc.
   # Fields are NOT declared with Constructor names.
-  type_lookup  = dict(meta.BUILTIN_TYPES)
+  type_lookup = dict(meta.BUILTIN_TYPES)
   type_lookup.update(app_types)
 
   # NOTE: We need two passes because types can be mutually recursive, e.g.

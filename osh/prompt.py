@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 # Prompt Evaluation
 #
 
-PROMPT_ERROR = '<Error: unbalanced \[ and \]> '
+PROMPT_ERROR = r'<Error: unbalanced \[ and \]> '
 
 # NOTE: word_compile._ONE_CHAR has some of the same stuff.
 _ONE_CHAR = {
@@ -174,7 +174,7 @@ class Evaluator(object):
           r = _ONE_CHAR[char]
 
         else:
-          r = '<Error: \%s not implemented in $PS1> ' % char
+          r = r'<Error: \%s not implemented in $PS1> ' % char
 
         # See comment above on bash hack for $.
         ret.append(r.replace('$', '\\$'))

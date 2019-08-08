@@ -57,9 +57,9 @@ class SplitTest(unittest.TestCase):
   def testTrailingWhitespaceBug(self):
     # Bug: these differed
     CASES = [
-        (['x y'], ' x\ y', True),
-        (['ab '], ' ab\ ', True),
-        (['ab '], ' ab\  ', True),
+        (['x y'], r' x\ y', True),
+        (['ab '], r' ab\ ', True),
+        (['ab '], r' ab\  ', True),
     ]
     sp = split.IfsSplitter(split.DEFAULT_IFS, '')
     _RunSplitCases(self, sp, CASES)
@@ -83,7 +83,7 @@ class SplitTest(unittest.TestCase):
     sp = split.IfsSplitter(split.DEFAULT_IFS, '')
     _RunSplitCases(self, sp, CASES)
 
-    self.assertEqual('a\ _b', sp.Escape('a _b'))
+    self.assertEqual(r'a\ _b', sp.Escape('a _b'))
 
   def testMixedIfs(self):
     CASES = [

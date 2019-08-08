@@ -91,7 +91,6 @@ _TRANSITIONS = {
 def AdjustArg(arg, break_chars, argv_out):
   end_indices = []  # stores the end of each span
   state = ST_Begin
-  last_i = 0
   for i, c in enumerate(arg):
     ch = CH_Break if c in break_chars else CH_Other
     state, emit_span = _TRANSITIONS[state, ch]

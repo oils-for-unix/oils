@@ -104,7 +104,7 @@ class GlobParserTest(unittest.TestCase):
   def testGlobLexer(self):
     print(_ReadTokens(''))
     print(_ReadTokens('*.py'))
-    print(_ReadTokens('\*.py'))
+    print(_ReadTokens(r'\*.py'))
     print(_ReadTokens('[abc]'))
     print(_ReadTokens('\\'))  # Enf
     print(_ReadTokens('\\x'))
@@ -115,12 +115,12 @@ class GlobParserTest(unittest.TestCase):
   def testGlobParser(self):
     CASES = [
         # (glob input, expected AST, expected extended regexp, has error)
-        ('*.py', '.*\.py', False),
-        ('*.?', '.*\..', False),
-        ('<*>', '<.*>', False),
-        ('\**+', '\*.*\+', False),
-        ('\**', '\*.*', False),
-        ('*.[ch]pp', '.*\.[ch]pp', False),
+        ('*.py', r'.*\.py', False),
+        ('*.?', r'.*\..', False),
+        ('<*>', r'<.*>', False),
+        ('\**+', r'\*.*\+', False),
+        ('\**', r'\*.*', False),
+        ('*.[ch]pp', r'.*\.[ch]pp', False),
 
         # not globs
         ('abc', 'abc', False),
@@ -132,11 +132,11 @@ class GlobParserTest(unittest.TestCase):
         ('[[:space:]abc]', '[[:space:]abc]', False),
         ('[abc]', '[abc]', False),
         (r'[\a\b\c]', r'[\a\b\c]', False),
-        ('[abc\[]', '[abc\[]', False),
+        ('[abc\[]', r'[abc\[]', False),
         ('[!not]', '[^not]', False),
         ('[^also_not]', '[^also_not]', False),
         ('[!*?!\\[]', '[^*?!\\[]', False),
-        ('[!\]foo]', '[^\]foo]', False),
+        ('[!\]foo]', r'[^\]foo]', False),
 
         # invalid globs
         ('not_closed[a-z', 'not_closed\\[a-z', True),

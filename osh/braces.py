@@ -360,9 +360,9 @@ def _RangeStrings(part):
 
 
 def _ExpandPart(parts,  # type: List[word_part_t]
-                 first_alt_index,  # type: int
-                 suffixes,  # type: List[List[word_part_t]]
-                 ):
+                first_alt_index,  # type: int
+                suffixes,  # type: List[List[word_part_t]]
+                ):
   # type: (...) -> List[List[word_part_t]]
   """Mutually recursive with _BraceExpand.
 

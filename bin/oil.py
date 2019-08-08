@@ -120,8 +120,8 @@ OSH_SPEC.ShortFlag('-i')  # interactive
 # TODO: -h too
 # the output format when passing -n
 OSH_SPEC.LongFlag('--ast-format',
-              ['text', 'abbrev-text', 'html', 'abbrev-html', 'oheap', 'none'],
-              default='abbrev-text')
+    ['text', 'abbrev-text', 'html', 'abbrev-html', 'oheap', 'none'],
+    default='abbrev-text')
 
 # Defines completion style.
 OSH_SPEC.LongFlag('--completion-display', ['minimal', 'nice'], default='nice')

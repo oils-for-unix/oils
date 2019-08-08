@@ -1322,7 +1322,7 @@ class Executor(object):
 
     r, w = posix.pipe()
     p.AddStateChange(process.StdoutToPipe(r, w))
-    pid = p.Start()
+    _ = p.Start()
     #log('Command sub started %d', pid)
 
     chunks = []

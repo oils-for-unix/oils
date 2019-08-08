@@ -33,16 +33,16 @@ class PromptTest(unittest.TestCase):
 
   def testValidEscapes(self):
     for prompt_str in [
-        "\[\033[01;34m\]user\[\033[00m\] >", "\[\]\[\]\[\]",
-        "\[\] hi \[hi\] \[\] hello"]:
+        "\[\033[01;34m\]user\[\033[00m\] >", r"\[\]\[\]\[\]",
+        r"\[\] hi \[hi\] \[\] hello"]:
       self.assertEqual(
           self.p.EvalPrompt(value.Str(prompt_str)),
-          prompt_str.replace("\[", "\x01").replace("\]", "\x02"))
+          prompt_str.replace(r"\[", "\x01").replace(r"\]", "\x02"))
 
   def testInvalidEscapes(self):
     for invalid_prompt in [
-        "\[\[", "\[\]\[\]\]", "\]\]", "almost valid \]", "\[almost valid",
-        "\]\[",  # goes negative!
+        r"\[\[", r"\[\]\[\]\]", r"\]\]", r"almost valid \]", r"\[almost valid",
+        r"\]\[",  # goes negative!
         ]:
       tokens = list(match.PS1_LEXER.Tokens(invalid_prompt))
       self.assertEqual(
