@@ -39,6 +39,7 @@ _spec-manifest() {
 
     # Not ready yet
     if (name == "oil-assign") next;
+    if (name == "builtin-oil") next;
 
     print name
   }

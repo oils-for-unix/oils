@@ -75,7 +75,7 @@ test -file
 
 ### Builtins Upgraded With a Block
 
-#### cd,  shopt, env
+#### cd, shopt, env
 
 - we're not changing `set`, only `shopt`
 - `env` is backward-compatible with /usr/bin/env
@@ -148,4 +148,30 @@ Speculative:
 - `command` and `builtin` could be subsumed by some more general $PATH
   mechanism?
 
+
+### Other Ideas
+
+`prefix` builtin?
+
+    prefix git -C . {
+      add foo.txt
+      rm foo.txt
+    }
+
+
+Or maybe just `command`?  Not `builtin`?
+
+    command git -C . {
+      add foo.txt
+      rm foo.txt
+    }
+
+`command` does find builtins though, e.g. `command echo ls` works.
+
+That would conflict with 
+
+    command cd {
+      /
+      d
+    }
 

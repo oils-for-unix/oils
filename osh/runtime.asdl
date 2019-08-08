@@ -40,6 +40,11 @@ module runtime
   | StrArray(string* strs)
   | AssocArray(dict d)
     -- A Python-style object.  'any' is not currently type checked.
+    -- invariant for 'proc' stack:
+    -- * s bool, int, float, (NOT str), or...
+    -- * BoolArray, IntArray, FloatArray (NOT StrArray), or ...
+    -- * heterogeneous List (NOT dict)
+    -- * or a user-defined type
   | Obj(any obj)
 
   -- For storing a variable.

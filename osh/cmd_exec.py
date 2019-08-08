@@ -811,20 +811,30 @@ class Executor(object):
       status = 0 if i != 0 else 1
 
     elif node.tag == command_e.OilAssign:
-      # TODO: maybe pick out LHS and RHS here.
-      # And then use mem and everything.
-
       lval = self.expr_ev.EvalLHS(node.lhs)
       py_val = self.expr_ev.EvalRHS(node.rhs)
 
       if node.op.id == Id.Arith_Equal:
-        val = value.Obj(py_val)
+
+        # Maintain the 'value' invariant in osh/runtime.asdl.
+        if isinstance(py_val, str):  # var s = "hello $name"
+          val = value.Str(py_val)
+        elif isinstance(py_val, objects.StrArray):  # var a = @(a b)
+          # TODO: Rename this value.MaybeStrArray?
+          val = value.StrArray(py_val)
+        elif isinstance(py_val, dict):  # var d = {name: "bob"}
+          val = value.AssocArray(py_val)
+        else:
+          val = value.Obj(py_val)
+
         flags = ()
         self.mem.SetVar(lval, val, flags, scope_e.LocalOnly)
 
       elif node.op.id == Id.Arith_PlusEqual:
         old_py_val = self.expr_ev.LookupVar(lval.name)
 
+        # TODO: This should be done in the expression evaluator.  Strings and
+        # lists shouldn't respect +.  Only ints and floats.
         val = value.Obj(old_py_val + py_val)
         flags = ()
         self.mem.SetVar(lval, val, flags, scope_e.LocalOnly)
