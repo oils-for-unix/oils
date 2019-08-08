@@ -6,7 +6,7 @@ import pwd
 
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import (
-    word_e, word_t, word__CompoundWord,
+    word_e, word_t, word__Compound,
     bracket_op_e, suffix_op_e, word_part_e
 )
 from _devbuild.gen.syntax_asdl import word
@@ -973,11 +973,11 @@ class _WordEvaluator(object):
       List of part_value.
       But note that this is a TREE.
     """
-    if word.tag == word_e.CompoundWord:
+    if word.tag == word_e.Compound:
       for p in word.parts:
         self._EvalWordPart(p, part_vals, quoted=quoted, is_subst=is_subst)
 
-    elif word.tag == word_e.EmptyWord:
+    elif word.tag == word_e.Empty:
       part_vals.append(part_value.String('', quoted, not quoted))
 
     else:
@@ -996,7 +996,7 @@ class _WordEvaluator(object):
   def EvalWordToString(self, word, do_fnmatch=False, do_ere=False):
     """
     Args:
-      word: CompoundWord
+      word: Compound
 
     Used for redirect arg, ControlFlow arg, ArithWord, BoolWord, etc.
 
@@ -1010,7 +1010,7 @@ class _WordEvaluator(object):
 
     TODO: Raise AssertionError if it has ExtGlob.
     """
-    if word.tag == word_e.EmptyWord:
+    if word.tag == word_e.Empty:
       return value.Str('')
 
     part_vals = []
@@ -1074,7 +1074,7 @@ class _WordEvaluator(object):
 
     Used for RHS of assignment.  There is no splitting.
     """
-    if word.tag == word_e.EmptyWord:
+    if word.tag == word_e.Empty:
       return value.Str('')
 
     if len(word.parts) == 1:
@@ -1171,7 +1171,7 @@ class _WordEvaluator(object):
       argv.extend(results)
 
   def _EvalWordToArgv(self, w):
-    # type: (word__CompoundWord) -> List[str]
+    # type: (word__Compound) -> List[str]
     """Helper for _EvalAssignBuiltin.
 
     Splitting and globbing are disabled for assignment builtins.
@@ -1189,7 +1189,7 @@ class _WordEvaluator(object):
     return argv
 
   def _EvalAssignBuiltin(self, builtin_id, arg0, words):
-    # type: (List[word__CompoundWord]) -> cmd_value__Assign
+    # type: (List[word__Compound]) -> cmd_value__Assign
     """
     Handles both static and dynamic assignment, e.g.
 
@@ -1241,9 +1241,9 @@ class _WordEvaluator(object):
 
           left = lvalue.Named(tok_val[:-1])
           if part_offset == len(w.parts):
-            rhs_word = word.EmptyWord()  # type: word_t
+            rhs_word = word.Empty()  # type: word_t
           else:
-            rhs_word = word.CompoundWord(w.parts[part_offset:])
+            rhs_word = word.Compound(w.parts[part_offset:])
             # tilde detection only happens on static assignments!
             rhs_word = word_.TildeDetect(rhs_word) or rhs_word
 
@@ -1413,7 +1413,7 @@ class _WordEvaluator(object):
     return cmd_value.Argv(strs, spids)
 
   def EvalWordSequence(self, words):
-    # type: (List[word__CompoundWord]) -> List[str]
+    # type: (List[word__Compound]) -> List[str]
     """For arrays and for loops.  They don't allow assignment builtins."""
     cmd_val = self.EvalWordSequence2(words)
     return cmd_val.argv

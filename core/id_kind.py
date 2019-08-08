@@ -137,7 +137,8 @@ class IdSpec(object):
     # type: (str, int) -> int
     """For [ = ] [ == ] and [ != ].
 
-    These operators are NOT added to the lexer.  The are "lexed" as StringWord.
+    These operators are NOT added to the lexer.  The are "lexed" as
+    word.String.
     """
     id_name = 'BoolBinary_%s' % id_name
     id_int = self._AddId(id_name, kind=kind)

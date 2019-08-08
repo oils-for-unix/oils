@@ -163,7 +163,7 @@ def _GetRhsStyle(w):
 
   # Actually splitting NEVER HAPPENS ON ASSIGNMENT.  LEAVE IT OFF.
 
-  if w.tag == word_e.EmptyWord:
+  if w.tag == word_e.Empty:
     return word_style_e.SQ
 
   if len(w.parts) == 0:
@@ -528,8 +528,8 @@ class OilPrinter(object):
         self.f.write(pair.lhs.name)
         self.f.write(' = ')
 
-        # TODO: This should be translated from EmptyWord.
-        if pair.rhs.tag == word_e.EmptyWord:
+        # TODO: This should be translated from Empty.
+        if pair.rhs.tag == word_e.Empty:
           self.f.write("''")  # local i -> var i = ''
         else:
           self.DoWordAsExpr(pair.rhs, local_symbols)
@@ -550,7 +550,7 @@ class OilPrinter(object):
         # assignments.
         self.f.write("array-assign %s '%s' " % (pair.lhs.name, pair.lhs.index))
 
-        if pair.rhs.tag == word_e.EmptyWord:
+        if pair.rhs.tag == word_e.Empty:
           self.f.write("''")  # local i -> var i = ''
         else:
           rhs_spid = word_.LeftMostSpanForWord(pair.rhs)
@@ -1023,7 +1023,7 @@ class OilPrinter(object):
 
     # What about here docs words?  It's a double quoted part, but with
     # different formatting!
-    if node.tag == word_e.CompoundWord:
+    if node.tag == word_e.Compound:
 
       # UNQUOTE simple var subs
 
@@ -1113,11 +1113,11 @@ class OilPrinter(object):
         #self.cursor.PrintUntil(right_spid)
         #pass
 
-    elif node.tag == word_e.BracedWordTree:
+    elif node.tag == word_e.BracedTree:
       # Not doing anything now
       pass
 
-    elif node.tag == word_e.EmptyWord:
+    elif node.tag == word_e.Empty:
       # Hm do I need to make it ''?
       # This only happens for:
       # s=

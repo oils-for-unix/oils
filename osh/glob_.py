@@ -9,7 +9,7 @@ except ImportError:
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    glob_part_e, glob_part, word__CompoundWord, word_part__Literal
+    glob_part_e, glob_part, word__Compound, word_part__Literal
 )
 from core import util
 #from core.util import log
@@ -50,7 +50,7 @@ def LooksLikeGlob(s):
 
 
 def LooksLikeStaticGlob(w):
-  # type: (word__CompoundWord) -> bool
+  # type: (word__Compound) -> bool
   """Like LooksLikeGlob, but for static words."""
 
   left_bracket = False

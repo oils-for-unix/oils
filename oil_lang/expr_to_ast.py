@@ -227,7 +227,7 @@ class Transformer(object):
             Id.Lit_Chars
         ]
         array_words = [
-            word.CompoundWord([word_part.Literal(t)]) for t in tokens
+            word.Compound([word_part.Literal(t)]) for t in tokens
         ]  # type: List[word_t]
         return expr.ArrayLiteral(left_tok, array_words)
 
@@ -263,7 +263,7 @@ class Transformer(object):
             Id.Lit_Chars
         ]
         words = [
-            word.CompoundWord([word_part.Literal(t)]) for t in tokens
+            word.Compound([word_part.Literal(t)]) for t in tokens
         ]  # type: List[word_t]
         return expr.CommandSub(left_tok, command.SimpleCommand(words))
 

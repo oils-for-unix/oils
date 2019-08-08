@@ -120,7 +120,7 @@ class Executor(object):
   """Executes the program by tree-walking.
 
   It also does some double-dispatch by passing itself into Eval() for
-  CompoundWord/WordPart.
+  Compound/WordPart.
   """
   def __init__(self, mem, fd_state, funcs, builtins, exec_opts, parse_ctx,
                exec_deps):
@@ -481,7 +481,7 @@ class Executor(object):
 
     elif n.tag == redir_e.HereDoc:
       # HACK: Wrap it in a word to evaluate.
-      w = word.CompoundWord(n.stdin_parts)
+      w = word.Compound(n.stdin_parts)
       val = self.word_ev.EvalWordToString(w)
       assert val.tag == value_e.Str, val
       return redirect.HereDoc(fd, val.s, n.op.span_id)

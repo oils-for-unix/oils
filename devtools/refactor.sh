@@ -46,6 +46,9 @@ replace() {
 
   while read pat replace; do
     sed -r -i "s/${pat}/${replace}/g" "${files[@]}"
+
+    # word-anchored version
+    #sed -r -i "s/\b${pat}\b/${replace}/g" "${files[@]}"
   done < $file
 }
 

@@ -24,10 +24,10 @@ _OTHER_LOOKUP = meta.TEST_OTHER_LOOKUP
 
 
 class _StringWordEmitter(object):
-  """For test/[, we need a word parser that returns StringWord.
+  """For test/[, we need a word parser that returns String.
 
   The BoolParser calls word_.BoolId(w), and deals with Kind.BoolUnary,
-  Kind.BoolBinary, etc.  This is instead of CompoundWord/TokenWord (as in the
+  Kind.BoolBinary, etc.  This is instead of Compound/Token (as in the
   [[ case.
   """
   def __init__(self, arg_vec):
@@ -39,7 +39,7 @@ class _StringWordEmitter(object):
     """Interface for bool_parse.py."""
     if self.i == self.n:
       # Does it make sense to define Eof_Argv or something?
-      w = word.StringWord(Id.Eof_Real, '')
+      w = word.String(Id.Eof_Real, '')
       # TODO: Add a way to show this.  Show 1 char past the right-most spid of
       # the last word?  But we only have the left-most spid.
       w.spids.append(const.NO_INTEGER)
@@ -58,7 +58,7 @@ class _StringWordEmitter(object):
 
     # NOTE: We only have the left spid now.  It might be useful to add the
     # right one.
-    w = word.StringWord(id_, s)
+    w = word.String(id_, s)
     w.spids.append(left_spid)
     return w
 

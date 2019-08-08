@@ -134,7 +134,7 @@ class BracesTest(unittest.TestCase):
     self.assertEqual(word_part_e.BracedTuple, middle_part2.tag)
     self.assertEqual(2, len(middle_part2.words))  # b c
 
-    # Third alternative is a CompoundWord with zero parts
+    # Third alternative is a Compound with zero parts
     w = _assertReadWord(self, '{a,b,}')
     tree = braces._BraceDetect(w)
     _PrettyPrint(tree)
@@ -146,7 +146,7 @@ class BracesTest(unittest.TestCase):
     results = braces._BraceExpand(w.parts)
     self.assertEqual(1, len(results))
     for parts in results:
-      _PrettyPrint(word.CompoundWord(parts))
+      _PrettyPrint(word.Compound(parts))
       print('')
 
     w = _assertReadWord(self, 'B-{a,b}-E')
@@ -157,7 +157,7 @@ class BracesTest(unittest.TestCase):
     results = braces._BraceExpand(tree.parts)
     self.assertEqual(2, len(results))
     for parts in results:
-      _PrettyPrint(word.CompoundWord(parts))
+      _PrettyPrint(word.Compound(parts))
       print('')
 
     w = _assertReadWord(self, 'B-{a,={b,c,d}=,e}-E')
@@ -168,7 +168,7 @@ class BracesTest(unittest.TestCase):
     results = braces._BraceExpand(tree.parts)
     self.assertEqual(5, len(results))
     for parts in results:
-      _PrettyPrint(word.CompoundWord(parts))
+      _PrettyPrint(word.Compound(parts))
       print('')
 
     w = _assertReadWord(self, 'B-{a,b}-{c,d}-E')
@@ -179,7 +179,7 @@ class BracesTest(unittest.TestCase):
     results = braces._BraceExpand(tree.parts)
     self.assertEqual(4, len(results))
     for parts in results:
-      _PrettyPrint(word.CompoundWord(parts))
+      _PrettyPrint(word.Compound(parts))
       print('')
 
 

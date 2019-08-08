@@ -83,7 +83,7 @@ class WordTest(unittest.TestCase):
         ('a=(1 2 3)', (Id.Lit_VarLike, None, 1)),
         ('a+=(1 2 3)', (Id.Lit_VarLike, None, 1)),
 
-        # EmptyWord on RHS
+        # Empty on RHS
         ('s=', (Id.Lit_VarLike, None, 1)),
         ('a[x]=', (Id.Lit_ArrayLhsOpen, Id.Lit_ArrayLhsClose, 3)),
 

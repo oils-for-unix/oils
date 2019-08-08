@@ -130,19 +130,19 @@ module syntax
 
   word = 
     -- for RHS of 'x=', 'declare x=', and the argument in "${x:-}"
-    -- In contrast, a CompoundWord always has at least one part.
-    EmptyWord
-  | TokenWord(token token)
-    -- A CompoundWord can contain any word_part except the Braced*Part.
+    -- In contrast, a Compound word always has at least one part.
+    Empty
+  | Token(token token)
+    -- A Compound word can contain any word_part except the Braced*Part.
     -- We could model this with another variant type but it incurs runtime
     -- overhead and seems like overkill.  Note that DoubleQuoted can't
     -- contain a SingleQuoted, etc. either.
-  | CompoundWord(word_part* parts)
-    -- A BracedWordTree is a word because it can appear in a command.  It can
+  | Compound(word_part* parts)
+    -- A BracedTree is a word because it can appear in a command.  It can
     -- contains any type of word_part.
-  | BracedWordTree(word_part* parts)
+  | BracedTree(word_part* parts)
     -- For dynamic parsing of test/[ -- the string is already evaluated.
-  | StringWord(id id, string s)
+  | String(id id, string s)
 
   -- TODO: Need more tokens/spids to translate a[x++]=1
   -- These don't follow the LST design, because they're shared for
@@ -347,7 +347,7 @@ module syntax
   --
   -- UNUSED stuff for oil_lang/cmd_parse.py (on hold).
   --
-  -- Differences from OSH: no TokenWord, but add GlobWord, etc.
+  -- Differences from OSH: no Token, but add GlobWord, etc.
 
   oil_word = 
     Compound(word_part* parts)

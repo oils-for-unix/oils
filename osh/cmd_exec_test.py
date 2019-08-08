@@ -54,7 +54,7 @@ class VarOpTest(unittest.TestCase):
 
     # Now add some ops
     part = word_part.Literal(token(Id.Lit_Chars, 'default'))
-    arg_word = word.CompoundWord([part])
+    arg_word = word.Compound([part])
     test_op = suffix_op.StringUnary(Id.VTest_ColonHyphen, arg_word)
     unset_sub.suffix_op = test_op
     set_sub.suffix_op = test_op

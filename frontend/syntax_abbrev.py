@@ -86,8 +86,8 @@ def _word_part__SingleQuoted(obj):
   return p_node
 
 
-def _word__CompoundWord(obj):
-  # type: (word__CompoundWord) -> PrettyNode
+def _word__Compound(obj):
+  # type: (word__Compound) -> PrettyNode
   p_node = runtime.PrettyNode()
   p_node.abbrev = True
   p_node.node_type = ''  # don't show

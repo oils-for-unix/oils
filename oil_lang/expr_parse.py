@@ -6,7 +6,7 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.syntax_asdl import (
-    token, word__TokenWord, word__CompoundWord, word_part
+    token, word__Token, word__Compound, word_part
 )
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.types_asdl import lex_mode_e
@@ -238,17 +238,17 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
         if 0:
           log('w = %s', w)
 
-        if isinstance(w, word__TokenWord):
+        if isinstance(w, word__Token):
           word_id = word_.CommandId(w)
           if word_id == Id.Right_ArrayLiteral:
             break
           elif word_id == Id.Op_Newline:  # internal newlines allowed
             continue
           else:
-            # TokenWord
+            # Token
             p_die('Unexpected token in array literal: %r', w.token.val, word=w)
 
-        assert isinstance(w, word__CompoundWord)  # for MyPy
+        assert isinstance(w, word__Compound)  # for MyPy
         words.append(w)
 
       if 0:

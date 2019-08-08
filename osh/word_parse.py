@@ -55,7 +55,7 @@ from _devbuild.gen.syntax_asdl import (
 
     suffix_op_t, suffix_op__Slice, suffix_op__PatSub,
 
-    word_t, word__CompoundWord, word__TokenWord,
+    word_t, word__Compound, word__Token,
 
     word_part, word_part_t,
     word_part__Literal,
@@ -141,7 +141,7 @@ class WordParser(object):
     # type: (lex_mode_t, Id_t, bool) -> word_t
     """
     Args:
-      empty_ok: Whether EmptyWord can be returned
+      empty_ok: Whether Empty can be returned
     """
 
     # NOTE: Operators like | and < are not treated as special, so ${a:- | >} is
@@ -152,8 +152,8 @@ class WordParser(object):
     w = self._ReadCompoundWord(lex_mode=arg_lex_mode, eof_type=eof_type,
                                empty_ok=empty_ok)
 
-    # If the CompoundWord has no parts, and we're in a double-quoted VarSub
-    # arg, and empty_ok, then return EmptyWord.  This is so it can evaluate to
+    # If the Compound has no parts, and we're in a double-quoted VarSub
+    # arg, and empty_ok, then return Empty.  This is so it can evaluate to
     # the empty string and not get elided.
     #
     # Examples:
@@ -162,10 +162,10 @@ class WordParser(object):
     # has the same potential problem of not having spids.
     #
     # NOTE: empty_ok is False only for the PatSub pattern, which means we'll
-    # return a CompoundWord with no parts, which is explicitly checked with a
+    # return a Compound with no parts, which is explicitly checked with a
     # custom error message.
     if not w.parts and arg_lex_mode == lex_mode_e.VSub_ArgDQ and empty_ok:
-      return word.EmptyWord()
+      return word.Empty()
 
     return w
 
@@ -199,7 +199,7 @@ class WordParser(object):
               | VarOf '/' Match '/' WORD
     """
     pat = self._ReadVarOpArg(lex_mode, eof_type=Id.Lit_Slash, empty_ok=False)
-    assert isinstance(pat, word__CompoundWord)  # Because empty_ok=False
+    assert isinstance(pat, word__Compound)  # Because empty_ok=False
 
     if len(pat.parts) == 1:
       ok, s, quoted = word_.StaticEval(pat)
@@ -578,11 +578,11 @@ class WordParser(object):
     # type: () -> word_part__ExtGlob
     """
     Grammar:
-      Item         = CompoundWord | EPSILON  # important: @(foo|) is allowed
+      Item         = word.Compound | EPSILON  # important: @(foo|) is allowed
       LEFT         = '@(' | '*(' | '+(' | '?(' | '!('
       RIGHT        = ')'
       ExtGlob      = LEFT (Item '|')* Item RIGHT  # ITEM may be empty
-      CompoundWord includes ExtGlob
+      Compound includes ExtGlob
     """
     left_token = self.cur_token
     arms = []  # type: List[word_t]
@@ -599,13 +599,13 @@ class WordParser(object):
 
       if self.token_type == Id.Right_ExtGlob:
         if not read_word:
-          arms.append(word.CompoundWord())
+          arms.append(word.Compound())
         spids.append(self.cur_token.span_id)
         break
 
       elif self.token_type == Id.Op_Pipe:
         if not read_word:
-          arms.append(word.CompoundWord())
+          arms.append(word.Compound())
         read_word = False
         self._Next(lex_mode_e.ExtGlob)
 
@@ -791,7 +791,7 @@ class WordParser(object):
     enode, last_token = self.parse_ctx.ParseOilAssign(kw_token, self.lexer,
                                                       grammar_nt.oil_var)
     # Let the CommandParser see the Op_Semi or Op_Newline.
-    self.buffered_word = word.TokenWord(last_token)
+    self.buffered_word = word.Token(last_token)
     self._Next(lex_mode_e.ShCommand)  # always back to this
     return enode
 
@@ -806,7 +806,7 @@ class WordParser(object):
     enode, last_token = self.parse_ctx.ParseOilAssign(kw_token, self.lexer,
                                                       grammar_nt.oil_setvar)
     # Let the CommandParser see the Op_Semi or Op_Newline.
-    self.buffered_word = word.TokenWord(last_token)
+    self.buffered_word = word.Token(last_token)
     self._Next(lex_mode_e.ShCommand)  # always back to this
     return enode
 
@@ -987,7 +987,7 @@ class WordParser(object):
     while True:
       w = w_parser.ReadWord(lex_mode_e.ShCommand)
 
-      if isinstance(w, word__TokenWord):
+      if isinstance(w, word__Token):
         word_id = word_.CommandId(w)
         if word_id == Id.Right_ArrayLiteral:
           break
@@ -995,10 +995,10 @@ class WordParser(object):
         elif word_id == Id.Op_Newline:
           continue
         else:
-          # TokenWord
+          # Token
           p_die('Unexpected token in array literal: %r', w.token.val, word=w)
 
-      assert isinstance(w, word__CompoundWord)  # for MyPy
+      assert isinstance(w, word__Compound)  # for MyPy
       words.append(w)
 
     if not words:  # a=() is empty indexed array
@@ -1054,7 +1054,7 @@ class WordParser(object):
 
   def _ReadCompoundWord(self, eof_type=Id.Undefined_Tok,
                         lex_mode=lex_mode_e.ShCommand, empty_ok=True):
-    # type: (Id_t, lex_mode_t, bool) -> word__CompoundWord
+    # type: (Id_t, lex_mode_t, bool) -> word__Compound
     """
     Precondition: Looking at the first token of the first word part
     Postcondition: Looking at the token after, e.g. space or operator
@@ -1063,7 +1063,7 @@ class WordParser(object):
     could be an operator delimiting a compound word.  Can we change lexer modes
     and remove this special case?
     """
-    w = word.CompoundWord()
+    w = word.Compound()
     num_parts = 0
     done = False
     while not done:
@@ -1216,7 +1216,7 @@ class WordParser(object):
 
     elif self.token_kind == Kind.Eof:
       # Just return EOF token
-      w = word.TokenWord(self.cur_token)  # type: word_t
+      w = word.Token(self.cur_token)  # type: word_t
       return w, False
 
     elif self.token_kind == Kind.Ignored:
@@ -1228,7 +1228,7 @@ class WordParser(object):
     elif self.token_kind in (Kind.Arith, Kind.Right):
       # Id.Right_DollarDParen IS just a normal token, handled by ArithParser
       self._Next(lex_mode_e.Arith)
-      w = word.TokenWord(self.cur_token)
+      w = word.Token(self.cur_token)
       return w, False
 
     elif self.token_kind in (Kind.Lit, Kind.Left, Kind.VSub):
@@ -1253,7 +1253,7 @@ class WordParser(object):
 
     if self.token_kind == Kind.Eof:
       # No advance
-      return word.TokenWord(self.cur_token), False
+      return word.Token(self.cur_token), False
 
     # Allow Arith for ) at end of for loop?
     elif self.token_kind in (Kind.Op, Kind.Redir, Kind.Arith):
@@ -1262,7 +1262,7 @@ class WordParser(object):
         if self.cursor_was_newline:
           return None, True
 
-      return word.TokenWord(self.cur_token), False
+      return word.Token(self.cur_token), False
 
     elif self.token_kind == Kind.Right:
       if self.token_type not in (
@@ -1271,7 +1271,7 @@ class WordParser(object):
         raise AssertionError(self.cur_token)
 
       self._Next(lex_mode)
-      return word.TokenWord(self.cur_token), False
+      return word.Token(self.cur_token), False
 
     elif self.token_kind in (Kind.Ignored, Kind.WS):
       self._Next(lex_mode)
@@ -1361,12 +1361,12 @@ class WordParser(object):
     # Returns nothing
 
   def ReadForPlugin(self):
-    # type: () -> word__CompoundWord
+    # type: () -> word__Compound
     """For $PS1, $PS4, etc.
 
     This is just like reading a here doc line.  "\n" is allowed, as well as the
     typical substitutions ${x} $(echo hi) $((1 + 2)).
     """
-    w = word.CompoundWord()
+    w = word.Compound()
     self._ReadLikeDQ(None, w.parts)
     return w

@@ -5,7 +5,7 @@ braces.py - Implementation of {andy,bob}@example.com
 NOTE: bash implements brace expansion in the braces.c file (835 lines).  It
 uses goto!
 
-Possible optimization flags for CompoundWord:
+Possible optimization flags for Compound:
 - has Lit_LBrace, LitRBrace -- set during word_parse phase
   - it if has both, then do _BraceDetect
 - has BracedTuple -- set during _BraceDetect
@@ -17,7 +17,7 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
-    word, word_t, word__CompoundWord, word__BracedWordTree,
+    word, word_t, word__Compound, word__BracedTree,
     word_part, word_part_t,
     word_part__BracedTuple, word_part__BracedRange,
     word_part__Literal,
@@ -167,7 +167,7 @@ class _StackFrame(object):
 
 
 def _BraceDetect(w):
-  # type: (word__CompoundWord) -> Optional[word__BracedWordTree]
+  # type: (word__Compound) -> Optional[word__BracedTree]
   """Return a new word if the input word looks like a brace expansion.
 
   e.g. {a,b} or {1..10..2} (TODO)
@@ -221,7 +221,7 @@ def _BraceDetect(w):
         if stack:
           stack[-1].saw_comma = True
 
-          stack[-1].alt_part.words.append(word.CompoundWord(cur_parts))
+          stack[-1].alt_part.words.append(word.Compound(cur_parts))
           cur_parts = []  # clear
           append = False
 
@@ -256,7 +256,7 @@ def _BraceDetect(w):
           if not stack[-1].saw_comma:  # {foo} is not a real alternative
             return None  # early return
 
-          stack[-1].alt_part.words.append(word.CompoundWord(cur_parts))
+          stack[-1].alt_part.words.append(word.Compound(cur_parts))
 
           frame = stack.pop()
           cur_parts = frame.cur_parts
@@ -270,14 +270,14 @@ def _BraceDetect(w):
     return None
 
   if found:
-    return word.BracedWordTree(cur_parts)
+    return word.BracedTree(cur_parts)
   else:
     return None
 
 
 def BraceDetectAll(words):
-  # type: (List[word__CompoundWord]) -> List[word_t]
-  """Return a new list of words, possibly with BracedWordTree instances."""
+  # type: (List[word__Compound]) -> List[word_t]
+  """Return a new list of words, possibly with BracedTree instances."""
   out = []  # type: List[word_t]
   for w in words:
     brace_tree = _BraceDetect(w)
@@ -380,7 +380,7 @@ def _ExpandPart(parts,  # type: List[word_part_t]
     # Call _BraceExpand on each of the inner words too!
     expanded_alts = []  # type: List[List[word_part_t]]
     for w in expand_part.words:
-      assert isinstance(w, word__CompoundWord)  # for MyPy
+      assert isinstance(w, word__Compound)  # for MyPy
       expanded_alts.extend(_BraceExpand(w.parts))
 
     for alt_parts in expanded_alts:
@@ -440,12 +440,12 @@ def _BraceExpand(parts):
 
 
 def BraceExpandWords(words):
-  # type: (List[word__CompoundWord]) -> List[word__CompoundWord]
-  out = []  # type: List[word__CompoundWord]
+  # type: (List[word__Compound]) -> List[word__Compound]
+  out = []  # type: List[word__Compound]
   for w in words:
-    if isinstance(w, word__BracedWordTree):
+    if isinstance(w, word__BracedTree):
       parts_list = _BraceExpand(w.parts)
-      out.extend(word.CompoundWord(p) for p in parts_list)
+      out.extend(word.Compound(p) for p in parts_list)
     else:
       out.append(w)
   return out

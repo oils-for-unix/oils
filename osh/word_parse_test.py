@@ -45,7 +45,7 @@ def _assertReadWordWithArena(test, w_parser):
   w2 = w_parser.ReadWord(lex_mode_e.ShCommand)
   test.assertTrue(
       test_lib.TokenWordsEqual(
-          word.TokenWord(token(Id.Eof_Real, '')), w2),
+          word.Token(token(Id.Eof_Real, '')), w2),
       w2)
   return w
 
@@ -508,31 +508,31 @@ ls bar
     print('--MULTI')
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     parts = [word_part.Literal(token(Id.Lit_Chars, 'ls'))]
-    test_lib.AssertAsdlEqual(self, word.CompoundWord(parts), w)
+    test_lib.AssertAsdlEqual(self, word.Compound(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     parts = [word_part.Literal(token(Id.Lit_Chars, 'foo'))]
-    test_lib.AssertAsdlEqual(self, word.CompoundWord(parts), w)
+    test_lib.AssertAsdlEqual(self, word.Compound(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     t = token(Id.Op_Newline, '\n')
-    test_lib.AssertAsdlEqual(self, word.TokenWord(t), w)
+    test_lib.AssertAsdlEqual(self, word.Token(t), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     parts = [word_part.Literal(token(Id.Lit_Chars, 'ls'))]
-    test_lib.AssertAsdlEqual(self, word.CompoundWord(parts), w)
+    test_lib.AssertAsdlEqual(self, word.Compound(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     parts = [word_part.Literal(token(Id.Lit_Chars, 'bar'))]
-    test_lib.AssertAsdlEqual(self, word.CompoundWord(parts), w)
+    test_lib.AssertAsdlEqual(self, word.Compound(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     t = token(Id.Op_Newline, '\n')
-    test_lib.AssertAsdlEqual(self, word.TokenWord(t), w)
+    test_lib.AssertAsdlEqual(self, word.Token(t), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     t = token(Id.Eof_Real, '')
-    test_lib.AssertAsdlEqual(self, word.TokenWord(t), w)
+    test_lib.AssertAsdlEqual(self, word.Token(t), w)
 
   def testParseErrorLocation(self):
     w = _assertSpanForWord(self, 'a=(1 2 3)')

@@ -21,7 +21,7 @@ from _devbuild.gen.syntax_asdl import (
 
     lhs_expr, lhs_expr_t,
     redir, redir_t, redir__HereDoc,
-    word_t, word__CompoundWord, word__TokenWord,
+    word_t, word__Compound, word__Token,
     word_part, word_part_t, word_part__Literal,
 
     token, assign_pair, env_pair,
@@ -140,7 +140,7 @@ def _ParseHereDocBody(parse_ctx, h, line_reader, arena):
 
 
 def _MakeAssignPair(parse_ctx,  # type: ParseContext
-                    preparsed,  # type: Tuple[token, Optional[token], int, word__CompoundWord]
+                    preparsed,  # type: Tuple[token, Optional[token], int, word__Compound]
                     arena,  # type: Arena
                     ):
   # type: (...) -> assign_pair
@@ -212,9 +212,9 @@ def _MakeAssignPair(parse_ctx,  # type: ParseContext
   # TODO: Should we also create a rhs_expr.ArrayLiteral here?
   n = len(w.parts)
   if part_offset == n:
-    val = word.EmptyWord()  # type: word_t
+    val = word.Empty()  # type: word_t
   else:
-    val = word.CompoundWord(w.parts[part_offset:])
+    val = word.Compound(w.parts[part_offset:])
     val = word_.TildeDetect(val) or val
 
   pair = syntax_asdl.assign_pair(lhs, op, val)
@@ -242,9 +242,9 @@ def _AppendMoreEnv(preparsed_list, more_env):
     var_name = left_token.val[:-1]
     n = len(w.parts)
     if part_offset == n:
-      val = word.EmptyWord()  # type: word_t
+      val = word.Empty()  # type: word_t
     else:
-      val = word.CompoundWord(w.parts[part_offset:])
+      val = word.Compound(w.parts[part_offset:])
 
     pair = syntax_asdl.env_pair(var_name, val)
     pair.spids.append(left_token.span_id)  # Do we need this?
@@ -253,11 +253,11 @@ def _AppendMoreEnv(preparsed_list, more_env):
 
 
 if TYPE_CHECKING:
-  PreParsedList = List[Tuple[token, Optional[token], int, word__CompoundWord]]
+  PreParsedList = List[Tuple[token, Optional[token], int, word__Compound]]
 
-def _SplitSimpleCommandPrefix(words  # type: List[word__CompoundWord]
+def _SplitSimpleCommandPrefix(words  # type: List[word__Compound]
                               ):
-  # type: (...) -> Tuple[PreParsedList, List[word__CompoundWord]]
+  # type: (...) -> Tuple[PreParsedList, List[word__Compound]]
   """Second pass of SimpleCommand parsing: look for assignment words."""
   preparsed_list = []
   suffix_words = []
@@ -279,7 +279,7 @@ def _SplitSimpleCommandPrefix(words  # type: List[word__CompoundWord]
 
 
 def _MakeSimpleCommand(preparsed_list, suffix_words, redirects):
-  # type: (PreParsedList, List[word__CompoundWord], List[redir_t]) -> command__SimpleCommand
+  # type: (PreParsedList, List[word__Compound], List[redir_t]) -> command__SimpleCommand
   """Create an command.SimpleCommand node."""
 
   # FOO=(1 2 3) ls is not allowed.
@@ -297,7 +297,7 @@ def _MakeSimpleCommand(preparsed_list, suffix_words, redirects):
 
   # NOTE: We only do brace DETECTION here, not brace EXPANSION.  Therefore we
   # can't implement bash's behavior of having say {~bob,~jane}/src work,
-  # because we only have a BracedWordTree.
+  # because we only have a BracedTree.
   # This is documented in spec/brace-expansion.
   # NOTE: Technically we could do expansion outside of 'oshc translate', but it
   # doesn't seem worth it.
@@ -389,7 +389,7 @@ class CommandParser(object):
 
       # Here docs only happen in command mode, so other kinds of newlines don't
       # count.
-      if isinstance(w, word__TokenWord) and w.token.id == Id.Op_Newline:
+      if isinstance(w, word__Token) and w.token.id == Id.Op_Newline:
         for h in self.pending_here_docs:
           _ParseHereDocBody(self.parse_ctx, h, self.line_reader, self.arena)
         del self.pending_here_docs[:]  # No .clear() until Python 3.3.
@@ -439,7 +439,7 @@ class CommandParser(object):
     """
     self._Peek()
     assert self.c_kind == Kind.Redir, self.cur_word
-    w = cast(word__TokenWord, self.cur_word)  # for MyPy
+    w = cast(word__Token, self.cur_word)  # for MyPy
 
     op = w.token
     # For now only supporting single digit descriptor
@@ -494,10 +494,10 @@ class CommandParser(object):
     return redirects
 
   def _ScanSimpleCommand(self):
-    # type: () -> Tuple[List[redir_t], List[word__CompoundWord]]
+    # type: () -> Tuple[List[redir_t], List[word__Compound]]
     """First pass: Split into redirects and words."""
     redirects = []  # type: List[redir_t]
-    words = []  # type: List[word__CompoundWord]
+    words = []  # type: List[word__Compound]
     while True:
       self._Peek()
       if self.c_kind == Kind.Redir:
@@ -505,7 +505,7 @@ class CommandParser(object):
         redirects.append(node)
 
       elif self.c_kind == Kind.Word:
-        assert isinstance(self.cur_word, word__CompoundWord)  # for MyPy
+        assert isinstance(self.cur_word, word__Compound)  # for MyPy
         words.append(self.cur_word)
 
       else:
@@ -515,11 +515,11 @@ class CommandParser(object):
     return redirects, words
 
   def _MaybeExpandAliases(self, words):
-    # type: (List[word__CompoundWord]) -> Optional[command_t]
+    # type: (List[word__Compound]) -> Optional[command_t]
     """Try to expand aliases.
 
     Args:
-      words: A list of CompoundWord
+      words: A list of Compound
 
     Returns:
       A new LST node, or None.
@@ -846,7 +846,7 @@ class CommandParser(object):
     return node
 
   def ParseForWords(self):
-    # type: () -> Tuple[List[word__CompoundWord], int]
+    # type: () -> Tuple[List[word__Compound], int]
     """
     for_words        : WORD* for_sep
                      ;
@@ -861,7 +861,7 @@ class CommandParser(object):
     while True:
       self._Peek()
       if self.c_id == Id.Op_Semi:
-        w = cast(word__TokenWord, self.cur_word)
+        w = cast(word__Token, self.cur_word)
         semi_spid = w.token.span_id
         self._Next()
         self._NewlineOk()
@@ -870,7 +870,7 @@ class CommandParser(object):
         self._Next()
         break
 
-      if not isinstance(self.cur_word, word__CompoundWord):
+      if not isinstance(self.cur_word, word__Compound):
         # TODO: Can we also show a pointer to the 'for' keyword?
         p_die('Invalid word in for loop', word=self.cur_word)
 
@@ -970,9 +970,9 @@ class CommandParser(object):
     while_clause     : While command_list do_group ;
     until_clause     : Until command_list do_group ;
     """
-    # This is ensured by the WordParser.  Keywords are returned in a CompoundWord.
-    # It's not a TokenWord because we could have something like 'whileZZ true'.
-    assert isinstance(self.cur_word, word__CompoundWord)  # for MyPy
+    # This is ensured by the WordParser.  Keywords are returned in a Compound.
+    # It's not a Token because we could have something like 'whileZZ true'.
+    assert isinstance(self.cur_word, word__Compound)  # for MyPy
     assert isinstance(self.cur_word.parts[0], word_part__Literal)  # for MyPy
 
     keyword = self.cur_word.parts[0].token
@@ -1249,7 +1249,7 @@ class CommandParser(object):
     left_spid = word_.LeftMostSpanForWord(self.cur_word)
 
     # for MyPy, caller ensures
-    assert isinstance(self.cur_word, word__CompoundWord)
+    assert isinstance(self.cur_word, word__Compound)
     name = word_.AsFuncName(self.cur_word)
     if not name:
       p_die('Invalid function name', word=self.cur_word)
@@ -1288,7 +1288,7 @@ class CommandParser(object):
     self._Next()  # skip past 'function'
 
     # for MyPy, caller ensures
-    assert isinstance(self.cur_word, word__CompoundWord)
+    assert isinstance(self.cur_word, word__Compound)
     self._Peek()
     name = word_.AsFuncName(self.cur_word)
     if not name:
@@ -1418,9 +1418,9 @@ class CommandParser(object):
       return self.ParseSimpleCommand()
 
     if self.c_kind == Kind.Word:
-      # NOTE: At the top level, only TokenWord and CompoundWord are possible.
+      # NOTE: At the top level, only Token and Compound are possible.
       # Can this be modelled better in the type system, removing asserts?
-      assert isinstance(self.cur_word, word__CompoundWord)
+      assert isinstance(self.cur_word, word__Compound)
       if (self.w_parser.LookAhead() == Id.Op_LParen and
           not word_.IsVarLike(self.cur_word)):
           return self.ParseFunctionDef()  # f() { echo; }  # function
@@ -1576,7 +1576,7 @@ class CommandParser(object):
 
       self._Peek()
       if self.c_id in (Id.Op_Semi, Id.Op_Amp):  # also Id.Op_Amp.
-        w = cast(word__TokenWord, self.cur_word)  # for MyPy
+        w = cast(word__Token, self.cur_word)  # for MyPy
         child = command.Sentence(child, w.token)
         self._Next()
 
@@ -1646,7 +1646,7 @@ class CommandParser(object):
           done = True
 
       elif self.c_id in (Id.Op_Semi, Id.Op_Amp):
-        w = cast(word__TokenWord, self.cur_word)  # for MyPy
+        w = cast(word__Token, self.cur_word)  # for MyPy
         child = command.Sentence(child, w.token)
         self._Next()
 
