@@ -123,6 +123,7 @@ _NORMAL_BUILTINS = {
 
     # OSH only
     "repr": builtin_e.REPR,
+    "push": builtin_e.PUSH,
 }
 
 # This is used by completion.

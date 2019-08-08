@@ -1,5 +1,3 @@
-#!/bin/bash
-#
 # Bash implements type -t
 
 #### type -t -> function

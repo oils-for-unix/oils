@@ -37,6 +37,9 @@ _spec-manifest() {
     # Just a demo
     if (name == "blog-other1") next;
 
+    # Not ready yet
+    if (name == "oil-assign") next;
+
     print name
   }
   '

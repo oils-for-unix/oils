@@ -394,6 +394,10 @@ builtin-bash() {
   sh-spec spec/builtin-bash.test.sh $BASH $OSH_LIST "$@"
 }
 
+builtin-oil() {
+  sh-spec spec/builtin-oil.test.sh $OSH_LIST "$@"
+}
+
 # This is bash/OSH only
 builtin-completion() {
   sh-spec spec/builtin-completion.test.sh --osh-failures-allowed 1 \

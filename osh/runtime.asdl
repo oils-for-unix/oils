@@ -96,7 +96,8 @@ module runtime
   | COMMAND | TYPE | HASH | HELP | HISTORY
   | BUILTIN
   | ALIAS | UNALIAS
-  | REPR
+  -- Oil
+  | REPR | PUSH
 
   -- word_eval.py: SliceParts is for ${a-} and ${a+}, Error is for ${a?}, and
   -- SliceAndAssign is for ${a=}.

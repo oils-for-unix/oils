@@ -71,6 +71,7 @@ from frontend import parse_lib
 
 from oil_lang import cmd_exec as oil_cmd_exec
 from oil_lang import expr_eval
+from oil_lang import builtin_oil
 
 from osh import builtin
 from osh import builtin_assign
@@ -467,8 +468,8 @@ def ShellMain(lang, argv0, argv, login_shell):
 
       builtin_e.TYPE: builtin_pure.Type(funcs, aliases, exec_deps.search_path),
       builtin_e.HASH: builtin_pure.Hash(exec_deps.search_path),
-      builtin_e.REPR: builtin_pure.Repr(mem, errfmt),
       builtin_e.GETOPTS: builtin_pure.GetOpts(mem, errfmt),
+      builtin_e.REPR: builtin_pure.Repr(mem, errfmt),
 
       builtin_e.COLON: lambda arg_vec: 0,  # a "special" builtin 
       builtin_e.TRUE: lambda arg_vec: 0,
@@ -481,6 +482,9 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.FG: builtin_process.Fg(exec_deps.job_state, exec_deps.waiter),
       builtin_e.BG: builtin_process.Bg(exec_deps.job_state),
       builtin_e.UMASK: builtin_process.Umask,
+
+      # Oil
+      builtin_e.PUSH: builtin_oil.Push(mem, errfmt),
   }
 
   ex = cmd_exec.Executor(mem, fd_state, funcs, builtins, exec_opts,
