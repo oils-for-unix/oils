@@ -24,6 +24,27 @@
 #   - this is legacy stuff.  Both (( )) and [[ ]]
 #   - LhsIndexedName should not reference Oil vars either
 
+#### integers like 1 + 2 * 3
+var x = 1 + 2 * 3
+echo x=$x
+## STDOUT:
+x=7
+## END
+
+#### command sub $(echo hi)
+var x = $(echo hi)
+echo x=$x
+## STDOUT:
+x=hi
+## END
+
+#### shell array @(a b c)
+var x = @(a 'b c')
+argv.py @x
+## STDOUT:
+['a', 'b c']
+## END
+
 #### Set $HOME using 'var' (using Oil var in word evaluator)
 var HOME = "foo"
 echo $HOME
