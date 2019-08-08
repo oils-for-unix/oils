@@ -75,8 +75,8 @@ module runtime
 
   -- NOTE: not used right now, isinstance() check works fine
   job_status =
-    ProcessStatus(int status)
-  | PipelineStatus(int* statuses)
+    Process(int status)
+  | Pipeline(int* statuses)
 
   -- For word splitting in legacy.py
   span = Black | Delim | Backslash
