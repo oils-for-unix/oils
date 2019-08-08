@@ -6,9 +6,6 @@ Python types under value.Obj.  See the invariant in osh/runtime.asdl.
 """
 from __future__ import print_function
 
-import sys
-
-
 # These are for data frames?
 
 class BoolArray(list):

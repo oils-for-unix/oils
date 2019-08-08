@@ -7,8 +7,8 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen import syntax_asdl
 from _devbuild.gen.syntax_asdl import (
     command, command__OilAssign,
-    expr, expr_t, expr_context_e, regex, regex_t, word, word_t, word_part,
-    word_part__CommandSub,
+    expr, expr_t, expr_context_e, regex, regex_t, word, word_t,
+    word_part, word_part_t, word_part__CommandSub,
 )
 from _devbuild.gen import grammar_nt
 from pgen2.parse import PNode
@@ -295,7 +295,7 @@ class Transformer(object):
         ]
         parts2 = [
             word_part.Literal(t) for t in tokens
-        ]  # type: List[oil_word_part_t]
+        ]  # type: List[word_part_t]
         return expr.DoubleQuoted(left_tok, parts2)
 
       else:
