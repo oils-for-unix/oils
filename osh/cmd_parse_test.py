@@ -408,14 +408,14 @@ class RedirectTest(unittest.TestCase):
   def testDescriptorRedirect(self):
     node = assertParseRedirect(self, '1>& 2 cat')
 
-  def testHereRedirect(self):
+  def testHereDoc(self):
     node = assertParseRedirect(self, """\
 <<EOF cat
 hi
 EOF
 """)
 
-  def testHereRedirectStrip(self):
+  def testHereDocStrip(self):
     node = assertParseRedirect(self, """\
 <<-EOF cat
 hi

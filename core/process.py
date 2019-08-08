@@ -219,7 +219,7 @@ class FdState(object):
   def _ApplyRedirect(self, r, waiter):
     ok = True
 
-    if r.tag == redirect_e.PathRedirect:
+    if r.tag == redirect_e.Path:
       if r.op_id in (Id.Redir_Great, Id.Redir_AndGreat):  # >   &>
         # NOTE: This is different than >| because it respects noclobber, but
         # that option is almost never used.  See test/wild.sh.
@@ -270,7 +270,7 @@ class FdState(object):
       # saved position (10), which closes it.
       #self._PushClose(r.fd)
 
-    elif r.tag == redirect_e.DescRedirect:  # e.g. echo hi 1>&2
+    elif r.tag == redirect_e.FileDesc:  # e.g. echo hi 1>&2
 
       if r.op_id == Id.Redir_GreatAnd:  # 1>&2
         if not self._PushDup(r.target_fd, r.fd):
@@ -283,7 +283,7 @@ class FdState(object):
       else:
         raise NotImplementedError
 
-    elif r.tag == redirect_e.HereRedirect:
+    elif r.tag == redirect_e.HereDoc:
       # NOTE: Do these descriptors have to be moved out of the range 0-9?
       read_fd, write_fd = posix.pipe()
 

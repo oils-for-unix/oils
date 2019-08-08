@@ -68,10 +68,10 @@ module runtime
 
   -- evaluated version of syntax.redir
   redirect = 
-    PathRedirect(id op_id, int fd, string filename, int op_spid)
-  | DescRedirect(id op_id, int fd, int target_fd, int op_spid)
+    Path(id op_id, int fd, string filename, int op_spid)
+  | FileDesc(id op_id, int fd, int target_fd, int op_spid)
     -- here doc or here word
-  | HereRedirect(int fd, string body, int op_spid)
+  | HereDoc(int fd, string body, int op_spid)
 
   -- NOTE: not used right now, isinstance() check works fine
   job_status =

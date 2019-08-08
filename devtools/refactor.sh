@@ -32,13 +32,20 @@ k2() {
 # Execute a bunch of find/replace pairs in a text file.
 replace() {
   local file=$1
+  local include_asdl=${2:-}
 
   # NOTE: Escaping here is messed up.  sed doesn't have --name like awk?
   # To match literal parentheses I had to double-escape like this
   # (shell-escape, then sed-escape).
   # MakeMatcher\\(\\) MATCHER
+
+  local -a files=( */*.py )
+  if test -n "$include_asdl"; then
+    files+=( */*.asdl )
+  fi
+
   while read pat replace; do
-    sed -r -i "s/${pat}/${replace}/g" */*.py
+    sed -r -i "s/${pat}/${replace}/g" "${files[@]}"
   done < $file
 }
 
