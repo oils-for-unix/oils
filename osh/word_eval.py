@@ -9,7 +9,7 @@ from _devbuild.gen.syntax_asdl import (
     word_e, word_t, word__CompoundWord,
     bracket_op_e, suffix_op_e, word_part_e
 )
-from _devbuild.gen.syntax_asdl import word as osh_word
+from _devbuild.gen.syntax_asdl import word
 from _devbuild.gen.runtime_asdl import (
     builtin_e, effect_e,
     part_value, part_value_e, part_value__String,
@@ -1241,9 +1241,9 @@ class _WordEvaluator(object):
 
           left = lvalue.Named(tok_val[:-1])
           if part_offset == len(w.parts):
-            rhs_word = osh_word.EmptyWord()  # type: word_t
+            rhs_word = word.EmptyWord()  # type: word_t
           else:
-            rhs_word = osh_word.CompoundWord(w.parts[part_offset:])
+            rhs_word = word.CompoundWord(w.parts[part_offset:])
             # tilde detection only happens on static assignments!
             rhs_word = word_.TildeDetect(rhs_word) or rhs_word
 

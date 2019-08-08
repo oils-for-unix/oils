@@ -30,7 +30,7 @@ from _devbuild.gen.syntax_asdl import (
     source,
     parse_result, parse_result_t,
 )
-from _devbuild.gen.syntax_asdl import word as osh_word  # TODO: rename
+from _devbuild.gen.syntax_asdl import word  # TODO: rename
 from _devbuild.gen import syntax_asdl  # line_span
 
 from asdl import const
@@ -212,9 +212,9 @@ def _MakeAssignPair(parse_ctx,  # type: ParseContext
   # TODO: Should we also create a rhs_expr.ArrayLiteral here?
   n = len(w.parts)
   if part_offset == n:
-    val = osh_word.EmptyWord()  # type: word_t
+    val = word.EmptyWord()  # type: word_t
   else:
-    val = osh_word.CompoundWord(w.parts[part_offset:])
+    val = word.CompoundWord(w.parts[part_offset:])
     val = word_.TildeDetect(val) or val
 
   pair = syntax_asdl.assign_pair(lhs, op, val)
@@ -242,9 +242,9 @@ def _AppendMoreEnv(preparsed_list, more_env):
     var_name = left_token.val[:-1]
     n = len(w.parts)
     if part_offset == n:
-      val = osh_word.EmptyWord()  # type: word_t
+      val = word.EmptyWord()  # type: word_t
     else:
-      val = osh_word.CompoundWord(w.parts[part_offset:])
+      val = word.CompoundWord(w.parts[part_offset:])
 
     pair = syntax_asdl.env_pair(var_name, val)
     pair.spids.append(left_token.span_id)  # Do we need this?

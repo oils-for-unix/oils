@@ -69,8 +69,8 @@ from _devbuild.gen.syntax_asdl import (
     expr, expr_t,
     source,
 )
-# TODO: rename word -> osh_word in syntax.asdl
-from _devbuild.gen.syntax_asdl import word as osh_word
+# TODO: rename word -> word in syntax.asdl
+from _devbuild.gen.syntax_asdl import word
 
 from core import meta
 from core.util import p_die
@@ -165,7 +165,7 @@ class WordParser(object):
     # return a CompoundWord with no parts, which is explicitly checked with a
     # custom error message.
     if not w.parts and arg_lex_mode == lex_mode_e.VSub_ArgDQ and empty_ok:
-      return osh_word.EmptyWord()
+      return word.EmptyWord()
 
     return w
 
@@ -599,13 +599,13 @@ class WordParser(object):
 
       if self.token_type == Id.Right_ExtGlob:
         if not read_word:
-          arms.append(osh_word.CompoundWord())
+          arms.append(word.CompoundWord())
         spids.append(self.cur_token.span_id)
         break
 
       elif self.token_type == Id.Op_Pipe:
         if not read_word:
-          arms.append(osh_word.CompoundWord())
+          arms.append(word.CompoundWord())
         read_word = False
         self._Next(lex_mode_e.ExtGlob)
 
@@ -791,7 +791,7 @@ class WordParser(object):
     enode, last_token = self.parse_ctx.ParseOilAssign(kw_token, self.lexer,
                                                       grammar_nt.oil_var)
     # Let the CommandParser see the Op_Semi or Op_Newline.
-    self.buffered_word = osh_word.TokenWord(last_token)
+    self.buffered_word = word.TokenWord(last_token)
     self._Next(lex_mode_e.ShCommand)  # always back to this
     return enode
 
@@ -806,7 +806,7 @@ class WordParser(object):
     enode, last_token = self.parse_ctx.ParseOilAssign(kw_token, self.lexer,
                                                       grammar_nt.oil_setvar)
     # Let the CommandParser see the Op_Semi or Op_Newline.
-    self.buffered_word = osh_word.TokenWord(last_token)
+    self.buffered_word = word.TokenWord(last_token)
     self._Next(lex_mode_e.ShCommand)  # always back to this
     return enode
 
@@ -1063,7 +1063,7 @@ class WordParser(object):
     could be an operator delimiting a compound word.  Can we change lexer modes
     and remove this special case?
     """
-    word = osh_word.CompoundWord()
+    w = word.CompoundWord()
     num_parts = 0
     done = False
     while not done:
@@ -1083,14 +1083,14 @@ class WordParser(object):
           part = word_part.LiteralPart(self.cur_token)
 
         if self.token_type == Id.Lit_VarLike and num_parts == 0:  # foo=
-          word.parts.append(part)
+          w.parts.append(part)
           # Unfortunately it's awkward to pull the check for a=(1 2) up to
           # _ReadWord.
           t = self.lexer.LookAhead(lex_mode_e.ShCommand)
           if t.id == Id.Op_LParen:
             self.lexer.PushHint(Id.Op_RParen, Id.Right_ArrayLiteral)
             part2 = self._ReadArrayLiteralPart()
-            word.parts.append(part2)
+            w.parts.append(part2)
 
             # Array literal must be the last part of the word.
             self._Next(lex_mode)
@@ -1113,7 +1113,7 @@ class WordParser(object):
           else:
             part = word_part.Splice(splice_token)
 
-          word.parts.append(part)
+          w.parts.append(part)
 
           # @words or @arrayfunc() must be the last part of the word
           self._Next(lex_mode)
@@ -1125,7 +1125,7 @@ class WordParser(object):
           done = True
 
         else:  # not a literal with lookahead; append it
-          word.parts.append(part)
+          w.parts.append(part)
 
       elif self.token_kind == Kind.VSub:
         vsub_token = self.cur_token
@@ -1152,15 +1152,15 @@ class WordParser(object):
               p_die('Unexpected token after inline function call',
                     token=self.cur_token)
 
-        word.parts.append(part)
+        w.parts.append(part)
 
       elif self.token_kind == Kind.ExtGlob:
         part = self._ReadExtGlobPart()
-        word.parts.append(part)
+        w.parts.append(part)
 
       elif self.token_kind == Kind.Left:
         part = self._ReadLeftParts()
-        word.parts.append(part)
+        w.parts.append(part)
 
       # NOT done yet, will advance below
       elif self.token_kind == Kind.Right:
@@ -1204,7 +1204,7 @@ class WordParser(object):
       if not done:
         self._Next(lex_mode)
       num_parts += 1
-    return word
+    return w
 
   def _ReadArithWord(self):
     # type: () -> Tuple[word_t, bool]
@@ -1216,7 +1216,7 @@ class WordParser(object):
 
     elif self.token_kind == Kind.Eof:
       # Just return EOF token
-      w = osh_word.TokenWord(self.cur_token)  # type: word_t
+      w = word.TokenWord(self.cur_token)  # type: word_t
       return w, False
 
     elif self.token_kind == Kind.Ignored:
@@ -1228,7 +1228,7 @@ class WordParser(object):
     elif self.token_kind in (Kind.Arith, Kind.Right):
       # Id.Right_DollarDParen IS just a normal token, handled by ArithParser
       self._Next(lex_mode_e.Arith)
-      w = osh_word.TokenWord(self.cur_token)
+      w = word.TokenWord(self.cur_token)
       return w, False
 
     elif self.token_kind in (Kind.Lit, Kind.Left, Kind.VSub):
@@ -1253,7 +1253,7 @@ class WordParser(object):
 
     if self.token_kind == Kind.Eof:
       # No advance
-      return osh_word.TokenWord(self.cur_token), False
+      return word.TokenWord(self.cur_token), False
 
     # Allow Arith for ) at end of for loop?
     elif self.token_kind in (Kind.Op, Kind.Redir, Kind.Arith):
@@ -1262,7 +1262,7 @@ class WordParser(object):
         if self.cursor_was_newline:
           return None, True
 
-      return osh_word.TokenWord(self.cur_token), False
+      return word.TokenWord(self.cur_token), False
 
     elif self.token_kind == Kind.Right:
       if self.token_type not in (
@@ -1271,7 +1271,7 @@ class WordParser(object):
         raise AssertionError(self.cur_token)
 
       self._Next(lex_mode)
-      return osh_word.TokenWord(self.cur_token), False
+      return word.TokenWord(self.cur_token), False
 
     elif self.token_kind in (Kind.Ignored, Kind.WS):
       self._Next(lex_mode)
@@ -1367,6 +1367,6 @@ class WordParser(object):
     This is just like reading a here doc line.  "\n" is allowed, as well as the
     typical substitutions ${x} $(echo hi) $((1 + 2)).
     """
-    w = osh_word.CompoundWord()
+    w = word.CompoundWord()
     self._ReadLikeDQ(None, w.parts)
     return w

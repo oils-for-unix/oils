@@ -45,7 +45,9 @@ replace() {
 replace2() {
   #sed -r -i "s/^from osh import parse_lib/from frontend import parse_lib/g" */*.py
   #sed -r -i "s/^from core import libstr/from osh import string_ops/g" */*.py
-  sed -r -i "s/^from osh import word$/from osh import word_/g" */*.py
+  #sed -r -i "s/^from osh import word$/from osh import word_/g" */*.py
+  sed -r -i 's/from _devbuild.gen.syntax_asdl import word as osh_word/from _devbuild.gen.syntax_asdl import word/g' */*.py
+  sed -r -i 's/osh_word/word/g' */*.py
 }
 
 trailing-ws() {

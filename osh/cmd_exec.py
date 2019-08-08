@@ -23,7 +23,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
     command_e, redir_e, assign_op_e, source
 )
-from _devbuild.gen.syntax_asdl import word as osh_word  # TODO: Rename
+from _devbuild.gen.syntax_asdl import word  # TODO: Rename
 from _devbuild.gen.runtime_asdl import (
     lvalue, redirect, value, value_e, value_t, scope_e, var_flags_e, builtin_e,
     arg_vector, cmd_value_e,
@@ -480,7 +480,7 @@ class Executor(object):
 
     elif n.tag == redir_e.HereDoc:
       # HACK: Wrap it in a word to evaluate.
-      w = osh_word.CompoundWord(n.stdin_parts)
+      w = word.CompoundWord(n.stdin_parts)
       val = self.word_ev.EvalWordToString(w)
       assert val.tag == value_e.Str, val
       return redirect.HereRedirect(fd, val.s, n.op.span_id)
