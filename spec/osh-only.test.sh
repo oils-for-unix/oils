@@ -23,7 +23,7 @@ declare -a array
 array[3]=42
 repr array
 ## STDOUT:
-array = (cell val:(value.StrArray strs:[_ _ _ 42]) exported:F readonly:F)
+array = (cell val:(value.MaybeStrArray strs:[_ _ _ 42]) exported:F readonly:F)
 ## END
 
 
