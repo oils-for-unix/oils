@@ -20,7 +20,7 @@ from _devbuild.gen.syntax_asdl import (
     word, word_t, word__CompoundWord, word__BracedWordTree,
     word_part, word_part_t,
     word_part__BracedTuple, word_part__BracedRange,
-    word_part__LiteralPart,
+    word_part__Literal,
     token,
 )
 from asdl import const
@@ -183,7 +183,7 @@ def _BraceDetect(w):
   Grammar:
     # an alternative is a literal, possibly empty, or another brace_expr
 
-    part = <any part except LiteralPart>
+    part = <any part except Literal>
     alt = part* | brace_expr
 
     # a brace_expr is group of at least 2 braced and comma-separated
@@ -202,7 +202,7 @@ def _BraceDetect(w):
 
   for i, part in enumerate(w.parts):
     append = True
-    if isinstance(part, word_part__LiteralPart):
+    if isinstance(part, word_part__Literal):
       id_ = part.token.id
       if id_ == Id.Lit_LBrace:
         # Save prefix parts.  Start new parts list.
@@ -240,7 +240,7 @@ def _BraceDetect(w):
           # It must be ONE part.  For example, -1..-100..-2 is initially
           # lexed as a single Lit_Chars token.
           part = cur_parts[0]
-          if (isinstance(part, word_part__LiteralPart) and
+          if (isinstance(part, word_part__Literal) and
               part.token.id == Id.Lit_Chars):
             range_part = _RangePartDetect(part.token)
             if range_part:
@@ -400,7 +400,7 @@ def _ExpandPart(parts,  # type: List[word_part_t]
         out_parts_.extend(prefix)
         # Preserve span_id from the original
         t = token(Id.Lit_Chars, s, expand_part.spids[0])
-        out_parts_.append(word_part.LiteralPart(t))
+        out_parts_.append(word_part.Literal(t))
         out_parts_.extend(suffix)
         out.append(out_parts_)
 

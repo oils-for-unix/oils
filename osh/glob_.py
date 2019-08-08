@@ -9,7 +9,7 @@ except ImportError:
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    glob_part_e, glob_part, word__CompoundWord, word_part__LiteralPart
+    glob_part_e, glob_part, word__CompoundWord, word_part__Literal
 )
 from core import util
 #from core.util import log
@@ -55,7 +55,7 @@ def LooksLikeStaticGlob(w):
 
   left_bracket = False
   for part in w.parts:
-    if isinstance(part, word_part__LiteralPart):
+    if isinstance(part, word_part__Literal):
       id_ = part.token.id
       if id_ in (Id.Lit_Star, Id.Lit_QMark):
         return True
@@ -73,7 +73,7 @@ GLOB_META_CHARS = r'\*?[]-:!'
 
 def GlobEscape(s):
   """
-  For SingleQuotedPart, DoubleQuotedPart, and EscapedLiteralPart
+  For SingleQuoted, DoubleQuoted, and EscapedLiteral
   """
   return util.BackslashEscape(s, GLOB_META_CHARS)
 

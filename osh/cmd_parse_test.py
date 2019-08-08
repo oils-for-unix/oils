@@ -804,7 +804,7 @@ class NestedParensTest(unittest.TestCase):
     self.assertEqual(command_e.CommandList, node.tag)
 
   def testUnquotedComSub(self):
-    # CommandSubPart with two LiteralPart instances surrounding it
+    # CommandSub with two Literal instances surrounding it
     node = assertParseSimpleCommand(self,
         'echo ab$(echo hi)cd ef')
     self.assertEqual(3, len(node.words))
@@ -904,7 +904,7 @@ case bar in two) echo comsub2;; esac
     self.assertEqual(3, len(node.children))
 
   def testComSubWithinDoubleQuotes(self):
-    # CommandSubPart with two LiteralPart instances surrounding it
+    # CommandSub with two Literal instances surrounding it
     node = assertParseSimpleCommand(self,
         'echo "double $(echo hi) quoted" two')
     self.assertEqual(3, len(node.words))

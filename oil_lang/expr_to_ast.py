@@ -8,7 +8,7 @@ from _devbuild.gen import syntax_asdl
 from _devbuild.gen.syntax_asdl import (
     command, command__OilAssign,
     expr, expr_t, expr_context_e, regex, regex_t, word, word_t, word_part,
-    word_part__CommandSubPart,
+    word_part__CommandSub,
 )
 from _devbuild.gen import grammar_nt
 from pgen2.parse import PNode
@@ -227,7 +227,7 @@ class Transformer(object):
             Id.Lit_Chars
         ]
         array_words = [
-            word.CompoundWord([word_part.LiteralPart(t)]) for t in tokens
+            word.CompoundWord([word_part.Literal(t)]) for t in tokens
         ]  # type: List[word_t]
         return expr.ArrayLiteral(left_tok, array_words)
 
@@ -263,7 +263,7 @@ class Transformer(object):
             Id.Lit_Chars
         ]
         words = [
-            word.CompoundWord([word_part.LiteralPart(t)]) for t in tokens
+            word.CompoundWord([word_part.Literal(t)]) for t in tokens
         ]  # type: List[word_t]
         return expr.CommandSub(left_tok, command.SimpleCommand(words))
 
@@ -274,7 +274,7 @@ class Transformer(object):
         # actually has a word_part.CommandSub!
         typ1 = children[1].typ
         assert typ1 == Id.Expr_CommandDummy.enum_id, typ1
-        cs_part = cast(word_part__CommandSubPart, children[1].tok)
+        cs_part = cast(word_part__CommandSub, children[1].tok)
 
         # Awkward: the schemas are different
         expr_part = expr.CommandSub(cs_part.left_token, cs_part.command_list)
@@ -294,7 +294,7 @@ class Transformer(object):
             Id.Lit_Chars
         ]
         parts2 = [
-            word_part.LiteralPart(t) for t in tokens
+            word_part.Literal(t) for t in tokens
         ]  # type: List[oil_word_part_t]
         return expr.DoubleQuoted(left_tok, parts2)
 

@@ -28,8 +28,8 @@ def _token(obj):
   return p_node
 
 
-def _word_part__LiteralPart(obj):
-  # type: (word_part__LiteralPart) -> PrettyNode
+def _word_part__Literal(obj):
+  # type: (word_part__Literal) -> PrettyNode
   p_node = runtime.PrettyNode()
   p_node.abbrev = True
   p_node.node_type = ''  # don't show
@@ -59,8 +59,8 @@ def _word_part__BracedVarSub(obj):
   return p_node
 
 
-def _word_part__DoubleQuotedPart(obj):
-  # type: (word_part__DoubleQuotedPart) -> PrettyNode
+def _word_part__DoubleQuoted(obj):
+  # type: (word_part__DoubleQuoted) -> PrettyNode
   p_node = runtime.PrettyNode()
   p_node.abbrev = True
   p_node.node_type = 'DQ'
@@ -70,8 +70,8 @@ def _word_part__DoubleQuotedPart(obj):
   return p_node
 
 
-def _word_part__SingleQuotedPart(obj):
-  # type: (word_part__SingleQuotedPart) -> PrettyNode
+def _word_part__SingleQuoted(obj):
+  # type: (word_part__SingleQuoted) -> PrettyNode
 
   # Only abbreviate 'foo', not $'foo\n'
   if obj.left.id != Id.Left_SingleQuote:

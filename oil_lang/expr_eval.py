@@ -65,7 +65,7 @@ class OilEvaluator(object):
     """
     TODO: We might not want oil_word_part_e?  Just use OSH word_part?
     """
-    if part.tag == word_part_e.LiteralPart:
+    if part.tag == word_part_e.Literal:
       return part.token.val
 
     raise NotImplementedError(part.__class__.__name__)

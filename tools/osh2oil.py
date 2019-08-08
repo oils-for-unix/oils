@@ -156,8 +156,8 @@ def _GetRhsStyle(w):
   # Arith and command sub both retain $() and $[], so they are not pure
   # "expressions".
   VAR_SUBS = (word_part_e.SimpleVarSub, word_part_e.BracedVarSub,
-              word_part_e.TildeSubPart)
-  OTHER_SUBS = (word_part_e.CommandSubPart, word_part_e.ArithSubPart)
+              word_part_e.TildeSub)
+  OTHER_SUBS = (word_part_e.CommandSub, word_part_e.ArithSub)
 
   ALL_SUBS = VAR_SUBS + OTHER_SUBS
 
@@ -181,7 +181,7 @@ def _GetRhsStyle(w):
     elif part0.tag in OTHER_SUBS:
       return word_style_e.Unquoted
 
-    elif part0.tag == word_part_e.DoubleQuotedPart:
+    elif part0.tag == word_part_e.DoubleQuoted:
       if len(part0.parts) == 1:
         dq_part0 = part0.parts[0]
         # "$x" -> x  and  "${x}" -> x  and "${x:-default}" -> x or 'default'
@@ -192,7 +192,7 @@ def _GetRhsStyle(w):
 
   # Tilde subs also cause double quoted style.
   for part in w.parts:
-    if part.tag == word_part_e.DoubleQuotedPart:
+    if part.tag == word_part_e.DoubleQuoted:
       for dq_part in part.parts:
         if dq_part.tag in ALL_SUBS:
           return word_style_e.DQ
@@ -1040,7 +1040,7 @@ class OilPrinter(object):
       # "${foo}" -> $foo
 
       if (len(node.parts) == 1 and
-          node.parts[0].tag == word_part_e.DoubleQuotedPart):
+          node.parts[0].tag == word_part_e.DoubleQuoted):
         dq_part = node.parts[0]
 
         # NOTE: In double quoted case, this is the begin and end quote.
@@ -1087,7 +1087,7 @@ class OilPrinter(object):
             self.cursor.SkipUntil(right_spid + 1)
             return
 
-          elif part0.tag == word_part_e.CommandSubPart:
+          elif part0.tag == word_part_e.CommandSub:
             self.cursor.PrintUntil(left_spid)
             self.cursor.SkipUntil(left_spid + 1)
             self.DoWordPart(part0, local_symbols)
@@ -1135,13 +1135,13 @@ class OilPrinter(object):
 
       self.cursor.PrintUntil(span_id)
 
-    if node.tag == word_part_e.ArrayLiteralPart:
+    if node.tag == word_part_e.ArrayLiteral:
       pass
 
     elif node.tag == word_part_e.AssocArrayLiteral:
       pass
 
-    elif node.tag == word_part_e.EscapedLiteralPart:
+    elif node.tag == word_part_e.EscapedLiteral:
       if quoted:
         pass
       else:
@@ -1156,7 +1156,7 @@ class OilPrinter(object):
           self.cursor.SkipUntil(t.span_id + 1)
           self.f.write("'%s'" % val)
 
-    elif node.tag == word_part_e.LiteralPart:
+    elif node.tag == word_part_e.Literal:
       # Print it literally.
       # TODO: We might want to do it all on the word level though.  For
       # example, foo"bar" becomes "foobar" in oil.
@@ -1168,10 +1168,10 @@ class OilPrinter(object):
       else:
         self.cursor.PrintUntil(spid + 1)
 
-    elif node.tag == word_part_e.TildeSubPart:  # No change
+    elif node.tag == word_part_e.TildeSub:  # No change
       pass
 
-    elif node.tag == word_part_e.SingleQuotedPart:
+    elif node.tag == word_part_e.SingleQuoted:
       # TODO:
       # '\n' is '\\n'
       # $'\n' is '\n'
@@ -1181,7 +1181,7 @@ class OilPrinter(object):
         last_spid = node.tokens[-1].span_id
         self.cursor.PrintUntil(last_spid + 1)
 
-    elif node.tag == word_part_e.DoubleQuotedPart:
+    elif node.tag == word_part_e.DoubleQuoted:
       for part in node.parts:
         self.DoWordPart(part, local_symbols, quoted=True)
 
@@ -1279,7 +1279,7 @@ class OilPrinter(object):
 
       self.cursor.SkipUntil(right_spid + 1)
 
-    elif node.tag == word_part_e.CommandSubPart:
+    elif node.tag == word_part_e.CommandSub:
       left_spid, right_spid = node.spids
 
       #self.cursor.PrintUntil(left_spid)
@@ -1292,7 +1292,7 @@ class OilPrinter(object):
       self.cursor.SkipUntil(right_spid + 1)
       # change to $[echo hi]
 
-    elif node.tag == word_part_e.ArithSubPart:
+    elif node.tag == word_part_e.ArithSub:
       # We're not bothering to translate the arithmetic language.
       # Just turn $(( x ? 0 : 1 )) into $shExpr('x ? 0 : 1').
 
@@ -1311,7 +1311,7 @@ class OilPrinter(object):
       self.f.write("')")
       self.cursor.SkipUntil(right_spid + 1)
 
-    elif node.tag == word_part_e.ExtGlobPart:
+    elif node.tag == word_part_e.ExtGlob:
       # Change this into a function?  It depends whether it is used as
       # a glob or fnmatch.
       # 

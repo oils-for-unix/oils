@@ -507,11 +507,11 @@ ls bar
 """)
     print('--MULTI')
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    parts = [word_part.LiteralPart(token(Id.Lit_Chars, 'ls'))]
+    parts = [word_part.Literal(token(Id.Lit_Chars, 'ls'))]
     test_lib.AssertAsdlEqual(self, word.CompoundWord(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    parts = [word_part.LiteralPart(token(Id.Lit_Chars, 'foo'))]
+    parts = [word_part.Literal(token(Id.Lit_Chars, 'foo'))]
     test_lib.AssertAsdlEqual(self, word.CompoundWord(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
@@ -519,11 +519,11 @@ ls bar
     test_lib.AssertAsdlEqual(self, word.TokenWord(t), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    parts = [word_part.LiteralPart(token(Id.Lit_Chars, 'ls'))]
+    parts = [word_part.Literal(token(Id.Lit_Chars, 'ls'))]
     test_lib.AssertAsdlEqual(self, word.CompoundWord(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    parts = [word_part.LiteralPart(token(Id.Lit_Chars, 'bar'))]
+    parts = [word_part.Literal(token(Id.Lit_Chars, 'bar'))]
     test_lib.AssertAsdlEqual(self, word.CompoundWord(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)

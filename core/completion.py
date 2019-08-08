@@ -659,7 +659,7 @@ def IsDummy(t):
 def WordEndsWithCompDummy(w):
   last_part = w.parts[-1]
   return (
-      last_part.tag == word_part_e.LiteralPart and
+      last_part.tag == word_part_e.Literal and
       last_part.token.id == Id.Lit_CompDummy
   )
 
@@ -806,8 +806,8 @@ class RootCompleter(object):
       # EXACTLY what we want.
       parts = trail.words[-1].parts
       if (len(parts) == 2 and
-          parts[0].tag == word_part_e.LiteralPart and
-          parts[1].tag == word_part_e.LiteralPart and
+          parts[0].tag == word_part_e.Literal and
+          parts[1].tag == word_part_e.Literal and
           parts[0].token.id == Id.Lit_TildeLike and
           parts[1].token.id == Id.Lit_CompDummy):
         t2 = parts[0].token
@@ -892,7 +892,7 @@ class RootCompleter(object):
             # TODO:
             # - Should we call EvalWordSequence?  But turn globbing off?  It
             # can do splitting and such.
-            # - We could have a variant to eval TildeSubPart to ~ ?
+            # - We could have a variant to eval TildeSub to ~ ?
             val = self.word_ev.EvalWordToString(w)
           except util.FatalRuntimeError:
             # Why would it fail?

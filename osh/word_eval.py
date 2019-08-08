@@ -209,7 +209,7 @@ class _WordEvaluator(object):
     """Abstract since it has a side effect.
 
     Args:
-      part: CommandSubPart
+      part: CommandSub
 
     Returns:
        part_value
@@ -220,7 +220,7 @@ class _WordEvaluator(object):
     """Abstract since it has a side effect.
 
     Args:
-      part: CommandSubPart
+      part: CommandSub
 
     Returns:
        part_value
@@ -521,8 +521,8 @@ class _WordEvaluator(object):
 
     return new_val
 
-  def _EvalDoubleQuotedPart(self, part, part_vals):
-    """DoubleQuotedPart -> part_value
+  def _EvalDoubleQuoted(self, part, part_vals):
+    """DoubleQuoted -> part_value
 
     Args:
       part_vals: output param to append to.
@@ -537,8 +537,8 @@ class _WordEvaluator(object):
 
     #log('DQ part %s', part)
 
-    # Special case for "".  The parser outputs (DoubleQuotedPart []), instead
-    # of (DoubleQuotedPart [LiteralPart '']).  This is better but it means we
+    # Special case for "".  The parser outputs (DoubleQuoted []), instead
+    # of (DoubleQuoted [Literal '']).  This is better but it means we
     # have to check for it.
     if not part.parts:
       v = part_value.String('', True, False)
@@ -844,18 +844,18 @@ class _WordEvaluator(object):
     Returns:
       None
     """
-    if part.tag == word_part_e.ArrayLiteralPart:  # e.g. ls a=(1 2)
+    if part.tag == word_part_e.ArrayLiteral:  # e.g. ls a=(1 2)
       e_die("Unexpected array literal", part=part)
     elif part.tag == word_part_e.AssocArrayLiteral:
       e_die("Unexpected associative array literal", part=part)
 
-    elif part.tag == word_part_e.LiteralPart:
+    elif part.tag == word_part_e.Literal:
       # Split if it's in a substitution.
       # That is: echo is not split, but ${foo:-echo} is split
       v = part_value.String(part.token.val, quoted, is_subst)
       part_vals.append(v)
 
-    elif part.tag == word_part_e.EscapedLiteralPart:
+    elif part.tag == word_part_e.EscapedLiteral:
       val = part.token.val
       assert len(val) == 2, val  # e.g. \*
       assert val[0] == '\\'
@@ -863,7 +863,7 @@ class _WordEvaluator(object):
       v = part_value.String(s, True, False)
       part_vals.append(v)
 
-    elif part.tag == word_part_e.SingleQuotedPart:
+    elif part.tag == word_part_e.SingleQuoted:
       if part.left.id == Id.Left_SingleQuote:
         s = ''.join(t.val for t in part.tokens)
       elif part.left.id == Id.Left_DollarSingleQuote:
@@ -877,10 +877,10 @@ class _WordEvaluator(object):
       v = part_value.String(s, True, False)
       part_vals.append(v)
 
-    elif part.tag == word_part_e.DoubleQuotedPart:
-      self._EvalDoubleQuotedPart(part, part_vals)
+    elif part.tag == word_part_e.DoubleQuoted:
+      self._EvalDoubleQuoted(part, part_vals)
 
-    elif part.tag == word_part_e.CommandSubPart:
+    elif part.tag == word_part_e.CommandSub:
       id_ = part.left_token.id
       if id_ in (Id.Left_DollarParen, Id.Left_Backtick):
         v = self._EvalCommandSub(part.command_list, quoted)
@@ -919,19 +919,19 @@ class _WordEvaluator(object):
     elif part.tag == word_part_e.BracedVarSub:
       self._EvalBracedVarSub(part, part_vals, quoted)
 
-    elif part.tag == word_part_e.TildeSubPart:
-      # We never parse a quoted string into a TildeSubPart.
+    elif part.tag == word_part_e.TildeSub:
+      # We never parse a quoted string into a TildeSub.
       assert not quoted
       s = self._EvalTildeSub(part.token)
       v = part_value.String(s, True, False)  # NOT split even when unquoted!
       part_vals.append(v)
 
-    elif part.tag == word_part_e.ArithSubPart:
+    elif part.tag == word_part_e.ArithSub:
       num = self.arith_ev.Eval(part.anode)
       v = part_value.String(str(num), quoted, not quoted)
       part_vals.append(v)
 
-    elif part.tag == word_part_e.ExtGlobPart:
+    elif part.tag == word_part_e.ExtGlob:
       # Do NOT split these.
       part_vals.append(part_value.String(part.op.val, False, False))
       for i, w in enumerate(part.arms):
@@ -986,7 +986,7 @@ class _WordEvaluator(object):
   # Do we need this?
   def EvalWordToPattern(self, word):
     """
-    Given a word, returns pattern.ERE if has an ExtGlobPart, or pattern.Fnmatch
+    Given a word, returns pattern.ERE if has an ExtGlob, or pattern.Fnmatch
     otherwise.
 
     NOTE: Have to handle nested extglob like: [[ foo == ${empty:-@(foo|bar) ]]
@@ -1008,7 +1008,7 @@ class _WordEvaluator(object):
       "$pat") echo 'equal to glob string' ;;  # must be glob escaped
     esac
 
-    TODO: Raise AssertionError if it has ExtGlobPart.
+    TODO: Raise AssertionError if it has ExtGlob.
     """
     if word.tag == word_e.EmptyWord:
       return value.Str('')
@@ -1080,9 +1080,9 @@ class _WordEvaluator(object):
     if len(word.parts) == 1:
       part0 = word.parts[0]
 
-      # Special case for a=(1 2).  ArrayLiteralPart won't appear in words that
+      # Special case for a=(1 2).  ArrayLiteral won't appear in words that
       # don't look like assignments.
-      if part0.tag == word_part_e.ArrayLiteralPart:
+      if part0.tag == word_part_e.ArrayLiteral:
         array_words = part0.words
         words = braces.BraceExpandWords(array_words)
         strs = self.EvalWordSequence(words)

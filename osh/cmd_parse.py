@@ -22,7 +22,7 @@ from _devbuild.gen.syntax_asdl import (
     lhs_expr, lhs_expr_t,
     redir, redir_t, redir__HereDoc,
     word_t, word__CompoundWord, word__TokenWord,
-    word_part, word_part_t, word_part__LiteralPart,
+    word_part, word_part_t, word_part__Literal,
 
     token, assign_pair, env_pair,
     assign_op_e,
@@ -108,7 +108,7 @@ def _MakeLiteralHereLines(here_lines,  # type: List[Tuple[int, str, int]]
     span_id = arena.AddLineSpan(line_id, start_offset, len(line))
     t = syntax_asdl.token(Id.Lit_Chars, line[start_offset:], span_id)
     tokens.append(t)
-  return [word_part.LiteralPart(t) for t in tokens]
+  return [word_part.Literal(t) for t in tokens]
 
 
 def _ParseHereDocBody(parse_ctx, h, line_reader, arena):
@@ -125,7 +125,7 @@ def _ParseHereDocBody(parse_ctx, h, line_reader, arena):
   here_lines, last_line = _ReadHereLines(line_reader, h, delimiter)
 
   if delim_quoted:  # << 'EOF'
-    # LiteralPart for each line.
+    # Literal for each line.
     h.stdin_parts = _MakeLiteralHereLines(here_lines, arena)
   else:
     line_reader = reader.VirtualLineReader(here_lines, arena)
@@ -973,7 +973,7 @@ class CommandParser(object):
     # This is ensured by the WordParser.  Keywords are returned in a CompoundWord.
     # It's not a TokenWord because we could have something like 'whileZZ true'.
     assert isinstance(self.cur_word, word__CompoundWord)  # for MyPy
-    assert isinstance(self.cur_word.parts[0], word_part__LiteralPart)  # for MyPy
+    assert isinstance(self.cur_word.parts[0], word_part__Literal)  # for MyPy
 
     keyword = self.cur_word.parts[0].token
     # This is ensured by the caller

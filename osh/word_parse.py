@@ -58,10 +58,10 @@ from _devbuild.gen.syntax_asdl import (
     word_t, word__CompoundWord, word__TokenWord,
 
     word_part, word_part_t,
-    word_part__LiteralPart,
-    word_part__BracedVarSub, word_part__SingleQuotedPart,
-    word_part__ArithSubPart, word_part__DoubleQuotedPart,
-    word_part__CommandSubPart, word_part__ExtGlobPart,
+    word_part__Literal,
+    word_part__BracedVarSub, word_part__SingleQuoted,
+    word_part__ArithSub, word_part__DoubleQuoted,
+    word_part__CommandSub, word_part__ExtGlob,
 
     command, command_t, command__ForExpr,
     suffix_op, bracket_op,
@@ -206,7 +206,7 @@ class WordParser(object):
       if ok and s == '/' and not quoted:  # Looks like ${a////c}, read again
         self._Next(lex_mode)
         self._Peek()
-        p = word_part.LiteralPart(self.cur_token)
+        p = word_part.Literal(self.cur_token)
         pat.parts.append(p)
 
     if len(pat.parts) == 0:
@@ -216,7 +216,7 @@ class WordParser(object):
     replace_mode = Id.Undefined_Tok
     # Check for / # % modifier on pattern.
     first_part = pat.parts[0]
-    if isinstance(first_part, word_part__LiteralPart):
+    if isinstance(first_part, word_part__Literal):
       lit_id = first_part.token.id
       if lit_id in (Id.Lit_Slash, Id.Lit_Pound, Id.Lit_Percent):
         pat.parts.pop(0)
@@ -492,8 +492,8 @@ class WordParser(object):
 
     return part
 
-  def _ReadSingleQuotedPart(self, lex_mode):
-    # type: (lex_mode_t) -> word_part__SingleQuotedPart
+  def _ReadSingleQuoted(self, lex_mode):
+    # type: (lex_mode_t) -> word_part__SingleQuoted
     left = self.cur_token
     tokens = []
 
@@ -518,7 +518,7 @@ class WordParser(object):
             'Unhandled token in single-quoted part %s (%s)' %
             (self.cur_token, self.token_kind))
 
-    node = word_part.SingleQuotedPart(left, tokens)
+    node = word_part.SingleQuoted(left, tokens)
     node.spids.append(left.span_id)  # left '
     node.spids.append(self.cur_token.span_id)  # right '
     return node
@@ -527,13 +527,13 @@ class WordParser(object):
     # type: () -> word_part_t
     """Read substitution parts in a double quoted context."""
     if self.token_type in (Id.Left_DollarParen, Id.Left_Backtick):
-      return self._ReadCommandSubPart(self.token_type)
+      return self._ReadCommandSub(self.token_type)
 
     if self.token_type == Id.Left_DollarBrace:
       return self._ReadBracedBracedVarSub(d_quoted=True)
 
     if self.token_type == Id.Left_DollarDParen:
-      return self._ReadArithSubPart()
+      return self._ReadArithSub()
 
     if self.token_type == Id.Left_DollarBracket:
       return self._DollarBracketIsReserved()
@@ -545,44 +545,44 @@ class WordParser(object):
     """Read substitutions and quoted strings (for the OUTER context)."""
 
     if self.token_type == Id.Left_DoubleQuote:
-      return self._ReadDoubleQuotedPart()
+      return self._ReadDoubleQuoted()
 
     if self.token_type == Id.Left_DollarDoubleQuote:
       # NOTE: $"" is treated as "" for now.  Does it make sense to add the
       # token to the part?
-      return self._ReadDoubleQuotedPart()
+      return self._ReadDoubleQuoted()
 
     if self.token_type == Id.Left_SingleQuote:
-      return self._ReadSingleQuotedPart(lex_mode_e.SQ)
+      return self._ReadSingleQuoted(lex_mode_e.SQ)
 
     if self.token_type == Id.Left_DollarSingleQuote:
-      return self._ReadSingleQuotedPart(lex_mode_e.DollarSQ)
+      return self._ReadSingleQuoted(lex_mode_e.DollarSQ)
 
     if self.token_type in (
         Id.Left_DollarParen, Id.Left_Backtick, Id.Left_ProcSubIn,
         Id.Left_ProcSubOut):
-      return self._ReadCommandSubPart(self.token_type)
+      return self._ReadCommandSub(self.token_type)
 
     if self.token_type == Id.Left_DollarBrace:
       return self._ReadBracedBracedVarSub(d_quoted=False)
 
     if self.token_type == Id.Left_DollarDParen:
-      return self._ReadArithSubPart()
+      return self._ReadArithSub()
 
     if self.token_type == Id.Left_DollarBracket:
       return self._DollarBracketIsReserved()
 
     raise AssertionError('%s not handled' % self.cur_token)
 
-  def _ReadExtGlobPart(self):
-    # type: () -> word_part__ExtGlobPart
+  def _ReadExtGlob(self):
+    # type: () -> word_part__ExtGlob
     """
     Grammar:
       Item         = CompoundWord | EPSILON  # important: @(foo|) is allowed
       LEFT         = '@(' | '*(' | '+(' | '?(' | '!('
       RIGHT        = ')'
       ExtGlob      = LEFT (Item '|')* Item RIGHT  # ITEM may be empty
-      CompoundWord includes ExtGlobPart
+      CompoundWord includes ExtGlob
     """
     left_token = self.cur_token
     arms = []  # type: List[word_t]
@@ -622,7 +622,7 @@ class WordParser(object):
       else:
         raise AssertionError('Unexpected token %r' % self.cur_token)
 
-    part = word_part.ExtGlobPart(left_token, arms)
+    part = word_part.ExtGlob(left_token, arms)
     part.spids.extend(spids)
     return part
 
@@ -641,9 +641,9 @@ class WordParser(object):
 
       if self.token_kind == Kind.Lit:
         if self.token_type == Id.Lit_EscapedChar:
-          part = word_part.EscapedLiteralPart(self.cur_token)  # type: word_part_t
+          part = word_part.EscapedLiteral(self.cur_token)  # type: word_part_t
         else:
-          part = word_part.LiteralPart(self.cur_token)
+          part = word_part.Literal(self.cur_token)
         out_parts.append(part)
 
       elif self.token_kind == Kind.Left:
@@ -660,7 +660,7 @@ class WordParser(object):
           done = True
         else:
           # In a here doc, the right quote is literal!
-          out_parts.append(word_part.LiteralPart(self.cur_token))
+          out_parts.append(word_part.Literal(self.cur_token))
 
       elif self.token_kind == Kind.Eof:
         if left_dq_token:
@@ -673,8 +673,8 @@ class WordParser(object):
         raise AssertionError(self.cur_token)
     # Return nothing, since we appended to 'out_parts'
 
-  def _ReadDoubleQuotedPart(self):
-    # type: () -> word_part__DoubleQuotedPart
+  def _ReadDoubleQuoted(self):
+    # type: () -> word_part__DoubleQuoted
     """
     Args:
       eof_type: for stopping at }, Id.Lit_RBrace
@@ -682,7 +682,7 @@ class WordParser(object):
 
     Also ${foo%%a b c}  # treat this as double quoted.  until you hit
     """
-    dq_part = word_part.DoubleQuotedPart()
+    dq_part = word_part.DoubleQuoted()
     left_dq_token = self.cur_token
     dq_part.spids.append(left_dq_token.span_id)  # Left "
 
@@ -691,8 +691,8 @@ class WordParser(object):
     dq_part.spids.append(self.cur_token.span_id)  # Right "
     return dq_part
 
-  def _ReadCommandSubPart(self, left_id):
-    # type: (Id_t) -> word_part__CommandSubPart
+  def _ReadCommandSub(self, left_id):
+    # type: (Id_t) -> word_part__CommandSub
     """
     NOTE: This is not in the grammar, because word parts aren't in the grammar!
 
@@ -750,7 +750,7 @@ class WordParser(object):
           raise AssertionError
         self._Next(lex_mode_e.Backtick)
 
-      # Calculate right SPID on CommandSubPart BEFORE re-parsing.
+      # Calculate right SPID on CommandSub BEFORE re-parsing.
       right_spid = self.cur_token.span_id
 
       code_str = ''.join(parts)
@@ -771,7 +771,7 @@ class WordParser(object):
     else:
       raise AssertionError(left_id)
 
-    cs_part = word_part.CommandSubPart(node, left_token)
+    cs_part = word_part.CommandSub(node, left_token)
     cs_part.spids.append(left_spid)
     cs_part.spids.append(right_spid)
     return cs_part
@@ -836,8 +836,8 @@ class WordParser(object):
     anode = a_parser.Parse()
     return anode
 
-  def _ReadArithSubPart(self):
-    # type: () -> word_part__ArithSubPart
+  def _ReadArithSub(self):
+    # type: () -> word_part__ArithSub
     """
     Read an arith substitution, which contains an arith expression, e.g.
     $((a + 1)).
@@ -872,13 +872,13 @@ class WordParser(object):
 
     right_span_id = self.cur_token.span_id
 
-    node = word_part.ArithSubPart(anode)
+    node = word_part.ArithSub(anode)
     node.spids.append(left_span_id)
     node.spids.append(right_span_id)
     return node
 
   def _DollarBracketIsReserved(self):
-    # type: () -> word_part__ArithSubPart
+    # type: () -> word_part__ArithSub
     """Non-standard arith sub $[a + 1]."""
     left_span_id = self.cur_token.span_id
     p_die('Use $(( instead of $[', token=self.cur_token)
@@ -955,7 +955,7 @@ class WordParser(object):
 
     return command.ForExpr(init_node, cond_node, update_node)
 
-  def _ReadArrayLiteralPart(self):
+  def _ReadArrayLiteral(self):
     # type: () -> word_part_t
     """
     a=(1 2 3)
@@ -1002,7 +1002,7 @@ class WordParser(object):
       words.append(w)
 
     if not words:  # a=() is empty indexed array
-      node = word_part.ArrayLiteralPart(words)  # type: ignore  # invariant List?
+      node = word_part.ArrayLiteral(words)  # type: ignore  # invariant List?
       node.spids.append(paren_spid)
       return node
  
@@ -1027,7 +1027,7 @@ class WordParser(object):
 
     words2 = braces.BraceDetectAll(words)
     words3 = word_.TildeDetectAll(words2)
-    node = word_part.ArrayLiteralPart(words3)
+    node = word_part.ArrayLiteral(words3)
     node.spids.append(paren_spid)
     return node
 
@@ -1078,9 +1078,9 @@ class WordParser(object):
           Kind.Lit, Kind.History, Kind.KW, Kind.ControlFlow,
           Kind.BoolUnary, Kind.BoolBinary):
         if self.token_type == Id.Lit_EscapedChar:
-          part = word_part.EscapedLiteralPart(self.cur_token)  # type: word_part_t
+          part = word_part.EscapedLiteral(self.cur_token)  # type: word_part_t
         else:
-          part = word_part.LiteralPart(self.cur_token)
+          part = word_part.Literal(self.cur_token)
 
         if self.token_type == Id.Lit_VarLike and num_parts == 0:  # foo=
           w.parts.append(part)
@@ -1089,7 +1089,7 @@ class WordParser(object):
           t = self.lexer.LookAhead(lex_mode_e.ShCommand)
           if t.id == Id.Op_LParen:
             self.lexer.PushHint(Id.Op_RParen, Id.Right_ArrayLiteral)
-            part2 = self._ReadArrayLiteralPart()
+            part2 = self._ReadArrayLiteral()
             w.parts.append(part2)
 
             # Array literal must be the last part of the word.
@@ -1155,7 +1155,7 @@ class WordParser(object):
         w.parts.append(part)
 
       elif self.token_kind == Kind.ExtGlob:
-        part = self._ReadExtGlobPart()
+        part = self._ReadExtGlob()
         w.parts.append(part)
 
       elif self.token_kind == Kind.Left:

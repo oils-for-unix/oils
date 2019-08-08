@@ -97,24 +97,24 @@ module syntax
   | Slice(arith_expr? begin, arith_expr? length)
 
   word_part = 
-    ArrayLiteralPart(word* words)
+    ArrayLiteral(word* words)
     -- alternating key and value (saving some space)
   | AssocArrayLiteral(word* pairs)
-  | LiteralPart(token token)
+  | Literal(token token)
     -- escaped case is separate so the evaluator doesn't have to check token ID
-  | EscapedLiteralPart(token token)
-  | SingleQuotedPart(token left, token* tokens)
-  | DoubleQuotedPart(word_part* parts)
+  | EscapedLiteral(token token)
+  | SingleQuoted(token left, token* tokens)
+  | DoubleQuoted(word_part* parts)
   | SimpleVarSub(token token)
   | BracedVarSub(token token,
                 id? prefix_op,  -- prefix # or ! operators
                 bracket_op? bracket_op
                 suffix_op? suffix_op)
     -- This should be token tilde, token rest
-  | TildeSubPart(token token)
+  | TildeSub(token token)
     -- For command sub and process sub: $(...)  <(...)  >(...)
-  | CommandSubPart(command command_list, token left_token)
-  | ArithSubPart(arith_expr anode)
+  | CommandSub(command command_list, token left_token)
+  | ArithSub(arith_expr anode)
     -- {a,b,c}
   | BracedTuple(word* words)
     -- {1..10} or {-5..10..2} or {01..10} (leading zeros matter)
@@ -122,7 +122,7 @@ module syntax
   | BracedRange(id kind, string start, string end, int? step)
     -- note: optional int may need special handling in ASDL
   -- extended globs are parsed statically, unlike globs
-  | ExtGlobPart(token op, word* arms)
+  | ExtGlob(token op, word* arms)
     -- @array
   | Splice(token name)
     -- $strfunc(x) and @arrayfunc(x)
@@ -135,8 +135,8 @@ module syntax
   | TokenWord(token token)
     -- A CompoundWord can contain any word_part except the Braced*Part.
     -- We could model this with another variant type but it incurs runtime
-    -- overhead and seems like overkill.  Note that DoubleQuotedPart can't
-    -- contain a SingleQuotedPart, etc. either.
+    -- overhead and seems like overkill.  Note that DoubleQuoted can't
+    -- contain a SingleQuoted, etc. either.
   | CompoundWord(word_part* parts)
     -- A BracedWordTree is a word because it can appear in a command.  It can
     -- contains any type of word_part.
@@ -215,7 +215,7 @@ module syntax
   | DoGroup(command* children, redir* redirects)
     -- A brace group is a compound command, with redirects.
   | BraceGroup(command* children, redir* redirects)
-    -- Contains a single child, like CommandSubPart
+    -- Contains a single child, like CommandSub
   | Subshell(command command_list, redir* redirects)
   | DParen(arith_expr child, redir* redirects)
   | DBracket(bool_expr expr, redir* redirects)
