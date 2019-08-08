@@ -756,7 +756,7 @@ class InitCompletionTest(unittest.TestCase):
       # Our test shell script records what passed in an array.
       val = mem.GetVar('PASSED')
       self.assertEqual(
-          value_e.StrArray, val.tag, "Expected array, got %s" % val)
+          value_e.MaybeStrArray, val.tag, "Expected array, got %s" % val)
       actually_passed = val.strs
 
       should_pass = [

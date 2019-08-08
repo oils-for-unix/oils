@@ -136,7 +136,7 @@ class PrettyLeaf(_PrettyBase):
 
   def __init__(self, s, e_color):
     # type: (Optional[str], int) -> None
-    if s is None:  # hack for repr of StrArray, which can have 'None'
+    if s is None:  # hack for repr of MaybeStrArray, which can have 'None'
       self.s = '_'
       self.e_color = Color_OtherConst
     else:

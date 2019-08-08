@@ -39,9 +39,9 @@ class StrArray(list):
   var array = @(a b c)  # only strings, PARSED like shell
   var oilarray = @[a b c]  # can be integers
 
-  TODO: value.StrArray should be renamed LooseArray?
+  TODO: value.MaybeStrArray should be renamed LooseArray?
     Because it can have holes!
-    StrNoneArray?  MaybeStrArray?
+    StrNoneArray?  MaybeMaybeStrArray?
 
   In C, do both of them have the same physical representation?
   """

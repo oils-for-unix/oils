@@ -398,7 +398,7 @@ class Cd(object):
         return 1
       elif val.tag == value_e.Str:
         dest_dir = val.s
-      elif val.tag == value_e.StrArray:
+      elif val.tag == value_e.MaybeStrArray:
         # User would have to unset $HOME to get rid of exported flag
         self.errfmt.Print("$HOME shouldn't be an array")
         return 1
@@ -411,7 +411,7 @@ class Cd(object):
       elif old.tag == value_e.Str:
         dest_dir = old.s
         print(dest_dir)  # Shells print the directory
-      elif old.tag == value_e.StrArray:
+      elif old.tag == value_e.MaybeStrArray:
         # TODO: Prevent the user from setting OLDPWD to array (or maybe they
         # can't even set it at all.)
         raise AssertionError('Invalid $OLDPWD')

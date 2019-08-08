@@ -495,8 +495,8 @@ def _DumpVarFrame(frame):
     elif tag == value_e.Str:
       cell_json['type'] = 'Str'
       cell_json['value'] = cell.val.s
-    elif tag == value_e.StrArray:
-      cell_json['type'] = 'StrArray'
+    elif tag == value_e.MaybeStrArray:
+      cell_json['type'] = 'MaybeStrArray'
       cell_json['value'] = cell.val.strs
 
     vars_json[name] = cell_json
@@ -1027,7 +1027,7 @@ class Mem(object):
         e_die("Entries in value of type %s can't be assigned to",
               cell.val.__class__.__name__, span_id=left_spid)
 
-      if cell_tag == value_e.StrArray:
+      if cell_tag == value_e.MaybeStrArray:
         strs = cell.val.strs
         try:
           strs[lval.index] = val.s
@@ -1067,7 +1067,7 @@ class Mem(object):
     """Fill 'namespace' with a new indexed array entry."""
     items = [None] * lval.index
     items.append(val.s)
-    new_value = value.StrArray(items)
+    new_value = value.MaybeStrArray(items)
 
     # arrays can't be exported; can't have AssocArray flag
     readonly = var_flags_e.ReadOnly in flags_to_set
@@ -1097,12 +1097,12 @@ class Mem(object):
 
     if name == 'ARGV':
       # TODO:
-      # - Reuse the StrArray?
+      # - Reuse the MaybeStrArray?
       # - @@ could be an alias for ARGV (in command mode, but not expr mode)
-      return value.StrArray(self.GetArgv())
+      return value.MaybeStrArray(self.GetArgv())
 
     if name == 'PIPESTATUS':
-      return value.StrArray([str(i) for i in self.pipe_status[-1]])
+      return value.MaybeStrArray([str(i) for i in self.pipe_status[-1]])
 
     # Do lookup of system globals before looking at user variables.  Note: we
     # could optimize this at compile-time like $?.  That would break
@@ -1120,12 +1120,12 @@ class Mem(object):
 
       if self.has_main:
         strs.append('main')  # bash does this
-      return value.StrArray(strs)  # TODO: Reuse this object too?
+      return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
 
     # This isn't the call source, it's the source of the function DEFINITION
     # (or the sourced # file itself).
     if name == 'BASH_SOURCE':
-      return value.StrArray(list(reversed(self.bash_source)))
+      return value.MaybeStrArray(list(reversed(self.bash_source)))
 
     # This is how bash source SHOULD be defined, but it's not!
     if name == 'CALL_SOURCE':
@@ -1139,7 +1139,7 @@ class Mem(object):
         strs.append(source_str)
       if self.has_main:
         strs.append('-')  # Bash does this to line up with main?
-      return value.StrArray(strs)  # TODO: Reuse this object too?
+      return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
 
     if name == 'BASH_LINENO':
       strs = []
@@ -1152,7 +1152,7 @@ class Mem(object):
         strs.append(str(line_num))
       if self.has_main:
         strs.append('0')  # Bash does this to line up with main?
-      return value.StrArray(strs)  # TODO: Reuse this object too?
+      return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
 
     if name == 'LINENO':
       span = self.arena.GetLineSpan(self.current_spid)
@@ -1235,7 +1235,7 @@ class Mem(object):
     for scope in self.var_stack:
       for name, cell in scope.iteritems():
         # TODO: Disallow exporting at assignment time.  If an exported Str is
-        # changed to StrArray, also clear its 'exported' flag.
+        # changed to MaybeStrArray, also clear its 'exported' flag.
         if cell.exported and cell.val.tag == value_e.Str:
           exported[name] = cell.val.s
     return exported
@@ -1287,7 +1287,7 @@ def SetArrayDynamic(mem, name, a):
   Used for _init_completion.
   """
   assert isinstance(a, list)
-  mem.SetVar(lhs_expr.LhsName(name), value.StrArray(a), (), scope_e.Dynamic)
+  mem.SetVar(lhs_expr.LhsName(name), value.MaybeStrArray(a), (), scope_e.Dynamic)
 
 
 def SetGlobalString(mem, name, s):
@@ -1300,7 +1300,7 @@ def SetGlobalString(mem, name, s):
 def SetGlobalArray(mem, name, a):
   """Helper for completion."""
   assert isinstance(a, list)
-  mem.SetVar(lhs_expr.LhsName(name), value.StrArray(a), (), scope_e.GlobalOnly)
+  mem.SetVar(lhs_expr.LhsName(name), value.MaybeStrArray(a), (), scope_e.GlobalOnly)
 
 
 def ExportGlobalString(mem, name, s):

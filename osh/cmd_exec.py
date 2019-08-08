@@ -820,8 +820,8 @@ class Executor(object):
         if isinstance(py_val, str):  # var s = "hello $name"
           val = value.Str(py_val)
         elif isinstance(py_val, objects.StrArray):  # var a = @(a b)
-          # TODO: Rename this value.MaybeStrArray?
-          val = value.StrArray(py_val)
+          # It's safe to convert StrArray to MaybeStrArray.
+          val = value.MaybeStrArray(py_val)
         elif isinstance(py_val, dict):  # var d = {name: "bob"}
           val = value.AssocArray(py_val)
         else:
@@ -860,16 +860,16 @@ class Executor(object):
           sig = (old_val.tag, val.tag)
           if sig == (value_e.Undef, value_e.Str):
             pass  # val is RHS
-          elif sig == (value_e.Undef, value_e.StrArray):
+          elif sig == (value_e.Undef, value_e.MaybeStrArray):
             pass  # val is RHS
           elif sig == (value_e.Str, value_e.Str):
             val = value.Str(old_val.s + val.s)
-          elif sig == (value_e.Str, value_e.StrArray):
+          elif sig == (value_e.Str, value_e.MaybeStrArray):
             e_die("Can't append array to string")
-          elif sig == (value_e.StrArray, value_e.Str):
+          elif sig == (value_e.MaybeStrArray, value_e.Str):
             e_die("Can't append string to array")
-          elif sig == (value_e.StrArray, value_e.StrArray):
-            val = value.StrArray(old_val.strs + val.strs)
+          elif sig == (value_e.MaybeStrArray, value_e.MaybeStrArray):
+            val = value.MaybeStrArray(old_val.strs + val.strs)
 
         else:  # plain assignment
           spid = pair.spids[0]  # Source location for tracing

@@ -46,7 +46,7 @@ class Export(object):
 
 def _CheckType(rval, arg, errfmt, span_id):
   """Shared between NewVar and Readonly."""
-  if arg.a and rval and rval.tag != value_e.StrArray:
+  if arg.a and rval and rval.tag != value_e.MaybeStrArray:
     errfmt.Print("Got -a but RHS isn't an array", span_id=span_id)
     return False
   if arg.A and rval and rval.tag != value_e.AssocArray:
@@ -75,7 +75,7 @@ class Readonly(object):
     for pair in cmd_val.pairs:
       if pair.rval is None:
         if arg.a:
-          rval = value.StrArray([])
+          rval = value.MaybeStrArray([])
         elif arg.A:
           rval = value.AssocArray({})
         else:
@@ -189,7 +189,7 @@ class NewVar(object):
     for pair in cmd_val.pairs:
       if pair.rval is None:
         if arg.a:
-          rval = value.StrArray([])
+          rval = value.MaybeStrArray([])
         elif arg.A:
           rval = value.AssocArray({})
         else:

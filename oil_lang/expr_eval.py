@@ -40,7 +40,7 @@ class OilEvaluator(object):
 
     if val.tag == value_e.Str:
       return val.s
-    if val.tag == value_e.StrArray:
+    if val.tag == value_e.MaybeStrArray:
       return val.strs  # node: has None
     if val.tag == value_e.AssocArray:
       return val.d

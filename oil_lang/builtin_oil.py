@@ -51,7 +51,7 @@ class Push(object):
 
     val = self.mem.GetVar(var_name)
     # TODO: value.Obj too
-    if val.tag != value_e.StrArray:
+    if val.tag != value_e.MaybeStrArray:
       self.errfmt.Print("%r isn't an array", var_name, span_id=var_spid)
       return 1
 

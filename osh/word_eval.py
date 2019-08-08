@@ -53,7 +53,7 @@ def _ValueToPartValue(val, quoted):
   if val.tag == value_e.Str:
     return part_value.String(val.s, quoted, not quoted)
 
-  elif val.tag == value_e.StrArray:
+  elif val.tag == value_e.MaybeStrArray:
     return part_value.Array(val.strs)
 
   elif val.tag == value_e.AssocArray:
@@ -159,7 +159,7 @@ def _PerformSlice(val, begin, length, part):
     substr = s[byte_begin : byte_end]
     val = value.Str(substr)
 
-  elif val.tag == value_e.StrArray:  # Slice array entries.
+  elif val.tag == value_e.MaybeStrArray:  # Slice array entries.
     # NOTE: This error is ALWAYS fatal in bash.  It's inconsistent with
     # strings.
     if length and length < 0:
@@ -173,7 +173,7 @@ def _PerformSlice(val, begin, length, part):
         strs.append(s)
         if len(strs) == length:  # never true for unspecified length
           break
-    val = value.StrArray(strs)
+    val = value.MaybeStrArray(strs)
 
   elif val.tag == value_e.AssocArray:
     e_die("Can't slice associative arrays", part=part)
@@ -273,7 +273,7 @@ class _WordEvaluator(object):
 
     if op_id in (Id.VSub_At, Id.VSub_Star):
       argv = self.mem.GetArgv()
-      val = value.StrArray(argv)
+      val = value.MaybeStrArray(argv)
       if op_id == Id.VSub_At:
         # "$@" evaluates to an array, $@ should be decayed
         return val, not quoted
@@ -318,7 +318,7 @@ class _WordEvaluator(object):
       is_falsey = (
           undefined or
           (val.tag == value_e.Str and not val.s) or
-          (val.tag == value_e.StrArray and not val.strs)
+          (val.tag == value_e.MaybeStrArray and not val.strs)
       )
     else:
       is_falsey = undefined
@@ -376,10 +376,10 @@ class _WordEvaluator(object):
     if not match.IsValidVarName(name):
       return None
     val = self.mem.GetVar(name)
-    if val.tag == value_e.StrArray:
+    if val.tag == value_e.MaybeStrArray:
       if index in ('@', '*'):
         # TODO: maybe_decay_array
-        return value.StrArray(val.strs)
+        return value.MaybeStrArray(val.strs)
       try:
         index_num = int(index)
       except ValueError:
@@ -429,7 +429,7 @@ class _WordEvaluator(object):
             self.errfmt.PrettyPrintError(e, prefix='warning: ')
             return value.Str('-1')
 
-      elif val.tag == value_e.StrArray:
+      elif val.tag == value_e.MaybeStrArray:
         # There can be empty placeholder values in the array.
         length = sum(1 for s in val.strs if s is not None)
 
@@ -462,7 +462,7 @@ class _WordEvaluator(object):
 
         if val.s in ('@', '*'):
           # TODO maybe_decay_array
-          return value.StrArray(self.mem.GetArgv())
+          return value.MaybeStrArray(self.mem.GetArgv())
 
         # otherwise an array reference, like 'arr[0]' or 'arr[xyz]' or 'arr[@]'
         i = val.s.find('[')
@@ -476,13 +476,13 @@ class _WordEvaluator(object):
         # command exit with '1', but we don't have that ability yet?
         e_die('Bad indirect expansion: %r', val.s, token=token)
 
-      elif val.tag == value_e.StrArray:
+      elif val.tag == value_e.MaybeStrArray:
         indices = [str(i) for i, s in enumerate(val.strs) if s is not None]
-        return value.StrArray(indices)
+        return value.MaybeStrArray(indices)
 
       elif val.tag == value_e.AssocArray:
         indices = [str(k) for k in val.d]
-        return value.StrArray(indices)
+        return value.MaybeStrArray(indices)
 
     else:
       raise AssertionError(op_id)
@@ -502,19 +502,19 @@ class _WordEvaluator(object):
         #log('%r %r -> %r', val.s, arg_val.s, s)
         new_val = value.Str(s)
 
-      elif val.tag == value_e.StrArray:
+      elif val.tag == value_e.MaybeStrArray:
         # ${a[@]#prefix} is VECTORIZED on arrays.  Oil should have this too.
         strs = []
         for s in val.strs:
           if s is not None:
             strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s))
-        new_val = value.StrArray(strs)
+        new_val = value.MaybeStrArray(strs)
 
       elif val.tag == value_e.AssocArray:
         strs = []
         for s in val.d.itervalues():
           strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s))
-        new_val = value.StrArray(strs)
+        new_val = value.MaybeStrArray(strs)
 
     else:
       raise AssertionError(op_kind)
@@ -549,7 +549,7 @@ class _WordEvaluator(object):
       self._EvalWordPart(p, part_vals, quoted=True)
 
   def _DecayArray(self, val):
-    assert val.tag == value_e.StrArray, val
+    assert val.tag == value_e.MaybeStrArray, val
     sep = self.splitter.GetJoinChar()
     return value.Str(sep.join(s for s in val.strs if s is not None))
 
@@ -568,12 +568,12 @@ class _WordEvaluator(object):
     else:
       return val
 
-  def _EmptyStrArrayOrError(self, token):
+  def _EmptyMaybeStrArrayOrError(self, token):
     assert token is not None
     if self.exec_opts.nounset:
       e_die('Undefined array %r', token.val, token=token)
     else:
-      return value.StrArray([])
+      return value.MaybeStrArray([])
 
   def _EvalBracedVarSub(self, part, part_vals, quoted):
     """
@@ -623,23 +623,23 @@ class _WordEvaluator(object):
         if op_id == Id.Lit_At:
           maybe_decay_array = not quoted  # ${a[@]} decays but "${a[@]}" doesn't
           if val.tag == value_e.Undef:
-            val = self._EmptyStrArrayOrError(part.token)
+            val = self._EmptyMaybeStrArrayOrError(part.token)
           elif val.tag == value_e.Str:
             e_die("Can't index string with @: %r", val, part=part)
-          elif val.tag == value_e.StrArray:
+          elif val.tag == value_e.MaybeStrArray:
             # TODO: Is this a no-op?  Just leave 'val' alone.
-            val = value.StrArray(val.strs)
+            val = value.MaybeStrArray(val.strs)
 
         elif op_id == Id.Arith_Star:
           maybe_decay_array = True  # both ${a[*]} and "${a[*]}" decay
           if val.tag == value_e.Undef:
-            val = self._EmptyStrArrayOrError(part.token)
+            val = self._EmptyMaybeStrArrayOrError(part.token)
           elif val.tag == value_e.Str:
             e_die("Can't index string with *: %r", val, part=part)
-          elif val.tag == value_e.StrArray:
+          elif val.tag == value_e.MaybeStrArray:
             # TODO: Is this a no-op?  Just leave 'val' alone.
             # ${a[*]} or "${a[*]}" :  maybe_decay_array is always true
-            val = value.StrArray(val.strs)
+            val = value.MaybeStrArray(val.strs)
 
         else:
           raise AssertionError(op_id)  # unknown
@@ -656,7 +656,7 @@ class _WordEvaluator(object):
           e_die("Can't index string %r with integer", part.token.val,
                 token=part.token)
 
-        elif val.tag == value_e.StrArray:
+        elif val.tag == value_e.MaybeStrArray:
           index = self.arith_ev.EvalToIndex(anode)
           try:
             # could be None because representation is sparse
@@ -686,7 +686,7 @@ class _WordEvaluator(object):
 
     else:  # no bracket op
       # When the array is "$@", var_name is None
-      if var_name and val.tag in (value_e.StrArray, value_e.AssocArray):
+      if var_name and val.tag in (value_e.MaybeStrArray, value_e.AssocArray):
         e_die("Array %r can't be referred to as a scalar (without @ or *)",
               var_name, part=part)
 
@@ -780,18 +780,18 @@ class _WordEvaluator(object):
           s = replacer.Replace(val.s, op)
           val = value.Str(s)
 
-        elif val.tag == value_e.StrArray:
+        elif val.tag == value_e.MaybeStrArray:
           strs = []
           for s in val.strs:
             if s is not None:
               strs.append(replacer.Replace(s, op))
-          val = value.StrArray(strs)
+          val = value.MaybeStrArray(strs)
 
         elif val.tag == value_e.AssocArray:
           strs = []
           for s in val.d.itervalues():
             strs.append(replacer.Replace(s, op))
-          val = value.StrArray(strs)
+          val = value.MaybeStrArray(strs)
 
         else:
           raise AssertionError(val.__class__.__name__)
@@ -818,13 +818,13 @@ class _WordEvaluator(object):
             self.errfmt.PrettyPrintError(e, prefix='warning: ')
             if val.tag == value_e.Str:
               val = value.Str('')
-            elif val.tag == value_e.StrArray:
-              val = value.StrArray([])
+            elif val.tag == value_e.MaybeStrArray:
+              val = value.MaybeStrArray([])
             else:
               raise NotImplementedError
 
     # After applying suffixes, process maybe_decay_array here.
-    if maybe_decay_array and val.tag == value_e.StrArray:
+    if maybe_decay_array and val.tag == value_e.MaybeStrArray:
       val = self._DecayArray(val)
 
     # For the case where there are no prefix or suffix ops.
@@ -899,7 +899,7 @@ class _WordEvaluator(object):
       if part.token.id == Id.VSub_DollarName:
         var_name = part.token.val[1:]
         val = self.mem.GetVar(var_name)
-        if val.tag in (value_e.StrArray, value_e.AssocArray):
+        if val.tag in (value_e.MaybeStrArray, value_e.AssocArray):
           e_die("Array %r can't be referred to as a scalar (without @ or *)",
                 var_name, part=part)
 
@@ -911,7 +911,7 @@ class _WordEvaluator(object):
 
       #log('SIMPLE %s', part)
       val = self._EmptyStrOrError(val, token=part.token)
-      if maybe_decay_array and val.tag == value_e.StrArray:
+      if maybe_decay_array and val.tag == value_e.MaybeStrArray:
         val = self._DecayArray(val)
       v = _ValueToPartValue(val, quoted)
       part_vals.append(v)
@@ -944,7 +944,7 @@ class _WordEvaluator(object):
     elif part.tag == word_part_e.Splice:
       var_name = part.name.val[1:]
       val = self.mem.GetVar(var_name)
-      if val.tag != value_e.StrArray:
+      if val.tag != value_e.MaybeStrArray:
         e_die("Can't splice non-array %r", var_name, part=part)
 
       v = part_value.Array(val.strs)
@@ -957,7 +957,7 @@ class _WordEvaluator(object):
         typ = value_e.Str
       elif id_ == Id.Lit_Splice:
         # No dict?
-        typ = value_e.StrArray
+        typ = value_e.MaybeStrArray
       else:
         raise AssertionError(id_)
 
@@ -1087,7 +1087,7 @@ class _WordEvaluator(object):
         words = braces.BraceExpandWords(array_words)
         strs = self.EvalWordSequence(words)
         #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
-        return value.StrArray(strs)
+        return value.MaybeStrArray(strs)
 
       if part0.tag == word_part_e.AssocArrayLiteral:
         d = {}

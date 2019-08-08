@@ -397,7 +397,7 @@ class CompAdjust(object):
     # TODO: How does the user test a completion function programmatically?  Set
     # COMP_ARGV?
     val = self.mem.GetVar('COMP_ARGV')
-    if val.tag != value_e.StrArray:
+    if val.tag != value_e.MaybeStrArray:
       raise args.UsageError("COMP_ARGV should be an array")
     comp_argv = val.strs
 

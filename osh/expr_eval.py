@@ -167,7 +167,7 @@ def _EvalLhsArith(node, mem, arith_ev):
     return lval
 
   elif node.tag == lhs_expr_e.LhsIndexedName:  # (( a[42] = 42 ))
-    # The index of StrArray needs to be coerced to int, but not the index of
+    # The index of MaybeStrArray needs to be coerced to int, but not the index of
     # an AssocArray.
     if mem.IsAssocArray(node.name, scope_e.Dynamic):
       key = arith_ev.EvalWordToString(node.index)
@@ -230,7 +230,7 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
       else:
         val = value.Str('')
 
-    elif val.tag == value_e.StrArray:
+    elif val.tag == value_e.MaybeStrArray:
 
       #log('ARRAY %s -> %s, index %d', node.name, array, index)
       array = val.strs
@@ -317,7 +317,7 @@ class ArithEvaluator(_ExprEvaluator):
     if val.tag == value_e.Str:
       return _StringToInteger(val.s, span_id=span_id)  # calls e_die
 
-    if val.tag == value_e.StrArray:  # array is valid on RHS, but not on left
+    if val.tag == value_e.MaybeStrArray:  # array is valid on RHS, but not on left
       return val.strs
 
     if val.tag == value_e.AssocArray:
@@ -351,7 +351,7 @@ class ArithEvaluator(_ExprEvaluator):
     """
     val, lval = EvalLhsAndLookup(node, self, self.mem, self.exec_opts)
 
-    if val.tag == value_e.StrArray:
+    if val.tag == value_e.MaybeStrArray:
       e_die("Can't use assignment like ++ or += on arrays")
 
     # TODO: attribute a span ID here.  There are a few cases, like UnaryAssign
@@ -372,7 +372,7 @@ class ArithEvaluator(_ExprEvaluator):
     Returns:
       None for Undef  (e.g. empty cell)  TODO: Don't return 0!
       int for Str
-      List[int] for StrArray
+      List[int] for MaybeStrArray
       Dict[str, str] for AssocArray (TODO: Should we support this?)
 
     NOTE: (( A['x'] = 'x' )) and (( x = A['x'] )) are syntactically valid in
@@ -499,7 +499,7 @@ class ArithEvaluator(_ExprEvaluator):
       rhs = self.Eval(node.right)  # eager evaluation for the rest
 
       if op_id == Id.Arith_LBracket:
-        # StrArray or AssocArray
+        # MaybeStrArray or AssocArray
         if isinstance(lhs, list):
           if not isinstance(rhs, int):
             e_die('Expected index to be an integer, got %r', rhs)

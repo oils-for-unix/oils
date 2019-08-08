@@ -37,7 +37,8 @@ module runtime
     -- An Undef value is different than "no binding" because of dynamic scope.
     Undef
   | Str(string s)
-  | StrArray(string* strs)
+    -- "holes" in the array are represented by None
+  | MaybeStrArray(string* strs)
   | AssocArray(dict d)
     -- A Python-style object.  'any' is not currently type checked.
     -- invariant for 'proc' stack:
