@@ -113,10 +113,9 @@ BUILTIN COMMANDS
 X [Unsupported]   enable
 X [Oil Builtins]  log   die              common functions
                   dirname   basename     simple optimization
-                  env   shopt            compatible, and takes a block
+                  cd   shopt   env       compatible, and takes a block
                   fork   wait            replaces & and (), takes a block
                   use                    source with namespace, file-relative 
-                  write                  sugar for 'do write(s)'
                   push                   sugar for 'do array.push( @(a b) )'
 
 SHELL OPTIONS

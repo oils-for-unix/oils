@@ -464,6 +464,16 @@ EOF
   _error-case 'var x = $(var x = 1))'
 }
 
+push-builtin() {
+  set +o errexit
+
+  # Unterminated
+  _error-case 'push'
+  #_error-case 'push notarray'  # returns status 1
+  _error-case 'a=(1 2); push a'
+  _error-case 'a=(1 2); push a zz'  # points at 'zz'
+}
+
 cases-in-strings() {
   set +o errexit
 
@@ -497,6 +507,7 @@ cases-in-strings() {
   invalid-brace-ranges  # osh/braces.py
 
   oil-language  # oil_lang/
+  push-builtin
 }
 
 # Cases in their own file

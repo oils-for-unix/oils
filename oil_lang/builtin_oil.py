@@ -2,12 +2,11 @@
 """
 builtin_oil.py - Oil builtins.
 
-fork, wait - wait is in osh/builtin_process.py, so I guess fork can go there.
-env - builtin_compat.py?
-log, die - oil-polyfill.sh
-shopt, set - add blocks to osh/builtin_pure.py
-write
-push
+See design-docs/0009-oil-builtins.md for notes.
+
+env: Should be in builtin_compat.py?
+
+It's sort of like xargs too.
 """
 from __future__ import print_function
 
