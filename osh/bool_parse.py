@@ -36,7 +36,7 @@ from _devbuild.gen.syntax_asdl import (
     word_t, word__CompoundWord, word__StringWord,
     bool_expr, bool_expr_t,
 )
-from osh import word
+from osh import word_
 from core.util import p_die
 from core.meta import LookupKind
 
@@ -84,7 +84,7 @@ class BoolParser(object):
       self.cur_word = w
 
     assert self.cur_word is not None
-    self.op_id = word.BoolId(self.cur_word)
+    self.op_id = word_.BoolId(self.cur_word)
     self.b_kind = LookupKind(self.op_id)
     #log('--- word %s', self.cur_word)
     #log('op_id %s %s %s', self.op_id, self.b_kind, lex_mode)
@@ -136,7 +136,7 @@ class BoolParser(object):
 
     node = self.ParseExpr()
     if self.op_id != Id.Eof_Real:
-      p_die('Unexpected trailing word %s', word.Pretty(self.cur_word),
+      p_die('Unexpected trailing word %s', word_.Pretty(self.cur_word),
           word=self.cur_word)
 
     return node
@@ -211,7 +211,7 @@ class BoolParser(object):
     if self.b_kind == Kind.Word:
       # Peek ahead another token.
       t2 = self._LookAhead()
-      t2_op_id = word.BoolId(t2)
+      t2_op_id = word_.BoolId(t2)
       t2_b_kind = LookupKind(t2_op_id)
 
       #log('t2 %s / t2_op_id %s / t2_b_kind %s', t2, t2_op_id, t2_b_kind)
@@ -234,7 +234,7 @@ class BoolParser(object):
         if is_regex:
           # NOTE: StaticEval for checking regex syntax isn't enough.  We could
           # need to pass do_ere so that the quoted parts get escaped.
-          #ok, s, unused_quoted = word.StaticEval(right)
+          #ok, s, unused_quoted = word_.StaticEval(right)
           pass
 
         self._Next()
@@ -249,7 +249,7 @@ class BoolParser(object):
       self._Next()
       node = self.ParseExpr()
       if self.op_id != Id.Op_RParen:
-        p_die('Expected ), got %s', word.Pretty(self.cur_word),
+        p_die('Expected ), got %s', word_.Pretty(self.cur_word),
               word=self.cur_word)
       self._Next()
       return node

@@ -24,7 +24,7 @@ from core.meta import BOOL_ARG_TYPES
 from core import util
 from core.util import e_die
 from osh import state
-from osh import word
+from osh import word_
 
 import posix_ as posix
 try:
@@ -288,7 +288,7 @@ class _ExprEvaluator(object):
                               span_id=const.NO_INTEGER):
     """Used by both [[ $x -gt 3 ]] and (( $x ))."""
     if span_id == const.NO_INTEGER and blame_word:
-      span_id = word.LeftMostSpanForWord(blame_word)
+      span_id = word_.LeftMostSpanForWord(blame_word)
 
     try:
       i = _StringToInteger(s, span_id=span_id)
@@ -327,7 +327,7 @@ class ArithEvaluator(_ExprEvaluator):
 
   def _ValToArithOrError(self, val, blame_word=None, span_id=const.NO_INTEGER):
     if span_id == const.NO_INTEGER and blame_word:
-      span_id = word.LeftMostSpanForWord(blame_word)
+      span_id = word_.LeftMostSpanForWord(blame_word)
     #log('_ValToArithOrError span=%s blame=%s', span_id, blame_word)
 
     try:
@@ -337,7 +337,7 @@ class ArithEvaluator(_ExprEvaluator):
         raise
       else:
         i = 0
-        span_id = word.SpanIdFromError(e)
+        span_id = word_.SpanIdFromError(e)
         self.errfmt.PrettyPrintError(e, prefix='warning: ')
     return i
 
@@ -356,7 +356,7 @@ class ArithEvaluator(_ExprEvaluator):
 
     # TODO: attribute a span ID here.  There are a few cases, like UnaryAssign
     # and BinaryAssign.
-    span_id = word.SpanForLhsExpr(node)
+    span_id = word_.SpanForLhsExpr(node)
     i = self._ValToArithOrError(val, span_id=span_id)
     return i, lval
 

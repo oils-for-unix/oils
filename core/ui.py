@@ -21,7 +21,7 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.runtime_asdl import value_t, value
 from asdl import const
 from asdl import format as fmt
-from osh import word
+from osh import word_
 
 from typing import List, Any, IO, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -139,7 +139,7 @@ def PrettyPrintError(err, arena, prefix='', f=sys.stderr):
     prefix: in osh/cmd_exec.py we want to print 'fatal'
   """
   msg = err.UserErrorString()
-  span_id = word.SpanIdFromError(err)
+  span_id = word_.SpanIdFromError(err)
 
   # TODO: Should there be a special span_id of 0 for EOF?  const.NO_INTEGER
   # means there is no location info, but 0 could mean that the location is EOF.

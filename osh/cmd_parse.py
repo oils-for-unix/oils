@@ -40,7 +40,7 @@ from frontend import match
 from frontend import reader
 from osh import braces
 from osh import bool_parse
-from osh import word
+from osh import word_
 
 from typing import Optional, List, Tuple, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -118,7 +118,7 @@ def _ParseHereDocBody(parse_ctx, h, line_reader, arena):
   # performing quote removal on word, and the here-document lines shall not
   # be expanded. Otherwise, the delimiter shall be the word itself."
   # NOTE: \EOF counts, or even E\OF
-  ok, delimiter, delim_quoted = word.StaticEval(h.here_begin)
+  ok, delimiter, delim_quoted = word_.StaticEval(h.here_begin)
   if not ok:
     p_die('Invalid here doc delimiter', word=h.here_begin)
 
@@ -215,7 +215,7 @@ def _MakeAssignPair(parse_ctx,  # type: ParseContext
     val = osh_word.EmptyWord()  # type: word_t
   else:
     val = osh_word.CompoundWord(w.parts[part_offset:])
-    val = word.TildeDetect(val) or val
+    val = word_.TildeDetect(val) or val
 
   pair = syntax_asdl.assign_pair(lhs, op, val)
   pair.spids.append(left_token.span_id)  # To skip to beginning of pair
@@ -268,7 +268,7 @@ def _SplitSimpleCommandPrefix(words  # type: List[word__CompoundWord]
       suffix_words.append(w)
       continue
 
-    left_token, close_token, part_offset = word.DetectAssignment(w)
+    left_token, close_token, part_offset = word_.DetectAssignment(w)
     if left_token:
       preparsed_list.append((left_token, close_token, part_offset, w))
     else:
@@ -284,7 +284,7 @@ def _MakeSimpleCommand(preparsed_list, suffix_words, redirects):
 
   # FOO=(1 2 3) ls is not allowed.
   for _, _, _, w in preparsed_list:
-    if word.HasArrayPart(w):
+    if word_.HasArrayPart(w):
       p_die("Environment bindings can't contain array literals", word=w)
 
   # NOTE: It would be possible to add this check back.  But it already happens
@@ -292,7 +292,7 @@ def _MakeSimpleCommand(preparsed_list, suffix_words, redirects):
   # echo FOO=(1 2 3) is not allowed (but we should NOT fail on echo FOO[x]=1).
   if 0:
     for w in suffix_words:
-      if word.HasArrayPart(w):
+      if word_.HasArrayPart(w):
         p_die("Commands can't contain array literals", word=w)
 
   # NOTE: We only do brace DETECTION here, not brace EXPANSION.  Therefore we
@@ -302,7 +302,7 @@ def _MakeSimpleCommand(preparsed_list, suffix_words, redirects):
   # NOTE: Technically we could do expansion outside of 'oshc translate', but it
   # doesn't seem worth it.
   words2 = braces.BraceDetectAll(suffix_words)
-  words3 = word.TildeDetectAll(words2)
+  words3 = word_.TildeDetectAll(words2)
 
   node = command.SimpleCommand()
   node.words = words3
@@ -396,8 +396,8 @@ class CommandParser(object):
 
       self.cur_word = w
 
-      self.c_kind = word.CommandKind(self.cur_word)
-      self.c_id = word.CommandId(self.cur_word)
+      self.c_kind = word_.CommandKind(self.cur_word)
+      self.c_id = word_.CommandId(self.cur_word)
       self.next_lex_mode = lex_mode_e.Undefined
 
   def _Eat(self, c_id, msg=None):
@@ -416,7 +416,7 @@ class CommandParser(object):
         p_die(msg, word=self.cur_word)
       else:
         p_die('Expected word type %s, got %s', c_id,
-              word.CommandId(self.cur_word), word=self.cur_word)
+              word_.CommandId(self.cur_word), word=self.cur_word)
 
     self._Next()
 
@@ -465,7 +465,7 @@ class CommandParser(object):
     if self.c_kind != Kind.Word:
       p_die('Invalid token after redirect operator', word=self.cur_word)
 
-    w2 = word.TildeDetect(self.cur_word)
+    w2 = word_.TildeDetect(self.cur_word)
     arg_word = w2 or self.cur_word
     self._Next()
 
@@ -562,7 +562,7 @@ class CommandParser(object):
     aliases_in_flight = self.aliases_in_flight or []
 
     first_word_str = None  # for error message
-    argv0_spid = word.LeftMostSpanForWord(words[0])
+    argv0_spid = word_.LeftMostSpanForWord(words[0])
 
     expanded = []
     i = 0
@@ -571,7 +571,7 @@ class CommandParser(object):
     while i < n:
       w = words[i]
 
-      ok, word_str, quoted = word.StaticEval(w)
+      ok, word_str, quoted = word_.StaticEval(w)
       if not ok or quoted:
         break
 
@@ -612,8 +612,8 @@ class CommandParser(object):
     # dash/mksh/zsh go beyond the first redirect!
     while i < n:
       w = words[i]
-      spid1 = word.LeftMostSpanForWord(w)
-      spid2 = word.RightMostSpanForWord(w)
+      spid1 = word_.LeftMostSpanForWord(w)
+      spid2 = word_.RightMostSpanForWord(w)
 
       span1 = self.arena.GetLineSpan(spid1)
       span2 = self.arena.GetLineSpan(spid2)
@@ -765,11 +765,11 @@ class CommandParser(object):
         pairs.append(_MakeAssignPair(self.parse_ctx, preparsed, self.arena))
 
       node = command.Assignment(pairs, redirects)
-      left_spid = word.LeftMostSpanForWord(words[0])
+      left_spid = word_.LeftMostSpanForWord(words[0])
       node.spids.append(left_spid)  # no keyword spid to skip past
       return node
 
-    kind, kw_token = word.KeywordToken(suffix_words[0])
+    kind, kw_token = word_.KeywordToken(suffix_words[0])
 
     if kind == Kind.ControlFlow:
       if redirects:
@@ -811,14 +811,14 @@ class CommandParser(object):
     """
     brace_group      : LBrace command_list RBrace ;
     """
-    left_spid = word.LeftMostSpanForWord(self.cur_word)
+    left_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.Lit_LBrace)
 
     c_list = self._ParseCommandList()
     assert c_list is not None
 
     # Not needed
-    #right_spid = word.LeftMostSpanForWord(self.cur_word)
+    #right_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.Lit_RBrace)
 
     node = command.BraceGroup(c_list.children)
@@ -833,13 +833,13 @@ class CommandParser(object):
     do_group         : Do command_list Done ;          /* Apply rule 6 */
     """
     self._Eat(Id.KW_Do)
-    do_spid = word.LeftMostSpanForWord(self.cur_word)  # after _Eat
+    do_spid = word_.LeftMostSpanForWord(self.cur_word)  # after _Eat
 
     c_list = self._ParseCommandList()  # could be any thing
     assert c_list is not None
 
     self._Eat(Id.KW_Done)
-    done_spid = word.LeftMostSpanForWord(self.cur_word)  # after _Eat
+    done_spid = word_.LeftMostSpanForWord(self.cur_word)  # after _Eat
 
     node = command.DoGroup(c_list.children)
     node.spids.extend((do_spid, done_spid))
@@ -906,7 +906,7 @@ class CommandParser(object):
     node.do_arg_iter = False
     node.spids.append(for_spid)  # for $LINENO and error fallback
 
-    ok, iter_name, quoted = word.StaticEval(self.cur_word)
+    ok, iter_name, quoted = word_.StaticEval(self.cur_word)
     if not ok or quoted:
       p_die("Loop variable name should be a constant", word=self.cur_word)
     if not match.IsValidVarName(iter_name):
@@ -923,11 +923,11 @@ class CommandParser(object):
     if self.c_id == Id.KW_In:
       self._Next()  # skip in
 
-      in_spid = word.LeftMostSpanForWord(self.cur_word) + 1
+      in_spid = word_.LeftMostSpanForWord(self.cur_word) + 1
       iter_words, semi_spid = self.ParseForWords()
 
       words2 = braces.BraceDetectAll(iter_words)
-      words3 = word.TildeDetectAll(words2)
+      words3 = word_.TildeDetectAll(words2)
       node.iter_words = words3
 
     elif self.c_id == Id.Op_Semi:  # for x; do
@@ -953,7 +953,7 @@ class CommandParser(object):
     for_clause : For for_name newline_ok (in for_words? for_sep)? do_group ;
                | For '((' ... TODO
     """
-    for_spid = word.LeftMostSpanForWord(self.cur_word)
+    for_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.KW_For)
 
     self._Peek()
@@ -996,7 +996,7 @@ class CommandParser(object):
     """
     self.lexer.PushHint(Id.Op_RParen, Id.Right_CasePat)
 
-    left_spid = word.LeftMostSpanForWord(self.cur_word)
+    left_spid = word_.LeftMostSpanForWord(self.cur_word)
     if self.c_id == Id.Op_LParen:
       self._Next()
 
@@ -1012,7 +1012,7 @@ class CommandParser(object):
       else:
         break
 
-    rparen_spid = word.LeftMostSpanForWord(self.cur_word)
+    rparen_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.Right_CasePat)
     self._NewlineOk()
 
@@ -1026,9 +1026,9 @@ class CommandParser(object):
     last_spid = const.NO_INTEGER
     self._Peek()
     if self.c_id == Id.KW_Esac:
-      last_spid = word.LeftMostSpanForWord(self.cur_word)
+      last_spid = word_.LeftMostSpanForWord(self.cur_word)
     elif self.c_id == Id.Op_DSemi:
-      dsemi_spid = word.LeftMostSpanForWord(self.cur_word)
+      dsemi_spid = word_.LeftMostSpanForWord(self.cur_word)
       self._Next()
     else:
       # Happens on EOF
@@ -1066,7 +1066,7 @@ class CommandParser(object):
     """
     case_node = command.Case()
 
-    case_spid = word.LeftMostSpanForWord(self.cur_word)
+    case_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Next()  # skip case
 
     self._Peek()
@@ -1074,7 +1074,7 @@ class CommandParser(object):
     self._Next()
 
     self._NewlineOk()
-    in_spid = word.LeftMostSpanForWord(self.cur_word)
+    in_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.KW_In)
     self._NewlineOk()
 
@@ -1083,7 +1083,7 @@ class CommandParser(object):
       # TODO: should it return a list of nodes, and extend?
       self._Peek()
 
-    esac_spid = word.LeftMostSpanForWord(self.cur_word)
+    esac_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.KW_Esac)
     self._Next()
 
@@ -1099,13 +1099,13 @@ class CommandParser(object):
 
     self._Peek()
     while self.c_id == Id.KW_Elif:
-      elif_spid = word.LeftMostSpanForWord(self.cur_word)
+      elif_spid = word_.LeftMostSpanForWord(self.cur_word)
 
       self._Next()  # skip elif
       cond = self._ParseCommandList()
       assert cond is not None
 
-      then_spid = word.LeftMostSpanForWord(self.cur_word)
+      then_spid = word_.LeftMostSpanForWord(self.cur_word)
       self._Eat(Id.KW_Then)
 
       body = self._ParseCommandList()
@@ -1116,7 +1116,7 @@ class CommandParser(object):
       arms.append(arm)
 
     if self.c_id == Id.KW_Else:
-      else_spid = word.LeftMostSpanForWord(self.cur_word)
+      else_spid = word_.LeftMostSpanForWord(self.cur_word)
       self._Next()
       body = self._ParseCommandList()
       assert body is not None
@@ -1137,7 +1137,7 @@ class CommandParser(object):
     cond = self._ParseCommandList()
     assert cond is not None
 
-    then_spid = word.LeftMostSpanForWord(self.cur_word)
+    then_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.KW_Then)
 
     body = self._ParseCommandList()
@@ -1152,7 +1152,7 @@ class CommandParser(object):
     else:
       if_node.spids.append(const.NO_INTEGER)  # no else spid
 
-    fi_spid = word.LeftMostSpanForWord(self.cur_word)
+    fi_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.KW_Fi)
 
     if_node.spids.append(fi_spid)
@@ -1210,12 +1210,12 @@ class CommandParser(object):
       return self.ParseDParen()
 
     if self.c_id == Id.KW_Var:
-      kw_token = word.LiteralToken(self.cur_word)
+      kw_token = word_.LiteralToken(self.cur_word)
       self._Next()
       return self.w_parser.ParseVar(kw_token)
 
     if self.c_id == Id.KW_SetVar:
-      kw_token = word.LiteralToken(self.cur_word)
+      kw_token = word_.LiteralToken(self.cur_word)
       self._Next()
       return self.w_parser.ParseSetVar(kw_token)
 
@@ -1246,11 +1246,11 @@ class CommandParser(object):
 
     Bash only accepts the latter, though it doesn't really follow a grammar.
     """
-    left_spid = word.LeftMostSpanForWord(self.cur_word)
+    left_spid = word_.LeftMostSpanForWord(self.cur_word)
 
     # for MyPy, caller ensures
     assert isinstance(self.cur_word, word__CompoundWord)
-    name = word.AsFuncName(self.cur_word)
+    name = word_.AsFuncName(self.cur_word)
     if not name:
       p_die('Invalid function name', word=self.cur_word)
 
@@ -1265,7 +1265,7 @@ class CommandParser(object):
 
     self._Eat(Id.Right_FuncDef, msg='Expected ) in function definition')
 
-    after_name_spid = word.LeftMostSpanForWord(self.cur_word) + 1
+    after_name_spid = word_.LeftMostSpanForWord(self.cur_word) + 1
 
     self._NewlineOk()
 
@@ -1283,18 +1283,18 @@ class CommandParser(object):
     """
     ksh_function_def : 'function' fname ( '(' ')' )? newline_ok function_body
     """
-    left_spid = word.LeftMostSpanForWord(self.cur_word)
+    left_spid = word_.LeftMostSpanForWord(self.cur_word)
 
     self._Next()  # skip past 'function'
 
     # for MyPy, caller ensures
     assert isinstance(self.cur_word, word__CompoundWord)
     self._Peek()
-    name = word.AsFuncName(self.cur_word)
+    name = word_.AsFuncName(self.cur_word)
     if not name:
       p_die('Invalid KSH-style function name', word=self.cur_word)
 
-    after_name_spid = word.LeftMostSpanForWord(self.cur_word) + 1
+    after_name_spid = word_.LeftMostSpanForWord(self.cur_word) + 1
     self._Next()  # skip past 'function name
 
     self._Peek()
@@ -1303,7 +1303,7 @@ class CommandParser(object):
       self._Next()
       self._Eat(Id.Right_FuncDef)
       # Change it: after )
-      after_name_spid = word.LeftMostSpanForWord(self.cur_word) + 1
+      after_name_spid = word_.LeftMostSpanForWord(self.cur_word) + 1
 
     self._NewlineOk()
 
@@ -1325,7 +1325,7 @@ class CommandParser(object):
 
   def ParseSubshell(self):
     # type: () -> command__Subshell
-    left_spid = word.LeftMostSpanForWord(self.cur_word)
+    left_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Next()  # skip past (
 
     # Ensure that something $( (cd / && pwd) ) works.  If ) is already on the
@@ -1336,7 +1336,7 @@ class CommandParser(object):
     c_list = self._ParseCommandList()
     node = command.Subshell(c_list)
 
-    right_spid = word.LeftMostSpanForWord(self.cur_word)
+    right_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.Right_Subshell)
 
     node.spids.extend((left_spid, right_spid))
@@ -1348,14 +1348,14 @@ class CommandParser(object):
     Pass the underlying word parser off to the boolean expression parser.
     """
     maybe_error_word = self.cur_word
-    left_spid = word.LeftMostSpanForWord(self.cur_word)
+    left_spid = word_.LeftMostSpanForWord(self.cur_word)
     # TODO: Test interactive.  Without closing ]], you should get > prompt
     # (PS2)
 
     self._Next()  # skip [[
     b_parser = bool_parse.BoolParser(self.w_parser)
     bnode = b_parser.Parse()  # May raise
-    right_spid = word.LeftMostSpanForWord(self.cur_word)
+    right_spid = word_.LeftMostSpanForWord(self.cur_word)
 
     node = command.DBracket(bnode)
     node.spids.append(left_spid)
@@ -1365,7 +1365,7 @@ class CommandParser(object):
   def ParseDParen(self):
     # type: () -> command__DParen
     maybe_error_word = self.cur_word
-    left_spid = word.LeftMostSpanForWord(self.cur_word)
+    left_spid = word_.LeftMostSpanForWord(self.cur_word)
 
     self._Next()  # skip ((
     anode, right_spid = self.w_parser.ReadDParen()
@@ -1422,7 +1422,7 @@ class CommandParser(object):
       # Can this be modelled better in the type system, removing asserts?
       assert isinstance(self.cur_word, word__CompoundWord)
       if (self.w_parser.LookAhead() == Id.Op_LParen and
-          not word.IsVarLike(self.cur_word)):
+          not word_.IsVarLike(self.cur_word)):
           return self.ParseFunctionDef()  # f() { echo; }  # function
       # echo foo
       # f=(a b c)  # array
@@ -1448,7 +1448,7 @@ class CommandParser(object):
 
     self._Peek()
     if self.c_id == Id.KW_Bang:
-      pipeline_spid = word.LeftMostSpanForWord(self.cur_word)
+      pipeline_spid = word_.LeftMostSpanForWord(self.cur_word)
       negated = True
       self._Next()
 
@@ -1476,7 +1476,7 @@ class CommandParser(object):
     while True:
       # Set it to the first | if it isn't already set.
       if pipeline_spid == const.NO_INTEGER:
-        pipeline_spid = word.LeftMostSpanForWord(self.cur_word)
+        pipeline_spid = word_.LeftMostSpanForWord(self.cur_word)
 
       self._Next()  # skip past Id.Op_Pipe or Id.Op_PipeAmp
       self._NewlineOk()

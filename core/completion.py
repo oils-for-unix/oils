@@ -47,7 +47,7 @@ from core.meta import Id, REDIR_ARG_TYPES
 from frontend import reader
 from pylib import os_path
 from pylib import path_stat
-from osh import word
+from osh import word_
 from osh import state
 from osh.string_ops import ShellQuoteB
 
@@ -841,7 +841,7 @@ class RootCompleter(object):
             debug_f.log("Didn't get a string from redir arg")
             return
 
-          span_id = word.LeftMostSpanForWord(r.arg_word)
+          span_id = word_.LeftMostSpanForWord(r.arg_word)
           span = arena.GetLineSpan(span_id)
 
           self.comp_ui_state.display_pos = span.col
@@ -876,7 +876,7 @@ class RootCompleter(object):
         # etc.  Now try partial_argv, which may involve invoking PLUGINS.
 
         # needed to complete paths with ~
-        words2 = word.TildeDetectAll(trail.words)
+        words2 = word_.TildeDetectAll(trail.words)
         if 0:
           debug_f.log('After tilde detection')
           for w in words2:
@@ -928,7 +928,7 @@ class RootCompleter(object):
           # echo $(gr   and
           # echo `gr
 
-          span_id = word.LeftMostSpanForWord(trail.words[0])
+          span_id = word_.LeftMostSpanForWord(trail.words[0])
           span = arena.GetLineSpan(span_id)
           self.comp_ui_state.display_pos = span.col
           self.debug_f.log('** DISPLAY_POS = %d', self.comp_ui_state.display_pos)
@@ -945,7 +945,7 @@ class RootCompleter(object):
             base_opts, user_spec = self.comp_lookup.GetFallback()
 
           # Display since the beginning
-          span_id = word.LeftMostSpanForWord(trail.words[-1])
+          span_id = word_.LeftMostSpanForWord(trail.words[-1])
           span = arena.GetLineSpan(span_id)
           self.comp_ui_state.display_pos = span.col
           self.debug_f.log('words[-1]: %r', trail.words[-1])

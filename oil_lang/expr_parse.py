@@ -16,7 +16,7 @@ from core import util
 #from core.util import log
 from core.util import p_die
 from frontend import reader
-from osh import word
+from osh import word_
 from pgen2 import parse
 
 from typing import TYPE_CHECKING, IO, Dict, Tuple, cast
@@ -239,7 +239,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
           log('w = %s', w)
 
         if isinstance(w, word__TokenWord):
-          word_id = word.CommandId(w)
+          word_id = word_.CommandId(w)
           if word_id == Id.Right_ArrayLiteral:
             break
           elif word_id == Id.Op_Newline:  # internal newlines allowed

@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    expr_e, oil_word_part_e
+    expr_e, word_part_e
 )
 from _devbuild.gen.runtime_asdl import (
     lvalue, value_e, scope_e,
@@ -65,7 +65,7 @@ class OilEvaluator(object):
     """
     TODO: We might not want oil_word_part_e?  Just use OSH word_part?
     """
-    if part.tag == oil_word_part_e.Literal:
+    if part.tag == word_part_e.LiteralPart:
       return part.token.val
 
     raise NotImplementedError(part.__class__.__name__)

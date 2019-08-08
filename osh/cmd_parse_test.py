@@ -11,7 +11,7 @@ from core import test_lib
 from core import ui
 from core import util
 
-from osh import word
+from osh import word_
 
 
 def _assertParseMethod(test, code_str, method, expect_success=True):
@@ -1019,7 +1019,7 @@ echo foo#bar
 """)
     self.assertEqual(command_e.SimpleCommand, node.tag)
     self.assertEqual(2, len(node.words))
-    _, s, _ = word.StaticEval(node.words[1])
+    _, s, _ = word_.StaticEval(node.words[1])
     self.assertEqual('foo#bar', s)
 
     # This is a comment
@@ -1028,7 +1028,7 @@ echo foo #comment
 """)
     self.assertEqual(command_e.SimpleCommand, node.tag)
     self.assertEqual(2, len(node.words))
-    _, s, _ = word.StaticEval(node.words[1])
+    _, s, _ = word_.StaticEval(node.words[1])
     self.assertEqual('foo', s)
 
     # Empty comment
@@ -1037,7 +1037,7 @@ echo foo #
 """)
     self.assertEqual(command_e.SimpleCommand, node.tag)
     self.assertEqual(2, len(node.words))
-    _, s, _ = word.StaticEval(node.words[1])
+    _, s, _ = word_.StaticEval(node.words[1])
     self.assertEqual('foo', s)
 
   def testChromeIfSubshell(self):

@@ -47,7 +47,7 @@ from osh import builtin
 from osh import builtin_pure
 from osh import expr_eval
 from osh import state
-from osh import word
+from osh import word_
 
 import posix_ as posix
 try:
@@ -415,7 +415,7 @@ class Executor(object):
 
       if node.tag == command_e.SimpleCommand:
         reason = 'command in '
-        span_id = word.LeftMostSpanForWord(node.words[0])
+        span_id = word_.LeftMostSpanForWord(node.words[0])
       elif node.tag == command_e.Assignment:
         reason = 'assignment in '
         span_id = self._SpanIdForAssignment(node)
@@ -697,7 +697,7 @@ class Executor(object):
       # NOTE: osh2oil uses node.more_env, but we don't need that.
       span_id = const.NO_INTEGER
       if node.words:
-        span_id = word.LeftMostSpanForWord(node.words[0])
+        span_id = word_.LeftMostSpanForWord(node.words[0])
       elif node.redirects:
         span_id = node.redirects[0].op  # note: this could be a here doc?
 

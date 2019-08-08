@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-word_test.py: Tests for word.py
+word_test.py: Tests for word_.py
 """
 from __future__ import print_function
 
@@ -13,7 +13,7 @@ from frontend import parse_lib
 from osh import cmd_parse  # reparse input
 from osh import word_parse_test  # parse words
 
-from osh import word  # module under test
+from osh import word_  # module under test
 
 
 def _Detect(test, word_str, expected):
@@ -21,7 +21,7 @@ def _Detect(test, word_str, expected):
   log('-'*80)
   w = word_parse_test._assertReadWord(test, word_str)
 
-  actual = word.DetectAssignment(w)
+  actual = word_.DetectAssignment(w)
   left_token, close_token, part_offset = actual
 
   expected_left, expected_close, expected_part_offset = expected

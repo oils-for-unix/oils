@@ -18,7 +18,7 @@ from core import ui
 from core import util
 from frontend import match
 from frontend import reader
-from osh import word
+from osh import word_
 from pylib import os_path
 
 import libc  # gethostname()
@@ -214,7 +214,7 @@ class Evaluator(object):
       try:
         ps1_word = w_parser.ReadForPlugin()
       except util.ParseError as e:
-        ps1_word = word.ErrorWord("<ERROR: Can't parse PS1: %s>", e)
+        ps1_word = word_.ErrorWord("<ERROR: Can't parse PS1: %s>", e)
       self.parse_cache[ps1_str] = ps1_word
 
     # Evaluate, e.g. "${debian_chroot}\u" -> '\u'

@@ -12,7 +12,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.types_asdl import lex_mode_e
 from core import util
-from osh import word
+from osh import word_
 
 from typing import Callable, List, Dict, NoReturn, TYPE_CHECKING
 
@@ -73,7 +73,7 @@ def NullError(p, t, bp):
 
 def NullConstant(p, w, bp):
   # type: (TdopParser, word_t, int) -> arith_expr_t
-  var_name_token = word.LooksLikeArithVar(w)
+  var_name_token = word_.LooksLikeArithVar(w)
   if var_name_token:
     return arith_expr.ArithVarRef(var_name_token)
 
@@ -99,7 +99,7 @@ def NullPrefixOp(p, w, bp):
     !x && y is (!x) && y, not !(x && y)
   """
   right = p.ParseUntil(bp)
-  return arith_expr.ArithUnary(word.ArithId(w), right)
+  return arith_expr.ArithUnary(word_.ArithId(w), right)
 
 
 #
@@ -116,7 +116,7 @@ def LeftBinaryOp(p, w, left, rbp):
   # type: (TdopParser, word_t, arith_expr_t, int) -> arith_expr_t
   """ Normal binary operator like 1+2 or 2*3, etc. """
   # TODO: w shoudl be a TokenWord, and we should extract the token from it.
-  return arith_expr.ArithBinary(word.ArithId(w), left, p.ParseUntil(rbp))
+  return arith_expr.ArithBinary(word_.ArithId(w), left, p.ParseUntil(rbp))
 
 
 def LeftAssign(p, w, left, rbp):
@@ -129,7 +129,7 @@ def LeftAssign(p, w, left, rbp):
     # support arbitrary arith_expr_t.
     #p_die("Can't assign to this expression", word=w)
     p_die("Left-hand side of this assignment is invalid", word=w)
-  return arith_expr.BinaryAssign(word.ArithId(w), lhs, p.ParseUntil(rbp))
+  return arith_expr.BinaryAssign(word_.ArithId(w), lhs, p.ParseUntil(rbp))
 
 
 #
@@ -240,7 +240,7 @@ class TdopParser(object):
   def Next(self):
     # type: () -> bool
     self.cur_word = self.w_parser.ReadWord(lex_mode_e.Arith)
-    self.op_id = word.ArithId(self.cur_word)
+    self.op_id = word_.ArithId(self.cur_word)
     return True
 
   def ParseUntil(self, rbp):

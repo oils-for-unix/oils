@@ -78,7 +78,7 @@ from frontend import reader
 from frontend import tdop
 from osh import arith_parse
 from osh import braces
-from osh import word
+from osh import word_
 
 from typing import List, Optional, Tuple, cast
 from typing import TYPE_CHECKING
@@ -202,7 +202,7 @@ class WordParser(object):
     assert isinstance(pat, word__CompoundWord)  # Because empty_ok=False
 
     if len(pat.parts) == 1:
-      ok, s, quoted = word.StaticEval(pat)
+      ok, s, quoted = word_.StaticEval(pat)
       if ok and s == '/' and not quoted:  # Looks like ${a////c}, read again
         self._Next(lex_mode)
         self._Peek()
@@ -988,7 +988,7 @@ class WordParser(object):
       w = w_parser.ReadWord(lex_mode_e.ShCommand)
 
       if isinstance(w, word__TokenWord):
-        word_id = word.CommandId(w)
+        word_id = word_.CommandId(w)
         if word_id == Id.Right_ArrayLiteral:
           break
         # Unlike command parsing, array parsing allows embedded \n.
@@ -1007,14 +1007,14 @@ class WordParser(object):
       return node
  
     # If the first one is a key/value pair, then the rest are assumed to be.
-    pair = word.DetectAssocPair(words[0])
+    pair = word_.DetectAssocPair(words[0])
     if pair:
       pairs = [pair[0], pair[1]]  # flat representation
 
       n = len(words)
       for i in xrange(1, n):
         w = words[i]
-        pair = word.DetectAssocPair(w)
+        pair = word_.DetectAssocPair(w)
         if not pair:
           p_die("Expected associative array pair", word=w)
 
@@ -1026,7 +1026,7 @@ class WordParser(object):
       return node
 
     words2 = braces.BraceDetectAll(words)
-    words3 = word.TildeDetectAll(words2)
+    words3 = word_.TildeDetectAll(words2)
     node = word_part.ArrayLiteralPart(words3)
     node.spids.append(paren_spid)
     return node
@@ -1351,7 +1351,7 @@ class WordParser(object):
     # Note that there can be an infinite (Id.Ignored_Comment Id.Op_Newline
     # Id.Ignored_Comment Id.Op_Newline) sequence, so we have to keep track of
     # the last non-ignored token.
-    self.cursor_was_newline = (word.CommandId(self.cursor) == Id.Op_Newline)
+    self.cursor_was_newline = (word_.CommandId(self.cursor) == Id.Op_Newline)
     return self.cursor
 
   def ReadHereDocBody(self, parts):

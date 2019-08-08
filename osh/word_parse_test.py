@@ -23,7 +23,7 @@ from core import util
 
 from frontend import parse_lib
 
-from osh import word
+from osh import word_
 
 
 def _InitWordParser(s, oil_at=False, arena=None):
@@ -74,7 +74,7 @@ def _assertSpanForWord(test, word_str):
   arena = test_lib.MakeArena('word_parse_test.py')
   w_parser = _InitWordParser(word_str, arena=arena)
   w = _assertReadWordWithArena(test, w_parser)
-  span_id = word.LeftMostSpanForWord(w)
+  span_id = word_.LeftMostSpanForWord(w)
 
   print(word_str)
   print(span_id)
@@ -108,7 +108,7 @@ class WordParserTest(unittest.TestCase):
     expr = r'\EOF'  # Quoted here doc delimiter
     w_parser = _InitWordParser(expr)
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    ok, s, quoted = word.StaticEval(w)
+    ok, s, quoted = word_.StaticEval(w)
     self.assertEqual(True, ok)
     self.assertEqual('EOF', s)
     self.assertEqual(True, quoted)
@@ -190,7 +190,7 @@ class WordParserTest(unittest.TestCase):
     #w = _assertReadWord(self, '${11[@]}')
 
   def assertUnquoted(self, expected, w):
-    ok, s, quoted = word.StaticEval(w)
+    ok, s, quoted = word_.StaticEval(w)
     self.assertTrue(ok)
     self.assertEqual(expected, s)
     self.assertFalse(quoted)
@@ -244,7 +244,7 @@ class WordParserTest(unittest.TestCase):
     op = _GetSuffixOp(self, w)
     self.assertUnquoted('pat', op.pat)
 
-    ok, s, quoted = word.StaticEval(op.replace)
+    ok, s, quoted = word_.StaticEval(op.replace)
     self.assertTrue(ok)
     self.assertEqual('//', s)
     self.assertTrue(quoted)
@@ -257,7 +257,7 @@ class WordParserTest(unittest.TestCase):
 
     self.assertUnquoted('/', op.pat)
 
-    ok, s, quoted = word.StaticEval(op.replace)
+    ok, s, quoted = word_.StaticEval(op.replace)
     self.assertTrue(ok)
     self.assertEqual(r'\/', s)
 
@@ -366,7 +366,7 @@ class WordParserTest(unittest.TestCase):
 
         w.PrettyPrint()
 
-        if word.CommandId(w) == Id.Eof_Real:
+        if word_.CommandId(w) == Id.Eof_Real:
           break
 
   def testOilSplice(self):
@@ -494,7 +494,7 @@ class WordParserTest(unittest.TestCase):
         w = w_parser.ReadWord(lex_mode_e.Arith)
         assert w is not None
         w.PrettyPrint()
-        if word.CommandId(w) in (Id.Eof_Real, Id.Unknown_Tok):
+        if word_.CommandId(w) in (Id.Eof_Real, Id.Unknown_Tok):
           break
 
   def testMultiLine(self):

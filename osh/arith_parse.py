@@ -7,7 +7,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (arith_expr, arith_expr_t, word_t)
 from core import util
 from frontend import tdop
-from osh import word
+from osh import word_
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -23,7 +23,7 @@ def NullIncDec(p, w, bp):
   child = tdop.ToLValue(right)
   if child is None:
     p_die("This value can't be assigned to", word=w)
-  return arith_expr.UnaryAssign(word.ArithId(w), child)
+  return arith_expr.UnaryAssign(word_.ArithId(w), child)
 
 
 def NullUnaryPlus(p, t, bp):
@@ -44,9 +44,9 @@ def LeftIncDec(p, w, left, rbp):
   # type: (TdopParser, word_t, arith_expr_t, int) -> arith_expr_t
   """ For i++ and i--
   """
-  if word.ArithId(w) == Id.Arith_DPlus:
+  if word_.ArithId(w) == Id.Arith_DPlus:
     op_id = Id.Node_PostDPlus
-  elif word.ArithId(w) == Id.Arith_DMinus:
+  elif word_.ArithId(w) == Id.Arith_DMinus:
     op_id = Id.Node_PostDMinus
   else:
     raise AssertionError
@@ -80,7 +80,7 @@ def LeftIndex(p, w, left, unused_bp):
   index = p.ParseUntil(0)
   p.Eat(Id.Arith_RBracket)
 
-  return arith_expr.ArithBinary(word.ArithId(w), left, index)
+  return arith_expr.ArithBinary(word_.ArithId(w), left, index)
 
 
 def LeftTernary(p, t, left, bp):

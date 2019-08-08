@@ -6,7 +6,7 @@ osh2oil_test.py: Tests for osh2oil.py
 import unittest
 
 from _devbuild.gen.runtime_asdl import word_style_e
-from osh import word
+from osh import word_
 from tools import osh2oil  # module under test
 
 from osh.word_parse_test import _assertReadWord
@@ -15,7 +15,7 @@ from osh.word_parse_test import _assertReadWord
 def assertStyle(test, expected_style, word_str):
   w = _assertReadWord(test, word_str)
 
-  new_word = word.TildeDetect(w)
+  new_word = word_.TildeDetect(w)
   if new_word is not None:
     w = new_word
 

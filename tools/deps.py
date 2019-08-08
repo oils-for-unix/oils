@@ -10,7 +10,7 @@ from _devbuild.gen.syntax_asdl import command
 from asdl import runtime
 from core.util import log
 from osh import builtin
-from osh import word
+from osh import word_
 
 
 # TODO: Move to asdl/visitor.py?
@@ -101,7 +101,7 @@ class DepsVisitor(Visitor):
         return
 
       w = node.words[0]
-      ok, argv0, _ = word.StaticEval(w)
+      ok, argv0, _ = word_.StaticEval(w)
       if not ok:
         log("Couldn't statically evaluate %r", w)
         return
@@ -116,7 +116,7 @@ class DepsVisitor(Visitor):
         if len(node.words) < 2:
           return
         w1 = node.words[1]
-        ok, argv1, _ = word.StaticEval(w1)
+        ok, argv1, _ = word_.StaticEval(w1)
         if not ok:
           log("Couldn't statically evaluate %r", w)
           return

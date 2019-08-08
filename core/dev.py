@@ -10,7 +10,7 @@ from asdl import const
 from asdl import pretty
 from core import util
 from core.util import log
-from osh import word
+from osh import word_
 from pylib import os_path
 
 import posix_ as posix
@@ -74,7 +74,7 @@ class CrashDumper(object):
       return
 
     self.var_stack, self.argv_stack, self.debug_stack = ex.mem.Dump()
-    span_id = word.SpanIdFromError(err)
+    span_id = word_.SpanIdFromError(err)
 
     self.error = {
        'msg': err.UserErrorString(),
@@ -191,7 +191,7 @@ class Tracer(object):
       try:
         ps4_word = w_parser.ReadForPlugin()
       except util.ParseError as e:
-        ps4_word = word.ErrorWord("<ERROR: Can't parse PS4: %s>", e)
+        ps4_word = word_.ErrorWord("<ERROR: Can't parse PS4: %s>", e)
       self.parse_cache[ps4] = ps4_word
 
     #print(ps4_word)

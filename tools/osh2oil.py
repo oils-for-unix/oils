@@ -13,7 +13,7 @@ from _devbuild.gen.syntax_asdl import (
 from asdl import const
 from core import util
 
-from osh import word
+from osh import word_
 
 log = util.log
 p_die = util.p_die
@@ -284,7 +284,7 @@ class OilPrinter(object):
           self.cursor.SkipUntil(op_spid + 1)
         elif op_id == Id.Redir_GreatAnd:
           self.f.write('> !')  # Replace >& 2 with > !2
-          spid = word.LeftMostSpanForWord(node.arg_word)
+          spid = word_.LeftMostSpanForWord(node.arg_word)
           self.cursor.SkipUntil(spid)
           #self.DoWordInCommand(node.arg_word)
 
@@ -297,26 +297,26 @@ class OilPrinter(object):
           self.cursor.SkipUntil(op_spid + 1)
         elif op_id == Id.Redir_GreatAnd:
           self.f.write('> !')  # Replace 1>& 2 with !1 > !2
-          spid = word.LeftMostSpanForWord(node.arg_word)
+          spid = word_.LeftMostSpanForWord(node.arg_word)
           self.cursor.SkipUntil(spid)
 
       self.DoWordInCommand(node.arg_word, local_symbols)
 
     elif node.tag == redir_e.HereDoc:
-      ok, delimiter, delim_quoted = word.StaticEval(node.here_begin)
+      ok, delimiter, delim_quoted = word_.StaticEval(node.here_begin)
       if not ok:
         p_die('Invalid here doc delimiter', word=node.here_begin)
 
       # Turn everything into <<.  We just change the quotes
       self.f.write('<<')
 
-      #here_begin_spid2 = word.RightMostSpanForWord(node.here_begin)
+      #here_begin_spid2 = word_.RightMostSpanForWord(node.here_begin)
       if delim_quoted:
         self.f.write(" '''")
       else:
         self.f.write(' """')
 
-      delim_end_spid = word.RightMostSpanForWord(node.here_begin)
+      delim_end_spid = word_.RightMostSpanForWord(node.here_begin)
       self.cursor.SkipUntil(delim_end_spid + 1)
 
       #self.cursor.SkipUntil(here_begin_spid + 1)
@@ -553,7 +553,7 @@ class OilPrinter(object):
         if pair.rhs.tag == word_e.EmptyWord:
           self.f.write("''")  # local i -> var i = ''
         else:
-          rhs_spid = word.LeftMostSpanForWord(pair.rhs)
+          rhs_spid = word_.LeftMostSpanForWord(pair.rhs)
           self.cursor.SkipUntil(rhs_spid)
           self.DoWordAsExpr(pair.rhs, local_symbols)
 
@@ -596,13 +596,13 @@ class OilPrinter(object):
 
       if node.words:
         first_word = node.words[0]
-        ok, val, quoted = word.StaticEval(first_word)
-        word0_spid = word.LeftMostSpanForWord(first_word)
+        ok, val, quoted = word_.StaticEval(first_word)
+        word0_spid = word_.LeftMostSpanForWord(first_word)
         if ok and not quoted:
           if val == '[':
             last_word = node.words[-1]
             # Check if last word is ]
-            ok, val, quoted = word.StaticEval(last_word)
+            ok, val, quoted = word_.StaticEval(last_word)
             if ok and not quoted and val == ']':
               # Replace [ with 'test'
               self.cursor.PrintUntil(word0_spid)
@@ -613,7 +613,7 @@ class OilPrinter(object):
                 self.DoWordInCommand(w, local_symbols)
 
               # Now omit ]
-              last_spid = word.LeftMostSpanForWord(last_word)
+              last_spid = word_.LeftMostSpanForWord(last_word)
               self.cursor.PrintUntil(last_spid - 1)  # Get the space before
               self.cursor.SkipUntil(last_spid + 1)  # ] takes one spid
               return
@@ -945,7 +945,7 @@ class OilPrinter(object):
       # ${foo:-default} -> @split(foo or 'default')
       #                    @(foo or 'default')  -- implicit split.
 
-      if word.IsVarSub(node):  # ${1} or "$1"
+      if word_.IsVarSub(node):  # ${1} or "$1"
         # Do it in expression mode
         pass
       # NOTE: ArithSub with $(1 +2 ) is different than 1 + 2 because of
@@ -1029,8 +1029,8 @@ class OilPrinter(object):
 
       # TODO: I think we have to print the beginning and the end?
 
-      #left_spid = word.LeftMostSpanForWord(node)
-      #right_spid = word.RightMostSpanForWord(node)
+      #left_spid = word_.LeftMostSpanForWord(node)
+      #right_spid = word_.RightMostSpanForWord(node)
       #right_spid = -1
       #print('DoWordInCommand %s %s' % (left_spid, right_spid), file=sys.stderr)
 
@@ -1129,7 +1129,7 @@ class OilPrinter(object):
       raise AssertionError(node.__class__.__name__)
 
   def DoWordPart(self, node, local_symbols, quoted=False):
-    span_id = word.LeftMostSpanForPart(node)
+    span_id = word_.LeftMostSpanForPart(node)
     if span_id is not None and span_id != const.NO_INTEGER:
       span = self.arena.GetLineSpan(span_id)
 
@@ -1163,7 +1163,7 @@ class OilPrinter(object):
       spid = node.token.span_id
       if spid == const.NO_INTEGER:
         #raise RuntimeError('%s has no span_id' % node.token)
-        # TODO: Fix word.TildeDetect to construct proper tokens.
+        # TODO: Fix word_.TildeDetect to construct proper tokens.
         log('WARNING: %s has no span_id' % node.token)
       else:
         self.cursor.PrintUntil(spid + 1)

@@ -292,7 +292,8 @@ module syntax
   | CommandSub(token left, command cmd)
   | ExprSub(token left, expr  e)
   | SingleQuoted(token left, token* tokens)
-  | DoubleQuoted(token left, oil_word_part* parts)
+    -- Not all word_part are valid here!
+  | DoubleQuoted(token left, word_part* parts)
 
   | Unary(token op, expr child)
   | Binary(token op, expr left, expr right)
@@ -343,28 +344,15 @@ module syntax
   -- keyword arguments supplied to call (NULL identifier for **kwargs)
   keyword = (token? arg, expr value)
 
+  --
+  -- UNUSED stuff for oil_lang/cmd_parse.py (on hold).
+  --
+  -- Differences from OSH: no TokenWord, but add GlobWord, etc.
 
-  -- NOTE: Remove these for the first cut?  We could mostly reuse OSH nodes.
-  -- And then we can share the evaluator to have identical semantics?
-
-  oil_word_part = 
-    Literal(token token)
-    -- for 'foo=' and "${a:-}"
-  | SingleQuoted(token left, token* tokens)
-  | DoubleQuoted(token left, oil_word_part* parts)
-  | TildeSub(token token)
-  | VarSub(token token)
-  | ExprSub(token token,
-            id? prefix_op,  -- prefix # or ! operators
-            bracket_op? bracket_op
-            suffix_op? suffix_op)
-  | CommandSub(oil_cmd command_list, token left_token)
-
-  -- NOTE differences from OSH: no TokenWord, but add GlobWord, etc.
   oil_word = 
-    Compound(oil_word_part* parts)
+    Compound(word_part* parts)
   | Glob()
-  | Braced(oil_word_part* parts) -- TODO: Does it need its own parts?
+  | Braced(word_part* parts) -- TODO: Does it need its own parts?
 
   oil_cmd = 
     -- TODO: respect order of words and redirects

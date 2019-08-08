@@ -12,7 +12,7 @@ from core import util
 #from core.util import log
 from frontend.match import HISTORY_LEXER
 from frontend import reader
-from osh import word
+from osh import word_
 
 
 class Evaluator(object):
@@ -85,8 +85,8 @@ class Evaluator(object):
               w = words[1]
             except IndexError:
               raise util.HistoryError("No first word in %r", prev)
-            spid1 = word.LeftMostSpanForWord(w)
-            spid2 = word.RightMostSpanForWord(w)
+            spid1 = word_.LeftMostSpanForWord(w)
+            spid2 = word_.RightMostSpanForWord(w)
 
           elif ch == '$':
             try:
@@ -94,8 +94,8 @@ class Evaluator(object):
             except IndexError:
               raise util.HistoryError("No last word in %r", prev)
 
-            spid1 = word.LeftMostSpanForWord(w)
-            spid2 = word.RightMostSpanForWord(w)
+            spid1 = word_.LeftMostSpanForWord(w)
+            spid2 = word_.RightMostSpanForWord(w)
 
           elif ch == '*':
             try:
@@ -104,8 +104,8 @@ class Evaluator(object):
             except IndexError:
               raise util.HistoryError("Couldn't find words in %r", prev)
 
-            spid1 = word.LeftMostSpanForWord(w1)
-            spid2 = word.RightMostSpanForWord(w2)
+            spid1 = word_.LeftMostSpanForWord(w1)
+            spid2 = word_.RightMostSpanForWord(w2)
 
           else:
             raise AssertionError(ch)

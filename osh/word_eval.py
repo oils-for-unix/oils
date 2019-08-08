@@ -26,7 +26,7 @@ from osh import builtin
 from osh import glob_
 from osh import string_ops
 from osh import state
-from osh import word
+from osh import word_
 from osh import word_compile
 
 import posix_ as posix
@@ -1218,19 +1218,19 @@ class _WordEvaluator(object):
     started_pairs = False
 
     flags = [arg0]
-    flag_spids = [word.LeftMostSpanForWord(words[0])]
+    flag_spids = [word_.LeftMostSpanForWord(words[0])]
     assign_args = []
 
     n = len(words)
     for i in xrange(1, n):  # skip first word
       w = words[i]
-      word_spid = word.LeftMostSpanForWord(w)
+      word_spid = word_.LeftMostSpanForWord(w)
 
-      if word.IsVarLike(w):
+      if word_.IsVarLike(w):
         started_pairs = True  # Everything from now on is an assign_pair
 
       if started_pairs:
-        left_token, close_token, part_offset = word.DetectAssignment(w)
+        left_token, close_token, part_offset = word_.DetectAssignment(w)
         if left_token:  # Detected statically
           if left_token.id != Id.Lit_VarLike:
             # (not guaranteed since started_pairs is set twice)
@@ -1245,7 +1245,7 @@ class _WordEvaluator(object):
           else:
             rhs_word = osh_word.CompoundWord(w.parts[part_offset:])
             # tilde detection only happens on static assignments!
-            rhs_word = word.TildeDetect(rhs_word) or rhs_word
+            rhs_word = word_.TildeDetect(rhs_word) or rhs_word
 
           right = self.EvalRhsWord(rhs_word)
           arg2 = assign_arg(left, right, word_spid)
@@ -1280,7 +1280,7 @@ class _WordEvaluator(object):
 
     n = 0
     for i, w in enumerate(words):
-      word_spid = word.LeftMostSpanForWord(w)
+      word_spid = word_.LeftMostSpanForWord(w)
 
       # No globbing in the first arg!  That seems like a feature, not a bug.
       if i == 0:
@@ -1402,7 +1402,7 @@ class _WordEvaluator(object):
 
       # Fill in spids parallel to strs.
       n_next = len(strs)
-      spid = word.LeftMostSpanForWord(w)
+      spid = word_.LeftMostSpanForWord(w)
       for _ in xrange(n_next - n):
         spids.append(spid)
       n = n_next
