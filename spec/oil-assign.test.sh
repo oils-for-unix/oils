@@ -48,8 +48,21 @@ x=hi y=default
 shopt -s oil-parse-at static-word-eval
 var x = @(a 'b c')
 argv.py @x
+
 ## STDOUT:
 ['a', 'b c']
+## END
+
+#### Shell arrays support tilde detection, static globbing, brace detection
+shopt -s oil-parse-at static-word-eval
+touch {foo,bar}.py
+HOME=/home/bob
+no_dynamic_glob='*.py'
+
+var x = @(~/src *.py {andy,bob}@example.com $no_dynamic_glob)
+argv.py @x
+## STDOUT:
+['/home/bob/src', 'bar.py', 'foo.py', 'andy@example.com', 'bob@example.com', '*.py']
 ## END
 
 #### augmented assignment doesn't work on shell arrays

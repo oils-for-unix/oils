@@ -395,7 +395,8 @@ builtin-bash() {
 }
 
 builtin-oil() {
-  sh-spec spec/builtin-oil.test.sh $OSH_LIST "$@"
+  sh-spec spec/builtin-oil.test.sh --cd-tmp \
+    $OSH_LIST "$@"
 }
 
 # This is bash/OSH only

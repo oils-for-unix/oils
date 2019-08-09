@@ -16,6 +16,7 @@ from core import util
 #from core.util import log
 from core.util import p_die
 from frontend import reader
+from osh import braces
 from osh import word_
 from pgen2 import parse
 
@@ -250,6 +251,9 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
 
         assert isinstance(w, word__Compound)  # for MyPy
         words.append(w)
+
+        words = braces.BraceDetectAll(words)
+        words = word_.TildeDetectAll(words)
 
       if 0:
         log('words = %s', words)
