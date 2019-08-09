@@ -252,8 +252,8 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
         assert isinstance(w, word__Compound)  # for MyPy
         words.append(w)
 
-        words = braces.BraceDetectAll(words)
-        words = word_.TildeDetectAll(words)
+        words2 = braces.BraceDetectAll(words)
+        words3 = word_.TildeDetectAll(words2)
 
       if 0:
         log('words = %s', words)
@@ -263,7 +263,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
 
       #log('pushing Expr_WordsDummy')
       typ = Id.Expr_WordsDummy.enum_id
-      opaque = cast(token, words)  # HACK for expr_to_ast
+      opaque = cast(token, words3)  # HACK for expr_to_ast
       ilabel = gr.tokens[typ]
       done = p.addtoken(typ, opaque, ilabel)
       assert not done  # can't end the expression

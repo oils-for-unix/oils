@@ -15,6 +15,8 @@ from core.util import e_die
 from oil_lang import objects
 from osh import braces
 
+from typing import Any
+
 
 class OilEvaluator(object):
   """Shared between arith and bool evaluators.
