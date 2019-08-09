@@ -18,8 +18,8 @@ module arith {
   word = (string value)
 
   bool_expr =
-    BoolBinary(word left, word right)
-  | BoolUnary(word child)
+    Binary(word left, word right)
+  | Unary(word child)
   | LogicalNot(bool_expr b)
   | LogicalBinary(op_id op, bool_expr left, bool_expr right)
 }
