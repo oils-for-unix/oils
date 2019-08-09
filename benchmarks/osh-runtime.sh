@@ -195,6 +195,9 @@ print-tasks() {
 
     # Need $PWD/$sh_path because we must change dirs to configure.
     case $sh_path in
+      /*)
+        # It's already absolute -- do nothing.
+        ;;
       */osh)
         sh_path=$PWD/$sh_path
         ;;
