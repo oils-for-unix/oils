@@ -24,11 +24,15 @@
 #   - this is legacy stuff.  Both (( )) and [[ ]]
 #   - LhsIndexedName should not reference Oil vars either
 
-#### integers like 1 + 2 * 3
+#### integers expression and augmented assignment
 var x = 1 + 2 * 3
+echo x=$x
+
+setvar x += 4
 echo x=$x
 ## STDOUT:
 x=7
+x=11
 ## END
 
 #### command sub $(echo hi)
@@ -44,6 +48,18 @@ x=hi y=default
 shopt -s oil-parse-at static-word-eval
 var x = @(a 'b c')
 argv.py @x
+## STDOUT:
+['a', 'b c']
+## END
+
+#### augmented assignment doesn't work on shell arrays
+shopt -s oil-parse-at static-word-eval
+var x = @(a 'b c')
+argv.py @x
+
+setvar x += @(d e)  # fatal error
+argv.py @x
+## status: 1
 ## STDOUT:
 ['a', 'b c']
 ## END

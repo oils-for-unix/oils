@@ -51,6 +51,14 @@ class OilEvaluator(object):
     if val.tag == value_e.Obj:
       return val.obj
 
+  def EvalPlusEquals(self, lval, rhs_py):
+    lhs_py = self.LookupVar(lval.name)
+    if not isinstance(lhs_py, (int, float)):
+      # TODO: Could point at the variable name
+      e_die("Object of type %r doesn't support +=", lhs_py.__class__.__name__)
+
+    return lhs_py + rhs_py
+
   def EvalLHS(self, node):
     if 0:
       print('EvalLHS()')

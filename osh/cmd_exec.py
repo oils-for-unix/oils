@@ -812,6 +812,8 @@ class Executor(object):
       status = 0 if i != 0 else 1
 
     elif node.tag == command_e.OilAssign:
+      self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to var/setvar
+
       lval = self.expr_ev.EvalLHS(node.lhs)
       py_val = self.expr_ev.EvalRHS(node.rhs)
 
@@ -832,11 +834,10 @@ class Executor(object):
         self.mem.SetVar(lval, val, flags, scope_e.LocalOnly)
 
       elif node.op.id == Id.Arith_PlusEqual:
-        old_py_val = self.expr_ev.LookupVar(lval.name)
+        new_py_val = self.expr_ev.EvalPlusEquals(lval, py_val)
+        # This should only be an int or float, so we don't eed the object above
+        val = value.Obj(new_py_val)
 
-        # TODO: This should be done in the expression evaluator.  Strings and
-        # lists shouldn't respect +.  Only ints and floats.
-        val = value.Obj(old_py_val + py_val)
         flags = ()
         self.mem.SetVar(lval, val, flags, scope_e.LocalOnly)
 

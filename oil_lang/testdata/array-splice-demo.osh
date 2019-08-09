@@ -16,3 +16,7 @@ echo
 for item in "${myarray[@]}"; do
   echo "  $item"
 done
+
+# NOTE: This doesn't work for arrays
+#setvar myarray += @(more stuff)
+
