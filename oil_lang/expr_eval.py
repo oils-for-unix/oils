@@ -12,6 +12,8 @@ from _devbuild.gen.runtime_asdl import (
     lvalue, value_e, scope_e,
 )
 from core.util import e_die
+from oil_lang import objects
+from osh import braces
 
 
 class OilEvaluator(object):
@@ -23,9 +25,10 @@ class OilEvaluator(object):
   2. Look up variables and evaluate words.
   """
 
-  def __init__(self, mem, ex, errfmt):
+  def __init__(self, mem, ex, word_ev, errfmt):
     self.mem = mem
     self.ex = ex
+    self.word_ev = word_ev
     self.errfmt = errfmt
 
   def LookupVar(self, var_name):
@@ -94,6 +97,13 @@ class OilEvaluator(object):
 
     if node.tag == expr_e.CommandSub:
       return self.ex.RunCommandSub(node.command_list)
+
+    if node.tag == expr_e.ShellArrayLiteral:
+      words = node.items
+      words = braces.BraceExpandWords(words)
+      strs = self.word_ev.EvalWordSequence(words)
+      #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
+      return objects.StrArray(strs)
 
     if node.tag == expr_e.DoubleQuoted:
       s = ''.join(self.EvalWordPart(part) for part in node.parts)

@@ -40,11 +40,20 @@ echo x=${x:-default} y=${y:-default}
 x=hi y=default
 ## END
 
-#### shell array @(a b c)
+#### shell array @(a 'b c')
+shopt -s oil-parse-at static-word-eval
 var x = @(a 'b c')
 argv.py @x
 ## STDOUT:
 ['a', 'b c']
+## END
+
+#### Splice in list (using Oil var in word evaluator)
+shopt -s oil-parse-at static-word-eval
+var mylist = ["one", "two"]
+argv.py @mylist
+## STDOUT:
+['one', 'two']
 ## END
 
 #### Set $HOME using 'var' (using Oil var in word evaluator)
@@ -54,14 +63,6 @@ echo ~
 ## STDOUT:
 foo
 foo
-## END
-
-#### Splice in regular array (using Oil var in word evaluator)
-shopt -s oil-parse-at static-word-eval
-var mylist = ["one", "two"]
-argv.py @mylist
-## STDOUT:
-['one', 'two']
 ## END
 
 #### Use shell var in Oil expression
