@@ -33,9 +33,11 @@ x=7
 
 #### command sub $(echo hi)
 var x = $(echo hi)
-echo x=$x
+var y = $(echo '')
+# Make sure we can operate on these values
+echo x=${x:-default} y=${y:-default}
 ## STDOUT:
-x=hi
+x=hi y=default
 ## END
 
 #### shell array @(a b c)

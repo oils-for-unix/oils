@@ -501,7 +501,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   bool_ev = osh_expr_eval.BoolEvaluator(mem, exec_opts, word_ev, errfmt)
   exec_deps.bool_ev = bool_ev
 
-  expr_ev = expr_eval.OilEvaluator(mem, errfmt)
+  expr_ev = expr_eval.OilEvaluator(mem, ex, errfmt)
   exec_deps.expr_ev = expr_ev
 
   tracer = dev.Tracer(parse_ctx, exec_opts, mem, word_ev, trace_f)

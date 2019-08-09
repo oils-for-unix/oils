@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    expr_e, word_part_e
+    expr_e, expr_t, word_part_e
 )
 from _devbuild.gen.runtime_asdl import (
     lvalue, value_e, scope_e,
@@ -23,8 +23,9 @@ class OilEvaluator(object):
   2. Look up variables and evaluate words.
   """
 
-  def __init__(self, mem, errfmt):
+  def __init__(self, mem, ex, errfmt):
     self.mem = mem
+    self.ex = ex
     self.errfmt = errfmt
 
   def LookupVar(self, var_name):
@@ -71,6 +72,7 @@ class OilEvaluator(object):
     raise NotImplementedError(part.__class__.__name__)
 
   def EvalRHS(self, node):
+    # type: (expr_t) -> Any
     """
     This is a naive PyObject evaluator!  It uses the type dispatch of the host
     Python interpreter.
@@ -89,6 +91,9 @@ class OilEvaluator(object):
 
     if node.tag == expr_e.Var:
       return self.LookupVar(node.name.val)
+
+    if node.tag == expr_e.CommandSub:
+      return self.ex.RunCommandSub(node.command_list)
 
     if node.tag == expr_e.DoubleQuoted:
       s = ''.join(self.EvalWordPart(part) for part in node.parts)
