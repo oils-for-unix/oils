@@ -11,9 +11,6 @@ table {
   border-collapse: collapse;
   font-family: sans-serif;
 }
-p {
-  text-align: center;
-}
 
 thead {
   font-weight: bold;

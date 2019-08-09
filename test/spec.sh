@@ -711,11 +711,14 @@ sh-spec-smoosh-env() {
     "$@"
 }
 
+# For speed, only run with one copy of OSH.
+readonly smoosh_osh_list=$OSH_CPYTHON
+
 smoosh() {
   ### Run case smoosh from the console
 
   sh-spec-smoosh-env _tmp/smoosh.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+    ${REF_SHELLS[@]} $smoosh_osh_list "$@"
 }
 
 smoosh-hang() {
@@ -725,7 +728,7 @@ smoosh-hang() {
   sh-spec-smoosh-env _tmp/smoosh-hang.test.sh \
     --timeout-bin "$SMOOSH_REPO/tests/util/timeout" \
     --timeout 1 \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+    ${REF_SHELLS[@]} $smoosh_osh_list "$@"
 }
 
 _one-html() {

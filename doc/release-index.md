@@ -102,6 +102,13 @@ More tests:
 - [oshc-deps](test/other.wwz/oshc-deps.txt).  Tests for a subcommand in
   progress.
 - [opyc](test/other.wwz/opyc.txt).  Tests for the opyc tool.
+- [Smoosh][] test suite (from [mgree/smoosh][]):
+  - [smoosh](test/spec.wwz/smoosh.html)
+  - [smoosh-hang](test/spec.wwz/smoosh-hang.html)
+
+[Smoosh]: http://shell.cs.pomona.edu/
+
+[mgree/smoosh]: https://github.com/mgree/smoosh/tree/master/tests/shell
 
 ### OPy Tests
 

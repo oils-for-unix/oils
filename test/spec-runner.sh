@@ -198,6 +198,15 @@ EOF
   cat <<EOF
     </table>
 
+    <h3>Smoosh Test Suite
+    (from <a href="https://github.com/mgree/smoosh/tree/master/tests/shell">mgree/smoosh</a>)
+    </h3>
+
+    <ul>
+      <li><a href="smoosh.html">smoosh</a>
+      <li><a href="smoosh-hang.html">smoosh-hang</a>
+    </ul>
+
     <h3>Version Information</h3>
     <pre>
 EOF
