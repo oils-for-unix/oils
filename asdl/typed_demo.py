@@ -70,7 +70,7 @@ def main(argv):
 
   w1 = word('w1')
   w2 = word('e2')
-  b1 = bool_expr.BoolBinary(w1, w2)
+  b1 = bool_expr.Binary(w1, w2)
   b2 = bool_expr.LogicalNot(b1)
   print(b1)
   print(b2)

@@ -56,8 +56,15 @@ replace2() {
   #sed -r -i "s/^from osh import parse_lib/from frontend import parse_lib/g" */*.py
   #sed -r -i "s/^from core import libstr/from osh import string_ops/g" */*.py
   #sed -r -i "s/^from osh import word$/from osh import word_/g" */*.py
-  sed -r -i 's/from _devbuild.gen.syntax_asdl import word as osh_word/from _devbuild.gen.syntax_asdl import word/g' */*.py
-  sed -r -i 's/osh_word/word/g' */*.py
+  #sed -r -i 's/from _devbuild.gen.syntax_asdl import word as osh_word/from _devbuild.gen.syntax_asdl import word/g' */*.py
+  #sed -r -i 's/osh_word/word/g' */*.py
+
+  sed -r -i 's/bool_expr.BoolUnary/bool_expr.Unary/g' */*.py
+  sed -r -i 's/bool_expr.BoolBinary/bool_expr.Binary/g' */*.py
+  sed -r -i 's/bool_expr_e.BoolUnary/bool_expr_e.Unary/g' */*.py
+  sed -r -i 's/bool_expr_e.BoolBinary/bool_expr_e.Binary/g' */*.py
+  sed -r -i 's/bool_expr__BoolUnary/bool_expr__Unary/g' */*.py
+  sed -r -i 's/bool_expr__BoolBinary/bool_expr__Binary/g' */*.py
 }
 
 trailing-ws() {

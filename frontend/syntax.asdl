@@ -89,8 +89,8 @@ module syntax
   | ArrayIndex(arith_expr expr)
 
   suffix_op = 
-    StringNullary(id op_id)  -- ${x@Q}
-  | StringUnary(id op_id, word arg_word)  -- e.g. ${v:-default}
+    Nullary(id op_id)  -- ${x@Q}
+  | Unary(id op_id, word arg_word)  -- e.g. ${v:-default}
     -- TODO: token for / to attribute errors
   | PatSub(word pat, word? replace, id replace_mode)
   -- begin is optional with ${array::1}
@@ -168,8 +168,8 @@ module syntax
 
   bool_expr =
     WordTest(word w)  -- e.g. [[ myword ]]
-  | BoolBinary(id op_id, word left, word right)
-  | BoolUnary(id op_id, word child)
+  | Binary(id op_id, word left, word right)
+  | Unary(id op_id, word child)
   | LogicalNot(bool_expr child)
   | LogicalAnd(bool_expr left, bool_expr right)
   | LogicalOr(bool_expr left, bool_expr right)

@@ -700,7 +700,7 @@ class _WordEvaluator(object):
 
     elif part.suffix_op:
       op = part.suffix_op
-      if op.tag == suffix_op_e.StringNullary:
+      if op.tag == suffix_op_e.Nullary:
         if op.op_id == Id.VOp0_P:
           prompt = self.prompt_ev.EvalPrompt(val)
           # readline gets rid of these, so we should too.
@@ -711,7 +711,7 @@ class _WordEvaluator(object):
         else:
           raise NotImplementedError(op.op_id)
 
-      elif op.tag == suffix_op_e.StringUnary:
+      elif op.tag == suffix_op_e.Unary:
         if LookupKind(part.suffix_op.op_id) == Kind.VTest:
           # TODO: Change style to:
           # if self._ApplyTestOp(...)

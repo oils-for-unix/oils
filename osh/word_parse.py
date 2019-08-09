@@ -316,11 +316,11 @@ class WordParser(object):
         p_die('Unexpected token (after VTest): %r', self.cur_token.val,
               token=self.cur_token)
 
-      part.suffix_op = suffix_op.StringUnary(op_id, arg_word)
+      part.suffix_op = suffix_op.Unary(op_id, arg_word)
 
     elif op_kind == Kind.VOp0:
       op_id = self.token_type
-      part.suffix_op = suffix_op.StringNullary(op_id)
+      part.suffix_op = suffix_op.Nullary(op_id)
       self._Next(lex_mode_e.VSub_2)  # Expecting }
       self._Peek()
 
@@ -331,7 +331,7 @@ class WordParser(object):
         p_die('Unexpected token (after VOp1): %r', self.cur_token.val,
               token=self.cur_token)
 
-      part.suffix_op = suffix_op.StringUnary(op_id, arg_word)
+      part.suffix_op = suffix_op.Unary(op_id, arg_word)
 
     elif op_kind == Kind.VOp2:
       if self.token_type == Id.VOp2_Slash:

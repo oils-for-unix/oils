@@ -57,13 +57,13 @@ class BoolParserTest(unittest.TestCase):
     node = p.ParseFactor()
     print(node)
     self.assertTrue(p._TestAtEnd())
-    self.assertEqual(bool_expr_e.BoolUnary, node.tag)
+    self.assertEqual(bool_expr_e.Unary, node.tag)
 
     p = _MakeParser('foo == bar')
     node = p.ParseFactor()
     print(node)
     self.assertTrue(p._TestAtEnd())
-    self.assertEqual(bool_expr_e.BoolBinary, node.tag)
+    self.assertEqual(bool_expr_e.Binary, node.tag)
 
   def testParseNegatedFactor(self):
     p = _MakeParser('foo')
@@ -109,7 +109,7 @@ class BoolParserTest(unittest.TestCase):
     node = p.ParseFactor()
     print(node)
     self.assertTrue(p._TestAtEnd())
-    self.assertEqual(bool_expr_e.BoolBinary, node.tag)
+    self.assertEqual(bool_expr_e.Binary, node.tag)
 
   def testParseParenthesized(self):
     p = _MakeParser('zoo && ( foo == bar )')

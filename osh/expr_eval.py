@@ -680,7 +680,7 @@ class BoolEvaluator(_ExprEvaluator):
       else:
         return self.Eval(node.right)
 
-    if node.tag == bool_expr_e.BoolUnary:
+    if node.tag == bool_expr_e.Unary:
       op_id = node.op_id
       s = self._EvalCompoundWord(node.child)
 
@@ -776,7 +776,7 @@ class BoolEvaluator(_ExprEvaluator):
 
       raise AssertionError(arg_type)  # should never happen
 
-    if node.tag == bool_expr_e.BoolBinary:
+    if node.tag == bool_expr_e.Binary:
       op_id = node.op_id
 
       s1 = self._EvalCompoundWord(node.left)

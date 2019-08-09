@@ -96,7 +96,7 @@ def _TwoArgs(w_parser):
     # TODO:
     # - separate lookup by unary
     p_die('Expected unary operator, got %r (2 args)', w0.s, word=w0)
-  return bool_expr.BoolUnary(IdInstance(unary_id), w1)
+  return bool_expr.Unary(IdInstance(unary_id), w1)
 
 
 def _ThreeArgs(w_parser):
@@ -109,7 +109,7 @@ def _ThreeArgs(w_parser):
 
   binary_id = _BINARY_LOOKUP.get(w1.s)
   if binary_id is not None:
-    return bool_expr.BoolBinary(IdInstance(binary_id), w0, w2)
+    return bool_expr.Binary(IdInstance(binary_id), w0, w2)
 
   if w1.s == '-a':
     return bool_expr.LogicalAnd(bool_expr.WordTest(w0), bool_expr.WordTest(w2))

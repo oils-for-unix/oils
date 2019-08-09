@@ -205,7 +205,7 @@ class BoolParser(object):
       if not isinstance(w, (word__Compound, word__String)):
         p_die('Invalid argument to unary operator', word=w)
       self._Next()
-      node = bool_expr.BoolUnary(op, w)  # type: bool_expr_t
+      node = bool_expr.Unary(op, w)  # type: bool_expr_t
       return node
 
     if self.b_kind == Kind.Word:
@@ -238,7 +238,7 @@ class BoolParser(object):
           pass
 
         self._Next()
-        return bool_expr.BoolBinary(op, left, right)
+        return bool_expr.Binary(op, left, right)
       else:
         # [[ foo ]]
         w = self.cur_word
