@@ -13,7 +13,7 @@ from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
     command, command_e, command_t,
-    command__SimpleCommand, command__BraceGroup,
+    command__Simple, command__BraceGroup,
     command__DoGroup, command__ForExpr, command__ForEach, command__WhileUntil,
     command__Case, command__If, command__FuncDef, command__Subshell,
     command__DBracket, command__DParen, command__CommandList,
@@ -279,8 +279,8 @@ def _SplitSimpleCommandPrefix(words  # type: List[word__Compound]
 
 
 def _MakeSimpleCommand(preparsed_list, suffix_words, redirects):
-  # type: (PreParsedList, List[word__Compound], List[redir_t]) -> command__SimpleCommand
-  """Create an command.SimpleCommand node."""
+  # type: (PreParsedList, List[word__Compound], List[redir_t]) -> command__Simple
+  """Create an command.Simple node."""
 
   # FOO=(1 2 3) ls is not allowed.
   for _, _, _, w in preparsed_list:
@@ -304,7 +304,7 @@ def _MakeSimpleCommand(preparsed_list, suffix_words, redirects):
   words2 = braces.BraceDetectAll(suffix_words)
   words3 = word_.TildeDetectAll(words2)
 
-  node = command.SimpleCommand()
+  node = command.Simple()
   node.words = words3
   node.redirects = redirects
   _AppendMoreEnv(preparsed_list, node.more_env)
@@ -750,7 +750,7 @@ class CommandParser(object):
     redirects, words = result
 
     if not words:  # e.g.  >out.txt  # redirect without words
-      node = command.SimpleCommand(None, redirects, None)  # type: command_t
+      node = command.Simple(None, redirects, None)  # type: command_t
       return node
 
     preparsed_list, suffix_words = _SplitSimpleCommandPrefix(words)

@@ -265,7 +265,7 @@ class Transformer(object):
         words = [
             word.Compound([word_part.Literal(t)]) for t in tokens
         ]  # type: List[word_t]
-        return expr.CommandSub(left_tok, command.SimpleCommand(words))
+        return expr.CommandSub(left_tok, command.Simple(words))
 
       elif typ == grammar_nt.sh_command_sub:
         left_tok = children[0].tok

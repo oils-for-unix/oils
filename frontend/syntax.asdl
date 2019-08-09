@@ -199,7 +199,7 @@ module syntax
   command = 
     NoOp
     -- TODO: respect order of words and redirects
-  | SimpleCommand(word* words, redir* redirects, env_pair* more_env)
+  | Simple(word* words, redir* redirects, env_pair* more_env)
     -- This doesn't technically belong in the LST, but it's convenient for
     -- execution
   | ExpandedAlias(command child, redir* redirects, env_pair* more_env)

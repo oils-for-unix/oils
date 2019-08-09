@@ -570,7 +570,7 @@ class OilPrinter(object):
       for child in node.children:
         self.DoCommand(child, local_symbols, at_top_level=at_top_level)
 
-    elif node.tag == command_e.SimpleCommand:
+    elif node.tag == command_e.Simple:
       # How to preserve spaces between words?  Do you want to do it?
       # Well you need to test this:
       #

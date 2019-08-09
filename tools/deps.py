@@ -80,11 +80,11 @@ class DepsVisitor(Visitor):
     #log('VISIT %s', node.__class__.__name__)
 
     # NOTE: The tags are not unique!!!  We would need this:
-    # if isinstance(node, ast.command) and node.tag == command_e.SimpleCommand:
+    # if isinstance(node, ast.command) and node.tag == command_e.Simple:
     # But it's easier to check the __class__ attribute.
 
     cls = node.__class__
-    if cls is command.SimpleCommand:
+    if cls is command.Simple:
       #log('SimpleCommand %s', node.words)
       #log('--')
       #node.PrettyPrint()

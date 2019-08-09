@@ -414,7 +414,7 @@ class Executor(object):
       # NOTE: Sometimes location info is duplicated, like on UsageError, or a
       # bad redirect.  Also, pipelines can fail twice.
 
-      if node.tag == command_e.SimpleCommand:
+      if node.tag == command_e.Simple:
         reason = 'command in '
         span_id = word_.LeftMostSpanForWord(node.words[0])
       elif node.tag == command_e.Assignment:
@@ -690,7 +690,7 @@ class Executor(object):
     #argv0 = None  # for error message
     check_errexit = False  # for errexit
 
-    if node.tag == command_e.SimpleCommand:
+    if node.tag == command_e.Simple:
       check_errexit = True
 
       # Find span_id for a basic implementation of $LINENO, e.g.

@@ -59,12 +59,18 @@ replace2() {
   #sed -r -i 's/from _devbuild.gen.syntax_asdl import word as osh_word/from _devbuild.gen.syntax_asdl import word/g' */*.py
   #sed -r -i 's/osh_word/word/g' */*.py
 
-  sed -r -i 's/bool_expr.BoolUnary/bool_expr.Unary/g' */*.py
-  sed -r -i 's/bool_expr.BoolBinary/bool_expr.Binary/g' */*.py
-  sed -r -i 's/bool_expr_e.BoolUnary/bool_expr_e.Unary/g' */*.py
-  sed -r -i 's/bool_expr_e.BoolBinary/bool_expr_e.Binary/g' */*.py
-  sed -r -i 's/bool_expr__BoolUnary/bool_expr__Unary/g' */*.py
-  sed -r -i 's/bool_expr__BoolBinary/bool_expr__Binary/g' */*.py
+  if test -n ''; then
+    sed -r -i 's/bool_expr.BoolUnary/bool_expr.Unary/g' */*.py
+    sed -r -i 's/bool_expr.BoolBinary/bool_expr.Binary/g' */*.py
+    sed -r -i 's/bool_expr_e.BoolUnary/bool_expr_e.Unary/g' */*.py
+    sed -r -i 's/bool_expr_e.BoolBinary/bool_expr_e.Binary/g' */*.py
+    sed -r -i 's/bool_expr__BoolUnary/bool_expr__Unary/g' */*.py
+    sed -r -i 's/bool_expr__BoolBinary/bool_expr__Binary/g' */*.py
+  fi
+
+  sed -r -i 's/command.SimpleCommand/command.Simple/g' */*.py
+  sed -r -i 's/command_e.SimpleCommand/command_e.Simple/g' */*.py
+  sed -r -i 's/command__SimpleCommand/command__Simple/g' */*.py
 }
 
 trailing-ws() {
