@@ -283,7 +283,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
       # A little gross: Copied from osh/word_parse.py
       right_token = c_parser.w_parser.cur_token
 
-      cs_part = word_part.CommandSub(node, left_token)
+      cs_part = word_part.CommandSub(left_token, node)
       cs_part.spids.append(left_token.span_id)
       cs_part.spids.append(right_token.span_id)
 

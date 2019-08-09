@@ -771,7 +771,7 @@ class WordParser(object):
     else:
       raise AssertionError(left_id)
 
-    cs_part = word_part.CommandSub(node, left_token)
+    cs_part = word_part.CommandSub(left_token, node)
     cs_part.spids.append(left_spid)
     cs_part.spids.append(right_spid)
     return cs_part

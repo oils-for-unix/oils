@@ -113,7 +113,7 @@ module syntax
     -- This should be token tilde, token rest
   | TildeSub(token token)
     -- For command sub and process sub: $(...)  <(...)  >(...)
-  | CommandSub(command command_list, token left_token)
+  | CommandSub(token left_token, command command_list)
   | ArithSub(arith_expr anode)
     -- {a,b,c}
   | BracedTuple(word* words)
@@ -284,12 +284,16 @@ module syntax
     -- also note that ArrayLiterals could appear in command mode.
     -- echo @[a b c]
   | Const(token c)   -- could be integer, or false, etc.
-  | ArrayLiteral(token left, word* items)  -- a variable name to evaluate
+    -- @(a b c ${x:-default} $'\n')
+  | ShellArrayLiteral(token left, word* items)
+    -- @[a b c] @[1 2 3] @[(1+1) (2+2)]
+  | ArrayLiteral(token left, expr* items)
   | RegexLiteral(token left, regex regex)
 
     -- These are duplicated as "parts" too
   | VarSub(token left, expr e)  -- might be a variant for ${x %02d}
-  | CommandSub(token left, command cmd)
+    -- Just like word_part.CommandSub
+  | CommandSub(token left_token, command command_list)
   | ExprSub(token left, expr  e)
   | SingleQuoted(token left, token* tokens)
     -- Not all word_part are valid here!

@@ -226,10 +226,8 @@ class Transformer(object):
             pnode.tok for pnode in children[1:-1] if pnode.tok.id ==
             Id.Lit_Chars
         ]
-        array_words = [
-            word.Compound([word_part.Literal(t)]) for t in tokens
-        ]  # type: List[word_t]
-        return expr.ArrayLiteral(left_tok, array_words)
+        items = [expr.Const(t) for t in tokens]  # type: List[expr_t]
+        return expr.ArrayLiteral(left_tok, items)
 
       elif typ == grammar_nt.sh_array_literal:
         left_tok = children[0].tok
@@ -240,7 +238,7 @@ class Transformer(object):
         assert typ1 == Id.Expr_WordsDummy.enum_id, typ1
         array_words = cast('List[word_t]', children[1].tok)
 
-        return expr.ArrayLiteral(left_tok, array_words)
+        return expr.ShellArrayLiteral(left_tok, array_words)
 
       elif typ == grammar_nt.regex_literal:
         left_tok = children[0].tok
