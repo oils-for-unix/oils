@@ -209,9 +209,9 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
 
   elif node.tag == lhs_expr_e.LhsIndexedName:  # a[1] = b
     # See tdop.IsIndexable for valid values:
-    # - ArithVarRef (not LhsName): a[1]
+    # - VarRef (not LhsName): a[1]
     # - FuncCall: f(x), 1
-    # - ArithBinary LBracket: f[1][1] -- no semantics for this?
+    # - Binary LBracket: f[1][1] -- no semantics for this?
 
     val = mem.GetVar(node.name)
 
@@ -383,7 +383,7 @@ class ArithEvaluator(_ExprEvaluator):
     # can.  ${foo:-3}4 is OK.  $? will be a compound word too, so we don't have
     # to handle that as a special case.
 
-    if node.tag == arith_expr_e.ArithVarRef:  # $(( x ))  (can be array)
+    if node.tag == arith_expr_e.VarRef:  # $(( x ))  (can be array)
       tok = node.token
       val = _LookupVar(tok.val, self.mem, self.exec_opts)
       return self._ValToArithOrError(val, span_id=tok.span_id)
@@ -462,7 +462,7 @@ class ArithEvaluator(_ExprEvaluator):
       self._Store(lval, new_int)
       return new_int
 
-    if node.tag == arith_expr_e.ArithUnary:
+    if node.tag == arith_expr_e.Unary:
       op_id = node.op_id
 
       if op_id == Id.Node_UnaryPlus:
@@ -477,7 +477,7 @@ class ArithEvaluator(_ExprEvaluator):
 
       raise AssertionError(op_id)
 
-    if node.tag == arith_expr_e.ArithBinary:
+    if node.tag == arith_expr_e.Binary:
       op_id = node.op_id
 
       lhs = self.Eval(node.left)
@@ -550,9 +550,9 @@ class ArithEvaluator(_ExprEvaluator):
           # TODO: _ErrorWithLocation should also accept arith_expr ?  I
           # think I needed that for other stuff.
           # Or I could blame the '/' token, instead of op_id.
-          error_expr = node.right  # node is ArithBinary
-          if error_expr.tag == arith_expr_e.ArithVarRef:
-            # TODO: ArithVarRef should store a token instead of a string!
+          error_expr = node.right  # node is Binary
+          if error_expr.tag == arith_expr_e.VarRef:
+            # TODO: VarRef should store a token instead of a string!
             e_die('Divide by zero (name)')
           elif error_expr.tag == arith_expr_e.ArithWord:
             e_die('Divide by zero', word=node.right.w)

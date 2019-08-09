@@ -447,11 +447,11 @@ class WordParserTest(unittest.TestCase):
   def testReadArithWord(self):
     w = _assertReadWord(self, '$(( (1+2) ))')
     child = w.parts[0].anode
-    self.assertEqual(arith_expr_e.ArithBinary, child.tag)
+    self.assertEqual(arith_expr_e.Binary, child.tag)
 
     w = _assertReadWord(self, '$(( (1+2) ))')
     child = w.parts[0].anode
-    self.assertEqual(arith_expr_e.ArithBinary, child.tag)
+    self.assertEqual(arith_expr_e.Binary, child.tag)
 
   def testReadArith(self):
     CASES = [

@@ -156,14 +156,14 @@ module syntax
   | CompatIndexedName(string name, string index)  -- for translation
 
   arith_expr =
-    ArithVarRef(token token)  -- variable without $
+    VarRef(token token)  -- variable without $
   | ArithWord(word w)  -- a string that looks like an integer
 
   | UnaryAssign(id op_id, lhs_expr child)
   | BinaryAssign(id op_id, lhs_expr left, arith_expr right)
-  | ArithUnary(id op_id, arith_expr child)
+  | Unary(id op_id, arith_expr child)
   -- TODO: add token for divide by zero
-  | ArithBinary(id op_id, arith_expr left, arith_expr right)
+  | Binary(id op_id, arith_expr left, arith_expr right)
   | TernaryOp(arith_expr cond, arith_expr true_expr, arith_expr false_expr)
 
   bool_expr =

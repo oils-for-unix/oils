@@ -30,14 +30,14 @@ def NullUnaryPlus(p, t, bp):
   # type: (TdopParser, word_t, int) -> arith_expr_t
   """ +x, to distinguish from binary operator. """
   right = p.ParseUntil(bp)
-  return arith_expr.ArithUnary(Id.Node_UnaryPlus, right)
+  return arith_expr.Unary(Id.Node_UnaryPlus, right)
 
 
 def NullUnaryMinus(p, t, bp):
   # type: (TdopParser, word_t, int) -> arith_expr_t
   """ -1, to distinguish from binary operator. """
   right = p.ParseUntil(bp)
-  return arith_expr.ArithUnary(Id.Node_UnaryMinus, right)
+  return arith_expr.Unary(Id.Node_UnaryMinus, right)
 
 
 def LeftIncDec(p, w, left, rbp):
@@ -80,7 +80,7 @@ def LeftIndex(p, w, left, unused_bp):
   index = p.ParseUntil(0)
   p.Eat(Id.Arith_RBracket)
 
-  return arith_expr.ArithBinary(word_.ArithId(w), left, index)
+  return arith_expr.Binary(word_.ArithId(w), left, index)
 
 
 def LeftTernary(p, t, left, bp):

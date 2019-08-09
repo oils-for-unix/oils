@@ -5,8 +5,8 @@ tdop.py - Library for expression parsing.
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
     arith_expr, arith_expr_t,
-    arith_expr__ArithWord, arith_expr__UnaryAssign, arith_expr__ArithVarRef,
-    arith_expr__ArithBinary, arith_expr__BinaryAssign,
+    arith_expr__ArithWord, arith_expr__UnaryAssign, arith_expr__VarRef,
+    arith_expr__Binary, arith_expr__BinaryAssign,
     lhs_expr, lhs_expr_t, lhs_expr__LhsName,
     word_t,
 )
@@ -31,7 +31,7 @@ def IsIndexable(node):
   Args:
     node: ExprNode
   """
-  if isinstance(node, arith_expr__ArithVarRef):
+  if isinstance(node, arith_expr__VarRef):
     return True  # f[1] is allowed
 
   return False
@@ -45,16 +45,16 @@ def ToLValue(node):
     node: ExprNode (could be VarExprNode or BinaryExprNode)
   """
   # foo = bar, foo[1] = bar
-  if isinstance(node, arith_expr__ArithVarRef):
+  if isinstance(node, arith_expr__VarRef):
     # For consistency with osh/cmd_parse.py, append a span_id.
     # TODO: (( a[ x ] = 1 )) and a[x]=1 should use different LST nodes.
     n = lhs_expr.LhsName(node.token.val)
     n.spids.append(node.token.span_id)
     return n
-  if isinstance(node, arith_expr__ArithBinary):
+  if isinstance(node, arith_expr__Binary):
     # For example, a[0][0] = 1 is NOT valid.
     if (node.op_id == Id.Arith_LBracket and
-        isinstance(node.left, arith_expr__ArithVarRef)):
+        isinstance(node.left, arith_expr__VarRef)):
       return lhs_expr.LhsIndexedName(node.left.token.val, node.right)
 
   return None
@@ -75,7 +75,7 @@ def NullConstant(p, w, bp):
   # type: (TdopParser, word_t, int) -> arith_expr_t
   var_name_token = word_.LooksLikeArithVar(w)
   if var_name_token:
-    return arith_expr.ArithVarRef(var_name_token)
+    return arith_expr.VarRef(var_name_token)
 
   return arith_expr.ArithWord(w)
 
@@ -99,7 +99,7 @@ def NullPrefixOp(p, w, bp):
     !x && y is (!x) && y, not !(x && y)
   """
   right = p.ParseUntil(bp)
-  return arith_expr.ArithUnary(word_.ArithId(w), right)
+  return arith_expr.Unary(word_.ArithId(w), right)
 
 
 #
@@ -116,7 +116,7 @@ def LeftBinaryOp(p, w, left, rbp):
   # type: (TdopParser, word_t, arith_expr_t, int) -> arith_expr_t
   """ Normal binary operator like 1+2 or 2*3, etc. """
   # TODO: w shoudl be a Token, and we should extract the token from it.
-  return arith_expr.ArithBinary(word_.ArithId(w), left, p.ParseUntil(rbp))
+  return arith_expr.Binary(word_.ArithId(w), left, p.ParseUntil(rbp))
 
 
 def LeftAssign(p, w, left, rbp):

@@ -57,13 +57,13 @@ class ArithAstTest(unittest.TestCase):
     # Integer is not allowed
     self.assertRaises(TypeError, arith_expr.Var, 1)
 
-    v = arith_expr.ArithUnary(op_id_e.Minus, arith_expr.Const(99))
+    v = arith_expr.Unary(op_id_e.Minus, arith_expr.Const(99))
     # Raw integer is not allowed
     self.assertRaises(TypeError, arith_expr.Unary, op_id_e.Minus, 99)
 
-    v = arith_expr.ArithUnary(op_id_e.Minus, arith_expr.Const(99))
+    v = arith_expr.Unary(op_id_e.Minus, arith_expr.Const(99))
     # Raw integer is not allowed
-    #self.assertRaises(AssertionError, arith_expr.ArithUnary, op_id_e.Minus, op_id_e.Plus)
+    #self.assertRaises(AssertionError, arith_expr.Unary, op_id_e.Minus, op_id_e.Plus)
 
   def testExtraFields(self):
     v = arith_expr.Var('z')
@@ -144,7 +144,7 @@ class ArithAstTest(unittest.TestCase):
     print(arith_expr)
 
     # Invalid because only half were assigned
-    #print(arith_expr.ArithBinary(op_id_e.Plus, arith_expr.Const(5)))
+    #print(arith_expr.Binary(op_id_e.Plus, arith_expr.Const(5)))
 
     n = arith_expr.Binary()
     #n.CheckUnassigned()
