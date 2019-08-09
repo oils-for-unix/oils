@@ -743,6 +743,8 @@ _one-html() {
 
   echo
   echo "Wrote $out"
+
+  # NOTE: This IGNORES the exit status.
 }
 
 smoosh-html() {

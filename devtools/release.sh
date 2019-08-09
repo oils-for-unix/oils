@@ -260,7 +260,8 @@ test-opy() {
 }
 
 spec-all() {
-  OSH_LIST="bin/osh $OSH_RELEASE_BINARY" test/spec.sh all
+  # 8/2019: Added smoosh
+  OSH_LIST="bin/osh $OSH_RELEASE_BINARY" test/spec.sh all-and-smoosh
 }
 
 # For quickly debugging failures that don't happen in dev mode.
