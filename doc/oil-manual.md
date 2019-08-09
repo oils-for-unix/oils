@@ -31,21 +31,28 @@ using shell options that are toggled with the `shopt` builtin.
 
 #### Parsing Options
 
-Start with `oil-parse-`.
+Options that affect parsing start with `oil-parse-`.
 
-- shopt -s oil-parse-at
+- `shopt -s oil-parse-at` enables splicing:
 
 ```
 echo @words
 ```
 
+and inline function calls.
+
+```
+echo @split(x)
+```
+
+See examples below.
+
 #### Runtime Options
 
-- strict-word-eval
+- `strict-word-eval~
   - Meant to be implemented by other shells
 
-
-TODO: copy some from spec tests
+TODO: copy examples from spec tests
 
 ```
 echo $dir/*.py
@@ -106,9 +113,20 @@ var x = @(
 
 #### Shell Command Substitution with $()
 
+The `$(echo hi)` construct works in shell commands, and it also works in Oil
+expressions:
+
 ```
 var x = $(echo hi)           # no quotes necessary
 var x = "$(echo hi) there"
+```
+
+#### Splice Arrays with @array
+
+```
+var a1 = @(a b)
+var a2 = @(c d)
+echo / @a1 / @a2 /   # gives / a b / c d /
 ```
 
 #### Future

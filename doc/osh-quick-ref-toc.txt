@@ -34,7 +34,7 @@ ASSIGNING VARIABLES
                   assoc         assoc=(['a']=1 ['b']=2)   assoc['x']=b
   [Builtins]      local   readonly   export   unset   shift
                   declare   typeset   X let
-  [Oil Keywords]  var   setvar   auto
+  [Oil Keywords]  var   setvar   X auto
 
 OIL EXPRESSION LANGUAGE
 X [Data Types]    Str           r'\'   c"\n"   multiline r""" c'''
@@ -74,6 +74,7 @@ WORD LANGUAGE
                   op-format     ${x@P}
 X [Oil Word]      oil-printf    ${x %.3f}
                   oil-format    ${x|html}
+                  splice        @array @ARGV
 
 OTHER SHELL SUBLANGUAGES
   [Arithmetic]    arith-context Where legacy arithmetic is allowed
@@ -111,11 +112,11 @@ BUILTIN COMMANDS
   [Word Lookup]   command   builtin
   [Interactive]   alias   unalias   history   X fc   X bind
 X [Unsupported]   enable
-X [Oil Builtins]  log   die              common functions
-                  dirname   basename     simple optimization
-                  cd   shopt   env       compatible, and takes a block
-                  fork   wait            replaces & and (), takes a block
-                  use                    source with namespace, file-relative 
+  [Oil Builtins]  X log   X die          common functions (polyfill)
+                  X cd   X shopt   X env compatible, and takes a block
+                  X fork   X wait        replaces & and (), takes a block
+                  X use                  source with namespace, file-relative 
+                  X dirname   X basename optimizations
                   push                   sugar for 'do array.push( @(a b) )'
 
 SHELL OPTIONS
@@ -136,17 +137,17 @@ SHELL OPTIONS
                   X strict-glob          Parse the sublanguage more strictly
                   X strict-eval-builtin  Single arg
                   X strict-trap          Function name only
-X [Oil Semantics] all:oil                All options below, plus POSIX and bash
+  [Oil Semantics] X all:oil              All options below, plus POSIX and bash
                   static-word-eval       No splitting, static globbing
-                  longopts               test -file, shopt -unset, etc.
-                  oil-echo               No -e or -n, one arg per line
-                  oil-test-builtin       Only file tests (no strings), remove [
-X [Oil Syntax]    all:oil-parse
+                  X longopts             test -file, shopt -unset, etc.
+                  X oil-echo             No -e or -n, one arg per line
+                  X oil-test-builtin     Only file tests (no strings), remove [
+  [Oil Syntax]    X all:oil-parse
                   oil-parse-at           echo @array @arrayfunc(x, y)
-                  oil-parse-brace        cd ~/src { ... }
-                  oil-parse-equals       x = 's' (for cleaner config snippets)
-                  oil-parse-paren        if (x > 0) ...
-                  oil-parse-set          instead of setvar
+                  X oil-parse-brace      cd ~/src { ... }
+                  X oil-parse-equals     x = 's' (for cleaner config snippets)
+                  X oil-parse-paren      if (x > 0) ...
+                  X oil-parse-set        instead of setvar
 
 ENVIRONMENT VARIABLES
   [Shell Options] SHELLOPTS   X BASHOPTS
