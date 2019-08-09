@@ -55,8 +55,10 @@ shopt -s all:strict 2>/dev/null || true  # dogfood for OSH
 
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 
+readonly REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
+
 # Dir is defined in build/test.sh.
-readonly OSH_RELEASE_BINARY=_tmp/oil-tar-test/oil-$OIL_VERSION/_bin/osh
+readonly OSH_RELEASE_BINARY=$REPO_ROOT/_tmp/oil-tar-test/oil-$OIL_VERSION/_bin/osh
 
 source devtools/common.sh  # html-footer
 
