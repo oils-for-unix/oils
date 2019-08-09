@@ -48,7 +48,7 @@ argv.py @x
 ['a', 'b c']
 ## END
 
-#### Splice in list (using Oil var in word evaluator)
+#### Splice in a Python list (i.e. Oil Obj var in word evaluator)
 shopt -s oil-parse-at static-word-eval
 var mylist = ["one", "two"]
 argv.py @mylist
@@ -56,7 +56,7 @@ argv.py @mylist
 ['one', 'two']
 ## END
 
-#### Set $HOME using 'var' (using Oil var in word evaluator)
+#### Set $HOME using 'var' (i.e. Oil string var in word evaluator)
 var HOME = "foo"
 echo $HOME
 echo ~
