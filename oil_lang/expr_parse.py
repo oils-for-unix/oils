@@ -252,14 +252,8 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
         assert isinstance(w, word__Compound)  # for MyPy
         words.append(w)
 
-        words2 = braces.BraceDetectAll(words)
-        words3 = word_.TildeDetectAll(words2)
-
-      if 0:
-        log('words = %s', words)
-        log('pushing tok = %s', w.token)
-
-      # Push a dummy with the whole subtree
+      words2 = braces.BraceDetectAll(words)
+      words3 = word_.TildeDetectAll(words2)
 
       #log('pushing Expr_WordsDummy')
       typ = Id.Expr_WordsDummy.enum_id

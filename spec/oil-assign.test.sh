@@ -45,12 +45,13 @@ x=hi y=default
 ## END
 
 #### shell array @(a 'b c')
-shopt -s oil-parse-at static-word-eval
+shopt -s oil-parse-at #static-word-eval
 var x = @(a 'b c')
-argv.py @x
+var empty = @()
+argv.py / @x @empty /
 
 ## STDOUT:
-['a', 'b c']
+['/', 'a', 'b c', '/']
 ## END
 
 #### Shell arrays support tilde detection, static globbing, brace detection
