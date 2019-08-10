@@ -1184,7 +1184,8 @@ class _WordEvaluator(object):
     frames = _MakeWordFrames(part_vals)
     argv = []
     for frame in frames:
-      argv.append(''.join(s for (s, _, _) in frame))  # no split or glob
+      if frame:  # empty array gives empty frame!
+        argv.append(''.join(s for (s, _, _) in frame))  # no split or glob
     #log('argv: %s', argv)
     return argv
 
@@ -1310,7 +1311,7 @@ class _WordEvaluator(object):
 
       if 0:
         log('')
-        log('part_vals after _EvalWordToParts:')
+        log('Static: part_vals after _EvalWordToParts:')
         for entry in part_vals:
           log('  %s', entry)
 
@@ -1319,15 +1320,16 @@ class _WordEvaluator(object):
 
       if 0:
         log('')
-        log('frames after _MakeWordFrames:')
+        log('Static: frames after _MakeWordFrames:')
         for entry in frames:
           log('  %s', entry)
 
       # We will still allow x"${a[@]"x, though it's deprecated by @a, which
       # disallows such expressions at parse time.
       for frame in frames:
-        strs.append(''.join(s for (s, _, _) in frame))  # no split or glob
-        spids.append(word_spid)
+        if frame:  # empty array gives empty frame!
+          strs.append(''.join(s for (s, _, _) in frame))  # no split or glob
+          spids.append(word_spid)
 
     return cmd_value.Argv(strs, spids)
 

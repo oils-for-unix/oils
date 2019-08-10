@@ -45,13 +45,33 @@ x=hi y=default
 ## END
 
 #### shell array @(a 'b c')
-shopt -s oil-parse-at #static-word-eval
+shopt -s oil-parse-at
 var x = @(a 'b c')
 var empty = @()
 argv.py / @x @empty /
 
 ## STDOUT:
 ['/', 'a', 'b c', '/']
+## END
+
+#### empty array and static-word-eval (regression test)
+shopt -s oil-parse-at static-word-eval
+var empty = @()
+echo len=${#empty[@]}
+argv.py / @empty /
+
+## STDOUT:
+len=0
+['/', '/']
+## END
+
+#### Empty array and assignment builtin (regression)
+# Bug happens with shell arrays too
+empty=()
+declare z=1 "${empty[@]}"
+echo z=$z
+## STDOUT:
+z=1
 ## END
 
 #### Shell arrays support tilde detection, static globbing, brace detection
