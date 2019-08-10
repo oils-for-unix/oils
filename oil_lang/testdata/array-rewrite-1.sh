@@ -11,7 +11,7 @@ argv() { spec/bin/argv.py "$@"; }
 # OLD, BASH-COMPATIBLE WAY
 #
 
-regex=('one' 'two')
+regex=(old1 old2)
 flags=()
 
 for r in "${regex[@]}"; do
@@ -27,12 +27,13 @@ argv "${flags[@]}"
 # Things fixed:
 # - verbose "${a[@]}" becomes @a
 # - a=() is weird because it doesn't allow spaces around =
+#   - Oil uses var a = @()
 # - builtin 'push' for appending
 #
 
 shopt -s static-word-eval oil-parse-at
 
-var regex2 = @(two three)
+var regex2 = @(new1 new2)
 var flags2 = @()
 
 for r in @regex2; do

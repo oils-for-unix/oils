@@ -12,11 +12,10 @@ argv() { spec/bin/argv.py "$@"; }
 #
 # This style can't handle paths with spaces
 
-path='/etc/path with spaces'
-
 CONFIG_HAVE_FOO=yes
-
+path='/etc/path with spaces'
 flags=''
+
 
 if [ -n "${CONFIG_HAVE_FOO}" ]; then
   flags="${flags} --foo=$path"
@@ -40,8 +39,8 @@ argv ${flags}  # unquoted splitting
 
 shopt -s oil-parse-at static-word-eval
 
-CONFIG_HAVE_FOO=yes
-
+var CONFIG_HAVE_FOO = "yes"  # TODO: change to single quotes
+var path = "/etc/path with spaces"
 var flags = @()
 
 if test -n $CONFIG_HAVE_FOO; then
