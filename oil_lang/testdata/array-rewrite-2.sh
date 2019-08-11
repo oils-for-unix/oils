@@ -47,7 +47,7 @@ if test -n $CONFIG_HAVE_FOO; then
   push flags _ --foo=$path
 fi
 
-if test -n $CONFIG_KALLSYMS_BASE_RELATIVE; then
+if test -n $CONFIG_HAVE_BAR; then
   push flags _ --bar
 fi
 
