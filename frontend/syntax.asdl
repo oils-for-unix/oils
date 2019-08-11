@@ -236,6 +236,9 @@ module syntax
     -- Most nodes optimize it out as command*, but there are a few places where
     -- this is useful for type safety.
   | CommandList(command* children)
+    -- Oil stuff
+  | Do(expr e)      -- an expression for its side effects
+  | Return(expr e)  -- returnin an Obj, not an int-like string
 
   -- For now, using stderr_indices representation because it's more compact.
   -- |& in osh; |- in oil.

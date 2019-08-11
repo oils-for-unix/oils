@@ -122,13 +122,13 @@ class Executor(object):
   It also does some double-dispatch by passing itself into Eval() for
   Compound/WordPart.
   """
-  def __init__(self, mem, fd_state, funcs, builtins, exec_opts, parse_ctx,
+  def __init__(self, mem, fd_state, procs, builtins, exec_opts, parse_ctx,
                exec_deps):
     """
     Args:
       mem: Mem instance for storing variables
       fd_state: FdState() for managing descriptors
-      funcs: dict of functions
+      procs: dict of SHELL functions or 'procs'
       builtins: dict of builtin callables (TODO: migrate all builtins here)
       exec_opts: ExecOpts
       parse_ctx: for instantiating parsers
@@ -136,7 +136,7 @@ class Executor(object):
     """
     self.mem = mem
     self.fd_state = fd_state
-    self.funcs = funcs
+    self.procs = procs
     self.builtins = builtins
     # This is for shopt and set -o.  They are initialized by flags.
     self.exec_opts = exec_opts
@@ -303,7 +303,7 @@ class Executor(object):
     elif builtin_id == builtin_e.COMMAND:
       # TODO: How do we handle fork_external?  It doesn't fit the common
       # signature.  We also don't handle 'command local', etc.
-      b = builtin_pure.Command(self, self.funcs, self.aliases,
+      b = builtin_pure.Command(self, self.procs, self.aliases,
                                self.search_path)
       status = b(arg_vec, fork_external)
 
@@ -585,7 +585,15 @@ class Executor(object):
 
     # Builtins like 'true' can be redefined as functions.
     if funcs:
-      func_node = self.funcs.get(arg0)
+      # TODO: if shopt -s namespaces, then look up in current namespace FIRST.
+      #
+      # Then fallback on self.procs, which should be renamed self.procs?
+      #
+      # honestly there is no real chance of colllision because
+      # foo-bar() {} can't be accessed anyway
+      # functions can have hyphens, but variables can't
+
+      func_node = self.procs.get(arg0)
       if func_node is not None:
         # NOTE: Functions could call 'exit 42' directly, etc.
         status = self._RunFunc(func_node, argv[1:])
@@ -1103,9 +1111,12 @@ class Executor(object):
       check_errexit = False  # not real statements
 
     elif node.tag == command_e.FuncDef:
+      # TODO: if shopt -s namespaces, then enter it in self.mem
+      # self.mem.SetVar(value.Obj(...))
+
       # NOTE: Would it make sense to evaluate the redirects BEFORE entering?
       # It will save time on function calls.
-      self.funcs[node.name] = node
+      self.procs[node.name] = node
       status = 0
 
     elif node.tag == command_e.If:
@@ -1491,3 +1502,22 @@ class Executor(object):
       status = 1
     # NOTE: (IOError, OSError) are caught in completion.py:ReadlineCallback
     return status
+
+  def RunOilFunc(self, func_node, args):
+    # TODO:
+    # - Return value register should be separate?
+    #   - But how does 'return 345' work?  Is that the return builtin
+    #     raising an exception?
+    #     Or is it setting the register?
+    #   - I think the exception can have any type, but when you catch it
+    #     you determine whether it's LastStatus() or it's something else.
+    #   - Something declared with 'func' CANNOT have both?
+    #
+    # - Type checking
+    #   - If the arguments are all strings, make them @ARGV?
+    #     That isn't happening right now.
+
+    status = self._Execute(func_node.body)
+    # If status is nonzero, that's like an exception with errexit?
+    ret = None
+    return ret

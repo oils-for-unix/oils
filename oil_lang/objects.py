@@ -44,3 +44,37 @@ class StrArray(list):
   """
   pass
 
+
+class Function(object):
+  """An Oil function or a wrapped shell function.
+
+  Put under value.Obj()
+
+  objects.Function
+  """
+  def __init__(self, name):
+    self.name = name
+    self.docstring = ''
+    self.nodes = None  # type: command_t
+
+  def __call__(self, *args, **kwargs):
+    # Behave like a Python function
+    pass
+
+
+class Module(object):
+  """An Oil module.
+
+  The 'use' keyword creates an object of this type in the current namespace.
+
+  It holds both variables and functions.
+
+  But it doesn't have "$@" or anything else that Mem has?
+  Mem also has introspection.  For function calls and such.
+  Maybe that only applies to 'proc' and not 'func'.
+  """
+  def __init__(self, name):
+    self.name = name
+    self.docstring = ''
+    # items
+    self.attrs = {}

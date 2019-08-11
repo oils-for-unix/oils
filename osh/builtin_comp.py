@@ -109,7 +109,7 @@ class SpecBuilder(object):
     # obviously it's better to check here.
     if arg.F:
       func_name = arg.F
-      func = ex.funcs.get(func_name)
+      func = ex.procs.get(func_name)
       if func is None:
         raise args.UsageError('Function %r not found' % func_name)
       actions.append(completion.ShellFuncAction(ex, func, self.comp_lookup))
@@ -130,7 +130,7 @@ class SpecBuilder(object):
 
         actions.append(_FixedWordsAction(builtin.BUILTIN_NAMES))
         actions.append(_FixedWordsAction(ex.aliases))
-        actions.append(_FixedWordsAction(ex.funcs))
+        actions.append(_FixedWordsAction(ex.procs))
         actions.append(_FixedWordsAction(lex.OSH_KEYWORD_NAMES))
         actions.append(completion.FileSystemAction(exec_only=True))
 
@@ -144,7 +144,7 @@ class SpecBuilder(object):
         a = completion.FileSystemAction()
 
       elif name == 'function':
-        a = _FixedWordsAction(ex.funcs)
+        a = _FixedWordsAction(ex.procs)
 
       elif name == 'job':
         a = _FixedWordsAction(['jobs-not-implemented'])

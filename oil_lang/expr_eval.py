@@ -12,6 +12,7 @@ from _devbuild.gen.runtime_asdl import (
     lvalue, value_e, scope_e,
 )
 from core.util import e_die
+from core.util import log
 from oil_lang import objects
 from osh import braces
 
@@ -27,8 +28,9 @@ class OilEvaluator(object):
   2. Look up variables and evaluate words.
   """
 
-  def __init__(self, mem, ex, word_ev, errfmt):
+  def __init__(self, mem, funcs, ex, word_ev, errfmt):
     self.mem = mem
+    self.funcs = funcs
     self.ex = ex
     self.word_ev = word_ev
     self.errfmt = errfmt
@@ -136,6 +138,43 @@ class OilEvaluator(object):
 
     if node.tag == expr_e.List:
       return [self.EvalRHS(e) for e in node.elts]
+
+    if node.tag == expr_e.FuncCall:
+      # TODO:
+      # First cut builtins:
+      #
+      # len() Int
+      # split(s Str) StrArray (what about List[Str])?
+      # join(s StrArray) Str
+      #
+      # Let Python handle type errors for now?
+
+      # TODO: Lookup in equivalent of __builtins__
+      #
+      # shopt -s namespaces
+      # 
+      # builtin log "hello"
+      # builtin log "hello"
+
+      node.PrettyPrint()
+
+      # TODO: All functions called like f(x, y) must be in 'mem'.
+      # Only 'procs' are in self.funcs
+
+      # First look up the name in 'funcs'.  And then look it up
+      # in 'mem' for first-class functions?
+      if node.func.tag == expr_e.Var:
+        func = self.funcs.get(node.func.name.val)
+
+      if func is None:
+        # This is evaluated out of 'mem'.  Should really be Eval
+        func = self.EvalRHS(node.func)
+
+      args = [self.EvalRHS(a) for a in node.args]
+
+      # Returns an arbitrary type, not just an integer.
+      ret = self.ex.RunOilFunc(func, args)
+      return ret
 
     if node.tag == expr_e.Subscript:
       collection = self.EvalRHS(node.collection)

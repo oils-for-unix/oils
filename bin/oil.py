@@ -306,7 +306,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   mem = state.Mem(dollar0, argv[arg_r.i + 1:], posix.environ, arena,
                   has_main=has_main)
 
-  funcs = {}
+  procs = {}
 
   job_state = process.JobState()
   fd_state = process.FdState(errfmt, job_state)
@@ -424,7 +424,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   dir_stack = state.DirStack()
 
-  new_var = builtin_assign.NewVar(mem, funcs, errfmt)
+  new_var = builtin_assign.NewVar(mem, procs, errfmt)
 
   builtins = {  # Lookup
       builtin_e.ECHO: builtin_pure.Echo,
@@ -456,7 +456,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.EXPORT: builtin_assign.Export(mem, errfmt),
       builtin_e.READONLY: builtin_assign.Readonly(mem, errfmt),
 
-      builtin_e.UNSET: builtin_assign.Unset(mem, funcs, errfmt),
+      builtin_e.UNSET: builtin_assign.Unset(mem, procs, errfmt),
       builtin_e.SHIFT: builtin_assign.Shift(mem),
 
       # Pure
@@ -466,7 +466,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.ALIAS: builtin_pure.Alias(aliases, errfmt),
       builtin_e.UNALIAS: builtin_pure.UnAlias(aliases, errfmt),
 
-      builtin_e.TYPE: builtin_pure.Type(funcs, aliases, exec_deps.search_path),
+      builtin_e.TYPE: builtin_pure.Type(procs, aliases, exec_deps.search_path),
       builtin_e.HASH: builtin_pure.Hash(exec_deps.search_path),
       builtin_e.GETOPTS: builtin_pure.GetOpts(mem, errfmt),
       builtin_e.REPR: builtin_pure.Repr(mem, errfmt),
@@ -487,7 +487,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.PUSH: builtin_oil.Push(mem, errfmt),
   }
 
-  ex = cmd_exec.Executor(mem, fd_state, funcs, builtins, exec_opts,
+  ex = cmd_exec.Executor(mem, fd_state, procs, builtins, exec_opts,
                          parse_ctx, exec_deps)
   exec_deps.ex = ex
 
@@ -501,7 +501,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   bool_ev = osh_expr_eval.BoolEvaluator(mem, exec_opts, word_ev, errfmt)
   exec_deps.bool_ev = bool_ev
 
-  expr_ev = expr_eval.OilEvaluator(mem, ex, word_ev, errfmt)
+  expr_ev = expr_eval.OilEvaluator(mem, procs, ex, word_ev, errfmt)
   exec_deps.expr_ev = expr_ev
 
   tracer = dev.Tracer(parse_ctx, exec_opts, mem, word_ev, trace_f)
