@@ -118,6 +118,7 @@ X [Unsupported]   enable
                   X use                  source with namespace, file-relative 
                   X dirname   X basename optimizations
                   push                   sugar for 'do array.push( @(a b) )'
+                  repr                   Show debug representation of vars
 
 SHELL OPTIONS
   [Errors]        nounset   errexit   pipefail

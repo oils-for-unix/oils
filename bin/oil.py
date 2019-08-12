@@ -72,6 +72,7 @@ from frontend import parse_lib
 from oil_lang import cmd_exec as oil_cmd_exec
 from oil_lang import expr_eval
 from oil_lang import builtin_oil
+from oil_lang import builtin_funcs
 
 from osh import builtin
 from osh import builtin_assign
@@ -305,6 +306,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   # required arg.
   mem = state.Mem(dollar0, argv[arg_r.i + 1:], posix.environ, arena,
                   has_main=has_main)
+  builtin_funcs.Init(mem)
 
   procs = {}
 
@@ -485,6 +487,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
       # Oil
       builtin_e.PUSH: builtin_oil.Push(mem, errfmt),
+      builtin_e.USE: builtin_oil.Use(mem, errfmt),
   }
 
   ex = cmd_exec.Executor(mem, fd_state, procs, builtins, exec_opts,

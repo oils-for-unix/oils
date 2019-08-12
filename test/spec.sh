@@ -245,6 +245,11 @@ oil-assign() {
     $OSH_LIST "$@"
 }
 
+oil-builtin-funcs() {
+  sh-spec spec/oil-builtin-funcs.test.sh --cd-tmp \
+    $OSH_LIST "$@"
+}
+
 # Regress bugs
 bugs() {
   sh-spec spec/bugs.test.sh ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"

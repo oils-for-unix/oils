@@ -12,7 +12,7 @@ from _devbuild.gen.runtime_asdl import (
     lvalue, value_e, scope_e,
 )
 from core.util import e_die
-from core.util import log
+#from core.util import log
 from oil_lang import objects
 from osh import braces
 
@@ -156,24 +156,26 @@ class OilEvaluator(object):
       # builtin log "hello"
       # builtin log "hello"
 
-      node.PrettyPrint()
+      #node.PrettyPrint()
 
       # TODO: All functions called like f(x, y) must be in 'mem'.
       # Only 'procs' are in self.funcs
 
       # First look up the name in 'funcs'.  And then look it up
       # in 'mem' for first-class functions?
-      if node.func.tag == expr_e.Var:
-        func = self.funcs.get(node.func.name.val)
+      #if node.func.tag == expr_e.Var:
+      #  func = self.funcs.get(node.func.name.val)
 
-      if func is None:
-        # This is evaluated out of 'mem'.  Should really be Eval
-        func = self.EvalRHS(node.func)
+      func = self.EvalRHS(node.func)
 
       args = [self.EvalRHS(a) for a in node.args]
 
-      # Returns an arbitrary type, not just an integer.
-      ret = self.ex.RunOilFunc(func, args)
+      if callable(func):  # built-in function like join()
+        ret = func(*args)
+
+      else:  # User-defined function
+        # Returns an arbitrary type, not just an integer.
+        ret = self.ex.RunOilFunc(func, args)
       return ret
 
     if node.tag == expr_e.Subscript:

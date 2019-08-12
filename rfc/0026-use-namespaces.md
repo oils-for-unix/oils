@@ -104,5 +104,9 @@ Like `source`, but respects namespaces.
       func1
       func2
     }
-    use foo.sh  # foo ls 
+    use foo.sh  # foo myproc, foo.myfunc() or foo::myfunc()
+
+    # short versions
+    use foo.sh { log; p_die; e_die }
+    use foo.sh { mylog log; p_alias p_die }
 

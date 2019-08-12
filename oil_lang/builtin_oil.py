@@ -2,7 +2,7 @@
 """
 builtin_oil.py - Oil builtins.
 
-See design-docs/0009-oil-builtins.md for notes.
+See rfc/0024-oil-builtins.md for notes.
 
 env: Should be in builtin_compat.py?
 
@@ -14,6 +14,7 @@ import sys
 
 from _devbuild.gen.runtime_asdl import value_e
 
+from core.util import log
 from frontend import args
 
 
@@ -63,3 +64,55 @@ class Push(object):
 
     val.strs.extend(arg_r.Rest())
     return 0
+
+
+class Use(object):
+  """use lib, bin, env.  Respects namespaces."""
+
+  def __init__(self, mem, errfmt):
+    self.mem = mem
+    self.errfmt = errfmt
+
+  # TODO: It takes a block too
+  def __call__(self, arg_vec):
+    arg_r = args.Reader(arg_vec.strs, spids=arg_vec.spids)
+    arg_r.Next()  # skip 'use'
+
+    # TODO:
+    # - Does shopt -s namespaces have to be on?
+    #   - I don't think so?  It only affects 'procs', not funcs.
+
+    arg = arg_r.Peek()
+
+    # 'use bin' and 'use env' are for static analysis.  No-ops at runtime.
+    if arg in ('bin', 'env'):
+      return 0
+
+    if arg == 'lib':  # OPTIONAL lib
+      arg_r.Next()
+
+    # Cosmetic: separator for 'use bin __ grep sed'.  Allowed for 'lib' to be
+    # consistent.
+    arg = arg_r.Peek()
+    if arg == '__':  # OPTIONAL __
+      arg_r.Next()
+
+    # Now import everything.
+    rest = arg_r.Rest()
+    for path in rest:
+      log('path %s', path)
+
+    return 0
+
+
+class Env(object):
+  """env {} blocks are preferred over 'export'."""
+  pass
+
+
+class Fork(object):
+  """Replaces &.  Takes a block.
+
+  Similar to Wait, which is in osh/builtin_process.py.
+  """
+  pass

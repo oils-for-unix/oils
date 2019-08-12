@@ -77,12 +77,18 @@ test -file
 
 #### cd, shopt, env
 
+- cd { ... } subsumes pushd and popd
+
 - we're not changing `set`, only `shopt`
-- `env` is backward-compatible with /usr/bin/env
 
 - should `shopt` unify `set` and `shopt`?
   - the `-o` flag is ugly
 
+- `env` is backward-compatible with /usr/bin/env
+  - an `env` block is preferred over export
+  - it also is required for `shopt -s parse-equals`, so
+    that `PYTHONPATH=. ./foo.py` isn't parsed as an assignment.
+    - it's now `env PYTHONPATH=. ./foo.py`
 
 #### fork, wait
 
@@ -117,6 +123,8 @@ And maybe 'write'?  Although the sep can't be ''.
 #### dirname, basename (optimizations)
 
 #### use (modules with namespaces)
+
+See 0026-use-namespaces.md.
 
 
 ### Deprecated
