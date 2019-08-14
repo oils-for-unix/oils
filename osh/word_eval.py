@@ -1344,7 +1344,7 @@ class _WordEvaluator(object):
     Returns:
       argv: list of string arguments, or None if there was an eval error
     """
-    if self.exec_opts.static_word_eval:
+    if self.exec_opts.simple_word_eval:
       return self.StaticEvalWordSequence2(words, allow_assign)
 
     # Parse time:

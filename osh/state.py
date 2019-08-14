@@ -199,16 +199,16 @@ SHOPT_OPTION_NAMES = (
     'strict-backslash',  # BadBackslash
     'strict-glob',  # GlobParser
 
-    'static-word-eval',  # No splitting (arity isn't data-dependent)
+    'simple-word-eval',  # No splitting (arity isn't data-dependent)
                          # Don't reparse program data as globs
 )
 
 SYNTAX_OPTION_NAMES = (
-    'oil-parse-at',
-    'oil-parse-brace',
-    'oil-parse-equals',
-    'oil-parse-paren',
-    'oil-parse-set',
+    'parse-at',
+    'parse-brace',
+    'parse-equals',
+    'parse-paren',
+    'parse-set',
 )
 
 ALL_SHOPT_OPTIONS = SHOPT_OPTION_NAMES + SYNTAX_OPTION_NAMES
@@ -302,7 +302,7 @@ class ExecOpts(object):
     self.strict_glob = False  # glob_.py GlobParser has warnings
     self.strict_backslash = False  # BadBackslash for echo -e, printf, PS1, etc.
 
-    self.static_word_eval = False
+    self.simple_word_eval = False
 
     # Don't need flags -e and -n.  -e is $'\n', and -n is write.
     self.sane_echo = False
@@ -388,7 +388,7 @@ class ExecOpts(object):
 
     # TODO: all:oil
     # shopt -s -o nounset -o errexit -o pipefail
-    # shopt -s static-word-eval  # no splitting, static globbing
+    # shopt -s simple-word-eval  # no splitting, static globbing
 
     # shopt -s all:strict turns on all strict options
     if opt_name == 'all:strict':
@@ -405,7 +405,7 @@ class ExecOpts(object):
       if not self.mem.InGlobalNamespace():
         e_die('Syntax options must be set at the top level '
               '(outside any function)')
-      attr = attr[len('oil_parse_'):]  # oil_parse_at -> at
+      attr = attr[len('parse_'):]  # parse_at -> at
       setattr(self.parse_opts, attr, b)
     else:
       raise args.UsageError('got invalid option %r' % opt_name)
@@ -432,7 +432,7 @@ class ExecOpts(object):
       if opt_name in SHOPT_OPTION_NAMES:
         b = getattr(self, attr)
       elif opt_name in SYNTAX_OPTION_NAMES:
-        attr = attr[len('oil_parse_'):]  # oil_parse_at -> at
+        attr = attr[len('parse_'):]  # parse_at -> at
         b = getattr(self.parse_opts, attr)
       else:
         raise args.UsageError('got invalid option %r' % opt_name)

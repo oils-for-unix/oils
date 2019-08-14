@@ -31,7 +31,7 @@ argv "${flags[@]}"
 # - builtin 'push' for appending
 #
 
-shopt -s static-word-eval oil-parse-at
+shopt -s simple-word-eval parse-at
 
 var regex2 = @(new1 new2)
 var flags2 = @()

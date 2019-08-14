@@ -139,16 +139,16 @@ SHELL OPTIONS
                   X strict-eval-builtin  Single arg
                   X strict-trap          Function name only
   [Oil Semantics] X all:oil              All options below, plus POSIX and bash
-                  static-word-eval       No splitting, static globbing
+                  simple-word-eval       No splitting, static globbing
                   X longopts             test -file, shopt -unset, etc.
                   X oil-echo             No -e or -n, one arg per line
                   X oil-test-builtin     Only file tests (no strings), remove [
-  [Oil Syntax]    X all:oil-parse
-                  oil-parse-at           echo @array @arrayfunc(x, y)
-                  X oil-parse-brace      cd ~/src { ... }
-                  X oil-parse-equals     x = 's' (for cleaner config snippets)
-                  X oil-parse-paren      if (x > 0) ...
-                  X oil-parse-set        instead of setvar
+  [Oil Syntax]    X all:parse
+                  parse-at               echo @array @arrayfunc(x, y)
+                  X parse-brace          cd ~/src { ... }
+                  X parse-equals         x = 's' (for cleaner config snippets)
+                  X parse-paren          if (x > 0) ...
+                  X parse-set            instead of setvar
 
 ENVIRONMENT VARIABLES
   [Shell Options] SHELLOPTS   X BASHOPTS

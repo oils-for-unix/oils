@@ -1,6 +1,6 @@
 # Test shell execution options.
 
-#### static-word-eval doesn't split, glob, or elide empty
+#### simple-word-eval doesn't split, glob, or elide empty
 mkdir mydir
 touch foo.txt bar.txt spam.txt
 spaces='a b'
@@ -16,7 +16,7 @@ for i in 1 2; do
   # arrays still work too, with this weird rule
   argv.py -"$@"-
 
-  shopt -s static-word-eval
+  shopt -s simple-word-eval
 done
 ## STDOUT:
 ['a', 'b', 'bar.txt', 'foo.txt', 'spam.txt', 'spam.txt']
@@ -25,12 +25,12 @@ done
 ['-x y', 'z-']
 ## END
 
-#### static-word-eval and strict-array conflict over globs
+#### simple-word-eval and strict-array conflict over globs
 touch foo.txt bar.txt
 set -- f
 
 argv.py "$@"*.txt
-shopt -s static-word-eval
+shopt -s simple-word-eval
 argv.py "$@"*.txt
 shopt -s strict-array
 argv.py "$@"*.txt
@@ -41,14 +41,14 @@ argv.py "$@"*.txt
 ['foo.txt']
 ## END
 
-#### oil-parse-at
+#### parse-at
 words=(a 'b c')
 argv.py @words
 
 # TODO: This should be parse-oil-at, and only allowed at the top of the file?
 # Going midway is weird?  Then you can't bin/osh -n?
 
-shopt -s oil-parse-at
+shopt -s parse-at
 argv.py @words
 
 ## STDOUT:
@@ -56,9 +56,9 @@ argv.py @words
 ['a', 'b c']
 ## END
 
-#### oil-parse-at can't be used outside top level
+#### parse-at can't be used outside top level
 f() {
-  shopt -s oil-parse-at
+  shopt -s parse-at
   echo status=$?
 }
 f
@@ -67,9 +67,9 @@ echo 'should not get here'
 ## stdout-json: ""
 
 
-#### sourcing a file that sets oil-parse-at
+#### sourcing a file that sets parse-at
 cat >lib.sh <<EOF
-shopt -s oil-parse-at
+shopt -s parse-at
 echo lib.sh
 EOF
 
@@ -90,16 +90,16 @@ main.sh
 ['a', 'b c']
 ## END
 
-#### oil-parse-at can be specified through sh -O
-$SH +O oil-parse-at -c 'words=(a "b c"); argv.py @words'
-$SH -O oil-parse-at -c 'words=(a "b c"); argv.py @words'
+#### parse-at can be specified through sh -O
+$SH +O parse-at -c 'words=(a "b c"); argv.py @words'
+$SH -O parse-at -c 'words=(a "b c"); argv.py @words'
 ## STDOUT:
 ['@words']
 ['a', 'b c']
 ## END
 
 #### @a splices into $0
-shopt -s static-word-eval oil-parse-at
+shopt -s simple-word-eval parse-at
 a=(echo hi)
 "${a[@]}"
 @a
@@ -117,7 +117,7 @@ hi
 ## END
 
 #### ARGV is alias for "$@"
-shopt -s oil-parse-at
+shopt -s parse-at
 argv.py "$@"
 argv.py @ARGV
 argv.py "${ARGV[@]}"  # not useful, but it works!

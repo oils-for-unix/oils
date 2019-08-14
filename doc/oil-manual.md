@@ -31,9 +31,9 @@ using shell options that are toggled with the `shopt` builtin.
 
 #### Parsing Options
 
-Options that affect parsing start with `oil-parse-`.
+Options that affect parsing start with `parse-`.
 
-- `shopt -s oil-parse-at` enables splicing:
+- `shopt -s parse-at` enables splicing:
 
 ```
 echo @words
@@ -49,7 +49,7 @@ See examples below.
 
 #### Runtime Options
 
-- `strict-word-eval~
+- `simple-word-eval`
   - Meant to be implemented by other shells
 
 TODO: copy examples from spec tests
@@ -82,7 +82,7 @@ setvar myint = 1
 Spelled with `set`:
 
 ```
-shopt -s oil-parse-set
+shopt -s parse-set
 
 set mylist[0] = 43
 set mylist[0] += 1  # increment by 1
@@ -204,9 +204,9 @@ Five different things have to come together!
 - expressions:
   - `var myarray = @(one two three)` (array of strings)
 - options:
-  - `static-word-eval`
+  - `simple-word-eval`
     - meant to be implemented by other shells
-  - `oil-parse-at`
+  - `parse-at`
     - `@words` and `@arrayfunc(x, y)`
 - builtin: `push`
   - syntactic sugar for `do myarray.push(...)`
