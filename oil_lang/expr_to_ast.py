@@ -352,3 +352,16 @@ class Transformer(object):
     nt_name = self.number2symbol[typ]
     raise AssertionError(
         "PNode type %d (%s) wasn't handled" % (typ, nt_name))
+
+  def ArgList(self, pnode):
+    # type: (PNode) -> List[expr_t]
+     
+    # NOTE: It's similar to _AssocBinary, but we don't want it flattened.
+    # TODO: Return expr.FuncCall()
+
+    # TODO: Use _AssocBinary
+    print(pnode)
+    for c in pnode.children:
+      print(c)
+
+    return [expr.Str('TODO')]

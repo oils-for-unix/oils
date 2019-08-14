@@ -6,6 +6,7 @@ from _devbuild.gen.id_kind_asdl import Id_t
 from _devbuild.gen.syntax_asdl import (
     token, command_t, expr_t, word_t, redir_t, word__Compound)
 from _devbuild.gen.types_asdl import lex_mode_e
+from _devbuild.gen import grammar_nt
 
 from core import meta
 from core.util import p_die
@@ -32,7 +33,7 @@ if TYPE_CHECKING:
   from osh.word_parse import WordParser
   from osh.cmd_parse import CommandParser
   from pgen2.grammar import Grammar
-
+  from pgen2.parse import PNode
 
 class _BaseTrail(object):
 
@@ -298,10 +299,21 @@ class ParseContext(object):
     lx = self._MakeLexer(line_reader)
     return word_parse.WordParser(self, lx, line_reader)
 
+  def _ParseOil(self, lexer, start_symbol):
+    # type: (Lexer, int) -> Tuple[PNode, token]
+    """Helper Oil expression parsing."""
+    self.parsing_expr = True
+    try:
+      return self.e_parser.Parse(lexer, grammar_nt.oil_arglist)
+    finally:
+      self.parsing_expr = False
+
   def ParseOilAssign(self, kw_token, lexer, start_symbol,
                      print_parse_tree=False):
     # type: (token, Lexer, int, bool) -> Tuple[command_t, token]
     """e.g. var mylist = [1, 2, 3]"""
+
+    # TODO: We do need re-entracy for var x = @[ (1+2) ] and such
     if self.parsing_expr:
       p_die("Assignment expression can't be nested like this", token=kw_token)
 
@@ -317,6 +329,15 @@ class ParseContext(object):
 
     ast_node = self.tr.OilAssign(pnode)
     ast_node.keyword = kw_token  # OilAssign didn't fill this in
+    return ast_node, last_token
+
+  def ParseOilArgList(self, lexer):
+    # type: (Lexer) -> Tuple[List[expr_t], token]
+    if self.parsing_expr:
+      p_die("TODO: can't be nested")
+
+    pnode, last_token = self._ParseOil(lexer, grammar_nt.oil_arglist)
+    ast_node = self.tr.ArgList(pnode)
     return ast_node, last_token
 
   def ParseOilExpr(self, lexer, start_symbol, print_parse_tree=False):

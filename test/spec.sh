@@ -240,8 +240,8 @@ oil-options() {
     $OSH_LIST "$@"
 }
 
-oil-assign() {
-  sh-spec spec/oil-assign.test.sh --cd-tmp --osh-failures-allowed 2 \
+oil-expr() {
+  sh-spec spec/oil-expr.test.sh --cd-tmp --osh-failures-allowed 2 \
     $OSH_LIST "$@"
 }
 

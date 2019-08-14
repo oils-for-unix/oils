@@ -66,7 +66,7 @@ from _devbuild.gen.syntax_asdl import (
     command, command_t, command__ForExpr,
     suffix_op, bracket_op,
 
-    expr, expr_t,
+    expr_t,
     source,
 )
 # TODO: rename word -> word in syntax.asdl
@@ -74,6 +74,7 @@ from _devbuild.gen.syntax_asdl import word
 
 from core import meta
 from core.util import p_die
+#from core.util import log
 from frontend import reader
 from frontend import tdop
 from osh import arith_parse
@@ -1037,18 +1038,18 @@ class WordParser(object):
     # Needed so ) doesn't get translated to something else
     self.lexer.PushHint(Id.Op_RParen, Id.Op_RParen)
 
-    arguments = []  # type: List[expr_t]
+    #log('t: %s', self.cur_token)
 
-    self._Next(lex_mode)
-    self._Peek()  # We already looked ahead to assert this is (
-    # TODO: Call into expression language.
-    self._Next(lex_mode)  # Get )
-    self._Peek()
-    if self.token_type != Id.Op_RParen:
-      p_die("Expected ), got %r", self.cur_token)
+    # Call into expression language.
+    arg_nodes, last_token = self.parse_ctx.ParseOilArgList(self.lexer)
 
-    arguments.append(expr.Str('TODO'))
-    return arguments
+    if 0:
+      self._Next(lex_mode)  # Get )
+      self._Peek()
+      if self.token_type != Id.Op_RParen:
+        p_die("Expected ), got %r", self.cur_token)
+
+    return arg_nodes
 
   KINDS_THAT_END_WORDS = (Kind.Eof, Kind.WS, Kind.Op, Kind.Right)
 
@@ -1131,7 +1132,11 @@ class WordParser(object):
         vsub_token = self.cur_token
 
         part = word_part.SimpleVarSub(vsub_token)
-        if self.token_type == Id.VSub_DollarName and num_parts == 0:
+        if self.token_type == Id.VSub_DollarName:
+          # Look for $f(x)
+          # --name=$f(x) allowed
+          # "--name=$f(x)" not allowed?  That would require \( ?  Feels too
+          # complicated.
           t = self.lexer.LookAhead(lex_mode_e.ShCommand)
           if t.id == Id.Op_LParen:  # $strfunc(x)
             arguments = self._ParseCallArguments(lex_mode)

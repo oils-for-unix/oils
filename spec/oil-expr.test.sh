@@ -139,3 +139,11 @@ echo oil= $len(x)
 shell=5
 oil=20
 ## END
+
+#### @split(x) 
+var IFS = ':'
+var x = "one:two:three"
+argv.py @split(x)
+## STDOUT:
+['one', 'two', 'three']
+## END
