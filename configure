@@ -19,6 +19,10 @@ log() {
   echo "$0: $@" 1>&2
 }
 
+info() {
+  echo "$0 INFO: $@" 1>&2
+}
+
 die() {
   echo "$0 ERROR: $@" 1>&2
   exit 1
@@ -39,9 +43,17 @@ Detects system settings before a build of Oil.
 EOF
 }
 
-# Default installation is /usr/local/bin/oil, but this can be changed with
-# --prefix.  We roughly follow GNU:
+# This script roughly follows the GNU Standards
+# https://www.gnu.org/prep/standards/html_node/Configuration.html
 # https://www.gnu.org/prep/standards/html_node/Directory-Variables.html
+#
+# Default installation is /usr/local/bin/oil, but this can be changed with
+# --prefix.
+#
+# While this script only uses a handful of the standard directory variables
+# listed on the above documents, it accepts most of them in the --arg=value
+# form as noops. This helps automated build-systems passing preconfigured
+# sets of arguments to configure oil.
 FLAG_prefix='/usr/local'
 FLAG_datarootdir=''  # default initialized after processing flags
 FLAG_with_readline=''  # Fail if it's not available.
@@ -101,6 +113,30 @@ while true; do
       fi
       shift
       FLAG_datarootdir=$1
+      ;;
+
+    --with-*|--enable-*)
+      info "Argument '$1' not used by this configure script"
+      ;;
+
+    --build=*|--host=*)
+      info "Argument '$1' not used by this configure script"
+      ;;
+
+    --exec-prefix=*|--bindir=*|--sbindir=*|--libexecdir=*|--sysconfdir=*)
+      info "Argument '$1' not used by this configure script"
+      ;;
+    --sharedstatedir=*|--localstatedir=*|--runstatedir=*)
+      info "Argument '$1' not used by this configure script"
+      ;;
+    --libdir=*|--includedir=*|--oldincludedir=*)
+      info "Argument '$1' not used by this configure script"
+      ;;
+    --datadir=*|--infodir=*|--localedir=*|--mandir=*|--docdir=*)
+      info "Argument '$1' not used by this configure script"
+      ;;
+    --htmldir=*|--dvidir=*|--pdfdir=*|--psdir=*)
+      info "Argument '$1' not used by this configure script"
       ;;
 
     *)
