@@ -54,8 +54,8 @@ argv.py / @x @empty /
 ['/', 'a', 'b c', '/']
 ## END
 
-#### empty array and static-word-eval (regression test)
-shopt -s parse-at static-word-eval
+#### empty array and simple-word-eval (regression test)
+shopt -s parse-at simple-word-eval
 var empty = @()
 echo len=${#empty[@]}
 argv.py / @empty /
@@ -75,7 +75,7 @@ z=1
 ## END
 
 #### Shell arrays support tilde detection, static globbing, brace detection
-shopt -s parse-at static-word-eval
+shopt -s parse-at simple-word-eval
 touch {foo,bar}.py
 HOME=/home/bob
 no_dynamic_glob='*.py'
@@ -87,7 +87,7 @@ argv.py @x
 ## END
 
 #### augmented assignment doesn't work on shell arrays
-shopt -s parse-at static-word-eval
+shopt -s parse-at simple-word-eval
 var x = @(a 'b c')
 argv.py @x
 
@@ -99,7 +99,7 @@ argv.py @x
 ## END
 
 #### Splice in a Python list (i.e. Oil Obj var in word evaluator)
-shopt -s parse-at static-word-eval
+shopt -s parse-at simple-word-eval
 var mylist = ["one", "two"]
 argv.py @mylist
 ## STDOUT:
