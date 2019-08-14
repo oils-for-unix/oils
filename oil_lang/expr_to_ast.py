@@ -355,7 +355,11 @@ class Transformer(object):
 
   def ArgList(self, pnode):
     # type: (PNode) -> List[expr_t]
-     
+    """Transform arg lists.
+
+    oil_arglist: '(' [arglist] ')'
+    arglist: argument (',' argument)*  [',']
+    """
     # NOTE: It's similar to _AssocBinary, but we don't want it flattened.
     # TODO: Return expr.FuncCall()
 

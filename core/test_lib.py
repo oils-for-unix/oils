@@ -18,7 +18,9 @@ from core import alloc
 from core import completion
 from core import dev
 from core import main_loop
+from core import meta
 from core import process
+from core import pyutil
 from core import ui
 from core import util
 from frontend import lexer
@@ -231,11 +233,14 @@ def EvalCode(code_str, parse_ctx, comp_lookup=None, mem=None, aliases=None):
   return ex
 
 
-def InitWordParser(code_str, arena=None):
+def InitWordParser(word_str, oil_at=False, arena=None):
   arena = arena or MakeArena('<test_lib>')
   parse_opts = parse_lib.OilParseOptions()
-  parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
-  line_reader, _ = InitLexer(code_str, arena)
+  parse_opts.at = oil_at
+  loader = pyutil.GetResourceLoader()
+  oil_grammar = meta.LoadOilGrammar(loader)
+  parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, oil_grammar)
+  line_reader, _ = InitLexer(word_str, arena)
   c_parser = parse_ctx.MakeOshParser(line_reader)
   # Hack
   return c_parser.w_parser

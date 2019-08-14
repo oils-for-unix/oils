@@ -147,3 +147,14 @@ argv.py @split(x)
 ## STDOUT:
 ['one', 'two', 'three']
 ## END
+
+#### nested expr contexts
+var s = "123"
+
+# lex_mode_e.ShCommand -> Expr -> ShCommand -> Expr
+var x = $(echo 'len\n' $len(s))
+echo $x
+## STDOUT:
+len
+3
+## END

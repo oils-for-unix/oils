@@ -26,16 +26,6 @@ from frontend import parse_lib
 from osh import word_
 
 
-def _InitWordParser(s, oil_at=False, arena=None):
-  arena = arena or test_lib.MakeArena('word_parse_test.py')
-  parse_opts = parse_lib.OilParseOptions()
-  parse_opts.at = oil_at
-  parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
-  line_reader, lexer = test_lib.InitLexer(s, arena)
-  c_parser = parse_ctx.MakeOshParser(line_reader)
-  return c_parser.w_parser  # hack
-
-
 def _assertReadWordWithArena(test, w_parser):
   w = w_parser.ReadWord(lex_mode_e.ShCommand)
   assert w is not None
@@ -53,14 +43,14 @@ def _assertReadWordWithArena(test, w_parser):
 def _assertReadWord(test, word_str, oil_at=False):
   print('\n---', word_str)
   arena = test_lib.MakeArena('word_parse_test.py')
-  w_parser = _InitWordParser(word_str, arena=arena, oil_at=oil_at)
+  w_parser = test_lib.InitWordParser(word_str, arena=arena, oil_at=oil_at)
   w = _assertReadWordWithArena(test, w_parser)
   return w
 
 
 def _assertReadWordFailure(test, word_str, oil_at=False):
   print('\n---', word_str)
-  w_parser = _InitWordParser(word_str, oil_at=oil_at)
+  w_parser = test_lib.InitWordParser(word_str, oil_at=oil_at)
   try:
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
   except util.ParseError as e:
@@ -72,7 +62,7 @@ def _assertReadWordFailure(test, word_str, oil_at=False):
 
 def _assertSpanForWord(test, word_str):
   arena = test_lib.MakeArena('word_parse_test.py')
-  w_parser = _InitWordParser(word_str, arena=arena)
+  w_parser = test_lib.InitWordParser(word_str, arena=arena)
   w = _assertReadWordWithArena(test, w_parser)
   span_id = word_.LeftMostSpanForWord(w)
 
@@ -106,7 +96,7 @@ class WordParserTest(unittest.TestCase):
 
   def testStaticEvalWord(self):
     expr = r'\EOF'  # Quoted here doc delimiter
-    w_parser = _InitWordParser(expr)
+    w_parser = test_lib.InitWordParser(expr)
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     ok, s, quoted = word_.StaticEval(w)
     self.assertEqual(True, ok)
@@ -358,7 +348,7 @@ class WordParserTest(unittest.TestCase):
       print(expr)
       print()
 
-      w_parser = _InitWordParser(expr)
+      w_parser = test_lib.InitWordParser(expr)
 
       while True:
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
@@ -404,7 +394,7 @@ class WordParserTest(unittest.TestCase):
   def testReadComment(self):
     # Test that we get Id.Op_Newline
     code = 'foo # comment\nbar #comment\n'
-    w_parser = _InitWordParser(code)
+    w_parser = test_lib.InitWordParser(code)
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     assert w
     self.assertEqual('foo', w.parts[0].token.val)
@@ -428,7 +418,7 @@ class WordParserTest(unittest.TestCase):
   def testReadRegex(self):
     # Test that we get Id.Op_Newline
     code = '(foo|bar)'
-    w_parser = _InitWordParser(code)
+    w_parser = test_lib.InitWordParser(code)
     w_parser.next_lex_mode = lex_mode_e.BashRegex  # needed at beginning
 
     w = w_parser.ReadWord(lex_mode_e.BashRegex)
@@ -487,7 +477,7 @@ class WordParserTest(unittest.TestCase):
       print(expr)
       print()
 
-      w_parser = _InitWordParser(expr)
+      w_parser = test_lib.InitWordParser(expr)
       w_parser._Next(lex_mode_e.Arith)  # Can we remove this requirement?
 
       while True:
@@ -498,7 +488,7 @@ class WordParserTest(unittest.TestCase):
           break
 
   def testMultiLine(self):
-    w_parser = _InitWordParser("""\
+    w_parser = test_lib.InitWordParser("""\
 ls foo
 
 # Multiple newlines and comments should be ignored
