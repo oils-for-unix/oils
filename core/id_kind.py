@@ -429,22 +429,22 @@ def AddKinds(spec):
       'Time',
 
       # Oil keywords.
-      'Const', 'Set', 'SetGlobal', 'Var',  # assignment
+      'Const', 'Set', 'Var', 'Auto', # assignment
       'SetVar',  # for OSH compatibility
-      'Fork', 'Shell',  # blocks
       'Proc', 'Func',
       'Match', 'With',  # matching
       # not sure: yield
 
       # mycpp
       'Switch', 
-      # mod (class) and 'init' (constructor) and maybe 'call'
-      # record
+      # module (class) 
+      #   - 'init' (constructor) and maybe 'call'
+      # data (struct)
       # enum
       # try except (no finally?)
-      # use (instead of import)
 
-      # dialects: wok rule, etc.
+      # builtins, NOT keywords: use, fork, wait, wok, rule, etc.
+      # Things that don't affect parsing shouldn't be keywords.
   ])
 
   # Unlike bash, we parse control flow statically.  They're not

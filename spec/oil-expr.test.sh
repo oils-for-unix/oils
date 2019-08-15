@@ -24,6 +24,7 @@
 #   - this is legacy stuff.  Both (( )) and [[ ]]
 #   - LhsIndexedName should not reference Oil vars either
 
+
 #### integers expression and augmented assignment
 var x = 1 + 2 * 3
 echo x=$x
@@ -34,6 +35,36 @@ echo x=$x
 x=7
 x=11
 ## END
+
+#### setvar when variable isn't declared results in fatal error
+var x = 1
+f() {
+  # setting global is OK
+  setvar x = 2
+  echo x=$x
+
+  setvar y = 3  # NOT DECLARED
+  echo y=$y
+}
+f
+## status: 1
+## STDOUT:
+x=2
+## END
+
+#### duplicate var def results in fatal error
+var x = "global"
+f() {
+  var x = "local"
+  echo x=$x
+}
+f
+var x = "redeclaration is an error"
+## status: 1
+## STDOUT:
+x=local
+## END
+
 
 #### command sub $(echo hi)
 var x = $(echo hi)
@@ -158,3 +189,4 @@ echo $x
 len
 3
 ## END
+

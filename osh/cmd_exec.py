@@ -838,8 +838,14 @@ class Executor(object):
         else:
           val = value.Obj(py_val)
 
+        if node.keyword.id in (Id.KW_Var, Id.KW_Const):
+          lookup_mode = scope_e.LocalOnly
+        else:
+          lookup_mode = scope_e.Dynamic
+
         flags = ()
-        self.mem.SetVar(lval, val, flags, scope_e.LocalOnly)
+        self.mem.SetVar(lval, val, flags, lookup_mode,
+                        keyword_id=node.keyword.id)
 
       elif node.op.id == Id.Arith_PlusEqual:
         new_py_val = self.expr_ev.EvalPlusEquals(lval, py_val)
@@ -847,7 +853,8 @@ class Executor(object):
         val = value.Obj(new_py_val)
 
         flags = ()
-        self.mem.SetVar(lval, val, flags, scope_e.LocalOnly)
+        self.mem.SetVar(lval, val, flags, scope_e.LocalOnly,
+                        keyword_id=node.keyword.id)
 
       else:
         raise NotImplementedError(node.op)

@@ -674,7 +674,6 @@ _OIL_KEYWORDS = [
   # Blocks
   C('const',     Id.KW_Const),
   C('set',       Id.KW_Set),
-  C('setglobal', Id.KW_SetGlobal),
   C('var',       Id.KW_Var),
 
   # Blocks
@@ -682,8 +681,6 @@ _OIL_KEYWORDS = [
   C('func',      Id.KW_Func),
 
   C('do',        Id.KW_Do),
-  C('fork',      Id.KW_Fork),
-  C('shell',     Id.KW_Shell),
   C('time',      Id.KW_Time),  # Or should this be time do ?
 
   # Loops
@@ -697,7 +694,7 @@ _OIL_KEYWORDS = [
   C('elif',      Id.KW_Elif),  # Python and shell both use elif
 
   C('switch',    Id.KW_Switch),  # for C translation
-  C('match',     Id.KW_If),
+  C('match',     Id.KW_Match),
   C('case',      Id.KW_Case),
   C('with',      Id.KW_With),
 ]
@@ -708,8 +705,6 @@ _OIL_LEFT_SUBS = [
   C('${', Id.Left_DollarBrace),
   C('$[', Id.Left_DollarBracket),
   C('$/', Id.Left_DollarSlash),
-
-  # TODO: $stringfunc(x, y)
 ]
 
 # Valid in lex_mode_e.{Command,Array,Expr}

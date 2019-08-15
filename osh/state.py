@@ -926,7 +926,24 @@ class Mem(object):
         return True
     return False
 
-  def SetVar(self, lval, val, flags_to_set, lookup_mode, flags_to_clear=()):
+  def _CheckOilKeyword(self, keyword_id, lval, cell):
+    """Check that 'var' and setvar/set are used correctly.
+
+    NOTE: These are dynamic checks, but the syntactic difference between
+    definition and mutation will help translate the Oil subset of OSH to static
+    languages.
+    """
+
+    if cell and keyword_id == Id.KW_Var:
+      # TODO: Point at the ORIGINAL declaration!
+      e_die("%r has already been declared", lval.name)
+
+    if cell is None and keyword_id in (Id.KW_Set, Id.KW_SetVar):
+      # NOTE: all 3 variants of 'lvalue' have 'name'
+      e_die("%r hasn't been declared", lval.name)
+
+  def SetVar(self, lval, val, flags_to_set, lookup_mode, flags_to_clear=(),
+             keyword_id=None):
     """
     Args:
       lval: lvalue
@@ -958,6 +975,7 @@ class Mem(object):
     assert flags_to_set is not None
     if lval.tag == lvalue_e.Named:
       cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
+      self._CheckOilKeyword(keyword_id, lval, cell)
       if cell:
         # Clear before checking readonly bit.
         # NOTE: Could be cell.flags &= flag_clear_mask 
@@ -1007,6 +1025,7 @@ class Mem(object):
       # Undef, which then turns into an INDEXED array.  (Undef means that set
       # -o nounset fails.)
       cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
+      self._CheckOilKeyword(keyword_id, lval, cell)
       if not cell:
         self._BindNewArrayWithEntry(namespace, lval, val, flags_to_set)
         return
@@ -1053,6 +1072,7 @@ class Mem(object):
       left_spid = lval.spids[0] if lval.spids else const.NO_INTEGER
 
       cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
+      self._CheckOilKeyword(keyword_id, lval, cell)
       # We already looked it up before making the lvalue
       assert cell.val.tag == value_e.AssocArray, cell
       if cell.readonly:
