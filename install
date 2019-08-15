@@ -13,7 +13,7 @@ die() {
 # NOTE: The configure step
 main() {
   if ! . _build/detected-config.sh; then
-    die "Can't find _build/detected-config.h.  Run './configure'"
+    die "Can't find _build/detected-config.sh.  Run './configure'"
   fi
 
   # Now $PREFIX should be defined

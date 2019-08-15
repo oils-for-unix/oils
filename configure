@@ -5,7 +5,7 @@
 #
 # The only library Oil needs is readline.
 #
-# External utilities used: expr, cc
+# External utilities used: cc
 #
 # TODO: Should be able to run this from another directory.
 #
@@ -17,6 +17,10 @@ readonly TMP  # POSIX sh supports 'readonly'
 
 log() {
   echo "$0: $@" 1>&2
+}
+
+info() {
+  echo "$0 INFO: $@" 1>&2
 }
 
 die() {
@@ -39,9 +43,17 @@ Detects system settings before a build of Oil.
 EOF
 }
 
-# Default installation is /usr/local/bin/oil, but this can be changed with
-# --prefix.  We roughly follow GNU:
+# This script roughly follows the GNU Standards
+# https://www.gnu.org/prep/standards/html_node/Configuration.html
 # https://www.gnu.org/prep/standards/html_node/Directory-Variables.html
+#
+# Default installation is /usr/local/bin/oil, but this can be changed with
+# --prefix.
+#
+# While this script only uses a handful of the standard directory variables
+# listed on the above documents, it accepts most of them in the --arg=value
+# form as noops. This helps automated build-systems passing preconfigured
+# sets of arguments to configure oil.
 FLAG_prefix='/usr/local'
 FLAG_datarootdir=''  # default initialized after processing flags
 FLAG_with_readline=''  # Fail if it's not available.
@@ -68,10 +80,7 @@ while true; do
       ;;
 
     --readline=*)
-      # \( is required for non-GNU expr, which doesn't like leading dashes
-      # See https://www.freebsd.org/cgi/man.cgi?query=expr&sektion=&n=1,
-      # specifically the section on 'Compatibility with previous implementations'
-      FLAG_readline=$(expr \( "$1" : '--readline=\(.*\)' \) )
+      FLAG_readline="${1#*=}"
       ;;
     --readline)
       if test $# -eq 1; then
@@ -84,7 +93,7 @@ while true; do
     # TODO: Maybe prefix only needs to be part of the install step?  I'm not
     # sure if we need it for building anything.
     --prefix=*)
-      FLAG_prefix=$(expr \( "$1" : '--prefix=\(.*\)' \) )
+      FLAG_prefix="${1#*=}"
       ;;
     --prefix)
       if test $# -eq 1; then
@@ -96,7 +105,7 @@ while true; do
 
     # Following autoconf's spelling of --mandir
     --datarootdir=*)
-      FLAG_datarootdir=$(expr \( "$1" : '--datarootdir=\(.*\)' \) )
+      FLAG_datarootdir="${1#*=}"
       ;;
     --datarootdir)
       if test $# -eq 1; then
@@ -104,6 +113,30 @@ while true; do
       fi
       shift
       FLAG_datarootdir=$1
+      ;;
+
+    --with-*|--enable-*)
+      info "Argument '$1' not used by this configure script"
+      ;;
+
+    --build=*|--host=*)
+      info "Argument '$1' not used by this configure script"
+      ;;
+
+    --exec-prefix=*|--bindir=*|--sbindir=*|--libexecdir=*|--sysconfdir=*)
+      info "Argument '$1' not used by this configure script"
+      ;;
+    --sharedstatedir=*|--localstatedir=*|--runstatedir=*)
+      info "Argument '$1' not used by this configure script"
+      ;;
+    --libdir=*|--includedir=*|--oldincludedir=*)
+      info "Argument '$1' not used by this configure script"
+      ;;
+    --datadir=*|--infodir=*|--localedir=*|--mandir=*|--docdir=*)
+      info "Argument '$1' not used by this configure script"
+      ;;
+    --htmldir=*|--dvidir=*|--pdfdir=*|--psdir=*)
+      info "Argument '$1' not used by this configure script"
       ;;
 
     *)
