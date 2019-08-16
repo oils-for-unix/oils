@@ -5,12 +5,15 @@
 
 # NOTE: 'install' is part of coreutils and busybox.
 
-# The variable DESTDIR provides for staged installs, where the installed files
-# are not placed directly into their expected location but are instead copied
-# into a temporary location (DESTDIR).
+# The variable DESTDIR allows staged installs, where the installed files are
+# not placed directly into the location they're expected to be executed from.
+# They are placed in a temp dir first, which they are NOT expected to run out of.
+#
 # https://www.gnu.org/prep/standards/html_node/DESTDIR.html
-# This staged install is the default method of installation by package managers
-# such as gentoo-portage
+#
+# Staged installs are the default method of installation by package managers
+# such as gentoo-portage.
+#
 # https://devmanual.gentoo.org/quickstart/index.html
 
 die() {
@@ -23,26 +26,28 @@ main() {
   if ! . _build/detected-config.sh; then
     die "Can't find _build/detected-config.sh.  Run './configure'"
   fi
-
   # Now $PREFIX should be defined
 
+  #
+  # Install the shell binary
+  #
+
   #local exec_filename=oil.ovm-dbg
-  local exec_filename=oil.ovm  # Should this go in configure output?
+  local exec_filename=oil.ovm
+  local bin_dest="$DESTDIR/$PREFIX/bin/"
 
-  local bindir="$PREFIX/bin"
-
-  echo "Installing executables in $DESTDIR/$bindir/"
-  if ! install -v -d "$DESTDIR/$bindir/"; then
-    die "Couldn't create $DESTDIR/$bindir/"
+  echo "Installing executables in $bin_dest"
+  if ! install -v -d "$bin_dest"; then
+    die "Couldn't create $bin_dest"
   fi
 
-  if ! install -v "_bin/$exec_filename" "$DESTDIR/$bindir/"; then
+  if ! install -v "_bin/$exec_filename" "$bin_dest"; then
     die "Couldn't install oil binary"
   fi
 
   local working_dir=$PWD  # save for later
 
-  cd "$DESTDIR/$bindir/"
+  cd "$bin_dest"
   for link in osh oshc; do
     if ! ln -s -f "$exec_filename" "$link"; then  # -f to overwrite
       die "Couldn't create $link symlink"
@@ -53,22 +58,22 @@ main() {
   # Install man page
   #
 
-  # relevant:
+  # Relevant:
   # https://unix.stackexchange.com/questions/90759/where-should-i-install-manual-pages-in-user-directory
   # https://www.freebsd.org/cgi/man.cgi?query=install
 
   cd "$working_dir"
 
-  # e.g. /usr/share/man/man1
-  local mandir="$DATAROOTDIR/man/man1"
+  # e.g. /usr/local/share/man/man1
+  local man_dest="$DESTDIR/$DATAROOTDIR/man/man1/"
 
-  echo "Installing man page osh.1 in $DESTDIR/$mandir/"
-  if ! install -v -d "$DESTDIR/$mandir/"; then
-    die "Couldn't create $DESTDIR/$mandir/"
+  echo "Installing man page osh.1 in $man_dest"
+  if ! install -v -d "$man_dest"; then
+    die "Couldn't create $man_dest"
   fi
 
   # -t to install to a directory and make them, -m so it's not executable
-  if ! install -v -m 644 doc/osh.1 "$DESTDIR/$mandir/"; then
+  if ! install -v -m 644 doc/osh.1 "$man_dest"; then
     die "Couldn't install man page"
   fi
 }
