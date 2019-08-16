@@ -30,16 +30,19 @@ die() {
 
 show_help() {
   cat <<'EOF'
-Usage: ./configure [OPTION]
+Usage: ./configure [OPTION...]
 
 Detects system settings before a build of Oil.
 
-  --prefix            Prefix for the bin/ directory [/usr/local]
-  --datarootdir       Prefix for data files, including man page [$PREFIX/share]
-  --with-readline     Fail unless readline is available.
-  --without-readline  Don't compile with readline, even if it's available.
-		      The shell won't have any interactive features.
-  --readline          An alternative readline installation to link against
+Installation directories:
+  --prefix=PREFIX               Prefix for the bin/ directory [/usr/local]
+  --datarootdir=DATAROOTDIR     Prefix for data files, including man page [PREFIX/share]
+
+Optional features:
+  --with-readline               Fail unless readline is available.
+  --without-readline            Don't compile with readline, even if it's available.
+                                The shell won't have any interactive features.
+  --readline=DIR                An alternative readline installation to link against
 EOF
 }
 
