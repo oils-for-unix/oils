@@ -5,6 +5,14 @@
 
 # NOTE: 'install' is part of coreutils and busybox.
 
+# The variable DESTDIR provides for staged installs, where the installed files
+# are not placed directly into their expected location but are instead copied
+# into a temporary location (DESTDIR).
+# https://www.gnu.org/prep/standards/html_node/DESTDIR.html
+# This staged install is the default method of installation by package managers
+# such as gentoo-portage
+# https://devmanual.gentoo.org/quickstart/index.html
+
 die() {
   echo "FATAL install error: $@" 1>&2
   exit 1
@@ -21,18 +29,22 @@ main() {
   #local exec_filename=oil.ovm-dbg
   local exec_filename=oil.ovm  # Should this go in configure output?
 
-  local dest="$PREFIX/bin/$exec_filename"
+  local bindir="$PREFIX/bin"
 
-  echo "Installing executables in $dest"
-  if ! install -v _bin/$exec_filename $dest; then
+  echo "Installing executables in $DESTDIR/$bindir/"
+  if ! install -v -d "$DESTDIR/$bindir/"; then
+    die "Couldn't create $DESTDIR/$bindir/"
+  fi
+
+  if ! install -v "_bin/$exec_filename" "$DESTDIR/$bindir/"; then
     die "Couldn't install oil binary"
   fi
 
   local working_dir=$PWD  # save for later
 
-  cd $PREFIX/bin
+  cd "$DESTDIR/$bindir/"
   for link in osh oshc; do
-    if ! ln -s -f $exec_filename $link; then  # -f to overwrite
+    if ! ln -s -f "$exec_filename" "$link"; then  # -f to overwrite
       die "Couldn't create $link symlink"
     fi
   done
@@ -45,18 +57,18 @@ main() {
   # https://unix.stackexchange.com/questions/90759/where-should-i-install-manual-pages-in-user-directory
   # https://www.freebsd.org/cgi/man.cgi?query=install
 
-  cd $working_dir
+  cd "$working_dir"
 
   # e.g. /usr/share/man/man1
-  local man_dest="$DATAROOTDIR/man/man1"
+  local mandir="$DATAROOTDIR/man/man1"
 
-  echo "Installing man page osh.1 in $man_dest"
-  if ! install -v -d $man_dest; then
-    die "Couldn't create $man_dest"
+  echo "Installing man page osh.1 in $DESTDIR/$mandir/"
+  if ! install -v -d "$DESTDIR/$mandir/"; then
+    die "Couldn't create $DESTDIR/$mandir/"
   fi
 
   # -t to install to a directory and make them, -m so it's not executable
-  if ! install -v -m 644 doc/osh.1 $man_dest; then
+  if ! install -v -m 644 doc/osh.1 "$DESTDIR/$mandir/"; then
     die "Couldn't install man page"
   fi
 }
