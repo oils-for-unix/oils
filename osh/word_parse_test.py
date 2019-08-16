@@ -21,8 +21,6 @@ from asdl import const
 from core import test_lib
 from core import util
 
-from frontend import parse_lib
-
 from osh import word_
 
 
