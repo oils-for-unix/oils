@@ -151,17 +151,17 @@ false___
 
 #### compgen -A directory
 # omit portable-files.mk
-compgen -A directory p
+compgen -A directory p | sort
 ## STDOUT:
 pgen2
 pylib
 ## END
 
 #### compgen -A file
-compgen -A file b
+compgen -A file b | sort
 ## STDOUT:
-bin
 benchmarks
+bin
 build
 ## END
 
@@ -241,11 +241,11 @@ build
 ## END
 
 #### compgen -o default completes files and dirs
-compgen -o default spec/t
+compgen -o default spec/t | sort
 ## STDOUT:
+spec/testdata
 spec/tilde.test.sh
 spec/type-compat.test.sh
-spec/testdata
 ## END
 
 #### compgen doesn't respect -X for user-defined functions
@@ -279,7 +279,7 @@ three
 #### compgen -f -X filter -- $cur
 cd $TMP
 touch spam.py spam.sh
-compgen -f -- sp
+compgen -f -- sp | sort
 echo --
 # WORKAROUND: wrap in bash -i -c because non-interactive bash behaves
 # differently!

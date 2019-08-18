@@ -185,7 +185,7 @@ EQUAL
 #### automatically creating arrays WITHOUT strict-array
 undef[2]=x
 undef[3]=y
-argv "${undef[@]}"
+argv.py "${undef[@]}"
 ## STDOUT:
 ['x', 'y']
 ## END
@@ -202,7 +202,7 @@ x='bad'
 # behavior, which we want to disallow.  Consider disallowing in OSH.
 
 undef[$x]=zzz
-argv "${undef[@]}"
+argv.py "${undef[@]}"
 ## STDOUT:
 ['zzz', 'x', 'y']
 ## END

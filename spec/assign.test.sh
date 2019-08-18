@@ -506,11 +506,11 @@ argv.py "$ex2" "$ro2"
 cd $TMP
 touch foo=a foo=b
 foo=*
-argv "$foo"
+argv.py "$foo"
 unset foo
 
 export foo=*
-argv "$foo"
+argv.py "$foo"
 unset foo
 
 ## STDOUT:
@@ -526,7 +526,7 @@ unset foo
 cd $TMP
 touch foo=a foo=b
 typeset foo=*
-argv "$foo"
+argv.py "$foo"
 unset foo
 ## STDOUT:
 ['*']

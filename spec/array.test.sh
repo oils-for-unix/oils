@@ -477,7 +477,7 @@ argv.py "${a[@]:15:2}"
 shopt -u strict-arith
 a[a]=42
 a[a]=99
-argv "${a[@]}" "${a[0]}" "${a[42]}" "${a[99]}"
+argv.py "${a[@]}" "${a[0]}" "${a[42]}" "${a[99]}"
 
 ## status: 1
 ## stdout-json: ""
