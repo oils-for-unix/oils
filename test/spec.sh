@@ -165,7 +165,7 @@ sh-spec() {
 
   test/sh_spec.py \
       --tmp-env $tmp_env \
-      --path-env "$this_dir/../spec/bin:$PATH" \
+      --path-env "$this_dir/../spec/bin:/bin:/usr/bin" \
       "$test_file" \
       "$@"
 }
