@@ -192,7 +192,7 @@ SHOPT_OPTION_NAMES = (
     'strict-arith',  # string to integer conversions
     'strict-array',  # no implicit conversion between string and array
     'strict-control-flow',  # break/continue at top level is fatal
-    'strict-errexit',  # inherited to command subs, etc.
+    'strict-eval-builtin',  # single arg
     'strict-word-eval',  # negative slices, unicode
 
     # Not implemented
@@ -269,7 +269,7 @@ class ExecOpts(object):
     # inherit the value of errexit.  # I don't believe it is strict enough --
     # local still needs to fail.
     self.strict_errexit = False
-
+    self.strict_eval_builtin = False  # only accepts single arg
     self.strict_word_eval = False  # Bad slices and bad unicode
 
     # This comes after all the 'set' options.

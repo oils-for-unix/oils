@@ -208,3 +208,42 @@ argv.py "${undef[@]}"
 ## END
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
+
+#### strict-eval-builtin
+for i in 1 2; do
+  eval  # zero args
+  echo status=$?
+  eval echo one
+  echo status=$?
+  eval 'echo two'
+  echo status=$?
+  shopt -s strict-eval-builtin
+  echo ---
+done
+## STDOUT:
+status=0
+one
+status=0
+two
+status=0
+---
+status=2
+status=2
+two
+status=0
+---
+## END
+## N-I dash/bash/mksh STDOUT:
+status=0
+one
+status=0
+two
+status=0
+---
+status=0
+one
+status=0
+two
+status=0
+---
+## END

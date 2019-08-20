@@ -118,6 +118,9 @@ errors.
 `strict-errexit`.  The `errexit` setting is **inherited** in subshells, AND it
 can cause fatal errors in the **parent process**.
 
+`strict-eval-builtin`.  The `eval` builtin takes exactly **one** argument.  It
+doesn't concatenate its arguments with a space, or accept zero arguments.
+
 For example, `echo 0; echo $(touch one; false; touch two); echo 3` will print
 `0` and touch the file `one`.
 

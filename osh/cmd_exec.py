@@ -180,9 +180,14 @@ class Executor(object):
       self.arena.PopSource()
 
   def _Eval(self, arg_vec):
-    # TODO:
-    # - set -o sane-eval should change eval to take a single string.
-    code_str = ' '.join(arg_vec.strs[1:])
+    if self.exec_opts.strict_eval_builtin:
+      # To be less confusing, eval accepts EXACTLY one string arg.
+      n = len(arg_vec.strs)
+      if n != 2:
+        raise args.UsageError('requires exactly 1 argument, got %d' % (n-1))
+      code_str = arg_vec.strs[1]
+    else:
+      code_str = ' '.join(arg_vec.strs[1:])
     eval_spid = arg_vec.spids[0]
 
     line_reader = reader.StringLineReader(code_str, self.arena)

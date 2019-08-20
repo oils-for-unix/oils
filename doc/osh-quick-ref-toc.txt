@@ -131,12 +131,12 @@ SHELL OPTIONS
                   strict-array           Arrays don't decay to strings
                   strict-arith           Fatal parse errors (on by default)
                   strict-errexit         Fail earlier, at command sub 
+                  strict-eval-builtin    Takes exactly 1 argument
                   strict-control-flow    Do we need this?  Special builtins?
                   strict-word-eval       Expose unicode and slicing errors
                   X strict-tilde         Tilde subst can result in error
                   X strict-backslash     Parse the sublanguage more strictly
                   X strict-glob          Parse the sublanguage more strictly
-                  X strict-eval-builtin  Single arg
                   X strict-trap          Function name only
   [Oil Semantics] X all:oil              All options below, plus POSIX and bash
                   simple-word-eval       No splitting, static globbing
