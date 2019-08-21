@@ -29,6 +29,26 @@ using shell options that are toggled with the `shopt` builtin.
 
 ### Options
 
+#### "Meta" Options Are The Most Important
+ 
+This is how you opt into the Oil language:
+
+```
+shopt -s all:oil
+```
+
+It turns on:
+
+- `errexit`, `nounset` (`sh` modes to get more errors)
+- `pipefail` (a `bash` mode to get more errors)
+- OSH modes:
+  - `simple-word-eval`
+  - `strict-*` (`strict-array`, etc.)
+  - `parse-*` (`parse-at`, etc.)
+
+In contrast, `shopt -s all:strict` turns on all the `strict-*` options, but no
+others.
+
 #### Parsing Options
 
 Options that affect parsing start with `parse-`.
@@ -57,6 +77,23 @@ TODO: copy examples from spec tests
 ```
 echo $dir/*.py
 ```
+
+#### Strict Options
+
+These options produce more **programming errors**.  Importantly, the resulting
+program is still compatible with other shells.
+
+For example, `shopt -s strict-array` produces runtime errors when you confuse
+strings and arrays.  After you fix these problems, your program will still run
+correctly under `bash`.
+
+In contrast, if you set `shopt -s simple-word-eval` (an option that doesn't
+start with `strict-`), the semantics of your program have changed, and you can
+no longer run it under other shells.  It's considered an "Oil option": by
+setting it, you're upgrading to the Oil language.
+
+See the [OSH manual](osh-manual.html) for a list of strict options and their
+meaning.
 
 ### Keywords
 
