@@ -172,7 +172,8 @@ SET_OPTIONS = [
 # Used by core/builtin_comp.py too.
 SET_OPTION_NAMES = set(name for _, name in SET_OPTIONS)
 
-SHOPT_OPTION_NAMES = (
+# Used by core/builtin_comp.py too.
+SHOPT_OPTION_NAMES = [
     'nullglob', 'failglob',
 
     # No-ops for bash compatibility
@@ -201,17 +202,23 @@ SHOPT_OPTION_NAMES = (
 
     'simple-word-eval',  # No splitting (arity isn't data-dependent)
                          # Don't reparse program data as globs
-)
+]
 
-SYNTAX_OPTION_NAMES = (
+_STRICT_OPTION_NAMES = [o for o in SHOPT_OPTION_NAMES if o.startswith('strict-')]
+
+_PARSE_OPTION_NAMES = [
     'parse-at',
     'parse-brace',
     'parse-equals',
     'parse-paren',
     'parse-set',
-)
+]
 
-ALL_SHOPT_OPTIONS = SHOPT_OPTION_NAMES + SYNTAX_OPTION_NAMES
+# errexit is also set, but handled separately
+_OIL_OPTION_NAMES = _STRICT_OPTION_NAMES + _PARSE_OPTION_NAMES + ['nounset', 'pipefail', 'simple-word-eval']
+
+# Used in builtin_pure.py
+ALL_SHOPT_OPTIONS = SHOPT_OPTION_NAMES + _PARSE_OPTION_NAMES
 
 
 class ExecOpts(object):
@@ -356,6 +363,13 @@ class ExecOpts(object):
         log('Warning: set -o verbose not implemented')
       setattr(self, opt_name, b)
 
+  def _SetParseOption(self, attr, b):
+    if not self.mem.InGlobalNamespace():
+      e_die('Syntax options must be set at the top level '
+            '(outside any function)')
+    attr = attr[len('parse_'):]  # parse_at -> at
+    setattr(self.parse_opts, attr, b)
+
   def SetOption(self, opt_name, b):
     """ For set -o, set +o, or shopt -s/-u -o. """
     self._SetOption(opt_name, b)
@@ -386,27 +400,32 @@ class ExecOpts(object):
   def SetShoptOption(self, opt_name, b):
     """ For shopt -s/-u. """
 
-    # TODO: all:oil
-    # shopt -s -o nounset -o errexit -o pipefail
-    # shopt -s simple-word-eval  # no splitting, static globbing
+    # shopt -s all:oil turns on all Oil options, which includes all strict #
+    # options
+    if opt_name == 'all:oil':
+      for o in _OIL_OPTION_NAMES:
+        attr = o.replace('-', '_')
+        if o in _PARSE_OPTION_NAMES:
+          self._SetParseOption(attr, b)
+        else:
+          setattr(self, attr, b)
+
+      # Special case
+      self.errexit.Set(b)
+      return
 
     # shopt -s all:strict turns on all strict options
     if opt_name == 'all:strict':
-      for opt_name in SHOPT_OPTION_NAMES:
-        if opt_name.startswith('strict-'):
-          attr = opt_name.replace('-', '_')  # for strict-*
-          setattr(self, attr, b)
+      for o in _STRICT_OPTION_NAMES:
+        attr = o.replace('-', '_')  # for strict-*
+        setattr(self, attr, b)
       return
 
     attr = opt_name.replace('-', '_')  # for strict-*
     if opt_name in SHOPT_OPTION_NAMES:
       setattr(self, attr, b)
-    elif opt_name in SYNTAX_OPTION_NAMES:
-      if not self.mem.InGlobalNamespace():
-        e_die('Syntax options must be set at the top level '
-              '(outside any function)')
-      attr = attr[len('parse_'):]  # parse_at -> at
-      setattr(self.parse_opts, attr, b)
+    elif opt_name in _PARSE_OPTION_NAMES:
+      self._SetParseOption(attr, b)
     else:
       raise args.UsageError('got invalid option %r' % opt_name)
 
@@ -431,7 +450,7 @@ class ExecOpts(object):
       attr = opt_name.replace('-', '_')  # for strict-*
       if opt_name in SHOPT_OPTION_NAMES:
         b = getattr(self, attr)
-      elif opt_name in SYNTAX_OPTION_NAMES:
+      elif opt_name in _PARSE_OPTION_NAMES:
         attr = attr[len('parse_'):]  # parse_at -> at
         b = getattr(self.parse_opts, attr)
       else:

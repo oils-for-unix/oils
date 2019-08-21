@@ -140,3 +140,28 @@ f 1 '2 3'
 ['1', '2 3']
 ['1', '2 3']
 ## END
+
+#### shopt -s all:oil
+shopt -s all:oil
+# normal option names
+shopt -o -p | grep -- ' -o ' | grep -v hashall
+shopt -p | grep -- ' -s '
+## STDOUT:
+set -o errexit
+set -o nounset
+set -o pipefail
+shopt -s strict-argv
+shopt -s strict-arith
+shopt -s strict-array
+shopt -s strict-control-flow
+shopt -s strict-eval-builtin
+shopt -s strict-word-eval
+shopt -s strict-backslash
+shopt -s strict-glob
+shopt -s simple-word-eval
+shopt -s parse-at
+shopt -s parse-brace
+shopt -s parse-equals
+shopt -s parse-paren
+shopt -s parse-set
+## END
