@@ -193,6 +193,7 @@ SHOPT_OPTION_NAMES = [
     'strict-arith',  # string to integer conversions
     'strict-array',  # no implicit conversion between string and array
     'strict-control-flow',  # break/continue at top level is fatal
+    'strict-errexit',  # inherited to command subs, etc.
     'strict-eval-builtin',  # single arg
     'strict-word-eval',  # negative slices, unicode
 

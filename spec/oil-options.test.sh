@@ -154,6 +154,7 @@ shopt -s strict-argv
 shopt -s strict-arith
 shopt -s strict-array
 shopt -s strict-control-flow
+shopt -s strict-errexit
 shopt -s strict-eval-builtin
 shopt -s strict-word-eval
 shopt -s strict-backslash
