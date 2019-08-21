@@ -122,6 +122,9 @@ def Batch(ex, c_parser, arena, nodes_out=None):
     nodes_out: if set to a list, the input lines are parsed, and LST nodes are
       appended to it instead of executed.  For 'sh -n'.
 
+  Returns:
+    int status, e.g. 2 on parse error
+
   Can this be combined with interative loop?  Differences:
   
   - Handling of parse errors.

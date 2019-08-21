@@ -237,16 +237,18 @@ def SourceStartupFile(rc_path, lang, parse_ctx, ex):
   # https://www.gnu.org/software/bash/manual/bash.html#Bash-Startup-Files
   # Bash also has --login.
 
-  arena = parse_ctx.arena
   try:
-    arena.PushSource(rc_path)
+    arena = parse_ctx.arena
     with open(rc_path) as f:
       rc_line_reader = reader.FileLineReader(f, arena)
       if lang == 'osh':
         rc_c_parser = parse_ctx.MakeOshParser(rc_line_reader)
       else:
         rc_c_parser = parse_ctx.MakeOilParser(rc_line_reader)
+
+      arena.PushSource(source.SourcedFile(rc_path))
       try:
+        # TODO: don't ignore status, e.g. status == 2 when there's a parse error.
         status = main_loop.Batch(ex, rc_c_parser, arena)
       finally:
         arena.PopSource()

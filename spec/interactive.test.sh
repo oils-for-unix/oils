@@ -122,3 +122,27 @@ two
 ^D
 ## END
 ## N-I dash/mksh stdout-json: ""
+
+#### Error message with bad oshrc file (currently ignored)
+cd $TMP
+echo 'foo >' > bad_oshrc
+
+$SH --rcfile bad_oshrc -i -c 'echo hi' 2>stderr.txt
+echo status=$?
+
+# bash prints two lines
+grep --max-count 1 -o 'bad_oshrc:' stderr.txt
+
+## STDOUT:
+hi
+status=0
+bad_oshrc:
+## END
+
+## N-I dash/mksh status: 1
+## N-I dash STDOUT:
+status=2
+## END
+## N-I mksh STDOUT:
+status=1
+## END
