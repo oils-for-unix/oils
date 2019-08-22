@@ -40,9 +40,10 @@ shopt -s all:oil
 It turns on:
 
 - `errexit`, `nounset` (`sh` modes to get more errors)
-- `pipefail` (a `bash` mode to get more errors)
-- OSH modes:
+- `pipefail` and `inherit_errexit` (`bash` modes to get more errors)
+- Oil modes:
   - `simple-word-eval`
+  - `more_errexit`
   - `strict-*` (`strict-array`, etc.)
   - `parse-*` (`parse-at`, etc.)
 
@@ -69,14 +70,19 @@ See examples below.
 
 #### Runtime Options
 
-- `simple-word-eval`
-  - Meant to be implemented by other shells
+- `simple-word-eval`.  Word evaluation consists of one stage rather than three:
+  - No word splitting or empty elision.  (In other words, arity isn't data-dependent.)
+  - Static globbing, but no dynamic globbing.  (In other words, data isn't re-parsed as code.)
+  - This option is intended to be implemented by other shells.
 
 TODO: copy examples from spec tests
 
 ```
 echo $dir/*.py
 ```
+
+- `more_errexit`.  A error in a command sub can cause the **parent shell** to
+  exit fatally.  Also see `inherit_errexit` and `strict_errexit`.
 
 #### Strict Options
 

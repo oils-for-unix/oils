@@ -572,8 +572,8 @@ errexit() {
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
-errexit-strict() {
-  sh-spec spec/errexit-strict.test.sh \
+errexit-oil() {
+  sh-spec spec/errexit-oil.test.sh \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 

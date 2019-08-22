@@ -1,6 +1,9 @@
 #!/bin/bash
 #
-# Cases relevant to shopt -s strict-errexit in OSH.
+# Cases relevant to Oil's:
+#
+# - shopt -s more_errexit
+# - and maybe inherit_errexit and strict_errexit (OSH)
 #
 # Summary:
 # - errexit is reset to false in ash/bash -- completely ignored!
@@ -16,7 +19,7 @@
 # See inherit_errexit below.
 #
 # I remember finding a script that relies on bash's bad behavior, so OSH copies
-# it.  Instead strict-errexit, is recommended.
+# it.  Instead more_errexit, is recommended.
 
 set -o errexit
 echo $(echo one; false; echo two)  # bash/ash keep going
@@ -31,13 +34,13 @@ one
 status=0
 ## END
 
-#### command sub: errexit not ignored with strict-errexit
+#### command sub: errexit not ignored with more_errexit
 set -o errexit
 
 # bash implements inherit_errexit, but it's not as strict as OSH.
 shopt -s inherit_errexit || true
 
-shopt -s strict-errexit || true
+shopt -s more_errexit || true
 echo zero
 echo $(echo one; false; echo two)  # bash/ash keep going
 echo status=$?
@@ -123,10 +126,10 @@ status=0
 one
 ## END
 
-#### local and strict-errexit
+#### local and more_errexit
 # I've run into this problem a lot.
 set -o errexit
-shopt -s strict-errexit || true  # ignore error
+shopt -s more_errexit || true  # ignore error
 f() {
   echo good
   local x=$(echo one; false; echo two)

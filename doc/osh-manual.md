@@ -115,8 +115,16 @@ implemented.)
 `strict-control-flow`. `break` and `continue` outside of a loop are fatal
 errors.
 
-`strict-errexit`.  The `errexit` setting is **inherited** in subshells, AND it
-can cause fatal errors in the **parent process**.
+`strict_errexit`.  The `errexit` behavior can only be disabled for external
+commands and builtins, as opposed to shell functions.  (The shell normally
+disables `errexit` for the `if`, `||`, and `&&` constructs.)
+
+When a function is used like `myfunc || echo error`, your program will always
+fail with a runtime error warning that it should be changed.  Consider using
+the ["at-splice pattern"][at-splice] to fix this, e.g. `$0 myfunc || echo
+errexit`.
+
+(Also see `inherit_errexit` and `more_errexit`.)
 
 `strict-eval-builtin`.  The `eval` builtin takes exactly **one** argument.  It
 doesn't concatenate its arguments with a space, or accept zero arguments.
@@ -138,11 +146,18 @@ in the command sub, but keeps running the parent process.
   `strict-word-eval`.)
 - UTF-8 decoding errors are fatal when computing lengths (`${#s}`) and slices.
 
+`inherit_errexit`. The `errexit` setting is **inherited** in subshells. (This
+option is implemented in bash.)
+
+`more_errexit`.  An error in a command sub can cause the **parent process** to
+exit.  In other words, it's checked more often. (An Oil option.)
+
 **On by default**:
 
 `strict-arith`.  Strings that don't look like integers cause a fatal error in
 arithmetic expressions.  NOTE: This option may be removed if no scripts rely on
 the old, bad behavior.
+
 
 
 ### Features Unique to OSH
@@ -333,4 +348,7 @@ External:
 - [Bash Cheat Sheet](https://devhints.io/bash).  A short overview.
 
 [BashGuide]: https://mywiki.wooledge.org/BashGuide
+
+[at-splice]: TODO
+
 

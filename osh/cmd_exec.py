@@ -1353,7 +1353,7 @@ class Executor(object):
 
   def RunCommandSub(self, node):
     p = self._MakeProcess(node,
-                          disable_errexit=not self.exec_opts.strict_errexit)
+                          disable_errexit=not self.exec_opts.more_errexit)
 
     r, w = posix.pipe()
     p.AddStateChange(process.StdoutToPipe(r, w))
@@ -1373,7 +1373,7 @@ class Executor(object):
 
     # OSH has the concept of aborting in the middle of a WORD.  We're not
     # waiting until the command is over!
-    if self.exec_opts.strict_errexit:
+    if self.exec_opts.more_errexit:
       if self.exec_opts.ErrExit() and status != 0:
         raise util.ErrExitFailure(
             'Command sub exited with status %d (%r)', status,

@@ -181,7 +181,6 @@ SHOPT_OPTION_NAMES = [
     'progcomp', 'histappend', 'hostcomplete',  # not sure what these are
     'cmdhist',  # multi-line commands in history
 
-    # NOTE: strict-errexit CANNOT be on by default.
     # - some are PARSING:
     #   - strict-glob
     #   - strict-backslash
@@ -193,7 +192,6 @@ SHOPT_OPTION_NAMES = [
     'strict-arith',  # string to integer conversions
     'strict-array',  # no implicit conversion between string and array
     'strict-control-flow',  # break/continue at top level is fatal
-    'strict-errexit',  # inherited to command subs, etc.
     'strict-eval-builtin',  # single arg
     'strict-word-eval',  # negative slices, unicode
 
@@ -201,8 +199,10 @@ SHOPT_OPTION_NAMES = [
     'strict-backslash',  # BadBackslash
     'strict-glob',  # GlobParser
 
+    # Oil Options (shopt -s all:oil)
     'simple-word-eval',  # No splitting (arity isn't data-dependent)
                          # Don't reparse program data as globs
+    'more_errexit',  # check after command sub
 ]
 
 _STRICT_OPTION_NAMES = [o for o in SHOPT_OPTION_NAMES if o.startswith('strict-')]
@@ -269,14 +269,14 @@ class ExecOpts(object):
 
     self.strict_control_flow = False  # break at top level is fatal, etc.
 
-    # strict_errexit makes 'local foo=$(false)' and echo $(false) fail.
+    # more_errexit makes 'local foo=$(false)' and echo $(false) fail.
     # By default, we have mimic bash's undesirable behavior of ignoring
     # these failures, since ash copied it, and Alpine's abuild relies on it.
     #
     # bash 4.4 also has shopt -s inherit_errexit, which says that command subs
     # inherit the value of errexit.  # I don't believe it is strict enough --
     # local still needs to fail.
-    self.strict_errexit = False
+    self.more_errexit = False
     self.strict_eval_builtin = False  # only accepts single arg
     self.strict_word_eval = False  # Bad slices and bad unicode
 
