@@ -117,7 +117,8 @@ errors.
 
 `strict_errexit`.  The `errexit` behavior can only be disabled for external
 commands and builtins, as opposed to shell functions.  (The shell normally
-disables `errexit` for the `if`, `||`, and `&&` constructs.)
+disables `errexit` for the `if`, `while/until`, `||`, `&&`, and `!`
+constructs.)
 
 When a function is used like `myfunc || echo error`, your program will always
 fail with a runtime error warning that it should be changed.  Consider using

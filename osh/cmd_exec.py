@@ -600,6 +600,12 @@ class Executor(object):
 
       func_node = self.procs.get(arg0)
       if func_node is not None:
+        eo = self.exec_opts
+        if eo.strict_errexit and eo.errexit.IsTemporarilyDisabled():
+          e_die("errexit can't be disabled when running a function. "
+                "Maybe wrap the function in a process with the at-splice "
+                "pattern.", span_id=span_id)
+
         # NOTE: Functions could call 'exit 42' directly, etc.
         status = self._RunFunc(func_node, argv[1:])
         return status
@@ -1331,7 +1337,6 @@ class Executor(object):
       status = e.exit_status if e.exit_status is not None else 1
 
     self.dumper.MaybeDump(status)
-
     self.mem.SetLastStatus(status)
     return is_return, is_fatal
 

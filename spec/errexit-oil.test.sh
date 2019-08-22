@@ -208,3 +208,98 @@ echo status=$?
 ## STDOUT:
 status=0
 ## END
+
+#### strict_errexit
+set -o errexit
+func() { echo func; }
+
+func || true  # this is OK
+
+shopt -s strict_errexit || true
+
+echo 'builtin ok' || true
+/bin/echo 'external ok' || true
+
+func || true  # this fails
+
+## status: 1
+## STDOUT:
+func
+builtin ok
+external ok
+## END
+## N-I dash/bash/mksh/ash status: 0
+## N-I dash/bash/mksh/ash STDOUT:
+func
+builtin ok
+external ok
+func
+## END
+
+#### strict_errexit and ! && || if while until
+prelude='set -o errexit
+shopt -s strict_errexit || true
+func() { echo func; }'
+
+$SH -c "$prelude; ! func; echo 'should not get here'"
+echo bang=$?
+echo --
+
+$SH -c "$prelude; func || true"
+echo or=$?
+echo --
+
+$SH -c "$prelude; func && true"
+echo and=$?
+echo --
+
+$SH -c "$prelude; if func; then true; fi"
+echo if=$?
+echo --
+
+$SH -c "$prelude; while func; do echo while; exit; done"
+echo while=$?
+echo --
+
+$SH -c "$prelude; until func; do echo until; exit; done"
+echo until=$?
+echo --
+
+
+## STDOUT:
+bang=1
+--
+or=1
+--
+and=1
+--
+if=1
+--
+while=1
+--
+until=1
+--
+## END
+## N-I dash/bash/mksh/ash STDOUT:
+func
+should not get here
+bang=0
+--
+func
+or=0
+--
+func
+and=0
+--
+func
+if=0
+--
+func
+while
+while=0
+--
+func
+until=0
+--
+## END
+

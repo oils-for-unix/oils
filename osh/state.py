@@ -131,6 +131,9 @@ class _ErrExit(object):
     """Restore the previous value."""
     self.errexit = self.stack.pop()
 
+  def IsTemporarilyDisabled(self):
+    return len(self.stack) and self.stack[-1]
+
   def Set(self, b):
     """User code calls this."""
     if True in self.stack:  # are we in a temporary state?

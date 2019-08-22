@@ -897,8 +897,11 @@ class Pipeline(Job):
       # /dev/urandom | sleep 1' will never get SIGPIPE.
       posix.close(r)
 
-    else:  # Background pipe
-      ex.ExecuteAndCatch(node)
+    else:
+      if self.procs:
+        ex.ExecuteAndCatch(node)  # Background pipeline without last_pipe
+      else:
+        ex._Execute(node)  # singleton foreground pipeline, e.g. '! func'
 
     self.pipe_status[-1] = ex.LastStatus()
     #log('pipestatus before all have finished = %s', self.pipe_status)
@@ -906,7 +909,7 @@ class Pipeline(Job):
     if self.procs:
       return self.Wait(waiter)
     else:
-      return self.pipe_status  # singleton foreground pipeline
+      return self.pipe_status  # singleton foreground pipeline, e.g. '! func'
 
   def WhenDone(self, pid, status):
     """Called by Process.WhenDone. """
