@@ -431,7 +431,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   new_var = builtin_assign.NewVar(mem, procs, errfmt)
 
   builtins = {  # Lookup
-      builtin_e.ECHO: builtin_pure.Echo,
+      builtin_e.ECHO: builtin_pure.Echo(exec_opts),
       builtin_e.PRINTF: builtin_printf.Printf(mem, parse_ctx, errfmt),
 
       builtin_e.CD: builtin.Cd(mem, dir_stack, errfmt),

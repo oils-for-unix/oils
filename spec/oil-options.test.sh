@@ -154,11 +154,14 @@ shopt -s strict-argv
 shopt -s strict-arith
 shopt -s strict-array
 shopt -s strict-control-flow
+shopt -s strict_errexit
 shopt -s strict-eval-builtin
 shopt -s strict-word-eval
 shopt -s strict-backslash
 shopt -s strict-glob
 shopt -s simple-word-eval
+shopt -s more_errexit
+shopt -s simple_echo
 shopt -s parse-at
 shopt -s parse-brace
 shopt -s parse-equals

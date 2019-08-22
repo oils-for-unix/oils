@@ -134,6 +134,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
     parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
 
   mem = mem or state.Mem('', [], {}, arena)
+  exec_opts = state.ExecOpts(mem, parse_opts, None)
   errfmt = ui.ErrorFormatter(arena)
   job_state = process.JobState()
   fd_state = process.FdState(errfmt, job_state)
@@ -146,7 +147,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   readline = None  # simulate not having it
   new_var = builtin_assign.NewVar(mem, funcs, errfmt)
   builtins = {  # Lookup
-      builtin_e.ECHO: builtin_pure.Echo,
+      builtin_e.ECHO: builtin_pure.Echo(exec_opts),
       builtin_e.SHIFT: builtin_assign.Shift(mem),
 
       builtin_e.HISTORY: builtin.History(readline),

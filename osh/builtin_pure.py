@@ -510,52 +510,59 @@ ECHO_SPEC.ShortFlag('-e')  # no backslash escapes
 ECHO_SPEC.ShortFlag('-n')
 
 
-def Echo(arg_vec):
+class Echo(object):
   """echo builtin.
 
-  set -o sane-echo could do the following:
-  - only one arg, no implicit joining.
-  - no -e: should be echo c'one\ttwo\t'
-  - no -n: should be write 'one'
+  shopt -s simple-echo:
+    -sep ''
+    -end '\n'
+    -n is a synonym for -end ''
+    -e deprecated
+    -- is accepted
 
-  multiple args on a line:
-  echo-lines one two three
+  Issues:
+  - Has to use Oil option parser.
+  - How does this affect completion?
+
+  NOTE: Python's getopt and optparse are both unsuitable for 'echo' because:
+  - 'echo -c' should print '-c', not fail
+  - echo '---' should print ---, not fail
   """
-  # NOTE: both getopt and optparse are unsuitable for 'echo' because:
-  # - 'echo -c' should print '-c', not fail
-  # - echo '---' should print ---, not fail
+  def __init__(self, exec_opts):
+    self.exec_opts = exec_opts
 
-  argv = arg_vec.strs[1:]
-  arg, arg_index = ECHO_SPEC.ParseLikeEcho(argv)
-  argv = argv[arg_index:]
-  if arg.e:
-    new_argv = []
-    for a in argv:
-      parts = []
-      for id_, value in match.ECHO_LEXER.Tokens(a):
-        p = word_compile.EvalCStringToken(id_, value)
+  def __call__(self, arg_vec):
+    argv = arg_vec.strs[1:]
+    arg, arg_index = ECHO_SPEC.ParseLikeEcho(argv)
+    argv = argv[arg_index:]
+    if arg.e:
+      new_argv = []
+      for a in argv:
+        parts = []
+        for id_, value in match.ECHO_LEXER.Tokens(a):
+          p = word_compile.EvalCStringToken(id_, value)
 
-        # Unusual behavior: '\c' prints what is there and aborts processing!
-        if p is None:
-          new_argv.append(''.join(parts))
-          for i, a in enumerate(new_argv):
-            if i != 0:
-              sys.stdout.write(' ')  # arg separator
-            sys.stdout.write(a)
-          return 0  # EARLY RETURN
+          # Unusual behavior: '\c' prints what is there and aborts processing!
+          if p is None:
+            new_argv.append(''.join(parts))
+            for i, a in enumerate(new_argv):
+              if i != 0:
+                sys.stdout.write(' ')  # arg separator
+              sys.stdout.write(a)
+            return 0  # EARLY RETURN
 
-        parts.append(p)
-      new_argv.append(''.join(parts))
+          parts.append(p)
+        new_argv.append(''.join(parts))
 
-    # Replace it
-    argv = new_argv
+      # Replace it
+      argv = new_argv
 
-  #log('echo argv %s', argv)
-  for i, a in enumerate(argv):
-    if i != 0:
-      sys.stdout.write(' ')  # arg separator
-    sys.stdout.write(a)
-  if not arg.n:
-    sys.stdout.write('\n')
+    #log('echo argv %s', argv)
+    for i, a in enumerate(argv):
+      if i != 0:
+        sys.stdout.write(' ')  # arg separator
+      sys.stdout.write(a)
+    if not arg.n:
+      sys.stdout.write('\n')
 
-  return 0
+    return 0

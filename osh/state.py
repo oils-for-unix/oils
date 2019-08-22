@@ -175,22 +175,17 @@ SET_OPTIONS = [
 # Used by core/builtin_comp.py too.
 SET_OPTION_NAMES = set(name for _, name in SET_OPTIONS)
 
-# Used by core/builtin_comp.py too.
-SHOPT_OPTION_NAMES = [
-    'nullglob', 'failglob',
-    'inherit_errexit',
+_OIL_OPTION_NAMES = [
+    'simple-word-eval',  # No splitting (arity isn't data-dependent)
+                         # Don't reparse program data as globs
+    'more_errexit',  # check after command sub
+    'simple_echo',  # longopts, -sep -end, etc.
+]
 
-    # No-ops for bash compatibility
-    'expand_aliases', 'extglob', 'lastpipe',  # language features always on
-    'progcomp', 'histappend', 'hostcomplete',  # not sure what these are
-    'cmdhist',  # multi-line commands in history
-
-    # - some are PARSING:
-    #   - strict-glob
-    #   - strict-backslash
-    # - some are runtime:
-    #   - strict-arith
-    #   - strict-word-eval
+_STRICT_OPTION_NAMES = [
+    # NOTE:
+    # - some are PARSING: strict-glob, strict-backslash
+    # - some are runtime: strict-arith, strict-word-eval
 
     'strict-argv',  # empty argv not allowed
     'strict-arith',  # string to integer conversions
@@ -203,14 +198,18 @@ SHOPT_OPTION_NAMES = [
     # Not implemented
     'strict-backslash',  # BadBackslash
     'strict-glob',  # GlobParser
-
-    # Oil Options (shopt -s all:oil)
-    'simple-word-eval',  # No splitting (arity isn't data-dependent)
-                         # Don't reparse program data as globs
-    'more_errexit',  # check after command sub
 ]
 
-_STRICT_OPTION_NAMES = [o for o in SHOPT_OPTION_NAMES if o.startswith('strict-')]
+# Used by core/builtin_comp.py too.
+SHOPT_OPTION_NAMES = [
+    'nullglob', 'failglob',
+    'inherit_errexit',
+
+    # No-ops for bash compatibility
+    'expand_aliases', 'extglob', 'lastpipe',  # language features always on
+    'progcomp', 'histappend', 'hostcomplete',  # not sure what these are
+    'cmdhist',  # multi-line commands in history
+] + _STRICT_OPTION_NAMES + _OIL_OPTION_NAMES
 
 _PARSE_OPTION_NAMES = [
     'parse-at',
@@ -221,7 +220,7 @@ _PARSE_OPTION_NAMES = [
 ]
 
 # errexit is also set, but handled separately
-_OIL_OPTION_NAMES = _STRICT_OPTION_NAMES + _PARSE_OPTION_NAMES + ['nounset', 'pipefail', 'simple-word-eval']
+_ALL_OIL = _STRICT_OPTION_NAMES + _PARSE_OPTION_NAMES + ['nounset', 'pipefail'] + _OIL_OPTION_NAMES
 
 # Used in builtin_pure.py
 ALL_SHOPT_OPTIONS = SHOPT_OPTION_NAMES + _PARSE_OPTION_NAMES
@@ -315,15 +314,14 @@ class ExecOpts(object):
     # local still needs to fail.
     self.more_errexit = False
 
+    self.simple_echo = False
+
     #
     # OSH-specific options that are NOT YET IMPLEMENTED.
     #
 
     self.strict_glob = False  # glob_.py GlobParser has warnings
     self.strict_backslash = False  # BadBackslash for echo -e, printf, PS1, etc.
-
-    # Don't need flags -e and -n.  -e is $'\n', and -n is write.
-    self.sane_echo = False
 
   def _InitOptionsFromEnv(self, shellopts):
     # e.g. errexit:nounset:pipefail
@@ -414,7 +412,7 @@ class ExecOpts(object):
     # shopt -s all:oil turns on all Oil options, which includes all strict #
     # options
     if opt_name == 'all:oil':
-      for o in _OIL_OPTION_NAMES:
+      for o in _ALL_OIL:
         attr = o.replace('-', '_')
         if o in _PARSE_OPTION_NAMES:
           self._SetParseOption(attr, b)
