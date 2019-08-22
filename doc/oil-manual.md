@@ -42,13 +42,13 @@ It turns on:
 - `errexit`, `nounset` (`sh` modes to get more errors)
 - `pipefail` and `inherit_errexit` (`bash` modes to get more errors)
 - Oil modes:
-  - `simple-word-eval`
+  - `simple-word-eval` (subsumes `nullglob` that `all:strict` includes)
   - `more_errexit`
   - `strict-*` (`strict-array`, etc.)
   - `parse-*` (`parse-at`, etc.)
 
-In contrast, `shopt -s all:strict` turns on all the `strict-*` options, but no
-others.
+When you care about running your script under other shells, use `shopt -s
+all:strict`, which is documented in the [OSH manual](osh-manual.html).
 
 #### Parsing Options
 

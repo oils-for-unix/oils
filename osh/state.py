@@ -220,7 +220,14 @@ _PARSE_OPTION_NAMES = [
 ]
 
 # errexit is also set, but handled separately
-_ALL_OIL = _STRICT_OPTION_NAMES + _PARSE_OPTION_NAMES + ['nounset', 'pipefail'] + _OIL_OPTION_NAMES
+_MORE_STRICT = ['nounset', 'pipefail', 'inherit_errexit']
+
+_ALL_OIL = (
+    _STRICT_OPTION_NAMES + _MORE_STRICT + _PARSE_OPTION_NAMES +
+    _OIL_OPTION_NAMES
+)
+# nullglob instead of simple-word-eval
+_ALL_STRICT = _STRICT_OPTION_NAMES + _MORE_STRICT + ['nullglob']
 
 # Used in builtin_pure.py
 ALL_SHOPT_OPTIONS = SHOPT_OPTION_NAMES + _PARSE_OPTION_NAMES
@@ -421,15 +428,16 @@ class ExecOpts(object):
         else:
           setattr(self, attr, b)
 
-      # Special case
-      self.errexit.Set(b)
+      self.errexit.Set(b)  # Special case
       return
 
     # shopt -s all:strict turns on all strict options
     if opt_name == 'all:strict':
-      for o in _STRICT_OPTION_NAMES:
+      for o in _ALL_STRICT:
         attr = o.replace('-', '_')  # for strict-*
         setattr(self, attr, b)
+
+      self.errexit.Set(b)  # Special case
       return
 
     attr = opt_name.replace('-', '_')  # for strict-*

@@ -141,6 +141,28 @@ f 1 '2 3'
 ['1', '2 3']
 ## END
 
+#### shopt -s all:strict
+shopt -s all:strict
+# normal option names
+shopt -o -p | grep -- ' -o ' | grep -v hashall
+shopt -p | grep -- ' -s '
+## STDOUT:
+set -o errexit
+set -o nounset
+set -o pipefail
+shopt -s nullglob
+shopt -s inherit_errexit
+shopt -s strict-argv
+shopt -s strict-arith
+shopt -s strict-array
+shopt -s strict-control-flow
+shopt -s strict_errexit
+shopt -s strict-eval-builtin
+shopt -s strict-word-eval
+shopt -s strict-backslash
+shopt -s strict-glob
+## END
+
 #### shopt -s all:oil
 shopt -s all:oil
 # normal option names
@@ -150,6 +172,7 @@ shopt -p | grep -- ' -s '
 set -o errexit
 set -o nounset
 set -o pipefail
+shopt -s inherit_errexit
 shopt -s strict-argv
 shopt -s strict-arith
 shopt -s strict-array
@@ -175,4 +198,11 @@ $SH -O all:oil -c 'var x = @(one two three); echo @x'
 one
 two
 three
+## END
+
+#### all:strict includes inherit_errexit
+shopt -s all:strict
+echo $(echo one; false; echo two)
+## STDOUT:
+one
 ## END

@@ -101,6 +101,13 @@ This line turns all strict modes on, but is portable to other shells:
 
     shopt -s all:strict 2>/dev/null || true  # suppress errors
 
+#### all:strict turns on these options
+
+- `errexit`, `nounset` (`sh` modes to get more errors)
+- `pipefail` and `inherit_errexit` (`bash` modes to get more errors)
+- `nullglob`
+- `strict-*` (`strict-array`, etc.)
+
 #### List of Options
 
 `strict-argv`.  Empty `argv` arrays are disallowed, since there's no practical
