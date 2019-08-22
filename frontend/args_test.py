@@ -210,43 +210,43 @@ class ArgsTest(unittest.TestCase):
     s.Flag('-out-file', args.Str)
     s.Flag('-retries', args.Int)
 
-    arg, i = s.Parse(['-docstring=0', 'x', 'y'])
+    arg, i = s.ParseArgv(['-docstring=0', 'x', 'y'])
     self.assertEqual(False, arg.docstring)
     self.assertEqual(None, arg.out_file)
     self.assertEqual(1, i)
 
     # This turns it on too
-    arg, i = s.Parse(['-docstring', '0', 'x', 'y'])
+    arg, i = s.ParseArgv(['-docstring', '0', 'x', 'y'])
     self.assertEqual(True, arg.docstring)
     self.assertEqual(None, arg.out_file)
     self.assertEqual(1, i)
 
-    arg, i = s.Parse(['-out-file', 'out', 'y'])
+    arg, i = s.ParseArgv(['-out-file', 'out', 'y'])
     self.assertEqual(True, arg.docstring)
     self.assertEqual('out', arg.out_file)
     self.assertEqual(2, i)
 
-    arg, i = s.Parse(['-retries', '3'])
+    arg, i = s.ParseArgv(['-retries', '3'])
     self.assertEqual(3, arg.retries)
 
-    arg, i = s.Parse(['-retries=3'])
+    arg, i = s.ParseArgv(['-retries=3'])
     self.assertEqual(3, arg.retries)
 
     # Like GNU: anything that starts with -- is parsed like an option.
-    self.assertRaises(args.UsageError, s.Parse, ['---'])
+    self.assertRaises(args.UsageError, s.ParseArgv, ['---'])
 
-    self.assertRaises(args.UsageError, s.Parse, ['-oops'])
+    self.assertRaises(args.UsageError, s.ParseArgv, ['-oops'])
 
     # Invalid boolean arg
-    self.assertRaises(args.UsageError, s.Parse, ['--docstring=YEAH'])
+    self.assertRaises(args.UsageError, s.ParseArgv, ['--docstring=YEAH'])
 
-    arg, i = s.Parse(['--'])
+    arg, i = s.ParseArgv(['--'])
     self.assertEqual(1, i)
 
-    arg, i = s.Parse(['-'])
+    arg, i = s.ParseArgv(['-'])
     self.assertEqual(0, i)
 
-    arg, i = s.Parse(['abc'])
+    arg, i = s.ParseArgv(['abc'])
     self.assertEqual(0, i)
 
   def testFlagRegex(self):

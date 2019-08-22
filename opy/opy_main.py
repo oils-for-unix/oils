@@ -367,19 +367,19 @@ def OpyCommandMain(argv):
     printer.Print(pnode)
 
   elif action == 'ast':  # output AST
-    opt, i = compile_spec.Parse(argv)
+    opt, i = compile_spec.ParseArgv(argv)
     py_path = argv[i]
     with open(py_path) as f:
       graph = compiler.Compile(f, opt, 'exec', print_action='ast')
 
   elif action == 'symbols':  # output symbols
-    opt, i = compile_spec.Parse(argv)
+    opt, i = compile_spec.ParseArgv(argv)
     py_path = argv[i]
     with open(py_path) as f:
       graph = compiler.Compile(f, opt, 'exec', print_action='symbols')
 
   elif action == 'cfg':  # output Control Flow Graph
-    opt, i = compile_spec.Parse(argv)
+    opt, i = compile_spec.ParseArgv(argv)
     py_path = argv[i]
     with open(py_path) as f:
       graph = compiler.Compile(f, opt, 'exec', print_action='cfg')
@@ -388,7 +388,7 @@ def OpyCommandMain(argv):
     # spec.Arg('action', ['foo', 'bar'])
     # But that leads to some duplication.
 
-    opt, i = compile_spec.Parse(argv)
+    opt, i = compile_spec.ParseArgv(argv)
 
     py_path = argv[i]
     out_path = argv[i+1]
@@ -405,7 +405,7 @@ def OpyCommandMain(argv):
       marshal.dump(co, out_f)
 
   elif action == 'compile-ovm':
-    opt, i = compile_spec.Parse(argv)
+    opt, i = compile_spec.ParseArgv(argv)
     py_path = argv[i]
     out_path = argv[i+1]
 
@@ -431,7 +431,7 @@ def OpyCommandMain(argv):
     log('Wrote only the bytecode to %r', out_path)
 
   elif action == 'eval':  # Like compile, but parses to a code object and prints it
-    opt, i = compile_spec.Parse(argv)
+    opt, i = compile_spec.ParseArgv(argv)
     py_expr = argv[i]
     f = skeleton.StringInput(py_expr, '<eval input>')
     co = compiler.Compile(f, opt, 'eval')
@@ -468,7 +468,7 @@ def OpyCommandMain(argv):
     out.Close()
 
   elif action == 'dis':
-    opt, i = compile_spec.Parse(argv)
+    opt, i = compile_spec.ParseArgv(argv)
     path = argv[i]
     v = dis_tool.Visitor()
 
@@ -508,7 +508,7 @@ def OpyCommandMain(argv):
     #logging.basicConfig(level=level)
     #logging.basicConfig(level=logging.DEBUG)
 
-    opt, i = compile_spec.Parse(argv)
+    opt, i = compile_spec.ParseArgv(argv)
 
     py_path = argv[i]
     opy_argv = argv[i:]
@@ -528,7 +528,7 @@ def OpyCommandMain(argv):
       raise args.UsageError('Invalid path %r' % py_path)
 
   elif action == 'run-ovm':  # Compile and run, without writing pyc file
-    opt, i = compile_spec.Parse(argv)
+    opt, i = compile_spec.ParseArgv(argv)
     py_path = argv[i]
     opy_argv = argv[i+1:]
 

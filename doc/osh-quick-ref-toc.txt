@@ -138,11 +138,11 @@ SHELL OPTIONS
                   X strict_backslash     Parse the sublanguage more strictly
                   X strict_glob          Parse the sublanguage more strictly
                   X strict_trap          Function name only
-  [Oil Semantics] X all:oil              All options below, plus POSIX and bash
+  [Oil Semantics] all:oil                All options below, plus POSIX and bash
+                  simple_echo            Doesn't join args; -sep -end and --
                   simple_word_eval       No splitting, static globbing
                   more_errexit           More errexit checks --  at command sub
                   X longopts             test -file, shopt -unset, etc.
-                  X simple_echo          Doesn't join args; -sep -end and --
                   X simple_test_builtin  Only file tests (no strings), remove [
   [Oil Syntax]    X all:parse
                   parse_at               echo @array @arrayfunc(x, y)

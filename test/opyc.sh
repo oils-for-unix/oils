@@ -43,6 +43,12 @@ parse() {
   bin/opyc parse $FILE
 }
 
+compile() {
+  bin/opyc compile $FILE _tmp/opyc-compile-1
+  bin/opyc compile -emit-docstring=0 $FILE _tmp/opyc-compile-2
+  ls -l _tmp/opyc-compile-*
+}
+
 parse-with() {
   local -a exprs
 
@@ -108,6 +114,7 @@ readonly -a PASSING=(
   dis
   parse
   parse-with
+  compile
 )
 
 all-passing() {

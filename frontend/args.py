@@ -757,8 +757,7 @@ class OilFlags(object):
 
     self.attr_names[attr_name] = default
 
-  def Parse(self, argv):
-    arg_r = Reader(argv)
+  def Parse(self, arg_r):
     out = _Attributes(self.attr_names)
 
     while not arg_r.AtEnd():
@@ -791,7 +790,6 @@ class OilFlags(object):
           action.OnMatch(None, suffix, arg_r, out)
         else:
           raise UsageError('Unrecognized flag %r' % arg)
-          pass
 
         arg_r.Next()  # next arg
 
@@ -799,3 +797,8 @@ class OilFlags(object):
         break
 
     return out, arg_r.i
+
+  def ParseArgv(self, argv):
+    """For tools/readlink.py -- no location info available."""
+    arg_r = Reader(argv)
+    return self.Parse(arg_r)

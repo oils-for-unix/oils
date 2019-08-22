@@ -70,6 +70,9 @@ See examples below.
 
 #### Runtime Options
 
+- `simple_echo`.  Changes the flags accepted by the `echo` builtin, and style of flag parsing.
+  See the `Builtins > echo` below.
+
 - `simple-word-eval`.  Word evaluation consists of one stage rather than three:
   - No word splitting or empty elision.  (In other words, arity isn't data-dependent.)
   - Static globbing, but no dynamic globbing.  (In other words, data isn't re-parsed as code.)
@@ -226,7 +229,25 @@ var s = sorted(ARGV)
 
 ### Builtins
 
-- push
+#### echo
+
+`shopt -s simple_echo` changes the `echo` builtin to accept the following long
+flags, as well as the `--` separator between flags and args.
+
+- `-sep`: Characters to separate args to `echo`.  (Default: empty string)
+- `-end`: Characters to terminate the whole `echo` invocation.  (Default:
+  newline)
+- `-n`: A synonym for `-end ''`.
+
+#### push
+
+Append one or more strings to an array.
+
+```
+var array = @(a 'b c')
+push :array d e
+echo @array  # prints 'ab cde'
+```
 
 #### Future
 
