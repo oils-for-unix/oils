@@ -3,7 +3,7 @@
 #### push onto a=(1 2)
 shopt -s parse-at
 a=(1 2)
-push a _ '3 4' '5'
+push :a '3 4' '5'
 argv.py @a
 ## STDOUT:
 ['1', '2', '3 4', '5']
@@ -12,11 +12,22 @@ argv.py @a
 #### push onto var a = @(1 2)
 shopt -s parse-at
 var a = @(1 2)
-push a _ '3 4' '5'
+push a '3 4' '5'  # : is optional
 argv.py @a
 ## STDOUT:
 ['1', '2', '3 4', '5']
 ## END
+
+#### push with invalid type
+s=''
+push :s a b
+echo status=$?
+## stdout: status=1
+
+#### push with invalid var name
+push - a b
+echo status=$?
+## stdout: status=2
 
 #### echo -sep, -end, -n, varying flag syntax
 shopt -s all:oil

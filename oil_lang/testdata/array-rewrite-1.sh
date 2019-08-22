@@ -37,7 +37,7 @@ var regex2 = @(new1 new2)
 var flags2 = @()
 
 for r in @regex2; do
-  push flags2 _ "--regex=$r"
+  push :flags2 "--regex=$r"
 done
 
 argv @flags2

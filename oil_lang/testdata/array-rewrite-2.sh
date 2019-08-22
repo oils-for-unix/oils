@@ -37,18 +37,19 @@ argv ${flags}  # unquoted splitting
 #   - I might want to change the ignored delimiter character _ to something like
 #     : or :: or \\ .  Opinions?
 
+set -o errexit
 shopt -s parse-at simple-word-eval
 
-var CONFIG_HAVE_FOO = "yes"  # TODO: change to single quotes
-var path = "/etc/path with spaces"
-var flags = @()
+setvar CONFIG_HAVE_FOO = "yes"  # TODO: change to single quotes
+setvar path = "/etc/path with spaces"
+setvar flags = @()
 
 if test -n $CONFIG_HAVE_FOO; then
-  push flags _ --foo=$path
+  push :flags --foo=$path
 fi
 
 if test -n $CONFIG_HAVE_BAR; then
-  push flags _ --bar
+  push :flags --bar
 fi
 
 argv @flags

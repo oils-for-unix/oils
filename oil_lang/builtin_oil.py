@@ -16,6 +16,7 @@ from _devbuild.gen.runtime_asdl import value_e
 
 from core.util import log
 from frontend import args
+from frontend import match
 
 
 # TODO: Enable it when oil-echo-builtin is enabled?  Because echo -n will be
@@ -50,17 +51,18 @@ class Push(object):
     var_name, var_spid = arg_r.ReadRequired2(
         'requires a variable name')
 
+    if var_name.startswith(':'):  # optional : sigil
+      var_name = var_name[1:]
+
+    if not match.IsValidVarName(var_name):
+      raise args.UsageError('got invalid variable name %r' % var_name,
+                            span_id=var_spid)
+
     val = self.mem.GetVar(var_name)
     # TODO: value.Obj too
     if val.tag != value_e.MaybeStrArray:
       self.errfmt.Print("%r isn't an array", var_name, span_id=var_spid)
       return 1
-
-    underscore, u_spid = arg_r.ReadRequired2(
-        'requires the _ separator')
-
-    if underscore != '_':
-      raise args.UsageError('requires the _ separator', span_id=u_spid)
 
     val.strs.extend(arg_r.Rest())
     return 0
