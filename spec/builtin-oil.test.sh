@@ -18,7 +18,7 @@ argv.py @a
 ['1', '2', '3 4', '5']
 ## END
 
-#### echo
+#### echo -sep, -end, -n, varying flag syntax
 shopt -s all:oil
 var a = @('a b' 'c d')
 echo @a
@@ -32,8 +32,12 @@ echo .
 echo -sep '_' -- @a
 echo -sep '_' -end $' END\n' -- @a
 
+# with =
+echo -sep='_' -end=$' END\n' -- @a
 # long flags
 echo --sep '_' --end $' END\n' -- @a
+# long flags with =
+echo --sep='_' --end=$' END\n' -- @a
 
 echo -n x
 echo -n y
@@ -51,5 +55,21 @@ a bc d
 a b_c d
 a b_c d END
 a b_c d END
+a b_c d END
+a b_c d END
 xy
 ## END
+
+#### echo -e not supported
+shopt -s all:oil
+echo -e foo
+echo status=$?
+## stdout-json: ""
+## status: 2
+
+#### echo syntax error
+shopt -s all:oil
+echo ---end foo
+echo status=$?
+## stdout-json: ""
+## status: 2
