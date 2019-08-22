@@ -234,9 +234,8 @@ var s = sorted(ARGV)
 `shopt -s simple_echo` changes the `echo` builtin to accept the following long
 flags, as well as the `--` separator between flags and args.
 
-- `-sep`: Characters to separate args to `echo`.  (Default: empty string)
-- `-end`: Characters to terminate the whole `echo` invocation.  (Default:
-  newline)
+- `-sep`: Characters to separate each argument.  (Default: newline)
+- `-end`: Characters to terminate the whole invocation.  (Default: newline)
 - `-n`: A synonym for `-end ''`.
 
 #### push

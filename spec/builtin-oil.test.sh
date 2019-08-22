@@ -22,7 +22,12 @@ argv.py @a
 shopt -s all:oil
 var a = @('a b' 'c d')
 echo @a
+echo .
 echo -- @a
+echo .
+
+echo -sep '' -end '' @a; echo
+echo .
 
 echo -sep '_' -- @a
 echo -sep '_' -end $' END\n' -- @a
@@ -33,9 +38,16 @@ echo --sep '_' --end $' END\n' -- @a
 echo -n x
 echo -n y
 echo
+
 ## STDOUT:
+a b
+c d
+.
+a b
+c d
+.
 a bc d
-a bc d
+.
 a b_c d
 a b_c d END
 a b_c d END

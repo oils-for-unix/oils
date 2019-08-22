@@ -510,12 +510,12 @@ ECHO_SPEC.ShortFlag('-e')  # no backslash escapes
 ECHO_SPEC.ShortFlag('-n')
 
 OIL_ECHO_SPEC = args.OilFlags()
-OIL_ECHO_SPEC.Flag('-sep', args.Str, default='',
-                    help='Characters to separate args')
+OIL_ECHO_SPEC.Flag('-sep', args.Str, default='\n',
+                    help='Characters to separate each argument')
 OIL_ECHO_SPEC.Flag('-end', args.Str, default='\n',
-                    help='Characters to terminate the echo invocation')
+                    help='Characters to terminate the whole invocation')
 OIL_ECHO_SPEC.Flag('-n', args.Bool, default=False,
-                    help='Omit newline')
+                    help="Omit newline (synonym for -end '')")
 
 
 class Echo(object):
