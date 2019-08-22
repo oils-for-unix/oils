@@ -248,6 +248,29 @@ push :array three four
 echo @array  # prints 4 lines
 ```
 
+### Builtin Flag Syntax
+
+Oil's builtins accept long flags like `--verbose` and short flags like `-v`.
+
+They behave like the popular GNU utilities on Linux distros, except that
+`-long` (single hyphen) means the same thing as `--long`.  It's not a shortcut
+for `-l -o -n -g` or `-l=ong`.  (This rule is consistent with the [Go flags
+  package][goflags].)
+
+[goflags]: https://golang.org/pkg/flag/
+
+In addition, all of these are equivalent:
+
+- `-sep x`
+- `-sep=x`
+- `--sep x`
+- `--sep=x`
+
+The first is preferred because it's the simplest and shortest.
+
+(Trivia: Oil's flag syntax avoids the issue where `set -oo errexit nounset` is
+a confusing equivalent to `set -o errexit -o nounset`.)
+
 #### Future
 
 - fork, wait
