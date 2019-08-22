@@ -175,6 +175,7 @@ SET_OPTION_NAMES = set(name for _, name in SET_OPTIONS)
 # Used by core/builtin_comp.py too.
 SHOPT_OPTION_NAMES = [
     'nullglob', 'failglob',
+    'inherit_errexit',
 
     # No-ops for bash compatibility
     'expand_aliases', 'extglob', 'lastpipe',  # language features always on
@@ -192,6 +193,7 @@ SHOPT_OPTION_NAMES = [
     'strict-arith',  # string to integer conversions
     'strict-array',  # no implicit conversion between string and array
     'strict-control-flow',  # break/continue at top level is fatal
+    'strict_errexit',  # errexit can't be disabled during function body execution
     'strict-eval-builtin',  # single arg
     'strict-word-eval',  # negative slices, unicode
 
@@ -268,15 +270,7 @@ class ExecOpts(object):
     # default:    do not allow
 
     self.strict_control_flow = False  # break at top level is fatal, etc.
-
-    # more_errexit makes 'local foo=$(false)' and echo $(false) fail.
-    # By default, we have mimic bash's undesirable behavior of ignoring
-    # these failures, since ash copied it, and Alpine's abuild relies on it.
-    #
-    # bash 4.4 also has shopt -s inherit_errexit, which says that command subs
-    # inherit the value of errexit.  # I don't believe it is strict enough --
-    # local still needs to fail.
-    self.more_errexit = False
+    self.strict_errexit = False
     self.strict_eval_builtin = False  # only accepts single arg
     self.strict_word_eval = False  # Bad slices and bad unicode
 
@@ -289,6 +283,7 @@ class ExecOpts(object):
     # these.
     self.nullglob = False
     self.failglob = False
+    self.inherit_errexit = False
 
     # No-ops for bash compatibility.
     self.expand_aliases = False  # We always expand aliases.
@@ -303,14 +298,26 @@ class ExecOpts(object):
     self.vi = False
     self.emacs = False
 
+    # 
+    # Turned on with shopt -s all:oil
+    #
+    self.simple_word_eval = False
+
+    # more_errexit makes 'local foo=$(false)' and echo $(false) fail.
+    # By default, we have mimic bash's undesirable behavior of ignoring
+    # these failures, since ash copied it, and Alpine's abuild relies on it.
+    #
+    # bash 4.4 also has shopt -s inherit_errexit, which says that command subs
+    # inherit the value of errexit.  # I don't believe it is strict enough --
+    # local still needs to fail.
+    self.more_errexit = False
+
     #
     # OSH-specific options that are NOT YET IMPLEMENTED.
     #
 
     self.strict_glob = False  # glob_.py GlobParser has warnings
     self.strict_backslash = False  # BadBackslash for echo -e, printf, PS1, etc.
-
-    self.simple_word_eval = False
 
     # Don't need flags -e and -n.  -e is $'\n', and -n is write.
     self.sane_echo = False

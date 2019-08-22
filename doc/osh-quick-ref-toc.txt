@@ -121,34 +121,35 @@ X [Unsupported]   enable
                   repr                   Show debug representation of vars
 
 SHELL OPTIONS
-  [Errors]        nounset   errexit   pipefail
+  [Errors]        nounset   pipefail   errexit   inherit_errexit
   [Globbing]      noglob   failglob   nullglob
   [Debugging]     xtrace   X verbose   X extdebug
   [Interactive]   emacs   vi
   [Other]         X noclobber
   [OSH Strict]    all:strict             All options starting with 'strict-'
-                  strict-argv            No empty argv
-                  strict-array           Arrays don't decay to strings
-                  strict-arith           Fatal parse errors (on by default)
-                  strict-errexit         Fail earlier, at command sub 
-                  strict-eval-builtin    Takes exactly 1 argument
-                  strict-control-flow    Do we need this?  Special builtins?
-                  strict-word-eval       Expose unicode and slicing errors
-                  X strict-tilde         Tilde subst can result in error
-                  X strict-backslash     Parse the sublanguage more strictly
-                  X strict-glob          Parse the sublanguage more strictly
-                  X strict-trap          Function name only
+                  strict_argv            No empty argv
+                  strict_array           Arrays don't decay to strings
+                  strict_arith           Fatal parse errors (on by default)
+                  strict_errexit         Fail earlier, at command sub 
+                  strict_eval_builtin    Takes exactly 1 argument
+                  strict_control_flow    Do we need this?  Special builtins?
+                  strict_word_eval       Expose unicode and slicing errors
+                  X strict_tilde         Tilde subst can result in error
+                  X strict_backslash     Parse the sublanguage more strictly
+                  X strict_glob          Parse the sublanguage more strictly
+                  X strict_trap          Function name only
   [Oil Semantics] X all:oil              All options below, plus POSIX and bash
-                  simple-word-eval       No splitting, static globbing
+                  simple_word_eval       No splitting, static globbing
+                  more_errexit           More errexit checks --  at command sub
                   X longopts             test -file, shopt -unset, etc.
-                  X oil-echo             No -e or -n, one arg per line
-                  X oil-test-builtin     Only file tests (no strings), remove [
+                  X simple_echo          Doesn't join args; -sep -end and --
+                  X simple_test_builtin  Only file tests (no strings), remove [
   [Oil Syntax]    X all:parse
-                  parse-at               echo @array @arrayfunc(x, y)
-                  X parse-brace          cd ~/src { ... }
-                  X parse-equals         x = 's' (for cleaner config snippets)
-                  X parse-paren          if (x > 0) ...
-                  X parse-set            instead of setvar
+                  parse_at               echo @array @arrayfunc(x, y)
+                  X parse_brace          cd ~/src { ... }
+                  X parse_equals         x = 's' (for cleaner config snippets)
+                  X parse_paren          if (x > 0) ...
+                  X parse_set            instead of setvar
 
 ENVIRONMENT VARIABLES
   [Shell Options] SHELLOPTS   X BASHOPTS
