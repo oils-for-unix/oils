@@ -12,7 +12,7 @@
 # different.
 # - ash has copied bash behavior!
 
-#### command sub: errexit is NOT inherited
+#### command sub: errexit is NOT inherited and outer shell keeps going
 
 # This is the bash-specific bug here:
 # https://blogs.janestreet.com/when-bash-scripts-bite/
@@ -23,27 +23,60 @@
 
 set -o errexit
 echo $(echo one; false; echo two)  # bash/ash keep going
-echo status=$?
+echo parent status=$?
 ## STDOUT:
 one two
-status=0
+parent status=0
 ## END
 # dash and mksh: inner shell aborts, but outer one keeps going!
 ## OK dash/mksh STDOUT:
 one
-status=0
+parent status=0
 ## END
 
-#### command sub: errexit not ignored with more_errexit
+#### command sub with inherit_errexit only
+set -o errexit
+shopt -s inherit_errexit || true
+echo zero
+echo $(echo one; false; echo two)  # bash/ash keep going
+echo parent status=$?
+## STDOUT:
+zero
+one
+parent status=0
+## END
+## N-I ash STDOUT:
+zero
+one two
+parent status=0
+## END
+
+#### command sub with more_errexit only
+set -o errexit
+shopt -s more_errexit || true
+echo zero
+echo $(echo one; false; echo two)  # bash/ash keep going
+echo parent status=$?
+## STDOUT:
+zero
+one two
+parent status=0
+## END
+## N-I dash/mksh STDOUT:
+zero
+one
+parent status=0
+## END
+
+#### command sub with inherit_errexit and more_errexit
 set -o errexit
 
 # bash implements inherit_errexit, but it's not as strict as OSH.
 shopt -s inherit_errexit || true
-
 shopt -s more_errexit || true
 echo zero
 echo $(echo one; false; echo two)  # bash/ash keep going
-echo status=$?
+echo parent status=$?
 ## STDOUT:
 zero
 ## END
@@ -52,13 +85,13 @@ zero
 ## N-I dash/mksh/bash STDOUT:
 zero
 one
-status=0
+parent status=0
 ## END
 ## N-I ash status: 0
 ## N-I ash STDOUT:
 zero
 one two
-status=0
+parent status=0
 ## END
 
 #### command sub: last command fails but keeps going and exit code is 0
@@ -126,10 +159,11 @@ status=0
 one
 ## END
 
-#### local and more_errexit
+#### local and inherit_errexit / more_errexit
 # I've run into this problem a lot.
 set -o errexit
-shopt -s more_errexit || true  # ignore error
+shopt -s inherit_errexit || true  # bash option
+shopt -s more_errexit || true  # oil option
 f() {
   echo good
   local x=$(echo one; false; echo two)
@@ -141,14 +175,14 @@ f
 ## STDOUT:
 good
 ## END
-## N-I bash/ash status: 0
-## N-I bash/ash STDOUT:
+## N-I ash status: 0
+## N-I ash STDOUT:
 good
 status=0
 one two
 ## END
-## N-I dash/mksh  status: 0
-## N-I dash/mksh STDOUT:
+## N-I bash/dash/mksh  status: 0
+## N-I bash/dash/mksh STDOUT:
 good
 status=0
 one

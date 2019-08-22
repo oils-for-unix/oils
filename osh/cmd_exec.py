@@ -511,7 +511,7 @@ class Executor(object):
     """
     return [self._EvalRedirect(redir) for redir in node.redirects]
 
-  def _MakeProcess(self, node, parent_pipeline=None, disable_errexit=False):
+  def _MakeProcess(self, node, parent_pipeline=None, inherit_errexit=True):
     """
     Assume we will run the node in another process.  Return a process.
     """
@@ -533,7 +533,7 @@ class Executor(object):
     # - We could turn the `exit` builtin into a FatalRuntimeError exception and
     # get this check for "free".
     thunk = process.SubProgramThunk(self, node,
-                                    disable_errexit=disable_errexit)
+                                    inherit_errexit=inherit_errexit)
     p = process.Process(thunk, self.job_state, parent_pipeline=parent_pipeline)
     return p
 
@@ -1353,7 +1353,7 @@ class Executor(object):
 
   def RunCommandSub(self, node):
     p = self._MakeProcess(node,
-                          disable_errexit=not self.exec_opts.more_errexit)
+                          inherit_errexit=self.exec_opts.inherit_errexit)
 
     r, w = posix.pipe()
     p.AddStateChange(process.StdoutToPipe(r, w))

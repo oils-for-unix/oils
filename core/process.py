@@ -543,10 +543,10 @@ class ExternalThunk(Thunk):
 class SubProgramThunk(Thunk):
   """A subprogram that can be executed in another process."""
 
-  def __init__(self, ex, node, disable_errexit=False):
+  def __init__(self, ex, node, inherit_errexit=True):
     self.ex = ex
     self.node = node
-    self.disable_errexit = disable_errexit  # for bash errexit compatibility
+    self.inherit_errexit = inherit_errexit  # for bash errexit compatibility
 
   def DisplayLine(self):
     # NOTE: These can be pieces of a pipeline, so they're arbitrary nodes.
@@ -555,7 +555,7 @@ class SubProgramThunk(Thunk):
 
   def Run(self):
     # NOTE: may NOT return due to exec().
-    if self.disable_errexit:
+    if not self.inherit_errexit:
       self.ex.exec_opts.errexit.Disable()
 
     try:
