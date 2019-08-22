@@ -119,6 +119,8 @@ X [Unsupported]   enable
                   X dirname   X basename optimizations
                   push                   sugar for 'do array.push( @(a b) )'
                   repr                   Show debug representation of vars
+                  X json-echo   X json-read  
+                  X tsv2-echo   X tsv2-read
 
 SHELL OPTIONS
   [Errors]        nounset   pipefail   errexit   inherit_errexit

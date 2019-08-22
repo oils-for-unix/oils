@@ -243,9 +243,9 @@ flags, as well as the `--` separator between flags and args.
 Append one or more strings to an array.
 
 ```
-var array = @(a 'b c')
-push :array d e
-echo @array  # prints 'ab cde'
+var array = @(1 '2 two')
+push :array three four
+echo @array  # prints 4 lines
 ```
 
 #### Future

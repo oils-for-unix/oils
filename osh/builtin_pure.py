@@ -101,7 +101,7 @@ def AddOptionsToArgSpec(spec):
   for short_flag, opt_name in state.SET_OPTIONS:
     spec.Option(short_flag, opt_name)
 
-  for shopt_name in state.ALL_SHOPT_OPTIONS:
+  for shopt_name in state.ALL_SHOPT_OPTIONS + state.META_OPTIONS:
     spec.ShoptOption(shopt_name)
 
 

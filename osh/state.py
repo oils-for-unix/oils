@@ -225,6 +225,8 @@ _ALL_OIL = _STRICT_OPTION_NAMES + _PARSE_OPTION_NAMES + ['nounset', 'pipefail'] 
 # Used in builtin_pure.py
 ALL_SHOPT_OPTIONS = SHOPT_OPTION_NAMES + _PARSE_OPTION_NAMES
 
+META_OPTIONS = ['all:oil', 'all:strict']  # Passed to flag parser
+
 
 class ExecOpts(object):
 

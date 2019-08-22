@@ -168,3 +168,11 @@ shopt -s parse-equals
 shopt -s parse-paren
 shopt -s parse-set
 ## END
+
+#### osh -O all:oil 
+$SH -O all:oil -c 'var x = @(one two three); echo @x'
+## STDOUT:
+one
+two
+three
+## END
