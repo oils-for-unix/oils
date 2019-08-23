@@ -248,6 +248,10 @@ def Render(opts, in_file, out_file, use_fastlex=True):
   html = md2html(in_file.read())
 
   if use_fastlex:
+    # Hack for allowing tables without <p> in cells, which CommonMark seems to require?
+    html = html.replace('<p><pstrip>', '')
+    html = html.replace('</pstrip></p>', '')
+
     # Stages of transformation.
     html = oil_doc.ExpandLinks(html)
 
