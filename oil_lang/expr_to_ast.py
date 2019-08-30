@@ -82,7 +82,7 @@ class Transformer(object):
 
     if op_tok.id == Id.Op_LParen:
       p = children[1]  # the X in ( X )
-      args = []
+      args = []  # type: List[expr_t]
       # NOTE: The "no singleton" rule causes some complication here.
       if p.typ == grammar_nt.arglist:  # f(x, y)
         self._Arglist(p.children, args)

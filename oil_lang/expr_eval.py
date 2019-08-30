@@ -121,6 +121,13 @@ class OilEvaluator(object):
       s = ''.join(self.EvalWordPart(part) for part in node.parts)
       return s
 
+    if node.tag == expr_e.Unary:
+      child = self.EvalExpr(node.child)
+      if node.op.id == Id.Arith_Minus:
+        return -child
+
+      raise NotImplementedError(node.op.id)
+
     if node.tag == expr_e.Binary:
       left = self.EvalExpr(node.left)
       right = self.EvalExpr(node.right)

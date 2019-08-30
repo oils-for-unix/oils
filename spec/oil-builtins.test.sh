@@ -84,3 +84,20 @@ echo ---end foo
 echo status=$?
 ## stdout-json: ""
 ## status: 2
+
+#### echo --
+shopt -s all:oil
+echo --
+# This is annoying
+echo -- --
+echo done
+
+# this is a syntax error!  Doh.
+echo ---
+## status: 2
+## STDOUT:
+
+--
+done
+## END
+

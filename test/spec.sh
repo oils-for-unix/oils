@@ -246,7 +246,7 @@ oil-expr() {
 }
 
 oil-builtin-funcs() {
-  sh-spec spec/oil-builtin-funcs.test.sh --cd-tmp \
+  sh-spec spec/oil-builtin-funcs.test.sh --cd-tmp --osh-failures-allowed 1 \
     $OSH_LIST "$@"
 }
 

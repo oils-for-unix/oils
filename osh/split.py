@@ -31,6 +31,8 @@ from _devbuild.gen.runtime_asdl import value_e, span_e
 from core import util
 from core.util import log
 
+from typing import List
+
 # Enums for the state machine
 CH = runtime_asdl.char_kind_e
 EMIT = runtime_asdl.emit_e

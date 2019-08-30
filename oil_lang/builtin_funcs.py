@@ -29,6 +29,11 @@ def Init(mem):
   SetGlobalFunc(mem, 'max', max)
   SetGlobalFunc(mem, 'min', min)
 
+  SetGlobalFunc(mem, 'abs', abs)
+
+  SetGlobalFunc(mem, 'any', any)
+  SetGlobalFunc(mem, 'all', all)
+
   # Return an iterable like Python 3.
   SetGlobalFunc(mem, 'range', xrange)
 
