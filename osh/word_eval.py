@@ -960,20 +960,19 @@ class _WordEvaluator(object):
       args = [self.expr_ev.EvalExpr(a) for a in part.args]
       id_ = part.name.id
 
+      val = self.mem.GetVar(func_name)
+      if val.tag != value_e.Obj:
+        e_die("Expected function named %r, got %r ", func_name, val)
+
+      func = val.obj
       if id_ == Id.VSub_DollarName:
-        if func_name == 'len':   # TODO: Look up builtins
-          s = str(len(*args))
-        else:
-          raise NotImplementedError(func_name)
+        s = str(func(*args))
         part_val = part_value.String(s)
 
       elif id_ == Id.Lit_Splice:
-        # TODO: Use iterable protocol and convert to an array of strings!
-
-        if func_name == 'split':  # IFS split
-          a = self.splitter.SplitForWordEval(*args)
-        else:
-          raise NotImplementedError(func_name)
+        # NOTE: Using iterable protocol.  TODO: Optimize this so it doesn't
+        # make a copy?
+        a = [str(item) for item in func(*args)]
         part_val = part_value.Array(a)
 
       else:

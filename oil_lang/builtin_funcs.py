@@ -9,7 +9,7 @@ from _devbuild.gen.syntax_asdl import lhs_expr
 
 
 def SetGlobalFunc(mem, name, func):
-  """Helper for completion."""
+  """Used by bin/oil.py to set split(), etc."""
   assert callable(func), func
   mem.SetVar(lhs_expr.LhsName(name), value.Obj(func), (), scope_e.GlobalOnly)
 
@@ -22,16 +22,15 @@ def _Join(array, delim=''):
   return delim.join(array)
 
 
-def _Split(s):
-  """
-  func split(s Str) Array[Str] { ... }
-  """
-  # TODO: self.splitter for ifs
-  return s.split()
-
-
 def Init(mem):
+  """Populate the top level namespace with some builtin functions."""
+
   SetGlobalFunc(mem, 'len', len)
+  SetGlobalFunc(mem, 'max', max)
+  SetGlobalFunc(mem, 'min', min)
+
   SetGlobalFunc(mem, 'join', _Join)
-  SetGlobalFunc(mem, 'split', _Split)
+
+  # NOTE: split() is set in main(), since it depends on the Splitter() object /
+  # $IFS.
 

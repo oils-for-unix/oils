@@ -408,6 +408,10 @@ def ShellMain(lang, argv0, argv, login_shell):
   splitter = split.SplitContext(mem)
   exec_deps.splitter = splitter
 
+  # split() builtin
+  builtin_funcs.SetGlobalFunc(
+      mem, 'split', lambda s: splitter.SplitForWordEval(s))
+
   # This could just be OSH_DEBUG_STREAMS='debug crash' ?  That might be
   # stuffing too much into one, since a .json crash dump isn't a stream.
   crash_dump_dir = posix.environ.get('OSH_CRASH_DUMP_DIR', '')

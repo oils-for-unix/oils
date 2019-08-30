@@ -78,29 +78,31 @@ class Transformer(object):
     children = p_trailer.children
     op_tok = children[0].tok
 
-    if op_tok.id == Id.Op_LParen:
-       p_args = children[1]
+    # TODO: Need to process ALL the trailers, e.g. f(x, y)[1, 2](x, y)
 
-       # NOTE: This doesn't take into account kwargs and so forth.
-       if p_args.children is not None:
-         # a, b, c -- every other one is a comma
-         arglist = children[1].children[::2]
-       else:
-         arg = children[1]
-         arglist = [arg]
-       return expr.FuncCall(base, [self.Expr(a) for a in arglist])
+    if op_tok.id == Id.Op_LParen:
+      p = children[1]  # the X in ( X )
+      args = []
+      # NOTE: The "no singleton" rule causes some complication here.
+      if p.typ == grammar_nt.arglist:  # f(x, y)
+        self._Arglist(p.children, args)
+      else:  # f(1+2)
+        args.append(self.Expr(p))
+      return expr.FuncCall(base, args)
 
     if op_tok.id == Id.Op_LBracket:
-       p_args = children[1]
+      p_args = children[1]
 
-       # NOTE: This doens't take into account slices
-       if p_args.children is not None:
-         # a, b, c -- every other one is a comma
-         arglist = children[1].children[::2]
-       else:
-         arg = children[1]
-         arglist = [arg]
-       return expr.Subscript(base, [self.Expr(a) for a in arglist])
+      # NOTE:
+      # - This doesn't take into account slices
+      # - Similar to _Arglist.
+      if p_args.children is not None:
+        # a, b, c -- every other one is a comma
+        arglist = children[1].children[::2]
+      else:
+        arg = children[1]
+        arglist = [arg]
+      return expr.Subscript(base, [self.Expr(a) for a in arglist])
 
     if op_tok.id == Id.Expr_Dot:
       #return self._GetAttr(base, nodelist[2])
@@ -372,7 +374,6 @@ class Transformer(object):
     """
     #from core import util
     #util.log('children %s', children)
-
     n = len(children)
     i = 0
     while i < n:

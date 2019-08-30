@@ -171,6 +171,23 @@ shell=5
 oil=21
 ## END
 
+#### Func with multiple args in multiple contexts
+var x = max(1+2, 3+4)
+echo $x $max(1+2, 3+4)
+
+## STDOUT:
+7 7
+## END
+
+
+#### Trailing Comma in Param list
+var x = max(1+2, 3+4,)
+echo $x $max(1+2, 3+4,)
+
+## STDOUT:
+7 7
+## END
+
 #### @split(x) 
 shopt -s all:oil
 setvar IFS = ":"
@@ -191,3 +208,17 @@ len
 3
 ## END
 
+
+# TODO:
+# - test keyword args
+# - test splatting *args, **kwargs
+# - Multiline parsing
+#
+# var x = max(
+#   1+2,
+#   3+4,
+# )
+# echo $x $max(
+#   1+2,
+#   3+4,
+# )
