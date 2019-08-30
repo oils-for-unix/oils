@@ -89,8 +89,8 @@ errors**.
 
 They are used like this:
 
-    shopt -s strict-array  # Set this option.  I want more fatal errors.
-    shopt -u strict-array  # Unset it.  Ignore errors and keep executing.
+    shopt -s strict_array  # Set this option.  I want more fatal errors.
+    shopt -u strict_array  # Unset it.  Ignore errors and keep executing.
 
 You can turn all of them on or off at once:
 
@@ -106,20 +106,20 @@ This line turns all strict modes on, but is portable to other shells:
 - `errexit`, `nounset` (`sh` modes to get more errors)
 - `pipefail` and `inherit_errexit` (`bash` modes to get more errors)
 - `nullglob`
-- `strict-*` (`strict-array`, etc.)
+- `strict_*` (`strict_array`, etc.)
 
 #### List of Options
 
-`strict-argv`.  Empty `argv` arrays are disallowed, since there's no practical
+`strict_argv`.  Empty `argv` arrays are disallowed, since there's no practical
 use for them.
 
 - For example, the second statement in `x=''; $x` results in a fatal error.
 
-`strict-array`. No implicit conversions between string an array.  In other
+`strict_array`. No implicit conversions between string an array.  In other
 words, turning this on gives you a "real" array type.  (NOTE: Only partially
 implemented.)
 
-`strict-control-flow`. `break` and `continue` outside of a loop are fatal
+`strict_control_flow`. `break` and `continue` outside of a loop are fatal
 errors.
 
 `strict_errexit`.  The `errexit` behavior can only be disabled for external
@@ -134,7 +134,7 @@ errexit`.
 
 (Also see `inherit_errexit` and `more_errexit`.)
 
-`strict-eval-builtin`.  The `eval` builtin takes exactly **one** argument.  It
+`strict_eval_builtin`.  The `eval` builtin takes exactly **one** argument.  It
 doesn't concatenate its arguments with a space, or accept zero arguments.
 
 For example, `echo 0; echo $(touch one; false; touch two); echo 3` will print
@@ -146,7 +146,7 @@ For example, `echo 0; echo $(touch one; false; touch two); echo 3` will print
 This is even stricter than bash 4.4's `inherit_errexit`, which stops at `false`
 in the command sub, but keeps running the parent process.
 
-`strict-word-eval`.  More word evaluation errors are fatal.
+`strict_word_eval`.  More word evaluation errors are fatal.
 
 - String slices with negative arguments like `${s: -1}` and `${s: 1 : -1}`
   result in a fatal error.  (NOTE: In array slices, negative start indices are
@@ -162,7 +162,7 @@ exit.  In other words, it's checked more often. (An Oil option.)
 
 **On by default**:
 
-`strict-arith`.  Strings that don't look like integers cause a fatal error in
+`strict_arith`.  Strings that don't look like integers cause a fatal error in
 arithmetic expressions.  NOTE: This option may be removed if no scripts rely on
 the old, bad behavior.
 

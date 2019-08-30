@@ -1,6 +1,6 @@
 # Test shell execution options.
 
-#### simple-word-eval doesn't split, glob, or elide empty
+#### simple_word_eval doesn't split, glob, or elide empty
 mkdir mydir
 touch foo.txt bar.txt spam.txt
 spaces='a b'
@@ -16,7 +16,7 @@ for i in 1 2; do
   # arrays still work too, with this weird rule
   argv.py -"$@"-
 
-  shopt -s simple-word-eval
+  shopt -s simple_word_eval
 done
 ## STDOUT:
 ['a', 'b', 'bar.txt', 'foo.txt', 'spam.txt', 'spam.txt']
@@ -25,14 +25,14 @@ done
 ['-x y', 'z-']
 ## END
 
-#### simple-word-eval and strict-array conflict over globs
+#### simple_word_eval and strict_array conflict over globs
 touch foo.txt bar.txt
 set -- f
 
 argv.py "$@"*.txt
-shopt -s simple-word-eval
+shopt -s simple_word_eval
 argv.py "$@"*.txt
-shopt -s strict-array
+shopt -s strict_array
 argv.py "$@"*.txt
 
 ## status: 1
@@ -41,14 +41,14 @@ argv.py "$@"*.txt
 ['foo.txt']
 ## END
 
-#### parse-at
+#### parse_at
 words=(a 'b c')
 argv.py @words
 
-# TODO: This should be parse-oil-at, and only allowed at the top of the file?
+# TODO: This should be parse_oil-at, and only allowed at the top of the file?
 # Going midway is weird?  Then you can't bin/osh -n?
 
-shopt -s parse-at
+shopt -s parse_at
 argv.py @words
 
 ## STDOUT:
@@ -56,9 +56,9 @@ argv.py @words
 ['a', 'b c']
 ## END
 
-#### parse-at can't be used outside top level
+#### parse_at can't be used outside top level
 f() {
-  shopt -s parse-at
+  shopt -s parse_at
   echo status=$?
 }
 f
@@ -67,9 +67,9 @@ echo 'should not get here'
 ## stdout-json: ""
 
 
-#### sourcing a file that sets parse-at
+#### sourcing a file that sets parse_at
 cat >lib.sh <<EOF
-shopt -s parse-at
+shopt -s parse_at
 echo lib.sh
 EOF
 
@@ -90,22 +90,22 @@ main.sh
 ['a', 'b c']
 ## END
 
-#### parse-at can be specified through sh -O
-$SH +O parse-at -c 'words=(a "b c"); argv.py @words'
-$SH -O parse-at -c 'words=(a "b c"); argv.py @words'
+#### parse_at can be specified through sh -O
+$SH +O parse_at -c 'words=(a "b c"); argv.py @words'
+$SH -O parse_at -c 'words=(a "b c"); argv.py @words'
 ## STDOUT:
 ['@words']
 ['a', 'b c']
 ## END
 
 #### @a splices into $0
-shopt -s simple-word-eval parse-at
+shopt -s simple_word_eval parse_at
 a=(echo hi)
 "${a[@]}"
 @a
 
 # Bug fix
-shopt -s strict-array
+shopt -s strict_array
 
 "${a[@]}"
 @a
@@ -117,7 +117,7 @@ hi
 ## END
 
 #### ARGV is alias for "$@"
-shopt -s parse-at
+shopt -s parse_at
 argv.py "$@"
 argv.py @ARGV
 argv.py "${ARGV[@]}"  # not useful, but it works!
@@ -152,15 +152,15 @@ set -o nounset
 set -o pipefail
 shopt -s nullglob
 shopt -s inherit_errexit
-shopt -s strict-argv
-shopt -s strict-arith
-shopt -s strict-array
-shopt -s strict-control-flow
+shopt -s strict_argv
+shopt -s strict_arith
+shopt -s strict_array
+shopt -s strict_control_flow
 shopt -s strict_errexit
-shopt -s strict-eval-builtin
-shopt -s strict-word-eval
-shopt -s strict-backslash
-shopt -s strict-glob
+shopt -s strict_eval_builtin
+shopt -s strict_word_eval
+shopt -s strict_backslash
+shopt -s strict_glob
 ## END
 
 #### shopt -s all:oil
@@ -173,23 +173,23 @@ set -o errexit
 set -o nounset
 set -o pipefail
 shopt -s inherit_errexit
-shopt -s strict-argv
-shopt -s strict-arith
-shopt -s strict-array
-shopt -s strict-control-flow
+shopt -s strict_argv
+shopt -s strict_arith
+shopt -s strict_array
+shopt -s strict_control_flow
 shopt -s strict_errexit
-shopt -s strict-eval-builtin
-shopt -s strict-word-eval
-shopt -s strict-backslash
-shopt -s strict-glob
-shopt -s simple-word-eval
+shopt -s strict_eval_builtin
+shopt -s strict_word_eval
+shopt -s strict_backslash
+shopt -s strict_glob
+shopt -s simple_word_eval
 shopt -s more_errexit
 shopt -s simple_echo
-shopt -s parse-at
-shopt -s parse-brace
-shopt -s parse-equals
-shopt -s parse-paren
-shopt -s parse-set
+shopt -s parse_at
+shopt -s parse_brace
+shopt -s parse_equals
+shopt -s parse_paren
+shopt -s parse_set
 ## END
 
 #### osh -O all:oil 

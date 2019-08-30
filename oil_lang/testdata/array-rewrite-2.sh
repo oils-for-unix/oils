@@ -38,7 +38,7 @@ argv ${flags}  # unquoted splitting
 #     : or :: or \\ .  Opinions?
 
 set -o errexit
-shopt -s parse-at simple-word-eval
+shopt -s parse_at simple_word_eval
 
 setvar CONFIG_HAVE_FOO = "yes"  # TODO: change to single quotes
 setvar path = "/etc/path with spaces"

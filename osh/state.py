@@ -176,7 +176,7 @@ SET_OPTIONS = [
 SET_OPTION_NAMES = set(name for _, name in SET_OPTIONS)
 
 _OIL_OPTION_NAMES = [
-    'simple-word-eval',  # No splitting (arity isn't data-dependent)
+    'simple_word_eval',  # No splitting (arity isn't data-dependent)
                          # Don't reparse program data as globs
     'more_errexit',  # check after command sub
     'simple_echo',  # longopts, -sep -end, etc.
@@ -187,17 +187,17 @@ _STRICT_OPTION_NAMES = [
     # - some are PARSING: strict-glob, strict-backslash
     # - some are runtime: strict-arith, strict-word-eval
 
-    'strict-argv',  # empty argv not allowed
-    'strict-arith',  # string to integer conversions
-    'strict-array',  # no implicit conversion between string and array
-    'strict-control-flow',  # break/continue at top level is fatal
+    'strict_argv',  # empty argv not allowed
+    'strict_arith',  # string to integer conversions
+    'strict_array',  # no implicit conversion between string and array
+    'strict_control_flow',  # break/continue at top level is fatal
     'strict_errexit',  # errexit can't be disabled during function body execution
-    'strict-eval-builtin',  # single arg
-    'strict-word-eval',  # negative slices, unicode
+    'strict_eval_builtin',  # single arg
+    'strict_word_eval',  # negative slices, unicode
 
     # Not implemented
-    'strict-backslash',  # BadBackslash
-    'strict-glob',  # GlobParser
+    'strict_backslash',  # BadBackslash
+    'strict_glob',  # GlobParser
 ]
 
 # Used by core/builtin_comp.py too.
@@ -212,11 +212,11 @@ SHOPT_OPTION_NAMES = [
 ] + _STRICT_OPTION_NAMES + _OIL_OPTION_NAMES
 
 _PARSE_OPTION_NAMES = [
-    'parse-at',
-    'parse-brace',
-    'parse-equals',
-    'parse-paren',
-    'parse-set',
+    'parse_at',
+    'parse_brace',
+    'parse_equals',
+    'parse_paren',
+    'parse_set',
 ]
 
 # errexit is also set, but handled separately

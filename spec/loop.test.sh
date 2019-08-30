@@ -161,7 +161,6 @@ done
 ## stdout: hi
 
 #### continue at top level
-# zsh behaves with strict-control-flow!
 if true; then
   echo one
   continue
@@ -172,6 +171,7 @@ fi
 one
 two
 ## END
+# zsh behaves like strict_control_flow!
 ## OK zsh status: 1
 ## OK zsh STDOUT:
 one

@@ -291,7 +291,7 @@ string_to_int_arith() {
   local x='ZZZ'
   echo $(( x + 5 ))
 
-  shopt -s strict-arith
+  shopt -s strict_arith
 
   echo $(( x + 5 ))
 
@@ -375,7 +375,7 @@ patsub_bad_glob() {
 string_to_int_bool() {
   [[ a -eq 0 ]]
 
-  shopt -s strict-arith
+  shopt -s strict_arith
 
   [[ a -eq 0 ]]
   echo 'SHOULD NOT GET HERE'
@@ -384,19 +384,19 @@ string_to_int_bool() {
 strict_array() {
   set -- 1 2
   echo foo > _tmp/"$@"
-  shopt -s strict-array
+  shopt -s strict_array
   echo foo > _tmp/"$@"
 }
 
 strict_array_2() {
   local foo="$@"
-  shopt -s strict-array
+  shopt -s strict_array
   local foo="$@"
 }
 
 strict_array_3() {
   local foo=${1:- "[$@]" }
-  shopt -s strict-array
+  shopt -s strict_array
   local foo=${1:- "[$@]" }
 }
 
@@ -406,7 +406,7 @@ strict_array_4() {
   echo "x[42] = ${x[42]}"
 
   # Not implemented yet
-  shopt -s strict-array
+  shopt -s strict_array
   local -a y
   y[42]=99
 }
@@ -555,11 +555,11 @@ builtin_exec() {
 }
 
 #
-# Strict options (see spec/strict-options.sh)
+# Strict options (see spec/strict_options.sh)
 #
 
 strict_word_eval_warnings() {
-  # Warnings when 'set +o strict-word-eval' is OFF
+  # Warnings when 'set +o strict_word_eval' is OFF
 
   echo slice start negative
   s='abc'

@@ -69,7 +69,7 @@ echo $((`echo 1` + 2))
 
 #### Invalid string to int
 # bash, mksh, and zsh all treat strings that don't look like numbers as zero.
-shopt -u strict-arith || true
+shopt -u strict_arith || true
 s=foo
 echo $((s+5))
 ## OK dash stdout-json: ""
@@ -77,8 +77,8 @@ echo $((s+5))
 ## OK bash/mksh/zsh/osh stdout: 5
 ## OK bash/mksh/zsh/osh status: 0
 
-#### Invalid string to int with strict-arith
-shopt -s strict-arith || true
+#### Invalid string to int with strict_arith
+shopt -s strict_arith || true
 s=foo
 echo $s
 echo $((s+5))
@@ -123,7 +123,7 @@ echo $a
 ## N-I dash stdout-json: ""
 
 #### Increment undefined variables
-shopt -u strict-arith || true
+shopt -u strict_arith || true
 (( undef1++ ))
 (( ++undef2 ))
 echo "[$undef1][$undef2]"
@@ -131,7 +131,7 @@ echo "[$undef1][$undef2]"
 ## N-I dash stdout: [][]
 
 #### Increment and decrement array elements
-shopt -u strict-arith || true
+shopt -u strict_arith || true
 a=(5 6 7 8)
 (( a[0]++, ++a[1], a[2]--, --a[3] ))
 (( undef[0]++, ++undef[1], undef[2]--, --undef[3] ))

@@ -410,7 +410,7 @@ invalidZZ=127
 n=2
 
 show-strict() {
-  shopt -p | grep 'strict-' | head -n $n
+  shopt -p | grep 'strict_' | head -n $n
   echo -
 }
 
@@ -420,14 +420,14 @@ show-strict
 shopt -u all:strict
 show-strict
 ## STDOUT:
-shopt -u strict-argv
-shopt -s strict-arith
+shopt -u strict_argv
+shopt -s strict_arith
 -
-shopt -s strict-argv
-shopt -s strict-arith
+shopt -s strict_argv
+shopt -s strict_arith
 -
-shopt -u strict-argv
-shopt -u strict-arith
+shopt -u strict_argv
+shopt -u strict_arith
 -
 ## END
 ## N-I dash status: 2
@@ -445,8 +445,8 @@ set -o errexit
 
 shopt -p nullglob || true  # bash returns 1 here?  Like -q.
 
-# This should set strict-array, and return 1, which can be ignored
-shopt -s nullglob strict-OPTION_NOT_YET_IMPLEMENTED 2>/dev/null || true
+# This should set nullglob, and return 1, which can be ignored
+shopt -s nullglob strict_OPTION_NOT_YET_IMPLEMENTED 2>/dev/null || true
 echo status=$?
 
 shopt -p nullglob || true

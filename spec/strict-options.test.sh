@@ -1,20 +1,20 @@
 # In this file:
 #
-# - strict-control-flow: break/continue at the top level should be fatal!
+# - strict_control-flow: break/continue at the top level should be fatal!
 #
 # Other tests:
 # - spec/errexit-strict: command subs inherit errexit
 #   - TODO: does bash 4.4. use inherit_errexit?
 #
-# - spec/var-op-other tests strict-word-eval (negative indices and invalid
+# - spec/var-op-other tests strict_word-eval (negative indices and invalid
 #   utf-8)
 #   - hm I think these should be the default?  compat-word-eval?
 #
-# - spec/arith tests strict-arith - invalid strings become 0
+# - spec/arith tests strict_arith - invalid strings become 0
 #   - OSH has a warning that can turn into an error.  I think the error could
 #     be the default (since this was a side effect of "ShellMathShock")
 
-# - strict-array: unimplemented.
+# - strict_array: unimplemented.
 #   - WAS undef[2]=x, but bash-completion relied on the associative array
 #     version of that.
 #   - TODO: It should disable decay_array EVERYWHERE except a specific case like:
@@ -23,11 +23,11 @@
 #
 # Most of those options could be compat-*.
 #
-# One that can't: strict-scope disables dynamic scope.
+# One that can't: strict_scope disables dynamic scope.
 
 
-#### strict-arith option
-shopt -s strict-arith
+#### strict_arith option
+shopt -s strict_arith
 ## status: 0
 ## N-I bash status: 1
 ## N-I dash/mksh status: 127
@@ -68,8 +68,8 @@ $SH -o errexit spec/testdata/top-level-control-flow.sh
 SUBSHELL
 ## END
 
-#### shopt -s strict-control-flow
-shopt -s strict-control-flow || true
+#### shopt -s strict_control_flow
+shopt -s strict_control_flow || true
 echo break
 break
 echo hi
@@ -102,7 +102,7 @@ break
 echo status=$?
 ## stdout: status=0
 
-#### empty argv WITHOUT strict-argv
+#### empty argv WITHOUT strict_argv
 x=''
 $x
 echo status=$?
@@ -135,8 +135,8 @@ VarSub FAILED
 CommandSub FAILED
 ## END
 
-#### empty argv WITH strict-argv
-shopt -s strict-argv || true
+#### empty argv WITH strict_argv
+shopt -s strict_argv || true
 echo empty
 x=''
 $x
@@ -151,7 +151,7 @@ empty
 status=0
 ## END
 
-#### Arrays are incorrectly compared, but strict-array prevents it
+#### Arrays are incorrectly compared, but strict_array prevents it
 
 # NOTE: from spec/dbracket has a test case like this
 # sane-array should turn this ON.
@@ -163,7 +163,7 @@ echo ${#a[@]}
 echo ${#b[@]}
 [[ "${a[@]}" == "${b[@]}" ]] && echo EQUAL
 
-shopt -s strict-array || true
+shopt -s strict_array || true
 [[ "${a[@]}" == "${b[@]}" ]] && echo EQUAL
 
 ## status: 1
@@ -182,7 +182,7 @@ EQUAL
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 
-#### automatically creating arrays WITHOUT strict-array
+#### automatically creating arrays WITHOUT strict_array
 undef[2]=x
 undef[3]=y
 argv.py "${undef[@]}"
@@ -193,7 +193,7 @@ argv.py "${undef[@]}"
 ## N-I dash stdout-json: ""
 
 #### automatically creating arrays are INDEXED, not associative
-shopt -u strict-arith || true
+shopt -u strict_arith || true
 
 undef[2]=x
 undef[3]=y
@@ -209,7 +209,7 @@ argv.py "${undef[@]}"
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 
-#### strict-eval-builtin
+#### strict_eval-builtin
 for i in 1 2; do
   eval  # zero args
   echo status=$?
@@ -217,7 +217,7 @@ for i in 1 2; do
   echo status=$?
   eval 'echo two'
   echo status=$?
-  shopt -s strict-eval-builtin
+  shopt -s strict_eval_builtin
   echo ---
 done
 ## STDOUT:

@@ -82,5 +82,5 @@ status=1
 OK
 ## END
 
-# NOTE: strict-arith has one case in arith.test.sh), strict-word-eval has a case in var-op-other.
+# NOTE: strict_arith has one case in arith.test.sh), strict_word-eval has a case in var-op-other.
 

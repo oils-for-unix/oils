@@ -474,7 +474,7 @@ argv.py "${a[@]:15:2}"
 ## N-I mksh stdout-json: ""
 
 #### Using an array itself as the index on LHS
-shopt -u strict-arith
+shopt -u strict_arith
 a[a]=42
 a[a]=99
 argv.py "${a[@]}" "${a[0]}" "${a[42]}" "${a[99]}"
@@ -488,7 +488,7 @@ argv.py "${a[@]}" "${a[0]}" "${a[42]}" "${a[99]}"
 ## END
 
 #### Using an array itself as the index on RHS
-shopt -u strict-arith
+shopt -u strict_arith
 a=(1 2 3)
 (( x = a[a] ))
 echo $x

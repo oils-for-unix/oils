@@ -1,7 +1,7 @@
 # Oil builtins
 
 #### push onto a=(1 2)
-shopt -s parse-at
+shopt -s parse_at
 a=(1 2)
 push :a '3 4' '5'
 argv.py @a
@@ -10,7 +10,7 @@ argv.py @a
 ## END
 
 #### push onto var a = @(1 2)
-shopt -s parse-at
+shopt -s parse_at
 var a = @(1 2)
 push a '3 4' '5'  # : is optional
 argv.py @a

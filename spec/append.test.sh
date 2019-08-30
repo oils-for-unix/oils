@@ -109,7 +109,7 @@ e
 
 #### Append to nonexistent array is allowed
 
-## TODO: strict-array could get rid of this?
+## TODO: strict_array could get rid of this?
 y+=(c d)
 argv.py "${y[@]}"
 ## STDOUT:

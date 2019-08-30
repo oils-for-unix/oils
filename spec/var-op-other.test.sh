@@ -58,8 +58,8 @@ echo ${foo:3:-1} ${foo: 3: -2} ${foo:3 :-3 }
 ## BUG mksh stdout: defg defg defg
 
 
-#### strict-word-eval with string slice
-shopt -s strict-word-eval || true
+#### strict_word_eval with string slice
+shopt -s strict_word_eval || true
 echo slice
 s='abc'
 echo -${s: -2}-
@@ -121,8 +121,8 @@ echo -${s:1:3}-
 ## BUG bash/mksh/zsh stderr-json: ""
 
 
-#### Slice string with invalid UTF-8 with strict-word-eval
-shopt -s strict-word-eval || true
+#### Slice string with invalid UTF-8 with strict_word_eval
+shopt -s strict_word_eval || true
 echo slice
 s=$(echo -e "\xFF")bcdef
 echo -${s:1:3}-

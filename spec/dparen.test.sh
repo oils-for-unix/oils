@@ -43,7 +43,7 @@ true
 
 
 #### bash and mksh: V in (( a[K] = V )) gets coerced to integer 
-shopt -u strict-arith || true
+shopt -u strict_arith || true
 K=key
 V=value
 typeset -a a
@@ -103,7 +103,7 @@ V=0
 ## END
 
 #### bash: V in (( A["K"] = V )) gets coerced to integer
-shopt -u strict-arith || true
+shopt -u strict_arith || true
 K=key
 V=value
 typeset -A A || exit 1

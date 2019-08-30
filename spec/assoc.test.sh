@@ -272,7 +272,7 @@ assoc[i]=string
 assoc[i+1]=string+1
 ## END
 
-#### Array stored in associative array gets converted to string (without strict-array)
+#### Array stored in associative array gets converted to string (without strict_array)
 
 array=('1 2' 3)
 declare -A d
@@ -280,7 +280,7 @@ d['key']="${array[@]}"
 argv.py "${d['key']}"
 ## stdout: ['1 2 3']
 
-#### Indexed array as key of associative array coerces to string (without shopt -s strict-array)
+#### Indexed array as key of associative array coerces to string (without shopt -s strict_array)
 
 declare -a array=(1 2 3)
 declare -A assoc
@@ -379,7 +379,7 @@ echo ${A[5]}
 ## END
 
 #### (( A[5] += 42 )) with empty cell
-shopt -u strict-arith  # default zero cell
+shopt -u strict_arith  # default zero cell
 declare -A A
 (( A[5] += 6 ))
 echo ${A[5]}

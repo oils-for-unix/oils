@@ -87,7 +87,7 @@ fi
 # http://tldp.org/LDP/abs/html/testconstructs.html#DBLBRACKETS
 
 #### Octal literals with -eq
-shopt -u strict-arith || true
+shopt -u strict_arith || true
 decimal=15
 octal=017   # = 15 (decimal)
 [[ $decimal -eq $octal ]] && echo true
@@ -100,7 +100,7 @@ false
 # mksh doesn't implement this syntax for literals.
 
 #### Hex literals with -eq
-shopt -u strict-arith || true
+shopt -u strict_arith || true
 decimal=15
 hex=0x0f    # = 15 (decimal)
 [[ $decimal -eq $hex ]] && echo true
@@ -127,7 +127,7 @@ hex=0x0f    # = 15 (decimal)
 
 #### -eq on strings 
 # This is lame behavior: it does a conversion to 0 first for any string
-shopt -u strict-arith || true
+shopt -u strict_arith || true
 [[ a -eq a ]] && echo true
 [[ a -eq b ]] && echo true
 ## STDOUT: 
@@ -186,7 +186,7 @@ false
 ## status: 2
 ## OK mksh status: 1
 
-#### User array compared to "$@" (broken unless shopt -s strict-array)
+#### User array compared to "$@" (broken unless shopt -s strict_array)
 # Both are coerced to string!  It treats it more like an  UNQUOTED ${a[@]}.
 
 a=('1 3' 5)
@@ -199,7 +199,7 @@ true
 false
 ## END
 
-#### Array coerces to string (shopt -s strict-array to disallow)
+#### Array coerces to string (shopt -s strict_array to disallow)
 a=('1 3' 5)
 [[ '1 3 5' = "${a[@]}" ]] && echo true
 [[ '1 3 4' = "${a[@]}" ]] || echo false
@@ -253,7 +253,7 @@ true
 ## N-I osh status: 1
 
 #### -eq coercion produces weird results
-shopt -u strict-arith || true
+shopt -u strict_arith || true
 [[ '' -eq 0 ]] && echo true
 ## stdout: true
 
