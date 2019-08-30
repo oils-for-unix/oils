@@ -137,6 +137,13 @@ argv.py @mylist
 ['one', 'two']
 ## END
 
+#### Can't splice undefined
+shopt -s all:oil
+argv.py @undefined
+echo done
+## status: 1
+## stdout-json: ""
+
 #### Set $HOME using 'var' (i.e. Oil string var in word evaluator)
 var HOME = "foo"
 echo $HOME
@@ -196,6 +203,30 @@ argv.py @split(x)
 ## STDOUT:
 ['one', 'two', 'three']
 ## END
+
+#### @range()
+shopt -s all:oil
+echo @range(10, 15, 2)
+## STDOUT:
+10
+12
+14
+## END
+
+#### Wrong sigil $range() shows representation of iterator?
+shopt -s all:oil
+echo $range(10, 15, 2)
+## STDOUT:
+TODO
+## END
+
+#### Wrong sigil @max(3, 4)
+shopt -s all:oil
+echo @max(3, 4)
+## STDOUT:
+TODO
+## END
+
 
 #### nested expr contexts
 var s = "123"

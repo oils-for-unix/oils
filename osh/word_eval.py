@@ -946,13 +946,24 @@ class _WordEvaluator(object):
       var_name = part.name.val[1:]
       val = self.mem.GetVar(var_name)
 
-      # @mylist isn't currently allowed.
-      # TODO: Use iterable protocol and convert to an array of strings!
-      # That means you can splice in dicts too?
-      if val.tag != value_e.MaybeStrArray:
-        e_die("Can't splice non-array %r", var_name, part=part)
+      if val.tag == value_e.Str:
+        obj = val.s
+      elif val.tag == value_e.MaybeStrArray:
+        obj = val.strs
+      elif val.tag == value_e.AssocArray:
+        obj = val.d
+      elif val.tag == value_e.Obj:
+        obj = val.obj
+      else:
+        e_die("Can't splice %r", var_name, part=part)
 
-      v = part_value.Array(val.strs)
+      # Use iterable protocol and convert each item to a string.  This means
+      # you can splice in dicts too.  # TODO: Optimize this so it doesn't make
+      # a copy in the common case that it's already an Array/string.
+      #
+      # TODO: Strings should not be iterable over their bytes either!  Need
+      # separate .bytes() and .runes().
+      v = part_value.Array([str(item) for item in obj])
       part_vals.append(v)
 
     elif part.tag == word_part_e.FuncCall:
@@ -970,8 +981,8 @@ class _WordEvaluator(object):
         part_val = part_value.String(s)
 
       elif id_ == Id.Lit_Splice:
-        # NOTE: Using iterable protocol.  TODO: Optimize this so it doesn't
-        # make a copy?
+        # NOTE: Using iterable protocol as with @array.  TODO: Optimize this so
+        # it doesn't make a copy?
         a = [str(item) for item in func(*args)]
         part_val = part_value.Array(a)
 

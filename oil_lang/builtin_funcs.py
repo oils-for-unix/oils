@@ -29,6 +29,9 @@ def Init(mem):
   SetGlobalFunc(mem, 'max', max)
   SetGlobalFunc(mem, 'min', min)
 
+  # Return an iterable like Python 3.
+  SetGlobalFunc(mem, 'range', xrange)
+
   SetGlobalFunc(mem, 'join', _Join)
 
   # NOTE: split() is set in main(), since it depends on the Splitter() object /
