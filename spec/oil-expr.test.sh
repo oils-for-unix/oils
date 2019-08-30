@@ -164,11 +164,11 @@ echo shell=${#x[@]}
 
 # Oil function call: length is 20.  I think that makes sense?  It's just a
 # different notion of length.
-echo oil= $len(x)
+echo oil=$len(x)
 
 ## STDOUT:
 shell=5
-oil=20
+oil=21
 ## END
 
 #### @split(x) 

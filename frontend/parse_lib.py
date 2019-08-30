@@ -331,7 +331,7 @@ class ParseContext(object):
     ast_node.keyword = kw_token  # OilAssign didn't fill this in
     return ast_node, last_token
 
-  def ParseOilArgList(self, lexer, print_parse_tree=True):
+  def ParseOilArgList(self, lexer, print_parse_tree=False):
     # type: (Lexer, bool) -> Tuple[List[expr_t], token]
     if self.parsing_expr:
       p_die("TODO: can't be nested")

@@ -86,7 +86,7 @@ class OilEvaluator(object):
 
     raise NotImplementedError(part.__class__.__name__)
 
-  def EvalRHS(self, node):
+  def EvalExpr(self, node):
     # type: (expr_t) -> Any
     """
     This is a naive PyObject evaluator!  It uses the type dispatch of the host
@@ -97,7 +97,7 @@ class OilEvaluator(object):
       storing in Mem.
     """
     if 0:
-      print('EvalRHS()')
+      print('EvalExpr()')
       node.PrettyPrint()
       print('')
 
@@ -122,8 +122,8 @@ class OilEvaluator(object):
       return s
 
     if node.tag == expr_e.Binary:
-      left = self.EvalRHS(node.left)
-      right = self.EvalRHS(node.right)
+      left = self.EvalExpr(node.left)
+      right = self.EvalExpr(node.right)
 
       if node.op.id == Id.Arith_Plus:
         return left + right
@@ -137,7 +137,7 @@ class OilEvaluator(object):
       raise NotImplementedError(node.op.id)
 
     if node.tag == expr_e.List:
-      return [self.EvalRHS(e) for e in node.elts]
+      return [self.EvalExpr(e) for e in node.elts]
 
     if node.tag == expr_e.FuncCall:
       # TODO:
@@ -166,9 +166,9 @@ class OilEvaluator(object):
       #if node.func.tag == expr_e.Var:
       #  func = self.funcs.get(node.func.name.val)
 
-      func = self.EvalRHS(node.func)
+      func = self.EvalExpr(node.func)
 
-      args = [self.EvalRHS(a) for a in node.args]
+      args = [self.EvalExpr(a) for a in node.args]
 
       if callable(func):  # built-in function like join()
         ret = func(*args)
@@ -179,10 +179,10 @@ class OilEvaluator(object):
       return ret
 
     if node.tag == expr_e.Subscript:
-      collection = self.EvalRHS(node.collection)
+      collection = self.EvalExpr(node.collection)
 
       # TODO: handle multiple indices like a[i, j]
-      index = self.EvalRHS(node.indices[0])
+      index = self.EvalExpr(node.indices[0])
       return collection[index]
 
     raise NotImplementedError(node.__class__.__name__)

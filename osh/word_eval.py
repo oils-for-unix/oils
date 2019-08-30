@@ -200,6 +200,7 @@ class _WordEvaluator(object):
     self.splitter = exec_deps.splitter
     self.prompt_ev = exec_deps.prompt_ev
     self.arith_ev = exec_deps.arith_ev
+    self.expr_ev = exec_deps.expr_ev
     self.errfmt = exec_deps.errfmt
 
     self.globber = glob_.Globber(exec_opts)
@@ -956,7 +957,15 @@ class _WordEvaluator(object):
       if id_ == Id.VSub_DollarName:
         typ = value_e.Str
 
+        func_name = part.name.val[1:]
+        args = [self.expr_ev.EvalExpr(a) for a in part.args]
+        if func_name == 'len':   # TODO: Look up builtins
+          s = str(len(*args))
+        else:
+          raise NotImplementedError
+
         # TODO: Convert the result to a string.
+        part_vals.append(part_value.String(s))
 
       elif id_ == Id.Lit_Splice:
         # No dict?
@@ -967,8 +976,6 @@ class _WordEvaluator(object):
 
       else:
         raise AssertionError(id_)
-
-      raise NotImplementedError('FuncCall')
 
     else:
       raise AssertionError(part.__class__.__name__)

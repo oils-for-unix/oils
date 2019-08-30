@@ -834,7 +834,7 @@ class Executor(object):
       self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to var/setvar
 
       lval = self.expr_ev.EvalLHS(node.lhs)
-      py_val = self.expr_ev.EvalRHS(node.rhs)
+      py_val = self.expr_ev.EvalExpr(node.rhs)
 
       if node.op.id == Id.Arith_Equal:
 

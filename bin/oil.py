@@ -519,6 +519,8 @@ def ShellMain(lang, argv0, argv, login_shell):
   ex.expr_ev = expr_ev
   ex.tracer = tracer
 
+  word_ev.expr_ev = expr_ev
+
   spec_builder = builtin_comp.SpecBuilder(ex, parse_ctx, word_ev, splitter,
                                           comp_lookup)
 

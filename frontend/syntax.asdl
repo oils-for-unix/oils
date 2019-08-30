@@ -126,7 +126,7 @@ module syntax
     -- @array
   | Splice(token name)
     -- $strfunc(x) and @arrayfunc(x)
-  | FuncCall(token name, expr* arguments)
+  | FuncCall(token name, expr* args)
 
   word = 
     -- for RHS of 'x=', 'declare x=', and the argument in "${x:-}"
