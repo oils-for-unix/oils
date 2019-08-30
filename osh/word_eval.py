@@ -945,6 +945,10 @@ class _WordEvaluator(object):
     elif part.tag == word_part_e.Splice:
       var_name = part.name.val[1:]
       val = self.mem.GetVar(var_name)
+
+      # @mylist isn't currently allowed.
+      # TODO: Use iterable protocol and convert to an array of strings!
+      # That means you can splice in dicts too?
       if val.tag != value_e.MaybeStrArray:
         e_die("Can't splice non-array %r", var_name, part=part)
 
@@ -953,29 +957,29 @@ class _WordEvaluator(object):
 
     elif part.tag == word_part_e.FuncCall:
       func_name = part.name.val[1:]
+      args = [self.expr_ev.EvalExpr(a) for a in part.args]
       id_ = part.name.id
-      if id_ == Id.VSub_DollarName:
-        typ = value_e.Str
 
-        func_name = part.name.val[1:]
-        args = [self.expr_ev.EvalExpr(a) for a in part.args]
+      if id_ == Id.VSub_DollarName:
         if func_name == 'len':   # TODO: Look up builtins
           s = str(len(*args))
         else:
-          raise NotImplementedError
-
-        # TODO: Convert the result to a string.
-        part_vals.append(part_value.String(s))
+          raise NotImplementedError(func_name)
+        part_val = part_value.String(s)
 
       elif id_ == Id.Lit_Splice:
-        # No dict?
-        typ = value_e.MaybeStrArray
-
         # TODO: Use iterable protocol and convert to an array of strings!
-        # That means dicts get it too!
+
+        if func_name == 'split':  # IFS split
+          a = self.splitter.SplitForWordEval(*args)
+        else:
+          raise NotImplementedError(func_name)
+        part_val = part_value.Array(a)
 
       else:
         raise AssertionError(id_)
+
+      part_vals.append(part_val)
 
     else:
       raise AssertionError(part.__class__.__name__)

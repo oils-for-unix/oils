@@ -150,6 +150,7 @@ class SplitContext(object):
     return sp.Escape(s)
 
   def SplitForWordEval(self, s):
+    # type: (str) -> List[str]
     """Split the string into slices, some of which are marked ignored.
 
     IGNORED can be used for two reasons:
@@ -174,6 +175,7 @@ class SplitContext(object):
     return _SpansToParts(s, spans)
 
   def SplitForRead(self, line, allow_escape):
+    # type: (str, bool) -> List[str]
     sp = self._GetSplitter()
     return sp.Split(line, allow_escape)
 
