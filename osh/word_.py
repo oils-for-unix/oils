@@ -11,7 +11,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part__SingleQuoted, word_part__DoubleQuoted,
     word_part__SimpleVarSub, word_part__BracedVarSub, word_part__TildeSub,
     word_part__CommandSub, word_part__ArithSub, word_part__BracedTuple,
-    word_part__ExtGlob, word_part__Splice,
+    word_part__ExtGlob, word_part__Splice, word_part__FuncCall,
 
     word, word_t, 
     word__Compound, word__Token, word__Empty, word__BracedTree,
@@ -175,6 +175,9 @@ def LeftMostSpanForPart(part):
 
   elif isinstance(part, word_part__Splice):
     return part.name.span_id
+
+  elif isinstance(part, word_part__FuncCall):
+    return part.name.span_id  # @f(x) or $f(x)
 
   else:
     raise AssertionError(part.__class__.__name__)

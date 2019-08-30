@@ -353,19 +353,50 @@ class Transformer(object):
     raise AssertionError(
         "PNode type %d (%s) wasn't handled" % (typ, nt_name))
 
+  def _Argument(self, pnode):
+    # type: (PNode) -> expr_t
+    """
+    argument: ( test [comp_for] |
+                test '=' test |
+                '**' test |
+                '*' test )
+    """
+    # Only simple args for now.
+    # TODO: Do keyword args and such.
+    return self.Expr(pnode)
+
+  def _Arglist(self, children, out):
+    # type: (List[PNode], List[expr_t]) -> None
+    """
+    arglist: argument (',' argument)*  [',']
+    """
+    #from core import util
+    #util.log('children %s', children)
+
+    n = len(children)
+    i = 0
+    while i < n:
+      result = self._Argument(children[i])
+      out.append(result)
+      i += 2
+
   def ArgList(self, pnode):
     # type: (PNode) -> List[expr_t]
     """Transform arg lists.
 
     oil_arglist: '(' [arglist] ')'
-    arglist: argument (',' argument)*  [',']
     """
-    # NOTE: It's similar to _AssocBinary, but we don't want it flattened.
-    # TODO: Return expr.FuncCall()
+    args = []  # type: List[expr_t]
+    if len(pnode.children) == 2:  # f()
+      return args
 
-    # TODO: Use _AssocBinary
-    print(pnode)
-    for c in pnode.children:
-      print(c)
+    assert len(pnode.children) == 3, pnode.children
+    p = pnode.children[1]  # the X in '( X )'
 
-    return [expr.Str('TODO')]
+    # NOTE: The "no singleton" rule causes some complication here.
+    if p.typ == grammar_nt.arglist:  # f(x, y)
+      self._Arglist(p.children, args)
+    else:  # f(1+2)
+      args.append(self.Expr(p))
+
+    return args

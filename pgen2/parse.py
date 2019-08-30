@@ -39,12 +39,12 @@ class PNode(object):
                     # NOTE: This is None for the first entry in the stack?
     self.children = children
 
-  def __str__(self):
+  def __repr__(self):
     # type: () -> str
     tok_str = str(self.tok) if self.tok else '-'
     ch_str = 'with %d children' % len(self.children) \
         if self.children is not None else ''
-    return '<PNode %s %s %s>' % (self.typ, tok_str, ch_str)
+    return '(PNode %s %s %s)' % (self.typ, tok_str, ch_str)
 
 
 class Parser(object):

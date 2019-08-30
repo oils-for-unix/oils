@@ -955,9 +955,16 @@ class _WordEvaluator(object):
       id_ = part.name.id
       if id_ == Id.VSub_DollarName:
         typ = value_e.Str
+
+        # TODO: Convert the result to a string.
+
       elif id_ == Id.Lit_Splice:
         # No dict?
         typ = value_e.MaybeStrArray
+
+        # TODO: Use iterable protocol and convert to an array of strings!
+        # That means dicts get it too!
+
       else:
         raise AssertionError(id_)
 

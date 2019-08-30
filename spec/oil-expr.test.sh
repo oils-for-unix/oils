@@ -172,7 +172,8 @@ oil=20
 ## END
 
 #### @split(x) 
-var IFS = ':'
+shopt -s all:oil
+setvar IFS = ":"
 var x = "one:two:three"
 argv.py @split(x)
 ## STDOUT:
