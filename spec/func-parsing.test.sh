@@ -64,8 +64,12 @@ func-name=ext
 ## OK mksh stdout-json: ""
 
 #### Function name with $
-# bash allows this; dash doesn't.
-foo$bar() { ls ; }
+$foo-bar() { ls ; }
+## status: 2
+## OK bash/mksh status: 1
+
+#### Function name with command sub
+foo-$(echo hi)() { ls ; }
 ## status: 2
 ## OK bash/mksh status: 1
 
