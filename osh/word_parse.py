@@ -1142,20 +1142,12 @@ class WordParser(object):
             arguments = self._ParseCallArguments(lex_mode)
             part = word_part.FuncCall(vsub_token, arguments)
 
-            # $strfunc() must be the last part of the word
-            #
-            # Unlike @splice, it makes some sense to allow this, but I feel
-            # it's too confusing?
+            # Unlike @splice, it sense to allow this:
             #
             # $f(1)$f(2) ->
             # var a = f(1); var b = f(2); echo $a$b
-
-            self._Next(lex_mode)
-            self._Peek()
-            # EOF, whitespace, newline, Right_Subshell
-            if self.token_kind not in self.KINDS_THAT_END_WORDS:
-              p_die('Unexpected token after inline function call',
-                    token=self.cur_token)
+            #
+            # It's consistent with other uses of $.
 
         w.parts.append(part)
 

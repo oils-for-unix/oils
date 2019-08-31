@@ -76,7 +76,6 @@ def Init(mem):
   SetGlobalFunc(mem, 'sorted', sorted)
   SetGlobalFunc(mem, 'reversed', reversed)
 
-
   # TODO: ord() should UTF-8 decode its argument
   # ord('\u100') -> 256
   #
@@ -150,6 +149,7 @@ def Init(mem):
 
   # Modules that could be builtin:
   # - math -- sin(), a lot of floating point stuff like frexp()
+  #   - new in Python 3.4: statistics
   # - datetime -- hm we need some sort of better replacement
   #   - strftime() because awk has it
   # - hashlib

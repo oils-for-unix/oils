@@ -89,9 +89,9 @@ argv.py $z
 #### abs
 shopt -s all:oil
 
-# BUG: These are parsed as 3 word_part of the same word!!!
+# Also test smooshing
+echo $abs(-5)$abs(-0)$abs(5)
 echo $abs(-5) $abs(-0) $abs(5)
-#echo $abs(-5)$abs(-0)$abs(5)
 ## STDOUT:
 505
 5
@@ -127,13 +127,13 @@ False
 shopt -s all:oil
 var start = 42
 
-# TODO: There's a parsing bug here
 echo $sum( range(3) )
 echo $sum( range(3), start)
-#echo $sum( range(0), start)
+echo $sum( range(0), start)
 ## STDOUT:
 3
 45
+42
 ## END
 
 #### sorted()

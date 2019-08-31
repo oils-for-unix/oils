@@ -178,6 +178,15 @@ shell=5
 oil=21
 ## END
 
+#### $len(x) inside strings
+var s = "abc"
+echo -$len(s)-
+# This has to work, otherwise $len become "builtin function"
+#echo "-$len(x)-"
+## STDOUT:
+-3-
+## END
+
 #### Func with multiple args in multiple contexts
 var x = max(1+2, 3+4)
 echo $x $max(1+2, 3+4)
