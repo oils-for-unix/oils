@@ -1,6 +1,76 @@
 # oil-builtin-funcs.test.sh
 
-# TODO: There will be exceptions when there are too many args.
+# TODO: Test that there are exceptions when there are too many args, etc.
+
+#### bool()
+shopt -s all:oil
+var a = bool( @() )
+var b = bool( @(foo) )
+echo $a $b
+## STDOUT:
+False
+True
+## END
+
+#### int()
+shopt -s all:oil
+var a = int("3")
+var b = int("-35")
+echo $a $b
+## STDOUT:
+3
+-35
+## END
+
+#### float()
+# TODO: This needs a lot more testing, for precision, etc.
+shopt -s all:oil
+var a = float("1.2")
+var b = float("3.4")
+echo $a $b
+## STDOUT:
+1.2
+3.4
+## END
+
+#### str()
+# TODO: more testing
+shopt -s all:oil
+var a = str(5)
+var b = str(42)
+echo $a $b
+## STDOUT:
+5
+42
+## END
+
+#### tuple()
+# TODO: more testing
+shopt -s all:oil
+var a = tuple()
+echo $a
+## STDOUT:
+()
+## END
+
+#### list()
+# TODO: more testing
+shopt -s all:oil
+var a = list(range(3))
+echo $a
+## STDOUT:
+[0, 1, 2]
+## END
+
+#### dict()
+# TODO: more testing
+shopt -s all:oil
+var a = dict()
+#repr a
+echo $len(a)
+## STDOUT:
+0
+## END
 
 #### join()
 shopt -s simple_word_eval
@@ -53,3 +123,35 @@ True
 False
 ## END
 
+#### sum()
+shopt -s all:oil
+var start = 42
+
+# TODO: There's a parsing bug here
+echo $sum( range(3) )
+echo $sum( range(3), start)
+#echo $sum( range(0), start)
+## STDOUT:
+3
+45
+## END
+
+#### sorted()
+shopt -s all:oil
+var x = sorted(range(3))
+echo @x
+## STDOUT:
+0
+1
+2
+## END
+
+#### reversed()
+shopt -s all:oil
+var x = reversed(range(3))
+echo @x
+## STDOUT:
+2
+1
+0
+## END

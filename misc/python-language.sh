@@ -16,7 +16,7 @@ dump-builtins() {
   $py -c '
 for name in sorted(dir(__builtins__)):
   print(name)
-' > _tmp/$py.txt
+' | sort > _tmp/$py.txt
 }
 
 # Hm Python 3 moved  sorted(), etc. out of __builtins__?

@@ -81,8 +81,11 @@ class Transformer(object):
     # TODO: Need to process ALL the trailers, e.g. f(x, y)[1, 2](x, y)
 
     if op_tok.id == Id.Op_LParen:
-      p = children[1]  # the X in ( X )
       args = []  # type: List[expr_t]
+      if len(children) == 2:  # ()
+        return expr.FuncCall(base, args)
+
+      p = children[1]  # the X in ( X )
       # NOTE: The "no singleton" rule causes some complication here.
       if p.typ == grammar_nt.arglist:  # f(x, y)
         self._Arglist(p.children, args)

@@ -43,9 +43,10 @@ X [Data Types]    Str           r'\'   c"\n"   multiline r""" c'''
                   Bool          true false
                   Int           1_000_000
                   Float         3.14
-                  Array<>       @[ls -l]  @[T F F]  @[1 2 3]  @[1.5 2.5] 
-                  Dict<>        {name: 'oil'}  {['name']: 'oil'}  {name}
+                  Array[]       @[ls -l]  @[T F F]  @[1 2 3]  @[1.5 2.5] 
+                  Tuple[]       #()  #(42)  #(42, "foo")
                   List          [1, 'str', false]  (for JSON compatibility)
+                  Dict[]        {name: 'oil'}  {['name']: 'oil'}  {name}
                   Null          null
                   Regex         $/ d+ /
                   Func          func(x) { return x+1 }
