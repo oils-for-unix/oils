@@ -45,8 +45,40 @@ simple-demo() {
   #echo @sorted(myarray)@invalid
 }
 
+split-join-demo() {
+  var parts = @(aaa BB c)
+  echo 'Parts:' @parts
+  echo
+
+  echo 'join(parts):' $join(parts)
+  echo
+
+  echo '+ Another way of doing it, without creating another variable:'
+  echo -sep '' @parts
+  echo
+
+  var j = join(parts, ":")
+  #var a = split(j)
+  #repr j a
+
+  echo -sep '' "j => " $j
+  echo -sep '' 'When IFS is the default, split(j) => '
+  echo @split(j)
+  echo
+
+  setvar IFS = ":"
+  echo 'When IFS is :, split(j) => '
+  echo @split(j)
+  echo
+
+  unset IFS
+
+  echo '+ Since there is no word splitting of unquoted $(ls), here iss an idiom:'
+  echo @split( $(ls ~ | grep b) )
+}
+
 types-demo() {
-  echo 'TODO: bool'
+  echo 'TODO: bool, int, etc.'
 }
 
 "$@"
