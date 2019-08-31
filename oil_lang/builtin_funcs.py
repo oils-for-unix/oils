@@ -150,15 +150,15 @@ def Init(mem):
   # Modules that could be builtin:
   # - math -- sin(), a lot of floating point stuff like frexp()
   #   - new in Python 3.4: statistics
+  # - hashlib, e.g. useful for writing a package manager or build system
+  # - heapq, bisect: algorithms, somewhat rarely used
   # - datetime -- hm we need some sort of better replacement
   #   - strftime() because awk has it
-  # - hashlib
   # - itertools, functools -- I don't really use these
   #
   # libc wrappers:
   # - normpath()
   # - replacement for $RANDOM.  rand() and srand()?
-
   # left to external utils:
   # - mkdir, readlink()
 
