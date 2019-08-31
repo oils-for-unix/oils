@@ -155,3 +155,30 @@ echo @x
 1
 0
 ## END
+
+#### enumerate()
+echo $enumerate
+shopt -s all:oil
+# TODO: need new for loop syntax
+for (i, a in enumerate( @(a b c) )) {
+  echo $i $a
+}
+## STDOUT:
+0 a
+1 b
+2 c
+## END
+
+#### zip()
+echo $zip
+shopt -s all:oil
+var a = @(1 2 3)
+var b = @(a b c)
+for (item in zip(a, b)) {
+  echo $item
+}
+## STDOUT:
+1 a
+2 b
+3 c
+## END

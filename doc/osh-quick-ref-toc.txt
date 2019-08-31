@@ -119,8 +119,10 @@ X [Unsupported]   enable
                   X fork   X wait        replaces & and (), takes a block
                   X use                  source with namespace, file-relative 
                   X dirname   X basename optimizations
+                  opts                   getopts replacement
                   push                   sugar for 'do array.push( @(a b) )'
                   repr                   Show debug representation of vars
+                  X getline              Instead of read -raw :name
                   X json-echo   X json-read  
                   X tsv2-echo   X tsv2-read
 
@@ -198,9 +200,9 @@ OIL LIBRARIES
   [Builtin Funcs] join()   split()    $IFS algorithm or awk algorithm
                   len()
                   read(n)             better than read -n, no short reads?
-                  write()             replaces echo -n
                   posix::read()       raw bindings?
                   strftime()
+                  hashlib
 X [getopts]       ?
 X [Testing]       check ?
 X [Data Formats]  json   csv   tsv2   struct (binary)
