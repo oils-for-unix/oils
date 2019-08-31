@@ -654,6 +654,8 @@ class WordParser(object):
       elif self.token_kind == Kind.VSub:
         part = word_part.SimpleVarSub(self.cur_token)
         out_parts.append(part)
+        # NOTE: parsing "$f(x)" would BREAK CODE.  Could add a more for it
+        # later.
 
       elif self.token_kind == Kind.Right:
         assert self.token_type == Id.Right_DoubleQuote, self.token_type
@@ -1032,7 +1034,7 @@ class WordParser(object):
     node.spids.append(paren_spid)
     return node
 
-  def _ParseCallArguments(self, lex_mode):
+  def _ParseCallArguments(self):
     # type: (lex_mode_t) -> List[expr_t]
 
     # Needed so ) doesn't get translated to something else
@@ -1041,14 +1043,7 @@ class WordParser(object):
     #log('t: %s', self.cur_token)
 
     # Call into expression language.
-    arg_nodes, last_token = self.parse_ctx.ParseOilArgList(self.lexer)
-
-    if 0:
-      self._Next(lex_mode)  # Get )
-      self._Peek()
-      if self.token_type != Id.Op_RParen:
-        p_die("Expected ), got %r", self.cur_token)
-
+    arg_nodes, _ = self.parse_ctx.ParseOilArgList(self.lexer)
     return arg_nodes
 
   KINDS_THAT_END_WORDS = (Kind.Eof, Kind.WS, Kind.Op, Kind.Right)
@@ -1109,7 +1104,7 @@ class WordParser(object):
 
           t = self.lexer.LookAhead(lex_mode_e.ShCommand)
           if t.id == Id.Op_LParen:  # @arrayfunc(x)
-            arguments = self._ParseCallArguments(lex_mode)
+            arguments = self._ParseCallArguments()
             part = word_part.FuncCall(splice_token, arguments)
           else:
             part = word_part.Splice(splice_token)
@@ -1133,20 +1128,18 @@ class WordParser(object):
 
         part = word_part.SimpleVarSub(vsub_token)
         if self.token_type == Id.VSub_DollarName:
-          # Look for $f(x)
-          # --name=$f(x) allowed
-          # "--name=$f(x)" not allowed?  That would require \( ?  Feels too
-          # complicated.
+          # Look ahead for $strfunc(x)
+          #   $f(x) or --name=$f(x) is allowed
+          #   but "--name=$f(x)" not allowed?  This would BREAK EXISTING CODE.
+          #   It would need a parse option.
+
           t = self.lexer.LookAhead(lex_mode_e.ShCommand)
-          if t.id == Id.Op_LParen:  # $strfunc(x)
-            arguments = self._ParseCallArguments(lex_mode)
+          if t.id == Id.Op_LParen:
+            arguments = self._ParseCallArguments()
             part = word_part.FuncCall(vsub_token, arguments)
 
-            # Unlike @splice, it sense to allow this:
-            #
-            # $f(1)$f(2) ->
+            # Unlike @arrayfunc(x), it makes sense to allow $f(1)$f(2)
             # var a = f(1); var b = f(2); echo $a$b
-            #
             # It's consistent with other uses of $.
 
         w.parts.append(part)

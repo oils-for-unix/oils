@@ -181,8 +181,11 @@ oil=21
 #### $len(x) inside strings
 var s = "abc"
 echo -$len(s)-
-# This has to work, otherwise $len become "builtin function"
+
+# This already has a meaning ...
 #echo "-$len(x)-"
+#echo "-${len}(x)-"
+
 ## STDOUT:
 -3-
 ## END
