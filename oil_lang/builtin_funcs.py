@@ -10,7 +10,8 @@ from _devbuild.gen.syntax_asdl import lhs_expr
 
 def SetGlobalFunc(mem, name, func):
   """Used by bin/oil.py to set split(), etc."""
-  assert callable(func), func
+  # NOTE: Not present in release build
+  #assert callable(func), func
   mem.SetVar(lhs_expr.LhsName(name), value.Obj(func), (), scope_e.GlobalOnly)
 
 
