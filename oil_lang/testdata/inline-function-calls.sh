@@ -73,7 +73,7 @@ split-join-demo() {
 
   unset IFS
 
-  echo '+ Since there is no word splitting of unquoted $(ls), here iss an idiom:'
+  echo '+ Since there is no word splitting of unquoted $(ls), here is an idiom:'
   echo @split( $(ls ~ | grep b) )
 }
 
