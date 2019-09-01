@@ -116,10 +116,14 @@ class _ErrExit(object):
   An _ErrExit object prevents these two mechanisms from clobbering each other.
   """
   def __init__(self):
+    # type: () -> None
     self.errexit = False  # the setting
+    # SUBTLE INVARIANT: True can only appear ONCE in stack.  Push() and Set()
+    # enforce this.
     self.stack = []
 
   def Push(self):
+    # type: () -> None
     """Temporarily disable errexit."""
     if self.errexit:
       self.errexit = False
@@ -128,21 +132,31 @@ class _ErrExit(object):
       self.stack.append(False)
 
   def Pop(self):
+    # type: () -> None
     """Restore the previous value."""
     self.errexit = self.stack.pop()
 
   def IsTemporarilyDisabled(self):
-    return len(self.stack) and self.stack[-1]
+    # type: () -> bool
+    return True in self.stack
 
   def Set(self, b):
-    """User code calls this."""
-    if True in self.stack:  # are we in a temporary state?
-      # TODO: Add error context.
-      e_die("Can't set 'errexit' in a context where it's disabled "
-            "(if, !, && ||, while/until conditions)")
-    self.errexit = b
+    # type: (bool) -> None
+    """Set the errexit flag.
+
+    Callers: set -o errexit, shopt -s all:oil, all:strict.
+    """
+    if True in self.stack:  # Will set -e be restored later?
+      # Ignore set -e or set +e now, but its effect becomes visible LATER.
+      # This is confusing behavior that all shells implement!  strict_errexit
+      # makes it a non-issue.
+      i = self.stack.index(True)
+      self.stack[i] = b
+    else:
+      self.errexit = b
 
   def Disable(self):
+    # type: () -> None
     """For bash compatibility in command sub."""
     self.errexit = False
 

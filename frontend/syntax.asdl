@@ -211,7 +211,7 @@ module syntax
   | ControlFlow(token token, word? arg_word)
   | Pipeline(command* children, bool negated, int* stderr_indices)
   | AndOr(id* ops, command* children)
-    -- Part of for/while/until.
+    -- Part of for, while, until (but not if, case, FuncDef)
   | DoGroup(command* children, redir* redirects)
     -- A brace group is a compound command, with redirects.
   | BraceGroup(command* children, redir* redirects)

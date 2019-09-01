@@ -601,7 +601,10 @@ class Executor(object):
       func_node = self.procs.get(arg0)
       if func_node is not None:
         eo = self.exec_opts
-        if eo.strict_errexit and eo.errexit.IsTemporarilyDisabled():
+        #if eo.strict_errexit and eo.errexit.IsTemporarilyDisabled():
+        # TODO: Remove.  Check is made below.  But we need to fix location
+        # info.
+        if 0:
           e_die("errexit can't be disabled when running a function. "
                 "Maybe wrap the function in a process with the at-splice "
                 "pattern.", span_id=span_id)
@@ -1223,6 +1226,21 @@ class Executor(object):
       del self.trap_nodes[:]
       for trap_node in to_run:  # NOTE: Don't call this 'node'!
         self._Execute(trap_node)
+
+    # strict_errexit check for all compound commands
+    eo = self.exec_opts
+    if (eo.strict_errexit and eo.errexit.IsTemporarilyDisabled() and
+        node.tag in (
+        # These are nodes that execute more than one COMMAND.  DParen doesn't
+        # count because ther are no commands.
+        command_e.Pipeline, command_e.AndOr, command_e.Subshell,
+        command_e.DoGroup,  # covers ForEach and ForExpr, but not WhileUntil/If
+        command_e.BraceGroup, command_e.Subshell,
+        command_e.WhileUntil, command_e.If, command_e.Case,
+        command_e.TimeBlock, command_e.CommandList,
+        )):
+      # TODO: location info is wrong here.
+      e_die("errexit can't be disabled when running a compound command")
 
     # These nodes have no redirects.  NOTE: Function definitions have
     # redirects, but we do NOT want to evaluate them yet!  They're evaluated

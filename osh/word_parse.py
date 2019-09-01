@@ -1035,7 +1035,7 @@ class WordParser(object):
     return node
 
   def _ParseCallArguments(self):
-    # type: (lex_mode_t) -> List[expr_t]
+    # type: () -> List[expr_t]
 
     # Needed so ) doesn't get translated to something else
     self.lexer.PushHint(Id.Op_RParen, Id.Op_RParen)

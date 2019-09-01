@@ -209,7 +209,7 @@ echo status=$?
 status=0
 ## END
 
-#### strict_errexit
+#### strict_errexit prevents errexit from being disabled in function
 set -o errexit
 func() { echo func; }
 
@@ -234,6 +234,50 @@ func
 builtin ok
 external ok
 func
+## END
+
+#### strict_errexit prevents errexit from being disabled in brace group
+set -o errexit
+# false failure is NOT respected either way
+{ echo foo; false; echo bar; } || echo "failed"
+
+shopt -s strict_errexit || true
+{ echo foo; false; echo bar; } || echo "failed"
+## status: 1
+## STDOUT:
+foo
+bar
+## END
+
+## N-I dash/bash/mksh/ash status: 0
+## N-I dash/bash/mksh/ash STDOUT:
+foo
+bar
+foo
+bar
+## END
+
+#### strict_errexit prevents errexit from being disabled in subshell
+set -o errexit
+shopt -s inherit_errexit || true
+
+# false failure is NOT respected either way
+( echo foo; false; echo bar; ) || echo "failed"
+
+shopt -s strict_errexit || true
+( echo foo; false; echo bar; ) || echo "failed"
+## status: 1
+## STDOUT:
+foo
+bar
+## END
+
+## N-I dash/bash/mksh/ash status: 0
+## N-I dash/bash/mksh/ash STDOUT:
+foo
+bar
+foo
+bar
 ## END
 
 #### strict_errexit and ! && || if while until
