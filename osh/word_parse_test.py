@@ -383,11 +383,9 @@ class WordParserTest(unittest.TestCase):
     _assertReadWordFailure(self, '@func().', oil_at=True)
 
   def testInlineFuncCall(self):
-    # Leading chars don't make sense
-    #_assertReadWordFailure(self, '.$func()', oil_at=True)
-
-    # Can't have trailing chars
-    _assertReadWordFailure(self, '$func().', oil_at=True)
+    _assertReadWord(self, '--foo=$func()', oil_at=True)
+    _assertReadWord(self, '$func()trailer', oil_at=True)
+    _assertReadWord(self, '--foo=$func()trailer', oil_at=True)
 
   def testReadComment(self):
     # Test that we get Id.Op_Newline
