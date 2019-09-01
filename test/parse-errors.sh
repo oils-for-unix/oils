@@ -469,9 +469,8 @@ push-builtin() {
 
   # Unterminated
   _error-case 'push'
+  _error-case 'push invalid-'
   #_error-case 'push notarray'  # returns status 1
-  _error-case 'a=(1 2); push a'
-  _error-case 'a=(1 2); push a zz'  # points at 'zz'
 }
 
 cases-in-strings() {
