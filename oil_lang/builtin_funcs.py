@@ -42,7 +42,12 @@ def Init(mem):
   # TODO: Should these be Bool Int Float Str List Dict?
   SetGlobalFunc(mem, 'bool', bool)
   SetGlobalFunc(mem, 'int', int)
-  SetGlobalFunc(mem, 'float', float)
+
+  # TODO: Enable float
+  # OVM: PyOS_string_to_double()
+  # osh: Python/ovm_stub_pystrtod.c:10: PyOS_string_to_double: Assertion `0' failed.
+  #SetGlobalFunc(mem, 'float', float)
+
   SetGlobalFunc(mem, 'tuple', tuple)
   SetGlobalFunc(mem, 'str', str)
   SetGlobalFunc(mem, 'list', list)
