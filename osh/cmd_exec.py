@@ -40,7 +40,6 @@ from core.util import log, e_die
 from core.meta import REDIR_ARG_TYPES, REDIR_DEFAULT_FD
 
 from frontend import args
-from frontend import location
 from frontend import reader
 
 from oil_lang import objects
