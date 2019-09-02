@@ -1,11 +1,30 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   $SH ./runtime-errors.sh all
+#   $SH ./runtime-errors.sh <function name>
 #
 # Run with bash/dash/mksh/zsh.
 
 source test/common.sh
+
+# Run with SH=bash too
+SH=${SH:-bin/osh}
+
+banner() {
+  echo
+  echo ===== "$@" =====
+  echo
+}
+
+_error-case() {
+  $SH -c "$@"
+
+  # NOTE: This works with osh, not others.
+  local status=$?
+  if test $status != 1; then
+    die "Expected status 1, got $status"
+  fi
+}
 
 #
 # PARSE ERRORS
@@ -99,12 +118,46 @@ errexit_alias() {
   foo /nonexistent
 }
 
-_func() { set +o errexit; echo _func; }
+_strict-errexit-case() {
+  local code=$1
+  banner "[strict_errexit] $code"
+  _error-case \
+    "set -o errexit; shopt -s strict_errexit; $code"
+  echo
+}
 
-cannot_disable_errexit() {
-  set -o errexit
+strict_errexit() {
+  # Test out all the location info
 
-  ! _func
+  # command.Pipeline.  Hm ! doesn't work here
+  _strict-errexit-case 'if ls | wc -l; then echo Pipeline; fi'
+
+  # command.AndOr
+  _strict-errexit-case 'if echo a && echo b; then echo AndOr; fi'
+
+  # command.DoGroup
+  _strict-errexit-case '! for x in a; do echo $x; done'
+
+  # command.BraceGroup
+  _strict-errexit-case '_func() { echo; }; ! _func'
+  _strict-errexit-case '! { echo brace; }'
+
+  # command.Subshell
+  _strict-errexit-case '! ( echo subshell )'
+
+  # command.WhileUntil
+  _strict-errexit-case '! while false; do echo while; done'
+
+  # command.If
+  _strict-errexit-case '! if true; then false; fi'
+
+  # command.Case
+  _strict-errexit-case '! case x in x) echo x;; esac'
+
+  # command.TimeBlock
+  _strict-errexit-case '! time echo hi'
+
+  # How do I tickle CommandList?  That only happens with a single line?
 }
 
 pipefail() {
@@ -627,7 +680,7 @@ all() {
   for t in \
     no_such_command no_such_command_commandsub no_such_command_heredoc \
     failed_command errexit_usage_error errexit_subshell errexit_dbracket \
-    errexit_alias cannot_disable_errexit \
+    errexit_alias strict_errexit \
     pipefail pipefail_group pipefail_subshell pipefail_func \
     pipefail_while pipefail_multiple \
     core_process osh_state \

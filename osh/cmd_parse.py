@@ -51,6 +51,11 @@ if TYPE_CHECKING:
   from osh.word_parse import WordParser
 
 
+def _KeywordSpid(w):
+  """Assume that 'while', 'case', etc. are a specific type of word.Compound."""
+  return w.parts[0].token.span_id
+
+
 def _ReadHereLines(line_reader,  # type: _Reader
                    h,  # type: redir__HereDoc
                    delimiter,  # type: str
@@ -833,10 +838,9 @@ class CommandParser(object):
     do_group         : Do command_list Done ;          /* Apply rule 6 */
     """
     self._Eat(Id.KW_Do)
-    do_spid = word_.LeftMostSpanForWord(self.cur_word)  # after _Eat
+    do_spid = _KeywordSpid(self.cur_word)  # Must come AFTER _Eat
 
     c_list = self._ParseCommandList()  # could be any thing
-    assert c_list is not None
 
     self._Eat(Id.KW_Done)
     done_spid = word_.LeftMostSpanForWord(self.cur_word)  # after _Eat
@@ -953,7 +957,7 @@ class CommandParser(object):
     for_clause : For for_name newline_ok (in for_words? for_sep)? do_group ;
                | For '((' ... TODO
     """
-    for_spid = word_.LeftMostSpanForWord(self.cur_word)
+    for_spid = _KeywordSpid(self.cur_word)
     self._Eat(Id.KW_For)
 
     self._Peek()
@@ -978,15 +982,14 @@ class CommandParser(object):
     keyword = self.cur_word.parts[0].token
     # This is ensured by the caller
     assert keyword.id in (Id.KW_While, Id.KW_Until), keyword
-    self._Next()  # skip while
+    self._Next()  # skip keyword
 
     cond_node = self._ParseCommandList()
-    assert cond_node is not None
-
     body_node = self.ParseDoGroup()
-    assert body_node is not None
 
-    return command.WhileUntil(keyword, cond_node.children, body_node)
+    node = command.WhileUntil(keyword, cond_node.children, body_node)
+    node.spids.append(keyword.span_id)  # e.g. for errexit message
+    return node
 
   def ParseCaseItem(self):
     # type: () -> case_arm
@@ -1066,7 +1069,7 @@ class CommandParser(object):
     """
     case_node = command.Case()
 
-    case_spid = word_.LeftMostSpanForWord(self.cur_word)
+    case_spid = _KeywordSpid(self.cur_word)
     self._Next()  # skip case
 
     self._Peek()
@@ -1103,13 +1106,11 @@ class CommandParser(object):
 
       self._Next()  # skip elif
       cond = self._ParseCommandList()
-      assert cond is not None
 
       then_spid = word_.LeftMostSpanForWord(self.cur_word)
       self._Eat(Id.KW_Then)
 
       body = self._ParseCommandList()
-      assert body is not None
 
       arm = syntax_asdl.if_arm(cond.children, body.children)
       arm.spids.extend((elif_spid, then_spid))
@@ -1119,7 +1120,6 @@ class CommandParser(object):
       else_spid = word_.LeftMostSpanForWord(self.cur_word)
       self._Next()
       body = self._ParseCommandList()
-      assert body is not None
       if_node.else_action = body.children
     else:
       else_spid = const.NO_INTEGER
@@ -1131,20 +1131,19 @@ class CommandParser(object):
     """
     if_clause        : If command_list Then command_list else_part? Fi ;
     """
+    if_spid = _KeywordSpid(self.cur_word)
     if_node = command.If()
     self._Next()  # skip if
 
     cond = self._ParseCommandList()
-    assert cond is not None
 
     then_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.KW_Then)
 
     body = self._ParseCommandList()
-    assert body is not None
 
     arm = syntax_asdl.if_arm(cond.children, body.children)
-    arm.spids.extend((const.NO_INTEGER, then_spid))  # no if spid at first?
+    arm.spids.extend((if_spid, then_spid))
     if_node.arms.append(arm)
 
     if self.c_id in (Id.KW_Elif, Id.KW_Else):
@@ -1165,9 +1164,12 @@ class CommandParser(object):
 
     According to bash help.
     """
+    time_spid = _KeywordSpid(self.cur_word)
     self._Next()  # skip time
     pipeline = self.ParsePipeline()
-    return command.TimeBlock(pipeline)
+    node = command.TimeBlock(pipeline)
+    node.spids.append(time_spid)
+    return node
 
   def ParseCompoundCommand(self):
     # type: () -> command_t
@@ -1513,10 +1515,12 @@ class CommandParser(object):
       return child
 
     ops = []
+    op_spids = []
     children = [child]
 
     while True:
       ops.append(self.c_id)
+      op_spids.append(self.cur_word.token.span_id)
 
       self._Next()  # skip past || &&
       self._NewlineOk()
@@ -1530,6 +1534,7 @@ class CommandParser(object):
         break
 
     node = command.AndOr(ops, children)
+    node.spids = op_spids
     return node
 
   # NOTE: _ParseCommandLine and _ParseCommandTerm are similar, but different.

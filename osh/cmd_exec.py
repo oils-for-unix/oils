@@ -40,6 +40,7 @@ from core.util import log, e_die
 from core.meta import REDIR_ARG_TYPES, REDIR_DEFAULT_FD
 
 from frontend import args
+from frontend import location
 from frontend import reader
 
 from oil_lang import objects
@@ -1227,24 +1228,27 @@ class Executor(object):
       for trap_node in to_run:  # NOTE: Don't call this 'node'!
         self._Execute(trap_node)
 
-    # strict_errexit check for all compound commands
+    # strict_errexit check for all compound commands.
+    # TODO: Speed this up with some kind of bit mask?
     eo = self.exec_opts
     if (eo.strict_errexit and eo.errexit.IsTemporarilyDisabled() and
         node.tag in (
         # These are nodes that execute more than one COMMAND.  DParen doesn't
         # count because ther are no commands.
-        command_e.Pipeline, command_e.AndOr, command_e.Subshell,
+        command_e.Pipeline, command_e.AndOr,
         command_e.DoGroup,  # covers ForEach and ForExpr, but not WhileUntil/If
         command_e.BraceGroup, command_e.Subshell,
         command_e.WhileUntil, command_e.If, command_e.Case,
-        command_e.TimeBlock, command_e.CommandList,
+        command_e.TimeBlock,
+        command_e.CommandList,  # might never happen
         )):
-      # TODO: location info is wrong here.
-      e_die("errexit can't be disabled when running a compound command")
+      e_die("can't disable errexit when running a compound command",
+            span_id=location.SpanForCommand(node))
 
     # These nodes have no redirects.  NOTE: Function definitions have
     # redirects, but we do NOT want to evaluate them yet!  They're evaluated
     # on every invocation.
+    # TODO: Speed this up with some kind of bit mask?
     if node.tag in (
         command_e.NoOp, command_e.ControlFlow, command_e.Pipeline,
         command_e.AndOr, command_e.CommandList, command_e.Sentence,
