@@ -602,11 +602,10 @@ class Executor(object):
       func_node = self.procs.get(arg0)
       if func_node is not None:
         eo = self.exec_opts
-        #if eo.strict_errexit and eo.errexit.IsTemporarilyDisabled():
-        # TODO: Remove.  Check is made below.  But we need to fix location
-        # info.
-        if 0:
-          e_die("errexit can't be disabled when running a function. "
+        if eo.strict_errexit and eo.errexit.IsTemporarilyDisabled():
+          # NOTE: This would be checked below, but this gives a better error
+          # message.
+          e_die("can't disable errexit running a function. "
                 "Maybe wrap the function in a process with the at-splice "
                 "pattern.", span_id=span_id)
 
