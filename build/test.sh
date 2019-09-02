@@ -33,6 +33,7 @@ oil-bundle() {
 _tarball() {
   local name=${1:-hello}
   local version=${2:-0.0.0}
+  local install=${3:-}
 
   local tmp=_tmp/${name}-tar-test
   rm -r -f $tmp
@@ -48,6 +49,10 @@ _tarball() {
   local bin=_bin/${name}.ovm  # not dbg
   time make $bin
   $bin --version
+
+  if test -n "$install"; then
+    sudo ./install
+  fi
 }
 
 hello-tar() {
@@ -55,7 +60,8 @@ hello-tar() {
 }
 
 oil-tar() {
-  _tarball oil $(head -n 1 oil-version.txt)
+  local install=${1:-}  # non-empty to install
+  _tarball oil $(head -n 1 oil-version.txt) "$install"
 }
 
 # Test the different entry points.
