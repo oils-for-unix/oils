@@ -231,7 +231,11 @@ def _RightMostSpanForPart(part):
 def LeftMostSpanForWord(w):
   # type: (word_t) -> int
   if isinstance(w, word__Compound):
-    return LeftMostSpanForPart(w.parts[0])
+    if w.parts:
+      return LeftMostSpanForPart(w.parts[0])
+    else:
+      # This is possible for empty brace sub alternative {a,b,}
+      return const.NO_INTEGER
 
   elif isinstance(w, word__Token):
     return w.token.span_id
@@ -240,13 +244,8 @@ def LeftMostSpanForWord(w):
     return const.NO_INTEGER
 
   elif isinstance(w, word__BracedTree):
-    if len(w.parts) == 0:  # Is this possible?
-      return const.NO_INTEGER
-    else:
-      begin = w.parts[0]
-      # TODO: We need to combine LineSpan()?  If they're both on the same line,
-      # return them both.  If they're not, then just use "begin"?
-      return LeftMostSpanForPart(begin)
+    # This should always have one part?
+    return LeftMostSpanForPart(w.parts[0])
 
   elif isinstance(w, word__String):
     return w.spids[0]  # See _StringWordEmitter in osh/builtin_bracket.py

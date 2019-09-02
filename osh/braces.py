@@ -220,7 +220,6 @@ def _BraceDetect(w):
         # ?  We're forcing braces right now but not commas.
         if stack:
           stack[-1].saw_comma = True
-
           stack[-1].alt_part.words.append(word.Compound(cur_parts))
           cur_parts = []  # clear
           append = False
