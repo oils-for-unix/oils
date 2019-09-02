@@ -5,21 +5,20 @@
 # Usage:
 #   devtools/release.sh <function name>
 #
-# Pre-release:
-#   $0 quick-oil-tarball
+# Steps:
+#   build/doc.sh update-src-versions  (optional)
+#   $0 quick-oil-tarball     # build FIRST tarball
 #   build/test.sh oil-tar T  # extract, build, install
 #                            # for cpython-defs source scanning and dogfood
 #   demo/osh-debug.sh osh-for-release: Start a shell to dogfood
 #   opy/regtest.sh verify-golden, because that one tends to be flaky
-#   build/cpython-defs.sh {rebuild-manifest,oil-py-names,filter-methods}
+#   build/cpython-defs.sh {oil-py-names,filter-methods}
 #     (regenerate C source)
 #
-# Steps:
-#   build/doc.sh update-src-versions  (optional)
-#   $0 build-and-test  (builds tarball, runs unit/gold/osh2oil suites, etc.)
+#   $0 build-and-test  # build FINAL tarball, run unit/osh2oil suites, etc.
 #     prereq: build/codegen.sh {download,install}-re2c
 #     test/gold.sh run-for-release (outside OSH_HIJACK_SHEBANG)
-#   $0 metrics  # this can catch bugs
+#   $0 metrics  # this can catch bugs, operates on FINAL tarball
 #   test/wild.sh all (3-4 minutes on fast machine, outside OSH_HIJACK_SHEBANG)
 #   $0 test-opy (2 minutes on fast machine)
 #   $0 spec-all  # tests 2 OSH binaries

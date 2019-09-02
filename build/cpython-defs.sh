@@ -7,9 +7,8 @@
 #
 #   # make clean tree of .c files
 #   devtools/release.sh quick-oil-tarball
-#   build/test.sh oil-tar
+#   build/test.sh oil-tar  # can Ctrl-C this
 #
-#   build/cpython-defs.sh rebuild-manifest  # figure out where to extract names from
 #   build/cpython-defs.sh oil-py-names  # extract names
 #   build/cpython-defs.sh filter-methods
 #
@@ -32,11 +31,6 @@ readonly PY_NAMES=_tmp/oil-py-names.txt
 # Hm that doesn't seem to duplicate posixpath while this does?
 oil-py-deps() {
   cat _build/oil/opy-app-deps.txt | awk ' $1 ~ /\.py$/ { print $1 }'
-}
-
-rebuild-manifest() {
-  rm -v _build/oil/*.txt
-  make _build/oil/opy-app-deps.txt
 }
 
 oil-py-names() {
