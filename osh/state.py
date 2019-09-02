@@ -118,27 +118,32 @@ class _ErrExit(object):
   def __init__(self):
     # type: () -> None
     self.errexit = False  # the setting
-    # SUBTLE INVARIANT: True can only appear ONCE in stack.  Push() and Set()
+    # SUBTLE INVARIANT: There's only ONE valid integer in the stack that's not
+    # const.NO_INTEGER, and it's either a valid span_id or 0.  Push() and Set()
     # enforce this.
     self.stack = []
 
-  def Push(self):
-    # type: () -> None
+  def Push(self, span_id):
+    # type: (int) -> None
     """Temporarily disable errexit."""
+    assert span_id != const.NO_INTEGER
     if self.errexit:
       self.errexit = False
-      self.stack.append(True)  # value to restore
+      self.stack.append(span_id)  # value to restore
     else:
-      self.stack.append(False)
+      self.stack.append(const.NO_INTEGER)  # INVALID span ID / "False"
 
   def Pop(self):
     # type: () -> None
     """Restore the previous value."""
-    self.errexit = self.stack.pop()
+    self.errexit = (self.stack.pop() != const.NO_INTEGER)
 
-  def IsTemporarilyDisabled(self):
-    # type: () -> bool
-    return True in self.stack
+  def SpidIfDisabled(self):
+    # type: () -> int
+    for n in self.stack:
+      if n != const.NO_INTEGER:  # set -e will be restored later
+        return n
+    return const.NO_INTEGER
 
   def Set(self, b):
     # type: (bool) -> None
@@ -146,14 +151,18 @@ class _ErrExit(object):
 
     Callers: set -o errexit, shopt -s all:oil, all:strict.
     """
-    if True in self.stack:  # Will set -e be restored later?
-      # Ignore set -e or set +e now, but its effect becomes visible LATER.
-      # This is confusing behavior that all shells implement!  strict_errexit
-      # makes it a non-issue.
-      i = self.stack.index(True)
-      self.stack[i] = b
-    else:
-      self.errexit = b
+    for i, n in enumerate(self.stack):
+      if n != const.NO_INTEGER:  # set -e will be restored later
+        # Ignore set -e or set +e now, but its effect becomes visible LATER.
+        # This is confusing behavior that all shells implement!  strict_errexit
+        # makes it a non-issue.
+
+        # SUBTLE: 0 isn't a valid span_id, but we will never use it for the
+        # strict_errexit message.
+        self.stack[i] = 0 if b else const.NO_INTEGER
+        return
+
+    self.errexit = b  # Otherwise just set it
 
   def Disable(self):
     # type: () -> None

@@ -126,7 +126,26 @@ _strict-errexit-case() {
   echo
 }
 
-strict_errexit() {
+strict_errexit_1() {
+  # Test out all the location info
+
+  _strict-errexit-case '! { echo 1; echo 2; }'
+
+  _strict-errexit-case '{ echo 1; echo 2; } && true'
+  _strict-errexit-case '{ echo 1; echo 2; } || true'
+
+  # More chains
+  _strict-errexit-case '{ echo 1; echo 2; } && true && true'
+  _strict-errexit-case 'true && { echo 1; echo 2; } || true || true'
+  _strict-errexit-case 'true && true && { echo 1; echo 2; } || true || true'
+
+  _strict-errexit-case 'if { echo 1; echo 2; }; then echo IF; fi'
+  _strict-errexit-case 'while { echo 1; echo 2; }; do echo WHILE; done'
+  _strict-errexit-case 'until { echo 1; echo 2; }; do echo UNTIL; done'
+}
+
+# OLD WAY OF BLAMING
+strict_errexit_2() {
   # Test out all the location info
 
   # command.Pipeline.  Hm ! doesn't work here
@@ -680,7 +699,7 @@ all() {
   for t in \
     no_such_command no_such_command_commandsub no_such_command_heredoc \
     failed_command errexit_usage_error errexit_subshell errexit_dbracket \
-    errexit_alias strict_errexit \
+    errexit_alias strict_errexit_1 strict_errexit_2 \
     pipefail pipefail_group pipefail_subshell pipefail_func \
     pipefail_while pipefail_multiple \
     core_process osh_state \

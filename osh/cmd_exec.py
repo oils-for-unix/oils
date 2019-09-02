@@ -402,8 +402,8 @@ class Executor(object):
 
     return status
 
-  def _PushErrExit(self):
-    self.exec_opts.errexit.Push()
+  def _PushErrExit(self, span_id):
+    self.exec_opts.errexit.Push(span_id)
 
   def _PopErrExit(self):
     self.exec_opts.errexit.Pop()
@@ -602,7 +602,7 @@ class Executor(object):
       func_node = self.procs.get(arg0)
       if func_node is not None:
         eo = self.exec_opts
-        if eo.strict_errexit and eo.errexit.IsTemporarilyDisabled():
+        if eo.strict_errexit and eo.errexit.SpidIfDisabled() != const.NO_INTEGER:
           # NOTE: This would be checked below, but this gives a better error
           # message.
           e_die("can't disable errexit running a function. "
@@ -799,7 +799,7 @@ class Executor(object):
         e_die("|& isn't supported", span_id=node.spids[0])
 
       if node.negated:
-        self._PushErrExit()
+        self._PushErrExit(node.spids[0])  # ! spid
         try:
           status2 = self._RunPipeline(node)
         finally:
@@ -993,7 +993,7 @@ class Executor(object):
       left = node.children[0]
 
       # Suppress failure for every child except the last one.
-      self._PushErrExit()
+      self._PushErrExit(node.spids[0])
       try:
         status = self._Execute(left)
       finally:
@@ -1020,7 +1020,7 @@ class Executor(object):
           status = self._Execute(child)
           check_errexit = True
         else:
-          self._PushErrExit()
+          self._PushErrExit(node.spids[i])  # blame the right && or ||
           try:
             status = self._Execute(child)
           finally:
@@ -1039,7 +1039,7 @@ class Executor(object):
       self.loop_level += 1
       try:
         while True:
-          self._PushErrExit()
+          self._PushErrExit(node.spids[0])  # while/until spid
           try:
             cond_status = self._ExecuteList(node.cond)
           finally:
@@ -1143,7 +1143,7 @@ class Executor(object):
     elif node.tag == command_e.If:
       done = False
       for arm in node.arms:
-        self._PushErrExit()
+        self._PushErrExit(arm.spids[0])  # if/elif spid
         try:
           status = self._ExecuteList(arm.cond)
         finally:
@@ -1230,8 +1230,7 @@ class Executor(object):
     # strict_errexit check for all compound commands.
     # TODO: Speed this up with some kind of bit mask?
     eo = self.exec_opts
-    if (eo.strict_errexit and eo.errexit.IsTemporarilyDisabled() and
-        node.tag in (
+    if eo.strict_errexit and node.tag in (
         # These are nodes that execute more than one COMMAND.  DParen doesn't
         # count because ther are no commands.
         command_e.Pipeline, command_e.AndOr,
@@ -1240,9 +1239,12 @@ class Executor(object):
         command_e.WhileUntil, command_e.If, command_e.Case,
         command_e.TimeBlock,
         command_e.CommandList,  # might never happen
-        )):
-      e_die("can't disable errexit when running a compound command",
-            span_id=location.SpanForCommand(node))
+        ):
+      span_id = eo.errexit.SpidIfDisabled()
+      if span_id != const.NO_INTEGER:
+        node_str = node.__class__.__name__.split('_')[-1]  # e.g. BraceGroup
+        e_die("errexit is disabled here, but strict_errexit disallows it "
+              "with a compound command (%s)", node_str, span_id=span_id)
 
     # These nodes have no redirects.  NOTE: Function definitions have
     # redirects, but we do NOT want to evaluate them yet!  They're evaluated
