@@ -117,6 +117,7 @@ date-and-git-info() {
   echo
 }
 
-if test "$(basename $0)" = 'common.sh'; then
+filename=$(basename $0)
+if test "$filename" = 'common.sh'; then
   "$@"
 fi

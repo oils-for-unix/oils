@@ -11,7 +11,7 @@ shopt -s all:strict 2>/dev/null || true  # dogfood for OSH
 
 source test/common.sh
 
-readonly REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
+readonly REPO_ROOT=$(cd $(dirname $0)/..; pwd)
 
 # For now, fall back to the shell in $PATH.
 shell-path() {
@@ -158,7 +158,7 @@ sh-spec() {
     die "Test file should end with .test.sh"
   fi
 
-  local this_dir=$(cd $(dirname $0) && pwd)
+  local this_dir=$(cd $(dirname $0); pwd)
 
   local tmp_env=$this_dir/../_tmp/spec-tmp/$(basename $test_file)
   mkdir -p $tmp_env

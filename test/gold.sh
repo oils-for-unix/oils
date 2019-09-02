@@ -60,7 +60,7 @@ count() {
 
 # Uses $(cd $(dirname $0) && pwd)
 one-spec-test() {
-  _compare test/spec.sh builtins-special
+  _compare test/spec.sh builtin-special
 }
 
 # Uses redirect of functions.
