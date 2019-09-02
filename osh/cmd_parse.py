@@ -52,8 +52,17 @@ if TYPE_CHECKING:
 
 
 def _KeywordSpid(w):
-  """Assume that 'while', 'case', etc. are a specific type of word.Compound."""
-  return w.parts[0].token.span_id
+  # type: (word_t) -> int
+  """
+  TODO: Can be we optimize this?
+  Assume that 'while', 'case', etc. are a specific type of word.Compound.
+
+  I tested turning LeftMostSpanForWord in a no-op and couldn't observe the
+  difference on a ~500 ms parse of testdata/osh-runtime/abuild.  So maybe this
+  doesn't make sense.
+  """
+  return word_.LeftMostSpanForWord(w)
+  #return w.parts[0].token.span_id
 
 
 def _ReadHereLines(line_reader,  # type: _Reader
@@ -816,11 +825,10 @@ class CommandParser(object):
     """
     brace_group      : LBrace command_list RBrace ;
     """
-    left_spid = word_.LeftMostSpanForWord(self.cur_word)
+    left_spid = _KeywordSpid(self.cur_word)
     self._Eat(Id.Lit_LBrace)
 
     c_list = self._ParseCommandList()
-    assert c_list is not None
 
     # Not needed
     #right_spid = word_.LeftMostSpanForWord(self.cur_word)
@@ -843,7 +851,7 @@ class CommandParser(object):
     c_list = self._ParseCommandList()  # could be any thing
 
     self._Eat(Id.KW_Done)
-    done_spid = word_.LeftMostSpanForWord(self.cur_word)  # after _Eat
+    done_spid = _KeywordSpid(self.cur_word)  # after _Eat
 
     node = command.DoGroup(c_list.children)
     node.spids.extend((do_spid, done_spid))
@@ -927,6 +935,7 @@ class CommandParser(object):
     if self.c_id == Id.KW_In:
       self._Next()  # skip in
 
+      # TODO: Do _Peek() here?
       in_spid = word_.LeftMostSpanForWord(self.cur_word) + 1
       iter_words, semi_spid = self.ParseForWords()
 
@@ -1520,7 +1529,7 @@ class CommandParser(object):
 
     while True:
       ops.append(self.c_id)
-      op_spids.append(self.cur_word.token.span_id)
+      op_spids.append(word_.LeftMostSpanForWord(self.cur_word))
 
       self._Next()  # skip past || &&
       self._NewlineOk()

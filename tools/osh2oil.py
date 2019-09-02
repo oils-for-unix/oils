@@ -814,9 +814,9 @@ class OilPrinter(object):
 
       # if foo; then -> if foo {
       # elif foo; then -> } elif foo {
-      for arm in node.arms:
+      for i, arm in enumerate(node.arms):
         elif_spid, then_spid = arm.spids
-        if elif_spid != const.NO_INTEGER:
+        if i != 0:  # 'if' not 'elif' on the first arm
           self.cursor.PrintUntil(elif_spid)
           self.f.write('} ')
 

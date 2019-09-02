@@ -230,29 +230,8 @@ def _RightMostSpanForPart(part):
 
 def LeftMostSpanForWord(w):
   # type: (word_t) -> int
-  # For now it returns a LineSpan.  That's all you know how to print.
-  #
-  # Runtime errors may be different.
-  #
-  # Token: just use token.line_span
-  # Literal: token.line_span
-  # composites: just use the first part for now, but show the stack trace:
-  #   $(( 1 +  + ))
-  #   ^~~
-  #   In arithmetic substitution
-  #   $(( 1 +  + ))
-  #            ^
-  #            Invalid argument to + operator
-
-  # TODO: Really we should use par
   if isinstance(w, word__Compound):
-    if len(w.parts) == 0:
-      return const.NO_INTEGER
-    else:
-      begin = w.parts[0]
-      # TODO: We need to combine LineSpan()?  If they're both on the same line,
-      # return them both.  If they're not, then just use "begin"?
-      return LeftMostSpanForPart(begin)
+    return LeftMostSpanForPart(w.parts[0])
 
   elif isinstance(w, word__Token):
     return w.token.span_id
@@ -261,7 +240,7 @@ def LeftMostSpanForWord(w):
     return const.NO_INTEGER
 
   elif isinstance(w, word__BracedTree):
-    if len(w.parts) == 0:
+    if len(w.parts) == 0:  # Is this possible?
       return const.NO_INTEGER
     else:
       begin = w.parts[0]
