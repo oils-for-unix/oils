@@ -453,8 +453,9 @@ class ExternalProgram(object):
           # with no newlines, so read 80 bytes instead of readline().
           line = f.read(80)
           if match.ShouldHijack(line):
-            self.debug_f.log('Hijacked: %s with %s', argv, self.hijack_shebang)
-            argv = [self.hijack_shebang] + argv
+            argv = [self.hijack_shebang, argv0_path] + argv[1:]
+            argv0_path = self.hijack_shebang
+            self.debug_f.log('Hijacked: %s', argv)
           else:
             #self.debug_f.log('Not hijacking %s (%r)', argv, line)
             pass
@@ -463,6 +464,7 @@ class ExternalProgram(object):
 
     # TODO: If there is an error, like the file isn't executable, then we should
     # exit, and the parent will reap it.  Should it capture stderr?
+
     try:
       posix.execve(argv0_path, argv, environ)
     except OSError as e:
