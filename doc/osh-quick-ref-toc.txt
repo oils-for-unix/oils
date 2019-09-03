@@ -155,7 +155,7 @@ SHELL OPTIONS
                   X parse_brace          cd ~/src { ... }
                   X parse_equals         x = 's' (for cleaner config snippets)
                   X parse_paren          if (x > 0) ...
-                  X parse_set            instead of setvar
+                  parse_set              instead of setvar
 
 ENVIRONMENT VARIABLES
   [Shell Options] SHELLOPTS   X BASHOPTS

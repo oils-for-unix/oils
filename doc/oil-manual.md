@@ -135,6 +135,16 @@ set mylist[0] += 1  # increment by 1
 set mydict['name'] = 'other'
 ```
 
+In Oil, `set` is a keyword.  To use the `set` builtin, prefix it with `builtin`:
+
+```
+builtin set -o errexit
+builtin set -- a b c
+```
+
+You can also turn on `set` options with the `shopt -o` flag: `shopt -o -s
+errexit`.
+
 #### Future
 
 (Not implemented)
@@ -276,7 +286,6 @@ a confusing equivalent to `set -o errexit -o nounset`.)
 - fork, wait
 - log, die
 - write
-
 
 ### Links
 

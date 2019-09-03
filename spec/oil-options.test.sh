@@ -206,3 +206,23 @@ echo $(echo one; false; echo two)
 ## STDOUT:
 one
 ## END
+
+#### parse_set
+x=init
+
+set x=42
+echo x=$x
+echo argv "$@"
+
+shopt -s parse_set
+set x=42
+builtin set --
+echo x=$x
+echo argv "$@"
+
+## STDOUT:
+x=init
+argv x=42
+x=42
+argv
+## END

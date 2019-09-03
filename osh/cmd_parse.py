@@ -360,6 +360,8 @@ class CommandParser(object):
     self.eof_id = eof_id
     self.aliases_in_flight = aliases_in_flight
 
+    self.parse_opts = parse_ctx.parse_opts
+
     self.Reset()
 
   def Reset(self):
@@ -1230,6 +1232,11 @@ class CommandParser(object):
       self._Next()
       return self.w_parser.ParseSetVar(kw_token)
 
+    if self.parse_opts.set and self.c_id == Id.KW_Set:
+      kw_token = word_.LiteralToken(self.cur_word)
+      self._Next()
+      return self.w_parser.ParseSetVar(kw_token)
+
     # This never happens?
     p_die('Unexpected word while parsing compound command', word=self.cur_word)
 
@@ -1417,6 +1424,8 @@ class CommandParser(object):
       if node.tag not in (command_e.TimeBlock, command_e.OilAssign):
         node.redirects = self._ParseRedirectList()  # type: ignore
       return node
+    if self.parse_opts.set and self.c_id == Id.KW_Set:
+      return self.ParseCompoundCommand()
 
     # NOTE: I added this to fix cases in parse-errors.test.sh, but it doesn't
     # work because Lit_RBrace is in END_LIST below.
