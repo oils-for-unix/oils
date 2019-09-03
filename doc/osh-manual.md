@@ -84,28 +84,32 @@ OSH](https://github.com/oilshell/oil/wiki/How-To-Test-OSH).
 
 ### Global Execution Options
 
-ALl unix shells have global options that affect execution, like `set -e`, which
-is also spelled `set -o errexit`.
+All Unix shells have global options that affect execution.  There are two
+kinds:
+
+- POSIX options like `set -e`, which I prefer to write `set -o errexit`.
+- bash extensions like `shopt -s inherit_errexit`
+
+List them all with `set -o` and `shopt -p`.  Other than syntax, there's no
+essential difference between the two kinds.
 
 #### shopt -s all:strict is Recommended
 
-OSH adds more options on top of those provided by POSIX shell and bash.
-
-There is a convenient shortcut `shopt -s all:strict` which turns on these
-optoins:
+OSH adds more options on top of those provided by POSIX and bash.  It has  a
+shortcut `shopt -s all:strict` which turns on many options at once:
 
 - `errexit`, `nounset` (`sh` modes to get more errors)
 - `pipefail` and `inherit_errexit` (`bash` modes to get more errors)
-- `nullglob` (doesn't confuse code and data)
+- `nullglob` (a `bash` mode, doesn't confuse code and data)
 - `strict_*` (`strict_array`, etc.)
-   - These options **disallow** certain parts of the language with **fatal
+   - Strict options **disallow** certain parts of the language with **fatal
      runtime errors**.
 
-This line turns all strict modes on, but is portable to other shells:
+If you want your script to be portable to other shells, use this line:
 
     shopt -s all:strict 2>/dev/null || true  # suppress errors
 
-Of course, you can also turn individual options on or off:
+You can also turn individual options on or off:
 
     shopt -s strict_array  # Set this option.  I want more fatal errors.
     shopt -u strict_array  # Unset it.  Ignore errors and keep executing.
@@ -113,40 +117,17 @@ Of course, you can also turn individual options on or off:
 #### List of Options
 
 `strict_argv`.  Empty `argv` arrays are disallowed, since there's no practical
-use for them.
-
-- For example, the second statement in `x=''; $x` results in a fatal error.
+use for them.  For example, the second statement in `x=''; $x` results in a
+fatal error.
 
 `strict_array`. No implicit conversions between string an array.  In other
-words, turning this on gives you a "real" array type.  (NOTE: Only partially
-implemented.)
+words, turning this on gives you a "real" array type.
 
 `strict_control_flow`. `break` and `continue` outside of a loop are fatal
 errors.
 
-`strict_errexit`.  The `errexit` behavior can only be disabled for external
-commands and builtins, as opposed to shell functions.  (The shell normally
-disables `errexit` for the `if`, `while/until`, `||`, `&&`, and `!`
-constructs.)
-
-When a function is used like `myfunc || echo error`, your program will always
-fail with a runtime error warning that it should be changed.  Consider using
-the ["at-splice pattern"][at-splice] to fix this, e.g. `$0 myfunc || echo
-errexit`.
-
-(Also see `inherit_errexit` and `more_errexit`.)
-
 `strict_eval_builtin`.  The `eval` builtin takes exactly **one** argument.  It
 doesn't concatenate its arguments with a space, or accept zero arguments.
-
-For example, `echo 0; echo $(touch one; false; touch two); echo 3` will print
-`0` and touch the file `one`.
-
-1. The command sub aborts at `false`, and
-2. The parent process aborts after the command sub fails.
-
-This is even stricter than bash 4.4's `inherit_errexit`, which stops at `false`
-in the command sub, but keeps running the parent process.
 
 `strict_word_eval`.  More word evaluation errors are fatal.
 
@@ -155,12 +136,6 @@ in the command sub, but keeps running the parent process.
   allowed, but negative lengths are always fatal, regardless of
   `strict-word-eval`.)
 - UTF-8 decoding errors are fatal when computing lengths (`${#s}`) and slices.
-
-`inherit_errexit`. The `errexit` setting is **inherited** in subshells. (This
-option is implemented in bash.)
-
-`more_errexit`.  An error in a command sub can cause the **parent process** to
-exit.  In other words, it's checked more often. (An Oil option.)
 
 **On by default**:
 
@@ -171,10 +146,31 @@ the old, bad behavior.
 See the [Oil manual](oil-manual.html) for options that fundamentally change the
 shell language, e.g. those categorized under `shopt -s all:oil`.
 
-#### The Shell Sometimes Disables And Restores `errexit`
+### OSH Has Four `errexit` Options (while Bash Has Two)
 
-In all Unix shells, the `errexit` check for non-zero status is disabled in
-these situations:
+The complex behavior of these global execution options requires extra attention
+in this manual.
+
+But you don't need to understand all the details.  Simply choose between:
+
+```
+# Turn on four errexit options.  I don't run this script with other shells.
+shopt -s all:oil
+```
+
+and
+
+```
+# Turn on three errexit options.  I run this script with other shells.
+shopt -s all:strict
+```
+
+#### Quirk 1: the Shell Sometimes Disables And Restores `errexit`
+
+Here's some background for understanding the additional `errexit` options
+described below.
+
+In all Unix shells, the `errexit` check is disabled in these situations:
  
 1. The condition of the `if`, `while`, and `until`  constructs
 2. A command/pipeline prefixed by `!`
@@ -182,36 +178,62 @@ these situations:
 
 Now consider this situation:
 
-- `errexit` is **on**
-- The shell disables it one of those three situations
-- While disabled, the user touches it with `set -o errexit` (or `+o` to turn it
-  off).
+1. `errexit` is **on**
+2. The shell disables it one of those three situations
+3. While disabled, the user touches it with `set -o errexit` (or `+o` to turn
+   it off).
 
 Surprising behavior: Unix shells **ignore** the `set` builtin for awhile,
 delaying its execution until **after** the temporary disablement.
+
+#### Quirk 2: x=$(false) is inconsitent with local x=$(false)
+
+Background: In shell, `local` is a builtin rather than a keyword, which means
+`local foo=$(false)` behaves differently than than `foo=$(false)`.
+
+#### Additional `errexit` options
+
+OSH aims to fix the many quirks of `errexit`.  It has this bash-compatible
+option:
+
+- `inherit_errexit`: `errexit` is inherited inside `$()`, so errors aren't
+  ignored.  It's enabled by both `all:strict` and `all:oil`.
+
+And two more options:
+
+- `strict_errexit` makes the quirk above irrelevant.  Compound commands,
+  including **functions**, can't be used in any of those three situations.  You
+  can write `set -o errexit || true`, but not `{ set -o errexit; false } ||
+  true`.  When this option is set, you get a runtime error indicating that you
+  should **change your code**.  Consider using the ["at-splice
+  pattern"][at-splice] to fix this, e.g. `$0 myfunc || echo errexit`.
+- `more_errexit`: Check more often for non-zero status.  In particular, the
+  failure of a command sub can abort the entire script.  For example, `local
+  foo=$(false)` is a fatal runtime error rather than a silent success.
+
+#### Example
+
+When both `inherit_errexit` and `more_errexit` are on, this code
+
+    echo 0; echo $(touch one; false; touch two); echo 3
+
+will print `0` and touch the file `one`.
+
+1. The command sub aborts at `false` (`inherrit_errexit), and
+2. The parent process aborts after the command sub fails (`more_errexit`).
+
+#### Recap/Summary
+
+- `errexit` -- abort the shell script when a command exits nonzero, except in
+  the three situations described above.
+- `inherit_errexit` -- A bash option that OSH borrows.
+- `strict_errexit` -- Turned on with `all:strict`.
+- `more_errexit` -- Turned on with `all:oil`.
 
 Good articles on `errexit`:
 
 - <http://mywiki.wooledge.org/BashFAQ/105>
 - <http://fvue.nl/wiki/Bash:_Error_handling>
-
-#### Additional Options to Control `errexit` 
-
-OSH aims to fix the many quirks of `errexit`.
-
-- `strict_errexit` makes the above issue irrelevant.  Compound commands
-  including **functions** can't be used in any of those three situations.  You
-  can write `set -o errexit || true`, but not `{ set -o errexit; false } ||
-  true`.  When this option is set, you get a runtime error indicating that you
-  should **change your code**.
-- `more_errexit`: Failure in `local foo=...` should be fatal.  In other shells,
-  `local` is a builtin rather than a keyword, which means `local foo=$(false)`
-  behaves differently than than `foo=$(false)`.
-
-OSH also has this bash-compatible option:
-
-- `inherit_errexit`: `errexit` is inherited inside `$()`, so errors aren't
-  ignored.  It's enabled by both `all:strict` and `all:oil`.
 
 ### Features Unique to OSH
 
