@@ -351,36 +351,6 @@ parsed:
 - Statically: to avoid splitting `declare x=$y` when `$y` contains spaces.
 - Dynamically: to handle expressions like `declare $1` where `$1` is `a=b`
 
-#### Touching `errexit` while it's temporarily disabled
-
-In all shells, checks for non-zero status are disabled in these situations:
- 
-1. The condition of the `if`, `while`, and `until`  constructs
-2. A command/pipeline prefixed by `!`
-3. Every clause in `||` and `&&` except the last.
-
-Now consider this situation:
-
-- `errexit` is **on**
-- The shell disables it one of those three situations
-- The user invokes `set -o errexit` to turn it **back on**.
-
-This is a fatal error in OSH.  Other shells delay the restoration of `errexit`
-until **after** the temporary disablement.
-
-Good articles on `errexit`:
-
-- <http://mywiki.wooledge.org/BashFAQ/105>
-- <http://fvue.nl/wiki/Bash:_Error_handling>
-
-OSH also has `strict-errexit` to fix two issues with bash's behavior:
-
-- `errexit` should be inherited inside `$()`, so errors aren't ignored.  OSH
-  behaves like dash and mksh, not bash.
-- Failure in `local foo=...` should be fatal.  In other shells, `local` is
-  a command rather than a keyword, which means `local foo=$(false)` behaves
-  differently than than `foo=$(false)`.
-
 #### Completion
 
 The OSH completion API is mostly compatible with the bash completion API,

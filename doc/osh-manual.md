@@ -82,31 +82,33 @@ I describe my own `oshrc` file on the wiki: [How To Test
 OSH](https://github.com/oilshell/oil/wiki/How-To-Test-OSH).
 
 
-### Strict Options To Produce More Errors
+### Global Execution Options
 
-Strict options **disallow** certain parts of the language with **fatal runtime
-errors**.
+ALl unix shells have global options that affect execution, like `set -e`, which
+is also spelled `set -o errexit`.
 
-They are used like this:
+#### shopt -s all:strict is Recommended
 
-    shopt -s strict_array  # Set this option.  I want more fatal errors.
-    shopt -u strict_array  # Unset it.  Ignore errors and keep executing.
+OSH adds more options on top of those provided by POSIX shell and bash.
 
-You can turn all of them on or off at once:
+There is a convenient shortcut `shopt -s all:strict` which turns on these
+optoins:
 
-    shopt -s all:strict
-    shopt -u all:strict
+- `errexit`, `nounset` (`sh` modes to get more errors)
+- `pipefail` and `inherit_errexit` (`bash` modes to get more errors)
+- `nullglob` (doesn't confuse code and data)
+- `strict_*` (`strict_array`, etc.)
+   - These options **disallow** certain parts of the language with **fatal
+     runtime errors**.
 
 This line turns all strict modes on, but is portable to other shells:
 
     shopt -s all:strict 2>/dev/null || true  # suppress errors
 
-#### all:strict turns on these options
+Of course, you can also turn individual options on or off:
 
-- `errexit`, `nounset` (`sh` modes to get more errors)
-- `pipefail` and `inherit_errexit` (`bash` modes to get more errors)
-- `nullglob`
-- `strict_*` (`strict_array`, etc.)
+    shopt -s strict_array  # Set this option.  I want more fatal errors.
+    shopt -u strict_array  # Unset it.  Ignore errors and keep executing.
 
 #### List of Options
 
@@ -166,7 +168,50 @@ exit.  In other words, it's checked more often. (An Oil option.)
 arithmetic expressions.  NOTE: This option may be removed if no scripts rely on
 the old, bad behavior.
 
+See the [Oil manual](oil-manual.html) for options that fundamentally change the
+shell language, e.g. those categorized under `shopt -s all:oil`.
 
+#### The Shell Sometimes Disables And Restores `errexit`
+
+In all Unix shells, the `errexit` check for non-zero status is disabled in
+these situations:
+ 
+1. The condition of the `if`, `while`, and `until`  constructs
+2. A command/pipeline prefixed by `!`
+3. Every clause in `||` and `&&` except the last.
+
+Now consider this situation:
+
+- `errexit` is **on**
+- The shell disables it one of those three situations
+- While disabled, the user touches it with `set -o errexit` (or `+o` to turn it
+  off).
+
+Surprising behavior: Unix shells **ignore** the `set` builtin for awhile,
+delaying its execution until **after** the temporary disablement.
+
+Good articles on `errexit`:
+
+- <http://mywiki.wooledge.org/BashFAQ/105>
+- <http://fvue.nl/wiki/Bash:_Error_handling>
+
+#### Additional Options to Control `errexit` 
+
+OSH aims to fix the many quirks of `errexit`.
+
+- `strict_errexit` makes the above issue irrelevant.  Compound commands
+  including **functions** can't be used in any of those three situations.  You
+  can write `set -o errexit || true`, but not `{ set -o errexit; false } ||
+  true`.  When this option is set, you get a runtime error indicating that you
+  should **change your code**.
+- `more_errexit`: Failure in `local foo=...` should be fatal.  In other shells,
+  `local` is a builtin rather than a keyword, which means `local foo=$(false)`
+  behaves differently than than `foo=$(false)`.
+
+OSH also has this bash-compatible option:
+
+- `inherit_errexit`: `errexit` is inherited inside `$()`, so errors aren't
+  ignored.  It's enabled by both `all:strict` and `all:oil`.
 
 ### Features Unique to OSH
 
