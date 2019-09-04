@@ -102,7 +102,7 @@ def _word__Compound(obj):
 def _command__Simple(obj):
   # type: (command__Simple) -> PrettyNode
   p_node = runtime.PrettyNode()
-  if obj.redirects or obj.more_env:
+  if obj.redirects or obj.more_env or obj.block:
     return None  # we have other fields to display; don't abbreviate
 
   p_node.abbrev = True

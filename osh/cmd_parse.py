@@ -269,9 +269,8 @@ def _AppendMoreEnv(preparsed_list, more_env):
 if TYPE_CHECKING:
   PreParsedList = List[Tuple[token, Optional[token], int, word__Compound]]
 
-def _SplitSimpleCommandPrefix(words  # type: List[word__Compound]
-                              ):
-  # type: (...) -> Tuple[PreParsedList, List[word__Compound]]
+def _SplitSimpleCommandPrefix(words):
+  # type: (List[word__Compound]) -> Tuple[PreParsedList, List[word__Compound]]
   """Second pass of SimpleCommand parsing: look for assignment words."""
   preparsed_list = []
   suffix_words = []
@@ -292,8 +291,8 @@ def _SplitSimpleCommandPrefix(words  # type: List[word__Compound]
   return preparsed_list, suffix_words
 
 
-def _MakeSimpleCommand(preparsed_list, suffix_words, redirects):
-  # type: (PreParsedList, List[word__Compound], List[redir_t]) -> command__Simple
+def _MakeSimpleCommand(preparsed_list, suffix_words, redirects, block):
+  # type: (PreParsedList, List[word__Compound], List[redir_t], Optional[command_t]) -> command__Simple
   """Create an command.Simple node."""
 
   # FOO=(1 2 3) ls is not allowed.
@@ -318,10 +317,9 @@ def _MakeSimpleCommand(preparsed_list, suffix_words, redirects):
   words2 = braces.BraceDetectAll(suffix_words)
   words3 = word_.TildeDetectAll(words2)
 
-  node = command.Simple()
-  node.words = words3
-  node.redirects = redirects
-  _AppendMoreEnv(preparsed_list, node.more_env)
+  more_env = []  # type: List[env_pair]
+  _AppendMoreEnv(preparsed_list, more_env)
+  node = command.Simple(words3, redirects, more_env, block)
   return node
 
 
@@ -510,10 +508,11 @@ class CommandParser(object):
     return redirects
 
   def _ScanSimpleCommand(self):
-    # type: () -> Tuple[List[redir_t], List[word__Compound]]
+    # type: () -> Tuple[List[redir_t], List[word__Compound], Optional[command__BraceGroup]]
     """First pass: Split into redirects and words."""
     redirects = []  # type: List[redir_t]
     words = []  # type: List[word__Compound]
+    block = None
     while True:
       self._Peek()
       if self.c_kind == Kind.Redir:
@@ -521,6 +520,22 @@ class CommandParser(object):
         redirects.append(node)
 
       elif self.c_kind == Kind.Word:
+        if self.parse_opts.brace:
+          # Treat { and } more like operators
+          # TODO: Also allow cd foo :{ a }
+          if self.c_id == Id.Lit_LBrace:
+            block = self.ParseBraceGroup()
+            if 0:
+              print('--')
+              block.PrettyPrint()
+              print('\n--')
+            break
+          elif self.c_id == Id.Lit_RBrace:
+            # Another thing: { echo hi }
+            # We're DONE!!!
+            break
+
+        # It's not { or }
         assert isinstance(self.cur_word, word__Compound)  # for MyPy
         words.append(self.cur_word)
 
@@ -528,7 +543,7 @@ class CommandParser(object):
         break
 
       self._Next()
-    return redirects, words
+    return redirects, words, block
 
   def _MaybeExpandAliases(self, words):
     # type: (List[word__Compound]) -> Optional[command_t]
@@ -762,10 +777,12 @@ class CommandParser(object):
     here_end vs filename is a matter of whether we test that it's quoted.  e.g.
     <<EOF vs <<'EOF'.
     """
-    result = self._ScanSimpleCommand()
-    redirects, words = result
+    redirects, words, block = self._ScanSimpleCommand()
+    block_spid = block.spids[0] if block else const.NO_INTEGER
 
     if not words:  # e.g.  >out.txt  # redirect without words
+      if block:
+        p_die("Unexpected block", span_id=block_spid)
       node = command.Simple(None, redirects, None)  # type: command_t
       return node
 
@@ -775,7 +792,11 @@ class CommandParser(object):
     # inspect this state after a failed parse.
     self.parse_ctx.trail.SetLatestWords(suffix_words, redirects)
 
-    if not suffix_words:  # ONE=1 a[x]=1 TWO=2  (with no other words)
+    if not suffix_words:
+      if block:
+        p_die("Unexpected block", span_id=block_spid)
+
+      # Assignment: No suffix words like ONE=1 a[x]=1 TWO=2
       pairs = []
       for preparsed in preparsed_list:
         pairs.append(_MakeAssignPair(self.parse_ctx, preparsed, self.arena))
@@ -788,6 +809,8 @@ class CommandParser(object):
     kind, kw_token = word_.KeywordToken(suffix_words[0])
 
     if kind == Kind.ControlFlow:
+      if block:
+        p_die("Unexpected block", span_id=block_spid)
       if redirects:
         p_die("Control flow shouldn't have redirects", token=kw_token)
 
@@ -807,19 +830,20 @@ class CommandParser(object):
 
       return command.ControlFlow(kw_token, arg_word)
 
-    # If any expansions were detected, then parse again.
-    expanded_node = self._MaybeExpandAliases(suffix_words)
-    if expanded_node:
-      # Attach env bindings and redirects to the expanded node.
-      more_env = []  # type: List[env_pair]
-      _AppendMoreEnv(preparsed_list, more_env)
-      node = command.ExpandedAlias(expanded_node, redirects, more_env)
-      return node
+    if not block:  # Only expand aliases if we didn't get a block.
+      # If any expansions were detected, then parse again.
+      expanded_node = self._MaybeExpandAliases(suffix_words)
+      if expanded_node:
+        # Attach env bindings and redirects to the expanded node.
+        more_env = []  # type: List[env_pair]
+        _AppendMoreEnv(preparsed_list, more_env)
+        node = command.ExpandedAlias(expanded_node, redirects, more_env)
+        return node
 
     # TODO check that we don't have env1=x x[1]=y env2=z here.
 
     # FOO=bar printenv.py FOO
-    node = _MakeSimpleCommand(preparsed_list, suffix_words, redirects)
+    node = _MakeSimpleCommand(preparsed_list, suffix_words, redirects, block)
     return node
 
   def ParseBraceGroup(self):

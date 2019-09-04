@@ -30,6 +30,17 @@ _error-case() {
   fi
 }
 
+_oil-parse-error() {
+  banner "$@"
+  echo
+  $SH -O all:oil -c "$@"
+
+  local status=$?
+  if test $status != 2; then
+    die "Expected status 2, got $status"
+  fi
+}
+
 # All in osh/word_parse.py
 patsub() {
   set +o errexit
@@ -473,6 +484,14 @@ push-builtin() {
   #_error-case 'push notarray'  # returns status 1
 }
 
+blocks() {
+  set +o errexit
+
+  _oil-parse-error '>out { echo hi }'
+  _oil-parse-error 'a=1 b=2 { echo hi }'
+  _oil-parse-error 'break { echo hi }'
+}
+
 cases-in-strings() {
   set +o errexit
 
@@ -507,6 +526,7 @@ cases-in-strings() {
 
   oil-language  # oil_lang/
   push-builtin
+  blocks
 }
 
 # Cases in their own file

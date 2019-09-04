@@ -199,7 +199,8 @@ module syntax
   command = 
     NoOp
     -- TODO: respect order of words and redirects
-  | Simple(word* words, redir* redirects, env_pair* more_env)
+    -- NOTE: block is always a BraceGroup.
+  | Simple(word* words, redir* redirects, env_pair* more_env, command? block)
     -- This doesn't technically belong in the LST, but it's convenient for
     -- execution
   | ExpandedAlias(command child, redir* redirects, env_pair* more_env)
