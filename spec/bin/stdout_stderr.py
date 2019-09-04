@@ -13,11 +13,15 @@ def main(argv):
   try:
     stdout = argv[1]
     stderr = argv[2]
+    status = int(argv[3])
   except IndexError:
     stdout = 'STDOUT'
     stderr = 'STDERR'
+    status = 0
   print(stdout)
   print(stderr, file=sys.stderr)
+  return status
+
 
 if __name__ == '__main__':
-  main(sys.argv)
+  sys.exit(main(sys.argv))

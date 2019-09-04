@@ -235,6 +235,16 @@ osh-only() {
     $OSH_LIST "$@"
 }
 
+oil-blocks() {
+  sh-spec spec/oil-blocks.test.sh --cd-tmp \
+    $OSH_LIST "$@"
+}
+
+oil-builtins() {
+  sh-spec spec/oil-builtins.test.sh --cd-tmp \
+    $OSH_LIST "$@"
+}
+
 oil-options() {
   sh-spec spec/oil-options.test.sh --cd-tmp \
     $OSH_LIST "$@"
@@ -397,11 +407,6 @@ builtin-trap() {
 # zsh/mksh/dash don't have the 'help' builtin.
 builtin-bash() {
   sh-spec spec/builtin-bash.test.sh $BASH $OSH_LIST "$@"
-}
-
-oil-builtins() {
-  sh-spec spec/oil-builtins.test.sh --cd-tmp \
-    $OSH_LIST "$@"
 }
 
 # This is bash/OSH only

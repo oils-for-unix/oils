@@ -21,6 +21,18 @@ pwd=/
 ## N-I dash/mksh status: 127
 ## N-I dash/mksh stdout-json: ""
 
+#### popd usage error
+pushd / >/dev/null
+popd zzz
+echo status=$?
+## STDOUT:
+status=2
+## END
+## BUG zsh STDOUT:
+status=0
+## END
+
+
 #### dirs builtin
 cd /
 dirs

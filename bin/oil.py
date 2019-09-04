@@ -438,7 +438,6 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.ECHO: builtin_pure.Echo(exec_opts),
       builtin_e.PRINTF: builtin_printf.Printf(mem, parse_ctx, errfmt),
 
-      builtin_e.CD: builtin.Cd(mem, dir_stack, errfmt),
       builtin_e.PUSHD: builtin.Pushd(mem, dir_stack, errfmt),
       builtin_e.POPD: builtin.Popd(mem, dir_stack, errfmt),
       builtin_e.DIRS: builtin.Dirs(mem, dir_stack, errfmt),
@@ -532,6 +531,8 @@ def ShellMain(lang, argv0, argv, login_shell):
   complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
   builtins[builtin_e.COMPLETE] = complete_builtin
   builtins[builtin_e.COMPGEN] = builtin_comp.CompGen(spec_builder)
+  builtins[builtin_e.CD] = builtin.Cd(mem, dir_stack, ex, errfmt)
+  builtins[builtin_e.JSON] = builtin_oil.Json(mem, ex, errfmt)
 
   sig_state = process.SignalState()
   sig_state.InitShell()

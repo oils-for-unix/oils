@@ -227,10 +227,18 @@ x=42
 argv
 ## END
 
-#### parse_brace with bad block
+#### bad block to assignment builtin
 shopt -s all:oil
 # This is a fatal programming error.  It's unlike passing an extra arg?
 local x=y { echo 'bad block' }
+echo status=$?
+## status: 1
+## stdout-json: ""
+
+#### bad block to external program
+shopt -s all:oil
+# This is a fatal programming error.  It's unlike passing an extra arg?
+ls { echo 'bad block' }
 echo status=$?
 ## status: 1
 ## stdout-json: ""

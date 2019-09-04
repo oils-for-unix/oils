@@ -42,6 +42,7 @@ from core.meta import REDIR_ARG_TYPES, REDIR_DEFAULT_FD
 from frontend import args
 from frontend import reader
 
+from oil_lang import builtin_oil
 from oil_lang import objects
 from osh import braces
 from osh import builtin
@@ -286,13 +287,25 @@ class Executor(object):
     # Shift one arg.  Builtins don't need to know their own name.
     argv = cmd_val.argv[1:]
 
-    # STUB for copmatibility
+    # STUB for compatibility
     arg_vec = arg_vector(cmd_val.argv, cmd_val.arg_spids)
+
+    # TODO: For now, hard-code the builtins that take a block, and pass them
+    # cmd_val.
+    # Later, we should give builtins signatures like this and check them:
+    #
+    # proc cd(argv Array[Str], b Block) {
+    #   do evaluate(b, locals, globals)
+    # }
 
     # Most builtins dispatch with a dictionary
     builtin_func = self.builtins.get(builtin_id)
     if builtin_func is not None:
-      status = builtin_func(arg_vec)
+      # Pass the block
+      if isinstance(builtin_func, (builtin.Cd, builtin_oil.Json)):
+        status = builtin_func(cmd_val)
+      else:
+        status = builtin_func(arg_vec)
 
     # Some builtins "belong" to the executor.
 
@@ -621,10 +634,14 @@ class Executor(object):
 
     environ = self.mem.GetExported()  # Include temporary variables
 
+    if cmd_val.block:
+      e_die('Unexpected block passed to external command %r', arg0,
+            span_id=cmd_val.block.spids[0])
+
     # Resolve argv[0] BEFORE forking.
-    argv0_path = self.search_path.CachedLookup(argv[0])
+    argv0_path = self.search_path.CachedLookup(arg0)
     if argv0_path is None:
-      self.errfmt.Print('%r not found', argv[0], span_id=span_id)
+      self.errfmt.Print('%r not found', arg0, span_id=span_id)
       return 127
 
     arg_vec = arg_vector(cmd_val.argv, cmd_val.arg_spids)
@@ -1567,3 +1584,33 @@ class Executor(object):
     # If status is nonzero, that's like an exception with errexit?
     ret = None
     return ret
+
+  def EvalBlock(self, block):
+    """
+    Returns a namespace.  For config files.
+
+    rule foo {
+      a = 1
+    }
+    is like:
+    foo = {a:1}
+
+    """
+    status = None
+    self.mem.PushTemp()  # So variables don't conflict
+    try:
+      self._Execute(block)  # can raise FatalRuntimeError, etc.
+    except _ControlFlow as e:  # A block is more like a function.
+      if e.IsReturn():
+        status = e.StatusCode()
+      else:
+        raise
+    finally:
+      namespace = self.mem.TopNamespace()
+      self.mem.PopTemp()
+    # This is the thing on self.mem?
+    # Filter out everything beginning with _ ?
+
+    # TODO: Return arbitrary values instead
+    namespace['_returned'] = status
+    return namespace

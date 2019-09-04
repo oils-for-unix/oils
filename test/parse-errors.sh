@@ -490,6 +490,8 @@ blocks() {
   _oil-parse-error '>out { echo hi }'
   _oil-parse-error 'a=1 b=2 { echo hi }'
   _oil-parse-error 'break { echo hi }'
+  # missing semicolon
+  _oil-parse-error 'cd / { echo hi } cd /'
 }
 
 cases-in-strings() {

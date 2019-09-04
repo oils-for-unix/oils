@@ -869,6 +869,10 @@ class Mem(object):
     self._PopDebugStack()
     self.var_stack.pop()
 
+  def TopNamespace(self):
+    """For evalblock()."""
+    return self.var_stack[-1]
+
   def _PushDebugStack(self, func_name, source_name):
     # self.current_spid is set before every SimpleCommand, Assignment, [[, ((,
     # etc.  Function calls and 'source' are both SimpleCommand.

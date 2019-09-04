@@ -163,7 +163,7 @@ ENVIRONMENT VARIABLES
   [Oil Paths]     ?builtins   ?completion_plugins   ?coprocesses
 
 SPECIAL VARIABLES
-  [Oil]           ARGV
+  [Oil]           ARGV   STATUS
 X [Platform]      HOSTNAME   OSTYPE   BASH_VERSION   @BASH_VERSINFO
   [Call Stack]    @BASH_SOURCE   @FUNCNAME   @BASH_LINENO   
                   X @BASH_ARGV   X @BASH_ARGC
@@ -199,6 +199,8 @@ OIL LIBRARIES
 
   [Builtin Funcs] join()   split()    $IFS algorithm or awk algorithm
                   len()
+                  setvar()            for procs to set in outer scope
+                  evalblock()         procs evaluate block to namespace
                   read(n)             better than read -n, no short reads?
                   posix::read()       raw bindings?
                   strftime()

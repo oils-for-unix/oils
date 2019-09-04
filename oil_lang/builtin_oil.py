@@ -118,3 +118,53 @@ class Fork(object):
   Similar to Wait, which is in osh/builtin_process.py.
   """
   pass
+
+
+class Json(object):
+  """Json I/O.
+
+  -indent pretty prints it.  Is the default indent 2?  -pretty=0 can turn it
+  off.
+
+  json echo -indent 2 :var1 :var2 {
+    x = 1
+    d = {name: 'andy'}
+  }
+
+  json read :x < foo.tsv2
+  """
+  def __init__(self, mem, ex, errfmt):
+    self.mem = mem
+    self.ex = ex
+    self.errfmt = errfmt
+
+  def __call__(self, cmd_val):
+    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+    #arg_r.Next()  # skip 'use'
+
+    # TODO: GetVar() and print them
+
+    if cmd_val.block:
+      # TODO: flatten value.{Str,Obj} into a flat dict?
+      namespace = self.ex.EvalBlock(cmd_val.block)
+
+      # TODO: Use JSON library
+      from pprint import pprint
+      pprint(namespace, indent=2)
+
+    return 0
+
+
+class Tsv2(object):
+  """TSV2 I/O.
+
+  # Takes a block.
+  tsv2 echo :var1 :var2 {
+    # Does this make sense?
+    x = @(a b c)
+    age = @[1 2 3]
+  }
+
+  tsv2 read :x < foo.tsv2
+  """
+  pass

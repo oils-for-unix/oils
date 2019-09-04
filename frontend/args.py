@@ -668,6 +668,12 @@ class BuiltinFlags(object):
     arg_r.Next()  # move past the builtin name
     return self.Parse(arg_r)
 
+  def ParseCmdVal(self, cmd_val):
+    """Newer style for OSH builtins."""
+    arg_r = Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+    arg_r.Next()  # move past the builtin name
+    return self.Parse(arg_r)
+
   def ParseArgv(self, argv):
     """For tools/readlink.py -- no location info available."""
     arg_r = Reader(argv)

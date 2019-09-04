@@ -125,6 +125,7 @@ _NORMAL_BUILTINS = {
     "repr": builtin_e.REPR,
     "push": builtin_e.PUSH,
     "use": builtin_e.USE,
+    "json": builtin_e.JSON,
 }
 
 # This is used by completion.
@@ -379,19 +380,16 @@ CD_SPEC.ShortFlag('-L')
 CD_SPEC.ShortFlag('-P')
 
 class Cd(object):
-  def __init__(self, mem, dir_stack, errfmt):
+  def __init__(self, mem, dir_stack, ex, errfmt):
     self.mem = mem
     self.dir_stack = dir_stack
+    self.ex = ex  # To run blocks
     self.errfmt = errfmt
 
-  def __call__(self, arg_vec):
-    arg, i = CD_SPEC.ParseVec(arg_vec)
-    # TODO: error checking, etc.
-    # TODO: ensure that if multiple flags are provided, the *last* one overrides
-    # the others.
-
+  def __call__(self, cmd_val):
+    arg, i = CD_SPEC.ParseCmdVal(cmd_val)
     try:
-      dest_dir = arg_vec.strs[i]
+      dest_dir = cmd_val.argv[i]
     except IndexError:
       val = self.mem.GetVar('HOME')
       if val.tag == value_e.Undef:
@@ -436,17 +434,26 @@ class Cd(object):
       posix.chdir(real_dest_dir)
     except OSError as e:
       self.errfmt.Print("cd %r: %s", real_dest_dir, posix.strerror(e.errno),
-                        span_id=arg_vec.spids[i])
+                        span_id=cmd_val.arg_spids[i])
       return 1
 
-    state.ExportGlobalString(self.mem, 'OLDPWD', pwd.s)
     state.ExportGlobalString(self.mem, 'PWD', real_dest_dir)
 
     # WEIRD: We need a copy that is NOT PWD, because the user could mutate PWD.
     # Other shells use global variables.
     self.mem.SetPwd(real_dest_dir)
 
-    self.dir_stack.Reset()  # for pushd/popd/dirs
+    if cmd_val.block:
+      self.dir_stack.Push(real_dest_dir)
+      try:
+        unused = self.ex.EvalBlock(cmd_val.block)
+      finally:  # TODO: Change this to a context manager.
+        _PopDirStack(self.mem, self.dir_stack, self.errfmt)
+
+    else:  # No block
+      state.ExportGlobalString(self.mem, 'OLDPWD', pwd.s)
+      self.dir_stack.Reset()  # for pushd/popd/dirs
+
     return 0
 
 
@@ -501,6 +508,24 @@ class Pushd(object):
     return 0
 
 
+def _PopDirStack(mem, dir_stack, errfmt):
+  """Helper for popd and cd { ... }."""
+  dest_dir = dir_stack.Pop()
+  if dest_dir is None:
+    errfmt.Print('popd: directory stack is empty')
+    return 1
+
+  try:
+    posix.chdir(dest_dir)
+  except OSError as e:
+    # Happens if a directory is deleted in pushing and popping
+    errfmt.Print("popd: %r: %s", dest_dir, posix.strerror(e.errno))
+    return 1
+
+  state.SetGlobalString(mem, 'PWD', dest_dir)
+  mem.SetPwd(dest_dir)
+
+
 class Popd(object):
   def __init__(self, mem, dir_stack, errfmt):
     self.mem = mem
@@ -508,21 +533,12 @@ class Popd(object):
     self.errfmt = errfmt
 
   def __call__(self, arg_vec):
-    dest_dir = self.dir_stack.Pop()
-    if dest_dir is None:
-      self.errfmt.Print('popd: directory stack is empty')
-      return 1
+    if len(arg_vec.spids) > 1:
+      raise args.UsageError('got extra argument', span_id=arg_vec.spids[1])
 
-    try:
-      posix.chdir(dest_dir)
-    except OSError as e:
-      # Happens if a directory is deleted in pushing and popping
-      self.errfmt.Print("popd: %r: %s", dest_dir, posix.strerror(e.errno))
-      return 1
+    _PopDirStack(self.mem, self.dir_stack, self.errfmt)
 
     _PrintDirStack(self.dir_stack, SINGLE_LINE, self.mem.GetVar('HOME'))
-    state.SetGlobalString(self.mem, 'PWD', dest_dir)
-    self.mem.SetPwd(dest_dir)
     return 0
 
 
