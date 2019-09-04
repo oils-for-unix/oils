@@ -26,7 +26,7 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.syntax_asdl import word  # TODO: Rename
 from _devbuild.gen.runtime_asdl import (
     lvalue, redirect, value, value_e, value_t, scope_e, var_flags_e, builtin_e,
-    arg_vector, cmd_value_e,
+    arg_vector, cmd_value, cmd_value_e,
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
@@ -278,13 +278,16 @@ class Executor(object):
     arg_vec2 = arg_vector(arg_vec.strs[1:], arg_vec.spids[1:])
     self.ext_prog.Exec(argv0_path, arg_vec2, environ)  # NEVER RETURNS
 
-  def _RunBuiltinAndRaise(self, builtin_id, arg_vec, fork_external):
+  def _RunBuiltinAndRaise(self, builtin_id, cmd_val, fork_external):
     """
     Raises:
       args.UsageError
     """
     # Shift one arg.  Builtins don't need to know their own name.
-    argv = arg_vec.strs[1:]
+    argv = cmd_val.argv[1:]
+
+    # STUB for copmatibility
+    arg_vec = arg_vector(cmd_val.argv, cmd_val.arg_spids)
 
     # Most builtins dispatch with a dictionary
     builtin_func = self.builtins.get(builtin_id)
@@ -332,8 +335,9 @@ class Executor(object):
           self.errfmt.Print("%r isn't a shell builtin", span_id=span_id)
         return 1
 
-      arg_vec2 = arg_vector(arg_vec.strs[1:], arg_vec.spids[1:])
-      status = self._RunBuiltinAndRaise(to_run, arg_vec2, fork_external)
+      cmd_val2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:],
+                                cmd_val.block)
+      status = self._RunBuiltinAndRaise(to_run, cmd_val2, fork_external)
 
     else:
       raise AssertionError('Unhandled builtin: %s' % builtin_id)
@@ -341,12 +345,12 @@ class Executor(object):
     assert isinstance(status, int)
     return status
 
-  def _RunBuiltin(self, builtin_id, arg_vec, fork_external):
-    self.errfmt.PushLocation(arg_vec.spids[0])
+  def _RunBuiltin(self, builtin_id, cmd_val, fork_external):
+    self.errfmt.PushLocation(cmd_val.arg_spids[0])
     try:
-      status = self._RunBuiltinAndRaise(builtin_id, arg_vec, fork_external)
+      status = self._RunBuiltinAndRaise(builtin_id, cmd_val, fork_external)
     except args.UsageError as e:
-      arg0 = arg_vec.strs[0]
+      arg0 = cmd_val.argv[0]
       # fill in default location.  e.g. osh/state.py raises UsageError without
       # span_id.
       if e.span_id == const.NO_INTEGER:
@@ -541,25 +545,23 @@ class Executor(object):
     """Private interface to run a simple command (including assignment)."""
 
     if cmd_val.tag == cmd_value_e.Argv:
-      arg_vec = arg_vector(cmd_val.argv, cmd_val.arg_spids)
-      return self.RunSimpleCommand(arg_vec, fork_external)
+      return self.RunSimpleCommand(cmd_val, fork_external)
 
     elif cmd_val.tag == cmd_value_e.Assign:
       return self._RunAssignBuiltin(cmd_val)
     else:
       raise AssertionError
 
-  def RunSimpleCommand(self, arg_vec, fork_external, funcs=True):
+  def RunSimpleCommand(self, cmd_val, fork_external, funcs=True):
     """Public interface to run a simple command (excluding assignment)
 
     Args:
       fork_external: for subshell ( ls / ) or ( command ls / )
     """
-    argv = arg_vec.strs
-    if arg_vec.spids:
-      span_id = arg_vec.spids[0]
-    else:
-      span_id = const.NO_INTEGER
+    assert cmd_val.tag == cmd_value_e.Argv
+
+    argv = cmd_val.argv
+    span_id = cmd_val.arg_spids[0] if cmd_val.arg_spids else const.NO_INTEGER
 
     # This happens when you write "$@" but have no arguments.
     if not argv:
@@ -581,7 +583,7 @@ class Executor(object):
 
     builtin_id = builtin.ResolveSpecial(arg0)
     if builtin_id != builtin_e.NONE:
-      status = self._RunBuiltin(builtin_id, arg_vec, fork_external)
+      status = self._RunBuiltin(builtin_id, cmd_val, fork_external)
       # TODO: Enable this and fix spec test failures.
       # Also update _SPECIAL_BUILTINS in osh/builtin.py.
       #if status != 0:
@@ -615,7 +617,7 @@ class Executor(object):
     builtin_id = builtin.Resolve(arg0)
 
     if builtin_id != builtin_e.NONE:
-      return self._RunBuiltin(builtin_id, arg_vec, fork_external)
+      return self._RunBuiltin(builtin_id, cmd_val, fork_external)
 
     environ = self.mem.GetExported()  # Include temporary variables
 
@@ -625,6 +627,7 @@ class Executor(object):
       self.errfmt.Print('%r not found', argv[0], span_id=span_id)
       return 127
 
+    arg_vec = arg_vector(cmd_val.argv, cmd_val.arg_spids)
     if fork_external:
       thunk = process.ExternalThunk(self.ext_prog, argv0_path, arg_vec, environ)
       p = process.Process(thunk, self.job_state)
@@ -740,11 +743,15 @@ class Executor(object):
       words = braces.BraceExpandWords(node.words)
       cmd_val = self.word_ev.EvalWordSequence2(words, allow_assign=True)
 
-      # STUB for compatibility.  TODO: Handle cmd_value_e.Assign.
+      # STUB for compatibility.
       if cmd_val.tag == cmd_value_e.Argv:
         argv = cmd_val.argv
+        cmd_val.block = node.block  # may be None
       else:
-        argv = ['TODO: assignment builtin']
+        argv = ['TODO: trace string for assignment']
+        if node.block:
+          e_die("Assignment builtins don't accept blocks",
+                span_id=node.block.spids[0])
 
       # This comes before evaluating env, in case there are problems evaluating
       # it.  We could trace the env separately?  Also trace unevaluated code

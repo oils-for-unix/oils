@@ -5,8 +5,10 @@ module runtime
   -- Evaluating SimpleCommand results in either an argv array or an assignment.
   -- in 'local foo', rval is None
   assign_arg = (lvalue lval, value? rval, int spid)
+
+  -- ASDL issue: I need to import the 'command' type from frontend/syntax.asdl!
   cmd_value =
-    Argv(string* argv, int* arg_spids)
+    Argv(string* argv, int* arg_spids, any? block)
   | Assign(builtin builtin_id,
            string* argv, int* arg_spids,
            assign_arg* pairs)

@@ -16,7 +16,7 @@ from __future__ import print_function
 
 import sys  # for sys.sdtout
 
-from _devbuild.gen.runtime_asdl import builtin_e, arg_vector, value_e
+from _devbuild.gen.runtime_asdl import builtin_e, cmd_value, value_e
 
 from asdl import pretty
 from core.util import e_die
@@ -268,9 +268,10 @@ class Command(object):
           print(arg)
       return status
 
-    arg_vec2 = arg_vector(arg_vec.strs[1:], arg_vec.spids[1:])  # shift by one
+    # shift by one
+    cmd_val = cmd_value.Argv(arg_vec.strs[1:], arg_vec.spids[1:])
     # 'command ls' suppresses function lookup.
-    return self.ex.RunSimpleCommand(arg_vec2, fork_external, funcs=False)
+    return self.ex.RunSimpleCommand(cmd_val, fork_external, funcs=False)
 
 
 TYPE_SPEC = _Register('type')
