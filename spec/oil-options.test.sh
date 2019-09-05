@@ -187,9 +187,7 @@ shopt -s more_errexit
 shopt -s simple_echo
 shopt -s parse_at
 shopt -s parse_brace
-shopt -s parse_equals
 shopt -s parse_paren
-shopt -s parse_set
 ## END
 
 #### osh -O all:oil 

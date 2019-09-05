@@ -234,19 +234,26 @@ SHOPT_OPTION_NAMES = [
     'cmdhist',  # multi-line commands in history
 ] + _STRICT_OPTION_NAMES + _OIL_OPTION_NAMES
 
-_PARSE_OPTION_NAMES = [
+# Oil parse options only.
+_OIL_PARSE_OPTION_NAMES = [
     'parse_at',
     'parse_brace',
-    'parse_equals',
     'parse_paren',
-    'parse_set',
 ]
+
+# Extra stuff that breaks too many programs.
+_NICE_OPTION_NAMES = [
+    'parse_set',
+    'parse_equals',
+]
+
+_PARSE_OPTION_NAMES = _OIL_PARSE_OPTION_NAMES + _NICE_OPTION_NAMES
 
 # errexit is also set, but handled separately
 _MORE_STRICT = ['nounset', 'pipefail', 'inherit_errexit']
 
 _ALL_OIL = (
-    _STRICT_OPTION_NAMES + _MORE_STRICT + _PARSE_OPTION_NAMES +
+    _STRICT_OPTION_NAMES + _MORE_STRICT + _OIL_PARSE_OPTION_NAMES +
     _OIL_OPTION_NAMES
 )
 # nullglob instead of simple-word-eval
@@ -255,7 +262,7 @@ _ALL_STRICT = _STRICT_OPTION_NAMES + _MORE_STRICT + ['nullglob']
 # Used in builtin_pure.py
 ALL_SHOPT_OPTIONS = SHOPT_OPTION_NAMES + _PARSE_OPTION_NAMES
 
-META_OPTIONS = ['all:oil', 'all:strict']  # Passed to flag parser
+META_OPTIONS = ['all:oil', 'all:strict', 'all:nice']  # Passed to flag parser
 
 
 class ExecOpts(object):
@@ -452,6 +459,11 @@ class ExecOpts(object):
           setattr(self, attr, b)
 
       self.errexit.Set(b)  # Special case
+      return
+
+    if opt_name == 'all:nice':
+      for attr in _NICE_OPTION_NAMES:
+        setattr(self, attr, b)
       return
 
     # shopt -s all:strict turns on all strict options

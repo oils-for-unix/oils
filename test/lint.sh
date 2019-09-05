@@ -86,6 +86,23 @@ find-long-lines() {
   find-src | xargs grep -n '^.\{81\}' | grep -v 'http'
 }
 
+_parse-one-oil() {
+  local path=$1
+  echo $path
+  if ! bin/osh -O all:oil -n $path >/dev/null; then
+    return 255  # stop xargs
+  fi
+}
+
+all-oil-parse() {
+  ### Make sure they parse with shopt -s all:oil
+  ### Will NOT Parse with all:nice.
+  find-src |
+    grep '.sh$' |
+    egrep -v 'spec/|/parse-errors/' |
+    xargs -n 1 -- $0 _parse-one-oil
+}
+
 bin-flake8() {
   local ubuntu_flake8=~/.local/bin/flake8 
   if test -f "$ubuntu_flake8"; then
