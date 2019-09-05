@@ -11,6 +11,7 @@
 set -o nounset
 set -o pipefail
 set -o errexit
+shopt -s all:strict 2>/dev/null || true  # dogfood for OSH
 
 source test/common.sh  # for $OSH
 
