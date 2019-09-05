@@ -26,7 +26,7 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.syntax_asdl import word  # TODO: Rename
 from _devbuild.gen.runtime_asdl import (
     lvalue, redirect, value, value_e, value_t, scope_e, var_flags_e, builtin_e,
-    arg_vector, cmd_value, cmd_value_e,
+    arg_vector, cmd_value, cmd_value_e, command_t
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
