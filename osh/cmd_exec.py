@@ -23,10 +23,10 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
     command_e, redir_e, assign_op_e, source
 )
-from _devbuild.gen.syntax_asdl import word  # TODO: Rename
+from _devbuild.gen.syntax_asdl import word, command_t
 from _devbuild.gen.runtime_asdl import (
     lvalue, redirect, value, value_e, value_t, scope_e, var_flags_e, builtin_e,
-    arg_vector, cmd_value, cmd_value_e, command_t
+    arg_vector, cmd_value, cmd_value_e
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
