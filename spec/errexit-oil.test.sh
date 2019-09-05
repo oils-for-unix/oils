@@ -347,3 +347,56 @@ until=0
 --
 ## END
 
+#### if pipeline doesn't fail fatally
+set -o errexit
+set -o pipefail
+
+f() {
+  local dir=$1
+	if ls $dir | grep ''; then
+    echo foo
+		echo ${PIPESTATUS[@]}
+	fi
+}
+rm -f $TMP/*
+f $TMP
+f /nonexistent # should fail
+echo done
+
+## N-I dash/ash status: 2
+## N-I dash/ash stdout-json: ""
+## STDOUT:
+done
+## END
+
+#### if pipeline DOES fail fatally with strict_errexit
+set -o errexit
+set -o pipefail
+shopt -s strict_errexit || true
+
+# This "PIPELINE" is OK
+if ! false; then
+  echo '! false ok'
+fi
+
+f() {
+  local dir=$1
+	if ls $dir | grep ''; then
+    echo foo
+	fi
+}
+rm -f $TMP/*
+f $TMP
+f /nonexistent # should fail
+echo done
+## status: 1
+## STDOUT:
+! false ok
+## END
+## N-I bash/mksh/ash status: 0
+## N-I bash/mksh/ash STDOUT:
+! false ok
+done
+## END
+## N-I dash status: 2
+## N-I dash stdout-json: ""

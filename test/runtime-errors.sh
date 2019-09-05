@@ -148,9 +148,13 @@ strict_errexit_1() {
 strict_errexit_2() {
   # Test out all the location info
 
-  # These are considered logical.
-  # command.Pipeline.  Hm ! doesn't work here
-  #_strict-errexit-case 'if ls | wc -l; then echo Pipeline; fi'
+  # command.Pipeline.
+  _strict-errexit-case 'if ls | wc -l; then echo Pipeline; fi'
+  _strict-errexit-case 'if ! ls | wc -l; then echo Pipeline; fi'
+
+  # This one is logical
+  #_strict-errexit-case 'if ! ls; then echo Pipeline; fi'
+
   # command.AndOr
   #_strict-errexit-case 'if echo a && echo b; then echo AndOr; fi'
 

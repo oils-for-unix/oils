@@ -58,6 +58,29 @@ except ImportError:
   from benchmarks import fake_libc as libc  # type: ignore
 
 
+# These are nodes that execute more than one COMMAND.  DParen doesn't
+# count because there are no commands.
+# - AndOr has multiple commands, but uses exit code in boolean way
+_DISALLOWED = (
+    command_e.DoGroup,  # covers ForEach and ForExpr, but not WhileUntil/If
+    command_e.BraceGroup, command_e.Subshell,
+    command_e.WhileUntil, command_e.If, command_e.Case,
+    command_e.TimeBlock,
+    command_e.CommandList,  # Happens in $(command sub)
+)
+
+def _DisallowErrExit(node):
+  # type: (command_t) -> bool
+  if node.tag in _DISALLOWED:
+    return True
+
+  # '! foo' is a pipeline according to the POSIX shell grammar, but it's NOT
+  # disallowed!  It's not more than one command.
+  if node.tag == command_e.Pipeline and len(node.children) > 1:
+    return True
+  return False
+
+
 class _ControlFlow(RuntimeError):
   """Internal execption for control flow.
 
@@ -1253,19 +1276,8 @@ class Executor(object):
     # strict_errexit check for all compound commands.
     # TODO: Speed this up with some kind of bit mask?
     eo = self.exec_opts
-    if eo.strict_errexit and node.tag in (
-        # These are nodes that execute more than one COMMAND.  DParen doesn't
-        # count because there are no commands.
-        # - AndOr has multiple commands, but uses exit code in boolean way
-        # - Ditto for Pipeline.  TODO: Does it make sense to disallow ls|grep
-        #   but allow ! grep?
+    if eo.strict_errexit and _DisallowErrExit(node):
 
-        command_e.DoGroup,  # covers ForEach and ForExpr, but not WhileUntil/If
-        command_e.BraceGroup, command_e.Subshell,
-        command_e.WhileUntil, command_e.If, command_e.Case,
-        command_e.TimeBlock,
-        command_e.CommandList,  # Happens in $(command sub)
-        ):
       span_id = eo.errexit.SpidIfDisabled()
       if span_id != const.NO_INTEGER:
         node_str = node.__class__.__name__.split('_')[-1]  # e.g. BraceGroup
