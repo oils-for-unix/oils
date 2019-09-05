@@ -19,20 +19,32 @@ from frontend import args
 from frontend import match
 
 
-# TODO: Enable it when oil-echo-builtin is enabled?  Because echo -n will be
-# gone?
-#
-# or honestly echo -- @words might be ok?
-#
-# Change it to be consistent?  I think we don't want to have this one
-# exception.
+class Repr(object):
+  """Given a list of variable names, print their values.
 
-def Write(arg_vec):
-  # TODO: this take cmd_value.Argv
-  if len(arg_vec) != 2:
-    raise args.UsageError('expects exactly 1 argument')
-  sys.stdout.write(arg_vec.strs[1])
-  return 0
+  'repr a' is a lot easier to type than 'argv.py "${a[@]}"'.
+  """
+  def __init__(self, mem, errfmt):
+    self.mem = mem
+    self.errfmt = errfmt
+
+  def __call__(self, arg_vec):
+    status = 0
+    for i in xrange(1, len(arg_vec.strs)):
+      name = arg_vec.strs[i]
+      if not match.IsValidVarName(name):
+        raise args.UsageError('got invalid variable name %r' % name,
+                              span_id=arg_vec.spids[i])
+
+      cell = self.mem.GetCell(name)
+      if cell is None:
+        print('%r is not defined' % name)
+        status = 1
+      else:
+        sys.stdout.write('%s = ' % name)
+        cell.PrettyPrint()  # may be color
+        sys.stdout.write('\n')
+    return status
 
 
 class Push(object):
@@ -118,6 +130,32 @@ class Fork(object):
   Similar to Wait, which is in osh/builtin_process.py.
   """
   pass
+
+
+class Opts(object):
+  """getopts replacement.
+
+  opts :grep_opts {
+    flag -v --invert Bool "Invert"
+    flag -A --after Int "Lines after"
+    flag -t --timeout Float "Seconds to wait" { default = 1.0 }
+
+    # / pattern file* /
+    arg 1 pattern "Regular expression"
+    arg 2- file "Regular expression"
+  }
+  var opt = grep_opts.Parse(ARGV)
+  opt.invert
+  opt.after
+  opt.pattern
+  opt.file
+  """
+  def __init__(self, mem, errfmt):
+    self.mem = mem
+    self.errfmt = errfmt
+
+  def __call__(self, cmd_val):
+    raise NotImplementedError
 
 
 class Json(object):

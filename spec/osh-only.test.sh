@@ -5,28 +5,6 @@ $SH --debug-file $TMP/debug.txt -c 'true'
 grep 'OSH started with' $TMP/debug.txt >/dev/null && echo yes
 ## stdout: yes
 
-#### repr
-x=42
-repr x
-echo status=$?
-repr nonexistent
-echo status=$?
-## STDOUT:
-x = (cell val:(value.Str s:42) exported:F readonly:F)
-status=0
-'nonexistent' is not defined
-status=1
-## END
-
-#### repr on indexed array with hole
-declare -a array
-array[3]=42
-repr array
-## STDOUT:
-array = (cell val:(value.MaybeStrArray strs:[_ _ _ 42]) exported:F readonly:F)
-## END
-
-
 #### crash dump
 rm -f $TMP/*.json
 OSH_CRASH_DUMP_DIR=$TMP $SH -c '

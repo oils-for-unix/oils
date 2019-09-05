@@ -1,5 +1,27 @@
 # Oil builtins
 
+#### repr
+x=42
+repr x
+echo status=$?
+repr nonexistent
+echo status=$?
+## STDOUT:
+x = (cell val:(value.Str s:42) exported:F readonly:F)
+status=0
+'nonexistent' is not defined
+status=1
+## END
+
+#### repr on indexed array with hole
+declare -a array
+array[3]=42
+repr array
+## STDOUT:
+array = (cell val:(value.MaybeStrArray strs:[_ _ _ 42]) exported:F readonly:F)
+## END
+
+
 #### push onto a=(1 2)
 shopt -s parse_at
 a=(1 2)

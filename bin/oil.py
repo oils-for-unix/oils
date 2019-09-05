@@ -476,7 +476,6 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.TYPE: builtin_pure.Type(procs, aliases, exec_deps.search_path),
       builtin_e.HASH: builtin_pure.Hash(exec_deps.search_path),
       builtin_e.GETOPTS: builtin_pure.GetOpts(mem, errfmt),
-      builtin_e.REPR: builtin_pure.Repr(mem, errfmt),
 
       builtin_e.COLON: lambda arg_vec: 0,  # a "special" builtin 
       builtin_e.TRUE: lambda arg_vec: 0,
@@ -491,6 +490,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.UMASK: builtin_process.Umask,
 
       # Oil
+      builtin_e.REPR: builtin_oil.Repr(mem, errfmt),
       builtin_e.PUSH: builtin_oil.Push(mem, errfmt),
       builtin_e.USE: builtin_oil.Use(mem, errfmt),
   }

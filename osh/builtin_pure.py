@@ -478,34 +478,6 @@ class GetOpts(object):
     return status
 
 
-class Repr(object):
-  """Given a list of variable names, print their values.
-
-  'repr a' is a lot easier to type than 'argv.py "${a[@]}"'.
-  """
-  def __init__(self, mem, errfmt):
-    self.mem = mem
-    self.errfmt = errfmt
-
-  def __call__(self, arg_vec):
-    status = 0
-    for i in xrange(1, len(arg_vec.strs)):
-      name = arg_vec.strs[i]
-      if not match.IsValidVarName(name):
-        raise args.UsageError('got invalid variable name %r' % name,
-                              span_id=arg_vec.spids[i])
-
-      cell = self.mem.GetCell(name)
-      if cell is None:
-        print('%r is not defined' % name)
-        status = 1
-      else:
-        sys.stdout.write('%s = ' % name)
-        cell.PrettyPrint()  # may be color
-        sys.stdout.write('\n')
-    return status
-
-
 ECHO_SPEC = _Register('echo')
 ECHO_SPEC.ShortFlag('-e')  # no backslash escapes
 ECHO_SPEC.ShortFlag('-n')

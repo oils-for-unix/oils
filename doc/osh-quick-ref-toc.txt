@@ -119,7 +119,7 @@ X [Unsupported]   enable
                   X fork   X wait        replaces & and (), takes a block
                   X use                  source with namespace, file-relative 
                   X dirname   X basename optimizations
-                  opts                   getopts replacement
+                  X opts                 getopts replacement
                   push                   sugar for 'do array.push( @(a b) )'
                   repr                   Show debug representation of vars
                   X getline              Instead of read -raw :name
