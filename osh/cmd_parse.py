@@ -358,6 +358,8 @@ class CommandParser(object):
     self.eof_id = eof_id
     self.aliases_in_flight = aliases_in_flight
 
+    # A hacky boolean to remove 'if cd / {' ambiguity.
+    self.allow_block = True
     self.parse_opts = parse_ctx.parse_opts
 
     self.Reset()
@@ -524,7 +526,8 @@ class CommandParser(object):
           # Treat { and } more like operators
           # TODO: Also allow cd foo :{ a }
           if self.c_id == Id.Lit_LBrace:
-            block = self.ParseBraceGroup()
+            if self.allow_block:  # Disabled for if/while condition, etc.
+              block = self.ParseBraceGroup()
             if 0:
               print('--')
               block.PrettyPrint()
@@ -1128,6 +1131,81 @@ class CommandParser(object):
     case_node.spids.extend((case_spid, in_spid, esac_spid))
     return case_node
 
+  def _ParseOilElifElse(self, if_node):
+    # type: (command__If) -> None
+    """
+    if test -f foo {
+      echo foo
+    } elif test -f bar; test -f spam {
+  # ^ we parsed up to here
+      echo bar
+    } else {
+      echo none
+    }
+    """
+    arms = if_node.arms
+
+    while self.c_id == Id.KW_Elif:
+      elif_spid = word_.LeftMostSpanForWord(self.cur_word)
+
+      self._Next()  # skip elif
+      self.allow_block = False
+      cond = self._ParseCommandList()
+      self.allow_block = True
+
+      body = self.ParseBraceGroup()
+
+      arm = syntax_asdl.if_arm(cond.children, body.children)
+      arm.spids.append(elif_spid)
+      arms.append(arm)
+
+    self._Peek()
+    if self.c_id == Id.KW_Else:
+      else_spid = word_.LeftMostSpanForWord(self.cur_word)
+      self._Next()
+      body = self.ParseBraceGroup()
+      if_node.else_action = body.children
+    else:
+      else_spid = const.NO_INTEGER
+
+    if_node.spids.append(else_spid)
+
+  def _ParseOilIf(self, if_spid, cond1):
+    # type: (int, command__CommandList) -> command__If
+    """
+    if test -f foo {
+                 # ^ we parsed up to here
+      echo foo
+    } elif test -f bar; test -f spam {
+      echo bar
+    } else {
+      echo none
+    }
+    NOTE: If you do something like if test -n foo{, the parser keeps going, and
+    the error is confusing because it doesn't point to the right place.
+
+    I think we might need strict_brace so that foo{ is disallowed.  It has to
+    be foo\{ or foo{a,b}.  Or just turn that on with parse_brace?  After you
+    form ANY CompoundWord, make sure it's balanced for Lit_LBrace and
+    Lit_RBrace?  Maybe this is pre-parsing step in teh WordParser?
+    """
+    if_node = command.If()
+
+    body1 = self.ParseBraceGroup()
+    arm = syntax_asdl.if_arm(cond1.children, body1.children)
+    arm.spids.append(if_spid)  # every arm has 1 spid, unlike shell-style
+
+    if_node.arms.append(arm)
+
+    self._Peek()
+    if self.c_id in (Id.KW_Elif, Id.KW_Else):
+      self._ParseOilElifElse(if_node)
+    else:
+      if_node.spids.append(const.NO_INTEGER)  # no else spid
+    # the whole if node has the 'else' spid, unlike shell-style there's no 'fi'
+    # spid because that's in the BraceGroup.
+    return if_node
+
   def _ParseElifElse(self, if_node):
     # type: (command__If) -> None
     """
@@ -1170,11 +1248,23 @@ class CommandParser(object):
     if_node = command.If()
     self._Next()  # skip if
 
+    # Remove ambiguity with if cd / {
+    # Blocks aren't allowed there.
+    self.allow_block = False
     cond = self._ParseCommandList()
+    self.allow_block = True
+    if 0:
+      print('COND')
+      cond.PrettyPrint()
+      print()
+
+    self._Peek()
+    if self.parse_opts.brace and self.c_id == Id.Lit_LBrace:
+      # if foo {
+      return self._ParseOilIf(if_spid, cond)
 
     then_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.KW_Then)
-
     body = self._ParseCommandList()
 
     arm = syntax_asdl.if_arm(cond.children, body.children)
@@ -1713,7 +1803,12 @@ class CommandParser(object):
       elif self.c_id in END_LIST:  # EOF
         done = True
 
+      # For if test -f foo; test -f bar {
+      elif self.parse_opts.brace and self.c_id == Id.Lit_LBrace:
+        done = True
+
       else:
+        #p_die("OOPS", word=self.cur_word)
         pass  # e.g. "} done", "fi fi", ") fi", etc. is OK
 
       children.append(child)

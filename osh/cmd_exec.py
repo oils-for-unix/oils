@@ -325,7 +325,8 @@ class Executor(object):
     builtin_func = self.builtins.get(builtin_id)
     if builtin_func is not None:
       # Pass the block
-      if isinstance(builtin_func, (builtin.Cd, builtin_oil.Json)):
+      if isinstance(builtin_func,
+          (builtin.Cd, builtin_oil.Use, builtin_oil.Json)):
         status = builtin_func(cmd_val)
       else:
         status = builtin_func(arg_vec)

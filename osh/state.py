@@ -203,6 +203,7 @@ _OIL_OPTION_NAMES = [
                          # Don't reparse program data as globs
     'more_errexit',  # check after command sub
     'simple_echo',  # longopts, -sep -end, etc.
+    'simple_test_builtin',  # only file tests (no strings), remove [, status 2
 ]
 
 _STRICT_OPTION_NAMES = [
@@ -354,6 +355,7 @@ class ExecOpts(object):
     self.more_errexit = False
 
     self.simple_echo = False
+    self.simple_test_builtin = False
 
     #
     # OSH-specific options that are NOT YET IMPLEMENTED.

@@ -185,6 +185,7 @@ shopt -s strict_glob
 shopt -s simple_word_eval
 shopt -s more_errexit
 shopt -s simple_echo
+shopt -s simple_test_builtin
 shopt -s parse_at
 shopt -s parse_brace
 shopt -s parse_paren
@@ -225,7 +226,7 @@ x=42
 argv
 ## END
 
-#### bad block to assignment builtin
+#### parse_brace: bad block to assignment builtin
 shopt -s all:oil
 # This is a fatal programming error.  It's unlike passing an extra arg?
 local x=y { echo 'bad block' }
@@ -233,7 +234,7 @@ echo status=$?
 ## status: 1
 ## stdout-json: ""
 
-#### bad block to external program
+#### parse_brace: bad block to external program
 shopt -s all:oil
 # This is a fatal programming error.  It's unlike passing an extra arg?
 ls { echo 'bad block' }
@@ -241,4 +242,63 @@ echo status=$?
 ## status: 1
 ## stdout-json: ""
 
+#### parse_brace: cd { } in pipeline
+shopt -s all:oil
+cd /tmp {
+  pwd
+  pwd
+} | tr a-z A-Z
+## STDOUT:
+/TMP
+/TMP
+## END
 
+
+#### parse_brace: if accepts blocks
+shopt -s all:oil
+if test -n foo {
+  echo one
+}
+# harder
+if test -n foo; test -n bar {
+  echo two
+}
+
+# just like POSIX shell!
+if test -n foo;
+
+   test -n bar {
+  echo three
+}
+
+if test -z foo {
+  echo if
+} else {
+  echo else
+}
+
+if test -z foo {
+  echo if
+} elif test -z '' {
+  echo elif
+} else {
+  echo else
+}
+
+echo 'one line'
+if test -z foo { echo if } elif test -z '' { echo 1 }; if test -n foo { echo 2 };
+
+
+# NOTE: This is not alowed because it's like a brace group!
+# if test -n foo; { 
+
+## STDOUT:
+one
+two
+three
+else
+elif
+one line
+1
+2
+## END

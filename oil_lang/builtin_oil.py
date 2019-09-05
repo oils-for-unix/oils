@@ -81,15 +81,20 @@ class Push(object):
 
 
 class Use(object):
-  """use lib, bin, env.  Respects namespaces."""
+  """use lib, bin, env.  Respects namespaces.
+
+  use lib foo.sh {  # "punning" on block syntax.  1 or 3 words.
+    func1
+    func2 as myalias
+  }
+  """
 
   def __init__(self, mem, errfmt):
     self.mem = mem
     self.errfmt = errfmt
 
-  # TODO: It takes a block too
-  def __call__(self, arg_vec):
-    arg_r = args.Reader(arg_vec.strs, spids=arg_vec.spids)
+  def __call__(self, cmd_val):
+    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip 'use'
 
     # TODO:
