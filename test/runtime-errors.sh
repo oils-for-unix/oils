@@ -148,11 +148,11 @@ strict_errexit_1() {
 strict_errexit_2() {
   # Test out all the location info
 
+  # These are considered logical.
   # command.Pipeline.  Hm ! doesn't work here
-  _strict-errexit-case 'if ls | wc -l; then echo Pipeline; fi'
-
+  #_strict-errexit-case 'if ls | wc -l; then echo Pipeline; fi'
   # command.AndOr
-  _strict-errexit-case 'if echo a && echo b; then echo AndOr; fi'
+  #_strict-errexit-case 'if echo a && echo b; then echo AndOr; fi'
 
   # command.DoGroup
   _strict-errexit-case '! for x in a; do echo $x; done'
@@ -176,7 +176,7 @@ strict_errexit_2() {
   # command.TimeBlock
   _strict-errexit-case '! time echo hi'
 
-  # How do I tickle CommandList?  That only happens with a single line?
+  _strict-errexit-case '! echo $(echo hi)'
 }
 
 pipefail() {

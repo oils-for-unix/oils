@@ -1255,13 +1255,16 @@ class Executor(object):
     eo = self.exec_opts
     if eo.strict_errexit and node.tag in (
         # These are nodes that execute more than one COMMAND.  DParen doesn't
-        # count because ther are no commands.
-        command_e.Pipeline, command_e.AndOr,
+        # count because there are no commands.
+        # - AndOr has multiple commands, but uses exit code in boolean way
+        # - Ditto for Pipeline.  TODO: Does it make sense to disallow ls|grep
+        #   but allow ! grep?
+
         command_e.DoGroup,  # covers ForEach and ForExpr, but not WhileUntil/If
         command_e.BraceGroup, command_e.Subshell,
         command_e.WhileUntil, command_e.If, command_e.Case,
         command_e.TimeBlock,
-        command_e.CommandList,  # might never happen
+        command_e.CommandList,  # Happens in $(command sub)
         ):
       span_id = eo.errexit.SpidIfDisabled()
       if span_id != const.NO_INTEGER:
