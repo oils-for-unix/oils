@@ -693,15 +693,20 @@ class BoolEvaluator(_ExprEvaluator):
           try:
             mode = posix.lstat(s).st_mode
           except OSError:
+            # TODO: simple_test_builtin should this as status=2.
+            #e_die("lstat() error: %s", e, word=node.child)
             return False
 
           return stat.S_ISLNK(mode)
 
         try:
           st = posix.stat(s)
-        except OSError:
-          # TODO: Signal extra debug information?
-          #log("Error from stat(%r): %s" % (s, e))
+        except OSError as e:
+          # TODO: simple_test_builtin should this as status=2.
+          # Problem: we really need errno, because test -f / is bad argument,
+          # while test -f /nonexistent is a good argument but failed.  Gah.
+          # ENOENT vs. ENAMETOOLONG.
+          #e_die("stat() error: %s", e, word=node.child)
           return False
         mode = st.st_mode
 
@@ -765,7 +770,7 @@ class BoolEvaluator(_ExprEvaluator):
             return posix.isatty(fd)
           # fd is user input, and causes this exception in the binding.
           except OverflowError:
-            return 1
+            e_die('File descriptor %r is too big', s, word=node.child)
 
         # See whether 'set -o' options have been set
         if op_id == Id.BoolUnary_o:

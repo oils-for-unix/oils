@@ -149,7 +149,7 @@ SHELL OPTIONS
                   simple_word_eval       No splitting, static globbing
                   more_errexit           More errexit checks --  at command sub
                   X longopts             test -file, shopt -unset, etc.
-                  X simple_test_builtin  Only file tests (no strings), remove [
+                  X simple_test_builtin  Only file tests, remove [, status 2
   [Oil Syntax]    X all:parse
                   parse_at               echo @array @arrayfunc(x, y)
                   X parse_brace          cd ~/src { ... }
