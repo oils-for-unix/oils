@@ -302,3 +302,16 @@ one line
 1
 2
 ## END
+
+#### parse_brace: brace group in if condition
+
+# strict_errexit would make this a RUNTIME error
+shopt -s parse_brace
+if { echo one; echo two } {
+  echo three
+}
+## STDOUT:
+one
+two
+three
+## END

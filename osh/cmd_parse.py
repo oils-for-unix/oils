@@ -1193,6 +1193,7 @@ class CommandParser(object):
 
     body1 = self.ParseBraceGroup()
     arm = syntax_asdl.if_arm(cond1.children, body1.children)
+    # TODO: We could get the spids from the brace group.
     arm.spids.append(if_spid)  # every arm has 1 spid, unlike shell-style
 
     if_node.arms.append(arm)

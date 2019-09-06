@@ -65,6 +65,29 @@ var x = "redeclaration is an error"
 x=local
 ## END
 
+#### setvar dynamic scope (TODO: change this?)
+modify_with_shell_assignment() {
+  f=shell
+}
+
+modify_with_setvar() {
+  setvar f = "setvar"
+}
+
+f() {
+  var f = 1
+  echo f=$f
+  modify_with_shell_assignment
+  echo f=$f
+  modify_with_setvar
+  echo f=$f
+}
+f
+## STDOUT:
+f=1
+f=shell
+f=setvar
+## END
 
 #### command sub $(echo hi)
 var x = $(echo hi)
