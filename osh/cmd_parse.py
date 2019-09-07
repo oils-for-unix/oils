@@ -1022,8 +1022,17 @@ class CommandParser(object):
     assert keyword.id in (Id.KW_While, Id.KW_Until), keyword
     self._Next()  # skip keyword
 
+    self.allow_block = False
     cond_node = self._ParseCommandList()
-    body_node = self.ParseDoGroup()
+    self.allow_block = True
+
+    # NOTE: The LSTs will be different for Oil and OSH, but the execution
+    # should be unchanged.  To be sure we should desugar.
+    if self.parse_opts.brace and self.c_id == Id.Lit_LBrace:
+      # if foo {
+      body_node = self.ParseBraceGroup()
+    else:
+      body_node = self.ParseDoGroup()
 
     node = command.WhileUntil(keyword, cond_node.children, body_node)
     node.spids.append(keyword.span_id)  # e.g. for errexit message

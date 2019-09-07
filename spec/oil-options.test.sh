@@ -315,3 +315,15 @@ one
 two
 three
 ## END
+
+#### parse_brace: while/until
+shopt -s all:oil
+while true {
+  echo one
+  break
+}
+while true { echo two; break }
+## STDOUT:
+one
+two
+## END
