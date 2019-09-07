@@ -136,8 +136,8 @@ SHELL OPTIONS
                   strict_argv            No empty argv
                   strict_array           Arrays don't decay to strings
                   strict_arith           Fatal parse errors (on by default)
-                  strict_errexit         Fail earlier, at command sub 
-                  strict_eval_builtin    Takes exactly 1 argument
+                  strict_errexit         Disallow code that ignores failure
+                  strict_eval_builtin    eval takes exactly 1 argument
                   strict_control_flow    Do we need this?  Special builtins?
                   strict_word_eval       Expose unicode and slicing errors
                   X strict_tilde         Tilde subst can result in error
