@@ -937,10 +937,15 @@ class CommandParser(object):
       self._Next()
     elif self.c_id == Id.KW_Do:  # missing semicolon/newline allowed
       pass
+    elif self.c_id == Id.Lit_LBrace:  # does NOT require parse_brace
+      pass
     else:
       p_die('Invalid word after for expression', word=self.cur_word)
 
-    node.body = self.ParseDoGroup()
+    if self.c_id == Id.Lit_LBrace:
+      node.body = self.ParseBraceGroup()
+    else:
+      node.body = self.ParseDoGroup()
     return node
 
   def _ParseForEachLoop(self, for_spid):
@@ -1036,7 +1041,7 @@ class CommandParser(object):
     # should be unchanged.  To be sure we should desugar.
     if self.parse_opts.brace and self.c_id == Id.Lit_LBrace:
       # if foo {
-      body_node = self.ParseBraceGroup()
+      body_node = self.ParseBraceGroup()  # type: command_t
     else:
       body_node = self.ParseDoGroup()
 

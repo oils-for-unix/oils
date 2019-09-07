@@ -40,6 +40,16 @@ done
 3
 ## END
 
+#### Accepts { } syntax too
+for ((a=1; a <= 3; a++)) {
+  echo $a
+}
+## STDOUT:
+1
+2
+3
+## END
+
 #### Empty init
 i=1
 for ((  ;i < 4;  i++ )); do
