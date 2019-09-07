@@ -114,14 +114,14 @@ BUILTIN COMMANDS
   [Word Lookup]   command   builtin
   [Interactive]   alias   unalias   history   X fc   X bind
 X [Unsupported]   enable
-  [Oil Builtins]  X log   X die          common functions (polyfill)
-                  X cd   X shopt   X env compatible, and takes a block
+  [Oil Builtins]  cd   X shopt   X env   compatible, and takes a block
                   X fork   X wait        replaces & and (), takes a block
                   X use                  source with namespace, file-relative 
                   X dirname   X basename optimizations
                   X opts                 getopts replacement
                   push                   sugar for 'do array.push( @(a b) )'
                   repr                   Show debug representation of vars
+                  X log   X die          common functions (polyfill)
                   X getline              Instead of read -raw :name
                   X json-echo   X json-read  
                   X tsv2-echo   X tsv2-read
@@ -132,7 +132,7 @@ SHELL OPTIONS
   [Debugging]     xtrace   X verbose   X extdebug
   [Interactive]   emacs   vi
   [Other]         X noclobber
-  [OSH Strict]    all:strict             All options starting with 'strict-'
+  [all:strict]                           All options starting with 'strict_'
                   strict_argv            No empty argv
                   strict_array           Arrays don't decay to strings
                   strict_arith           Fatal parse errors (on by default)
@@ -144,18 +144,22 @@ SHELL OPTIONS
                   X strict_backslash     Parse the sublanguage more strictly
                   X strict_glob          Parse the sublanguage more strictly
                   X strict_trap          Function name only
-  [Oil Semantics] all:oil                All options below, plus POSIX and bash
+  [all:oil]                              All options below and more
+                  parse_at               echo @array @arrayfunc(x, y)
+                  parse_brace            if true { ... }; cd ~/src { ... }
+                  parse_cstrings         r'\'   c'\n'   c"$x\n"
+                  X parse_paren          if (x > 0) ...
+                  X longopts             test -file, shopt -unset, etc.
+                  more_errexit           More errexit checks --  at command sub
                   simple_echo            Doesn't join args; -sep -end and --
                   simple_word_eval       No splitting, static globbing
-                  more_errexit           More errexit checks --  at command sub
-                  X longopts             test -file, shopt -unset, etc.
                   X simple_test_builtin  Only file tests, remove [, status 2
-  [Oil Syntax]    X all:parse
-                  parse_at               echo @array @arrayfunc(x, y)
-                  X parse_brace          cd ~/src { ... }
-                  X parse_equals         x = 's' (for cleaner config snippets)
-                  X parse_paren          if (x > 0) ...
+  [all:nice]                             Makes scripts more consistent
+                  X parse_equals         x = 's' (for cleaner config blocks)
                   parse_set              instead of setvar
+                  no_legacy_builtins     local/declare/etc.  pushd/popd/dirs
+                                         source  unset  printf  [un]alias
+                                         getopts
 
 ENVIRONMENT VARIABLES
   [Shell Options] SHELLOPTS   X BASHOPTS
