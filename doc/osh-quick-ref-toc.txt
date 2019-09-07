@@ -58,14 +58,14 @@ X [Operators]     unary         -a
                   chain         pass a => f(y, z) => var new
                   getattr       d->key is like d['key'] or d.key
                   scope-attr    module::name
-  [Functions]     word-call     echo $strfunc(x, y) @arrayfunc(z)
+  [Functions]     inline-call   echo $strfunc(x, y) @arrayfunc(z)
                   X func-decl   func inc(a Int, b Int = 1) Int { ... }
 
 WORD LANGUAGE
   [Quotes]        quotes        'abc'  $'\n'  "$var"
   [Substitutions] com-sub       $(command)   `command`
                   var-sub       ${var}
-                  arith-sub     $((1 + 2))  $[1 + 2]
+                  arith-sub     $((1 + 2))
                   tilde-sub     ~/src
                   proc-sub      diff <(sort L.txt) <(sort R.txt)
   [Special Vars]  special-vars  $@  $*  $#     $?  $-     $$  $!
@@ -149,7 +149,7 @@ SHELL OPTIONS
                   parse_brace            if true { ... }; cd ~/src { ... }
                   parse_cstrings         r'\'   c'\n'   c"$x\n"
                   X parse_paren          if (x > 0) ...
-                  X longopts             test -file, shopt -unset, etc.
+                  X longopts             test -file, read -delim, etc.
                   more_errexit           More errexit checks --  at command sub
                   simple_echo            Doesn't join args; -sep -end and --
                   simple_word_eval       No splitting, static globbing
@@ -157,9 +157,12 @@ SHELL OPTIONS
   [all:nice]                             Makes scripts more consistent
                   X parse_equals         x = 's' (for cleaner config blocks)
                   parse_set              instead of setvar
-                  no_legacy_builtins     local/declare/etc.  pushd/popd/dirs
+                  no_old_builtins        local/declare/etc.  pushd/popd/dirs
                                          source  unset  printf  [un]alias
                                          getopts
+                  no_old_syntax          [[   $(( ))  ${x%prefix}   $$
+                                         $'\n'   @(*.sh|*.py)  `echo comsub`
+                                         ${a[@]}
 
 ENVIRONMENT VARIABLES
   [Shell Options] SHELLOPTS   X BASHOPTS
