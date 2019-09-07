@@ -288,6 +288,8 @@ if test -z foo {
 echo 'one line'
 if test -z foo { echo if } elif test -z '' { echo 1 }; if test -n foo { echo 2 };
 
+echo 'sh syntax'
+if test -z foo; then echo if; elif test -z ''; then echo 1; fi; if test -n foo { echo 2 };
 
 # NOTE: This is not alowed because it's like a brace group!
 # if test -n foo; { 
@@ -299,6 +301,9 @@ three
 else
 elif
 one line
+1
+2
+sh syntax
 1
 2
 ## END
@@ -323,18 +328,30 @@ while true {
   break
 }
 while true { echo two; break }
+
+echo 'sh syntax'
+while true; do echo three; break; done
 ## STDOUT:
 one
 two
+sh syntax
+three
 ## END
 
 #### parse_brace: for-in loop
 shopt -s all:oil
-for x in one two three {
+for x in one two {
   echo $x
 }
+for x in three { echo $x }
+
+echo 'sh syntax'
+for x in four; do echo $x; done
+
 ## STDOUT:
 one
 two
 three
+sh syntax
+four
 ## END
