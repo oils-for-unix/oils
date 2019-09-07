@@ -910,6 +910,8 @@ class CommandParser(object):
       elif self.c_id == Id.Op_Newline:
         self._Next()
         break
+      elif self.parse_opts.brace and self.c_id == Id.Lit_LBrace:
+        break
 
       if not isinstance(self.cur_word, word__Compound):
         # TODO: Can we also show a pointer to the 'for' keyword?
@@ -983,7 +985,11 @@ class CommandParser(object):
     else:  # for foo BAD
       p_die('Unexpected word after for loop variable', word=self.cur_word)
 
-    node.body = self.ParseDoGroup()
+    self._Peek()
+    if self.c_id == Id.Lit_LBrace:  # parse_opts.brace must be on
+      node.body = self.ParseBraceGroup()
+    else:
+      node.body = self.ParseDoGroup()
 
     node.spids.append(in_spid)
     node.spids.append(semi_spid)

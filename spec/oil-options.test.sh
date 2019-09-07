@@ -327,3 +327,14 @@ while true { echo two; break }
 one
 two
 ## END
+
+#### parse_brace: for-in loop
+shopt -s all:oil
+for x in one two three {
+  echo $x
+}
+## STDOUT:
+one
+two
+three
+## END
