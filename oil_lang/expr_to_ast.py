@@ -161,6 +161,10 @@ class Transformer(object):
       c = '-' if not children else len(children)
       #log('non-terminal %s %s', nt_name, c)
 
+      if typ == grammar_nt.oil_expr:
+        # oil_expr: '(' testlist ')'
+        return self.Expr(children[1])
+
       if typ == grammar_nt.lvalue_list:
         return self._AssocBinary(children)
 

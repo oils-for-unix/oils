@@ -288,3 +288,18 @@ len
 #   1+2,
 #   3+4,
 # )
+
+#### Test value.Obj inside shell arithmetic
+var w = "3"
+echo lt=$(( w < 4 ))
+echo gt=$(( w > 4 ))
+
+var z = 3
+echo lt=$(( z < 4 ))
+echo gt=$(( z > 4 ))
+## STDOUT:
+lt=1
+gt=0
+lt=1
+gt=0
+## END

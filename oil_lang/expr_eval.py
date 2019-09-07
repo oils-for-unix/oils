@@ -141,6 +141,12 @@ class OilEvaluator(object):
       if node.op.id == Id.Arith_Star:
         return left * right
 
+      if node.op.id == Id.Arith_Less:
+        return left < right
+
+      if node.op.id == Id.Arith_Great:
+        return left > right
+
       raise NotImplementedError(node.op.id)
 
     if node.tag == expr_e.List:

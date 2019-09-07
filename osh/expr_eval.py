@@ -323,6 +323,15 @@ class ArithEvaluator(_ExprEvaluator):
     if val.tag == value_e.AssocArray:
       return val.d
 
+    if val.tag == value_e.Obj:
+      if isinstance(val.obj, int):
+        return val.obj
+      # NOTE: This doesn't happen because we convert it.
+      #elif isinstance(val.obj, str):
+      #  return _StringToInteger(val.obj, span_id=span_id)  # calls e_die
+      else:
+        e_die("Object %r can't be used in shell arirhmetic", val.obj)
+
     raise AssertionError(val)
 
   def _ValToArithOrError(self, val, blame_word=None, span_id=const.NO_INTEGER):

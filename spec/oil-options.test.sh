@@ -396,3 +396,42 @@ if (x < 42) {
 ## STDOUT:
 less
 ## END
+
+#### parse_paren: while statement
+shopt -s all:oil
+
+# ksh style
+var x = 1
+while (( x < 3 )) {
+  echo $x
+  setvar x += 1
+}
+echo 'done ksh'
+
+# sh style
+var y = 1
+while test $y -lt 3 {
+  echo $y
+  setvar y += 1
+}
+echo 'done sh'
+
+# oil
+var z = 1
+while (z < 3) {
+  echo $z
+  setvar z += 1
+}
+echo 'done oil'
+
+## STDOUT:
+1
+2
+done ksh
+1
+2
+done sh
+1
+2
+done oil
+## END

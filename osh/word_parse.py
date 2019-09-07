@@ -789,6 +789,8 @@ class WordParser(object):
     
     var x = 42 | wc -l
     var x = 42 && echo hi
+
+    TODO: Also have to allow th trailing } in { var x = 'a' }
     """
     self._Next(lex_mode_e.Expr)
     enode, last_token = self.parse_ctx.ParseOilAssign(kw_token, self.lexer,

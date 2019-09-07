@@ -9,6 +9,7 @@ cmd_parse.py - Parse high level shell commands.
 """
 from __future__ import print_function
 
+from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
@@ -21,7 +22,7 @@ from _devbuild.gen.syntax_asdl import (
 
     lhs_expr, lhs_expr_t,
     redir, redir_t, redir__HereDoc,
-    word_t, word__Compound, word__Token,
+    word, word_t, word__Compound, word__Token,
     word_part, word_part_t, word_part__Literal,
 
     token, assign_pair, env_pair,
@@ -30,8 +31,7 @@ from _devbuild.gen.syntax_asdl import (
     source,
     parse_result, parse_result_t,
 )
-from _devbuild.gen.syntax_asdl import word  # TODO: rename
-from _devbuild.gen import syntax_asdl  # line_span
+from _devbuild.gen import syntax_asdl  # token, etc.
 
 from asdl import const
 from core import util
@@ -1033,21 +1033,32 @@ class CommandParser(object):
     assert keyword.id in (Id.KW_While, Id.KW_Until), keyword
     self._Next()  # skip keyword
 
-    # TODO: Check if it's (, and parse expression.
-    # self.parse_ctx.ParseOilExpr()
-    self.allow_block = False
-    cond_node = self._ParseCommandList()
-    self.allow_block = True
+    #if self.c_id == Id.Op_LParen:
+    if self.w_parser.LookAhead() == Id.Op_LParen:
+      enode, _ = self.parse_ctx.ParseOilExpr(self.lexer,
+                                                      grammar_nt.oil_expr)
+      #enode.PrettyPrint()
+      #print()
+      # NOTE: OilCondition could have spids of ( and ) ?
+      conds = [command.OilCondition(enode)]
+    else:
+      # TODO: Check if it's (, and parse expression.
+      # self.parse_ctx.ParseOilExpr()
+      self.allow_block = False
+      node = self._ParseCommandList()
+      conds = node.children
+      self.allow_block = True
 
     # NOTE: The LSTs will be different for Oil and OSH, but the execution
     # should be unchanged.  To be sure we should desugar.
+    self._Peek()
     if self.parse_opts.brace and self.c_id == Id.Lit_LBrace:
       # if foo {
       body_node = self.ParseBraceGroup()  # type: command_t
     else:
       body_node = self.ParseDoGroup()
 
-    node = command.WhileUntil(keyword, cond_node.children, body_node)
+    node = command.WhileUntil(keyword, conds, body_node)
     node.spids.append(keyword.span_id)  # e.g. for errexit message
     return node
 

@@ -880,6 +880,15 @@ class Executor(object):
       i = self.arith_ev.Eval(node.child)
       status = 0 if i != 0 else 1
 
+    elif node.tag == command_e.OilCondition:
+      # TODO: Do we need location information?  Yes, probably for execptions in
+      # Oil expressions.
+      #span_id = node.spids[0]
+      #self.mem.SetCurrentSpanId(span_id)
+
+      obj = self.expr_ev.EvalExpr(node.e)
+      status = 0 if obj else 1
+
     elif node.tag == command_e.OilAssign:
       self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to var/setvar
 
@@ -1293,7 +1302,7 @@ class Executor(object):
         command_e.NoOp, command_e.ControlFlow, command_e.Pipeline,
         command_e.AndOr, command_e.CommandList, command_e.Sentence,
         command_e.TimeBlock, command_e.FuncDef, command_e.OilAssign,
-        ):
+        command_e.OilCondition):
       redirects = []
     else:
       try:
