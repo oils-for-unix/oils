@@ -215,6 +215,7 @@ module syntax
     -- Part of for, while, until (but not if, case, FuncDef)
   | DoGroup(command* children, redir* redirects)
     -- A brace group is a compound command, with redirects.
+    -- TODO: Combine DoGroup and BraceGroup, with 'token left' for do or {
   | BraceGroup(command* children, redir* redirects)
     -- Contains a single child, like CommandSub
   | Subshell(command command_list, redir* redirects)

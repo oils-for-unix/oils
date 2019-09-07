@@ -355,3 +355,34 @@ three
 sh syntax
 four
 ## END
+
+#### parse_brace case
+shopt -s all:oil
+
+var files = @(foo.py 'foo test.sh')
+for name in "${files[@]}" ; do
+  case $name in
+    *.py)
+      echo python
+      ;;
+    *.sh)
+      echo shell
+      ;;
+  esac
+done
+
+for name in @files {
+  case $name {
+  (*.py)
+    echo python
+    ;;
+  (*.sh) echo shell ;;
+  }
+}
+
+## STDOUT:
+python
+shell
+python
+shell
+## END

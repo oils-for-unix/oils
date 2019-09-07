@@ -1112,6 +1112,8 @@ class CommandParser(object):
       # case item begins with a command word or (
       if self.c_id == Id.KW_Esac:
         break
+      if self.parse_opts.brace and self.c_id == Id.Lit_RBrace:
+        break
       if self.c_kind != Kind.Word and self.c_id != Id.Op_LParen:
         break
       arm = self.ParseCaseItem()
@@ -1136,7 +1138,11 @@ class CommandParser(object):
 
     self._NewlineOk()
     in_spid = word_.LeftMostSpanForWord(self.cur_word)
-    self._Eat(Id.KW_In)
+    self._Peek()
+    if self.parse_opts.brace and self.c_id == Id.Lit_LBrace:
+      self._Next()
+    else:
+      self._Eat(Id.KW_In)
     self._NewlineOk()
 
     if self.c_id != Id.KW_Esac:  # empty case list
@@ -1145,7 +1151,11 @@ class CommandParser(object):
       self._Peek()
 
     esac_spid = word_.LeftMostSpanForWord(self.cur_word)
-    self._Eat(Id.KW_Esac)
+    self._Peek()
+    if self.parse_opts.brace and self.c_id == Id.Lit_RBrace:
+      self._Next()
+    else:
+      self._Eat(Id.KW_Esac)
     self._Next()
 
     case_node.spids.extend((case_spid, in_spid, esac_spid))
