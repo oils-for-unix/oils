@@ -386,3 +386,13 @@ shell
 python
 shell
 ## END
+
+#### parse_paren: if statement
+shopt -s all:oil
+var x = 1
+if (x < 42) {
+  echo less
+}
+## STDOUT:
+less
+## END

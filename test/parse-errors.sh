@@ -494,6 +494,12 @@ blocks() {
   _oil-parse-error 'cd / { echo hi } cd /'
 }
 
+parse_brace() {
+  # missing space
+  _oil-parse-error 'if test -f foo{ echo hi }'
+
+}
+
 cases-in-strings() {
   set +o errexit
 
@@ -529,6 +535,7 @@ cases-in-strings() {
   oil-language  # oil_lang/
   push-builtin
   blocks
+  parse_brace
 }
 
 # Cases in their own file

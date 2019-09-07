@@ -1061,6 +1061,7 @@ class WordParser(object):
     """
     w = word.Compound()
     num_parts = 0
+    brace_count = 0
     done = False
     while not done:
       self._Peek()
@@ -1120,7 +1121,14 @@ class WordParser(object):
                   token=self.cur_token)
           done = True
 
-        else:  # not a literal with lookahead; append it
+        else:
+          # Syntax error for { and }
+          if self.token_type == Id.Lit_LBrace:
+            brace_count += 1
+          elif self.token_type == Id.Lit_RBrace:
+            brace_count -= 1
+
+          # not a literal with lookahead; append it
           w.parts.append(part)
 
       elif self.token_kind == Kind.VSub:
@@ -1194,6 +1202,12 @@ class WordParser(object):
       if not done:
         self._Next(lex_mode)
       num_parts += 1
+
+    if self.parse_opts.brace and brace_count != 0:
+      p_die(
+          'Word has unbalanced { }.  Maybe add a space or quote it like \{',
+          word=w)
+
     return w
 
   def _ReadArithWord(self):
