@@ -1201,9 +1201,10 @@ class WordParser(object):
 
       if not done:
         self._Next(lex_mode)
-      num_parts += 1
+        num_parts += 1
 
-    if self.parse_opts.brace and brace_count != 0:
+    if self.parse_opts.brace and num_parts > 1 and brace_count != 0:
+      # accept { and }, but not foo{
       p_die(
           'Word has unbalanced { }.  Maybe add a space or quote it like \{',
           word=w)

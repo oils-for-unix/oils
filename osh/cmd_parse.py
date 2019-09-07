@@ -1033,6 +1033,8 @@ class CommandParser(object):
     assert keyword.id in (Id.KW_While, Id.KW_Until), keyword
     self._Next()  # skip keyword
 
+    # TODO: Check if it's (, and parse expression.
+    # self.parse_ctx.ParseOilExpr()
     self.allow_block = False
     cond_node = self._ParseCommandList()
     self.allow_block = True
