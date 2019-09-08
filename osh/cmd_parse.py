@@ -1033,17 +1033,12 @@ class CommandParser(object):
     assert keyword.id in (Id.KW_While, Id.KW_Until), keyword
     self._Next()  # skip keyword
 
-    #if self.c_id == Id.Op_LParen:
-    if self.w_parser.LookAhead() == Id.Op_LParen:
+    if self.parse_opts.paren and self.w_parser.LookAhead() == Id.Op_LParen:
       enode, _ = self.parse_ctx.ParseOilExpr(self.lexer,
-                                                      grammar_nt.oil_expr)
-      #enode.PrettyPrint()
-      #print()
+                                             grammar_nt.oil_expr)
       # NOTE: OilCondition could have spids of ( and ) ?
       conds = [command.OilCondition(enode)]
     else:
-      # TODO: Check if it's (, and parse expression.
-      # self.parse_ctx.ParseOilExpr()
       self.allow_block = False
       node = self._ParseCommandList()
       conds = node.children
@@ -1053,7 +1048,7 @@ class CommandParser(object):
     # should be unchanged.  To be sure we should desugar.
     self._Peek()
     if self.parse_opts.brace and self.c_id == Id.Lit_LBrace:
-      # if foo {
+      # while test -f foo {
       body_node = self.ParseBraceGroup()  # type: command_t
     else:
       body_node = self.ParseDoGroup()

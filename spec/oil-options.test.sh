@@ -435,3 +435,16 @@ done sh
 2
 done oil
 ## END
+
+#### while subshell without parse_paren
+while ( echo one ); do
+  echo two
+  break
+done
+## STDOUT:
+one
+two
+## END
+
+
+
