@@ -209,6 +209,11 @@ var_sub: '${' expr Op_RBrace
 # - type annotation syntax is more restrictive    # a: (1+2) = 3 is OK in python
 # - We're validating the lvalue here, instead of doing it in the "transformer".
 #   We have the 'var' prefix which helps.
+#
+# TODO: Get rid of lvalue
+# place: ...
+# oil_setvar: place_list
+# oil_var: typed_var_list = 
 
 lvalue_trailer: '[' subscriptlist ']' | '.' NAME
 lvalue: NAME trailer*
@@ -231,6 +236,15 @@ oil_expr: '(' testlist ')'
 # Example: for (a Int, b Int in expr) { ... }
 oil_for: '(' lvalue_list 'in' testlist ')'
 
+# Examples: func print(msg Str, *args ; span_id Int = 0, token Token = None)
+#           proc rule(@argv, b Block) { }
+# We have to put the opening { there for pgen2.  TODO: Also accept :{ so the
+# lexer knows to change modes.
+oil_func_proc: NAME '(' params* [';' params*] ')' [type_expr] '{'
+#oil_func_proc: NAME '(' params* [';' params*] ')'
+params: param (',' param)* [',']
+# ... is for *args or **kwargs of any type, and @argv is for string args
+param: NAME [type_expr] ['=' expr] | '...' NAME | '@' NAME
 
 # Problem: we can't end it on a newline because say dict literals will have
 # multiple lines.  But EOF isn't right either.

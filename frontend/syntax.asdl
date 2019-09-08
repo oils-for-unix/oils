@@ -245,6 +245,19 @@ module syntax
     -- C-style for loop?
   | OilFor3(expr? init, expr? cond, expr? update, command? body)
   | OilForIn(expr lhs, expr iterable, command body)
+    -- this is a proc OR func.  Some things can be disallowed later?
+    -- return type may look like Tuple[Int, Str]
+  | OilFuncProc(id which, token name, param* params, type_expr? return_type,
+                command body)
+
+  -- op is ... in ...args
+  -- s Array[Str] = @(1 2 3)
+  param = (token? op, token name, type_expr? typ, expr? default)
+
+  -- Examples: Int   Dict[str, Any]
+  type_expr =
+    Simple(token name)
+  | Compound(token name, type_expr* params)
 
   -- For now, using stderr_indices representation because it's more compact.
   -- |& in osh; |- in oil.

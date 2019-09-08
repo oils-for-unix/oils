@@ -39,6 +39,7 @@ OPS = {
 
     '.': Id.Expr_Dot,
     '->': Id.Expr_RArrow,
+    '@': Id.Expr_At,
 
     # TODO: Add Ellipsis.
     '...': Id.Expr_Dot,

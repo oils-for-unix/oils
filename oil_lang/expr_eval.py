@@ -183,12 +183,7 @@ class OilEvaluator(object):
 
       args = [self.EvalExpr(a) for a in node.args]
 
-      if callable(func):  # built-in function like join()
-        ret = func(*args)
-
-      else:  # User-defined function
-        # Returns an arbitrary type, not just an integer.
-        ret = self.ex.RunOilFunc(func, args)
+      ret = func(*args)
       return ret
 
     if node.tag == expr_e.Subscript:

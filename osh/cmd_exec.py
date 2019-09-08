@@ -1230,6 +1230,14 @@ class Executor(object):
       self.procs[node.name] = node
       status = 0
 
+    elif node.tag == command_e.OilFuncProc:
+      # TODO: enter it in current namespace?
+      # maybe make a callable out of it
+      func = objects.Function(node, self)
+      self.mem.SetVar(lvalue.Named(node.name.val), value.Obj(func), (),
+          scope_e.GlobalOnly)
+      status = 0
+
     elif node.tag == command_e.If:
       done = False
       for arm in node.arms:
@@ -1336,7 +1344,7 @@ class Executor(object):
         command_e.NoOp, command_e.ControlFlow, command_e.Pipeline,
         command_e.AndOr, command_e.CommandList, command_e.Sentence,
         command_e.TimeBlock, command_e.FuncDef, command_e.OilAssign,
-        command_e.OilCondition):
+        command_e.OilCondition, command_e.OilFuncProc):
       redirects = []
     else:
       try:
@@ -1625,7 +1633,7 @@ class Executor(object):
     # NOTE: (IOError, OSError) are caught in completion.py:ReadlineCallback
     return status
 
-  def RunOilFunc(self, func_node, args):
+  def RunOilFunc(self, func_node, args, kwargs):
     # TODO:
     # - Return value register should be separate?
     #   - But how does 'return 345' work?  Is that the return builtin
@@ -1639,9 +1647,23 @@ class Executor(object):
     #   - If the arguments are all strings, make them @ARGV?
     #     That isn't happening right now.
 
-    status = self._Execute(func_node.body)
+    self.mem.PushTemp()
+    # Bind the function arguments
+    for i, param in enumerate(func_node.params):
+      self.mem.SetVar(
+          lvalue.Named(param.name.val), value.Obj(args[i]),
+          (), scope_e.LocalOnly)
+    try:
+      self._Execute(func_node.body)
+    except _ControlFlow as e:
+      # TODO: Have to get a structured value!
+      if e.IsReturn():
+        status = e.StatusCode()
+    finally:
+      self.mem.PopTemp()
+
     # If status is nonzero, that's like an exception with errexit?
-    ret = None
+    ret = status
     return ret
 
   def EvalBlock(self, block):

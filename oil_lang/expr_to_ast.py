@@ -4,15 +4,15 @@ expr_to_ast.py
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen import syntax_asdl
 from _devbuild.gen.syntax_asdl import (
-    command, command__OilAssign, command__OilForIn,
+    token, command, command__OilAssign, command__OilForIn,
     expr, expr_t, expr_context_e, regex, regex_t, word, word_t,
     word_part, word_part_t, word_part__CommandSub,
+    param, type_expr
 )
 from _devbuild.gen import grammar_nt
 from pgen2.parse import PNode
-#from core.util import log
+from core.util import log
 
 from typing import TYPE_CHECKING, List, Tuple, cast
 if TYPE_CHECKING:
@@ -70,7 +70,7 @@ class Transformer(object):
     else:
       right = self._AssocBinary(children[2:])
 
-    assert isinstance(op.tok, syntax_asdl.token)
+    assert isinstance(op.tok, token)
     return expr.Binary(op.tok, self.Expr(left), right)
 
   def trailer(self, base, p_trailer):
@@ -204,7 +204,7 @@ class Transformer(object):
         # the power would have already been reduced
         assert len(children) == 2, children
         op, e = children
-        assert isinstance(op.tok, syntax_asdl.token)
+        assert isinstance(op.tok, token)
         return expr.Unary(op.tok, self.Expr(e))
 
       elif typ == grammar_nt.atom_expr:
@@ -424,3 +424,65 @@ class Transformer(object):
       args.append(self.Expr(p))
 
     return args
+
+  def _TypeExpr(self, pnode):
+    # type: (PNode) -> type_expr
+    return None
+
+  def _Param(self, pnode):
+    # type: (PNode) -> param
+    """
+    param: NAME [type_expr] | '...' NAME | '@' NAME
+    """
+    #log('pnode: %s', pnode)
+
+    if ISNONTERMINAL(pnode.typ):
+      if pnode.typ == grammar_nt.param:  # x Int
+        first_tok = pnode.children[0].tok
+        #tok = pnode.tok
+
+        if first_tok.id == Id.Expr_Name:
+          return param(None, first_tok, None, None)
+        else:
+          pass
+    else:
+      if pnode.tok.id == Id.Expr_Name:  # x
+        return param(None, pnode.tok, None, None)
+
+    raise AssertionError(pnode)
+
+  def OilFuncDef(self, pnode):
+    # type: (PNode) -> Tuple[token, List[param], Optional[type_expr]]
+    typ = pnode.typ
+    children = pnode.children
+
+    if typ == grammar_nt.oil_func_proc:
+      # oil_for: '(' lvalue_list 'in' testlist ')'
+
+      name = children[0].tok
+
+      # children[1] is '(' -- now look at children[2]
+
+      if children[2].typ == Id.Op_RParen:  # f()
+        params = []
+        n = 3
+      elif children[2].typ == grammar_nt.param:  # f(x)
+        params = [self._Param(children[2])]
+        log('PARAMS %s', params)
+        n = 4
+      elif children[2].typ == grammar_nt.params:  # f(x, y)
+        n = 4
+        # every other one is a comma
+        params = [self._Param(c) for c in children[2].children[::2]]
+      else:
+        raise AssertionError
+
+      if children[n].typ == Id.Lit_LBrace:
+        return_type = None
+      else:
+        return_type = self._TypeExpr(children[n])
+      return name, params, return_type
+
+    nt_name = self.number2symbol[typ]
+    raise AssertionError(
+        "PNode type %d (%s) wasn't handled" % (typ, nt_name))

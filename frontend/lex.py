@@ -243,6 +243,8 @@ _KEYWORDS = [
   C('var',      Id.KW_Var),
   C('setvar',   Id.KW_SetVar),
   C('set',      Id.KW_Set),
+  C('func',     Id.KW_Func),
+  C('proc',     Id.KW_Proc),
 ]
 
 # These are treated like builtins in bash, but keywords in OSH.  However, we

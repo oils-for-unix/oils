@@ -7,6 +7,7 @@ Python types under value.Obj.  See the invariant in osh/runtime.asdl.
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import command_t
+from _devbuild.gen.runtime_asdl import scope_e, value, lvalue
 
 # These are for data frames?
 
@@ -54,14 +55,12 @@ class Function(object):
 
   objects.Function
   """
-  def __init__(self, name):
-    self.name = name
-    self.docstring = ''
-    self.nodes = None  # type: command_t
+  def __init__(self, node, ex):
+    self.node = node
+    self.ex = ex
 
   def __call__(self, *args, **kwargs):
-    # Behave like a Python function
-    pass
+    return self.ex.RunOilFunc(self.node, args, kwargs)
 
 
 class Module(object):
