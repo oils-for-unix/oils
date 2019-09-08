@@ -1034,15 +1034,14 @@ class CommandParser(object):
     self._Next()  # skip keyword
 
     if self.parse_opts.paren and self.w_parser.LookAhead() == Id.Op_LParen:
-      enode, _ = self.parse_ctx.ParseOilExpr(self.lexer,
-                                             grammar_nt.oil_expr)
+      enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
       # NOTE: OilCondition could have spids of ( and ) ?
-      conds = [command.OilCondition(enode)]
+      cond_list = [command.OilCondition(enode)]
     else:
       self.allow_block = False
       node = self._ParseCommandList()
-      conds = node.children
       self.allow_block = True
+      cond_list = node.children
 
     # NOTE: The LSTs will be different for Oil and OSH, but the execution
     # should be unchanged.  To be sure we should desugar.
@@ -1053,7 +1052,7 @@ class CommandParser(object):
     else:
       body_node = self.ParseDoGroup()
 
-    node = command.WhileUntil(keyword, conds, body_node)
+    node = command.WhileUntil(keyword, cond_list, body_node)
     node.spids.append(keyword.span_id)  # e.g. for errexit message
     return node
 
@@ -1185,15 +1184,20 @@ class CommandParser(object):
 
     while self.c_id == Id.KW_Elif:
       elif_spid = word_.LeftMostSpanForWord(self.cur_word)
-
       self._Next()  # skip elif
-      self.allow_block = False
-      cond = self._ParseCommandList()
-      self.allow_block = True
+      if self.parse_opts.paren and self.w_parser.LookAhead() == Id.Op_LParen:
+        enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
+        # NOTE: OilCondition could have spids of ( and ) ?
+        cond_list = [command.OilCondition(enode)]
+      else:
+        self.allow_block = False
+        cond = self._ParseCommandList()
+        self.allow_block = True
+        cond_list = cond.children
 
       body = self.ParseBraceGroup()
 
-      arm = syntax_asdl.if_arm(cond.children, body.children)
+      arm = syntax_asdl.if_arm(cond_list, body.children)
       arm.spids.append(elif_spid)
       arms.append(arm)
 
@@ -1208,7 +1212,7 @@ class CommandParser(object):
 
     if_node.spids.append(else_spid)
 
-  def _ParseOilIf(self, if_spid, cond1):
+  def _ParseOilIf(self, if_spid, cond_list):
     # type: (int, command__CommandList) -> command__If
     """
     if test -f foo {
@@ -1230,7 +1234,7 @@ class CommandParser(object):
     if_node = command.If()
 
     body1 = self.ParseBraceGroup()
-    arm = syntax_asdl.if_arm(cond1.children, body1.children)
+    arm = syntax_asdl.if_arm(cond_list, body1.children)
     # TODO: We could get the spids from the brace group.
     arm.spids.append(if_spid)  # every arm has 1 spid, unlike shell-style
 
@@ -1288,25 +1292,26 @@ class CommandParser(object):
     self._Next()  # skip if
 
     # Remove ambiguity with if cd / {
-    # Blocks aren't allowed there.
-    self.allow_block = False
-    cond = self._ParseCommandList()
-    self.allow_block = True
-    if 0:
-      print('COND')
-      cond.PrettyPrint()
-      print()
+    if self.parse_opts.paren and self.w_parser.LookAhead() == Id.Op_LParen:
+      enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
+      # NOTE: OilCondition could have spids of ( and ) ?
+      cond_list = [command.OilCondition(enode)]
+    else:
+      self.allow_block = False
+      node = self._ParseCommandList()
+      self.allow_block = True
+      cond_list = cond.children
 
     self._Peek()
     if self.parse_opts.brace and self.c_id == Id.Lit_LBrace:
       # if foo {
-      return self._ParseOilIf(if_spid, cond)
+      return self._ParseOilIf(if_spid, cond_list)
 
     then_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.KW_Then)
     body = self._ParseCommandList()
 
-    arm = syntax_asdl.if_arm(cond.children, body.children)
+    arm = syntax_asdl.if_arm(cond_list, body.children)
     arm.spids.extend((if_spid, then_spid))
     if_node.arms.append(arm)
 

@@ -393,8 +393,26 @@ var x = 1
 if (x < 42) {
   echo less
 }
+
+if (x < 0) {
+  echo negative
+} elif (x < 42) {
+  echo less
+}
+
+if (x < 0) {
+  echo negative
+} elif (x < 1) {
+  echo less
+} else {
+  echo other
+}
+
+
 ## STDOUT:
 less
+less
+other
 ## END
 
 #### parse_paren: while statement
