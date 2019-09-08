@@ -52,6 +52,13 @@ f
 x=2
 ## END
 
+#### setvar x, y = 1, 2
+setvar x, y = 1, 2
+echo $x $y
+## STDOUT:
+1 2
+## END
+
 #### duplicate var def results in fatal error
 var x = "global"
 f() {

@@ -242,6 +242,9 @@ module syntax
   | Do(expr e)      -- an expression for its side effects
   | Return(expr e)  -- returnin an Obj, not an int-like string
   | OilCondition(expr e) -- for if/while
+    -- C-style for loop?
+  | OilFor3(expr? init, expr? cond, expr? update, command? body)
+  | OilForIn(expr lhs, expr iterable, command body)
 
   -- For now, using stderr_indices representation because it's more compact.
   -- |& in osh; |- in oil.

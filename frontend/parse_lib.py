@@ -355,6 +355,17 @@ class ParseContext(object):
     ast_node = self.tr.Expr(pnode)
     return ast_node, last_token
 
+  def ParseOilForExpr(self, lexer, start_symbol, print_parse_tree=False):
+    # type: (Lexer, int, bool) -> Tuple[expr_t, expr_t, token]
+    """For Oil expressions that aren't assignments.  Currently unused."""
+    pnode, last_token = self.e_parser.Parse(lexer, start_symbol)
+
+    if print_parse_tree:
+      self.p_printer.Print(pnode)
+
+    lvalue, iterable = self.tr.OilForExpr(pnode)
+    return lvalue, iterable, last_token
+
   # Another parser instantiation:
   # - For Array Literal in word_parse.py WordParser:
   #   w_parser = WordParser(self.lexer, self.line_reader)

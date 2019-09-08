@@ -464,5 +464,24 @@ one
 two
 ## END
 
+#### parse_paren: for loop
+shopt -s all:oil
+var array = @(one two three)
+for (item in array) {
+  echo $item
+}
 
+echo -- ---
 
+declare -A A=([k]=v [k2]=v2)  # iterate over keys
+for (key in A) {
+  echo $key
+} | sort
+## STDOUT:
+one
+two
+three
+---
+k
+k2
+## END

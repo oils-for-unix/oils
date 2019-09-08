@@ -6,7 +6,7 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen import syntax_asdl
 from _devbuild.gen.syntax_asdl import (
-    command, command__OilAssign,
+    command, command__OilAssign, command__OilForIn,
     expr, expr_t, expr_context_e, regex, regex_t, word, word_t,
     word_part, word_part_t, word_part__CommandSub,
 )
@@ -14,7 +14,7 @@ from _devbuild.gen import grammar_nt
 from pgen2.parse import PNode
 #from core.util import log
 
-from typing import TYPE_CHECKING, List, cast
+from typing import TYPE_CHECKING, List, Tuple, cast
 if TYPE_CHECKING:
   from pgen2.grammar import Grammar
 
@@ -161,7 +161,7 @@ class Transformer(object):
       c = '-' if not children else len(children)
       #log('non-terminal %s %s', nt_name, c)
 
-      if typ == grammar_nt.oil_expr:
+      if typ == grammar_nt.oil_expr:  # for if/while
         # oil_expr: '(' testlist ')'
         return self.Expr(children[1])
 
@@ -357,6 +357,22 @@ class Transformer(object):
       op_tok = children[1].tok
       rhs = children[2]
       return command.OilAssign(None, lvalue, op_tok, self.Expr(rhs))
+
+    nt_name = self.number2symbol[typ]
+    raise AssertionError(
+        "PNode type %d (%s) wasn't handled" % (typ, nt_name))
+
+  def OilForExpr(self, pnode):
+    # type: (PNode) -> Tuple[expr_t, expr_t]
+    typ = pnode.typ
+    children = pnode.children
+
+    # TODO: Distinguish between for-in and for-c
+    if typ == grammar_nt.oil_for:
+      # oil_for: '(' lvalue_list 'in' testlist ')'
+      lvalue = self.Expr(children[1])  # could be a tuple
+      iterable = self.Expr(children[3])
+      return lvalue, iterable
 
     nt_name = self.number2symbol[typ]
     raise AssertionError(

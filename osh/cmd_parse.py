@@ -244,7 +244,6 @@ def _AppendMoreEnv(preparsed_list, more_env):
     preparsed: a list of 4-tuples from DetectAssignment
     more_env: a list to append env_pairs to
   """
-
   for left_token, close_token, part_offset, w in preparsed_list:
     if left_token.id != Id.Lit_VarLike:  # can't be a[x]=1
       p_die("Environment binding shouldn't look like an array assignment",
@@ -1009,11 +1008,22 @@ class CommandParser(object):
     for_spid = _KeywordSpid(self.cur_word)
     self._Eat(Id.KW_For)
 
-    self._Peek()
-    if self.c_id == Id.Op_DLeftParen:
-      node = self._ParseForExprLoop()  # type: command_t
+    if self.parse_opts.paren and self.w_parser.LookAhead() == Id.Op_LParen:
+      lvalue, iterable, _ = (
+          self.parse_ctx.ParseOilForExpr(self.lexer, grammar_nt.oil_for)
+      )
+      self._Peek()
+      if self.c_id == Id.Lit_LBrace:
+        body = self.ParseBraceGroup()  # type: command_t
+      else:
+        body = self.ParseDoGroup()
+      node = command.OilForIn(lvalue, iterable, body)  # type: command_t
     else:
-      node = self._ParseForEachLoop(for_spid)
+      self._Peek()
+      if self.c_id == Id.Op_DLeftParen:
+        node = self._ParseForExprLoop()
+      else:
+        node = self._ParseForEachLoop(for_spid)
 
     return node
 
@@ -1036,12 +1046,12 @@ class CommandParser(object):
     if self.parse_opts.paren and self.w_parser.LookAhead() == Id.Op_LParen:
       enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
       # NOTE: OilCondition could have spids of ( and ) ?
-      cond_list = [command.OilCondition(enode)]
+      cond_list = [command.OilCondition(enode)]  # type: List[command_t]
     else:
       self.allow_block = False
-      node = self._ParseCommandList()
+      cond = self._ParseCommandList()
       self.allow_block = True
-      cond_list = node.children
+      cond_list = cond.children
 
     # NOTE: The LSTs will be different for Oil and OSH, but the execution
     # should be unchanged.  To be sure we should desugar.
@@ -1188,7 +1198,7 @@ class CommandParser(object):
       if self.parse_opts.paren and self.w_parser.LookAhead() == Id.Op_LParen:
         enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
         # NOTE: OilCondition could have spids of ( and ) ?
-        cond_list = [command.OilCondition(enode)]
+        cond_list = [command.OilCondition(enode)]  # type: List[command_t]
       else:
         self.allow_block = False
         cond = self._ParseCommandList()
@@ -1213,7 +1223,7 @@ class CommandParser(object):
     if_node.spids.append(else_spid)
 
   def _ParseOilIf(self, if_spid, cond_list):
-    # type: (int, command__CommandList) -> command__If
+    # type: (int, List[command_t]) -> command__If
     """
     if test -f foo {
                  # ^ we parsed up to here
@@ -1295,10 +1305,10 @@ class CommandParser(object):
     if self.parse_opts.paren and self.w_parser.LookAhead() == Id.Op_LParen:
       enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
       # NOTE: OilCondition could have spids of ( and ) ?
-      cond_list = [command.OilCondition(enode)]
+      cond_list = [command.OilCondition(enode)]  # type: List[command_t]
     else:
       self.allow_block = False
-      node = self._ParseCommandList()
+      cond = self._ParseCommandList()
       self.allow_block = True
       cond_list = cond.children
 

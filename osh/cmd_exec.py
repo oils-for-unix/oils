@@ -25,7 +25,9 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.syntax_asdl import word, command_t
 from _devbuild.gen.runtime_asdl import (
-    lvalue, redirect, value, value_e, value_t, scope_e, var_flags_e, builtin_e,
+    lvalue, redirect,
+    value, value_e, value_t,
+    scope_e, var_flags_e, builtin_e,
     arg_vector, cmd_value, cmd_value_e
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
@@ -1182,6 +1184,38 @@ class Executor(object):
 
       finally:
         self.loop_level -= 1
+
+    elif node.tag == command_e.OilForIn:
+      # NOTE: This is a metacircular implementation using the iterable
+      # protocol.
+      status = 0
+
+      obj = self.expr_ev.EvalExpr(node.iterable)
+      if isinstance(obj, str):
+        e_die("Strings aren't iterable")
+      else:
+        it = iter(obj)
+
+      body = node.body
+      iter_name = node.lhs.name.val  # TODO: proper lvalue
+      while True:
+        try:
+          loop_val = next(it)
+        except StopIteration:
+          break
+        state.SetLocalString(self.mem, iter_name, loop_val)
+
+        # Copied from above
+        try:
+          status = self._Execute(body)
+        except _ControlFlow as e:
+          if e.IsBreak():
+            status = 0
+            break
+          elif e.IsContinue():
+            status = 0
+          else:  # return needs to pop up more
+            raise
 
     elif node.tag == command_e.DoGroup:
       status = self._ExecuteList(node.children)
