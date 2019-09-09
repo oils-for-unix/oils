@@ -156,7 +156,6 @@ class Transformer(object):
     tok = pnode.tok
     children = pnode.children
 
-    #if typ in self.number2symbol:  # non-terminal
     if ISNONTERMINAL(typ):
       c = '-' if not children else len(children)
       #log('non-terminal %s %s', nt_name, c)
