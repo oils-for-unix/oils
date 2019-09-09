@@ -795,6 +795,11 @@ class WordParser(object):
     self._Next(lex_mode_e.Expr)
     enode, last_token = self.parse_ctx.ParseOilAssign(kw_token, self.lexer,
                                                       grammar_nt.oil_var)
+    # Hack to move } from what the Expr lexer modes gives to what CommandParser
+    # wants
+    if last_token.id == Id.Op_RBrace:
+      last_token.id = Id.Lit_RBrace
+
     # Let the CommandParser see the Op_Semi or Op_Newline.
     self.buffered_word = word.Token(last_token)
     self._Next(lex_mode_e.ShCommand)  # always back to this
@@ -810,6 +815,11 @@ class WordParser(object):
     self._Next(lex_mode_e.Expr)
     enode, last_token = self.parse_ctx.ParseOilAssign(kw_token, self.lexer,
                                                       grammar_nt.oil_setvar)
+    # Hack to move } from what the Expr lexer modes gives to what CommandParser
+    # wants
+    if last_token.id == Id.Op_RBrace:
+      last_token.id = Id.Lit_RBrace
+
     # Let the CommandParser see the Op_Semi or Op_Newline.
     self.buffered_word = word.Token(last_token)
     self._Next(lex_mode_e.ShCommand)  # always back to this

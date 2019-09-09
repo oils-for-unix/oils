@@ -437,10 +437,13 @@ class Transformer(object):
 
     if ISNONTERMINAL(pnode.typ):
       if pnode.typ == grammar_nt.param:  # x Int
-        first_tok = pnode.children[0].tok
+        children = pnode.children
+        first_tok = children[0].tok
         #tok = pnode.tok
 
-        if first_tok.id == Id.Expr_Name:
+        if first_tok.id in (Id.Expr_At,):  # ...
+          return param(first_tok, children[1].tok, None, None)
+        elif first_tok.id == Id.Expr_Name:
           return param(None, first_tok, None, None)
         else:
           pass

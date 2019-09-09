@@ -310,3 +310,13 @@ gt=0
 lt=1
 gt=0
 ## END
+
+#### Parse { setvar x = 1 }
+shopt -s all:oil
+var x = 1
+f() { setvar x = 2 }
+f
+echo x=$x
+## STDOUT:
+x=2
+## END
