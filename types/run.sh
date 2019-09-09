@@ -12,7 +12,8 @@ deps() {
   #pip install typing pyannotate
 
   # got error with 0.67.0
-  pip3 install 'mypy==0.660'
+  #pip3 install 'mypy==0.660'
+  pip3 install 'mypy'
 }
 
 mypy() { ~/.local/bin/mypy "$@"; }

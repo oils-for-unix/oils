@@ -1410,6 +1410,7 @@ class CommandParser(object):
 
     # This never happens?
     p_die('Unexpected word while parsing compound command', word=self.cur_word)
+    assert False  # for MyPy
 
   def ParseFunctionBody(self, func):
     # type: (command__FuncDef) -> None
@@ -1685,6 +1686,7 @@ class CommandParser(object):
     # NOTE: This only happens in batch mode in the second turn of the loop!
     # e.g. )
     p_die("Invalid word while parsing command", word=self.cur_word)
+    assert False  # for MyPy
 
   def ParsePipeline(self):
     # type: () -> command_t
