@@ -28,7 +28,7 @@ from _devbuild.gen.runtime_asdl import (
     lvalue, redirect,
     value, value_e, value_t,
     scope_e, var_flags_e, builtin_e,
-    arg_vector, cmd_value, cmd_value_e
+    arg_vector, cmd_value, cmd_value_e,
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
@@ -87,6 +87,17 @@ class _ControlFlow(RuntimeError):
   """Internal execption for control flow.
 
   break and continue are caught by loops, return is caught by functions.
+
+  NOTE: I tried representing this in ASDL, but in Python the base class has to
+  be BaseException.  Also, 'token' is in syntax.asdl but not runtime.asdl.
+
+  cflow =
+    -- break, continue, return, exit
+    Shell(token keyword, int arg)
+    -- break, continue
+  | OilLoop(token keyword)
+    -- return
+  | OilReturn(token keyword, value val)
   """
 
   def __init__(self, token, arg):
@@ -999,6 +1010,10 @@ class Executor(object):
       else:
         status = 0
 
+    elif node.tag == command_e.Return:
+      val = self.expr_ev.EvalExpr(node.e)
+      raise _ControlFlow(node.keyword, val)
+
     elif node.tag == command_e.ControlFlow:
       tok = node.token
 
@@ -1344,7 +1359,7 @@ class Executor(object):
         command_e.NoOp, command_e.ControlFlow, command_e.Pipeline,
         command_e.AndOr, command_e.CommandList, command_e.Sentence,
         command_e.TimeBlock, command_e.FuncDef, command_e.OilAssign,
-        command_e.OilCondition, command_e.OilFuncProc):
+        command_e.OilCondition, command_e.OilFuncProc, command_e.Return):
       redirects = []
     else:
       try:
@@ -1653,18 +1668,17 @@ class Executor(object):
       self.mem.SetVar(
           lvalue.Named(param.name.val), value.Obj(args[i]),
           (), scope_e.LocalOnly)
+
+    return_val = None
     try:
       self._Execute(func_node.body)
     except _ControlFlow as e:
-      # TODO: Have to get a structured value!
       if e.IsReturn():
-        status = e.StatusCode()
+        # TODO: Rename this
+        return_val = e.StatusCode()
     finally:
       self.mem.PopTemp()
-
-    # If status is nonzero, that's like an exception with errexit?
-    ret = status
-    return ret
+    return return_val
 
   def EvalBlock(self, block):
     """

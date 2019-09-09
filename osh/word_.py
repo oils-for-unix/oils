@@ -589,7 +589,8 @@ def CommandId(node):
   if token_type == Id.Undefined_Tok:
     return Id.Word_Compound
 
-  elif token_type in (Id.Lit_LBrace, Id.Lit_RBrace):
+  elif token_type in (Id.Lit_LBrace, Id.Lit_RBrace, Id.ControlFlow_Return):
+    # Return is for special processing
     return token_type
 
   token_kind = LookupKind(token_type)

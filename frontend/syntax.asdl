@@ -240,7 +240,7 @@ module syntax
   | CommandList(command* children)
     -- Oil stuff
   | Do(expr e)      -- an expression for its side effects
-  | Return(expr e)  -- returnin an Obj, not an int-like string
+  | Return(token keyword, expr e)  -- returnin an Obj, not an int-like string
   | OilCondition(expr e) -- for if/while
     -- C-style for loop?
   | OilFor3(expr? init, expr? cond, expr? update, command? body)

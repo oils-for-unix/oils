@@ -360,6 +360,8 @@ class CommandParser(object):
 
     # A hacky boolean to remove 'if cd / {' ambiguity.
     self.allow_block = True
+    # 'return' in proc and func takes an expression
+    self.return_expr = False
     self.parse_opts = parse_ctx.parse_opts
 
     self.Reset()
@@ -1517,12 +1519,16 @@ class CommandParser(object):
     name, params, return_type, _ = self.parse_ctx.ParseOilFuncDef(
         self.lexer, grammar_nt.oil_func_proc)
 
+    # TODO: Parse proc foo { }
+
     # This seems to be required to get the CommandParser back into a good state.
     # Otherwise we're still looking at 'func'.
     # Now we're already past {, so we can't do ParseBraceGroup.  Unfortunately
     # there is assymmetry of { and } here.
     self._Next()
+    self.return_expr = True
     body = self._ParseCommandList()
+    self.return_expr = False
 
     #log('c %s', self.cur_word)
     #log('c %s', self.c_id)
@@ -1633,6 +1639,23 @@ class CommandParser(object):
       return node
     if self.parse_opts.set and self.c_id == Id.KW_Set:
       return self.ParseCompoundCommand()
+
+    # return (x+y).  NOTE: We're not calling ParseCompoundCommand.  That
+    # doesn't seem to matter except for f() return x (no braces), which we
+    # don't care about.
+
+    # TODO: Get rid of parens
+    # testlist '}' | EOF | ';'
+
+    if self.return_expr and self.c_id == Id.ControlFlow_Return:
+      assert isinstance(self.cur_word, word__Compound)  # for MyPy
+      assert isinstance(self.cur_word.parts[0], word_part__Literal)  # for MyPy
+
+      keyword = self.cur_word.parts[0].token
+      self._Next()
+      enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
+      node = command.Return(keyword, enode)
+      return node
 
     # NOTE: I added this to fix cases in parse-errors.test.sh, but it doesn't
     # work because Lit_RBrace is in END_LIST below.

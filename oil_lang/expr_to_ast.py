@@ -5,16 +5,16 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    token, command, command__OilAssign, command__OilForIn,
+    token, command, command__OilAssign,
     expr, expr_t, expr_context_e, regex, regex_t, word, word_t,
     word_part, word_part_t, word_part__CommandSub,
-    param, type_expr
+    param, type_expr_t
 )
 from _devbuild.gen import grammar_nt
 from pgen2.parse import PNode
-from core.util import log
+#from core.util import log
 
-from typing import TYPE_CHECKING, List, Tuple, cast
+from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:
   from pgen2.grammar import Grammar
 
@@ -426,7 +426,7 @@ class Transformer(object):
     return args
 
   def _TypeExpr(self, pnode):
-    # type: (PNode) -> type_expr
+    # type: (PNode) -> type_expr_t
     return None
 
   def _Param(self, pnode):
@@ -452,7 +452,7 @@ class Transformer(object):
     raise AssertionError(pnode)
 
   def OilFuncDef(self, pnode):
-    # type: (PNode) -> Tuple[token, List[param], Optional[type_expr]]
+    # type: (PNode) -> Tuple[token, List[param], Optional[type_expr_t]]
     typ = pnode.typ
     children = pnode.children
 
@@ -464,18 +464,16 @@ class Transformer(object):
       # children[1] is '(' -- now look at children[2]
 
       if children[2].typ == Id.Op_RParen:  # f()
-        params = []
+        params = []  # type: List[param]
         n = 3
-      elif children[2].typ == grammar_nt.param:  # f(x)
-        params = [self._Param(children[2])]
-        log('PARAMS %s', params)
-        n = 4
       elif children[2].typ == grammar_nt.params:  # f(x, y)
         n = 4
         # every other one is a comma
         params = [self._Param(c) for c in children[2].children[::2]]
-      else:
-        raise AssertionError
+      else:  # f(x) or f(x Int)
+        params = [self._Param(children[2])]
+        #log('PARAMS %s', params)
+        n = 4
 
       if children[n].typ == Id.Lit_LBrace:
         return_type = None

@@ -432,9 +432,9 @@ def AddKinds(spec):
       'Const', 'Set', 'Var', 'Auto', # assignment
       'SetVar',  # for OSH compatibility
       'Proc', 'Func',
+
       'Match', 'With',  # matching
       # not sure: yield
-
       # mycpp
       'Switch', 
       # module (class) 

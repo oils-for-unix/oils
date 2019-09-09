@@ -5,7 +5,7 @@ parse_lib.py - Consolidate various parser instantiations here.
 from _devbuild.gen.id_kind_asdl import Id_t
 from _devbuild.gen.syntax_asdl import (
     token, command_t, expr_t, word_t, redir_t, word__Compound,
-    param, type_expr
+    param, type_expr_t
 )
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen import grammar_nt
@@ -369,7 +369,7 @@ class ParseContext(object):
     return lvalue, iterable, last_token
 
   def ParseOilFuncDef(self, lexer, start_symbol, print_parse_tree=False):
-    # type: (Lexer, int, bool) -> Tuple[token, List[param], type_expr, token]
+    # type: (Lexer, int, bool) -> Tuple[token, List[param], type_expr_t, token]
     """For Oil expressions that aren't assignments.  Currently unused."""
     pnode, last_token = self.e_parser.Parse(lexer, start_symbol)
 
