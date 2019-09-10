@@ -44,19 +44,21 @@ status=42
 
 #### proc with no args
 proc f {
-  var x = 1
-  return (x)
+  var x = 42
+  return x
 }
 # this gets called with 3 args then?
 f a b c
+echo status=$?
 ## STDOUT:
+status=42
 ## END
 
 #### proc with explicit args
 proc f(x, y, z) {
   echo $x $y $z
   var ret = 42
-  return (ret)  # expression mode
+  return ret  # expression mode
 }
 # this gets called with 3 args then?
 f a b c

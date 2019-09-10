@@ -45,19 +45,24 @@ class StrArray(list):
   pass
 
 
-class Function(object):
-  """An Oil function or a wrapped shell function.
-
-  Put under value.Obj()
-
-  objects.Function
-  """
+class Func(object):
+  """An Oil function declared with 'func'."""
   def __init__(self, node, ex):
     self.node = node
     self.ex = ex
 
   def __call__(self, *args, **kwargs):
     return self.ex.RunOilFunc(self.node, args, kwargs)
+
+
+class Proc(object):
+  """An Oil proc declared with 'proc'.
+
+  Unlike a shell proc, it has a signature, so we need to bind names to params.
+  """
+  def __init__(self, node):
+    self.docstring = ''
+    self.node = node
 
 
 class Module(object):

@@ -255,7 +255,7 @@ oil-expr() {
 }
 
 oil-func-proc() {
-  sh-spec spec/oil-func-proc.test.sh --cd-tmp --osh-failures-allowed 3 \
+  sh-spec spec/oil-func-proc.test.sh --cd-tmp --osh-failures-allowed 2 \
     $OSH_LIST "$@"
 }
 

@@ -661,7 +661,16 @@ class Executor(object):
                 "pattern.", span_id=span_id)
 
         # NOTE: Functions could call 'exit 42' directly, etc.
-        status = self._RunFunc(func_node, argv[1:])
+        status = self._RunProc(func_node, argv[1:])
+        return status
+
+      # TODO:
+      # look up arg0 in global namespace?  And see if the type is value.Obj
+      # And it's a proc?
+      # isinstance(val.obj, objects.Proc)
+      val = self.mem.GetVar(arg0)
+      if val.tag == value_e.Obj and isinstance(val.obj, objects.Proc):
+        status = self._RunOilProc(val.obj.node, argv[1:])
         return status
 
     builtin_id = builtin.Resolve(arg0)
@@ -1248,9 +1257,13 @@ class Executor(object):
     elif node.tag == command_e.OilFuncProc:
       # TODO: enter it in current namespace?
       # maybe make a callable out of it
-      func = objects.Function(node, self)
-      self.mem.SetVar(lvalue.Named(node.name.val), value.Obj(func), (),
-          scope_e.GlobalOnly)
+      if node.which == Id.KW_Func:
+        obj = objects.Func(node, self)
+      else:
+        obj = objects.Proc(node)
+
+      self.mem.SetVar(
+          lvalue.Named(node.name.val), value.Obj(obj), (), scope_e.GlobalOnly)
       status = 0
 
     elif node.tag == command_e.If:
@@ -1431,7 +1444,7 @@ class Executor(object):
     Most other clients call _Execute():
     - _Source() for source builtin
     - _Eval() for eval builtin
-    - _RunFunc() for function call
+    - _RunProc() for function call
     """
     is_return = False
     is_fatal = False
@@ -1592,7 +1605,7 @@ class Executor(object):
     else:
       raise AssertionError
 
-  def _RunFunc(self, func_node, argv):
+  def _RunProc(self, func_node, argv):
     """Used to run SimpleCommand and to run registered completion hooks."""
     # These are redirects at DEFINITION SITE.  You can also have redirects at
     # the CALL SITE.  For example:
@@ -1632,9 +1645,32 @@ class Executor(object):
 
     return status
 
+  def _RunOilProc(self, func_node, argv):
+    # type: (command__OilFuncProc, List[str]) -> int
+    self.mem.PushCall(func_node.name.val, func_node.name.span_id, argv)
+
+    # TODO: Also bind params!
+    # See how it's done in RunOilFunc
+
+    try:
+      status = self._Execute(func_node.body)
+    except _ControlFlow as e:
+      if e.IsReturn():
+        status = e.StatusCode()
+      else:
+        # break/continue used in the wrong place.
+        e_die('Unexpected %r (in function call)', e.token.val, token=e.token)
+    except (util.FatalRuntimeError, util.ParseError) as e:
+      self.dumper.MaybeCollect(self, e)  # Do this before unwinding stack
+      raise
+    finally:
+      self.mem.PopCall()
+
+    return status
+
   def RunFuncForCompletion(self, func_node, argv):
     try:
-      status = self._RunFunc(func_node, argv)
+      status = self._RunProc(func_node, argv)
     except util.FatalRuntimeError as e:
       ui.PrettyPrintError(e, self.arena)
       status = e.exit_status if e.exit_status is not None else 1
