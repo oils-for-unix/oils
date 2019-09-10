@@ -51,23 +51,19 @@ from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
-    token, arith_expr_t, bracket_op_t,
-
-    suffix_op_t, suffix_op__Slice, suffix_op__PatSub,
+    token, arith_expr_t,
+    suffix_op, suffix_op_t, suffix_op__Slice, suffix_op__PatSub,
+    bracket_op, bracket_op_t,
 
     word_t, word__Compound, word__Token,
-
     word_part, word_part_t,
-    word_part__Literal,
-    word_part__BracedVarSub, word_part__SingleQuoted,
-    word_part__ArithSub, word_part__DoubleQuoted,
-    word_part__CommandSub, word_part__ExtGlob,
+    word_part__Literal, word_part__BracedVarSub, word_part__SingleQuoted,
+    word_part__ArithSub, word_part__DoubleQuoted, word_part__CommandSub,
+    word_part__ExtGlob,
 
     command, command_t, command__ForExpr,
-    suffix_op, bracket_op,
 
-    expr_t,
-    source,
+    expr_t, source, param, type_expr_t,
 )
 # TODO: rename word -> word in syntax.asdl
 from _devbuild.gen.syntax_asdl import word
@@ -826,12 +822,22 @@ class WordParser(object):
     return enode
 
   def ParseReturn(self):
+    # type: () -> expr_t
     enode, last_token = self.parse_ctx.ParseOilExpr(self.lexer,
         grammar_nt.return_expr)
     if last_token.id == Id.Op_RBrace:
       last_token.id = Id.Lit_RBrace
     self.buffered_word = word.Token(last_token)
     return enode
+
+  def ParseFuncProc(self):
+    # type: () -> Tuple[token, List[param], type_expr_t]
+    name, params, return_type, last_token = self.parse_ctx.ParseFuncProc(
+        self.lexer, grammar_nt.oil_func_proc)
+    if last_token.id == Id.Op_LBrace:  # Translate to what CommandParser wants
+      last_token.id = Id.Lit_LBrace
+    self.buffered_word = word.Token(last_token)
+    return name, params, return_type
 
   def _ReadArithExpr(self):
     # type: () -> arith_expr_t

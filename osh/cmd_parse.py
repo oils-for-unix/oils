@@ -1509,38 +1509,15 @@ class CommandParser(object):
   def ParseOilFuncProc(self):
     # type: () -> command__OilFuncProc
 
-    #left_spid = word_.LeftMostSpanForWord(self.cur_word)
     which = self.c_id
-
-    #self._Next()  # skip past 'func' or 'proc'
-    self._Peek()
-    #log('AFTER %s', self.cur_word)
-
-    # NOTE: Last token is {
-    name, params, return_type, _ = self.parse_ctx.ParseOilFuncDef(
-        self.lexer, grammar_nt.oil_func_proc)
+    name, params, return_type = self.w_parser.ParseFuncProc()
 
     # TODO: Parse proc foo { }
 
-    # This seems to be required to get the CommandParser back into a good state.
-    # Otherwise we're still looking at 'func'.
-    # Now we're already past {, so we can't do ParseBraceGroup.  Unfortunately
-    # there is assymmetry of { and } here.
     self._Next()
     self.return_expr = True
-    body = self._ParseCommandList()
+    body = self.ParseBraceGroup()
     self.return_expr = False
-
-    #log('c %s', self.cur_word)
-    #log('c %s', self.c_id)
-
-    self._Eat(Id.Lit_RBrace)
-
-    #if self.c_id == Id.Lit_LBrace:
-    #  body = self.ParseCompoundCommand()
-    #else:
-    #  # Shell functions don't have this restriction!
-    #  p_die('Expected { after func/proc signature')
 
     # No redirects for Oil functions
     return command.OilFuncProc(which, name, params, return_type, body)

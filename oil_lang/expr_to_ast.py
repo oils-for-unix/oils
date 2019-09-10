@@ -457,7 +457,7 @@ class Transformer(object):
 
     raise AssertionError(pnode)
 
-  def OilFuncDef(self, pnode):
+  def FuncProc(self, pnode):
     # type: (PNode) -> Tuple[token, List[param], Optional[type_expr_t]]
     typ = pnode.typ
     children = pnode.children
