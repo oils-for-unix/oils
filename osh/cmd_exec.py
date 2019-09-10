@@ -1606,7 +1606,10 @@ class Executor(object):
       raise AssertionError
 
   def _RunProc(self, func_node, argv):
-    """Used to run SimpleCommand and to run registered completion hooks."""
+    """Run a shell "functions".
+
+    For SimpleCommand and registered completion hooks.
+    """
     # These are redirects at DEFINITION SITE.  You can also have redirects at
     # the CALL SITE.  For example:
     #
@@ -1647,10 +1650,26 @@ class Executor(object):
 
   def _RunOilProc(self, func_node, argv):
     # type: (command__OilFuncProc, List[str]) -> int
+    """
+    Run an oil proc foo { } or proc foo(x, y, @names) { }
+    """
     self.mem.PushCall(func_node.name.val, func_node.name.span_id, argv)
 
-    # TODO: Also bind params!
-    # See how it's done in RunOilFunc
+    # Bind params.
+    #
+    # proc foo { } should be params = None mean the params are implicit in ARGV
+    # proc foo() { } means there are NO params and you don't even have argv
+    # proc foo(@names) { } means you do NOT have ARGV.  It gets bound.  TODO:
+    #   change PushCall.  'shift' builtin will produce an error.
+
+    if func_node.params is not None:
+      for i, param in enumerate(func_node.params):
+        try:
+          self.mem.SetVar(
+              lvalue.Named(param.name.val), value.Str(argv[i]),
+              (), scope_e.LocalOnly)
+        except IndexError:
+          e_die("No value provided for param %s", param.name)
 
     try:
       status = self._Execute(func_node.body)
@@ -1669,6 +1688,7 @@ class Executor(object):
     return status
 
   def RunFuncForCompletion(self, func_node, argv):
+    # TODO: Change this to run Oil procs and funcs too
     try:
       status = self._RunProc(func_node, argv)
     except util.FatalRuntimeError as e:
@@ -1685,6 +1705,10 @@ class Executor(object):
     return status
 
   def RunOilFunc(self, func_node, args, kwargs):
+    """Run an Oil function.
+
+    var x = abs(y)   do f(x)   @split(mystr)   @join(myarray)
+    """
     # TODO:
     # - Return value register should be separate?
     #   - But how does 'return 345' work?  Is that the return builtin

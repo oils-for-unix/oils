@@ -55,6 +55,8 @@ status=42
 ## END
 
 #### proc with explicit args
+
+# doesn't require all:oil
 proc f(x, y, z) {
   echo $x $y $z
   var ret = 42
@@ -64,9 +66,7 @@ proc f(x, y, z) {
 f a b c
 echo status=$?
 ## STDOUT:
-a
-b
-c
+a b c
 status=42
 ## END
 
