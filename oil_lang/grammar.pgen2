@@ -232,6 +232,8 @@ oil_arglist: '(' [arglist] ')'
 
 # for if (x > 0) etc.
 oil_expr: '(' testlist ')'
+# e.g. return 1 + 2 * 3
+return_expr: testlist end_stmt
 
 # Example: for (a Int, b Int in expr) { ... }
 oil_for: '(' lvalue_list 'in' testlist ')'

@@ -1654,7 +1654,7 @@ class CommandParser(object):
 
       keyword = self.cur_word.parts[0].token
       self._Next()
-      enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
+      enode = self.w_parser.ParseReturn()
       node = command.Return(keyword, enode)
       return node
 

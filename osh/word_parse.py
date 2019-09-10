@@ -825,6 +825,14 @@ class WordParser(object):
     self._Next(lex_mode_e.ShCommand)  # always back to this
     return enode
 
+  def ParseReturn(self):
+    enode, last_token = self.parse_ctx.ParseOilExpr(self.lexer,
+        grammar_nt.return_expr)
+    if last_token.id == Id.Op_RBrace:
+      last_token.id = Id.Lit_RBrace
+    self.buffered_word = word.Token(last_token)
+    return enode
+
   def _ReadArithExpr(self):
     # type: () -> arith_expr_t
     """Read and parse an arithmetic expression in various contexts.

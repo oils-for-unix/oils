@@ -164,6 +164,10 @@ class Transformer(object):
         # oil_expr: '(' testlist ')'
         return self.Expr(children[1])
 
+      if typ == grammar_nt.return_expr:  # for if/while
+        # return_expr: testlist end_stmt
+        return self.Expr(children[0])
+
       if typ == grammar_nt.lvalue_list:
         return self._AssocBinary(children)
 
