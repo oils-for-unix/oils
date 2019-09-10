@@ -242,7 +242,7 @@ oil_for: '(' lvalue_list 'in' testlist ')'
 #           proc rule(@argv, b Block) { }
 # We have to put the opening { there for pgen2.  TODO: Also accept :{ so the
 # lexer knows to change modes.
-oil_func_proc: NAME '(' params* [';' params*] ')' [type_expr] '{'
+oil_func_proc: NAME ['(' params [';' params] ')'] [type_expr] '{'
 #oil_func_proc: NAME '(' params* [';' params*] ')'
 params: param (',' param)* [',']
 # ... is for *args or **kwargs of any type, and @argv is for string args

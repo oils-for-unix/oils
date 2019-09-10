@@ -463,14 +463,21 @@ class Transformer(object):
     children = pnode.children
 
     if typ == grammar_nt.oil_func_proc:
-      # oil_for: '(' lvalue_list 'in' testlist ')'
+      # oil_func_proc: NAME ['(' params [';' params] ')'] [type_expr] '{'
 
       name = children[0].tok
+      params = []  # type: List[param]
+      return_type = None
+
+      # TODO: Weird situation: Both of these conditions are true.  The parse
+      # tree probably needs to be cleaned up.
+
+      #if children[1].typ == Id.Op_LBrace.enum_id:
+      if children[1].tok.id == Id.Op_LBrace:
+        return name, params, return_type  # EARLY RETURN
 
       # children[1] is '(' -- now look at children[2]
-
       if children[2].typ == Id.Op_RParen:  # f()
-        params = []  # type: List[param]
         n = 3
       elif children[2].typ == grammar_nt.params:  # f(x, y)
         n = 4
@@ -482,7 +489,7 @@ class Transformer(object):
         n = 4
 
       if children[n].typ == Id.Lit_LBrace:
-        return_type = None
+        pass
       else:
         return_type = self._TypeExpr(children[n])
       return name, params, return_type
