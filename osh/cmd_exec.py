@@ -1662,6 +1662,11 @@ class Executor(object):
     # proc foo(@names) { } means you do NOT have ARGV.  It gets bound.  TODO:
     #   change PushCall.  'shift' builtin will produce an error.
 
+    # TODO:
+    # - Handle @names splat.  Disallow ...names because it's not typed.
+    # - Handle (b Block) param?  How to do that?  It's really the
+    #   syntax_asdl.command_t type?
+
     if func_node.params is not None:
       for i, param in enumerate(func_node.params):
         try:
@@ -1685,23 +1690,6 @@ class Executor(object):
     finally:
       self.mem.PopCall()
 
-    return status
-
-  def RunFuncForCompletion(self, func_node, argv):
-    # TODO: Change this to run Oil procs and funcs too
-    try:
-      status = self._RunProc(func_node, argv)
-    except util.FatalRuntimeError as e:
-      ui.PrettyPrintError(e, self.arena)
-      status = e.exit_status if e.exit_status is not None else 1
-    except _ControlFlow as e:
-      # shouldn't be able to exit the shell from a completion hook!
-      # TODO: Avoid overwriting the prompt!
-      self.errfmt.Print('Attempted to exit from completion hook.',
-                        span_id=e.token.span_id)
-
-      status = 1
-    # NOTE: (IOError, OSError) are caught in completion.py:ReadlineCallback
     return status
 
   def RunOilFunc(self, func_node, args, kwargs):
@@ -1769,3 +1757,20 @@ class Executor(object):
     # TODO: Return arbitrary values instead
     namespace['_returned'] = status
     return namespace
+
+  def RunFuncForCompletion(self, func_node, argv):
+    # TODO: Change this to run Oil procs and funcs too
+    try:
+      status = self._RunProc(func_node, argv)
+    except util.FatalRuntimeError as e:
+      ui.PrettyPrintError(e, self.arena)
+      status = e.exit_status if e.exit_status is not None else 1
+    except _ControlFlow as e:
+      # shouldn't be able to exit the shell from a completion hook!
+      # TODO: Avoid overwriting the prompt!
+      self.errfmt.Print('Attempted to exit from completion hook.',
+                        span_id=e.token.span_id)
+
+      status = 1
+    # NOTE: (IOError, OSError) are caught in completion.py:ReadlineCallback
+    return status

@@ -24,6 +24,30 @@ hi
 43
 ## END
 
+#### Func with default args
+shopt -s all:oil
+func add(x Int = 5, y = 0) {
+  return x + y
+}
+echo $add()
+## STDOUT:
+5
+## END
+
+#### Func with named args
+shopt -s all:oil
+func add(x Int, y Int ; verbose Bool) {
+  #if (verbose) {
+  #  echo 'verbose'
+  #}
+  return x + y
+}
+echo $add(3, 2)
+## STDOUT:
+verbose
+5
+## END
+
 #### return expression then return builtin
 func f(x) {
   return x + 2*3
@@ -92,3 +116,4 @@ b
 c
 status=42
 ## END
+
