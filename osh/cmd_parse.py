@@ -1011,7 +1011,9 @@ class CommandParser(object):
     for_spid = _KeywordSpid(self.cur_word)
     self._Eat(Id.KW_For)
 
-    if self.parse_opts.paren and self.w_parser.LookAhead() == Id.Op_LParen:
+    if self.w_parser.LookAhead() == Id.Op_LParen:
+      # for (x in y) { }
+      # NOTE: parse_paren NOT required since it would have been a syntax error.
       lvalue, iterable, _ = (
           self.parse_ctx.ParseOilForExpr(self.lexer, grammar_nt.oil_for)
       )
@@ -1024,8 +1026,10 @@ class CommandParser(object):
     else:
       self._Peek()
       if self.c_id == Id.Op_DLeftParen:
+        # for (( i = 0; i < 10; i++)
         node = self._ParseForExprLoop()
       else:
+        # for x in a b; do echo hi; done
         node = self._ParseForEachLoop(for_spid)
 
     return node

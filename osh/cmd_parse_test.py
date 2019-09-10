@@ -1238,7 +1238,7 @@ EOF
 
   def testForLoopName(self):
     err = _assert_ParseCommandListError(self, """\
-    for ( i = 1; i < 10; i++ )
+    for [ i = 1; i < 10; i++ ]
     """)
     err = _assert_ParseCommandListError(self, """\
     for = in a
