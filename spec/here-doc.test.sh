@@ -266,7 +266,7 @@ EOF2
 ## stdout-json: "X 1\nX 2\n==\nY 3\nY 4\n"
 
 #### Function def and execution with here doc
-func() { cat; } <<EOF; echo before; func; echo after 
+fun() { cat; } <<EOF; echo before; fun; echo after 
 1
 2
 EOF

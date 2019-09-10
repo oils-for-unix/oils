@@ -35,24 +35,24 @@ argv.py $a"$b"$c"$d"
 # http://stackoverflow.com/questions/448407/bash-script-to-receive-and-repass-quoted-parameters
 
 #### $*
-func() { argv.py -$*-; }
-func "a 1" "b 2" "c 3"
+fun() { argv.py -$*-; }
+fun "a 1" "b 2" "c 3"
 ## stdout: ['-a', '1', 'b', '2', 'c', '3-']
 
 #### "$*"
-func() { argv.py "-$*-"; }
-func "a 1" "b 2" "c 3"
+fun() { argv.py "-$*-"; }
+fun "a 1" "b 2" "c 3"
 ## stdout: ['-a 1 b 2 c 3-']
 
 #### $@
 # How does this differ from $* ?  I don't think it does.
-func() { argv.py -$@-; }
-func "a 1" "b 2" "c 3"
+fun() { argv.py -$@-; }
+fun "a 1" "b 2" "c 3"
 ## stdout: ['-a', '1', 'b', '2', 'c', '3-']
 
 #### "$@"
-func() { argv.py "-$@-"; }
-func "a 1" "b 2" "c 3"
+fun() { argv.py "-$@-"; }
+fun "a 1" "b 2" "c 3"
 ## stdout: ['-a 1', 'b 2', 'c 3-']
 
 #### empty argv
@@ -112,8 +112,8 @@ argv.py $s1
 ## stdout: ['a', 'b', '', '', 'c', 'd', 'e']
 
 #### empty $@ and $* is elided
-func() { argv.py 1 $@ $* 2; }
-func
+fun() { argv.py 1 $@ $* 2; }
+fun
 ## stdout: ['1', '2']
 
 #### unquoted empty arg is elided

@@ -252,12 +252,12 @@ spec/type-compat.test.sh
 # WORKAROUND: wrap in bash -i -c because non-interactive bash behaves
 # differently!
 $SH -i -c '
-func() {
+fun() {
   COMPREPLY=(one two three bin)
 }
-compgen -X "@(two|bin)" -F func
+compgen -X "@(two|bin)" -F fun
 echo --
-compgen -X "!@(two|bin)" -F func
+compgen -X "!@(two|bin)" -F fun
 '
 ## STDOUT:
 one

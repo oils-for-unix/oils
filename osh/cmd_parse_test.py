@@ -498,7 +498,7 @@ class CommandParserTest(unittest.TestCase):
     self.assertEqual(2, len(node.words))
     print(node)
 
-    c_parser = test_lib.InitCommandParser('func() { echo hi; }')
+    c_parser = test_lib.InitCommandParser('fun() { echo hi; }')
     node = c_parser.ParseCommand()
     print(node)
     self.assertEqual(command_e.FuncDef, node.tag)
@@ -780,7 +780,7 @@ class NestedParensTest(unittest.TestCase):
   $(( ))               # end arith sub (word_parse))
   a=(1 2 3)            # array literal and assoc array literal
   a[1*(2+3)]=x         # grouping in arith context
-  func() { echo x ; }  # function def
+  fun() { echo x ; }   # function def
 
   case x in x) echo x ;; esac     # case, with balanced or unbalanced
   case x in (x) echo x ;; esac
@@ -852,12 +852,12 @@ class NestedParensTest(unittest.TestCase):
 
   def testFuncDefWithin(self):
     node = assert_ParseCommandList(self,
-        'echo $(func() { echo hi; }; func)')
+        'echo $(fun() { echo hi; }; fun)')
     self.assertEqual(command_e.Simple, node.tag)
     self.assertEqual(2, len(node.words))
 
     node = assert_ParseCommandList(self,
-        '(func() { echo hi; }; func)')
+        '(fun() { echo hi; }; fun)')
     self.assertEqual(command_e.Subshell, node.tag)
     self.assertEqual(command_e.CommandList, node.command_list.tag)
 

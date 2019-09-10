@@ -24,10 +24,10 @@ echo ${foo:-${bar}}
 #     MultipleArgsPart?
 # mksh - tries to create '_tmp/var-sub1 _tmp/var-sub2'
 # dash - tries to create '_tmp/var-sub1 _tmp/var-sub2'
-func() {
+fun() {
   echo hi > "$@"
 }
-func _tmp/var-sub1 _tmp/var-sub2
+fun _tmp/var-sub1 _tmp/var-sub2
 ## status: 1
 ## OK dash status: 2
 
@@ -64,12 +64,12 @@ echo hi 1>& "$@"
 #
 # This means that "$@" should be part of the parse tree then?  Anything that
 # involves more than one token.
-func() {
+fun() {
   cat << "$@"
 hi
 1 2
 }
-func 1 2
+fun 1 2
 ## status: 2
 ## stdout-json: ""
 ## OK mksh status: 1

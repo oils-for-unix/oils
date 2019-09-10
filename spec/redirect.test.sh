@@ -50,36 +50,42 @@ FOO=
 ## END
 
 #### Redirect in function body.
-func() { echo hi; } 1>&2
-func
+fun() { echo hi; } 1>&2
+fun
 ## stdout-json: ""
 ## stderr-json: "hi\n"
 
 #### Bad redirects in function body
 empty=''
-func() { echo hi; } > $empty
-func
+fun() { echo hi; } > $empty
+fun
 echo status=$?
 ## stdout: status=1
 ## OK dash stdout: status=2
 
 #### Redirect in function body is evaluated multiple times
 i=0
-func() { echo "file $i"; } 1> "$TMP/file$((i++))"
-func
-func
+fun() { echo "file $i"; } 1> "$TMP/file$((i++))"
+fun
+fun
 echo i=$i
 echo __
 cat $TMP/file0
 echo __
 cat $TMP/file1
-## stdout-json: "i=2\n__\nfile 1\n__\nfile 2\n"
+## STDOUT: 
+i=2
+__
+file 1
+__
+file 2
+## END
 ## N-I dash stdout-json: ""
 ## N-I dash status: 2
 
 #### Redirect in function body AND function call
-func() { echo hi; } 1>&2
-func 2>&1
+fun() { echo hi; } 1>&2
+fun 2>&1
 ## stdout-json: "hi\n"
 ## stderr-json: ""
 

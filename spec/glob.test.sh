@@ -48,17 +48,17 @@ echo "[ $f ]"
 ## stdout: [ _tmp/*.A ]
 
 #### glob after "$@" expansion
-func() {
+fun() {
   echo "$@"
 }
-func '_tmp/*.B'
+fun '_tmp/*.B'
 ## stdout: _tmp/*.B
 
 #### glob after $@ expansion
-func() {
+fun() {
   echo $@
 }
-func '_tmp/*.B'
+fun '_tmp/*.B'
 ## stdout: _tmp/b.B
 
 #### no glob after ~ expansion

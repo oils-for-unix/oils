@@ -38,11 +38,11 @@ FOO=foo\<foo printenv.py FOO
 FOO=foo echo "[$foo]"
 ## stdout: []
 
-#### FOO=foo func
-func() {
+#### FOO=foo fun
+fun() {
   echo "[$FOO]"
 }
-FOO=foo func
+FOO=foo fun
 ## stdout: [foo]
 
 #### Multiple temporary envs on the stack

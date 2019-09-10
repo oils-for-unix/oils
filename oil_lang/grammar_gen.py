@@ -29,6 +29,7 @@ OPS = {
                              # It needs proper token names!
     '{': Id.Op_LBrace,
     '}': Id.Op_RBrace,
+    ';': Id.Op_Semi,
 
     '$[': Id.Left_DollarBracket,
     '${': Id.Left_DollarBrace,

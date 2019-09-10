@@ -81,17 +81,17 @@ wc -c _tmp/smoke1.txt
 ## stdout: 8 _tmp/smoke1.txt
 
 #### "$@" "$*"
-func () {
+fun () {
   argv.py "$@" "$*"
 }
-func "a b" "c d"
+fun "a b" "c d"
 ## stdout: ['a b', 'c d', 'a b c d']
 
 #### $@ $*
-func() {
+fun() {
   argv.py $@ $*
 }
-func "a b" "c d"
+fun "a b" "c d"
 ## stdout: ['a', 'b', 'c', 'd', 'a', 'b', 'c', 'd']
 
 #### failed command

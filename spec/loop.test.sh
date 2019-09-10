@@ -2,12 +2,12 @@
 
 #### implicit for loop
 # This is like "for i in $@".
-func() {
+fun() {
   for i; do
     echo $i
   done
 }
-func 1 2 3
+fun 1 2 3
 ## STDOUT:
 1
 2
@@ -58,13 +58,13 @@ d-
 ## END
 
 #### using loop var outside loop
-func() {
+fun() {
   for i in a b c; do
     echo $i
   done
   echo $i
 }
-func
+fun
 ## status: 0
 ## STDOUT:
 a

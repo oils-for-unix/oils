@@ -211,29 +211,29 @@ status=0
 
 #### strict_errexit prevents errexit from being disabled in function
 set -o errexit
-func() { echo func; }
+fun() { echo fun; }
 
-func || true  # this is OK
+fun || true  # this is OK
 
 shopt -s strict_errexit || true
 
 echo 'builtin ok' || true
 /bin/echo 'external ok' || true
 
-func || true  # this fails
+fun || true  # this fails
 
 ## status: 1
 ## STDOUT:
-func
+fun
 builtin ok
 external ok
 ## END
 ## N-I dash/bash/mksh/ash status: 0
 ## N-I dash/bash/mksh/ash STDOUT:
-func
+fun
 builtin ok
 external ok
-func
+fun
 ## END
 
 #### strict_errexit prevents errexit from being disabled in brace group
@@ -283,29 +283,29 @@ bar
 #### strict_errexit and ! && || if while until
 prelude='set -o errexit
 shopt -s strict_errexit || true
-func() { echo func; }'
+fun() { echo fun; }'
 
-$SH -c "$prelude; ! func; echo 'should not get here'"
+$SH -c "$prelude; ! fun; echo 'should not get here'"
 echo bang=$?
 echo --
 
-$SH -c "$prelude; func || true"
+$SH -c "$prelude; fun || true"
 echo or=$?
 echo --
 
-$SH -c "$prelude; func && true"
+$SH -c "$prelude; fun && true"
 echo and=$?
 echo --
 
-$SH -c "$prelude; if func; then true; fi"
+$SH -c "$prelude; if fun; then true; fi"
 echo if=$?
 echo --
 
-$SH -c "$prelude; while func; do echo while; exit; done"
+$SH -c "$prelude; while fun; do echo while; exit; done"
 echo while=$?
 echo --
 
-$SH -c "$prelude; until func; do echo until; exit; done"
+$SH -c "$prelude; until fun; do echo until; exit; done"
 echo until=$?
 echo --
 
@@ -325,24 +325,24 @@ until=1
 --
 ## END
 ## N-I dash/bash/mksh/ash STDOUT:
-func
+fun
 should not get here
 bang=0
 --
-func
+fun
 or=0
 --
-func
+fun
 and=0
 --
-func
+fun
 if=0
 --
-func
+fun
 while
 while=0
 --
-func
+fun
 until=0
 --
 ## END

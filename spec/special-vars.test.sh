@@ -47,16 +47,19 @@ zsh sets HOME
 
 
 #### $1 .. $9 are scoped, while $0 is not
-func() { echo $0 $1 $2 | sed -e 's/.*sh/sh/'; }
-func a b
+fun() { echo $0 $1 $2 | sed -e 's/.*sh/sh/'; }
+fun a b
 ## stdout: sh a b
-## BUG zsh stdout: func a b
+## BUG zsh stdout: fun a b
 
 #### $?
 echo $?  # starts out as 0
 sh -c 'exit 33'
 echo $?
-## stdout-json: "0\n33\n"
+## STDOUT:
+0
+33
+## END
 ## status: 0
 
 #### $#

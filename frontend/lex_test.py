@@ -228,10 +228,10 @@ class LexerTest(unittest.TestCase):
   def testLookAhead(self):
     # I think this is the usage pattern we care about.  Peek and Next() past
     # the function; then Peek() the next token.  Then Lookahead in that state.
-    lexer = _InitLexer('func()')
+    lexer = _InitLexer('fun()')
 
     t = lexer.Read(lex_mode_e.ShCommand)
-    self.assertTokensEqual(token(Id.Lit_Chars, 'func'), t)
+    self.assertTokensEqual(token(Id.Lit_Chars, 'fun'), t)
 
     #self.assertEqual(Id.Op_LParen, lexer.LookAhead())
 
@@ -241,10 +241,10 @@ class LexerTest(unittest.TestCase):
     self.assertTokensEqual(
         token(Id.Op_RParen, ')'), lexer.LookAhead(lex_mode_e.ShCommand))
 
-    lexer = _InitLexer('func ()')
+    lexer = _InitLexer('fun ()')
 
     t = lexer.Read(lex_mode_e.ShCommand)
-    self.assertTokensEqual(token(Id.Lit_Chars, 'func'), t)
+    self.assertTokensEqual(token(Id.Lit_Chars, 'fun'), t)
 
     t = lexer.Read(lex_mode_e.ShCommand)
     self.assertTokensEqual(token(Id.WS_Space, ' '), t)
@@ -321,15 +321,15 @@ class LineLexerTest(unittest.TestCase):
         token(Id.Lit_Chars, 'bar'), l.LookAhead(lex_mode_e.ShCommand))
 
     # No lookahead; using the cursor!
-    l = LineLexer(match.MATCHER, 'func(', self.arena)
+    l = LineLexer(match.MATCHER, 'fun(', self.arena)
     self.assertTokensEqual(
-        token(Id.Lit_Chars, 'func'), l.Read(lex_mode_e.ShCommand))
+        token(Id.Lit_Chars, 'fun'), l.Read(lex_mode_e.ShCommand))
     self.assertTokensEqual(
         token(Id.Op_LParen, '('), l.LookAhead(lex_mode_e.ShCommand))
 
-    l = LineLexer(match.MATCHER, 'func  (', self.arena)
+    l = LineLexer(match.MATCHER, 'fun  (', self.arena)
     self.assertTokensEqual(
-        token(Id.Lit_Chars, 'func'), l.Read(lex_mode_e.ShCommand))
+        token(Id.Lit_Chars, 'fun'), l.Read(lex_mode_e.ShCommand))
     self.assertTokensEqual(
         token(Id.Op_LParen, '('), l.LookAhead(lex_mode_e.ShCommand))
 
