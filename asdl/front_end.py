@@ -7,7 +7,7 @@ import re
 
 from asdl import asdl_ as asdl
 from asdl import meta
-from asdl.asdl_ import Module, Type, Constructor, Field, Sum, Product
+from asdl.asdl_ import Use, Module, Type, Constructor, Field, Sum, Product
 
 
 # Types for describing tokens in an ASDL specification.
@@ -75,26 +75,50 @@ class ASDLParser(object):
         return self._parse_module()
 
     def _parse_module(self):
-        if self._at_keyword('module'):
-            self._advance()
-        else:
+        """
+        module = 'module' NAME '{' use* type* '}'
+        """
+        if not self._at_keyword('module'):
             raise ASDLSyntaxError(
                 'Expected "module" (found {})'.format(self.cur_token.value),
                 self.cur_token.lineno)
+        self._advance()
         name = self._match(self._id_kinds)
         self._match(TokenKind.LBrace)
-        defs = self._parse_definitions()
-        self._match(TokenKind.RBrace)
-        return Module(name, defs)
 
-    def _parse_definitions(self):
+        uses = []
+        while self._at_keyword('use'):
+          uses.append(self._parse_use())
+
         defs = []
         while self.cur_token.kind == TokenKind.TypeId:
             typename = self._advance()
             self._match(TokenKind.Equals)
             type = self._parse_type()
             defs.append(Type(typename, type))
-        return defs
+
+        self._match(TokenKind.RBrace)
+        return Module(name, uses, defs)
+
+    def _parse_use(self):
+        """
+        use = 'use' NAME '{' NAME+ '}'
+        """
+        self._advance()
+        mod_name = self._match(self._id_kinds)
+        self._match(TokenKind.LBrace)
+
+        type_names = []
+        while self.cur_token.kind == TokenKind.TypeId:
+            t = self._advance()
+            type_names.append(t)
+            if self.cur_token.kind == TokenKind.RParen:
+                break
+            elif self.cur_token.kind == TokenKind.Comma:
+                self._advance()
+
+        self._match(TokenKind.RBrace)
+        return Use(mod_name, type_names)
 
     def _parse_type(self):
         if self.cur_token.kind == TokenKind.LParen:
@@ -320,7 +344,7 @@ def _MakeReflection(module, app_types):
   return type_lookup
 
 
-def LoadSchema(f, app_types):
+def LoadSchema(f, app_types, verbose=False):
   """Returns an AST for the schema and a type_lookup dictionary.
   
   Used for code gen and metaprogramming.
@@ -333,6 +357,9 @@ def LoadSchema(f, app_types):
   """
   p = ASDLParser()
   schema_ast = p.parse(f)
+  if verbose:
+    import sys
+    schema_ast.Print(sys.stdout, 0)
 
   v = Check()
   v.visit(schema_ast)

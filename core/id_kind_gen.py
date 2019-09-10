@@ -123,7 +123,7 @@ def main(argv):
     id_ = asdl_.Type('Id', id_sum)
     kind_ = asdl_.Type('Kind', kind_sum)
 
-    schema_ast = asdl_.Module('id_kind', [id_, kind_])
+    schema_ast = asdl_.Module('id_kind', [], [id_, kind_])
     #print(schema_ast)
 
     f = sys.stdout

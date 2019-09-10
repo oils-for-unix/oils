@@ -13,7 +13,7 @@ class FrontEndTest(unittest.TestCase):
 
   def testLoadSchema(self):
     with open('asdl/typed_demo.asdl') as f:
-      schema_ast, type_lookup = front_end.LoadSchema(f, {})
+      schema_ast, type_lookup = front_end.LoadSchema(f, {}, verbose=True)
     #print(type_lookup)
 
     # Test fully-qualified name

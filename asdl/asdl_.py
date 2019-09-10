@@ -55,14 +55,31 @@ class AST(object):
         return f.getvalue()
 
 
+class Use(AST):
+    def __init__(self, mod_name, type_names):
+        self.mod_name = mod_name
+        self.type_names = type_names
+
+    def Print(self, f, indent):
+        ind = indent * '  '
+        f.write('%sUse %s {\n' % (ind, self.mod_name))
+        f.write('  %s%s\n' % (ind, ', '.join(t for t in self.type_names)))
+        f.write('%s}\n' % ind)
+
+
 class Module(AST):
-    def __init__(self, name, dfns):
+    def __init__(self, name, uses, dfns):
         self.name = name
+        self.uses = uses
         self.dfns = dfns
 
     def Print(self, f, indent):
         ind = indent * '  '
         f.write('%sModule %s {\n' % (ind, self.name))
+
+        for u in self.uses:
+          u.Print(f, indent+1)
+          f.write('\n')
 
         for d in self.dfns:
           d.Print(f, indent+1)
