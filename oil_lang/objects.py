@@ -47,12 +47,13 @@ class StrArray(list):
 
 class Func(object):
   """An Oil function declared with 'func'."""
-  def __init__(self, node, ex):
+  def __init__(self, node, default_vals, ex):
     self.node = node
+    self.default_vals = default_vals
     self.ex = ex
 
   def __call__(self, *args, **kwargs):
-    return self.ex.RunOilFunc(self.node, args, kwargs)
+    return self.ex.RunOilFunc(self.node, self.default_vals, args, kwargs)
 
 
 class Proc(object):

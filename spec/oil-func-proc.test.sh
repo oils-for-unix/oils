@@ -24,14 +24,18 @@ hi
 43
 ## END
 
-#### Func with default args
+#### Default values for positional params
 shopt -s all:oil
-func add(x Int = 5, y = 0) {
-  return x + y
+func add(x Int, y=1, z=1+2*3) {
+  return x + y + z
 }
-echo $add()
+echo $add(3)
+echo $add(3,4)
+echo $add(3,4,5)
 ## STDOUT:
-5
+11
+14
+12
 ## END
 
 #### Func with named args

@@ -443,12 +443,18 @@ class Transformer(object):
       if pnode.typ == grammar_nt.param:  # x Int
         children = pnode.children
         first_tok = children[0].tok
+        n = len(children)
         #tok = pnode.tok
 
         if first_tok.id in (Id.Expr_At,):  # ...
           return param(first_tok, children[1].tok, None, None)
         elif first_tok.id == Id.Expr_Name:
-          return param(None, first_tok, None, None)
+          default = None
+          if n > 1 and children[1].tok.id == Id.Arith_Equal:  # x = 1+2*3
+            default = self.Expr(children[2])
+          elif n > 2 and children[2].tok.id == Id.Arith_Equal:  # x Int = 1+2*3
+            default = self.Expr(children[3])
+          return param(None, first_tok, None, default)
         else:
           pass
     else:

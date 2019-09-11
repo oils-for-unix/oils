@@ -1255,10 +1255,18 @@ class Executor(object):
       status = 0
 
     elif node.tag == command_e.OilFuncProc:
-      # TODO: enter it in current namespace?
-      # maybe make a callable out of it
       if node.which == Id.KW_Func:
-        obj = objects.Func(node, self)
+        # NOTE: It has the Python pitfall where mutable objects shouldn't be
+        # used as default args.
+
+        n = len(node.params)
+        default_vals = [None] * n
+        for i, param in enumerate(node.params):
+          if param.default:
+            obj = self.expr_ev.EvalExpr(param.default)
+            default_vals[i] = value.Obj(obj)
+
+        obj = objects.Func(node, default_vals, self)
       else:
         obj = objects.Proc(node)
 
@@ -1692,7 +1700,7 @@ class Executor(object):
 
     return status
 
-  def RunOilFunc(self, func_node, args, kwargs):
+  def RunOilFunc(self, func_node, default_vals, args, kwargs):
     """Run an Oil function.
 
     var x = abs(y)   do f(x)   @split(mystr)   @join(myarray)
@@ -1712,10 +1720,16 @@ class Executor(object):
 
     self.mem.PushTemp()
     # Bind the function arguments
+    n = len(args)
     for i, param in enumerate(func_node.params):
-      self.mem.SetVar(
-          lvalue.Named(param.name.val), value.Obj(args[i]),
-          (), scope_e.LocalOnly)
+      if i < n:
+        val = value.Obj(args[i])
+      else:
+        val = default_vals[i]
+        if val is None:
+          # Python raises TypeError.  Should we do something else?
+          raise TypeError('Missing argument')
+      self.mem.SetVar(lvalue.Named(param.name.val), val, (), scope_e.LocalOnly)
 
     return_val = None
     try:
