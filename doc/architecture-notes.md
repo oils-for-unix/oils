@@ -5,10 +5,10 @@ Notes on OSH Architecture
 
 Oil uses regex-based lexers, which are turned into efficient C code with
 [re2c][].  We intentionally avoid hand-written code that manipulates strings
-char-by-char, since that strategy is error prone.  It's inevitable that rare
+char-by-char, since that strategy is error prone; it's inevitable that rare
 cases will be mishandled.
 
-The list of lexers can bge found by looking at `native/fastlex.c`:
+The list of lexers can be found by looking at `native/fastlex.c`:
 
 - The huge combined OSH/Oil lexer.
 - OSH lexers:
@@ -29,7 +29,7 @@ This section is about extra passes ("irregularities") at **parse time**.  In
 the "Runtime Issues" section below, we discuss cases that involve parsing after
 variable expansion, etc.
 
-### Where We Re-parse Previously Parsed Text (unfortunately)
+### Where We Re-parse Previously Parsed Text (Unfortunately)
 
 This makes it harder to produce good error messages with source location info.
 It also implications for translation, because we break the "arena invariant".
@@ -45,7 +45,7 @@ happen compared with `$()`.
 
 (in `_ReadCommandSubPart` in `osh/word_parse.py`)
 
-### Where VirtualLineReader is used
+### Where VirtualLineReader is Used
 
 This isn't necessarily re-parsing, but it's re-reading.
 
@@ -78,18 +78,18 @@ this case:
 
 This is sort of like the `ungetc()` I've seen in other shell lexers.
 
-### Where the arena invariant is broken
+### Where the Arena Invariant is Broken
 
 - Here docs with <<-.  The leading tab is lost, because we don't need it for
   translation.
 
-### Where parsers are instantiated
+### Where Parsers are Instantiated
 
 - See `osh/parse_lib.py` and its callers.
 
 ## Runtime Issues
 
-### Where OSH Parses Code in Strings Formed At Runtime
+### Where OSH Parses Code in Strings Formed at Runtime
 
 (1) **Alias expansion** like `alias foo='ls | wc -l'`.  Aliases are like
 "lexical macros".
@@ -105,7 +105,7 @@ then the resulting strings are parsed as words, with `$` escaped to `\$`.
   - debug
   - err
   - signals
-- `source` -- the filename is formed dynamically, but the code is generally
+- `source` — the filename is formed dynamically, but the code is generally
   static.
 
 ### Where Bash Parses Code in Strings Formed at Runtime (perhaps unintentionally)
@@ -149,7 +149,7 @@ Relied on by `bash-completion`, as discovered by Greg Price)
 (6) ShellShock (removed from bash): `export -f`, all variables were checked for
 a certain pattern.
 
-### Parse errors at runtime (need line numbers)
+### Parse Errors at Runtime (Need Line Numbers)
 
 - [ -a -a -a ]
 - command line flag usage errors
