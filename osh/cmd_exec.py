@@ -21,7 +21,7 @@ import sys
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    command_e, redir_e, assign_op_e, source
+    command_e, command__OilFuncProc, redir_e, assign_op_e, source,
 )
 from _devbuild.gen.syntax_asdl import word, command_t
 from _devbuild.gen.runtime_asdl import (
@@ -58,6 +58,9 @@ try:
   import libc  # for fnmatch
 except ImportError:
   from benchmarks import fake_libc as libc  # type: ignore
+
+from typing import List
+
 
 
 # These are nodes that execute more than one COMMAND.  DParen doesn't

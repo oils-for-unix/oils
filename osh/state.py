@@ -453,9 +453,8 @@ class ExecOpts(object):
     # shopt -s all:oil turns on all Oil options, which includes all strict #
     # options
     if opt_name == 'all:oil':
-      for o in _ALL_OIL:
-        attr = o.replace('-', '_')
-        if o in _PARSE_OPTION_NAMES:
+      for attr in _ALL_OIL:
+        if attr in _PARSE_OPTION_NAMES:
           self._SetParseOption(attr, b)
         else:
           setattr(self, attr, b)
@@ -465,23 +464,22 @@ class ExecOpts(object):
 
     if opt_name == 'all:nice':
       for attr in _NICE_OPTION_NAMES:
+        self._SetParseOption(attr, b)
         setattr(self, attr, b)
       return
 
     # shopt -s all:strict turns on all strict options
     if opt_name == 'all:strict':
-      for o in _ALL_STRICT:
-        attr = o.replace('-', '_')  # for strict-*
+      for attr in _ALL_STRICT:
         setattr(self, attr, b)
 
       self.errexit.Set(b)  # Special case
       return
 
-    attr = opt_name.replace('-', '_')  # for strict-*
     if opt_name in SHOPT_OPTION_NAMES:
-      setattr(self, attr, b)
+      setattr(self, opt_name, b)
     elif opt_name in _PARSE_OPTION_NAMES:
-      self._SetParseOption(attr, b)
+      self._SetParseOption(opt_name, b)
     else:
       raise args.UsageError('got invalid option %r' % opt_name)
 
@@ -503,11 +501,10 @@ class ExecOpts(object):
     """ For 'shopt -p' """
     opt_names = opt_names or ALL_SHOPT_OPTIONS  # show all
     for opt_name in opt_names:
-      attr = opt_name.replace('-', '_')  # for strict-*
       if opt_name in SHOPT_OPTION_NAMES:
-        b = getattr(self, attr)
+        b = getattr(self, opt_name)
       elif opt_name in _PARSE_OPTION_NAMES:
-        attr = attr[len('parse_'):]  # parse_at -> at
+        attr = opt_name[len('parse_'):]  # parse_at -> at
         b = getattr(self.parse_opts, attr)
       else:
         raise args.UsageError('got invalid option %r' % opt_name)

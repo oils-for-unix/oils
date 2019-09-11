@@ -202,9 +202,14 @@ class OilParseOptions(object):
     # type: () -> None
     self.at = False  # @foo, @array(a, b)
     self.brace = False  # cd /bin { ... }
-    self.equals = False  # x = 'var'
     self.paren = False  # if (x > 0) ...
+
+    # all:nice
+    self.equals = False  # x = 'var'
     self.set = False  # set x = 'var'
+
+  #def __str__(self):
+  #  return str(self.__dict__)
 
 
 class ParseContext(object):

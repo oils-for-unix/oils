@@ -174,6 +174,7 @@ def AddKinds(spec):
       'Star', 'QMark',
       # Either brace expansion or keyword for { and }
       'LBrace', 'RBrace', 'Comma',
+      'Equals',
       'DRightBracket',     # the ]] that matches [[, NOT a keyword
       'TildeLike',         # tilde expansion
       'Pound',             #  for comment or VAROP state

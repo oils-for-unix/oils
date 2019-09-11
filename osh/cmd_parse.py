@@ -1656,6 +1656,19 @@ class CommandParser(object):
       if (self.w_parser.LookAhead() == Id.Op_LParen and
           not word_.IsVarLike(self.cur_word)):
           return self.ParseFunctionDef()  # f() { echo; }  # function
+
+      # TODO: Parse x = 1+2*3 when parse_equals is set.
+      parts = self.cur_word.parts
+      if self.parse_opts.equals and len(parts) == 1:
+        part0 = parts[0]
+        if isinstance(part0, word_part__Literal):
+          tok = part0.token
+          if (tok.id == Id.Lit_Chars and
+              match.IsValidVarName(tok.val) and
+              self.w_parser.LookAhead() == Id.Lit_Equals):
+            log('%s ', parts[0])
+            raise AssertionError
+
       # echo foo
       # f=(a b c)  # array
       # array[1+2]+=1

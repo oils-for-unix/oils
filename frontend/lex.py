@@ -300,6 +300,8 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
   C('}', Id.Lit_RBrace),  # Also for var sub ${a}
   C(',', Id.Lit_Comma),
 
+  C('=', Id.Lit_Equals),  # for x = 1+2*3
+
   # @array and @func(1, c)
   R('@' + VAR_NAME_RE, Id.Lit_Splice),  # for Oil splicing
 
