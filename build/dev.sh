@@ -86,6 +86,14 @@ gen-types-asdl() {
   gen-asdl-py frontend/types.asdl
 }
 
+# TODO: syntax.asdl and runtime.asdl are mutually recursive.
+# Do it in one invocation, and use an output dir:
+#
+# ASDL_PATH=frontend:runtime core/asdl_gen.py mypy $out_dir ...
+#
+# It looks like there needs to be a global cache like sys.modules in the ASDL
+# compiler.
+
 gen-syntax-asdl() {
   gen-asdl-py frontend/syntax.asdl 'frontend.syntax_abbrev'
 }

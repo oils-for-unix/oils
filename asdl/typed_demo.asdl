@@ -5,6 +5,8 @@ module arith {
   -- Two of them as a test
   use demo_lib { t2, t3, t4 }
 
+  using_value = (string foo, value v)
+
   -- Simple Sum Type
   op_id = Plus | Minus | Star
 

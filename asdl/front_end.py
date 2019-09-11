@@ -301,6 +301,15 @@ def _MakeReflection(module, app_types):
   type_lookup = dict(meta.BUILTIN_TYPES)
   type_lookup.update(app_types)
 
+  # TODO: Need to resolve 'imports' to the right descriptor.  Code generation
+  # relies on it:
+  # - To pick the method to call in AbbreviatedTree etc.
+  # - To generate 'value_t' instead of 'value' in type annotations.
+
+  for u in module.uses:
+    for type_name in u.type_names:
+      type_lookup[type_name] = None  # Placeholder
+
   # NOTE: We need two passes because types can be mutually recursive, e.g.
   # asdl/arith.asdl.
 
