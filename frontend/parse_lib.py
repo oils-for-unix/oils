@@ -202,6 +202,7 @@ class OilParseOptions(object):
     # type: () -> None
     self.at = False  # @foo, @array(a, b)
     self.brace = False  # cd /bin { ... }
+    self.cstrings = False  # echo r'' c''
     self.paren = False  # if (x > 0) ...
 
     # all:nice

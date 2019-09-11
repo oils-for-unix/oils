@@ -31,6 +31,7 @@ from _devbuild.gen.syntax_asdl import (
 
     source,
     parse_result, parse_result_t,
+    expr,
 )
 from _devbuild.gen import syntax_asdl  # token, etc.
 
@@ -1657,17 +1658,23 @@ class CommandParser(object):
           not word_.IsVarLike(self.cur_word)):
           return self.ParseFunctionDef()  # f() { echo; }  # function
 
-      # TODO: Parse x = 1+2*3 when parse_equals is set.
+      # Parse x = 1+2*3 when parse_equals is set.
       parts = self.cur_word.parts
       if self.parse_opts.equals and len(parts) == 1:
         part0 = parts[0]
         if isinstance(part0, word_part__Literal):
           tok = part0.token
-          if (tok.id == Id.Lit_Chars and
-              match.IsValidVarName(tok.val) and
+          # NOTE: tok.id should be Lit_Chars, but that check is redundant
+          if (match.IsValidVarName(tok.val) and
               self.w_parser.LookAhead() == Id.Lit_Equals):
-            log('%s ', parts[0])
-            raise AssertionError
+            #log('%s ', parts[0])
+            op_tok, enode = self.w_parser.ParseBareAssignment()
+            self._Next()  # Somehow this is necessary
+
+            # NOTE: This matches what expr_to_ast.py gives.  Probably should
+            # change it to another type.
+            lhs = expr.Var(tok)
+            return command.OilAssign(None, lhs, op_tok, enode)
 
       # echo foo
       # f=(a b c)  # array

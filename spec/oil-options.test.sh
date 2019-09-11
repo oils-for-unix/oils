@@ -188,6 +188,7 @@ shopt -s simple_echo
 shopt -s simple_test_builtin
 shopt -s parse_at
 shopt -s parse_brace
+shopt -s parse_cstrings
 shopt -s parse_paren
 ## END
 
@@ -485,3 +486,17 @@ three
 k
 k2
 ## END
+
+#### parse_equals: allows bare assignment
+shopt -s all:nice
+x = 1 + 2*3
+echo $x
+## STDOUT:
+7
+## END
+
+#### parse_equals: disallows FOO=bar
+shopt -s all:nice
+FOO=bar echo
+## status: 2
+## stdout-json: ""

@@ -914,7 +914,18 @@ class Executor(object):
       obj = self.expr_ev.EvalExpr(node.e)
       status = 0 if obj else 1
 
+    # TODO: Change x = 1 + 2*3 into its own Decl node.
+    elif node.tag == command_e.OilAssign and node.keyword is None:
+      lval = self.expr_ev.EvalLHS(node.lhs)
+      py_val = self.expr_ev.EvalExpr(node.rhs)
+      val = value.Obj(py_val)
+      lookup_mode = scope_e.LocalOnly
+      self.mem.SetVar(lval, val, (), lookup_mode,
+                      keyword_id=None)
+      status = 0
+
     elif node.tag == command_e.OilAssign:
+
       self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to var/setvar
 
       lval = self.expr_ev.EvalLHS(node.lhs)

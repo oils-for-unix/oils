@@ -250,5 +250,5 @@ class Lexer(object):
       if t.id != Id.Ignored_LineCont:
         break
 
-    #log('Read() Returning %s', t)
+    #log('> Read() Returning %s', t)
     return t

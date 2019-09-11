@@ -55,7 +55,7 @@ from _devbuild.gen.syntax_asdl import (
     suffix_op, suffix_op_t, suffix_op__Slice, suffix_op__PatSub,
     bracket_op, bracket_op_t,
 
-    word_t, word__Compound, word__Token,
+    word, word_t, word__Compound, word__Token,
     word_part, word_part_t,
     word_part__Literal, word_part__BracedVarSub, word_part__SingleQuoted,
     word_part__ArithSub, word_part__DoubleQuoted, word_part__CommandSub,
@@ -65,9 +65,6 @@ from _devbuild.gen.syntax_asdl import (
 
     expr_t, source, param, type_expr_t,
 )
-# TODO: rename word -> word in syntax.asdl
-from _devbuild.gen.syntax_asdl import word
-
 from core import meta
 from core.util import p_die
 #from core.util import log
@@ -820,6 +817,22 @@ class WordParser(object):
     self.buffered_word = word.Token(last_token)
     self._Next(lex_mode_e.ShCommand)  # always back to this
     return enode
+
+  def ParseBareAssignment(self):
+    # type: () -> Tuple[token, expr_t]
+    """
+    Parse the RHS of x = {name: val}
+    """
+    self._Next(lex_mode_e.Expr)
+    self._Peek()
+    op = self.cur_token  # TODO: Don't need this
+    enode, last_token = self.parse_ctx.ParseOilExpr(self.lexer,
+        grammar_nt.return_expr)
+    if last_token.id == Id.Op_RBrace:
+      last_token.id = Id.Lit_RBrace
+    self.buffered_word = word.Token(last_token)
+    self._Next(lex_mode_e.ShCommand)
+    return op, enode
 
   def ParseReturn(self):
     # type: () -> expr_t

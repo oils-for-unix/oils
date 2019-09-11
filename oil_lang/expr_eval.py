@@ -154,11 +154,6 @@ class OilEvaluator(object):
 
     if node.tag == expr_e.FuncCall:
       # TODO:
-      # First cut builtins:
-      #
-      # len() Int
-      # split(s Str) StrArray (what about List[Str])?
-      # join(s StrArray) Str
       #
       # Let Python handle type errors for now?
 

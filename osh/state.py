@@ -239,6 +239,7 @@ SHOPT_OPTION_NAMES = [
 _OIL_PARSE_OPTION_NAMES = [
     'parse_at',
     'parse_brace',
+    'parse_cstrings',
     'parse_paren',
 ]
 
