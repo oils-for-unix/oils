@@ -6,7 +6,7 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.syntax_asdl import (
-    token, word__Token, word__Compound, word_part, expr
+    token, word__Token, word__Compound, word_part, word_part_t, expr
 )
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.types_asdl import lex_mode_e
@@ -20,7 +20,7 @@ from osh import braces
 from osh import word_
 from pgen2 import parse
 
-from typing import TYPE_CHECKING, IO, Dict, Tuple, cast
+from typing import TYPE_CHECKING, IO, Dict, Tuple, List, cast
 if TYPE_CHECKING:
   from frontend.lexer import Lexer
   from frontend.parse_lib import ParseContext
@@ -316,7 +316,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
       line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
       w_parser = parse_ctx.MakeWordParser(lex, line_reader)
 
-      parts = []
+      parts = []  # type: List[word_part_t]
       last_token = w_parser.ReadDoubleQuoted(left_token, parts)
       expr_dq_part = expr.DoubleQuoted(left_token, parts)
 
@@ -335,9 +335,10 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
       w_parser = parse_ctx.MakeWordParser(lex, line_reader)
 
       # mode can be SQ or DollarSQ
-      tokens = []
+      tokens = []  # type: List[token]
       no_backslashes = (left_token.val == "'")
-      last_token = w_parser.ReadSingleQuoted(mode, tokens, no_backslashes)
+      last_token = w_parser.ReadSingleQuoted(mode, left_token, tokens,
+                                             no_backslashes)
       expr_sq_part = expr.SingleQuoted(left_token, tokens)
 
       typ = Id.Expr_SqDummy.enum_id

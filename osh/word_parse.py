@@ -489,18 +489,18 @@ class WordParser(object):
   def _ReadSingleQuoted(self, lex_mode):
     # type: (lex_mode_t) -> word_part__SingleQuoted
     """Interal method to read a word_part."""
-    left = self.cur_token
-
-    tokens = []
+    left_token = self.cur_token
+    tokens = []  # type: List[token]
     # In command mode, we never disallow backslashes like '\'
-    self.ReadSingleQuoted(lex_mode, tokens, False)
+    self.ReadSingleQuoted(lex_mode, left_token, tokens, False)
 
-    node = word_part.SingleQuoted(left, tokens)
-    node.spids.append(left.span_id)  # left '
+    node = word_part.SingleQuoted(left_token, tokens)
+    node.spids.append(left_token.span_id)  # left '
     node.spids.append(self.cur_token.span_id)  # right '
     return node
 
-  def ReadSingleQuoted(self, lex_mode, tokens, no_backslashes):
+  def ReadSingleQuoted(self, lex_mode, left_token, tokens, no_backslashes):
+    # type: (lex_mode_t, token, List[token], bool) -> token
     """Used by expr_parse.py."""
     done = False
     while not done:
@@ -517,7 +517,7 @@ class WordParser(object):
 
       elif self.token_kind == Kind.Eof:
         p_die('Unexpected EOF in single-quoted string that began here',
-              token=left)
+              token=left_token)
 
       elif self.token_kind == Kind.Right:
         done = True  # assume Id.Right_SingleQuote
@@ -699,7 +699,7 @@ class WordParser(object):
     return dq_part
 
   def ReadDoubleQuoted(self, left_token, parts):
-    # type: (token) -> Tuple[word_part__DoubleQuoted, token]
+    # type: (token, List[word_part_t]) -> token
     """For expression mode.
     
     Read var x = "${dir:-}/$name"; etc.
