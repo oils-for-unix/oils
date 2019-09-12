@@ -337,7 +337,7 @@ echo $x
 ## status: 1
 ## stdout-json: ""
 
-#### single quoted
+#### single quoted -- implicit and explicit raw
 var x = 'foo bar'
 echo $x
 setvar x = '\t\n'  # This is raw
