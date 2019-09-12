@@ -539,7 +539,7 @@ class RootCompleterTest(unittest.TestCase):
     m = list(r.Matches(MockApi('both2 ')))
     self.assertEqual(['both2 b1 ', 'both2 b2 '], sorted(m))
 
-  def testCompletesAssignment(self):
+  def testCompletesShAssignment(self):
     # OSH doesn't do this.  Here is noticed about bash --norc (which is
     # undoubtedly different from bash_completion):
     #

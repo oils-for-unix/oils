@@ -118,9 +118,9 @@ class SimpleCommandTest(unittest.TestCase):
     self.assertEqual(2, len(node.more_env))
     self.assertEqual(2, len(node.redirects))
 
-  def testMultipleGlobalAssignments(self):
+  def testMultipleGlobalShAssignments(self):
     node = assert_ParseCommandList(self, 'ONE=1 TWO=2')
-    self.assertEqual(command_e.Assignment, node.tag)
+    self.assertEqual(command_e.ShAssignment, node.tag)
     self.assertEqual(2, len(node.pairs))
 
   def testOnlyRedirect(self):
@@ -136,7 +136,7 @@ class SimpleCommandTest(unittest.TestCase):
     self.assertEqual(4, len(node.words))
     self.assertEqual(1, len(node.redirects))
 
-  def testParseRedirectBeforeAssignment(self):
+  def testParseRedirectBeforeShAssignment(self):
     # Write ENV to a file
     node = assert_ParseCommandList(self, '>out.txt PYTHONPATH=. env')
     self.assertEqual(command_e.Simple, node.tag)
@@ -151,12 +151,12 @@ class SimpleCommandTest(unittest.TestCase):
 
 class OldStaticParsing(object):
 
-  def testRedirectsInAssignment(self):
+  def testRedirectsInShAssignment(self):
     err = _assert_ParseCommandListError(self, 'x=1 >/dev/null')
     err = _assert_ParseCommandListError(self, 'echo hi; x=1 >/dev/null')
     err = _assert_ParseCommandListError(self, 'declare  x=1 >/dev/null')
 
-  def testParseAssignment(self):
+  def testParseShAssignment(self):
     node = assert_ParseCommandList(self, 'local foo=bar spam eggs one=1')
     self.assertEqual(4, len(node.pairs))
 
@@ -171,13 +171,13 @@ class OldStaticParsing(object):
     # This is the old static parsing.  Probably need to revisit.
     return
     node = assert_ParseCommandList(self, 'export ONE=1 TWO=2 THREE')
-    self.assertEqual(command_e.Assignment, node.tag)
+    self.assertEqual(command_e.ShAssignment, node.tag)
     self.assertEqual(3, len(node.pairs))
 
   def testReadonly(self):
     return
     node = assert_ParseCommandList(self, 'readonly ONE=1 TWO=2 THREE')
-    self.assertEqual(command_e.Assignment, node.tag)
+    self.assertEqual(command_e.ShAssignment, node.tag)
     self.assertEqual(3, len(node.pairs))
 
 
@@ -366,14 +366,14 @@ class ArrayTest(unittest.TestCase):
         'empty=()')
     self.assertEqual(['empty'], [p.lhs.name for p in node.pairs])
     self.assertEqual([], node.pairs[0].rhs.parts[0].words)  # No words
-    self.assertEqual(command_e.Assignment, node.tag)
+    self.assertEqual(command_e.ShAssignment, node.tag)
 
     # Array with 3 elements
     node = assert_ParseCommandList(self,
         'array=(a b c)')
     self.assertEqual(['array'], [p.lhs.name for p in node.pairs])
     self.assertEqual(3, len(node.pairs[0].rhs.parts[0].words))
-    self.assertEqual(command_e.Assignment, node.tag)
+    self.assertEqual(command_e.ShAssignment, node.tag)
 
     # Array literal can't come after word
     # Now caught at runtime
@@ -501,7 +501,7 @@ class CommandParserTest(unittest.TestCase):
     c_parser = test_lib.InitCommandParser('fun() { echo hi; }')
     node = c_parser.ParseCommand()
     print(node)
-    self.assertEqual(command_e.FuncDef, node.tag)
+    self.assertEqual(command_e.ShFunction, node.tag)
 
   def test_ParseCommandLine(self):
     node = assert_ParseCommandLine(self, 'ls foo 2>/dev/null')
@@ -850,7 +850,7 @@ class NestedParensTest(unittest.TestCase):
     node = assertParseSimpleCommand(self, 'echo $(a[1*(2+3)]=x)')
     self.assertEqual(2, len(node.words))
 
-  def testFuncDefWithin(self):
+  def testShFunctionWithin(self):
     node = assert_ParseCommandList(self,
         'echo $(fun() { echo hi; }; fun)')
     self.assertEqual(command_e.Simple, node.tag)

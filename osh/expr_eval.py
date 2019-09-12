@@ -102,7 +102,7 @@ def _StringToInteger(s, span_id=const.NO_INTEGER):
 # Common logic for Arith and Command/Word variants of the same expression
 #
 # Calls EvalLhs()
-#   a[$key]=$val                 # osh/cmd_exec.py:814  (command_e.Assignment)
+#   a[$key]=$val                 # osh/cmd_exec.py:814  (command_e.ShAssignment)
 # Calls _EvalLhsArith()
 #   (( a[key] = val ))           # osh/expr_eval.py:326 (_EvalLhsArith)
 #

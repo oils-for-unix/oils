@@ -16,7 +16,7 @@ from _devbuild.gen.syntax_asdl import (
     command, command_e, command_t,
     command__Simple, command__BraceGroup,
     command__DoGroup, command__ForExpr, command__ForEach, command__WhileUntil,
-    command__Case, command__If, command__FuncDef, command__Subshell,
+    command__Case, command__If, command__ShFunction, command__Subshell,
     command__DBracket, command__DParen, command__CommandList,
     command__OilFuncProc,
     case_arm,
@@ -160,7 +160,7 @@ def _MakeAssignPair(parse_ctx,  # type: ParseContext
                     arena,  # type: Arena
                     ):
   # type: (...) -> assign_pair
-  """Create an assign_pair from a 4-tuples from DetectAssignment."""
+  """Create an assign_pair from a 4-tuples from DetectShAssignment."""
 
   left_token, close_token, part_offset, w = preparsed
 
@@ -243,7 +243,7 @@ def _AppendMoreEnv(preparsed_list, more_env):
   """Helper to modify a SimpleCommand node.
 
   Args:
-    preparsed: a list of 4-tuples from DetectAssignment
+    preparsed: a list of 4-tuples from DetectShAssignment
     more_env: a list to append env_pairs to
   """
   for left_token, close_token, part_offset, w in preparsed_list:
@@ -282,7 +282,7 @@ def _SplitSimpleCommandPrefix(words):
       suffix_words.append(w)
       continue
 
-    left_token, close_token, part_offset = word_.DetectAssignment(w)
+    left_token, close_token, part_offset = word_.DetectShAssignment(w)
     if left_token:
       preparsed_list.append((left_token, close_token, part_offset, w))
     else:
@@ -806,12 +806,12 @@ class CommandParser(object):
       if block:
         p_die("Unexpected block", span_id=block_spid)
 
-      # Assignment: No suffix words like ONE=1 a[x]=1 TWO=2
+      # ShAssignment: No suffix words like ONE=1 a[x]=1 TWO=2
       pairs = []
       for preparsed in preparsed_list:
         pairs.append(_MakeAssignPair(self.parse_ctx, preparsed, self.arena))
 
-      node = command.Assignment(pairs, redirects)
+      node = command.ShAssignment(pairs, redirects)
       left_spid = word_.LeftMostSpanForWord(words[0])
       node.spids.append(left_spid)  # no keyword spid to skip past
       return node
@@ -830,7 +830,7 @@ class CommandParser(object):
         p_die("Control flow shouldn't have environment bindings",
               token=left_token)
 
-      # Attach the token for errors.  (Assignment may not need it.)
+      # Attach the token for errors.  (ShAssignment may not need it.)
       if len(suffix_words) == 1:
         arg_word = None
       elif len(suffix_words) == 2:
@@ -1422,7 +1422,7 @@ class CommandParser(object):
     assert False  # for MyPy
 
   def ParseFunctionBody(self, func):
-    # type: (command__FuncDef) -> None
+    # type: (command__ShFunction) -> None
     """
     function_body    : compound_command io_redirect* ; /* Apply rule 9 */
     """
@@ -1430,7 +1430,7 @@ class CommandParser(object):
     func.redirects = self._ParseRedirectList()
 
   def ParseFunctionDef(self):
-    # type: () -> command__FuncDef
+    # type: () -> command__ShFunction
     """
     function_header : fname '(' ')'
     function_def     : function_header newline_ok function_body ;
@@ -1459,16 +1459,16 @@ class CommandParser(object):
     self._Peek()
     assert self.c_id == Id.Op_LParen, self.cur_word
 
-    self.lexer.PushHint(Id.Op_RParen, Id.Right_FuncDef)
+    self.lexer.PushHint(Id.Op_RParen, Id.Right_ShFunction)
     self._Next()
 
-    self._Eat(Id.Right_FuncDef, msg='Expected ) in function definition')
+    self._Eat(Id.Right_ShFunction, msg='Expected ) in function definition')
 
     after_name_spid = word_.LeftMostSpanForWord(self.cur_word) + 1
 
     self._NewlineOk()
 
-    func = command.FuncDef()
+    func = command.ShFunction()
     func.name = name
 
     self.ParseFunctionBody(func)
@@ -1478,7 +1478,7 @@ class CommandParser(object):
     return func
 
   def ParseKshFunctionDef(self):
-    # type: () -> command__FuncDef
+    # type: () -> command__ShFunction
     """
     ksh_function_def : 'function' fname ( '(' ')' )? newline_ok function_body
     """
@@ -1498,15 +1498,15 @@ class CommandParser(object):
 
     self._Peek()
     if self.c_id == Id.Op_LParen:
-      self.lexer.PushHint(Id.Op_RParen, Id.Right_FuncDef)
+      self.lexer.PushHint(Id.Op_RParen, Id.Right_ShFunction)
       self._Next()
-      self._Eat(Id.Right_FuncDef)
+      self._Eat(Id.Right_ShFunction)
       # Change it: after )
       after_name_spid = word_.LeftMostSpanForWord(self.cur_word) + 1
 
     self._NewlineOk()
 
-    func = command.FuncDef()
+    func = command.ShFunction()
     func.name = name
 
     self.ParseFunctionBody(func)
@@ -1621,7 +1621,7 @@ class CommandParser(object):
 
       # NOTE: this is unsafe within the type system because redirects aren't on
       # the base class.
-      if node.tag not in (command_e.TimeBlock, command_e.OilAssign):
+      if node.tag not in (command_e.TimeBlock, command_e.VarDecl):
         node.redirects = self._ParseRedirectList()  # type: ignore
       return node
     if self.parse_opts.set and self.c_id == Id.KW_Set:
@@ -1672,13 +1672,15 @@ class CommandParser(object):
           if (match.IsValidVarName(tok.val) and
               self.w_parser.LookAhead() == Id.Lit_Equals):
             #log('%s ', parts[0])
-            op_tok, enode = self.w_parser.ParseBareAssignment()
+            op_tok, enode = self.w_parser.ParseBareShAssignment()
             self._Next()  # Somehow this is necessary
 
             # NOTE: This matches what expr_to_ast.py gives.  Probably should
             # change it to another type.
+            # Note: no type expressions are possible here.  'lazy' is part of
+            # the "dynamic dialect" of Oil.
             lhs = expr.Var(tok)
-            return command.OilAssign(None, lhs, op_tok, enode)
+            return command.VarDecl(None, lhs, None, op_tok, enode)
 
       # echo foo
       # f=(a b c)  # array

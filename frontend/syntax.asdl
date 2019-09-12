@@ -190,10 +190,6 @@ module syntax
   case_arm = (word* pat_list, command* action, int* spids)
   if_arm = (command* cond, command* action, int* spids)
 
-  iterable = 
-    IterArgv
-  | IterArray(word* words)
-
   -- TODO: Make field names consistent: child vs expr, etc.
 
   command = 
@@ -206,13 +202,11 @@ module syntax
   | ExpandedAlias(command child, redir* redirects, env_pair* more_env)
   | Sentence(command child, token terminator)
     -- NOTE: Only represents "bare assignment".  TODO: Rename ShAssign
-  | Assignment(assign_pair* pairs, redir* redirects)
-    -- TODO: add optional type_expr (only appears in var/const)
-  | OilAssign(token? keyword, expr lhs, token op, expr rhs)
+  | ShAssignment(assign_pair* pairs, redir* redirects)
   | ControlFlow(token token, word? arg_word)
   | Pipeline(command* children, bool negated, int* stderr_indices)
   | AndOr(id* ops, command* children)
-    -- Part of for, while, until (but not if, case, FuncDef)
+    -- Part of for, while, until (but not if, case, ShFunction)
   | DoGroup(command* children, redir* redirects)
     -- A brace group is a compound command, with redirects.
     -- TODO: Combine DoGroup and BraceGroup, with 'token left' for do or {
@@ -222,7 +216,7 @@ module syntax
   | DParen(arith_expr child, redir* redirects)
   | DBracket(bool_expr expr, redir* redirects)
     -- do_arg_iter: whether to implicitly loop over "$@"
-    -- TODO: Make iter_words a sum type.  iterable for_words
+    -- NOTE: iterable could be a sum type instead of do_arg_iter.
   | ForEach(string iter_name, word* iter_words, bool do_arg_iter,
             command body, redir* redirects)
     -- C-style for loop.  Any of the 3 expressions can be omitted.
@@ -233,16 +227,23 @@ module syntax
   | WhileUntil(token keyword, command* cond, command body, redir* redirects)
   | If(if_arm* arms, command* else_action, redir* redirects)
   | Case(word to_match, case_arm* arms, redir* redirects)
-  | FuncDef(string name, command body, redir* redirects)
+  | ShFunction(string name, command body, redir* redirects)
   | TimeBlock(command pipeline)
     -- Most nodes optimize it out as command*, but there are a few places where
     -- this is useful for type safety.
   | CommandList(command* children)
+
     -- Oil stuff
+
+    -- var, const, lazy, and implicit lazy
+    -- TODO: var x Int, y Int = 1, 2 doesn't fit (expr, type_expr)
+  | VarDecl(token? keyword, expr lhs, type_expr? typ, token op, expr rhs)
+    -- setvar/set, auto
+  | PlaceMutation(token? keyword, expr lhs, expr rhs)
   | Do(expr e)      -- an expression for its side effects
   | Return(token keyword, expr e)  -- returnin an Obj, not an int-like string
   | OilCondition(expr e) -- for if/while
-    -- C-style for loop?
+    -- C-style for loop?  Currently unused.
   | OilFor3(expr? init, expr? cond, expr? update, command? body)
   | OilForIn(expr lhs, expr iterable, command body)
     -- this is a proc OR func.  Some things can be disallowed later?

@@ -152,7 +152,7 @@ class WordParser(object):
     #
     # Examples:
     # - "${s:-}", "${s/%pat/}"
-    # It's similar to LooksLikeAssignment where we turn x= into x=''.  And it
+    # It's similar to LooksLikeShAssignment where we turn x= into x=''.  And it
     # has the same potential problem of not having spids.
     #
     # NOTE: empty_ok is False only for the PatSub pattern, which means we'll
@@ -786,7 +786,7 @@ class WordParser(object):
     TODO: Also have to allow th trailing } in { var x = 'a' }
     """
     self._Next(lex_mode_e.Expr)
-    enode, last_token = self.parse_ctx.ParseOilAssign(kw_token, self.lexer,
+    enode, last_token = self.parse_ctx.ParseVarDecl(kw_token, self.lexer,
                                                       grammar_nt.oil_var)
     # Hack to move } from what the Expr lexer modes gives to what CommandParser
     # wants
@@ -806,7 +806,7 @@ class WordParser(object):
     setvar i++
     """
     self._Next(lex_mode_e.Expr)
-    enode, last_token = self.parse_ctx.ParseOilAssign(kw_token, self.lexer,
+    enode, last_token = self.parse_ctx.ParseVarDecl(kw_token, self.lexer,
                                                       grammar_nt.oil_setvar)
     # Hack to move } from what the Expr lexer modes gives to what CommandParser
     # wants
@@ -818,7 +818,7 @@ class WordParser(object):
     self._Next(lex_mode_e.ShCommand)  # always back to this
     return enode
 
-  def ParseBareAssignment(self):
+  def ParseBareShAssignment(self):
     # type: () -> Tuple[token, expr_t]
     """
     Parse the RHS of x = {name: val}
@@ -1310,7 +1310,7 @@ class WordParser(object):
 
     elif self.token_kind == Kind.Right:
       if self.token_type not in (
-          Id.Right_Subshell, Id.Right_FuncDef, Id.Right_CasePat,
+          Id.Right_Subshell, Id.Right_ShFunction, Id.Right_CasePat,
           Id.Right_ArrayLiteral):
         raise AssertionError(self.cur_token)
 

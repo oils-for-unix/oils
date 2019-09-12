@@ -189,7 +189,7 @@ def main(argv):
       if start_symbol == 'eval_input':
         ast_node = tr.Expr(pnode)
       else:
-        ast_node = tr.OilAssign(pnode)
+        ast_node = tr.VarDecl(pnode)
       ast_node.PrettyPrint()
       print()
 

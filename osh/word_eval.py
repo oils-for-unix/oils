@@ -1259,7 +1259,7 @@ class _WordEvaluator(object):
         started_pairs = True  # Everything from now on is an assign_pair
 
       if started_pairs:
-        left_token, close_token, part_offset = word_.DetectAssignment(w)
+        left_token, close_token, part_offset = word_.DetectShAssignment(w)
         if left_token:  # Detected statically
           if left_token.id != Id.Lit_VarLike:
             # (not guaranteed since started_pairs is set twice)

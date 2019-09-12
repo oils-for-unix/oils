@@ -221,7 +221,7 @@ class Tracer(object):
     cmd = ' '.join(pretty.Str(a) for a in argv)
     self.f.log('%s%s%s', first_char, prefix, cmd)
 
-  def OnAssignment(self, lval, op, val, flags, lookup_mode):
+  def OnShAssignment(self, lval, op, val, flags, lookup_mode):
     # NOTE: I think tracing should be on by default?  For post-mortem viewing.
     if not self.exec_opts.xtrace:
       return
@@ -237,7 +237,7 @@ class Tracer(object):
     - Function call events.  As opposed to external commands.
     - Process Forks.  Subshell, command sub, pipeline,
     - Command Completion -- you get the status code.
-    - Assignments
+    - ShAssignments
       - We should desugar to SetVar like mksh
     """
     pass

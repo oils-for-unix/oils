@@ -455,7 +455,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.TEST: builtin_bracket.Test(False, errfmt),
       builtin_e.BRACKET: builtin_bracket.Test(True, errfmt),
 
-      # Assignment (which are pure)
+      # ShAssignment (which are pure)
       builtin_e.DECLARE: new_var,
       builtin_e.TYPESET: new_var,
       builtin_e.LOCAL: new_var,

@@ -378,7 +378,7 @@ class OilPrinter(object):
     # The _ is an indicator that it's not a string to be piped in.
     pass
 
-  def DoAssignment(self, node, at_top_level, local_symbols):
+  def DoShAssignment(self, node, at_top_level, local_symbols):
     """
     local_symbols:
       - Add every 'local' declaration to it
@@ -403,7 +403,7 @@ class OilPrinter(object):
 
     # TODO:
     # - This depends on self.mode.
-    # - And we also need the enclosing FuncDef node to analyze.
+    # - And we also need the enclosing ShFunction node to analyze.
     #   - or we need a symbol table for the current function.  Forget about
     #
     # Oil keywords:
@@ -643,8 +643,8 @@ class OilPrinter(object):
       # - [ -> "test".  Eliminate trailing ].
       # - . -> source, etc.
 
-    elif node.tag == command_e.Assignment:
-      self.DoAssignment(node, at_top_level, local_symbols)
+    elif node.tag == command_e.ShAssignment:
+      self.DoShAssignment(node, at_top_level, local_symbols)
 
     elif node.tag == command_e.Pipeline:
       # Obscure: |& turns into |- or |+ for stderr.
@@ -718,7 +718,7 @@ class OilPrinter(object):
       # [[ 1 -eq 2 ]] to (1 == 2)
       self.DoBoolExpr(node.expr)
 
-    elif node.tag == command_e.FuncDef:
+    elif node.tag == command_e.ShFunction:
       # TODO: skip name
       #self.f.write('proc %s' % node.name)
 

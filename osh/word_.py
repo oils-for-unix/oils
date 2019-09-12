@@ -376,7 +376,7 @@ def LooksLikeArithVar(w):
   # type: (word_t) -> Optional[token]
   """Return a token if this word looks like an arith var.
 
-  NOTE: This can't be combined with DetectAssignment because VarLike and
+  NOTE: This can't be combined with DetectShAssignment because VarLike and
   ArithVarLike must be different tokens.  Otherwise _ReadCompoundWord will be
   confused between array assigments foo=(1 2) and function calls foo(1, 2).
   """
@@ -411,7 +411,7 @@ def IsVarLike(w):
   return _LiteralId(w.parts[0]) == Id.Lit_VarLike
 
 
-def DetectAssignment(w):
+def DetectShAssignment(w):
   # type: (word_t) -> Tuple[Optional[token], Optional[token], int]
   """Detects whether a word looks like FOO=bar or FOO[x]=bar.
 
@@ -464,7 +464,7 @@ def DetectAssignment(w):
 def DetectAssocPair(w):
   # type: (word__Compound) -> Optional[Tuple[word__Compound, word__Compound]]
   """
-  Like DetectAssignment, but for A=(['k']=v ['k2']=v)
+  Like DetectShAssignment, but for A=(['k']=v ['k2']=v)
 
   The key and the value are both strings.  So we just pick out word_part.
   Unlike a[k]=v, A=([k]=v) is NOT ambiguous, because the [k] syntax is only used

@@ -787,7 +787,7 @@ class Mem(object):
     """Set the current source location, for BASH_SOURCE, BASH_LINENO, LINENO,
     etc.
 
-    It's also set on SimpleCommand, Assignment, ((, [[, etc. and used as
+    It's also set on SimpleCommand, ShAssignment, ((, [[, etc. and used as
     a fallback when e_die() didn't set any location information.
     """
     if span_id == const.NO_INTEGER:
@@ -886,7 +886,7 @@ class Mem(object):
     return self.var_stack[-1]
 
   def _PushDebugStack(self, func_name, source_name):
-    # self.current_spid is set before every SimpleCommand, Assignment, [[, ((,
+    # self.current_spid is set before every SimpleCommand, ShAssignment, [[, ((,
     # etc.  Function calls and 'source' are both SimpleCommand.
 
     # These integers are handles/pointers, for use in CrashDumper.

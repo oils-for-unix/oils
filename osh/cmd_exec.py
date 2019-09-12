@@ -466,7 +466,7 @@ class Executor(object):
 
   # TODO: Also change to BareAssign (set global or mutate local) and
   # KeywordAssign.  The latter may have flags too.
-  def _SpanIdForAssignment(self, node):
+  def _SpanIdForShAssignment(self, node):
     # TODO: Share with tracing (SetCurrentSpanId) and _CheckStatus
     return node.spids[0]
 
@@ -479,9 +479,9 @@ class Executor(object):
       if node.tag == command_e.Simple:
         reason = 'command in '
         span_id = word_.LeftMostSpanForWord(node.words[0])
-      elif node.tag == command_e.Assignment:
+      elif node.tag == command_e.ShAssignment:
         reason = 'assignment in '
-        span_id = self._SpanIdForAssignment(node)
+        span_id = self._SpanIdForShAssignment(node)
       elif node.tag == command_e.Subshell:
         reason = 'subshell invoked from '
         span_id = node.spids[0]
@@ -816,7 +816,7 @@ class Executor(object):
       else:
         argv = ['TODO: trace string for assignment']
         if node.block:
-          e_die("Assignment builtins don't accept blocks",
+          e_die("ShAssignment builtins don't accept blocks",
                 span_id=node.block.spids[0])
 
       # This comes before evaluating env, in case there are problems evaluating
@@ -915,7 +915,7 @@ class Executor(object):
       status = 0 if obj else 1
 
     # TODO: Change x = 1 + 2*3 into its own Decl node.
-    elif node.tag == command_e.OilAssign and node.keyword is None:
+    elif node.tag == command_e.VarDecl and node.keyword is None:
       lval = self.expr_ev.EvalLHS(node.lhs)
       py_val = self.expr_ev.EvalExpr(node.rhs)
       val = value.Obj(py_val)
@@ -924,7 +924,7 @@ class Executor(object):
                       keyword_id=None)
       status = 0
 
-    elif node.tag == command_e.OilAssign:
+    elif node.tag == command_e.VarDecl:
 
       self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to var/setvar
 
@@ -967,7 +967,7 @@ class Executor(object):
 
       status = 0  # TODO: what should status be?
 
-    elif node.tag == command_e.Assignment:  # Only unqualified assignment
+    elif node.tag == command_e.ShAssignment:  # Only unqualified assignment
 
       lookup_mode = scope_e.Dynamic
       for pair in node.pairs:
@@ -1013,7 +1013,7 @@ class Executor(object):
         #log('setting %s to %s with flags %s', lval, val, flags)
         flags = ()
         self.mem.SetVar(lval, val, flags, lookup_mode)
-        self.tracer.OnAssignment(lval, pair.op, val, flags, lookup_mode)
+        self.tracer.OnShAssignment(lval, pair.op, val, flags, lookup_mode)
 
       # PATCH to be compatible with existing shells: If the assignment had a
       # command sub like:
@@ -1259,7 +1259,7 @@ class Executor(object):
       status = self._ExecuteList(node.children)
       check_errexit = False  # not real statements
 
-    elif node.tag == command_e.FuncDef:
+    elif node.tag == command_e.ShFunction:
       # TODO: if shopt -s namespaces, then enter it in self.mem
       # self.mem.SetVar(value.Obj(...))
 
@@ -1393,7 +1393,7 @@ class Executor(object):
     if node.tag in (
         command_e.NoOp, command_e.ControlFlow, command_e.Pipeline,
         command_e.AndOr, command_e.CommandList, command_e.Sentence,
-        command_e.TimeBlock, command_e.FuncDef, command_e.OilAssign,
+        command_e.TimeBlock, command_e.ShFunction, command_e.VarDecl,
         command_e.OilCondition, command_e.OilFuncProc, command_e.Return):
       redirects = []
     else:
@@ -1575,7 +1575,7 @@ class Executor(object):
 
     strict-proc-sub:
     - Don't allow it anywhere except SimpleCommand, any redirect, or
-    Assignment?  And maybe not even assignment?
+    ShAssignment?  And maybe not even assignment?
 
     Should you put return codes in @PROCESS_SUB_STATUS?  You need two of them.
     """

@@ -271,7 +271,7 @@ class OilParser(object):
     const_binding = VarName '=' Expr
     """
 
-  def ParseAssignment(self):
+  def ParseShAssignment(self):
     """
     assign_keyword = Const | Set | SetGlobal | Var
     assignment = assign_keyword VarName '=' Expr (',' VarName = Expr)*

@@ -272,7 +272,7 @@ def AddKinds(spec):
 
       # Disambiguated right parens
       'Subshell',      # )
-      'FuncDef',       # )
+      'ShFunction',    # )
       'CasePat',       # )
       'ArrayLiteral',  # )
       'ExtGlob',       # )
@@ -408,7 +408,7 @@ def AddKinds(spec):
 
      # Oil Command nodes?  Not used yet.
      #'Command', 'Assign', 'AndOr', 'Block', 'Subshell', 'Fork',
-     #'FuncDef', 'ForEach', 'ForExpr', 'NoOp',
+     #'ShFunction', 'ForEach', 'ForExpr', 'NoOp',
 
      #'UnaryExpr', 'BinaryExpr', 'TernaryExpr', 'FuncCall',
      #'ConstInt',  # for arithmetic.  There is no ConstBool.

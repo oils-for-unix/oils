@@ -316,14 +316,14 @@ class ParseContext(object):
     finally:
       self.parsing_expr = False
 
-  def ParseOilAssign(self, kw_token, lexer, start_symbol,
+  def ParseVarDecl(self, kw_token, lexer, start_symbol,
                      print_parse_tree=False):
     # type: (token, Lexer, int, bool) -> Tuple[command_t, token]
     """e.g. var mylist = [1, 2, 3]"""
 
     # TODO: We do need re-entracy for var x = @[ (1+2) ] and such
     if self.parsing_expr:
-      p_die("Assignment expression can't be nested like this", token=kw_token)
+      p_die("ShAssignment expression can't be nested like this", token=kw_token)
 
     self.parsing_expr = True
     try:
@@ -335,8 +335,8 @@ class ParseContext(object):
     if print_parse_tree:
       self.p_printer.Print(pnode)
 
-    ast_node = self.tr.OilAssign(pnode)
-    ast_node.keyword = kw_token  # OilAssign didn't fill this in
+    ast_node = self.tr.VarDecl(pnode)
+    ast_node.keyword = kw_token  # VarDecl didn't fill this in
     return ast_node, last_token
 
   def ParseOilArgList(self, lexer, print_parse_tree=False):

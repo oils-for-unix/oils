@@ -21,7 +21,7 @@ def _Detect(test, word_str, expected):
   log('-'*80)
   w = word_parse_test._assertReadWord(test, word_str)
 
-  actual = word_.DetectAssignment(w)
+  actual = word_.DetectShAssignment(w)
   left_token, close_token, part_offset = actual
 
   expected_left, expected_close, expected_part_offset = expected

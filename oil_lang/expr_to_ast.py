@@ -5,7 +5,7 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    token, command, command__OilAssign,
+    token, command, command__VarDecl,
     expr, expr_t, expr_context_e, regex, regex_t, word, word_t,
     word_part, word_part_t, word_part__CommandSub,
     param, type_expr_t
@@ -47,7 +47,7 @@ class Transformer(object):
     frontend/parse_lib.py  (turn on print_parse_tree)
 
   Public methods:
-    Expr, OilAssign
+    Expr, VarDecl
     atom, trailer, etc. are private, named after productions in grammar.pgen2.
   """
   def __init__(self, gr):
@@ -324,11 +324,14 @@ class Transformer(object):
       else:
         raise AssertionError(tok.id)
 
-  def OilAssign(self, pnode):
-    # type: (PNode) -> command__OilAssign
+  def VarDecl(self, pnode):
+    # type: (PNode) -> command__VarDecl
     """Transform an Oil assignment statement."""
     typ = pnode.typ
     children = pnode.children
+
+    # TODO: Fill this in.
+    lhs_type = None
 
     if typ == grammar_nt.oil_var:
       # oil_var: lvalue_list [type_expr] '=' testlist (Op_Semi | Op_Newline)
@@ -351,15 +354,14 @@ class Transformer(object):
         raise AssertionError(n)
 
       # The caller should fill in the keyword token.
-      # TODO: type expression
-      return command.OilAssign(None, lvalue, op_tok, self.Expr(rhs))
+      return command.VarDecl(None, lvalue, lhs_type, op_tok, self.Expr(rhs))
 
     if typ == grammar_nt.oil_setvar:
       # oil_setvar: lvalue_list (augassign | '=') testlist (Op_Semi | Op_Newline)
       lvalue = self.Expr(children[0])  # could be a tuple
       op_tok = children[1].tok
       rhs = children[2]
-      return command.OilAssign(None, lvalue, op_tok, self.Expr(rhs))
+      return command.VarDecl(None, lvalue, lhs_type, op_tok, self.Expr(rhs))
 
     nt_name = self.number2symbol[typ]
     raise AssertionError(
