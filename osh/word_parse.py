@@ -687,6 +687,18 @@ class WordParser(object):
     dq_part.spids.append(self.cur_token.span_id)  # Right "
     return dq_part
 
+  def ReadDoubleQuotedForExpr(self, left_dq_token):
+    # type: (token) -> Tuple[word_part__DoubleQuoted, token]
+    """Read var x = "${dir:-}/$name"; etc.
+    """
+    dq_part = word_part.DoubleQuoted()
+    dq_part.spids.append(left_dq_token.span_id)  # Left "
+
+    self._ReadLikeDQ(left_dq_token, dq_part.parts)
+
+    dq_part.spids.append(self.cur_token.span_id)  # Right "
+    return dq_part, self.cur_token
+
   def _ReadCommandSub(self, left_id):
     # type: (Id_t) -> word_part__CommandSub
     """

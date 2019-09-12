@@ -6,7 +6,7 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.syntax_asdl import (
-    token, word__Token, word__Compound, word_part
+    token, word__Token, word__Compound, word_part, expr
 )
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.types_asdl import lex_mode_e
@@ -134,8 +134,8 @@ _MODE_TRANSITIONS = {
     (lex_mode_e.Expr, Id.Left_DollarBracket): lex_mode_e.Command,  # $[echo hi]
     (lex_mode_e.Expr, Id.Op_LParen): lex_mode_e.Expr,  # $( f(x) )
 
-    (lex_mode_e.Expr, Id.Left_DoubleQuote): lex_mode_e.DQ_Oil,  # x + "foo"
-    (lex_mode_e.DQ_Oil, Id.Right_DoubleQuote): POP,
+    (lex_mode_e.Expr, Id.Left_DoubleQuote): lex_mode_e.DQ,  # x + "foo"
+    (lex_mode_e.DQ, Id.Right_DoubleQuote): POP,
 
     # Regex
     (lex_mode_e.Regex, Id.Op_LBracket): lex_mode_e.CharClass,  # $/ 'foo.' [c h] /
@@ -172,13 +172,19 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
 
   mode = lex_mode_e.Expr
   mode_stack = [mode]
+  last_token = None
 
   balance = 0
 
   from core.util import log
   while True:
-    tok = lex.Read(mode)
-    #log('tok = %s', tok)
+    if last_token:  # e.g. left over from WordParser
+      tok = last_token
+      #log('last_token = %s', last_token)
+      last_token = None
+    else:
+      tok = lex.Read(mode)
+      #log('tok = %s', tok)
 
     # Comments and whitespace.  Newlines aren't ignored.
     if meta.LookupKind(tok.id) == Kind.Ignored:
@@ -297,6 +303,37 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
       assert not done  # can't end the expression
 
       continue
+
+    if tok.id == Id.Left_DoubleQuote:
+      left_token = tok
+      line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
+      w_parser = parse_ctx.MakeWordParser(lex, line_reader)
+      #log('%s', w_parser)
+      word_dq_part, last_token = w_parser.ReadDoubleQuotedForExpr(left_token)
+      #log('%s', dq_part)
+
+      # TODO:
+      # - Combine word_part.DoubleQuoted and expr.DoubleQuoted
+      expr_dq_part = expr.DoubleQuoted(left_token, word_dq_part.parts)
+
+      typ = Id.Expr_DqDummy.enum_id
+      opaque = cast(token, expr_dq_part)  # HACK for expr_to_ast
+      ilabel = gr.tokens[typ]
+      done = p.addtoken(typ, opaque, ilabel)
+      assert not done  # can't end the expression
+
+      continue
+
+    # TODO: Also parse r" and c" ?
+    # But that would change the rules for Lit_EscapedChar in lex_mode_e.DQ
+    # I guess you can have lex_mode_e.DQ_C
+    # Hm it's not that bad.
+    # \x001
+    # 
+    # Or you can ALwAYS parse like C.  But then
+    # _C_STRING_COMMON will have Id.CharHex, which can just evaluate to itself.
+    # That's not very hard.  Hm.
+
 
   else:
     # We never broke out -- EOF is too soon (how can this happen???)

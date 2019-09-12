@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    expr_e, expr_t, word_part_e
+    expr_e, expr_t
 )
 from _devbuild.gen.runtime_asdl import (
     lvalue, value_e, scope_e,
@@ -77,15 +77,6 @@ class OilEvaluator(object):
 
       raise NotImplementedError(node.__class__.__name__)
 
-  def EvalWordPart(self, part):
-    """
-    TODO: We might not want oil_word_part_e?  Just use OSH word_part?
-    """
-    if part.tag == word_part_e.Literal:
-      return part.token.val
-
-    raise NotImplementedError(part.__class__.__name__)
-
   def EvalExpr(self, node):
     # type: (expr_t) -> Any
     """
@@ -118,8 +109,17 @@ class OilEvaluator(object):
       return objects.StrArray(strs)
 
     if node.tag == expr_e.DoubleQuoted:
-      s = ''.join(self.EvalWordPart(part) for part in node.parts)
-      return s
+      # TODO: Disallow "$@" and "${array[@]}"
+      # No part_value.Array
+      # In an ideal world, I would *statically* disallow:
+      # - "$@" and "${array[@]}"
+      # - backticks like `echo hi`  
+      # - $(( 1+2 )) and $[] -- although useful for refactoring
+      #   - not sure: ${x%%} -- could disallow this
+      #     - these enters the ArgDQ state: "${a:-foo bar}" ?
+      # But that would complicate the parser/evaluator.  So just rely on
+      # strict_array to disallow the bad parts.
+      return self.word_ev.EvalDoubleQuotedToString(node)
 
     if node.tag == expr_e.Unary:
       child = self.EvalExpr(node.child)

@@ -522,7 +522,7 @@ class _WordEvaluator(object):
 
     return new_val
 
-  def _EvalDoubleQuoted(self, part, part_vals):
+  def _EvalDoubleQuoted(self, parts, part_vals):
     """DoubleQuoted -> part_value
 
     Args:
@@ -541,13 +541,38 @@ class _WordEvaluator(object):
     # Special case for "".  The parser outputs (DoubleQuoted []), instead
     # of (DoubleQuoted [Literal '']).  This is better but it means we
     # have to check for it.
-    if not part.parts:
+    if not parts:
       v = part_value.String('', True, False)
       part_vals.append(v)
       return
 
-    for p in part.parts:
+    for p in parts:
       self._EvalWordPart(p, part_vals, quoted=True)
+
+  def EvalDoubleQuotedToString(self, dq_part):
+    """For double quoted strings in Oil expressions.
+
+    Example: var x = "$foo-${foo}"
+    """
+    part_vals = []
+    self._EvalDoubleQuoted(dq_part.parts, part_vals)
+
+    strs = []
+    for part_val in part_vals:
+      if part_val.tag == part_value_e.String:
+        s = part_val.s
+      else:
+        if self.exec_opts.strict_array:
+          # Examples: echo f > "$@"; local foo="$@"
+          e_die("Illegal array in double quoted string (strict_array)",
+                span_id=dq_part.left.span_id)
+        else:
+          # It appears to not respect IFS
+          s = ' '.join(s for s in part_val.strs if s is not None)
+
+      strs.append(s)
+
+    return ''.join(strs)
 
   def _DecayArray(self, val):
     assert val.tag == value_e.MaybeStrArray, val
@@ -879,7 +904,7 @@ class _WordEvaluator(object):
       part_vals.append(v)
 
     elif part.tag == word_part_e.DoubleQuoted:
-      self._EvalDoubleQuoted(part, part_vals)
+      self._EvalDoubleQuoted(part.parts, part_vals)
 
     elif part.tag == word_part_e.CommandSub:
       id_ = part.left_token.id

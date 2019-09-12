@@ -320,3 +320,19 @@ echo x=$x
 ## STDOUT:
 x=2
 ## END
+
+#### double quoted
+var foo = "bar"
+var x = "-$foo-${foo}-${undef:-default}-"
+echo $x
+## STDOUT:
+-bar-bar-default-
+## END
+
+#### double quoted respects strict_array
+shopt -s all:oil
+var a = @(one two three)
+var x = "-${a[@]}-"
+echo $x
+## status: 1
+## stdout-json: ""

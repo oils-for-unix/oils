@@ -386,6 +386,7 @@ def AddKinds(spec):
 
     'WordsDummy',    # Used for @() (words in lex_mode_e.ShCommand)
     'CommandDummy',  # Used for $() (command in lex_mode_e.ShCommand)
+    'DqDummy',       # Used for ""
 
     # Keywords are resolved after lexing, but otherwise behave like tokens.
     # NOTE: These are not used because pgen2 automatically creates a

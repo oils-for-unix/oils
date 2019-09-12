@@ -38,6 +38,8 @@ OPS = {
     '@[': Id.Left_AtBracket,
     '@(': Id.Left_AtParen,
 
+    '"': Id.Left_DoubleQuote,
+
     '.': Id.Expr_Dot,
     '->': Id.Expr_RArrow,
     '@': Id.Expr_At,

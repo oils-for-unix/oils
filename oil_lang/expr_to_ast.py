@@ -6,8 +6,9 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
     token, command, command__VarDecl,
-    expr, expr_t, expr_context_e, regex, regex_t, word, word_t,
-    word_part, word_part_t, word_part__CommandSub,
+    expr, expr_t, expr__DoubleQuoted, expr_context_e, regex, regex_t, word,
+    word_t,
+    word_part, word_part__CommandSub,
     param, type_expr_t
 )
 from _devbuild.gen import grammar_nt
@@ -297,16 +298,8 @@ class Transformer(object):
         return expr.VarSub(left_tok, self.Expr(children[1]))
 
       elif typ == grammar_nt.dq_string:
-        left_tok = children[0].tok
-
-        tokens = [
-            pnode.tok for pnode in children[1:-1] if pnode.tok.id ==
-            Id.Lit_Chars
-        ]
-        parts2 = [
-            word_part.Literal(t) for t in tokens
-        ]  # type: List[word_part_t]
-        return expr.DoubleQuoted(left_tok, parts2)
+        dq_part = cast(expr__DoubleQuoted, children[1].tok)
+        return dq_part
 
       else:
         nt_name = self.number2symbol[typ]

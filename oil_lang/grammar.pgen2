@@ -190,7 +190,7 @@ dq_part: (
   Lit_EscapedChar | Lit_Chars | Lit_Other | VSub_DollarName | VSub_Number |
   command_sub | sh_command_sub | var_sub
 )
-dq_string: Left_DoubleQuote dq_part* Right_DoubleQuote
+dq_string: '"' Expr_DqDummy Right_DoubleQuote
 
 command_sub: (
   '$[' [WS_Space] [word] (WS_Space word)* [WS_Space] Op_RBracket
