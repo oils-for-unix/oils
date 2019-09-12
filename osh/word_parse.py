@@ -488,9 +488,19 @@ class WordParser(object):
 
   def _ReadSingleQuoted(self, lex_mode):
     # type: (lex_mode_t) -> word_part__SingleQuoted
+    """Interal method to read a word_part."""
     left = self.cur_token
-    tokens = []
 
+    tokens = []
+    self.ReadSingleQuoted(lex_mode, tokens)
+
+    node = word_part.SingleQuoted(left, tokens)
+    node.spids.append(left.span_id)  # left '
+    node.spids.append(self.cur_token.span_id)  # right '
+    return node
+
+  def ReadSingleQuoted(self, lex_mode, tokens):
+    """Used by expr_parse.py."""
     done = False
     while not done:
       self._Next(lex_mode)
@@ -511,11 +521,7 @@ class WordParser(object):
         raise AssertionError(
             'Unhandled token in single-quoted part %s (%s)' %
             (self.cur_token, self.token_kind))
-
-    node = word_part.SingleQuoted(left, tokens)
-    node.spids.append(left.span_id)  # left '
-    node.spids.append(self.cur_token.span_id)  # right '
-    return node
+    return self.cur_token
 
   def _ReadDoubleQuotedLeftParts(self):
     # type: () -> word_part_t

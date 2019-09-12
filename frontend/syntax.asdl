@@ -318,6 +318,7 @@ module syntax
     -- Just like word_part.CommandSub
   | CommandSub(token left_token, command command_list)
   | ExprSub(token left, expr  e)
+    -- NOTE: Duplicates word_part.SingleQuoted
   | SingleQuoted(token left, token* tokens)
     -- NOTE: Duplicates word_part.DoubleQuoted
     -- Not all word_part are valid here!

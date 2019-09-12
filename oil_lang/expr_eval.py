@@ -121,6 +121,13 @@ class OilEvaluator(object):
       # strict_array to disallow the bad parts.
       return self.word_ev.EvalDoubleQuotedToString(node)
 
+    if node.tag == expr_e.SingleQuoted:
+      if node.left.id == Id.Left_SingleQuote:
+        s = ''.join(t.val for t in node.tokens)
+      else:
+        raise NotImplementedError
+      return s
+
     if node.tag == expr_e.Unary:
       child = self.EvalExpr(node.child)
       if node.op.id == Id.Arith_Minus:

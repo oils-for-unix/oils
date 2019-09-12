@@ -137,6 +137,9 @@ _MODE_TRANSITIONS = {
     (lex_mode_e.Expr, Id.Left_DoubleQuote): lex_mode_e.DQ,  # x + "foo"
     (lex_mode_e.DQ, Id.Right_DoubleQuote): POP,
 
+    (lex_mode_e.Expr, Id.Left_SingleQuote): lex_mode_e.SQ,  # x + "foo"
+    (lex_mode_e.SQ, Id.Right_SingleQuote): POP,
+
     # Regex
     (lex_mode_e.Regex, Id.Op_LBracket): lex_mode_e.CharClass,  # $/ 'foo.' [c h] /
     (lex_mode_e.CharClass, Id.Op_RBracket): POP,
@@ -318,6 +321,26 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
 
       typ = Id.Expr_DqDummy.enum_id
       opaque = cast(token, expr_dq_part)  # HACK for expr_to_ast
+      ilabel = gr.tokens[typ]
+      done = p.addtoken(typ, opaque, ilabel)
+      assert not done  # can't end the expression
+
+      continue
+
+    if tok.id == Id.Left_SingleQuote:
+      left_token = tok
+      line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
+      w_parser = parse_ctx.MakeWordParser(lex, line_reader)
+      #log('%s', w_parser)
+
+      tokens = []
+      last_token = w_parser.ReadSingleQuoted(lex_mode_e.SQ, tokens)
+      #log('tokens %s', tokens)
+
+      expr_sq_part = expr.SingleQuoted(left_token, tokens)
+
+      typ = Id.Expr_SqDummy.enum_id
+      opaque = cast(token, expr_sq_part)  # HACK for expr_to_ast
       ilabel = gr.tokens[typ]
       done = p.addtoken(typ, opaque, ilabel)
       assert not done  # can't end the expression

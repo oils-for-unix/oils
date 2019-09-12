@@ -117,7 +117,7 @@ atom: ('(' [yield_expr|testlist_comp] ')' |
        array_literal | sh_array_literal |
        command_sub | sh_command_sub |
        regex_literal |
-       dq_string | var_sub
+       dq_string | sq_string | var_sub
 )
 testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
 trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
@@ -190,7 +190,10 @@ dq_part: (
   Lit_EscapedChar | Lit_Chars | Lit_Other | VSub_DollarName | VSub_Number |
   command_sub | sh_command_sub | var_sub
 )
+
+# TODO: We also need r'' c''  "" c""
 dq_string: '"' Expr_DqDummy Right_DoubleQuote
+sq_string: "'" Expr_SqDummy Right_SingleQuote
 
 command_sub: (
   '$[' [WS_Space] [word] (WS_Space word)* [WS_Space] Op_RBracket

@@ -336,3 +336,13 @@ var x = "-${a[@]}-"
 echo $x
 ## status: 1
 ## stdout-json: ""
+
+#### single quoted
+var x = 'foo bar'
+echo $x
+setvar x = '\t\n'  # This is raw
+echo $x
+## STDOUT:
+foo bar
+\t\n
+## END
