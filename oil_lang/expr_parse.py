@@ -315,13 +315,10 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
       left_token = tok
       line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
       w_parser = parse_ctx.MakeWordParser(lex, line_reader)
-      #log('%s', w_parser)
-      word_dq_part, last_token = w_parser.ReadDoubleQuotedForExpr(left_token)
-      #log('%s', dq_part)
 
-      # TODO:
-      # - Combine word_part.DoubleQuoted and expr.DoubleQuoted
-      expr_dq_part = expr.DoubleQuoted(left_token, word_dq_part.parts)
+      parts = []
+      last_token = w_parser.ReadDoubleQuoted(left_token, parts)
+      expr_dq_part = expr.DoubleQuoted(left_token, parts)
 
       typ = Id.Expr_DqDummy.enum_id
       opaque = cast(token, expr_dq_part)  # HACK for expr_to_ast
@@ -336,13 +333,10 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
       left_token = tok
       line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
       w_parser = parse_ctx.MakeWordParser(lex, line_reader)
-      #log('%s', w_parser)
 
       tokens = []
       # mode can be SQ or DollarSQ
       last_token = w_parser.ReadSingleQuoted(mode, tokens)
-      #log('tokens %s', tokens)
-
       expr_sq_part = expr.SingleQuoted(left_token, tokens)
 
       typ = Id.Expr_SqDummy.enum_id
