@@ -346,3 +346,11 @@ echo $x
 foo bar
 \t\n
 ## END
+
+#### single quoted c'foo\n
+var x = c'foo\nbar'
+echo "$x"
+## STDOUT:
+foo
+bar
+## END

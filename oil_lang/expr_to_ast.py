@@ -306,6 +306,10 @@ class Transformer(object):
         sq_part = cast(expr__SingleQuoted, children[1].tok)
         return sq_part
 
+      elif typ == grammar_nt.c_sq_string:
+        sq_part = cast(expr__SingleQuoted, children[1].tok)
+        return sq_part
+
       else:
         nt_name = self.number2symbol[typ]
         raise AssertionError(

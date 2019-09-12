@@ -719,6 +719,8 @@ _OIL_LEFT_SUBS = [
 _OIL_LEFT_UNQUOTED = [
   C('"', Id.Left_DoubleQuote),
   C("'", Id.Left_SingleQuote),
+  # HACK to change $' to c'
+  C("c'", Id.Left_DollarSingleQuote),
 
   # Not valid in DQ_Oil
   C('@(', Id.Left_AtParen),  # Legacy shell arrays.

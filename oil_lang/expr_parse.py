@@ -137,8 +137,12 @@ _MODE_TRANSITIONS = {
     (lex_mode_e.Expr, Id.Left_DoubleQuote): lex_mode_e.DQ,  # x + "foo"
     (lex_mode_e.DQ, Id.Right_DoubleQuote): POP,
 
-    (lex_mode_e.Expr, Id.Left_SingleQuote): lex_mode_e.SQ,  # x + "foo"
+    (lex_mode_e.Expr, Id.Left_SingleQuote): lex_mode_e.SQ,  # x + 'foo'
     (lex_mode_e.SQ, Id.Right_SingleQuote): POP,
+
+    # x + c'\n'
+    (lex_mode_e.Expr, Id.Left_DollarSingleQuote): lex_mode_e.DollarSQ,
+    (lex_mode_e.DollarSQ, Id.Right_SingleQuote): POP,
 
     # Regex
     (lex_mode_e.Regex, Id.Op_LBracket): lex_mode_e.CharClass,  # $/ 'foo.' [c h] /
@@ -327,14 +331,16 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
 
       continue
 
-    if tok.id == Id.Left_SingleQuote:
+    # '' and c''
+    if tok.id in (Id.Left_SingleQuote, Id.Left_DollarSingleQuote):
       left_token = tok
       line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
       w_parser = parse_ctx.MakeWordParser(lex, line_reader)
       #log('%s', w_parser)
 
       tokens = []
-      last_token = w_parser.ReadSingleQuoted(lex_mode_e.SQ, tokens)
+      # mode can be SQ or DollarSQ
+      last_token = w_parser.ReadSingleQuoted(mode, tokens)
       #log('tokens %s', tokens)
 
       expr_sq_part = expr.SingleQuoted(left_token, tokens)

@@ -861,6 +861,18 @@ class _WordEvaluator(object):
     part_val = _ValueToPartValue(val, quoted)
     part_vals.append(part_val)
 
+  def EvalSingleQuoted(self, part):
+    if part.left.id == Id.Left_SingleQuote:
+      s = ''.join(t.val for t in part.tokens)
+    elif part.left.id == Id.Left_DollarSingleQuote:
+      # NOTE: This could be done at compile time
+      # TODO: Add location info for invalid backslash
+      s = ''.join(word_compile.EvalCStringToken(t.id, t.val)
+                  for t in part.tokens)
+    else:
+      raise AssertionError(part.left.id)
+    return s
+
   def _EvalWordPart(self, part, part_vals, quoted=False, is_subst=False):
     """Evaluate a word part.
 
@@ -890,16 +902,7 @@ class _WordEvaluator(object):
       part_vals.append(v)
 
     elif part.tag == word_part_e.SingleQuoted:
-      if part.left.id == Id.Left_SingleQuote:
-        s = ''.join(t.val for t in part.tokens)
-      elif part.left.id == Id.Left_DollarSingleQuote:
-        # NOTE: This could be done at compile time
-        # TODO: Add location info for invalid backslash
-        s = ''.join(word_compile.EvalCStringToken(t.id, t.val)
-                    for t in part.tokens)
-      else:
-        raise AssertionError(part.left.id)
-
+      s = self.EvalSingleQuoted(part)
       v = part_value.String(s, True, False)
       part_vals.append(v)
 

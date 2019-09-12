@@ -122,11 +122,7 @@ class OilEvaluator(object):
       return self.word_ev.EvalDoubleQuotedToString(node)
 
     if node.tag == expr_e.SingleQuoted:
-      if node.left.id == Id.Left_SingleQuote:
-        s = ''.join(t.val for t in node.tokens)
-      else:
-        raise NotImplementedError
-      return s
+      return self.word_ev.EvalSingleQuoted(node)
 
     if node.tag == expr_e.Unary:
       child = self.EvalExpr(node.child)
