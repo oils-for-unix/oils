@@ -338,7 +338,7 @@ echo $x
 ## stdout-json: ""
 
 #### single quoted -- implicit and explicit raw
-var x = 'foo bar'
+var x = r'foo bar'
 echo $x
 setvar x = '\t\n'  # This is raw
 echo $x
