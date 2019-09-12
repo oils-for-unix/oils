@@ -793,6 +793,10 @@ class CommandParser(object):
       return node
 
     preparsed_list, suffix_words = _SplitSimpleCommandPrefix(words)
+    if self.parse_opts.equals and preparsed_list:
+      left_token, _, _, _ = preparsed_list[0]
+      p_die("name=val isn't allowed when shopt 'parse_equals' is on.\n"
+            "Hint: add 'env' before it, or spaces around =", token=left_token)
 
     # Set a reference to words and redirects for completion.  We want to
     # inspect this state after a failed parse.

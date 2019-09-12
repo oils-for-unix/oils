@@ -495,8 +495,14 @@ echo $x
 7
 ## END
 
-#### parse_equals: disallows FOO=bar
+#### parse_equals: disallows ENV=val mycommand
 shopt -s all:nice
-FOO=bar echo
+ENV=val echo hi
+## status: 2
+## stdout-json: ""
+
+#### parse_equals: disallows var=val
+shopt -s all:nice
+var=val
 ## status: 2
 ## stdout-json: ""
