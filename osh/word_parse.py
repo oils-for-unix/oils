@@ -492,14 +492,15 @@ class WordParser(object):
     left = self.cur_token
 
     tokens = []
-    self.ReadSingleQuoted(lex_mode, tokens)
+    # In command mode, we never disallow backslashes like '\'
+    self.ReadSingleQuoted(lex_mode, tokens, False)
 
     node = word_part.SingleQuoted(left, tokens)
     node.spids.append(left.span_id)  # left '
     node.spids.append(self.cur_token.span_id)  # right '
     return node
 
-  def ReadSingleQuoted(self, lex_mode, tokens):
+  def ReadSingleQuoted(self, lex_mode, tokens, no_backslashes):
     """Used by expr_parse.py."""
     done = False
     while not done:
@@ -508,7 +509,11 @@ class WordParser(object):
 
       # Kind.Char emitted in DOLLAR_SQ state
       if self.token_kind in (Kind.Lit, Kind.Char):
-        tokens.append(self.cur_token)
+        tok = self.cur_token
+        if no_backslashes and '\\' in tok.val:
+          p_die(r"Strings with backslashes should look like r'\n' or c'\n'",
+                token=tok)
+        tokens.append(tok)
 
       elif self.token_kind == Kind.Eof:
         p_die('Unexpected EOF in single-quoted string that began here',

@@ -338,14 +338,23 @@ echo $x
 ## stdout-json: ""
 
 #### single quoted -- implicit and explicit raw
-var x = r'foo bar'
+var x = 'foo bar'
 echo $x
-setvar x = '\t\n'  # This is raw
+setvar x = r'foo bar'  # Same string
+echo $x
+setvar x = r'\t\n'  # This is raw
 echo $x
 ## STDOUT:
 foo bar
+foo bar
 \t\n
 ## END
+
+#### Implicit raw single quote with backslash is a syntax error
+var x = '\t\n'
+echo $x
+## status: 2
+## stdout-json: ""
 
 #### single quoted c'foo\n
 var x = c'foo\nbar'

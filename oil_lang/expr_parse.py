@@ -334,9 +334,10 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
       line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
       w_parser = parse_ctx.MakeWordParser(lex, line_reader)
 
-      tokens = []
       # mode can be SQ or DollarSQ
-      last_token = w_parser.ReadSingleQuoted(mode, tokens)
+      tokens = []
+      no_backslashes = (left_token.val == "'")
+      last_token = w_parser.ReadSingleQuoted(mode, tokens, no_backslashes)
       expr_sq_part = expr.SingleQuoted(left_token, tokens)
 
       typ = Id.Expr_SqDummy.enum_id
@@ -346,17 +347,6 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
       assert not done  # can't end the expression
 
       continue
-
-    # TODO: Also parse r" and c" ?
-    # But that would change the rules for Lit_EscapedChar in lex_mode_e.DQ
-    # I guess you can have lex_mode_e.DQ_C
-    # Hm it's not that bad.
-    # \x001
-    # 
-    # Or you can ALwAYS parse like C.  But then
-    # _C_STRING_COMMON will have Id.CharHex, which can just evaluate to itself.
-    # That's not very hard.  Hm.
-
 
   else:
     # We never broke out -- EOF is too soon (how can this happen???)
