@@ -557,11 +557,11 @@ class WordParser(object):
       # token to the part?
       return self._ReadDoubleQuoted()
 
-    if self.token_type == Id.Left_SingleQuote:
-      return self._ReadSingleQuoted(lex_mode_e.SQ)
+    if self.token_type == Id.Left_SingleQuoteRaw:
+      return self._ReadSingleQuoted(lex_mode_e.SQ_Raw)
 
-    if self.token_type == Id.Left_DollarSingleQuote:
-      return self._ReadSingleQuoted(lex_mode_e.DollarSQ)
+    if self.token_type == Id.Left_SingleQuoteC:
+      return self._ReadSingleQuoted(lex_mode_e.SQ_C)
 
     if self.token_type in (
         Id.Left_DollarParen, Id.Left_Backtick, Id.Left_ProcSubIn,

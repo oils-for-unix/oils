@@ -12,7 +12,7 @@ module types {
   | ShCommand
   | Backtick  -- preprocessing before Outer
   | DBracket
-  | SQ | DQ | DollarSQ
+  | SQ_Raw | DQ | SQ_C
   | Arith
   | ExtGlob
   | VSub_1 | VSub_2 | VSub_ArgUnquoted | VSub_ArgDQ

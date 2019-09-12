@@ -74,7 +74,7 @@ def _word_part__SingleQuoted(obj):
   # type: (word_part__SingleQuoted) -> PrettyNode
 
   # Only abbreviate 'foo', not $'foo\n'
-  if obj.left.id != Id.Left_SingleQuote:
+  if obj.left.id != Id.Left_SingleQuoteRaw:
     return None  # Fall back on obj._AbbreviatedTree()
 
   p_node = runtime.PrettyNode()

@@ -137,12 +137,12 @@ _MODE_TRANSITIONS = {
     (lex_mode_e.Expr, Id.Left_DoubleQuote): lex_mode_e.DQ,  # x + "foo"
     (lex_mode_e.DQ, Id.Right_DoubleQuote): POP,
 
-    (lex_mode_e.Expr, Id.Left_SingleQuote): lex_mode_e.SQ,  # x + 'foo'
-    (lex_mode_e.SQ, Id.Right_SingleQuote): POP,
+    (lex_mode_e.Expr, Id.Left_SingleQuoteRaw): lex_mode_e.SQ_Raw,  # x + 'foo'
+    (lex_mode_e.SQ_Raw, Id.Right_SingleQuote): POP,
 
     # x + c'\n'
-    (lex_mode_e.Expr, Id.Left_DollarSingleQuote): lex_mode_e.DollarSQ,
-    (lex_mode_e.DollarSQ, Id.Right_SingleQuote): POP,
+    (lex_mode_e.Expr, Id.Left_SingleQuoteC): lex_mode_e.SQ_C,
+    (lex_mode_e.SQ_C, Id.Right_SingleQuote): POP,
 
     # Regex
     (lex_mode_e.Regex, Id.Op_LBracket): lex_mode_e.CharClass,  # $/ 'foo.' [c h] /
@@ -329,7 +329,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
       continue
 
     # '' and c''
-    if tok.id in (Id.Left_SingleQuote, Id.Left_DollarSingleQuote):
+    if tok.id in (Id.Left_SingleQuoteRaw, Id.Left_SingleQuoteC):
       left_token = tok
       line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
       w_parser = parse_ctx.MakeWordParser(lex, line_reader)

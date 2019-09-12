@@ -862,9 +862,9 @@ class _WordEvaluator(object):
     part_vals.append(part_val)
 
   def EvalSingleQuoted(self, part):
-    if part.left.id == Id.Left_SingleQuote:
+    if part.left.id == Id.Left_SingleQuoteRaw:
       s = ''.join(t.val for t in part.tokens)
-    elif part.left.id == Id.Left_DollarSingleQuote:
+    elif part.left.id == Id.Left_SingleQuoteC:
       # NOTE: This could be done at compile time
       # TODO: Add location info for invalid backslash
       s = ''.join(word_compile.EvalCStringToken(t.id, t.val)

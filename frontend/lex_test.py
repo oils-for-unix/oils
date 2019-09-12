@@ -141,11 +141,11 @@ class LexerTest(unittest.TestCase):
   def testMode_DollarSq(self):
     lexer = _InitLexer(r'foo bar\n \x00 \000 \u0065')
 
-    t = lexer.Read(lex_mode_e.DollarSQ)
+    t = lexer.Read(lex_mode_e.SQ_C)
     print(t)
     self.assertTokensEqual(token(Id.Char_Literals, 'foo bar'), t)
 
-    t = lexer.Read(lex_mode_e.DollarSQ)
+    t = lexer.Read(lex_mode_e.SQ_C)
     print(t)
     self.assertTokensEqual(token(Id.Char_OneChar, r'\n'), t)
 
@@ -300,7 +300,7 @@ class LineLexerTest(unittest.TestCase):
   def testRead_VS_ARG_UNQ(self):
     l = LineLexer(match.MATCHER, "'hi'", self.arena)
     t = l.Read(lex_mode_e.VSub_ArgUnquoted)
-    self.assertEqual(Id.Left_SingleQuote, t.id)
+    self.assertEqual(Id.Left_SingleQuoteRaw, t.id)
 
   def testLookAhead(self):
     # Lines always end with '\n'

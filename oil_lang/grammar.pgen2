@@ -193,7 +193,7 @@ dq_part: (
 
 # TODO: We also need r'' c''  "" c""
 dq_string: '"' Expr_DqDummy Right_DoubleQuote
-sq_string: (Left_SingleQuote | Left_DollarSingleQuote) Expr_SqDummy Right_SingleQuote
+sq_string: (Left_SingleQuoteRaw | Left_SingleQuoteC) Expr_SqDummy Right_SingleQuote
 
 command_sub: (
   '$[' [WS_Space] [word] (WS_Space word)* [WS_Space] Op_RBracket

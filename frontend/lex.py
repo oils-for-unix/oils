@@ -146,9 +146,9 @@ _LEFT_SUBS = [
 # Additional Kind.Left that are valid in unquoted modes.
 _LEFT_UNQUOTED = [
   C('"', Id.Left_DoubleQuote),
-  C("'", Id.Left_SingleQuote),
+  C("'", Id.Left_SingleQuoteRaw),
   C('$"', Id.Left_DollarDoubleQuote),
-  C("$'", Id.Left_DollarSingleQuote),
+  C("$'", Id.Left_SingleQuoteC),
 
   C('<(', Id.Left_ProcSubIn),
   C('>(', Id.Left_ProcSubOut),
@@ -430,14 +430,14 @@ LEXER_DEF[lex_mode_e.VSub_ArgDQ] = _VS_ARG_COMMON + _LEFT_SUBS + _VARS + [
   C('"', Id.Left_DoubleQuote),
 
   # Another weird wart of bash/mksh: $'' is recognized but NOT ''!
-  C("$'", Id.Left_DollarSingleQuote),
+  C("$'", Id.Left_SingleQuoteC),
 
   R(r'[^\0]', Id.Lit_Other),  # e.g. "$", must be last
 ]
 
 # NOTE: Id.Ignored_LineCont is NOT supported in SQ state, as opposed to DQ
 # state.
-LEXER_DEF[lex_mode_e.SQ] = [
+LEXER_DEF[lex_mode_e.SQ_Raw] = [
   R(r"[^'\0]+", Id.Lit_Chars),  # matches a line at most
   C("'", Id.Right_SingleQuote),
 ]
@@ -488,7 +488,7 @@ PS1_DEF = [
 # NOTE: Id.Ignored_LineCont is also not supported here, even though the whole
 # point of it is that supports other backslash escapes like \n!  It just
 # becomes a regular backslash.
-LEXER_DEF[lex_mode_e.DollarSQ] = _C_STRING_COMMON + [
+LEXER_DEF[lex_mode_e.SQ_C] = _C_STRING_COMMON + [
   # Silly difference!  In echo -e, the syntax is \0377, but here it's $'\377',
   # with no leading 0.
   R(OCTAL3_RE, Id.Char_Octal3),
@@ -718,14 +718,13 @@ _OIL_LEFT_SUBS = [
 # - multiline strings ''' """ r''' r"""
 _OIL_LEFT_UNQUOTED = [
   C('"', Id.Left_DoubleQuote),
-  C("'", Id.Left_SingleQuote),
 
-  # TODO: This should be Left_RawSingleQuote  r'' and ''
-  #                      Left_CSingleQuote    c'' and $''
+  # In expression mode, we add the r'' and c'' prefixes for '' and $''.
+  C("'", Id.Left_SingleQuoteRaw),
+  C("r'", Id.Left_SingleQuoteRaw),
 
-  # HACK to change $' to c'
-  C("c'", Id.Left_DollarSingleQuote),
-  C("r'", Id.Left_SingleQuote),
+  C("c'", Id.Left_SingleQuoteC),
+  C("$'", Id.Left_SingleQuoteC),
 
   # Not valid in DQ_Oil
   C('@(', Id.Left_AtParen),  # Legacy shell arrays.

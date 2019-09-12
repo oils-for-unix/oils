@@ -39,7 +39,7 @@ OPS = {
     '@(': Id.Left_AtParen,
 
     '"': Id.Left_DoubleQuote,
-    "'": Id.Left_SingleQuote,
+    "'": Id.Left_SingleQuoteRaw,
 
     '.': Id.Expr_Dot,
     '->': Id.Expr_RArrow,

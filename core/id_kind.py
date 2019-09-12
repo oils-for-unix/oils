@@ -244,14 +244,14 @@ def AddKinds(spec):
   # get that.
   spec.AddKind('Left', [
       'DoubleQuote',
-      'SingleQuote',
+      'SingleQuoteRaw',
+      'SingleQuoteC',       # $'' for \n escapes, and c'' in expression mode
       'Backtick',           # `
       'DollarParen',        # $(
       'DollarBrace',        # ${
       'DollarDParen',       # $((
       'DollarBracket',      # $[ - synonym for $(( in bash and zsh
       'DollarDoubleQuote',  # $" for bash localized strings
-      'DollarSingleQuote',  # $' for \n escapes
       'ProcSubIn',          # <( )
       'ProcSubOut',         # >( )
 

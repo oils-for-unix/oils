@@ -356,10 +356,14 @@ echo $x
 ## status: 2
 ## stdout-json: ""
 
-#### single quoted c'foo\n
+#### single quoted C strings: c'foo\n' and $'foo\n'
 var x = c'foo\nbar'
 echo "$x"
+var y = $'foo\nbar'
+echo "$y"
 ## STDOUT:
+foo
+bar
 foo
 bar
 ## END
