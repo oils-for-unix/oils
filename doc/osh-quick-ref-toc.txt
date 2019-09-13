@@ -147,7 +147,7 @@ SHELL OPTIONS
   [all:oil]                              All options below and more
                   parse_at               echo @array @arrayfunc(x, y)
                   parse_brace            if true { ... }; cd ~/src { ... }
-                  parse_cstrings         r'\'   c'\n'   c"$x\n"
+                  parse_rawc             r'\'   c'\n'   c"$x\n"
                   X parse_paren          if (x > 0) ...
                   X longopts             test -file, read -delim, etc.
                   more_errexit           More errexit checks --  at command sub

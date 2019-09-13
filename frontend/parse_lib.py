@@ -202,8 +202,20 @@ class OilParseOptions(object):
     # type: () -> None
     self.at = False  # @foo, @array(a, b)
     self.brace = False  # cd /bin { ... }
-    self.cstrings = False  # echo r'' c''
     self.paren = False  # if (x > 0) ...
+
+    # Should this also change r''' c''' and and c"""?  Those are hard to
+    # do in command mode without changing the lexer, but useful because of
+    # redirects.  Maybe r' and c' are tokens, and then you look for '' after
+    # it?  If it's off and you get the token, then you change it into
+    # word_part__Literal and start parsing.
+    #
+    # proc foo {
+    #   cat << c'''
+    #   hello\n
+    #   '''
+    # }
+    self.rawc = False  # echo r'' c''
 
     # all:nice
     self.equals = False  # x = 'var'
