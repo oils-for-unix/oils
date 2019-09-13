@@ -165,6 +165,12 @@ def TranslateTree(re_tree, f, in_char_class=False):
       assert arg is None
       f.write('.')
 
+    elif name == 'subpattern':
+      _, children = arg  # Not sure what the _ is, but it works
+      f.write('(')
+      TranslateTree(children, f)
+      f.write(')')
+
     else:
       raise RuntimeError("I don't understand regex construct: %r" % name)
 

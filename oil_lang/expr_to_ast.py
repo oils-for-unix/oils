@@ -317,7 +317,8 @@ class Transformer(object):
       if tok.id == Id.Expr_Name:
         return expr.Var(tok)
       # TODO: Should I combine all of these?
-      elif tok.id == Id.Expr_Digits:
+      elif tok.id in (
+          Id.Expr_DecInt, Id.Expr_BinInt, Id.Expr_OctInt, Id.Expr_HexInt):
         return expr.Const(tok)
       elif tok.id in (Id.Expr_Null, Id.Expr_True, Id.Expr_False):
         return expr.Const(tok)

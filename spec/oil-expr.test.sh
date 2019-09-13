@@ -393,3 +393,13 @@ no
 yes
 no
 ## END
+
+#### Integer literals
+var d = 123
+var b = 0b11
+var o = 0o123
+var h = 0xff
+echo $d $b $o $h
+## STDOUT:
+123 3 83 255
+## END

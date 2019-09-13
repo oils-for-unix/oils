@@ -54,7 +54,6 @@ OPS = {
 # TODO: We should be able to remove all these.
 TERMINALS = {
     'NAME': Id.Expr_Name,
-    'NUMBER': Id.Expr_Digits,
 
     # The grammar seems something like 'for' or '>='
     # These need to be looked up at "_Classify" time?

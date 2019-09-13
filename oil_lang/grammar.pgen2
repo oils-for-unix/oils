@@ -109,11 +109,11 @@ factor: ('+'|'-'|'~') factor | power
 # Oil patch: ** -> ^
 power: atom_expr ['^' factor]
 atom_expr: ['await'] atom trailer*
-# Oil patch: removed STRING.  TODO: Add back Oil strings.
 atom: ('(' [yield_expr|testlist_comp] ')' |
        '[' [testlist_comp] ']' |
        '{' [dictorsetmaker] '}' |
-       NAME | NUMBER | '...' | Expr_Null | Expr_True | Expr_False |
+       Expr_Name | '...' | Expr_Null | Expr_True | Expr_False |
+       Expr_DecInt | Expr_BinInt | Expr_OctInt | Expr_HexInt |
        array_literal | sh_array_literal |
        command_sub | sh_command_sub |
        regex_literal |

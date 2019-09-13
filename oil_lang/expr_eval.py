@@ -94,8 +94,16 @@ class OilEvaluator(object):
 
     if node.tag == expr_e.Const:
       id_ = node.c.id
-      if id_ == Id.Expr_Digits:
+
+      if id_ == Id.Expr_DecInt:
         return int(node.c.val)
+      elif id_ == Id.Expr_BinInt:
+        return int(node.c.val, 2)
+      elif id_ == Id.Expr_OctInt:
+        return int(node.c.val, 8)
+      elif id_ == Id.Expr_HexInt:
+        return int(node.c.val, 16)
+
       elif id_ == Id.Expr_Null:
         return None
       elif id_ == Id.Expr_True:

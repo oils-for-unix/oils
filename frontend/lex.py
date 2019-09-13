@@ -822,6 +822,26 @@ _EXPR_NEWLINE_COMMENT = [
 
 # NOTE: Borrowing tokens from Arith (i.e. $(( )) ), but not using LexerPairs().
 LEXER_DEF[lex_mode_e.Expr] = _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + [
+  # https://docs.python.org/3/reference/lexical_analysis.html#literals
+  #
+  # integer      ::=  decinteger | bininteger | octinteger | hexinteger
+  # decinteger   ::=  nonzerodigit (["_"] digit)* | "0"+ (["_"] "0")*
+  # bininteger   ::=  "0" ("b" | "B") (["_"] bindigit)+
+  # octinteger   ::=  "0" ("o" | "O") (["_"] octdigit)+
+  # hexinteger   ::=  "0" ("x" | "X") (["_"] hexdigit)+
+  # nonzerodigit ::=  "1"..."9"
+  # digit        ::=  "0"..."9"
+  # bindigit     ::=  "0" | "1"
+  # octdigit     ::=  "0"..."7"
+  # hexdigit     ::=  digit | "a"..."f" | "A"..."F"
+
+  # Python allows 0 to be written 00 or 0_0_0, which is weird.
+  C('0', Id.Expr_DecInt),
+  R(r'[1-9](_?[0-9])*', Id.Expr_DecInt),
+  R(r'0[bB](_?[01])+', Id.Expr_BinInt),
+  R(r'0[oO](_?[0-7])+', Id.Expr_OctInt),
+  R(r'0[xX](_?[0-9a-fA-F])+', Id.Expr_HexInt),
+
   # NOTE: pgen2 is taking care of 'in', 'is', etc.?  Should we register those?
   # We probably want those too.
   C('null', Id.Expr_Null),
@@ -840,8 +860,6 @@ LEXER_DEF[lex_mode_e.Expr] = _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + [
   # if     # ternary
   # match  # consistent with if/else expressions
   # func   # literals
-
-  R(r'[0-9]+', Id.Expr_Digits),  # mode -> OilNumericConst ?
 
   C(',', Id.Arith_Comma),
   C(':', Id.Arith_Colon),   # for slicing a[1:2]
@@ -954,8 +972,6 @@ LEXER_DEF[lex_mode_e.Regex] = _OIL_LEFT_UNQUOTED + [
   # if     # ternary
   # match  # consistent with if/else expressions
   # func   # literals
-
-  R(r'[0-9]+', Id.Expr_Digits),  # mode -> OilNumericConst ?
 
   C('?', Id.Arith_QMark),   # optional
 
