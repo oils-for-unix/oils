@@ -819,6 +819,8 @@ _EXPR_NEWLINE_COMMENT = [
 ]
 
 
+# Python 3 float literals:
+
 # digitpart     ::=  digit (["_"] digit)*
 # fraction      ::=  "." digitpart
 # exponent      ::=  ("e" | "E") ["+" | "-"] digitpart
@@ -827,6 +829,10 @@ _EXPR_NEWLINE_COMMENT = [
 # floatnumber   ::=  pointfloat | exponentfloat
 
 # This is the same as far as I can tell?
+
+# This is a hand-written re2c rule to "refine" the Id.Expr_Float token to 
+# include undescores: 1_000.234_567
+
 LEXER_REFINEMENTS = {
   (lex_mode_e.Expr, Id.Expr_Float): """
 digit = [0-9]
@@ -836,24 +842,6 @@ exponent = ("e" | "E") ("+" | "-")? digitpart
 float = digitpart fraction? exponent? | fraction exponent?
 """
 }
-
-  # We don't want it to all be one token for readability?  And to extract the
-  # fraction and exponent for frexp()?  Doesn't Python parse it again though?
-  # in ast.c, Python uses PyOS_string_to_double on the whole thing
-  # I guess we should use the same thing?
-  #
-  # After DecInt,
-  # Another: LookAheadForFloat(lex_mode_e.Float)
-  # Fraction = '.' Digit
-  # Exponent = [eE] [+-]? Digit
-  # Float = DecInt Fraction? Exponent?
-
-  # With leading .
-  # Float = Fraction Exponent? 
-  #       | DecInt Fraction? Exponent?
-  #
-  # compare with Python: There is no leading '.' allowed
-
 
 # TODO: Should all of these be Kind.Op instead of Kind.Arith?  And Kind.Expr?
 
