@@ -104,12 +104,17 @@ class OilEvaluator(object):
       elif id_ == Id.Expr_HexInt:
         return int(node.c.val, 16)
 
+      elif id_ == Id.Expr_Float:
+        return float(node.c.val)
+
       elif id_ == Id.Expr_Null:
         return None
       elif id_ == Id.Expr_True:
         return True
       elif id_ == Id.Expr_False:
         return False
+
+      raise AssertionError(id_)
 
     if node.tag == expr_e.Var:
       return self.LookupVar(node.name.val)

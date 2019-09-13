@@ -818,6 +818,43 @@ _EXPR_NEWLINE_COMMENT = [
   R(r'[ \t\r]+', Id.Ignored_Space),
 ]
 
+
+# digitpart     ::=  digit (["_"] digit)*
+# fraction      ::=  "." digitpart
+# exponent      ::=  ("e" | "E") ["+" | "-"] digitpart
+# pointfloat    ::=  [digitpart] fraction | digitpart "."
+# exponentfloat ::=  (digitpart | pointfloat) exponent
+# floatnumber   ::=  pointfloat | exponentfloat
+
+# This is the same as far as I can tell?
+LEXER_REFINEMENTS = {
+  (lex_mode_e.Expr, Id.Expr_Float): """
+digit = [0-9]
+digitpart = digit ("_"? digit)*
+fraction = "." digitpart
+exponent = ("e" | "E") ("+" | "-")? digitpart
+float = digitpart fraction? exponent? | fraction exponent?
+"""
+}
+
+  # We don't want it to all be one token for readability?  And to extract the
+  # fraction and exponent for frexp()?  Doesn't Python parse it again though?
+  # in ast.c, Python uses PyOS_string_to_double on the whole thing
+  # I guess we should use the same thing?
+  #
+  # After DecInt,
+  # Another: LookAheadForFloat(lex_mode_e.Float)
+  # Fraction = '.' Digit
+  # Exponent = [eE] [+-]? Digit
+  # Float = DecInt Fraction? Exponent?
+
+  # With leading .
+  # Float = Fraction Exponent? 
+  #       | DecInt Fraction? Exponent?
+  #
+  # compare with Python: There is no leading '.' allowed
+
+
 # TODO: Should all of these be Kind.Op instead of Kind.Arith?  And Kind.Expr?
 
 # NOTE: Borrowing tokens from Arith (i.e. $(( )) ), but not using LexerPairs().
@@ -838,9 +875,14 @@ LEXER_DEF[lex_mode_e.Expr] = _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + [
   # Python allows 0 to be written 00 or 0_0_0, which is weird.
   C('0', Id.Expr_DecInt),
   R(r'[1-9](_?[0-9])*', Id.Expr_DecInt),
+
   R(r'0[bB](_?[01])+', Id.Expr_BinInt),
   R(r'0[oO](_?[0-7])+', Id.Expr_OctInt),
   R(r'0[xX](_?[0-9a-fA-F])+', Id.Expr_HexInt),
+
+  # !!! This is REFINED by a hand-written re2c rule !!!
+  # The dev build is slightly different than the production build.
+  R(r'[0-9]+(\.[0-9]*)?([eE][+\-]?[0-9]+)?', Id.Expr_Float),
 
   # NOTE: pgen2 is taking care of 'in', 'is', etc.?  Should we register those?
   # We probably want those too.

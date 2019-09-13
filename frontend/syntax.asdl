@@ -307,6 +307,9 @@ module syntax
     -- also note that ArrayLiterals could appear in command mode.
     -- echo @[a b c]
   | Const(token c)   -- could be integer, or false, etc.
+    -- NOTE: Python has Num(object n).
+    -- If we evaluate it, then the tree isn't "lossless" anymore.
+  | Float(token begin, token? fraction, token? exponent)
     -- @(a b c ${x:-default} $'\n')
   | ShellArrayLiteral(token left, word* items)
     -- @[a b c] @[1 2 3] @[(1+1) (2+2)]

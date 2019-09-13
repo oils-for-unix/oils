@@ -379,7 +379,7 @@ def AddKinds(spec):
   # Oil expressions use Kind.Arith (above) and Kind.Expr (below)
   spec.AddKind('Expr', [
     'Name',
-    'DecInt', 'BinInt', 'OctInt', 'HexInt',
+    'DecInt', 'BinInt', 'OctInt', 'HexInt', 'Float',
     'Dot', 'DColon', 'RArrow', 'RDArrow',
     'At', 'DoubleAt',  # splice operators
 

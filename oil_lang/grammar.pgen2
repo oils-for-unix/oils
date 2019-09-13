@@ -114,6 +114,7 @@ atom: ('(' [yield_expr|testlist_comp] ')' |
        '{' [dictorsetmaker] '}' |
        Expr_Name | '...' | Expr_Null | Expr_True | Expr_False |
        Expr_DecInt | Expr_BinInt | Expr_OctInt | Expr_HexInt |
+       Expr_Float |
        array_literal | sh_array_literal |
        command_sub | sh_command_sub |
        regex_literal |
