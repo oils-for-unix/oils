@@ -395,13 +395,12 @@ def AddKinds(spec):
     'Null', 'True', 'False',
 
     # Keywords are resolved after lexing, but otherwise behave like tokens.
-    # NOTE: These are not used because pgen2 automatically creates a
-    # gr.keywords dict in the grammar.
     #'Div', 'Xor', 
     #'And', 'Or', 'Not', 
-    #'For',
-    #'Is', 'In', 'If', 'Else',
-    #'Match', 'Func',
+
+    # List comprehensions
+    'For', #'Is', 'In', 'If', 'Else',
+    #'Func',  # For function literals
   ])
 
   # This kind is for Node types that are NOT tokens.
@@ -412,15 +411,6 @@ def AddKinds(spec):
      'UnaryPlus', 'UnaryMinus',  # +1 and -1, to distinguish from infix.
                                  # Actually we don't need this because we they
                                  # will be under Expr1/Plus vs Expr2/Plus.
-
-     # Oil Command nodes?  Not used yet.
-     #'Command', 'Assign', 'AndOr', 'Block', 'Subshell', 'Fork',
-     #'ShFunction', 'ForEach', 'ForExpr', 'NoOp',
-
-     #'UnaryExpr', 'BinaryExpr', 'TernaryExpr', 'FuncCall',
-     #'ConstInt',  # for arithmetic.  There is no ConstBool.
-                  # Could be Lit_Digits?  But oil will need
-                  # ConstFloat/ConstNum.
   ])
 
   # A compound word, in arith context, boolean context, or command context.

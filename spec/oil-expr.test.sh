@@ -468,3 +468,11 @@ echo -sep ' ' @even
 0 2 4 6 8
 0 4 8
 ## END
+
+#### in, not in
+var d = [1,2,3]
+var b = 1 in d
+echo $b
+## STDOUT:
+true
+## END

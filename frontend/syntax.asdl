@@ -106,6 +106,9 @@ module syntax
   | SingleQuoted(token left, token* tokens)
   | DoubleQuoted(word_part* parts)
   | SimpleVarSub(token token)
+
+    -- TODO: Add Oil expressions
+    -- ${x %.3f}   ${x|html}   ${f(x)}   ${obj.attr}
   | BracedVarSub(token token,
                 id? prefix_op,  -- prefix # or ! operators
                 bracket_op? bracket_op
@@ -334,6 +337,7 @@ module syntax
   -- COPIED from Python-3.7/Parser/Python.asdl and lightly modified.
   -- Will need more changes.
 
+    -- TODO: if
   | IfExp(expr test, expr body, expr orelse)
   | Tuple(expr* elts, expr_context ctx)
   | List(expr* elts, expr_context ctx)
@@ -341,13 +345,15 @@ module syntax
   | ListComp(expr elt, comprehension* generators)
   | DictComp(expr key, expr value, comprehension* generators)
   | GeneratorExp(expr elt, comprehension* generators)
+
+  -- NOTE: unused; Oil currently uses Binary
   -- need sequences for compare to distinguish between
-  -- x < 4 < 3 and (x < 4) < 3 (NOTE: unused; Oil currently uses Binary)
+  -- x < 4 < 3 and (x < 4) < 3
   | Compare(expr left, cmpop* ops, expr* comparators)
+
+  -- TODO: Replace FuncCall
   | Call(expr func, expr* args, keyword* keywords)
-  | FormattedValue(expr value, int? conversion, expr? format_spec)
-  | JoinedStr(expr* values)
-  | Ellipsis -- do we need this?
+  | Ellipsis
 
   -- TODO: Need a representation for method call.  We don't just want
   -- Attribute() and then Call()
@@ -356,8 +362,10 @@ module syntax
   | Attribute(expr value, token attr, expr_context ctx)
     -- TODO: we used Subscript() above, might want to migrate?
   | Subscript_PYTHON(expr value, slice slice, expr_context ctx)
+    -- TODO: are we allowing extended unpacking like set x, *y = z?
+    -- I guess there's no reason not to, but it's a bit exotic and rare.
+    -- It doesn't fit in the static "Coil" subset.
   | Starred(expr value, expr_context ctx)
-  | Name(token identifier, expr_context ctx)
 
   expr_context = Load | Store | Del | AugLoad | AugStore | Param
 

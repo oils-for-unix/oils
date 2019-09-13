@@ -256,6 +256,23 @@ _MORE_KEYWORDS = [
   C('exit',     Id.ControlFlow_Exit),
 ]
 
+_EXPR_KEYWORDS = [
+  #C('div', Id.Expr_Div),
+  #C('xor', Id.Expr_Xor),
+
+  #C('and', Id.Expr_And),
+  #C('or', Id.Expr_Or),
+  #C('not', Id.Expr_Not),
+
+  C('for', Id.Expr_For),
+  #C('is', Id.Expr_Is),
+  #C('in', Id.Expr_In),
+  #C('if', Id.Expr_If),
+  #C('else', Id.Expr_Else),
+
+  #C('func', Id.Expr_Func),
+]
+
 
 # The 'compen' and 'type' builtins introspect on keywords and builtins.
 OSH_KEYWORD_NAMES = [name for _, name, _ in _KEYWORDS]

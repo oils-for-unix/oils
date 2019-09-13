@@ -155,9 +155,6 @@ sync_comp_for: 'for' exprlist 'in' or_test [comp_iter]
 comp_for: ['async'] sync_comp_for
 comp_if: 'if' test_nocond [comp_iter]
 
-# not used in grammar, but may appear in "node" passed from Parser to Compiler
-encoding_decl: NAME
-
 yield_expr: 'yield' [yield_arg]
 yield_arg: 'from' test | testlist
 
@@ -251,28 +248,3 @@ oil_func_proc: NAME ['(' params [';' params] ')'] [type_expr] '{'
 params: param (',' param)* [',']
 # ... is for *args or **kwargs of any type, and @argv is for string args
 param: NAME [type_expr] ['=' expr] | '...' NAME | '@' NAME
-
-# Problem: we can't end it on a newline because say dict literals will have
-# multiple lines.  But EOF isn't right either.
-#oil_var: lvalue_list [type_expr] '=' testlist (Op_Semi | Op_Newline)
-
-#oil_setvar: lvalue_list (augassign | '=') testlist (Op_Semi | Op_Newline)
-
-
-#
-# Blocks
-# 
-# Hard to parse:
-#
-# echo = 1
-# echo -x +y  # is this allowed?
-# echo('x' + 'y')
-# echo.method()
-# 
-# hard_stmt: NAME ('=' | '('_ | word*)
-# 
-# Should you allow hyphens in names?  A minus sign will never appear first.
-# x-1  # this is always a command
-# must be expr x-1 or so forth
-
-
