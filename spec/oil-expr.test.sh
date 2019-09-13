@@ -452,3 +452,19 @@ echo $len(two)
 1
 2
 ## END
+
+#### List comprehension
+shopt -s all:oil
+
+var n = [i*2 for i in range(5)]
+echo -sep ' ' @n
+
+# TODO: Test this
+#var n = [i*2 for i,j in range(5)]
+
+var even = [i*2 for i in range(5) if i % 2 == 0]
+echo -sep ' ' @even
+## STDOUT:
+0 2 4 6 8
+0 4 8
+## END

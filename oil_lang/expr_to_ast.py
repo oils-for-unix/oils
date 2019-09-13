@@ -10,7 +10,8 @@ from _devbuild.gen.syntax_asdl import (
     expr_context_e, regex, regex_t, word,
     word_t,
     word_part, word_part__CommandSub,
-    param, type_expr_t
+    param, type_expr_t,
+    comprehension,
 )
 from _devbuild.gen import grammar_nt
 from pgen2.parse import PNode
@@ -115,6 +116,25 @@ class Transformer(object):
 
     raise AssertionError(op_tok)
 
+  def _CompFor(self, p_node):
+    # type: (PNode) -> comprehension
+    """
+    sync_comp_for: 'for' exprlist 'in' or_test [comp_iter]
+    """
+    children = p_node.children
+
+    lvalue = self.Expr(children[1])  # Python calls this target
+    iterable = self.Expr(children[3])
+
+    # TODO: I want to rewrite this grammar element
+    if_ = None
+    if len(children) >= 5:
+      # comp_if
+      if_ = self.Expr(children[4].children[1])
+
+    ifs = [if_] if if_ else []
+    return comprehension(lvalue, iterable, ifs)
+
   def atom(self, children):
     # type: (List[PNode]) -> expr_t
     """Handles alternatives of 'atom' where there is more than one child."""
@@ -138,11 +158,14 @@ class Transformer(object):
       p_list = children[1].children  # what's between [ and ]
 
       # [x for x in y]
+
+      # Python allows multiple ifs!  Didn't know that.
+      # https://stackoverflow.com/questions/15248272/python-list-comprehension-with-multiple-ifs
+
       if len(p_list) == 2 and p_list[1].typ == grammar_nt.sync_comp_for:
         elt = self.Expr(p_list[0])
-
-        # TODO: transform 'for', 'if', etc.
-        return expr.ListComp(elt, [])
+        comp = self._CompFor(p_list[1])
+        return expr.ListComp(elt, [comp])
 
       # [1, 2, 3]
       n = len(p_list)
@@ -152,6 +175,9 @@ class Transformer(object):
         elts.append(self.Expr(p_node))
 
       return expr.List(elts, expr_context_e.Store)  # unused expr_context_e
+
+    if id_ == Id.Op_LBrace:
+      raise NotImplementedError('{')
 
     raise NotImplementedError
 

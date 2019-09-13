@@ -312,7 +312,7 @@ class ParseContext(object):
     """Helper Oil expression parsing."""
     self.parsing_expr = True
     try:
-      return self.e_parser.Parse(lexer, grammar_nt.oil_arglist)
+      return self.e_parser.Parse(lexer, start_symbol)
     finally:
       self.parsing_expr = False
 
@@ -321,7 +321,7 @@ class ParseContext(object):
     # type: (token, Lexer, int, bool) -> Tuple[command_t, token]
     """e.g. var mylist = [1, 2, 3]"""
 
-    # TODO: We do need re-entracy for var x = @[ (1+2) ] and such
+    # TODO: We do need re-entrancy for var x = @[ (1+2) ] and such
     if self.parsing_expr:
       p_die("ShAssignment expression can't be nested like this", token=kw_token)
 

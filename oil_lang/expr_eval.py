@@ -9,12 +9,13 @@ from _devbuild.gen.syntax_asdl import (
     expr_e, expr_t
 )
 from _devbuild.gen.runtime_asdl import (
-    lvalue, value_e, scope_e,
+    lvalue, value, value_e, scope_e,
 )
 from core.util import e_die
 #from core.util import log
 from oil_lang import objects
 from osh import braces
+from osh import state
 
 from typing import Any
 
@@ -171,6 +172,12 @@ class OilEvaluator(object):
       if node.op.id == Id.Arith_Great:
         return left > right
 
+      if node.op.id == Id.Arith_Percent:
+        return left % right
+
+      if node.op.id == Id.Arith_DEqual:
+        return left == right
+
       raise NotImplementedError(node.op.id)
 
     if node.tag == expr_e.List:
@@ -178,6 +185,44 @@ class OilEvaluator(object):
 
     if node.tag == expr_e.Tuple:
       return tuple(self.EvalExpr(e) for e in node.elts)
+
+    if node.tag == expr_e.ListComp:
+
+      # TODO:
+      # - Consolidate with command_e.OilForIn in osh/cmd_exec.py?
+      # - Do I have to push a temp frame here?
+      #   Hm... lexical or dynamic scope is an issue.
+      result = []
+      comp = node.generators[0]
+      obj = self.EvalExpr(comp.iter)
+
+      # TODO: Handle x,y etc.
+      iter_name = comp.target.name.val
+
+      if isinstance(obj, str):
+        e_die("Strings aren't iterable")
+      else:
+        it = iter(obj)
+
+      while True:
+        try:
+          loop_val = next(it)  # e.g. x
+        except StopIteration:
+          break
+        self.mem.SetVar(
+            lvalue.Named(iter_name), value.Obj(loop_val), (),
+            scope_e.LocalOnly)
+
+        if comp.ifs:
+          b = self.EvalExpr(comp.ifs[0])
+        else:
+          b = True
+
+        if b:
+          item = self.EvalExpr(node.elt)  # e.g. x*2
+          result.append(item)
+
+      return result
 
     if node.tag == expr_e.FuncCall:
       # TODO:
