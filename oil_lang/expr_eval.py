@@ -176,6 +176,9 @@ class OilEvaluator(object):
     if node.tag == expr_e.List:
       return [self.EvalExpr(e) for e in node.elts]
 
+    if node.tag == expr_e.Tuple:
+      return tuple(self.EvalExpr(e) for e in node.elts)
+
     if node.tag == expr_e.FuncCall:
       # TODO:
       #

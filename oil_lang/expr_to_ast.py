@@ -123,7 +123,11 @@ class Transformer(object):
 
     if id_ == Id.Op_LParen:
       # atom: '(' [yield_expr|testlist_comp] ')' | ...
-      return self.Expr(children[1])
+      if children[1].tok.id == Id.Op_RParen:
+        # () is a tuple
+        return expr.Tuple([], expr_context_e.Store)
+      else:
+        return self.Expr(children[1])
 
     if id_ == Id.Op_LBracket:
       # atom: ... | '[' [testlist_comp] ']' | ...
@@ -150,6 +154,19 @@ class Transformer(object):
       return expr.List(elts, expr_context_e.Store)  # unused expr_context_e
 
     raise NotImplementedError
+
+  def _Tuple(self, children):
+    # type: (List[PNode]) -> expr_t
+
+    # NOTE: We haven't solved the 1, issue.  Gah!  Or ()
+    # 1, 2, 3
+    n = len(children)
+    elts = []
+    for i in xrange(0, n, 2):  # skip commas
+      p_node = children[i]
+      elts.append(self.Expr(p_node))
+
+    return expr.Tuple(elts, expr_context_e.Store)  # unused expr_context_e
 
   def Expr(self, pnode):
     # type: (PNode) -> expr_t
@@ -182,7 +199,17 @@ class Transformer(object):
 
       if typ == grammar_nt.testlist:
         # testlist: test (',' test)* [',']
-        return self._AssocBinary(children)
+
+        # We need tuples for Python's 'var a, b = x' and 'for (a, b in x) {'
+        return self._Tuple(children)
+
+      if typ == grammar_nt.testlist_comp:
+        # testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
+
+        # (1,)  (1, 2)  etc.
+        if children[1].tok.id == Id.Arith_Comma:
+          return self._Tuple(children)
+        raise NotImplementedError('testlist_comp')
 
       elif typ == grammar_nt.arith_expr:
         # expr: term (('+'|'-') term)*
