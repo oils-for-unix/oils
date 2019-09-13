@@ -367,3 +367,29 @@ bar
 foo
 bar
 ## END
+
+#### null / true / false
+shopt -s all:oil
+var n = null
+if (n) {
+  echo yes
+} else {
+  echo no
+}
+var t = true
+if (t) {
+  echo yes
+} else {
+  echo no
+}
+var f = false
+if (f) {
+  echo yes
+} else {
+  echo no
+}
+## STDOUT:
+no
+yes
+no
+## END

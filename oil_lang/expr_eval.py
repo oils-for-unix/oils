@@ -93,7 +93,15 @@ class OilEvaluator(object):
       print('')
 
     if node.tag == expr_e.Const:
-      return int(node.c.val)
+      id_ = node.c.id
+      if id_ == Id.Expr_Digits:
+        return int(node.c.val)
+      elif id_ == Id.Expr_Null:
+        return None
+      elif id_ == Id.Expr_True:
+        return True
+      elif id_ == Id.Expr_False:
+        return False
 
     if node.tag == expr_e.Var:
       return self.LookupVar(node.name.val)

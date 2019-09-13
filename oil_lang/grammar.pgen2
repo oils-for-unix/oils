@@ -113,7 +113,7 @@ atom_expr: ['await'] atom trailer*
 atom: ('(' [yield_expr|testlist_comp] ')' |
        '[' [testlist_comp] ']' |
        '{' [dictorsetmaker] '}' |
-       NAME | NUMBER | '...' | 'None' | 'True' | 'False' |
+       NAME | NUMBER | '...' | Expr_Null | Expr_True | Expr_False |
        array_literal | sh_array_literal |
        command_sub | sh_command_sub |
        regex_literal |

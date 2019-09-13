@@ -822,6 +822,12 @@ _EXPR_NEWLINE_COMMENT = [
 
 # NOTE: Borrowing tokens from Arith (i.e. $(( )) ), but not using LexerPairs().
 LEXER_DEF[lex_mode_e.Expr] = _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + [
+  # NOTE: pgen2 is taking care of 'in', 'is', etc.?  Should we register those?
+  # We probably want those too.
+  C('null', Id.Expr_Null),
+  C('true', Id.Expr_True),
+  C('false', Id.Expr_False),
+
   # These can be looked up as keywords separately, so you enforce that they have
   # space around them?
   R(VAR_NAME_RE, Id.Expr_Name),
