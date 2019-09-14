@@ -477,7 +477,7 @@ echo $b
 true
 ## END
 
-#### dict
+#### dict with 'bare word' keys
 var d0 = {}
 echo len=$len(d0)
 var d1 = {name: "hello"}
@@ -488,4 +488,36 @@ echo len=$len(d2)
 len=0
 len=1
 len=2
+## END
+
+#### dict with expression keys
+var d1 = {['name']: "hello"}
+echo len=$len(d1)
+var v = d1['name']
+echo $v
+
+var key='k'
+var d2 = {["$key"]: "bar"}
+echo len=$len(d2)
+var v2 = d2['k']
+echo $v2
+
+## STDOUT:
+len=1
+hello
+len=1
+bar
+## END
+
+
+#### dict literal with implicit value
+var name = 'foo'
+var d1 = {name, other: 'val'}
+echo len=$len(d1)
+var v1 = d2['name']
+echo $v1
+
+## STDOUT:
+len=1
+foo
 ## END

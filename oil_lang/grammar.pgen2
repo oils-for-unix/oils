@@ -147,7 +147,7 @@ testlist: test (',' test)* [',']
 # - I don't think we want set literals?  It might be @{} or %{} or #{}
 
 dict_key: Expr_Name | '[' testlist ']'
-dict: dict_key ':' [test] (',' dict_key [':' test])* [',']
+dict: dict_key [':' [test]] (',' dict_key [':' test])* [',']
 
 dictorsetmaker: ( ((test ':' test | '**' expr)
                    (comp_for | (',' (test ':' test | '**' expr))* [','])) |

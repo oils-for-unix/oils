@@ -329,7 +329,7 @@ class ParseContext(object):
       self.parsing_expr = False
 
   def ParseVarDecl(self, kw_token, lexer, start_symbol,
-                     print_parse_tree=False):
+                   print_parse_tree=False):
     # type: (token, Lexer, int, bool) -> Tuple[command_t, token]
     """e.g. var mylist = [1, 2, 3]"""
 

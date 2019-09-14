@@ -12,10 +12,11 @@ from _devbuild.gen.syntax_asdl import (
     word_part, word_part__CommandSub,
     param, type_expr_t,
     comprehension,
+    dict_val,
 )
 from _devbuild.gen import grammar_nt
 from pgen2.parse import PNode
-#from core.util import log
+from core.util import log
 
 from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:
@@ -99,15 +100,11 @@ class Transformer(object):
     if op_tok.id == Id.Op_LBracket:
       p_args = children[1]
 
-      # NOTE:
-      # - This doesn't take into account slices
-      # - Similar to _Arglist.
-      if p_args.children is not None:
+      if p_args.typ == grammar_nt.subscriptlist:
         # a, b, c -- every other one is a comma
-        arglist = children[1].children[::2]
+        arglist = p_args.children[::2]
       else:
-        arg = children[1]
-        arglist = [arg]
+        arglist = [p_args]
       return expr.Subscript(base, [self.Expr(a) for a in arglist])
 
     if op_tok.id == Id.Expr_Dot:
@@ -142,26 +139,41 @@ class Transformer(object):
     """
     keys = []
     values = []
+
+    # Handle {}
     if p_node.tok.id == Id.Op_RBrace:
       return expr.Dict(keys, values)
+
+    # Handle {name}
+    # Stupid singleton rule messes this up
+    #if p_node.tok.id == Id.Expr_Name:
+    #  key = expr.Const(p_node.tok)
+    #  value = dict_val.Implicit()
+    #  return expr.Dict([key], [value])
 
     if p_node.typ == grammar_nt.dict:
       children = p_node.children
       n = len(children)
       i = 0
       while i < n-1:
-        # TODO: We're not handling "shorthand properties" like {k1, k2}
-
         p_key = children[i]
         if p_key.tok.id == Id.Expr_Name:  # {name: 'bob'}
           key = expr.Const(p_key.tok)
         else:                             # {[x+y]: 'val'}
-          key = self.Expr(p_key)  
-        value = self.Expr(children[i+2])
-
+          key = self.Expr(p_key.children[i+1])
         keys.append(key)
+
+        # NOTE: weird that we can't use 'typ' here
+        #if children[i+1].tok.id == Id.Arith_Colon:
+        if 1:
+          e = self.Expr(children[i+2])
+          value = dict_val.Expr(e)
+          i += 4  # to account for : and ,
+        else:
+          value = dict_val.Implicit()
+          i += 2
         values.append(value)
-        i += 4  # to account for : and ,
+
       return expr.Dict(keys, values)
 
     raise NotImplementedError
