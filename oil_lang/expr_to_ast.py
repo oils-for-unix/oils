@@ -12,7 +12,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part, word_part__CommandSub,
     param, type_expr_t,
     comprehension,
-    dict_val,
+    dict_val, dict_val_t,
 )
 from _devbuild.gen import grammar_nt
 from pgen2.parse import PNode
@@ -132,13 +132,41 @@ class Transformer(object):
     ifs = [if_] if if_ else []
     return comprehension(lvalue, iterable, ifs)
 
+  def _DictPair(self, p_node):
+    # type: (PNode) -> Tuple[expr_t, dict_val_t]
+    assert p_node.typ == grammar_nt.dict_pair
+
+    if ISNONTERMINAL(p_node.typ):  # stupid singleton rule
+      p_key = p_node.children[0]
+
+      if p_key.tok.id == Id.Expr_Name:  # {name: 'bob'}
+        key = expr.Const(p_key.tok)  # type: expr_t
+        val_index = 2
+      else:                             # {[x+y]: 'val'}
+        key = self.Expr(p_node.children[1])
+        val_index = 4
+    else:
+      key = expr.Const(p_node.tok)  # stupid singleton rule
+      val_index = 2
+
+    if ISNONTERMINAL(p_node.typ):  # stupid singleton rule
+      p_val = p_node.children[val_index]
+      # NOTE: weird that we can't use 'typ' here
+      #if children[i+1].tok.id == Id.Arith_Colon:
+      e = self.Expr(p_val)
+      value = dict_val.Expr(e)  # type: dict_val_t
+    else:
+      value = dict_val.Implicit()
+
+    return key, value
+
   def _Dict(self, p_node):
     # type: (PNode) -> expr__Dict
     """
     dict: dict_key ':' [test] (',' dict_key [':' test])* [',']
     """
-    keys = []
-    values = []
+    keys = []  # type: List[expr_t]
+    values = []  # type: List[dict_val_t]
 
     # Handle {}
     if p_node.tok.id == Id.Op_RBrace:
@@ -146,32 +174,28 @@ class Transformer(object):
 
     # Handle {name}
     # Stupid singleton rule messes this up
-    #if p_node.tok.id == Id.Expr_Name:
-    #  key = expr.Const(p_node.tok)
-    #  value = dict_val.Implicit()
-    #  return expr.Dict([key], [value])
+    if not ISNONTERMINAL(p_node.typ):
+      key = expr.Const(p_node.tok)  # type: expr_t
+      value = dict_val.Implicit()  # type: dict_val_t
+      return expr.Dict([key], [value])
+
+    if p_node.typ == grammar_nt.dict_pair:
+      key, value = self._DictPair(p_node)
+      return expr.Dict([key], [value])
 
     if p_node.typ == grammar_nt.dict:
       children = p_node.children
       n = len(children)
       i = 0
-      while i < n-1:
-        p_key = children[i]
-        if p_key.tok.id == Id.Expr_Name:  # {name: 'bob'}
-          key = expr.Const(p_key.tok)
-        else:                             # {[x+y]: 'val'}
-          key = self.Expr(p_key.children[i+1])
-        keys.append(key)
-
-        # NOTE: weird that we can't use 'typ' here
-        #if children[i+1].tok.id == Id.Arith_Colon:
-        if 1:
-          e = self.Expr(children[i+2])
-          value = dict_val.Expr(e)
-          i += 4  # to account for : and ,
-        else:
-          value = dict_val.Implicit()
+      while i < n:
+        if ISNONTERMINAL(children[i].typ):
+          key, value = self._DictPair(children[i])
           i += 2
+        else:
+          key = expr.Const(p_node.tok)
+          value = dict_val.Implicit()
+          i += 1
+        keys.append(key)
         values.append(value)
 
       return expr.Dict(keys, values)

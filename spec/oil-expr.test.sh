@@ -512,12 +512,19 @@ bar
 
 #### dict literal with implicit value
 var name = 'foo'
-var d1 = {name, other: 'val'}
+var d1 = {name}
 echo len=$len(d1)
-var v1 = d2['name']
+var v1 = d1['name']
 echo $v1
+
+var d2 = {name, other: 'val'}
+echo len=$len(d2)
+var v2 = d2['name']
+echo $v2
 
 ## STDOUT:
 len=1
+foo
+len=2
 foo
 ## END

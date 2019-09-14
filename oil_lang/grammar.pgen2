@@ -138,16 +138,20 @@ testlist: test (',' test)* [',']
 # d = {[x]: 20}  # Evaluate x as a variable
 # d = {["foo$x"]: 20}  # Another expression
 # d = {[x, y]: 20}  # Tuple key
-# d = {(x, y): 20}  # More familiar way to write it?
-# #
+# d = {key1, key1: 123}
 # Notes:
-# - Value is optional because it can be taken from the environment.
-# - We don't have dict comprehensions.  Maybe wait until LR parsing?
-# - Splatting with **
+# - Value is optional when the key is a name, because it can be taken from the
+# environment.
+# - We don't have:
+#   - dict comprehensions.  Maybe wait until LR parsing?
+#   - Splatting with **
 # - I don't think we want set literals?  It might be @{} or %{} or #{}
 
-dict_key: Expr_Name | '[' testlist ']'
-dict: dict_key [':' [test]] (',' dict_key [':' test])* [',']
+dict_pair: (
+  Expr_Name [':' test] |
+  '[' testlist ']' ':' test
+)
+dict: dict_pair (',' dict_pair)* [',']
 
 dictorsetmaker: ( ((test ':' test | '**' expr)
                    (comp_for | (',' (test ':' test | '**' expr))* [','])) |
