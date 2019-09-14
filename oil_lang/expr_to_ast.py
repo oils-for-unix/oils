@@ -6,7 +6,7 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
     token, command, command__VarDecl,
-    expr, expr_t, expr__DoubleQuoted, expr__SingleQuoted,
+    expr, expr_t, expr__DoubleQuoted, expr__SingleQuoted, expr__Dict,
     expr_context_e, regex, regex_t, word,
     word_t,
     word_part, word_part__CommandSub,
@@ -135,6 +135,37 @@ class Transformer(object):
     ifs = [if_] if if_ else []
     return comprehension(lvalue, iterable, ifs)
 
+  def _Dict(self, p_node):
+    # type: (PNode) -> expr__Dict
+    """
+    dict: dict_key ':' [test] (',' dict_key [':' test])* [',']
+    """
+    keys = []
+    values = []
+    if p_node.tok.id == Id.Op_RBrace:
+      return expr.Dict(keys, values)
+
+    if p_node.typ == grammar_nt.dict:
+      children = p_node.children
+      n = len(children)
+      i = 0
+      while i < n-1:
+        # TODO: We're not handling "shorthand properties" like {k1, k2}
+
+        p_key = children[i]
+        if p_key.tok.id == Id.Expr_Name:  # {name: 'bob'}
+          key = expr.Const(p_key.tok)
+        else:                             # {[x+y]: 'val'}
+          key = self.Expr(p_key)  
+        value = self.Expr(children[i+2])
+
+        keys.append(key)
+        values.append(value)
+        i += 4  # to account for : and ,
+      return expr.Dict(keys, values)
+
+    raise NotImplementedError
+
   def atom(self, children):
     # type: (List[PNode]) -> expr_t
     """Handles alternatives of 'atom' where there is more than one child."""
@@ -177,7 +208,7 @@ class Transformer(object):
       return expr.List(elts, expr_context_e.Store)  # unused expr_context_e
 
     if id_ == Id.Op_LBrace:
-      raise NotImplementedError('{')
+      return self._Dict(children[1])
 
     raise NotImplementedError
 

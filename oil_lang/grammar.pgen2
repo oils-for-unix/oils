@@ -111,7 +111,7 @@ power: atom_expr ['^' factor]
 atom_expr: ['await'] atom trailer*
 atom: ('(' [yield_expr|testlist_comp] ')' |
        '[' [testlist_comp] ']' |
-       '{' [dictorsetmaker] '}' |
+       '{' [dict] '}' |
        Expr_Name | '...' | Expr_Null | Expr_True | Expr_False |
        Expr_DecInt | Expr_BinInt | Expr_OctInt | Expr_HexInt |
        Expr_Float |
@@ -127,6 +127,28 @@ subscript: test | [test] ':' [test] [sliceop]
 sliceop: ':' [test]
 exprlist: (expr|star_expr) (',' (expr|star_expr))* [',']
 testlist: test (',' test)* [',']
+
+# Dict syntax resembles JavaScript
+# https://stackoverflow.com/questions/38948306/what-is-javascript-shorthand-property
+#
+# Examples:
+# {age: 20} is like {'age': 20}
+# 
+# x = 'age'
+# d = {[x]: 20}  # Evaluate x as a variable
+# d = {["foo$x"]: 20}  # Another expression
+# d = {[x, y]: 20}  # Tuple key
+# d = {(x, y): 20}  # More familiar way to write it?
+# #
+# Notes:
+# - Value is optional because it can be taken from the environment.
+# - We don't have dict comprehensions.  Maybe wait until LR parsing?
+# - Splatting with **
+# - I don't think we want set literals?  It might be @{} or %{} or #{}
+
+dict_key: Expr_Name | '[' testlist ']'
+dict: dict_key ':' [test] (',' dict_key [':' test])* [',']
+
 dictorsetmaker: ( ((test ':' test | '**' expr)
                    (comp_for | (',' (test ':' test | '**' expr))* [','])) |
                   ((test | star_expr)

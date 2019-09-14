@@ -476,3 +476,16 @@ echo $b
 ## STDOUT:
 true
 ## END
+
+#### dict
+var d0 = {}
+echo len=$len(d0)
+var d1 = {name: "hello"}
+echo len=$len(d1)
+var d2 = {name: "hello", other: 2}
+echo len=$len(d2)
+## STDOUT:
+len=0
+len=1
+len=2
+## END

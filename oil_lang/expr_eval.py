@@ -115,6 +115,11 @@ class OilEvaluator(object):
       elif id_ == Id.Expr_False:
         return False
 
+      elif id_ == Id.Expr_Name:
+        # for {name: 'bob'}
+        # Maybe also :Symbol?
+        return node.c.val
+
       raise AssertionError(id_)
 
     if node.tag == expr_e.Var:
@@ -185,6 +190,12 @@ class OilEvaluator(object):
 
     if node.tag == expr_e.Tuple:
       return tuple(self.EvalExpr(e) for e in node.elts)
+
+    if node.tag == expr_e.Dict:
+      # NOTE: some keys are expr.Const
+      keys = [self.EvalExpr(e) for e in node.keys]
+      values = [self.EvalExpr(e) for e in node.values]
+      return dict(zip(keys, values))
 
     if node.tag == expr_e.ListComp:
 
