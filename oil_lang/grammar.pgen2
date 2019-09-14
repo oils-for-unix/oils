@@ -241,23 +241,27 @@ var_sub: '${' expr Op_RBrace
 # - type annotation syntax is more restrictive    # a: (1+2) = 3 is OK in python
 # - We're validating the lvalue here, instead of doing it in the "transformer".
 #   We have the 'var' prefix which helps.
-#
-# TODO: Get rid of lvalue
-# place: ...
-# oil_setvar: place_list
-# oil_var: typed_var_list = 
 
-lvalue_trailer: '[' subscriptlist ']' | '.' NAME
-lvalue: NAME trailer*
-lvalue_list: lvalue (',' lvalue)*
+# name_type use cases:
+#   for x Int, y Int
+#   [x for x Int, y Int in ...]
+#   var x Int, y Int = 3, 5
+#   func(x Int, y Int)
+name_type: Expr_Name [type_expr]
+name_type_list: name_type (',' name_type)*
+
+# setvar x[key], x.attr = 1, 2
+place_trailer: '[' subscriptlist ']' | '.' NAME
+place: NAME place_trailer*
+place_list: place (',' place)*
 
 type_expr: NAME [ '[' type_expr (',' type_expr)* ']' ]
 
 # NOTE: Eof_RParen and Eof_Backtick aren't allowed because we don't want 'var'
 # in command subs.
 end_stmt: '}' | ';' | Op_Newline | Eof_Real 
-oil_var: lvalue_list [type_expr] '=' testlist end_stmt
-oil_setvar: lvalue_list (augassign | '=') testlist end_stmt
+oil_var: place_list [type_expr] '=' testlist end_stmt
+oil_setvar: place_list (augassign | '=') testlist end_stmt
 
 # For $stringfunc(x, y=1) and @arrayfunc(a, b='s')
 oil_arglist: '(' [arglist] ')'
@@ -268,7 +272,7 @@ oil_expr: '(' testlist ')'
 return_expr: testlist end_stmt
 
 # Example: for (a Int, b Int in expr) { ... }
-oil_for: '(' lvalue_list 'in' testlist ')'
+oil_for: '(' place_list 'in' testlist ')'
 
 # Examples: func print(msg Str, *args ; span_id Int = 0, token Token = None)
 #           proc rule(@argv, b Block) { }

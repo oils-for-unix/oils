@@ -12,7 +12,6 @@ from _devbuild.gen.syntax_asdl import (
     word_part, word_part__CommandSub,
     param, type_expr_t,
     comprehension,
-    dict_val, dict_val_t,
 )
 from _devbuild.gen import grammar_nt
 from pgen2.parse import PNode
@@ -79,7 +78,7 @@ class Transformer(object):
     assert isinstance(op.tok, token)
     return expr.Binary(op.tok, self.Expr(left), right)
 
-  def trailer(self, base, p_trailer):
+  def _Trailer(self, base, p_trailer):
     # type: (expr_t, PNode) -> expr_t
     children = p_trailer.children
     op_tok = children[0].tok
@@ -116,7 +115,7 @@ class Transformer(object):
     raise AssertionError(op_tok)
 
   def _DictPair(self, p_node):
-    # type: (PNode) -> Tuple[expr_t, dict_val_t]
+    # type: (PNode) -> Tuple[expr_t, expr_t]
     """
     dict_pair: (
       Expr_Name [':' test] |
@@ -137,15 +136,13 @@ class Transformer(object):
     if id_ == Id.Expr_Name:
       key = expr.Const(tok0)  # type: expr_t
       if len(children) >= 3:
-        e = self.Expr(children[2])
-        value = dict_val.Expr(e)  # type: dict_val_t
+        value = self.Expr(children[2])
       else:
-        value = dict_val.Implicit()
+        value = expr.Implicit()
 
     if id_ == Id.Op_LBracket:  # {[x+y]: 'val'}
       key = self.Expr(children[1])
-      e = self.Expr(children[4])
-      value = dict_val.Expr(e)
+      value = self.Expr(children[4])
       return key, value
 
     return key, value
@@ -160,7 +157,7 @@ class Transformer(object):
       return expr.Dict([], [])
 
     keys = []  # type: List[expr_t]
-    values = []  # type: List[dict_val_t]
+    values = []  # type: List[expr_t]
 
     if p_node.typ == grammar_nt.dict:
       children = p_node.children
@@ -176,7 +173,7 @@ class Transformer(object):
 
     raise NotImplementedError
 
-  def atom(self, children):
+  def _Atom(self, children):
     # type: (List[PNode]) -> expr_t
     """Handles alternatives of 'atom' where there is more than one child."""
 
@@ -200,10 +197,6 @@ class Transformer(object):
       p_list = children[1].children  # what's between [ and ]
 
       # [x for x in y]
-
-      # Python allows multiple ifs!  Didn't know that.
-      # https://stackoverflow.com/questions/15248272/python-list-comprehension-with-multiple-ifs
-
       if children[1].typ == grammar_nt.testlist_comp:
         return self.Expr(children[1])
 
@@ -273,13 +266,11 @@ class Transformer(object):
         # return_expr: testlist end_stmt
         return self.Expr(children[0])
 
-      if typ == grammar_nt.lvalue_list:
+      if typ == grammar_nt.place_list:
         return self._AssocBinary(children)
 
-      if typ == grammar_nt.lvalue:
-        # lvalue: NAME trailer*
-        # TODO: This should be renamed to 'place'
-
+      if typ == grammar_nt.place:
+        # place: NAME place_trailer*
         if len(pnode.children) == 1:
           return self.Expr(pnode.children[0])
         raise NotImplementedError
@@ -287,7 +278,7 @@ class Transformer(object):
       if typ == grammar_nt.atom:
         if len(children) == 1:
           return self.Expr(children[0])
-        return self.atom(children)
+        return self._Atom(children)
 
       if typ == grammar_nt.eval_input:
         # testlist_input: testlist NEWLINE* ENDMARKER
@@ -352,7 +343,6 @@ class Transformer(object):
 
       if typ == grammar_nt.testlist_comp:
         # testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
-
         if children[1].typ == grammar_nt.comp_for:
           elt = self.Expr(children[0])
           comp = self._CompFor(children[1])
@@ -412,7 +402,7 @@ class Transformer(object):
         for i in xrange(1, n):
           pnode = children[i]
           tok = pnode.tok
-          base = self.trailer(base, pnode)
+          base = self._Trailer(base, pnode)
 
         return base
 

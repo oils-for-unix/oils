@@ -341,7 +341,9 @@ module syntax
   | IfExp(expr test, expr body, expr orelse)
   | Tuple(expr* elts, expr_context ctx)
   | List(expr* elts, expr_context ctx)
-  | Dict(expr* keys, dict_val* values)
+  | Dict(expr* keys, expr* values)
+    -- For the values in {n1, n2}
+  | Implicit
   | ListComp(expr elt, comprehension* generators)
   | DictComp(expr key, expr value, comprehension* generators)
   | GeneratorExp(expr elt, comprehension* generators)
@@ -366,8 +368,6 @@ module syntax
     -- I guess there's no reason not to, but it's a bit exotic and rare.
     -- It doesn't fit in the static "Coil" subset.
   | Starred(expr value, expr_context ctx)
-
-  dict_val = Expr(expr e) | Implicit
 
   expr_context = Load | Store | Del | AugLoad | AugStore | Param
 

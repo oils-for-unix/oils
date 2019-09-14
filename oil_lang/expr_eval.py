@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    expr_e, expr_t, dict_val_e,
+    expr_e, expr_t,
 )
 from _devbuild.gen.runtime_asdl import (
     lvalue, value, value_e, scope_e,
@@ -195,11 +195,11 @@ class OilEvaluator(object):
       keys = [self.EvalExpr(e) for e in node.keys]
 
       values = []
-      for i, v in enumerate(node.values):
-        if v.tag == dict_val_e.Implicit:
+      for i, e in enumerate(node.values):
+        if e.tag == expr_e.Implicit:
           v = self.LookupVar(keys[i])  # {name}
         else:
-          v = self.EvalExpr(v.e)
+          v = self.EvalExpr(e)
         values.append(v)
 
       return dict(zip(keys, values))
