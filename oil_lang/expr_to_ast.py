@@ -117,69 +117,60 @@ class Transformer(object):
 
   def _DictPair(self, p_node):
     # type: (PNode) -> Tuple[expr_t, dict_val_t]
+    """
+    dict_pair: (
+      Expr_Name [':' test] |
+      '[' testlist ']' ':' test
+    )
+    """
     assert p_node.typ == grammar_nt.dict_pair
 
-    if ISNONTERMINAL(p_node.typ):  # stupid singleton rule
-      p_key = p_node.children[0]
+    children = p_node.children
+    typ = children[0].typ
 
-      if p_key.tok.id == Id.Expr_Name:  # {name: 'bob'}
-        key = expr.Const(p_key.tok)  # type: expr_t
-        val_index = 2
-      else:                             # {[x+y]: 'val'}
-        key = self.Expr(p_node.children[1])
-        val_index = 4
-    else:
-      key = expr.Const(p_node.tok)  # stupid singleton rule
-      val_index = 2
+    if ISNONTERMINAL(typ):  # for sq_string
+      raise NotImplementedError
 
-    if ISNONTERMINAL(p_node.typ):  # stupid singleton rule
-      p_val = p_node.children[val_index]
-      # NOTE: weird that we can't use 'typ' here
-      #if children[i+1].tok.id == Id.Arith_Colon:
-      e = self.Expr(p_val)
-      value = dict_val.Expr(e)  # type: dict_val_t
-    else:
-      value = dict_val.Implicit()
+    tok0 = children[0].tok
+    id_ = tok0.id
+
+    if id_ == Id.Expr_Name:
+      key = expr.Const(tok0)  # type: expr_t
+      if len(children) >= 3:
+        e = self.Expr(children[2])
+        value = dict_val.Expr(e)  # type: dict_val_t
+      else:
+        value = dict_val.Implicit()
+
+    if id_ == Id.Op_LBracket:  # {[x+y]: 'val'}
+      key = self.Expr(children[1])
+      e = self.Expr(children[4])
+      value = dict_val.Expr(e)
+      return key, value
 
     return key, value
 
   def _Dict(self, p_node):
     # type: (PNode) -> expr__Dict
     """
-    dict: dict_key ':' [test] (',' dict_key [':' test])* [',']
+    dict: dict_pair (',' dict_pair)* [',']
     """
+    if not ISNONTERMINAL(p_node.typ):
+      assert p_node.tok.id == Id.Op_RBrace
+      return expr.Dict([], [])
+
     keys = []  # type: List[expr_t]
     values = []  # type: List[dict_val_t]
-
-    # Handle {}
-    if p_node.tok.id == Id.Op_RBrace:
-      return expr.Dict(keys, values)
-
-    # Handle {name}
-    # Stupid singleton rule messes this up
-    if not ISNONTERMINAL(p_node.typ):
-      key = expr.Const(p_node.tok)  # type: expr_t
-      value = dict_val.Implicit()  # type: dict_val_t
-      return expr.Dict([key], [value])
-
-    if p_node.typ == grammar_nt.dict_pair:
-      key, value = self._DictPair(p_node)
-      return expr.Dict([key], [value])
 
     if p_node.typ == grammar_nt.dict:
       children = p_node.children
       n = len(children)
       i = 0
       while i < n:
-        if ISNONTERMINAL(children[i].typ):
-          key, value = self._DictPair(children[i])
-          i += 2
-        else:
-          key = expr.Const(p_node.tok)
-          value = dict_val.Implicit()
-          i += 1
+        key, value = self._DictPair(children[i])
         keys.append(key)
         values.append(value)
+        i += 2
 
       return expr.Dict(keys, values)
 
