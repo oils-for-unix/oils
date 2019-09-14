@@ -15,7 +15,6 @@ from core.util import e_die
 #from core.util import log
 from oil_lang import objects
 from osh import braces
-from osh import state
 
 from typing import Any
 

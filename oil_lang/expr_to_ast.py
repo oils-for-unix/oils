@@ -16,7 +16,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen import grammar_nt
 from pgen2.parse import PNode
-from core.util import log
+#from core.util import log
 
 from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:
