@@ -379,7 +379,7 @@ class ExprParser(object):
     self.parse_ctx = parse_ctx
     self.gr = gr
     # Reused multiple times.
-    self.push_parser = parse.Parser(gr, convert=NoSingletonAction)
+    self.push_parser = parse.Parser(gr)
 
   def Parse(self, lexer, start_symbol):
     # type: (Lexer, int) -> Tuple[PNode, token]

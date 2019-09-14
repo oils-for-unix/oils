@@ -64,7 +64,9 @@ class Transformer(object):
 
     We don't care if it's (1+2)+3 or 1+(2+3).
     """
-    assert len(children) >= 3, children
+    if len(children) == 1:
+      return self.Expr(children[0])
+
     # Note: Compare the iteractive com_binary() method in
     # opy/compiler2/transformer.py.
 
@@ -112,25 +114,6 @@ class Transformer(object):
       raise NotImplementedError
 
     raise AssertionError(op_tok)
-
-  def _CompFor(self, p_node):
-    # type: (PNode) -> comprehension
-    """
-    sync_comp_for: 'for' exprlist 'in' or_test [comp_iter]
-    """
-    children = p_node.children
-
-    lvalue = self.Expr(children[1])  # Python calls this target
-    iterable = self.Expr(children[3])
-
-    # TODO: I want to rewrite this grammar element
-    if_ = None
-    if len(children) >= 5:
-      # comp_if
-      if_ = self.Expr(children[4].children[1])
-
-    ifs = [if_] if if_ else []
-    return comprehension(lvalue, iterable, ifs)
 
   def _DictPair(self, p_node):
     # type: (PNode) -> Tuple[expr_t, dict_val_t]
@@ -206,7 +189,8 @@ class Transformer(object):
     # type: (List[PNode]) -> expr_t
     """Handles alternatives of 'atom' where there is more than one child."""
 
-    id_ = children[0].tok.id
+    tok = children[0].tok
+    id_ = tok.id
 
     if id_ == Id.Op_LParen:
       # atom: '(' [yield_expr|testlist_comp] ')' | ...
@@ -229,10 +213,8 @@ class Transformer(object):
       # Python allows multiple ifs!  Didn't know that.
       # https://stackoverflow.com/questions/15248272/python-list-comprehension-with-multiple-ifs
 
-      if len(p_list) == 2 and p_list[1].typ == grammar_nt.sync_comp_for:
-        elt = self.Expr(p_list[0])
-        comp = self._CompFor(p_list[1])
-        return expr.ListComp(elt, [comp])
+      if children[1].typ == grammar_nt.testlist_comp:
+        return self.Expr(children[1])
 
       # [1, 2, 3]
       n = len(p_list)
@@ -246,7 +228,7 @@ class Transformer(object):
     if id_ == Id.Op_LBrace:
       return self._Dict(children[1])
 
-    raise NotImplementedError
+    raise NotImplementedError(id_)
 
   def _Tuple(self, children):
     # type: (List[PNode]) -> expr_t
@@ -254,12 +236,32 @@ class Transformer(object):
     # NOTE: We haven't solved the 1, issue.  Gah!  Or ()
     # 1, 2, 3
     n = len(children)
+    if n == 1:
+      return self.Expr(children[0])
     elts = []
     for i in xrange(0, n, 2):  # skip commas
       p_node = children[i]
       elts.append(self.Expr(p_node))
 
     return expr.Tuple(elts, expr_context_e.Store)  # unused expr_context_e
+
+  def _CompFor(self, p_node):
+    # type: (PNode) -> comprehension
+    """
+    comp_for: 'for' exprlist 'in' or_test ['if' test_nocond]
+    """
+    children = p_node.children
+
+    lvalue = self.Expr(children[1])  # Python calls this target
+    iterable = self.Expr(children[3])
+
+    if_ = None
+    if len(children) >= 6:
+      if_ = self.Expr(children[5])
+
+    # TODO: Simplify the node
+    ifs = [if_] if if_ else []
+    return comprehension(lvalue, iterable, ifs)
 
   def Expr(self, pnode):
     # type: (PNode) -> expr_t
@@ -283,7 +285,17 @@ class Transformer(object):
       if typ == grammar_nt.lvalue_list:
         return self._AssocBinary(children)
 
+      if typ == grammar_nt.lvalue:
+        # lvalue: NAME trailer*
+        # TODO: This should be renamed to 'place'
+
+        if len(pnode.children) == 1:
+          return self.Expr(pnode.children[0])
+        raise NotImplementedError
+
       if typ == grammar_nt.atom:
+        if len(children) == 1:
+          return self.Expr(children[0])
         return self.atom(children)
 
       if typ == grammar_nt.eval_input:
@@ -292,17 +304,83 @@ class Transformer(object):
 
       if typ == grammar_nt.testlist:
         # testlist: test (',' test)* [',']
-
         # We need tuples for Python's 'var a, b = x' and 'for (a, b in x) {'
         return self._Tuple(children)
 
+      if typ == grammar_nt.test:
+        if len(children) == 1:
+          return self.Expr(children[0])
+        raise NotImplementedError
+
+      if typ == grammar_nt.test_nocond:
+        # test_nocond: or_test | lambdef_nocond
+        assert len(children) == 1
+        return self.Expr(children[0])
+
+      if typ == grammar_nt.or_test:
+        if len(children) == 1:
+          return self.Expr(children[0])
+        raise NotImplementedError
+
+      if typ == grammar_nt.and_test:
+        if len(pnode.children) == 1:
+          return self.Expr(children[0])
+        raise NotImplementedError
+
+      if typ == grammar_nt.not_test:
+        if len(pnode.children) == 1:
+          return self.Expr(children[0])
+        raise NotImplementedError
+
+      if typ == grammar_nt.xor_expr:
+        if len(pnode.children) == 1:
+          return self.Expr(children[0])
+        raise NotImplementedError
+
+      if typ == grammar_nt.and_expr:
+        if len(pnode.children) == 1:
+          return self.Expr(children[0])
+        raise NotImplementedError
+
+      if typ == grammar_nt.argument:
+        # argument: ( test [comp_for] |
+        #             test '=' test |
+        #             '**' test |
+        #             '*' test )
+        if len(pnode.children) == 1:
+          return self.Expr(children[0])
+        # TODO:
+        raise NotImplementedError
+
+      if typ == grammar_nt.subscript:
+        # subscript: test | [test] ':' [test] [sliceop]
+        if len(pnode.children) == 1:
+          return self.Expr(children[0])
+        # TODO:
+        raise NotImplementedError
+
       if typ == grammar_nt.testlist_comp:
         # testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
+
+        if children[1].typ == grammar_nt.comp_for:
+          elt = self.Expr(children[0])
+          comp = self._CompFor(children[1])
+          return expr.ListComp(elt, [comp])
 
         # (1,)  (1, 2)  etc.
         if children[1].tok.id == Id.Arith_Comma:
           return self._Tuple(children)
         raise NotImplementedError('testlist_comp')
+
+      elif typ == grammar_nt.exprlist:
+        # exprlist: (expr|star_expr) (',' (expr|star_expr))* [',']
+
+        if len(children) == 1:
+          return self.Expr(children[0])
+
+        # used in for loop, genexpr.
+        # TODO: This sould be placelist?  for x, *y ?
+        raise NotImplementedError('exprlist')
 
       elif typ == grammar_nt.arith_expr:
         # expr: term (('+'|'-') term)*
@@ -327,16 +405,18 @@ class Transformer(object):
       elif typ == grammar_nt.factor:
         # factor: ('+'|'-'|'~') factor | power
         # the power would have already been reduced
-        assert len(children) == 2, children
+        if len(children) == 1:
+          return self.Expr(children[0])
         op, e = children
         assert isinstance(op.tok, token)
         return expr.Unary(op.tok, self.Expr(e))
 
-      elif typ == grammar_nt.atom_expr:
-        # atom_expr: ['await'] atom trailer*
+      elif typ == grammar_nt.power:
+        # power: atom trailer* ['^' factor]
 
-        # NOTE: This would be shorter in a recursive style.
         base = self.Expr(children[0])
+
+        # TODO: Handle '^' factor
         n = len(children)
         for i in xrange(1, n):
           pnode = children[i]
@@ -344,13 +424,6 @@ class Transformer(object):
           base = self.trailer(base, pnode)
 
         return base
-
-      elif typ == grammar_nt.power:
-        # power: atom_expr ['^' factor]
-
-        # This doesn't repeat, so it doesn't matter if it's left or right
-        # associative.
-        return self._AssocBinary(children)
 
       elif typ == grammar_nt.array_literal:
         left_tok = children[0].tok
@@ -432,21 +505,21 @@ class Transformer(object):
             "PNode type %d (%s) wasn't handled" % (typ, nt_name))
 
     else:  # Terminals should have a token
-      #log('terminal %s', tok)
+      id_ = tok.id
 
-      if tok.id == Id.Expr_Name:
+      if id_ == Id.Expr_Name:
         return expr.Var(tok)
 
-      elif tok.id in (
+      if id_ in (
           Id.Expr_DecInt, Id.Expr_BinInt, Id.Expr_OctInt, Id.Expr_HexInt,
           Id.Expr_Float):
         return expr.Const(tok)
 
-      elif tok.id in (Id.Expr_Null, Id.Expr_True, Id.Expr_False):
+      if id_ in (Id.Expr_Null, Id.Expr_True, Id.Expr_False):
         return expr.Const(tok)
 
-      else:
-        raise AssertionError(tok.id)
+      from core.meta import IdInstance
+      raise NotImplementedError(IdInstance(typ))
 
   def VarDecl(self, pnode):
     # type: (PNode) -> command__VarDecl
