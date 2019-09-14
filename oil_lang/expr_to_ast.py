@@ -91,11 +91,8 @@ class Transformer(object):
         return expr.FuncCall(base, args)
 
       p = children[1]  # the X in ( X )
-      # NOTE: The "no singleton" rule causes some complication here.
-      if p.typ == grammar_nt.arglist:  # f(x, y)
-        self._Arglist(p.children, args)
-      else:  # f(1+2)
-        args.append(self.Expr(p))
+      assert p.typ == grammar_nt.arglist  # f(x, y)
+      self._Arglist(p.children, args)
       return expr.FuncCall(base, args)
 
     if op_tok.id == Id.Op_LBracket:
@@ -156,22 +153,21 @@ class Transformer(object):
       assert p_node.tok.id == Id.Op_RBrace
       return expr.Dict([], [])
 
+    assert p_node.typ == grammar_nt.dict
+
     keys = []  # type: List[expr_t]
     values = []  # type: List[expr_t]
 
-    if p_node.typ == grammar_nt.dict:
-      children = p_node.children
-      n = len(children)
-      i = 0
-      while i < n:
-        key, value = self._DictPair(children[i])
-        keys.append(key)
-        values.append(value)
-        i += 2
+    children = p_node.children
+    n = len(children)
+    i = 0
+    while i < n:
+      key, value = self._DictPair(children[i])
+      keys.append(key)
+      values.append(value)
+      i += 2
 
-      return expr.Dict(keys, values)
-
-    raise NotImplementedError
+    return expr.Dict(keys, values)
 
   def _Atom(self, children):
     # type: (List[PNode]) -> expr_t
@@ -578,8 +574,6 @@ class Transformer(object):
     """
     arglist: argument (',' argument)*  [',']
     """
-    #from core import util
-    #util.log('children %s', children)
     n = len(children)
     i = 0
     while i < n:
@@ -600,16 +594,13 @@ class Transformer(object):
     assert len(pnode.children) == 3, pnode.children
     p = pnode.children[1]  # the X in '( X )'
 
-    # NOTE: The "no singleton" rule causes some complication here.
-    if p.typ == grammar_nt.arglist:  # f(x, y)
-      self._Arglist(p.children, args)
-    else:  # f(1+2)
-      args.append(self.Expr(p))
-
+    assert p.typ == grammar_nt.arglist
+    self._Arglist(p.children, args)
     return args
 
   def _TypeExpr(self, pnode):
     # type: (PNode) -> type_expr_t
+    assert pnode.typ == grammar_nt.type_expr, pnode.typ
     return None
 
   def _Param(self, pnode):
@@ -618,30 +609,25 @@ class Transformer(object):
     param: NAME [type_expr] | '...' NAME | '@' NAME
     """
     #log('pnode: %s', pnode)
+    assert pnode.typ == grammar_nt.param
 
-    if ISNONTERMINAL(pnode.typ):
-      if pnode.typ == grammar_nt.param:  # x Int
-        children = pnode.children
-        first_tok = children[0].tok
-        n = len(children)
-        #tok = pnode.tok
+    children = pnode.children
+    tok0 = children[0].tok
+    n = len(children)
+    #tok = pnode.tok
 
-        if first_tok.id in (Id.Expr_At,):  # ...
-          return param(first_tok, children[1].tok, None, None)
-        elif first_tok.id == Id.Expr_Name:
-          default = None
-          if n > 1 and children[1].tok.id == Id.Arith_Equal:  # x = 1+2*3
-            default = self.Expr(children[2])
-          elif n > 2 and children[2].tok.id == Id.Arith_Equal:  # x Int = 1+2*3
-            default = self.Expr(children[3])
-          return param(None, first_tok, None, default)
-        else:
-          pass
-    else:
-      if pnode.tok.id == Id.Expr_Name:  # x
-        return param(None, pnode.tok, None, None)
+    if tok0.id in (Id.Expr_At,):  # ...
+      return param(tok0, children[1].tok, None, None)
 
-    raise AssertionError(pnode)
+    if tok0.id == Id.Expr_Name:
+      default = None
+      if n > 1 and children[1].tok.id == Id.Arith_Equal:  # f(x = 1+2*3)
+        default = self.Expr(children[2])
+      elif n > 2 and children[2].tok.id == Id.Arith_Equal:  # f(x Int = 1+2*3)
+        default = self.Expr(children[3])
+      return param(None, tok0, None, default)
+
+    raise AssertionError(tok0)
 
   def FuncProc(self, pnode):
     # type: (PNode) -> Tuple[token, List[param], Optional[type_expr_t]]
@@ -655,29 +641,25 @@ class Transformer(object):
       params = []  # type: List[param]
       return_type = None
 
-      # TODO: Weird situation: Both of these conditions are true.  The parse
-      # tree probably needs to be cleaned up.
-
-      #if children[1].typ == Id.Op_LBrace.enum_id:
-      if children[1].tok.id == Id.Op_LBrace:
+      if children[1].tok.id == Id.Op_LBrace:  # proc foo {
         return name, params, return_type  # EARLY RETURN
 
-      # children[1] is '(' -- now look at children[2]
-      if children[2].typ == Id.Op_RParen:  # f()
-        n = 3
-      elif children[2].typ == grammar_nt.params:  # f(x, y)
-        n = 4
+      assert children[1].tok.id == Id.Op_LParen  # proc foo(
+
+      typ2 = children[2].typ
+      if typ2 == Id.Op_RParen:  # f()
+        next_index = 3
+      elif typ2 == grammar_nt.params:  # f(x, y)
+        next_index = 4
         # every other one is a comma
         params = [self._Param(c) for c in children[2].children[::2]]
-      else:  # f(x) or f(x Int)
-        params = [self._Param(children[2])]
-        #log('PARAMS %s', params)
-        n = 4
-
-      if children[n].typ == Id.Lit_LBrace:
-        pass
       else:
-        return_type = self._TypeExpr(children[n])
+        raise AssertionError
+
+      if ISNONTERMINAL(children[next_index].typ):
+        return_type = self._TypeExpr(children[next_index])
+        # otherwise it's Id.Op_LBrace like f() {
+
       return name, params, return_type
 
     nt_name = self.number2symbol[typ]
