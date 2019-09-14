@@ -256,7 +256,13 @@ _MORE_KEYWORDS = [
   C('exit',     Id.ControlFlow_Exit),
 ]
 
-_EXPR_KEYWORDS = [
+# Used by oil_lang/grammar_gen.py too
+EXPR_WORDS = [
+  C('null', Id.Expr_Null),
+  C('true', Id.Expr_True),
+  C('false', Id.Expr_False),
+
+  # TODO: Enable this
   #C('div', Id.Expr_Div),
   #C('xor', Id.Expr_Xor),
 
@@ -264,7 +270,7 @@ _EXPR_KEYWORDS = [
   #C('or', Id.Expr_Or),
   #C('not', Id.Expr_Not),
 
-  C('for', Id.Expr_For),
+  #C('for', Id.Expr_For),
   #C('is', Id.Expr_Is),
   #C('in', Id.Expr_In),
   #C('if', Id.Expr_If),
@@ -863,7 +869,9 @@ float = digitpart fraction? exponent? | fraction exponent?
 # TODO: Should all of these be Kind.Op instead of Kind.Arith?  And Kind.Expr?
 
 # NOTE: Borrowing tokens from Arith (i.e. $(( )) ), but not using LexerPairs().
-LEXER_DEF[lex_mode_e.Expr] = _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + [
+LEXER_DEF[lex_mode_e.Expr] = \
+    _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + EXPR_WORDS + [
+
   # https://docs.python.org/3/reference/lexical_analysis.html#literals
   #
   # integer      ::=  decinteger | bininteger | octinteger | hexinteger
@@ -888,12 +896,6 @@ LEXER_DEF[lex_mode_e.Expr] = _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + [
   # !!! This is REFINED by a hand-written re2c rule !!!
   # The dev build is slightly different than the production build.
   R(r'[0-9]+(\.[0-9]*)?([eE][+\-]?[0-9]+)?', Id.Expr_Float),
-
-  # NOTE: pgen2 is taking care of 'in', 'is', etc.?  Should we register those?
-  # We probably want those too.
-  C('null', Id.Expr_Null),
-  C('true', Id.Expr_True),
-  C('false', Id.Expr_False),
 
   # These can be looked up as keywords separately, so you enforce that they have
   # space around them?

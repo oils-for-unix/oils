@@ -395,12 +395,12 @@ def AddKinds(spec):
     'Null', 'True', 'False',
 
     # Keywords are resolved after lexing, but otherwise behave like tokens.
-    #'Div', 'Xor', 
-    #'And', 'Or', 'Not', 
+    'Div', 'Xor', 
+    'And', 'Or', 'Not', 
 
     # List comprehensions
-    'For', #'Is', 'In', 'If', 'Else',
-    #'Func',  # For function literals
+    'For', 'Is', 'In', 'If', 'Else',
+    'Func',  # For function literals
   ])
 
   # This kind is for Node types that are NOT tokens.

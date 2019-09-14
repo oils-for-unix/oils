@@ -13,7 +13,7 @@ from _devbuild.gen.syntax_asdl import source
 from core import alloc
 from core import meta
 from core.util import log
-from frontend import lexer, match, reader
+from frontend import lexer, match, reader, lex
 from pgen2 import parse, pgen
 
 
@@ -121,8 +121,12 @@ def main(argv):
   for _, token_str, id_ in meta.ID_SPEC.LexerPairs(Kind.Arith):
     arith_ops[token_str] = id_
 
+  if 0:  # TODO: Enable this
+    for _, token_str, id_ in lex.EXPR_WORDS:  # for, in, etc.
+      arith_ops[token_str] = id_
+
+  from pprint import pprint
   if 0:
-    from pprint import pprint
     pprint(arith_ops)
 
   tok_def = OilTokenDef(arith_ops)
@@ -168,7 +172,7 @@ def main(argv):
       gr = pgen.MakeGrammar(f, tok_def=tok_def)
 
     arena = alloc.Arena()
-    lex = MakeOilLexer(code_str, arena)
+    lex_ = MakeOilLexer(code_str, arena)
 
     is_expr = grammar_name in ('calc', 'grammar')
 
@@ -176,7 +180,7 @@ def main(argv):
     parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, gr)
     p = expr_parse.ExprParser(parse_ctx, gr)
     try:
-      pnode, _ = p.Parse(lex, gr.symbol2number[start_symbol])
+      pnode, _ = p.Parse(lex_, gr.symbol2number[start_symbol])
     except parse.ParseError as e:
       log('Parse Error: %s', e)
       return 1

@@ -147,6 +147,7 @@ testlist: test (',' test)* [',']
 #   - Splatting with **
 # - I don't think we want set literals?  It might be @{} or %{} or #{}
 
+# TODO: [testlist] or sq_string or dq_string!
 dict_pair: (
   Expr_Name [':' test] |
   '[' testlist ']' ':' test
@@ -189,8 +190,15 @@ yield_arg: 'from' test | testlist
 # Oil Expressions
 #
 
-word_part: Lit_Chars | Lit_Other | Glob_Star | char_class
+word_part: Lit_Chars | Lit_Other
 word: word_part*
+# TODO: Change this to types and expressions, like
+# @[1 2 3] @[(x) (y+1)] @[true false false]
+#
+# Empty:
+# @Bool[] @Int[] @Float[]
+# Do we need @Str[]?  Or that's just @()?
+
 array_literal: (
   '@[' [WS_Space] [word] (WS_Space word)* [WS_Space] Op_RBracket
 )
