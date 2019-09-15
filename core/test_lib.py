@@ -254,13 +254,3 @@ def InitCommandParser(code_str, arena=None):
   line_reader, _ = InitLexer(code_str, arena)
   c_parser = parse_ctx.MakeOshParser(line_reader)
   return c_parser
-
-
-def InitOilCommandParser(code_str, arena=None):
-  # NOTE: aliases don't exist in the Oil parser?
-  arena = arena or MakeArena('')
-  parse_opts = parse_lib.OilParseOptions()
-  parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
-  line_reader, _ = InitLexer(code_str, arena)
-  c_parser = parse_ctx.MakeOilCommandParser(line_reader)
-  return arena, c_parser

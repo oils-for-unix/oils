@@ -23,8 +23,6 @@ from osh import arith_parse
 from osh import cmd_parse
 from osh import word_parse
 
-#from oil_lang import cmd_parse as oil_cmd_parse
-
 from typing import Any, List, Tuple, Dict, Optional, IO, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
@@ -276,14 +274,6 @@ class ParseContext(object):
     c_parser = cmd_parse.CommandParser(self, w_parser, lx, line_reader,
                                        aliases_in_flight=aliases_in_flight)
     return c_parser
-
-  def MakeOilCommandParser(self, line_reader):
-    # type: (_Reader) -> None
-    # Same lexer as Oil?  It just doesn't start in the OUTER state?
-    lx = self._MakeLexer(line_reader)
-    #c_parser = oil_cmd_parse.OilParser(self, lx, line_reader)
-    #return c_parser
-    return None
 
   def MakeWordParserForHereDoc(self, line_reader):
     # type: (_Reader) -> WordParser

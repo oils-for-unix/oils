@@ -338,14 +338,15 @@ module syntax
   -- COPIED from Python-3.7/Parser/Python.asdl and lightly modified.
   -- Will need more changes.
 
-    -- TODO: if
   | IfExp(expr test, expr body, expr orelse)
   | Tuple(expr* elts, expr_context ctx)
   | List(expr* elts, expr_context ctx)
   | Dict(expr* keys, expr* values)
     -- For the values in {n1, n2}
   | Implicit
+
   | ListComp(expr elt, comprehension* generators)
+    -- not implemented
   | DictComp(expr key, expr value, comprehension* generators)
   | GeneratorExp(expr elt, comprehension* generators)
 
