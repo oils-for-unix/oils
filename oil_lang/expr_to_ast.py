@@ -263,11 +263,15 @@ class Transformer(object):
 
     if ISNONTERMINAL(typ):
 
+      #
+      # Oil Entry Points / Additions
+      #
+
       if typ == grammar_nt.oil_expr:  # for if/while
         # oil_expr: '(' testlist ')'
         return self.Expr(children[1])
 
-      if typ == grammar_nt.return_expr:  # for if/while
+      if typ == grammar_nt.return_expr:
         # return_expr: testlist end_stmt
         return self.Expr(children[0])
 
@@ -304,29 +308,6 @@ class Transformer(object):
         # test_nocond: or_test | lambdef_nocond
         assert len(children) == 1
         return self.Expr(children[0])
-
-      if typ == grammar_nt.or_test:
-        # or_test: and_test ('or' and_test)*
-        return self._AssocBinary(children)
-
-      if typ == grammar_nt.and_test:
-        # and_test: not_test ('and' not_test)*
-        return self._AssocBinary(children)
-
-      if typ == grammar_nt.not_test:
-        # not_test: 'not' not_test | comparison
-        if len(children) == 1:
-          return self.Expr(children[0])
-
-        op_tok = children[0].tok
-        #log('op_tok %s', op_tok)
-        return expr.Unary(op_tok, self.Expr(children[1]))
-
-      if typ == grammar_nt.xor_expr:
-        return self._AssocBinary(children)
-
-      if typ == grammar_nt.and_expr:  # a & b
-        return self._AssocBinary(children)
 
       if typ == grammar_nt.argument:
         # argument: ( test [comp_for] |
@@ -367,24 +348,54 @@ class Transformer(object):
         # TODO: This sould be placelist?  for x, *y ?
         raise NotImplementedError('exprlist')
 
-      elif typ == grammar_nt.arith_expr:
-        # expr: term (('+'|'-') term)*
+      #
+      # Operators with Precedence
+      #
+
+      if typ == grammar_nt.or_test:
+        # or_test: and_test ('or' and_test)*
         return self._AssocBinary(children)
 
-      elif typ == grammar_nt.term:
-        # term: factor (('*'|'/'|'div'|'mod') factor)*
+      if typ == grammar_nt.and_test:
+        # and_test: not_test ('and' not_test)*
+        return self._AssocBinary(children)
+
+      if typ == grammar_nt.not_test:
+        # not_test: 'not' not_test | comparison
+        if len(children) == 1:
+          return self.Expr(children[0])
+
+        op_tok = children[0].tok
+        #log('op_tok %s', op_tok)
+        return expr.Unary(op_tok, self.Expr(children[1]))
+
+
+      elif typ == grammar_nt.comparison:
+        # comparison: expr (comp_op expr)*
         return self._AssocBinary(children)
 
       elif typ == grammar_nt.expr:
         # expr: xor_expr ('|' xor_expr)*
         return self._AssocBinary(children)
 
+      if typ == grammar_nt.xor_expr:
+        # xor_expr: and_expr ('xor' and_expr)*
+        return self._AssocBinary(children)
+
+      if typ == grammar_nt.and_expr:  # a & b
+        # and_expr: shift_expr ('&' shift_expr)*
+        return self._AssocBinary(children)
+
       elif typ == grammar_nt.shift_expr:
         # shift_expr: arith_expr (('<<'|'>>') arith_expr)*
         return self._AssocBinary(children)
 
-      elif typ == grammar_nt.comparison:
-        # comparison: expr (comp_op expr)*
+      elif typ == grammar_nt.arith_expr:
+        # arith_expr: term (('+'|'-') term)*
+        return self._AssocBinary(children)
+
+      elif typ == grammar_nt.term:
+        # term: factor (('*'|'/'|'div'|'mod') factor)*
         return self._AssocBinary(children)
 
       elif typ == grammar_nt.factor:
@@ -416,6 +427,10 @@ class Transformer(object):
           node = expr.Binary(op_tok, node, factor)
 
         return node
+
+      #
+      # Oil Lexer Modes
+      #
 
       elif typ == grammar_nt.array_literal:
         left_tok = children[0].tok
@@ -526,7 +541,6 @@ class Transformer(object):
       # oil_var: lvalue_list [type_expr] '=' testlist (Op_Semi | Op_Newline)
 
       #log('len(children) = %d', len(children))
-
       lvalue = self.Expr(children[0])  # could be a tuple
       #log('lvalue %s', lvalue)
 
