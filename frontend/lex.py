@@ -753,39 +753,6 @@ _OIL_LEFT_UNQUOTED = [
   C('@[', Id.Left_AtBracket),  # Oil arrays.  Not used yet.
 ]
 
-_OIL_VARS = [
-  # Unbraced variables
-  R(r'\$' + VAR_NAME_RE, Id.VSub_DollarName),
-  R(r'\$[0-9]', Id.VSub_Number),
-]
-
-LEXER_DEF[lex_mode_e.Array] = (
-  _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + [
-
-  # what about comments?  newline?
-  _SIGNIFICANT_SPACE,
-
-  C('*', Id.Glob_Star),  # Statically parsed glob
-
-  # For brace expansion.  Although is there a whitespace?
-  # {a, b} vs. {a,' b'} ?
-  C('{', Id.Op_LBrace),
-  C('}', Id.Op_RBrace),
-
-  # For brace expansion
-  C('[', Id.Op_LBracket),
-  C(']', Id.Op_RBracket),
-
-  # placeholder
-  R(_LITERAL_WHITELIST_REGEX, Id.Lit_Chars),
-
-  # simple sub $foo
-  # splicing @foo
-
-  R(r'[^\0]', Id.Lit_Other),  # any other single char is a literal
-])
-
-
 # Newline is significant, but sometimes elided by expr_parse.py.
 _EXPR_NEWLINE_COMMENT = [
   C('\n', Id.Op_Newline),
@@ -949,10 +916,6 @@ LEXER_DEF[lex_mode_e.Expr] = \
 ] + _EXPR_NEWLINE_COMMENT + _EXPR_ARITH_SHARED
 
 
-# FOR NOW, ${x|html} is the same!
-LEXER_DEF[lex_mode_e.VSub_Oil] = LEXER_DEF[lex_mode_e.Expr]
-
-
 # Differences from expression mode:
 # - no nested regexes
 # - only a limited set of operators
@@ -1001,24 +964,4 @@ LEXER_DEF[lex_mode_e.CharClass] = [
   C(']', Id.Op_RBracket),
 
   R(r'[^\]\0]', Id.Lit_Other),
-]
-
-# Oil gets rid of $$, etc.  What about $?  I think that's $status.
-_OIL_VARS = [
-  # Unbraced variables
-  R(r'\$' + VAR_NAME_RE, Id.VSub_DollarName),
-  R(r'\$[0-9]', Id.VSub_Number),
-]
-
-# TODO: Remove this?  Right now it would be used in regexes.
-LEXER_DEF[lex_mode_e.DQ_Oil] = [
-  # Like sh DQ, except no `
-  R(r'\\[$"\\]', Id.Lit_EscapedChar),
-  C('\\\n', Id.Ignored_LineCont),
-] + _OIL_LEFT_SUBS + _OIL_VARS + [
-  R(r'[^$"\0\\]+', Id.Lit_Chars),  # matches a line at most
-  # NOTE: When parsing here doc line, this token doesn't end it.
-  C('"', Id.Right_DoubleQuote),
-  # This matches plain $.  TODO: Make it a syntax error in Oil?
-  R(r'[^\0]', Id.Lit_Other),
 ]

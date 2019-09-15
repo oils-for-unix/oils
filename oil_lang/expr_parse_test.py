@@ -127,8 +127,10 @@ EOF)
       #'$/ "." [a-z A-Z] y /',
       #'$[echo hi]',
       '$(echo hi)',
-      '${x}',
-      '"quoted ${x}"',
+
+      # TODO: Add these back
+      #'${x}',
+      #'"quoted ${x}"',
     ]
 
     # array literal

@@ -25,29 +25,7 @@ module types {
   -- Oil language has 4 main modes, 2 for regexes, and 4 kinds of strings
   -- (or maybe 6 with multiline?  Not sure if that's handled in the lexer.)
 
-  | Command   -- echo foo (should this be Block or OilBlock ?)
-              -- Newlines are terminators
-  | Array     -- Like Command, but {a,b} and [NOT a-z].?
-              -- entered with @[] for array literals
-              -- hm actually we don't need another mode?  Just within @[] we
-              -- parse {} as brace sub, and NOT blocks.  They're operators in
-              -- both places.
-
-  | Expr      -- echo ${a * b} $(a * b)
-
-  | VSub_Oil  -- echo "${x %05d}" (like '%05d' % x)
-
-              -- note: could quoted strings be shared with OSH?  Rename that
-              -- to CSQ, CDQ, RawSQ, RawDQ?  Maybe disallow octal literals
-              -- after the fact?
-              -- OilDQ is different because it disallows `` and so forth
-              -- can multiline strings share
-  | SQ_Oil    -- echo '_\t_'
-  | DQ_Oil    -- echo "hello $name\n"
-
-  | SQ_Raw    -- echo r'foo'         -- TODO: identical to SQ for sh?
-  | DQ_Raw    -- echo r"hello there" -- this is different than sh DQ because
-                                     -- Left?  Or the same?
+  | Expr      -- var x = 1 + 2 * 3; echo $f(a, b + 1)
 
   -- TODO:
   -- * Multiline strings.  May require some parsing too.

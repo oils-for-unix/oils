@@ -110,19 +110,14 @@ def _Classify(gr, tok):
 POP = lex_mode_e.Undefined
 
 _MODE_TRANSITIONS = {
-    # DQ_Oil -> ...
-    (lex_mode_e.DQ_Oil, Id.Left_DollarSlash): lex_mode_e.Regex,  # "$/ any + /"
+    #(lex_mode_e.DQ, Id.Left_DollarSlash): lex_mode_e.Regex,  # "$/ any + /"
+
     # TODO: Add a token for $/ 'foo' /i .
     # Long version is RegExp($/ 'foo' /, ICASE|DOTALL) ?  Or maybe Regular()
     (lex_mode_e.Regex, Id.Arith_Slash): POP,
 
-    (lex_mode_e.DQ_Oil, Id.Left_DollarBrace): lex_mode_e.VSub_Oil,  # "${x|html}"
-    (lex_mode_e.VSub_Oil, Id.Op_RBrace): POP,
-    (lex_mode_e.DQ_Oil, Id.Left_DollarParen): lex_mode_e.Expr,  # "$(1 + 2)"
-    (lex_mode_e.Expr, Id.Op_RParen): POP,
-
     (lex_mode_e.Expr, Id.Left_DollarSlash): lex_mode_e.Regex,  # $/ any + /
-    (lex_mode_e.Expr, Id.Left_DollarBrace): lex_mode_e.VSub_Oil,  # ${x|html}
+    (lex_mode_e.Expr, Id.Left_DollarBrace): lex_mode_e.VSub_1,  # ${x|html}
     (lex_mode_e.Expr, Id.Op_LParen): lex_mode_e.Expr,  # $( f(x) )
 
     (lex_mode_e.Expr, Id.Left_DoubleQuote): lex_mode_e.DQ,  # x + "foo"
@@ -139,10 +134,10 @@ _MODE_TRANSITIONS = {
     (lex_mode_e.Regex, Id.Op_LBracket): lex_mode_e.CharClass,  # $/ 'foo.' [c h] /
     (lex_mode_e.CharClass, Id.Op_RBracket): POP,
 
-    (lex_mode_e.Regex, Id.Left_DoubleQuote): lex_mode_e.DQ_Oil,  # $/ "foo" /
+    (lex_mode_e.Regex, Id.Left_DoubleQuote): lex_mode_e.DQ,  # $/ "foo" /
     # POP is done above
 
-    (lex_mode_e.Array, Id.Op_LBracket): lex_mode_e.CharClass,  # @[ a *.[c h] ]
+    #(lex_mode_e.Array, Id.Op_LBracket): lex_mode_e.CharClass,  # @[ a *.[c h] ]
     # POP is done above
 }
 
