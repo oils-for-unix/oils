@@ -147,22 +147,23 @@ SHELL OPTIONS
   [all:oil]                              All options below and more
                   parse_at               echo @array @arrayfunc(x, y)
                   parse_brace            if true { ... }; cd ~/src { ... }
-                  parse_rawc             r'\'   c'\n'   c"$x\n"
-                  X parse_paren          if (x > 0) ...
+                  parse_paren            if (x > 0) ...
+                  X parse_index_expr     ${a[1 + f(x)]}
+                  X parse_rawc           r'\'   c'\n'   c"$x\n"
                   X longopts             test -file, read -delim, etc.
                   more_errexit           More errexit checks --  at command sub
                   simple_echo            Doesn't join args; -sep -end and --
                   simple_word_eval       No splitting, static globbing
-                  X simple_test_builtin  Only file tests, remove [, status 2
   [all:nice]                             Makes scripts more consistent
-                  X parse_equals         x = 's' (for cleaner config blocks)
+                  parse_equals           x = 's' (for cleaner config blocks)
                   parse_set              instead of setvar
-                  no_old_builtins        local/declare/etc.  pushd/popd/dirs
+                  X no_old_builtins      local/declare/etc.  pushd/popd/dirs
                                          source  unset  printf  [un]alias
                                          getopts
-                  no_old_syntax          [[   $(( ))  ${x%prefix}   $$
+                  X no_old_syntax        [[   $(( ))  ${x%prefix}   $$
                                          $'\n'   @(*.sh|*.py)  `echo comsub`
                                          ${a[@]}
+                  X simple_test_builtin  Only file tests, remove [, status 2
 
 ENVIRONMENT VARIABLES
   [Shell Options] SHELLOPTS   X BASHOPTS

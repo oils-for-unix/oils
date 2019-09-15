@@ -214,6 +214,7 @@ class OilParseOptions(object):
     #   '''
     # }
     self.rawc = False  # echo r'' c''
+    self.index_expr = False  # ${a[1 + f(x)]}
 
     # all:nice
     self.equals = False  # x = 'var'

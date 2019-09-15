@@ -7,6 +7,7 @@ import pwd
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import (
     word_e, word_t, word__Compound,
+    word_part__BracedVarSub,
     bracket_op_e, suffix_op_e, word_part_e
 )
 from _devbuild.gen.syntax_asdl import word
@@ -15,7 +16,6 @@ from _devbuild.gen.runtime_asdl import (
     part_value, part_value_e, part_value_t, part_value__String,
     value, value_e, value_t, lvalue,
     assign_arg, cmd_value, cmd_value__Assign,
-    word_part__BracedVarSub,
 )
 from core import process
 from core.meta import LookupKind

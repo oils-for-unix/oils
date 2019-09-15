@@ -239,8 +239,9 @@ SHOPT_OPTION_NAMES = [
 _OIL_PARSE_OPTION_NAMES = [
     'parse_at',
     'parse_brace',
-    'parse_rawc',
+    'parse_index_expr',
     'parse_paren',
+    'parse_rawc',
 ]
 
 # Extra stuff that breaks too many programs.

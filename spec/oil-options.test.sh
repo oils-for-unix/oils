@@ -188,8 +188,9 @@ shopt -s simple_echo
 shopt -s simple_test_builtin
 shopt -s parse_at
 shopt -s parse_brace
-shopt -s parse_rawc
+shopt -s parse_index_expr
 shopt -s parse_paren
+shopt -s parse_rawc
 ## END
 
 #### osh -O all:oil 
