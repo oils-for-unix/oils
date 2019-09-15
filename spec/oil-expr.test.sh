@@ -52,12 +52,26 @@ f
 x=2
 ## END
 
-#### setvar x, y = 1, 2
+#### var/setvar x, y = 1, 2
+
+# Python doesn't allow you to have annotation on each variable!
+# https://www.python.org/dev/peps/pep-0526/#where-annotations-aren-t-allowed
+#var x Int, y Int = 3, 4
 setvar x, y = 1, 2
 echo $x $y
 ## STDOUT:
 1 2
 ## END
+
+#### setvar x[1] = 42
+shopt -s all:oil
+var mylist = [1,2,3]
+setvar x[1] = 42
+echo -sep ' ' @x
+## STDOUT:
+1 42 3
+## END
+
 
 #### duplicate var def results in fatal error
 var x = "global"
