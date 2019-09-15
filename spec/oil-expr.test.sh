@@ -630,3 +630,61 @@ echo $f
 43
 41
 ## END
+
+#### multiline strings, dict, list, tuples, etc.
+var dq = "
+dq
+2
+"
+echo dq=$len(dq)
+
+var sq = '
+sq
+2
+'
+echo sq=$len(sq)
+
+var mylist = [
+  1,
+  2,
+  3,
+]
+echo mylist=$len(mylist)
+
+var mydict = { a:1,
+  b:
+  2,
+}
+echo mydict=$len(mydict)
+
+var mytuple = (1,
+  2, 3)
+echo mytuple=$len(mytuple)
+
+## STDOUT:
+dq=6
+sq=6
+mylist=3
+mydict=2
+mytuple=3
+## END
+
+#### multiline array and command sub (only here docs disallowed)
+var array = @(
+  one
+  two
+  three
+)
+echo array=$len(array)
+
+var comsub = $(
+echo hi
+echo bye
+)
+echo comsub=$len(comsub)
+
+## STDOUT:
+array=3
+comsub=6
+## END
+
