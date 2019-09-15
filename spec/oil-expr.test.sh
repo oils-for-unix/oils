@@ -382,6 +382,37 @@ foo
 bar
 ## END
 
+#### braced var sub ${x:-default}
+
+# without double quotes
+
+var b = ${foo:-default}
+echo $b
+var c = ${bar:-"-$b-"}
+echo $c
+
+var d = "${bar:-"-$c-"}"  # another one
+echo $d
+
+## STDOUT:
+default
+-default-
+--default--
+## END
+
+#### braced var sub respects strict_array
+set -- a b c
+var x = ${undef:-"$@"}
+echo $x
+shopt -s strict_array
+setvar x = ${undef:-"$@"}
+echo $x
+## status: 1
+## STDOUT:
+a b c
+## END
+
+
 #### null / true / false
 shopt -s all:oil
 var n = null

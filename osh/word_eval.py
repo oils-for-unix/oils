@@ -556,23 +556,7 @@ class _WordEvaluator(object):
     """
     part_vals = []
     self._EvalDoubleQuoted(dq_part.parts, part_vals)
-
-    strs = []
-    for part_val in part_vals:
-      if part_val.tag == part_value_e.String:
-        s = part_val.s
-      else:
-        if self.exec_opts.strict_array:
-          # Examples: echo f > "$@"; local foo="$@"
-          e_die("Illegal array in double quoted string (strict_array)",
-                span_id=dq_part.left.span_id)
-        else:
-          # It appears to not respect IFS
-          s = ' '.join(s for s in part_val.strs if s is not None)
-
-      strs.append(s)
-
-    return ''.join(strs)
+    return self._PartValsToString(part_vals, dq_part.left.span_id)
 
   def _DecayArray(self, val):
     assert val.tag == value_e.MaybeStrArray, val
@@ -860,6 +844,34 @@ class _WordEvaluator(object):
     # part_value.String().
     part_val = _ValueToPartValue(val, quoted)
     part_vals.append(part_val)
+
+  def _PartValsToString(self, part_vals, span_id):
+    strs = []
+    for part_val in part_vals:
+      if part_val.tag == part_value_e.String:
+        s = part_val.s
+      else:
+        if self.exec_opts.strict_array:
+          # Examples: echo f > "$@"; local foo="$@"
+          e_die("Illegal array word part (strict_array)",
+                span_id=span_id)
+        else:
+          # It appears to not respect IFS
+          s = ' '.join(s for s in part_val.strs if s is not None)
+
+      strs.append(s)
+
+    return ''.join(strs)
+
+  def EvalBracedVarSubToString(self, part):
+    """For double quoted strings in Oil expressions.
+
+    Example: var x = "$foo-${foo}"
+    """
+    part_vals = []
+    self._EvalBracedVarSub(part, part_vals, False)
+    # blame ${ location
+    return self._PartValsToString(part_vals, part.spids[0])
 
   def EvalSingleQuoted(self, part):
     if part.left.id == Id.Left_SingleQuoteRaw:

@@ -114,10 +114,12 @@ _MODE_TRANSITIONS = {
 
     # TODO: Add a token for $/ 'foo' /i .
     # Long version is RegExp($/ 'foo' /, ICASE|DOTALL) ?  Or maybe Regular()
+    (lex_mode_e.Expr, Id.Left_DollarSlash): lex_mode_e.Regex,  # $/ any + /
     (lex_mode_e.Regex, Id.Arith_Slash): POP,
 
-    (lex_mode_e.Expr, Id.Left_DollarSlash): lex_mode_e.Regex,  # $/ any + /
     (lex_mode_e.Expr, Id.Left_DollarBrace): lex_mode_e.VSub_1,  # ${x|html}
+    (lex_mode_e.VSub_1, Id.Right_DollarBrace): POP,
+
     (lex_mode_e.Expr, Id.Op_LParen): lex_mode_e.Expr,  # $( f(x) )
 
     (lex_mode_e.Expr, Id.Left_DoubleQuote): lex_mode_e.DQ,  # x + "foo"
@@ -308,6 +310,22 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
 
       typ = Id.Expr_DqDummy.enum_id
       opaque = cast(token, expr_dq_part)  # HACK for expr_to_ast
+      ilabel = gr.tokens[typ]
+      done = p.addtoken(typ, opaque, ilabel)
+      assert not done  # can't end the expression
+
+      continue
+
+    if tok.id == Id.Left_DollarBrace:
+      left_token = tok
+      line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
+      w_parser = parse_ctx.MakeWordParser(lex, line_reader)
+
+      part, last_token = w_parser.ReadBracedBracedVarSub(left_token)
+
+      # NOTE: We cast it to a token, then cast it back to expr__BracedVarSub!
+      typ = Id.Expr_WordsDummy.enum_id
+      opaque = cast(token, part)  # HACK for expr_to_ast
       ilabel = gr.tokens[typ]
       done = p.addtoken(typ, opaque, ilabel)
       assert not done  # can't end the expression

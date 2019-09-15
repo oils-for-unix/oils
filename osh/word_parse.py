@@ -67,7 +67,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from core import meta
 from core.util import p_die
-#from core.util import log
+from core.util import log
 from frontend import reader
 from frontend import tdop
 from osh import arith_parse
@@ -81,6 +81,7 @@ if TYPE_CHECKING:
   from frontend.parse_lib import ParseContext
   from frontend.reader import _Reader
 
+_ = log
 
 class WordParser(object):
 
@@ -364,7 +365,13 @@ class WordParser(object):
     # Now look for ops
     return part
 
-  def _ReadBracedBracedVarSub(self, d_quoted=False):
+  def ReadBracedBracedVarSub(self, left_token):
+    """   For expressions like var x = ${x:-"default"}.  """
+    part = self._ReadBracedBracedVarSub(left_token)
+    last_token = self.cur_token
+    return part, last_token
+
+  def _ReadBracedBracedVarSub(self, left_token, d_quoted=False):
     # type: (bool) -> word_part__BracedVarSub
     """For the ${} expression language.
 
@@ -423,8 +430,6 @@ class WordParser(object):
     ${a[@]:1:2} is not allowed
     ${#a[@]:1:2} is allowed, but gives the wrong answer
     """
-    left_spid = self.cur_token.span_id
-
     if d_quoted:
       arg_lex_mode = lex_mode_e.VSub_ArgDQ
     else:
@@ -478,7 +483,7 @@ class WordParser(object):
       # e.g. ${^}
       p_die('Unexpected token %r', self.cur_token.val, token=self.cur_token)
 
-    part.spids.append(left_spid)
+    part.spids.append(left_token.span_id)
 
     # Does this work?
     right_spid = self.cur_token.span_id
@@ -535,7 +540,7 @@ class WordParser(object):
       return self._ReadCommandSub(self.token_type)
 
     if self.token_type == Id.Left_DollarBrace:
-      return self._ReadBracedBracedVarSub(d_quoted=True)
+      return self._ReadBracedBracedVarSub(self.cur_token, d_quoted=True)
 
     if self.token_type == Id.Left_DollarDParen:
       return self._ReadArithSub()
@@ -569,7 +574,7 @@ class WordParser(object):
       return self._ReadCommandSub(self.token_type)
 
     if self.token_type == Id.Left_DollarBrace:
-      return self._ReadBracedBracedVarSub(d_quoted=False)
+      return self._ReadBracedBracedVarSub(self.cur_token, d_quoted=False)
 
     if self.token_type == Id.Left_DollarDParen:
       return self._ReadArithSub()

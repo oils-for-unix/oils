@@ -150,6 +150,9 @@ class OilEvaluator(object):
     if node.tag == expr_e.SingleQuoted:
       return self.word_ev.EvalSingleQuoted(node)
 
+    if node.tag == expr_e.BracedVarSub:
+      return self.word_ev.EvalBracedVarSubToString(node)
+
     if node.tag == expr_e.Unary:
       child = self.EvalExpr(node.child)
       if node.op.id == Id.Arith_Minus:

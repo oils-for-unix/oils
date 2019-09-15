@@ -322,6 +322,12 @@ module syntax
   | VarSub(token left, expr e)  -- might be a variant for ${x %02d}
     -- Just like word_part.CommandSub
   | CommandSub(token left_token, command command_list)
+
+    -- TODO: Duplicates BracedVarSub
+  | BracedVarSub(token token,
+                id? prefix_op,  -- prefix # or ! operators
+                bracket_op? bracket_op
+                suffix_op? suffix_op)
     -- NOTE: Duplicates word_part.SingleQuoted
   | SingleQuoted(token left, token* tokens)
     -- NOTE: Duplicates word_part.DoubleQuoted

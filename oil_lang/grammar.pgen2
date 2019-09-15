@@ -153,7 +153,7 @@ regex_literal: '$/' regex_part+ Arith_Slash
 dq_string: '"' Expr_DqDummy Right_DoubleQuote
 sq_string: (Left_SingleQuoteRaw | Left_SingleQuoteC) Expr_SqDummy Right_SingleQuote
 
-braced_var_sub: '${' expr Op_RBrace
+braced_var_sub: '${' Expr_WordsDummy Right_DollarBrace
 
 # TODO: Allow anything in VSub category?
 # $? should be STATUS because it's an integer.
