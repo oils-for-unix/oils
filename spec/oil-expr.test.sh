@@ -586,3 +586,16 @@ echo $x
 2.5
 #2
 ## END
+
+#### Logical operators
+var a = not true
+echo $a
+var b = true and false
+echo $b
+var c = true or false
+echo $c
+## STDOUT:
+False
+False
+True
+## END

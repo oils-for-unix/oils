@@ -170,8 +170,8 @@ class OilEvaluator(object):
       if node.op.id == Id.Arith_Star:
         return left * right
       if node.op.id == Id.Arith_Slash:
-        # NOTE: from __future__ import division
-        # changes 5/2!  But just make it explicit.
+        # NOTE: from __future__ import division changes 5/2!
+        # But just make it explicit.
         return float(left) / right  # floating point division
       if node.op.id == Id.Arith_Percent:
         return left % right

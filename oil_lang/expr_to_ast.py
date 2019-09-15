@@ -262,8 +262,6 @@ class Transformer(object):
     children = pnode.children
 
     if ISNONTERMINAL(typ):
-      c = '-' if not children else len(children)
-      #log('non-terminal %s %s', nt_name, c)
 
       if typ == grammar_nt.oil_expr:  # for if/while
         # oil_expr: '(' testlist ')'
@@ -282,6 +280,10 @@ class Transformer(object):
           return self.Expr(pnode.children[0])
         raise NotImplementedError
 
+      #
+      # Python-like Expressions / Operators
+      #
+
       if typ == grammar_nt.atom:
         if len(children) == 1:
           return self.Expr(children[0])
@@ -293,6 +295,7 @@ class Transformer(object):
         return self._Tuple(children)
 
       if typ == grammar_nt.test:
+        # test: or_test ['if' or_test 'else' test] | lambdef
         if len(children) == 1:
           return self.Expr(children[0])
         raise NotImplementedError
@@ -303,24 +306,27 @@ class Transformer(object):
         return self.Expr(children[0])
 
       if typ == grammar_nt.or_test:
-        if len(children) == 1:
-          return self.Expr(children[0])
-        raise NotImplementedError
+        # or_test: and_test ('or' and_test)*
+        return self._AssocBinary(children)
 
       if typ == grammar_nt.and_test:
-        if len(pnode.children) == 1:
-          return self.Expr(children[0])
-        raise NotImplementedError
+        # and_test: not_test ('and' not_test)*
+        return self._AssocBinary(children)
 
       if typ == grammar_nt.not_test:
-        if len(pnode.children) == 1:
+        # not_test: 'not' not_test | comparison
+        if len(children) == 1:
           return self.Expr(children[0])
-        raise NotImplementedError
+
+        # TODO: Handle comparison
+        op_tok = children[0]
+        #log('op_tok %s', op_tok)
+        return expr.Unary(op_tok, self.Expr(children[1]))
 
       if typ == grammar_nt.xor_expr:
         return self._AssocBinary(children)
 
-      if typ == grammar_nt.and_expr:
+      if typ == grammar_nt.and_expr:  # a & b
         return self._AssocBinary(children)
 
       if typ == grammar_nt.argument:
