@@ -528,3 +528,17 @@ foo
 len=2
 foo
 ## END
+
+#### Dict literal with string keys
+var d = {'sq': 123}
+var v = d['sq']
+echo $v
+
+var x = "q"
+var d2 = {"d$x": 456}
+var v2 = d2["dq"]
+echo $v2
+## STDOUT:
+123
+456
+## END

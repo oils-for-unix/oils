@@ -125,7 +125,14 @@ class Transformer(object):
     typ = children[0].typ
 
     if ISNONTERMINAL(typ):  # for sq_string
-      raise NotImplementedError
+      # TODO: These cases are the same.  Could inline them.
+      if typ == grammar_nt.sq_string:
+        key = self.Expr(children[0])
+      elif typ == grammar_nt.dq_string:
+        key = self.Expr(children[0])
+
+      value = self.Expr(children[2])
+      return key, value
 
     tok0 = children[0].tok
     id_ = tok0.id

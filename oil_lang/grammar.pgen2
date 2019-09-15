@@ -150,7 +150,9 @@ testlist: test (',' test)* [',']
 # TODO: [testlist] or sq_string or dq_string!
 dict_pair: (
   Expr_Name [':' test] |
-  '[' testlist ']' ':' test
+  '[' testlist ']' ':' test |
+  sq_string ':' test |
+  dq_string ':' test
 )
 dict: dict_pair (',' dict_pair)* [',']
 
