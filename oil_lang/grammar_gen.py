@@ -31,7 +31,8 @@ OPS = {
     '}': Id.Op_RBrace,
     ';': Id.Op_Semi,
 
-    '$[': Id.Left_DollarBracket,
+    # Unused now
+    #'$[': Id.Left_DollarBracket,
     '${': Id.Left_DollarBrace,
     '$(': Id.Left_DollarParen,
     '$/': Id.Left_DollarSlash,

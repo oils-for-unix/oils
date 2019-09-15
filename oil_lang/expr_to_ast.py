@@ -472,19 +472,6 @@ class Transformer(object):
 
         return expr.RegexLiteral(left_tok, regex.Concat(parts))
 
-      elif typ == grammar_nt.command_sub:
-        left_tok = children[0].tok
-
-        # Approximation for now.
-        tokens = [
-            pnode.tok for pnode in children[1:-1] if pnode.tok.id ==
-            Id.Lit_Chars
-        ]
-        words = [
-            word.Compound([word_part.Literal(t)]) for t in tokens
-        ]  # type: List[word_t]
-        return expr.CommandSub(left_tok, command.Simple(words))
-
       elif typ == grammar_nt.sh_command_sub:
         left_tok = children[0].tok
 
@@ -499,7 +486,7 @@ class Transformer(object):
         expr_part.spids.extend(cs_part.spids)
         return expr_part
 
-      elif typ == grammar_nt.var_sub:
+      elif typ == grammar_nt.braced_var_sub:
         left_tok = children[0].tok
 
         return expr.VarSub(left_tok, self.Expr(children[1]))

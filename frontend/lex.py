@@ -759,53 +759,6 @@ _OIL_VARS = [
   R(r'\$[0-9]', Id.VSub_Number),
 ]
 
-LEXER_DEF[lex_mode_e.Command] = (
-    _OIL_KEYWORDS + _BACKSLASH + _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + 
-    _OIL_VARS + [
-
-  R(_LITERAL_WHITELIST_REGEX, Id.Lit_Chars),
-
-  C('*', Id.Glob_Star),  # Statically parsed glob
-
-  C('#', Id.Lit_Pound),  # For comments
-  _SIGNIFICANT_SPACE,
-  C('\n', Id.Op_Newline),
-
-  # TODO:
-  # - Recognize glob chars like *.py here?  What about '?' ?
-  # - Need % to start "words" mode?
-
-  # File descriptor?  Or is that parsed like $foo?  &1 and &stderr?
-  R('&[0-9]', Id.Fd_Number),
-  R('&' + VAR_NAME_RE, Id.Fd_Name),
-
-  # Unused now?  But we don't want them to be literals.
-  C('(', Id.Op_LParen),
-  C(')', Id.Op_RParen),
-  # for proc args?  Otherwise unused?
-  C('[', Id.Op_LBracket),
-  C(']', Id.Op_RBracket),
-  # For blocks
-  C('{', Id.Op_LBrace),
-  C('}', Id.Op_RBrace),
-
-  C('!', Id.Op_Bang),
-  C('|', Id.Op_Pipe),
-  C('&&', Id.Op_DAmp),
-  C('||', Id.Op_DPipe),
-  C(';', Id.Op_Semi),
-
-  C('<', Id.Redir_Less),
-  C('>', Id.Redir_Great),
-  C('>+', Id.Redir_GreatPlus),  # Append
-
-  C('<<', Id.Redir_DLess),
-  C('>>', Id.Redir_DGreat),
-  C('>>+', Id.Redir_DGreatPlus),
-
-  R(r'[^\0]', Id.Lit_Other),  # any other single char is a literal
-])
-
 LEXER_DEF[lex_mode_e.Array] = (
   _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + [
 
@@ -1057,6 +1010,7 @@ _OIL_VARS = [
   R(r'\$[0-9]', Id.VSub_Number),
 ]
 
+# TODO: Remove this?  Right now it would be used in regexes.
 LEXER_DEF[lex_mode_e.DQ_Oil] = [
   # Like sh DQ, except no `
   R(r'\\[$"\\]', Id.Lit_EscapedChar),
@@ -1068,4 +1022,3 @@ LEXER_DEF[lex_mode_e.DQ_Oil] = [
   # This matches plain $.  TODO: Make it a syntax error in Oil?
   R(r'[^\0]', Id.Lit_Other),
 ]
-

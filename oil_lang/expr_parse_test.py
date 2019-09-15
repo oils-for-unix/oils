@@ -125,7 +125,7 @@ EOF)
       # TODO: Put this back after fixing double quoted strings in expression
       # mode.
       #'$/ "." [a-z A-Z] y /',
-      '$[echo hi]',
+      #'$[echo hi]',
       '$(echo hi)',
       '${x}',
       '"quoted ${x}"',
@@ -133,6 +133,7 @@ EOF)
 
     # array literal
     for c in CASES:
+      print('--- %s' % c)
       node = self._ParseOilExpression(c)
 
   def testLexer(self):

@@ -102,8 +102,6 @@ def _Classify(gr, tok):
 #   echo hi = 1
 
 # Other issues:
-# - Command and Array could be combined?  The parsing of { is different, not
-# the lexing.
 # - What about SingleLine mode?  With a % prefix?
 #   - Assumes {} means brace sub, and also makes trailing \ unnecessary?
 #   - Allows you to align pipes on the left
@@ -120,18 +118,11 @@ _MODE_TRANSITIONS = {
 
     (lex_mode_e.DQ_Oil, Id.Left_DollarBrace): lex_mode_e.VSub_Oil,  # "${x|html}"
     (lex_mode_e.VSub_Oil, Id.Op_RBrace): POP,
-    (lex_mode_e.DQ_Oil, Id.Left_DollarBracket): lex_mode_e.Command,  # "$[echo hi]"
-    (lex_mode_e.Command, Id.Op_RBracket): POP,
     (lex_mode_e.DQ_Oil, Id.Left_DollarParen): lex_mode_e.Expr,  # "$(1 + 2)"
     (lex_mode_e.Expr, Id.Op_RParen): POP,
 
-    # Expr -> ...
-    (lex_mode_e.Expr, Id.Left_AtBracket): lex_mode_e.Array,  # x + @[1 2]
-    (lex_mode_e.Array, Id.Op_RBracket): POP,
-
     (lex_mode_e.Expr, Id.Left_DollarSlash): lex_mode_e.Regex,  # $/ any + /
     (lex_mode_e.Expr, Id.Left_DollarBrace): lex_mode_e.VSub_Oil,  # ${x|html}
-    (lex_mode_e.Expr, Id.Left_DollarBracket): lex_mode_e.Command,  # $[echo hi]
     (lex_mode_e.Expr, Id.Op_LParen): lex_mode_e.Expr,  # $( f(x) )
 
     (lex_mode_e.Expr, Id.Left_DoubleQuote): lex_mode_e.DQ,  # x + "foo"

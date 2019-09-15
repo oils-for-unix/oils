@@ -37,13 +37,15 @@ power: atom trailer* ['^' factor]
 atom: ('(' [yield_expr|testlist_comp] ')' |
        '[' [testlist_comp] ']' |
        '{' [dict] '}' |
-       Expr_Name | '...' | Expr_Null | Expr_True | Expr_False |
-       Expr_DecInt | Expr_BinInt | Expr_OctInt | Expr_HexInt |
+        '...' |
+       # NOTE: These atoms are are allowed in typed array literals
+       Expr_Name |
+       Expr_Null | Expr_True | Expr_False |
        Expr_Float |
-       array_literal | sh_array_literal |
-       command_sub | sh_command_sub |
-       regex_literal |
-       dq_string | sq_string | var_sub
+       Expr_DecInt | Expr_BinInt | Expr_OctInt | Expr_HexInt |
+       dq_string | sq_string |
+       sh_command_sub | braced_var_sub | var_sub | regex_literal |
+       array_literal | sh_array_literal
 )
 testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
 trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
@@ -120,8 +122,17 @@ word: word_part*
 # @Bool[] @Int[] @Float[]
 # Do we need @Str[]?  Or that's just @()?
 
+array_item: (
+  # NOTE: Most of these occur in 'atom' above
+   Expr_Name |
+   Expr_Null | Expr_True | Expr_False |
+   Expr_Float |
+   Expr_DecInt | Expr_BinInt | Expr_OctInt | Expr_HexInt |
+   dq_string | sq_string |
+   sh_command_sub | braced_var_sub | var_sub | regex_literal
+)
 array_literal: (
-  '@[' [WS_Space] [word] (WS_Space word)* [WS_Space] Op_RBracket
+  '@[' array_item* Op_RBracket
 )
 
 sh_array_literal: '@(' Expr_WordsDummy Right_ArrayLiteral
@@ -138,21 +149,16 @@ regex_part: Expr_Name | dq_string | char_class
 # empty regex invalid for now
 regex_literal: '$/' regex_part+ Arith_Slash
 
-# line continuation is ignored by lexer
-dq_part: (
-  Lit_EscapedChar | Lit_Chars | Lit_Other | VSub_DollarName | VSub_Number |
-  command_sub | sh_command_sub | var_sub
-)
-
 # TODO: We also need r'' c''  "" c""
 dq_string: '"' Expr_DqDummy Right_DoubleQuote
 sq_string: (Left_SingleQuoteRaw | Left_SingleQuoteC) Expr_SqDummy Right_SingleQuote
 
-command_sub: (
-  '$[' [WS_Space] [word] (WS_Space word)* [WS_Space] Op_RBracket
-)
+braced_var_sub: '${' expr Op_RBrace
 
-var_sub: '${' expr Op_RBrace
+# TODO: Allow anything in VSub category?
+# $? should be STATUS because it's an integer.
+
+var_sub: VSub_Name | VSub_Number | VSub_QMark | VSub_Dollar
 
 #
 # Assignment / Type Variables
