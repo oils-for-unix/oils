@@ -229,7 +229,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
       raise AssertionError(str(tok))
 
     ilabel = _Classify(gr, tok)
-    #log('tok = %s, ilabel = %d', tok, ilabel)
+    log('tok = %s, ilabel = %d', tok, ilabel)
 
     if p.addtoken(tok.id.enum_id, tok, ilabel):
       return tok

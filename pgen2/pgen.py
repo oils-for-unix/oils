@@ -5,7 +5,7 @@
 #import grammar, token, tokenize
 # NOTE: Need these special versions of token/tokenize for BACKQUOTE and such.
 from . import grammar, token, tokenize
-#from core.util import log
+from core.util import log
 
 
 class PythonTokDef(object):
@@ -17,9 +17,21 @@ class PythonTokDef(object):
     assert itoken in token.tok_name, label
     return itoken
 
-  def GetOpNum(self, value):
-    """ e.g '(' -> LPAR """
-    return token.opmap[value]
+  def GetKeywordNum(self, value):
+    """
+    e.g 'xor' -> Id.Expr_Xor
+
+    Python doesn't have this, but Oil does.  Returns None if not found.
+    """
+    return None
+
+  def GetOpNum(self, op_str):
+    """
+    e.g '(' -> LPAR
+
+    Raises an exception if it's not found.
+    """
+    return token.opmap[op_str]
 
 
 class ParserGenerator(object):
@@ -302,10 +314,10 @@ def make_label(tok_def, gr, label):
     """Given a grammar item, return a unique integer representing it.
 
     It could be:
-    1. 'expr'  - a non-terminal
-    2. NAME    - a terminal
-    3. 'for'   - keyword
-    4. '>='    - operator
+    1. or_test      - a non-terminal
+    2. Expr_Name    - a terminal
+    3. 'for'        - keyword   (quotes)
+    4. '>='         - operator  (quotes)
 
     Oil addition
     5. Op_RBracket -- anything with _ is assumed to be in the Id namespace.
@@ -334,17 +346,27 @@ def make_label(tok_def, gr, label):
         # Either a keyword or an operator
         assert label[0] in ('"', "'"), label
         value = eval(label)
-        if value[0].isalpha():
-            # A keyword
+
+        # Treat 'xor' just like '^'.  TODO: I think this code can be
+        # simplified.
+        n = tok_def.GetKeywordNum(value)  # int or None
+
+        if value[0].isalpha() and n is None:  # A word like 'for', 'xor'
+            # Then look in the keywords automatically extracted from the
+            # grammar.
             if value in gr.keywords:
                 return gr.keywords[value]
             else:
                 gr.labels.append(token.NAME)  # arbitrary number < 256
                 gr.keywords[value] = ilabel
                 return ilabel
-        else:
-            # An operator (any non-numeric token)
-            itoken = tok_def.GetOpNum(value)
+
+        else:  # An operator e.g. '>='
+            if n is None:
+                itoken = tok_def.GetOpNum(value)
+            else:
+                itoken = n
+
             if itoken in gr.tokens:
                 return gr.tokens[itoken]
             else:

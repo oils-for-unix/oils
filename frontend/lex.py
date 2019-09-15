@@ -262,21 +262,20 @@ EXPR_WORDS = [
   C('true', Id.Expr_True),
   C('false', Id.Expr_False),
 
-  # TODO: Enable this
-  #C('div', Id.Expr_Div),
-  #C('xor', Id.Expr_Xor),
+  C('div', Id.Expr_Div),
+  C('xor', Id.Expr_Xor),
 
-  #C('and', Id.Expr_And),
-  #C('or', Id.Expr_Or),
-  #C('not', Id.Expr_Not),
+  C('and', Id.Expr_And),
+  C('or', Id.Expr_Or),
+  C('not', Id.Expr_Not),
 
-  #C('for', Id.Expr_For),
-  #C('is', Id.Expr_Is),
-  #C('in', Id.Expr_In),
-  #C('if', Id.Expr_If),
-  #C('else', Id.Expr_Else),
+  C('for', Id.Expr_For),
+  C('is', Id.Expr_Is),
+  C('in', Id.Expr_In),
+  C('if', Id.Expr_If),
+  C('else', Id.Expr_Else),
 
-  #C('func', Id.Expr_Func),
+  C('func', Id.Expr_Func),
 ]
 
 

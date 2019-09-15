@@ -109,6 +109,10 @@ class TokenDef(object):
 		""" e.g '(' -> LPAR """
 		return opmap[value]
 
+	def GetKeywordNum(self, value):
+		return None
+
+
 def tokenize(argv):
 	start = end = (1, 0) # dummy location data
 	line_text = ''

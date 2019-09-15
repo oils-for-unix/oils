@@ -318,8 +318,7 @@ class Transformer(object):
         if len(children) == 1:
           return self.Expr(children[0])
 
-        # TODO: Handle comparison
-        op_tok = children[0]
+        op_tok = children[0].tok
         #log('op_tok %s', op_tok)
         return expr.Unary(op_tok, self.Expr(children[1]))
 

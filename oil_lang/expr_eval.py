@@ -156,6 +156,8 @@ class OilEvaluator(object):
         return -child
       if node.op.id == Id.Arith_Tilde:
         return ~child
+      if node.op.id == Id.Expr_Not:
+        return not child
 
       raise NotImplementedError(node.op.id)
 
@@ -201,6 +203,12 @@ class OilEvaluator(object):
         return left >> right
       if node.op.id == Id.Arith_DLess:
         return left << right
+
+      # Logical
+      if node.op.id == Id.Expr_And:
+        return left and right
+      if node.op.id == Id.Expr_Or:
+        return left or right
 
       raise NotImplementedError(node.op.id)
 

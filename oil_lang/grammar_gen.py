@@ -47,8 +47,6 @@ OPS = {
 
     # TODO: Add Ellipsis.
     '...': Id.Expr_Dot,
-
-    # TODO: do we need div= and xor= ?
 }
 
 # TODO: We should be able to remove all these.
@@ -64,30 +62,11 @@ TERMINALS = {
 }
 
 
-if 0:  # unused because the grammar compile keeps track of keywords!
-  KEYWORDS = {
-      'div': Id.Expr_Div,
-      'xor': Id.Expr_Xor,
-
-      'and': Id.Expr_And,
-      'or': Id.Expr_Or,
-      'not': Id.Expr_Not,
-
-      'for': Id.Expr_For,
-      'is': Id.Expr_Is,
-      'in': Id.Expr_In,
-      'if': Id.Expr_If,
-      'else': Id.Expr_Else,
-
-      'match': Id.Expr_Match,
-      'func': Id.Expr_Func,
-  }
-
-
 class OilTokenDef(object):
 
-  def __init__(self, arith_ops):
+  def __init__(self, arith_ops, keyword_ops):
     self.arith_ops = arith_ops
+    self.keyword_ops = keyword_ops
 
   def GetTerminalNum(self, label):
     """
@@ -98,8 +77,27 @@ class OilTokenDef(object):
     assert id_.enum_id < 256, id_
     return id_.enum_id
 
-  def GetOpNum(self, value):
-    id_ = OPS.get(value) or self.arith_ops[value]
+  def GetKeywordNum(self, s):
+    """
+    e.g 'xor' -> Id.Expr_Xor
+
+    Python doesn't have this, but Oil does.  Returns None if not found.
+    """
+    id_ = self.keyword_ops.get(s) 
+    if id_ is None:
+      return None
+    assert id_.enum_id < 256, id_
+    return id_.enum_id
+
+  def GetOpNum(self, op_str):
+    """
+    Args:
+      op_str: '>='
+
+    Returns:
+      Integer for '>=' or Id.Arith_GreatEqual
+    """
+    id_ = OPS.get(op_str) or self.arith_ops[op_str]
     assert id_.enum_id < 256, id_
     return id_.enum_id
 
@@ -119,17 +117,22 @@ def main(argv):
   # Common initialization
   arith_ops = {}
   for _, token_str, id_ in meta.ID_SPEC.LexerPairs(Kind.Arith):
+    assert token_str not in arith_ops, token_str
     arith_ops[token_str] = id_
 
-  if 0:  # TODO: Enable this
-    for _, token_str, id_ in lex.EXPR_WORDS:  # for, in, etc.
-      arith_ops[token_str] = id_
+  keyword_ops = {}
+  for _, token_str, id_ in lex.EXPR_WORDS:  # for, in, etc.
+    assert token_str not in keyword_ops, token_str
+    keyword_ops[token_str] = id_
 
-  from pprint import pprint
-  if 0:
+  if 1:
+    from pprint import pprint
     pprint(arith_ops)
+    print('---')
+    pprint(keyword_ops)
+    print('---')
 
-  tok_def = OilTokenDef(arith_ops)
+  tok_def = OilTokenDef(arith_ops, keyword_ops)
 
   if action == 'marshal':  # generate the grammar and parse it
     grammar_path = argv[0]
