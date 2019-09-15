@@ -69,7 +69,6 @@ from frontend import args
 from frontend import reader
 from frontend import parse_lib
 
-from oil_lang import cmd_exec as oil_cmd_exec
 from oil_lang import expr_eval
 from oil_lang import builtin_oil
 from oil_lang import builtin_funcs
@@ -540,11 +539,6 @@ def ShellMain(lang, argv0, argv, login_shell):
   builtins[builtin_e.TRAP] = builtin_process.Trap(sig_state, exec_deps.traps,
                                                   exec_deps.trap_nodes, ex,
                                                   errfmt)
-
-  if lang == 'oil':
-    # The Oil executor wraps an OSH executor?  It needs to be able to source
-    # it.
-    ex = oil_cmd_exec.OilExecutor(ex)
 
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
   prompt_ev = prompt.Evaluator(lang, parse_ctx, ex, mem)

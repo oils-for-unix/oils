@@ -7,19 +7,20 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
     token, command, command__VarDecl,
     expr, expr_t, expr__DoubleQuoted, expr__SingleQuoted, expr__Dict,
-    expr_context_e, regex, regex_t, word,
-    word_t,
-    word_part, word_part__CommandSub,
+    expr_context_e, regex, regex_t,
+    word_t, word_part__CommandSub,
     param, type_expr_t,
     comprehension,
 )
 from _devbuild.gen import grammar_nt
 from pgen2.parse import PNode
-from core.util import log
+#from core.util import log
 
 from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:
   from pgen2.grammar import Grammar
+
+_ = word_t  # shut up lint, it's used below
 
 
 # Copied from pgen2/token.py to avoid dependency.
