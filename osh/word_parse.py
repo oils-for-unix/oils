@@ -366,13 +366,14 @@ class WordParser(object):
     return part
 
   def ReadBracedBracedVarSub(self, left_token):
+    # type: (token) -> Tuple[word_part__BracedVarSub, token]
     """   For expressions like var x = ${x:-"default"}.  """
     part = self._ReadBracedBracedVarSub(left_token)
     last_token = self.cur_token
     return part, last_token
 
   def _ReadBracedBracedVarSub(self, left_token, d_quoted=False):
-    # type: (bool) -> word_part__BracedVarSub
+    # type: (token, bool) -> word_part__BracedVarSub
     """For the ${} expression language.
 
     NAME        = [a-zA-Z_][a-zA-Z0-9_]*

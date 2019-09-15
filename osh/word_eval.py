@@ -12,9 +12,10 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.syntax_asdl import word
 from _devbuild.gen.runtime_asdl import (
     builtin_e, effect_e,
-    part_value, part_value_e, part_value__String,
+    part_value, part_value_e, part_value_t, part_value__String,
     value, value_e, value_t, lvalue,
     assign_arg, cmd_value, cmd_value__Assign,
+    word_part__BracedVarSub,
 )
 from core import process
 from core.meta import LookupKind
@@ -846,6 +847,7 @@ class _WordEvaluator(object):
     part_vals.append(part_val)
 
   def _PartValsToString(self, part_vals, span_id):
+    # type: (List[part_value_t], int) -> str
     strs = []
     for part_val in part_vals:
       if part_val.tag == part_value_e.String:
@@ -864,6 +866,7 @@ class _WordEvaluator(object):
     return ''.join(strs)
 
   def EvalBracedVarSubToString(self, part):
+    # type: (word_part__BracedVarSub) -> str
     """For double quoted strings in Oil expressions.
 
     Example: var x = "$foo-${foo}"
