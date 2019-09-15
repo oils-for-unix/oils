@@ -283,10 +283,6 @@ class Transformer(object):
           return self.Expr(children[0])
         return self._Atom(children)
 
-      if typ == grammar_nt.eval_input:
-        # testlist_input: testlist NEWLINE* ENDMARKER
-        return self.Expr(children[0])
-
       if typ == grammar_nt.testlist:
         # testlist: test (',' test)* [',']
         # We need tuples for Python's 'var a, b = x' and 'for (a, b in x) {'
