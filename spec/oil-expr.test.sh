@@ -548,12 +548,14 @@ var a = 0b0101 & 0b0011
 echo $a
 var b = 0b0101 | 0b0011
 echo $b
-# TODO: xor
-var c = ~b
+var c = 0b0101 xor 0b0011
 echo $c
+var d = ~b
+echo $d
 ## STDOUT:
 1
 7
+6
 -8
 ## END
 
@@ -580,11 +582,11 @@ echo $y
 #### Two Kinds of Division
 var x = 5/2
 echo $x
-#var y = 5 div 2
-#echo $y
+var y = 5 div 2
+echo $y
 ## STDOUT:
 2.5
-#2
+2
 ## END
 
 #### Logical operators

@@ -129,9 +129,9 @@ class Transformer(object):
     typ = children[0].typ
 
     if ISNONTERMINAL(typ):  # for sq_string
-      # TODO: These cases are the same.  Could inline them.
+      # Note: Could inline these cases instead of going through self.Expr.
       if typ == grammar_nt.sq_string:
-        key = self.Expr(children[0])
+        key = self.Expr(children[0])  # type: expr_t
       elif typ == grammar_nt.dq_string:
         key = self.Expr(children[0])
 
@@ -142,7 +142,7 @@ class Transformer(object):
     id_ = tok0.id
 
     if id_ == Id.Expr_Name:
-      key = expr.Const(tok0)  # type: expr_t
+      key = expr.Const(tok0)
       if len(children) >= 3:
         value = self.Expr(children[2])
       else:

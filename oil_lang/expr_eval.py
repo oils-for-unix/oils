@@ -175,8 +175,12 @@ class OilEvaluator(object):
         # NOTE: from __future__ import division changes 5/2!
         # But just make it explicit.
         return float(left) / right  # floating point division
+
+      if node.op.id == Id.Expr_Div:
+        return left // right  # integer divison
       if node.op.id == Id.Arith_Percent:
         return left % right
+
       if node.op.id == Id.Arith_Caret:  # Exponentiation
         return left ** right
 
@@ -197,8 +201,8 @@ class OilEvaluator(object):
         return left & right
       if node.op.id == Id.Arith_Pipe:
         return left | right
-      #if node.op.id == Id.Expr_Xor:
-      #  return left ^ right
+      if node.op.id == Id.Expr_Xor:
+        return left ^ right
       if node.op.id == Id.Arith_DGreat:
         return left >> right
       if node.op.id == Id.Arith_DLess:
