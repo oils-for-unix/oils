@@ -256,11 +256,9 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
       words2 = braces.BraceDetectAll(words)
       words3 = word_.TildeDetectAll(words2)
 
-      #log('pushing Expr_WordsDummy')
-      typ = Id.Expr_WordsDummy.enum_id
+      typ = Id.Expr_CastedDummy.enum_id
       opaque = cast(token, words3)  # HACK for expr_to_ast
-      ilabel = gr.tokens[typ]
-      done = p.addtoken(typ, opaque, ilabel)
+      done = p.addtoken(typ, opaque, gr.tokens[typ])
       assert not done  # can't end the expression
 
       # Now push the closing )
@@ -286,7 +284,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
       cs_part.spids.append(left_token.span_id)
       cs_part.spids.append(right_token.span_id)
 
-      typ = Id.Expr_CommandDummy.enum_id
+      typ = Id.Expr_CastedDummy.enum_id
       opaque = cast(token, cs_part)  # HACK for expr_to_ast
       ilabel = gr.tokens[typ]
       done = p.addtoken(typ, opaque, ilabel)
@@ -308,10 +306,9 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
       last_token = w_parser.ReadDoubleQuoted(left_token, parts)
       expr_dq_part = expr.DoubleQuoted(left_token, parts)
 
-      typ = Id.Expr_DqDummy.enum_id
+      typ = Id.Expr_CastedDummy.enum_id
       opaque = cast(token, expr_dq_part)  # HACK for expr_to_ast
-      ilabel = gr.tokens[typ]
-      done = p.addtoken(typ, opaque, ilabel)
+      done = p.addtoken(typ, opaque, gr.tokens[typ])
       assert not done  # can't end the expression
 
       continue
@@ -323,11 +320,10 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
 
       part, last_token = w_parser.ReadBracedBracedVarSub(left_token)
 
-      # NOTE: We cast it to a token, then cast it back to expr__BracedVarSub!
-      typ = Id.Expr_WordsDummy.enum_id
+      # It's casted word_part__BracedVarSub -> dummy -> expr__BracedVarSub!
+      typ = Id.Expr_CastedDummy.enum_id
       opaque = cast(token, part)  # HACK for expr_to_ast
-      ilabel = gr.tokens[typ]
-      done = p.addtoken(typ, opaque, ilabel)
+      done = p.addtoken(typ, opaque, gr.tokens[typ])
       assert not done  # can't end the expression
 
       continue
@@ -345,10 +341,9 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
                                              no_backslashes)
       expr_sq_part = expr.SingleQuoted(left_token, tokens)
 
-      typ = Id.Expr_SqDummy.enum_id
+      typ = Id.Expr_CastedDummy.enum_id
       opaque = cast(token, expr_sq_part)  # HACK for expr_to_ast
-      ilabel = gr.tokens[typ]
-      done = p.addtoken(typ, opaque, ilabel)
+      done = p.addtoken(typ, opaque, gr.tokens[typ])
       assert not done  # can't end the expression
 
       continue

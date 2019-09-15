@@ -454,10 +454,10 @@ class Transformer(object):
       elif typ == grammar_nt.sh_array_literal:
         left_tok = children[0].tok
 
-        # HACK: When typ is Id.Expr_WordsDummy, the 'tok' field ('opaque')
+        # HACK: When typ is Id.Expr_CastedDummy, the 'tok' field ('opaque')
         # actually has a list of words!
         typ1 = children[1].typ
-        assert typ1 == Id.Expr_WordsDummy.enum_id, typ1
+        assert typ1 == Id.Expr_CastedDummy.enum_id, typ1
         array_words = cast('List[word_t]', children[1].tok)
 
         return expr.ShellArrayLiteral(left_tok, array_words)
@@ -477,10 +477,8 @@ class Transformer(object):
       elif typ == grammar_nt.sh_command_sub:
         left_tok = children[0].tok
 
-        # HACK: When typ is Id.Expr_CommandDummy, the 'tok' field ('opaque')
-        # actually has a word_part.CommandSub!
         typ1 = children[1].typ
-        assert typ1 == Id.Expr_CommandDummy.enum_id, typ1
+        assert typ1 == Id.Expr_CastedDummy.enum_id, typ1
         cs_part = cast(word_part__CommandSub, children[1].tok)
 
         # Awkward: the schemas are different

@@ -34,7 +34,7 @@ factor: ('+'|'-'|'~') factor | power
 # Oil patch: ** -> ^
 # Also removed Python 3 'await'
 power: atom trailer* ['^' factor]
-atom: ('(' [yield_expr|testlist_comp] ')' |
+atom: ('(' [testlist_comp] ')' |
        '[' [testlist_comp] ']' |
        '{' [dict] '}' |
         '...' |
@@ -82,10 +82,13 @@ dict_pair: (
 )
 dict: dict_pair (',' dict_pair)* [',']
 
-dictorsetmaker: ( ((test ':' test | '**' expr)
-                   (comp_for | (',' (test ':' test | '**' expr))* [','])) |
-                  ((test | star_expr)
-                   (comp_for | (',' (test | star_expr))* [','])) )
+# This how Python implemented dict comprehensions.  We can probably do the
+# same.
+#
+# dictorsetmaker: ( ((test ':' test | '**' expr)
+#                    (comp_for | (',' (test ':' test | '**' expr))* [','])) |
+#                   ((test | star_expr)
+#                    (comp_for | (',' (test | star_expr))* [','])) )
 
 arglist: argument (',' argument)*  [',']
 
@@ -104,9 +107,6 @@ argument: ( test [comp_for] |
             '*' test )
 
 comp_for: 'for' exprlist 'in' or_test ['if' test_nocond]
-
-yield_expr: 'yield' [yield_arg]
-yield_arg: 'from' test | testlist
 
 
 #
@@ -135,8 +135,8 @@ array_literal: (
   '@[' array_item* Op_RBracket
 )
 
-sh_array_literal: '@(' Expr_WordsDummy Right_ArrayLiteral
-sh_command_sub: '$(' Expr_CommandDummy Eof_RParen
+sh_array_literal: '@(' Expr_CastedDummy Right_ArrayLiteral
+sh_command_sub: '$(' Expr_CastedDummy Eof_RParen
 
 char_class_part: Lit_Chars  # TODO: letters, escaped, and ranges
 char_class: (
@@ -150,10 +150,10 @@ regex_part: Expr_Name | dq_string | char_class
 regex_literal: '$/' regex_part+ Arith_Slash
 
 # TODO: We also need r'' c''  "" c""
-dq_string: '"' Expr_DqDummy Right_DoubleQuote
-sq_string: (Left_SingleQuoteRaw | Left_SingleQuoteC) Expr_SqDummy Right_SingleQuote
+dq_string: '"' Expr_CastedDummy Right_DoubleQuote
+sq_string: (Left_SingleQuoteRaw | Left_SingleQuoteC) Expr_CastedDummy Right_SingleQuote
 
-braced_var_sub: '${' Expr_WordsDummy Right_DollarBrace
+braced_var_sub: '${' Expr_CastedDummy Right_DollarBrace
 
 # TODO: Allow anything in VSub category?
 # $? should be STATUS because it's an integer.

@@ -385,11 +385,8 @@ def AddKinds(spec):
 
     'NotTilde',  # !~
 
-    # TODO: We could use the same Dummy for all?
-    'WordsDummy',    # Used for @() (words in lex_mode_e.ShCommand)
-    'CommandDummy',  # Used for $() (command in lex_mode_e.ShCommand)
-    'DqDummy',       # Used for ""
-    'SqDummy',       # Used for ''
+    'CastedDummy',    # Used for @()  $() (words in lex_mode_e.ShCommand)
+                      # and ${}  ''  ""  (and all other strings)
 
     # Constants
     'Null', 'True', 'False',
