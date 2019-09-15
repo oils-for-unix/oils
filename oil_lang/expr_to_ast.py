@@ -302,7 +302,13 @@ class Transformer(object):
         # test: or_test ['if' or_test 'else' test] | lambdef
         if len(children) == 1:
           return self.Expr(children[0])
-        raise NotImplementedError
+
+        # TODO: Handle lambdef
+
+        test = self.Expr(children[2])
+        body = self.Expr(children[0])
+        orelse = self.Expr(children[4])
+        return expr.IfExp(test, body, orelse)
 
       if typ == grammar_nt.test_nocond:
         # test_nocond: or_test | lambdef_nocond

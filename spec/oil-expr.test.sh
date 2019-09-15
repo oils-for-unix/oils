@@ -596,8 +596,23 @@ var b = true and false
 echo $b
 var c = true or false
 echo $c
+
+# TODO: These should be spelled 'false' 'false' 'true'?
+
 ## STDOUT:
 False
 False
 True
+## END
+
+#### x if b else y
+var b = true
+var i = 42
+var t = i+1 if b else i-1
+echo $t
+var f = i+1 if false else i-1
+echo $f
+## STDOUT:
+43
+41
 ## END

@@ -216,6 +216,13 @@ class OilEvaluator(object):
 
       raise NotImplementedError(node.op.id)
 
+    if node.tag == expr_e.IfExp:
+      b = self.EvalExpr(node.test)
+      if b:
+        return self.EvalExpr(node.body)
+      else:
+        return self.EvalExpr(node.orelse)
+
     if node.tag == expr_e.List:
       return [self.EvalExpr(e) for e in node.elts]
 
