@@ -15,7 +15,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen import grammar_nt
 from pgen2.parse import PNode
-#from core.util import log
+from core.util import log
 
 from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:
@@ -60,6 +60,10 @@ class Transformer(object):
   def _AssocBinary(self, children):
     # type: (List[PNode]) -> expr_t
     """For an associative binary operation.
+
+    Examples:
+      xor_expr: and_expr ('xor' and_expr)*
+      term: factor (('*'|'/'|'%'|'div') factor)*
 
     We don't care if it's (1+2)+3 or 1+(2+3).
     """
@@ -314,14 +318,10 @@ class Transformer(object):
         raise NotImplementedError
 
       if typ == grammar_nt.xor_expr:
-        if len(pnode.children) == 1:
-          return self.Expr(children[0])
-        raise NotImplementedError
+        return self._AssocBinary(children)
 
       if typ == grammar_nt.and_expr:
-        if len(pnode.children) == 1:
-          return self.Expr(children[0])
-        raise NotImplementedError
+        return self._AssocBinary(children)
 
       if typ == grammar_nt.argument:
         # argument: ( test [comp_for] |
@@ -394,16 +394,23 @@ class Transformer(object):
       elif typ == grammar_nt.power:
         # power: atom trailer* ['^' factor]
 
-        base = self.Expr(children[0])
+        node = self.Expr(children[0])
+        if len(children) == 1:  # No trailers
+          return node
 
-        # TODO: Handle '^' factor
         n = len(children)
-        for i in xrange(1, n):
-          pnode = children[i]
-          tok = pnode.tok
-          base = self._Trailer(base, pnode)
+        i = 1
+        while i < n and ISNONTERMINAL(children[i].typ):
+          node = self._Trailer(node, children[i])
+          i += 1
 
-        return base
+        if i != n:  # ['^' factor]
+          op_tok = children[i].tok
+          assert op_tok.id == Id.Arith_Caret, op_tok
+          factor = self.Expr(children[i+1])
+          node = expr.Binary(op_tok, node, factor)
+
+        return node
 
       elif typ == grammar_nt.array_literal:
         left_tok = children[0].tok

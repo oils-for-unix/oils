@@ -542,3 +542,47 @@ echo $v2
 123
 456
 ## END
+
+#### Bitwise logical
+var a = 0b0101 & 0b0011
+echo $a
+var b = 0b0101 | 0b0011
+echo $b
+# TODO: xor
+var c = ~b
+echo $c
+## STDOUT:
+1
+7
+-8
+## END
+
+#### Shift operators
+var a = 1 << 4
+echo $a
+var b = 16 >> 4
+echo $b
+## STDOUT:
+16
+1
+## END
+
+#### Exponent is ^
+var x = 2^3
+echo $x
+var y = 2.0^3.0
+echo $y
+## STDOUT:
+8
+8.0
+## END
+
+#### Two Kinds of Division
+var x = 5/2
+echo $x
+#var y = 5 div 2
+#echo $y
+## STDOUT:
+2.5
+#2
+## END

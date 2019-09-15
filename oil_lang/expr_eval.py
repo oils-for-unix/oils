@@ -154,6 +154,8 @@ class OilEvaluator(object):
       child = self.EvalExpr(node.child)
       if node.op.id == Id.Arith_Minus:
         return -child
+      if node.op.id == Id.Arith_Tilde:
+        return ~child
 
       raise NotImplementedError(node.op.id)
 
@@ -163,24 +165,42 @@ class OilEvaluator(object):
 
       if node.op.id == Id.Arith_Plus:
         return left + right
-
       if node.op.id == Id.Arith_Minus:
         return left - right
-
       if node.op.id == Id.Arith_Star:
         return left * right
-
-      if node.op.id == Id.Arith_Less:
-        return left < right
-
-      if node.op.id == Id.Arith_Great:
-        return left > right
-
+      if node.op.id == Id.Arith_Slash:
+        # NOTE: from __future__ import division
+        # changes 5/2!  But just make it explicit.
+        return float(left) / right  # floating point division
       if node.op.id == Id.Arith_Percent:
         return left % right
+      if node.op.id == Id.Arith_Caret:  # Exponentiation
+        return left ** right
 
+      # Copmarison
+      if node.op.id == Id.Arith_Less:
+        return left < right
+      if node.op.id == Id.Arith_Great:
+        return left > right
+      if node.op.id == Id.Arith_GreatEqual:
+        return left >= right
+      if node.op.id == Id.Arith_LessEqual:
+        return left <= right
       if node.op.id == Id.Arith_DEqual:
         return left == right
+
+      # Bitwise
+      if node.op.id == Id.Arith_Amp:
+        return left & right
+      if node.op.id == Id.Arith_Pipe:
+        return left | right
+      #if node.op.id == Id.Expr_Xor:
+      #  return left ^ right
+      if node.op.id == Id.Arith_DGreat:
+        return left >> right
+      if node.op.id == Id.Arith_DLess:
+        return left << right
 
       raise NotImplementedError(node.op.id)
 
