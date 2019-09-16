@@ -734,8 +734,21 @@ _OIL_KEYWORDS = [
 OIL_LEFT_SUBS = [
   C('$(', Id.Left_DollarParen),
   C('${', Id.Left_DollarBrace),
-  C('$[', Id.Left_DollarBracket),
+  C('$[', Id.Left_DollarBracket),  # Unused now
   C('$/', Id.Left_DollarSlash),
+
+  # For lazily evaluated expressions
+  #
+  # NOTE: This conflicts with {key:[value]}
+  # Julia uses {key => value} instead.
+  # Maybe we should reserve  %( %{ %[  %/
+  #
+  # That would be valid in command mode, while \{ isn't.
+  # But we don't really need it in command mode!  \{ would still be valid.
+
+  #C(':(', Id.Expr_Reserved),
+  #C(':{', Id.Expr_Reserved),
+  #C(':[', Id.Expr_Reserved),
 ]
 
 # Valid in lex_mode_e.Expr
@@ -756,6 +769,7 @@ OIL_LEFT_UNQUOTED = [
   # Not valid in DQ_Oil
   C('@(', Id.Left_AtParen),  # Legacy shell arrays.
   C('@[', Id.Left_AtBracket),  # Oil arrays.  Not used yet.
+  C('@{', Id.Expr_Reserved),  # For table literals?  Not used yet.
 ]
 
 # Used by oil_lang/grammar_gen.py

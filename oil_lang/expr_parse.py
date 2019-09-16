@@ -110,17 +110,20 @@ def _Classify(gr, tok):
 POP = lex_mode_e.Undefined
 
 _MODE_TRANSITIONS = {
+    # Do we want regex literals in double quoted strings?  That would be
+    # breaking in command mode.
     #(lex_mode_e.DQ, Id.Left_DollarSlash): lex_mode_e.Regex,  # "$/ any + /"
 
-    # TODO: Add a token for $/ 'foo' /i .
-    # Long version is RegExp($/ 'foo' /, ICASE|DOTALL) ?  Or maybe Regular()
+    #
+    # Expr
+    #
+
     (lex_mode_e.Expr, Id.Left_DollarSlash): lex_mode_e.Regex,  # $/ any + /
     (lex_mode_e.Regex, Id.Arith_Slash): POP,
 
     (lex_mode_e.Expr, Id.Left_DollarBrace): lex_mode_e.VSub_1,  # ${x|html}
+    # TODO: What about VSub_2 and so forth?
     (lex_mode_e.VSub_1, Id.Right_DollarBrace): POP,
-
-    (lex_mode_e.Expr, Id.Op_LParen): lex_mode_e.Expr,  # $( f(x) )
 
     (lex_mode_e.Expr, Id.Left_DoubleQuote): lex_mode_e.DQ,  # x + "foo"
     (lex_mode_e.DQ, Id.Right_DoubleQuote): POP,
@@ -128,11 +131,16 @@ _MODE_TRANSITIONS = {
     (lex_mode_e.Expr, Id.Left_SingleQuoteRaw): lex_mode_e.SQ_Raw,  # x + 'foo'
     (lex_mode_e.SQ_Raw, Id.Right_SingleQuote): POP,
 
-    # x + c'\n'
-    (lex_mode_e.Expr, Id.Left_SingleQuoteC): lex_mode_e.SQ_C,
+    (lex_mode_e.Expr, Id.Left_SingleQuoteC): lex_mode_e.SQ_C,  # x + c'\n'
     (lex_mode_e.SQ_C, Id.Right_SingleQuote): POP,
 
+    # Why don't we need need @() and $() here?  Are ${  ' c'  " also
+    # unnecessary?
+
+    #
     # Regex
+    #
+
     (lex_mode_e.Regex, Id.Op_LBracket): lex_mode_e.CharClass,  # $/ 'foo.' [c h] /
     (lex_mode_e.CharClass, Id.Op_RBracket): POP,
 

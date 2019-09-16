@@ -115,6 +115,10 @@ class Transformer(object):
       #return self._GetAttr(base, nodelist[2])
       raise NotImplementedError
 
+    # TODO:
+    # Also do :: and ->
+    # Both can be on the LHS too.
+
     raise AssertionError(op_tok)
 
   def _DictPair(self, p_node):

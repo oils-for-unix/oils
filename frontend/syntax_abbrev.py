@@ -61,6 +61,9 @@ def _word_part__BracedVarSub(obj):
 
 def _word_part__DoubleQuoted(obj):
   # type: (word_part__DoubleQuoted) -> PrettyNode
+  if obj.left.id != Id.Left_DoubleQuote:
+    return None  # Fall back on obj._AbbreviatedTree()
+
   p_node = runtime.PrettyNode()
   p_node.abbrev = True
   p_node.node_type = 'DQ'

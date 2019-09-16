@@ -104,7 +104,7 @@ module syntax
     -- escaped case is separate so the evaluator doesn't have to check token ID
   | EscapedLiteral(token token)
   | SingleQuoted(token left, token* tokens)
-  | DoubleQuoted(word_part* parts)
+  | DoubleQuoted(token left, word_part* parts)
   | SimpleVarSub(token token)
 
     -- TODO: Add Oil expressions

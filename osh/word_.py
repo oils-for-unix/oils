@@ -143,10 +143,10 @@ def LeftMostSpanForPart(part):
     return part.token.span_id
 
   elif isinstance(part, word_part__SingleQuoted):
-    return part.spids[0]  # single quote location
+    return part.left.span_id  # single quote location
 
   elif isinstance(part, word_part__DoubleQuoted):
-    return part.spids[0]  # double quote location
+    return part.left.span_id  # double quote location
 
   elif isinstance(part, word_part__SimpleVarSub):
     return part.token.span_id

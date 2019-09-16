@@ -695,12 +695,12 @@ class WordParser(object):
 
     Also ${foo%%a b c}  # treat this as double quoted.  until you hit
     """
-    dq_part = word_part.DoubleQuoted()
     left_dq_token = self.cur_token
-    dq_part.spids.append(left_dq_token.span_id)  # Left "
+    parts = []
+    self._ReadLikeDQ(left_dq_token, parts)
 
-    self._ReadLikeDQ(left_dq_token, dq_part.parts)
-
+    dq_part = word_part.DoubleQuoted(left_dq_token, parts)
+    dq_part.spids.append(left_dq_token.span_id)  # Left ", sort of redundant
     dq_part.spids.append(self.cur_token.span_id)  # Right "
     return dq_part
 
