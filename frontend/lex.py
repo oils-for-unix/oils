@@ -275,6 +275,9 @@ EXPR_WORDS = [
   C('if', Id.Expr_If),
   C('else', Id.Expr_Else),
 
+  # Should this be 'fn'?  Because the syntax is different:
+  # fn(x) x+1
+  # fn(x) :{ return x + 1 }
   C('func', Id.Expr_Func),
 ]
 
@@ -726,19 +729,21 @@ _OIL_KEYWORDS = [
   C('with',      Id.KW_With),
 ]
 
-# Valid in lex_mode_e.{Command,Array,Expr,DQ_Oil}
-_OIL_LEFT_SUBS = [
+# Valid in lex_mode_e.{Expr,DQ_Oil}
+# Used by oil_lang/grammar_gen.py
+OIL_LEFT_SUBS = [
   C('$(', Id.Left_DollarParen),
   C('${', Id.Left_DollarBrace),
   C('$[', Id.Left_DollarBracket),
   C('$/', Id.Left_DollarSlash),
 ]
 
-# Valid in lex_mode_e.{Command,Array,Expr}
+# Valid in lex_mode_e.Expr
 # TODO:
 # - raw strings with r' r"
 # - multiline strings ''' """ r''' r"""
-_OIL_LEFT_UNQUOTED = [
+# Used by oil_lang/grammar_gen.py
+OIL_LEFT_UNQUOTED = [
   C('"', Id.Left_DoubleQuote),
 
   # In expression mode, we add the r'' and c'' prefixes for '' and $''.
@@ -752,6 +757,20 @@ _OIL_LEFT_UNQUOTED = [
   C('@(', Id.Left_AtParen),  # Legacy shell arrays.
   C('@[', Id.Left_AtBracket),  # Oil arrays.  Not used yet.
 ]
+
+# Used by oil_lang/grammar_gen.py
+EXPR_OPS = [
+  # Terminator
+  C(';', Id.Op_Semi),
+  C('(', Id.Op_LParen),
+  C(')', Id.Op_RParen),
+  # NOTE: type expressions are expressions, e.g. Dict[Str, Int]
+  C('[', Id.Op_LBracket),
+  C(']', Id.Op_RBracket),
+  C('{', Id.Op_LBrace),
+  C('}', Id.Op_RBrace),
+]
+
 
 # Newline is significant, but sometimes elided by expr_parse.py.
 _EXPR_NEWLINE_COMMENT = [
@@ -789,7 +808,7 @@ float = digitpart fraction? exponent? | fraction exponent?
 
 # NOTE: Borrowing tokens from Arith (i.e. $(( )) ), but not using LexerPairs().
 LEXER_DEF[lex_mode_e.Expr] = \
-    _OIL_LEFT_SUBS + _OIL_LEFT_UNQUOTED + EXPR_WORDS + [
+    OIL_LEFT_SUBS + OIL_LEFT_UNQUOTED + EXPR_OPS + EXPR_WORDS + [
 
   # https://docs.python.org/3/reference/lexical_analysis.html#literals
   #
@@ -819,15 +838,10 @@ LEXER_DEF[lex_mode_e.Expr] = \
   # These can be looked up as keywords separately, so you enforce that they have
   # space around them?
   R(VAR_NAME_RE, Id.Expr_Name),
-  # keywords:
-  # div xor      # binary
-  # and or not   # boolean
-  # for          # comprehensions
-  # is
-  # in
-  # if     # ternary
-  # match  # consistent with if/else expressions
-  # func   # literals
+
+  #
+  # Arith
+  #
 
   C(',', Id.Arith_Comma),
   C(':', Id.Arith_Colon),   # for slicing a[1:2]
@@ -840,25 +854,6 @@ LEXER_DEF[lex_mode_e.Expr] = \
   C('^', Id.Arith_Caret),   # ^ rather than ** is exponentiation.  xor is 'xor'.
   C('/', Id.Arith_Slash),
   C('%', Id.Arith_Percent),
-
-  C('.', Id.Expr_Dot),      # attribute access (static or dynamic)
-  C('::', Id.Expr_DColon),  # static namespace access
-  C('->', Id.Expr_RArrow),  # dynamic dict access: be d->name->age
-                            # instead of d['name']['age']
-  C('=>', Id.Expr_RDArrow), # for df => filter(age > 10)
-                            # and match (x) { 1 => "one" }
-                            # note: other languages use |>
-                            # R/dplyr uses %>%
-
-  # Terminator
-  C(';', Id.Op_Semi),
-  C('(', Id.Op_LParen),
-  C(')', Id.Op_RParen),
-  # NOTE: type expressions are expressions, e.g. Dict[Str, Int]
-  C('[', Id.Op_LBracket),
-  C(']', Id.Op_RBracket),
-  C('{', Id.Op_LBrace),
-  C('}', Id.Op_RBrace),
 
   C('<', Id.Arith_Less),
   C('>', Id.Arith_Great),
@@ -876,10 +871,6 @@ LEXER_DEF[lex_mode_e.Expr] = \
   # Bitwise complement, as well as infix pattern matching
   C('~', Id.Arith_Tilde),
   C('!~', Id.Expr_NotTilde),
-
-  # Splat operators
-  C('@', Id.Expr_At),
-  C('@@', Id.Expr_DoubleAt),
 
   # Left out for now:
   # ++ --       -- needed for loops, awk?
@@ -901,11 +892,26 @@ LEXER_DEF[lex_mode_e.Expr] = \
   C('>>=', Id.Arith_DGreatEqual),
   C('<<=', Id.Arith_DLessEqual),
 
+  #
+  # Expr
+  #
 
-  # NOTE: % could be string interpolation with a context other than locals?
-  # like '$foo $bar' % {foo: 'X', bar: 'Y'}
-  # single quoted rather than double quoted?
-  # Would that be a security issue?
+  C('.', Id.Expr_Dot),      # attribute access (static or dynamic)
+  C('::', Id.Expr_DColon),  # static namespace access
+  C('->', Id.Expr_RArrow),  # dynamic dict access: be d->name->age
+                            # instead of d['name']['age']
+
+  # Reserved this.  Go uses it for channels, etc.
+  # I guess it conflicts with -4<-3, but that's OK -- spaces suffices.
+  C('<-', Id.Expr_Reserved),
+  C('=>', Id.Expr_RDArrow), # for df => filter(age > 10)
+                            # and match (x) { 1 => "one" }
+                            # note: other languages use |>
+                            # R/dplyr uses %>%
+
+  # Splat operators
+  C('@', Id.Expr_At),
+  C('@@', Id.Expr_DoubleAt),
 
   # expr as List[Int] for casting?  Or just cast(List[Int]], expr)
   # What about specifying types?  NOTE: we attach it to the expression rather
@@ -923,7 +929,7 @@ LEXER_DEF[lex_mode_e.Expr] = \
 
 # TODO: Do we allow $name $() ${} $[] in regexes?  I don't think they're really
 # necessary.
-LEXER_DEF[lex_mode_e.Regex] = _OIL_LEFT_UNQUOTED + [
+LEXER_DEF[lex_mode_e.Regex] = OIL_LEFT_UNQUOTED + [
   # These can be looked up as keywords separately, so you enforce that they have
   # space around them?
   R(VAR_NAME_RE, Id.Expr_Name),

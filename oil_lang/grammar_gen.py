@@ -17,39 +17,6 @@ from frontend import lexer, match, reader, lex
 from pgen2 import parse, pgen
 
 
-# Used at grammar BUILD time.
-OPS = {
-    '(': Id.Op_LParen,
-    ')': Id.Op_RParen,
-
-    '[': Id.Op_LBracket,
-    ']': Id.Op_RBracket,     # Problem: in OilOuter, this is OP_RBracket.
-                             # OK I think the metalanguage needs to be
-                             # extended to take something other than ']'
-                             # It needs proper token names!
-    '{': Id.Op_LBrace,
-    '}': Id.Op_RBrace,
-    ';': Id.Op_Semi,
-
-    # Unused now
-    #'$[': Id.Left_DollarBracket,
-    '${': Id.Left_DollarBrace,
-    '$(': Id.Left_DollarParen,
-    '$/': Id.Left_DollarSlash,
-    '@[': Id.Left_AtBracket,
-    '@(': Id.Left_AtParen,
-
-    '"': Id.Left_DoubleQuote,
-    "'": Id.Left_SingleQuoteRaw,
-
-    '.': Id.Expr_Dot,
-    '->': Id.Expr_RArrow,
-    '@': Id.Expr_At,
-
-    # TODO: Add Ellipsis.
-    '...': Id.Expr_Dot,
-}
-
 # TODO: We should be able to remove all these.
 TERMINALS = {
     'NAME': Id.Expr_Name,
@@ -65,8 +32,9 @@ TERMINALS = {
 
 class OilTokenDef(object):
 
-  def __init__(self, arith_ops, keyword_ops):
-    self.arith_ops = arith_ops
+  def __init__(self, ops, more_ops, keyword_ops):
+    self.ops = ops
+    self.more_ops = more_ops
     self.keyword_ops = keyword_ops
 
   def GetTerminalNum(self, label):
@@ -84,7 +52,7 @@ class OilTokenDef(object):
 
     Python doesn't have this, but Oil does.  Returns None if not found.
     """
-    id_ = self.keyword_ops.get(s) 
+    id_ = self.keyword_ops.get(s)
     if id_ is None:
       return None
     assert id_.enum_id < 256, id_
@@ -98,7 +66,7 @@ class OilTokenDef(object):
     Returns:
       Integer for '>=' or Id.Arith_GreatEqual
     """
-    id_ = OPS.get(op_str) or self.arith_ops[op_str]
+    id_ = self.ops.get(op_str) or self.more_ops[op_str]  # Fail if not there
     assert id_.enum_id < 256, id_
     return id_.enum_id
 
@@ -111,29 +79,54 @@ def MakeOilLexer(code_str, arena):
   return lex
 
 
+
 def main(argv):
   action = argv[1]
   argv = argv[2:]
 
-  # Common initialization
-  arith_ops = {}
-  for _, token_str, id_ in meta.ID_SPEC.LexerPairs(Kind.Arith):
-    assert token_str not in arith_ops, token_str
-    arith_ops[token_str] = id_
+  # Used at grammar BUILD time.
+  OPS = {
+      '.': Id.Expr_Dot,
+      '->': Id.Expr_RArrow,
+      '@': Id.Expr_At,
 
+      # TODO: Add Ellipsis.
+      '...': Id.Expr_Dot,
+  }
+
+  # Note: We have two lists of ops because Id.Op_Semi is used, not
+  # Id.Arith_Semi.
+  for _, token_str, id_ in lex.EXPR_OPS:
+    assert token_str not in OPS, token_str
+    OPS[token_str] = id_
+
+  # Tokens that look like / or ${ or @{
+  triples = (
+      meta.ID_SPEC.LexerPairs(Kind.Arith) +
+      lex.OIL_LEFT_SUBS +
+      lex.OIL_LEFT_UNQUOTED
+  )
+  more_ops = {}
+  for _, token_str, id_ in triples:
+    assert token_str not in more_ops, token_str
+    more_ops[token_str] = id_
+
+  # Tokens that look like 'for'
   keyword_ops = {}
   for _, token_str, id_ in lex.EXPR_WORDS:  # for, in, etc.
     assert token_str not in keyword_ops, token_str
     keyword_ops[token_str] = id_
 
-  if 1:
+  if 0:
     from pprint import pprint
-    pprint(arith_ops)
+    pprint(OPS)
+    print('---')
+    pprint(more_ops)
     print('---')
     pprint(keyword_ops)
     print('---')
 
-  tok_def = OilTokenDef(arith_ops, keyword_ops)
+  tok_def = OilTokenDef(OPS, more_ops, keyword_ops)
 
   if action == 'marshal':  # generate the grammar and parse it
     grammar_path = argv[0]
