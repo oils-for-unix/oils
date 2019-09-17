@@ -51,13 +51,13 @@ from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
-    token, double_quoted, arith_expr_t,
+    token, double_quoted, single_quoted, arith_expr_t,
     suffix_op, suffix_op_t, suffix_op__Slice, suffix_op__PatSub,
     bracket_op, bracket_op_t,
 
     word, word_t, word__Compound, word__Token,
     word_part, word_part_t,
-    word_part__Literal, word_part__BracedVarSub, word_part__SingleQuoted,
+    word_part__Literal, word_part__BracedVarSub,
     word_part__ArithSub, word_part__CommandSub,
     word_part__ExtGlob,
 
@@ -493,14 +493,14 @@ class WordParser(object):
     return part
 
   def _ReadSingleQuoted(self, lex_mode):
-    # type: (lex_mode_t) -> word_part__SingleQuoted
+    # type: (lex_mode_t) -> single_quoted
     """Interal method to read a word_part."""
     left_token = self.cur_token
     tokens = []  # type: List[token]
     # In command mode, we never disallow backslashes like '\'
     self.ReadSingleQuoted(lex_mode, left_token, tokens, False)
 
-    node = word_part.SingleQuoted(left_token, tokens)
+    node = single_quoted(left_token, tokens)
     node.spids.append(left_token.span_id)  # left '
     node.spids.append(self.cur_token.span_id)  # right '
     return node

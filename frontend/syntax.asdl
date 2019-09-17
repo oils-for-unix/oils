@@ -98,6 +98,7 @@ module syntax
   attributes (int* spids)
 
   double_quoted = (token left, word_part* parts) attributes (int* spids)
+  single_quoted = (token left, token* tokens) attributes (int* spids)
 
   word_part = 
     ArrayLiteral(word* words)
@@ -106,7 +107,7 @@ module syntax
   | Literal(token token)
     -- escaped case is separate so the evaluator doesn't have to check token ID
   | EscapedLiteral(token token)
-  | SingleQuoted(token left, token* tokens)
+  | SingleQuoted %single_quoted
   | DoubleQuoted %double_quoted
   | SimpleVarSub(token token)
 
@@ -335,10 +336,7 @@ module syntax
                 id? prefix_op,  -- prefix # or ! operators
                 bracket_op? bracket_op
                 suffix_op? suffix_op)
-    -- NOTE: Duplicates word_part.SingleQuoted
-  | SingleQuoted(token left, token* tokens)
-    -- NOTE: Duplicates word_part.DoubleQuoted
-    -- Not all word_part are valid here!
+  | SingleQuoted %single_quoted
   | DoubleQuoted %double_quoted
 
   | Unary(token op, expr child)

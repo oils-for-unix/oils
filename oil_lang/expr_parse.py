@@ -6,8 +6,8 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.syntax_asdl import (
-    token, double_quoted, word__Token, word__Compound, word_part, word_part_t,
-    expr
+    token, double_quoted, single_quoted, expr,
+    word__Token, word__Compound, word_part, word_part_t,
 )
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.types_asdl import lex_mode_e
@@ -348,10 +348,10 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
       no_backslashes = (left_token.val == "'")
       last_token = w_parser.ReadSingleQuoted(mode, left_token, tokens,
                                              no_backslashes)
-      expr_sq_part = expr.SingleQuoted(left_token, tokens)
+      sq_part = single_quoted(left_token, tokens)
 
       typ = Id.Expr_CastedDummy.enum_id
-      opaque = cast(token, expr_sq_part)  # HACK for expr_to_ast
+      opaque = cast(token, sq_part)  # HACK for expr_to_ast
       done = p.addtoken(typ, opaque, gr.tokens[typ])
       assert not done  # can't end the expression
 

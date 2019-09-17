@@ -42,6 +42,22 @@ def _double_quoted(obj):
   return p_node
 
 
+def _single_quoted(obj):
+  # type: (single_quoted) -> PrettyNode
+
+  # Only abbreviate 'foo', not $'foo\n'
+  if obj.left.id != Id.Left_SingleQuoteRaw:
+    return None  # Fall back on obj._AbbreviatedTree()
+
+  p_node = runtime.PrettyNode()
+  p_node.abbrev = True
+  p_node.node_type = 'SQ'
+
+  for token in obj.tokens:
+    p_node.unnamed_fields.append(token.AbbreviatedTree())
+  return p_node
+
+
 def _word_part__Literal(obj):
   # type: (word_part__Literal) -> PrettyNode
   p_node = runtime.PrettyNode()
@@ -70,22 +86,6 @@ def _word_part__BracedVarSub(obj):
   p_node.abbrev = True
   p_node.node_type = '${'
   _AbbreviateToken(obj.token, p_node.unnamed_fields)
-  return p_node
-
-
-def _word_part__SingleQuoted(obj):
-  # type: (word_part__SingleQuoted) -> PrettyNode
-
-  # Only abbreviate 'foo', not $'foo\n'
-  if obj.left.id != Id.Left_SingleQuoteRaw:
-    return None  # Fall back on obj._AbbreviatedTree()
-
-  p_node = runtime.PrettyNode()
-  p_node.abbrev = True
-  p_node.node_type = 'SQ'
-
-  for token in obj.tokens:
-    p_node.unnamed_fields.append(token.AbbreviatedTree())
   return p_node
 
 
