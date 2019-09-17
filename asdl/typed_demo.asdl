@@ -2,9 +2,9 @@
 
 module arith {
   -- TODO: re-enable this after generating the proper Python code
-  -- use demo_lib { value }
+  use demo_lib { value }
   -- Two of them as a test
-  -- use demo_lib { t2, t3, t4 }
+  use demo_lib { t2, t3, t4 }
 
   -- using_value = (string foo, value v)
 

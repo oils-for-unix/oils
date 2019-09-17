@@ -1,0 +1,16 @@
+-- To test how all ASDL construct generate typed code.
+
+module shared_variant {
+
+  double_quoted = (int left, string* tokens)
+
+  expr =
+    Binary(expr left, expr right)
+    -- Use the existing TYPE double_quoted, but create a new TAG
+    -- expr_e.DoubleQuoted.
+  | DoubleQuoted -- %double_quoted
+
+  word_part =
+    Literal(string s)
+  | DoubleQuoted --%double_quoted
+}

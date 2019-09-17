@@ -126,14 +126,15 @@ class ASDLParser(object):
             return self._parse_product()
         else:
             # Otherwise it's a sum. Look for ConstructorId
-            sumlist = [Constructor(self._match(TokenKind.ConstructorId),
-                                   self._parse_optional_fields())]
-            while self.cur_token.kind == TokenKind.Pipe:
+            sumlist = []
+            while True:
                 # More constructors
+                cons = Constructor(self._match(TokenKind.ConstructorId),
+                                   self._parse_optional_fields())
+                sumlist.append(cons)
+                if self.cur_token.kind != TokenKind.Pipe:
+                  break
                 self._advance()
-                sumlist.append(Constructor(
-                                self._match(TokenKind.ConstructorId),
-                                self._parse_optional_fields()))
             return Sum(sumlist, self._parse_optional_attributes())
 
     def _parse_product(self):
