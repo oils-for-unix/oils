@@ -319,10 +319,9 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
   def VisitProduct(self, product, name, depth):
     self._shared_type_tags[name] = self._product_counter
-    self._product_counter += 1
-
     self._GenClass(product, product.attributes, name, 'runtime.CompoundObj',
-                   depth)
+                   depth, tag_num=self._product_counter)
+    self._product_counter += 1
 
   def EmitFooter(self):
     pass

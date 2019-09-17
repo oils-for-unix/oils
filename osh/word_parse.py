@@ -51,14 +51,14 @@ from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
-    token, arith_expr_t,
+    token, double_quoted, arith_expr_t,
     suffix_op, suffix_op_t, suffix_op__Slice, suffix_op__PatSub,
     bracket_op, bracket_op_t,
 
     word, word_t, word__Compound, word__Token,
     word_part, word_part_t,
     word_part__Literal, word_part__BracedVarSub, word_part__SingleQuoted,
-    word_part__ArithSub, word_part__DoubleQuoted, word_part__CommandSub,
+    word_part__ArithSub, word_part__CommandSub,
     word_part__ExtGlob,
 
     command, command_t, command__ForExpr,
@@ -687,7 +687,7 @@ class WordParser(object):
     # Return nothing, since we appended to 'out_parts'
 
   def _ReadDoubleQuoted(self):
-    # type: () -> word_part__DoubleQuoted
+    # type: () -> double_quoted
     """
     Args:
       eof_type: for stopping at }, Id.Lit_RBrace
@@ -699,7 +699,7 @@ class WordParser(object):
     parts = []  # type: List[word_part_t]
     self._ReadLikeDQ(left_dq_token, parts)
 
-    dq_part = word_part.DoubleQuoted(left_dq_token, parts)
+    dq_part = double_quoted(left_dq_token, parts)
     dq_part.spids.append(left_dq_token.span_id)  # Left ", sort of redundant
     dq_part.spids.append(self.cur_token.span_id)  # Right "
     return dq_part

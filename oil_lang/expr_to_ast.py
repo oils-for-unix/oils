@@ -5,9 +5,9 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    token, command, command__VarDecl,
-    expr, expr_t,
-    expr__DoubleQuoted, expr__SingleQuoted, expr__Dict, expr__BracedVarSub,
+    token, double_quoted,
+    command, command__VarDecl,
+    expr, expr_t, expr__SingleQuoted, expr__Dict, expr__BracedVarSub,
     expr_context_e, regex, regex_t,
     word_t, word_part__CommandSub, 
     param, type_expr_t,
@@ -496,7 +496,7 @@ class Transformer(object):
         return part
 
       elif typ == grammar_nt.dq_string:
-        dq_part = cast(expr__DoubleQuoted, children[1].tok)
+        dq_part = cast(double_quoted, children[1].tok)
         return dq_part
 
       elif typ == grammar_nt.sq_string:

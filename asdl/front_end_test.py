@@ -41,6 +41,14 @@ class FrontEndTest(unittest.TestCase):
     self.assertEqual(1001, expr_e.DoubleQuoted)
     self.assertEqual(expr_e.DoubleQuoted, word_part_e.DoubleQuoted)
 
+    d = double_quoted(5, ['foo', 'bar'])
+    d.PrettyPrint()
+    print()
+
+    b = expr.Binary(d, d)
+    b.PrettyPrint()
+
+
 
 if __name__ == '__main__':
   unittest.main()

@@ -97,6 +97,8 @@ module syntax
   | Slice(arith_expr? begin, arith_expr? length)
   attributes (int* spids)
 
+  double_quoted = (token left, word_part* parts) attributes (int* spids)
+
   word_part = 
     ArrayLiteral(word* words)
     -- alternating key and value (saving some space)
@@ -105,7 +107,7 @@ module syntax
     -- escaped case is separate so the evaluator doesn't have to check token ID
   | EscapedLiteral(token token)
   | SingleQuoted(token left, token* tokens)
-  | DoubleQuoted(token left, word_part* parts)
+  | DoubleQuoted %double_quoted
   | SimpleVarSub(token token)
 
     -- TODO: Add Oil expressions
@@ -337,7 +339,7 @@ module syntax
   | SingleQuoted(token left, token* tokens)
     -- NOTE: Duplicates word_part.DoubleQuoted
     -- Not all word_part are valid here!
-  | DoubleQuoted(token left, word_part* parts)
+  | DoubleQuoted %double_quoted
 
   | Unary(token op, expr child)
   | Binary(token op, expr left, expr right)

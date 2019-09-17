@@ -6,7 +6,8 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.syntax_asdl import (
-    token, word__Token, word__Compound, word_part, word_part_t, expr
+    token, double_quoted, word__Token, word__Compound, word_part, word_part_t,
+    expr
 )
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.types_asdl import lex_mode_e
@@ -312,7 +313,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
 
       parts = []  # type: List[word_part_t]
       last_token = w_parser.ReadDoubleQuoted(left_token, parts)
-      expr_dq_part = expr.DoubleQuoted(left_token, parts)
+      expr_dq_part = double_quoted(left_token, parts)
 
       typ = Id.Expr_CastedDummy.enum_id
       opaque = cast(token, expr_dq_part)  # HACK for expr_to_ast
