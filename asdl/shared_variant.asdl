@@ -17,6 +17,8 @@ module shared_variant {
   word_part =
     Literal(string s)
   | DoubleQuoted %double_quoted
+  -- Comment out to test build-time error
+  -- | ErrorIsDuplicate %double_quoted
 
   -- Make sure we didn't break these variants
   cflow = Break | Continue | Return(int val)

@@ -287,7 +287,15 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       if variant.shared_type:
         tag_num = self._shared_type_tags[variant.shared_type]
         # e.g. double_quoted may have base types expr_t, word_part_t
-        self._product_bases[variant.shared_type].append(sum_name + '_t')
+        base_class = sum_name + '_t'
+        bases = self._product_bases[variant.shared_type]
+        if base_class in bases:
+          raise RuntimeError(
+              "Two tags in sum %r refer to product type %r" %
+              (sum_name, variant.shared_type))
+
+        else:
+          bases.append(base_class)
       else:
         tag_num = i + 1
       self.Emit('  %s = %d' % (variant.name, tag_num), depth)
