@@ -4,6 +4,8 @@ gen_python.py: Generate Python code from an ASDL schema.
 """
 from __future__ import print_function
 
+from collections import defaultdict
+
 from asdl import meta
 from asdl import visitor
 from core.util import log
@@ -19,8 +21,12 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     self.type_lookup = type_lookup
     self.abbrev_mod_entries = abbrev_mod_entries or []
     self.e_suffix = e_suffix
+
     self._shared_type_tags = {}
     self._product_counter = 1000  # start it high
+
+    self._products = []
+    self._product_bases = defaultdict(list)
 
   def VisitSimpleSum(self, sum, name, depth):
     # First emit a type
@@ -110,14 +116,12 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
       self.Emit('  L.append((%r, %s))' % (field_name, out_val_name), depth)
 
-  def _GenClass(self, desc, attributes, class_name, super_name, depth,
-                tag_num=None):
+  def _GenClass(self, desc, attributes, class_name, base_classes, depth,
+                tag_num):
     """Used for Constructor and Product."""
     pretty_cls_name = class_name.replace('__', '.')  # used below
-    self.Emit('class %s(%s):' % (class_name, super_name))
-
-    if tag_num is not None:
-      self.Emit('  tag = %d' % tag_num)
+    self.Emit('class %s(%s):' % (class_name, ', '.join(base_classes)))
+    self.Emit('  tag = %d' % tag_num)
 
     # Add on attributes
     all_fields = desc.fields + attributes
@@ -282,6 +286,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     for i, variant in enumerate(sum.types):
       if variant.shared_type:
         tag_num = self._shared_type_tags[variant.shared_type]
+        # e.g. double_quoted may have base types expr_t, word_part_t
+        self._product_bases[variant.shared_type].append(sum_name + '_t')
       else:
         tag_num = i + 1
       self.Emit('  %s = %d' % (variant.name, tag_num), depth)
@@ -300,8 +306,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         # Use fully-qualified name, so we can have osh_cmd.Simple and
         # oil_cmd.Simple.
         fq_name = '%s__%s' % (sum_name, variant.name)
-        self._GenClass(variant, sum.attributes, fq_name, sum_name + '_t',
-                       depth, tag_num=i+1)
+        self._GenClass(variant, sum.attributes, fq_name, (sum_name + '_t',),
+                       depth, i+1)
 
     # Emit a namespace
     self.Emit('class %s(object):' % sum_name, depth)
@@ -319,9 +325,19 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
   def VisitProduct(self, product, name, depth):
     self._shared_type_tags[name] = self._product_counter
-    self._GenClass(product, product.attributes, name, 'runtime.CompoundObj',
-                   depth, tag_num=self._product_counter)
+    # Create a tuple of _GenClass args to create LAST.  They may inherit from
+    # sum types that have yet to be defined.
+    self._products.append(
+        (product, product.attributes, name, depth, self._product_counter)
+    )
     self._product_counter += 1
 
   def EmitFooter(self):
-    pass
+    # Now generate all the product types we deferred.
+    for args in self._products:
+      desc, attributes, name, depth, tag_num = args
+      # Figure out base classes AFTERWARD.
+      bases = self._product_bases[name]
+      if not bases:
+        bases = ('runtime.CompoundObj',)
+      self._GenClass(desc, attributes, name, bases, depth, tag_num)
