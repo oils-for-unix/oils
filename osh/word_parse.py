@@ -696,7 +696,7 @@ class WordParser(object):
     Also ${foo%%a b c}  # treat this as double quoted.  until you hit
     """
     left_dq_token = self.cur_token
-    parts = []
+    parts = []  # type: List[word_part_t]
     self._ReadLikeDQ(left_dq_token, parts)
 
     dq_part = word_part.DoubleQuoted(left_dq_token, parts)
