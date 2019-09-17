@@ -9,27 +9,36 @@ from asdl import asdl_ as asdl
 from asdl import meta
 from asdl.asdl_ import Use, Module, Type, Constructor, Field, Sum, Product
 
-# Types for describing tokens in an ASDL specification.
+_TOKENS = [
+    ('ConstructorId', ''),
+    ('TypeId', ''),
+    ('Equals', '='),
+    ('Comma', ','),
+    ('Question', '?'),
+    ('Pipe', '|'),
+    ('Asterisk', '*'),
+    ('LParen', '('),
+    ('RParen', ')'),
+    ('LBrace', '{'),
+    ('RBrace', '}'),
+    ('Percent', '%'),
+]
+
+_TOKEN_STR = [name for name, _ in _TOKENS]  # integer -> string like LParen
+_TOKEN_INT = {}  # string like '(' -> integer
+
+
 class TokenKind(object):
-    """TokenKind is provides a scope for enumerated token kinds."""
+    """ASDL tokens.
 
-    (ConstructorId, TypeId, Equals, Comma, Question, Pipe, Asterisk,
-     LParen, RParen, LBrace, RBrace, Percent) = xrange(12)
-
-    operator_table = {
-        '=': Equals, ',': Comma,    '?': Question, '|': Pipe,    '(': LParen,
-        ')': RParen, '*': Asterisk, '{': LBrace,   '}': RBrace,  '%': Percent,
-    }
+    TokenKind.LBrace = 5, etc.
+    """
+    pass
 
 
-_NAMES = (
-    'ConstructorId', 'TypeId',
-    'Equals', 'Comma', 'Question', 'Pipe', 'Asterisk', 'LParen',
-    'RParen', 'LBrace', 'RBrace', 'Percent'
-)
-
-def KindName(i):
-  return _NAMES[i]
+for i, (name, val) in enumerate(_TOKENS):
+    setattr(TokenKind, name, i)
+    _TOKEN_INT[val] = i
 
 
 class Token(object):
@@ -63,7 +72,7 @@ def _Tokenize(f):
             else:
                 # Operators
                 try:
-                    op_kind = TokenKind.operator_table[c]
+                    op_kind = _TOKEN_INT[c]
                 except KeyError:
                     raise ASDLSyntaxError('Invalid operator %s' % c, lineno)
                 yield Token(op_kind, c, lineno)
@@ -232,7 +241,7 @@ class ASDLParser(object):
             return value
         else:
             raise ASDLSyntaxError(
-                'Expected token {}, got {}'.format(KindName(kind),
+                'Expected token {}, got {}'.format(_TOKEN_STR[kind],
                                                    self.cur_token.value),
                 self.cur_token.lineno)
 
