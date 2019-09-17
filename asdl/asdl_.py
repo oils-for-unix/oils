@@ -135,9 +135,10 @@ class _CompoundAST(AST):
 
 
 class Constructor(_CompoundAST):
-    def __init__(self, name, fields=None):
+    def __init__(self, name, shared_type, fields=None):
         _CompoundAST.__init__(self, fields)
         self.name = name
+        self.shared_type = shared_type  # for DoubleQuoted %double_quoted
 
         # Add fake spids field.
         # TODO: Only do this if 'attributes' are set.
@@ -147,6 +148,8 @@ class Constructor(_CompoundAST):
     def Print(self, f, indent):
         ind = indent * '  '
         f.write('%sConstructor %s' % (ind, self.name))
+        if self.shared_type:
+          f.write(' %%%s' % self.shared_type)
 
         if self.fields:
           f.write(' {\n')
@@ -168,7 +171,10 @@ class Sum(AST):
         for t in self.types:
           t.Print(f, indent+1)
         if self.attributes:
-          f.write('%s\n' % self.attributes)
+          f.write('\n')
+          f.write('%s  (attributes)\n' % ind)
+          for a in self.attributes:
+            a.Print(f, indent+1)
         f.write('%s}\n' % ind)
 
 
@@ -183,5 +189,8 @@ class Product(_CompoundAST):
         for field in self.fields:
           field.Print(f, indent+1)
         if self.attributes:
-          f.write('%s\n' % self.attributes)
+          f.write('\n')
+          f.write('%s  (attributes)\n' % ind)
+          for a in self.attributes:
+            a.Print(f, indent+1)
         f.write('%s}\n' % ind)

@@ -9,16 +9,28 @@ from asdl import asdl_ as asdl
 from asdl import meta
 from asdl.asdl_ import Use, Module, Type, Constructor, Field, Sum, Product
 
-
 # Types for describing tokens in an ASDL specification.
 class TokenKind(object):
     """TokenKind is provides a scope for enumerated token kinds."""
+
     (ConstructorId, TypeId, Equals, Comma, Question, Pipe, Asterisk,
-     LParen, RParen, LBrace, RBrace) = xrange(11)
+     LParen, RParen, LBrace, RBrace, Percent) = xrange(12)
 
     operator_table = {
         '=': Equals, ',': Comma,    '?': Question, '|': Pipe,    '(': LParen,
-        ')': RParen, '*': Asterisk, '{': LBrace,   '}': RBrace}
+        ')': RParen, '*': Asterisk, '{': LBrace,   '}': RBrace,  '%': Percent,
+    }
+
+
+_NAMES = (
+    'ConstructorId', 'TypeId',
+    'Equals', 'Comma', 'Question', 'Pipe', 'Asterisk', 'LParen',
+    'RParen', 'LBrace', 'RBrace', 'Percent'
+)
+
+def KindName(i):
+  return _NAMES[i]
+
 
 class Token(object):
     def __init__(self, kind, value, lineno):
@@ -121,6 +133,11 @@ class ASDLParser(object):
         return Use(mod_name, type_names)
 
     def _parse_type(self):
+        """
+        constructor: ConstructorId fields?
+        sum: constructor ('|' constructor)*
+        type: product | sum
+        """
         if self.cur_token.kind == TokenKind.LParen:
             # If we see a (, it's a product
             return self._parse_product()
@@ -128,10 +145,21 @@ class ASDLParser(object):
             # Otherwise it's a sum. Look for ConstructorId
             sumlist = []
             while True:
-                # More constructors
-                cons = Constructor(self._match(TokenKind.ConstructorId),
-                                   self._parse_optional_fields())
+                cons_name = self._match(TokenKind.ConstructorId)
+
+                shared_type = None
+                fields = None
+                if self.cur_token.kind == TokenKind.LParen:
+                    fields = self._parse_fields()
+                elif self.cur_token.kind == TokenKind.Percent:
+                    self._advance()
+                    shared_type = self._match(TokenKind.TypeId)
+                else:
+                    pass
+
+                cons = Constructor(cons_name, shared_type, fields)
                 sumlist.append(cons)
+
                 if self.cur_token.kind != TokenKind.Pipe:
                   break
                 self._advance()
@@ -155,12 +183,6 @@ class ASDLParser(object):
                 self._advance()
         self._match(TokenKind.RParen)
         return fields
-
-    def _parse_optional_fields(self):
-        if self.cur_token.kind == TokenKind.LParen:
-            return self._parse_fields()
-        else:
-            return None
 
     def _parse_optional_attributes(self):
         if self._at_keyword('attributes'):
@@ -199,16 +221,19 @@ class ASDLParser(object):
           be a tuple, in which the kind must match one of its members).
         * Returns the value of the current token
         * Reads in the next token
+
+        Args:
+          kind: A TokenKind, or a tuple of TokenKind
         """
         if (isinstance(kind, tuple) and self.cur_token.kind in kind or
-            self.cur_token.kind == kind
-            ):
+            self.cur_token.kind == kind):
             value = self.cur_token.value
             self._advance()
             return value
         else:
             raise ASDLSyntaxError(
-                'Unmatched {} (found {})'.format(kind, self.cur_token.kind),
+                'Expected token {}, got {}'.format(KindName(kind),
+                                                   self.cur_token.value),
                 self.cur_token.lineno)
 
     def _at_keyword(self, keyword):

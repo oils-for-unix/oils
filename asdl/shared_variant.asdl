@@ -2,15 +2,22 @@
 
 module shared_variant {
 
-  double_quoted = (int left, string* tokens)
+  -- Testing out this unused syntax
+  prod_with_attrs = (string a, string b) attributes (int spid)
+
+  double_quoted = (int left, string* tokens) 
 
   expr =
     Binary(expr left, expr right)
     -- Use the existing TYPE double_quoted, but create a new TAG
     -- expr_e.DoubleQuoted.
-  | DoubleQuoted -- %double_quoted
+  | DoubleQuoted %double_quoted
+  attributes (int left_spid, int right_spid)
 
   word_part =
     Literal(string s)
-  | DoubleQuoted --%double_quoted
+  | DoubleQuoted %double_quoted
+
+  -- Make sure we didn't break these variants
+  op = Plus | Minus
 }
