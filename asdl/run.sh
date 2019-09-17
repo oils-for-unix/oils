@@ -41,22 +41,18 @@ py-cpp() {
   asdl-cpp $schema _tmp/$(basename $schema).h
 }
 
-gen-python() {
-  local schema=$1
-  local name=$(basename $schema .asdl)
-  core/asdl_gen.py py $schema _devbuild/${name}_asdl.pickle
-}
-
-gen-typed-demo-asdl() {
-  local out=_devbuild/gen/typed_demo_asdl.py
-  core/asdl_gen.py mypy asdl/typed_demo.asdl > $out
+gen-mypy-asdl() {
+  local name=$1
+  shift
+  local out=_devbuild/gen/${name}_asdl.py
+  core/asdl_gen.py mypy asdl/${name}.asdl "$@" > $out
   wc -l $out
 }
 
+gen-typed-demo-asdl() { gen-mypy-asdl typed_demo; }
+gen-shared-variant-asdl() { gen-mypy-asdl shared_variant; }
 gen-typed-arith-asdl() {
-  local out=_devbuild/gen/typed_arith_asdl.py
-  core/asdl_gen.py mypy asdl/typed_arith.asdl 'asdl.typed_arith_abbrev' > $out
-  wc -l $out
+  gen-mypy-asdl typed_arith 'asdl.typed_arith_abbrev'
 }
 
 unit() {

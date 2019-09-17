@@ -67,6 +67,7 @@ module runtime
     Named(string name)
   | Indexed(string name, int index)
   | Keyed(string name, string key)
+  attributes (int* spids)
 
   -- evaluated version of syntax.redir
   redirect = 

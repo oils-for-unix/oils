@@ -25,6 +25,22 @@ class FrontEndTest(unittest.TestCase):
       schema_ast, type_lookup = front_end.LoadSchema(f, {}, verbose=True)
     #print(type_lookup)
 
+  def testSharedVariantCode(self):
+    from _devbuild.gen.shared_variant_asdl import (
+        double_quoted, expr, expr_e, word_part, word_part_e
+    )
+    print(double_quoted)
+
+    print(expr)
+    print(expr_e)
+
+    print(word_part)
+    print(word_part_e)
+
+    # These have the same value!
+    self.assertEqual(1001, expr_e.DoubleQuoted)
+    self.assertEqual(expr_e.DoubleQuoted, word_part_e.DoubleQuoted)
+
 
 if __name__ == '__main__':
   unittest.main()

@@ -19,5 +19,5 @@ module shared_variant {
   | DoubleQuoted %double_quoted
 
   -- Make sure we didn't break these variants
-  op = Plus | Minus
+  cflow = Break | Continue | Return(int val)
 }

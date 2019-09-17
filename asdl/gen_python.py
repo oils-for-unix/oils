@@ -1,29 +1,26 @@
 #!/usr/bin/env python2
 """
-gen_python.py
-
-Generate Python code from and ASDL schema.
-
-TODO:
-- What about Id?  app_types?
+gen_python.py: Generate Python code from an ASDL schema.
 """
 from __future__ import print_function
 
 from asdl import meta
 from asdl import visitor
-#from core.util import log
+from core.util import log
+
+_ = log  # shut up lint
 
 
 class GenMyPyVisitor(visitor.AsdlVisitor):
-  """Generate code with MyPy type annotations.
+  """Generate Python code with MyPy type annotations."""
 
-  TODO: Remove the code above.  This should substitute for it.
-  """
   def __init__(self, f, type_lookup, abbrev_mod_entries=None, e_suffix=True):
     visitor.AsdlVisitor.__init__(self, f)
     self.type_lookup = type_lookup
     self.abbrev_mod_entries = abbrev_mod_entries or []
     self.e_suffix = e_suffix
+    self._shared_type_tags = {}
+    self._product_counter = 1000  # start it high
 
   def VisitSimpleSum(self, sum, name, depth):
     # First emit a type
@@ -113,7 +110,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
       self.Emit('  L.append((%r, %s))' % (field_name, out_val_name), depth)
 
-  def _GenClass(self, desc, class_name, super_name, depth, tag_num=None):
+  def _GenClass(self, desc, attributes, class_name, super_name, depth,
+                tag_num=None):
     """Used for Constructor and Product."""
     pretty_cls_name = class_name.replace('__', '.')  # used below
     self.Emit('class %s(%s):' % (class_name, super_name))
@@ -121,7 +119,10 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     if tag_num is not None:
       self.Emit('  tag = %d' % tag_num)
 
-    field_names = [f.name for f in desc.fields]
+    # Add on attributes
+    all_fields = desc.fields + attributes
+
+    field_names = [f.name for f in all_fields]
 
     quoted_fields = repr(tuple(field_names))
     self.Emit('  __slots__ = %s' % quoted_fields)
@@ -132,12 +133,11 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     # __init__
     #
 
-    # TODO: leave out spids?  Mark it as an attribute?
-    args = ', '.join('%s=None' % f.name for f in desc.fields)
+    args = ', '.join('%s=None' % f.name for f in all_fields)
     self.Emit('  def __init__(self, %s):' % args)
 
     arg_types = []
-    for f in desc.fields:
+    for f in all_fields:
       field_desc = self.type_lookup.get(f.type)
 
       # op_id -> op_id_t, bool_expr -> bool_expr_t, etc.
@@ -174,11 +174,11 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     self.Emit('    # type: (%s) -> None' % ', '.join(arg_types), reflow=False)
 
-    if not desc.fields:
+    if not all_fields:
       self.Emit('    pass')  # for types like NoOp
 
     # TODO: Use the field_desc rather than the parse tree, for consistency.
-    for f in desc.fields:
+    for f in all_fields:
       # This logic is like _MakeFieldDescriptors
       default = None
       if f.opt:  # Maybe
@@ -256,11 +256,22 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     self.Emit('')
 
   def VisitCompoundSum(self, sum, sum_name, depth):
+    """
+    Note that the following is_simple:
+
+      cflow = Break | Continue
+
+    But this is compound:
+
+      cflow = Break | Continue | Return(int val)
+
+    The generated code changes depending on which one it is.
+    """
     # We emit THREE Python types for each meta.CompoundType:
     #
     # 1. enum for tag (cflow_e)
     # 2. base class for inheritance (cflow_t)
-    # 3. namespace for classes (cflow)
+    # 3. namespace for classes (cflow)  -- TODO: Get rid of this one.
     #
     # Should code use cflow_e.tag or isinstance()?
     # isinstance() is better for MyPy I think.  But tag is better for C++.
@@ -269,7 +280,11 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     # enum for the tag
     self.Emit('class %s_e(object):' % sum_name, depth)
     for i, variant in enumerate(sum.types):
-      self.Emit('  %s = %d' % (variant.name, i + 1), depth)
+      if variant.shared_type:
+        tag_num = self._shared_type_tags[variant.shared_type]
+      else:
+        tag_num = i + 1
+      self.Emit('  %s = %d' % (variant.name, tag_num), depth)
     self.Emit('', depth)
 
     # the base class, e.g. 'oil_cmd'
@@ -278,23 +293,36 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     self.Emit('', depth)
 
     for i, variant in enumerate(sum.types):
-      # Use fully-qualified name, so we can have osh_cmd.Simple and
-      # oil_cmd.Simple.
-      fq_name = '%s__%s' % (sum_name, variant.name)
-      self._GenClass(variant, fq_name, sum_name + '_t', depth, tag_num=i+1)
+      if variant.shared_type:
+        # Do not generated a class.
+        pass
+      else:
+        # Use fully-qualified name, so we can have osh_cmd.Simple and
+        # oil_cmd.Simple.
+        fq_name = '%s__%s' % (sum_name, variant.name)
+        self._GenClass(variant, sum.attributes, fq_name, sum_name + '_t',
+                       depth, tag_num=i+1)
 
     # Emit a namespace
     self.Emit('class %s(object):' % sum_name, depth)
     # Put everything in a namespace of the base class, so we can instantiate
     # with oil_cmd.Simple()
-    for i, t in enumerate(sum.types):
-      # e.g. op_id.Plus = op_id__Plus.
-      fq_name = '%s__%s' % (sum_name, t.name)
-      self.Emit('  %s = %s' % (t.name, fq_name), depth)
+    for i, variant in enumerate(sum.types):
+      if variant.shared_type:
+        # No class for this namespace
+        pass
+      else:
+        # e.g. op_id.Plus = op_id__Plus.
+        fq_name = '%s__%s' % (sum_name, variant.name)
+        self.Emit('  %s = %s' % (variant.name, fq_name), depth)
     self.Emit('', depth)
 
   def VisitProduct(self, product, name, depth):
-    self._GenClass(product, name, 'runtime.CompoundObj', depth)
+    self._shared_type_tags[name] = self._product_counter
+    self._product_counter += 1
+
+    self._GenClass(product, product.attributes, name, 'runtime.CompoundObj',
+                   depth)
 
   def EmitFooter(self):
     pass

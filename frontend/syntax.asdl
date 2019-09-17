@@ -95,6 +95,7 @@ module syntax
   | PatSub(word pat, word? replace, id replace_mode)
   -- begin is optional with ${array::1}
   | Slice(arith_expr? begin, arith_expr? length)
+  attributes (int* spids)
 
   word_part = 
     ArrayLiteral(word* words)
@@ -131,6 +132,7 @@ module syntax
   | Splice(token name)
     -- $strfunc(x) and @arrayfunc(x)
   | FuncCall(token name, expr* args)
+  attributes (int* spids)
 
   word = 
     -- for RHS of 'x=', 'declare x=', and the argument in "${x:-}"
@@ -147,6 +149,7 @@ module syntax
   | BracedTree(word_part* parts)
     -- For dynamic parsing of test/[ -- the string is already evaluated.
   | String(id id, string s)
+  attributes (int* spids)
 
   -- TODO: Need more tokens/spids to translate a[x++]=1
   -- These don't follow the LST design, because they're shared for
@@ -158,6 +161,7 @@ module syntax
     LhsName(string name)
   | LhsIndexedName(string name, arith_expr index)
   | CompatIndexedName(string name, string index)  -- for translation
+  attributes (int* spids)
 
   arith_expr =
     VarRef(token token)  -- variable without $
@@ -254,6 +258,7 @@ module syntax
     -- return type may look like Tuple[Int, Str]
   | OilFuncProc(id which, token name, param* params, type_expr? return_type,
                 command body)
+  attributes (int* spids)
 
   -- op is ... in ...args
   -- s Array[Str] = @(1 2 3)
@@ -376,6 +381,7 @@ module syntax
     -- I guess there's no reason not to, but it's a bit exotic and rare.
     -- It doesn't fit in the static "Coil" subset.
   | Starred(expr value, expr_context ctx)
+  attributes (int* spids)
 
   expr_context = Load | Store | Del | AugLoad | AugStore | Param
 
