@@ -6,8 +6,9 @@ from _devbuild.gen.id_kind_asdl import (Id, Kind, Id_t, Kind_t)
 from _devbuild.gen.syntax_asdl import (
     token,
     double_quoted, single_quoted, braced_var_sub, command_sub,
+    sh_array_literal,
     word_part, word_part_t, word_part_e,
-    word_part__ArrayLiteral, word_part__AssocArrayLiteral,
+    word_part__AssocArrayLiteral,
     word_part__Literal, word_part__EscapedLiteral,
     word_part__SimpleVarSub, word_part__TildeSub,
     word_part__ArithSub, word_part__BracedTuple,
@@ -62,7 +63,7 @@ def _EvalWordPart(part):
       value: a string (not Value)
       quoted: whether any part of the word was quoted
   """
-  if isinstance(part, word_part__ArrayLiteral):
+  if isinstance(part, sh_array_literal):
     # Array literals aren't good for any of our use cases.  TODO: Rename
     # EvalWordToString?
     return False, '', False
@@ -129,11 +130,11 @@ def LeftMostSpanForPart(part):
   # type: (word_part_t) -> int
   # TODO: Write unit tests in ui.py for error values
 
-  if isinstance(part, word_part__ArrayLiteral):
-    return part.spids[0]  # ( location
+  if isinstance(part, sh_array_literal):
+    return part.left.span_id  # ( location
 
   elif isinstance(part, word_part__AssocArrayLiteral):
-    return part.spids[0]  # ( location
+    return part.left.span_id  # ( location
 
   elif isinstance(part, word_part__Literal):
     # Just use the token
@@ -187,7 +188,7 @@ def _RightMostSpanForPart(part):
   # type: (word_part_t) -> int
   # TODO: Write unit tests in ui.py for error values
 
-  if isinstance(part, word_part__ArrayLiteral):
+  if isinstance(part, sh_array_literal):
     # TODO: Return )
     return LeftMostSpanForWord(part.words[0])  # Hm this is a=(1 2 3)
 
@@ -346,7 +347,7 @@ def HasArrayPart(w):
   assert isinstance(w, word__Compound)
 
   for part in w.parts:
-    if isinstance(part, word_part__ArrayLiteral):
+    if isinstance(part, sh_array_literal):
       return True
   return False
 

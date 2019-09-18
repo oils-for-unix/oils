@@ -127,9 +127,8 @@ class OilEvaluator(object):
     if node.tag == expr_e.CommandSub:
       return self.ex.RunCommandSub(node.command_list)
 
-    if node.tag == expr_e.ShellArrayLiteral:
-      words = node.items
-      words = braces.BraceExpandWords(words)
+    if node.tag == expr_e.ShArrayLiteral:
+      words = braces.BraceExpandWords(node.words)
       strs = self.word_ev.EvalWordSequence(words)
       #log('ARRAY LITERAL EVALUATED TO -> %s', strs)
       return objects.StrArray(strs)

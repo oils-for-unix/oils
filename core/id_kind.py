@@ -271,11 +271,11 @@ def AddKinds(spec):
       'DollarSingleQuote',  # '
 
       # Disambiguated right parens
-      'Subshell',      # )
-      'ShFunction',    # )
-      'CasePat',       # )
-      'ArrayLiteral',  # )
-      'ExtGlob',       # )
+      'Subshell',           # )
+      'ShFunction',         # )
+      'CasePat',            # )
+      'ShArrayLiteral',     # )
+      'ExtGlob',            # )
   ])
 
   spec.AddKind('ExtGlob', ['At', 'Star', 'Plus', 'QMark', 'Bang'])

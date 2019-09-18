@@ -6,6 +6,7 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
     token, double_quoted, single_quoted, braced_var_sub, command_sub,
+    sh_array_literal,
     command, command__VarDecl,
     expr, expr_t, expr__Dict,
     expr_context_e, regex, regex_t,
@@ -464,7 +465,7 @@ class Transformer(object):
         assert typ1 == Id.Expr_CastedDummy.enum_id, typ1
         array_words = cast('List[word_t]', children[1].tok)
 
-        return expr.ShellArrayLiteral(left_tok, array_words)
+        return sh_array_literal(left_tok, array_words)
 
       elif typ == grammar_nt.regex_literal:
         left_tok = children[0].tok

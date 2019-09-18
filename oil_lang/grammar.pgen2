@@ -135,7 +135,7 @@ array_literal: (
   '@[' array_item* Op_RBracket
 )
 
-sh_array_literal: '@(' Expr_CastedDummy Right_ArrayLiteral
+sh_array_literal: '@(' Expr_CastedDummy Right_ShArrayLiteral
 sh_command_sub: '$(' Expr_CastedDummy Eof_RParen
 
 char_class_part: Lit_Chars  # TODO: letters, escaped, and ranges

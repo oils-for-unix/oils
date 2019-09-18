@@ -896,7 +896,7 @@ class _WordEvaluator(object):
     Returns:
       None
     """
-    if part.tag == word_part_e.ArrayLiteral:  # e.g. ls a=(1 2)
+    if part.tag == word_part_e.ShArrayLiteral:  # e.g. ls a=(1 2)
       e_die("Unexpected array literal", part=part)
     elif part.tag == word_part_e.AssocArrayLiteral:
       e_die("Unexpected associative array literal", part=part)
@@ -1150,9 +1150,9 @@ class _WordEvaluator(object):
     if len(word.parts) == 1:
       part0 = word.parts[0]
 
-      # Special case for a=(1 2).  ArrayLiteral won't appear in words that
+      # Special case for a=(1 2).  ShArrayLiteral won't appear in words that
       # don't look like assignments.
-      if part0.tag == word_part_e.ArrayLiteral:
+      if part0.tag == word_part_e.ShArrayLiteral:
         array_words = part0.words
         words = braces.BraceExpandWords(array_words)
         strs = self.EvalWordSequence(words)

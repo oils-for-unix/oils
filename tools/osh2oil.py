@@ -1135,7 +1135,7 @@ class OilPrinter(object):
 
       self.cursor.PrintUntil(span_id)
 
-    if node.tag == word_part_e.ArrayLiteral:
+    if node.tag == word_part_e.ShArrayLiteral:
       pass
 
     elif node.tag == word_part_e.AssocArrayLiteral:

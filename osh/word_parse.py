@@ -52,13 +52,16 @@ from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
     token, double_quoted, single_quoted, braced_var_sub, command_sub,
+    sh_array_literal,
+
     arith_expr_t,
-    suffix_op, suffix_op_t, suffix_op__Slice, suffix_op__PatSub,
     bracket_op, bracket_op_t,
 
+    suffix_op, suffix_op_t, suffix_op__Slice, suffix_op__PatSub,
+
     word, word_t, word__Compound, word__Token,
-    word_part, word_part_t,
-    word_part__Literal, word_part__ArithSub, word_part__ExtGlob,
+    word_part, word_part_t, word_part__Literal, word_part__ArithSub,
+    word_part__ExtGlob,
 
     command, command_t, command__ForExpr,
 
@@ -1046,6 +1049,7 @@ class WordParser(object):
     if self.cur_token.id != Id.Op_LParen:
       p_die('Expected ( after =, got %r', self.cur_token.val,
             token=self.cur_token)
+    left_token = self.cur_token
     paren_spid = self.cur_token.span_id
 
     # MUST use a new word parser (with same lexer).
@@ -1056,7 +1060,7 @@ class WordParser(object):
 
       if isinstance(w, word__Token):
         word_id = word_.CommandId(w)
-        if word_id == Id.Right_ArrayLiteral:
+        if word_id == Id.Right_ShArrayLiteral:
           break
         # Unlike command parsing, array parsing allows embedded \n.
         elif word_id == Id.Op_Newline:
@@ -1069,8 +1073,9 @@ class WordParser(object):
       words.append(w)
 
     if not words:  # a=() is empty indexed array
-      node = word_part.ArrayLiteral(words)  # type: ignore  # invariant List?
-      node.spids.append(paren_spid)
+      # ignore for invariant List?
+      node = sh_array_literal(left_token, words)  # type: ignore
+      node.spids.append(left_token.span_id)
       return node
  
     # If the first one is a key/value pair, then the rest are assumed to be.
@@ -1088,13 +1093,14 @@ class WordParser(object):
         pairs.append(pair[0])  # flat representation
         pairs.append(pair[1])
 
-      node = word_part.AssocArrayLiteral(pairs)  # type: ignore  # invariant List?
+      # invariant List?
+      node = word_part.AssocArrayLiteral(left_token, pairs)  # type: ignore
       node.spids.append(paren_spid)
       return node
 
     words2 = braces.BraceDetectAll(words)
     words3 = word_.TildeDetectAll(words2)
-    node = word_part.ArrayLiteral(words3)
+    node = sh_array_literal(left_token, words3)
     node.spids.append(paren_spid)
     return node
 
@@ -1149,7 +1155,7 @@ class WordParser(object):
           # _ReadWord.
           t = self.lexer.LookAhead(lex_mode_e.ShCommand)
           if t.id == Id.Op_LParen:
-            self.lexer.PushHint(Id.Op_RParen, Id.Right_ArrayLiteral)
+            self.lexer.PushHint(Id.Op_RParen, Id.Right_ShArrayLiteral)
             part2 = self._ReadArrayLiteral()
             w.parts.append(part2)
 
@@ -1336,7 +1342,7 @@ class WordParser(object):
     elif self.token_kind == Kind.Right:
       if self.token_type not in (
           Id.Right_Subshell, Id.Right_ShFunction, Id.Right_CasePat,
-          Id.Right_ArrayLiteral):
+          Id.Right_ShArrayLiteral):
         raise AssertionError(self.cur_token)
 
       self._Next(lex_mode)
