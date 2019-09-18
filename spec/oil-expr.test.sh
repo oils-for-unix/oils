@@ -780,3 +780,33 @@ argv.py @m2
 ['bar', 'ar']
 ## END
 
+
+#### obj.attr and obj.method()
+var s = 'hi'
+
+# TODO: This does a bound method thing we probably don't want
+var s2 = s.upper()
+echo $s2
+## STDOUT:
+HI
+## END
+
+#### obj.method does NOT give you a bound method
+
+# TODO: Not sure how to implement this
+
+var s = 'hi'
+var method = s.upper
+echo $method
+## STDOUT:
+## END
+
+
+
+#### d->key
+var d = {name: 'andy'}
+var x = d->name
+echo $x
+## STDOUT:
+andy
+## END

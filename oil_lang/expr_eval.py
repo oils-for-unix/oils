@@ -368,4 +368,28 @@ class OilEvaluator(object):
       index = self.EvalExpr(node.indices[0])
       return collection[index]
 
+    # TODO: obj.method() should be separate
+    if node.tag == expr_e.Attribute:  # obj.attr 
+      o = self.EvalExpr(node.value)
+      id_ = node.op.id
+      if id_ == Id.Expr_Dot:
+        name = node.attr.name.val
+        # TODO: Does this do the bound method thing we do NOT want?
+        return getattr(o, name)
+
+      if id_ == Id.Expr_RArrow:  # d->key is like d['key']
+        name = node.attr.name.val
+        return o[name]
+
+      if id_ == Id.Expr_DColon:  # StaticName::member
+        raise NotImplementedError(id_)
+
+        # TODO: We should prevent virtual lookup here?  This is a pure static
+        # namespace lookup?
+        # But Python doesn't any hook for this.
+        # Maybe we can just check that it's a module?  And modules don't lookup
+        # in a supertype or __class__, etc.
+
+      raise AssertionError(id_)
+
     raise NotImplementedError(node.__class__.__name__)
