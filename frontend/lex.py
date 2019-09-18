@@ -822,7 +822,7 @@ float = digitpart fraction? exponent? | fraction exponent?
 
 # NOTE: Borrowing tokens from Arith (i.e. $(( )) ), but not using LexerPairs().
 LEXER_DEF[lex_mode_e.Expr] = \
-    OIL_LEFT_SUBS + OIL_LEFT_UNQUOTED + EXPR_OPS + EXPR_WORDS + [
+    _VARS + OIL_LEFT_SUBS + OIL_LEFT_UNQUOTED + EXPR_OPS + EXPR_WORDS + [
 
   # https://docs.python.org/3/reference/lexical_analysis.html#literals
   #

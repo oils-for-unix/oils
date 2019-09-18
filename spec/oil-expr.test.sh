@@ -382,6 +382,25 @@ foo
 bar
 ## END
 
+#### simple var sub $name $0 $1 $? etc.
+( exit 42 )
+var status = $?
+echo status=$status
+
+set -- a b c
+var one = $1
+var two = $2
+echo $one $two
+
+var named = $one  # equivalent to 'one'
+echo named=$named
+
+## STDOUT:
+status=42
+a b
+named=a
+## END
+
 #### braced var sub ${x:-default}
 
 # without double quotes

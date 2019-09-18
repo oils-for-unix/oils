@@ -190,6 +190,9 @@ class OilEvaluator(object):
     if node.tag == expr_e.BracedVarSub:
       return self.word_ev.EvalBracedVarSubToString(node)
 
+    if node.tag == expr_e.SimpleVarSub:
+      return self.word_ev.EvalSimpleVarSubToString(node.token)
+
     if node.tag == expr_e.Unary:
       child = self.EvalExpr(node.child)
       if node.op.id == Id.Arith_Minus:
@@ -373,12 +376,12 @@ class OilEvaluator(object):
       o = self.EvalExpr(node.value)
       id_ = node.op.id
       if id_ == Id.Expr_Dot:
-        name = node.attr.name.val
+        name = node.attr.val
         # TODO: Does this do the bound method thing we do NOT want?
         return getattr(o, name)
 
       if id_ == Id.Expr_RArrow:  # d->key is like d['key']
-        name = node.attr.name.val
+        name = node.attr.val
         return o[name]
 
       if id_ == Id.Expr_DColon:  # StaticName::member

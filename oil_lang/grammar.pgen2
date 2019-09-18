@@ -37,27 +37,26 @@ factor: ('+'|'-'|'~') factor | power
 # Oil patch: ** -> ^
 # Also removed Python 3 'await'
 power: atom trailer* ['^' factor]
-atom: ('(' [testlist_comp] ')' |
-       '[' [testlist_comp] ']' |
-       '{' [dict] '}' |
-        '...' |
-       # NOTE: These atoms are are allowed in typed array literals
-       Expr_Name |
-       Expr_Null | Expr_True | Expr_False |
-       Expr_Float |
-       Expr_DecInt | Expr_BinInt | Expr_OctInt | Expr_HexInt |
-       dq_string | sq_string |
-       sh_command_sub | braced_var_sub | var_sub | regex_literal |
-       array_literal | sh_array_literal
+atom: (
+    '(' [testlist_comp] ')' 
+  | '[' [testlist_comp] ']' 
+  | '{' [dict] '}'
+  | '...'
+    # NOTE: These atoms are are allowed in typed array literals
+  | Expr_Name | Expr_Null | Expr_True | Expr_False 
+  | Expr_Float | Expr_DecInt | Expr_BinInt | Expr_OctInt | Expr_HexInt 
+  | dq_string | sq_string
+  | sh_command_sub | braced_var_sub | simple_var_sub | regex_literal
+  | sh_array_literal | array_literal 
 )
 testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
 
 trailer: (
-  '(' [arglist] ')'
-| '[' subscriptlist ']'
-| '.' NAME
-| '->' NAME
-| '::' NAME
+    '(' [arglist] ')'
+  | '[' subscriptlist ']'
+  | '.' NAME
+  | '->' NAME
+  | '::' NAME
 )
 
 subscriptlist: subscript (',' subscript)* [',']
@@ -135,12 +134,10 @@ word: word_part*
 
 array_item: (
   # NOTE: Most of these occur in 'atom' above
-   Expr_Name |
-   Expr_Null | Expr_True | Expr_False |
-   Expr_Float |
-   Expr_DecInt | Expr_BinInt | Expr_OctInt | Expr_HexInt |
+   Expr_Name | Expr_Null | Expr_True | Expr_False |
+   Expr_Float | Expr_DecInt | Expr_BinInt | Expr_OctInt | Expr_HexInt |
    dq_string | sq_string |
-   sh_command_sub | braced_var_sub | var_sub | regex_literal
+   sh_command_sub | braced_var_sub | simple_var_sub | regex_literal
 )
 array_literal: (
   '@[' array_item* Op_RBracket
@@ -166,10 +163,16 @@ sq_string: (Left_SingleQuoteRaw | Left_SingleQuoteC) Expr_CastedDummy Right_Sing
 
 braced_var_sub: '${' Expr_CastedDummy Right_DollarBrace
 
-# TODO: Allow anything in VSub category?
-# $? should be STATUS because it's an integer.
-
-var_sub: VSub_Name | VSub_Number | VSub_QMark | VSub_Dollar
+simple_var_sub: (
+    # NOTE: Everything in Kind.VSub except VSub_Name because that's ${foo}
+    #
+    # Note: we could allow $foo and $0, but disallow the rest in favor of
+    # ${@} and ${-}?  Meh it's too inconsistent.
+    VSub_DollarName | VSub_Number
+  | VSub_Bang | VSub_At | VSub_Pound | VSub_Dollar | VSub_Star | VSub_Hyphen
+  | VSub_QMark 
+  # NOTE: $? should be STATUS because it's an integer.
+)
 
 #
 # Assignment / Type Variables

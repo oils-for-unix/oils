@@ -119,9 +119,8 @@ class Transformer(object):
       return expr.Subscript(base, [self.Expr(a) for a in arglist])
 
     if op_tok.id in (Id.Expr_Dot, Id.Expr_RArrow, Id.Expr_DColon):
-      #return self._GetAttr(base, nodelist[2])
-      child = self.Expr(children[1])
-      return expr.Attribute(base, op_tok, child, expr_context_e.Store)
+      attr = children[1].tok  # will be Id.Expr_Name
+      return expr.Attribute(base, op_tok, attr, expr_context_e.Store)
 
     raise AssertionError(op_tok)
 
@@ -497,6 +496,10 @@ class Transformer(object):
       elif typ == grammar_nt.sq_string:
         sq_part = cast(single_quoted, children[1].tok)
         return sq_part
+
+      elif typ == grammar_nt.simple_var_sub:
+        part = expr.SimpleVarSub(children[0].tok)
+        return part
 
       else:
         nt_name = self.number2symbol[typ]

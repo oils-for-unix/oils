@@ -41,6 +41,12 @@
 --
 -- Size optimization:
 --   'token left' should really be 'speck left'.  Saves a lot of space.
+--   SimpleVarSub(token token) could be optimized
+--   SimpleVarSub(id id, string val, int span_id) without useless token 'tag'
+--   Or VarSubSpecial(id id, int span_id)
+--    | VarSubNum(id, int n, int span_id)
+--    | SimpleVarSub(id, string val, int span_id)
+-- and get rid of attributes (int* spids)
 
 module syntax
 {
@@ -346,7 +352,7 @@ module syntax
   | ArrayLiteral(token left, expr* items)
   | RegexLiteral(token left, regex regex)
 
-    -- TODO: SimpleVarSub
+  | SimpleVarSub(token token)
   | BracedVarSub %braced_var_sub
   | CommandSub %command_sub
   | SingleQuoted %single_quoted
@@ -379,8 +385,11 @@ module syntax
   -- x < 4 < 3 and (x < 4) < 3
   | Compare(expr left, cmpop* ops, expr* comparators)
 
-  -- TODO: Replace FuncCall
+    -- TODO: Replace FuncCall
   | Call(expr func, expr* args, keyword* keywords)
+    -- In Python 2, ... is a "symbol" in slices like numpy_array[1:2, ...]
+    -- In Python 3, it's allowed everywhere, and used in .pyi files.
+
   | Ellipsis
 
   -- TODO: Need a representation for method call.  We don't just want

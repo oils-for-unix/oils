@@ -887,6 +887,39 @@ class _WordEvaluator(object):
       raise AssertionError(part.left.id)
     return s
 
+  def _EvalSimpleVarSub(self, token, part_vals, quoted):
+    maybe_decay_array = False
+    # 1. Evaluate from (var_name, var_num, token) -> defined, value
+    if token.id == Id.VSub_DollarName:
+      var_name = token.val[1:]
+      val = self.mem.GetVar(var_name)
+      if val.tag in (value_e.MaybeStrArray, value_e.AssocArray):
+        e_die("Array %r can't be referred to as a scalar (without @ or *)",
+              var_name, token=token)
+
+    elif token.id == Id.VSub_Number:
+      var_num = int(token.val[1:])
+      val = self._EvalVarNum(var_num)
+    else:
+      val, maybe_decay_array = self._EvalSpecialVar(token.id, quoted)
+
+    #log('SIMPLE %s', part)
+    val = self._EmptyStrOrError(val, token=token)
+    if maybe_decay_array and val.tag == value_e.MaybeStrArray:
+      val = self._DecayArray(val)
+    v = _ValueToPartValue(val, quoted)
+    part_vals.append(v)
+
+  def EvalSimpleVarSubToString(self, tok):
+    # type: (token) -> str
+    """For double quoted strings in Oil expressions.
+
+    Example: var x = "$foo-${foo}"
+    """
+    part_vals = []
+    self._EvalSimpleVarSub(tok, part_vals, False)
+    return self._PartValsToString(part_vals, tok.span_id)
+
   def _EvalWordPart(self, part, part_vals, quoted=False, is_subst=False):
     """Evaluate a word part.
 
@@ -937,27 +970,7 @@ class _WordEvaluator(object):
       part_vals.append(v)
 
     elif part.tag == word_part_e.SimpleVarSub:
-      maybe_decay_array = False
-      # 1. Evaluate from (var_name, var_num, token) -> defined, value
-      if part.token.id == Id.VSub_DollarName:
-        var_name = part.token.val[1:]
-        val = self.mem.GetVar(var_name)
-        if val.tag in (value_e.MaybeStrArray, value_e.AssocArray):
-          e_die("Array %r can't be referred to as a scalar (without @ or *)",
-                var_name, part=part)
-
-      elif part.token.id == Id.VSub_Number:
-        var_num = int(part.token.val[1:])
-        val = self._EvalVarNum(var_num)
-      else:
-        val, maybe_decay_array = self._EvalSpecialVar(part.token.id, quoted)
-
-      #log('SIMPLE %s', part)
-      val = self._EmptyStrOrError(val, token=part.token)
-      if maybe_decay_array and val.tag == value_e.MaybeStrArray:
-        val = self._DecayArray(val)
-      v = _ValueToPartValue(val, quoted)
-      part_vals.append(v)
+      maybe_decay_array = self._EvalSimpleVarSub(part.token, part_vals, quoted)
 
     elif part.tag == word_part_e.BracedVarSub:
       self._EvalBracedVarSub(part, part_vals, quoted)
