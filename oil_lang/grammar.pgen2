@@ -51,7 +51,15 @@ atom: ('(' [testlist_comp] ')' |
        array_literal | sh_array_literal
 )
 testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
-trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
+
+trailer: (
+  '(' [arglist] ')'
+| '[' subscriptlist ']'
+| '.' NAME
+| '->' NAME
+| '::' NAME
+)
+
 subscriptlist: subscript (',' subscript)* [',']
 subscript: test | [test] ':' [test] [sliceop]
 sliceop: ':' [test]

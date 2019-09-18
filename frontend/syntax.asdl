@@ -387,7 +387,8 @@ module syntax
   -- Attribute() and then Call()
 
   -- the following expressions can appear in assignment context
-  | Attribute(expr value, token attr, expr_context ctx)
+    -- TODO: op should be 'speck'
+  | Attribute(expr value, token op, token attr, expr_context ctx)
     -- TODO: we used Subscript() above, might want to migrate?
   | Subscript_PYTHON(expr value, slice slice, expr_context ctx)
     -- TODO: are we allowing extended unpacking like set x, *y = z?

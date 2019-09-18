@@ -90,9 +90,21 @@ class OilEvaluator(object):
     if matches:
       # TODO:
       # - Also set NAMED CAPTURES.
+      #   - Idea: Set an OBJECT:
+      #     M.group(0)   M.match()
+      #     M.group(1)   M.group('foo')
+      #     M.group(2)   M.group('bar')
+      #
+      #     Since it's statically parsed, it could be statically typed?
+      #     $/ (digit+ as foo Int) /
+      #
+      #     Can use Python's __getattr__ and __index__ under the hood
+      #     M[0]         M._ or M.match
+      #     M[1]         M.foo
+      #     M[2]         M.bar
+      #
       # - Is 'M' the right name?  What do Perl and Ruby do?
       #   - BASH_REMATCH?
-      #   - M
       if set_match_result:
         state.SetLocalArray(self.mem, 'M', matches)
       return True

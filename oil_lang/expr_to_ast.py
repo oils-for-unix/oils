@@ -87,6 +87,12 @@ class Transformer(object):
 
   def _Trailer(self, base, p_trailer):
     # type: (expr_t, PNode) -> expr_t
+    """
+    trailer: (
+      '(' [arglist] ')' | '[' subscriptlist ']'
+    | '.' NAME | '->' NAME | '::' NAME
+    )
+    """
     children = p_trailer.children
     op_tok = children[0].tok
 
@@ -112,13 +118,10 @@ class Transformer(object):
         arglist = [p_args]
       return expr.Subscript(base, [self.Expr(a) for a in arglist])
 
-    if op_tok.id == Id.Expr_Dot:
+    if op_tok.id in (Id.Expr_Dot, Id.Expr_RArrow, Id.Expr_DColon):
       #return self._GetAttr(base, nodelist[2])
-      raise NotImplementedError
-
-    # TODO:
-    # Also do :: and ->
-    # Both can be on the LHS too.
+      child = self.Expr(children[1])
+      return expr.Attribute(base, op_tok, child, expr_context_e.Store)
 
     raise AssertionError(op_tok)
 
