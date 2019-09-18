@@ -761,3 +761,22 @@ matches
 ['foo', 'oo']
 default
 ## END
+
+
+#### M can be saved and used later
+shopt -s all:oil
+
+var pat = '.([[:alpha:]]+)'  # ERE syntax
+if ('foo' ~ pat) {
+  var m1 = M
+  if ('bar' ~ pat) {
+    var m2 = M
+  }
+}
+argv.py @m1
+argv.py @m2
+## STDOUT:
+['foo', 'oo']
+['bar', 'ar']
+## END
+
