@@ -26,6 +26,22 @@
 -- * order of redirects: 'echo >out.txt hi'  vs echo hi >out.txt
 --   * In the printer, I want to preserve line breaks!  foo \bar?
 
+-- Refactorings:
+--
+-- compound_word = (word_part* parts)
+--   cmd_token = Word %compound_word | Token %token
+--   word = Compound %compound_word | Token %token | Empty
+--   arith_expr = Word %compound_word | VarRef %token
+--   bool_expr = WordTest %compound_word | ...
+--
+-- Many %token references:
+--   word_part = Literal %token | ...
+--   type_expr = Atom %token | ...
+--   printf_part ...
+--
+-- Size optimization:
+--   'token left' should really be 'speck left'.  Saves a lot of space.
+
 module syntax
 {
   -- core/main_loop.py
@@ -71,11 +87,10 @@ module syntax
   -- lines.  Encoded into LST with 'int spid'.
   line_span = (int line_id, int col, int length)
 
-  -- NOTE: We use 'val' for execution, and the line_span from span_id for
-  -- errors and translation.  (LATER: Add 'speck' and 'strand' to optimize for
-  -- space.)
+  -- NOTE: The 'val' and 'span_id' fields are somewhat redundant, but useful.
+  -- We use 'val' for execution, and the line_span for error messages and
+  -- translation.
   token = (id id, string val, int span_id)
-
 
   --
   -- Shell language
@@ -406,3 +421,6 @@ module syntax
   -- extent = (int s_line_id, int s_col,
             int e_line_id, int e_col)
 
+  -- TODO: 'speck' optimizes for space.  It's only 6 bytes, which may pack
+  -- with other types.
+  -- speck = (id id, int span_id)

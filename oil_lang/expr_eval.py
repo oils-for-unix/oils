@@ -15,6 +15,9 @@ from core.util import e_die
 #from core.util import log
 from oil_lang import objects
 from osh import braces
+from osh import state
+
+import libc
 
 from typing import Any
 
@@ -76,6 +79,29 @@ class OilEvaluator(object):
       # subscripts, tuple unpacking, starred expressions, etc.
 
       raise NotImplementedError(node.__class__.__name__)
+
+  # Copied from BoolEvaluator
+  def _EvalMatch(self, left, right, set_match_result):
+    """
+    Args:
+      set_match_result: Whether to assign
+    """
+    matches = libc.regex_match(right, left)
+    if matches:
+      # TODO:
+      # - Also set NAMED CAPTURES.
+      # - Is 'M' the right name?  What do Perl and Ruby do?
+      #   - BASH_REMATCH?
+      #   - M
+      if set_match_result:
+        state.SetGlobalArray(self.mem, 'M', matches)
+      return True
+    else:
+      if set_match_result:
+        # TODO: Clearing this would save allocations
+        # Also, what's the initial value of M?
+        state.SetGlobalArray(self.mem, 'M', [])
+      return False
 
   def EvalExpr(self, node):
     # type: (expr_t) -> Any
@@ -215,6 +241,17 @@ class OilEvaluator(object):
         return left and right
       if node.op.id == Id.Expr_Or:
         return left or right
+
+      try:
+        if node.op.id == Id.Arith_Tilde:
+          return self._EvalMatch(left, right, True)
+
+        if node.op.id == Id.Expr_NotTilde:
+          return not self._EvalMatch(left, right, False)
+      except RuntimeError:
+        # Status 2 indicates a regex parse error.  This is fatal in OSH but
+        # not in bash, which treats [[ like a command with an exit code.
+        e_die("Invalid regex %r", right, word=node.right, status=2)
 
       raise NotImplementedError(node.op.id)
 

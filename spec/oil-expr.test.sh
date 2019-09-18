@@ -719,3 +719,29 @@ array=3
 comsub=6
 ## END
 
+#### a ~ b and !~
+shopt -s all:oil
+
+var s = 'foo'
+if (s ~ '.([[:alpha:]]+)') {  # ERE syntax
+  echo matches
+  argv.py @M
+}
+if (s !~ '[[:digit:]]+') {
+  echo "does not match"
+  argv.py @M
+}
+
+if (s ~ '[[:digit:]]+') {
+  echo "matches"
+}
+# Should be cleared now
+argv.py @M
+
+## STDOUT:
+matches
+['foo', 'oo']
+does not match
+['foo', 'oo']
+[]
+## END
