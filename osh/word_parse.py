@@ -51,15 +51,14 @@ from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
-    token, double_quoted, single_quoted, arith_expr_t,
+    token, double_quoted, single_quoted, braced_var_sub, command_sub,
+    arith_expr_t,
     suffix_op, suffix_op_t, suffix_op__Slice, suffix_op__PatSub,
     bracket_op, bracket_op_t,
 
     word, word_t, word__Compound, word__Token,
     word_part, word_part_t,
-    word_part__Literal, word_part__BracedVarSub,
-    word_part__ArithSub, word_part__CommandSub,
-    word_part__ExtGlob,
+    word_part__Literal, word_part__ArithSub, word_part__ExtGlob,
 
     command, command_t, command__ForExpr,
 
@@ -270,7 +269,7 @@ class WordParser(object):
     return op
 
   def _ParseVarOf(self):
-    # type: () -> word_part__BracedVarSub
+    # type: () -> braced_var_sub
     """
     VarOf     = NAME Subscript?
               | NUMBER      # no subscript allowed, none of these are arrays
@@ -287,12 +286,12 @@ class WordParser(object):
     else:
       bracket_op = None
 
-    part = word_part.BracedVarSub(name_token)
+    part = braced_var_sub(name_token)
     part.bracket_op = bracket_op
     return part
 
   def _ParseVarExpr(self, arg_lex_mode):
-    # type: (lex_mode_t) -> word_part__BracedVarSub
+    # type: (lex_mode_t) -> braced_var_sub
     """
     Start parsing at the op -- we already skipped past the name.
     """
@@ -366,14 +365,14 @@ class WordParser(object):
     return part
 
   def ReadBracedBracedVarSub(self, left_token):
-    # type: (token) -> Tuple[word_part__BracedVarSub, token]
+    # type: (token) -> Tuple[braced_var_sub, token]
     """   For expressions like var x = ${x:-"default"}.  """
     part = self._ReadBracedBracedVarSub(left_token)
     last_token = self.cur_token
     return part, last_token
 
   def _ReadBracedBracedVarSub(self, left_token, d_quoted=False):
-    # type: (token, bool) -> word_part__BracedVarSub
+    # type: (token, bool) -> braced_var_sub
     """For the ${} expression language.
 
     NAME        = [a-zA-Z_][a-zA-Z0-9_]*
@@ -714,7 +713,7 @@ class WordParser(object):
     return self.cur_token
 
   def _ReadCommandSub(self, left_id):
-    # type: (Id_t) -> word_part__CommandSub
+    # type: (Id_t) -> command_sub
     """
     NOTE: This is not in the grammar, because word parts aren't in the grammar!
 
@@ -793,7 +792,7 @@ class WordParser(object):
     else:
       raise AssertionError(left_id)
 
-    cs_part = word_part.CommandSub(left_token, node)
+    cs_part = command_sub(left_token, node)
     cs_part.spids.append(left_spid)
     cs_part.spids.append(right_spid)
     return cs_part

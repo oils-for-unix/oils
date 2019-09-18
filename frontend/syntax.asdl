@@ -100,6 +100,20 @@ module syntax
   double_quoted = (token left, word_part* parts) attributes (int* spids)
   single_quoted = (token left, token* tokens) attributes (int* spids)
 
+  -- TODO: Add Oil expressions
+  -- ${x %.3f}   ${x|html}   ${f(x)}   ${obj.attr}
+  -- Problem: ${obj[x]} is already taken.  Need a parse mode for it.
+  braced_var_sub = (
+      token token,
+      id? prefix_op,  -- prefix # or ! operators
+      bracket_op? bracket_op,
+      suffix_op? suffix_op
+      ) attributes (int* spids)
+
+  command_sub = (
+      token left_token, command command_list
+      ) attributes (int* spids)
+
   word_part = 
     ArrayLiteral(word* words)
     -- alternating key and value (saving some space)
@@ -110,18 +124,11 @@ module syntax
   | SingleQuoted %single_quoted
   | DoubleQuoted %double_quoted
   | SimpleVarSub(token token)
-
-    -- TODO: Add Oil expressions
-    -- ${x %.3f}   ${x|html}   ${f(x)}   ${obj.attr}
-    -- Problem: ${obj[x]} is already taken.  Need a parse mode for it.
-  | BracedVarSub(token token,
-                id? prefix_op,  -- prefix # or ! operators
-                bracket_op? bracket_op
-                suffix_op? suffix_op)
+  | BracedVarSub %braced_var_sub
+  | CommandSub %command_sub
     -- This should be token tilde, token rest
   | TildeSub(token token)
     -- For command sub and process sub: $(...)  <(...)  >(...)
-  | CommandSub(token left_token, command command_list)
   | ArithSub(arith_expr anode)
     -- {a,b,c}
   | BracedTuple(word* words)
@@ -325,17 +332,11 @@ module syntax
   | ArrayLiteral(token left, expr* items)
   | RegexLiteral(token left, regex regex)
 
-    -- These are duplicated as "parts" too
-    -- TODO: BracedVarSub.  But no arith sub?
   | VarSub(token left, expr e)  -- might be a variant for ${x %02d}
     -- Just like word_part.CommandSub
-  | CommandSub(token left_token, command command_list)
 
-    -- TODO: Duplicates BracedVarSub
-  | BracedVarSub(token token,
-                id? prefix_op,  -- prefix # or ! operators
-                bracket_op? bracket_op
-                suffix_op? suffix_op)
+  | BracedVarSub %braced_var_sub
+  | CommandSub %command_sub
   | SingleQuoted %single_quoted
   | DoubleQuoted %double_quoted
 

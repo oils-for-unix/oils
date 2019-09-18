@@ -12,8 +12,9 @@ cmd_exec_test.py: Tests for cmd_exec.py
 import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import suffix_op, word_part, token
-from _devbuild.gen.syntax_asdl import word
+from _devbuild.gen.syntax_asdl import (
+    braced_var_sub, word, suffix_op, word_part, token
+)
 from core import test_lib
 from osh import state
 
@@ -42,12 +43,12 @@ class VarOpTest(unittest.TestCase):
 
   def testVarOps(self):
     ev = InitEvaluator()  # initializes x=xxx and y=yyy
-    unset_sub = word_part.BracedVarSub(token(Id.VSub_Name, 'unset'))
+    unset_sub = braced_var_sub(token(Id.VSub_Name, 'unset'))
     part_vals = []
     ev._EvalWordPart(unset_sub, part_vals)
     print(part_vals)
 
-    set_sub = word_part.BracedVarSub(token(Id.VSub_Name, 'x'))
+    set_sub = braced_var_sub(token(Id.VSub_Name, 'x'))
     part_vals = []
     ev._EvalWordPart(set_sub, part_vals)
     print(part_vals)

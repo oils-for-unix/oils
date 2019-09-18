@@ -6,7 +6,7 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.syntax_asdl import (
-    token, double_quoted, single_quoted, expr,
+    token, double_quoted, single_quoted, command_sub, expr,
     word__Token, word__Compound, word_part, word_part_t,
 )
 from _devbuild.gen.id_kind_asdl import Id, Kind
@@ -289,14 +289,13 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
       # A little gross: Copied from osh/word_parse.py
       right_token = c_parser.w_parser.cur_token
 
-      cs_part = word_part.CommandSub(left_token, node)
+      cs_part = command_sub(left_token, node)
       cs_part.spids.append(left_token.span_id)
       cs_part.spids.append(right_token.span_id)
 
       typ = Id.Expr_CastedDummy.enum_id
       opaque = cast(token, cs_part)  # HACK for expr_to_ast
-      ilabel = gr.tokens[typ]
-      done = p.addtoken(typ, opaque, ilabel)
+      done = p.addtoken(typ, opaque, gr.tokens[typ])
       assert not done  # can't end the expression
 
       # Now push the closing )

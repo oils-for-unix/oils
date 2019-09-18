@@ -6,11 +6,10 @@ import pwd
 
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import (
-    word_e, word_t, word__Compound,
-    word_part__BracedVarSub,
+    braced_var_sub,
+    word, word_e, word_t, word__Compound,
     bracket_op_e, suffix_op_e, word_part_e
 )
-from _devbuild.gen.syntax_asdl import word
 from _devbuild.gen.runtime_asdl import (
     builtin_e, effect_e,
     part_value, part_value_e, part_value_t, part_value__String,
@@ -866,7 +865,7 @@ class _WordEvaluator(object):
     return ''.join(strs)
 
   def EvalBracedVarSubToString(self, part):
-    # type: (word_part__BracedVarSub) -> str
+    # type: (braced_var_sub) -> str
     """For double quoted strings in Oil expressions.
 
     Example: var x = "$foo-${foo}"

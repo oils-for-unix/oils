@@ -5,11 +5,11 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    token, double_quoted, single_quoted,
+    token, double_quoted, single_quoted, braced_var_sub, command_sub,
     command, command__VarDecl,
-    expr, expr_t, expr__Dict, expr__BracedVarSub,
+    expr, expr_t, expr__Dict,
     expr_context_e, regex, regex_t,
-    word_t, word_part__CommandSub, 
+    word_t,
     param, type_expr_t,
     comprehension,
 )
@@ -479,21 +479,12 @@ class Transformer(object):
         return expr.RegexLiteral(left_tok, regex.Concat(parts))
 
       elif typ == grammar_nt.sh_command_sub:
-        left_tok = children[0].tok
-
-        typ1 = children[1].typ
-        assert typ1 == Id.Expr_CastedDummy.enum_id, typ1
-        cs_part = cast(word_part__CommandSub, children[1].tok)
-
-        # Awkward: the schemas are different
-        expr_part = expr.CommandSub(cs_part.left_token, cs_part.command_list)
-        expr_part.spids.extend(cs_part.spids)
-        return expr_part
+        cs_part = cast(command_sub, children[1].tok)
+        return cs_part
 
       elif typ == grammar_nt.braced_var_sub:
-        # Casting to a different type!
-        part = cast(expr__BracedVarSub, children[1].tok)
-        return part
+        bvs_part = cast(braced_var_sub, children[1].tok)
+        return bvs_part
 
       elif typ == grammar_nt.dq_string:
         dq_part = cast(double_quoted, children[1].tok)
