@@ -1401,6 +1401,12 @@ def SetGlobalArray(mem, name, a):
   mem.SetVar(lhs_expr.LhsName(name), value.MaybeStrArray(a), (), scope_e.GlobalOnly)
 
 
+def SetLocalArray(mem, name, a):
+  """Helper for completion."""
+  assert isinstance(a, list)
+  mem.SetVar(lhs_expr.LhsName(name), value.MaybeStrArray(a), (), scope_e.LocalOnly)
+
+
 def ExportGlobalString(mem, name, s):
   """Helper for completion, $PWD, $OLDPWD, etc."""
   assert isinstance(s, str)

@@ -94,13 +94,13 @@ class OilEvaluator(object):
       #   - BASH_REMATCH?
       #   - M
       if set_match_result:
-        state.SetGlobalArray(self.mem, 'M', matches)
+        state.SetLocalArray(self.mem, 'M', matches)
       return True
     else:
       if set_match_result:
         # TODO: Clearing this would save allocations
-        # Also, what's the initial value of M?
-        state.SetGlobalArray(self.mem, 'M', [])
+        # NOTE: M does not exist initially.
+        state.SetLocalArray(self.mem, 'M', [])
       return False
 
   def EvalExpr(self, node):

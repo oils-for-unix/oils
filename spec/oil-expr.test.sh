@@ -719,7 +719,7 @@ array=3
 comsub=6
 ## END
 
-#### a ~ b and !~
+#### s ~ regex and s !~ regex
 shopt -s all:oil
 
 var s = 'foo'
@@ -744,4 +744,20 @@ matches
 does not match
 ['foo', 'oo']
 []
+## END
+
+#### s ~ regex sets a local, not a global
+shopt -s all:oil
+proc f {
+  if ('foo' ~ '.([[:alpha:]]+)') {  # ERE syntax
+    echo matches
+    argv.py @M
+  }
+}
+f
+echo ${M:-default}
+## STDOUT:
+matches
+['foo', 'oo']
+default
 ## END
