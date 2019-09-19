@@ -6,10 +6,10 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    expr_e, expr_t,
+    expr_e, expr_t, re_t
 )
 from _devbuild.gen.runtime_asdl import (
-    lvalue, value, value_e, scope_e,
+    lvalue, value, value_e, scope_e, regex_t,
 )
 from core.util import e_die
 #from core.util import log
@@ -395,4 +395,13 @@ class OilEvaluator(object):
 
       raise AssertionError(id_)
 
+    if node.tag == expr_e.RegexLiteral:  # obj.attr 
+      # TODO: Should this just be an object that ~ calls?
+      return objects.Regex(self.EvalRegex(node))
+
     raise NotImplementedError(node.__class__.__name__)
+
+  def EvalRegex(self, node):
+    # type: (re_t) -> regex_t
+    pass
+

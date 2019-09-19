@@ -98,6 +98,14 @@ module syntax
   -- translation.
   token = (id id, string val, int span_id)
 
+  -- After parsing, we often don't need the token 'string val', so use a
+  -- 'speck'.  Notes:
+  -- * This structure could be packed into (2 + 2 + 4) = 8 bytes.
+  -- * If we had a step between parsing and execution (i.e. compilation), we could
+  --   just use specks as tokens.  We care about 'string val' when they're made
+  --   literal parts of words; variable, function, and parameter names; etc.
+  speck = (id id, int span_id)
+
   --
   -- Shell language
   --
@@ -339,7 +347,7 @@ module syntax
   | ShArrayLiteral %sh_array_literal
     -- @[a b c] @[1 2 3] @[(1+1) (2+2)]
   | ArrayLiteral(token left, expr* items)
-  | RegexLiteral(token left, regex r, token* flags)
+  | RegexLiteral(token left, re r, token* flags)
 
   | SimpleVarSub(token token)
   | BracedVarSub %braced_var_sub
@@ -412,7 +420,7 @@ module syntax
   -- Regex Language
   --
 
-  char_class = 
+  class_part = 
     Name(bool negated, token token)
   | Range(token start, token end)
   | SimpleVarSub(token token)
@@ -420,29 +428,32 @@ module syntax
   | SingleQuoted %single_quoted
   | DoubleQuoted %double_quoted
 
-  regex_repeat =
+  re_repeat =
     Op(token op)
   | Num(token times)
   | Range(token lower, token upper)
 
-  regex = 
-    -- Dot goes here too
-    -- TODO: only some can be negated?
-    Name(bool negated, token token)
-  | CharClass(bool negated, char_class c)
+  re = 
+    -- . < > ^ $
+    Speck %speck
+    -- digit or ~digit
+    -- NOTE: Some names are resolved at eval time, not match time
+  | Name(bool negated, token token)
+  | CharClass(bool negated, class_part* c)
 
+    -- NOTE: These are resolved at eval time, not match time
   | SimpleVarSub(token token)
   | BracedVarSub %braced_var_sub
   | SingleQuoted %single_quoted
   | DoubleQuoted %double_quoted
 
-  | Repeat(regex r, regex_repeat op)
-  | Seq(regex* children)
-  | Alt(regex* children)
+  | Repeat(re child, re_repeat op)
+  | Seq(re* children)
+  | Alt(re* children)
 
-  | Group(regex r)
-  | Capture(regex r, token? var_name, type_expr? type)
-  | Backtracking(bool negated, token name, regex child)
+  | Group(re child)
+  | Capture(re child, token? var_name, type_expr? type)
+  | Backtracking(bool negated, token name, re child)
 
 }
 

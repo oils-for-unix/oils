@@ -122,4 +122,32 @@ module runtime
 
   -- tools/osh2oil.py
   word_style = Expr | Unquoted | DQ | SQ
+
+
+  class_part = 
+    Literal(string s)
+  | GroupName(bool negated, string s)
+  | Range(string start, string end)
+
+  -- TODO: import tokens
+  regex = 
+    -- . < > ^ $
+    Dot
+  | Start
+  | End
+
+  | CharClass(bool negated, class_part* c)
+
+    -- Evaluated words, sort of like cmd_value.Argv
+  | Literal(string s)
+
+    -- TODO: Need re_repeat because it's a literal
+  -- | Repeat(regex r, re_repeat op)
+  | Repeat(regex r, any op)
+  | Seq(regex* children)
+  | Alt(regex* children)
+
+  | Group(regex r)
+  -- | Capture(regex r, token? var_name, type_expr? type)
+
 }

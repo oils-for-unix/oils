@@ -6,6 +6,11 @@ Python types under value.Obj.  See the invariant in osh/runtime.asdl.
 """
 from __future__ import print_function
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+  from _devbuild.gen.runtime.asdl import regex_t
+
+
 # These are for data frames?
 
 class BoolArray(list):
@@ -82,3 +87,37 @@ class Module(object):
     self.docstring = ''
     # items
     self.attrs = {}
+
+
+class Regex(object):
+  """
+  TODO: This should resolve all references into a different type of tree?
+
+  var D = / d+ /
+  var pat2 = / D '.' D '.' D $suffix /
+
+  Instead of expr.RegexLiteral runtime.Regex?  And objects.Regex wraps it?
+  """
+  def __init__(self, regex):
+    # type: (regex_t) -> None
+    self.regex = regex
+
+  def __str__(self):
+    # The default because x ~ obj accepts an ERE string?
+    # And because grep $/d+/ does.
+    #
+    # $ var x = /d+/
+    # $ echo $x
+    # [0-9]+
+    return self.AsPosixEre()
+
+  def AsPosixEre(self):
+    # TODO: Walk the tree and print it
+    pass
+
+  def AsPcre(self):
+    pass
+
+  def AsPythonRe(self):
+    """Very similar to PCRE, except a few constructs aren't allowed."""
+    pass

@@ -6,13 +6,13 @@ from _devbuild.gen.id_kind_asdl import Id
 from asdl import runtime
 
 
-def _AbbreviateToken(token, out):
+def _AbbreviateToken(tok, out):
   # type: (token, List[runtime._PrettyBase]) -> None
-  if token.id != Id.Lit_Chars:
-    n1 = runtime.PrettyLeaf(token.id.name, runtime.Color_OtherConst)
+  if tok.id != Id.Lit_Chars:
+    n1 = runtime.PrettyLeaf(tok.id.name, runtime.Color_OtherConst)
     out.append(n1)
 
-  n2 = runtime.PrettyLeaf(token.val, runtime.Color_StringConst)
+  n2 = runtime.PrettyLeaf(tok.val, runtime.Color_StringConst)
   out.append(n2)
 
 
@@ -25,6 +25,18 @@ def _token(obj):
   p_node.left = '<'
   p_node.right = '>'
   _AbbreviateToken(obj, p_node.unnamed_fields)
+  return p_node
+
+
+def _speck(obj):
+  # type: (speck) -> PrettyNode
+  """Always abbreviate a speck as the Id."""
+  p_node = runtime.PrettyNode()
+  p_node.abbrev = True
+  p_node.node_type = ''  # don't show
+
+  n1 = runtime.PrettyLeaf(obj.id.name, runtime.Color_OtherConst)
+  p_node.unnamed_fields.append(n1)
   return p_node
 
 

@@ -359,23 +359,6 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
     raise parse.ParseError("incomplete input", tok.id.enum_id, tok)
 
 
-def NoSingletonAction(gr, pnode):
-  # type: (Grammar, PNode) -> PNode
-  """Collapse parse tree."""
-  # hm this was so easy!  Why do CPython and pgen2 materialize so much then?
-
-  # TODO: This doesn't work
-  # Because of func f(x, y) vs. func f(x Int, y Int = 5)
-  # You don't get consistent types!
-  # Same with {key} vs. {key: value}
-
-  children = pnode.children
-  if children is not None and len(children) == 1:
-    return children[0]
-
-  return pnode
-
-
 class ExprParser(object):
   """A wrapper around a pgen2 parser."""
 

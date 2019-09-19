@@ -5,11 +5,11 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    token, double_quoted, single_quoted, braced_var_sub, command_sub,
+    token, speck, double_quoted, single_quoted, braced_var_sub, command_sub,
     sh_array_literal,
     command, command__VarDecl,
     expr, expr_t, expr__Dict, expr_context_e,
-    regex, regex_t, regex_repeat, regex_repeat_t,
+    re, re_t, re_repeat, re_repeat_t, class_part_t,
     word_t,
     param, type_expr_t, comprehension,
 )
@@ -189,58 +189,116 @@ class Transformer(object):
 
     return expr.Dict(keys, values)
 
-  def _ReAtom(self, p_atom):
-    # type: (PNode) -> regex_t
-    tok = p_atom.children[0].tok
-    if tok.id == Id.Expr_Dot:
-      return regex.Name(False, tok)
-    if tok.id == Id.Expr_Name:
-      return regex.Name(False, tok)
-
+  def _CharClass(self, p_node):
+    # type: (PNode) -> class_part_t
+    tok = p_node.tok
+    if tok.id == Id.Op_LBracket:
+      # | char_class
+      pass
     raise NotImplementedError(tok.id)
 
+  def _ReAtom(self, p_atom):
+    # type: (PNode) -> re_t
+    """
+    re_atom: (
+        char_literal
+    """
+    assert p_atom.typ == grammar_nt.re_atom, p_atom.typ
+
+    typ = p_atom.children[0].typ
+
+    if ISNONTERMINAL(typ):
+      children = p_atom.children
+      if typ == grammar_nt.char_class:
+        parts = [self._CharClass(c) for c in children[1:-1]]
+        return re.CharClass(False, parts)
+
+      # TODO: Consolidate these?
+      if typ == grammar_nt.simple_var_sub:
+        pass
+
+      if typ == grammar_nt.braced_var_sub:
+        pass
+
+      if typ == grammar_nt.sq_string:
+        pass
+
+      if typ == grammar_nt.dq_string:
+        pass
+
+      raise NotImplementedError(typ)
+
+    else:
+      tok = p_atom.children[0].tok
+
+      # Special punctuation
+      if tok.id in (Id.Expr_Dot, Id.Arith_Caret, Id.Arith_Less, Id.Arith_Great):
+        return speck(tok.id, tok.span_id)
+      if tok.id == Id.Expr_Name:
+        return re.Name(False, tok)
+
+      if tok.id == Id.Arith_Tilde:
+        # | '~' [Expr_Name | char_class]
+        raise NotImplementedError(tok.id)
+
+      if tok.id == Id.Op_LParen:
+        # | '(' regex ['as' name_type] ')'
+        raise NotImplementedError(tok.id)
+
+      if tok.id == Id.Arith_Colon:
+        # | ':' '(' regex ')'
+        raise NotImplementedError(tok.id)
+
+      if tok.id == Id.Op_LBrace:
+        # | '{' ['!'] Expr_Name regex '}'
+        raise NotImplementedError(tok.id)
+
+      raise NotImplementedError(tok.id)
+
   def _RepeatOp(self, p_repeat):
-    # type: (PNode) -> regex_repeat_t
+    # type: (PNode) -> re_repeat_t
     tok = p_repeat.children[0].tok
     id_ = tok.id
     # a+
     if id_ in (Id.Arith_Plus, Id.Arith_Star, Id.Arith_QMark):
-      return regex_repeat.Op(tok)
+      return re_repeat.Op(tok)
 
     # TODO: Parse a{3,4}
     raise NotImplementedError(id_)
 
   def _Regex(self, p_node):
-    # type: (PNode) -> regex_t
+    # type: (PNode) -> re_t
     typ = p_node.typ
     children = p_node.children
 
     if typ == grammar_nt.regex:
+      # regex: [re_alt] (('|'|'or') re_alt)*
+
       if len(children) == 1:
         return self._Regex(children[0])
-      raise NotImplementedError
+
+      # NOTE: We're losing the | and or operators
+      children = p_node.children[0::2]
+      return re.Alt([self._Regex(c) for c in children])
 
     if typ == grammar_nt.re_alt:
       # re_alt: (re_atom [repeat_op])+
       i = 0
       n = len(children)
-      alts = []
+      seq = []
       while i < n:
-        alt = self._ReAtom(children[i])
+        r = self._ReAtom(children[i])
         i += 1
-        if i < n:
+        if i < n and children[i].typ == grammar_nt.repeat_op:
           repeat_op = self._RepeatOp(children[i])
-          alt = regex.Repeat(alt, repeat_op)
+          r = re.Repeat(r, repeat_op)
           i += 1
-        alts.append(alt)
+        seq.append(r)
 
-      if len(alts) == 1:
-        return alts[0]
+      if len(seq) == 1:
+        return seq[0]
       else:
-        return regex.Alt(alts)
-
-    if typ == grammar_nt.re_atom:
-      pass
+        return re.Seq(seq)
 
     raise NotImplementedError
 
