@@ -121,7 +121,7 @@ EOF)
 
     CASES = [
       '@[1 2 3]',
-      '$/ x /',
+      #'$/ x /',
       # TODO: Put this back after fixing double quoted strings in expression
       # mode.
       #'$/ "." [a-z A-Z] y /',
@@ -129,8 +129,8 @@ EOF)
       '$(echo hi)',
 
       # TODO: Add these back
-      #'${x}',
-      #'"quoted ${x}"',
+      '${x}',
+      '"quoted ${x}"',
     ]
 
     # array literal

@@ -8,21 +8,21 @@ from _devbuild.gen.syntax_asdl import (
     token, double_quoted, single_quoted, braced_var_sub, command_sub,
     sh_array_literal,
     command, command__VarDecl,
-    expr, expr_t, expr__Dict,
-    expr_context_e, regex, regex_t,
+    expr, expr_t, expr__Dict, expr_context_e,
+    regex, regex_t, regex_repeat, regex_repeat_t,
     word_t,
-    param, type_expr_t,
-    comprehension,
+    param, type_expr_t, comprehension,
 )
 from _devbuild.gen import grammar_nt
 from pgen2.parse import PNode
-#from core.util import log
+from core.util import log
 
 from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:
   from pgen2.grammar import Grammar
 
-_ = word_t  # shut up lint, it's used below
+unused1 = word_t  # shut up lint, it's used below
+unused2 = log
 
 
 # Copied from pgen2/token.py to avoid dependency.
@@ -189,6 +189,61 @@ class Transformer(object):
 
     return expr.Dict(keys, values)
 
+  def _ReAtom(self, p_atom):
+    # type: (PNode) -> regex_t
+    tok = p_atom.children[0].tok
+    if tok.id == Id.Expr_Dot:
+      return regex.Name(False, tok)
+    if tok.id == Id.Expr_Name:
+      return regex.Name(False, tok)
+
+    raise NotImplementedError(tok.id)
+
+  def _RepeatOp(self, p_repeat):
+    # type: (PNode) -> regex_repeat_t
+    tok = p_repeat.children[0].tok
+    id_ = tok.id
+    # a+
+    if id_ in (Id.Arith_Plus, Id.Arith_Star, Id.Arith_QMark):
+      return regex_repeat.Op(tok)
+
+    # TODO: Parse a{3,4}
+    raise NotImplementedError(id_)
+
+  def _Regex(self, p_node):
+    # type: (PNode) -> regex_t
+    typ = p_node.typ
+    children = p_node.children
+
+    if typ == grammar_nt.regex:
+      if len(children) == 1:
+        return self._Regex(children[0])
+      raise NotImplementedError
+
+    if typ == grammar_nt.re_alt:
+      # re_alt: (re_atom [repeat_op])+
+      i = 0
+      n = len(children)
+      alts = []
+      while i < n:
+        alt = self._ReAtom(children[i])
+        i += 1
+        if i < n:
+          repeat_op = self._RepeatOp(children[i])
+          alt = regex.Repeat(alt, repeat_op)
+          i += 1
+        alts.append(alt)
+
+      if len(alts) == 1:
+        return alts[0]
+      else:
+        return regex.Alt(alts)
+
+    if typ == grammar_nt.re_atom:
+      pass
+
+    raise NotImplementedError
+
   def _Atom(self, children):
     # type: (List[PNode]) -> expr_t
     """Handles alternatives of 'atom' where there is more than one child."""
@@ -227,6 +282,11 @@ class Transformer(object):
 
     if id_ == Id.Op_LBrace:
       return self._Dict(children[1])
+
+    if id_ == Id.Arith_Slash:
+      r = self._Regex(children[1])
+      flags = []  # type: List[token]
+      return expr.RegexLiteral(children[0].tok, r, flags)
 
     raise NotImplementedError(id_)
 
@@ -291,6 +351,8 @@ class Transformer(object):
         # place: NAME place_trailer*
         if len(pnode.children) == 1:
           return self.Expr(pnode.children[0])
+        # TODO: Called _Trailer but don't handle ( )?
+        # only [] . -> :: ?
         raise NotImplementedError
 
       #
@@ -468,18 +530,6 @@ class Transformer(object):
         array_words = cast('List[word_t]', children[1].tok)
 
         return sh_array_literal(left_tok, array_words)
-
-      elif typ == grammar_nt.regex_literal:
-        left_tok = children[0].tok
-
-        # Approximation for now.
-        tokens = [
-            pnode.tok for pnode in children[1:-1] if pnode.tok.id ==
-            Id.Expr_Name
-        ]
-        parts = [regex.Var(t) for t in tokens]  # type: List[regex_t]
-
-        return expr.RegexLiteral(left_tok, regex.Concat(parts))
 
       elif typ == grammar_nt.sh_command_sub:
         cs_part = cast(command_sub, children[1].tok)

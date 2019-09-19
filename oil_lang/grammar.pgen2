@@ -41,12 +41,13 @@ atom: (
     '(' [testlist_comp] ')' 
   | '[' [testlist_comp] ']' 
   | '{' [dict] '}'
+  | '/' regex [re_flags] '/'
   | '...'
     # NOTE: These atoms are are allowed in typed array literals
   | Expr_Name | Expr_Null | Expr_True | Expr_False 
   | Expr_Float | Expr_DecInt | Expr_BinInt | Expr_OctInt | Expr_HexInt 
   | dq_string | sq_string
-  | sh_command_sub | braced_var_sub | simple_var_sub | regex_literal
+  | sh_command_sub | braced_var_sub | simple_var_sub
   | sh_array_literal | array_literal 
 )
 testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
@@ -137,7 +138,7 @@ array_item: (
    Expr_Name | Expr_Null | Expr_True | Expr_False |
    Expr_Float | Expr_DecInt | Expr_BinInt | Expr_OctInt | Expr_HexInt |
    dq_string | sq_string |
-   sh_command_sub | braced_var_sub | simple_var_sub | regex_literal
+   sh_command_sub | braced_var_sub | simple_var_sub
 )
 array_literal: (
   '@[' array_item* Op_RBracket
@@ -145,17 +146,6 @@ array_literal: (
 
 sh_array_literal: '@(' Expr_CastedDummy Right_ShArrayLiteral
 sh_command_sub: '$(' Expr_CastedDummy Eof_RParen
-
-char_class_part: Lit_Chars  # TODO: letters, escaped, and ranges
-char_class: (
-  Op_LBracket [WS_Space]
-  [char_class_part] (WS_Space char_class_part)*
-  [WS_Space] Op_RBracket
-)
-
-regex_part: Expr_Name | dq_string | char_class
-# empty regex invalid for now
-regex_literal: '$/' regex_part+ Arith_Slash
 
 # TODO: We also need r'' c''  "" c""
 dq_string: '"' Expr_CastedDummy Right_DoubleQuote
@@ -227,3 +217,82 @@ oil_func_proc: NAME ['(' params [';' params] ')'] [type_expr] '{'
 params: param (',' param)* [',']
 # ... is for *args or **kwargs of any type, and @argv is for string args
 param: NAME [type_expr] ['=' expr] | '...' NAME | '@' NAME
+
+#
+# Regex Sublanguage
+#
+
+# TODO: Also \t \n \u0123 \U0123 are chars?  In expression mode too.
+char_literal: Expr_CastedDummy
+
+# digit or a-z
+# We have to do further validation of ranges later.
+char_class_part: (
+    char_literal
+  | Expr_Name ['-' Expr_Name]
+  | '~' Expr_Name
+    # $mychars or ${mymodule.mychars}
+  | simple_var_sub | braced_var_sub
+    # e.g. 'abc' or "abc$mychars" 
+  | sq_string | dq_string
+
+)
+char_class: '[' char_class_part+ ']'
+
+
+re_atom: (
+    char_literal
+    # builtin regex like 'digit' or a regex reference like 'D'
+  | Expr_Name
+  | char_class
+    # ~digit or ~[a-f]
+  | '~' [Expr_Name | char_class]
+    # . is also any
+  | '.'
+  | '<' | '>'
+  | '^' # TODO '$' is a token
+    # literal STRINGS like $foo or ${module.foo}
+  | simple_var_sub | braced_var_sub
+  | sq_string | dq_string
+    # negated character class
+  | '(' regex ['as' name_type] ')'
+    # : is syntactic space for non-capturing group.  (! would seem like negation.)
+  | ':' '(' regex ')'
+    # syntactic space for Perl-style backtracking
+  | '{' ['!'] Expr_Name regex '}'
+
+    # Might want this obscure conditional construct.  Can't use C-style ternary
+    # because '?' is a regex operator.
+  #| '{' regex 'if' regex 'else' regex '}'
+    
+
+  # TODO: Add SYMBOL type like %foo, and use %begin and %end
+  # And %boundary !%boundary  or is it ~!boundary?
+)
+
+repeat_op: (
+    # ++ ** ?? ^^ is syntactic space for Perl non-greedy ops, which we don't
+    # support
+    '+' ['+'] | '*' ['*'] | '?' ['?']
+  # e.g. a^3 a^{3,4} a^{3,} a^{,4}
+  | '^' ['^'] (Expr_DecInt | '{' [Expr_DecInt] ',' [Expr_DecInt] '}')
+)
+
+re_alt: (re_atom [repeat_op])+
+
+regex: [re_alt] (('|'|'or') re_alt)*
+
+# /digit+ ; multiline,ignorecase/
+re_flags: ';' Expr_Name (',' Expr_Name)*
+
+# Syntax reserved for PCRE/Python, but that's not in ERE:
+# 
+#   greedy         a**
+#   non-capturing  :( digit+ )
+#   backtracking   { REF 1 }
+# 
+# Legacy syntax:
+# 
+#   ^ and $ instead of < and >
+#   . instead of any
+#   | instead of 'or'

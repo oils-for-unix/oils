@@ -329,17 +329,6 @@ module syntax
   -- OIL LANGUAGE
   --
 
-  -- NOTE: These are defined in the same ASDL module since the OSH LST will
-  -- contain oil_command, e.g. for 'var', 'func', etc.
-
-  regex = 
-    Var(token name)
-  | SingleQuoted
-  | DoubleQuoted
-  | Repeat(token op, regex child)  -- + * ?
-  | RepeatRange(token min, token max, regex child)  -- x^{1,2}
-  | Concat(regex* parts)
-
   expr =
     Var(token name)  -- a variable name to evaluate
     -- For null, Bool, Int, Float
@@ -350,7 +339,7 @@ module syntax
   | ShArrayLiteral %sh_array_literal
     -- @[a b c] @[1 2 3] @[(1+1) (2+2)]
   | ArrayLiteral(token left, expr* items)
-  | RegexLiteral(token left, regex regex)
+  | RegexLiteral(token left, regex r, token* flags)
 
   | SimpleVarSub(token token)
   | BracedVarSub %braced_var_sub
@@ -418,6 +407,43 @@ module syntax
 
   -- keyword arguments supplied to call (NULL identifier for **kwargs)
   keyword = (token? arg, expr value)
+
+  --
+  -- Regex Language
+  --
+
+  char_class = 
+    Name(bool negated, token token)
+  | Range(token start, token end)
+  | SimpleVarSub(token token)
+  | BracedVarSub %braced_var_sub
+  | SingleQuoted %single_quoted
+  | DoubleQuoted %double_quoted
+
+  regex_repeat =
+    Op(token op)
+  | Num(token times)
+  | Range(token lower, token upper)
+
+  regex = 
+    -- Dot goes here too
+    -- TODO: only some can be negated?
+    Name(bool negated, token token)
+  | CharClass(bool negated, char_class c)
+
+  | SimpleVarSub(token token)
+  | BracedVarSub %braced_var_sub
+  | SingleQuoted %single_quoted
+  | DoubleQuoted %double_quoted
+
+  | Repeat(regex r, regex_repeat op)
+  | Seq(regex* children)
+  | Alt(regex* children)
+
+  | Group(regex r)
+  | Capture(regex r, token? var_name, type_expr? type)
+  | Backtracking(bool negated, token name, regex child)
+
 }
 
 -- Ideas for even more precise error messages

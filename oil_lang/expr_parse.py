@@ -119,8 +119,8 @@ _MODE_TRANSITIONS = {
     # Expr
     #
 
-    (lex_mode_e.Expr, Id.Left_DollarSlash): lex_mode_e.Regex,  # $/ any + /
-    (lex_mode_e.Regex, Id.Arith_Slash): POP,
+    #(lex_mode_e.Expr, Id.Left_DollarSlash): lex_mode_e.Regex,  # $/ any + /
+    #(lex_mode_e.Regex, Id.Arith_Slash): POP,
 
     (lex_mode_e.Expr, Id.Left_DollarBrace): lex_mode_e.VSub_1,  # ${x|html}
     # TODO: What about VSub_2 and so forth?
