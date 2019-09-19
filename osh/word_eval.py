@@ -6,7 +6,7 @@ import pwd
 
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import (
-    braced_var_sub,
+    braced_var_sub, token,
     word, word_e, word_t, word__Compound,
     bracket_op_e, suffix_op_e, word_part_e
 )

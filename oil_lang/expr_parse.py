@@ -6,8 +6,8 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.syntax_asdl import (
-    token, double_quoted, single_quoted, command_sub, expr,
-    word__Token, word__Compound, word_part, word_part_t,
+    token, double_quoted, single_quoted, command_sub,
+    word__Token, word__Compound, word_part_t,
 )
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.types_asdl import lex_mode_e
