@@ -446,17 +446,18 @@ module syntax
   re = 
     -- . ^ $
     Speck %speck
+    -- get rid of speck, because 'dot' is a primitive too
+    -- the LST preserves the difference between '.' and 'dot'
+    -- but at EvalRegex we change Speck to Primitive
+    -- TODO: should be strand rather than token?
+  | Token %token
   | PosixClass %posix_class
   | PerlClass %perl_class
   | ClassLiteral(bool negated, class_literal_part* parts)
 
-    -- String substitutions are evaluated into literals
-  | Literal(string s)
-    -- Splices are resolved like this
-  | Resolved(re child)
-
     -- @D
   | Splice(token token)
+
     -- $literal ${literal} 'no-backslashes' "other$foo"
   | SimpleVarSub(token token)
   | BracedVarSub %braced_var_sub
@@ -468,9 +469,23 @@ module syntax
   | Seq(re* children)
   | Alt(re* children)
 
+    -- TODO: model the place and type: (d+ as month Int)
   | Group(re child)
   | Capture(re child, token? var_name, type_expr? type)
   | Backtracking(bool negated, token name, re child)
+
+  -- Regex Evaluation Shares the Same Structure, but uses slightly different
+  -- nodes.
+  -- * Speck/Token (syntactic concepts) -> Primitive (logical)
+  -- * Splice -> Resolved
+  -- * All Strings -> Literal
+
+  | Primitive(id id)  -- . dot etc.
+    -- String substitutions are evaluated into literals
+  | Literal(string s)
+    -- Splices are resolved like this
+  | Resolved(re child)
+
 }
 
 -- Ideas for even more precise error messages

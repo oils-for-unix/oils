@@ -6,10 +6,8 @@ Python types under value.Obj.  See the invariant in osh/runtime.asdl.
 """
 from __future__ import print_function
 
-
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import re_e, re_repeat_e, class_literal_part_e
-from _devbuild.gen.runtime_asdl import regex_e
 
 from core.util import log
 
@@ -124,31 +122,30 @@ def _ClassLiteralToPosixEre(term, parts):
 
 def _PosixEre(node, parts):
   tag = node.tag
-  if tag == regex_e.Dot:
-    parts.append('.')
+  if tag == re_e.Primitive:
+    if node.id == Id.Re_Dot:
+      parts.append('.')
+    elif node.id == Id.Re_Start:
+      parts.append('^')
+    elif node.id == Id.Re_End:
+      parts.append('$')
+    else:
+      raise AssertionError(node)
     return
 
-  if tag == regex_e.Start:
-    parts.append('^')
-    return
-
-  if tag == regex_e.End:
-    parts.append('$')
-    return
-
-  if tag == regex_e.Seq:
+  if tag == re_e.Seq:
     for c in node.children:
       _PosixEre(c, parts)
     return
 
-  if tag == regex_e.Alt:
+  if tag == re_e.Alt:
     for i, c in enumerate(node.children):
       if i != 0:
         parts.append('|')
       _PosixEre(c, parts)
     return
 
-  if tag == regex_e.Repeat:
+  if tag == re_e.Repeat:
     _PosixEre(node.child, parts)
     op_tag = node.op.tag
 
@@ -172,7 +169,13 @@ def _PosixEre(node, parts):
 
     raise NotImplementedError(node.op)
 
-  if tag == regex_e.PerlClass:
+  if tag == re_e.Group:
+    parts.append('(')
+    _PosixEre(node.child, parts)
+    parts.append(')')
+    return
+
+  if tag == re_e.PerlClass:
     n = node.name
     chars = PERL_CLASS[node.name]
     if node.negated:
@@ -182,7 +185,7 @@ def _PosixEre(node, parts):
     parts.append(pat)
     return
 
-  if tag == regex_e.PosixClass:
+  if tag == re_e.PosixClass:
     n = node.name
     if node.negated:
       pat = '[^[:%s:]]' % n
@@ -191,7 +194,7 @@ def _PosixEre(node, parts):
     parts.append(pat)
     return
 
-  if tag == regex_e.ClassLiteral:
+  if tag == re_e.ClassLiteral:
     parts.append('[')
     for term in node.parts:
       _ClassLiteralToPosixEre(term, parts)

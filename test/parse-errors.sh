@@ -507,8 +507,17 @@ regex_literals() {
   _oil-parse-error 'var x = /[a-zA-Z]/'
   _oil-parse-error 'var x = /[a-z0-9]/'
 
+  _oil-parse-error 'var x = /[a-zz]/'
+
+  # can't have multichar ranges
+  _oil-parse-error "var x = /['ab'-'z']/"
+
   # These are too long too
   _oil-parse-error 'var x = /[abc]/'
+
+  # Single chars not allowed, should be /['abc']/
+  _oil-parse-error 'var x = /[a b c]/'
+
 }
 
 

@@ -6,10 +6,10 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    expr_e, expr_t, re_e, re_t, class_literal_part_e,
+    expr_e, expr_t, re, re_e, re_t, class_literal_part_e,
 )
 from _devbuild.gen.runtime_asdl import (
-    lvalue, value, value_e, scope_e, regex, regex_t,
+    lvalue, value, value_e, scope_e,
 )
 from core.util import e_die
 from core.util import log
@@ -20,7 +20,7 @@ from osh import word_eval
 
 import libc
 
-from typing import Any
+from typing import Any, Optional
 
 _ = log
 
@@ -421,42 +421,113 @@ class OilEvaluator(object):
 
     raise NotImplementedError(part.__class__.__name__)
 
-  def EvalRegex(self, node):
-    # type: (re_t) -> regex_t
-    
-    # TODO:
-    # - 4 types of strings -> re.Literal
-    # - Splice -> re.Resolved?
-    # Should we MUTATED children?
-
+  def _MaybeReplaceLeaf(self, node):
+    # type: (re_t) -> Optional[re_t]
+    """
+    If a leaf node needs to be evaluated, do it and return the replacement.
+    Otherwise return None.
+    """
+    new_leaf = None
     if node.tag == re_e.Speck:
       id_ = node.id
       if id_ == Id.Expr_Dot:
-        return regex.Dot()
-      if id_ == Id.Arith_Caret:  # ^
-        return regex.Start()
-      if id_ == Id.Expr_Dollar:  # $
-        return regex.End()
+        new_leaf = re.Primitive(Id.Re_Dot)
+      elif id_ == Id.Arith_Caret:  # ^
+        new_leaf = re.Primitive(Id.Re_Start)
+      elif id_ == Id.Expr_Dollar:  # $
+        new_leaf = re.Primitive(Id.Re_End)
+      else:
+        raise NotImplementedError(id_)
 
-      raise NotImplementedError(id_)
+    if node.tag == re_e.Token:
+      val = node.val
 
+      if val == 'dot':
+        new_leaf = re.Primitive(Id.Re_Dot)
+      elif val == '%start':
+        new_leaf = re.Primitive(Id.Re_Start)
+      elif val == '%end':
+        new_leaf = re.Primitive(Id.Re_End)
+      else:
+        raise NotImplementedError(val)
+
+    if node.tag == re_e.Splice:
+      pass
+
+    if node.tag == re_e.SingleQuoted:
+      pass
+
+    if node.tag == re_e.DoubleQuoted:
+      pass
+
+    recurse = True
+    # Not replaced
+    if node.tag == re_e.PosixClass:
+      recurse = False
+    if node.tag == re_e.PerlClass:
+      recurse = False
+
+    return new_leaf, recurse
+
+  def _MutateChildren(self, children):
+    # type: (List[re_t]) -> None
+    """
+    """
+    for i, c in enumerate(children):
+      new_leaf, recurse = self._MaybeReplaceLeaf(c)
+      if new_leaf:
+        children[i] = new_leaf
+      elif recurse:
+        self._MutateSubtree(c)
+
+  def _MutateClassLiteral(self, node):
+    # type: (re_t) -> None
+    pass
+
+  def _MutateSubtree(self, node):
     if node.tag == re_e.Seq:
-      return regex.Seq(self.EvalRegex(c) for c in node.children)
+      self._MutateChildren(node.children)
+      return
 
     if node.tag == re_e.Alt:
-      return regex.Alt(self.EvalRegex(c) for c in node.children)
+      self._MutateChildren(node.children)
+      return
 
     if node.tag == re_e.Repeat:
-      return regex.Repeat(self.EvalRegex(node.child), node.op)
+      new_leaf, recurse = self._MaybeReplaceLeaf(node.child)
+      if new_leaf:
+        node.child = new_leaf
+      elif recurse:
+        self._MutateSubtree(node.child)
+      return
 
-    if node.tag == re_e.ClassLiteral:
-      parts = [self._EvalClassLiteralPart(p) for p in node.parts]
-      return regex.ClassLiteral(node.negated, parts)
+    # TODO: How to consolidate this code with the above?
+    if node.tag == re_e.Group:
+      new_leaf, recurse = self._MaybeReplaceLeaf(node.child)
+      if new_leaf:
+        node.child = new_leaf
+      elif recurse:
+        self._MutateSubtree(node.child)
+      return
 
-    if node.tag == re_e.PosixClass:
-      return regex.PosixClass(node.negated, node.name)
-
-    if node.tag == re_e.PerlClass:
-      return regex.PerlClass(node.negated, node.name)
+    elif node.tag == re_e.ClassLiteral:
+      self._MutateClassLiteral(node)
+      return
 
     raise NotImplementedError(node.__class__.__name__)
+
+  def EvalRegex(self, node):
+    # type: (re_t) -> re_t
+    
+    # Regex Evaluation Shares the Same Structure, but uses slightly different
+    # nodes.
+    # * Speck/Token (syntactic concepts) -> Primitive (logical)
+    # * Splice -> Resolved
+    # * All Strings -> Literal
+
+    new_leaf, recurse = self._MaybeReplaceLeaf(node)
+    if new_leaf:
+      return new_leaf
+    elif recurse:
+      self._MutateSubtree(node)
+    return node

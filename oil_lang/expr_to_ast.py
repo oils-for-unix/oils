@@ -192,7 +192,7 @@ class Transformer(object):
 
     return expr.Dict(keys, values)
 
-  TOO_LONG = 'Quote characters or surround them by spaces'
+  RANGE_POINT_TOO_LONG = "Range start/end shouldn't have more than one character"
 
   def _RangeChar(self, p_node):
     """
@@ -204,11 +204,12 @@ class Transformer(object):
       # 'a' in 'a'-'b'
       if typ == grammar_nt.sq_string:
         sq_part = cast(single_quoted, children[0].children[1].tok)
-        if len(sq_part.tokens) > 1:
-          p_die('Too long', part=sq_part)
-        if len(sq_part.tokens[0].val) > 1:
-          p_die('Too long', part=sq_part)
-        s = sq_part.tokens[0].val[0]
+        tokens = sq_part.tokens
+        if len(tokens) > 1:  # Can happen with multiline single-quoted strings
+          p_die(self.RANGE_POINT_TOO_LONG, part=sq_part)
+        if len(tokens[0].val) > 1:
+          p_die(self.RANGE_POINT_TOO_LONG, part=sq_part)
+        s = tokens[0].val[0]
         return s
 
       raise NotImplementedError
@@ -219,7 +220,7 @@ class Transformer(object):
       if tok.id in (Id.Expr_Name, Id.Expr_DecInt):
         # For the a in a-z, 0 in 0-9
         if len(tok.val) != 1:
-          p_die(self.TOO_LONG, token=tok)
+          p_die(self.RANGE_POINT_TOO_LONG, token=tok)
         return tok.val[0]
 
       # TODO: \n \' are valid in ranges
@@ -300,15 +301,19 @@ class Transformer(object):
       'blank', 'graph', 'punct', 'xdigit',
   )
 
-  def _RegexName(self, negated, token):
-    name = token.val
+  def _RegexName(self, negated, tok):
+    val = tok.val
+    if val == 'dot':
+      if negated:
+        p_die("Can't negate this symbol", token=tok)
+      return tok
     # Resolve all the names now
-    if name in self.POSIX_CLASSES:
-      return posix_class(negated, name)
-    perl = self.PERL_CLASSES.get(name)
+    if val in self.POSIX_CLASSES:
+      return posix_class(negated, val)
+    perl = self.PERL_CLASSES.get(val)
     if perl:
       return perl_class(negated, perl)
-    p_die("%r isn't a character class", name, token=token)
+    p_die("%r isn't a character class", val, token=tok)
 
   def _ReAtom(self, p_atom):
     # type: (PNode) -> re_t
@@ -353,6 +358,12 @@ class Transformer(object):
       if tok.id == Id.Expr_Name:
         return self._RegexName(False, tok)
 
+      if tok.id == Id.Expr_Symbol:
+        # Validate symbols here, like we validate PerlClass, etc.
+        if tok.val in ('%start', '%end', 'dot'):
+          return tok
+        p_die("Unexpected token %r in regex", tok.val, token=tok)
+
       if tok.id == Id.Arith_Tilde:
         # | '~' [Expr_Name | class_literal]
         typ = children[1].typ
@@ -364,7 +375,9 @@ class Transformer(object):
 
       if tok.id == Id.Op_LParen:
         # | '(' regex ['as' name_type] ')'
-        raise NotImplementedError(tok.id)
+
+        # TODO: Add variable
+        return re.Group(self._Regex(children[1]))
 
       if tok.id == Id.Arith_Colon:
         # | ':' '(' regex ')'

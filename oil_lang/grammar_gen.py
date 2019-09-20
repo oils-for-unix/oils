@@ -86,7 +86,6 @@ def main(argv):
 
   # Used at grammar BUILD time.
   OPS = {
-
       '.': Id.Expr_Dot,
       '->': Id.Expr_RArrow,
       '::': Id.Expr_DColon,

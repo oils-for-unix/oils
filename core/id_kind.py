@@ -256,6 +256,14 @@ def AddKinds(spec):
       'BadBackslash',  # \D or trailing \
   ])
 
+  # Regular expression primtiives.
+  spec.AddKind('Re', [
+      'Start',  # ^ or %start
+      'End',  # $ or %end
+      'Dot',  # . or dot
+      # Future: %boundary generates \b in Python/Perl, etc.
+  ])
+
   spec.AddKind('Redir', [
       'Less',       # < stdin
       'Great',      # > stdout

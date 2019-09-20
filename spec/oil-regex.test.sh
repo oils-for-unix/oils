@@ -2,8 +2,14 @@
 
 #### /^.$/
 shopt -s all:oil
-var pat = /^.$/
+var pat = ''
+
+setvar pat = /^.$/
 echo pat=$pat
+
+setvar pat = /%start dot %end/
+echo pat=$pat
+
 if ('' ~ pat) {  # ERE syntax
   echo yes
 } else {
@@ -17,6 +23,7 @@ if ('f' ~ pat) {  # ERE syntax
 }
 
 ## STDOUT:
+pat=^.$
 pat=^.$
 no
 yes
@@ -121,3 +128,22 @@ yes
 no
 no
 ## END
+
+#### Group ()
+shopt -s all:oil
+var pat = ''
+
+setvar pat = /(%start s or d d)/
+echo $pat
+
+if (' foo' ~ pat) { echo yes } else { echo no }
+if ('-00-' ~ pat) { echo yes } else { echo no }
+if ('foo' ~ pat) { echo yes } else { echo no }
+
+## STDOUT:
+(^[[:space:]]|[[:digit:]][[:digit:]])
+yes
+yes
+no
+## END
+

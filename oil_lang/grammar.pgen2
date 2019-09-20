@@ -255,6 +255,8 @@ re_atom: (
     char_literal
     # builtin regex like 'digit' or a regex reference like 'D'
   | Expr_Name
+    # %begin or %end
+  | Expr_Symbol
   | class_literal
     # ~digit or ~[a-f]
   | '~' [Expr_Name | class_literal]
