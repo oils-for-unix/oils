@@ -6,10 +6,10 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    expr_e, expr_t, re_t
+    expr_e, expr_t, re_e, re_t
 )
 from _devbuild.gen.runtime_asdl import (
-    lvalue, value, value_e, scope_e, regex_t,
+    lvalue, value, value_e, scope_e, regex, regex_t,
 )
 from core.util import e_die
 #from core.util import log
@@ -86,6 +86,14 @@ class OilEvaluator(object):
     Args:
       set_match_result: Whether to assign
     """
+    # TODO: Rename EggEx?
+    if isinstance(right, str):
+      pass
+    elif isinstance(right, objects.Regex):
+      right = right.AsPosixEre()
+    else:
+      raise RuntimeError("RHS of ~ should be string or Regex")
+    
     matches = libc.regex_match(right, left)
     if matches:
       # TODO:
@@ -397,11 +405,24 @@ class OilEvaluator(object):
 
     if node.tag == expr_e.RegexLiteral:  # obj.attr 
       # TODO: Should this just be an object that ~ calls?
-      return objects.Regex(self.EvalRegex(node))
+      return objects.Regex(self.EvalRegex(node.r))
 
     raise NotImplementedError(node.__class__.__name__)
 
   def EvalRegex(self, node):
     # type: (re_t) -> regex_t
-    pass
+    if node.tag == re_e.Speck:
+      id_ = node.id
+      if id_ == Id.Expr_Dot:
+        return regex.Dot()
+      if id_ == Id.Arith_Less:
+        return regex.Start()
+      if id_ == Id.Arith_Great:
+        return regex.End()
 
+      raise NotImplementedError(id_)
+
+    if node.tag == re_e.Seq:
+      return regex.Seq(self.EvalRegex(c) for c in node.children)
+
+    raise NotImplementedError(node.__class__.__name__)

@@ -6,9 +6,11 @@ Python types under value.Obj.  See the invariant in osh/runtime.asdl.
 """
 from __future__ import print_function
 
+from _devbuild.gen.runtime_asdl import regex_e
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime.asdl import regex_t
+  from _devbuild.gen.runtime_asdl import regex_t
 
 
 # These are for data frames?
@@ -89,6 +91,28 @@ class Module(object):
     self.attrs = {}
 
 
+def _PosixEre(node, parts):
+  tag = node.tag
+  if tag == regex_e.Dot:
+    parts.append('.')
+    return
+
+  if tag == regex_e.Start:
+    parts.append('^')
+    return
+
+  if tag == regex_e.End:
+    parts.append('$')
+    return
+
+  if tag == regex_e.Seq:
+    for c in node.children:
+      _PosixEre(c, parts)
+    return
+
+  raise NotImplementedError(node.__class__.__name__)
+
+
 class Regex(object):
   """
   TODO: This should resolve all references into a different type of tree?
@@ -102,7 +126,7 @@ class Regex(object):
     # type: (regex_t) -> None
     self.regex = regex
 
-  def __str__(self):
+  def __repr__(self):
     # The default because x ~ obj accepts an ERE string?
     # And because grep $/d+/ does.
     #
@@ -112,8 +136,9 @@ class Regex(object):
     return self.AsPosixEre()
 
   def AsPosixEre(self):
-    # TODO: Walk the tree and print it
-    pass
+    parts = []
+    _PosixEre(self.regex, parts)
+    return ''.join(parts)
 
   def AsPcre(self):
     pass
