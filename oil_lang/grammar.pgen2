@@ -256,9 +256,8 @@ re_atom: (
   | class_literal
     # ~digit or ~[a-f]
   | '~' [Expr_Name | class_literal]
-    # . is also any
-  | '.'
-  | '<' | '>'
+    # any %start %end are preferred
+  | '.' | '^' | '$'
   # TODO: Should ^ only happen at the FRONT of the string, and $ can only
   # happen at the end!
   # What about multiline mode?

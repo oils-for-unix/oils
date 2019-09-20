@@ -11,9 +11,13 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import re_repeat_e
 from _devbuild.gen.runtime_asdl import regex_e
 
+from core.util import log
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import regex_t
+
+_ = log
 
 
 # These are for data frames?
@@ -186,6 +190,7 @@ class Regex(object):
   def __init__(self, regex):
     # type: (regex_t) -> None
     self.regex = regex
+    self.as_ere = None  # Cache the evaluation
 
   def __repr__(self):
     # The default because x ~ obj accepts an ERE string?
@@ -197,9 +202,11 @@ class Regex(object):
     return self.AsPosixEre()
 
   def AsPosixEre(self):
-    parts = []
-    _PosixEre(self.regex, parts)
-    return ''.join(parts)
+    if self.as_ere is None:
+      parts = []
+      _PosixEre(self.regex, parts)
+      self.as_ere = ''.join(parts)
+    return self.as_ere
 
   def AsPcre(self):
     pass

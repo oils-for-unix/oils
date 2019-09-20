@@ -130,7 +130,11 @@ class LibcTest(unittest.TestCase):
         # The match is unanchored
         (r'bc', 'abcd', ['bc']),
         # The match is unanchored
-        (r'.c', 'abcd', ['bc'])
+        (r'.c', 'abcd', ['bc']),
+        # Empty matches empty
+        (r'', '', ['']),
+        (r'^$', '', ['']),
+        (r'^.$', '', None),
     ]
 
     for pat, s, expected in cases:

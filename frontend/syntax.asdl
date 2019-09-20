@@ -420,7 +420,7 @@ module syntax
   -- Regex Language
   --
 
-  class_part = 
+  class_literal_part = 
     Name(bool negated, token token)
   | Range(token start, token end)
   | SimpleVarSub(token token)
@@ -442,7 +442,7 @@ module syntax
     -- ~digit
   | NegatedName(token token)
     -- [a-z]   ~[a-z]
-  | ClassLiteral(bool negated, class_part* c)
+  | ClassLiteral(bool negated, class_literal_part* c)
 
     -- NOTE: These are resolved at eval time, not match time
   | SimpleVarSub(token token)

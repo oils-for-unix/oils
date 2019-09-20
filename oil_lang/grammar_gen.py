@@ -92,9 +92,9 @@ def main(argv):
       '::': Id.Expr_DColon,
 
       '@': Id.Expr_At,
+      '...': Id.Expr_Ellipsis,
 
-      # TODO: Add Ellipsis.
-      '...': Id.Expr_Dot,
+      '$': Id.Expr_Dollar, 
   }
 
   # Note: We have two lists of ops because Id.Op_Semi is used, not

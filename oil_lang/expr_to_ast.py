@@ -9,7 +9,7 @@ from _devbuild.gen.syntax_asdl import (
     sh_array_literal,
     command, command__VarDecl,
     expr, expr_t, expr__Dict, expr_context_e,
-    re, re_t, re_repeat, re_repeat_t, class_part_t,
+    re, re_t, re_repeat, re_repeat_t, class_literal_part_t,
     word_t,
     param, type_expr_t, comprehension,
 )
@@ -190,8 +190,12 @@ class Transformer(object):
 
     return expr.Dict(keys, values)
 
+  def _ClassLiteralPart(self, p_node):
+    # type: (PNode) -> class_literal_part_t
+    raise NotImplementedError
+
   def _ClassLiteral(self, p_node):
-    # type: (PNode) -> class_part_t
+    # type: (PNode) -> List[class_literal_part_t]
     tok = p_node.tok
     if tok.id == Id.Op_LBracket:
       # | class_literal
@@ -212,8 +216,7 @@ class Transformer(object):
     if ISNONTERMINAL(typ):
       children = p_atom.children
       if typ == grammar_nt.class_literal:
-        parts = [self._ClassLiteral(c) for c in children[1:-1]]
-        return re.CharClass(False, parts)
+        return re.ClassLiteral(False, self._ClassLiteral(children[0]))
 
       # TODO: Consolidate these?
       if typ == grammar_nt.simple_var_sub:
@@ -234,7 +237,7 @@ class Transformer(object):
       tok = children[0].tok
 
       # Special punctuation
-      if tok.id in (Id.Expr_Dot, Id.Arith_Caret, Id.Arith_Less, Id.Arith_Great):
+      if tok.id in (Id.Expr_Dot, Id.Arith_Caret, Id.Expr_Dollar):
         return speck(tok.id, tok.span_id)
       if tok.id == Id.Expr_Name:
         return re.Name(False, tok)
@@ -243,6 +246,7 @@ class Transformer(object):
         # | '~' [Expr_Name | class_literal]
         typ = children[1].typ
         if ISNONTERMINAL(typ):
+          ch = children[1].children
           return re.ClassLiteral(True, self._ClassLiteral(children[1]))
         else:
           return re.Name(True, children[1].tok)

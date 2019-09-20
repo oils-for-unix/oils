@@ -1,19 +1,23 @@
 # Test out Oil's regular expression syntax.
 
-#### /./
+#### /^.$/
 shopt -s all:oil
-if ('' ~ /./) {  # ERE syntax
+var pat = /^.$/
+echo pat=$pat
+if ('' ~ pat) {  # ERE syntax
   echo yes
 } else {
   echo no
 }
-if ('f' ~ /./) {  # ERE syntax
+# $pat is same as pat
+if ('f' ~ pat) {  # ERE syntax
   echo yes
 } else {
   echo no
 }
 
 ## STDOUT:
+pat=^.$
 no
 yes
 ## END

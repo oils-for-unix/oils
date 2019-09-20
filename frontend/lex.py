@@ -735,7 +735,6 @@ OIL_LEFT_SUBS = [
   C('$(', Id.Left_DollarParen),
   C('${', Id.Left_DollarBrace),
   C('$[', Id.Left_DollarBracket),  # Unused now
-  C('$/', Id.Left_DollarSlash),
 
   # For lazily evaluated expressions
   #
@@ -852,6 +851,7 @@ LEXER_DEF[lex_mode_e.Expr] = \
   # These can be looked up as keywords separately, so you enforce that they have
   # space around them?
   R(VAR_NAME_RE, Id.Expr_Name),
+  R('%' + VAR_NAME_RE, Id.Expr_Symbol),
 
   #
   # Arith
@@ -914,6 +914,7 @@ LEXER_DEF[lex_mode_e.Expr] = \
   C('::', Id.Expr_DColon),  # static namespace access
   C('->', Id.Expr_RArrow),  # dynamic dict access: be d->name->age
                             # instead of d['name']['age']
+  C('$', Id.Expr_Dollar),   # legacy regex end: /d+ $/ (better written /d+ >/
 
   # Reserved this.  Go uses it for channels, etc.
   # I guess it conflicts with -4<-3, but that's OK -- spaces suffices.
@@ -935,45 +936,6 @@ LEXER_DEF[lex_mode_e.Expr] = \
   # inc = |x| x+1 for simple lambdas.
 ] + _EXPR_NEWLINE_COMMENT + _EXPR_ARITH_SHARED
 
-
-# Differences from expression mode:
-# - no nested regexes
-# - only a limited set of operators
-# - character classes are valid
-
-# TODO: Do we allow $name $() ${} $[] in regexes?  I don't think they're really
-# necessary.
-LEXER_DEF[lex_mode_e.Regex] = OIL_LEFT_UNQUOTED + [
-  # These can be looked up as keywords separately, so you enforce that they have
-  # space around them?
-  R(VAR_NAME_RE, Id.Expr_Name),
-  # keywords:
-  # div xor      # binary
-  # and or not   # boolean
-  # for          # comprehensions
-  # is
-  # in
-  # if     # ternary
-  # match  # consistent with if/else expressions
-  # func   # literals
-
-  C('?', Id.Arith_QMark),   # optional
-
-  C('+', Id.Arith_Plus),    # 1 or more
-  C('*', Id.Arith_Star),    # 0 or more
-  C('^', Id.Arith_Caret),   # x^{1,3}
-
-  C('(', Id.Op_LParen),
-  C(')', Id.Op_RParen),
-
-  C('[', Id.Op_LBracket),
-  C(']', Id.Op_RBracket),
-
-  C('{', Id.Op_LBrace),
-  C('}', Id.Op_RBrace),
-
-  C('/', Id.Arith_Slash),  # Ends the regex.  TODO: Op_Slash?
-] + _EXPR_NEWLINE_COMMENT + _EXPR_ARITH_SHARED
 
 LEXER_DEF[lex_mode_e.CharClass] = [
   # placeholder.  Need a-z A-Z, NOT, \n, \x00, etc.

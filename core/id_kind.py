@@ -255,7 +255,6 @@ def AddKinds(spec):
       'ProcSubIn',          # <( )
       'ProcSubOut',         # >( )
 
-      'DollarSlash',        # $/ for Oil regex
       'AtBracket',          # @[ for Oil arrays
       'AtParen',            # @( for legacy shell arrays
   ])
@@ -379,11 +378,13 @@ def AddKinds(spec):
   # Oil expressions use Kind.Arith (above) and Kind.Expr (below)
   spec.AddKind('Expr', [
     'Reserved',  # <- means nothing but it's reserved now
-
+    'Symbol',  # %foo
     'Name',
     'DecInt', 'BinInt', 'OctInt', 'HexInt', 'Float',
     'Dot', 'DColon', 'RArrow', 'RDArrow',
     'At', 'DoubleAt',  # splice operators
+    'Ellipsis',  # for varargs
+    'Dollar',  # legacy regex
 
     'NotTilde',  # !~
 

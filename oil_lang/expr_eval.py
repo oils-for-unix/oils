@@ -12,7 +12,7 @@ from _devbuild.gen.runtime_asdl import (
     lvalue, value, value_e, scope_e, regex, regex_t,
 )
 from core.util import e_die
-#from core.util import log
+from core.util import log
 from oil_lang import objects
 from osh import braces
 from osh import state
@@ -20,6 +20,8 @@ from osh import state
 import libc
 
 from typing import Any
+
+_ = log
 
 
 class OilEvaluator(object):
@@ -427,9 +429,9 @@ class OilEvaluator(object):
       id_ = node.id
       if id_ == Id.Expr_Dot:
         return regex.Dot()
-      if id_ == Id.Arith_Less:
+      if id_ == Id.Arith_Caret:  # ^
         return regex.Start()
-      if id_ == Id.Arith_Great:
+      if id_ == Id.Expr_Dollar:  # $
         return regex.End()
 
       raise NotImplementedError(id_)
