@@ -436,10 +436,13 @@ module syntax
   re = 
     -- . < > ^ $
     Speck %speck
-    -- digit or ~digit
+    -- any but not ~any, D but not ~D
     -- NOTE: Some names are resolved at eval time, not match time
   | Name(bool negated, token token)
-  | CharClass(bool negated, class_part* c)
+    -- ~digit
+  | NegatedName(token token)
+    -- [a-z]   ~[a-z]
+  | ClassLiteral(bool negated, class_part* c)
 
     -- NOTE: These are resolved at eval time, not match time
   | SimpleVarSub(token token)

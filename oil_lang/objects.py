@@ -6,6 +6,9 @@ Python types under value.Obj.  See the invariant in osh/runtime.asdl.
 """
 from __future__ import print_function
 
+
+from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.syntax_asdl import re_repeat_e
 from _devbuild.gen.runtime_asdl import regex_e
 
 from typing import TYPE_CHECKING
@@ -91,6 +94,14 @@ class Module(object):
     self.attrs = {}
 
 
+PERL_CLASS = {
+    'd': '[:digit:]',
+    # Python's docs say it's [a-zA-Z0-9_] when NO LOCALE is set.
+    'w': '[:alpha:][:digit:]_',
+    # Python's doc says \s is [ \t\n\r\f\v] when NO LCOALE
+    's': '[:space:]',
+}
+
 def _PosixEre(node, parts):
   tag = node.tag
   if tag == regex_e.Dot:
@@ -108,6 +119,49 @@ def _PosixEre(node, parts):
   if tag == regex_e.Seq:
     for c in node.children:
       _PosixEre(c, parts)
+    return
+
+  if tag == regex_e.Repeat:
+    _PosixEre(node.child, parts)
+    op_tag = node.op.tag
+
+    if op_tag == re_repeat_e.Op:
+      op_id = node.op.op.id
+      if op_id == Id.Arith_Plus:
+        parts.append('+')
+      elif op_id == Id.Arith_Star:
+        parts.append('*')
+      elif op_id == Id.Arith_QMark:
+        parts.append('?')
+      else:
+        raise AssertionError(op_id)
+      return
+
+    if op_tag == re_repeat_e.Num:
+      pass
+
+    if op_tag == re_repeat_e.Range:
+      pass
+
+    raise NotImplementedError(node.op)
+
+  if tag == regex_e.PerlClass:
+    n = node.name
+    chars = PERL_CLASS[node.name]
+    if node.negated:
+      pat = '[^%s]' % chars
+    else:
+      pat = '[%s]' % chars
+    parts.append(pat)
+    return
+
+  if tag == regex_e.PosixClass:
+    n = node.name
+    if node.negated:
+      pat = '[^[:%s:]]' % n
+    else:
+      pat = '[[:%s:]]' % n
+    parts.append(pat)
     return
 
   raise NotImplementedError(node.__class__.__name__)

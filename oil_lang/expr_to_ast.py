@@ -189,11 +189,11 @@ class Transformer(object):
 
     return expr.Dict(keys, values)
 
-  def _CharClass(self, p_node):
+  def _ClassLiteral(self, p_node):
     # type: (PNode) -> class_part_t
     tok = p_node.tok
     if tok.id == Id.Op_LBracket:
-      # | char_class
+      # | class_literal
       pass
     raise NotImplementedError(tok.id)
 
@@ -205,12 +205,13 @@ class Transformer(object):
     """
     assert p_atom.typ == grammar_nt.re_atom, p_atom.typ
 
-    typ = p_atom.children[0].typ
+    children = p_atom.children
+    typ = children[0].typ
 
     if ISNONTERMINAL(typ):
       children = p_atom.children
-      if typ == grammar_nt.char_class:
-        parts = [self._CharClass(c) for c in children[1:-1]]
+      if typ == grammar_nt.class_literal:
+        parts = [self._ClassLiteral(c) for c in children[1:-1]]
         return re.CharClass(False, parts)
 
       # TODO: Consolidate these?
@@ -229,7 +230,7 @@ class Transformer(object):
       raise NotImplementedError(typ)
 
     else:
-      tok = p_atom.children[0].tok
+      tok = children[0].tok
 
       # Special punctuation
       if tok.id in (Id.Expr_Dot, Id.Arith_Caret, Id.Arith_Less, Id.Arith_Great):
@@ -238,8 +239,12 @@ class Transformer(object):
         return re.Name(False, tok)
 
       if tok.id == Id.Arith_Tilde:
-        # | '~' [Expr_Name | char_class]
-        raise NotImplementedError(tok.id)
+        # | '~' [Expr_Name | class_literal]
+        typ = children[1].typ
+        if ISNONTERMINAL(typ):
+          return re.ClassLiteral(True, self._ClassLiteral(children[1]))
+        else:
+          return re.Name(True, children[1].tok)
 
       if tok.id == Id.Op_LParen:
         # | '(' regex ['as' name_type] ')'
@@ -260,7 +265,7 @@ class Transformer(object):
     tok = p_repeat.children[0].tok
     id_ = tok.id
     # a+
-    if id_ in (Id.Arith_Plus, Id.Arith_Star, Id.Arith_QMark):
+    if id_ in (Id.Arith_Plus, Id.Arith_Star, Id.Arith_QMark, Id.Arith_Caret):
       return re_repeat.Op(tok)
 
     # TODO: Parse a{3,4}

@@ -228,7 +228,7 @@ char_literal: Expr_CastedDummy
 
 # digit or a-z
 # We have to do further validation of ranges later.
-char_class_part: (
+class_literal_part: (
     char_literal
   | Expr_Name ['-' Expr_Name]
   | '~' Expr_Name
@@ -238,45 +238,66 @@ char_class_part: (
   | sq_string | dq_string
 
 )
-char_class: '[' char_class_part+ ']'
+class_literal: '[' class_literal_part+ ']'
 
+# NOTE: Here is an example of where you can put ^ in the middle of a pattern in
+# Python, and it matters!
+# >>> r = re.compile('.f[a-z]*', re.DOTALL|re.MULTILINE)
+# >>> r.findall('z\nfoo\nbeef\nfood\n')
+# ['\nfoo', 'ef', '\nfood']
+# >>> r = re.compile('.^f[a-z]*', re.DOTALL|re.MULTILINE)
+# r.findall('z\nfoo\nbeef\nfood\n')
+# ['\nfoo', '\nfood']
 
 re_atom: (
     char_literal
     # builtin regex like 'digit' or a regex reference like 'D'
   | Expr_Name
-  | char_class
+  | class_literal
     # ~digit or ~[a-f]
-  | '~' [Expr_Name | char_class]
+  | '~' [Expr_Name | class_literal]
     # . is also any
   | '.'
   | '<' | '>'
-  | '^' # TODO '$' is a token
+  # TODO: Should ^ only happen at the FRONT of the string, and $ can only
+  # happen at the end!
+  # What about multiline mode?
+  #| '^' # TODO '$' is a token
     # literal STRINGS like $foo or ${module.foo}
   | simple_var_sub | braced_var_sub
+    # In a language-independent spec, backslashes are disallowed within 'sq'.
+    # Write it with char literals outside strings: 'foo' \\ 'bar' \n
   | sq_string | dq_string
     # negated character class
   | '(' regex ['as' name_type] ')'
     # : is syntactic space for non-capturing group.  (! would seem like negation.)
   | ':' '(' regex ')'
     # syntactic space for Perl-style backtracking
-  | '{' ['!'] Expr_Name regex '}'
+    # !REF 1   !REF name  !ASSERT d+  !NOT d+
+  | ['!'] Expr_Name (regex | Expr_DecInt)
 
     # Might want this obscure conditional construct.  Can't use C-style ternary
     # because '?' is a regex operator.
   #| '{' regex 'if' regex 'else' regex '}'
     
-
   # TODO: Add SYMBOL type like %foo, and use %begin and %end
   # And %boundary !%boundary  or is it ~!boundary?
+)
+
+repeat_range: (
+    Expr_DecInt [',']
+  | ',' Expr_DecInt
+  | Expr_DecInt ',' Expr_DecInt
 )
 
 repeat_op: (
     # ++ ** ?? ^^ is syntactic space for Perl non-greedy ops, which we don't
     # support
     '+' ['+'] | '*' ['*'] | '?' ['?']
-  # e.g. a^3 a^{3,4} a^{3,} a^{,4}
-  | '^' ['^'] (Expr_DecInt | '{' [Expr_DecInt] ',' [Expr_DecInt] '}')
+  # e.g. a{3} a{3,4} a{3,} a{,4}.   a{,}
+  # a{{}}
+  |     '{' repeat_range '}'
+  | '{' '{' repeat_range '}' '}'
 )
 
 re_alt: (re_atom [repeat_op])+

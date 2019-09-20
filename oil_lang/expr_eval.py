@@ -409,6 +409,18 @@ class OilEvaluator(object):
 
     raise NotImplementedError(node.__class__.__name__)
 
+  PERL_CLASSES = {
+      'd': 'd',
+      'w': 'w', 'word': 'w',
+      's': 's',
+  }
+  # https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html
+  POSIX_CLASSES = (
+      'alnum', 'cntrl', 'lower', 'space',
+      'alpha', 'digit', 'print', 'upper',
+      'blank', 'graph', 'punct', 'xdigit',
+  )
+
   def EvalRegex(self, node):
     # type: (re_t) -> regex_t
     if node.tag == re_e.Speck:
@@ -424,5 +436,25 @@ class OilEvaluator(object):
 
     if node.tag == re_e.Seq:
       return regex.Seq(self.EvalRegex(c) for c in node.children)
+
+    if node.tag == re_e.Repeat:
+      return regex.Repeat(self.EvalRegex(node.child), node.op)
+
+    if node.tag == re_e.Name:
+      name = node.token.val
+      # Resolve all the names now
+      if name in self.POSIX_CLASSES:
+        return regex.PosixClass(node.negated, name)
+      perl_class = self.PERL_CLASSES.get(name)
+      if perl_class:
+        return regex.PerlClass(node.negated, perl_class)
+
+      # TODO: Look up variables.
+      # They can't shadow Perl or POSIX classes.
+      # Should they be in a different namespace then?
+      # maybe :d :alnum+   leading : can be optional.
+      # Capital letters for vars?
+      raise AssertionError(node)
+
 
     raise NotImplementedError(node.__class__.__name__)

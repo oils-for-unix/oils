@@ -22,17 +22,46 @@ yes
 #### /.+/
 shopt -s all:oil
 
+var pat = /.+/
+echo $pat
+
 var s = 'foo'
-if (s ~ /.+/) {  # ERE syntax
-  echo no
+if (s ~ pat) {  # ERE syntax
+  echo yes
 }
 var empty = ''
-if (empty ~ /.+/) {
-  echo yes
-} else {
-  echo no
-}
+if (empty ~ pat) { echo yes } else { echo no }
 ## STDOUT:
+.+
 yes
 no
+## END
+
+#### d+  digit+  ~d+  ~digit+
+shopt -s all:oil
+
+var pat = ''
+
+setvar pat = /d+/
+echo $pat
+if ('42' ~ pat) { echo yes }
+
+var empty = ''
+if (empty ~ pat) { echo yes } else { echo no }
+
+setvar pat = /digit+/
+echo $pat
+setvar pat = /~d+/
+echo $pat
+setvar pat = /~digit+/
+echo $pat
+
+
+## STDOUT:
+[[:digit:]]+
+yes
+no
+[[:digit:]]+
+[^[:digit:]]+
+[^[:digit:]]+
 ## END

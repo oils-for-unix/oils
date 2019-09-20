@@ -14,12 +14,14 @@ from _devbuild.gen.types_asdl import lex_mode_e
 
 from core import meta
 from core import util
-#from core.util import log
+from core.util import log
 from core.util import p_die
 from frontend import reader
 from osh import braces
 from osh import word_
 from pgen2 import parse
+
+_ = log
 
 from typing import TYPE_CHECKING, IO, Dict, Tuple, List, cast
 if TYPE_CHECKING:
@@ -378,7 +380,7 @@ class ExprParser(object):
       last_token = _PushOilTokens(self.parse_ctx, self.gr, self.push_parser,
                                   lexer)
     except parse.ParseError as e:
-      #log('ERROR %s', e)
+      log('ERROR %s', e)
       # TODO:
       # - Describe what lexer mode we're in (Invalid syntax in regex)
       #   - Maybe say where the mode started
