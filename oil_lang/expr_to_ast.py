@@ -70,20 +70,21 @@ class Transformer(object):
 
     We don't care if it's (1+2)+3 or 1+(2+3).
     """
-    if len(children) == 1:
-      return self.Expr(children[0])
-
     # Note: Compare the iteractive com_binary() method in
     # opy/compiler2/transformer.py.
 
-    left, op = children[0], children[1]
-    if len(children) == 3:
+    n = len(children)
+    if n == 1:
+      return self.Expr(children[0])
+
+    # left is evaluated first
+    left, op = self.Expr(children[0]), children[1]
+    if n == 3:
       right = self.Expr(children[2])
     else:
-      right = self._AssocBinary(children[2:])
+      right = self._AssocBinary(children[2:])  # Recursive call
 
-    assert isinstance(op.tok, token)
-    return expr.Binary(op.tok, self.Expr(left), right)
+    return expr.Binary(op.tok, left, right)
 
   def _Trailer(self, base, p_trailer):
     # type: (expr_t, PNode) -> expr_t
@@ -305,7 +306,8 @@ class Transformer(object):
       else:
         return re.Seq(seq)
 
-    raise NotImplementedError
+    nt_name = self.number2symbol[typ]
+    raise NotImplementedError(nt_name)
 
   def _Atom(self, children):
     # type: (List[PNode]) -> expr_t

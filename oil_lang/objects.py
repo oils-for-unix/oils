@@ -121,6 +121,13 @@ def _PosixEre(node, parts):
       _PosixEre(c, parts)
     return
 
+  if tag == regex_e.Alt:
+    for i, c in enumerate(node.children):
+      if i != 0:
+        parts.append('|')
+      _PosixEre(c, parts)
+    return
+
   if tag == regex_e.Repeat:
     _PosixEre(node.child, parts)
     op_tag = node.op.tag

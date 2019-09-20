@@ -65,3 +65,14 @@ no
 [^[:digit:]]+
 [^[:digit:]]+
 ## END
+
+#### Alternation and sequence
+var pat = ''
+setvar pat = /s d+ | w*/
+echo $pat
+setvar pat = /s d+ or w*/
+echo $pat
+## STDOUT:
+[[:space:]][[:digit:]]+|[[:alpha:][:digit:]_]*
+[[:space:]][[:digit:]]+|[[:alpha:][:digit:]_]*
+## END

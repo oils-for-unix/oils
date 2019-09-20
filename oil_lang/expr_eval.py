@@ -437,6 +437,9 @@ class OilEvaluator(object):
     if node.tag == re_e.Seq:
       return regex.Seq(self.EvalRegex(c) for c in node.children)
 
+    if node.tag == re_e.Alt:
+      return regex.Alt(self.EvalRegex(c) for c in node.children)
+
     if node.tag == re_e.Repeat:
       return regex.Repeat(self.EvalRegex(node.child), node.op)
 
@@ -455,6 +458,5 @@ class OilEvaluator(object):
       # maybe :d :alnum+   leading : can be optional.
       # Capital letters for vars?
       raise AssertionError(node)
-
 
     raise NotImplementedError(node.__class__.__name__)

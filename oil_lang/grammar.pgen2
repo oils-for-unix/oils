@@ -274,7 +274,7 @@ re_atom: (
   | ':' '(' regex ')'
     # syntactic space for Perl-style backtracking
     # !REF 1   !REF name  !ASSERT d+  !NOT d+
-  | ['!'] Expr_Name (regex | Expr_DecInt)
+  | '!' Expr_Name (regex | Expr_DecInt)
 
     # Might want this obscure conditional construct.  Can't use C-style ternary
     # because '?' is a regex operator.
@@ -303,6 +303,7 @@ repeat_op: (
 re_alt: (re_atom [repeat_op])+
 
 regex: [re_alt] (('|'|'or') re_alt)*
+#regex: [re_atom+] (('|'|'or') re_atom+)*
 
 # /digit+ ; multiline,ignorecase/
 re_flags: ';' Expr_Name (',' Expr_Name)*
