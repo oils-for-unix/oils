@@ -500,6 +500,18 @@ parse_brace() {
 
 }
 
+regex_literals() {
+  set +o errexit
+
+  # missing space between rangfes
+  _oil-parse-error 'var x = /[a-zA-Z]/'
+  _oil-parse-error 'var x = /[a-z0-9]/'
+
+  # These are too long too
+  _oil-parse-error 'var x = /[abc]/'
+}
+
+
 cases-in-strings() {
   set +o errexit
 
@@ -536,6 +548,7 @@ cases-in-strings() {
   push-builtin
   blocks
   parse_brace
+  regex_literals
 }
 
 # Cases in their own file

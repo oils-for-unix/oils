@@ -219,6 +219,43 @@ def AddKinds(spec):
       'RBrace',
   ])
 
+  # Oil expressions use Kind.Expr and Kind.Arith (further below)
+  spec.AddKind('Expr', [
+    'Reserved',  # <- means nothing but it's reserved now
+    'Symbol',  # %foo
+    'Name',
+    'DecInt', 'BinInt', 'OctInt', 'HexInt', 'Float',
+    'Dot', 'DColon', 'RArrow', 'RDArrow',
+    'At', 'DoubleAt',  # splice operators
+    'Ellipsis',  # for varargs
+    'Dollar',  # legacy regex
+
+    'NotTilde',  # !~
+
+    'CastedDummy',    # Used for @()  $() (words in lex_mode_e.ShCommand)
+                      # and ${}  ''  ""  (and all other strings)
+
+    # Constants
+    'Null', 'True', 'False',
+
+    # Keywords are resolved after lexing, but otherwise behave like tokens.
+    'Div', 'Xor', 
+    'And', 'Or', 'Not', 
+
+    # List comprehensions
+    'For', 'Is', 'In', 'If', 'Else',
+    'Func',  # For function literals
+  ])
+
+  # For C-escaped strings.
+  spec.AddKind('Char', [
+      'OneChar', 'Stop', 'Hex',
+      # Two variants of Octal: \377, and \0377.
+      'Octal3', 'Octal4',
+      'Unicode4', 'Unicode8', 'Literals',
+      'BadBackslash',  # \D or trailing \
+  ])
+
   spec.AddKind('Redir', [
       'Less',       # < stdin
       'Great',      # > stdout
@@ -236,9 +273,6 @@ def AddKinds(spec):
       'GreatPlus',  # >+ is append in Oil
       'DGreatPlus', # >>+ is append to string in Oil
   ])
-
-  # For Oil
-  spec.AddKind('Fd', ['Number', 'Name'])
 
   # NOTE: This is for left/right WORDS only.  (( is not a word so it doesn't
   # get that.
@@ -375,34 +409,6 @@ def AddKinds(spec):
       ('CaretEqual', '^=')
   ])
 
-  # Oil expressions use Kind.Arith (above) and Kind.Expr (below)
-  spec.AddKind('Expr', [
-    'Reserved',  # <- means nothing but it's reserved now
-    'Symbol',  # %foo
-    'Name',
-    'DecInt', 'BinInt', 'OctInt', 'HexInt', 'Float',
-    'Dot', 'DColon', 'RArrow', 'RDArrow',
-    'At', 'DoubleAt',  # splice operators
-    'Ellipsis',  # for varargs
-    'Dollar',  # legacy regex
-
-    'NotTilde',  # !~
-
-    'CastedDummy',    # Used for @()  $() (words in lex_mode_e.ShCommand)
-                      # and ${}  ''  ""  (and all other strings)
-
-    # Constants
-    'Null', 'True', 'False',
-
-    # Keywords are resolved after lexing, but otherwise behave like tokens.
-    'Div', 'Xor', 
-    'And', 'Or', 'Not', 
-
-    # List comprehensions
-    'For', 'Is', 'In', 'If', 'Else',
-    'Func',  # For function literals
-  ])
-
   # This kind is for Node types that are NOT tokens.
   spec.AddKind('Node', [
      # Arithmetic nodes
@@ -448,15 +454,6 @@ def AddKinds(spec):
   # Unlike bash, we parse control flow statically.  They're not
   # dynamically-resolved builtins.
   spec.AddKind('ControlFlow', ['Break', 'Continue', 'Return', 'Exit'])
-
-  # For C-escaped strings.
-  spec.AddKind('Char', [
-      'OneChar', 'Stop', 'Hex',
-      # Two variants of Octal: \377, and \0377.
-      'Octal3', 'Octal4',
-      'Unicode4', 'Unicode8', 'Literals',
-      'BadBackslash',  # \D or trailing \
-  ])
 
   # For parsing globs and converting them to regexes.
   spec.AddKind('Glob', [

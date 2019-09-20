@@ -123,21 +123,19 @@ module runtime
   -- tools/osh2oil.py
   word_style = Expr | Unquoted | DQ | SQ
 
-
-  class_part = 
+  class_literal_part = 
     Literal(string s)
   | GroupName(bool negated, string s)
   | Range(string start, string end)
 
   -- TODO: import tokens
   regex = 
-    -- . < > ^ $
     Dot
   | Start
   | End
   | PosixClass(bool negated, string name)
   | PerlClass(bool negated, string name)
-  | ClassLiteral(bool negated, class_part* c)
+  | ClassLiteral(bool negated, class_literal_part* parts)
 
     -- Evaluated words, sort of like cmd_value.Argv
   | Literal(string s)

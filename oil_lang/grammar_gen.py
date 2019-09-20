@@ -107,7 +107,8 @@ def main(argv):
   triples = (
       meta.ID_SPEC.LexerPairs(Kind.Arith) +
       lex.OIL_LEFT_SUBS +
-      lex.OIL_LEFT_UNQUOTED
+      lex.OIL_LEFT_UNQUOTED +
+      lex.EXPR_WORDS
   )
   more_ops = {}
   for _, token_str, id_ in triples:

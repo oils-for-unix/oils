@@ -34,6 +34,19 @@ import posix_ as posix
 from typing import List
 
 
+def EvalSingleQuoted(part):
+  if part.left.id == Id.Left_SingleQuoteRaw:
+    s = ''.join(t.val for t in part.tokens)
+  elif part.left.id == Id.Left_SingleQuoteC:
+    # NOTE: This could be done at compile time
+    # TODO: Add location info for invalid backslash
+    s = ''.join(word_compile.EvalCStringToken(t.id, t.val)
+                for t in part.tokens)
+  else:
+    raise AssertionError(part.left.id)
+  return s
+
+
 # NOTE: Could be done with util.BackslashEscape like glob_.GlobEscape().
 def _BackslashEscape(s):
   """Double up backslashes.
@@ -875,18 +888,6 @@ class _WordEvaluator(object):
     # blame ${ location
     return self._PartValsToString(part_vals, part.spids[0])
 
-  def EvalSingleQuoted(self, part):
-    if part.left.id == Id.Left_SingleQuoteRaw:
-      s = ''.join(t.val for t in part.tokens)
-    elif part.left.id == Id.Left_SingleQuoteC:
-      # NOTE: This could be done at compile time
-      # TODO: Add location info for invalid backslash
-      s = ''.join(word_compile.EvalCStringToken(t.id, t.val)
-                  for t in part.tokens)
-    else:
-      raise AssertionError(part.left.id)
-    return s
-
   def _EvalSimpleVarSub(self, token, part_vals, quoted):
     maybe_decay_array = False
     # 1. Evaluate from (var_name, var_num, token) -> defined, value
@@ -949,7 +950,7 @@ class _WordEvaluator(object):
       part_vals.append(v)
 
     elif part.tag == word_part_e.SingleQuoted:
-      s = self.EvalSingleQuoted(part)
+      s = EvalSingleQuoted(part)
       v = part_value.String(s, True, False)
       part_vals.append(v)
 

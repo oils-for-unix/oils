@@ -80,3 +80,44 @@ echo $pat
 [[:space:]][[:digit:]]+|[[:alpha:][:digit:]_]*
 [[:space:]][[:digit:]]+|[[:alpha:][:digit:]_]*
 ## END
+
+#### Char Class Ranges
+shopt -s all:oil
+
+var pat = ''
+setvar pat = /[0-9 a-f]+/
+echo $pat
+# This is equivalent
+setvar pat = /['0' - '9' 'a' - 'f']+/
+echo $pat
+
+if ('0123' ~ pat) { echo yes } else { echo no }
+if ('zzz' ~ pat) { echo yes } else { echo no }
+if ('' ~ pat) { echo yes } else { echo no }
+## STDOUT:
+[0-9a-f]+
+[0-9a-f]+
+yes
+no
+no
+## END
+
+#### Char Class Set
+shopt -s all:oil
+var pat = ''
+
+# This is NOT allowed
+# setvar pat = /[a b c]+/
+
+setvar pat = /['abc']+/
+echo $pat
+
+if ('cbcb' ~ pat) { echo yes } else { echo no }
+if ('0123' ~ pat) { echo yes } else { echo no }
+if ('' ~ pat) { echo yes } else { echo no }
+## STDOUT:
+[abc]+
+yes
+no
+no
+## END

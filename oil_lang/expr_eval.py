@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    expr_e, expr_t, re_e, re_t
+    expr_e, expr_t, re_e, re_t, class_literal_part_e,
 )
 from _devbuild.gen.runtime_asdl import (
     lvalue, value, value_e, scope_e, regex, regex_t,
@@ -16,6 +16,7 @@ from core.util import log
 from oil_lang import objects
 from osh import braces
 from osh import state
+from osh import word_eval
 
 import libc
 
@@ -195,7 +196,7 @@ class OilEvaluator(object):
       return self.word_ev.EvalDoubleQuotedToString(node)
 
     if node.tag == expr_e.SingleQuoted:
-      return self.word_ev.EvalSingleQuoted(node)
+      return word_eval.EvalSingleQuoted(node)
 
     if node.tag == expr_e.BracedVarSub:
       return self.word_ev.EvalBracedVarSubToString(node)
@@ -411,20 +412,23 @@ class OilEvaluator(object):
 
     raise NotImplementedError(node.__class__.__name__)
 
-  PERL_CLASSES = {
-      'd': 'd',
-      'w': 'w', 'word': 'w',
-      's': 's',
-  }
-  # https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html
-  POSIX_CLASSES = (
-      'alnum', 'cntrl', 'lower', 'space',
-      'alpha', 'digit', 'print', 'upper',
-      'blank', 'graph', 'punct', 'xdigit',
-  )
+  def _EvalClassLiteralPart(self, part):
+    # TODO: You can RESOLVE strings -> literal
+    # Technically you can also @ if it contains exactly ONE CharClassLiteral?
+    # But leave it out for now.
+
+    return part
+
+    raise NotImplementedError(part.__class__.__name__)
 
   def EvalRegex(self, node):
     # type: (re_t) -> regex_t
+    
+    # TODO:
+    # - 4 types of strings -> re.Literal
+    # - Splice -> re.Resolved?
+    # Should we MUTATED children?
+
     if node.tag == re_e.Speck:
       id_ = node.id
       if id_ == Id.Expr_Dot:
@@ -445,20 +449,14 @@ class OilEvaluator(object):
     if node.tag == re_e.Repeat:
       return regex.Repeat(self.EvalRegex(node.child), node.op)
 
-    if node.tag == re_e.Name:
-      name = node.token.val
-      # Resolve all the names now
-      if name in self.POSIX_CLASSES:
-        return regex.PosixClass(node.negated, name)
-      perl_class = self.PERL_CLASSES.get(name)
-      if perl_class:
-        return regex.PerlClass(node.negated, perl_class)
+    if node.tag == re_e.ClassLiteral:
+      parts = [self._EvalClassLiteralPart(p) for p in node.parts]
+      return regex.ClassLiteral(node.negated, parts)
 
-      # TODO: Look up variables.
-      # They can't shadow Perl or POSIX classes.
-      # Should they be in a different namespace then?
-      # maybe :d :alnum+   leading : can be optional.
-      # Capital letters for vars?
-      raise AssertionError(node)
+    if node.tag == re_e.PosixClass:
+      return regex.PosixClass(node.negated, node.name)
+
+    if node.tag == re_e.PerlClass:
+      return regex.PerlClass(node.negated, node.name)
 
     raise NotImplementedError(node.__class__.__name__)

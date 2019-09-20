@@ -9,13 +9,15 @@ from _devbuild.gen.syntax_asdl import (
     sh_array_literal,
     command, command__VarDecl,
     expr, expr_t, expr__Dict, expr_context_e,
-    re, re_t, re_repeat, re_repeat_t, class_literal_part_t,
+    re, re_t, re_repeat, re_repeat_t, class_literal_part, class_literal_part_t,
+    posix_class, perl_class,
     word_t,
     param, type_expr_t, comprehension,
 )
 from _devbuild.gen import grammar_nt
 from pgen2.parse import PNode
-from core.util import log
+from core.util import log, p_die
+from osh import word_eval
 
 from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:
@@ -190,17 +192,123 @@ class Transformer(object):
 
     return expr.Dict(keys, values)
 
+  TOO_LONG = 'Quote characters or surround them by spaces'
+
+  def _RangeChar(self, p_node):
+    """
+    """
+    assert p_node.typ == grammar_nt.range_char, p_node
+    children = p_node.children
+    typ = children[0].typ
+    if ISNONTERMINAL(typ):
+      # 'a' in 'a'-'b'
+      if typ == grammar_nt.sq_string:
+        sq_part = cast(single_quoted, children[0].children[1].tok)
+        if len(sq_part.tokens) > 1:
+          p_die('Too long', part=sq_part)
+        if len(sq_part.tokens[0].val) > 1:
+          p_die('Too long', part=sq_part)
+        s = sq_part.tokens[0].val[0]
+        return s
+
+      raise NotImplementedError
+    else:
+      # Expr_Name or Expr_DecInt
+      tok = p_node.tok
+      #
+      if tok.id in (Id.Expr_Name, Id.Expr_DecInt):
+        # For the a in a-z, 0 in 0-9
+        if len(tok.val) != 1:
+          p_die(self.TOO_LONG, token=tok)
+        return tok.val[0]
+
+      # TODO: \n \' are valid in ranges
+      raise NotImplementedError
+
+  def _NonRangeChars(self, p_node):
+    """
+    \" \u123 '#'
+    """
+    assert p_node.typ == grammar_nt.range_char, p_node
+    children = p_node.children
+    typ = children[0].typ
+    if ISNONTERMINAL(typ):
+      # every char in 'abc'
+      if typ == grammar_nt.sq_string:
+        sq_part = cast(single_quoted, children[0].children[1].tok)
+        s = word_eval.EvalSingleQuoted(sq_part)
+        return class_literal_part.CharSet(s)
+      raise NotImplementedError
+    else:
+      # Look up PerlClass and PosixClass
+      return self._RegexName(False, children[0].tok)
+
   def _ClassLiteralPart(self, p_node):
     # type: (PNode) -> class_literal_part_t
-    raise NotImplementedError
+    """
+    class_literal_part: (
+      range_char ['-' range_char ]
+    | '~' Expr_Name
+      # $mychars or ${mymodule.mychars}
+    | simple_var_sub | braced_var_sub
+      # e.g. 'abc' or "abc$mychars" 
+    | dq_string
+      ...
+    """
+    assert p_node.typ == grammar_nt.class_literal_part, p_node
+
+    children = p_node.children
+    typ = children[0].typ
+
+    if ISNONTERMINAL(typ):
+      n = len(children)
+
+      if n == 1 and children[0].typ == grammar_nt.range_char:
+        return self._NonRangeChars(children[0])
+
+      if n == 3 and children[1].tok.id == Id.Arith_Minus:
+        start = self._RangeChar(children[0])
+        end = self._RangeChar(children[2])
+        return class_literal_part.Range(start, end)
+
+    else:
+      if children[0].tok.id == Id.Arith_Tilde:
+        return self._RegexName(True, children[1].tok)
+
+    typ = p_node.children[0].typ
+    nt_name = self.number2symbol[typ]
+    raise NotImplementedError(nt_name)
 
   def _ClassLiteral(self, p_node):
     # type: (PNode) -> List[class_literal_part_t]
-    tok = p_node.tok
-    if tok.id == Id.Op_LBracket:
-      # | class_literal
-      pass
-    raise NotImplementedError(tok.id)
+    """
+    class_literal: '[' class_literal_part+ ']'
+    """
+    assert p_node.typ == grammar_nt.class_literal
+    # skip [ and ]
+    return [self._ClassLiteralPart(c) for c in p_node.children[1:-1]]
+
+  PERL_CLASSES = {
+      'd': 'd',
+      'w': 'w', 'word': 'w',
+      's': 's',
+  }
+  # https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html
+  POSIX_CLASSES = (
+      'alnum', 'cntrl', 'lower', 'space',
+      'alpha', 'digit', 'print', 'upper',
+      'blank', 'graph', 'punct', 'xdigit',
+  )
+
+  def _RegexName(self, negated, token):
+    name = token.val
+    # Resolve all the names now
+    if name in self.POSIX_CLASSES:
+      return posix_class(negated, name)
+    perl = self.PERL_CLASSES.get(name)
+    if perl:
+      return perl_class(negated, perl)
+    p_die("%r isn't a character class", name, token=token)
 
   def _ReAtom(self, p_atom):
     # type: (PNode) -> re_t
@@ -239,8 +347,11 @@ class Transformer(object):
       # Special punctuation
       if tok.id in (Id.Expr_Dot, Id.Arith_Caret, Id.Expr_Dollar):
         return speck(tok.id, tok.span_id)
+
+      # TODO: d digit can turn into PosixClass and PerlClass right here!
+      # It's parsing.
       if tok.id == Id.Expr_Name:
-        return re.Name(False, tok)
+        return self._RegexName(False, tok)
 
       if tok.id == Id.Arith_Tilde:
         # | '~' [Expr_Name | class_literal]
@@ -249,7 +360,7 @@ class Transformer(object):
           ch = children[1].children
           return re.ClassLiteral(True, self._ClassLiteral(children[1]))
         else:
-          return re.Name(True, children[1].tok)
+          return self._RegexName(True, children[1].tok)
 
       if tok.id == Id.Op_LParen:
         # | '(' regex ['as' name_type] ')'
@@ -270,11 +381,13 @@ class Transformer(object):
     tok = p_repeat.children[0].tok
     id_ = tok.id
     # a+
-    if id_ in (Id.Arith_Plus, Id.Arith_Star, Id.Arith_QMark, Id.Arith_Caret):
+    if id_ in (Id.Arith_Plus, Id.Arith_Star, Id.Arith_QMark):
       return re_repeat.Op(tok)
 
-    # TODO: Parse a{3,4}
-    raise NotImplementedError(id_)
+    if id_ == Id.Arith_Caret:
+      raise NotImplementedError(id_)
+
+    raise AssertionError(id_)
 
   def _Regex(self, p_node):
     # type: (PNode) -> re_t

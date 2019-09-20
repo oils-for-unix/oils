@@ -223,19 +223,21 @@ param: NAME [type_expr] ['=' expr] | '...' NAME | '@' NAME
 # Regex Sublanguage
 #
 
-# TODO: Also \t \n \u0123 \U0123 are chars?  In expression mode too.
-char_literal: Expr_CastedDummy
+char_literal: Char_OneChar | Char_Hex | Char_Unicode4 | Char_Unicode8
+
+# we allow a-z A-Z 0-9 as ranges, but otherwise they have to be quoted
+# The parser enforces that they are single strings
+range_char: Expr_Name | Expr_DecInt | sq_string | char_literal
 
 # digit or a-z
 # We have to do further validation of ranges later.
 class_literal_part: (
-    char_literal
-  | Expr_Name ['-' Expr_Name]
+    range_char ['-' range_char ]
   | '~' Expr_Name
     # $mychars or ${mymodule.mychars}
   | simple_var_sub | braced_var_sub
     # e.g. 'abc' or "abc$mychars" 
-  | sq_string | dq_string
+  | dq_string
 
 )
 class_literal: '[' class_literal_part+ ']'

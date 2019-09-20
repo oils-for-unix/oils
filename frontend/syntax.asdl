@@ -420,9 +420,19 @@ module syntax
   -- Regex Language
   --
 
+  -- e.g. alnum digit
+  posix_class = (bool negated, string name)
+  -- e.g. d w s
+  perl_class = (bool negated, string name)
+
   class_literal_part = 
-    Name(bool negated, token token)
-  | Range(token start, token end)
+    -- each char of 'abc' in ['abc']
+    -- each char of [\" \u123]
+    CharSet(string chars)
+  | PosixClass %posix_class
+  | PerlClass %perl_class
+    -- [a-z]   ~[a-z]
+  | Range(string start, string end)
   | SimpleVarSub(token token)
   | BracedVarSub %braced_var_sub
   | SingleQuoted %single_quoted
@@ -434,22 +444,26 @@ module syntax
   | Range(token lower, token upper)
 
   re = 
-    -- . < > ^ $
+    -- . ^ $
     Speck %speck
-    -- any but not ~any, D but not ~D
-    -- NOTE: Some names are resolved at eval time, not match time
-  | Name(bool negated, token token)
-    -- ~digit
-  | NegatedName(token token)
-    -- [a-z]   ~[a-z]
-  | ClassLiteral(bool negated, class_literal_part* c)
+  | PosixClass %posix_class
+  | PerlClass %perl_class
+  | ClassLiteral(bool negated, class_literal_part* parts)
 
-    -- NOTE: These are resolved at eval time, not match time
+    -- String substitutions are evaluated into literals
+  | Literal(string s)
+    -- Splices are resolved like this
+  | Resolved(re child)
+
+    -- @D
+  | Splice(token token)
+    -- $literal ${literal} 'no-backslashes' "other$foo"
   | SimpleVarSub(token token)
   | BracedVarSub %braced_var_sub
   | SingleQuoted %single_quoted
   | DoubleQuoted %double_quoted
 
+    -- Compound:
   | Repeat(re child, re_repeat op)
   | Seq(re* children)
   | Alt(re* children)
@@ -457,7 +471,6 @@ module syntax
   | Group(re child)
   | Capture(re child, token? var_name, type_expr? type)
   | Backtracking(bool negated, token name, re child)
-
 }
 
 -- Ideas for even more precise error messages

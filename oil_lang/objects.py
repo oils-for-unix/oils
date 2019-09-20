@@ -8,7 +8,7 @@ from __future__ import print_function
 
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import re_repeat_e
+from _devbuild.gen.syntax_asdl import re_e, re_repeat_e, class_literal_part_e
 from _devbuild.gen.runtime_asdl import regex_e
 
 from core.util import log
@@ -106,6 +106,22 @@ PERL_CLASS = {
     's': '[:space:]',
 }
 
+
+def _ClassLiteralToPosixEre(term, parts):
+  tag = term.tag
+  if tag == class_literal_part_e.Range:
+    # TODO: Proper escaping of chars!!!  \] \- etc.
+    parts.append('%s-%s' % (term.start, term.end))
+    return
+
+  if tag == class_literal_part_e.CharSet:
+    # TODO: Proper escaping of chars!!!  \] \- etc.
+    parts.append('%s' % term.chars)
+    return
+
+  raise NotImplementedError(term) 
+
+
 def _PosixEre(node, parts):
   tag = node.tag
   if tag == regex_e.Dot:
@@ -173,6 +189,13 @@ def _PosixEre(node, parts):
     else:
       pat = '[[:%s:]]' % n
     parts.append(pat)
+    return
+
+  if tag == regex_e.ClassLiteral:
+    parts.append('[')
+    for term in node.parts:
+      _ClassLiteralToPosixEre(term, parts)
+    parts.append(']')
     return
 
   raise NotImplementedError(node.__class__.__name__)

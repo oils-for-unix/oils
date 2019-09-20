@@ -467,6 +467,29 @@ LEXER_DEF[lex_mode_e.SQ_Raw] = [
   C("'", Id.Right_SingleQuote),
 ]
 
+# The main purpose for EXPR_CHARS is in regex literals, e.g. [a-z \t \n].
+#
+# Since chars are integers, means that \u1234 is the same as 0x1234.  And 0x0
+
+# In Python:
+# chr(0x00012345) == u'\u00012345'
+#
+# In Oil:
+# 
+# 0x00012345 == \u00012345
+# chr(0x00012345) == chr(\u00012345) == c'\u00012345'
+#
+# The syntax follows Python, which is stricter than bash.  There must be
+# exactly 2, 4, or 8 digits.
+EXPR_CHARS = [
+  # This is like Rust.  We don't have the legacy C escapes like \b.
+  R(r'\\[0rtn\\]', Id.Char_OneChar),
+
+  R(r'\\x[0-9a-fA-F]2}', Id.Char_Hex),
+  R(r'\\u[0-9a-fA-F]4}', Id.Char_Unicode4),
+  R(r'\\U[0-9a-fA-F]8}', Id.Char_Unicode8),
+]
+
 # Shared between echo -e and $''.
 _C_STRING_COMMON = [
 
@@ -821,7 +844,8 @@ float = digitpart fraction? exponent? | fraction exponent?
 
 # NOTE: Borrowing tokens from Arith (i.e. $(( )) ), but not using LexerPairs().
 LEXER_DEF[lex_mode_e.Expr] = \
-    _VARS + OIL_LEFT_SUBS + OIL_LEFT_UNQUOTED + EXPR_OPS + EXPR_WORDS + [
+    _VARS + OIL_LEFT_SUBS + OIL_LEFT_UNQUOTED + EXPR_OPS + EXPR_WORDS + \
+    EXPR_CHARS + [
 
   # https://docs.python.org/3/reference/lexical_analysis.html#literals
   #
