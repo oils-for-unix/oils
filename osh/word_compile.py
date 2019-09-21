@@ -11,7 +11,7 @@ from core import ui
 from osh import string_ops
 
 
-_ONE_CHAR = {
+ONE_CHAR = {
     '0': '\0',
     'a': '\a',
     'b': '\b',
@@ -54,7 +54,7 @@ def EvalCStringToken(id_, value):
 
   elif id_ == Id.Char_OneChar:
     c = value[1]
-    return _ONE_CHAR[c]
+    return ONE_CHAR[c]
 
   elif id_ == Id.Char_Stop:  # \c returns a special sentinel
     return None

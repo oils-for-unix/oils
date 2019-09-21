@@ -16,6 +16,7 @@ from core.util import log
 from oil_lang import objects
 from osh import braces
 from osh import state
+from osh import word_compile
 from osh import word_eval
 
 import libc
@@ -510,6 +511,12 @@ class OilEvaluator(object):
 
       elif term.tag == class_literal_term_e.SimpleVarSub:
         s = self.word_ev.EvalSimpleVarSubToString(term.token)
+
+      elif term.tag == class_literal_term_e.CharLiteral:
+        tok = term.tok
+        # What about \0?
+        # At runtime, ERE should disallow it.  But we can also disallow it here.
+        s = word_compile.EvalCStringToken(tok.id, tok.val)
 
       if s is not None:
         node.terms[i] = class_literal_term.CharSet(s)

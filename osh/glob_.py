@@ -78,6 +78,16 @@ def GlobEscape(s):
   return util.BackslashEscape(s, GLOB_META_CHARS)
 
 
+def EreCharClassEscape(s):
+  # \ is escaping
+  # ^ would invert it at the front,
+  # - is range
+  #
+  # ] would close it -- but there is a weird posix rule where it has to be put
+  # FIRST.  Like []abc].
+  return util.BackslashEscape(s, r'\^-')
+
+
 ERE_META_CHARS = '?*+{}^$.()|'
 
 def ExtendedRegexEscape(s):
@@ -88,6 +98,7 @@ def ExtendedRegexEscape(s):
   https://www.gnu.org/software/sed/manual/html_node/ERE-syntax.html
   """
   return util.BackslashEscape(s, ERE_META_CHARS)
+
 
 
 def GlobUnescape(s):  # used by cmd_exec

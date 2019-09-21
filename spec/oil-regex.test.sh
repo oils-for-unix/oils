@@ -219,4 +219,55 @@ yes
 no
 ## END
 
+#### Matching escaped tab character
+shopt -s all:oil
+
+# BUG: need C strings in array literal
+var lines=@($'aa\tbb' $'cc\tdd')
+
+var pat = / ('a' [\t] 'b') /
+echo pat=$pat
+echo @lines | egrep $pat 
+
+## stdout-json: "pat=(a[\t]b)\naa\tbb\n"
+
+#### Matching ] and \ and ' and " in character classes
+shopt -s all:oil
+
+# BUG: need C strings in array literal
+var lines=@(
+  'backslash \'
+  'rbracket ]'
+  'lbracket ['
+  "sq '"
+  'dq "'
+)
+
+# Weird GNU quirk: ] has to come first!
+# []abc] works.  But [abc\]] does NOT work.  Stupid rule!
+
+var pat = / [ ']' \\ \' \" ] /
+echo pat=$pat
+echo @lines | egrep $pat 
+
+## STDOUT:
+pat=[]\\'"]
+backslash \
+rbracket ]
+sq '
+dq "
+## END
+
+#### Matching literal hyphen in character classes
+shopt -s all:oil
+
+var literal = '-'
+var pat = / [ 'a' $literal 'b' ${literal} "-" ] /
+echo pat=$pat
+echo 'c-d' 'ab' 'cd' | grep $pat
+## STDOUT:
+pat=[a\-b\-\-]
+c-d
+ab
+## END
 

@@ -239,11 +239,11 @@ class_literal_term: (
     # e.g. 'abc' or "abc$mychars" 
     # NOTE: range_char has sq_string
   | dq_string
-    # TODO: Do these actually work in bash/awk/egrep/sed/etc.?
     # Reserved for [[.collating sequences.]] (Unicode)
   | '.' Expr_Name
     # Reserved for [[=character equivalents=]] (Unicode)
   | '=' Expr_Name
+    # TODO: Do they actually work in bash/awk/egrep/sed/etc.?
 
 )
 class_literal: '[' class_literal_term+ ']'
@@ -273,63 +273,58 @@ re_atom: (
     # egrep has zero-width assertions \< and \>
     # We could make them %< and %> or %startword %endword
   | '<' | '>'
-  # TODO: Should ^ only happen at the FRONT of the string, and $ can only
-  # happen at the end!
-  # What about multiline mode?
-  #| '^' # TODO '$' is a token
     # literal STRINGS like $foo or ${module.foo}
   | simple_var_sub | braced_var_sub
     # In a language-independent spec, backslashes are disallowed within 'sq'.
     # Write it with char literals outside strings: 'foo' \\ 'bar' \n
   | sq_string | dq_string
-    # negated character class
+    # capturing group
   | '(' regex ['as' name_type] ')'
     # : is syntactic space for non-capturing group.  (! would seem like negation.)
   | ':' '(' regex ')'
     # syntactic space for Perl-style backtracking
-    # !REF 1   !REF name  !AHEAD d+   !BEHIND d+  !NOT_AHEAD  !NOT_BEHIND
+    # !REF 1   !REF name
+    # !AHEAD(d+)   !BEHIND(d+)  !NOT_AHEAD(d+)  !NOT_BEHIND(d+)
   | '!' Expr_Name (Expr_Name | Expr_DecInt | '(' regex ')')
 
     # Might want this obscure conditional construct.  Can't use C-style ternary
     # because '?' is a regex operator.
   #| '{' regex 'if' regex 'else' regex '}'
+
+  # Others:
+  # PCRE has (?R ) for recursion?  That could be !RECURSE()
+  # Note: .NET has && in character classes, making it a recursive language
 )
 
+# e.g.   a{3}   a{3,4}  a{3,}   a{,4} but not a{,}
 repeat_range: (
     Expr_DecInt [',']
   | ',' Expr_DecInt
   | Expr_DecInt ',' Expr_DecInt
 )
 
-# NOTE: ?? *? +? {}? is nongreedy and ?+ *+ ++ {}+ is "possessive"
-# This is in PCRE.
-# maybe ?N  *N +N {3,4}N
-#       ?P  *P +P {3,4}P
-# We might want to reserve the namespace of identifiers then?
-
 repeat_op: (
-    # ++ ** ?? ^^ is syntactic space for Perl non-greedy ops, which we don't
-    # support
-    '+' ['+'] | '*' ['*'] | '?' ['?']
-  # e.g. a{3} a{3,4} a{3,} a{,4}.   a{,}
-  # a{{}}
-  |     '{' repeat_range '}'
-  | '{' '{' repeat_range '}' '}'
+    '+' | '*' | '?' 
+
+  # In PCRE, ?? *? +? {}? is lazy/nongreedy and ?+ *+ ++ {}+ is "possessive"
+  # We use N and P modifiers within {}.
+  # a{L +}  a{P ?}  a{P 3,4}  a{P ,4}
+  | '{' [Expr_Name] ('+' | '*' | '?' | repeat_range) '}'
 )
 
 re_alt: (re_atom [repeat_op])+
 
 regex: [re_alt] (('|'|'or') re_alt)*
-#regex: [re_atom+] (('|'|'or') re_atom+)*
 
 # /digit+ ; multiline,ignorecase/
-re_flags: ';' Expr_Name (',' Expr_Name)*
+re_flag: ['~'] Expr_Name
+re_flags: ';' re_flag (',' re_flag)*
 
 # Syntax reserved for PCRE/Python, but that's not in ERE:
 # 
-#   greedy         a**
+#   nop-greedy     a{N *}
 #   non-capturing  :( digit+ )
-#   backtracking   ! REF 1
+#   backtracking   !REF 1  !AHEAD(d+)
 # 
 # Legacy syntax:
 # 

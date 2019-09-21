@@ -252,6 +252,9 @@ class Transformer(object):
       if typ == grammar_nt.simple_var_sub:
         return simple_var_sub(children[0].tok)
 
+      if typ == grammar_nt.char_literal:
+        return class_literal_term.CharLiteral(children[0].tok)
+
       raise NotImplementedError
     else:
       # Look up PerlClass and PosixClass
@@ -275,11 +278,22 @@ class Transformer(object):
     typ = children[0].typ
 
     if ISNONTERMINAL(typ):
+      p_child = children[0]
+      if typ == grammar_nt.simple_var_sub:
+        return simple_var_sub(p_child.children[0].tok)
+
+      if typ == grammar_nt.braced_var_sub:
+        return cast(braced_var_sub, p_child.children[1].tok)
+
+      if typ == grammar_nt.dq_string:
+        return cast(double_quoted, p_child.children[1].tok)
+
       n = len(children)
 
-      if n == 1 and children[0].typ == grammar_nt.range_char:
+      if n == 1 and typ == grammar_nt.range_char:
         return self._NonRangeChars(children[0])
 
+      # 'a'-'z' etc.
       if n == 3 and children[1].tok.id == Id.Arith_Minus:
         start = self._RangeChar(children[0])
         end = self._RangeChar(children[2])
@@ -289,7 +303,8 @@ class Transformer(object):
       if children[0].tok.id == Id.Arith_Tilde:
         return self._NameInClass(True, children[1].tok)
 
-    typ = p_node.children[0].typ
+      raise AssertionError(children[0].tok.id)
+
     nt_name = self.number2symbol[typ]
     raise NotImplementedError(nt_name)
 

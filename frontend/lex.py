@@ -483,7 +483,9 @@ LEXER_DEF[lex_mode_e.SQ_Raw] = [
 # exactly 2, 4, or 8 digits.
 EXPR_CHARS = [
   # This is like Rust.  We don't have the legacy C escapes like \b.
-  R(r'\\[0rtn\\]', Id.Char_OneChar),
+
+  # NOTE: \' and \" are more readable versions of '"' and "'" in regexs
+  R(r'\\[0rtn\\"%s]' % "'", Id.Char_OneChar),
 
   R(r'\\x[0-9a-fA-F]2}', Id.Char_Hex),
   R(r'\\u[0-9a-fA-F]4}', Id.Char_Unicode4),

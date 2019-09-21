@@ -507,3 +507,14 @@ shopt -s all:nice
 var=val
 ## status: 2
 ## stdout-json: ""
+
+#### parse_rawc: C strings in @() array literals
+shopt -s all:oil
+
+# BUG: Surprising that this doesn't work because of command mode!
+var lines=@(c'aa\tbb' c'cc\tdd')
+echo @lines
+
+## STDOUT:
+## END
+

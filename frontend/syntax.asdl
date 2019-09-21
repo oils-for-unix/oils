@@ -96,6 +96,7 @@ module syntax
   -- NOTE: The 'val' and 'span_id' fields are somewhat redundant, but useful.
   -- We use 'val' for execution, and the line_span for error messages and
   -- translation.
+  -- If we can pack it, this type is probably (2+2) + 8 + 4 = 16 bytes.
   token = (id id, string val, int span_id)
 
   -- After parsing, we often don't need the token 'string val', so use a
@@ -105,6 +106,11 @@ module syntax
   --   just use specks as tokens.  We care about 'string val' when they're made
   --   literal parts of words; variable, function, and parameter names; etc.
   speck = (id id, int span_id)
+
+  -- Note: like token -> speck, token -> strand is for when we don't need the id.
+  -- We're not using it since it's probably 4 + 4 + 8 = 16 bytes, which doesn't
+  -- save any space over the token!
+  -- strand = (int span_id, string val)
 
   --
   -- Shell language
@@ -429,11 +435,16 @@ module syntax
   -- e.g. d w s
   perl_class = (bool negated, string name)
 
+  -- Note: .NET has && in character classes, making it a recursive language
+
   class_literal_term = 
     PosixClass %posix_class
   | PerlClass %perl_class
+    -- NOTE: Doesn't respect LST invariant
     -- [a-z]   ~[a-z]
   | Range(string start, string end)
+
+  | CharLiteral(token tok)
 
   | SimpleVarSub %simple_var_sub
   | BracedVarSub %braced_var_sub
@@ -445,11 +456,13 @@ module syntax
     -- each char of [\" \u123]
   | CharSet(string chars)
 
-  -- TODO: All these really be 'strand'.  You don't need the Id.
+  -- NOTE: modifier is unused now, can represent L or P
   re_repeat =
-    Op(token op)
-  | Num(token times)
-  | Range(token? lower, token? upper)
+    -- TODO: could use speck
+    Op(token op, id modifier)
+    -- TODO: could use 'strand'.  You don't need the Id.
+  | Num(token times, id modifier)
+  | Range(token? lower, token? upper, id modifier)
 
   re = 
     -- . ^ $
