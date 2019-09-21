@@ -948,6 +948,10 @@ LEXER_DEF[lex_mode_e.Expr] = \
                             # note: other languages use |>
                             # R/dplyr uses %>%
 
+  C('//', Id.Expr_Reserved),
+  # For multiline regex literals?
+  C('///', Id.Expr_Reserved),
+
   # Splat operators
   C('@', Id.Expr_At),
   C('@@', Id.Expr_DoubleAt),
