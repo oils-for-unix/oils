@@ -126,6 +126,10 @@ module syntax
   double_quoted = (token left, word_part* parts) attributes (int* spids)
   single_quoted = (token left, token* tokens) attributes (int* spids)
 
+  -- NOTE: This could be split up into nodes for $0 $1, speck for $?, and
+  -- a strand for $foo
+  simple_var_sub = (token token)
+
   -- TODO: Add Oil expressions
   -- ${x %.3f}   ${x|html}   ${f(x)}   ${obj.attr}
   -- Problem: ${obj[x]} is already taken.  Need a parse mode for it.
@@ -151,7 +155,7 @@ module syntax
   | EscapedLiteral(token token)
   | SingleQuoted %single_quoted
   | DoubleQuoted %double_quoted
-  | SimpleVarSub(token token)
+  | SimpleVarSub %simple_var_sub
   | BracedVarSub %braced_var_sub
   | CommandSub %command_sub
     -- This should be token tilde, token rest
@@ -349,7 +353,7 @@ module syntax
   | ArrayLiteral(token left, expr* items)
   | RegexLiteral(token left, re r, token* flags)
 
-  | SimpleVarSub(token token)
+  | SimpleVarSub %simple_var_sub
   | BracedVarSub %braced_var_sub
   | CommandSub %command_sub
   | SingleQuoted %single_quoted
@@ -425,18 +429,21 @@ module syntax
   -- e.g. d w s
   perl_class = (bool negated, string name)
 
-  class_literal_part = 
-    -- each char of 'abc' in ['abc']
-    -- each char of [\" \u123]
-    CharSet(string chars)
-  | PosixClass %posix_class
+  class_literal_term = 
+    PosixClass %posix_class
   | PerlClass %perl_class
     -- [a-z]   ~[a-z]
   | Range(string start, string end)
-  | SimpleVarSub(token token)
+
+  | SimpleVarSub %simple_var_sub
   | BracedVarSub %braced_var_sub
   | SingleQuoted %single_quoted
   | DoubleQuoted %double_quoted
+
+    -- Evaluated to this:
+    -- each char of 'abc' in ['abc']
+    -- each char of [\" \u123]
+  | CharSet(string chars)
 
   re_repeat =
     Op(token op)
@@ -453,13 +460,13 @@ module syntax
   | Token %token
   | PosixClass %posix_class
   | PerlClass %perl_class
-  | ClassLiteral(bool negated, class_literal_part* parts)
+  | ClassLiteral(bool negated, class_literal_term* terms)
 
     -- @D
   | Splice(token token)
 
     -- $literal ${literal} 'no-backslashes' "other$foo"
-  | SimpleVarSub(token token)
+  | SimpleVarSub %simple_var_sub
   | BracedVarSub %braced_var_sub
   | SingleQuoted %single_quoted
   | DoubleQuoted %double_quoted
@@ -482,7 +489,7 @@ module syntax
 
   | Primitive(id id)  -- . dot etc.
     -- String substitutions are evaluated into literals
-  | Literal(string s)
+  | LiteralChars(string s)
     -- Splices are resolved like this
   | Resolved(re child)
 

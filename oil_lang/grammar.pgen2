@@ -231,16 +231,17 @@ range_char: Expr_Name | Expr_DecInt | sq_string | char_literal
 
 # digit or a-z
 # We have to do further validation of ranges later.
-class_literal_part: (
+class_literal_term: (
     range_char ['-' range_char ]
   | '~' Expr_Name
     # $mychars or ${mymodule.mychars}
   | simple_var_sub | braced_var_sub
     # e.g. 'abc' or "abc$mychars" 
+    # NOTE: range_char has sq_string
   | dq_string
 
 )
-class_literal: '[' class_literal_part+ ']'
+class_literal: '[' class_literal_term+ ']'
 
 # NOTE: Here is an example of where you can put ^ in the middle of a pattern in
 # Python, and it matters!
@@ -258,10 +259,15 @@ re_atom: (
     # %begin or %end
   | Expr_Symbol
   | class_literal
-    # ~digit or ~[a-f]
-  | '~' [Expr_Name | class_literal]
+    # ~digit or ~ %boundary or ~[a-f]
+  | '~' [Expr_Name | Expr_Symbol | class_literal]
+    # Splice another expression
+  | '@' Expr_Name
     # any %start %end are preferred
   | '.' | '^' | '$'
+    # egrep has zero-width assertions \< and \>
+    # We could make them %< and %> or %startword %endword
+  | '<' | '>'
   # TODO: Should ^ only happen at the FRONT of the string, and $ can only
   # happen at the end!
   # What about multiline mode?
@@ -276,15 +282,12 @@ re_atom: (
     # : is syntactic space for non-capturing group.  (! would seem like negation.)
   | ':' '(' regex ')'
     # syntactic space for Perl-style backtracking
-    # !REF 1   !REF name  !ASSERT d+  !NOT d+
+    # !REF 1   !REF name  !AHEAD d+   !BEHIND d+  !NOT_AHEAD  !NOT_BEHIND
   | '!' Expr_Name (regex | Expr_DecInt)
 
     # Might want this obscure conditional construct.  Can't use C-style ternary
     # because '?' is a regex operator.
   #| '{' regex 'if' regex 'else' regex '}'
-    
-  # TODO: Add SYMBOL type like %foo, and use %begin and %end
-  # And %boundary !%boundary  or is it ~!boundary?
 )
 
 repeat_range: (
@@ -292,6 +295,12 @@ repeat_range: (
   | ',' Expr_DecInt
   | Expr_DecInt ',' Expr_DecInt
 )
+
+# NOTE: ?? *? +? {}? is nongreedy and ?+ *+ ++ {}+ is "possessive"
+# This is in PCRE.
+# maybe ?N  *N +N {3,4}N
+#       ?P  *P +P {3,4}P
+# We might want to reserve the namespace of identifiers then?
 
 repeat_op: (
     # ++ ** ?? ^^ is syntactic space for Perl non-greedy ops, which we don't

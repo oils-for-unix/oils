@@ -5,12 +5,12 @@ word.py - Utility functions for words, e.g. treating them as "tokens".
 from _devbuild.gen.id_kind_asdl import (Id, Kind, Id_t, Kind_t)
 from _devbuild.gen.syntax_asdl import (
     token,
-    double_quoted, single_quoted, braced_var_sub, command_sub,
+    double_quoted, single_quoted, simple_var_sub, braced_var_sub, command_sub,
     sh_array_literal,
     word_part, word_part_t, word_part_e,
     word_part__AssocArrayLiteral,
     word_part__Literal, word_part__EscapedLiteral,
-    word_part__SimpleVarSub, word_part__TildeSub,
+    word_part__TildeSub,
     word_part__ArithSub, word_part__BracedTuple,
     word_part__ExtGlob, word_part__Splice, word_part__FuncCall,
 
@@ -149,7 +149,7 @@ def LeftMostSpanForPart(part):
   elif isinstance(part, double_quoted):
     return part.left.span_id  # double quote location
 
-  elif isinstance(part, word_part__SimpleVarSub):
+  elif isinstance(part, simple_var_sub):
     return part.token.span_id
 
   elif isinstance(part, braced_var_sub):
@@ -205,7 +205,7 @@ def _RightMostSpanForPart(part):
   elif isinstance(part, double_quoted):
     return part.spids[1]  # right "
 
-  elif isinstance(part, word_part__SimpleVarSub):
+  elif isinstance(part, simple_var_sub):
     return part.token.span_id
 
   elif isinstance(part, braced_var_sub):

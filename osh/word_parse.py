@@ -51,8 +51,8 @@ from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
-    token, double_quoted, single_quoted, braced_var_sub, command_sub,
-    sh_array_literal,
+    token, double_quoted, single_quoted, simple_var_sub, braced_var_sub,
+    command_sub, sh_array_literal,
 
     arith_expr_t,
     bracket_op, bracket_op_t,
@@ -664,7 +664,7 @@ class WordParser(object):
         out_parts.append(part)
 
       elif self.token_kind == Kind.VSub:
-        part = word_part.SimpleVarSub(self.cur_token)
+        part = simple_var_sub(self.cur_token)
         out_parts.append(part)
         # NOTE: parsing "$f(x)" would BREAK CODE.  Could add a more for it
         # later.
@@ -1204,7 +1204,7 @@ class WordParser(object):
       elif self.token_kind == Kind.VSub:
         vsub_token = self.cur_token
 
-        part = word_part.SimpleVarSub(vsub_token)
+        part = simple_var_sub(vsub_token)
         if self.token_type == Id.VSub_DollarName:
           # Look ahead for $strfunc(x)
           #   $f(x) or --name=$f(x) is allowed

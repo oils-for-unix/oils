@@ -7,7 +7,7 @@ Python types under value.Obj.  See the invariant in osh/runtime.asdl.
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import re_e, re_repeat_e, class_literal_part_e
+from _devbuild.gen.syntax_asdl import re_e, re_repeat_e, class_literal_term_e
 
 from core.util import log
 
@@ -107,12 +107,12 @@ PERL_CLASS = {
 
 def _ClassLiteralToPosixEre(term, parts):
   tag = term.tag
-  if tag == class_literal_part_e.Range:
+  if tag == class_literal_term_e.Range:
     # TODO: Proper escaping of chars!!!  \] \- etc.
     parts.append('%s-%s' % (term.start, term.end))
     return
 
-  if tag == class_literal_part_e.CharSet:
+  if tag == class_literal_term_e.CharSet:
     # TODO: Proper escaping of chars!!!  \] \- etc.
     parts.append('%s' % term.chars)
     return
@@ -131,6 +131,11 @@ def _PosixEre(node, parts):
       parts.append('$')
     else:
       raise AssertionError(node)
+    return
+
+  if tag == re_e.LiteralChars:
+    # TODO: ESCAPE
+    parts.append(node.s)
     return
 
   if tag == re_e.Seq:
@@ -196,7 +201,7 @@ def _PosixEre(node, parts):
 
   if tag == re_e.ClassLiteral:
     parts.append('[')
-    for term in node.parts:
+    for term in node.terms:
       _ClassLiteralToPosixEre(term, parts)
     parts.append(']')
     return

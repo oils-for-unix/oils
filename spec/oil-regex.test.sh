@@ -147,3 +147,40 @@ yes
 no
 ## END
 
+
+#### literal ''
+shopt -s all:oil
+var pat = ''
+
+setvar pat = /'abc' 'def'/
+echo $pat
+
+#setvar pat = /'abc' '^ + * ?'/
+#echo $pat
+
+if ('abcde' ~ pat) { echo yes } else { echo no }
+if ('abcdef' ~ pat) { echo yes } else { echo no }
+
+## STDOUT:
+abcdef
+no
+yes
+## END
+
+#### double quoted, $x, and ${x}
+shopt -s all:oil
+var pat = ''
+
+var x = 'x'
+var y = 'y'
+setvar pat = / $x ${x} "abc" "$x${y}"/
+echo $pat
+
+if ('xxabcx' ~ pat) { echo yes } else { echo no }
+if ('xxabcxyf' ~ pat) { echo yes } else { echo no }
+
+## STDOUT:
+xxabcxy
+no
+yes
+## END

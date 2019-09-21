@@ -5,11 +5,12 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    token, speck, double_quoted, single_quoted, braced_var_sub, command_sub,
+    token, speck, double_quoted, single_quoted, simple_var_sub, braced_var_sub,
+    command_sub,
     sh_array_literal,
     command, command__VarDecl,
     expr, expr_t, expr__Dict, expr_context_e,
-    re, re_t, re_repeat, re_repeat_t, class_literal_part, class_literal_part_t,
+    re, re_t, re_repeat, re_repeat_t, class_literal_term, class_literal_term_t,
     posix_class, perl_class,
     word_t,
     param, type_expr_t, comprehension,
@@ -17,7 +18,6 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen import grammar_nt
 from pgen2.parse import PNode
 from core.util import log, p_die
-from osh import word_eval
 
 from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:
@@ -195,7 +195,11 @@ class Transformer(object):
   RANGE_POINT_TOO_LONG = "Range start/end shouldn't have more than one character"
 
   def _RangeChar(self, p_node):
+    # type: (PNode) -> str
     """
+    the 'a' in 'a'-'z'
+    the \x00 in \x00-\x01
+    etc.
     """
     assert p_node.typ == grammar_nt.range_char, p_node
     children = p_node.children
@@ -227,6 +231,7 @@ class Transformer(object):
       raise NotImplementedError
 
   def _NonRangeChars(self, p_node):
+    # type: (PNode) -> class_literal_term_t
     """
     \" \u123 '#'
     """
@@ -234,20 +239,28 @@ class Transformer(object):
     children = p_node.children
     typ = children[0].typ
     if ISNONTERMINAL(typ):
-      # every char in 'abc'
+      p_child = children[0]
+      if typ == grammar_nt.braced_var_sub:
+        return cast(braced_var_sub, p_child.children[1].tok)
+
+      if typ == grammar_nt.dq_string:
+        return cast(double_quoted, p_child.children[1].tok)
+
       if typ == grammar_nt.sq_string:
-        sq_part = cast(single_quoted, children[0].children[1].tok)
-        s = word_eval.EvalSingleQuoted(sq_part)
-        return class_literal_part.CharSet(s)
+        return cast(single_quoted, p_child.children[1].tok)
+
+      if typ == grammar_nt.simple_var_sub:
+        return simple_var_sub(children[0].tok)
+
       raise NotImplementedError
     else:
       # Look up PerlClass and PosixClass
-      return self._RegexName(False, children[0].tok)
+      return self._NameInClass(False, children[0].tok)
 
-  def _ClassLiteralPart(self, p_node):
-    # type: (PNode) -> class_literal_part_t
+  def _ClassLiteralTerm(self, p_node):
+    # type: (PNode) -> class_literal_term_t
     """
-    class_literal_part: (
+    class_literal_term: (
       range_char ['-' range_char ]
     | '~' Expr_Name
       # $mychars or ${mymodule.mychars}
@@ -256,7 +269,7 @@ class Transformer(object):
     | dq_string
       ...
     """
-    assert p_node.typ == grammar_nt.class_literal_part, p_node
+    assert p_node.typ == grammar_nt.class_literal_term, p_node
 
     children = p_node.children
     typ = children[0].typ
@@ -270,24 +283,24 @@ class Transformer(object):
       if n == 3 and children[1].tok.id == Id.Arith_Minus:
         start = self._RangeChar(children[0])
         end = self._RangeChar(children[2])
-        return class_literal_part.Range(start, end)
+        return class_literal_term.Range(start, end)
 
     else:
       if children[0].tok.id == Id.Arith_Tilde:
-        return self._RegexName(True, children[1].tok)
+        return self._NameInClass(True, children[1].tok)
 
     typ = p_node.children[0].typ
     nt_name = self.number2symbol[typ]
     raise NotImplementedError(nt_name)
 
   def _ClassLiteral(self, p_node):
-    # type: (PNode) -> List[class_literal_part_t]
+    # type: (PNode) -> List[class_literal_term_t]
     """
-    class_literal: '[' class_literal_part+ ']'
+    class_literal: '[' class_literal_term+ ']'
     """
     assert p_node.typ == grammar_nt.class_literal
     # skip [ and ]
-    return [self._ClassLiteralPart(c) for c in p_node.children[1:-1]]
+    return [self._ClassLiteralTerm(c) for c in p_node.children[1:-1]]
 
   PERL_CLASSES = {
       'd': 'd',
@@ -301,15 +314,31 @@ class Transformer(object):
       'blank', 'graph', 'punct', 'xdigit',
   )
 
-  def _RegexName(self, negated, tok):
+  def _NameInRegex(self, negated, tok):
+    # type: (bool, token) -> re_t
     val = tok.val
     if val == 'dot':
       if negated:
         p_die("Can't negate this symbol", token=tok)
       return tok
-    # Resolve all the names now
+
     if val in self.POSIX_CLASSES:
       return posix_class(negated, val)
+
+    perl = self.PERL_CLASSES.get(val)
+    if perl:
+      return perl_class(negated, perl)
+    p_die("%r isn't a character class", val, token=tok)
+
+  def _NameInClass(self, negated, tok):
+    # type: (bool, token) -> class_literal_term_t
+    """
+    Like the above, but 'dot' doesn't mean anything.
+    """
+    val = tok.val
+    if val in self.POSIX_CLASSES:
+      return posix_class(negated, val)
+
     perl = self.PERL_CLASSES.get(val)
     if perl:
       return perl_class(negated, perl)
@@ -327,22 +356,21 @@ class Transformer(object):
     typ = children[0].typ
 
     if ISNONTERMINAL(typ):
-      children = p_atom.children
+      p_child = p_atom.children[0]
       if typ == grammar_nt.class_literal:
-        return re.ClassLiteral(False, self._ClassLiteral(children[0]))
-
-      # TODO: Consolidate these?
-      if typ == grammar_nt.simple_var_sub:
-        pass
+        return re.ClassLiteral(False, self._ClassLiteral(p_child))
 
       if typ == grammar_nt.braced_var_sub:
-        pass
-
-      if typ == grammar_nt.sq_string:
-        pass
+        return cast(braced_var_sub, p_child.children[1].tok)
 
       if typ == grammar_nt.dq_string:
-        pass
+        return cast(double_quoted, p_child.children[1].tok)
+
+      if typ == grammar_nt.sq_string:
+        return cast(single_quoted, p_child.children[1].tok)
+
+      if typ == grammar_nt.simple_var_sub:
+        return simple_var_sub(children[0].tok)
 
       raise NotImplementedError(typ)
 
@@ -356,7 +384,7 @@ class Transformer(object):
       # TODO: d digit can turn into PosixClass and PerlClass right here!
       # It's parsing.
       if tok.id == Id.Expr_Name:
-        return self._RegexName(False, tok)
+        return self._NameInRegex(False, tok)
 
       if tok.id == Id.Expr_Symbol:
         # Validate symbols here, like we validate PerlClass, etc.
@@ -371,7 +399,7 @@ class Transformer(object):
           ch = children[1].children
           return re.ClassLiteral(True, self._ClassLiteral(children[1]))
         else:
-          return self._RegexName(True, children[1].tok)
+          return self._NameInRegex(True, children[1].tok)
 
       if tok.id == Id.Op_LParen:
         # | '(' regex ['as' name_type] ')'
@@ -727,24 +755,19 @@ class Transformer(object):
         return sh_array_literal(left_tok, array_words)
 
       elif typ == grammar_nt.sh_command_sub:
-        cs_part = cast(command_sub, children[1].tok)
-        return cs_part
+        return cast(command_sub, children[1].tok)
 
       elif typ == grammar_nt.braced_var_sub:
-        bvs_part = cast(braced_var_sub, children[1].tok)
-        return bvs_part
+        return cast(braced_var_sub, children[1].tok)
 
       elif typ == grammar_nt.dq_string:
-        dq_part = cast(double_quoted, children[1].tok)
-        return dq_part
+        return cast(double_quoted, children[1].tok)
 
       elif typ == grammar_nt.sq_string:
-        sq_part = cast(single_quoted, children[1].tok)
-        return sq_part
+        return cast(single_quoted, children[1].tok)
 
       elif typ == grammar_nt.simple_var_sub:
-        part = expr.SimpleVarSub(children[0].tok)
-        return part
+        return simple_var_sub(children[0].tok)
 
       else:
         nt_name = self.number2symbol[typ]

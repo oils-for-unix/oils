@@ -70,6 +70,15 @@ def _single_quoted(obj):
   return p_node
 
 
+def _simple_var_sub(obj):
+  # type: (simple_var_sub) -> PrettyNode
+  p_node = runtime.PrettyNode()
+  p_node.abbrev = True
+  p_node.node_type = '$'
+  _AbbreviateToken(obj.token, p_node.unnamed_fields)
+  return p_node
+
+
 def _braced_var_sub(obj):
   # type: (braced_var_sub) -> PrettyNode
   p_node = runtime.PrettyNode()
@@ -88,15 +97,6 @@ def _word_part__Literal(obj):
   p_node.abbrev = True
   p_node.node_type = ''  # don't show
 
-  _AbbreviateToken(obj.token, p_node.unnamed_fields)
-  return p_node
-
-
-def _word_part__SimpleVarSub(obj):
-  # type: (word_part__SimpleVarSub) -> PrettyNode
-  p_node = runtime.PrettyNode()
-  p_node.abbrev = True
-  p_node.node_type = '$'
   _AbbreviateToken(obj.token, p_node.unnamed_fields)
   return p_node
 

@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    expr_e, expr_t, re, re_e, re_t, class_literal_part_e,
+    expr_e, expr_t, re, re_e, re_t, class_literal_term, class_literal_term_e,
 )
 from _devbuild.gen.runtime_asdl import (
     lvalue, value, value_e, scope_e,
@@ -20,7 +20,7 @@ from osh import word_eval
 
 import libc
 
-from typing import Any, Optional
+from typing import Any, Optional, List
 
 _ = log
 
@@ -183,8 +183,6 @@ class OilEvaluator(object):
       return objects.StrArray(strs)
 
     if node.tag == expr_e.DoubleQuoted:
-      # TODO: Disallow "$@" and "${array[@]}"
-      # No part_value.Array
       # In an ideal world, I would *statically* disallow:
       # - "$@" and "${array[@]}"
       # - backticks like `echo hi`  
@@ -428,6 +426,8 @@ class OilEvaluator(object):
     Otherwise return None.
     """
     new_leaf = None
+    recurse = True
+
     if node.tag == re_e.Speck:
       id_ = node.id
       if id_ == Id.Expr_Dot:
@@ -439,7 +439,7 @@ class OilEvaluator(object):
       else:
         raise NotImplementedError(id_)
 
-    if node.tag == re_e.Token:
+    elif node.tag == re_e.Token:
       val = node.val
 
       if val == 'dot':
@@ -451,20 +451,29 @@ class OilEvaluator(object):
       else:
         raise NotImplementedError(val)
 
-    if node.tag == re_e.Splice:
+    elif node.tag == re_e.SingleQuoted:
+      s = word_eval.EvalSingleQuoted(node)
+      new_leaf = re.LiteralChars(s)
+
+    elif node.tag == re_e.DoubleQuoted:
+      s = self.word_ev.EvalDoubleQuotedToString(node)
+      new_leaf = re.LiteralChars(s)
+
+    elif node.tag == re_e.BracedVarSub:
+      s = self.word_ev.EvalBracedVarSubToString(node)
+      new_leaf = re.LiteralChars(s)
+
+    elif node.tag == re_e.SimpleVarSub:
+      s = self.word_ev.EvalSimpleVarSubToString(node.token)
+      new_leaf = re.LiteralChars(s)
+
+    elif node.tag == re_e.Splice:
       pass
 
-    if node.tag == re_e.SingleQuoted:
-      pass
-
-    if node.tag == re_e.DoubleQuoted:
-      pass
-
-    recurse = True
-    # Not replaced
-    if node.tag == re_e.PosixClass:
+    # These are leaves we don't need to do anything with.
+    elif node.tag == re_e.PosixClass:
       recurse = False
-    if node.tag == re_e.PerlClass:
+    elif node.tag == re_e.PerlClass:
       recurse = False
 
     return new_leaf, recurse
@@ -482,7 +491,22 @@ class OilEvaluator(object):
 
   def _MutateClassLiteral(self, node):
     # type: (re_t) -> None
-    pass
+    for i, term in enumerate(node.terms):
+      s = None
+      if term.tag == class_literal_term_e.SingleQuoted:
+        s = word_eval.EvalSingleQuoted(term)
+
+      elif term.tag == class_literal_term_e.DoubleQuoted:
+        s = self.word_ev.EvalDoubleQuotedToString(term)
+
+      elif term.tag == class_literal_term_e.BracedVarSub:
+        s = self.word_ev.EvalBracedVarSubToString(term)
+
+      elif term.tag == class_literal_term_e.SimpleVarSub:
+        s = self.word_ev.EvalSimpleVarSubToString(term.token)
+
+      if s is not None:
+        node.terms[i] = class_literal_term.CharSet(s)
 
   def _MutateSubtree(self, node):
     if node.tag == re_e.Seq:
@@ -530,4 +554,9 @@ class OilEvaluator(object):
       return new_leaf
     elif recurse:
       self._MutateSubtree(node)
+
+    # View it after evaluation
+    if 0:
+      log('After evaluation:')
+      node.PrettyPrint(); print()
     return node
