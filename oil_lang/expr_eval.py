@@ -406,7 +406,7 @@ class OilEvaluator(object):
 
     if node.tag == expr_e.RegexLiteral:  # obj.attr 
       # TODO: Should this just be an object that ~ calls?
-      return objects.Regex(self.EvalRegex(node.r))
+      return objects.Regex(self.EvalRegex(node.regex))
 
     raise NotImplementedError(node.__class__.__name__)
 
@@ -468,7 +468,13 @@ class OilEvaluator(object):
       new_leaf = re.LiteralChars(s)
 
     elif node.tag == re_e.Splice:
-      pass
+      obj = self.LookupVar(node.name.val)
+      if not isinstance(obj, objects.Regex):
+        e_die("Can't splice object of type %r into regex", obj.__class__,
+              token=node.name)
+      # Note: we only splice the regex, and ignore flags.
+      # Should we warn about this?
+      new_leaf = obj.regex
 
     # These are leaves we don't need to do anything with.
     elif node.tag == re_e.PosixClass:

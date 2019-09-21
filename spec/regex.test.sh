@@ -201,15 +201,41 @@ echo status=$?
 ## BUG bash stdout: status=1
 ## BUG bash status: 0
 
-#### Quoted {
-[[ { =~ "{" ]] && echo true
+#### Quoted { and +
+[[ { =~ "{" ]] && echo 'yes {'
+[[ + =~ "+" ]] && echo 'yes +'
+[[ * =~ "*" ]] && echo 'yes *'
+[[ ? =~ "?" ]] && echo 'yes ?'
+[[ ^ =~ "^" ]] && echo 'yes ^'
+[[ $ =~ "$" ]] && echo 'yes $'
+[[ '(' =~ '(' ]] && echo 'yes ('
+[[ ')' =~ ')' ]] && echo 'yes )'
+[[ '|' =~ '|' ]] && echo 'yes |'
+
+[[ . =~ "." ]] && echo 'yes .'
+[[ z =~ "." ]] || echo 'no .'
 echo status=$?
 ## STDOUT:
-true
+yes {
+yes +
+yes *
+yes ?
+yes ^
+yes $
+yes (
+yes )
+yes |
+yes .
+no .
 status=0
 ## END
 ## N-I zsh STDOUT:
-status=1
+yes ^
+yes $
+yes )
+yes |
+yes .
+status=0
 ## END
 
 #### Escaped {

@@ -392,6 +392,10 @@ class Transformer(object):
           return tok
         p_die("Unexpected token %r in regex", tok.val, token=tok)
 
+      if tok.id == Id.Expr_At:
+        # | '@' Expr_Name
+        return re.Splice(children[1].tok)
+
       if tok.id == Id.Arith_Tilde:
         # | '~' [Expr_Name | class_literal]
         typ = children[1].typ
@@ -409,10 +413,6 @@ class Transformer(object):
 
       if tok.id == Id.Arith_Colon:
         # | ':' '(' regex ')'
-        raise NotImplementedError(tok.id)
-
-      if tok.id == Id.Op_LBrace:
-        # | '{' ['!'] Expr_Name regex '}'
         raise NotImplementedError(tok.id)
 
       raise NotImplementedError(tok.id)

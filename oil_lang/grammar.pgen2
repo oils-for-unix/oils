@@ -283,7 +283,7 @@ re_atom: (
   | ':' '(' regex ')'
     # syntactic space for Perl-style backtracking
     # !REF 1   !REF name  !AHEAD d+   !BEHIND d+  !NOT_AHEAD  !NOT_BEHIND
-  | '!' Expr_Name (regex | Expr_DecInt)
+  | '!' Expr_Name (Expr_Name | Expr_DecInt | '(' regex ')')
 
     # Might want this obscure conditional construct.  Can't use C-style ternary
     # because '?' is a regex operator.
@@ -324,10 +324,11 @@ re_flags: ';' Expr_Name (',' Expr_Name)*
 # 
 #   greedy         a**
 #   non-capturing  :( digit+ )
-#   backtracking   { REF 1 }
+#   backtracking   ! REF 1
 # 
 # Legacy syntax:
 # 
-#   ^ and $ instead of < and >
-#   . instead of any
+#   ^ and $ instead of %start and %end
+#   < and > instead of %start_word and %end_word
+#   . instead of dot
 #   | instead of 'or'

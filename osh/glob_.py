@@ -78,17 +78,14 @@ def GlobEscape(s):
   return util.BackslashEscape(s, GLOB_META_CHARS)
 
 
-# Quoted parts need to be regex-escaped, e.g. [[ $a =~ "{" ]].  I don't think
-# libc has a function to do this.  Escape these characters:
-# https://www.gnu.org/software/sed/manual/html_node/ERE-syntax.html Use
-
-# NOTE: Weird bash rule: (|) are literal and don't have to be escaped.
-# The list of chars {}$ is determined by experience.
-ERE_META_CHARS = '{}$'
+ERE_META_CHARS = '?*+{}^$.()|'
 
 def ExtendedRegexEscape(s):
   """
-  For [[ foo =~ $\{ ]]
+  Quoted parts need to be regex-escaped when quoted, e.g. [[ $a =~ "{" ]].  I
+  don't think libc has a function to do this.  Escape these characters:
+
+  https://www.gnu.org/software/sed/manual/html_node/ERE-syntax.html
   """
   return util.BackslashEscape(s, ERE_META_CHARS)
 

@@ -9,6 +9,7 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import re_e, re_repeat_e, class_literal_term_e
 
+from osh import glob_  # for ExtendedRegexEscape
 from core.util import log
 
 from typing import TYPE_CHECKING
@@ -119,6 +120,7 @@ def _ClassLiteralToPosixEre(term, parts):
 
   raise NotImplementedError(term) 
 
+  return util.BackslashEscape(s, GLOB_META_CHARS)
 
 def _PosixEre(node, parts):
   tag = node.tag
@@ -134,8 +136,8 @@ def _PosixEre(node, parts):
     return
 
   if tag == re_e.LiteralChars:
-    # TODO: ESCAPE
-    parts.append(node.s)
+    # The bash [[ x =~ "." ]] construct also has to do this
+    parts.append(glob_.ExtendedRegexEscape(node.s))
     return
 
   if tag == re_e.Seq:

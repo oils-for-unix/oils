@@ -351,7 +351,7 @@ module syntax
   | ShArrayLiteral %sh_array_literal
     -- @[a b c] @[1 2 3] @[(1+1) (2+2)]
   | ArrayLiteral(token left, expr* items)
-  | RegexLiteral(token left, re r, token* flags)
+  | RegexLiteral(token left, re regex, token* flags)
 
   | SimpleVarSub %simple_var_sub
   | BracedVarSub %braced_var_sub
@@ -463,7 +463,7 @@ module syntax
   | ClassLiteral(bool negated, class_literal_term* terms)
 
     -- @D
-  | Splice(token token)
+  | Splice(token name)
 
     -- $literal ${literal} 'no-backslashes' "other$foo"
   | SimpleVarSub %simple_var_sub

@@ -184,3 +184,19 @@ xxabcxy
 no
 yes
 ## END
+
+#### @splice
+shopt -s all:oil
+var d = /d+/;
+var ip = / @d '.' @d '.' @d '.' @d /
+echo $ip
+if ('0.0.0.0' ~ ip) { echo yes } else { echo no }
+if ('0.0.0' ~ ip) { echo yes } else { echo no }
+## STDOUT:
+[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+
+yes
+no
+## END
+
+
+
