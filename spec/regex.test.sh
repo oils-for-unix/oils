@@ -211,9 +211,19 @@ echo status=$?
 [[ '(' =~ '(' ]] && echo 'yes ('
 [[ ')' =~ ')' ]] && echo 'yes )'
 [[ '|' =~ '|' ]] && echo 'yes |'
+echo ---
 
 [[ . =~ "." ]] && echo 'yes .'
 [[ z =~ "." ]] || echo 'no .'
+echo ---
+
+# This rule is weird but all shells agree.  I would expect that the - gets
+# escaped?  It's an operator?  but it behaves like a-z.
+[[ a =~ ["a-z"] ]]; echo "a $?"
+[[ - =~ ["a-z"] ]]; echo "- $?"
+[[ b =~ ['a-z'] ]]; echo "b $?"
+[[ z =~ ['a-z'] ]]; echo "z $?"
+
 echo status=$?
 ## STDOUT:
 yes {
@@ -225,8 +235,14 @@ yes $
 yes (
 yes )
 yes |
+---
 yes .
 no .
+---
+a 0
+- 1
+b 0
+z 0
 status=0
 ## END
 ## N-I zsh STDOUT:
@@ -234,7 +250,13 @@ yes ^
 yes $
 yes )
 yes |
+---
 yes .
+---
+a 0
+- 1
+b 0
+z 0
 status=0
 ## END
 
@@ -264,4 +286,21 @@ pat='^(\$\{?)([A-Za-z0-9_]*)$'
 ## STDOUT:
 true
 true
+## END
+
+#### regex with unprintable characters
+# can't have nul byte
+
+# This pattern has literal characters
+pat=$'^[\x01\x02]+$'
+
+[[ $'\x01\x02\x01' =~ $pat ]]; echo status=$?
+[[ $'a\x01' =~ $pat ]]; echo status=$?
+
+# NOTE: There doesn't appear to be any way to escape these!
+pat2='^[\x01\x02]+$'
+
+## STDOUT:
+status=0
+status=1
 ## END

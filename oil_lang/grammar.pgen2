@@ -239,6 +239,11 @@ class_literal_term: (
     # e.g. 'abc' or "abc$mychars" 
     # NOTE: range_char has sq_string
   | dq_string
+    # TODO: Do these actually work in bash/awk/egrep/sed/etc.?
+    # Reserved for [[.collating sequences.]] (Unicode)
+  | '.' Expr_Name
+    # Reserved for [[=character equivalents=]] (Unicode)
+  | '=' Expr_Name
 
 )
 class_literal: '[' class_literal_term+ ']'

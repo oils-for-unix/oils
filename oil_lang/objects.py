@@ -106,6 +106,29 @@ PERL_CLASS = {
 }
 
 
+# ERE's in POSIX:
+# https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html
+# 
+# NOTE: They don't support \x00 or \u1234 as in Perl/Python!
+#
+# It's hard to grep for tabs with BRE or ERE syntax.  You have to use:
+#
+# (1) a literal tab with Ctrl-V, or
+# (2) bash syntax:  grep $'\t' foo.txt
+# (3) POSIX shell syntax:  grep "$(echo -e '\t')" foo.txt.
+#
+# I ran into this in test/lint.sh !!!
+#
+# https://stackoverflow.com/questions/1825552/grep-a-tab-in-unix
+
+# Algorithm:
+# - Unicode escapes in BREs disallowed
+# - ASCII codes 1-255 allowed LITERALLY, but NUL \0 disallowed
+#
+# What about utf-8 encoded characters?  Those work within literals, but are
+# problematic within character sets.  There's no way to disallow those in
+# general though.
+
 def _ClassLiteralToPosixEre(term, parts):
   tag = term.tag
   if tag == class_literal_term_e.Range:
@@ -137,6 +160,13 @@ def _PosixEre(node, parts):
 
   if tag == re_e.LiteralChars:
     # The bash [[ x =~ "." ]] construct also has to do this
+
+    # TODO: What about \0 and unicode escapes?
+    # Those won't be as LiteralChars I don't think?
+    # Unless you put them there through \0
+    # Maybe DISALLOW those.
+    # "Unprintable chars should be written as \0 or \x00 or \u0000"
+
     parts.append(glob_.ExtendedRegexEscape(node.s))
     return
 
@@ -154,10 +184,11 @@ def _PosixEre(node, parts):
 
   if tag == re_e.Repeat:
     _PosixEre(node.child, parts)
-    op_tag = node.op.tag
+    op = node.op
+    op_tag = op.tag
 
     if op_tag == re_repeat_e.Op:
-      op_id = node.op.op.id
+      op_id = op.op.id
       if op_id == Id.Arith_Plus:
         parts.append('+')
       elif op_id == Id.Arith_Star:
@@ -169,10 +200,14 @@ def _PosixEre(node, parts):
       return
 
     if op_tag == re_repeat_e.Num:
-      pass
+      parts.append('{%s}' % op.times.val)
+      return
 
     if op_tag == re_repeat_e.Range:
-      pass
+      lower = op.lower.val if op.lower else ''
+      upper = op.upper.val if op.upper else ''
+      parts.append('{%s,%s}' % (lower, upper))
+      return
 
     raise NotImplementedError(node.op)
 

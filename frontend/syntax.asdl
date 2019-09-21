@@ -445,10 +445,11 @@ module syntax
     -- each char of [\" \u123]
   | CharSet(string chars)
 
+  -- TODO: All these really be 'strand'.  You don't need the Id.
   re_repeat =
     Op(token op)
   | Num(token times)
-  | Range(token lower, token upper)
+  | Range(token? lower, token? upper)
 
   re = 
     -- . ^ $

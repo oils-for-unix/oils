@@ -419,14 +419,39 @@ class Transformer(object):
 
   def _RepeatOp(self, p_repeat):
     # type: (PNode) -> re_repeat_t
+    assert p_repeat.typ == grammar_nt.repeat_op, p_repeat
+
     tok = p_repeat.children[0].tok
     id_ = tok.id
     # a+
     if id_ in (Id.Arith_Plus, Id.Arith_Star, Id.Arith_QMark):
       return re_repeat.Op(tok)
 
-    if id_ == Id.Arith_Caret:
-      raise NotImplementedError(id_)
+    if id_ == Id.Op_LBrace:
+      p_range = p_repeat.children[1]
+      assert p_range.typ == grammar_nt.repeat_range, p_range
+
+      # repeat_range: (
+      #     Expr_DecInt [',']
+      #   | ',' Expr_DecInt
+      #   | Expr_DecInt ',' Expr_DecInt
+      # )
+
+      children = p_range.children
+      n = len(children)
+      if n == 1:  # {3}
+        return re_repeat.Num(children[0].tok)
+
+      if n == 2:
+        if children[0].tok.id == Id.Expr_DecInt:  # {,3}
+          return re_repeat.Range(children[0].tok, None)
+        else:  # {1,}
+          return re_repeat.Range(None, children[1].tok)
+
+      if n == 3:  # {1,3}
+        return re_repeat.Range(children[0].tok, children[2].tok)
+
+      raise AssertionError(n)
 
     raise AssertionError(id_)
 

@@ -48,6 +48,27 @@ yes
 no
 ## END
 
+#### Repeat {1,3} etc.
+var pat = null
+
+setvar pat = /d{2}/
+echo $pat
+setvar pat = /d{1,3}/
+echo $pat
+setvar pat = /d{1,}/
+echo $pat
+setvar pat = /d{,3}/
+echo $pat
+
+
+## STDOUT:
+[[:digit:]]{2}
+[[:digit:]]{1,3}
+[[:digit:]]{1,}
+[[:digit:]]{,3}
+## END
+
+
 #### d+  digit+  ~d+  ~digit+
 shopt -s all:oil
 
@@ -197,6 +218,5 @@ if ('0.0.0' ~ ip) { echo yes } else { echo no }
 yes
 no
 ## END
-
 
 
