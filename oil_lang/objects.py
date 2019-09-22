@@ -10,7 +10,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import re_e, re_repeat_e, class_literal_term_e
 
 from osh import glob_  # for ExtendedRegexEscape
-from core.util import log
+from core.util import log, e_die
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -183,6 +183,14 @@ def _PosixEre(node, parts):
     return
 
   if tag == re_e.Repeat:
+    # 'foo' or "foo" or $x or ${x} evaluated to too many chars
+    if node.child.tag == re_e.LiteralChars:
+      if len(node.child.s) > 1:
+        # Note: Other regex dialects have non-capturing groups since we don't
+        # need this.
+        e_die("POSIX EREs don't have groups without capture, so this node "
+              "needs () around it.", span_id=node.child.spid)
+
     _PosixEre(node.child, parts)
     op = node.op
     op_tag = op.tag

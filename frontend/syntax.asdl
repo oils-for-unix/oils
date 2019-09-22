@@ -503,7 +503,7 @@ module syntax
 
   | Primitive(id id)  -- . dot etc.
     -- String substitutions are evaluated into literals
-  | LiteralChars(string s)
+  | LiteralChars(string s, int spid)
     -- Splices are resolved like this
   | Resolved(re child)
 

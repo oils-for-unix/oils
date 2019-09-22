@@ -271,3 +271,40 @@ c-d
 ab
 ## END
 
+#### Repeated String Literal With Single Char
+shopt -s all:oil
+
+var literal = 'f'
+var pat = null
+
+setvar pat = / %start $literal+ %end /
+echo $pat
+setvar pat = / %start ($literal)+ %end /
+echo $pat
+
+if ('fff' ~ pat) { echo yes }
+if ('foo' !~ pat) { echo no }
+
+## STDOUT:
+^f+$
+^(f)+$
+yes
+no
+## END
+
+#### Error when unparenthesized string of more than one character is repeated
+shopt -s all:oil
+
+var literal = 'foo'
+var pat = null
+
+setvar pat = / %start $literal+ %end /
+echo $pat
+setvar pat = / %start ($literal)+ %end /
+echo $pat
+
+if ('foofoo' ~ pat) { echo yes }
+if ('foof' !~ pat) { echo no }
+
+## status: 1
+## stdout-json: ""

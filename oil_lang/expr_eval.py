@@ -454,19 +454,19 @@ class OilEvaluator(object):
 
     elif node.tag == re_e.SingleQuoted:
       s = word_eval.EvalSingleQuoted(node)
-      new_leaf = re.LiteralChars(s)
+      new_leaf = re.LiteralChars(s, node.left.span_id)
 
     elif node.tag == re_e.DoubleQuoted:
       s = self.word_ev.EvalDoubleQuotedToString(node)
-      new_leaf = re.LiteralChars(s)
+      new_leaf = re.LiteralChars(s, node.left.span_id)
 
     elif node.tag == re_e.BracedVarSub:
       s = self.word_ev.EvalBracedVarSubToString(node)
-      new_leaf = re.LiteralChars(s)
+      new_leaf = re.LiteralChars(s, node.spids[0])
 
     elif node.tag == re_e.SimpleVarSub:
       s = self.word_ev.EvalSimpleVarSubToString(node.token)
-      new_leaf = re.LiteralChars(s)
+      new_leaf = re.LiteralChars(s, node.token.span_id)
 
     elif node.tag == re_e.Splice:
       obj = self.LookupVar(node.name.val)
