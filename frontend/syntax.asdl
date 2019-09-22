@@ -452,7 +452,10 @@ module syntax
   | DoubleQuoted %double_quoted
 
     -- Each of ['abc' \\ \" \xff ] is evaluated to this
-  | CharSet(string chars, int spid)
+    -- If there is more than one byte and any of them is > 128, there is
+    -- ambiguity about whether it's a single encoded character or multiple
+    -- bytes.
+  | ByteSet(string bytes, int spid)
     -- [ \u0100 \u00ff ] is evaluated to this
   | CodePoint(int i, int spid)
 

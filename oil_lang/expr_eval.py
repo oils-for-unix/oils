@@ -502,15 +502,19 @@ class OilEvaluator(object):
       s = None
       if term.tag == class_literal_term_e.SingleQuoted:
         s = word_eval.EvalSingleQuoted(term)
+        spid = term.left.span_id
 
       elif term.tag == class_literal_term_e.DoubleQuoted:
         s = self.word_ev.EvalDoubleQuotedToString(term)
+        spid = term.left.span_id
 
       elif term.tag == class_literal_term_e.BracedVarSub:
         s = self.word_ev.EvalBracedVarSubToString(term)
+        spid = term.spids[0]
 
       elif term.tag == class_literal_term_e.SimpleVarSub:
         s = self.word_ev.EvalSimpleVarSubToString(term.token)
+        spid = term.token.span_id
 
       elif term.tag == class_literal_term_e.CharLiteral:
         # What about \0?
@@ -518,7 +522,14 @@ class OilEvaluator(object):
         node.terms[i] = word_compile.EvalCharLiteralForRegex(term.tok)
 
       if s is not None:
-        node.terms[i] = class_literal_term.CharSet(s)
+        # A string like '\x7f\xff' should be presented like
+        if len(s) > 1:
+          for c in s:
+            if ord(c) > 128:
+              e_die("Express these bytes as character literals to avoid "
+                    "confusing them with encoded characters", span_id=spid)
+
+        node.terms[i] = class_literal_term.ByteSet(s, spid)
 
   def _MutateSubtree(self, node):
     if node.tag == re_e.Seq:

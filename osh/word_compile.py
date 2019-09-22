@@ -39,12 +39,12 @@ def EvalCharLiteralForRegex(tok):
   if id_ == Id.Char_OneChar:
     c = value[1]
     s = _ONE_CHAR[c]
-    return class_literal_term.CharSet(s, tok.span_id)
+    return class_literal_term.ByteSet(s, tok.span_id)
 
   elif id_ == Id.Char_Hex:
     s = value[2:]
     i = int(s, 16)
-    return class_literal_term.CharSet(chr(i), tok.span_id)
+    return class_literal_term.ByteSet(chr(i), tok.span_id)
 
   elif id_ in (Id.Char_Unicode4, Id.Char_Unicode8):
     s = value[2:]

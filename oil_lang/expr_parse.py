@@ -183,7 +183,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
       last_token = None
     else:
       tok = lex.Read(mode)
-      log('tok = %s', tok)
+      #log('tok = %s', tok)
 
     # Comments and whitespace.  Newlines aren't ignored.
     if meta.LookupKind(tok.id) == Kind.Ignored:

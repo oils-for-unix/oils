@@ -284,6 +284,13 @@ if (c'\x7e' ~ pat) { echo yes } else { echo no }
 ## status: 1
 ## stdout-json: ""
 
+#### non-ASCII bytes must be singleton terms, e.g. '\x7f\xff' is disallowed
+var bytes = c'\x7f\xff'
+var pat = / [ $bytes ] /
+echo $pat
+## status: 1
+## stdout-json: ""
+
 #### Matching escaped tab character
 shopt -s all:oil
 

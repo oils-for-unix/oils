@@ -136,9 +136,9 @@ def _ClassLiteralToPosixEre(term, parts):
     parts.append('%s-%s' % (term.start, term.end))
     return
 
-  if tag == class_literal_term_e.CharSet:
+  if tag == class_literal_term_e.ByteSet:
     # This escaping is different than ExtendedRegexEscape.
-    parts.append(glob_.EreCharClassEscape(term.chars))
+    parts.append(glob_.EreCharClassEscape(term.bytes))
     return
 
   if tag == class_literal_term_e.CodePoint:
