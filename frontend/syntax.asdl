@@ -470,10 +470,7 @@ module syntax
   re = 
     -- . ^ $
     Speck %speck
-    -- get rid of speck, because 'dot' is a primitive too
-    -- the LST preserves the difference between '.' and 'dot'
-    -- but at EvalRegex we change Speck to Primitive
-    -- TODO: should be strand rather than token?
+    -- %begin or \u123
   | Token %token
   | PosixClass %posix_class
   | PerlClass %perl_class

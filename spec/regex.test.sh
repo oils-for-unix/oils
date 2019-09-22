@@ -211,6 +211,7 @@ echo status=$?
 [[ '(' =~ '(' ]] && echo 'yes ('
 [[ ')' =~ ')' ]] && echo 'yes )'
 [[ '|' =~ '|' ]] && echo 'yes |'
+[[ '\' =~ '\' ]] && echo 'yes \'
 echo ---
 
 [[ . =~ "." ]] && echo 'yes .'
@@ -235,6 +236,7 @@ yes $
 yes (
 yes )
 yes |
+yes \
 ---
 yes .
 no .

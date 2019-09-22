@@ -4,13 +4,14 @@ expr_eval.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import (
     expr_e, expr_t, re, re_e, re_t, class_literal_term, class_literal_term_e,
 )
 from _devbuild.gen.runtime_asdl import (
     lvalue, value, value_e, scope_e,
 )
+from core import meta
 from core.util import e_die
 from core.util import log
 from oil_lang import objects
@@ -441,16 +442,28 @@ class OilEvaluator(object):
         raise NotImplementedError(id_)
 
     elif node.tag == re_e.Token:
+      id_ = node.id
       val = node.val
 
-      if val == 'dot':
-        new_leaf = re.Primitive(Id.Re_Dot)
-      elif val == '%start':
-        new_leaf = re.Primitive(Id.Re_Start)
-      elif val == '%end':
-        new_leaf = re.Primitive(Id.Re_End)
-      else:
-        raise NotImplementedError(val)
+      if id_ == Id.Expr_Name:
+        if val == 'dot':
+          new_leaf = re.Primitive(Id.Re_Dot)
+        else:
+          raise NotImplementedError(val)
+
+      elif id_ == Id.Expr_Symbol:
+        if val == '%start':
+          new_leaf = re.Primitive(Id.Re_Start)
+        elif val == '%end':
+          new_leaf = re.Primitive(Id.Re_End)
+        else:
+          raise NotImplementedError(val)
+
+      else:  # Must be Id.Char_{OneChar,Hex,Unicode4,Unicode8}
+        kind = meta.LookupKind(id_)
+        assert kind == Kind.Char, id_
+        s = word_compile.EvalCStringToken(id_, val)
+        new_leaf = re.LiteralChars(s, node.span_id)
 
     elif node.tag == re_e.SingleQuoted:
       s = word_eval.EvalSingleQuoted(node)

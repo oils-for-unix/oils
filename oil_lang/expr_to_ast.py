@@ -328,6 +328,8 @@ class Transformer(object):
       'alpha', 'digit', 'print', 'upper',
       'blank', 'graph', 'punct', 'xdigit',
   )
+  # NOTE: These are also things like \p{Greek} that we could put in the
+  # "non-sigil" namespace.
 
   def _NameInRegex(self, negated, tok):
     # type: (bool, token) -> re_t
@@ -386,6 +388,9 @@ class Transformer(object):
 
       if typ == grammar_nt.simple_var_sub:
         return simple_var_sub(children[0].tok)
+
+      if typ == grammar_nt.char_literal:
+        return children[0].tok
 
       raise NotImplementedError(typ)
 

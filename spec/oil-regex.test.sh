@@ -380,3 +380,16 @@ if ('foof' !~ pat) { echo no }
 
 ## status: 1
 ## stdout-json: ""
+
+#### Instead of c'foo\\bar' use 'foo' \\ 'bar'
+shopt -s all:oil
+var pat = /'foo' \\ 'bar'/
+echo $pat
+
+if (r'foo\bar' ~ pat) { echo yes }
+if (r'foo.bar' !~ pat) { echo no }
+## STDOUT:
+foo\\bar
+yes
+no
+## END

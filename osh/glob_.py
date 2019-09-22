@@ -88,7 +88,7 @@ def EreCharClassEscape(s):
   return util.BackslashEscape(s, r'\^-')
 
 
-ERE_META_CHARS = '?*+{}^$.()|'
+ERE_META_CHARS = r'\?*+{}^$.()|'
 
 def ExtendedRegexEscape(s):
   """
