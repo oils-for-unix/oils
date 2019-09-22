@@ -44,11 +44,11 @@ X [Data Types]    Str           r'\'   c"\n"   multiline r""" c'''
                   Int           1_000_000
                   Float         3.14
                   Array[]       @[ls -l]  @[T F F]  @[1 2 3]  @[1.5 2.5] 
-                  Tuple[]       #()  #(42)  #(42, "foo")
+                  Tuple[]       ()  tup(42)  (42, "foo")
                   List          [1, 'str', false]  (for JSON compatibility)
                   Dict[]        {name: 'oil'}  {['name']: 'oil'}  {name}
                   Null          null
-                  Regex         $/ d+ /
+                  Regex         /d+/
                   Func          func(x) { return x+1 }
 X [Comprehension] Array, List, Dict
 X [Operators]     unary         -a
@@ -60,6 +60,14 @@ X [Operators]     unary         -a
                   scope-attr    module::name
   [Functions]     inline-call   echo $strfunc(x, y) @arrayfunc(z)
                   X func-decl   func inc(a Int, b Int = 1) Int { ... }
+  [Regexes]       re-literal    /d+/
+                  re-compound   ~  ()  :()  or  sequence
+                  re-primitive  %zero  @other_pattern  'sq'  "dq"  $x  ${x}
+                  named-classes dot   digit   space   word   d   s   w
+                  class-literal [a-z 'abc' \\ \xFF \u0100]
+                  re-flags      ignorecase etc.
+                  re-multiline  ///
+                  re-api        if   for   sub()   split()  findall()
 
 WORD LANGUAGE
   [Quotes]        quotes        'abc'  $'\n'  "$var"

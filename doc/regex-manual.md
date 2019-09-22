@@ -3,49 +3,52 @@ Egg Expressions (Oil Regexes)
 
 ## Intro
 
-Oil has a new regex syntax:
+Oil has a new regex syntax, which appears between the `/ /` delimiters.
 
     if (mystr ~ /d+ '.' d+/) {   
       echo 'mystr looks like a number'
     }
 
-The part between `/ /` delimiters is called an "Egg Expression" or EggEx.  It's
-different than POSIX or Perl regex syntax, but it's intended to be familiar.
+It's different than POSIX or Perl syntax, but it's intended to be familiar.
+
+It's called an "Eggex" because it's a similar to the regexes you already know,
+but different.
 
 Why?
 
-- It lets you compose and reuse patterns.  Breaking regexes up makes them more
+- Eggexes let you name **subpatterns** and compose them, which makes them more
   readable and testable.
-- The syntax is simpler and more consistent because string literals are
-  **quoted**, and operators aren't.  For example, this means that the `^`
-  character no longer means three different things.  See the critique below.
-- It's more Perl-like than POSIX ERE syntax, which is what bash and awk use.
-- It's designed to be translated to any regex dialect.  In practice, it
-  integrates well with tools that use the ERE syntax:
+- Their **syntax** is vastly simpler because literal characters are **quoted**,
+  and operators are not.  For example, `^` no longer means three totally
+  different things.  See the critique at the end of this doc.
+- bash and awk use the limited and verbose POSIX ERE syntax, while eggexes are
+  more expressive and (in some cases) Perl-like.
+- They're designed to be **translated to any regex dialect**.  Right now, it
+  translates to ERE so you can use them with common Unix tools:
   - `egrep` (`grep -E`)
-  - awk
-  - GNU sed `--regexp-extended`
+  - `awk`
+  - GNU `sed --regexp-extended`
   - PCRE syntax is the second most important target.
-- It's statically parsed in Oil, so:
-  - You can get syntax errors at parse time.  If you embed a regex in a string,
-    you don't get syntax errors until runtime.
-  - The regex is part of the "lossless syntax tree", which means you can do
-    linting, formatting, and refactoring on regexes, just like any other type
+- They're **statically parsed** in Oil, so:
+  - You can get **syntax errors** at parse time.  In contrast, if you embed a
+    regex in a string, you don't get syntax errors until runtime.
+  - The eggex is part of the "lossless syntax tree", which means you can do
+    linting, formatting, and refactoring on eggexes, just like any other type
     of code.
 
+### Example of Pattern Reuse
 
-### Longer Example
+Here's a longer example:
 
-Here's an example of reusing a pattern:
+    $ var D = / digit{1,3} /  # Reuse this subpattern; 'digit' is long for 'd'
+    $ var ip_pat = / @D '.' @D '.' @D '.' @D /
 
-    $ var D = / digit{1,3} /  # Reuse this subpattern
-    $ var ip_address = / @D '.' @D '.' @D '.' @D /
-
-    $ echo $ip_address        # This EggExobject compiles to an ERE
+    $ echo $ip_pat            # This Eggex compiles to an ERE
     [[:digit:]]{1,3}\.[[:digit:]]{1,3}\.[[:digit:]]{1,3}\.[[:digit:]]{1,3}
 
-    So you can use it like this!
-    $ egrep $ip_address foo.txt
+This means you can use it in a very simple way:
+
+    $ egrep $ip_pat foo.txt
 
 TODO: You should also be able to inline patterns like this:
 
@@ -53,19 +56,76 @@ TODO: You should also be able to inline patterns like this:
 
 ### Philosophy
 
-- Expresses a superset of POSIX and Perl.
-- The language is designed for "dumb", one-to-one, syntactic translations.
-  That is, translation doesn't rely on understanding the semantics of regexes.
-  Regex implementations have many corner cases and incompatibilities, with
-  regard to Unicode, `NUL` bytes, etc.
+- Eggexes can express a superset of POSIX and Perl syntax.
+- The language is designed for "dumb", one-to-one, **syntactic** translations.
+  That is, translation doesn't rely on understanding the **semantics** of
+  regexes.  This is because regex implementations have many corner cases and
+  incompatibilities, with regard to Unicode, `NUL` bytes, etc.
 
 ## The Expression language
 
-Here's a summary of the language.
+Eggexes have a consistent syntax:
+
+- Single characters are unadorned: `dot`, `space`, or `s`
+- A sequence of multiple characters looks like `'lit'`, `$var`, etc.
+- Constructs that match **zero** characters look like `%start %end` 
+- Entire subpatterns (which may contain alternation, repetition, etc.) look
+  like `@var_name`.  Important: these are **spliced** as syntax trees, not
+  strings, so you **don't** need to think about quoting.
+
+For example, it's easy to see that these patterns all match **three** characters:
+
+    / d d d /
+    / digit digit digit /
+    / dot dot dot /
+    / word space word /
+    / 'ab' space /
+    / 'abc' /
+
+And that these patterns match **two**:
+
+    / %start w w /
+    / %start 'if' /
+    / d d %end /
+
+And that you have to look up the definition of `D` to know how many characters
+this matches:
+
+    / %start @D %end /
+
+Constructs like `. ^ $ \< \>` are deprecated because they break these rules.
+
+### Primitives
+
+#### . is now `dot`
+
+But `.` is still accepted.  It usually matches any character except a newline,
+although this changes based on flags (e.g. `dotall`, `unicode`).
+
+#### Classes are unadorned: `word`, `w`, `alnum`
+
+We accept both Perl and POSIX classes.
+
+- Perl
+- POSIX
+
+#### Zero-width Assertions Look Like `%this`
+
+- `%start` is `^`
+- `%end` is `$`
+- `%start_word` is GNU `\<`
+- `%end_word` is GNU `\>`
+
+#### Literals
+
+- `'abc'`
+- `"xyz $var"`
+- `$mychars`
+- `${otherchars}`
 
 ### Compound Structures
 
-#### Sequence and Alternation Unchanged
+#### Sequence and Alternation Are Unchanged
 
 - `x y` matches `x` and `y` in sequence
 - `x | y` matches `x` or `y`
@@ -84,72 +144,76 @@ We've reserved syntactic space for PCRE and Python variants:
 - lazy/non-greedy: `x{L +}`, `x{L 3,4}`
 - possessive: `x{P +}`, `x{P 3,4}`
 
-#### Negation Is More Consistent
+#### Negation Consistently Uses ~
 
-Both named char classes and char class literals can be negated:
+You can negated named char classes:
 
     / ~digit /
-    / [ ~digit ] /
-    / ~[ a-z ] /
 
-    # Does this work?
-    / ~[ ~digit ] /
-    / word ; ~ignorecase /
+and char class literals:
 
-Note that regexes have many syntaxes for negation:
+    / ~[ a-z A-Z ] /
+
+Sometimes you can do both:
+
+    / ~[ ~digit ] /  # translates to /[^\D]/ in PCRE
+                     # error in ERE because it can't be expressed
+
+
+You can also negate "regex modifiers" / compilation flags:
+
+    / word ; ignorecase /   # flag on
+    / word ; ~ignorecase /  # flag off
+    / word ; ~i /           # abbreviated
+
+In contrast, regexes have many confusing syntaxes for negation:
 
     [^abc] vs. [abc]
     [[^:digit:]] vs. [[:digit:]]
+
     \D vs. \d
+
     /[x]/-i vs /[x]/i
 
 #### Splicing
 
-New in EggEx!  You can reuse patterns.  Like re2c /lex.
+New in Eggex!  You can reuse patterns with `@pattern_name`.
 
+See the example at the front of this document.
 
-    var D = / digit{1,3} /
-    var IP = / @D '.' @D '.' @D '.' @D /
-    echo $IP
-
+This is similar to how `lex` and `re2c` work.
 
 #### Grouping, Capturing
 
-- `(digit{4} as year Int)`
-- `:(digit+)`  # not captured
+Capture with `()`:
+
+    ('foo' or 'bar')+   # Becomes M.group(1)
+
+Named capture
+
+    ('foo' or 'bar' as myvar)  # Becomes M.group('myvar')
+
+Group with `:()`
+
+    :('foo' or 'bar')
 
 See note below: POSIX ERE has no non-capturing groups.
 
-### Character Class Literals
+#### Character Class Literals
 
 Example:
 
-    [ a-f 'A'-'F' \x01 \n \\ \' \" \0 ]
+    [ a-f 'A'-'F' \xFF \u0100 \n \\ \' \" \0 ]
 
 Terms:
 
-- ranges: `a-f` or `'A' - 'F'`
-- character literals: `\n`, `\x01`, etc.
-- character sets specified as strings:
+- Ranges: `a-f` or `'A' - 'F'`
+- Literals: `\n`, `\x01`, `\u0100`, etc.
+- Sets specified as strings:
   - `'abc'`
   - `"xyz"`
   - `$mychars`
   - `${otherchars}`
-
-### Primitives
-
-- Classes are unadorned: `w` `d` `alnum`
-  - Perl
-  - POSIX
-- Zero-width assertions are `%start`
-- Literals:
-  - `'abc'`
-  - `"xyz"`
-  - `$mychars`
-  - `${otherchars}`
-
-- Legacy:
-  - `. ^ $`
 
 ### Flags and Predispositions
 
@@ -162,20 +226,35 @@ Terms:
 
 ### Backtracking Constructs (Discouraged)
 
-For PCRE, etc.
+All the "dangerous" concepts begin with `!`.
+
+If you want to translate to PCRE, you can use these.
+
+
+    !REF 1
+    !REF name
+
+    !AHEAD( d+ )
+    !NOT_AHEAD( d+ )
+    !BEHIND( d+ )
+    !NOT_BEHIND( d+ )
+
+    !ATOMIC( d+ )
 
 ### Multiline Syntax
 
-Not implemented:
+You can spread regexes over multiple lines and add comments:
 
     var x = ///
-      digit{4}     # year e.g. 2001
+      digit{4}   # year e.g. 2001
       '-'
       digit{2}   # month e.g. 06
       '-'
       digit{2}   # day e.g. 31
     ///
 
+
+(Not yet implemented in Oil.)
 
 ### Language Reference
 
@@ -189,7 +268,10 @@ TODO:
     if (x ~ pat) {
     }
 
-Link?
+    if (for pat in mystr) {
+    }
+
+Link to another doc?
 
 ## Style Notes
 
@@ -205,7 +287,6 @@ YES:
     # Instead, Take advantage of char literals and implicit regex concatenation
     / 'foo' \t 'bar' /
     / 'foo' \\ 'tbar' /
-
 
 
 ## ERE Limitations
@@ -263,37 +344,46 @@ front or back.  You have to put it in the right place.
 
 ## Critiques
 
-### Of Existing Regex Syntax
+### Existing Regex Syntax
 
-- `^` could mean:
-  - start of the string
-  - negated character class in `[^abc]`
-  - literal `^` in `[abc^]`
-- `\` doesn't mean so many different things
-  - character classes like `\w` or `\d`
-  - Zero-width assertions like `\b`
-  - Escaped characters like `\n`
-  - Quoted characters like `\+`
-- `?` could mean
-  - optional: `a?`
-  - lazy match: `a+?`
-  - some other kind of grouping:
-    - `(?P<named>\d+)`
-    - `(?:noncapturing)`
+Regexes are hard to read because the **same symbol can mean many things**.
+
+`^` could mean:
+
+- Start of the string/line
+- Negated character class like `[^abc]`
+- Literal character `^` like `[abc^]`
+
+`\` is used in:
+
+- Character classes like `\w` or `\d`
+- Zero-width assertions like `\b`
+- Escaped characters like `\n`
+- Quoted characters like `\+`
+
+`?` could mean:
+
+- optional: `a?`
+- lazy match: `a+?`
+- some other kind of grouping:
+  - `(?P<named>\d+)`
+  - `(?:noncapturing)`
 
 In Oil, each construct has a distinct syntax.
 
-
 ### Oil is Shorter than Bash
+
+Bash:
 
     if [[ $x =~ '[[:digit:]]+' ]]; then
       echo 'x looks like a number
     fi
 
+Compare with Oil:
+
     if (x ~ /digit+/) {
       echo 'x looks like a number'
     }
-
 
 ### And Perl
 
@@ -305,23 +395,28 @@ rather than:
 
     $x =~ /\d+/
 
-The Perl expression has three more puncutation characters.
+The Perl expression has three more puncutation characters:
+
+- We don't need sigils in expression mode
+- The operator is `~` not `=~`
+- Named character classes are unadorned like `d`.  If that's too short, you can
+  also write `digit`.
 
 ## TODO
 
-multiline syntax: top one in terms of usefulness
+Multiline syntax:
 
     var x = ///
       abc   # TODO: comments
       a+
     ///
 
-Regex FLAGS 
+Regex flags:
 
     $/ d+ ; ignorecase ~multiline/
     $/ d+ ; i ~m/
 
-Disposition
+Translation preference:
 
     $/ d+ ; i m ; PCRE/     %ERE, %PCRE, %Python
 
@@ -333,8 +428,7 @@ Inline syntax:
 
   grep -P $/d+ ;; perl/ f
 
-
-Zero-width asertions
+Zero-width asertions:
 
 - %start_word %end_word  for < and >
 
@@ -344,7 +438,6 @@ API:
 - `sub()` (and `=>` syntax)
 - `findall()`
 - `split()`
-
 
 Other ideas: either/or syntax
 
