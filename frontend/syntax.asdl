@@ -451,10 +451,10 @@ module syntax
   | SingleQuoted %single_quoted
   | DoubleQuoted %double_quoted
 
-    -- Evaluated to this:
-    -- each char of 'abc' in ['abc']
-    -- each char of [\" \u123]
-  | CharSet(string chars)
+    -- Each of ['abc' \\ \" \xff ] is evaluated to this
+  | CharSet(string chars, int spid)
+    -- [ \u0100 \u00ff ] is evaluated to this
+  | CodePoint(int i, int spid)
 
   -- NOTE: modifier is unused now, can represent L or P
   re_repeat =

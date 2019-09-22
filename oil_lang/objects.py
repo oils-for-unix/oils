@@ -137,10 +137,16 @@ def _ClassLiteralToPosixEre(term, parts):
     return
 
   if tag == class_literal_term_e.CharSet:
-    # TODO: Proper escaping of chars!!!  \] \- etc.
-
-    # ExtendedRegexEscape is different!
+    # This escaping is different than ExtendedRegexEscape.
     parts.append(glob_.EreCharClassEscape(term.chars))
+    return
+
+  if tag == class_literal_term_e.CodePoint:
+    code_point = term.i
+    if code_point < 128:
+      parts.append(chr(code_point))
+    else:
+      e_die("ERE can't express code point %d", code_point, span_id=term.spid)
     return
 
   raise NotImplementedError(term) 

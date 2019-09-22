@@ -78,14 +78,7 @@ def _Classify(gr, tok):
   if ilabel is not None:
     return ilabel
 
-  #log('NAME = %s', tok.id.name)
-  # 'Op_RBracket' ->
-  # Never needed this?
-  #id_ = TERMINALS.get(tok.id.name)
-  #if id_ is not None:
-  #  return id_.enum_id
-
-  raise AssertionError('%d not a keyword and not in gr.tokens: %s' % (typ, tok))
+  p_die('Invalid token %s', tok, token=tok)
 
 
 # NOTE: this model is not NOT expressive enough for:
@@ -190,7 +183,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
       last_token = None
     else:
       tok = lex.Read(mode)
-      #log('tok = %s', tok)
+      log('tok = %s', tok)
 
     # Comments and whitespace.  Newlines aren't ignored.
     if meta.LookupKind(tok.id) == Kind.Ignored:

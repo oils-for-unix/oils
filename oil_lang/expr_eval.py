@@ -513,10 +513,9 @@ class OilEvaluator(object):
         s = self.word_ev.EvalSimpleVarSubToString(term.token)
 
       elif term.tag == class_literal_term_e.CharLiteral:
-        tok = term.tok
         # What about \0?
         # At runtime, ERE should disallow it.  But we can also disallow it here.
-        s = word_compile.EvalCStringToken(tok.id, tok.val)
+        node.terms[i] = word_compile.EvalCharLiteralForRegex(term.tok)
 
       if s is not None:
         node.terms[i] = class_literal_term.CharSet(s)

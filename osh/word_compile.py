@@ -7,11 +7,12 @@ doesn't depend on any values at runtime.
 """
 
 from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.syntax_asdl import class_literal_term
 from core import ui
 from osh import string_ops
 
 
-ONE_CHAR = {
+_ONE_CHAR = {
     '0': '\0',
     'a': '\a',
     'b': '\b',
@@ -26,6 +27,32 @@ ONE_CHAR = {
     "'": "'",  # for $'' only, not echo -e
     '"': '"',  # not sure why this is escaped within $''
 }
+
+def EvalCharLiteralForRegex(tok):
+  """For regex char classes.
+
+  Similar logic as below.
+  """
+  id_ = tok.id
+  value = tok.val
+
+  if id_ == Id.Char_OneChar:
+    c = value[1]
+    s = _ONE_CHAR[c]
+    return class_literal_term.CharSet(s, tok.span_id)
+
+  elif id_ == Id.Char_Hex:
+    s = value[2:]
+    i = int(s, 16)
+    return class_literal_term.CharSet(chr(i), tok.span_id)
+
+  elif id_ in (Id.Char_Unicode4, Id.Char_Unicode8):
+    s = value[2:]
+    i = int(s, 16)
+    return class_literal_term.CodePoint(i, tok.span_id)
+
+  else:
+    raise AssertionError
 
 
 # TODO: Strict mode syntax errors:
@@ -54,7 +81,7 @@ def EvalCStringToken(id_, value):
 
   elif id_ == Id.Char_OneChar:
     c = value[1]
-    return ONE_CHAR[c]
+    return _ONE_CHAR[c]
 
   elif id_ == Id.Char_Stop:  # \c returns a special sentinel
     return None

@@ -122,7 +122,7 @@ def TranslateTree(re_tree, f, in_char_class=False):
     elif name == 'max_repeat':  # repetition
       min_, max_, children = arg
       # min = 0 means *, min = 1 means +
-      assert min_ in (0, 1), min_
+      #assert min_ in (0, 1), min_
       TranslateTree(children, f)
 
       if min_ == 0 and max_ == 1:
@@ -130,13 +130,14 @@ def TranslateTree(re_tree, f, in_char_class=False):
 
       elif max_ == sre_constants.MAXREPEAT:
         if min_ == 0:
-            f.write('* ')
+          f.write('* ')
         elif min_ == 1:
           f.write('+ ')
         else:
           assert 0, min_
 
       else:  # re2c also supports [0-7]{1,2} syntax
+        # note: might generated {2,2}
         f.write('{%d,%d} ' % (min_, max_))
 
     elif name == 'negate':  # ^ in [^a-z]

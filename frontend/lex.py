@@ -487,9 +487,9 @@ EXPR_CHARS = [
   # NOTE: \' and \" are more readable versions of '"' and "'" in regexs
   R(r'\\[0rtn\\"%s]' % "'", Id.Char_OneChar),
 
-  R(r'\\x[0-9a-fA-F]2}', Id.Char_Hex),
-  R(r'\\u[0-9a-fA-F]4}', Id.Char_Unicode4),
-  R(r'\\U[0-9a-fA-F]8}', Id.Char_Unicode8),
+  R(r'\\x[0-9a-fA-F]{2}', Id.Char_Hex),
+  R(r'\\u[0-9a-fA-F]{4}', Id.Char_Unicode4),
+  R(r'\\U[0-9a-fA-F]{8}', Id.Char_Unicode8),
 ]
 
 # Shared between echo -e and $''.

@@ -231,6 +231,71 @@ echo @lines | egrep $pat
 
 ## stdout-json: "pat=(a[\t]b)\naa\tbb\n"
 
+#### Match non-ASCII byte denoted using c'\xff'
+shopt -s all:oil
+var pat = /[ c'\xff' ]/;
+
+echo $pat | od -A n -t x1
+if (c'\xff' ~ pat) { echo yes } else { echo no }
+if (c'\xfe' ~ pat) { echo yes } else { echo no }
+
+## STDOUT:
+ 5b ff 5d 0a
+yes
+no
+## END
+
+#### Match non-ASCII byte denoted using \xff
+shopt -s all:oil
+var pat = /[ \xff ]/;
+
+echo $pat | od -A n -t x1
+if (c'\xff' ~ pat) { echo yes } else { echo no }
+if (c'\xfe' ~ pat) { echo yes } else { echo no }
+
+## STDOUT:
+ 5b ff 5d 0a
+yes
+no
+## END
+
+#### ERE can express Unicode escapes that are in the ASCII range
+shopt -s all:oil
+var pat = /[ \u007f ]/;
+
+echo $pat | od -A n -t x1
+if (c'\x7f' ~ pat) { echo yes } else { echo no }
+if (c'\x7e' ~ pat) { echo yes } else { echo no }
+
+## STDOUT:
+ 5b 7f 5d 0a
+yes
+no
+## END
+
+#### ERE can't express higher Unicode escapes
+shopt -s all:oil
+var pat = /[ \u00ff ]/;
+
+echo $pat | od -A n -t x1
+if (c'\x7f' ~ pat) { echo yes } else { echo no }
+if (c'\x7e' ~ pat) { echo yes } else { echo no }
+
+## status: 1
+## stdout-json: ""
+
+#### Matching escaped tab character
+shopt -s all:oil
+
+# BUG: need C strings in array literal
+var lines=@($'aa\tbb' $'cc\tdd')
+
+var pat = / ('a' [\t] 'b') /
+echo pat=$pat
+echo @lines | egrep $pat 
+
+## stdout-json: "pat=(a[\t]b)\naa\tbb\n"
+
 #### Matching ] and \ and ' and " in character classes
 shopt -s all:oil
 
