@@ -838,7 +838,7 @@ class Transformer(object):
   # "non-sigil" namespace.
 
   def _NameInRegex(self, negated_tok, tok):
-    # type: (bool, token) -> re_t
+    # type: (token, token) -> re_t
 
     if negated_tok:  # For error messages
       negated_speck = speck(negated_tok.id, negated_tok.span_id)
@@ -861,7 +861,7 @@ class Transformer(object):
     p_die("%r isn't a character class", val, token=tok)
 
   def _NameInClass(self, negated_tok, tok):
-    # type: (bool, token) -> class_literal_term_t
+    # type: (token, token) -> class_literal_term_t
     """
     Like the above, but 'dot' doesn't mean anything.
     """

@@ -39,23 +39,24 @@ X [Coil Keywords] const   try   catch   throw   switch   match
                   data   enum   module   interface   namespace
 
 OIL EXPRESSION LANGUAGE
-X [Data Types]    Str           r'\'   c"\n"   multiline r""" c'''
+X [Data Types]    Str           r'\'   c'\n'   "$var"   multiline r""" c'''
+                  Symbol        %foo
+                  Null          null
                   Bool          true false
-                  Int           1_000_000
-                  Float         3.14
-                  Array[]       @[ls -l]  @[T F F]  @[1 2 3]  @[1.5 2.5] 
+                  Int           1_000_000   0b0100   0xFF  0o377  \n  \\  \u0100
+                  Float         3.14   6.022e+23
+                  Array[]       @(ls -l)  @[T F F]  @[1 2 3]  @[1.5 2.5] 
                   Tuple[]       ()  tup(42)  (42, "foo")
                   List          [1, 'str', false]  (for JSON compatibility)
                   Dict[]        {name: 'oil'}  {['name']: 'oil'}  {name}
-                  Null          null
                   Regex         /d+/
-                  Func          func(x) { return x+1 }
+                  Func          fn(x) x+1   func(x) { return x+1 }
 X [Comprehension] Array, List, Dict
-X [Operators]     unary         -a
+  [Operators]     unary         -a
                   binary        a+b   base^exp  a xor b  p div q
                   ternary       a if cond else b
-                  subscript     a[b, c]   a[start:end]
-                  chain         pass a => f(y, z) => var new
+                  X subscript   a[b, c]   a[start:end]
+                  X chain       pass a => f(y, z) => var new
                   getattr       d->key is like d['key'] or d.key
                   scope-attr    module::name
   [Functions]     inline-call   echo $strfunc(x, y) @arrayfunc(z)
@@ -68,6 +69,8 @@ X [Operators]     unary         -a
                   re-flags      ignorecase etc.
                   re-multiline  ///
                   re-api        if   for   sub()   split()  findall()
+                  re-ops        ~   !~        
+  [Var Subst]     oil-var-sub   ${f(x)}  ${obj.attr}  ${obj[1, 2]}   ${d->key}
 
 WORD LANGUAGE
   [Quotes]        quotes        'abc'  $'\n'  "$var"

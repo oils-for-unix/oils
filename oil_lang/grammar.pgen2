@@ -46,6 +46,7 @@ atom: (
   | '...'
     # NOTE: These atoms are are allowed in typed array literals
   | Expr_Name | Expr_Null | Expr_True | Expr_False 
+    # TODO: Allow suffixes on floats and decimals?  What about in arrays?
   | Expr_Float | Expr_DecInt | Expr_BinInt | Expr_OctInt | Expr_HexInt 
   | dq_string | sq_string
   | sh_command_sub | braced_var_sub | simple_var_sub

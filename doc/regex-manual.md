@@ -6,7 +6,7 @@ Egg Expressions (Oil Regexes)
 Oil has a new regex syntax, which appears between the `/ /` delimiters.
 
     if (mystr ~ /d+ '.' d+/) {   
-      echo 'mystr looks like a number'
+      echo 'mystr looks like a number N.M'
     }
 
 It's different than POSIX or Perl syntax, but it's intended to be familiar.
@@ -35,6 +35,7 @@ Why?
   - The eggex is part of the "lossless syntax tree", which means you can do
     linting, formatting, and refactoring on eggexes, just like any other type
     of code.
+- Eggexes are more fun than regexes!
 
 ### Example of Pattern Reuse
 
@@ -215,11 +216,38 @@ Terms:
   - `$mychars`
   - `${otherchars}`
 
-### Flags and Predispositions
+Only letters, numbers, and the underscore may be unquoted:
+
+    /['a'-'f' 'A'-'F' '0'-'9']/
+    /[a-f A-F 0-9]/                # Equivalent to the above
+
+    /['!' - ')']/  # Syntactically correct range
+    /[!-)]/      # Syntax Error
+
+Ranges must be separated by spaces:
+
+NO:
+
+    /[a-fA-F0-9]/
+
+YES:
+
+    /[a-f A-f 0-9]/
+
+
+
+### Flags and Translation Preferences
+
+Flags or "regex modifiers" appear after the first semicolon:
 
     / digit+ ; ignorecase /
 
+A translation preference appears after the second semicolon.  It controls what
+regex syntax the eggex is translated to by default.
+
     / digit+ ; ignorecase ; ERE /
+
+This expression has a translation preference, but no flags:
 
     / digit+ ;; ERE /
 
