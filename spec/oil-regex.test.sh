@@ -406,3 +406,52 @@ foo\\bar
 yes
 no
 ## END
+
+#### Negation of Character Class
+shopt -s all:oil
+
+var pat = / ~[ a-z ] /
+echo $pat
+
+if ('0' ~ pat) { echo yes }
+if ('a' !~ pat) { echo no }
+
+## STDOUT:
+[^a-z]
+yes
+no
+## END
+
+#### Posix and Perl class in class literals
+shopt -s all:oil
+
+var pat = null
+
+setvar pat = / [ s 'z' ] /
+echo $pat
+#setvar pat = / [ ~s 'z' ] /
+#echo $pat
+
+# PROBLEM: can't negate individual POSIX classes.  They would have to be a Perl
+# class to be \D or \S.
+# [[:space:]z] negates the whole thing!
+# [^[:space:]]
+
+setvar pat = / [ digit 'z' ] /
+echo $pat
+#setvar pat = / [ ~digit 'z' ] /
+#echo $pat
+
+## STDOUT:
+[[:space:]z]
+[[:digit:]z]
+## END
+
+#### Individual Perl and POSIX Classes In Literals Can't Be Negated
+var pat = null
+setvar pat = / [ ~d 'z' ] /
+echo $pat
+setvar pat = / [ ~digit 'z' ] /
+echo $pat
+## status: 1
+## stdout-json: ""

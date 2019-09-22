@@ -431,9 +431,9 @@ module syntax
   --
 
   -- e.g. alnum digit
-  posix_class = (bool negated, string name)
+  posix_class = (speck? negated, string name)
   -- e.g. d w s
-  perl_class = (bool negated, string name)
+  perl_class = (speck? negated, string name)
 
   -- Note: .NET has && in character classes, making it a recursive language
 

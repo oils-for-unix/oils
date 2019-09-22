@@ -193,336 +193,6 @@ class Transformer(object):
 
     return expr.Dict(keys, values)
 
-  RANGE_POINT_TOO_LONG = "Range start/end shouldn't have more than one character"
-
-  def _RangeChar(self, p_node):
-    # type: (PNode) -> str
-    """Evaluate a range endpoints.
-    - the 'a' in 'a'-'z'
-    - the \x00 in \x00-\x01
-    etc.
-
-    TODO: This function doesn't respect the LST invariant.
-    """
-    assert p_node.typ == grammar_nt.range_char, p_node
-    children = p_node.children
-    typ = children[0].typ
-    if ISNONTERMINAL(typ):
-      # 'a' in 'a'-'b'
-      if typ == grammar_nt.sq_string:
-        sq_part = cast(single_quoted, children[0].children[1].tok)
-        tokens = sq_part.tokens
-        if len(tokens) > 1:  # Can happen with multiline single-quoted strings
-          p_die(self.RANGE_POINT_TOO_LONG, part=sq_part)
-        if len(tokens[0].val) > 1:
-          p_die(self.RANGE_POINT_TOO_LONG, part=sq_part)
-        s = tokens[0].val[0]
-        return s
-
-      if typ == grammar_nt.char_literal:
-        raise AssertionError('TODO')
-        # TODO: This brings in a lot of dependencies, and this type checking
-        # errors.  We want to respect the LST invariant anyway.
-
-        #from osh import word_compile
-        #tok = children[0].children[0].tok
-        #s = word_compile.EvalCStringToken(tok.id, tok.val)
-        #return s
-
-      raise NotImplementedError
-    else:
-      # Expr_Name or Expr_DecInt
-      tok = p_node.tok
-      if tok.id in (Id.Expr_Name, Id.Expr_DecInt):
-        # For the a in a-z, 0 in 0-9
-        if len(tok.val) != 1:
-          p_die(self.RANGE_POINT_TOO_LONG, token=tok)
-        return tok.val[0]
-
-      raise NotImplementedError
-
-  def _NonRangeChars(self, p_node):
-    # type: (PNode) -> class_literal_term_t
-    """
-    \" \u123 '#'
-    """
-    assert p_node.typ == grammar_nt.range_char, p_node
-    children = p_node.children
-    typ = children[0].typ
-    if ISNONTERMINAL(typ):
-      p_child = children[0]
-      if typ == grammar_nt.braced_var_sub:
-        return cast(braced_var_sub, p_child.children[1].tok)
-
-      if typ == grammar_nt.dq_string:
-        return cast(double_quoted, p_child.children[1].tok)
-
-      if typ == grammar_nt.sq_string:
-        return cast(single_quoted, p_child.children[1].tok)
-
-      if typ == grammar_nt.simple_var_sub:
-        return simple_var_sub(children[0].tok)
-
-      if typ == grammar_nt.char_literal:
-        return class_literal_term.CharLiteral(children[0].tok)
-
-      raise NotImplementedError
-    else:
-      # Look up PerlClass and PosixClass
-      return self._NameInClass(False, children[0].tok)
-
-  def _ClassLiteralTerm(self, p_node):
-    # type: (PNode) -> class_literal_term_t
-    """
-    class_literal_term: (
-      range_char ['-' range_char ]
-    | '~' Expr_Name
-      # $mychars or ${mymodule.mychars}
-    | simple_var_sub | braced_var_sub
-      # e.g. 'abc' or "abc$mychars" 
-    | dq_string
-      ...
-    """
-    assert p_node.typ == grammar_nt.class_literal_term, p_node
-
-    children = p_node.children
-    typ = children[0].typ
-
-    if ISNONTERMINAL(typ):
-      p_child = children[0]
-      if typ == grammar_nt.simple_var_sub:
-        return simple_var_sub(p_child.children[0].tok)
-
-      if typ == grammar_nt.braced_var_sub:
-        return cast(braced_var_sub, p_child.children[1].tok)
-
-      if typ == grammar_nt.dq_string:
-        return cast(double_quoted, p_child.children[1].tok)
-
-      n = len(children)
-
-      if n == 1 and typ == grammar_nt.range_char:
-        return self._NonRangeChars(children[0])
-
-      # 'a'-'z' etc.
-      if n == 3 and children[1].tok.id == Id.Arith_Minus:
-        start = self._RangeChar(children[0])
-        end = self._RangeChar(children[2])
-        return class_literal_term.Range(start, end)
-
-    else:
-      if children[0].tok.id == Id.Arith_Tilde:
-        return self._NameInClass(True, children[1].tok)
-
-      raise AssertionError(children[0].tok.id)
-
-    nt_name = self.number2symbol[typ]
-    raise NotImplementedError(nt_name)
-
-  def _ClassLiteral(self, p_node):
-    # type: (PNode) -> List[class_literal_term_t]
-    """
-    class_literal: '[' class_literal_term+ ']'
-    """
-    assert p_node.typ == grammar_nt.class_literal
-    # skip [ and ]
-    return [self._ClassLiteralTerm(c) for c in p_node.children[1:-1]]
-
-  PERL_CLASSES = {
-      'd': 'd',
-      'w': 'w', 'word': 'w',
-      's': 's',
-  }
-  # https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html
-  POSIX_CLASSES = (
-      'alnum', 'cntrl', 'lower', 'space',
-      'alpha', 'digit', 'print', 'upper',
-      'blank', 'graph', 'punct', 'xdigit',
-  )
-  # NOTE: These are also things like \p{Greek} that we could put in the
-  # "non-sigil" namespace.
-
-  def _NameInRegex(self, negated, tok):
-    # type: (bool, token) -> re_t
-    val = tok.val
-    if val == 'dot':
-      if negated:
-        p_die("Can't negate this symbol", token=tok)
-      return tok
-
-    if val in self.POSIX_CLASSES:
-      return posix_class(negated, val)
-
-    perl = self.PERL_CLASSES.get(val)
-    if perl:
-      return perl_class(negated, perl)
-    p_die("%r isn't a character class", val, token=tok)
-
-  def _NameInClass(self, negated, tok):
-    # type: (bool, token) -> class_literal_term_t
-    """
-    Like the above, but 'dot' doesn't mean anything.
-    """
-    val = tok.val
-    if val in self.POSIX_CLASSES:
-      return posix_class(negated, val)
-
-    perl = self.PERL_CLASSES.get(val)
-    if perl:
-      return perl_class(negated, perl)
-    p_die("%r isn't a character class", val, token=tok)
-
-  def _ReAtom(self, p_atom):
-    # type: (PNode) -> re_t
-    """
-    re_atom: (
-        char_literal
-    """
-    assert p_atom.typ == grammar_nt.re_atom, p_atom.typ
-
-    children = p_atom.children
-    typ = children[0].typ
-
-    if ISNONTERMINAL(typ):
-      p_child = p_atom.children[0]
-      if typ == grammar_nt.class_literal:
-        return re.ClassLiteral(False, self._ClassLiteral(p_child))
-
-      if typ == grammar_nt.braced_var_sub:
-        return cast(braced_var_sub, p_child.children[1].tok)
-
-      if typ == grammar_nt.dq_string:
-        return cast(double_quoted, p_child.children[1].tok)
-
-      if typ == grammar_nt.sq_string:
-        return cast(single_quoted, p_child.children[1].tok)
-
-      if typ == grammar_nt.simple_var_sub:
-        return simple_var_sub(children[0].tok)
-
-      if typ == grammar_nt.char_literal:
-        return children[0].tok
-
-      raise NotImplementedError(typ)
-
-    else:
-      tok = children[0].tok
-
-      # Special punctuation
-      if tok.id in (Id.Expr_Dot, Id.Arith_Caret, Id.Expr_Dollar):
-        return speck(tok.id, tok.span_id)
-
-      # TODO: d digit can turn into PosixClass and PerlClass right here!
-      # It's parsing.
-      if tok.id == Id.Expr_Name:
-        return self._NameInRegex(False, tok)
-
-      if tok.id == Id.Expr_Symbol:
-        # Validate symbols here, like we validate PerlClass, etc.
-        if tok.val in ('%start', '%end', 'dot'):
-          return tok
-        p_die("Unexpected token %r in regex", tok.val, token=tok)
-
-      if tok.id == Id.Expr_At:
-        # | '@' Expr_Name
-        return re.Splice(children[1].tok)
-
-      if tok.id == Id.Arith_Tilde:
-        # | '~' [Expr_Name | class_literal]
-        typ = children[1].typ
-        if ISNONTERMINAL(typ):
-          ch = children[1].children
-          return re.ClassLiteral(True, self._ClassLiteral(children[1]))
-        else:
-          return self._NameInRegex(True, children[1].tok)
-
-      if tok.id == Id.Op_LParen:
-        # | '(' regex ['as' name_type] ')'
-
-        # TODO: Add variable
-        return re.Group(self._Regex(children[1]))
-
-      if tok.id == Id.Arith_Colon:
-        # | ':' '(' regex ')'
-        raise NotImplementedError(tok.id)
-
-      raise NotImplementedError(tok.id)
-
-  def _RepeatOp(self, p_repeat):
-    # type: (PNode) -> re_repeat_t
-    assert p_repeat.typ == grammar_nt.repeat_op, p_repeat
-
-    tok = p_repeat.children[0].tok
-    id_ = tok.id
-    # a+
-    if id_ in (Id.Arith_Plus, Id.Arith_Star, Id.Arith_QMark):
-      return re_repeat.Op(tok)
-
-    if id_ == Id.Op_LBrace:
-      p_range = p_repeat.children[1]
-      assert p_range.typ == grammar_nt.repeat_range, p_range
-
-      # repeat_range: (
-      #     Expr_DecInt [',']
-      #   | ',' Expr_DecInt
-      #   | Expr_DecInt ',' Expr_DecInt
-      # )
-
-      children = p_range.children
-      n = len(children)
-      if n == 1:  # {3}
-        return re_repeat.Num(children[0].tok)
-
-      if n == 2:
-        if children[0].tok.id == Id.Expr_DecInt:  # {,3}
-          return re_repeat.Range(children[0].tok, None)
-        else:  # {1,}
-          return re_repeat.Range(None, children[1].tok)
-
-      if n == 3:  # {1,3}
-        return re_repeat.Range(children[0].tok, children[2].tok)
-
-      raise AssertionError(n)
-
-    raise AssertionError(id_)
-
-  def _Regex(self, p_node):
-    # type: (PNode) -> re_t
-    typ = p_node.typ
-    children = p_node.children
-
-    if typ == grammar_nt.regex:
-      # regex: [re_alt] (('|'|'or') re_alt)*
-
-      if len(children) == 1:
-        return self._Regex(children[0])
-
-      # NOTE: We're losing the | and or operators
-      children = p_node.children[0::2]
-      return re.Alt([self._Regex(c) for c in children])
-
-    if typ == grammar_nt.re_alt:
-      # re_alt: (re_atom [repeat_op])+
-      i = 0
-      n = len(children)
-      seq = []
-      while i < n:
-        r = self._ReAtom(children[i])
-        i += 1
-        if i < n and children[i].typ == grammar_nt.repeat_op:
-          repeat_op = self._RepeatOp(children[i])
-          r = re.Repeat(r, repeat_op)
-          i += 1
-        seq.append(r)
-
-      if len(seq) == 1:
-        return seq[0]
-      else:
-        return re.Seq(seq)
-
-    nt_name = self.number2symbol[typ]
-    raise NotImplementedError(nt_name)
-
   def _Atom(self, children):
     # type: (List[PNode]) -> expr_t
     """Handles alternatives of 'atom' where there is more than one child."""
@@ -1013,3 +683,349 @@ class Transformer(object):
     nt_name = self.number2symbol[typ]
     raise AssertionError(
         "PNode type %d (%s) wasn't handled" % (typ, nt_name))
+
+  #
+  # Regex Language
+  #
+
+  RANGE_POINT_TOO_LONG = "Range start/end shouldn't have more than one character"
+
+  def _RangeChar(self, p_node):
+    # type: (PNode) -> str
+    """Evaluate a range endpoints.
+    - the 'a' in 'a'-'z'
+    - the \x00 in \x00-\x01
+    etc.
+
+    TODO: This function doesn't respect the LST invariant.
+    """
+    assert p_node.typ == grammar_nt.range_char, p_node
+    children = p_node.children
+    typ = children[0].typ
+    if ISNONTERMINAL(typ):
+      # 'a' in 'a'-'b'
+      if typ == grammar_nt.sq_string:
+        sq_part = cast(single_quoted, children[0].children[1].tok)
+        tokens = sq_part.tokens
+        if len(tokens) > 1:  # Can happen with multiline single-quoted strings
+          p_die(self.RANGE_POINT_TOO_LONG, part=sq_part)
+        if len(tokens[0].val) > 1:
+          p_die(self.RANGE_POINT_TOO_LONG, part=sq_part)
+        s = tokens[0].val[0]
+        return s
+
+      if typ == grammar_nt.char_literal:
+        raise AssertionError('TODO')
+        # TODO: This brings in a lot of dependencies, and this type checking
+        # errors.  We want to respect the LST invariant anyway.
+
+        #from osh import word_compile
+        #tok = children[0].children[0].tok
+        #s = word_compile.EvalCStringToken(tok.id, tok.val)
+        #return s
+
+      raise NotImplementedError
+    else:
+      # Expr_Name or Expr_DecInt
+      tok = p_node.tok
+      if tok.id in (Id.Expr_Name, Id.Expr_DecInt):
+        # For the a in a-z, 0 in 0-9
+        if len(tok.val) != 1:
+          p_die(self.RANGE_POINT_TOO_LONG, token=tok)
+        return tok.val[0]
+
+      raise NotImplementedError
+
+  def _NonRangeChars(self, p_node):
+    # type: (PNode) -> class_literal_term_t
+    """
+    \" \u123 '#'
+    """
+    assert p_node.typ == grammar_nt.range_char, p_node
+    children = p_node.children
+    typ = children[0].typ
+    if ISNONTERMINAL(typ):
+      p_child = children[0]
+      if typ == grammar_nt.braced_var_sub:
+        return cast(braced_var_sub, p_child.children[1].tok)
+
+      if typ == grammar_nt.dq_string:
+        return cast(double_quoted, p_child.children[1].tok)
+
+      if typ == grammar_nt.sq_string:
+        return cast(single_quoted, p_child.children[1].tok)
+
+      if typ == grammar_nt.simple_var_sub:
+        return simple_var_sub(children[0].tok)
+
+      if typ == grammar_nt.char_literal:
+        return class_literal_term.CharLiteral(children[0].tok)
+
+      raise NotImplementedError
+    else:
+      # Look up PerlClass and PosixClass
+      return self._NameInClass(None, children[0].tok)
+
+  def _ClassLiteralTerm(self, p_node):
+    # type: (PNode) -> class_literal_term_t
+    """
+    class_literal_term: (
+      range_char ['-' range_char ]
+    | '~' Expr_Name
+      # $mychars or ${mymodule.mychars}
+    | simple_var_sub | braced_var_sub
+      # e.g. 'abc' or "abc$mychars" 
+    | dq_string
+      ...
+    """
+    assert p_node.typ == grammar_nt.class_literal_term, p_node
+
+    children = p_node.children
+    typ = children[0].typ
+
+    if ISNONTERMINAL(typ):
+      p_child = children[0]
+      if typ == grammar_nt.simple_var_sub:
+        return simple_var_sub(p_child.children[0].tok)
+
+      if typ == grammar_nt.braced_var_sub:
+        return cast(braced_var_sub, p_child.children[1].tok)
+
+      if typ == grammar_nt.dq_string:
+        return cast(double_quoted, p_child.children[1].tok)
+
+      n = len(children)
+
+      if n == 1 and typ == grammar_nt.range_char:
+        return self._NonRangeChars(children[0])
+
+      # 'a'-'z' etc.
+      if n == 3 and children[1].tok.id == Id.Arith_Minus:
+        start = self._RangeChar(children[0])
+        end = self._RangeChar(children[2])
+        return class_literal_term.Range(start, end)
+
+    else:
+      if children[0].tok.id == Id.Arith_Tilde:
+        return self._NameInClass(children[0].tok, children[1].tok)
+
+      raise AssertionError(children[0].tok.id)
+
+    nt_name = self.number2symbol[typ]
+    raise NotImplementedError(nt_name)
+
+  def _ClassLiteral(self, p_node):
+    # type: (PNode) -> List[class_literal_term_t]
+    """
+    class_literal: '[' class_literal_term+ ']'
+    """
+    assert p_node.typ == grammar_nt.class_literal
+    # skip [ and ]
+    return [self._ClassLiteralTerm(c) for c in p_node.children[1:-1]]
+
+  PERL_CLASSES = {
+      'd': 'd',
+      'w': 'w', 'word': 'w',
+      's': 's',
+  }
+  # https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html
+  POSIX_CLASSES = (
+      'alnum', 'cntrl', 'lower', 'space',
+      'alpha', 'digit', 'print', 'upper',
+      'blank', 'graph', 'punct', 'xdigit',
+  )
+  # NOTE: These are also things like \p{Greek} that we could put in the
+  # "non-sigil" namespace.
+
+  def _NameInRegex(self, negated_tok, tok):
+    # type: (bool, token) -> re_t
+
+    if negated_tok:  # For error messages
+      negated_speck = speck(negated_tok.id, negated_tok.span_id)
+    else:
+      negated_speck = None
+
+    val = tok.val
+    if val == 'dot':
+      if negated_tok:
+        p_die("Can't negate this symbol", token=tok)
+      return tok
+
+    if val in self.POSIX_CLASSES:
+      return posix_class(negated_speck, val)
+
+    perl = self.PERL_CLASSES.get(val)
+    if perl:
+      return perl_class(negated_speck, perl)
+
+    p_die("%r isn't a character class", val, token=tok)
+
+  def _NameInClass(self, negated_tok, tok):
+    # type: (bool, token) -> class_literal_term_t
+    """
+    Like the above, but 'dot' doesn't mean anything.
+    """
+    if negated_tok:  # For error messages
+      negated_speck = speck(negated_tok.id, negated_tok.span_id)
+    else:
+      negated_speck = None
+
+    val = tok.val
+    if val in self.POSIX_CLASSES:
+      return posix_class(negated_speck, val)
+
+    perl = self.PERL_CLASSES.get(val)
+    if perl:
+      return perl_class(negated_speck, perl)
+    p_die("%r isn't a character class", val, token=tok)
+
+  def _ReAtom(self, p_atom):
+    # type: (PNode) -> re_t
+    """
+    re_atom: (
+        char_literal
+    """
+    assert p_atom.typ == grammar_nt.re_atom, p_atom.typ
+
+    children = p_atom.children
+    typ = children[0].typ
+
+    if ISNONTERMINAL(typ):
+      p_child = p_atom.children[0]
+      if typ == grammar_nt.class_literal:
+        return re.ClassLiteral(False, self._ClassLiteral(p_child))
+
+      if typ == grammar_nt.braced_var_sub:
+        return cast(braced_var_sub, p_child.children[1].tok)
+
+      if typ == grammar_nt.dq_string:
+        return cast(double_quoted, p_child.children[1].tok)
+
+      if typ == grammar_nt.sq_string:
+        return cast(single_quoted, p_child.children[1].tok)
+
+      if typ == grammar_nt.simple_var_sub:
+        return simple_var_sub(children[0].tok)
+
+      if typ == grammar_nt.char_literal:
+        return children[0].tok
+
+      raise NotImplementedError(typ)
+
+    else:
+      tok = children[0].tok
+
+      # Special punctuation
+      if tok.id in (Id.Expr_Dot, Id.Arith_Caret, Id.Expr_Dollar):
+        return speck(tok.id, tok.span_id)
+
+      # TODO: d digit can turn into PosixClass and PerlClass right here!
+      # It's parsing.
+      if tok.id == Id.Expr_Name:
+        return self._NameInRegex(None, tok)
+
+      if tok.id == Id.Expr_Symbol:
+        # Validate symbols here, like we validate PerlClass, etc.
+        if tok.val in ('%start', '%end', 'dot'):
+          return tok
+        p_die("Unexpected token %r in regex", tok.val, token=tok)
+
+      if tok.id == Id.Expr_At:
+        # | '@' Expr_Name
+        return re.Splice(children[1].tok)
+
+      if tok.id == Id.Arith_Tilde:
+        # | '~' [Expr_Name | class_literal]
+        typ = children[1].typ
+        if ISNONTERMINAL(typ):
+          ch = children[1].children
+          return re.ClassLiteral(True, self._ClassLiteral(children[1]))
+        else:
+          return self._NameInRegex(tok, children[1].tok)
+
+      if tok.id == Id.Op_LParen:
+        # | '(' regex ['as' name_type] ')'
+
+        # TODO: Add variable
+        return re.Group(self._Regex(children[1]))
+
+      if tok.id == Id.Arith_Colon:
+        # | ':' '(' regex ')'
+        raise NotImplementedError(tok.id)
+
+      raise NotImplementedError(tok.id)
+
+  def _RepeatOp(self, p_repeat):
+    # type: (PNode) -> re_repeat_t
+    assert p_repeat.typ == grammar_nt.repeat_op, p_repeat
+
+    tok = p_repeat.children[0].tok
+    id_ = tok.id
+    # a+
+    if id_ in (Id.Arith_Plus, Id.Arith_Star, Id.Arith_QMark):
+      return re_repeat.Op(tok)
+
+    if id_ == Id.Op_LBrace:
+      p_range = p_repeat.children[1]
+      assert p_range.typ == grammar_nt.repeat_range, p_range
+
+      # repeat_range: (
+      #     Expr_DecInt [',']
+      #   | ',' Expr_DecInt
+      #   | Expr_DecInt ',' Expr_DecInt
+      # )
+
+      children = p_range.children
+      n = len(children)
+      if n == 1:  # {3}
+        return re_repeat.Num(children[0].tok)
+
+      if n == 2:
+        if children[0].tok.id == Id.Expr_DecInt:  # {,3}
+          return re_repeat.Range(children[0].tok, None)
+        else:  # {1,}
+          return re_repeat.Range(None, children[1].tok)
+
+      if n == 3:  # {1,3}
+        return re_repeat.Range(children[0].tok, children[2].tok)
+
+      raise AssertionError(n)
+
+    raise AssertionError(id_)
+
+  def _Regex(self, p_node):
+    # type: (PNode) -> re_t
+    typ = p_node.typ
+    children = p_node.children
+
+    if typ == grammar_nt.regex:
+      # regex: [re_alt] (('|'|'or') re_alt)*
+
+      if len(children) == 1:
+        return self._Regex(children[0])
+
+      # NOTE: We're losing the | and or operators
+      children = p_node.children[0::2]
+      return re.Alt([self._Regex(c) for c in children])
+
+    if typ == grammar_nt.re_alt:
+      # re_alt: (re_atom [repeat_op])+
+      i = 0
+      n = len(children)
+      seq = []
+      while i < n:
+        r = self._ReAtom(children[i])
+        i += 1
+        if i < n and children[i].typ == grammar_nt.repeat_op:
+          repeat_op = self._RepeatOp(children[i])
+          r = re.Repeat(r, repeat_op)
+          i += 1
+        seq.append(r)
+
+      if len(seq) == 1:
+        return seq[0]
+      else:
+        return re.Seq(seq)
+
+    nt_name = self.number2symbol[typ]
+    raise NotImplementedError(nt_name)

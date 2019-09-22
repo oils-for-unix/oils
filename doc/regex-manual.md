@@ -3,73 +3,88 @@ Egg Expressions (Oil Regexes)
 
 ## Intro
 
-Oil has a new but familiar regex syntax called "Egg Expressions".  Why?
+Oil has a new regex syntax:
 
-- It lets you compose and reuse regexes.  Breaking regexes up makes them more
+    if (mystr ~ /d+ '.' d+/) {   
+      echo 'mystr looks like a number'
+    }
+
+The part between `/ /` delimiters is called an "Egg Expression" or EggEx.  It's
+different than POSIX or Perl regex syntax, but it's intended to be familiar.
+
+Why?
+
+- It lets you compose and reuse patterns.  Breaking regexes up makes them more
   readable and testable.
-- String literals are **quoted**, and operators aren't.  This removes many
-  tortured parts of regex syntax.
-  - For example, the `^` character no longer means three different things; `\`
-    and `? + *` no longer mean multiple things; etc.
-- It's designed to compile to any regex dialect in theory.  In practice, it
+- The syntax is simpler and more consistent because string literals are
+  **quoted**, and operators aren't.  For example, this means that the `^`
+  character no longer means three different things.  See the critique below.
+- It's more Perl-like than POSIX ERE syntax, which is what bash and awk use.
+- It's designed to be translated to any regex dialect.  In practice, it
   integrates well with tools that use the ERE syntax:
   - `egrep` (`grep -E`)
   - awk
   - GNU sed `--regexp-extended`
   - PCRE syntax is the second most important target.
-- It's shorter and more familiar than ERE syntax, which is what bash already
-  uses.
-- It's statically parsed in Oil.  You can get syntax errors at parse time,
-  whereas if you embed a regex in a string, you can't.
-  - The regex is part of the "LST", which means you can do linting, formatting,
-    and refactoring on regexes, just like any other type of code.
+- It's statically parsed in Oil, so:
+  - You can get syntax errors at parse time.  If you embed a regex in a string,
+    you don't get syntax errors until runtime.
+  - The regex is part of the "lossless syntax tree", which means you can do
+    linting, formatting, and refactoring on regexes, just like any other type
+    of code.
 
-TODO: This should be in a compact cheat-sheet format.
 
-### Example
+### Longer Example
 
-Here's how you use them in Oil:
+Here's an example of reusing a pattern:
 
-    var D = / digit{1,3} /  # Reuse this subpattern
-    var ip_address = / @D '.' @D '.' @D '.' @D /
-    echo $ip_address
-    egrep $ip_address foo.txt
+    $ var D = / digit{1,3} /  # Reuse this subpattern
+    $ var ip_address = / @D '.' @D '.' @D '.' @D /
 
-TODO: inlining in the command language:
+    $ echo $ip_address        # This EggExobject compiles to an ERE
+    [[:digit:]]{1,3}\.[[:digit:]]{1,3}\.[[:digit:]]{1,3}\.[[:digit:]]{1,3}
+
+    So you can use it like this!
+    $ egrep $ip_address foo.txt
+
+TODO: You should also be able to inline patterns like this:
 
     egrep $/d+/ foo.txt
 
 ### Philosophy
 
 - Expresses a superset of POSIX and Perl.
-- 1:1 dumb translation.  We're not doing any transformations that rely on
-  understanding the semantics of regexes.  Regex implementations have many
-  corner cases and incompatibilities, with regard to Unicode, `NUL` bytes, etc.
+- The language is designed for "dumb", one-to-one, syntactic translations.
+  That is, translation doesn't rely on understanding the semantics of regexes.
+  Regex implementations have many corner cases and incompatibilities, with
+  regard to Unicode, `NUL` bytes, etc.
 
 ## The Expression language
 
-Regexes.
+Here's a summary of the language.
 
 ### Compound Structures
 
-#### Sequences, Alternation
+#### Sequence and Alternation Unchanged
 
 - `x y` matches `x` and `y` in sequence
-- `x | y` matches `x` or `y` (`x or y` also accepted)
+- `x | y` matches `x` or `y`
 
-#### Repetition
+You can also write a more Pythonic alternative: `x or y`.
+
+#### Repetition Is Unchanged In Common Cases, and Better in Rare Cases
 
 Repetition is just like POSIX ERE or Perl:
 
 - `x?`, `x+`, `x*` 
 - `x{3}`, `x{1,3}`
 
-Reserved space:
+We've reserved syntactic space for PCRE and Python variants:
 
 - lazy/non-greedy: `x{L +}`, `x{L 3,4}`
 - possessive: `x{P +}`, `x{P 3,4}`
 
-#### Negation
+#### Negation Is More Consistent
 
 Both named char classes and char class literals can be negated:
 
@@ -79,7 +94,14 @@ Both named char classes and char class literals can be negated:
 
     # Does this work?
     / ~[ ~digit ] /
+    / word ; ~ignorecase /
 
+Note that regexes have many syntaxes for negation:
+
+    [^abc] vs. [abc]
+    [[^:digit:]] vs. [[:digit:]]
+    \D vs. \d
+    /[x]/-i vs /[x]/i
 
 #### Splicing
 
