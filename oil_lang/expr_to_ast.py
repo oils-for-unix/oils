@@ -16,8 +16,9 @@ from _devbuild.gen.syntax_asdl import (
     param, type_expr_t, comprehension,
 )
 from _devbuild.gen import grammar_nt
-from pgen2.parse import PNode
+
 from core.util import log, p_die
+from pgen2.parse import PNode
 
 from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:
@@ -196,10 +197,12 @@ class Transformer(object):
 
   def _RangeChar(self, p_node):
     # type: (PNode) -> str
-    """
-    the 'a' in 'a'-'z'
-    the \x00 in \x00-\x01
+    """Evaluate a range endpoints.
+    - the 'a' in 'a'-'z'
+    - the \x00 in \x00-\x01
     etc.
+
+    TODO: This function doesn't respect the LST invariant.
     """
     assert p_node.typ == grammar_nt.range_char, p_node
     children = p_node.children
@@ -216,18 +219,26 @@ class Transformer(object):
         s = tokens[0].val[0]
         return s
 
+      if typ == grammar_nt.char_literal:
+        raise AssertionError('TODO')
+        # TODO: This brings in a lot of dependencies, and this type checking
+        # errors.  We want to respect the LST invariant anyway.
+
+        #from osh import word_compile
+        #tok = children[0].children[0].tok
+        #s = word_compile.EvalCStringToken(tok.id, tok.val)
+        #return s
+
       raise NotImplementedError
     else:
       # Expr_Name or Expr_DecInt
       tok = p_node.tok
-      #
       if tok.id in (Id.Expr_Name, Id.Expr_DecInt):
         # For the a in a-z, 0 in 0-9
         if len(tok.val) != 1:
           p_die(self.RANGE_POINT_TOO_LONG, token=tok)
         return tok.val[0]
 
-      # TODO: \n \' are valid in ranges
       raise NotImplementedError
 
   def _NonRangeChars(self, p_node):

@@ -512,6 +512,9 @@ regex_literals() {
   # can't have multichar ranges
   _oil-parse-error "var x = /['ab'-'z']/"
 
+  # range endpoints must be constants
+  _oil-parse-error 'var x = /[$a-${z}]/'
+
   # These are too long too
   _oil-parse-error 'var x = /[abc]/'
 

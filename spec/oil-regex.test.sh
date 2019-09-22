@@ -150,6 +150,19 @@ no
 no
 ## END
 
+#### Range with escaped characters
+shopt -s all:oil
+
+var pat = null
+
+setvar pat = / [ \x00 - \x0f ] /
+echo $pat | od -A n -t x1
+
+## STDOUT:
+ 5b 00 2d 0f 5d 0a
+## END
+
+
 #### Group ()
 shopt -s all:oil
 var pat = ''

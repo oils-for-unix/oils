@@ -255,7 +255,7 @@ oil-expr() {
 }
 
 oil-regex() {
-  sh-spec spec/oil-regex.test.sh --cd-tmp \
+  sh-spec spec/oil-regex.test.sh --cd-tmp --osh-failures-allowed 1 \
     $OSH_LIST "$@"
 }
 
