@@ -4,11 +4,15 @@ regex_translate.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.syntax_asdl import re_e, re_repeat_e, class_literal_term_e
+from _devbuild.gen.syntax_asdl import (
+    re_e, re_repeat_e, class_literal_term_e, re_t
+)
 from _devbuild.gen.id_kind_asdl import Id
 
 from core.util import log, e_die
 from osh import glob_  # for ExtendedRegexEscape
+
+from typing import List
 
 _ = log
 

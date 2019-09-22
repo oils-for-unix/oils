@@ -423,7 +423,7 @@ rather than:
 
     $x =~ /\d+/
 
-The Perl expression has three more puncutation characters:
+The Perl expression has three more punctuation characters:
 
 - We don't need sigils in expression mode
 - The operator is `~` not `=~`
