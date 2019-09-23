@@ -286,20 +286,42 @@ You can spread regexes over multiple lines and add comments:
 
 ### Language Reference
 
-- See Oil Grammar
-- See frontend/syntax.asdl
+- See bottom of the [Oil Expression Grammar](https://github.com/oilshell/oil/blob/master/oil_lang/grammar.pgen2) for the concrete syntax.
+- See the bottom of
+  [frontend/syntax.asdl](https://github.com/oilshell/oil/blob/master/frontend/syntax.asdl)
+  for the abstract syntax.
 
 ## The Oil API
 
-TODO:
+(Still to be implemented.)
 
-    if (x ~ pat) {
+Testing and extracting matches:
+
+    if (mystr ~ pat) {
+      echo ${M.group(1)}
     }
 
-    if (for pat in mystr) {
+Iterative matching:
+
+    for (mystr ~ pat) {  # Saves state like JavaScript's "sticky" bit
+      echo ${M.group(1)}
     }
 
-Link to another doc?
+Slurping all like Python:
+
+    var matches = findall(s, / (d+) '.' (d+) /)
+    pass s => findall(/ (d+) '.' (d+) /) => var matches
+
+Substitution:
+
+    var new = sub(s, /d+/, 'zz')
+    pass s => sub(/d+/, 'zz) => var new   # Nicer left-to-right syntax
+
+Splitting:
+
+    var parts = split(s, /space+/)
+    pass s => split(/space+/) => var parts
+
 
 ## Style Notes
 
@@ -397,9 +419,9 @@ Regexes are hard to read because the **same symbol can mean many things**.
   - `(?P<named>\d+)`
   - `(?:noncapturing)`
 
-In Oil, each construct has a distinct syntax.
+With egg expressions, each construct has a distinct syntax.
 
-### Oil is Shorter than Bash
+### Oil is Shorter Than Bash
 
 Bash:
 
@@ -415,18 +437,19 @@ Compare with Oil:
 
 ### And Perl
 
-It's also shorter than Perl because we can write
-
-    x ~ /d+/
-
-rather than:
+Perl:
 
     $x =~ /\d+/
 
+Oil:
+
+    x ~ /d+/
+
+
 The Perl expression has three more punctuation characters:
 
-- We don't need sigils in expression mode
-- The operator is `~` not `=~`
+- Oil doesn't require sigils in expression mode
+- The match operator is `~`, not `=~`
 - Named character classes are unadorned like `d`.  If that's too short, you can
   also write `digit`.
 
@@ -450,7 +473,6 @@ Notes:
 
 If "eggex" sounds too much like "regex" to you, simply say "egg expression".
 It won't be confused with "regular expression" or "regex".
-
 
 ### TODO
 
@@ -482,12 +504,7 @@ Zero-width asertions:
 
 - %start_word %end_word  for < and >
 
-API:
-
-- `while` or `for` loop, saving state (like "sticky" bit)
-- `sub()` (and `=>` syntax)
-- `findall()`
-- `split()`
+Oil's API.
 
 Other ideas: either/or syntax
 
