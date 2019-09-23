@@ -512,7 +512,21 @@ Python, etc.  That means they **cannot** be used this way.
 
 [perl6-regex]: https://docs.perl6.org/language/regexes
 
-### TODO
+
+### Where Do I Send Feedback?
+
+Eggexes are implemented in Oil, but not yet set in stone.
+
+Please try them, as described in [this
+post](http://www.oilshell.org/blog/2019/08/22.html) and the
+[README](https://github.com/oilshell/oil/blob/master/README.md), and send us
+feedback!
+
+You can create a new post on [/r/oilshell](https://www.reddit.com/r/oilshell/)
+or a new message on `#oil-discuss` on <https://oilshell.zulipchat.com/> (log in
+with Github, etc.)
+
+## TODO
 
 Multiline syntax:
 
@@ -538,11 +552,9 @@ Inline syntax:
 
   grep -P $/d+ ;; perl/ f
 
-Zero-width asertions:
+More zero-width asertions:
 
 - %start_word %end_word  for < and >
 
 Oil's API.
-
-Other ideas: either/or syntax
 
