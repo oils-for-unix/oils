@@ -3,18 +3,17 @@ Egg Expressions (Oil Regexes)
 
 ## Intro
 
-Oil has a new regex syntax, which appears between the `/ /` delimiters.
+Oil has a new syntax for patterns, which appears between the `/ /` delimiters:
 
     if (mystr ~ /d+ '.' d+/) {   
       echo 'mystr looks like a number N.M'
     }
 
-It's different than POSIX or Perl syntax, but it's intended to be familiar.
+These patterns are intended to be familiar, but they differ from POSIX or Perl
+expressions in important ways.  So we call them "eggexes" rather than
+"regexes"!
 
-It's called an "Eggex" because it's a similar to the regexes you already know,
-but different.
-
-Why?
+Why invent a new language?
 
 - Eggexes let you name **subpatterns** and compose them, which makes them more
   readable and testable.
@@ -23,8 +22,8 @@ Why?
   different things.  See the critique at the end of this doc.
 - bash and awk use the limited and verbose POSIX ERE syntax, while eggexes are
   more expressive and (in some cases) Perl-like.
-- They're designed to be **translated to any regex dialect**.  Right now, it
-  translates to ERE so you can use them with common Unix tools:
+- They're designed to be **translated to any regex dialect**.  Right now, the
+  Oil shell translates them to ERE so you can use them with common Unix tools:
   - `egrep` (`grep -E`)
   - `awk`
   - GNU `sed --regexp-extended`
@@ -32,17 +31,19 @@ Why?
 - They're **statically parsed** in Oil, so:
   - You can get **syntax errors** at parse time.  In contrast, if you embed a
     regex in a string, you don't get syntax errors until runtime.
-  - The eggex is part of the "lossless syntax tree", which means you can do
+  - The eggex is part of the [lossless syntax tree][], which means you can do
     linting, formatting, and refactoring on eggexes, just like any other type
     of code.
 - Eggexes support **regular languages** in the mathematical sense, whereas
-  regexes are **confused** about the issue.  (Russ Cox, author of the RE2 engine,
-  [has written extensively](https://swtch.com/~rsc/regexp/) on the difference.)
-  In eggexes, all nonregular extensions are prefixed with `!`, so you can
-  visually audit them for [catastrophic backtracking][backtracking].
+  regexes are **confused** about the issue.  All nonregular eggex extensions
+  are prefixed with `!`, so you can visually audit them for [catastrophic
+  backtracking][backtracking].  (Russ Cox, author of the RE2 engine, [has
+  written extensively](https://swtch.com/~rsc/regexp/) on this issue.)
 - Eggexes are more fun than regexes!
 
-[bactracking]: https://blog.codinghorror.com/regex-performance/
+[backtracking]: https://blog.codinghorror.com/regex-performance/
+
+[lossless syntax tree]: http://www.oilshell.org/blog/2017/02/11.html
 
 ### Example of Pattern Reuse
 
@@ -488,8 +489,8 @@ operators like `^ . $` to ease the transition.  These expressions are valid
 eggexes **and** valid POSIX EREs:
 
     .*
-    ^[0-9]$
-    ^.{1,3}|[0-9]$
+    ^[0-9]+$
+    ^.{1,3}|[0-9][0-9]?$
 
 ## FAQ
 
