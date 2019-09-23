@@ -430,7 +430,29 @@ The Perl expression has three more punctuation characters:
 - Named character classes are unadorned like `d`.  If that's too short, you can
   also write `digit`.
 
-## TODO
+## Notes
+
+### Eggexes In Other Languages
+
+The eggex syntax can be incorporated into other tools and shells.  It's
+designed to be separate from Oil -- hence the separate name.
+
+Notes:
+
+- Single quoted string literals should **disallow** internal backslashes, and
+  treat all other characters literally..  Instead, users can write `/ 'foo' \t
+  'sq' \' bar \n /` &mdash; i.e. implicit concatenation of strings and
+  characters, described above.
+- To make eggexes portable between languages, Don't use the host language's
+  syntax for string literals (at least for single-quoted strings).
+
+### Pronunciation
+
+If "eggex" sounds too much like "regex" to you, simply say "egg expression".
+It won't be confused with "regular expression" or "regex".
+
+
+### TODO
 
 Multiline syntax:
 

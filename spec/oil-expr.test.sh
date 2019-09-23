@@ -547,6 +547,26 @@ False
 True
 ## END
 
+#### Chained Comparisons
+shopt -s all:oil
+if (1 < 2 < 3) {
+  echo '123'
+}
+if (1 < 2 <= 2 <= 3 < 4) {
+  echo '123'
+}
+
+if (1 < 2 < 2) {
+  echo '123'
+} else {
+  echo 'no'
+}
+## STDOUT:
+123
+123
+no
+## END
+
 #### dict with 'bare word' keys
 var d0 = {}
 echo len=$len(d0)
