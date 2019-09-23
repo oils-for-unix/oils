@@ -273,12 +273,12 @@ class Transformer(object):
     return comprehension(lvalue, iterable, ifs)
 
   def _CompareChain(self, children):
-    # type: (PNode) -> expr_t
+    # type: (List[PNode]) -> expr_t
     """
     comparison: expr (comp_op expr)*
     """
     cmp_ops = []  # type: List[speck]
-    comparators = []  # type: List[expr]
+    comparators = []  # type: List[expr_t]
     left = self.Expr(children[0])
 
     i = 1
