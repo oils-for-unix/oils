@@ -35,7 +35,14 @@ Why?
   - The eggex is part of the "lossless syntax tree", which means you can do
     linting, formatting, and refactoring on eggexes, just like any other type
     of code.
+- Eggexes support **regular languages** in the mathematical sense, whereas
+  regexes are **confused** about the issue.  (Russ Cox, author of the RE2 engine,
+  [has written extensively](https://swtch.com/~rsc/regexp/) on the difference.)
+  In eggexes, all nonregular extensions are prefixed with `!`, so you can
+  visually audit them for [catastrophic backtracking][backtracking].
 - Eggexes are more fun than regexes!
+
+[bactracking]: https://blog.codinghorror.com/regex-performance/
 
 ### Example of Pattern Reuse
 
@@ -323,7 +330,7 @@ Splitting:
     pass s => split(/space+/) => var parts
 
 
-## Style Notes
+## Usage Notes
 
 ### Use Character Literals Rather than C-Escaped Strings
 
@@ -473,6 +480,36 @@ Notes:
 
 If "eggex" sounds too much like "regex" to you, simply say "egg expression".
 It won't be confused with "regular expression" or "regex".
+
+### Backward Compatibility
+
+Eggexes aren't backward compatible in general, but they retain some legacy
+operators like `^ . $` to ease the transition.  These expressions are valid
+eggexes **and** valid POSIX EREs:
+
+    .*
+    ^[0-9]$
+    ^.{1,3}|[0-9]$
+
+## FAQ
+
+### How Do Eggexes Compare with [Perl 6 Regexes][perl6-regex] and the [Rosie Pattern Language][rosie]?
+
+All three languages support pattern composition and have quoted literals.  And
+they have the goal of improving upon Perl 5 regex syntax, which has made its
+way into every major programming language (Python, Java, C++, etc.)
+
+The main difference is that Eggexes are meant to be used with **existing**
+regex engines.  For example, you translate them to a POSIX ERE, which is
+executed by `egrep` or `awk`.  Or you translate them to a Perl-like syntax and
+use them in Python, JavaScript, Java, or C++ programs.
+
+Perl 6 and Rosie have their **own engines** that are more powerful than PCRE,
+Python, etc.  That means they **cannot** be used this way.
+
+[rosie]: https://rosie-lang.org/
+
+[perl6-regex]: https://docs.perl6.org/language/regexes
 
 ### TODO
 
