@@ -425,6 +425,7 @@ def AddKinds(spec):
      'UnaryPlus', 'UnaryMinus',  # +1 and -1, to distinguish from infix.
                                  # Actually we don't need this because we they
                                  # will be under Expr1/Plus vs Expr2/Plus.
+     'NotIn', 'IsNot',           # For Oil comparisons
   ])
 
   # A compound word, in arith context, boolean context, or command context.

@@ -272,6 +272,38 @@ class Transformer(object):
     ifs = [if_] if if_ else []
     return comprehension(lvalue, iterable, ifs)
 
+  def _CompareChain(self, children):
+    # type: (PNode) -> expr_t
+    """
+    comparison: expr (comp_op expr)*
+    """
+    cmp_ops = []  # type: List[speck]
+    comparators = []  # type: List[expr]
+    left = self.Expr(children[0])
+
+    i = 1
+    n = len(children)
+    while i < n:
+      op_children = children[i].children
+      tok1 = op_children[0].tok
+      if len(op_children) == 2:
+        # Blame the first token
+        if tok1.id == Id.Expr_Not:  # not in
+          op = speck(Id.Node_NotIn, tok1.span_id)
+        elif tok1.id == Id.Expr_Is:  # is not
+          op = speck(Id.Node_IsNot, tok1.span_id)
+        else:
+          raise AssertionError
+      else:
+        # is, <, ==, etc.
+        op = speck(tok1.id, tok1.span_id)
+
+      cmp_ops.append(op)
+      i += 1
+      comparators.append(self.Expr(children[i]))
+      i += 1
+    return expr.Compare(left, cmp_ops, comparators)
+
   def Expr(self, pnode):
     # type: (PNode) -> expr_t
     """Transform expressions (as opposed to statements)."""
@@ -391,14 +423,14 @@ class Transformer(object):
         if len(children) == 1:
           return self.Expr(children[0])
 
-        op_tok = children[0].tok
-        #log('op_tok %s', op_tok)
+        op_tok = children[0].tok  # not
         return expr.Unary(op_tok, self.Expr(children[1]))
 
-
       elif typ == grammar_nt.comparison:
-        # comparison: expr (comp_op expr)*
-        return self._AssocBinary(children)
+        if len(children) == 1:
+          return self.Expr(children[0])
+
+        return self._CompareChain(children)
 
       elif typ == grammar_nt.expr:
         # expr: xor_expr ('|' xor_expr)*

@@ -537,8 +537,14 @@ echo -sep ' ' @even
 var d = [1,2,3]
 var b = 1 in d
 echo $b
+setvar b = 0 in d
+echo $b
+setvar b = 0 not in d
+echo $b
 ## STDOUT:
-true
+True
+False
+True
 ## END
 
 #### dict with 'bare word' keys

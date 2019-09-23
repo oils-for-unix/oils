@@ -97,7 +97,8 @@ class OilEvaluator(object):
     elif isinstance(right, objects.Regex):
       right = right.AsPosixEre()
     else:
-      raise RuntimeError("RHS of ~ should be string or Regex")
+      raise RuntimeError(
+          "RHS of ~ should be string or Regex (got %s)" % right.__class__.__name__)
     
     matches = libc.regex_match(right, left)
     if matches:
@@ -238,18 +239,6 @@ class OilEvaluator(object):
       if node.op.id == Id.Arith_Caret:  # Exponentiation
         return left ** right
 
-      # Copmarison
-      if node.op.id == Id.Arith_Less:
-        return left < right
-      if node.op.id == Id.Arith_Great:
-        return left > right
-      if node.op.id == Id.Arith_GreatEqual:
-        return left >= right
-      if node.op.id == Id.Arith_LessEqual:
-        return left <= right
-      if node.op.id == Id.Arith_DEqual:
-        return left == right
-
       # Bitwise
       if node.op.id == Id.Arith_Amp:
         return left & right
@@ -268,19 +257,57 @@ class OilEvaluator(object):
       if node.op.id == Id.Expr_Or:
         return left or right
 
-      try:
-        if node.op.id == Id.Arith_Tilde:
-          return self._EvalMatch(left, right, True)
-
-        if node.op.id == Id.Expr_NotTilde:
-          return not self._EvalMatch(left, right, False)
-      except RuntimeError:
-        # Status 2 indicates a regex parse error.  This is fatal in OSH but
-        # not in bash, which treats [[ like a command with an exit code.
-        e_die("Invalid regex %r", right, word=node.right, status=2)
-
       raise NotImplementedError(node.op.id)
 
+    if node.tag == expr_e.Compare:
+      left = self.EvalExpr(node.left)
+      result = True  # Implicit and
+      for op, right_expr in zip(node.ops, node.comparators):
+
+        right = self.EvalExpr(right_expr)
+
+        if op.id == Id.Arith_Less:
+          result = left < right
+        elif op.id == Id.Arith_Great:
+          result = left > right
+        elif op.id == Id.Arith_GreatEqual:
+          result = left >= right
+        elif op.id == Id.Arith_LessEqual:
+          result = left <= right
+        elif op.id == Id.Arith_DEqual:
+          result = left == right
+
+        elif op.id == Id.Expr_In:
+          result = left in right
+        elif op.id == Id.Node_NotIn:
+          result = left not in right
+
+        elif op.id == Id.Expr_Is:
+          result = left is right
+        elif op.id == Id.Node_IsNot:
+          result = left is not right
+
+        else:
+          try:
+            if op.id == Id.Arith_Tilde:
+              result = self._EvalMatch(left, right, True)
+
+            elif op.id == Id.Expr_NotTilde:
+              result = not self._EvalMatch(left, right, False)
+
+            else:
+              raise AssertionError(op.id)
+          except RuntimeError as e:
+            # Status 2 indicates a regex parse error.  This is fatal in OSH but
+            # not in bash, which treats [[ like a command with an exit code.
+            e_die("Invalid regex %r", right, span_id=op.span_id, status=2)
+
+        if not result:
+          return result
+
+        left = right
+      return result
+ 
     if node.tag == expr_e.IfExp:
       b = self.EvalExpr(node.test)
       if b:

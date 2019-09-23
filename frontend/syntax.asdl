@@ -390,7 +390,7 @@ module syntax
   -- NOTE: unused; Oil currently uses Binary
   -- need sequences for compare to distinguish between
   -- x < 4 < 3 and (x < 4) < 3
-  | Compare(expr left, cmpop* ops, expr* comparators)
+  | Compare(expr left, speck* ops, expr* comparators)
 
     -- TODO: Replace FuncCall
   | Call(expr func, expr* args, keyword* keywords)
