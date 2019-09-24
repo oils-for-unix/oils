@@ -104,7 +104,19 @@ maybe-show() {
   fi
 }
 
-version-text() {
+oil-version-text() {
+  date-and-git-info
+
+  for bin in $OIL_LIST; do
+    echo ---
+    echo "\$ $bin --version"
+    $bin --version
+    echo
+  done
+}
+
+# This has to be in test/spec because it uses $OSH_LIST, etc.
+osh-version-text() {
   date-and-git-info
 
   for bin in $OSH_LIST; do

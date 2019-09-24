@@ -100,8 +100,9 @@ readonly NUM_TASKS=400
 
 
 _html-summary() {
-  local totals=$1
-  local manifest=${2:-_tmp/spec/MANIFEST.txt}
+  local sh_label=$1  # osh or oil
+  local totals=$2
+  local manifest=${3:-_tmp/spec/MANIFEST.txt}
 
   # TODO: I think the style should be shared
   cat <<EOF
@@ -113,6 +114,8 @@ _html-summary() {
   <body>
 
 <p id="home-link">
+  <!-- The release index is two dirs up -->
+  <a href="../..">Up</a> |
   <a href="/">oilshell.org</a>
 </p>
 
@@ -122,9 +125,9 @@ _html-summary() {
   <thead>
   <tr>
     <td>name</td>
-    <td># cases</td> <td>osh # passed</td> <td>osh # failed</td>
-    <td>osh failures allowed</td>
-    <td>osh ALT delta</td>
+    <td># cases</td> <td>$sh_label # passed</td> <td>$sh_label # failed</td>
+    <td>$sh_label failures allowed</td>
+    <td>$sh_label ALT delta</td>
     <td>Elapsed Seconds</td>
   </tr>
   </thead>
@@ -235,7 +238,7 @@ EOF
     <pre>
 EOF
 
-  test/spec.sh version-text
+  test/spec.sh ${suite}-version-text
 
   cat <<EOF
     </pre>
@@ -253,7 +256,7 @@ html-summary() {
 
   local out=_tmp/spec/$suite.html
 
-  _html-summary $totals $manifest > $tmp
+  _html-summary $suite $totals $manifest > $tmp
 
   awk -v totals="$(cat $totals)" '
   /<!-- TOTALS -->/ {
