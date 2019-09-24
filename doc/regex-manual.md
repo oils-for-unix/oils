@@ -245,31 +245,15 @@ Only letters, numbers, and the underscore may be unquoted:
 
 Ranges must be separated by spaces:
 
-NO:
+No:
 
     /[a-fA-F0-9]/
 
-YES:
+Yes:
 
     /[a-f A-f 0-9]/
 
-### Flags and Translation Preferences (`;`)
-
-Flags or "regex modifiers" appear after the first semicolon:
-
-    / digit+ ; ignorecase /
-
-A translation preference appears after the second semicolon.  It controls what
-regex syntax the eggex is translated to by default.
-
-    / digit+ ; ignorecase ; ERE /
-
-This expression has a translation preference, but no flags:
-
-    / digit+ ;; ERE /
-
-
-### Backtracking Constructs (Discouraged)
+#### Backtracking Constructs (Discouraged)
 
 All the "dangerous" concepts begin with `!`.
 
@@ -286,16 +270,24 @@ If you want to translate to PCRE, you can use these.
 
     !ATOMIC( d+ )
 
-## More Details
+## Outside the Expression language
 
-## Language Reference
+### Flags and Translation Preferences (`;`)
 
-- See bottom of the [Oil Expression Grammar](https://github.com/oilshell/oil/blob/master/oil_lang/grammar.pgen2) for the concrete syntax.
-- See the bottom of
-  [frontend/syntax.asdl](https://github.com/oilshell/oil/blob/master/frontend/syntax.asdl)
-  for the abstract syntax.
+Flags or "regex modifiers" appear after the first semicolon:
 
-## Multiline Syntax
+    / digit+ ; ignorecase /
+
+A translation preference appears after the second semicolon.  It controls what
+regex syntax the eggex is translated to by default.
+
+    / digit+ ; ignorecase ; ERE /
+
+This expression has a translation preference, but no flags:
+
+    / digit+ ;; ERE /
+
+### Multiline Syntax
 
 You can spread regexes over multiple lines and add comments:
 
@@ -341,6 +333,12 @@ Splitting:
     var parts = split(s, /space+/)
     pass s => split(/space+/) => var parts
 
+### Language Reference
+
+- See bottom of the [Oil Expression Grammar](https://github.com/oilshell/oil/blob/master/oil_lang/grammar.pgen2) for the concrete syntax.
+- See the bottom of
+  [frontend/syntax.asdl](https://github.com/oilshell/oil/blob/master/frontend/syntax.asdl)
+  for the abstract syntax.
 
 ## Usage Notes
 
