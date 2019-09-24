@@ -3,7 +3,7 @@
 # TODO: Test that there are exceptions when there are too many args, etc.
 
 #### bool()
-shopt -s all:oil
+shopt -s oil:basic
 var a = bool( @() )
 var b = bool( @(foo) )
 echo $a $b
@@ -13,7 +13,7 @@ True
 ## END
 
 #### int()
-shopt -s all:oil
+shopt -s oil:basic
 var a = int("3")
 var b = int("-35")
 echo $a $b
@@ -24,7 +24,7 @@ echo $a $b
 
 #### float()
 # TODO: This needs a lot more testing, for precision, etc.
-shopt -s all:oil
+shopt -s oil:basic
 var a = float("1.2")
 var b = float("3.4")
 echo $a $b
@@ -35,7 +35,7 @@ echo $a $b
 
 #### str()
 # TODO: more testing
-shopt -s all:oil
+shopt -s oil:basic
 var a = str(5)
 var b = str(42)
 echo $a $b
@@ -46,7 +46,7 @@ echo $a $b
 
 #### tuple()
 # TODO: more testing
-shopt -s all:oil
+shopt -s oil:basic
 var a = tuple()
 echo $a
 ## STDOUT:
@@ -55,7 +55,7 @@ echo $a
 
 #### list()
 # TODO: more testing
-shopt -s all:oil
+shopt -s oil:basic
 var a = list(range(3))
 echo $a
 ## STDOUT:
@@ -64,7 +64,7 @@ echo $a
 
 #### dict()
 # TODO: more testing
-shopt -s all:oil
+shopt -s oil:basic
 var a = dict()
 #repr a
 echo $len(a)
@@ -87,7 +87,7 @@ argv.py $z
 ## END
 
 #### abs
-shopt -s all:oil
+shopt -s oil:basic
 
 # Also test smooshing
 echo $abs(-5)$abs(-0)$abs(5)
@@ -100,7 +100,7 @@ echo $abs(-5) $abs(-0) $abs(5)
 ## END
 
 #### any() and all()
-shopt -s all:oil
+shopt -s oil:basic
 var a1 = all( @(yes yes) )
 var a2 = all( @(yes '') )
 var a3 = all( @('' '') )
@@ -124,7 +124,7 @@ False
 ## END
 
 #### sum()
-shopt -s all:oil
+shopt -s oil:basic
 var start = 42
 
 echo $sum( range(3) )
@@ -137,7 +137,7 @@ echo $sum( range(0), start)
 ## END
 
 #### sorted()
-shopt -s all:oil
+shopt -s oil:basic
 var x = sorted(range(3))
 echo @x
 ## STDOUT:
@@ -147,7 +147,7 @@ echo @x
 ## END
 
 #### reversed()
-shopt -s all:oil
+shopt -s oil:basic
 var x = reversed(range(3))
 echo @x
 ## STDOUT:
@@ -158,7 +158,7 @@ echo @x
 
 #### enumerate()
 echo $enumerate
-shopt -s all:oil
+shopt -s oil:basic
 # TODO: need new for loop syntax
 for (i, a in enumerate( @(a b c) )) {
   echo $i $a
@@ -171,7 +171,7 @@ for (i, a in enumerate( @(a b c) )) {
 
 #### zip()
 echo $zip
-shopt -s all:oil
+shopt -s oil:basic
 var a = @(1 2 3)
 var b = @(a b c)
 for (item in zip(a, b)) {

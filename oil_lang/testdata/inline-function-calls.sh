@@ -3,7 +3,7 @@
 # Usage:
 #   ./inline-function-calls.sh <function name>
 
-shopt -s all:oil
+shopt -s oil:basic
 
 simple-demo() {
   var myarray = @(spam eggs ham)

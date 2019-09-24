@@ -322,9 +322,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   # Set these BEFORE processing flags, so they can be overridden.
   if lang == 'oil':
-    # TODO: Change to oil:all
-    exec_opts.SetShoptOption('all:oil', True)
-    exec_opts.SetShoptOption('all:nice', True)
+    exec_opts.SetShoptOption('oil:all', True)
 
   builtin_pure.SetExecOpts(exec_opts, opts.opt_changes, opts.shopt_changes)
   aliases = {}  # feedback between runtime and parser

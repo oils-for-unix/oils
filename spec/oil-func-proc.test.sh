@@ -25,7 +25,7 @@ hi
 ## END
 
 #### Default values for positional params
-shopt -s all:oil
+shopt -s oil:basic
 func add(x Int, y=1, z=1+2*3) {
   return x + y + z
 }
@@ -39,7 +39,7 @@ echo $add(3,4,5)
 ## END
 
 #### Func with named args
-shopt -s all:oil
+shopt -s oil:basic
 func add(x Int, y Int ; verbose Bool) {
   #if (verbose) {
   #  echo 'verbose'
@@ -84,7 +84,7 @@ status=42
 
 #### proc with explicit args
 
-# doesn't require all:oil
+# doesn't require oil:basic
 proc f(x, y, z) {
   echo $x $y $z
   var ret = 42

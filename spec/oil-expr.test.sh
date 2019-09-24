@@ -64,7 +64,7 @@ echo $x $y
 ## END
 
 #### setvar x[1] = 42
-shopt -s all:oil
+shopt -s oil:basic
 var mylist = [1,2,3]
 setvar x[1] = 42
 echo -sep ' ' @x
@@ -182,7 +182,7 @@ argv.py @mylist
 ## END
 
 #### Can't splice undefined
-shopt -s all:oil
+shopt -s oil:basic
 argv.py @undefined
 echo done
 ## status: 1
@@ -252,7 +252,7 @@ echo $x $max(1+2, 3+4,)
 ## END
 
 #### @split(x) 
-shopt -s all:oil
+shopt -s oil:basic
 setvar IFS = ":"
 var x = "one:two:three"
 argv.py @split(x)
@@ -261,7 +261,7 @@ argv.py @split(x)
 ## END
 
 #### @range()
-shopt -s all:oil
+shopt -s oil:basic
 echo @range(10, 15, 2)
 ## STDOUT:
 10
@@ -270,14 +270,14 @@ echo @range(10, 15, 2)
 ## END
 
 #### Wrong sigil $range() shows representation of iterator?
-shopt -s all:oil
+shopt -s oil:basic
 echo $range(10, 15, 2)
 ## STDOUT:
 TODO
 ## END
 
 #### Wrong sigil @max(3, 4)
-shopt -s all:oil
+shopt -s oil:basic
 echo @max(3, 4)
 ## STDOUT:
 TODO
@@ -326,7 +326,7 @@ gt=0
 ## END
 
 #### Parse { setvar x = 1 }
-shopt -s all:oil
+shopt -s oil:basic
 var x = 1
 f() { setvar x = 2 }
 f
@@ -344,7 +344,7 @@ echo $x
 ## END
 
 #### double quoted respects strict_array
-shopt -s all:oil
+shopt -s oil:basic
 var a = @(one two three)
 var x = "-${a[@]}-"
 echo $x
@@ -433,7 +433,7 @@ a b c
 
 
 #### null / true / false
-shopt -s all:oil
+shopt -s oil:basic
 var n = null
 if (n) {
   echo yes
@@ -469,7 +469,7 @@ echo $d $b $o $h
 ## END
 
 #### Float Literals
-shopt -s all:oil
+shopt -s oil:basic
 # 1+2 2.3
 var x = 1.2 + 23.0e-1  # 3.5
 if (x < 3.9) {
@@ -484,7 +484,7 @@ great
 ## END
 
 #### Float Literals with _ (requires re2c refinement)
-shopt -s all:oil
+shopt -s oil:basic
 # 1+2 + 2.3
 # add this _ here
 var x = 1.2 + 2_3.0e-1  # 3.5
@@ -518,7 +518,7 @@ echo $len(two)
 ## END
 
 #### List comprehension
-shopt -s all:oil
+shopt -s oil:basic
 
 var n = [i*2 for i in range(5)]
 echo -sep ' ' @n
@@ -548,7 +548,7 @@ True
 ## END
 
 #### Chained Comparisons
-shopt -s all:oil
+shopt -s oil:basic
 if (1 < 2 < 3) {
   echo '123'
 }
@@ -765,7 +765,7 @@ comsub=6
 ## END
 
 #### s ~ regex and s !~ regex
-shopt -s all:oil
+shopt -s oil:basic
 
 var s = 'foo'
 if (s ~ '.([[:alpha:]]+)') {  # ERE syntax
@@ -792,7 +792,7 @@ does not match
 ## END
 
 #### s ~ regex sets a local, not a global
-shopt -s all:oil
+shopt -s oil:basic
 proc f {
   if ('foo' ~ '.([[:alpha:]]+)') {  # ERE syntax
     echo matches
@@ -809,7 +809,7 @@ default
 
 
 #### M can be saved and used later
-shopt -s all:oil
+shopt -s oil:basic
 
 var pat = '.([[:alpha:]]+)'  # ERE syntax
 if ('foo' ~ pat) {

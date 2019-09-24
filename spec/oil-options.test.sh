@@ -163,8 +163,8 @@ shopt -s strict_backslash
 shopt -s strict_glob
 ## END
 
-#### shopt -s all:oil
-shopt -s all:oil
+#### shopt -s oil:basic
+shopt -s oil:basic
 # normal option names
 shopt -o -p | grep -- ' -o ' | grep -v hashall
 shopt -p | grep -- ' -s '
@@ -193,8 +193,8 @@ shopt -s parse_paren
 shopt -s parse_rawc
 ## END
 
-#### osh -O all:oil 
-$SH -O all:oil -c 'var x = @(one two three); echo @x'
+#### osh -O oil:basic 
+$SH -O oil:basic -c 'var x = @(one two three); echo @x'
 ## STDOUT:
 one
 two
@@ -229,7 +229,7 @@ argv
 ## END
 
 #### parse_brace: bad block to assignment builtin
-shopt -s all:oil
+shopt -s oil:basic
 # This is a fatal programming error.  It's unlike passing an extra arg?
 local x=y { echo 'bad block' }
 echo status=$?
@@ -237,7 +237,7 @@ echo status=$?
 ## stdout-json: ""
 
 #### parse_brace: bad block to external program
-shopt -s all:oil
+shopt -s oil:basic
 # This is a fatal programming error.  It's unlike passing an extra arg?
 ls { echo 'bad block' }
 echo status=$?
@@ -245,7 +245,7 @@ echo status=$?
 ## stdout-json: ""
 
 #### parse_brace: cd { } in pipeline
-shopt -s all:oil
+shopt -s oil:basic
 cd /tmp {
   pwd
   pwd
@@ -257,7 +257,7 @@ cd /tmp {
 
 
 #### parse_brace: if accepts blocks
-shopt -s all:oil
+shopt -s oil:basic
 if test -n foo {
   echo one
 }
@@ -324,7 +324,7 @@ three
 ## END
 
 #### parse_brace: while/until
-shopt -s all:oil
+shopt -s oil:basic
 while true {
   echo one
   break
@@ -341,7 +341,7 @@ three
 ## END
 
 #### parse_brace: for-in loop
-shopt -s all:oil
+shopt -s oil:basic
 for x in one two {
   echo $x
 }
@@ -359,7 +359,7 @@ four
 ## END
 
 #### parse_brace case
-shopt -s all:oil
+shopt -s oil:basic
 
 var files = @(foo.py 'foo test.sh')
 for name in "${files[@]}" ; do
@@ -390,7 +390,7 @@ shell
 ## END
 
 #### parse_paren: if statement
-shopt -s all:oil
+shopt -s oil:basic
 var x = 1
 if (x < 42) {
   echo less
@@ -418,7 +418,7 @@ other
 ## END
 
 #### parse_paren: while statement
-shopt -s all:oil
+shopt -s oil:basic
 
 # ksh style
 var x = 1
@@ -467,7 +467,7 @@ two
 ## END
 
 #### parse_paren: for loop
-shopt -s all:oil
+shopt -s oil:basic
 var array = @(one two three)
 for (item in array) {
   echo $item
@@ -489,7 +489,7 @@ k2
 ## END
 
 #### parse_equals: allows bare assignment
-shopt -s all:nice
+shopt -s oil:all  # including nice options
 x = 1 + 2*3
 echo $x
 ## STDOUT:
@@ -497,19 +497,19 @@ echo $x
 ## END
 
 #### parse_equals: disallows ENV=val mycommand
-shopt -s all:nice
+shopt -s oil:all
 ENV=val echo hi
 ## status: 2
 ## stdout-json: ""
 
 #### parse_equals: disallows var=val
-shopt -s all:nice
+shopt -s oil:all
 var=val
 ## status: 2
 ## stdout-json: ""
 
 #### parse_rawc: C strings in @() array literals
-shopt -s all:oil
+shopt -s oil:basic
 
 # BUG: Surprising that this doesn't work because of command mode!
 var lines=@(c'aa\tbb' c'cc\tdd')

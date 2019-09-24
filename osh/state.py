@@ -255,7 +255,7 @@ _PARSE_OPTION_NAMES = _OIL_PARSE_OPTION_NAMES + _NICE_OPTION_NAMES
 # errexit is also set, but handled separately
 _MORE_STRICT = ['nounset', 'pipefail', 'inherit_errexit']
 
-_ALL_OIL = (
+_OIL_BASIC = (
     _STRICT_OPTION_NAMES + _MORE_STRICT + _OIL_PARSE_OPTION_NAMES +
     _OIL_OPTION_NAMES
 )
@@ -265,7 +265,7 @@ _ALL_STRICT = _STRICT_OPTION_NAMES + _MORE_STRICT + ['nullglob']
 # Used in builtin_pure.py
 ALL_SHOPT_OPTIONS = SHOPT_OPTION_NAMES + _PARSE_OPTION_NAMES
 
-META_OPTIONS = ['all:oil', 'all:strict', 'all:nice']  # Passed to flag parser
+META_OPTIONS = ['oil:basic', 'all:strict', 'oil:all']  # Passed to flag parser
 
 
 class ExecOpts(object):
@@ -454,8 +454,8 @@ class ExecOpts(object):
 
     # shopt -s all:oil turns on all Oil options, which includes all strict #
     # options
-    if opt_name == 'all:oil':
-      for attr in _ALL_OIL:
+    if opt_name == 'oil:basic':
+      for attr in _OIL_BASIC:
         if attr in _PARSE_OPTION_NAMES:
           self._SetParseOption(attr, b)
         else:
@@ -464,8 +464,8 @@ class ExecOpts(object):
       self.errexit.Set(b)  # Special case
       return
 
-    if opt_name == 'all:nice':
-      for attr in _NICE_OPTION_NAMES:
+    if opt_name == 'oil:all':
+      for attr in _OIL_BASIC + _NICE_OPTION_NAMES:
         self._SetParseOption(attr, b)
         setattr(self, attr, b)
       return

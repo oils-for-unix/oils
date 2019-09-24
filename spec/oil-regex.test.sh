@@ -1,7 +1,7 @@
 # Test out Oil's regular expression syntax.
 
 #### /^.$/
-shopt -s all:oil
+shopt -s oil:basic
 var pat = ''
 
 setvar pat = /^.$/
@@ -31,7 +31,7 @@ yes
 
 
 #### /.+/
-shopt -s all:oil
+shopt -s oil:basic
 
 var pat = /.+/
 echo $pat
@@ -70,7 +70,7 @@ echo $pat
 
 
 #### d+  digit+  ~d+  ~digit+
-shopt -s all:oil
+shopt -s oil:basic
 
 var pat = ''
 
@@ -110,7 +110,7 @@ echo $pat
 ## END
 
 #### Char Class Ranges
-shopt -s all:oil
+shopt -s oil:basic
 
 var pat = ''
 setvar pat = /[0-9 a-f]+/
@@ -131,7 +131,7 @@ no
 ## END
 
 #### Char Class Set
-shopt -s all:oil
+shopt -s oil:basic
 var pat = ''
 
 # This is NOT allowed
@@ -151,7 +151,7 @@ no
 ## END
 
 #### Range with escaped characters
-shopt -s all:oil
+shopt -s oil:basic
 
 var pat = null
 
@@ -164,7 +164,7 @@ echo $pat | od -A n -t x1
 
 
 #### Group ()
-shopt -s all:oil
+shopt -s oil:basic
 var pat = ''
 
 setvar pat = /(%start s or d d)/
@@ -183,7 +183,7 @@ no
 
 
 #### literal ''
-shopt -s all:oil
+shopt -s oil:basic
 var pat = ''
 
 setvar pat = /'abc' 'def'/
@@ -202,7 +202,7 @@ yes
 ## END
 
 #### double quoted, $x, and ${x}
-shopt -s all:oil
+shopt -s oil:basic
 var pat = ''
 
 var x = 'x'
@@ -220,7 +220,7 @@ yes
 ## END
 
 #### @splice
-shopt -s all:oil
+shopt -s oil:basic
 var d = /d+/;
 var ip = / @d '.' @d '.' @d '.' @d /
 echo $ip
@@ -233,7 +233,7 @@ no
 ## END
 
 #### Matching escaped tab character
-shopt -s all:oil
+shopt -s oil:basic
 
 # BUG: need C strings in array literal
 var lines=@($'aa\tbb' $'cc\tdd')
@@ -245,7 +245,7 @@ echo @lines | egrep $pat
 ## stdout-json: "pat=(a[\t]b)\naa\tbb\n"
 
 #### Match non-ASCII byte denoted using c'\xff'
-shopt -s all:oil
+shopt -s oil:basic
 var pat = /[ c'\xff' ]/;
 
 echo $pat | od -A n -t x1
@@ -259,7 +259,7 @@ no
 ## END
 
 #### Match non-ASCII byte denoted using \xff
-shopt -s all:oil
+shopt -s oil:basic
 var pat = /[ \xff ]/;
 
 echo $pat | od -A n -t x1
@@ -273,7 +273,7 @@ no
 ## END
 
 #### ERE can express Unicode escapes that are in the ASCII range
-shopt -s all:oil
+shopt -s oil:basic
 var pat = /[ \u007f ]/;
 
 echo $pat | od -A n -t x1
@@ -287,7 +287,7 @@ no
 ## END
 
 #### ERE can't express higher Unicode escapes
-shopt -s all:oil
+shopt -s oil:basic
 var pat = /[ \u00ff ]/;
 
 echo $pat | od -A n -t x1
@@ -305,7 +305,7 @@ echo $pat
 ## stdout-json: ""
 
 #### Matching escaped tab character
-shopt -s all:oil
+shopt -s oil:basic
 
 # BUG: need C strings in array literal
 var lines=@($'aa\tbb' $'cc\tdd')
@@ -317,7 +317,7 @@ echo @lines | egrep $pat
 ## stdout-json: "pat=(a[\t]b)\naa\tbb\n"
 
 #### Matching ] and \ and ' and " in character classes
-shopt -s all:oil
+shopt -s oil:basic
 
 # BUG: need C strings in array literal
 var lines=@(
@@ -344,7 +344,7 @@ dq "
 ## END
 
 #### Matching literal hyphen in character classes
-shopt -s all:oil
+shopt -s oil:basic
 
 var literal = '-'
 var pat = / [ 'a' $literal 'b' ${literal} "-" ] /
@@ -357,7 +357,7 @@ ab
 ## END
 
 #### Repeated String Literal With Single Char
-shopt -s all:oil
+shopt -s oil:basic
 
 var literal = 'f'
 var pat = null
@@ -378,7 +378,7 @@ no
 ## END
 
 #### Error when unparenthesized string of more than one character is repeated
-shopt -s all:oil
+shopt -s oil:basic
 
 var literal = 'foo'
 var pat = null
@@ -395,7 +395,7 @@ if ('foof' !~ pat) { echo no }
 ## stdout-json: ""
 
 #### Instead of c'foo\\bar' use 'foo' \\ 'bar'
-shopt -s all:oil
+shopt -s oil:basic
 var pat = /'foo' \\ 'bar'/
 echo $pat
 
@@ -408,7 +408,7 @@ no
 ## END
 
 #### Negation of Character Class
-shopt -s all:oil
+shopt -s oil:basic
 
 var pat = / ~[ a-z ] /
 echo $pat
@@ -423,7 +423,7 @@ no
 ## END
 
 #### Posix and Perl class in class literals
-shopt -s all:oil
+shopt -s oil:basic
 
 var pat = null
 
