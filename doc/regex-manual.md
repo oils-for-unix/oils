@@ -106,22 +106,27 @@ Constructs like `. ^ $ \< \>` are deprecated because they break these rules.
 
 ### Primitives
 
-#### . is now `dot`
+#### `.` Is Now `dot`
 
 But `.` is still accepted.  It usually matches any character except a newline,
 although this changes based on flags (e.g. `dotall`, `unicode`).
 
-#### Classes are unadorned: `word`, `w`, `alnum`
+#### Classes Are Unadorned: `word`, `w`, `alnum`
 
 We accept both Perl and POSIX classes.
 
-- Perl
+- Perl:
+  - `d` or `digit`
+  - `s` or `space`
+  - `w` or `word`
 - POSIX
+  - `alpha`, `alnum`, ...
 
 #### Zero-width Assertions Look Like `%this`
 
-- `%start` is `^`
-- `%end` is `$`
+- POSIX
+  - `%start` is `^`
+  - `%end` is `$`
 - PCRE:
   - `%input_start` is `\A`
   - `%input_end` is `\z`
@@ -130,7 +135,7 @@ We accept both Perl and POSIX classes.
   - `%word_start` is `\<`
   - `%word_end` is `\>`
 
-#### Literals
+#### Literals Are Quoted And Can Use String Variables
 
 - `'abc'`
 - `"xyz $var"`
@@ -189,7 +194,7 @@ In contrast, regexes have many confusing syntaxes for negation:
 
     /[x]/-i vs /[x]/i
 
-#### Splicing
+#### Splice Other Patterns With @
 
 New in Eggex!  You can reuse patterns with `@pattern_name`.
 
@@ -197,7 +202,7 @@ See the example at the front of this document.
 
 This is similar to how `lex` and `re2c` work.
 
-#### Grouping, Capturing
+#### Group and Capture With `()` and `<>`
 
 Group with `(pat)`
 
@@ -214,7 +219,7 @@ Add a variable after `=` for named capture:
 
     <'foo' | 'bar' = myvar>  # Becomes M.group('myvar')
 
-#### Character Class Literals
+#### Character Class Literals Use `[]`
 
 Example:
 
@@ -248,9 +253,7 @@ YES:
 
     /[a-f A-f 0-9]/
 
-
-
-### Flags and Translation Preferences
+### Flags and Translation Preferences (`;`)
 
 Flags or "regex modifiers" appear after the first semicolon:
 
@@ -283,7 +286,16 @@ If you want to translate to PCRE, you can use these.
 
     !ATOMIC( d+ )
 
-### Multiline Syntax
+## More Details
+
+## Language Reference
+
+- See bottom of the [Oil Expression Grammar](https://github.com/oilshell/oil/blob/master/oil_lang/grammar.pgen2) for the concrete syntax.
+- See the bottom of
+  [frontend/syntax.asdl](https://github.com/oilshell/oil/blob/master/frontend/syntax.asdl)
+  for the abstract syntax.
+
+## Multiline Syntax
 
 You can spread regexes over multiple lines and add comments:
 
@@ -297,13 +309,6 @@ You can spread regexes over multiple lines and add comments:
 
 
 (Not yet implemented in Oil.)
-
-### Language Reference
-
-- See bottom of the [Oil Expression Grammar](https://github.com/oilshell/oil/blob/master/oil_lang/grammar.pgen2) for the concrete syntax.
-- See the bottom of
-  [frontend/syntax.asdl](https://github.com/oilshell/oil/blob/master/frontend/syntax.asdl)
-  for the abstract syntax.
 
 ## The Oil API
 
@@ -341,41 +346,41 @@ Splitting:
 
 ### Use Character Literals Rather than C-Escaped Strings
 
-NO:
+No:
 
     / c'foo\tbar' /   # Match 7 characters including a tab, but it's hard to read
     / r'foo\tbar' /   # The string must contain 8 chars including '\' and 't'
 
-YES:
+Yes:
 
     # Instead, Take advantage of char literals and implicit regex concatenation
     / 'foo' \t 'bar' /
     / 'foo' \\ 'tbar' /
 
 
-## ERE Limitations
+## POSIX ERE Limitations
 
 ### Surround Repeated Strings with a Capturing Group ()
 
-NO:
+No:
 
     'foo'+ 
     $string_with_many_chars+
 
-YES:
+Yes:
 
     ('foo')+
     ($string_with_many_chars)+
 
-### Unicode Character Literals Can't Be in Char Class Literals
+### Unicode Char Literals Can't Be Used In Char Class Literals
 
-NO:
+No:
 
     # ERE can't represent this, and 2 byte utf-8 encoding could be confused
     with 2 bytes.
     / [ \u0100 ] /
 
-YES:
+Yes:
 
     # This is accepted -- it's clear it matches one of two bytes.
     / [ \x61 \xFF ] /
@@ -393,11 +398,11 @@ These don't work:
 
 So in Oil you have to write it like this:
 
-YES:
+Yes:
 
     / [ ']' 'abc'] /
 
-NO:
+No:
 
     / [ 'abc' ']' ] /
     / [ 'abc]' ] /
@@ -483,11 +488,6 @@ Notes:
 - To make eggexes portable between languages, Don't use the host language's
   syntax for string literals (at least for single-quoted strings).
 
-### Pronunciation
-
-If "eggex" sounds too much like "regex" to you, simply say "egg expression".
-It won't be confused with "regular expression" or "regex".
-
 ### Backward Compatibility
 
 Eggexes aren't backward compatible in general, but they retain some legacy
@@ -499,6 +499,11 @@ eggexes **and** valid POSIX EREs:
     ^.{1,3}|[0-9][0-9]?$
 
 ## FAQ
+
+### The Name Sounds Funny.
+
+If "eggex" sounds too much like "regex" to you, simply say "egg expression".
+It won't be confused with "regular expression" or "regex".
 
 ### How Do Eggexes Compare with [Perl 6 Regexes][perl6-regex] and the [Rosie Pattern Language][rosie]?
 
