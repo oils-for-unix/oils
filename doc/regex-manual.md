@@ -47,7 +47,7 @@ expressions in important ways.  So we call them *eggexes* rather than
 
 [lossless syntax tree]: http://www.oilshell.org/blog/2017/02/11.html
 
-### Example of Pattern Reuse
+#### Example of Pattern Reuse
 
 Here's a longer example:
 
@@ -65,7 +65,7 @@ TODO: You should also be able to inline patterns like this:
 
     egrep $/d+/ foo.txt
 
-### Philosophy
+#### Design Philosophy
 
 - Eggexes can express a **superset** of POSIX and Perl syntax.
 - The language is designed for "dumb", one-to-one, **syntactic** translations.
@@ -73,7 +73,7 @@ TODO: You should also be able to inline patterns like this:
   regexes.  This is because regex implementations have many corner cases and
   incompatibilities, with regard to Unicode, `NUL` bytes, etc.
 
-### The Expression Language Is Consistent
+#### The Expression Language Is Consistent
 
 Eggexes have a consistent syntax:
 
@@ -194,7 +194,7 @@ In contrast, regexes have many confusing syntaxes for negation:
 
     \D vs. \d
 
-    /[x]/-i vs /[x]/i
+    /\w/-i vs /\w/i
 
 #### Splice Other Patterns With @
 
@@ -420,9 +420,9 @@ front or back.  You have to put it in the right place.
 
 ### Critiques
 
-#### Existing Regex Syntax
+#### Regexes Are Hard To Read
 
-Regexes are hard to read because the **same symbol can mean many things**.
+... because the **same symbol can mean many things**.
 
 `^` could mean:
 
@@ -445,7 +445,7 @@ Regexes are hard to read because the **same symbol can mean many things**.
   - `(?P<named>\d+)`
   - `(?:noncapturing)`
 
-With egg expressions, each construct has a distinct syntax.
+With egg expressions, each construct has a **distinct syntax**.
 
 #### Oil is Shorter Than Bash
 
@@ -535,8 +535,8 @@ Python, etc.  That means they **cannot** be used this way.
 Because the meanings of `. ^` and `$` are usually affected by regex engine
 flags, like `dotall`, `multiline`, and `unicode`.
 
-As a result, the names mean nothing more htan "whatever your regex engine does
-for `.` `^` and `$`.
+As a result, the names mean nothing more than "however your regex engine
+interprets `.` `^` and `$`.
 
 As mentioned in the "Philosophy" section above, eggex only does a superficial,
 one-to-one translation.  It doesn't understand the details of which characters

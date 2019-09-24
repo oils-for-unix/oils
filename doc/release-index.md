@@ -40,6 +40,9 @@ Test results, metrics, and benchmarks are shown below.
   - [OSH Quick Reference](doc/osh-quick-ref.html), with examples (incomplete).
     This document underlies the `help` builtin, and gives a rough overview of
     what features OSH implements.
+- Oil
+  - [Egg Expressions](doc/eggex.html).  Oil has a new regex syntax called "egg
+    expressions", abbreviated *eggexes*.
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
   - The [Oil Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments)
     wiki page has other ways of getting Oil.  These versions may not be
