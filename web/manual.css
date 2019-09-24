@@ -22,19 +22,20 @@ h4 {
 
 /* blocks of code */
 pre {
-  /* font-size: medium; */
-  /* background-color: #f6f8fa; */
   background-color: #eee;
   padding: 1em;
   margin-left: 2em;
 }
 
-/* inline code */
-code {
-  /* color: darkgreen; */
+/* inline code 
+ *
+ * BUG FIX: Selector is 'p code' and not 'code' because markdown generates
+ * <pre><code> pairs from indented blocks for some reason, and they would
+ * interfere only in Chrome.
+ */
+p code, li code {
   background-color: #eee;
-  padding: 1px;
-  /* background-color: #f6f8fa; */
+  padding: 4px;
 }
 
 #home-link {

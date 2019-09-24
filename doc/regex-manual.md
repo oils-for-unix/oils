@@ -51,10 +51,14 @@ expressions in important ways.  So we call them *eggexes* rather than
 
 Here's a longer example:
 
-    $ var D = / digit{1,3} /  # Reuse this subpattern; 'digit' is long for 'd'
+    # Define a subpattern.  'digit' and 'd' are the same.
+    $ var D = / digit{1,3} /
+
+    # Use the subpattern
     $ var ip_pat = / @D '.' @D '.' @D '.' @D /
 
-    $ echo $ip_pat            # This Eggex compiles to an ERE
+    # This eggex compiles to an ERE
+    $ echo $ip_pat
     [[:digit:]]{1,3}\.[[:digit:]]{1,3}\.[[:digit:]]{1,3}\.[[:digit:]]{1,3}
 
 This means you can use it in a very simple way:
