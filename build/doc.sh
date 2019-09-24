@@ -204,7 +204,7 @@ manual() {
   '
 
   # TODO: cmark.py could replace <span class="date"></span> with -v date=?
-  for d in osh-manual oil-manual known-differences; do
+  for d in osh-manual oil-manual known-differences regex-manual; do
     markdown2html doc/$d.md $root_dir/doc/$d.html "$css_link" ''
   done
   ls -l $root_dir/doc

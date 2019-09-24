@@ -1,7 +1,5 @@
 Egg Expressions (Oil Regexes)
-=============================
-
-## Intro
+-----------------------------
 
 Oil has a new syntax for patterns, which appears between the `/ /` delimiters:
 
@@ -10,10 +8,14 @@ Oil has a new syntax for patterns, which appears between the `/ /` delimiters:
     }
 
 These patterns are intended to be familiar, but they differ from POSIX or Perl
-expressions in important ways.  So we call them "eggexes" rather than
-"regexes"!
+expressions in important ways.  So we call them *eggexes* rather than
+*regexes*!
 
-Why invent a new language?
+<!-- cmark.py expands this -->
+<div id="toc">
+</div>
+
+### Why Invent a New Language?
 
 - Eggexes let you name **subpatterns** and compose them, which makes them more
   readable and testable.
@@ -65,13 +67,13 @@ TODO: You should also be able to inline patterns like this:
 
 ### Philosophy
 
-- Eggexes can express a superset of POSIX and Perl syntax.
+- Eggexes can express a **superset** of POSIX and Perl syntax.
 - The language is designed for "dumb", one-to-one, **syntactic** translations.
   That is, translation doesn't rely on understanding the **semantics** of
   regexes.  This is because regex implementations have many corner cases and
   incompatibilities, with regard to Unicode, `NUL` bytes, etc.
 
-## The Expression language
+### The Expression Language Is Consistent
 
 Eggexes have a consistent syntax:
 
@@ -104,7 +106,7 @@ this matches:
 
 Constructs like `. ^ $ \< \>` are deprecated because they break these rules.
 
-### Primitives
+### Expression Primitives
 
 #### `.` Is Now `dot`
 
@@ -142,7 +144,7 @@ We accept both Perl and POSIX classes.
 - `$mychars`
 - `${otherchars}`
 
-### Compound Structures
+### Compound Expressions
 
 #### Sequence and Alternation Are Unchanged
 
@@ -253,12 +255,9 @@ Yes:
 
     /[a-f A-f 0-9]/
 
-#### Backtracking Constructs (Discouraged)
-
-All the "dangerous" concepts begin with `!`.
+#### Backtracking Constructs Use `!` (Discouraged)
 
 If you want to translate to PCRE, you can use these.
-
 
     !REF 1
     !REF name
@@ -270,9 +269,12 @@ If you want to translate to PCRE, you can use these.
 
     !ATOMIC( d+ )
 
-## Outside the Expression language
+Since they all being with `!`, You can visually audit your code for potential
+performance problems.
 
-### Flags and Translation Preferences (`;`)
+### Outside the Expression language
+
+#### Flags and Translation Preferences (`;`)
 
 Flags or "regex modifiers" appear after the first semicolon:
 
@@ -287,7 +289,7 @@ This expression has a translation preference, but no flags:
 
     / digit+ ;; ERE /
 
-### Multiline Syntax
+#### Multiline Syntax
 
 You can spread regexes over multiple lines and add comments:
 
@@ -302,7 +304,7 @@ You can spread regexes over multiple lines and add comments:
 
 (Not yet implemented in Oil.)
 
-## The Oil API
+#### The Oil API
 
 (Still to be implemented.)
 
@@ -333,16 +335,16 @@ Splitting:
     var parts = split(s, /space+/)
     pass s => split(/space+/) => var parts
 
-### Language Reference
+#### Language Reference
 
 - See bottom of the [Oil Expression Grammar](https://github.com/oilshell/oil/blob/master/oil_lang/grammar.pgen2) for the concrete syntax.
 - See the bottom of
   [frontend/syntax.asdl](https://github.com/oilshell/oil/blob/master/frontend/syntax.asdl)
   for the abstract syntax.
 
-## Usage Notes
+### Usage Notes
 
-### Use Character Literals Rather than C-Escaped Strings
+#### Use Character Literals Rather than C-Escaped Strings
 
 No:
 
@@ -356,9 +358,9 @@ Yes:
     / 'foo' \\ 'tbar' /
 
 
-## POSIX ERE Limitations
+### POSIX ERE Limitations
 
-### Surround Repeated Strings with a Capturing Group ()
+#### Surround Repeated Strings with a Capturing Group <>
 
 No:
 
@@ -367,10 +369,17 @@ No:
 
 Yes:
 
-    ('foo')+
-    ($string_with_many_chars)+
+    <'foo'>+
+    <$string_with_many_chars>+
 
-### Unicode Char Literals Can't Be Used In Char Class Literals
+This is necessar because:
+
+- ERE doesn't have non-capturing groups like Perl's `(?:...)`
+- Eggex only does "dumb" translations.  It doesn't silently insert constructs
+  that change the meaning of the pattern.
+
+
+#### Unicode Char Literals Can't Be Used In Char Class Literals
 
 No:
 
@@ -383,7 +392,7 @@ Yes:
     # This is accepted -- it's clear it matches one of two bytes.
     / [ \x61 \xFF ] /
 
-### ] is Confusing in Char Class Literals
+#### ] is Confusing in Char Class Literals
 
 ERE wants it like this:
 
@@ -409,9 +418,9 @@ Since we do a dumb syntactic translation, we can't detect whether it's on the
 front or back.  You have to put it in the right place.
 
 
-## Critiques
+### Critiques
 
-### Existing Regex Syntax
+#### Existing Regex Syntax
 
 Regexes are hard to read because the **same symbol can mean many things**.
 
@@ -438,7 +447,7 @@ Regexes are hard to read because the **same symbol can mean many things**.
 
 With egg expressions, each construct has a distinct syntax.
 
-### Oil is Shorter Than Bash
+#### Oil is Shorter Than Bash
 
 Bash:
 
@@ -452,7 +461,7 @@ Compare with Oil:
       echo 'x looks like a number'
     }
 
-### And Perl
+#### ... and Perl
 
 Perl:
 
@@ -470,9 +479,9 @@ The Perl expression has three more punctuation characters:
 - Named character classes are unadorned like `d`.  If that's too short, you can
   also write `digit`.
 
-## Notes
+### Design Notes
 
-### Eggexes In Other Languages
+#### Eggexes In Other Languages
 
 The eggex syntax can be incorporated into other tools and shells.  It's
 designed to be separate from Oil -- hence the separate name.
@@ -486,7 +495,7 @@ Notes:
 - To make eggexes portable between languages, Don't use the host language's
   syntax for string literals (at least for single-quoted strings).
 
-### Backward Compatibility
+#### Backward Compatibility
 
 Eggexes aren't backward compatible in general, but they retain some legacy
 operators like `^ . $` to ease the transition.  These expressions are valid
@@ -496,14 +505,14 @@ eggexes **and** valid POSIX EREs:
     ^[0-9]+$
     ^.{1,3}|[0-9][0-9]?$
 
-## FAQ
+### FAQ
 
-### The Name Sounds Funny.
+#### The Name Sounds Funny.
 
 If "eggex" sounds too much like "regex" to you, simply say "egg expression".
 It won't be confused with "regular expression" or "regex".
 
-### How Do Eggexes Compare with [Perl 6 Regexes][perl6-regex] and the [Rosie Pattern Language][rosie]?
+#### How Do Eggexes Compare with [Perl 6 Regexes][perl6-regex] and the [Rosie Pattern Language][rosie]?
 
 All three languages support pattern composition and have quoted literals.  And
 they have the goal of improving upon Perl 5 regex syntax, which has made its
@@ -521,7 +530,7 @@ Python, etc.  That means they **cannot** be used this way.
 
 [perl6-regex]: https://docs.perl6.org/language/regexes
 
-### Why Don't `dot`, `%start`, and `%end` Have More Precise Names?
+#### Why Don't `dot`, `%start`, and `%end` Have More Precise Names?
 
 Because the meanings of `. ^` and `$` are usually affected by regex engine
 flags, like `dotall`, `multiline`, and `unicode`.
@@ -533,7 +542,7 @@ As mentioned in the "Philosophy" section above, eggex only does a superficial,
 one-to-one translation.  It doesn't understand the details of which characters
 will matched under which engine.
 
-### Where Do I Send Feedback?
+#### Where Do I Send Feedback?
 
 Eggexes are implemented in Oil, but not yet set in stone.
 
