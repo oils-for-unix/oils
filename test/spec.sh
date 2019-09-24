@@ -208,8 +208,12 @@ trace-var-sub() {
 # Run All tests
 #
 
-all() {
-  test/spec-runner.sh all-parallel "$@"
+all-osh() {
+  test/spec-runner.sh all-parallel osh "$@"
+}
+
+all-oil() {
+  test/spec-runner.sh all-parallel oil "$@"
 }
 
 # Usgae: test/spec.sh dbg smoke, dbg-all
@@ -806,7 +810,8 @@ html-demo() {
 all-and-smoosh() {
   ### Run everything that we can publish
 
-  all
+  all-osh
+  all-oil
 
   # These aren't all green/yellow yet, and are slow.
   smoosh-html

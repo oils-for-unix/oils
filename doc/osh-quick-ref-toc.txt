@@ -127,6 +127,7 @@ BUILTIN COMMANDS
 X [Unsupported]   enable
   [Oil Builtins]  cd   X shopt   X env   compatible, and takes a block
                   X fork   X wait        replaces & and (), takes a block
+                  X open                 For multiple named strings (block)
                   X use                  source with namespace, file-relative 
                   X dirname   X basename optimizations
                   X opts                 getopts replacement
@@ -216,15 +217,14 @@ X [find]          fs
 
 OIL LIBRARIES
 
-  [Builtin Funcs] join()   split()    $IFS algorithm or awk algorithm
-                  len()
-                  setvar()            for procs to set in outer scope
+  [Collections]   len()
+  [String, Eggex] join()   split()    $IFS, awk algorithm, regex
+                  sub()  find()       regex/string functions
+  [Block]         setvar()            for procs to set in outer scope
                   evalblock()         procs evaluate block to namespace
-                  read(n)             better than read -n, no short reads?
+  [libc]          read(n)             better than read -n, no short reads?
                   posix::read()       raw bindings?
                   strftime()
-                  hashlib
-X [getopts]       ?
 X [Testing]       check ?
 X [Data Formats]  json   csv   tsv2   struct (binary)
-X [Hash Functions]
+X [Hashing]       sha1, sha256, etc.

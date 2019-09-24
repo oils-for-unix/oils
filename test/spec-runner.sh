@@ -22,36 +22,49 @@ source test/common.sh
 # Test Runner
 #
 
-# Generate an array of all the spec tests.
-_spec-manifest() {
+# Generate an array of the spec test names.
+_spec-names() {
   for t in spec/*.test.sh; do
     echo $t 
   done | gawk '
   match($0, "spec/(.*)[.]test.sh", array) {
     name = array[1]
-    # This is for file system globs.  We have tests elsewhere for the [[ case.
-    if (name == "extended-glob") next;
-
-    # This was meant for ANTLR.
-    if (name == "shell-grammar") next;
-
-    # Just a demo
-    if (name == "blog-other1") next;
-
     print name
   }
   '
   # only gawk does this kind of extraction
+
+  # Oil:
+  #
+  # for t in spec/*.test.sh {
+  #   if (t ~ / 'spec/' <.* = name> '.test.sh' /) {
+  #     echo $name
+  #   } else {
+  #     die "Should have matched"
+  #   }
+  # }
 }
 
 manifest() {
-  _spec-manifest > _tmp/spec/MANIFEST.txt
-
   # Testing out obscure bash syntax.  How do we do this in Oil?
   # redir { } should come at the FRONT!  Maybe we should have sigils like
   # &left < path.txt &right < path.txt
 
-  { while read t; do
+  { _spec-names | while read t; do
+      # First filter.
+      case $t in
+        # This is for file system globs.  We have tests elsewhere for the [[ case.
+        (extended-glob) continue ;;
+        # This was meant for ANTLR.
+        (shell-grammar) continue ;;
+        # Just a demo
+        (blog-other1) continue ;;
+      esac
+
+      # A list of both.
+      echo $t >& $both
+
+      # Now split into two.
       case $t in
         (oil-*)
           echo $t >& $oil
@@ -60,12 +73,13 @@ manifest() {
           echo $t >& $osh
           ;;
       esac
-    done 
-  } < _tmp/spec/MANIFEST.txt \
-    {oil}>_tmp/spec/OIL-SUITE.txt \
-    {osh}>_tmp/spec/OSH-SUITE.txt
 
-  wc -l _tmp/spec/*.txt | sort -n
+    done 
+  } {oil}>_tmp/spec/SUITE-oil.txt \
+    {osh}>_tmp/spec/SUITE-osh.txt \
+    {both}>_tmp/spec/SUITE-osh-oil.txt
+
+  #wc -l _tmp/spec/*.txt | sort -n
 }
 
 run-cases() {
@@ -84,12 +98,10 @@ run-cases() {
 readonly NUM_TASKS=400
 #readonly NUM_TASKS=4
 
-# TODO:
-#
-# - Sum columns in the table.
 
 _html-summary() {
   local totals=$1
+  local manifest=${2:-_tmp/spec/MANIFEST.txt}
 
   # TODO: I think the style should be shared
   cat <<EOF
@@ -124,7 +136,7 @@ EOF
   # specify variable names.  You have to destructure it yourself.
   # - Lack of string interpolation is very annoying
 
-  head -n $NUM_TASKS _tmp/spec/MANIFEST.txt | awk -v totals=$totals '
+  head -n $NUM_TASKS $manifest | awk -v totals=$totals '
   # Awk problem: getline errors are ignored by default!
   function error(path) {
     print "Error reading line from file: " path > "/dev/stderr"
@@ -219,15 +231,6 @@ EOF
   cat <<EOF
     </table>
 
-    <h3>Smoosh Test Suite
-    (from <a href="https://github.com/mgree/smoosh/tree/master/tests/shell">mgree/smoosh</a>)
-    </h3>
-
-    <ul>
-      <li><a href="smoosh.html">smoosh</a>
-      <li><a href="smoosh-hang.html">smoosh-hang</a>
-    </ul>
-
     <h3>Version Information</h3>
     <pre>
 EOF
@@ -242,10 +245,15 @@ EOF
 }
 
 html-summary() {
-  local totals=_tmp/spec/totals.html
-  local tmp=_tmp/spec/tmp.html
+  local suite=$1
+  local manifest="_tmp/spec/SUITE-$suite.txt"
 
-  _html-summary $totals > $tmp
+  local totals=_tmp/spec/totals-$suite.html
+  local tmp=_tmp/spec/tmp-$suite.html
+
+  local out=_tmp/spec/$suite.html
+
+  _html-summary $totals $manifest > $tmp
 
   awk -v totals="$(cat $totals)" '
   /<!-- TOTALS -->/ {
@@ -253,10 +261,10 @@ html-summary() {
     next
   }
   { print }
-  ' < $tmp > _tmp/spec/index.html
+  ' < $tmp > $out
 
   echo
-  echo "Results: file://$PWD/_tmp/spec/index.html"
+  echo "Results: file://$PWD/$out"
 }
 
 link-web() {
@@ -264,32 +272,36 @@ link-web() {
 }
 
 _all-parallel() {
+  local suite=${1:-osh-oil}
+  local manifest="_tmp/spec/SUITE-$suite.txt"
+
   mkdir -p _tmp/spec
 
   manifest
 
-  head -n $NUM_TASKS _tmp/spec/MANIFEST.txt \
+  head -n $NUM_TASKS $manifest \
     | xargs -n 1 -P $JOBS --verbose -- $0 run-cases || true
 
   #ls -l _tmp/spec
 
-  all-tests-to-html
+  all-tests-to-html $manifest
 
   link-web
 
-  html-summary
+  html-summary $suite
 }
 
 # 8.5 seconds, 43 users.
 all-parallel() {
-  time $0 _all-parallel
+  time $0 _all-parallel "$@"
 }
 
 # For debugging only: run tests serially.
+# TODO: We could get rid of 'all-serial' and the 'osh-oil' suite.
 all-serial() {
   mkdir -p _tmp/spec
 
-  cat _tmp/spec/MANIFEST.txt | while read t; do
+  cat _tmp/spec/SUITE-osh-oil.txt | while read t; do
     echo $t
     # Run the wrapper function here
     test/spec.sh $t --format html > _tmp/spec/${t}.html || {
@@ -359,7 +371,8 @@ test-to-html() {
 }
 
 all-tests-to-html() {
-  head -n $NUM_TASKS _tmp/spec/MANIFEST.txt \
+  local manifest=$1
+  head -n $NUM_TASKS $manifest \
     | xargs -n 1 -P $JOBS --verbose -- $0 test-to-html || true
 }
 

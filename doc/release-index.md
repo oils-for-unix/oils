@@ -83,17 +83,18 @@ Test results, metrics, and benchmarks are shown below.
 [OVM]: //www.oilshell.org/cross-ref.html?tag=OVM#OVM
 
 
-### Oil Tests
+### Tests
 
-- [Spec Tests](test/spec.wwz/).  Test OSH behavior against that of existing
-  shells.
-- [Wild Tests](test/wild.wwz/).  Parsing and translating thousands of shell
-  scripts with OSH.
+- [Oil Spec Tests](test/spec.wwz/oil.html).  Test new Oil language features.
+- [OSH Spec Tests](test/spec.wwz/osh.html).  Test OSH with existing shells, and
+  compare their behavior.
+- [Wild Tests](test/wild.wwz/).  Parse and translate thousands of shell scripts
+  with OSH.
 - [Unit Tests](test/unit.wwz/).  Python unit test results.
 
 More tests:
 
-- [Gold Tests](test/other.wwz/gold.txt).  Comparisons against bash (using
+- [Gold Tests](test/other.wwz/gold.txt).  Compare OSH against bash (using
   implicit assertions, no golden output.)
 - [osh2oil Tests](test/other.wwz/osh2oil.txt).  Test the conversion of OSH to
   Oil.
