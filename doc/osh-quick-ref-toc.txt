@@ -143,7 +143,7 @@ SHELL OPTIONS
   [Debugging]     xtrace   X verbose   X extdebug
   [Interactive]   emacs   vi
   [Other]         X noclobber
-  [all:strict]                           All options starting with 'strict_'
+  [strict:all]                           All options starting with 'strict_'
                   strict_argv            No empty argv
                   strict_array           Arrays don't decay to strings
                   strict_arith           Fatal parse errors (on by default)
@@ -155,7 +155,7 @@ SHELL OPTIONS
                   X strict_backslash     Parse the sublanguage more strictly
                   X strict_glob          Parse the sublanguage more strictly
                   X strict_trap          Function name only
-  [all:oil]                              All options below and more
+  [oil:basic]                            Enable Oil functionality
                   parse_at               echo @array @arrayfunc(x, y)
                   parse_brace            if true { ... }; cd ~/src { ... }
                   parse_paren            if (x > 0) ...
@@ -163,11 +163,11 @@ SHELL OPTIONS
                   X parse_rawc           r'\'   c'\n'   c"$x\n"
                   X longopts             test -file, read -delim, etc.
                   more_errexit           More errexit checks --  at command sub
-                  simple_echo            Doesn't join args; -sep -end and --
                   simple_word_eval       No splitting, static globbing
-  [all:nice]                             Makes scripts more consistent
+  [oil:nice]                             The full Oil language
                   parse_equals           x = 's' (for cleaner config blocks)
                   parse_set              instead of setvar
+                  simple_echo            Doesn't join args; -sep -end and --
                   X no_old_builtins      local/declare/etc.  pushd/popd/dirs
                                          source  unset  printf  [un]alias
                                          getopts

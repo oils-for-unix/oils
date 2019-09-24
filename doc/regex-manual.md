@@ -128,7 +128,7 @@ We accept both Perl and POSIX classes.
   - `%last_line_end` is `\Z`
 - GNU ERE extensions:
   - `%word_start` is `\<`
-  - `%end_word` is `\>`
+  - `%word_end` is `\>`
 
 #### Literals
 
@@ -199,19 +199,20 @@ This is similar to how `lex` and `re2c` work.
 
 #### Grouping, Capturing
 
-Capture with `()`:
+Group with `(pat)`
 
-    ('foo' or 'bar')+   # Becomes M.group(1)
-
-Named capture
-
-    ('foo' or 'bar' as myvar)  # Becomes M.group('myvar')
-
-Group with `:()`
-
-    :('foo' or 'bar')
+    ('foo' | 'bar')+
 
 See note below: POSIX ERE has no non-capturing groups.
+
+
+Capture with `<pat>`:
+
+    <'foo' | 'bar'>+   # Becomes M.group(1)
+
+Add a variable after `=` for named capture:
+
+    <'foo' | 'bar' = myvar>  # Becomes M.group('myvar')
 
 #### Character Class Literals
 
@@ -541,36 +542,3 @@ feedback!
 You can create a new post on [/r/oilshell](https://www.reddit.com/r/oilshell/)
 or a new message on `#oil-discuss` on <https://oilshell.zulipchat.com/> (log in
 with Github, etc.)
-
-## TODO
-
-Multiline syntax:
-
-    var x = ///
-      abc   # TODO: comments
-      a+
-    ///
-
-Regex flags:
-
-    $/ d+ ; ignorecase ~multiline/
-    $/ d+ ; i ~m/
-
-Translation preference:
-
-    $/ d+ ; i m ; PCRE/     %ERE, %PCRE, %Python
-
-    echo $/ d+ ; ignorecase ; ERE/    # prints [[:digit:]]
-    echo $/ d+ ; ignorecase ; perl/   # prints \d+
-    echo $/ d+ ;; python/             # prints \d+
-
-Inline syntax:
-
-  grep -P $/d+ ;; perl/ f
-
-More zero-width asertions:
-
-- %start_word %end_word  for < and >
-
-Oil's API.
-
