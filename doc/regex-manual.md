@@ -536,15 +536,15 @@ Python, etc.  That means they **cannot** be used this way.
 
 #### Why Don't `dot`, `%start`, and `%end` Have More Precise Names?
 
-Because the meanings of `. ^` and `$` are usually affected by regex engine
+Because the meanings of `.` `^` and `$` are usually affected by regex engine
 flags, like `dotall`, `multiline`, and `unicode`.
 
 As a result, the names mean nothing more than "however your regex engine
-interprets `.` `^` and `$`.
+interprets `.` `^` and `$`".
 
 As mentioned in the "Philosophy" section above, eggex only does a superficial,
 one-to-one translation.  It doesn't understand the details of which characters
-will matched under which engine.
+will be matched under which engine.
 
 #### Where Do I Send Feedback?
 
