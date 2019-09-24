@@ -229,8 +229,8 @@ dbg-all() {
 # prevent regressions.)
 #
 
-bin-oil() {
-  sh-spec spec/bin-oil.test.sh $OIL_LIST "$@"
+oil-bin() {
+  sh-spec spec/oil-bin.test.sh $OIL_LIST "$@"
 }
 
 smoke() {

@@ -46,6 +46,26 @@ _spec-manifest() {
 
 manifest() {
   _spec-manifest > _tmp/spec/MANIFEST.txt
+
+  # Testing out obscure bash syntax.  How do we do this in Oil?
+  # redir { } should come at the FRONT!  Maybe we should have sigils like
+  # &left < path.txt &right < path.txt
+
+  { while read t; do
+      case $t in
+        (oil-*)
+          echo $t >& $oil
+          ;;
+        (*)
+          echo $t >& $osh
+          ;;
+      esac
+    done 
+  } < _tmp/spec/MANIFEST.txt \
+    {oil}>_tmp/spec/OIL-SUITE.txt \
+    {osh}>_tmp/spec/OSH-SUITE.txt
+
+  wc -l _tmp/spec/*.txt | sort -n
 }
 
 run-cases() {
@@ -343,6 +363,7 @@ all-tests-to-html() {
     | xargs -n 1 -P $JOBS --verbose -- $0 test-to-html || true
 }
 
-if test "$(basename $0)" = 'spec-runner.sh'; then
+filename=$(basename $0)
+if test "$filename" = 'spec-runner.sh'; then
   "$@"
 fi
