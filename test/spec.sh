@@ -44,6 +44,7 @@ readonly OSH_OVM=${OSH_OVM:-$REPO_ROOT/_bin/osh}
 OSH_LIST=${OSH_LIST:-}  # A space-separated list.
 
 if test -z "$OSH_LIST"; then
+  # By default, run with both, unless $OSH_OVM isn't available.
   if test -e $OSH_OVM; then
     # TODO: Does it make sense to copy the binary to an unrelated to directory,
     # like /tmp?  /tmp/{oil.ovm,osh}.
@@ -53,6 +54,19 @@ if test -z "$OSH_LIST"; then
   fi
 fi
 
+readonly OIL_CPYTHON="$REPO_ROOT/bin/oil"
+readonly OIL_OVM=${OSH_OVM:-$REPO_ROOT/_bin/oil}
+
+OIL_LIST=${OIL_LIST:-}  # A space-separated list.
+
+if test -z "$OIL_LIST"; then
+  # By default, run with both, unless $OIL_OVM isn't available.
+  if test -e $OIL_OVM; then
+    OIL_LIST="$OIL_CPYTHON $OIL_OVM"
+  else
+    OIL_LIST="$OIL_CPYTHON"
+  fi
+fi
 
 # ash and dash are similar, so not including ash by default.  zsh is not quite
 # POSIX.
@@ -209,11 +223,15 @@ dbg-all() {
 }
 
 #
-# Invidual tests.
+# Individual tests.
 #
 # We configure the shells they run on and the number of allowed failures (to
 # prevent regressions.)
 #
+
+bin-oil() {
+  sh-spec spec/bin-oil.test.sh $OIL_LIST "$@"
+}
 
 smoke() {
   sh-spec spec/smoke.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"

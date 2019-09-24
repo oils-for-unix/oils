@@ -320,6 +320,12 @@ def ShellMain(lang, argv0, argv, login_shell):
     exec_opts.ShowOptions([])
     return 0
 
+  # Set these BEFORE processing flags, so they can be overridden.
+  if lang == 'oil':
+    # TODO: Change to oil:all
+    exec_opts.SetShoptOption('all:oil', True)
+    exec_opts.SetShoptOption('all:nice', True)
+
   builtin_pure.SetExecOpts(exec_opts, opts.opt_changes, opts.shopt_changes)
   aliases = {}  # feedback between runtime and parser
 
@@ -586,10 +592,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   # TODO: assert arena.NumSourcePaths() == 1
   # TODO: .rc file needs its own arena.
-  if lang == 'osh':
-    c_parser = parse_ctx.MakeOshParser(line_reader)
-  else:
-    c_parser = parse_ctx.MakeOilParser(line_reader)
+  c_parser = parse_ctx.MakeOshParser(line_reader)
 
   if exec_opts.interactive:
     # Calculate ~/.config/oil/oshrc or oilrc
