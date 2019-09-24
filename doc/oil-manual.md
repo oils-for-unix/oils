@@ -34,7 +34,7 @@ using shell options that are toggled with the `shopt` builtin.
 This is how you opt into the Oil language:
 
 ```
-shopt -s all:oil
+shopt -s oil:all
 ```
 
 It turns on:
@@ -42,13 +42,13 @@ It turns on:
 - `errexit`, `nounset` (`sh` modes to get more errors)
 - `pipefail` and `inherit_errexit` (`bash` modes to get more errors)
 - Oil modes:
-  - `simple-word-eval` (subsumes `nullglob` that `all:strict` includes)
+  - `simple-word-eval` (subsumes `nullglob` that `strict:all` includes)
   - `more_errexit`
   - `strict-*` (`strict-array`, etc.)
   - `parse-*` (`parse-at`, etc.)
 
 When you care about running your script under other shells, use `shopt -s
-all:strict`, which is documented in the [OSH manual](osh-manual.html).
+strict:all`, which is documented in the [OSH manual](osh-manual.html).
 
 #### Parsing Options
 

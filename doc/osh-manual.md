@@ -93,10 +93,10 @@ kinds:
 List them all with `set -o` and `shopt -p`.  Other than syntax, there's no
 essential difference between the two kinds.
 
-#### shopt -s all:strict is Recommended
+#### shopt -s strict:all is Recommended
 
 OSH adds more options on top of those provided by POSIX and bash.  It has  a
-shortcut `shopt -s all:strict` which turns on many options at once:
+shortcut `shopt -s strict:all` which turns on many options at once:
 
 - `errexit`, `nounset` (`sh` modes to get more errors)
 - `pipefail` and `inherit_errexit` (`bash` modes to get more errors)
@@ -107,7 +107,7 @@ shortcut `shopt -s all:strict` which turns on many options at once:
 
 If you want your script to be portable to other shells, use this line:
 
-    shopt -s all:strict 2>/dev/null || true  # suppress errors
+    shopt -s strict:all 2>/dev/null || true  # suppress errors
 
 You can also turn individual options on or off:
 
@@ -144,7 +144,7 @@ arithmetic expressions.  NOTE: This option may be removed if no scripts rely on
 the old, bad behavior.
 
 See the [Oil manual](oil-manual.html) for options that fundamentally change the
-shell language, e.g. those categorized under `shopt -s all:oil`.
+shell language, e.g. those categorized under `shopt -s oil:all`.
 
 ### OSH Has Four `errexit` Options (while Bash Has Two)
 
@@ -155,14 +155,14 @@ But you don't need to understand all the details.  Simply choose between:
 
 ```
 # Turn on four errexit options.  I don't run this script with other shells.
-shopt -s all:oil
+shopt -s oil:all
 ```
 
 and
 
 ```
 # Turn on three errexit options.  I run this script with other shells.
-shopt -s all:strict
+shopt -s strict:all
 ```
 
 #### Quirk 1: the Shell Sometimes Disables And Restores `errexit`
@@ -197,7 +197,7 @@ OSH aims to fix the many quirks of `errexit`.  It has this bash-compatible
 option:
 
 - `inherit_errexit`: `errexit` is inherited inside `$()`, so errors aren't
-  ignored.  It's enabled by both `all:strict` and `all:oil`.
+  ignored.  It's enabled by both `strict:all` and `oil:all`.
 
 And two more options:
 
@@ -227,8 +227,8 @@ will print `0` and touch the file `one`.
 - `errexit` -- abort the shell script when a command exits nonzero, except in
   the three situations described above.
 - `inherit_errexit` -- A bash option that OSH borrows.
-- `strict_errexit` -- Turned on with `all:strict`.
-- `more_errexit` -- Turned on with `all:oil`.
+- `strict_errexit` -- Turned on with `strict:all`.
+- `more_errexit` -- Turned on with `oil:all`.
 
 Good articles on `errexit`:
 
