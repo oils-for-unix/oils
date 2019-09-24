@@ -220,9 +220,9 @@ echo 7
 6
 ## END
 
-#### shopt -s all:strict || true while errexit is on
+#### shopt -s strict:all || true while errexit is on
 set -o errexit
-shopt -s all:strict || true
+shopt -s strict:all || true
 echo one
 false  # fail
 echo two

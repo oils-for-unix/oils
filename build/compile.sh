@@ -6,7 +6,7 @@
 set -o nounset
 set -o pipefail
 set -o errexit
-shopt -s all:strict 2>/dev/null || true  # dogfood for OSH
+shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
 source build/common.sh
 

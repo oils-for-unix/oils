@@ -141,8 +141,8 @@ f 1 '2 3'
 ['1', '2 3']
 ## END
 
-#### shopt -s all:strict
-shopt -s all:strict
+#### shopt -s strict:all
+shopt -s strict:all
 # normal option names
 shopt -o -p | grep -- ' -o ' | grep -v hashall
 shopt -p | grep -- ' -s '
@@ -201,8 +201,8 @@ two
 three
 ## END
 
-#### all:strict includes inherit_errexit
-shopt -s all:strict
+#### strict:all includes inherit_errexit
+shopt -s strict:all
 echo $(echo one; false; echo two)
 ## STDOUT:
 one

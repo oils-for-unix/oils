@@ -406,7 +406,7 @@ invalidZZ=1
 invalidZZ=127
 ## END
 
-#### shopt -s all:strict
+#### shopt -s strict:all
 n=2
 
 show-strict() {
@@ -415,9 +415,9 @@ show-strict() {
 }
 
 show-strict
-shopt -s all:strict
+shopt -s strict:all
 show-strict
-shopt -u all:strict
+shopt -u strict:all
 show-strict
 ## STDOUT:
 shopt -u strict_argv
