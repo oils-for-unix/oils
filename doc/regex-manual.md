@@ -122,8 +122,13 @@ We accept both Perl and POSIX classes.
 
 - `%start` is `^`
 - `%end` is `$`
-- `%start_word` is GNU `\<`
-- `%end_word` is GNU `\>`
+- PCRE:
+  - `%input_start` is `\A`
+  - `%input_end` is `\z`
+  - `%last_line_end` is `\Z`
+- GNU ERE extensions:
+  - `%word_start` is `\<`
+  - `%end_word` is `\>`
 
 #### Literals
 
@@ -512,6 +517,17 @@ Python, etc.  That means they **cannot** be used this way.
 
 [perl6-regex]: https://docs.perl6.org/language/regexes
 
+### Why Don't `dot`, `%start`, and `%end` Have More Precise Names?
+
+Because the meanings of `. ^` and `$` are usually affected by regex engine
+flags, like `dotall`, `multiline`, and `unicode`.
+
+As a result, the names mean nothing more htan "whatever your regex engine does
+for `.` `^` and `$`.
+
+As mentioned in the "Philosophy" section above, eggex only does a superficial,
+one-to-one translation.  It doesn't understand the details of which characters
+will matched under which engine.
 
 ### Where Do I Send Feedback?
 
