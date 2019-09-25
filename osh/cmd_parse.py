@@ -1640,7 +1640,7 @@ class CommandParser(object):
 
       keyword = self.cur_word.parts[0].token
       self._Next()
-      enode = self.w_parser.ParseReturn()
+      enode = self.w_parser.ParseCommandExpr()
       node = command.Return(keyword, enode)
       return node
 

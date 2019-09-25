@@ -446,6 +446,9 @@ def AddKinds(spec):
       'SetVar',  # for OSH compatibility
       'Proc', 'Func',
 
+      # for printing
+      'Pass', 'Pp',
+
       'Match', 'With',  # matching
       # not sure: yield
       # mycpp

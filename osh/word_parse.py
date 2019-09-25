@@ -855,17 +855,17 @@ class WordParser(object):
     self._Peek()
     op = self.cur_token  # TODO: Don't need this
     enode, last_token = self.parse_ctx.ParseOilExpr(self.lexer,
-        grammar_nt.return_expr)
+                                                    grammar_nt.command_expr)
     if last_token.id == Id.Op_RBrace:
       last_token.id = Id.Lit_RBrace
     self.buffered_word = word.Token(last_token)
     self._Next(lex_mode_e.ShCommand)
     return op, enode
 
-  def ParseReturn(self):
+  def ParseCommandExpr(self):
     # type: () -> expr_t
     enode, last_token = self.parse_ctx.ParseOilExpr(self.lexer,
-        grammar_nt.return_expr)
+                                                    grammar_nt.command_expr)
     if last_token.id == Id.Op_RBrace:
       last_token.id = Id.Lit_RBrace
     self.buffered_word = word.Token(last_token)

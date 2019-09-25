@@ -245,6 +245,8 @@ _KEYWORDS = [
   C('set',      Id.KW_Set),
   C('func',     Id.KW_Func),
   C('proc',     Id.KW_Proc),
+  C('pass',     Id.KW_Pass),
+  C('pp',       Id.KW_Pp),
 ]
 
 # These are treated like builtins in bash, but keywords in OSH.  However, we

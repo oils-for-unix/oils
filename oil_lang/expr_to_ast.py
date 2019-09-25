@@ -321,7 +321,7 @@ class Transformer(object):
         # oil_expr: '(' testlist ')'
         return self.Expr(children[1])
 
-      if typ == grammar_nt.return_expr:
+      if typ == grammar_nt.command_expr:
         # return_expr: testlist end_stmt
         return self.Expr(children[0])
 

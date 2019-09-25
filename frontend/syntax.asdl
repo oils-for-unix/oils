@@ -296,8 +296,10 @@ module syntax
   | VarDecl(token? keyword, expr lhs, type_expr? typ, token op, expr rhs)
     -- setvar/set, auto
   | PlaceMutation(token? keyword, expr lhs, expr rhs)
-  | Do(expr e)      -- an expression for its side effects
-  | Return(token keyword, expr e)  -- returnin an Obj, not an int-like string
+    -- do, pp, pass.  An expression for its side effects
+  | Expr(token keyword, expr e)
+    -- return an Obj, not an int-like string
+  | Return(token keyword, expr e)
   | OilCondition(expr e) -- for if/while
     -- C-style for loop?  Currently unused.
   | OilFor3(expr? init, expr? cond, expr? update, command? body)
