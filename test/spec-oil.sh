@@ -22,6 +22,11 @@ oil-expr() {
     $OSH_LIST "$@"
 }
 
+oil-subscript() {
+  sh-spec spec/oil-subscript.test.sh --cd-tmp --osh-failures-allowed 1 \
+    $OSH_LIST "$@"
+}
+
 oil-regex() {
   sh-spec spec/oil-regex.test.sh --cd-tmp --osh-failures-allowed 1 \
     $OSH_LIST "$@"

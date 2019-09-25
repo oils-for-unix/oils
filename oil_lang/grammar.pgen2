@@ -19,7 +19,8 @@ lambdef_nocond: 'lambda' [name_type_list] ':' test_nocond
 or_test: and_test ('or' and_test)*
 and_test: not_test ('and' not_test)*
 not_test: 'not' not_test | comparison
-comparison: expr (comp_op expr)*
+comparison: slice_expr (comp_op slice_expr)*
+slice_expr: expr [':' expr] [':' expr]
 # Oil patch: removed legacy <>
 comp_op: (
     '<'|'>'|'=='|'>='|'<='|'!='|'in'|'not' 'in'|'is'|'is' 'not'|

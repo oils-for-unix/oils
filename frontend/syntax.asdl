@@ -369,10 +369,9 @@ module syntax
 
   | Unary(token op, expr child)
   | Binary(token op, expr left, expr right)
+    -- x < 4 < 3 and (x < 4) < 3
+  | Compare(expr left, speck* ops, expr* comparators)
   | FuncCall(expr func, expr* args)
-    -- a[1, 2] or a[1:2]
-    -- should 1:2 be an expression then?
-  | Subscript(expr collection, expr* indices)
 
   -- COPIED from Python-3.7/Parser/Python.asdl and lightly modified.
   -- Will need more changes.
@@ -389,41 +388,30 @@ module syntax
   | DictComp(expr key, expr value, comprehension* generators)
   | GeneratorExp(expr elt, comprehension* generators)
 
-  -- NOTE: unused; Oil currently uses Binary
-  -- need sequences for compare to distinguish between
-  -- x < 4 < 3 and (x < 4) < 3
-  | Compare(expr left, speck* ops, expr* comparators)
-
     -- TODO: Replace FuncCall
+    -- TODO: Need a representation for method call.  We don't just want
+    -- Attribute() and then Call()
+
   | Call(expr func, expr* args, keyword* keywords)
+
     -- In Python 2, ... is a "symbol" in slices like numpy_array[1:2, ...]
     -- In Python 3, it's allowed everywhere, and used in .pyi files.
-
+    -- Fold this in with symbols?
   | Ellipsis
 
-  -- TODO: Need a representation for method call.  We don't just want
-  -- Attribute() and then Call()
+  | Range(expr? lower, expr? upper, expr? step)
+    -- a[1, 2]   a[1:2]  a[1:2, 3]  a[1, 2:3, ...]
+  | Subscript(expr collection, expr* indices)
 
   -- the following expressions can appear in assignment context
     -- TODO: op should be 'speck'
   | Attribute(expr value, token op, token attr, expr_context ctx)
-    -- TODO: we used Subscript() above, might want to migrate?
-  | Subscript_PYTHON(expr value, slice slice, expr_context ctx)
-    -- TODO: are we allowing extended unpacking like set x, *y = z?
-    -- I guess there's no reason not to, but it's a bit exotic and rare.
-    -- It doesn't fit in the static "Coil" subset.
   | Starred(expr value, expr_context ctx)
   attributes (int* spids)
 
   expr_context = Load | Store | Del | AugLoad | AugStore | Param
 
-  slice = Slice(expr? lower, expr? upper, expr? step)
-        | ExtSlice(slice* dims)
-        | Index(expr value)
-
   comprehension = (expr target, expr iter, expr* ifs)
-
-  cmpop = Eq | NotEq | Lt | LtE | Gt | GtE | Is | IsNot | In | NotIn
 
   -- keyword arguments supplied to call (NULL identifier for **kwargs)
   keyword = (token? arg, expr value)

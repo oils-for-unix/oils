@@ -432,6 +432,22 @@ class Transformer(object):
 
         return self._CompareChain(children)
 
+      elif typ == grammar_nt.slice_expr:
+        if len(children) == 1:
+          return self.Expr(children[0])
+        if len(children) == 3:
+          return expr.Range(
+              self.Expr(children[0]),
+              self.Expr(children[2])
+          )
+        if len(children) == 5:
+          return expr.Range(
+              self.Expr(children[0]),
+              self.Expr(children[2]),
+              self.Expr(children[4]),
+          )
+        raise AssertionError(children)
+
       elif typ == grammar_nt.expr:
         # expr: xor_expr ('|' xor_expr)*
         return self._AssocBinary(children)
@@ -486,10 +502,6 @@ class Transformer(object):
 
         return node
 
-      #
-      # Oil Lexer Modes
-      #
-
       elif typ == grammar_nt.array_literal:
         left_tok = children[0].tok
 
@@ -500,6 +512,10 @@ class Transformer(object):
         ]
         items = [expr.Const(t) for t in tokens]  # type: List[expr_t]
         return expr.ArrayLiteral(left_tok, items)
+
+      #
+      # Oil Lexer Modes
+      #
 
       elif typ == grammar_nt.sh_array_literal:
         left_tok = children[0].tok
