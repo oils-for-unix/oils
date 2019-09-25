@@ -1039,7 +1039,10 @@ class Executor(object):
 
     elif node.tag == command_e.Expr:
       obj = self.expr_ev.EvalExpr(node.e)
-      print(repr(obj))
+      if node.keyword.id == Id.KW_Pp:
+        print(repr(obj))
+
+      # TODO: What about exceptions?  They just throw?
       status = 0
 
     elif node.tag == command_e.ControlFlow:

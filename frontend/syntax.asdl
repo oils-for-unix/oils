@@ -297,7 +297,7 @@ module syntax
     -- setvar/set, auto
   | PlaceMutation(token? keyword, expr lhs, expr rhs)
     -- do, pp, pass.  An expression for its side effects
-  | Expr(token keyword, expr e)
+  | Expr(speck keyword, expr e)
     -- return an Obj, not an int-like string
   | Return(token keyword, expr e)
   | OilCondition(expr e) -- for if/while

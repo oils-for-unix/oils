@@ -31,7 +31,7 @@ from _devbuild.gen.syntax_asdl import (
 
     source,
     parse_result, parse_result_t,
-    expr,
+    expr, speck,
 )
 from _devbuild.gen import syntax_asdl  # token, etc.
 
@@ -1640,14 +1640,15 @@ class CommandParser(object):
       node = command.Return(keyword, enode)
       return node
 
-    if self.c_id in (Id.KW_Do, Id.KW_Pass, Id.KW_Pp):
+    # TODO: Can we have parse_do here?  For do obj.method()
+    if self.c_id in (Id.KW_Pass, Id.KW_Pp):
       assert isinstance(self.cur_word, word__Compound)  # for MyPy
       assert isinstance(self.cur_word.parts[0], word_part__Literal)  # for MyPy
 
       keyword = self.cur_word.parts[0].token
       self._Next()
       enode = self.w_parser.ParseCommandExpr()
-      node = command.Expr(keyword, enode)
+      node = command.Expr(speck(keyword.id, keyword.span_id), enode)
       return node
 
     # NOTE: I added this to fix cases in parse-errors.test.sh, but it doesn't
