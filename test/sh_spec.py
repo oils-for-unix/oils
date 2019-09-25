@@ -70,6 +70,7 @@ import time
 
 OSH_CPYTHON = ('osh', 'osh-dbg')
 OTHER_OSH = ('osh_ALT', 'osh-byterun')
+OIL_CPYTHON = ('oil', 'oil-dbg')
 
 
 class ParseError(Exception):
@@ -484,7 +485,7 @@ class Stats(object):
       if sh_label not in OTHER_OSH:
         c['num_failed'] += 1
 
-      if sh_label in OSH_CPYTHON:
+      if sh_label in OSH_CPYTHON + OIL_CPYTHON:
         c['osh_num_failed'] += 1
     elif cell_result == Result.BUG:
       c['num_bug'] += 1
@@ -494,7 +495,7 @@ class Stats(object):
       c['num_ok'] += 1
     elif cell_result == Result.PASS:
       c['num_passed'] += 1
-      if sh_label in OSH_CPYTHON:
+      if sh_label in OSH_CPYTHON + OIL_CPYTHON:
         c['osh_num_passed'] += 1
     else:
       raise AssertionError
