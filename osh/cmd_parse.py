@@ -1630,10 +1630,6 @@ class CommandParser(object):
     # return (x+y).  NOTE: We're not calling ParseCompoundCommand.  That
     # doesn't seem to matter except for f() return x (no braces), which we
     # don't care about.
-
-    # TODO: Get rid of parens
-    # testlist '}' | EOF | ';'
-
     if self.return_expr and self.c_id == Id.ControlFlow_Return:
       assert isinstance(self.cur_word, word__Compound)  # for MyPy
       assert isinstance(self.cur_word.parts[0], word_part__Literal)  # for MyPy
@@ -1642,6 +1638,16 @@ class CommandParser(object):
       self._Next()
       enode = self.w_parser.ParseCommandExpr()
       node = command.Return(keyword, enode)
+      return node
+
+    if self.c_id in (Id.KW_Do, Id.KW_Pass, Id.KW_Pp):
+      assert isinstance(self.cur_word, word__Compound)  # for MyPy
+      assert isinstance(self.cur_word.parts[0], word_part__Literal)  # for MyPy
+
+      keyword = self.cur_word.parts[0].token
+      self._Next()
+      enode = self.w_parser.ParseCommandExpr()
+      node = command.Expr(keyword, enode)
       return node
 
     # NOTE: I added this to fix cases in parse-errors.test.sh, but it doesn't

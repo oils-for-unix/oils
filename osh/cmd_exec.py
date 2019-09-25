@@ -1037,6 +1037,11 @@ class Executor(object):
       val = self.expr_ev.EvalExpr(node.e)
       raise _ControlFlow(node.keyword, val)
 
+    elif node.tag == command_e.Expr:
+      obj = self.expr_ev.EvalExpr(node.e)
+      print(repr(obj))
+      status = 0
+
     elif node.tag == command_e.ControlFlow:
       tok = node.token
 
@@ -1394,7 +1399,8 @@ class Executor(object):
         command_e.NoOp, command_e.ControlFlow, command_e.Pipeline,
         command_e.AndOr, command_e.CommandList, command_e.Sentence,
         command_e.TimeBlock, command_e.ShFunction, command_e.VarDecl,
-        command_e.OilCondition, command_e.OilFuncProc, command_e.Return):
+        command_e.OilCondition, command_e.OilFuncProc, command_e.Return,
+        command_e.Expr):
       redirects = []
     else:
       try:
