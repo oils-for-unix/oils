@@ -112,7 +112,18 @@ var mydict = {[2,3]: 'foo'}
 var val = mydict[(2, 3)]
 echo $val
 # TODO: This should work!
-#setvar val = mydict[2, 3]
+setvar val = mydict[2, 3]
+echo $val
 ## STDOUT:
 foo
+foo
 ## END
+
+#### Index with expression
+var mydict = {[5]: 3}
+var val = mydict[2+3]
+echo $val
+## STDOUT:
+3
+## END
+

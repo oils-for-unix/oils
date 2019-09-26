@@ -415,8 +415,12 @@ class OilEvaluator(object):
     if node.tag == expr_e.Subscript:
       collection = self.EvalExpr(node.collection)
 
-      # TODO: handle multiple indices like a[i, j]
-      index = self.EvalExpr(node.indices[0])
+      if len(node.indices) == 1:
+        index = self.EvalExpr(node.indices[0])
+      else:
+        # e.g. mydict[a,b]
+        index = tuple(self.EvalExpr(ind) for ind in node.indices)
+
       return collection[index]
 
     # TODO: obj.method() should be separate
