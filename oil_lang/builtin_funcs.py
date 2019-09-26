@@ -63,8 +63,10 @@ def Init(mem):
   # round()
   # divmod() - probably useful?  Look at the implementation
 
-  # Return an iterable like Python 3.
+  # Return an iterable like Python 3.  Used for 'step' param.
   SetGlobalFunc(mem, 'range', xrange)
+  # For the 'step' param.
+  SetGlobalFunc(mem, 'slice', slice)
 
   # Not the best API, but requires no new syntax, and is familiar to Python
   # users.
