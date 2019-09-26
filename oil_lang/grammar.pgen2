@@ -57,12 +57,21 @@ atom: (
 )
 testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
 
+# var f = f(x)
 trailer: (
     '(' [arglist] ')'
   | '[' subscriptlist ']'
-  | '.' NAME
-  | '->' NAME
-  | '::' NAME
+  | '.' Expr_Name
+  | '->' Expr_Name
+  | '::' Expr_Name
+)
+
+# e.g. setvar x->key = 0
+place_trailer: (
+    '[' subscriptlist ']'
+  | '.' Expr_Name
+  | '->' Expr_Name
+  | '::' Expr_Name
 )
 
 # Oil patch: this is 'expr' instead of 'test'
@@ -194,16 +203,16 @@ simple_var_sub: (
 name_type: Expr_Name [type_expr]
 name_type_list: name_type (',' name_type)*
 
-# setvar x[key], x.attr = 1, 2
-place_trailer: '[' subscriptlist ']' | '.' NAME
-place: NAME place_trailer*
+place: Expr_Name place_trailer*
 place_list: place (',' place)*
 
-type_expr: NAME [ '[' type_expr (',' type_expr)* ']' ]
+type_expr: Expr_Name [ '[' type_expr (',' type_expr)* ']' ]
 
 # NOTE: Eof_RParen and Eof_Backtick aren't allowed because we don't want 'var'
 # in command subs.
 end_stmt: '}' | ';' | Op_Newline | Eof_Real 
+
+# TODO: oil_var should be oil_var_decl and use name_type_list
 oil_var: place_list [type_expr] '=' testlist end_stmt
 oil_setvar: place_list (augassign | '=') testlist end_stmt
 
@@ -222,11 +231,11 @@ oil_for: '(' place_list 'in' testlist ')'
 #           proc rule(@argv, b Block) { }
 # We have to put the opening { there for pgen2.  TODO: Also accept :{ so the
 # lexer knows to change modes.
-oil_func_proc: NAME ['(' params [';' params] ')'] [type_expr] '{'
+oil_func_proc: Expr_Name ['(' params [';' params] ')'] [type_expr] '{'
 #oil_func_proc: NAME '(' params* [';' params*] ')'
 params: param (',' param)* [',']
 # ... is for *args or **kwargs of any type, and @argv is for string args
-param: NAME [type_expr] ['=' expr] | '...' NAME | '@' NAME
+param: Expr_Name [type_expr] ['=' expr] | '...' Expr_Name | '@' Expr_Name
 
 #
 # Regex Sublanguage

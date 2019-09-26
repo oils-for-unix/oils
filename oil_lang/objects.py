@@ -56,10 +56,21 @@ class StrArray(list):
 
 
 class Table(dict):
-  """
-  This is a data frame, which is a dict of arrays.
+  """A table is our name for a data frame. 
+  
+  It's represented by a dict of arrays.
 
-  NOTE that we don't need ellipsis because we only have two dimensions.
+  Notes:
+
+  - Can we do table[rowexpr, columnexpr] slicing?
+
+    t[name == 'bob',]              # A 1-tuple isn't good?
+    t[name == 'bob', :]            # This is better
+    t[name == 'bob', @(name age)]  # Select columns
+
+  Problem: it would require lazy evaluation.
+
+  - We don't need Ellipsis because we only have two dimensions.
 
   print(b[...,1]) #Equivalent to b[: ,: ,1 ] 
   """
@@ -69,6 +80,11 @@ class Table(dict):
   def __getitem__(self, index):
     """
     TODO: Accept slices here.
+
+    d['mycol']  # returns a vector
+    d->mycol
+
+    d[rowexpr, colexpr]  # how to implement this?
     """
     # Shows the slice objects
     #log('index %s', index)

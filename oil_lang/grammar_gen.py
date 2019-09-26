@@ -17,19 +17,6 @@ from frontend import lexer, match, reader, lex
 from pgen2 import parse, pgen
 
 
-# TODO: We should be able to remove all these.
-TERMINALS = {
-    'NAME': Id.Expr_Name,
-
-    # The grammar seems something like 'for' or '>='
-    # These need to be looked up at "_Classify" time?
-    #'STRING': Id.Expr_Name,
-
-    'NEWLINE': Id.Op_Newline,
-    'ENDMARKER': Id.Eof_Real,
-}
-
-
 class OilTokenDef(object):
 
   def __init__(self, ops, more_ops, keyword_ops):
@@ -41,7 +28,7 @@ class OilTokenDef(object):
     """
     e.g. translate Expr_Name in the grammar to 178
     """
-    id_ = TERMINALS.get(label) or getattr(Id, label)
+    id_ = getattr(Id, label)
     #log('Id %s = %d', id_, id_.enum_id)
     assert id_.enum_id < 256, id_
     return id_.enum_id

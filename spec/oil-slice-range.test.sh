@@ -162,3 +162,23 @@ pp t2
 'TODO: Table Slicing'
 'TODO: Table Slicing'
 ## END
+
+#### Slice with Range
+shopt -s oil:all
+var mylist = [1,2,3,4,5]
+var r = 1:3
+var myslice = mylist[r]
+echo @myslice
+## STDOUT:
+a
+## END
+
+#### Range with list constructor
+shopt -s oil:all
+var mylist = list(0:3)
+echo @mylist
+## STDOUT:
+0
+1
+2
+## END
