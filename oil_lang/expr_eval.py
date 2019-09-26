@@ -385,6 +385,38 @@ class OilEvaluator(object):
 
       return result
 
+    if node.tag == expr_e.GeneratorExp:
+      comp = node.generators[0]
+      obj = self.EvalExpr(comp.iter)
+
+      iter_name = comp.target.name.val
+
+      it = iter(obj)
+
+      # TODO: There is probably a much better way to do this!
+      #       The scope of the loop variable is wrong, etc.
+
+      def _gen():
+        while True:
+          try:
+            loop_val = next(it)  # e.g. x
+          except StopIteration:
+            break
+          self.mem.SetVar(
+              lvalue.Named(iter_name), value.Obj(loop_val), (),
+              scope_e.LocalOnly)
+
+          if comp.ifs:
+            b = self.EvalExpr(comp.ifs[0])
+          else:
+            b = True
+
+          if b:
+            item = self.EvalExpr(node.elt)  # e.g. x*2
+            yield item
+
+      return _gen()
+
     if node.tag == expr_e.FuncCall:
       # TODO:
       #

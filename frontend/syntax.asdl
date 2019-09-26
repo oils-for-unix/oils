@@ -348,18 +348,19 @@ module syntax
   --
   -- OIL LANGUAGE
   --
+  -- Copied and modified from Python-3.7/Parser/Python.asdl !
 
   expr =
     Var(token name)  -- a variable name to evaluate
     -- For null, Bool, Int, Float
-    -- Note that Python has Num(object n).  But if we evaluate it, then the
-    -- tree isn't "lossless" anymore.
+    -- Python uses Num(object n), which doesn't respect our "LST" invariant.
+    -- speck?
   | Const(token c)
     -- @(one 'two' "$three")
   | ShArrayLiteral %sh_array_literal
     -- @[a b c] @[1 2 3] @[(1+1) (2+2)]
   | ArrayLiteral(token left, expr* items)
-  | RegexLiteral(token left, re regex, token* flags)
+  | RegexLiteral(token left, re regex, token* flags, token* trans_pref)
 
   | SimpleVarSub %simple_var_sub
   | BracedVarSub %braced_var_sub
@@ -367,14 +368,12 @@ module syntax
   | SingleQuoted %single_quoted
   | DoubleQuoted %double_quoted
 
+    -- TODO: speck op
   | Unary(token op, expr child)
   | Binary(token op, expr left, expr right)
     -- x < 4 < 3 and (x < 4) < 3
   | Compare(expr left, speck* ops, expr* comparators)
   | FuncCall(expr func, expr* args)
-
-  -- COPIED from Python-3.7/Parser/Python.asdl and lightly modified.
-  -- Will need more changes.
 
   | IfExp(expr test, expr body, expr orelse)
   | Tuple(expr* elts, expr_context ctx)
@@ -398,23 +397,20 @@ module syntax
     -- step as in Python. Use range(0, 10, step=2) for that.
   | Range(expr lower, expr upper)
 
-    -- In Python 2, ... is a "symbol" in slices like numpy_array[1:2, ...]
-    -- In Python 3, it's allowed everywhere, and used in .pyi files.
-    -- TODO: Fold this in with symbols?
-  | Ellipsis
-
     -- Slices occur within [] only.  Unlike ranges, the start/end can be --
     -- implicit.  Like ranges, denote a step with slice(0, 10, step=2).
     --   a[3:]   a[:i]
   | Slice(expr? lower, expr? upper)
 
+  -- TODO: Make these into lhs_expr, and renamet o sh_lhs_expr.
+
     -- Subscripts are lists of expressions
     --   a[:i, n]      (we don't have matrices, but we have data frames)
   | Subscript(expr collection, expr* indices)
 
-  -- the following expressions can appear in assignment context
     -- TODO: op should be 'speck'
   | Attribute(expr value, token op, token attr, expr_context ctx)
+    -- Do we need this?
   | Starred(expr value, expr_context ctx)
   attributes (int* spids)
 
@@ -439,8 +435,7 @@ module syntax
   class_literal_term = 
     PosixClass %posix_class
   | PerlClass %perl_class
-    -- NOTE: Doesn't respect LST invariant
-    -- [a-z]   ~[a-z]
+    -- [a-z]   ~[a-z]   TODO: Doesn't respect LST invariant
   | Range(string start, string end)
 
   | CharLiteral(token tok)
@@ -510,15 +505,11 @@ module syntax
 
 -- Ideas for even more precise error messages
 
-  -- A temporary value that's NOT stored in the LST.  It's the beginning or end
-  -- of a line_span / extent.
-  -- position = (int line_id, int col)
+-- A temporary value that's NOT stored in the LST.  It's the beginning or end
+-- of a line_span / extent.
+-- position = (int line_id, int col)
 
-  -- An extent represents the source locations of a word or word_part, which
-  -- may span multiple lines.  Encoded into LST with 'int exid'.
-  -- extent = (int s_line_id, int s_col,
-            int e_line_id, int e_col)
-
-  -- TODO: 'speck' optimizes for space.  It's only 6 bytes, which may pack
-  -- with other types.
-  -- speck = (id id, int span_id)
+-- An extent represents the source locations of a word or word_part, which
+-- may span multiple lines.  Encoded into LST with 'int exid'.
+-- extent = (int s_line_id, int s_col,
+             int e_line_id, int e_col)

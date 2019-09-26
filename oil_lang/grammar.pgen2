@@ -61,6 +61,11 @@ testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
 trailer: (
     '(' [arglist] ')'
   | '[' subscriptlist ']'
+
+  # TODO: Consider {} @() @[] trailers for passing a single arg that's a
+  # collection
+  # And also [[ ]] for lazy evaluation.
+
   | '.' Expr_Name
   | '->' Expr_Name
   | '::' Expr_Name

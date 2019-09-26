@@ -64,13 +64,25 @@ False
 shopt -s oil:basic
 
 var b = Array[Bool](true for _ in 1:3)
-var i = Array[Int](i+1 for i in 1:3)
-var f = Array[Float](i * 2.5 for i in 1:3)
+
+var i = Array[Int](j+1 for j in 1:3)
+#var f = Array[Float](i * 2.5 for i in 1:3)
 echo @b
 echo @i
-echo @f
+#echo @f
 ## STDOUT:
-len=0
-len=0
-len=0
+True
+True
+2
+3
+## END
+
+#### Standalone generator expression
+var x = (i+1 for i in 1:3)
+# This is NOT a list.  TODO: This test is overspecified.
+repr x | grep -o '<generator'
+echo status=$?
+## STDOUT:
+<generator
+status=0
 ## END

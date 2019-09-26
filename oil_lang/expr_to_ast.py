@@ -222,7 +222,11 @@ class Transformer(object):
     if n > 1 and children[1].typ == grammar_nt.comp_for:
       elt = self.Expr(children[0])
       comp = self._CompFor(children[1])
-      return expr.ListComp(elt, [comp])
+      if id0 == Id.Op_LParen:
+        return expr.GeneratorExp(elt, [comp])
+      if id0 == Id.Op_LBracket:
+        return expr.ListComp(elt, [comp])
+      raise AssertionError
 
     if id0 == Id.Op_LParen:
       # (1,)  (1, 2)  etc.
@@ -414,16 +418,6 @@ class Transformer(object):
         assert len(children) == 1
         return self.Expr(children[0])
 
-      if typ == grammar_nt.argument:
-        # argument: ( test [comp_for] |
-        #             test '=' test |
-        #             '**' test |
-        #             '*' test )
-        if len(pnode.children) == 1:
-          return self.Expr(children[0])
-        # TODO:
-        raise NotImplementedError
-
       elif typ == grammar_nt.exprlist:
         # exprlist: (expr|star_expr) (',' (expr|star_expr))* [',']
 
@@ -585,6 +579,7 @@ class Transformer(object):
       raise NotImplementedError(IdInstance(typ))
 
   def _ArrayItem(self, p_node):
+    # type: (PNode) -> expr_t
     assert p_node.typ == grammar_nt.array_item
 
     child0 = p_node.children[0]
@@ -654,7 +649,7 @@ class Transformer(object):
     raise AssertionError(
         "PNode type %d (%s) wasn't handled" % (typ, nt_name))
 
-  def _Argument(self, pnode):
+  def _Argument(self, p_node):
     # type: (PNode) -> expr_t
     """
     argument: ( test [comp_for] |
@@ -662,9 +657,21 @@ class Transformer(object):
                 '**' test |
                 '*' test )
     """
-    # Only simple args for now.
-    # TODO: Do keyword args and such.
-    return self.Expr(pnode)
+    assert p_node.typ == grammar_nt.argument, p_node
+    children = p_node.children
+    n = len(children)
+    if n == 1:
+      return self.Expr(children[0])
+
+    if n == 2 and children[1].typ == grammar_nt.comp_for:
+      elt = self.Expr(children[0])
+      comp = self._CompFor(children[1])
+      return expr.GeneratorExp(elt, [comp])
+
+    # TODO:
+    # - keyword args
+    # - @args and ...args
+    raise NotImplementedError
 
   def _Arglist(self, children, out):
     # type: (List[PNode], List[expr_t]) -> None

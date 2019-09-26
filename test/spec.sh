@@ -804,7 +804,7 @@ all-and-smoosh() {
 #
 
 oil-array() {
-  sh-spec spec/oil-array.test.sh --cd-tmp --osh-failures-allowed 1 \
+  sh-spec spec/oil-array.test.sh --cd-tmp --osh-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
