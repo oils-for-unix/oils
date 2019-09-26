@@ -10,7 +10,7 @@ True
 #### ranges have lower precedence than bitwise operators
 pp 3:3|4
 ## STDOUT:
-slice(3, 7, None)
+xrange(3, 7)
 ## END
 
 #### subscript and range of array
@@ -65,4 +65,23 @@ pp myarray[-2:]
 implicit
 ['1', '2', '3']
 ['4', '5']
+## END
+
+#### Range loop
+for (i in 1:3) {
+  echo "i = $i"
+}
+var lower = -3
+var upper = 2
+for (i in lower:upper) {
+  echo $i
+}
+## STDOUT:
+i = 1
+i = 2
+-3
+-2
+-1
+0
+1
 ## END

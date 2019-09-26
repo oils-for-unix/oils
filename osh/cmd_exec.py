@@ -156,6 +156,26 @@ class Deps(object):
     self.waiter = None
 
 
+def _PyObjectToVal(py_val):
+  """
+  Maintain the 'value' invariant in osh/runtime.asdl.
+
+  TODO: Move this to Mem and combine with LookupVar in oil_lang/expr_eval.py.
+  They are opposites.
+  """
+  if isinstance(py_val, str):  # var s = "hello $name"
+    val = value.Str(py_val)
+  elif isinstance(py_val, objects.StrArray):  # var a = @(a b)
+    # It's safe to convert StrArray to MaybeStrArray.
+    val = value.MaybeStrArray(py_val)
+  elif isinstance(py_val, dict):  # var d = {name: "bob"}
+    val = value.AssocArray(py_val)
+  else:
+    val = value.Obj(py_val)
+  return val
+
+
+
 class Executor(object):
   """Executes the program by tree-walking.
 
@@ -933,17 +953,7 @@ class Executor(object):
 
       if node.op.id == Id.Arith_Equal:
 
-        # Maintain the 'value' invariant in osh/runtime.asdl.
-        if isinstance(py_val, str):  # var s = "hello $name"
-          val = value.Str(py_val)
-        elif isinstance(py_val, objects.StrArray):  # var a = @(a b)
-          # It's safe to convert StrArray to MaybeStrArray.
-          val = value.MaybeStrArray(py_val)
-        elif isinstance(py_val, dict):  # var d = {name: "bob"}
-          val = value.AssocArray(py_val)
-        else:
-          val = value.Obj(py_val)
-
+        val = _PyObjectToVal(py_val)
         if node.keyword.id in (Id.KW_Var, Id.KW_Const):
           lookup_mode = scope_e.LocalOnly
         else:
@@ -955,7 +965,7 @@ class Executor(object):
 
       elif node.op.id == Id.Arith_PlusEqual:
         new_py_val = self.expr_ev.EvalPlusEquals(lval, py_val)
-        # This should only be an int or float, so we don't eed the object above
+        # This should only be an int or float, so we don't need the logic above
         val = value.Obj(new_py_val)
 
         flags = ()
@@ -1249,7 +1259,8 @@ class Executor(object):
           loop_val = next(it)
         except StopIteration:
           break
-        state.SetLocalString(self.mem, iter_name, loop_val)
+        self.mem.SetVar(lvalue.Named(iter_name), _PyObjectToVal(loop_val), (),
+                        scope_e.LocalOnly)
 
         # Copied from above
         try:

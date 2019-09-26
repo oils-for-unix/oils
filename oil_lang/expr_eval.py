@@ -260,10 +260,14 @@ class OilEvaluator(object):
       raise NotImplementedError(node.op.id)
 
     if node.tag == expr_e.Range:  # 1:10  or  1:10:2
+      lower = self.EvalExpr(node.lower)
+      upper = self.EvalExpr(node.upper)
+      return xrange(lower, upper)
+
+    if node.tag == expr_e.Slice:  # a[:0]
       lower = self.EvalExpr(node.lower) if node.lower else None
       upper = self.EvalExpr(node.upper) if node.upper else None
-      step = self.EvalExpr(node.step) if node.step else None
-      return slice(lower, upper, step)
+      return slice(lower, upper)
 
     if node.tag == expr_e.Compare:
       left = self.EvalExpr(node.left)

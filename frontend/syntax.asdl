@@ -394,17 +394,21 @@ module syntax
 
   | Call(expr func, expr* args, keyword* keywords)
 
+    -- Ranges are written 1:2, with first class expression syntax. There is no
+    -- step as in Python. Use range(0, 10, step=2) for that.
+  | Range(expr lower, expr upper)
+
     -- In Python 2, ... is a "symbol" in slices like numpy_array[1:2, ...]
     -- In Python 3, it's allowed everywhere, and used in .pyi files.
-    -- Fold this in with symbols?
+    -- TODO: Fold this in with symbols?
   | Ellipsis
 
-    -- Ranges are like 1:2  -- there is no step as in Python
-    -- Use range(0, 10, step=2) for that.
-  | Range(expr? lower, expr? upper)
-    -- Subscripts are lists of expressions, and additionally start/end can bge
-    -- implicit:
+    -- Slices occur within [] only.  Unlike ranges, the start/end can be --
+    -- implicit.  Like ranges, denote a step with slice(0, 10, step=2).
     --   a[3:]   a[:i]
+  | Slice(expr? lower, expr? upper)
+
+    -- Subscripts are lists of expressions
     --   a[:i, n]      (we don't have matrices, but we have data frames)
   | Subscript(expr collection, expr* indices)
 

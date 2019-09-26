@@ -325,7 +325,7 @@ class Transformer(object):
         upper = None
       else:          # a[:3]
         upper = self.Expr(children[1])
-    return expr.Range(lower, upper)
+    return expr.Slice(lower, upper)
 
   def Expr(self, pnode):
     # type: (PNode) -> expr_t
@@ -452,20 +452,16 @@ class Transformer(object):
 
         return self._CompareChain(children)
 
-      elif typ == grammar_nt.slice_expr:
+      elif typ == grammar_nt.range_expr:
         if len(children) == 1:
           return self.Expr(children[0])
+
         if len(children) == 3:
           return expr.Range(
               self.Expr(children[0]),
               self.Expr(children[2])
           )
-        if len(children) == 5:
-          return expr.Range(
-              self.Expr(children[0]),
-              self.Expr(children[2]),
-              self.Expr(children[4]),
-          )
+
         raise AssertionError(children)
 
       elif typ == grammar_nt.expr:
