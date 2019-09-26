@@ -7,6 +7,8 @@ from __future__ import print_function
 from _devbuild.gen.runtime_asdl import value, scope_e
 from _devbuild.gen.syntax_asdl import lhs_expr
 
+from oil_lang import objects
+
 
 def SetGlobalFunc(mem, name, func):
   """Used by bin/oil.py to set split(), etc."""
@@ -37,6 +39,8 @@ def Init(mem):
   #
   # Borrowed from Python
   #
+
+  SetGlobalFunc(mem, 'Table', objects.Table)
 
   # Types:
   # TODO: Should these be Bool Int Float Str List Dict?

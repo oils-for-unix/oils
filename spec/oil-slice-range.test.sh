@@ -127,3 +127,38 @@ echo $val
 3
 ## END
 
+#### Copy wtih a[:]
+var a = [1,2,3]
+var b = a[:]
+pp b
+## STDOUT:
+[1, 2, 3]
+## END
+
+#### Slices with Multilple Dimensions (with Table/data frame)
+
+# This parses, but it isn't hashable.  We need a type with operator overloading
+# to handle this, which we don't have.
+#
+# Data frames could be:
+#
+# df[3:5, :]    rows 3 to 5, all cols
+#
+# df[3:5, @(name age)]    rows 3 to 5, two cols
+
+#var b = d[3,1:]
+
+# TODO: We don't have col=value syntax
+var t = Table()
+
+# Cut off the first two rows
+var t1 = t[2:, :]
+pp t1
+
+var t2 = t[:2, 3:4]
+pp t2
+
+## STDOUT:
+'TODO: Table Slicing'
+'TODO: Table Slicing'
+## END

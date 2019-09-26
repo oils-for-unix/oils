@@ -47,7 +47,6 @@ atom: (
   | '{' [dict] '}'
     # TODO: Also accept < > for fully-anchored?  How does regexec work?
   | '/' regex [re_flags] '/'
-  | '...'
     # NOTE: These atoms are are allowed in typed array literals
   | Expr_Name | Expr_Null | Expr_True | Expr_False 
     # TODO: Allow suffixes on floats and decimals?  What about in arrays?

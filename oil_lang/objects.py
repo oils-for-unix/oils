@@ -55,6 +55,28 @@ class StrArray(list):
   pass
 
 
+class Table(dict):
+  """
+  This is a data frame, which is a dict of arrays.
+
+  NOTE that we don't need ellipsis because we only have two dimensions.
+
+  print(b[...,1]) #Equivalent to b[: ,: ,1 ] 
+  """
+  def __init__(self):
+    pass
+
+  def __getitem__(self, index):
+    """
+    TODO: Accept slices here.
+    """
+    # Shows the slice objects
+    #log('index %s', index)
+
+    return 'TODO: Table Slicing'
+
+
+
 class Func(object):
   """An Oil function declared with 'func'."""
   def __init__(self, node, default_vals, ex):
@@ -92,6 +114,8 @@ class Module(object):
     self.docstring = ''
     # items
     self.attrs = {}
+
+
 class Regex(object):
   """
   How to use Regex objects:
@@ -192,3 +216,4 @@ class Regex(object):
   def AsPythonRe(self):
     """Very similar to PCRE, except a few constructs aren't allowed."""
     pass
+
