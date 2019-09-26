@@ -583,7 +583,7 @@ class Transformer(object):
           Id.Expr_Float):
         return expr.Const(tok)
 
-      if id_ in (Id.Expr_Null, Id.Expr_True, Id.Expr_False):
+      if id_ in (Id.Expr_Null, Id.Expr_True, Id.Expr_False, Id.Expr_Ellipsis):
         return expr.Const(tok)
 
       from core.meta import IdInstance

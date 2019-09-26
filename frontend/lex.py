@@ -952,6 +952,8 @@ LEXER_DEF[lex_mode_e.Expr] = \
                             # note: other languages use |>
                             # R/dplyr uses %>%
 
+  C('...', Id.Expr_Ellipsis),  # f(...args) and maybe a[:, ...]
+
   C('//', Id.Expr_Reserved),
   # For multiline regex literals?
   C('///', Id.Expr_Reserved),

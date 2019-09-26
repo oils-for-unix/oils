@@ -93,7 +93,7 @@ def main(argv):
       '@': Id.Expr_At,
       '...': Id.Expr_Ellipsis,
 
-      '$': Id.Expr_Dollar, 
+      '$': Id.Expr_Dollar,  # Only for legacy eggex /d+$/
   }
 
   # Note: We have two lists of ops because Id.Op_Semi is used, not

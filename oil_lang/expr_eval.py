@@ -171,6 +171,8 @@ class OilEvaluator(object):
         # Maybe also :Symbol?
         return node.c.val
 
+      # NOTE: We could allow Ellipsis for a[:, ...] here, but we're not using
+      # it yet.
       raise AssertionError(id_)
 
     if node.tag == expr_e.Var:
