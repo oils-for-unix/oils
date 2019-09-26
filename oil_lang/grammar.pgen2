@@ -147,17 +147,14 @@ word_part: Lit_Chars | Lit_Other
 word: word_part*
 # TODO: Change this to types and expressions, like
 # @[1 2 3] @[(x) (y+1)] @[true false false]
-#
-# Empty:
-# @Bool[] @Int[] @Float[]
-# Do we need @Str[]?  Or that's just @()?
 
 array_item: (
-  # NOTE: Most of these occur in 'atom' above
+   # NOTE: Most of these occur in 'atom' above
    Expr_Name | Expr_Null | Expr_True | Expr_False |
    Expr_Float | Expr_DecInt | Expr_BinInt | Expr_OctInt | Expr_HexInt |
    dq_string | sq_string |
-   sh_command_sub | braced_var_sub | simple_var_sub
+   sh_command_sub | braced_var_sub | simple_var_sub |
+   '(' test ')'
 )
 array_literal: (
   '@[' array_item* Op_RBracket

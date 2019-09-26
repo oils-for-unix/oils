@@ -16,6 +16,27 @@ if TYPE_CHECKING:
 _ = log
 
 
+class ParameterizedArray(object):
+  """
+  Parameterized
+  For Array[Bool]
+  """
+  def __getitem__(self, typ):
+    if typ is bool:
+      return BoolArray
+    if typ is int:
+      return IntArray
+    if typ is float:
+      return FloatArray
+    if typ is str:
+      return StrArray
+    raise AssertionError('typ: %s' % typ)
+
+  def __call__(self):
+    # Array(1 2 3)
+    raise AssertionError("Arrays need a parameterized type")
+
+
 # These are for data frames?
 
 class BoolArray(list):

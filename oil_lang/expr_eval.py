@@ -453,6 +453,9 @@ class OilEvaluator(object):
       # TODO: Should this just be an object that ~ calls?
       return objects.Regex(self.EvalRegex(node.regex))
 
+    if node.tag == expr_e.ArrayLiteral:  # obj.attr 
+      return objects.IntArray(self.EvalExpr(item) for item in node.items)
+
     raise NotImplementedError(node.__class__.__name__)
 
   def _EvalClassLiteralPart(self, part):

@@ -529,12 +529,7 @@ class Transformer(object):
       elif typ == grammar_nt.array_literal:
         left_tok = children[0].tok
 
-        # Approximation for now.
-        tokens = [
-            pnode.tok for pnode in children[1:-1] if pnode.tok.id ==
-            Id.Lit_Chars
-        ]
-        items = [expr.Const(t) for t in tokens]  # type: List[expr_t]
+        items = [self._ArrayItem(p) for p in children[1:-1]]
         return expr.ArrayLiteral(left_tok, items)
 
       #
@@ -588,6 +583,18 @@ class Transformer(object):
 
       from core.meta import IdInstance
       raise NotImplementedError(IdInstance(typ))
+
+  def _ArrayItem(self, p_node):
+    assert p_node.typ == grammar_nt.array_item
+
+    child0 = p_node.children[0]
+    typ0 = child0.typ
+    if ISNONTERMINAL(typ0):
+      return self.Expr(child0)
+    else:
+      if child0.tok.id == Id.Op_LParen:  # (x+1)
+        return self.Expr(p_node.children[1])
+      return self.Expr(child0)  # $1 ${x} etc.
 
   def VarDecl(self, pnode):
     # type: (PNode) -> command__VarDecl

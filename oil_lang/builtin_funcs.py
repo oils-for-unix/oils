@@ -41,21 +41,22 @@ def Init(mem):
   #
 
   SetGlobalFunc(mem, 'Table', objects.Table)
+  SetGlobalFunc(mem, 'Array', objects.ParameterizedArray())
 
   # Types:
   # TODO: Should these be Bool Int Float Str List Dict?
-  SetGlobalFunc(mem, 'bool', bool)
-  SetGlobalFunc(mem, 'int', int)
+  SetGlobalFunc(mem, 'Bool', bool)
+  SetGlobalFunc(mem, 'Int', int)
 
   # TODO: Enable float
   # OVM: PyOS_string_to_double()
   # osh: Python/ovm_stub_pystrtod.c:10: PyOS_string_to_double: Assertion `0' failed.
-  #SetGlobalFunc(mem, 'float', float)
+  #SetGlobalFunc(mem, 'Float', float)
 
-  SetGlobalFunc(mem, 'tuple', tuple)
-  SetGlobalFunc(mem, 'str', str)
-  SetGlobalFunc(mem, 'list', list)
-  SetGlobalFunc(mem, 'dict', dict)
+  SetGlobalFunc(mem, 'Tuple', tuple)
+  SetGlobalFunc(mem, 'Str', str)
+  SetGlobalFunc(mem, 'List', list)
+  SetGlobalFunc(mem, 'Dict', dict)
 
   SetGlobalFunc(mem, 'len', len)
   SetGlobalFunc(mem, 'max', max)

@@ -803,6 +803,16 @@ all-and-smoosh() {
 # Oil Language
 #
 
+oil-array() {
+  sh-spec spec/oil-array.test.sh --cd-tmp --osh-failures-allowed 1 \
+    $OSH_LIST "$@"
+}
+
+oil-assign() {
+  sh-spec spec/oil-assign.test.sh --cd-tmp --osh-failures-allowed 1 \
+    $OSH_LIST "$@"
+}
+
 oil-blocks() {
   sh-spec spec/oil-blocks.test.sh --cd-tmp \
     $OSH_LIST "$@"
@@ -819,7 +829,7 @@ oil-options() {
 }
 
 oil-expr() {
-  sh-spec spec/oil-expr.test.sh --cd-tmp --osh-failures-allowed 7 \
+  sh-spec spec/oil-expr.test.sh --cd-tmp --osh-failures-allowed 5 \
     $OSH_LIST "$@"
 }
 
