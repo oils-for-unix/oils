@@ -20,7 +20,10 @@ or_test: and_test ('or' and_test)*
 and_test: not_test ('and' not_test)*
 not_test: 'not' not_test | comparison
 comparison: slice_expr (comp_op slice_expr)*
-slice_expr: expr [':' expr] [':' expr]
+
+# Here the beginning and end are required
+slice_expr: expr [':' expr]
+
 # Oil patch: removed legacy <>
 comp_op: (
     '<'|'>'|'=='|'>='|'<='|'!='|'in'|'not' 'in'|'is'|'is' 'not'|
@@ -63,9 +66,14 @@ trailer: (
   | '::' NAME
 )
 
+# Oil patch: this is 'expr' instead of 'test'
+# - 1:(3<4) doesn't make any sense.
+# - And then this allows us to support a[3:] and a[:i] as special cases.
+# - First class slices have to be written 0:n.
+
 subscriptlist: subscript (',' subscript)* [',']
-subscript: test | [test] ':' [test] [sliceop]
-sliceop: ':' [test]
+subscript: expr | [expr] ':' [expr]
+
 exprlist: (expr|star_expr) (',' (expr|star_expr))* [',']
 testlist: test (',' test)* [',']
 

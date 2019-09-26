@@ -357,7 +357,7 @@ class ParseContext(object):
 
   def ParseOilExpr(self, lexer, start_symbol, print_parse_tree=False):
     # type: (Lexer, int, bool) -> Tuple[expr_t, token]
-    """For Oil expressions that aren't assignments.  Currently unused."""
+    """For Oil expressions that aren't assignments."""
     pnode, last_token = self.e_parser.Parse(lexer, start_symbol)
 
     if print_parse_tree:
@@ -368,7 +368,7 @@ class ParseContext(object):
 
   def ParseOilForExpr(self, lexer, start_symbol, print_parse_tree=False):
     # type: (Lexer, int, bool) -> Tuple[expr_t, expr_t, token]
-    """For Oil expressions that aren't assignments.  Currently unused."""
+    """ for (x Int, y Int in foo) """
     pnode, last_token = self.e_parser.Parse(lexer, start_symbol)
 
     if print_parse_tree:
@@ -379,7 +379,7 @@ class ParseContext(object):
 
   def ParseFuncProc(self, lexer, start_symbol, print_parse_tree=False):
     # type: (Lexer, int, bool) -> Tuple[token, List[param], type_expr_t, token]
-    """For Oil expressions that aren't assignments.  Currently unused."""
+    """ func f(x Int, y Int) { """
     pnode, last_token = self.e_parser.Parse(lexer, start_symbol)
 
     if print_parse_tree:

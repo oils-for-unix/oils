@@ -399,8 +399,13 @@ module syntax
     -- Fold this in with symbols?
   | Ellipsis
 
-  | Range(expr? lower, expr? upper, expr? step)
-    -- a[1, 2]   a[1:2]  a[1:2, 3]  a[1, 2:3, ...]
+    -- Ranges are like 1:2  -- there is no step as in Python
+    -- Use range(0, 10, step=2) for that.
+  | Range(expr? lower, expr? upper)
+    -- Subscripts are lists of expressions, and additionally start/end can bge
+    -- implicit:
+    --   a[3:]   a[:i]
+    --   a[:i, n]      (we don't have matrices, but we have data frames)
   | Subscript(expr collection, expr* indices)
 
   -- the following expressions can appear in assignment context
