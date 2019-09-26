@@ -304,6 +304,29 @@ class Transformer(object):
       i += 1
     return expr.Compare(left, cmp_ops, comparators)
 
+  def _Subscript(self, children):
+    typ0 = children[0].typ
+
+    n = len(children)
+
+    if ISNONTERMINAL(typ0):
+      if n == 3:     # a[1:2]
+        lower = self.Expr(children[0])
+        upper = self.Expr(children[2])
+      elif n == 2:   # a[1:]
+        lower = self.Expr(children[0])
+        upper = None
+      else:          # a[1]
+        return self.Expr(children[0])
+    else:
+      assert children[0].tok.id == Id.Arith_Colon
+      lower = None
+      if n == 1:     # a[:]
+        upper = None
+      else:          # a[:3]
+        upper = self.Expr(children[1])
+    return expr.Range(lower, upper)
+
   def Expr(self, pnode):
     # type: (PNode) -> expr_t
     """Transform expressions (as opposed to statements)."""
@@ -378,11 +401,8 @@ class Transformer(object):
         raise NotImplementedError
 
       if typ == grammar_nt.subscript:
-        # subscript: test | [test] ':' [test] [sliceop]
-        if len(pnode.children) == 1:
-          return self.Expr(children[0])
-        # TODO:
-        raise NotImplementedError
+        # subscript: expr | [expr] ':' [expr]
+        return self._Subscript(children)
 
       if typ == grammar_nt.testlist_comp:
         # testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )

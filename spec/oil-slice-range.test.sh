@@ -18,22 +18,51 @@ var myarray = @(1 2 3 4)
 pp myarray[1]
 pp myarray[1:3]
 
-# Stride
-pp myarray[1:4:2]
+echo 'implicit'
+pp myarray[:2]
+pp myarray[2:]
+
+# Stride not supported
+#pp myarray[1:4:2]
 
 # Now try omitting smoe
 #pp myarray[1:4:2]
 ## STDOUT:
 '2'
 ['2', '3']
-['2', '4']
+implicit
+['1', '2']
+['3', '4']
 ## END
 
 #### subscript and range of list
 var mylist = [1,2,3,4]
 pp mylist[1]
 pp mylist[1:3]
+
+echo 'implicit'
+pp mylist[:2]
+pp mylist[2:]
 ## STDOUT:
-2
+'2'
 [2, 3]
+implicit
+[1, 2]
+[3, 4]
+## END
+
+#### expressions and negative indices
+var myarray = @(1 2 3 4 5)
+pp myarray[-1]
+pp myarray[-4:-2]
+
+echo 'implicit'
+pp myarray[:-2]
+pp myarray[-2:]
+## STDOUT:
+'5'
+['2', '3']
+implicit
+['1', '2', '3']
+['4', '5']
 ## END
