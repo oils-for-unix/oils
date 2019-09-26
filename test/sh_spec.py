@@ -1053,7 +1053,7 @@ def Options():
       '-t', '--trace', dest='trace', action='store_true', default=False,
       help='trace execution of shells to diagnose hangs')
   p.add_option(
-      '--range', dest='range', default=None,
+      '-r', '--range', dest='range', default=None,
       help='Execute only a given test range, e.g. 5-10, 5-, -10, or 5')
   p.add_option(
       '--regex', dest='regex', default=None,

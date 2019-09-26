@@ -3,7 +3,7 @@ expr_to_ast.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
     token, speck, double_quoted, single_quoted, simple_var_sub, braced_var_sub,
     command_sub,
@@ -120,7 +120,9 @@ class Transformer(object):
         arglist = p_args.children[::2]
       else:
         arglist = [p_args]
-      return expr.Subscript(base, [self.Expr(a) for a in arglist])
+
+      indices = [self._Subscript(a.children) for a in arglist]
+      return expr.Subscript(base, indices)
 
     if op_tok.id in (Id.Expr_Dot, Id.Expr_RArrow, Id.Expr_DColon):
       attr = children[1].tok  # will be Id.Expr_Name
@@ -193,52 +195,6 @@ class Transformer(object):
 
     return expr.Dict(keys, values)
 
-  def _Atom(self, children):
-    # type: (List[PNode]) -> expr_t
-    """Handles alternatives of 'atom' where there is more than one child."""
-
-    tok = children[0].tok
-    id_ = tok.id
-
-    if id_ == Id.Op_LParen:
-      # atom: '(' [yield_expr|testlist_comp] ')' | ...
-      if children[1].tok.id == Id.Op_RParen:
-        # () is a tuple
-        return expr.Tuple([], expr_context_e.Store)
-      else:
-        return self.Expr(children[1])
-
-    if id_ == Id.Op_LBracket:
-      # atom: ... | '[' [testlist_comp] ']' | ...
-
-      if len(children) == 2:  # []
-        return expr.List([], expr_context_e.Store)  # unused expr_context_e
-
-      p_list = children[1].children  # what's between [ and ]
-
-      # [x for x in y]
-      if children[1].typ == grammar_nt.testlist_comp:
-        return self.Expr(children[1])
-
-      # [1, 2, 3]
-      n = len(p_list)
-      elts = []
-      for i in xrange(0, n, 2):  # skip commas
-        p_node = p_list[i]
-        elts.append(self.Expr(p_node))
-
-      return expr.List(elts, expr_context_e.Store)  # unused expr_context_e
-
-    if id_ == Id.Op_LBrace:
-      return self._Dict(children[1])
-
-    if id_ == Id.Arith_Slash:
-      r = self._Regex(children[1])
-      flags = []  # type: List[token]
-      return expr.RegexLiteral(children[0].tok, r, flags)
-
-    raise NotImplementedError(id_)
-
   def _Tuple(self, children):
     # type: (List[PNode]) -> expr_t
 
@@ -253,6 +209,70 @@ class Transformer(object):
       elts.append(self.Expr(p_node))
 
     return expr.Tuple(elts, expr_context_e.Store)  # unused expr_context_e
+
+  def _TestlistComp(self, p_node, id0):
+    # type: (PNode, Id_t) -> expr_t
+    """
+    testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
+    """
+
+    assert p_node.typ == grammar_nt.testlist_comp
+    children = p_node.children
+    n = len(children)
+    if n > 1 and children[1].typ == grammar_nt.comp_for:
+      elt = self.Expr(children[0])
+      comp = self._CompFor(children[1])
+      return expr.ListComp(elt, [comp])
+
+    if id0 == Id.Op_LParen:
+      # (1,)  (1, 2)  etc.
+      if children[1].tok.id == Id.Arith_Comma:
+        return self._Tuple(children)
+      raise NotImplementedError('testlist_comp')
+
+    if id0 == Id.Op_LBracket:
+      elts = []
+      for i in xrange(0, n, 2):  # skip commas
+        elts.append(self.Expr(children[i]))
+
+      return expr.List(elts, expr_context_e.Store)  # unused expr_context_e
+
+    raise AssertionError(id0)
+
+  def _Atom(self, children):
+    # type: (List[PNode]) -> expr_t
+    """Handles alternatives of 'atom' where there is more than one child."""
+
+    tok = children[0].tok
+    id_ = tok.id
+    n = len(children)
+
+    if id_ == Id.Op_LParen:
+      # atom: '(' [yield_expr|testlist_comp] ')' | ...
+      if n == 2:  # () is a tuple
+        assert children[1].tok.id == Id.Op_RParen, children[1]
+        return expr.Tuple([], expr_context_e.Store)
+
+      return self._TestlistComp(children[1], id_)
+
+    if id_ == Id.Op_LBracket:
+      # atom: ... | '[' [testlist_comp] ']' | ...
+
+      if n == 2:  # []
+        assert children[1].tok.id == Id.Op_RBracket, children[1]
+        return expr.List([], expr_context_e.Store)  # unused expr_context_e
+
+      return self._TestlistComp(children[1], id_)
+
+    if id_ == Id.Op_LBrace:
+      return self._Dict(children[1])
+
+    if id_ == Id.Arith_Slash:
+      r = self._Regex(children[1])
+      flags = []  # type: List[token]
+      return expr.RegexLiteral(children[0].tok, r, flags)
+
+    raise NotImplementedError(id_)
 
   def _CompFor(self, p_node):
     # type: (PNode) -> comprehension
@@ -305,6 +325,10 @@ class Transformer(object):
     return expr.Compare(left, cmp_ops, comparators)
 
   def _Subscript(self, children):
+    # type: (List[PNode]) -> expr_t
+    """
+    subscript: expr | [expr] ':' [expr]
+    """
     typ0 = children[0].typ
 
     n = len(children)
@@ -399,22 +423,6 @@ class Transformer(object):
           return self.Expr(children[0])
         # TODO:
         raise NotImplementedError
-
-      if typ == grammar_nt.subscript:
-        # subscript: expr | [expr] ':' [expr]
-        return self._Subscript(children)
-
-      if typ == grammar_nt.testlist_comp:
-        # testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
-        if children[1].typ == grammar_nt.comp_for:
-          elt = self.Expr(children[0])
-          comp = self._CompFor(children[1])
-          return expr.ListComp(elt, [comp])
-
-        # (1,)  (1, 2)  etc.
-        if children[1].tok.id == Id.Arith_Comma:
-          return self._Tuple(children)
-        raise NotImplementedError('testlist_comp')
 
       elif typ == grammar_nt.exprlist:
         # exprlist: (expr|star_expr) (',' (expr|star_expr))* [',']

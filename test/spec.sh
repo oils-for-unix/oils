@@ -824,7 +824,7 @@ oil-expr() {
 }
 
 oil-slice-range() {
-  sh-spec spec/oil-slice-range.test.sh --cd-tmp --osh-failures-allowed 1 \
+  sh-spec spec/oil-slice-range.test.sh --cd-tmp --osh-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 

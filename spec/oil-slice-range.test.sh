@@ -44,7 +44,7 @@ echo 'implicit'
 pp mylist[:2]
 pp mylist[2:]
 ## STDOUT:
-'2'
+2
 [2, 3]
 implicit
 [1, 2]
