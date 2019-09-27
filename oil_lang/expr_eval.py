@@ -486,7 +486,27 @@ class OilEvaluator(object):
       return objects.Regex(self.EvalRegex(node.regex))
 
     if node.tag == expr_e.ArrayLiteral:  # obj.attr 
-      return objects.IntArray(self.EvalExpr(item) for item in node.items)
+      items = [self.EvalExpr(item) for item in node.items]
+      if items:
+        # Determine type at runtime?  If we have something like @[(i) (j)]
+        # then we don't know its type until runtime.
+
+        first = items[0]
+        if isinstance(first, bool):
+          return objects.BoolArray(bool(x) for x in items)
+        elif isinstance(first, int):
+          return objects.IntArray(int(x) for x in items)
+        elif isinstance(first, float):
+          return objects.FloatArray(float(x) for x in items)
+        elif isinstance(first, str):
+          return objects.StrArray(str(x) for x in items)
+        else:
+          raise AssertionError(first)
+      else:
+        # TODO: Should this have an unknown type?
+        # What happens when you mutate or extend it?  You have to make sure
+        # that the type tags match?
+        return objects.BoolArray(items)
 
     raise NotImplementedError(node.__class__.__name__)
 

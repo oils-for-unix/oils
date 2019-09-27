@@ -76,6 +76,12 @@ class StrArray(list):
   pass
 
 
+# TODO: Maybe use this so that 'pp my_assoc_array' works?  Or does it even
+# matter how it was defined?
+class AssocArray(dict):
+  pass
+
+
 class Table(dict):
   """A table is our name for a data frame. 
   
