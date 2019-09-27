@@ -58,11 +58,6 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       # This is used for value.Obj().
       code_str = 'ExternalLeaf(%s)' % var_name
 
-    elif isinstance(desc, meta.DictType):
-      # Dicts are used for AssocArray in osh/runtime.asdl
-      # I think it makes sense to treat it as a leaf.
-      code_str = 'ExternalLeaf(%s)' % var_name
-
     # TODO: Is this unused?  Delete it?
     elif isinstance(desc, meta.UserType):  # e.g. Id
       # This assumes it's Id, which is a simple SumType.  TODO: Remove this.
@@ -159,10 +154,6 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
       elif isinstance(field_desc, meta.UserType):
         type_str = field_desc.type_name
-
-      # Hard-coded for AssocArray in runtime.asdl
-      elif isinstance(field_desc, meta.DictType):
-        type_str = 'Dict[str, Any]'
 
       else:
         type_str = f.type

@@ -35,11 +35,6 @@ class BoolType(_RuntimeType):
     return '<Bool>'
 
 
-class DictType(_RuntimeType):
-  def __repr__(self):
-    return '<Dict>'
-
-
 class ArrayType(_RuntimeType):
   def __init__(self, desc):
     self.desc = desc
@@ -113,10 +108,11 @@ BUILTIN_TYPES = {
     'string': StrType(),
     'int': IntType(),
     'bool': BoolType(),
-    'dict': DictType(),
 
-    # TODO: This is a hack for the Oil expression evaluator.  We're not doing
-    # any dynamic or static checking now.
+    # 'any' is used:
+    # - for value.Obj in the the Oil expression evaluator.  We're not doing any
+    #   dynamic or static checking now.
+    # - for the dict in value.AssocArray.  Ditto -- no checking.
     'any': AnyType(),
 }
 

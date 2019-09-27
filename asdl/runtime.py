@@ -9,7 +9,7 @@ from __future__ import print_function
 from cStringIO import StringIO
 import sys
 
-from typing import List, Tuple, Optional, IO
+from typing import List, Tuple, Optional, IO, Any
 
 
 class Obj(object):

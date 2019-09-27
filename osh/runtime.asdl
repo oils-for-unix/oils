@@ -41,7 +41,8 @@ module runtime
   | Str(string s)
     -- "holes" in the array are represented by None
   | MaybeStrArray(string* strs)
-  | AssocArray(dict d)
+    -- d will be a dict
+  | AssocArray(any d)
     -- A Python-style object.  'any' is not currently type checked.
     -- invariant for 'proc' stack:
     -- * s bool, int, float, (NOT str), or...
