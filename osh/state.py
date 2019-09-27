@@ -14,7 +14,7 @@ import cStringIO
 from typing import List
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import lhs_expr
+from _devbuild.gen.syntax_asdl import sh_lhs_expr
 from _devbuild.gen.runtime_asdl import (
     value, value_e, lvalue_e, scope_e, var_flags_e, value__Str
 )
@@ -755,7 +755,7 @@ class Mem(object):
     # 'environ' variable into shell variables.  Bash has an export_env
     # variable.  Dash has a loop through environ in init.c
     for n, v in environ.iteritems():
-      self.SetVar(lhs_expr.LhsName(n), value.Str(v),
+      self.SetVar(sh_lhs_expr.Name(n), value.Str(v),
                  (var_flags_e.Exported,), scope_e.GlobalOnly)
 
     # If it's not in the environment, initialize it.  This makes it easier to
@@ -769,7 +769,7 @@ class Mem(object):
       SetGlobalString(self, 'SHELLOPTS', '')
     # Now make it readonly
     self.SetVar(
-        lhs_expr.LhsName('SHELLOPTS'), None, (var_flags_e.ReadOnly,),
+        sh_lhs_expr.Name('SHELLOPTS'), None, (var_flags_e.ReadOnly,),
         scope_e.GlobalOnly)
 
     # Usually we inherit PWD from the parent shell.  When it's not set, we may
@@ -780,7 +780,7 @@ class Mem(object):
     # Now mark it exported, no matter what.  This is one of few variables
     # EXPORTED.  bash and dash both do it.  (e.g. env -i -- dash -c env)
     self.SetVar(
-        lhs_expr.LhsName('PWD'), None, (var_flags_e.Exported,),
+        sh_lhs_expr.Name('PWD'), None, (var_flags_e.Exported,),
         scope_e.GlobalOnly)
 
   def SetCurrentSpanId(self, span_id):
@@ -1139,7 +1139,7 @@ class Mem(object):
         return
 
       # AssocArray shouldn't happen because we query IsAssocArray before
-      # evaluating lhs_expr.
+      # evaluating sh_lhs_expr.
       e_die("Object of this type can't be indexed: %s", cell.val)
 
     elif lval.tag == lvalue_e.Keyed:
@@ -1366,7 +1366,7 @@ def SetLocalString(mem, name, s):
   3) read builtin
   """
   assert isinstance(s, str)
-  mem.SetVar(lhs_expr.LhsName(name), value.Str(s), (), scope_e.LocalOnly)
+  mem.SetVar(sh_lhs_expr.Name(name), value.Str(s), (), scope_e.LocalOnly)
 
 
 def SetStringDynamic(mem, name, s):
@@ -1375,7 +1375,7 @@ def SetStringDynamic(mem, name, s):
   Used for getopts.
   """
   assert isinstance(s, str)
-  mem.SetVar(lhs_expr.LhsName(name), value.Str(s), (), scope_e.Dynamic)
+  mem.SetVar(sh_lhs_expr.Name(name), value.Str(s), (), scope_e.Dynamic)
 
 
 def SetArrayDynamic(mem, name, a):
@@ -1384,33 +1384,33 @@ def SetArrayDynamic(mem, name, a):
   Used for _init_completion.
   """
   assert isinstance(a, list)
-  mem.SetVar(lhs_expr.LhsName(name), value.MaybeStrArray(a), (), scope_e.Dynamic)
+  mem.SetVar(sh_lhs_expr.Name(name), value.MaybeStrArray(a), (), scope_e.Dynamic)
 
 
 def SetGlobalString(mem, name, s):
   """Helper for completion, etc."""
   assert isinstance(s, str)
   val = value.Str(s)
-  mem.SetVar(lhs_expr.LhsName(name), val, (), scope_e.GlobalOnly)
+  mem.SetVar(sh_lhs_expr.Name(name), val, (), scope_e.GlobalOnly)
 
 
 def SetGlobalArray(mem, name, a):
   """Helper for completion."""
   assert isinstance(a, list)
-  mem.SetVar(lhs_expr.LhsName(name), value.MaybeStrArray(a), (), scope_e.GlobalOnly)
+  mem.SetVar(sh_lhs_expr.Name(name), value.MaybeStrArray(a), (), scope_e.GlobalOnly)
 
 
 def SetLocalArray(mem, name, a):
   """Helper for completion."""
   assert isinstance(a, list)
-  mem.SetVar(lhs_expr.LhsName(name), value.MaybeStrArray(a), (), scope_e.LocalOnly)
+  mem.SetVar(sh_lhs_expr.Name(name), value.MaybeStrArray(a), (), scope_e.LocalOnly)
 
 
 def ExportGlobalString(mem, name, s):
   """Helper for completion, $PWD, $OLDPWD, etc."""
   assert isinstance(s, str)
   val = value.Str(s)
-  mem.SetVar(lhs_expr.LhsName(name), val, (var_flags_e.Exported,),
+  mem.SetVar(sh_lhs_expr.Name(name), val, (var_flags_e.Exported,),
              scope_e.GlobalOnly)
 
 

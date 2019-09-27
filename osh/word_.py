@@ -18,7 +18,7 @@ from _devbuild.gen.syntax_asdl import (
     word__Compound, word__Token, word__Empty, word__BracedTree,
     word__String,
 
-    lhs_expr__LhsName,
+    sh_lhs_expr__Name,
 )
 from asdl import const
 from core import util
@@ -621,14 +621,14 @@ def IsVarSub(w):
 
 
 def SpanForLhsExpr(node):
-  # type: (lhs_expr__LhsName) -> int
+  # type: (sh_lhs_expr__Name) -> int
   if node.spids:
     return node.spids[0]
   else:
     return const.NO_INTEGER  
-  # TODO: LhsIndexedName needs span_id.
-  #if isinstance(node, lhs_expr__LhsName):
-  #elif isinstance(node, lhs_expr__LhsIndexedName):
+  # TODO: IndexedName needs span_id.
+  #if isinstance(node, sh_lhs_expr__Name):
+  #elif isinstance(node, sh_lhs_expr__IndexedName):
 
 
 def SpanIdFromError(error):

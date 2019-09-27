@@ -5,7 +5,7 @@ builtin_funcs.py
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import value, scope_e
-from _devbuild.gen.syntax_asdl import lhs_expr
+from _devbuild.gen.syntax_asdl import sh_lhs_expr
 
 from oil_lang import objects
 
@@ -13,7 +13,7 @@ from oil_lang import objects
 def SetGlobalFunc(mem, name, func):
   """Used by bin/oil.py to set split(), etc."""
   assert callable(func), func
-  mem.SetVar(lhs_expr.LhsName(name), value.Obj(func), (), scope_e.GlobalOnly)
+  mem.SetVar(sh_lhs_expr.Name(name), value.Obj(func), (), scope_e.GlobalOnly)
 
 
 def _Join(array, delim=''):

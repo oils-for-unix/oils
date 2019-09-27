@@ -21,7 +21,7 @@ from _devbuild.gen.syntax_asdl import (
     command__OilFuncProc,
     case_arm,
 
-    lhs_expr, lhs_expr_t,
+    sh_lhs_expr, sh_lhs_expr_t,
     redir, redir_t, redir__HereDoc,
     word, word_t, word__Compound, word__Token,
     word_part, word_part_t, word_part__Literal,
@@ -172,10 +172,10 @@ def _MakeAssignPair(parse_ctx,  # type: ParseContext
       var_name = left_token.val[:-1]
       op = assign_op_e.Equal
 
-    lhs_ = lhs_expr.LhsName(var_name)
+    lhs_ = sh_lhs_expr.Name(var_name)
     lhs_.spids.append(left_token.span_id)
 
-    lhs = cast(lhs_expr_t, lhs_)  # for MyPy
+    lhs = cast(sh_lhs_expr_t, lhs_)  # for MyPy
 
   elif left_token.id == Id.Lit_ArrayLhsOpen and parse_ctx.one_pass_parse:
     var_name = left_token.val[:-1]
@@ -194,7 +194,7 @@ def _MakeAssignPair(parse_ctx,  # type: ParseContext
 
     line = parse_ctx.arena.GetLine(left_span.line_id)
     index_str = line[left_span.col : right_span.col]
-    lhs = lhs_expr.CompatIndexedName(var_name, index_str)
+    lhs = sh_lhs_expr.CompatIndexedName(var_name, index_str)
 
   elif left_token.id == Id.Lit_ArrayLhsOpen:  # a[x++]=1
     var_name = left_token.val[:-1]
@@ -219,7 +219,7 @@ def _MakeAssignPair(parse_ctx,  # type: ParseContext
       index_node = a_parser.Parse()  # may raise util.ParseError
     finally:
       arena.PopSource()
-    lhs = lhs_expr.LhsIndexedName(var_name, index_node)
+    lhs = sh_lhs_expr.IndexedName(var_name, index_node)
     lhs.spids.append(left_token.span_id)
 
   else:

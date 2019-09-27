@@ -16,7 +16,7 @@ from _devbuild.gen.runtime_asdl import (
     lvalue, value, value_e, value_t, scope_e,
 )
 from _devbuild.gen.syntax_asdl import (
-    arith_expr_e, lhs_expr_e, lhs_expr_t, bool_expr_e,
+    arith_expr_e, sh_lhs_expr_e, sh_lhs_expr_t, bool_expr_e,
 )
 from _devbuild.gen.types_asdl import bool_arg_type_e
 from asdl import const
@@ -126,17 +126,17 @@ def _LookupVar(name, mem, exec_opts):
 
 
 def EvalLhs(node, arith_ev, mem, spid, lookup_mode):
-  """lhs_expr -> lvalue.
+  """sh_lhs_expr -> lvalue.
 
   Used for a=b and a[x]=b
   """
-  assert isinstance(node, lhs_expr_t), node
+  assert isinstance(node, sh_lhs_expr_t), node
 
-  if node.tag == lhs_expr_e.LhsName:  # a=x
+  if node.tag == sh_lhs_expr_e.Name:  # a=x
     lval = lvalue.Named(node.name)
     lval.spids.append(spid)
 
-  elif node.tag == lhs_expr_e.LhsIndexedName:  # a[1+2]=x
+  elif node.tag == sh_lhs_expr_e.IndexedName:  # a[1+2]=x
 
     if mem.IsAssocArray(node.name, lookup_mode):
       key = arith_ev.EvalWordToString(node.index)
@@ -154,19 +154,19 @@ def EvalLhs(node, arith_ev, mem, spid, lookup_mode):
 
 
 def _EvalLhsArith(node, mem, arith_ev):
-  """lhs_expr -> lvalue.
+  """sh_lhs_expr -> lvalue.
   
   Very similar to EvalLhs above in core/cmd_exec.
   """
-  assert isinstance(node, lhs_expr_t), node
+  assert isinstance(node, sh_lhs_expr_t), node
 
-  if node.tag == lhs_expr_e.LhsName:  # (( i = 42 ))
+  if node.tag == sh_lhs_expr_e.Name:  # (( i = 42 ))
     lval = lvalue.Named(node.name)
     # TODO: location info.  Use the = token?
     #lval.spids.append(spid)
     return lval
 
-  elif node.tag == lhs_expr_e.LhsIndexedName:  # (( a[42] = 42 ))
+  elif node.tag == sh_lhs_expr_e.IndexedName:  # (( a[42] = 42 ))
     # The index of MaybeStrArray needs to be coerced to int, but not the index of
     # an AssocArray.
     if mem.IsAssocArray(node.name, scope_e.Dynamic):
@@ -191,25 +191,25 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
   Also used by the Executor for s+='x' and a[42]+='x'.
 
   Args:
-    node: syntax_asdl.lhs_expr
+    node: syntax_asdl.sh_lhs_expr
 
   Returns:
     value_t, lvalue_t
   """
-  #log('lhs_expr NODE %s', node)
+  #log('sh_lhs_expr NODE %s', node)
 
-  assert isinstance(node, lhs_expr_t), node
+  assert isinstance(node, sh_lhs_expr_t), node
 
-  if node.tag == lhs_expr_e.LhsName:  # a = b
+  if node.tag == sh_lhs_expr_e.Name:  # a = b
     # Problem: It can't be an array?
     # a=(1 2)
     # (( a++ ))
     lval = lvalue.Named(node.name)
     val = _LookupVar(node.name, mem, exec_opts)
 
-  elif node.tag == lhs_expr_e.LhsIndexedName:  # a[1] = b
+  elif node.tag == sh_lhs_expr_e.IndexedName:  # a[1] = b
     # See tdop.IsIndexable for valid values:
-    # - VarRef (not LhsName): a[1]
+    # - VarRef (not Name): a[1]
     # - FuncCall: f(x), 1
     # - Binary LBracket: f[1][1] -- no semantics for this?
 
@@ -353,7 +353,7 @@ class ArithEvaluator(_ExprEvaluator):
   def _EvalLhsAndLookupArith(self, node):
     """
     Args:
-      node: lhs_expr
+      node: sh_lhs_expr
 
     Returns:
       (Python object, lvalue_t)

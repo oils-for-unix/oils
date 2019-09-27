@@ -53,6 +53,7 @@ module syntax
   -- core/main_loop.py
   parse_result = EmptyLine | Eof | Node(command cmd)
  
+  -- 'source' represents the location of a line / token.
   source = 
     Interactive
   | Unused(string comment)     -- completion and history never show parse errors?
@@ -83,7 +84,6 @@ module syntax
 
     -- reparsing of x+1 in a[x+1]=y
   | LValue(int left_spid, int right_spid)
-
 
   -- Logically, here's our record for a physical line.  For compactness, we
   -- TRANSPOSE it into 3 parallel arrays, so this record is UNUSED.
@@ -132,8 +132,8 @@ module syntax
   double_quoted = (token left, word_part* parts) attributes (int* spids)
   single_quoted = (token left, token* tokens) attributes (int* spids)
 
-  -- NOTE: This could be split up into nodes for $0 $1, speck for $?, and
-  -- a strand for $foo
+  -- Note: simple_var_sub could be split up into speck for $?, (speck, int) for
+  -- $0 $1, token for $foo.
   simple_var_sub = (token token)
 
   -- TODO: Add Oil expressions
@@ -205,9 +205,9 @@ module syntax
   -- It would be better runtime.lvalue were be the shared representation, and
   -- there were 2 different lhs_expr types.  They both should contribute their
   -- location information.
-  lhs_expr =
-    LhsName(string name)
-  | LhsIndexedName(string name, arith_expr index)
+  sh_lhs_expr =
+    Name(string name)
+  | IndexedName(string name, arith_expr index)
   | CompatIndexedName(string name, string index)  -- for translation
   attributes (int* spids)
 
@@ -215,8 +215,8 @@ module syntax
     VarRef(token token)  -- variable without $
   | ArithWord(word w)  -- a string that looks like an integer
 
-  | UnaryAssign(id op_id, lhs_expr child)
-  | BinaryAssign(id op_id, lhs_expr left, arith_expr right)
+  | UnaryAssign(id op_id, sh_lhs_expr child)
+  | BinaryAssign(id op_id, sh_lhs_expr left, arith_expr right)
   | Unary(id op_id, arith_expr child)
   -- TODO: add token for divide by zero
   | Binary(id op_id, arith_expr left, arith_expr right)
@@ -239,7 +239,7 @@ module syntax
            )
 
   assign_op = Equal | PlusEqual
-  assign_pair = (lhs_expr lhs, assign_op op, word? rhs, int* spids)
+  assign_pair = (sh_lhs_expr lhs, assign_op op, word? rhs, int* spids)
   env_pair = (string name, word val, int* spids)
 
   -- Each arm tests one word against multiple words
@@ -260,6 +260,8 @@ module syntax
     -- NOTE: Only represents "bare assignment".  TODO: Rename ShAssign
   | ShAssignment(assign_pair* pairs, redir* redirects)
   | ControlFlow(token token, word? arg_word)
+    -- Note: There are spids for every pipeline operator, parallel to
+    -- stderr_indices
   | Pipeline(command* children, bool negated, int* stderr_indices)
   | AndOr(id* ops, command* children)
     -- Part of for, while, until (but not if, case, ShFunction)
@@ -317,11 +319,9 @@ module syntax
     Simple(token name)
   | Compound(token name, type_expr* params)
 
-  -- For now, using stderr_indices representation because it's more compact.
-  -- |& in osh; |- in oil.
-  -- pipe_op = Pipe | PipeAndStderr
-
+  --
   -- Glob representation, for converting ${x//} to extended regexes.
+  --
 
   -- Example: *.[ch] is:
   --   GlobOp(<Glob_Star '*'>),
@@ -348,6 +348,14 @@ module syntax
   --
   -- Copied and modified from Python-3.7/Parser/Python.asdl !
 
+  expr_context = Load | Store | Del | AugLoad | AugStore | Param
+
+  -- TODO: Inline this into GenExp and ListComp?  Just use a flag there?
+  comprehension = (expr target, expr iter, expr* ifs)
+
+  -- keyword arguments supplied to call (NULL identifier for **kwargs)
+  named_arg = (token? arg, expr value)
+
   expr =
     Var(token name)  -- a variable name to evaluate
     -- For null, Bool, Int, Float
@@ -373,6 +381,13 @@ module syntax
   | Compare(expr left, speck* ops, expr* comparators)
   | FuncCall(expr func, expr* args)
 
+    -- Oil call:
+    -- f(x, ...args; n=1, ...kwargs)
+  | Call(expr func, expr* args, named_arg* named_args, expr? starargs,
+         expr? kwargs)
+    -- TODO: Need a representation for method call.  We don't just want
+    -- Attribute() and then Call()
+
   | IfExp(expr test, expr body, expr orelse)
   | Tuple(expr* elts, expr_context ctx)
   | List(expr* elts, expr_context ctx)
@@ -385,12 +400,6 @@ module syntax
   | DictComp(expr key, expr value, comprehension* generators)
   | GeneratorExp(expr elt, comprehension* generators)
 
-    -- TODO: Replace FuncCall
-    -- TODO: Need a representation for method call.  We don't just want
-    -- Attribute() and then Call()
-
-  | Call(expr func, expr* args, keyword* keywords)
-
     -- Ranges are written 1:2, with first class expression syntax. There is no
     -- step as in Python. Use range(0, 10, step=2) for that.
   | Range(expr lower, expr upper)
@@ -400,7 +409,7 @@ module syntax
     --   a[3:]   a[:i]
   | Slice(expr? lower, expr? upper)
 
-  -- TODO: Make these into lhs_expr, and renamet o sh_lhs_expr.
+  -- TODO: Make these into lhs_expr, and rename to sh_lhs_expr.
 
     -- Subscripts are lists of expressions
     --   a[:i, n]      (we don't have matrices, but we have data frames)
@@ -408,19 +417,19 @@ module syntax
 
     -- TODO: op should be 'speck'
   | Attribute(expr value, token op, token attr, expr_context ctx)
-    -- Do we need this?
-  | Starred(expr value, expr_context ctx)
+
+    -- Ellipsis is like 'Starred' within Python, which are valid on the LHS in
+    -- Python for unpacking, and -- within list literals for splicing.
+    -- (Starred is NOT used for {k:v, **a}.  That used a blank "keys"
+    -- attribute.)
+
+    -- In Oil, splicing will be @[1 ...array2] [b, ...list2] and
+    -- {k: v, ...dict2}.  We don't need two different symbols.
+  | Ellipsis(expr value, expr_context ctx)
   attributes (int* spids)
 
-  expr_context = Load | Store | Del | AugLoad | AugStore | Param
-
-  comprehension = (expr target, expr iter, expr* ifs)
-
-  -- keyword arguments supplied to call (NULL identifier for **kwargs)
-  keyword = (token? arg, expr value)
-
   --
-  -- Regex Language
+  -- Regex Language (Eggex)
   --
 
   -- e.g. alnum digit

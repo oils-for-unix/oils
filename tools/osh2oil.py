@@ -8,7 +8,7 @@ import sys
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import word_style_e
 from _devbuild.gen.syntax_asdl import (
-    command_e, redir_e, word_e, word_part_e, lhs_expr_e
+    command_e, redir_e, word_e, word_part_e, sh_lhs_expr_e
 )
 from asdl import const
 from core import util
@@ -446,7 +446,7 @@ class OilPrinter(object):
       if local_symbols is not None:
         for pair in node.pairs:
           # NOTE: Not handling local a[b]=c
-          if pair.lhs.tag == lhs_expr_e.LhsName:
+          if pair.lhs.tag == sh_lhs_expr_e.Name:
             #print("REGISTERED %s" % pair.lhs.name)
             local_symbols[pair.lhs.name] = True
 
@@ -458,12 +458,12 @@ class OilPrinter(object):
       # statements.
       if local_symbols is not None:
         lhs0 = node.pairs[0].lhs
-        if lhs0.tag == lhs_expr_e.LhsName and lhs0.name in local_symbols:
+        if lhs0.tag == sh_lhs_expr_e.Name and lhs0.name in local_symbols:
           defined_locally = True
         #print("CHECKING NAME", lhs0.name, defined_locally, local_symbols)
 
       has_array = any(
-          pair.lhs.tag == lhs_expr_e.CompatIndexedName for pair in node.pairs)
+          pair.lhs.tag == sh_lhs_expr_e.CompatIndexedName for pair in node.pairs)
 
       # need semantic analysis.
       # Would be nice to assume that it's a local though.
@@ -518,7 +518,7 @@ class OilPrinter(object):
     # foo=bar spam=eggs -> foo = 'bar', spam = 'eggs'
     n = len(node.pairs)
     for i, pair in enumerate(node.pairs):
-      if pair.lhs.tag == lhs_expr_e.LhsName:
+      if pair.lhs.tag == sh_lhs_expr_e.Name:
         left_spid = pair.spids[0]
         self.cursor.PrintUntil(left_spid)
         # Assume skipping over one Lit_VarLike token
@@ -534,7 +534,7 @@ class OilPrinter(object):
         else:
           self.DoWordAsExpr(pair.rhs, local_symbols)
 
-      elif pair.lhs.tag == lhs_expr_e.CompatIndexedName:
+      elif pair.lhs.tag == sh_lhs_expr_e.CompatIndexedName:
         # NOTES:
         # - parse_ctx.one_pass_parse should be on, so the span invariant
         #   is accurate

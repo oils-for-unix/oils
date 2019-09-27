@@ -7,7 +7,7 @@ from _devbuild.gen.syntax_asdl import (
     arith_expr, arith_expr_t,
     arith_expr__ArithWord, arith_expr__UnaryAssign, arith_expr__VarRef,
     arith_expr__Binary, arith_expr__BinaryAssign,
-    lhs_expr, lhs_expr_t, lhs_expr__LhsName,
+    sh_lhs_expr, sh_lhs_expr_t, sh_lhs_expr__Name,
     word_t,
 )
 from _devbuild.gen.types_asdl import lex_mode_e
@@ -38,7 +38,7 @@ def IsIndexable(node):
 
 
 def ToLValue(node):
-  # type: (arith_expr_t) -> lhs_expr_t
+  # type: (arith_expr_t) -> sh_lhs_expr_t
   """Determine if a node is a valid L-value by whitelisting tags.
 
   Args:
@@ -48,14 +48,14 @@ def ToLValue(node):
   if isinstance(node, arith_expr__VarRef):
     # For consistency with osh/cmd_parse.py, append a span_id.
     # TODO: (( a[ x ] = 1 )) and a[x]=1 should use different LST nodes.
-    n = lhs_expr.LhsName(node.token.val)
+    n = sh_lhs_expr.Name(node.token.val)
     n.spids.append(node.token.span_id)
     return n
   if isinstance(node, arith_expr__Binary):
     # For example, a[0][0] = 1 is NOT valid.
     if (node.op_id == Id.Arith_LBracket and
         isinstance(node.left, arith_expr__VarRef)):
-      return lhs_expr.LhsIndexedName(node.left.token.val, node.right)
+      return sh_lhs_expr.IndexedName(node.left.token.val, node.right)
 
   return None
 

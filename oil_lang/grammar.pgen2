@@ -112,10 +112,10 @@ testlist: test (',' test)* [',']
 # - I don't think we want set literals?  It might be @{} or %{} or #{}
 
 dict_pair: (
-  Expr_Name [':' test] |
-  '[' testlist ']' ':' test |
-  sq_string ':' test |
-  dq_string ':' test
+    Expr_Name [':' test] 
+  | '[' testlist ']' ':' test 
+  | sq_string ':' test 
+  | dq_string ':' test
 )
 dict: dict_pair (',' dict_pair)* [',']
 
@@ -159,11 +159,11 @@ comp_for: 'for' exprlist 'in' or_test ['if' test_nocond]
 # - Most of these occur in 'atom' above
 # - You can write $mystr but not mystr.  It has to be (mystr)
 array_item: (
-   Expr_Null | Expr_True | Expr_False |
-   Expr_Float | Expr_DecInt | Expr_BinInt | Expr_OctInt | Expr_HexInt |
-   dq_string | sq_string |
-   sh_command_sub | braced_var_sub | simple_var_sub |
-   '(' test ')'
+   Expr_Null | Expr_True | Expr_False 
+ | Expr_Float | Expr_DecInt | Expr_BinInt | Expr_OctInt | Expr_HexInt
+ | dq_string | sq_string
+ | sh_command_sub | braced_var_sub | simple_var_sub
+ | '(' test ')'
 )
 array_literal: '@[' array_item* Op_RBracket
 
@@ -177,10 +177,10 @@ sq_string: (Left_SingleQuoteRaw | Left_SingleQuoteC) Expr_CastedDummy Right_Sing
 braced_var_sub: '${' Expr_CastedDummy Right_DollarBrace
 
 simple_var_sub: (
-    # NOTE: Everything in Kind.VSub except VSub_Name because that's ${foo}
-    #
-    # Note: we could allow $foo and $0, but disallow the rest in favor of
-    # ${@} and ${-}?  Meh it's too inconsistent.
+  # This is everything in Kind.VSub except VSub_Name, which is braced: ${foo}
+  #
+  # Note: we could allow $foo and $0, but disallow the rest in favor of ${@}
+  # and ${-}?  Meh it's too inconsistent.
     VSub_DollarName | VSub_Number
   | VSub_Bang | VSub_At | VSub_Pound | VSub_Dollar | VSub_Star | VSub_Hyphen
   | VSub_QMark 
@@ -329,7 +329,6 @@ repeat_range: (
 
 repeat_op: (
     '+' | '*' | '?' 
-
   # In PCRE, ?? *? +? {}? is lazy/nongreedy and ?+ *+ ++ {}+ is "possessive"
   # We use N and P modifiers within {}.
   # a{L +}  a{P ?}  a{P 3,4}  a{P ,4}
