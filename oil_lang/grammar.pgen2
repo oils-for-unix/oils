@@ -41,6 +41,9 @@ factor: ('+'|'-'|'~') factor | power
 # Oil patch: ** -> ^
 # Also removed Python 3 'await'
 power: atom trailer* ['^' factor]
+
+testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
+
 atom: (
     '(' [testlist_comp] ')' 
   | '[' [testlist_comp] ']' 
@@ -55,7 +58,6 @@ atom: (
   | sh_command_sub | braced_var_sub | simple_var_sub
   | sh_array_literal | array_literal 
 )
-testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
 
 # var f = f(x)
 trailer: (
@@ -136,11 +138,16 @@ arglist: argument (',' argument)*  [',']
 # Illegal combinations and orderings are blocked in ast.c:
 # multiple (test comp_for) arguments are blocked; keyword unpackings
 # that precede iterable unpackings are blocked; etc.
+
+# TODO: Should be ...args, and also allow ;
+# But NOT @args?  I think that's only for command mode.
+
 argument: ( test [comp_for] |
             test '=' test |
             '**' test |
             '*' test )
 
+# TODO: Change to name_type_list
 comp_for: 'for' exprlist 'in' or_test ['if' test_nocond]
 
 
@@ -211,6 +218,7 @@ end_stmt: '}' | ';' | Op_Newline | Eof_Real
 
 # TODO: oil_var should be oil_var_decl and use name_type_list
 oil_var: place_list [type_expr] '=' testlist end_stmt
+
 oil_setvar: place_list (augassign | '=') testlist end_stmt
 
 # For $stringfunc(x, y=1) and @arrayfunc(a, b='s')
@@ -222,6 +230,7 @@ oil_expr: '(' testlist ')'
 command_expr: testlist end_stmt
 
 # Example: for (a Int, b Int in expr) { ... }
+# TODO: should be name_type_list
 oil_for: '(' place_list 'in' testlist ')'
 
 # Examples: func print(msg Str, *args ; span_id Int = 0, token Token = None)

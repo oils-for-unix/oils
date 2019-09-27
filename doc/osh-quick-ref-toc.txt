@@ -39,7 +39,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
                   data   enum   module   interface   namespace
 
 OIL EXPRESSION LANGUAGE
-X [Data Types]    Str           r'\'   c'\n'   "$var"   multiline r""" c'''
+  [Data Types]    Str           r'\'   c'\n'   "$var"   multiline r""" c'''
                   Symbol        %foo
                   Null          null
                   Bool          true false
@@ -50,15 +50,15 @@ X [Data Types]    Str           r'\'   c'\n'   "$var"   multiline r""" c'''
                   List          [1, 'str', false]  (for JSON compatibility)
                   Dict[]        {name: 'oil'}  {['name']: 'oil'}  {name}
                   Regex         /d+/
-                  Func          fn(x) x+1   func(x) { return x+1 }
-X [Comprehension] Array, List, Dict
+                  X Func        fn(x) x+1   func(x) { return x+1 }
   [Operators]     unary         -a
-                  binary        a+b   base^exp  a xor b  p div q
+                  binary        a+b   base^exp  a xor b  p div q  0:n
                   ternary       a if cond else b
-                  X subscript   a[b, c]   a[start:end]
+                  subscript     a[b, c]   a[start:end]
                   X chain       pass a => f(y, z) => var new
                   getattr       d->key is like d['key'] or d.key
                   scope-attr    module::name
+                  genexp   listcomp   X dictcomp
   [Functions]     inline-call   echo $strfunc(x, y) @arrayfunc(z)
                   X func-decl   func inc(a Int, b Int = 1) Int { ... }
   [Regexes]       re-literal    /d+/
@@ -70,7 +70,6 @@ X [Comprehension] Array, List, Dict
                   re-multiline  ///
                   re-api        if   for   sub()   split()  findall()
                   re-ops        ~   !~        
-  [Var Subst]     oil-var-sub   ${f(x)}  ${obj.attr}  ${obj[1, 2]}   ${d->key}
 
 WORD LANGUAGE
   [Quotes]        quotes        'abc'  $'\n'  "$var"
@@ -86,8 +85,9 @@ WORD LANGUAGE
                   op-slice      ${a[@]:0:1}
                   op-format     ${x@P}
   [Oil Word]      splice        @array @ARGV
-                  X oil-printf    ${x %.3f}
-                  X oil-format    ${x|html}
+                  X oil-printf  ${x %.3f}
+                  X oil-format  ${x|html}
+                  X oil-var-sub ${f(x)}  ${obj.attr}  ${obj[1, 2]}   ${d->key}
 
 OTHER SHELL SUBLANGUAGES
   [Arithmetic]    arith-context Where legacy arithmetic is allowed
@@ -127,7 +127,7 @@ BUILTIN COMMANDS
 X [Unsupported]   enable
   [Oil Builtins]  cd   X shopt   X env   compatible, and takes a block
                   X fork   X wait        replaces & and (), takes a block
-                  X open                 For multiple named strings (block)
+                  X fopen                Many open streams, takes a block
                   X use                  source with namespace, file-relative 
                   X dirname   X basename optimizations
                   X opts                 getopts replacement
@@ -160,7 +160,9 @@ SHELL OPTIONS
                   parse_at               echo @array @arrayfunc(x, y)
                   parse_brace            if true { ... }; cd ~/src { ... }
                   parse_paren            if (x > 0) ...
-                  X parse_index_expr     ${a[1 + f(x)]}
+                  X parse_brace_expr     ${a[1 + f(x)]}  ${d->mykey}
+                  X parse_redir_expr     >> var x   << 'here string'
+                  X parse_dollar_slash   egrep $/ d+ / *.txt
                   X parse_rawc           r'\'   c'\n'   c"$x\n"
                   X longopts             test -file, read -delim, etc.
                   more_errexit           More errexit checks --  at command sub
@@ -169,13 +171,13 @@ SHELL OPTIONS
                   parse_equals           x = 's' (for cleaner config blocks)
                   parse_set              instead of setvar
                   simple_echo            Doesn't join args; -sep -end and --
+                  X simple_test_builtin  Only file tests, remove [, status 2
                   X no_old_builtins      local/declare/etc.  pushd/popd/dirs
                                          source  unset  printf  [un]alias
                                          getopts
                   X no_old_syntax        [[   $(( ))  ${x%prefix}   $$
                                          $'\n'   @(*.sh|*.py)  `echo comsub`
                                          ${a[@]}
-                  X simple_test_builtin  Only file tests, remove [, status 2
 
 ENVIRONMENT VARIABLES
   [Shell Options] SHELLOPTS   X BASHOPTS
