@@ -159,6 +159,8 @@ class HtmlOutput(ColorOutput):
       css_class = 's'
     elif e_color == runtime.Color_OtherConst:
       css_class = 'o'
+    elif e_color == runtime.Color_PythonType:
+      css_class = 'o'
     elif e_color == runtime.Color_UserType:
       css_class = 'o'
     else:
@@ -208,6 +210,8 @@ class AnsiOutput(ColorOutput):
       self.f.write(_BOLD)
     elif e_color == runtime.Color_OtherConst:
       self.f.write(_GREEN)
+    elif e_color == runtime.Color_PythonType:
+      self.f.write(_BOLD + _BLUE)
     elif e_color == runtime.Color_UserType:
       self.f.write(_GREEN)  # Same color as other literals for now
     else:

@@ -129,6 +129,7 @@ Color_TypeName = 1
 Color_StringConst = 2
 Color_OtherConst = 3  # Int and bool.  Green?
 Color_UserType = 4  # UserType Id
+Color_PythonType = 5  # e.g. for value.Obj
 
 
 class PrettyLeaf(_PrettyBase):
