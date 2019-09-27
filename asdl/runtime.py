@@ -129,7 +129,7 @@ Color_TypeName = 1
 Color_StringConst = 2
 Color_OtherConst = 3  # Int and bool.  Green?
 Color_UserType = 4  # UserType Id
-Color_PythonType = 5  # e.g. for value.Obj
+Color_External = 5  # e.g. for value.Obj
 
 
 class PrettyLeaf(_PrettyBase):
@@ -148,3 +148,16 @@ class PrettyLeaf(_PrettyBase):
   def __repr__(self):
     # type: () -> str
     return '<PrettyLeaf %s %s>' % (self.s, self.e_color)
+
+
+class ExternalLeaf(_PrettyBase):
+  """Leaf node to print an arbitrary objects."""
+
+  def __init__(self, obj):
+    # type: (Any) -> None
+    self.obj = obj
+    self.e_color = Color_External  # alwasy the same
+
+  def __repr__(self):
+    # type: () -> str
+    return '<ExternalLeaf %s>' % self.obj

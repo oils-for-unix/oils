@@ -87,8 +87,8 @@ namespace %s {
 from asdl import const  # For const.NO_INTEGER
 from asdl import runtime
 from asdl.runtime import (
-  PrettyLeaf, PrettyArray, PrettyNode,
-  Color_TypeName, Color_StringConst, Color_OtherConst, Color_PythonType,
+  PrettyLeaf, ExternalLeaf, PrettyArray, PrettyNode,
+  Color_TypeName, Color_StringConst, Color_OtherConst, Color_External,
   Color_UserType
 )
 

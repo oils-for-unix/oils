@@ -159,7 +159,7 @@ class HtmlOutput(ColorOutput):
       css_class = 's'
     elif e_color == runtime.Color_OtherConst:
       css_class = 'o'
-    elif e_color == runtime.Color_PythonType:
+    elif e_color == runtime.Color_External:
       css_class = 'o'
     elif e_color == runtime.Color_UserType:
       css_class = 'o'
@@ -210,7 +210,7 @@ class AnsiOutput(ColorOutput):
       self.f.write(_BOLD)
     elif e_color == runtime.Color_OtherConst:
       self.f.write(_GREEN)
-    elif e_color == runtime.Color_PythonType:
+    elif e_color == runtime.Color_External:
       self.f.write(_BOLD + _BLUE)
     elif e_color == runtime.Color_UserType:
       self.f.write(_GREEN)  # Same color as other literals for now
@@ -385,6 +385,11 @@ def PrintTree(node, f, indent=0, max_col=100):
     f.write(pretty.Str(node.s))
     f.PopColor()
 
+  elif isinstance(node, runtime.ExternalLeaf):
+    f.PushColor(node.e_color)
+    f.write(repr(node.obj))
+    f.PopColor()
+
   elif isinstance(node, runtime.PrettyNode):
     _PrintTreeObj(node, f, indent, max_col)
 
@@ -442,6 +447,11 @@ def _TrySingleLine(node,  # type: runtime._PrettyBase
   if isinstance(node, runtime.PrettyLeaf):
     f.PushColor(node.e_color)
     f.write(pretty.Str(node.s))
+    f.PopColor()
+
+  elif isinstance(node, runtime.ExternalLeaf):
+    f.PushColor(node.e_color)
+    f.write(repr(node.obj))
     f.PopColor()
 
   elif isinstance(node, runtime.PrettyArray):  # Can we fit the WHOLE list on the line?
