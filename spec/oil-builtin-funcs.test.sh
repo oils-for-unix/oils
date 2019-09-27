@@ -2,70 +2,70 @@
 
 # TODO: Test that there are exceptions when there are too many args, etc.
 
-#### bool()
+#### Bool()
 shopt -s oil:basic
-var a = bool( @() )
-var b = bool( @(foo) )
+var a = Bool( @() )
+var b = Bool( @(foo) )
 echo $a $b
 ## STDOUT:
 False
 True
 ## END
 
-#### int()
+#### Int()
 shopt -s oil:basic
-var a = int("3")
-var b = int("-35")
+var a = Int("3")
+var b = Int("-35")
 echo $a $b
 ## STDOUT:
 3
 -35
 ## END
 
-#### float()
+#### Float()
 # TODO: This needs a lot more testing, for precision, etc.
 shopt -s oil:basic
-var a = float("1.2")
-var b = float("3.4")
+var a = Float("1.2")
+var b = Float("3.4")
 echo $a $b
 ## STDOUT:
 1.2
 3.4
 ## END
 
-#### str()
+#### Str()
 # TODO: more testing
 shopt -s oil:basic
-var a = str(5)
-var b = str(42)
+var a = Str(5)
+var b = Str(42)
 echo $a $b
 ## STDOUT:
 5
 42
 ## END
 
-#### tuple()
+#### Tuple()
 # TODO: more testing
 shopt -s oil:basic
-var a = tuple()
+var a = Tuple()
 echo $a
 ## STDOUT:
 ()
 ## END
 
-#### list()
+#### List()
 # TODO: more testing
 shopt -s oil:basic
-var a = list(range(3))
+var a = List(range(3))
 echo $a
 ## STDOUT:
 [0, 1, 2]
 ## END
 
-#### dict()
+#### Dict()
 # TODO: more testing
 shopt -s oil:basic
-var a = dict()
+var a = Dict()
 #repr a
 echo $len(a)
 ## STDOUT:

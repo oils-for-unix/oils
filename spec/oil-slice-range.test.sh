@@ -175,7 +175,7 @@ a
 
 #### Range with list constructor
 shopt -s oil:all
-var mylist = list(0:3)
+var mylist = List(0:3)
 echo @mylist
 ## STDOUT:
 0
