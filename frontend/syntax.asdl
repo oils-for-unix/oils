@@ -310,15 +310,6 @@ module syntax
                 command body)
   attributes (int* spids)
 
-  -- op is ... in ...args
-  -- s Array[Str] = @(1 2 3)
-  param = (token? op, token name, type_expr? typ, expr? default)
-
-  -- Examples: Int   Dict[str, Any]
-  type_expr =
-    Simple(token name)
-  | Compound(token name, type_expr* params)
-
   --
   -- Glob representation, for converting ${x//} to extended regexes.
   --
@@ -350,11 +341,26 @@ module syntax
 
   expr_context = Load | Store | Del | AugLoad | AugStore | Param
 
+  -- type expressions:   Int   Array[Int]   Dict[Str, Any]
+  type_expr =
+    Simple(token name)
+  | Compound(token name, type_expr* params)
+
+  -- LHS binding in loops, list comprehensions, and var/const
+  name_type = (token name, type_expr? typ)
+
+  -- op is ... in ...args
+  -- s Array[Str] = @(1 2 3)
+  param = (token? op, token name, type_expr? typ, expr? default)
+
   -- TODO: Inline this into GenExp and ListComp?  Just use a flag there?
-  comprehension = (expr target, expr iter, expr* ifs)
+  -- TODO: lhs_expr
+  comprehension = (name_type lhs, expr iter, expr* ifs)
 
   -- keyword arguments supplied to call (NULL identifier for **kwargs)
   named_arg = (token? arg, expr value)
+
+  -- [Names and Types]
 
   expr =
     Var(token name)  -- a variable name to evaluate

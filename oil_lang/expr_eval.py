@@ -358,7 +358,7 @@ class OilEvaluator(object):
       obj = self.EvalExpr(comp.iter)
 
       # TODO: Handle x,y etc.
-      iter_name = comp.target.name.val
+      iter_name = comp.lhs[0].name.val
 
       if isinstance(obj, str):
         e_die("Strings aren't iterable")
@@ -389,7 +389,8 @@ class OilEvaluator(object):
       comp = node.generators[0]
       obj = self.EvalExpr(comp.iter)
 
-      iter_name = comp.target.name.val
+      # TODO: Support (x for x, y in ...)
+      iter_name = comp.lhs[0].name.val
 
       it = iter(obj)
 

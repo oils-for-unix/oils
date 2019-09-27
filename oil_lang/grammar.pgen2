@@ -29,7 +29,10 @@ comp_op: (
     '<'|'>'|'=='|'>='|'<='|'!='|'in'|'not' 'in'|'is'|'is' 'not'|
      Arith_Tilde | Expr_NotTilde
 )
+
+# Note: For Oil this will be ...
 star_expr: '*' expr
+
 expr: xor_expr ('|' xor_expr)*
 xor_expr: and_expr ('xor' and_expr)*
 and_expr: shift_expr ('&' shift_expr)*
@@ -89,7 +92,6 @@ place_trailer: (
 subscriptlist: subscript (',' subscript)* [',']
 subscript: expr | [expr] ':' [expr]
 
-exprlist: (expr|star_expr) (',' (expr|star_expr))* [',']
 testlist: test (',' test)* [',']
 
 # Dict syntax resembles JavaScript
@@ -147,8 +149,7 @@ argument: ( test [comp_for] |
             '**' test |
             '*' test )
 
-# TODO: Change to name_type_list
-comp_for: 'for' exprlist 'in' or_test ['if' test_nocond]
+comp_for: 'for' name_type_list 'in' or_test ['if' test_nocond]
 
 
 #

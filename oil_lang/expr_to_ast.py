@@ -13,7 +13,7 @@ from _devbuild.gen.syntax_asdl import (
     re, re_t, re_repeat, re_repeat_t, class_literal_term, class_literal_term_t,
     posix_class, perl_class,
     word_t,
-    param, type_expr_t, comprehension,
+    name_type, param, type_expr_t, comprehension,
 )
 from _devbuild.gen import grammar_nt
 
@@ -278,6 +278,26 @@ class Transformer(object):
 
     raise NotImplementedError(id_)
 
+  def _NameTypeList(self, p_node):
+    # type: (PNode) -> List[name_type]
+    """
+    name_type_list: name_type (',' name_type)*
+    """
+    assert p_node.typ == grammar_nt.name_type_list
+    results = []
+
+    for p in p_node.children[::2]:
+      children = p.children
+
+      if len(children) == 2:
+        typ = self._TypeExpr(children[1])
+      else:
+        typ = None
+
+      node = name_type(children[0].tok, typ)
+      results.append(node)
+    return results
+
   def _CompFor(self, p_node):
     # type: (PNode) -> comprehension
     """
@@ -285,7 +305,7 @@ class Transformer(object):
     """
     children = p_node.children
 
-    lvalue = self.Expr(children[1])  # Python calls this target
+    lhs = self._NameTypeList(children[1])  # Python calls this target
     iterable = self.Expr(children[3])
 
     if_ = None
@@ -294,7 +314,7 @@ class Transformer(object):
 
     # TODO: Simplify the node
     ifs = [if_] if if_ else []
-    return comprehension(lvalue, iterable, ifs)
+    return comprehension(lhs, iterable, ifs)
 
   def _CompareChain(self, children):
     # type: (List[PNode]) -> expr_t
@@ -417,16 +437,6 @@ class Transformer(object):
         # test_nocond: or_test | lambdef_nocond
         assert len(children) == 1
         return self.Expr(children[0])
-
-      elif typ == grammar_nt.exprlist:
-        # exprlist: (expr|star_expr) (',' (expr|star_expr))* [',']
-
-        if len(children) == 1:
-          return self.Expr(children[0])
-
-        # used in for loop, genexpr.
-        # TODO: This sould be placelist?  for x, *y ?
-        raise NotImplementedError('exprlist')
 
       #
       # Operators with Precedence
