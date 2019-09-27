@@ -11,13 +11,15 @@ len=3
 shopt -s oil:basic
 
 var x = 1
-var a = @[$x $(echo hi)]
+var a = @[$x $(echo hi) 'sq' "dq $x"]
 echo len=$len(a)
 echo @a
 ## STDOUT:
-len=2
+len=4
 1
 hi
+sq
+dq 1
 ## END
 
 #### arrays with expressions
@@ -27,13 +29,14 @@ shopt -s oil:basic
 
 var x = 5
 var y = 6
-var a = @[(x+1) (y*2)]
+var a = @[(x) (x+1) (y*2)]
 
 echo len=$len(a)
 echo @a
 
 ## STDOUT:
-len=2
+len=3
+5
 6
 12
 ## END
@@ -85,4 +88,18 @@ echo status=$?
 ## STDOUT:
 <generator
 status=0
+## END
+
+#### typeof should show the type
+var b = @[true]
+# repr should show the type of the object?
+repr b
+#typeof b
+
+var empty = @[]
+repr empty
+
+## STDOUT:
+Array[Bool]
+Array[???]  # what should this be?
 ## END

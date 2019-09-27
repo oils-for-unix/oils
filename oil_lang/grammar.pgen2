@@ -148,27 +148,22 @@ comp_for: 'for' exprlist 'in' or_test ['if' test_nocond]
 # Oil Expressions
 #
 
-word_part: Lit_Chars | Lit_Other
-word: word_part*
-# TODO: Change this to types and expressions, like
-# @[1 2 3] @[(x) (y+1)] @[true false false]
-
+# Notes:
+# - Most of these occur in 'atom' above
+# - You can write $mystr but not mystr.  It has to be (mystr)
 array_item: (
-   # NOTE: Most of these occur in 'atom' above
-   Expr_Name | Expr_Null | Expr_True | Expr_False |
+   Expr_Null | Expr_True | Expr_False |
    Expr_Float | Expr_DecInt | Expr_BinInt | Expr_OctInt | Expr_HexInt |
    dq_string | sq_string |
    sh_command_sub | braced_var_sub | simple_var_sub |
    '(' test ')'
 )
-array_literal: (
-  '@[' array_item* Op_RBracket
-)
+array_literal: '@[' array_item* Op_RBracket
 
 sh_array_literal: '@(' Expr_CastedDummy Right_ShArrayLiteral
 sh_command_sub: '$(' Expr_CastedDummy Eof_RParen
 
-# TODO: We also need r'' c''  "" c""
+# Note: could add c"" too
 dq_string: '"' Expr_CastedDummy Right_DoubleQuote
 sq_string: (Left_SingleQuoteRaw | Left_SingleQuoteC) Expr_CastedDummy Right_SingleQuote
 
