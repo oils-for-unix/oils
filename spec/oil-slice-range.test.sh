@@ -4,13 +4,13 @@
 # Python slices are comparable?  Why?
 pp 1:3 < 1:4
 ## STDOUT:
-True
+(bool)   True
 ## END
 
 #### ranges have lower precedence than bitwise operators
 pp 3:3|4
 ## STDOUT:
-xrange(3, 7)
+(xrange)   xrange(3, 7)
 ## END
 
 #### subscript and range of array
@@ -28,11 +28,11 @@ pp myarray[2:]
 # Now try omitting smoe
 #pp myarray[1:4:2]
 ## STDOUT:
-'2'
-['2', '3']
+(str)   '2'
+(list)   ['2', '3']
 implicit
-['1', '2']
-['3', '4']
+(list)   ['1', '2']
+(list)   ['3', '4']
 ## END
 
 #### subscript and range of list
@@ -44,11 +44,11 @@ echo 'implicit'
 pp mylist[:2]
 pp mylist[2:]
 ## STDOUT:
-2
-[2, 3]
+(int)   2
+(list)   [2, 3]
 implicit
-[1, 2]
-[3, 4]
+(list)   [1, 2]
+(list)   [3, 4]
 ## END
 
 #### expressions and negative indices
@@ -60,11 +60,11 @@ echo 'implicit'
 pp myarray[:-2]
 pp myarray[-2:]
 ## STDOUT:
-'5'
-['2', '3']
+(str)   '5'
+(list)   ['2', '3']
 implicit
-['1', '2', '3']
-['4', '5']
+(list)   ['1', '2', '3']
+(list)   ['4', '5']
 ## END
 
 #### Range loop
@@ -132,7 +132,7 @@ var a = [1,2,3]
 var b = a[:]
 pp b
 ## STDOUT:
-[1, 2, 3]
+(list)   [1, 2, 3]
 ## END
 
 #### Slices with Multilple Dimensions (with Table/data frame)
@@ -159,8 +159,8 @@ var t2 = t[:2, 3:4]
 pp t2
 
 ## STDOUT:
-'TODO: Table Slicing'
-'TODO: Table Slicing'
+(str)   'TODO: Table Slicing'
+(str)   'TODO: Table Slicing'
 ## END
 
 #### Slice with Range

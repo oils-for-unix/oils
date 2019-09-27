@@ -4,7 +4,7 @@
 ### pp
 pp 1 + 2 * 3
 ## STDOUT:
-7
+(int)   7
 ## END
 
 #### pass

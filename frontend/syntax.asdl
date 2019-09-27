@@ -301,8 +301,6 @@ module syntax
     -- return an Obj, not an int-like string
   | Return(token keyword, expr e)
   | OilCondition(expr e) -- for if/while
-    -- C-style for loop?  Currently unused.
-  | OilFor3(expr? init, expr? cond, expr? update, command? body)
   | OilForIn(expr lhs, expr iterable, command body)
     -- this is a proc OR func.  Some things can be disallowed later?
     -- return type may look like Tuple[Int, Str]
@@ -492,15 +490,12 @@ module syntax
   -- Regex Evaluation Shares the Same Structure, but uses slightly different
   -- nodes.
   -- * Speck/Token (syntactic concepts) -> Primitive (logical)
-  -- * Splice -> Resolved
+  -- * Splice -> re_t
   -- * All Strings -> Literal
 
   | Primitive(id id)  -- . dot etc.
     -- String substitutions are evaluated into literals
   | LiteralChars(string s, int spid)
-    -- Splices are resolved like this
-  | Resolved(re child)
-
 }
 
 -- Ideas for even more precise error messages

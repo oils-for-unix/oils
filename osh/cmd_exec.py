@@ -1052,7 +1052,7 @@ class Executor(object):
       if node.keyword.id == Id.KW_Pp:
         # NOTE: It would be nice to unify this with 'repr', but there isn't a
         # good way to do it with the value/PyObject split.
-        print('%s\t%s' % (obj.__class__.__name__, repr(obj)))
+        print('(%s)   %s' % (obj.__class__.__name__, repr(obj)))
 
       # TODO: What about exceptions?  They just throw?
       status = 0
