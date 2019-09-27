@@ -32,6 +32,7 @@ from _devbuild.gen.syntax_asdl import (
     source,
     parse_result, parse_result_t,
     expr, speck,
+    name_type,
 )
 from _devbuild.gen import syntax_asdl  # token, etc.
 
@@ -1686,8 +1687,7 @@ class CommandParser(object):
             # change it to another type.
             # Note: no type expressions are possible here.  'lazy' is part of
             # the "dynamic dialect" of Oil.
-            lhs = expr.Var(tok)
-            return command.VarDecl(None, lhs, None, op_tok, enode)
+            return command.VarDecl(None, [name_type(tok, None)], enode)
 
       # echo foo
       # f=(a b c)  # array

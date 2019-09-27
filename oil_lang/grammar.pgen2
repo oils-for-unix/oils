@@ -13,6 +13,7 @@ test_nocond: or_test | lambdef_nocond
 
 # Oil patch: These used to be varargslist.
 # TODO: I think we want fn(x) x+1 or |x| x+1.
+# TODO: This should be param
 lambdef: 'lambda' [name_type_list] ':' test
 lambdef_nocond: 'lambda' [name_type_list] ':' test_nocond
 
@@ -153,7 +154,7 @@ comp_for: 'for' name_type_list 'in' or_test ['if' test_nocond]
 
 
 #
-# Oil Expressions
+# Expressions that are New in Oil
 #
 
 # Notes:
@@ -217,8 +218,7 @@ type_expr: Expr_Name [ '[' type_expr (',' type_expr)* ']' ]
 # in command subs.
 end_stmt: '}' | ';' | Op_Newline | Eof_Real 
 
-# TODO: oil_var should be oil_var_decl and use name_type_list
-oil_var: place_list [type_expr] '=' testlist end_stmt
+oil_var_decl: name_type_list '=' testlist end_stmt
 
 oil_setvar: place_list (augassign | '=') testlist end_stmt
 
@@ -231,8 +231,7 @@ oil_expr: '(' testlist ')'
 command_expr: testlist end_stmt
 
 # Example: for (a Int, b Int in expr) { ... }
-# TODO: should be name_type_list
-oil_for: '(' place_list 'in' testlist ')'
+oil_for: '(' name_type_list 'in' testlist ')'
 
 # Examples: func print(msg Str, *args ; span_id Int = 0, token Token = None)
 #           proc rule(@argv, b Block) { }

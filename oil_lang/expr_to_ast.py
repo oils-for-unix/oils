@@ -6,14 +6,14 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
     token, speck, double_quoted, single_quoted, simple_var_sub, braced_var_sub,
-    command_sub,
-    sh_array_literal,
-    command, command__VarDecl,
+    command_sub, sh_array_literal,
+    word_t,
+    command, command_t, command__VarDecl,
     expr, expr_t, expr__Dict, expr_context_e,
     re, re_t, re_repeat, re_repeat_t, class_literal_term, class_literal_term_t,
     posix_class, perl_class,
-    word_t,
-    name_type, param, type_expr_t, comprehension,
+    name_type, place_expr, place_expr_t, param, type_expr_t, comprehension,
+    subscript, attribute, tuple_
 )
 from _devbuild.gen import grammar_nt
 
@@ -122,11 +122,11 @@ class Transformer(object):
         arglist = [p_args]
 
       indices = [self._Subscript(a.children) for a in arglist]
-      return expr.Subscript(base, indices)
+      return subscript(base, indices)
 
     if op_tok.id in (Id.Expr_Dot, Id.Expr_RArrow, Id.Expr_DColon):
       attr = children[1].tok  # will be Id.Expr_Name
-      return expr.Attribute(base, op_tok, attr, expr_context_e.Store)
+      return attribute(base, op_tok, attr, expr_context_e.Store)
 
     raise AssertionError(op_tok)
 
@@ -208,7 +208,7 @@ class Transformer(object):
       p_node = children[i]
       elts.append(self.Expr(p_node))
 
-    return expr.Tuple(elts, expr_context_e.Store)  # unused expr_context_e
+    return tuple_(elts, expr_context_e.Store)  # unused expr_context_e
 
   def _TestlistComp(self, p_node, id0):
     # type: (PNode, Id_t) -> expr_t
@@ -255,7 +255,7 @@ class Transformer(object):
       # atom: '(' [yield_expr|testlist_comp] ')' | ...
       if n == 2:  # () is a tuple
         assert children[1].tok.id == Id.Op_RParen, children[1]
-        return expr.Tuple([], expr_context_e.Store)
+        return tuple_([], expr_context_e.Store)
 
       return self._TestlistComp(children[1], id_)
 
@@ -395,17 +395,6 @@ class Transformer(object):
       if typ == grammar_nt.command_expr:
         # return_expr: testlist end_stmt
         return self.Expr(children[0])
-
-      if typ == grammar_nt.place_list:
-        return self._AssocBinary(children)
-
-      if typ == grammar_nt.place:
-        # place: NAME place_trailer*
-        if len(pnode.children) == 1:
-          return self.Expr(pnode.children[0])
-        # TODO: Called _Trailer but don't handle ( )?
-        # only [] . -> :: ?
-        raise NotImplementedError
 
       #
       # Python-like Expressions / Operators
@@ -601,59 +590,68 @@ class Transformer(object):
         return self.Expr(p_node.children[1])
       return self.Expr(child0)  # $1 ${x} etc.
 
+  def _Place(self, p_node):
+    # type: (PNode) -> place_expr_t
+    """
+    place: Expr_Name place_trailer*
+    """
+    children = p_node.children
+
+    node = place_expr.Var(children[0].tok)
+
+    n = len(children)
+    i = 1
+    while i < n and ISNONTERMINAL(children[i].typ):
+      node = self._Trailer(node, children[i])
+      i += 1
+    return node
+
+  def _PlaceList(self, p_node):
+    # type: (PNode) -> List[place_expr_t]
+    """
+    place: Expr_Name place_trailer*
+    place_list: place (',' place)*
+    """
+    assert p_node.typ == grammar_nt.place_list
+    return [self._Place(c) for c in p_node.children[::2]]
+
   def VarDecl(self, pnode):
-    # type: (PNode) -> command__VarDecl
+    # type: (PNode) -> command_t
     """Transform an Oil assignment statement."""
     typ = pnode.typ
     children = pnode.children
 
-    # TODO: Fill this in.
-    lhs_type = None
-
-    if typ == grammar_nt.oil_var:
-      # oil_var: lvalue_list [type_expr] '=' testlist (Op_Semi | Op_Newline)
+    if typ == grammar_nt.oil_var_decl:
+      # oil_var_decl: name_type_list '=' testlist end_stmt
 
       #log('len(children) = %d', len(children))
-      lvalue = self.Expr(children[0])  # could be a tuple
-      #log('lvalue %s', lvalue)
-
-      n = len(children)
-      if n == 4:
-        op_tok = children[1].tok
-        rhs = children[2]
-      elif n == 5:
-        # TODO: translate type expression
-        op_tok = children[2].tok
-        rhs = children[3]
-
-      else:
-        raise AssertionError(n)
+      lhs = self._NameTypeList(children[0])  # could be a tuple
+      rhs = self.Expr(children[2])
 
       # The caller should fill in the keyword token.
-      return command.VarDecl(None, lvalue, lhs_type, op_tok, self.Expr(rhs))
+      return command.VarDecl(None, lhs, rhs)
 
     if typ == grammar_nt.oil_setvar:
-      # oil_setvar: lvalue_list (augassign | '=') testlist (Op_Semi | Op_Newline)
-      lvalue = self.Expr(children[0])  # could be a tuple
+      # oil_setvar: place_list (augassign | '=') testlist end_stmt
+      place_list = self._PlaceList(children[0])  # could be a tuple
       op_tok = children[1].tok
-      rhs = children[2]
-      return command.VarDecl(None, lvalue, lhs_type, op_tok, self.Expr(rhs))
+      rhs = self.Expr(children[2])
+      return command.PlaceMutation(None, place_list, op_tok, rhs)
 
     nt_name = self.number2symbol[typ]
     raise AssertionError(
         "PNode type %d (%s) wasn't handled" % (typ, nt_name))
 
   def OilForExpr(self, pnode):
-    # type: (PNode) -> Tuple[expr_t, expr_t]
+    # type: (PNode) -> Tuple[List[name_type], expr_t]
     typ = pnode.typ
     children = pnode.children
 
-    # TODO: Distinguish between for-in and for-c
     if typ == grammar_nt.oil_for:
       # oil_for: '(' lvalue_list 'in' testlist ')'
-      lvalue = self.Expr(children[1])  # could be a tuple
+      lhs = self._NameTypeList(children[1])  # could be a tuple
       iterable = self.Expr(children[3])
-      return lvalue, iterable
+      return lhs, iterable
 
     nt_name = self.number2symbol[typ]
     raise AssertionError(

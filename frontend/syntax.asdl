@@ -294,16 +294,16 @@ module syntax
     -- Oil stuff
 
     -- var, const, lazy, and implicit lazy
-    -- TODO: var x Int, y Int = 1, 2 doesn't fit (expr, type_expr)
-  | VarDecl(token? keyword, expr lhs, type_expr? typ, token op, expr rhs)
+  | VarDecl(token? keyword, name_type* lhs, expr rhs)
     -- setvar/set, auto
-  | PlaceMutation(token? keyword, expr lhs, expr rhs)
+    -- Note: op can be a speck
+  | PlaceMutation(token? keyword, place_expr* lhs, token op, expr rhs)
     -- do, pp, pass.  An expression for its side effects
   | Expr(speck keyword, expr e)
     -- return an Obj, not an int-like string
   | Return(token keyword, expr e)
   | OilCondition(expr e) -- for if/while
-  | OilForIn(expr lhs, expr iterable, command body)
+  | OilForIn(name_type* lhs, expr iterable, command body)
     -- this is a proc OR func.  Some things can be disallowed later?
     -- return type may look like Tuple[Int, Str]
   | OilFuncProc(id which, token name, param* params, type_expr? return_type,
@@ -354,13 +354,24 @@ module syntax
   param = (token? op, token name, type_expr? typ, expr? default)
 
   -- TODO: Inline this into GenExp and ListComp?  Just use a flag there?
-  -- TODO: lhs_expr
-  comprehension = (name_type lhs, expr iter, expr* ifs)
+  comprehension = (name_type* lhs, expr iter, expr* ifs)
 
   -- keyword arguments supplied to call (NULL identifier for **kwargs)
   named_arg = (token? arg, expr value)
 
-  -- [Names and Types]
+  tuple_ = (expr* elts, expr_context ctx)
+  -- Subscripts are lists of expressions
+  --   a[:i, n]      (we don't have matrices, but we have data frames)
+  subscript = (expr collection, expr* indices)
+  -- TODO: op should be 'speck'
+  attribute = (expr value, token op, token attr, expr_context ctx)
+
+  -- Places that can be mutated.
+  place_expr = 
+    Var(token name)
+  | Tuple %tuple_
+  | Subscript %subscript
+  | Attribute %attribute
 
   expr =
     Var(token name)  -- a variable name to evaluate
@@ -395,7 +406,7 @@ module syntax
     -- Attribute() and then Call()
 
   | IfExp(expr test, expr body, expr orelse)
-  | Tuple(expr* elts, expr_context ctx)
+  | Tuple %tuple_
   | List(expr* elts, expr_context ctx)
   | Dict(expr* keys, expr* values)
     -- For the values in {n1, n2}
@@ -415,14 +426,8 @@ module syntax
     --   a[3:]   a[:i]
   | Slice(expr? lower, expr? upper)
 
-  -- TODO: Make these into lhs_expr, and rename to sh_lhs_expr.
-
-    -- Subscripts are lists of expressions
-    --   a[:i, n]      (we don't have matrices, but we have data frames)
-  | Subscript(expr collection, expr* indices)
-
-    -- TODO: op should be 'speck'
-  | Attribute(expr value, token op, token attr, expr_context ctx)
+  | Subscript %subscript
+  | Attribute %attribute
 
     -- Ellipsis is like 'Starred' within Python, which are valid on the LHS in
     -- Python for unpacking, and -- within list literals for splicing.

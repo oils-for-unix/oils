@@ -936,19 +936,35 @@ class Executor(object):
 
     # TODO: Change x = 1 + 2*3 into its own Decl node.
     elif node.tag == command_e.VarDecl and node.keyword is None:
-      lval = self.expr_ev.EvalLHS(node.lhs)
+      self.mem.SetCurrentSpanId(node.lhs[0].name.span_id)  # point to var name
+
+      # Note: there's only one LHS
+      lval = lvalue.Named(node.lhs[0].name.val)
       py_val = self.expr_ev.EvalExpr(node.rhs)
-      val = value.Obj(py_val)
-      lookup_mode = scope_e.LocalOnly
-      self.mem.SetVar(lval, val, (), lookup_mode,
-                      keyword_id=None)
+      val = _PyObjectToVal(py_val)
+
+      self.mem.SetVar(lval, val, (), scope_e.LocalOnly, keyword_id=None)
       status = 0
 
     elif node.tag == command_e.VarDecl:
+      self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to var
 
-      self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to var/setvar
+      lval = lvalue.Named(node.lhs[0].name.val)
+      py_val = self.expr_ev.EvalExpr(node.rhs)
 
-      lval = self.expr_ev.EvalLHS(node.lhs)
+      val = _PyObjectToVal(py_val)
+      if node.keyword.id in (Id.KW_Var, Id.KW_Const):
+        lookup_mode = scope_e.LocalOnly
+      else:
+        lookup_mode = scope_e.Dynamic
+
+      self.mem.SetVar(lval, val, (), lookup_mode, keyword_id=node.keyword.id)
+      status = 0
+
+    elif node.tag == command_e.PlaceMutation:
+      self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to setvar/set
+
+      lval = lvalue.Named(node.lhs[0].name.val)
       py_val = self.expr_ev.EvalExpr(node.rhs)
 
       if node.op.id == Id.Arith_Equal:
@@ -959,17 +975,14 @@ class Executor(object):
         else:
           lookup_mode = scope_e.Dynamic
 
-        flags = ()
-        self.mem.SetVar(lval, val, flags, lookup_mode,
-                        keyword_id=node.keyword.id)
+        self.mem.SetVar(lval, val, (), lookup_mode, keyword_id=node.keyword.id)
 
       elif node.op.id == Id.Arith_PlusEqual:
         new_py_val = self.expr_ev.EvalPlusEquals(lval, py_val)
         # This should only be an int or float, so we don't need the logic above
         val = value.Obj(new_py_val)
 
-        flags = ()
-        self.mem.SetVar(lval, val, flags, scope_e.LocalOnly,
+        self.mem.SetVar(lval, val, (), scope_e.LocalOnly,
                         keyword_id=node.keyword.id)
 
       else:
@@ -1255,7 +1268,7 @@ class Executor(object):
         it = iter(obj)
 
       body = node.body
-      iter_name = node.lhs.name.val  # TODO: proper lvalue
+      iter_name = node.lhs[0].name.val  # TODO: proper lvalue
       while True:
         try:
           loop_val = next(it)
@@ -1415,8 +1428,8 @@ class Executor(object):
         command_e.NoOp, command_e.ControlFlow, command_e.Pipeline,
         command_e.AndOr, command_e.CommandList, command_e.Sentence,
         command_e.TimeBlock, command_e.ShFunction, command_e.VarDecl,
-        command_e.OilCondition, command_e.OilFuncProc, command_e.Return,
-        command_e.Expr):
+        command_e.PlaceMutation, command_e.OilCondition, command_e.OilFuncProc,
+        command_e.Return, command_e.Expr):
       redirects = []
     else:
       try:

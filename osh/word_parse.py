@@ -803,19 +803,17 @@ class WordParser(object):
   def ParseVar(self, kw_token):
     # type: (token) -> command_t
     """
-    oil_var: 'var' <'oil_var' in grammar.pgen2>
+    oil_var_decl: name_type_list '=' testlist end_stmt
 
-    Note that assignments must end with a newline or a semicolon.  Unlike shell
+    Note that assignments must end with \n  ;  }  or EOF.  Unlike shell
     assignments, we disallow:
     
     var x = 42 | wc -l
     var x = 42 && echo hi
-
-    TODO: Also have to allow th trailing } in { var x = 'a' }
     """
     self._Next(lex_mode_e.Expr)
     enode, last_token = self.parse_ctx.ParseVarDecl(kw_token, self.lexer,
-                                                      grammar_nt.oil_var)
+                                                      grammar_nt.oil_var_decl)
     # Hack to move } from what the Expr lexer modes gives to what CommandParser
     # wants
     if last_token.id == Id.Op_RBrace:
