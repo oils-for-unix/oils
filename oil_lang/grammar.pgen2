@@ -9,13 +9,17 @@ augassign: ('+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=' |
 # For normal and annotated assignments, additional restrictions enforced by the interpreter
 
 test: or_test ['if' or_test 'else' test] | lambdef
-test_nocond: or_test | lambdef_nocond
 
-# Oil patch: These used to be varargslist.
-# TODO: I think we want fn(x) x+1 or |x| x+1.
-# TODO: This should be param
-lambdef: 'lambda' [name_type_list] ':' test
-lambdef_nocond: 'lambda' [name_type_list] ':' test_nocond
+# We follow the same rules as Python lambdas:
+#
+# |x| 1, 2                ==    (|x| 1), 2
+# |x| x if True else 42   ==    |x| (x if True else 42)
+#
+# Python also had a test_nocond production like this:  We don't need it because
+# we can't have multiple ifs.
+# [x for x in range(3) if lambda x: x if 1]
+
+lambdef: 'lambda' [params] ':' test
 
 or_test: and_test ('or' and_test)*
 and_test: not_test ('and' not_test)*
@@ -52,7 +56,7 @@ atom: (
     '(' [testlist_comp] ')' 
   | '[' [testlist_comp] ']' 
   | '{' [dict] '}'
-    # TODO: Also accept < > for fully-anchored?  How does regexec work?
+    # TODO: translation preference
   | '/' regex [re_flags] '/'
     # NOTE: These atoms are are allowed in typed array literals
   | Expr_Name | Expr_Null | Expr_True | Expr_False 
@@ -91,8 +95,11 @@ place_trailer: (
 # - First class slices have to be written 0:n.
 
 subscriptlist: subscript (',' subscript)* [',']
+
+# TODO: Add => as low precedence operator, for Func[Str, Int => Str]
 subscript: expr | [expr] ':' [expr]
 
+# TODO: => should be even lower precedence here too
 testlist: test (',' test)* [',']
 
 # Dict syntax resembles JavaScript
@@ -130,8 +137,6 @@ dict: dict_pair (',' dict_pair)* [',']
 #                   ((test | star_expr)
 #                    (comp_for | (',' (test | star_expr))* [','])) )
 
-arglist: argument (',' argument)*  [',']
-
 # The reason that keywords are test nodes instead of NAME is that using NAME
 # results in an ambiguity. ast.c makes sure it's a NAME.
 # "test '=' test" is really "keyword '=' test", but we have no such token.
@@ -145,12 +150,25 @@ arglist: argument (',' argument)*  [',']
 # TODO: Should be ...args, and also allow ;
 # But NOT @args?  I think that's only for command mode.
 
-argument: ( test [comp_for] |
-            test '=' test |
-            '**' test |
-            '*' test )
+argument: (
+    test [comp_for]
+    # named arg
+  | test '=' test
+    # var args
+  | '...' test
+)
 
-comp_for: 'for' name_type_list 'in' or_test ['if' test_nocond]
+# Note: trailing commas allowed at call sites
+arglist: argument (',' argument)* [','] [';' argument (',' argument)* [',']]
+
+
+# Oil patch: test_nocond -> or_test.  I believe this was trying to prevent the
+# "double if" ambiguity here:
+# #
+# [x for x in range(3) if lambda x: x if 1]
+# 
+# but Oil doesn't supported "nested loops", so we don't have this problem.
+comp_for: 'for' name_type_list 'in' or_test ['if' or_test]
 
 
 #
@@ -237,15 +255,32 @@ command_expr: testlist end_stmt
 # Example: for (a Int, b Int in expr) { ... }
 oil_for: '(' name_type_list 'in' testlist ')'
 
+# ... is for *args or **kwargs of any type, and @argv is for string args
+# Note: ... for procs doesn't make sense?
+param: Expr_Name [type_expr] ['=' expr] | '...' Expr_Name | '@' Expr_Name
+
 # Examples: func print(msg Str, *args ; span_id Int = 0, token Token = None)
 #           proc rule(@argv, b Block) { }
-# We have to put the opening { there for pgen2.  TODO: Also accept :{ so the
-# lexer knows to change modes.
-oil_func_proc: Expr_Name ['(' params [';' params] ')'] [type_expr] '{'
-#oil_func_proc: NAME '(' params* [';' params*] ')'
+# We have to put the opening { there for pgen2.
+
+# func: parens required?  func f { } doesn't make sense
+# proc: parens optional
+# func: ... allowed
+# proc: ... doesn't make sense because it takes homogeneous args
+# func: ; allowed for named args
+# proc: ; doesn't make sense
+# func: optional return type
+# proc: return type disallowed -- it's always int
+
 params: param (',' param)* [',']
-# ... is for *args or **kwargs of any type, and @argv is for string args
-param: Expr_Name [type_expr] ['=' expr] | '...' Expr_Name | '@' Expr_Name
+type_expr_list: type_expr (',' type_expr)*
+oil_func_proc: Expr_Name ['(' params [';' params] ')'] [type_expr_list] '{'
+
+func_params: [param] (',' param)* [';' param (',' param)*]
+oil_func: Expr_Name '(' [func_params] ')' [type_expr_list] '{'
+
+proc_params: param (',' param)*
+oil_proc: Expr_Name ['(' [proc_params] ')'] '{'
 
 #
 # Regex Sublanguage

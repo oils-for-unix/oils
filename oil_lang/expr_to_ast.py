@@ -295,7 +295,7 @@ class Transformer(object):
   def _CompFor(self, p_node):
     # type: (PNode) -> comprehension
     """
-    comp_for: 'for' exprlist 'in' or_test ['if' test_nocond]
+    comp_for: 'for' exprlist 'in' or_test ['if' or_test]
     """
     children = p_node.children
 
@@ -415,11 +415,6 @@ class Transformer(object):
         body = self.Expr(children[0])
         orelse = self.Expr(children[4])
         return expr.IfExp(test, body, orelse)
-
-      if typ == grammar_nt.test_nocond:
-        # test_nocond: or_test | lambdef_nocond
-        assert len(children) == 1
-        return self.Expr(children[0])
 
       #
       # Operators with Precedence
@@ -712,6 +707,10 @@ class Transformer(object):
     assert pnode.typ == grammar_nt.type_expr, pnode.typ
     return None
 
+  def _TypeExprList(self, pnode):
+    assert pnode.typ == grammar_nt.type_expr_list, pnode.typ
+    return None
+
   def _Param(self, pnode):
     # type: (PNode) -> param
     """
@@ -766,7 +765,7 @@ class Transformer(object):
         raise AssertionError
 
       if ISNONTERMINAL(children[next_index].typ):
-        return_type = self._TypeExpr(children[next_index])
+        return_type = self._TypeExprList(children[next_index])
         # otherwise it's Id.Op_LBrace like f() {
 
       return name, params, return_type
