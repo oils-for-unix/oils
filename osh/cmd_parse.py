@@ -1679,14 +1679,11 @@ class CommandParser(object):
           # NOTE: tok.id should be Lit_Chars, but that check is redundant
           if (match.IsValidVarName(tok.val) and
               self.w_parser.LookAhead() == Id.Lit_Equals):
-            #log('%s ', parts[0])
-            op_tok, enode = self.w_parser.ParseBareDecl()
+            enode = self.w_parser.ParseBareDecl()
             self._Next()  # Somehow this is necessary
 
-            # NOTE: This matches what expr_to_ast.py gives.  Probably should
-            # change it to another type.
-            # Note: no type expressions are possible here.  'lazy' is part of
-            # the "dynamic dialect" of Oil.
+            # TODO: Use BareDecl here.  Well, do that when we treat it as const
+            # or lazy.
             return command.VarDecl(None, [name_type(tok, None)], enode)
 
       # echo foo

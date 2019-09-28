@@ -114,14 +114,8 @@ class Transformer(object):
 
     if op_tok.id == Id.Op_LBracket:
       p_args = children[1]
-
-      if p_args.typ == grammar_nt.subscriptlist:
-        # a, b, c -- every other one is a comma
-        arglist = p_args.children[::2]
-      else:
-        arglist = [p_args]
-
-      indices = [self._Subscript(a.children) for a in arglist]
+      assert p_args.typ == grammar_nt.subscriptlist
+      indices = [self._Subscript(a.children) for a in p_args.children[::2]]
       return subscript(base, indices)
 
     if op_tok.id in (Id.Expr_Dot, Id.Expr_RArrow, Id.Expr_DColon):

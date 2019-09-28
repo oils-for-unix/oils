@@ -843,20 +843,19 @@ class WordParser(object):
     return enode
 
   def ParseBareDecl(self):
-    # type: () -> Tuple[token, expr_t]
+    # type: () -> expr_t
     """
     Parse the RHS of x = {name: val}
     """
     self._Next(lex_mode_e.Expr)
     self._Peek()
-    op = self.cur_token  # TODO: Don't need this
     enode, last_token = self.parse_ctx.ParseOilExpr(self.lexer,
                                                     grammar_nt.command_expr)
     if last_token.id == Id.Op_RBrace:
       last_token.id = Id.Lit_RBrace
     self.buffered_word = word.Token(last_token)
     self._Next(lex_mode_e.ShCommand)
-    return op, enode
+    return enode
 
   def ParseCommandExpr(self):
     # type: () -> expr_t
