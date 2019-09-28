@@ -418,6 +418,9 @@ class OilEvaluator(object):
 
       return _gen()
 
+    if node.tag == expr_e.Lambda:
+      raise NotImplementedError('|x|')
+
     if node.tag == expr_e.FuncCall:
       # TODO:
       #

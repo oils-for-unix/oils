@@ -1,6 +1,13 @@
 # Grammar for Oil.
 # Adapted from the Python 3.7 expression grammar, with several changes!
 
+# Note: trailing commas are allowed:
+#   {k: mydict,}
+#   [mylist,]
+#   mytuple,
+#   f(args,)
+#   func f(params,)
+
 # Oil patch: removed @= **= //=
 # Note that we're missing div= and xor=, which now look weird.  ^= is
 # exponentiation.  Honestly I don't even like '%='.  |= has a use case.
@@ -18,8 +25,14 @@ test: or_test ['if' or_test 'else' test] | lambdef
 # Python also had a test_nocond production like this:  We don't need it because
 # we can't have multiple ifs.
 # [x for x in range(3) if lambda x: x if 1]
+# 
+# The zero arg syntax like || 1  annoys me -- but this also works:
+# func() { return 1 }
+# 
+# We used name_type_list rather than func_params because a default value like
+# x|y (bitwise or) conflicts with the | delimiter!
 
-lambdef: 'lambda' [params] ':' test
+lambdef: '|' [name_type_list] '|' test
 
 or_test: and_test ('or' and_test)*
 and_test: not_test ('and' not_test)*
@@ -276,10 +289,10 @@ params: param (',' param)* [',']
 type_expr_list: type_expr (',' type_expr)*
 oil_func_proc: Expr_Name ['(' params [';' params] ')'] [type_expr_list] '{'
 
-func_params: [param] (',' param)* [';' param (',' param)*]
+func_params: [param] (',' param)* [','] [';' param (',' param)* [',']]
 oil_func: Expr_Name '(' [func_params] ')' [type_expr_list] '{'
 
-proc_params: param (',' param)*
+proc_params: param (',' param)* [',']
 oil_proc: Expr_Name ['(' [proc_params] ')'] '{'
 
 #

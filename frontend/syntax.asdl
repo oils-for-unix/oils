@@ -308,6 +308,7 @@ module syntax
   | OilForIn(name_type* lhs, expr iterable, command body)
     -- this is a proc OR func.  Some things can be disallowed later?
     -- return type may look like Tuple[Int, Str]
+    -- TODO: pos_params and named_params
   | OilFuncProc(id which, token name, param* params, type_expr? return_type,
                 command body)
   attributes (int* spids)
@@ -392,6 +393,8 @@ module syntax
   | CommandSub %command_sub
   | SingleQuoted %single_quoted
   | DoubleQuoted %double_quoted
+
+  | Lambda(name_type* params, expr body)
 
     -- TODO: speck op
   | Unary(token op, expr child)

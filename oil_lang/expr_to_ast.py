@@ -416,6 +416,18 @@ class Transformer(object):
         orelse = self.Expr(children[4])
         return expr.IfExp(test, body, orelse)
 
+      if typ == grammar_nt.lambdef:
+        # lambdef: '|' [func_params] '|' test
+
+        n = len(children)
+        if n == 4:
+          params = self._NameTypeList(children[1])
+        else:
+          params = []
+
+        body = self.Expr(children[n-1])
+        return expr.Lambda(params, body)
+
       #
       # Operators with Precedence
       #
@@ -736,6 +748,24 @@ class Transformer(object):
       return param(None, tok0, None, default)
 
     raise AssertionError(tok0)
+
+  def _FuncParams(self, p_node):
+    # type: (PNode) -> Tuple[List[param], List[param]]
+    """
+    func_params: [param] (',' param)* [','] [';' param (',' param)* [',']]
+    """
+    pos_params = []
+    named_params = []
+
+    current = pos_params  # Start appending to this ilst
+    children = p_node.children
+    for p in children:
+      if ISNONTERMINAL(p.typ):
+        current.append(self._Param(p))
+      elif p.tok.id == Id.Op_Semi:
+        current = named_params
+
+    return pos_params, named_params
 
   def FuncProc(self, pnode):
     # type: (PNode) -> Tuple[token, List[param], Optional[type_expr_t]]
