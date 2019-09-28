@@ -1157,6 +1157,14 @@ class Mem(object):
 
       cell.val.d[lval.key] = val.s
 
+    elif 0:  # lval.tag == lvalue_e.Obj:
+      # TODO:
+      # First look up the object
+      cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
+      # And then call __setitem__ on it if it's Obj?
+      # Should work for lists, dicts, arrays, and tuple will raise?
+      pass
+
     else:
       raise AssertionError(lval.__class__.__name__)
 

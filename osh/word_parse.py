@@ -812,8 +812,7 @@ class WordParser(object):
     var x = 42 && echo hi
     """
     self._Next(lex_mode_e.Expr)
-    enode, last_token = self.parse_ctx.ParseVarDecl(kw_token, self.lexer,
-                                                      grammar_nt.oil_var_decl)
+    enode, last_token = self.parse_ctx.ParseVarDecl(kw_token, self.lexer)
     # Hack to move } from what the Expr lexer modes gives to what CommandParser
     # wants
     if last_token.id == Id.Op_RBrace:
@@ -832,8 +831,7 @@ class WordParser(object):
     setvar i++
     """
     self._Next(lex_mode_e.Expr)
-    enode, last_token = self.parse_ctx.ParseVarDecl(kw_token, self.lexer,
-                                                      grammar_nt.oil_setvar)
+    enode, last_token = self.parse_ctx.ParsePlaceMutation(kw_token, self.lexer)
     # Hack to move } from what the Expr lexer modes gives to what CommandParser
     # wants
     if last_token.id == Id.Op_RBrace:
@@ -844,7 +842,7 @@ class WordParser(object):
     self._Next(lex_mode_e.ShCommand)  # always back to this
     return enode
 
-  def ParseBareShAssignment(self):
+  def ParseBareDecl(self):
     # type: () -> Tuple[token, expr_t]
     """
     Parse the RHS of x = {name: val}

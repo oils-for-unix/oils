@@ -293,10 +293,12 @@ module syntax
 
     -- Oil stuff
 
-    -- var, const, lazy, and implicit lazy
+    -- TODO: for implicit lazy or implicit const.  There's no type and no
+    -- comma.
+  | BareDecl(token lhs, expr rhs)
+    -- var, const
   | VarDecl(token? keyword, name_type* lhs, expr rhs)
-    -- setvar/set, auto
-    -- Note: op can be a speck
+    -- setvar/set, auto.  Note: op can be a speck
   | PlaceMutation(token? keyword, place_expr* lhs, token op, expr rhs)
     -- do, pp, pass.  An expression for its side effects
   | Expr(speck keyword, expr e)

@@ -107,6 +107,8 @@ int main(int argc, char **argv) {
   log("heap.cc");
   log("sizeof(Slab) = %d", sizeof(Slab));
   log("sizeof(Slice) = %d", sizeof(Slice));
+  // 8 bytes.
+  log("sizeof(size_t) = %d", sizeof(size_t));
 
   gBase4 = new Cell4[10];
   int slab = 5;  // pool ID returned by alloc

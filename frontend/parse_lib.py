@@ -319,9 +319,8 @@ class ParseContext(object):
     finally:
       self.parsing_expr = False
 
-  def ParseVarDecl(self, kw_token, lexer, start_symbol,
-                   print_parse_tree=False):
-    # type: (token, Lexer, int, bool) -> Tuple[command_t, token]
+  def ParseVarDecl(self, kw_token, lexer, print_parse_tree=False):
+    # type: (token, Lexer, bool) -> Tuple[command_t, token]
     """e.g. var mylist = [1, 2, 3]"""
 
     # TODO: We do need re-entrancy for var x = @[ (1+2) ] and such
@@ -330,15 +329,25 @@ class ParseContext(object):
 
     self.parsing_expr = True
     try:
-      pnode, last_token = self.e_parser.Parse(lexer, start_symbol)
+      pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.oil_var_decl)
     finally:
       self.parsing_expr = False
 
-    #print_parse_tree = True
     if print_parse_tree:
       self.p_printer.Print(pnode)
 
     ast_node = self.tr.VarDecl(pnode)
+    ast_node.keyword = kw_token  # VarDecl didn't fill this in
+    return ast_node, last_token
+
+  def ParsePlaceMutation(self, kw_token, lexer, print_parse_tree=False):
+    # type: (token, Lexer, bool) -> Tuple[command_t, token]
+
+    # TODO: Create an ExprParser so it's re-entrant.
+    pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.oil_setvar)
+    if print_parse_tree:
+      self.p_printer.Print(pnode)
+    ast_node = self.tr.PlaceMutation(pnode)
     ast_node.keyword = kw_token  # VarDecl didn't fill this in
     return ast_node, last_token
 

@@ -8,7 +8,7 @@ from _devbuild.gen.syntax_asdl import (
     token, speck, double_quoted, single_quoted, simple_var_sub, braced_var_sub,
     command_sub, sh_array_literal,
     word_t,
-    command, command_t, command__VarDecl,
+    command, command_t, command__VarDecl, command__PlaceMutation,
     expr, expr_t, expr__Dict, expr_context_e,
     re, re_t, re_repeat, re_repeat_t, class_literal_term, class_literal_term_t,
     posix_class, perl_class,
@@ -615,32 +615,35 @@ class Transformer(object):
     assert p_node.typ == grammar_nt.place_list
     return [self._Place(c) for c in p_node.children[::2]]
 
-  def VarDecl(self, pnode):
-    # type: (PNode) -> command_t
-    """Transform an Oil assignment statement."""
-    typ = pnode.typ
-    children = pnode.children
+  def VarDecl(self, p_node):
+    # type: (PNode) -> command__VarDecl
+    """
+    oil_var_decl: name_type_list '=' testlist end_stmt
+    """
+    typ = p_node.typ
+    children = p_node.children
+    assert typ == grammar_nt.oil_var_decl
 
-    if typ == grammar_nt.oil_var_decl:
-      # oil_var_decl: name_type_list '=' testlist end_stmt
+    #log('len(children) = %d', len(children))
+    lhs = self._NameTypeList(children[0])  # could be a tuple
+    rhs = self.Expr(children[2])
 
-      #log('len(children) = %d', len(children))
-      lhs = self._NameTypeList(children[0])  # could be a tuple
-      rhs = self.Expr(children[2])
+    # The caller should fill in the keyword token.
+    return command.VarDecl(None, lhs, rhs)
 
-      # The caller should fill in the keyword token.
-      return command.VarDecl(None, lhs, rhs)
+  def PlaceMutation(self, p_node):
+    # type: (PNode) -> command__PlaceMutation
+    """
+    oil_setvar: place_list (augassign | '=') testlist end_stmt
+    """
+    typ = p_node.typ
+    children = p_node.children
+    assert typ == grammar_nt.oil_setvar
 
-    if typ == grammar_nt.oil_setvar:
-      # oil_setvar: place_list (augassign | '=') testlist end_stmt
-      place_list = self._PlaceList(children[0])  # could be a tuple
-      op_tok = children[1].tok
-      rhs = self.Expr(children[2])
-      return command.PlaceMutation(None, place_list, op_tok, rhs)
-
-    nt_name = self.number2symbol[typ]
-    raise AssertionError(
-        "PNode type %d (%s) wasn't handled" % (typ, nt_name))
+    place_list = self._PlaceList(children[0])  # could be a tuple
+    op_tok = children[1].tok
+    rhs = self.Expr(children[2])
+    return command.PlaceMutation(None, place_list, op_tok, rhs)
 
   def OilForExpr(self, pnode):
     # type: (PNode) -> Tuple[List[name_type], expr_t]

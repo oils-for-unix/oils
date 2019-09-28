@@ -964,24 +964,34 @@ class Executor(object):
     elif node.tag == command_e.PlaceMutation:
       self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to setvar/set
 
-      lval = lvalue.Named(node.lhs[0].name.val)
-      py_val = self.expr_ev.EvalExpr(node.rhs)
-
       if node.op.id == Id.Arith_Equal:
+        #places = self.expr_eval.EvalPlaceList(node.lhs)
+        lval = lvalue.Named(node.lhs[0].name.val)
+        py_val = self.expr_ev.EvalExpr(node.rhs)
 
         val = _PyObjectToVal(py_val)
         if node.keyword.id in (Id.KW_Var, Id.KW_Const):
           lookup_mode = scope_e.LocalOnly
         else:
+          # TODO: Change this to LocalOrGlobal
           lookup_mode = scope_e.Dynamic
 
+        #for p in places:
         self.mem.SetVar(lval, val, (), lookup_mode, keyword_id=node.keyword.id)
 
+      # TODO: Other augmented assignments
       elif node.op.id == Id.Arith_PlusEqual:
+        # NOTE: x, y += 1 in Python is a SYNTAX error, but it's checked in the
+        # transformer and not the grammar.  We should do that too.
+
+        lval = lvalue.Named(node.lhs[0].name.val)
+        py_val = self.expr_ev.EvalExpr(node.rhs)
+
         new_py_val = self.expr_ev.EvalPlusEquals(lval, py_val)
         # This should only be an int or float, so we don't need the logic above
         val = value.Obj(new_py_val)
 
+        # TODO: This should be LocalOrGlobal too
         self.mem.SetVar(lval, val, (), scope_e.LocalOnly,
                         keyword_id=node.keyword.id)
 

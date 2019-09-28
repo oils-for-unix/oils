@@ -220,11 +220,11 @@ trace-var-sub() {
 # Run All tests
 #
 
-all-osh() {
+osh-all() {
   test/spec-runner.sh all-parallel osh "$@"
 }
 
-all-oil() {
+oil-all() {
   test/spec-runner.sh all-parallel oil "$@"
 }
 

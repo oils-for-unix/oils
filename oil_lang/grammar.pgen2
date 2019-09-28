@@ -220,6 +220,10 @@ end_stmt: '}' | ';' | Op_Newline | Eof_Real
 
 oil_var_decl: name_type_list '=' testlist end_stmt
 
+# TODO: This production is more precise as the following, but it's ambiguous :(
+#oil_setvar: place augassign testlist end_stmt
+#          | place_list '=' testlist end_stmt
+
 oil_setvar: place_list (augassign | '=') testlist end_stmt
 
 # For $stringfunc(x, y=1) and @arrayfunc(a, b='s')

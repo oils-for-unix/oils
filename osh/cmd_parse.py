@@ -1680,7 +1680,7 @@ class CommandParser(object):
           if (match.IsValidVarName(tok.val) and
               self.w_parser.LookAhead() == Id.Lit_Equals):
             #log('%s ', parts[0])
-            op_tok, enode = self.w_parser.ParseBareShAssignment()
+            op_tok, enode = self.w_parser.ParseBareDecl()
             self._Next()  # Somehow this is necessary
 
             # NOTE: This matches what expr_to_ast.py gives.  Probably should
