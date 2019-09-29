@@ -13,7 +13,8 @@ from _devbuild.gen.syntax_asdl import (
     re, re_t, re_repeat, re_repeat_t, class_literal_term, class_literal_term_t,
     posix_class, perl_class,
     name_type, place_expr, place_expr_t, param, type_expr_t, comprehension,
-    subscript, attribute, tuple_
+    subscript, attribute, tuple_,
+    proc_sig, proc_sig_t,
 )
 from _devbuild.gen import grammar_nt
 
@@ -720,23 +721,51 @@ class Transformer(object):
     return None
 
   def _TypeExprList(self, pnode):
+    # type: (PNode) -> List[type_expr_t]
     assert pnode.typ == grammar_nt.type_expr_list, pnode.typ
     return None
 
-  def _Param(self, pnode):
+  def _ProcParam(self, pnode):
     # type: (PNode) -> param
     """
-    param: NAME [type_expr] | '...' NAME | '@' NAME
+    func_param: Expr_Name [type_expr] ['=' expr] | '...' Expr_Name
     """
-    #log('pnode: %s', pnode)
-    assert pnode.typ == grammar_nt.param
+    assert pnode.typ == grammar_nt.proc_param
 
     children = pnode.children
     tok0 = children[0].tok
     n = len(children)
-    #tok = pnode.tok
 
-    if tok0.id in (Id.Expr_At,):  # ...
+    if tok0.id == Id.Expr_At:  # @foo
+      return param(tok0, children[1].tok, None, None)
+
+    if tok0.id == Id.Expr_Name:
+      default = None
+      if n > 1 and children[1].tok.id == Id.Arith_Equal:  # proc p(x = 1+2*3)
+        default = self.Expr(children[2])
+      return param(None, tok0, None, default)
+
+    raise AssertionError(tok0)
+
+  def _ProcParams(self, p_node):
+    # type: (PNode) -> List[param]
+    """
+    proc_params: proc_param (',' proc_param)* [',']
+    """
+    return [self._ProcParam(p) for p in p_node.children[::2]]
+
+  def _FuncParam(self, pnode):
+    # type: (PNode) -> param
+    """
+    func_param: Expr_Name [type_expr] ['=' expr] | '...' Expr_Name
+    """
+    assert pnode.typ == grammar_nt.func_param
+
+    children = pnode.children
+    tok0 = children[0].tok
+    n = len(children)
+
+    if tok0.id == Id.Expr_Ellipsis:  # ...
       return param(tok0, children[1].tok, None, None)
 
     if tok0.id == Id.Expr_Name:
@@ -752,57 +781,80 @@ class Transformer(object):
   def _FuncParams(self, p_node):
     # type: (PNode) -> Tuple[List[param], List[param]]
     """
-    func_params: [param] (',' param)* [','] [';' param (',' param)* [',']]
+    func_params: (
+      [func_param] (',' func_param)* [',']
+      [';' func_param (',' func_param)* [',']]
+    )
     """
-    pos_params = []
-    named_params = []
+    pos_params = []  # type: List[param]
+    named_params = []  # type: List[param]
 
     current = pos_params  # Start appending to this ilst
     children = p_node.children
     for p in children:
       if ISNONTERMINAL(p.typ):
-        current.append(self._Param(p))
+        current.append(self._FuncParam(p))
       elif p.tok.id == Id.Op_Semi:
         current = named_params
 
     return pos_params, named_params
 
-  def FuncProc(self, pnode):
-    # type: (PNode) -> Tuple[token, List[param], Optional[type_expr_t]]
+  def Proc(self, pnode):
+    # type: (PNode) -> Tuple[token, proc_sig_t]
+    """
+    oil_proc: Expr_Name ['[' [proc_params] ']'] '{'
+    """
+    typ = pnode.typ
+    children = pnode.children
+    assert typ == grammar_nt.oil_proc
+
+    name = children[0].tok
+
+    n = len(children)
+    if n == 2:  # proc f { 
+      sig = proc_sig.Open()  # type: proc_sig_t
+    elif n == 4:  # proc f [] {
+      sig = proc_sig.Closed([])
+    elif n == 5:  # proc f [foo, bar] {
+      sig = proc_sig.Closed(self._ProcParams(children[2]))
+    else:
+      raise AssertionError(n)
+
+    return name, sig
+
+  def Func(self, pnode):
+    # type: (PNode) -> Tuple[token, List[param], List[param], List[type_expr_t]]
+    """
+    oil_func: Expr_Name '(' [func_params] ')' [type_expr_list] '{'
+    """
     typ = pnode.typ
     children = pnode.children
 
-    if typ == grammar_nt.oil_func_proc:
-      # oil_func_proc: NAME ['(' params [';' params] ')'] [type_expr] '{'
+    assert typ == grammar_nt.oil_func
 
-      name = children[0].tok
-      params = []  # type: List[param]
-      return_type = None
+    name = children[0].tok
+    params = []  # type: List[param]
+    return_type = None
 
-      if children[1].tok.id == Id.Op_LBrace:  # proc foo {
-        return name, params, return_type  # EARLY RETURN
+    assert children[1].tok.id == Id.Op_LParen  # proc foo(
 
-      assert children[1].tok.id == Id.Op_LParen  # proc foo(
+    typ2 = children[2].typ
+    if ISNONTERMINAL(typ2):
+      assert typ2 == grammar_nt.func_params, children[2]  # f(x, y)
+      # every other one is a comma
+      pos_params, named_params = self._FuncParams(children[2])
+      ret_index = 4
+    else:  # f()
+      pos_params = []
+      named_params = []
 
-      typ2 = children[2].typ
-      if typ2 == Id.Op_RParen:  # f()
-        next_index = 3
-      elif typ2 == grammar_nt.params:  # f(x, y)
-        next_index = 4
-        # every other one is a comma
-        params = [self._Param(c) for c in children[2].children[::2]]
-      else:
-        raise AssertionError
+      ret_index = 3
 
-      if ISNONTERMINAL(children[next_index].typ):
-        return_type = self._TypeExprList(children[next_index])
-        # otherwise it's Id.Op_LBrace like f() {
+    if ISNONTERMINAL(children[ret_index].typ):
+      return_type = self._TypeExprList(children[ret_index])
+      # otherwise it's Id.Op_LBrace like f() {
 
-      return name, params, return_type
-
-    nt_name = self.number2symbol[typ]
-    raise AssertionError(
-        "PNode type %d (%s) wasn't handled" % (typ, nt_name))
+    return name, pos_params, named_params, return_type
 
   #
   # Regex Language

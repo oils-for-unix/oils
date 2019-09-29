@@ -63,7 +63,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part, word_part_t, word_part__Literal, word_part__ArithSub,
     word_part__ExtGlob,
 
-    command, command_t, command__ForExpr,
+    command, command_t, command__ForExpr, command__Proc, command__Func,
 
     expr_t, source, param, type_expr_t,
 )
@@ -866,14 +866,20 @@ class WordParser(object):
     self.buffered_word = word.Token(last_token)
     return enode
 
-  def ParseFuncProc(self):
-    # type: () -> Tuple[token, List[param], type_expr_t]
-    name, params, return_type, last_token = self.parse_ctx.ParseFuncProc(
-        self.lexer, grammar_nt.oil_func_proc)
+  def ParseProc(self, node):
+    # type: (command__Proc) -> None
+    last_token = self.parse_ctx.ParseProc(self.lexer, node)
     if last_token.id == Id.Op_LBrace:  # Translate to what CommandParser wants
       last_token.id = Id.Lit_LBrace
     self.buffered_word = word.Token(last_token)
-    return name, params, return_type
+
+  def ParseFunc(self, node):
+    # type: (command__Func) -> None
+    last_token = self.parse_ctx.ParseFunc(self.lexer, node)
+    node.name, node.pos_params, node.named_params, node.return_types,
+    if last_token.id == Id.Op_LBrace:  # Translate to what CommandParser wants
+      last_token.id = Id.Lit_LBrace
+    self.buffered_word = word.Token(last_token)
 
   def _ReadArithExpr(self):
     # type: () -> arith_expr_t

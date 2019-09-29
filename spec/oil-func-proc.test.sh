@@ -85,7 +85,7 @@ status=42
 #### proc with explicit args
 
 # doesn't require oil:basic
-proc f(x, y, z) {
+proc f [x, y, z] {
   echo $x $y $z
   var ret = 42
   return ret  # expression mode
@@ -106,7 +106,7 @@ status=42
 # func(**opt)  # Assumes keyword args match?
 # parse :grep_opts :opt @ARGV
 
-proc f(@names) {
+proc f [@names] {
   echo names= $names
   return 42
 }

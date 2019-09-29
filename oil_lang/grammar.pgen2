@@ -276,24 +276,36 @@ param: Expr_Name [type_expr] ['=' expr] | '...' Expr_Name | '@' Expr_Name
 #           proc rule(@argv, b Block) { }
 # We have to put the opening { there for pgen2.
 
-# func: parens required?  func f { } doesn't make sense
-# proc: parens optional
-# func: ... allowed
-# proc: ... doesn't make sense because it takes homogeneous args
-# func: ; allowed for named args
-# proc: ; doesn't make sense
-# func: optional return type
-# proc: return type disallowed -- it's always int
+# Comparison:
+# ()
+#   func: required because func f { } doesn't make sense
+#   proc: optional
+# ...args
+#   func: allowed for args of any type
+#   proc: doesn't make sense because it takes homogeneous args
+# ; 
+#   func: allowed for named args
+#   proc: doesn't make sense
+# return types
+#   func: optional list
+#   proc: disallowed -- it's always int
 
 params: param (',' param)* [',']
 type_expr_list: type_expr (',' type_expr)*
 oil_func_proc: Expr_Name ['(' params [';' params] ')'] [type_expr_list] '{'
 
-func_params: [param] (',' param)* [','] [';' param (',' param)* [',']]
+# proc params can't have types!
+proc_param: Expr_Name ['=' expr] | '@' Expr_Name
+proc_params: proc_param (',' proc_param)* [',']
+oil_proc: Expr_Name ['[' [proc_params] ']'] '{'
+
+func_param: Expr_Name [type_expr] ['=' expr] | '...' Expr_Name
+func_params: (
+  [func_param] (',' func_param)* [',']
+  [';' func_param (',' func_param)* [',']]
+)
 oil_func: Expr_Name '(' [func_params] ')' [type_expr_list] '{'
 
-proc_params: param (',' param)* [',']
-oil_proc: Expr_Name ['(' [proc_params] ')'] '{'
 
 #
 # Regex Sublanguage

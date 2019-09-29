@@ -21,7 +21,7 @@ import sys
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    command_e, command__OilFuncProc, redir_e, assign_op_e, source,
+    command_e, command__OilFuncProc, redir_e, assign_op_e, source, proc_sig_e,
 )
 from _devbuild.gen.syntax_asdl import word, command_t
 from _devbuild.gen.runtime_asdl import (
@@ -1312,22 +1312,25 @@ class Executor(object):
       self.procs[node.name] = node
       status = 0
 
-    elif node.tag == command_e.OilFuncProc:
-      if node.which == Id.KW_Func:
-        # NOTE: It has the Python pitfall where mutable objects shouldn't be
-        # used as default args.
+    elif node.tag == command_e.Proc:
+      obj = objects.Proc(node)
+      self.mem.SetVar(
+          lvalue.Named(node.name.val), value.Obj(obj), (), scope_e.GlobalOnly)
+      status = 0
 
-        n = len(node.params)
-        default_vals = [None] * n
-        for i, param in enumerate(node.params):
-          if param.default:
-            obj = self.expr_ev.EvalExpr(param.default)
-            default_vals[i] = value.Obj(obj)
+    elif node.tag == command_e.Func:
+      # Note: funcs have the Python pitfall where mutable objects shouldn't be
+      # used as default args.
 
-        obj = objects.Func(node, default_vals, self)
-      else:
-        obj = objects.Proc(node)
+      # TODO: Defaults for named_params too
+      n = len(node.pos_params)
+      default_vals = [None] * n
+      for i, param in enumerate(node.pos_params):
+        if param.default:
+          obj = self.expr_ev.EvalExpr(param.default)
+          default_vals[i] = value.Obj(obj)
 
+      obj = objects.Func(node, default_vals, self)
       self.mem.SetVar(
           lvalue.Named(node.name.val), value.Obj(obj), (), scope_e.GlobalOnly)
       status = 0
@@ -1438,8 +1441,8 @@ class Executor(object):
         command_e.NoOp, command_e.ControlFlow, command_e.Pipeline,
         command_e.AndOr, command_e.CommandList, command_e.Sentence,
         command_e.TimeBlock, command_e.ShFunction, command_e.VarDecl,
-        command_e.PlaceMutation, command_e.OilCondition, command_e.OilFuncProc,
-        command_e.Return, command_e.Expr):
+        command_e.PlaceMutation, command_e.OilCondition, command_e.Proc,
+        command_e.Func, command_e.Return, command_e.Expr):
       redirects = []
     else:
       try:
@@ -1715,12 +1718,12 @@ class Executor(object):
 
     return status
 
-  def _RunOilProc(self, func_node, argv):
-    # type: (command__OilFuncProc, List[str]) -> int
+  def _RunOilProc(self, node, argv):
+    # type: (command__Proc, List[str]) -> int
     """
     Run an oil proc foo { } or proc foo(x, y, @names) { }
     """
-    self.mem.PushCall(func_node.name.val, func_node.name.span_id, argv)
+    self.mem.PushCall(node.name.val, node.name.span_id, argv)
 
     # Bind params.
     #
@@ -1734,17 +1737,22 @@ class Executor(object):
     # - Handle (b Block) param?  How to do that?  It's really the
     #   syntax_asdl.command_t type?
 
-    if func_node.params is not None:
-      for i, param in enumerate(func_node.params):
+    sig = node.sig
+    if sig.tag == proc_sig_e.Closed:
+      for i, param in enumerate(sig.params):
         try:
           self.mem.SetVar(
               lvalue.Named(param.name.val), value.Str(argv[i]),
               (), scope_e.LocalOnly)
         except IndexError:
           e_die("No value provided for param %s", param.name)
+    else:
+      # if sig.tag == proc_sig_e.Open:
+      #raise NotImplementedError('open')
+      pass
 
     try:
-      status = self._Execute(func_node.body)
+      status = self._Execute(node.body)
     except _ControlFlow as e:
       if e.IsReturn():
         status = e.StatusCode()
@@ -1780,7 +1788,7 @@ class Executor(object):
     self.mem.PushTemp()
     # Bind the function arguments
     n = len(args)
-    for i, param in enumerate(func_node.params):
+    for i, param in enumerate(func_node.pos_params):
       if i < n:
         val = value.Obj(args[i])
       else:

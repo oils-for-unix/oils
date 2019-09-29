@@ -219,11 +219,11 @@ See note below: POSIX ERE has no non-capturing groups.
 
 Capture with `<pat>`:
 
-    <'foo' | 'bar'>+   # Becomes M.group(1)
+    < d+ >+        # Becomes M.group(1)
 
 Add a variable after `=` for named capture:
 
-    <'foo' | 'bar' = myvar>  # Becomes M.group('myvar')
+    < d+ = myvar>  # Becomes M.group('myvar')
 
 #### Character Class Literals Use `[]`
 
@@ -244,10 +244,10 @@ Terms:
 Only letters, numbers, and the underscore may be unquoted:
 
     /['a'-'f' 'A'-'F' '0'-'9']/
-    /[a-f A-F 0-9]/                # Equivalent to the above
+    /[a-f A-F 0-9]/              # Equivalent to the above
 
-    /['!' - ')']/  # Syntactically correct range
-    /[!-)]/      # Syntax Error
+    /['!' - ')']/                # Correct range
+    /[!-)]/                      # Syntax Error
 
 Ranges must be separated by spaces:
 
@@ -273,7 +273,7 @@ If you want to translate to PCRE, you can use these.
 
     !ATOMIC( d+ )
 
-Since they all being with `!`, You can visually audit your code for potential
+Since they all begin with `!`, You can visually audit your code for potential
 performance problems.
 
 ### Outside the Expression language

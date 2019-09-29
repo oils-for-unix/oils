@@ -18,7 +18,7 @@ from _devbuild.gen.syntax_asdl import (
     command__DoGroup, command__ForExpr, command__ForEach, command__WhileUntil,
     command__Case, command__If, command__ShFunction, command__Subshell,
     command__DBracket, command__DParen, command__CommandList,
-    command__OilFuncProc,
+    command__Func, command__Proc,
     case_arm,
 
     sh_lhs_expr, sh_lhs_expr_t,
@@ -1516,21 +1516,31 @@ class CommandParser(object):
     func.spids.append(after_name_spid)
     return func
 
-  def ParseOilFuncProc(self):
-    # type: () -> command__OilFuncProc
-
-    which = self.c_id
-    name, params, return_type = self.w_parser.ParseFuncProc()
-
-    # TODO: Parse proc foo { }
+  def ParseOilProc(self):
+    # type: () -> command__Proc
+    node = command.Proc()
+    self.w_parser.ParseProc(node)
 
     self._Next()
     self.return_expr = True
-    body = self.ParseBraceGroup()
+    node.body = self.ParseBraceGroup()
     self.return_expr = False
+    # No redirects for Oil procs (only at call site)
 
-    # No redirects for Oil functions
-    return command.OilFuncProc(which, name, params, return_type, body)
+    return node
+
+  def ParseOilFunc(self):
+    # type: () -> command__Func
+    node = command.Func()
+    self.w_parser.ParseFunc(node)
+
+    self._Next()
+    self.return_expr = True
+    node.body = self.ParseBraceGroup()
+    self.return_expr = False
+    # No redirects for Oil funcs (only at call site)
+
+    return node
 
   def ParseCoproc(self):
     # type: () -> command_t
@@ -1608,9 +1618,10 @@ class CommandParser(object):
 
     if self.c_id == Id.KW_Function:
       return self.ParseKshFunctionDef()
-
-    if self.c_id in (Id.KW_Func, Id.KW_Proc):
-      return self.ParseOilFuncProc()
+    if self.c_id == Id.KW_Func:
+      return self.ParseOilFunc()
+    if self.c_id == Id.KW_Proc:
+      return self.ParseOilProc()
 
     # TODO: We should have another Kind for "initial keywords".  And then
     # NOT_FIRST_WORDS are "secondary keywords".
