@@ -1809,6 +1809,22 @@ class Executor(object):
       self.mem.PopTemp()
     return return_val
 
+  def RunLambda(self, lambda_node, args, kwargs):
+    """ Run a lambda like |x| x+1 """
+
+    self.mem.PushTemp()
+    # Bind params.  TODO: Reject kwargs, etc.
+    for i, param in enumerate(lambda_node.params):
+      val = value.Obj(args[i])
+      self.mem.SetVar(lvalue.Named(param.name.val), val, (), scope_e.LocalOnly)
+
+    return_val = None
+    try:
+      return_val = self.expr_ev.EvalExpr(lambda_node.body)
+    finally:
+      self.mem.PopTemp()
+    return return_val
+
   def EvalBlock(self, block):
     """
     Returns a namespace.  For config files.

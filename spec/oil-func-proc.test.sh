@@ -149,3 +149,13 @@ c
 status=42
 ## END
 
+
+#### basic lambda
+var f = |x| x+1
+var y = f(0)
+echo $y
+echo $f(42)
+## STDOUT:
+1
+43
+## END

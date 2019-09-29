@@ -6,6 +6,7 @@ Python types under value.Obj.  See the invariant in osh/runtime.asdl.
 """
 from __future__ import print_function
 
+from _devbuild.gen.syntax_asdl import command
 from core.util import log
 from oil_lang import regex_translate
 
@@ -119,6 +120,15 @@ class Table(dict):
     return 'TODO: Table Slicing'
 
 
+class Proc(object):
+  """An Oil proc declared with 'proc'.
+
+  Unlike a shell proc, it has a signature, so we need to bind names to params.
+  """
+  def __init__(self, node):
+    self.docstring = ''
+    self.node = node
+
 
 class Func(object):
   """An Oil function declared with 'func'."""
@@ -131,14 +141,14 @@ class Func(object):
     return self.ex.RunOilFunc(self.node, self.default_vals, args, kwargs)
 
 
-class Proc(object):
-  """An Oil proc declared with 'proc'.
-
-  Unlike a shell proc, it has a signature, so we need to bind names to params.
-  """
-  def __init__(self, node):
-    self.docstring = ''
+class Lambda(object):
+  """An Oil function like |x| x+1 """
+  def __init__(self, node, ex):
     self.node = node
+    self.ex = ex
+
+  def __call__(self, *args, **kwargs):
+    return self.ex.RunLambda(self.node, args, kwargs)
 
 
 class Module(object):

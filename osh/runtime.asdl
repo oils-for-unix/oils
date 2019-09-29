@@ -72,6 +72,7 @@ module runtime
   attributes (int* spids)
 
   -- For Oil, evaluated from place_expr.
+  -- Or combine these?
   place = 
     Named(string name)
     -- can be indexed by int, string, tuple, etc.  Anything hashable.

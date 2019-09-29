@@ -11,8 +11,9 @@
 # Oil patch: removed @= **= //=
 # Note that we're missing div= and xor=, which now look weird.  ^= is
 # exponentiation.  Honestly I don't even like '%='.  |= has a use case.
-augassign: ('+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=' |
-            '<<=' | '>>=' )
+augassign: (
+    '+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=' | '<<=' | '>>='
+)
 # For normal and annotated assignments, additional restrictions enforced by the interpreter
 
 test: or_test ['if' or_test 'else' test] | lambdef
@@ -45,7 +46,7 @@ range_expr: expr [':' expr]
 # Oil patch: removed legacy <>
 comp_op: (
     '<'|'>'|'=='|'>='|'<='|'!='|'in'|'not' 'in'|'is'|'is' 'not'|
-     Arith_Tilde | Expr_NotTilde
+    Arith_Tilde | Expr_NotTilde
 )
 
 # Note: For Oil this will be ...
@@ -272,9 +273,9 @@ oil_for: '(' name_type_list 'in' testlist ')'
 # Note: ... for procs doesn't make sense?
 param: Expr_Name [type_expr] ['=' expr] | '...' Expr_Name | '@' Expr_Name
 
-# Examples: func print(msg Str, *args ; span_id Int = 0, token Token = None)
-#           proc rule(@argv, b Block) { }
-# We have to put the opening { there for pgen2.
+# Examples:
+#   func print(msg Str, v = 0, ...args ; span_id Int = 0, ..named) { ...
+#   proc rule [src, dest, @argv ; b] { ...
 
 # Comparison:
 # ()
@@ -290,19 +291,18 @@ param: Expr_Name [type_expr] ['=' expr] | '...' Expr_Name | '@' Expr_Name
 #   func: optional list
 #   proc: disallowed -- it's always int
 
-params: param (',' param)* [',']
 type_expr_list: type_expr (',' type_expr)*
-oil_func_proc: Expr_Name ['(' params [';' params] ')'] [type_expr_list] '{'
 
 # proc params can't have types!
 proc_param: Expr_Name ['=' expr] | '@' Expr_Name
+# TODO: Add ; for the block?  Or use | or {block}
 proc_params: proc_param (',' proc_param)* [',']
-oil_proc: Expr_Name ['[' [proc_params] ']'] '{'
+oil_proc: Expr_Name ['[' [proc_params] ']'] '{'  # opening { for pgen2
 
 func_param: Expr_Name [type_expr] ['=' expr] | '...' Expr_Name
 func_params: (
-  [func_param] (',' func_param)* [',']
-  [';' func_param (',' func_param)* [',']]
+    [func_param] (',' func_param)* [',']
+    [';' func_param (',' func_param)* [',']]
 )
 oil_func: Expr_Name '(' [func_params] ')' [type_expr_list] '{'
 
