@@ -52,6 +52,19 @@ verbose
 5
 ## END
 
+#### Func with varargs
+shopt -s oil:basic
+func printf(fmt, ...args) {
+  pp fmt
+  # Should be a LIST
+  pp args
+}
+pass printf('foo', 'a', 42, null)
+## STDOUT:
+(str)   'foo'
+(list)   ['a', 42, null]
+## END
+
 #### return expression then return builtin
 func f(x) {
   return x + 2*3
@@ -70,7 +83,7 @@ x=42
 status=42
 ## END
 
-#### proc with no args
+#### open proc (any number of args)
 proc f {
   var x = 42
   return x
@@ -78,6 +91,21 @@ proc f {
 # this gets called with 3 args then?
 f a b c
 echo status=$?
+## STDOUT:
+status=42
+## END
+
+#### closed proc with no args
+proc f [] {
+  return 42
+}
+f
+echo status=$?
+
+# TODO: This should abort, or have status 1
+f a b
+echo status=$?
+
 ## STDOUT:
 status=42
 ## END

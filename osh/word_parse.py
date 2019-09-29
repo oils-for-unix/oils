@@ -65,7 +65,7 @@ from _devbuild.gen.syntax_asdl import (
 
     command, command_t, command__ForExpr, command__Proc, command__Func,
 
-    expr_t, source, param, type_expr_t,
+    expr_t, source,
 )
 from core import meta
 from core.util import p_die

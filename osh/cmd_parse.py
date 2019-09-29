@@ -29,10 +29,8 @@ from _devbuild.gen.syntax_asdl import (
     token, assign_pair, env_pair,
     assign_op_e,
 
-    source,
-    parse_result, parse_result_t,
-    expr, speck,
-    name_type,
+    source, parse_result, parse_result_t,
+    speck, name_type,
 )
 from _devbuild.gen import syntax_asdl  # token, etc.
 

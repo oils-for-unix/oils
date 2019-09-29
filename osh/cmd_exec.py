@@ -21,7 +21,7 @@ import sys
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    command_e, command__OilFuncProc, redir_e, assign_op_e, source, proc_sig_e,
+    command_e, command__Proc, redir_e, assign_op_e, source, proc_sig_e,
 )
 from _devbuild.gen.syntax_asdl import word, command_t
 from _devbuild.gen.runtime_asdl import (

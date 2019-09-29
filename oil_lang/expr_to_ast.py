@@ -8,7 +8,7 @@ from _devbuild.gen.syntax_asdl import (
     token, speck, double_quoted, single_quoted, simple_var_sub, braced_var_sub,
     command_sub, sh_array_literal,
     word_t,
-    command, command_t, command__VarDecl, command__PlaceMutation,
+    command, command__VarDecl, command__PlaceMutation,
     expr, expr_t, expr__Dict, expr_context_e,
     re, re_t, re_repeat, re_repeat_t, class_literal_term, class_literal_term_t,
     posix_class, perl_class,
@@ -21,7 +21,7 @@ from _devbuild.gen import grammar_nt
 from core.util import log, p_die
 from pgen2.parse import PNode
 
-from typing import TYPE_CHECKING, List, Tuple, Optional, cast
+from typing import TYPE_CHECKING, List, Tuple, cast
 if TYPE_CHECKING:
   from pgen2.grammar import Grammar
 
