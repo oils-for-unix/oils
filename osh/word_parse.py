@@ -876,7 +876,6 @@ class WordParser(object):
   def ParseFunc(self, node):
     # type: (command__Func) -> None
     last_token = self.parse_ctx.ParseFunc(self.lexer, node)
-    node.name, node.pos_params, node.named_params, node.return_types,
     if last_token.id == Id.Op_LBrace:  # Translate to what CommandParser wants
       last_token.id = Id.Lit_LBrace
     self.buffered_word = word.Token(last_token)

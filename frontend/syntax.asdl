@@ -308,13 +308,19 @@ module syntax
   | OilForIn(name_type* lhs, expr iterable, command body)
 
   | Proc(token name, proc_sig sig, command body)
-  | Func(token name, param* pos_params, param* named_params,
+  | Func(token name, 
+         param* positional, token? pos_splat,
+         param* named, token? named_splat,
          type_expr* return_types, command body)
 
   attributes (int* spids)
 
-  -- 'open' is for proc p { }; closed is for proc p() { }
-  proc_sig = Open | Closed(param* params)
+  -- 'open' is for proc p { }; closed is for proc p [] { }
+  proc_sig =
+    Open
+  | Closed(param* params, token? block_arg)
+
+  param = (token name, type_expr? type, expr? default)
 
   --
   -- Glob representation, for converting ${x//} to extended regexes.
@@ -354,10 +360,6 @@ module syntax
 
   -- LHS binding in loops, list comprehensions, and var/const
   name_type = (token name, type_expr? typ)
-
-  -- op is ... in ...args
-  -- s Array[Str] = @(1 2 3)
-  param = (token? op, token name, type_expr? typ, expr? default)
 
   -- TODO: Inline this into GenExp and ListComp?  Just use a flag there?
   comprehension = (name_type* lhs, expr iter, expr* ifs)

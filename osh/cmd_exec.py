@@ -23,7 +23,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
     command_e, command__Proc, redir_e, assign_op_e, source, proc_sig_e,
 )
-from _devbuild.gen.syntax_asdl import word, command_t
+from _devbuild.gen.syntax_asdl import word, command_t, expr_e
 from _devbuild.gen.runtime_asdl import (
     lvalue, redirect,
     value, value_e, value_t,
@@ -1323,11 +1323,12 @@ class Executor(object):
       # used as default args.
 
       # TODO: Defaults for named_params too
-      n = len(node.pos_params)
+      n = len(node.positional)
       default_vals = [None] * n
-      for i, param in enumerate(node.pos_params):
-        if param.default:
-          obj = self.expr_ev.EvalExpr(param.default)
+      for i, param in enumerate(node.positional):
+        default = param.default
+        if default:
+          obj = self.expr_ev.EvalExpr(default)
           default_vals[i] = value.Obj(obj)
 
       obj = objects.Func(node, default_vals, self)
@@ -1734,19 +1735,19 @@ class Executor(object):
 
     # TODO:
     # - Handle @names splat.  Disallow ...names because it's not typed.
-    # - Handle (b Block) param?  How to do that?  It's really the
-    #   syntax_asdl.command_t type?
+    # - Handle &block param?  How to do that?  It's really the
+    #   syntax_asdl.command_t type?  Or objects.Block probably.
 
     sig = node.sig
-    if sig.tag == proc_sig_e.Closed:
-      for i, param in enumerate(sig.params):
+    if sig.tag == proc_sig_e.Closed:  # proc is-closed []
+      for i, p in enumerate(sig.params):
         try:
           self.mem.SetVar(
-              lvalue.Named(param.name.val), value.Str(argv[i]),
-              (), scope_e.LocalOnly)
+              lvalue.Named(p.name.val), value.Str(argv[i]), (),
+              scope_e.LocalOnly)
         except IndexError:
-          e_die("No value provided for param %s", param.name)
-    else:
+          e_die("No value provided for param %s", name.val)
+    else:  # proc is-open { }
       # if sig.tag == proc_sig_e.Open:
       #raise NotImplementedError('open')
       pass
@@ -1787,9 +1788,10 @@ class Executor(object):
 
     self.mem.PushTemp()
     # Bind the function arguments
-    n = len(args)
-    for i, param in enumerate(func_node.pos_params):
-      if i < n:
+    n_args = len(args)
+    n_params = len(func_node.positional)
+    for i, param in enumerate(func_node.positional):
+      if i < n_args:
         val = value.Obj(args[i])
       else:
         val = default_vals[i]

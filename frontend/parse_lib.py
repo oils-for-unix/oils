@@ -5,8 +5,7 @@ parse_lib.py - Consolidate various parser instantiations here.
 from _devbuild.gen.id_kind_asdl import Id_t
 from _devbuild.gen.syntax_asdl import (
     token, command_t, expr_t, word_t, redir_t, word__Compound,
-    param, type_expr_t, name_type, proc_sig_t,
-    command__Proc, command__Func,
+    name_type, command__Proc, command__Func,
 )
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen import grammar_nt
@@ -406,8 +405,7 @@ class ParseContext(object):
     if print_parse_tree:
       self.p_printer.Print(pnode)
 
-    out.name, out.pos_params, out.named_params, out.return_types = (
-        self.tr.Func(pnode))
+    self.tr.Func(pnode, out)
     return last_token
 
 # Another parser instantiation:

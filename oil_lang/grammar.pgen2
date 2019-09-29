@@ -49,8 +49,8 @@ comp_op: (
     Arith_Tilde | Expr_NotTilde
 )
 
-# Note: For Oil this will be ...
-star_expr: '*' expr
+# For lists and dicts.  Note: In Python this was star_expr *foo
+splat_expr: '...' expr
 
 expr: xor_expr ('|' xor_expr)*
 xor_expr: and_expr ('xor' and_expr)*
@@ -64,7 +64,7 @@ factor: ('+'|'-'|'~') factor | power
 # Also removed Python 3 'await'
 power: atom trailer* ['^' factor]
 
-testlist_comp: (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
+testlist_comp: (test|splat_expr) ( comp_for | (',' (test|splat_expr))* [','] )
 
 atom: (
     '(' [testlist_comp] ')' 
@@ -148,14 +148,14 @@ dict: dict_pair (',' dict_pair)* [',']
 #
 # dictorsetmaker: ( ((test ':' test | '**' expr)
 #                    (comp_for | (',' (test ':' test | '**' expr))* [','])) |
-#                   ((test | star_expr)
-#                    (comp_for | (',' (test | star_expr))* [','])) )
+#                   ((test | splat_expr)
+#                    (comp_for | (',' (test | splat_expr))* [','])) )
 
 # The reason that keywords are test nodes instead of NAME is that using NAME
 # results in an ambiguity. ast.c makes sure it's a NAME.
 # "test '=' test" is really "keyword '=' test", but we have no such token.
 # These need to be in a single rule to avoid grammar that is ambiguous
-# to our LL(1) parser. Even though 'test' includes '*expr' in star_expr,
+# to our LL(1) parser. Even though 'test' includes '*expr' in splat_expr,
 # we explicitly match '*' here, too, to give it proper precedence.
 # Illegal combinations and orderings are blocked in ast.c:
 # multiple (test comp_for) arguments are blocked; keyword unpackings
@@ -269,13 +269,13 @@ command_expr: testlist end_stmt
 # Example: for (a Int, b Int in expr) { ... }
 oil_for: '(' name_type_list 'in' testlist ')'
 
-# ... is for *args or **kwargs of any type, and @argv is for string args
-# Note: ... for procs doesn't make sense?
-param: Expr_Name [type_expr] ['=' expr] | '...' Expr_Name | '@' Expr_Name
-
+# Signatures for proc and func.
+# 
 # Examples:
-#   func print(msg Str, v = 0, ...args ; span_id Int = 0, ..named) { ...
-#   proc rule [src, dest, @argv ; b] { ...
+#   func print(msg Str, v = 0, ...args; span_id Int = 0, ...named) Int {
+#     echo hi
+#   }
+#   proc rule [src, dest, @argv, &block] { echo hi }
 
 # Comparison:
 # ()
@@ -291,20 +291,34 @@ param: Expr_Name [type_expr] ['=' expr] | '...' Expr_Name | '@' Expr_Name
 #   func: optional list
 #   proc: disallowed -- it's always int
 
-type_expr_list: type_expr (',' type_expr)*
+# proc params can't have types.
+proc_param: Expr_Name ['=' expr]
 
-# proc params can't have types!
-proc_param: Expr_Name ['=' expr] | '@' Expr_Name
-# TODO: Add ; for the block?  Or use | or {block}
-proc_params: proc_param (',' proc_param)* [',']
+# proc p [a, b, @args, &block] {}
+proc_params: proc_param (',' proc_param)* [',' '@' Expr_Name] [',' '&' Expr_Name]
+
+# TODO: NAME should be parsed in cmd_parse!!  Because it can contains hyphens.
 oil_proc: Expr_Name ['[' [proc_params] ']'] '{'  # opening { for pgen2
 
-func_param: Expr_Name [type_expr] ['=' expr] | '...' Expr_Name
-func_params: (
-    [func_param] (',' func_param)* [',']
-    [';' func_param (',' func_param)* [',']]
+func_param: Expr_Name [type_expr] ['=' expr]
+func_params: [func_param] (',' func_param)* [',' '...' Expr_Name]
+
+type_expr_list: type_expr (',' type_expr)*
+
+oil_func: Expr_Name '(' [func_params] [';' func_params] ')' [type_expr_list] '{'
+
+# This is an awkward way of writing that '...' has to come last.
+Xfunc_params: (
+   (func_param ',')*
+   [ (func_param | '...' Expr_Name) [','] ]
 )
-oil_func: Expr_Name '(' [func_params] ')' [type_expr_list] '{'
+
+# This is an awkward way of writing that we have params, then '@', then '&' --
+# all optional.  If they appear, @ and & have to be last, in that order.
+Xproc_params: (
+  (proc_param ','*)
+  [ (proc_param | '&' Expr_Name | '@' Expr_Name ',' '&' Expr_Name) [','] ]
+)
 
 
 #

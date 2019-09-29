@@ -38,7 +38,16 @@ echo $add(3,4,5)
 12
 ## END
 
-#### Func with named args
+#### Passing named arg
+func f(; x=1) {
+  echo $x
+}
+pass f(x=42)
+## STDOUT:
+42
+## END
+
+#### Func with named param with no default
 shopt -s oil:basic
 func add(x Int, y Int ; verbose Bool) {
   #if (verbose) {
@@ -149,6 +158,16 @@ c
 status=42
 ## END
 
+#### proc with block arg
+
+# TODO: Test more of this
+proc f [x, y, &block] {
+  echo hi
+}
+f a b c
+## STDOUT:
+hi
+## END
 
 #### basic lambda
 var f = |x| x+1
@@ -159,3 +178,4 @@ echo $f(42)
 1
 43
 ## END
+
