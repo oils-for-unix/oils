@@ -164,6 +164,7 @@ dict: dict_pair (',' dict_pair)* [',']
 # TODO: Should be ...args, and also allow ;
 # But NOT @args?  I think that's only for command mode.
 
+# TODO: What about ;
 argument: (
     test [comp_for]
     # named arg
@@ -173,6 +174,12 @@ argument: (
 )
 
 # Note: trailing commas allowed at call sites
+
+# TODO: Named arguments have to come after all positional arguments?
+# What about ';' ?
+# Need to look at what Julia does
+# I think ; is only needed for named_splat
+
 arglist: argument (',' argument)* [','] [';' argument (',' argument)* [',']]
 
 
@@ -294,31 +301,26 @@ oil_for: '(' name_type_list 'in' testlist ')'
 # proc params can't have types.
 proc_param: Expr_Name ['=' expr]
 
-# proc p [a, b, @args, &block] {}
-proc_params: proc_param (',' proc_param)* [',' '@' Expr_Name] [',' '&' Expr_Name]
+# This is an awkward way of writing that we have params, then '@', then '&' --
+# all optional.  If they appear, @ and & have to be last, in that order.
+proc_params: (
+  (proc_param ',')*
+  [ (proc_param | '&' Expr_Name | '@' Expr_Name [',' '&' Expr_Name]) [','] ]
+)
 
 # TODO: NAME should be parsed in cmd_parse!!  Because it can contains hyphens.
 oil_proc: Expr_Name ['[' [proc_params] ']'] '{'  # opening { for pgen2
 
 func_param: Expr_Name [type_expr] ['=' expr]
-func_params: [func_param] (',' func_param)* [',' '...' Expr_Name]
-
-type_expr_list: type_expr (',' type_expr)*
-
-oil_func: Expr_Name '(' [func_params] [';' func_params] ')' [type_expr_list] '{'
-
 # This is an awkward way of writing that '...' has to come last.
-Xfunc_params: (
+func_params: (
    (func_param ',')*
    [ (func_param | '...' Expr_Name) [','] ]
 )
 
-# This is an awkward way of writing that we have params, then '@', then '&' --
-# all optional.  If they appear, @ and & have to be last, in that order.
-Xproc_params: (
-  (proc_param ','*)
-  [ (proc_param | '&' Expr_Name | '@' Expr_Name ',' '&' Expr_Name) [','] ]
-)
+type_expr_list: type_expr (',' type_expr)*
+
+oil_func: Expr_Name '(' [func_params] [';' func_params] ')' [type_expr_list] '{'
 
 
 #

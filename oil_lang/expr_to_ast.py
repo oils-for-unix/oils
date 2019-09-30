@@ -14,7 +14,7 @@ from _devbuild.gen.syntax_asdl import (
     posix_class, perl_class,
     name_type, place_expr, place_expr_t, type_expr, type_expr_t, comprehension,
     subscript, attribute, tuple_,
-    proc_sig, proc_sig_t, param,
+    proc_sig, proc_sig_t, param, named_arg,
 )
 from _devbuild.gen import grammar_nt
 
@@ -664,10 +664,13 @@ class Transformer(object):
   def _Argument(self, p_node):
     # type: (PNode) -> expr_t
     """
-    argument: ( test [comp_for] |
-                test '=' test |
-                '**' test |
-                '*' test )
+    argument: (
+      test [comp_for]
+      # named arg
+    | test '=' test
+      # var args
+    | '...' test
+    )
     """
     assert p_node.typ == grammar_nt.argument, p_node
     children = p_node.children
@@ -675,10 +678,18 @@ class Transformer(object):
     if n == 1:
       return self.Expr(children[0])
 
-    if n == 2 and children[1].typ == grammar_nt.comp_for:
-      elt = self.Expr(children[0])
-      comp = self._CompFor(children[1])
-      return expr.GeneratorExp(elt, [comp])
+    if n == 2:
+      if children[0].tok.id == Id.Expr_Ellipsis:
+        raise NotImplementedError
+      if children[1].typ == grammar_nt.comp_for:
+        elt = self.Expr(children[0])
+        comp = self._CompFor(children[1])
+        return expr.GeneratorExp(elt, [comp])
+      raise AssertionError
+
+    if n == 3:
+      arg = named_arg(children[0].tok, self.Expr(children[2]))
+      return arg
 
     # TODO:
     # - keyword args
@@ -690,6 +701,10 @@ class Transformer(object):
     """
     arglist: argument (',' argument)*  [',']
     """
+
+    # TODO: Split into (positional, pos_splat, named, named_splat)
+    # and then ; is only needed if you have named splat but no positional
+
     n = len(children)
     i = 0
     while i < n:

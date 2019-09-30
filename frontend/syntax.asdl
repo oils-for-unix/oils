@@ -410,8 +410,10 @@ module syntax
 
     -- Oil call:
     -- f(x, ...args; n=1, ...kwargs)
-  | Call(expr func, expr* args, named_arg* named_args, expr? starargs,
-         expr? kwargs)
+  | Call(expr func,
+         expr* args, expr? pos_splat,
+         named_arg* named_args, expr? named_splat)
+
     -- TODO: Need a representation for method call.  We don't just want
     -- Attribute() and then Call()
 

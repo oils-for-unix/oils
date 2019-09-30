@@ -446,7 +446,10 @@ class OilEvaluator(object):
 
       func = self.EvalExpr(node.func)
 
+      # TODO: Need to match up named args here
+
       args = [self.EvalExpr(a) for a in node.args]
+      kwargs = []
 
       ret = func(*args)
       return ret
