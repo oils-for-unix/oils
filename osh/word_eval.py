@@ -1024,7 +1024,7 @@ class _WordEvaluator(object):
 
     elif part.tag == word_part_e.FuncCall:
       func_name = part.name.val[1:]
-      args = [self.expr_ev.EvalExpr(a) for a in part.args]
+      args = [self.expr_ev.EvalExpr(a) for a in part.args.positional]
       id_ = part.name.id
 
       val = self.mem.GetVar(func_name)

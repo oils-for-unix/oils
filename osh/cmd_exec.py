@@ -1323,9 +1323,9 @@ class Executor(object):
       # used as default args.
 
       # TODO: Defaults for named_params too
-      n = len(node.positional)
+      n = len(node.pos_params)
       default_vals = [None] * n
-      for i, param in enumerate(node.positional):
+      for i, param in enumerate(node.pos_params):
         default = param.default
         if default:
           obj = self.expr_ev.EvalExpr(default)
@@ -1789,8 +1789,8 @@ class Executor(object):
     self.mem.PushTemp()
     # Bind the function arguments
     n_args = len(args)
-    n_params = len(func_node.positional)
-    for i, param in enumerate(func_node.positional):
+    n_params = len(func_node.pos_params)
+    for i, param in enumerate(func_node.pos_params):
       if i < n_args:
         val = value.Obj(args[i])
       else:

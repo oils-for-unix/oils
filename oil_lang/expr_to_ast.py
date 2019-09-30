@@ -14,7 +14,7 @@ from _devbuild.gen.syntax_asdl import (
     posix_class, perl_class,
     name_type, place_expr, place_expr_t, type_expr, type_expr_t, comprehension,
     subscript, attribute, tuple_,
-    proc_sig, proc_sig_t, param, named_arg,
+    proc_sig, proc_sig_t, param, named_arg, arg_list,
 )
 from _devbuild.gen import grammar_nt
 
@@ -104,14 +104,14 @@ class Transformer(object):
     # TODO: Need to process ALL the trailers, e.g. f(x, y)[1, 2](x, y)
 
     if op_tok.id == Id.Op_LParen:
-      args = []  # type: List[expr_t]
+      arglist = arg_list()
       if len(children) == 2:  # ()
-        return expr.FuncCall(base, args)
+        return expr.FuncCall(base, arglist)
 
       p = children[1]  # the X in ( X )
       assert p.typ == grammar_nt.arglist  # f(x, y)
-      self._Arglist(p.children, args)
-      return expr.FuncCall(base, args)
+      self._Arglist(p.children, arglist)
+      return expr.FuncCall(base, arglist)
 
     if op_tok.id == Id.Op_LBracket:
       p_args = children[1]
@@ -696,12 +696,11 @@ class Transformer(object):
     # - @args and ...args
     raise NotImplementedError
 
-  def _Arglist(self, children, out):
-    # type: (List[PNode], List[expr_t]) -> None
+  def _Arglist(self, children, arglist):
+    # type: (List[PNode], arg_list) -> None
     """
     arglist: argument (',' argument)*  [',']
     """
-
     # TODO: Split into (positional, pos_splat, named, named_splat)
     # and then ; is only needed if you have named splat but no positional
 
@@ -709,25 +708,24 @@ class Transformer(object):
     i = 0
     while i < n:
       result = self._Argument(children[i])
-      out.append(result)
+      arglist.positional.append(result)
       i += 2
 
-  def ArgList(self, pnode):
-    # type: (PNode) -> List[expr_t]
+  def ArgList(self, pnode, arglist):
+    # type: (PNode, arg_list) -> None
     """Transform arg lists.
 
     oil_arglist: '(' [arglist] ')'
     """
     args = []  # type: List[expr_t]
     if len(pnode.children) == 2:  # f()
-      return args
+      return
 
     assert len(pnode.children) == 3, pnode.children
     p = pnode.children[1]  # the X in '( X )'
 
     assert p.typ == grammar_nt.arglist
-    self._Arglist(p.children, args)
-    return args
+    self._Arglist(p.children, arglist)
 
   def _TypeExpr(self, pnode):
     # type: (PNode) -> type_expr_t
@@ -872,14 +870,14 @@ class Transformer(object):
     if ISNONTERMINAL(typ2):
       assert typ2 == grammar_nt.func_params, children[pos]  # f(x, y)
       # every other one is a comma
-      out.positional, out.pos_splat = self._FuncParams(children[2])
+      out.pos_params , out.pos_splat = self._FuncParams(children[2])
       pos += 1
 
     id_ = children[pos].tok.id
     if id_ == Id.Op_RParen:  # f()
       pos += 1 
     elif id_ == Id.Op_Semi:  # f(; a)
-      out.named, out.named_splat = self._FuncParams(children[pos+1])
+      out.named_params, out.named_splat = self._FuncParams(children[pos+1])
       pos += 3
 
     if ISNONTERMINAL(children[pos].typ):

@@ -152,6 +152,12 @@ module syntax
 
   sh_array_literal = (token left, word* words) attributes (int* spids)
 
+  -- Used in both expr and a word_part
+  arg_list = (
+    expr* positional, expr? pos_splat,
+    named_arg* named_args, expr? named_splat
+  )
+
   word_part = 
     ShArrayLiteral %sh_array_literal
     -- alternating key and value (saving some space)
@@ -179,7 +185,7 @@ module syntax
     -- @array
   | Splice(token name)
     -- $strfunc(x) and @arrayfunc(x)
-  | FuncCall(token name, expr* args)
+  | FuncCall(token name, arg_list args)
   attributes (int* spids)
 
   word = 
@@ -309,8 +315,8 @@ module syntax
 
   | Proc(token name, proc_sig sig, command body)
   | Func(token name, 
-         param* positional, token? pos_splat,
-         param* named, token? named_splat,
+         param* pos_params, token? pos_splat,
+         param* named_params, token? named_splat,
          type_expr* return_types, command body)
 
   attributes (int* spids)
@@ -364,8 +370,8 @@ module syntax
   -- TODO: Inline this into GenExp and ListComp?  Just use a flag there?
   comprehension = (name_type* lhs, expr iter, expr* ifs)
 
-  -- keyword arguments supplied to call (NULL identifier for **kwargs)
-  named_arg = (token? arg, expr value)
+  -- named arguments supplied to call
+  named_arg = (token? name, expr value)
 
   tuple_ = (expr* elts, expr_context ctx)
   -- Subscripts are lists of expressions
@@ -406,13 +412,7 @@ module syntax
   | Binary(token op, expr left, expr right)
     -- x < 4 < 3 and (x < 4) < 3
   | Compare(expr left, speck* ops, expr* comparators)
-  | FuncCall(expr func, expr* args)
-
-    -- Oil call:
-    -- f(x, ...args; n=1, ...kwargs)
-  | Call(expr func,
-         expr* args, expr? pos_splat,
-         named_arg* named_args, expr? named_splat)
+  | FuncCall(expr func, arg_list args)
 
     -- TODO: Need a representation for method call.  We don't just want
     -- Attribute() and then Call()

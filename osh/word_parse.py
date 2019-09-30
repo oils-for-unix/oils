@@ -65,7 +65,7 @@ from _devbuild.gen.syntax_asdl import (
 
     command, command_t, command__ForExpr, command__Proc, command__Func,
 
-    expr_t, source,
+    expr_t, source, arg_list,
 )
 from core import meta
 from core.util import p_die
@@ -1104,8 +1104,8 @@ class WordParser(object):
     node.spids.append(paren_spid)
     return node
 
-  def _ParseCallArguments(self):
-    # type: () -> List[expr_t]
+  def _ParseCallArguments(self, arglist):
+    # type: (arg_list) -> None
 
     # Needed so ) doesn't get translated to something else
     self.lexer.PushHint(Id.Op_RParen, Id.Op_RParen)
@@ -1113,8 +1113,7 @@ class WordParser(object):
     #log('t: %s', self.cur_token)
 
     # Call into expression language.
-    arg_nodes, _ = self.parse_ctx.ParseOilArgList(self.lexer)
-    return arg_nodes
+    self.parse_ctx.ParseOilArgList(self.lexer, arglist)
 
   KINDS_THAT_END_WORDS = (Kind.Eof, Kind.WS, Kind.Op, Kind.Right)
 
@@ -1175,8 +1174,9 @@ class WordParser(object):
 
           t = self.lexer.LookAhead(lex_mode_e.ShCommand)
           if t.id == Id.Op_LParen:  # @arrayfunc(x)
-            arguments = self._ParseCallArguments()
-            part = word_part.FuncCall(splice_token, arguments)
+            arglist = arg_list()
+            self._ParseCallArguments(arglist)
+            part = word_part.FuncCall(splice_token, arglist)
           else:
             part = word_part.Splice(splice_token)
 
@@ -1213,8 +1213,9 @@ class WordParser(object):
 
           t = self.lexer.LookAhead(lex_mode_e.ShCommand)
           if t.id == Id.Op_LParen:
-            arguments = self._ParseCallArguments()
-            part = word_part.FuncCall(vsub_token, arguments)
+            arglist = arg_list()
+            self._ParseCallArguments(arglist)
+            part = word_part.FuncCall(vsub_token, arglist)
 
             # Unlike @arrayfunc(x), it makes sense to allow $f(1)$f(2)
             # var a = f(1); var b = f(2); echo $a$b

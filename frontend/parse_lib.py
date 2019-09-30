@@ -5,7 +5,7 @@ parse_lib.py - Consolidate various parser instantiations here.
 from _devbuild.gen.id_kind_asdl import Id_t
 from _devbuild.gen.syntax_asdl import (
     token, command_t, expr_t, word_t, redir_t, word__Compound,
-    name_type, command__Proc, command__Func,
+    name_type, command__Proc, command__Func, arg_list,
 )
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen import grammar_nt
@@ -351,8 +351,8 @@ class ParseContext(object):
     ast_node.keyword = kw_token  # VarDecl didn't fill this in
     return ast_node, last_token
 
-  def ParseOilArgList(self, lexer, print_parse_tree=False):
-    # type: (Lexer, bool) -> Tuple[List[expr_t], token]
+  def ParseOilArgList(self, lexer, out, print_parse_tree=False):
+    # type: (Lexer, arg_list, bool) -> token
     if self.parsing_expr:
       p_die("TODO: can't be nested")
 
@@ -361,8 +361,8 @@ class ParseContext(object):
     if print_parse_tree:
       self.p_printer.Print(pnode)
 
-    ast_node = self.tr.ArgList(pnode)
-    return ast_node, last_token
+    self.tr.ArgList(pnode, out)
+    return last_token
 
   def ParseOilExpr(self, lexer, start_symbol, print_parse_tree=False):
     # type: (Lexer, int, bool) -> Tuple[expr_t, token]
