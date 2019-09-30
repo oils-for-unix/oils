@@ -38,6 +38,17 @@ echo $add(3,4,5)
 12
 ## END
 
+#### Pass too many positional params (without spread)
+shopt -s oil:basic
+func add(x, y) {
+  return x + y
+}
+var f = add(1,2,3)
+echo $f
+## STDOUT:
+a
+## END
+
 #### Passing named arg
 func f(; x=42) {
   echo $x
@@ -52,12 +63,22 @@ pass f(x=99)
 #### Func with named param with no default
 shopt -s oil:basic
 func add(x Int, y Int ; verbose Bool) {
-  #if (verbose) {
-  #  echo 'verbose'
-  #}
+  if (verbose) {
+    echo 'verbose'
+  }
   return x + y
 }
-echo $add(3, 2)
+var a = add(3, 2, verbose=true)
+echo $a
+
+# crashes
+var a = add(3, 2)
+echo "shouldn't get here"
+
+# doens't work eyt
+#echo $add(3, 2, verbose=true)
+
+## status: 1
 ## STDOUT:
 verbose
 5
@@ -71,9 +92,10 @@ func printf(fmt, ...args) {
   pp args
 }
 pass printf('foo', 'a', 42, null)
+
 ## STDOUT:
 (str)   'foo'
-(list)   ['a', 42, null]
+(tuple)   ('a', 42, None)
 ## END
 
 #### return expression then return builtin
@@ -106,7 +128,7 @@ echo status=$?
 status=42
 ## END
 
-#### closed proc with no args
+#### closed proc with no args, passed too many
 proc f [] {
   return 42
 }
@@ -117,6 +139,7 @@ echo status=$?
 f a b
 echo status=$?
 
+## status: 1
 ## STDOUT:
 status=42
 ## END
@@ -145,19 +168,20 @@ status=42
 # func(**opt)  # Assumes keyword args match?
 # parse :grep_opts :opt @ARGV
 
+shopt -s oil:basic
+
 proc f [@names] {
-  echo names= $names
-  return 42
+  echo names: @names
 }
 # this gets called with 3 args then?
 f a b c
 echo status=$?
 ## STDOUT:
-names=
+names:
 a
 b
 c
-status=42
+status=0
 ## END
 
 #### proc with block arg
@@ -166,7 +190,7 @@ status=42
 proc f [x, y, &block] {
   echo hi
 }
-f a b c
+f a b
 ## STDOUT:
 hi
 ## END

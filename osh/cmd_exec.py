@@ -1750,6 +1750,19 @@ class Executor(object):
               scope_e.LocalOnly)
         except IndexError:
           e_die("No value provided for param %s", name.val)
+
+      n_params = len(sig.params)
+      if sig.rest:
+        leftover = value.MaybeStrArray(argv[n_params:])
+        self.mem.SetVar(
+            lvalue.Named(sig.rest.val), leftover, (), scope_e.LocalOnly)
+      else:
+        n_args = len(argv)
+        if n_params != n_args:
+          raise TypeError(
+              "proc %r expected %d arguments, but got %d" %
+              (node.name.val, n_params, n_args))
+
     else:  # proc is-open { }
       # if sig.tag == proc_sig_e.Open:
       #raise NotImplementedError('open')
@@ -1807,6 +1820,13 @@ class Executor(object):
           # Python raises TypeError.  Should we do something else?
           raise TypeError('Missing positional argument %r', param.name)
       self.mem.SetVar(lvalue.Named(param.name.val), val, (), scope_e.LocalOnly)
+
+    if func.node.pos_splat:
+      splat_name = func.node.pos_splat.val
+
+      # NOTE: This is a heterogeneous TUPLE, not list.
+      leftover = value.Obj(args[n_params:])
+      self.mem.SetVar(lvalue.Named(splat_name), leftover, (), scope_e.LocalOnly)
 
     # Bind named arguments
     for i, param in enumerate(func.node.named_params):

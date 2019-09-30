@@ -684,8 +684,8 @@ class Transformer(object):
       return
 
     if n == 2:
-      # Note: We allow multiple splats, just like Julia.  They are concatenated
-      # as in lists and dicts.
+      # Note: We allow multiple spreads, just like Julia.  They are
+      # concatenated as in lists and dicts.
       if children[0].tok.id == Id.Expr_Ellipsis:
         spread_expr = self.Expr(children[1])
         if do_named:
@@ -776,6 +776,7 @@ class Transformer(object):
     n = len(children)
 
     params = []  # type: List[param]
+    rest = None
     block = None
 
     i = 0
@@ -788,7 +789,7 @@ class Transformer(object):
       else:
         if p.tok.id == Id.Expr_At:  # @args
           i += 1
-          splat = children[i].tok
+          rest = children[i].tok
         elif p.tok.id == Id.Arith_Amp:  # &block
           i += 1
           block = children[i].tok
@@ -796,7 +797,7 @@ class Transformer(object):
           raise AssertionError(p.tok)
       i += 2
 
-    return proc_sig.Closed(params, block)
+    return proc_sig.Closed(params, rest, block)
 
   def _FuncParam(self, pnode):
     # type: (PNode) -> param
@@ -836,7 +837,7 @@ class Transformer(object):
       if ISNONTERMINAL(p.typ):
         params.append(self._FuncParam(p))
       elif p.tok.id == Id.Expr_Ellipsis:
-        splat = children[i].tok
+        splat = children[i+1].tok
       i += 1
 
     return params, splat
@@ -881,7 +882,7 @@ class Transformer(object):
     if ISNONTERMINAL(typ2):
       assert typ2 == grammar_nt.func_params, children[pos]  # f(x, y)
       # every other one is a comma
-      out.pos_params , out.pos_splat = self._FuncParams(children[2])
+      out.pos_params, out.pos_splat = self._FuncParams(children[2])
       pos += 1
 
     id_ = children[pos].tok.id

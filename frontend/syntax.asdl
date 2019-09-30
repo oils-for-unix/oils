@@ -321,7 +321,7 @@ module syntax
   -- 'open' is for proc p { }; closed is for proc p [] { }
   proc_sig =
     Open
-  | Closed(param* params, token? block_arg)
+  | Closed(param* params, token? rest, token? block)
 
   param = (token name, type_expr? type, expr? default)
 
