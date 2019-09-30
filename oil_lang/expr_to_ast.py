@@ -661,8 +661,8 @@ class Transformer(object):
     raise AssertionError(
         "PNode type %d (%s) wasn't handled" % (typ, nt_name))
 
-  def _Argument(self, p_node):
-    # type: (PNode) -> expr_t
+  def _Argument(self, p_node, do_named, arglist):
+    # type: (PNode, bool, arg_list) -> None
     """
     argument: (
       test [comp_for]
@@ -672,44 +672,56 @@ class Transformer(object):
     | '...' test
     )
     """
+    positional = arglist.positional
+    named = arglist.named
+
     assert p_node.typ == grammar_nt.argument, p_node
     children = p_node.children
     n = len(children)
     if n == 1:
-      return self.Expr(children[0])
+      arg = self.Expr(children[0])
+      positional.append(arg)
+      return
 
     if n == 2:
+      # Note: We allow multiple splats, just like Julia.  They are concatenated
+      # as in lists and dicts.
       if children[0].tok.id == Id.Expr_Ellipsis:
-        raise NotImplementedError
+        spread_expr = self.Expr(children[1])
+        if do_named:
+          # Implicit spread with name = None
+          named.append(named_arg(None, spread_expr))
+        else:
+          positional.append(expr.Spread(spread_expr, expr_context_e.Store))
+        return
+
       if children[1].typ == grammar_nt.comp_for:
         elt = self.Expr(children[0])
         comp = self._CompFor(children[1])
-        return expr.GeneratorExp(elt, [comp])
+        arg = expr.GeneratorExp(elt, [comp])
+        positional.append(arg)
+        return
+
       raise AssertionError
 
     if n == 3:
-      arg = named_arg(children[0].tok, self.Expr(children[2]))
-      return arg
+      n1 = named_arg(children[0].tok, self.Expr(children[2]))
+      named.append(n1)
+      return
 
-    # TODO:
-    # - keyword args
-    # - @args and ...args
     raise NotImplementedError
 
   def _Arglist(self, children, arglist):
     # type: (List[PNode], arg_list) -> None
     """
-    arglist: argument (',' argument)*  [',']
+    arglist: argument (',' argument)* [','] [';' argument (',' argument)* [',']]
     """
-    # TODO: Split into (positional, pos_splat, named, named_splat)
-    # and then ; is only needed if you have named splat but no positional
-
-    n = len(children)
-    i = 0
-    while i < n:
-      result = self._Argument(children[i])
-      arglist.positional.append(result)
-      i += 2
+    do_named = False
+    for p_child in children:
+      if ISNONTERMINAL(p_child.typ):
+        self._Argument(p_child, do_named, arglist)
+      elif p_child.tok.id == Id.Op_Semi:
+        do_named = True
 
   def ArgList(self, pnode, arglist):
     # type: (PNode, arg_list) -> None
@@ -717,7 +729,6 @@ class Transformer(object):
 
     oil_arglist: '(' [arglist] ')'
     """
-    args = []  # type: List[expr_t]
     if len(pnode.children) == 2:  # f()
       return
 

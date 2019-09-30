@@ -153,10 +153,7 @@ module syntax
   sh_array_literal = (token left, word* words) attributes (int* spids)
 
   -- Used in both expr and a word_part
-  arg_list = (
-    expr* positional, expr? pos_splat,
-    named_arg* named_args, expr? named_splat
-  )
+  arg_list = (expr* positional, named_arg* named)
 
   word_part = 
     ShArrayLiteral %sh_array_literal
@@ -370,7 +367,7 @@ module syntax
   -- TODO: Inline this into GenExp and ListComp?  Just use a flag there?
   comprehension = (name_type* lhs, expr iter, expr* ifs)
 
-  -- named arguments supplied to call
+  -- named arguments supplied to call.  token is null for f(; ...named).
   named_arg = (token? name, expr value)
 
   tuple_ = (expr* elts, expr_context ctx)
@@ -446,9 +443,9 @@ module syntax
     -- (Starred is NOT used for {k:v, **a}.  That used a blank "keys"
     -- attribute.)
 
-    -- In Oil, splicing will be @[1 ...array2] [b, ...list2] and
+    -- In Oil, "spreading" will be @[1 ...array2] [b, ...list2] and
     -- {k: v, ...dict2}.  We don't need two different symbols.
-  | Ellipsis(expr value, expr_context ctx)
+  | Spread(expr value, expr_context ctx)
   attributes (int* spids)
 
   --

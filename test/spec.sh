@@ -844,7 +844,7 @@ oil-regex() {
 }
 
 oil-func-proc() {
-  sh-spec spec/oil-func-proc.test.sh --cd-tmp --osh-failures-allowed 5 \
+  sh-spec spec/oil-func-proc.test.sh --cd-tmp --osh-failures-allowed 4 \
     $OSH_LIST "$@"
 }
 

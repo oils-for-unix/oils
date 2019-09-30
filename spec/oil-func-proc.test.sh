@@ -39,12 +39,14 @@ echo $add(3,4,5)
 ## END
 
 #### Passing named arg
-func f(; x=1) {
+func f(; x=42) {
   echo $x
 }
-pass f(x=42)
+pass f()
+pass f(x=99)
 ## STDOUT:
 42
+99
 ## END
 
 #### Func with named param with no default

@@ -132,13 +132,14 @@ class Proc(object):
 
 class Func(object):
   """An Oil function declared with 'func'."""
-  def __init__(self, node, default_vals, ex):
+  def __init__(self, node, pos_defaults, named_defaults, ex):
     self.node = node
-    self.default_vals = default_vals
+    self.pos_defaults = pos_defaults
+    self.named_defaults = named_defaults
     self.ex = ex
 
   def __call__(self, *args, **kwargs):
-    return self.ex.RunOilFunc(self.node, self.default_vals, args, kwargs)
+    return self.ex.RunOilFunc(self, args, kwargs)
 
 
 class Lambda(object):

@@ -1322,16 +1322,19 @@ class Executor(object):
       # Note: funcs have the Python pitfall where mutable objects shouldn't be
       # used as default args.
 
-      # TODO: Defaults for named_params too
-      n = len(node.pos_params)
-      default_vals = [None] * n
+      pos_defaults = [None] * len(node.pos_params)
       for i, param in enumerate(node.pos_params):
-        default = param.default
-        if default:
-          obj = self.expr_ev.EvalExpr(default)
-          default_vals[i] = value.Obj(obj)
+        if param.default:
+          obj = self.expr_ev.EvalExpr(param.default)
+          pos_defaults[i] = value.Obj(obj)
 
-      obj = objects.Func(node, default_vals, self)
+      named_defaults = {}
+      for i, param in enumerate(node.named_params):
+        if param.default:
+          obj = self.expr_ev.EvalExpr(param.default)
+          named_defaults[param.name.val] = value.Obj(obj)
+
+      obj = objects.Func(node, pos_defaults, named_defaults, self)
       self.mem.SetVar(
           lvalue.Named(node.name.val), value.Obj(obj), (), scope_e.GlobalOnly)
       status = 0
@@ -1768,7 +1771,8 @@ class Executor(object):
 
     return status
 
-  def RunOilFunc(self, func_node, default_vals, args, kwargs):
+  def RunOilFunc(self, func, args, kwargs):
+    # type: (objects.Func, List[Any], Dict[Str, Any]) -> Any
     """Run an Oil function.
 
     var x = abs(y)   do f(x)   @split(mystr)   @join(myarray)
@@ -1786,23 +1790,42 @@ class Executor(object):
     #   - If the arguments are all strings, make them @ARGV?
     #     That isn't happening right now.
 
+    #log('RunOilFunc kwargs %s', kwargs)
+    #log('RunOilFunc named_defaults %s', func.named_defaults)
+
     self.mem.PushTemp()
-    # Bind the function arguments
+
+    # Bind positional arguments
     n_args = len(args)
-    n_params = len(func_node.pos_params)
-    for i, param in enumerate(func_node.pos_params):
+    n_params = len(func.node.pos_params)
+    for i, param in enumerate(func.node.pos_params):
       if i < n_args:
         val = value.Obj(args[i])
       else:
-        val = default_vals[i]
+        val = func.pos_defaults[i]
         if val is None:
           # Python raises TypeError.  Should we do something else?
-          raise TypeError('Missing argument')
+          raise TypeError('Missing positional argument %r', param.name)
       self.mem.SetVar(lvalue.Named(param.name.val), val, (), scope_e.LocalOnly)
+
+    # Bind named arguments
+    for i, param in enumerate(func.node.named_params):
+      name = param.name
+      if name.val in kwargs:
+        val = value.Obj(kwargs[name.val])
+      else:
+        if name.val in func.named_defaults:
+          val = func.named_defaults[name.val]
+        else:
+          raise TypeError(
+              "Named argument %r wasn't passed, and it doesn't have a default "
+              "value" % name.val)
+
+      self.mem.SetVar(lvalue.Named(name.val), val, (), scope_e.LocalOnly)
 
     return_val = None
     try:
-      self._Execute(func_node.body)
+      self._Execute(func.node.body)
     except _ControlFlow as e:
       if e.IsReturn():
         # TODO: Rename this

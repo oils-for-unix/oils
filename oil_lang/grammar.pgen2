@@ -169,17 +169,13 @@ argument: (
     test [comp_for]
     # named arg
   | test '=' test
-    # var args
+    # splat.  Note we're using prefix syntax to be consistent with Python, JS,
+    # and the prefix @ operator.
   | '...' test
 )
 
-# Note: trailing commas allowed at call sites
-
-# TODO: Named arguments have to come after all positional arguments?
-# What about ';' ?
-# Need to look at what Julia does
-# I think ; is only needed for named_splat
-
+# The grammar at call sites is less restrictive than at declaration sites.
+# ... can appear anywhere.  Keyword args can appear anywhere too.
 arglist: argument (',' argument)* [','] [';' argument (',' argument)* [',']]
 
 

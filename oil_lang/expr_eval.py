@@ -449,9 +449,17 @@ class OilEvaluator(object):
       # TODO: Need to match up named args here
 
       args = [self.EvalExpr(a) for a in node.args.positional]
-      kwargs = []
+      kwargs = {}
+      for arg in node.args.named:
+        if arg.name:
+          kwargs[arg.name.val] = self.EvalExpr(arg.value)
+        else:
+          # ...named
+          kwargs.update(self.EvalExpr(arg.value))
 
-      ret = func(*args)
+      log('args %s', args)
+      log('kwargs %s', kwargs)
+      ret = func(*args, **kwargs)
       return ret
 
     if node.tag == expr_e.Subscript:
