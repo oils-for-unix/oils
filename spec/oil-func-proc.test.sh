@@ -1,6 +1,6 @@
 # Oil Functions
 
-#### Untyped function
+#### Untyped func
 func add(x, y) Int {
   echo hi
   return x + y
@@ -12,7 +12,7 @@ hi
 43
 ## END
 
-#### Typed function
+#### Typed func
 func add(x Int, y Int) Int {
   echo hi
   return x+y
@@ -24,32 +24,33 @@ hi
 43
 ## END
 
-#### Default values for positional params
+#### func: default values for positional params
 shopt -s oil:basic
 func add(x Int, y=1, z=1+2*3) {
   return x + y + z
 }
 echo $add(3)
 echo $add(3,4)
-echo $add(3,4,5)
 ## STDOUT:
 11
 14
-12
 ## END
 
-#### Pass too many positional params (without spread)
+#### pass too many positional params to func (without spread)
 shopt -s oil:basic
 func add(x, y) {
   return x + y
 }
+var f = add(1,2)
+echo f=$f
 var f = add(1,2,3)
 echo $f
+## status: 1
 ## STDOUT:
-a
+f=3
 ## END
 
-#### Passing named arg
+#### pass named arg to func
 func f(; x=42) {
   echo $x
 }
@@ -116,7 +117,7 @@ x=42
 status=42
 ## END
 
-#### open proc (any number of args)
+#### Open proc (any number of args)
 proc f {
   var x = 42
   return x
@@ -128,7 +129,7 @@ echo status=$?
 status=42
 ## END
 
-#### closed proc with no args, passed too many
+#### Closed proc with no args, passed too many
 proc f [] {
   return 42
 }
@@ -144,7 +145,16 @@ echo status=$?
 status=42
 ## END
 
-#### proc with explicit args
+#### Proc with default args
+proc f [x='foo'] {
+  echo x=$x
+}
+f
+## STDOUT:
+x=foo
+## END
+
+#### Proc with explicit args
 
 # doesn't require oil:basic
 proc f [x, y, z] {
@@ -160,7 +170,7 @@ a b c
 status=42
 ## END
 
-#### proc with varargs
+#### Proc with varargs
 
 # TODO: opts goes with this
 # var opt = grep_opts.parse(ARGV)
@@ -184,7 +194,7 @@ c
 status=0
 ## END
 
-#### proc with block arg
+#### Proc with block arg
 
 # TODO: Test more of this
 proc f [x, y, &block] {

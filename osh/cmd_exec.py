@@ -693,7 +693,7 @@ class Executor(object):
       # isinstance(val.obj, objects.Proc)
       val = self.mem.GetVar(arg0)
       if val.tag == value_e.Obj and isinstance(val.obj, objects.Proc):
-        status = self._RunOilProc(val.obj.node, argv[1:])
+        status = self._RunOilProc(val.obj, argv[1:])
         return status
 
     builtin_id = builtin.Resolve(arg0)
@@ -1313,7 +1313,17 @@ class Executor(object):
       status = 0
 
     elif node.tag == command_e.Proc:
-      obj = objects.Proc(node)
+      if node.sig.tag == proc_sig_e.Closed:
+        defaults = [None] * len(node.sig.params)
+        for i, param in enumerate(node.sig.params):
+          if param.default:
+            py_val = self.expr_ev.EvalExpr(param.default)
+            defaults[i] = _PyObjectToVal(py_val)
+      else:
+        defaults = None
+
+      obj = objects.Proc(node, defaults)
+
       self.mem.SetVar(
           lvalue.Named(node.name.val), value.Obj(obj), (), scope_e.GlobalOnly)
       status = 0
@@ -1325,8 +1335,8 @@ class Executor(object):
       pos_defaults = [None] * len(node.pos_params)
       for i, param in enumerate(node.pos_params):
         if param.default:
-          obj = self.expr_ev.EvalExpr(param.default)
-          pos_defaults[i] = value.Obj(obj)
+          py_val = self.expr_ev.EvalExpr(param.default)
+          pos_defaults[i] = _PyObjectToVal(py_val)
 
       named_defaults = {}
       for i, param in enumerate(node.named_params):
@@ -1722,11 +1732,12 @@ class Executor(object):
 
     return status
 
-  def _RunOilProc(self, node, argv):
+  def _RunOilProc(self, proc, argv):
     # type: (command__Proc, List[str]) -> int
     """
     Run an oil proc foo { } or proc foo(x, y, @names) { }
     """
+    node = proc.node
     self.mem.PushCall(node.name.val, node.name.span_id, argv)
 
     # Bind params.
@@ -1742,14 +1753,16 @@ class Executor(object):
     #   syntax_asdl.command_t type?  Or objects.Block probably.
 
     sig = node.sig
+    n_args = len(argv)
     if sig.tag == proc_sig_e.Closed:  # proc is-closed []
       for i, p in enumerate(sig.params):
-        try:
-          self.mem.SetVar(
-              lvalue.Named(p.name.val), value.Str(argv[i]), (),
-              scope_e.LocalOnly)
-        except IndexError:
-          e_die("No value provided for param %s", name.val)
+        if i < n_args:
+          val = value.Str(argv[i])
+        else:
+          val = proc.defaults[i]
+          if val is None:
+            e_die("No value provided for param %r", p.name.val)
+        self.mem.SetVar(lvalue.Named(p.name.val), val, (), scope_e.LocalOnly)
 
       n_params = len(sig.params)
       if sig.rest:
@@ -1757,8 +1770,7 @@ class Executor(object):
         self.mem.SetVar(
             lvalue.Named(sig.rest.val), leftover, (), scope_e.LocalOnly)
       else:
-        n_args = len(argv)
-        if n_params != n_args:
+        if n_args > n_params:
           raise TypeError(
               "proc %r expected %d arguments, but got %d" %
               (node.name.val, n_params, n_args))
@@ -1818,7 +1830,7 @@ class Executor(object):
         val = func.pos_defaults[i]
         if val is None:
           # Python raises TypeError.  Should we do something else?
-          raise TypeError('Missing positional argument %r', param.name)
+          raise TypeError('No value provided for param %r', param.name)
       self.mem.SetVar(lvalue.Named(param.name.val), val, (), scope_e.LocalOnly)
 
     if func.node.pos_splat:
@@ -1827,6 +1839,11 @@ class Executor(object):
       # NOTE: This is a heterogeneous TUPLE, not list.
       leftover = value.Obj(args[n_params:])
       self.mem.SetVar(lvalue.Named(splat_name), leftover, (), scope_e.LocalOnly)
+    else:
+      if n_args > n_params:
+        raise TypeError(
+            "func %r expected %d arguments, but got %d" %
+            (func.node.name.val, n_params, n_args))
 
     # Bind named arguments
     for i, param in enumerate(func.node.named_params):

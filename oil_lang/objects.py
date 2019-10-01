@@ -125,9 +125,10 @@ class Proc(object):
 
   Unlike a shell proc, it has a signature, so we need to bind names to params.
   """
-  def __init__(self, node):
+  def __init__(self, node, defaults):
     self.docstring = ''
     self.node = node
+    self.defaults = defaults
 
 
 class Func(object):
