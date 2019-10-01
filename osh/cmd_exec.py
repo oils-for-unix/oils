@@ -59,7 +59,7 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc  # type: ignore
 
-from typing import List, Dict, Str, Any
+from typing import List, Dict, Any
 
 
 # These are nodes that execute more than one COMMAND.  DParen doesn't
@@ -1790,7 +1790,7 @@ class Executor(object):
     return status
 
   def RunOilFunc(self, func, args, kwargs):
-    # type: (objects.Func, List[Any], Dict[Str, Any]) -> Any
+    # type: (objects.Func, List[Any], Dict[str, Any]) -> Any
     """Run an Oil function.
 
     var x = abs(y)   do f(x)   @split(mystr)   @join(myarray)

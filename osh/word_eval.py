@@ -1024,22 +1024,23 @@ class _WordEvaluator(object):
 
     elif part.tag == word_part_e.FuncCall:
       func_name = part.name.val[1:]
-      args = [self.expr_ev.EvalExpr(a) for a in part.args.positional]
-      id_ = part.name.id
 
       val = self.mem.GetVar(func_name)
       if val.tag != value_e.Obj:
         e_die("Expected function named %r, got %r ", func_name, val)
 
       func = val.obj
+      pos_args, named_args = self.expr_ev.EvalArgList(part.args)
+
+      id_ = part.name.id
       if id_ == Id.VSub_DollarName:
-        s = str(func(*args))
+        s = str(func(*pos_args, **named_args))
         part_val = part_value.String(s)
 
       elif id_ == Id.Lit_Splice:
         # NOTE: Using iterable protocol as with @array.  TODO: Optimize this so
         # it doesn't make a copy?
-        a = [str(item) for item in func(*args)]
+        a = [str(item) for item in func(*pos_args, **named_args)]
         part_val = part_value.Array(a)
 
       else:

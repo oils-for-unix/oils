@@ -295,8 +295,9 @@ hi
 shopt -s oil:basic
 
 func f(a, b=0, ...args; c, d=0, ...named) {
-  echo args @args
-  echo named @named
+  echo __ args: @args
+  echo __ named:
+  echo @named | sort
   if (named) {
     return [a, b, c, d]
   } else {
@@ -306,15 +307,38 @@ func f(a, b=0, ...args; c, d=0, ...named) {
 var a = [42, 43]
 var n = {x: 99, y: 100}
 
-echo string $f(0, 1, ...a, c=1, d=2)
-echo ---
+echo ____
+echo string $f(0, 1, ...a, c=2, d=3)
 
 # Now get a list back
-echo array @f(0, 1, ...a, c=1, d=2; ...n)
+echo ____
+echo array @f(5, 6, ...a, c=7, d=8; ...n)
 
 ## STDOUT:
+____
+__
+args:
+42
+43
+__
+named:
+
 string
+6
+____
+__
+args:
+42
+43
+__
+named:
+x
+y
 array
+5
+6
+7
+8
 ## END
 
 #### basic lambda

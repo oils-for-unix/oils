@@ -129,6 +129,25 @@ class OilEvaluator(object):
         state.SetLocalArray(self.mem, 'M', [])
       return False
 
+  def EvalArgList(self, args):
+    """ Used by do f(x) and echo $f(x). """
+    pos_args = []
+    for arg in args.positional:
+      if arg.tag == expr_e.Spread:
+        # assume it returns a list
+        pos_args.extend(self.EvalExpr(arg.child))
+      else:
+        pos_args.append(self.EvalExpr(arg))
+
+    kwargs = {}
+    for arg in args.named:
+      if arg.name:
+        kwargs[arg.name.val] = self.EvalExpr(arg.value)
+      else:
+        # ...named
+        kwargs.update(self.EvalExpr(arg.value))
+    return pos_args, kwargs
+
   def EvalExpr(self, node):
     # type: (expr_t) -> Any
     """
@@ -422,50 +441,9 @@ class OilEvaluator(object):
       return objects.Lambda(node, self.ex)
 
     if node.tag == expr_e.FuncCall:
-      # TODO:
-      #
-      # Let Python handle type errors for now?
-
-      # TODO: Lookup in equivalent of __builtins__
-      #
-      # shopt -s namespaces
-      # 
-      # builtin log "hello"
-      # builtin log "hello"
-
-      #node.PrettyPrint()
-
-      # TODO: All functions called like f(x, y) must be in 'mem'.
-      # Only 'procs' are in self.funcs
-
-      # First look up the name in 'funcs'.  And then look it up
-      # in 'mem' for first-class functions?
-      #if node.func.tag == expr_e.Var:
-      #  func = self.funcs.get(node.func.name.val)
-
       func = self.EvalExpr(node.func)
-
-      # TODO: Need to match up named args here
-
-      args = []
-      for arg in node.args.positional:
-        if arg.tag == expr_e.Spread:
-          # assume it returns a list
-          args.extend(self.EvalExpr(arg.child))
-        else:
-          args.append(self.EvalExpr(arg))
-
-      kwargs = {}
-      for arg in node.args.named:
-        if arg.name:
-          kwargs[arg.name.val] = self.EvalExpr(arg.value)
-        else:
-          # ...named
-          kwargs.update(self.EvalExpr(arg.value))
-
-      log('args %s', args)
-      log('kwargs %s', kwargs)
-      ret = func(*args, **kwargs)
+      pos_args, named_args = self.EvalArgList(node.args)
+      ret = func(*pos_args, **named_args)
       return ret
 
     if node.tag == expr_e.Subscript:
