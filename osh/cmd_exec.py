@@ -169,11 +169,12 @@ def _PyObjectToVal(py_val):
     # It's safe to convert StrArray to MaybeStrArray.
     val = value.MaybeStrArray(py_val)
   elif isinstance(py_val, dict):  # var d = {name: "bob"}
+    # TODO: Is this necessary?  Shell assoc arrays aren't nested and don't have
+    # arbitrary values.
     val = value.AssocArray(py_val)
   else:
     val = value.Obj(py_val)
   return val
-
 
 
 class Executor(object):
@@ -1818,14 +1819,16 @@ class Executor(object):
     #log('RunOilFunc kwargs %s', kwargs)
     #log('RunOilFunc named_defaults %s', func.named_defaults)
 
+    node = func.node
     self.mem.PushTemp()
 
     # Bind positional arguments
     n_args = len(args)
-    n_params = len(func.node.pos_params)
-    for i, param in enumerate(func.node.pos_params):
+    n_params = len(node.pos_params)
+    for i, param in enumerate(node.pos_params):
       if i < n_args:
-        val = value.Obj(args[i])
+        py_val = args[i]
+        val = _PyObjectToVal(py_val)
       else:
         val = func.pos_defaults[i]
         if val is None:
@@ -1833,8 +1836,8 @@ class Executor(object):
           raise TypeError('No value provided for param %r', param.name)
       self.mem.SetVar(lvalue.Named(param.name.val), val, (), scope_e.LocalOnly)
 
-    if func.node.pos_splat:
-      splat_name = func.node.pos_splat.val
+    if node.pos_splat:
+      splat_name = node.pos_splat.val
 
       # NOTE: This is a heterogeneous TUPLE, not list.
       leftover = value.Obj(args[n_params:])
@@ -1843,13 +1846,14 @@ class Executor(object):
       if n_args > n_params:
         raise TypeError(
             "func %r expected %d arguments, but got %d" %
-            (func.node.name.val, n_params, n_args))
+            (node.name.val, n_params, n_args))
 
     # Bind named arguments
-    for i, param in enumerate(func.node.named_params):
+    for i, param in enumerate(node.named_params):
       name = param.name
       if name.val in kwargs:
-        val = value.Obj(kwargs[name.val])
+        py_val = kwargs.pop(name.val)  # REMOVE it
+        val = _PyObjectToVal(py_val)
       else:
         if name.val in func.named_defaults:
           val = func.named_defaults[name.val]
@@ -1860,9 +1864,20 @@ class Executor(object):
 
       self.mem.SetVar(lvalue.Named(name.val), val, (), scope_e.LocalOnly)
 
+    if node.named_splat:
+      splat_name = node.named_splat.val
+      # Note: this dict is not an AssocArray
+      leftover = value.Obj(kwargs)
+      self.mem.SetVar(lvalue.Named(splat_name), leftover, (), scope_e.LocalOnly)
+    else:
+      if kwargs:
+        raise TypeError(
+            'func %r got unexpected named arguments: %s' %
+            (node.name.val, ', '.join(kwargs.keys())))
+
     return_val = None
     try:
-      self._Execute(func.node.body)
+      self._Execute(node.body)
     except _ControlFlow as e:
       if e.IsReturn():
         # TODO: Rename this

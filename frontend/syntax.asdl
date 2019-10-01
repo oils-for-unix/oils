@@ -445,7 +445,7 @@ module syntax
 
     -- In Oil, "spreading" will be @[1 ...array2] [b, ...list2] and
     -- {k: v, ...dict2}.  We don't need two different symbols.
-  | Spread(expr value, expr_context ctx)
+  | Spread(expr child, expr_context ctx)
   attributes (int* spids)
 
   --

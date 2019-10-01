@@ -448,7 +448,14 @@ class OilEvaluator(object):
 
       # TODO: Need to match up named args here
 
-      args = [self.EvalExpr(a) for a in node.args.positional]
+      args = []
+      for arg in node.args.positional:
+        if arg.tag == expr_e.Spread:
+          # assume it returns a list
+          args.extend(self.EvalExpr(arg.child))
+        else:
+          args.append(self.EvalExpr(arg))
+
       kwargs = {}
       for arg in node.args.named:
         if arg.name:

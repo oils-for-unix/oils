@@ -50,6 +50,21 @@ echo $f
 f=3
 ## END
 
+#### Positional Spread
+shopt -s oil:basic
+func add(x, y, ...args) {
+  echo @args
+  return x + y
+}
+var args = @[5 6 7 8]
+var y = add(...args)
+echo y=$y
+## STDOUT:
+7
+8
+y=11
+## END
+
 #### pass named arg to func
 func f(; x=42) {
   echo $x
@@ -61,7 +76,7 @@ pass f(x=99)
 99
 ## END
 
-#### Func with named param with no default
+#### Func with missing named param with no default
 shopt -s oil:basic
 func add(x Int, y Int ; verbose Bool) {
   if (verbose) {
@@ -75,14 +90,43 @@ echo $a
 # crashes
 var a = add(3, 2)
 echo "shouldn't get here"
-
-# doens't work eyt
-#echo $add(3, 2, verbose=true)
-
 ## status: 1
 ## STDOUT:
 verbose
 5
+## END
+
+#### Func passed wrong named param
+shopt -s oil:basic
+func add(x, y) {
+  return x + y
+}
+var x = add(2, 3)
+echo x=$x
+var y = add(2, 3, verbose=true)
+
+## status: 1
+## STDOUT:
+x=5
+## END
+
+
+#### Named Spread
+shopt -s oil:basic
+func add(x, y; verbose=true, ...named) {
+  if (verbose) { echo 'verbose' }
+  echo @named | sort
+  return x + y
+}
+var args = {verbose: false, a: 1, b: 2}
+var args2 = {f: 3}
+var ret = add(2, 3; ...args, ...args2)
+echo ret=$ret
+## STDOUT:
+a
+b
+f
+ret=5
 ## END
 
 #### Func with varargs
