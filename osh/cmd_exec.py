@@ -23,7 +23,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
     command_e, command__Proc, redir_e, assign_op_e, source, proc_sig_e,
 )
-from _devbuild.gen.syntax_asdl import word, command_t, expr_e
+from _devbuild.gen.syntax_asdl import word, command_t
 from _devbuild.gen.runtime_asdl import (
     lvalue, redirect,
     value, value_e, value_t,
@@ -59,8 +59,7 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc  # type: ignore
 
-from typing import List
-
+from typing import List, Dict, Str, Any
 
 
 # These are nodes that execute more than one COMMAND.  DParen doesn't
@@ -1739,21 +1738,15 @@ class Executor(object):
     Run an oil proc foo { } or proc foo(x, y, @names) { }
     """
     node = proc.node
-    self.mem.PushCall(node.name.val, node.name.span_id, argv)
-
-    # Bind params.
-    #
-    # proc foo { } should be params = None mean the params are implicit in ARGV
-    # proc foo() { } means there are NO params and you don't even have argv
-    # proc foo(@names) { } means you do NOT have ARGV.  It gets bound.  TODO:
-    #   change PushCall.  'shift' builtin will produce an error.
-
-    # TODO:
-    # - Handle @names splat.  Disallow ...names because it's not typed.
-    # - Handle &block param?  How to do that?  It's really the
-    #   syntax_asdl.command_t type?  Or objects.Block probably.
-
     sig = node.sig
+    if sig.tag == proc_sig_e.Closed:
+      # We're binding named params.  User should use @rest.  No 'shift'.
+      proc_argv = []
+    else:
+      proc_argv = argv
+
+    self.mem.PushCall(node.name.val, node.name.span_id, proc_argv)
+
     n_args = len(argv)
     if sig.tag == proc_sig_e.Closed:  # proc is-closed []
       for i, p in enumerate(sig.params):
@@ -1776,10 +1769,9 @@ class Executor(object):
               "proc %r expected %d arguments, but got %d" %
               (node.name.val, n_params, n_args))
 
-    else:  # proc is-open { }
-      # if sig.tag == proc_sig_e.Open:
-      #raise NotImplementedError('open')
-      pass
+    # TODO:
+    # - Handle &block param?  How to do that?  It's really the
+    #   syntax_asdl.command_t type?  Or objects.Block probably.
 
     try:
       status = self._Execute(node.body)

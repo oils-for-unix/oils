@@ -189,6 +189,37 @@ echo status=$?
 status=42
 ## END
 
+#### Open proc has "$@"
+shopt -s oil:basic
+proc foo { 
+  echo ARGV "$@"
+}
+set -- a b c
+foo x y z
+## STDOUT:
+ARGV
+x
+y
+z
+## END
+
+#### Closed proc doesn't have "$@"
+shopt -s oil:basic
+proc foo[d, e, f] { 
+  echo params $d $e $f
+  echo ARGV "$@"
+}
+set -- a b c
+foo x y z
+## STDOUT:
+params
+x
+y
+z
+ARGV
+## END
+
+
 #### Proc with default args
 proc f [x='foo'] {
   echo x=$x
@@ -238,6 +269,17 @@ c
 status=0
 ## END
 
+#### Proc name-with-hyphen
+proc name-with-hyphen {
+  echo @ARGV
+}
+name-with-hyphen x y z
+## STDOUT:
+x
+y
+z
+## END
+
 #### Proc with block arg
 
 # TODO: Test more of this
@@ -247,6 +289,32 @@ proc f [x, y, &block] {
 f a b
 ## STDOUT:
 hi
+## END
+
+#### inline function calls with spread, named args, etc.
+shopt -s oil:basic
+
+func f(a, b=0, ...args; c, d=0, ...named) {
+  echo args @args
+  echo named @named
+  if (named) {
+    return [a, b, c, d]
+  } else {
+    return a + b + c + d
+  }
+}
+var a = [42, 43]
+var n = {x: 99, y: 100}
+
+echo string $f(0, 1, ...a, c=1, d=2)
+echo ---
+
+# Now get a list back
+echo array @f(0, 1, ...a, c=1, d=2; ...n)
+
+## STDOUT:
+string
+array
 ## END
 
 #### basic lambda

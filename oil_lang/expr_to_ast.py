@@ -12,8 +12,8 @@ from _devbuild.gen.syntax_asdl import (
     expr, expr_t, expr__Dict, expr_context_e,
     re, re_t, re_repeat, re_repeat_t, class_literal_term, class_literal_term_t,
     posix_class, perl_class,
-    name_type, place_expr, place_expr_t, type_expr, type_expr_t, comprehension,
-    subscript, attribute, tuple_,
+    name_type, place_expr, place_expr_t, type_expr_t, comprehension, subscript,
+    attribute, tuple_,
     proc_sig, proc_sig_t, param, named_arg, arg_list,
 )
 from _devbuild.gen import grammar_nt

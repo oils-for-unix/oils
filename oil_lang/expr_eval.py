@@ -7,7 +7,6 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import (
     expr_e, expr_t, re, re_e, re_t, class_literal_term, class_literal_term_e,
-    command,
 )
 from _devbuild.gen.runtime_asdl import (
     lvalue, value, value_e, scope_e,
