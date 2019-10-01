@@ -1448,7 +1448,7 @@ class CommandParser(object):
 
     # for MyPy, caller ensures
     assert isinstance(self.cur_word, word__Compound)
-    name = word_.AsFuncName(self.cur_word)
+    name = word_.ShFunctionName(self.cur_word)
     if not name:
       p_die('Invalid function name', word=self.cur_word)
 
@@ -1488,7 +1488,7 @@ class CommandParser(object):
     # for MyPy, caller ensures
     assert isinstance(self.cur_word, word__Compound)
     self._Peek()
-    name = word_.AsFuncName(self.cur_word)
+    name = word_.ShFunctionName(self.cur_word)
     if not name:
       p_die('Invalid KSH-style function name', word=self.cur_word)
 

@@ -174,7 +174,7 @@ status=42
 ## END
 
 #### Closed proc with no args, passed too many
-proc f [] {
+proc f() {
   return 42
 }
 f
@@ -205,7 +205,7 @@ z
 
 #### Closed proc doesn't have "$@"
 shopt -s oil:basic
-proc foo[d, e, f] { 
+proc foo(d, e, f) { 
   echo params $d $e $f
   echo ARGV "$@"
 }
@@ -221,7 +221,7 @@ ARGV
 
 
 #### Proc with default args
-proc f [x='foo'] {
+proc f(x='foo') {
   echo x=$x
 }
 f
@@ -232,7 +232,7 @@ x=foo
 #### Proc with explicit args
 
 # doesn't require oil:basic
-proc f [x, y, z] {
+proc f(x, y, z) {
   echo $x $y $z
   var ret = 42
   return ret  # expression mode
@@ -255,7 +255,7 @@ status=42
 
 shopt -s oil:basic
 
-proc f [@names] {
+proc f(@names) {
   echo names: @names
 }
 # this gets called with 3 args then?
@@ -271,19 +271,17 @@ status=0
 
 #### Proc name-with-hyphen
 proc name-with-hyphen {
-  echo @ARGV
+  echo "$@"
 }
 name-with-hyphen x y z
 ## STDOUT:
-x
-y
-z
+x y z
 ## END
 
 #### Proc with block arg
 
 # TODO: Test more of this
-proc f [x, y, &block] {
+proc f(x, y, &block) {
   echo hi
 }
 f a b

@@ -33,7 +33,7 @@ _error-case() {
 _oil-parse-error() {
   banner "$@"
   echo
-  $SH -O all:oil -c "$@"
+  $SH -O oil:all -c "$@"
 
   local status=$?
   if test $status != 2; then
@@ -500,6 +500,13 @@ parse_brace() {
 
 }
 
+proc_sig() {
+  set +o errexit
+  _oil-parse-error 'proc f[] { echo hi }'
+  _oil-parse-error 'proc : { echo hi }'
+  _oil-parse-error 'proc foo::bar { echo hi }'
+}
+
 regex_literals() {
   set +o errexit
 
@@ -561,6 +568,7 @@ cases-in-strings() {
   blocks
   parse_brace
   regex_literals
+  proc_sig
 }
 
 # Cases in their own file

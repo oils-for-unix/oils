@@ -868,10 +868,20 @@ class WordParser(object):
 
   def ParseProc(self, node):
     # type: (command__Proc) -> None
+
+    # proc name-with-hyphens() must be accepted
+    self._Next(lex_mode_e.ShCommand) 
+    self._Peek()
+    # example: 'proc f[' gets you Lit_ArrayLhsOpen
+    if self.token_type != Id.Lit_Chars:
+      p_die('Invalid proc name %r', self.cur_token.val, token=self.cur_token)
+    node.name = self.cur_token
+
     last_token = self.parse_ctx.ParseProc(self.lexer, node)
     if last_token.id == Id.Op_LBrace:  # Translate to what CommandParser wants
       last_token.id = Id.Lit_LBrace
     self.buffered_word = word.Token(last_token)
+    self._Next(lex_mode_e.ShCommand)  # required
 
   def ParseFunc(self, node):
     # type: (command__Func) -> None

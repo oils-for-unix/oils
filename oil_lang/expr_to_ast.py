@@ -843,27 +843,25 @@ class Transformer(object):
     return params, splat
 
   def Proc(self, pnode):
-    # type: (PNode) -> Tuple[token, proc_sig_t]
+    # type: (PNode) -> proc_sig_t
     """
-    oil_proc: Expr_Name ['[' [proc_params] ']'] '{'
+    oil_proc: ['(' [proc_params] ')'] '{'
     """
     typ = pnode.typ
     children = pnode.children
     assert typ == grammar_nt.oil_proc
 
-    name = children[0].tok
-
     n = len(children)
-    if n == 2:  # proc f { 
+    if n == 1:  # proc f { 
       sig = proc_sig.Open()  # type: proc_sig_t
-    elif n == 4:  # proc f [] {
+    elif n == 3:  # proc f () {
       sig = proc_sig.Closed([])
-    elif n == 5:  # proc f [foo, bar='z', @args] {
-      sig = self._ProcParams(children[2])
+    elif n == 4:  # proc f [foo, bar='z', @args] {
+      sig = self._ProcParams(children[1])
     else:
       raise AssertionError(n)
 
-    return name, sig
+    return sig
 
   def Func(self, pnode, out):
     # type: (PNode, command__Func) -> None

@@ -352,10 +352,9 @@ def HasArrayPart(w):
   return False
 
 
-def AsFuncName(w):
+def ShFunctionName(w):
   # type: (word__Compound) -> str
-  """
-  Returns a valid function name, or the empty string.
+  """Returns a valid shell function name, or the empty string.
 
   TODO: Maybe use this regex to validate:
 

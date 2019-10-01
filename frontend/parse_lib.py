@@ -394,7 +394,7 @@ class ParseContext(object):
     if print_parse_tree:
       self.p_printer.Print(pnode)
 
-    out.name, out.sig = self.tr.Proc(pnode)
+    out.sig = self.tr.Proc(pnode)
     return last_token
 
   def ParseFunc(self, lexer, out, print_parse_tree=False):

@@ -304,8 +304,9 @@ proc_params: (
   [ (proc_param | '&' Expr_Name | '@' Expr_Name [',' '&' Expr_Name]) [','] ]
 )
 
-# TODO: NAME should be parsed in cmd_parse!!  Because it can contains hyphens.
-oil_proc: Expr_Name ['[' [proc_params] ']'] '{'  # opening { for pgen2
+# Note: we might have proc name-with-hyphens, so we can't parse the name in
+# expression mode.
+oil_proc: ['(' [proc_params] ')'] '{'  # opening { for pgen2
 
 func_param: Expr_Name [type_expr] ['=' expr]
 # This is an awkward way of writing that '...' has to come last.
