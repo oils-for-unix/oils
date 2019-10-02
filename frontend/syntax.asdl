@@ -369,14 +369,13 @@ module syntax
   -- named arguments supplied to call.  token is null for f(; ...named).
   named_arg = (token? name, expr value)
 
-  -- TODO: Inline this again
-  tuple_ = (expr* elts, expr_context ctx)
-
   -- Subscripts are lists of expressions
   --   a[:i, n]      (we don't have matrices, but we have data frames)
-  subscript = (expr collection, expr* indices)
+  subscript = (expr obj, expr* indices)
+
+  -- Attributes are obj.attr, d->key, name::scope,
   -- TODO: op should be 'speck'
-  attribute = (expr value, token op, token attr, expr_context ctx)
+  attribute = (expr obj, token op, token attr, expr_context ctx)
 
   -- Places that can be mutated.
   -- TODO: Changed to Var %token and expr.Var %token.
@@ -416,7 +415,8 @@ module syntax
     -- Attribute() and then Call()
 
   | IfExp(expr test, expr body, expr orelse)
-  | Tuple %tuple_
+  | Tuple(expr* elts, expr_context ctx)
+
   | List(expr* elts, expr_context ctx)
   | Dict(expr* keys, expr* values)
     -- For the values in {n1, n2}

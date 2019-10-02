@@ -13,7 +13,7 @@ from _devbuild.gen.syntax_asdl import (
     re, re_t, re_repeat, re_repeat_t, class_literal_term, class_literal_term_t,
     posix_class, perl_class,
     name_type, place_expr, place_expr_e, place_expr_t, type_expr_t,
-    comprehension, subscript, attribute, tuple_, proc_sig, proc_sig_t, param,
+    comprehension, subscript, attribute, proc_sig, proc_sig_t, param,
     named_arg, arg_list,
 )
 from _devbuild.gen import grammar_nt
@@ -203,7 +203,7 @@ class Transformer(object):
       p_node = children[i]
       elts.append(self.Expr(p_node))
 
-    return tuple_(elts, expr_context_e.Store)  # unused expr_context_e
+    return expr.Tuple(elts, expr_context_e.Store)  # unused expr_context_e
 
   def _TestlistComp(self, p_node, id0):
     # type: (PNode, Id_t) -> expr_t
@@ -249,7 +249,7 @@ class Transformer(object):
       # atom: '(' [yield_expr|testlist_comp] ')' | ...
       if n == 2:  # () is a tuple
         assert children[1].tok.id == Id.Op_RParen, children[1]
-        return tuple_([], expr_context_e.Store)
+        return expr.Tuple([], expr_context_e.Store)
 
       return self._TestlistComp(children[1], id_)
 

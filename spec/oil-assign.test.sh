@@ -71,15 +71,26 @@ x=1 y=9
 x=9 y=1
 ## END
 
-#### setvar x[1] = 42
+#### setvar mylist[1] = 42 (setitem)
 shopt -s oil:basic
 var mylist = [1,2,3]
-setvar x[1] = 42
-echo -sep ' ' @x
+setvar mylist[1] = 42
+
+echo -sep ' ' @mylist
 ## STDOUT:
 1 42 3
 ## END
 
+#### setvar obj.attr = 42 (setattr)
+shopt -s oil:basic
+# Is there a better way to do this?
+var myobj = {}
+setvar myobj.x = 42
+var val = myobj.x
+echo val=$val
+## STDOUT:
+val=42
+## END
 
 #### duplicate var def results in fatal error
 var x = "global"

@@ -138,3 +138,20 @@ def _expr__Var(obj):
   n1 = runtime.PrettyLeaf(obj.name.val, runtime.Color_StringConst)
   p_node.unnamed_fields.append(n1)
   return p_node
+
+
+def _expr__Const(obj):
+  # type: (expr__Var) -> PrettyNode
+  p_node = runtime.PrettyNode()
+  p_node.abbrev = True
+  p_node.node_type = 'Const'
+
+  tok = obj.c
+  out = p_node.unnamed_fields
+
+  n1 = runtime.PrettyLeaf(tok.id.name, runtime.Color_OtherConst)
+  out.append(n1)
+
+  n2 = runtime.PrettyLeaf(tok.val, runtime.Color_StringConst)
+  out.append(n2)
+  return p_node

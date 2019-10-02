@@ -7,6 +7,7 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import (
     expr_e, expr_t, re, re_e, re_t, class_literal_term, class_literal_term_e,
+    place_expr_e, place_expr_t,
 )
 from _devbuild.gen.runtime_asdl import (
     lvalue, value, value_e, scope_e,
@@ -147,6 +148,29 @@ class OilEvaluator(object):
         # ...named
         kwargs.update(self.EvalExpr(arg.value))
     return pos_args, kwargs
+
+  def _EvalIndices(self, indices):
+    if len(indices) == 1:
+      return self.EvalExpr(indices[0])
+    else:
+      # e.g. mydict[a,b]
+      return tuple(self.EvalExpr(ind) for ind in indices)
+
+  def EvalPlaceExpr(self, place):
+    # type: (place_expr_t) -> None
+    if place.tag == place_expr_e.Var:
+      return lvalue.Named(place.name.val)
+
+    if place.tag == place_expr_e.Subscript:
+      obj = self.EvalExpr(place.obj)
+      index = self._EvalIndices(place.indices)
+      return lvalue.ObjIndex(obj, index)
+
+    if place.tag == place_expr_e.Attribute:
+      obj = self.EvalExpr(place.obj)
+      return lvalue.ObjAttr(obj, place.attr.val)
+
+    raise NotImplementedError(place)
 
   def EvalExpr(self, node):
     # type: (expr_t) -> Any
@@ -447,19 +471,13 @@ class OilEvaluator(object):
       return ret
 
     if node.tag == expr_e.Subscript:
-      collection = self.EvalExpr(node.collection)
-
-      if len(node.indices) == 1:
-        index = self.EvalExpr(node.indices[0])
-      else:
-        # e.g. mydict[a,b]
-        index = tuple(self.EvalExpr(ind) for ind in node.indices)
-
-      return collection[index]
+      obj = self.EvalExpr(node.obj)
+      index = self._EvalIndices(node.indices)
+      return obj[index]
 
     # TODO: obj.method() should be separate
     if node.tag == expr_e.Attribute:  # obj.attr 
-      o = self.EvalExpr(node.value)
+      o = self.EvalExpr(node.obj)
       id_ = node.op.id
       if id_ == Id.Expr_Dot:
         name = node.attr.val

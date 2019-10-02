@@ -981,7 +981,11 @@ class Executor(object):
         lvals = []
         vals = []
         if len(node.lhs) == 1:  # TODO: Optimize this common case (but measure)
-          lval = lvalue.Named(node.lhs[0].name.val)
+          # See ShAssignment
+          # EvalLhs
+          # EvalLhsAndLookup for +=
+
+          lval = self.expr_ev.EvalPlaceExpr(node.lhs[0])
           val = _PyObjectToVal(py_val)
 
           lvals.append(lval)
@@ -989,7 +993,7 @@ class Executor(object):
         else:
           it = iter(py_val)
           for lhs in node.lhs:
-            lval = lvalue.Named(lhs.name.val)
+            lval = self.expr_ev.EvalPlaceExpr(lhs)
             val = _PyObjectToVal(it.next())
 
             lvals.append(lval)
