@@ -68,7 +68,8 @@ typecheck-all() {
   cat _tmp/err.txt
   echo
 
-  local num_errors=$(wc -l < _tmp/err.txt)
+  # Hack to get rid of summary line that appears in some MyPy versions.
+  local num_errors=$(grep -F -v 'Found 1 error in 1 file' _tmp/err.txt | wc -l)
 
   # 1 type error allowed for asdl/pretty.py, because our --no-strict-optional
   # conflicts with demo/typed and so forth.
