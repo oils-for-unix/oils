@@ -860,10 +860,15 @@ oil-keywords() {
     $OIL_LIST "$@"
 }
 
-
 oil-tuple() {
   sh-spec spec/oil-tuple.test.sh --cd-tmp --osh-failures-allowed 1 \
     $OIL_LIST "$@"
 }
+
+oil-interactive() {
+  sh-spec spec/oil-interactive.test.sh --cd-tmp --osh-failures-allowed 0 \
+    $OIL_LIST "$@"
+}
+
 
 "$@"

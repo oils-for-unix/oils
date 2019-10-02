@@ -240,10 +240,7 @@ def SourceStartupFile(rc_path, lang, parse_ctx, ex):
     arena = parse_ctx.arena
     with open(rc_path) as f:
       rc_line_reader = reader.FileLineReader(f, arena)
-      if lang == 'osh':
-        rc_c_parser = parse_ctx.MakeOshParser(rc_line_reader)
-      else:
-        rc_c_parser = parse_ctx.MakeOilParser(rc_line_reader)
+      rc_c_parser = parse_ctx.MakeOshParser(rc_line_reader)
 
       arena.PushSource(source.SourcedFile(rc_path))
       try:
