@@ -377,9 +377,9 @@ module syntax
   attribute = (expr value, token op, token attr, expr_context ctx)
 
   -- Places that can be mutated.
+  -- TODO: Changed to Var %token and expr.Var %token.
   place_expr = 
     Var(token name)
-  | Tuple %tuple_
   | Subscript %subscript
   | Attribute %attribute
 

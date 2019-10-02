@@ -126,3 +126,15 @@ def _command__Simple(obj):
   for w in obj.words:
     p_node.unnamed_fields.append(w.AbbreviatedTree())
   return p_node
+
+
+def _expr__Var(obj):
+  # type: (expr__Var) -> PrettyNode
+  p_node = runtime.PrettyNode()
+  p_node.abbrev = True
+  p_node.node_type = 'Var'
+
+  assert obj.name.id == Id.Expr_Name, obj.name
+  n1 = runtime.PrettyLeaf(obj.name.val, runtime.Color_StringConst)
+  p_node.unnamed_fields.append(n1)
+  return p_node

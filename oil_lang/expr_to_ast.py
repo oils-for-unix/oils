@@ -9,12 +9,12 @@ from _devbuild.gen.syntax_asdl import (
     command_sub, sh_array_literal,
     word_t,
     command, command__VarDecl, command__PlaceMutation, command__Func,
-    expr, expr_t, expr__Dict, expr_context_e,
+    expr, expr_e, expr_t, expr__Var, expr__Dict, expr_context_e,
     re, re_t, re_repeat, re_repeat_t, class_literal_term, class_literal_term_t,
     posix_class, perl_class,
-    name_type, place_expr, place_expr_t, type_expr_t, comprehension, subscript,
-    attribute, tuple_,
-    proc_sig, proc_sig_t, param, named_arg, arg_list,
+    name_type, place_expr, place_expr_e, place_expr_t, type_expr_t,
+    comprehension, subscript, attribute, tuple_, proc_sig, proc_sig_t, param,
+    named_arg, arg_list,
 )
 from _devbuild.gen import grammar_nt
 
@@ -591,30 +591,26 @@ class Transformer(object):
         return self.Expr(p_node.children[1])
       return self.Expr(child0)  # $1 ${x} etc.
 
-  def _Place(self, p_node):
-    # type: (PNode) -> place_expr_t
-    """
-    place: Expr_Name place_trailer*
-    """
-    children = p_node.children
-
-    node = place_expr.Var(children[0].tok)
-
-    n = len(children)
-    i = 1
-    while i < n and ISNONTERMINAL(children[i].typ):
-      node = self._Trailer(node, children[i])
-      i += 1
-    return node
-
   def _PlaceList(self, p_node):
     # type: (PNode) -> List[place_expr_t]
     """
-    place: Expr_Name place_trailer*
-    place_list: place (',' place)*
+    place_list: expr (',' expr)*
     """
     assert p_node.typ == grammar_nt.place_list
-    return [self._Place(c) for c in p_node.children[::2]]
+    places = []  # type: List[place_expr_t]
+    for p in p_node.children[::2]:
+      e = self.Expr(p)
+      if e.tag == expr_e.Var:  # COMPATIBILITY hack
+        assert isinstance(e, expr__Var)
+        places.append(place_expr.Var(e.name))
+      elif e.tag in (
+          place_expr_e.Var, place_expr_e.Subscript, place_expr_e.Attribute):
+        places.append(cast(place_expr_t, e))
+      else:
+        # This blame mechanism seems to work.  Otherwise we don't have a method
+        # to blame an arbitrary expr_t.
+        p_die("Can't assign to this expression", token=p.tok if p.tok else None)
+    return places
 
   def VarDecl(self, p_node):
     # type: (PNode) -> command__VarDecl
