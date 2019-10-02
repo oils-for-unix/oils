@@ -949,35 +949,56 @@ class Executor(object):
     elif node.tag == command_e.VarDecl:
       self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to var
 
-      lval = lvalue.Named(node.lhs[0].name.val)
       py_val = self.expr_ev.EvalExpr(node.rhs)
+      lvals = []
+      vals = []
+      if len(node.lhs) == 1:  # TODO: optimize this common case (but measure)
+        lval = lvalue.Named(node.lhs[0].name.val)
+        val = _PyObjectToVal(py_val)
 
-      val = _PyObjectToVal(py_val)
-      if node.keyword.id in (Id.KW_Var, Id.KW_Const):
-        lookup_mode = scope_e.LocalOnly
+        lvals.append(lval)
+        vals.append(val)
       else:
-        lookup_mode = scope_e.Dynamic
+        it = iter(py_val)
+        for lhs in node.lhs:
+          lval = lvalue.Named(lhs.name.val)
+          val = _PyObjectToVal(it.next())
 
-      self.mem.SetVar(lval, val, (), lookup_mode, keyword_id=node.keyword.id)
+          lvals.append(lval)
+          vals.append(val)
+
+      for lval, val in zip(lvals, vals):
+        self.mem.SetVar(
+            lval, val, (), scope_e.LocalOnly, keyword_id=node.keyword.id)
+
       status = 0
 
     elif node.tag == command_e.PlaceMutation:
       self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to setvar/set
 
       if node.op.id == Id.Arith_Equal:
-        #places = self.expr_eval.EvalPlaceList(node.lhs)
-        lval = lvalue.Named(node.lhs[0].name.val)
         py_val = self.expr_ev.EvalExpr(node.rhs)
+        lvals = []
+        vals = []
+        if len(node.lhs) == 1:  # TODO: Optimize this common case (but measure)
+          lval = lvalue.Named(node.lhs[0].name.val)
+          val = _PyObjectToVal(py_val)
 
-        val = _PyObjectToVal(py_val)
-        if node.keyword.id in (Id.KW_Var, Id.KW_Const):
-          lookup_mode = scope_e.LocalOnly
+          lvals.append(lval)
+          vals.append(val)
         else:
-          # TODO: Change this to LocalOrGlobal
-          lookup_mode = scope_e.Dynamic
+          it = iter(py_val)
+          for lhs in node.lhs:
+            lval = lvalue.Named(lhs.name.val)
+            val = _PyObjectToVal(it.next())
 
-        #for p in places:
-        self.mem.SetVar(lval, val, (), lookup_mode, keyword_id=node.keyword.id)
+            lvals.append(lval)
+            vals.append(val)
+
+        # TODO: Change this to LocalOrGlobal
+        lookup_mode = scope_e.Dynamic
+        for lval, val in zip(lvals, vals):
+          self.mem.SetVar(lval, val, (), lookup_mode, keyword_id=node.keyword.id)
 
       # TODO: Other augmented assignments
       elif node.op.id == Id.Arith_PlusEqual:

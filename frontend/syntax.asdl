@@ -369,7 +369,9 @@ module syntax
   -- named arguments supplied to call.  token is null for f(; ...named).
   named_arg = (token? name, expr value)
 
+  -- TODO: Inline this again
   tuple_ = (expr* elts, expr_context ctx)
+
   -- Subscripts are lists of expressions
   --   a[:i, n]      (we don't have matrices, but we have data frames)
   subscript = (expr collection, expr* indices)

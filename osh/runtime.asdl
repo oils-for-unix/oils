@@ -69,14 +69,11 @@ module runtime
     Named(string name)
   | Indexed(string name, int index)
   | Keyed(string name, string key)
-  attributes (int* spids)
 
-  -- For Oil, evaluated from place_expr.
-  -- Or combine these?
-  place = 
-    Named(string name)
-    -- can be indexed by int, string, tuple, etc.  Anything hashable.
-  | Indexed(string name, any index)
+    -- Oil variants
+  | ObjIndex(any obj, any index)
+  | ObjAttr(any obj, string index)
+  attributes (int* spids)
 
   -- evaluated version of syntax.redir
   redirect = 

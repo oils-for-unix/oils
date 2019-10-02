@@ -56,11 +56,19 @@ x=2
 
 # Python doesn't allow you to have annotation on each variable!
 # https://www.python.org/dev/peps/pep-0526/#where-annotations-aren-t-allowed
-#var x Int, y Int = 3, 4
-setvar x, y = 1, 2
-echo $x $y
+var x Int, y Int = 3, 4
+echo x=$x y=$y
+
+setvar x, y = 1, 9
+echo x=$x y=$y
+
+setvar y, x = x, y
+echo x=$x y=$y
+
 ## STDOUT:
-1 2
+x=3 y=4
+x=1 y=9
+x=9 y=1
 ## END
 
 #### setvar x[1] = 42
