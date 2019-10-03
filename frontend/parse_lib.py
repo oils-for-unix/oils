@@ -344,7 +344,8 @@ class ParseContext(object):
     # type: (token, Lexer, bool) -> Tuple[command_t, token]
 
     # TODO: Create an ExprParser so it's re-entrant.
-    pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.oil_setvar)
+    pnode, last_token = self.e_parser.Parse(lexer,
+                                            grammar_nt.oil_place_mutation)
     if print_parse_tree:
       self.p_printer.Print(pnode)
     ast_node = self.tr.PlaceMutation(pnode)

@@ -136,9 +136,7 @@ module syntax
   -- $0 $1, token for $foo.
   simple_var_sub = (token token)
 
-  -- TODO: Add Oil expressions
-  -- ${x %.3f}   ${x|html}   ${f(x)}   ${obj.attr}
-  -- Problem: ${obj[x]} is already taken.  Need a parse mode for it.
+  -- TODO: Add    ${x %.3f}   ${x|html}
   braced_var_sub = (
       token token,
       id? prefix_op,  -- prefix # or ! operators
@@ -223,7 +221,7 @@ module syntax
   | UnaryAssign(id op_id, sh_lhs_expr child)
   | BinaryAssign(id op_id, sh_lhs_expr left, arith_expr right)
   | Unary(id op_id, arith_expr child)
-  -- TODO: add token for divide by zero
+    -- TODO: add token/speck for divide by zero
   | Binary(id op_id, arith_expr left, arith_expr right)
   | TernaryOp(arith_expr cond, arith_expr true_expr, arith_expr false_expr)
 
@@ -255,14 +253,13 @@ module syntax
 
   command = 
     NoOp
-    -- TODO: respect order of words and redirects
     -- NOTE: block is always a BraceGroup.
   | Simple(word* words, redir* redirects, env_pair* more_env, command? block)
     -- This doesn't technically belong in the LST, but it's convenient for
     -- execution
   | ExpandedAlias(command child, redir* redirects, env_pair* more_env)
   | Sentence(command child, token terminator)
-    -- NOTE: Only represents "bare assignment".  TODO: Rename ShAssign
+    -- NOTE: Only represents "bare assignment".
   | ShAssignment(assign_pair* pairs, redir* redirects)
   | ControlFlow(token token, word? arg_word)
     -- Note: There are spids for every pipeline operator, parallel to
@@ -298,8 +295,7 @@ module syntax
 
     -- Oil stuff
 
-    -- TODO: for implicit lazy or implicit const.  There's no type and no
-    -- comma.
+    -- For 'x = myexpr'.  There's no type and no comma allowed.
   | BareDecl(token lhs, expr rhs)
     -- var, const
   | VarDecl(token? keyword, name_type* lhs, expr rhs)

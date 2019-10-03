@@ -634,11 +634,11 @@ class Transformer(object):
   def PlaceMutation(self, p_node):
     # type: (PNode) -> command__PlaceMutation
     """
-    oil_setvar: place_list (augassign | '=') testlist end_stmt
+    oil_place_mutation: place_list (augassign | '=') testlist end_stmt
     """
     typ = p_node.typ
     children = p_node.children
-    assert typ == grammar_nt.oil_setvar
+    assert typ == grammar_nt.oil_place_mutation
 
     place_list = self._PlaceList(children[0])  # could be a tuple
     op_tok = children[1].tok

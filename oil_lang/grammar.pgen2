@@ -9,8 +9,8 @@
 #   func f(params,)
 
 # Oil patch: removed @= **= //=
-# Note that we're missing div= and xor=, which now look weird.  ^= is
-# exponentiation.  Honestly I don't even like '%='.  |= has a use case.
+# We're missing div= and xor=, which now look weird.  ^= is
+# exponentiation.  |= has a use case.
 augassign: (
     '+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=' | '<<=' | '>>='
 )
@@ -86,9 +86,8 @@ trailer: (
     '(' [arglist] ')'
   | '[' subscriptlist ']'
 
-  # TODO: Consider {} @() @[] trailers for passing a single arg that's a
-  # collection
-  # And also [[ ]] for lazy evaluation.
+  # TODO: {} @() @[] trailers for passing a single arg that's a collection.
+  #       And [[ ]] for lazy evaluation.
 
   | '.' Expr_Name
   | '->' Expr_Name
@@ -153,10 +152,6 @@ dict: dict_pair (',' dict_pair)* [',']
 # multiple (test comp_for) arguments are blocked; keyword unpackings
 # that precede iterable unpackings are blocked; etc.
 
-# TODO: Should be ...args, and also allow ;
-# But NOT @args?  I think that's only for command mode.
-
-# TODO: What about ;
 argument: (
     test [comp_for]
     # named arg
@@ -244,12 +239,12 @@ end_stmt: '}' | ';' | Op_Newline | Eof_Real
 
 oil_var_decl: name_type_list '=' testlist end_stmt
 
-# TODO: This production is more precise as the following, but it's ambiguous :(
+# Note: this production is more precise as the following, but it's ambiguous :(
 #oil_setvar: place augassign testlist end_stmt
 #          | place_list '=' testlist end_stmt
 
 place_list: expr (',' expr)*
-oil_setvar: place_list (augassign | '=') testlist end_stmt
+oil_place_mutation: place_list (augassign | '=') testlist end_stmt
 
 # For $stringfunc(x, y=1) and @arrayfunc(a, b='s')
 oil_arglist: '(' [arglist] ')'
@@ -342,7 +337,7 @@ class_literal_term: (
   | '.' Expr_Name
     # Reserved for [[=character equivalents=]] (Unicode)
   | '=' Expr_Name
-    # TODO: Do they actually work in bash/awk/egrep/sed/etc.?
+    # TODO: Do these char classes actually work in bash/awk/egrep/sed/etc.?
 
 )
 class_literal: '[' class_literal_term+ ']'
