@@ -1404,17 +1404,17 @@ class CommandParser(object):
     if self.c_id == Id.KW_Var:
       kw_token = word_.LiteralToken(self.cur_word)
       self._Next()
-      return self.w_parser.ParseVar(kw_token)
+      return self.w_parser.ParseVarDecl(kw_token)
 
     if self.c_id == Id.KW_SetVar:
       kw_token = word_.LiteralToken(self.cur_word)
       self._Next()
-      return self.w_parser.ParseSetVar(kw_token)
+      return self.w_parser.ParsePlaceMutation(kw_token)
 
     if self.parse_opts.set and self.c_id == Id.KW_Set:
       kw_token = word_.LiteralToken(self.cur_word)
       self._Next()
-      return self.w_parser.ParseSetVar(kw_token)
+      return self.w_parser.ParsePlaceMutation(kw_token)
 
     # This never happens?
     p_die('Unexpected word while parsing compound command', word=self.cur_word)

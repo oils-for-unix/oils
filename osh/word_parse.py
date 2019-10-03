@@ -800,7 +800,7 @@ class WordParser(object):
     cs_part.spids.append(right_spid)
     return cs_part
 
-  def ParseVar(self, kw_token):
+  def ParseVarDecl(self, kw_token):
     # type: (token) -> command_t
     """
     oil_var_decl: name_type_list '=' testlist end_stmt
@@ -823,7 +823,7 @@ class WordParser(object):
     self._Next(lex_mode_e.ShCommand)  # always back to this
     return enode
 
-  def ParseSetVar(self, kw_token):
+  def ParsePlaceMutation(self, kw_token):
     # type: (token) -> command_t
     """
     setvar a[i] = 1

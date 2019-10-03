@@ -254,13 +254,21 @@ oil_setvar: place_list (augassign | '=') testlist end_stmt
 # For $stringfunc(x, y=1) and @arrayfunc(a, b='s')
 oil_arglist: '(' [arglist] ')'
 
+#
+# Other Entry Points
+#
+
 # for if (x > 0) etc.
 oil_expr: '(' testlist ')'
-# e.g. return 1 + 2 * 3
-command_expr: testlist end_stmt
 
 # Example: for (a Int, b Int in expr) { ... }
 oil_for: '(' name_type_list 'in' testlist ')'
+
+# e.g. return 1 + 2 * 3
+command_expr: testlist end_stmt
+
+# $[d->key] etc.
+dollar_bracket: testlist ']'
 
 # Signatures for proc and func.
 # 
