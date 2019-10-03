@@ -11,8 +11,8 @@ from _devbuild.gen.syntax_asdl import (
     word_part__AssocArrayLiteral,
     word_part__Literal, word_part__EscapedLiteral,
     word_part__TildeSub,
-    word_part__ArithSub, word_part__BracedTuple,
-    word_part__ExtGlob, word_part__Splice, word_part__FuncCall,
+    word_part__ArithSub, word_part__BracedTuple, word_part__ExtGlob,
+    word_part__Splice, word_part__FuncCall, word_part__ExprSub,
 
     word, word_t, 
     word__Compound, word__Token, word__Empty, word__BracedTree,
@@ -179,6 +179,9 @@ def LeftMostSpanForPart(part):
 
   elif isinstance(part, word_part__FuncCall):
     return part.name.span_id  # @f(x) or $f(x)
+
+  elif isinstance(part, word_part__ExprSub):
+    return part.left.span_id  # $[
 
   else:
     raise AssertionError(part.__class__.__name__)

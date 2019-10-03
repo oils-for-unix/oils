@@ -74,7 +74,7 @@ def _ValueToPartValue(val, quoted):
     return part_value.Array(val.d.values())
 
   elif val.tag == value_e.Obj:
-    return part_value.String(repr(val.obj), quoted, not quoted)
+    return part_value.String(str(val.obj), quoted, not quoted)
 
   else:
     # Undef should be caught by _EmptyStrOrError().
@@ -1046,6 +1046,11 @@ class _WordEvaluator(object):
       else:
         raise AssertionError(id_)
 
+      part_vals.append(part_val)
+
+    elif part.tag == word_part_e.ExprSub:
+      py_val = self.expr_ev.EvalExpr(part.child)
+      part_val = part_value.String(str(py_val))
       part_vals.append(part_val)
 
     else:

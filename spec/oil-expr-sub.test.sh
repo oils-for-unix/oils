@@ -1,36 +1,42 @@
-# Test Oil expressions within ${}
+# Test Oil expressions within $[]
 
-#### ${f(x)}
+#### $[f(x)]
 func f() {
   return 42
 }
-echo ${f(x)}
+echo $[f()]
 ## STDOUT:
 42
 ## END
 
-#### ${obj.attr}
+#### $[obj.attr]
 var obj = /d+/
 set obj.x = 42
-echo ${obj.attr}
+echo $[obj.x]
 ## STDOUT:
 42
 ## END
 
-#### ${d['key']}
+#### $[d['key']]
 var d = {}
 set d['key'] = 42
-echo ${d['key']}
+echo $[d['key']]
 ## STDOUT:
 42
 ## END
 
-# NOTE: d->key is technically optional?  
-
-#### ${d->key'}
+#### $[d->key]
 var d = {}
 set d['key'] = 42
 echo $[d->key]
 ## STDOUT:
 42
+## END
+
+#### In Double quotes
+var d = {}
+set d['key'] = 42
+echo "key $[d->key]"
+## STDOUT:
+key 42
 ## END

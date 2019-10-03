@@ -268,7 +268,7 @@ oil_for: '(' name_type_list 'in' testlist ')'
 command_expr: testlist end_stmt
 
 # $[d->key] etc.
-dollar_bracket: testlist ']'
+oil_expr_sub: testlist ']'
 
 # Signatures for proc and func.
 # 

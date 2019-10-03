@@ -183,6 +183,8 @@ module syntax
   | Splice(token name)
     -- $strfunc(x) and @arrayfunc(x)
   | FuncCall(token name, arg_list args)
+    -- $[d->key], etc.
+  | ExprSub(token left, expr child)
   attributes (int* spids)
 
   word = 

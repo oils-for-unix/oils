@@ -549,13 +549,13 @@ class WordParser(object):
       return self._ReadArithSub()
 
     if self.token_type == Id.Left_DollarBracket:
-      return self._DollarBracketIsReserved()
+      return self._ReadExprSub(lex_mode_e.DQ)
 
     raise AssertionError(self.cur_token)
 
   def _ReadLeftParts(self):
     # type: () -> word_part_t
-    """Read substitutions and quoted strings (for the OUTER context)."""
+    """Read substitutions and quoted strings (for lex_mode_e.ShCommand)."""
 
     if self.token_type == Id.Left_DoubleQuote:
       return self._ReadDoubleQuoted()
@@ -583,7 +583,7 @@ class WordParser(object):
       return self._ReadArithSub()
 
     if self.token_type == Id.Left_DollarBracket:
-      return self._DollarBracketIsReserved()
+      return self._ReadExprSub(lex_mode_e.ShCommand)
 
     raise AssertionError('%s not handled' % self.cur_token)
 
@@ -799,6 +799,16 @@ class WordParser(object):
     cs_part.spids.append(left_spid)
     cs_part.spids.append(right_spid)
     return cs_part
+
+  def _ReadExprSub(self, lex_mode):
+    # type: (lex_mode_e) -> word_part__ExprSub
+    """  $[d->key]  $[obj.method()]  etc.  """
+    left_token = self.cur_token
+    self._Next(lex_mode_e.Expr)
+    enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr_sub)
+    self._Next(lex_mode)
+    node = word_part.ExprSub(left_token, enode)
+    return node
 
   def ParseVarDecl(self, kw_token):
     # type: (token) -> command_t

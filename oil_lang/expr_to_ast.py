@@ -526,6 +526,9 @@ class Transformer(object):
         items = [self._ArrayItem(p) for p in children[1:-1]]
         return expr.ArrayLiteral(left_tok, items)
 
+      elif typ == grammar_nt.oil_expr_sub:
+        return self.Expr(children[0])
+
       #
       # Oil Lexer Modes
       #
