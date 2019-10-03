@@ -87,6 +87,7 @@ trailer: (
   | '[' subscriptlist ']'
 
   # TODO: {} @() @[] trailers for passing a single arg that's a collection.
+  #      %{} %() %"" too.
   #       And [[ ]] for lazy evaluation.
 
   | '.' Expr_Name

@@ -162,10 +162,7 @@ SHELL OPTIONS
                   parse_at               echo @array @arrayfunc(x, y)
                   parse_brace            if true { ... }; cd ~/src { ... }
                   parse_paren            if (x > 0) ...
-                  X parse_brace_expr     ${a[1 + f(x)]}  ${d->mykey}
                   X parse_redir_expr     >> var x   << 'here string'
-                  X parse_dollar_slash   egrep $/ d+ / *.txt
-                  X parse_rawc           r'\'   c'\n'   c"$x\n"
                   X longopts             test -file, read -delim, etc.
                   more_errexit           More errexit checks --  at command sub
                   simple_word_eval       No splitting, static globbing
@@ -173,6 +170,11 @@ SHELL OPTIONS
                   parse_equals           x = 's' (for cleaner config blocks)
                   parse_set              instead of setvar
                   simple_echo            Doesn't join args; -sep -end and --
+                  X parse_amp            echo hi &2 > /dev/null
+                  X parse_do             do f(x)
+                  X parse_dollar_slash   egrep $/ d+ / *.txt
+                  X parse_dparen         remove ((
+                  X parse_rawc           r'\'   c'\n'   c"$x\n"
                   X simple_test_builtin  Only file tests, remove [, status 2
                   X no_old_builtins      local/declare/etc.  pushd/popd/dirs
                                          source  unset  printf  [un]alias
