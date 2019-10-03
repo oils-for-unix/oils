@@ -33,8 +33,8 @@ Test results, metrics, and benchmarks are shown below.
 
 ### Documentation
 
-- [INSTALL][]: How do I install Oil?  This text file is also in the tarball.
-- [OSH User Manual](doc/osh-manual.html): How do I use it?
+- [INSTALL][]. How do I install Oil?  This text file is also in the tarball.
+- [OSH User Manual](doc/osh-manual.html). How do I use it?
   - [Known Differences](doc/known-differences.html) is trivia for advanced
     users.  It lists differences between Oil and other shells.
   - [OSH Quick Reference](doc/osh-quick-ref.html), with examples (incomplete).
@@ -143,6 +143,24 @@ Tree-shaking:
   shells use at startup?
 - [OVM Build](benchmarks.wwz/ovm-build/).  How long does it take for end users
   to build Oil?  How big is the resulting binary?
+
+### Source Code
+
+These files may help you understand how Oil is implemented, i.e. with
+domain-specific languages and code generation.
+
+- [_devbuild/gen/id.h](source-code.wwz/_devbuild/gen/id.h). A list of language
+  elements, used in the lexer and in multiple parsers and evaluators.
+- The regex-based lexer uses two stages of code generation:
+  - [frontend/lex.py](source-code.wwz/frontend/lex.py)
+  - [_devbuild/gen/osh-lex.re2c.h](source-code.wwz/_devbuild/gen/osh-lex.re2c.h)
+  - [_devbuild/gen/osh-lex.h](source-code.wwz/_devbuild/gen/osh-lex.h)
+- [frontend/syntax.asdl](source-code.wwz/frontend/syntax.asdl). The syntax tree
+  for OSH and Oil.
+- [oil_lang/grammar.pgen2](source-code.wwz/oil_lang/grammar.pgen2). The
+  expression grammar for Oil.  In contrast, the OSH parsers are hand-written.
+
+Also see the [oilshell/oil](https://github.com/oilshell/oil) repository.
 
 <!-- - [OHeap](benchmarks.wwz/oheap/).  Metrics for a possible AST encoding format. -->
 

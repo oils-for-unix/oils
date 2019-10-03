@@ -246,4 +246,20 @@ oil-grammar() {
   PYTHONPATH=. oil_lang/cmd_parse.py "$@"
 }
 
+important-source-code() {
+  local dest=_tmp/important-source-code
+  mkdir -p $dest
+
+  for rel_path in \
+    frontend/lex.py \
+    _devbuild/gen/osh-lex.re2c.h \
+    _devbuild/gen/osh-lex.h \
+    _devbuild/gen/id.h \
+    frontend/syntax.asdl \
+    oil_lang/grammar.pgen2; do
+  mkdir -p $dest/$(dirname $rel_path)
+    cp --no-target-directory -v $rel_path $dest/$rel_path
+  done
+}
+
 "$@"

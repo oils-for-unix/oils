@@ -383,6 +383,12 @@ compress() {
   time zip -r -q $out .  # recursive, quiet
   popd
 
+  log "--- source-code"
+  local out="$root/source-code.wwz"
+  pushd _tmp/important-source-code
+  time zip -r -q $out .  # recursive, quiet
+  popd
+
   compress-benchmarks
 
   tree _release/VERSION
