@@ -76,9 +76,7 @@ echo $a $((1 + (2*3)))
 echo $a $((1 + (2 * (3+4))))
 ## stdout: 15 15
 
-#### Alternative $[] syntax
+#### ExprSub $[] happpens to behave the same on simple cases
 echo $[1 + 2] "$[3 * 4]"
 ## stdout: 3 12
 ## N-I mksh stdout: $[1 + 2] $[3 * 4]
-## N-I osh status: 2
-## N-I osh stdout-json: ""

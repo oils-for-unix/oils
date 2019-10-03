@@ -61,7 +61,7 @@ from _devbuild.gen.syntax_asdl import (
 
     word, word_t, word__Compound, word__Token,
     word_part, word_part_t, word_part__Literal, word_part__ArithSub,
-    word_part__ExtGlob,
+    word_part__ExtGlob, word_part__ExprSub,
 
     command, command_t, command__ForExpr, command__Proc, command__Func,
 
@@ -801,7 +801,7 @@ class WordParser(object):
     return cs_part
 
   def _ReadExprSub(self, lex_mode):
-    # type: (lex_mode_e) -> word_part__ExprSub
+    # type: (lex_mode_t) -> word_part__ExprSub
     """  $[d->key]  $[obj.method()]  etc.  """
     left_token = self.cur_token
     self._Next(lex_mode_e.Expr)
