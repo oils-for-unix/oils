@@ -54,7 +54,7 @@ shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 
-readonly REPO_ROOT=$(cd $(dirname $0)/.. && pwd)
+readonly REPO_ROOT=$(cd $(dirname $0)/..; pwd)
 
 # Dir is defined in build/test.sh.
 readonly OSH_RELEASE_BINARY=$REPO_ROOT/_tmp/oil-tar-test/oil-$OIL_VERSION/_bin/osh
@@ -445,6 +445,9 @@ metrics() {
   metrics/bytecode.sh run-for-release
   metrics/native-code.sh run-for-release
   build/cpython-defs.sh run-for-release
+
+  # For another .wwz file
+  build/doc.sh important-source-code
 
   tree $out
 }

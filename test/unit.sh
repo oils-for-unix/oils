@@ -126,7 +126,13 @@ run-all-and-log() {
   # in NullSchema.
 
   echo 'status,elapsed_secs,test,test_HREF' > $tasks_csv
-  time tests-to-run | xargs -n 1 -- $0 run-test-and-log $tasks_csv || status=1
+
+  # There are no functions here, so disabline errexit is safe.
+  # Note: In Oil, this could use shopt { }.
+  set +o errexit
+  time tests-to-run | xargs -n 1 -- $0 run-test-and-log $tasks_csv
+  status=$?
+  set -o errexit
 
   if test $status -ne 0; then
     cat $tasks_csv
