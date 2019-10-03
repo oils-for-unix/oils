@@ -16,15 +16,15 @@
 -- * let arithmetic (rarely used)
 -- * coprocesses -- one with arg and one without
 -- * select block
--- * 1>&2- to close redirect
 -- * case fallthrough ;& and ;;&
+-- * 1>&2- to close redirect
+-- * named descriptors (bash): cmd {fd1}>left.txt {fd2}>right.txt
 
--- Parsed but Not Implemented
+-- Parsed but Not Implemented:
 -- * <> redirect
 
 -- TODO: Preserve these source differences:
 -- * order of redirects: 'echo >out.txt hi'  vs echo hi >out.txt
---   * In the printer, I want to preserve line breaks!  foo \bar?
 
 -- Refactorings:
 --
