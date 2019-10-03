@@ -70,7 +70,9 @@ import time
 
 OSH_CPYTHON = ('osh', 'osh-dbg')
 OTHER_OSH = ('osh_ALT', 'osh-byterun')
+
 OIL_CPYTHON = ('oil', 'oil-dbg')
+OTHER_OIL = ('oil_ALT',)
 
 
 class ParseError(Exception):
@@ -482,7 +484,7 @@ class Stats(object):
     elif cell_result == Result.FAIL:
       # Special logic: don't count osh_ALT beacuse its failures will be
       # counted in the delta.
-      if sh_label not in OTHER_OSH:
+      if sh_label not in OTHER_OSH + OTHER_OIL:
         c['num_failed'] += 1
 
       if sh_label in OSH_CPYTHON + OIL_CPYTHON:
@@ -1132,15 +1134,24 @@ def main(argv):
 
   shell_pairs = []
   saw_osh = False
+  saw_oil = False
   for path in shells:
     name, _ = os.path.splitext(path)
     label = os.path.basename(name)
+
     if label == 'osh':
       # change the second 'osh' to 'osh_ALT' so it's distinct
       if saw_osh:
         label = 'osh_ALT'
       else:
         saw_osh = True
+
+    if label == 'oil':
+      if saw_oil:
+        label = 'oil_ALT'
+      else:
+        saw_oil = True
+
     shell_pairs.append((label, path))
 
   with open(test_file) as f:

@@ -58,6 +58,7 @@ readonly REPO_ROOT=$(cd $(dirname $0)/..; pwd)
 
 # Dir is defined in build/test.sh.
 readonly OSH_RELEASE_BINARY=$REPO_ROOT/_tmp/oil-tar-test/oil-$OIL_VERSION/_bin/osh
+readonly OIL_RELEASE_BINARY=$REPO_ROOT/_tmp/oil-tar-test/oil-$OIL_VERSION/_bin/oil
 
 source devtools/common.sh  # html-footer
 
@@ -160,6 +161,7 @@ _release-build() {
   build/test.sh oil-tar
 
   ln -s -f --no-target-directory -v oil.ovm $OSH_RELEASE_BINARY
+  ln -s -f --no-target-directory -v oil.ovm $OIL_RELEASE_BINARY
 
   # TODO: Move these?
 
@@ -222,8 +224,11 @@ _test-release-build() {
 
   run-other-tests
 
-  # Just test the release build (not under CPython.  That comes later.)
-  OSH_LIST="$OSH_RELEASE_BINARY" test/spec.sh all
+  # Just test the release build (as opposed to Oil under CPython, which comes
+  # later.)
+  export OSH_LIST="$OSH_RELEASE_BINARY" OIL_LIST="$OIL_RELEASE_BINARY"
+  test/spec.sh osh-all
+  test/spec.sh oil-all
 }
 
 # NOTE: Following opy/README.md.  Right now this is a quick and dirty
@@ -262,12 +267,17 @@ test-opy() {
 
 spec-all() {
   # 8/2019: Added smoosh
-  OSH_LIST="$REPO_ROOT/bin/osh $OSH_RELEASE_BINARY" test/spec.sh all-and-smoosh
+  export OSH_LIST="$REPO_ROOT/bin/osh $OSH_RELEASE_BINARY"
+  export OIL_LIST="$REPO_ROOT/bin/oil $OIL_RELEASE_BINARY"
+  test/spec.sh all-and-smoosh
+  #test/spec.sh oil-all
 }
 
 # For quickly debugging failures that don't happen in dev mode.
 spec-one() {
-  OSH_LIST="$REPO_ROOT/bin/osh $OSH_RELEASE_BINARY" test/spec.sh "$@"
+  export OSH_LIST="$REPO_ROOT/bin/osh $OSH_RELEASE_BINARY"
+  export OIL_LIST="$REPO_ROOT/bin/oil $OIL_RELEASE_BINARY"
+  test/spec.sh "$@"
 }
 
 

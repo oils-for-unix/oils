@@ -40,10 +40,10 @@ osh-file() {
   cat >_tmp/smoke-prog.sh <<EOF
 echo hi
 
-func() {
+myfunc() {
   echo "inside func"
 }
-func 1 2 3
+myfunc 1 2 3
 
 # TODO: Test vars don't persist.
 (echo "in subshell"; echo "another")
@@ -88,7 +88,7 @@ echo \$(
 echo command sub
 )
 
-func() {
+myfunc() {
   echo hi
 }
 

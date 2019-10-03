@@ -791,8 +791,8 @@ html-demo() {
 all-and-smoosh() {
   ### Run everything that we can publish
 
-  all-osh
-  all-oil
+  osh-all
+  oil-all
 
   # These aren't all green/yellow yet, and are slow.
   smoosh-html
