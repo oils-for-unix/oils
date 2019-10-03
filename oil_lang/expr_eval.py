@@ -168,7 +168,11 @@ class OilEvaluator(object):
 
     if place.tag == place_expr_e.Attribute:
       obj = self.EvalExpr(place.obj)
-      return lvalue.ObjAttr(obj, place.attr.val)
+      if place.op.id == Id.Expr_RArrow:
+        index = place.attr.val
+        return lvalue.ObjIndex(obj, index)
+      else:
+        return lvalue.ObjAttr(obj, place.attr.val)
 
     raise NotImplementedError(place)
 
