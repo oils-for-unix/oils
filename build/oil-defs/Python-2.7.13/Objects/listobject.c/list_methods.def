@@ -1,6 +1,7 @@
 // Python-2.7.13/Objects/listobject.c
 
 static PyMethodDef list_methods[] = {
+  {"__getitem__", (PyCFunction)list_subscript, METH_O|METH_COEXIST},
   {"append", (PyCFunction)listappend, METH_O},
   {"extend", (PyCFunction)listextend, METH_O},
   {"pop", (PyCFunction)listpop, METH_VARARGS},

@@ -1,6 +1,7 @@
 // Python-2.7.13/Objects/dictobject.c
 
 static PyMethodDef mapp_methods[] = {
+  {"__getitem__", (PyCFunction)dict_subscript, METH_O | METH_COEXIST},
   {"get", (PyCFunction)dict_get, METH_VARARGS},
   {"pop", (PyCFunction)dict_pop, METH_VARARGS},
   {"keys", (PyCFunction)dict_keys, METH_NOARGS},
