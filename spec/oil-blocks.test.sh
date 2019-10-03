@@ -2,7 +2,7 @@
 
 
 #### cd with block
-shopt -s oil:basic
+shopt -s oil:all
 # OLDPWD is NOT defined
 cd / { echo $PWD; echo OLDPWD=${OLDPWD:-} }; echo done
 echo $(basename $PWD)  # restored
@@ -22,7 +22,7 @@ oil-blocks.test.sh
 ## END
 
 #### cd with block: fatal error in block
-shopt -s oil:basic
+shopt -s oil:all
 cd / {
   echo one
   false
@@ -35,7 +35,7 @@ one
 
 
 #### cd with block: return in block
-shopt -s oil:basic
+shopt -s oil:all
 f() {
   cd / {
     echo one
@@ -51,7 +51,7 @@ end func
 ## END
 
 #### cd with block: break in block
-shopt -s oil:basic
+shopt -s oil:all
 f() {
   cd / {
     echo one
@@ -73,7 +73,7 @@ one
 ## END
 
 #### cd with block exits with status 0
-shopt -s oil:basic
+shopt -s oil:all
 cd / {
   echo block
 
@@ -88,7 +88,7 @@ status=0
 ## END
 
 #### block has its own scope, e.g. shadows outer vars
-shopt -s oil:basic
+shopt -s oil:all
 var x = 1
 cd / {
   #set y = 5  # This would be an error because set doesn't do dynamic lookup

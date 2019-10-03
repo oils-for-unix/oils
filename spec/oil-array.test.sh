@@ -8,7 +8,7 @@ len=3
 ## END
 
 #### string array with command sub, varsub, etc.
-shopt -s oil:basic
+shopt -s oil:all
 
 var x = 1
 var a = @[$x $(echo hi) 'sq' "dq $x"]
@@ -23,7 +23,7 @@ dq 1
 ## END
 
 #### arrays with expressions
-shopt -s oil:basic
+shopt -s oil:all
 
 # Does () make makes sense?
 
@@ -42,7 +42,7 @@ len=3
 ## END
 
 #### Empty arrays and using Array[T]
-shopt -s oil:basic
+shopt -s oil:all
 
 var b = Array[Bool]()
 var i = Array[Int]()
@@ -64,7 +64,7 @@ False
 
 
 #### Arrays from generator expressions
-shopt -s oil:basic
+shopt -s oil:all
 
 var b = Array[Bool](true for _ in 1:3)
 

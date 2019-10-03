@@ -151,7 +151,7 @@ argv.py @split(x)
 ## END
 
 #### @range()
-shopt -s oil:basic
+shopt -s oil:all
 echo @range(10, 15, 2)
 ## STDOUT:
 10
@@ -408,7 +408,7 @@ echo $len(two)
 ## END
 
 #### List comprehension
-shopt -s oil:basic
+shopt -s oil:all
 
 var n = [i*2 for i in range(5)]
 echo -sep ' ' @n

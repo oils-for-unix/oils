@@ -3,7 +3,6 @@
 # TODO: Test that there are exceptions when there are too many args, etc.
 
 #### Bool()
-shopt -s oil:basic
 var a = Bool( @() )
 var b = Bool( @(foo) )
 echo $a $b
@@ -13,7 +12,6 @@ True
 ## END
 
 #### Int()
-shopt -s oil:basic
 var a = Int("3")
 var b = Int("-35")
 echo $a $b
@@ -24,7 +22,6 @@ echo $a $b
 
 #### Float()
 # TODO: This needs a lot more testing, for precision, etc.
-shopt -s oil:basic
 var a = Float("1.2")
 var b = Float("3.4")
 echo $a $b
@@ -35,7 +32,6 @@ echo $a $b
 
 #### Str()
 # TODO: more testing
-shopt -s oil:basic
 var a = Str(5)
 var b = Str(42)
 echo $a $b
@@ -46,7 +42,6 @@ echo $a $b
 
 #### Tuple()
 # TODO: more testing
-shopt -s oil:basic
 var a = Tuple()
 echo $a
 ## STDOUT:
@@ -55,7 +50,6 @@ echo $a
 
 #### List()
 # TODO: more testing
-shopt -s oil:basic
 var a = List(range(3))
 echo $a
 ## STDOUT:
@@ -64,7 +58,6 @@ echo $a
 
 #### Dict()
 # TODO: more testing
-shopt -s oil:basic
 var a = Dict()
 #repr a
 echo $len(a)
@@ -73,7 +66,6 @@ echo $len(a)
 ## END
 
 #### join()
-shopt -s simple_word_eval
 var x = @(a b 'c d')
 
 var y = join(x)
@@ -87,7 +79,6 @@ argv.py $z
 ## END
 
 #### abs
-shopt -s oil:basic
 
 # Also test smooshing
 echo $abs(-5)$abs(-0)$abs(5)
@@ -100,7 +91,6 @@ echo $abs(-5) $abs(-0) $abs(5)
 ## END
 
 #### any() and all()
-shopt -s oil:basic
 var a1 = all( @(yes yes) )
 var a2 = all( @(yes '') )
 var a3 = all( @('' '') )
@@ -124,7 +114,6 @@ False
 ## END
 
 #### sum()
-shopt -s oil:basic
 var start = 42
 
 echo $sum( range(3) )
@@ -137,7 +126,6 @@ echo $sum( range(0), start)
 ## END
 
 #### sorted()
-shopt -s oil:basic
 var x = sorted(range(3))
 echo @x
 ## STDOUT:
@@ -147,7 +135,6 @@ echo @x
 ## END
 
 #### reversed()
-shopt -s oil:basic
 var x = reversed(range(3))
 echo @x
 ## STDOUT:
@@ -158,7 +145,6 @@ echo @x
 
 #### enumerate()
 echo $enumerate
-shopt -s oil:basic
 # TODO: need new for loop syntax
 for (i, a in enumerate( @(a b c) )) {
   echo $i $a
@@ -171,7 +157,6 @@ for (i, a in enumerate( @(a b c) )) {
 
 #### zip()
 echo $zip
-shopt -s oil:basic
 var a = @(1 2 3)
 var b = @(a b c)
 for (item in zip(a, b)) {

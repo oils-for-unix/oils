@@ -72,7 +72,7 @@ x=9 y=1
 ## END
 
 #### setvar d->key = 42 (setitem)
-shopt -s oil:basic
+shopt -s oil:all
 
 var d = {}
 setvar d['f2'] = 42
@@ -89,7 +89,7 @@ f2=42
 ## END
 
 #### setvar mylist[1] = 42 (setitem)
-shopt -s oil:basic
+shopt -s oil:all
 var mylist = [1,2,3]
 setvar mylist[1] = 42
 
@@ -99,7 +99,7 @@ echo -sep ' ' @mylist
 ## END
 
 #### setvar obj.attr = 42 (setattr)
-shopt -s oil:basic
+shopt -s oil:all
 
 # TODO: dicts and list can't have arbitrary attributes set.  But right now
 # regex objects can.  Should we change that?
@@ -114,7 +114,7 @@ val=42
 ## END
 
 #### setvar f()[2] = 42 (setitem)
-shopt -s oil:basic
+shopt -s oil:all
 
 var mylist = [1,2,3]
 func f() {

@@ -25,7 +25,7 @@ hi
 ## END
 
 #### func: default values for positional params
-shopt -s oil:basic
+shopt -s oil:all
 func add(x Int, y=1, z=1+2*3) {
   return x + y + z
 }
@@ -37,7 +37,7 @@ echo $add(3,4)
 ## END
 
 #### pass too many positional params to func (without spread)
-shopt -s oil:basic
+shopt -s oil:all
 func add(x, y) {
   return x + y
 }
@@ -51,7 +51,7 @@ f=3
 ## END
 
 #### Positional Spread
-shopt -s oil:basic
+shopt -s oil:all
 func add(x, y, ...args) {
   echo @args
   return x + y
@@ -77,7 +77,7 @@ pass f(x=99)
 ## END
 
 #### Func with missing named param with no default
-shopt -s oil:basic
+shopt -s oil:all
 func add(x Int, y Int ; verbose Bool) {
   if (verbose) {
     echo 'verbose'
@@ -97,7 +97,7 @@ verbose
 ## END
 
 #### Func passed wrong named param
-shopt -s oil:basic
+shopt -s oil:all
 func add(x, y) {
   return x + y
 }
@@ -112,7 +112,7 @@ x=5
 
 
 #### Named Spread
-shopt -s oil:basic
+shopt -s oil:all
 func add(x, y; verbose=true, ...named) {
   if (verbose) { echo 'verbose' }
   echo @named | sort
@@ -130,7 +130,7 @@ ret=5
 ## END
 
 #### Func with varargs
-shopt -s oil:basic
+shopt -s oil:all
 func printf(fmt, ...args) {
   pp fmt
   # Should be a LIST
@@ -190,11 +190,11 @@ status=42
 ## END
 
 #### Open proc has "$@"
-shopt -s oil:basic
+shopt -s oil:all
 proc foo { 
   echo ARGV "$@"
 }
-set -- a b c
+builtin set -- a b c
 foo x y z
 ## STDOUT:
 ARGV
@@ -204,12 +204,12 @@ z
 ## END
 
 #### Closed proc doesn't have "$@"
-shopt -s oil:basic
+shopt -s oil:all
 proc foo(d, e, f) { 
   echo params $d $e $f
   echo ARGV "$@"
 }
-set -- a b c
+builtin set -- a b c
 foo x y z
 ## STDOUT:
 params
@@ -231,7 +231,7 @@ x=foo
 
 #### Proc with explicit args
 
-# doesn't require oil:basic
+# doesn't require oil:all
 proc f(x, y, z) {
   echo $x $y $z
   var ret = 42
@@ -253,7 +253,7 @@ status=42
 # func(**opt)  # Assumes keyword args match?
 # parse :grep_opts :opt @ARGV
 
-shopt -s oil:basic
+shopt -s oil:all
 
 proc f(@names) {
   echo names: @names
@@ -290,7 +290,7 @@ hi
 ## END
 
 #### inline function calls with spread, named args, etc.
-shopt -s oil:basic
+shopt -s oil:all
 
 func f(a, b=0, ...args; c, d=0, ...named) {
   echo __ args: @args

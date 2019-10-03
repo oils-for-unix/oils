@@ -52,7 +52,7 @@ echo status=$?
 ## stdout: status=2
 
 #### echo -sep, -end, -n, varying flag syntax
-shopt -s oil:basic
+shopt -s oil:all
 var a = @('a b' 'c d')
 echo @a
 echo .
@@ -94,21 +94,21 @@ xy
 ## END
 
 #### echo -e not supported
-shopt -s oil:basic
+shopt -s oil:all
 echo -e foo
 echo status=$?
 ## stdout-json: ""
 ## status: 2
 
 #### echo syntax error
-shopt -s oil:basic
+shopt -s oil:all
 echo ---end foo
 echo status=$?
 ## stdout-json: ""
 ## status: 2
 
 #### echo --
-shopt -s oil:basic
+shopt -s oil:all
 echo --
 # This is annoying
 echo -- --

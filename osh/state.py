@@ -198,14 +198,6 @@ SET_OPTIONS = [
 # Used by core/builtin_comp.py too.
 SET_OPTION_NAMES = set(name for _, name in SET_OPTIONS)
 
-_OIL_OPTION_NAMES = [
-    'simple_word_eval',  # No splitting (arity isn't data-dependent)
-                         # Don't reparse program data as globs
-    'more_errexit',  # check after command sub
-    'simple_echo',  # longopts, -sep -end, etc.
-    'simple_test_builtin',  # only file tests (no strings), remove [, status 2
-]
-
 _STRICT_OPTION_NAMES = [
     # NOTE:
     # - some are PARSING: strict-glob, strict-backslash
@@ -224,6 +216,18 @@ _STRICT_OPTION_NAMES = [
     'strict_glob',  # GlobParser
 ]
 
+# These will break some programs, but the fix should be simple.
+_BASIC_RUNTIME_OPTIONS = [
+    'simple_word_eval',  # No splitting (arity isn't data-dependent)
+                         # Don't reparse program data as globs
+    'more_errexit',  # check after command sub
+    'simple_test_builtin',  # only file tests (no strings), remove [, status 2
+]
+
+_AGGRESSIVE_RUNTIME_OPTIONS = [
+    'simple_echo',  # -sep, -end, --, etc.
+]
+
 # Used by core/builtin_comp.py too.
 SHOPT_OPTION_NAMES = [
     'nullglob', 'failglob',
@@ -233,10 +237,10 @@ SHOPT_OPTION_NAMES = [
     'expand_aliases', 'extglob', 'lastpipe',  # language features always on
     'progcomp', 'histappend', 'hostcomplete',  # not sure what these are
     'cmdhist',  # multi-line commands in history
-] + _STRICT_OPTION_NAMES + _OIL_OPTION_NAMES
+] + _STRICT_OPTION_NAMES + _BASIC_RUNTIME_OPTIONS + _AGGRESSIVE_RUNTIME_OPTIONS
 
 # Oil parse options only.
-_OIL_PARSE_OPTION_NAMES = [
+_BASIC_PARSE_OPTIONS = [
     'parse_at',
     'parse_brace',
     'parse_index_expr',
@@ -245,19 +249,21 @@ _OIL_PARSE_OPTION_NAMES = [
 ]
 
 # Extra stuff that breaks too many programs.
-_NICE_OPTION_NAMES = [
+_AGGRESSIVE_PARSE_OPTIONS = [
     'parse_set',
     'parse_equals',
 ]
 
-_PARSE_OPTION_NAMES = _OIL_PARSE_OPTION_NAMES + _NICE_OPTION_NAMES
+_PARSE_OPTION_NAMES = _BASIC_PARSE_OPTIONS + _AGGRESSIVE_PARSE_OPTIONS
+
+_OIL_AGGRESSIVE = _AGGRESSIVE_PARSE_OPTIONS + _AGGRESSIVE_RUNTIME_OPTIONS
 
 # errexit is also set, but handled separately
 _MORE_STRICT = ['nounset', 'pipefail', 'inherit_errexit']
 
 _OIL_BASIC = (
-    _STRICT_OPTION_NAMES + _MORE_STRICT + _OIL_PARSE_OPTION_NAMES +
-    _OIL_OPTION_NAMES
+    _STRICT_OPTION_NAMES + _MORE_STRICT + _BASIC_PARSE_OPTIONS +
+    _BASIC_RUNTIME_OPTIONS
 )
 # nullglob instead of simple-word-eval
 _ALL_STRICT = _STRICT_OPTION_NAMES + _MORE_STRICT + ['nullglob']
@@ -465,9 +471,11 @@ class ExecOpts(object):
       return
 
     if opt_name == 'oil:all':
-      for attr in _OIL_BASIC + _NICE_OPTION_NAMES:
+      for attr in _OIL_BASIC + _OIL_AGGRESSIVE:
         self._SetParseOption(attr, b)
         setattr(self, attr, b)
+
+      self.errexit.Set(b)  # Special case
       return
 
     if opt_name == 'strict:all':

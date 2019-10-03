@@ -184,7 +184,6 @@ shopt -s strict_backslash
 shopt -s strict_glob
 shopt -s simple_word_eval
 shopt -s more_errexit
-shopt -s simple_echo
 shopt -s simple_test_builtin
 shopt -s parse_at
 shopt -s parse_brace
@@ -196,9 +195,7 @@ shopt -s parse_rawc
 #### osh -O oil:basic 
 $SH -O oil:basic -c 'var x = @(one two three); echo @x'
 ## STDOUT:
-one
-two
-three
+one two three
 ## END
 
 #### strict:all includes inherit_errexit
@@ -467,7 +464,7 @@ two
 ## END
 
 #### parse_paren: for loop
-shopt -s oil:basic
+shopt -s oil:basic simple_echo
 var array = @(one two three)
 for (item in array) {
   echo $item
