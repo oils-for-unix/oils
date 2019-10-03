@@ -530,6 +530,14 @@ regex_literals() {
 
 }
 
+oil_expr() {
+  set +o errexit
+  # % is not a token
+  _oil-parse-error 'pp 5 % 3'
+  _oil-parse-error 'pp >>='
+  _oil-parse-error 'pp %('
+}
+
 
 cases-in-strings() {
   set +o errexit
@@ -569,6 +577,7 @@ cases-in-strings() {
   parse_brace
   regex_literals
   proc_sig
+  oil_expr
 }
 
 # Cases in their own file

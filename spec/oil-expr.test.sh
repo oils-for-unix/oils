@@ -569,6 +569,14 @@ echo $y
 2
 ## END
 
+#### mod operator
+pp 5 mod 3
+pp -5 mod 3
+## STDOUT:
+(int)   2
+(int)   1
+## END
+
 #### Logical operators
 var a = not true
 echo $a

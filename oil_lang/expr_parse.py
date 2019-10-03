@@ -78,7 +78,8 @@ def _Classify(gr, tok):
   if ilabel is not None:
     return ilabel
 
-  p_die('Invalid token %s', tok, token=tok)
+  type_str = '' if tok.id == Id.Unknown_Tok else (' (%s)' % tok.id.name)
+  p_die('Unexpected token in expression mode%s', type_str, token=tok)
 
 
 # NOTE: this model is not NOT expressive enough for:
@@ -350,11 +351,11 @@ class ExprParser(object):
       last_token = _PushOilTokens(self.parse_ctx, self.gr, self.push_parser,
                                   lexer)
     except parse.ParseError as e:
-      log('ERROR %s', e)
+      #log('ERROR %s', e)
       # TODO:
       # - Describe what lexer mode we're in (Invalid syntax in regex)
       #   - Maybe say where the mode started
       # - Id.Unknown_Tok could say "This character is invalid"
-      raise util.ParseError('Invalid syntax', token=e.opaque)
+      raise util.ParseError('Syntax error in expression', token=e.opaque)
 
     return self.push_parser.rootnode, last_token

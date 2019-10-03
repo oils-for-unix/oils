@@ -282,7 +282,7 @@ class OilEvaluator(object):
 
       if node.op.id == Id.Expr_Div:
         return left // right  # integer divison
-      if node.op.id == Id.Arith_Percent:
+      if node.op.id == Id.Expr_Mod:
         return left % right
 
       if node.op.id == Id.Arith_Caret:  # Exponentiation

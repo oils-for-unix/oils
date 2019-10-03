@@ -239,7 +239,7 @@ def AddKinds(spec):
     'Null', 'True', 'False',
 
     # Keywords are resolved after lexing, but otherwise behave like tokens.
-    'Div', 'Xor', 
+    'Div', 'Mod', 'Xor', 
     'And', 'Or', 'Not', 
 
     # List comprehensions

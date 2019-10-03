@@ -57,8 +57,8 @@ xor_expr: and_expr ('xor' and_expr)*
 and_expr: shift_expr ('&' shift_expr)*
 shift_expr: arith_expr (('<<'|'>>') arith_expr)*
 arith_expr: term (('+'|'-') term)*
-# Oil patch: removed '@' and '//' -> div
-term: factor (('*'|'/'|'%'|'div') factor)*
+# Oil patch: removed '@' and // -> div, % -> mod
+term: factor (('*'|'/'|'mod'|'div') factor)*
 factor: ('+'|'-'|'~') factor | power
 # Oil patch: ** -> ^
 # Also removed Python 3 'await'

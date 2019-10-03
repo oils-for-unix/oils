@@ -193,6 +193,7 @@ EXPR_WORDS = [
   C('false', Id.Expr_False),
 
   C('div', Id.Expr_Div),
+  C('mod', Id.Expr_Mod),
   C('xor', Id.Expr_Xor),
 
   C('and', Id.Expr_And),
@@ -817,7 +818,6 @@ LEXER_DEF[lex_mode_e.Expr] = \
   C('*', Id.Arith_Star),
   C('^', Id.Arith_Caret),   # ^ rather than ** is exponentiation.  xor is 'xor'.
   C('/', Id.Arith_Slash),
-  C('%', Id.Arith_Percent),
 
   C('<', Id.Arith_Less),
   C('>', Id.Arith_Great),
