@@ -436,7 +436,7 @@ func-parsing() {
   sh-spec spec/func-parsing.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
-func() {
+func_() {
   sh-spec spec/func.test.sh \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
