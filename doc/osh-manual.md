@@ -1,5 +1,5 @@
 <div style="float:right;">
-  <span id="version-in-header">Version 0.7.pre4</span> <br/>
+  <span id="version-in-header">Version 0.7.pre5</span> <br/>
 
   <!-- TODO: date support in cmark.py -->
   <span style="" class="date">
