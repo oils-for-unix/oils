@@ -92,7 +92,11 @@ run-other-suite-for-release() {
   # separate process.  I came up with this fix in gold/errexit-confusion.sh.
 
   local status=0
-  $0 $func_name 2>&1 | tee $out || status=$?
+
+  set +o errexit
+  $0 $func_name 2>&1 | tee $out 
+  status=$?  # pipefail makes this work.
+  set -o errexit
 
   if test $status -eq 0; then
     echo
