@@ -141,7 +141,7 @@ def _expr__Var(obj):
 
 
 def _expr__Const(obj):
-  # type: (expr__Var) -> PrettyNode
+  # type: (expr__Const) -> PrettyNode
   p_node = runtime.PrettyNode()
   p_node.abbrev = True
   p_node.node_type = 'Const'

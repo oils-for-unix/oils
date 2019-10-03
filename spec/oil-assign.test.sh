@@ -83,13 +83,32 @@ echo -sep ' ' @mylist
 
 #### setvar obj.attr = 42 (setattr)
 shopt -s oil:basic
-# Is there a better way to do this?
-var myobj = {}
+
+# TODO: dicts and list can't have arbitrary attributes set.  But right now
+# regex objects can.  Should we change that?
+
+var myobj = /d+/
+
 setvar myobj.x = 42
 var val = myobj.x
 echo val=$val
 ## STDOUT:
 val=42
+## END
+
+#### setvar f()[2] = 42 (setitem)
+shopt -s oil:basic
+
+var mylist = [1,2,3]
+func f() {
+  return mylist
+}
+setvar f()[2] = 42
+echo @mylist
+## STDOUT:
+1
+2
+42
 ## END
 
 #### duplicate var def results in fatal error

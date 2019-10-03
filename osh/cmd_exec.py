@@ -25,9 +25,9 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.syntax_asdl import word, command_t
 from _devbuild.gen.runtime_asdl import (
-    lvalue, redirect,
+    lvalue, lvalue_e,
     value, value_e, value_t,
-    scope_e, var_flags_e, builtin_e,
+    redirect, scope_e, var_flags_e, builtin_e,
     arg_vector, cmd_value, cmd_value_e,
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
@@ -1001,8 +1001,16 @@ class Executor(object):
 
         # TODO: Change this to LocalOrGlobal
         lookup_mode = scope_e.Dynamic
+
+        # TODO: Resolve the asymmetry betwen Named vs ObjIndex,ObjAttr.
         for lval, val in zip(lvals, vals):
-          self.mem.SetVar(lval, val, (), lookup_mode, keyword_id=node.keyword.id)
+          if lval.tag == lvalue_e.ObjIndex:
+            lval.obj[lval.index] = val.obj
+          elif lval.tag == lvalue_e.ObjAttr:
+            setattr(lval.obj, lval.attr, val.obj)
+          else:
+            # top level variable
+            self.mem.SetVar(lval, val, (), lookup_mode, keyword_id=node.keyword.id)
 
       # TODO: Other augmented assignments
       elif node.op.id == Id.Arith_PlusEqual:

@@ -72,7 +72,7 @@ module runtime
 
     -- Oil variants
   | ObjIndex(any obj, any index)
-  | ObjAttr(any obj, string index)
+  | ObjAttr(any obj, string attr)
   attributes (int* spids)
 
   -- evaluated version of syntax.redir
