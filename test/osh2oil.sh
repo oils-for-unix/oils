@@ -16,7 +16,14 @@ osh-to-oil() {
 
 # Compare osh code on stdin (fd 0) and expected oil code on fd 3.
 osh0-oil3() {
-  osh-to-oil "$@" | diff -u /dev/fd/3 - || fail
+  set +o errexit
+  osh-to-oil "$@" | diff -u /dev/fd/3 - 
+  local status=$?
+  set -o errexit
+
+  if test $status -ne 0; then
+    fail
+  fi
 }
 
 args-vars() {
