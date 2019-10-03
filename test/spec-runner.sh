@@ -80,6 +80,9 @@ manifest() {
     8>_tmp/spec/SUITE-osh.txt \
     9>_tmp/spec/SUITE-osh-oil.txt
 
+  # BUG: osh leaks descriptors here!
+  ls -l /proc/$$/fd
+
   # Used to use this obscure bash syntax.  How do we do this in Oil?  Probably
   # with 'fopen :both foo.txt' builtin.
 
@@ -290,8 +293,9 @@ _all-parallel() {
 
   manifest
 
-  head -n $NUM_TASKS $manifest \
-    | xargs -n 1 -P $JOBS --verbose -- $0 run-cases || true
+  set +o errexit
+  head -n $NUM_TASKS $manifest | xargs -n 1 -P $JOBS --verbose -- $0 run-cases
+  set -o errexit
 
   #ls -l _tmp/spec
 
@@ -384,7 +388,7 @@ test-to-html() {
 all-tests-to-html() {
   local manifest=$1
   head -n $NUM_TASKS $manifest \
-    | xargs -n 1 -P $JOBS --verbose -- $0 test-to-html || true
+    | xargs -n 1 -P $JOBS --verbose -- $0 test-to-html
 }
 
 filename=$(basename $0)

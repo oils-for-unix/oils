@@ -436,8 +436,8 @@ func-parsing() {
   sh-spec spec/func-parsing.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
-func_() {
-  sh-spec spec/func.test.sh \
+sh-func() {
+  sh-spec spec/sh-func.test.sh \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -761,7 +761,9 @@ _one-html() {
     > _tmp/spec/${spec_name}.test.html
 
   local out=_tmp/spec/${spec_name}.html
-  time { $spec_name --format html --trace "$@" || true; } | tee $out
+  set +o errexit
+  time $spec_name --format html --trace "$@" > $out
+  set -o errexit
 
   echo
   echo "Wrote $out"
@@ -781,8 +783,7 @@ html-demo() {
   ### Test for --format html
 
   local out=_tmp/spec/demo.html
-  { builtin-special --format html "$@" || true; } | tee $out
-  #{ array --format html "$@" || true; } | tee $out
+  builtin-special --format html "$@" > $out
 
   echo
   echo "Wrote $out"
