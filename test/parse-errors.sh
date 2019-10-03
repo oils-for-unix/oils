@@ -213,7 +213,7 @@ bool-expr() {
 
   # Invalid regex
   _error-case '[[ $var =~ * ]]'
-  _error-case '[[ $var =~ \\ ]]'
+  _error-case '[[ $var =~ + ]]'
 
   # Unbalanced parens
   _error-case '[[ ( 1 == 2 - ]]'
