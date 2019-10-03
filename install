@@ -34,7 +34,7 @@ main() {
 
   #local exec_filename=oil.ovm-dbg
   local exec_filename=oil.ovm
-  local bin_dest="$DESTDIR/$PREFIX/bin/"
+  local bin_dest="${DESTDIR}${PREFIX}/bin/"
 
   echo "Installing executables in $bin_dest"
   if ! install -v -d "$bin_dest"; then
@@ -65,7 +65,7 @@ main() {
   cd "$working_dir"
 
   # e.g. /usr/local/share/man/man1
-  local man_dest="$DESTDIR/$DATAROOTDIR/man/man1/"
+  local man_dest="${DESTDIR}${DATAROOTDIR}/man/man1/"
 
   echo "Installing man page osh.1 in $man_dest"
   if ! install -v -d "$man_dest"; then
