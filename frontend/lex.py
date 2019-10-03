@@ -1,103 +1,31 @@
 """
-lex.py -- Shell lexer.
+lex.py -- A lexer for both shell and Oil.
 
 It consists of a series of lexer modes, each with a regex -> Id mapping.
 
-NOTE: If this changes, the lexer may need to be recompiled with
-build/codegen.sh lexer.
+After changing this file, run:
+
+    build/dev.sh all
+    
+or at least:
+
+    build/dev.sh fastlex
 
 Input Handling
 --------------
 
-Note that our style of input Handling affects the regular expressions in the
-lexer.
+Every line is NUL terminated:
 
-We pass one line at a time to the Lexer, via LineLexer.  We must be able to
-parse one line at a time because of interactive parsing (e.g. using the output
-of GNU readline.)
+    'one\n\0' 'last line\0'
 
-There are two ways we could handle input:
+which means that no regexes below should match \0.  The core/lexer_gen.py code
+generator adds and extra rule for \0.
 
-  1. Every line is NUL terminated:
-     'one\n\0' 'last line\0'
-  2. Every line is terminated by NUL, except the last:
-     'one\n' 'last line\0'
+For example, use [^'\0]+ instead of [^']+ .
 
-The advantage of #2 is that in the common case of reading files, we don't have
-to do it one line at a time.  We could slurp the whole file in, or mmap() it,
-etc.
-
-The second option makes the regular expressions more complicated, so I'm
-punting on it for now.  We assume the first.
-
-That means:
-
-  - No regexes below should match \0.  They are added by
-    core/lexer_gen.py for re2c.
-
-For example, [^']+ is not valid.  [^'\0]+ is correct.  Otherwise we would read
-unitialized memory past the sentinel.
-
-Python's regex engine knows where the end of the input string is, so it
-doesn't require need a sentinel like \0.
-
-Note that re2c is not able to work in a mode with a strict length limit.  It
-would cause too many extra checks?  The language is then no longer regular!
-
-http://re2c.org/examples/example_03.html
-
-UPDATE: Two More Options
-------------------------
-
-3. Change the \n at the end of every line to \0.  \0 becomes Id.Op_Newline, at
-least in lex_mode.Outer.
-
-Advantage: This makes the regular expressions easier to generate, but allows
-you to read in the whole file at once instead of allocating lines.
-
-Disadvantages:
-- You can't mmap() the file because the data is mutated.  Or it will have to be
-  copy-on-write.
-- You can't get rid of comment lines if you read the whole file.
-
-4. Read a line at a time.  Throw away the lines, unless you're parsing a
-function, which should be obvious.
-
-After you parse the function, you can COPY all the tokens to another location.
-Very few tokens need their actual text data.  Most of them can just be
-identified by ID.
-
-Contents are relevant:
-
-- Lit_Chars, Lit_Other, Lit_EscapedChar, Lit_Digits
-- Id.Lit_VarLike -- for the name, and for = vs +=
-- Id.Lit_ArithVarLike
-- VSub_Name, VSub_Number
-- Id.Redir_* for the LHS file descriptor.  Although this is one or two bytes
-  that could be copied.
-
-You can also take this opportunity to enter the strings in an intern table.
-How much memory would that save?
-
-Remaining constructs
---------------------
-
-Case terminators:
-  ;;&                  Op_DSemiAmp  for case
-  ;&                   Op_Semi
-
-Left Index:
-
-  VAR_NAME_RE + '\['  Lit_LeftIndexLikeOpen
-  ]=                   Lit_LeftIndexLikeClose
-
-Indexed array and Associative array literals:
-  declare -A a=([key]=value [key2]=value2)
-  declare -a a=([1 + 2]=value [3 + 4]=value2)  # parsed!
-
-  Lit_LBracket Lit_RBracketEqual
-  Left_Bracket, Right_BracketEqual?
-  Op_LBracket Op_RBracketEqual
+If this rule isn't followed, we would read unitialized memory past the
+sentinel.  Python's regex engine knows where the end of the input string is, so
+it doesn't require need a sentinel like \0.
 """
 
 from _devbuild.gen.id_kind_asdl import Id, Kind
@@ -277,10 +205,12 @@ EXPR_WORDS = [
   C('if', Id.Expr_If),
   C('else', Id.Expr_Else),
 
-  # Should this be 'fn'?  Because the syntax is different:
-  # fn(x) x+1
-  # fn(x) :{ return x + 1 }
+  # for function literals
   C('func', Id.Expr_Func),
+
+  # TODO: as ?
+  # expr as List[Int] for casting?  Or just cast(List[Int]], expr)?
+  # What about specifying types without casting?  'of'?
 ]
 
 
@@ -764,17 +694,9 @@ OIL_LEFT_SUBS = [
   C('$[', Id.Left_DollarBracket),  # Unused now
 
   # For lazily evaluated expressions
-  #
-  # NOTE: This conflicts with {key:[value]}
-  # Julia uses {key => value} instead.
-  # Maybe we should reserve  %( %{ %[  %/
-  #
-  # That would be valid in command mode, while \{ isn't.
-  # But we don't really need it in command mode!  \{ would still be valid.
-
-  #C(':(', Id.Expr_Reserved),
-  #C(':{', Id.Expr_Reserved),
-  #C(':[', Id.Expr_Reserved),
+  C('%(', Id.Expr_Reserved),
+  C('%{', Id.Expr_Reserved),
+  C('%[', Id.Expr_Reserved),
 ]
 
 # Valid in lex_mode_e.Expr
@@ -960,12 +882,6 @@ LEXER_DEF[lex_mode_e.Expr] = \
 
   # Splat operators
   C('@', Id.Expr_At),
+  # NOTE: Unused
   C('@@', Id.Expr_DoubleAt),
-
-  # expr as List[Int] for casting?  Or just cast(List[Int]], expr)
-  # What about specifying types?  NOTE: we attach it to the expression rather
-  # than the type.
-  # x = [] : Array<Int>
-  #
-  # inc = |x| x+1 for simple lambdas.
 ] + _EXPR_NEWLINE_COMMENT + _EXPR_ARITH_SHARED
