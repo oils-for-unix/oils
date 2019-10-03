@@ -16,6 +16,11 @@
 #
 # https://devmanual.gentoo.org/quickstart/index.html
 
+log() {
+  # indent it a bit
+  echo "    $@" 1>&2
+}
+
 die() {
   echo "FATAL install error: $@" 1>&2
   exit 1
@@ -36,7 +41,6 @@ main() {
   local exec_filename=oil.ovm
   local bin_dest="${DESTDIR}${PREFIX}/bin/"
 
-  echo "Installing executables in $bin_dest"
   if ! install -v -d "$bin_dest"; then
     die "Couldn't create $bin_dest"
   fi
@@ -44,6 +48,7 @@ main() {
   if ! install -v "_bin/$exec_filename" "$bin_dest"; then
     die "Couldn't install oil binary"
   fi
+  log "Installed executable"
 
   local working_dir=$PWD  # save for later
 
@@ -52,6 +57,7 @@ main() {
     if ! ln -s -f "$exec_filename" "$link"; then  # -f to overwrite
       die "Couldn't create $link symlink"
     fi
+    log "Created '$link' symlink"
   done
 
   #
@@ -67,10 +73,10 @@ main() {
   # e.g. /usr/local/share/man/man1
   local man_dest="${DESTDIR}${DATAROOTDIR}/man/man1/"
 
-  echo "Installing man page osh.1 in $man_dest"
   if ! install -v -d "$man_dest"; then
     die "Couldn't create $man_dest"
   fi
+  log "Installed man page"
 
   # -t to install to a directory and make them, -m so it's not executable
   if ! install -v -m 644 doc/osh.1 "$man_dest"; then
