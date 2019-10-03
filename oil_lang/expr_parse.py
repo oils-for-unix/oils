@@ -106,17 +106,6 @@ def _Classify(gr, tok):
 POP = lex_mode_e.Undefined
 
 _MODE_TRANSITIONS = {
-    # Do we want regex literals in double quoted strings?  That would be
-    # breaking in command mode.
-    #(lex_mode_e.DQ, Id.Left_DollarSlash): lex_mode_e.Regex,  # "$/ any + /"
-
-    #
-    # Expr
-    #
-
-    #(lex_mode_e.Expr, Id.Left_DollarSlash): lex_mode_e.Regex,  # $/ any + /
-    #(lex_mode_e.Regex, Id.Arith_Slash): POP,
-
     (lex_mode_e.Expr, Id.Left_DollarBrace): lex_mode_e.VSub_1,  # ${x|html}
     # TODO: What about VSub_2 and so forth?
     (lex_mode_e.VSub_1, Id.Right_DollarBrace): POP,
@@ -132,19 +121,6 @@ _MODE_TRANSITIONS = {
 
     # Why don't we need need @() and $() here?  Are ${  ' c'  " also
     # unnecessary?
-
-    #
-    # Regex
-    #
-
-    (lex_mode_e.Regex, Id.Op_LBracket): lex_mode_e.CharClass,  # $/ 'foo.' [c h] /
-    (lex_mode_e.CharClass, Id.Op_RBracket): POP,
-
-    (lex_mode_e.Regex, Id.Left_DoubleQuote): lex_mode_e.DQ,  # $/ "foo" /
-    # POP is done above
-
-    #(lex_mode_e.Array, Id.Op_LBracket): lex_mode_e.CharClass,  # @[ a *.[c h] ]
-    # POP is done above
 }
 
 # For ignoring newlines.
@@ -152,6 +128,7 @@ _OTHER_BALANCE = {
     Id.Op_LParen:  1,
     Id.Op_RParen: -1,
 
+    Id.Left_AtBracket:  1,
     Id.Op_LBracket:  1,
     Id.Op_RBracket: -1,
 

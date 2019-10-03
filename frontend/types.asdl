@@ -31,13 +31,7 @@ module types {
   -- * Multiline strings.  May require some parsing too.
   -- * Tagged strings.  Are these raw by default?
 
-  | Regex     -- [[ is special, e.g. myregex = $/ [[a-z]]+ /
-  | CharClass -- / [a-z space]+ /
-              -- echo foo.[c h]  # spaces allowed?  So it must be its own
-              -- mode
-
   -- More possibilities
-  -- * numeric constants: -3.14e+00, 3_000_000.50
   -- * printf formatting ${x %05d}.  I think that is mostly in expression mode
   --   like ${x|html} or ${x|title}
 }

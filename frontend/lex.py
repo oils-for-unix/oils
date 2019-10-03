@@ -969,15 +969,3 @@ LEXER_DEF[lex_mode_e.Expr] = \
   #
   # inc = |x| x+1 for simple lambdas.
 ] + _EXPR_NEWLINE_COMMENT + _EXPR_ARITH_SHARED
-
-
-LEXER_DEF[lex_mode_e.CharClass] = [
-  # placeholder.  Need a-z A-Z, NOT, \n, \x00, etc.
-  R(_LITERAL_WHITELIST_REGEX, Id.Lit_Chars),
-
-  _SIGNIFICANT_SPACE,
-  # end char class
-  C(']', Id.Op_RBracket),
-
-  R(r'[^\]\0]', Id.Lit_Other),
-]
