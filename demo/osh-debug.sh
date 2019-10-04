@@ -41,7 +41,7 @@ runtime-mem-dump() {
   grep '^Vm' $dump
 }
 
-func() {
+myfunc() {
   metrics/source-code.sh osh-cloc
 }
 
@@ -52,7 +52,7 @@ func() {
 
 recursive() {
   echo ===
-  $0 func
+  $0 myfunc
   echo ===
 }
 
