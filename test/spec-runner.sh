@@ -80,8 +80,8 @@ manifest() {
     8>_tmp/spec/SUITE-osh.txt \
     9>_tmp/spec/SUITE-osh-oil.txt
 
-  # BUG: osh leaks descriptors here!
-  ls -l /proc/$$/fd
+  # TODO: Fix bug where osh leaks descriptors 7, 8, 9 here!
+  #ls -l /proc/$$/fd
 
   # Used to use this obscure bash syntax.  How do we do this in Oil?  Probably
   # with 'fopen :both foo.txt' builtin.
