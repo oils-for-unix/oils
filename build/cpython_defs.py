@@ -308,7 +308,7 @@ class OilMethodFilter(object):
     # We don't need top-level next().  The method should be good enough.
     # iter is a field name
     if (basename == 'bltinmodule.c' and
-        method_name in ('compile', 'format', 'next', 'vars', 'iter')):
+        method_name in ('compile', 'format', 'next', 'vars')):
       return False
     if basename == 'bltinmodule.c':
       # Get "bootstrapping error" without this.
