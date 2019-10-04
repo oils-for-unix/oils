@@ -13,7 +13,6 @@ static PyMethodDef builtin_methods[] = {
   {"hash", builtin_hash, METH_O},
   {"id", builtin_id, METH_O},
   {"isinstance", builtin_isinstance, METH_VARARGS},
-  {"iter", builtin_iter, METH_VARARGS},
   {"len", builtin_len, METH_O},
   {"max", (PyCFunction)builtin_max, METH_VARARGS | METH_KEYWORDS},
   {"min", (PyCFunction)builtin_min, METH_VARARGS | METH_KEYWORDS},
