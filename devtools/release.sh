@@ -162,16 +162,19 @@ _release-build() {
 
   ln -s -f --no-target-directory -v oil.ovm $OSH_RELEASE_BINARY
   ln -s -f --no-target-directory -v oil.ovm $OIL_RELEASE_BINARY
+}
 
-  # TODO: Move these?
+# Run this after manually removing symbols from CPython.
+release-build-and-spec() {
+  # We need _clean to prevent stale files, and _dev-build too.  Dependencies
+  # are all messed up.
 
-  # _pending/oil-alpha1
-  # _tmp/pending/
-  #    oil-0.5.alpha2.tar.gz
-  #    osh ->
-  #    oil-0.5.alpha2/
-  #      _bin/
-  #         oil.ovm
+  _clean
+  _dev-build
+  _release-build
+  export OSH_LIST="$OSH_RELEASE_BINARY" OIL_LIST="$OIL_RELEASE_BINARY"
+  #test/spec.sh osh-all
+  test/spec.sh oil-all
 }
 
 readonly HAVE_ROOT=1

@@ -855,7 +855,7 @@ oil-func-proc() {
 }
 
 oil-builtin-funcs() {
-  sh-spec spec/oil-builtin-funcs.test.sh --cd-tmp --osh-failures-allowed 3 \
+  sh-spec spec/oil-builtin-funcs.test.sh --cd-tmp --osh-failures-allowed 2 \
     $OIL_LIST "$@"
 }
 

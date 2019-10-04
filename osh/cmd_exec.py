@@ -959,7 +959,7 @@ class Executor(object):
         lvals.append(lval)
         vals.append(val)
       else:
-        it = iter(py_val)
+        it = py_val.__iter__()
         for lhs in node.lhs:
           lval = lvalue.Named(lhs.name.val)
           val = _PyObjectToVal(it.next())
@@ -991,7 +991,7 @@ class Executor(object):
           lvals.append(lval)
           vals.append(val)
         else:
-          it = iter(py_val)
+          it = py_val.__iter__()
           for lhs in node.lhs:
             lval = self.expr_ev.EvalPlaceExpr(lhs)
             val = _PyObjectToVal(it.next())
@@ -1308,13 +1308,13 @@ class Executor(object):
       if isinstance(obj, str):
         e_die("Strings aren't iterable")
       else:
-        it = iter(obj)
+        it = obj.__iter__()
 
       body = node.body
       iter_name = node.lhs[0].name.val  # TODO: proper lvalue
       while True:
         try:
-          loop_val = next(it)
+          loop_val = it.next()
         except StopIteration:
           break
         self.mem.SetVar(lvalue.Named(iter_name), _PyObjectToVal(loop_val), (),

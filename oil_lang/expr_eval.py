@@ -410,11 +410,11 @@ class OilEvaluator(object):
       if isinstance(obj, str):
         e_die("Strings aren't iterable")
       else:
-        it = iter(obj)
+        it = obj.__iter__()
 
       while True:
         try:
-          loop_val = next(it)  # e.g. x
+          loop_val = it.next()  # e.g. x
         except StopIteration:
           break
         self.mem.SetVar(
@@ -439,7 +439,7 @@ class OilEvaluator(object):
       # TODO: Support (x for x, y in ...)
       iter_name = comp.lhs[0].name.val
 
-      it = iter(obj)
+      it = obj.__iter__()
 
       # TODO: There is probably a much better way to do this!
       #       The scope of the loop variable is wrong, etc.
@@ -447,7 +447,7 @@ class OilEvaluator(object):
       def _gen():
         while True:
           try:
-            loop_val = next(it)  # e.g. x
+            loop_val = it.next()  # e.g. x
           except StopIteration:
             break
           self.mem.SetVar(

@@ -51,7 +51,7 @@ def Init(mem):
   # TODO: Enable float
   # OVM: PyOS_string_to_double()
   # osh: Python/ovm_stub_pystrtod.c:10: PyOS_string_to_double: Assertion `0' failed.
-  #SetGlobalFunc(mem, 'Float', float)
+  SetGlobalFunc(mem, 'Float', float)
 
   SetGlobalFunc(mem, 'Tuple', tuple)
   SetGlobalFunc(mem, 'Str', str)

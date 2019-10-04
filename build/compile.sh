@@ -47,8 +47,11 @@ Python/random.c
 Python/structmember.c
 Python/sysmodule.c
 Python/traceback.c
-Python/ovm_stub_pystrtod.c
+Python/pystrtod.c
+Python/dtoa.c
+Python/pymath.c
 '
+# NOTE: pystrtod.c needs some floating point functions in pymath.c
 
 OBJECT_OBJS='
 Objects/abstract.c
