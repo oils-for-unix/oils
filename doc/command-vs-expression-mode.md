@@ -89,3 +89,29 @@ echo $myfunc(*.py)  # syntax error
 ```
 
 So yeah you do have to have an awareness of what's an expression and what's a "word/command", which is why I highlighted it.
+
+
+
+
+Right I should have clarified – they don’t turn globbing back on. It’s just a string. It’s up to the function that is called to interpret as a glob or not.
+
+It’s exactly like the difference between:
+
+    from glob import glob; glob('*.py')  # yes glob
+    os.listdir('*.py')  # no glob because it's not how listdir() works
+
+in Python. Single quoted strings in Oil are just like string literals in Python. Does that make sense?
+
+I’m not sure what you mean by myEcho? Both of these work in Oil just like they
+do in sh:
+
+    echo *
+    echo '*'
+
+Because you’ve never entered expression mode. You’re still in command mode.
+
+Here’s a short summary:
+
+    command mode: unquoted is a string, while $dollar is a variable.
+    expression mode: 'quoted' is a string, while unquoted is a variable.
+
