@@ -24,7 +24,7 @@ COMMAND LANGUAGE
                   redir-desc  >&  <&
                   here-doc    <<  <<-  <<<
   [Other]         dparen ((   time   X coproc   X select
-  [Oil Keywords]  func   return   do   pass   fs
+  [Oil Keywords]  proc   func   return   do   pass   pp
                   (Change parsing so they can't be builtins)
 
 ASSIGNING VARIABLES

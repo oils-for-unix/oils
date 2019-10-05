@@ -204,15 +204,10 @@ manual() {
   '
 
   # TODO: cmark.py could replace <span class="date"></span> with -v date=?
-  for d in osh-manual oil-manual known-differences regex-manual; do
+  for d in \
+    osh-manual oil-manual known-differences eggex oil-expressions; do
 
-    # Rename one doc.  TODO: Rename the source too.
-    local dest=$d
-    if test $dest = 'regex-manual'; then
-      dest=eggex
-    fi
-
-    markdown2html doc/$d.md $root_dir/doc/$dest.html "$css_link" ''
+    markdown2html doc/$d.md $root_dir/doc/$d.html "$css_link" ''
   done
   ls -l $root_dir/doc
 }
