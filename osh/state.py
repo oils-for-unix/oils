@@ -252,6 +252,7 @@ _BASIC_PARSE_OPTIONS = [
 _AGGRESSIVE_PARSE_OPTIONS = [
     'parse_set',
     'parse_equals',
+    'parse_do',
 ]
 
 _PARSE_OPTION_NAMES = _BASIC_PARSE_OPTIONS + _AGGRESSIVE_PARSE_OPTIONS

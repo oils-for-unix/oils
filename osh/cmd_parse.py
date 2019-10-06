@@ -323,9 +323,9 @@ def _MakeSimpleCommand(preparsed_list, suffix_words, redirects, block):
   return node
 
 
-NOT_FIRST_WORDS = (
-    Id.KW_Do, Id.KW_Done, Id.KW_Then, Id.KW_Fi, Id.KW_Elif,
-    Id.KW_Else, Id.KW_Esac
+# Note: 'do' depends on parse_do
+SECONDARY_KEYWORDS = (
+    Id.KW_Done, Id.KW_Then, Id.KW_Fi, Id.KW_Elif, Id.KW_Else, Id.KW_Esac
 )
 
 
@@ -445,6 +445,13 @@ class CommandParser(object):
     if self.c_id == Id.Op_Newline:
       self._Next()
       self._Peek()
+
+  def _AtSecondaryKeyword(self):
+    if self.c_id in SECONDARY_KEYWORDS:
+      return True
+    if self.c_id == Id.KW_Do and not self.parse_opts.do:
+      return True
+    return False
 
   def ParseRedirect(self):
     # type: () -> redir_t
@@ -1611,7 +1618,7 @@ class CommandParser(object):
     """
     self._Peek()
 
-    if self.c_id in NOT_FIRST_WORDS:
+    if self._AtSecondaryKeyword():
       p_die('Unexpected word when parsing command', word=self.cur_word)
 
     if self.c_id == Id.KW_Function:
@@ -1621,8 +1628,7 @@ class CommandParser(object):
     if self.c_id == Id.KW_Proc:
       return self.ParseOilProc()
 
-    # TODO: We should have another Kind for "initial keywords".  And then
-    # NOT_FIRST_WORDS are "secondary keywords".
+    # TODO: We should have another Kind for "initial keywords".
     if self.c_id in (
         Id.KW_DLeftBracket, Id.Op_DLeftParen, Id.Op_LParen, Id.Lit_LBrace,
         Id.KW_For, Id.KW_While, Id.KW_Until, Id.KW_If, Id.KW_Case, Id.KW_Time,
@@ -1651,7 +1657,7 @@ class CommandParser(object):
       return node
 
     # TODO: Can we have parse_do here?  For do obj.method()
-    if self.c_id in (Id.KW_Pass, Id.KW_Pp):
+    if self.c_id in (Id.KW_Pass, Id.KW_Pp, Id.KW_Do):
       assert isinstance(self.cur_word, word__Compound)  # for MyPy
       assert isinstance(self.cur_word.parts[0], word_part__Literal)  # for MyPy
 
@@ -1907,7 +1913,7 @@ class CommandParser(object):
 
       # Most keywords are valid "first words".  But do/done/then do not BEGIN
       # commands, so they are not valid.
-      if self.c_id in NOT_FIRST_WORDS:
+      if self._AtSecondaryKeyword():
         break
 
       child = self.ParseAndOr()

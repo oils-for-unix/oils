@@ -220,6 +220,8 @@ class OilParseOptions(object):
     self.equals = False  # x = 'var'
     self.set = False  # set x = 'var'
 
+    self.do = False  # do f(x)
+
   #def __str__(self):
   #  return str(self.__dict__)
 

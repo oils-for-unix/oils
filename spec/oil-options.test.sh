@@ -515,3 +515,13 @@ echo @lines
 ## STDOUT:
 ## END
 
+
+#### do f(x)
+shopt -s parse_do
+func f(x) {
+  echo foo $x
+}
+do f(42)
+## STDOUT:
+foo 42
+## END
