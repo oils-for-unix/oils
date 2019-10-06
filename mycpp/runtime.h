@@ -277,11 +277,39 @@ inline bool maybe_str_equals(Str* left, Str* right) {
   return false;  // one is None and one is a Str*
 }
 
+inline Str* chr(int i) {
+  char* buf = static_cast<char*>(malloc(2));
+  buf[0] = i;
+  buf[1] = '\0';
+  return new Str(buf, 1);
+}
+
 // Will need it for dict, but not tuple.
 //inline int len(Dict* D) {
 //}
 
 bool _str_to_int(Str* s, int* result);  // for testing only
 int str_to_int(Str* s);
+
+//
+// Buf is StringIO
+//
+
+namespace runtime {  // MyPy artifact
+
+class Buf {
+ public:
+  Buf() : data_(nullptr), len_(0) {
+  };
+  void write(Str* s);
+  Str* getvalue() { return new Str(data_, len_); }
+
+ private:
+  // Just like a string, except it's mutable
+  char* data_;
+  size_t len_;
+};
+
+};
 
 #endif  // RUNTIME_H

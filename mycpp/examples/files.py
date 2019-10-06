@@ -6,24 +6,24 @@ from __future__ import print_function
 
 import os
 import sys
-import cStringIO
 
-from runtime import log
+from runtime import log, Buf
 
 
 def run_tests():
   # type: () -> None
 
-  f = cStringIO.StringIO()
-  for i in xrange(100):
-    f.write(str(i))
+  f = Buf()
+  for i in xrange(30):
+    f.write(chr(i + 65))
 
   contents = f.getvalue()
   log('Wrote %d bytes to StringIO', len(contents))
   log('contents = %s ... %s', contents[:10], contents[-10:])
 
-  f = sys.stdout
-  f.write('stdout\n')
+  # TODO:
+  #f = sys.stdout
+  #f.write('stdout\n')
 
 
 def run_benchmarks():
@@ -34,9 +34,9 @@ def run_benchmarks():
 
   i = 0
   while i < n:
-    f = cStringIO.StringIO()
-    for j in xrange(100):
-      f.write(str(j))
+    f = Buf()
+    for j in xrange(30):
+      f.write(chr(i + 65))
 
     result += len(f.getvalue())
 

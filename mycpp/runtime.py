@@ -19,3 +19,9 @@ def log(msg, *args):
 def p_die(msg, *args):
   # type: (str, *Any) -> None
   raise RuntimeError(msg % args)
+
+
+import StringIO  # can't subclasss StringIO
+
+class Buf(StringIO.StringIO):
+  pass

@@ -138,6 +138,28 @@ Str* StrIter::Value() {
 }
 
 //
+// Buf
+//
+
+namespace runtime {
+
+void Buf::write(Str* s) {
+  int orig_len = len_;
+  len_ += s->len_;
+  if (data_ == nullptr) {  // first write
+    data_ = static_cast<char*>(malloc(len_ + 1));
+  } else {
+    data_ = static_cast<char*>(realloc(data_, len_ + 1));
+  }
+
+  // Append to the end
+  memcpy(data_ + orig_len, s->data_, s->len_);
+  data_[len_] = '\0';
+}
+
+};
+
+//
 // Free functions
 //
 

@@ -51,6 +51,7 @@ OIL EXPRESSION LANGUAGE
                   Dict[]        {name: 'oil'}  {['name']: 'oil'}  {name}
                   Regex         /d+/
                   X Func        fn(x) x+1   func(x) { return x+1 }
+                  X Buf         file-like, mutable string
   [Operators]     unary         -a
                   binary        a+b   base^exp  a xor b  p div q  0:n
                   ternary       a if cond else b

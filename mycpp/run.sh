@@ -305,12 +305,12 @@ compile-parse() {
   _compile-example parse '' -I _gen
 }
 
-run-python-example() {
+python-example() {
   local name=$1
   examples/${name}.py
 }
 
-run-example() {
+example-both() {
   local name=$1
 
   #mypy --py2 --strict examples/$name.py

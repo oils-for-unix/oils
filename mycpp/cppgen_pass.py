@@ -311,6 +311,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if o.callee.name == 'log':
           printf_style = True
 
+        callee_name = o.callee.name
         callee_type = self.types[o.callee]
 
         # e.g. int() takes str, float, etc.  It doesn't matter for translation.
@@ -323,11 +324,16 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # If the function name is the same as the return type, then add 'new'.
           # f = Foo() => f = new Foo().
           ret_type = callee_type.ret_type
-          if isinstance(ret_type, Instance) and \
-              o.callee.name == ret_type.type.name():
+          # str(i) doesn't need new.  For now it's a free function.
+          if (callee_name not in ('str',) and 
+              isinstance(ret_type, Instance) and 
+              callee_name == ret_type.type.name()):
             self.write('new ')
 
-        if o.callee.name == 'int':  # int('foo') in Python conflicts with keyword
+        # Namespace.
+        if callee_name == 'Buf':
+          self.write('runtime::Buf')
+        elif callee_name == 'int':  # int('foo') in Python conflicts with keyword
           self.write('str_to_int')
         else:
           self.accept(o.callee)  # could be f() or obj.method()
