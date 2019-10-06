@@ -536,6 +536,10 @@ oil_expr() {
   _oil-parse-error 'pp 5 % 3'
   _oil-parse-error 'pp >>='
   _oil-parse-error 'pp %('
+
+  # Singleton tuples
+  _oil-parse-error 'pp 42,'
+  _oil-parse-error 'pp (42,)'
 }
 
 

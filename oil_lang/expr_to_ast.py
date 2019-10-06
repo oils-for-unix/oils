@@ -193,11 +193,17 @@ class Transformer(object):
   def _Tuple(self, children):
     # type: (List[PNode]) -> expr_t
 
-    # NOTE: We haven't solved the 1, issue.  Gah!  Or ()
-    # 1, 2, 3
     n = len(children)
+
+    # (x) -- not a tuple
     if n == 1:
       return self.Expr(children[0])
+
+    # x, and (x,) aren't allowed
+    if n == 2:
+      p_die('Write singleton tuples with tup(), not a trailing comma',
+            token=children[1].tok)
+
     elts = []
     for i in xrange(0, n, 2):  # skip commas
       p_node = children[i]
@@ -401,7 +407,6 @@ class Transformer(object):
 
       if typ == grammar_nt.testlist:
         # testlist: test (',' test)* [',']
-        # We need tuples for Python's 'var a, b = x' and 'for (a, b in x) {'
         return self._Tuple(children)
 
       if typ == grammar_nt.test:

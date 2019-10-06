@@ -58,6 +58,9 @@ def Init(mem):
   SetGlobalFunc(mem, 'List', list)
   SetGlobalFunc(mem, 'Dict', dict)
 
+  # Singleton tuple!
+  SetGlobalFunc(mem, 'tup', lambda x: (x,))
+
   SetGlobalFunc(mem, 'len', len)
   SetGlobalFunc(mem, 'max', max)
   SetGlobalFunc(mem, 'min', min)
