@@ -378,7 +378,6 @@ should-skip() {
     # not passing yet!
     #
     # - prereqs for parse
-    #   - files: no runtime for cStringIO
     #   - classes: TextOutput needs to inherit fields from ColorOutput
     #
     # - parse needs to translate asdl/format.py to pretty print.
@@ -392,7 +391,7 @@ should-skip() {
 
     # Other problematic constructs: **kwargs, named args
 
-    parse|files|classes|switch1|switch2|scoped_resource)
+    parse|classes|switch1|switch2|scoped_resource)
       return 0
       ;;
     *)
@@ -448,6 +447,11 @@ benchmark-all() {
   echo $'status\tseconds\texample_name\tlanguage' > $out
 
   for name in "${EXAMPLES[@]}"; do
+    if should-skip $name; then
+      echo "  (skipping $name)"
+      continue
+    fi
+
     banner $name
 
     echo

@@ -36,7 +36,7 @@ def run_benchmarks():
   while i < n:
     f = runtime.Buf()
     for j in xrange(30):
-      f.write(chr(i + 65))
+      f.write(chr(j + 65))
 
     result += len(f.getvalue())
 

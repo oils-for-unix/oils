@@ -286,9 +286,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if o.expr:  
           # This is an approximate hack that assumes that locals don't shadow
           # imported names.  Might be a problem with names like 'word'?
-          expr_name = o.expr.name
           if (isinstance(o.expr, NameExpr) and
-             (expr_name in self.imported_names or expr_name == 'runtime')):
+             (o.expr.name in self.imported_names or o.expr.name == 'runtime')):
             op = '::'
           else:
             op = '->'  # Everything is a pointer
