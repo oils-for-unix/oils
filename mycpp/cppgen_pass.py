@@ -52,6 +52,9 @@ def get_c_type(t):
       inner_c_type = get_c_type(type_param)
       c_type = 'List<%s>*' % inner_c_type
 
+    elif type_name == 'typing.IO':
+      c_type = 'runtime::IO*'
+
     else:
       # fullname() => 'parse.Lexer'; name() => 'Lexer'
 
@@ -283,7 +286,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if o.expr:  
           # This is an approximate hack that assumes that locals don't shadow
           # imported names.  Might be a problem with names like 'word'?
-          if isinstance(o.expr, NameExpr) and o.expr.name in self.imported_names:
+          expr_name = o.expr.name
+          if (isinstance(o.expr, NameExpr) and
+             (expr_name in self.imported_names or expr_name == 'runtime')):
             op = '::'
           else:
             op = '->'  # Everything is a pointer
@@ -331,9 +336,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write('new ')
 
         # Namespace.
-        if callee_name == 'Buf':
-          self.write('runtime::Buf')
-        elif callee_name == 'int':  # int('foo') in Python conflicts with keyword
+        if callee_name == 'int':  # int('foo') in Python conflicts with keyword
           self.write('str_to_int')
         else:
           self.accept(o.callee)  # could be f() or obj.method()

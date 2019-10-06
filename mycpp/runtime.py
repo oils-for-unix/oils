@@ -4,7 +4,7 @@ runtime.py
 from __future__ import print_function
 
 import sys
-from typing import Any
+from typing import IO, Any
 
 
 # C code ignores this!
@@ -25,3 +25,7 @@ import StringIO  # can't subclasss StringIO
 
 class Buf(StringIO.StringIO):
   pass
+
+
+def StdOut():
+  return sys.stdout

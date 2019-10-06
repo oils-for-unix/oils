@@ -313,7 +313,7 @@ python-example() {
 example-both() {
   local name=$1
 
-  #mypy --py2 --strict examples/$name.py
+  mypy --py2 --strict examples/$name.py
 
   translate-example $name
   compile-example $name

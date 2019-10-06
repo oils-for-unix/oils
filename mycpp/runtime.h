@@ -8,6 +8,8 @@
 #include <stddef.h>  // size_t
 #include <stdlib.h>  // malloc
 #include <string.h>  // strlen
+// https://stackoverflow.com/questions/3882346/forward-declare-file
+#include <cstdio>  // FILE*
 #include <vector>
 #include <initializer_list>
 
@@ -297,11 +299,16 @@ int str_to_int(Str* s);
 
 namespace runtime {  // MyPy artifact
 
-class Buf {
+class IO {
+ public:
+  virtual void write(Str* s) = 0;
+};
+
+class Buf : public IO {
  public:
   Buf() : data_(nullptr), len_(0) {
   };
-  void write(Str* s);
+  virtual void write(Str* s);
   Str* getvalue() { return new Str(data_, len_); }
 
  private:
@@ -309,6 +316,26 @@ class Buf {
   char* data_;
   size_t len_;
 };
+
+// Wrap a FILE*
+class CFile : public IO {
+ public:
+  CFile(FILE* f) : f_(f) {
+  };
+  virtual void write(Str* s);
+
+ private:
+  FILE* f_;
+};
+
+extern IO* gStdOut;
+
+inline IO* StdOut() {
+  if (gStdOut == nullptr) {
+    gStdOut = new CFile(stdout);
+  }
+  return gStdOut;
+}
 
 };
 

@@ -7,13 +7,14 @@ from __future__ import print_function
 import os
 import sys
 
-from runtime import log, Buf
+import runtime
+from runtime import log
 
 
 def run_tests():
   # type: () -> None
 
-  f = Buf()
+  f = runtime.Buf()
   for i in xrange(30):
     f.write(chr(i + 65))
 
@@ -21,9 +22,8 @@ def run_tests():
   log('Wrote %d bytes to StringIO', len(contents))
   log('contents = %s ... %s', contents[:10], contents[-10:])
 
-  # TODO:
-  #f = sys.stdout
-  #f.write('stdout\n')
+  f2 = runtime.StdOut()
+  f2.write('stdout\n')
 
 
 def run_benchmarks():
@@ -34,7 +34,7 @@ def run_benchmarks():
 
   i = 0
   while i < n:
-    f = Buf()
+    f = runtime.Buf()
     for j in xrange(30):
       f.write(chr(i + 65))
 
