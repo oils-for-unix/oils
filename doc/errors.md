@@ -41,9 +41,9 @@ understandable!
 
 ### Strict Modes
 
-strict-array
-strict-errexit
-strict-arith
+strict_array
+strict_errexit
+strict_arith
 
 TODO: strict-word-eval?
   for unicode errors

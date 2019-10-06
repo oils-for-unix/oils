@@ -62,7 +62,7 @@ Parsing bash is undecidable.
 Associative arrays and being undefined
 
 - half an array type
-  - strict-array removes this
+  - strict_array removes this
   - case $x in "$@"
 
 - half an associative array type
@@ -269,10 +269,10 @@ NOTE: string slicing:
 
     set -o nounset  # bash
 
-    shopt -s strict-array
-    shopt -s strict-arith  # on by default
+    shopt -s strict_array
+    shopt -s strict_arith  # on by default
 
-    shopt -s strict-word-eval  # slice args, unicode strings
+    shopt -s strict_word_eval  # slice args, unicode strings
 
 
 ### Quirky Syntax and Semantics in Shell Sublanguages
