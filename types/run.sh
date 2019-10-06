@@ -141,4 +141,13 @@ audit-hacks() {
   egrep --color -w 'type: ignore' {osh,core,frontend}/*.py
 }
 
+#
+# expr_parse demo.  Typecheck it?
+#
+
+expr-parse() {
+  export PYTHONPATH=.
+  echo '1 + 2*3' | bin/expr_parse.py "$@"
+}
+
 "$@"

@@ -447,6 +447,7 @@ class CommandParser(object):
       self._Peek()
 
   def _AtSecondaryKeyword(self):
+    # type: () -> bool
     if self.c_id in SECONDARY_KEYWORDS:
       return True
     if self.c_id == Id.KW_Do and not self.parse_opts.do:
