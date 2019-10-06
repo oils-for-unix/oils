@@ -131,3 +131,34 @@ use lib foo.sh {
   myalias otherfunc
 }
 ```
+
+
+Yes good question – this hasn’t been addressed by the docs yet, but it will be.
+
+There are two kinds of composition / code units in Oil: proc and func.
+
+- funcs are like Python or JavaScript functions. They accept and return typed data.
+- procs are like shell “functions”. They look like an external process, with
+argv and an exit code. I think of proc as “procedure” or “proecss”.
+
+- procs are called with a "command line":
+
+    myproc arg1 arg2 arg3
+
+funcs are called with Python/JS-like expressions:
+
+    var x = myfunc(42, 'foo')
+    do myfunc(42, 'foo')   # throw away the return value.
+
+This is NOT legal:
+
+    myfunc(42, 'foo')
+
+I will have a whole doc about this, along with some advice on where to use
+each. I do expect that it’s one of the more confusing things, but I think it’s
+justified because both mechanism are powerful and well-tested. I guess you
+kinda have to know shell AND Python to know when to use each.
+
+I use shell as my “main”, if that makes sense. So generally speaking, procs
+calls funcs, and funcs won’t call procs as much.
+
