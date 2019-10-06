@@ -299,12 +299,12 @@ int str_to_int(Str* s);
 
 namespace runtime {  // MyPy artifact
 
-class IO {
+class File {
  public:
   virtual void write(Str* s) = 0;
 };
 
-class Buf : public IO {
+class Buf : public File {
  public:
   Buf() : data_(nullptr), len_(0) {
   };
@@ -318,7 +318,7 @@ class Buf : public IO {
 };
 
 // Wrap a FILE*
-class CFile : public IO {
+class CFile : public File {
  public:
   CFile(FILE* f) : f_(f) {
   };
@@ -328,9 +328,9 @@ class CFile : public IO {
   FILE* f_;
 };
 
-extern IO* gStdOut;
+extern File* gStdOut;
 
-inline IO* StdOut() {
+inline File* StdOut() {
   if (gStdOut == nullptr) {
     gStdOut = new CFile(stdout);
   }

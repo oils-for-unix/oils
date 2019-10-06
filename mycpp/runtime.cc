@@ -143,7 +143,7 @@ Str* StrIter::Value() {
 
 namespace runtime {
 
-IO* gStdOut;
+File* gStdOut;
 
 void Buf::write(Str* s) {
   int orig_len = len_;

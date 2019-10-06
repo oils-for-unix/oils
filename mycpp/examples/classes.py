@@ -8,6 +8,7 @@ import cStringIO
 import os
 import sys
 
+import runtime
 from runtime import log
 
 from typing import IO
@@ -17,7 +18,7 @@ class ColorOutput(object):
   """Abstract base class for plain text, ANSI color, and HTML color."""
 
   def __init__(self, f):
-    # type: (IO[str]) -> None
+    # type: (runtime.File) -> None
     self.f = f
     self.num_chars = 0
 
@@ -31,7 +32,7 @@ class TextOutput(ColorOutput):
   """TextOutput put obeys the color interface, but outputs nothing."""
 
   def __init__(self, f):
-    # type: (IO[str]) -> None
+    # type: (runtime.File) -> None
 
     # TODO: This should be translated into an initializer list.
     ColorOutput.__init__(self, f)
@@ -39,7 +40,8 @@ class TextOutput(ColorOutput):
 
 def run_tests():
   # type: () -> None
-  out = TextOutput(sys.stdout)
+  stdout = runtime.StdOut()
+  out = TextOutput(stdout)
   out.write('foo\n')
   log('Wrote %d bytes', out.num_chars)
 
@@ -51,7 +53,7 @@ def run_benchmarks():
   x = 33
   result = -1
 
-  f = cStringIO.StringIO()
+  f = runtime.Buf()
   out = TextOutput(f)
 
   i = 0

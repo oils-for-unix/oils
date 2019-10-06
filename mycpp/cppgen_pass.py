@@ -284,10 +284,15 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> T:
         t = self.types[o]
         if o.expr:  
+          #log('member o = %s', o)
+
           # This is an approximate hack that assumes that locals don't shadow
           # imported names.  Might be a problem with names like 'word'?
-          if (isinstance(o.expr, NameExpr) and
-             (o.expr.name in self.imported_names or o.expr.name == 'runtime')):
+          if (isinstance(o.expr, NameExpr) and (
+              o.expr.name in self.imported_names or
+              o.expr.name == 'runtime' or
+              o.name == '__init__'
+              )):
             op = '::'
           else:
             op = '->'  # Everything is a pointer
@@ -890,12 +895,17 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           self.member_vars.clear()  # make a new list
 
-          self.decl_write_ind('class %s {\n', o.name)  # block after this
+          self.decl_write_ind('class %s', o.name)  # block after this
+
+          # e.g. class TextOuput : public ColorOutput
+          for b in o.base_type_exprs:
+            if isinstance(b, NameExpr):
+              if b.name != 'object':
+                self.decl_write(' : public %s', b.name)
+
+          self.decl_write(' {\n')
           self.decl_write_ind(' public:\n')
 
-          # TODO: base types
-          for b in o.base_type_exprs:
-            self.log('  base_type_expr %s', b)
 
           # NOTE: declaration still has to traverse the whole body to fill out
           # self.member_vars!!!
@@ -910,6 +920,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               continue
 
             # Constructor is named after class
+            # TODO: Subtypes need to call this!  Maybe keep a member named
+            # 'init' to call.
             if isinstance(stmt, FuncDef) and stmt.name() == '__init__':
               self.decl_write_ind('%s(', o.name)
               self._write_func_args(stmt)
