@@ -215,7 +215,8 @@ translate-parse() {
 # TODO: Get rid of translate-ordered
 translate-asdl-generated() {
   translate-ordered asdl_generated '#include "expr.asdl.h"' \
-    $REPO_ROOT/asdl/runtime.py $REPO_ROOT/asdl/format.py \
+    $REPO_ROOT/asdl/runtime.py \
+    $REPO_ROOT/asdl/format.py \
     examples/asdl_generated.py
 } 
 

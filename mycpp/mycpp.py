@@ -63,7 +63,7 @@ def ModulesToCompile(result, mod_names):
 
     # Why do I get oil.asdl.tdop in addition to asdl.tdop?
     # I also get oil.asdl.typed_arith_parse?  Doesn't make sense?
-    if name == 'asdl.tdop':
+    if name in ('asdl.tdop', 'asdl.format', 'asdl.runtime'):
       continue
 
     yield name, module
@@ -130,7 +130,8 @@ def main(argv):
   const_code = []
   pass1 = const_pass.Collect(result.types, const_lookup, const_code)
 
-  for name, module in ModulesToCompile(result, mod_names):
+  to_compile = list(ModulesToCompile(result, mod_names))
+  for name, module in to_compile:
     pass1.visit_mypy_file(module)
 
   # Collect constants and then emit code.
@@ -142,15 +143,23 @@ def main(argv):
     f.write('%s\n' % line)
   f.write('\n')
 
-  # First generate ALL C++ declarations / "headers".
-  for name, module in ModulesToCompile(result, mod_names):
-    p2 = cppgen_pass.Generate(result.types, const_lookup, f, decl=True)
+  # Forward declarations first.
+  for name, module in to_compile:
+    p2 = cppgen_pass.Generate(result.types, const_lookup, f, forward_decl=True)
     p2.visit_mypy_file(module)
 
-  # Now the definitions / implementations.
-  for name, module in ModulesToCompile(result, mod_names):
-    p3 = cppgen_pass.Generate(result.types, const_lookup, f)
+  # First generate ALL C++ declarations / "headers".
+  for name, module in to_compile:
+    p3 = cppgen_pass.Generate(result.types, const_lookup, f, decl=True)
     p3.visit_mypy_file(module)
+
+  # Now the definitions / implementations.
+  for name, module in to_compile:
+    p4 = cppgen_pass.Generate(result.types, const_lookup, f)
+    p4.visit_mypy_file(module)
+
+  for name, module in to_compile:
+    log('to_compile: %s', name)
 
 
 if __name__ == '__main__':

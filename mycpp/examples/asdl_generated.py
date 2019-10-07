@@ -13,7 +13,8 @@ from mylib import log
 
 from typing import Optional, List
 
-from asdl import format as fmt
+# This causes problems
+#from asdl import format as fmt
 
 
 class arith_expr_t(object):

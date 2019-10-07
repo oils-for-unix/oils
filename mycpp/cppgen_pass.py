@@ -121,11 +121,12 @@ def get_c_type(t):
 class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def __init__(self, types: Dict[Expression, Type], const_lookup, f,
-                 decl=False):
+                 decl=False, forward_decl=False):
       self.types = types
       self.const_lookup = const_lookup
       self.f = f 
       self.decl = decl
+      self.forward_decl = forward_decl
 
       self.indent = 0
       self.local_vars = {}  # type: Dict[str, bool]
@@ -144,7 +145,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       log(ind_str + msg, *args)
 
     def write(self, msg, *args):
-      if self.decl:
+      if self.decl or self.forward_decl:
         return
       if args:
         msg = msg % args
@@ -152,7 +153,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     # Write respecting indent
     def write_ind(self, msg, *args):
-      if self.decl:
+      if self.decl or self.forward_decl:
         return
       ind_str = self.indent * '  '
       if args:
@@ -220,7 +221,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.log('mypyfile %s', o.fullname())
 
         mod_parts = o.fullname().split('.')
-        comment = 'declare' if self.decl else 'define'
+        if self.forward_decl:
+          comment = 'forward declare' 
+        elif self.decl:
+          comment = 'declare' 
+        else:
+          comment = 'define'
 
         self.decl_write_ind('namespace %s {  // %s\n', mod_parts[-1], comment)
         self.decl_write('\n')
@@ -869,6 +875,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.log('  kind %s', arg.kind)
 
     def visit_func_def(self, o: 'mypy.nodes.FuncDef') -> T:
+        # No function prototypes when forward declaring.
+        if self.forward_decl:
+          return
+
         if self.current_class_name:
           # definition looks like
           # void Type::foo(...);
@@ -896,6 +906,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         pass
 
     def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> T:
+        # Forward declare types because they may be used in prototypes
+        if self.forward_decl:
+            self.decl_write_ind('class %s;\n', o.name)
+            return
+
         base_class_name = None  # single inheritance only
         for b in o.base_type_exprs:
           if isinstance(b, NameExpr):
