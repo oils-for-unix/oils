@@ -463,7 +463,7 @@ class OilPrinter(object):
         #print("CHECKING NAME", lhs0.name, defined_locally, local_symbols)
 
       has_array = any(
-          pair.lhs.tag == sh_lhs_expr_e.CompatIndexedName for pair in node.pairs)
+          pair.lhs.tag == sh_lhs_expr_e.UnparsedIndex for pair in node.pairs)
 
       # need semantic analysis.
       # Would be nice to assume that it's a local though.
@@ -534,7 +534,7 @@ class OilPrinter(object):
         else:
           self.DoWordAsExpr(pair.rhs, local_symbols)
 
-      elif pair.lhs.tag == sh_lhs_expr_e.CompatIndexedName:
+      elif pair.lhs.tag == sh_lhs_expr_e.UnparsedIndex:
         # NOTES:
         # - parse_ctx.one_pass_parse should be on, so the span invariant
         #   is accurate

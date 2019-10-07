@@ -1,7 +1,9 @@
 """
 visitor.py
 """
+from __future__ import print_function
 
+import sys
 from asdl import asdl_ as asdl
 
 
@@ -86,7 +88,12 @@ def _ReflowLines(s, depth):
     # XXX this should be fixed for real
     if i == -1 and 'GeneratorExp' in cur:
       i = size + 3
-    assert i != -1, "Impossible line %d to reflow: %r" % (size, s)
+    if i == -1:
+      print("Warning: No space to reflow line (size=%d, depth=%d, cur=%r): %r"
+            % (size, depth, cur, s), file=sys.stderr)
+      lines.append(padding + cur)
+      break
+
     lines.append(padding + cur[:i])
     if len(lines) == 1:
       # find new size based on brace

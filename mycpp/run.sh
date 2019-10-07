@@ -220,6 +220,19 @@ translate-asdl-generated() {
     examples/asdl_generated.py
 } 
 
+# TODO: syntax_asdl is used.  Hm.
+# So we have to translate tha tfile and include it.
+alloc-main() {
+  translate-ordered alloc_main '#include "syntax.asdl.h"' \
+    $REPO_ROOT/core/alloc.py \
+    examples/alloc_main.py
+
+  local out=_gen/syntax.asdl.h
+  asdl-gen cpp ../frontend/syntax.asdl > $out
+
+  compile-example alloc_main
+} 
+
 # build ASDL schema and run it
 run-python-parse() {
   mkdir -p _gen
@@ -329,7 +342,7 @@ python-example() {
 example-both() {
   local name=$1
 
-  mypy --py2 --strict examples/$name.py
+  #mypy --py2 --strict examples/$name.py
 
   translate-example $name
   compile-example $name

@@ -211,7 +211,7 @@ module syntax
   sh_lhs_expr =
     Name(string name)
   | IndexedName(string name, arith_expr index)
-  | CompatIndexedName(string name, string index)  -- for translation
+  | UnparsedIndex(string name, string index)  -- for translation
   attributes (int* spids)
 
   arith_expr =

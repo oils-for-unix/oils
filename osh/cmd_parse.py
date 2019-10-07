@@ -193,7 +193,7 @@ def _MakeAssignPair(parse_ctx,  # type: ParseContext
 
     line = parse_ctx.arena.GetLine(left_span.line_id)
     index_str = line[left_span.col : right_span.col]
-    lhs = sh_lhs_expr.CompatIndexedName(var_name, index_str)
+    lhs = sh_lhs_expr.UnparsedIndex(var_name, index_str)
 
   elif left_token.id == Id.Lit_ArrayLhsOpen:  # a[x++]=1
     var_name = left_token.val[:-1]

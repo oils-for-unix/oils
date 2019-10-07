@@ -231,7 +231,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     self.Emit('    L = out_node.fields')
     for i, (field_name, field_desc) in enumerate(desc.GetFields()):
       if field_name == 'spids':
-        continue  # don't emit for now
+        continue  # don't emit in the abbreviated version
 
       self.Indent()
       self._EmitCodeForField('AbbreviatedTree', field_name, field_desc, i)
