@@ -83,7 +83,13 @@ translate-osh-parse() {
   time ./mycpp.py $main
 }
 
-# Has some hard-coded stuff
+# for examples/{parse,asdl_generated}
+# TODO: Get rid of this?   Every example should be translated the same.
+#
+# What does it do?
+# - passes multiple files in order to mycpp.py
+# - adds the "snippet" prefix
+
 translate-ordered() {
   local name=$1
   local snippet=$2
@@ -204,6 +210,13 @@ mypy() {
 translate-parse() {
   translate-ordered parse '#include "expr.asdl.h"' \
     $REPO_ROOT/asdl/format.py examples/parse.py 
+} 
+
+# TODO: Get rid of translate-ordered
+translate-asdl-generated() {
+  translate-ordered asdl_generated '#include "expr.asdl.h"' \
+    $REPO_ROOT/asdl/runtime.py $REPO_ROOT/asdl/format.py \
+    examples/asdl_generated.py
 } 
 
 # build ASDL schema and run it

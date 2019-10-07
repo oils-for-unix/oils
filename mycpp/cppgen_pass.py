@@ -8,7 +8,7 @@ from typing import overload, Union, Optional, Any, Dict
 from mypy.visitor import ExpressionVisitor, StatementVisitor
 from mypy.types import (
     Type, AnyType, NoneTyp, TupleType, Instance, Overloaded, CallableType,
-    UnionType, UninhabitedType)
+    UnionType, UninhabitedType, PartialType)
 from mypy.nodes import (
     Expression, Statement, NameExpr, IndexExpr, MemberExpr, TupleExpr,
     ExpressionStmt, AssignmentStmt, StrExpr, SliceExpr, FuncDef,
@@ -77,6 +77,10 @@ def get_c_type(t):
 
       parts = t.type.fullname().split('.')
       c_type = '%s::%s%s' % (parts[-2], parts[-1], is_pointer)
+
+  elif isinstance(t, PartialType):
+    # For Any?
+    c_type = 'void*'
 
   elif isinstance(t, UninhabitedType):
     # UninhabitedType has a NoReturn flag

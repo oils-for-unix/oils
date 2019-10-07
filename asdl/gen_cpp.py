@@ -1,7 +1,12 @@
 """
-gen_cpp.py
+gen_cpp.py - Generate C++ classes from an ASDL schema.
 
 TODO:
+
+- Integrate some of the lessons here:  
+  - https://github.com/oilshell/blog-code/tree/master/asdl
+  - And maybe mycpp/target_lang.cc
+
 - pretty printing methods
   - so asdl/format.py get translated?
 
@@ -38,7 +43,7 @@ class CEnumVisitor(visitor.AsdlVisitor):
 
 
 _BUILTINS = {
-    'string': 'Str*',  # declared in runtime.h
+    'string': 'Str*',  # declared in mylib.h
     'int': 'int',
     'bool': 'bool',
     #'id': 'Id',  # Application specific hack for now

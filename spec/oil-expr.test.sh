@@ -391,18 +391,13 @@ great
 
 #### Tuples
 var zero = ()
-
-# TODO: I don't like this trailing comma syntax?
-var one = 1,
-var one2 = (1,)
+var one = tup(42)
 var two = (1,2)
 echo $len(zero)
 echo $len(one)
-echo $len(one2)
 echo $len(two)
 ## STDOUT:
 0
-1
 1
 2
 ## END

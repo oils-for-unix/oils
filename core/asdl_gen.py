@@ -48,7 +48,7 @@ def main(argv):
     f.write("""\
 #include <cstdint>
 
-#include "runtime.h"  // for Str, List, etc.
+#include "mylib.h"  // for Str, List, etc.
 
 namespace %s {
 

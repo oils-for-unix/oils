@@ -13,6 +13,8 @@ from mylib import log
 
 from typing import Optional, List
 
+from asdl import format as fmt
+
 
 class arith_expr_t(object):
   pass

@@ -55,7 +55,7 @@ if test -z "$OSH_LIST"; then
 fi
 
 readonly OIL_CPYTHON="$REPO_ROOT/bin/oil"
-readonly OIL_OVM=${OSH_OVM:-$REPO_ROOT/_bin/oil}
+readonly OIL_OVM=${OIL_OVM:-$REPO_ROOT/_bin/oil}
 
 OIL_LIST=${OIL_LIST:-}  # A space-separated list.
 
