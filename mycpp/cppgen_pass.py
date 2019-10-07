@@ -334,6 +334,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # f = Foo() => f = new Foo().
           ret_type = callee_type.ret_type
           # str(i) doesn't need new.  For now it's a free function.
+          # TODO: rename int_to_str?  or Str::from_int()?
           if (callee_name not in ('str',) and 
               isinstance(ret_type, Instance) and 
               callee_name == ret_type.type.name()):
@@ -891,17 +892,22 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         pass
 
     def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> T:
+        base_class_name = None  # single inheritance only
+        for b in o.base_type_exprs:
+          if isinstance(b, NameExpr):
+            # TODO: inherit from std::exception?
+            if b.name != 'object' and b.name != 'Exception':
+              base_class_name = b.name
+
         if self.decl:
 
           self.member_vars.clear()  # make a new list
 
           self.decl_write_ind('class %s', o.name)  # block after this
 
-          # e.g. class TextOuput : public ColorOutput
-          for b in o.base_type_exprs:
-            if isinstance(b, NameExpr):
-              if b.name != 'object':
-                self.decl_write(' : public %s', b.name)
+          # e.g. class TextOutput : public ColorOutput
+          if base_class_name:
+            self.decl_write(' : public %s', base_class_name)
 
           self.decl_write(' {\n')
           self.decl_write_ind(' public:\n')
@@ -920,8 +926,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               continue
 
             # Constructor is named after class
-            # TODO: Subtypes need to call this!  Maybe keep a member named
-            # 'init' to call.
             if isinstance(stmt, FuncDef) and stmt.name() == '__init__':
               self.decl_write_ind('%s(', o.name)
               self._write_func_args(stmt)
@@ -947,14 +951,46 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.current_class_name = o.name
 
+        # Now we're visiting for definitions (not declarations).
+        #
         block = o.defs
         for stmt in block.body:
 
-          # Constructor!
+          # Collect __init__ calls within __init__, and turn them into
+          # initialize lists.
           if isinstance(stmt, FuncDef) and stmt.name() == '__init__':
             self.write_ind('%s::%s(', o.name, o.name)
             self._write_func_args(stmt)
             self.write(') ')
+
+            # TODO: Initializer list with constructor
+            first_stmt = stmt.body.body[0]
+            if (isinstance(first_stmt, ExpressionStmt) and
+                isinstance(first_stmt.expr, CallExpr)):
+              expr = first_stmt.expr
+              #log('expr %s', expr)
+              callee = first_stmt.expr.callee
+              # TextOutput() : ColorOutput(f), ... {
+              if isinstance(callee, MemberExpr) and callee.name == '__init__':
+                base_constructor_args = expr.args
+                #log('ARGS %s', base_constructor_args)
+                self.write(': %s(', base_class_name)
+                for i, arg in enumerate(base_constructor_args):
+                  if i == 0:
+                    continue  # Skip 'this'
+                  if i != 1:
+                    self.write(', ')
+                  self.accept(arg)
+                self.write(') {\n')
+
+                self.indent += 1
+                for node in stmt.body.body[1:]:
+                  self.accept(node)
+                self.indent -= 1
+                self.write('}\n\n')
+                continue
+
+            # Normal function body
             self.accept(stmt.body)
             self.write('\n')
             continue

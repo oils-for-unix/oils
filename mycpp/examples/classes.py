@@ -34,8 +34,9 @@ class TextOutput(ColorOutput):
   def __init__(self, f):
     # type: (runtime.File) -> None
 
-    # TODO: This should be translated into an initializer list.
+    # Note: translated into an initializer list.
     ColorOutput.__init__(self, f)
+    print('TextOutput constructor')
 
 
 def run_tests():
@@ -43,6 +44,7 @@ def run_tests():
   stdout = runtime.StdOut()
   out = TextOutput(stdout)
   out.write('foo\n')
+  out.write('bar\n')
   log('Wrote %d bytes', out.num_chars)
 
 

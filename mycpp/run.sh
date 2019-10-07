@@ -377,9 +377,6 @@ should-skip() {
   case $1 in
     # not passing yet!
     #
-    # - prereqs for parse
-    #   - classes: TextOutput needs to inherit fields from ColorOutput
-    #
     # - parse needs to translate asdl/format.py to pretty print.
     #     Also fails on expr.asdl.h.
     #
@@ -391,7 +388,7 @@ should-skip() {
 
     # Other problematic constructs: **kwargs, named args
 
-    parse|classes|switch1|switch2|scoped_resource)
+    parse|switch1|switch2|scoped_resource)
       return 0
       ;;
     *)
