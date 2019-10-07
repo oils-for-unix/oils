@@ -1349,8 +1349,8 @@ class Executor(object):
       if node.sig.tag == proc_sig_e.Closed:
         defaults = [None] * len(node.sig.params)
         for i, param in enumerate(node.sig.params):
-          if param.default:
-            py_val = self.expr_ev.EvalExpr(param.default)
+          if param.default_val:
+            py_val = self.expr_ev.EvalExpr(param.default_val)
             defaults[i] = _PyObjectToVal(py_val)
       else:
         defaults = None
@@ -1367,14 +1367,14 @@ class Executor(object):
 
       pos_defaults = [None] * len(node.pos_params)
       for i, param in enumerate(node.pos_params):
-        if param.default:
-          py_val = self.expr_ev.EvalExpr(param.default)
+        if param.default_val:
+          py_val = self.expr_ev.EvalExpr(param.default_val)
           pos_defaults[i] = _PyObjectToVal(py_val)
 
       named_defaults = {}
       for i, param in enumerate(node.named_params):
-        if param.default:
-          obj = self.expr_ev.EvalExpr(param.default)
+        if param.default_val:
+          obj = self.expr_ev.EvalExpr(param.default_val)
           named_defaults[param.name.val] = value.Obj(obj)
 
       obj = objects.Func(node, pos_defaults, named_defaults, self)

@@ -27,7 +27,6 @@ from __future__ import print_function
 import sys
 
 from asdl import meta
-from asdl import runtime
 from asdl import visitor
 
 

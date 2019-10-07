@@ -320,7 +320,7 @@ module syntax
     Open
   | Closed(param* params, token? rest, token? block)
 
-  param = (token name, type_expr? type, expr? default)
+  param = (token name, type_expr? type, expr? default_val)
 
   --
   -- Glob representation, for converting ${x//} to extended regexes.

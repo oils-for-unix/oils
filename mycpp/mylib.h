@@ -15,6 +15,7 @@
 
 class Str;
 template <class T> class List;
+template <class K, class V> class Dict;
 
 // for hand-written code
 void log(const char* fmt, ...);
@@ -193,6 +194,11 @@ class ListIter {
  private:
   List<T>* L_;
   int i_;
+};
+
+template <class K, class V>
+class Dict {
+  // TODO: Implement it!
 };
 
 template <class A, class B>

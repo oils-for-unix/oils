@@ -63,7 +63,10 @@ def ModulesToCompile(result, mod_names):
 
     # Why do I get oil.asdl.tdop in addition to asdl.tdop?
     # I also get oil.asdl.typed_arith_parse?  Doesn't make sense?
-    if name in ('asdl.tdop', 'asdl.format', 'asdl.runtime'):
+    # Maybe remove everything that starts with 'oil.' instead?
+    if name in (
+        'asdl.tdop', 'asdl.format', 'asdl.runtime', 'core.alloc'):
+
       continue
 
     yield name, module

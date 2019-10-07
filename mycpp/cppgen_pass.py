@@ -52,6 +52,12 @@ def get_c_type(t):
       inner_c_type = get_c_type(type_param)
       c_type = 'List<%s>*' % inner_c_type
 
+    elif type_name == 'builtins.dict':
+      params = []
+      for type_param in t.args:
+        params.append(get_c_type(type_param))
+      c_type = 'Dict<%s>*' % ', '.join(params)
+
     elif type_name == 'typing.IO':
       c_type = 'mylib::File*'
 
