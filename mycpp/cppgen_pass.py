@@ -53,7 +53,7 @@ def get_c_type(t):
       c_type = 'List<%s>*' % inner_c_type
 
     elif type_name == 'typing.IO':
-      c_type = 'runtime::IO*'
+      c_type = 'mylib::File*'
 
     else:
       # fullname() => 'parse.Lexer'; name() => 'Lexer'
@@ -290,7 +290,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # imported names.  Might be a problem with names like 'word'?
           if (isinstance(o.expr, NameExpr) and (
               o.expr.name in self.imported_names or
-              o.expr.name == 'runtime' or
+              o.expr.name == 'mylib' or
               o.name == '__init__'
               )):
             op = '::'
@@ -1024,7 +1024,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         if o.id in ('__future__', 'typing'):
           return  # do nothing
-        if o.id == 'runtime' and o.names == [('log', None)]:
+        if o.id == 'mylib' and o.names == [('log', None)]:
           return  # do nothing
 
         # Later we need to turn module.func() into module::func(), without

@@ -11,7 +11,7 @@ from __future__ import print_function
 import os
 import sys
 
-from runtime import log
+from mylib import log
 from typing import List, Any
 
 
@@ -40,7 +40,7 @@ class Switch(object):
 class typeswitch(object):
   """A ContextManager that translates to a C switch statement.
   
-  Each case will have a static_cast<>.  It does nothing at runtime."""
+  Each case will have a static_cast<>.  It does nothing at mylib."""
   def __init__(self):
     # type: (int) -> None
     pass

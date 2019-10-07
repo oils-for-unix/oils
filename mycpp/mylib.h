@@ -1,7 +1,7 @@
-// runtime.h
+// mylib.h
 
-#ifndef RUNTIME_H
-#define RUNTIME_H
+#ifndef MYLIB_H
+#define MYLIB_H
 
 #include <assert.h>
 #include <ctype.h>  // isalpha(), isdigit()
@@ -297,7 +297,7 @@ int str_to_int(Str* s);
 // Buf is StringIO
 //
 
-namespace runtime {  // MyPy artifact
+namespace mylib {  // MyPy artifact
 
 class File {
  public:
@@ -339,4 +339,4 @@ inline File* StdOut() {
 
 };
 
-#endif  // RUNTIME_H
+#endif  // MYLIB_H

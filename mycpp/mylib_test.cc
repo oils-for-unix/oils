@@ -2,7 +2,7 @@
 #include <stdio.h>  // vprintf
 #include <assert.h>
 
-#include "runtime.h"
+#include "mylib.h"
 
 void test_str_to_int() {
   int i;

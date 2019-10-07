@@ -120,7 +120,7 @@ translate-compile-typed-arith() {
 
   cc -o _bin/$name $CPPFLAGS \
     -I . -I ../_tmp \
-    _gen/$name.cc runtime.cc \
+    _gen/$name.cc mylib.cc \
     -lstdc++
 }
 
@@ -129,7 +129,7 @@ filter-cpp() {
   shift
 
   cat <<EOF
-#include "runtime.h"
+#include "mylib.h"
 
 EOF
 
@@ -225,6 +225,8 @@ run-cc-parse() {
 
   translate-parse
   # Now compile it
+
+  compile-parse
 }
 
 
@@ -248,7 +250,7 @@ modules-deps() {
   popd
 
   egrep '/mycpp/.*\.py$' examples/_tmp/modules-cpython.txt \
-    | egrep -v '__init__.py|runtime.py' \
+    | egrep -v '__init__.py|mylib.py' \
     | awk '{print $1}' > _tmp/manifest.txt
 
   local raw=_gen/modules_raw.cc
@@ -288,7 +290,7 @@ _compile-example() {
   #local flags='-O0 -g'  # to debug crashes
   mkdir -p _bin
   cc -o _bin/$name $CPPFLAGS -I . \
-    runtime.cc $src -lstdc++
+    mylib.cc $src -lstdc++
 }
 
 compile-example() {
@@ -499,8 +501,8 @@ heap() {
   cpp-compile-run heap
 }
 
-runtime-test() {
-  cpp-compile-run runtime_test runtime.cc
+mylib-test() {
+  cpp-compile-run mylib_test mylib.cc
 }
 
 gen-ctags() {

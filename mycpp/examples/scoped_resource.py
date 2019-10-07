@@ -7,7 +7,7 @@ from __future__ import print_function
 import os
 import sys
 
-from runtime import log
+from mylib import log
 from typing import List, Any
 
 

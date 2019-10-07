@@ -7,14 +7,14 @@ from __future__ import print_function
 import os
 import sys
 
-import runtime
-from runtime import log
+import mylib
+from mylib import log
 
 
 def run_tests():
   # type: () -> None
 
-  f = runtime.Buf()
+  f = mylib.Buf()
   for i in xrange(30):
     f.write(chr(i + 65))
 
@@ -22,7 +22,7 @@ def run_tests():
   log('Wrote %d bytes to StringIO', len(contents))
   log('contents = %s ... %s', contents[:10], contents[-10:])
 
-  f2 = runtime.StdOut()
+  f2 = mylib.StdOut()
   f2.write('stdout\n')
 
 
@@ -34,7 +34,7 @@ def run_benchmarks():
 
   i = 0
   while i < n:
-    f = runtime.Buf()
+    f = mylib.Buf()
     for j in xrange(30):
       f.write(chr(j + 65))
 

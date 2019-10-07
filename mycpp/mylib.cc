@@ -1,11 +1,11 @@
-// runtime.cc
+// mylib.cc
 
 #include <assert.h>
 #include <exception>  // std::exception
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>
 
-#include "runtime.h"
+#include "mylib.h"
 
 void print(Str* s) {
   printf("%s\n", s->data_);
@@ -141,7 +141,7 @@ Str* StrIter::Value() {
 // Buf
 //
 
-namespace runtime {
+namespace mylib {
 
 File* gStdOut;
 

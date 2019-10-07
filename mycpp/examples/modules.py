@@ -5,7 +5,7 @@ modules.py
 from __future__ import print_function
 
 import os
-from runtime import log
+from mylib import log
 
 from testpkg import module1
 from testpkg.module2 import func2
