@@ -25,6 +25,21 @@ void log(Str* fmt, ...);
 
 void print(Str* s);
 
+//
+// TODO: Fill exceptions in
+//
+
+class IndexError {
+};
+
+class KeyError {
+};
+
+
+//
+// Data Types
+//
+
 class Str {
  public:
   Str(const char* data) : data_(data) {
@@ -198,7 +213,11 @@ class ListIter {
 
 template <class K, class V>
 class Dict {
+ public:
   // TODO: Implement it!
+  V index(K key) {
+    return nullptr;
+  }
 };
 
 template <class A, class B>
@@ -291,6 +310,14 @@ inline Str* chr(int i) {
   buf[1] = '\0';
   return new Str(buf, 1);
 }
+
+// TODO: Call itoa I guess.
+inline Str* str(int i) {
+  return new Str("");
+}
+
+// TODO: There should be one str() and one repr() for every sum type, that
+// dispatches on tag?  Or just repr()?
 
 // Will need it for dict, but not tuple.
 //inline int len(Dict* D) {

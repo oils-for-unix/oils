@@ -12,12 +12,12 @@ Also, we don't want to save comment lines.
 """
 
 from _devbuild.gen.syntax_asdl import (
-    line_span, source_t, source__CFlag, source__MainFile, source__SourcedFile
+    line_span, source_t, source_e, source__MainFile, source__SourcedFile
 )
 from asdl import const
 from core.util import log
 
-from typing import List, Dict
+from typing import List, Dict, cast
 
 
 class Arena(object):
@@ -96,11 +96,13 @@ class Arena(object):
     src = self.line_srcs[line_id]
 
     # TODO: Make it look nicer, like core/ui.py.
-    if isinstance(src, source__CFlag):
+    if src.tag == source_e.CFlag:
       return '-c flag'
-    if isinstance(src, source__MainFile):
+    if src.tag == source_e.MainFile:
+      src = cast(source__MainFile, src)
       return src.path
-    if isinstance(src, source__SourcedFile):
+    if src.tag == source_e.SourcedFile:
+      src = cast(source__SourcedFile, src)
       return src.path
     return repr(src)
 

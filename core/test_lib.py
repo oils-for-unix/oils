@@ -13,6 +13,7 @@ import string
 import sys
 
 from _devbuild.gen.runtime_asdl import builtin_e
+from _devbuild.gen.syntax_asdl import source
 from asdl import runtime
 from core import alloc
 from core import completion
@@ -98,7 +99,7 @@ def AssertAsdlEqual(test, left, right):
 
 def MakeArena(source_name):
   arena = alloc.Arena()
-  arena.PushSource(source_name)
+  arena.PushSource(source.MainFile(source_name))
   return arena
 
 

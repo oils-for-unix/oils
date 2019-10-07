@@ -15,6 +15,7 @@ import unittest
 import sys
 
 from _devbuild.gen.runtime_asdl import value_e
+from _devbuild.gen.syntax_asdl import source
 from core import alloc
 from core import completion  # module under test
 from core import comp_ui
@@ -51,7 +52,7 @@ def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
 
   if not parse_ctx:
     arena = alloc.Arena()
-    arena.PushSource('<_MakeRootCompleter>')
+    arena.PushSource(source.MainFile('<_MakeRootCompleter>'))
     parse_opts = parse_lib.OilParseOptions()
     trail = parse_lib.Trail()
     parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None,

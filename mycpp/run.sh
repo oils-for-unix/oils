@@ -223,7 +223,13 @@ translate-asdl-generated() {
 # TODO: syntax_asdl is used.  Hm.
 # So we have to translate tha tfile and include it.
 alloc-main() {
-  translate-ordered alloc_main '#include "syntax.asdl.h"' \
+ 
+  # NOTE: We didn't import source_e because we're using isinstance().
+  local snippet='
+#include "syntax.asdl.h"
+using syntax_asdl::source_e;
+'
+  translate-ordered alloc_main "$snippet" \
     $REPO_ROOT/core/alloc.py \
     examples/alloc_main.py
 

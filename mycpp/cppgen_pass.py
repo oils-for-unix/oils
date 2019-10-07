@@ -325,10 +325,21 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> T:
         if o.callee.name == 'isinstance':
-          # TODO:
-          # if not isinstance(right, (arith_expr.Var, arith_expr.Index)):
-          # We need to look at the tag?
-          self.write('isinstance(TODO)')
+          assert len(o.args) == 2, args
+          obj = o.args[0]
+          typ = o.args[1]
+
+          if 0:
+            log('obj %s', obj)
+            log('typ %s', typ)
+
+          self.accept(obj)
+          self.write('->tag == ')
+          assert isinstance(typ, NameExpr), typ
+
+          # source__CFlag -> source_e::CFlag
+          tag = typ.name.replace('__', '_e::')
+          self.write(tag)
           return
 
         # HACK for log("%s", s)
@@ -531,7 +542,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write('})')
 
     def visit_dict_expr(self, o: 'mypy.nodes.DictExpr') -> T:
-        pass
+        dict_type = self.types[o]
+        c_type = get_c_type(dict_type)
+        assert c_type.endswith('*'), c_type
+        c_type = c_type[:-1]  # HACK TO CLEAN UP
+
+        self.write('new %s(' % c_type)
+        if o.items:
+          self.write('{')
+          for i, item in enumerate(o.items):
+            # TODO:  we can use an initializer list, I think.
+            pass
+          self.write('}')
+        self.write(')')
 
     def visit_tuple_expr(self, o: 'mypy.nodes.TupleExpr') -> T:
         tuple_type = self.types[o]
@@ -658,8 +681,20 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # I think there are more than one when you do a = b = 1, which I never
         # use.
         assert len(o.lvalues) == 1, o.lvalues
-
         lval = o.lvalues[0]
+
+        #    src = cast(source__SourcedFile, src)
+        # -> source__SourcedFile* src = static_cast<source__SourcedFile>(src)
+        if isinstance(o.rvalue, CallExpr) and o.rvalue.callee.name == 'cast':
+          assert isinstance(lval, NameExpr)
+          call = o.rvalue
+          subtype_name = call.args[0].name
+          self.write_ind(
+              '%s* %s = static_cast<%s*>(%s);\n', subtype_name, lval.name,
+              subtype_name, call.args[1].name)
+
+          return
+
         if isinstance(lval, NameExpr):
           lval_type = self.types[lval]
           c_type = get_c_type(lval_type)
@@ -685,7 +720,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           # Collect statements that look like self.foo = 1
           if isinstance(lval.expr, NameExpr) and lval.expr.name == 'self':
-            log('lval.name %s', lval.name)
+            #log('lval.name %s', lval.name)
             lval_type = self.types[lval]
             self.member_vars[lval.name] = lval_type
 
