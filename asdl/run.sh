@@ -45,7 +45,7 @@ gen-mypy-asdl() {
   local name=$1
   shift
   local out=_devbuild/gen/${name}_asdl.py
-  core/asdl_gen.py mypy asdl/${name}.asdl "$@" > $out
+  asdl/tool.py mypy asdl/${name}.asdl "$@" > $out
   wc -l $out
 }
 
@@ -202,10 +202,10 @@ line-length-hist() {
 
 gen-cpp-demo() {
   local out=_tmp/typed_arith.asdl.h
-  core/asdl_gen.py cpp asdl/typed_arith.asdl > $out
+  asdl/tool.py cpp asdl/typed_arith.asdl > $out
 
   local out2=_tmp/typed_demo.asdl.h
-  core/asdl_gen.py cpp asdl/typed_demo.asdl > $out2
+  asdl/tool.py cpp asdl/typed_demo.asdl > $out2
 
   wc -l $out $out2
 

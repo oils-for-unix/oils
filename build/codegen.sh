@@ -64,7 +64,7 @@ extract-clang() {
 }
 
 types-gen() {
-  core/asdl_gen.py c frontend/types.asdl "$@" > _devbuild/gen/osh-types.h
+  asdl/tool.py c frontend/types.asdl "$@" > _devbuild/gen/osh-types.h
 }
 
 id-c-gen() {

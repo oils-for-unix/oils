@@ -73,7 +73,7 @@ gen-asdl-py() {
   local out=_devbuild/gen/${name}_asdl.py
 
   # abbrev module is optional
-  core/asdl_gen.py mypy "$@" > $tmp
+  asdl/tool.py mypy "$@" > $tmp
 
   # BUG: MUST BE DONE ATOMICALLY ATOMIC; otherwise the Python interpreter can
   # import an empty file!
@@ -89,7 +89,7 @@ gen-types-asdl() {
 # TODO: syntax.asdl and runtime.asdl are mutually recursive.
 # Do it in one invocation, and use an output dir:
 #
-# ASDL_PATH=frontend:runtime core/asdl_gen.py mypy $out_dir ...
+# ASDL_PATH=frontend:runtime asdl/tool.py mypy $out_dir ...
 #
 # It looks like there needs to be a global cache like sys.modules in the ASDL
 # compiler.
