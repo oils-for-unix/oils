@@ -2,6 +2,23 @@
 
 module runtime
 {
+  builtin = 
+    NONE | READ | ECHO | PRINTF | SHIFT
+  | CD | PWD | PUSHD | POPD | DIRS
+  | EXPORT | READONLY | LOCAL | DECLARE | TYPESET 
+  | UNSET | SET | SHOPT
+  | TRAP | UMASK
+  | SOURCE | DOT | EVAL | EXEC | WAIT | JOBS | FG | BG
+  | COMPLETE | COMPGEN | COMPOPT | COMPADJUST
+  | TRUE | FALSE
+  | COLON
+  | TEST | BRACKET | GETOPTS
+  | COMMAND | TYPE | HASH | HELP | HISTORY
+  | BUILTIN
+  | ALIAS | UNALIAS
+  -- Oil
+  | REPR | PUSH | USE | ENV | FORK | OPTS | JSON
+
   -- Evaluating SimpleCommand results in either an argv array or an assignment.
   -- in 'local foo', rval is None
   assign_arg = (lvalue lval, value? rval, int spid)
@@ -96,23 +113,6 @@ module runtime
   -- whitespace; DE_Gray is for other IFS chars; Black is for significant
   -- characters.
   char_kind = DE_White | DE_Gray | Black | Backslash
-
-  builtin = 
-    NONE | READ | ECHO | PRINTF | SHIFT
-  | CD | PWD | PUSHD | POPD | DIRS
-  | EXPORT | READONLY | LOCAL | DECLARE | TYPESET 
-  | UNSET | SET | SHOPT
-  | TRAP | UMASK
-  | SOURCE | DOT | EVAL | EXEC | WAIT | JOBS | FG | BG
-  | COMPLETE | COMPGEN | COMPOPT | COMPADJUST
-  | TRUE | FALSE
-  | COLON
-  | TEST | BRACKET | GETOPTS
-  | COMMAND | TYPE | HASH | HELP | HISTORY
-  | BUILTIN
-  | ALIAS | UNALIAS
-  -- Oil
-  | REPR | PUSH | USE | ENV | FORK | OPTS | JSON
 
   -- word_eval.py: SliceParts is for ${a-} and ${a+}, Error is for ${a?}, and
   -- SliceAndAssign is for ${a=}.

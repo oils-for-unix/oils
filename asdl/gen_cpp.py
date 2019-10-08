@@ -45,6 +45,7 @@ _BUILTINS = {
     'string': 'Str*',  # declared in mylib.h
     'int': 'int',
     'bool': 'bool',
+    'any': 'void*',
     #'id': 'Id',  # Application specific hack for now
 }
 

@@ -82,8 +82,17 @@ gen-asdl-py() {
   echo "Wrote $out"
 }
 
-gen-types-asdl() {
-  gen-asdl-py frontend/types.asdl
+gen-asdl-cpp() {
+  local asdl_path=$1  # e.g. osh/osh.asdl
+
+  local name=$(basename $asdl_path .asdl)
+
+  local out=_devbuild/gen-cpp/${name}_asdl.h
+
+  # abbrev module is optional
+  asdl/tool.py cpp "$@" > $out
+
+  echo "Wrote $out"
 }
 
 # TODO: syntax.asdl and runtime.asdl are mutually recursive.
@@ -94,16 +103,39 @@ gen-types-asdl() {
 # It looks like there needs to be a global cache like sys.modules in the ASDL
 # compiler.
 
-gen-syntax-asdl() {
+oil-asdl-to-py() {
+  gen-asdl-py frontend/types.asdl  # no dependency on Id
+
+  build/codegen.sh id-mypy-gen  # dependency on bool_arg_type_e
+
   gen-asdl-py frontend/syntax.asdl 'frontend.syntax_abbrev'
-}
-
-gen-runtime-asdl() {
   gen-asdl-py osh/runtime.asdl
+  gen-asdl-py 'tools/find/find.asdl'
 }
 
-gen-find-asdl() {
-  gen-asdl-py 'tools/find/find.asdl'
+oil-asdl-to-cpp() {
+  local dir='_devbuild/gen-cpp'
+  mkdir -p $dir
+
+  gen-asdl-cpp frontend/types.asdl  # no dependency on Id
+
+  # Problem:
+  # - lex_mode_e is a #define
+  # - Id too
+  # - do we want enum class?
+
+  #build/codegen.sh id-mypy-gen  # dependency on bool_arg_type_e
+
+  # We also want to generate the lexer here.
+  # TranslateOshLexer can have a flag to use different Ids?
+  # Instead of id__Eol_Tok, use Id::Eol_Tok.
+  # case lex_mode_e::Expr
+
+  gen-asdl-cpp frontend/syntax.asdl
+  gen-asdl-cpp osh/runtime.asdl
+
+  echo
+  wc -l $dir/*
 }
 
 # TODO: should fastlex.c be part of the dev build?  It means you need re2c
@@ -175,13 +207,7 @@ minimal() {
 
   gen-help
 
-  gen-types-asdl    # no dependency on Id
-
-  build/codegen.sh id-mypy-gen  # dependency on bool_arg_type_e
-
-  gen-syntax-asdl   # depends on Id
-  gen-runtime-asdl  # ditto
-  gen-find-asdl
+  oil-asdl-to-py  # depends on Id
 
   # Only for testing.
   asdl/run.sh gen-typed-demo-asdl
