@@ -87,4 +87,10 @@ int main(int argc, char **argv) {
 
   test_str_to_int();
   test_str_methods();
+
+  log("");
+  Dict<int, Str*>* d = new Dict<int, Str*>();
+  (*d)[1] = new Str("foo");
+  log("d[1] = %s", d->index(1)->data_);
 }
+

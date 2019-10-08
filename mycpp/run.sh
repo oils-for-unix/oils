@@ -228,6 +228,11 @@ alloc-main() {
   local snippet='
 #include "syntax.asdl.h"
 using syntax_asdl::source_e;
+
+// Hack for now.  Every sum type should have repr()?
+Str* repr(syntax_asdl::source_t* obj) {
+  return new Str("TODO");
+}
 '
   translate-ordered alloc_main "$snippet" \
     $REPO_ROOT/core/alloc.py \

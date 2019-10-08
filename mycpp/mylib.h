@@ -215,9 +215,16 @@ template <class K, class V>
 class Dict {
  public:
   // TODO: Implement it!
+  // Used unordered_map or what?
   V index(K key) {
-    return nullptr;
+    return values_[0];
   }
+
+  V& operator[](K key) {
+    return values_[0];
+  }
+ private:
+  V values_[1];
 };
 
 template <class A, class B>

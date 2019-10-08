@@ -725,9 +725,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.member_vars[lval.name] = lval_type
 
         elif isinstance(lval, IndexExpr):  # a[x] = 1
-          self.write_ind('')
+          self.write_ind('(*')
           self.accept(lval.base)
-          self.write('[')
+          self.write(')[')
           self.accept(lval.index)
           self.write('] = ')
           self.accept(o.rvalue)
@@ -1085,6 +1085,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if o.id in ('__future__', 'typing'):
           return  # do nothing
         if o.id == 'mylib' and o.names == [('log', None)]:
+          return  # do nothing
+        if o.id == 'core.util' and o.names == [('log', None)]:
           return  # do nothing
 
         # Later we need to turn module.func() into module::func(), without
