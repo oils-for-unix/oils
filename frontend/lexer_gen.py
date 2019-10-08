@@ -204,13 +204,13 @@ def TranslateRegex(pat):
 
 def TranslateSimpleLexer(func_name, lexer_def):
   print(r"""
-static inline void %s(unsigned char* line, int line_len,
+static inline void %s(const unsigned char* line, int line_len,
                                   int start_pos, int* id, int* end_pos) {
   assert(start_pos <= line_len);  /* caller should have checked */
 
-  unsigned char* p = line + start_pos;  /* modified by re2c */
+  const unsigned char* p = line + start_pos;  /* modified by re2c */
 
-  unsigned char* YYMARKER;  /* why do we need this? */
+  const unsigned char* YYMARKER;  /* why do we need this? */
 
   for (;;) {
     /*!re2c
@@ -251,14 +251,14 @@ def TranslateOshLexer(lexer_def):
   re2c:yyfill:enable = 0;  // generated code doesn't ask for more input
 */
 
-static inline void MatchOshToken(int lex_mode, unsigned char* line, int line_len,
+static inline void MatchOshToken(int lex_mode, const unsigned char* line, int line_len,
                               int start_pos, int* id, int* end_pos) {
   assert(start_pos <= line_len);  /* caller should have checked */
 
-  unsigned char* p = line + start_pos;  /* modified by re2c */
+  const unsigned char* p = line + start_pos;  /* modified by re2c */
   //printf("p: %p q: %p\n", p, q);
 
-  unsigned char* YYMARKER;  /* why do we need this? */
+  const unsigned char* YYMARKER;  /* why do we need this? */
   switch (lex_mode)  {
 """)
 
@@ -334,13 +334,14 @@ static inline void MatchOshToken(int lex_mode, unsigned char* line, int line_len
 def TranslateRegexToPredicate(py_regex, func_name):
   re2c_pat = TranslateRegex(py_regex)
   print(r"""
-static inline int %s(const char* s, int len) {
-  const char* p = s;  /* modified by re2c */
-  const char* end = s + len;
+static inline int %s(const unsigned char* s, int len) {
+  const unsigned char* p = s;  /* modified by re2c */
+  const unsigned char* end = s + len;
 
-  unsigned char* YYMARKER;  /* why do we need this? For SHOULD_HIJACK_RE */
+  const unsigned char* YYMARKER;  /* why do we need this? For SHOULD_HIJACK_RE */
 
   /*!re2c
+  re2c:define:YYCTYPE = "unsigned char";
   re2c:define:YYCURSOR = p;
   %-30s { return p == end; }  // Match must be anchored right, like $
   *     { return 0; }
