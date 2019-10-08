@@ -310,14 +310,13 @@ class ArithEvaluator(_ExprEvaluator):
     if val.tag == value_e.Undef:  # 'nounset' already handled before got here
       # Happens upon a[undefined]=42, which unfortunately turns into a[0]=42.
       #log('blame_word %s   arena %s', blame_word, self.arena)
-      e_die('Undefined value in arithmetic context '
-            '(0 if shopt -u strict-arith)', span_id=span_id)
+      e_die('Undefined value in arithmetic context', span_id=span_id)
       return 0
 
     if val.tag == value_e.Str:
       return _StringToInteger(val.s, span_id=span_id)  # calls e_die
 
-    if val.tag == value_e.MaybeStrArray:  # array is valid on RHS, but not on left
+    if val.tag == value_e.MaybeStrArray:  # array is valid on RHS, but not LHS
       return val.strs
 
     if val.tag == value_e.AssocArray:

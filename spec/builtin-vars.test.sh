@@ -447,11 +447,21 @@ f() {
   echo y=$y
 }
 f
-## stdout-json: ""
+echo y=$y
 ## status: 1
+## stdout-json: ""
+
 ## OK dash status: 2
-## BUG bash stdout: y=
-## BUG bash status: 0
-## BUG mksh stdout: y=0
+
 ## BUG mksh status: 0
+## BUG mksh STDOUT:
+y=0
+y=
+## END
+
+## BUG bash status: 0
+## BUG bash STDOUT:
+y=
+y=
+## END
 

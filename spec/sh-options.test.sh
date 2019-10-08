@@ -417,16 +417,16 @@ show-strict() {
 show-strict
 shopt -s strict:all
 show-strict
-shopt -u strict:all
+shopt -u strict_arith
 show-strict
 ## STDOUT:
 shopt -u strict_argv
-shopt -s strict_arith
+shopt -u strict_arith
 -
 shopt -s strict_argv
 shopt -s strict_arith
 -
-shopt -u strict_argv
+shopt -s strict_argv
 shopt -u strict_arith
 -
 ## END

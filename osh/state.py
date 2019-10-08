@@ -184,13 +184,13 @@ SET_OPTIONS = [
     ('C', 'noclobber'),
     ('h', 'hashall'),
     (None, 'pipefail'),
-    # A no-op for modernish.  TODO: could do shopt -u strict-arith?
+    # A no-op for modernish.
     (None, 'posix'),
 
     (None, 'vi'),
     (None, 'emacs'),
 
-    # TODO: Add strict-arg-parse?  For example, 'trap 1 2 3' shouldn't be
+    # TODO: Add strict_arg_parse?  For example, 'trap 1 2 3' shouldn't be
     # valid, because it has an extra argument.  Builtins are inconsistent about
     # checking this.
 ]
@@ -200,8 +200,8 @@ SET_OPTION_NAMES = set(name for _, name in SET_OPTIONS)
 
 _STRICT_OPTION_NAMES = [
     # NOTE:
-    # - some are PARSING: strict-glob, strict-backslash
-    # - some are runtime: strict-arith, strict-word-eval
+    # - some are PARSING: strict_glob, strict_backslash
+    # - some are runtime: strict_arith, strict_word_eval
 
     'strict_argv',  # empty argv not allowed
     'strict_arith',  # string to integer conversions
@@ -307,7 +307,7 @@ class ExecOpts(object):
     # OSH-specific options.
 
     # e.g. x=foo; echo $(( x )) is fatal
-    self.strict_arith = True  # The only one that's ON by default.
+    self.strict_arith = False
 
     self.strict_argv = False
 
@@ -1045,7 +1045,7 @@ class Mem(object):
     #
     # 1) Don't create arrays automatically, e.g. a[1000]=x
     # 2) Never change types?  yeah I think that's a good idea, at least for oil
-    # (not sh, for compatibility).  set -o strict-types or something.  That
+    # (not sh, for compatibility).  set -o strict_types or something.  That
     # means arrays have to be initialized with let arr = [], which is fine.
     # This helps with stuff like IFS.  It starts off as a string, and assigning
     # it to a list is an error.  I guess you will have to turn this no for
@@ -1141,7 +1141,7 @@ class Mem(object):
           # ['1', 2, 3, None, None, '4', None]
           # Then ${#a[@]} counts the entries that are not None.
           #
-          # TODO: strict-array for Oil arrays won't auto-fill.
+          # TODO: strict_array for Oil arrays won't auto-fill.
           n = lval.index - len(strs) + 1
           strs.extend([None] * n)
           strs[lval.index] = val.s

@@ -9,7 +9,6 @@ reader.py - Read lines of input.
 """
 
 import cStringIO
-import signal
 
 from core.util import p_die
 

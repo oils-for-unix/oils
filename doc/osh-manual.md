@@ -116,6 +116,9 @@ You can also turn individual options on or off:
 
 #### List of Options
 
+`strict_arith`.  Strings that don't look like integers cause a fatal error in
+arithmetic expressions.
+
 `strict_argv`.  Empty `argv` arrays are disallowed, since there's no practical
 use for them.  For example, the second statement in `x=''; $x` results in a
 fatal error.
@@ -136,12 +139,6 @@ doesn't concatenate its arguments with a space, or accept zero arguments.
   allowed, but negative lengths are always fatal, regardless of
   `strict-word-eval`.)
 - UTF-8 decoding errors are fatal when computing lengths (`${#s}`) and slices.
-
-**On by default**:
-
-`strict_arith`.  Strings that don't look like integers cause a fatal error in
-arithmetic expressions.  NOTE: This option may be removed if no scripts rely on
-the old, bad behavior.
 
 See the [Oil manual](oil-manual.html) for options that fundamentally change the
 shell language, e.g. those categorized under `shopt -s oil:all`.

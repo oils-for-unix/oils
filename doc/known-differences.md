@@ -31,16 +31,12 @@ treats it more like part of a programming language.
 
 Despite these differences, OSH is very compatible with existing shell scripts.
 
+Note that you can opt into more errors with `shopt -s strict_arith`.
+
 #### Static Parsing
 
 Arithmetic is statically parsed, so expressions like `$(( 1 $op 2 ))` fail with
 a parse error.  Use an explicit `eval` for these rare use cases.
-
-#### No Coercion to Zero
-
-Strings like `''` or `'foo'` aren't coerced to `0` in arithmetic contexts.
-OSH produces a fatal error unless you opt out with `shopt -u strict_arith`.
-(This is the only strict option that's on by default.)
 
 #### printf '%d' and other numeric formats require a valid integer
 
