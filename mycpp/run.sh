@@ -233,6 +233,8 @@ lexer-main() {
 #include "id.h"
 '
   translate-ordered lexer_main "$snippet" \
+    $REPO_ROOT/frontend/reader.py \
+    $REPO_ROOT/core/alloc.py \
     $REPO_ROOT/frontend/lexer.py \
     examples/lexer_main.py
 

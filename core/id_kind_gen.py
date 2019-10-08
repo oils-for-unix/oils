@@ -134,7 +134,7 @@ def main(argv):
     f = sys.stdout
     f.write('namespace id_kind_asdl {\n\n')
 
-    v = gen_cpp.ClassDefVisitor(f, {})
+    v = gen_cpp.ClassDefVisitor(f, {}, e_suffix=False)
     v.VisitModule(schema_ast)
 
     f.write('}  // namespace id_kind_asdl\n')

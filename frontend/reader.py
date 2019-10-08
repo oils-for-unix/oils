@@ -106,7 +106,8 @@ class InteractiveLineReader(_Reader):
     except EOFError:
       print('^D')  # bash prints 'exit'; mksh prints ^D.
       line = None
-    else:
+
+    if line is not None:
       # NOTE: Like bash, OSH does this on EVERY line in a multi-line command,
       # which is confusing.
 
@@ -115,12 +116,12 @@ class InteractiveLineReader(_Reader):
       # can't just remember a number -- I have to type 'hi' again.
       line = self.hist_ev.Eval(line)
 
-    # Add the line if it's not EOL, not whitespace-only, not the same as the
-    # previous line, and we have line_input.
-    if (line is not None and line.strip() and 
-        line != self.prev_line and self.line_input is not None):
-      self.line_input.add_history(line.rstrip())  # no trailing newlines
-      self.prev_line = line
+      # Add the line if it's not EOL, not whitespace-only, not the same as the
+      # previous line, and we have line_input.
+      if (line.strip() and line != self.prev_line and
+          self.line_input is not None):
+        self.line_input.add_history(line.rstrip())  # no trailing newlines
+        self.prev_line = line
 
     self.prompt_str = _PS2  # TODO: Do we need $PS2?  Would be easy.
     self.prompt_state.SetLastPrompt(self.prompt_str)

@@ -29,7 +29,9 @@ def get_c_type(t):
     return 'void'
 
   if isinstance(t, AnyType):
-    return 'Any'  # TODO: This is a problem!
+    # Note: this usually results in another compile-time error.  We should get
+    # rid of the 'Any' types.
+    return 'void*'
 
   # TODO: It seems better not to check for string equality, but that's what
   # mypyc/genops.py does?
@@ -725,7 +727,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           # Collect statements that look like self.foo = 1
           if isinstance(lval.expr, NameExpr) and lval.expr.name == 'self':
-            #log('lval.name %s', lval.name)
+            log('    lval.name %s', lval.name)
             lval_type = self.types[lval]
             self.member_vars[lval.name] = lval_type
 
@@ -940,6 +942,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         if self.decl:
           self.decl_write(');\n')
+          self.accept(o.body)  # Collect member_vars, but don't write anything
           return
 
         self.write(') ')
@@ -952,6 +955,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         pass
 
     def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> T:
+        log('  CLASS %s', o.name)
         # Forward declare types because they may be used in prototypes
         if self.forward_decl:
             self.decl_write_ind('class %s;\n', o.name)
@@ -1003,6 +1007,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.accept(stmt)
 
           # Now write member defs
+          log('MEMBERS for %s: %s', o.name, list(self.member_vars.keys()))
           if self.member_vars:
             self.decl_write('\n')  # separate from functions
           for name in sorted(self.member_vars):

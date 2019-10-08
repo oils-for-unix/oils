@@ -68,9 +68,10 @@ class ForwardDeclareVisitor(visitor.AsdlVisitor):
 class ClassDefVisitor(visitor.AsdlVisitor):
   """Generate C++ classes and type-safe enums."""
 
-  def __init__(self, f, type_lookup):
+  def __init__(self, f, type_lookup, e_suffix=True):
     visitor.AsdlVisitor.__init__(self, f)
     self.type_lookup = type_lookup
+    self.e_suffix = e_suffix
 
   def _GetInnerCppType(self, field):
     type_name = field.type
@@ -105,7 +106,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       type = sum.types[i]
       enum.append("%s = %d" % (type.name, i + 1))  # zero is reserved
 
-    self.Emit("enum class %s_e {" % name, depth)
+    enum_name = '%s_e' % name if self.e_suffix else name
+    self.Emit("enum class %s {" % enum_name, depth)
     self.Emit(", ".join(enum), depth + 1)
     self.Emit("};", depth)
     self.Emit("", depth)
@@ -113,7 +115,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
   def VisitSimpleSum(self, sum, name, depth):
     self._EmitEnum(sum, name, depth)
     # type alias to match Python code
-    self.Emit('typedef %s_e %s_t;' % (name, name), depth)
+    enum_name = '%s_e' % name if self.e_suffix else name
+    self.Emit('typedef %s %s_t;' % (enum_name, name), depth)
 
   def VisitCompoundSum(self, sum, sum_name, depth):
     # This is a sign that Python needs string interpolation!!!
