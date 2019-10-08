@@ -75,6 +75,10 @@ id-mypy-gen() {
   core/id_kind_gen.py mypy > _devbuild/gen/id_kind_asdl.py
 }
 
+id-cpp-gen() {
+  core/id_kind_gen.py cpp > _devbuild/gen-cpp/id_kind_asdl.h
+}
+
 lexer-gen() { frontend/lexer_gen.py "$@"; }
 
 # _gen/osh_lex.re2c.c

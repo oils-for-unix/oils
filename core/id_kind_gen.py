@@ -85,6 +85,24 @@ def GenCppCode(kind_names, id_names, f, id_labels=None, kind_labels=None):
   """)
 
 
+def _CreateModule(id_spec, ids):
+  """ 
+  Create a SYNTHETIC ASDL module to generate code from.
+  """
+  from asdl import asdl_
+
+  id_sum = asdl_.Sum([asdl_.Constructor(name) for name, _ in ids])
+
+  variants2 = [asdl_.Constructor(name) for name in id_spec.kind_name_list]
+  kind_sum = asdl_.Sum(variants2)
+
+  id_ = asdl_.Type('Id', id_sum)
+  kind_ = asdl_.Type('Kind', kind_sum)
+
+  schema_ast = asdl_.Module('id_kind', [], [id_, kind_])
+  return schema_ast
+
+
 def main(argv):
   try:
     action = argv[1]
@@ -108,22 +126,27 @@ def main(argv):
     for name, id_int in ids:
       print('#define id__%s %s' % (name, id_int))
 
+  elif action == 'cpp':
+    from asdl import gen_cpp
+
+    schema_ast = _CreateModule(ID_SPEC, ids)
+
+    f = sys.stdout
+    f.write('namespace id_kind_asdl {\n\n')
+
+    v = gen_cpp.ClassDefVisitor(f, {})
+    v.VisitModule(schema_ast)
+
+    f.write('}  // namespace id_kind_asdl\n')
+
+    # TODO: ID_INSTANCES and KIND_INSTANCES?
+    # Or those should be plain numbers?
+    # How do we print them then?
+
   elif action == 'mypy':
-    from asdl import asdl_
     from asdl import gen_python
 
-    #
-    # Create a SYNTHETIC ASDL module, and generate code from it.
-    #
-    id_sum = asdl_.Sum([asdl_.Constructor(name) for name, _ in ids])
-
-    variants2 = [asdl_.Constructor(name) for name in ID_SPEC.kind_name_list]
-    kind_sum = asdl_.Sum(variants2)
-
-    id_ = asdl_.Type('Id', id_sum)
-    kind_ = asdl_.Type('Kind', kind_sum)
-
-    schema_ast = asdl_.Module('id_kind', [], [id_, kind_])
+    schema_ast = _CreateModule(ID_SPEC, ids)
     #print(schema_ast)
 
     f = sys.stdout

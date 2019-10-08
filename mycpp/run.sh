@@ -193,7 +193,7 @@ EXAMPLES=( $(cd examples && echo *.py) )
 EXAMPLES=( "${EXAMPLES[@]//.py/}" )
 
 asdl-gen() {
-  PYTHONPATH="$REPO_ROOT:$REPO_ROOT/vendor" $REPO_ROOT/asdl/tool.py "$@"
+  PYTHONPATH="$REPO_ROOT:$REPO_ROOT/vendor" $REPO_ROOT/core/asdl_gen.py "$@"
 }
 
 # This is the one installed from PIP
@@ -226,13 +226,20 @@ lexer-main() {
   #mypy --py2 --strict examples/$name.py
 
   local snippet='
-#include "syntax.asdl.h"
+#include "types_asdl.h"
+#include "syntax_asdl.h"
+#include "id_kind_asdl.h"
+
+#include "id.h"
 '
   translate-ordered lexer_main "$snippet" \
     $REPO_ROOT/frontend/lexer.py \
     examples/lexer_main.py
 
-  compile-example lexer_main
+  local src=_gen/$name.cc
+  c++ -o _bin/$name $CPPFLAGS \
+    -I . -I ../_devbuild/gen -I ../_devbuild/gen-cpp \
+    mylib.cc $src -lstdc++
 }
 
 # TODO: syntax_asdl is used.  Hm.
@@ -346,7 +353,7 @@ _compile-example() {
   local more_flags='-O0 -g'  # to debug crashes
   #local more_flags=''
   mkdir -p _bin
-  cc -o _bin/$name $CPPFLAGS $more_flags -I . \
+  c++ -o _bin/$name $CPPFLAGS $more_flags -I . \
     mylib.cc $src -lstdc++
 }
 
