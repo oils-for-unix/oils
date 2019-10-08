@@ -162,6 +162,10 @@ class List {
   }
 
   T index(int i) {
+    if (i < 0) {
+      int j = v_.size() + i;
+      return v_.at(j);
+    }
     return v_.at(i);  // checked version
   }
 

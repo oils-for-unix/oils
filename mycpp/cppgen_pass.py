@@ -382,7 +382,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # Add ->data_ to string arguments after the first one
           if printf_style and i != 0:
             typ = self.types[arg]
-            if typ.type.fullname() == 'builtins.str':
+            # for Optional[Str]
+            if isinstance(typ, UnionType):
+              t = typ.items[0]
+            else:
+              t = typ
+            if t.type.fullname() == 'builtins.str':
               self.write('->data_')
 
         self.write(')')

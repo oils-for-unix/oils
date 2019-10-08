@@ -61,12 +61,9 @@ def ModulesToCompile(result, mod_names):
     if suffix not in mod_names:
       continue
 
-    # Why do I get oil.asdl.tdop in addition to asdl.tdop?
-    # I also get oil.asdl.typed_arith_parse?  Doesn't make sense?
-    # Maybe remove everything that starts with 'oil.' instead?
-    if name in (
-        'asdl.tdop', 'asdl.format', 'asdl.runtime', 'core.alloc'):
-
+    # Why do I get oil.asdl.tdop in addition to asdl.tdop?  This seems to
+    # work.
+    if name.startswith('oil.'):
       continue
 
     yield name, module

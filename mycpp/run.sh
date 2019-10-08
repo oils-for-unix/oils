@@ -220,14 +220,32 @@ translate-asdl-generated() {
     examples/asdl_generated.py
 } 
 
+lexer-main() {
+  local name='lexer_main'
+  PYTHONPATH=$REPO_ROOT examples/lexer_main.py
+  #mypy --py2 --strict examples/$name.py
+
+  local snippet='
+#include "syntax.asdl.h"
+'
+  translate-ordered lexer_main "$snippet" \
+    $REPO_ROOT/frontend/lexer.py \
+    examples/lexer_main.py
+
+  compile-example lexer_main
+}
+
 # TODO: syntax_asdl is used.  Hm.
 # So we have to translate tha tfile and include it.
 alloc-main() {
+  local name='alloc_main'
+  #mypy --py2 --strict examples/$name.py
+
+  PYTHONPATH=$REPO_ROOT examples/alloc_main.py
  
   # NOTE: We didn't import source_e because we're using isinstance().
   local snippet='
 #include "syntax.asdl.h"
-using syntax_asdl::source_e;
 
 // Hack for now.  Every sum type should have repr()?
 Str* repr(syntax_asdl::source_t* obj) {
@@ -325,9 +343,10 @@ _compile-example() {
 
   # need -lstdc++ for operator new
 
-  #local flags='-O0 -g'  # to debug crashes
+  local more_flags='-O0 -g'  # to debug crashes
+  #local more_flags=''
   mkdir -p _bin
-  cc -o _bin/$name $CPPFLAGS -I . \
+  cc -o _bin/$name $CPPFLAGS $more_flags -I . \
     mylib.cc $src -lstdc++
 }
 
@@ -427,6 +446,11 @@ should-skip() {
     #   - scoped_resource: Not translated at all.  No RuntimeError.
 
     # Other problematic constructs: **kwargs, named args
+
+    # TODO: enable these with special build scripts
+    alloc_main|lexer_main)
+      return 0
+      ;;
 
     parse|switch1|switch2|scoped_resource)
       return 0
