@@ -35,6 +35,15 @@ class IndexError {
 class KeyError {
 };
 
+class EOFError {
+};
+
+class NotImplementedError {
+};
+
+class AssertionError {
+};
+
 
 //
 // Data Types

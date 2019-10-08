@@ -31,8 +31,9 @@ class Cursor(object):
 
   def PrintUntil(self, until_span_id):
     # Sometimes we add +1
-    assert until_span_id < const.NO_INTEGER, \
-        'Missing span ID, got %d' % until_span_id
+    if until_span_id == const.NO_INTEGER:
+      assert 0, 'Missing span ID, got %d' % until_span_id
+
     for span_id in xrange(self.next_span_id, until_span_id):
       span = self.arena.GetLineSpan(span_id)
 
@@ -51,6 +52,9 @@ class Cursor(object):
     """Skip everything before next_span_id.
     Printing will start at next_span_id
     """
+    if (next_span_id == const.NO_INTEGER or
+        next_span_id == const.NO_INTEGER + 1):
+      assert 0, 'Missing span ID, got %d' % until_span_id
     assert next_span_id != const.NO_INTEGER, next_span_id
     self.next_span_id = next_span_id
 

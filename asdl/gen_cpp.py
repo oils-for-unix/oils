@@ -46,7 +46,9 @@ _BUILTINS = {
     'int': 'int',
     'bool': 'bool',
     'any': 'void*',
-    #'id': 'Id',  # Application specific hack for now
+    # TODO: frontend/syntax.asdl should properly import id enum instead of
+    # hard-coding it here.
+    'id': 'Id_t',
 }
 
 

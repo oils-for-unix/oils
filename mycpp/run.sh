@@ -226,14 +226,17 @@ lexer-main() {
   #mypy --py2 --strict examples/$name.py
 
   local snippet='
+#include "id_kind_asdl.h"  // syntax.asdl depends on this
+
+using id_kind_asdl::Id_t;
+
 #include "types_asdl.h"
 #include "syntax_asdl.h"
-#include "id_kind_asdl.h"
 
 #include "id.h"
 '
   translate-ordered lexer_main "$snippet" \
-    $REPO_ROOT/frontend/reader.py \
+    $REPO_ROOT/frontend/my_reader.py \
     $REPO_ROOT/core/alloc.py \
     $REPO_ROOT/frontend/lexer.py \
     examples/lexer_main.py
