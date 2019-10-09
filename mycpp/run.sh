@@ -42,6 +42,11 @@ readonly REPO_ROOT=$(cd $THIS_DIR/.. && pwd)
 readonly MYPY_REPO=~/git/languages/mypy
 
 source $REPO_ROOT/test/common.sh  # for R_PATH
+source $REPO_ROOT/build/common.sh  # for $CLANG_REL_PATH, $PREPARE_DIR
+
+readonly CXX=$REPO_ROOT/$CLANG_DIR_RELATIVE/bin/clang++
+# system compiler
+#readonly CXX='c++'
 
 banner() {
   echo -----
@@ -258,7 +263,7 @@ Tuple2<Id_t, int>* OneToken(lex_mode_t lex_mode, Str* line, int start_pos);
     examples/lexer_main.py
 
   local src=_gen/$name.cc
-  c++ -o _bin/$name $CPPFLAGS \
+  $CXX -o _bin/$name $CPPFLAGS \
     -I . -I ../_devbuild/gen -I ../_devbuild/gen-cpp \
     mylib.cc $src -lstdc++
 }
@@ -313,8 +318,6 @@ run-cc-parse() {
   compile-parse
 }
 
-
-readonly PREPARE_DIR=$PWD/../_devbuild/cpython-full
 
 # NOT USED
 modules-deps() {
@@ -374,7 +377,7 @@ _compile-example() {
   local more_flags='-O0 -g'  # to debug crashes
   #local more_flags=''
   mkdir -p _bin
-  c++ -o _bin/$name $CPPFLAGS $more_flags -I . \
+  $CXX -o _bin/$name $CPPFLAGS $more_flags -I . \
     mylib.cc $src -lstdc++
 }
 
@@ -579,7 +582,7 @@ cpp-compile-run() {
   shift
 
   mkdir -p _bin
-  cc -o _bin/$name $CPPFLAGS -I . $name.cc "$@" -lstdc++
+  $CXX -o _bin/$name $CPPFLAGS -I . $name.cc "$@" -lstdc++
   _bin/$name
 }
 
