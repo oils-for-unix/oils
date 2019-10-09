@@ -30,7 +30,7 @@ class _Reader(object):
 
   def _GetLine(self):
     # type: () -> Optional[str]
-    raise NotImplementedError
+    raise NotImplementedError()
 
   def GetLine(self):
     # type: () -> Tuple[int, Optional[str], int]

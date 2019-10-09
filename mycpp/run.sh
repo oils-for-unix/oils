@@ -247,7 +247,7 @@ Tuple2<Id_t, int>* OneToken(lex_mode_t lex_mode, Str* line, int start_pos);
 '
   translate-ordered lexer_main "$snippet" \
     $REPO_ROOT/asdl/runtime.py \
-    $REPO_ROOT/frontend/my_reader.py \
+    $REPO_ROOT/frontend/reader.py \
     $REPO_ROOT/core/alloc.py \
     $REPO_ROOT/frontend/lexer.py \
     examples/lexer_main.py

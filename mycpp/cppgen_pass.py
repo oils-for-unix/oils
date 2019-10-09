@@ -1042,8 +1042,17 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self._write_func_args(stmt)
             self.write(') ')
 
-            # TODO: Initializer list with constructor
-            first_stmt = stmt.body.body[0]
+            # Taking into account the docstring, look at the first statement to
+            # see if it's a superclass __init__ call.  Then move that to the
+            # initializer list.
+
+            first_index = 0
+            maybe_skip_stmt = stmt.body.body[0]
+            if (isinstance(maybe_skip_stmt, ExpressionStmt) and
+                isinstance(maybe_skip_stmt.expr, StrExpr)):
+              first_index += 1
+
+            first_stmt = stmt.body.body[first_index]
             if (isinstance(first_stmt, ExpressionStmt) and
                 isinstance(first_stmt.expr, CallExpr)):
               expr = first_stmt.expr
@@ -1063,7 +1072,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 self.write(') {\n')
 
                 self.indent += 1
-                for node in stmt.body.body[1:]:
+                for node in stmt.body.body[first_index+1:]:
                   self.accept(node)
                 self.indent -= 1
                 self.write('}\n\n')

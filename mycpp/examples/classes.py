@@ -33,7 +33,9 @@ class TextOutput(ColorOutput):
 
   def __init__(self, f):
     # type: (mylib.File) -> None
-
+    """
+    This docstring used to interfere with __init__ detection
+    """
     # Note: translated into an initializer list.
     ColorOutput.__init__(self, f)
     print('TextOutput constructor')
