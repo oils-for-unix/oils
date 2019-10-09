@@ -180,7 +180,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       default = None
       if f.opt:  # Maybe
         if f.type == 'int':
-          default = 'const.NO_INTEGER'
+          default = 'runtime.NO_SPID'
         elif f.type == 'string':
           default = "''"
         else:
@@ -190,7 +190,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         default = '[]'
 
       # PROBLEM: Optional ints can't be zero!
-      # self.span_id = span_id or const.NO_INTEGER
+      # self.span_id = span_id or runtime.NO_SPID
       # I don't want to add if statements checking against None?
       # For now don't use optional ints.  We don't need it.
 

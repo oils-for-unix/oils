@@ -34,7 +34,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen import syntax_asdl  # token, etc.
 
-from asdl import const
+from asdl import runtime
 from core import util
 from core.util import log, p_die
 from frontend import match
@@ -473,7 +473,7 @@ class CommandParser(object):
     if first_char.isdigit():
       fd = int(first_char)
     else:
-      fd = const.NO_INTEGER
+      fd = runtime.NO_SPID
 
     self._Next()
     self._Peek()
@@ -791,7 +791,7 @@ class CommandParser(object):
     <<EOF vs <<'EOF'.
     """
     redirects, words, block = self._ScanSimpleCommand()
-    block_spid = block.spids[0] if block else const.NO_INTEGER
+    block_spid = block.spids[0] if block else runtime.NO_SPID
 
     if not words:  # e.g.  >out.txt  # redirect without words
       if block:
@@ -911,7 +911,7 @@ class CommandParser(object):
     """
     words = []
     # The span_id of any semi-colon, so we can remove it.
-    semi_spid = const.NO_INTEGER
+    semi_spid = runtime.NO_SPID
 
     while True:
       self._Peek()
@@ -978,8 +978,8 @@ class CommandParser(object):
 
     self._NewlineOk()
 
-    in_spid = const.NO_INTEGER
-    semi_spid = const.NO_INTEGER
+    in_spid = runtime.NO_SPID
+    semi_spid = runtime.NO_SPID
 
     self._Peek()
     if self.c_id == Id.KW_In:
@@ -1119,8 +1119,8 @@ class CommandParser(object):
     else:
       action_children = []
 
-    dsemi_spid = const.NO_INTEGER
-    last_spid = const.NO_INTEGER
+    dsemi_spid = runtime.NO_SPID
+    last_spid = runtime.NO_SPID
     self._Peek()
     if self.c_id == Id.KW_Esac:
       last_spid = word_.LeftMostSpanForWord(self.cur_word)
@@ -1237,7 +1237,7 @@ class CommandParser(object):
       body = self.ParseBraceGroup()
       if_node.else_action = body.children
     else:
-      else_spid = const.NO_INTEGER
+      else_spid = runtime.NO_SPID
 
     if_node.spids.append(else_spid)
 
@@ -1273,7 +1273,7 @@ class CommandParser(object):
     if self.c_id in (Id.KW_Elif, Id.KW_Else):
       self._ParseOilElifElse(if_node)
     else:
-      if_node.spids.append(const.NO_INTEGER)  # no else spid
+      if_node.spids.append(runtime.NO_SPID)  # no else spid
     # the whole if node has the 'else' spid, unlike shell-style there's no 'fi'
     # spid because that's in the BraceGroup.
     return if_node
@@ -1307,7 +1307,7 @@ class CommandParser(object):
       body = self._ParseCommandList()
       if_node.else_action = body.children
     else:
-      else_spid = const.NO_INTEGER
+      else_spid = runtime.NO_SPID
 
     if_node.spids.append(else_spid)
 
@@ -1347,7 +1347,7 @@ class CommandParser(object):
     if self.c_id in (Id.KW_Elif, Id.KW_Else):
       self._ParseElifElse(if_node)
     else:
-      if_node.spids.append(const.NO_INTEGER)  # no else spid
+      if_node.spids.append(runtime.NO_SPID)  # no else spid
 
     fi_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.KW_Fi)
@@ -1723,7 +1723,7 @@ class CommandParser(object):
     negated = False
 
     # For blaming failures
-    pipeline_spid = const.NO_INTEGER
+    pipeline_spid = runtime.NO_SPID
 
     self._Peek()
     if self.c_id == Id.KW_Bang:
@@ -1754,7 +1754,7 @@ class CommandParser(object):
 
     while True:
       # Set it to the first | if it isn't already set.
-      if pipeline_spid == const.NO_INTEGER:
+      if pipeline_spid == runtime.NO_SPID:
         pipeline_spid = word_.LeftMostSpanForWord(self.cur_word)
 
       self._Next()  # skip past Id.Op_Pipe or Id.Op_PipeAmp

@@ -49,7 +49,7 @@ class ArithAstTest(unittest.TestCase):
     t = demo_asdl.token(5, 'x')
     self.assertEqual(5, t.id)
     self.assertEqual('x', t.value)
-    self.assertEqual(const.NO_INTEGER, t.span_id)
+    self.assertEqual(runtime.NO_SPID, t.span_id)
 
   def testTypeCheck(self):
     return

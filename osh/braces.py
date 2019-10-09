@@ -23,7 +23,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part__Literal,
     token,
 )
-from asdl import const
+from asdl import runtime
 #from core.util import log
 from core.util import p_die
 from frontend.match import BRACE_RANGE_LEXER
@@ -100,13 +100,13 @@ class _RangeParser(object):
       start = int(part.start)
       end = int(part.end)
       if start < end:
-        if part.step == const.NO_INTEGER:
+        if part.step == runtime.NO_SPID:
           part.step = 1
         if part.step <= 0:  # 0 step is not allowed
           p_die('Invalid step %d for ascending integer range', part.step,
                 span_id=self.span_id)
       elif start > end:
-        if part.step == const.NO_INTEGER:
+        if part.step == runtime.NO_SPID:
           part.step = -1
         if part.step >= 0:  # 0 step is not allowed
           p_die('Invalid step %d for descending integer range', part.step,
@@ -118,13 +118,13 @@ class _RangeParser(object):
 
       # Check step validity and fill in a default
       if part.start < part.end:
-        if part.step == const.NO_INTEGER:
+        if part.step == runtime.NO_SPID:
           part.step = 1
         if part.step <= 0:  # 0 step is not allowed
           p_die('Invalid step %d for ascending character range', part.step,
                 span_id=self.span_id)
       elif part.start > part.end:
-        if part.step == const.NO_INTEGER:
+        if part.step == runtime.NO_SPID:
           part.step = -1
         if part.step >= 0:  # 0 step is not allowed
           p_die('Invalid step %d for descending character range', part.step,

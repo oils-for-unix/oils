@@ -11,7 +11,7 @@ lexer.py - Library for lexing.
 from _devbuild.gen.syntax_asdl import token, line_span
 from _devbuild.gen.types_asdl import lex_mode_t
 from _devbuild.gen.id_kind_asdl import Id_t, Id
-from asdl import const
+from asdl import runtime
 from core.util import log
 
 from typing import Callable, List, Tuple, TYPE_CHECKING
@@ -40,7 +40,7 @@ class LineLexer(object):
     self.arena = arena
 
     self.arena_skip = False  # For MaybeUnreadOne
-    self.last_span_id = const.NO_INTEGER  # For MaybeUnreadOne
+    self.last_span_id = runtime.NO_SPID  # For MaybeUnreadOne
 
     self.Reset(line, -1, 0)  # Invalid line_id to start
 
@@ -100,7 +100,7 @@ class LineLexer(object):
         # would involve interacting with the line reader, and we never need
         # it.  In the OUTER mode, there is an explicit newline token, but
         # ARITH doesn't have it.
-        t = token(Id.Unknown_Tok, '', const.NO_INTEGER)
+        t = token(Id.Unknown_Tok, '', runtime.NO_SPID)
         return t
 
       tok_type, end_pos = self.match_func(lex_mode, self.line, pos)
@@ -111,7 +111,7 @@ class LineLexer(object):
         break
       pos = end_pos
 
-    return token(tok_type, tok_val, const.NO_INTEGER)
+    return token(tok_type, tok_val, runtime.NO_SPID)
 
   def Read(self, lex_mode):
     # type: (lex_mode_t) -> token
@@ -121,7 +121,7 @@ class LineLexer(object):
 
     tok_type, end_pos = self.match_func(lex_mode, line, line_pos)
     if tok_type == Id.Eol_Tok:  # Do NOT add a span for this sentinel!
-      return token(tok_type, '', const.NO_INTEGER)
+      return token(tok_type, '', runtime.NO_SPID)
 
     tok_val = line[line_pos:end_pos]
 
@@ -130,7 +130,7 @@ class LineLexer(object):
     # added at the last line, so we don't end with \0.
 
     if self.arena_skip:  # make another token from the last span
-      assert self.last_span_id != const.NO_INTEGER
+      assert self.last_span_id != runtime.NO_SPID
       span_id = self.last_span_id
       self.arena_skip = False
     else:

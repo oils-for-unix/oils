@@ -20,7 +20,7 @@ from _devbuild.gen.syntax_asdl import (
 
     sh_lhs_expr__Name,
 )
-from asdl import const
+from asdl import runtime
 from core import util
 from core.meta import LookupKind
 
@@ -172,7 +172,7 @@ def LeftMostSpanForPart(part):
     #return part.op.span_id  # e.g. @( is the left-most token
 
   elif isinstance(part, word_part__BracedTuple):
-    return const.NO_INTEGER
+    return runtime.NO_SPID
 
   elif isinstance(part, word_part__Splice):
     return part.name.span_id
@@ -213,14 +213,14 @@ def _RightMostSpanForPart(part):
 
   elif isinstance(part, braced_var_sub):
     spid = part.spids[1]  # right }
-    assert spid != const.NO_INTEGER
+    assert spid != runtime.NO_SPID
     return spid
 
   elif isinstance(part, command_sub):
     return part.spids[1]
 
   elif isinstance(part, word_part__TildeSub):
-    return const.NO_INTEGER
+    return runtime.NO_SPID
 
   elif isinstance(part, word_part__ArithSub):
     return part.spids[1]
@@ -239,13 +239,13 @@ def LeftMostSpanForWord(w):
       return LeftMostSpanForPart(w.parts[0])
     else:
       # This is possible for empty brace sub alternative {a,b,}
-      return const.NO_INTEGER
+      return runtime.NO_SPID
 
   elif isinstance(w, word__Token):
     return w.token.span_id
 
   elif isinstance(w, word__Empty):
-    return const.NO_INTEGER
+    return runtime.NO_SPID
 
   elif isinstance(w, word__BracedTree):
     # This should always have one part?
@@ -270,7 +270,7 @@ def RightMostSpanForWord(w):
       return _RightMostSpanForPart(end)
 
   elif isinstance(w, word__Empty):
-    return const.NO_INTEGER
+    return runtime.NO_SPID
 
   assert isinstance(w, word__Token)
   return w.token.span_id
@@ -627,7 +627,7 @@ def SpanForLhsExpr(node):
   if node.spids:
     return node.spids[0]
   else:
-    return const.NO_INTEGER  
+    return runtime.NO_SPID  
   # TODO: IndexedName needs span_id.
   #if isinstance(node, sh_lhs_expr__Name):
   #elif isinstance(node, sh_lhs_expr__IndexedName):
@@ -636,7 +636,7 @@ def SpanForLhsExpr(node):
 def SpanIdFromError(error):
   # type: (_ErrorWithLocation) -> int
   #print(parse_error)
-  if error.span_id != const.NO_INTEGER:
+  if error.span_id != runtime.NO_SPID:
     return error.span_id
   if error.token:
     return error.token.span_id
@@ -645,13 +645,13 @@ def SpanIdFromError(error):
   if error.word:
     return LeftMostSpanForWord(error.word)
 
-  return const.NO_INTEGER
+  return runtime.NO_SPID
 
 
 def ErrorWord(fmt, err):
   # type: (str, _ErrorWithLocation) -> word__Compound
   error_str = fmt % err.UserErrorString()
-  t = token(Id.Lit_Chars, error_str, const.NO_INTEGER)
+  t = token(Id.Lit_Chars, error_str, runtime.NO_SPID)
   return word.Compound([word_part.Literal(t)])
 
 

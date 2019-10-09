@@ -6,14 +6,14 @@ args_test.py: Tests for args.py
 import unittest
 
 from _devbuild.gen.runtime_asdl import arg_vector
-from asdl import const
+from asdl import runtime
 from frontend import args  # module under test
 
 
 def _MakeArgVector(argv):
   argv = [''] + argv  # add dummy since arg_vec includes argv[0]
   # no location info
-  return arg_vector(argv, [const.NO_INTEGER] * len(argv))
+  return arg_vector(argv, [runtime.NO_SPID] * len(argv))
 
 
 class ArgsTest(unittest.TestCase):

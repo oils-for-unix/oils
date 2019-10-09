@@ -16,7 +16,7 @@ from _devbuild.gen.syntax_asdl import arith_expr_e, word_part, token
 from _devbuild.gen.syntax_asdl import word
 from _devbuild.gen.types_asdl import lex_mode_e
 
-from asdl import const
+from asdl import runtime
 
 from core import test_lib
 from core import util
@@ -67,7 +67,7 @@ def _assertSpanForWord(test, word_str):
   print(word_str)
   print(span_id)
 
-  if span_id != const.NO_INTEGER:
+  if span_id != runtime.NO_SPID:
     span = arena.GetLineSpan(span_id)
     print(span)
 

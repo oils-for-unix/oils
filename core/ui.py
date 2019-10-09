@@ -19,7 +19,7 @@ from _devbuild.gen.syntax_asdl import (
 
 )
 from _devbuild.gen.runtime_asdl import value_t, value
-from asdl import const
+from asdl import runtime
 from asdl import format as fmt
 from osh import word_
 
@@ -126,7 +126,7 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, f=sys.stderr):
 
 def _PrintWithOptionalSpanId(prefix, msg, span_id, arena, f):
   # type: (str, str, int, Arena, IO[str]) -> None
-  if span_id == const.NO_INTEGER:  # When does this happen?
+  if span_id == runtime.NO_SPID:  # When does this happen?
     print('[??? no location ???] %s%s' % (prefix, msg), file=f)
   else:
     _PrintWithSpanId(prefix, msg, span_id, arena)
@@ -141,11 +141,11 @@ def PrettyPrintError(err, arena, prefix='', f=sys.stderr):
   msg = err.UserErrorString()
   span_id = word_.SpanIdFromError(err)
 
-  # TODO: Should there be a special span_id of 0 for EOF?  const.NO_INTEGER
+  # TODO: Should there be a special span_id of 0 for EOF?  runtime.NO_SPID
   # means there is no location info, but 0 could mean that the location is EOF.
   # So then you query the arena for the last line in that case?
   # Eof_Real is the ONLY token with 0 span, because it's invisible!
-  # Well Eol_Tok is a sentinel with a span_id of const.NO_INTEGER.  I think
+  # Well Eol_Tok is a sentinel with a span_id of runtime.NO_SPID.  I think
   # that is OK.
   # Problem: the column for Eof could be useful.
 
@@ -164,7 +164,7 @@ class ErrorFormatter(object):
   def __init__(self, arena):
     # type: (Arena) -> None
     self.arena = arena
-    self.last_spid = const.NO_INTEGER  # last resort for location info
+    self.last_spid = runtime.NO_SPID  # last resort for location info
     self.spid_stack = []  # type: List[int]
 
   # A stack used for the current builtin.  A fallback for UsageError.
@@ -186,7 +186,7 @@ class ErrorFormatter(object):
     if self.spid_stack:
       return self.spid_stack[-1]
     else:
-      return const.NO_INTEGER
+      return runtime.NO_SPID
 
   def Print(self, msg, *args, **kwargs):
     # type: (str, *Any, **Any) -> None

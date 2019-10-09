@@ -9,7 +9,7 @@ TODO: Move some of osh/word_ here.
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import command_e, command_t
-from asdl import const
+from asdl import runtime
 from core.util import log
 
 
@@ -41,4 +41,4 @@ def SpanForCommand(node):
   #if node.tag == command_e.CommandList:
   #  pass
 
-  return const.NO_INTEGER
+  return runtime.NO_SPID

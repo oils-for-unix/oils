@@ -10,7 +10,7 @@ from _devbuild.gen.runtime_asdl import word_style_e
 from _devbuild.gen.syntax_asdl import (
     command_e, redir_e, word_e, word_part_e, sh_lhs_expr_e
 )
-from asdl import const
+from asdl import runtime
 from core import util
 
 from osh import word_
@@ -31,7 +31,7 @@ class Cursor(object):
 
   def PrintUntil(self, until_span_id):
     # Sometimes we add +1
-    if until_span_id == const.NO_INTEGER:
+    if until_span_id == runtime.NO_SPID:
       assert 0, 'Missing span ID, got %d' % until_span_id
 
     for span_id in xrange(self.next_span_id, until_span_id):
@@ -52,10 +52,10 @@ class Cursor(object):
     """Skip everything before next_span_id.
     Printing will start at next_span_id
     """
-    if (next_span_id == const.NO_INTEGER or
-        next_span_id == const.NO_INTEGER + 1):
+    if (next_span_id == runtime.NO_SPID or
+        next_span_id == runtime.NO_SPID + 1):
       assert 0, 'Missing span ID, got %d' % until_span_id
-    assert next_span_id != const.NO_INTEGER, next_span_id
+    assert next_span_id != runtime.NO_SPID, next_span_id
     self.next_span_id = next_span_id
 
 
@@ -282,7 +282,7 @@ class OilPrinter(object):
     # - >> becomes >+ or >-, or maybe >>>
 
     if node.tag == redir_e.Redir:
-      if node.fd == const.NO_INTEGER:
+      if node.fd == runtime.NO_SPID:
         if op_id == Id.Redir_Great:
           self.f.write('>')  # Allow us to replace the operator
           self.cursor.SkipUntil(op_spid + 1)
@@ -773,7 +773,7 @@ class OilPrinter(object):
 
       _, in_spid, semi_spid = node.spids
 
-      if in_spid == const.NO_INTEGER:
+      if in_spid == runtime.NO_SPID:
         #self.cursor.PrintUntil()  # 'for x' and then space
         self.f.write('for %s in @Argv ' % node.iter_name)
         self.cursor.SkipUntil(node.body.spids[0])
@@ -785,7 +785,7 @@ class OilPrinter(object):
         self.f.write(']')
         #print("SKIPPING SEMI %d" % semi_spid, file=sys.stderr)
 
-      if semi_spid != const.NO_INTEGER:
+      if semi_spid != runtime.NO_SPID:
         self.cursor.PrintUntil(semi_spid)
         self.cursor.SkipUntil(semi_spid + 1)
 
@@ -900,11 +900,11 @@ class OilPrinter(object):
         for child in arm.action:
           self.DoCommand(child, local_symbols)
 
-        if dsemi_spid != const.NO_INTEGER:
+        if dsemi_spid != runtime.NO_SPID:
           # Remove ;;
           self.cursor.PrintUntil(dsemi_spid)
           self.cursor.SkipUntil(dsemi_spid + 1)
-        elif last_spid != const.NO_INTEGER:
+        elif last_spid != runtime.NO_SPID:
           self.cursor.PrintUntil(last_spid)
         else:
           raise AssertionError(
@@ -1052,8 +1052,8 @@ class OilPrinter(object):
 
         left_spid, right_spid = dq_part.spids
         # This is not set in the case of here docs?  Why not?
-        #assert left_spid != const.NO_INTEGER, left_spid
-        assert right_spid != const.NO_INTEGER, right_spid
+        #assert left_spid != runtime.NO_SPID, left_spid
+        assert right_spid != runtime.NO_SPID, right_spid
 
         if len(dq_part.parts) == 1:
           part0 = dq_part.parts[0]
@@ -1134,7 +1134,7 @@ class OilPrinter(object):
 
   def DoWordPart(self, node, local_symbols, quoted=False):
     span_id = word_.LeftMostSpanForPart(node)
-    if span_id is not None and span_id != const.NO_INTEGER:
+    if span_id is not None and span_id != runtime.NO_SPID:
       span = self.arena.GetLineSpan(span_id)
 
       self.cursor.PrintUntil(span_id)
@@ -1165,7 +1165,7 @@ class OilPrinter(object):
       # TODO: We might want to do it all on the word level though.  For
       # example, foo"bar" becomes "foobar" in oil.
       spid = node.token.span_id
-      if spid == const.NO_INTEGER:
+      if spid == runtime.NO_SPID:
         #raise RuntimeError('%s has no span_id' % node.token)
         # TODO: Fix word_.TildeDetect to construct proper tokens.
         log('WARNING: %s has no span_id' % node.token)

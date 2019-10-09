@@ -53,7 +53,7 @@ class BracesTest(unittest.TestCase):
         s, e = expected
         self.assertEqual(s, part.start)
         self.assertEqual(e, part.end)
-        #self.assertEqual(const.NO_INTEGER, part.step)
+        #self.assertEqual(runtime.NO_SPID, part.step)
 
       elif len(expected) == 3:
         s, e, step = expected

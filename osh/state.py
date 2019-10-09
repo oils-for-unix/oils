@@ -20,7 +20,7 @@ from _devbuild.gen.runtime_asdl import (
 )
 from _devbuild.gen import runtime_asdl  # for cell
 
-from asdl import const
+from asdl import runtime
 from core.util import log, e_die
 from frontend import args
 from osh import split
@@ -119,31 +119,31 @@ class _ErrExit(object):
     # type: () -> None
     self.errexit = False  # the setting
     # SUBTLE INVARIANT: There's only ONE valid integer in the stack that's not
-    # const.NO_INTEGER, and it's either a valid span_id or 0.  Push() and Set()
+    # runtime.NO_SPID, and it's either a valid span_id or 0.  Push() and Set()
     # enforce this.
     self.stack = []
 
   def Push(self, span_id):
     # type: (int) -> None
     """Temporarily disable errexit."""
-    assert span_id != const.NO_INTEGER
+    assert span_id != runtime.NO_SPID
     if self.errexit:
       self.errexit = False
       self.stack.append(span_id)  # value to restore
     else:
-      self.stack.append(const.NO_INTEGER)  # INVALID span ID / "False"
+      self.stack.append(runtime.NO_SPID)  # INVALID span ID / "False"
 
   def Pop(self):
     # type: () -> None
     """Restore the previous value."""
-    self.errexit = (self.stack.pop() != const.NO_INTEGER)
+    self.errexit = (self.stack.pop() != runtime.NO_SPID)
 
   def SpidIfDisabled(self):
     # type: () -> int
     for n in self.stack:
-      if n != const.NO_INTEGER:  # set -e will be restored later
+      if n != runtime.NO_SPID:  # set -e will be restored later
         return n
-    return const.NO_INTEGER
+    return runtime.NO_SPID
 
   def Set(self, b):
     # type: (bool) -> None
@@ -152,14 +152,14 @@ class _ErrExit(object):
     Callers: set -o errexit, shopt -s oil:all, strict:all.
     """
     for i, n in enumerate(self.stack):
-      if n != const.NO_INTEGER:  # set -e will be restored later
+      if n != runtime.NO_SPID:  # set -e will be restored later
         # Ignore set -e or set +e now, but its effect becomes visible LATER.
         # This is confusing behavior that all shells implement!  strict_errexit
         # makes it a non-issue.
 
         # SUBTLE: 0 isn't a valid span_id, but we will never use it for the
         # strict_errexit message.
-        self.stack[i] = 0 if b else const.NO_INTEGER
+        self.stack[i] = 0 if b else runtime.NO_SPID
         return
 
     self.errexit = b  # Otherwise just set it
@@ -651,14 +651,14 @@ class Mem(object):
     # The debug_stack isn't strictly necessary for execution.  We use it for
     # crash dumps and for 3 parallel arrays: FUNCNAME, CALL_SOURCE,
     # BASH_LINENO.  The First frame points at the global vars and argv.
-    self.debug_stack = [(None, None, const.NO_INTEGER, 0, 0)]
+    self.debug_stack = [(None, None, runtime.NO_SPID, 0, 0)]
 
     self.bash_source = []  # for implementing BASH_SOURCE
     self.has_main = has_main
     if has_main:
       self.bash_source.append(dollar0)  # e.g. the filename
 
-    self.current_spid = const.NO_INTEGER
+    self.current_spid = runtime.NO_SPID
 
     # Note: we're reusing these objects because they change on every single
     # line!  Don't want to allocate more than necsesary.
@@ -713,7 +713,7 @@ class Mem(object):
         pass  # It's a frame for FOO=bar?  Or the top one?
 
       d['call_spid'] = call_spid
-      if call_spid != const.NO_INTEGER:  # first frame has this issue
+      if call_spid != runtime.NO_SPID:  # first frame has this issue
         span = self.arena.GetLineSpan(call_spid)
         line_id = span.line_id
         d['call_source'] = self.arena.GetLineSourceString(line_id)
@@ -799,7 +799,7 @@ class Mem(object):
     It's also set on SimpleCommand, ShAssignment, ((, [[, etc. and used as
     a fallback when e_die() didn't set any location information.
     """
-    if span_id == const.NO_INTEGER:
+    if span_id == runtime.NO_SPID:
       # NOTE: This happened in the osh-runtime benchmark for yash.
       log('Warning: span_id undefined in SetCurrentSpanId')
 
@@ -1105,7 +1105,7 @@ class Mem(object):
 
       # TODO: All paths should have this?  We can get here by a[x]=1 or
       # (( a[ x ] = 1 )).  Maybe we should make them different?
-      left_spid = lval.spids[0] if lval.spids else const.NO_INTEGER
+      left_spid = lval.spids[0] if lval.spids else runtime.NO_SPID
 
       # bash/mksh have annoying behavior of letting you do LHS assignment to
       # Undef, which then turns into an INDEXED array.  (Undef means that set
@@ -1155,7 +1155,7 @@ class Mem(object):
       # There is no syntax 'declare A["x"]'
       assert val is not None, val
 
-      left_spid = lval.spids[0] if lval.spids else const.NO_INTEGER
+      left_spid = lval.spids[0] if lval.spids else runtime.NO_SPID
 
       cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
       self._CheckOilKeyword(keyword_id, lval, cell)
@@ -1238,7 +1238,7 @@ class Mem(object):
       strs = []
       for func_name, source_name, call_spid, _, _ in reversed(self.debug_stack):
         # should only happen for the first entry
-        if call_spid == const.NO_INTEGER:
+        if call_spid == runtime.NO_SPID:
           continue
         span = self.arena.GetLineSpan(call_spid)
         source_str = self.arena.GetLineSourceString(span.line_id)
@@ -1251,7 +1251,7 @@ class Mem(object):
       strs = []
       for _, _, call_spid, _, _ in reversed(self.debug_stack):
         # should only happen for the first entry
-        if call_spid == const.NO_INTEGER:
+        if call_spid == runtime.NO_SPID:
           continue
         span = self.arena.GetLineSpan(call_spid)
         line_num = self.arena.GetLineNumber(span.line_id)

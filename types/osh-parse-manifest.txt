@@ -1,4 +1,3 @@
-./asdl/const.py
 ./asdl/format.py
 ./asdl/pretty.py
 ./asdl/runtime.py

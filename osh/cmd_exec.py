@@ -32,7 +32,7 @@ from _devbuild.gen.runtime_asdl import (
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
-from asdl import const
+from asdl import runtime
 
 from core import main_loop
 from core import process
@@ -265,7 +265,7 @@ class Executor(object):
     c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
     # TODO: the SPID should be passed through argv
-    self.arena.PushSource(source.Trap(const.NO_INTEGER))
+    self.arena.PushSource(source.Trap(runtime.NO_SPID))
     try:
       try:
         node = main_loop.ParseWholeFile(c_parser)
@@ -426,7 +426,7 @@ class Executor(object):
       arg0 = cmd_val.argv[0]
       # fill in default location.  e.g. osh/state.py raises UsageError without
       # span_id.
-      if e.span_id == const.NO_INTEGER:
+      if e.span_id == runtime.NO_SPID:
         e.span_id = self.errfmt.CurrentLocation()
       # e.g. 'type' doesn't accept flag '-x'
       self.errfmt.Print(e.msg, prefix='%r ' % arg0, span_id=e.span_id)
@@ -458,7 +458,7 @@ class Executor(object):
       status = builtin_func(cmd_val)
     except args.UsageError as e:  # Copied from _RunBuiltin
       arg0 = cmd_val.argv[0]
-      if e.span_id == const.NO_INTEGER:  # fill in default location.
+      if e.span_id == runtime.NO_SPID:  # fill in default location.
         e.span_id = self.errfmt.CurrentLocation()
       self.errfmt.Print(e.msg, prefix='%r ' % arg0, span_id=e.span_id)
       status = 2  # consistent error code for usage error
@@ -512,14 +512,14 @@ class Executor(object):
       else:
         # NOTE: The fallback of CurrentSpanId() fills this in.
         reason = ''
-        span_id = const.NO_INTEGER
+        span_id = runtime.NO_SPID
 
       raise util.ErrExitFailure(
           'Exiting with status %d (%sPID %d)', status, reason, posix.getpid(),
           span_id=span_id, status=status)
 
   def _EvalRedirect(self, n):
-    fd = REDIR_DEFAULT_FD[n.op.id] if n.fd == const.NO_INTEGER else n.fd
+    fd = REDIR_DEFAULT_FD[n.op.id] if n.fd == runtime.NO_SPID else n.fd
     if n.tag == redir_e.Redir:
       redir_type = REDIR_ARG_TYPES[n.op.id]  # could be static in the LST?
 
@@ -634,7 +634,7 @@ class Executor(object):
     assert cmd_val.tag == cmd_value_e.Argv
 
     argv = cmd_val.argv
-    span_id = cmd_val.arg_spids[0] if cmd_val.arg_spids else const.NO_INTEGER
+    span_id = cmd_val.arg_spids[0] if cmd_val.arg_spids else runtime.NO_SPID
 
     # This happens when you write "$@" but have no arguments.
     if not argv:
@@ -676,7 +676,7 @@ class Executor(object):
       func_node = self.procs.get(arg0)
       if func_node is not None:
         eo = self.exec_opts
-        if eo.strict_errexit and eo.errexit.SpidIfDisabled() != const.NO_INTEGER:
+        if eo.strict_errexit and eo.errexit.SpidIfDisabled() != runtime.NO_SPID:
           # NOTE: This would be checked below, but this gives a better error
           # message.
           e_die("can't disable errexit running a function. "
@@ -806,7 +806,7 @@ class Executor(object):
       # Find span_id for a basic implementation of $LINENO, e.g.
       # PS4='+$SOURCE_NAME:$LINENO:'
       # NOTE: osh2oil uses node.more_env, but we don't need that.
-      span_id = const.NO_INTEGER
+      span_id = runtime.NO_SPID
       if node.words:
         span_id = word_.LeftMostSpanForWord(node.words[0])
       elif node.redirects:
@@ -1475,7 +1475,7 @@ class Executor(object):
     if eo.strict_errexit and _DisallowErrExit(node):
 
       span_id = eo.errexit.SpidIfDisabled()
-      if span_id != const.NO_INTEGER:
+      if span_id != runtime.NO_SPID:
         node_str = node.__class__.__name__.split('_')[-1]  # e.g. BraceGroup
         e_die("errexit is disabled here, but strict_errexit disallows it "
               "with a compound command (%s)", node_str, span_id=span_id)

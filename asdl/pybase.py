@@ -7,7 +7,10 @@ from __future__ import print_function
 import sys
 from cStringIO import StringIO
 
-from typing import IO
+from typing import IO, TYPE_CHECKING
+if TYPE_CHECKING:
+  from asdl import runtime
+
 
 class Obj(object):
   # NOTE: We're using CAPS for these static fields, since they are constant at
@@ -48,15 +51,15 @@ class CompoundObj(Obj):
   tag = 0  # TYPED: Changed from None.  0 is invalid!
 
   def PrettyTree(self):
-    # type: () -> _PrettyBase
+    # type: () -> runtime._PrettyBase
     raise NotImplementedError(self.__class__.__name__)
 
   def _AbbreviatedTree(self):
-    # type: () -> _PrettyBase
+    # type: () -> runtime._PrettyBase
     raise NotImplementedError(self.__class__.__name__)
 
   def AbbreviatedTree(self):
-    # type: () -> _PrettyBase
+    # type: () -> runtime._PrettyBase
     raise NotImplementedError(self.__class__.__name__)
 
   def PrettyPrint(self, f=sys.stdout):

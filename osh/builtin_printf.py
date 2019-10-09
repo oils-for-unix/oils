@@ -13,7 +13,7 @@ from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
 
 import sys
 
-from asdl import const
+from asdl import runtime
 from core import meta
 from core import util
 from core.util import p_die, e_die
@@ -194,7 +194,7 @@ class Printf(object):
             word_spid = spids[arg_index]
           except IndexError:
             s = ''
-            word_spid = const.NO_INTEGER
+            word_spid = runtime.NO_SPID
 
           typ = part.type.val
           if typ == 's':
@@ -208,7 +208,7 @@ class Printf(object):
               d = int(s)
             except ValueError:
               # This works around the fact that in the arg recycling case, you have no spid.
-              if word_spid == const.NO_INTEGER:
+              if word_spid == runtime.NO_SPID:
                 self.errfmt.Print("printf got invalid number %r for this substitution", s,
                                   span_id=part.type.span_id)
               else:

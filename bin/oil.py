@@ -51,7 +51,7 @@ import errno
 from _devbuild.gen.runtime_asdl import builtin_e, arg_vector
 from _devbuild.gen.syntax_asdl import source
 
-from asdl import const
+from asdl import runtime
 
 from core import alloc
 from core import comp_ui
@@ -149,7 +149,7 @@ builtin_pure.AddOptionsToArgSpec(OSH_SPEC)
 def _MakeArgVector(argv):
   argv = [''] + argv  # add dummy since arg_vec includes argv[0]
   # no location info
-  return arg_vector(argv, [const.NO_INTEGER] * len(argv))
+  return arg_vector(argv, [runtime.NO_SPID] * len(argv))
 
 
 def _InitDefaultCompletions(ex, complete_builtin, comp_lookup):

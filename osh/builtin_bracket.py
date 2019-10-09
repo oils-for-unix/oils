@@ -8,7 +8,7 @@ from _devbuild.gen.runtime_asdl import value
 from _devbuild.gen.syntax_asdl import word, bool_expr
 from _devbuild.gen.types_asdl import lex_mode_e
 
-from asdl import const
+from asdl import runtime
 from core import util
 from core.util import p_die
 from core import meta
@@ -42,7 +42,7 @@ class _StringWordEmitter(object):
       w = word.String(Id.Eof_Real, '')
       # TODO: Add a way to show this.  Show 1 char past the right-most spid of
       # the last word?  But we only have the left-most spid.
-      w.spids.append(const.NO_INTEGER)
+      w.spids.append(runtime.NO_SPID)
       return w
 
     #log('ARGV %s i %d', self.argv, self.i)

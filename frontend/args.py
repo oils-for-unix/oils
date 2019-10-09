@@ -56,7 +56,7 @@ However I don't see these used anywhere!  I only see ':' used.
 """
 from __future__ import print_function
 
-from asdl import const
+from asdl import runtime
 from core.util import log
 
 import libc  # for regex support
@@ -67,7 +67,7 @@ class UsageError(Exception):
 
   # TODO: Should this be _ErrorWithLocation?  Probably, even though we only use
   # 'span_id'.
-  def __init__(self, msg, span_id=const.NO_INTEGER):
+  def __init__(self, msg, span_id=runtime.NO_SPID):
     self.msg = msg
     self.span_id = span_id
 
@@ -150,7 +150,7 @@ class Reader(object):
     if self.spids:
       return self.spids[0]
     else:
-      return const.NO_INTEGER  # TODO: remove this when all have spids
+      return runtime.NO_SPID  # TODO: remove this when all have spids
 
   def SpanId(self):
     if self.spids:
@@ -160,7 +160,7 @@ class Reader(object):
         i = self.i
       return self.spids[i]
     else:
-      return const.NO_INTEGER  # TODO: remove this when all have spids
+      return runtime.NO_SPID  # TODO: remove this when all have spids
 
 
 class _Action(object):

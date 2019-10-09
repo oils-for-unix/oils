@@ -12,7 +12,7 @@ from _devbuild.gen.runtime_asdl import value_e, value_t
 from _devbuild.gen.syntax_asdl import (
     command_t, source, word__Compound
 )
-from asdl import const
+from asdl import runtime
 from core import main_loop
 from core import ui
 from core import util
@@ -263,7 +263,7 @@ class UserPlugin(object):
 
       # NOTE: This is similar to Executor.ParseTrapCode().
       # TODO: Add spid
-      self.arena.PushSource(source.PromptCommand(const.NO_INTEGER))
+      self.arena.PushSource(source.PromptCommand(runtime.NO_SPID))
       try:
         try:
           node = main_loop.ParseWholeFile(c_parser)

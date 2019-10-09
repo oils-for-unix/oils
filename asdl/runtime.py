@@ -8,6 +8,10 @@ from __future__ import print_function
 
 from typing import List, Tuple, Optional, Any
 
+
+# Used throughout the "LST" to indicate we don't have location info.
+NO_SPID = -1
+
 #
 # A Homogeneous Tree for Pretty Printing.
 #

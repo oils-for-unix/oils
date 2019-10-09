@@ -19,7 +19,7 @@ from _devbuild.gen.syntax_asdl import (
     arith_expr_e, sh_lhs_expr_e, sh_lhs_expr_t, bool_expr_e,
 )
 from _devbuild.gen.types_asdl import bool_arg_type_e
-from asdl import const
+from asdl import runtime
 from core.meta import BOOL_ARG_TYPES
 from core import util
 from core.util import e_die
@@ -33,7 +33,7 @@ except ImportError:
   from benchmarks import fake_libc as libc  # type: ignore
 
 
-def _StringToInteger(s, span_id=const.NO_INTEGER):
+def _StringToInteger(s, span_id=runtime.NO_SPID):
   """Use bash-like rules to coerce a string to an integer.
 
   Runtime parsing enables silly stuff like $(( $(echo 1)$(echo 2) + 1 )) => 13
@@ -285,9 +285,9 @@ class _ExprEvaluator(object):
     self.errfmt = errfmt
 
   def _StringToIntegerOrError(self, s, blame_word=None,
-                              span_id=const.NO_INTEGER):
+                              span_id=runtime.NO_SPID):
     """Used by both [[ $x -gt 3 ]] and (( $x ))."""
-    if span_id == const.NO_INTEGER and blame_word:
+    if span_id == runtime.NO_SPID and blame_word:
       span_id = word_.LeftMostSpanForWord(blame_word)
 
     try:
@@ -333,8 +333,8 @@ class ArithEvaluator(_ExprEvaluator):
 
     raise AssertionError(val)
 
-  def _ValToArithOrError(self, val, blame_word=None, span_id=const.NO_INTEGER):
-    if span_id == const.NO_INTEGER and blame_word:
+  def _ValToArithOrError(self, val, blame_word=None, span_id=runtime.NO_SPID):
+    if span_id == runtime.NO_SPID and blame_word:
       span_id = word_.LeftMostSpanForWord(blame_word)
     #log('_ValToArithOrError span=%s blame=%s', span_id, blame_word)
 

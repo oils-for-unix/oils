@@ -6,7 +6,7 @@ from __future__ import print_function
 from _devbuild.gen.runtime_asdl import value_e
 from _devbuild.gen.syntax_asdl import assign_op_e
 
-from asdl import const
+from asdl import runtime
 from asdl import pretty
 from core import util
 from core.util import log
@@ -81,7 +81,7 @@ class CrashDumper(object):
        'span_id': span_id,
     }
 
-    if span_id != const.NO_INTEGER:
+    if span_id != runtime.NO_SPID:
       span = ex.arena.GetLineSpan(span_id)
       line_id = span.line_id
 

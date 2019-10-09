@@ -14,7 +14,7 @@ Also, we don't want to save comment lines.
 from _devbuild.gen.syntax_asdl import (
     line_span, source_t, source_e, source__MainFile, source__SourcedFile
 )
-from asdl import const
+from asdl import runtime
 from core.util import log
 
 from typing import List, Dict, cast
@@ -116,7 +116,7 @@ class Arena(object):
 
   def GetLineSpan(self, span_id):
     # type: (int) -> line_span
-    assert span_id != const.NO_INTEGER, span_id
+    assert span_id != runtime.NO_SPID, span_id
     try:
       return self.spans[span_id]
     except IndexError:
