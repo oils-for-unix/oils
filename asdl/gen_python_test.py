@@ -6,7 +6,7 @@ from __future__ import print_function
 
 import unittest
 
-from asdl import const
+from asdl import runtime
 from asdl import meta
 from asdl import pybase
 
