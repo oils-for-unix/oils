@@ -67,6 +67,7 @@ from core.util import log
 
 from frontend import args
 from frontend import reader
+from frontend import py_reader
 from frontend import parse_lib
 
 from oil_lang import expr_eval
@@ -557,9 +558,8 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   elif opts.i:  # force interactive
     arena.PushSource(source.Stdin(' -i'))
-    line_reader = reader.InteractiveLineReader(arena, prompt_ev, hist_ev,
-                                               line_input, prompt_state,
-                                               sig_state)
+    line_reader = py_reader.InteractiveLineReader(
+        arena, prompt_ev, hist_ev, line_input, prompt_state)
     exec_opts.interactive = True
 
   else:
@@ -568,9 +568,8 @@ def ShellMain(lang, argv0, argv, login_shell):
     except IndexError:
       if sys.stdin.isatty():
         arena.PushSource(source.Interactive())
-        line_reader = reader.InteractiveLineReader(arena, prompt_ev, hist_ev,
-                                                   line_input, prompt_state,
-                                                   sig_state)
+        line_reader = py_reader.InteractiveLineReader(
+            arena, prompt_ev, hist_ev, line_input, prompt_state)
         exec_opts.interactive = True
       else:
         arena.PushSource(source.Stdin(''))
