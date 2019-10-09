@@ -28,10 +28,24 @@ sentinel.  Python's regex engine knows where the end of the input string is, so
 it doesn't require need a sentinel like \0.
 """
 
-from _devbuild.gen.id_kind_asdl import Id, Kind
+from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.types_asdl import lex_mode_e
 from core.meta import ID_SPEC
-from frontend.lexer import C, R
+
+from typing import Tuple
+
+
+def C(pat, tok_type):
+  # type: (str, Id_t) -> Tuple[bool, str, Id_t]
+  """ Lexer rule with a constant string, e.g. C('$*', VSub_Star) """
+  return (False, pat, tok_type)
+
+
+def R(pat, tok_type):
+  # type: (str, Id_t) -> Tuple[bool, str, Id_t]
+  """ Lexer rule with a regex string, e.g. R('\$[0-9]', VSub_Number) """
+  return (True, pat, tok_type)
+
 
 # See unit tests in frontend/match_test.py.
 # We need the [^\0]* because the re2c translation assumes it's anchored like $.

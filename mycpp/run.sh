@@ -234,6 +234,16 @@ using id_kind_asdl::Id_t;
 #include "syntax_asdl.h"
 
 #include "id.h"
+
+// TODO: This is already added elsewhere
+#include "mylib.h"
+
+namespace match {
+
+using types_asdl::lex_mode_t;
+// TODO: Implement this wrapper
+Tuple2<Id_t, int>* OneToken(lex_mode_t lex_mode, Str* line, int start_pos);
+}
 '
   translate-ordered lexer_main "$snippet" \
     $REPO_ROOT/asdl/runtime.py \
@@ -401,7 +411,7 @@ example-both() {
 
 benchmark() {
   export BENCHMARK=1
-  run-example "$@"
+  example-both "$@"
 }
 
 # NOTES on timings:

@@ -13,30 +13,17 @@ from _devbuild.gen.types_asdl import lex_mode_t
 from _devbuild.gen.id_kind_asdl import Id_t, Id
 from asdl import runtime
 from core.util import log
+from frontend import match
 
 from typing import Callable, List, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
   from frontend.reader import _Reader
-  from frontend.match import MatchFunc
-
-
-def C(pat, tok_type):
-  # type: (str, Id_t) -> Tuple[bool, str, Id_t]
-  """ Lexer rule with a constant string, e.g. C('$*', VSub_Star) """
-  return (False, pat, tok_type)
-
-
-def R(pat, tok_type):
-  # type: (str, Id_t) -> Tuple[bool, str, Id_t]
-  """ Lexer rule with a regex string, e.g. R('\$[0-9]', VSub_Number) """
-  return (True, pat, tok_type)
 
 
 class LineLexer(object):
-  def __init__(self, match_func, line, arena):
-    # type: (MatchFunc, str, Arena) -> None
-    self.match_func = match_func
+  def __init__(self, line, arena):
+    # type: (str, Arena) -> None
     self.arena = arena
 
     self.arena_skip = False  # For MaybeUnreadOne
@@ -103,7 +90,7 @@ class LineLexer(object):
         t = token(Id.Unknown_Tok, '', runtime.NO_SPID)
         return t
 
-      tok_type, end_pos = self.match_func(lex_mode, self.line, pos)
+      tok_type, end_pos = match.OneToken(lex_mode, self.line, pos)
       tok_val = self.line[pos:end_pos]
       # NOTE: Instead of hard-coding this token, we could pass it in.  This
       # one only appears in OUTER state!  LookAhead(lex_mode, past_token_type)
@@ -119,7 +106,7 @@ class LineLexer(object):
     line = self.line
     line_pos = self.line_pos
 
-    tok_type, end_pos = self.match_func(lex_mode, line, line_pos)
+    tok_type, end_pos = match.OneToken(lex_mode, line, line_pos)
     if tok_type == Id.Eol_Tok:  # Do NOT add a span for this sentinel!
       return token(tok_type, '', runtime.NO_SPID)
 

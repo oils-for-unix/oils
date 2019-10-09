@@ -4,7 +4,9 @@ runtime.py
 from __future__ import print_function
 
 import sys
-from typing import IO, Any
+import cStringIO
+
+from typing import Any
 
 
 # C code ignores this!
@@ -21,10 +23,7 @@ def p_die(msg, *args):
   raise RuntimeError(msg % args)
 
 
-import StringIO  # can't subclasss StringIO
-
-class Buf(StringIO.StringIO):
-  pass
+Buf = cStringIO.StringIO
 
 
 def StdOut():

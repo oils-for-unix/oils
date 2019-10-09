@@ -25,7 +25,6 @@ from core import pyutil
 from core import ui
 from core import util
 from frontend import lexer
-from frontend import match
 from frontend import parse_lib
 from frontend import reader
 from osh import builtin
@@ -105,7 +104,7 @@ def MakeArena(source_name):
 
 def InitLexer(s, arena):
   """For tests only."""
-  line_lexer = lexer.LineLexer(match.MATCHER, '', arena)
+  line_lexer = lexer.LineLexer('', arena)
   line_reader = reader.StringLineReader(s, arena)
   lx = lexer.Lexer(line_lexer, line_reader)
   return line_reader, lx

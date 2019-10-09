@@ -26,7 +26,6 @@ else:
 
 if TYPE_CHECKING:
   SRE_Pattern = Any  # Do we need a .pyi file for re or _sre?
-  MatchFunc = Callable[[lex_mode_t, str, int], Tuple[Id_t, int]]
   SimpleMatchFunc = Callable[[str, int], Tuple[Id_t, int]]
   LexerPairs = List[Tuple[SRE_Pattern, Id_t]]
 
@@ -146,7 +145,7 @@ def _MatchBraceRangeToken_Fast(line, start_pos):
 
 
 if fastlex:
-  MATCHER = _MatchOshToken_Fast
+  OneToken = _MatchOshToken_Fast
   ECHO_MATCHER = _MatchEchoToken_Fast
   GLOB_MATCHER = _MatchGlobToken_Fast
   PS1_MATCHER = _MatchPS1Token_Fast
@@ -155,7 +154,7 @@ if fastlex:
   IsValidVarName = fastlex.IsValidVarName
   ShouldHijack = fastlex.ShouldHijack
 else:
-  MATCHER = _MatchOshToken_Slow(lex.LEXER_DEF)
+  OneToken = _MatchOshToken_Slow(lex.LEXER_DEF)
   ECHO_MATCHER = _MatchTokenSlow(lex.ECHO_E_DEF)
   GLOB_MATCHER = _MatchTokenSlow(lex.GLOB_DEF)
   PS1_MATCHER = _MatchTokenSlow(lex.PS1_DEF)

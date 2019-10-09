@@ -50,7 +50,7 @@ def run_tests():
   #   runtime_asdl.h
 
    
-  line_lexer = lexer.LineLexer(match.MATCHER, '', arena)
+  line_lexer = lexer.LineLexer('', arena)
   print('lexer_main.py')
 
 

@@ -263,7 +263,7 @@ class ParseContext(object):
     NOTE: I tried to combine the LineLexer and Lexer, and it didn't perform
     better.
     """
-    line_lexer = lexer.LineLexer(match.MATCHER, '', self.arena)
+    line_lexer = lexer.LineLexer('', self.arena)
     return lexer.Lexer(line_lexer, line_reader)
 
   def MakeOshParser(self, line_reader, emit_comp_dummy=False,

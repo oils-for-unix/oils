@@ -18,7 +18,6 @@ from core import ui
 from core import util
 from frontend import reader
 from frontend import lexer
-from frontend import match
 from oil_lang import expr_parse
 from oil_lang import expr_to_ast
 
@@ -36,7 +35,7 @@ def main(argv):
   parse_ctx = None
   e_parser = expr_parse.ExprParser(parse_ctx, oil_grammar)
 
-  line_lexer = lexer.LineLexer(match.MATCHER, '', arena)
+  line_lexer = lexer.LineLexer('', arena)
   line_reader = reader.FileLineReader(sys.stdin, arena)
   lex = lexer.Lexer(line_lexer, line_reader)
 

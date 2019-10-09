@@ -13,7 +13,7 @@ from _devbuild.gen.syntax_asdl import source
 from core import alloc
 from core import meta
 from core.util import log
-from frontend import lexer, match, reader, lex
+from frontend import lexer, reader, lex
 from pgen2 import parse, pgen
 
 
@@ -61,10 +61,9 @@ class OilTokenDef(object):
 def MakeOilLexer(code_str, arena):
   arena.PushSource(source.MainFile('pgen2_main'))
   line_reader = reader.StringLineReader(code_str, arena)
-  line_lexer = lexer.LineLexer(match.MATCHER, '', arena)
+  line_lexer = lexer.LineLexer('', arena)
   lex = lexer.Lexer(line_lexer, line_reader)
   return lex
-
 
 
 def main(argv):

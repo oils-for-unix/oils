@@ -293,41 +293,41 @@ class LineLexerTest(unittest.TestCase):
     self.assertTrue(test_lib.TokensEqual(left, right))
 
   def testReadOuter(self):
-    l = LineLexer(match.MATCHER, '\n', self.arena)
+    l = LineLexer('\n', self.arena)
     self.assertTokensEqual(
         token(Id.Op_Newline, '\n'), l.Read(lex_mode_e.ShCommand))
 
   def testRead_VS_ARG_UNQ(self):
-    l = LineLexer(match.MATCHER, "'hi'", self.arena)
+    l = LineLexer("'hi'", self.arena)
     t = l.Read(lex_mode_e.VSub_ArgUnquoted)
     self.assertEqual(Id.Left_SingleQuoteRaw, t.id)
 
   def testLookAhead(self):
     # Lines always end with '\n'
-    l = LineLexer(match.MATCHER, '', self.arena)
+    l = LineLexer('', self.arena)
     self.assertTokensEqual(
         token(Id.Unknown_Tok, ''), l.LookAhead(lex_mode_e.ShCommand))
 
-    l = LineLexer(match.MATCHER, 'foo', self.arena)
+    l = LineLexer('foo', self.arena)
     self.assertTokensEqual(
         token(Id.Lit_Chars, 'foo'), l.Read(lex_mode_e.ShCommand))
     self.assertTokensEqual(
         token(Id.Unknown_Tok, ''), l.LookAhead(lex_mode_e.ShCommand))
 
-    l = LineLexer(match.MATCHER, 'foo  bar', self.arena)
+    l = LineLexer('foo  bar', self.arena)
     self.assertTokensEqual(
         token(Id.Lit_Chars, 'foo'), l.Read(lex_mode_e.ShCommand))
     self.assertTokensEqual(
         token(Id.Lit_Chars, 'bar'), l.LookAhead(lex_mode_e.ShCommand))
 
     # No lookahead; using the cursor!
-    l = LineLexer(match.MATCHER, 'fun(', self.arena)
+    l = LineLexer('fun(', self.arena)
     self.assertTokensEqual(
         token(Id.Lit_Chars, 'fun'), l.Read(lex_mode_e.ShCommand))
     self.assertTokensEqual(
         token(Id.Op_LParen, '('), l.LookAhead(lex_mode_e.ShCommand))
 
-    l = LineLexer(match.MATCHER, 'fun  (', self.arena)
+    l = LineLexer('fun  (', self.arena)
     self.assertTokensEqual(
         token(Id.Lit_Chars, 'fun'), l.Read(lex_mode_e.ShCommand))
     self.assertTokensEqual(
