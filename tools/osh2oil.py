@@ -54,8 +54,7 @@ class Cursor(object):
     """
     if (next_span_id == runtime.NO_SPID or
         next_span_id == runtime.NO_SPID + 1):
-      assert 0, 'Missing span ID, got %d' % until_span_id
-    assert next_span_id != runtime.NO_SPID, next_span_id
+      assert 0, 'Missing span ID, got %d' % next_span_id
     self.next_span_id = next_span_id
 
 
