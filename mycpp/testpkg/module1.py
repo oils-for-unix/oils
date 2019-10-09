@@ -1,7 +1,7 @@
 """
 module1.py
 """
-from runtime import log
+from mylib import log
 
 def func1():
   # type: () -> None

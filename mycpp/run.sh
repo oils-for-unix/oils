@@ -236,6 +236,7 @@ using id_kind_asdl::Id_t;
 #include "id.h"
 '
   translate-ordered lexer_main "$snippet" \
+    $REPO_ROOT/asdl/runtime.py \
     $REPO_ROOT/frontend/my_reader.py \
     $REPO_ROOT/core/alloc.py \
     $REPO_ROOT/frontend/lexer.py \

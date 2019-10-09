@@ -26,7 +26,7 @@ class PrettyNode(_PrettyBase):
 
   def __init__(self, node_type=None):
     # type: (Optional[str]) -> None
-    self.node_type = node_type or ''  # type: str
+    self.node_type = node_type if node_type else ''  # type: str
     # Gah this signature is complicated.
     # Probably should have _PrettyRepeated?
     self.fields = []  # type: List[Tuple[str, _PrettyBase]]

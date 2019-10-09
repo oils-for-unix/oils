@@ -78,7 +78,7 @@ def get_c_type(t):
       base_class_names = [b.type.fullname() for b in t.type.bases]
       #log('** base_class_names %s', base_class_names)
       # not sure why this isn't runtime.SimpleObj
-      if 'asdl.runtime.SimpleObj' in base_class_names:
+      if 'asdl.pybase.SimpleObj' in base_class_names:
         is_pointer = ''
       else:
         is_pointer = '*'
@@ -633,7 +633,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           raise AssertionError('Stride not supported')
 
     def visit_conditional_expr(self, o: 'mypy.nodes.ConditionalExpr') -> T:
-        pass
+        # 0 if b else 1 -> b ? 0 : 1
+        self.accept(o.cond)
+        self.write(' ? ')
+        self.accept(o.if_expr)
+        self.write(' : ')
+        self.accept(o.else_expr)
 
     def visit_backquote_expr(self, o: 'mypy.nodes.BackquoteExpr') -> T:
         pass
@@ -923,6 +928,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.log('  kind %s', arg.kind)
 
     def visit_func_def(self, o: 'mypy.nodes.FuncDef') -> T:
+        # Skip these for now
+        if o.name() == '__repr__':
+          return
+
         # No function prototypes when forward declaring.
         if self.forward_decl:
           return

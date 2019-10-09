@@ -255,7 +255,9 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
           self.accept(o.stride)
 
     def visit_conditional_expr(self, o: 'mypy.nodes.ConditionalExpr') -> T:
-        pass
+        self.accept(o.cond)
+        self.accept(o.if_expr)
+        self.accept(o.else_expr)
 
     def visit_backquote_expr(self, o: 'mypy.nodes.BackquoteExpr') -> T:
         pass
