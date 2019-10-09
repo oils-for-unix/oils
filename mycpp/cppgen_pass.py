@@ -711,8 +711,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           lval_type = self.types[lval]
           c_type = get_c_type(lval_type)
 
-          # TODO: Only include the type if it's a declaration!  That is, the
-          # first use.
+          # TODO: How can we hoist?
 
           if lval.name in self.local_vars:  # already defined
             self.write_ind('%s = ', lval.name)
