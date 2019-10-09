@@ -14,7 +14,7 @@ import sys
 
 from _devbuild.gen.runtime_asdl import builtin_e
 from _devbuild.gen.syntax_asdl import source
-from asdl import runtime
+from asdl import pybase
 from core import alloc
 from core import completion
 from core import dev
@@ -63,7 +63,7 @@ def AsdlEqual(left, right):
 
   We don't use equality in the actual code, so this is relegated to test_lib.
   """
-  if isinstance(left, (int, str, bool, runtime.SimpleObj)):
+  if isinstance(left, (int, str, bool, pybase.SimpleObj)):
     return left == right
 
   if isinstance(left, list):
@@ -74,7 +74,7 @@ def AsdlEqual(left, right):
         return False
     return True
 
-  if isinstance(left, runtime.CompoundObj):
+  if isinstance(left, pybase.CompoundObj):
     if left.tag != right.tag:
       return False
 

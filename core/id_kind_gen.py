@@ -152,7 +152,7 @@ def main(argv):
     f = sys.stdout
 
     f.write("""\
-from asdl import runtime
+from asdl import pybase
 from typing import List
 
 """)

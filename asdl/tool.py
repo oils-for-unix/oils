@@ -85,7 +85,7 @@ namespace %s {
     # NOTE: Dict, Any are for AssocArray with 'dict' type.
     f.write("""\
 from asdl import const  # For const.NO_INTEGER
-from asdl import runtime
+from asdl import pybase
 from asdl.runtime import (
   PrettyLeaf, ExternalLeaf, PrettyArray, PrettyNode,
   Color_TypeName, Color_StringConst, Color_OtherConst, Color_External,

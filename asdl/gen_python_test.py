@@ -8,7 +8,7 @@ import unittest
 
 from asdl import const
 from asdl import meta
-from asdl import runtime
+from asdl import pybase
 
 from _devbuild.gen import typed_demo_asdl as demo_asdl  # module under test
 from _devbuild.gen import typed_arith_asdl
@@ -108,7 +108,7 @@ class ArithAstTest(unittest.TestCase):
     print(s)
 
     # Implementation detail for dynamic type checking
-    assert isinstance(s, runtime.CompoundObj)
+    assert isinstance(s, pybase.CompoundObj)
 
   def testSimpleSumType(self):
     # TODO: Should be op_id_i.Plus -- instance
@@ -119,7 +119,7 @@ class ArithAstTest(unittest.TestCase):
     print()
 
     o = op_id_e.Plus
-    assert isinstance(o, runtime.SimpleObj)
+    assert isinstance(o, pybase.SimpleObj)
 
   def testCompoundSumType(self):
     print()
@@ -130,7 +130,7 @@ class ArithAstTest(unittest.TestCase):
     c = cflow.Break()
     assert isinstance(c, cflow.Break)
     assert isinstance(c, demo_asdl.cflow_t)
-    assert isinstance(c, runtime.CompoundObj)
+    assert isinstance(c, pybase.CompoundObj)
 
   def testOtherTypes(self):
     c = arith_expr.Const(66)

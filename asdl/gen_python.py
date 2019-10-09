@@ -30,7 +30,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
   def VisitSimpleSum(self, sum, name, depth):
     # First emit a type
-    self.Emit('class %s_t(runtime.SimpleObj):' % name, depth)
+    self.Emit('class %s_t(pybase.SimpleObj):' % name, depth)
     self.Emit('  pass', depth)
     self.Emit('', depth)
 
@@ -295,7 +295,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     self.Emit('', depth)
 
     # the base class, e.g. 'oil_cmd'
-    self.Emit('class %s_t(runtime.CompoundObj):' % sum_name, depth)
+    self.Emit('class %s_t(pybase.CompoundObj):' % sum_name, depth)
     self.Emit('  pass', depth)
     self.Emit('', depth)
 
@@ -340,5 +340,5 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       # Figure out base classes AFTERWARD.
       bases = self._product_bases[name]
       if not bases:
-        bases = ('runtime.CompoundObj',)
+        bases = ('pybase.CompoundObj',)
       self._GenClass(desc, attributes, name, bases, depth, tag_num)

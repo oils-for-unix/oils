@@ -7,7 +7,7 @@ import sys
 
 from _devbuild.gen.runtime_asdl import builtin_e
 from _devbuild.gen.syntax_asdl import command
-from asdl import runtime
+from asdl import pybase
 from core.util import log
 from osh import builtin
 from osh import word_
@@ -41,11 +41,11 @@ class Visitor(object):
           # type basis, because sums can look liek this:
           # iterable = IterArgv | IterArray(word* words)
           # We visit the latter but not the former.
-          if isinstance(item, runtime.CompoundObj):
+          if isinstance(item, pybase.CompoundObj):
             self.Visit(item)
         continue
 
-      if isinstance(child, runtime.CompoundObj):
+      if isinstance(child, pybase.CompoundObj):
         #log('Visiting child %s', name)
         self.Visit(child)
         continue
