@@ -1,5 +1,6 @@
 ./asdl/format.py
 ./asdl/pretty.py
+./asdl/pybase.py
 ./asdl/runtime.py
 ./bin/osh_parse.py
 ./core/alloc.py

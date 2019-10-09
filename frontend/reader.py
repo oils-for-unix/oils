@@ -32,7 +32,8 @@ class _Reader(object):
     # type: () -> Tuple[int, Optional[str], int]
     line = self._GetLine()
     if line is None:
-      return -1, None, 0
+      eof_line = None  # type: Optional[str]
+      return -1, eof_line, 0
 
     line_id = self.arena.AddLine(line, self.line_num)
     self.line_num += 1
@@ -113,7 +114,9 @@ class VirtualLineReader(_Reader):
   def GetLine(self):
     # type: () -> Tuple[int, Optional[str], int]
     if self.pos == self.num_lines:
-      return -1, None, 0
+      eof_line = None  # type: Optional[str]
+      return -1, eof_line, 0
+
     line_id, line, start_offset = self.lines[self.pos]
 
     self.pos += 1
