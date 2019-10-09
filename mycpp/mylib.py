@@ -25,6 +25,12 @@ def p_die(msg, *args):
 
 Buf = cStringIO.StringIO
 
+BufLineReader = cStringIO.StringIO
+
 
 def StdOut():
   return sys.stdout
+
+
+def StdIn():
+  return sys.stdin

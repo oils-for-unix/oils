@@ -16,6 +16,7 @@ from core import ui
 from core import util
 from frontend import parse_lib
 from frontend import reader
+from mycpp import mylib
 
 from typing import List, Dict, Any
 
@@ -36,7 +37,7 @@ def main(argv):
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar,
                                      one_pass_parse=True)
 
-  line_reader = reader.FileLineReader(sys.stdin, arena)
+  line_reader = reader.FileLineReader(mylib.StdIn(), arena)
   c_parser = parse_ctx.MakeOshParser(line_reader)
 
   try:

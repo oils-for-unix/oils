@@ -352,10 +352,24 @@ int str_to_int(Str* s);
 
 namespace mylib {  // MyPy artifact
 
+class LineReader {
+ public:
+  virtual Str* readline() = 0;
+};
+
+class BufLineReader : public LineReader {
+ public:
+  BufLineReader(Str* s) : s_(s) {
+  }
+  virtual Str* readline();
+ private:
+  Str* s_;
+};
+
+// TODO: Rename Writer
 class File {
  public:
   virtual void write(Str* s) = 0;
-  virtual Str* readline() = 0;
 };
 
 class Buf : public File {
@@ -363,7 +377,6 @@ class Buf : public File {
   Buf() : data_(nullptr), len_(0) {
   };
   virtual void write(Str* s);
-  virtual Str* readline();
   Str* getvalue() { return new Str(data_, len_); }
 
  private:
@@ -378,7 +391,6 @@ class CFile : public File {
   CFile(FILE* f) : f_(f) {
   };
   virtual void write(Str* s);
-  virtual Str* readline();
 
  private:
   FILE* f_;

@@ -8,11 +8,11 @@
 reader.py - Read lines of input.
 """
 
-import cStringIO
+from mycpp import mylib
 
 from core.util import p_die
 
-from typing import Optional, Tuple, List, IO, TYPE_CHECKING
+from typing import Optional, Tuple, List, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import token
   from core.alloc import Arena
@@ -62,7 +62,7 @@ class FileLineReader(_Reader):
   """For -c and stdin?"""
 
   def __init__(self, f, arena):
-    # type: (IO[str], Arena) -> None
+    # type: (mylib.LineReader, Arena) -> None
     """
     Args:
       lines: List of (line_id, line) pairs
@@ -81,17 +81,10 @@ class FileLineReader(_Reader):
 
 def StringLineReader(s, arena):
   # type: (str, Arena) -> FileLineReader
-  return FileLineReader(cStringIO.StringIO(s), arena)
+  return FileLineReader(mylib.BufLineReader(s), arena)
 
-
-# C++ ownership notes:
-# - used for file input (including source)
-# - used for -c arg (NUL terminated, likely no newline)
-# - used for eval arg
-# - for here doc?
-#
-# Adding \n causes problems for StringPiece.  Maybe we an just copy it
-# internally.
+# TODO: Should be BufLineReader(Str)?
+# This doesn't have to copy.  It just has a pointer.
 
 
 class VirtualLineReader(_Reader):

@@ -46,7 +46,7 @@ def get_c_type(t):
       c_type = 'bool'
 
     elif type_name == 'builtins.str':
-      c_type = 'Str*'  # TODO: write this!
+      c_type = 'Str*'
 
     elif type_name == 'builtins.list':
       assert len(t.args) == 1, t.args
@@ -59,6 +59,11 @@ def get_c_type(t):
       for type_param in t.args:
         params.append(get_c_type(type_param))
       c_type = 'Dict<%s>*' % ', '.join(params)
+
+    # TODO: we might want Writer and LineReader base classes, and
+    # mylib::Writer
+    #   CFileWriter
+    #   BufWriter
 
     elif type_name == 'typing.IO':
       c_type = 'mylib::File*'
