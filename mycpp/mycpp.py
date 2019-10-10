@@ -144,18 +144,27 @@ def main(argv):
   f.write('\n')
 
   # Forward declarations first.
+  # class Foo; class Bar;
   for name, module in to_compile:
     p2 = cppgen_pass.Generate(result.types, const_lookup, f, forward_decl=True)
     p2.visit_mypy_file(module)
 
+  local_vars = {}  # FuncDef node -> (name, c_type) list
+
   # First generate ALL C++ declarations / "headers".
+  # class Foo { void method(); }; class Bar { void method(); };
   for name, module in to_compile:
-    p3 = cppgen_pass.Generate(result.types, const_lookup, f, decl=True)
+    p3 = cppgen_pass.Generate(result.types, const_lookup, f,
+                              local_vars=local_vars, decl=True)
+
     p3.visit_mypy_file(module)
 
   # Now the definitions / implementations.
+  # void Foo:method() { ... }
+  # void Bar:method() { ... }
   for name, module in to_compile:
-    p4 = cppgen_pass.Generate(result.types, const_lookup, f)
+    p4 = cppgen_pass.Generate(result.types, const_lookup, f,
+                              local_vars=local_vars)
     p4.visit_mypy_file(module)
 
   for name, module in to_compile:

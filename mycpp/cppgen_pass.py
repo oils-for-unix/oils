@@ -134,7 +134,7 @@ def get_c_type(t):
 class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def __init__(self, types: Dict[Expression, Type], const_lookup, f,
-                 decl=False, forward_decl=False):
+                 local_vars=None, decl=False, forward_decl=False):
       self.types = types
       self.const_lookup = const_lookup
       self.f = f 
@@ -142,12 +142,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       self.forward_decl = forward_decl
 
       self.indent = 0
-      self.local_vars = {}  # type: Dict[str, bool]
+      # local_vars: FuncDef node -> list of type, var
+      # This is different from member_vars because we collect it in the 'decl'
+      # phase.  But then write it in the definition phase.
+      self.local_vars = local_vars
+      self.local_var_list = []  # Collected at assignment
+      self.prepend_to_block = None  # For writing vars after {
+      self.in_func_body = False
 
       # This is cleared when we start visiting a class.  Then we visit all the
       # methods, and accumulate the types of everything that looks like
       # self.foo = 1.  Then we write C++ class member declarations at the end
       # of the class.
+      # This is all in the 'decl' phase.
       self.member_vars = {}  # type: Dict[str, Type]
       self.current_class_name = None  # for prototypes
 
@@ -681,9 +688,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       for lval_item, item_type in zip(lval_items, item_types):
         #self.log('*** %s :: %s', lval_item, item_type)
         if isinstance(lval_item, NameExpr):
-          # TODO:
-          # - check if it's self.local_vars, then we don't need the
-          # declaration.
           item_c_type = get_c_type(item_type)
           self.write_ind('%s %s', item_c_type, lval_item.name)
         else:
@@ -716,13 +720,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           lval_type = self.types[lval]
           c_type = get_c_type(lval_type)
 
-          # TODO: How can we hoist?
-
-          if lval.name in self.local_vars:  # already defined
+          # for "hoisting" to the top of the function
+          if self.in_func_body:
             self.write_ind('%s = ', lval.name)
+            if self.decl:
+              self.local_var_list.append((lval.name, c_type))
           else:
+            # globals always get a type -- they're not mutated
             self.write_ind('%s %s = ', c_type, lval.name)
-            self.local_vars[lval.name] = True  # now defined
 
           self.accept(o.rvalue)
           self.write(';\n')
@@ -917,9 +922,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.decl_write('%s %s', c_type, arg_name)
           first = False
 
-          # arguments shouldn't be redeclared as locals
-          self.local_vars[arg_name] = True
-
           # We can't use __str__ on these Argument objects?  That seems like an
           # oversight
           #self.log('%r', arg)
@@ -940,6 +942,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if self.forward_decl:
           return
 
+        if self.decl:
+          self.local_var_list = []  # Make a new instance to collect from
+          self.local_vars[o] = self.local_var_list
+
         if self.current_class_name:
           # definition looks like
           # void Type::foo(...);
@@ -955,14 +961,27 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         if self.decl:
           self.decl_write(');\n')
+          self.in_func_body = True
           self.accept(o.body)  # Collect member_vars, but don't write anything
+          self.in_func_body = False
           return
 
         self.write(') ')
-        self.accept(o.body)
-        self.write('\n')
 
-        self.local_vars.clear()
+        # Write local vars we collected in the 'decl' phase
+        if not self.forward_decl and not self.decl:
+          arg_names = [arg.variable.name() for arg in o.arguments]
+          no_args = [
+              (lval_name, c_type) for (lval_name, c_type) in self.local_vars[o]
+              if lval_name not in arg_names
+          ]
+
+          self.prepend_to_block = no_args
+
+        self.in_func_body = True
+        self.accept(o.body)
+        self.in_func_body = False
+        self.write('\n')
 
     def visit_overloaded_func_def(self, o: 'mypy.nodes.OverloadedFuncDef') -> T:
         pass
@@ -1161,7 +1180,18 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def visit_block(self, block: 'mypy.nodes.Block') -> T:
         self.write('{\n')  # not indented to use same line as while/if
+
         self.indent += 1
+
+        if self.prepend_to_block:
+          done = set()
+          for lval_name, c_type in self.prepend_to_block:
+            if lval_name not in done:
+              self.write_ind('%s %s;\n', c_type, lval_name)
+              done.add(lval_name)
+          self.write('\n')
+          self.prepend_to_block = None
+
         for stmt in block.body:
             # Ignore things that look like docstrings
             if isinstance(stmt, ExpressionStmt) and isinstance(stmt.expr, StrExpr):

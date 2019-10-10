@@ -4,6 +4,7 @@ hoist.py
 """
 from __future__ import print_function
 
+import os
 import sys
 
 
@@ -15,8 +16,8 @@ import sys
 # up?
 
 
-def run_tests():
-  # type: () -> None
+def f(s):
+  # type: (str) -> str
 
   x = 1
   if x > 0:
@@ -25,6 +26,20 @@ def run_tests():
     s = 'less'
   print(s)
   return s
+
+
+S = "global string"
+
+
+def g():
+  # type: () -> None
+  print(S)
+
+
+def run_tests():
+  # type: () -> None
+  f('foo')
+  g()
 
 
 def run_benchmarks():
