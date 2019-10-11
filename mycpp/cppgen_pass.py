@@ -249,21 +249,27 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           comment = 'define'
 
         self.decl_write_ind('namespace %s {  // %s\n', mod_parts[-1], comment)
-        self.decl_write('\n')
 
         self.module_path = o.path
 
-        for node in o.defs:
-            # skip module docstring
-            if (isinstance(node, ExpressionStmt) and
-                isinstance(node.expr, StrExpr)):
-                continue
-            self.accept(node)
+        if self.forward_decl:
+          self.indent += 1
 
-        #for part in reversed(mod_parts):
+        for node in o.defs:
+          # skip module docstring
+          if (isinstance(node, ExpressionStmt) and
+              isinstance(node.expr, StrExpr)):
+              continue
+          self.accept(node)
+
+        if self.forward_decl:
+          self.indent -= 1
+
+        self.decl_write('\n')
         self.decl_write_ind(
             '}  // %s namespace %s\n', comment, mod_parts[-1])
         self.decl_write('\n')
+
 
     # NOTE: Copied ExpressionVisitor and StatementVisitor nodes below!
 
@@ -959,6 +965,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # declaration inside class { }
           func_name = o.name()
 
+        self.write('\n')
         c_type = get_c_type(o.type.ret_type)
         self.decl_write_ind('%s %s(', c_type, func_name)
 
@@ -986,7 +993,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.in_func_body = True
         self.accept(o.body)
         self.in_func_body = False
-        self.write('\n')
 
     def visit_overloaded_func_def(self, o: 'mypy.nodes.OverloadedFuncDef') -> T:
         pass
@@ -1009,6 +1015,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           self.member_vars.clear()  # make a new list
 
+          self.decl_write('\n')
           self.decl_write_ind('class %s', o.name)  # block after this
 
           # e.g. class TextOutput : public ColorOutput
@@ -1052,7 +1059,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.decl_write_ind('%s %s;\n', c_type, name)
 
           self.indent -= 1
-          self.decl_write_ind('};\n\n')
+          self.decl_write_ind('};\n')
 
           return
 
@@ -1066,6 +1073,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # Collect __init__ calls within __init__, and turn them into
           # initialize lists.
           if isinstance(stmt, FuncDef) and stmt.name() == '__init__':
+            self.write('\n')
             self.write_ind('%s::%s(', o.name, o.name)
             self._write_func_args(stmt)
             self.write(') ')
@@ -1103,12 +1111,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 for node in stmt.body.body[first_index+1:]:
                   self.accept(node)
                 self.indent -= 1
-                self.write('}\n\n')
+                self.write('}\n')
                 continue
 
             # Normal function body
             self.accept(stmt.body)
-            self.write('\n')
             continue
 
           # Write body
