@@ -11,8 +11,8 @@ import sys
 from typing import Tuple, Optional
 
 # PYTHONPATH=$REPO_ROOT/mycpp
-from mylib import log
-import mylib
+from mycpp.mylib import log
+from mycpp import mylib
 from _gen.expr_asdl import (
     expr_t, expr__Var, expr__Const, expr__Binary, tok_e, tok_t
 )

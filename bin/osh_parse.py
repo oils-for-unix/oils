@@ -37,7 +37,7 @@ def main(argv):
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar,
                                      one_pass_parse=True)
 
-  line_reader = reader.FileLineReader(mylib.StdIn(), arena)
+  line_reader = reader.FileLineReader(mylib.Stdin(), arena)
   c_parser = parse_ctx.MakeOshParser(line_reader)
 
   try:
@@ -50,7 +50,7 @@ def main(argv):
   tree = node.AbbreviatedTree()
   #tree = node.PrettyTree()
 
-  ast_f = fmt.DetectConsoleOutput(sys.stdout)
+  ast_f = fmt.DetectConsoleOutput(mylib.Stdout())
   fmt.PrintTree(tree, ast_f)
   ast_f.write('\n')
 

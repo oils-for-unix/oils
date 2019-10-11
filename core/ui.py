@@ -22,6 +22,7 @@ from _devbuild.gen.runtime_asdl import value_t, value
 from asdl import runtime
 from asdl import format as fmt
 from osh import word_
+from mycpp import mylib
 
 from typing import List, Any, IO, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -227,7 +228,7 @@ def PrintAst(nodes, opts):
     print('AST not printed.', file=sys.stderr)
 
   else:  # text output
-    f = sys.stdout
+    f = mylib.Stdout()
 
     if opts.ast_format in ('text', 'abbrev-text'):
       ast_f = fmt.DetectConsoleOutput(f)

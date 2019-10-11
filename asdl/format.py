@@ -14,9 +14,7 @@ Places where we try a single line:
  - objects with name fields
  - abbreviated, unnamed fields
 """
-from typing import Tuple, List, IO
-
-from cStringIO import StringIO
+from typing import Tuple, List
 
 from asdl import pretty
 from asdl import runtime
@@ -29,7 +27,7 @@ from typing import cast
 
 
 def DetectConsoleOutput(f):
-  # type: (IO[str]) -> ColorOutput
+  # type: (mylib.Writer) -> ColorOutput
   """Wrapped to auto-detect."""
   if f.isatty():
     return AnsiOutput(f)
@@ -41,7 +39,7 @@ class ColorOutput(object):
   """Abstract base class for plain text, ANSI color, and HTML color."""
 
   def __init__(self, f):
-    # type: (IO[str]) -> None
+    # type: (mylib.Writer) -> None
     self.f = f
     self.num_chars = 0
 
@@ -89,7 +87,7 @@ class ColorOutput(object):
 
   def GetRaw(self):
     # type: () -> Tuple[str, int]
-    # NOTE: When wrapping, self.f will be a StringIO with this method.
+    # NOTE: When wrapping, self.f will be a BufWriter with this method.
     return self.f.getvalue(), self.num_chars  # type: ignore
 
 
@@ -97,12 +95,12 @@ class TextOutput(ColorOutput):
   """TextOutput put obeys the color interface, but outputs nothing."""
 
   def __init__(self, f):
-    # type: (IO[str]) -> None
+    # type: (mylib.Writer) -> None
     ColorOutput.__init__(self, f)
 
   def NewTempBuffer(self):
     # type: () -> TextOutput
-    return TextOutput(StringIO())
+    return TextOutput(mylib.BufWriter())
 
   def PushColor(self, e_color):
     # type: (int) -> None
@@ -121,12 +119,12 @@ class HtmlOutput(ColorOutput):
   Color: HTML spans
   """
   def __init__(self, f):
-    # type: (IO[str]) -> None
+    # type: (mylib.Writer) -> None
     ColorOutput.__init__(self, f)
 
   def NewTempBuffer(self):
     # type: () -> HtmlOutput
-    return HtmlOutput(StringIO())
+    return HtmlOutput(mylib.BufWriter())
 
   def FileHeader(self):
     # type: () -> None
@@ -200,12 +198,12 @@ class AnsiOutput(ColorOutput):
   """For the console."""
 
   def __init__(self, f):
-    # type: (IO[str]) -> None
+    # type: (mylib.Writer) -> None
     ColorOutput.__init__(self, f)
 
   def NewTempBuffer(self):
     # type: () -> AnsiOutput
-    return AnsiOutput(StringIO())
+    return AnsiOutput(mylib.BufWriter())
 
   def PushColor(self, e_color):
     # type: (int) -> None

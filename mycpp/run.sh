@@ -85,14 +85,14 @@ translate-osh-parse() {
 
   # Have to get rid of strict optional?
   local main=~/git/oilshell/oil/bin/osh_parse.py
-  time ./mycpp.py $main
+  time ./mycpp_main.py $main
 }
 
 # for examples/{parse,asdl_generated}
 # TODO: Get rid of this?   Every example should be translated the same.
 #
 # What does it do?
-# - passes multiple files in order to mycpp.py
+# - passes multiple files in order to mycpp_main.py
 # - adds the "snippet" prefix
 
 translate-ordered() {
@@ -104,7 +104,7 @@ translate-ordered() {
   local out=_gen/${name}.cc
 
   ( source _tmp/mycpp-venv/bin/activate
-    time PYTHONPATH=$MYPY_REPO ./mycpp.py "$@" > $raw
+    time PYTHONPATH=$MYPY_REPO ./mycpp_main.py "$@" > $raw
   )
 
   {
@@ -170,7 +170,7 @@ _translate-example() {
   # NOTE: mycpp has to be run in the virtualenv, as well as with a different
   # PYTHONPATH.
   ( source _tmp/mycpp-venv/bin/activate
-    time PYTHONPATH=$MYPY_REPO ./mycpp.py $main > $raw
+    time PYTHONPATH=$MYPY_REPO ./mycpp_main.py $main > $raw
   )
   wc -l $raw
 
@@ -332,7 +332,7 @@ run-python-parse() {
   touch _gen/__init__.py
   asdl-gen mypy examples/expr.asdl > $out
 
-  mypy --py2 --strict examples/parse.py
+  MYPYPATH="$REPO_ROOT" mypy --py2 --strict examples/parse.py
 
   PYTHONPATH="$REPO_ROOT/mycpp:$REPO_ROOT/vendor:$REPO_ROOT" examples/parse.py
 }
@@ -373,7 +373,7 @@ modules-deps() {
   local raw=_gen/modules_raw.cc
   local out=_gen/modules.cc
 
-  cat _tmp/manifest.txt | xargs ./mycpp.py > $raw
+  cat _tmp/manifest.txt | xargs ./mycpp_main.py > $raw
 
   filter-cpp modules $raw > $out
   wc -l $raw $out
@@ -384,7 +384,7 @@ translate-modules() {
   local out=_gen/modules.cc
 
   ( source _tmp/mycpp-venv/bin/activate
-    PYTHONPATH=$MYPY_REPO ./mycpp.py \
+    PYTHONPATH=$MYPY_REPO ./mycpp_main.py \
       testpkg/module1.py testpkg/module2.py examples/modules.py > $raw
   )
   filter-cpp modules $raw > $out

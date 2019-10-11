@@ -4,10 +4,9 @@ pybase.py
 """
 from __future__ import print_function
 
-import sys
-from cStringIO import StringIO
+from mycpp import mylib
 
-from typing import IO, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from asdl import runtime
 
@@ -62,10 +61,11 @@ class CompoundObj(Obj):
     # type: () -> runtime._PrettyBase
     raise NotImplementedError(self.__class__.__name__)
 
-  def PrettyPrint(self, f=sys.stdout):
-    # type: (IO[str]) -> None
+  def PrettyPrint(self, f=None):
+    # type: (Optional[mylib.Writer]) -> None
     """Print abbreviated tree in color, for debugging."""
     from asdl import format as fmt
+    f = f if f else mylib.Stdout()
 
     ast_f = fmt.DetectConsoleOutput(f)
     tree = self.AbbreviatedTree()
@@ -76,7 +76,7 @@ class CompoundObj(Obj):
     # TODO: Break this circular dependency.
     from asdl import format as fmt
 
-    ast_f = fmt.TextOutput(StringIO())  # No color by default.
+    ast_f = fmt.TextOutput(mylib.BufWriter())  # No color by default.
     tree = self.PrettyTree()
     fmt.PrintTree(tree, ast_f)
     s, _ = ast_f.GetRaw()

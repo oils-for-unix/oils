@@ -28,9 +28,9 @@ BufWriter = cStringIO.StringIO
 BufLineReader = cStringIO.StringIO
 
 
-def StdOut():
+def Stdout():
   return sys.stdout
 
 
-def StdIn():
+def Stdin():
   return sys.stdin
