@@ -689,7 +689,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         #self.log('*** %s :: %s', lval_item, item_type)
         if isinstance(lval_item, NameExpr):
           item_c_type = get_c_type(item_type)
-          self.write_ind('%s %s', item_c_type, lval_item.name)
+          # declare it at the top of the function
+          if self.decl:
+            self.local_var_list.append((lval_item.name, item_c_type))
+          self.write_ind('%s', lval_item.name)
         else:
           # Could be MemberExpr like self.foo, self.bar = baz
           self.write_ind('')
@@ -845,7 +848,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         if index0_name:
           # can't initialize two things in a for loop, so do it on a separate line
-          self.write_ind('int %s = 0;\n', index0_name)
+          if self.decl:
+            self.local_var_list.append((index0_name, 'int'))
+          self.write_ind('%s = 0;\n', index0_name)
           index_update = ', ++%s' % index0_name
         else:
           index_update = ''
