@@ -16,13 +16,22 @@ NO_SPID = -1
 # A Homogeneous Tree for Pretty Printing.
 #
 
+# TODO: Bootstrap with ASDL (--no-pretty-print)
+class hnode_e:
+  Record = 0
+  Array = 1
+  Leaf = 2
+  External = 3
+
 
 class _PrettyBase(object):
-  pass
+  # like ASDL
+  tag = None  # type: int
 
 
 class PrettyNode(_PrettyBase):
   """Homogeneous node for pretty-printing."""
+  tag = hnode_e.Record
 
   def __init__(self, node_type=None):
     # type: (Optional[str]) -> None
@@ -44,6 +53,8 @@ class PrettyNode(_PrettyBase):
 
 
 class PrettyArray(_PrettyBase):
+  tag = hnode_e.Array
+
   def __init__(self):
     # type: () -> None
     self.children = []  # type: List[_PrettyBase]
@@ -63,6 +74,7 @@ Color_External = 5  # e.g. for value.Obj
 
 class PrettyLeaf(_PrettyBase):
   """Colored string for pretty-printing."""
+  tag = hnode_e.Leaf
 
   def __init__(self, s, e_color):
     # type: (Optional[str], int) -> None
@@ -81,6 +93,7 @@ class PrettyLeaf(_PrettyBase):
 
 class ExternalLeaf(_PrettyBase):
   """Leaf node to print an arbitrary objects."""
+  tag = hnode_e.External
 
   def __init__(self, obj):
     # type: (Any) -> None

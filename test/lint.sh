@@ -197,4 +197,17 @@ replace-shebang() {
   sed -i '1c#!/usr/bin/env python2' "$@"
 }
 
+#
+# sprintf -- What do we need in mycpp?
+#
+
+sp-formats() {
+  egrep --no-filename --only-matching '%.' */*.py | sort | uniq -c | sort -n
+}
+
+# 122 instances of these.  %() for named
+sp-rare() {
+  egrep --color=always '%[^srd ]' */*.py  | egrep -v 'Python-|_test.py'
+}
+ 
 "$@"

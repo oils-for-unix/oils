@@ -198,7 +198,7 @@ EXAMPLES=( $(cd examples && echo *.py) )
 EXAMPLES=( "${EXAMPLES[@]//.py/}" )
 
 asdl-gen() {
-  PYTHONPATH="$REPO_ROOT:$REPO_ROOT/vendor" $REPO_ROOT/core/asdl_gen.py "$@"
+  PYTHONPATH="$REPO_ROOT:$REPO_ROOT/vendor" $REPO_ROOT/asdl/tool.py "$@"
 }
 
 # This is the one installed from PIP

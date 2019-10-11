@@ -22,6 +22,11 @@ from asdl import pretty
 from asdl import runtime
 from pylib import cgi
 
+from typing import cast
+
+hnode_e = runtime.hnode_e
+
+
 
 def DetectConsoleOutput(f):
   # type: (IO[str]) -> ColorOutput
@@ -325,7 +330,9 @@ def _PrintTreeObj(node, f, indent, max_col):
     i = 0
     for name, val in node.fields:
       ind1 = ' ' * (indent+INDENT)
-      if isinstance(val, runtime.PrettyArray):  # list field
+      if val.tag == hnode_e.Array:
+        val = cast(runtime.PrettyArray, val)
+
         name_str = '%s%s: [' % (ind1, name)
         f.write(name_str)
         prefix_len = len(name_str)
@@ -380,17 +387,20 @@ def PrintTree(node, f, indent=0, max_col=100):
     f.WriteRaw(single_f.GetRaw())
     return
 
-  if isinstance(node, runtime.PrettyLeaf):
+  if node.tag == hnode_e.Leaf:
+    node = cast(runtime.PrettyLeaf, node)
     f.PushColor(node.e_color)
     f.write(pretty.Str(node.s))
     f.PopColor()
 
-  elif isinstance(node, runtime.ExternalLeaf):
+  elif node.tag == hnode_e.External:
+    node = cast(runtime.ExternalLeaf, node)
     f.PushColor(node.e_color)
     f.write(repr(node.obj))
     f.PopColor()
 
-  elif isinstance(node, runtime.PrettyNode):
+  elif node.tag == hnode_e.Record:
+    node = cast(runtime.PrettyNode, node)
     _PrintTreeObj(node, f, indent, max_col)
 
   else:
@@ -444,17 +454,23 @@ def _TrySingleLine(node,  # type: runtime._PrettyBase
     ok: whether it fit on the line of the given size.
       If False, you can't use the value of f.
   """
-  if isinstance(node, runtime.PrettyLeaf):
+  if node.tag == hnode_e.Leaf:
+    node = cast(runtime.PrettyLeaf, node)
     f.PushColor(node.e_color)
     f.write(pretty.Str(node.s))
     f.PopColor()
 
-  elif isinstance(node, runtime.ExternalLeaf):
+  elif node.tag == hnode_e.External:
+    node = cast(runtime.ExternalLeaf, node)
+
     f.PushColor(node.e_color)
     f.write(repr(node.obj))
     f.PopColor()
 
-  elif isinstance(node, runtime.PrettyArray):  # Can we fit the WHOLE list on the line?
+  elif node.tag == hnode_e.Array:
+    node = cast(runtime.PrettyArray, node)
+
+    # Can we fit the WHOLE array on the line?
     f.write('[')
     for i, item in enumerate(node.children):
       if i != 0:
@@ -463,7 +479,9 @@ def _TrySingleLine(node,  # type: runtime._PrettyBase
         return False
     f.write(']')
 
-  elif isinstance(node, runtime.PrettyNode):
+  elif node.tag == hnode_e.Record:
+    node = cast(runtime.PrettyNode, node)
+
     return _TrySingleLineObj(node, f, max_chars)
 
   else:
