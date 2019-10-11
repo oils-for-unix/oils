@@ -137,11 +137,49 @@ Str* StrIter::Value() {
   return new Str(buf, 1);
 }
 
+namespace mylib {
+
+//
+// LineReader
+//
+
+Str* kEmptyString = new Str("");
+
+// problem: most Str methods like index() and slice() COPY so they have a
+// NUL terminator.
+// log("%s") falls back on sprintf, so it expects a NUL terminator.
+// It would be easier for us to just share.
+Str* BufLineReader::readline() {
+  const char* end = s_->data_ + s_->len_;
+  if (pos_ == end) {
+    return kEmptyString;
+  }
+
+  const char* orig_pos = pos_;
+  const char* new_pos = strchr(pos_, '\n');
+  //log("pos_ = %s", pos_);
+  int len;
+  if (new_pos) {
+    len = new_pos - pos_ + 1;  // past newline char
+    pos_ = new_pos + 1;
+  } else {  // leftover line
+    len = end - pos_;
+    pos_ = end;
+  }
+
+  char* result = static_cast<char*>(malloc(len+1));
+  memcpy(result, orig_pos, len);  // copy the list item
+  result[len] = '\0';
+  Str* line = new Str(result, len);
+
+  // Easier way:
+  //Str* line = new Str(pos_, new_pos - pos_);
+  return line;
+}
+
 //
 // Buf
 //
-
-namespace mylib {
 
 File* gStdOut;
 

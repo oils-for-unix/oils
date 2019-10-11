@@ -359,11 +359,12 @@ class LineReader {
 
 class BufLineReader : public LineReader {
  public:
-  BufLineReader(Str* s) : s_(s) {
+  BufLineReader(Str* s) : s_(s), pos_(s->data_) {
   }
   virtual Str* readline();
  private:
   Str* s_;
+  const char* pos_;
 };
 
 // TODO: Rename Writer

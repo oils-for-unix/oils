@@ -239,6 +239,8 @@ using id_kind_asdl::Id_t;
 #include "syntax_asdl.h"
 
 #include "id.h"
+#include "osh-types.h"
+#include "osh-lex.h"
 
 // TODO: This is already added elsewhere
 #include "mylib.h"
@@ -248,11 +250,25 @@ Str* repr(syntax_asdl::source_t* obj) {
   return new Str("TODO");
 }
 
+// Stub
+void p_die(Str* fmt, syntax_asdl::token* blame_token) {
+  throw AssertionError();
+}
+
 namespace match {
 
 using types_asdl::lex_mode_t;
-// TODO: Implement this wrapper
-Tuple2<Id_t, int>* OneToken(lex_mode_t lex_mode, Str* line, int start_pos);
+
+Tuple2<Id_t, int>* OneToken(lex_mode_t lex_mode, Str* line, int start_pos) {
+  int id;
+  int end_pos;
+  // TODO: get rid of these casts
+  MatchOshToken(static_cast<int>(lex_mode),
+                reinterpret_cast<const unsigned char*>(line->data_),
+                line->len_, start_pos, &id, &end_pos);
+  return new Tuple2<Id_t, int>(static_cast<Id_t>(id), end_pos);
+}
+
 }
 '
   translate-ordered lexer_main "$snippet" \

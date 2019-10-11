@@ -1151,6 +1151,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           return  # do nothing
         if o.id == 'core.util' and o.names == [('log', None)]:
           return  # do nothing
+        if o.names == [('p_die', None)]:
+          return  # do nothing
 
         # Later we need to turn module.func() into module::func(), without
         # disturbing self.foo.

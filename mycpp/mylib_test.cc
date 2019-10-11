@@ -50,6 +50,25 @@ void test_str_methods() {
   assert((new Str("abc"))->isalpha());
 }
 
+using mylib::BufLineReader;
+
+void test_buf_line_reader() {
+  Str* s = new Str("foo\nbar\nleftover");
+  BufLineReader* reader = new BufLineReader(s);
+  Str* line;
+
+  log("BufLineReader");
+
+  line = reader->readline();
+  log("1 [%s]", line->data_);
+  line = reader->readline();
+  log("2: [%s]", line->data_);
+  line = reader->readline();
+  log("3: [%s]", line->data_);
+  line = reader->readline();
+  log("4: [%s]", line->data_);
+}
+
 int main(int argc, char **argv) {
   List<int>* L = new List<int> {1, 2, 3};
 
@@ -92,5 +111,8 @@ int main(int argc, char **argv) {
   Dict<int, Str*>* d = new Dict<int, Str*>();
   (*d)[1] = new Str("foo");
   log("d[1] = %s", d->index(1)->data_);
+
+  log("");
+  test_buf_line_reader();
 }
 
