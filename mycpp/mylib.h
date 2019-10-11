@@ -310,6 +310,8 @@ template <class T> int len(List<T>* L) {
 
 Str* str_concat(Str* a, Str* b);  // a + b when a and b are strings
 
+Str* str_repeat(Str* s, int times);  // e.g. ' ' * 3
+
 inline bool str_equals(Str* left, Str* right) {
   if (left->len_ == right->len_) {
     return memcmp(left->data_, right->data_, left->len_) == 0;
@@ -376,6 +378,7 @@ class BufLineReader : public LineReader {
 class Writer {
  public:
   virtual void write(Str* s) = 0;
+  virtual bool isatty() = 0;
 };
 
 class BufWriter : public Writer {
@@ -383,6 +386,9 @@ class BufWriter : public Writer {
   BufWriter() : data_(nullptr), len_(0) {
   };
   virtual void write(Str* s);
+  virtual bool isatty() {
+    return false;
+  }
   Str* getvalue() { return new Str(data_, len_); }
 
  private:
@@ -396,6 +402,7 @@ class CFileWriter : public Writer {
  public:
   explicit CFileWriter(FILE* f) : f_(f) {
   };
+  virtual bool isatty();
   virtual void write(Str* s);
 
  private:

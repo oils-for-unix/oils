@@ -440,6 +440,16 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write(')')
             return
 
+          if (t0.type.fullname() == 'builtins.str' and
+              t1.type.fullname() == 'builtins.int' and
+              c_op == '*'):
+            self.write('str_repeat(')
+            self.accept(o.left)
+            self.write(', ')
+            self.accept(o.right)
+            self.write(')')
+            return
+
         self.accept(o.left)
         self.write(' %s ', c_op)
         self.accept(o.right)

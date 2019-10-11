@@ -4,6 +4,7 @@
 #include <exception>  // std::exception
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>
+#include <unistd.h>  // isatty
 
 #include "mylib.h"
 
@@ -178,7 +179,7 @@ Str* BufLineReader::readline() {
 }
 
 //
-// Buf
+// Writer
 //
 
 Writer* gStdout;
@@ -199,6 +200,9 @@ void CFileWriter::write(Str* s) {
   fwrite(s->data_, s->len_, 1, f_);
 }
 
+bool CFileWriter::isatty() {
+  return ::isatty(fileno(f_));
+}
 
 };
 
@@ -216,6 +220,20 @@ Str* str_concat(Str* a, Str* b) {
   buf[new_len] = '\0';
 
   return new Str(buf, new_len);
+}
+
+Str* str_repeat(Str* s, int times) {
+  int len = s->len_;
+  int new_len = len * times;
+  char* data_ = static_cast<char*>(malloc(new_len + 1));
+
+  char* dest = data_;
+  for (int i = 0; i < times; i++) {
+    memcpy(dest, s->data_, len);
+    dest += len;
+  }
+  data_[new_len] = '\0';
+  return new Str(data_, new_len);
 }
 
 // Helper for str_to_int() that doesn't use exceptions.

@@ -48,6 +48,14 @@ void test_str_to_int() {
 
 void test_str_methods() {
   assert((new Str("abc"))->isalpha());
+
+  Str* s = new Str("abc");
+  Str* r0 = str_repeat(s, 0);
+  Str* r1 = str_repeat(s, 1);
+  Str* r3 = str_repeat(s, 3);
+  log("r0 = %s", r0->data_);
+  log("r1 = %s", r1->data_);
+  log("r3 = %s", r3->data_);
 }
 
 using mylib::BufLineReader;
