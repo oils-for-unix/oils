@@ -20,11 +20,11 @@ from cStringIO import StringIO
 
 from asdl import pretty
 from asdl import runtime
+from asdl.runtime import hnode_e
 from pylib import cgi
+from mycpp import mylib
 
 from typing import cast
-
-hnode_e = runtime.hnode_e
 
 
 
@@ -48,7 +48,7 @@ class ColorOutput(object):
   def NewTempBuffer(self):
     # type: () -> ColorOutput
     """Return a temporary buffer for the line wrapping calculation."""
-    raise NotImplementedError
+    raise NotImplementedError()
 
   def FileHeader(self):
     # type: () -> None
@@ -62,11 +62,11 @@ class ColorOutput(object):
 
   def PushColor(self, e_color):
     # type: (int) -> None
-    raise NotImplementedError
+    raise NotImplementedError()
 
   def PopColor(self):
     # type: () -> None
-    raise NotImplementedError
+    raise NotImplementedError()
 
   def write(self, s):
     # type: (str) -> None

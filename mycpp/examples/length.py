@@ -61,10 +61,11 @@ def run_tests():
     if c == 'y':
       break
 
-  c = None  # to test nullptr.  Python correctly infers this as 'str'
-  for c in mystr:
-    if c != 'a':  # test != operator
-      log('%s != a', c)
+  # to test nullptr.  Python correctly infers this as 'str'
+  c2 = None  # type: Optional[str]
+  for c2 in mystr:
+    if c2 != 'a':  # test != operator
+      log('%s != a', c2)
 
   log('')
 

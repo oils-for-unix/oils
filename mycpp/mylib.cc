@@ -181,9 +181,9 @@ Str* BufLineReader::readline() {
 // Buf
 //
 
-File* gStdOut;
+Writer* gStdout;
 
-void Buf::write(Str* s) {
+void BufWriter::write(Str* s) {
   int orig_len = len_;
   len_ += s->len_;
   // data_ is nullptr at first
@@ -194,7 +194,7 @@ void Buf::write(Str* s) {
   data_[len_] = '\0';
 }
 
-void CFile::write(Str* s) {
+void CFileWriter::write(Str* s) {
   // note: throwing away the return value
   fwrite(s->data_, s->len_, 1, f_);
 }

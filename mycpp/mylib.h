@@ -42,6 +42,12 @@ class NotImplementedError {
 };
 
 class AssertionError {
+ public:
+  AssertionError() {
+  }
+  // asdl/format.py has Assertion_error(e_color).
+  explicit AssertionError(int i) {
+  }
 };
 
 
@@ -359,7 +365,7 @@ class LineReader {
 
 class BufLineReader : public LineReader {
  public:
-  BufLineReader(Str* s) : s_(s), pos_(s->data_) {
+  explicit BufLineReader(Str* s) : s_(s), pos_(s->data_) {
   }
   virtual Str* readline();
  private:
@@ -367,15 +373,14 @@ class BufLineReader : public LineReader {
   const char* pos_;
 };
 
-// TODO: Rename Writer
-class File {
+class Writer {
  public:
   virtual void write(Str* s) = 0;
 };
 
-class Buf : public File {
+class BufWriter : public Writer {
  public:
-  Buf() : data_(nullptr), len_(0) {
+  BufWriter() : data_(nullptr), len_(0) {
   };
   virtual void write(Str* s);
   Str* getvalue() { return new Str(data_, len_); }
@@ -387,9 +392,9 @@ class Buf : public File {
 };
 
 // Wrap a FILE*
-class CFile : public File {
+class CFileWriter : public Writer {
  public:
-  CFile(FILE* f) : f_(f) {
+  explicit CFileWriter(FILE* f) : f_(f) {
   };
   virtual void write(Str* s);
 
@@ -397,13 +402,13 @@ class CFile : public File {
   FILE* f_;
 };
 
-extern File* gStdOut;
+extern Writer* gStdout;
 
-inline File* StdOut() {
-  if (gStdOut == nullptr) {
-    gStdOut = new CFile(stdout);
+inline Writer* Stdout() {
+  if (gStdout == nullptr) {
+    gStdout = new CFileWriter(stdout);
   }
-  return gStdOut;
+  return gStdout;
 }
 
 };

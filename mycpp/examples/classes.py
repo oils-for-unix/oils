@@ -18,7 +18,7 @@ class ColorOutput(object):
   """Abstract base class for plain text, ANSI color, and HTML color."""
 
   def __init__(self, f):
-    # type: (mylib.File) -> None
+    # type: (mylib.Writer) -> None
     self.f = f
     self.num_chars = 0
 
@@ -32,7 +32,7 @@ class TextOutput(ColorOutput):
   """TextOutput put obeys the color interface, but outputs nothing."""
 
   def __init__(self, f):
-    # type: (mylib.File) -> None
+    # type: (mylib.Writer) -> None
     """
     This docstring used to interfere with __init__ detection
     """
@@ -43,7 +43,7 @@ class TextOutput(ColorOutput):
 
 def run_tests():
   # type: () -> None
-  stdout = mylib.StdOut()
+  stdout = mylib.Stdout()
   out = TextOutput(stdout)
   out.write('foo\n')
   out.write('bar\n')
@@ -57,7 +57,7 @@ def run_benchmarks():
   x = 33
   result = -1
 
-  f = mylib.Buf()
+  f = mylib.BufWriter()
   out = TextOutput(f)
 
   i = 0

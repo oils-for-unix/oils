@@ -23,7 +23,7 @@ def p_die(msg, *args):
   raise RuntimeError(msg % args)
 
 
-Buf = cStringIO.StringIO
+BufWriter = cStringIO.StringIO
 
 BufLineReader = cStringIO.StringIO
 

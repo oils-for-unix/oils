@@ -12,6 +12,7 @@ from typing import Tuple, Optional
 
 # PYTHONPATH=$REPO_ROOT/mycpp
 from mylib import log
+import mylib
 from _gen.expr_asdl import (
     expr_t, expr__Var, expr__Const, expr__Binary, tok_e, tok_t
 )
@@ -185,8 +186,7 @@ def run_tests():
     #log('%s', tree)
 
     pretty_tree = tree.AbbreviatedTree()
-    #ast_f = fmt.TextOutput(sys.stdout)
-    ast_f = fmt.AnsiOutput(sys.stdout)
+    ast_f = fmt.AnsiOutput(mylib.Stdout())
     fmt.PrintTree(pretty_tree, ast_f)
     ast_f.write('\n')
 

@@ -213,8 +213,14 @@ mypy() {
 
 # classes and ASDL
 translate-parse() {
-  translate-ordered parse '#include "expr.asdl.h"' \
-    $REPO_ROOT/asdl/format.py examples/parse.py 
+  local snippet='
+#include "expr.asdl.h"
+'
+  translate-ordered parse "$snippet"  \
+    $REPO_ROOT/pylib/cgi.py \
+    $REPO_ROOT/asdl/runtime.py \
+    $REPO_ROOT/asdl/format.py \
+    examples/parse.py 
 } 
 
 # TODO: Get rid of translate-ordered
@@ -225,6 +231,15 @@ translate-asdl-generated() {
     examples/asdl_generated.py
 } 
 
+# -I with ASDL files.
+compile-with-asdl() {
+  local name=$1
+  local src=_gen/$name.cc
+  $CXX -o _bin/$name $CPPFLAGS \
+    -I . -I ../_devbuild/gen -I ../_devbuild/gen-cpp \
+    mylib.cc $src -lstdc++
+}
+
 lexer-main() {
   local name='lexer_main'
   PYTHONPATH=$REPO_ROOT examples/lexer_main.py
@@ -232,8 +247,7 @@ lexer-main() {
 
   local snippet='
 #include "id_kind_asdl.h"  // syntax.asdl depends on this
-
-using id_kind_asdl::Id_t;
+using id_kind_asdl::Id_t;  // TODO: proper ASDL modules 
 
 #include "types_asdl.h"
 #include "syntax_asdl.h"
@@ -278,10 +292,7 @@ Tuple2<Id_t, int>* OneToken(lex_mode_t lex_mode, Str* line, int start_pos) {
     $REPO_ROOT/frontend/lexer.py \
     examples/lexer_main.py
 
-  local src=_gen/$name.cc
-  $CXX -o _bin/$name $CPPFLAGS \
-    -I . -I ../_devbuild/gen -I ../_devbuild/gen-cpp \
-    mylib.cc $src -lstdc++
+  compile-with-asdl $name
 }
 
 # TODO: syntax_asdl is used.  Hm.
@@ -294,6 +305,9 @@ alloc-main() {
  
   # NOTE: We didn't import source_e because we're using isinstance().
   local snippet='
+#include "id_kind_asdl.h"  // syntax.asdl depends on this
+using id_kind_asdl::Id_t;  // TODO: proper ASDL modules 
+
 #include "syntax.asdl.h"
 
 // Hack for now.  Every sum type should have repr()?
@@ -308,7 +322,7 @@ Str* repr(syntax_asdl::source_t* obj) {
   local out=_gen/syntax.asdl.h
   asdl-gen cpp ../frontend/syntax.asdl > $out
 
-  compile-example alloc_main
+  compile-with-asdl alloc_main
 } 
 
 # build ASDL schema and run it
@@ -419,7 +433,7 @@ python-example() {
 example-both() {
   local name=$1
 
-  #mypy --py2 --strict examples/$name.py
+  mypy --py2 --strict examples/$name.py
 
   translate-example $name
   compile-example $name
@@ -505,6 +519,22 @@ should-skip() {
     *)
       return 1
   esac
+}
+
+typecheck-example() {
+  local name=$1
+  mypy --py2 --strict examples/$name.py
+}
+
+typecheck-all() {
+  for name in "${EXAMPLES[@]}"; do
+    if should-skip $name; then
+      continue
+    fi
+
+    echo "___ $name"
+    typecheck-example $name
+  done
 }
 
 
