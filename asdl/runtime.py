@@ -7,7 +7,7 @@ runtime.py
 from __future__ import print_function
 
 from _devbuild.gen.hnode_asdl import (
-    hnode, hnode__Record, hnode__Leaf, color_t, color_e
+    hnode__Record, hnode__Leaf, color_t, color_e
 )
 
 from typing import Optional
@@ -18,7 +18,7 @@ NO_SPID = -1
 
 def NewRecord(node_type):
   # type: (str) -> hnode__Record
-  return hnode.Record(
+  return hnode__Record(
       node_type,
       [],  # fields
       False, '(', ')',  # abbrev, left, right
@@ -31,6 +31,6 @@ def NewLeaf(s, e_color):
 
   # for repr of MaybeStrArray, which can have 'None'
   if s is None:
-    return hnode.Leaf('_', color_e.OtherConst)
+    return hnode__Leaf('_', color_e.OtherConst)
   else:
-    return hnode.Leaf(s, e_color)
+    return hnode__Leaf(s, e_color)

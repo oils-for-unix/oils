@@ -46,7 +46,7 @@ class AssertionError {
   AssertionError() {
   }
   // asdl/format.py has Assertion_error(e_color).
-  explicit AssertionError(int i) {
+  explicit AssertionError(Str* s) {
   }
 };
 

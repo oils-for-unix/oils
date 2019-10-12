@@ -61,7 +61,7 @@ class ForwardDeclareVisitor(visitor.AsdlVisitor):
     self.Emit("class %(name)s_t;" % locals(), depth)
 
   def VisitProduct(self, product, name, depth):
-    self.Emit("class %(name)s_t;" % locals(), depth)
+    self.Emit("class %(name)s;" % locals(), depth)
 
   def EmitFooter(self):
     self.Emit("", 0)  # blank line
@@ -83,12 +83,15 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       return cpp_type
 
     typ = self.type_lookup[type_name]
-    if isinstance(typ, meta.SumType) and typ.is_simple:
-      # Use the enum instead of the class.
-      return "%s_e" % type_name
+    if isinstance(typ, meta.SumType):
+      if typ.is_simple:
+        # Use the enum instead of the class.
+        return "%s_e" % type_name
+      else:
+        # Everything is a pointer for now.  No references.
+        return "%s_t*" % type_name
 
-    # Everything is a pointer for now.  No references.
-    return "%s_t*" % type_name
+    return '%s*' % type_name
 
   def _GetCppType(self, field):
     """Return a string for the C++ name of the type."""

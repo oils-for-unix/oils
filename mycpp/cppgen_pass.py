@@ -452,6 +452,16 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write(')')
             return
 
+        # RHS can be primitive or tuple
+        if isinstance(t0, Instance):
+          if (t0.type.fullname() == 'builtins.str' and c_op == '%'):
+            self.write('Sprintf(')
+            self.accept(o.left)
+            self.write(', ')
+            self.accept(o.right)
+            self.write(')')
+            return
+
         self.accept(o.left)
         self.write(' %s ', c_op)
         self.accept(o.right)
@@ -730,7 +740,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if isinstance(o.rvalue, CallExpr) and o.rvalue.callee.name == 'cast':
           assert isinstance(lval, NameExpr)
           call = o.rvalue
-          subtype_name = call.args[0].name
+          type_expr = call.args[0]
+          if isinstance(type_expr, MemberExpr):
+            subtype_name = '%s::%s' % (type_expr.expr.name, type_expr.name)
+          else:
+            subtype_name = type_expr.name
+
           self.write_ind(
               '%s* %s = static_cast<%s*>(%s);\n', subtype_name, lval.name,
               subtype_name, call.args[1].name)
@@ -1163,9 +1178,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         if o.id in ('__future__', 'typing'):
           return  # do nothing
-        if o.id == 'mylib' and o.names == [('log', None)]:
-          return  # do nothing
-        if o.id == 'core.util' and o.names == [('log', None)]:
+        if o.names == [('log', None)]:
           return  # do nothing
         if o.names == [('p_die', None)]:
           return  # do nothing

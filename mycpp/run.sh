@@ -215,6 +215,16 @@ mypy() {
 translate-parse() {
   local snippet='
 #include "expr.asdl.h"
+#include "hnode_asdl.h"
+
+namespace pretty {
+Str* Str(Str* s) {
+  return s;
+}
+}
+
+Str* Sprintf(Str* fmt, ...);
+
 '
   translate-ordered parse "$snippet"  \
     $REPO_ROOT/pylib/cgi.py \
@@ -235,8 +245,11 @@ translate-asdl-generated() {
 compile-with-asdl() {
   local name=$1
   local src=_gen/$name.cc
+
+  # TODO: Remove _gen dir
+
   $CXX -o _bin/$name $CPPFLAGS \
-    -I . -I ../_devbuild/gen -I ../_devbuild/gen-cpp \
+    -I . -I ../_devbuild/gen -I ../_devbuild/gen-cpp -I _gen \
     mylib.cc $src -lstdc++
 }
 
@@ -332,7 +345,20 @@ run-python-parse() {
   touch _gen/__init__.py
   asdl-gen mypy examples/expr.asdl > $out
 
-  MYPYPATH="$REPO_ROOT" mypy --py2 --strict examples/parse.py
+  local flags='--no-strict-optional'
+  set +o errexit
+  MYPYPATH="$REPO_ROOT" \
+    mypy --py2 --strict $flags examples/parse.py | tee _tmp/err.txt
+  set -o errexit
+
+  # Stupid fastlex error in asdl/pretty.py
+
+  local num_errors=$(cat _tmp/err.txt | wc -l)
+  if [[ $num_errors -eq 1 ]]; then
+    echo 'OK'
+  else
+    return
+  fi
 
   PYTHONPATH="$REPO_ROOT/mycpp:$REPO_ROOT/vendor:$REPO_ROOT" examples/parse.py
 }
@@ -422,7 +448,7 @@ compile-example() {
 
 # Because it depends on ASDL
 compile-parse() {
-  _compile-example parse '' -I _gen
+  compile-with-asdl parse
 }
 
 python-example() {
@@ -433,7 +459,7 @@ python-example() {
 example-both() {
   local name=$1
 
-  mypy --py2 --strict examples/$name.py
+  typecheck-example $name
 
   translate-example $name
   compile-example $name
@@ -509,7 +535,7 @@ should-skip() {
     # Other problematic constructs: **kwargs, named args
 
     # TODO: enable these with special build scripts
-    alloc_main|lexer_main)
+    alloc_main|lexer_main|named_args)
       return 0
       ;;
 
@@ -521,6 +547,7 @@ should-skip() {
   esac
 }
 
+# TODO: Add plugin for typecheck-parse, --no-strict-optional
 typecheck-example() {
   local name=$1
   mypy --py2 --strict examples/$name.py

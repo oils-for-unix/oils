@@ -115,18 +115,11 @@ oil-asdl-to-py() {
   gen-asdl-py 'tools/find/find.asdl'
 }
 
-# TODO: This should have no pretty-printing for bootstrapping reasons!
-# Suppress PrettyTree and _AbbreviatedTree
-hnode() {
-  gen-asdl-py 'asdl/hnode.asdl'
-  gen-asdl-cpp 'asdl/hnode.asdl'
-  ls -l _devbuild/gen
-  ls -l _devbuild/gen-cpp
-}
-
 oil-asdl-to-cpp() {
   local dir='_devbuild/gen-cpp'
   mkdir -p $dir
+
+  PRETTY_PRINT_METHODS='' gen-asdl-cpp 'asdl/hnode.asdl'
 
   gen-asdl-cpp frontend/types.asdl  # no dependency on Id
 

@@ -89,8 +89,10 @@ class ColorOutput(object):
 
   def GetRaw(self):
     # type: () -> Tuple[str, int]
-    # NOTE: When wrapping, self.f will be a BufWriter with this method.
-    return self.f.getvalue(), self.num_chars  # type: ignore
+
+    # NOTE: Ensured by NewTempBuffer()
+    f = cast(mylib.BufWriter, self.f)
+    return f.getvalue(), self.num_chars
 
 
 class TextOutput(ColorOutput):
@@ -169,7 +171,7 @@ class HtmlOutput(ColorOutput):
     elif e_color == color_e.UserType:
       css_class = 'o'
     else:
-      raise AssertionError(e_color)
+      raise AssertionError('%s' % e_color)
     self.f.write('<span class="%s">' % css_class)
 
   def PopColor(self):
@@ -220,7 +222,7 @@ class AnsiOutput(ColorOutput):
     elif e_color == color_e.UserType:
       self.f.write(_GREEN)  # Same color as other literals for now
     else:
-      raise AssertionError(e_color)
+      raise AssertionError('%s' % e_color)
 
   def PopColor(self):
     # type: () -> None
@@ -407,7 +409,7 @@ def PrintTree(node, f, indent=0, max_col=100):
     _PrintTreeObj(node, f, indent, max_col)
 
   else:
-    raise AssertionError(node)
+    raise AssertionError('%s' % node.tag)
 
 
 def _TrySingleLineObj(node, f, max_chars):
