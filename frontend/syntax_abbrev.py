@@ -18,9 +18,8 @@ def _AbbreviateToken(tok, out):
 
 def _token(obj):
   # type: (token) -> PrettyNode
-  p_node = runtime.PrettyNode()
+  p_node = runtime.PrettyNode('')  # don't show node type
   p_node.abbrev = True
-  p_node.node_type = ''  # don't show
 
   p_node.left = '<'
   p_node.right = '>'
@@ -31,9 +30,8 @@ def _token(obj):
 def _speck(obj):
   # type: (speck) -> PrettyNode
   """Always abbreviate a speck as the Id."""
-  p_node = runtime.PrettyNode()
+  p_node = runtime.PrettyNode('')  # don't show node type
   p_node.abbrev = True
-  p_node.node_type = ''  # don't show
 
   n1 = runtime.PrettyLeaf(obj.id.name, runtime.Color_OtherConst)
   p_node.unnamed_fields.append(n1)
@@ -45,9 +43,8 @@ def _double_quoted(obj):
   if obj.left.id != Id.Left_DoubleQuote:
     return None  # Fall back on obj._AbbreviatedTree()
 
-  p_node = runtime.PrettyNode()
+  p_node = runtime.PrettyNode('DQ')
   p_node.abbrev = True
-  p_node.node_type = 'DQ'
 
   for part in obj.parts:
     p_node.unnamed_fields.append(part.AbbreviatedTree())
@@ -61,9 +58,8 @@ def _single_quoted(obj):
   if obj.left.id != Id.Left_SingleQuoteRaw:
     return None  # Fall back on obj._AbbreviatedTree()
 
-  p_node = runtime.PrettyNode()
+  p_node = runtime.PrettyNode('SQ')
   p_node.abbrev = True
-  p_node.node_type = 'SQ'
 
   for token in obj.tokens:
     p_node.unnamed_fields.append(token.AbbreviatedTree())
@@ -72,30 +68,27 @@ def _single_quoted(obj):
 
 def _simple_var_sub(obj):
   # type: (simple_var_sub) -> PrettyNode
-  p_node = runtime.PrettyNode()
+  p_node = runtime.PrettyNode('$')
   p_node.abbrev = True
-  p_node.node_type = '$'
   _AbbreviateToken(obj.token, p_node.unnamed_fields)
   return p_node
 
 
 def _braced_var_sub(obj):
   # type: (braced_var_sub) -> PrettyNode
-  p_node = runtime.PrettyNode()
+  p_node = runtime.PrettyNode('${')
   if obj.prefix_op or obj.bracket_op or obj.suffix_op:
     return None  # we have other fields to display; don't abbreviate
 
   p_node.abbrev = True
-  p_node.node_type = '${'
   _AbbreviateToken(obj.token, p_node.unnamed_fields)
   return p_node
 
 
 def _word_part__Literal(obj):
   # type: (word_part__Literal) -> PrettyNode
-  p_node = runtime.PrettyNode()
+  p_node = runtime.PrettyNode('')  # don't show node type
   p_node.abbrev = True
-  p_node.node_type = ''  # don't show
 
   _AbbreviateToken(obj.token, p_node.unnamed_fields)
   return p_node
@@ -103,9 +96,8 @@ def _word_part__Literal(obj):
 
 def _word__Compound(obj):
   # type: (word__Compound) -> PrettyNode
-  p_node = runtime.PrettyNode()
+  p_node = runtime.PrettyNode('')  # don't show node type
   p_node.abbrev = True
-  p_node.node_type = ''  # don't show
   p_node.left = '{'
   p_node.right = '}'
 
@@ -116,12 +108,11 @@ def _word__Compound(obj):
 
 def _command__Simple(obj):
   # type: (command__Simple) -> PrettyNode
-  p_node = runtime.PrettyNode()
+  p_node = runtime.PrettyNode('C')
   if obj.redirects or obj.more_env or obj.block:
     return None  # we have other fields to display; don't abbreviate
 
   p_node.abbrev = True
-  p_node.node_type = 'C'
 
   for w in obj.words:
     p_node.unnamed_fields.append(w.AbbreviatedTree())
@@ -130,9 +121,8 @@ def _command__Simple(obj):
 
 def _expr__Var(obj):
   # type: (expr__Var) -> PrettyNode
-  p_node = runtime.PrettyNode()
+  p_node = runtime.PrettyNode('Var')
   p_node.abbrev = True
-  p_node.node_type = 'Var'
 
   assert obj.name.id == Id.Expr_Name, obj.name
   n1 = runtime.PrettyLeaf(obj.name.val, runtime.Color_StringConst)
@@ -142,9 +132,8 @@ def _expr__Var(obj):
 
 def _expr__Const(obj):
   # type: (expr__Const) -> PrettyNode
-  p_node = runtime.PrettyNode()
+  p_node = runtime.PrettyNode('Const')
   p_node.abbrev = True
-  p_node.node_type = 'Const'
 
   tok = obj.c
   out = p_node.unnamed_fields

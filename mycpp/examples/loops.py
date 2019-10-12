@@ -17,7 +17,7 @@ def run_tests():
 
   log('--- tuple unpacking')
 
-  mylist = [(1, 'one'), (2, 'two')]
+  mylist = [(5, 'five'), (6, 'six')]
   for i, item in mylist:
     log("- [%d] %s", i, item)
 
@@ -39,6 +39,10 @@ def run_tests():
 
   for i, c in enumerate(CATS):
     log('%d %s', i, c)
+
+  for i, pair in enumerate(mylist):
+    index, s = pair
+    log('%d %d %s', i, index, s)
 
 
 def run_benchmarks():

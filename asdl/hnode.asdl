@@ -1,0 +1,23 @@
+-- Homogeneous tree for pretty-printing ASDL schemas!
+-- To avoid bootstrapping problems, it can't be pretty-printed!
+-- It's generated first with a special flag.
+
+module hnode {
+
+  field = (string name, hnode val)
+
+  color =
+    TypeName
+  | StringConst
+  | OtherConst
+  | UserType  -- e.g. for Id
+  | External
+
+  hnode =
+    Record(string node_type, field* fields,
+           bool abbrev, string left, string right, hnode* unnamed_fields)
+  | Array(hnode* children)
+  | Leaf(string s, color color)
+  | External(any obj)
+
+}

@@ -24,6 +24,12 @@ class hnode_e:
   External = 3
 
 
+# NewRecord(node_type)
+# NewRecord('')
+# it will initialize left, right, etc.
+# NewLeaf(s)
+
+
 class _PrettyBase(object):
   # like ASDL
   tag = None  # type: int
@@ -33,9 +39,9 @@ class PrettyNode(_PrettyBase):
   """Homogeneous node for pretty-printing."""
   tag = hnode_e.Record
 
-  def __init__(self, node_type=None):
+  def __init__(self, node_type):
     # type: (Optional[str]) -> None
-    self.node_type = node_type if node_type else ''  # type: str
+    self.node_type = node_type
     # Gah this signature is complicated.
     # Probably should have _PrettyRepeated?
     self.fields = []  # type: List[Tuple[str, _PrettyBase]]
@@ -98,7 +104,7 @@ class ExternalLeaf(_PrettyBase):
   def __init__(self, obj):
     # type: (Any) -> None
     self.obj = obj
-    self.e_color = Color_External  # alwasy the same
+    self.e_color = Color_External  # always the same
 
   def __repr__(self):
     # type: () -> str

@@ -7,9 +7,8 @@ from asdl import runtime
 def _arith_expr__Unary(obj):
   # type: (arith_expr__Unary) -> Optional[runtime.PrettyNode]
 
-  p_node = runtime.PrettyNode()
+  p_node = runtime.PrettyNode('U')
   p_node.abbrev = True
-  p_node.node_type = 'U'
   n = runtime.PrettyLeaf(str(obj.op), runtime.Color_StringConst)
   p_node.unnamed_fields.append(n)
   p_node.unnamed_fields.append(obj.a.AbbreviatedTree())  # type: ignore
@@ -22,9 +21,8 @@ def _arith_expr__Binary(obj):
   if obj.op == '=':  # test for fallback
     return None
 
-  p_node = runtime.PrettyNode()
+  p_node = runtime.PrettyNode('B')
   p_node.abbrev = True
-  p_node.node_type = 'B'
   n = runtime.PrettyLeaf(str(obj.op), runtime.Color_StringConst)
   p_node.unnamed_fields.append(n)
   p_node.unnamed_fields.append(obj.left.AbbreviatedTree())  # type: ignore
@@ -34,9 +32,8 @@ def _arith_expr__Binary(obj):
 
 def _arith_expr__Const(obj):
   # type: (arith_expr__Const) -> Optional[runtime.PrettyNode]
-  p_node = runtime.PrettyNode()
+  p_node = runtime.PrettyNode(None)
   p_node.abbrev = True
-  p_node.node_type = ''  # omit it
   n = runtime.PrettyLeaf(str(obj.i), runtime.Color_OtherConst)
   p_node.unnamed_fields.append(n)
   return p_node
@@ -44,9 +41,8 @@ def _arith_expr__Const(obj):
 
 def _arith_expr__Var(obj):
   # type: (arith_expr__Var) -> Optional[runtime.PrettyNode]
-  p_node = runtime.PrettyNode()
+  p_node = runtime.PrettyNode('$')
   p_node.abbrev = True
-  p_node.node_type = '$'
   n = runtime.PrettyLeaf(str(obj.name), runtime.Color_StringConst)
   p_node.unnamed_fields.append(n)
   return p_node

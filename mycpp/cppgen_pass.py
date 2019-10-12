@@ -141,6 +141,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       self.decl = decl
       self.forward_decl = forward_decl
 
+      self.unique_id = 0
+
       self.indent = 0
       # local_vars: FuncDef node -> list of type, var
       # This is different from member_vars because we collect it in the 'decl'
@@ -785,7 +787,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           rvalue_type = self.types[o.rvalue]
           c_type = get_c_type(rvalue_type)
 
-          temp_name = 'tup1'  # TODO: generate this
+          temp_name = 'tup%d' % self.unique_id
+          self.unique_id += 1
           self.write_ind('%s %s = ', c_type, temp_name)
 
           self.accept(o.rvalue)
@@ -875,13 +878,15 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.accept(iterated_over)  # the thing being iterated over
         self.write('); !it.Done(); it.Next()%s) {\n', index_update)
 
-        if isinstance(item_type, Instance):
+        # for x in it: ...
+        # for i, x in enumerate(pairs): ...
+        if isinstance(item_type, Instance) or index0_name:
           c_item_type = get_c_type(item_type)
           self.write_ind('  %s ', c_item_type)
           self.accept(index_expr)
           self.write(' = it.Value();\n')
 
-        elif isinstance(item_type, TupleType):
+        elif isinstance(item_type, TupleType):  # for x, y in pairs
           # Example:
           # for (ListIter it(mylist); !it.Done(); it.Next()) {
           #   Tuple2<int, Str*> tup1 = it.Value();
@@ -890,7 +895,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           #   log("%d %s", i, s);
           # }
 
-          temp_name = 'tup1'  # TODO: generate
+          temp_name = 'tup%d' % self.unique_id
+          self.unique_id += 1
           c_item_type = get_c_type(item_type)
           self.write_ind('  %s %s = it.Value();\n', c_item_type, temp_name)
 
