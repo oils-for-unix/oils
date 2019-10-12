@@ -1,5 +1,5 @@
 """
-syntax_abbrev.py - Abbreviations for pretty-printing syntax.asdl.
+ssyntax_abbrev.py - Abbreviations for pretty-printing syntax.asdl.
 """
 
 from _devbuild.gen.id_kind_asdl import Id
@@ -9,10 +9,10 @@ from asdl import runtime
 def _AbbreviateToken(tok, out):
   # type: (token, List[runtime._PrettyBase]) -> None
   if tok.id != Id.Lit_Chars:
-    n1 = runtime.PrettyLeaf(tok.id.name, runtime.Color_OtherConst)
+    n1 = runtime.PrettyLeaf(tok.id.name, color_e.OtherConst)
     out.append(n1)
 
-  n2 = runtime.PrettyLeaf(tok.val, runtime.Color_StringConst)
+  n2 = runtime.PrettyLeaf(tok.val, color_e.StringConst)
   out.append(n2)
 
 
@@ -33,7 +33,7 @@ def _speck(obj):
   p_node = runtime.PrettyNode('')  # don't show node type
   p_node.abbrev = True
 
-  n1 = runtime.PrettyLeaf(obj.id.name, runtime.Color_OtherConst)
+  n1 = runtime.PrettyLeaf(obj.id.name, color_e.OtherConst)
   p_node.unnamed_fields.append(n1)
   return p_node
 
@@ -125,7 +125,7 @@ def _expr__Var(obj):
   p_node.abbrev = True
 
   assert obj.name.id == Id.Expr_Name, obj.name
-  n1 = runtime.PrettyLeaf(obj.name.val, runtime.Color_StringConst)
+  n1 = runtime.PrettyLeaf(obj.name.val, color_e.StringConst)
   p_node.unnamed_fields.append(n1)
   return p_node
 
@@ -138,9 +138,9 @@ def _expr__Const(obj):
   tok = obj.c
   out = p_node.unnamed_fields
 
-  n1 = runtime.PrettyLeaf(tok.id.name, runtime.Color_OtherConst)
+  n1 = runtime.PrettyLeaf(tok.id.name, color_e.OtherConst)
   out.append(n1)
 
-  n2 = runtime.PrettyLeaf(tok.val, runtime.Color_StringConst)
+  n2 = runtime.PrettyLeaf(tok.val, color_e.StringConst)
   out.append(n2)
   return p_node

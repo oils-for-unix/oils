@@ -16,11 +16,13 @@ _ = log  # shut up lint
 class GenMyPyVisitor(visitor.AsdlVisitor):
   """Generate Python code with MyPy type annotations."""
 
-  def __init__(self, f, type_lookup, abbrev_mod_entries=None, e_suffix=True):
+  def __init__(self, f, type_lookup, abbrev_mod_entries=None, e_suffix=True,
+               pretty_print_methods=True):
     visitor.AsdlVisitor.__init__(self, f)
     self.type_lookup = type_lookup
     self.abbrev_mod_entries = abbrev_mod_entries or []
     self.e_suffix = e_suffix
+    self.pretty_print_methods = pretty_print_methods
 
     self._shared_type_tags = {}
     self._product_counter = 1000  # start it high
@@ -46,13 +48,13 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
   def _CodeSnippet(self, method_name, var_name, desc):
     none_guard = False
     if isinstance(desc, meta.BoolType):
-      code_str = "PrettyLeaf('T' if %s else 'F', Color_OtherConst)" % var_name
+      code_str = "PrettyLeaf('T' if %s else 'F', color_e.OtherConst)" % var_name
 
     elif isinstance(desc, meta.IntType):
-      code_str = 'PrettyLeaf(str(%s), Color_OtherConst)' % var_name
+      code_str = 'PrettyLeaf(str(%s), color_e.OtherConst)' % var_name
 
     elif isinstance(desc, meta.StrType):
-      code_str = 'PrettyLeaf(%s, Color_StringConst)' % var_name
+      code_str = 'PrettyLeaf(%s, color_e.StringConst)' % var_name
 
     elif isinstance(desc, meta.AnyType):
       # This is used for value.Obj().
@@ -61,12 +63,12 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     # TODO: Is this unused?  Delete it?
     elif isinstance(desc, meta.UserType):  # e.g. Id
       # This assumes it's Id, which is a simple SumType.  TODO: Remove this.
-      code_str = 'PrettyLeaf(%s.name, Color_UserType)' % var_name
+      code_str = 'PrettyLeaf(%s.name, color_e.UserType)' % var_name
       none_guard = True  # otherwise MyPy complains about foo.name
 
     elif isinstance(desc, meta.SumType):
       if desc.is_simple:
-        code_str = 'PrettyLeaf(%s.name, Color_TypeName)' % var_name
+        code_str = 'PrettyLeaf(%s.name, color_e.TypeName)' % var_name
         none_guard = True  # otherwise MyPy complains about foo.name
       else:
         code_str = '%s.%s()' % (var_name, method_name)
@@ -198,6 +200,9 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       self.Emit('    self.%s = %s%s' % (f.name, f.name, default_str))
 
     self.Emit('')
+
+    if not self.pretty_print_methods:
+      return
 
     #
     # PrettyTree

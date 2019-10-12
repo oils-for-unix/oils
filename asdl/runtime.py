@@ -6,6 +6,8 @@ runtime.py
 """
 from __future__ import print_function
 
+from _devbuild.gen.hnode_asdl import hnode, hnode_t, color_t, color_e
+
 from typing import List, Tuple, Optional, Any
 
 
@@ -28,6 +30,15 @@ class hnode_e:
 # NewRecord('')
 # it will initialize left, right, etc.
 # NewLeaf(s)
+
+def NewRecord(node_type):
+  # type: (str) -> hnode_t
+  return hnode.Record(
+      node_type,
+      [],  # fields
+      False, '(', ')',  # abbrev, left, right
+      []  # unnamed fields
+  )
 
 
 class _PrettyBase(object):
@@ -70,23 +81,15 @@ class PrettyArray(_PrettyBase):
     return '<PrettyArray %s>' % (self.children)
 
 
-# Color token types
-Color_TypeName = 1
-Color_StringConst = 2
-Color_OtherConst = 3  # Int and bool.  Green?
-Color_UserType = 4  # UserType Id
-Color_External = 5  # e.g. for value.Obj
-
-
 class PrettyLeaf(_PrettyBase):
   """Colored string for pretty-printing."""
   tag = hnode_e.Leaf
 
   def __init__(self, s, e_color):
-    # type: (Optional[str], int) -> None
+    # type: (Optional[str], color_t) -> None
     if s is None:  # hack for repr of MaybeStrArray, which can have 'None'
       self.s = '_'
-      self.e_color = Color_OtherConst
+      self.e_color = color_e.OtherConst
     else:
       assert isinstance(s, str), s
       self.s = s
@@ -104,7 +107,6 @@ class ExternalLeaf(_PrettyBase):
   def __init__(self, obj):
     # type: (Any) -> None
     self.obj = obj
-    self.e_color = Color_External  # always the same
 
   def __repr__(self):
     # type: () -> str

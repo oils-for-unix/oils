@@ -84,20 +84,24 @@ namespace %s {
 
     # NOTE: Dict, Any are for AssocArray with 'dict' type.
     f.write("""\
-from asdl import runtime  # For runtime.NO_SPID
 from asdl import pybase
+from typing import Optional, List, Tuple, Dict, Any
+""")
+
+    pretty_print_methods = bool(os.getenv('PRETTY_PRINT_METHODS', 'yes'))
+    if pretty_print_methods:
+      f.write("""
+from asdl import runtime  # For runtime.NO_SPID
 from asdl.runtime import (
   PrettyLeaf, ExternalLeaf, PrettyArray, PrettyNode,
-  Color_TypeName, Color_StringConst, Color_OtherConst, Color_External,
-  Color_UserType
 )
-
-from typing import Optional, List, Tuple, Dict, Any
+from _devbuild.gen.hnode_asdl import color_e, hnode, hnode_e, hnode_t
 
 """)
 
     abbrev_mod_entries = dir(abbrev_mod) if abbrev_mod else []
-    v = gen_python.GenMyPyVisitor(f, type_lookup, abbrev_mod_entries)
+    v = gen_python.GenMyPyVisitor(f, type_lookup, abbrev_mod_entries,
+                                  pretty_print_methods=pretty_print_methods)
     v.VisitModule(schema_ast)
 
     if abbrev_mod:

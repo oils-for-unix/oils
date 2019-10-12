@@ -12,7 +12,9 @@ from __future__ import print_function
 
 import sys
 
-from asdl import runtime
+# Break circular dependency.
+#from asdl import runtime
+NO_SPID = -1
 
 from typing import IO, NoReturn, Any, TYPE_CHECKING
 if TYPE_CHECKING:  # avoid circular build deps
@@ -56,7 +58,7 @@ class _ErrorWithLocation(Exception):
     self.args = args
     # NOTE: We use a kwargs dict because Python 2 doesn't have keyword-only
     # args.
-    self.span_id = kwargs.pop('span_id', runtime.NO_SPID)  # type: int
+    self.span_id = kwargs.pop('span_id', NO_SPID)  # type: int
     self.token = kwargs.pop('token', None)  # type: token
     self.part = kwargs.pop('part', None)  # type: word_part_t
     self.word = kwargs.pop('word', None)  # type: word_t
@@ -66,7 +68,7 @@ class _ErrorWithLocation(Exception):
 
   def HasLocation(self):
     # type: () -> bool
-    return bool(self.span_id != runtime.NO_SPID or
+    return bool(self.span_id != NO_SPID or
                 self.token or self.part or self.word)
 
   def __repr__(self):

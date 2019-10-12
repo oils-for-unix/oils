@@ -16,6 +16,7 @@ Places where we try a single line:
 """
 from typing import Tuple, List
 
+from _devbuild.gen.hnode_asdl import color_e, color_t
 from asdl import pretty
 from asdl import runtime
 from asdl.runtime import hnode_e
@@ -59,7 +60,7 @@ class ColorOutput(object):
     pass
 
   def PushColor(self, e_color):
-    # type: (int) -> None
+    # type: (color_t) -> None
     raise NotImplementedError()
 
   def PopColor(self):
@@ -103,7 +104,7 @@ class TextOutput(ColorOutput):
     return TextOutput(mylib.BufWriter())
 
   def PushColor(self, e_color):
-    # type: (int) -> None
+    # type: (color_t) -> None
     pass  # ignore color
 
   def PopColor(self):
@@ -154,17 +155,17 @@ class HtmlOutput(ColorOutput):
     """)
 
   def PushColor(self, e_color):
-    # type: (int) -> None
+    # type: (color_t) -> None
     # To save bandwidth, use single character CSS names.
-    if e_color == runtime.Color_TypeName:
+    if e_color == color_e.TypeName:
       css_class = 'n'
-    elif e_color == runtime.Color_StringConst:
+    elif e_color == color_e.StringConst:
       css_class = 's'
-    elif e_color == runtime.Color_OtherConst:
+    elif e_color == color_e.OtherConst:
       css_class = 'o'
-    elif e_color == runtime.Color_External:
+    elif e_color == color_e.External:
       css_class = 'o'
-    elif e_color == runtime.Color_UserType:
+    elif e_color == color_e.UserType:
       css_class = 'o'
     else:
       raise AssertionError(e_color)
@@ -206,16 +207,16 @@ class AnsiOutput(ColorOutput):
     return AnsiOutput(mylib.BufWriter())
 
   def PushColor(self, e_color):
-    # type: (int) -> None
-    if e_color == runtime.Color_TypeName:
+    # type: (color_t) -> None
+    if e_color == color_e.TypeName:
       self.f.write(_YELLOW)
-    elif e_color == runtime.Color_StringConst:
+    elif e_color == color_e.StringConst:
       self.f.write(_BOLD)
-    elif e_color == runtime.Color_OtherConst:
+    elif e_color == color_e.OtherConst:
       self.f.write(_GREEN)
-    elif e_color == runtime.Color_External:
+    elif e_color == color_e.External:
       self.f.write(_BOLD + _BLUE)
-    elif e_color == runtime.Color_UserType:
+    elif e_color == color_e.UserType:
       self.f.write(_GREEN)  # Same color as other literals for now
     else:
       raise AssertionError(e_color)
@@ -303,7 +304,7 @@ def _PrintTreeObj(node, f, indent, max_col):
     prefix = ind + node.left
     f.write(prefix)
     if node.node_type:
-      f.PushColor(runtime.Color_TypeName)
+      f.PushColor(color_e.TypeName)
       f.write(node.node_type)
       f.PopColor()
       f.write(' ')
@@ -320,7 +321,7 @@ def _PrintTreeObj(node, f, indent, max_col):
   else:  # full form like (SimpleCommand ...)
     f.write(ind + node.left)
 
-    f.PushColor(runtime.Color_TypeName)
+    f.PushColor(color_e.TypeName)
     f.write(node.node_type)
     f.PopColor()
 
@@ -393,7 +394,7 @@ def PrintTree(node, f, indent=0, max_col=100):
 
   elif node.tag == hnode_e.External:
     node = cast(runtime.ExternalLeaf, node)
-    f.PushColor(node.e_color)
+    f.PushColor(color_e.External)
     f.write(repr(node.obj))
     f.PopColor()
 
@@ -411,7 +412,7 @@ def _TrySingleLineObj(node, f, max_chars):
   f.write(node.left)
   if node.abbrev:
     if node.node_type:
-      f.PushColor(runtime.Color_TypeName)
+      f.PushColor(color_e.TypeName)
       f.write(node.node_type)
       f.PopColor()
       f.write(' ')
@@ -422,7 +423,7 @@ def _TrySingleLineObj(node, f, max_chars):
       if not _TrySingleLine(val, f, max_chars):
         return False
   else:
-    f.PushColor(runtime.Color_TypeName)
+    f.PushColor(color_e.TypeName)
     f.write(node.node_type)
     f.PopColor()
 
@@ -461,7 +462,7 @@ def _TrySingleLine(node,  # type: runtime._PrettyBase
   elif node.tag == hnode_e.External:
     node = cast(runtime.ExternalLeaf, node)
 
-    f.PushColor(node.e_color)
+    f.PushColor(color_e.External)
     f.write(repr(node.obj))
     f.PopColor()
 

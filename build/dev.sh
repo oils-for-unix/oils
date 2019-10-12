@@ -104,6 +104,8 @@ gen-asdl-cpp() {
 # compiler.
 
 oil-asdl-to-py() {
+  PRETTY_PRINT_METHODS='' gen-asdl-py 'asdl/hnode.asdl'
+
   gen-asdl-py frontend/types.asdl  # no dependency on Id
 
   build/codegen.sh id-mypy-gen  # dependency on bool_arg_type_e
