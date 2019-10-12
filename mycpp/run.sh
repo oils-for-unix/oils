@@ -215,7 +215,6 @@ mypy() {
 translate-parse() {
   local snippet='
 #include "expr.asdl.h"
-#include "hnode_asdl.h"
 
 // TODO: Implement these stubs
 namespace pretty {

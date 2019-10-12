@@ -231,180 +231,178 @@ class AnsiOutput(ColorOutput):
 
 INDENT = 2
 
-def _PrintWrappedArray(array, prefix_len, f, indent, max_col):
-  # type: (List[hnode_t], int, ColorOutput, int, int) -> bool
-  """Print an array of objects with line wrapping.
+class _PrettyPrinter(object):
+  def __init__(self, max_col):
+    # type: (int) -> None
+    self.max_col = max_col
 
-  Returns whether they all fit on a single line, so you can print the closing
-  brace properly.
-  """
-  all_fit = True
-  chars_so_far = prefix_len
+  def _PrintWrappedArray(self, array, prefix_len, f, indent):
+    # type: (List[hnode_t], int, ColorOutput, int) -> bool
+    """Print an array of objects with line wrapping.
 
-  for i, val in enumerate(array):
-    if i != 0:
-      f.write(' ')
+    Returns whether they all fit on a single line, so you can print the closing
+    brace properly.
+    """
+    all_fit = True
+    chars_so_far = prefix_len
 
-    single_f = f.NewTempBuffer()
-    if _TrySingleLine(val, single_f, max_col - chars_so_far):
-      f.WriteRaw(single_f.GetRaw())
-      chars_so_far += single_f.NumChars()
-    else:  # WRAP THE LINE
-      f.write('\n')
-      # TODO: Add max_col here, taking into account the field name
-      new_indent = indent + INDENT
-      PrintTree(val, f, indent=new_indent, max_col=max_col)
-
-      chars_so_far = 0  # allow more
-      all_fit = False
-  return all_fit
-
-
-def _PrintWholeArray(array, prefix_len, f, indent, max_col):
-  # type: (List[hnode_t], int, ColorOutput, int, int) -> bool
-
-  # This is UNLIKE the abbreviated case above, where we do WRAPPING.
-  # Here, ALL children must fit on a single line, or else we separate
-  # each one oonto a separate line.  This is to avoid the following:
-  #
-  # children: [(C ...)
-  #   (C ...)
-  # ]
-  # The first child is out of line.  The abbreviated objects have a
-  # small header like C or DQ so it doesn't matter as much.
-  all_fit = True
-  pieces = []  # type: List[Tuple[str, int]]
-  chars_so_far = prefix_len
-  for item in array:
-    single_f = f.NewTempBuffer()
-    if _TrySingleLine(item, single_f, max_col - chars_so_far):
-      pieces.append(single_f.GetRaw())
-      chars_so_far += single_f.NumChars()
-    else:
-      all_fit = False
-      break
-
-  if all_fit:
-    for i, p in enumerate(pieces):
+    for i, val in enumerate(array):
       if i != 0:
         f.write(' ')
-      f.WriteRaw(p)
-    f.write(']')
-  return all_fit
 
+      single_f = f.NewTempBuffer()
+      if _TrySingleLine(val, single_f, self.max_col - chars_so_far):
+        f.WriteRaw(single_f.GetRaw())
+        chars_so_far += single_f.NumChars()
+      else:  # WRAP THE LINE
+        f.write('\n')
+        self.PrintNode(val, f, indent + INDENT)
 
-def _PrintTreeObj(node, f, indent, max_col):
-  # type: (hnode__Record, ColorOutput, int, int) -> None
-  """Print a CompoundObj in abbreviated or normal form."""
-  ind = ' ' * indent
+        chars_so_far = 0  # allow more
+        all_fit = False
+    return all_fit
 
-  if node.abbrev:  # abbreviated
-    prefix = ind + node.left
-    f.write(prefix)
-    if node.node_type:
+  def _PrintWholeArray(self, array, prefix_len, f, indent):
+    # type: (List[hnode_t], int, ColorOutput, int) -> bool
+
+    # This is UNLIKE the abbreviated case above, where we do WRAPPING.
+    # Here, ALL children must fit on a single line, or else we separate
+    # each one onto a separate line.  This is to avoid the following:
+    #
+    # children: [(C ...)
+    #   (C ...)
+    # ]
+    # The first child is out of line.  The abbreviated objects have a
+    # small header like C or DQ so it doesn't matter as much.
+    all_fit = True
+    pieces = []  # type: List[Tuple[str, int]]
+    chars_so_far = prefix_len
+    for item in array:
+      single_f = f.NewTempBuffer()
+      if _TrySingleLine(item, single_f, self.max_col - chars_so_far):
+        pieces.append(single_f.GetRaw())
+        chars_so_far += single_f.NumChars()
+      else:
+        all_fit = False
+        break
+
+    if all_fit:
+      for i, p in enumerate(pieces):
+        if i != 0:
+          f.write(' ')
+        f.WriteRaw(p)
+      f.write(']')
+    return all_fit
+
+  def _PrintRecord(self, node, f, indent):
+    # type: (hnode__Record, ColorOutput, int) -> None
+    """Print a CompoundObj in abbreviated or normal form."""
+    ind = ' ' * indent
+
+    if node.abbrev:  # abbreviated
+      prefix = ind + node.left
+      f.write(prefix)
+      if node.node_type:
+        f.PushColor(color_e.TypeName)
+        f.write(node.node_type)
+        f.PopColor()
+        f.write(' ')
+
+      prefix_len = len(prefix) + len(node.node_type) + 1
+      all_fit = self._PrintWrappedArray(
+          node.unnamed_fields, prefix_len, f, indent)
+
+      if not all_fit:
+        f.write('\n')
+        f.write(ind)
+      f.write(node.right)
+
+    else:  # full form like (SimpleCommand ...)
+      f.write(ind + node.left)
+
       f.PushColor(color_e.TypeName)
       f.write(node.node_type)
       f.PopColor()
-      f.write(' ')
 
-    prefix_len = len(prefix) + len(node.node_type) + 1
-    all_fit = _PrintWrappedArray(
-        node.unnamed_fields, prefix_len, f, indent, max_col)
-
-    if not all_fit:
       f.write('\n')
-      f.write(ind)
-    f.write(node.right)
+      i = 0
+      for field in node.fields:
+        name = field.name
+        val = field.val
 
-  else:  # full form like (SimpleCommand ...)
-    f.write(ind + node.left)
+        ind1 = ' ' * (indent+INDENT)
+        if val.tag == hnode_e.Array:
+          val = cast(hnode__Array, val)
 
-    f.PushColor(color_e.TypeName)
-    f.write(node.node_type)
-    f.PopColor()
+          name_str = '%s%s: [' % (ind1, name)
+          f.write(name_str)
+          prefix_len = len(name_str)
 
-    f.write('\n')
-    i = 0
-    for field in node.fields:
-      name = field.name
-      val = field.val
-
-      ind1 = ' ' * (indent+INDENT)
-      if val.tag == hnode_e.Array:
-        val = cast(hnode__Array, val)
-
-        name_str = '%s%s: [' % (ind1, name)
-        f.write(name_str)
-        prefix_len = len(name_str)
-
-        if not _PrintWholeArray(val.children, prefix_len, f, indent, max_col):
-          f.write('\n')
-          for child in val.children:
-            # TODO: Add max_col here
-            PrintTree(child, f, indent=indent+INDENT+INDENT)
+          if not self._PrintWholeArray(val.children, prefix_len, f, indent):
             f.write('\n')
-          f.write('%s]' % ind1)
+            for child in val.children:
+              self.PrintNode(child, f, indent+INDENT+INDENT)
+              f.write('\n')
+            f.write('%s]' % ind1)
 
-      else:  # primitive field
-        name_str = '%s%s: ' % (ind1, name)
-        f.write(name_str)
-        prefix_len = len(name_str)
+        else:  # primitive field
+          name_str = '%s%s: ' % (ind1, name)
+          f.write(name_str)
+          prefix_len = len(name_str)
 
-        # Try to print it on the same line as the field name; otherwise print
-        # it on a separate line.
-        single_f = f.NewTempBuffer()
-        if _TrySingleLine(val, single_f, max_col - prefix_len):
-          f.WriteRaw(single_f.GetRaw())
-        else:
-          f.write('\n')
-          # TODO: Add max_col here, taking into account the field name
-          PrintTree(val, f, indent=indent+INDENT+INDENT)
-        i += 1
+          # Try to print it on the same line as the field name; otherwise print
+          # it on a separate line.
+          single_f = f.NewTempBuffer()
+          if _TrySingleLine(val, single_f, self.max_col - prefix_len):
+            f.WriteRaw(single_f.GetRaw())
+          else:
+            f.write('\n')
+            self.PrintNode(val, f, indent+INDENT+INDENT)
+          i += 1
 
-      f.write('\n')  # separate fields
+        f.write('\n')  # separate fields
 
-    f.write(ind + node.right)
+      f.write(ind + node.right)
 
+  def PrintNode(self, node, f, indent):
+    # type: (hnode_t, ColorOutput, int) -> None
+    """Second step of printing: turn homogeneous tree into a colored string.
 
-def PrintTree(node, f, indent=0, max_col=100):
-  # type: (hnode_t, ColorOutput, int, int) -> None
-  """Second step of printing: turn homogeneous tree into a colored string.
+    Args:
+      node: homogeneous tree node
+      f: ColorOutput instance.
+      max_col: don't print past this column number on ANY line
+        NOTE: See asdl/run.sh line-length-hist for a test of this.  It's
+        approximate.
+        TODO: Use the terminal width.
+    """
+    ind = ' ' * indent
 
-  Args:
-    node: homogeneous tree node
-    f: ColorOutput instance.
-    max_col: don't print past this column number on ANY line
-      NOTE: See asdl/run.sh line-length-hist for a test of this.  It's
-      approximate.
-      TODO: Use the terminal width.
-  """
-  ind = ' ' * indent
+    # Try printing on a single line
+    single_f = f.NewTempBuffer()
+    single_f.write(ind)
+    if _TrySingleLine(node, single_f, self.max_col - indent):
+      f.WriteRaw(single_f.GetRaw())
+      return
 
-  # Try printing on a single line
-  single_f = f.NewTempBuffer()
-  single_f.write(ind)
-  if _TrySingleLine(node, single_f, max_col - indent):
-    f.WriteRaw(single_f.GetRaw())
-    return
+    if node.tag == hnode_e.Leaf:
+      node = cast(hnode__Leaf, node)
+      f.PushColor(node.color)
+      f.write(pretty.Str(node.s))
+      f.PopColor()
 
-  if node.tag == hnode_e.Leaf:
-    node = cast(hnode__Leaf, node)
-    f.PushColor(node.color)
-    f.write(pretty.Str(node.s))
-    f.PopColor()
+    elif node.tag == hnode_e.External:
+      node = cast(hnode__External, node)
+      f.PushColor(color_e.External)
+      f.write(repr(node.obj))
+      f.PopColor()
 
-  elif node.tag == hnode_e.External:
-    node = cast(hnode__External, node)
-    f.PushColor(color_e.External)
-    f.write(repr(node.obj))
-    f.PopColor()
+    elif node.tag == hnode_e.Record:
+      node = cast(hnode__Record, node)
+      self._PrintRecord(node, f, indent)
 
-  elif node.tag == hnode_e.Record:
-    node = cast(hnode__Record, node)
-    _PrintTreeObj(node, f, indent, max_col)
-
-  else:
-    raise AssertionError('%s' % node.tag)
+    else:
+      raise AssertionError('%s' % node.tag)
 
 
 def _TrySingleLineObj(node, f, max_chars):
@@ -492,3 +490,9 @@ def _TrySingleLine(node, f, max_chars):
     return False
 
   return True
+
+
+def PrintTree(node, f):
+  # type: (hnode_t, ColorOutput) -> None
+  pp = _PrettyPrinter(100)  # max_col
+  pp.PrintNode(node, f, 0)  # indent

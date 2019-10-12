@@ -70,10 +70,11 @@ class ForwardDeclareVisitor(visitor.AsdlVisitor):
 class ClassDefVisitor(visitor.AsdlVisitor):
   """Generate C++ classes and type-safe enums."""
 
-  def __init__(self, f, type_lookup, e_suffix=True):
+  def __init__(self, f, type_lookup, e_suffix=True, pretty_print_methods=True):
     visitor.AsdlVisitor.__init__(self, f)
     self.type_lookup = type_lookup
     self.e_suffix = e_suffix
+    self.pretty_print_methods = pretty_print_methods
 
   def _GetInnerCppType(self, field):
     type_name = field.type
@@ -138,6 +139,12 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     Emit("  %s_t(%s_e tag) : tag(tag) {" % (sum_name, sum_name))
     Emit("  }")
     Emit("  %s_e tag;" % sum_name)
+    # TODO: This should be a free function.
+    if self.pretty_print_methods:
+      self.Emit("  hnode_t* AbbreviatedTree() {")
+      self.Emit("    return new hnode__External(nullptr);")
+      self.Emit("  }")
+
     Emit("};")
     Emit("")
 

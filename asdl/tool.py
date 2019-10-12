@@ -49,7 +49,14 @@ def main(argv):
 #include <cstdint>
 
 #include "mylib.h"  // for Str, List, etc.
+""")
+    pretty_print_methods = bool(os.getenv('PRETTY_PRINT_METHODS', 'yes'))
+    if pretty_print_methods:
+      f.write('#include "hnode_asdl.h"\n')
+      f.write('using hnode_asdl::hnode_t;\n')
+      f.write('using hnode_asdl::hnode__External;\n')
 
+    f.write("""\
 namespace %s {
 
 """ % ns)
@@ -57,7 +64,8 @@ namespace %s {
     v = gen_cpp.ForwardDeclareVisitor(f)
     v.VisitModule(schema_ast)
 
-    v2 = gen_cpp.ClassDefVisitor(f, type_lookup)
+    v2 = gen_cpp.ClassDefVisitor(f, type_lookup,
+                                 pretty_print_methods=pretty_print_methods)
     v2.VisitModule(schema_ast)
 
     f.write('}  // namespace %s\n' % ns)
