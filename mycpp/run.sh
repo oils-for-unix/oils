@@ -217,6 +217,7 @@ translate-parse() {
 #include "expr.asdl.h"
 #include "hnode_asdl.h"
 
+// TODO: Implement these stubs
 namespace pretty {
 Str* Str(Str* s) {
   return s;
@@ -224,6 +225,8 @@ Str* Str(Str* s) {
 }
 
 Str* Sprintf(Str* fmt, ...);
+
+Str* repr(void* obj);
 
 '
   translate-ordered parse "$snippet"  \

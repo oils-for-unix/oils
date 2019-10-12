@@ -426,41 +426,47 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         t0 = self.types[o.left]
         t1 = self.types[o.right]
 
+        # NOTE: Need get_c_type to handle Optional[Str*] in ASDL schemas.
+        # Could tighten it up later.
+        type_left = get_c_type(t0)
+        type_right = get_c_type(t1)
+
+        #if c_op == '+':
         if 0:
           self.log('*** %r', c_op)
-          self.log('t0 %r', t0.type.fullname())
-          self.log('t1 %r', t0.type.fullname())
+          self.log('%s', o.left)
+          self.log('%s', o.right)
+          #self.log('t0 %r', t0.type.fullname())
+          #self.log('t1 %r', t1.type.fullname())
+          self.log('type_left %r', type_left)
+          self.log('type_right %r', type_right)
+          self.log('')
 
-        if isinstance(t0, Instance) and isinstance(t1, Instance):
-          if (t0.type.fullname() == 'builtins.str' and
-              t1.type.fullname() == 'builtins.str' and
-              c_op == '+'):
-            self.write('str_concat(')
-            self.accept(o.left)
-            self.write(', ')
-            self.accept(o.right)
-            self.write(')')
-            return
+        if type_left == type_right == 'Str*' and c_op == '+':
+          self.write('str_concat(')
+          self.accept(o.left)
+          self.write(', ')
+          self.accept(o.right)
+          self.write(')')
+          log('REPLACED')
+          return
 
-          if (t0.type.fullname() == 'builtins.str' and
-              t1.type.fullname() == 'builtins.int' and
-              c_op == '*'):
-            self.write('str_repeat(')
-            self.accept(o.left)
-            self.write(', ')
-            self.accept(o.right)
-            self.write(')')
-            return
+        if type_left == 'Str*' and type_right == 'int' and c_op == '*':
+          self.write('str_repeat(')
+          self.accept(o.left)
+          self.write(', ')
+          self.accept(o.right)
+          self.write(')')
+          return
 
         # RHS can be primitive or tuple
-        if isinstance(t0, Instance):
-          if (t0.type.fullname() == 'builtins.str' and c_op == '%'):
-            self.write('Sprintf(')
-            self.accept(o.left)
-            self.write(', ')
-            self.accept(o.right)
-            self.write(')')
-            return
+        if type_left == 'Str*' and c_op == '%':
+          self.write('Sprintf(')
+          self.accept(o.left)
+          self.write(', ')
+          self.accept(o.right)
+          self.write(')')
+          return
 
         self.accept(o.left)
         self.write(' %s ', c_op)

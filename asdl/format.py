@@ -231,13 +231,8 @@ class AnsiOutput(ColorOutput):
 
 INDENT = 2
 
-def _PrintWrappedArray(array,  # type: List[hnode_t]
-                       prefix_len,  # type: int
-                       f,  # type: ColorOutput
-                       indent,  # type: int
-                       max_col,  # type: int
-                       ):
-  # type: (...) -> bool
+def _PrintWrappedArray(array, prefix_len, f, indent, max_col):
+  # type: (List[hnode_t], int, ColorOutput, int, int) -> bool
   """Print an array of objects with line wrapping.
 
   Returns whether they all fit on a single line, so you can print the closing
@@ -442,11 +437,8 @@ def _TrySingleLineObj(node, f, max_chars):
   return True
 
 
-def _TrySingleLine(node,  # type: hnode_t
-                   f,  # type: ColorOutput
-                   max_chars,  # type: int
-                   ):
-  # type: (...) -> bool
+def _TrySingleLine(node, f, max_chars):
+  # type: (hnode_t, ColorOutput, int) -> bool
   """Try printing on a single line.
 
   Args:
