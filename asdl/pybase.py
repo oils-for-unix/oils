@@ -8,7 +8,7 @@ from mycpp import mylib
 
 from typing import Optional, TYPE_CHECKING
 if TYPE_CHECKING:
-  from asdl import runtime
+  from _devbuild.gen.hnode_asdl import hnode_t
 
 
 class Obj(object):
@@ -50,15 +50,15 @@ class CompoundObj(Obj):
   tag = 0  # TYPED: Changed from None.  0 is invalid!
 
   def PrettyTree(self):
-    # type: () -> runtime._PrettyBase
+    # type: () -> hnode_t
     raise NotImplementedError(self.__class__.__name__)
 
   def _AbbreviatedTree(self):
-    # type: () -> runtime._PrettyBase
+    # type: () -> hnode_t
     raise NotImplementedError(self.__class__.__name__)
 
   def AbbreviatedTree(self):
-    # type: () -> runtime._PrettyBase
+    # type: () -> hnode_t
     raise NotImplementedError(self.__class__.__name__)
 
   def PrettyPrint(self, f=None):

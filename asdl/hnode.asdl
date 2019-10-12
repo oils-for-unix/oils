@@ -14,7 +14,8 @@ module hnode {
   | External
 
   hnode =
-    Record(string node_type, field* fields,
+    -- null node_type means there's no prefix, e.g. for 'token' type
+    Record(string? node_type, field* fields,
            bool abbrev, string left, string right, hnode* unnamed_fields)
   | Array(hnode* children)
   | Leaf(string s, color color)

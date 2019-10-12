@@ -93,9 +93,9 @@ from typing import Optional, List, Tuple, Dict, Any
       f.write("""
 from asdl import runtime  # For runtime.NO_SPID
 from asdl.runtime import (
-  PrettyLeaf, ExternalLeaf, PrettyArray, PrettyNode,
+  NewRecord, NewLeaf,
 )
-from _devbuild.gen.hnode_asdl import color_e, hnode, hnode_e, hnode_t
+from _devbuild.gen.hnode_asdl import color_e, hnode, hnode_e, hnode_t, field
 
 """)
 

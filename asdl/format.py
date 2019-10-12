@@ -16,10 +16,11 @@ Places where we try a single line:
 """
 from typing import Tuple, List
 
-from _devbuild.gen.hnode_asdl import color_e, color_t
+from _devbuild.gen.hnode_asdl import (
+    hnode_e, hnode_t, hnode__Record, hnode__Array, hnode__Leaf,
+    hnode__External, color_e, color_t
+)
 from asdl import pretty
-from asdl import runtime
-from asdl.runtime import hnode_e
 from pylib import cgi
 from mycpp import mylib
 
@@ -228,7 +229,7 @@ class AnsiOutput(ColorOutput):
 
 INDENT = 2
 
-def _PrintWrappedArray(array,  # type: List[runtime._PrettyBase]
+def _PrintWrappedArray(array,  # type: List[hnode_t]
                        prefix_len,  # type: int
                        f,  # type: ColorOutput
                        indent,  # type: int
@@ -263,7 +264,7 @@ def _PrintWrappedArray(array,  # type: List[runtime._PrettyBase]
 
 
 def _PrintWholeArray(array, prefix_len, f, indent, max_col):
-  # type: (List[runtime._PrettyBase], int, ColorOutput, int, int) -> bool
+  # type: (List[hnode_t], int, ColorOutput, int, int) -> bool
 
   # This is UNLIKE the abbreviated case above, where we do WRAPPING.
   # Here, ALL children must fit on a single line, or else we separate
@@ -296,7 +297,7 @@ def _PrintWholeArray(array, prefix_len, f, indent, max_col):
 
 
 def _PrintTreeObj(node, f, indent, max_col):
-  # type: (runtime.PrettyNode, ColorOutput, int, int) -> None
+  # type: (hnode__Record, ColorOutput, int, int) -> None
   """Print a CompoundObj in abbreviated or normal form."""
   ind = ' ' * indent
 
@@ -327,10 +328,13 @@ def _PrintTreeObj(node, f, indent, max_col):
 
     f.write('\n')
     i = 0
-    for name, val in node.fields:
+    for field in node.fields:
+      name = field.name
+      val = field.val
+
       ind1 = ' ' * (indent+INDENT)
       if val.tag == hnode_e.Array:
-        val = cast(runtime.PrettyArray, val)
+        val = cast(hnode__Array, val)
 
         name_str = '%s%s: [' % (ind1, name)
         f.write(name_str)
@@ -366,7 +370,7 @@ def _PrintTreeObj(node, f, indent, max_col):
 
 
 def PrintTree(node, f, indent=0, max_col=100):
-  # type: (runtime._PrettyBase, ColorOutput, int, int) -> None
+  # type: (hnode_t, ColorOutput, int, int) -> None
   """Second step of printing: turn homogeneous tree into a colored string.
 
   Args:
@@ -387,19 +391,19 @@ def PrintTree(node, f, indent=0, max_col=100):
     return
 
   if node.tag == hnode_e.Leaf:
-    node = cast(runtime.PrettyLeaf, node)
-    f.PushColor(node.e_color)
+    node = cast(hnode__Leaf, node)
+    f.PushColor(node.color)
     f.write(pretty.Str(node.s))
     f.PopColor()
 
   elif node.tag == hnode_e.External:
-    node = cast(runtime.ExternalLeaf, node)
+    node = cast(hnode__External, node)
     f.PushColor(color_e.External)
     f.write(repr(node.obj))
     f.PopColor()
 
   elif node.tag == hnode_e.Record:
-    node = cast(runtime.PrettyNode, node)
+    node = cast(hnode__Record, node)
     _PrintTreeObj(node, f, indent, max_col)
 
   else:
@@ -407,7 +411,7 @@ def PrintTree(node, f, indent=0, max_col=100):
 
 
 def _TrySingleLineObj(node, f, max_chars):
-  # type: (runtime.PrettyNode, ColorOutput, int) -> bool
+  # type: (hnode__Record, ColorOutput, int) -> bool
   """Print an object on a single line."""
   f.write(node.left)
   if node.abbrev:
@@ -427,16 +431,16 @@ def _TrySingleLineObj(node, f, max_chars):
     f.write(node.node_type)
     f.PopColor()
 
-    for name, val in node.fields:
-      f.write(' %s:' % name)
-      if not _TrySingleLine(val, f, max_chars):
+    for field in node.fields:
+      f.write(' %s:' % field.name)
+      if not _TrySingleLine(field.val, f, max_chars):
         return False
 
   f.write(node.right)
   return True
 
 
-def _TrySingleLine(node,  # type: runtime._PrettyBase
+def _TrySingleLine(node,  # type: hnode_t
                    f,  # type: ColorOutput
                    max_chars,  # type: int
                    ):
@@ -454,20 +458,20 @@ def _TrySingleLine(node,  # type: runtime._PrettyBase
       If False, you can't use the value of f.
   """
   if node.tag == hnode_e.Leaf:
-    node = cast(runtime.PrettyLeaf, node)
-    f.PushColor(node.e_color)
+    node = cast(hnode__Leaf, node)
+    f.PushColor(node.color)
     f.write(pretty.Str(node.s))
     f.PopColor()
 
   elif node.tag == hnode_e.External:
-    node = cast(runtime.ExternalLeaf, node)
+    node = cast(hnode__External, node)
 
     f.PushColor(color_e.External)
     f.write(repr(node.obj))
     f.PopColor()
 
   elif node.tag == hnode_e.Array:
-    node = cast(runtime.PrettyArray, node)
+    node = cast(hnode__Array, node)
 
     # Can we fit the WHOLE array on the line?
     f.write('[')
@@ -479,7 +483,7 @@ def _TrySingleLine(node,  # type: runtime._PrettyBase
     f.write(']')
 
   elif node.tag == hnode_e.Record:
-    node = cast(runtime.PrettyNode, node)
+    node = cast(hnode__Record, node)
 
     return _TrySingleLineObj(node, f, max_chars)
 

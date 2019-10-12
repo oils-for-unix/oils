@@ -48,27 +48,26 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
   def _CodeSnippet(self, method_name, var_name, desc):
     none_guard = False
     if isinstance(desc, meta.BoolType):
-      code_str = "PrettyLeaf('T' if %s else 'F', color_e.OtherConst)" % var_name
+      code_str = "hnode.Leaf('T' if %s else 'F', color_e.OtherConst)" % var_name
 
     elif isinstance(desc, meta.IntType):
-      code_str = 'PrettyLeaf(str(%s), color_e.OtherConst)' % var_name
+      code_str = 'hnode.Leaf(str(%s), color_e.OtherConst)' % var_name
 
     elif isinstance(desc, meta.StrType):
-      code_str = 'PrettyLeaf(%s, color_e.StringConst)' % var_name
+      code_str = 'NewLeaf(%s, color_e.StringConst)' % var_name
 
     elif isinstance(desc, meta.AnyType):
       # This is used for value.Obj().
-      code_str = 'ExternalLeaf(%s)' % var_name
+      code_str = 'hnode.External(%s)' % var_name
 
-    # TODO: Is this unused?  Delete it?
     elif isinstance(desc, meta.UserType):  # e.g. Id
       # This assumes it's Id, which is a simple SumType.  TODO: Remove this.
-      code_str = 'PrettyLeaf(%s.name, color_e.UserType)' % var_name
+      code_str = 'hnode.Leaf(%s.name, color_e.UserType)' % var_name
       none_guard = True  # otherwise MyPy complains about foo.name
 
     elif isinstance(desc, meta.SumType):
       if desc.is_simple:
-        code_str = 'PrettyLeaf(%s.name, color_e.TypeName)' % var_name
+        code_str = 'hnode.Leaf(%s.name, color_e.TypeName)' % var_name
         none_guard = True  # otherwise MyPy complains about foo.name
       else:
         code_str = '%s.%s()' % (var_name, method_name)
@@ -84,25 +83,25 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     return code_str, none_guard
 
   def _EmitCodeForField(self, method_name, field_name, desc, counter):
-    """Given a field value and type descriptor, return a PrettyNode."""
+    """Given a field value and type descriptor, return an hnode."""
     out_val_name = 'x%d' % counter
 
     if isinstance(desc, meta.ArrayType):
       iter_name = 'i%d' % counter
 
       self.Emit('  if self.%s:  # ArrayType' % field_name)
-      self.Emit('    %s = PrettyArray()' % out_val_name)
+      self.Emit('    %s = hnode.Array()' % out_val_name)
       self.Emit('    for %s in self.%s:' % (iter_name, field_name))
       child_code_str, _ = self._CodeSnippet(method_name, iter_name, desc.desc)
       self.Emit('      %s.children.append(%s)' % (out_val_name, child_code_str))
-      self.Emit('    L.append((%r, %s))' % (field_name, out_val_name))
+      self.Emit('    L.append(field(%r, %s))' % (field_name, out_val_name))
 
     elif isinstance(desc, meta.MaybeType):
       self.Emit('  if self.%s is not None:  # MaybeType' % field_name)
       child_code_str, _ = self._CodeSnippet(method_name,
                                             'self.%s' % field_name, desc.desc)
       self.Emit('    %s = %s' % (out_val_name, child_code_str))
-      self.Emit('    L.append((%r, %s))' % (field_name, out_val_name))
+      self.Emit('    L.append(field(%r, %s))' % (field_name, out_val_name))
 
     else:
       var_name = 'self.%s' % field_name
@@ -113,7 +112,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('  assert self.%s is not None' % field_name)
       self.Emit('  %s = %s' % (out_val_name, code_str), depth)
 
-      self.Emit('  L.append((%r, %s))' % (field_name, out_val_name), depth)
+      self.Emit('  L.append(field(%r, %s))' % (field_name, out_val_name), depth)
 
   def _GenClass(self, desc, attributes, class_name, base_classes, depth,
                 tag_num):
@@ -209,8 +208,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     #
 
     self.Emit('  def PrettyTree(self):')
-    self.Emit('    # type: () -> PrettyNode')
-    self.Emit('    out_node = PrettyNode(%r)' % pretty_cls_name)
+    self.Emit('    # type: () -> hnode_t')
+    self.Emit('    out_node = NewRecord(%r)' % pretty_cls_name)
     self.Emit('    L = out_node.fields')
     self.Emit('')
 
@@ -231,8 +230,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     #
 
     self.Emit('  def _AbbreviatedTree(self):')
-    self.Emit('    # type: () -> PrettyNode')
-    self.Emit('    out_node = PrettyNode(%r)' % pretty_cls_name)
+    self.Emit('    # type: () -> hnode_t')
+    self.Emit('    out_node = NewRecord(%r)' % pretty_cls_name)
     self.Emit('    L = out_node.fields')
     for i, (field_name, field_desc) in enumerate(desc.GetFields()):
       if field_name == 'spids':
@@ -247,7 +246,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     self.Emit('')
 
     self.Emit('  def AbbreviatedTree(self):')
-    self.Emit('    # type: () -> PrettyNode')
+    self.Emit('    # type: () -> hnode_t')
     abbrev_name = '_%s' % class_name
     if abbrev_name in self.abbrev_mod_entries:
       self.Emit('    p = %s(self)' % abbrev_name)
