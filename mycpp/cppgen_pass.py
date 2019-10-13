@@ -14,6 +14,7 @@ from mypy.nodes import (
     ExpressionStmt, AssignmentStmt, StrExpr, SliceExpr, FuncDef,
     ComparisonExpr, CallExpr)
 
+import format_strings
 from crash import catch_errors
 from util import log
 
@@ -423,13 +424,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         # a + b when a and b are strings.  (Can't use operator overloading
         # because they're pointers.)
-        t0 = self.types[o.left]
-        t1 = self.types[o.right]
+        left_type = self.types[o.left]
+        right_type = self.types[o.right]
 
         # NOTE: Need get_c_type to handle Optional[Str*] in ASDL schemas.
         # Could tighten it up later.
-        type_left = get_c_type(t0)
-        type_right = get_c_type(t1)
+        left_ctype = get_c_type(left_type)
+        right_ctype = get_c_type(right_type)
 
         #if c_op == '+':
         if 0:
@@ -438,20 +439,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.log('%s', o.right)
           #self.log('t0 %r', t0.type.fullname())
           #self.log('t1 %r', t1.type.fullname())
-          self.log('type_left %r', type_left)
-          self.log('type_right %r', type_right)
+          self.log('left_ctype %r', left_ctype)
+          self.log('right_ctype %r', right_ctype)
           self.log('')
 
-        if type_left == type_right == 'Str*' and c_op == '+':
+        if left_ctype == right_ctype == 'Str*' and c_op == '+':
           self.write('str_concat(')
           self.accept(o.left)
           self.write(', ')
           self.accept(o.right)
           self.write(')')
-          log('REPLACED')
           return
 
-        if type_left == 'Str*' and type_right == 'int' and c_op == '*':
+        if left_ctype == 'Str*' and right_ctype == 'int' and c_op == '*':
           self.write('str_repeat(')
           self.accept(o.left)
           self.write(', ')
@@ -460,11 +460,64 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           return
 
         # RHS can be primitive or tuple
-        if type_left == 'Str*' and c_op == '%':
-          self.write('Sprintf(')
-          self.accept(o.left)
-          self.write(', ')
-          self.accept(o.right)
+        if left_ctype == 'Str*' and c_op == '%':
+          if not isinstance(o.left, StrExpr):
+            raise AssertionError('Expected constant format string, got %s' % o.left)
+          fmt = o.left.value
+
+          parts = format_strings.Parse(fmt)
+
+          temp_name = 'fmt%d' % self.unique_id
+          self.unique_id += 1
+
+          if self.decl:
+            self.decl_write('Str* %s(' % temp_name)
+
+            #log('right_type %s', right_type)
+            if isinstance(right_type, Instance):
+              self.decl_write('%s a0', right_ctype)
+            elif isinstance(right_type, TupleType):
+              for i, typ in enumerate(right_type.items):
+                if i != 0:
+                  self.decl_write(', ');
+                self.decl_write('%s a%d', get_c_type(typ), i)
+
+            # Handle Optional[str]
+            elif (isinstance(right_type, UnionType) and
+                  len(right_type.items) == 2 and
+                  isinstance(right_type.items[1], NoneTyp)):
+              self.decl_write('%s a0', get_c_type(right_type.items[0]))
+            else:
+              raise AssertionError(right_type)
+
+            self.decl_write(') {\n')
+            self.decl_write('  gBuf.clear();\n')
+
+            for part in parts:
+              if isinstance(part, format_strings.LiteralPart):
+                # TODO: Escape the string.  Also fix const_pass.
+                escaped = part.s
+                self.decl_write(
+                    '  gBuf.write_const("%s", %d);\n', escaped, part.strlen)
+              elif isinstance(part, format_strings.SubstPart):
+                self.decl_write(
+                    '  gBuf.format_%s(a%d);\n', part.char_code, part.arg_num)
+              else:
+                raise AssertionError(part)
+
+            self.decl_write('  return gBuf.getvalue();\n')
+
+            self.decl_write('}\n')
+
+          self.write('%s(' % temp_name)
+          if isinstance(right_type, Instance):
+            self.accept(o.right)
+          elif isinstance(right_type, TupleType):
+            for i, item in enumerate(o.right.items):
+              if i != 0:
+                self.write(', ')
+              self.accept(item)
+
           self.write(')')
           return
 

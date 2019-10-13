@@ -195,6 +195,21 @@ void BufWriter::write(Str* s) {
   data_[len_] = '\0';
 }
 
+void BufWriter::write_const(const char* s, int len) {
+  int orig_len = len_;
+  len_ += len;
+  // data_ is nullptr at first
+  data_ = static_cast<char*>(realloc(data_, len_ + 1));
+
+  // Append to the end
+  memcpy(data_ + orig_len, s, len);
+  data_[len_] = '\0';
+}
+
+void BufWriter::format_s(Str* s) {
+  this->write(s);
+}
+
 void CFileWriter::write(Str* s) {
   // note: throwing away the return value
   fwrite(s->data_, s->len_, 1, f_);
@@ -271,3 +286,9 @@ int str_to_int(Str* s) {
     throw std::exception();  // TODO: should be ValueError
   }
 }
+
+//
+// Formatter
+//
+
+mylib::BufWriter gBuf;

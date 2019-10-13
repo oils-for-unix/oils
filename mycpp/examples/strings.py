@@ -22,6 +22,14 @@ def run_tests():
   obj = Foo()
   print('foo' + obj.s)
 
+  s = 'mystr'
+  print('[%s]' % s)
+
+  s = 'mystr'
+  print('[%s, %s]' % (s, 'abc'))
+
+  print('%s: 5%%-100%%' % 'abc')
+
 
 def run_benchmarks():
   # type: () -> None

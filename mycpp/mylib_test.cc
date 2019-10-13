@@ -77,6 +77,14 @@ void test_buf_line_reader() {
   log("4: [%s]", line->data_);
 }
 
+void test_formatter() {
+  gBuf.clear();
+  gBuf.write_const("[", 1);
+  gBuf.format_s(new Str("bar"));
+  gBuf.write_const("]", 1);
+  log("value = %s", gBuf.getvalue()->data_);
+}
+
 int main(int argc, char **argv) {
   List<int>* L = new List<int> {1, 2, 3};
 
@@ -122,5 +130,8 @@ int main(int argc, char **argv) {
 
   log("");
   test_buf_line_reader();
+
+  log("");
+  test_formatter();
 }
 
