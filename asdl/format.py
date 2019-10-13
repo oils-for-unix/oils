@@ -18,7 +18,7 @@ from typing import Tuple, List
 
 from _devbuild.gen.hnode_asdl import (
     hnode_e, hnode_t, hnode__Record, hnode__Array, hnode__Leaf,
-    hnode__External, color_e, color_t
+    hnode__External, color_e, color_t, color_str, hnode_str,
 )
 from asdl import pretty
 from pylib import cgi
@@ -171,7 +171,7 @@ class HtmlOutput(ColorOutput):
     elif e_color == color_e.UserType:
       css_class = 'o'
     else:
-      raise AssertionError('%s' % e_color)
+      raise AssertionError(color_str(e_color))
     self.f.write('<span class="%s">' % css_class)
 
   def PopColor(self):
@@ -222,7 +222,7 @@ class AnsiOutput(ColorOutput):
     elif e_color == color_e.UserType:
       self.f.write(_GREEN)  # Same color as other literals for now
     else:
-      raise AssertionError('%s' % e_color)
+      raise AssertionError(color_str(e_color))
 
   def PopColor(self):
     # type: () -> None
@@ -402,7 +402,7 @@ class _PrettyPrinter(object):
       self._PrintRecord(node, f, indent)
 
     else:
-      raise AssertionError('%s' % node.tag)
+      raise AssertionError(hnode_str(node.tag))
 
 
 def _TrySingleLineObj(node, f, max_chars):

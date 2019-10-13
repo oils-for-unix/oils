@@ -30,6 +30,8 @@ def run_tests():
 
   print('%s: 5%%-100%%' % 'abc')
 
+  print('<a href="foo.html">%s</a>' % 'anchor')
+
 
 def run_benchmarks():
   # type: () -> None

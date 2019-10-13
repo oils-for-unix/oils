@@ -30,6 +30,13 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     self._products = []
     self._product_bases = defaultdict(list)
 
+  def _EmitDict(self, name, d, depth):
+    self.Emit('_%s_str = {' % name, depth)
+    for k in sorted(d):
+      self.Emit('%d: %r,' % (k, d[k]), depth + 1)
+    self.Emit('}', depth)
+    self.Emit('', depth)
+
   def VisitSimpleSum(self, sum, name, depth):
     # First emit a type
     self.Emit('class %s_t(pybase.SimpleObj):' % name, depth)
@@ -39,10 +46,22 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     # Now emit a namespace
     e_name = ('%s_e' % name) if self.e_suffix else name
     self.Emit('class %s(object):' % e_name, depth)
+    int_to_str = {}
     for i, variant in enumerate(sum.types):
+      tag_num = i + 1
+      tag_str = '%s.%s' % (name, variant.name)
+      int_to_str[tag_num] = tag_str
+
       attr = '  %s = %s_t(%d, %r)' % (
-          variant.name, name, i + 1, variant.name)
+          variant.name, name, tag_num, variant.name)
       self.Emit(attr, depth)
+    self.Emit('', depth)
+
+    self._EmitDict(name, int_to_str, depth)
+
+    self.Emit('def %s_str(val):' % name, depth)
+    self.Emit('  # type: (%s_t) -> str' % name, depth)
+    self.Emit('  return _%s_str[val.enum_id]' % name, depth)
     self.Emit('', depth)
 
   def _CodeSnippet(self, method_name, var_name, desc):
@@ -278,6 +297,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     # isinstance() is better for MyPy I think.  But tag is better for C++.
     # int tag = static_cast<cflow>(node).tag;
 
+    int_to_str = {}
+
     # enum for the tag
     self.Emit('class %s_e(object):' % sum_name, depth)
     for i, variant in enumerate(sum.types):
@@ -296,6 +317,15 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       else:
         tag_num = i + 1
       self.Emit('  %s = %d' % (variant.name, tag_num), depth)
+      tag_str = '%s.%s' % (sum_name, variant.name)
+      int_to_str[tag_num] = tag_str
+    self.Emit('', depth)
+
+    self._EmitDict(sum_name, int_to_str, depth)
+
+    self.Emit('def %s_str(tag):' % sum_name, depth)
+    self.Emit('  # type: (int) -> str', depth)
+    self.Emit('  return _%s_str[tag]' % sum_name, depth)
     self.Emit('', depth)
 
     # the base class, e.g. 'oil_cmd'

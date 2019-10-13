@@ -1,6 +1,7 @@
 """
 cppgen.py - AST pass to that prints C++ code
 """
+import json  # for "C escaping"
 import sys
 
 from typing import overload, Union, Optional, Any, Dict
@@ -495,10 +496,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             for part in parts:
               if isinstance(part, format_strings.LiteralPart):
-                # TODO: Escape the string.  Also fix const_pass.
-                escaped = part.s
+                # JSON does a decent job of escaping for now.
+                escaped = json.dumps(part.s)
                 self.decl_write(
-                    '  gBuf.write_const("%s", %d);\n', escaped, part.strlen)
+                    '  gBuf.write_const(%s, %d);\n', escaped, part.strlen)
               elif isinstance(part, format_strings.SubstPart):
                 self.decl_write(
                     '  gBuf.format_%s(a%d);\n', part.char_code, part.arg_num)
@@ -510,13 +511,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.decl_write('}\n')
 
           self.write('%s(' % temp_name)
-          if isinstance(right_type, Instance):
-            self.accept(o.right)
-          elif isinstance(right_type, TupleType):
+          if isinstance(right_type, TupleType):
             for i, item in enumerate(o.right.items):
               if i != 0:
                 self.write(', ')
               self.accept(item)
+          else:
+            self.accept(o.right)
 
           self.write(')')
           return
