@@ -1057,6 +1057,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           func_name = o.name()
 
         self.write('\n')
+
+        # TODO: if self.current_class_name ==
+        # write 'virtual' here.
+        # You could also test NotImplementedError as abstract?
+
         c_type = get_c_type(o.type.ret_type)
         self.decl_write_ind('%s %s(', c_type, func_name)
 

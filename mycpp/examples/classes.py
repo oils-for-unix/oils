@@ -41,6 +41,23 @@ class TextOutput(ColorOutput):
     print('TextOutput constructor')
 
 
+class Base(object):
+  def method(self):
+    # type: () -> str
+    return "Base"
+
+
+class Derived(Base):
+  def method(self):
+    # type: () -> str
+    return "Derived"
+
+
+def f(obj):
+  # type: (Base) -> str
+  return obj.method()
+
+
 def run_tests():
   # type: () -> None
   stdout = mylib.Stdout()
@@ -48,6 +65,12 @@ def run_tests():
   out.write('foo\n')
   out.write('bar\n')
   log('Wrote %d bytes', out.num_chars)
+
+  #b = Base()
+  d = Derived()
+  #log(b.method())
+  log(d.method())
+  log(f(d))
 
 
 def run_benchmarks():

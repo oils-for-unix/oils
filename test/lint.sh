@@ -209,5 +209,24 @@ sp-formats() {
 sp-rare() {
   egrep --color=always '%[^srd ]' */*.py  | egrep -v 'Python-|_test.py'
 }
+
+#
+# inherit
+#
+
+# 56 instances of inheritance
+inheritance() {
+  grep ^class {osh,core,oil_lang,frontend}/*.py \
+    | egrep -v '_test|object'
+}
+
+# 18 unique base classes.
+# TODO: Maybe extract this automatically with OPy?
+# Or does the MyPy AST have enough?
+# You can collect method defs in the decl phase.  Or in the forward_decl phase?
+
+base-classes() {
+  inheritance | egrep -o '\(.*\)' | sort | uniq -c | sort -n
+}
  
 "$@"

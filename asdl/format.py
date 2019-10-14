@@ -480,9 +480,7 @@ def _TrySingleLine(node, f, max_chars):
     return _TrySingleLineObj(node, f, max_chars)
 
   else:
-    raise AssertionError("Unexpected node: %r" % node)
-    # mycpp doesn't like __class__
-    #raise AssertionError("Unexpected node: %r (%r)" % (node, node.__class__))
+    raise AssertionError(hnode_str(node.tag))
 
   # Take into account the last char.
   num_chars_so_far = f.NumChars()

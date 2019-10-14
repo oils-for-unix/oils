@@ -223,9 +223,9 @@ Str* Str(Str* s) {
 }
 }
 
-Str* Sprintf(Str* fmt, ...);
-
-Str* repr(void* obj);
+Str* repr(void* obj) {
+  return new Str("TODO: repr()");
+}
 
 '
   translate-ordered parse "$snippet"  \
@@ -250,7 +250,9 @@ compile-with-asdl() {
 
   # TODO: Remove _gen dir
 
-  $CXX -o _bin/$name $CPPFLAGS \
+  local more_flags='-O0 -g'  # to debug crashes
+  #local more_flags=''
+  $CXX -o _bin/$name $CPPFLAGS $more_flags \
     -I . -I ../_devbuild/gen -I ../_devbuild/gen-cpp -I _gen \
     mylib.cc $src -lstdc++
 }
