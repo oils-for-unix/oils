@@ -45,7 +45,8 @@ class AssertionError {
  public:
   AssertionError() {
   }
-  // asdl/format.py has Assertion_error(e_color).
+  explicit AssertionError(const char*  s) {
+  }
   explicit AssertionError(Str* s) {
   }
 };

@@ -106,17 +106,29 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     else:
       return c_type
 
-  def _EmitEnum(self, sum, name, depth):
+  def _EmitEnum(self, sum, sum_name, depth):
     enum = []
+    int_to_str = {}
     for i in xrange(len(sum.types)):
-      type = sum.types[i]
-      enum.append("%s = %d" % (type.name, i + 1))  # zero is reserved
+      variant = sum.types[i]
+      tag_num = i + 1
+      enum.append("%s = %d" % (variant.name, tag_num))  # zero is reserved
+      int_to_str[tag_num] = variant.name
 
-    enum_name = '%s_e' % name if self.e_suffix else name
-    self.Emit("enum class %s {" % enum_name, depth)
-    self.Emit(", ".join(enum), depth + 1)
-    self.Emit("};", depth)
-    self.Emit("", depth)
+    enum_name = '%s_e' % sum_name if self.e_suffix else sum_name
+    self.Emit('enum class %s {' % enum_name, depth)
+    self.Emit(', '.join(enum), depth + 1)
+    self.Emit('};', depth)
+    self.Emit('', depth)
+
+    self.Emit('const char* %s_str(%s tag) {' % (sum_name, enum_name), depth)
+    self.Emit('  switch (tag) {', depth)
+    for variant in sum.types:
+      self.Emit('case %s::%s:' % (enum_name, variant.name), depth + 1)
+      self.Emit('  return "%s.%s";' % (sum_name, variant.name), depth + 1)
+    self.Emit('  }', depth)
+    self.Emit('}', depth)
+    self.Emit('', depth)
 
   def VisitSimpleSum(self, sum, name, depth):
     self._EmitEnum(sum, name, depth)
