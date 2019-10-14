@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 """
 format_strings.py
 

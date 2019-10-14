@@ -46,11 +46,19 @@ class Base(object):
     # type: () -> str
     return "Base"
 
+  def x(self):
+    # type: () -> int
+    return 42
+
 
 class Derived(Base):
   def method(self):
     # type: () -> str
     return "Derived"
+
+  def y(self):
+    # type: () -> int
+    return 43
 
 
 def f(obj):

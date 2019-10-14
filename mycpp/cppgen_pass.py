@@ -136,20 +136,24 @@ def get_c_type(t):
 class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def __init__(self, types: Dict[Expression, Type], const_lookup, f,
-                 local_vars=None, decl=False, forward_decl=False):
+                 local_vars=None, virtual=None, decl=False,
+                 forward_decl=False):
       self.types = types
       self.const_lookup = const_lookup
       self.f = f 
+
+      # local_vars: FuncDef node -> list of type, var
+      # This is different from member_vars because we collect it in the 'decl'
+      # phase.  But then write it in the definition phase.
+      self.local_vars = local_vars
+      self.virtual = virtual
+
       self.decl = decl
       self.forward_decl = forward_decl
 
       self.unique_id = 0
 
       self.indent = 0
-      # local_vars: FuncDef node -> list of type, var
-      # This is different from member_vars because we collect it in the 'decl'
-      # phase.  But then write it in the definition phase.
-      self.local_vars = local_vars
       self.local_var_list = []  # Collected at assignment
       self.prepend_to_block = None  # For writing vars after {
       self.in_func_body = False
@@ -1042,13 +1046,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         # No function prototypes when forward declaring.
         if self.forward_decl:
+          self.virtual.OnMethod(self.current_class_name, o.name())
           return
 
+        virtual = ''
         if self.decl:
           self.local_var_list = []  # Make a new instance to collect from
           self.local_vars[o] = self.local_var_list
 
-        if self.current_class_name:
+          #log('Is Virtual? %s %s', self.current_class_name, o.name())
+          if self.virtual.IsVirtual(self.current_class_name, o.name()):
+            virtual = 'virtual '
+
+        if not self.decl and self.current_class_name:
           # definition looks like
           # void Type::foo(...);
           func_name = '%s::%s' % (self.current_class_name, o.name())
@@ -1063,7 +1073,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # You could also test NotImplementedError as abstract?
 
         c_type = get_c_type(o.type.ret_type)
-        self.decl_write_ind('%s %s(', c_type, func_name)
+        self.decl_write_ind('%s%s %s(', virtual, c_type, func_name)
 
         self._write_func_args(o)
 
@@ -1094,11 +1104,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         pass
 
     def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> T:
-        log('  CLASS %s', o.name)
-        # Forward declare types because they may be used in prototypes
-        if self.forward_decl:
-            self.decl_write_ind('class %s;\n', o.name)
-            return
+        #log('  CLASS %s', o.name)
 
         base_class_name = None  # single inheritance only
         for b in o.base_type_exprs:
@@ -1107,8 +1113,24 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if b.name != 'object' and b.name != 'Exception':
               base_class_name = b.name
 
-        if self.decl:
+        # Forward declare types because they may be used in prototypes
+        if self.forward_decl:
+          self.decl_write_ind('class %s;\n', o.name)
+          if base_class_name:
+            self.virtual.OnSubclass(base_class_name, o.name)
+          # Visit class body so we get method declarations
+          self.current_class_name = o.name
+          for stmt in o.defs.body:
+            # Ignore things that look like docstrings
+            if (isinstance(stmt, ExpressionStmt) and
+                isinstance(stmt.expr, StrExpr)):
+              continue
 
+            self.accept(stmt)
+          self.current_class_name = None
+          return
+
+        if self.decl:
           self.member_vars.clear()  # make a new list
 
           self.decl_write('\n')
@@ -1121,12 +1143,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.decl_write(' {\n')
           self.decl_write_ind(' public:\n')
 
-
           # NOTE: declaration still has to traverse the whole body to fill out
           # self.member_vars!!!
           block = o.defs
 
           self.indent += 1
+          self.current_class_name = o.name
           for stmt in block.body:
 
             # Ignore things that look like docstrings
@@ -1146,8 +1168,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             self.accept(stmt)
 
+          self.current_class_name = None
+
           # Now write member defs
-          log('MEMBERS for %s: %s', o.name, list(self.member_vars.keys()))
+          #log('MEMBERS for %s: %s', o.name, list(self.member_vars.keys()))
           if self.member_vars:
             self.decl_write('\n')  # separate from functions
           for name in sorted(self.member_vars):

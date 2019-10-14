@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 """
 format_strings_test.py: Tests for format_strings.py
 """

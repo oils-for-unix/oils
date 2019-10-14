@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-mycpp.py - Translate a subset of Python to C++, using MyPy's typed AST.
+mycpp_main.py - Translate a subset of Python to C++, using MyPy's typed AST.
 """
 from __future__ import print_function
 
@@ -17,6 +17,7 @@ from mypy.options import Options
 import const_pass
 import cppgen_pass
 import debug_pass
+import pass_state
 
 from util import log
 
@@ -143,11 +144,20 @@ def main(argv):
     f.write('%s\n' % line)
   f.write('\n')
 
+  virtual = pass_state.Virtual()
+
   # Forward declarations first.
   # class Foo; class Bar;
   for name, module in to_compile:
-    p2 = cppgen_pass.Generate(result.types, const_lookup, f, forward_decl=True)
+    p2 = cppgen_pass.Generate(result.types, const_lookup, f,
+                              virtual=virtual, forward_decl=True)
+
     p2.visit_mypy_file(module)
+
+  # After seeing class and method names in the first pass, figure out which
+  # ones are virtual.  We use this info in the second pass.
+  virtual.Calculate()
+  #log('V %s', virtual.virtuals)
 
   local_vars = {}  # FuncDef node -> (name, c_type) list
 
@@ -155,7 +165,8 @@ def main(argv):
   # class Foo { void method(); }; class Bar { void method(); };
   for name, module in to_compile:
     p3 = cppgen_pass.Generate(result.types, const_lookup, f,
-                              local_vars=local_vars, decl=True)
+                              local_vars=local_vars, virtual=virtual,
+                              decl=True)
 
     p3.visit_mypy_file(module)
 
