@@ -45,6 +45,13 @@ def main(argv):
     ns = os.path.basename(schema_path).replace('.', '_')
 
     f = sys.stdout
+
+    guard = ns.upper()
+    f.write("""\
+#ifndef %s
+#define %s
+
+""" % (guard, guard))
     f.write("""\
 #include <cstdint>
 
@@ -55,6 +62,8 @@ def main(argv):
       f.write('#include "hnode_asdl.h"\n')
       f.write('using hnode_asdl::hnode_t;\n')
       f.write('using hnode_asdl::hnode__External;\n')
+      f.write('using hnode_asdl::hnode__Leaf;\n')
+      f.write('using hnode_asdl::color_e;\n')
 
     f.write("""\
 namespace %s {
@@ -69,6 +78,9 @@ namespace %s {
     v2.VisitModule(schema_ast)
 
     f.write('}  // namespace %s\n' % ns)
+
+    f.write('\n')
+    f.write('#endif  // %s\n' % guard)
 
   elif action == 'mypy':  # Generated typed MyPy code
     with open(schema_path) as f:

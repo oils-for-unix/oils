@@ -13,34 +13,6 @@ source build/common.sh  # for clang
 
 export PYTHONPATH='.:vendor/'
 
-asdl-arith-encode() {
-  local expr="$1"
-  local out=${2:-_tmp/arith.bin}
-  asdl/asdl_demo.py arith-encode "$expr" $out
-  echo
-
-  ls -l $out
-  #hexdump -C $out
-  xxd $out
-  echo
-}
-
-asdl-arith-format() {
-  local expr="$1"
-  asdl/asdl_demo.py arith-format "$expr"
-}
-
-asdl-py() {
-  local schema=$1
-  asdl/asdl_demo.py py $schema
-}
-
-py-cpp() {
-  local schema=${1:-asdl/arith.asdl}
-  asdl-py $schema
-  asdl-cpp $schema _tmp/$(basename $schema).h
-}
-
 gen-mypy-asdl() {
   local name=$1
   shift
@@ -210,8 +182,9 @@ gen-cpp-demo() {
   wc -l $out $out2
 
   local bin=_tmp/typed_arith_demo 
-  # uses typed_arith_asdl.h and runtime.h
-  cxx -I _tmp -I mycpp -o $bin asdl/typed_arith_demo.cc
+  # uses typed_arith_asdl.h, runtime.h, hnode_asdl.h
+  $CLANGXX -std=c++11 -I _tmp -I mycpp -I _devbuild/gen-cpp \
+    -o $bin asdl/typed_arith_demo.cc
   $bin
 }
 

@@ -3,7 +3,7 @@
 
 #include "typed_arith.asdl.h"
 #include "typed_demo.asdl.h"  // has simple Sum, etc
-#include "runtime.h"
+#include "mylib.h"
 
 using typed_arith_asdl::pipeline;
 
@@ -73,6 +73,31 @@ int main(int argc, char **argv) {
   auto o = op_id_e::Plus;
   auto b = new bool_expr__LogicalBinary(o, nullptr, nullptr);
   log("sizeof b = %d", sizeof b);
+  log("");
+
+  hnode_t* t = c->AbbreviatedTree();
+  log("%s", hnode_str(t->tag));
+  log("");
+
+  // This works -- why is it crashing in mycpp/examples/parse?
+  using hnode_asdl::hnode_e;
+  if (t->tag == hnode_e::Leaf) {
+    hnode__Leaf* t2 = static_cast<hnode__Leaf*>(t);
+    log("%s", hnode_str(t2->tag));
+    log("%s", color_str(t2->color));
+    log("%s", t2->s->data_);
+  }
+  // USING THE SAME VAR NAME IS ILLEGAL.  Why???
+  // And it even happens with -O0.  Not an optimization thing.
+  // Happens with gcc and Clang.
+  /*
+  if (t->tag == hnode_e::Leaf) {
+    hnode__Leaf* t = static_cast<hnode__Leaf*>(t);
+    log("%s", hnode_str(t->tag));
+    log("%s", color_str(t->color));
+    log("%s", t->s->data_);
+  }
+  */
 
   //log("u->a->name = %s", u->a->name->data_);
 }

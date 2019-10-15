@@ -7,7 +7,7 @@ from __future__ import print_function
 import sys
 from asdl import asdl_ as asdl
 from asdl import front_end
-from asdl import arith_parse
+from asdl import typed_arith_parse
 from asdl import py_meta
 from asdl import format as fmt
 
@@ -62,7 +62,7 @@ def main(argv):
   elif action == 'arith-format':  # pretty printing
     expr = argv[2]
 
-    obj = arith_parse.ParseShell(expr)
+    obj = typed_arith_parse.ParseShell(expr)
     tree = obj.PrettyTree()
     #treee= ['hi', 'there', ['a', 'b'], 'c']
     f = fmt.DetectConsoleOutput(sys.stdout)

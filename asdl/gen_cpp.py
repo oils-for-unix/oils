@@ -126,6 +126,13 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     for variant in sum.types:
       self.Emit('case %s::%s:' % (enum_name, variant.name), depth + 1)
       self.Emit('  return "%s.%s";' % (sum_name, variant.name), depth + 1)
+
+    # NOTE: This happened in real life, maybe due to casting.  Although we
+    # might want to get rid of the extra string constants once things are
+    # debugged.
+    self.Emit('default:', depth + 1)
+    self.Emit('  return "UNKNOWN %s";' % sum_name, depth + 1)
+    
     self.Emit('  }', depth)
     self.Emit('}', depth)
     self.Emit('', depth)
@@ -153,12 +160,12 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     Emit("  %s_e tag;" % sum_name)
     # TODO: This should be a free function.
     if self.pretty_print_methods:
-      self.Emit("  hnode_t* AbbreviatedTree() {")
-      self.Emit("    return new hnode__External(nullptr);")
-      self.Emit("  }")
+      self.Emit('  virtual hnode_t* AbbreviatedTree() {')
+      self.Emit('    return new hnode__Leaf(new Str("TODO"), color_e::StringConst);')
+      self.Emit('  }')
 
-    Emit("};")
-    Emit("")
+    Emit('};')
+    Emit('')
 
     for variant in sum.types:
       if variant.shared_type:
