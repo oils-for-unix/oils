@@ -27,7 +27,6 @@ from mycpp import mylib
 from typing import cast
 
 
-
 def DetectConsoleOutput(f):
   # type: (mylib.Writer) -> ColorOutput
   """Wrapped to auto-detect."""
@@ -331,8 +330,9 @@ class _PrettyPrinter(object):
         val = field.val
 
         ind1 = ' ' * (indent+INDENT)
+        UP_val = val  # for mycpp
         if val.tag == hnode_e.Array:
-          val = cast(hnode__Array, val)
+          val = cast(hnode__Array, UP_val)
 
           name_str = '%s%s: [' % (ind1, name)
           f.write(name_str)
@@ -385,20 +385,21 @@ class _PrettyPrinter(object):
       f.WriteRaw(single_f.GetRaw())
       return
 
+    UP_node = node  # for mycpp
     if node.tag == hnode_e.Leaf:
-      node = cast(hnode__Leaf, node)
+      node = cast(hnode__Leaf, UP_node)
       f.PushColor(node.color)
       f.write(pretty.Str(node.s))
       f.PopColor()
 
     elif node.tag == hnode_e.External:
-      node = cast(hnode__External, node)
+      node = cast(hnode__External, UP_node)
       f.PushColor(color_e.External)
       f.write(repr(node.obj))
       f.PopColor()
 
     elif node.tag == hnode_e.Record:
-      node = cast(hnode__Record, node)
+      node = cast(hnode__Record, UP_node)
       self._PrintRecord(node, f, indent)
 
     else:
@@ -449,21 +450,22 @@ def _TrySingleLine(node, f, max_chars):
     ok: whether it fit on the line of the given size.
       If False, you can't use the value of f.
   """
+  UP_node = node  # for mycpp
   if node.tag == hnode_e.Leaf:
-    node = cast(hnode__Leaf, node)
+    node = cast(hnode__Leaf, UP_node)
     f.PushColor(node.color)
     f.write(pretty.Str(node.s))
     f.PopColor()
 
   elif node.tag == hnode_e.External:
-    node = cast(hnode__External, node)
+    node = cast(hnode__External, UP_node)
 
     f.PushColor(color_e.External)
     f.write(repr(node.obj))
     f.PopColor()
 
   elif node.tag == hnode_e.Array:
-    node = cast(hnode__Array, node)
+    node = cast(hnode__Array, UP_node)
 
     # Can we fit the WHOLE array on the line?
     f.write('[')
@@ -475,7 +477,7 @@ def _TrySingleLine(node, f, max_chars):
     f.write(']')
 
   elif node.tag == hnode_e.Record:
-    node = cast(hnode__Record, node)
+    node = cast(hnode__Record, UP_node)
 
     return _TrySingleLineObj(node, f, max_chars)
 
