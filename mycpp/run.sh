@@ -68,6 +68,7 @@ create-venv() {
 }
 
 # Do this inside the virtualenv
+# Re-run this when UPGRADING MyPy.  10/2019: Upgraded from 0.670 to 0.730.
 mypy-deps() {
   python3 -m pip install -r $MYPY_REPO/test-requirements.txt
 }
@@ -426,7 +427,7 @@ translate-modules() {
 
 # -O3 is faster than -O2 for fib, but let's use -O2 since it's "standard"?
 
-CPPFLAGS='-O2 -std=c++11 '
+CPPFLAGS='-Wall -O2 -std=c++11 '
 
 _compile-example() { 
   local name=${1:-fib} #  name of output, and maybe input

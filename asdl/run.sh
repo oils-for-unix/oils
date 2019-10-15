@@ -183,7 +183,7 @@ gen-cpp-demo() {
 
   local bin=_tmp/typed_arith_demo 
   # uses typed_arith_asdl.h, runtime.h, hnode_asdl.h
-  $CLANGXX -std=c++11 -I _tmp -I mycpp -I _devbuild/gen-cpp \
+  $CLANGXX -Wall -std=c++11 -I _tmp -I mycpp -I _devbuild/gen-cpp \
     -o $bin asdl/typed_arith_demo.cc
   $bin
 }

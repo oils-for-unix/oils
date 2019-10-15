@@ -167,6 +167,9 @@ class Print(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_super_expr(self, o: 'mypy.nodes.SuperExpr') -> T:
         pass
 
+    def visit_assignment_expr(self, o: 'mypy.nodes.AssignmentExpr') -> T:
+        pass
+
     def visit_unary_expr(self, o: 'mypy.nodes.UnaryExpr') -> T:
         self.log('UnaryExpr %s', o.op)
         self.indent += 1

@@ -201,6 +201,9 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_super_expr(self, o: 'mypy.nodes.SuperExpr') -> T:
         pass
 
+    def visit_assignment_expr(self, o: 'mypy.nodes.AssignmentExpr') -> T:
+        pass
+
     def visit_unary_expr(self, o: 'mypy.nodes.UnaryExpr') -> T:
         # e.g. a[-1] or 'not x'
         self.accept(o.expr)

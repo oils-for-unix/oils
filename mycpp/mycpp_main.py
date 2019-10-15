@@ -48,6 +48,8 @@ def get_mypy_config(paths: List[str],
     options.export_types = True
     # TODO: Support incremental checking
     options.incremental = False
+    # 10/2019: FIX for MyPy 0.730.  Not sure why I need this but I do.
+    options.preserve_asts = True
 
     for source in sources:
         options.per_module_options.setdefault(source.module, {})['mypyc'] = True
@@ -84,7 +86,7 @@ def main(argv):
 
   sources, options = get_mypy_config(paths, mypy_options)
   for source in sources:
-    log('sources %s', source)
+    log('source %s', source)
   #log('options %s', options)
 
   #result = emitmodule.parse_and_typecheck(sources, options)
@@ -124,6 +126,7 @@ def main(argv):
     for name, module in ModulesToCompile(result, mod_names):
       builder = debug_pass.Print(result.types)
       builder.visit_mypy_file(module)
+    return
 
   # GLOBAL Constant pass over all modules.  We want to collect duplicate
   # strings together.  And have globally unique IDs str0, str1, ... strN.

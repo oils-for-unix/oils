@@ -263,7 +263,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if self.forward_decl:
           self.indent += 1
 
+        self.log('defs %s', o.defs)
         for node in o.defs:
+          log('def %s', node)
           # skip module docstring
           if (isinstance(node, ExpressionStmt) and
               isinstance(node.expr, StrExpr)):
@@ -623,6 +625,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_super_expr(self, o: 'mypy.nodes.SuperExpr') -> T:
         pass
 
+    def visit_assignment_expr(self, o: 'mypy.nodes.AssignmentExpr') -> T:
+        pass
+
     def visit_unary_expr(self, o: 'mypy.nodes.UnaryExpr') -> T:
         # e.g. a[-1] or 'not x'
         if o.op == 'not':
@@ -811,9 +816,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             subtype_name = type_expr.name
 
           self.write_ind(
-              '%s* %s = static_cast<%s*>(%s);\n', subtype_name, lval.name,
-              subtype_name, call.args[1].name)
-
+              '%s* %s = static_cast<%s*>(', subtype_name, lval.name,
+              subtype_name)
+          self.accept(call.args[1])  # variable being casted
+          self.write(');\n')
           return
 
         if isinstance(lval, NameExpr):

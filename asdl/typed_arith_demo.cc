@@ -79,7 +79,6 @@ int main(int argc, char **argv) {
   log("%s", hnode_str(t->tag));
   log("");
 
-  // This works -- why is it crashing in mycpp/examples/parse?
   using hnode_asdl::hnode_e;
   if (t->tag == hnode_e::Leaf) {
     hnode__Leaf* t2 = static_cast<hnode__Leaf*>(t);
@@ -87,9 +86,7 @@ int main(int argc, char **argv) {
     log("%s", color_str(t2->color));
     log("%s", t2->s->data_);
   }
-  // USING THE SAME VAR NAME IS ILLEGAL.  Why???
-  // And it even happens with -O0.  Not an optimization thing.
-  // Happens with gcc and Clang.
+  // NOTE: This is self-initialization!!!
   /*
   if (t->tag == hnode_e::Leaf) {
     hnode__Leaf* t = static_cast<hnode__Leaf*>(t);
@@ -98,7 +95,5 @@ int main(int argc, char **argv) {
     log("%s", t->s->data_);
   }
   */
-
-  //log("u->a->name = %s", u->a->name->data_);
 }
 
