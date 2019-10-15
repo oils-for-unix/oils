@@ -265,7 +265,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.log('defs %s', o.defs)
         for node in o.defs:
-          log('def %s', node)
           # skip module docstring
           if (isinstance(node, ExpressionStmt) and
               isinstance(node.expr, StrExpr)):
