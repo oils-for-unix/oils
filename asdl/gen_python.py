@@ -138,7 +138,6 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
   def _GenClass(self, desc, attributes, class_name, base_classes, depth,
                 tag_num):
     """Used for Constructor and Product."""
-    pretty_cls_name = class_name.replace('__', '.')  # used below
     self.Emit('class %s(%s):' % (class_name, ', '.join(base_classes)))
     self.Emit('  tag = %d' % tag_num)
 
@@ -221,6 +220,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     if not self.pretty_print_methods:
       return
+
+    pretty_cls_name = class_name.replace('__', '.')  # used below
 
     #
     # PrettyTree
@@ -339,8 +340,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 	self.Emit('UP_self = self', depth)
 	self.Emit('', depth)
 
-	local_id = 0  # to generate unique local names
-	for i, variant in enumerate(sum.types):
+	for variant in sum.types:
 	  if variant.shared_type:
             subtype_name = variant.shared_type
 	  else:

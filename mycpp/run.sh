@@ -215,6 +215,22 @@ mypy() {
 # classes and ASDL
 translate-parse() {
   local snippet='
+// TODO: Generate a header?
+
+class Str;
+namespace hnode_asdl {
+  class hnode__Record;
+  class hnode__Leaf;
+  enum class color_e;
+  typedef color_e color_t;
+}
+
+namespace runtime {  // declare
+hnode_asdl::hnode__Record* NewRecord(Str* node_type);
+hnode_asdl::hnode__Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color);
+
+}  // declare namespace runtime
+
 #include "expr.asdl.h"
 
 // TODO: Implement these stubs
@@ -528,9 +544,6 @@ should-skip() {
   case $1 in
     # not passing yet!
     #
-    # - parse needs to translate asdl/format.py to pretty print.
-    #     Also fails on expr.asdl.h.
-    #
     # - prereqs for evaluation:
     #   - switch1: typeswitch.  Needs casting?
     #   - switch2: primitive switch.  Translation crashes
@@ -540,11 +553,11 @@ should-skip() {
     # Other problematic constructs: **kwargs, named args
 
     # TODO: enable these with special build scripts
-    alloc_main|lexer_main|named_args)
+    parse|alloc_main|lexer_main|named_args)
       return 0
       ;;
 
-    parse|switch1|switch2|scoped_resource)
+    switch1|switch2|scoped_resource)
       return 0
       ;;
     *)

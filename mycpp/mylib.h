@@ -340,9 +340,10 @@ inline Str* chr(int i) {
   return new Str(buf, 1);
 }
 
-// TODO: Call itoa I guess.
+// TODO: Call sprintf I guess.
+// format_d() should also share the same strategy
 inline Str* str(int i) {
-  return new Str("");
+  return new Str("itoa");
 }
 
 // TODO: There should be one str() and one repr() for every sum type, that
