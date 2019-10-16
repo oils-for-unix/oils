@@ -12,6 +12,7 @@
 #include <cstdio>  // FILE*
 #include <vector>
 #include <initializer_list>
+#include <climits>  // CHAR_BIT
 
 class Str;
 template <class T> class List;
@@ -340,10 +341,17 @@ inline Str* chr(int i) {
   return new Str(buf, 1);
 }
 
-// TODO: Call sprintf I guess.
-// format_d() should also share the same strategy
+// https://stackoverflow.com/questions/3919995/determining-sprintf-buffer-size-whats-the-standard/11092994#11092994
+// Note: Python 2.7's intobject.c has an erroneous +6 
+
+// This is 13, but
+// len('-2147483648') is 11, which means we only need 12?
+const int kIntBufSize = CHAR_BIT * sizeof(int) / 3 + 3;
+
 inline Str* str(int i) {
-  return new Str("itoa");
+  char* buf = static_cast<char*>(malloc(kIntBufSize));
+  int len = snprintf(buf, kIntBufSize, "%d", i);
+  return new Str(buf, len);
 }
 
 // TODO: There should be one str() and one repr() for every sum type, that

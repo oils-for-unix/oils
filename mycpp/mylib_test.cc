@@ -46,7 +46,7 @@ void test_str_to_int() {
   assert(!ok);
 }
 
-void test_str_methods() {
+void test_str_funcs() {
   assert((new Str("abc"))->isalpha());
 
   Str* s = new Str("abc");
@@ -56,6 +56,19 @@ void test_str_methods() {
   log("r0 = %s", r0->data_);
   log("r1 = %s", r1->data_);
   log("r3 = %s", r3->data_);
+
+  Str* int_str;
+  int_str = str((1<<31) - 1);
+  log("i = %s", int_str->data_);
+
+  // wraps with - sign
+  int_str = str(1<<31);
+  log("i = %s", int_str->data_);
+
+  int_str = str(-(1<<31) + 1);
+  log("i = %s", int_str->data_);
+  int_str = str(-(1<<31));
+  log("i = %s", int_str->data_);
 }
 
 using mylib::BufLineReader;
@@ -121,7 +134,7 @@ int main(int argc, char **argv) {
   log("t4[3] = %d", t4->at3());
 
   test_str_to_int();
-  test_str_methods();
+  test_str_funcs();
 
   log("");
   Dict<int, Str*>* d = new Dict<int, Str*>();
