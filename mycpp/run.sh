@@ -358,7 +358,7 @@ run-python-parse() {
 
   # Stupid fastlex error in asdl/pretty.py
 
-  local num_errors=$(cat _tmp/err.txt | wc -l)
+  local num_errors=$(grep -v 'Found 1 error in 1 file' _tmp/err.txt | wc -l)
   if [[ $num_errors -eq 1 ]]; then
     echo 'OK'
   else

@@ -64,7 +64,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     self.Emit('  return _%s_str[val.enum_id]' % name, depth)
     self.Emit('', depth)
 
-  def _CodeSnippet(self, method_name, var_name, desc):
+  def _CodeSnippet(self, abbrev, desc, var_name):
     none_guard = False
     if isinstance(desc, meta.BoolType):
       code_str = "hnode.Leaf('T' if %s else 'F', color_e.OtherConst)" % var_name
@@ -89,11 +89,11 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         code_str = 'hnode.Leaf(%s.name, color_e.TypeName)' % var_name
         none_guard = True  # otherwise MyPy complains about foo.name
       else:
-        code_str = '%s.%s()' % (var_name, method_name)
+        code_str = '%s.%s()' % (var_name, abbrev)
         none_guard = True
 
     elif isinstance(desc, meta.CompoundType):
-      code_str = '%s.%s()' % (var_name, method_name)
+      code_str = '%s.%s()' % (var_name, abbrev)
       none_guard = True
 
     else:
@@ -101,37 +101,39 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     return code_str, none_guard
 
-  def _EmitCodeForField(self, method_name, field_name, desc, counter):
-    """Given a field value and type descriptor, return an hnode."""
+  def _EmitCodeForField(self, abbrev, field, counter):
+    """Generate code that returns an hnode for a field."""
     out_val_name = 'x%d' % counter
 
-    if isinstance(desc, meta.ArrayType):
+    desc = self.type_lookup[field.type]
+
+    if field.seq:
       iter_name = 'i%d' % counter
 
-      self.Emit('  if self.%s:  # ArrayType' % field_name)
+      self.Emit('  if self.%s:  # ArrayType' % field.name)
       self.Emit('    %s = hnode.Array()' % out_val_name)
-      self.Emit('    for %s in self.%s:' % (iter_name, field_name))
-      child_code_str, _ = self._CodeSnippet(method_name, iter_name, desc.desc)
+      self.Emit('    for %s in self.%s:' % (iter_name, field.name))
+      child_code_str, _ = self._CodeSnippet(abbrev, desc, iter_name)
       self.Emit('      %s.children.append(%s)' % (out_val_name, child_code_str))
-      self.Emit('    L.append(field(%r, %s))' % (field_name, out_val_name))
+      self.Emit('    L.append(field(%r, %s))' % (field.name, out_val_name))
 
-    elif isinstance(desc, meta.MaybeType):
-      self.Emit('  if self.%s is not None:  # MaybeType' % field_name)
-      child_code_str, _ = self._CodeSnippet(method_name,
-                                            'self.%s' % field_name, desc.desc)
+    elif field.opt:
+      self.Emit('  if self.%s is not None:  # MaybeType' % field.name)
+      child_code_str, _ = self._CodeSnippet(abbrev, desc,
+                                            'self.%s' % field.name)
       self.Emit('    %s = %s' % (out_val_name, child_code_str))
-      self.Emit('    L.append(field(%r, %s))' % (field_name, out_val_name))
+      self.Emit('    L.append(field(%r, %s))' % (field.name, out_val_name))
 
     else:
-      var_name = 'self.%s' % field_name
-      code_str, obj_none_guard = self._CodeSnippet(method_name, var_name, desc)
+      var_name = 'self.%s' % field.name
+      code_str, obj_none_guard = self._CodeSnippet(abbrev, desc, var_name)
 
       depth = self.current_depth
       if obj_none_guard:  # to satisfy MyPy type system
-        self.Emit('  assert self.%s is not None' % field_name)
+        self.Emit('  assert self.%s is not None' % field.name)
       self.Emit('  %s = %s' % (out_val_name, code_str), depth)
 
-      self.Emit('  L.append(field(%r, %s))' % (field_name, out_val_name), depth)
+      self.Emit('  L.append(field(%r, %s))' % (field.name, out_val_name), depth)
 
   def _GenClass(self, desc, attributes, class_name, base_classes, depth,
                 tag_num):
@@ -217,8 +219,6 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       default_str = (' or %s' % default) if default else ''
       self.Emit('    self.%s = %s%s' % (f.name, f.name, default_str))
 
-    self.Emit('')
-
     if not self.pretty_print_methods:
       return
 
@@ -233,35 +233,31 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     self.Emit('')
 
     # Use the runtime type to be more like asdl/format.py
-    desc = self.type_lookup[class_name]
-    for i, (field_name, field_desc) in enumerate(desc.GetFields()):
+    for local_id, field in enumerate(all_fields):
       #log('%s :: %s', field_name, field_desc)
       self.Indent()
-      self._EmitCodeForField('PrettyTree', field_name, field_desc, i)
+      self._EmitCodeForField('PrettyTree', field, local_id)
       self.Dedent()
       self.Emit('')
-
     self.Emit('    return out_node')
     self.Emit('')
 
     #
-    # AbbreviatedTree
+    # _AbbreviatedTree
     #
 
     self.Emit('  def _AbbreviatedTree(self):')
     self.Emit('    # type: () -> hnode_t')
     self.Emit('    out_node = NewRecord(%r)' % pretty_cls_name)
     self.Emit('    L = out_node.fields')
-    for i, (field_name, field_desc) in enumerate(desc.GetFields()):
-      if field_name == 'spids':
-        continue  # don't emit in the abbreviated version
 
+    # NO attributes in abbreviated version
+    for local_id, field in enumerate(desc.fields):
       self.Indent()
-      self._EmitCodeForField('AbbreviatedTree', field_name, field_desc, i)
+      self._EmitCodeForField('AbbreviatedTree', field, local_id)
       self.Dedent()
       self.Emit('')
     self.Emit('    return out_node')
-
     self.Emit('')
 
     self.Emit('  def AbbreviatedTree(self):')
@@ -330,12 +326,46 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     # the base class, e.g. 'oil_cmd'
     self.Emit('class %s_t(pybase.CompoundObj):' % sum_name, depth)
-    self.Emit('  pass', depth)
-    self.Emit('', depth)
+    self.Indent()
+    depth = self.current_depth
+    if self.pretty_print_methods:
+      # Emit free function to pretty print
+      for abbrev in 'PrettyTree', '_AbbreviatedTree', 'AbbreviatedTree':
+        self.Emit('')
+	self.Emit('def %s(self):' % abbrev, depth)
+	self.Emit('  # type: () -> hnode_t', depth)
+	self.Indent()
+	depth = self.current_depth
+	self.Emit('UP_self = self', depth)
+	self.Emit('', depth)
+
+	local_id = 0  # to generate unique local names
+	for i, variant in enumerate(sum.types):
+	  if variant.shared_type:
+            subtype_name = variant.shared_type
+	  else:
+	    subtype_name = '%s__%s' % (sum_name, variant.name)
+
+	  self.Emit('if self.tag ==  %s_e.%s:' % (sum_name, variant.name),
+		    depth)
+	  self.Emit('  self = cast(%s, UP_self)' % subtype_name, depth)
+	  self.Emit('  return self.%s()' % abbrev, depth)
+
+	self.Emit('raise AssertionError', depth)
+
+	self.Dedent()
+	depth = self.current_depth
+    else:
+      # Otherwise it's empty
+      self.Emit('pass', depth)
+
+    self.Dedent()
+    depth = self.current_depth
+    self.Emit('')
 
     for i, variant in enumerate(sum.types):
       if variant.shared_type:
-        # Do not generated a class.
+        # Don't generate a class.
         pass
       else:
         # Use fully-qualified name, so we can have osh_cmd.Simple and

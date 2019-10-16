@@ -185,9 +185,10 @@ def run_tests():
 
     #log('%s', tree)
 
-    pretty_tree = tree.AbbreviatedTree()
+    htree = tree.AbbreviatedTree()
     ast_f = fmt.AnsiOutput(mylib.Stdout())
-    fmt.PrintTree(pretty_tree, ast_f)
+
+    fmt.PrintTree(htree, ast_f)
     ast_f.write('\n')
 
 

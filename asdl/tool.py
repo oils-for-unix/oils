@@ -105,7 +105,7 @@ namespace %s {
     # NOTE: Dict, Any are for AssocArray with 'dict' type.
     f.write("""\
 from asdl import pybase
-from typing import Optional, List, Tuple, Dict, Any
+from typing import Optional, List, Tuple, Dict, Any, cast
 """)
 
     pretty_print_methods = bool(os.getenv('PRETTY_PRINT_METHODS', 'yes'))

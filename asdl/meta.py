@@ -53,12 +53,11 @@ class MaybeType(_RuntimeType):
 
 class UserType(_RuntimeType):
   def __init__(self, mod_name, type_name):
-    #assert isinstance(typ, type), typ
     self.mod_name = mod_name
     self.type_name = type_name
 
   def __repr__(self):
-    return '<UserType %s>' % self.typ
+    return '<UserType %s %s>' % (self.mod_name, self.type_name)
 
 
 class SumType(_RuntimeType):
