@@ -1,6 +1,7 @@
 """
 cppgen.py - AST pass to that prints C++ code
 """
+import io
 import json  # for "C escaping"
 import sys
 
@@ -136,17 +137,18 @@ def get_c_type(t):
 class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def __init__(self, types: Dict[Expression, Type], const_lookup, f,
-                 local_vars=None, virtual=None, decl=False,
-                 forward_decl=False):
+                 virtual=None, local_vars=None,
+                 decl=False, forward_decl=False):
       self.types = types
       self.const_lookup = const_lookup
       self.f = f 
 
+      self.virtual = virtual
       # local_vars: FuncDef node -> list of type, var
       # This is different from member_vars because we collect it in the 'decl'
       # phase.  But then write it in the definition phase.
       self.local_vars = local_vars
-      self.virtual = virtual
+      self.fmt_funcs = io.StringIO()
 
       self.decl = decl
       self.forward_decl = forward_decl
@@ -270,6 +272,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               isinstance(node.expr, StrExpr)):
               continue
           self.accept(node)
+
+        # Write fmtX() functions inside the namespace.
+        if self.decl:
+          self.decl_write(self.fmt_funcs.getvalue())
+          self.fmt_funcs = io.StringIO()  # clear it for the next file
 
         if self.forward_decl:
           self.indent -= 1
@@ -476,45 +483,49 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           temp_name = 'fmt%d' % self.unique_id
           self.unique_id += 1
 
+          # Write a buffer with fmtX() functions.
+
           if self.decl:
-            self.decl_write('Str* %s(' % temp_name)
+            self.fmt_funcs.write('Str* %s(' % temp_name)
 
             #log('right_type %s', right_type)
             if isinstance(right_type, Instance):
-              self.decl_write('%s a0', right_ctype)
+              self.fmt_funcs.write('%s a0' % right_ctype)
             elif isinstance(right_type, TupleType):
               for i, typ in enumerate(right_type.items):
                 if i != 0:
-                  self.decl_write(', ');
-                self.decl_write('%s a%d', get_c_type(typ), i)
+                  self.fmt_funcs.write(', ');
+                self.fmt_funcs.write('%s a%d' % (get_c_type(typ), i))
 
             # Handle Optional[str]
             elif (isinstance(right_type, UnionType) and
                   len(right_type.items) == 2 and
                   isinstance(right_type.items[1], NoneTyp)):
-              self.decl_write('%s a0', get_c_type(right_type.items[0]))
+              self.fmt_funcs.write('%s a0' % get_c_type(right_type.items[0]))
             else:
               raise AssertionError(right_type)
 
-            self.decl_write(') {\n')
-            self.decl_write('  gBuf.clear();\n')
+            self.fmt_funcs.write(') {\n')
+            self.fmt_funcs.write('  gBuf.clear();\n')
 
             for part in parts:
               if isinstance(part, format_strings.LiteralPart):
                 # JSON does a decent job of escaping for now.
                 escaped = json.dumps(part.s)
-                self.decl_write(
-                    '  gBuf.write_const(%s, %d);\n', escaped, part.strlen)
+                self.fmt_funcs.write(
+                    '  gBuf.write_const(%s, %d);\n' % (escaped, part.strlen))
               elif isinstance(part, format_strings.SubstPart):
-                self.decl_write(
-                    '  gBuf.format_%s(a%d);\n', part.char_code, part.arg_num)
+                self.fmt_funcs.write(
+                    '  gBuf.format_%s(a%d);\n' %
+                    (part.char_code, part.arg_num))
               else:
                 raise AssertionError(part)
 
-            self.decl_write('  return gBuf.getvalue();\n')
+            self.fmt_funcs.write('  return gBuf.getvalue();\n')
+            self.fmt_funcs.write('}\n')
+            self.fmt_funcs.write('\n')
 
-            self.decl_write('}\n')
-
+          # In the definition pass, write the call site.
           self.write('%s(' % temp_name)
           if isinstance(right_type, TupleType):
             for i, item in enumerate(o.right.items):

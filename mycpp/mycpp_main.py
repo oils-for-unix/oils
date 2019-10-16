@@ -147,6 +147,7 @@ def main(argv):
     f.write('%s\n' % line)
   f.write('\n')
 
+  # Note: doesn't take into account module names!
   virtual = pass_state.Virtual()
 
   # Forward declarations first.
