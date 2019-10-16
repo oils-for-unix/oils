@@ -38,14 +38,10 @@ pyrun-parse() {
   PYTHONPATH="$REPO_ROOT/mycpp:$REPO_ROOT/vendor:$REPO_ROOT" examples/parse.py
 }
 
-# classes and ASDL
-translate-parse() {
-  # Need this otherwise we get type errors
-  codegen-parse
 
-  local snippet='
-// TODO: Generate a header?
+# TODO: Need a header for this.
 
+readonly HNODE_HEADER='
 class Str;
 namespace hnode_asdl {
   class hnode__Record;
@@ -59,10 +55,19 @@ hnode_asdl::hnode__Record* NewRecord(Str* node_type);
 hnode_asdl::hnode__Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color);
 
 }  // declare namespace runtime
+'
 
-#include "expr.asdl.h"
 
-// TODO: Implement these stubs
+# classes and ASDL
+translate-parse() {
+  # Need this otherwise we get type errors
+  codegen-parse
+
+  local snippet='
+#include "expr_asdl.h"
+
+// TODO: pretty.Str() turns + into "+", etc.
+// This is a good opportunity to use the rest of fastlex.
 namespace pretty {
 Str* Str(Str* s) {
   return s;
@@ -74,7 +79,7 @@ Str* repr(void* obj) {
 }
 
 '
-  translate-ordered parse "$snippet"  \
+  translate-ordered parse "${HNODE_HEADER}$snippet"  \
     $REPO_ROOT/pylib/cgi.py \
     $REPO_ROOT/asdl/runtime.py \
     $REPO_ROOT/asdl/format.py \
@@ -84,10 +89,9 @@ Str* repr(void* obj) {
 # Because it depends on ASDL
 compile-parse() {
   mkdir -p _gen
-  local out=_gen/expr.asdl.h
-  asdl-gen cpp examples/expr.asdl > $out
+  asdl-gen cpp examples/expr.asdl _gen/expr_asdl
 
-  compile-with-asdl parse
+  compile-with-asdl parse _gen/expr_asdl.cc ../_devbuild/gen-cpp/hnode_asdl.cc
 }
 
 ### parse
@@ -129,7 +133,7 @@ translate-modules() {
 
 # TODO: Get rid of translate-ordered
 translate-asdl-generated() {
-  translate-ordered asdl_generated '#include "expr.asdl.h"' \
+  translate-ordered asdl_generated '#include "expr_asdl.h"' \
     $REPO_ROOT/asdl/runtime.py \
     $REPO_ROOT/asdl/format.py \
     examples/asdl_generated.py
@@ -202,20 +206,20 @@ alloc-main() {
   local snippet='
 #include "id_kind_asdl.h"  // syntax.asdl depends on this
 using id_kind_asdl::Id_t;  // TODO: proper ASDL modules 
-
-#include "syntax.asdl.h"
+#include "syntax_asdl.h"
 
 // Hack for now.  Every sum type should have repr()?
 Str* repr(syntax_asdl::source_t* obj) {
   return new Str("TODO");
 }
 '
-  translate-ordered alloc_main "$snippet" \
+  translate-ordered alloc_main "${HNODE_HEADER}$snippet" \
     $REPO_ROOT/core/alloc.py \
     examples/alloc_main.py
 
-  local out=_gen/syntax.asdl.h
-  asdl-gen cpp ../frontend/syntax.asdl > $out
+  local out=_gen/syntax_asdl
+  asdl-gen cpp ../frontend/syntax.asdl $out
 
-  compile-with-asdl alloc_main
+  compile-with-asdl alloc_main \
+    _gen/syntax_asdl.cc ../_devbuild/gen-cpp/hnode_asdl.cc
 } 

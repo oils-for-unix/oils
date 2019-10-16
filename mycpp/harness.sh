@@ -121,9 +121,13 @@ test-all() {
 
     pyrun-example ${name} > _tmp/$name.python.txt 2>&1
     _bin/$name > _tmp/$name.cpp.txt 2>&1
-    diff -u _tmp/$name.{python,cpp}.txt
 
-    echo $'\t\t\tOK'
+    if diff -u _tmp/$name.{python,cpp}.txt > _tmp/$name.diff.txt; then
+      echo $'\t\t\tOK'
+    else
+      echo $'\t\tFAIL'
+      cat _tmp/$name.diff.txt
+    fi
   done
 }
 
@@ -156,7 +160,7 @@ benchmark-all() {
 
     echo
     echo $'\t[ Python ]'
-    time-tsv -o $out --field $name --field 'Python' -- examples/${name}.py
+    time-tsv -o $out --field $name --field 'Python' -- $0 pyrun-example $name
   done
 
   cat $out

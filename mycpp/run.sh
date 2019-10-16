@@ -152,6 +152,7 @@ mypy() {
 compile-with-asdl() {
   local name=$1
   local src=_gen/$name.cc
+  shift
 
   # TODO: Remove _gen dir
 
@@ -159,7 +160,7 @@ compile-with-asdl() {
   #local more_flags=''
   $CXX -o _bin/$name $CPPFLAGS $more_flags \
     -I . -I ../_devbuild/gen -I ../_devbuild/gen-cpp -I _gen \
-    mylib.cc $src -lstdc++
+    mylib.cc $src "$@" -lstdc++
 }
 
 # fib_recursive(35) takes 72 ms without optimization, 20 ms with optimization.

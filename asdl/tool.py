@@ -25,7 +25,8 @@ def main(argv):
   except IndexError:
     raise RuntimeError('Schema path required')
 
-  if os.path.basename(schema_path) in ('syntax.asdl', 'runtime.asdl'):
+  schema_filename = os.path.basename(schema_path) 
+  if schema_filename in ('syntax.asdl', 'runtime.asdl'):
     app_types = {'id': meta.UserType('id_kind_asdl', 'Id_t')}
   else:
     app_types = {}
@@ -38,54 +39,90 @@ def main(argv):
     v.VisitModule(schema_ast)
 
   elif action == 'cpp':  # Generate C++ code for ASDL schemas
+    out_prefix = argv[3]
+    pretty_print_methods = bool(os.getenv('PRETTY_PRINT_METHODS', 'yes'))
+
     with open(schema_path) as f:
       schema_ast, type_lookup = front_end.LoadSchema(f, app_types)
 
     # asdl/typed_arith.asdl -> typed_arith_asdl
     ns = os.path.basename(schema_path).replace('.', '_')
 
-    f = sys.stdout
-
-    guard = ns.upper()
-    f.write("""\
+    with open(out_prefix + '.h', 'w') as f:
+      guard = ns.upper()
+      f.write("""\
 #ifndef %s
 #define %s
 
 """ % (guard, guard))
-    f.write("""\
+
+      f.write("""\
 #include <cstdint>
 
 #include "mylib.h"  // for Str, List, etc.
 """)
-    pretty_print_methods = bool(os.getenv('PRETTY_PRINT_METHODS', 'yes'))
-    if pretty_print_methods:
-      f.write("""
+
+      if pretty_print_methods:
+        f.write("""
 #include "hnode_asdl.h"
 using hnode_asdl::hnode_t;
+""")
+
+      f.write("""\
+namespace %s {
+
+""" % ns)
+
+      v = gen_cpp.ForwardDeclareVisitor(f)
+      v.VisitModule(schema_ast)
+
+      v2 = gen_cpp.ClassDefVisitor(f, type_lookup,
+                                   pretty_print_methods=pretty_print_methods)
+      v2.VisitModule(schema_ast)
+
+      f.write("""
+}  // namespace %s
+
+#endif  // %s
+""" % (ns, guard))
+
+      with open(out_prefix + '.cc', 'w') as f:
+        # HACK until we support 'use'
+        if schema_filename == 'syntax.asdl':
+          f.write('#include "id_kind_asdl.h"  // hack\n')
+          f.write('using id_kind_asdl::Id_t;  // hack\n')
+
+        f.write("""
+#include "hnode_asdl.h"
 using hnode_asdl::hnode__Record;
 using hnode_asdl::hnode__Array;
 using hnode_asdl::hnode__External;
 using hnode_asdl::hnode__Leaf;
 using hnode_asdl::field;
 using hnode_asdl::color_e;
+
+// TODO: Generate this asdl/runtime.h header and include it?
+namespace runtime {  // declare
+hnode_asdl::hnode__Record* NewRecord(Str* node_type);
+hnode_asdl::hnode__Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color);
+
+}  // declare namespace runtime
 """)
 
-    f.write("""\
+        f.write("""
+#include "%s.h"
+
 namespace %s {
 
+""" % (ns, ns))
+
+        v3 = gen_cpp.MethodDefVisitor(f, type_lookup,
+                                      pretty_print_methods=pretty_print_methods)
+        v3.VisitModule(schema_ast)
+
+        f.write("""
+}  // namespace %s
 """ % ns)
-
-    v = gen_cpp.ForwardDeclareVisitor(f)
-    v.VisitModule(schema_ast)
-
-    v2 = gen_cpp.ClassDefVisitor(f, type_lookup,
-                                 pretty_print_methods=pretty_print_methods)
-    v2.VisitModule(schema_ast)
-
-    f.write('}  // namespace %s\n' % ns)
-
-    f.write('\n')
-    f.write('#endif  // %s\n' % guard)
 
   elif action == 'mypy':  # Generated typed MyPy code
     with open(schema_path) as f:

@@ -131,17 +131,23 @@ def main(argv):
 
     schema_ast = _CreateModule(ID_SPEC, ids)
 
-    f = sys.stdout
-    f.write('namespace id_kind_asdl {\n\n')
+    out_prefix = argv[2]
 
-    v = gen_cpp.ClassDefVisitor(f, {}, e_suffix=False)
-    v.VisitModule(schema_ast)
+    with open(out_prefix + '.h', 'w') as f:
+      f.write('namespace id_kind_asdl {\n\n')
 
-    f.write('}  // namespace id_kind_asdl\n')
+      v = gen_cpp.ClassDefVisitor(f, {}, e_suffix=False)
+      v.VisitModule(schema_ast)
 
-    # TODO: ID_INSTANCES and KIND_INSTANCES?
-    # Or those should be plain numbers?
-    # How do we print them then?
+      f.write('}  // namespace id_kind_asdl\n')
+
+    with open(out_prefix + '.cc', 'w') as f:
+      f.write('namespace id_kind_asdl {\n\n')
+
+      v = gen_cpp.MethodDefVisitor(f, {}, e_suffix=False)
+      v.VisitModule(schema_ast)
+
+      f.write('}  // namespace id_kind_asdl\n')
 
   elif action == 'mypy':
     from asdl import gen_python

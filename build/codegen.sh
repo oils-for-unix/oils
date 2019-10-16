@@ -76,7 +76,7 @@ id-mypy-gen() {
 }
 
 id-cpp-gen() {
-  core/id_kind_gen.py cpp > _devbuild/gen-cpp/id_kind_asdl.h
+  core/id_kind_gen.py cpp _devbuild/gen-cpp/id_kind_asdl
 }
 
 lexer-gen() { frontend/lexer_gen.py "$@"; }
