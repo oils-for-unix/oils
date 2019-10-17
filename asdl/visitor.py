@@ -89,8 +89,9 @@ def _ReflowLines(s, depth):
     if i == -1 and 'GeneratorExp' in cur:
       i = size + 3
     if i == -1:
-      print("Warning: No space to reflow line (size=%d, depth=%d, cur=%r): %r"
-            % (size, depth, cur, s), file=sys.stderr)
+      if 0:
+        print("Warning: No space to reflow line (size=%d, depth=%d, cur=%r): %r"
+              % (size, depth, cur, s), file=sys.stderr)
       lines.append(padding + cur)
       break
 

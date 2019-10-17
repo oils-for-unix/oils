@@ -26,7 +26,11 @@ echo ${#v}
 for num_bytes in 0 1 2 3 4 5 6 7 8 9 10 11 12 13; do
   s=$(head -c $num_bytes spec/testdata/utf8-chars.txt)
   echo ${#s}
-done
+done 2> $TMP/err.txt
+
+grep 'warning:' $TMP/err.txt
+true  # exit 0
+
 ## STDOUT:
 0
 1
@@ -42,14 +46,12 @@ done
 -1
 -1
 7
-## END
-## STDERR:
-[??? no location ???] warning: Incomplete UTF-8 character
-[??? no location ???] warning: Incomplete UTF-8 character
-[??? no location ???] warning: Incomplete UTF-8 character
-[??? no location ???] warning: Incomplete UTF-8 character
-[??? no location ???] warning: Incomplete UTF-8 character
-[??? no location ???] warning: Incomplete UTF-8 character
+[ stdin ]:3: warning: Incomplete UTF-8 character
+[ stdin ]:3: warning: Incomplete UTF-8 character
+[ stdin ]:3: warning: Incomplete UTF-8 character
+[ stdin ]:3: warning: Incomplete UTF-8 character
+[ stdin ]:3: warning: Incomplete UTF-8 character
+[ stdin ]:3: warning: Incomplete UTF-8 character
 ## END
 # zsh behavior actually matches bash!
 ## BUG bash/zsh stderr-json: ""
@@ -91,7 +93,11 @@ done
 for num_bytes in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14; do
   s=$(head -c $num_bytes spec/testdata/utf8-chars.txt)$(echo -e "\xFF")
   echo ${#s}
-done
+done 2> $TMP/err.txt
+
+grep 'warning:' $TMP/err.txt
+true
+
 ## STDOUT:
 -1
 -1
@@ -108,23 +114,21 @@ done
 -1
 -1
 -1
-## END
-## STDERR:
-[??? no location ???] warning: Invalid start of UTF-8 character
-[??? no location ???] warning: Invalid start of UTF-8 character
-[??? no location ???] warning: Invalid start of UTF-8 character
-[??? no location ???] warning: Invalid UTF-8 continuation byte
-[??? no location ???] warning: Invalid start of UTF-8 character
-[??? no location ???] warning: Invalid start of UTF-8 character
-[??? no location ???] warning: Invalid UTF-8 continuation byte
-[??? no location ???] warning: Invalid UTF-8 continuation byte
-[??? no location ???] warning: Invalid start of UTF-8 character
-[??? no location ???] warning: Invalid start of UTF-8 character
-[??? no location ???] warning: Invalid UTF-8 continuation byte
-[??? no location ???] warning: Invalid UTF-8 continuation byte
-[??? no location ???] warning: Invalid UTF-8 continuation byte
-[??? no location ???] warning: Invalid start of UTF-8 character
-[??? no location ???] warning: Invalid start of UTF-8 character
+[ stdin ]:3: warning: Invalid start of UTF-8 character
+[ stdin ]:3: warning: Invalid start of UTF-8 character
+[ stdin ]:3: warning: Invalid start of UTF-8 character
+[ stdin ]:3: warning: Invalid UTF-8 continuation byte
+[ stdin ]:3: warning: Invalid start of UTF-8 character
+[ stdin ]:3: warning: Invalid start of UTF-8 character
+[ stdin ]:3: warning: Invalid UTF-8 continuation byte
+[ stdin ]:3: warning: Invalid UTF-8 continuation byte
+[ stdin ]:3: warning: Invalid start of UTF-8 character
+[ stdin ]:3: warning: Invalid start of UTF-8 character
+[ stdin ]:3: warning: Invalid UTF-8 continuation byte
+[ stdin ]:3: warning: Invalid UTF-8 continuation byte
+[ stdin ]:3: warning: Invalid UTF-8 continuation byte
+[ stdin ]:3: warning: Invalid start of UTF-8 character
+[ stdin ]:3: warning: Invalid start of UTF-8 character
 ## END
 ## BUG bash/zsh stderr-json: ""
 ## BUG bash/zsh STDOUT:

@@ -74,10 +74,16 @@ def _GetInnerCppType(type_lookup, field):
 
   cpp_type = _BUILTINS.get(type_name)
   if cpp_type is not None:
-    if field.opt:
-      return '%s*' % cpp_type  # e.g. Id_t*
-    else:
-      return cpp_type
+    # We don't allow int? or Id? now.  Just reserve a Id.Unknown_Tok or -1.
+    if field.opt and not cpp_type.endswith('*'):
+      # e.g. Id_t*
+      # TODO: Use Id.Unknown_Tok for id?
+      # - use runtime.NO_STEP for int? step.  That could be ZERO?
+      # - although 5..6..0 is allowed.  Probabl -MAXINT
+      # Need to make sure int parsing doesn't overflow.
+      #raise AssertionError(field)
+      print('field %s' % field, file=sys.stderr)
+    return cpp_type
 
   typ = type_lookup[type_name]
   if isinstance(typ, meta.SumType):
@@ -161,9 +167,11 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     # TODO: DISALLOW_COPY_AND_ASSIGN on this class and others?
 
     # This is the base class.
-    Emit("class %(sum_name)s_t {")
+    Emit("class %(sum_name)s_t : public Obj {")
     Emit(" public:")
-    Emit("  %s_t(%s_e tag) : tag(tag) {" % (sum_name, sum_name))
+    # default constructor (needed because of multiple inheritance)
+    Emit("  %s_t() {}" % sum_name)
+    Emit("  %s_t(uint16_t tag) : Obj(tag) {" % sum_name)
     Emit("  }")
     Emit("  %s_e tag;" % sum_name)
 
@@ -198,11 +206,12 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     params = []
     inits = []
 
-    # TODO: Remove tag from sum type and put it in each variant.  They can't be
-    # both initialized.  And you might need to get rid of 'enum class' as a
-    # result too.
     if tag:
-      inits.append('%s(%s)' % (base_classes[0], tag))
+      # Note that Obj has the tag, not the sum type, because it would cause the
+      # diamond problem with multiple inheritance.
+      # TODO: We could just set it manually?  Don't use initializer list,
+      # because first class is arbitrary?
+      inits.append('%s(static_cast<uint16_t>(%s))' % (base_classes[0], tag))
     for f in desc.fields:
       params.append('%s %s' % (self._GetCppType(f), f.name))
       inits.append('%s(%s)' % (f.name, f.name))
@@ -241,7 +250,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       bases = self._product_bases[name]
       if not bases:
         bases = ['Obj']
-      self._GenClass(desc, attributes, name, bases, depth, tag_num)
+      self._GenClass(desc, attributes, name, bases, depth, tag=tag_num)
 
 
 class MethodDefVisitor(visitor.AsdlVisitor):
@@ -256,10 +265,10 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     self.e_suffix = e_suffix
     self.pretty_print_methods = pretty_print_methods
 
-  def _CodeSnippet(self, abbrev, desc, var_name):
+  def _CodeSnippet(self, abbrev, field, desc, var_name):
     none_guard = False
     if isinstance(desc, meta.BoolType):
-      code_str = "new hnode__Leaf(%s ? 'T' : 'F', color_e::OtherConst)" % var_name
+      code_str = "new hnode__Leaf(%s ? runtime::TRUE_STR : runtime::FALSE_STR, color_e::OtherConst)" % var_name
 
     elif isinstance(desc, meta.IntType):
       code_str = 'new hnode__Leaf(str(%s), color_e::OtherConst)' % var_name
@@ -278,7 +287,8 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
     elif isinstance(desc, meta.SumType):
       if desc.is_simple:
-        code_str = 'new hnode__Leaf(%s.name, color_e::TypeName)' % var_name
+        code_str = 'new hnode__Leaf(new Str(%s_str(%s)), color_e::TypeName)' % (
+            field.type, var_name)
         none_guard = True  # otherwise MyPy complains about foo.name
       else:
         code_str = '%s->%s()' % (var_name, abbrev)
@@ -308,7 +318,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       self.Emit('    for (ListIter<%s>it(this->%s); !it.Done(); it.Next()) {'
                 % (item_type, field.name))
       self.Emit('      %s %s = it.Value();' % (item_type, iter_name))
-      child_code_str, _ = self._CodeSnippet(abbrev, desc, iter_name)
+      child_code_str, _ = self._CodeSnippet(abbrev, field, desc, iter_name)
       self.Emit('      %s->children->append(%s);' % (out_val_name, child_code_str))
       self.Emit('    }')
       self.Emit('    L->append(new field(new Str("%s"), %s));' % (field.name, out_val_name))
@@ -316,7 +326,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
     elif field.opt:
       self.Emit('  if (this->%s) {  // MaybeType' % field.name)
-      child_code_str, _ = self._CodeSnippet(abbrev, desc,
+      child_code_str, _ = self._CodeSnippet(abbrev, field, desc,
                                             'this->%s' % field.name)
       self.Emit('    hnode_t* %s = %s;' % (out_val_name, child_code_str))
       self.Emit('    L->append(new field(new Str("%s"), %s));' % (field.name, out_val_name))
@@ -324,7 +334,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
     else:
       var_name = 'this->%s' % field.name
-      code_str, obj_none_guard = self._CodeSnippet(abbrev, desc, var_name)
+      code_str, obj_none_guard = self._CodeSnippet(abbrev, field, desc, var_name)
 
       depth = self.current_depth
       if obj_none_guard:  # to satisfy MyPy type system

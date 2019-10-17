@@ -416,12 +416,14 @@ class _WordEvaluator(object):
     else:
       raise AssertionError
 
-  def _ApplyPrefixOp(self, val, op_id, token):
+  def _ApplyPrefixOp(self, val, prefix_op, token):
     """
     Returns:
       value
     """
     assert val.tag != value_e.Undef
+
+    op_id = prefix_op.id
 
     if op_id == Id.VSub_Pound:  # LENGTH
       if val.tag == value_e.Str:
@@ -434,7 +436,11 @@ class _WordEvaluator(object):
         try:
           length = string_ops.CountUtf8Chars(val.s)
         except util.InvalidUtf8 as e:
-          # TODO: Add location info from 'part'?  Only the caller has it.
+          # Add this hear so we don't have to add it so far down the stack.
+          # TODO: It's better to show BOTH this CODE an the actual DATA
+          # somehow.
+          e.span_id = token.span_id
+
           if self.exec_opts.strict_word_eval:
             raise
           else:
@@ -717,7 +723,7 @@ class _WordEvaluator(object):
       val = self._EmptyStrOrError(val)  # maybe error
 
       # TODO: maybe_decay_array for "${!assoc[@]}" vs. ${!assoc[*]}
-      val = self._ApplyPrefixOp(val, part.prefix_op, token=part.token)
+      val = self._ApplyPrefixOp(val, part.prefix_op, part.token)
       # NOTE: When applying the length operator, we can't have a test or
       # suffix afterward.  And we don't want to decay the array
 

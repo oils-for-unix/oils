@@ -63,6 +63,11 @@ class AssertionError {
 
 class Obj {
  public:
+  // default constructor for multiple inheritance
+  Obj() : tag(0) {
+  }
+  Obj(uint16_t tag) : tag(tag) {
+  }
   uint16_t tag;
 };
 

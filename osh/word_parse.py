@@ -51,11 +51,11 @@ from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
-    token, double_quoted, single_quoted, simple_var_sub, braced_var_sub,
-    command_sub, sh_array_literal,
+    token, speck,
+    double_quoted, single_quoted, simple_var_sub, braced_var_sub, command_sub,
+    sh_array_literal,
 
-    arith_expr_t,
-    bracket_op, bracket_op_t,
+    arith_expr_t, bracket_op, bracket_op_t,
 
     suffix_op, suffix_op_t, suffix_op__Slice, suffix_op__PatSub,
 
@@ -456,7 +456,7 @@ class WordParser(object):
           p_die("Expected } after length expression, got %r",
                 self.cur_token.val, token=self.cur_token)
 
-        part.prefix_op = Id.VSub_Pound  # length
+        part.prefix_op = speck(ty, self.cur_token.span_id)
 
       else:  # not a prefix, '#' is the variable
         part = self._ParseVarExpr(arg_lex_mode)
@@ -473,7 +473,7 @@ class WordParser(object):
         self._Next(lex_mode_e.VSub_1)
         part = self._ParseVarExpr(arg_lex_mode)
 
-        part.prefix_op = Id.VSub_Bang
+        part.prefix_op = speck(ty, self.cur_token.span_id)
 
       else:  # not a prefix, '!' is the variable
         part = self._ParseVarExpr(arg_lex_mode)

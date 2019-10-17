@@ -138,8 +138,8 @@ module syntax
 
   -- TODO: Add    ${x %.3f}   ${x|html}
   braced_var_sub = (
-      token token,
-      id? prefix_op,  -- prefix # or ! operators
+      token token,  -- the name
+      speck? prefix_op,  -- prefix # or ! operators
       bracket_op? bracket_op,
       suffix_op? suffix_op
   ) attributes (int* spids)

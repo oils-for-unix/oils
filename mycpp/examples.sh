@@ -53,6 +53,8 @@ namespace hnode_asdl {
 namespace runtime {  // declare
 hnode_asdl::hnode__Record* NewRecord(Str* node_type);
 hnode_asdl::hnode__Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color);
+Str* TRUE_STR;
+Str* FALSE_STR;
 
 }  // declare namespace runtime
 '

@@ -81,7 +81,7 @@ def _GetSuffixOp(test, w):
 def _GetPrefixOp(test, w):
   """Get a single transform op"""
   test.assertEqual(1, len(w.parts))
-  return w.parts[0].prefix_op
+  return w.parts[0].prefix_op.id
 
 
 def _GetVarSub(test, w):
