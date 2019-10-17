@@ -13,6 +13,7 @@
 #include <vector>
 #include <initializer_list>
 #include <climits>  // CHAR_BIT
+#include <cstdint>
 
 class Str;
 template <class T> class List;
@@ -56,6 +57,14 @@ class AssertionError {
 //
 // Data Types
 //
+
+// every ASDL type inherits from this, and provides tag() to
+// static_cast<>(this->tag) to its own enum?
+
+class Obj {
+ public:
+  uint16_t tag;
+};
 
 class Str {
  public:

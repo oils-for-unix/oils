@@ -26,6 +26,8 @@ from __future__ import print_function
 
 import sys
 
+from collections import defaultdict
+
 from asdl import meta
 from asdl import visitor
 
@@ -67,6 +69,28 @@ class ForwardDeclareVisitor(visitor.AsdlVisitor):
     self.Emit("", 0)  # blank line
 
 
+def _GetInnerCppType(type_lookup, field):
+  type_name = field.type
+
+  cpp_type = _BUILTINS.get(type_name)
+  if cpp_type is not None:
+    if field.opt:
+      return '%s*' % cpp_type  # e.g. Id_t*
+    else:
+      return cpp_type
+
+  typ = type_lookup[type_name]
+  if isinstance(typ, meta.SumType):
+    if typ.is_simple:
+      # Use the enum instead of the class.
+      return "%s_e" % type_name
+    else:
+      # Everything is a pointer for now.  No references.
+      return "%s_t*" % type_name
+
+  return '%s*' % type_name
+
+
 class ClassDefVisitor(visitor.AsdlVisitor):
   """Generate C++ declarations and type-safe enums."""
 
@@ -76,23 +100,11 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     self.e_suffix = e_suffix
     self.pretty_print_methods = pretty_print_methods
 
-  def _GetInnerCppType(self, field):
-    type_name = field.type
+    self._shared_type_tags = {}
+    self._product_counter = 1000  # start it high
 
-    cpp_type = _BUILTINS.get(type_name)
-    if cpp_type is not None:
-      return cpp_type
-
-    typ = self.type_lookup[type_name]
-    if isinstance(typ, meta.SumType):
-      if typ.is_simple:
-        # Use the enum instead of the class.
-        return "%s_e" % type_name
-      else:
-        # Everything is a pointer for now.  No references.
-        return "%s_t*" % type_name
-
-    return '%s*' % type_name
+    self._products = []
+    self._product_bases = defaultdict(list)
 
   def _GetCppType(self, field):
     """Return a string for the C++ name of the type."""
@@ -100,7 +112,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     # TODO: The once instance of 'dict' needs an overhaul!
     # Right now it's untyped in ASDL.
     # I guess is should be Dict[str, str] for the associative array contents?
-    c_type = self._GetInnerCppType(field)
+    c_type = _GetInnerCppType(self.type_lookup, field)
     if field.seq:
       return 'List<%s>*' % c_type
     else:
@@ -108,9 +120,20 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
   def _EmitEnum(self, sum, sum_name, depth):
     enum = []
-    for i in xrange(len(sum.types)):
-      variant = sum.types[i]
-      tag_num = i + 1
+    for i, variant in enumerate(sum.types):
+      if variant.shared_type:  # Copied from gen_python.py
+        tag_num = self._shared_type_tags[variant.shared_type]
+        # e.g. double_quoted may have base types expr_t, word_part_t
+        base_class = sum_name + '_t'
+        bases = self._product_bases[variant.shared_type]
+        if base_class in bases:
+          raise RuntimeError(
+              "Two tags in sum %r refer to product type %r" %
+              (sum_name, variant.shared_type))
+        else:
+          bases.append(base_class)
+      else:
+        tag_num = i + 1
       enum.append("%s = %d" % (variant.name, tag_num))  # zero is reserved
 
     enum_name = '%s_e' % sum_name if self.e_suffix else sum_name
@@ -159,14 +182,15 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         super_name = '%s_t' % sum_name
         tag = '%s_e::%s' % (sum_name, variant.name)
         class_name = '%s__%s' % (sum_name, variant.name)
-        self._GenClass(variant, sum.attributes, class_name, super_name,
+        self._GenClass(variant, sum.attributes, class_name, [super_name],
                        depth, tag=tag)
 
-  def _GenClass(self, desc, attributes, class_name, super_name, depth,
+  def _GenClass(self, desc, attributes, class_name, base_classes, depth,
                 tag=None):
     """For Product and Constructor."""
-    if super_name:
-      self.Emit("class %s : public %s {" % (class_name, super_name), depth)
+    if base_classes:
+      bases = ', '.join('public %s' % b for b in base_classes)
+      self.Emit("class %s : %s {" % (class_name, bases), depth)
     else:
       self.Emit("class %s {" % class_name, depth)
     self.Emit(" public:", depth)
@@ -174,8 +198,11 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     params = []
     inits = []
 
+    # TODO: Remove tag from sum type and put it in each variant.  They can't be
+    # both initialized.  And you might need to get rid of 'enum class' as a
+    # result too.
     if tag:
-      inits.append('%s(%s)' % (super_name, tag))
+      inits.append('%s(%s)' % (base_classes[0], tag))
     for f in desc.fields:
       params.append('%s %s' % (self._GetCppType(f), f.name))
       inits.append('%s(%s)' % (f.name, f.name))
@@ -198,7 +225,23 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     self.Emit("", depth)
 
   def VisitProduct(self, product, name, depth):
-    self._GenClass(product, product.attributes, name, None, depth)
+    self._shared_type_tags[name] = self._product_counter
+    # Create a tuple of _GenClass args to create LAST.  They may inherit from
+    # sum types that have yet to be defined.
+    self._products.append(
+        (product, product.attributes, name, depth, self._product_counter)
+    )
+    self._product_counter += 1
+
+  def EmitFooter(self):
+    # Now generate all the product types we deferred.
+    for args in self._products:
+      desc, attributes, name, depth, tag_num = args
+      # Figure out base classes AFTERWARD.
+      bases = self._product_bases[name]
+      if not bases:
+        bases = ['Obj']
+      self._GenClass(desc, attributes, name, bases, depth, tag_num)
 
 
 class MethodDefVisitor(visitor.AsdlVisitor):
@@ -260,10 +303,14 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       iter_name = 'i%d' % counter
 
       self.Emit('  if (this->%s) {  // ArrayType' % field.name)
-      self.Emit('    hnode__Array* %s = hnode__Array();' % out_val_name)
-      self.Emit('    for %s in this->%s:' % (iter_name, field.name))
+      self.Emit('    hnode__Array* %s = new hnode__Array(new List<hnode_t*>());' % out_val_name)
+      item_type = _GetInnerCppType(self.type_lookup, field)
+      self.Emit('    for (ListIter<%s>it(this->%s); !it.Done(); it.Next()) {'
+                % (item_type, field.name))
+      self.Emit('      %s %s = it.Value();' % (item_type, iter_name))
       child_code_str, _ = self._CodeSnippet(abbrev, desc, iter_name)
-      self.Emit('      %s->children->append(%s)' % (out_val_name, child_code_str))
+      self.Emit('      %s->children->append(%s);' % (out_val_name, child_code_str))
+      self.Emit('    }')
       self.Emit('    L->append(new field(new Str("%s"), %s));' % (field.name, out_val_name))
       self.Emit('  }')
 
