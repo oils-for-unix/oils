@@ -173,7 +173,7 @@ module syntax
   | BracedTuple(word* words)
     -- {1..10} or {-5..10..2} or {01..10} (leading zeros matter)
     -- {a..f} or {a..f..2} or {a..f..-2}
-  | BracedRange(id kind, string start, string end, int? step)
+  | BracedRange(id kind, string start, string end, int step)
     -- note: optional int may need special handling in ASDL
   -- extended globs are parsed statically, unlike globs
   | ExtGlob(token op, word* arms)

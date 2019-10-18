@@ -31,6 +31,11 @@ from frontend.match import BRACE_RANGE_LEXER
 from typing import List, Optional, Iterator, Tuple
 
 
+# Step has to be strictly positive or negative, so we can use 0 for 'not
+# specified'.
+NO_STEP = 0
+
+
 # The brace language has no syntax errors!  But we still need to abort the
 # parse.
 class _NotARange(Exception):
@@ -73,7 +78,10 @@ class _RangeParser(object):
   def _ParseStep(self):
     # type: () -> int
     self._Next()  # past Dots
-    return int(self._Eat(Id.Range_Int))
+    step = int(self._Eat(Id.Range_Int))
+    if step == 0:
+      p_die("Step can't be 0", span_id=self.span_id)
+    return step
 
   def _ParseRange(self, range_kind):
     # type: (Id_t) -> word_part__BracedRange
@@ -87,6 +95,8 @@ class _RangeParser(object):
 
     if self.token_type == Id.Range_Dots:
       part.step = self._ParseStep()
+    else:
+      part.step = NO_STEP
 
     return part
 
@@ -100,36 +110,40 @@ class _RangeParser(object):
       start = int(part.start)
       end = int(part.end)
       if start < end:
-        if part.step == runtime.NO_SPID:
+        if part.step == NO_STEP:
           part.step = 1
         if part.step <= 0:  # 0 step is not allowed
           p_die('Invalid step %d for ascending integer range', part.step,
                 span_id=self.span_id)
       elif start > end:
-        if part.step == runtime.NO_SPID:
+        if part.step == NO_STEP:
           part.step = -1
         if part.step >= 0:  # 0 step is not allowed
           p_die('Invalid step %d for descending integer range', part.step,
                 span_id=self.span_id)
-      # else: singleton range is dumb but I suppose consistent
+      else:
+        # {1..1}  singleton range is dumb but I suppose consistent
+        part.step = 1
 
     elif self.token_type == Id.Range_Char:
       part = self._ParseRange(self.token_type)
 
       # Check step validity and fill in a default
       if part.start < part.end:
-        if part.step == runtime.NO_SPID:
+        if part.step == NO_STEP:
           part.step = 1
         if part.step <= 0:  # 0 step is not allowed
           p_die('Invalid step %d for ascending character range', part.step,
                 span_id=self.span_id)
       elif part.start > part.end:
-        if part.step == runtime.NO_SPID:
+        if part.step == NO_STEP:
           part.step = -1
         if part.step >= 0:  # 0 step is not allowed
           p_die('Invalid step %d for descending character range', part.step,
                 span_id=self.span_id)
-      # else: singleton range is dumb but I suppose consistent
+      else:
+        # {a..a}  singleton range is dumb but I suppose consistent
+        part.step = 1
 
       # Check matching cases
       upper1 = part.start.isupper()

@@ -208,6 +208,26 @@ echo -{1..8..-3}-
 ## N-I mksh stdout: -{1..8..-3}-
 ## N-I mksh status: 0
 
+#### regression: -1 step disallowed
+echo -{1..4..-1}-
+## stdout-json: ""
+## status: 2
+## BUG bash stdout: -1- -2- -3- -4-
+## BUG zsh stdout: -4- -3- -2- -1-
+## BUG bash/zsh status: 0
+## N-I mksh stdout: -{1..4..-1}-
+## N-I mksh status: 0
+
+#### regression: 0 step disallowed
+echo -{1..4..0}-
+## stdout-json: ""
+## status: 2
+## BUG bash stdout: -1- -2- -3- -4-
+## BUG zsh stdout: -1..4..0-
+## BUG bash/zsh status: 0
+## N-I mksh stdout: -{1..4..0}-
+## N-I mksh status: 0
+
 #### Descending number range expansion with positive step is invalid
 echo -{8..1..3}-
 ## stdout-json: ""
@@ -419,3 +439,4 @@ echo {z..3}
 ## BUG zsh STDOUT:
 BUG
 ## END
+
