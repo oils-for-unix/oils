@@ -53,8 +53,8 @@ namespace hnode_asdl {
 namespace runtime {  // declare
 hnode_asdl::hnode__Record* NewRecord(Str* node_type);
 hnode_asdl::hnode__Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color);
-Str* TRUE_STR;
-Str* FALSE_STR;
+extern Str* TRUE_STR;
+extern Str* FALSE_STR;
 
 }  // declare namespace runtime
 '
@@ -216,6 +216,7 @@ Str* repr(syntax_asdl::source_t* obj) {
 }
 '
   translate-ordered alloc_main "${HNODE_HEADER}$snippet" \
+    $REPO_ROOT/asdl/runtime.py \
     $REPO_ROOT/core/alloc.py \
     examples/alloc_main.py
 
@@ -223,5 +224,7 @@ Str* repr(syntax_asdl::source_t* obj) {
   asdl-gen cpp ../frontend/syntax.asdl $out
 
   compile-with-asdl alloc_main \
-    _gen/syntax_asdl.cc ../_devbuild/gen-cpp/hnode_asdl.cc
+    _gen/syntax_asdl.cc \
+    ../_devbuild/gen-cpp/hnode_asdl.cc \
+    ../_devbuild/gen-cpp/id_kind_asdl.cc
 } 

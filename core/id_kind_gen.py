@@ -142,6 +142,7 @@ def main(argv):
       f.write('}  // namespace id_kind_asdl\n')
 
     with open(out_prefix + '.cc', 'w') as f:
+      f.write('#include "id_kind_asdl.h"\n')
       f.write('namespace id_kind_asdl {\n\n')
 
       v = gen_cpp.MethodDefVisitor(f, {}, e_suffix=False)
