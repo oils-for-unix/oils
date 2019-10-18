@@ -32,7 +32,7 @@ def run_tests():
   log('line number = %d', n)
 
   src = arena.GetLineSource(1)
-  if src.tag == source_e.MainFile:
+  if src.tag_() == source_e.MainFile:
     src = cast(source__MainFile, src)
     log('source = %s', src.path)
 

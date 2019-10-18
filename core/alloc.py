@@ -96,12 +96,13 @@ class Arena(object):
     src = self.line_srcs[line_id]
 
     # TODO: Make it look nicer, like core/ui.py.
-    if src.tag == source_e.CFlag:
+    tag = src.tag_()
+    if tag == source_e.CFlag:
       return '-c flag'
-    if src.tag == source_e.MainFile:
+    if tag == source_e.MainFile:
       src = cast(source__MainFile, src)
       return src.path
-    if src.tag == source_e.SourcedFile:
+    if tag == source_e.SourcedFile:
       src = cast(source__SourcedFile, src)
       return src.path
     return repr(src)

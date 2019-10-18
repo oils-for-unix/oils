@@ -331,7 +331,8 @@ class _PrettyPrinter(object):
 
         ind1 = ' ' * (indent+INDENT)
         UP_val = val  # for mycpp
-        if val.tag == hnode_e.Array:
+        tag = val.tag_()
+        if tag == hnode_e.Array:
           val = cast(hnode__Array, UP_val)
 
           name_str = '%s%s: [' % (ind1, name)
@@ -386,24 +387,25 @@ class _PrettyPrinter(object):
       return
 
     UP_node = node  # for mycpp
-    if node.tag == hnode_e.Leaf:
+    tag = node.tag_()
+    if tag == hnode_e.Leaf:
       node = cast(hnode__Leaf, UP_node)
       f.PushColor(node.color)
       f.write(pretty.Str(node.s))
       f.PopColor()
 
-    elif node.tag == hnode_e.External:
+    elif tag == hnode_e.External:
       node = cast(hnode__External, UP_node)
       f.PushColor(color_e.External)
       f.write(repr(node.obj))
       f.PopColor()
 
-    elif node.tag == hnode_e.Record:
+    elif tag == hnode_e.Record:
       node = cast(hnode__Record, UP_node)
       self._PrintRecord(node, f, indent)
 
     else:
-      raise AssertionError(hnode_str(node.tag))
+      raise AssertionError(hnode_str(tag))
 
 
 def _TrySingleLineObj(node, f, max_chars):
@@ -451,20 +453,21 @@ def _TrySingleLine(node, f, max_chars):
       If False, you can't use the value of f.
   """
   UP_node = node  # for mycpp
-  if node.tag == hnode_e.Leaf:
+  tag = node.tag_()
+  if tag == hnode_e.Leaf:
     node = cast(hnode__Leaf, UP_node)
     f.PushColor(node.color)
     f.write(pretty.Str(node.s))
     f.PopColor()
 
-  elif node.tag == hnode_e.External:
+  elif tag == hnode_e.External:
     node = cast(hnode__External, UP_node)
 
     f.PushColor(color_e.External)
     f.write(repr(node.obj))
     f.PopColor()
 
-  elif node.tag == hnode_e.Array:
+  elif tag == hnode_e.Array:
     node = cast(hnode__Array, UP_node)
 
     # Can we fit the WHOLE array on the line?
@@ -476,13 +479,13 @@ def _TrySingleLine(node, f, max_chars):
         return False
     f.write(']')
 
-  elif node.tag == hnode_e.Record:
+  elif tag == hnode_e.Record:
     node = cast(hnode__Record, UP_node)
 
     return _TrySingleLineObj(node, f, max_chars)
 
   else:
-    raise AssertionError(hnode_str(node.tag))
+    raise AssertionError(hnode_str(tag))
 
   # Take into account the last char.
   num_chars_so_far = f.NumChars()

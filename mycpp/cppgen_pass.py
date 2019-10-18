@@ -825,8 +825,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           else:
             subtype_name = type_expr.name
 
+          # Hack for now
+          if subtype_name != 'int':
+            subtype_name += '*'
+
           self.write_ind(
-              '%s* %s = static_cast<%s*>(', subtype_name, lval.name,
+              '%s %s = static_cast<%s>(', subtype_name, lval.name,
               subtype_name)
           self.accept(call.args[1])  # variable being casted
           self.write(');\n')
@@ -1306,7 +1310,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             #   from _devbuild.gen.id_kind_asdl import Id
             # -> using id_kind_asdl::Id.
             mod_name = o.id.split('.')[-1]
-            self.write_ind('using %s::%s;\n', mod_name, name)
+
+            # HACK to tell strong enums apart from tag namespaces.
+            # TODO: Use a _tag suffix?
+            if name in ('hnode_e', 'source_e', 'assign_op_e'):
+              self.write_ind(
+                  'namespace %s = %s::%s;\n', name, mod_name, name)
+            else:
+              self.write_ind('using %s::%s;\n', mod_name, name)
           else:
             #    from asdl import format as fmt
             # -> namespace fmt = format;

@@ -219,6 +219,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       self.Emit('    self.%s = %s%s' % (f.name, f.name, default_str))
 
     if not self.pretty_print_methods:
+      self.Emit('')
       return
 
     pretty_cls_name = class_name.replace('__', '.')  # used below
@@ -329,6 +330,12 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     self.Emit('class %s_t(pybase.CompoundObj):' % sum_name, depth)
     self.Indent()
     depth = self.current_depth
+
+    # To imitate C++ API
+    self.Emit('def tag_(self):')
+    self.Emit('  # type: () -> int')
+    self.Emit('  return self.tag')
+
     if self.pretty_print_methods:
       # Emit free function to pretty print
       for abbrev in 'PrettyTree', '_AbbreviatedTree', 'AbbreviatedTree':
@@ -346,7 +353,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 	  else:
 	    subtype_name = '%s__%s' % (sum_name, variant.name)
 
-	  self.Emit('if self.tag ==  %s_e.%s:' % (sum_name, variant.name),
+	  self.Emit('if self.tag_() == %s_e.%s:' % (sum_name, variant.name),
 		    depth)
 	  self.Emit('  self = cast(%s, UP_self)' % subtype_name, depth)
 	  self.Emit('  return self.%s()' % abbrev, depth)

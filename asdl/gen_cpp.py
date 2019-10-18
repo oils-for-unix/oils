@@ -124,7 +124,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     else:
       return c_type
 
-  def _EmitEnum(self, sum, sum_name, depth):
+  def _EmitEnum(self, sum, sum_name, depth, strong=False):
     enum = []
     for i, variant in enumerate(sum.types):
       if variant.shared_type:  # Copied from gen_python.py
@@ -140,22 +140,39 @@ class ClassDefVisitor(visitor.AsdlVisitor):
           bases.append(base_class)
       else:
         tag_num = i + 1
-      enum.append("%s = %d" % (variant.name, tag_num))  # zero is reserved
+      enum.append((variant.name, tag_num))  # zero is reserved
 
     enum_name = '%s_e' % sum_name if self.e_suffix else sum_name
-    self.Emit('enum class %s {' % enum_name, depth)
-    self.Emit(', '.join(enum), depth + 1)
-    self.Emit('};', depth)
-    self.Emit('', depth)
 
-    self.Emit('const char* %s_str(%s tag);' % (sum_name, enum_name), depth)
-    self.Emit('', depth)
+    if strong:
+      # Simple sum types can be STRONG since there's no possibility of multiple
+      # inheritance!
+
+      self.Emit('enum class %s {' % enum_name, depth)
+      for name, tag_num in enum:
+        self.Emit('%s = %d,' % (name, tag_num), depth + 1)
+      self.Emit('};', depth)
+
+      # type alias to match Python code
+      self.Emit('typedef %s %s_t;' % (enum_name, sum_name), depth)
+      self.Emit('', depth)
+
+      self.Emit('const char* %s_str(%s tag);' % (sum_name, enum_name), depth)
+      self.Emit('', depth)
+
+    else:
+      self.Emit('namespace %s {' % enum_name, depth)
+      for name, tag_num in enum:
+        self.Emit('const int %s = %d;' % (name, tag_num), depth + 1)
+      self.Emit('};', depth)
+
+      self.Emit('', depth)
+
+      self.Emit('const char* %s_str(int tag);' % sum_name, depth)
+      self.Emit('', depth)
 
   def VisitSimpleSum(self, sum, name, depth):
-    self._EmitEnum(sum, name, depth)
-    # type alias to match Python code
-    enum_name = '%s_e' % name if self.e_suffix else name
-    self.Emit('typedef %s %s_t;' % (enum_name, name), depth)
+    self._EmitEnum(sum, name, depth, strong=True)
 
   def VisitCompoundSum(self, sum, sum_name, depth):
     # This is a sign that Python needs string interpolation!!!
@@ -167,13 +184,15 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     # TODO: DISALLOW_COPY_AND_ASSIGN on this class and others?
 
     # This is the base class.
-    Emit("class %(sum_name)s_t : public Obj {")
-    Emit(" public:")
-    # default constructor (needed because of multiple inheritance)
-    Emit("  %s_t() {}" % sum_name)
-    Emit("  %s_t(uint16_t tag) : Obj(tag) {" % sum_name)
-    Emit("  }")
-    Emit("  %s_e tag;" % sum_name)
+    Emit('class %(sum_name)s_t {')
+    # Can't be constructed directly
+    Emit(' protected:')
+    Emit('  %s_t() {}' % sum_name)
+    Emit(' public:')
+    Emit('  int tag_() {')
+    # There's no inheritance relationship, so we have to reinterpret_cast.
+    Emit('    return reinterpret_cast<Obj*>(this)->tag;')
+    Emit('  }')
 
     if self.pretty_print_methods:
       for abbrev in 'PrettyTree', '_AbbreviatedTree', 'AbbreviatedTree':
@@ -188,13 +207,12 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         pass
       else:
         super_name = '%s_t' % sum_name
-        tag = '%s_e::%s' % (sum_name, variant.name)
+        tag = 'static_cast<uint16_t>(%s_e::%s)' % (sum_name, variant.name)
         class_name = '%s__%s' % (sum_name, variant.name)
         self._GenClass(variant, sum.attributes, class_name, [super_name],
-                       depth, tag=tag)
+                       depth, tag)
 
-  def _GenClass(self, desc, attributes, class_name, base_classes, depth,
-                tag=None):
+  def _GenClass(self, desc, attributes, class_name, base_classes, depth, tag):
     """For Product and Constructor."""
     if base_classes:
       bases = ', '.join('public %s' % b for b in base_classes)
@@ -205,13 +223,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
     params = []
     inits = []
+    # All product types and variants have a tag
+    inits.append('tag(%s)' % tag)
 
-    if tag:
-      # Note that Obj has the tag, not the sum type, because it would cause the
-      # diamond problem with multiple inheritance.
-      # TODO: We could just set it manually?  Don't use initializer list,
-      # because first class is arbitrary?
-      inits.append('%s(static_cast<uint16_t>(%s))' % (base_classes[0], tag))
     for f in desc.fields:
       params.append('%s %s' % (self._GetCppType(f), f.name))
       inits.append('%s(%s)' % (f.name, f.name))
@@ -221,11 +235,11 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         (class_name, ', '.join(params), ', '.join(inits)), depth)
     self.Emit("  }")
 
+    self.Emit('  uint16_t tag;')
     all_fields = desc.fields + attributes
     for f in all_fields:
       self.Emit("  %s %s;" % (self._GetCppType(f), f.name))
 
-    # TODO: Declare then define!!!
     if self.pretty_print_methods:
       for abbrev in 'PrettyTree', '_AbbreviatedTree', 'AbbreviatedTree':
         self.Emit('  hnode_t* %s();' % abbrev, depth)
@@ -250,7 +264,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       bases = self._product_bases[name]
       if not bases:
         bases = ['Obj']
-      self._GenClass(desc, attributes, name, bases, depth, tag=tag_num)
+      self._GenClass(desc, attributes, name, bases, depth, tag_num)
 
 
 class MethodDefVisitor(visitor.AsdlVisitor):
@@ -404,9 +418,14 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       self.Emit('  return _AbbreviatedTree();')
     self.Emit('}')
 
-  def _EmitStrFunction(self, sum, sum_name, depth):
+  def _EmitStrFunction(self, sum, sum_name, depth, strong=False):
     enum_name = '%s_e' % sum_name if self.e_suffix else sum_name
-    self.Emit('const char* %s_str(%s tag) {' % (sum_name, enum_name), depth)
+
+    if strong:
+      self.Emit('const char* %s_str(%s tag) {' % (sum_name, enum_name), depth)
+    else:
+      self.Emit('const char* %s_str(int tag) {' % sum_name, depth)
+
     self.Emit('  switch (tag) {', depth)
     for variant in sum.types:
       self.Emit('case %s::%s:' % (enum_name, variant.name), depth + 1)
@@ -422,7 +441,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     self.Emit('}', depth)
 
   def VisitSimpleSum(self, sum, name, depth):
-    self._EmitStrFunction(sum, name, depth)
+    self._EmitStrFunction(sum, name, depth, strong=True)
 
   def VisitCompoundSum(self, sum, sum_name, depth):
     self._EmitStrFunction(sum, sum_name, depth)
@@ -444,7 +463,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     for abbrev in 'PrettyTree', '_AbbreviatedTree', 'AbbreviatedTree':
       self.Emit('')
       self.Emit('hnode_t* %s_t::%s() {' % (sum_name, abbrev))
-      self.Emit('  switch (this->tag) {', depth)
+      self.Emit('  switch (this->tag_()) {', depth)
 
       for variant in sum.types:
         if variant.shared_type:
