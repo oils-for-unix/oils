@@ -373,7 +373,8 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     self.Emit('')
     self.Emit('hnode_t* %s::PrettyTree() {' % class_name)
     self.Emit('  hnode__Record* out_node = runtime::NewRecord(new Str("%s"));' % pretty_cls_name)
-    self.Emit('  List<field*>* L = out_node->fields;')
+    if all_fields:
+      self.Emit('  List<field*>* L = out_node->fields;')
 
     # Use the runtime type to be more like asdl/format.py
     for local_id, field in enumerate(all_fields):
@@ -392,7 +393,8 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     self.Emit('')
     self.Emit('hnode_t* %s::_AbbreviatedTree() {' % class_name)
     self.Emit('  hnode__Record* out_node = runtime::NewRecord(new Str("%s"));' % pretty_cls_name)
-    self.Emit('  List<field*>* L = out_node->fields;')
+    if desc.fields:
+      self.Emit('  List<field*>* L = out_node->fields;')
 
     # NO attributes in abbreviated version
     for local_id, field in enumerate(desc.fields):
@@ -435,7 +437,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     # instead?
 
     self.Emit('default:', depth + 1)
-    self.Emit('  return "X";', depth + 1)
+    self.Emit('  assert(0);', depth + 1)
     
     self.Emit('  }', depth)
     self.Emit('}', depth)
@@ -476,6 +478,9 @@ class MethodDefVisitor(visitor.AsdlVisitor):
                   (subtype_name, subtype_name), depth)
         self.Emit('    return obj->%s();' % abbrev, depth)
         self.Emit('  }', depth)
+
+      self.Emit('  default:', depth)
+      self.Emit('    assert(0);', depth)
 
       self.Emit('  }')
       self.Emit('}')

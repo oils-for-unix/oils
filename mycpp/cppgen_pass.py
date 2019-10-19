@@ -1311,9 +1311,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # -> using id_kind_asdl::Id.
             mod_name = o.id.split('.')[-1]
 
-            # HACK to tell strong enums apart from tag namespaces.
-            # TODO: Use a _tag suffix?
-            if name in ('hnode_e', 'source_e', 'assign_op_e'):
+            # Tag numbers/namespaces end with _n.  enum types end with _e.
+            # TODO: rename special cases
+            if name.endswith('_n') or name in (
+                'hnode_e', 'source_e', 'assign_op_e'):
               self.write_ind(
                   'namespace %s = %s::%s;\n', name, mod_name, name)
             else:

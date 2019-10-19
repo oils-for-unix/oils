@@ -93,7 +93,10 @@ namespace %s {
           f.write('using id_kind_asdl::Id_t;  // hack\n')
 
         f.write("""
+#include <assert.h>
+
 #include "hnode_asdl.h"
+
 using hnode_asdl::hnode__Record;
 using hnode_asdl::hnode__Array;
 using hnode_asdl::hnode__External;
@@ -103,6 +106,7 @@ using hnode_asdl::color_e;
 
 // TODO: Generate this asdl/runtime.h header and include it?
 namespace runtime {  // declare
+
 hnode_asdl::hnode__Record* NewRecord(Str* node_type);
 hnode_asdl::hnode__Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color);
 extern Str* TRUE_STR;
