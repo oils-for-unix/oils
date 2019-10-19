@@ -23,7 +23,7 @@ from pgen2 import parse
 
 _ = log
 
-from typing import TYPE_CHECKING, IO, Dict, Tuple, List, cast
+from typing import TYPE_CHECKING, IO, Dict, Tuple, List, cast, Optional
 if TYPE_CHECKING:
   from frontend.lexer import Lexer
   from frontend.parse_lib import ParseContext
@@ -42,14 +42,12 @@ class ParseTreePrinter(object):
 
     ind = '  ' * indent
     # NOTE:
-    # - value is filled in for TOKENS, but it's always None for PRODUCTIONS.
-    # - context is (prefix, (lineno, column)), where lineno is 1-based, and
-    #   'prefix' is a string of whitespace.
-    #   e.g. for 'f(1, 3)', the "3" token has a prefix of ' '.
-    if isinstance(pnode.tok, tuple):
-      v = pnode.tok[0]
-    elif isinstance(pnode.tok, token):
+    # - why isn't 'tok' None for PRODUCTIONS?  There is some redundancy to get
+    #   rid of.
+    if pnode.tok:
+      assert isinstance(pnode.tok, token), pnode.tok
       v = pnode.tok.val
+      #v = repr(pnode.tok)
     else:
       v = '-'
     f.write('%s%d %s %s\n' % (ind, i, self.names[pnode.typ], v))
@@ -149,7 +147,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
 
   mode = lex_mode_e.Expr
   mode_stack = [mode]
-  last_token = None
+  last_token = None  # type: Optional[token]
 
   balance = 0
 

@@ -9,7 +9,7 @@ See Parser/parser.c in the Python distribution for additional info on
 how this parsing engine works.
 """
 
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Optional, Any, List
 
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import token
@@ -31,7 +31,7 @@ class PNode(object):
   __slots__ = ('typ', 'tok', 'children')
 
   def __init__(self, typ, tok, children):
-    # type: (int, token, List[PNode]) -> None
+    # type: (int, Optional[token], List[PNode]) -> None
     self.typ = typ  # token or non-terminal
     self.tok = tok  # opaque object that is passed back to "convert" callback.
                     # In Oil, this is syntax_asdl.token.  In OPy, it's a

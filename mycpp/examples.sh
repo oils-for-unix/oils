@@ -200,8 +200,6 @@ Tuple2<Id_t, int>* OneToken(lex_mode_t lex_mode, Str* line, int start_pos) {
   compile-with-asdl $name
 }
 
-# TODO: syntax_asdl is used.  Hm.
-# So we have to translate tha tfile and include it.
 alloc-main() {
   local name='alloc_main'
   #mypy --py2 --strict examples/$name.py
@@ -248,3 +246,47 @@ typecheck-pgen2_demo() {
   typecheck-oil pgen2_demo
 }
 
+translate-pgen2_demo() {
+  local name='pgen2_demo'
+
+  # NOTE: We didn't import source_e because we're using isinstance().
+  local snippet='
+#include "id_kind_asdl.h"  // syntax.asdl depends on this
+using id_kind_asdl::Id_t;  // TODO: proper ASDL modules 
+#include "syntax_asdl.h"
+
+// Hack for now.  Every sum type should have repr()?
+Str* repr(syntax_asdl::source_t* obj) {
+  return new Str("TODO");
+}
+'
+# problem with isinstance() and any type
+    #$REPO_ROOT/pgen2/parse.py \
+    # do we need this/
+    # $REPO_ROOT/pgen2/grammar.py \
+
+# other modules:
+# core.util.ParseError: move this to core/errors.py?
+
+  translate-ordered $name "${HNODE_HEADER}$snippet" \
+    $REPO_ROOT/asdl/runtime.py \
+    $REPO_ROOT/core/alloc.py \
+    $REPO_ROOT/frontend/reader.py \
+    $REPO_ROOT/frontend/lexer.py \
+    $REPO_ROOT/oil_lang/expr_parse.py \
+    examples/$name.py
+
+  compile-pgen2_demo
+} 
+
+compile-pgen2_demo() {
+  local name='pgen2_demo'
+
+  local out=_gen/syntax_asdl
+  asdl-gen cpp ../frontend/syntax.asdl $out
+
+  compile-with-asdl $name \
+    _gen/syntax_asdl.cc \
+    ../_devbuild/gen-cpp/hnode_asdl.cc \
+    ../_devbuild/gen-cpp/id_kind_asdl.cc
+}

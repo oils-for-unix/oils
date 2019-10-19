@@ -51,15 +51,21 @@ def ParseDemo(oil_grammar):
 def run_tests():
   # type: () -> None
 
-  from pgen2 import grammar
+  if mylib.CPP:
+    # TODO: Initialize this
+    gr = None
+  else:
+    # And then cppgen_pass.py gets rid of all the "else" blocks
 
-  # We're finding a bad os.pyi ?
-  repo_root = os.environ['HOME'] + '/git/oilshell/oil'  # type: ignore
-  gr = grammar.Grammar()
-  f = open(repo_root + '/_devbuild/gen/arith.marshal')
-  contents = f.read()
-  gr.loads(contents)
-  f.close()
+    from pgen2 import grammar
+
+    # We're finding a bad os.pyi ?
+    repo_root = os.environ['HOME'] + '/git/oilshell/oil'  # type: ignore
+    gr = grammar.Grammar()
+    f = open(repo_root + '/_devbuild/gen/arith.marshal')
+    contents = f.read()
+    gr.loads(contents)
+    f.close()
 
   ParseDemo(gr)
 

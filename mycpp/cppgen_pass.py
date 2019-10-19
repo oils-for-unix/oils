@@ -14,7 +14,7 @@ from mypy.types import (
 from mypy.nodes import (
     Expression, Statement, NameExpr, IndexExpr, MemberExpr, TupleExpr,
     ExpressionStmt, AssignmentStmt, StrExpr, SliceExpr, FuncDef,
-    ComparisonExpr, CallExpr)
+    ComparisonExpr, CallExpr, IntExpr)
 
 import format_strings
 from crash import catch_errors
@@ -1403,10 +1403,22 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             cond.operands[0].name == '__name__'):
           return
 
+        # Omit if 0:
+        if isinstance(cond, IntExpr) and cond.value == 0:
+          return
+
         # Omit if TYPE_CHECKING blocks.  They contain type expressions that
         # don't type check!
-        expr = o.expr[0]
-        if isinstance(expr, NameExpr) and expr.name == 'TYPE_CHECKING':
+        if isinstance(cond, NameExpr) and cond.name == 'TYPE_CHECKING':
+          return
+        # mylib.CPP
+        if isinstance(cond, MemberExpr) and cond.name == 'CPP':
+          # just take the if block
+          self.write_ind('// if MYCPP\n')
+          self.write_ind('')
+          for node in o.body:
+            self.accept(node)
+          self.write_ind('// endif MYCPP\n')
           return
 
         self.write_ind('if (')
@@ -1416,6 +1428,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         for node in o.body:
           self.accept(node)
+
         if o.else_body:
           self.write_ind('else ')
           self.accept(o.else_body)

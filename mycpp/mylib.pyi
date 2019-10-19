@@ -1,5 +1,6 @@
 from typing import IO, Any
 
+CPP: bool
 
 class LineReader:
   def readline(self) -> str: ...

@@ -34,3 +34,7 @@ def Stdout():
 
 def Stdin():
   return sys.stdin
+
+
+# For conditional translation
+CPP = False

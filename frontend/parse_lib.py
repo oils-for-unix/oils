@@ -321,8 +321,8 @@ class ParseContext(object):
     finally:
       self.parsing_expr = False
 
-  def ParseVarDecl(self, kw_token, lexer, print_parse_tree=False):
-    # type: (token, Lexer, bool) -> Tuple[command_t, token]
+  def ParseVarDecl(self, kw_token, lexer):
+    # type: (token, Lexer) -> Tuple[command_t, token]
     """e.g. var mylist = [1, 2, 3]"""
 
     # TODO: We do need re-entrancy for var x = @[ (1+2) ] and such
@@ -335,77 +335,77 @@ class ParseContext(object):
     finally:
       self.parsing_expr = False
 
-    if print_parse_tree:
+    if 0:
       self.p_printer.Print(pnode)
 
     ast_node = self.tr.VarDecl(pnode)
     ast_node.keyword = kw_token  # VarDecl didn't fill this in
     return ast_node, last_token
 
-  def ParsePlaceMutation(self, kw_token, lexer, print_parse_tree=False):
-    # type: (token, Lexer, bool) -> Tuple[command_t, token]
+  def ParsePlaceMutation(self, kw_token, lexer):
+    # type: (token, Lexer) -> Tuple[command_t, token]
 
     # TODO: Create an ExprParser so it's re-entrant.
     pnode, last_token = self.e_parser.Parse(lexer,
                                             grammar_nt.oil_place_mutation)
-    if print_parse_tree:
+    if 0:
       self.p_printer.Print(pnode)
     ast_node = self.tr.PlaceMutation(pnode)
     ast_node.keyword = kw_token  # VarDecl didn't fill this in
     return ast_node, last_token
 
-  def ParseOilArgList(self, lexer, out, print_parse_tree=False):
-    # type: (Lexer, arg_list, bool) -> token
+  def ParseOilArgList(self, lexer, out):
+    # type: (Lexer, arg_list) -> token
     if self.parsing_expr:
       p_die("TODO: can't be nested")
 
     pnode, last_token = self._ParseOil(lexer, grammar_nt.oil_arglist)
 
-    if print_parse_tree:
+    if 0:
       self.p_printer.Print(pnode)
 
     self.tr.ArgList(pnode, out)
     return last_token
 
-  def ParseOilExpr(self, lexer, start_symbol, print_parse_tree=False):
-    # type: (Lexer, int, bool) -> Tuple[expr_t, token]
+  def ParseOilExpr(self, lexer, start_symbol):
+    # type: (Lexer, int) -> Tuple[expr_t, token]
     """For Oil expressions that aren't assignments."""
     pnode, last_token = self.e_parser.Parse(lexer, start_symbol)
 
-    if print_parse_tree:
+    if 0:
       self.p_printer.Print(pnode)
 
     ast_node = self.tr.Expr(pnode)
     return ast_node, last_token
 
-  def ParseOilForExpr(self, lexer, start_symbol, print_parse_tree=False):
-    # type: (Lexer, int, bool) -> Tuple[List[name_type], expr_t, token]
+  def ParseOilForExpr(self, lexer, start_symbol):
+    # type: (Lexer, int) -> Tuple[List[name_type], expr_t, token]
     """ for (x Int, y Int in foo) """
     pnode, last_token = self.e_parser.Parse(lexer, start_symbol)
 
-    if print_parse_tree:
+    if 0:
       self.p_printer.Print(pnode)
 
     lvalue, iterable = self.tr.OilForExpr(pnode)
     return lvalue, iterable, last_token
 
-  def ParseProc(self, lexer, out, print_parse_tree=False):
-    # type: (Lexer, command__Proc, bool) -> token
+  def ParseProc(self, lexer, out):
+    # type: (Lexer, command__Proc) -> token
     """ proc f(x, y, @args) { """
     pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.oil_proc)
 
-    if print_parse_tree:
+    if 0:
       self.p_printer.Print(pnode)
 
     out.sig = self.tr.Proc(pnode)
     return last_token
 
-  def ParseFunc(self, lexer, out, print_parse_tree=False):
-    # type: (Lexer, command__Func, bool) -> token
+  def ParseFunc(self, lexer, out):
+    # type: (Lexer, command__Func) -> token
     """ func f(x Int, y Int = 0, ...args; z Int = 3, ...named) { """
     pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.oil_func)
 
-    if print_parse_tree:
+    if 0:
       self.p_printer.Print(pnode)
 
     self.tr.Func(pnode, out)

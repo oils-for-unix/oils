@@ -31,7 +31,6 @@ from frontend import args
 from core.util import log
 from core import pyutil
 
-from oil_lang import expr_parse  # for ParseTreePrinter
 from ovm2 import oheap2
 
 
@@ -119,6 +118,33 @@ class TupleTreePrinter(object):
       f.write('\n')
     else:
       raise AssertionError(tu)
+
+
+class ParseTreePrinter(object):
+  """Prints a tree of PNode instances."""
+  def __init__(self, names):
+    # type: (Dict[int, str]) -> None
+    self.names = names
+
+  def Print(self, pnode, f=sys.stdout, indent=0, i=0):
+    # type: (PNode, IO[str], int, int) -> None
+
+    ind = '  ' * indent
+    # NOTE:
+    # - 'tok' used to be opaque context
+    #   - it's None for PRODUCTIONS (nonterminals)
+    #   - for terminals, it's (prefix, (lineno, column)), where lineno is
+    #     1-based, and 'prefix' is a string of whitespace.
+    #     e.g. for 'f(1, 3)', the "3" token has a prefix of ' '.
+    if isinstance(pnode.tok, tuple):
+      # Used for ParseWith
+      v = pnode.tok[0]
+    else:
+      v = '-'
+    f.write('%s%d %s %s\n' % (ind, i, self.names[pnode.typ], v))
+    if pnode.children:  # could be None
+      for i, child in enumerate(pnode.children):
+        self.Print(child, indent=indent+1, i=i)
 
 
 class TableOutput(object):
@@ -363,7 +389,7 @@ def OpyCommandMain(argv):
       log('  %s^', ' '*offset)
       log('Parse Error: %s', e)
       return 1
-    printer = expr_parse.ParseTreePrinter(transformer._names)  # print raw nodes
+    printer = ParseTreePrinter(transformer._names)  # print raw nodes
     printer.Print(pnode)
 
   elif action == 'ast':  # output AST

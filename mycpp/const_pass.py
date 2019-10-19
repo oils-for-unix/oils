@@ -8,7 +8,8 @@ from typing import overload, Union, Optional, Any, Dict, List
 
 from mypy.visitor import ExpressionVisitor, StatementVisitor
 from mypy.nodes import (
-    Expression, Statement, ExpressionStmt, StrExpr, ComparisonExpr, NameExpr)
+    Expression, Statement, ExpressionStmt, StrExpr, ComparisonExpr, NameExpr,
+    MemberExpr, IntExpr)
 
 from mypy.types import Type
 
@@ -446,18 +447,29 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
             cond.operands[0].name == '__name__'):
           return
 
+        # Omit if 0:
+        if isinstance(cond, IntExpr) and cond.value == 0:
+          return
+
         # Omit if TYPE_CHECKING blocks.  They contain type expressions that
         # don't type check!
-        expr = o.expr[0]
-        if isinstance(expr, NameExpr) and expr.name == 'TYPE_CHECKING':
+        if isinstance(cond, NameExpr) and cond.name == 'TYPE_CHECKING':
+          return
+        # mylib.CPP
+        if isinstance(cond, MemberExpr) and cond.name == 'CPP':
+          # just take the if block
+          for node in o.body:
+            self.accept(node)
           return
 
         self.log('IfStmt')
         self.indent += 1
         for e in o.expr:
           self.accept(e)
+
         for node in o.body:
           self.accept(node)
+
         if o.else_body:
           self.accept(o.else_body)
         self.indent -= 1
