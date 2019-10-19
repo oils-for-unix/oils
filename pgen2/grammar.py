@@ -83,6 +83,13 @@ class Grammar(object):
         # type: () -> None
         self.symbol2number = {}  # type: Dict[str, int]
         self.number2symbol = {}  # type: Dict[int, str]
+
+        # TODO: See MakeGrammar in pgen2/pgen.py
+        # To see the type
+        # states: List[List[arcs]]
+        # arc: (int, int)
+        # dfs = Dict[int, Tuple[states, ...]]
+
         self.states = []  # type: List[Any]
         self.dfas = {}  # type: Dict[int, Tuple[Any, Any]]
         # Oil patch: used to be [(0, "EMPTY")].  I suppose 0 is a special value?

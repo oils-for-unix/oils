@@ -1,0 +1,3 @@
+arith_expr: term (('+'|'-') term)* Eof_Real
+# Oil patch: removed '@' and // -> div, % -> mod
+term: Expr_DecInt (('*'|'/'|'mod'|'div') Expr_DecInt)*

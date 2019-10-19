@@ -235,6 +235,10 @@ find-grammar() {
   oil_lang/grammar_gen.py marshal tools/find/find.pgen2 _devbuild/gen
 }
 
+demo-grammar() {
+  oil_lang/grammar_gen.py marshal mycpp/examples/arith.pgen2 _devbuild/gen
+}
+
 # Prerequisites: build/codegen.sh {download,install}-re2c
 all() {
   minimal

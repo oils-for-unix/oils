@@ -1,17 +1,13 @@
 # examples.sh: Hooks for specific files
 
-
-#
-# examples/parse
-#
-
-typecheck-parse() {
-  local name='parse'
+# Type check, with some relaxations for Oil
+typecheck-oil() {
+  local name=$1
   local flags='--no-strict-optional'
 
   set +o errexit
   MYPYPATH="$REPO_ROOT" \
-    mypy --py2 --strict $flags examples/parse.py | tee _tmp/err.txt
+    mypy --py2 --strict $flags examples/$name.py | tee _tmp/err.txt
   set -o errexit
 
   # Stupid fastlex error in asdl/pretty.py
@@ -22,6 +18,14 @@ typecheck-parse() {
   else
     return 1
   fi
+}
+
+#
+# examples/parse
+#
+
+typecheck-parse() {
+  typecheck-oil parse
 }
 
 codegen-parse() {
@@ -228,3 +232,19 @@ Str* repr(syntax_asdl::source_t* obj) {
     ../_devbuild/gen-cpp/hnode_asdl.cc \
     ../_devbuild/gen-cpp/id_kind_asdl.cc
 } 
+
+#
+# pgen2_demo
+#
+
+# build ASDL schema and run it
+pyrun-pgen2_demo() {
+  #codegen-pgen2_demo
+
+  PYTHONPATH="$REPO_ROOT/mycpp:$REPO_ROOT/vendor:$REPO_ROOT" examples/pgen2_demo.py
+}
+
+typecheck-pgen2_demo() {
+  typecheck-oil pgen2_demo
+}
+
