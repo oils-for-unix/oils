@@ -20,6 +20,11 @@ def run_tests():
   else:
     log('CPP')
 
+  if mylib.PYTHON:
+    log('PYTHON')
+  else:
+    log('PYTHON')
+
   if 0:
     log('ZERO')
 

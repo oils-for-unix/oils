@@ -8,6 +8,10 @@ import cStringIO
 
 from typing import Any
 
+# For conditional translation
+CPP = False
+PYTHON = True
+
 
 # C code ignores this!
 def log(msg, *args):
@@ -35,6 +39,3 @@ def Stdout():
 def Stdin():
   return sys.stdin
 
-
-# For conditional translation
-CPP = False

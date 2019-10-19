@@ -261,9 +261,7 @@ Str* repr(syntax_asdl::source_t* obj) {
 }
 '
 # problem with isinstance() and any type
-    #$REPO_ROOT/pgen2/parse.py \
     # do we need this/
-    # $REPO_ROOT/pgen2/grammar.py \
 
 # other modules:
 # core.util.ParseError: move this to core/errors.py?
@@ -273,6 +271,8 @@ Str* repr(syntax_asdl::source_t* obj) {
     $REPO_ROOT/core/alloc.py \
     $REPO_ROOT/frontend/reader.py \
     $REPO_ROOT/frontend/lexer.py \
+    $REPO_ROOT/pgen2/grammar.py \
+    $REPO_ROOT/pgen2/parse.py \
     $REPO_ROOT/oil_lang/expr_parse.py \
     examples/$name.py
 

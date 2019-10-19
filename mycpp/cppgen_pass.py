@@ -1420,6 +1420,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.accept(node)
           self.write_ind('// endif MYCPP\n')
           return
+        # mylib.PYTHON
+        if isinstance(cond, MemberExpr) and cond.name == 'PYTHON':
+          if o.else_body:
+            self.write_ind('// if not PYTHON\n')
+            self.write_ind('')
+            self.accept(o.else_body)
+            self.write_ind('// endif MYCPP\n')
+          return
 
         self.write_ind('if (')
         for e in o.expr:

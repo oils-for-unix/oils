@@ -461,6 +461,11 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
           for node in o.body:
             self.accept(node)
           return
+        # mylib.PYTHON
+        if isinstance(cond, MemberExpr) and cond.name == 'PYTHON':
+          if o.else_body:
+            self.accept(o.else_body)
+          return
 
         self.log('IfStmt')
         self.indent += 1
