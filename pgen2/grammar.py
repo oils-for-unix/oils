@@ -17,10 +17,15 @@ import marshal
 from core.util import log
 from mycpp import mylib
 
-from typing import TYPE_CHECKING, Any, Tuple
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-  from typing import IO, Dict, List
+  from typing import IO, Dict, List, Tuple
+
+  # Type aliases
+  arc_t = Tuple[int, int]
+  first_t = Dict[int, int]
+  states_t = List[List[arc_t]]
 
 
 class Grammar(object):
@@ -91,8 +96,8 @@ class Grammar(object):
         # arc: (int, int)
         # dfs = Dict[int, Tuple[states, ...]]
 
-        self.states = []  # type: List[Any]
-        self.dfas = {}  # type: Dict[int, Tuple[Any, Any]]
+        self.states = []  # type: states_t
+        self.dfas = {}  # type: Dict[int, Tuple[states_t, first_t]]
         # Oil patch: used to be [(0, "EMPTY")].  I suppose 0 is a special value?
         # Or is it ENDMARKER?
         self.labels = [0]  # type: List[int]

@@ -33,8 +33,7 @@ class PNode(object):
   def __init__(self, typ, tok, children):
     # type: (int, Optional[token], List[PNode]) -> None
     self.typ = typ  # token or non-terminal
-    self.tok = tok  # opaque object that is passed back to "convert" callback.
-                    # In Oil, this is syntax_asdl.token.  In OPy, it's a
+    self.tok = tok  # In Oil, this is syntax_asdl.token.  In OPy, it's a
                     # 3-tuple (val, prefix, loc)
                     # NOTE: This is None for the first entry in the stack?
     self.children = children
@@ -76,8 +75,8 @@ class Parser(object):
     reinitialized by calling setup()).
     """
 
-    def __init__(self, grammar, convert=None):
-        # type: (Grammar, Any) -> None
+    def __init__(self, grammar):
+        # type: (Grammar) -> None
         """Constructor.
 
         The grammar argument is a grammar.Grammar instance; see the
@@ -85,15 +84,6 @@ class Parser(object):
 
         The parser is not ready yet for parsing; you must call the
         setup() method to get it started.
-
-        The optional convert argument is a function mapping concrete
-        syntax tree nodes to abstract syntax tree nodes.  If not
-        given, no conversion is done and the syntax tree produced is
-        the concrete syntax tree.  If given, it must be a function of
-        two arguments, the first being the grammar (a grammar.Grammar
-        instance), and the second being the concrete syntax tree node
-        to be converted.  The syntax tree is converted from the bottom
-        up.
 
         A concrete syntax tree node is a (type, value, context, nodes)
         tuple, where type is the node type (a token or symbol number),
@@ -106,7 +96,6 @@ class Parser(object):
         up to the converter function.
         """
         self.grammar = grammar
-        self.convert = convert or (lambda grammar, node: node)
 
     def setup(self, start=None):
         # type: (int) -> None
@@ -126,7 +115,7 @@ class Parser(object):
         newnode = PNode(start, None, [])
         # Each stack entry is a tuple: (dfa, state, node).
         self.stack = [(self.grammar.dfas[start], 0, newnode)]
-        self.rootnode = None
+        self.rootnode = None  # type: Optional[PNode]
 
     def addtoken(self, typ, opaque, ilabel):
         # type: (int, token, int) -> bool
@@ -185,7 +174,6 @@ class Parser(object):
         """Shift a token.  (Internal)"""
         dfa, _, node = self.stack[-1]
         newnode = PNode(typ, opaque, None)
-        newnode = self.convert(self.grammar, newnode)
         if newnode is not None:
             node.children.append(newnode)
         self.stack[-1] = (dfa, newstate, node)
@@ -201,8 +189,7 @@ class Parser(object):
     def pop(self):
         # type: () -> None
         """Pop a nonterminal.  (Internal)"""
-        _, _, popnode = self.stack.pop()
-        newnode = self.convert(self.grammar, popnode)
+        _, _, newnode = self.stack.pop()
         if newnode is not None:
             if self.stack:
                 _, _, node = self.stack[-1]

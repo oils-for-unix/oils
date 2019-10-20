@@ -20,10 +20,11 @@ from frontend import reader
 from osh import braces
 from osh import word_
 from pgen2 import parse
+from mycpp import mylib
 
 _ = log
 
-from typing import TYPE_CHECKING, IO, Dict, Tuple, List, cast, Optional
+from typing import TYPE_CHECKING, Dict, Tuple, List, cast, Optional
 if TYPE_CHECKING:
   from frontend.lexer import Lexer
   from frontend.parse_lib import ParseContext
@@ -36,9 +37,10 @@ class ParseTreePrinter(object):
   def __init__(self, names):
     # type: (Dict[int, str]) -> None
     self.names = names
+    self.f = mylib.Stdout()
 
-  def Print(self, pnode, f=sys.stdout, indent=0, i=0):
-    # type: (PNode, IO[str], int, int) -> None
+  def Print(self, pnode, indent=0, i=0):
+    # type: (PNode, int, int) -> None
 
     ind = '  ' * indent
     # NOTE:
@@ -50,7 +52,7 @@ class ParseTreePrinter(object):
       #v = repr(pnode.tok)
     else:
       v = '-'
-    f.write('%s%d %s %s\n' % (ind, i, self.names[pnode.typ], v))
+    self.f.write('%s%d %s %s\n' % (ind, i, self.names[pnode.typ], v))
     if pnode.children:  # could be None
       for i, child in enumerate(pnode.children):
         self.Print(child, indent=indent+1, i=i)

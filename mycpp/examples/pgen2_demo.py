@@ -8,7 +8,7 @@ import os
 import sys
 
 from _devbuild.gen import arith_nt
-from _devbuild.gen.syntax_asdl import source
+from _devbuild.gen.syntax_asdl import source__Stdin
 
 from core import alloc
 from core import util
@@ -28,7 +28,7 @@ def ParseDemo(oil_grammar):
   # type: (Grammar) -> None
 
   arena = alloc.Arena()
-  arena.PushSource(source.Stdin(''))
+  arena.PushSource(source__Stdin(''))
 
   parse_ctx = None
   e_parser = expr_parse.ExprParser(parse_ctx, oil_grammar)
