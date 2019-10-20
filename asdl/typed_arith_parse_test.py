@@ -190,7 +190,6 @@ def t_parse(s,  # type: str
   print()
   print(tree)
 
-  import sys
   from asdl import format as fmt
   from mycpp import mylib
 
