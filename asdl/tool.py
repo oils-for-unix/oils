@@ -157,6 +157,8 @@ from typing import Optional, List, Tuple, Dict, Any, cast
 """)
 
     pretty_print_methods = bool(os.getenv('PRETTY_PRINT_METHODS', 'yes'))
+    optional_fields = bool(os.getenv('OPTIONAL_FIELDS', 'yes'))
+
     if pretty_print_methods:
       f.write("""
 from asdl import runtime  # For runtime.NO_SPID
@@ -167,7 +169,8 @@ from _devbuild.gen.hnode_asdl import color_e, hnode, hnode_e, hnode_t, field
 
     abbrev_mod_entries = dir(abbrev_mod) if abbrev_mod else []
     v = gen_python.GenMyPyVisitor(f, type_lookup, abbrev_mod_entries,
-                                  pretty_print_methods=pretty_print_methods)
+                                  pretty_print_methods=pretty_print_methods,
+                                  optional_fields=optional_fields)
     v.VisitModule(schema_ast)
 
     if abbrev_mod:

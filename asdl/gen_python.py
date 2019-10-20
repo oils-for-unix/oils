@@ -17,12 +17,13 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
   """Generate Python code with MyPy type annotations."""
 
   def __init__(self, f, type_lookup, abbrev_mod_entries=None, e_suffix=True,
-               pretty_print_methods=True):
+               pretty_print_methods=True, optional_fields=True):
     visitor.AsdlVisitor.__init__(self, f)
     self.type_lookup = type_lookup
     self.abbrev_mod_entries = abbrev_mod_entries or []
     self.e_suffix = e_suffix
     self.pretty_print_methods = pretty_print_methods
+    self.optional_fields = optional_fields
 
     self._shared_type_tags = {}
     self._product_counter = 1000  # start it high
@@ -111,7 +112,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       iter_name = 'i%d' % counter
 
       self.Emit('  if self.%s:  # ArrayType' % field.name)
-      self.Emit('    %s = hnode.Array()' % out_val_name)
+      self.Emit('    %s = hnode.Array([])' % out_val_name)
       self.Emit('    for %s in self.%s:' % (iter_name, field.name))
       child_code_str, _ = self._CodeSnippet(abbrev, desc, iter_name)
       self.Emit('      %s.children.append(%s)' % (out_val_name, child_code_str))
@@ -155,8 +156,12 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     # __init__
     #
 
-    args = ', '.join('%s=None' % f.name for f in all_fields)
-    self.Emit('  def __init__(self, %s):' % args)
+    if self.optional_fields:
+      args = ['%s=None' % f.name for f in all_fields]
+    else:
+      args = [f.name for f in all_fields]
+
+    self.Emit('  def __init__(self, %s):' % ', '.join(args))
 
     arg_types = []
     for f in all_fields:
@@ -185,10 +190,13 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       # NOTE: It's complicated in the List[] case, because we don't want a
       # mutable default arg?  That is a Python pitfall
       if f.seq:
-        t = 'Optional[List[%s]]' % type_str
-        arg_types.append(t)
+        t = 'List[%s]' % type_str
       else:
-        arg_types.append('Optional[%s]' % type_str)
+        t = type_str
+
+      if self.optional_fields:
+        t = 'Optional[%s]' % t
+      arg_types.append(t)
 
     self.Emit('    # type: (%s) -> None' % ', '.join(arg_types), reflow=False)
 

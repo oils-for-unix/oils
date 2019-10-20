@@ -104,7 +104,7 @@ gen-asdl-cpp() {
 # compiler.
 
 oil-asdl-to-py() {
-  PRETTY_PRINT_METHODS='' gen-asdl-py 'asdl/hnode.asdl'
+  OPTIONAL_FIELDS='' PRETTY_PRINT_METHODS='' gen-asdl-py 'asdl/hnode.asdl'
 
   gen-asdl-py frontend/types.asdl  # no dependency on Id
 
