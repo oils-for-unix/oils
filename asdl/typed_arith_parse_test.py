@@ -192,8 +192,9 @@ def t_parse(s,  # type: str
 
   import sys
   from asdl import format as fmt
+  from mycpp import mylib
 
-  ast_f = fmt.DetectConsoleOutput(sys.stdout)
+  ast_f = fmt.DetectConsoleOutput(mylib.Stdout())
   p_node = tree.AbbreviatedTree()
   fmt.PrintTree(p_node, ast_f)
 

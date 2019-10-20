@@ -301,7 +301,7 @@ class _PrettyPrinter(object):
     if node.abbrev:  # abbreviated
       prefix = ind + node.left
       f.write(prefix)
-      if node.node_type:
+      if len(node.node_type):
         f.PushColor(color_e.TypeName)
         f.write(node.node_type)
         f.PopColor()
@@ -413,7 +413,7 @@ def _TrySingleLineObj(node, f, max_chars):
   """Print an object on a single line."""
   f.write(node.left)
   if node.abbrev:
-    if node.node_type:
+    if len(node.node_type):
       f.PushColor(color_e.TypeName)
       f.write(node.node_type)
       f.PopColor()

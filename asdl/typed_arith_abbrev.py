@@ -3,9 +3,10 @@ typed_arith_abbrev.py - Abbreviations for pretty-printing typed_arith.asdl.
 """
 
 from asdl import runtime
+from _devbuild.gen.hnode_asdl import hnode__Record
 
 def _arith_expr__Unary(obj):
-  # type: (arith_expr__Unary) -> Optional[hnode__Record]
+  # type: (arith_expr__Unary) -> hnode__Record
 
   p_node = runtime.NewRecord('U')
   p_node.abbrev = True
@@ -31,8 +32,8 @@ def _arith_expr__Binary(obj):
 
 
 def _arith_expr__Const(obj):
-  # type: (arith_expr__Const) -> Optional[hnode__Record]
-  p_node = runtime.NewRecord(None)
+  # type: (arith_expr__Const) -> hnode__Record
+  p_node = runtime.NewRecord('')
   p_node.abbrev = True
   n = runtime.NewLeaf(str(obj.i), color_e.OtherConst)
   p_node.unnamed_fields.append(n)
@@ -40,7 +41,7 @@ def _arith_expr__Const(obj):
 
 
 def _arith_expr__Var(obj):
-  # type: (arith_expr__Var) -> Optional[hnode__Record]
+  # type: (arith_expr__Var) -> hnode__Record
   p_node = runtime.NewRecord('$')
   p_node.abbrev = True
   n = runtime.NewLeaf(str(obj.name), color_e.StringConst)
