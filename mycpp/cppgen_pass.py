@@ -791,10 +791,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def _write_tuple_unpacking(self, temp_name, lval_items, item_types):
       """Used by assignment and for loops."""
-      i = 0
-      for lval_item, item_type in zip(lval_items, item_types):
+      for i, (lval_item, item_type) in enumerate(zip(lval_items, item_types)):
         #self.log('*** %s :: %s', lval_item, item_type)
         if isinstance(lval_item, NameExpr):
+          if lval_item.name == '_':
+            continue
+
           item_c_type = get_c_type(item_type)
           # declare it at the top of the function
           if self.decl:
@@ -806,7 +808,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.accept(lval_item)
 
         self.write(' = %s->at%d();\n', temp_name, i)  # RHS
-        i += 1
 
     def visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt') -> T:
         # I think there are more than one when you do a = b = 1, which I never
@@ -837,6 +838,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           return
 
         if isinstance(lval, NameExpr):
+          if lval.name == '_':  # Skip _ = log
+            return
+
           lval_type = self.types[lval]
           c_type = get_c_type(lval_type)
 
@@ -1461,10 +1465,17 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.write_ind('try ')
         self.accept(o.body)
         for t, v, handler in zip(o.types, o.vars, o.handlers):
-          if v:
-            self.write_ind('catch (%s* %s) ', t.name, v.name)
+
+          # Heuristic
+          if isinstance(t, MemberExpr):
+            c_type = '%s::%s*' % (t.expr.name, t.name)
           else:
-            self.write_ind('catch (%s*) ', t.name)
+            c_type = '%s*' % t.name
+
+          if v:
+            self.write_ind('catch (%s %s) ', c_type, v.name)
+          else:
+            self.write_ind('catch (%s) ', c_type)
           self.accept(handler)
 
         if o.else_body:

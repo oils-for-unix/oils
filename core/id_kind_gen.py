@@ -134,12 +134,21 @@ def main(argv):
     out_prefix = argv[2]
 
     with open(out_prefix + '.h', 'w') as f:
-      f.write('namespace id_kind_asdl {\n\n')
+      f.write("""
+#ifndef ID_KIND_ASDL_H
+#define ID_KIND_ASDL_H
+
+namespace id_kind_asdl {
+""")
 
       v = gen_cpp.ClassDefVisitor(f, {}, e_suffix=False)
       v.VisitModule(schema_ast)
 
-      f.write('}  // namespace id_kind_asdl\n')
+      f.write("""
+}  // namespace id_kind_asdl
+
+#endif  // ID_KIND_ASDL_H
+""")
 
     with open(out_prefix + '.cc', 'w') as f:
       f.write("""\

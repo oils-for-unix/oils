@@ -154,12 +154,9 @@ lexer-main() {
 #include "id_kind_asdl.h"  // syntax.asdl depends on this
 using id_kind_asdl::Id_t;  // TODO: proper ASDL modules 
 
-#include "types_asdl.h"
 #include "syntax_asdl.h"
 
-#include "id.h"
-#include "osh-types.h"
-#include "osh-lex.h"
+#include "match.h"
 
 // TODO: This is already added elsewhere
 #include "mylib.h"
@@ -167,27 +164,6 @@ using id_kind_asdl::Id_t;  // TODO: proper ASDL modules
 // Hack for now.  Every sum type should have repr()?
 Str* repr(syntax_asdl::source_t* obj) {
   return new Str("TODO");
-}
-
-// Stub
-void p_die(Str* fmt, syntax_asdl::token* blame_token) {
-  throw AssertionError();
-}
-
-namespace match {
-
-using types_asdl::lex_mode_t;
-
-Tuple2<Id_t, int>* OneToken(lex_mode_t lex_mode, Str* line, int start_pos) {
-  int id;
-  int end_pos;
-  // TODO: get rid of these casts
-  MatchOshToken(static_cast<int>(lex_mode),
-                reinterpret_cast<const unsigned char*>(line->data_),
-                line->len_, start_pos, &id, &end_pos);
-  return new Tuple2<Id_t, int>(static_cast<Id_t>(id), end_pos);
-}
-
 }
 '
   translate-ordered lexer_main "$snippet" \
@@ -197,7 +173,7 @@ Tuple2<Id_t, int>* OneToken(lex_mode_t lex_mode, Str* line, int start_pos) {
     $REPO_ROOT/frontend/lexer.py \
     examples/lexer_main.py
 
-  compile-with-asdl $name
+  compile-with-asdl $name ../cpp/match.cc
 }
 
 alloc-main() {
@@ -253,11 +229,20 @@ translate-pgen2_demo() {
   local snippet='
 #include "id_kind_asdl.h"  // syntax.asdl depends on this
 using id_kind_asdl::Id_t;  // TODO: proper ASDL modules 
+
 #include "syntax_asdl.h"
+#include "types_asdl.h"
+
+#include "match.h"
 
 // Hack for now.  Every sum type should have repr()?
 Str* repr(syntax_asdl::source_t* obj) {
   return new Str("TODO");
+}
+
+// STUB
+namespace parse_lib {
+  class ParseContext;
 }
 '
 # problem with isinstance() and any type
@@ -276,7 +261,7 @@ Str* repr(syntax_asdl::source_t* obj) {
     $REPO_ROOT/oil_lang/expr_parse.py \
     examples/$name.py
 
-  compile-pgen2_demo
+  compile-pgen2_demo ../cpp/match.cc
 } 
 
 compile-pgen2_demo() {

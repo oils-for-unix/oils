@@ -19,9 +19,10 @@ from oil_lang import expr_parse
 from mycpp import mylib
 from mycpp.mylib import log
 
-from typing import TYPE_CHECKING
+from typing import Dict, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from pgen2.grammar import Grammar
+  from frontend.parse_lib import ParseContext
 
 
 def ParseDemo(oil_grammar):
@@ -30,7 +31,7 @@ def ParseDemo(oil_grammar):
   arena = alloc.Arena()
   arena.PushSource(source__Stdin(''))
 
-  parse_ctx = None
+  parse_ctx = None  # type: ParseContext
   e_parser = expr_parse.ExprParser(parse_ctx, oil_grammar)
 
   line_lexer = lexer.LineLexer('', arena)
@@ -44,7 +45,10 @@ def ParseDemo(oil_grammar):
     print(e)
     return
 
-  print(pnode)
+  # TODO: Fill this in.  Oil uses parse_lib.MakeGrammarNames()
+  names = {}  # type: Dict[int, str]
+  printer = expr_parse.ParseTreePrinter(names)
+  printer.Print(pnode)
   # NOTE: Could also transform
 
 
@@ -53,7 +57,7 @@ def run_tests():
 
   if mylib.CPP:
     # TODO: Initialize this
-    gr = None
+    gr = None  # type: Optional[Grammar]
   else:
     # And then cppgen_pass.py gets rid of all the "else" blocks
 

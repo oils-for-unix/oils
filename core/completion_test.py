@@ -127,7 +127,7 @@ class CompletionTest(unittest.TestCase):
   def testFileSystemAction(self):
     CASES = [
         # Dirs and files
-        ('c', ['configure', 'core']),
+        ('c', ['configure', 'core', 'cpp']),
         ('opy/doc', ['opy/doc']),
     ]
 
@@ -145,7 +145,7 @@ class CompletionTest(unittest.TestCase):
     # that shouldn't go away.
     ADD_SLASH_CASES = [
         # Dirs and files
-        ('c', ['configure', 'core/']),
+        ('c', ['configure', 'core/', 'cpp/']),
         ('nonexistent/', []),
         ('README', ['README.md']),
         # Directory should be completed to core/ ?

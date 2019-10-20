@@ -21,7 +21,7 @@ class ParseError(Exception):
 
     def __init__(self, msg, typ, opaque):
         # type: (str, int, token) -> None
-        Exception.__init__(self, "%s: type=%r, opaque=%r" % (msg, typ, opaque))
+        Exception.__init__(self, "%s: type=%d, opaque=%r" % (msg, typ, opaque))
         self.msg = msg
         self.type = typ
         self.opaque = opaque

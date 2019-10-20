@@ -7,7 +7,7 @@ from _devbuild.gen.syntax_asdl import (
     token, double_quoted, single_quoted, command_sub,
     word__Token, word__Compound, word_part_t,
 )
-from _devbuild.gen.id_kind_asdl import Id, Kind
+from _devbuild.gen.id_kind_asdl import Id, Kind, Id_str
 from _devbuild.gen.types_asdl import lex_mode_e
 
 from core import meta
@@ -37,7 +37,7 @@ class ParseTreePrinter(object):
     self.names = names
     self.f = mylib.Stdout()
 
-  def Print(self, pnode, indent=0, i=0):
+  def _Print(self, pnode, indent, i):
     # type: (PNode, int, int) -> None
 
     ind = '  ' * indent
@@ -53,7 +53,11 @@ class ParseTreePrinter(object):
     self.f.write('%s%d %s %s\n' % (ind, i, self.names[pnode.typ], v))
     if pnode.children:  # could be None
       for i, child in enumerate(pnode.children):
-        self.Print(child, indent=indent+1, i=i)
+        self._Print(child, indent+1, i)
+
+  def Print(self, pnode):
+    # type: (PNode) -> None
+    self._Print(pnode, 0, 0)
 
 
 def _Classify(gr, tok):
@@ -66,15 +70,13 @@ def _Classify(gr, tok):
   # 'x' and 'for' are both tokenized as Expr_Name.  This handles the 'for'
   # case.
   if tok.id == Id.Expr_Name:
-    ilabel = gr.keywords.get(tok.val)
-    if ilabel is not None:
-      return ilabel
+    if tok.val in gr.keywords:
+      return gr.keywords[tok.val]
 
   # This handles 'x'.
   typ = tok.id.enum_id
-  ilabel = gr.tokens.get(typ)
-  if ilabel is not None:
-    return ilabel
+  if typ in gr.tokens:
+    return gr.tokens[typ]
 
   type_str = '' if tok.id == Id.Unknown_Tok else (' (%s)' % tok.id.name)
   p_die('Unexpected token in expression mode%s', type_str, token=tok)
@@ -194,7 +196,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
     #  log('Replaced with %s', tok.id)
 
     if tok.id.enum_id >= 256:
-      raise AssertionError(str(tok))
+      raise AssertionError(Id_str(tok.id))
 
     ilabel = _Classify(gr, tok)
     #log('tok = %s, ilabel = %d', tok, ilabel)

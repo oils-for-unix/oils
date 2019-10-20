@@ -222,6 +222,8 @@ class List {
     return result;
   }
 
+  bool contains(T needle);
+
  //private:
   std::vector<T> v_;  // ''.join accesses this directly
 };
@@ -253,6 +255,14 @@ class Dict {
   // Used unordered_map or what?
   V index(K key) {
     return values_[0];
+  }
+  // TODO: Can't use this for non-pointer types
+  V get(K key) {
+    return values_[0];
+  }
+
+  bool contains(K key) {
+    return false;
   }
 
   V& operator[](K key) {
