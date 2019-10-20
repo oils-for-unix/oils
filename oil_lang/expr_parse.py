@@ -82,48 +82,6 @@ def _Classify(gr, tok):
   p_die('Unexpected token in expression mode%s', type_str, token=tok)
 
 
-# NOTE: this model is not NOT expressive enough for:
-#
-# x = func(x, y='default', z={}) {
-#   echo hi
-# }
-
-# That can probably be handled with some state machine.  Or maybe:
-# https://en.wikipedia.org/wiki/Dyck_language
-# When you see "func", start matching () and {}, until you hit a new {.
-# It's not a regular expression.
-#
-# Or even more simply:
-#   var x = 1 + 2 
-# vs.
-#   echo hi = 1
-
-# Other issues:
-# - What about SingleLine mode?  With a % prefix?
-#   - Assumes {} means brace sub, and also makes trailing \ unnecessary?
-#   - Allows you to align pipes on the left
-#   - does it mean that only \n\n is a newline?
-
-POP = lex_mode_e.Undefined
-
-_MODE_TRANSITIONS = {
-    (lex_mode_e.Expr, Id.Left_DollarBrace): lex_mode_e.VSub_1,  # ${x|html}
-    # TODO: What about VSub_2 and so forth?
-    (lex_mode_e.VSub_1, Id.Right_DollarBrace): POP,
-
-    (lex_mode_e.Expr, Id.Left_DoubleQuote): lex_mode_e.DQ,  # x + "foo"
-    (lex_mode_e.DQ, Id.Right_DoubleQuote): POP,
-
-    (lex_mode_e.Expr, Id.Left_SingleQuoteRaw): lex_mode_e.SQ_Raw,  # x + 'foo'
-    (lex_mode_e.SQ_Raw, Id.Right_SingleQuote): POP,
-
-    (lex_mode_e.Expr, Id.Left_SingleQuoteC): lex_mode_e.SQ_C,  # x + c'\n'
-    (lex_mode_e.SQ_C, Id.Right_SingleQuote): POP,
-
-    # Why don't we need need @() and $() here?  Are ${  ' c'  " also
-    # unnecessary?
-}
-
 # For ignoring newlines.
 _OTHER_BALANCE = {
     Id.Op_LParen:  1,
@@ -147,20 +105,17 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
   #log('keywords = %s', gr.keywords)
   #log('tokens = %s', gr.tokens)
 
-  mode = lex_mode_e.Expr
-  mode_stack = [mode]
   last_token = None  # type: Optional[token]
 
-  balance = 0
+  balance = 0  # to ignore newlines
 
-  from core.util import log
   while True:
     if last_token:  # e.g. left over from WordParser
       tok = last_token
       #log('last_token = %s', last_token)
       last_token = None
     else:
-      tok = lex.Read(mode)
+      tok = lex.Read(lex_mode_e.Expr)
       #log('tok = %s', tok)
 
     # Comments and whitespace.  Newlines aren't ignored.
@@ -174,22 +129,8 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
       #log('*** SKIPPING NEWLINE')
       continue
 
-    action = _MODE_TRANSITIONS.get((mode, tok.id))
-    if action == POP:
-      mode_stack.pop()
-      mode = mode_stack[-1]
-      balance -= 1
-      #log('POPPED to %s', mode)
-    elif action:  # it's an Id
-      new_mode = action
-      mode_stack.append(new_mode)
-      mode = new_mode
-      balance += 1  # e.g. var x = $/ NEWLINE /
-      #log('PUSHED to %s', mode)
-    else:
-      # If we didn't already so something with the balance, look at another table.
-      balance += _OTHER_BALANCE.get(tok.id, 0)
-      #log('BALANCE after seeing %s = %d', tok.id, balance)
+    balance += _OTHER_BALANCE.get(tok.id, 0)
+    #log('BALANCE after seeing %s = %d', tok.id, balance)
 
     #if tok.id == Id.Expr_Name and tok.val in KEYWORDS:
     #  tok.id = KEYWORDS[tok.val]
@@ -205,127 +146,131 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
       return tok
 
     #
-    # Extra handling of the body of @() and $().  Lex in the ShCommand mode.
+    # Mututally recursive calls into the command/word parsers.
     #
 
-    if tok.id == Id.Left_AtParen:
-      lex.PushHint(Id.Op_RParen, Id.Right_ShArrayLiteral)
+    if mylib.PYTHON:
+      if tok.id == Id.Left_AtParen:
+        lex.PushHint(Id.Op_RParen, Id.Right_ShArrayLiteral)
 
-      # Blame the opening token
-      line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
-      w_parser = parse_ctx.MakeWordParser(lex, line_reader)
-      words = []
-      while True:
-        w = w_parser.ReadWord(lex_mode_e.ShCommand)
-        if 0:
-          log('w = %s', w)
+        # Blame the opening token
+        line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
+        w_parser = parse_ctx.MakeWordParser(lex, line_reader)
+        words = []
+        while True:
+          w = w_parser.ReadWord(lex_mode_e.ShCommand)
+          if 0:
+            log('w = %s', w)
 
-        if isinstance(w, word__Token):
-          word_id = word_.CommandId(w)
-          if word_id == Id.Right_ShArrayLiteral:
-            break
-          elif word_id == Id.Op_Newline:  # internal newlines allowed
-            continue
-          else:
-            # Token
-            p_die('Unexpected token in array literal: %r', w.token.val, word=w)
+          if isinstance(w, word__Token):
+            word_id = word_.CommandId(w)
+            if word_id == Id.Right_ShArrayLiteral:
+              break
+            elif word_id == Id.Op_Newline:  # internal newlines allowed
+              continue
+            else:
+              # Token
+              p_die('Unexpected token in array literal: %r', w.token.val, word=w)
 
-        assert isinstance(w, word__Compound)  # for MyPy
-        words.append(w)
+          assert isinstance(w, word__Compound)  # for MyPy
+          words.append(w)
 
-      words2 = braces.BraceDetectAll(words)
-      words3 = word_.TildeDetectAll(words2)
+        words2 = braces.BraceDetectAll(words)
+        words3 = word_.TildeDetectAll(words2)
 
-      typ = Id.Expr_CastedDummy.enum_id
-      opaque = cast(token, words3)  # HACK for expr_to_ast
-      done = p.addtoken(typ, opaque, gr.tokens[typ])
-      assert not done  # can't end the expression
+        typ = Id.Expr_CastedDummy.enum_id
+        opaque = cast(token, words3)  # HACK for expr_to_ast
+        done = p.addtoken(typ, opaque, gr.tokens[typ])
+        assert not done  # can't end the expression
 
-      # Now push the closing )
-      tok = w.token
-      ilabel = _Classify(gr, tok)
-      done = p.addtoken(tok.id.enum_id, tok, ilabel)
-      assert not done  # can't end the expression
+        # Now push the closing )
+        tok = w.token
+        ilabel = _Classify(gr, tok)
+        done = p.addtoken(tok.id.enum_id, tok, ilabel)
+        assert not done  # can't end the expression
 
-      continue
+        continue
 
-    if tok.id == Id.Left_DollarParen:
-      left_token = tok
+      if tok.id == Id.Left_DollarParen:
+        left_token = tok
 
-      lex.PushHint(Id.Op_RParen, Id.Eof_RParen)
-      line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
-      c_parser = parse_ctx.MakeParserForCommandSub(line_reader, lex,
-                                                   Id.Eof_RParen)
-      node = c_parser.ParseCommandSub()
-      # A little gross: Copied from osh/word_parse.py
-      right_token = c_parser.w_parser.cur_token
+        lex.PushHint(Id.Op_RParen, Id.Eof_RParen)
+        line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
+        c_parser = parse_ctx.MakeParserForCommandSub(line_reader, lex,
+                                                     Id.Eof_RParen)
+        node = c_parser.ParseCommandSub()
+        # A little gross: Copied from osh/word_parse.py
+        right_token = c_parser.w_parser.cur_token
 
-      cs_part = command_sub(left_token, node)
-      cs_part.spids.append(left_token.span_id)
-      cs_part.spids.append(right_token.span_id)
+        cs_part = command_sub(left_token, node)
+        cs_part.spids.append(left_token.span_id)
+        cs_part.spids.append(right_token.span_id)
 
-      typ = Id.Expr_CastedDummy.enum_id
-      opaque = cast(token, cs_part)  # HACK for expr_to_ast
-      done = p.addtoken(typ, opaque, gr.tokens[typ])
-      assert not done  # can't end the expression
+        typ = Id.Expr_CastedDummy.enum_id
+        opaque = cast(token, cs_part)  # HACK for expr_to_ast
+        done = p.addtoken(typ, opaque, gr.tokens[typ])
+        assert not done  # can't end the expression
 
-      # Now push the closing )
-      ilabel = _Classify(gr, right_token)
-      done = p.addtoken(right_token.id.enum_id, right_token, ilabel)
-      assert not done  # can't end the expression
+        # Now push the closing )
+        ilabel = _Classify(gr, right_token)
+        done = p.addtoken(right_token.id.enum_id, right_token, ilabel)
+        assert not done  # can't end the expression
 
-      continue
+        continue
 
-    if tok.id == Id.Left_DoubleQuote:
-      left_token = tok
-      line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
-      w_parser = parse_ctx.MakeWordParser(lex, line_reader)
+      if tok.id == Id.Left_DoubleQuote:
+        left_token = tok
+        line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
+        w_parser = parse_ctx.MakeWordParser(lex, line_reader)
 
-      parts = []  # type: List[word_part_t]
-      last_token = w_parser.ReadDoubleQuoted(left_token, parts)
-      expr_dq_part = double_quoted(left_token, parts)
+        parts = []  # type: List[word_part_t]
+        last_token = w_parser.ReadDoubleQuoted(left_token, parts)
+        expr_dq_part = double_quoted(left_token, parts)
 
-      typ = Id.Expr_CastedDummy.enum_id
-      opaque = cast(token, expr_dq_part)  # HACK for expr_to_ast
-      done = p.addtoken(typ, opaque, gr.tokens[typ])
-      assert not done  # can't end the expression
+        typ = Id.Expr_CastedDummy.enum_id
+        opaque = cast(token, expr_dq_part)  # HACK for expr_to_ast
+        done = p.addtoken(typ, opaque, gr.tokens[typ])
+        assert not done  # can't end the expression
 
-      continue
+        continue
 
-    if tok.id == Id.Left_DollarBrace:
-      left_token = tok
-      line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
-      w_parser = parse_ctx.MakeWordParser(lex, line_reader)
+      if tok.id == Id.Left_DollarBrace:
+        left_token = tok
+        line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
+        w_parser = parse_ctx.MakeWordParser(lex, line_reader)
 
-      part, last_token = w_parser.ReadBracedBracedVarSub(left_token)
+        part, last_token = w_parser.ReadBracedBracedVarSub(left_token)
 
-      # It's casted word_part__BracedVarSub -> dummy -> expr__BracedVarSub!
-      typ = Id.Expr_CastedDummy.enum_id
-      opaque = cast(token, part)  # HACK for expr_to_ast
-      done = p.addtoken(typ, opaque, gr.tokens[typ])
-      assert not done  # can't end the expression
+        # It's casted word_part__BracedVarSub -> dummy -> expr__BracedVarSub!
+        typ = Id.Expr_CastedDummy.enum_id
+        opaque = cast(token, part)  # HACK for expr_to_ast
+        done = p.addtoken(typ, opaque, gr.tokens[typ])
+        assert not done  # can't end the expression
 
-      continue
+        continue
 
-    # '' and c''
-    if tok.id in (Id.Left_SingleQuoteRaw, Id.Left_SingleQuoteC):
-      left_token = tok
-      line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
-      w_parser = parse_ctx.MakeWordParser(lex, line_reader)
+      # '' and c''
+      if tok.id in (Id.Left_SingleQuoteRaw, Id.Left_SingleQuoteC):
+        if tok.id == Id.Left_SingleQuoteRaw:
+          sq_mode = lex_mode_e.SQ_Raw
+        else:
+          sq_mode = lex_mode_e.SQ_C
 
-      # mode can be SQ or DollarSQ
-      tokens = []  # type: List[token]
-      no_backslashes = (left_token.val == "'")
-      last_token = w_parser.ReadSingleQuoted(mode, left_token, tokens,
-                                             no_backslashes)
-      sq_part = single_quoted(left_token, tokens)
+        left_token = tok
+        line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
+        w_parser = parse_ctx.MakeWordParser(lex, line_reader)
 
-      typ = Id.Expr_CastedDummy.enum_id
-      opaque = cast(token, sq_part)  # HACK for expr_to_ast
-      done = p.addtoken(typ, opaque, gr.tokens[typ])
-      assert not done  # can't end the expression
+        tokens = []  # type: List[token]
+        no_backslashes = (left_token.val == "'")
+        last_token = w_parser.ReadSingleQuoted(sq_mode, left_token, tokens,
+                                               no_backslashes)
+        sq_part = single_quoted(left_token, tokens)
 
-      continue
+        typ = Id.Expr_CastedDummy.enum_id
+        opaque = cast(token, sq_part)  # HACK for expr_to_ast
+        done = p.addtoken(typ, opaque, gr.tokens[typ])
+        assert not done  # can't end the expression
+        continue
 
   else:
     # We never broke out -- EOF is too soon (how can this happen???)

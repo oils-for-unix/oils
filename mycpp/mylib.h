@@ -222,6 +222,12 @@ class List {
     return result;
   }
 
+  // STUB: For LHS assignment.
+  // TODO: Handle L[-1] = 3 (pgen2 appears to do it)
+  T& operator[](int index) {
+    return v_[0];
+  }
+
   bool contains(T needle);
 
  //private:
@@ -261,10 +267,12 @@ class Dict {
     return values_[0];
   }
 
+  // STUB
   bool contains(K key) {
     return false;
   }
 
+  // STUB
   V& operator[](K key) {
     return values_[0];
   }

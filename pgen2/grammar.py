@@ -26,6 +26,7 @@ if TYPE_CHECKING:
   arc_t = Tuple[int, int]
   first_t = Dict[int, int]
   states_t = List[List[arc_t]]
+  dfa_t = Tuple[states_t, first_t]
 
 
 class Grammar(object):
@@ -97,7 +98,7 @@ class Grammar(object):
         # dfs = Dict[int, Tuple[states, ...]]
 
         self.states = []  # type: states_t
-        self.dfas = {}  # type: Dict[int, Tuple[states_t, first_t]]
+        self.dfas = {}  # type: Dict[int, dfa_t]
         # Oil patch: used to be [(0, "EMPTY")].  I suppose 0 is a special value?
         # Or is it ENDMARKER?
         self.labels = [0]  # type: List[int]

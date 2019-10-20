@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Optional, Any, List
 
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import token
-  from pgen2.grammar import Grammar
+  from pgen2.grammar import Grammar, dfa_t
 
 
 class ParseError(Exception):
@@ -52,7 +52,7 @@ class Parser(object):
     The proper usage sequence is:
 
     p = Parser(grammar, [converter])  # create instance
-    p.setup([start])                  # prepare for parsing
+    p.setup(start)                    # prepare for parsing
     <for each input token>:
         if p.addtoken(...):           # parse a token; may raise ParseError
             break
@@ -97,7 +97,7 @@ class Parser(object):
         """
         self.grammar = grammar
 
-    def setup(self, start=None):
+    def setup(self, start):
         # type: (int) -> None
         """Prepare for parsing.
 
@@ -110,8 +110,6 @@ class Parser(object):
         each time you call setup() the parser is reset to an initial
         state determined by the (implicit or explicit) start symbol.
         """
-        if start is None:
-            start = self.grammar.start
         newnode = PNode(start, None, [])
         # Each stack entry is a tuple: (dfa, state, node).
         self.stack = [(self.grammar.dfas[start], 0, newnode)]
@@ -179,7 +177,7 @@ class Parser(object):
         self.stack[-1] = (dfa, newstate, node)
 
     def push(self, typ, opaque, newdfa, newstate):
-        # type: (int, token, Any, int) -> None
+        # type: (int, token, dfa_t, int) -> None
         """Push a nonterminal.  (Internal)"""
         dfa, _, node = self.stack[-1]
         newnode = PNode(typ, opaque, [])

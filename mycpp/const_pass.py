@@ -146,7 +146,8 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         pass
 
     def visit_name_expr(self, o: 'mypy.nodes.NameExpr') -> T:
-        self.log('NameExpr %s', o.name)
+        #self.log('NameExpr %s', o.name)
+        pass
 
     def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> T:
         if o.expr:
@@ -170,8 +171,8 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         self.indent -= 1
         #self.log(  'args %s', o.args)
 
-        self.log('  arg_kinds %s', o.arg_kinds)
-        self.log('  arg_names %s', o.arg_names)
+        #self.log('  arg_kinds %s', o.arg_kinds)
+        #self.log('  arg_names %s', o.arg_names)
 
     def visit_op_expr(self, o: 'mypy.nodes.OpExpr') -> T:
         self.log('OpExpr')
@@ -186,7 +187,6 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         self.indent += 1
 
         for operand in o.operands:
-          self.log('operand')
           self.indent += 1
           self.accept(operand)
           self.indent -= 1
@@ -319,16 +319,16 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
           else:
             #self.log('    %s :: %s', o.rvalue, r)
             self.indent += 1
-            self.log('    rvalue :: %s', r)
+            #self.log('    rvalue :: %s', r)
             self.accept(o.rvalue)
             self.indent -= 1
             #self.log('  o.rvalue %s', o.rvalue)
 
     def visit_for_stmt(self, o: 'mypy.nodes.ForStmt') -> T:
         self.log('ForStmt')
-        self.log('  index_type %s', o.index_type)
-        self.log('  inferred_item_type %s', o.inferred_item_type)
-        self.log('  inferred_iterator_type %s', o.inferred_iterator_type)
+        #self.log('  index_type %s', o.index_type)
+        #self.log('  inferred_item_type %s', o.inferred_item_type)
+        #self.log('  inferred_iterator_type %s', o.inferred_iterator_type)
         self.accept(o.index)  # index var expression
         self.accept(o.expr)  # the thing being iterated over
         self.accept(o.body)
