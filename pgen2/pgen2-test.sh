@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Proof of concept for pgen2 and Oil syntax.
 #

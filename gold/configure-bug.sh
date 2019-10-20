@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 detect_readline() {
   echo foo >/dev/null 2>&1

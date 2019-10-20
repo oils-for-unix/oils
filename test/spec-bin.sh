@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Build binaries for the spec tests.  This is necessary because they tickle
 # behavior in minor versions of each shell.

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Find dependencies of shell scripts in this repo.
 # This is a good set of repos for oilshell.org/src.

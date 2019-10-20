@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Adapted from gold/echo-e.sh, which was adapted from spec/builtin-io.test.sh.
 

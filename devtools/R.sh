@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Launch R with the libraries we installed for benchmarks and tests.
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Compare osh code on stdin (fd 0) and expected oil code on fd 3.
 osh0-oil3() {

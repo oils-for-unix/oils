@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Measure the time it takes to build a binary with different compilers on
 # different machines, and measure the binary size.

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Use sys.setprofile() and maybe sys.settrace() to trace Oil execution.
 #

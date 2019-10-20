@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #### trap -l
 trap -l | grep INT >/dev/null

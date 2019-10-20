@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # 2018 experiments on determism.  There are 2017 experiments in compare.sh and
 # misc/determinism.py.
