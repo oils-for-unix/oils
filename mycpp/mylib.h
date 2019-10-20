@@ -262,8 +262,15 @@ class Dict {
   V index(K key) {
     return values_[0];
   }
+  // STUB
   // TODO: Can't use this for non-pointer types
   V get(K key) {
+    return values_[0];
+  }
+
+  // STUB
+  // expr_parse.py uses OTHER_BALANCE
+  V get(K key, V default_val) {
     return values_[0];
   }
 

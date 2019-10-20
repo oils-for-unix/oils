@@ -19,12 +19,15 @@ if TYPE_CHECKING:
 class ParseError(Exception):
     """Exception to signal the parser is stuck."""
 
-    def __init__(self, msg, typ, opaque):
+    def __init__(self, msg, type_, opaque):
         # type: (str, int, token) -> None
-        Exception.__init__(self, "%s: type=%d, opaque=%r" % (msg, typ, opaque))
         self.msg = msg
-        self.type = typ
+        self.type = type_
         self.opaque = opaque
+
+    def __repr__(self):
+        # type: () -> str
+        return "%s: type=%d, opaque=%r" % (self.msg, self.type, self.opaque)
 
 
 class PNode(object):

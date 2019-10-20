@@ -161,6 +161,11 @@ using id_kind_asdl::Id_t;  // TODO: proper ASDL modules
 // TODO: This is already added elsewhere
 #include "mylib.h"
 
+// Stub
+void p_die(Str* fmt, syntax_asdl::token* blame_token) {
+  throw AssertionError();
+}
+
 // Hack for now.  Every sum type should have repr()?
 Str* repr(syntax_asdl::source_t* obj) {
   return new Str("TODO");
@@ -238,6 +243,16 @@ using id_kind_asdl::Id_t;  // TODO: proper ASDL modules
 // Hack for now.  Every sum type should have repr()?
 Str* repr(syntax_asdl::source_t* obj) {
   return new Str("TODO");
+}
+
+// Stub
+void p_die(Str* fmt, syntax_asdl::token* blame_token) {
+  throw AssertionError();
+}
+
+// Stub
+void p_die(Str* fmt, Str* s, syntax_asdl::token* blame_token) {
+  throw AssertionError();
 }
 
 // STUB

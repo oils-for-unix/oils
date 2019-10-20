@@ -9,8 +9,6 @@ using id_kind_asdl::Id_t;  // TODO: proper ASDL modules
 #include "syntax_asdl.h"
 #include "types_asdl.h"
 
-void p_die(Str* fmt, syntax_asdl::token* blame_token);
-
 namespace match {
 
 using types_asdl::lex_mode_t;

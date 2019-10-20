@@ -7,11 +7,6 @@
 #include "osh-types.h"
 #include "osh-lex.h"
 
-// Stub
-void p_die(Str* fmt, syntax_asdl::token* blame_token) {
-  throw AssertionError();
-}
-
 namespace match {
 
 Tuple2<Id_t, int>* OneToken(lex_mode_t lex_mode, Str* line, int start_pos) {
