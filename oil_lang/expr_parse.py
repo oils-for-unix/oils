@@ -3,8 +3,6 @@ expr_parse.py
 """
 from __future__ import print_function
 
-import sys
-
 from _devbuild.gen.syntax_asdl import (
     token, double_quoted, single_quoted, command_sub,
     word__Token, word__Compound, word_part_t,

@@ -33,6 +33,12 @@ from core import pyutil
 
 from ovm2 import oheap2
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+  from typing import Dict
+  from pgen2.parse import PNode
+
 
 # From lib2to3/pygram.py.  This takes the place of the 'symbol' module.
 # compiler/transformer module needs this.
@@ -125,9 +131,10 @@ class ParseTreePrinter(object):
   def __init__(self, names):
     # type: (Dict[int, str]) -> None
     self.names = names
+    self.f = sys.stdout
 
   def Print(self, pnode, f=sys.stdout, indent=0, i=0):
-    # type: (PNode, IO[str], int, int) -> None
+    # type: (PNode, int, int) -> None
 
     ind = '  ' * indent
     # NOTE:
@@ -141,7 +148,7 @@ class ParseTreePrinter(object):
       v = pnode.tok[0]
     else:
       v = '-'
-    f.write('%s%d %s %s\n' % (ind, i, self.names[pnode.typ], v))
+    self.f.write('%s%d %s %s\n' % (ind, i, self.names[pnode.typ], v))
     if pnode.children:  # could be None
       for i, child in enumerate(pnode.children):
         self.Print(child, indent=indent+1, i=i)

@@ -23,7 +23,6 @@ from _devbuild.gen.syntax_asdl import (
     word_part__Literal,
     token,
 )
-from asdl import runtime
 #from core.util import log
 from core.util import p_die
 from frontend.match import BRACE_RANGE_LEXER
