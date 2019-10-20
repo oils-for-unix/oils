@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Following:
 # https://docs.python.org/3/howto/instrumentation.html

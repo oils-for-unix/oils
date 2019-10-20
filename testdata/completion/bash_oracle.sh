@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Test our _init_completion builtin against the bash_completion implementaiton.
 #

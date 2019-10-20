@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Make an Alpine Linux chroot.
 #
@@ -6,7 +6,7 @@
 # - Test if the oil tarball can be configured/compiled/installed inside a
 #   minimal Linux distro.
 # - TODO: Test BUILDING this distro, by running their ash/bash scripts.
-#   - Should symlink BOTH /bin/sh and /bin/bash to osh!
+#   - Should symlink BOTH /bin/sh and /usr/bin/env bash to osh!
 #
 # Usage:
 #   ./alpine.sh <function name>

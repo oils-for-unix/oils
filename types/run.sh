@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Usage:
 #   ./typed.sh <function name>
@@ -16,7 +16,7 @@ deps() {
   pip3 install 'mypy'
 }
 
-mypy() { ~/.local/bin/mypy "$@"; }
+mypy() { mypy "$@"; }
 # This has a bug
 #pyannotate() { ~/.local/bin/pyannotate "$@"; }
 
@@ -58,7 +58,7 @@ iter-arith-asdl() {
   asdl/run.sh gen-typed-arith-asdl
   check-arith
 
-  export PYTHONPATH=. 
+  export PYTHONPATH=.
   asdl/typed_arith_parse_test.py
 
   echo '---'

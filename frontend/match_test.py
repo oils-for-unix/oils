@@ -25,9 +25,9 @@ class MatchTest(unittest.TestCase):
         True, match.ShouldHijack('#!/usr/bin/env bash\n'))
 
     self.assertEqual(
-        True, match.ShouldHijack('#!/bin/bash\n[line 2]'))
+        True, match.ShouldHijack('#!/usr/bin/env bash\n[line 2]'))
     self.assertEqual(
-        True, match.ShouldHijack('#!/bin/bash -e\n[line 2]'))
+        True, match.ShouldHijack('#!/usr/bin/env bash -e\n[line 2]'))
     self.assertEqual(
         True, match.ShouldHijack('#!/bin/sh\n[line 2]\n'))
     self.assertEqual(

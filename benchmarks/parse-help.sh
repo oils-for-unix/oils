@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # A pure string-processing benchmark extracted from bash-completion.
 #

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Usage:
 #   ./startup.sh <function name>
@@ -26,7 +26,7 @@ regular-shell() {
 # /* System-wide .bashrc file for interactive shells. */
 # /* #define SYS_BASHRC "/etc/bash.bashrc" */ 
 search-bin() {
-  strings /bin/bash | grep bashrc
+  strings /usr/bin/env bash | grep bashrc
 }
 
 "$@"

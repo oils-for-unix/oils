@@ -40,6 +40,22 @@ You can also download the latest release and build it, which is linked from the
 [home page](https://www.oilshell.org/).  (This is the only way to try OSH on OS
 X.  Developer builds don't work on OS X.)
 
+Building and testing with Nix
+-----------------------------
+The Nix expression `default.nix` allows you to build and test Oil using the
+[https://nixos.org/nix/](Nix package manager). To build Oil using Nix
+
+    nix-build
+
+To open a development shell with all dependencies
+
+    nix-shell
+
+Within this shell `osh` can be built using `build/dev.sh minimal` and tested with
+e.g. `test/spec.sh smoke`.
+
+As a shortcut for the smoke test, one could use `nix-shell --run "test/spec.sh smoke"`.
+
 Contributing
 ------------
 

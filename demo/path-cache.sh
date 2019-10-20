@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Test how many calls to execve() there are.
 # This is also a good demo of extraneous stat() calls at startup!  bash has a

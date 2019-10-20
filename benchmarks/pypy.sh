@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Summary: PyPy is slower than CPython for parsing.  (I bet it also uses more
 # memory, although I didn't measure that.)

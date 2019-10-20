@@ -74,7 +74,7 @@ find-src() {
           -o -name '*.sh' \
           -o -name '*.asdl' \
           -o -name '*.[ch]' \
-         ')' -a -print 
+         ')' -a -print
 }
 
 find-tabs() {
@@ -104,7 +104,7 @@ all-oil-parse() {
 }
 
 bin-flake8() {
-  local ubuntu_flake8=~/.local/bin/flake8 
+  local ubuntu_flake8=~/.local/bin/flake8
   if test -f "$ubuntu_flake8"; then
     $ubuntu_flake8 "$@"
   else
@@ -228,5 +228,5 @@ inheritance() {
 base-classes() {
   inheritance | egrep -o '\(.*\)' | sort | uniq -c | sort -n
 }
- 
+
 "$@"
