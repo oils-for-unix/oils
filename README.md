@@ -42,12 +42,9 @@ X.  Developer builds don't work on OS X.)
 
 Building and testing with Nix
 -----------------------------
-The Nix expression `default.nix` allows you to build and test Oil using the
-[https://nixos.org/nix/](Nix package manager). To build Oil using Nix
-
-    nix-build
-
-To open a development shell with all dependencies
+The Nix expression `shell.nix` provides all build and test dependencies using the
+[https://nixos.org/nix/](Nix package manager). To open a development shell with
+all dependencies
 
     nix-shell
 
