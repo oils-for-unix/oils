@@ -78,7 +78,7 @@ class _MatchOshToken_Slow(object):
 def _MatchOshToken_Fast(lex_mode, line, start_pos):
   # type: (lex_mode_t, str, int) -> Tuple[Id_t, int]
   """Returns (Id, end_pos)."""
-  tok_type, end_pos = fastlex.MatchOshToken(lex_mode.enum_id, line, start_pos)
+  tok_type, end_pos = fastlex.MatchOshToken(lex_mode, line, start_pos)
   # IMPORTANT: We're reusing Id instances here.  Ids are very common, so this
   # saves memory.
   return IdInstance(tok_type), end_pos

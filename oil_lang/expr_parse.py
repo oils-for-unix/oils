@@ -74,11 +74,11 @@ def _Classify(gr, tok):
       return gr.keywords[tok.val]
 
   # This handles 'x'.
-  typ = tok.id.enum_id
+  typ = tok.id
   if typ in gr.tokens:
     return gr.tokens[typ]
 
-  type_str = '' if tok.id == Id.Unknown_Tok else (' (%s)' % tok.id.name)
+  type_str = '' if tok.id == Id.Unknown_Tok else (' (%s)' % Id_str(tok.id))
   p_die('Unexpected token in expression mode%s', type_str, token=tok)
 
 
@@ -136,13 +136,13 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
     #  tok.id = KEYWORDS[tok.val]
     #  log('Replaced with %s', tok.id)
 
-    if tok.id.enum_id >= 256:
+    if tok.id >= 256:
       raise AssertionError(Id_str(tok.id))
 
     ilabel = _Classify(gr, tok)
     #log('tok = %s, ilabel = %d', tok, ilabel)
 
-    if p.addtoken(tok.id.enum_id, tok, ilabel):
+    if p.addtoken(tok.id, tok, ilabel):
       return tok
 
     #
@@ -178,7 +178,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
         words2 = braces.BraceDetectAll(words)
         words3 = word_.TildeDetectAll(words2)
 
-        typ = Id.Expr_CastedDummy.enum_id
+        typ = Id.Expr_CastedDummy
         opaque = cast(token, words3)  # HACK for expr_to_ast
         done = p.addtoken(typ, opaque, gr.tokens[typ])
         assert not done  # can't end the expression
@@ -186,7 +186,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
         # Now push the closing )
         tok = w.token
         ilabel = _Classify(gr, tok)
-        done = p.addtoken(tok.id.enum_id, tok, ilabel)
+        done = p.addtoken(tok.id, tok, ilabel)
         assert not done  # can't end the expression
 
         continue
@@ -206,14 +206,14 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
         cs_part.spids.append(left_token.span_id)
         cs_part.spids.append(right_token.span_id)
 
-        typ = Id.Expr_CastedDummy.enum_id
+        typ = Id.Expr_CastedDummy
         opaque = cast(token, cs_part)  # HACK for expr_to_ast
         done = p.addtoken(typ, opaque, gr.tokens[typ])
         assert not done  # can't end the expression
 
         # Now push the closing )
         ilabel = _Classify(gr, right_token)
-        done = p.addtoken(right_token.id.enum_id, right_token, ilabel)
+        done = p.addtoken(right_token.id, right_token, ilabel)
         assert not done  # can't end the expression
 
         continue
@@ -227,7 +227,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
         last_token = w_parser.ReadDoubleQuoted(left_token, parts)
         expr_dq_part = double_quoted(left_token, parts)
 
-        typ = Id.Expr_CastedDummy.enum_id
+        typ = Id.Expr_CastedDummy
         opaque = cast(token, expr_dq_part)  # HACK for expr_to_ast
         done = p.addtoken(typ, opaque, gr.tokens[typ])
         assert not done  # can't end the expression
@@ -242,7 +242,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
         part, last_token = w_parser.ReadBracedBracedVarSub(left_token)
 
         # It's casted word_part__BracedVarSub -> dummy -> expr__BracedVarSub!
-        typ = Id.Expr_CastedDummy.enum_id
+        typ = Id.Expr_CastedDummy
         opaque = cast(token, part)  # HACK for expr_to_ast
         done = p.addtoken(typ, opaque, gr.tokens[typ])
         assert not done  # can't end the expression
@@ -266,7 +266,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
                                                no_backslashes)
         sq_part = single_quoted(left_token, tokens)
 
-        typ = Id.Expr_CastedDummy.enum_id
+        typ = Id.Expr_CastedDummy
         opaque = cast(token, sq_part)  # HACK for expr_to_ast
         done = p.addtoken(typ, opaque, gr.tokens[typ])
         assert not done  # can't end the expression
@@ -274,7 +274,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
 
   else:
     # We never broke out -- EOF is too soon (how can this happen???)
-    raise parse.ParseError("incomplete input", tok.id.enum_id, tok)
+    raise parse.ParseError("incomplete input", tok.id, tok)
 
 
 class ExprParser(object):

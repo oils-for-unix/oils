@@ -53,8 +53,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       tag_str = '%s.%s' % (name, variant.name)
       int_to_str[tag_num] = tag_str
 
-      attr = '  %s = %s_t(%d, %r)' % (
-          variant.name, name, tag_num, variant.name)
+      attr = '  %s = %s_t(%d)' % (variant.name, name, tag_num)
       self.Emit(attr, depth)
     self.Emit('', depth)
 
@@ -62,10 +61,10 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     self.Emit('def %s_str(val):' % name, depth)
     self.Emit('  # type: (%s_t) -> str' % name, depth)
-    self.Emit('  return _%s_str[val.enum_id]' % name, depth)
+    self.Emit('  return _%s_str[val]' % name, depth)
     self.Emit('', depth)
 
-  def _CodeSnippet(self, abbrev, desc, var_name):
+  def _CodeSnippet(self, abbrev, field, desc, var_name):
     none_guard = False
     if isinstance(desc, meta.BoolType):
       code_str = "hnode.Leaf('T' if %s else 'F', color_e.OtherConst)" % var_name
@@ -82,12 +81,14 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     elif isinstance(desc, meta.UserType):  # e.g. Id
       # This assumes it's Id, which is a simple SumType.  TODO: Remove this.
-      code_str = 'hnode.Leaf(%s.name, color_e.UserType)' % var_name
+      code_str = 'hnode.Leaf(Id_str(%s), color_e.UserType)' % var_name
       none_guard = True  # otherwise MyPy complains about foo.name
 
     elif isinstance(desc, meta.SumType):
       if desc.is_simple:
-        code_str = 'hnode.Leaf(%s.name, color_e.TypeName)' % var_name
+        code_str = 'hnode.Leaf(%s_str(%s), color_e.TypeName)' % (
+            field.type, var_name)
+
         none_guard = True  # otherwise MyPy complains about foo.name
       else:
         code_str = '%s.%s()' % (var_name, abbrev)
@@ -114,20 +115,21 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       self.Emit('  if self.%s:  # ArrayType' % field.name)
       self.Emit('    %s = hnode.Array([])' % out_val_name)
       self.Emit('    for %s in self.%s:' % (iter_name, field.name))
-      child_code_str, _ = self._CodeSnippet(abbrev, desc, iter_name)
+      child_code_str, _ = self._CodeSnippet(abbrev, field, desc, iter_name)
       self.Emit('      %s.children.append(%s)' % (out_val_name, child_code_str))
       self.Emit('    L.append(field(%r, %s))' % (field.name, out_val_name))
 
     elif field.opt:
       self.Emit('  if self.%s is not None:  # MaybeType' % field.name)
-      child_code_str, _ = self._CodeSnippet(abbrev, desc,
+      child_code_str, _ = self._CodeSnippet(abbrev, field, desc,
                                             'self.%s' % field.name)
       self.Emit('    %s = %s' % (out_val_name, child_code_str))
       self.Emit('    L.append(field(%r, %s))' % (field.name, out_val_name))
 
     else:
       var_name = 'self.%s' % field.name
-      code_str, obj_none_guard = self._CodeSnippet(abbrev, desc, var_name)
+      code_str, obj_none_guard = self._CodeSnippet(abbrev, field, desc,
+                                                   var_name)
 
       depth = self.current_depth
       if obj_none_guard:  # to satisfy MyPy type system

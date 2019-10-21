@@ -29,9 +29,9 @@ class OilTokenDef(object):
     e.g. translate Expr_Name in the grammar to 178
     """
     id_ = getattr(Id, label)
-    #log('Id %s = %d', id_, id_.enum_id)
-    assert id_.enum_id < 256, id_
-    return id_.enum_id
+    #log('Id %s = %d', id_, id_)
+    assert id_ < 256, id_
+    return id_
 
   def GetKeywordNum(self, s):
     """
@@ -42,8 +42,8 @@ class OilTokenDef(object):
     id_ = self.keyword_ops.get(s)
     if id_ is None:
       return None
-    assert id_.enum_id < 256, id_
-    return id_.enum_id
+    assert id_ < 256, id_
+    return id_
 
   def GetOpNum(self, op_str):
     """
@@ -54,8 +54,8 @@ class OilTokenDef(object):
       Integer for '>=' or Id.Arith_GreatEqual
     """
     id_ = self.ops.get(op_str) or self.more_ops[op_str]  # Fail if not there
-    assert id_.enum_id < 256, id_
-    return id_.enum_id
+    assert id_ < 256, id_
+    return id_
 
 
 def MakeOilLexer(code_str, arena):

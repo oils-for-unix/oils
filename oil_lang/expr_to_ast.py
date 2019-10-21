@@ -544,7 +544,7 @@ class Transformer(object):
         # HACK: When typ is Id.Expr_CastedDummy, the 'tok' field ('opaque')
         # actually has a list of words!
         typ1 = children[1].typ
-        assert typ1 == Id.Expr_CastedDummy.enum_id, typ1
+        assert typ1 == Id.Expr_CastedDummy, typ1
         array_words = cast('List[word_t]', children[1].tok)
 
         return sh_array_literal(left_tok, array_words)

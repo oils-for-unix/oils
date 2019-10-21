@@ -4,6 +4,9 @@ lex_gen.py
 """
 from __future__ import print_function
 
+from _devbuild.gen.id_kind_asdl import Id_str
+from _devbuild.gen.types_asdl import lex_mode_str
+
 import cStringIO
 import sys
 import sre_parse
@@ -221,7 +224,8 @@ static inline void %s(const unsigned char* line, int line_len,
       re2c_pat = TranslateRegex(pat)
     else:
       re2c_pat = TranslateConstant(pat)
-    print('      %-30s { *id = id__%s; break; }' % (re2c_pat, id_.name))
+    id_name = Id_str(id_).split('.')[-1]  # e.g. Undefined_Tok
+    print('      %-30s { *id = id__%s; break; }' % (re2c_pat, id_name))
 
   # EARLY RETURN: Do NOT advance past the NUL terminator.
   print('      %-30s { *id = id__Eol_Tok; *end_pos = start_pos; return; }' % \
@@ -264,11 +268,9 @@ static inline void MatchOshToken(int lex_mode, const unsigned char* line, int li
 
   # TODO: Should be ordered by most common?  Or will profile-directed feedback
   # help?
-
   for state, pat_list in lexer_def.iteritems():
-    # HACK: strip off '_e'
-    prefix = state.__class__.__name__[:-2]
-    print('  case %s__%s:' % (prefix, state.name))
+    # e.g. lex_mode.DQ => lex_mode__DQ
+    print('  case %s:' % lex_mode_str(state).replace('.', '__'))
     print('    for (;;) {')
     print('      /*!re2c')
 
@@ -277,7 +279,8 @@ static inline void MatchOshToken(int lex_mode, const unsigned char* line, int li
         re2c_pat = TranslateRegex(pat)
       else:
         re2c_pat = TranslateConstant(pat)
-      print('      %-30s { *id = id__%s; break; }' % (re2c_pat, id_.name))
+      id_name = Id_str(id_).split('.')[-1]  # e.g. Undefined_Tok
+      print('      %-30s { *id = id__%s; break; }' % (re2c_pat, id_name))
 
     # EARLY RETURN: Do NOT advance past the NUL terminator.
     print('      %-30s { *id = id__Eol_Tok; *end_pos = start_pos; return; }' % \

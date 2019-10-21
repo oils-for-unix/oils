@@ -10,7 +10,7 @@ from asdl import runtime
 def _AbbreviateToken(tok, out):
   # type: (token, List[hnode_t]) -> None
   if tok.id != Id.Lit_Chars:
-    n1 = runtime.NewLeaf(tok.id.name, color_e.OtherConst)
+    n1 = runtime.NewLeaf(Id_str(tok.id), color_e.OtherConst)
     out.append(n1)
 
   n2 = runtime.NewLeaf(tok.val, color_e.StringConst)
@@ -34,7 +34,7 @@ def _speck(obj):
   p_node = runtime.NewRecord('')  # don't show node type
   p_node.abbrev = True
 
-  n1 = runtime.NewLeaf(obj.id.name, color_e.OtherConst)
+  n1 = runtime.NewLeaf(Id_str(obj.id), color_e.OtherConst)
   p_node.unnamed_fields.append(n1)
   return p_node
 
@@ -139,7 +139,7 @@ def _expr__Const(obj):
   tok = obj.c
   out = p_node.unnamed_fields
 
-  n1 = runtime.NewLeaf(tok.id.name, color_e.OtherConst)
+  n1 = runtime.NewLeaf(Id_str(tok.id), color_e.OtherConst)
   out.append(n1)
 
   n2 = runtime.NewLeaf(tok.val, color_e.StringConst)

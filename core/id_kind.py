@@ -45,7 +45,7 @@ class IdSpec(object):
     # type: (Kind_t) -> List[Tuple[bool, str, Id_t]]
     from core import meta  # break circular dep
     result = []
-    for is_regex, pat, id_int in self.lexer_pairs[kind.enum_id]:
+    for is_regex, pat, id_int in self.lexer_pairs[kind]:
       result.append((is_regex, pat, meta.IdInstance(id_int)))
     return result
 

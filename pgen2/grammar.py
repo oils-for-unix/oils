@@ -124,6 +124,10 @@ class Grammar(object):
           performance because OrderedDict uses dict's __getitem__ with nothing in
           between.
           """
+          # Hack to get rid of Id_t
+          labels = [int(i) for i in self.labels]
+          tokens = dict((int(k), v) for (k, v) in self.tokens.iteritems())
+
           #self.report()
           payload = (
             self.MARSHAL_HEADER,
@@ -131,9 +135,9 @@ class Grammar(object):
             self.number2symbol,
             self.states,
             self.dfas,
-            self.labels,
+            labels,
             self.keywords,
-            self.tokens,
+            tokens,
             self.symbol2label,
             self.start,
           )  # tuple

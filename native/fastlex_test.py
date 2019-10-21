@@ -20,9 +20,9 @@ from core.meta import IdInstance
 import fastlex  # module under test
 
 
-# NOTE: This is just like _MatchOshToken_Fast in osh/match.py
+# NOTE: This is just like _MatchOshToken_Fast in frontend/match.py
 def MatchOshToken(lex_mode, line, start_pos):
-  tok_type, end_pos = fastlex.MatchOshToken(lex_mode.enum_id, line, start_pos)
+  tok_type, end_pos = fastlex.MatchOshToken(lex_mode, line, start_pos)
   #log('tok_type = %d, id = %s', tok_type, IdInstance(tok_type))
   return IdInstance(tok_type), end_pos
 

@@ -17,30 +17,10 @@ class Obj(object):
   ASDL_TYPE = None  # Used for type checking
 
 
-class SimpleObj(Obj):
+class SimpleObj(int):
   """Base type of simple sum types."""
-  def __init__(self, enum_id, name):
-    # type: (int, str) -> None
-    self.enum_id = enum_id
-    self.name = name
-
-  # TODO: Why is __hash__ needed?  Otherwise native/fastlex_test.py fails.
-  # util.Enum required it too.  I thought that instances would hash by
-  # identity?
-  #
-  # Example:
-  # class bool_arg_type_e(py_meta.SimpleObj):
-  #   pass
-  # bool_arg_type_e.Undefined = bool_arg_type_e(1, 'Undefined')
-
-  def __hash__(self):
-    # type: () -> int
-    # Could it be the integer self.enum_id?
-    return hash(self.__class__.__name__ + self.name)
-
-  def __repr__(self):
-    # type: () -> str
-    return '<%s %s %s>' % (self.__class__.__name__, self.name, self.enum_id)
+  # TODO: Get rid of this indirection?  Although mycpp might use it.
+  pass
 
 
 class CompoundObj(Obj):

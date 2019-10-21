@@ -148,6 +148,8 @@ namespace %s {
       if isinstance(typ, meta.UserType):
         f.write('from _devbuild.gen.%s import %s\n' % (
           typ.mod_name, typ.type_name))
+        # HACK
+        f.write('from _devbuild.gen.%s import Id_str\n' % typ.mod_name)
         f.write('\n')
 
     # NOTE: Dict, Any are for AssocArray with 'dict' type.

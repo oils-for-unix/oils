@@ -28,7 +28,7 @@ _ID_TO_KIND_INTEGERS = {}  # type: Dict[int, int]
 def LookupKind(id_):
   # type: (Id_t) -> Kind_t
   """Id_t -> Kind_t"""
-  return KIND_INSTANCES[_ID_TO_KIND_INTEGERS[id_.enum_id]]
+  return KIND_INSTANCES[_ID_TO_KIND_INTEGERS[id_]]
 
 
 # Do NOT create any any more instances of Id.  Always use IdInstance().

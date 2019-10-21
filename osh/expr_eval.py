@@ -693,7 +693,7 @@ class BoolEvaluator(_ExprEvaluator):
       s = self._EvalCompoundWord(node.child)
 
       # Now dispatch on arg type
-      arg_type = BOOL_ARG_TYPES[op_id.enum_id]  # could be static in the LST?
+      arg_type = BOOL_ARG_TYPES[op_id]  # could be static in the LST?
 
       if arg_type == bool_arg_type_e.Path:
         # Only use lstat if we're testing for a symlink.
@@ -801,7 +801,7 @@ class BoolEvaluator(_ExprEvaluator):
                                   do_ere=do_ere)
 
       # Now dispatch on arg type
-      arg_type = BOOL_ARG_TYPES[op_id.enum_id]
+      arg_type = BOOL_ARG_TYPES[op_id]
 
       if arg_type == bool_arg_type_e.Path:
         try:
