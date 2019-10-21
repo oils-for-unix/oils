@@ -27,7 +27,7 @@ else:
 # NOTE: bash prints \' for single quote, repr() prints "'".  Gah.  This is also
 # used for printf %q and ${var@q} (bash 4.4).
 
-def Str(s):
+def String(s):
   # type: (str) -> str
   """Return a human-friendly representation of an arbitrary shell string.
 

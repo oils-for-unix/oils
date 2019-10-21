@@ -391,7 +391,7 @@ class _PrettyPrinter(object):
     if tag == hnode_e.Leaf:
       node = cast(hnode__Leaf, UP_node)
       f.PushColor(node.color)
-      f.write(pretty.Str(node.s))
+      f.write(pretty.String(node.s))
       f.PopColor()
 
     elif tag == hnode_e.External:
@@ -457,7 +457,7 @@ def _TrySingleLine(node, f, max_chars):
   if tag == hnode_e.Leaf:
     node = cast(hnode__Leaf, UP_node)
     f.PushColor(node.color)
-    f.write(pretty.Str(node.s))
+    f.write(pretty.String(node.s))
     f.PopColor()
 
   elif tag == hnode_e.External:

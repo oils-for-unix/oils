@@ -533,7 +533,7 @@ class ExternalThunk(Thunk):
     # bash displays        sleep $n & (code)
     # but OSH displays     sleep 1 &  (argv array)
     # We could switch the former but I'm not sure it's necessary.
-    return '[process] %s' % ' '.join(pretty.Str(a) for a in self.arg_vec.strs)
+    return '[process] %s' % ' '.join(pretty.String(a) for a in self.arg_vec.strs)
 
   def Run(self):
     """

@@ -409,7 +409,7 @@ def _GetOpts(spec, argv, optind, errfmt):
       optarg = argv[optind-1]  # 1-based indexing
     except IndexError:
       errfmt.Print('getopts: option %r requires an argument.', current)
-      ui.Stderr('(getopts argv: %s)', ' '.join(pretty.Str(a) for a in argv))
+      ui.Stderr('(getopts argv: %s)', ' '.join(pretty.String(a) for a in argv))
       # Hm doesn't cause status 1?
       return 0, '?', optarg, optind
 

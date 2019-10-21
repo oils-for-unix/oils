@@ -71,14 +71,7 @@ translate-parse() {
 
   local snippet='
 #include "expr_asdl.h"
-
-// TODO: pretty.Str() turns + into "+", etc.
-// This is a good opportunity to use the rest of fastlex.
-namespace pretty {
-Str* Str(Str* s) {
-  return s;
-}
-}
+#include "pretty.h"
 
 Str* repr(void* obj) {
   return new Str("TODO: repr()");
@@ -97,7 +90,10 @@ compile-parse() {
   mkdir -p _gen
   asdl-gen cpp examples/expr.asdl _gen/expr_asdl
 
-  compile-with-asdl parse _gen/expr_asdl.cc ../_devbuild/gen-cpp/hnode_asdl.cc
+  compile-with-asdl parse \
+    ../cpp/pretty.cc \
+    _gen/expr_asdl.cc \
+    ../_devbuild/gen-cpp/hnode_asdl.cc
 }
 
 ### parse

@@ -2,7 +2,7 @@
 
 #include "match.h"
 
-// C includes
+// C includes have to go together
 #include "id.h"
 #include "osh-types.h"
 #include "osh-lex.h"
@@ -19,4 +19,4 @@ Tuple2<Id_t, int>* OneToken(lex_mode_t lex_mode, Str* line, int start_pos) {
   return new Tuple2<Id_t, int>(static_cast<Id_t>(id), end_pos);
 }
 
-}
+}  // namespace match

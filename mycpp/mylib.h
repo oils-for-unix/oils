@@ -455,6 +455,8 @@ class BufWriter : public Writer {
   // strategy: snprintf() based on sizeof(int)
   void format_d(int i);
   void format_s(Str* s);
+  // mycpp doesn't agree here
+  //void format_s(const char* s);
   void format_r(Str* s);  // formats with quotes
 
   // looks at arbitrary type tags?  Is this possible

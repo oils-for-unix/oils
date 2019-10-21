@@ -218,7 +218,7 @@ class Tracer(object):
       return
 
     first_char, prefix = self._EvalPS4()
-    cmd = ' '.join(pretty.Str(a) for a in argv)
+    cmd = ' '.join(pretty.String(a) for a in argv)
     self.f.log('%s%s%s', first_char, prefix, cmd)
 
   def OnShAssignment(self, lval, op, val, flags, lookup_mode):

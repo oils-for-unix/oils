@@ -111,7 +111,14 @@ build-all() {
 test-all() {
   mkdir -p _tmp
 
-  time for name in "${EXAMPLES[@]}"; do
+  if test $# -eq 0; then
+    readonly cases=("${EXAMPLES[@]}")
+  else
+    # Explicit list passed
+    readonly cases=("$@")
+  fi
+
+  time for name in "${cases[@]}"; do
     if should-skip $name; then
       echo "  (skipping $name)"
       continue
@@ -182,8 +189,9 @@ should-skip() {
 
     # Other problematic constructs: **kwargs, named args
 
-    # TODO: enable these with special build scripts
-    alloc_main|lexer_main|named_args)
+    # TODO:
+    # - alloc_main and lexer_main work!  They just need build scripts
+    pgen2_demo|alloc_main|lexer_main|named_args)
       return 0
       ;;
 

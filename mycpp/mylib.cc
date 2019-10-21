@@ -210,6 +210,10 @@ void BufWriter::format_s(Str* s) {
   this->write(s);
 }
 
+//void BufWriter::format_s(const char* s) {
+//  this->write_const(s, strlen(s));
+//}
+
 void CFileWriter::write(Str* s) {
   // note: throwing away the return value
   fwrite(s->data_, s->len_, 1, f_);
