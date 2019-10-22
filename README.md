@@ -57,6 +57,16 @@ doesn't work.
 [oilshell.zulipchat.com]: https://oilshell.zulipchat.com/
 [blog]: http://www.oilshell.org/blog/
 
+Developer Docs
+--------------
+
+The [Wiki](https://github.com/oilshell/oil/wiki) has many developoer docs in
+semi-organized state.  There are also READMEs in some subdirs, like `opy/`
+and `mycpp/`.
+
+If you're confused, the best thing to do is to ask on Zulip and someone
+should produce a pointer and/or improve the docs.
+
 Code Overview
 -------------
 

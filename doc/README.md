@@ -1,10 +1,25 @@
 # Documentation
 
+## HTML Docs
+
+I build these with a wrapper around CommonMark.  Try:
+
+    devtools/cmark.sh download
+    devtools/cmark.sh build
+    devtools/cmark.sh run-tests
+
+And then:
+
+    build/doc.sh manual
+
+The output HTML shows up in `_release/VERSION/doc`.
+
+
 ## Man pages
-Osh.1 is a ["man" page](https://en.wikipedia.org/wiki/Man_page) written using the ['mdoc'](http://mandoc.bsd.lv/man/mdoc.7.html) macro language for the troff (groff) formatter.
-Osh.1 is viewable with the `man` or `mandoc` commands by typing (in the doc directory) `man ./osh`. 
 
-### TODO:
-Install oil to the $MANPATH
+`osh.1` is a [man page](https://en.wikipedia.org/wiki/Man_page) written using
+the [mdoc](http://mandoc.bsd.lv/man/mdoc.7.html) macro language for the troff
+(groff) formatter.
 
+You can view it with `man doc/osh.1`. 
 
