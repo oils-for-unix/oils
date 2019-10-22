@@ -1,3 +1,5 @@
+<title>Oil User Manual</title>
+
 <div style="float:right;">
   <span id="version-in-header">Version 0.7.pre5</span> <br/>
 

@@ -1,9 +1,11 @@
+<title>Egg Expressions (Oil Regexes)</title>
+
 Egg Expressions (Oil Regexes)
 -----------------------------
 
 Oil has a new syntax for patterns, which appears between the `/ /` delimiters:
 
-    if (mystr ~ /d+ '.' d+/) {   
+    if (mystr ~ /d+ '.' d+/) {
       echo 'mystr looks like a number N.M'
     }
 
