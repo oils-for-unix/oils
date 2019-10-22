@@ -1,11 +1,15 @@
-Oil
-===
+Oil Source Code
+===============
+
+[git-repo]: https://github.com/oilshell/oil
 
 [![Build
 Status](https://travis-ci.org/oilshell/oil.svg)](https://travis-ci.org/oilshell/oil)
 
 [Oil][] is a new Unix shell.  It's our upgrade path from bash!  ([Why Create a
 New Unix Shell?][why] / [2019 FAQ][faq])
+
+Its [source code lives in git][git-repo].
 
 [Oil]: https://www.oilshell.org/
 [why]: https://www.oilshell.org/blog/2018/01/28.html
@@ -14,22 +18,23 @@ New Unix Shell?][why] / [2019 FAQ][faq])
 It's written in Python, but we deploy a native executable by including some of
 the `Python-2.7.13/` dir in the tarball.
 
-[The blog][blog] has updates on the project status.
+<div id="toc">
+</div>
 
-## Contributing
+### Contributing
 
 * Make sure to check out the [Contributing][] page.
 * Let us know if you have problems getting started by posting on the `#oil-dev`
   channel of [oilshell.zulipchat.com][].
 * Feel free to grab an [issue from
   Github](https://github.com/oilshell/oil/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
-  And let us know what you're thinking before you get too far.
+  Let us know what you're thinking before you get too far.
 
 [Contributing]: https://github.com/oilshell/oil/wiki/Contributing
 [oilshell.zulipchat.com]: https://oilshell.zulipchat.com/
 [blog]: http://www.oilshell.org/blog/
 
-### Quick Start for Contributors on Linux
+#### Quick Start on Linux
 
 Clone the repo, build the Python extension, and run `bin/osh` (or `bin/oil`):
 
@@ -45,16 +50,16 @@ Clone the repo, build the Python extension, and run `bin/osh` (or `bin/oil`):
 Try running a shell script you wrote with `bin/osh myscript.sh`.
 
 This is called the **developer build**, and is **very different** from the
-release tarball.  The [Contributing][] describes this difference in detail.
+release tarball.  The [Contributing][] page describes this difference in
+detail.
 
 The release tarballs are linked from the [home
 page](https://www.oilshell.org/).  (Developer builds don't work on OS X, so use
 the release tarballs on OS X.)
 
-Running `bin/oil` will let you try the Oil language.  Send me feedback about
-it!
+Run `bin/oil` to try the Oil language.  Send me feedback about it!
 
-### Docs
+#### Docs
 
 The [Wiki](https://github.com/oilshell/oil/wiki) has many developer docs.  Feel
 free to edit them.  If you make a major change, let us know on Zulip!
@@ -67,7 +72,7 @@ produce a pointer and/or improve the docs.
 Docs for **end users** are linked from each [release
 page](https://www.oilshell.org/releases.html).
 
-## Code Overview
+### Repository Structure
 
 Try this to show a summary of what's in the repo and their line counts:
 
@@ -75,39 +80,25 @@ Try this to show a summary of what's in the repo and their line counts:
 
 (Other functions in this file may be useful as well.)
 
-### Directory Structure
+#### A Collection of Interpreters
 
-    # Development Scripts
+Oil is naturally structured as a set of mutually recursive parsers and
+evaluators.
 
-    benchmarks/       # Benchmarks should be run on multiple machines.
-    metrics/          # Metrics don't change between machines (e.g. code size)
-    build/            # Build automation
-      oil-defs/       # Files that define our slice of CPython.
-      dev.sh          # For development builds, running CPython
-    devtools/         # For Oil developers (not end users)
-      release.sh      # Documents the release process.
-    misc/             # Other development scripts
-    demo/             # Demonstrations of bash/shell features.  Could be
-                      # moved to tests/ if automated.
-    web/              # HTML/JS/CSS for tests and tools
+    bin/              # Main entry points (bin/osh)
+    osh/              # OSH parser and evaluator
+    oil_lang/         # Oil parser and evaluator
+    frontend/         # Lexing/Parsing code common to Oil and OSH
+    core/             # Other code shared between Oil and OSH
+    pylib/            # Borrowed from the Python standard library.
+    native/           # Python extension modules, e.g. libc.c
+    cpp/              # C++ code which complements the mycpp translation
+    tools/            # User-facing tools, e.g. the osh2oil translator
+    Python-2.7.13/    # CPython is the initial basis for the Oil VM
 
-    # Tests
+#### DSLs / Code Generators
 
-    test/             # Test automation
-      unit.sh         ## Types of test runner: unit, spec, wild, smoke
-      spec.sh
-      wild.sh
-      smoke.sh
-      sh_spec.py      # shell spec test framework
-    testdata/
-    gold/             # Gold Test cases.
-    spec/             # spec test cases
-      bin/            # tools used in many spec tests
-      testdata/       # scripts for specific test cases
-      errors/         # TODO: migrate these bad shell scripts
-    types/            # Scripts for running MyPy and PyAnnotate, etc.
-
-    # DSLs / Code Generators
+Oil is implemented with DSLs and metaprogramming, for "leverage".
 
     asdl/             # ASDL implementation, derived from CPython
     pgen2/            # Parser Generator, borrowed from CPython
@@ -120,20 +111,45 @@ Try this to show a summary of what's in the repo and their line counts:
       gold/           # tests
       byterun/        # Unused bytecode interpreter
 
-    # Oil Code
+#### Tests
 
-    Python-2.7.13/    # CPython is the initial basis for the Oil VM
-    bin/              # Programs to run (bin/osh)
-    core/             # Most of the Oil and OSH implementation.
-    cpp/              # C++ code which complements the mycpp translation
-    native/           # Python extension modules, e.g. libc.c
-    frontend/         # Lexing/Parsing code common to Oil and OSH.
-    oil_lang/         # Oil parser and evaluator.
-    osh/              # OSH parser and evaluator.
-    pylib/            # Borrowed from the Python standard library.
-    tools/            # User-facing tools, e.g. the osh2oil translator
+Unit tests are named `foo_test.py` and live next to `foo.py`.
 
-    # Temporary Directories
+    test/             # Test automation
+      unit.sh         ## Types of test runner: unit, spec, wild, smoke
+      spec.sh
+      wild.sh
+      smoke.sh
+      sh_spec.py      # shell spec test framework
+    testdata/
+    gold/             # Gold Test cases
+    spec/             # Spec test cases
+      bin/            # tools used in many spec tests
+      testdata/       # scripts for specific test cases
+      errors/         # TODO: migrate these bad shell scripts
+    types/            # Scripts for running MyPy and PyAnnotate, etc.
+
+#### Dev Tools and Scripts
+
+We use a lot of automation to improve the dev process.  It's largely written in
+shell, of course!
+
+    benchmarks/       # Benchmarks should be run on multiple machines.
+    metrics/          # Metrics don't change between machines (e.g. code size)
+    build/            # Build automation
+      oil-defs/       # Files that define our slice of CPython.
+      dev.sh          # For development builds, running CPython
+    devtools/         # For Oil developers (not end users)
+      release.sh      # The (large) release process.
+    demo/             # Demonstrations of bash/shell features.  Could be
+                      # moved to tests/ if automated.
+    misc/             # A junk drawer
+    web/              # HTML/JS/CSS for tests and tools
+
+#### Temp Dirs
+
+Directories that begin with `_` are **not** stored in `git`.  The dev tools
+above create and use these dirs.
 
     _bin/             # Native executables are put here
     _build/           # Temporary build files
@@ -163,23 +179,25 @@ Try this to show a summary of what's in the repo and their line counts:
         web/          # Static files, copy of $REPO_ROOT/web
           table/
 
-    # Docs
+#### End user build system
+
+This is very different than the **developer build** of Oil.
+
+    Makefile
+    configure
+    install
+
+#### Docs
+
     doc/              # A mix of docs
     README.md         # For Oil developers
 
     LICENSE.txt       # For end users
     INSTALL.txt
 
-    # End user build system
+### More info
 
-    Makefile
-    configure
-    install
-
-Unit tests are named `foo_test.py` and live next to `foo.py`.
-
-## More info
-
+* [The blog][blog] has updates on the project status.
 * [Oil Home Page](http://www.oilshell.org/)
 * [oilshell.zulipchat.com][] is for any kind of discussion
 * Subscribe for updates:
