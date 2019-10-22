@@ -4,26 +4,21 @@ Oil
 [![Build
 Status](https://travis-ci.org/oilshell/oil.svg)](https://travis-ci.org/oilshell/oil)
 
-Oil is a new Unix shell.  [Why Create a New Unix Shell?][why]
+Oil is a new Unix shell.  It's our upgrade path from bash!  ([Why
+Create a New Unix Shell?][why] / [2019 FAQ][faq])
 
-[why]: http://www.oilshell.org/blog/2018/01/28.html
+[why]: https://www.oilshell.org/blog/2018/01/28.html
+[faq]: https://www.oilshell.org/blog/2019/06/17.html
 
-This repo contains a bash-compatible shell called OSH, written in Python.
+To try it, follow the instructions below, and run `bin/osh` or `bin/oil`.
 
-The dialect of bash that is recognized is called the [OSH
-language][osh-language].  The [Oil language][oil-language] has been designed
-but not implemented.
-
-[osh-language]: http://www.oilshell.org/cross-ref.html#osh-language
-[oil-language]: http://www.oilshell.org/cross-ref.html#oil-language
-
-OSH is written in Python, but we deploy a native executable.  A subset of the
-`Python-2.7.13/` directory is packaged with the application.
+It's written in Python, but we deploy a native executable by including a subset
+of the `Python-2.7.13/` dir the tarball.
 
 Quick Start for Developers on Linux
 -----------------------------------
 
-Clone the repo, build the Python extension, and run `bin/osh`.
+Clone the repo, build the Python extension, and run `bin/osh`:
 
     bash$ build/dev.sh minimal
     ...
@@ -34,20 +29,27 @@ Clone the repo, build the Python extension, and run `bin/osh`.
     osh$ echo "hello $name"
     hello world
 
-Most shell scripts should run, e.g. with `osh myscript.sh`.
+Most shell scripts should run, e.g. with `bin/osh myscript.sh`.
 
-You can also download the latest release and build it, which is linked from the
-[home page](https://www.oilshell.org/).  (This is the only way to try OSH on OS
-X.  Developer builds don't work on OS X.)
+This is called the **developer build**, and is **very different** from the
+release tarball.  See [Contributing][] for details.
+
+The release tarballs are linked from the [home
+page](https://www.oilshell.org/).  (This is the only way to try OSH on OS X.
+Developer builds don't work on OS X.)
+
+Running `bin/oil` will let you try the Oil language.  Send me feedback about
+it!
 
 Contributing
 ------------
 
-For information on how to build and test Oil, see [Contributing][] on the wiki.
-
 If you'd like to contribute, please post a message on the `#oil-dev` channel of
 [oilshell.zulipchat.com][].  Let us know what you're thinking, or let us know
 if you're having problems getting started.
+
+Make sure to check out the [Contributing][] page.  Let us know if anything
+doesn't work.
 
 [The blog][blog] has updates on the project status.
 
@@ -115,7 +117,8 @@ Directory Structure
     Python-2.7.13/    # CPython is the initial basis for the Oil VM
     bin/              # Programs to run (bin/osh)
     core/             # Most of the Oil and OSH implementation.
-    native/           # Native code for Oil, e.g. libc.c
+    cpp/              # C++ code which complements the mycpp translation
+    native/           # Python extension modules, e.g. libc.c
     frontend/         # Lexing/Parsing code common to Oil and OSH.
     oil_lang/         # Oil parser and evaluator.
     osh/              # OSH parser and evaluator.
