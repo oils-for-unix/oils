@@ -43,6 +43,8 @@ Test results, metrics, and benchmarks are shown below.
 - Oil
   - [Egg Expressions](doc/eggex.html).  Oil has a new regex syntax called "egg
     expressions", abbreviated *eggexes*.
+- [README.md](doc/README.html).  If you want to modify Oil, start here.  We
+  welcome contributions!
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
   - The [Oil Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments)
     wiki page has other ways of getting Oil.  These versions may not be

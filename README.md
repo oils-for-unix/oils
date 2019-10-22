@@ -16,8 +16,7 @@ the `Python-2.7.13/` dir in the tarball.
 
 [The blog][blog] has updates on the project status.
 
-Contributing
-------------
+## Contributing
 
 * Make sure to check out the [Contributing][] page.
 * Let us know if you have problems getting started by posting on the `#oil-dev`
@@ -30,8 +29,7 @@ Contributing
 [oilshell.zulipchat.com]: https://oilshell.zulipchat.com/
 [blog]: http://www.oilshell.org/blog/
 
-Quick Start for Contributors on Linux
--------------------------------------
+### Quick Start for Contributors on Linux
 
 Clone the repo, build the Python extension, and run `bin/osh` (or `bin/oil`):
 
@@ -56,18 +54,20 @@ the release tarballs on OS X.)
 Running `bin/oil` will let you try the Oil language.  Send me feedback about
 it!
 
-Docs for Contributors
----------------------
+### Docs
 
-The [Wiki](https://github.com/oilshell/oil/wiki) has many developoer docs in
-semi-organized state.  There are also READMEs in some subdirs, like `opy/`
-and `mycpp/`.
+The [Wiki](https://github.com/oilshell/oil/wiki) has many developer docs.  Feel
+free to edit them.  If you make a major change, let us know on Zulip!
 
-If you're confused, the best thing to do is to ask on Zulip and someone
-should produce a pointer and/or improve the docs.
+There are also READMEs in some subdirs, like `opy/` and `mycpp/`.
 
-Code Overview
--------------
+If you're confused, the best thing to do is to ask on Zulip and someone should
+produce a pointer and/or improve the docs.
+
+Docs for **end users** are linked from each [release
+page](https://www.oilshell.org/releases.html).
+
+## Code Overview
 
 Try this to show a summary of what's in the repo and their line counts:
 
@@ -75,8 +75,7 @@ Try this to show a summary of what's in the repo and their line counts:
 
 (Other functions in this file may be useful as well.)
 
-Directory Structure
--------------------
+### Directory Structure
 
     # Development Scripts
 
@@ -179,8 +178,7 @@ Directory Structure
 
 Unit tests are named `foo_test.py` and live next to `foo.py`.
 
-More info
----------
+## More info
 
 * [Oil Home Page](http://www.oilshell.org/)
 * [oilshell.zulipchat.com][] is for any kind of discussion

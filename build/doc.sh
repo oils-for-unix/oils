@@ -209,6 +209,9 @@ manual() {
 
     markdown2html doc/$d.md $root_dir/doc/$d.html "$css_link" ''
   done
+
+  markdown2html README.md $root_dir/doc/README.html "$css_link" ''
+
   ls -l $root_dir/doc
 }
 
