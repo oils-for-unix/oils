@@ -136,8 +136,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
     #  tok.id = KEYWORDS[tok.val]
     #  log('Replaced with %s', tok.id)
 
-    if tok.id >= 256:
-      raise AssertionError(Id_str(tok.id))
+    assert tok.id < 256, Id_str(tok.id)
 
     ilabel = _Classify(gr, tok)
     #log('tok = %s, ilabel = %d', tok, ilabel)

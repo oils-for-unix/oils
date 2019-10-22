@@ -42,7 +42,7 @@ def ParseDemo(oil_grammar):
     pnode, _ = e_parser.Parse(lex, arith_nt.arith_expr)
   except util.ParseError as e:
     #ui.PrettyPrintError(e, arena)
-    print(e)
+    log("Parse Error (TODO: print it)")
     return
 
   # TODO: Fill this in.  Oil uses parse_lib.MakeGrammarNames()

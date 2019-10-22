@@ -241,7 +241,7 @@ Str* repr(syntax_asdl::source_t* obj) {
   return new Str("TODO");
 }
 
-// Stub
+// STUB
 void p_die(Str* fmt, syntax_asdl::token* blame_token) {
   throw AssertionError();
 }
@@ -251,9 +251,20 @@ void p_die(Str* fmt, Str* s, syntax_asdl::token* blame_token) {
   throw AssertionError();
 }
 
-// STUB
 namespace parse_lib {
   class ParseContext;
+}
+
+// STUB
+namespace util {
+  class ParseError {
+   public:
+    ParseError(Str* s, syntax_asdl::token* tok);
+  };
+}
+
+namespace arith_nt {
+  const int arith_expr = 1;
 }
 '
 # problem with isinstance() and any type

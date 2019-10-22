@@ -4,21 +4,36 @@ Oil
 [![Build
 Status](https://travis-ci.org/oilshell/oil.svg)](https://travis-ci.org/oilshell/oil)
 
-Oil is a new Unix shell.  It's our upgrade path from bash!  ([Why
-Create a New Unix Shell?][why] / [2019 FAQ][faq])
+[Oil][] is a new Unix shell.  It's our upgrade path from bash!  ([Why Create a
+New Unix Shell?][why] / [2019 FAQ][faq])
 
+[Oil]: https://www.oilshell.org/
 [why]: https://www.oilshell.org/blog/2018/01/28.html
 [faq]: https://www.oilshell.org/blog/2019/06/17.html
 
-To try it, follow the instructions below, and run `bin/osh` or `bin/oil`.
+It's written in Python, but we deploy a native executable by including some of
+the `Python-2.7.13/` dir in the tarball.
 
-It's written in Python, but we deploy a native executable by including a subset
-of the `Python-2.7.13/` dir the tarball.
+[The blog][blog] has updates on the project status.
 
-Quick Start for Developers on Linux
------------------------------------
+Contributing
+------------
 
-Clone the repo, build the Python extension, and run `bin/osh`:
+* Make sure to check out the [Contributing][] page.
+* Let us know if you have problems getting started by posting on the `#oil-dev`
+  channel of [oilshell.zulipchat.com][].
+* Feel free to grab an [issue from
+  Github](https://github.com/oilshell/oil/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
+  And let us know what you're thinking before you get too far.
+
+[Contributing]: https://github.com/oilshell/oil/wiki/Contributing
+[oilshell.zulipchat.com]: https://oilshell.zulipchat.com/
+[blog]: http://www.oilshell.org/blog/
+
+Quick Start for Contributors on Linux
+-------------------------------------
+
+Clone the repo, build the Python extension, and run `bin/osh` (or `bin/oil`):
 
     bash$ build/dev.sh minimal
     ...
@@ -29,36 +44,20 @@ Clone the repo, build the Python extension, and run `bin/osh`:
     osh$ echo "hello $name"
     hello world
 
-Most shell scripts should run, e.g. with `bin/osh myscript.sh`.
+Try running a shell script you wrote with `bin/osh myscript.sh`.
 
 This is called the **developer build**, and is **very different** from the
-release tarball.  See [Contributing][] for details.
+release tarball.  The [Contributing][] describes this difference in detail.
 
 The release tarballs are linked from the [home
-page](https://www.oilshell.org/).  (This is the only way to try OSH on OS X.
-Developer builds don't work on OS X.)
+page](https://www.oilshell.org/).  (Developer builds don't work on OS X, so use
+the release tarballs on OS X.)
 
 Running `bin/oil` will let you try the Oil language.  Send me feedback about
 it!
 
-Contributing
-------------
-
-If you'd like to contribute, please post a message on the `#oil-dev` channel of
-[oilshell.zulipchat.com][].  Let us know what you're thinking, or let us know
-if you're having problems getting started.
-
-Make sure to check out the [Contributing][] page.  Let us know if anything
-doesn't work.
-
-[The blog][blog] has updates on the project status.
-
-[Contributing]: https://github.com/oilshell/oil/wiki/Contributing
-[oilshell.zulipchat.com]: https://oilshell.zulipchat.com/
-[blog]: http://www.oilshell.org/blog/
-
-Developer Docs
---------------
+Docs for Contributors
+---------------------
 
 The [Wiki](https://github.com/oilshell/oil/wiki) has many developoer docs in
 semi-organized state.  There are also READMEs in some subdirs, like `opy/`
@@ -183,11 +182,8 @@ Unit tests are named `foo_test.py` and live next to `foo.py`.
 More info
 ---------
 
-Right now we're using
-[/r/oilshell on Reddit](https://www.reddit.com/r/oilshell/) for general discussion.
-
-
-I have docs that need to be cleaned up and published.  For now, there is a fair
-amount of design information on
-the [blog at oilshell.org](http://www.oilshell.org/blog/).
-
+* [Oil Home Page](http://www.oilshell.org/)
+* [oilshell.zulipchat.com][] is for any kind of discussion
+* Subscribe for updates:
+  * [/r/oilshell on Reddit](https://www.reddit.com/r/oilshell/)
+  * [@oilshellblog on Twitter](https://twitter.com/oilshellblog)

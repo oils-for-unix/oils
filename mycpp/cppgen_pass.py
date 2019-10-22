@@ -1311,25 +1311,32 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         for name, alias in o.names:
           if '.' in o.id:
-            #   from _devbuild.gen.id_kind_asdl import Id
-            # -> using id_kind_asdl::Id.
-            mod_name = o.id.split('.')[-1]
+            last_dotted = o.id.split('.')[-1]
+
+            # Omit this:
+            #   from _devbuild.gen import grammar_nt
+            if last_dotted == 'gen':
+              return
 
             # Tag numbers/namespaces end with _n.  enum types end with _e.
             # TODO: rename special cases
             if name.endswith('_n') or name in (
                 'hnode_e', 'source_e', 'assign_op_e'):
               self.write_ind(
-                  'namespace %s = %s::%s;\n', name, mod_name, name)
+                  'namespace %s = %s::%s;\n', name, last_dotted, name)
             else:
-              self.write_ind('using %s::%s;\n', mod_name, name)
+              #   from _devbuild.gen.id_kind_asdl import Id
+              # -> using id_kind_asdl::Id.
+              self.write_ind('using %s::%s;\n', last_dotted, name)
           else:
-            #    from asdl import format as fmt
-            # -> namespace fmt = format;
-            if alias:
-              self.write_ind('namespace %s = %s;\n', alias, name)
             # If we're importing a module without an alias, we don't need to do
             # anything.  'namespace cmd_exec' is already defined.
+            if not alias:
+              return
+
+            #    from asdl import format as fmt
+            # -> namespace fmt = format;
+            self.write_ind('namespace %s = %s;\n', alias, name)
 
         # Old scheme
         # from testpkg import module1 =>
