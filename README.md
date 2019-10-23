@@ -15,8 +15,8 @@ Its [source code lives in git][git-repo].
 [why]: https://www.oilshell.org/blog/2018/01/28.html
 [faq]: https://www.oilshell.org/blog/2019/06/17.html
 
-It's written in Python, but we deploy a native executable by including some of
-the `Python-2.7.13/` dir in the tarball.
+It's written in Python, but we deploy a native executable by reusing portions
+of the [CPython](https://en.wikipedia.org/wiki/CPython) interpreter.
 
 <div id="toc">
 </div>
