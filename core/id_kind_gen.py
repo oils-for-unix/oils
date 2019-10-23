@@ -198,6 +198,48 @@ KIND_INSTANCES = [
       f.write('  Kind.%s,\n' % name)
     f.write(']  # type: List[Kind_t]\n')
 
+  elif action == 'cc-tables':
+    pass
+
+  elif action == 'py-tables':
+    # It's kind of weird to use the generated code to generate more code.
+    # Can we do this instead with the parsed module for "id" and "types.asdl"?
+
+    from core.meta import REDIR_DEFAULT_FD, REDIR_ARG_TYPES, BOOL_ARG_TYPES
+    from _devbuild.gen.id_kind_asdl import Id, Id_str
+    from _devbuild.gen.types_asdl import redir_arg_type_str, bool_arg_type_str
+
+    print("""
+from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.types_asdl import redir_arg_type_e, bool_arg_type_e
+""")
+
+    print('')
+    print('REDIR_DEFAULT_FD = {')
+    for id_ in sorted(REDIR_DEFAULT_FD):
+      v = REDIR_DEFAULT_FD[id_]
+      print('  %s: %s,' % (Id_str(id_), v))
+    print('}')
+
+    print('')
+    print('REDIR_ARG_TYPES = {')
+    for id_ in sorted(REDIR_ARG_TYPES):
+      v = REDIR_ARG_TYPES[id_]
+      # HACK
+      v = redir_arg_type_str(v).replace('.', '_e.')
+      print('  %s: %s,' % (Id_str(id_), v))
+    print('}')
+
+    print('')
+    print('BOOL_ARG_TYPES = {')
+    for id_ in sorted(BOOL_ARG_TYPES):
+      v = BOOL_ARG_TYPES[id_]
+      # HACK
+      v = bool_arg_type_str(v).replace('.', '_e.')
+      print('  %s: %s,' % (Id_str(id_), v))
+    print('}')
+    pass
+
   else:
     raise RuntimeError('Invalid action %r' % action)
 

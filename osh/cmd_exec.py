@@ -20,6 +20,7 @@ import time
 import sys
 
 from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.id_tables import REDIR_ARG_TYPES, REDIR_DEFAULT_FD
 from _devbuild.gen.syntax_asdl import (
     command_e, command__Proc, redir_e, assign_op_e, source, proc_sig_e,
 )
@@ -39,7 +40,6 @@ from core import process
 from core import ui
 from core import util
 from core.util import log, e_die
-from core.meta import REDIR_ARG_TYPES, REDIR_DEFAULT_FD
 
 from frontend import args
 from frontend import reader

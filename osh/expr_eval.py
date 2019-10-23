@@ -12,6 +12,7 @@ expr_eval.py -- Currently used for boolean and arithmetic expressions.
 import stat
 
 from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.id_tables import BOOL_ARG_TYPES
 from _devbuild.gen.runtime_asdl import (
     lvalue, value, value_e, value_t, scope_e,
 )
@@ -20,7 +21,6 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.types_asdl import bool_arg_type_e
 from asdl import runtime
-from core.meta import BOOL_ARG_TYPES
 from core import util
 from core.util import e_die
 from osh import state

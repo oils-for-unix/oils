@@ -72,7 +72,14 @@ id-c-gen() {
 }
 
 id-mypy-gen() {
-  core/id_kind_gen.py mypy > _devbuild/gen/id_kind_asdl.py
+  local out=_devbuild/gen/id_kind_asdl.py
+  core/id_kind_gen.py mypy > $out
+  log "Wrote $out"
+
+  out=_devbuild/gen/id_tables.py
+  core/id_kind_gen.py py-tables > $out
+  log "Wrote $out"
+  cat _devbuild/gen/id_tables.py
 }
 
 id-cpp-gen() {

@@ -36,14 +36,14 @@ from __future__ import print_function
 import pwd
 import time
 
-from _devbuild.gen.syntax_asdl import word_part_e, redir_e
+from _devbuild.gen.syntax_asdl import word_part_e, redir_e, Id
 from _devbuild.gen.runtime_asdl import value_e
 from _devbuild.gen.types_asdl import redir_arg_type_e
+from _devbuild.gen.id_tables import REDIR_ARG_TYPES
 
 from core import ui
 from core import util
 from core.util import log
-from core.meta import Id, REDIR_ARG_TYPES
 from frontend import reader
 from pylib import os_path
 from pylib import path_stat
