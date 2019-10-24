@@ -14,9 +14,7 @@ import unittest
 
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen import syntax_asdl 
-from core.meta import (
-    IdInstance, ID_SPEC, BOOL_ARG_TYPES, _kind_sizes
-)
+from core.meta import IdInstance, ID_SPEC, _kind_sizes
 from frontend.lexer import LookupKind
 
 
@@ -96,14 +94,6 @@ class TokensTest(unittest.TestCase):
     # Thinking about switching
     big = [i for i in k if i > 8]
     print('%d BIG groups: %s' % (len(big), sorted(big)))
-
-    PrintBoolTable()
-    print('---')
-
-
-def PrintBoolTable():
-  for i, arg_type in BOOL_ARG_TYPES.items():
-    print('%-40s %s' % (IdInstance(i), arg_type))
 
 
 if __name__ == '__main__':

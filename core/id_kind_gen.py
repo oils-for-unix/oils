@@ -109,15 +109,20 @@ def main(argv):
   except IndexError:
     raise RuntimeError('Action required')
 
-  # NOTE: This initialization must be identical to the one in core/meta.py.  We
-  # do it here to avoid circular dependencies.
+  # TODO: Remove duplication in core/meta.py
+  ID_TO_KIND_INTEGERS = {}
+  BOOL_ARG_TYPES = {}
+  TEST_UNARY_LOOKUP = {}
+  TEST_BINARY_LOOKUP = {}
+  TEST_OTHER_LOOKUP = {}
 
-  ID_SPEC = id_kind.IdSpec({}, {})
+  ID_SPEC = id_kind.IdSpec(ID_TO_KIND_INTEGERS, BOOL_ARG_TYPES)
 
   id_kind.AddKinds(ID_SPEC)
   id_kind.AddBoolKinds(ID_SPEC)  # must come second
 
-  id_kind.SetupTestBuiltin(ID_SPEC, {}, {}, {})
+  id_kind.SetupTestBuiltin(ID_SPEC, TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP,
+                           TEST_OTHER_LOOKUP)
 
   ids = ID_SPEC.id_str2int.items()
   ids.sort(key=lambda pair: pair[1])  # Sort by ID
@@ -205,11 +210,7 @@ KIND_INSTANCES = [
     # It's kind of weird to use the generated code to generate more code.
     # Can we do this instead with the parsed module for "id" and "types.asdl"?
 
-    from core.meta import (
-        REDIR_DEFAULT_FD, REDIR_ARG_TYPES, BOOL_ARG_TYPES,
-        TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP, TEST_OTHER_LOOKUP,
-        ID_TO_KIND_INTEGERS,
-    )
+    from core.meta import REDIR_DEFAULT_FD, REDIR_ARG_TYPES
     from _devbuild.gen.id_kind_asdl import Id_str, Kind_str
     from _devbuild.gen.types_asdl import redir_arg_type_str, bool_arg_type_str
 

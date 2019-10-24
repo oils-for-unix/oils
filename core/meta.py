@@ -20,34 +20,21 @@ if TYPE_CHECKING:
   from core.pyutil import _ResourceLoader
 
 
-ID_TO_KIND_INTEGERS = {}  # type: Dict[int, int]
-
-
 # Do NOT create any any more instances of Id.  Always use IdInstance().
 def IdInstance(i):
   # type: (int) -> Id_t
   return ID_INSTANCES[i]
 
 
-BOOL_ARG_TYPES = {}  # type: Dict[int, bool_arg_type_t]
-
-# Used by builtin_bracket.py
-TEST_UNARY_LOOKUP = {}  # type: Dict[str, int]
-TEST_BINARY_LOOKUP = {}  # type: Dict[str, int]
-TEST_OTHER_LOOKUP = {}  # type: Dict[str, int]
-
-
 #
 # Initialize Id and Kind
 #
 
-ID_SPEC = id_kind.IdSpec(ID_TO_KIND_INTEGERS, BOOL_ARG_TYPES)
+ID_SPEC = id_kind.IdSpec({}, {})
 
 id_kind.AddKinds(ID_SPEC)
 id_kind.AddBoolKinds(ID_SPEC)  # must come second
-id_kind.SetupTestBuiltin(ID_SPEC,
-                         TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP,
-                         TEST_OTHER_LOOKUP)
+id_kind.SetupTestBuiltin(ID_SPEC, {}, {}, {})
 
 # Debug Stats
 _kind_sizes = ID_SPEC.kind_sizes
