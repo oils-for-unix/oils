@@ -11,7 +11,6 @@ from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import source
 
 from core import alloc
-from core import meta
 from core.util import log
 from frontend import lexer, reader, lex
 from pgen2 import parse, pgen
@@ -90,7 +89,7 @@ def main(argv):
 
   # Tokens that look like / or ${ or @{
   triples = (
-      meta.ID_SPEC.LexerPairs(Kind.Arith) +
+      lex.ID_SPEC.LexerPairs(Kind.Arith) +
       lex.OIL_LEFT_SUBS +
       lex.OIL_LEFT_UNQUOTED +
       lex.EXPR_WORDS

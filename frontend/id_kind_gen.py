@@ -13,7 +13,7 @@ from __future__ import print_function
 import sys
 
 from asdl.visitor import FormatLines
-from core import id_kind
+from frontend import id_kind
 
 
 def Emit(s, f, depth=0):
@@ -211,7 +211,7 @@ KIND_INSTANCES = [
     # It's kind of weird to use the generated code to generate more code.
     # Can we do this instead with the parsed module for "id" and "types.asdl"?
 
-    from core.meta import REDIR_DEFAULT_FD, REDIR_ARG_TYPES
+    from frontend.lookup import REDIR_DEFAULT_FD, REDIR_ARG_TYPES
     from _devbuild.gen.id_kind_asdl import Id_str, Kind_str
     from _devbuild.gen.types_asdl import redir_arg_type_str, bool_arg_type_str
 

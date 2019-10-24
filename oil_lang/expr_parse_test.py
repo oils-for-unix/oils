@@ -6,11 +6,9 @@ from __future__ import print_function
 
 import unittest
 
-#from _devbuild.gen import grammar_nt  # names for integer nonterminal IDs
-from _devbuild.gen.id_kind_asdl import Kind
+#from _devbuild.gen.id_kind_asdl import Kind
 from _devbuild.gen.syntax_asdl import source
 
-from core.meta import ID_SPEC
 from core import alloc
 from core import meta
 from core import pyutil
@@ -140,7 +138,8 @@ EOF)
 
   def testLexer(self):
     # NOTE: Kind.Expr for Oil doesn't have LexerPairs
-    pairs = ID_SPEC.LexerPairs(Kind.Arith)
+    #pairs = ID_SPEC.LexerPairs(Kind.Arith)
+    pairs = []
     for p in pairs:
       #print(p)
       pass

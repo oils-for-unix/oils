@@ -173,9 +173,12 @@ if TYPE_CHECKING:
 def MakeGrammarNames(oil_grammar):
   # type: (Grammar) -> Dict[int, str]
 
+  # TODO: Break this dependency
+  from frontend import lex
+
   names = {}
 
-  for id_name, k in meta.ID_SPEC.id_str2int.items():
+  for id_name, k in lex.ID_SPEC.id_str2int.items():
     # Hm some are out of range
     #assert k < 256, (k, id_name)
 

@@ -14,8 +14,10 @@ import unittest
 
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen import syntax_asdl 
-from core.meta import ID_SPEC, _kind_sizes
+from frontend.lex import ID_SPEC
 from frontend.lexer import LookupKind
+
+_kind_sizes = ID_SPEC.kind_sizes
 
 
 class TokensTest(unittest.TestCase):
