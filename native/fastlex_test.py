@@ -15,7 +15,6 @@ import unittest
 #from core.util import log
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.types_asdl import lex_mode_e
-from core.meta import IdInstance
 
 import fastlex  # module under test
 
@@ -23,8 +22,8 @@ import fastlex  # module under test
 # NOTE: This is just like _MatchOshToken_Fast in frontend/match.py
 def MatchOshToken(lex_mode, line, start_pos):
   tok_type, end_pos = fastlex.MatchOshToken(lex_mode, line, start_pos)
-  #log('tok_type = %d, id = %s', tok_type, IdInstance(tok_type))
-  return IdInstance(tok_type), end_pos
+  #log('tok_type = %d, id = %s', tok_type, tok_type)
+  return tok_type, end_pos
 
 
 def TokenizeLineOuter(line):

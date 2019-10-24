@@ -14,7 +14,7 @@ import unittest
 
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen import syntax_asdl 
-from core.meta import IdInstance, ID_SPEC, _kind_sizes
+from core.meta import ID_SPEC, _kind_sizes
 from frontend.lexer import LookupKind
 
 
@@ -67,12 +67,6 @@ class TokensTest(unittest.TestCase):
 
     t = syntax_asdl.token(Id.BoolBinary_Equal, '=')
     self.assertEqual(Kind.BoolBinary, LookupKind(t.id))
-
-  def testEquality(self):
-    left = IdInstance(198)
-    right = IdInstance(198)
-    print(left, right)
-    self.assertEqual(left, right)
 
   def testLexerPairs(self):
     def MakeLookup(p):

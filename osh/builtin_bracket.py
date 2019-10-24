@@ -14,7 +14,6 @@ from _devbuild.gen.types_asdl import lex_mode_e
 from asdl import runtime
 from core import util
 from core.util import p_die
-from core import meta
 
 from osh import expr_eval
 from osh import bool_parse
@@ -54,7 +53,7 @@ class _StringWordEmitter(object):
         TEST_OTHER_LOOKUP.get(s)
     )
 
-    id_ = Id.Word_Compound if id_int is None else meta.IdInstance(id_int)
+    id_ = Id.Word_Compound if id_int is None else id_int
 
     # NOTE: We only have the left spid now.  It might be useful to add the
     # right one.
@@ -96,7 +95,7 @@ def _TwoArgs(w_parser):
     # TODO:
     # - separate lookup by unary
     p_die('Expected unary operator, got %r (2 args)', w0.s, word=w0)
-  return bool_expr.Unary(meta.IdInstance(unary_id), w1)
+  return bool_expr.Unary(unary_id, w1)
 
 
 def _ThreeArgs(w_parser):
@@ -109,7 +108,7 @@ def _ThreeArgs(w_parser):
 
   binary_id = TEST_BINARY_LOOKUP.get(w1.s)
   if binary_id is not None:
-    return bool_expr.Binary(meta.IdInstance(binary_id), w0, w2)
+    return bool_expr.Binary(binary_id, w0, w2)
 
   if w1.s == '-a':
     return bool_expr.LogicalAnd(bool_expr.WordTest(w0), bool_expr.WordTest(w2))

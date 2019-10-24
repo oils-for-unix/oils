@@ -10,20 +10,14 @@ Usage:
   from core.meta import ID_SPEC
 """
 
-from _devbuild.gen.types_asdl import bool_arg_type_t, redir_arg_type_e
-from _devbuild.gen.id_kind_asdl import Id, Id_t, ID_INSTANCES
+from _devbuild.gen.types_asdl import redir_arg_type_e
+from _devbuild.gen.id_kind_asdl import Id
 from core import id_kind
 from pgen2 import grammar
 
-from typing import Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:
   from core.pyutil import _ResourceLoader
-
-
-# Do NOT create any any more instances of Id.  Always use IdInstance().
-def IdInstance(i):
-  # type: (int) -> Id_t
-  return ID_INSTANCES[i]
 
 
 #

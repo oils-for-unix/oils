@@ -4,8 +4,6 @@ match.py - match with generated re2c code or Python regexes.
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.types_asdl import lex_mode_t
-#from core import util
-from core.meta import IdInstance
 from frontend import lex
 
 from typing import Iterator, Tuple, Callable, Dict, List, Any, TYPE_CHECKING
@@ -81,7 +79,7 @@ def _MatchOshToken_Fast(lex_mode, line, start_pos):
   tok_type, end_pos = fastlex.MatchOshToken(lex_mode, line, start_pos)
   # IMPORTANT: We're reusing Id instances here.  Ids are very common, so this
   # saves memory.
-  return IdInstance(tok_type), end_pos
+  return tok_type, end_pos
 
 
 class SimpleLexer(object):
@@ -117,31 +115,31 @@ def _MatchEchoToken_Fast(line, start_pos):
   # type: (str, int) -> Tuple[Id_t, int]
   """Returns (id, end_pos)."""
   tok_type, end_pos = fastlex.MatchEchoToken(line, start_pos)
-  return IdInstance(tok_type), end_pos
+  return tok_type, end_pos
 
 def _MatchGlobToken_Fast(line, start_pos):
   # type: (str, int) -> Tuple[Id_t, int]
   """Returns (id, end_pos)."""
   tok_type, end_pos = fastlex.MatchGlobToken(line, start_pos)
-  return IdInstance(tok_type), end_pos
+  return tok_type, end_pos
 
 def _MatchPS1Token_Fast(line, start_pos):
   # type: (str, int) -> Tuple[Id_t, int]
   """Returns (id, end_pos)."""
   tok_type, end_pos = fastlex.MatchPS1Token(line, start_pos)
-  return IdInstance(tok_type), end_pos
+  return tok_type, end_pos
 
 def _MatchHistoryToken_Fast(line, start_pos):
   # type: (str, int) -> Tuple[Id_t, int]
   """Returns (id, end_pos)."""
   tok_type, end_pos = fastlex.MatchHistoryToken(line, start_pos)
-  return IdInstance(tok_type), end_pos
+  return tok_type, end_pos
 
 def _MatchBraceRangeToken_Fast(line, start_pos):
   # type: (str, int) -> Tuple[Id_t, int]
   """Returns (id, end_pos)."""
   tok_type, end_pos = fastlex.MatchBraceRangeToken(line, start_pos)
-  return IdInstance(tok_type), end_pos
+  return tok_type, end_pos
 
 
 if fastlex:
