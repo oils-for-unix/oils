@@ -5,7 +5,14 @@ lookup.py
 from __future__ import print_function
 
 from _devbuild.gen.types_asdl import redir_arg_type_e
-from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind_t, KIND_INSTANCES
+from _devbuild.gen.id_tables import ID_TO_KIND_INTEGERS
+
+
+def LookupKind(id_):
+  # type: (Id_t) -> Kind_t
+  """To make coarse-grained parsing decisions."""
+  return KIND_INSTANCES[ID_TO_KIND_INTEGERS[id_]]
 
 
 #

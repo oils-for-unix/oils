@@ -22,7 +22,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from asdl import runtime
 from core import util
-from frontend import lexer
+from frontend import lookup
 
 from typing import Tuple, Optional, List, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -509,7 +509,7 @@ def KeywordToken(w):
 
   assert isinstance(part0, word_part__Literal)  # for MyPy
 
-  token_kind = lexer.LookupKind(token_type)
+  token_kind = lookup.LookupKind(token_type)
   if token_kind == Kind.ControlFlow:
     return token_kind, part0.token
 
@@ -569,7 +569,7 @@ def BoolId(node):
   if token_type in (Id.KW_Bang, Id.Lit_DRightBracket):
     return token_type  # special boolean "tokens"
 
-  token_kind = lexer.LookupKind(token_type)
+  token_kind = lookup.LookupKind(token_type)
   if token_kind in (Kind.BoolUnary, Kind.BoolBinary):
     return token_type  # boolean operators
 
@@ -596,7 +596,7 @@ def CommandId(node):
     # Return is for special processing
     return token_type
 
-  token_kind = lexer.LookupKind(token_type)
+  token_kind = lookup.LookupKind(token_type)
   if token_kind == Kind.KW:
     return token_type
 
@@ -607,7 +607,7 @@ def CommandKind(w):
   # type: (word_t) -> Kind_t
   """The CommandKind is for coarse-grained decisions in the CommandParser."""
   if isinstance(w, word__Token):
-    return lexer.LookupKind(w.token.id)
+    return lookup.LookupKind(w.token.id)
 
   # NOTE: This is a bit inconsistent with CommandId, because we never return
   # Kind.KW (or Kind.Lit).  But the CommandParser is easier to write this way.

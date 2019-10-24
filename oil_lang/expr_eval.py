@@ -14,7 +14,7 @@ from _devbuild.gen.runtime_asdl import (
 )
 from core.util import e_die
 from core.util import log
-from frontend import lexer
+from frontend import lookup
 from oil_lang import objects
 from osh import braces
 from osh import state
@@ -580,7 +580,7 @@ class OilEvaluator(object):
           raise NotImplementedError(val)
 
       else:  # Must be Id.Char_{OneChar,Hex,Unicode4,Unicode8}
-        kind = lexer.LookupKind(id_)
+        kind = lookup.LookupKind(id_)
         assert kind == Kind.Char, id_
         s = word_compile.EvalCStringToken(id_, val)
         new_leaf = re.LiteralChars(s, node.span_id)

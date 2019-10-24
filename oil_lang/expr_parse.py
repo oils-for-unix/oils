@@ -13,7 +13,7 @@ from _devbuild.gen.types_asdl import lex_mode_e
 from core import util
 from core.util import log
 from core.util import p_die
-from frontend import lexer
+from frontend import lookup
 from frontend import reader
 from osh import braces
 from osh import word_
@@ -119,7 +119,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
       #log('tok = %s', tok)
 
     # Comments and whitespace.  Newlines aren't ignored.
-    if lexer.LookupKind(tok.id) == Kind.Ignored:
+    if lookup.LookupKind(tok.id) == Kind.Ignored:
       continue
 
     # For var x = {

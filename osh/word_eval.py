@@ -19,7 +19,7 @@ from _devbuild.gen.runtime_asdl import (
 from core import process
 from core import util
 from core.util import log, e_die
-from frontend import lexer
+from frontend import lookup
 from frontend import match
 from osh import braces
 from osh import builtin
@@ -510,7 +510,7 @@ class _WordEvaluator(object):
   def _ApplyUnarySuffixOp(self, val, op):
     assert val.tag != value_e.Undef
 
-    op_kind = lexer.LookupKind(op.op_id)
+    op_kind = lookup.LookupKind(op.op_id)
 
     if op_kind == Kind.VOp1:
       # NOTE: glob syntax is supported in ^ ^^ , ,, !  As well as % %% # ##.
@@ -741,7 +741,7 @@ class _WordEvaluator(object):
           raise NotImplementedError(op.op_id)
 
       elif op.tag == suffix_op_e.Unary:
-        if lexer.LookupKind(part.suffix_op.op_id) == Kind.VTest:
+        if lookup.LookupKind(part.suffix_op.op_id) == Kind.VTest:
           # TODO: Change style to:
           # if self._ApplyTestOp(...)
           #   return

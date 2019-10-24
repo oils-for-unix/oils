@@ -15,7 +15,7 @@ import unittest
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen import syntax_asdl 
 from frontend.lex import ID_SPEC
-from frontend.lexer import LookupKind
+from frontend.lookup import LookupKind
 
 _kind_sizes = ID_SPEC.kind_sizes
 
