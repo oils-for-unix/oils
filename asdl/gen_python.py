@@ -367,8 +367,10 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     self.Emit('  # type: () -> int')
     self.Emit('  return self.tag')
 
-    if self.pretty_print_methods:
-      # Emit free function to pretty print
+    # This is what we would do in C++, but we don't need it in Python because
+    # every function is virtual.
+    if 0:
+    #if self.pretty_print_methods:
       for abbrev in 'PrettyTree', '_AbbreviatedTree', 'AbbreviatedTree':
         self.Emit('')
 	self.Emit('def %s(self):' % abbrev, depth)
