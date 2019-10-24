@@ -21,70 +21,6 @@ def Emit(s, f, depth=0):
     f.write(line)
 
 
-def GenCppCode(kind_names, id_names, f, id_labels=None, kind_labels=None):
-  """
-  Args:
-    kind_names: List of kind name strings, in display order
-    id_names: List of list of id name strings, in display order
-    f: output file
-    id_labels: optional name to integer
-    kind_labels: optional name to integer
-  """
-  Emit('#include <cstdint>', f)
-  #Emit('#include "stdio.h"', f)
-  Emit('', f)
-  Emit('enum class Kind : uint8_t {', f)
-  if kind_labels:
-    s = ', '.join(['%s=%s' % (k, kind_labels[k]) for k in kind_names]) + ','
-    Emit(s, f, 1)
-  else:
-    Emit(', '.join(kind_names), f, 1)
-  Emit('};\n', f)
-
-  # TODO: Change this back to a uint8_t?  Right now we have a Glob_ Kind which
-  # pushes it over 256, but we don't really need it in Id.  It could easily be
-  # its own type GlobId.
-
-  Emit('enum class Id : uint16_t {', f)
-  for names_in_kind in id_names:
-    if id_labels:
-      s = ', '.join(['%s=%s' % (i, id_labels[i]) for i in names_in_kind]) + ','
-      Emit(s, f, 1)
-    else:
-      Emit(', '.join(names_in_kind) + ',', f, 1)
-    Emit('', f)
-
-  Emit('};\n', f)
-
-  if 0:  # Test for blog post
-    f.write(r"""
-  Kind LookupKind(Id id) {
-    int i = static_cast<int>(id);
-    int k = 175 & i & ((i ^ 173) + 11);
-    return static_cast<Kind>(k);
-  }
-
-  int main() {
-  """)
-    for names_in_kind in id_names:
-      if id_labels:
-        for id_name in names_in_kind:
-          kind_name = id_name.split('_')[0]
-          test = (
-              'if (LookupKind(Id::%s) != Kind::%s) return 1;' %
-              (id_name, kind_name))
-          Emit(test, f, 1)
-      else:
-        pass
-      Emit('', f)
-
-    f.write(r"""
-    printf("PASSED\n");
-    return 0;
-  }
-  """)
-
-
 def _CreateModule(id_spec, ids):
   """ 
   Create a SYNTHETIC ASDL module to generate code from.
@@ -110,13 +46,13 @@ def main(argv):
     raise RuntimeError('Action required')
 
   # TODO: Remove duplication in core/meta.py
-  ID_TO_KIND_INTEGERS = {}
+  ID_TO_KIND = {}
   BOOL_ARG_TYPES = {}
   TEST_UNARY_LOOKUP = {}
   TEST_BINARY_LOOKUP = {}
   TEST_OTHER_LOOKUP = {}
 
-  ID_SPEC = id_kind.IdSpec(ID_TO_KIND_INTEGERS, BOOL_ARG_TYPES)
+  ID_SPEC = id_kind.IdSpec(ID_TO_KIND, BOOL_ARG_TYPES)
 
   id_kind.AddKinds(ID_SPEC)
   id_kind.AddBoolKinds(ID_SPEC)  # must come second
@@ -187,23 +123,6 @@ from typing import List
                                   simple_int_sums=['Id'])
     v.VisitModule(schema_ast)
 
-    f.write("""
-ID_INSTANCES = [
-  None,  # unused index 0
-""")
-    for name, _ in ids:
-      f.write('  Id.%s,\n' % name)
-    f.write(']  # type: List[Id_t]\n')
-
-    f.write("""
-
-KIND_INSTANCES = [
-  None,  # unused index 0
-""")
-    for name in ID_SPEC.kind_name_list:
-      f.write('  Kind.%s,\n' % name)
-    f.write(']  # type: List[Kind_t]\n')
-
   elif action == 'cc-tables':
     pass
 
@@ -267,9 +186,9 @@ from _devbuild.gen.types_asdl import redir_arg_type_e, bool_arg_type_e
     print('}')
 
     print('')
-    print('ID_TO_KIND_INTEGERS = {')
-    for id_ in sorted(ID_TO_KIND_INTEGERS):
-      v = Kind_str(ID_TO_KIND_INTEGERS[id_])
+    print('ID_TO_KIND = {')
+    for id_ in sorted(ID_TO_KIND):
+      v = Kind_str(ID_TO_KIND[id_])
       print('  %s: %s,' % (Id_str(id_), v))
     print('}')
 
