@@ -17,13 +17,18 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
   """Generate Python code with MyPy type annotations."""
 
   def __init__(self, f, type_lookup, abbrev_mod_entries=None, e_suffix=True,
-               pretty_print_methods=True, optional_fields=True):
+               pretty_print_methods=True, optional_fields=True,
+               simple_int_sums=None):
+
     visitor.AsdlVisitor.__init__(self, f)
     self.type_lookup = type_lookup
     self.abbrev_mod_entries = abbrev_mod_entries or []
     self.e_suffix = e_suffix
     self.pretty_print_methods = pretty_print_methods
     self.optional_fields = optional_fields
+    # For Id to use different code gen.  It's used like an integer, not just
+    # like an enum.
+    self.simple_int_sums = simple_int_sums or []
 
     self._shared_type_tags = {}
     self._product_counter = 1000  # start it high
@@ -39,22 +44,38 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     self.Emit('', depth)
 
   def VisitSimpleSum(self, sum, name, depth):
-    # First emit a type
-    self.Emit('class %s_t(pybase.SimpleObj):' % name, depth)
-    self.Emit('  pass', depth)
-    self.Emit('', depth)
-
-    # Now emit a namespace
-    e_name = ('%s_e' % name) if self.e_suffix else name
-    self.Emit('class %s(object):' % e_name, depth)
     int_to_str = {}
+    variants = []
     for i, variant in enumerate(sum.types):
       tag_num = i + 1
       tag_str = '%s.%s' % (name, variant.name)
       int_to_str[tag_num] = tag_str
+      variants.append((variant, tag_num))
 
-      attr = '  %s = %s_t(%d)' % (variant.name, name, tag_num)
-      self.Emit(attr, depth)
+    if name in self.simple_int_sums:
+      self.Emit('Id_t = int  # type alias for integer')
+      self.Emit('')
+
+      self.Emit('class %s(object):' % name, depth)
+
+      for variant, tag_num in variants:
+        line = '  %s = %d' % (variant.name, tag_num)
+        self.Emit(line, depth)
+
+    else:
+      # First emit a type
+      self.Emit('class %s_t(pybase.SimpleObj):' % name, depth)
+      self.Emit('  pass', depth)
+      self.Emit('', depth)
+
+      # Now emit a namespace
+      e_name = ('%s_e' % name) if self.e_suffix else name
+      self.Emit('class %s(object):' % e_name, depth)
+
+      for variant, tag_num in variants:
+        line = '  %s = %s_t(%d)' % (variant.name, name, tag_num)
+        self.Emit(line, depth)
+
     self.Emit('', depth)
 
     self._EmitDict(name, int_to_str, depth)

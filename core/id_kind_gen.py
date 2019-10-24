@@ -183,7 +183,8 @@ from typing import List
 
 """)
     # Minor style issue: we want Id and Kind, not Id_e and Kind_e
-    v = gen_python.GenMyPyVisitor(f, None, e_suffix=False)
+    v = gen_python.GenMyPyVisitor(f, None, e_suffix=False,
+                                  simple_int_sums=['Id'])
     v.VisitModule(schema_ast)
 
     f.write("""

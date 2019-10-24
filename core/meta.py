@@ -40,6 +40,8 @@ id_kind.SetupTestBuiltin(ID_SPEC, {}, {}, {})
 _kind_sizes = ID_SPEC.kind_sizes
 
 
+# TODO: Move to frontend/id_tables.py ?
+
 #
 # Redirect Tables associated with IDs
 #
