@@ -205,8 +205,11 @@ KIND_INSTANCES = [
     # It's kind of weird to use the generated code to generate more code.
     # Can we do this instead with the parsed module for "id" and "types.asdl"?
 
-    from core.meta import REDIR_DEFAULT_FD, REDIR_ARG_TYPES, BOOL_ARG_TYPES
-    from _devbuild.gen.id_kind_asdl import Id, Id_str
+    from core.meta import (
+        REDIR_DEFAULT_FD, REDIR_ARG_TYPES, BOOL_ARG_TYPES,
+        TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP, TEST_OTHER_LOOKUP,
+    )
+    from _devbuild.gen.id_kind_asdl import Id_str
     from _devbuild.gen.types_asdl import redir_arg_type_str, bool_arg_type_str
 
     print("""
@@ -238,7 +241,27 @@ from _devbuild.gen.types_asdl import redir_arg_type_e, bool_arg_type_e
       v = bool_arg_type_str(v).replace('.', '_e.')
       print('  %s: %s,' % (Id_str(id_), v))
     print('}')
-    pass
+
+    print('')
+    print('TEST_UNARY_LOOKUP = {')
+    for op_str in sorted(TEST_UNARY_LOOKUP):
+      v = Id_str(TEST_UNARY_LOOKUP[op_str])
+      print('  %r: %s,' % (op_str, v))
+    print('}')
+
+    print('')
+    print('TEST_BINARY_LOOKUP = {')
+    for op_str in sorted(TEST_BINARY_LOOKUP):
+      v = Id_str(TEST_BINARY_LOOKUP[op_str])
+      print('  %r: %s,' % (op_str, v))
+    print('}')
+
+    print('')
+    print('TEST_OTHER_LOOKUP = {')
+    for op_str in sorted(TEST_OTHER_LOOKUP):
+      v = Id_str(TEST_OTHER_LOOKUP[op_str])
+      print('  %r: %s,' % (op_str, v))
+    print('}')
 
   else:
     raise RuntimeError('Invalid action %r' % action)

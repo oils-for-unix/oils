@@ -3,7 +3,7 @@ expr_to_ast.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.id_kind_asdl import Id, Id_t
+from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
     token, speck, double_quoted, single_quoted, simple_var_sub, braced_var_sub,
     command_sub, sh_array_literal,
@@ -276,7 +276,7 @@ class Transformer(object):
       flags = []  # type: List[token]
       return expr.RegexLiteral(children[0].tok, r, flags)
 
-    raise NotImplementedError(id_)
+    raise NotImplementedError(Id_str(id_))
 
   def _NameTypeList(self, p_node):
     # type: (PNode) -> List[name_type]
@@ -583,8 +583,7 @@ class Transformer(object):
       if id_ in (Id.Expr_Null, Id.Expr_True, Id.Expr_False):
         return expr.Const(tok)
 
-      from core.meta import IdInstance
-      raise NotImplementedError(IdInstance(typ))
+      raise NotImplementedError(Id_str(id_))
 
   def _ArrayItem(self, p_node):
     # type: (PNode) -> expr_t

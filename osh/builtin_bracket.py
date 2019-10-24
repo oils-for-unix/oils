@@ -4,6 +4,9 @@ builtin_bracket.py
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.id_tables import (
+    TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP, TEST_OTHER_LOOKUP
+)
 from _devbuild.gen.runtime_asdl import value
 from _devbuild.gen.syntax_asdl import word, bool_expr
 from _devbuild.gen.types_asdl import lex_mode_e
@@ -12,15 +15,9 @@ from asdl import runtime
 from core import util
 from core.util import p_die
 from core import meta
-from core.meta import IdInstance
 
 from osh import expr_eval
 from osh import bool_parse
-
-
-_UNARY_LOOKUP = meta.TEST_UNARY_LOOKUP
-_BINARY_LOOKUP = meta.TEST_BINARY_LOOKUP
-_OTHER_LOOKUP = meta.TEST_OTHER_LOOKUP
 
 
 class _StringWordEmitter(object):
@@ -52,9 +49,12 @@ class _StringWordEmitter(object):
 
     # default is an operand word
     id_int = (
-        _UNARY_LOOKUP.get(s) or _BINARY_LOOKUP.get(s) or _OTHER_LOOKUP.get(s))
+        TEST_UNARY_LOOKUP.get(s) or
+        TEST_BINARY_LOOKUP.get(s) or
+        TEST_OTHER_LOOKUP.get(s)
+    )
 
-    id_ = Id.Word_Compound if id_int is None else IdInstance(id_int)
+    id_ = Id.Word_Compound if id_int is None else meta.IdInstance(id_int)
 
     # NOTE: We only have the left spid now.  It might be useful to add the
     # right one.
@@ -91,12 +91,12 @@ def _TwoArgs(w_parser):
   w1 = w_parser.Read()
   if w0.s == '!':
     return bool_expr.LogicalNot(bool_expr.WordTest(w1))
-  unary_id = _UNARY_LOOKUP.get(w0.s)
+  unary_id = TEST_UNARY_LOOKUP.get(w0.s)
   if unary_id is None:
     # TODO:
     # - separate lookup by unary
     p_die('Expected unary operator, got %r (2 args)', w0.s, word=w0)
-  return bool_expr.Unary(IdInstance(unary_id), w1)
+  return bool_expr.Unary(meta.IdInstance(unary_id), w1)
 
 
 def _ThreeArgs(w_parser):
@@ -107,9 +107,9 @@ def _ThreeArgs(w_parser):
 
   # NOTE: Order is important here.
 
-  binary_id = _BINARY_LOOKUP.get(w1.s)
+  binary_id = TEST_BINARY_LOOKUP.get(w1.s)
   if binary_id is not None:
-    return bool_expr.Binary(IdInstance(binary_id), w0, w2)
+    return bool_expr.Binary(meta.IdInstance(binary_id), w0, w2)
 
   if w1.s == '-a':
     return bool_expr.LogicalAnd(bool_expr.WordTest(w0), bool_expr.WordTest(w2))
