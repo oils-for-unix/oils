@@ -11,9 +11,7 @@ Usage:
 """
 
 from _devbuild.gen.types_asdl import bool_arg_type_t, redir_arg_type_e
-from _devbuild.gen.id_kind_asdl import (
-    Id, Id_t, Kind_t, ID_INSTANCES, KIND_INSTANCES
-)
+from _devbuild.gen.id_kind_asdl import Id, Id_t, ID_INSTANCES
 from core import id_kind
 from pgen2 import grammar
 
@@ -22,13 +20,7 @@ if TYPE_CHECKING:
   from core.pyutil import _ResourceLoader
 
 
-_ID_TO_KIND_INTEGERS = {}  # type: Dict[int, int]
-
-
-def LookupKind(id_):
-  # type: (Id_t) -> Kind_t
-  """Id_t -> Kind_t"""
-  return KIND_INSTANCES[_ID_TO_KIND_INTEGERS[id_]]
+ID_TO_KIND_INTEGERS = {}  # type: Dict[int, int]
 
 
 # Do NOT create any any more instances of Id.  Always use IdInstance().
@@ -49,7 +41,7 @@ TEST_OTHER_LOOKUP = {}  # type: Dict[str, int]
 # Initialize Id and Kind
 #
 
-ID_SPEC = id_kind.IdSpec(_ID_TO_KIND_INTEGERS, BOOL_ARG_TYPES)
+ID_SPEC = id_kind.IdSpec(ID_TO_KIND_INTEGERS, BOOL_ARG_TYPES)
 
 id_kind.AddKinds(ID_SPEC)
 id_kind.AddBoolKinds(ID_SPEC)  # must come second

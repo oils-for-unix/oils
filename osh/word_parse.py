@@ -67,9 +67,9 @@ from _devbuild.gen.syntax_asdl import (
 
     expr_t, source, arg_list,
 )
-from core import meta
 from core.util import p_die
 from core.util import log
+from frontend import lexer
 from frontend import reader
 from frontend import tdop
 from osh import arith_parse
@@ -120,7 +120,7 @@ class WordParser(object):
     if self.next_lex_mode is not None:
       self.cur_token = self.lexer.Read(self.next_lex_mode)
       self.token_type = self.cur_token.id
-      self.token_kind = meta.LookupKind(self.token_type)
+      self.token_kind = lexer.LookupKind(self.token_type)
       self.parse_ctx.trail.AppendToken(self.cur_token)   # For completion
       self.next_lex_mode = None
     return self.cur_token

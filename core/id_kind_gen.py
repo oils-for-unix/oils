@@ -208,12 +208,13 @@ KIND_INSTANCES = [
     from core.meta import (
         REDIR_DEFAULT_FD, REDIR_ARG_TYPES, BOOL_ARG_TYPES,
         TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP, TEST_OTHER_LOOKUP,
+        ID_TO_KIND_INTEGERS,
     )
-    from _devbuild.gen.id_kind_asdl import Id_str
+    from _devbuild.gen.id_kind_asdl import Id_str, Kind_str
     from _devbuild.gen.types_asdl import redir_arg_type_str, bool_arg_type_str
 
     print("""
-from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.types_asdl import redir_arg_type_e, bool_arg_type_e
 """)
 
@@ -261,6 +262,13 @@ from _devbuild.gen.types_asdl import redir_arg_type_e, bool_arg_type_e
     for op_str in sorted(TEST_OTHER_LOOKUP):
       v = Id_str(TEST_OTHER_LOOKUP[op_str])
       print('  %r: %s,' % (op_str, v))
+    print('}')
+
+    print('')
+    print('ID_TO_KIND_INTEGERS = {')
+    for id_ in sorted(ID_TO_KIND_INTEGERS):
+      v = Kind_str(ID_TO_KIND_INTEGERS[id_])
+      print('  %s: %s,' % (Id_str(id_), v))
     print('}')
 
   else:

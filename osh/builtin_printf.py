@@ -14,10 +14,10 @@ from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
 import sys
 
 from asdl import runtime
-from core import meta
 from core import util
 from core.util import p_die, e_die
 from frontend import args
+from frontend import lexer
 from frontend import match
 from frontend import reader
 from osh import builtin
@@ -51,7 +51,7 @@ class _FormatStringParser(object):
     """
     self.cur_token = self.lexer.Read(lex_mode)
     self.token_type = self.cur_token.id
-    self.token_kind = meta.LookupKind(self.token_type)
+    self.token_kind = lexer.LookupKind(self.token_type)
 
   def _ParseFormatStr(self):
     self._Next(lex_mode_e.PrintfPercent)  # move past %

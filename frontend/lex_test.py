@@ -11,10 +11,10 @@ from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen.syntax_asdl import token
 from frontend import lex
-from frontend import match
+from frontend import lexer
 from frontend.lexer import LineLexer
+from frontend import match
 from core import test_lib
-from core.meta import LookupKind
 
 
 def _InitLexer(s):
@@ -133,10 +133,10 @@ class LexerTest(unittest.TestCase):
     self.assertTokensEqual(token(Id.Lit_Other, '|'), t)
 
   def testMode_DBracket(self):
-    lexer = _InitLexer('-z foo')
-    t = lexer.Read(lex_mode_e.DBracket)
+    lex = _InitLexer('-z foo')
+    t = lex.Read(lex_mode_e.DBracket)
     self.assertTokensEqual(token(Id.BoolUnary_z, '-z'), t)
-    self.assertEqual(Kind.BoolUnary, LookupKind(t.id))
+    self.assertEqual(Kind.BoolUnary, lexer.LookupKind(t.id))
 
   def testMode_DollarSq(self):
     lexer = _InitLexer(r'foo bar\n \x00 \000 \u0065')

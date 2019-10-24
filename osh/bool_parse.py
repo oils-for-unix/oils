@@ -36,9 +36,10 @@ from _devbuild.gen.syntax_asdl import (
     word_t, word__Compound, word__String,
     bool_expr, bool_expr_t,
 )
+from frontend import lexer
 from osh import word_
 from core.util import p_die
-from core.meta import LookupKind
+
 
 from typing import List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -85,7 +86,7 @@ class BoolParser(object):
 
     assert self.cur_word is not None
     self.op_id = word_.BoolId(self.cur_word)
-    self.b_kind = LookupKind(self.op_id)
+    self.b_kind = lexer.LookupKind(self.op_id)
     #log('--- word %s', self.cur_word)
     #log('op_id %s %s %s', self.op_id, self.b_kind, lex_mode)
 
@@ -212,7 +213,7 @@ class BoolParser(object):
       # Peek ahead another token.
       t2 = self._LookAhead()
       t2_op_id = word_.BoolId(t2)
-      t2_b_kind = LookupKind(t2_op_id)
+      t2_b_kind = lexer.LookupKind(t2_op_id)
 
       #log('t2 %s / t2_op_id %s / t2_b_kind %s', t2, t2_op_id, t2_b_kind)
       # Op for < and >, -a and -o pun

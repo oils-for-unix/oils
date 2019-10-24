@@ -10,7 +10,8 @@ lexer.py - Library for lexing.
 
 from _devbuild.gen.syntax_asdl import token, line_span
 from _devbuild.gen.types_asdl import lex_mode_t
-from _devbuild.gen.id_kind_asdl import Id_t, Id
+from _devbuild.gen.id_kind_asdl import Id_t, Id, Kind_t, KIND_INSTANCES
+from _devbuild.gen.id_tables import ID_TO_KIND_INTEGERS
 from asdl import runtime
 from core.util import log
 from frontend import match
@@ -19,6 +20,12 @@ from typing import Callable, List, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
   from frontend.reader import _Reader
+
+
+def LookupKind(id_):
+  # type: (Id_t) -> Kind_t
+  """To make coarse-grained parsing decisions."""
+  return KIND_INSTANCES[ID_TO_KIND_INTEGERS[id_]]
 
 
 class LineLexer(object):

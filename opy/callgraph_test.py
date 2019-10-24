@@ -7,8 +7,9 @@ callgraph_test.py: Tests for callgraph.py
 import unittest
 import sys
 
+from _devbuild.gen import types_asdl
+
 from opy import callgraph  # module under test
-from core.meta import types_asdl
 
 lex_mode_e = types_asdl.lex_mode_e
 

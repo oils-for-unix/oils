@@ -15,8 +15,9 @@ import unittest
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen import syntax_asdl 
 from core.meta import (
-    IdInstance, LookupKind, ID_SPEC, BOOL_ARG_TYPES, _kind_sizes
+    IdInstance, ID_SPEC, BOOL_ARG_TYPES, _kind_sizes
 )
+from frontend.lexer import LookupKind
 
 
 class TokensTest(unittest.TestCase):
