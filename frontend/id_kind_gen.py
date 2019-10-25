@@ -82,7 +82,8 @@ def main(argv):
 namespace id_kind_asdl {
 """)
 
-      v = gen_cpp.ClassDefVisitor(f, {}, e_suffix=False, simple_int_sums=['Id'])
+      v = gen_cpp.ClassDefVisitor(f, {}, e_suffix=False,
+                                  simple_int_sums=['Id'])
       v.VisitModule(schema_ast)
 
       f.write("""
@@ -100,7 +101,9 @@ namespace id_kind_asdl {
 
 """)
 
-      v = gen_cpp.MethodDefVisitor(f, {}, e_suffix=False)
+      v = gen_cpp.MethodDefVisitor(f, {}, e_suffix=False,
+                                   simple_int_sums=['Id'])
+
       v.VisitModule(schema_ast)
 
       f.write('}  // namespace id_kind_asdl\n')

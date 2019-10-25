@@ -66,6 +66,7 @@ def main(argv):
         f.write("""
 #include "hnode_asdl.h"
 using hnode_asdl::hnode_t;
+using id_kind_asdl::Id_str;
 """)
 
       f.write("""\

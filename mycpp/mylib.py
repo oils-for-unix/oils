@@ -13,6 +13,11 @@ CPP = False
 PYTHON = True
 
 
+def NewStr(s):
+  """Hack to translate conar char* s to Str * in C++."""
+  return s
+
+
 # C code ignores this!
 def log(msg, *args):
   # type: (str, *Any) -> None

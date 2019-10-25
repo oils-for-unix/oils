@@ -281,11 +281,13 @@ class MethodDefVisitor(visitor.AsdlVisitor):
   We have to do this in another pass because types and schemas have circular
   dependencies.
   """
-  def __init__(self, f, type_lookup, e_suffix=True, pretty_print_methods=True):
+  def __init__(self, f, type_lookup, e_suffix=True, pretty_print_methods=True,
+               simple_int_sums=None):
     visitor.AsdlVisitor.__init__(self, f)
     self.type_lookup = type_lookup
     self.e_suffix = e_suffix
     self.pretty_print_methods = pretty_print_methods
+    self.simple_int_sums = simple_int_sums or []
 
   def _CodeSnippet(self, abbrev, field, desc, var_name):
     none_guard = False
@@ -451,7 +453,10 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     self.Emit('}', depth)
 
   def VisitSimpleSum(self, sum, name, depth):
-    self._EmitStrFunction(sum, name, depth, strong=True)
+    if name in self.simple_int_sums:
+      self._EmitStrFunction(sum, name, depth, strong=False)
+    else:
+      self._EmitStrFunction(sum, name, depth, strong=True)
 
   def VisitCompoundSum(self, sum, sum_name, depth):
     self._EmitStrFunction(sum, sum_name, depth)

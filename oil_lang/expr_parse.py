@@ -78,7 +78,7 @@ def _Classify(gr, tok):
   if typ in gr.tokens:
     return gr.tokens[typ]
 
-  type_str = '' if tok.id == Id.Unknown_Tok else (' (%s)' % Id_str(tok.id))
+  type_str = '' if tok.id == Id.Unknown_Tok else (' (%s)' % mylib.NewStr(Id_str(tok.id)))
   p_die('Unexpected token in expression mode%s', type_str, token=tok)
 
 

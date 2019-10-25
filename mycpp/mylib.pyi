@@ -3,6 +3,8 @@ from typing import IO, Any
 CPP: bool
 PYTHON: bool
 
+def NewStr(s: str) -> str: ...
+
 class LineReader:
   def readline(self) -> str: ...
 
