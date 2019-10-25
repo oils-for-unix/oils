@@ -132,6 +132,7 @@ class Parser(object):
             states, _ = dfa
             arcs = states[state]
             # Look for a state with this label
+            found = False
             for ilab, newstate in arcs:
                 t = self.grammar.labels[ilab]
                 if ilabel == ilab:
@@ -157,9 +158,11 @@ class Parser(object):
                     if ilabel in itsfirst:
                         # Push a symbol
                         self.push(t, opaque, self.grammar.dfas[t], newstate)
+                        found = True
                         break # To continue the outer while loop
 
-            else:  # note: for/else not supported in C++
+            if not found:
+                # TODO: rewrite this condition
                 if (0, state) in arcs:
                     # An accepting state, pop it and try something else
                     self.pop()

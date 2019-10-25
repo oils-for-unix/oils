@@ -1028,7 +1028,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.write_ind('}\n')
 
         if o.else_body:
-          self.accept(o.else_body)
+          raise AssertionError("can't translate for-else")
 
     def visit_with_stmt(self, o: 'mypy.nodes.WithStmt') -> T:
         pass

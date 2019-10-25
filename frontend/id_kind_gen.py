@@ -127,7 +127,57 @@ from typing import List
     v.VisitModule(schema_ast)
 
   elif action == 'cc-tables':
-    pass
+    from frontend.lookup import REDIR_DEFAULT_FD, REDIR_ARG_TYPES
+    from _devbuild.gen.id_kind_asdl import Id_str, Kind_str
+    from _devbuild.gen.types_asdl import redir_arg_type_str, bool_arg_type_str
+
+    prefix = argv[2]
+
+    with open(prefix + '.h', 'w') as f:
+      def out(fmt, *args):
+        print(fmt % args, file=f)
+
+      out("""\
+#ifndef LOOKUP_H
+#define LOOKUP_H
+
+#include "id_kind_asdl.h"
+
+namespace lookup {
+
+id_kind_asdl::Kind LookupKind(id_kind_asdl::Id_t id);
+
+}  // namespace lookup
+
+#endif  // LOOKUP_H
+""")
+
+    with open(prefix + '.cc', 'w') as f:
+      def out(fmt, *args):
+        print(fmt % args, file=f)
+
+      out("""\
+#include "lookup.h"
+
+namespace Id = id_kind_asdl::Id;
+using id_kind_asdl::Kind;
+
+namespace lookup {
+""")
+      out('Kind LookupKind(id_kind_asdl::Id_t id) {')
+      out('  // relies on "switch lowering"')
+      out('  switch (id) {')
+      for id_ in sorted(ID_TO_KIND):
+        a = Id_str(id_).replace('.','::')
+        b = Kind_str(ID_TO_KIND[id_]).replace('.', '::')
+        out('  case %s: return %s;' % (a, b))
+      out("""\
+  }
+}
+
+}  // namespace lookup
+""")
+
 
   elif action == 'py-tables':
     # It's kind of weird to use the generated code to generate more code.

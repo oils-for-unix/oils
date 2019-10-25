@@ -235,6 +235,7 @@ using id_kind_asdl::Kind_t;
 #include "syntax_asdl.h"
 #include "types_asdl.h"
 
+#include "lookup.h"
 #include "match.h"
 
 // Hack for now.  Every sum type should have repr()?
@@ -264,7 +265,8 @@ namespace parse_lib {
 namespace util {
   class ParseError {
    public:
-    ParseError(Str* s, syntax_asdl::token* tok);
+    ParseError(Str* s, syntax_asdl::token* tok) {
+    }
   };
 }
 
@@ -301,5 +303,6 @@ compile-pgen2_demo() {
     ../cpp/match.cc \
     _gen/syntax_asdl.cc \
     ../_devbuild/gen-cpp/hnode_asdl.cc \
-    ../_devbuild/gen-cpp/id_kind_asdl.cc
+    ../_devbuild/gen-cpp/id_kind_asdl.cc \
+    ../_devbuild/gen-cpp/lookup.cc
 }
