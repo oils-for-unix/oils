@@ -210,6 +210,14 @@ void BufWriter::format_s(Str* s) {
   this->write(s);
 }
 
+void BufWriter::format_d(int i) {
+  // extend to the maximum size
+  data_ = static_cast<char*>(realloc(data_, len_ + kIntBufSize));
+  int len = snprintf(data_ + len_, kIntBufSize, "%d", i);
+  // but record only the number of bytes written
+  len_ += len;
+}
+
 //void BufWriter::format_s(const char* s) {
 //  this->write_const(s, strlen(s));
 //}

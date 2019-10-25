@@ -409,7 +409,7 @@ int str_to_int(Str* s);
 
 namespace mylib {  // MyPy artifact
 
-Str* NewStr(const char* s) {
+inline Str* NewStr(const char* s) {
   return new Str(s);
 }
 

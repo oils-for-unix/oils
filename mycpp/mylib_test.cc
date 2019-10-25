@@ -96,6 +96,12 @@ void test_formatter() {
   gBuf.format_s(new Str("bar"));
   gBuf.write_const("]", 1);
   log("value = %s", gBuf.getvalue()->data_);
+
+  gBuf.format_d(42);
+  gBuf.write_const("-", 1);
+  gBuf.format_d(42);
+  gBuf.write_const(".", 1);
+  log("value = %s", gBuf.getvalue()->data_);
 }
 
 int main(int argc, char **argv) {
