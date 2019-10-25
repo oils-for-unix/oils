@@ -230,6 +230,7 @@ translate-pgen2_demo() {
   local snippet='
 #include "id_kind_asdl.h"  // syntax.asdl depends on this
 using id_kind_asdl::Id_t;  // TODO: proper ASDL modules 
+using id_kind_asdl::Kind_t;
 
 #include "syntax_asdl.h"
 #include "types_asdl.h"
@@ -249,6 +250,10 @@ void p_die(Str* fmt, syntax_asdl::token* blame_token) {
 // Stub
 void p_die(Str* fmt, Str* s, syntax_asdl::token* blame_token) {
   throw AssertionError();
+}
+
+namespace lookup {
+  Kind_t LookupKind(Id_t id);
 }
 
 namespace parse_lib {

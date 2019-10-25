@@ -82,7 +82,7 @@ def main(argv):
 namespace id_kind_asdl {
 """)
 
-      v = gen_cpp.ClassDefVisitor(f, {}, e_suffix=False)
+      v = gen_cpp.ClassDefVisitor(f, {}, e_suffix=False, simple_int_sums=['Id'])
       v.VisitModule(schema_ast)
 
       f.write("""

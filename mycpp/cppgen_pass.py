@@ -1321,7 +1321,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # Tag numbers/namespaces end with _n.  enum types end with _e.
             # TODO: rename special cases
             if name.endswith('_n') or name in (
-                'hnode_e', 'source_e', 'assign_op_e'):
+                'hnode_e', 'source_e', 'assign_op_e', 'Id'):
               self.write_ind(
                   'namespace %s = %s::%s;\n', name, last_dotted, name)
             else:

@@ -100,11 +100,14 @@ def _GetInnerCppType(type_lookup, field):
 class ClassDefVisitor(visitor.AsdlVisitor):
   """Generate C++ declarations and type-safe enums."""
 
-  def __init__(self, f, type_lookup, e_suffix=True, pretty_print_methods=True):
+  def __init__(self, f, type_lookup, e_suffix=True, pretty_print_methods=True,
+               simple_int_sums=None):
+
     visitor.AsdlVisitor.__init__(self, f)
     self.type_lookup = type_lookup
     self.e_suffix = e_suffix
     self.pretty_print_methods = pretty_print_methods
+    self.simple_int_sums = simple_int_sums or []
 
     self._shared_type_tags = {}
     self._product_counter = 1000  # start it high
@@ -172,7 +175,12 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       self.Emit('', depth)
 
   def VisitSimpleSum(self, sum, name, depth):
-    self._EmitEnum(sum, name, depth, strong=True)
+    if name in self.simple_int_sums:
+      self._EmitEnum(sum, name, depth, strong=False)
+      self.Emit('typedef int %s_t;' % name)
+      self.Emit('')
+    else:
+      self._EmitEnum(sum, name, depth, strong=True)
 
   def VisitCompoundSum(self, sum, sum_name, depth):
     # This is a sign that Python needs string interpolation!!!
