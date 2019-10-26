@@ -63,9 +63,13 @@ def main(argv):
 """)
 
       if pretty_print_methods:
-        f.write("""
+        f.write("""\
 #include "hnode_asdl.h"
 using hnode_asdl::hnode_t;
+""")
+
+      if app_types:
+        f.write("""\
 using id_kind_asdl::Id_str;
 """)
 

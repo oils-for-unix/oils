@@ -215,6 +215,9 @@ Str* repr(syntax_asdl::source_t* obj) {
 # build ASDL schema and run it
 pyrun-pgen2_demo() {
   #codegen-pgen2_demo
+  pushd ..
+  build/dev.sh demo-grammar
+  popd
 
   PYTHONPATH="$REPO_ROOT/mycpp:$REPO_ROOT/vendor:$REPO_ROOT" examples/pgen2_demo.py
 }
@@ -288,6 +291,7 @@ namespace arith_nt {
     $REPO_ROOT/pgen2/grammar.py \
     $REPO_ROOT/pgen2/parse.py \
     $REPO_ROOT/oil_lang/expr_parse.py \
+    $REPO_ROOT/oil_lang/expr_to_ast.py \
     examples/$name.py
 
   compile-pgen2_demo ../cpp/match.cc

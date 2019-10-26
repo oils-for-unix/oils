@@ -178,6 +178,11 @@ def MakeGrammarNames(oil_grammar):
 
   names = {}
 
+  #from _devbuild.gen.id_kind_asdl import _Id_str
+  # This is a dictionary
+
+  # _Id_str()
+
   for id_name, k in lex.ID_SPEC.id_str2int.items():
     # Hm some are out of range
     #assert k < 256, (k, id_name)

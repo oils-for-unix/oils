@@ -922,9 +922,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.accept(args[0])
             self.write('; ++%s) ', index_name)
 
-            self.accept(o.body)
-            return
-
           elif num_args == 2:  # xrange(being, end)
             self.write_ind('for (int %s = ', index_name)
             self.accept(args[0])
@@ -932,11 +929,20 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.accept(args[1])
             self.write('; ++%s) ', index_name)
 
-            self.accept(o.body)
-            return
+          elif num_args == 3:  # xrange(being, end, step)
+            self.write_ind('for (int %s = ', index_name)
+            self.accept(args[0])
+            self.write('; %s < ', index_name)
+            self.accept(args[1])
+            self.write('; %s += ')
+            self.accept(args[2])
+            self.write(') ', index_name)
 
           else:
             raise AssertionError
+
+          self.accept(o.body)
+          return
 
         # for i, x in enumerate(...):
         index0_name = None

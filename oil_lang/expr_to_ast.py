@@ -82,7 +82,9 @@ class Transformer(object):
       return self.Expr(children[0])
 
     # left is evaluated first
-    left, op = self.Expr(children[0]), children[1]
+    left = self.Expr(children[0])
+    op = children[1]
+
     if n == 3:
       right = self.Expr(children[2])
     else:

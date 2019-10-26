@@ -15,6 +15,7 @@ from core import util
 from frontend import reader
 from frontend import lexer
 from oil_lang import expr_parse
+from oil_lang import expr_to_ast
 
 from mycpp import mylib
 from mycpp.mylib import log
@@ -46,10 +47,27 @@ def ParseDemo(oil_grammar):
     return
 
   # TODO: Fill this in.  Oil uses parse_lib.MakeGrammarNames()
-  names = {}  # type: Dict[int, str]
-  printer = expr_parse.ParseTreePrinter(names)
-  printer.Print(pnode)
-  # NOTE: Could also transform
+  #
+  # terminals: _Id_str?  Doesn't work in mycpp
+  # nonterminals: gr.number2symbol.  Is this ever used at runtime?
+  #
+  # Dict[int,str] should really be a List[str] then?
+
+  if 0:
+    names = {}  # type: Dict[int, str]
+    printer = expr_parse.ParseTreePrinter(names)
+    printer.Print(pnode)
+    # NOTE: Could also transform
+
+  # This only works for Oil
+  if 0:
+    tr = expr_to_ast.Transformer(oil_grammar)
+    node = tr.Expr(pnode)
+
+    assert node is not None
+
+    tree = node.AbbreviatedTree()
+    fmt.PrintTree(tree, mylib.Stdout())
 
 
 def run_tests():
