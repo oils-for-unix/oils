@@ -206,6 +206,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       for abbrev in 'PrettyTree', '_AbbreviatedTree', 'AbbreviatedTree':
         self.Emit('  hnode_t* %s();' % abbrev)
 
+    Emit('  DISALLOW_COPY_AND_ASSIGN(%(sum_name)s_t)')
     Emit('};')
     Emit('')
 
@@ -252,8 +253,10 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       for abbrev in 'PrettyTree', '_AbbreviatedTree', 'AbbreviatedTree':
         self.Emit('  hnode_t* %s();' % abbrev, depth)
 
-    self.Emit("};", depth)
-    self.Emit("", depth)
+    self.Emit('')
+    self.Emit('  DISALLOW_COPY_AND_ASSIGN(%s)' % class_name)
+    self.Emit('};', depth)
+    self.Emit('', depth)
 
   def VisitProduct(self, product, name, depth):
     self._shared_type_tags[name] = self._product_counter

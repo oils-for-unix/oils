@@ -15,6 +15,12 @@
 #include <climits>  // CHAR_BIT
 #include <cstdint>
 
+// To reduce code size
+
+#define DISALLOW_COPY_AND_ASSIGN(TypeName) \
+TypeName(TypeName&) = delete;              \
+void operator=(TypeName) = delete;
+
 class Str;
 template <class T> class List;
 template <class K, class V> class Dict;
@@ -69,6 +75,8 @@ class Obj {
   Obj(uint16_t tag) : tag(tag) {
   }
   uint16_t tag;
+
+  DISALLOW_COPY_AND_ASSIGN(Obj)
 };
 
 class Str {
@@ -158,6 +166,8 @@ class Str {
 
   const char* data_;
   size_t len_;
+
+  DISALLOW_COPY_AND_ASSIGN(Str)
 };
 
 // NOTE: This iterates over bytes.
@@ -176,6 +186,8 @@ class StrIter {
  private:
   Str* s_;
   int i_;
+
+  DISALLOW_COPY_AND_ASSIGN(StrIter)
 };
 
 // TODO: Parameterize this by type.  I don't think we can use vector<>
@@ -426,6 +438,8 @@ class BufLineReader : public LineReader {
  private:
   Str* s_;
   const char* pos_;
+
+  DISALLOW_COPY_AND_ASSIGN(BufLineReader)
 };
 
 class Writer {
@@ -483,6 +497,8 @@ class CFileWriter : public Writer {
 
  private:
   FILE* f_;
+
+  DISALLOW_COPY_AND_ASSIGN(CFileWriter)
 };
 
 extern Writer* gStdout;

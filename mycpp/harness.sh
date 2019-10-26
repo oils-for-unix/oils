@@ -228,4 +228,24 @@ benchmark-both() {
   example-both "$@"
 }
 
+strip-all() {
+  for bin in _bin/*; do
+    case $bin in
+      *.stripped)
+        continue
+        ;;
+      *)
+        if test -f $bin.stripped; then
+          echo "$bin already stripped"
+          continue
+        fi
+
+        strip -o $bin.stripped $bin
+        ;;
+    esac
+  done
+
+  ls -l _bin/*.stripped
+}
+
 
