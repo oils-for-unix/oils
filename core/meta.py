@@ -1,12 +1,7 @@
 """
 meta.py
 
-This file is used only at build time.
-
-TODO:
-- Consolidate ID_SPEC in core/id_kind_gen.py, and this one, which is used only
-  by frontend/lex.py.
-- Move the REDIR tables somewhere else.  They depend on Id.
+TODO: Move to core/pyutil.py
 """
 
 from pgen2 import grammar
