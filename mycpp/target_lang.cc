@@ -201,6 +201,17 @@ struct Extent {
   uint16_t src_id;
 };
 
+class expr__Const {
+ public:
+  expr__Const(int i) : i_(i) {
+  }
+  int i_;
+};
+
+namespace expr {
+  typedef expr__Const Const;
+}
+
 
 int main(int argc, char **argv) {
   log("sizeof(int): %d", sizeof(int));
@@ -229,4 +240,8 @@ int main(int argc, char **argv) {
   log("");
   default_args_demo();
   typed_arith_parse::namespace_demo();
+
+  log("");
+  expr::Const c(42);
+  log("expr::Const = %d", c.i_);
 }

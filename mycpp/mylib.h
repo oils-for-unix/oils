@@ -47,6 +47,13 @@ class EOFError {
 };
 
 class NotImplementedError {
+ public:
+  NotImplementedError() {
+  }
+  explicit NotImplementedError(const char* s) {
+  }
+  explicit NotImplementedError(Str* s) {
+  }
 };
 
 class AssertionError {

@@ -134,11 +134,20 @@ def main(argv):
     with open(marshal_path, 'wb') as out_f:
       gr.dump(out_f)
 
+    log('%s -> %s', grammar_path, marshal_path)
+
     nonterm_path = os.path.join(out_dir, basename + '_nt.py')
     with open(nonterm_path, 'w') as out_f:
-      gr.dump_nonterminals(out_f)
+      gr.dump_nonterminals_py(out_f)
 
-    log('Compiled %s -> %s and %s', grammar_path, marshal_path, nonterm_path)
+    log('%s -> %s', grammar_path, nonterm_path)
+
+    nonterm_path = os.path.join(out_dir, basename + '_nt.h')
+    with open(nonterm_path, 'w') as out_f:
+      gr.dump_nonterminals_cpp(out_f)
+
+    log('%s -> %s', grammar_path, nonterm_path)
+
     #gr.report()
 
   elif action == 'parse':  # generate the grammar and parse it

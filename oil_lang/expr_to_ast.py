@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:
   from pgen2.grammar import Grammar
 
-unused2 = log
+_ = log
 
 
 # Copied from pgen2/token.py to avoid dependency.
@@ -116,7 +116,7 @@ class Transformer(object):
     if op_tok.id == Id.Op_LBracket:
       p_args = children[1]
       assert p_args.typ == grammar_nt.subscriptlist
-      indices = []
+      indices = []  # type: List[expr_t]
       n = len(p_args.children)
       for i in xrange(0, n, 2):  # was children[::2]
         a = p_args.children[i]
@@ -208,7 +208,7 @@ class Transformer(object):
       p_die('Write singleton tuples with tup(), not a trailing comma',
             token=children[1].tok)
 
-    elts = []
+    elts = []  # type: List[expr_t]
     for i in xrange(0, n, 2):  # skip commas
       p_node = children[i]
       elts.append(self.Expr(p_node))
@@ -230,7 +230,7 @@ class Transformer(object):
         return expr.GeneratorExp(elt, [comp])
       if id0 == Id.Op_LBracket:
         return expr.ListComp(elt, [comp])
-      raise AssertionError
+      raise AssertionError()
 
     if id0 == Id.Op_LParen:
       # (1,)  (1, 2)  etc.
@@ -239,7 +239,7 @@ class Transformer(object):
       raise NotImplementedError('testlist_comp')
 
     if id0 == Id.Op_LBracket:
-      elts = []
+      elts = []  # type: List[expr_t]
       for i in xrange(0, n, 2):  # skip commas
         elts.append(self.Expr(children[i]))
 
@@ -288,7 +288,7 @@ class Transformer(object):
     name_type_list: name_type (',' name_type)*
     """
     assert p_node.typ == grammar_nt.name_type_list
-    results = []
+    results = []  # type: List[name_type]
 
     n = len(p_node.children)
     for i in xrange(0, n, 2):  # was children[::2]
@@ -343,7 +343,7 @@ class Transformer(object):
         elif tok1.id == Id.Expr_Is:  # is not
           op = speck(Id.Node_IsNot, tok1.span_id)
         else:
-          raise AssertionError
+          raise AssertionError()
       else:
         # is, <, ==, etc.
         op = speck(tok1.id, tok1.span_id)
@@ -709,7 +709,7 @@ class Transformer(object):
         positional.append(arg)
         return
 
-      raise AssertionError
+      raise AssertionError()
 
     if n == 3:
       n1 = named_arg(children[0].tok, self.Expr(children[2]))
@@ -1222,7 +1222,7 @@ class Transformer(object):
         return self._Regex(children[0])
 
       # NOTE: We're losing the | and or operators
-      alts = []
+      alts = []  # type: List[re_t]
       n = len(p_node.children)
       for i in xrange(0, n, 2):  # was children[::2]
         c = p_node.children[i]
@@ -1233,7 +1233,7 @@ class Transformer(object):
       # re_alt: (re_atom [repeat_op])+
       i = 0
       n = len(children)
-      seq = []
+      seq = []  # type: List[re_t]
       while i < n:
         r = self._ReAtom(children[i])
         i += 1

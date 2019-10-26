@@ -240,6 +240,7 @@ using id_kind_asdl::Kind_t;
 
 #include "lookup.h"
 #include "match.h"
+#include "grammar_nt.h"
 
 // Hack for now.  Every sum type should have repr()?
 Str* repr(syntax_asdl::source_t* obj) {

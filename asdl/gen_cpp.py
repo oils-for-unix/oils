@@ -221,6 +221,15 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         self._GenClass(variant, sum.attributes, class_name, [super_name],
                        depth, tag)
 
+    # Allow expr::Const in addition to expr__Const.
+    Emit('namespace %(sum_name)s {')
+    for variant in sum.types:
+      if not variant.shared_type:
+        variant_name = variant.name
+        Emit('  typedef %(sum_name)s__%(variant_name)s %(variant_name)s;')
+    Emit('}')
+    Emit('')
+
   def _GenClass(self, desc, attributes, class_name, base_classes, depth, tag):
     """For Product and Constructor."""
     if base_classes:

@@ -418,12 +418,22 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # If the function name is the same as the return type, then add 'new'.
           # f = Foo() => f = new Foo().
           ret_type = callee_type.ret_type
+
+          if 0:
+            log('callee %s', o.callee)
+            log('callee name %s', callee_name)
+            if isinstance(ret_type, Instance):
+              log('ret_type name %s', ret_type.type.name())
+              log('---')
+
           # str(i) doesn't need new.  For now it's a free function.
           # TODO: rename int_to_str?  or Str::from_int()?
-          if (callee_name not in ('str',) and 
-              isinstance(ret_type, Instance) and 
-              callee_name == ret_type.type.name()):
-            self.write('new ')
+          if callee_name not in ('str',) and isinstance(ret_type, Instance):
+            ret_type_name = ret_type.type.name()
+            # HACK: Const is the callee; expr__Const is the return type
+            if (callee_name == ret_type_name or
+                ret_type_name.endswith('__' + callee_name)):
+              self.write('new ')
 
         # Namespace.
         if callee_name == 'int':  # int('foo') in Python conflicts with keyword
@@ -1346,10 +1356,40 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if last_dotted == 'gen':
               return
 
+            # ASDL:
+            #
+            # namespaces:
+            #   expr_e::Const   # Compound sum
+            #   expr::Const
+            #   Id
+            #
+            # types:
+            #   expr__Const
+            #   expr_t   # sum type
+            #   expr_context_e   # simple sum.   This one is hard
+            #   double_quoted
+            #   Id_str
+
             # Tag numbers/namespaces end with _n.  enum types end with _e.
             # TODO: rename special cases
-            if name.endswith('_n') or name in (
-                'hnode_e', 'source_e', 'assign_op_e', 'Id'):
+
+            is_namespace = False
+
+            if last_dotted.endswith('_asdl'):
+              if name.endswith('_n') or name in (
+                'hnode_e', 'source_e', 'assign_op_e', 'place_e',
+                'place_expr_e', 'Id',
+                # for this
+                'expr_e', 'expr',
+
+                # syntax_asdl
+                'command',
+                're', 're_repeat', 'class_literal_term',
+                'place_expr', 'proc_sig',
+                ):
+                is_namespace = True
+
+            if is_namespace:
               self.write_ind(
                   'namespace %s = %s::%s;\n', name, last_dotted, name)
             else:
