@@ -9,6 +9,9 @@ See Parser/parser.c in the Python distribution for additional info on
 how this parsing engine works.
 """
 
+from core.util import log
+_ = log
+
 from typing import TYPE_CHECKING, Optional, Any, List
 
 if TYPE_CHECKING:
@@ -19,15 +22,15 @@ if TYPE_CHECKING:
 class ParseError(Exception):
     """Exception to signal the parser is stuck."""
 
-    def __init__(self, msg, type_, opaque):
+    def __init__(self, msg, type_, tok):
         # type: (str, int, token) -> None
         self.msg = msg
         self.type = type_
-        self.opaque = opaque
+        self.tok = tok
 
     def __repr__(self):
         # type: () -> str
-        return "%s: type=%d, opaque=%r" % (self.msg, self.type, self.opaque)
+        return "%s: type=%d, tok=%r" % (self.msg, self.type, self.tok)
 
 
 class PNode(object):
@@ -142,6 +145,8 @@ class Parser(object):
                     self.shift(typ, opaque, newstate)
                     # Pop while we are in an accept-only state
                     state = newstate
+                     
+                    # TODO: Does this condition translate?
                     while states[state] == [(0, state)]:
                         self.pop()
                         if not self.stack:
@@ -162,14 +167,22 @@ class Parser(object):
                         break # To continue the outer while loop
 
             if not found:
-                # TODO: rewrite this condition
-                if (0, state) in arcs:
-                    # An accepting state, pop it and try something else
-                    self.pop()
-                    if not self.stack:
-                        # Done parsing, but another token is input
-                        raise ParseError("too much input", typ, opaque)
-                else:
+                # Note: this condition was rewritten for mycpp tarnslation.
+                # if (0, state) in arcs:
+                #   ...
+                # else:
+                #   ...
+                found2 = False
+                for left, right in arcs:
+                    if left == 0 and right == state:
+                        # An accepting state, pop it and try something else
+                        self.pop()
+                        if not self.stack:
+                            # Done parsing, but another token is input
+                            raise ParseError("too much input", typ, opaque)
+                        found2 = True
+
+                if not found2:
                     # No success finding a transition
                     raise ParseError("bad input", typ, opaque)
 

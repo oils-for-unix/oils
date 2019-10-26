@@ -300,6 +300,11 @@ class ExprParser(object):
       # - Describe what lexer mode we're in (Invalid syntax in regex)
       #   - Maybe say where the mode started
       # - Id.Unknown_Tok could say "This character is invalid"
-      raise util.ParseError('Syntax error in expression', token=e.opaque)
+
+      # ParseError has a "too much input" case but I haven't been able to
+      # tickle it.  Mabye it's because of the Eof tokens?
+
+      #raise util.ParseError('Syntax error in expression (%r)', e, token=e.tok)
+      raise util.ParseError('Syntax error in expression', token=e.tok)
 
     return self.push_parser.rootnode, last_token
