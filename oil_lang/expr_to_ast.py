@@ -7,7 +7,6 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
     token, speck, double_quoted, single_quoted, simple_var_sub, braced_var_sub,
     command_sub, sh_array_literal,
-    word_t,
     command, command__VarDecl, command__PlaceMutation, command__Func,
     expr, expr_e, expr_t, expr__Var, expr__Dict, expr_context_e,
     re, re_t, re_repeat, re_repeat_t, class_literal_term, class_literal_term_t,
@@ -25,7 +24,6 @@ from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:
   from pgen2.grammar import Grammar
 
-unused1 = word_t  # shut up lint, it's used below
 unused2 = log
 
 
@@ -118,7 +116,11 @@ class Transformer(object):
     if op_tok.id == Id.Op_LBracket:
       p_args = children[1]
       assert p_args.typ == grammar_nt.subscriptlist
-      indices = [self._Subscript(a.children) for a in p_args.children[::2]]
+      indices = []
+      n = len(p_args.children)
+      for i in xrange(0, n, 2):  # was children[::2]
+        a = p_args.children[i]
+        indices.append(self._Subscript(a.children))
       return subscript(base, indices)
 
     if op_tok.id in (Id.Expr_Dot, Id.Expr_RArrow, Id.Expr_DColon):
@@ -288,7 +290,9 @@ class Transformer(object):
     assert p_node.typ == grammar_nt.name_type_list
     results = []
 
-    for p in p_node.children[::2]:
+    n = len(p_node.children)
+    for i in xrange(0, n, 2):  # was children[::2]
+      p = p_node.children[i]
       children = p.children
 
       if len(children) == 2:
@@ -502,7 +506,11 @@ class Transformer(object):
         # the power would have already been reduced
         if len(children) == 1:
           return self.Expr(children[0])
-        op, e = children
+
+        assert len(children) == 2
+        op = children[0]
+        e = children[1]
+
         assert isinstance(op.tok, token)
         return expr.Unary(op.tok, self.Expr(e))
 
@@ -541,15 +549,7 @@ class Transformer(object):
       #
 
       elif typ == grammar_nt.sh_array_literal:
-        left_tok = children[0].tok
-
-        # HACK: When typ is Id.Expr_CastedDummy, the 'tok' field ('opaque')
-        # actually has a list of words!
-        typ1 = children[1].typ
-        assert typ1 == Id.Expr_CastedDummy, typ1
-        array_words = cast('List[word_t]', children[1].tok)
-
-        return sh_array_literal(left_tok, array_words)
+        return cast(sh_array_literal, children[1].tok)
 
       elif typ == grammar_nt.sh_command_sub:
         return cast(command_sub, children[1].tok)
@@ -607,7 +607,9 @@ class Transformer(object):
     """
     assert p_node.typ == grammar_nt.place_list
     places = []  # type: List[place_expr_t]
-    for p in p_node.children[::2]:
+    n = len(p_node.children)
+    for i in xrange(0, n, 2):  # was children[::2]
+      p = p_node.children[i]
       e = self.Expr(p)
       if e.tag == expr_e.Var:  # COMPATIBILITY hack
         assert isinstance(e, expr__Var)
@@ -1220,8 +1222,12 @@ class Transformer(object):
         return self._Regex(children[0])
 
       # NOTE: We're losing the | and or operators
-      children = p_node.children[0::2]
-      return re.Alt([self._Regex(c) for c in children])
+      alts = []
+      n = len(p_node.children)
+      for i in xrange(0, n, 2):  # was children[::2]
+        c = p_node.children[i]
+        alts.append(self._Regex(c))
+      return re.Alt(alts)
 
     if typ == grammar_nt.re_alt:
       # re_alt: (re_atom [repeat_op])+

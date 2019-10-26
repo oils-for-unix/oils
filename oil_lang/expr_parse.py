@@ -4,7 +4,7 @@ expr_parse.py
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
-    token, double_quoted, single_quoted, command_sub,
+    token, double_quoted, single_quoted, command_sub, sh_array_literal,
     word__Token, word__Compound, word_part_t,
 )
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_str
@@ -150,6 +150,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
 
     if mylib.PYTHON:
       if tok.id == Id.Left_AtParen:
+        left_tok = tok
         lex.PushHint(Id.Op_RParen, Id.Right_ShArrayLiteral)
 
         # Blame the opening token
@@ -178,7 +179,9 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
         words3 = word_.TildeDetectAll(words2)
 
         typ = Id.Expr_CastedDummy
-        opaque = cast(token, words3)  # HACK for expr_to_ast
+
+        lit_part = sh_array_literal(left_tok, words3)
+        opaque = cast(token, lit_part)  # HACK for expr_to_ast
         done = p.addtoken(typ, opaque, gr.tokens[typ])
         assert not done  # can't end the expression
 

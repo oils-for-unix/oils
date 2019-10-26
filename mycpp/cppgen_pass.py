@@ -378,6 +378,28 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.write(tag)
           return
 
+        #    return cast(sh_array_literal, tok)
+        # -> return static_cast<sh_array_literal*>(tok)
+
+        # TODO: Consolidate this with AssignmentExpr logic.
+
+        if o.callee.name == 'cast':
+          call = o
+          type_expr = call.args[0]
+          if isinstance(type_expr, MemberExpr):
+            subtype_name = '%s::%s' % (type_expr.expr.name, type_expr.name)
+          else:
+            subtype_name = type_expr.name
+
+          # Hack for now
+          if subtype_name != 'int':
+            subtype_name += '*'
+
+          self.write('static_cast<%s>(', subtype_name)
+          self.accept(call.args[1])  # variable being casted
+          self.write(')')
+          return
+
         # HACK for log("%s", s)
         printf_style = False
         if o.callee.name == 'log':
@@ -934,9 +956,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.accept(args[0])
             self.write('; %s < ', index_name)
             self.accept(args[1])
-            self.write('; %s += ')
+            self.write('; %s += ', index_name)
             self.accept(args[2])
-            self.write(') ', index_name)
+            self.write(') ')
 
           else:
             raise AssertionError

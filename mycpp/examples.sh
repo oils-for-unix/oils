@@ -291,8 +291,8 @@ namespace arith_nt {
     $REPO_ROOT/pgen2/grammar.py \
     $REPO_ROOT/pgen2/parse.py \
     $REPO_ROOT/oil_lang/expr_parse.py \
+    $REPO_ROOT/oil_lang/expr_to_ast.py \
     examples/$name.py
-    #$REPO_ROOT/oil_lang/expr_to_ast.py \
 
   compile-pgen2_demo
 } 
