@@ -395,7 +395,17 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           if subtype_name != 'int':
             subtype_name += '*'
 
-          self.write('static_cast<%s>(', subtype_name)
+          cast_kind = 'static_cast'
+
+          # Hack for the CastDummy in expr_to_ast.py
+          if 'expr_to_ast.py' in self.module_path:
+            for name in ('sh_array_literal', 'command_sub', 'braced_var_sub',
+                'double_quoted', 'single_quoted'):
+              if name in subtype_name:
+                cast_kind = 'reinterpret_cast'
+                break
+
+          self.write('%s<%s>(', cast_kind, subtype_name)
           self.accept(call.args[1])  # variable being casted
           self.write(')')
           return

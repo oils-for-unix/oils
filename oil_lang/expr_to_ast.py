@@ -631,12 +631,14 @@ class Transformer(object):
     for i in xrange(0, n, 2):  # was children[::2]
       p = p_node.children[i]
       e = self.Expr(p)
-      if e.tag == expr_e.Var:  # COMPATIBILITY hack
-        assert isinstance(e, expr__Var)
+      UP_e = e
+      tag = e.tag_()
+      if tag == expr_e.Var:  # COMPATIBILITY hack
+        e = cast(expr__Var, UP_e)
         places.append(place_expr.Var(e.name))
-      elif e.tag in (
+      elif tag in (
           place_expr_e.Var, place_expr_e.Subscript, place_expr_e.Attribute):
-        places.append(cast(place_expr_t, e))
+        places.append(cast(place_expr_t, UP_e))
       else:
         # This blame mechanism seems to work.  Otherwise we don't have a method
         # to blame an arbitrary expr_t.
