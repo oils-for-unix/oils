@@ -39,6 +39,13 @@ def IntDemo():
   #log("x = %s", x)
 
 
+class Point(object):
+  def __init__(self, x, y):
+    # type: (int, int) -> None
+    self.x = x
+    self.y = y
+
+
 def TupleDemo():
   # type: () -> None
 
@@ -55,6 +62,12 @@ def TupleDemo():
 
   x = 3
   if x in (3, 4, 5):
+    print('yes')
+  else:
+    print('no')
+
+  p = Point(3, 4)
+  if p.x in (3, 4, 5):
     print('yes')
   else:
     print('no')

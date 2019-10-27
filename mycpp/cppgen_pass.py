@@ -637,14 +637,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           return
 
         if operator == 'in':
-          if isinstance(left, NameExpr) and isinstance(right, TupleExpr):
+          if isinstance(right, TupleExpr):
             # x in (1, 2, 3) => (x == 1 || x == 2 || x == 3)
             self.write('(')
 
             for i, item in enumerate(right.items):
               if i != 0:
                 self.write(' || ')
-              self.write(left.name)
+              self.accept(left)
               self.write(' == ')
               self.accept(item)
 

@@ -252,8 +252,13 @@ void p_die(Str* fmt, syntax_asdl::token* blame_token) {
   throw AssertionError();
 }
 
-// Stub
+// STUB
 void p_die(Str* fmt, Str* s, syntax_asdl::token* blame_token) {
+  throw AssertionError();
+}
+
+// STUB
+void p_die(Str* fmt, syntax_asdl::word_part* part) {
   throw AssertionError();
 }
 
