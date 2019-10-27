@@ -27,6 +27,23 @@ if TYPE_CHECKING:
 _ = log
 
 
+PERL_CLASSES = {
+    'd': 'd',
+    'w': 'w', 'word': 'w',
+    's': 's',
+}
+# https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html
+POSIX_CLASSES = [
+    'alnum', 'cntrl', 'lower', 'space',
+    'alpha', 'digit', 'print', 'upper',
+    'blank', 'graph', 'punct', 'xdigit',
+]
+# NOTE: There are also things like \p{Greek} that we could put in the
+# "non-sigil" namespace.
+
+RANGE_POINT_TOO_LONG = "Range start/end shouldn't have more than one character"
+
+
 # Copied from pgen2/token.py to avoid dependency.
 NT_OFFSET = 256
 
@@ -104,7 +121,7 @@ class Transformer(object):
     # TODO: Need to process ALL the trailers, e.g. f(x, y)[1, 2](x, y)
 
     if op_tok.id == Id.Op_LParen:
-      arglist = arg_list()
+      arglist = arg_list([], [])
       if len(children) == 2:  # ()
         return expr.FuncCall(base, arglist)
 
@@ -127,7 +144,7 @@ class Transformer(object):
       attr = children[1].tok  # will be Id.Expr_Name
       return attribute(base, op_tok, attr, expr_context_e.Store)
 
-    raise AssertionError(op_tok)
+    raise AssertionError(Id_str(op_tok.id))
 
   def _DictPair(self, p_node):
     # type: (PNode) -> Tuple[expr_t, expr_t]
@@ -245,7 +262,7 @@ class Transformer(object):
 
       return expr.List(elts, expr_context_e.Store)  # unused expr_context_e
 
-    raise AssertionError(id0)
+    raise AssertionError(Id_str(id0))
 
   def _Atom(self, children):
     # type: (List[PNode]) -> expr_t
@@ -278,7 +295,9 @@ class Transformer(object):
     if id_ == Id.Arith_Slash:
       r = self._Regex(children[1])
       flags = []  # type: List[token]
-      return expr.RegexLiteral(children[0].tok, r, flags)
+      # TODO: Parse translation preference.
+      trans_pref = None  # type: token
+      return expr.RegexLiteral(children[0].tok, r, flags, trans_pref)
 
     raise NotImplementedError(Id_str(id_))
 
@@ -466,16 +485,17 @@ class Transformer(object):
         return self._CompareChain(children)
 
       elif typ == grammar_nt.range_expr:
-        if len(children) == 1:
+        n = len(children)
+        if n == 1:
           return self.Expr(children[0])
 
-        if len(children) == 3:
+        if n == 3:
           return expr.Range(
               self.Expr(children[0]),
               self.Expr(children[2])
           )
 
-        raise AssertionError(children)
+        raise AssertionError(n)
 
       elif typ == grammar_nt.expr:
         # expr: xor_expr ('|' xor_expr)*
@@ -716,7 +736,7 @@ class Transformer(object):
       named.append(n1)
       return
 
-    raise NotImplementedError
+    raise NotImplementedError()
 
   def _Arglist(self, children, arglist):
     # type: (List[PNode], arg_list) -> None
@@ -767,12 +787,12 @@ class Transformer(object):
     n = len(children)
 
     if tok0.id == Id.Expr_Name:
-      default = None
+      default_val = None
       if n > 1 and children[1].tok.id == Id.Arith_Equal:  # proc p(x = 1+2*3)
-        default = self.Expr(children[2])
-      return tok0, default
+        default_val = self.Expr(children[2])
+      return tok0, default_val
 
-    raise AssertionError(tok0)
+    raise AssertionError(Id_str(tok0.id))
 
   def _ProcParams(self, p_node):
     # type: (PNode) -> proc_sig_t
@@ -790,9 +810,9 @@ class Transformer(object):
     while i < n:
       p = children[i]
       if ISNONTERMINAL(p.typ):
-        name, default = self._ProcParam(p)
+        name, default_val = self._ProcParam(p)
         # No type_expr for procs
-        params.append(param(name, None, default))
+        params.append(param(name, None, default_val))
       else:
         if p.tok.id == Id.Expr_At:  # @args
           i += 1
@@ -801,7 +821,7 @@ class Transformer(object):
           i += 1
           block = children[i].tok
         else:
-          raise AssertionError(p.tok)
+          raise AssertionError(Id_str(p.tok.id))
       i += 2
 
     return proc_sig.Closed(params, rest, block)
@@ -818,15 +838,15 @@ class Transformer(object):
     n = len(children)
 
     if tok0.id == Id.Expr_Name:
-      default = None
+      default_val = None
       type_ = None
       if n > 1 and children[1].tok.id == Id.Arith_Equal:  # f(x = 1+2*3)
-        default = self.Expr(children[2])
+        default_val = self.Expr(children[2])
       elif n > 2 and children[2].tok.id == Id.Arith_Equal:  # f(x Int = 1+2*3)
-        default = self.Expr(children[3])
-      return param(tok0, type_, default)
+        default_val = self.Expr(children[3])
+      return param(tok0, type_, default_val)
 
-    raise AssertionError(tok0)
+    raise AssertionError(Id_str(tok0.id))
 
   def _FuncParams(self, p_node):
     # type: (PNode) -> Tuple[List[param], Optional[token]]
@@ -834,7 +854,7 @@ class Transformer(object):
     func_params: [func_param] (',' func_param)* [',' '...' Expr_Name]
     """
     params = []  # type: List[param]
-    splat = None
+    splat = None  # type: Optional[token]
 
     children = p_node.children
     n = len(children)
@@ -905,8 +925,6 @@ class Transformer(object):
   # Regex Language
   #
 
-  RANGE_POINT_TOO_LONG = "Range start/end shouldn't have more than one character"
-
   def _RangeChar(self, p_node):
     # type: (PNode) -> str
     """Evaluate a range endpoints.
@@ -925,9 +943,9 @@ class Transformer(object):
         sq_part = cast(single_quoted, children[0].children[1].tok)
         tokens = sq_part.tokens
         if len(tokens) > 1:  # Can happen with multiline single-quoted strings
-          p_die(self.RANGE_POINT_TOO_LONG, part=sq_part)
+          p_die(RANGE_POINT_TOO_LONG, part=sq_part)
         if len(tokens[0].val) > 1:
-          p_die(self.RANGE_POINT_TOO_LONG, part=sq_part)
+          p_die(RANGE_POINT_TOO_LONG, part=sq_part)
         s = tokens[0].val[0]
         return s
 
@@ -941,17 +959,17 @@ class Transformer(object):
         #s = word_compile.EvalCStringToken(tok.id, tok.val)
         #return s
 
-      raise NotImplementedError
+      raise NotImplementedError()
     else:
       # Expr_Name or Expr_DecInt
       tok = p_node.tok
       if tok.id in (Id.Expr_Name, Id.Expr_DecInt):
         # For the a in a-z, 0 in 0-9
         if len(tok.val) != 1:
-          p_die(self.RANGE_POINT_TOO_LONG, token=tok)
+          p_die(RANGE_POINT_TOO_LONG, token=tok)
         return tok.val[0]
 
-      raise NotImplementedError
+      raise NotImplementedError()
 
   def _NonRangeChars(self, p_node):
     # type: (PNode) -> class_literal_term_t
@@ -978,7 +996,7 @@ class Transformer(object):
       if typ == grammar_nt.char_literal:
         return class_literal_term.CharLiteral(children[0].tok)
 
-      raise NotImplementedError
+      raise NotImplementedError()
     else:
       # Look up PerlClass and PosixClass
       return self._NameInClass(None, children[0].tok)
@@ -1040,20 +1058,6 @@ class Transformer(object):
     # skip [ and ]
     return [self._ClassLiteralTerm(c) for c in p_node.children[1:-1]]
 
-  PERL_CLASSES = {
-      'd': 'd',
-      'w': 'w', 'word': 'w',
-      's': 's',
-  }
-  # https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html
-  POSIX_CLASSES = (
-      'alnum', 'cntrl', 'lower', 'space',
-      'alpha', 'digit', 'print', 'upper',
-      'blank', 'graph', 'punct', 'xdigit',
-  )
-  # NOTE: These are also things like \p{Greek} that we could put in the
-  # "non-sigil" namespace.
-
   def _NameInRegex(self, negated_tok, tok):
     # type: (token, token) -> re_t
 
@@ -1068,10 +1072,10 @@ class Transformer(object):
         p_die("Can't negate this symbol", token=tok)
       return tok
 
-    if val in self.POSIX_CLASSES:
+    if val in POSIX_CLASSES:
       return posix_class(negated_speck, val)
 
-    perl = self.PERL_CLASSES.get(val)
+    perl = PERL_CLASSES.get(val)
     if perl:
       return perl_class(negated_speck, perl)
 
@@ -1088,10 +1092,10 @@ class Transformer(object):
       negated_speck = None
 
     val = tok.val
-    if val in self.POSIX_CLASSES:
+    if val in POSIX_CLASSES:
       return posix_class(negated_speck, val)
 
-    perl = self.PERL_CLASSES.get(val)
+    perl = PERL_CLASSES.get(val)
     if perl:
       return perl_class(negated_speck, perl)
     p_die("%r isn't a character class", val, token=tok)
@@ -1168,9 +1172,9 @@ class Transformer(object):
 
       if tok.id == Id.Arith_Colon:
         # | ':' '(' regex ')'
-        raise NotImplementedError(tok.id)
+        raise NotImplementedError(Id_str(tok.id))
 
-      raise NotImplementedError(tok.id)
+      raise NotImplementedError(Id_str(tok.id))
 
   def _RepeatOp(self, p_repeat):
     # type: (PNode) -> re_repeat_t
@@ -1250,3 +1254,4 @@ class Transformer(object):
 
     nt_name = self.number2symbol[typ]
     raise NotImplementedError(nt_name)
+

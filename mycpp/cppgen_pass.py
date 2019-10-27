@@ -637,6 +637,20 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           return
 
         if operator == 'in':
+          if isinstance(left, NameExpr) and isinstance(right, TupleExpr):
+            # x in (1, 2, 3) => (x == 1 || x == 2 || x == 3)
+            self.write('(')
+
+            for i, item in enumerate(right.items):
+              if i != 0:
+                self.write(' || ')
+              self.write(left.name)
+              self.write(' == ')
+              self.accept(item)
+
+            self.write(')')
+            return
+
           # x in mylist => mylist->contains(x) 
           self.accept(right)
           self.write('->contains(')
@@ -721,17 +735,17 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         c_type = c_type[:-1]  # HACK TO CLEAN UP
 
         if len(o.items) == 0:
-            self.write('new %s()' % c_type)
+            self.write('(new %s())' % c_type)
         else:
             # Use initialize list.  Lists are MUTABLE so we can't pull them to
             # the top level.
-            self.write('new %s(' % c_type)
+            self.write('(new %s(' % c_type)
             for i, item in enumerate(o.items):
                 if i != 0:
                     self.write(', ')
                 self.accept(item)
                 # TODO: const_lookup
-            self.write(')')
+            self.write('))')
 
     def visit_set_expr(self, o: 'mypy.nodes.SetExpr') -> T:
         pass

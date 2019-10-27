@@ -53,6 +53,12 @@ def TupleDemo():
   #log('t2[0] = %d', t2[0])
   #log('t2[1] = %s', t2[1])
 
+  x = 3
+  if x in (3, 4, 5):
+    print('yes')
+  else:
+    print('no')
+
 
 def run_tests():
   # type: () -> None

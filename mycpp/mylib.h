@@ -50,6 +50,8 @@ class NotImplementedError {
  public:
   NotImplementedError() {
   }
+  explicit NotImplementedError(int i) {  // e.g. in expr_to_ast
+  }
   explicit NotImplementedError(const char* s) {
   }
   explicit NotImplementedError(Str* s) {
@@ -59,6 +61,8 @@ class NotImplementedError {
 class AssertionError {
  public:
   AssertionError() {
+  }
+  explicit AssertionError(int i) {  // e.g. in expr_to_ast
   }
   explicit AssertionError(const char*  s) {
   }

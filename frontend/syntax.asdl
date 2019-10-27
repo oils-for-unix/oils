@@ -392,7 +392,7 @@ module syntax
   | ShArrayLiteral %sh_array_literal
     -- @[a b c] @[1 2 3] @[(1+1) (2+2)]
   | ArrayLiteral(token left, expr* items)
-  | RegexLiteral(token left, re regex, token* flags, token* trans_pref)
+  | RegexLiteral(token left, re regex, token* flags, token? trans_pref)
 
   | SimpleVarSub %simple_var_sub
   | BracedVarSub %braced_var_sub
@@ -481,11 +481,13 @@ module syntax
 
   -- NOTE: modifier is unused now, can represent L or P
   re_repeat =
-    -- TODO: could use speck
-    Op(token op, id modifier)
-    -- TODO: could use 'strand'.  You don't need the Id.
-  | Num(token times, id modifier)
-  | Range(token? lower, token? upper, id modifier)
+    -- TODO: could use speck.  And add back Op(token op, id modifier)
+    Op(token op)
+  | Num(token times)
+  | Range(token? lower, token? upper)
+  -- Haven't implemented the modifier, e.g. x{+ P}
+  -- | Num(token times, id modifier)
+  -- | Range(token? lower, token? upper, id modifier)
 
   re = 
     -- . ^ $
