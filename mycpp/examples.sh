@@ -258,7 +258,7 @@ void p_die(Str* fmt, Str* s, syntax_asdl::token* blame_token) {
 }
 
 // STUB
-void p_die(Str* fmt, syntax_asdl::word_part* part) {
+void p_die(Str* fmt, syntax_asdl::word_part_t* part) {
   throw AssertionError();
 }
 

@@ -27,6 +27,22 @@ class UnsupportedException(Exception):
     pass
 
 
+def _GetCastKind(module_path, subtype_name):
+  cast_kind = 'static_cast'
+  # Hack for the CastDummy in expr_to_ast.py
+  if 'expr_to_ast.py' in module_path:
+    for name in (
+        'sh_array_literal', 'command_sub', 'braced_var_sub',
+        'double_quoted', 'single_quoted',
+        # Another kind of hack, not because of CastDummy
+        'place_expr_t',
+        ):
+      if name in subtype_name:
+        cast_kind = 'reinterpret_cast'
+        break
+  return cast_kind
+
+
 def get_c_type(t):
   if isinstance(t, NoneTyp):  # e.g. a function that doesn't return anything
     return 'void'
@@ -395,16 +411,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           if subtype_name != 'int':
             subtype_name += '*'
 
-          cast_kind = 'static_cast'
-
-          # Hack for the CastDummy in expr_to_ast.py
-          if 'expr_to_ast.py' in self.module_path:
-            for name in ('sh_array_literal', 'command_sub', 'braced_var_sub',
-                'double_quoted', 'single_quoted'):
-              if name in subtype_name:
-                cast_kind = 'reinterpret_cast'
-                break
-
+          cast_kind = _GetCastKind(self.module_path, subtype_name)
           self.write('%s<%s>(', cast_kind, subtype_name)
           self.accept(call.args[1])  # variable being casted
           self.write(')')
@@ -886,8 +893,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           if subtype_name != 'int':
             subtype_name += '*'
 
+          cast_kind = _GetCastKind(self.module_path, subtype_name)
           self.write_ind(
-              '%s %s = static_cast<%s>(', subtype_name, lval.name,
+              '%s %s = %s<%s>(', subtype_name, lval.name, cast_kind,
               subtype_name)
           self.accept(call.args[1])  # variable being casted
           self.write(');\n')
@@ -1353,10 +1361,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         if o.id in ('__future__', 'typing'):
           return  # do nothing
-        if o.names == [('log', None)]:
-          return  # do nothing
-        if o.names == [('p_die', None)]:
-          return  # do nothing
 
         # Later we need to turn module.func() into module::func(), without
         # disturbing self.foo.
@@ -1372,6 +1376,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # from core import util => NOT translated
 
         for name, alias in o.names:
+
+          # TODO: Should these be moved to core/pylib.py or something?
+          # They are varargs functions that have to be rewritten.
+          if name == 'log':
+            return  # do nothing
+          if name == 'p_die':
+            return  # do nothing
+
           if '.' in o.id:
             last_dotted = o.id.split('.')[-1]
 

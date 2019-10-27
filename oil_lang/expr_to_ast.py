@@ -789,7 +789,7 @@ class Transformer(object):
     n = len(children)
 
     if tok0.id == Id.Expr_Name:
-      default_val = None
+      default_val = None  # type: expr_t
       if n > 1 and children[1].tok.id == Id.Arith_Equal:  # proc p(x = 1+2*3)
         default_val = self.Expr(children[2])
       return tok0, default_val
@@ -814,7 +814,8 @@ class Transformer(object):
       if ISNONTERMINAL(p.typ):
         name, default_val = self._ProcParam(p)
         # No type_expr for procs
-        params.append(param(name, None, default_val))
+        type_ = None  # type: type_expr_t
+        params.append(param(name, type_, default_val))
       else:
         if p.tok.id == Id.Expr_At:  # @args
           i += 1
@@ -840,8 +841,8 @@ class Transformer(object):
     n = len(children)
 
     if tok0.id == Id.Expr_Name:
-      default_val = None
-      type_ = None
+      default_val = None  # type: expr_t
+      type_ = None  # type: type_expr_t
       if n > 1 and children[1].tok.id == Id.Arith_Equal:  # f(x = 1+2*3)
         default_val = self.Expr(children[2])
       elif n > 2 and children[2].tok.id == Id.Arith_Equal:  # f(x Int = 1+2*3)
