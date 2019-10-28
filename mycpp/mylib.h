@@ -493,19 +493,13 @@ class BufWriter : public Writer {
   // For cStringIO API
   Str* getvalue() { return new Str(data_, len_); }
 
-  // For fmtX() functions
-  Str* new_str() {
-    char* buf = static_cast<char*>(malloc(len_ + 1));
-    memcpy(buf, data_, len_ + 1);
-    return new Str(buf, len_);
-  }
-
   // Methods to compile printf format strings to
 
   // To reuse the global gBuf instance
   // problem: '%r' % obj will recursively call asdl/format.py, which has its
   // own % operations
-  void clear() {
+  void reset() {
+    data_ = nullptr;  // make sure we get a new buffer next time
     len_ = 0;
   }
 

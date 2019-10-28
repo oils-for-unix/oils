@@ -1059,7 +1059,8 @@ class Transformer(object):
     """
     assert p_node.typ == grammar_nt.class_literal
     # skip [ and ]
-    return [self._ClassLiteralTerm(c) for c in p_node.children[1:-1]]
+    terms = [self._ClassLiteralTerm(c) for c in p_node.children[1:-1]]
+    return terms
 
   def _NameInRegex(self, negated_tok, tok):
     # type: (token, token) -> re_t

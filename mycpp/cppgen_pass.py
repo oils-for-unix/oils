@@ -555,7 +555,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               raise AssertionError(right_type)
 
             self.fmt_funcs.write(') {\n')
-            self.fmt_funcs.write('  gBuf.clear();\n')
+            self.fmt_funcs.write('  gBuf.reset();\n')
 
             for part in parts:
               if isinstance(part, format_strings.LiteralPart):
@@ -570,7 +570,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               else:
                 raise AssertionError(part)
 
-            self.fmt_funcs.write('  return gBuf.new_str();\n')
+            self.fmt_funcs.write('  return gBuf.getvalue();\n')
             self.fmt_funcs.write('}\n')
             self.fmt_funcs.write('\n')
 
