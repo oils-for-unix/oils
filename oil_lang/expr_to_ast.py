@@ -121,7 +121,7 @@ class Transformer(object):
     # TODO: Need to process ALL the trailers, e.g. f(x, y)[1, 2](x, y)
 
     if op_tok.id == Id.Op_LParen:
-      arglist = arg_list([], [])
+      arglist = arg_list()
       if len(children) == 2:  # ()
         return expr.FuncCall(base, arglist)
 
@@ -333,13 +333,12 @@ class Transformer(object):
     lhs = self._NameTypeList(children[1])  # Python calls this target
     iterable = self.Expr(children[3])
 
-    if_ = None
     if len(children) >= 6:
-      if_ = self.Expr(children[5])
+      cond = self.Expr(children[5])
+    else:
+      cond = None
 
-    # TODO: Simplify the node
-    ifs = [if_] if if_ else []
-    return comprehension(lhs, iterable, ifs)
+    return comprehension(lhs, iterable, cond)
 
   def _CompareChain(self, children):
     # type: (List[PNode]) -> expr_t

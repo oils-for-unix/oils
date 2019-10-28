@@ -421,8 +421,8 @@ class OilEvaluator(object):
             lvalue.Named(iter_name), value.Obj(loop_val), (),
             scope_e.LocalOnly)
 
-        if comp.ifs:
-          b = self.EvalExpr(comp.ifs[0])
+        if comp.cond:
+          b = self.EvalExpr(comp.cond)
         else:
           b = True
 
@@ -454,8 +454,8 @@ class OilEvaluator(object):
               lvalue.Named(iter_name), value.Obj(loop_val), (),
               scope_e.LocalOnly)
 
-          if comp.ifs:
-            b = self.EvalExpr(comp.ifs[0])
+          if comp.cond:
+            b = self.EvalExpr(comp.cond)
           else:
             b = True
 

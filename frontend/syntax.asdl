@@ -362,7 +362,7 @@ module syntax
   name_type = (token name, type_expr? typ)
 
   -- TODO: Inline this into GenExp and ListComp?  Just use a flag there?
-  comprehension = (name_type* lhs, expr iter, expr* ifs)
+  comprehension = (name_type* lhs, expr iter, expr? cond)
 
   -- named arguments supplied to call.  token is null for f(; ...named).
   named_arg = (token? name, expr value)
