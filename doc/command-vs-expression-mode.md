@@ -1,4 +1,3 @@
-Could not detect file type from 'command-vs-expression-mode.md'
 
 Here is a list of places we switch modes:
 

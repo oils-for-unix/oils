@@ -150,6 +150,11 @@ osh-quick-ref() {
   x-quick-ref osh $out_dir
 }
 
+cmark() {
+  # h2 and h3 are shown in TOC.  The blog uses "legacy" h3 and h4.
+  devtools/cmark.py --toc-tag h2 --toc-tag h3 --pretty-href
+}
+
 markdown2html() {
   local src=$1
   local out=$2
@@ -168,7 +173,7 @@ markdown2html() {
     </p>
 EOF
   
-    devtools/cmark.py < $src
+    cmark < $src
 
     _build-timestamp
     cat <<EOF

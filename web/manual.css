@@ -14,7 +14,20 @@ p, ul, ol {
   margin-left: 2em;
 }
 
-h4 {
+/* h1 is the title
+ * h2 is the first level shown in TOC
+ * h3 is the second and last level shown in TOC
+ */
+h1 {
+  font-size: 1.5em;  /* reduce to what browsers apparently use for h2 */
+}
+
+h2 {
+  font-size: 1.2em;  /* reduce to what browsers apparently use for h3 */
+}
+
+h3 {
+  font-size: large;
   margin-left: 2em;
   color: darkblue;  /* different than blog */
 }

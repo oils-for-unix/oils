@@ -1,5 +1,5 @@
 Known Differences Between OSH and Other Shells
-----------------------------------------------
+==============================================
 
 This document is for **sophisticated shell users**.
 
@@ -24,7 +24,7 @@ TODO:
 
 -->
 
-### Numbers and Arithmetic
+## Numbers and Arithmetic
 
 Roughly speaking, shells treat arithmetic like "macro processing", while OSH
 treats it more like part of a programming language.
@@ -33,17 +33,17 @@ Despite these differences, OSH is very compatible with existing shell scripts.
 
 Note that you can opt into more errors with `shopt -s strict_arith`.
 
-#### Static Parsing
+### Static Parsing
 
 Arithmetic is statically parsed, so expressions like `$(( 1 $op 2 ))` fail with
 a parse error.  Use an explicit `eval` for these rare use cases.
 
-#### printf '%d' and other numeric formats require a valid integer
+### printf '%d' and other numeric formats require a valid integer
 
 In other shells, `printf %d invalid_integer` prints `0` and a warning.  OSH
 gives you a runtime error.
 
-### Parsing Differences
+## Parsing Differences
 
 This section describes differences related to [static
 parsing](http://www.oilshell.org/blog/2016/10/22.html).  OSH avoids the
@@ -53,7 +53,7 @@ dynamic parsing of most shells.
 tests](http://oilshell.org/cross-ref.html?tag=wild-test#wild-test) and [spec
 tests](http://oilshell.org/cross-ref.html?tag=spec-test#spec-test).
 
-#### Strings vs. Bare words in array indices
+### Strings vs. Bare words in array indices
 
 Strings should be quoted inside array indices:
 
@@ -70,7 +70,7 @@ vs. associative arrays.  See [Parsing Bash is
 Undecidable](http://www.oilshell.org/blog/2016/10/20.html).
 
 
-#### Subshell in command sub
+### Subshell in command sub
 
 You can have a subshell in a command sub, but it usually doesn't make sense.
 
@@ -88,7 +88,7 @@ Yes:
     $(cd / && ls)       # Even better
 
 
-#### Extended glob vs. Negation of boolean expression
+### Extended glob vs. Negation of boolean expression
 
 - `[[ !(a == a) ]]` is an extended glob.  
 - `[[ ! (a == a) ]]` is the negation of an equality test.
@@ -96,7 +96,7 @@ Yes:
 In bash the rules are more complicated, and depend on `shopt -s extglob`.  The
 `extglob` setting does nothing in OSH.
 
-#### Here doc terminators must be on their own line
+### Here doc terminators must be on their own line
 
 Lines like `EOF]` or `EOF)` don't end here docs.  The delimiter must be on its
 own line.
@@ -120,7 +120,7 @@ Yes:
     )  # this is actually a comment
 
 
-#### break / continue / return are keywords, not builtins
+### break / continue / return are keywords, not builtins
 
 This means that they aren't "dynamic":
 
@@ -134,7 +134,7 @@ Static control flow will allow static analysis of shell scripts.
 (Test cases are in [spec/loop][]).
 
 
-#### Spaces aren't allowed in LHS indices
+### Spaces aren't allowed in LHS indices
 
 Bash allows:
 
@@ -147,11 +147,11 @@ OSH only allows:
 because it parses with limited lookahead.  The first line would result in the
 execution of a command named `a[1`.
 
-### More Parsing Differences
+## More Parsing Differences
 
 These differences occur in subsequent stages of parsing, or in runtime parsing.
 
-#### Variable names in assignments must be constants
+### Variable names in assignments must be constants
 
 That is, they can't be variables themselves.
 
@@ -166,7 +166,7 @@ Yes:
 
 NOTE: This restriction will probably be relaxed.
 
-#### Brace expansion is all or nothing
+### Brace expansion is all or nothing
 
 No:
 
@@ -185,7 +185,7 @@ OSH considers them syntax errors and aborts all brace expansion, giving you
 the same thing back: `{a,b}{` and `{a,b}{1...3}`.
 
 
-#### Tilde expansion and Brace expansion don't interact
+### Tilde expansion and Brace expansion don't interact
 
 In bash, `{~bob,~jane}/src` will expand the home dirs of both people.  OSH
 doesn't do this because it separates parsing and evaluation.  By the time tilde
@@ -194,7 +194,7 @@ expansion happens, we haven't *evaluated* the brace expansion.  We've only
 
 (mksh agrees with OSH, but zsh agrees with bash.)
 
-#### Brackets should be escaped within character classes
+### Brackets should be escaped within character classes
 
 Don't use ambiguous syntax for a character class consisting of a single bracket
 character.
@@ -213,7 +213,7 @@ Yes:
 The ambiguous syntax is allowed when we pass globs through to `libc`, but it's
 good practice to be explicit.
 
-#### Double quotes within backticks
+### Double quotes within backticks
 
 In rare cases, OSH processes backslashes within backticks differently than
 other shells.  However there are **two workarounds** that are compatible with
@@ -238,9 +238,9 @@ Notes:
   particular number of backslashes.  The rules are consistent for any level of
   quoting, although incompatible in this edge case.
 
-### Differences at Runtime
+## Differences at Runtime
 
-#### Alias Expansion
+### Alias Expansion
 
 Almost all "real" aliases should work in OSH.  But these don't work:
 
@@ -275,7 +275,7 @@ These don't:
 - `{ echo one; echo two; }`
 - `for`, `while`, `case`, functions, etc.
 
-#### Array References Must be Explicit
+### Array References Must be Explicit
 
 In bash, `$array` is equivalent to `${array[0]}`, which is very confusing
 (especially when combined with `set -o nounset`).
@@ -293,7 +293,7 @@ Yes:
 NOTE: Setting `shopt -s strict-array` further reduces the confusion between
 strings and arrays.  See [the manual](osh-manual.html) for details.
 
-#### Arrays aren't split inside ${}
+### Arrays aren't split inside ${}
 
 Most shells split the entries of arrays like `"$@"` and `"${a[@]}"` here:
 
@@ -305,7 +305,7 @@ In OSH, omit the quotes if you want splitting:
 
 I think OSH is more consistent, but it disagrees with other shells.
 
-#### Indexed and Associative Arrays are Distinct
+### Indexed and Associative Arrays are Distinct
 
 OSH has bash-compatible arrays, which are created like this:
 
@@ -322,7 +322,7 @@ In bash, the distinction between the two is blurry, e.g. in cases like this:
     local -A x=(foo bar)                  # -A disagrees with literal
     local -a y=(['one']=1 ['two']=2)      # -a disagrees with literal
 
-#### Args to Assignment Builtins Aren't Split or Globbed
+### Args to Assignment Builtins Aren't Split or Globbed
 
 The assignment builtins are `export`, `readonly`, `local`, and
 `declare`/`typeset`.
@@ -347,7 +347,7 @@ parsed:
 - Statically: to avoid splitting `declare x=$y` when `$y` contains spaces.
 - Dynamically: to handle expressions like `declare $1` where `$1` is `a=b`
 
-#### Completion
+### Completion
 
 The OSH completion API is mostly compatible with the bash completion API,
 except that it moves the **responsibility for quoting** out of plugins and onto
@@ -358,16 +358,16 @@ See the [OSH manual][] for details.
 
 [OSH manual]: osh-manual.html
 
-### Interactive Features
+## Interactive Features
 
-#### History Substitution Language
+### History Substitution Language
 
 The rules for history substitution like `!echo` are simpler.  There are no
 special cases to avoid clashes with `${!indirect}` and so forth.
 
 TODO: Link to the history lexer.
 
-### Links
+## Links
 
 - [OSH Spec Tests](../test/spec.wwz/) run shell snippets with OSH and other
   shells to compare their behavior.

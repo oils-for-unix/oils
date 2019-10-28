@@ -25,16 +25,11 @@ div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 {
   margin-top: 0;
   margin-bottom: 0;
 }
-div.toclevel2 {
+div.toclevel1 {
   margin-left: 2em;
   font-size: 0.9em;
 }
-div.toclevel3 {
+div.toclevel2 {
   margin-left: 4em;
   font-size: 0.9em;
 }
-div.toclevel4 {
-  margin-left: 6em;
-  font-size: 0.9em;
-}
-

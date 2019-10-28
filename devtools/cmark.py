@@ -7,11 +7,11 @@ I started from cmark-0.28.3/wrappers/wrapper.py.
 """
 from __future__ import print_function
 
-import ctypes
-import sys
-
 import cgi
+import ctypes
 import HTMLParser
+import optparse
+import sys
 
 # Geez find_library returns the filename and not the path?  Just hardcode it as
 # a workaround.
@@ -50,17 +50,15 @@ def demo():
   sys.stdout.write(md2html('*hi*'))
 
 
-# h2 is the title.  h1 is unused.
-H_TAGS = ('h3', 'h4')
-
 class TocExtractor(HTMLParser.HTMLParser):
   """
   Look for.
 
   <div id="toc">
   """
-  def __init__(self):
+  def __init__(self, h_tags):
     HTMLParser.HTMLParser.__init__(self)
+    self.h_tags = h_tags
     self.indent = 0
 
     # The TOC will be inserted after this.
@@ -87,7 +85,7 @@ class TocExtractor(HTMLParser.HTMLParser):
       else:
         self._AppendHtml('<%s>' % tag)
 
-    if tag in H_TAGS:
+    if tag in self.h_tags:
       log('%s> %s %s', self.indent * '  ', tag, attrs)
       self.indent += 1
       line_num, _ = self.getpos()
@@ -106,7 +104,7 @@ class TocExtractor(HTMLParser.HTMLParser):
       self.indent -= 1
       log('%s< %s', self.indent * '  ', tag)
 
-    if tag in H_TAGS:
+    if tag in self.h_tags:
       self.indent -= 1
       log('%s< %s', self.indent * '  ', tag)
       self.capturing = False
@@ -152,7 +150,7 @@ def _MakeTocAndAnchors(headings, toc_pos):
 
   i = 0
   for line_num, tag, css_id, html_parts in headings:
-    css_class = {'h3': 'toclevel2', 'h4': 'toclevel3'}[tag]
+    css_class = {'h2': 'toclevel1', 'h3': 'toclevel2', 'h4': 'toclevel3'}[tag]
 
     # Add BOTH anchors, for stability.
     numeric_anchor = 'toc_%d' % i
@@ -193,10 +191,16 @@ def _ApplyInsertions(lines, insertions, out_file):
     out_file.write(line)
 
 
-def Render(in_file, out_file):
+def Render(opts, in_file, out_file):
   html = md2html(in_file.read())
 
-  parser = TocExtractor()
+  # h2 is the title.  h1 is unused.
+  if opts.toc_tags:
+    toc_tags = opts.toc_tags
+  else:
+    toc_tags = ('h3', 'h4')
+
+  parser = TocExtractor(toc_tags)
   parser.feed(html)
 
   log('')
@@ -222,8 +226,24 @@ def Render(in_file, out_file):
   _ApplyInsertions(lines, insertions, out_file)
 
 
+def Options():
+  """Returns an option parser instance."""
+  p = optparse.OptionParser('cmark.py [options]')
+  p.add_option(
+      '--pretty-href', action='store_true', default=False,
+      help='Generate textual hrefs #like-this rather than like #toc10')
+  p.add_option(
+      '--toc-tag', dest='toc_tags', action='append', default=[],
+      help='h tags to include in the TOC, e.g. h2 h3')
+  return p
+
+
 def main(argv):
-  Render(sys.stdin, sys.stdout)
+  o = Options()
+  opts, argv = o.parse_args(argv)
+  assert all(tag.startswith('h') for tag in opts.toc_tags), opts.toc_tags
+
+  Render(opts, sys.stdin, sys.stdout)
 
 
 if __name__ == '__main__':
