@@ -10,7 +10,7 @@ from mylib import log
 from typing import List, Tuple
 
 
-def IntDemo():
+def ListDemo():
   # type: () -> None
   intlist = []  # type: List[int]
                # NOTE: this annotation is required, or MyPy has a partial type.
@@ -23,6 +23,9 @@ def IntDemo():
   for i in intlist:
     log("i = %d", i)
 
+  log('1? %d', 1 in intlist)
+  log('42? %d', 42 in intlist)
+
   strlist = []  # type: List[str]
 
   strlist.append('a')
@@ -31,12 +34,16 @@ def IntDemo():
   for s in strlist:
     log("s = %s", s)
 
+  log('a? %d', 'a' in strlist)
+  log('foo? %d', 'foo' in strlist)
+
   #strlist.pop()
   #strlist.pop()
   x = strlist.pop()
   log("len(strlist) = %d", len(strlist))
   # seg fault
   #log("x = %s", x)
+
 
 
 class Point(object):
@@ -76,7 +83,7 @@ def TupleDemo():
 def run_tests():
   # type: () -> None
 
-  IntDemo()
+  ListDemo()
   log('')
   TupleDemo()
 

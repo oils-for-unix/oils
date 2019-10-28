@@ -176,8 +176,6 @@ class Str {
   Str* replace(Str* old, Str* new_str);
   Str* join(List<Str*>* items);
 
-  bool contains(Str* needle);
-
   const char* data_;
   size_t len_;
 
@@ -204,8 +202,7 @@ class StrIter {
   DISALLOW_COPY_AND_ASSIGN(StrIter)
 };
 
-// TODO: Parameterize this by type.  I don't think we can use vector<>
-// directly?  The method names are different.
+// I don't think we can use vector<> directly?  The method names are different.
 template <class T>
 class List {
  public:
@@ -274,8 +271,6 @@ class List {
     return v_[0];
   }
 
-  bool contains(T needle);
-
  //private:
   std::vector<T> v_;  // ''.join accesses this directly
 };
@@ -318,11 +313,6 @@ class Dict {
   // expr_parse.py uses OTHER_BALANCE
   V get(K key, V default_val) {
     return values_[0];
-  }
-
-  // STUB
-  bool contains(K key) {
-    return false;
   }
 
   // STUB
@@ -448,6 +438,41 @@ inline Str* str(int i) {
 
 bool _str_to_int(Str* s, int* result);  // for testing only
 int str_to_int(Str* s);
+
+// e.g. ('a' in 'abc')
+inline bool str_contains(Str* haystack, Str* needle) {
+  const char* p = strstr(haystack->data_, needle->data_);
+  return p != NULL;
+}
+
+// e.g. 'a' in ['a', 'b', 'c']
+inline bool list_contains(List<Str*>* haystack, Str* needle) {
+  int n = haystack->v_.size();
+  for (int i = 0; i < n; ++i) {
+    if (str_equals(haystack->index(i), needle)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// ints and floats
+// e.g. 1 in [1, 2, 3]
+template <typename T> 
+inline bool list_contains(List<T>* haystack, int needle) {
+  int n = haystack->v_.size();
+  for (int i = 0; i < n; ++i) {
+    if (haystack->index(i) == needle) {
+      return true;
+    }
+  }
+  return false;
+}
+
+template <typename K, typename V> 
+inline bool dict_contains(Dict<K, V>* haystack, K needle) {
+  return false;
+}
 
 //
 // Buf is StringIO

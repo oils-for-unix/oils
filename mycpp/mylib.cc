@@ -90,12 +90,6 @@ Str* Str::replace(Str* old, Str* new_str) {
   return new Str(result);
 }
 
-// e.g. ('a' in 'abc')
-bool Str::contains(Str* needle) {
-  const char* p = strstr(data_, needle->data_);
-  return p != NULL;
-}
-
 Str* Str::join(List<Str*>* items) {
   int len = 0;
   const std::vector<Str*>& v = items->v_;

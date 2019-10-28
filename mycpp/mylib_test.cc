@@ -91,7 +91,7 @@ void test_buf_line_reader() {
 }
 
 void test_formatter() {
-  gBuf.clear();
+  gBuf.reset();
   gBuf.write_const("[", 1);
   gBuf.format_s(new Str("bar"));
   gBuf.write_const("]", 1);
@@ -102,6 +102,40 @@ void test_formatter() {
   gBuf.format_d(42);
   gBuf.write_const(".", 1);
   log("value = %s", gBuf.getvalue()->data_);
+}
+
+void test_contains() {
+  bool b;
+
+  b = str_contains(new Str("foo"), new Str("oo"));
+  log("b = %d", b);
+
+  b = str_contains(new Str("foo"), new Str("ood"));
+  log("b = %d", b);
+
+  log("  strs");
+  auto strs = new List<Str*>();
+  strs->append(new Str("bar"));
+
+  b = list_contains(strs, new Str("foo"));
+  log("b = %d", b);
+  strs->append(new Str("foo"));
+  b = list_contains(strs, new Str("foo"));
+  log("b = %d", b);
+
+  log("  ints");
+  auto ints = new List<int>({1, 2, 3});
+  b = list_contains(ints, 1);
+  log("b = %d", b);
+  b = list_contains(ints, 42);
+  log("b = %d", b);
+
+  log("  floats");
+  auto floats = new List<float>({0.5, 0.25, 0.0});
+  b = list_contains(floats, 0.0);
+  log("b = %d", b);
+  b = list_contains(floats, 42.0);
+  log("b = %d", b);
 }
 
 int main(int argc, char **argv) {
@@ -152,5 +186,8 @@ int main(int argc, char **argv) {
 
   log("");
   test_formatter();
+
+  log("");
+  test_contains();
 }
 

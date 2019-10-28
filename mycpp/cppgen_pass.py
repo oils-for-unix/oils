@@ -653,6 +653,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write(')')
           return
 
+        # Note: we could get rid of this altogether and rely on C++ function
+        # overloading.  But somehow I like it more explicit, closer to C (even
+        # though we use templates).
+        contains_func = None
+        if isinstance(t1, Instance):
+          right_type_name = t1.type.fullname()
+          if right_type_name == 'builtins.list':
+            contains_func = 'list_contains'
+          elif right_type_name == 'builtins.str':
+            contains_func = 'str_contains'
+          elif right_type_name == 'builtins.dict':
+            contains_func = 'dict_contains'
+
         if operator == 'in':
           if isinstance(right, TupleExpr):
             # x in (1, 2, 3) => (x == 1 || x == 2 || x == 3)
@@ -668,20 +681,24 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write(')')
             return
 
-          # x in mylist => mylist->contains(x) 
+          assert contains_func, right_type_name
+          # x in mylist => list_contains(mylist, x) 
+          self.write('%s(', contains_func)
           self.accept(right)
-          self.write('->contains(')
+          self.write(', ')
           self.accept(left)
           self.write(')')
           return
 
         if operator == 'not in':
-          # x not in mylist => !(mylist->contains(x))
-          self.write('!(')
+          assert contains_func, right_type_name
+
+          # x not in mylist => !list_contains(mylist, x)
+          self.write('!%s(', contains_func)
           self.accept(right)
-          self.write('->contains(')
+          self.write(', ')
           self.accept(left)
-          self.write('))')
+          self.write(')')
           return
 
         # Default case

@@ -32,6 +32,9 @@ def run_tests():
 
   print('<a href="foo.html">%s</a>' % 'anchor')
 
+  log("foo? %d", 'foo' in s)
+  log("str? %d", 'str' in s)
+
 
 def run_benchmarks():
   # type: () -> None
