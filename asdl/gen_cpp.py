@@ -30,6 +30,9 @@ from collections import defaultdict
 
 from asdl import meta
 from asdl import visitor
+from core.util import log
+
+_ = log
 
 
 # Used by core/asdl_gen.py to generate _devbuild/gen/osh-types.h, with
@@ -239,24 +242,55 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       self.Emit("class %s {" % class_name, depth)
     self.Emit(" public:", depth)
 
+    tag_init = 'tag(%s)' % tag
+    all_fields = desc.fields + attributes
+
+    if desc.fields:  # Don't emit for constructors with no fields
+      default_inits = [tag_init]
+      for field in all_fields:
+        if field.seq:  # Array
+          default = 'new List<%s>()' % _GetInnerCppType(self.type_lookup, field)
+        else:
+          if field.type == 'int':
+            default = '-1'
+          elif field.type == 'id':  # hard-coded HACK
+            default = '-1'
+          elif field.type == 'bool':
+            default = 'false'
+          elif field.type == 'string':
+            default = 'new Str("")'
+          else:
+            field_desc = self.type_lookup[field.type]
+            if isinstance(field_desc, meta.SumType) and field_desc.is_simple:
+              # Just make it the first variant.  We could define "Undef" for
+              # each enum, but it doesn't seem worth it.
+              default = '%s_e::%s' % (field.type, field_desc.simple_variants[0])
+            else:
+              default = 'nullptr'
+
+        default_inits.append('%s(%s)' % (field.name, default))
+
+      # Constructor with ZERO args
+      self.Emit("  %s() : %s {" %
+          (class_name, ', '.join(default_inits)), depth)
+      self.Emit("  }")
+
     params = []
-    inits = []
     # All product types and variants have a tag
-    inits.append('tag(%s)' % tag)
+    inits = [tag_init]
 
     for f in desc.fields:
       params.append('%s %s' % (self._GetCppType(f), f.name))
       inits.append('%s(%s)' % (f.name, f.name))
 
-    # Constructor
+    # Constructor with N args
     self.Emit("  %s(%s) : %s {" %
         (class_name, ', '.join(params), ', '.join(inits)), depth)
     self.Emit("  }")
 
     self.Emit('  uint16_t tag;')
-    all_fields = desc.fields + attributes
-    for f in all_fields:
-      self.Emit("  %s %s;" % (self._GetCppType(f), f.name))
+    for field in all_fields:
+      self.Emit("  %s %s;" % (self._GetCppType(field), field.name))
 
     if self.pretty_print_methods:
       for abbrev in 'PrettyTree', '_AbbreviatedTree', 'AbbreviatedTree':

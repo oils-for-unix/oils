@@ -65,14 +65,18 @@ class SumType(_RuntimeType):
 
   obj.ASDL_TYPE points directly to the constructor, which you reflect on.
   """
-  def __init__(self, is_simple):
+  def __init__(self, is_simple, simple_variants):
     self.is_simple = is_simple  # for type checking
-    self.cases = []  # list of _RuntimeType for type checking
+    self.simple_variants = simple_variants  # list of strings
+    self.cases = []  # TODO: This is obsolete?
 
   def __repr__(self):
     # We need an entry for this but we don't use it?
-    return '<SumType with %d cases at %d>' % (
-        len(self.cases), id(self))
+    if self.is_simple:
+      variants_str = '%d simple variants' % len(self.simple_variants)
+    else:
+      variants_str = 'not simple'
+    return '<SumType at %d (%s)>' % (id(self), variants_str)
 
 
 # TODO: Delete some of these methods!

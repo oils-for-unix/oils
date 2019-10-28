@@ -356,7 +356,11 @@ def _MakeReflection(module, app_types):
 
     elif isinstance(ast_node, asdl.Sum):
       is_simple = asdl.is_simple(ast_node)
-      type_lookup[d.name] = meta.SumType(is_simple)
+
+      simple_variants = []
+      if is_simple:
+        simple_variants = [cons.name for cons in ast_node.types]
+      type_lookup[d.name] = meta.SumType(is_simple, simple_variants)
 
     else:
       raise AssertionError(ast_node)
@@ -370,17 +374,19 @@ def _MakeReflection(module, app_types):
 
     elif isinstance(ast_node, asdl.Sum):
       sum_type = type_lookup[d.name]  # the one we just created
+      # TODO: Remove this -- it used to be used for runtime type checking.
+      # Unused?
+      if 1:
+        for cons in ast_node.types:
+          fields_out = []
+          # fully-qualified name.  Use a _ so we can share strings with class
+          # name.
+          key = '%s__%s' % (d.name, cons.name)
+          cons_type = meta.CompoundType(fields_out)
+          type_lookup[key] = cons_type
+          _AppendFields(cons.fields, type_lookup, fields_out)
 
-      for cons in ast_node.types:
-        fields_out = []
-        # fully-qualified name.  Use a _ so we can share strings with class
-        # name.
-        key = '%s__%s' % (d.name, cons.name)
-        cons_type = meta.CompoundType(fields_out)
-        type_lookup[key] = cons_type
-        _AppendFields(cons.fields, type_lookup, fields_out)
-
-        sum_type.cases.append(cons_type)
+          sum_type.cases.append(cons_type)
 
     else:
       raise AssertionError(ast_node)

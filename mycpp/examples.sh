@@ -302,12 +302,9 @@ namespace arith_nt {
 compile-pgen2_demo() {
   local name='pgen2_demo'
 
-  local out=_gen/syntax_asdl
-  asdl-gen cpp ../frontend/syntax.asdl $out
-
   compile-with-asdl $name \
     ../cpp/match.cc \
-    _gen/syntax_asdl.cc \
+    ../_devbuild/gen-cpp/syntax_asdl.cc \
     ../_devbuild/gen-cpp/hnode_asdl.cc \
     ../_devbuild/gen-cpp/id_kind_asdl.cc \
     ../_devbuild/gen-cpp/lookup.cc

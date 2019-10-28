@@ -884,7 +884,7 @@ class Transformer(object):
     if n == 1:  # proc f { 
       sig = proc_sig.Open()  # type: proc_sig_t
     elif n == 3:  # proc f () {
-      sig = proc_sig.Closed([])
+      sig = proc_sig.Closed()  # no params
     elif n == 4:  # proc f [foo, bar='z', @args] {
       sig = self._ProcParams(children[1])
     else:
