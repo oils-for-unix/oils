@@ -14,7 +14,7 @@ from mypy.types import (
 from mypy.nodes import (
     Expression, Statement, NameExpr, IndexExpr, MemberExpr, TupleExpr,
     ExpressionStmt, AssignmentStmt, StrExpr, SliceExpr, FuncDef,
-    ComparisonExpr, CallExpr, IntExpr)
+    ComparisonExpr, CallExpr, IntExpr, ListComprehension)
 
 import format_strings
 from crash import catch_errors
@@ -570,7 +570,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               else:
                 raise AssertionError(part)
 
-            self.fmt_funcs.write('  return gBuf.getvalue();\n')
+            self.fmt_funcs.write('  return gBuf.new_str();\n')
             self.fmt_funcs.write('}\n')
             self.fmt_funcs.write('\n')
 
@@ -916,6 +916,46 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           else:
             # globals always get a type -- they're not mutated
             self.write_ind('%s %s = ', c_type, lval.name)
+
+          # Special case for list comprehensions.  Note that a variable has to
+          # be on the LHS, so we can append to it.
+          #
+          # y = [i+1 for i in x[1:] if i]
+          #   =>
+          # y = []
+          # for i in x[1:]:
+          #   if i:
+          #     y.append(i+1)
+          # (but in C++)
+
+          if isinstance(o.rvalue, ListComprehension):
+            gen = o.rvalue.generator  # GeneratorExpr
+            left_expr = gen.left_expr
+            index_expr = gen.indices[0]
+            seq = gen.sequences[0]
+            cond = gen.condlists[0]
+
+            seq_type = self.types[seq]
+            index_expr_type = self.types[index_expr]
+
+            assert c_type.endswith('*'), c_type  # Hack
+            self.write('new %s();\n' % c_type[:-1])
+
+            self.write_ind('for (ListIter<%s> it(', get_c_type(index_expr_type))
+            self.accept(seq)
+            self.write('); !it.Done(); it.Next()) {\n')
+
+            item_type = seq_type.args[0]  # get 'int' from 'List<int>'
+            self.write_ind('  %s ', get_c_type(item_type))
+            self.accept(index_expr)
+            self.write(' = it.Value();\n')
+
+            self.write_ind('  %s->append(', lval.name)
+            self.accept(left_expr)
+            self.write(');\n')
+
+            self.write_ind('}\n')
+            return
 
           self.accept(o.rvalue)
           self.write(';\n')

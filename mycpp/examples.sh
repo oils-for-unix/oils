@@ -262,10 +262,6 @@ void p_die(Str* fmt, syntax_asdl::word_part_t* part) {
   throw AssertionError();
 }
 
-namespace lookup {
-  Kind_t LookupKind(Id_t id);
-}
-
 namespace parse_lib {
   class ParseContext;
 }

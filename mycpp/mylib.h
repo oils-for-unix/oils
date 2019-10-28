@@ -109,6 +109,9 @@ class Str {
 
   // s[begin:]
   Str* slice(int begin) {
+    if (begin < 0) {
+      begin = len_ + begin;
+    }
     return slice(begin, len_);
   }
   // s[begin:end]
@@ -225,8 +228,28 @@ class List {
 
   // L[begin:]
   List* slice(int begin) {
+    if (begin < 0) {
+      begin = v_.size() + begin;
+    }
+
     List* result = new List();
     for (int i = begin; i < v_.size(); i++) {
+      result->v_.push_back(v_[i]);
+    }
+    return result;
+  }
+  // L[begin:end]
+  // TODO: Can this be optimized?
+  List* slice(int begin, int end) {
+    if (begin < 0) {
+      begin = v_.size() + begin;
+    }
+    if (end < 0) {
+      end = v_.size() + end;
+    }
+
+    List* result = new List();
+    for (int i = begin; i < end; i++) {
       result->v_.push_back(v_[i]);
     }
     return result;
@@ -467,7 +490,15 @@ class BufWriter : public Writer {
   virtual bool isatty() {
     return false;
   }
+  // For cStringIO API
   Str* getvalue() { return new Str(data_, len_); }
+
+  // For fmtX() functions
+  Str* new_str() {
+    char* buf = static_cast<char*>(malloc(len_ + 1));
+    memcpy(buf, data_, len_ + 1);
+    return new Str(buf, len_);
+  }
 
   // Methods to compile printf format strings to
 
