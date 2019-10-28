@@ -99,15 +99,21 @@ all() {
     xargs wc -l | sort --numeric
   echo
 
-  echo 'PEN2 (parser generator)'
+  echo 'MYCPP'
+  ls mycpp/*.py | filter-py | xargs wc -l | sort --numeric
+  echo
+
+  echo 'PGEN2 (parser generator)'
   ls pgen2/*.py | filter-py | xargs wc -l | sort --numeric
   echo
 
+  # NOTE: OPy is counted separately.
+
   echo 'CODE GENERATORS'
-  wc -l asdl/gen_*.py */*_gen.py | sort --numeric
+  wc -l */*_gen.py | sort --numeric
   echo
 
-  echo 'GENERATED CODE'
+  echo 'GENERATED CODE (for appb undle)'
   wc -l _devbuild/gen/*.{py,h} | sort --numeric
   echo
 
@@ -139,9 +145,7 @@ all() {
   ls oil_lang/*.{py,pgen2} | filter-py | xargs wc -l | sort --numeric
   echo
 
-  echo 'OVM2'
-  wc -l ovm2/*.{py,cc} | filter-py | sort --numeric
-  echo
+  cpp
 
   return
   # TODO: Import docs
@@ -149,7 +153,28 @@ all() {
   echo 'DOCS'
   wc -l README.md doc/* | sort --numeric
   echo
+
+  # Obsolete.  Delete this code/
+  echo 'OVM2'
+  wc -l ovm2/*.{py,cc} | filter-py | sort --numeric
+  echo
 }
+
+cpp() {
+  # NOTE: Could exclude .re2c.h file
+  echo '[ C++ ] Generated Code'
+  wc -l _devbuild/gen-cpp/*.{cc,h} _devbuild/gen/*.h | sort --numeric
+  echo
+
+  echo '[ C++ ] Hand-Written Code'
+  wc -l cpp/*.{cc,h} | sort --numeric
+  echo
+
+  echo '[ C++ ] mycpp Runtime'
+  wc -l mycpp/mylib.{cc,h} | sort --numeric
+  echo
+}
+
 
 # count instructions, for fun
 instructions() {

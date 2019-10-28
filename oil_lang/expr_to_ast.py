@@ -804,8 +804,8 @@ class Transformer(object):
     n = len(children)
 
     params = []  # type: List[param]
-    rest = None
-    block = None
+    rest = None  # type: Optional[token]
+    block = None  # type: Optional[token]
 
     i = 0
     while i < n:
