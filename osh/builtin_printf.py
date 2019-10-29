@@ -208,6 +208,8 @@ class Printf(object):
               d = int(s)
             except ValueError:
               if len(s) >= 2 and s[0] in '\'"':
+                # TODO: utf-8 decode s[1:] to be more correct.  Probably
+                # depends on issue #366, a utf-8 library.
                 d = ord(s[1])
               else:
                 # This works around the fact that in the arg recycling case, you have no spid.

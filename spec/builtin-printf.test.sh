@@ -244,9 +244,9 @@ printf '%d\n' ''
 0
 ## END
 
-#### No char after '
+#### No char after ' (osh is more strict)
 
-# most shells use 0, but OSH is more strict
+# most shells use 0 here
 printf '%d\n' \' 
 
 ## OK osh stdout-json: ""
@@ -254,6 +254,19 @@ printf '%d\n' \'
 ## OK mksh status: 1
 ## STDOUT:
 0
+## END
+
+#### Unicode char with ' (osh is more strict)
+
+# the mu character is U+03BC
+
+printf '%x\n' \'μ
+
+## STDOUT:
+3bc
+## END
+## BUG dash/mksh/ash STDOUT:
+ce
 ## END
 
 #### negative numbers with unsigned / octal / hex
