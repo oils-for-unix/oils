@@ -1,5 +1,5 @@
 Oil Word Language Extensions
-----------------------------
+============================
 
 ```
 @array
@@ -30,7 +30,7 @@ And then for completeness we also have:
 - `echo @x`  interpolates an array into a command
 - `echo @f(x)` interpolates a function returning an array into a command
 
-### Unimplemented
+## Unimplemented
 
 `${x|html}`
 

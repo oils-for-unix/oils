@@ -21,7 +21,7 @@ of the [CPython](https://en.wikipedia.org/wiki/CPython) interpreter.
 <div id="toc">
 </div>
 
-### Contributing
+## Contributing
 
 * Make sure to check out the [Contributing][] page.
 * Let us know if you have problems getting started by posting on the `#oil-dev`
@@ -34,7 +34,7 @@ of the [CPython](https://en.wikipedia.org/wiki/CPython) interpreter.
 [oilshell.zulipchat.com]: https://oilshell.zulipchat.com/
 [blog]: http://www.oilshell.org/blog/
 
-#### Quick Start on Linux
+### Quick Start on Linux
 
 Clone the repo, build the Python extension, and run `bin/osh` (or `bin/oil`):
 
@@ -59,7 +59,7 @@ the release tarballs on OS X.)
 
 Run `bin/oil` to try the Oil language.  Send me feedback about it!
 
-#### Docs
+### Docs
 
 The [Wiki](https://github.com/oilshell/oil/wiki) has many developer docs.  Feel
 free to edit them.  If you make a major change, let us know on Zulip!
@@ -72,7 +72,7 @@ produce a pointer and/or improve the docs.
 Docs for **end users** are linked from each [release
 page](https://www.oilshell.org/releases.html).
 
-### Repository Structure
+## Repository Structure
 
 Try this to show a summary of what's in the repo and their line counts:
 
@@ -80,7 +80,7 @@ Try this to show a summary of what's in the repo and their line counts:
 
 (Other functions in this file may be useful as well.)
 
-#### A Collection of Interpreters
+### A Collection of Interpreters
 
 Oil is naturally structured as a set of mutually recursive parsers and
 evaluators.
@@ -96,7 +96,7 @@ evaluators.
     tools/            # User-facing tools, e.g. the osh2oil translator
     Python-2.7.13/    # CPython is the initial basis for the Oil VM
 
-#### DSLs / Code Generators
+### DSLs / Code Generators
 
 Oil is implemented with DSLs and metaprogramming, for "leverage".
 
@@ -111,7 +111,7 @@ Oil is implemented with DSLs and metaprogramming, for "leverage".
       gold/           # tests
       byterun/        # Unused bytecode interpreter
 
-#### Tests
+### Tests
 
 Unit tests are named `foo_test.py` and live next to `foo.py`.
 
@@ -129,7 +129,7 @@ Unit tests are named `foo_test.py` and live next to `foo.py`.
       errors/         # TODO: migrate these bad shell scripts
     types/            # Scripts for running MyPy and PyAnnotate, etc.
 
-#### Dev Tools and Scripts
+### Dev Tools and Scripts
 
 We use a lot of automation to improve the dev process.  It's largely written in
 shell, of course!
@@ -146,7 +146,7 @@ shell, of course!
     misc/             # A junk drawer
     web/              # HTML/JS/CSS for tests and tools
 
-#### Temp Dirs
+### Temp Dirs
 
 Directories that begin with `_` are **not** stored in `git`.  The dev tools
 above create and use these dirs.
@@ -179,7 +179,7 @@ above create and use these dirs.
         web/          # Static files, copy of $REPO_ROOT/web
           table/
 
-#### End user build system
+### End user build system
 
 This is very different than the **developer build** of Oil.
 
@@ -187,7 +187,7 @@ This is very different than the **developer build** of Oil.
     configure
     install
 
-#### Docs
+### Docs
 
     doc/              # A mix of docs
     README.md         # For Oil developers
@@ -195,7 +195,7 @@ This is very different than the **developer build** of Oil.
     LICENSE.txt       # For end users
     INSTALL.txt
 
-### More info
+## More info
 
 * [The blog][blog] has updates on the project status.
 * [Oil Home Page](http://www.oilshell.org/)

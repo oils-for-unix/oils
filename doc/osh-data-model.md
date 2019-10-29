@@ -1,5 +1,5 @@
 OSH Data Model
---------------
+==============
 
 - This is for the OSH language, as opposed to the Oil language.
 - OSH semantics are based on:
@@ -22,7 +22,7 @@ TODO:
 
   - bash 4.3 maybe?  or 4.4
 
-### Why Use this Information?
+## Why Use this Information?
 
 The goal of Oil is to replace this quirkl language!  But we still made it
 compatible.
@@ -32,21 +32,21 @@ If you want to write scripts compatible with OSH and bash!
 TODO: The Oil language not done yet!
 
 
-### Preliminary: Why Differences from bash
+## Preliminary: Why Differences from bash
 
 I SALVAGED THESE SEMANTICS.
 
 Worst of the language!  Newest and most "grafted on".
 
 
-#### Surprising Parsing
+### Surprising Parsing
 
 Parsing bash is undecidable.
 
     A[x]
     a[x]
 
-#### Surprising Coercions
+### Surprising Coercions
 
     Horrible
 
@@ -67,14 +67,14 @@ Associative arrays and being undefined
 
 - half an associative array type
 
-#### Bugs
+### Bugs
 
 - test -v
 - empty array and nounset, in bash 4.3.  I can't recommend in good faith
 
 
 
-### Undef, Str, Sequential/Indexed Arrays, Associative Array
+## Undef, Str, Sequential/Indexed Arrays, Associative Array
 
   - "array" refers to both.
     - although Oil has a "homogeneous array type" that's entirely different
@@ -89,7 +89,7 @@ Associative arrays and being undefined
   - flags: readonly and exported (but arrays/assoc arrays shouldn't be exported)
     - TODO: find that
 
-#### Arrays Can't Be Nested and Can't Escape Functions
+### Arrays Can't Be Nested and Can't Escape Functions
 
 Big limitation!  Lifting it in Oil
 
@@ -97,27 +97,27 @@ You have to splice
 
 There's no Garbage collection.
 
-#### There are no true integers
+### There are no true integers
 
 There are lots of coercions instead. 
 
 bash has '-i' but that's true anyway.
 
 
-### Operations on All Variables
+## Operations on All Variables
 
-#### assignment
+### assignment
 
-#### unset
+### unset
 
-#### readonly
+### readonly
 
-#### export only applies to strings
+### export only applies to strings
 
 
-### Operations on Arrays
+## Operations on Arrays
 
-#### Initialization
+### Initialization
 
     declare -a array 
     declare -a array=()
@@ -134,7 +134,7 @@ Makes a global array:
 
     array=()
 
-#### Array Literals
+### Array Literals
 
 Respects the normal rules of argv.
 
@@ -147,7 +147,7 @@ Respects the normal rules of argv.
       $(1 + 2 * 3)
     )
 
-#### Associative Array Literals
+### Associative Array Literals
 
     (['k']=v)
 
@@ -157,7 +157,7 @@ Respects the normal rules of argv.
     so forth?
 
 
-#### "${a[@]}" is Evaluating (Splicing)
+### "${a[@]}" is Evaluating (Splicing)
 
     echo "${array[@]}"
     echo "${assoc[@]}"
@@ -168,7 +168,7 @@ NOT Allowed, unlike in bash!
     ${!assoc}  ${assoc//pattern/replace}  # etc.
 
 
-#### Iteration
+### Iteration
 
 Note that since a for loop takes an array of words, evaluating/splicing works:
 
@@ -176,7 +176,7 @@ Note that since a for loop takes an array of words, evaluating/splicing works:
       echo $i
     done
 
-#### ${#a[@]} is the Length
+### ${#a[@]} is the Length
 
 
     echo ${#array[@]}
@@ -184,7 +184,7 @@ Note that since a for loop takes an array of words, evaluating/splicing works:
 
 
 
-#### Coercion to String by Joining Elements
+### Coercion to String by Joining Elements
 
     echo ${!array[@]}
     echo ${!assoc[@]}
@@ -195,7 +195,7 @@ Note that since a for loop takes an array of words, evaluating/splicing works:
     echo "${!array[*]}"
     echo "${!assoc[*]}"
 
-#### Look Up By Index / Key With a[]
+### Look Up By Index / Key With a[]
 
   matrix:
     a['x'] a["x"]
@@ -217,7 +217,7 @@ Note that since a for loop takes an array of words, evaluating/splicing works:
 undef[0]=1 automatically creates an INDEXED array
 undef=(1)
 
-#### Assign / Append To Location Specified by Index / Key
+### Assign / Append To Location Specified by Index / Key
 
     a[expr]=    # int_coerce
     A[expr]=    # no integer coercion
@@ -231,7 +231,7 @@ Append to elements of an array, which are strings:
     a[x+1]+=x
     a[x+1]+=$x
 
-#### Slicing With ${a[@]:5:2}
+### Slicing With ${a[@]:5:2}
 
     ${array[@]:1:3}
 
@@ -246,26 +246,26 @@ NOTE: string slicing:
 
 
 
-#### Append Array to Array
+### Append Array to Array
 
     a=(1 2 3)
     a+=(4 5 6)
 
 
-#### Get All Indices With ${!a[@]}
+### Get All Indices With ${!a[@]}
 
     echo ${!array[@]}
     echo ${!assoc[@]}
 
 
-#### Vectorized String Operations
+### Vectorized String Operations
 
     echo ${array[@]//x/X}
 
     echo ${assoc[@]//x/X}
 
 
-### Strict Options
+## Strict Options
 
     set -o nounset  # bash
 
@@ -275,9 +275,9 @@ NOTE: string slicing:
     shopt -s strict_word_eval  # slice args, unicode strings
 
 
-### Quirky Syntax and Semantics in Shell Sublanguages
+## Quirky Syntax and Semantics in Shell Sublanguages
 
-#### Command
+### Command
 
 Mentioned above: 
 
@@ -286,7 +286,7 @@ Mentioned above:
 
     s+='foo'
 
-#### Word
+### Word
 
 Mentioned above:
 
@@ -294,43 +294,43 @@ Mentioned above:
     echo "${a[0]}"
     echo ${a[i+1]}
 
-#### Arithmetic Does Integer Coercion
+### Arithmetic Does Integer Coercion
 
 SURPRISING!  Avoid if you can!!!
 
     (( a[ x+1 ] += s ))  # 
 
 
-#### Boolean: [[ $a = $b ]]
+### Boolean: [[ $a = $b ]]
 
 Operates on strings only.  Can't compare
 
-### Introspection
+## Introspection
 
-#### set
+### set
 
 Prints all variables.  Strings only?
 
-#### declare/typeset/readonly/export -p
+### declare/typeset/readonly/export -p
 
 Prints a subset.
 
-#### test -v
+### test -v
 
 Test if a variable is defined.
 
 Don't use this because it's incopmatible?
 
-#### repr (OSH-specific)
+### repr (OSH-specific)
 
-### Future Work: The Oil Data Model
+## Future Work: The Oil Data Model
 
 - similar to Python and JavaScript
 - garbage collection
 - JSON serialization
 
 
-### Links
+## Links
 
 - <https://opensource.com/article/18/5/you-dont-know-bash-intro-bash-arrays>
 - <https://www.thegeekstuff.com/2010/06/bash-array-tutorial>

@@ -1,5 +1,5 @@
 The Expression Language Is Mostly Python
-----------------------------------------
+========================================
 
 
 Most of the operator language is now implemented (in the metacircular style).
@@ -32,7 +32,7 @@ Comment about it here:
 
 https://lobste.rs/s/2cw6ov/say_something_you_dislike_about_language#c_c5mk2l
 
-### d->key is a shortcut for d['key']
+## d->key is a shortcut for d['key']
 
 > the distinction between attributes and dictionary members always seemed weird and unnecessary to me.
 
@@ -95,7 +95,7 @@ for (i in 0:n) {
 }
 ```
 
-#### Chained Comparison
+### Chained Comparison
 
 https://github.com/oilshell/oil/blob/master/spec/oil-expr.test.sh#L550
 

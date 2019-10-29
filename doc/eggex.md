@@ -1,5 +1,5 @@
 Egg Expressions (Oil Regexes)
------------------------------
+=============================
 
 Oil has a new syntax for patterns, which appears between the `/ /` delimiters:
 
@@ -15,7 +15,7 @@ expressions in important ways.  So we call them *eggexes* rather than
 <div id="toc">
 </div>
 
-### Why Invent a New Language?
+## Why Invent a New Language?
 
 - Eggexes let you name **subpatterns** and compose them, which makes them more
   readable and testable.
@@ -47,7 +47,7 @@ expressions in important ways.  So we call them *eggexes* rather than
 
 [lossless syntax tree]: http://www.oilshell.org/blog/2017/02/11.html
 
-#### Example of Pattern Reuse
+### Example of Pattern Reuse
 
 Here's a longer example:
 
@@ -69,7 +69,7 @@ TODO: You should also be able to inline patterns like this:
 
     egrep $/d+/ foo.txt
 
-#### Design Philosophy
+### Design Philosophy
 
 - Eggexes can express a **superset** of POSIX and Perl syntax.
 - The language is designed for "dumb", one-to-one, **syntactic** translations.
@@ -77,7 +77,7 @@ TODO: You should also be able to inline patterns like this:
   regexes.  This is because regex implementations have many corner cases and
   incompatibilities, with regard to Unicode, `NUL` bytes, etc.
 
-#### The Expression Language Is Consistent
+### The Expression Language Is Consistent
 
 Eggexes have a consistent syntax:
 
@@ -110,14 +110,14 @@ this matches:
 
 Constructs like `. ^ $ \< \>` are deprecated because they break these rules.
 
-### Expression Primitives
+## Expression Primitives
 
-#### `.` Is Now `dot`
+### `.` Is Now `dot`
 
 But `.` is still accepted.  It usually matches any character except a newline,
 although this changes based on flags (e.g. `dotall`, `unicode`).
 
-#### Classes Are Unadorned: `word`, `w`, `alnum`
+### Classes Are Unadorned: `word`, `w`, `alnum`
 
 We accept both Perl and POSIX classes.
 
@@ -128,7 +128,7 @@ We accept both Perl and POSIX classes.
 - POSIX
   - `alpha`, `alnum`, ...
 
-#### Zero-width Assertions Look Like `%this`
+### Zero-width Assertions Look Like `%this`
 
 - POSIX
   - `%start` is `^`
@@ -141,23 +141,23 @@ We accept both Perl and POSIX classes.
   - `%word_start` is `\<`
   - `%word_end` is `\>`
 
-#### Literals Are Quoted And Can Use String Variables
+### Literals Are Quoted And Can Use String Variables
 
 - `'abc'`
 - `"xyz $var"`
 - `$mychars`
 - `${otherchars}`
 
-### Compound Expressions
+## Compound Expressions
 
-#### Sequence and Alternation Are Unchanged
+### Sequence and Alternation Are Unchanged
 
 - `x y` matches `x` and `y` in sequence
 - `x | y` matches `x` or `y`
 
 You can also write a more Pythonic alternative: `x or y`.
 
-#### Repetition Is Unchanged In Common Cases, and Better in Rare Cases
+### Repetition Is Unchanged In Common Cases, and Better in Rare Cases
 
 Repetition is just like POSIX ERE or Perl:
 
@@ -169,7 +169,7 @@ We've reserved syntactic space for PCRE and Python variants:
 - lazy/non-greedy: `x{L +}`, `x{L 3,4}`
 - possessive: `x{P +}`, `x{P 3,4}`
 
-#### Negation Consistently Uses ~
+### Negation Consistently Uses ~
 
 You can negated named char classes:
 
@@ -200,7 +200,7 @@ In contrast, regexes have many confusing syntaxes for negation:
 
     /\w/-i vs /\w/i
 
-#### Splice Other Patterns With @
+### Splice Other Patterns With @
 
 New in Eggex!  You can reuse patterns with `@pattern_name`.
 
@@ -208,7 +208,7 @@ See the example at the front of this document.
 
 This is similar to how `lex` and `re2c` work.
 
-#### Group and Capture With `()` and `<>`
+### Group and Capture With `()` and `<>`
 
 Group with `(pat)`
 
@@ -225,7 +225,7 @@ Add a variable after `=` for named capture:
 
     < d+ = myvar>  # Becomes M.group('myvar')
 
-#### Character Class Literals Use `[]`
+### Character Class Literals Use `[]`
 
 Example:
 
@@ -259,7 +259,7 @@ Yes:
 
     /[a-f A-f 0-9]/
 
-#### Backtracking Constructs Use `!` (Discouraged)
+### Backtracking Constructs Use `!` (Discouraged)
 
 If you want to translate to PCRE, you can use these.
 
@@ -276,9 +276,9 @@ If you want to translate to PCRE, you can use these.
 Since they all begin with `!`, You can visually audit your code for potential
 performance problems.
 
-### Outside the Expression language
+## Outside the Expression language
 
-#### Flags and Translation Preferences (`;`)
+### Flags and Translation Preferences (`;`)
 
 Flags or "regex modifiers" appear after the first semicolon:
 
@@ -293,7 +293,7 @@ This expression has a translation preference, but no flags:
 
     / digit+ ;; ERE /
 
-#### Multiline Syntax
+### Multiline Syntax
 
 You can spread regexes over multiple lines and add comments:
 
@@ -308,7 +308,7 @@ You can spread regexes over multiple lines and add comments:
 
 (Not yet implemented in Oil.)
 
-#### The Oil API
+### The Oil API
 
 (Still to be implemented.)
 
@@ -339,16 +339,16 @@ Splitting:
     var parts = split(s, /space+/)
     pass s => split(/space+/) => var parts
 
-#### Language Reference
+### Language Reference
 
 - See bottom of the [Oil Expression Grammar](https://github.com/oilshell/oil/blob/master/oil_lang/grammar.pgen2) for the concrete syntax.
 - See the bottom of
   [frontend/syntax.asdl](https://github.com/oilshell/oil/blob/master/frontend/syntax.asdl)
   for the abstract syntax.
 
-### Usage Notes
+## Usage Notes
 
-#### Use Character Literals Rather than C-Escaped Strings
+### Use Character Literals Rather than C-Escaped Strings
 
 No:
 
@@ -362,9 +362,9 @@ Yes:
     / 'foo' \\ 'tbar' /
 
 
-### POSIX ERE Limitations
+## POSIX ERE Limitations
 
-#### Surround Repeated Strings with a Capturing Group <>
+### Surround Repeated Strings with a Capturing Group <>
 
 No:
 
@@ -383,7 +383,7 @@ This is necessar because:
   that change the meaning of the pattern.
 
 
-#### Unicode Char Literals Can't Be Used In Char Class Literals
+### Unicode Char Literals Can't Be Used In Char Class Literals
 
 No:
 
@@ -396,7 +396,7 @@ Yes:
     # This is accepted -- it's clear it matches one of two bytes.
     / [ \x61 \xFF ] /
 
-#### ] is Confusing in Char Class Literals
+### ] is Confusing in Char Class Literals
 
 ERE wants it like this:
 
@@ -422,9 +422,9 @@ Since we do a dumb syntactic translation, we can't detect whether it's on the
 front or back.  You have to put it in the right place.
 
 
-### Critiques
+## Critiques
 
-#### Regexes Are Hard To Read
+### Regexes Are Hard To Read
 
 ... because the **same symbol can mean many things**.
 
@@ -451,7 +451,7 @@ front or back.  You have to put it in the right place.
 
 With egg expressions, each construct has a **distinct syntax**.
 
-#### Oil is Shorter Than Bash
+### Oil is Shorter Than Bash
 
 Bash:
 
@@ -465,7 +465,7 @@ Compare with Oil:
       echo 'x looks like a number'
     }
 
-#### ... and Perl
+### ... and Perl
 
 Perl:
 
@@ -483,9 +483,9 @@ The Perl expression has three more punctuation characters:
 - Named character classes are unadorned like `d`.  If that's too short, you can
   also write `digit`.
 
-### Design Notes
+## Design Notes
 
-#### Eggexes In Other Languages
+### Eggexes In Other Languages
 
 The eggex syntax can be incorporated into other tools and shells.  It's
 designed to be separate from Oil -- hence the separate name.
@@ -499,7 +499,7 @@ Notes:
 - To make eggexes portable between languages, Don't use the host language's
   syntax for string literals (at least for single-quoted strings).
 
-#### Backward Compatibility
+### Backward Compatibility
 
 Eggexes aren't backward compatible in general, but they retain some legacy
 operators like `^ . $` to ease the transition.  These expressions are valid
@@ -509,14 +509,14 @@ eggexes **and** valid POSIX EREs:
     ^[0-9]+$
     ^.{1,3}|[0-9][0-9]?$
 
-### FAQ
+## FAQ
 
-#### The Name Sounds Funny.
+### The Name Sounds Funny.
 
 If "eggex" sounds too much like "regex" to you, simply say "egg expression".
 It won't be confused with "regular expression" or "regex".
 
-#### How Do Eggexes Compare with [Perl 6 Regexes][perl6-regex] and the [Rosie Pattern Language][rosie]?
+### How Do Eggexes Compare with [Perl 6 Regexes][perl6-regex] and the [Rosie Pattern Language][rosie]?
 
 All three languages support pattern composition and have quoted literals.  And
 they have the goal of improving upon Perl 5 regex syntax, which has made its
@@ -534,7 +534,7 @@ Python, etc.  That means they **cannot** be used this way.
 
 [perl6-regex]: https://docs.perl6.org/language/regexes
 
-#### Why Don't `dot`, `%start`, and `%end` Have More Precise Names?
+### Why Don't `dot`, `%start`, and `%end` Have More Precise Names?
 
 Because the meanings of `.` `^` and `$` are usually affected by regex engine
 flags, like `dotall`, `multiline`, and `unicode`.
@@ -546,7 +546,7 @@ As mentioned in the "Philosophy" section above, eggex only does a superficial,
 one-to-one translation.  It doesn't understand the details of which characters
 will be matched under which engine.
 
-#### Where Do I Send Feedback?
+### Where Do I Send Feedback?
 
 Eggexes are implemented in Oil, but not yet set in stone.
 

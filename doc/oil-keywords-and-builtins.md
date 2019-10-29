@@ -1,10 +1,9 @@
 Oil Keywords and Builtins
--------------------------
-
-Keywords vs. Builtins
+=========================
 
 
-### Keywords
+
+## Keywords
 
 - var
 - set / setvar
@@ -44,9 +43,9 @@ Kind of ugly ... :neutral:
 
 https://github.com/oilshell/oil/commit/dc7a0474b006287f2152b54f78d56df8c3d13281
 
-#### Declaration / Assignment
+### Declaration / Assignment
 
-#### Mutation
+### Mutation
 
 Expressions like these should all work.  They're basically identical to Python,
 except that you use the `setvar` or `set` keyword to change locations.
@@ -63,13 +62,13 @@ set x.foo, x.bar = foo, bar
 
 https://github.com/oilshell/oil/commit/64e1e9c91c541e495fee4a39e5a23bc775ae3104
 
-### Builtins
+## Builtins
 
 - use
 - push, repr
 - wait, fork
 
-#### Enhanced with Block
+### Enhanced with Block
 
 - cd
 

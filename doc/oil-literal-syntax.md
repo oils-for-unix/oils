@@ -1,7 +1,7 @@
 Oil Literals
-------------
+============
 
-### Dict Literals Look Like JavaScript
+## Dict Literals Look Like JavaScript
 
 The last few commits implement dict literals.  They're pretty much exactly what
 JavaScript provides, as far as I can tell.
@@ -27,7 +27,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Obje
 
 Questions/comments are welcome!
 
-### List Literals Are Unchanged
+## List Literals Are Unchanged
 
 Lists are heterogeneous.  Syntax is unchanged.
 
@@ -38,7 +38,7 @@ Arrays and Tuples are preferred.
 
 Or maybe lists are for composite data types?  Arrays are for primitives.
 
-### Tuple Literals
+## Tuple Literals
 
 I implemented tuple literals just like Python, since Oil is borrowing Python's
 grammar.
@@ -63,11 +63,11 @@ I guess there is no problem with `()` as an empty tuple?
 
 
 
-### Two Types of Array Literals
+## Two Types of Array Literals
 
-#### Word Syntax for String Arrays
+### Word Syntax for String Arrays
 
-#### Expression Syntax for Typed Arrays
+### Expression Syntax for Typed Arrays
 
 I implemented the literal syntax for Bool, Int, Float, and Str arrays.  The semantics still need to be polished, but the syntax is there.
 
@@ -130,7 +130,7 @@ Well, at least the syntax.  The semantics still need work, especially with regar
 Note that the `pp` **keyword** pretty-prints the result of an expression.  ([thread](https://oilshell.zulipchat.com/#narrow/stream/121540-oil-discuss/topic/pass.20and.20pp.20keywords.20implemented))
 
 
-### String Literals
+## String Literals
 
 
 The last few commits implement **string literals** in expression mode.  They evaluate to Python-like byte strings (which may be utf-8 encoded) but have shell-like syntax: double-quoted strings allow `$subs` and single-quoted ones don't.
@@ -199,7 +199,7 @@ I'm not sure how high priority these are.  I think I want to get on to ints, flo
 
 
 
-### Bool, Int, Float, null literals
+## Bool, Int, Float, null literals
 
 Implemented the following last night:
 

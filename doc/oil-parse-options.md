@@ -1,5 +1,5 @@
 Parse Options
--------------
+=============
 
 `shopt -s parse_brace` does three things:
 

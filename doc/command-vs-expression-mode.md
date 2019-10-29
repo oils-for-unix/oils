@@ -1,3 +1,6 @@
+Command vs. Expression Mode
+===========================
+
 
 Here is a list of places we switch modes:
 
@@ -62,7 +65,7 @@ echo ${f(x)}
 This is an incomplete list.  Double quoted strings are yet another lexer mode I didn't list.
 
 
-### Does that mean that functions arguments can’t be globs? Eg:
+## Does that mean that functions arguments can’t be globs? Eg:
 
 do_something_with_files(data*.dat)?
 

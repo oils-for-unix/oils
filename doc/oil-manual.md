@@ -8,7 +8,7 @@
 </div>
 
 Oil User Manual
----------------
+===============
 
 The Oil project aims to transform Unix shell into a better programming
 language.
@@ -27,9 +27,9 @@ using shell options that are toggled with the `shopt` builtin.
 <div id="toc">
 </div>
 
-### Options
+## Options
 
-#### "Meta" Options Are The Most Important
+### "Meta" Options Are The Most Important
  
 This is how you opt into the Oil language:
 
@@ -50,7 +50,7 @@ It turns on:
 When you care about running your script under other shells, use `shopt -s
 strict:all`, which is documented in the [OSH manual](osh-manual.html).
 
-#### Parsing Options
+### Parsing Options
 
 Options that affect parsing start with `parse-`.
 
@@ -68,7 +68,7 @@ echo @split(x)
 
 See examples below.
 
-#### Runtime Options
+### Runtime Options
 
 - `simple_echo`.  Changes the flags accepted by the `echo` builtin, and style of flag parsing.
   See the `Builtins > echo` below.
@@ -87,7 +87,7 @@ echo $dir/*.py
 - `more_errexit`.  A error in a command sub can cause the **parent shell** to
   exit fatally.  Also see `inherit_errexit` and `strict_errexit`.
 
-#### Strict Options
+### Strict Options
 
 These options produce more **programming errors**.  Importantly, the resulting
 program is still compatible with other shells.
@@ -104,9 +104,9 @@ setting it, you're upgrading to the Oil language.
 See the [OSH manual](osh-manual.html) for a list of strict options and their
 meaning.
 
-### Keywords
+## Keywords
 
-#### `var` to declare variables
+### `var` to declare variables
 
 Python- or JavaScript- like syntax on RHS.
 
@@ -119,7 +119,7 @@ var mydict = {name: 'bob', age: 10}
 var mylist = [42, false, "hello"]
 ```
 
-#### `setvar` or `set` to update variables
+### `setvar` or `set` to update variables
 
 ```
 setvar myint = 1
@@ -145,16 +145,16 @@ builtin set -- a b c
 You can also turn on `set` options with the `shopt -o` flag: `shopt -o -s
 errexit`.
 
-#### Future
+### Future
 
 (Not implemented)
 
 - const (compile-time?)
 - auto for "auto-vivifcation"
 
-### Expressions
+## Expressions
 
-#### Shell Array Literals with @()
+### Shell Array Literals with @()
 
 ```
 var x = @(a b c)
@@ -167,7 +167,7 @@ var x = @(
 )
 ```
 
-#### Shell Command Substitution with $()
+### Shell Command Substitution with $()
 
 The `$(echo hi)` construct works in shell commands, and it also works in Oil
 expressions:
@@ -177,7 +177,7 @@ var x = $(echo hi)           # no quotes necessary
 var x = "$(echo hi) there"
 ```
 
-#### Splice Arrays with @array
+### Splice Arrays with @array
 
 ```
 var a1 = @(a b)
@@ -185,7 +185,7 @@ var a2 = @(c d)
 echo / @a1 / @a2 /   # gives / a b / c d /
 ```
 
-#### Future
+### Future
 
 - "Legacy-free" command substitution with `$[echo hi]`
 - "Legacy-free" and typed literals like
@@ -195,9 +195,9 @@ echo / @a1 / @a2 /   # gives / a b / c d /
 - For details, see the wiki page [Implementing the Oil Expression
   Language](https://github.com/oilshell/oil/wiki/Implementing-the-Oil-Expression-Language)
 
-### Inline function Calls
+## Inline function Calls
 
-#### That Return Strings
+### That Return Strings
 
 ```
 echo $stringfunc(x, y)
@@ -210,14 +210,14 @@ var s = stringfunc(x, y)
 echo "__$s__"
 ```
 
-#### That Return Arrays
+### That Return Arrays
 
 ```
 cc -o foo -- @arrayfunc(x, y)
 ```
 
 
-### Special Variables
+## Special Variables
 
 - `ARGV` instead of `"$@"`
 
@@ -237,7 +237,7 @@ var length = len(ARGV)
 var s = sorted(ARGV)
 ```
 
-### Builtins Can Accept Ruby-Style Blocks
+## Builtins Can Accept Ruby-Style Blocks
 
 Example of syntax that works:
 
@@ -263,7 +263,7 @@ Runtime errors
 local a=1 { echo bad };  # assignment builtins can't take blocks
 ```
 
-#### Caveat: Blocks Are Space Sensitive
+### Caveat: Blocks Are Space Sensitive
 
 ```
 cd {a,b}  # brace substitution
@@ -279,7 +279,7 @@ echo these are literal braces not a block '{' '}'
 ```
 
 
-#### What's Allowed in Blocks?
+### What's Allowed in Blocks?
 
 You can break out with `return`, and it accepts Oil**expressions** (not
 shell-like words) (note: not implemented yet).
@@ -310,15 +310,15 @@ var result = namespace->_result
 ```
 
 
-#### Scope
+### Scope
 
 evalblock()
 
 
 
-### Builtins
+## Builtins
 
-#### cd
+### cd
 
 It now takes a block:
 
@@ -343,7 +343,7 @@ When a block is passed:
 - The directory stack for `pushd` and `popd` isn't cleared, as it is with a
 	normal `cd` command.
 
-#### echo
+### echo
 
 `shopt -s simple_echo` changes the `echo` builtin to accept the following long
 flags, as well as the `--` separator between flags and args.
@@ -352,7 +352,7 @@ flags, as well as the `--` separator between flags and args.
 - `-end`: Characters to terminate the whole invocation.  (Default: newline)
 - `-n`: A synonym for `-end ''`.
 
-#### push
+### push
 
 Append one or more strings to an array.
 
@@ -362,7 +362,7 @@ push :array three four
 echo @array  # prints 4 lines
 ```
 
-### Builtin Flag Syntax
+## Builtin Flag Syntax
 
 Oil's builtins accept long flags like `--verbose` and short flags like `-v`.
 
@@ -385,17 +385,17 @@ The first is preferred because it's the simplest and shortest.
 (Trivia: Oil's flag syntax avoids the issue where `set -oo errexit nounset` is
 a confusing equivalent to `set -o errexit -o nounset`.)
 
-#### Future
+### Future
 
 - fork, wait
 - log, die
 - write
 
-### Links
+## Links
 
 - TODO: Examples on the blog
 
-#### Blog Post
+### Blog Post
 
 Five different things have to come together!
 

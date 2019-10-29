@@ -1,7 +1,7 @@
 <!-- NOTE: This file is at /release/$VERSION/index.html -->
 
 Oil 0.7.pre5
----------
+============
 
 <span class="date">
 <!-- REPLACE_WITH_DATE -->
@@ -20,18 +20,18 @@ Test results, metrics, and benchmarks are shown below.
 
 [INSTALL]: doc/INSTALL.html
 
-### Download
+## Download
 
 <!-- REPLACE_WITH_DOWNLOAD_LINKS -->
 
-### What's New
+## What's New
 
 - Details are in the [raw git change log](changelog.html).  Not all changes
   affect the release tarball.
 - I sometimes write a [release announcement](announcement.html) with a
   high-level description of changes.
 
-### Documentation
+## Documentation
 
 - [INSTALL][]. How do I install Oil?  This text file is also in the tarball.
 - [OSH User Manual](doc/osh-manual.html). How do I use it?
@@ -51,7 +51,7 @@ Test results, metrics, and benchmarks are shown below.
     up-to-date.
 
 
-### Metrics
+## Metrics
 
 - Lines of source, counted in differented ways:
   - [osh-cloc](metrics.wwz/line-counts/osh-cloc.txt).  OSH and common
@@ -85,7 +85,7 @@ Test results, metrics, and benchmarks are shown below.
 [OVM]: //www.oilshell.org/cross-ref.html?tag=OVM#OVM
 
 
-### Tests
+## Tests
 
 - [Oil Spec Tests](test/spec.wwz/oil.html).  Test new Oil language features.
 - [OSH Spec Tests](test/spec.wwz/osh.html).  Test OSH with existing shells, and
@@ -116,7 +116,7 @@ More tests:
 
 [mgree/smoosh]: https://github.com/mgree/smoosh/tree/master/tests/shell
 
-### OPy Tests
+## OPy Tests
 
 The OPy compiler is used to compile Oil to bytecode, but isn't itself part of
 the release.
@@ -131,11 +131,11 @@ Tree-shaking:
 - [Symbols in Oil](test/opy.wwz/oil-symbols.txt)
 - [Symbols in OPy](test/opy.wwz/opy-symbols.txt)
 
-### Manual Tests
+## Manual Tests
 
 - [ ] Test build and install on OS X
 
-### Benchmarks
+## Benchmarks
 
 - [OSH Parser Performance](benchmarks.wwz/osh-parser/).  How fast does OSH
   parse compared to other shells?
@@ -146,7 +146,7 @@ Tree-shaking:
 - [OVM Build](benchmarks.wwz/ovm-build/).  How long does it take for end users
   to build Oil?  How big is the resulting binary?
 
-### Source Code
+## Source Code
 
 These files may help you understand how Oil is implemented, i.e. with
 domain-specific languages and code generation.

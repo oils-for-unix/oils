@@ -1,5 +1,5 @@
 Procs, Funcs, and Blocks
-------------------------
+========================
 
 * Procs Have Open or Closed Signatures
 * Functions Look Like Julia, JavaScript, and Go
@@ -80,7 +80,7 @@ echo array @f(5, 6, ...a, c=7, d=8; ...n)
 ```
 
 
-### Blocks
+## Blocks
 
 ## cd now takes a Ruby-like block
 

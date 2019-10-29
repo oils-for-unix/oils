@@ -8,7 +8,7 @@
 </div>
 
 OSH User Manual
----------------
+===============
 
 OSH is a **Unix shell** designed to run existing shell scripts.  More
 precisely, it's
@@ -43,13 +43,13 @@ which shell you're using.  See the end of this manual for more resources.
 <div id="toc">
 </div>
 
-### Downloading OSH
+## Downloading OSH
 
 The [releases page](https://www.oilshell.org/releases.html) links to source
 tarballs for every release.  It also links to the documentation tree, which
 includes this manual.
 
-### Setup
+## Setup
 
 After running the instructions in [INSTALL](INSTALL.html), run:
 
@@ -58,7 +58,7 @@ After running the instructions in [INSTALL](INSTALL.html), run:
 - OSH will create `osh_history` there, to store your command history.
 - You can create your own `oshrc` there.
 
-### Startup Files
+## Startup Files
 
 On startup, the interactive shell sources **only** `~/.config/oil/oshrc`.
 
@@ -82,7 +82,7 @@ I describe my own `oshrc` file on the wiki: [How To Test
 OSH](https://github.com/oilshell/oil/wiki/How-To-Test-OSH).
 
 
-### Global Execution Options
+## Global Execution Options
 
 All Unix shells have global options that affect execution.  There are two
 kinds:
@@ -93,7 +93,7 @@ kinds:
 List them all with `set -o` and `shopt -p`.  Other than syntax, there's no
 essential difference between the two kinds.
 
-#### shopt -s strict:all is Recommended
+### shopt -s strict:all is Recommended
 
 OSH adds more options on top of those provided by POSIX and bash.  It has  a
 shortcut `shopt -s strict:all` which turns on many options at once:
@@ -114,7 +114,7 @@ You can also turn individual options on or off:
     shopt -s strict_array  # Set this option.  I want more fatal errors.
     shopt -u strict_array  # Unset it.  Ignore errors and keep executing.
 
-#### List of Options
+### List of Options
 
 `strict_arith`.  Strings that don't look like integers cause a fatal error in
 arithmetic expressions.
@@ -143,7 +143,7 @@ doesn't concatenate its arguments with a space, or accept zero arguments.
 See the [Oil manual](oil-manual.html) for options that fundamentally change the
 shell language, e.g. those categorized under `shopt -s oil:all`.
 
-### OSH Has Four `errexit` Options (while Bash Has Two)
+## OSH Has Four `errexit` Options (while Bash Has Two)
 
 The complex behavior of these global execution options requires extra attention
 in this manual.
@@ -162,7 +162,7 @@ and
 shopt -s strict:all
 ```
 
-#### Quirk 1: the Shell Sometimes Disables And Restores `errexit`
+### Quirk 1: the Shell Sometimes Disables And Restores `errexit`
 
 Here's some background for understanding the additional `errexit` options
 described below.
@@ -183,12 +183,12 @@ Now consider this situation:
 Surprising behavior: Unix shells **ignore** the `set` builtin for awhile,
 delaying its execution until **after** the temporary disablement.
 
-#### Quirk 2: x=$(false) is inconsitent with local x=$(false)
+### Quirk 2: x=$(false) is inconsitent with local x=$(false)
 
 Background: In shell, `local` is a builtin rather than a keyword, which means
 `local foo=$(false)` behaves differently than than `foo=$(false)`.
 
-#### Additional `errexit` options
+### Additional `errexit` options
 
 OSH aims to fix the many quirks of `errexit`.  It has this bash-compatible
 option:
@@ -208,7 +208,7 @@ And two more options:
   failure of a command sub can abort the entire script.  For example, `local
   foo=$(false)` is a fatal runtime error rather than a silent success.
 
-#### Example
+### Example
 
 When both `inherit_errexit` and `more_errexit` are on, this code
 
@@ -219,7 +219,7 @@ will print `0` and touch the file `one`.
 1. The command sub aborts at `false` (`inherrit_errexit), and
 2. The parent process aborts after the command sub fails (`more_errexit`).
 
-#### Recap/Summary
+### Recap/Summary
 
 - `errexit` -- abort the shell script when a command exits nonzero, except in
   the three situations described above.
@@ -232,9 +232,9 @@ Good articles on `errexit`:
 - <http://mywiki.wooledge.org/BashFAQ/105>
 - <http://fvue.nl/wiki/Bash:_Error_handling>
 
-### Features Unique to OSH
+## Features Unique to OSH
 
-#### Dumping the AST
+### Dumping the AST
 
 The `-n` flag tells OSH to parse the program rather than executing it.  By
 default, it prints an abbreviated abstract syntax tree:
@@ -277,7 +277,7 @@ sophisticated users may use it to interpret tricky shell programs without
 running them.
 
 
-#### `OSH_HIJACK_SHEBANG`
+### `OSH_HIJACK_SHEBANG`
 
 This environment variable can be set to the path of a **shell**.  Before OSH
 executes a program, it will inspect the shebang line to see if it looks like a
@@ -311,7 +311,7 @@ run, and once for all recursive runs.
 **inherited**.)
 
 
-#### `--debug-file`
+### `--debug-file`
 
 Print internal debug logs to this file.  It's useful to make it a FIFO:
 
@@ -330,13 +330,13 @@ Related:
 - The `--xtrace-to-debug-file` flag sends `set -o xtrace` output to that file
   instead of to `stderr`.
 
-#### Crash Dumps
+### Crash Dumps
 
 - TODO: `OSH_CRASH_DUMP_DIR`
 
 This is implemented, but a JSON library isn't in the release build.
 
-### Completion API
+## Completion API
 
 The completion API is modeled after the [bash completion
 API](https://www.gnu.org/software/bash/manual/html_node/Command-Line-Editing.html#Command-Line-Editing)
@@ -350,7 +350,7 @@ plugins should not do it.
 - TODO: describe the `compadjust` builtin.  Derived from a cleanup of the
   `bash-completion` project.
 
-### Exit Codes
+## Exit Codes
 
 - `0` for **success**.
 - `1` for **runtime errors**.  Examples:
@@ -366,9 +366,9 @@ plugins should not do it.
   - `126` for permission denied when running a command (`errno EACCES`)
   - `127` for command not found
 
-### Unicode
+## Unicode
 
-#### Program Encoding
+### Program Encoding
 
 Shell **programs** should be encoded in UTF-8 (or its ASCII subset).  Unicode
 characters can be encoded directly in the source:
@@ -383,7 +383,7 @@ or denoted in ASCII with C-escaped strings, i.e.  `$''`:
 
 (This construct is preferred over `echo -e` because it's statically parsed.)
 
-#### Data Encoding
+### Data Encoding
 
 Strings in OSH are arbitrary sequences of **bytes**.  Caveats:
 
@@ -399,11 +399,11 @@ Also see [Notes on Unicode in Shell][unicode.md].
 
 [unicode.md]: https://github.com/oilshell/oil/blob/master/doc/unicode.md
 
-### Bugs
+## Bugs
 
 - OSH runs shell scripts too slowly.  Speeding it up is a top priority.
 
-### Links
+## Links
 
 - [Blog Posts Tagged #FAQ](http://www.oilshell.org/blog/tags.html?tag=FAQ#FAQ)
   tell you why OSH exists and how it's designed.

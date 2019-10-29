@@ -1,5 +1,5 @@
 Notes on Unicode in Shell
--------------------------
+=========================
 
 List of operations that are aware of code points:
 

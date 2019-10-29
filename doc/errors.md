@@ -1,5 +1,5 @@
 List of Errors in the OSH Interpreter
--------------------------------------
+=====================================
 
 Parse Error:
   Can be determined statically
@@ -9,7 +9,7 @@ Parse Error:
 
 TODO: See test/runtime-errors.sh.  Merge them here.
 
-### Fatal vs. Non-Fatal
+## Fatal vs. Non-Fatal
 
 Fatal Error:
   terminates the interpreter unconditionally, e.g. divide by zero does this in
@@ -39,7 +39,7 @@ understandable!
    set -o errexit
    echo $(exit 1)
 
-### Strict Modes
+## Strict Modes
 
 strict_array
 strict_errexit
@@ -50,7 +50,7 @@ TODO: strict-word-eval?
   for subshell negative indices?  I think this is most consistent right now.
 
 
-### Parse Error API
+## Parse Error API
 
 TODO:
 
@@ -73,7 +73,7 @@ Related to memory management API:
     else:
       c_parser.Error()  # Is this still a stack?
 
-### Runtime Error API: error codes + error contexts?
+## Runtime Error API: error codes + error contexts?
 
 Idea:
 
@@ -93,7 +93,7 @@ List of contexts:
 - pipeline?  ls | { foo; exit 1; }
 - dparen (( )) vs. arith sub $(( ))
 
-### Problem in bash: Context affects a lot
+## Problem in bash: Context affects a lot
 
 echo $(( 1 / 0 ))
 echo 'after-$(())
@@ -101,7 +101,7 @@ echo 'after-$(())
 echo 'after-$(())
 
 
-### Arith Eval
+## Arith Eval
 
 Divide by zero: $(( 1 / 0 ))
 
@@ -118,14 +118,14 @@ Invalid hex constant:
     x=0xabcg
     echo $(( x * 2 ))   (fatal in bash)
 
-### Bool Eval
+## Bool Eval
 
 regcomp parse error: 
 
 x=$(cat invalid-syntax.txt)
 [[ foo =~ $x ]]
 
-### Word Eval
+## Word Eval
 
 IMPORTANT: Command sub error $(exit 1)
 
@@ -175,7 +175,7 @@ NotImplementedError
 - Slicing: Index is negative.  ${foo: -4} and ${foo: 1 : -4} aren't supported
   right now, unlike bash and zsh.
 
-### Command Exec
+## Command Exec
 
 IMPORTANT: subshell error ( exit 1 )
 
@@ -221,7 +221,7 @@ Invalid descriptor:
 fd=$(cat invalid.txt)
 echo foo 2>& $fd
 
-#### Builtins
+### Builtins
 
 In core/builtins.py:
 
@@ -239,7 +239,7 @@ Although we might want to highlight the extra args.
 
 
 
-### Syscall Failures
+## Syscall Failures
 
 Fatal error from system calls:
     fork() could fail in theory
@@ -250,7 +250,7 @@ Some are not failures:
     cd /ff  chdir()  # exit code 1
     cat <nonexistent  # This is just exit code 1 
 
-### Interpreter Failures
+## Interpreter Failures
 
 Runtime: Stack Too Deep (catch infinite recursion)
 Out of memory: should not happen with OSH, but maybe with Oil
