@@ -170,7 +170,6 @@ printf '%d\n' 42
 printf '%i\n' 42  # synonym
 printf '%d\n' \'a # if first character is a quote, use character code
 printf '%d\n' \"a # double quotes work too
-printf '%d\n' \' # when no character follows, use 0
 printf '[%5d]\n' 42
 printf '[%-5d]\n' 42
 printf '[%05d]\n' 42
@@ -181,7 +180,6 @@ printf '[%05d]\n' 42
 42
 97
 97
-0
 [   42]
 [42   ]
 [00042]
@@ -226,13 +224,36 @@ printf '[%u]\n' 42
 printf '[%o]\n' 42
 printf '[%x]\n' 42
 printf '[%X]\n' 42
-printf '[%X]\n' \'\a # if first character is a quote, use character code
+printf '[%X]\n' \'a  # if first character is a quote, use character code
+printf '[%X]\n' \'ab  # extra chars ignored
 ## STDOUT:
 [42]
 [52]
 [2a]
 [2A]
 [61]
+[61]
+## END
+
+#### empty string (osh is more strict)
+printf '%d\n' ''
+## OK osh stdout-json: ""
+## OK osh status: 1
+## OK ash status: 1
+## STDOUT:
+0
+## END
+
+#### No char after '
+
+# most shells use 0, but OSH is more strict
+printf '%d\n' \' 
+
+## OK osh stdout-json: ""
+## OK osh status: 1
+## OK mksh status: 1
+## STDOUT:
+0
 ## END
 
 #### negative numbers with unsigned / octal / hex

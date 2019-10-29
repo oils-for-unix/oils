@@ -207,11 +207,8 @@ class Printf(object):
             try:
               d = int(s)
             except ValueError:
-              if s[0] in '\'"':
-                if len(s) >= 2:
-                  d = ord(s[1])
-                else:
-                  d = 0
+              if len(s) >= 2 and s[0] in '\'"':
+                d = ord(s[1])
               else:
                 # This works around the fact that in the arg recycling case, you have no spid.
                 if word_spid == runtime.NO_SPID:
