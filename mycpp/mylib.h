@@ -83,7 +83,7 @@ class Obj {
   // default constructor for multiple inheritance
   Obj() : tag(0) {
   }
-  Obj(uint16_t tag) : tag(tag) {
+  explicit Obj(uint16_t tag) : tag(tag) {
   }
   uint16_t tag;
 
@@ -92,7 +92,7 @@ class Obj {
 
 class Str {
  public:
-  Str(const char* data) : data_(data) {
+  explicit Str(const char* data) : data_(data) {
     len_ = strlen(data);
   }
 
@@ -185,7 +185,7 @@ class Str {
 // NOTE: This iterates over bytes.
 class StrIter {
  public:
-  StrIter(Str* s) : s_(s), i_(0) {
+  explicit StrIter(Str* s) : s_(s), i_(0) {
   }
   void Next() {
     i_++;
@@ -207,7 +207,7 @@ template <class T>
 class List {
  public:
   List() : v_() {
-  };
+  }
 
   List(std::initializer_list<T> init) : v_() {
     for (T item : init) {
@@ -271,21 +271,21 @@ class List {
     return v_[0];
   }
 
- //private:
+// private:
   std::vector<T> v_;  // ''.join accesses this directly
 };
 
 template <class T>
 class ListIter {
  public:
-  ListIter(List<T>* L) : L_(L), i_(0) {
-  };
+  explicit ListIter(List<T>* L) : L_(L), i_(0) {
+  }
   void Next() {
     i_++;
   }
   bool Done() {
     return i_ >= L_->v_.size();
-  };
+  }
   T Value() {
     return L_->v_[i_];
   }
@@ -319,6 +319,7 @@ class Dict {
   V& operator[](K key) {
     return values_[0];
   }
+
  private:
   V values_[1];
 };
@@ -327,7 +328,7 @@ template <class A, class B>
 class Tuple2 {
  public:
   Tuple2(A a, B b) : a_(a), b_(b) {
-  };
+  }
   A at0() { return a_; }
   B at1() { return b_; }
 
@@ -340,7 +341,7 @@ template <class A, class B, class C>
 class Tuple3 {
  public:
   Tuple3(A a, B b, C c) : a_(a), b_(b), c_(c) {
-  };
+  }
   A at0() { return a_; }
   B at1() { return b_; }
   C at2() { return c_; }
@@ -355,7 +356,7 @@ template <class A, class B, class C, class D>
 class Tuple4 {
  public:
   Tuple4(A a, B b, C c, D d) : a_(a), b_(b), c_(c), d_(d) {
-  };
+  }
   A at0() { return a_; }
   B at1() { return b_; }
   C at2() { return c_; }
@@ -417,7 +418,7 @@ inline Str* chr(int i) {
 }
 
 // https://stackoverflow.com/questions/3919995/determining-sprintf-buffer-size-whats-the-standard/11092994#11092994
-// Note: Python 2.7's intobject.c has an erroneous +6 
+// Note: Python 2.7's intobject.c has an erroneous +6
 
 // This is 13, but
 // len('-2147483648') is 11, which means we only need 12?
@@ -433,8 +434,8 @@ inline Str* str(int i) {
 // dispatches on tag?  Or just repr()?
 
 // Will need it for dict, but not tuple.
-//inline int len(Dict* D) {
-//}
+// inline int len(Dict* D) {
+// }
 
 bool _str_to_int(Str* s, int* result);  // for testing only
 int str_to_int(Str* s);
@@ -458,7 +459,7 @@ inline bool list_contains(List<Str*>* haystack, Str* needle) {
 
 // ints and floats
 // e.g. 1 in [1, 2, 3]
-template <typename T> 
+template <typename T>
 inline bool list_contains(List<T>* haystack, int needle) {
   int n = haystack->v_.size();
   for (int i = 0; i < n; ++i) {
@@ -470,7 +471,7 @@ inline bool list_contains(List<T>* haystack, int needle) {
 }
 
 // STUB
-template <typename K, typename V> 
+template <typename K, typename V>
 inline bool dict_contains(Dict<K, V>* haystack, K needle) {
   return false;
 }
@@ -511,7 +512,7 @@ class Writer {
 class BufWriter : public Writer {
  public:
   BufWriter() : data_(nullptr), len_(0) {
-  };
+  }
   virtual void write(Str* s);
   virtual bool isatty() {
     return false;
@@ -535,8 +536,6 @@ class BufWriter : public Writer {
   // strategy: snprintf() based on sizeof(int)
   void format_d(int i);
   void format_s(Str* s);
-  // mycpp doesn't agree here
-  //void format_s(const char* s);
   void format_r(Str* s);  // formats with quotes
 
   // looks at arbitrary type tags?  Is this possible
@@ -553,7 +552,7 @@ class BufWriter : public Writer {
 class CFileWriter : public Writer {
  public:
   explicit CFileWriter(FILE* f) : f_(f) {
-  };
+  }
   virtual bool isatty();
   virtual void write(Str* s);
 
@@ -572,7 +571,7 @@ inline Writer* Stdout() {
   return gStdout;
 }
 
-};
+}  // namespace mylib
 
 //
 // Formatter for Python's %s

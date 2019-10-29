@@ -1,12 +1,13 @@
 // mylib.cc
 
+#include "mylib.h"
+
 #include <assert.h>
-#include <exception>  // std::exception
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>
 #include <unistd.h>  // isatty
 
-#include "mylib.h"
+#include <exception>  // std::exception
 
 void print(Str* s) {
   printf("%s\n", s->data_);
@@ -225,7 +226,7 @@ bool CFileWriter::isatty() {
   return ::isatty(fileno(f_));
 }
 
-};
+}  // namespace mylib
 
 //
 // Free functions

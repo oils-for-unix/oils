@@ -26,8 +26,9 @@ get-cpplint() {
 }
 
 cpplint() {
-  _tmp/cpplint.py --filter -readability/todo,-legal/copyright \
-    *.{cc,h} shell/*.{cc,h}
+  # we don't have subdir names on the header guard
+  _tmp/cpplint.py --filter \
+    -readability/todo,-legal/copyright,-build/header_guard,-whitespace/comments "$@"
 }
 
 clang-format() {
