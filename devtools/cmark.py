@@ -11,6 +11,7 @@ import cgi
 import ctypes
 import HTMLParser
 import optparse
+import re
 import sys
 
 # Geez find_library returns the filename and not the path?  Just hardcode it as
@@ -48,6 +49,24 @@ def md2html(text):
 
 def demo():
   sys.stdout.write(md2html('*hi*'))
+
+
+def PrettyHref(s):
+  """
+  Turn arbitrary heading text into a clickable href with no special characters.
+
+  This is modelled after what github does.  It makes everything lower case.
+  """
+  # Split by whitespace
+  words = re.split(r'\s+', s)
+
+  # Keep only alphanumeric
+  keep = [''.join(re.findall(r'\w+', w)) for w in words]
+
+  # Join with - and lowercase.  And then remove empty words, unlike Github.
+  # This is SIMILAR to what Github does, but there's no need to be 100%
+  # compatible.
+  return '-'.join(p.lower() for p in keep if p)
 
 
 class TocExtractor(HTMLParser.HTMLParser):
@@ -98,7 +117,7 @@ class TocExtractor(HTMLParser.HTMLParser):
         if k == 'id':
           css_id = v
           break
-      self.headings.append((line_num, tag, css_id, []))
+      self.headings.append((line_num, tag, css_id, [], []))
       self.capturing = True  # record the text inside <h2></h2> etc.
 
   def handle_endtag(self, tag):
@@ -132,12 +151,16 @@ class TocExtractor(HTMLParser.HTMLParser):
 
     if self.capturing:
       self._AppendHtml(data)
+      self._AppendText(data)
+
+  def _AppendText(self, text):
+    """Accumlate text of the last heading."""
+    _, _, _, _, text_parts = self.headings[-1]
+    text_parts.append(text)
 
   def _AppendHtml(self, html):
-    """
-    Append HTML to the last heading.
-    """
-    _, _, _, html_parts = self.headings[-1]
+    """Accumulate HTML of the last heading."""
+    _, _, _, html_parts, _ = self.headings[-1]
     html_parts.append(html)
 
 
@@ -158,37 +181,41 @@ def _MakeTocAndAnchors(opts, headings, toc_pos):
   insertions = []
 
   i = 0
-  for line_num, tag, css_id, html_parts in headings:
+  for line_num, tag, css_id, html_parts, text_parts in headings:
     css_class = TAG_TO_CSS[tag]
 
-    # Add BOTH anchors, for stability.
-    numeric_anchor = 'toc_%d' % i
+    # Add BOTH href, for stability.
+    numeric_href = 'toc_%d' % i
 
     # If there was an explicit CSS ID written by the user, use that as the href.
     # I used this in the blog a few times.
 
-    href = css_id or numeric_anchor
+    pretty_href = PrettyHref(''.join(text_parts))
 
-    if opts.toc_pretty_href:
-      # TODO: generate a target
-      pass
+    if css_id:              # A FEW OLD BLOG POSTS USE an explicit CSS ID
+      toc_href = css_id
+    else:
+      # Always use the pretty version now.  The old numeric version is still a
+      # target, but not in the TOC.
+      toc_href = pretty_href
 
     line = '  <div class="%s"><a href="#%s">%s</a></div>\n' % (
-        css_class, href, ''.join(html_parts))
+        css_class, toc_href, ''.join(html_parts))
     toc_lines.append(line)
 
-    auto_anchor = 'TODO'
+    FMT = '<a name="%s"></a>\n'
 
-    if opts.toc_pretty_href:
-      anchor = auto_anchor
-    else:
-      anchor = numeric_anchor
+    targets = []
+    if opts.toc_pretty_href:  # NEW WAY
+      targets.append(FMT % pretty_href)
+    elif css_id:              # Old blog explicit
+      targets.append(FMT % css_id)
+      targets.append(FMT % numeric_href)
+    else:                     # Old blog implicit
+      targets.append(FMT % pretty_href)  # Include the NEW WAY too
+      targets.append(FMT % numeric_href)
 
-    # Add one or two targets.
-    target = '<a name="%s"></a>\n' % anchor
-    if css_id:
-      target += '<a name="%s"></a>\n' % css_id
-    insertions.append((line_num, target))
+    insertions.append((line_num, ''.join(targets)))
 
     i += 1
 
