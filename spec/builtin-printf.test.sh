@@ -168,8 +168,8 @@ printf '[%-5s]\n' abc
 #### printf integer
 printf '%d\n' 42
 printf '%i\n' 42  # synonym
-printf '%d\n' \'\* # if first character is a quote, use character code
-printf '%d\n' \"\* # double quotes work too
+printf '%d\n' \'a # if first character is a quote, use character code
+printf '%d\n' \"a # double quotes work too
 printf '[%5d]\n' 42
 printf '[%-5d]\n' 42
 printf '[%05d]\n' 42
@@ -178,8 +178,8 @@ printf '[%05d]\n' 42
 ## STDOUT:
 42
 42
-42
-42
+97
+97
 [   42]
 [42   ]
 [00042]
@@ -224,13 +224,13 @@ printf '[%u]\n' 42
 printf '[%o]\n' 42
 printf '[%x]\n' 42
 printf '[%X]\n' 42
-printf '[%X]\n' \'\* # if first character is a quote, use character code
+printf '[%X]\n' \'\a # if first character is a quote, use character code
 ## STDOUT:
 [42]
 [52]
 [2a]
 [2A]
-[2A]
+[61]
 ## END
 
 #### negative numbers with unsigned / octal / hex
