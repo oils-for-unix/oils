@@ -208,9 +208,9 @@ class Printf(object):
               d = int(s)
             except ValueError:
               if s[0] in '\'"':
-                try:
+                if len(s) >= 2:
                   d = ord(s[1])
-                except IndexError:
+                else:
                   d = 0
               else:
                 # This works around the fact that in the arg recycling case, you have no spid.
