@@ -1,6 +1,79 @@
 Procs, Funcs, and Blocks
 ========================
 
+## Builtins Can Accept Ruby-Style Blocks
+
+Example of syntax that works:
+
+```
+cd / {
+  echo $PWD
+}
+cd / { echo $PWD }
+cd / { echo $PWD }; cd / { echo $PWD }
+```
+
+Syntax errors:
+
+```
+a=1 { echo bad };        # assignments can't take blocks
+>out.txt { echo bad };   # bare redirects can't take blocks
+break { echo bad };      # control flow can't take blocks
+```
+
+Runtime errors
+
+```
+local a=1 { echo bad };  # assignment builtins can't take blocks
+```
+
+### Caveat: Blocks Are Space Sensitive
+
+```
+cd {a,b}  # brace substitution
+cd { a,b }  # tries to run command 'a,b', which probably doesn't exist
+```
+
+more:
+
+```
+echo these are literal braces not a block \{ \}
+echo these are literal braces not a block '{' '}'
+# etc.
+```
+
+
+### What's Allowed in Blocks?
+
+You can break out with `return`, and it accepts Oil**expressions** (not
+shell-like words) (note: not implemented yet).
+
+
+```
+cd {
+  # return is for FUNCTIONS.
+  return 1 + 2 * 3
+}
+```
+
+The block can set vars in enclosing scope:
+
+```
+setvar('name', 1+2, up=1)
+```
+
+They can also get the value:
+
+```
+var namespace = evalblock('name', 1+2, up=1)
+
+# _result is set if there was a return statement!
+
+# namespace has all vars except those prefixed with _
+var result = namespace->_result
+```
+
+
 * Procs Have Open or Closed Signatures
 * Functions Look Like Julia, JavaScript, and Go
 * Procs May Accept Block Arguments

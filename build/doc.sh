@@ -152,7 +152,7 @@ osh-quick-ref() {
 
 cmark() {
   # h2 and h3 are shown in TOC.  The blog uses "legacy" h3 and h4.
-  devtools/cmark.py --toc-tag h2 --toc-tag h3 --pretty-href
+  devtools/cmark.py --toc-tag h2 --toc-tag h3 --toc-pretty-href
 }
 
 markdown2html() {
@@ -199,6 +199,23 @@ install() {
   markdown2html INSTALL.txt $root_dir/doc/INSTALL.html "$css_link"
 }
 
+readonly DOCS=(
+  # polished
+  osh-manual oil-manual known-differences eggex 
+  # needs polish
+  oil-options
+  oil-keywords-and-builtins
+  oil-assignment
+  command-vs-expression-mode
+  oil-expressions
+  oil-literal-syntax
+  oil-word-language
+  oil-special-vars
+  func-proc-blocks
+  eggex
+  data-model
+)
+
 manual() {
   local root_dir=${1:-_release/VERSION}
   local release_date=${2:-}
@@ -209,8 +226,7 @@ manual() {
   '
 
   # TODO: cmark.py could replace <span class="date"></span> with -v date=?
-  for d in \
-    osh-manual oil-manual known-differences eggex oil-expressions; do
+  for d in "${DOCS[@]}"; do
 
     markdown2html doc/$d.md $root_dir/doc/$d.html "$css_link" ''
   done

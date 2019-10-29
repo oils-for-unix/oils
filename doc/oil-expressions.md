@@ -2,6 +2,52 @@ The Expression Language Is Mostly Python
 ========================================
 
 
+
+## Expressions
+
+### Shell Array Literals with @()
+
+```
+var x = @(a b c)
+var x = @(
+  'single quoted'
+  "double quoted"
+  $'c string'
+  glob/*.py
+  brace-{a,b,c}-{1..3}
+)
+```
+
+### Shell Command Substitution with $()
+
+The `$(echo hi)` construct works in shell commands, and it also works in Oil
+expressions:
+
+```
+var x = $(echo hi)           # no quotes necessary
+var x = "$(echo hi) there"
+```
+
+### Splice Arrays with @array
+
+```
+var a1 = @(a b)
+var a2 = @(c d)
+echo / @a1 / @a2 /   # gives / a b / c d /
+```
+
+### Future
+
+- "Legacy-free" command substitution with `$[echo hi]`
+- "Legacy-free" and typed literals like
+  - `@[a 'b c' "hi $name"]`
+  - `@[1 2 3]` 
+  - `@[3.14 1.50 2.33]`
+- For details, see the wiki page [Implementing the Oil Expression
+  Language](https://github.com/oilshell/oil/wiki/Implementing-the-Oil-Expression-Language)
+
+
+
 Most of the operator language is now implemented (in the metacircular style).
 
 Oil's operators largely follow Python, except:

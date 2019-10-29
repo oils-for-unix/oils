@@ -54,15 +54,56 @@ def f():
 </pre></div>
 """)
 
+NEW_DOC = cStringIO.StringIO("""
+Title
+=====
+
+<div id="toc">
+</div>
+
+## One
+
+hello one.
+
+### subheading
+
+## Two &amp; Three
+
+""")
+
+
+DOC_WITH_METADATA = cStringIO.StringIO("""
+- repo-url: doc/README.md
+
+Title
+=====
+
+## One
+""")
+
+
+
 class RenderTest(unittest.TestCase):
 
   def testRender(self):
+    opts, _ = cmark.Options().parse_args([])
+
     out_file = cStringIO.StringIO()
-    cmark.Render(SIMPLE_DOC, out_file)
+    cmark.Render(opts, SIMPLE_DOC, out_file)
     self.assertEqual('<p>hi</p>\n', out_file.getvalue())
 
     out_file = cStringIO.StringIO()
-    cmark.Render(TOC_DOC, out_file)
+    cmark.Render(opts, TOC_DOC, out_file)
+    print(out_file.getvalue())
+
+  def testNewRender(self):
+    # New style of doc
+
+    new_flags = ['--toc-tag', 'h2', '--toc-tag', 'h3']
+    opts, _ = cmark.Options().parse_args(new_flags)
+
+    out_file = cStringIO.StringIO()
+    cmark.Render(opts, NEW_DOC, out_file)
     print(out_file.getvalue())
 
 

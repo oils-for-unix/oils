@@ -52,9 +52,12 @@ def demo():
 
 class TocExtractor(HTMLParser.HTMLParser):
   """
-  Look for.
+  When he hit h_tags (h2, h3, h4, etc.), append to self.headings, recording the
+  line number.
 
-  <div id="toc">
+  Later, we insert two things:
+  - <a name=""> before each heading
+  - The TOC after <div id="toc">
   """
   def __init__(self, h_tags):
     HTMLParser.HTMLParser.__init__(self)
@@ -96,7 +99,7 @@ class TocExtractor(HTMLParser.HTMLParser):
           css_id = v
           break
       self.headings.append((line_num, tag, css_id, []))
-      self.capturing = True
+      self.capturing = True  # record the text inside <h2></h2> etc.
 
   def handle_endtag(self, tag):
     # Debug print
@@ -131,11 +134,17 @@ class TocExtractor(HTMLParser.HTMLParser):
       self._AppendHtml(data)
 
   def _AppendHtml(self, html):
+    """
+    Append HTML to the last heading.
+    """
     _, _, _, html_parts = self.headings[-1]
     html_parts.append(html)
 
 
-def _MakeTocAndAnchors(headings, toc_pos):
+TAG_TO_CSS = {'h2': 'toclevel1', 'h3': 'toclevel2', 'h4': 'toclevel3'}
+
+
+def _MakeTocAndAnchors(opts, headings, toc_pos):
   """
   Given a list of extract headings and TOC position, render HTML to insert.
   """
@@ -145,22 +154,38 @@ def _MakeTocAndAnchors(headings, toc_pos):
   # Yeah it's just a flat list, and then indentation is done with CSS.  Hm
   # that's easy.
 
-  toc_lines = ['<div id="toctitle">Table of Contents</div>']
+  toc_lines = ['<div id="toctitle">Table of Contents</div>\n']
   insertions = []
 
   i = 0
   for line_num, tag, css_id, html_parts in headings:
-    css_class = {'h2': 'toclevel1', 'h3': 'toclevel2', 'h4': 'toclevel3'}[tag]
+    css_class = TAG_TO_CSS[tag]
 
     # Add BOTH anchors, for stability.
     numeric_anchor = 'toc_%d' % i
+
+    # If there was an explicit CSS ID written by the user, use that as the href.
+    # I used this in the blog a few times.
+
     href = css_id or numeric_anchor
 
-    line = '<div class="%s"><a href="#%s">%s</a></div>\n' % (
+    if opts.toc_pretty_href:
+      # TODO: generate a target
+      pass
+
+    line = '  <div class="%s"><a href="#%s">%s</a></div>\n' % (
         css_class, href, ''.join(html_parts))
     toc_lines.append(line)
 
-    target = '<a name="%s"></a>\n' % numeric_anchor
+    auto_anchor = 'TODO'
+
+    if opts.toc_pretty_href:
+      anchor = auto_anchor
+    else:
+      anchor = numeric_anchor
+
+    # Add one or two targets.
+    target = '<a name="%s"></a>\n' % anchor
     if css_id:
       target += '<a name="%s"></a>\n' % css_id
     insertions.append((line_num, target))
@@ -212,7 +237,7 @@ def Render(opts, in_file, out_file):
     out_file.write(html)  # Pass through
     return
 
-  insertions = _MakeTocAndAnchors(parser.headings, parser.toc_begin_line)
+  insertions = _MakeTocAndAnchors(opts, parser.headings, parser.toc_begin_line)
 
   log('')
   log('*** Text Insertions:')
@@ -230,12 +255,28 @@ def Options():
   """Returns an option parser instance."""
   p = optparse.OptionParser('cmark.py [options]')
   p.add_option(
-      '--pretty-href', action='store_true', default=False,
+      '--toc-pretty-href', action='store_true', default=False,
       help='Generate textual hrefs #like-this rather than like #toc10')
   p.add_option(
       '--toc-tag', dest='toc_tags', action='append', default=[],
       help='h tags to include in the TOC, e.g. h2 h3')
   return p
+
+# --extract-metadata : title plus front matter
+#
+# Move shell markdown2html here then?
+# maybe add 
+#
+# What about update-src-versions?  That's for every doc I guess.
+
+
+"""
+- repo-url: doc/README.md
+
+Title is h1
+===========
+
+"""
 
 
 def main(argv):

@@ -4,7 +4,7 @@ Command vs. Expression Mode
 
 Here is a list of places we switch modes:
 
-# From Command Mode to Expression Mode
+## From Command Mode to Expression Mode
 
 Assignments:
 
@@ -47,14 +47,14 @@ for (x, y in pairs) { ... }
 ```
 
 
-# From Expression Mode to Command Mode
+## From Expression Mode to Command Mode
 
 ```
 var x = func(x) { echo hi; return x +1 }   # everything between {} is in command mode
 ```
 
 
-# Other
+## Other
 
 Braced Vars in Double Quotes:
 
