@@ -207,15 +207,21 @@ class Printf(object):
             try:
               d = int(s)
             except ValueError:
-              # This works around the fact that in the arg recycling case, you have no spid.
-              if word_spid == runtime.NO_SPID:
-                self.errfmt.Print("printf got invalid number %r for this substitution", s,
-                                  span_id=part.type.span_id)
+              if s[0] in '\'"':
+                try:
+                  d = ord(s[1])
+                except IndexError:
+                  d = 0
               else:
-                self.errfmt.Print("printf got invalid number %r", s,
-                                  span_id=word_spid)
+                # This works around the fact that in the arg recycling case, you have no spid.
+                if word_spid == runtime.NO_SPID:
+                  self.errfmt.Print("printf got invalid number %r for this substitution", s,
+                                    span_id=part.type.span_id)
+                else:
+                  self.errfmt.Print("printf got invalid number %r", s,
+                                    span_id=word_spid)
 
-              return 1
+                return 1
 
             if typ in 'di':
               s = str(d)
