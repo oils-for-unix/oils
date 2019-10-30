@@ -1,3 +1,7 @@
+---
+repo_url: doc/eggex.md
+---
+
 Egg Expressions (Oil Regexes)
 =============================
 

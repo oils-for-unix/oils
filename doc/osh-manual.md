@@ -1,11 +1,6 @@
-<div style="float:right;">
-  <span id="version-in-header">Version 0.7.pre5</span> <br/>
-
-  <!-- TODO: date support in cmark.py -->
-  <span style="" class="date">
-  <!-- REPLACE_WITH_DATE -->
-  </span>
-</div>
+---
+repo_url: doc/osh-manual.md
+---
 
 OSH User Manual
 ===============

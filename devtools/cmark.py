@@ -14,6 +14,8 @@ import optparse
 import re
 import sys
 
+import doc_html  # templates
+
 # Geez find_library returns the filename and not the path?  Just hardcode it as
 # a workaround.
 # https://bugs.python.org/issue21042
@@ -295,7 +297,23 @@ def main(argv):
   opts, argv = o.parse_args(argv)
   assert all(tag.startswith('h') for tag in opts.toc_tags), opts.toc_tags
 
-  Render(opts, sys.stdin, sys.stdout)
+  if len(argv) == 1:
+    # Old style for blog: it's a filter
+    Render(opts, sys.stdin, sys.stdout)
+    return
+
+  # Otherwise we expect metadata and content
+
+  import json
+  with open(argv[1]) as f:
+    meta = json.load(f)
+
+  #print(meta, file=sys.stderr)
+
+  with open(argv[2]) as content_f:
+    doc_html.Header(meta, sys.stdout)
+    Render(opts, content_f, sys.stdout)
+    doc_html.Footer(meta, sys.stdout)
 
 
 if __name__ == '__main__':

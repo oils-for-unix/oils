@@ -152,7 +152,7 @@ osh-quick-ref() {
 
 cmark() {
   # h2 and h3 are shown in TOC.  The blog uses "legacy" h3 and h4.
-  devtools/cmark.py --toc-tag h2 --toc-tag h3 --toc-pretty-href
+  devtools/cmark.py --toc-tag h2 --toc-tag h3 --toc-pretty-href "$@"
 }
 
 markdown2html() {
@@ -182,6 +182,8 @@ EOF
 EOF
   } > $out
 }
+
+# TODO: Fix rendering of these
 
 release-index() {
   local out=${1:-_tmp/release-index.html}
@@ -218,32 +220,65 @@ readonly DOCS=(
   data-model
 )
 
-# TODO:
-# - Use devtools/split_doc.py
-#   - repo_url and css_files will be in JSON
-# - and then just --meta devtools/cmark.py, and it will add the right stuff in
-#   the body
+readonly TIMESTAMP=$(date)
 
-manual() {
-  local root_dir=${1:-_release/VERSION}
-  local release_date=${2:-}
+split-and-render() {
+  local markdown=${1:-doc/known-differences.md}
 
-  local css_link='
-    <link rel="stylesheet" type="text/css" href="../web/manual.css" />
-    <link rel="stylesheet" type="text/css" href="../web/toc.css" />
-  '
+  local name=$(basename $markdown .md)
 
-  # TODO: cmark.py could replace <span class="date"></span> with -v date=?
-  for d in "${DOCS[@]}"; do
+  local prefix=_tmp/doc/$name
 
-    markdown2html doc/$d.md $root_dir/doc/$d.html "$css_link" ''
+  # Also add could add css_files.  The one in the file takes precedence always?
+
+  # css_files is a space-separated list
+  devtools/split_doc.py \
+    -v build_timestamp="$TIMESTAMP" \
+    -v oil_version="$OIL_VERSION" \
+    -v css_files='../web/manual.css ../web/toc.css' \
+    $markdown $prefix
+
+  #ls -l _tmp/doc
+  #head _tmp/doc/*
+  #return
+
+  local out=_release/VERSION/doc/$name.html
+  cmark ${prefix}_meta.json ${prefix}_content.md > $out
+  log "Wrote $out"
+}
+
+# Special case for README
+# Do NOT split because we don't want front matter in the markdown source.
+render-readme() {
+  local name='README'
+  local prefix=_tmp/doc/$name
+  local out=_release/VERSION/doc/$name.html
+
+  local meta=${prefix}_meta.json 
+  cat >$meta <<EOF
+{ "title": "Oil Source Code",
+  "repo_url": "README.md",
+  "build_timestamp": "$TIMESTAMP",
+  "oil_version": "$OIL_VERSION",
+  "css_files": "../web/manual.css ../web/toc.css"
+}
+EOF
+
+  cmark $meta README.md > $out
+  log "Wrote $out"
+}
+
+all() {
+  mkdir -p _tmp/doc
+
+  for d in doc/known-differences.md doc/*-manual.md doc/eggex.md; do
+    #"${DOCS[@]}"; do
+    split-and-render $d
   done
 
-  markdown2html README.md $root_dir/doc/README.html "$css_link" ''
-
-
-  ls -l $root_dir/doc
+  render-readme
 }
+
 
 # TODO: This could use some CSS.
 man-page() {
