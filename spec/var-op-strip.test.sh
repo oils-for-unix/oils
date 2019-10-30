@@ -267,3 +267,39 @@ argv.py "${x%%}"
 ['abc']
 ['abc']
 ## END
+
+#### strip all unicode
+x=μabcμ
+echo "${x#?abc?}"
+echo "${x##?abc?}"
+echo "${x%?abc?}"
+echo "${x%%?abc?}"
+## STDOUT:
+
+
+
+
+## BUG dash/mksh STDOUT:
+μabcμ
+μabcμ
+μabcμ
+μabcμ
+## END
+
+#### strip none unicode
+x=μabcμ
+argv.py "${x#}"
+argv.py "${x##}"
+argv.py "${x%}"
+argv.py "${x%%}"
+## STDOUT:
+['\xce\xbcabc\xce\xbc']
+['\xce\xbcabc\xce\xbc']
+['\xce\xbcabc\xce\xbc']
+['\xce\xbcabc\xce\xbc']
+## BUG ash STDOUT:
+['\xce\xbcabc\xce\xbc']
+['\xbcabc\xce\xbc']
+['\xce\xbcabc\xce\xbc']
+['\xce']
+## END
