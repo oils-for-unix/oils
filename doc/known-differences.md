@@ -155,21 +155,6 @@ execution of a command named `a[1`.
 
 These differences occur in subsequent stages of parsing, or in runtime parsing.
 
-### Variable names in assignments must be constants
-
-That is, they can't be variables themselves.
-
-No:
-
-    declare "$1"=abc
-
-Yes:
-
-    declare x=abc
-
-
-NOTE: This restriction will probably be relaxed.
-
 ### Brace expansion is all or nothing
 
 No:

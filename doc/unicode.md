@@ -1,7 +1,8 @@
 Notes on Unicode in Shell
 =========================
 
-List of operations that are aware of code points:
+This is a list of operations in shell that should be aware of Unicode
+characters.  (OSH doesn't implement all of them yet, e.g. all the glob stuff.)
 
 - Length operator counts code points: `${#s}`
   - TODO: provide an option to count bytes.
@@ -12,6 +13,8 @@ List of operations that are aware of code points:
   - `[[ $x == ? ]]`
   - `${s#?}` (remove one character)
   - `${s/?/x}` (note: this uses our glob to ERE translator for position)
+- `printf '%d' \'c` where `c` is an arbitrary character.  This is an obscure
+  syntax for `ord()`, i.e. getting an integer from an encoded character.
 
 List of operations that depend on the locale (not implemented):
 
@@ -26,4 +29,3 @@ Other:
 - The prompt width is calculated with `wcswidth()`, which doesn't just count
   code points.  It calculates the **display width** of characters, which is
   different in general.
-

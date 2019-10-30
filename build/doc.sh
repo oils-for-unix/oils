@@ -184,12 +184,14 @@ split-and-render() {
 
   # Also add could add css_files.  The one in the file takes precedence always?
 
-  # css_files is a space-separated list
+  # css_files: a space-separated list
+  # all_docs_url: so we link from doc/foo.html -> doc/
+
   devtools/split_doc.py \
     -v build_timestamp="$TIMESTAMP" \
     -v oil_version="$OIL_VERSION" \
     -v css_files='../web/manual.css ../web/toc.css' \
-    -v all_docs_url='..' \
+    -v all_docs_url='.' \
     $src $prefix
 
   #ls -l _tmp/doc
@@ -228,7 +230,7 @@ render-only() {
 { "title": "$title",
   "repo_url": "$src",
   "css_files": "$css_files",
-  "all_docs_url": "..",
+  "all_docs_url": ".",
 
   "build_timestamp": "$TIMESTAMP",
   "oil_version": "$OIL_VERSION"
@@ -249,7 +251,10 @@ special() {
 all() {
   mkdir -p _tmp/doc
 
-  for d in doc/known-differences.md doc/*-manual.md doc/eggex.md; do
+  # TODO: We can set repo_url here!  Then we don't need it for most docs.
+  # split_doc.py can return {} if the doc doesn't start with ---
+
+  for d in doc/index.md doc/known-differences.md doc/*-manual.md doc/eggex.md; do
     #"${DOCS[@]}"; do
     split-and-render $d
   done
