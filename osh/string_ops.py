@@ -109,10 +109,10 @@ def _PreviousUtf8Char(s, i):
     byte_as_int = ord(s[i])
     if (byte_as_int >> 6) != 0b10:
       offset = following_i - i
-      char_length = _Utf8CharLen(byte_as_int)
-      if offset > 4 or offset != char_length:
+      if offset != _Utf8CharLen(byte_as_int):
         # Leaving a generic error for now, but if we want to, it's not
-        # hard to calculate the position where things go wrong.
+        # hard to calculate the position where things go wrong.  Note
+        # that offset might be more than 4, for an invalid utf-8 string.
         raise util.InvalidUtf8(INVALID_START)
       return i
 
