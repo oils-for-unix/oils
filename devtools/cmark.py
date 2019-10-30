@@ -289,22 +289,6 @@ def Options():
       help='h tags to include in the TOC, e.g. h2 h3')
   return p
 
-# --extract-metadata : title plus front matter
-#
-# Move shell markdown2html here then?
-# maybe add 
-#
-# What about update-src-versions?  That's for every doc I guess.
-
-
-"""
-- repo-url: doc/README.md
-
-Title is h1
-===========
-
-"""
-
 
 def main(argv):
   o = Options()

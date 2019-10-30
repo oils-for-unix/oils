@@ -193,6 +193,8 @@ release-index() {
   markdown2html doc/release-index.md $out "$css_link" ''
 }
 
+# NOTE: This can't have front matter!  Just write INSTALL_meta.json with
+# css_urls then.
 install() {
   local root_dir=${1:-_release/VERSION}
   local css_link='<link rel="stylesheet" type="text/css" href="../web/install.css" />'
@@ -216,6 +218,12 @@ readonly DOCS=(
   data-model
 )
 
+# TODO:
+# - Use devtools/split_doc.py
+#   - repo_url and css_files will be in JSON
+# - and then just --meta devtools/cmark.py, and it will add the right stuff in
+#   the body
+
 manual() {
   local root_dir=${1:-_release/VERSION}
   local release_date=${2:-}
@@ -232,6 +240,7 @@ manual() {
   done
 
   markdown2html README.md $root_dir/doc/README.html "$css_link" ''
+
 
   ls -l $root_dir/doc
 }
@@ -279,6 +288,24 @@ important-source-code() {
   mkdir -p $dest/$(dirname $rel_path)
     cp --no-target-directory -v $rel_path $dest/$rel_path
   done
+}
+
+split-doc-demo() {
+  cat > _tmp/testdoc.md <<EOF
+---
+title: foo
+---
+
+Title
+=====
+
+hello
+
+EOF
+
+  devtools/split_doc.py _tmp/testdoc.md _tmp/testdoc
+
+  head _tmp/testdoc*
 }
 
 "$@"
