@@ -27,8 +27,8 @@ def Header(meta, f):
   </head>
   <body>
     <p id="home-link">
-      <a href="https://github.com/oilshell/oil/blob/master/%(repo_url)s">edit</a> |
-      <a href="..">all docs</a>
+      <a href="https://github.com/oilshell/oil/blob/master/%(repo_url)s" id="source-link">source</a> |
+      <a href="%(all_docs_url)s">all docs</a>
         for <span id="version-in-header">version %(oil_version)s</span> |
       <a href="/">oilshell.org</a>
     </p>

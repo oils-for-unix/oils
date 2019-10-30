@@ -1,7 +1,13 @@
-<!-- NOTE: This file is at /release/$VERSION/index.html -->
+---
+repo_url: doc/release-index.md
+css_files: web/release-index.css
+all_docs_url: doc/
+---
 
 Oil 0.7.pre5
 ============
+
+<!-- NOTE: This file is published to /release/$VERSION/index.html -->
 
 <span class="date">
 <!-- REPLACE_WITH_DATE -->

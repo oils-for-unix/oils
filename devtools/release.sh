@@ -525,10 +525,10 @@ build-tree() {
   # NOTE: This action is also run in the build.  It generates code that goes in
   # the binary.
   build/doc.sh osh-quick-ref $root
-  build/doc.sh install $root
-  build/doc.sh manual $root $release_date
 
-  build/doc.sh release-index _tmp/release-index.html
+  # Writes _release/VERSION and _tmp/release-index.html
+  build/doc.sh all
+
   add-date-and-links $release_date < _tmp/release-index.html > $root/index.html
 
   # Problem: You can't preview it without .wwz!

@@ -1,22 +1,41 @@
 /* For INSTALL.txt as HTML */
 
-/* COMMON */
 body {
   margin: 0 auto;
   width: 40em;
   font-family: monospace;
 }
 
+p, ul, ol {
+  margin-left: 2em;
+}
+
+h1 {
+  font-size: 1.5em;  /* reduce to what browsers apparently use for h2 */
+  font-family: serif;
+}
+
+h2 {
+  font-size: 1.2em;  /* reduce to what browsers apparently use for h3 */
+  font-family: serif;
+}
+
 pre {
-  color: green;
-  margin-left: 4em;
+  background-color: #eee;
+  padding: 1em;
+  margin-left: 2em;
 }
 
 code {
-  color: green;
+  color: darkgreen;
 }
 
 #home-link {
   text-align: right;
+  font-family: serif;
 }
-/* END COMMON */
+
+#version-in-header {
+  color: darkgreen;
+  font-weight: bold;
+}

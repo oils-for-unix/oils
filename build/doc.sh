@@ -155,54 +155,6 @@ cmark() {
   devtools/cmark.py --toc-tag h2 --toc-tag h3 --toc-pretty-href "$@"
 }
 
-markdown2html() {
-  local src=$1
-  local out=$2
-  local more_css_link=${3:-}
-
-  { cat <<EOF
-<!DOCTYPE html>
-<html>
-  <head>
-    $more_css_link
-  </head>
-  <body>
-    <p id="home-link">
-      <a href="/releases.html">all releases</a> |
-      <a href="/">oilshell.org</a>
-    </p>
-EOF
-  
-    cmark < $src
-
-    _build-timestamp
-    cat <<EOF
-  </body>
-</html>
-EOF
-  } > $out
-}
-
-# TODO: Fix rendering of these
-
-release-index() {
-  local out=${1:-_tmp/release-index.html}
-  # NOTE: We're at /release/0.6.pre10/index.html, and then there is a
-  # web/release-index.css file in each release tree.
-
-  # Not monospace
-  local css_link='<link rel="stylesheet" type="text/css" href="web/release-index.css" />'
-  markdown2html doc/release-index.md $out "$css_link" ''
-}
-
-# NOTE: This can't have front matter!  Just write INSTALL_meta.json with
-# css_urls then.
-install() {
-  local root_dir=${1:-_release/VERSION}
-  local css_link='<link rel="stylesheet" type="text/css" href="../web/install.css" />'
-  markdown2html INSTALL.txt $root_dir/doc/INSTALL.html "$css_link"
-}
-
 readonly DOCS=(
   # polished
   osh-manual oil-manual known-differences eggex 
@@ -223,9 +175,10 @@ readonly DOCS=(
 readonly TIMESTAMP=$(date)
 
 split-and-render() {
-  local markdown=${1:-doc/known-differences.md}
+  local src=${1:-doc/known-differences.md}
 
-  local name=$(basename $markdown .md)
+  local name=$(basename $src .md)
+  local out=${2:-_release/VERSION/doc/$name.html}
 
   local prefix=_tmp/doc/$name
 
@@ -236,36 +189,61 @@ split-and-render() {
     -v build_timestamp="$TIMESTAMP" \
     -v oil_version="$OIL_VERSION" \
     -v css_files='../web/manual.css ../web/toc.css' \
-    $markdown $prefix
+    -v all_docs_url='..' \
+    $src $prefix
 
   #ls -l _tmp/doc
   #head _tmp/doc/*
   #return
 
-  local out=_release/VERSION/doc/$name.html
   cmark ${prefix}_meta.json ${prefix}_content.md > $out
   log "Wrote $out"
 }
 
 # Special case for README
 # Do NOT split because we don't want front matter in the markdown source.
-render-readme() {
-  local name='README'
+render-only() {
+  local src=${1:-README.md}
+  local css_files=${2:-'../web/manual.css ../web/toc.css'}
+  local title=${3:-'Oil Source Code'}
+
+  local name
+  case $src in 
+    *.md)
+      name=$(basename $src .md)
+      ;;
+    *.txt)
+      name=$(basename $src .txt)
+      ;;
+    *)
+      name=$(basename $src)
+      ;;
+  esac
+
   local prefix=_tmp/doc/$name
   local out=_release/VERSION/doc/$name.html
 
   local meta=${prefix}_meta.json 
   cat >$meta <<EOF
-{ "title": "Oil Source Code",
-  "repo_url": "README.md",
+{ "title": "$title",
+  "repo_url": "$src",
+  "css_files": "$css_files",
+  "all_docs_url": "..",
+
   "build_timestamp": "$TIMESTAMP",
-  "oil_version": "$OIL_VERSION",
-  "css_files": "../web/manual.css ../web/toc.css"
+  "oil_version": "$OIL_VERSION"
 }
 EOF
 
-  cmark $meta README.md > $out
+  cmark $meta $src > $out
   log "Wrote $out"
+}
+
+special() {
+  render-only 'README.md' '../web/manual.css ../web/toc.css' 'Oil Source Code'
+  render-only 'INSTALL.txt' '../web/install.css' 'Installing Oil'
+
+  split-and-render doc/release-index.md _tmp/release-index.html
 }
 
 all() {
@@ -276,7 +254,7 @@ all() {
     split-and-render $d
   done
 
-  render-readme
+  special
 }
 
 
