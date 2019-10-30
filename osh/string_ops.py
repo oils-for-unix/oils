@@ -76,7 +76,11 @@ def _Utf8CharLen(starting_byte):
 
 def _NextUtf8Char(s, i):
   """
-  Given a string and a byte offset, returns the byte position of the next char.
+  Given a string and a byte offset, returns the byte position after
+  the character at this position.  Usually this is the position of the
+  next character, but for the last character in the string, it's the
+  position just past the end of the string.
+
   Validates UTF-8.
   """
   byte_as_int = ord(s[i])  # Should never raise IndexError
