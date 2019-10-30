@@ -180,6 +180,7 @@ class FunctionsTest(unittest.TestCase):
       self.assertEqual('section-2-3', cmark.PrettyHref("Section 2 + 3"))
       self.assertEqual('break-return-continue', cmark.PrettyHref("break / return / continue"))
       self.assertEqual('inside', cmark.PrettyHref('Inside ${}'))
+      self.assertEqual('bash-compatible', cmark.PrettyHref('Bash-Compatible'))
 
 
 if __name__ == '__main__':

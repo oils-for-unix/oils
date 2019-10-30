@@ -57,8 +57,8 @@ def PrettyHref(s):
 
   This is modelled after what github does.  It makes everything lower case.
   """
-  # Split by whitespace
-  words = re.split(r'\s+', s)
+  # Split by whitespace or hyphen
+  words = re.split(r'[\s\-]+', s)
 
   # Keep only alphanumeric
   keep = [''.join(re.findall(r'\w+', w)) for w in words]
