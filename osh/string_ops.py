@@ -61,6 +61,19 @@ def _CheckContinuationByte(byte):
     raise util.InvalidUtf8(INVALID_CONT)
 
 
+def _Utf8CharLen(starting_byte):
+  if (starting_byte >> 7) == 0b0:
+    return 1
+  elif (starting_byte >> 5) == 0b110:
+    return 2
+  elif (starting_byte >> 4) == 0b1110:
+    return 3
+  elif (starting_byte >> 3) == 0b11110:
+    return 4
+  else:
+    raise util.InvalidUtf8(INVALID_START)
+
+
 def _NextUtf8Char(s, i):
   """
   Given a string and a byte offset, returns the byte position of the next char.
@@ -69,22 +82,10 @@ def _NextUtf8Char(s, i):
   byte_as_int = ord(s[i])  # Should never raise IndexError
 
   try:
-    if (byte_as_int >> 7) == 0b0:
-      i += 1
-    elif (byte_as_int >> 5) == 0b110:
-      _CheckContinuationByte(s[i+1])
-      i += 2
-    elif (byte_as_int >> 4) == 0b1110:
-      _CheckContinuationByte(s[i+1])
-      _CheckContinuationByte(s[i+2])
-      i += 3
-    elif (byte_as_int >> 3) == 0b11110:
-      _CheckContinuationByte(s[i+1])
-      _CheckContinuationByte(s[i+2])
-      _CheckContinuationByte(s[i+3])
-      i += 4
-    else:
-      raise util.InvalidUtf8(INVALID_START)
+    length = _Utf8CharLen(byte_as_int)
+    for j in xrange(i + 1, i + length):
+      _CheckContinuationByte(s[j])
+    i += length
   except IndexError:
     raise util.InvalidUtf8(INCOMPLETE_CHAR)
 
