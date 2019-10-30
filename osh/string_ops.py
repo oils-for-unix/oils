@@ -96,6 +96,29 @@ def _NextUtf8Char(s, i):
   return i
 
 
+def _PreviousUtf8Char(s, i):
+  """
+  Given a string and a byte offset, returns the position of the
+  character before that offset.
+
+  Validates UTF-8.
+  """
+  following_i = i
+  while i > 0:
+    i -= 1
+    byte_as_int = ord(s[i])
+    if (byte_as_int >> 6) != 0b10:
+      offset = following_i - i
+      char_length = _Utf8CharLen(byte_as_int)
+      if offset > 4 or offset != char_length:
+        # Leaving a generic error for now, but if we want to, it's not
+        # hard to calculate the position where things go wrong.
+        raise util.InvalidUtf8(INVALID_START)
+      return i
+
+  raise util.InvalidUtf8(INVALID_START)
+
+
 def CountUtf8Chars(s):
   """Returns the number of utf-8 characters in the byte string 's'.
 
@@ -218,10 +241,6 @@ def DoUnarySuffixOp(s, op, arg):
   # For patterns, do fnmatch() in a loop.
   #
   # TODO:
-  # - The loop needs to iterate over code points, not bytes!
-  #   - The forward case can probably be handled in a similar manner.
-  #   - The backward case might be handled by pre-calculating an array of start
-  #     positions with _NextUtf8Char.
   # - Another potential fast path:
   #   v=aabbccdd
   #   echo ${v#*b}  # strip shortest prefix
@@ -236,41 +255,53 @@ def DoUnarySuffixOp(s, op, arg):
   if op.op_id == Id.VOp1_Pound:  # shortest prefix
     # 'abcd': match '', 'a', 'ab', 'abc', ...
     i = 0
-    while i <= n:
+    while True:
+      assert i <= n
       #log('Matching pattern %r with %r', arg, s[:i])
       if libc.fnmatch(arg, s[:i]):
         return s[i:]
-      i += 1
+      if i >= n:
+        break
+      i = _NextUtf8Char(s, i)
     return s
 
   elif op.op_id == Id.VOp1_DPound:  # longest prefix
     # 'abcd': match 'abc', 'ab', 'a'
     i = n
-    while i >= 0:
+    while True:
+      assert i >= 0
       #log('Matching pattern %r with %r', arg, s[:i])
       if libc.fnmatch(arg, s[:i]):
         return s[i:]
-      i -= 1
+      if i == 0:
+        break
+      i = _PreviousUtf8Char(s, i)
     return s
 
   elif op.op_id == Id.VOp1_Percent:  # shortest suffix
     # 'abcd': match 'abcd', 'abc', 'ab', 'a'
     i = n
-    while i >= 0:
+    while True:
+      assert i >= 0
       #log('Matching pattern %r with %r', arg, s[:i])
       if libc.fnmatch(arg, s[i:]):
         return s[:i]
-      i -= 1
+      if i == 0:
+        break
+      i = _PreviousUtf8Char(s, i)
     return s
 
   elif op.op_id == Id.VOp1_DPercent:  # longest suffix
     # 'abcd': match 'abc', 'bc', 'c', ...
     i = 0
-    while i <= n:
+    while True:
+      assert i <= n
       #log('Matching pattern %r with %r', arg, s[:i])
       if libc.fnmatch(arg, s[i:]):
         return s[:i]
-      i += 1
+      if i >= n:
+        break
+      i = _NextUtf8Char(s, i)
     return s
 
   else:

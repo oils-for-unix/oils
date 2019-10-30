@@ -63,9 +63,17 @@ echo ${v%[[:alpha:]]}
 # NOTE: LANG is set to utf-8.
 v='μ-'
 echo ${v#?}  # ? is a glob that stands for one character
-## stdout: -
-## BUG dash/mksh/ash stdout-repr: '\xbc-\n'
-## BUG zsh stdout-repr: '\n'
+echo ${v##?}
+v='-μ'
+echo ${v%?}  # ? is a glob that stands for one character
+echo ${v%%?}
+## STDOUT:
+-
+-
+-
+-
+## BUG dash/mksh/ash stdout-repr: '\xbc-\n\xbc-\n-\xce\n-\xce\n'
+## BUG zsh stdout-repr: '\n\n\n\n'
 
 #### Bug fix: Test that you can remove everything with glob
 s='--x--'
