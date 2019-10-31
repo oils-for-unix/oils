@@ -61,34 +61,87 @@ def _CheckContinuationByte(byte):
     raise util.InvalidUtf8(INVALID_CONT)
 
 
+def _Utf8CharLen(starting_byte):
+  if (starting_byte >> 7) == 0b0:
+    return 1
+  elif (starting_byte >> 5) == 0b110:
+    return 2
+  elif (starting_byte >> 4) == 0b1110:
+    return 3
+  elif (starting_byte >> 3) == 0b11110:
+    return 4
+  else:
+    raise util.InvalidUtf8(INVALID_START)
+
+
 def _NextUtf8Char(s, i):
   """
-  Given a string and a byte offset, returns the byte position of the next char.
+  Given a string and a byte offset, returns the byte position after
+  the character at this position.  Usually this is the position of the
+  next character, but for the last character in the string, it's the
+  position just past the end of the string.
+
   Validates UTF-8.
   """
   byte_as_int = ord(s[i])  # Should never raise IndexError
 
   try:
-    if (byte_as_int >> 7) == 0b0:
-      i += 1
-    elif (byte_as_int >> 5) == 0b110:
-      _CheckContinuationByte(s[i+1])
-      i += 2
-    elif (byte_as_int >> 4) == 0b1110:
-      _CheckContinuationByte(s[i+1])
-      _CheckContinuationByte(s[i+2])
-      i += 3
-    elif (byte_as_int >> 3) == 0b11110:
-      _CheckContinuationByte(s[i+1])
-      _CheckContinuationByte(s[i+2])
-      _CheckContinuationByte(s[i+3])
-      i += 4
-    else:
-      raise util.InvalidUtf8(INVALID_START)
+    length = _Utf8CharLen(byte_as_int)
+    for j in xrange(i + 1, i + length):
+      _CheckContinuationByte(s[j])
+    i += length
   except IndexError:
     raise util.InvalidUtf8(INCOMPLETE_CHAR)
 
   return i
+
+
+def _PreviousUtf8Char(s, i):
+  """
+  Given a string and a byte offset, returns the position of the
+  character before that offset.  To start (find the first byte of the
+  last character), pass len(s) for the initial value of i.
+
+  Validates UTF-8.
+  """
+  # All bytes in a valid UTF-8 string have one of the following formats:
+  #
+  #   0xxxxxxx (1-byte char)
+  #   110xxxxx (start of 2-byte char)
+  #   1110xxxx (start of 3-byte char)
+  #   11110xxx (start of 4-byte char)
+  #   10xxxxxx (continuation byte)
+  #
+  # Any byte that starts with 10... MUST be a continuation byte,
+  # otherwise it must be the start of a character (or just invalid
+  # data).
+  #
+  # Walking backward, we stop at the first non-continuaton byte
+  # found.  We try to interpret it as a valid UTF-8 character starting
+  # byte, and check that it indicates the correct length, based on how
+  # far we've moved from the original byte.  Possible problems:
+  #   * byte we stopped on does not have a valid value (e.g., 11111111)
+  #   * start byte indicates more or fewer continuation bytes than we've seen
+  #   * no start byte at beginning of array
+  #
+  # Note that because we are going backward, on malformed input, we
+  # won't error out in the same place as when parsing the string
+  # forwards as normal.
+  orig_i = i
+
+  while i > 0:
+    i -= 1
+    byte_as_int = ord(s[i])
+    if (byte_as_int >> 6) != 0b10:
+      offset = orig_i - i
+      if offset != _Utf8CharLen(byte_as_int):
+        # Leaving a generic error for now, but if we want to, it's not
+        # hard to calculate the position where things go wrong.  Note
+        # that offset might be more than 4, for an invalid utf-8 string.
+        raise util.InvalidUtf8(INVALID_START)
+      return i
+
+  raise util.InvalidUtf8(INVALID_START)
 
 
 def CountUtf8Chars(s):
@@ -213,10 +266,6 @@ def DoUnarySuffixOp(s, op, arg):
   # For patterns, do fnmatch() in a loop.
   #
   # TODO:
-  # - The loop needs to iterate over code points, not bytes!
-  #   - The forward case can probably be handled in a similar manner.
-  #   - The backward case might be handled by pre-calculating an array of start
-  #     positions with _NextUtf8Char.
   # - Another potential fast path:
   #   v=aabbccdd
   #   echo ${v#*b}  # strip shortest prefix
@@ -231,41 +280,53 @@ def DoUnarySuffixOp(s, op, arg):
   if op.op_id == Id.VOp1_Pound:  # shortest prefix
     # 'abcd': match '', 'a', 'ab', 'abc', ...
     i = 0
-    while i <= n:
+    while True:
+      assert i <= n
       #log('Matching pattern %r with %r', arg, s[:i])
       if libc.fnmatch(arg, s[:i]):
         return s[i:]
-      i += 1
+      if i >= n:
+        break
+      i = _NextUtf8Char(s, i)
     return s
 
   elif op.op_id == Id.VOp1_DPound:  # longest prefix
     # 'abcd': match 'abc', 'ab', 'a'
     i = n
-    while i >= 0:
+    while True:
+      assert i >= 0
       #log('Matching pattern %r with %r', arg, s[:i])
       if libc.fnmatch(arg, s[:i]):
         return s[i:]
-      i -= 1
+      if i == 0:
+        break
+      i = _PreviousUtf8Char(s, i)
     return s
 
   elif op.op_id == Id.VOp1_Percent:  # shortest suffix
     # 'abcd': match 'abcd', 'abc', 'ab', 'a'
     i = n
-    while i >= 0:
+    while True:
+      assert i >= 0
       #log('Matching pattern %r with %r', arg, s[:i])
       if libc.fnmatch(arg, s[i:]):
         return s[:i]
-      i -= 1
+      if i == 0:
+        break
+      i = _PreviousUtf8Char(s, i)
     return s
 
   elif op.op_id == Id.VOp1_DPercent:  # longest suffix
     # 'abcd': match 'abc', 'bc', 'c', ...
     i = 0
-    while i <= n:
+    while True:
+      assert i <= n
       #log('Matching pattern %r with %r', arg, s[:i])
       if libc.fnmatch(arg, s[i:]):
         return s[:i]
-      i += 1
+      if i >= n:
+        break
+      i = _NextUtf8Char(s, i)
     return s
 
   else:

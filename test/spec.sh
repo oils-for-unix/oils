@@ -535,7 +535,7 @@ var-op-other() {
 }
 
 var-op-strip() {
-  sh-spec spec/var-op-strip.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/var-op-strip.test.sh \
     ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 

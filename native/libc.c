@@ -71,7 +71,15 @@ func_fnmatch(PyObject *self, PyObject *args) {
   int flags = 0;
 #endif
 
+  const char *old_locale = setlocale(LC_CTYPE, NULL);
+  if (setlocale(LC_CTYPE, "") == NULL) {
+	  PyErr_SetString(PyExc_SystemError, "Invalid locale for LC_CTYPE");
+	  return NULL;
+  }
+
   int ret = fnmatch(pattern, str, flags);
+
+  setlocale(LC_CTYPE, old_locale);
 
   switch (ret) {
   case 0:
