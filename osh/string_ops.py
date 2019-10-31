@@ -15,8 +15,13 @@ from osh import glob_
 
 import libc
 
+from typing import List, Tuple, TYPE_CHECKING
+if TYPE_CHECKING:
+  from _devbuild.gen.syntax_asdl import suffix_op__Unary, suffix_op__PatSub
+
 
 def Utf8Encode(code):
+  # type: (int) -> str
   """Return utf-8 encoded bytes from a unicode code point.
 
   Based on https://stackoverflow.com/a/23502707
@@ -57,11 +62,13 @@ INVALID_START = 'Invalid start of UTF-8 character'
 
 
 def _CheckContinuationByte(byte):
+  # type: (str) -> None
   if (ord(byte) >> 6) != 0b10:
     raise util.InvalidUtf8(INVALID_CONT)
 
 
 def _Utf8CharLen(starting_byte):
+  # type: (int) -> int
   if (starting_byte >> 7) == 0b0:
     return 1
   elif (starting_byte >> 5) == 0b110:
@@ -75,6 +82,7 @@ def _Utf8CharLen(starting_byte):
 
 
 def _NextUtf8Char(s, i):
+  # type: (str, int) -> int
   """
   Given a string and a byte offset, returns the byte position after
   the character at this position.  Usually this is the position of the
@@ -97,6 +105,7 @@ def _NextUtf8Char(s, i):
 
 
 def _PreviousUtf8Char(s, i):
+  # type: (str, int) -> int
   """
   Given a string and a byte offset, returns the position of the
   character before that offset.  To start (find the first byte of the
@@ -145,6 +154,7 @@ def _PreviousUtf8Char(s, i):
 
 
 def CountUtf8Chars(s):
+  # type: (str) -> int
   """Returns the number of utf-8 characters in the byte string 's'.
 
   TODO: Raise exception rather than returning a string, so we can set the exit
@@ -165,6 +175,7 @@ def CountUtf8Chars(s):
 
 
 def AdvanceUtf8Chars(s, num_chars, byte_offset):
+  # type: (str, int, int) -> int
   """
   Advance a certain number of UTF-8 chars, beginning with the given byte
   offset.  Returns a byte offset.
@@ -215,6 +226,7 @@ def AdvanceUtf8Chars(s, num_chars, byte_offset):
 #   - Compile time errors for [[:space:]] ?
 
 def DoUnarySuffixOp(s, op, arg):
+  # type: (str, suffix_op__Unary, str) -> str
   """Helper for ${x#prefix} and family."""
 
   # Fast path for constant strings.
@@ -334,6 +346,7 @@ def DoUnarySuffixOp(s, op, arg):
 
 
 def _AllMatchPositions(s, regex):
+  # type: (str, str) -> List[Tuple[int, int]]
   """Returns a list of all (start, end) match positions of the regex against s.
 
   (If there are no matches, it returns the empty list.)
@@ -352,6 +365,7 @@ def _AllMatchPositions(s, regex):
 
 
 def _PatSubAll(s, regex, replace_str):
+  # type: (str, str, str) -> str
   parts = []
   prev_end = 0
   for start, end in _AllMatchPositions(s, regex):
@@ -365,6 +379,8 @@ def _PatSubAll(s, regex, replace_str):
 class GlobReplacer(object):
 
   def __init__(self, regex, replace_str, slash_spid):
+    # type: (str, str, int) -> None
+
     # TODO: It would be nice to cache the compilation of the regex here,
     # instead of just the string.  That would require more sophisticated use of
     # the Python/C API in libc.c, which we might want to avoid.
@@ -373,9 +389,12 @@ class GlobReplacer(object):
     self.slash_spid = slash_spid
 
   def __repr__(self):
+    # type: () -> str
     return '<_GlobReplacer regex %r r %r>' % (self.regex, self.replace_str)
 
   def Replace(self, s, op):
+    # type: (str, suffix_op__PatSub) -> str
+
     regex = '(%s)' % self.regex  # make it a group
 
     if op.replace_mode == Id.Lit_Slash:
@@ -400,6 +419,7 @@ class GlobReplacer(object):
 # TODO: Replace with ShellQuoteOneLine?  It may need more testing and
 # optimization.
 def ShellQuote(s):
+  # type: (str) -> str
   """Quote 's' in a way that can be reused as shell input.
 
   It doesn't necessarily match bash byte-for-byte.  IIRC bash isn't consistent
@@ -418,6 +438,8 @@ def ShellQuote(s):
 
 
 def ShellQuoteOneLine(s):
+  # type: (str) -> str
+
   # TODO: Could use a regex to speed this up
   needs_dollar = False
   for c in s:
@@ -438,6 +460,7 @@ def ShellQuoteOneLine(s):
 
 
 def ShellQuoteB(s):
+  # type: (str) -> str
   """Quote by adding backslashes.
 
   Used for autocompletion, so it's friendlier for display on the command line.
@@ -456,5 +479,4 @@ def ShellQuoteB(s):
   # {} for brace expansion
   # space because it separates words
   return util.BackslashEscape(s, ' `~!$&*()[]{}\\|;\'"<>?')
-
 
