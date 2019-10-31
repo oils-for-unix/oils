@@ -247,3 +247,19 @@ echo ${x//[^[z]/<}  # also accepted
 ## END
 ## N-I dash stdout-json: ""
 ## N-I dash status: 2
+
+#### Glob unicode char
+
+touch $TMP/__a__
+touch $TMP/__μ__
+cd $TMP
+
+echo __?__ 
+
+## STDOUT:
+__a__ __μ__
+## END
+## BUG dash/mksh/ash STDOUT:
+__a__
+## END
+# note: zsh also passes this, but it doesn't run with this file.

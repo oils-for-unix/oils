@@ -72,3 +72,23 @@ case "$x" in
 esac
 echo $result
 ## stdout: - X
+
+#### Match one unicode char
+
+for s in '__a__' '__μ__'; do
+  case $s in
+    __?__)
+      echo yes
+      ;;
+    *)
+      echo no
+  esac
+done
+## STDOUT:
+yes
+yes
+## END
+## BUG dash/mksh STDOUT:
+yes
+no
+## END

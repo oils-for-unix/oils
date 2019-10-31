@@ -352,7 +352,7 @@ loop() {
 }
 
 case_() {
-  sh-spec spec/case_.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/case_.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -442,7 +442,7 @@ sh-func() {
 }
 
 glob() {
-  sh-spec spec/glob.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/glob.test.sh --osh-failures-allowed 5 \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
@@ -670,7 +670,8 @@ extended-glob() {
 
 # This does string matching.
 extglob-match() {
-  sh-spec spec/extglob-match.test.sh $BASH $MKSH $OSH_LIST "$@"
+  sh-spec spec/extglob-match.test.sh --osh-failures-allowed 2 \
+    $BASH $MKSH $OSH_LIST "$@"
 }
 
 # ${!var} syntax -- oil should replace this with associative arrays.

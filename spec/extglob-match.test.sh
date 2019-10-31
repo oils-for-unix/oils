@@ -290,3 +290,34 @@ FALSE
 ## END
 ## N-I mksh stdout-json: ""
 ## N-I mksh status: 1
+
+
+#### regular glob of single unicode char
+shopt -s extglob
+[[ __a__ == __?__ ]]
+echo $?
+[[ __μ__ == __?__ ]]
+echo $?
+## STDOUT:
+0
+0
+## END
+## BUG mksh STDOUT:
+0
+1
+## END
+
+#### extended glob of single unicode char
+shopt -s extglob
+[[ __a__ == @(__?__) ]]
+echo $?
+[[ __μ__ == @(__?__) ]]
+echo $?
+## STDOUT:
+0
+0
+## END
+## BUG mksh STDOUT:
+0
+1
+## END
