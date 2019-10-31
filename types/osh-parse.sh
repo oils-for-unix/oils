@@ -46,6 +46,14 @@ typecheck() {
   MYPYPATH=. PYTHONPATH=.  mypy --py2 "$@"
 }
 
+typecheck-more() {
+  local flags="--strict --no-implicit-optional --no-strict-optional"
+
+  #typecheck $flags osh/word_compile.py
+  #typecheck $flags osh/string_ops.py
+  typecheck $flags osh/glob_.py
+}
+
 typecheck-all() {
   local manifest=$1
   local strict_none=${2:-}

@@ -2,18 +2,22 @@
 glob_.py
 """
 
-try:
-  import libc
-except ImportError:
-  from benchmarks import fake_libc as libc  # type: ignore
+import libc
 
-from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
-    glob_part_e, glob_part, word__Compound, word_part__Literal
+    glob_part_e, glob_part, glob_part_t, word__Compound, word_part__Literal
 )
 from core import util
 #from core.util import log
 from frontend import match
+
+# Note: using Sequence because it's covariant and not invariant.  Maybe change
+# it back?
+from typing import Optional, List, Sequence, Tuple, Any, TYPE_CHECKING
+if TYPE_CHECKING:
+  #from osh.state import ExecOpts
+  pass
 
 
 def LooksLikeGlob(s):
@@ -72,6 +76,7 @@ def LooksLikeStaticGlob(w):
 GLOB_META_CHARS = r'\*?[]-:!'
 
 def GlobEscape(s):
+  # type: (str) -> str
   """
   For SingleQuoted, DoubleQuoted, and EscapedLiteral
   """
@@ -79,6 +84,8 @@ def GlobEscape(s):
 
 
 def EreCharClassEscape(s):
+  # type: (str) -> str
+
   # \ is escaping
   # ^ would invert it at the front,
   # - is range
@@ -91,6 +98,7 @@ def EreCharClassEscape(s):
 ERE_META_CHARS = r'\?*+{}^$.()|'
 
 def ExtendedRegexEscape(s):
+  # type: (str) -> str
   """
   Quoted parts need to be regex-escaped when quoted, e.g. [[ $a =~ "{" ]].  I
   don't think libc has a function to do this.  Escape these characters:
@@ -102,6 +110,7 @@ def ExtendedRegexEscape(s):
 
 
 def GlobUnescape(s):  # used by cmd_exec
+  # type: (str) -> str
   """Remove glob escaping from a string.
 
   Used when there is no glob match.
@@ -140,12 +149,18 @@ def GlobUnescape(s):  # used by cmd_exec
 class _GlobParser(object):
 
   def __init__(self, lexer):
+    # type: (Any) -> None
+
+    # TODO: The lexer is an iterator!  Turn it into a class, because iterators
+    # won't translate to C++.
+
     self.lexer = lexer
-    self.token_type = None
+    self.token_type = None  # type: Optional[Id_t]
     self.token_val = ''
-    self.warnings = []
+    self.warnings = []  # type: List[str]
 
   def _Next(self):
+    # type: () -> None
     """Move to the next token."""
     try:
       self.token_type, self.token_val = self.lexer.next()
@@ -154,6 +169,7 @@ class _GlobParser(object):
       self.token_val = ''
 
   def _ParseCharClass(self):
+    # type: () -> Sequence[glob_part_t]
     """
     Returns:
       a CharClass if the parse suceeds, or a GlobLit if fails.  In the latter
@@ -161,7 +177,7 @@ class _GlobParser(object):
     """
     first_token = glob_part.GlobLit(self.token_type, self.token_val)
     balance = 1  # We already saw a [
-    tokens = []
+    tokens = []  # type: List[Tuple[Id_t, str]]
 
     # NOTE: There is a special rule where []] and [[] are valid globs.  Also
     # [^[] and sometimes [^]], although that one is ambiguous!
@@ -198,12 +214,13 @@ class _GlobParser(object):
     return [glob_part.CharClass(negated, [s for _, s in tokens])]
 
   def Parse(self):
+    # type: () -> Tuple[List[glob_part_t], List[str]]
     """
     Returns:
       regex string (or None if it's not a glob)
       A list of warnings about the syntax
     """
-    parts = []
+    parts = []  # type: List[glob_part_t]
 
     while True:
       self._Next()
@@ -237,6 +254,7 @@ class _GlobParser(object):
 _REGEX_CHARS_TO_ESCAPE = '.|^$()+*?[]{}\\'
 
 def _GenerateERE(parts):
+  # type: (List[glob_part_t]) -> str
   out = []
 
   for part in parts:
@@ -297,6 +315,7 @@ def _GenerateERE(parts):
 
 
 def GlobToERE(pat):
+  # type: (str) -> Tuple[str, List[str]]
   lexer = match.GLOB_LEXER.Tokens(pat)
   p = _GlobParser(lexer)
   parts, warnings = p.Parse()
@@ -320,6 +339,7 @@ def GlobToERE(pat):
 
 class Globber(object):
   def __init__(self, exec_opts):
+    # type: (Any) -> None
     self.exec_opts = exec_opts
 
     # NOTE: Bash also respects the GLOBIGNORE variable, but no other shells
@@ -337,6 +357,7 @@ class Globber(object):
     # - Include globstar since I use it, and zsh has it.
 
   def Expand(self, arg):
+    # type: (str) -> List[str]
     """Given a string that could be a glob, return a list of strings."""
     # e.g. don't glob 'echo' because it doesn't look like a glob
     if not LooksLikeGlob(arg):
