@@ -157,8 +157,12 @@ cmark() {
 
 readonly DOCS=(
   # polished
-  osh-manual oil-manual known-differences eggex 
+  osh-manual known-differences eggex 
   # needs polish
+  # Note: docs about the Oil language are prefixed 'oil-'.
+  # data-model and command-vs-expression-mode span both OSH and Oil.
+
+  index
   oil-options
   oil-keywords-and-builtins
   oil-assignment
@@ -167,7 +171,7 @@ readonly DOCS=(
   oil-literal-syntax
   oil-word-language
   oil-special-vars
-  func-proc-blocks
+  oil-func-proc-block
   eggex
   data-model
 )
@@ -192,6 +196,7 @@ split-and-render() {
     -v oil_version="$OIL_VERSION" \
     -v css_files='../web/manual.css ../web/toc.css' \
     -v all_docs_url='.' \
+    -v repo_url="$src" \
     $src $prefix
 
   #ls -l _tmp/doc
@@ -254,7 +259,8 @@ all() {
   # TODO: We can set repo_url here!  Then we don't need it for most docs.
   # split_doc.py can return {} if the doc doesn't start with ---
 
-  for d in doc/index.md doc/known-differences.md doc/*-manual.md doc/eggex.md; do
+  for d in doc/index.md doc/known-differences.md doc/*-manual.md \
+    doc/eggex.md doc/oil-options.md; do
     #"${DOCS[@]}"; do
     split-and-render $d
   done

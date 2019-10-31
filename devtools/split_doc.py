@@ -17,16 +17,19 @@ META_RE = re.compile(
     r'(\S+): [ ]* (.*)', re.VERBOSE)
 
 
-def SplitDocument(default_vals, entry_f, meta_f, content_f):
+def SplitDocument(default_vals, entry_f, meta_f, content_f, strict=False):
   """Split a document into metadata JSON and content Markdown.
 
   Used for blog posts and index.md / cross-ref.md.
   """
-  first_line = entry_f.readline().strip()
+  first_line = entry_f.readline()
+  if strict and first_line.strip() != '---':
+    raise RuntimeError("Document should start with --- (got %r)" % first_line)
+
+  meta = {}
 
   # TODO: if first_line is ---, then read metadata in key: value format.
-  if first_line == '---':
-    meta = {}
+  if first_line.strip() == '---':
     while True:
       line = entry_f.readline().strip()
       if line == '---':
@@ -57,37 +60,43 @@ def SplitDocument(default_vals, entry_f, meta_f, content_f):
       else:
         meta[name] = value
 
+    #print('line = %r' % line, file=sys.stderr)
+    while True:
+      first_nonempty = entry_f.readline()
+      if first_nonempty.strip() != '':
+        break
+
   else:
-    raise AssertionError(
-        "Document should start with --- (got %r)" % first_line)
+    if first_line:
+      first_nonempty = first_line
+    else:
+      while True:
+        first_nonempty = entry_f.readline()
+        if first_nonempty.strip() != '':
+          break
 
+  # Invariant: we've read the first non-empty line here.  Now we need to see if
+  # it's the title.
 
+  #print('first_nonempty = %r' % first_nonempty, file=sys.stderr)
+
+  line_two = entry_f.readline()
+  if re.match('=+', line_two):
+    meta['title'] = first_nonempty.strip()
+
+  # Fill in defaults after parsing all values.
   for name, value in default_vals.iteritems():
     if name not in meta:
       meta[name] = value
-
-  # Parse the title like this:
-  # ---
-  # repo-url:
-  # ---
-  #
-  # Title
-  # =====
-
-  one = entry_f.readline()
-  two = entry_f.readline()
-  three = entry_f.readline()
-  if re.match('=+', three):
-    meta['title'] = two.strip()
 
   json.dump(meta, meta_f, indent=2)
 
   # Read the rest of the file and write it
   contents = entry_f.read()
 
-  content_f.write(one)
-  content_f.write(two)
-  content_f.write(three)
+  content_f.write(first_nonempty)
+  content_f.write(line_two)
+
   content_f.write(contents)
 
   comments_url = meta.get('comments_url', '')
@@ -106,6 +115,9 @@ def Options():
   p.add_option(
       '-v', dest='default_vals', action='append', default=[],
       help="If the doc's own metadata doesn't define 'name', set it to this value")
+  p.add_option(
+      '-s', '--strict', dest='strict', action='store_true', default=False,
+      help="Require metadata")
   return p
 
 
@@ -128,7 +140,7 @@ def main(argv):
       open(entry_path) as entry_f, \
       open(meta_path, 'w') as meta_f, \
       open(content_path, 'w') as content_f:
-    SplitDocument(default_vals, entry_f, meta_f, content_f)
+    SplitDocument(default_vals, entry_f, meta_f, content_f, strict=opts.strict)
 
 
 if __name__ == '__main__':

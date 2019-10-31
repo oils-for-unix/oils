@@ -30,9 +30,17 @@ def Header(meta, f):
       <a href="https://github.com/oilshell/oil/blob/master/%(repo_url)s" id="source-link">source</a> |
       <a href="%(all_docs_url)s">all docs</a>
         for <span id="version-in-header">version %(oil_version)s</span> |
+      <a href="/releases.html">all versions</a> |
       <a href="/">oilshell.org</a>
     </p>
 ''' % meta)
+
+  if 'in_progress' in meta:
+    f.write('''\
+    <p style="color: darkred; font-size: x-large;">
+      NOTE: This document is a work in progress!
+    </p>
+''')
 
 
 def Footer(meta, f):
