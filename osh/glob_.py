@@ -260,9 +260,10 @@ def _GenerateERE(parts):
   out = []
 
   for part in parts:
+    tag = part.tag_()
     UP_part = part
 
-    if part.tag == glob_part_e.Literal:
+    if tag == glob_part_e.Literal:
       part = cast(glob_part__Literal, UP_part)
       if part.id == Id.Glob_EscapedChar:
         assert len(part.s) == 2, part.s
@@ -296,7 +297,7 @@ def _GenerateERE(parts):
       else:
         raise AssertionError(part.id)
 
-    elif part.tag == glob_part_e.Operator:
+    elif tag == glob_part_e.Operator:
       part = cast(glob_part__Operator, UP_part)
       if part.op_id == Id.Glob_QMark:
         out.append('.')
@@ -305,7 +306,7 @@ def _GenerateERE(parts):
       else:
         raise AssertionError
 
-    elif part.tag == glob_part_e.CharClass:
+    elif tag == glob_part_e.CharClass:
       part = cast(glob_part__CharClass, UP_part)
       out.append('[')
       if part.negated:
