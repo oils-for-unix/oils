@@ -279,7 +279,7 @@ echo "${x%%?abc?}"
 
 
 
-## BUG dash/mksh STDOUT:
+## BUG dash/mksh/ash STDOUT:
 μabcμ
 μabcμ
 μabcμ
@@ -297,9 +297,4 @@ argv.py "${x%%}"
 ['\xce\xbcabc\xce\xbc']
 ['\xce\xbcabc\xce\xbc']
 ['\xce\xbcabc\xce\xbc']
-## BUG ash STDOUT:
-['\xce\xbcabc\xce\xbc']
-['\xbcabc\xce\xbc']
-['\xce\xbcabc\xce\xbc']
-['\xce']
 ## END
