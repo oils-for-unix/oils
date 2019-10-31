@@ -14,6 +14,7 @@ TypingMeta = None
 TypeVar = None
 _ForwardRef = None
 List = None
+Sequence = None
 Tuple = None
 Optional = None
 Union = None
