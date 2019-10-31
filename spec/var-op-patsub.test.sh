@@ -146,3 +146,24 @@ a-b
 a-b
 a-b
 ## END
+
+#### Substitute one unicode character
+
+s='_μ_ and _μ_'
+
+# ? should match one char
+
+echo ${s//_?_/foo}  # all
+echo ${s/#_?_/foo}  # left
+echo ${s/%_?_/foo}  # right
+
+## STDOUT:
+foo and foo
+foo and _μ_
+_μ_ and foo
+## END
+## BUG mksh STDOUT:
+_μ_ and _μ_
+_μ_ and _μ_
+_μ_ and _μ_
+## END

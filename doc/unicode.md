@@ -1,8 +1,23 @@
 Notes on Unicode in Shell
 =========================
 
-This is a list of operations in shell that should be aware of Unicode
-characters.  (OSH doesn't implement all of them yet, e.g. all the glob stuff.)
+## Philosophy
+
+Oil's unicode support is unlike that of other shells because it's
+UTF-8-centric.
+
+In other words, it's like newer languages like Go, Rust, Julia, and Swift, as opposed
+, JavaScript, and Python (despite its Python heritage).  The latter languages
+use the notion of "multibyte characters".
+
+In particular, Oil doesn't have global variables like LANG for libc or a notion
+of "default encoding".  In my experience, these types of globals cause
+correctness problems.
+
+## List of Unicode-Aware Operations in Shell
+
+This is a list of operations that SHOULD be aware of Unicode characters.  OSH
+doesn't implement all of them yet, e.g. the globbing stuff.
 
 - Length operator counts code points: `${#s}`
   - TODO: provide an option to count bytes.
