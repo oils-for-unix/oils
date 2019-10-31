@@ -670,7 +670,7 @@ extended-glob() {
 
 # This does string matching.
 extglob-match() {
-  sh-spec spec/extglob-match.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/extglob-match.test.sh \
     $BASH $MKSH $OSH_LIST "$@"
 }
 
