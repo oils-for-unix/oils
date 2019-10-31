@@ -332,8 +332,8 @@ module syntax
   --   CharClass(False, ['ch'])  # from Glob_CleanLiterals token
 
   glob_part =
-    GlobLit(id id, string s)
-  | GlobOp(id op_id)  -- * or ?
+    Literal(id id, string s)
+  | Operator(id op_id)  -- * or ?
   | CharClass(bool negated, string* strs)
 
   -- Char classes are opaque for now.  If we ever need them:

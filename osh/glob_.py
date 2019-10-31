@@ -172,10 +172,10 @@ class _GlobParser(object):
     # type: () -> Sequence[glob_part_t]
     """
     Returns:
-      a CharClass if the parse suceeds, or a GlobLit if fails.  In the latter
+      a CharClass if the parse suceeds, or a Literal if fails.  In the latter
       case, we also append a warning.
     """
-    first_token = glob_part.GlobLit(self.token_type, self.token_val)
+    first_token = glob_part.Literal(self.token_type, self.token_val)
     balance = 1  # We already saw a [
     tokens = []  # type: List[Tuple[Id_t, str]]
 
@@ -191,7 +191,7 @@ class _GlobParser(object):
       if self.token_type == Id.Glob_Eof:
         # TODO: location info
         self.warnings.append('Malformed character class; treating as literal')
-        return [first_token] + [glob_part.GlobLit(id_, s) for (id_, s) in tokens]
+        return [first_token] + [glob_part.Literal(id_, s) for (id_, s) in tokens]
 
       if self.token_type == Id.Glob_LBracket:
         balance += 1
@@ -232,15 +232,15 @@ class _GlobParser(object):
         break
 
       if id_ in (Id.Glob_Star, Id.Glob_QMark):
-        parts.append(glob_part.GlobOp(id_))
+        parts.append(glob_part.Operator(id_))
 
       elif id_ == Id.Glob_LBracket:
-        # Could return a GlobLit or a CharClass
+        # Could return a Literal or a CharClass
         parts.extend(self._ParseCharClass())
 
       else: # Glob_{Bang,Caret,CleanLiterals,OtherLiteral,RBracket,EscapedChar,
             #       BadBackslash}
-        parts.append(glob_part.GlobLit(id_, s))
+        parts.append(glob_part.Literal(id_, s))
 
       # Also check for warnings.  TODO: location info.
       if id_ == Id.Glob_RBracket:
@@ -258,7 +258,7 @@ def _GenerateERE(parts):
   out = []
 
   for part in parts:
-    if part.tag == glob_part_e.GlobLit:
+    if part.tag == glob_part_e.Literal:
       if part.id == Id.Glob_EscapedChar:
         assert len(part.s) == 2, part.s
         # The user could have escaped a char that doesn't need regex escaping,
@@ -291,7 +291,7 @@ def _GenerateERE(parts):
       else:
         raise AssertionError(part.id)
 
-    elif part.tag == glob_part_e.GlobOp:
+    elif part.tag == glob_part_e.Operator:
       if part.op_id == Id.Glob_QMark:
         out.append('.')
       elif part.op_id == Id.Glob_Star:
@@ -326,7 +326,7 @@ def GlobToERE(pat):
   if 0:
     is_glob = False
     for p in parts:
-      if p.tag in (glob_part_e.GlobOp, glob_part_e.CharClass):
+      if p.tag in (glob_part_e.Operator, glob_part_e.CharClass):
         is_glob = True
   if 0:
     print('---')
