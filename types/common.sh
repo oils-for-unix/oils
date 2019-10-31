@@ -1,7 +1,8 @@
 # types/common.sh
 
 typecheck() {
-  MYPYPATH=. PYTHONPATH=. mypy --py2 "$@"
+  # we 'import libc' but the source is native/libc.{c,pyi}
+  MYPYPATH=.:native PYTHONPATH=. mypy --py2 "$@"
 }
 
 readonly MYPY_FLAGS='--strict --no-implicit-optional --no-strict-optional'
