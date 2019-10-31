@@ -6,7 +6,9 @@ import libc
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
-    glob_part_e, glob_part, glob_part_t, word__Compound, word_part__Literal
+    glob_part_e, glob_part, glob_part_t,
+    glob_part__Literal, glob_part__Operator, glob_part__CharClass,
+    word__Compound, word_part__Literal
 )
 from core import util
 #from core.util import log
@@ -14,7 +16,7 @@ from frontend import match
 
 # Note: using Sequence because it's covariant and not invariant.  Maybe change
 # it back?
-from typing import Optional, List, Sequence, Tuple, Any, TYPE_CHECKING
+from typing import Optional, List, Sequence, Tuple, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   #from osh.state import ExecOpts
   pass
@@ -258,7 +260,10 @@ def _GenerateERE(parts):
   out = []
 
   for part in parts:
+    UP_part = part
+
     if part.tag == glob_part_e.Literal:
+      part = cast(glob_part__Literal, UP_part)
       if part.id == Id.Glob_EscapedChar:
         assert len(part.s) == 2, part.s
         # The user could have escaped a char that doesn't need regex escaping,
@@ -292,6 +297,7 @@ def _GenerateERE(parts):
         raise AssertionError(part.id)
 
     elif part.tag == glob_part_e.Operator:
+      part = cast(glob_part__Operator, UP_part)
       if part.op_id == Id.Glob_QMark:
         out.append('.')
       elif part.op_id == Id.Glob_Star:
@@ -300,6 +306,7 @@ def _GenerateERE(parts):
         raise AssertionError
 
     elif part.tag == glob_part_e.CharClass:
+      part = cast(glob_part__CharClass, UP_part)
       out.append('[')
       if part.negated:
         out.append('^')

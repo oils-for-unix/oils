@@ -7,6 +7,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source types/common.sh
+
 deps() {
   set -x
   #pip install typing pyannotate
@@ -16,7 +18,6 @@ deps() {
   pip3 install 'mypy'
 }
 
-mypy() { ~/.local/bin/mypy "$@"; }
 # This has a bug
 #pyannotate() { ~/.local/bin/pyannotate "$@"; }
 
@@ -27,10 +28,6 @@ pyann-patched() {
   export PYTHONPATH=$PYANN_REPO
   # --dump can help
   python $tool "$@"
-}
-
-typecheck() {
-  mypy --py2 "$@"
 }
 
 # --no-strict-optional issues
@@ -70,10 +67,26 @@ iter-arith-asdl() {
   echo
 }
 
+typecheck-more-oil() {
+  #typecheck $flags osh/word_compile.py
+  #typecheck $flags osh/string_ops.py
+
+  local log=_tmp/typecheck-more-oil.txt
+
+  set +o errexit
+  typecheck $MYPY_FLAGS osh/glob_.py > $log
+
+  assert-one-error $log
+}
+
+
 travis() {
   iter-demo-asdl
   # Avoid spew on Travis.
   iter-arith-asdl > /dev/null
+
+  # Ad hoc list of additional files
+  typecheck-more-oil
 }
 
 # Alias for convenience
