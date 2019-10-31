@@ -1,7 +1,3 @@
----
-repo_url: doc/osh-manual.md
----
-
 OSH User Manual
 ===============
 

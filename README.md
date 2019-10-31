@@ -111,7 +111,7 @@ Oil is implemented with DSLs and metaprogramming, for "leverage".
       gold/           # tests
       byterun/        # Unused bytecode interpreter
 
-### Tests
+### Several Kinds of Tests
 
 Unit tests are named `foo_test.py` and live next to `foo.py`.
 
@@ -179,7 +179,7 @@ above create and use these dirs.
         web/          # Static files, copy of $REPO_ROOT/web
           table/
 
-### End user build system
+### Build System for End Users
 
 This is very different than the **developer build** of Oil.
 
@@ -187,10 +187,10 @@ This is very different than the **developer build** of Oil.
     configure
     install
 
-### Docs
+### Doc Sources
 
     doc/              # A mix of docs
-    README.md         # For Oil developers
+    README.md         # This page, which is For Oil developers
 
     LICENSE.txt       # For end users
     INSTALL.txt

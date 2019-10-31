@@ -5,6 +5,9 @@ in_progress: yes
 Oil Options
 ===========
 
+<div id="toc">
+</div>
+
 ## Options
 
 ### "Meta" Options Are The Most Important

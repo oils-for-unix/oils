@@ -18,23 +18,14 @@ using shell options that are toggled with the `shopt` builtin.
 <div id="toc">
 </div>
 
+## OSH is a Compatible Shell
 
+- [OSH User Manual](osh-manual.html). How do I use OSH as my shell?
+- [Known Differences](known-differences.html) is trivia for advanced users.
+  It lists differences between OSH and other shells.
+- [errexit](errexit.html) (in progress)
 
-## Other Topics
-
-
-
-TODO:
-
-- copy section from release-index.md
-- copy section from oil-manual.md
-
-### OSH
-
-- Manual
-- Known Differences
-
-### Oil
+## Oil is a New Shell Language
 
 - [Options](oil-options.html)
 - [Keywords and Builtins](oil-keywords-and-builtins.html)
@@ -45,19 +36,31 @@ TODO:
 - [Word Language](oil-word-language.html) - Oil extends the "word language".
 - [Special Variables](oil-special-vars.html) - Oil extends the "word language".
 - [funcs, procs, and blocks](oil-func-proc-block.html)
-- [Eggex](eggex.html) -- regular expression language.
+- [Egg Expressions](eggex.html).  Oil has a new regex syntax called "egg
+  expressions", abbreviated *eggexes*.
+- [Unicode](unicode.html)
+
+Internal details:
+
 - [Data Model](data-model.html) -- The interpreter
+- [Architecture Notes](architecture-notes.html) -- The interpreter
+- [Error List](errors.html) 
 
 Other:
 
 - scope
 - `evalblock()`
 
+## Other Docs
 
-### Other
+- [INSTALL](INSTALL.html). How do I install Oil?  This text file is also in the
+  tarball.
+- [OSH Quick Reference](osh-quick-ref.html), with examples (incomplete).
+  This document underlies the `help` builtin, and gives a rough overview of
+  what features OSH implements.
 
-- Quick Ref
-- INSTALL
-- Developer Documentation
-  - README
-  - Github Wiki
+Developer Documentation:
+
+- [README.md](README.html).  If you want to modify Oil, start here.  We
+  welcome contributions!
+- [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)

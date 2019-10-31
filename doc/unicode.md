@@ -1,5 +1,12 @@
+---
+in_progress: yes
+---
+
 Notes on Unicode in Shell
 =========================
+
+<div id="toc">
+</div>
 
 ## Philosophy
 

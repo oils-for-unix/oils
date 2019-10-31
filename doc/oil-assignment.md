@@ -1,5 +1,12 @@
+---
+in_progress: yes
+---
+
 Variables and Assignment
 ========================
+
+<div id="toc">
+</div>
 
 
 I just implemented some more Oil language semantics! [1]

@@ -1,5 +1,12 @@
+---
+in_progress: yes
+---
+
 Command vs. Expression Mode
 ===========================
+
+<div id="toc">
+</div>
 
 
 Here is a list of places we switch modes:

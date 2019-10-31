@@ -1,5 +1,12 @@
+---
+in_progress: yes
+---
+
 set -e / errexit in shell
 =========================
+
+<div id="toc">
+</div>
 
 Problem:
 
@@ -26,8 +33,7 @@ shopt -u errexit {
   var status = $?
 }
 
-Style Guide
------------
+## Style Guide
 
 No:
 
@@ -44,8 +50,5 @@ Yes:
 
 
 It behaves just like an external command.
-
-
-
 
 

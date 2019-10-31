@@ -1,5 +1,4 @@
 ---
-repo_url: doc/release-index.md
 css_files: web/release-index.css
 all_docs_url: doc/
 ---
@@ -39,23 +38,17 @@ Test results, metrics, and benchmarks are shown below.
 
 ## Documentation
 
-- [INSTALL][]. How do I install Oil?  This text file is also in the tarball.
-- [OSH User Manual](doc/osh-manual.html). How do I use it?
-  - [Known Differences](doc/known-differences.html) is trivia for advanced
-    users.  It lists differences between Oil and other shells.
-  - [OSH Quick Reference](doc/osh-quick-ref.html), with examples (incomplete).
-    This document underlies the `help` builtin, and gives a rough overview of
-    what features OSH implements.
-- Oil
-  - [Egg Expressions](doc/eggex.html).  Oil has a new regex syntax called "egg
-    expressions", abbreviated *eggexes*.
-- [README.md](doc/README.html).  If you want to modify Oil, start here.  We
-  welcome contributions!
+Oil has three major sources of docs:
+
+- [Documentation Overview](doc/).  This page links to all other docs, including
+  the Manual and Oil Language Reference.
+- [Quick Reference](doc/osh-quick-ref.html), with examples (incomplete).
+  This doc underlies the `help` builtin, and gives a rough overview of what
+  features Oil implements.
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
   - The [Oil Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments)
     wiki page has other ways of getting Oil.  These versions may not be
     up-to-date.
-
 
 ## Metrics
 

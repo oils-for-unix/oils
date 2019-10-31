@@ -1,5 +1,12 @@
+---
+in_progress: yes
+---
+
 Procs, Funcs, and Blocks
 ========================
+
+<div id="toc">
+</div>
 
 ## Builtins Can Accept Ruby-Style Blocks
 
