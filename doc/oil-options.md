@@ -5,12 +5,18 @@ in_progress: yes
 Oil Options
 ===========
 
+<!--
+
+Notes:
+- OSH manual describes some options.  Could move them here.
+- Copy in frmo quick ref
+-->
+
 <div id="toc">
 </div>
 
-## Options
 
-### "Meta" Options Are The Most Important
+## Use **Option Groups** To Gradually Opt In to Oil
  
 This is how you opt into the Oil language:
 
@@ -31,7 +37,7 @@ It turns on:
 When you care about running your script under other shells, use `shopt -s
 strict:all`, which is documented in the [OSH manual](osh-manual.html).
 
-### Parsing Options
+## That Affect Parsing
 
 Options that affect parsing start with `parse-`.
 
@@ -49,43 +55,8 @@ echo @split(x)
 
 See examples below.
 
-### Runtime Options
 
-- `simple_echo`.  Changes the flags accepted by the `echo` builtin, and style of flag parsing.
-  See the `Builtins > echo` below.
-
-- `simple-word-eval`.  Word evaluation consists of one stage rather than three:
-  - No word splitting or empty elision.  (In other words, arity isn't data-dependent.)
-  - Static globbing, but no dynamic globbing.  (In other words, data isn't re-parsed as code.)
-  - This option is intended to be implemented by other shells.
-
-TODO: copy examples from spec tests
-
-```
-echo $dir/*.py
-```
-
-- `more_errexit`.  A error in a command sub can cause the **parent shell** to
-  exit fatally.  Also see `inherit_errexit` and `strict_errexit`.
-
-### Strict Options
-
-These options produce more **programming errors**.  Importantly, the resulting
-program is still compatible with other shells.
-
-For example, `shopt -s strict-array` produces runtime errors when you confuse
-strings and arrays.  After you fix these problems, your program will still run
-correctly under `bash`.
-
-In contrast, if you set `shopt -s simple-word-eval` (an option that doesn't
-start with `strict-`), the semantics of your program have changed, and you can
-no longer run it under other shells.  It's considered an "Oil option": by
-setting it, you're upgrading to the Oil language.
-
-See the [OSH manual](osh-manual.html) for a list of strict options and their
-meaning.
-
-## Parse Options
+---
 
 `shopt -s parse_brace` does three things:
 
@@ -151,4 +122,39 @@ for (x in @(a b c)) {
 There is probably going to be `switch/case` or `match/case`, but that will
 likely come much later!
 
+## That Affect Runtime Behavior
+
+- `simple_echo`.  Changes the flags accepted by the `echo` builtin, and style of flag parsing.
+  See the `Builtins > echo` below.
+
+- `simple-word-eval`.  Word evaluation consists of one stage rather than three:
+  - No word splitting or empty elision.  (In other words, arity isn't data-dependent.)
+  - Static globbing, but no dynamic globbing.  (In other words, data isn't re-parsed as code.)
+  - This option is intended to be implemented by other shells.
+
+TODO: copy examples from spec tests
+
+```
+echo $dir/*.py
+```
+
+- `more_errexit`.  A error in a command sub can cause the **parent shell** to
+  exit fatally.  Also see `inherit_errexit` and `strict_errexit`.
+
+## Strict Option Produce More Errors
+
+These options produce more **programming errors**.  Importantly, the resulting
+program is still compatible with other shells.
+
+For example, `shopt -s strict-array` produces runtime errors when you confuse
+strings and arrays.  After you fix these problems, your program will still run
+correctly under `bash`.
+
+In contrast, if you set `shopt -s simple-word-eval` (an option that doesn't
+start with `strict-`), the semantics of your program have changed, and you can
+no longer run it under other shells.  It's considered an "Oil option": by
+setting it, you're upgrading to the Oil language.
+
+See the [OSH manual](osh-manual.html) for a list of strict options and their
+meaning.
 

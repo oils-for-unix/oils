@@ -1,22 +1,22 @@
+---
+in_progress: yes
+---
+
 Oil Documentation
 =================
 
 The Oil project aims to transform Unix shell into a better programming
-language.
-
-This manual covers the parts of Oil that are **new and unique**.  In contrast,
-the [OSH User Manual](osh-manual.html) describes parts of `osh` that overlap
-with other shells like `bash`.
-
-Everything described here is part of the `osh` binary.  In other words, the Oil
-language is implemented with a set of backward-compatible extensions, often
-using shell options that are toggled with the `shopt` builtin.
-
-(In the distant future, there may be a legacy-free `oil` binary.)
+language.  It's **our upgrade path from bash**.
 
 <!-- cmark.py expands this -->
 <div id="toc">
 </div>
+
+- [INSTALL](INSTALL.html). How do I install Oil?  This text file is also in the
+  tarball.
+- [OSH Quick Reference](osh-quick-ref.html), with examples (incomplete).
+  This document underlies the `help` builtin, and gives a rough overview of
+  what features OSH implements.
 
 ## OSH is a Compatible Shell
 
@@ -27,15 +27,33 @@ using shell options that are toggled with the `shopt` builtin.
 
 ## Oil is a New Shell Language
 
+<!--
+It would be kind of nice if there were two levels of TOC here?
+
+Automatically generated?  All the H2 could go here?  You could spit those out
+from the HTML parser?
+
+Examples for the Impatient, etc.
+-->
+
+- [The Oil Language From 10,000 Feet](oil-overview.html)  This is a tour of
+  the Oil language, but it doesn't go into too much detail.  **Start here if
+  you're new**.
+
+Details:
+
 - [Options](oil-options.html)
-- [Keywords and Builtins](oil-keywords-and-builtins.html)
-  - [Assignment](oil-assignment.html)
-- [Command vs. Expression Mode](command-vs-expression-mode.html)
-- [Oil Expressions](oil-expressions.html)
-  - [Literal Syntax](oil-literal-syntax.html)
+- [Oil Keywords](oil-keywords.html). (Shell keywords aren't discussed.)
+  - [Assignment](oil-assignment.html): TODO: combine
+- [Oil Builtins](oil-builtins.html) (Shell builtins aren't discussed.)
+- [Command vs. Expression Mode](command-vs-expression-mode.html) An important
+  syntactic concept.  See the [overview](oil-overview) for more syntactic
+  concepts.
+- [Oil Expressions](oil-expressions.html) The Expression Language is Mostly
+  Python.
+- [Procs, Funcs, and Blocks](oil-func-proc-block.html)
 - [Word Language](oil-word-language.html) - Oil extends the "word language".
 - [Special Variables](oil-special-vars.html) - Oil extends the "word language".
-- [funcs, procs, and blocks](oil-func-proc-block.html)
 - [Egg Expressions](eggex.html).  Oil has a new regex syntax called "egg
   expressions", abbreviated *eggexes*.
 - [Unicode](unicode.html)
@@ -46,20 +64,14 @@ Internal details:
 - [Architecture Notes](architecture-notes.html) -- The interpreter
 - [Error List](errors.html) 
 
-Other:
+Future:
 
-- scope
-- `evalblock()`
+- Scope
+- Error Handling
+- Builtin Functions: `evalblock()`, etc.
+  - TODO: copy from quick ref
 
-## Other Docs
-
-- [INSTALL](INSTALL.html). How do I install Oil?  This text file is also in the
-  tarball.
-- [OSH Quick Reference](osh-quick-ref.html), with examples (incomplete).
-  This document underlies the `help` builtin, and gives a rough overview of
-  what features OSH implements.
-
-Developer Documentation:
+## Docs for Contributors
 
 - [README.md](README.html).  If you want to modify Oil, start here.  We
   welcome contributions!

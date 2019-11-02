@@ -166,12 +166,12 @@ readonly DOCS=(
   # data-model and command-vs-expression-mode span both OSH and Oil.
 
   index
+  oil-overview
   oil-options
-  oil-keywords-and-builtins
-  oil-assignment
+  oil-keywords
+  oil-builtins
   command-vs-expression-mode
   oil-expressions
-  oil-literal-syntax
   oil-word-language
   oil-special-vars
   oil-proc-func-block

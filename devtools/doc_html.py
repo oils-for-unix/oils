@@ -37,8 +37,13 @@ def Header(meta, f):
 
   if 'in_progress' in meta:
     f.write('''\
-    <p style="color: darkred; font-size: x-large;">
-      NOTE: This document is a work in progress!
+        <p style="background-color: mistyrose; font-size: large;
+                  text-align: center; padding: 1em;">
+
+      <b>Warning: Work in progress!</b>  Leave feedback on <a
+      href="https://oilshell.zulipchat.com">Zulip</a> or <a
+      href="https://github.com/oilshell/oil/issues">Github</a> if you'd like
+      this doc to be updated.
     </p>
 ''')
 

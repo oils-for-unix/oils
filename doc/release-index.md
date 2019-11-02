@@ -40,7 +40,7 @@ Test results, metrics, and benchmarks are shown below.
 
 Oil has three major sources of docs:
 
-- [Documentation Overview](doc/).  This page links to all other docs, including
+- [Doc Overview](doc/).  This page links to all other docs, including
   the Manual and Oil Language Reference.
 - [Quick Reference](doc/osh-quick-ref.html), with examples (incomplete).
   This doc underlies the `help` builtin, and gives a rough overview of what

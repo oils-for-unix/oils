@@ -5,6 +5,9 @@ in_progress: yes
 Special Variables
 =================
 
+Why have a new spelling?  Because `"$@"` doesn't work well in expression mode.
+
+
 <div id="toc">
 </div>
 

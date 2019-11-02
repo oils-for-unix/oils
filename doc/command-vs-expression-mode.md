@@ -5,6 +5,10 @@ in_progress: yes
 Command vs. Expression Mode
 ===========================
 
+- command mode: `unquoted` is a string, while `$dollar` is a variable.
+- expression mode: `'quoted'` is a string, while `unquoted` is a variable.
+
+
 <div id="toc">
 </div>
 
@@ -15,7 +19,7 @@ Here is a list of places we switch modes:
 
 Assignments:
 
-```
+```oil
 var x = 1 + f(x)    # RHS of var/setvar
 setvar x = 1 + f(x)
 setvar x = obj.method()   
@@ -25,7 +29,7 @@ x = 1 + f(x)   # when parse_equals is on, = becomes special
 
 `do` parses in expression mode, and throws away the return value:
 
-```
+```oil
 do 1 + f(x)
 do obj.method()
 ```
@@ -39,7 +43,7 @@ echo @arrayfunc(x, y + f(z))
 
 **Parameter Lists**
 
-```
+```oil
 func add(x = 5, y = 2) {  # what's between () is in expression mode
   return x + y   # this part is in command mode
 }
@@ -47,7 +51,7 @@ func add(x = 5, y = 2) {  # what's between () is in expression mode
 
 **Oil if/while/for**
 
-```
+```oil
 if (x > 0) { ... }
 while (x > 0) { ... }
 for (x, y in pairs) { ... }
@@ -56,7 +60,7 @@ for (x, y in pairs) { ... }
 
 ## From Expression Mode to Command Mode
 
-```
+```oil
 var x = func(x) { echo hi; return x +1 }   # everything between {} is in command mode
 ```
 
@@ -65,23 +69,27 @@ var x = func(x) { echo hi; return x +1 }   # everything between {} is in command
 
 Braced Vars in Double Quotes:
 
-```
+```oil
 echo ${f(x)}
 ```
 
 This is an incomplete list.  Double quoted strings are yet another lexer mode I didn't list.
 
 
-## Does that mean that functions arguments can’t be globs? Eg:
+## Does that mean that functions arguments can’t be globs?
 
+For example:
+
+```oil
 do_something_with_files(data*.dat)?
+```
 
 
 Good question, yes in expressions globs have to be quoted:
 
 Yes:
 
-```
+```oil
 ls *.py
 echo $myfunc('*.py')
 if (x ~ '*.py') {  # ~ operator also matches globs, not implemented yet
@@ -92,7 +100,7 @@ if (x ~ '*.py') {  # ~ operator also matches globs, not implemented yet
 
 No:
 
-```
+```oil
 echo '*.py'  # not a glob
 echo $myfunc(*.py)  # syntax error
 ```
@@ -118,9 +126,4 @@ do in sh:
     echo '*'
 
 Because you’ve never entered expression mode. You’re still in command mode.
-
-Here’s a short summary:
-
-    command mode: unquoted is a string, while $dollar is a variable.
-    expression mode: 'quoted' is a string, while unquoted is a variable.
 
