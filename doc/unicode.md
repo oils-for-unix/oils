@@ -23,6 +23,16 @@ correctness problems.
 
 ## List of Unicode-Aware Operations in Shell
 
+- `${#s}` -- length in code points
+- `${s:1:2}` -- offsets in code points
+- `${x#?}` and family (not yet implemented)
+
+Where bash respects it:
+
+- [[ a < b ]] and [ a '<' b ] for sorting
+- ${foo,} and ${foo^} for lowercase / uppercase
+
+
 This is a list of operations that SHOULD be aware of Unicode characters.  OSH
 doesn't implement all of them yet, e.g. the globbing stuff.
 

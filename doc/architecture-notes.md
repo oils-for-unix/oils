@@ -5,6 +5,9 @@ in_progress: yes
 Notes on OSH Architecture
 =========================
 
+This doc is written for contributors or users who want to understand the Oil
+codebase.  These internal details are subject to change.
+
 <div id="toc">
 </div>
 
@@ -36,7 +39,7 @@ This section is about extra passes ("irregularities") at **parse time**.  In
 the "Runtime Issues" section below, we discuss cases that involve parsing after
 variable expansion, etc.
 
-## Where We Re-parse Previously Parsed Text (Unfortunately)
+### Where We Re-parse Previously Parsed Text (Unfortunately)
 
 This makes it harder to produce good error messages with source location info.
 It also implications for translation, because we break the "arena invariant".
@@ -52,14 +55,14 @@ happen compared with `$()`.
 
 (in `_ReadCommandSubPart` in `osh/word_parse.py`)
 
-## Where VirtualLineReader is Used
+### Where VirtualLineReader is Used
 
 This isn't necessarily re-parsing, but it's re-reading.
 
 - alias expansion
 - here documents:  We first read lines, and then parse them.
 
-## Extra Passes Over the LST
+### Extra Passes Over the LST
 
 These are handled up front, but not in a single pass.
 
@@ -69,12 +72,12 @@ These are handled up front, but not in a single pass.
 - Brace Detection in a few places: `echo {a,b}`
 - Tilde Detection: `echo ~bob`, `home=~bob`
 
-## Parser Lookahead
+### Parser Lookahead
 
 - `func() { echo hi; }` vs.  `func=()  # an array`
 - precedence parsing?  I think this is also a single token.
 
-## Lexer Unread
+### Lexer Unread
 
 `osh/word_parse.py` calls `lexer.MaybeUnreadOne() to handle right parens in
 this case:
@@ -85,18 +88,18 @@ this case:
 
 This is sort of like the `ungetc()` I've seen in other shell lexers.
 
-## Where the Arena Invariant is Broken
+### Where the Arena Invariant is Broken
 
 - Here docs with <<-.  The leading tab is lost, because we don't need it for
   translation.
 
-## Where Parsers are Instantiated
+### Where Parsers are Instantiated
 
 - See `osh/parse_lib.py` and its callers.
 
 ## Runtime Issues
 
-## Where OSH Parses Code in Strings Formed at Runtime
+### Where OSH Parses Code in Strings Formed at Runtime
 
 (1) **Alias expansion** like `alias foo='ls | wc -l'`.  Aliases are like
 "lexical macros".
@@ -115,7 +118,7 @@ then the resulting strings are parsed as words, with `$` escaped to `\$`.
 - `source` — the filename is formed dynamically, but the code is generally
   static.
 
-## Where Bash Parses Code in Strings Formed at Runtime (perhaps unintentionally)
+### Where Bash Parses Code in Strings Formed at Runtime (perhaps unintentionally)
 
 All of the cases above, plus:
 
@@ -156,7 +159,7 @@ Relied on by `bash-completion`, as discovered by Greg Price)
 (6) ShellShock (removed from bash): `export -f`, all variables were checked for
 a certain pattern.
 
-## Parse Errors at Runtime (Need Line Numbers)
+### Parse Errors at Runtime (Need Line Numbers)
 
 - [ -a -a -a ]
 - command line flag usage errors
@@ -164,41 +167,40 @@ a certain pattern.
 
 ## Other Cross-Cutting Observations
 
-## Shell Function Callbacks
+### Where $IFS is Used
+
+- Splitting of unquoted substitutions
+- read
+- To split words in `compgen -W` (bash only)
+
+### Shell Function Callbacks
 
 - completion hooks registered by `complete -F ls_complete_func ls`
 - bash has a `command_not_found` hook; osh doesn't yet
 
-## Where Unicode is Respected
+### Where Unicode is Respected
 
-- `${#s}` -- length in code points
-- `${s:1:2}` -- offsets in code points
-- `${x#?}` and family (not yet implemented)
+See the doc on [Unicode](unicode.html).
 
-Where bash respects it:
-
-- [[ a < b ]] and [ a '<' b ] for sorting
-- ${foo,} and ${foo^} for lowercase / uppercase
-
-## Parse-time and Runtime Pairs
+### Parse-time and Runtime Pairs
 
 - echo -e '\x00\n' and echo $'\x00\n' (shared in OSH)
 - test / [ and [[ (shared in OSH)
 - static vs. dynamic assignment.  `local x=$y` vs. `s='x=$y'; local $s`.
   - shells are very consistent here, but they have both notions!
 
-## Other Pairs
+### Other Pairs
 
 - expr and $(( )) (expr not in shell)
 - later: find and our own language
 
 ## Build Time
 
-## Dependencies
+### Dependencies
 
 - Optional: readline
 
-## Borrowed Code
+### Borrowed Code
 
 - All of OPy:
   - pgen2
@@ -207,11 +209,15 @@ Where bash respects it:
 - ASDL front end from CPython (heavily refactored)
 - core/tdop.py: Heavily adapted from tinypy
 
-## Generated Code
+### Generated Code
 
 - See `build/dev.sh`
 
+## More
+
 ## The OSH Parser
+
+TODO: Move this
 
 The OSH parser is better than other shell parsers:
 
@@ -246,8 +252,8 @@ Where the parser is reused:
 
 The point of a state machine is to make sure all cases are handled!
 
-## Where $IFS is Used
+## Links
 
-- Splitting of unquoted substitutions
-- read
-- To split words in `compgen -W` (bash only)
+- [OSH Word Evaluation Algorithm][word-eval] on the wiki
+
+[word-eval]: https://github.com/oilshell/oil/wiki/OSH-Word-Evaluation-Algorithm

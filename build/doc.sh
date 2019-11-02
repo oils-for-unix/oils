@@ -166,6 +166,7 @@ readonly DOCS=(
   # data-model and command-vs-expression-mode span both OSH and Oil.
 
   index
+  what-is-oil
   oil-overview
   oil-options
   oil-keywords

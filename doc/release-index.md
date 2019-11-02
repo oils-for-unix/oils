@@ -40,8 +40,14 @@ Test results, metrics, and benchmarks are shown below.
 
 Oil has three major sources of docs:
 
-- [Doc Overview](doc/).  This page links to all other docs, including
-  the Manual and Oil Language Reference.
+- The [Doc Overview](doc/) links to all other docs, including the Manual and
+  Oil Language Reference.  It's work in progress.  Up-to-date docs include:
+  - [INSTALL][]
+  - [OSH User Manual](doc/osh-manual.html)
+  - [Known Differences Between OSH and Other
+    Shells](doc/known-differences.html)
+  - [Egg Expressions (Oil Regexes)](doc/eggex.html)
+
 - [Quick Reference](doc/osh-quick-ref.html), with examples (incomplete).
   This doc underlies the `help` builtin, and gives a rough overview of what
   features Oil implements.

@@ -5,46 +5,52 @@ in_progress: yes
 Data Model for OSH and Oil
 ==========================
 
+This doc internal data structure in the Oil interpreter, and gives examples of
+how you manipulate them with shell or Oil code.
+
+The interpreter is "unified".
+
+- OSH semantics are based on:
+  - POSIX shell for strings
+  - bash and ksh for arrays and associative arrays.   bash largely follows ksh
+    is the case of arrays.  Its associative arrays are quirkier.
+- TODO: Python coercions.
+
+<!--
+TODO:
+
+- New "Pulp"?
+- Use fenced code blocks
+  - and run through BOTH bash and osh
+    - and link to this doc
+  - bash 4.4 in a sandbox?
+
+- Move "operations on arrays" to a legacy arrays doc?
+
+-->
+
+
 <div id="toc">
 </div>
 
-- This is for the OSH language, as opposed to the Oil language.
-- OSH semantics are based on:
-  - POSIX shell for strings
-  - bash and ksh for arrays and associative arrays.    bash largely follows ksh
-    is the  case of arrays.  Its associative arrays are quickier.
-  
-  POSIX shell for strings
-  exisbash.  For 
-
-Python coercions.
-
-TODO:
-
-- Use fenced code blocks
-- and then evaluate like Pulp
-  - maybe borrow from Brett
-- and run through BOTH bash and osh
-  - and link to this doc
-
-  - bash 4.3 maybe?  or 4.4
 
 ## Why Use this Information?
 
-The goal of Oil is to replace this quirkl language!  But we still made it
+The goal of Oil is to replace this quirky language.  But we still made it
 compatible.
 
-If you want to write scripts compatible with OSH and bash!
-
-TODO: The Oil language not done yet!
+If you want to write scripts compatible with OSH and bash.
 
 
-## Preliminary: Why Differences from bash
+## Oil's Data Model is Slightly Different Than Bash
 
-I SALVAGED THESE SEMANTICS.
+It's meant to be more sane.
+
+See [Known Differences](known-differences.html).
+
+I salvaged these semantics.
 
 Worst of the language!  Newest and most "grafted on".
-
 
 ### Surprising Parsing
 
@@ -71,40 +77,44 @@ Associative arrays and being undefined
 - half an array type
   - strict_array removes this
   - case $x in "$@"
-
 - half an associative array type
 
 ### Bugs
 
 - test -v
-- empty array and nounset, in bash 4.3.  I can't recommend in good faith
+- empty array conflicts with `set -o nounset` (in bash 4.3).  I can't recommend
+  in good faith
+
+## Memory
 
 
+Shell has a stack but no heap.  It has values and locations, but no
+references/pointers.
 
-## Undef, Str, Sequential/Indexed Arrays, Associative Array
+Oil adds references to data structures on the heap, which may be recurisve.
 
-  - "array" refers to both.
-    - although Oil has a "homogeneous array type" that's entirely different
-    - OSH array vs. Oil array
 
-  - no integers, but there is (( ))
+### Undef, Str, Sequential/Indexed Arrays, Associative Array
 
-  - "$@" is an array, and "${a[@]}" too
-    - not true in bash -- it's fuzzy there
-
-    - but $@ and ${a[@]}  are NOT arrays
-  - flags: readonly and exported (but arrays/assoc arrays shouldn't be exported)
-    - TODO: find that
+- "array" refers to both.
+  - although Oil has a "homogeneous array type" that's entirely different
+  - OSH array vs. Oil array
+- no integers, but there is (( ))
+- "$@" is an array, and "${a[@]}" too
+  - not true in bash -- it's fuzzy there
+  - but $@ and ${a[@]}  are NOT arrays
+- flags: readonly and exported (but arrays/assoc arrays shouldn't be exported)
+  - TODO: find that
 
 ### Arrays Can't Be Nested and Can't Escape Functions
 
-Big limitation!  Lifting it in Oil
+- Big limitation!  Lifting it in Oil
+- You have to splice
+- There's no Garbage collection.
 
-You have to splice
+### OSH Doesn't have True Integers
 
-There's no Garbage collection.
-
-### There are no true integers
+We save those for Oil!
 
 There are lots of coercions instead. 
 
@@ -116,6 +126,8 @@ bash has '-i' but that's true anyway.
 ### assignment
 
 ### unset
+
+You can't unset an array in OSH?  But you can in bash.
 
 ### readonly
 
@@ -169,7 +181,7 @@ Respects the normal rules of argv.
     echo "${array[@]}"
     echo "${assoc[@]}"
 
-NOT Allowed, unlike in bash!
+Not Allowed, unlike in bash!
 
     $assoc  ${assoc}  "${assoc}"
     ${!assoc}  ${assoc//pattern/replace}  # etc.
@@ -188,7 +200,6 @@ Note that since a for loop takes an array of words, evaluating/splicing works:
 
     echo ${#array[@]}
     echo ${#assoc[@]}
-
 
 
 ### Coercion to String by Joining Elements
@@ -272,16 +283,6 @@ NOTE: string slicing:
     echo ${assoc[@]//x/X}
 
 
-## Strict Options
-
-    set -o nounset  # bash
-
-    shopt -s strict_array
-    shopt -s strict_arith  # on by default
-
-    shopt -s strict_word_eval  # slice args, unicode strings
-
-
 ## Quirky Syntax and Semantics in Shell Sublanguages
 
 ### Command
@@ -314,32 +315,26 @@ Operates on strings only.  Can't compare
 
 ## Introspection
 
-### set
+Oil supports various shell and bash operations to view the interpretr state.
 
-Prints all variables.  Strings only?
+- `set` prints variables and their values
+- `set -o` prints options
+- `declare/typeset/readonly/export -p` prints a subset of variables
+- `test -v` tests if a variable is defined.
 
-### declare/typeset/readonly/export -p
+### repr (Oil only)
 
-Prints a subset.
-
-### test -v
-
-Test if a variable is defined.
-
-Don't use this because it's incopmatible?
-
-### repr (OSH-specific)
+Pretty prints state.
 
 ## Future Work: The Oil Data Model
 
-- similar to Python and JavaScript
-- garbage collection
+- Similar to Python and JavaScript
+- Garbage Collection
 - JSON serialization
-
+- Typed Arrays and Data Frames
 
 ## Links
 
 - <https://opensource.com/article/18/5/you-dont-know-bash-intro-bash-arrays>
 - <https://www.thegeekstuff.com/2010/06/bash-array-tutorial>
-
 
