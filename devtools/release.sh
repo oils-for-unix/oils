@@ -83,7 +83,6 @@ auto-machine1() {
 
 # oilshell.org__deploy/
 #   releases.html
-#   opy-releases.html  (later)
 #   release/
 #     $VERSION/
 #       index.html  # release page, from doc/release-index.md

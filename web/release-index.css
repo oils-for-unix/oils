@@ -7,6 +7,10 @@
 body {
   margin: 0 auto;
   width: 40em;  /* overridden in devtools/release.sh for releases.html */
+
+  /* note: not changing 'font-size' like web/manual.css */
+  line-height: 1.4;
+  color: #444;
 }
 
 pre {
