@@ -77,7 +77,7 @@ _build-timestamp() {
 
 # Run with environment variable
 _quick-ref() {
-  build/quick_ref.py "$@"
+  devtools/quick_ref.py "$@"
 }
 
 x-quick-ref() {

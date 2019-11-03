@@ -5,7 +5,6 @@ OSH Quick Reference
 - HTML version: https://www.oilshell.org/release/0.7.pre5/doc/osh-quick-ref.html
 
 INTRO
-  [Overview]      overview   osh-vs-oil   command-vs-expr
   [Usage]         bundle-usage   osh-usage   oil-usage   config   startup
                   line-editing   prompt
   [Lexing]        comments #   line-continuation \
@@ -23,9 +22,11 @@ COMMAND LANGUAGE
   [Redirects]     redir-file  >  >>  >|  <  <>   X &>
                   redir-desc  >&  <&
                   here-doc    <<  <<-  <<<
-  [Other]         dparen ((   time   X coproc   X select
+  [Other Command] dparen ((   time   X coproc   X select
   [Oil Keywords]  proc   func   return   do   pass   pp
                   (Change parsing so they can't be builtins)
+X [Coil Keywords] const   try   catch   throw   switch   match
+                  data   enum   module   interface   namespace
 
 ASSIGNING VARIABLES
   [Operators]     assign        str='xyz'
@@ -35,8 +36,6 @@ ASSIGNING VARIABLES
   [Builtins]      local   readonly   export   unset   shift
                   declare   typeset   X let
   [Oil Keywords]  var   setvar   X auto
-X [Coil Keywords] const   try   catch   throw   switch   match
-                  data   enum   module   interface   namespace
 
 OIL EXPRESSION LANGUAGE
   [Data Types]    Str           r'\'   c'\n'   "$var"   multiline r""" c'''
@@ -140,13 +139,15 @@ X [Unsupported]   enable
                   X getline              Instead of read -raw :name
                   X json-echo   X json-read  
                   X tsv2-echo   X tsv2-read
+  [External Lang] BEGIN   END   when (awk)
+                  rule (make)   each (xargs)   fs (find)
 
 SHELL OPTIONS
   [Errors]        nounset   pipefail   errexit   inherit_errexit
   [Globbing]      noglob   failglob   nullglob
   [Debugging]     xtrace   X verbose   X extdebug
   [Interactive]   emacs   vi
-  [Other]         X noclobber
+  [Other Option]  X noclobber
   [strict:all]                           All options starting with 'strict_'
                   strict_argv            No empty argv
                   strict_array           Arrays don't decay to strings
@@ -186,7 +187,7 @@ SHELL OPTIONS
 
 ENVIRONMENT VARIABLES
   [Shell Options] SHELLOPTS   X BASHOPTS
-  [Other Vars]    HOME   PATH   IFS
+  [Other Env]     HOME   PATH   IFS
   [Oil Paths]     ?builtins   ?completion_plugins   ?coprocesses
 
 SPECIAL VARIABLES
@@ -206,21 +207,14 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
   [getopts]       OPTIND   OPTARG   X OPTERR
   [read]          REPLY   IFS
   [Functions]     X RANDOM   X SECONDS
-  [Other]         BASH_REMATCH   @PIPESTATUS
+  [Other Special] BASH_REMATCH   @PIPESTATUS
 
 PLUGINS AND HOOKS
   [Signals]       SIGTERM   X SIGINT   X SIGABRT   SIG...
   [Traps]         EXIT   X ERR   X DEBUG   X RETURN
   [Words]         PS1   X PS2   X PS3   PS4
   [Completion]    complete
-  [Other]         X command_not_found   PROMPT_COMMAND
-
-OIL EXTENSIONS
-
-X [awk]           BEGIN   END   when
-X [make]          rule (builtin)
-X [xargs]         each (builtin)
-X [find]          fs
+  [Other Plugin]  X command_not_found   PROMPT_COMMAND
 
 OIL LIBRARIES
 

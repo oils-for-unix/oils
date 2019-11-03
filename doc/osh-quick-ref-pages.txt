@@ -55,13 +55,6 @@
 
 ##### <INTRO> Introduction
 
-#### <Overview> Overview
-
-### <overview>
-
-OSH is a shell.
-
-
 #### <Usage> Usage
 
 ### <bundle-usage> Usage of the Oil App Bundle
@@ -454,7 +447,7 @@ For the 'select' builtin (unimplemented).
 
 For 'set -o xtrace'.  The leading character is special.
 
-##### <OIL-EXTENSINOS> Oil Extensions
+##### <OIL-EXTENSIONS> Oil Extensions
 
 ##### <OIL-LIBRARIES> Oil Libraries
 

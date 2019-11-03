@@ -333,6 +333,25 @@ def main(argv):
 
     print('Wrote %s/ and %s' % (text_dir, py_out_path), file=sys.stderr)
 
+  elif action == 'pages2':
+    # TODO:
+    # - split <h4></h4>
+    #   - how?  From beginning of <h4> until next <h> tag?
+    # - assign it an ID for TOPIC_LOOKUP
+    #   - either the prettified name, or or an explicit id=""
+    #   - like devtools/cmark.py
+    # - then parse the HTML
+    #   - turn <code></code> into INVERTED
+    #   - turn <a> into UNDERLINE
+    #     - and then add at the bottom
+    #   - process
+    #     - $quick-ref:for
+    #     - $cross-ref:bash
+
+    # then output TOPIC_LOOKUP
+
+    pass
+
   else:
     raise RuntimeError('Invalid action %r' % action)
 

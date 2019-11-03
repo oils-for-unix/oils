@@ -63,7 +63,7 @@ def Header(meta, f):
 def Footer(meta, f):
   f.write('''\
     <hr/>
-    <i>Generated on %(build_timestamp)s</i>
+    <div id="build-timestamp"><i>Generated on %(build_timestamp)s</i></span>
   </body>
 </html>
 ''' % meta)

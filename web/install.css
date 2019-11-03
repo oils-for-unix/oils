@@ -1,9 +1,14 @@
 /* For INSTALL.txt as HTML */
 
 body {
+  font-family: monospace;
+
   margin: 0 auto;
   width: 40em;
-  font-family: monospace;
+
+  font-size: large;
+  line-height: 1.4;
+  color: #444;
 }
 
 p, ul, ol {
@@ -38,4 +43,8 @@ code {
 #version-in-header {
   color: darkgreen;
   font-weight: bold;
+}
+
+#build-timestamp {
+  font-family: serif;
 }

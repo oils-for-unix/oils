@@ -4,8 +4,7 @@ Building and Installing OSH
 OSH is a bash-compatible shell, and is part of the Oil project
 (http://www.oilshell.org).
 
-This file describes how to install OSH.  (It's in the release tarball and also
-published on the web.)
+This file describes how to configure, build, and install it from source code.
 
 Quick Start
 -----------
