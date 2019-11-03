@@ -26,7 +26,16 @@ def Header(meta, f):
     %(css_links)s
   </head>
   <body>
-    <p id="home-link">
+    <div id="home-link">
+''' % meta)
+
+  compact_title = meta.get('compact_title')
+  if compact_title:
+    f.write('''\
+<span id="compact-title">%(title)s</span>
+''' % meta)
+
+  f.write('''\
       <a href="https://github.com/oilshell/oil/blob/master/%(repo_url)s" id="source-link">source</a> |
 ''' % meta)
 
@@ -44,7 +53,7 @@ def Header(meta, f):
   f.write('''\
       <a href="/releases.html">all versions</a> |
       <a href="/">oilshell.org</a>
-    </p>
+    </div>
 ''' % meta)
 
   if 'in_progress' in meta:
@@ -63,7 +72,7 @@ def Header(meta, f):
 def Footer(meta, f):
   f.write('''\
     <hr/>
-    <div id="build-timestamp"><i>Generated on %(build_timestamp)s</i></span>
+    <div id="build-timestamp"><i>Generated on %(build_timestamp)s</i></div>
   </body>
 </html>
 ''' % meta)

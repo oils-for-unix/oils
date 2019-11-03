@@ -10,25 +10,25 @@ import pprint
 import re
 import sys
 
-
 # e.g. COMMAND LANGUAGE
 CAPS_RE = re.compile(r'^[A-Z ]+$')
 
-# 1. Optional X, then a SINGLE space
-# 2. lower-case or UPPER_CASE topic
-# 3. Optional: A SINGLE space, then punctuation
-#
-# Special chars:
-#
-# @ for BASH_SOURCE
-# : for all:strict and all:oil
-
-TOPIC_RE = re.compile(
-    r'\b(X[ ])?\@?([a-zA-Z0-9_\-:]+)([ ]\S+)?', re.VERBOSE)
-
 # Sections have alphabetical characters, spaces, and '/' for I/O.  They are
 # turned into anchors.
-SECTION_RE = re.compile(r'\s*\[([a-zA-Z /]+)\]')
+SECTION_RE = re.compile(r'''
+\s*
+\[
+([a-zA-Z /]+)
+\]
+''', re.VERBOSE)
+
+TOPIC_RE = re.compile(r'''
+\b(X[ ])?           # optional deprecation symbol X, then a single space
+@?                  # optional @array, e.g. @BASH_SOURCE
+([a-zA-Z0-9_\-:]+)  # e.g. osh-usage, all:oil, BASH_REMATCH
+([ ]\S+)?           # optional: single space then punctuation
+''', re.VERBOSE)
+
 
 # Can occur at the beginning of a line, or before a topic
 RED_X = '<span style="color: darkred">X </span>'
@@ -332,6 +332,14 @@ def main(argv):
       f.write('\n')
 
     print('Wrote %s/ and %s' % (text_dir, py_out_path), file=sys.stderr)
+
+  elif action == 'index':
+    # 1. Read quick-ref-index.md
+    # 2. Output a text file for each group, which appears in a <div>
+    #
+    # The whole file is also processed by devtools/cmark.py.
+    # Or we might want to make a special HTML file?
+    pass
 
   elif action == 'pages2':
     # TODO:

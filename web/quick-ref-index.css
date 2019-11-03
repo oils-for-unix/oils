@@ -1,0 +1,44 @@
+body {
+  margin: 1em;
+
+  line-height: 1.4;
+  color: #444;
+}
+
+h1 {
+  font-size: 1.4em;
+}
+
+#groups {
+  padding-top: 1em;
+
+  columns: 2;
+  /* 40em works in Chrome, but not in Firefox? */
+  column-width: 30em;
+}
+
+#sublang {
+  /* Works in Chrome but not Firefox? */
+  break-after: column;
+}
+
+
+/* blocks of code */
+pre {
+  background-color: #eee;
+  padding: 5px;
+}
+
+#compact-title {
+  font-weight: bold;
+  float: left;
+}
+
+#home-link {
+  text-align: right;
+}
+
+#version-in-header {
+  color: darkgreen;
+  font-weight: bold;
+}
