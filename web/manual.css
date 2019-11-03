@@ -46,7 +46,7 @@ pre {
  * <pre><code> pairs from indented blocks for some reason, and they would
  * interfere only in Chrome.
  */
-p code, li code {
+p code, li code, h2 code, h3 code, div code {
   background-color: #eee;
   padding: 4px;
 }

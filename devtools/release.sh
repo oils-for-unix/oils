@@ -749,7 +749,7 @@ cat <<EOF
     </p>
     <h1>Oil Releases</h1>
 
-    <table class="file-table">
+    <table class="release-table">
 EOF
 }
 

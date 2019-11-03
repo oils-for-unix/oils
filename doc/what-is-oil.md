@@ -20,6 +20,11 @@ The rest of this doc gives various
 <div id="toc">
 </div> 
 
+## It Runs Your Existing Shell Scripts
+
+## It's a New Language, which mostly borrows from other languages
+
+
 ## Examples For the Impatient
 
 This post is long, so here are some concrete examples.
@@ -173,7 +178,13 @@ Oil:
 - Scientific Computing / Data Science / "Data Engineering"  -- gluing things
   together that weren't meant to be glued together
 
-### Links To Older Descriptions
+
+## Oil Compared to Other Shells
+
+- link nushell comment from reddit
+
+
+## Links To Older Descriptions
 
 - The [design notes in the last post](22.html), in particular the array
   rewrites on Zulip.

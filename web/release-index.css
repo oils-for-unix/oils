@@ -23,6 +23,10 @@ code {
 }
 /* END COMMON */
 
+.release-table {
+  padding: 1em;
+}
+
 .file-table {
   padding: 1em;
   background-color: oldlace;
