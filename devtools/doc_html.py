@@ -28,8 +28,20 @@ def Header(meta, f):
   <body>
     <p id="home-link">
       <a href="https://github.com/oilshell/oil/blob/master/%(repo_url)s" id="source-link">source</a> |
+''' % meta)
+
+  if meta.get('all_docs_url') != '-':
+    f.write('''\
       <a href="%(all_docs_url)s">all docs</a>
         for <span id="version-in-header">version %(oil_version)s</span> |
+''' % meta)
+  elif meta.get('version_url') != '-':
+    # The doc/ URL needs to go back
+    f.write('''\
+      <a href="..">version %(oil_version)s</a> |
+''' % meta)
+
+  f.write('''\
       <a href="/releases.html">all versions</a> |
       <a href="/">oilshell.org</a>
     </p>

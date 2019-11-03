@@ -8,12 +8,14 @@ set -e / errexit in shell
 <div id="toc">
 </div>
 
-Problem:
+<!-- TODO: copy section from OSH manual -->
 
-Solution in Shell
+## Problem
+
+### Solution in Shell
 
 
-Solution Oil:
+### Solution Oil
 
 
 shopt -u errexit {
@@ -37,16 +39,16 @@ shopt -u errexit {
 
 No:
 
-  if myfunc ...
+    if myfunc ...
 
-  if ls | wc -l ;   # pipelines, no
+    if ls | wc -l ;   # pipelines, no
 
 
 Yes:
 
-  if external-command ...  (grep)
-  if builtin  (test)
-  if $0 myfunc
+    if external-command ...  (grep)
+    if builtin  (test)
+    if $0 myfunc
 
 
 It behaves just like an external command.

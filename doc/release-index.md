@@ -1,6 +1,7 @@
 ---
 css_files: web/release-index.css
-all_docs_url: doc/
+all_docs_url: -
+version_url: -
 ---
 
 Oil 0.7.pre5
@@ -57,7 +58,7 @@ Oil has three major sources of docs:
 
 ## Metrics
 
-- Lines of source, counted in differented ways:
+- Lines of source, counted in different ways:
   - [osh-cloc](metrics.wwz/line-counts/osh-cloc.txt).  OSH and common
     libraries, as measured by the [cloc][] tool.
   - [src](metrics.wwz/line-counts/src.txt).  The whole Oil repo organized by

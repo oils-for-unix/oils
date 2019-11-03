@@ -14,15 +14,24 @@ It also discusses **future work**.
 <div id="toc">
 </div> 
 
-## Oil is Built On Top of Shell
+## Oil Retains These Shell Concepts
 
-Same concepts apply:
-
-- commands
+- Commands (pipelines, etc.)
+  - `ls -l`
+  - `ls -l | wc -l`
 - words
+  - double quoted
+  - interpolation
 - variables
+  - use different assigment builtins
 - shell builtins
+  - different ones
 - shell functions, loops, and conditionals
+  - different syntax
+
+<!--
+Would be nice to show these side-by-side?  Old way and new way.
+-->
 
 Oil retains them all.  A big difference is that keywords rather than builtins
 are used for assignment.
