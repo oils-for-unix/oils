@@ -15,7 +15,7 @@ language.  It's **our upgrade path from bash**.
 
 ## Preliminaries
 
-- [What is Oil?](what-is-oil.html).  High-level descriptions of the project.
+- [What is Oil?](what-is-oil.html)  High-level descriptions of the project.
 - [The Oil Language From 10,000 Feet](oil-overview.html)  A tour of Oil.
 - [INSTALL](INSTALL.html). How do I install Oil?  This text file is also in the
   tarball.

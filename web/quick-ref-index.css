@@ -1,5 +1,6 @@
 body {
-  margin: 1em;
+  margin: 0 auto;
+  width: 40em;
 
   line-height: 1.4;
   color: #444;
@@ -9,13 +10,21 @@ h1 {
   font-size: 1.4em;
 }
 
+h2 {
+  font-size: 1em;
+}
+
+/*
+  Tried columns, but it didn't fit on one screen.  And it's not that portable.
+  40em works in Chrome, but not in Firefox? 
+
 #groups {
   padding-top: 1em;
 
   columns: 2;
-  /* 40em works in Chrome, but not in Firefox? */
   column-width: 30em;
 }
+*/
 
 #sublang {
   /* Works in Chrome but not Firefox? */

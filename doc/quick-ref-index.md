@@ -1,8 +1,9 @@
 ---
-css_files: ../web/quick-ref-index.css
-title: Index of Help Topics
-compact_title: yes
+css_files: ../web/quick-ref-index.css ../web/toc.css
 ---
+
+Index of Help Topics
+====================
 
 <div id="groups">
 
@@ -47,9 +48,12 @@ Each <div> gets split up into a "group" panel
   - this should be turned GREEN?
 -->
 
+<div id="toc">
+</div>
+
 
 <div id="intro">
-<a href="$quick-ref:intro">INTRO</a>
+<h2><a href="$quick-ref:intro">INTRO</a></h2>
 <pre>
   [Usage]         bundle-usage   osh-usage   oil-usage   config   startup
                   line-editing   prompt
@@ -60,7 +64,7 @@ Each <div> gets split up into a "group" panel
 
 
 <div id="cmd">
-<a href="$quick-ref:cmd">COMMAND LANGUAGE</a>
+<h2><a href="$quick-ref:cmd">COMMAND LANGUAGE</a></h2>
 <pre>
   [Commands]      simple-command   semicolon ;
   [Conditional]   case   if   true   false   colon :
@@ -81,7 +85,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
 </div>
 
 <div id="assign">
-<a href="$quick-ref:assign">VARIABLE ASSIGNMENTS</a>
+<h2><a href="$quick-ref:assign">VARIABLE ASSIGNMENTS</a></h2>
 <pre>
   [Operators]     assign        str='xyz'
                   append        str+='abc'
@@ -94,7 +98,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
 </div>
 
 <div id="expr">
-<a href="$quick-ref:expr">OIL EXPRESSION LANGUAGE</a>
+<h2><a href="$quick-ref:expr">OIL EXPRESSION LANGUAGE</a></h2>
 <pre>
   [Data Types]    Str           r'\'   c'\n'   "$var"   multiline r""" c'''
                   X Symbol      %foo
@@ -134,7 +138,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
 </div>
 
 <div id="word">
-<a href="$quick-ref:word">WORD LANGUAGE</a>
+<h2><a href="$quick-ref:word">WORD LANGUAGE</a></h2>
 <pre>
   [Quotes]        quotes        'abc'  $'\n'  "$var"
   [Substitutions] com-sub       $(command)   `command`
@@ -156,7 +160,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
 </div>
 
 <div id="sublang">
-<a href="$quick-ref:sublang">OTHER SHELL SUBLANGUAGES</a>
+<h2><a href="$quick-ref:sublang">OTHER SHELL SUBLANGUAGES</a></h2>
 <pre>
   [Arithmetic]    arith-context Where legacy arithmetic is allowed
                   num-literals  0xFF  0755  etc.
@@ -180,7 +184,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
 </div>
 
 <div id="builtin">
-<a href="$quick-ref:builtin">BUILTIN COMMANDS</a>
+<h2><a href="$quick-ref:builtin">BUILTIN COMMANDS</a></h2>
 <pre>
   [I/O]           read   echo 
                   X readarray   X mapfile
@@ -215,7 +219,7 @@ X [External Lang] BEGIN   END   when (awk)
 </div>
 
 <div id="option">
-<a href="$quick-ref:option">SHELL OPTIONS</a>
+<h2><a href="$quick-ref:option">SHELL OPTIONS</a></h2>
 <pre>
   [Errors]        nounset   pipefail   errexit   inherit_errexit
   [Globbing]      noglob   failglob   nullglob
@@ -262,7 +266,7 @@ X [External Lang] BEGIN   END   when (awk)
 </div>
 
 <div id="env">
-<a href="$quick-ref:env">ENVIRONMENT VARIABLES</a>
+<h2><a href="$quick-ref:env">ENVIRONMENT VARIABLES</a></h2>
 <pre>
   [Shell Options] SHELLOPTS   X BASHOPTS
   [Other Env]     HOME   PATH   IFS
@@ -271,7 +275,7 @@ X [External Lang] BEGIN   END   when (awk)
 </div>
 
 <div id="special">
-<a href="$quick-ref:special">SPECIAL VARIABLES</a>
+<h2><a href="$quick-ref:special">SPECIAL VARIABLES</a></h2>
 <pre>
   [Oil]           ARGV   STATUS
 X [Platform]      HOSTNAME   OSTYPE   BASH_VERSION   @BASH_VERSINFO
@@ -293,7 +297,7 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
 </div>
 
 <div id="plugin">
-<a href="$quick-ref:plugin">PLUGINS AND HOOKS</a>
+<h2><a href="$quick-ref:plugin">PLUGINS AND HOOKS</a></h2>
 <pre>
   [Signals]       SIGTERM   X SIGINT   X SIGABRT   SIG...
   [Traps]         EXIT   X ERR   X DEBUG   X RETURN
@@ -304,7 +308,7 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
 </div>
 
 <div id="lib">
-<a href="$quick-ref:lib">OIL LIBRARIES</a>
+<h2><a href="$quick-ref:lib">OIL LIBRARIES</a></h2>
 <pre>
   [Collections]   len()
   [String, Eggex] join()   split()    $IFS, awk algorithm, regex
