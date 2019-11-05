@@ -156,6 +156,9 @@ cmark() {
 }
 
 readonly DOCS=(
+  help
+  help-index
+
   # polished
   osh-manual known-differences
   errors
@@ -178,7 +181,6 @@ readonly DOCS=(
   oil-proc-func-block
   eggex
   unicode
-
 
   data-model
   architecture-notes

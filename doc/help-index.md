@@ -1,5 +1,5 @@
 ---
-css_files: ../web/quick-ref-index.css ../web/toc.css
+css_files: ../web/help-index.css ../web/toc.css
 ---
 
 Index of Help Topics

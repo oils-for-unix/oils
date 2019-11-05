@@ -1,6 +1,6 @@
 ---
 in_progress: yes
-css_files: ../web/quick-ref.css ../web/toc.css
+css_files: ../web/help.css ../web/toc.css
 ---
 
 Oil Quick Reference
