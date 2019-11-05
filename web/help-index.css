@@ -1,9 +1,25 @@
 body {
   margin: 0 auto;
-  width: 40em;
+  width: 45em;
 
+  font-size: large;
   line-height: 1.4;
   color: #444;
+}
+
+a:link {
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* where help-index.html links to h2 in help.html */
+.group-link {
+  width: 100%;
+  text-align: right;
+  font-family: monospace;
+  /* float: right; */
 }
 
 h1 {
@@ -11,7 +27,7 @@ h1 {
 }
 
 h2 {
-  font-size: 1em;
+  font-size: 1.2em;
 }
 
 /*

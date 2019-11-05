@@ -6,6 +6,29 @@ css_files: ../web/help.css ../web/toc.css
 Oil Quick Reference
 ===================
 
+<!--
+IMPORTANT: This doc is processed in TWO WAYS.  Be careful when editing.
+
+To generate HTML:
+- split_doc.py and then devtools/cmark.py
+
+To generate text for bin/oil
+- 'devtools/cmark.py' to render HTML, then 'make_help.py cards' to generate
+  'card' files.
+
+Subset of markdown we use:
+- [links] to generate <a href=""></a> (ANSI underline: then add to bottom?)
+- `backticks` to generate <code> (ANSI: bold or reverse)
+- 4 space indents  to generate <pre><code>
+- fenced code blocks to generate <pre><code class="language-X">
+
+We could also allow:
+- **bold** for bold
+- *foo* for italic / underline
+
+-->
+
+
 This doc describes every aspect of Oil and OSH briefly, and is indexed by
 keywords.
 

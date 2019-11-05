@@ -5,6 +5,7 @@ quick_ref.py
 """
 
 import cgi
+import HTMLParser
 import os
 import pprint
 import re
@@ -32,6 +33,12 @@ TOPIC_RE = re.compile(r'''
 
 # Can occur at the beginning of a line, or before a topic
 RED_X = '<span style="color: darkred">X </span>'
+
+
+def log(msg, *args):
+  if args:
+    msg = msg % args
+  print(msg, file=sys.stderr)
 
 
 def _StringToHref(s):
@@ -307,6 +314,156 @@ def Pages(f, text_out):
   print('</pre>')
 
 
+HTML_REFS = {
+    'amp': '&',
+    'lt': '<',
+    'gt': '>',
+    'quot': '"',
+}
+
+
+class Splitter(HTMLParser.HTMLParser):
+
+  def __init__(self, split_tag, out):
+    HTMLParser.HTMLParser.__init__(self)
+    self.split_tag = split_tag
+    self.out = out
+    self.cur_group = None
+
+    self.indent = 0
+
+  def log(self, msg, *args):
+    ind = self.indent * ' '
+    log(ind + msg, *args)
+
+  def handle_starttag(self, tag, attrs):
+    # 
+    if tag == self.split_tag:
+      if self.cur_group:
+        self.out.append(self.cur_group)
+
+      values = [v for k, v in attrs if k == 'id']
+      group_name = values[0] if len(values) == 1 else None
+      self.cur_group = (group_name, [])
+
+    self.log('start tag %s %s', tag, attrs)
+    self.indent += 1
+
+  def handle_endtag(self, tag):
+    self.log('end tag %s', tag)
+    self.indent -= 1
+
+  def handle_entityref(self, name):
+    """
+    From Python docs:
+    This method is called to process a named character reference of the form
+    &name; (e.g. &gt;), where name is a general entity reference (e.g. 'gt').
+    """
+    c = HTML_REFS[name]
+    self.cur_group[1].append(c)
+
+  def handle_data(self, data):
+    self.log('data %r', data)
+    if self.cur_group:
+      self.cur_group[1].append(data)
+
+  def end(self):
+    if self.cur_group:
+      self.out.append(self.cur_group)
+
+    # Maybe detect nesting?
+    if self.indent != 0:
+      raise RuntimeError('Unbalanced HTML tags: %d' % self.indent)
+
+
+def _LinkLine(line):
+  if line.startswith('  '):
+    html_line = HighlightLine(line)
+  elif line.startswith('X '):
+    html_line = RED_X + HighlightLine(line[2:])
+  else:
+    html_line = cgi.escape(line)
+  return html_line
+
+
+class IndexLinker(HTMLParser.HTMLParser):
+
+  def __init__(self, pre_class, out):
+    HTMLParser.HTMLParser.__init__(self)
+    self.split_tag = pre_class
+    self.indent = 0  # checking
+
+    self.pre_parts = []  # stuff to highlight
+
+    self.out = out
+
+    self.linking = False
+
+  def log(self, msg, *args):
+    return
+    ind = self.indent * ' '
+    log(ind + msg, *args)
+
+  def handle_starttag(self, tag, attrs):
+    if tag == 'pre':
+      values = [v for k, v in attrs if k == 'class']
+      class_name = values[0] if len(values) == 1 else None
+
+      if class_name:
+        self.linking = True
+
+    if attrs:
+      attr_str = ' '  # leading space
+      attr_str += ' '.join('%s="%s"' % (k, v) for (k, v) in attrs)
+    else:
+      attr_str = ''
+    self.out.write('<%s%s>' % (tag, attr_str))
+
+    self.log('start tag %s %s', tag, attrs)
+    self.indent += 1
+
+  def handle_endtag(self, tag):
+    if tag == 'pre':
+      self.linking = False
+
+      lines = ''.join(self.pre_parts).splitlines()
+      for line in lines:
+        #self.out.write('|')
+        self.out.write(_LinkLine(line))
+        self.out.write('\n')
+
+      self.pre_parts = []
+
+    self.out.write('</%s>' % tag)
+
+    self.log('end tag %s', tag)
+    self.indent -= 1
+
+  def handle_entityref(self, name):
+    """
+    From Python docs:
+    This method is called to process a named character reference of the form
+    &name; (e.g. &gt;), where name is a general entity reference (e.g. 'gt').
+    """
+    c = HTML_REFS[name]
+    if self.linking:
+      self.pre_parts.append(c)
+    else:
+      self.out.write(c)
+
+  def handle_data(self, data):
+    if self.linking:
+      self.pre_parts.append(data)
+    else:
+      self.out.write(data)
+
+  def end(self):
+    return
+    # Maybe detect nesting?
+    if self.indent != 0:
+      raise RuntimeError('Unbalanced HTML tags: %d' % self.indent)
+
+
 
 def main(argv):
   action = argv[1]
@@ -333,16 +490,71 @@ def main(argv):
 
     print('Wrote %s/ and %s' % (text_dir, py_out_path), file=sys.stderr)
 
-  elif action == 'index':
-    # 1. Read quick-ref-index.md
+  elif action == 'text-index':
+    # Make text for the app bundle.  HTML is made by build/doc.sh
+
+    # 1. Read help-index.md
+    #    split <h2></h2>
     # 2. Output a text file for each group, which appears in a <div>
     #
     # The whole file is also processed by devtools/cmark.py.
     # Or we might want to make a special HTML file?
-    pass
 
-  elif action == 'pages2':
+    # names are <h2 id="intro">...</h2>
+
+    # TODO: title needs to be centered in text?
+
+    groups = []
+    sp = Splitter('h2', groups)
+    sp.feed(sys.stdin.read())
+    sp.end()
+
+    for name, parts in groups:
+      print(name)
+      text = ''.join(parts)
+      text = text.rstrip() + '\n'
+
+      # This does NOT go through markdown.
+      # Instead each 'text'
+
+      print(text)
+
+    log('Parsed %d parts', len(groups))
+
+  elif action == 'html-index':
+    # TODO: We could process the pages first like in 'cards', and
+    # change the index rendering.
+
+    # TODO: parse all the <pre class="help-index"> blocks
+    sp = IndexLinker('help-index', sys.stdout)
+    sp.feed(sys.stdin.read())
+    sp.end()
+
+  elif action == 'cards':
+    page_path = argv[2]
+    index_path = argv[3]
+
+    # Process pages first, so you can parse 
+    # <h4 class="discouarged oil-language osh-only bash ksh posix"></h4>
+    #
+    # And then the cards can be highlighted?  Or at least have the markup to be
+    # able to do so.
+    #
+    # help index intro
+    # help -color=0 index intro  # no color
+    #
+    # Highlight tags with two different colors
+    # help -tag=oil-language -tag bash index intro  # no color
+
+    # Make text for the app bundle.  HTML is made by build/doc.sh
+
+    # names are <h4 id="if" keywords="elif fi">...</h2>
+
+    # NOTE: This has to go through MARKDOWN to parse:
+    # `code` and indented
+
     # TODO:
+    # - read help.md
     # - split <h4></h4>
     #   - how?  From beginning of <h4> until next <h> tag?
     # - assign it an ID for TOPIC_LOOKUP

@@ -5,29 +5,34 @@ css_files: ../web/help-index.css ../web/toc.css
 Index of Help Topics
 ====================
 
-<div id="groups">
-
-<!-- this section is only on the web -->
-
 <!--
-Below is a list of topics, organized into GROUPS and [Sections].  The X prefix
-means "unimplemented".  
+IMPORTANT: This doc is processed in TWO WAYS.  Be careful when editing.
 
-This doc can be viewed on the web at:
+To generate HTML:
+- split_doc.py and then 'make_help.py html-index' to add links.
 
-<https://www.oilshell.org/release/0.7.pre5/doc/quick-ref-index.html>
+To generate text for bin/oil
+- split_doc.py then 'make_help.py text-index' to generate files.
 
-Or inside Oil with:
-
-    help index
-    help index GROUP...
-
-where GROUP is one of:
-
-    intro   cmd   assign   expr   sublang
-    builtin   option   vars   plugin   lib
+NOTE: For convenience we don't escape < > and & below, except in the case of
+'<capture>' where it really looks like a tag.
 
 -->
+
+<div id="groups">
+
+This page organizes Oil help topics into 12 **groups**:
+
+    intro   cmd   assign   expr   word   sublang
+    builtin   option   env   vars   plugin   lib
+
+Each group has a few `[Sections]`.  The <span style="color: darkred">X</span>
+prefix means "unimplemented".  
+
+You can view this index inside Oil with:
+
+    help index          # all 12 groups
+    help index GROUP...
 
 <!--
 
@@ -52,20 +57,20 @@ Each <div> gets split up into a "group" panel
 </div>
 
 
-<div id="intro">
-<h2><a href="$quick-ref:intro">INTRO</a></h2>
-<pre>
+## Intro
+
+<div class="group-link"><a href="$quick-ref:intro">intro</a></div>
+<pre class="help-index">
   [Usage]         bundle-usage   osh-usage   oil-usage   config   startup
                   line-editing   prompt
   [Lexing]        comments #   line-continuation \
   [Oil Lexing]    single-command %%%   docstring ###
 </pre>
-</div>
 
+## Command Language
 
-<div id="cmd">
-<h2><a href="$quick-ref:cmd">COMMAND LANGUAGE</a></h2>
-<pre>
+<div class="group-link"><a href="$quick-ref:cmd">cmd</a></div>
+<pre class="help-index">
   [Commands]      simple-command   semicolon ;
   [Conditional]   case   if   true   false   colon :
                   bang !   and &&   or ||   dbracket [[
@@ -82,11 +87,9 @@ Each <div> gets split up into a "group" panel
 X [Coil Keywords] const   try   catch   throw   switch   match
                   data   enum   module   interface   namespace
 </pre>
-</div>
 
-<div id="assign">
-<h2><a href="$quick-ref:assign">VARIABLE ASSIGNMENTS</a></h2>
-<pre>
+<h2 id="assign"><a href="$quick-ref:assign">VARIABLE ASSIGNMENTS</a></h2>
+<pre class="help-index">
   [Operators]     assign        str='xyz'
                   append        str+='abc'
   [Compound Data] array         array=(a b c)   array[1]=B   "${a[@]}"
@@ -95,11 +98,11 @@ X [Coil Keywords] const   try   catch   throw   switch   match
                   declare   typeset   X let
   [Oil Keywords]  var   setvar   X auto
 </pre>
-</div>
 
+<!-- note: <capture> is HTML escaped below -->
 <div id="expr">
 <h2><a href="$quick-ref:expr">OIL EXPRESSION LANGUAGE</a></h2>
-<pre>
+<pre class="help-index">
   [Data Types]    Str           r'\'   c'\n'   "$var"   multiline r""" c'''
                   X Symbol      %foo
                   Null          null
@@ -125,7 +128,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
                   func-decl     func inc(p, p2=0; n=0, ...named) { echo hi }
                   proc-decl     proc p (x, y, @rest) { echo hi }
   [Regexes]       re-literal    /d+/
-                  re-compound   ~   (group)  <capture>    sequence
+                  re-compound   ~   (group)  &lt;capture&gt;    sequence
                   re-primitive  %zero  @other_pattern  'sq'  "dq"  $x  ${x}
                   named-classes dot   digit   space   word   d   s   w
                   class-literal [a-z 'abc' \\ \xFF \u0100]
@@ -139,7 +142,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
 
 <div id="word">
 <h2><a href="$quick-ref:word">WORD LANGUAGE</a></h2>
-<pre>
+<pre class="help-index">
   [Quotes]        quotes        'abc'  $'\n'  "$var"
   [Substitutions] com-sub       $(command)   `command`
                   var-sub       ${var}
@@ -161,7 +164,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
 
 <div id="sublang">
 <h2><a href="$quick-ref:sublang">OTHER SHELL SUBLANGUAGES</a></h2>
-<pre>
+<pre class="help-index">
   [Arithmetic]    arith-context Where legacy arithmetic is allowed
                   num-literals  0xFF  0755  etc.
                   math          1 + 2*3
@@ -185,7 +188,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
 
 <div id="builtin">
 <h2><a href="$quick-ref:builtin">BUILTIN COMMANDS</a></h2>
-<pre>
+<pre class="help-index">
   [I/O]           read   echo 
                   X readarray   X mapfile
   [Run Code]      source .   eval   trap
@@ -220,7 +223,7 @@ X [External Lang] BEGIN   END   when (awk)
 
 <div id="option">
 <h2><a href="$quick-ref:option">SHELL OPTIONS</a></h2>
-<pre>
+<pre class="help-index">
   [Errors]        nounset   pipefail   errexit   inherit_errexit
   [Globbing]      noglob   failglob   nullglob
   [Debugging]     xtrace   X verbose   X extdebug
@@ -267,7 +270,7 @@ X [External Lang] BEGIN   END   when (awk)
 
 <div id="env">
 <h2><a href="$quick-ref:env">ENVIRONMENT VARIABLES</a></h2>
-<pre>
+<pre class="help-index">
   [Shell Options] SHELLOPTS   X BASHOPTS
   [Other Env]     HOME   PATH   IFS
   [Oil Paths]     ?builtins   ?completion_plugins   ?coprocesses
@@ -276,7 +279,7 @@ X [External Lang] BEGIN   END   when (awk)
 
 <div id="special">
 <h2><a href="$quick-ref:special">SPECIAL VARIABLES</a></h2>
-<pre>
+<pre class="help-index">
   [Oil]           ARGV   STATUS
 X [Platform]      HOSTNAME   OSTYPE   BASH_VERSION   @BASH_VERSINFO
   [Call Stack]    @BASH_SOURCE   @FUNCNAME   @BASH_LINENO   
@@ -298,7 +301,7 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
 
 <div id="plugin">
 <h2><a href="$quick-ref:plugin">PLUGINS AND HOOKS</a></h2>
-<pre>
+<pre class="help-index">
   [Signals]       SIGTERM   X SIGINT   X SIGABRT   SIG...
   [Traps]         EXIT   X ERR   X DEBUG   X RETURN
   [Words]         PS1   X PS2   X PS3   PS4
@@ -309,7 +312,7 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
 
 <div id="lib">
 <h2><a href="$quick-ref:lib">OIL LIBRARIES</a></h2>
-<pre>
+<pre class="help-index">
   [Collections]   len()
   [String, Eggex] join()   split()    $IFS, awk algorithm, regex
                   sub()  find()       regex/string functions

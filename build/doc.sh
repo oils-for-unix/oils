@@ -342,4 +342,51 @@ EOF
   head _tmp/testdoc*
 }
 
+make-help-demo() {
+  devtools/make_help.py text-index <<EOF
+
+<h2 id="intro">Intro</h2>
+<pre class="help-index">
+  [Usage]         bundle-usage   osh-usage   oil-usage   config   startup
+                  line-editing   prompt
+  [Lexing]        comments #   line-continuation \\
+  [Oil Lexing]    single-command %%%   docstring ###
+</pre>
+
+<p>foo &amp; bar</p>
+
+<h2 id="cmd">Command Language</h2>
+
+EOF
+}
+
+# Generate an HTML page for the help index.  It has an extra step.
+help-index-html() {
+  # TODO: split the doc
+  # Run through devtools/cmark.py?
+  # And then parse the <pre> sections?
+
+  #devtools/make_help.py html-index < doc/help-index.md
+
+  local tmp=_tmp/help-index.html
+  split-and-render doc/help-index.md $tmp
+
+  ls -l $tmp
+
+  local out=_release/VERSION/doc/help-index.html
+  devtools/make_help.py html-index < $tmp > $out
+
+  ls -l $out
+}
+
+# Do all cards at once
+cards() {
+  devtools/make_help.py text-index < doc/help.md
+}
+
+# Deprecated?
+help-index-text() {
+  devtools/make_help.py text-index < doc/help-index.md
+}
+
 "$@"
