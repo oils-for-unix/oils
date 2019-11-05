@@ -76,8 +76,8 @@ _build-timestamp() {
 # - in deployment script
 
 # Run with environment variable
-_quick-ref() {
-  devtools/quick_ref.py "$@"
+_make-help() {
+  devtools/make_help.py "$@"
 }
 
 x-quick-ref() {
@@ -131,10 +131,10 @@ x-quick-ref() {
     </p>
 EOF
 
-    _quick-ref toc doc/${prog}-quick-ref-toc.txt
+    _make-help toc doc/${prog}-quick-ref-toc.txt
 
     # Also generate the _devbuild/osh-quick-ref/ dir
-    _quick-ref pages doc/${prog}-quick-ref-pages.txt $text_out_dir $py_out
+    _make-help pages doc/${prog}-quick-ref-pages.txt $text_out_dir $py_out
 
     _build-timestamp
     cat <<EOF

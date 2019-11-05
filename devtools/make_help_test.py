@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-quick_ref_test.py: Tests for quick_ref.py
+make_help_test.py: Tests for make_help.py
 """
 from __future__ import print_function
 
@@ -8,10 +8,10 @@ import os
 import unittest
 from cStringIO import StringIO
 
-import quick_ref  # module under test
+import make_help  # module under test
 
 
-class QuickRefTest(unittest.TestCase):
+class MakeHelpTest(unittest.TestCase):
 
   def testTableOfContents(self):
     os.environ['OIL_VERSION'] = '0.7.pre5'
@@ -29,7 +29,7 @@ INTRO
   [Overview] hello   there   X not-impl
 ''')
 
-    quick_ref.TableOfContents(f)
+    make_help.TableOfContents(f)
 
 
 if __name__ == '__main__':
