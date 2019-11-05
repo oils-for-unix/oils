@@ -16,10 +16,8 @@ a:hover {
 
 /* where help-index.html links to h2 in help.html */
 .group-link {
-  width: 100%;
-  text-align: right;
   font-family: monospace;
-  /* float: right; */
+  color: darkgreen;
 }
 
 h1 {
@@ -28,6 +26,12 @@ h1 {
 
 h2 {
   font-size: 1.2em;
+}
+
+/* Copied from manual.css */
+p code, li code, h2 code, h3 code, div code {
+  background-color: #eee;
+  padding: 4px;
 }
 
 /*

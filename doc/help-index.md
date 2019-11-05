@@ -1,47 +1,22 @@
 ---
+in_progress: yes
 css_files: ../web/help-index.css ../web/toc.css
 ---
 
-Index of Help Topics
-====================
+Oil Help Topics
+===============
 
 <!--
-IMPORTANT: This doc is processed in TWO WAYS.  Be careful when editing.
+IMPORTANT: This doc is processed in TWO WAYS.  BE CAREFUL WHEN EDITING.
 
 To generate HTML:
 - split_doc.py and then 'make_help.py html-index' to add links.
 
-To generate text for bin/oil
+To generate text "cards" for bin/oil
 - split_doc.py then 'make_help.py text-index' to generate files.
 
 NOTE: For convenience we don't escape < > and & below, except in the case of
 '<capture>' where it really looks like a tag.
-
--->
-
-<div id="groups">
-
-This page organizes Oil help topics into 12 **groups**:
-
-    intro   cmd   assign   expr   word   sublang
-    builtin   option   env   vars   plugin   lib
-
-Each group has a few `[Sections]`.  The <span style="color: darkred">X</span>
-prefix means "unimplemented".  
-
-You can view this index inside Oil with:
-
-    help index          # all 12 groups
-    help index GROUP...
-
-<!--
-
-Format of this doc:
-
-Each <div> gets split up into a "group" panel
-
-- In HTML it can be placed side-by-side, adding links
-- In text it becomes 'help index foo'>
 
 - Special rules:
   - [] at start of line is a section
@@ -53,13 +28,28 @@ Each <div> gets split up into a "group" panel
   - this should be turned GREEN?
 -->
 
+This is the online version of Oil's `help`.  Each help topic is linked below.
+
+For example, typing `help if` in the shell shows you how to use the `if`
+statement.  A link to this same rtext appears in the [`command`](#command)
+group below, under the `[Conditional]` section.
+
+To view this page inside the shell itself, use:
+
+    help index           # all 12 groups
+    help index GROUP...  # show one or more groups
+
+An <span style="color: darkred">X</span> next to a help topic means that it's
+an **unimplemented** feature.
+
 <div id="toc">
 </div>
 
 
-## Intro
+<h2 id="overview">
+  Overview (<a class="group-link" href="$help:overview">overview</a>)
+</h2>
 
-<div class="group-link"><a href="$quick-ref:intro">intro</a></div>
 <pre class="help-index">
   [Usage]         bundle-usage   osh-usage   oil-usage   config   startup
                   line-editing   prompt
@@ -67,9 +57,10 @@ Each <div> gets split up into a "group" panel
   [Oil Lexing]    single-command %%%   docstring ###
 </pre>
 
-## Command Language
+<h2 id="command">
+  Command Language (<a class="group-link" href="$help:command">command</a>)
+</h2>
 
-<div class="group-link"><a href="$quick-ref:cmd">cmd</a></div>
 <pre class="help-index">
   [Commands]      simple-command   semicolon ;
   [Conditional]   case   if   true   false   colon :
@@ -88,7 +79,10 @@ X [Coil Keywords] const   try   catch   throw   switch   match
                   data   enum   module   interface   namespace
 </pre>
 
-<h2 id="assign"><a href="$quick-ref:assign">VARIABLE ASSIGNMENTS</a></h2>
+<h2 id="assign">
+  Variable Assignments (<a class="group-link" href="$help:assign">assign</a>)
+</h2>
+
 <pre class="help-index">
   [Operators]     assign        str='xyz'
                   append        str+='abc'
@@ -99,9 +93,11 @@ X [Coil Keywords] const   try   catch   throw   switch   match
   [Oil Keywords]  var   setvar   X auto
 </pre>
 
+<h2 id="expr">
+  Oil Expression Language (<a class="group-link" href="$help:expr">expr</a>)
+</h2>
+
 <!-- note: <capture> is HTML escaped below -->
-<div id="expr">
-<h2><a href="$quick-ref:expr">OIL EXPRESSION LANGUAGE</a></h2>
 <pre class="help-index">
   [Data Types]    Str           r'\'   c'\n'   "$var"   multiline r""" c'''
                   X Symbol      %foo
@@ -124,13 +120,13 @@ X [Coil Keywords] const   try   catch   throw   switch   match
                   getattr       d->key is like d['key'] or d.key
                   scope-attr    module::name
                   genexp   listcomp   X dictcomp
-  [Functions]     inline-call   echo $strfunc(x, y) @arrayfunc(z)
+  [Functions]     inline-call   $strfunc(x, y) @arrayfunc(z)
                   func-decl     func inc(p, p2=0; n=0, ...named) { echo hi }
                   proc-decl     proc p (x, y, @rest) { echo hi }
   [Regexes]       re-literal    /d+/
                   re-compound   ~   (group)  &lt;capture&gt;    sequence
                   re-primitive  %zero  @other_pattern  'sq'  "dq"  $x  ${x}
-                  named-classes dot   digit   space   word   d   s   w
+                  named-classes dot  digit  space  word  d  s  w
                   class-literal [a-z 'abc' \\ \xFF \u0100]
                   re-flags      ignorecase etc.
                   re-multiline  ///
@@ -138,10 +134,11 @@ X [Coil Keywords] const   try   catch   throw   switch   match
                                 fnmatch()
                   re-glob-ops   ~   !~
 </pre>
-</div>
 
-<div id="word">
-<h2><a href="$quick-ref:word">WORD LANGUAGE</a></h2>
+<h2 id="word">
+  Word Language (<a class="group-link" href="$help:word">word</a>)
+</h2>
+
 <pre class="help-index">
   [Quotes]        quotes        'abc'  $'\n'  "$var"
   [Substitutions] com-sub       $(command)   `command`
@@ -160,10 +157,11 @@ X [Coil Keywords] const   try   catch   throw   switch   match
                   X oil-printf  ${x %.3f}
                   X oil-format  ${x|html}
 </pre>
-</div>
 
-<div id="sublang">
-<h2><a href="$quick-ref:sublang">OTHER SHELL SUBLANGUAGES</a></h2>
+<h2 id="sublang">
+  Other Shell Sublanguages (<a class="group-link" href="$help:sublang">sublang</a>)
+</h2>
+
 <pre class="help-index">
   [Arithmetic]    arith-context Where legacy arithmetic is allowed
                   num-literals  0xFF  0755  etc.
@@ -184,10 +182,11 @@ X [Coil Keywords] const   try   catch   throw   switch   match
   [Brace Expand]  braces        {alice,bob}@example.com
   [History]       histsub       !$  !!  !n
 </pre>
-</div>
 
-<div id="builtin">
-<h2><a href="$quick-ref:builtin">BUILTIN COMMANDS</a></h2>
+<h2 id="builtin">
+  Builtin Commands (<a class="group-link" href="$help:builtin">builtin</a>)
+</h2>
+
 <pre class="help-index">
   [I/O]           read   echo 
                   X readarray   X mapfile
@@ -219,10 +218,11 @@ X [Unsupported]   enable
 X [External Lang] BEGIN   END   when (awk)
                   rule (make)   each (xargs)   fs (find)
 </pre>
-</div>
 
-<div id="option">
-<h2><a href="$quick-ref:option">SHELL OPTIONS</a></h2>
+<h2 id="option">
+  Shell Options (<a class="group-link" href="$help:option">option</a>)
+</h2>
+
 <pre class="help-index">
   [Errors]        nounset   pipefail   errexit   inherit_errexit
   [Globbing]      noglob   failglob   nullglob
@@ -266,19 +266,22 @@ X [External Lang] BEGIN   END   when (awk)
                                          $'\n'   @(*.sh|*.py)  `echo comsub`
                                          ${a[@]}
 </pre>
-</div>
 
-<div id="env">
-<h2><a href="$quick-ref:env">ENVIRONMENT VARIABLES</a></h2>
+<h2 id="env">
+  Environment Variables (<a class="group-link" href="$help:env">env</a>)
+</h2>
+
 <pre class="help-index">
   [Shell Options] SHELLOPTS   X BASHOPTS
   [Other Env]     HOME   PATH   IFS
   [Oil Paths]     ?builtins   ?completion_plugins   ?coprocesses
 </pre>
-</div>
 
-<div id="special">
-<h2><a href="$quick-ref:special">SPECIAL VARIABLES</a></h2>
+
+<h2 id="special">
+  Special Variables (<a class="group-link" href="$help:special">special</a>)
+</h2>
+
 <pre class="help-index">
   [Oil]           ARGV   STATUS
 X [Platform]      HOSTNAME   OSTYPE   BASH_VERSION   @BASH_VERSINFO
@@ -297,10 +300,11 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
   [Functions]     X RANDOM   X SECONDS
   [Other Special] BASH_REMATCH   @PIPESTATUS
 </pre>
-</div>
 
-<div id="plugin">
-<h2><a href="$quick-ref:plugin">PLUGINS AND HOOKS</a></h2>
+<h2 id="plugin">
+  Plugins and Hooks (<a class="group-link" href="$help:plugin">plugin</a>)
+</h2>
+
 <pre class="help-index">
   [Signals]       SIGTERM   X SIGINT   X SIGABRT   SIG...
   [Traps]         EXIT   X ERR   X DEBUG   X RETURN
@@ -308,10 +312,11 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
   [Completion]    complete
   [Other Plugin]  X command_not_found   PROMPT_COMMAND
 </pre>
-</div>
 
-<div id="lib">
-<h2><a href="$quick-ref:lib">OIL LIBRARIES</a></h2>
+<h2 id="lib">
+  Oil Libraries (<a class="group-link" href="$help:lib">lib</a>)
+</h2>
+
 <pre class="help-index">
   [Collections]   len()
   [String, Eggex] join()   split()    $IFS, awk algorithm, regex
@@ -325,8 +330,6 @@ X [Testing]       check ?
 X [Data Formats]  json   csv   tsv2   struct (binary)
 X [Hashing]       sha1, sha256, etc.
 </pre>
-</div>
 
-<!-- end groups -->
-</div>
-
+<!-- doesn't work? -->
+<!-- vim: set filetype=txt: -->

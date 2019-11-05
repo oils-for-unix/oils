@@ -381,12 +381,15 @@ help-index-html() {
 
 # Do all cards at once
 cards() {
-  devtools/make_help.py text-index < doc/help.md
+  devtools/make_help.py cards doc/help.md doc/help-index.md
 }
 
 # Deprecated?
 help-index-text() {
-  devtools/make_help.py text-index < doc/help-index.md
+  mkdir -p _tmp/help
+  devtools/make_help.py text-index _tmp/help < doc/help-index.md
+  ls -l _tmp/help
+  head _tmp/help/*
 }
 
 "$@"

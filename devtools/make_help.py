@@ -324,11 +324,13 @@ HTML_REFS = {
 
 class Splitter(HTMLParser.HTMLParser):
 
-  def __init__(self, split_tag, out):
+  def __init__(self, heading_tags, out):
     HTMLParser.HTMLParser.__init__(self)
-    self.split_tag = split_tag
+    self.heading_tags = heading_tags
     self.out = out
-    self.cur_group = None
+
+    self.cur_group = None  # type: List[Tuple[str, List, List]]
+    self.in_heading = False
 
     self.indent = 0
 
@@ -337,19 +339,22 @@ class Splitter(HTMLParser.HTMLParser):
     log(ind + msg, *args)
 
   def handle_starttag(self, tag, attrs):
-    # 
-    if tag == self.split_tag:
+    if tag in self.heading_tags:
+      self.in_heading = True
       if self.cur_group:
         self.out.append(self.cur_group)
 
       values = [v for k, v in attrs if k == 'id']
       group_name = values[0] if len(values) == 1 else None
-      self.cur_group = (group_name, [])
+      self.cur_group = (group_name, [], [])
 
     self.log('start tag %s %s', tag, attrs)
     self.indent += 1
 
   def handle_endtag(self, tag):
+    if tag in self.heading_tags:
+      self.in_heading = False
+
     self.log('end tag %s', tag)
     self.indent -= 1
 
@@ -360,12 +365,19 @@ class Splitter(HTMLParser.HTMLParser):
     &name; (e.g. &gt;), where name is a general entity reference (e.g. 'gt').
     """
     c = HTML_REFS[name]
-    self.cur_group[1].append(c)
+    if self.in_heading:
+      self.cur_group[1].append(c)
+    else:
+      if self.cur_group:
+        self.cur_group[2].append(c)
 
   def handle_data(self, data):
     self.log('data %r', data)
-    if self.cur_group:
+    if self.in_heading:
       self.cur_group[1].append(data)
+    else:
+      if self.cur_group:
+        self.cur_group[2].append(data)
 
   def end(self):
     if self.cur_group:
@@ -390,7 +402,6 @@ class IndexLinker(HTMLParser.HTMLParser):
 
   def __init__(self, pre_class, out):
     HTMLParser.HTMLParser.__init__(self)
-    self.split_tag = pre_class
     self.indent = 0  # checking
 
     self.pre_parts = []  # stuff to highlight
@@ -464,6 +475,23 @@ class IndexLinker(HTMLParser.HTMLParser):
       raise RuntimeError('Unbalanced HTML tags: %d' % self.indent)
 
 
+def SplitIntoCards(heading_tags, contents):
+  groups = []
+  sp = Splitter(heading_tags, groups)
+  sp.feed(contents)
+  sp.end()
+
+  for topic_id, heading_parts, parts in groups:
+    heading = ''.join(heading_parts).strip()
+
+    # Don't strip leading space?
+    text = ''.join(parts)
+    text = text.rstrip() + '\n'
+
+    yield topic_id, heading, text
+
+  log('Parsed %d parts', len(groups))
+
 
 def main(argv):
   action = argv[1]
@@ -504,22 +532,16 @@ def main(argv):
 
     # TODO: title needs to be centered in text?
 
-    groups = []
-    sp = Splitter('h2', groups)
-    sp.feed(sys.stdin.read())
-    sp.end()
-
-    for name, parts in groups:
-      print(name)
-      text = ''.join(parts)
-      text = text.rstrip() + '\n'
-
-      # This does NOT go through markdown.
-      # Instead each 'text'
-
-      print(text)
-
-    log('Parsed %d parts', len(groups))
+    out_dir = argv[2]
+    for topic_id, heading, text in SplitIntoCards(['h2'], sys.stdin.read()):
+      log('topic_id = %r', topic_id)
+      log('heading = %r', heading)
+      #log('text = %r', text)
+      path = os.path.join(out_dir, topic_id)
+      with open(path, 'w') as f:
+        f.write('* %s\n\n' % heading)
+        f.write(text)
+      log('Wrote %s', path)
 
   elif action == 'html-index':
     # TODO: We could process the pages first like in 'cards', and
@@ -530,9 +552,22 @@ def main(argv):
     sp.feed(sys.stdin.read())
     sp.end()
 
+    # Maybe combine Splitter and IndexLinker?
+    # IndexParser?
+    # But the probably is it's not lossless!!!  We want to replace
+    # - <pre></pre>
+    # - maybe <h2> with a link to "help.html#cmd"
+
   elif action == 'cards':
     page_path = argv[2]
     index_path = argv[3]
+
+    with open(page_path) as f:
+      contents = f.read()
+
+    for topic_id, heading, text in SplitIntoCards(['h2', 'h3', 'h4'], contents):
+      log('topic_id = %r', topic_id)
+      log('heading = %r', heading)
 
     # Process pages first, so you can parse 
     # <h4 class="discouarged oil-language osh-only bash ksh posix"></h4>
