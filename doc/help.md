@@ -3,8 +3,8 @@ in_progress: yes
 css_files: ../web/help.css ../web/toc.css
 ---
 
-Oil Quick Reference
-===================
+Oil Help
+========
 
 <!--
 IMPORTANT: This doc is processed in TWO WAYS.  Be careful when editing.
@@ -40,19 +40,15 @@ Index](quick-ref-index.html).
 <!--
 TODO:
 
-- This document needs its own CSS.  H4 might look difference
-- Split this doc into "cards" and assign IDs to them.  Then map keywords to cards
-
 - <h4> also needs anchors generated
   - but not in TOC
 
-
-- TODO: cross ref bash?  <a href="$cross-ref:bash"></a>
+- cross ref bash?  <a href="$cross-ref:bash"></a>
   - links appear below the card?
 
 - Check that the cards don't go over 80 chars
 
-- Have a way to make DEPRECATED
+- Have a way to mark cards as DEPRECATED
   - dparen ((
   - <h4 deprecated=true>dparen ((</h4>
   - <h4 class="deprecated">dparen ((</h4>
@@ -62,22 +58,13 @@ TODO:
 
 help index               # show all topics
 
-help index <group>
-
-11 groups:
-
-intro, command, assign, expr, word, sublang, builtin, option, vars, hook, lib
-cmd
+help index GROUP
 
 help cmd vars
 
 h2: groups (of sections)
 h3: sections
 h4: topic/cards
-
-quick-ref-index.txt
-
-or md?  or html?
 
 <h2 tag="cmd">Command Language</h2>
 
@@ -114,9 +101,11 @@ processing?
 <div id="toc">
 </div>
 
-<h2 id="INTRO">Introduction</h2>
+<h2 id="overview">Overview</h2>
 
 ### Usage
+
+This section describes how to use the Oil binary.
 
 <div class="card" id="osh-usage">
 <h4 id="osh-usage"><code>bin/osh</code> Usage</h4>
@@ -174,7 +163,7 @@ A backslash `\` at the end of a line continues the line without executing it:
 
 ### Oil Lexing
 
-<h2 id="COMMAND-LANGUAGE">Command Language</h2>
+<h2 id="command">Command Language</h2>
 
 ### Commands
 
@@ -191,7 +180,7 @@ Commands are composed of words, and may refer to builtins, Oil procs / shell
 
 <!-- TODO: document lookup order -->
 
-#### semicolon ;
+<h4 id="semicolon">semicolon ;</h4>
 
 Run two commands in sequence like this:
 
@@ -216,7 +205,7 @@ or this:
 
 ### Other Command
 
-#### dparen ((
+<h4 id="dparen">dparen ((</h4>
 
 #### time
 
@@ -228,24 +217,22 @@ function from `libc`.
 <!-- Note: bash respects TIMEFORMAT -->
 
 
-<h2 id="ASSIGNING-VARIABLES">Assigning Variables</h2>
+<h2 id="assign">Assigning Variables</h2>
 
-<h2 id="OIL-EXPRESSION-LANGUAGE">Oil Expression Language</h2>
+<h2 id="expr">Oil Expression Language</h2>
 
-<h2 id="WORD-LANGUAGE">Word Language</h2>
+<h2 id="word">Word Language</h2>
 
-<h2 id="OTHER-SHELL-SUBLANGUAGES">Other Shell Sublanguages</h2>
+<h2 id="sublang">Other Shell Sublanguages</h2>
 
-<h2 id="BUILTIN-COMMANDS">Builtin Commands</h2>
+<h2 id="builtin">Builtin Commands</h2>
 
-<h2 id="SHELL-OPTIONS">Shell Options</h2>
+<h2 id="option">Shell Options</h2>
 
-<h2 id="ENVIRONMENT-VARIABLES">Environment Variables</h2>
+<h2 id="env">Environment Variables</h2>
 
-<h2 id="SPECIAL-VARIABLES">Special Variables</h2>
+<h2 id="special">Special Variables</h2>
 
-<h2 id="PLUGINS-AND-HOOKS">Plugins and Hooks</h2>
+<h2 id="plugin">Plugins and Hooks</h2>
 
-<h2 id="OIL-EXTENSIONS">Oil Extensions</h2>
-
-<h2 id="OIL-LIBRARIES">Oil Libraries</h2>
+<h2 id="lib">Oil Libraries</h2>

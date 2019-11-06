@@ -66,7 +66,19 @@ EOF
 [click here]($cross-ref:re2c)
 EOF
 
-}
+  # Hm for some reason it gets rid of the blank lines in HTML.  When rendering
+  # to text, we would have to indent and insert blank lines?  I guess we can
+  # parse <p> and wrap it.
 
+  devtools/cmark.py <<'EOF'
+Test spacing out:
+
+    echo one
+    echo two
+
+Another paragraph with `code`.
+EOF
+
+}
 
 "$@"

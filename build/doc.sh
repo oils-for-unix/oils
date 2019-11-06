@@ -380,16 +380,35 @@ help-index-html() {
 }
 
 # Do all cards at once
+
+
 cards() {
-  devtools/make_help.py cards doc/help.md doc/help-index.md
+  local out_dir=_devbuild/help
+  rm -f -v $out_dir/*
+
+  help-index-text
+
+# TODO: Don't pass the markdown directly!
+# Have to pass the help text HTML.
+
+  local dir=_release/VERSION/doc
+
+  split-and-render doc/help.md
+  split-and-render doc/help-index.md
+  devtools/make_help.py cards $dir/help.html $dir/help-index.html $out_dir
+
+  # Better sorting
+  LANG=C ls -l $out_dir
 }
 
 # Deprecated?
 help-index-text() {
-  mkdir -p _tmp/help
-  devtools/make_help.py text-index _tmp/help < doc/help-index.md
-  ls -l _tmp/help
-  head _tmp/help/*
+  local out_dir=_devbuild/help
+  #rm -f $out_dir/*
+  mkdir -p $out_dir
+  devtools/make_help.py text-index $out_dir < doc/help-index.md
+  ls -l $out_dir
+  head $out_dir/*
 }
 
 "$@"

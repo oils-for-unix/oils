@@ -47,7 +47,7 @@ an **unimplemented** feature.
 
 
 <h2 id="overview">
-  Overview (<a class="group-link" href="$help:overview">overview</a>)
+  Overview (<a class="group-link" href="help.html#overview">overview</a>)
 </h2>
 
 <pre class="help-index">
@@ -58,7 +58,7 @@ an **unimplemented** feature.
 </pre>
 
 <h2 id="command">
-  Command Language (<a class="group-link" href="$help:command">command</a>)
+  Command Language (<a class="group-link" href="help.html#command">command</a>)
 </h2>
 
 <pre class="help-index">
@@ -80,7 +80,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
 </pre>
 
 <h2 id="assign">
-  Variable Assignments (<a class="group-link" href="$help:assign">assign</a>)
+  Variable Assignments (<a class="group-link" href="help.html#assign">assign</a>)
 </h2>
 
 <pre class="help-index">
@@ -94,7 +94,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
 </pre>
 
 <h2 id="expr">
-  Oil Expression Language (<a class="group-link" href="$help:expr">expr</a>)
+  Oil Expression Language (<a class="group-link" href="help.html#expr">expr</a>)
 </h2>
 
 <!-- note: <capture> is HTML escaped below -->
@@ -136,7 +136,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
 </pre>
 
 <h2 id="word">
-  Word Language (<a class="group-link" href="$help:word">word</a>)
+  Word Language (<a class="group-link" href="help.html#word">word</a>)
 </h2>
 
 <pre class="help-index">
@@ -159,7 +159,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
 </pre>
 
 <h2 id="sublang">
-  Other Shell Sublanguages (<a class="group-link" href="$help:sublang">sublang</a>)
+  Other Shell Sublanguages (<a class="group-link" href="help.html#sublang">sublang</a>)
 </h2>
 
 <pre class="help-index">
@@ -184,7 +184,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
 </pre>
 
 <h2 id="builtin">
-  Builtin Commands (<a class="group-link" href="$help:builtin">builtin</a>)
+  Builtin Commands (<a class="group-link" href="help.html#builtin">builtin</a>)
 </h2>
 
 <pre class="help-index">
@@ -220,7 +220,7 @@ X [External Lang] BEGIN   END   when (awk)
 </pre>
 
 <h2 id="option">
-  Shell Options (<a class="group-link" href="$help:option">option</a>)
+  Shell Options (<a class="group-link" href="help.html#option">option</a>)
 </h2>
 
 <pre class="help-index">
@@ -268,7 +268,7 @@ X [External Lang] BEGIN   END   when (awk)
 </pre>
 
 <h2 id="env">
-  Environment Variables (<a class="group-link" href="$help:env">env</a>)
+  Environment Variables (<a class="group-link" href="help.html#env">env</a>)
 </h2>
 
 <pre class="help-index">
@@ -279,7 +279,7 @@ X [External Lang] BEGIN   END   when (awk)
 
 
 <h2 id="special">
-  Special Variables (<a class="group-link" href="$help:special">special</a>)
+  Special Variables (<a class="group-link" href="help.html#special">special</a>)
 </h2>
 
 <pre class="help-index">
@@ -302,7 +302,7 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
 </pre>
 
 <h2 id="plugin">
-  Plugins and Hooks (<a class="group-link" href="$help:plugin">plugin</a>)
+  Plugins and Hooks (<a class="group-link" href="help.html#plugin">plugin</a>)
 </h2>
 
 <pre class="help-index">
@@ -314,7 +314,7 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
 </pre>
 
 <h2 id="lib">
-  Oil Libraries (<a class="group-link" href="$help:lib">lib</a>)
+  Oil Libraries (<a class="group-link" href="help.html#lib">lib</a>)
 </h2>
 
 <pre class="help-index">

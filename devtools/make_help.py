@@ -58,7 +58,7 @@ def MaybeHighlightSection(line, parts):
 
   section = m.group(1)
   href = _StringToHref(section)
-  section_link = '<a href="#%s" class="level2">%s</a>' % (href, section)
+  section_link = '<a href="help.html#%s" class="level2">%s</a>' % (href, section)
   parts.append(section_link)
 
   return line[end:]
@@ -99,7 +99,7 @@ def HighlightLine(line):
     last_end = end
 
     topic = line[m.start(2):m.end(2)]
-    topic_link = '<a href="#%s">%s</a>' % (topic, topic)
+    topic_link = '<a href="help.html#%s">%s</a>' % (topic, topic)
     parts.append(topic_link)
 
     if have_suffix:
@@ -345,8 +345,8 @@ class Splitter(HTMLParser.HTMLParser):
         self.out.append(self.cur_group)
 
       values = [v for k, v in attrs if k == 'id']
-      group_name = values[0] if len(values) == 1 else None
-      self.cur_group = (group_name, [], [])
+      id_value = values[0] if len(values) == 1 else None
+      self.cur_group = (id_value, [], [])
 
     self.log('start tag %s %s', tag, attrs)
     self.indent += 1
@@ -423,6 +423,7 @@ class IndexLinker(HTMLParser.HTMLParser):
       if class_name:
         self.linking = True
 
+    # TODO: Change href="$help:command" to href="help.html#command"
     if attrs:
       attr_str = ' '  # leading space
       attr_str += ' '.join('%s="%s"' % (k, v) for (k, v) in attrs)
@@ -481,13 +482,14 @@ def SplitIntoCards(heading_tags, contents):
   sp.feed(contents)
   sp.end()
 
-  for topic_id, heading_parts, parts in groups:
+  for id_value, heading_parts, parts in groups:
     heading = ''.join(heading_parts).strip()
 
     # Don't strip leading space?
     text = ''.join(parts)
     text = text.rstrip() + '\n'
 
+    topic_id = id_value if id_value else heading.replace(' ', '-')
     yield topic_id, heading, text
 
   log('Parsed %d parts', len(groups))
@@ -537,7 +539,9 @@ def main(argv):
       log('topic_id = %r', topic_id)
       log('heading = %r', heading)
       #log('text = %r', text)
-      path = os.path.join(out_dir, topic_id)
+
+      # indices start with _
+      path = os.path.join(out_dir, '_' + topic_id)
       with open(path, 'w') as f:
         f.write('* %s\n\n' % heading)
         f.write(text)
@@ -561,6 +565,7 @@ def main(argv):
   elif action == 'cards':
     page_path = argv[2]
     index_path = argv[3]
+    out_dir = argv[4]
 
     with open(page_path) as f:
       contents = f.read()
@@ -568,6 +573,13 @@ def main(argv):
     for topic_id, heading, text in SplitIntoCards(['h2', 'h3', 'h4'], contents):
       log('topic_id = %r', topic_id)
       log('heading = %r', heading)
+
+      # indices start with _
+      path = os.path.join(out_dir, topic_id)
+      with open(path, 'w') as f:
+        f.write('* %s\n\n' % heading)
+        f.write(text)
+      log('Wrote %s', path)
 
     # Process pages first, so you can parse 
     # <h4 class="discouarged oil-language osh-only bash ksh posix"></h4>
