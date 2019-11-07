@@ -407,6 +407,7 @@ help-index-text() {
   #rm -f $out_dir/*
   mkdir -p $out_dir
   devtools/make_help.py text-index $out_dir < doc/help-index.md
+
   ls -l $out_dir
   head $out_dir/*
 }

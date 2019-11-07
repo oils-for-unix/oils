@@ -1,7 +1,39 @@
 #!/usr/bin/env python2
 from __future__ import print_function
 """
-quick_ref.py
+make_help.py
+
+Ideas for HTML -> ANSI converter:
+
+- `ls`  ->  <code>ls</code>  ->  is reverse video?
+- [link]()  ->  <a href="">  ->  underlined, and then add a number to the bottom?
+  - could also be bright blue
+- <pre> is also indented 4 spaces, like the markdown
+- red X <span class="X">X</span>
+
+- comments in code examples could be green?
+
+What about:
+
+- headings h1, h2, h3, h4
+  - Right now cards use reverse video.  Centering didn't look great.
+
+- <ul> - you could use a Unicode bullet here
+- <ol>
+
+Word wrapping?  troff/groff doesn't do it, but they do this weird right-justify
+thing.
+
+
+- maybe you could have a prefix for a linked word?
+  - or use [] ?
+  - [SIGTERM]
+  - ^SIGTERM
+  .SIGTERM
+  X .SIGTERM
+  X @DIRSTACK
+  .for .while .if
+
 """
 
 import cgi
@@ -27,12 +59,23 @@ TOPIC_RE = re.compile(r'''
 \b(X[ ])?           # optional deprecation symbol X, then a single space
 @?                  # optional @array, e.g. @BASH_SOURCE
 ([a-zA-Z0-9_\-:]+)  # e.g. osh-usage, all:oil, BASH_REMATCH
-([ ]\S+)?           # optional: single space then punctuation
+( [ ]\S+            # optional: single space then punctuation
+  |
+  \(\)              # or func()
+)?      
 ''', re.VERBOSE)
 
 
 # Can occur at the beginning of a line, or before a topic
 RED_X = '<span style="color: darkred">X </span>'
+
+
+# Copied from core/comp_ui.py
+
+_RESET = '\033[0;0m'
+_BOLD = '\033[1m'
+_UNDERLINE = '\033[4m'
+_REVERSE = '\033[7m'  # reverse video
 
 
 def log(msg, *args):
@@ -487,9 +530,12 @@ def SplitIntoCards(heading_tags, contents):
 
     # Don't strip leading space?
     text = ''.join(parts)
-    text = text.rstrip() + '\n'
+    text = text.strip('\n') + '\n'
 
     topic_id = id_value if id_value else heading.replace(' ', '-')
+
+    log('text = %r', text[:10])
+
     yield topic_id, heading, text
 
   log('Parsed %d parts', len(groups))
@@ -543,7 +589,7 @@ def main(argv):
       # indices start with _
       path = os.path.join(out_dir, '_' + topic_id)
       with open(path, 'w') as f:
-        f.write('* %s\n\n' % heading)
+        f.write('%s %s %s\n\n' % (_REVERSE, heading, _RESET))
         f.write(text)
       log('Wrote %s', path)
 

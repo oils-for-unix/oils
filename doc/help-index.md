@@ -99,7 +99,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
 
 <!-- note: <capture> is HTML escaped below -->
 <pre class="help-index">
-  [Data Types]    Str           r'\'   c'\n'   "$var"   multiline r""" c'''
+  [Data Types]    Str           r'\'   c'\n'   "$var"   X multiline r""" c'''
                   X Symbol      %foo
                   Null          null
                   Bool          true false
@@ -130,8 +130,6 @@ X [Coil Keywords] const   try   catch   throw   switch   match
                   class-literal [a-z 'abc' \\ \xFF \u0100]
                   re-flags      ignorecase etc.
                   re-multiline  ///
-                  re-api        find()   sub()   split()   regmatch()
-                                fnmatch()
                   re-glob-ops   ~   !~
 </pre>
 
@@ -213,8 +211,7 @@ X [Unsupported]   enable
                   repr                   Show debug representation of vars
                   X log   X die          common functions (polyfill)
                   X getline              Instead of read -raw :name
-                  X json-echo   X json-read  
-                  X tsv2-echo   X tsv2-read
+                  X json   X tsv2
 X [External Lang] BEGIN   END   when (awk)
                   rule (make)   each (xargs)   fs (find)
 </pre>
@@ -318,17 +315,21 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
 </h2>
 
 <pre class="help-index">
-  [Collections]   len()
-  [String, Eggex] join()   split()    $IFS, awk algorithm, regex
-                  sub()  find()       regex/string functions
+  [Collections]   len()   min()   max()   any()   all()   tup()  
+                  sorted()   reversed()
+  [Iteration]     range()   enumerate()   zip()
+  [Math]          sum()   abs()
+  [Pattern]       regmatch()   fnmatch()
+  [String]        find()   sub()   join() 
+                  split()             $IFS, awk algorithm, regex
   [Block]         setvar()            for procs to set in outer scope
                   evalblock()         procs evaluate block to namespace
   [libc]          read(n)             better than read -n, no short reads?
                   posix::read()       raw bindings?
                   strftime()
-X [Testing]       check ?
+X [Testing]       check
 X [Data Formats]  json   csv   tsv2   struct (binary)
-X [Hashing]       sha1, sha256, etc.
+X [Hashing]       sha1   sha256 (etc.)
 </pre>
 
 <!-- doesn't work? -->
