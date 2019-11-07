@@ -157,7 +157,7 @@ cmark() {
 
 readonly DOCS=(
   help
-  help-index
+  # Help index has its own rendering
 
   # polished
   osh-manual known-differences
@@ -379,37 +379,47 @@ help-index-html() {
   ls -l $out
 }
 
-# Do all cards at once
-
-
-cards() {
-  local out_dir=_devbuild/help
-  rm -f -v $out_dir/*
-
-  help-index-text
-
-# TODO: Don't pass the markdown directly!
-# Have to pass the help text HTML.
-
-  local dir=_release/VERSION/doc
-
-  split-and-render doc/help.md
-  split-and-render doc/help-index.md
-  devtools/make_help.py cards $dir/help.html $dir/help-index.html $out_dir
-
-  # Better sorting
-  LANG=C ls -l $out_dir
+# NOTE: Should eventually take .html instead of .md
+help-index-text() {
+  local out_dir=${1:-_devbuild/help}
+  devtools/make_help.py text-index $out_dir < doc/help-index.md
 }
 
-# Deprecated?
-help-index-text() {
-  local out_dir=_devbuild/help
-  #rm -f $out_dir/*
-  mkdir -p $out_dir
-  devtools/make_help.py text-index $out_dir < doc/help-index.md
+cards() {
+  ### Do all cards at once
 
-  ls -l $out_dir
-  head $out_dir/*
+  local html_dir=${1:-_release/VERSION}
+  local text_dir=${2:-_devbuild/help}
+
+  #help-index-text
+
+
+  # Pass the HTML.  This makes it easier to parse headings
+  #devtools/make_help.py cards \
+  #  $html_dir/doc/help.html $html_dir/doc/help-index.html $text_dir
+
+  # For now, the pass help markdown
+  devtools/make_help.py cards \
+    doc/help.md $html_dir/doc/help-index.html $text_dir
+}
+
+all-help() {
+  local text_dir=_devbuild/help
+  local html_dir=_release/VERSION
+
+  mkdir -p $text_dir
+  rm -v -f $text_dir/*
+
+  help-index-html $html_dir
+  log 'index text done'
+
+  split-and-render doc/help.md
+
+  help-index-text $text_dir
+  cards $html_dir $text_dir
+
+  # Better sorting
+  LANG=C ls -l $text_dir
 }
 
 "$@"

@@ -140,11 +140,10 @@ X [Coil Keywords] const   try   catch   throw   switch   match
 <pre class="help-index">
   [Quotes]        quotes        'abc'  $'\n'  "$var"
   [Substitutions] com-sub       $(command)   `command`
-                  var-sub       ${var}
+                  var-sub       ${var}   $0   $9   
                   arith-sub     $((1 + 2))
                   tilde-sub     ~/src
                   proc-sub      diff <(sort L.txt) <(sort R.txt)
-  [Special Vars]  special-vars  $@  $*  $#     $?  $-     $$  $!
   [Var Ops]       op-test       ${x:-default}  
                   op-unary      ${x%%suffix}  etc.
                   op-str        ${x//y/z}
@@ -280,7 +279,9 @@ X [External Lang] BEGIN   END   when (awk)
 </h2>
 
 <pre class="help-index">
-  [Oil]           ARGV   STATUS
+  [POSIX Special] $@  $*  $#     $?  $-     $$  $!   $0  $9
+  [Other Special] BASH_REMATCH   @PIPESTATUS
+  [Oil Special]   ARGV   STATUS   M
 X [Platform]      HOSTNAME   OSTYPE   BASH_VERSION   @BASH_VERSINFO
   [Call Stack]    @BASH_SOURCE   @FUNCNAME   @BASH_LINENO   
                   X @BASH_ARGV   X @BASH_ARGC
@@ -295,7 +296,6 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
   [getopts]       OPTIND   OPTARG   X OPTERR
   [read]          REPLY   IFS
   [Functions]     X RANDOM   X SECONDS
-  [Other Special] BASH_REMATCH   @PIPESTATUS
 </pre>
 
 <h2 id="plugin">

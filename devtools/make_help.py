@@ -34,6 +34,11 @@ thing.
   X @DIRSTACK
   .for .while .if
 
+Definition lists would be nice:
+  $?   exit status
+  $0   first etc.
+
+
 """
 
 import cgi
@@ -404,14 +409,14 @@ class Splitter(HTMLParser.HTMLParser):
       id_value = values[0] if len(values) == 1 else None
       self.cur_group = (id_value, [], [])
 
-    self.log('start tag %s %s', tag, attrs)
+    self.log('[%d] start tag %s %s', self.indent, tag, attrs)
     self.indent += 1
 
   def handle_endtag(self, tag):
     if tag in self.heading_tags:
       self.in_heading = False
 
-    self.log('end tag %s', tag)
+    self.log('[%d] end tag %s', self.indent, tag)
     self.indent -= 1
 
   def handle_entityref(self, name):
@@ -629,7 +634,12 @@ def main(argv):
     with open(page_path) as f:
       contents = f.read()
 
-    for topic_id, heading, text in SplitIntoCards(['h2', 'h3', 'h4'], contents):
+    #cards = SplitIntoCards(['h2', 'h3', 'h4'], contents)
+
+    # Only do h4 for now
+    cards = SplitIntoCards(['h4'], contents)
+
+    for topic_id, heading, text in cards:
       log('topic_id = %r', topic_id)
       log('heading = %r', heading)
 

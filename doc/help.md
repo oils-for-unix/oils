@@ -106,7 +106,6 @@ processing?
 
 This section describes how to use the Oil binary.
 
-<div class="card" id="osh-usage">
 <h4 id="osh-usage"><code>bin/osh</code> Usage</h4>
 
 The command line accepted by `bin/osh` is compatible with `/bin/sh` and `bash`.
@@ -119,7 +118,6 @@ It also has a few enhancements:
 
     osh -n -c 'hello'                    # pretty-print the AST
     osh --ast-format text -n -c 'hello'  # print it full
-</div>
 
 <h4 id="oil-usage"><code>bin/oil</code> Usage</h4>
 
@@ -230,19 +228,20 @@ There's no real difference.
 
 #### here-doc
 
-    cat <<EOF
+    cat &lt;&lt;EOF
     here doc with $double ${quoted} substitution
     EOF
 
     myfunc() {
-            cat <<-EOF
+            cat &lt;&lt;-EOF
             here doc with one tab leading tab stripped
             EOF
     }
 
     cat <<< 'here string'
 
-<!-- delimiter can be quoted -->
+<!-- TODO: delimiter can be quoted -->
+<!-- Note: Python's HTML parser thinks <EOF starts a tag -->
 
 ### Other Command
 
@@ -271,7 +270,7 @@ function from `libc`.
 
 ### Oil Keywords
 
-<!-- TODO: This duplicates the above -->
+<!-- CONFLICT: This duplicates the above -->
 
 <h2 id="expr">Oil Expression Language</h2>
 
@@ -279,7 +278,7 @@ function from `libc`.
 
 ### Operators
 
-<!-- TODO: This duplicates the above -->
+<!-- CONFLICT: This duplicates the above -->
 
 ### Functions
 
@@ -355,7 +354,7 @@ function from `libc`.
 
 ### Shell Options
 
-<!-- TODO: Duplicates the above -->
+<!-- CONFLICT: Duplicates the above -->
 
 ### Other Env
 
@@ -364,7 +363,13 @@ function from `libc`.
 
 <h2 id="special">Special Variables</h2>
 
-### Oil
+### Special
+
+### POSIX Special
+
+### Other Special
+
+### Oil Special
 
 ### Platform
 
