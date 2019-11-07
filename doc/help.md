@@ -34,8 +34,7 @@ keywords.
 
 The `help` builtin prints portions of it.
 
-You can also navigate this doc with The [Quick Ref
-Index](quick-ref-index.html).
+You can also navigate this doc with the [help index](help-index.html).
 
 <!--
 TODO:
@@ -203,6 +202,48 @@ or this:
 
 ### Redirects
 
+#### redir-file
+
+Three variants of redirecting stdout:
+
+    echo foo > out.txt    # write to a file
+    echo foo >> out.txt   # append to a file
+    echo foo >| out.txt   # clobber the file even if set -o noclobber
+
+Redirect stdin:
+
+    cat < in.txt
+
+<!-- They also take a file descriptor on the left -->
+
+
+#### redir-desc
+
+Redirect to a file descriptor:
+
+    echo 'to stderr' >&2
+
+<!--
+NOTE: >&2 is just like <&2 
+There's no real difference.
+-->
+
+#### here-doc
+
+    cat <<EOF
+    here doc with $double ${quoted} substitution
+    EOF
+
+    myfunc() {
+            cat <<-EOF
+            here doc with one tab leading tab stripped
+            EOF
+    }
+
+    cat <<< 'here string'
+
+<!-- delimiter can be quoted -->
+
 ### Other Command
 
 <h4 id="dparen">dparen ((</h4>
@@ -216,23 +257,165 @@ function from `libc`.
 
 <!-- Note: bash respects TIMEFORMAT -->
 
+### Oil Keywords
+
+### Coil Keywords
 
 <h2 id="assign">Assigning Variables</h2>
 
+### Operators
+
+### Compound Data
+
+### Builtins
+
+### Oil Keywords
+
+<!-- TODO: This duplicates the above -->
+
 <h2 id="expr">Oil Expression Language</h2>
+
+### Data Types
+
+### Operators
+
+<!-- TODO: This duplicates the above -->
+
+### Functions
+
+### Regexes
 
 <h2 id="word">Word Language</h2>
 
+### Quotes
+
+### Substitutions
+
+### Var Ops
+
+### Oil Word
+
 <h2 id="sublang">Other Shell Sublanguages</h2>
+
+### Arithmetic
+
+### Boolean
+
+### Patterns
+
+### Brace Expand
+
+### History
 
 <h2 id="builtin">Builtin Commands</h2>
 
+### I/O
+
+### Run Code
+
+### Set Options
+
+### Working Dir
+
+### Completion
+
+### Shell Process
+                
+### Child Process
+
+### External
+
+### Introspection
+
+### Word Lookup
+
+### Interactive
+
+### Oil Builtins
+
 <h2 id="option">Shell Options</h2>
+
+### Errors
+
+### Globbing
+
+### Debugging
+
+### Interactive
+
+### Other Option
+
+### strict:all
+
+### oil:basic
+
+### oil:all
 
 <h2 id="env">Environment Variables</h2>
 
+### Shell Options
+
+<!-- TODO: Duplicates the above -->
+
+### Other Env
+
+### Oil Paths
+
+
 <h2 id="special">Special Variables</h2>
+
+### Oil
+
+### Platform
+
+### Call Stack
+
+### Tracing
+
+### Process State
+
+### Process Stack
+
+### Shell State
+
+### Completion
+
+### Functions
+
+### Other Special
 
 <h2 id="plugin">Plugins and Hooks</h2>
 
+### Signals
+
+### Traps
+
+### Words
+
+### Completion
+
+### Other Plugin
+
 <h2 id="lib">Oil Libraries</h2>
+
+### Collections
+
+### Iteration
+
+### Math
+
+### Pattern
+
+### String
+
+### Block
+
+### libc
+
+### Testing
+
+### Data Formats
+
+### Hashing
+
+

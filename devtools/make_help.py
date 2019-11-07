@@ -85,7 +85,8 @@ def log(msg, *args):
 
 
 def _StringToHref(s):
-  return s.replace(' ', '-')
+  # lower case to match what devtools/cmark.py does
+  return s.lower().replace(' ', '-')
 
 
 def MaybeHighlightSection(line, parts):
@@ -366,7 +367,19 @@ HTML_REFS = {
 
 
 class Splitter(HTMLParser.HTMLParser):
+  """
+  Split an HTML stream starting at each of the heading tags.
+  
+  - h2 for help-index
+  - h2, h3, h4 for help
 
+  Content before the first heading is omitted.
+
+  After feed(), self.out is populated with a list of groups, and each group is
+  (id_value Str, heading_text Str, parts List[Str]).
+
+  TODO: Share HTML tag reconstruction with IndexLinker
+  """
   def __init__(self, heading_tags, out):
     HTMLParser.HTMLParser.__init__(self)
     self.heading_tags = heading_tags

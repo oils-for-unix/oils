@@ -54,7 +54,7 @@ an **unimplemented** feature.
   [Usage]         bundle-usage   osh-usage   oil-usage   config   startup
                   line-editing   prompt
   [Lexing]        comments #   line-continuation \
-  [Oil Lexing]    single-command %%%   docstring ###
+  [Oil Lexing]    X single-command %%%   X docstring ###
 </pre>
 
 <h2 id="command">

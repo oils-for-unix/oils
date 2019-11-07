@@ -19,9 +19,8 @@ language.  It's **our upgrade path from bash**.
 - [The Oil Language From 10,000 Feet](oil-overview.html)  A tour of Oil.
 - [INSTALL](INSTALL.html). How do I install Oil?  This text file is also in the
   tarball.
-- [OSH Quick Reference](osh-quick-ref.html), with examples (incomplete).  This
-  document underlies the `help` builtin, and gives a rough overview of what
-  features OSH implements.
+
+<!-- TODO: split up help into 12 docs? -->
 
 ## OSH is a Compatible Shell
 
@@ -32,35 +31,42 @@ language.  It's **our upgrade path from bash**.
 
 ## Oil is a New Shell Language
 
-- [Options](oil-options.html)
-- [Oil Keywords](oil-keywords.html). (Shell keywords aren't discussed.)
-  - [Procs, Funcs, and Blocks](oil-proc-func-block.html)
-- [Oil Builtins](oil-builtins.html) (Shell builtins aren't discussed.)
-- [Command vs. Expression Mode](command-vs-expression-mode.html) An important
-  syntactic concept.  See the [overview](oil-overview) for more syntactic
-  concepts.
+- [Options](oil-options.html).  Parsing and runtime options turn OSH into Oil.
+- [Oil Keywords](oil-keywords.html). Oil introduces new keywords.  (Shell
+  keyword aren't discussed.)
 - [Oil Expressions](oil-expressions.html) The Expression Language is Mostly
   Python.
+- [Procs, Funcs, and Blocks](oil-proc-func-block.html)
+- [Oil Builtins](oil-builtins.html) (Shell builtins aren't discussed.)
 - [Word Language](oil-word-language.html) - Oil extends the "word language".
-- [Special Variables](oil-special-vars.html) - Oil extends the "word language".
+  - [Special Variables](oil-special-vars.html)
 - [Egg Expressions](eggex.html).  Oil has a new regex syntax called "egg
   expressions", abbreviated *eggexes*.
-- [Unicode](unicode.html)
-
-Internal details:
-
-- [Data Model](data-model.html) -- The interpreter
-- [Architecture Notes](architecture-notes.html) -- The interpreter
-- [Error List](errors.html) 
 
 Future:
 
-- Scope
 - Error Handling
-- Builtin Functions: `evalblock()`, etc.
-  - TODO: copy from quick ref
 
-## Docs for Contributors
+## More
+
+These docs span both OSH and Oil.
+
+- [Index of Help Topics](help-index.html) (incomplete).  This document
+  underlies the `help` builtin, and gives examples of each Oil feature.  It
+  links to sections in the [Help](help.html) page.
+- [Command vs. Expression Mode](command-vs-expression-mode.html) An important
+  syntactic concept.  See the [overview](oil-overview) for more syntactic
+  concepts.
+- [Unicode](unicode.html)
+
+Internal Details:
+
+- [Data Model](data-model.html) -- The interpreter.
+  - TODO: Rules for scope
+- [Architecture Notes](architecture-notes.html) -- The interpreter
+- [Error List](errors.html) 
+
+## For Contributors
 
 - [README.md](README.html).  If you want to modify Oil, start here.  We
   welcome contributions!
