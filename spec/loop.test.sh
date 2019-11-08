@@ -280,3 +280,29 @@ c
 --
 ## END
 ## BUG dash/mksh/zsh status: 0
+
+#### break in condition of loop
+while break; do
+  echo x
+done
+echo done
+## STDOUT:
+done
+## END
+
+
+#### break in condition of nested loop
+for i in 1 2 3; do
+  echo i=$i
+  while break; do
+    echo x
+  done
+done
+echo done
+## STDOUT:
+i=1
+i=2
+i=3
+done
+## END
+

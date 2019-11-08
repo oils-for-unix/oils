@@ -1211,18 +1211,20 @@ class Executor(object):
       self.loop_level += 1
       try:
         while True:
-          self._PushErrExit(node.spids[0])  # while/until spid
           try:
-            cond_status = self._ExecuteList(node.cond)
-          finally:
-            self._PopErrExit()
+            self._PushErrExit(node.spids[0])  # while/until spid
+            try:
+              cond_status = self._ExecuteList(node.cond)
+            finally:
+              self._PopErrExit()
 
-          done = cond_status != 0
-          if _DonePredicate(cond_status):
-            break
-          try:
+            done = cond_status != 0
+            if _DonePredicate(cond_status):
+              break
             status = self._Execute(node.body)  # last one wins
+
           except _ControlFlow as e:
+            # Important: 'break' can occur in the CONDITION or body
             if e.IsBreak():
               status = 0
               break
