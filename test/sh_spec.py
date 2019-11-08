@@ -1082,7 +1082,10 @@ def Options():
       '--tmp-env', dest='tmp_env', default='',
       help="A temporary directory that the tests can use.")
 
-  # Note: utf-8 is the Ubuntu default
+  # Notes:
+  # - utf-8 is the Ubuntu default
+  # - this flag has limited usefulness.  It may be better to simply export LANG=
+  #   in this test case itself.
   p.add_option(
       '--lang-env', dest='lang_env', default='en_US.UTF-8',
       help="The LANG= setting, which affects various libc functions.")
