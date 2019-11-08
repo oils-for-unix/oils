@@ -390,7 +390,7 @@ class Splitter(HTMLParser.HTMLParser):
     self.heading_tags = heading_tags
     self.out = out
 
-    self.cur_group = None  # type: List[Tuple[str, List, List]]
+    self.cur_group = None  # type: List[Tuple[str, str, List, List]]
     self.in_heading = False
 
     self.indent = 0
@@ -407,7 +407,7 @@ class Splitter(HTMLParser.HTMLParser):
 
       values = [v for k, v in attrs if k == 'id']
       id_value = values[0] if len(values) == 1 else None
-      self.cur_group = (id_value, [], [])
+      self.cur_group = (tag, id_value, [], [])
 
     self.log('[%d] start tag %s %s', self.indent, tag, attrs)
     self.indent += 1
@@ -427,18 +427,18 @@ class Splitter(HTMLParser.HTMLParser):
     """
     c = HTML_REFS[name]
     if self.in_heading:
-      self.cur_group[1].append(c)
+      self.cur_group[2].append(c)
     else:
       if self.cur_group:
-        self.cur_group[2].append(c)
+        self.cur_group[3].append(c)
 
   def handle_data(self, data):
     self.log('data %r', data)
     if self.in_heading:
-      self.cur_group[1].append(data)
+      self.cur_group[2].append(data)
     else:
       if self.cur_group:
-        self.cur_group[2].append(data)
+        self.cur_group[3].append(data)
 
   def end(self):
     if self.cur_group:
@@ -543,7 +543,7 @@ def SplitIntoCards(heading_tags, contents):
   sp.feed(contents)
   sp.end()
 
-  for id_value, heading_parts, parts in groups:
+  for tag, id_value, heading_parts, parts in groups:
     heading = ''.join(heading_parts).strip()
 
     # Don't strip leading space?
@@ -554,7 +554,7 @@ def SplitIntoCards(heading_tags, contents):
 
     log('text = %r', text[:10])
 
-    yield topic_id, heading, text
+    yield tag, topic_id, heading, text
 
   log('Parsed %d parts', len(groups))
 
@@ -599,7 +599,7 @@ def main(argv):
     # TODO: title needs to be centered in text?
 
     out_dir = argv[2]
-    for topic_id, heading, text in SplitIntoCards(['h2'], sys.stdin.read()):
+    for tag, topic_id, heading, text in SplitIntoCards(['h2'], sys.stdin.read()):
       log('topic_id = %r', topic_id)
       log('heading = %r', heading)
       #log('text = %r', text)
@@ -634,19 +634,19 @@ def main(argv):
     with open(page_path) as f:
       contents = f.read()
 
-    #cards = SplitIntoCards(['h2', 'h3', 'h4'], contents)
+    cards = SplitIntoCards(['h2', 'h3', 'h4'], contents)
 
-    # Only do h4 for now
-    cards = SplitIntoCards(['h4'], contents)
+    for tag, topic_id, heading, text in cards:
+      if tag != 'h4':
+        continue  # Skip h2 and h3 for now
 
-    for topic_id, heading, text in cards:
       log('topic_id = %r', topic_id)
       log('heading = %r', heading)
 
       # indices start with _
       path = os.path.join(out_dir, topic_id)
       with open(path, 'w') as f:
-        f.write('* %s\n\n' % heading)
+        f.write('%s %s %s\n\n' % (_REVERSE, heading, _RESET))
         f.write(text)
       log('Wrote %s', path)
 
