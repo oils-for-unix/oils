@@ -524,7 +524,7 @@ var-op-len() {
 
 var-op-patsub() {
   # 1 unicode failure
-  sh-spec spec/var-op-patsub.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/var-op-patsub.test.sh \
     $BASH $MKSH $ZSH $OSH_LIST "$@"
 }
 

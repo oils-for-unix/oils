@@ -321,6 +321,12 @@ func_regex_first_group_match(PyObject *self, PyObject *args) {
   regex_t pat;
   regmatch_t m[NMATCH];
 
+  const char *old_locale = setlocale(LC_CTYPE, NULL);
+  if (setlocale(LC_CTYPE, "") == NULL) {
+	  PyErr_SetString(PyExc_SystemError, "Invalid locale for LC_CTYPE");
+	  return NULL;
+  }
+
   // Could have been checked by regex_parse for [[ =~ ]], but not for glob
   // patterns like ${foo/x*/y}.
 
@@ -329,6 +335,8 @@ func_regex_first_group_match(PyObject *self, PyObject *args) {
                     "Invalid regex syntax (func_regex_first_group_match)");
     return NULL;
   }
+
+  setlocale(LC_CTYPE, old_locale);
 
   debug("first_group_match pat %s str %s pos %d", pattern, str, pos);
 
