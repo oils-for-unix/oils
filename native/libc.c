@@ -322,6 +322,7 @@ func_regex_first_group_match(PyObject *self, PyObject *args) {
   regmatch_t m[NMATCH];
 
   const char *old_locale = setlocale(LC_CTYPE, NULL);
+
   if (setlocale(LC_CTYPE, "") == NULL) {
 	  PyErr_SetString(PyExc_SystemError, "Invalid locale for LC_CTYPE");
 	  return NULL;
@@ -336,13 +337,13 @@ func_regex_first_group_match(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  setlocale(LC_CTYPE, old_locale);
-
   debug("first_group_match pat %s str %s pos %d", pattern, str, pos);
 
   // Match at offset 'pos'
   int result = regexec(&pat, str + pos, NMATCH, m, 0 /*flags*/);
   regfree(&pat);
+
+  setlocale(LC_CTYPE, old_locale);
 
   if (result != 0) {
     Py_RETURN_NONE;  // no match
