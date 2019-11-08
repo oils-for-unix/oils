@@ -167,3 +167,20 @@ _μ_ and _μ_
 _μ_ and _μ_
 _μ_ and _μ_
 ## END
+
+#### Can't substitute one unicode character when LANG=C
+export LANG=C
+
+s='_μ_ and _μ_'
+
+# ? should match one char
+
+echo ${s//_?_/foo}  # all
+echo ${s/#_?_/foo}  # left
+echo ${s/%_?_/foo}  # right
+
+## STDOUT:
+_μ_ and _μ_
+_μ_ and _μ_
+_μ_ and _μ_
+## END
