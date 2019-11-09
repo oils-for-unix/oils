@@ -108,6 +108,9 @@ This section describes how to use the Oil binary.
 
 <h4 id="osh-usage"><code>bin/osh</code> Usage</h4>
 
+    Usage: osh [OPTION]... SCRIPT [ARG]...
+           osh [OPTION]... -c COMMAND [ARG]...
+
 The command line accepted by `bin/osh` is compatible with `/bin/sh` and `bash`.
 
     osh -c 'echo hi'
@@ -119,7 +122,15 @@ It also has a few enhancements:
     osh -n -c 'hello'                    # pretty-print the AST
     osh --ast-format text -n -c 'hello'  # print it full
 
+osh accepts POSIX sh flags, with these additions:
+
+  -n             parse the program but don't execute it.  Print the AST.
+  --ast-format   what format the AST should be in
+
 <h4 id="oil-usage"><code>bin/oil</code> Usage</h4>
+
+    Usage: oil  [OPTION]... SCRIPT [ARG]...
+           oil [OPTION]... -c COMMAND [ARG]...
 
 `bin/oil` is the same as `bin/osh` with a the `all:oil` option group set.  So
 `bin/oil` also accepts shell flags.
@@ -130,27 +141,39 @@ It also has a few enhancements:
 
 <h4 id="bundle-usage">App Bundle Usage</h4>
 
-- TODO: describe symlinks to it
+    Usage: oil.ovm MAIN_NAME [ARG]...
+           MAIN_NAME [ARG]...
+
+oil.ovm behaves like busybox.  If it's invoked through a symlink, e.g. 'osh',
+then it behaves like that binary.  Otherwise the binary name can be passed as
+the first argument, e.g.:
+
+    oil.ovm osh -c 'echo hi'
 
 <h4 id="config">Configuring the Shell</h4>
 
-- `bin/osh` runs `~/.config/oil/oshrc` at startup
-- `bin/oil` runs `~/.config/oil/oilrc` at startup
+If the --rcfile flag is specified, that file will be executed on startup.
+Otherwise:
+
+- `bin/osh` runs `~/.config/oil/oshrc`
+- `bin/oil` runs `~/.config/oil/oilrc`
+
+Pass --rcfile /dev/null to disable this behavior.
 
 <h4 id="config">Startup Files</h4>
 
 History is read?
 
 
-### Lexing
+<h3>Lexing</h3>
 
-#### comments
+<h4 id="comments">comments</h4>
 
 A comment starts with `#` and goes until the end of the line.
 
     echo hi  # print a greeting
 
-#### line-continuation
+<h4 id="line-continuation">line-continuation</h4>
 
 A backslash `\` at the end of a line continues the line without executing it:
 
@@ -158,24 +181,62 @@ A backslash `\` at the end of a line continues the line without executing it:
        /usr/lib \
        ~/src        # A single command split over three lines
 
-### Oil Lexing
+<h3>Oil Lexing</h3>
+
+
+<h4 id="single-command">single-command</h4>
+
+The %%% prefix Starts a Single Command Over Multiple Lines (?)
+
+This special lexer mode has several use cases:
+
+Long command lines without trailing \
+
+    %%% chromium-browser
+        --no-proxy-server
+        # comments allowed
+        --incognito
+
+Long pipelines or and-or chains without trailing \ 
+
+    %%% find .
+        # exclude tests
+      | grep -v '_test.py'
+      | xargs wc -l
+      | sort -n
+
+    %%% ls /
+     && ls /bin
+     && ls /lib
+     || error "oops"
+
+<h4 id="docstring">docstring</h4>
+
+TODO
 
 <h2 id="command">Command Language</h2>
 
 ### Commands
 
-#### simple-command
+<h4 id="simple-command">simple-command</h4>
 
-Commands are composed of words, and may refer to builtins, Oil procs / shell
-"functions", external commands, or aliases:
+Commands are composed of words.  The first word may by the name of a shell
+builtin, an Oil proc / shell "function", an external command, or an alias:
 
     echo hi               # a shell builtin doesn't start a process
     ls /usr/bin ~/src     # starts a new process
     myproc "hello $name"
     myshellfunc "hello $name"
     myalias -l
-
 <!-- TODO: document lookup order -->
+
+Redirects are also allowed in any part of the command:
+
+    echo 'to stderr' >&2
+    echo >&2 'to stderr'
+
+    echo 'to file' > out.txt
+    echo > out.txt 'to file'
 
 <h4 id="semicolon">semicolon ;</h4>
 
@@ -188,7 +249,7 @@ or this:
     echo one
     echo two
 
-### Conditional
+<h3>Conditional</h3>
 
 ### Iteration
 
@@ -247,16 +308,18 @@ There's no real difference.
 
 <h4 id="dparen">dparen ((</h4>
 
-#### time
+<h4>time</h4>
 
 `time [-p] pipeline`
 
 Measures the time taken by a command / pipeline.  It uses the `getrusage()`
 function from `libc`.
 
+Note that time is a KEYWORD, not a builtin!
+
 <!-- Note: bash respects TIMEFORMAT -->
 
-### Oil Keywords
+<h3>Oil Keywords</h3>
 
 ### Coil Keywords
 
@@ -290,9 +353,15 @@ function from `libc`.
 
 ### Substitutions
 
-### Var Ops
+<h3>Var Ops</h3>
 
-### Oil Word
+<h4 id="op-format">op-format</h4>
+
+${x@P} evaluates x as a prompt string, e.g. the string that would be printed if
+PS1=$x.
+
+
+<h3>Oil Word</h3>
 
 <h2 id="sublang">Other Shell Sublanguages</h2>
 
@@ -310,6 +379,8 @@ function from `libc`.
 
 ### I/O
 
+These builtins take input and output.  They're often used with redirects.
+
 ### Run Code
 
 ### Set Options
@@ -318,15 +389,57 @@ function from `libc`.
 
 ### Completion
 
-### Shell Process
+<h4 id="complete">complete</h4>
+
+Register completion policies for different commands.
+
+<h4 id="compgen">compgen</h4>
+
+Generate completion candidates inside a user-defined completion function.
+
+It can also be used in scripts, i.e. outside a completion function.
+
+<h4 id="compopt">compopt</h4>
+
+Change completion options inside a user-defined completion function.
+
+<h4 id="compadjust">compadjust</h4>
+
+Adjust COMP_ARGV according to specified delimiters, and optionally set
+variables cur, prev, words (an array), and cword.  May also set 'split'.
+
+This is an OSH extension that makes it easier to run the bash-completion
+project.
+
+<h3>Shell Process</h3>
                 
 ### Child Process
 
 ### External
 
-### Introspection
+<h4 id="kill">kill</h4>
 
-### Word Lookup
+TODO
+
+<!-- bash accepts job control syntax -->
+
+<h4 id="enable">enable</h4>
+
+Bash has this, but OSH won't implement it.
+
+<h3>Introspection</h3>
+
+<h4 id="help">help</h4>
+
+    help index           # list all help topics
+    help index GROUP...  # list help topics in the given groups
+    help TOPIC           # show help on a given topic
+    help osh-usage       # same as osh --help
+    help oil-usage       # same as oil --help
+
+View on the web: http://www.oilshell.org/$VERSION/doc/osh-quick-ref.html
+
+<h3>Word Lookup</h3>
 
 ### Interactive
 
@@ -356,10 +469,35 @@ function from `libc`.
 
 <!-- CONFLICT: Duplicates the above -->
 
-### Other Env
+<h4 id="SHELLOPTS">SHELLOPTS</h4>
 
-### Oil Paths
+For the 'set' builtin.
 
+<h4 id="BASHOPTS">BASHOPTS</h4>
+
+For the 'shopt' builtin.
+
+<h3>Other Env</h3>
+
+<h4 id="HOME">HOME</h4>
+
+$HOME is used for:
+
+1. ~ expansion 
+2. ~ abbreviation in the UI (the dirs builtin, \W in $PS1).
+
+Note: The shell doesn't set $HOME.  According to POSIX, the program that
+invokes the login shell sets it based on /etc/passwd.
+
+<h4 id="PATH">PATH</h4>
+
+A colon-separated string that's used to find executables to run.
+
+<h4 id="IFS">IFS</h4>
+
+Used for word splitting.  And the builtin split() function.
+
+<h3>Oil Paths</h3>
 
 <h2 id="special">Special Variables</h2>
 
@@ -383,9 +521,39 @@ function from `libc`.
 
 ### Shell State
 
-### Completion
+<h3>Completion</h3>
 
-### Functions
+<h4 id="COMP_WORDS">COMP_WORDS</h4>
+
+An array of words, split by : and = for compatibility with bash.  New
+completion scripts should use COMP_ARGV instead.
+
+<h4 id="COMP_CWORD">COMP_CWORD</h4>
+
+Discouraged; for compatibility with bash.
+
+<h4 id="COMP_LINE">COMP_LINE</h4>
+
+Discouraged; for compatibility with bash.
+
+<h4 id="COMP_POINT">COMP_POINT</h4>
+
+Discouraged; for compatibility with bash.
+
+<h4 id="COMPREPLY">COMPREPLY</h4>
+
+User-defined completion functions should Fill this array with candidates.  It
+is cleared on every completion request.
+
+<h4 id="COMP_ARGV">COMP_ARGV</h4>
+
+An array of partial command arguments to complete.  Preferred over COMP_WORDS.
+The compadjust builtin uses this variable.
+
+(An OSH extension to bash.)
+
+<h3>Functions</h3>
+
 
 ### Other Special
 
@@ -395,9 +563,25 @@ function from `libc`.
 
 ### Traps
 
-### Words
+<h3>Words</h3>
 
-### Completion
+<h4 id="PS1">PS1</h4>
+
+First line of a prompt.
+
+<h4 id="PS2">PS2</h4>
+
+Second line of a prompt.
+
+<h4 id="PS3">PS3</h4>
+
+For the 'select' builtin (unimplemented).
+
+<h4 id="PS4">PS4</h4>
+
+For 'set -o xtrace'.  The leading character is special.
+
+<h3>Completion</h3>
 
 ### Other Plugin
 
@@ -415,9 +599,14 @@ function from `libc`.
 
 ### Block
 
-### libc
+<h3>libc</h3>
 
-### Testing
+<h4 id="strftime">strftime()</h4>
+
+Useful for logging callbacks.  NOTE: bash has this with the obscure printf
+'%(...)' syntax.
+
+<h3>Testing</h3>
 
 ### Data Formats
 

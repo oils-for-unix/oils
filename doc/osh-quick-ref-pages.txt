@@ -236,11 +236,6 @@ For conditionals.
 
 ### <op-format> Variable Formatting Operators
 
-${x@P} evaluates x as a prompt string, e.g. the string that would be printed if
-PS1=$x.
-
-##### <OTHER-SHELL-SUBLANGUAGES> Other Shell Sublanguages
-
 #### <Arithmetic> 
 
 #### <Boolean> 
@@ -350,35 +345,6 @@ Bash has this, but OSH won't implement it.
 
 ##### <ENVIRONMENT-VARIABLES> Environment Variables
 
-#### <Shell-Options> Variables That Set Shell Options
-
-### <SHELLOPTS>
-
-For the 'set' builtin.
-
-### <BASHOPTS>
-
-For the 'shopt' builtin.
-
-#### <Other-Vars> Other Variables
-
-### <HOME>
-
-$HOME is used for:
-
-1. ~ expansion 
-2. ~ abbreviation in the UI (the dirs builtin, \W in $PS1).
-
-Note: The shell doesn't set $HOME.  According to POSIX, the program that
-invokes the login shell sets it based on /etc/passwd.
-
-### <PATH>
-
-Used for finding executables to run.
-
-### <IFS>
-
-Used for word splitting.
 
 ##### <SPECIAL-VARIABLES> Special Variables
 
@@ -400,62 +366,3 @@ Used for word splitting.
 
 An array of words, split by : and = for compatibility with bash.  New
 completion scripts should use COMP_ARGV instead.
-
-### <COMP_CWORD>
-
-Discouraged; for compatibility with bash.
-
-### <COMP_LINE>
-
-Discouraged; for compatibility with bash.
-
-### <COMP_POINT>
-
-Discouraged; for compatibility with bash.
-
-### <COMPREPLY>
-
-User-defined completion functions should Fill this array with candidates.  It
-is cleared on every completion request.
-
-### <COMP_ARGV>
-
-An array of partial command arguments to complete.  Preferred over COMP_WORDS.
-The compadjust builtin uses this variable.
-
-##### <PLUGINS-AND-HOOKS> Plugins and Hooks
-
-#### <Signals> Signals
-
-#### <Traps> Traps
-
-#### <Words> Words
-
-### <PS1> PS1
-
-First line of a prompt.
-
-### <PS2> PS2
-
-Second line of a prompt.
-
-### <PS3> PS3
-
-For the 'select' builtin (unimplemented).
-
-### <PS4> PS4
-
-For 'set -o xtrace'.  The leading character is special.
-
-##### <OIL-EXTENSIONS> Oil Extensions
-
-##### <OIL-LIBRARIES> Oil Libraries
-
-#### <Builtin-Procs> Builtins Procs
-
-#### <Builtin-Procs> Builtins Funcs
-
-### <strftime> strftime()
-
-Useful for logging callbacks.  NOTE: bash has this with the obscure 
-printf '%(...)' syntax.

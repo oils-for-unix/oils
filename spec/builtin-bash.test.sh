@@ -1,4 +1,19 @@
-# Bash implements type -t
+# builtins specific to bash and OSH
+
+#### help
+help
+help help
+## status: 0
+
+#### bad help topic
+help ZZZ 2>$TMP/err.txt
+echo "help=$?"
+cat $TMP/err.txt | grep -i 'no help topics' >/dev/null
+echo "grep=$?"
+## STDOUT: 
+help=1
+grep=0
+## END
 
 #### type -t -> function
 f() { echo hi; }
@@ -60,21 +75,6 @@ echo status=$?
 builtin
 file
 status=1
-## END
-
-#### help
-help
-help help
-## status: 0
-
-#### bad help topic
-help ZZZ 2>$TMP/err.txt
-echo "help=$?"
-cat $TMP/err.txt | grep -i 'no help topics' >/dev/null
-echo "grep=$?"
-## STDOUT: 
-help=1
-grep=0
 ## END
 
 #### type -p builtin -> file

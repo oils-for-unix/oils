@@ -62,3 +62,19 @@ OK
 
 # NOTE: strict_arith has one case in arith.test.sh), strict_word-eval has a case in var-op-other.
 
+
+#### help index
+help index > $TMP/index.txt
+echo index $?
+
+help index cmd > $TMP/cmd.txt
+echo index cmd $?
+
+help index ZZZ
+echo index ZZZ $?
+## STDOUT:
+index 0
+index cmd 0
+index ZZZ 1
+## END
+
