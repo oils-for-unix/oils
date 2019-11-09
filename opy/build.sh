@@ -117,9 +117,9 @@ make-mains() {
 _fill-oil-tree() {
   local dir=${1:-_tmp/repo-with-opy}
 
-  mkdir -p $dir/_devbuild/osh-quick-ref
+  mkdir -p $dir/_devbuild/help
   # For help text.
-  cp -v ../_devbuild/osh-quick-ref/* $dir/_devbuild/osh-quick-ref
+  cp -v ../_devbuild/help/* $dir/_devbuild/help
 
   cp -v ../asdl/*.asdl $dir/asdl
   ln -v -s -f $PWD/../{libc,fastlex}.so $dir

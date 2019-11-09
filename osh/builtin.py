@@ -30,7 +30,6 @@ from __future__ import print_function
 import termios  # for read -n
 import sys
 
-from _devbuild.gen import osh_help  # generated file
 from _devbuild.gen import help_index  # generated file
 from _devbuild.gen.runtime_asdl import (
   value_e, scope_e, span_e, builtin_e
@@ -607,6 +606,14 @@ class Pwd(object):
     return 0
 
 
+HELP_SPEC = _Register('help')
+
+# Use Oil flags?  -index?
+HELP_SPEC.ShortFlag('-i')  # show index
+# Note: bash has help -d -m -s, which change the formatting
+
+# TODO: Need $VERSION inside all pages?
+
 class Help(object):
 
   def __init__(self, loader, errfmt):
@@ -614,17 +621,13 @@ class Help(object):
     self.errfmt = errfmt
 
   def __call__(self, arg_vec):
-    # TODO: Need $VERSION inside all pages?
     try:
       topic = arg_vec.strs[1]
     except IndexError:
       topic = 'help'
 
-    if topic == 'toc':
-      # Just show the raw source.
-      f = self.loader.open('doc/osh-quick-ref-toc.txt')
-
-    elif topic == 'index':
+    # TODO: Should be -i for index?  Or -l?
+    if topic == 'index':
       groups = arg_vec.strs[2:]
       if len(groups) == 0:
         # Print the whole index
@@ -640,30 +643,22 @@ class Help(object):
         f.close()
       return 0
 
-    else:
-      try:
-        section_id = osh_help.TOPIC_LOOKUP[topic]
-      except KeyError:
-        # NOTE: bash suggests:
-        # man -k zzz
-        # info zzz
-        # help help
-        # We should do something smarter.
+    try:
+      f = self.loader.open('_devbuild/help/%s' % topic)
+    except IOError:
+      # NOTE: bash suggests:
+      # man -k zzz
+      # info zzz
+      # help help
+      # We should do something smarter.
+      
+      # NOTE: This is mostly an interactive command.  Is it obnoxious to
+      # quote the line of code?
+      self.errfmt.Print('no help topics match %r', topic,
+                        span_id=arg_vec.spids[1])
+      return 1
 
-        # NOTE: This is mostly an interactive command.  Is it obnoxious to
-        # quote the line of code?
-        self.errfmt.Print('No help topics match %r', topic,
-                          span_id=arg_vec.spids[1])
-        return 1
-      else:
-        try:
-          f = self.loader.open('_devbuild/osh-quick-ref/%s' % section_id)
-        except IOError as e:
-          util.log(str(e))
-          raise AssertionError('Should have found %r' % section_id)
-
-    for line in f:
-      sys.stdout.write(line)
+    print(f.read())
     f.close()
     return 0
 

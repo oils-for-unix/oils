@@ -2,7 +2,7 @@
 builtin_comp.py - Completion builtins
 """
 
-from _devbuild.gen import osh_help  # generated file
+#from _devbuild.gen import osh_help  # generated file
 from _devbuild.gen.runtime_asdl import value_e
 from core import completion
 from core import ui
@@ -156,7 +156,7 @@ class SpecBuilder(object):
         a = completion.VariablesAction(ex.mem)
 
       elif name == 'helptopic':
-        a = _FixedWordsAction(osh_help.TOPIC_LOOKUP)
+        a = _FixedWordsAction([])  # TODO: fix this
 
       elif name == 'setopt':
         a = _FixedWordsAction(state.SET_OPTION_NAMES)

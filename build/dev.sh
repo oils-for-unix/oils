@@ -58,11 +58,6 @@ test-r-packages() {
   R_LIBS_USER=$R_PATH Rscript -e 'library(dplyr)'
 }
 
-# Produces _devbuild/gen/osh_help.py
-gen-help() {
-  build/doc.sh osh-quick-ref
-}
-
 # Helper
 gen-asdl-py() {
   local asdl_path=$1  # e.g. osh/osh.asdl
@@ -209,7 +204,8 @@ minimal() {
   # So modules are importable.
   touch _devbuild/__init__.py  _devbuild/gen/__init__.py
 
-  gen-help
+  # Generates _devbuild/help
+  build/doc.sh minimal-help
 
   oil-asdl-to-py  # depends on Id
 

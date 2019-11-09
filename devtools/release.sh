@@ -91,8 +91,8 @@ auto-machine1() {
 #       announcement.html  # HTML redirect
 #       changelog.html
 #       doc/
-#         INSTALL.html
-#         osh-quick-ref.html
+#         index.html
+#         ...
 #       test/  # results
 #         spec.wwz/
 #           machine-lisa/
@@ -521,12 +521,8 @@ build-tree() {
 
   # Docs
 
-  # NOTE: This action is also run in the build.  It generates code that goes in
-  # the binary.
-  build/doc.sh osh-quick-ref $root
-
   # Writes _release/VERSION and _tmp/release-index.html
-  build/doc.sh all
+  build/doc.sh run-for-release
 
   add-date-and-links $release_date < _tmp/release-index.html > $root/index.html
 

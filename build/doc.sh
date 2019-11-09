@@ -1,38 +1,16 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   ./run.sh <function name>
+#   build/doc.sh <function name>
 
 set -o nounset
 set -o pipefail
 set -o errexit
 
-# http://oilshell.org/$VERSION/
+# https://oilshell.org/release/$VERSION/
 #  doc/
-#    INSTALL.txt -- for people who want to try it
-#    osh-quick-ref.html -- A single page
-#    osh-manual.html    -- more stuff
-
-# Do we want:
-# - spec/unit/gold/wild test results?
-# - benchmarks?
-
-# maybe:
-# $VERSION/
-#   doc/
-#   test/
-#   benchmarks/
-#
-# Just like the repo layout.
-
-# Another idea:
-#
-# http://oilshell.org/release/
-#   $VERSION/
-#     oil-0.0.0.tar.gz   # This should probably go on a different host
-#     doc/
-#     test/
-#     benchmarks/
+#    index.html
+#    INSTALL.html
 
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 export OIL_VERSION  # for quick_ref.py
@@ -80,83 +58,12 @@ _make-help() {
   devtools/make_help.py "$@"
 }
 
-x-quick-ref() {
-  local prog=$1
-  local out_dir=$2
-
-  local html_out=$out_dir/doc/$prog-quick-ref.html
-  local text_out_dir=_devbuild/$prog-quick-ref
-  local py_out=_devbuild/gen/${prog}_help.py
-
-  mkdir -p $out_dir/doc $text_out_dir
-
-  {
-    cat <<EOF
-<!DOCTYPE html>
-<html>
-  <head>
-    <style>
-      a:link {
-        text-decoration: none;
-      }
-      a:hover {
-        text-decoration: underline;
-      }
-      body {
-        margin: 0 auto;
-        width: 40em;
-      }
-      /* different color because they're links but not topics */
-      .level1 {
-        /* color: green; */
-        color: black;
-      }
-      .level2 {
-        color: #555;
-      }
-      h1,h2,h3,h4 {
-      /* color: darkcyan; */
-      }
-      #home-link {
-        text-align: right;
-      }
-    </style>
-  </head>
-  <body>
-    <p id="home-link">
-      <a href="/">oilshell.org</a>
-    </p>
-    <p style="color: darkred; font-size: x-large;">
-      NOTE: This document is a work in progress!
-    </p>
-EOF
-
-    _make-help toc doc/${prog}-quick-ref-toc.txt
-
-    # Also generate the _devbuild/osh-quick-ref/ dir
-    _make-help pages doc/${prog}-quick-ref-pages.txt $text_out_dir $py_out
-
-    _build-timestamp
-    cat <<EOF
-  </body>
-</html>
-EOF
-  } > $html_out
-  log "Wrote $html_out"
-}
-
-osh-quick-ref() {
-  local out_dir=${1:-_release/VERSION}
-  x-quick-ref osh $out_dir
-}
-
 cmark() {
   # h2 and h3 are shown in TOC.  The blog uses "legacy" h3 and h4.
   devtools/cmark.py --toc-tag h2 --toc-tag h3 --toc-pretty-href "$@"
 }
 
-readonly DOCS=(
-  help
+readonly MARKDOWN_DOCS=(
   # Help index has its own rendering
 
   # polished
@@ -263,7 +170,7 @@ special() {
   split-and-render doc/release-index.md _tmp/release-index.html
 }
 
-all() {
+all-markdown() {
   mkdir -p _tmp/doc
 
   # TODO: We can set repo_url here!  Then we don't need it for most docs.
@@ -271,13 +178,12 @@ all() {
 
   #for d in doc/index.md doc/known-differences.md doc/*-manual.md \
   #  doc/eggex.md doc/oil-options.md doc/oil-func-proc-block.md; do
-  for d in "${DOCS[@]}"; do
+  for d in "${MARKDOWN_DOCS[@]}"; do
     split-and-render doc/$d.md
   done
 
   special
 }
-
 
 # TODO: This could use some CSS.
 man-page() {
@@ -324,6 +230,10 @@ important-source-code() {
   done
 }
 
+#
+# Test Tools
+#
+
 split-doc-demo() {
   cat > _tmp/testdoc.md <<EOF
 ---
@@ -360,6 +270,10 @@ make-help-demo() {
 EOF
 }
 
+#
+# Help is both markdown and text
+#
+
 # Generate an HTML page for the help index.  It has an extra step.
 help-index-html() {
   # TODO: split the doc
@@ -379,51 +293,56 @@ help-index-html() {
   ls -l $out
 }
 
+readonly TEXT_DIR=_devbuild/help
+readonly HTML_DIR=_release/VERSION
+readonly CODE_DIR=_devbuild/gen
+
 # NOTE: Should eventually take .html instead of .md
 help-index-text() {
   local out_dir=${1:-_devbuild/help}
-  local code_dir=${2:-_devbuild/gen}
 
-  local py_out=$code_dir/help_index.py
+  local py_out=$CODE_DIR/help_index.py
   devtools/make_help.py text-index $out_dir $py_out < doc/help-index.md
 }
 
 help-cards() {
   ### Do all cards at once
 
-  local html_dir=${1:-_release/VERSION}
-  local text_dir=${2:-_devbuild/help}
-
-  #help-index-text
-
-
   # Pass the HTML.  This makes it easier to parse headings
   #devtools/make_help.py cards \
-  #  $html_dir/doc/help.html $html_dir/doc/help-index.html $text_dir
+  #  $HTML_DIR/doc/help.html $HTML_DIR/doc/help-index.html $TEXT_DIR
 
   # For now, the pass help markdown
   devtools/make_help.py cards \
-    doc/help.md $html_dir/doc/help-index.html $text_dir
+    doc/help.md $HTML_DIR/doc/help-index.html $TEXT_DIR
 }
 
 all-help() {
-  local text_dir=_devbuild/help
-  local html_dir=_release/VERSION
-  local code_dir=_devbuild/gen
+  mkdir -p $TEXT_DIR
+  rm -v -f $TEXT_DIR/*
 
-  mkdir -p $text_dir
-  rm -v -f $text_dir/*
-
-  help-index-html $html_dir
+  help-index-html $HTML_DIR
   log 'index text done'
 
   split-and-render doc/help.md
 
-  help-index-text $text_dir $code_dir
-  help-cards $html_dir $text_dir
+  help-index-text $TEXT_DIR $CODE_DIR
+  help-cards $HTML_DIR $TEXT_DIR
 
   # Better sorting
-  LANG=C ls -l $text_dir
+  LANG=C ls -l $TEXT_DIR
+}
+
+minimal-help() {
+  ### for build/dev.sh minimal
+
+  help-index-text $TEXT_DIR $CODE_DIR
+  help-cards $HTML_DIR $TEXT_DIR
+}
+
+run-for-release() {
+  all-markdown
+  all-help
 }
 
 "$@"
