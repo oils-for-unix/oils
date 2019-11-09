@@ -382,10 +382,13 @@ help-index-html() {
 # NOTE: Should eventually take .html instead of .md
 help-index-text() {
   local out_dir=${1:-_devbuild/help}
-  devtools/make_help.py text-index $out_dir < doc/help-index.md
+  local code_dir=${2:-_devbuild/gen}
+
+  local py_out=$code_dir/help_index.py
+  devtools/make_help.py text-index $out_dir $py_out < doc/help-index.md
 }
 
-cards() {
+help-cards() {
   ### Do all cards at once
 
   local html_dir=${1:-_release/VERSION}
@@ -406,6 +409,7 @@ cards() {
 all-help() {
   local text_dir=_devbuild/help
   local html_dir=_release/VERSION
+  local code_dir=_devbuild/gen
 
   mkdir -p $text_dir
   rm -v -f $text_dir/*
@@ -415,8 +419,8 @@ all-help() {
 
   split-and-render doc/help.md
 
-  help-index-text $text_dir
-  cards $html_dir $text_dir
+  help-index-text $text_dir $code_dir
+  help-cards $html_dir $text_dir
 
   # Better sorting
   LANG=C ls -l $text_dir

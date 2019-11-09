@@ -67,14 +67,14 @@ OK
 help index > $TMP/index.txt
 echo index $?
 
-help index cmd > $TMP/cmd.txt
-echo index cmd $?
+help index command assign > $TMP/groups.txt
+echo index groups $?
 
-help index ZZZ
+help index ZZZ > $TMP/index.txt
 echo index ZZZ $?
 ## STDOUT:
 index 0
-index cmd 0
+index groups 0
 index ZZZ 1
 ## END
 

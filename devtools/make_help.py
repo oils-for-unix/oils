@@ -599,6 +599,9 @@ def main(argv):
     # TODO: title needs to be centered in text?
 
     out_dir = argv[2]
+    py_out = argv[3]
+
+    groups = []
     for tag, topic_id, heading, text in SplitIntoCards(['h2'], sys.stdin.read()):
       log('topic_id = %r', topic_id)
       log('heading = %r', heading)
@@ -610,6 +613,12 @@ def main(argv):
         f.write('%s %s %s\n\n' % (_REVERSE, heading, _RESET))
         f.write(text)
       log('Wrote %s', path)
+
+      groups.append(topic_id)
+
+    import pprint
+    with open(py_out, 'w') as f:
+      f.write('GROUPS = %s\n' % pprint.pformat(groups))
 
   elif action == 'html-index':
     # TODO: We could process the pages first like in 'cards', and

@@ -31,6 +31,7 @@ import termios  # for read -n
 import sys
 
 from _devbuild.gen import osh_help  # generated file
+from _devbuild.gen import help_index  # generated file
 from _devbuild.gen.runtime_asdl import (
   value_e, scope_e, span_e, builtin_e
 )
@@ -622,6 +623,23 @@ class Help(object):
     if topic == 'toc':
       # Just show the raw source.
       f = self.loader.open('doc/osh-quick-ref-toc.txt')
+
+    elif topic == 'index':
+      groups = arg_vec.strs[2:]
+      if len(groups) == 0:
+        # Print the whole index
+        groups = help_index.GROUPS
+
+      for group in groups:
+        try:
+          f = self.loader.open('_devbuild/help/_%s' % group)
+        except IOError:
+          self.errfmt.Print('Invalid help index group: %r', group)
+          return 1
+        print(f.read())
+        f.close()
+      return 0
+
     else:
       try:
         section_id = osh_help.TOPIC_LOOKUP[topic]
