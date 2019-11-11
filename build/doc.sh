@@ -200,14 +200,14 @@ _sed-ext() {
 update-src-versions() {
   _sed-ext \
     "s/[0-9]+\.[0-9]+\.[a-z0-9]+/$OIL_VERSION/g" \
-    doc/release-index.md doc/osh-manual.md doc/oil-manual.md
+    doc/release-index.md 
 
   _sed-ext \
     "s/oil-[0-9]+\.[0-9]+\.[a-z0-9]+/oil-$OIL_VERSION/g" INSTALL.txt
 
   _sed-ext \
     "s;/release/[0-9]+\.[0-9]+\.[a-z0-9]+/;/release/$OIL_VERSION/;g" \
-    INSTALL.txt doc/osh-quick-ref-toc.txt doc/osh.1
+    doc/osh.1
 }
 
 oil-grammar() {
