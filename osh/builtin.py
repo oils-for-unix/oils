@@ -35,7 +35,6 @@ from _devbuild.gen.runtime_asdl import (
   value_e, scope_e, span_e, builtin_e
 )
 from core import ui
-from core import util
 from frontend import args
 from pylib import os_path
 from osh import state
