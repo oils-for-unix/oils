@@ -15,7 +15,10 @@ deps() {
 
   # got error with 0.67.0
   #pip3 install 'mypy==0.660'
-  pip3 install 'mypy'
+
+  # Without --upgrade, it won't install the latest version.
+  # In .travis.yaml we apparently install the latest version too (?)
+  pip3 install --upgrade 'mypy'
 }
 
 # This has a bug
