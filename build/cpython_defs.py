@@ -10,7 +10,8 @@ import re
 import sys
 
 from core.util import log
-from frontend.lexer import C, R
+# TODO: Could move these to a place where they don't depend on Oil
+from frontend.lex import C, R
 
 
 C_DEF = [
