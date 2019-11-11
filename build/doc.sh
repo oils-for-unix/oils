@@ -312,9 +312,11 @@ help-cards() {
   #devtools/make_help.py cards \
   #  $HTML_DIR/doc/help.html $HTML_DIR/doc/help-index.html $TEXT_DIR
 
+  local py_out=$CODE_DIR/help_.py
+
   # For now, the pass help markdown
   devtools/make_help.py cards \
-    doc/help.md $HTML_DIR/doc/help-index.html $TEXT_DIR
+    doc/help.md $HTML_DIR/doc/help-index.html $TEXT_DIR $py_out
 }
 
 all-help() {

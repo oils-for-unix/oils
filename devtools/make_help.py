@@ -620,30 +620,24 @@ def main(argv):
       f.write('GROUPS = %s\n' % pprint.pformat(groups))
 
   elif action == 'html-index':
-    # TODO: We could process the pages first like in 'cards', and
-    # change the index rendering.
-
-    # TODO: parse all the <pre class="help-index"> blocks
     sp = IndexLinker('help-index', sys.stdout)
     sp.feed(sys.stdin.read())
     sp.end()
 
-    # Maybe combine Splitter and IndexLinker?
-    # IndexParser?
-    # But the probably is it's not lossless!!!  We want to replace
-    # - <pre></pre>
-    # - maybe <h2> with a link to "help.html#cmd"
-
   elif action == 'cards':
+    # Split help into cards.
+
     page_path = argv[2]
-    index_path = argv[3]
+    index_path = argv[3]  # TODO: Combine with the above
     out_dir = argv[4]
+    py_out = argv[5]
 
     with open(page_path) as f:
       contents = f.read()
 
     cards = SplitIntoCards(['h2', 'h3', 'h4'], contents)
 
+    topics = []
     for tag, topic_id, heading, text in cards:
       if tag != 'h4':
         continue  # Skip h2 and h3 for now
@@ -657,6 +651,11 @@ def main(argv):
         f.write('%s %s %s\n\n' % (_REVERSE, heading, _RESET))
         f.write(text)
       log('Wrote %s', path)
+
+      topics.append(topic_id)
+
+    with open(py_out, 'w') as f:
+      f.write('TOPICS = %s\n' % pprint.pformat(topics))
 
     # Process pages first, so you can parse 
     # <h4 class="discouarged oil-language osh-only bash ksh posix"></h4>
@@ -693,8 +692,6 @@ def main(argv):
     #     - $cross-ref:bash
 
     # then output TOPIC_LOOKUP
-
-    pass
 
   else:
     raise RuntimeError('Invalid action %r' % action)

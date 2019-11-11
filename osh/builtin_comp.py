@@ -2,7 +2,7 @@
 builtin_comp.py - Completion builtins
 """
 
-#from _devbuild.gen import osh_help  # generated file
+from _devbuild.gen import help_
 from _devbuild.gen.runtime_asdl import value_e
 from core import completion
 from core import ui
@@ -156,7 +156,8 @@ class SpecBuilder(object):
         a = completion.VariablesAction(ex.mem)
 
       elif name == 'helptopic':
-        a = _FixedWordsAction([])  # TODO: fix this
+        # Note: it would be nice to have 'helpgroup' for help -i too
+        a = _FixedWordsAction(help_.TOPICS)
 
       elif name == 'setopt':
         a = _FixedWordsAction(state.SET_OPTION_NAMES)
