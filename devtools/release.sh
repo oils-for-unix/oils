@@ -452,6 +452,9 @@ metrics() {
   local out=_tmp/metrics
   mkdir -p $out
 
+  # Generate C++ code that will be conuted later
+  build/dev.sh oil-asdl-to-cpp
+
   line-counts $PWD/$out/line-counts
 
   metrics/bytecode.sh run-for-release
