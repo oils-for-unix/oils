@@ -616,7 +616,6 @@ def main(argv):
 
       groups.append(topic_id)
 
-    import pprint
     with open(py_out, 'w') as f:
       f.write('GROUPS = %s\n' % pprint.pformat(groups))
 
