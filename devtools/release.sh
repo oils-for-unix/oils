@@ -268,6 +268,9 @@ test-opy() {
 }
 
 spec-all() {
+  # Create the tests we're running
+  test/smoosh.sh make-spec
+
   # 8/2019: Added smoosh
   export OSH_LIST="$REPO_ROOT/bin/osh $OSH_RELEASE_BINARY"
   export OIL_LIST="$REPO_ROOT/bin/oil $OIL_RELEASE_BINARY"
