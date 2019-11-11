@@ -251,7 +251,25 @@ or this:
 
 <h3>Conditional</h3>
 
-### Iteration
+<h4 id="true">true</h4>
+
+Do nothing and return status 0.
+
+    if true; then
+      echo hello
+    fi
+
+<h4 id="false">false</h4>
+
+Do nothing and return status 1.
+
+    if false; then
+      echo 'not reached'
+    else
+      echo hello
+    fi
+
+<h3>Iteration</h3>
 
 ### Control Flow
 
