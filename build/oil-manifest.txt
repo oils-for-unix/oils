@@ -1,4 +1,3 @@
 oil-version.txt oil-version.txt 
-doc/osh-quick-ref-toc.txt doc/osh-quick-ref-toc.txt
 _devbuild/gen/grammar.marshal _devbuild/gen/grammar.marshal
 

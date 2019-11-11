@@ -80,7 +80,7 @@ py-to-compile() {
 }
 
 # For embedding in oil/bytecode.zip.
-quick-ref-manifest() {
+help-manifest() {
   local dir=$1
   for path in $dir/*; do
     echo "$path $path"  # relative path is the same
