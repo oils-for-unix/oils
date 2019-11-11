@@ -154,7 +154,7 @@
   9881 ccdb3e893d23576857e9e68cf24bb63f _tmp/regtest/core/legacy.pyc
   9889 612699f40c44ca452ee8dc9eef06bb1c _tmp/regtest/core/util.pyc
  10513 54a627997dabacb3c7c668b3b493d22e _tmp/regtest/runpy.pyc
- 10560 5f30d8c99b518534251459804d8e6af2 _tmp/regtest/opy/opy_main.pyc
+ 10555 607e9e9543036fc77688fbc07a3dcf45 _tmp/regtest/opy/opy_main.pyc
  10802 41b4b7f7c82b5975c2b78f9726befd1e _tmp/regtest/UserDict.pyc
  10951 3169174488da51bf746448c4b31c8ef8 _tmp/regtest/_weakrefset.pyc
  11111 516ad8bd7dddeab5dcfe1cca2bbf2b94 _tmp/regtest/core/id_kind.pyc
