@@ -11,9 +11,6 @@ readonly MYPY_FLAGS='--strict --no-implicit-optional --no-strict-optional'
 # Hack because there's an asdl/pretty.py error that's hard to get rid of.
 assert-one-error() {
   local log_path=$1
-  echo
-  cat $log_path
-  echo
 
   # Hack to get rid of summary line that appears in some MyPy versions.
   local num_errors=$(grep -F -v 'Found 1 error in 1 file' $log_path | wc -l)
@@ -24,6 +21,10 @@ assert-one-error() {
     echo OK
     return 0
   else
+    echo
+    cat $log_path
+    echo
+
     echo "Expected 1 error, but got $num_errors"
     return 1
   fi
