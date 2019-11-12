@@ -33,11 +33,9 @@ pyann-patched() {
   python $tool "$@"
 }
 
-# --no-strict-optional issues
-# - simple sum type might be None, but generated PrettyTree() method uses
-#   obj.name
-
-iter-demo-asdl() {
+# NOTE: We're testing ASDL code generation with --strict because we might want
+# Oil to pass under --strict someday.
+typed-demo-asdl() {
   asdl/run.sh gen-typed-demo-asdl
   typecheck --strict \
     _devbuild/gen/typed_demo_asdl.py asdl/typed_demo.py
@@ -54,7 +52,7 @@ check-arith() {
     asdl/typed_arith_parse.py asdl/typed_arith_parse_test.py asdl/tdop.py
 }
 
-iter-arith-asdl() {
+typed-arith-asdl() {
   asdl/run.sh gen-typed-arith-asdl
   check-arith
 
@@ -83,9 +81,9 @@ typecheck-more-oil() {
 
 
 travis() {
-  iter-demo-asdl
+  typed-demo-asdl
   # Avoid spew on Travis.
-  iter-arith-asdl > /dev/null
+  typed-arith-asdl > /dev/null
 
   # Ad hoc list of additional files
   typecheck-more-oil
