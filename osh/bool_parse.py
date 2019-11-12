@@ -32,14 +32,10 @@ BINARY_OP: -gt, -ot, ==, etc.
 
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
-from _devbuild.gen.syntax_asdl import (
-    word_t, word__Compound, word__String,
-    bool_expr, bool_expr_t,
-)
+from _devbuild.gen.syntax_asdl import word_t, word_e, bool_expr, bool_expr_t
 from frontend import lookup
 from osh import word_
 from core.util import p_die
-
 
 from typing import List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -203,7 +199,9 @@ class BoolParser(object):
       self._Next()
       w = self.cur_word
       # e.g. [[ -f < ]].  But [[ -f '<' ]] is OK
-      if not isinstance(w, (word__Compound, word__String)):
+
+      tag = w.tag_()
+      if tag != word_e.Compound and tag != word_e.String:
         p_die('Invalid argument to unary operator', word=w)
       self._Next()
       node = bool_expr.Unary(op, w)  # type: bool_expr_t

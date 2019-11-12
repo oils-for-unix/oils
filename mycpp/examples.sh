@@ -6,7 +6,7 @@ typecheck-oil() {
   local flags='--no-strict-optional'
 
   set +o errexit
-  MYPYPATH="$REPO_ROOT" \
+  MYPYPATH="$REPO_ROOT:$REPO_ROOT/native" \
     mypy --py2 --strict $flags examples/$name.py | tee _tmp/err.txt
   set -o errexit
 
@@ -294,7 +294,11 @@ namespace arith_nt {
     $REPO_ROOT/pgen2/parse.py \
     $REPO_ROOT/oil_lang/expr_parse.py \
     $REPO_ROOT/oil_lang/expr_to_ast.py \
+    $REPO_ROOT/osh/bool_parse.py \
+    $REPO_ROOT/osh/word_.py \
     examples/$name.py
+
+  # TODO: move bool_parse.py elsewhere
 
   compile-pgen2_demo
 } 

@@ -23,6 +23,7 @@ from _devbuild.gen.syntax_asdl import (
 from asdl import runtime
 from core import util
 from frontend import lookup
+from mycpp import mylib
 
 from typing import Tuple, Optional, List, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -648,11 +649,13 @@ def SpanIdFromError(error):
   return runtime.NO_SPID
 
 
-def ErrorWord(fmt, err):
-  # type: (str, _ErrorWithLocation) -> word__Compound
-  error_str = fmt % err.UserErrorString()
-  t = token(Id.Lit_Chars, error_str, runtime.NO_SPID)
-  return word.Compound([word_part.Literal(t)])
+if mylib.PYTHON:
+  # Doesn't translate with mycpp because of dynamic %
+  def ErrorWord(fmt, err):
+    # type: (str, _ErrorWithLocation) -> word__Compound
+    error_str = fmt % err.UserErrorString()
+    t = token(Id.Lit_Chars, error_str, runtime.NO_SPID)
+    return word.Compound([word_part.Literal(t)])
 
 
 def Pretty(w):
