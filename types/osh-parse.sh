@@ -44,12 +44,6 @@ egrep-deps() {
   cat $PY_DEPS | xargs -- egrep "$@"
 }
 
-readonly MYPY_INI_STRICT='_tmp/mypy-strict.ini'
-
-gen_strict_mypy_config() {
-  <"$MYPY_INI" sed '/--START-LAX-CONFIG--/,$d' > "$MYPY_INI_STRICT"
-}
-
 typecheck-all() {
   local manifest=$1
   local strict_none=${2:-}
@@ -59,8 +53,7 @@ typecheck-all() {
   #local flags=''
   local flags
   if test -n "$strict_none"; then
-    gen_strict_mypy_config
-    flags="--config-file=$MYPY_INI_STRICT"
+    flags="$MYPY_FLAGS --strict-optional"
   else
     flags=$MYPY_FLAGS
   fi
