@@ -58,11 +58,7 @@ typecheck-all() {
     flags=$MYPY_FLAGS
   fi
 
-  set +o errexit
-  cat $manifest | xargs -- $0 typecheck $flags >_tmp/err.txt
-  #echo "status: $?"
-
-  assert-one-error _tmp/err.txt
+  cat $manifest | xargs -- $0 typecheck $flags
 }
 
 # The manifest needs to be checked in because we don't have

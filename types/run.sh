@@ -69,12 +69,7 @@ iter-arith-asdl() {
 typecheck-more-oil() {
   #typecheck $flags osh/word_compile.py
 
-  local log=_tmp/typecheck-more-oil.txt
-
-  set +o errexit
-  typecheck $MYPY_FLAGS osh/glob_.py osh/string_ops.py > $log
-
-  assert-one-error $log
+  typecheck $MYPY_FLAGS osh/glob_.py osh/string_ops.py
 }
 
 
