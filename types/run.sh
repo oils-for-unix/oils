@@ -46,7 +46,7 @@ check-arith() {
   # NOTE: There are still some Any types here!  We don't want them for
   # translation.
 
-  MYPYPATH=. PYTHONPATH=. typecheck $MYPY_FLAGS \
+  typecheck $MYPY_FLAGS \
     asdl/typed_arith_parse.py asdl/typed_arith_parse_test.py asdl/tdop.py
 }
 
