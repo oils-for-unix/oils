@@ -21,6 +21,12 @@ h2 {
   font-size: 1.2em;  /* reduce to what browsers apparently use for h3 */
 }
 
+h3 {
+  font-size: 1.0em;
+  margin-left: 1em;
+  color: darkgreen;  /* different than blog */
+}
+
 pre {
   color: green;
   margin-left: 4em;

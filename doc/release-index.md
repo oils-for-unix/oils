@@ -89,8 +89,9 @@ Oil has three major sources of docs:
 [Bloaty]: https://github.com/google/bloaty
 [OVM]: //www.oilshell.org/cross-ref.html?tag=OVM#OVM
 
-
 ## Tests
+
+### Main Test Suites
 
 - [Oil Spec Tests](test/spec.wwz/oil.html).  Test new Oil language features.
 - [OSH Spec Tests](test/spec.wwz/osh.html).  Test OSH with existing shells, and
@@ -99,7 +100,7 @@ Oil has three major sources of docs:
   with OSH.
 - [Unit Tests](test/unit.wwz/).  Python unit test results.
 
-More tests:
+### Other Suites
 
 - [Gold Tests](test/other.wwz/gold.txt).  Compare OSH against bash (using
   implicit assertions, no golden output.)
@@ -121,7 +122,7 @@ More tests:
 
 [mgree/smoosh]: https://github.com/mgree/smoosh/tree/master/tests/shell
 
-## OPy Tests
+### For OPy
 
 The OPy compiler is used to compile Oil to bytecode, but isn't itself part of
 the release.
@@ -136,7 +137,7 @@ Tree-shaking:
 - [Symbols in Oil](test/opy.wwz/oil-symbols.txt)
 - [Symbols in OPy](test/opy.wwz/opy-symbols.txt)
 
-## Manual Tests
+### Manual Tests
 
 - [ ] Test build and install on OS X
 
