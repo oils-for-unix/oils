@@ -26,7 +26,7 @@ def Header(meta, f):
     %(css_links)s
   </head>
   <body>
-    <div id="home-link">
+    <p id="home-link">
 ''' % meta)
 
   compact_title = meta.get('compact_title')
@@ -53,7 +53,7 @@ def Header(meta, f):
   f.write('''\
       <a href="/releases.html">all versions</a> |
       <a href="/">oilshell.org</a>
-    </div>
+    </p>
 ''' % meta)
 
   if 'in_progress' in meta:

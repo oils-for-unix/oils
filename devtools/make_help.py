@@ -38,6 +38,12 @@ Definition lists would be nice:
   $?   exit status
   $0   first etc.
 
+TODO:
+  handle_startendtag()
+  handle_decl() -- for doctype
+
+https://bugs.python.org/issue25258
+
 
 """
 

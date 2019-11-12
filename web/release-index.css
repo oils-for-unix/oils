@@ -13,6 +13,14 @@ body {
   color: #444;
 }
 
+h1 {
+  font-size: 1.5em;  /* reduce to what browsers apparently use for h2 */
+}
+
+h2 {
+  font-size: 1.2em;  /* reduce to what browsers apparently use for h3 */
+}
+
 pre {
   color: green;
   margin-left: 4em;
@@ -26,6 +34,9 @@ code {
   text-align: right;
 }
 /* END COMMON */
+
+
+/* Downlad links are in both releases.html and /release/$VERSION/index.html */
 
 .release-table {
   padding: 1em;
