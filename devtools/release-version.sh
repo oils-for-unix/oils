@@ -94,6 +94,14 @@ _git-changelog-header() {
   <body>
     <h3>Commits Between Branches <code>$prev_branch</code> and
        <code>$cur_branch</code></h3>
+    <table>
+      <colgroup>
+        <col>
+        <col>
+        <col>
+        <!-- prevent long commits from causing wrapping in other cells -->
+        <col style="width: 40em">
+      </colgroup>
 EOF
 # Doesn't seem necessary now.
 #     <thead>
@@ -106,10 +114,8 @@ EOF
 }
 
 _git-changelog() {
-  echo '<table>'
   _git-changelog-header "$@"
   _git-changelog-body "$@"
-  echo '</table>'
   html-footer
 }
 
