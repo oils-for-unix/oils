@@ -104,3 +104,21 @@ yes
 no
 no
 ## END
+
+#### case with single byte LC_ALL=C
+
+LC_ALL=C
+
+c=$(printf \\377)
+
+# OSH prints -1 here
+#echo "${#c}"
+
+case $c in
+  '')   echo a ;;
+  "$c") echo b ;;
+esac
+
+## STDOUT:
+b
+## END
