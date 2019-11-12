@@ -5,4 +5,6 @@ typecheck() {
   MYPYPATH=.:native PYTHONPATH=. mypy --py2 "$@"
 }
 
-readonly MYPY_FLAGS='--config-file=types/mypy.ini'
+
+readonly MYPY_INI='types/mypy.ini'
+readonly MYPY_FLAGS="--config-file=$MYPY_INI"
