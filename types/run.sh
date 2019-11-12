@@ -36,7 +36,7 @@ pyann-patched() {
 
 iter-demo-asdl() {
   asdl/run.sh gen-typed-demo-asdl
-  typecheck --strict \
+  typecheck $MYPY_FLAGS \
     _devbuild/gen/typed_demo_asdl.py asdl/typed_demo.py
 
   PYTHONPATH=. asdl/typed_demo.py "$@"
@@ -46,8 +46,7 @@ check-arith() {
   # NOTE: There are still some Any types here!  We don't want them for
   # translation.
 
-  local strict='--strict'
-  MYPYPATH=. PYTHONPATH=. typecheck $strict \
+  MYPYPATH=. PYTHONPATH=. typecheck $MYPY_FLAGS \
     asdl/typed_arith_parse.py asdl/typed_arith_parse_test.py asdl/tdop.py
 }
 

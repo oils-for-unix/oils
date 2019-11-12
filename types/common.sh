@@ -5,7 +5,7 @@ typecheck() {
   MYPYPATH=.:native PYTHONPATH=. mypy --py2 "$@"
 }
 
-readonly MYPY_FLAGS='--strict --no-implicit-optional --no-strict-optional'
+readonly MYPY_FLAGS='--config-file=types/mypy.ini'
 
 
 # Hack because there's an asdl/pretty.py error that's hard to get rid of.
