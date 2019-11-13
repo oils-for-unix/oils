@@ -21,15 +21,12 @@ from _devbuild.gen.syntax_asdl import (
     sh_lhs_expr__Name,
 )
 from asdl import runtime
-from core import util
 from frontend import lookup
 from mycpp import mylib
 
-from typing import Tuple, Optional, List, TYPE_CHECKING
+from typing import Tuple, Optional, List, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.util import _ErrorWithLocation
-
-p_die = util.p_die
 
 
 def _LiteralId(p):
@@ -38,7 +35,9 @@ def _LiteralId(p):
   If the WordPart consists of a single literal token, return its Id.  Used for
   Id.KW_For, or Id.RBrace, etc.
   """
-  if isinstance(p, word_part__Literal):
+  UP_part = p
+  if p.tag_() == word_part_e.Literal:
+    p = cast(word_part__Literal, UP_part)
     return p.token.id
   else:
     return Id.Undefined_Tok  # unequal to any other Id
@@ -64,6 +63,8 @@ def _EvalWordPart(part):
       value: a string (not Value)
       quoted: whether any part of the word was quoted
   """
+  tag = part.tag_()
+
   if isinstance(part, sh_array_literal):
     # Array literals aren't good for any of our use cases.  TODO: Rename
     # EvalWordToString?
@@ -96,7 +97,7 @@ def _EvalWordPart(part):
 
     return True, ret, True  # At least one part was quoted!
 
-  elif part.tag in (
+  elif tag in (
       word_part_e.CommandSub, word_part_e.SimpleVarSub,
       word_part_e.BracedVarSub, word_part_e.TildeSub,
       word_part_e.ArithSub, word_part_e.ExtGlob,
@@ -104,7 +105,7 @@ def _EvalWordPart(part):
     return False, '', False
 
   else:
-    raise AssertionError(part.__class__.__name__)
+    raise AssertionError(tag)
 
 
 def StaticEval(w):
@@ -192,6 +193,8 @@ def _RightMostSpanForPart(part):
   # type: (word_part_t) -> int
   # TODO: Write unit tests in ui.py for error values
 
+  tag = part.tag_()
+
   if isinstance(part, sh_array_literal):
     # TODO: Return )
     return LeftMostSpanForWord(part.words[0])  # Hm this is a=(1 2 3)
@@ -230,7 +233,7 @@ def _RightMostSpanForPart(part):
     return part.spids[1]
 
   else:
-    raise AssertionError(part.tag)
+    raise AssertionError(tag)
 
 
 def LeftMostSpanForWord(w):

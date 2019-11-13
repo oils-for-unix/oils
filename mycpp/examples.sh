@@ -295,10 +295,19 @@ namespace arith_nt {
     $REPO_ROOT/oil_lang/expr_parse.py \
     $REPO_ROOT/oil_lang/expr_to_ast.py \
     $REPO_ROOT/osh/bool_parse.py \
-    $REPO_ROOT/osh/word_.py \
     examples/$name.py
+    #$REPO_ROOT/osh/word_.py \
 
-  # TODO: move bool_parse.py elsewhere
+  # TODO:
+  # osh/word_.py needs its own case
+
+  # word_.py:
+  # - all the isinstance() -- damn it's annoying to change these
+  #   - I kind of want a switch -- is it faster?
+  # - bool_parse.py (36 errors)
+  #   - WordParser dependency
+  #   - _Next() has keyword arg
+  # 
 
   compile-pgen2_demo
 } 

@@ -12,8 +12,8 @@ from mypy.types import (
     Type, AnyType, NoneTyp, TupleType, Instance, Overloaded, CallableType,
     UnionType, UninhabitedType, PartialType)
 from mypy.nodes import (
-    Expression, Statement, NameExpr, IndexExpr, MemberExpr, TupleExpr,
-    ExpressionStmt, AssignmentStmt, StrExpr, SliceExpr, FuncDef,
+    Expression, Statement, Block, NameExpr, IndexExpr, MemberExpr, TupleExpr,
+    ExpressionStmt, AssignmentStmt, IfStmt, StrExpr, SliceExpr, FuncDef,
     ComparisonExpr, CallExpr, IntExpr, ListComprehension)
 
 import format_strings
@@ -386,7 +386,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             log('typ %s', typ)
 
           self.accept(obj)
-          self.write('->tag == ')
+          self.write('->tag_() == ')
           assert isinstance(typ, NameExpr), typ
 
           # source__CFlag -> source_e::CFlag
@@ -1157,8 +1157,97 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if o.else_body:
           raise AssertionError("can't translate for-else")
 
+    def _write_cases(self, if_node):
+      """
+      The MyPy AST has a recursive structure for if-elif-elif rather than a
+      flat one.  It's a bit confusing.
+      """
+      assert isinstance(if_node, IfStmt), if_node
+      assert len(if_node.expr) == 1, if_node.expr
+      assert len(if_node.body) == 1, if_node.body
+
+      expr = if_node.expr[0]
+      body = if_node.body[0]
+
+      # case 1:
+      # case 2:
+      # case 3: {
+      #   print('body')
+      # }
+      #   break;  // this indent is annoying but hard to get rid of
+      assert isinstance(expr, CallExpr), expr
+      for i, arg in enumerate(expr.args):
+        if i != 0:
+          self.write('\n')
+        self.write_ind('case ')
+        self.accept(arg)
+        self.write(': ')
+
+      self.accept(body)
+      self.write_ind('  break;\n')
+
+      if if_node.else_body:
+        first_of_block = if_node.else_body.body[0]
+        if isinstance(first_of_block, IfStmt):
+          self._write_cases(first_of_block)
+        else:
+          # end the recursion
+          self.write_ind('default: ')
+          self.accept(if_node.else_body)  # the whole block
+          # no break here
+
+        #self.accept(if_node.else_body)
+
     def visit_with_stmt(self, o: 'mypy.nodes.WithStmt') -> T:
-        pass
+        """
+        Translate only blocks of this form:
+
+        with switch(x) as case:
+          if case(0):
+            print('zero')
+          elif case(1, 2, 3):
+            print('low')
+          else:
+            print('other')
+
+        switch(x) {
+          case 0:
+            # TODO: need casting here
+            print('zero')
+            break;
+          case 1:
+          case 2:
+          case 3:
+            print('low')
+            break;
+          default:
+            print('other')
+            break;
+        }
+        """
+        log('WITH')
+        log('expr %s', o.expr)
+        log('target %s', o.target)
+
+        assert len(o.expr) == 1, o.expr
+        expr = o.expr[0]
+        assert isinstance(expr, CallExpr), expr
+
+        assert len(expr.args) == 1, expr.args
+
+        self.write_ind('switch (')
+        self.accept(expr.args[0])
+        self.write(') {\n')
+
+        assert len(o.body.body) == 1, o.body.body
+        if_node = o.body.body[0]
+        assert isinstance(if_node, IfStmt), if_node
+
+        self.indent += 1
+        self._write_cases(if_node)
+
+        self.indent -= 1
+        self.write_ind('}\n')
 
     def visit_del_stmt(self, o: 'mypy.nodes.DelStmt') -> T:
         pass
@@ -1471,14 +1560,17 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if last_dotted.endswith('_asdl'):
               if name.endswith('_n') or name in (
                 'hnode_e', 'source_e', 'assign_op_e', 'place_e',
-                'place_expr_e', 'Id',
-                # for this
-                'expr_e', 'expr',
+                'Id',
 
                 # syntax_asdl
-                'command',
-                're', 're_repeat', 'class_literal_term',
-                'place_expr', 'proc_sig',
+                'command', 're', 're_repeat', 'class_literal_term', 'proc_sig',
+
+                # for this
+                'expr_e', 'expr',
+                'bool_expr_e', 'bool_expr',
+                'place_expr_e', 'place_expr', 
+                'word_part_e', 'word_part', 
+                'word_e', 'word',
                 ):
                 is_namespace = True
 

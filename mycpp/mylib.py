@@ -44,3 +44,22 @@ def Stdout():
 def Stdin():
   return sys.stdin
 
+
+class typeswitch(object):
+  """A ContextManager that translates to a C switch statement."""
+
+  def __init__(self, value):
+    # type: (int) -> None
+    self.value = value
+
+  def __enter__(self):
+    # type: () -> typeswitch
+    return self
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> bool
+    return False  # Allows a traceback to occur
+
+  def __call__(self, *cases):
+    # type: (*Any) -> bool
+    return self.value in cases

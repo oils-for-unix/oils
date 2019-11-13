@@ -103,7 +103,7 @@ class BoolParser(object):
     # type: () -> word_t
     n = len(self.words)
     if n != 1:
-      raise AssertionError(self.words)
+      raise AssertionError(n)
 
     w = self.w_parser.ReadWord(lex_mode_e.DBracket)  # may raise
     self.words.append(w)  # Save it for _Next()
