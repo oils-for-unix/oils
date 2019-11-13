@@ -10,7 +10,7 @@ set -o pipefail
 set -o errexit
 
 filter-py() {
-  grep -E -v '__init__.py$|_gen.py|_test.py$'
+  grep -E -v '__init__.py$|_gen.py|_test.py|_tests.py$'
 }
 
 readonly -a ASDL_FILES=( {frontend,osh}/*.asdl )
