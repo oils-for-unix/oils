@@ -1214,47 +1214,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.indent -= 1
         self.write_ind('}\n')
 
-    def _write_typeswitch_cases(self, if_node):
-      """
-      The MyPy AST has a recursive structure for if-elif-elif rather than a
-      flat one.  It's a bit confusing.
-      """
-      assert isinstance(if_node, IfStmt), if_node
-      assert len(if_node.expr) == 1, if_node.expr
-      assert len(if_node.body) == 1, if_node.body
-
-      expr = if_node.expr[0]
-      body = if_node.body[0]
-
-      # case 1:
-      # case 2:
-      # case 3: {
-      #   print('body')
-      # }
-      #   break;  // this indent is annoying but hard to get rid of
-      assert isinstance(expr, CallExpr), expr
-      for i, arg in enumerate(expr.args):
-        if i != 0:
-          self.write('\n')
-        self.write_ind('case ')
-        # must look like expr__Var
-        assert isinstance(arg, NameExpr), arg
-        self.write(arg.name.replace('__', '_e::'))
-        self.write(': ')
-
-      self.accept(body)
-      self.write_ind('  break;\n')
-
-      if if_node.else_body:
-        first_of_block = if_node.else_body.body[0]
-        if isinstance(first_of_block, IfStmt):
-          self._write_typeswitch_cases(first_of_block)
-        else:
-          # end the recursion
-          self.write_ind('default: ')
-          self.accept(if_node.else_body)  # the whole block
-          # no break here
-
     def _write_typeswitch(self, expr, o):
         """Write a switch statement over ASDL types."""
         assert len(expr.args) == 1, expr.args
@@ -1268,7 +1227,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         assert isinstance(if_node, IfStmt), if_node
 
         self.indent += 1
-        self._write_typeswitch_cases(if_node)
+        self._write_cases(if_node)
 
         self.indent -= 1
         self.write_ind('}\n')

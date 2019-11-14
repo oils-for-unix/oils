@@ -68,9 +68,9 @@ class switch(object):
 class typeswitch(object):
   """A ContextManager that translates to switch statement over ASDL types."""
 
-  def __init__(self, value):
+  def __init__(self, node):
     # type: (int) -> None
-    self.value = value
+    self.tag = node.tag
 
   def __enter__(self):
     # type: () -> typeswitch
@@ -82,4 +82,4 @@ class typeswitch(object):
 
   def __call__(self, *cases):
     # type: (*Any) -> bool
-    return isinstance(self.value, cases)
+    return self.tag in cases

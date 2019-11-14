@@ -195,11 +195,11 @@ def run_tests():
 
     UP_node = node
     with typeswitch(UP_node) as case:
-      if case(expr__Const):
+      if case(expr_e.Const):
         node = cast(expr__Const, UP_node)
         log('Const %d', node.i)
 
-      elif case(expr__Var):
+      elif case(expr_e.Var):
         node = cast(expr__Var, UP_node)
         log('Var %s', node.name)
 
