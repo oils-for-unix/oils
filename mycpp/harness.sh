@@ -181,9 +181,6 @@ should-skip() {
   case $1 in
     # not passing yet!
     #
-    # - prereqs for evaluation:
-    #   - switch1: typeswitch.  Needs casting?
-    #   - switch2: primitive switch.  Translation crashes
     # - later
     #   - scoped_resource: Not translated at all.  No RuntimeError.
 
@@ -195,7 +192,7 @@ should-skip() {
       return 0
       ;;
 
-    switch1|switch2|scoped_resource)
+    scoped_resource)
       return 0
       ;;
     *)

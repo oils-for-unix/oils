@@ -8,12 +8,13 @@ import os
 import sys
 
 # PYTHONPATH=$REPO_ROOT/vendor
-from typing import Tuple, Optional
+from typing import Tuple, Optional, cast
 
 # PYTHONPATH=$REPO_ROOT/mycpp
-from mycpp.mylib import log
+from mycpp.mylib import log, typeswitch
 from mycpp import mylib
 from _gen.expr_asdl import (
+    expr_e,  # for translation only?
     expr_t, expr__Var, expr__Const, expr__Binary, tok_e, tok_t
 )
 
@@ -161,6 +162,7 @@ def run_tests():
 
   CASES = [
       '1+2', '1+2*3', '1*2+3', '(1+2)*3', 'a+b+c+d', 'a*b*3*4',
+      '1', 'a',
 
       # expect errors here:
       '(',
@@ -176,20 +178,33 @@ def run_tests():
     log('--')
     log('%s =>', expr)
 
-    tree = None  # type: Optional[expr_t]
+    node = None  # type: Optional[expr_t]
     try:
-      tree = p.Parse()
+      node = p.Parse()
     except ParseError as e:
       log('Parse error: %s', e.msg)
       continue
 
     #log('%s', tree)
 
-    htree = tree.AbbreviatedTree()
+    htree = node.AbbreviatedTree()
     ast_f = fmt.AnsiOutput(mylib.Stdout())
 
     fmt.PrintTree(htree, ast_f)
     ast_f.write('\n')
+
+    UP_node = node
+    with typeswitch(UP_node) as case:
+      if case(expr__Const):
+        node = cast(expr__Const, UP_node)
+        log('Const %d', node.i)
+
+      elif case(expr__Var):
+        node = cast(expr__Var, UP_node)
+        log('Var %s', node.name)
+
+      else:
+        log('Other')
 
 
 def run_benchmarks():

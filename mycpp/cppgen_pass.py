@@ -1196,7 +1196,82 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.accept(if_node.else_body)  # the whole block
           # no break here
 
-        #self.accept(if_node.else_body)
+    def _write_switch(self, expr, o):
+        """Write a switch statement over integers."""
+        assert len(expr.args) == 1, expr.args
+
+        self.write_ind('switch (')
+        self.accept(expr.args[0])
+        self.write(') {\n')
+
+        assert len(o.body.body) == 1, o.body.body
+        if_node = o.body.body[0]
+        assert isinstance(if_node, IfStmt), if_node
+
+        self.indent += 1
+        self._write_cases(if_node)
+
+        self.indent -= 1
+        self.write_ind('}\n')
+
+    def _write_typeswitch_cases(self, if_node):
+      """
+      The MyPy AST has a recursive structure for if-elif-elif rather than a
+      flat one.  It's a bit confusing.
+      """
+      assert isinstance(if_node, IfStmt), if_node
+      assert len(if_node.expr) == 1, if_node.expr
+      assert len(if_node.body) == 1, if_node.body
+
+      expr = if_node.expr[0]
+      body = if_node.body[0]
+
+      # case 1:
+      # case 2:
+      # case 3: {
+      #   print('body')
+      # }
+      #   break;  // this indent is annoying but hard to get rid of
+      assert isinstance(expr, CallExpr), expr
+      for i, arg in enumerate(expr.args):
+        if i != 0:
+          self.write('\n')
+        self.write_ind('case ')
+        # must look like expr__Var
+        assert isinstance(arg, NameExpr), arg
+        self.write(arg.name.replace('__', '_e::'))
+        self.write(': ')
+
+      self.accept(body)
+      self.write_ind('  break;\n')
+
+      if if_node.else_body:
+        first_of_block = if_node.else_body.body[0]
+        if isinstance(first_of_block, IfStmt):
+          self._write_typeswitch_cases(first_of_block)
+        else:
+          # end the recursion
+          self.write_ind('default: ')
+          self.accept(if_node.else_body)  # the whole block
+          # no break here
+
+    def _write_typeswitch(self, expr, o):
+        """Write a switch statement over ASDL types."""
+        assert len(expr.args) == 1, expr.args
+
+        self.write_ind('switch (')
+        self.accept(expr.args[0])
+        self.write('->tag_()) {\n')
+
+        assert len(o.body.body) == 1, o.body.body
+        if_node = o.body.body[0]
+        assert isinstance(if_node, IfStmt), if_node
+
+        self.indent += 1
+        self._write_typeswitch_cases(if_node)
+
+        self.indent -= 1
+        self.write_ind('}\n')
 
     def visit_with_stmt(self, o: 'mypy.nodes.WithStmt') -> T:
         """
@@ -1233,21 +1308,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         expr = o.expr[0]
         assert isinstance(expr, CallExpr), expr
 
-        assert len(expr.args) == 1, expr.args
-
-        self.write_ind('switch (')
-        self.accept(expr.args[0])
-        self.write(') {\n')
-
-        assert len(o.body.body) == 1, o.body.body
-        if_node = o.body.body[0]
-        assert isinstance(if_node, IfStmt), if_node
-
-        self.indent += 1
-        self._write_cases(if_node)
-
-        self.indent -= 1
-        self.write_ind('}\n')
+        if expr.callee.name == 'switch':
+          self._write_switch(expr, o)
+        elif expr.callee.name == 'typeswitch':
+          self._write_typeswitch(expr, o)
+        else:
+          raise AssertionError(expr.callee.name)
 
     def visit_del_stmt(self, o: 'mypy.nodes.DelStmt') -> T:
         pass

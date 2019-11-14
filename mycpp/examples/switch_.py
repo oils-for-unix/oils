@@ -6,14 +6,14 @@ from __future__ import print_function
 
 import os
 
-from mylib import typeswitch, log
+from mylib import switch, log
 
 
 def run_tests():
   # type: () -> None
 
   x = 5
-  with typeswitch(x) as case:
+  with switch(x) as case:
     if case(0):
       print('zero')
       print('zero')
