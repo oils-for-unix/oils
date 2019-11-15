@@ -419,7 +419,7 @@ def ShFunctionName(w):
   return s
 
 
-def LooksLikeArithVar(w):
+def LooksLikeArithVar(UP_w):
   # type: (word_t) -> Optional[token]
   """Return a token if this word looks like an arith var.
 
@@ -427,17 +427,18 @@ def LooksLikeArithVar(w):
   ArithVarLike must be different tokens.  Otherwise _ReadCompoundWord will be
   confused between array assigments foo=(1 2) and function calls foo(1, 2).
   """
-  if not isinstance(w, word__Compound):
+  if UP_w.tag_() != word_e.Compound:
     return None
 
+  w = cast(word__Compound, UP_w)
   if len(w.parts) != 1:
     return None
 
-  part0 = w.parts[0]
-  if _LiteralId(part0) != Id.Lit_ArithVarLike:
+  UP_part0 = w.parts[0]
+  if _LiteralId(UP_part0) != Id.Lit_ArithVarLike:
     return None
-  assert isinstance(part0, word_part__Literal)  # for MyPy
 
+  part0 = cast(word_part__Literal, UP_part0)
   return part0.token
 
 
@@ -532,45 +533,44 @@ def DetectAssocPair(w):
 
 
 def KeywordToken(w):
-  # type: (word_t) -> Tuple[Kind_t, Optional[token]]
+  # type: (word__Compound) -> Tuple[Kind_t, Optional[token]]
   """Tests if a word is an assignment or control flow word.
 
   Returns:
     kind, token
   """
-  assert isinstance(w, word__Compound)
-
   err = (Kind.Undefined, None)
   if len(w.parts) != 1:
     return err
 
-  part0 = w.parts[0]
-  token_type = _LiteralId(part0)
+  UP_part0 = w.parts[0]
+  token_type = _LiteralId(UP_part0)
   if token_type == Id.Undefined_Tok:
     return err
 
-  assert isinstance(part0, word_part__Literal)  # for MyPy
-
   token_kind = lookup.LookupKind(token_type)
   if token_kind == Kind.ControlFlow:
+    part0 = cast(word_part__Literal, UP_part0)
     return token_kind, part0.token
 
   return err
 
 
-def LiteralToken(w):
+def LiteralToken(UP_w):
   # type: (word_t) -> Optional[token]
   """If a word consists of a literal token, return it.
   
   Otherwise return None.
   """
-  assert isinstance(w, word__Compound)
+  assert UP_w.tag_() == word_e.Compound
+  w = cast(word__Compound, UP_w)
 
   if len(w.parts) != 1:
     return None
 
-  part0 = w.parts[0]
-  if isinstance(part0, word_part__Literal):
+  UP_part0 = w.parts[0]
+  if UP_part0.tag_() == word_part_e.Literal:
+    part0 = cast(word_part__Literal, UP_part0)
     return part0.token
 
   return None
