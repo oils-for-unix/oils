@@ -14,7 +14,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part__ArithSub, word_part__BracedTuple, word_part__ExtGlob,
     word_part__Splice, word_part__FuncCall, word_part__ExprSub,
 
-    word, word_t, 
+    word, word_e, word_t,
     word__Compound, word__Token, word__Empty, word__BracedTree,
     word__String,
 
@@ -67,13 +67,11 @@ def _EvalWordPart(part):
   UP_part = part
   with tagswitch(part) as case:
     if case(word_part_e.ShArrayLiteral):
-      part = cast(sh_array_literal, UP_part)
       # Array literals aren't good for any of our use cases.  TODO: Rename
       # EvalWordToString?
       return False, '', False
 
     elif case(word_part_e.AssocArrayLiteral):
-      part = cast(word_part__AssocArrayLiteral, UP_part)
       return False, '', False
 
     elif case(word_part_e.Literal):
@@ -106,24 +104,25 @@ def _EvalWordPart(part):
 
     elif case(
         word_part_e.CommandSub, word_part_e.SimpleVarSub,
-        word_part_e.BracedVarSub, word_part_e.TildeSub,
-        word_part_e.ArithSub, word_part_e.ExtGlob,
-        word_part_e.Splice):
+        word_part_e.BracedVarSub, word_part_e.TildeSub, word_part_e.ArithSub,
+        word_part_e.ExtGlob, word_part_e.Splice):
       return False, '', False
 
     else:
       raise AssertionError(part.tag_())
 
 
-def StaticEval(w):
+def StaticEval(UP_w):
   # type: (word_t) -> Tuple[bool, str, bool]
   """Evaluate a Compound at PARSE TIME."""
   ret = ''
   quoted = False
 
   # e.g. for ( instead of for (( is a token word
-  if not isinstance(w, word__Compound):
+  if UP_w.tag_() != word_e.Compound:
     return False, ret, quoted
+
+  w = cast(word__Compound, UP_w)
 
   for part in w.parts:
     ok, s, q = _EvalWordPart(part)
@@ -137,154 +136,191 @@ def StaticEval(w):
 
 def LeftMostSpanForPart(part):
   # type: (word_part_t) -> int
-  # TODO: Write unit tests in ui.py for error values
+  UP_part = part
+  with tagswitch(part) as case:
+    if case(word_part_e.ShArrayLiteral):
+      part = cast(sh_array_literal, UP_part)
+      return part.left.span_id  # ( location
 
-  if isinstance(part, sh_array_literal):
-    return part.left.span_id  # ( location
+    elif case(word_part_e.AssocArrayLiteral):
+      part = cast(word_part__AssocArrayLiteral, UP_part)
+      return part.left.span_id  # ( location
 
-  elif isinstance(part, word_part__AssocArrayLiteral):
-    return part.left.span_id  # ( location
+    elif case(word_part_e.Literal):
+      part = cast(word_part__Literal, UP_part)
+      return part.token.span_id
 
-  elif isinstance(part, word_part__Literal):
-    # Just use the token
-    return part.token.span_id
+    elif case(word_part_e.EscapedLiteral):
+      part = cast(word_part__EscapedLiteral, UP_part)
+      return part.token.span_id
 
-  elif isinstance(part, word_part__EscapedLiteral):
-    return part.token.span_id
+    elif case(word_part_e.SingleQuoted):
+      part = cast(single_quoted, UP_part)
+      return part.left.span_id  # single quote location
 
-  elif isinstance(part, single_quoted):
-    return part.left.span_id  # single quote location
+    elif case(word_part_e.DoubleQuoted):
+      part = cast(double_quoted, UP_part)
+      return part.left.span_id  # double quote location
 
-  elif isinstance(part, double_quoted):
-    return part.left.span_id  # double quote location
+    elif case(word_part_e.SimpleVarSub):
+      part = cast(simple_var_sub, UP_part)
+      return part.token.span_id
 
-  elif isinstance(part, simple_var_sub):
-    return part.token.span_id
+    elif case(word_part_e.BracedVarSub):
+      part = cast(braced_var_sub, UP_part)
+      return part.spids[0]
 
-  elif isinstance(part, braced_var_sub):
-    return part.spids[0]
+    elif case(word_part_e.CommandSub):
+      part = cast(command_sub, UP_part)
+      return part.spids[0]
 
-  elif isinstance(part, command_sub):
-    return part.spids[0]
+    elif case(word_part_e.TildeSub):
+      part = cast(word_part__TildeSub, UP_part)
+      return part.token.span_id
 
-  elif isinstance(part, word_part__TildeSub):
-    return part.token.span_id
+    elif case(word_part_e.ArithSub):
+      part = cast(word_part__ArithSub, UP_part)
+      # begin, end
+      return part.spids[0]
 
-  elif isinstance(part, word_part__ArithSub):
-    # begin, end
-    return part.spids[0]
+    elif case(word_part_e.ExtGlob):
+      part = cast(word_part__ExtGlob, UP_part)
+      # This is the smae as part.op.span_id, but we want to be consistent with
+      # left/right.  Not sure I want to add a right token just for the spid.
+      return part.spids[0]
+      #return part.op.span_id  # e.g. @( is the left-most token
 
-  elif isinstance(part, word_part__ExtGlob):
-    # This is the smae as part.op.span_id, but we want to be consistent with
-    # left/right.  Not sure I want to add a right token just for the spid.
-    return part.spids[0]
-    #return part.op.span_id  # e.g. @( is the left-most token
+    elif case(word_part_e.BracedTuple):
+      return runtime.NO_SPID
 
-  elif isinstance(part, word_part__BracedTuple):
-    return runtime.NO_SPID
+    elif case(word_part_e.Splice):
+      part = cast(word_part__Splice, UP_part)
+      return part.name.span_id
 
-  elif isinstance(part, word_part__Splice):
-    return part.name.span_id
+    elif case(word_part_e.FuncCall):
+      part = cast(word_part__FuncCall, UP_part)
+      return part.name.span_id  # @f(x) or $f(x)
 
-  elif isinstance(part, word_part__FuncCall):
-    return part.name.span_id  # @f(x) or $f(x)
+    elif case(word_part_e.ExprSub):
+      part = cast(word_part__ExprSub, UP_part)
+      return part.left.span_id  # $[
 
-  elif isinstance(part, word_part__ExprSub):
-    return part.left.span_id  # $[
-
-  else:
-    raise AssertionError(part.__class__.__name__)
+    else:
+      raise AssertionError(part.tag_())
 
 
 def _RightMostSpanForPart(part):
   # type: (word_part_t) -> int
-  # TODO: Write unit tests in ui.py for error values
+  UP_part = part
+  with tagswitch(part) as case:
+    if case(word_part_e.ShArrayLiteral):
+      part = cast(sh_array_literal, UP_part)
+      # TODO: Return )
+      return LeftMostSpanForWord(part.words[0])  # Hm this is a=(1 2 3)
 
-  tag = part.tag_()
+    elif case(word_part_e.Literal):
+      part = cast(word_part__Literal, UP_part)
+      # Just use the token
+      return part.token.span_id
 
-  if isinstance(part, sh_array_literal):
-    # TODO: Return )
-    return LeftMostSpanForWord(part.words[0])  # Hm this is a=(1 2 3)
+    elif case(word_part_e.EscapedLiteral):
+      part = cast(word_part__EscapedLiteral, UP_part)
+      return part.token.span_id
 
-  elif isinstance(part, word_part__Literal):
-    # Just use the token
-    return part.token.span_id
+    elif case(word_part_e.SingleQuoted):
+      part = cast(single_quoted, UP_part)
+      return part.spids[1]  # right '
 
-  elif isinstance(part, word_part__EscapedLiteral):
-    return part.token.span_id
+    elif case(word_part_e.DoubleQuoted):
+      part = cast(double_quoted, UP_part)
+      return part.spids[1]  # right "
 
-  elif isinstance(part, single_quoted):
-    return part.spids[1]  # right '
+    elif case(word_part_e.SimpleVarSub):
+      part = cast(simple_var_sub, UP_part)
+      return part.token.span_id
 
-  elif isinstance(part, double_quoted):
-    return part.spids[1]  # right "
+    elif case(word_part_e.BracedVarSub):
+      part = cast(braced_var_sub, UP_part)
+      spid = part.spids[1]  # right }
+      assert spid != runtime.NO_SPID
+      return spid
 
-  elif isinstance(part, simple_var_sub):
-    return part.token.span_id
+    elif case(word_part_e.CommandSub):
+      part = cast(command_sub, UP_part)
+      return part.spids[1]
 
-  elif isinstance(part, braced_var_sub):
-    spid = part.spids[1]  # right }
-    assert spid != runtime.NO_SPID
-    return spid
+    elif case(word_part_e.TildeSub):
+      return runtime.NO_SPID
 
-  elif isinstance(part, command_sub):
-    return part.spids[1]
+    elif case(word_part_e.ArithSub):
+      part = cast(word_part__ArithSub, UP_part)
+      return part.spids[1]
 
-  elif isinstance(part, word_part__TildeSub):
-    return runtime.NO_SPID
+    elif case(word_part_e.ExtGlob):
+      part = cast(word_part__ExtGlob, UP_part)
+      return part.spids[1]
 
-  elif isinstance(part, word_part__ArithSub):
-    return part.spids[1]
-
-  elif isinstance(part, word_part__ExtGlob):
-    return part.spids[1]
-
-  else:
-    raise AssertionError(tag)
+    # TODO: Do Splice and FuncCall need it?
+    else:
+      raise AssertionError(part.tag_())
 
 
 def LeftMostSpanForWord(w):
   # type: (word_t) -> int
-  if isinstance(w, word__Compound):
-    if w.parts:
-      return LeftMostSpanForPart(w.parts[0])
-    else:
-      # This is possible for empty brace sub alternative {a,b,}
+  UP_w = w
+  with tagswitch(w) as case:
+    if case(word_e.Compound):
+      w = cast(word__Compound, UP_w)
+      if w.parts:
+        return LeftMostSpanForPart(w.parts[0])
+      else:
+        # This is possible for empty brace sub alternative {a,b,}
+        return runtime.NO_SPID
+
+    elif case(word_e.Token):
+      w = cast(word__Token, UP_w)
+      return w.token.span_id
+
+    elif case(word_e.Empty):
       return runtime.NO_SPID
 
-  elif isinstance(w, word__Token):
-    return w.token.span_id
+    elif case(word_e.BracedTree):
+      w = cast(word__BracedTree, UP_w)
+      # This should always have one part?
+      return LeftMostSpanForPart(w.parts[0])
 
-  elif isinstance(w, word__Empty):
-    return runtime.NO_SPID
+    elif case(word_e.String):
+      w = cast(word__String, UP_w)
+      return w.spids[0]  # See _StringWordEmitter in osh/builtin_bracket.py
 
-  elif isinstance(w, word__BracedTree):
-    # This should always have one part?
-    return LeftMostSpanForPart(w.parts[0])
-
-  elif isinstance(w, word__String):
-    return w.spids[0]  # See _StringWordEmitter in osh/builtin_bracket.py
-
-  else:
-    raise AssertionError(w)
+    else:
+      raise AssertionError(w.tag_())
 
 
 def RightMostSpanForWord(w):
   # type: (word_t) -> int
   """Needed for here doc delimiters."""
-  if isinstance(w, word__Compound):
-    if len(w.parts) == 0:
-      # TODO: Use Empty instead
-      raise AssertionError("Compound shouldn't be empty")
+  UP_w = w
+  with tagswitch(w) as case:
+    if case(word_e.Compound):
+      w = cast(word__Compound, UP_w)
+      if len(w.parts) == 0:
+        # TODO: Use Empty instead
+        raise AssertionError("Compound shouldn't be empty")
+      else:
+        end = w.parts[-1]
+        return _RightMostSpanForPart(end)
+
+    elif case(word_e.Empty):
+      w = cast(word__Empty, UP_w)
+      return runtime.NO_SPID
+
+    elif case(word_e.Token):
+      w = cast(word__Token, UP_w)
+      return w.token.span_id
+
     else:
-      end = w.parts[-1]
-      return _RightMostSpanForPart(end)
-
-  elif isinstance(w, word__Empty):
-    return runtime.NO_SPID
-
-  assert isinstance(w, word__Token)
-  return w.token.span_id
+      raise AssertionError(w.tag_())
 
 
 # From bash, general.c, unquoted_tilde_word():
@@ -301,7 +337,7 @@ def RightMostSpanForWord(w):
 #
 # We only detect ~Lit_Chars and split.  So we might as well just write a regex.
 
-def TildeDetect(w):
+def TildeDetect(UP_w):
   # type: (word_t) -> Optional[word_t]
   """Detect tilde expansion in a word.
 
@@ -317,9 +353,10 @@ def TildeDetect(w):
     is changed.  But note that we CANNOT know this during lexing.
   """
   # NOTE: BracedTree, Empty, etc. can't be tilde expanded
-  if not isinstance(w, word__Compound):
+  if UP_w.tag_() != word_e.Compound:
     return None
 
+  w = cast(word__Compound, UP_w)
   assert w.parts, w
 
   part0 = w.parts[0]
@@ -345,7 +382,7 @@ def TildeDetect(w):
 
 def TildeDetectAll(words):
   # type: (List[word_t]) -> List[word_t]
-  out = []
+  out = []  # type: List[word_t]
   for w in words:
     t = TildeDetect(w)
     if t:
@@ -356,10 +393,8 @@ def TildeDetectAll(words):
 
 
 def HasArrayPart(w):
-  # type: (word_t) -> bool
+  # type: (word__Compound) -> bool
   """Used in cmd_parse."""
-  assert isinstance(w, word__Compound)
-
   for part in w.parts:
     if isinstance(part, sh_array_literal):
       return True
@@ -377,8 +412,6 @@ def ShFunctionName(w):
   Bash is very lenient, but that would disallow confusing characters, for
   better error messages on a[x]=(), etc.
   """
-  assert isinstance(w, word__Compound)
-
   ok, s, quoted = StaticEval(w)
   # Function names should not have quotes
   if not ok or quoted:
@@ -417,7 +450,6 @@ def IsVarLike(w):
   func() { echo hi; }
   func=(1 2 3)
   """
-  assert isinstance(w, word__Compound)
   if len(w.parts) == 0:
     return False
 
@@ -426,7 +458,7 @@ def IsVarLike(w):
 
 
 def DetectShAssignment(w):
-  # type: (word_t) -> Tuple[Optional[token], Optional[token], int]
+  # type: (word__Compound) -> Tuple[Optional[token], Optional[token], int]
   """Detects whether a word looks like FOO=bar or FOO[x]=bar.
 
   Returns:
@@ -448,7 +480,6 @@ def DetectShAssignment(w):
   a[x]+=()  # We parse this (as bash does), but it's never valid because arrays
             # can't be nested.
   """
-  assert isinstance(w, word__Compound)
   n = len(w.parts)
   if n == 0:
     return None, None, 0
@@ -549,79 +580,98 @@ def LiteralToken(w):
 # Polymorphic between Token and Compound
 #
 
-def ArithId(node):
+def ArithId(w):
   # type: (word_t) -> Id_t
-  if isinstance(node, word__Token):
-    return node.token.id
+  UP_w = w
+  if w.tag_() == word_e.Token:
+    w = cast(word__Token, UP_w)
+    return w.token.id
 
-  assert isinstance(node, word__Compound)
+  assert isinstance(w, word__Compound)
   return Id.Word_Compound
 
 
-def BoolId(node):
+def BoolId(w):
   # type: (word_t) -> Id_t
-  if isinstance(node, word__String):  # for test/[
-    return node.id
+  UP_w = w
+  with tagswitch(w) as case:
+    if case(word_e.String):  # for test/[
+      w = cast(word__String, UP_w)
+      return w.id
 
-  if isinstance(node, word__Token):
-    return node.token.id
+    elif case(word_e.Token):
+      w = cast(word__Token, UP_w)
+      return w.token.id
 
-  # NOTE: I think Empty never happens in this context?
-  assert isinstance(node, word__Compound)
+    elif case(word_e.Compound):
+      w = cast(word__Compound, UP_w)
 
-  if len(node.parts) != 1:
-    return Id.Word_Compound
+      if len(w.parts) != 1:
+        return Id.Word_Compound
 
-  token_type = _LiteralId(node.parts[0])
-  if token_type == Id.Undefined_Tok:
-    return Id.Word_Compound  # It's a regular word
+      token_type = _LiteralId(w.parts[0])
+      if token_type == Id.Undefined_Tok:
+        return Id.Word_Compound  # It's a regular word
 
-  # This is outside the BoolUnary/BoolBinary namespace, but works the same.
-  if token_type in (Id.KW_Bang, Id.Lit_DRightBracket):
-    return token_type  # special boolean "tokens"
+      # This is outside the BoolUnary/BoolBinary namespace, but works the same.
+      if token_type in (Id.KW_Bang, Id.Lit_DRightBracket):
+        return token_type  # special boolean "tokens"
 
-  token_kind = lookup.LookupKind(token_type)
-  if token_kind in (Kind.BoolUnary, Kind.BoolBinary):
-    return token_type  # boolean operators
+      token_kind = lookup.LookupKind(token_type)
+      if token_kind in (Kind.BoolUnary, Kind.BoolBinary):
+        return token_type  # boolean operators
 
-  return Id.Word_Compound
+      return Id.Word_Compound
+
+    else:
+      # I think Empty never happens in this context?
+      raise AssertionError(w.tag_())
 
 
-def CommandId(node):
+def CommandId(w):
   # type: (word_t) -> Id_t
-  if isinstance(node, word__Token):
-    return node.token.id
+  UP_w = w
+  with tagswitch(w) as case:
+    if case(word_e.Token):
+      w = cast(word__Token, UP_w)
+      return w.token.id
 
-  # Assume it's a Compound
-  assert isinstance(node, word__Compound)
+    elif case(word_e.Compound):
+      w = cast(word__Compound, UP_w)
 
-  # Has to be a single literal part
-  if len(node.parts) != 1:
-    return Id.Word_Compound
+      # Has to be a single literal part
+      if len(w.parts) != 1:
+        return Id.Word_Compound
 
-  token_type = _LiteralId(node.parts[0])
-  if token_type == Id.Undefined_Tok:
-    return Id.Word_Compound
+      token_type = _LiteralId(w.parts[0])
+      if token_type == Id.Undefined_Tok:
+        return Id.Word_Compound
 
-  elif token_type in (Id.Lit_LBrace, Id.Lit_RBrace, Id.ControlFlow_Return):
-    # Return is for special processing
-    return token_type
+      elif token_type in (Id.Lit_LBrace, Id.Lit_RBrace, Id.ControlFlow_Return):
+        # Return is for special processing
+        return token_type
 
-  token_kind = lookup.LookupKind(token_type)
-  if token_kind == Kind.KW:
-    return token_type
+      token_kind = lookup.LookupKind(token_type)
+      if token_kind == Kind.KW:
+        return token_type
 
-  return Id.Word_Compound
+      return Id.Word_Compound
+
+    else:
+      raise AssertionError(w.tag_())
 
 
 def CommandKind(w):
   # type: (word_t) -> Kind_t
   """The CommandKind is for coarse-grained decisions in the CommandParser."""
-  if isinstance(w, word__Token):
+  UP_w = w
+  if w.tag_() == word_e.Token:
+    w = cast(word__Token, UP_w)
     return lookup.LookupKind(w.token.id)
 
-  # NOTE: This is a bit inconsistent with CommandId, because we never return
-  # Kind.KW (or Kind.Lit).  But the CommandParser is easier to write this way.
+  # NOTE: This is a bit inconsistent with CommandId, because we never
+  # return Kind.KW (or Kind.Lit).  But the CommandParser is easier to write
+  # this way.
   return Kind.Word
 
 
@@ -671,7 +721,9 @@ if mylib.PYTHON:
 def Pretty(w):
   # type: (word_t) -> str
   """Return a string to display to the user."""
-  if isinstance(w, word__String):
+  UP_w = w
+  if w.tag_() == word_e.String:
+    w = cast(word__String, UP_w)
     if w.id == Id.Eof_Real:
       return 'EOF'
     else:

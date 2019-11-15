@@ -294,9 +294,10 @@ namespace arith_nt {
     $REPO_ROOT/pgen2/parse.py \
     $REPO_ROOT/oil_lang/expr_parse.py \
     $REPO_ROOT/oil_lang/expr_to_ast.py \
-    $REPO_ROOT/osh/bool_parse.py \
+    $REPO_ROOT/osh/word_.py \
     examples/$name.py
-    #$REPO_ROOT/osh/word_.py \
+
+    #$REPO_ROOT/osh/bool_parse.py \
 
   # TODO:
   # osh/word_.py needs its own case

@@ -90,6 +90,7 @@ def run_tests():
     f.close()
 
   ParseDemo(gr)
+  print('done')
 
 
 def run_benchmarks():
