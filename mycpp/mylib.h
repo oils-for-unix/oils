@@ -256,6 +256,11 @@ class List {
     v_.push_back(item);
   }
 
+  // STUB
+  void extend(List<T>* items) {
+    assert(0);
+  }
+
   // Reconsider?
   // https://stackoverflow.com/questions/12600330/pop-back-return-value
   T pop() {

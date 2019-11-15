@@ -88,19 +88,20 @@ def _EvalWordPart(part):
 
     elif case(word_part_e.SingleQuoted):
       part = cast(single_quoted, UP_part)
-      s = ''.join(t.val for t in part.tokens)
+      tmp = [t.val for t in part.tokens]  # on its own line for mycpp
+      s = ''.join(tmp)
       return True, s, True
 
     elif case(word_part_e.DoubleQuoted):
       part = cast(double_quoted, UP_part)
-      ret = ''
+      strs = []  # type: List[str]
       for p in part.parts:
         ok, s, _ = _EvalWordPart(p)
         if not ok:
           return False, '', True
-        ret += s
+        strs.append(s)
 
-      return True, ret, True  # At least one part was quoted!
+      return True, ''.join(strs), True  # At least one part was quoted!
 
     elif case(
         word_part_e.CommandSub, word_part_e.SimpleVarSub,
@@ -115,23 +116,23 @@ def _EvalWordPart(part):
 def StaticEval(UP_w):
   # type: (word_t) -> Tuple[bool, str, bool]
   """Evaluate a Compound at PARSE TIME."""
-  ret = ''
   quoted = False
 
   # e.g. for ( instead of for (( is a token word
   if UP_w.tag_() != word_e.Compound:
-    return False, ret, quoted
+    return False, '', quoted
 
   w = cast(word__Compound, UP_w)
 
+  strs = []  # type: List[str]
   for part in w.parts:
     ok, s, q = _EvalWordPart(part)
     if not ok:
       return False, '', quoted
     if q:
       quoted = True  # at least one part was quoted
-    ret += s
-  return True, ret, quoted
+    strs.append(s)
+  return True, ''.join(strs), quoted
 
 
 def LeftMostSpanForPart(part):
@@ -312,7 +313,6 @@ def RightMostSpanForWord(w):
         return _RightMostSpanForPart(end)
 
     elif case(word_e.Empty):
-      w = cast(word__Empty, UP_w)
       return runtime.NO_SPID
 
     elif case(word_e.Token):
@@ -359,22 +359,25 @@ def TildeDetect(UP_w):
   w = cast(word__Compound, UP_w)
   assert w.parts, w
 
-  part0 = w.parts[0]
-  if _LiteralId(part0) != Id.Lit_TildeLike:
+  UP_part0 = w.parts[0]
+  if _LiteralId(UP_part0) != Id.Lit_TildeLike:
     return None
-  assert isinstance(part0, word_part__Literal)  # for MyPy
+  part0 = cast(word_part__Literal, UP_part0)
 
   if len(w.parts) == 1:  # can't be zero
     tilde_part = word_part.TildeSub(part0.token)
     return word.Compound([tilde_part])
 
-  part1 = w.parts[1]
+  UP_part1 = w.parts[1]
   # NOTE: We could inspect the raw tokens.
-  if _LiteralId(part1) == Id.Lit_Chars:
-    assert isinstance(part1, word_part__Literal)  # for MyPy
+  if _LiteralId(UP_part1) == Id.Lit_Chars:
+    part1 = cast(word_part__Literal, UP_part1)
     if part1.token.val.startswith('/'):
       tilde_part_ = word_part.TildeSub(part0.token)  # type: word_part_t
-      return word.Compound([tilde_part_] + w.parts[1:])
+
+      parts = [tilde_part_]
+      parts.extend(w.parts[1:])
+      return word.Compound(parts)
 
   # It could be something like '~foo:bar', which doesn't have a slash.
   return None
@@ -396,7 +399,7 @@ def HasArrayPart(w):
   # type: (word__Compound) -> bool
   """Used in cmd_parse."""
   for part in w.parts:
-    if isinstance(part, sh_array_literal):
+    if part.tag_() == word_part_e.ShArrayLiteral:
       return True
   return False
 
@@ -481,30 +484,31 @@ def DetectShAssignment(w):
   a[x]+=()  # We parse this (as bash does), but it's never valid because arrays
             # can't be nested.
   """
+  no_token = None  # type: Optional[token]
+
   n = len(w.parts)
   if n == 0:
-    return None, None, 0
+    return no_token, no_token, 0
 
-  part0 = w.parts[0]
-  id0 = _LiteralId(part0)
+  UP_part0 = w.parts[0]
+  id0 = _LiteralId(UP_part0)
   if id0 == Id.Lit_VarLike:
-    assert isinstance(part0, word_part__Literal)  # for MyPy
-    return part0.token, None, 1  # everything after first token is the value
+    part0 = cast(word_part__Literal, UP_part0)
+    return part0.token, no_token, 1  # everything after first token is the value
 
   if id0 == Id.Lit_ArrayLhsOpen:
-    assert isinstance(part0, word_part__Literal)  # for MyPy
-
+    part0 = cast(word_part__Literal, UP_part0)
     # NOTE that a[]=x should be an error.  We don't want to silently decay.
     if n < 2:
-      return None, None, 0
+      return no_token, no_token, 0
     for i in xrange(1, n):
-      part = w.parts[i]
-      if _LiteralId(part) == Id.Lit_ArrayLhsClose:
-        assert isinstance(part, word_part__Literal)  # for MyPy
+      UP_part = w.parts[i]
+      if _LiteralId(UP_part) == Id.Lit_ArrayLhsClose:
+        part = cast(word_part__Literal, UP_part)
         return part0.token, part.token, i+1
 
   # Nothing detected.  Could be 'foobar' or a[x+1+2/' without the closing ].
-  return None, None, 0
+  return no_token, no_token, 0
 
 
 def DetectAssocPair(w):
@@ -539,7 +543,9 @@ def KeywordToken(w):
   Returns:
     kind, token
   """
-  err = (Kind.Undefined, None)
+  no_token = None  # type: Optional[token]
+  err = (Kind.Undefined, no_token)
+
   if len(w.parts) != 1:
     return err
 
@@ -679,7 +685,7 @@ def CommandKind(w):
 # For osh2oil.py
 def IsVarSub(w):
   # type: (word_t) -> bool
-  # Return whether it's any var sub, or a double quoted one
+  """Return whether it's any var sub, or a double quoted one."""
   return False
 
 
@@ -696,7 +702,6 @@ def SpanForLhsExpr(node):
 
 def SpanIdFromError(error):
   # type: (_ErrorWithLocation) -> int
-  #print(parse_error)
   if error.span_id != runtime.NO_SPID:
     return error.span_id
   if error.token:

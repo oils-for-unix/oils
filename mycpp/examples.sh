@@ -299,15 +299,15 @@ namespace arith_nt {
 
     #$REPO_ROOT/osh/bool_parse.py \
 
-  # TODO:
-  # osh/word_.py needs its own case
+  # TODO: these files need their own test cases, for shorter generated code
 
   # word_.py:
-  # - all the isinstance() -- damn it's annoying to change these
-  #   - I kind of want a switch -- is it faster?
-  # - bool_parse.py (36 errors)
-  #   - WordParser dependency
-  #   - _Next() has keyword arg
+  # - changed a lot of tagswitch()
+  # - Need to fix _ErrorWithLocation -- maybe add core/errors.py
+  #   - or pylib?
+  # bool_parse.py (36 errors)
+  # - WordParser dependency
+  # - _Next() has keyword arg
   # 
 
   compile-pgen2_demo
