@@ -1269,7 +1269,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         if expr.callee.name == 'switch':
           self._write_switch(expr, o)
-        elif expr.callee.name == 'typeswitch':
+        elif expr.callee.name == 'tagswitch':
           self._write_typeswitch(expr, o)
         else:
           raise AssertionError(expr.callee.name)

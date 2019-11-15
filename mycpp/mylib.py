@@ -65,7 +65,7 @@ class switch(object):
     return self.value in cases
 
 
-class typeswitch(object):
+class tagswitch(object):
   """A ContextManager that translates to switch statement over ASDL types."""
 
   def __init__(self, node):
@@ -73,7 +73,7 @@ class typeswitch(object):
     self.tag = node.tag
 
   def __enter__(self):
-    # type: () -> typeswitch
+    # type: () -> tagswitch
     return self
 
   def __exit__(self, type, value, traceback):

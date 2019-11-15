@@ -23,6 +23,7 @@ from _devbuild.gen.syntax_asdl import (
 from asdl import runtime
 from frontend import lookup
 from mycpp import mylib
+from mycpp.mylib import tagswitch
 
 from typing import Tuple, Optional, List, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -63,49 +64,55 @@ def _EvalWordPart(part):
       value: a string (not Value)
       quoted: whether any part of the word was quoted
   """
-  tag = part.tag_()
+  UP_part = part
+  with tagswitch(part) as case:
+    if case(word_part_e.ShArrayLiteral):
+      part = cast(sh_array_literal, UP_part)
+      # Array literals aren't good for any of our use cases.  TODO: Rename
+      # EvalWordToString?
+      return False, '', False
 
-  if isinstance(part, sh_array_literal):
-    # Array literals aren't good for any of our use cases.  TODO: Rename
-    # EvalWordToString?
-    return False, '', False
+    elif case(word_part_e.AssocArrayLiteral):
+      part = cast(word_part__AssocArrayLiteral, UP_part)
+      return False, '', False
 
-  elif isinstance(part, word_part__AssocArrayLiteral):
-    return False, '', False
+    elif case(word_part_e.Literal):
+      part = cast(word_part__Literal, UP_part)
+      return True, part.token.val, False
 
-  elif isinstance(part, word_part__Literal):
-    return True, part.token.val, False
+    elif case(word_part_e.EscapedLiteral):
+      part = cast(word_part__EscapedLiteral, UP_part)
+      val = part.token.val
+      assert len(val) == 2, val  # e.g. \*
+      assert val[0] == '\\'
+      s = val[1]
+      return True, s, True
 
-  elif isinstance(part, word_part__EscapedLiteral):
-    val = part.token.val
-    assert len(val) == 2, val  # e.g. \*
-    assert val[0] == '\\'
-    s = val[1]
-    return True, s, True
+    elif case(word_part_e.SingleQuoted):
+      part = cast(single_quoted, UP_part)
+      s = ''.join(t.val for t in part.tokens)
+      return True, s, True
 
-  elif isinstance(part, single_quoted):
-    s = ''.join(t.val for t in part.tokens)
-    return True, s, True
+    elif case(word_part_e.DoubleQuoted):
+      part = cast(double_quoted, UP_part)
+      ret = ''
+      for p in part.parts:
+        ok, s, _ = _EvalWordPart(p)
+        if not ok:
+          return False, '', True
+        ret += s
 
-  elif isinstance(part, double_quoted):
-    ret = ''
-    for p in part.parts:
-      ok, s, _ = _EvalWordPart(p)
-      if not ok:
-        return False, '', True
-      ret += s
+      return True, ret, True  # At least one part was quoted!
 
-    return True, ret, True  # At least one part was quoted!
+    elif case(
+        word_part_e.CommandSub, word_part_e.SimpleVarSub,
+        word_part_e.BracedVarSub, word_part_e.TildeSub,
+        word_part_e.ArithSub, word_part_e.ExtGlob,
+        word_part_e.Splice):
+      return False, '', False
 
-  elif tag in (
-      word_part_e.CommandSub, word_part_e.SimpleVarSub,
-      word_part_e.BracedVarSub, word_part_e.TildeSub,
-      word_part_e.ArithSub, word_part_e.ExtGlob,
-      word_part_e.Splice):
-    return False, '', False
-
-  else:
-    raise AssertionError(tag)
+    else:
+      raise AssertionError(part.tag_())
 
 
 def StaticEval(w):

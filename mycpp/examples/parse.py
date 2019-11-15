@@ -11,7 +11,7 @@ import sys
 from typing import Tuple, Optional, cast
 
 # PYTHONPATH=$REPO_ROOT/mycpp
-from mycpp.mylib import log, typeswitch
+from mycpp.mylib import log, tagswitch
 from mycpp import mylib
 from _gen.expr_asdl import (
     expr_e,  # for translation only?
@@ -194,7 +194,7 @@ def run_tests():
     ast_f.write('\n')
 
     UP_node = node
-    with typeswitch(UP_node) as case:
+    with tagswitch(UP_node) as case:
       if case(expr_e.Const):
         node = cast(expr__Const, UP_node)
         log('Const %d', node.i)
