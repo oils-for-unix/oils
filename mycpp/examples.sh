@@ -295,9 +295,9 @@ namespace arith_nt {
     $REPO_ROOT/oil_lang/expr_parse.py \
     $REPO_ROOT/oil_lang/expr_to_ast.py \
     $REPO_ROOT/osh/word_.py \
+    $REPO_ROOT/osh/bool_parse.py \
     examples/$name.py
 
-    #$REPO_ROOT/osh/bool_parse.py \
 
   # TODO: these files need their own test cases, for shorter generated code
 
@@ -308,6 +308,8 @@ namespace arith_nt {
   # bool_parse.py (36 errors)
   # - WordParser dependency
   # - _Next() has keyword arg
+  #   - Hm maybe I need function overloading?
+  # - p_die()
   # 
 
   compile-pgen2_demo

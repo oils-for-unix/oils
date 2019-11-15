@@ -2,7 +2,7 @@
 word.py - Utility functions for words, e.g. treating them as "tokens".
 """
 
-from _devbuild.gen.id_kind_asdl import (Id, Kind, Id_t, Kind_t)
+from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t, Kind_t
 from _devbuild.gen.syntax_asdl import (
     token,
     double_quoted, single_quoted, simple_var_sub, braced_var_sub, command_sub,
@@ -11,12 +11,11 @@ from _devbuild.gen.syntax_asdl import (
     word_part__AssocArrayLiteral,
     word_part__Literal, word_part__EscapedLiteral,
     word_part__TildeSub,
-    word_part__ArithSub, word_part__BracedTuple, word_part__ExtGlob,
+    word_part__ArithSub, word_part__ExtGlob,
     word_part__Splice, word_part__FuncCall, word_part__ExprSub,
 
     word, word_e, word_t,
-    word__Compound, word__Token, word__Empty, word__BracedTree,
-    word__String,
+    word__Compound, word__Token, word__BracedTree, word__String,
 
     sh_lhs_expr__Name,
 )
@@ -734,4 +733,5 @@ def Pretty(w):
     else:
       return repr(w.s)
   else:
+    # internal representation
     return str(w)

@@ -1314,6 +1314,38 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.virtual.OnMethod(self.current_class_name, o.name())
           return
 
+        # Hack to turn _Next() with keyword arg into a set of overloaded
+        # methods
+        #
+        # Other things I tried:
+        # if mylib.CPP: def _Next()          # MyPy doesn't like this
+        # if not TYPE_CHECKING: def _Next()  # get UnboundType?
+        # @overload decorator -- not sure how to do it, will probably cause
+        # runtime overhead
+        if (self.current_class_name and o.name() == '_Next' and
+            len(o.arguments) == 2):
+          default_val = o.arguments[1].initializer
+          assert default_val
+
+          if self.decl:
+            func_name = o.name()
+          else:
+            func_name = '%s::%s' % (self.current_class_name, o.name())
+          self.write('\n')
+
+          # Write _Next() with no args
+          virtual = ''
+          c_type = get_c_type(o.type.ret_type)
+          self.decl_write_ind('%s%s %s()', virtual, c_type, func_name)
+          if self.decl:
+            self.decl_write(';\n')
+          else:
+            self.write(' {\n')
+            self.write('  _Next(')
+            self.accept(default_val)  # e.g. lex_mode_e::DBracket
+            self.write(');\n')
+            self.write('}\n')
+
         virtual = ''
         if self.decl:
           self.local_var_list = []  # Make a new instance to collect from

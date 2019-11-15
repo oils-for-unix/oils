@@ -33,18 +33,15 @@ BINARY_OP: -gt, -ot, ==, etc.
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import word_t, word_e, bool_expr, bool_expr_t
+from core.util import p_die
 from frontend import lookup
 from osh import word_
-from core.util import p_die
 
 from typing import List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from osh.word_parse import WordParser
 
-#try:
-#  import libc  # for regex_parse
-#except ImportError:
-#  from benchmarks import fake_libc as libc
+# import libc  # for regex_parse
 
 
 class BoolParser(object):
