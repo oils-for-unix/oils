@@ -497,10 +497,10 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         for t, v, handler in zip(o.types, o.vars, o.handlers):
           self.accept(handler)
 
-        if o.else_body:
-          raise AssertionError('try/else not supported')
-        if o.finally_body:
-          raise AssertionError('try/finally not supported')
+        #if o.else_body:
+        #  raise AssertionError('try/else not supported')
+        #if o.finally_body:
+        #  raise AssertionError('try/finally not supported')
 
     def visit_print_stmt(self, o: 'mypy.nodes.PrintStmt') -> T:
         pass

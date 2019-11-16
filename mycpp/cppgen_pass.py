@@ -43,6 +43,34 @@ def _GetCastKind(module_path, subtype_name):
   return cast_kind
 
 
+def _GetContainsFunc(t):
+  contains_func = None
+
+  if isinstance(t, Instance):
+    type_name = t.type.fullname()
+
+    if type_name == 'builtins.list':
+      contains_func = 'list_contains'
+
+    elif type_name == 'builtins.str':
+      contains_func = 'str_contains'
+
+    elif type_name == 'builtins.dict':
+      contains_func = 'dict_contains'
+
+  elif isinstance(t, UnionType):
+    # Special case for Optional[T] == Union[T, None]
+    if len(t.items) != 2:
+      raise NotImplementedError('Expected Optional, got %s' % t)
+
+    if not isinstance(t.items[1], NoneTyp):
+      raise NotImplementedError('Expected Optional, got %s' % t)
+
+    contains_func = _GetContainsFunc(t.items[0])
+
+  return contains_func  # None checked later
+
+
 def get_c_type(t):
   if isinstance(t, NoneTyp):  # e.g. a function that doesn't return anything
     return 'void'
@@ -656,15 +684,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # Note: we could get rid of this altogether and rely on C++ function
         # overloading.  But somehow I like it more explicit, closer to C (even
         # though we use templates).
-        contains_func = None
-        if isinstance(t1, Instance):
-          right_type_name = t1.type.fullname()
-          if right_type_name == 'builtins.list':
-            contains_func = 'list_contains'
-          elif right_type_name == 'builtins.str':
-            contains_func = 'str_contains'
-          elif right_type_name == 'builtins.dict':
-            contains_func = 'dict_contains'
+        contains_func = _GetContainsFunc(t1)
 
         if operator == 'in':
           if isinstance(right, TupleExpr):
@@ -681,7 +701,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write(')')
             return
 
-          assert contains_func, right_type_name
+          assert contains_func, t1
           # x in mylist => list_contains(mylist, x) 
           self.write('%s(', contains_func)
           self.accept(right)
@@ -691,7 +711,21 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           return
 
         if operator == 'not in':
-          assert contains_func, right_type_name
+          if isinstance(right, TupleExpr):
+            # x not in (1, 2, 3) => (x != 1 && x != 2 && x != 3)
+            self.write('(')
+
+            for i, item in enumerate(right.items):
+              if i != 0:
+                self.write(' && ')
+              self.accept(left)
+              self.write(' != ')
+              self.accept(item)
+
+            self.write(')')
+            return
+
+          assert contains_func, t1
 
           # x not in mylist => !list_contains(mylist, x)
           self.write('!%s(', contains_func)
@@ -1325,26 +1359,25 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if (self.current_class_name and o.name() == '_Next' and
             len(o.arguments) == 2):
           default_val = o.arguments[1].initializer
-          assert default_val
+          if default_val:  # e.g. osh/bool_parse.py has default val
+            if self.decl:
+              func_name = o.name()
+            else:
+              func_name = '%s::%s' % (self.current_class_name, o.name())
+            self.write('\n')
 
-          if self.decl:
-            func_name = o.name()
-          else:
-            func_name = '%s::%s' % (self.current_class_name, o.name())
-          self.write('\n')
-
-          # Write _Next() with no args
-          virtual = ''
-          c_type = get_c_type(o.type.ret_type)
-          self.decl_write_ind('%s%s %s()', virtual, c_type, func_name)
-          if self.decl:
-            self.decl_write(';\n')
-          else:
-            self.write(' {\n')
-            self.write('  _Next(')
-            self.accept(default_val)  # e.g. lex_mode_e::DBracket
-            self.write(');\n')
-            self.write('}\n')
+            # Write _Next() with no args
+            virtual = ''
+            c_type = get_c_type(o.type.ret_type)
+            self.decl_write_ind('%s%s %s()', virtual, c_type, func_name)
+            if self.decl:
+              self.decl_write(';\n')
+            else:
+              self.write(' {\n')
+              self.write('  _Next(')
+              self.accept(default_val)  # e.g. lex_mode_e::DBracket
+              self.write(');\n')
+              self.write('}\n')
 
         virtual = ''
         if self.decl:
@@ -1795,10 +1828,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write_ind('catch (%s) ', c_type)
           self.accept(handler)
 
-        if o.else_body:
-          raise AssertionError('try/else not supported')
-        if o.finally_body:
-          raise AssertionError('try/finally not supported')
+        #if o.else_body:
+        #  raise AssertionError('try/else not supported')
+        #if o.finally_body:
+        #  raise AssertionError('try/finally not supported')
 
     def visit_print_stmt(self, o: 'mypy.nodes.PrintStmt') -> T:
         pass

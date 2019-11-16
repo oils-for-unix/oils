@@ -85,6 +85,9 @@ if TYPE_CHECKING:
 
 _ = log
 
+KINDS_THAT_END_WORDS = [Kind.Eof, Kind.WS, Kind.Op, Kind.Right]
+
+
 class WordParser(object):
 
   def __init__(self, parse_ctx, lexer, line_reader,
@@ -1135,8 +1138,6 @@ class WordParser(object):
     # Call into expression language.
     self.parse_ctx.ParseOilArgList(self.lexer, arglist)
 
-  KINDS_THAT_END_WORDS = (Kind.Eof, Kind.WS, Kind.Op, Kind.Right)
-
   def _ReadCompoundWord(self, eof_type=Id.Undefined_Tok,
                         lex_mode=lex_mode_e.ShCommand, empty_ok=True):
     # type: (Id_t, lex_mode_t, bool) -> word__Compound
@@ -1182,7 +1183,7 @@ class WordParser(object):
             self._Next(lex_mode)
             self._Peek()
             # EOF, whitespace, newline, Right_Subshell
-            if self.token_kind not in self.KINDS_THAT_END_WORDS:
+            if self.token_kind not in KINDS_THAT_END_WORDS:
               p_die('Unexpected token after array literal',
                     token=self.cur_token)
             done = True
@@ -1206,7 +1207,7 @@ class WordParser(object):
           self._Next(lex_mode)
           self._Peek()
           # EOF, whitespace, newline, Right_Subshell
-          if self.token_kind not in self.KINDS_THAT_END_WORDS:
+          if self.token_kind not in KINDS_THAT_END_WORDS:
             p_die('Unexpected token after array splice',
                   token=self.cur_token)
           done = True
@@ -1332,9 +1333,7 @@ class WordParser(object):
       return w, False
 
     else:
-      assert False, ("Unexpected token parsing arith sub: %s" % self.cur_token)
-
-    raise AssertionError("Shouldn't get here")
+      raise AssertionError(self.cur_token)
 
   def _ReadWord(self, lex_mode):
     # type: (lex_mode_t) -> Tuple[word_t, bool]
@@ -1398,8 +1397,6 @@ class WordParser(object):
     else:
       raise AssertionError(
           'Unhandled: %s (%s)' % (self.cur_token, self.token_kind))
-
-    raise AssertionError("Shouldn't get here")
 
   def LookAhead(self):
     # type: () -> Id_t
