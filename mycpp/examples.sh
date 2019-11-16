@@ -247,18 +247,22 @@ Str* repr(syntax_asdl::source_t* obj) {
   return new Str("TODO");
 }
 
-// STUB
+// STUBS for p_die()
 void p_die(Str* fmt, syntax_asdl::token* blame_token) {
   throw AssertionError();
 }
-
-// STUB
 void p_die(Str* fmt, Str* s, syntax_asdl::token* blame_token) {
   throw AssertionError();
 }
 
-// STUB
 void p_die(Str* fmt, syntax_asdl::word_part_t* part) {
+  throw AssertionError();
+}
+
+void p_die(Str* fmt, syntax_asdl::word_t* w) {
+  throw AssertionError();
+}
+void p_die(Str* fmt, Str* s, syntax_asdl::word_t* w) {
   throw AssertionError();
 }
 
@@ -298,6 +302,8 @@ namespace arith_nt {
     $REPO_ROOT/osh/bool_parse.py \
     examples/$name.py
 
+  # $REPO_ROOT/osh/word_parse.py \
+  # try/finally not supported
 
   # TODO: these files need their own test cases, for shorter generated code
 
@@ -305,12 +311,8 @@ namespace arith_nt {
   # - changed a lot of tagswitch()
   # - Need to fix _ErrorWithLocation -- maybe add core/errors.py
   #   - or pylib?
-  # bool_parse.py (36 errors)
+  # bool_parse.py (11 errors)
   # - WordParser dependency
-  # - _Next() has keyword arg
-  #   - Hm maybe I need function overloading?
-  # - p_die()
-  # 
 
   compile-pgen2_demo
 } 
