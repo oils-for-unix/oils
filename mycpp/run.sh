@@ -158,7 +158,7 @@ compile-with-asdl() {
 
   local more_flags='-O0 -g'  # to debug crashes
   #local more_flags=''
-  $CXX -ferror-limit=50 -o _bin/$name $CPPFLAGS $more_flags \
+  $CXX -o _bin/$name $CPPFLAGS $more_flags \
     -I . -I ../_devbuild/gen -I ../_devbuild/gen-cpp -I _gen -I ../cpp \
     mylib.cc $src "$@" -lstdc++
 }
@@ -168,7 +168,7 @@ compile-with-asdl() {
 
 # -O3 is faster than -O2 for fib, but let's use -O2 since it's "standard"?
 
-CPPFLAGS='-Wall -O2 -std=c++11 '
+CPPFLAGS='-Wall -O2 -std=c++11 -ferror-limit=100'
 
 # NOTES on timings:
 

@@ -301,9 +301,20 @@ namespace arith_nt {
     $REPO_ROOT/osh/word_.py \
     $REPO_ROOT/osh/bool_parse.py \
     $REPO_ROOT/osh/word_parse.py \
+    $REPO_ROOT/osh/cmd_parse.py \
+    $REPO_ROOT/frontend/parse_lib.py \
     examples/$name.py
 
-  # try/finally not supported
+  # $REPO_ROOT/frontend/tdop.py \
+  # - function pointers for Left/Null are an issue
+
+  # $REPO_ROOT/frontend/parse_lib.py \
+  # - hm lots of circular deps
+
+  # $REPO_ROOT/osh/word_parse.py \
+  # - try/finally not supported (disabled)
+  # - lots of keyword args
+  # - parse_lib deps
 
   # TODO: these files need their own test cases, for shorter generated code
 

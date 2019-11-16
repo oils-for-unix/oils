@@ -59,9 +59,9 @@ from _devbuild.gen.syntax_asdl import (
 
     suffix_op, suffix_op_t, suffix_op__Slice, suffix_op__PatSub,
 
-    word, word_t, word__Compound, word__Token,
-    word_part, word_part_t, word_part__Literal, word_part__ArithSub,
-    word_part__ExtGlob, word_part__ExprSub,
+    word, word_e, word_t, word__Compound, word__Token,
+    word_part, word_part_e, word_part_t, word_part__Literal,
+    word_part__ArithSub, word_part__ExtGlob, word_part__ExprSub,
 
     command, command_t, command__ForExpr, command__Proc, command__Func,
 
@@ -198,8 +198,9 @@ class WordParser(object):
     VarSub    = ...
               | VarOf '/' Match '/' WORD
     """
-    pat = self._ReadVarOpArg(lex_mode, eof_type=Id.Lit_Slash, empty_ok=False)
-    assert isinstance(pat, word__Compound)  # Because empty_ok=False
+    UP_pat = self._ReadVarOpArg(lex_mode, eof_type=Id.Lit_Slash, empty_ok=False)
+    assert UP_pat.tag_() == word_e.Compound, UP_pat  # Because empty_ok=False
+    pat = cast(word__Compound, UP_pat)
 
     if len(pat.parts) == 1:
       ok, s, quoted = word_.StaticEval(pat)
@@ -215,8 +216,9 @@ class WordParser(object):
 
     replace_mode = Id.Undefined_Tok
     # Check for / # % modifier on pattern.
-    first_part = pat.parts[0]
-    if isinstance(first_part, word_part__Literal):
+    UP_first_part = pat.parts[0]
+    if UP_first_part.tag_() == word_part_e.Literal:
+      first_part = cast(word_part__Literal, UP_first_part)
       lit_id = first_part.token.id
       if lit_id in (Id.Lit_Slash, Id.Lit_Pound, Id.Lit_Percent):
         pat.parts.pop(0)
@@ -534,9 +536,7 @@ class WordParser(object):
         done = True  # assume Id.Right_SingleQuote
 
       else:
-        raise AssertionError(
-            'Unhandled token in single-quoted part %s (%s)' %
-            (self.cur_token, self.token_kind))
+        raise AssertionError(self.cur_token)
     return self.cur_token
 
   def _ReadDoubleQuotedLeftParts(self):
@@ -588,7 +588,7 @@ class WordParser(object):
     if self.token_type == Id.Left_DollarBracket:
       return self._ReadExprSub(lex_mode_e.ShCommand)
 
-    raise AssertionError('%s not handled' % self.cur_token)
+    raise AssertionError(self.cur_token)
 
   def _ReadExtGlob(self):
     # type: () -> word_part__ExtGlob
@@ -602,7 +602,7 @@ class WordParser(object):
     """
     left_token = self.cur_token
     arms = []  # type: List[word_t]
-    spids = []
+    spids = []  # type: List[int]
     spids.append(left_token.span_id)
 
     self.lexer.PushHint(Id.Op_RParen, Id.Right_ExtGlob)
@@ -636,7 +636,7 @@ class WordParser(object):
               token=left_token)
 
       else:
-        raise AssertionError('Unexpected token %r' % self.cur_token)
+        raise AssertionError(self.cur_token)
 
     part = word_part.ExtGlob(left_token, arms)
     part.spids.extend(spids)
@@ -759,7 +759,7 @@ class WordParser(object):
     elif left_id == Id.Left_Backtick:
       self._Next(lex_mode_e.Backtick)  # advance past `
 
-      parts = []
+      parts = []  # type: List[str]
       while True:
         self._Peek()
         #print(self.cur_token)
@@ -774,7 +774,7 @@ class WordParser(object):
           p_die('Unexpected EOF while looking for closing backtick',
                 token=left_token)
         else:
-          raise AssertionError
+          raise AssertionError(self.cur_token)
         self._Next(lex_mode_e.Backtick)
 
       # Calculate right SPID on CommandSub BEFORE re-parsing.
@@ -1077,11 +1077,13 @@ class WordParser(object):
 
     # MUST use a new word parser (with same lexer).
     w_parser = self.parse_ctx.MakeWordParser(self.lexer, self.line_reader)
-    words = []
+    words = []  # type: List[word__Compound]
     while True:
       w = w_parser.ReadWord(lex_mode_e.ShCommand)
 
-      if isinstance(w, word__Token):
+      UP_w = w
+      if w.tag_() == word_e.Token:
+        w = cast(word__Token, UP_w)
         word_id = word_.CommandId(w)
         if word_id == Id.Right_ShArrayLiteral:
           break

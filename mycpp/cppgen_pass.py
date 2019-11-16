@@ -1159,18 +1159,21 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           #   log("%d %s", i, s);
           # }
 
-          temp_name = 'tup%d' % self.unique_id
-          self.unique_id += 1
           c_item_type = get_c_type(item_type)
-          self.write_ind('  %s %s = it.Value();\n', c_item_type, temp_name)
 
-          assert isinstance(o.index, TupleExpr)
-          self.indent += 1
+          if isinstance(o.index, TupleExpr):
+            temp_name = 'tup%d' % self.unique_id
+            self.unique_id += 1
+            self.write_ind('  %s %s = it.Value();\n', c_item_type, temp_name)
 
-          self._write_tuple_unpacking(
-              temp_name, o.index.items, item_type.items)
+            self.indent += 1
 
-          self.indent -= 1
+            self._write_tuple_unpacking(
+                temp_name, o.index.items, item_type.items)
+
+            self.indent -= 1
+          else:
+            self.write_ind('  %s %s = it.Value();\n', c_item_type, o.index.name)
 
         else:
           raise AssertionError('Unexpected type %s' % item_type)
@@ -1654,6 +1657,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
                 # syntax_asdl
                 'command', 're', 're_repeat', 'class_literal_term', 'proc_sig',
+                'bracket_op', 'source', 'suffix_op',
 
                 # for this
                 'expr_e', 'expr',

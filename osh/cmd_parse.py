@@ -324,9 +324,9 @@ def _MakeSimpleCommand(preparsed_list, suffix_words, redirects, block):
 
 
 # Note: 'do' depends on parse_do
-SECONDARY_KEYWORDS = (
+SECONDARY_KEYWORDS = [
     Id.KW_Done, Id.KW_Then, Id.KW_Fi, Id.KW_Elif, Id.KW_Else, Id.KW_Esac
-)
+]
 
 
 class CommandParser(object):
@@ -1849,7 +1849,7 @@ class CommandParser(object):
     # This END_LIST is slightly different than END_LIST in _ParseCommandTerm.
     # I don't think we should add anything else here; otherwise it will be
     # ignored at the end of ParseInteractiveLine(), e.g. leading to bug #301.
-    END_LIST = (Id.Op_Newline, Id.Eof_Real)
+    END_LIST = [Id.Op_Newline, Id.Eof_Real]
 
     children = []
     done = False
@@ -1898,7 +1898,7 @@ class CommandParser(object):
       syntax_asdl.command
     """
     # Token types that will end the command term.
-    END_LIST = (self.eof_id, Id.Right_Subshell, Id.Lit_RBrace, Id.Op_DSemi)
+    END_LIST = [self.eof_id, Id.Right_Subshell, Id.Lit_RBrace, Id.Op_DSemi]
 
     # NOTE: This is similar to _ParseCommandLine.
     #
