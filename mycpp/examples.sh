@@ -310,18 +310,27 @@ namespace arith_nt {
 
   MORE_FILES=(
     $REPO_ROOT/osh/braces.py
+
+    # This has errfmt.Print() which uses *args and **kwargs
+    #$REPO_ROOT/core/ui.py
+
+    $REPO_ROOT/core/main_loop.py
+  )
+
+  PARSE_FILES=(
+    #$REPO_ROOT/asdl/format.py 
+    $REPO_ROOT/osh/word_.py 
+    $REPO_ROOT/osh/bool_parse.py 
+    $REPO_ROOT/osh/word_parse.py
+    $REPO_ROOT/osh/cmd_parse.py 
+    $REPO_ROOT/osh/arith_parse.py 
+    $REPO_ROOT/frontend/tdop.py
+    $REPO_ROOT/frontend/parse_lib.py
   )
 
   translate-ordered $name "${HNODE_HEADER}$snippet" \
-    "${FILES[@]}" "${MORE_FILES[@]}" "${PYLIB_FILES[@]}"
+    "${FILES[@]}" "${PARSE_FILES[@]}" "${MORE_FILES[@]}" "${PYLIB_FILES[@]}"
 
-    # $REPO_ROOT/osh/word_.py \
-    # $REPO_ROOT/osh/bool_parse.py \
-    # $REPO_ROOT/osh/word_parse.py \
-    # $REPO_ROOT/osh/cmd_parse.py \
-    # $REPO_ROOT/osh/arith_parse.py \
-    # $REPO_ROOT/frontend/tdop.py \
-    # $REPO_ROOT/frontend/parse_lib.py \
 
   # $REPO_ROOT/frontend/tdop.py \
   # - function pointers for Left/Null are an issue

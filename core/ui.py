@@ -18,7 +18,7 @@ from _devbuild.gen.syntax_asdl import (
     source__Alias, source__Backticks, source__LValue
 
 )
-from _devbuild.gen.runtime_asdl import value_t, value
+from _devbuild.gen.runtime_asdl import value_t, value, value__Str
 from asdl import runtime
 from asdl import format as fmt
 from osh import word_
@@ -38,7 +38,7 @@ def PrettyDir(dir_name, home_dir):
   Used by the 'dirs' builtin and the prompt evaluator.
   """
   if (home_dir and
-      isinstance(home_dir, value.Str) and
+      isinstance(home_dir, value__Str) and
       (dir_name == home_dir.s or dir_name.startswith(home_dir.s + '/'))):
     return '~' + dir_name[len(home_dir.s):]
 

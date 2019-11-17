@@ -77,7 +77,7 @@ def _ReadHereLines(line_reader,  # type: _Reader
   # 1 $(echo 2
   # echo 3) 4
   # EOF
-  here_lines = []
+  here_lines = []  # type: List[Tuple[int, str, int]]
   last_line = None
   strip_leading_tabs = (h.op.id == Id.Redir_DLessDash)
 
@@ -118,7 +118,7 @@ def _MakeLiteralHereLines(here_lines,  # type: List[Tuple[int, str, int]]
                           ):
   # type: (...) -> List[word_part_t]  # less precise because List is invariant type
   """Create a line_span and a token for each line."""
-  tokens = []
+  tokens = []  # type: List[token]
   for line_id, line, start_offset in here_lines:
     span_id = arena.AddLineSpan(line_id, start_offset, len(line))
     t = syntax_asdl.token(Id.Lit_Chars, line[start_offset:], span_id)
@@ -272,8 +272,8 @@ if TYPE_CHECKING:
 def _SplitSimpleCommandPrefix(words):
   # type: (List[word__Compound]) -> Tuple[PreParsedList, List[word__Compound]]
   """Second pass of SimpleCommand parsing: look for assignment words."""
-  preparsed_list = []
-  suffix_words = []
+  preparsed_list = []  # type: PreParsedList
+  suffix_words = []  # type: List[word__Compound]
 
   done_prefix = False
   for w in words:
@@ -505,7 +505,7 @@ class CommandParser(object):
 
     Return None on error.
     """
-    redirects = []
+    redirects = []  # type: List[redir_t]
     while True:
       self._Peek()
 
@@ -608,7 +608,7 @@ class CommandParser(object):
     first_word_str = None  # for error message
     argv0_spid = word_.LeftMostSpanForWord(words[0])
 
-    expanded = []
+    expanded = []  # type: List[str]
     i = 0
     n = len(words)
 
@@ -814,7 +814,7 @@ class CommandParser(object):
         p_die("Unexpected block", span_id=block_spid)
 
       # ShAssignment: No suffix words like ONE=1 a[x]=1 TWO=2
-      pairs = []
+      pairs = []  # type: List[assign_pair]
       for preparsed in preparsed_list:
         pairs.append(_MakeAssignPair(self.parse_ctx, preparsed, self.arena))
 
@@ -909,7 +909,7 @@ class CommandParser(object):
                      | NEWLINES
                      ;
     """
-    words = []
+    words = []  # type: List[word__Compound]
     # The span_id of any semi-colon, so we can remove it.
     semi_spid = runtime.NO_SPID
 
@@ -1097,7 +1097,7 @@ class CommandParser(object):
     if self.c_id == Id.Op_LParen:
       self._Next()
 
-    pat_words = []
+    pat_words = []  # type: List[word_t]
     while True:
       self._Peek()
       pat_words.append(self.cur_word)
@@ -1746,7 +1746,7 @@ class CommandParser(object):
         return child
 
     pipe_index = 0
-    stderr_indices = []
+    stderr_indices = []  # type: List[int]
 
     if self.c_id == Id.Op_PipeAmp:
       stderr_indices.append(pipe_index)
@@ -1791,8 +1791,8 @@ class CommandParser(object):
     if self.c_id not in (Id.Op_DPipe, Id.Op_DAmp):
       return child
 
-    ops = []
-    op_spids = []
+    ops = []  # type: List[int]
+    op_spids = []  # type: List[int]
     children = [child]
 
     while True:
@@ -1851,7 +1851,7 @@ class CommandParser(object):
     # ignored at the end of ParseInteractiveLine(), e.g. leading to bug #301.
     END_LIST = [Id.Op_Newline, Id.Eof_Real]
 
-    children = []
+    children = []  # type: List[command_t]
     done = False
     while not done:
       child = self.ParseAndOr()
@@ -1907,7 +1907,7 @@ class CommandParser(object):
     #   - We also know it will end in a newline.  It can't end in "fi"!
     #   - example: if true; then { echo hi; } fi
 
-    children = []
+    children = []  # type: List[command_t]
     done = False
     while not done:
       self._Peek()

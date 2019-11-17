@@ -487,21 +487,24 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.accept(o.callee)  # could be f() or obj.method()
 
         self.write('(')
-        for i, arg in enumerate(o.args):
-          if i != 0:
-            self.write(', ')
-          self.accept(arg)
 
-          # Add ->data_ to string arguments after the first one
-          if printf_style and i != 0:
-            typ = self.types[arg]
-            # for Optional[Str]
-            if isinstance(typ, UnionType):
-              t = typ.items[0]
-            else:
-              t = typ
-            if t.type.fullname() == 'builtins.str':
-              self.write('->data_')
+        # Don't pass any args to AssertionError
+        if callee_name != 'AssertionError':
+          for i, arg in enumerate(o.args):
+            if i != 0:
+              self.write(', ')
+            self.accept(arg)
+
+            # Add ->data_ to string arguments after the first one
+            if printf_style and i != 0:
+              typ = self.types[arg]
+              # for Optional[Str]
+              if isinstance(typ, UnionType):
+                t = typ.items[0]
+              else:
+                t = typ
+              if t.type.fullname() == 'builtins.str':
+                self.write('->data_')
 
         self.write(')')
 
@@ -1656,15 +1659,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 'Id',
 
                 # syntax_asdl
-                'command', 're', 're_repeat', 'class_literal_term', 'proc_sig',
+                're', 're_repeat', 'class_literal_term', 'proc_sig',
                 'bracket_op', 'source', 'suffix_op',
 
-                # for this
-                'expr_e', 'expr',
+                'sh_lhs_expr', 'redir', 'parse_result',
+
+                'command_e', 'command', 
+                'arith_expr_e', 'arith_expr',
                 'bool_expr_e', 'bool_expr',
+                'expr_e', 'expr',
                 'place_expr_e', 'place_expr', 
                 'word_part_e', 'word_part', 
                 'word_e', 'word',
+
                 ):
                 is_namespace = True
 

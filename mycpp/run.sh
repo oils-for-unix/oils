@@ -168,7 +168,7 @@ compile-with-asdl() {
 
 # -O3 is faster than -O2 for fib, but let's use -O2 since it's "standard"?
 
-CPPFLAGS='-Wall -O2 -std=c++11 -ferror-limit=100'
+CPPFLAGS='-Wall -O2 -std=c++11 -ferror-limit=1000'
 
 # NOTES on timings:
 
