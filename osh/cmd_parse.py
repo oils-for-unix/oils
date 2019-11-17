@@ -93,7 +93,7 @@ def _ReadHereLines(line_reader,  # type: _Reader
   # echo 3) 4
   # EOF
   here_lines = []  # type: List[Tuple[int, str, int]]
-  last_line = None
+  last_line = None  # type: Tuple[int, str, int]
   strip_leading_tabs = (h.op.id == Id.Redir_DLessDash)
 
   while True:
@@ -247,8 +247,7 @@ def _MakeAssignPair(parse_ctx,  # type: ParseContext
     val = word.Compound(w.parts[part_offset:])
     val = word_.TildeDetect(val) or val
 
-  pair = syntax_asdl.assign_pair(lhs, op, val)
-  pair.spids.append(left_token.span_id)  # To skip to beginning of pair
+  pair = syntax_asdl.assign_pair(lhs, op, val, [left_token.span_id])
   return pair
 
 
@@ -499,11 +498,13 @@ class CommandParser(object):
 
     # Here doc
     if op.id in (Id.Redir_DLess, Id.Redir_DLessDash):
-      here_begin = self.cur_word
-      self._Next()
-
-      h = redir.HereDoc(op, fd, here_begin)
+      h = redir.HereDoc()  # no stdin_parts yet
+      h.op = op
+      h.fd = fd
+      h.here_begin = self.cur_word
       self.pending_here_docs.append(h)  # will be filled on next newline.
+
+      self._Next()
       return h
 
     # Other redirect
@@ -543,7 +544,7 @@ class CommandParser(object):
     """First pass: Split into redirects and words."""
     redirects = []  # type: List[redir_t]
     words = []  # type: List[word__Compound]
-    block = None
+    block = None  # type: Optional[command__BraceGroup]
     while True:
       self._Peek()
       if self.c_kind == Kind.Redir:
@@ -622,7 +623,8 @@ class CommandParser(object):
     # through CommandParser instances.
     aliases_in_flight = self.aliases_in_flight or []
 
-    first_word_str = None  # for error message
+    # for error message
+    first_word_str = None  # type: Optional[str]
     argv0_spid = word_.LeftMostSpanForWord(words[0])
 
     expanded = []  # type: List[str]
@@ -857,7 +859,7 @@ class CommandParser(object):
 
       # Attach the token for errors.  (ShAssignment may not need it.)
       if len(suffix_words) == 1:
-        arg_word = None
+        arg_word = None  # type: Optional[word_t]
       elif len(suffix_words) == 2:
         arg_word = suffix_words[1]
       else:
@@ -895,7 +897,7 @@ class CommandParser(object):
     #right_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.Lit_RBrace)
 
-    node = command.BraceGroup(c_list.children)
+    node = command.BraceGroup(c_list.children, None)  # no redirects yet
     node.spids.append(left_spid)
     return node
 
@@ -914,7 +916,7 @@ class CommandParser(object):
     self._Eat(Id.KW_Done)
     done_spid = _KeywordSpid(self.cur_word)  # after _Eat
 
-    node = command.DoGroup(c_list.children)
+    node = command.DoGroup(c_list.children, None)  # no redirects yet
     node.spids.extend([do_spid, done_spid])
     return node
 
@@ -1092,7 +1094,7 @@ class CommandParser(object):
     else:
       body_node = self.ParseDoGroup()
 
-    node = command.WhileUntil(keyword, cond_list, body_node)
+    node = command.WhileUntil(keyword, cond_list, body_node, None)  # no redirects yet
     node.spids.append(keyword.span_id)  # e.g. for errexit message
     return node
 
@@ -1144,8 +1146,8 @@ class CommandParser(object):
 
     self._NewlineOk()
 
-    arm = syntax_asdl.case_arm(pat_words, action_children)
-    arm.spids.extend([left_spid, rparen_spid, dsemi_spid, last_spid])
+    spids = [left_spid, rparen_spid, dsemi_spid, last_spid]
+    arm = syntax_asdl.case_arm(pat_words, action_children, spids)
     return arm
 
   def ParseCaseList(self, arms):
@@ -1237,8 +1239,7 @@ class CommandParser(object):
 
       body = self.ParseBraceGroup()
 
-      arm = syntax_asdl.if_arm(cond_list, body.children)
-      arm.spids.append(elif_spid)
+      arm = syntax_asdl.if_arm(cond_list, body.children, [elif_spid])
       arms.append(arm)
 
     self._Peek()
@@ -1274,9 +1275,9 @@ class CommandParser(object):
     if_node = command.If()
 
     body1 = self.ParseBraceGroup()
-    arm = syntax_asdl.if_arm(cond_list, body1.children)
+    # Every arm has 1 spid, unlike shell-style
     # TODO: We could get the spids from the brace group.
-    arm.spids.append(if_spid)  # every arm has 1 spid, unlike shell-style
+    arm = syntax_asdl.if_arm(cond_list, body1.children, [if_spid])
 
     if_node.arms.append(arm)
 
@@ -1308,8 +1309,7 @@ class CommandParser(object):
 
       body = self._ParseCommandList()
 
-      arm = syntax_asdl.if_arm(cond.children, body.children)
-      arm.spids.extend([elif_spid, then_spid])
+      arm = syntax_asdl.if_arm(cond.children, body.children, [elif_spid, then_spid])
       arms.append(arm)
 
     if self.c_id == Id.KW_Else:
@@ -1351,8 +1351,7 @@ class CommandParser(object):
     self._Eat(Id.KW_Then)
     body = self._ParseCommandList()
 
-    arm = syntax_asdl.if_arm(cond_list, body.children)
-    arm.spids.extend([if_spid, then_spid])
+    arm = syntax_asdl.if_arm(cond_list, body.children, [if_spid, then_spid])
     if_node.arms.append(arm)
 
     if self.c_id in (Id.KW_Elif, Id.KW_Else):
@@ -1578,7 +1577,7 @@ class CommandParser(object):
     self.lexer.PushHint(Id.Op_RParen, Id.Right_Subshell)
 
     c_list = self._ParseCommandList()
-    node = command.Subshell(c_list)
+    node = command.Subshell(c_list, None)  # no redirects yet
 
     right_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.Right_Subshell)
@@ -1601,7 +1600,7 @@ class CommandParser(object):
     bnode = b_parser.Parse()  # May raise
     right_spid = word_.LeftMostSpanForWord(self.cur_word)
 
-    node = command.DBracket(bnode)
+    node = command.DBracket(bnode, None)  # no redirects yet
     node.spids.append(left_spid)
     node.spids.append(right_spid)
     return node
@@ -1615,7 +1614,7 @@ class CommandParser(object):
     anode, right_spid = self.w_parser.ReadDParen()
     assert anode is not None
 
-    node = command.DParen(anode)
+    node = command.DParen(anode, None)  # no redirects yet
     node.spids.append(left_spid)
     node.spids.append(right_spid)
     return node
