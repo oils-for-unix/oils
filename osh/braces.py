@@ -17,16 +17,16 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
-    word, word_t, word__Compound, word__BracedTree,
-    word_part, word_part_t,
-    word_part__BracedTuple, word_part__BracedRange,
-    word_part__Literal,
     token,
+    word, word_e, word_t, word__Compound, word__BracedTree,
+    word_part, word_part_e, word_part_t,
+    word_part__BracedTuple, word_part__BracedRange, word_part__Literal,
 )
 from core.util import log, p_die
 from frontend.match import BRACE_RANGE_LEXER
+from mycpp.mylib import tagswitch
 
-from typing import List, Optional, Iterator, Tuple
+from typing import List, Optional, Iterator, Tuple, cast
 
 _ = log
 
@@ -427,7 +427,7 @@ def _ExpandPart(parts,  # type: List[word_part_t]
         out.append(out_parts_)
 
   else:
-    raise AssertionError
+    raise AssertionError()
 
   return out
 
@@ -438,7 +438,8 @@ def _BraceExpand(parts):
   num_alts = 0
   first_alt_index = -1
   for i, part in enumerate(parts):
-    if isinstance(part, (word_part__BracedTuple, word_part__BracedRange)):
+    tag = part.tag_()
+    if tag in (word_part_e.BracedTuple, word_part_e.BracedRange):
       num_alts += 1
       if num_alts == 1:
         first_alt_index = i
@@ -462,12 +463,22 @@ def _BraceExpand(parts):
 
 
 def BraceExpandWords(words):
-  # type: (List[word__Compound]) -> List[word__Compound]
+  # type: (List[word_t]) -> List[word__Compound]
   out = []  # type: List[word__Compound]
   for w in words:
-    if isinstance(w, word__BracedTree):
-      parts_list = _BraceExpand(w.parts)
-      out.extend(word.Compound(p) for p in parts_list)
-    else:
-      out.append(w)
+    UP_w = w
+    with tagswitch(w) as case:
+      if case(word_e.BracedTree):
+        w = cast(word__BracedTree, UP_w)
+        parts_list = _BraceExpand(w.parts)
+        tmp = [word.Compound(p) for p in parts_list]
+        out.extend(tmp)
+
+      elif case(word_e.Compound):
+        w = cast(word__Compound, UP_w)
+        out.append(w)
+
+      else:
+        raise AssertionError(w.tag_())
+
   return out
