@@ -175,12 +175,14 @@ class WordParser(object):
     self._Next(lex_mode_e.Arith)
     self._Peek()
     if self.token_type == Id.Arith_Colon:  # A pun for Id.VOp2_Colon
-      begin = None  # no beginning specified
+      # no beginning specified
+      begin = None  # type: Optional[arith_expr_t]
     else:
       begin = self._ReadArithExpr()
 
     if self.token_type == Id.Arith_RBrace:
-      return suffix_op.Slice(begin, None)  # No length specified
+      no_length = None  # type: Optional[arith_expr_t]  # No length specified
+      return suffix_op.Slice(begin, no_length)
 
     # Id.Arith_Colon is a pun for Id.VOp2_Colon
     if self.token_type == Id.Arith_Colon:
@@ -1106,7 +1108,8 @@ class WordParser(object):
     # If the first one is a key/value pair, then the rest are assumed to be.
     pair = word_.DetectAssocPair(words[0])
     if pair:
-      pairs = [pair[0], pair[1]]  # flat representation
+      k, v = pair
+      pairs = [k, v]
 
       n = len(words)
       for i in xrange(1, n):
@@ -1115,8 +1118,9 @@ class WordParser(object):
         if not pair:
           p_die("Expected associative array pair", word=w)
 
-        pairs.append(pair[0])  # flat representation
-        pairs.append(pair[1])
+        k, v = pair
+        pairs.append(k)  # flat representation
+        pairs.append(v)
 
       # invariant List?
       node = word_part.AssocArrayLiteral(left_token, pairs)  # type: ignore
@@ -1339,7 +1343,7 @@ class WordParser(object):
       raise AssertionError(self.cur_token)
 
   def _ReadWord(self, lex_mode):
-    # type: (lex_mode_t) -> Tuple[word_t, bool]
+    # type: (lex_mode_t) -> Tuple[Optional[word_t], bool]
     """Helper function for Read().
 
     Returns:
@@ -1347,6 +1351,8 @@ class WordParser(object):
         word: Word, or None if there was an error, or need_more is set
         need_more: True if the caller should call us again
     """
+    no_word = None  # type: Optional[word_t]
+
     self._Peek()
 
     if self.token_kind == Kind.Eof:
@@ -1358,7 +1364,7 @@ class WordParser(object):
       self._Next(lex_mode)
       if self.token_type == Id.Op_Newline:
         if self.cursor_was_newline:
-          return None, True
+          return no_word, True
 
       return word.Token(self.cur_token), False
 
@@ -1373,7 +1379,7 @@ class WordParser(object):
 
     elif self.token_kind in (Kind.Ignored, Kind.WS):
       self._Next(lex_mode)
-      return None, True  # tell Read() to try again
+      return no_word, True  # tell Read() to try again
 
     elif self.token_kind in (
         Kind.VSub, Kind.Lit, Kind.History, Kind.Left, Kind.KW,
@@ -1391,7 +1397,7 @@ class WordParser(object):
 
         # The next iteration will go into Kind.Ignored and set lex state to
         # lex_mode_e.ShCommand/etc.
-        return None, True  # tell Read() to try again after comment
+        return no_word, True  # tell Read() to try again after comment
 
       else:
         w = self._ReadCompoundWord(lex_mode=lex_mode)

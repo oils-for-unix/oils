@@ -468,10 +468,10 @@ inline bool list_contains(List<Str*>* haystack, Str* needle) {
   return false;
 }
 
-// ints and floats
+// ints, floats, enums like Kind
 // e.g. 1 in [1, 2, 3]
 template <typename T>
-inline bool list_contains(List<T>* haystack, int needle) {
+inline bool list_contains(List<T>* haystack, T needle) {
   int n = haystack->v_.size();
   for (int i = 0; i < n; ++i) {
     if (haystack->index(i) == needle) {
