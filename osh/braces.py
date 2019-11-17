@@ -23,11 +23,12 @@ from _devbuild.gen.syntax_asdl import (
     word_part__Literal,
     token,
 )
-#from core.util import log
-from core.util import p_die
+from core.util import log, p_die
 from frontend.match import BRACE_RANGE_LEXER
 
 from typing import List, Optional, Iterator, Tuple
+
+_ = log
 
 
 # Step has to be strictly positive or negative, so we can use 0 for 'not
@@ -311,6 +312,18 @@ def _LeadingZeros(s):
   return n
 
 
+def _IntToString(i, width):
+  # type: (int, int) -> str
+  s = str(i)
+  n = len(s)
+  if n < width:  # width might be 0
+    # pad with zeros
+    pad = '0' * (width-n)
+    return pad + s
+  else:
+    return s
+
+
 def _RangeStrings(part):
   # type: (word_part__BracedRange) -> List[str]
 
@@ -321,28 +334,25 @@ def _RangeStrings(part):
     z2 = _LeadingZeros(part.end)
 
     if z1 == 0 and z2 == 0:
-      fmt = '%d'
+      width = 0
     else:
       if z1 < z2:
         width = len(part.end)
       else:
         width = len(part.start)
-      # TODO: Does the mycpp runtime support this dynamic format?  Or write it
-      # out?
-      fmt = '%0' + str(width) + 'd'
 
     n = int(part.start)
     end = int(part.end)
     step = part.step
     if step > 0:
       while True:
-        nums.append(fmt % n)
+        nums.append(_IntToString(n, width))
         n += step
         if n > end:
           break
     else:
       while True:
-        nums.append(fmt % n)
+        nums.append(_IntToString(n, width))
         n += step
         if n < end:
           break

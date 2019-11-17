@@ -289,21 +289,39 @@ namespace arith_nt {
 # other modules:
 # core.util.ParseError: move this to core/errors.py?
 
-  translate-ordered $name "${HNODE_HEADER}$snippet" \
-    $REPO_ROOT/asdl/runtime.py \
-    $REPO_ROOT/core/alloc.py \
-    $REPO_ROOT/frontend/reader.py \
-    $REPO_ROOT/frontend/lexer.py \
-    $REPO_ROOT/pgen2/grammar.py \
-    $REPO_ROOT/pgen2/parse.py \
-    $REPO_ROOT/oil_lang/expr_parse.py \
-    $REPO_ROOT/oil_lang/expr_to_ast.py \
-    $REPO_ROOT/osh/word_.py \
-    $REPO_ROOT/osh/bool_parse.py \
-    $REPO_ROOT/osh/word_parse.py \
-    $REPO_ROOT/osh/cmd_parse.py \
-    $REPO_ROOT/frontend/parse_lib.py \
+  # These files compile
+  FILES=(
+    $REPO_ROOT/asdl/runtime.py 
+    $REPO_ROOT/core/alloc.py 
+    $REPO_ROOT/frontend/reader.py 
+    $REPO_ROOT/frontend/lexer.py 
+    $REPO_ROOT/pgen2/grammar.py 
+    $REPO_ROOT/pgen2/parse.py 
+    $REPO_ROOT/oil_lang/expr_parse.py 
+    $REPO_ROOT/oil_lang/expr_to_ast.py 
     examples/$name.py
+  )
+
+  PYLIB_FILES=(
+    $REPO_ROOT/pylib/cgi.py
+    # join(*p) is a problem
+    #$REPO_ROOT/pylib/os_path.py
+  )
+
+  MORE_FILES=(
+    $REPO_ROOT/osh/braces.py
+  )
+
+  translate-ordered $name "${HNODE_HEADER}$snippet" \
+    "${FILES[@]}" "${MORE_FILES[@]}" "${PYLIB_FILES[@]}"
+
+    # $REPO_ROOT/osh/word_.py \
+    # $REPO_ROOT/osh/bool_parse.py \
+    # $REPO_ROOT/osh/word_parse.py \
+    # $REPO_ROOT/osh/cmd_parse.py \
+    # $REPO_ROOT/osh/arith_parse.py \
+    # $REPO_ROOT/frontend/tdop.py \
+    # $REPO_ROOT/frontend/parse_lib.py \
 
   # $REPO_ROOT/frontend/tdop.py \
   # - function pointers for Left/Null are an issue
