@@ -1128,7 +1128,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if over_type.type.fullname() == 'builtins.list':
           c_type = get_c_type(over_type)
           assert c_type.endswith('*'), c_type
-          c_iter_type = c_type.replace('List', 'ListIter')[:-1]  # remove *
+          c_iter_type = c_type.replace('List', 'ListIter', 1)[:-1]  # remove *
         else:
           c_iter_type = 'StrIter'
 
