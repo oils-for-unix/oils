@@ -170,7 +170,7 @@ module syntax
     -- For command sub and process sub: $(...)  <(...)  >(...)
   | ArithSub(arith_expr anode)
     -- {a,b,c}
-  | BracedTuple(word* words)
+  | BracedTuple(compound_word* words)
     -- {1..10} or {-5..10..2} or {01..10} (leading zeros matter)
     -- {a..f} or {a..f..2} or {a..f..-2}
   | BracedRange(id kind, string start, string end, int step)

@@ -37,9 +37,11 @@ NO_STEP = 0
 
 
 # The brace language has no syntax errors!  But we still need to abort the
-# parse.
+# parse.  TODO: Should we expose a strict version later?
 class _NotARange(Exception):
-  pass
+  def __init__(self, s):
+    # type: (str) -> None
+    pass
 
 
 class _RangeParser(object):
@@ -55,7 +57,7 @@ class _RangeParser(object):
     self.lexer = lexer
     self.span_id = span_id
 
-    self.token_type = None  # type: Id_t
+    self.token_type = Id.Undefined_Tok
     self.token_val = ''
 
   def _Next(self):
@@ -70,7 +72,7 @@ class _RangeParser(object):
   def _Eat(self, token_type):
     # type: (Id_t) -> str
     if self.token_type != token_type:
-      raise _NotARange('Expected %s, got %s' % (token_type, self.token_type))
+      raise _NotARange('Expected %d, got %d' % (token_type, self.token_type))
     val = self.token_val
     self._Next()
     return val
@@ -91,13 +93,12 @@ class _RangeParser(object):
     self._Eat(Id.Range_Dots)
     end = self._Eat(range_kind)
 
-    part = word_part.BracedRange(range_kind, start, end)
-
     if self.token_type == Id.Range_Dots:
-      part.step = self._ParseStep()
+      step = self._ParseStep()
     else:
-      part.step = NO_STEP
+      step = NO_STEP
 
+    part = word_part.BracedRange(range_kind, start, end, step)
     return part
 
   def Parse(self):
@@ -152,23 +153,23 @@ class _RangeParser(object):
         p_die('Mismatched cases in character range', span_id=self.span_id)
 
     else:
-      raise _NotARange()
+      raise _NotARange('')
 
     # prevent unexpected trailing tokens
     self._Eat(Id.Range_Eof)
     return part
 
 
-def _RangePartDetect(token):
+def _RangePartDetect(tok):
   # type: (token) -> Optional[word_part_t]
   """Parse the token and return a new word_part if it looks like a range."""
-  lexer = BRACE_RANGE_LEXER.Tokens(token.val)
-  p = _RangeParser(lexer, token.span_id)
+  lexer = BRACE_RANGE_LEXER.Tokens(tok.val)
+  p = _RangeParser(lexer, tok.span_id)
   try:
     part = p.Parse()
   except _NotARange as e:
     return None
-  part.spids.append(token.span_id)  # Propagate location info
+  part.spids.append(tok.span_id)  # Propagate location info
   return part
 
 
@@ -216,7 +217,9 @@ def _BraceDetect(w):
 
   for i, part in enumerate(w.parts):
     append = True
-    if isinstance(part, word_part__Literal):
+    UP_part = part
+    if part.tag_() == word_part_e.Literal:
+      part = cast(word_part__Literal, UP_part)
       id_ = part.token.id
       if id_ == Id.Lit_LBrace:
         # Save prefix parts.  Start new parts list.
@@ -247,20 +250,21 @@ def _BraceDetect(w):
         #log('stack[-1]: %s', stack[-1])
         #log('cur_parts: %s', cur_parts)
 
-        range_part = None
+        range_part = None  # type: Optional[word_part_t]
         # only allow {1..3}, not {a,1..3}
         if not stack[-1].saw_comma and len(cur_parts) == 1:
           # It must be ONE part.  For example, -1..-100..-2 is initially
           # lexed as a single Lit_Chars token.
-          part = cur_parts[0]
-          if (isinstance(part, word_part__Literal) and
-              part.token.id == Id.Lit_Chars):
-            range_part = _RangePartDetect(part.token)
-            if range_part:
-              frame = stack.pop()
-              cur_parts = frame.cur_parts
-              cur_parts.append(range_part)
-              append = False
+          part2 = cur_parts[0]
+          if part2.tag_() == word_part_e.Literal:
+            lit_part = cast(word_part__Literal, part2)
+            if lit_part.token.id == Id.Lit_Chars:
+              range_part = _RangePartDetect(lit_part.token)
+              if range_part:
+                frame = stack.pop()
+                cur_parts = frame.cur_parts
+                cur_parts.append(range_part)
+                append = False
 
         # It doesn't look like a range -- process it as the last element in
         # {a,b,c}
@@ -398,36 +402,39 @@ def _ExpandPart(parts,  # type: List[word_part_t]
   prefix = parts[ : first_alt_index]
   expand_part = parts[first_alt_index]
 
-  if isinstance(expand_part, word_part__BracedTuple):
-    # Call _BraceExpand on each of the inner words too!
-    expanded_alts = []  # type: List[List[word_part_t]]
-    for w in expand_part.words:
-      assert isinstance(w, compound_word)  # for MyPy
-      expanded_alts.extend(_BraceExpand(w.parts))
+  UP_part = expand_part
+  with tagswitch(expand_part) as case:
+    if case(word_part_e.BracedTuple):
+      expand_part = cast(word_part__BracedTuple, UP_part)
+      # Call _BraceExpand on each of the inner words too!
+      expanded_alts = []  # type: List[List[word_part_t]]
+      for w in expand_part.words:
+        expanded_alts.extend(_BraceExpand(w.parts))
 
-    for alt_parts in expanded_alts:
-      for suffix in suffixes:
-        out_parts = []  # type: List[word_part_t]
-        out_parts.extend(prefix)
-        out_parts.extend(alt_parts)
-        out_parts.extend(suffix)
-        out.append(out_parts)
+      for alt_parts in expanded_alts:
+        for suffix in suffixes:
+          out_parts = []  # type: List[word_part_t]
+          out_parts.extend(prefix)
+          out_parts.extend(alt_parts)
+          out_parts.extend(suffix)
+          out.append(out_parts)
 
-  elif isinstance(expand_part, word_part__BracedRange):
-    # Not mutually recursive with _BraceExpand
-    strs = _RangeStrings(expand_part)
-    for s in strs:
-      for suffix in suffixes:
-        out_parts_ = []  # type: List[word_part_t]
-        out_parts_.extend(prefix)
-        # Preserve span_id from the original
-        t = token(Id.Lit_Chars, s, expand_part.spids[0])
-        out_parts_.append(word_part.Literal(t))
-        out_parts_.extend(suffix)
-        out.append(out_parts_)
+    elif case(word_part_e.BracedRange):
+      expand_part = cast(word_part__BracedRange, UP_part)
+      # Not mutually recursive with _BraceExpand
+      strs = _RangeStrings(expand_part)
+      for s in strs:
+        for suffix in suffixes:
+          out_parts_ = []  # type: List[word_part_t]
+          out_parts_.extend(prefix)
+          # Preserve span_id from the original
+          t = token(Id.Lit_Chars, s, expand_part.spids[0])
+          out_parts_.append(word_part.Literal(t))
+          out_parts_.extend(suffix)
+          out.append(out_parts_)
 
-  else:
-    raise AssertionError()
+    else:
+      raise AssertionError()
 
   return out
 
@@ -471,7 +478,7 @@ def BraceExpandWords(words):
       if case(word_e.BracedTree):
         w = cast(word__BracedTree, UP_w)
         parts_list = _BraceExpand(w.parts)
-        tmp = [compound_word(p) for p in parts_list]
+        tmp = [compound_word(p, None) for p in parts_list]
         out.extend(tmp)
 
       elif case(word_e.Compound):

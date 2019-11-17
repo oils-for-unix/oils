@@ -13,7 +13,7 @@ import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import arith_expr_e, word_part, token
-from _devbuild.gen.syntax_asdl import word, compound_word
+from _devbuild.gen.syntax_asdl import compound_word
 from _devbuild.gen.types_asdl import lex_mode_e
 
 from asdl import runtime

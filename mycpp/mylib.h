@@ -167,6 +167,10 @@ class Str {
     }
     return true;
   }
+  // STUB (for osh/braces.py)
+  bool isupper() {
+    assert(0); 
+  }
 
   List<Str*>* splitlines(bool keep) {
     assert(keep == true);
@@ -420,6 +424,11 @@ inline Str* chr(int i) {
   buf[0] = i;
   buf[1] = '\0';
   return new Str(buf, 1);
+}
+
+// STUB
+inline int ord(Str* s) {
+  assert(0);
 }
 
 // https://stackoverflow.com/questions/3919995/determining-sprintf-buffer-size-whats-the-standard/11092994#11092994
