@@ -59,7 +59,7 @@ from _devbuild.gen.syntax_asdl import (
 
     suffix_op, suffix_op_t, suffix_op__Slice, suffix_op__PatSub,
 
-    word, word_e, word_t, word__Compound, word__Token,
+    word, word_e, word_t, compound_word, word__Token,
     word_part, word_part_e, word_part_t, word_part__Literal,
     word_part__ArithSub, word_part__ExtGlob, word_part__ExprSub,
 
@@ -202,7 +202,7 @@ class WordParser(object):
     """
     UP_pat = self._ReadVarOpArg(lex_mode, eof_type=Id.Lit_Slash, empty_ok=False)
     assert UP_pat.tag_() == word_e.Compound, UP_pat  # Because empty_ok=False
-    pat = cast(word__Compound, UP_pat)
+    pat = cast(compound_word, UP_pat)
 
     if len(pat.parts) == 1:
       ok, s, quoted = word_.StaticEval(pat)
@@ -596,7 +596,7 @@ class WordParser(object):
     # type: () -> word_part__ExtGlob
     """
     Grammar:
-      Item         = word.Compound | EPSILON  # important: @(foo|) is allowed
+      Item         = compound_word | EPSILON  # important: @(foo|) is allowed
       LEFT         = '@(' | '*(' | '+(' | '?(' | '!('
       RIGHT        = ')'
       ExtGlob      = LEFT (Item '|')* Item RIGHT  # ITEM may be empty
@@ -617,13 +617,13 @@ class WordParser(object):
 
       if self.token_type == Id.Right_ExtGlob:
         if not read_word:
-          arms.append(word.Compound())
+          arms.append(compound_word())
         spids.append(self.cur_token.span_id)
         break
 
       elif self.token_type == Id.Op_Pipe:
         if not read_word:
-          arms.append(word.Compound())
+          arms.append(compound_word())
         read_word = False
         self._Next(lex_mode_e.ExtGlob)
 
@@ -1079,7 +1079,7 @@ class WordParser(object):
 
     # MUST use a new word parser (with same lexer).
     w_parser = self.parse_ctx.MakeWordParser(self.lexer, self.line_reader)
-    words = []  # type: List[word__Compound]
+    words = []  # type: List[compound_word]
     while True:
       w = w_parser.ReadWord(lex_mode_e.ShCommand)
 
@@ -1096,7 +1096,7 @@ class WordParser(object):
           # Token
           p_die('Unexpected token in array literal: %r', w.token.val, word=w)
 
-      assert isinstance(w, word__Compound)  # for MyPy
+      assert isinstance(w, compound_word)  # for MyPy
       words.append(w)
 
     if not words:  # a=() is empty indexed array
@@ -1146,7 +1146,7 @@ class WordParser(object):
 
   def _ReadCompoundWord(self, eof_type=Id.Undefined_Tok,
                         lex_mode=lex_mode_e.ShCommand, empty_ok=True):
-    # type: (Id_t, lex_mode_t, bool) -> word__Compound
+    # type: (Id_t, lex_mode_t, bool) -> compound_word
     """
     Precondition: Looking at the first token of the first word part
     Postcondition: Looking at the token after, e.g. space or operator
@@ -1155,7 +1155,7 @@ class WordParser(object):
     could be an operator delimiting a compound word.  Can we change lexer modes
     and remove this special case?
     """
-    w = word.Compound()
+    w = compound_word()
     num_parts = 0
     brace_count = 0
     done = False
@@ -1463,12 +1463,12 @@ class WordParser(object):
     # Returns nothing
 
   def ReadForPlugin(self):
-    # type: () -> word__Compound
+    # type: () -> compound_word
     """For $PS1, $PS4, etc.
 
     This is just like reading a here doc line.  "\n" is allowed, as well as the
     typical substitutions ${x} $(echo hi) $((1 + 2)).
     """
-    w = word.Compound()
+    w = compound_word()
     self._ReadLikeDQ(None, w.parts)
     return w

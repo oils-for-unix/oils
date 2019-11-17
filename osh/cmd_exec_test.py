@@ -13,7 +13,7 @@ import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    braced_var_sub, word, suffix_op, word_part, token
+    braced_var_sub, suffix_op, word_part, token, compound_word
 )
 from core import test_lib
 from osh import state
@@ -55,7 +55,7 @@ class VarOpTest(unittest.TestCase):
 
     # Now add some ops
     part = word_part.Literal(token(Id.Lit_Chars, 'default'))
-    arg_word = word.Compound([part])
+    arg_word = compound_word([part])
     test_op = suffix_op.Unary(Id.VTest_ColonHyphen, arg_word)
     unset_sub.suffix_op = test_op
     set_sub.suffix_op = test_op

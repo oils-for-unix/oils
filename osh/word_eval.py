@@ -7,7 +7,7 @@ import pwd
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import (
     braced_var_sub, token,
-    word, word_e, word_t, word__Compound,
+    word, word_e, word_t, compound_word,
     bracket_op_e, suffix_op_e, word_part_e
 )
 from _devbuild.gen.runtime_asdl import (
@@ -1267,7 +1267,7 @@ class _WordEvaluator(object):
       argv.extend(results)
 
   def _EvalWordToArgv(self, w):
-    # type: (word__Compound) -> List[str]
+    # type: (compound_word) -> List[str]
     """Helper for _EvalAssignBuiltin.
 
     Splitting and globbing are disabled for assignment builtins.
@@ -1286,7 +1286,7 @@ class _WordEvaluator(object):
     return argv
 
   def _EvalAssignBuiltin(self, builtin_id, arg0, words):
-    # type: (List[word__Compound]) -> cmd_value__Assign
+    # type: (List[compound_word]) -> cmd_value__Assign
     """
     Handles both static and dynamic assignment, e.g.
 
@@ -1340,7 +1340,7 @@ class _WordEvaluator(object):
           if part_offset == len(w.parts):
             rhs_word = word.Empty()  # type: word_t
           else:
-            rhs_word = word.Compound(w.parts[part_offset:])
+            rhs_word = compound_word(w.parts[part_offset:])
             # tilde detection only happens on static assignments!
             rhs_word = word_.TildeDetect(rhs_word) or rhs_word
 
@@ -1511,7 +1511,7 @@ class _WordEvaluator(object):
     return cmd_value.Argv(strs, spids)
 
   def EvalWordSequence(self, words):
-    # type: (List[word__Compound]) -> List[str]
+    # type: (List[compound_word]) -> List[str]
     """For arrays and for loops.  They don't allow assignment builtins."""
     cmd_val = self.EvalWordSequence2(words)
     return cmd_val.argv

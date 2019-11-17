@@ -28,6 +28,18 @@ def _token(obj):
   return p_node
 
 
+def _compound_word(obj):
+  # type: (compound_word) -> hnode_t
+  p_node = runtime.NewRecord('')  # don't show node type
+  p_node.abbrev = True
+  p_node.left = '{'
+  p_node.right = '}'
+
+  for part in obj.parts:
+    p_node.unnamed_fields.append(part.AbbreviatedTree())
+  return p_node
+
+
 def _speck(obj):
   # type: (speck) -> hnode_t
   """Always abbreviate a speck as the Id."""
@@ -92,18 +104,6 @@ def _word_part__Literal(obj):
   p_node.abbrev = True
 
   _AbbreviateToken(obj.token, p_node.unnamed_fields)
-  return p_node
-
-
-def _word__Compound(obj):
-  # type: (word__Compound) -> hnode_t
-  p_node = runtime.NewRecord('')  # don't show node type
-  p_node.abbrev = True
-  p_node.left = '{'
-  p_node.right = '}'
-
-  for part in obj.parts:
-    p_node.unnamed_fields.append(part.AbbreviatedTree())
   return p_node
 
 

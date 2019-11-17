@@ -5,7 +5,7 @@ from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
     token, double_quoted, single_quoted, command_sub, sh_array_literal,
-    word__Token, word__Compound, word_part_t,
+    word__Token, compound_word, word_part_t,
 )
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_str
 from _devbuild.gen.types_asdl import lex_mode_e
@@ -172,7 +172,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
               # Token
               p_die('Unexpected token in array literal: %r', w.token.val, word=w)
 
-          assert isinstance(w, word__Compound)  # for MyPy
+          assert isinstance(w, compound_word)  # for MyPy
           words.append(w)
 
         words2 = braces.BraceDetectAll(words)

@@ -19,12 +19,13 @@ import resource
 import time
 import sys
 
-from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.id_tables import REDIR_ARG_TYPES, REDIR_DEFAULT_FD
+from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    command_e, command__Proc, redir_e, assign_op_e, source, proc_sig_e,
+    compound_word,
+    command_e, command_t, command__Proc,
+    redir_e, assign_op_e, source, proc_sig_e,
 )
-from _devbuild.gen.syntax_asdl import word, command_t
 from _devbuild.gen.runtime_asdl import (
     lvalue, lvalue_e,
     value, value_e, value_t,
@@ -563,7 +564,7 @@ class Executor(object):
 
     elif n.tag == redir_e.HereDoc:
       # HACK: Wrap it in a word to evaluate.
-      w = word.Compound(n.stdin_parts)
+      w = compound_word(n.stdin_parts, None)
       val = self.word_ev.EvalWordToString(w)
       assert val.tag == value_e.Str, val
       return redirect.HereDoc(fd, val.s, n.op.span_id)

@@ -10,7 +10,7 @@ import pwd
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import value_e, value_t
 from _devbuild.gen.syntax_asdl import (
-    command_t, source, word__Compound
+    command_t, source, compound_word
 )
 from asdl import runtime
 from core import main_loop
@@ -114,7 +114,7 @@ class Evaluator(object):
     # These caches should reduce memory pressure a bit.  We don't want to
     # reparse the prompt twice every time you hit enter.
     self.tokens_cache = {}  # type: Dict[str, List[Tuple[Id, str]]]
-    self.parse_cache = {}  # type: Dict[str, word__Compound]
+    self.parse_cache = {}  # type: Dict[str, compound_word]
 
   def _ReplaceBackslashCodes(self, tokens):
     # type: (List[Tuple[Id, str]]) -> str

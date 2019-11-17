@@ -17,8 +17,8 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
-    token,
-    word, word_e, word_t, word__Compound, word__BracedTree,
+    token, compound_word, 
+    word, word_e, word_t, word__BracedTree,
     word_part, word_part_e, word_part_t,
     word_part__BracedTuple, word_part__BracedRange, word_part__Literal,
 )
@@ -181,7 +181,7 @@ class _StackFrame(object):
 
 
 def _BraceDetect(w):
-  # type: (word__Compound) -> Optional[word__BracedTree]
+  # type: (compound_word) -> Optional[word__BracedTree]
   """Return a new word if the input word looks like a brace expansion.
 
   e.g. {a,b} or {1..10..2} (TODO)
@@ -234,7 +234,7 @@ def _BraceDetect(w):
         # ?  We're forcing braces right now but not commas.
         if stack:
           stack[-1].saw_comma = True
-          stack[-1].alt_part.words.append(word.Compound(cur_parts))
+          stack[-1].alt_part.words.append(compound_word(cur_parts, None))
           cur_parts = []  # clear
           append = False
 
@@ -269,7 +269,7 @@ def _BraceDetect(w):
           if not stack[-1].saw_comma:  # {foo} is not a real alternative
             return None  # early return
 
-          stack[-1].alt_part.words.append(word.Compound(cur_parts))
+          stack[-1].alt_part.words.append(compound_word(cur_parts, None))
 
           frame = stack.pop()
           cur_parts = frame.cur_parts
@@ -289,7 +289,7 @@ def _BraceDetect(w):
 
 
 def BraceDetectAll(words):
-  # type: (List[word__Compound]) -> List[word_t]
+  # type: (List[compound_word]) -> List[word_t]
   """Return a new list of words, possibly with BracedTree instances."""
   out = []  # type: List[word_t]
   for w in words:
@@ -402,7 +402,7 @@ def _ExpandPart(parts,  # type: List[word_part_t]
     # Call _BraceExpand on each of the inner words too!
     expanded_alts = []  # type: List[List[word_part_t]]
     for w in expand_part.words:
-      assert isinstance(w, word__Compound)  # for MyPy
+      assert isinstance(w, compound_word)  # for MyPy
       expanded_alts.extend(_BraceExpand(w.parts))
 
     for alt_parts in expanded_alts:
@@ -463,19 +463,19 @@ def _BraceExpand(parts):
 
 
 def BraceExpandWords(words):
-  # type: (List[word_t]) -> List[word__Compound]
-  out = []  # type: List[word__Compound]
+  # type: (List[word_t]) -> List[compound_word]
+  out = []  # type: List[compound_word]
   for w in words:
     UP_w = w
     with tagswitch(w) as case:
       if case(word_e.BracedTree):
         w = cast(word__BracedTree, UP_w)
         parts_list = _BraceExpand(w.parts)
-        tmp = [word.Compound(p) for p in parts_list]
+        tmp = [compound_word(p) for p in parts_list]
         out.extend(tmp)
 
       elif case(word_e.Compound):
-        w = cast(word__Compound, UP_w)
+        w = cast(compound_word, UP_w)
         out.append(w)
 
       else:

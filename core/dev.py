@@ -166,7 +166,7 @@ class Tracer(object):
     self.word_ev = word_ev
     self.f = f  # can be the --debug-file as well
 
-    self.parse_cache = {}  # PS4 value -> word.Compound.  PS4 is scoped.
+    self.parse_cache = {}  # PS4 value -> compound_word.  PS4 is scoped.
 
   def _EvalPS4(self):
     """For set -x."""

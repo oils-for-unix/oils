@@ -13,7 +13,7 @@ import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import arith_expr_e, word_part, token
-from _devbuild.gen.syntax_asdl import word
+from _devbuild.gen.syntax_asdl import word, compound_word
 from _devbuild.gen.types_asdl import lex_mode_e
 
 from asdl import runtime
@@ -494,11 +494,11 @@ ls bar
     print('--MULTI')
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     parts = [word_part.Literal(token(Id.Lit_Chars, 'ls'))]
-    test_lib.AssertAsdlEqual(self, word.Compound(parts), w)
+    test_lib.AssertAsdlEqual(self, compound_word(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     parts = [word_part.Literal(token(Id.Lit_Chars, 'foo'))]
-    test_lib.AssertAsdlEqual(self, word.Compound(parts), w)
+    test_lib.AssertAsdlEqual(self, compound_word(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     t = token(Id.Op_Newline, '\n')
@@ -506,11 +506,11 @@ ls bar
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     parts = [word_part.Literal(token(Id.Lit_Chars, 'ls'))]
-    test_lib.AssertAsdlEqual(self, word.Compound(parts), w)
+    test_lib.AssertAsdlEqual(self, compound_word(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     parts = [word_part.Literal(token(Id.Lit_Chars, 'bar'))]
-    test_lib.AssertAsdlEqual(self, word.Compound(parts), w)
+    test_lib.AssertAsdlEqual(self, compound_word(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     t = token(Id.Op_Newline, '\n')

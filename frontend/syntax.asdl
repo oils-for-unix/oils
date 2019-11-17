@@ -185,6 +185,7 @@ module syntax
   | ExprSub(token left, expr child)
   attributes (int* spids)
 
+  compound_word = (word_part* parts, int* spids)
   word = 
     -- for RHS of 'x=', 'declare x=', and the argument in "${x:-}"
     -- In contrast, a Compound word always has at least one part.
@@ -194,7 +195,7 @@ module syntax
     -- We could model this with another variant type but it incurs runtime
     -- overhead and seems like overkill.  Note that DoubleQuoted can't
     -- contain a SingleQuoted, etc. either.
-  | Compound(word_part* parts)
+  | Compound %compound_word
     -- A BracedTree is a word because it can appear in a command.  It can
     -- contains any type of word_part.
   | BracedTree(word_part* parts)

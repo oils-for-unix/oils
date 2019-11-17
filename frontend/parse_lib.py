@@ -4,7 +4,7 @@ parse_lib.py - Consolidate various parser instantiations here.
 
 from _devbuild.gen.id_kind_asdl import Id_t
 from _devbuild.gen.syntax_asdl import (
-    token, command_t, expr_t, word_t, redir_t, word__Compound,
+    token, command_t, expr_t, word_t, redir_t, compound_word,
     name_type, command__Proc, command__Func, arg_list,
 )
 from _devbuild.gen.types_asdl import lex_mode_e
@@ -41,7 +41,7 @@ class _BaseTrail(object):
     # type: () -> None
     # word from a partially completed command.
     # Filled in by _ScanSimpleCommand in osh/cmd_parse.py.
-    self.words = []  # type: List[word__Compound]
+    self.words = []  # type: List[compound_word]
     self.redirects = []  # type: List[redir_t]
     # TODO: We should maintain the LST invariant and have a single list, but
     # that I ran into the "cases classes are better than variants" problem.
@@ -57,7 +57,7 @@ class _BaseTrail(object):
     # line!
     self.tokens = []  # type: List[token]
 
-    self.alias_words = []  # type: List[word__Compound]  # words INSIDE an alias expansion
+    self.alias_words = []  # type: List[compound_word]  # words INSIDE an alias expansion
     self.expanding_alias = False
 
   def Clear(self):
@@ -65,7 +65,7 @@ class _BaseTrail(object):
     pass
 
   def SetLatestWords(self, words, redirects):
-    # type: (List[word__Compound], List[redir_t]) -> None
+    # type: (List[compound_word], List[redir_t]) -> None
     pass
 
   def AppendToken(self, token):
@@ -129,7 +129,7 @@ class Trail(_BaseTrail):
     del self.alias_words[:]
 
   def SetLatestWords(self, words, redirects):
-    # type: (List[word__Compound], List[redir_t]) -> None
+    # type: (List[compound_word], List[redir_t]) -> None
     if self.expanding_alias:
       self.alias_words = words  # Save these separately
       return

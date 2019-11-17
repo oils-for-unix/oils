@@ -4,7 +4,7 @@ word.py - Utility functions for words, e.g. treating them as "tokens".
 
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t, Kind_t
 from _devbuild.gen.syntax_asdl import (
-    token,
+    token, compound_word, 
     double_quoted, single_quoted, simple_var_sub, braced_var_sub, command_sub,
     sh_array_literal,
     word_part, word_part_t, word_part_e,
@@ -14,8 +14,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part__ArithSub, word_part__ExtGlob,
     word_part__Splice, word_part__FuncCall, word_part__ExprSub,
 
-    word, word_e, word_t,
-    word__Compound, word__Token, word__BracedTree, word__String,
+    word_e, word_t, word__Token, word__BracedTree, word__String,
 
     sh_lhs_expr__Name,
 )
@@ -121,7 +120,7 @@ def StaticEval(UP_w):
   if UP_w.tag_() != word_e.Compound:
     return False, '', quoted
 
-  w = cast(word__Compound, UP_w)
+  w = cast(compound_word, UP_w)
 
   strs = []  # type: List[str]
   for part in w.parts:
@@ -270,7 +269,7 @@ def LeftMostSpanForWord(w):
   UP_w = w
   with tagswitch(w) as case:
     if case(word_e.Compound):
-      w = cast(word__Compound, UP_w)
+      w = cast(compound_word, UP_w)
       if w.parts:
         return LeftMostSpanForPart(w.parts[0])
       else:
@@ -303,7 +302,7 @@ def RightMostSpanForWord(w):
   UP_w = w
   with tagswitch(w) as case:
     if case(word_e.Compound):
-      w = cast(word__Compound, UP_w)
+      w = cast(compound_word, UP_w)
       if len(w.parts) == 0:
         # TODO: Use Empty instead
         raise AssertionError("Compound shouldn't be empty")
@@ -355,7 +354,7 @@ def TildeDetect(UP_w):
   if UP_w.tag_() != word_e.Compound:
     return None
 
-  w = cast(word__Compound, UP_w)
+  w = cast(compound_word, UP_w)
   assert w.parts, w
 
   UP_part0 = w.parts[0]
@@ -365,7 +364,7 @@ def TildeDetect(UP_w):
 
   if len(w.parts) == 1:  # can't be zero
     tilde_part = word_part.TildeSub(part0.token)
-    return word.Compound([tilde_part])
+    return compound_word([tilde_part], None)
 
   UP_part1 = w.parts[1]
   # NOTE: We could inspect the raw tokens.
@@ -376,7 +375,7 @@ def TildeDetect(UP_w):
 
       parts = [tilde_part_]
       parts.extend(w.parts[1:])
-      return word.Compound(parts)
+      return compound_word(parts, None)
 
   # It could be something like '~foo:bar', which doesn't have a slash.
   return None
@@ -395,7 +394,7 @@ def TildeDetectAll(words):
 
 
 def HasArrayPart(w):
-  # type: (word__Compound) -> bool
+  # type: (compound_word) -> bool
   """Used in cmd_parse."""
   for part in w.parts:
     if part.tag_() == word_part_e.ShArrayLiteral:
@@ -404,7 +403,7 @@ def HasArrayPart(w):
 
 
 def ShFunctionName(w):
-  # type: (word__Compound) -> str
+  # type: (compound_word) -> str
   """Returns a valid shell function name, or the empty string.
 
   TODO: Maybe use this regex to validate:
@@ -432,7 +431,7 @@ def LooksLikeArithVar(UP_w):
   if UP_w.tag_() != word_e.Compound:
     return None
 
-  w = cast(word__Compound, UP_w)
+  w = cast(compound_word, UP_w)
   if len(w.parts) != 1:
     return None
 
@@ -445,7 +444,7 @@ def LooksLikeArithVar(UP_w):
 
 
 def IsVarLike(w):
-  # type: (word__Compound) -> bool
+  # type: (compound_word) -> bool
   """Tests whether a word looks like FOO=bar.
 
   This is a quick test for the command parser to distinguish:
@@ -461,7 +460,7 @@ def IsVarLike(w):
 
 
 def DetectShAssignment(w):
-  # type: (word__Compound) -> Tuple[Optional[token], Optional[token], int]
+  # type: (compound_word) -> Tuple[Optional[token], Optional[token], int]
   """Detects whether a word looks like FOO=bar or FOO[x]=bar.
 
   Returns:
@@ -511,7 +510,7 @@ def DetectShAssignment(w):
 
 
 def DetectAssocPair(w):
-  # type: (word__Compound) -> Optional[Tuple[word__Compound, word__Compound]]
+  # type: (compound_word) -> Optional[Tuple[compound_word, compound_word]]
   """
   Like DetectShAssignment, but for A=(['k']=v ['k2']=v)
 
@@ -528,15 +527,15 @@ def DetectAssocPair(w):
     id_ = _LiteralId(parts[i])
     if id_ == Id.Lit_ArrayLhsClose: # ]=
       # e.g. if we have [$x$y]=$a$b
-      key = word.Compound(parts[1:i])  # $x$y 
-      value = word.Compound(parts[i+1:])  # $a$b from
+      key = compound_word(parts[1:i], None)  # $x$y 
+      value = compound_word(parts[i+1:], None)  # $a$b from
       return key, value
 
   return None
 
 
 def KeywordToken(w):
-  # type: (word__Compound) -> Tuple[Kind_t, Optional[token]]
+  # type: (compound_word) -> Tuple[Kind_t, Optional[token]]
   """Tests if a word is an assignment or control flow word.
 
   Returns:
@@ -568,7 +567,7 @@ def LiteralToken(UP_w):
   Otherwise return None.
   """
   assert UP_w.tag_() == word_e.Compound
-  w = cast(word__Compound, UP_w)
+  w = cast(compound_word, UP_w)
 
   if len(w.parts) != 1:
     return None
@@ -592,7 +591,7 @@ def ArithId(w):
     w = cast(word__Token, UP_w)
     return w.token.id
 
-  assert isinstance(w, word__Compound)
+  assert isinstance(w, compound_word)
   return Id.Word_Compound
 
 
@@ -609,7 +608,7 @@ def BoolId(w):
       return w.token.id
 
     elif case(word_e.Compound):
-      w = cast(word__Compound, UP_w)
+      w = cast(compound_word, UP_w)
 
       if len(w.parts) != 1:
         return Id.Word_Compound
@@ -642,7 +641,7 @@ def CommandId(w):
       return w.token.id
 
     elif case(word_e.Compound):
-      w = cast(word__Compound, UP_w)
+      w = cast(compound_word, UP_w)
 
       # Has to be a single literal part
       if len(w.parts) != 1:
@@ -716,10 +715,10 @@ def SpanIdFromError(error):
 if mylib.PYTHON:
   # Doesn't translate with mycpp because of dynamic %
   def ErrorWord(fmt, err):
-    # type: (str, _ErrorWithLocation) -> word__Compound
+    # type: (str, _ErrorWithLocation) -> compound_word
     error_str = fmt % err.UserErrorString()
     t = token(Id.Lit_Chars, error_str, runtime.NO_SPID)
-    return word.Compound([word_part.Literal(t)])
+    return compound_word([word_part.Literal(t)], None)
 
 
 def Pretty(w):
