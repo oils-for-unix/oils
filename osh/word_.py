@@ -14,7 +14,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part__ArithSub, word_part__ExtGlob,
     word_part__Splice, word_part__FuncCall, word_part__ExprSub,
 
-    word_e, word_t, word__Token, word__BracedTree, word__String,
+    word_e, word_t, token, word__BracedTree, word__String,
 
     sh_lhs_expr__Name,
 )
@@ -277,8 +277,8 @@ def LeftMostSpanForWord(w):
         return runtime.NO_SPID
 
     elif case(word_e.Token):
-      w = cast(word__Token, UP_w)
-      return w.token.span_id
+      tok = cast(token, UP_w)
+      return tok.span_id
 
     elif case(word_e.Empty):
       return runtime.NO_SPID
@@ -314,8 +314,8 @@ def RightMostSpanForWord(w):
       return runtime.NO_SPID
 
     elif case(word_e.Token):
-      w = cast(word__Token, UP_w)
-      return w.token.span_id
+      tok = cast(token, UP_w)
+      return tok.span_id
 
     else:
       raise AssertionError(w.tag_())
@@ -586,10 +586,9 @@ def LiteralToken(UP_w):
 
 def ArithId(w):
   # type: (word_t) -> Id_t
-  UP_w = w
   if w.tag_() == word_e.Token:
-    w = cast(word__Token, UP_w)
-    return w.token.id
+    tok = cast(token, w)
+    return tok.id
 
   assert isinstance(w, compound_word)
   return Id.Word_Compound
@@ -604,8 +603,8 @@ def BoolId(w):
       return w.id
 
     elif case(word_e.Token):
-      w = cast(word__Token, UP_w)
-      return w.token.id
+      tok = cast(token, UP_w)
+      return tok.id
 
     elif case(word_e.Compound):
       w = cast(compound_word, UP_w)
@@ -637,8 +636,8 @@ def CommandId(w):
   UP_w = w
   with tagswitch(w) as case:
     if case(word_e.Token):
-      w = cast(word__Token, UP_w)
-      return w.token.id
+      tok = cast(token, UP_w)
+      return tok.id
 
     elif case(word_e.Compound):
       w = cast(compound_word, UP_w)
@@ -668,10 +667,9 @@ def CommandId(w):
 def CommandKind(w):
   # type: (word_t) -> Kind_t
   """The CommandKind is for coarse-grained decisions in the CommandParser."""
-  UP_w = w
   if w.tag_() == word_e.Token:
-    w = cast(word__Token, UP_w)
-    return lookup.LookupKind(w.token.id)
+    tok = cast(token, w)
+    return lookup.LookupKind(tok.id)
 
   # NOTE: This is a bit inconsistent with CommandId, because we never
   # return Kind.KW (or Kind.Lit).  But the CommandParser is easier to write

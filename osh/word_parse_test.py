@@ -32,8 +32,7 @@ def _assertReadWordWithArena(test, w_parser):
   # Next word must be Eof_Real
   w2 = w_parser.ReadWord(lex_mode_e.ShCommand)
   test.assertTrue(
-      test_lib.TokenWordsEqual(
-          word.Token(token(Id.Eof_Real, '')), w2),
+      test_lib.TokensEqual(token(Id.Eof_Real, ''), w2),
       w2)
   return w
 
@@ -397,7 +396,7 @@ class WordParserTest(unittest.TestCase):
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     assert w
-    self.assertEqual(Id.Op_Newline, w.token.id)
+    self.assertEqual(Id.Op_Newline, w.id)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     assert w
@@ -405,11 +404,11 @@ class WordParserTest(unittest.TestCase):
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     assert w
-    self.assertEqual(Id.Op_Newline, w.token.id)
+    self.assertEqual(Id.Op_Newline, w.id)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     assert w
-    self.assertEqual(Id.Eof_Real, w.token.id)
+    self.assertEqual(Id.Eof_Real, w.id)
 
   def testReadRegex(self):
     # Test that we get Id.Op_Newline
@@ -428,7 +427,7 @@ class WordParserTest(unittest.TestCase):
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     assert w
-    self.assertEqual(Id.Eof_Real, w.token.id)
+    self.assertEqual(Id.Eof_Real, w.id)
 
   def testReadArithWord(self):
     w = _assertReadWord(self, '$(( (1+2) ))')
@@ -502,7 +501,7 @@ ls bar
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     t = token(Id.Op_Newline, '\n')
-    test_lib.AssertAsdlEqual(self, word.Token(t), w)
+    test_lib.AssertAsdlEqual(self, t, w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     parts = [word_part.Literal(token(Id.Lit_Chars, 'ls'))]
@@ -514,11 +513,11 @@ ls bar
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     t = token(Id.Op_Newline, '\n')
-    test_lib.AssertAsdlEqual(self, word.Token(t), w)
+    test_lib.AssertAsdlEqual(self, t, w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     t = token(Id.Eof_Real, '')
-    test_lib.AssertAsdlEqual(self, word.Token(t), w)
+    test_lib.AssertAsdlEqual(self, t, w)
 
   def testParseErrorLocation(self):
     w = _assertSpanForWord(self, 'a=(1 2 3)')

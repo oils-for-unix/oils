@@ -5,7 +5,7 @@ from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
     token, double_quoted, single_quoted, command_sub, sh_array_literal,
-    word__Token, compound_word, word_part_t,
+    compound_word, word_part_t, word_e
 )
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_str
 from _devbuild.gen.types_asdl import lex_mode_e
@@ -157,20 +157,22 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
         line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
         w_parser = parse_ctx.MakeWordParser(lex, line_reader)
         words = []
+        close_tok = None  # type: Optional[token]
         while True:
           w = w_parser.ReadWord(lex_mode_e.ShCommand)
           if 0:
             log('w = %s', w)
 
-          if isinstance(w, word__Token):
-            word_id = word_.CommandId(w)
-            if word_id == Id.Right_ShArrayLiteral:
+          if w.tag_() == word_e.Token:
+            tok = cast(token, w)
+            if tok.id == Id.Right_ShArrayLiteral:
+              close_tok = tok
               break
-            elif word_id == Id.Op_Newline:  # internal newlines allowed
+            elif tok.id == Id.Op_Newline:  # internal newlines allowed
               continue
             else:
               # Token
-              p_die('Unexpected token in array literal: %r', w.token.val, word=w)
+              p_die('Unexpected token in array literal: %r', tok.val, word=w)
 
           assert isinstance(w, compound_word)  # for MyPy
           words.append(w)
@@ -186,9 +188,8 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
         assert not done  # can't end the expression
 
         # Now push the closing )
-        tok = w.token
-        ilabel = _Classify(gr, tok)
-        done = p.addtoken(tok.id, tok, ilabel)
+        ilabel = _Classify(gr, close_tok)
+        done = p.addtoken(tok.id, close_tok, ilabel)
         assert not done  # can't end the expression
 
         continue

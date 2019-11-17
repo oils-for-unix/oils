@@ -190,7 +190,7 @@ module syntax
     -- for RHS of 'x=', 'declare x=', and the argument in "${x:-}"
     -- In contrast, a Compound word always has at least one part.
     Empty
-  | Token(token token)
+  | Token %token
     -- A Compound word can contain any word_part except the Braced*Part.
     -- We could model this with another variant type but it incurs runtime
     -- overhead and seems like overkill.  Note that DoubleQuoted can't

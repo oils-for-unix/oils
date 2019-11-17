@@ -23,7 +23,7 @@ from _devbuild.gen.syntax_asdl import (
 
     sh_lhs_expr, sh_lhs_expr_t,
     redir, redir_t, redir__HereDoc,
-    word, word_e, word_t, compound_word, word__Token,
+    word, word_e, word_t, compound_word, token,
     word_part, word_part_e, word_part_t, word_part__Literal,
 
     token, assign_pair, env_pair,
@@ -244,7 +244,7 @@ def _MakeAssignPair(parse_ctx,  # type: ParseContext
   if part_offset == n:
     val = word.Empty()  # type: word_t
   else:
-    val = compound_word(w.parts[part_offset:])
+    val = compound_word(w.parts[part_offset:], None)
     val = word_.TildeDetect(val) or val
 
   pair = syntax_asdl.assign_pair(lhs, op, val, [left_token.span_id])
@@ -272,7 +272,7 @@ def _AppendMoreEnv(preparsed_list, more_env):
     if part_offset == n:
       val = word.Empty()  # type: word_t
     else:
-      val = compound_word(w.parts[part_offset:])
+      val = compound_word(w.parts[part_offset:], None)
 
     pair = syntax_asdl.env_pair(var_name, val, [left_token.span_id])
     more_env.append(pair)
@@ -419,10 +419,9 @@ class CommandParser(object):
 
       # Here docs only happen in command mode, so other kinds of newlines don't
       # count.
-      UP_w = w
       if w.tag_() == word_e.Token:
-        w = cast(word__Token, UP_w)
-        if w.token.id == Id.Op_Newline:
+        tok = cast(token, w)
+        if tok.id == Id.Op_Newline:
           for h in self.pending_here_docs:
             _ParseHereDocBody(self.parse_ctx, h, self.line_reader, self.arena)
           del self.pending_here_docs[:]  # No .clear() until Python 3.3.
@@ -481,11 +480,10 @@ class CommandParser(object):
     """
     self._Peek()
     assert self.c_kind == Kind.Redir, self.cur_word
-    w = cast(word__Token, self.cur_word)  # for MyPy
+    op_tok = cast(token, self.cur_word)  # for MyPy
 
-    op = w.token
     # For now only supporting single digit descriptor
-    first_char = w.token.val[0]
+    first_char = op_tok.val[0]
     if first_char.isdigit():
       fd = int(first_char)
     else:
@@ -495,9 +493,9 @@ class CommandParser(object):
     self._Peek()
 
     # Here doc
-    if op.id in (Id.Redir_DLess, Id.Redir_DLessDash):
+    if op_tok.id in (Id.Redir_DLess, Id.Redir_DLessDash):
       h = redir.HereDoc()  # no stdin_parts yet
-      h.op = op
+      h.op = op_tok
       h.fd = fd
       h.here_begin = self.cur_word
       self.pending_here_docs.append(h)  # will be filled on next newline.
@@ -513,7 +511,7 @@ class CommandParser(object):
     arg_word = w2 or self.cur_word
     self._Next()
 
-    return redir.Redir(op, fd, arg_word)
+    return redir.Redir(op_tok, fd, arg_word)
 
   def _ParseRedirectList(self):
     # type: () -> List[redir_t]
@@ -934,8 +932,8 @@ class CommandParser(object):
     while True:
       self._Peek()
       if self.c_id == Id.Op_Semi:
-        w = cast(word__Token, self.cur_word)
-        semi_spid = w.token.span_id
+        tok = cast(token, self.cur_word)
+        semi_spid = tok.span_id
         self._Next()
         self._NewlineOk()
         break
@@ -1862,8 +1860,8 @@ class CommandParser(object):
 
       self._Peek()
       if self.c_id in (Id.Op_Semi, Id.Op_Amp):  # also Id.Op_Amp.
-        w = cast(word__Token, self.cur_word)  # for MyPy
-        child = command.Sentence(child, w.token)
+        tok = cast(token, self.cur_word)  # for MyPy
+        child = command.Sentence(child, tok)
         self._Next()
 
         self._Peek()
@@ -1932,8 +1930,8 @@ class CommandParser(object):
           done = True
 
       elif self.c_id in (Id.Op_Semi, Id.Op_Amp):
-        w = cast(word__Token, self.cur_word)  # for MyPy
-        child = command.Sentence(child, w.token)
+        tok = cast(token, self.cur_word)  # for MyPy
+        child = command.Sentence(child, tok)
         self._Next()
 
         self._Peek()

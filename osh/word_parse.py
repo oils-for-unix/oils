@@ -59,7 +59,7 @@ from _devbuild.gen.syntax_asdl import (
 
     suffix_op, suffix_op_t, suffix_op__Slice, suffix_op__PatSub,
 
-    word, word_e, word_t, compound_word, word__Token,
+    word, word_e, word_t, compound_word, token,
     word_part, word_part_e, word_part_t, word_part__Literal,
     word_part__ArithSub, word_part__ExtGlob, word_part__ExprSub,
 
@@ -834,7 +834,7 @@ class WordParser(object):
       last_token.id = Id.Lit_RBrace
 
     # Let the CommandParser see the Op_Semi or Op_Newline.
-    self.buffered_word = word.Token(last_token)
+    self.buffered_word = last_token
     self._Next(lex_mode_e.ShCommand)  # always back to this
     return enode
 
@@ -853,7 +853,7 @@ class WordParser(object):
       last_token.id = Id.Lit_RBrace
 
     # Let the CommandParser see the Op_Semi or Op_Newline.
-    self.buffered_word = word.Token(last_token)
+    self.buffered_word = last_token
     self._Next(lex_mode_e.ShCommand)  # always back to this
     return enode
 
@@ -868,7 +868,7 @@ class WordParser(object):
                                                     grammar_nt.command_expr)
     if last_token.id == Id.Op_RBrace:
       last_token.id = Id.Lit_RBrace
-    self.buffered_word = word.Token(last_token)
+    self.buffered_word = last_token
     self._Next(lex_mode_e.ShCommand)
     return enode
 
@@ -878,7 +878,7 @@ class WordParser(object):
                                                     grammar_nt.command_expr)
     if last_token.id == Id.Op_RBrace:
       last_token.id = Id.Lit_RBrace
-    self.buffered_word = word.Token(last_token)
+    self.buffered_word = last_token
     return enode
 
   def ParseProc(self, node):
@@ -895,7 +895,7 @@ class WordParser(object):
     last_token = self.parse_ctx.ParseProc(self.lexer, node)
     if last_token.id == Id.Op_LBrace:  # Translate to what CommandParser wants
       last_token.id = Id.Lit_LBrace
-    self.buffered_word = word.Token(last_token)
+    self.buffered_word = last_token
     self._Next(lex_mode_e.ShCommand)  # required
 
   def ParseFunc(self, node):
@@ -903,7 +903,7 @@ class WordParser(object):
     last_token = self.parse_ctx.ParseFunc(self.lexer, node)
     if last_token.id == Id.Op_LBrace:  # Translate to what CommandParser wants
       last_token.id = Id.Lit_LBrace
-    self.buffered_word = word.Token(last_token)
+    self.buffered_word = last_token
 
   def _ReadArithExpr(self):
     # type: () -> arith_expr_t
@@ -1082,19 +1082,16 @@ class WordParser(object):
     words = []  # type: List[compound_word]
     while True:
       w = w_parser.ReadWord(lex_mode_e.ShCommand)
-
-      UP_w = w
       if w.tag_() == word_e.Token:
-        w = cast(word__Token, UP_w)
-        word_id = word_.CommandId(w)
-        if word_id == Id.Right_ShArrayLiteral:
+        tok = cast(token, w)
+        if tok.id == Id.Right_ShArrayLiteral:
           break
         # Unlike command parsing, array parsing allows embedded \n.
-        elif word_id == Id.Op_Newline:
+        elif tok.id == Id.Op_Newline:
           continue
         else:
           # Token
-          p_die('Unexpected token in array literal: %r', w.token.val, word=w)
+          p_die('Unexpected token in array literal: %r', tok.val, word=w)
 
       assert isinstance(w, compound_word)  # for MyPy
       words.append(w)
@@ -1319,7 +1316,7 @@ class WordParser(object):
 
     elif self.token_kind == Kind.Eof:
       # Just return EOF token
-      w = word.Token(self.cur_token)  # type: word_t
+      w = self.cur_token  # type: word_t
       return w, False
 
     elif self.token_kind == Kind.Ignored:
@@ -1332,7 +1329,7 @@ class WordParser(object):
     elif self.token_kind in (Kind.Arith, Kind.Right):
       # Id.Right_DollarDParen IS just a normal token, handled by ArithParser
       self._Next(lex_mode_e.Arith)
-      w = word.Token(self.cur_token)
+      w = self.cur_token
       return w, False
 
     elif self.token_kind in (Kind.Lit, Kind.Left, Kind.VSub):
@@ -1357,7 +1354,7 @@ class WordParser(object):
 
     if self.token_kind == Kind.Eof:
       # No advance
-      return word.Token(self.cur_token), False
+      return self.cur_token, False
 
     # Allow Arith for ) at end of for loop?
     elif self.token_kind in (Kind.Op, Kind.Redir, Kind.Arith):
@@ -1366,7 +1363,7 @@ class WordParser(object):
         if self.cursor_was_newline:
           return no_word, True
 
-      return word.Token(self.cur_token), False
+      return self.cur_token, False
 
     elif self.token_kind == Kind.Right:
       if self.token_type not in (
@@ -1375,7 +1372,7 @@ class WordParser(object):
         raise AssertionError(self.cur_token)
 
       self._Next(lex_mode)
-      return word.Token(self.cur_token), False
+      return self.cur_token, False
 
     elif self.token_kind in (Kind.Ignored, Kind.WS):
       self._Next(lex_mode)
