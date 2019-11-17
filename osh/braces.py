@@ -222,7 +222,7 @@ def _BraceDetect(w):
         # Save prefix parts.  Start new parts list.
         new_frame = _StackFrame(cur_parts)
         stack.append(new_frame)
-        cur_parts = []
+        cur_parts = []  # clear
         append = False
         found = True  # assume found, but can early exit with None later
 
@@ -328,7 +328,7 @@ def _RangeStrings(part):
   # type: (word_part__BracedRange) -> List[str]
 
   if part.kind == Id.Range_Int:
-    nums = []
+    nums = []  # type: List[str]
 
     z1 = _LeadingZeros(part.start)
     z2 = _LeadingZeros(part.end)
@@ -360,7 +360,7 @@ def _RangeStrings(part):
     return nums
 
   else:  # Id.Range_Char
-    chars = []
+    chars = []  # type: List[str]
 
     n = ord(part.start)
     ord_end = ord(part.end)
@@ -393,7 +393,7 @@ def _ExpandPart(parts,  # type: List[word_part_t]
     first_alt_index: index of the first BracedTuple
     suffixes: List of suffixes to append.
   """
-  out = []
+  out = []  # type: List[List[word_part_t]]
 
   prefix = parts[ : first_alt_index]
   expand_part = parts[first_alt_index]

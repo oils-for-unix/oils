@@ -237,7 +237,7 @@ def _MakeAssignPair(parse_ctx,  # type: ParseContext
     lhs.spids.append(left_token.span_id)
 
   else:
-    raise AssertionError
+    raise AssertionError()
 
   # TODO: Should we also create a rhs_expr.ArrayLiteral here?
   n = len(w.parts)
@@ -813,8 +813,9 @@ class CommandParser(object):
     if not words:  # e.g.  >out.txt  # redirect without words
       if block:
         p_die("Unexpected block", span_id=block_spid)
-      node = command.Simple(None, redirects, None)  # type: command_t
-      return node
+      simple = command.Simple()  # no words, more_env, or block,
+      simple.redirects = redirects
+      return simple
 
     preparsed_list, suffix_words = _SplitSimpleCommandPrefix(words)
     if self.parse_opts.equals and preparsed_list:
@@ -835,10 +836,10 @@ class CommandParser(object):
       for preparsed in preparsed_list:
         pairs.append(_MakeAssignPair(self.parse_ctx, preparsed, self.arena))
 
-      node = command.ShAssignment(pairs, redirects)
+      assign = command.ShAssignment(pairs, redirects)
       left_spid = word_.LeftMostSpanForWord(words[0])
-      node.spids.append(left_spid)  # no keyword spid to skip past
-      return node
+      assign.spids.append(left_spid)  # no keyword spid to skip past
+      return assign
 
     kind, kw_token = word_.KeywordToken(suffix_words[0])
 
@@ -871,8 +872,8 @@ class CommandParser(object):
         # Attach env bindings and redirects to the expanded node.
         more_env = []  # type: List[env_pair]
         _AppendMoreEnv(preparsed_list, more_env)
-        node = command.ExpandedAlias(expanded_node, redirects, more_env)
-        return node
+        exp = command.ExpandedAlias(expanded_node, redirects, more_env)
+        return exp
 
     # TODO check that we don't have env1=x x[1]=y env2=z here.
 
@@ -1564,7 +1565,7 @@ class CommandParser(object):
     """
     TODO: command__Coproc?
     """
-    raise NotImplementedError
+    raise NotImplementedError()
 
   def ParseSubshell(self):
     # type: () -> command__Subshell
