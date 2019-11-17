@@ -1655,8 +1655,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             if last_dotted.endswith('_asdl'):
               if name.endswith('_n') or name in (
-                'hnode_e', 'source_e', 'assign_op_e', 'place_e',
-                'Id',
+                'Id', 'hnode_e', 'source_e', 'place_e',
 
                 # syntax_asdl
                 're', 're_repeat', 'class_literal_term', 'proc_sig',

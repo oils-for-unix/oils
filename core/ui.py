@@ -18,7 +18,7 @@ from _devbuild.gen.syntax_asdl import (
     source__Alias, source__Backticks, source__LValue
 
 )
-from _devbuild.gen.runtime_asdl import value_t, value, value__Str
+from _devbuild.gen.runtime_asdl import value_t, value__Str
 from asdl import runtime
 from asdl import format as fmt
 from osh import word_

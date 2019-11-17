@@ -1306,7 +1306,7 @@ class WordParser(object):
     return w
 
   def _ReadArithWord(self):
-    # type: () -> Tuple[word_t, bool]
+    # type: () -> Tuple[Optional[word_t], bool]
     """Helper function for ReadWord."""
     self._Peek()
 
@@ -1322,7 +1322,8 @@ class WordParser(object):
       # Space should be ignored.  TODO: change this to SPACE_SPACE and
       # SPACE_NEWLINE?  or SPACE_TOK.
       self._Next(lex_mode_e.Arith)
-      return None, True  # Tell wrapper to try again
+      no_word = None  # type: Optional[word_t]
+      return no_word, True  # Tell wrapper to try again
 
     elif self.token_kind in (Kind.Arith, Kind.Right):
       # Id.Right_DollarDParen IS just a normal token, handled by ArithParser

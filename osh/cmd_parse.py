@@ -274,9 +274,7 @@ def _AppendMoreEnv(preparsed_list, more_env):
     else:
       val = word.Compound(w.parts[part_offset:])
 
-    pair = syntax_asdl.env_pair(var_name, val)
-    pair.spids.append(left_token.span_id)  # Do we need this?
-
+    pair = syntax_asdl.env_pair(var_name, val, [left_token.span_id])
     more_env.append(pair)
 
 
@@ -1465,11 +1463,10 @@ class CommandParser(object):
     """
     left_spid = word_.LeftMostSpanForWord(self.cur_word)
 
-    # for MyPy, caller ensures
-    assert isinstance(self.cur_word, word__Compound)
-    name = word_.ShFunctionName(self.cur_word)
+    cur_word = cast(word__Compound, self.cur_word)  # caller ensures validity
+    name = word_.ShFunctionName(cur_word)
     if not name:
-      p_die('Invalid function name', word=self.cur_word)
+      p_die('Invalid function name', word=cur_word)
 
     self._Next()  # skip function name
 
@@ -1503,13 +1500,12 @@ class CommandParser(object):
     left_spid = word_.LeftMostSpanForWord(self.cur_word)
 
     self._Next()  # skip past 'function'
-
-    # for MyPy, caller ensures
-    assert isinstance(self.cur_word, word__Compound)
     self._Peek()
-    name = word_.ShFunctionName(self.cur_word)
+
+    cur_word = cast(word__Compound, self.cur_word)  # caller ensures validity
+    name = word_.ShFunctionName(cur_word)
     if not name:
-      p_die('Invalid KSH-style function name', word=self.cur_word)
+      p_die('Invalid KSH-style function name', word=cur_word)
 
     after_name_spid = word_.LeftMostSpanForWord(self.cur_word) + 1
     self._Next()  # skip past 'function name
@@ -1684,18 +1680,20 @@ class CommandParser(object):
       return self.ParseSimpleCommand()
 
     if self.c_kind == Kind.Word:
+      cur_word = cast(word__Compound, self.cur_word)  # ensured by Kind.Word
+
       # NOTE: At the top level, only Token and Compound are possible.
       # Can this be modelled better in the type system, removing asserts?
-      assert isinstance(self.cur_word, word__Compound)
       if (self.w_parser.LookAhead() == Id.Op_LParen and
-          not word_.IsVarLike(self.cur_word)):
+          not word_.IsVarLike(cur_word)):
           return self.ParseFunctionDef()  # f() { echo; }  # function
 
       # Parse x = 1+2*3 when parse_equals is set.
-      parts = self.cur_word.parts
+      parts = cur_word.parts
       if self.parse_opts.equals and len(parts) == 1:
-        part0 = parts[0]
-        if isinstance(part0, word_part__Literal):
+        UP_part0 = parts[0]
+        if UP_part0.tag_() == word_part_e.Literal:
+          part0 = cast(word_part__Literal, UP_part0)
           tok = part0.token
           # NOTE: tok.id should be Lit_Chars, but that check is redundant
           if (match.IsValidVarName(tok.val) and
