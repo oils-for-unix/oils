@@ -487,7 +487,7 @@ def AddKinds(spec):
       'Subst', 'Octal3', 'LBrace', 'RBrace', 'Literals', 'BadBackslash',
   ])
 
-  spec.AddKind('Range', ['Int', 'Char', 'Dots', 'Other', 'Eof'])
+  spec.AddKind('Range', ['Int', 'Char', 'Dots', 'Other'])
 
 
 # Shared between [[ and test/[.

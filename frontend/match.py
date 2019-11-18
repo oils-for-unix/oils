@@ -178,3 +178,26 @@ GLOB_LEXER = SimpleLexer(GLOB_MATCHER)
 PS1_LEXER = SimpleLexer(PS1_MATCHER)
 HISTORY_LEXER = SimpleLexer(HISTORY_MATCHER)
 BRACE_RANGE_LEXER = SimpleLexer(BRACE_RANGE_MATCHER)
+
+
+class _SimpleLexer(object):
+  def __init__(self, match_func, s):
+    # type: (SimpleMatchFunc, str) -> None
+    self.match_func = match_func
+    self.s = s
+    self.pos = 0
+
+  def Next(self):
+    # type: () -> Tuple[Id_t, str]
+    """
+    Note: match_func will return Id.Eol_Tok repeatedly the terminating NUL
+    """
+    tok_id, end_pos = self.match_func(self.s, self.pos)
+    val = self.s[self.pos:end_pos]
+    self.pos = end_pos
+    return tok_id, val
+
+
+def BraceRangeLexer(s):
+  # type: (str) -> _SimpleLexer
+  return _SimpleLexer(BRACE_RANGE_MATCHER, s)

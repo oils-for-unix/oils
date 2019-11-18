@@ -6,6 +6,8 @@ from __future__ import print_function
 
 import unittest
 
+from _devbuild.gen.id_kind_asdl import Id, Id_str
+from core.util import log
 from frontend  import match  # module under test
 
 
@@ -36,6 +38,14 @@ class MatchTest(unittest.TestCase):
     # Unlikely but OK
     self.assertEqual(
         True, match.ShouldHijack('#!/usr/bin/env sh\n'))
+
+  def testBraceRangeLexer(self):
+    lex = match.BraceRangeLexer('1..3')
+    while True:
+      id_, val = lex.Next()
+      log('%s %r', Id_str(id_), val)
+      if id_ == Id.Eol_Tok:
+        break
 
 
 if __name__ == '__main__':

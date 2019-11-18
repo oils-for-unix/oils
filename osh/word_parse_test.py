@@ -12,15 +12,14 @@ word_parse_test.py: Tests for word_parse.py
 import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import arith_expr_e, word_part, token
-from _devbuild.gen.syntax_asdl import compound_word
+from _devbuild.gen.syntax_asdl import (
+    arith_expr_e, word_part, token, compound_word
+)
 from _devbuild.gen.types_asdl import lex_mode_e
 
 from asdl import runtime
-
 from core import test_lib
 from core import util
-
 from osh import word_
 
 

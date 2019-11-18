@@ -23,10 +23,13 @@ from _devbuild.gen.syntax_asdl import (
     word_part__BracedTuple, word_part__BracedRange, word_part__Literal,
 )
 from core.util import log, p_die
-from frontend.match import BRACE_RANGE_LEXER
+from frontend import match
 from mycpp.mylib import tagswitch
 
-from typing import List, Optional, Iterator, Tuple, cast
+from typing import List, Optional, cast, TYPE_CHECKING
+if TYPE_CHECKING:
+  from frontend.match import _SimpleLexer
+
 
 _ = log
 
@@ -53,7 +56,7 @@ class _RangeParser(object):
     range = (int_range | char_range) Eof  # ensure no extra tokens!
   """
   def __init__(self, lexer, span_id):
-    # type: (Iterator[Tuple[Id_t, str]], int) -> None
+    # type: (_SimpleLexer, int) -> None
     self.lexer = lexer
     self.span_id = span_id
 
@@ -63,11 +66,7 @@ class _RangeParser(object):
   def _Next(self):
     # type: () -> None
     """Move to the next token."""
-    try:
-      self.token_type, self.token_val = self.lexer.next()
-    except StopIteration:
-      self.token_type = Id.Range_Eof
-      self.token_val = ''
+    self.token_type, self.token_val = self.lexer.Next()
 
   def _Eat(self, token_type):
     # type: (Id_t) -> str
@@ -156,14 +155,14 @@ class _RangeParser(object):
       raise _NotARange('')
 
     # prevent unexpected trailing tokens
-    self._Eat(Id.Range_Eof)
+    self._Eat(Id.Eol_Tok)
     return part
 
 
 def _RangePartDetect(tok):
   # type: (token) -> Optional[word_part_t]
   """Parse the token and return a new word_part if it looks like a range."""
-  lexer = BRACE_RANGE_LEXER.Tokens(tok.val)
+  lexer = match.BraceRangeLexer(tok.val)
   p = _RangeParser(lexer, tok.span_id)
   try:
     part = p.Parse()
