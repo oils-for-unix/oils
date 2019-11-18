@@ -27,6 +27,23 @@ class UnsupportedException(Exception):
     pass
 
 
+def _GetCTypeForCast(type_expr):
+  if isinstance(type_expr, MemberExpr):
+    subtype_name = '%s::%s' % (type_expr.expr.name, type_expr.name)
+  elif isinstance(type_expr, IndexExpr):
+    # List[word_t] would be a problem.
+    # But worked around it in osh/word_parse.py
+    #subtype_name = 'List<word_t>'
+    raise AssertionError
+  else:
+    subtype_name = type_expr.name
+
+  # Hack for now
+  if subtype_name != 'int':
+    subtype_name += '*'
+  return subtype_name
+
+
 def _GetCastKind(module_path, subtype_name):
   cast_kind = 'static_cast'
   # Hack for the CastDummy in expr_to_ast.py
@@ -431,15 +448,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if o.callee.name == 'cast':
           call = o
           type_expr = call.args[0]
-          if isinstance(type_expr, MemberExpr):
-            subtype_name = '%s::%s' % (type_expr.expr.name, type_expr.name)
-          else:
-            subtype_name = type_expr.name
 
-          # Hack for now
-          if subtype_name != 'int':
-            subtype_name += '*'
-
+          subtype_name = _GetCTypeForCast(type_expr)
           cast_kind = _GetCastKind(self.module_path, subtype_name)
           self.write('%s<%s>(', cast_kind, subtype_name)
           self.accept(call.args[1])  # variable being casted
@@ -990,15 +1000,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           assert isinstance(lval, NameExpr)
           call = o.rvalue
           type_expr = call.args[0]
-          if isinstance(type_expr, MemberExpr):
-            subtype_name = '%s::%s' % (type_expr.expr.name, type_expr.name)
-          else:
-            subtype_name = type_expr.name
-
-          # Hack for now
-          if subtype_name != 'int':
-            subtype_name += '*'
-
+          subtype_name = _GetCTypeForCast(type_expr)
           cast_kind = _GetCastKind(self.module_path, subtype_name)
           self.write_ind(
               '%s %s = %s<%s>(', subtype_name, lval.name, cast_kind,

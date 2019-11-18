@@ -92,6 +92,13 @@ echo ${A['foo']}
 bar
 ## END
 
+#### Empty value (doesn't use EmptyWord?)
+declare -A A=(["k"]= )
+argv.py "${A["k"]}"
+## STDOUT:
+['']
+## END
+
 #### retrieve keys with !
 declare -A a
 var='x'
@@ -411,3 +418,36 @@ echo status=$?
 ## STDOUT:
 status=1
 ## END
+
+#### associative array and brace expansion
+declare -A A=([k1]=v [k2]=-{a,b}-)
+echo ${A["k1"]}
+echo ${A["k2"]}
+## STDOUT:
+v
+-{a,b}-
+## END
+
+#### bash mangles array #1
+a=([k1]=v1 [k2]=v2)
+echo ${a["k1"]}
+echo ${a["k2"]}
+## STDOUT:
+v1
+v2
+## END
+## BUG bash STDOUT:
+v2
+v2
+## END
+
+#### bash mangles array and brace #2
+a=([k2]=-{a,b}-)
+echo ${a["k2"]}
+## STDOUT:
+-{a,b}-
+## END
+## BUG bash STDOUT:
+[k2]=-a-
+## END
+

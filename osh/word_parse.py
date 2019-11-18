@@ -1101,8 +1101,9 @@ class WordParser(object):
       words.append(cast(compound_word, w))
 
     if not words:  # a=() is empty indexed array
-      # ignore for invariant List?
-      node = sh_array_literal(left_token, words)  # type: ignore
+      # Needed for type safety, doh
+      no_words = []  # type: List[word_t]
+      node = sh_array_literal(left_token, no_words)
       node.spids.append(left_token.span_id)
       return node
  
@@ -1114,20 +1115,21 @@ class WordParser(object):
 
       n = len(words)
       for i in xrange(1, n):
-        w = words[i]
-        pair = word_.DetectAssocPair(w)
+        w2 = words[i]
+        pair = word_.DetectAssocPair(w2)
         if not pair:
-          p_die("Expected associative array pair", word=w)
+          p_die("Expected associative array pair", word=w2)
 
         k, v = pair
         pairs.append(k)  # flat representation
         pairs.append(v)
 
       # invariant List?
-      node = word_part.AssocArrayLiteral(left_token, pairs)  # type: ignore
-      node.spids.append(paren_spid)
-      return node
+      node2 = word_part.AssocArrayLiteral(left_token, pairs)
+      node2.spids.append(paren_spid)
+      return node2
 
+    # Brace detection for arrays but NOT associative arrays
     words2 = braces.BraceDetectAll(words)
     words3 = word_.TildeDetectAll(words2)
     node = sh_array_literal(left_token, words3)

@@ -157,7 +157,8 @@ module syntax
   word_part = 
     ShArrayLiteral %sh_array_literal
     -- alternating key and value (saving some space)
-  | AssocArrayLiteral(token left, word* pairs)
+    -- we don't use word.Empty here either (is this inconsistent?)
+  | AssocArrayLiteral(token left, compound_word* pairs)
   | Literal(token token)
     -- escaped case is separate so the evaluator doesn't have to check token ID
   | EscapedLiteral(token token)
@@ -189,7 +190,7 @@ module syntax
   compound_word = (word_part* parts, int* spids)
   word = 
     -- for RHS of 'x=', 'declare x=', and the argument in "${x:-}"
-    -- In contrast, a Compound word always has at least one part.
+    -- Note: compound_word can have zero parts in assoc array literal A=([k]=)
     Empty
   | Token %token
     -- A Compound word can contain any word_part except the Braced*Part.
