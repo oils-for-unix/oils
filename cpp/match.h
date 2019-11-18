@@ -15,20 +15,21 @@ namespace match {
 
 using types_asdl::lex_mode_t;
 
+// The big lexer
 Tuple2<Id_t, int>* OneToken(lex_mode_t lex_mode, Str* line, int start_pos);
 
-// TODO:
-typedef int MatchFunc;
-
-// We have five functions of this kind:
-//
-// static inline void MatchEchoToken(const unsigned char* line, int line_len,
-//                                   int start_pos, int* id, int* end_pos) {
+// There are 5 secondary lexers with matchers of this type
+typedef void (*MatchFunc)(const unsigned char* line, int line_len,
+                          int start_pos, int* id, int* end_pos);
 
 class SimpleLexer {
  public:
-  SimpleLexer(MatchFunc match_func, Str* s);
-  // TODO: Implement and be careful about ownership
+  SimpleLexer(MatchFunc match_func, Str* s)
+      : match_func_(match_func),
+        s_(s),
+        pos_(0) {
+  }
+  // TODO: Implement and be careful about ownership of the buffer
   Tuple2<Id_t, Str*>* Next();
 
  private:
@@ -37,8 +38,9 @@ class SimpleLexer {
   int pos_;
 };
 
+// "Construct" secondary lexers
 SimpleLexer* BraceRangeLexer(Str* s);
 
-}
+}  // namespace match
 
 #endif  // MATCH_H

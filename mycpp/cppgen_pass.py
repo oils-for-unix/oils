@@ -512,6 +512,50 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         #self.log('  arg_kinds %s', o.arg_kinds)
         #self.log('  arg_names %s', o.arg_names)
 
+    def _WriteFmtFunc(self, temp_name, fmt_parts, right_type, right_ctype):
+      """Append a fmtX() function to a buffer."""
+      self.fmt_funcs.write('Str* %s(' % temp_name)
+
+      #log('right_type %s', right_type)
+      if isinstance(right_type, Instance):
+        self.fmt_funcs.write('%s a0' % right_ctype)
+      elif isinstance(right_type, TupleType):
+        # TODO:
+        # pick this out for p_die() CallExpr.args
+
+        for i, typ in enumerate(right_type.items):
+          if i != 0:
+            self.fmt_funcs.write(', ');
+          self.fmt_funcs.write('%s a%d' % (get_c_type(typ), i))
+
+      # Handle Optional[str]
+      elif (isinstance(right_type, UnionType) and
+            len(right_type.items) == 2 and
+            isinstance(right_type.items[1], NoneTyp)):
+        self.fmt_funcs.write('%s a0' % get_c_type(right_type.items[0]))
+      else:
+        raise AssertionError(right_type)
+
+      self.fmt_funcs.write(') {\n')
+      self.fmt_funcs.write('  gBuf.reset();\n')
+
+      for part in fmt_parts:
+        if isinstance(part, format_strings.LiteralPart):
+          # JSON does a decent job of escaping for now.
+          escaped = json.dumps(part.s)
+          self.fmt_funcs.write(
+              '  gBuf.write_const(%s, %d);\n' % (escaped, part.strlen))
+        elif isinstance(part, format_strings.SubstPart):
+          self.fmt_funcs.write(
+              '  gBuf.format_%s(a%d);\n' %
+              (part.char_code, part.arg_num))
+        else:
+          raise AssertionError(part)
+
+      self.fmt_funcs.write('  return gBuf.getvalue();\n')
+      self.fmt_funcs.write('}\n')
+      self.fmt_funcs.write('\n')
+
     def visit_op_expr(self, o: 'mypy.nodes.OpExpr') -> T:
         c_op = o.op
 
@@ -557,53 +601,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           if not isinstance(o.left, StrExpr):
             raise AssertionError('Expected constant format string, got %s' % o.left)
           fmt = o.left.value
-
-          parts = format_strings.Parse(fmt)
+          fmt_parts = format_strings.Parse(fmt)
 
           temp_name = 'fmt%d' % self.unique_id
           self.unique_id += 1
 
           # Write a buffer with fmtX() functions.
-
           if self.decl:
-            self.fmt_funcs.write('Str* %s(' % temp_name)
-
-            #log('right_type %s', right_type)
-            if isinstance(right_type, Instance):
-              self.fmt_funcs.write('%s a0' % right_ctype)
-            elif isinstance(right_type, TupleType):
-              for i, typ in enumerate(right_type.items):
-                if i != 0:
-                  self.fmt_funcs.write(', ');
-                self.fmt_funcs.write('%s a%d' % (get_c_type(typ), i))
-
-            # Handle Optional[str]
-            elif (isinstance(right_type, UnionType) and
-                  len(right_type.items) == 2 and
-                  isinstance(right_type.items[1], NoneTyp)):
-              self.fmt_funcs.write('%s a0' % get_c_type(right_type.items[0]))
-            else:
-              raise AssertionError(right_type)
-
-            self.fmt_funcs.write(') {\n')
-            self.fmt_funcs.write('  gBuf.reset();\n')
-
-            for part in parts:
-              if isinstance(part, format_strings.LiteralPart):
-                # JSON does a decent job of escaping for now.
-                escaped = json.dumps(part.s)
-                self.fmt_funcs.write(
-                    '  gBuf.write_const(%s, %d);\n' % (escaped, part.strlen))
-              elif isinstance(part, format_strings.SubstPart):
-                self.fmt_funcs.write(
-                    '  gBuf.format_%s(a%d);\n' %
-                    (part.char_code, part.arg_num))
-              else:
-                raise AssertionError(part)
-
-            self.fmt_funcs.write('  return gBuf.getvalue();\n')
-            self.fmt_funcs.write('}\n')
-            self.fmt_funcs.write('\n')
+            self._WriteFmtFunc(temp_name, fmt_parts, right_type, right_ctype)
 
           # In the definition pass, write the call site.
           self.write('%s(' % temp_name)
@@ -612,7 +617,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               if i != 0:
                 self.write(', ')
               self.accept(item)
-          else:
+          else:  # '[%s]' % x
             self.accept(o.right)
 
           self.write(')')
