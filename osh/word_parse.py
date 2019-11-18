@@ -136,21 +136,22 @@ class WordParser(object):
     """
     self.next_lex_mode = lex_mode
 
-  def _ReadVarOpArg(self, arg_lex_mode, eof_type=Id.Undefined_Tok,
-                    empty_ok=True):
+  def _ReadVarOpArg(self, arg_lex_mode):
+    # type: (lex_mode_t) -> word_t
+    return self._ReadVarOpArg3(arg_lex_mode, Id.Undefined_Tok, True)
+
+  def _ReadVarOpArg3(self, arg_lex_mode, eof_type, empty_ok):
     # type: (lex_mode_t, Id_t, bool) -> word_t
     """
     Args:
       empty_ok: Whether Empty can be returned
     """
-
     # NOTE: Operators like | and < are not treated as special, so ${a:- | >} is
     # valid, even when unquoted.
     self._Next(arg_lex_mode)
     self._Peek()
 
-    w = self._ReadCompoundWord(lex_mode=arg_lex_mode, eof_type=eof_type,
-                               empty_ok=empty_ok)
+    w = self._ReadCompoundWord3(arg_lex_mode, eof_type, empty_ok)
 
     # If the Compound has no parts, and we're in a double-quoted VarSub
     # arg, and empty_ok, then return Empty.  This is so it can evaluate to
@@ -200,7 +201,8 @@ class WordParser(object):
     VarSub    = ...
               | VarOf '/' Match '/' WORD
     """
-    UP_pat = self._ReadVarOpArg(lex_mode, eof_type=Id.Lit_Slash, empty_ok=False)
+    # stop at eof_type=Lit_Slash, empty_ok=False
+    UP_pat = self._ReadVarOpArg3(lex_mode, Id.Lit_Slash, False)
     assert UP_pat.tag_() == word_e.Compound, UP_pat  # Because empty_ok=False
     pat = cast(compound_word, UP_pat)
 
@@ -341,19 +343,18 @@ class WordParser(object):
     elif op_kind == Kind.VOp2:
       if self.token_type == Id.VOp2_Slash:
         op_spid = self.cur_token.span_id  # for attributing error to /
+        patsub_op = self._ReadPatSubVarOp(arg_lex_mode)
+        patsub_op.spids.append(op_spid)
 
-        # TODO: op_temp is only necessary for MyPy.  It can be removed when
-        # 'spids' are put on the base class suffix_op_t.
-        op_temp = self._ReadPatSubVarOp(arg_lex_mode)
-        op_temp.spids.append(op_spid)
-
-        op = cast(suffix_op_t, op_temp)  # for MyPy
+        # awkwardness for mycpp; could fix
+        temp = cast(suffix_op_t, patsub_op)
+        part.suffix_op = temp
 
         # Checked by the method above
         assert self.token_type == Id.Right_DollarBrace, self.cur_token
 
       elif self.token_type == Id.VOp2_Colon:
-        op = self._ReadSliceVarOp()
+        part.suffix_op = self._ReadSliceVarOp()
         # NOTE: } in arithmetic mode.
         if self.token_type != Id.Arith_RBrace:
           # Token seems off; doesn't point to X in # ${a:1:2 X
@@ -362,8 +363,6 @@ class WordParser(object):
 
       else:
         p_die('Unexpected token %r', self.cur_token.val, token=self.cur_token)
-
-      part.suffix_op = op
 
     # NOTE: Arith_RBrace is for slicing, because it reads } in arithmetic
     # mode.  It's redundantly checked above.
@@ -630,7 +629,7 @@ class WordParser(object):
 
       # lex mode EXTGLOB should only produce these 4 kinds of tokens
       elif self.token_kind in (Kind.Lit, Kind.Left, Kind.VSub, Kind.ExtGlob):
-        w = self._ReadCompoundWord(lex_mode=lex_mode_e.ExtGlob)
+        w = self._ReadCompoundWord(lex_mode_e.ExtGlob)
         arms.append(w)
         read_word = True
 
@@ -1147,9 +1146,12 @@ class WordParser(object):
     # Call into expression language.
     self.parse_ctx.ParseOilArgList(self.lexer, arglist)
 
-  def _ReadCompoundWord(self, eof_type=Id.Undefined_Tok,
-                        lex_mode=lex_mode_e.ShCommand, empty_ok=True):
-    # type: (Id_t, lex_mode_t, bool) -> compound_word
+  def _ReadCompoundWord(self, lex_mode):
+    # type: (lex_mode_t) -> compound_word
+    return self._ReadCompoundWord3(lex_mode, Id.Undefined_Tok, True)
+
+  def _ReadCompoundWord3(self, lex_mode, eof_type, empty_ok):
+    # type: (lex_mode_t, Id_t, bool) -> compound_word
     """
     Precondition: Looking at the first token of the first word part
     Postcondition: Looking at the token after, e.g. space or operator
@@ -1339,7 +1341,7 @@ class WordParser(object):
       return cast(word_t, self.cur_token), False
 
     elif self.token_kind in (Kind.Lit, Kind.Left, Kind.VSub):
-      w = self._ReadCompoundWord(lex_mode=lex_mode_e.Arith)
+      w = self._ReadCompoundWord(lex_mode_e.Arith)
       return cast(word_t, w), False
 
     else:
@@ -1403,7 +1405,7 @@ class WordParser(object):
         return no_word, True  # tell Read() to try again after comment
 
       else:
-        w = self._ReadCompoundWord(lex_mode=lex_mode)
+        w = self._ReadCompoundWord(lex_mode)
         return cast(word_t, w), False
 
     else:

@@ -157,7 +157,7 @@ module syntax
   word_part = 
     ShArrayLiteral %sh_array_literal
     -- alternating key and value (saving some space)
-    -- we don't use word.Empty here either (is this inconsistent?)
+    -- Note that word.Empty isn't needed here
   | AssocArrayLiteral(token left, compound_word* pairs)
   | Literal(token token)
     -- escaped case is separate so the evaluator doesn't have to check token ID
@@ -189,8 +189,10 @@ module syntax
 
   compound_word = (word_part* parts, int* spids)
   word = 
-    -- for RHS of 'x=', 'declare x=', and the argument in "${x:-}"
-    -- Note: compound_word can have zero parts in assoc array literal A=([k]=)
+    -- Empty is for the RHS of 'x=', 'declare x=', and the argument in "${x:-}".
+    -- Semantically, we need it for "${x:-}" (see osh/word_parse.py).  Other 
+    -- usages may be cosmetic, because e.g. compound_word will have zero parts
+    -- in the assoc array literal A=([k]=)
     Empty
   | Token %token
     -- A Compound word can contain any word_part except the Braced*Part.
