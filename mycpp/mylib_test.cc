@@ -131,7 +131,7 @@ void test_contains() {
   log("b = %d", b);
 
   log("  floats");
-  auto floats = new List<float>({0.5, 0.25, 0.0});
+  auto floats = new List<double>({0.5, 0.25, 0.0});
   b = list_contains(floats, 0.0);
   log("b = %d", b);
   b = list_contains(floats, 42.0);

@@ -445,6 +445,60 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.write(')')
           return
 
+        # Translate printf-style vargs for some functions, e.g.
+        #
+        # p_die('foo %s', x, token=t)
+        #   =>
+        # p_die(fmt1(x), t)
+        #
+        # And then we need 3 or 4 version of p_die()?  For the rest of the
+        # tokens.
+
+        # Others:
+        # - errfmt.Print
+        # - debug_f.log()?
+        # Maybe I should rename them all printf()
+        # or fprintf()?  Except p_die() has extra args
+
+        temp_name = 'fmt%d' % self.unique_id
+        self.unique_id += 1
+
+        if o.callee.name == 'log':
+          args = o.args
+          rest = args[1:]
+          if self.decl:
+            fmt = args[0].value
+            fmt_types = [self.types[arg] for arg in rest]
+            self._WriteFmtFunc(temp_name, fmt, fmt_types)
+          # Write the call
+          self.write('fprintf(stderr, %s(' % temp_name)
+          for i, arg in enumerate(rest):
+            if i != 0:
+              self.write(', ')
+            self.accept(arg)
+          self.write(')->data_)')
+          return
+
+        if o.callee.name in ('p_die', 'e_die'):
+          # TODO: Consolidate this
+          args = o.args
+          rest = args[1:-1]
+          if self.decl:
+            fmt = args[0].value
+            fmt_types = [self.types[arg] for arg in rest]
+            self._WriteFmtFunc(temp_name, fmt, fmt_types)
+
+          # Should p_die() be in mylib?
+          self.write('%s(%s(' % (o.callee.name, temp_name))
+          for i, arg in enumerate(rest):
+            if i != 0:
+              self.write(', ')
+            self.accept(arg)
+          self.write(')->data_, ')
+          self.accept(args[-1])
+          self.write(')')
+          return
+
         # HACK for log("%s", s)
         printf_style = False
         if o.callee.name == 'log':
@@ -512,29 +566,16 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         #self.log('  arg_kinds %s', o.arg_kinds)
         #self.log('  arg_names %s', o.arg_names)
 
-    def _WriteFmtFunc(self, temp_name, fmt_parts, right_type, right_ctype):
+    def _WriteFmtFunc(self, temp_name, fmt, fmt_types):
       """Append a fmtX() function to a buffer."""
+
+      fmt_parts = format_strings.Parse(fmt)
       self.fmt_funcs.write('Str* %s(' % temp_name)
 
-      #log('right_type %s', right_type)
-      if isinstance(right_type, Instance):
-        self.fmt_funcs.write('%s a0' % right_ctype)
-      elif isinstance(right_type, TupleType):
-        # TODO:
-        # pick this out for p_die() CallExpr.args
-
-        for i, typ in enumerate(right_type.items):
-          if i != 0:
-            self.fmt_funcs.write(', ');
-          self.fmt_funcs.write('%s a%d' % (get_c_type(typ), i))
-
-      # Handle Optional[str]
-      elif (isinstance(right_type, UnionType) and
-            len(right_type.items) == 2 and
-            isinstance(right_type.items[1], NoneTyp)):
-        self.fmt_funcs.write('%s a0' % get_c_type(right_type.items[0]))
-      else:
-        raise AssertionError(right_type)
+      for i, typ in enumerate(fmt_types):
+        if i != 0:
+          self.fmt_funcs.write(', ');
+        self.fmt_funcs.write('%s a%d' % (get_c_type(typ), i))
 
       self.fmt_funcs.write(') {\n')
       self.fmt_funcs.write('  gBuf.reset();\n')
@@ -600,15 +641,26 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if left_ctype == 'Str*' and c_op == '%':
           if not isinstance(o.left, StrExpr):
             raise AssertionError('Expected constant format string, got %s' % o.left)
-          fmt = o.left.value
-          fmt_parts = format_strings.Parse(fmt)
-
           temp_name = 'fmt%d' % self.unique_id
           self.unique_id += 1
 
+          #log('right_type %s', right_type)
+          if isinstance(right_type, Instance):
+            fmt_types = [right_type]
+          elif isinstance(right_type, TupleType):
+            fmt_types = right_type.items
+          # Handle Optional[str]
+          elif (isinstance(right_type, UnionType) and
+                len(right_type.items) == 2 and
+                isinstance(right_type.items[1], NoneTyp)):
+            fmt_types = [right_type.items[0]]
+          else:
+            raise AssertionError(right_type)
+
           # Write a buffer with fmtX() functions.
           if self.decl:
-            self._WriteFmtFunc(temp_name, fmt_parts, right_type, right_ctype)
+            fmt = o.left.value
+            self._WriteFmtFunc(temp_name, fmt, fmt_types)
 
           # In the definition pass, write the call site.
           self.write('%s(' % temp_name)
