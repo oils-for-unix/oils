@@ -484,10 +484,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           args = o.args
           rest = args[1:-1]
           if self.decl:
-            fmt = args[0].value
-            fmt_types = [self.types[arg] for arg in rest]
-            temp_name = self._WriteFmtFunc(fmt, fmt_types)
-            self.fmt_ids[o] = temp_name
+            fmt_arg = args[0]
+            if isinstance(fmt_arg, StrExpr):
+              fmt_types = [self.types[arg] for arg in rest]
+              temp_name = self._WriteFmtFunc(fmt_arg.value, fmt_types)
+              self.fmt_ids[o] = temp_name
+            else:
+              # oil_lang/expr_to_ast.py uses RANGE_POINT_TOO_LONG, etc.
+              self.fmt_ids[o] = "dynamic_fmt_dummy"
 
           # Should p_die() be in mylib?
           # DEFINITION PASS: Write the call
@@ -496,7 +500,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if i != 0:
               self.write(', ')
             self.accept(arg)
-          self.write(')->data_, ')
+          self.write('), ')
           self.accept(args[-1])
           self.write(')')
           return

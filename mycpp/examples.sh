@@ -158,7 +158,7 @@ using id_kind_asdl::Id_t;  // TODO: proper ASDL modules
 #include "mylib.h"
 
 // Stub
-void p_die(Str* fmt, syntax_asdl::token* blame_token) {
+void p_die(Str* s, syntax_asdl::token* blame_token) {
   throw AssertionError();
 }
 
@@ -248,21 +248,19 @@ Str* repr(syntax_asdl::source_t* obj) {
 }
 
 // STUBS for p_die()
-void p_die(Str* fmt, syntax_asdl::token* blame_token) {
-  throw AssertionError();
-}
-void p_die(Str* fmt, Str* s, syntax_asdl::token* blame_token) {
+void p_die(Str* s, int span_id) {
   throw AssertionError();
 }
 
-void p_die(Str* fmt, syntax_asdl::word_part_t* part) {
+void p_die(Str* s, syntax_asdl::token* blame_token) {
   throw AssertionError();
 }
 
-void p_die(Str* fmt, syntax_asdl::word_t* w) {
+void p_die(Str* s, syntax_asdl::word_part_t* part) {
   throw AssertionError();
 }
-void p_die(Str* fmt, Str* s, syntax_asdl::word_t* w) {
+
+void p_die(Str* s, syntax_asdl::word_t* w) {
   throw AssertionError();
 }
 

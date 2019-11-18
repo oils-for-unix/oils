@@ -609,4 +609,9 @@ inline Writer* Stdout() {
 
 extern mylib::BufWriter gBuf;
 
+// mycpp doesn't understand dynamic format strings yet
+inline Str* dynamic_fmt_dummy() {
+  return new Str("dynamic_fmt_dummy");
+}
+
 #endif  // MYLIB_H
