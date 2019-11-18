@@ -9,22 +9,21 @@
 
 #include <exception>  // std::exception
 
+Str* kEmptyString = new Str("", 0);
+
 void print(Str* s) {
   printf("%s\n", s->data_);
+}
+
+void println_stderr(Str* s) {
+  fputs(s->data_, stderr);
+  fputs("\n", stderr);
 }
 
 void log(const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
   vfprintf(stderr, fmt, args);
-  va_end(args);
-  fprintf(stderr, "\n");
-}
-
-void log(Str* fmt, ...) {
-  va_list args;
-  va_start(args, fmt);
-  vfprintf(stderr, fmt->data_, args);
   va_end(args);
   fprintf(stderr, "\n");
 }

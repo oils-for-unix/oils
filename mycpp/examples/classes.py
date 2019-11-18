@@ -77,8 +77,8 @@ def run_tests():
   #b = Base()
   d = Derived()
   #log(b.method())
-  log(d.method())
-  log(f(d))
+  print(d.method())
+  print(f(d))
 
 
 def run_benchmarks():

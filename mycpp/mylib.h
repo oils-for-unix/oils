@@ -28,10 +28,10 @@ template <class K, class V> class Dict;
 // for hand-written code
 void log(const char* fmt, ...);
 
-// for generated code
-void log(Str* fmt, ...);
-
 void print(Str* s);
+
+// log() generates code that writes this
+void println_stderr(Str* s);
 
 //
 // TODO: Fill exceptions in
@@ -529,6 +529,8 @@ class Writer {
   virtual bool isatty() = 0;
 };
 
+extern Str* kEmptyString;
+
 class BufWriter : public Writer {
  public:
   BufWriter() : data_(nullptr), len_(0) {
@@ -538,7 +540,15 @@ class BufWriter : public Writer {
     return false;
   }
   // For cStringIO API
-  Str* getvalue() { return new Str(data_, len_); }
+  Str* getvalue() {
+    if (data_) {
+      return new Str(data_, len_);
+    } else {
+      // log('') translates to this
+      // Strings are immutable so we can do this.
+      return kEmptyString;
+    }
+  }
 
   // Methods to compile printf format strings to
 

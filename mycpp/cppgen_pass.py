@@ -181,7 +181,7 @@ def get_c_type(t):
 class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def __init__(self, types: Dict[Expression, Type], const_lookup, f,
-                 virtual=None, local_vars=None,
+                 virtual=None, local_vars=None, fmt_ids=None,
                  decl=False, forward_decl=False):
       self.types = types
       self.const_lookup = const_lookup
@@ -192,6 +192,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       # This is different from member_vars because we collect it in the 'decl'
       # phase.  But then write it in the definition phase.
       self.local_vars = local_vars
+      self.fmt_ids = fmt_ids
       self.fmt_funcs = io.StringIO()
 
       self.decl = decl
@@ -460,23 +461,22 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # Maybe I should rename them all printf()
         # or fprintf()?  Except p_die() has extra args
 
-        temp_name = 'fmt%d' % self.unique_id
-        self.unique_id += 1
-
         if o.callee.name == 'log':
           args = o.args
           rest = args[1:]
           if self.decl:
             fmt = args[0].value
             fmt_types = [self.types[arg] for arg in rest]
-            self._WriteFmtFunc(temp_name, fmt, fmt_types)
-          # Write the call
-          self.write('fprintf(stderr, %s(' % temp_name)
+            temp_name = self._WriteFmtFunc(fmt, fmt_types)
+            self.fmt_ids[o] = temp_name
+
+          # DEFINITION PASS: Write the call
+          self.write('println_stderr(%s(' % self.fmt_ids[o])
           for i, arg in enumerate(rest):
             if i != 0:
               self.write(', ')
             self.accept(arg)
-          self.write(')->data_)')
+          self.write('))')
           return
 
         if o.callee.name in ('p_die', 'e_die'):
@@ -486,10 +486,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           if self.decl:
             fmt = args[0].value
             fmt_types = [self.types[arg] for arg in rest]
-            self._WriteFmtFunc(temp_name, fmt, fmt_types)
+            temp_name = self._WriteFmtFunc(fmt, fmt_types)
+            self.fmt_ids[o] = temp_name
 
           # Should p_die() be in mylib?
-          self.write('%s(%s(' % (o.callee.name, temp_name))
+          # DEFINITION PASS: Write the call
+          self.write('%s(%s(' % (o.callee.name, self.fmt_ids[o]))
           for i, arg in enumerate(rest):
             if i != 0:
               self.write(', ')
@@ -498,11 +500,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.accept(args[-1])
           self.write(')')
           return
-
-        # HACK for log("%s", s)
-        printf_style = False
-        if o.callee.name == 'log':
-          printf_style = True
 
         callee_name = o.callee.name
         callee_type = self.types[o.callee]
@@ -548,26 +545,20 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if i != 0:
               self.write(', ')
             self.accept(arg)
-
-            # Add ->data_ to string arguments after the first one
-            if printf_style and i != 0:
-              typ = self.types[arg]
-              # for Optional[Str]
-              if isinstance(typ, UnionType):
-                t = typ.items[0]
-              else:
-                t = typ
-              if t.type.fullname() == 'builtins.str':
-                self.write('->data_')
-
         self.write(')')
 
         # TODO: look at keyword arguments!
         #self.log('  arg_kinds %s', o.arg_kinds)
         #self.log('  arg_names %s', o.arg_names)
 
-    def _WriteFmtFunc(self, temp_name, fmt, fmt_types):
-      """Append a fmtX() function to a buffer."""
+    def _WriteFmtFunc(self, fmt, fmt_types):
+      """Append a fmtX() function to a buffer.
+
+      Returns:
+        the temp fmtX() name we used.
+      """
+      temp_name = 'fmt%d' % self.unique_id
+      self.unique_id += 1
 
       fmt_parts = format_strings.Parse(fmt)
       self.fmt_funcs.write('Str* %s(' % temp_name)
@@ -596,6 +587,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       self.fmt_funcs.write('  return gBuf.getvalue();\n')
       self.fmt_funcs.write('}\n')
       self.fmt_funcs.write('\n')
+
+      return temp_name
 
     def visit_op_expr(self, o: 'mypy.nodes.OpExpr') -> T:
         c_op = o.op
@@ -641,9 +634,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if left_ctype == 'Str*' and c_op == '%':
           if not isinstance(o.left, StrExpr):
             raise AssertionError('Expected constant format string, got %s' % o.left)
-          temp_name = 'fmt%d' % self.unique_id
-          self.unique_id += 1
-
           #log('right_type %s', right_type)
           if isinstance(right_type, Instance):
             fmt_types = [right_type]
@@ -660,10 +650,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # Write a buffer with fmtX() functions.
           if self.decl:
             fmt = o.left.value
-            self._WriteFmtFunc(temp_name, fmt, fmt_types)
+            temp_name = self._WriteFmtFunc(fmt, fmt_types)
+            self.fmt_ids[o] = temp_name
 
           # In the definition pass, write the call site.
-          self.write('%s(' % temp_name)
+          self.write('%s(' % self.fmt_ids[o])
           if isinstance(right_type, TupleType):
             for i, item in enumerate(o.right.items):
               if i != 0:

@@ -188,7 +188,8 @@ should-skip() {
 
     # TODO:
     # - alloc_main and lexer_main work!  They just need build scripts
-    pgen2_demo|alloc_main|lexer_main|named_args)
+    # - varargs doesn't have p_die()
+    pgen2_demo|alloc_main|lexer_main|named_args|varargs)
       return 0
       ;;
 

@@ -164,13 +164,14 @@ def main(argv):
   #log('V %s', virtual.virtuals)
 
   local_vars = {}  # FuncDef node -> (name, c_type) list
+  fmt_ids = {}  # Node -> fmt_name
 
   # First generate ALL C++ declarations / "headers".
   # class Foo { void method(); }; class Bar { void method(); };
   for name, module in to_compile:
     p3 = cppgen_pass.Generate(result.types, const_lookup, f,
-                              local_vars=local_vars, virtual=virtual,
-                              decl=True)
+                              local_vars=local_vars, fmt_ids=fmt_ids,
+                              virtual=virtual, decl=True)
 
     p3.visit_mypy_file(module)
 
@@ -179,7 +180,7 @@ def main(argv):
   # void Bar:method() { ... }
   for name, module in to_compile:
     p4 = cppgen_pass.Generate(result.types, const_lookup, f,
-                              local_vars=local_vars)
+                              local_vars=local_vars, fmt_ids=fmt_ids)
     p4.visit_mypy_file(module)
 
   for name, module in to_compile:
