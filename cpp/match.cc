@@ -9,7 +9,7 @@
 
 namespace match {
 
-inline Tuple2<Id_t, int>* OneToken(lex_mode_t lex_mode, Str* line, int start_pos) {
+Tuple2<Id_t, int>* OneToken(lex_mode_t lex_mode, Str* line, int start_pos) {
   int id;
   int end_pos;
   // TODO: get rid of these casts

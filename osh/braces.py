@@ -28,7 +28,7 @@ from mycpp.mylib import tagswitch
 
 from typing import List, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
-  from frontend.match import _SimpleLexer
+  from frontend.match import SimpleLexer
 
 
 _ = log
@@ -56,7 +56,7 @@ class _RangeParser(object):
     range = (int_range | char_range) Eof  # ensure no extra tokens!
   """
   def __init__(self, lexer, span_id):
-    # type: (_SimpleLexer, int) -> None
+    # type: (SimpleLexer, int) -> None
     self.lexer = lexer
     self.span_id = span_id
 

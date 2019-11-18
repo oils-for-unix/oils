@@ -82,7 +82,7 @@ def _MatchOshToken_Fast(lex_mode, line, start_pos):
   return tok_type, end_pos
 
 
-class SimpleLexer(object):
+class _OldLexer(object):
   """Lexer for echo -e, which interprets C-escaped strings."""
   def __init__(self, match_func):
     # type: (SimpleMatchFunc) -> None
@@ -173,14 +173,14 @@ else:
     # type: (str) -> bool
     return bool(_SHOULD_HIJACK_RE.match(s))
 
-ECHO_LEXER = SimpleLexer(ECHO_MATCHER)
-GLOB_LEXER = SimpleLexer(GLOB_MATCHER)
-PS1_LEXER = SimpleLexer(PS1_MATCHER)
-HISTORY_LEXER = SimpleLexer(HISTORY_MATCHER)
-BRACE_RANGE_LEXER = SimpleLexer(BRACE_RANGE_MATCHER)
+ECHO_LEXER = _OldLexer(ECHO_MATCHER)
+GLOB_LEXER = _OldLexer(GLOB_MATCHER)
+PS1_LEXER = _OldLexer(PS1_MATCHER)
+HISTORY_LEXER = _OldLexer(HISTORY_MATCHER)
+BRACE_RANGE_LEXER = _OldLexer(BRACE_RANGE_MATCHER)
 
 
-class _SimpleLexer(object):
+class SimpleLexer(object):
   def __init__(self, match_func, s):
     # type: (SimpleMatchFunc, str) -> None
     self.match_func = match_func
@@ -199,5 +199,5 @@ class _SimpleLexer(object):
 
 
 def BraceRangeLexer(s):
-  # type: (str) -> _SimpleLexer
-  return _SimpleLexer(BRACE_RANGE_MATCHER, s)
+  # type: (str) -> SimpleLexer
+  return SimpleLexer(BRACE_RANGE_MATCHER, s)
