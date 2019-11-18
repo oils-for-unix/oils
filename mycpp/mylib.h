@@ -274,6 +274,12 @@ class List {
     return result;
   }
 
+  // Used in osh/word_parse.py to remove from front
+  // TODO: Don't accept arbitrary index?
+  T pop(int index) {
+    assert(0);
+  }
+
   // STUB: For LHS assignment.
   // TODO: Handle L[-1] = 3 (pgen2 appears to do it)
   T& operator[](int index) {

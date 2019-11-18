@@ -312,7 +312,7 @@ namespace arith_nt {
     # This has errfmt.Print() which uses *args and **kwargs
     #$REPO_ROOT/core/ui.py
 
-    #$REPO_ROOT/core/main_loop.py
+    $REPO_ROOT/core/main_loop.py
   )
 
   PARSE_FILES=(
@@ -320,15 +320,15 @@ namespace arith_nt {
     $REPO_ROOT/osh/word_.py 
     $REPO_ROOT/osh/bool_parse.py 
     $REPO_ROOT/osh/word_parse.py
-    $REPO_ROOT/osh/cmd_parse.py 
+    #$REPO_ROOT/osh/cmd_parse.py 
     #$REPO_ROOT/osh/arith_parse.py 
     #$REPO_ROOT/frontend/tdop.py
-    $REPO_ROOT/frontend/parse_lib.py
+    #$REPO_ROOT/frontend/parse_lib.py
   )
 
   translate-ordered $name "${HNODE_HEADER}$snippet" \
-    "${FILES[@]}" "${MORE_FILES[@]}"
-    #"${FILES[@]}" "${PARSE_FILES[@]}" "${MORE_FILES[@]}" "${PYLIB_FILES[@]}"
+    "${FILES[@]}" "${PARSE_FILES[@]}" "${MORE_FILES[@]}" "${PYLIB_FILES[@]}"
+    #"${FILES[@]}" "${MORE_FILES[@]}"
 
 
   # $REPO_ROOT/frontend/tdop.py \

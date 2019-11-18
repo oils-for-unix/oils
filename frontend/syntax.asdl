@@ -148,6 +148,7 @@ module syntax
       token left_token, command command_list
   ) attributes (int* spids)
 
+  -- Note: can be word.BracedTree
   sh_array_literal = (token left, word* words) attributes (int* spids)
 
   -- Used in both expr and a word_part

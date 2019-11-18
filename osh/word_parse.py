@@ -120,12 +120,12 @@ class WordParser(object):
   def _Peek(self):
     # type: () -> token
     """Helper method."""
-    if self.next_lex_mode is not None:
+    if self.next_lex_mode != lex_mode_e.Undefined:
       self.cur_token = self.lexer.Read(self.next_lex_mode)
       self.token_type = self.cur_token.id
       self.token_kind = lookup.LookupKind(self.token_type)
       self.parse_ctx.trail.AppendToken(self.cur_token)   # For completion
-      self.next_lex_mode = None
+      self.next_lex_mode = lex_mode_e.Undefined
     return self.cur_token
 
   def _Next(self, lex_mode):
@@ -296,7 +296,8 @@ class WordParser(object):
     else:
       bracket_op = None
 
-    part = braced_var_sub(name_token)
+    part = braced_var_sub()
+    part.token = name_token
     part.bracket_op = bracket_op
     return part
 
@@ -1023,21 +1024,21 @@ class WordParser(object):
 
     self._Peek()
     if self.token_type == Id.Arith_Semi:  # for (( ; i < 10; i++ ))
-      init_node = None
+      init_node = None  # type: Optional[arith_expr_t]
     else:
       init_node = self._ReadArithExpr()
     self._NextNonSpace()
 
     self._Peek()
     if self.token_type == Id.Arith_Semi:  # for (( ; ; i++ ))
-      cond_node = None
+      cond_node = None  # type: Optional[arith_expr_t]
     else:
       cond_node = self._ReadArithExpr()
     self._NextNonSpace()
 
     self._Peek()
     if self.token_type == Id.Arith_RParen:  # for (( ; ; ))
-      update_node = None
+      update_node = None  # type: Optional[arith_expr_t]
     else:
       update_node = self._ReadArithExpr()
     self._NextNonSpace()
@@ -1048,7 +1049,11 @@ class WordParser(object):
             self.cur_token.val, token=self.cur_token)
     self._Next(lex_mode_e.ShCommand)
 
-    return command.ForExpr(init_node, cond_node, update_node)
+    node = command.ForExpr()
+    node.init = init_node
+    node.cond = cond_node
+    node.update = update_node
+    return node
 
   def _ReadArrayLiteral(self):
     # type: () -> word_part_t
@@ -1093,8 +1098,7 @@ class WordParser(object):
           # Token
           p_die('Unexpected token in array literal: %r', tok.val, word=w)
 
-      assert isinstance(w, compound_word)  # for MyPy
-      words.append(w)
+      words.append(cast(compound_word, w))
 
     if not words:  # a=() is empty indexed array
       # ignore for invariant List?
@@ -1265,7 +1269,8 @@ class WordParser(object):
         #  pass
         elif self.token_type == Id.Right_Subshell:
           # LEXER HACK for (case x in x) ;; esac )
-          assert self.next_lex_mode is None  # Rewind before it's used
+          # Rewind before it's used
+          assert self.next_lex_mode == lex_mode_e.Undefined
           if self.lexer.MaybeUnreadOne():
             self.lexer.PushHint(Id.Op_RParen, Id.Right_Subshell)
             self._Next(lex_mode)
@@ -1285,7 +1290,8 @@ class WordParser(object):
         # We get Id.Op_RParen at top level:      case x in x) ;; esac
         # We get Id.Eof_RParen inside ComSub:  $(case x in x) ;; esac )
         if self.token_type in (Id.Op_RParen, Id.Eof_RParen):
-          assert self.next_lex_mode is None  # Rewind before it's used
+          # Rewind before it's used
+          assert self.next_lex_mode == lex_mode_e.Undefined
           if self.lexer.MaybeUnreadOne():
             if self.token_type == Id.Eof_RParen:
               # Redo translation
@@ -1316,8 +1322,7 @@ class WordParser(object):
 
     elif self.token_kind == Kind.Eof:
       # Just return EOF token
-      w = self.cur_token  # type: word_t
-      return w, False
+      return cast(word_t, self.cur_token), False
 
     elif self.token_kind == Kind.Ignored:
       # Space should be ignored.  TODO: change this to SPACE_SPACE and
@@ -1329,12 +1334,11 @@ class WordParser(object):
     elif self.token_kind in (Kind.Arith, Kind.Right):
       # Id.Right_DollarDParen IS just a normal token, handled by ArithParser
       self._Next(lex_mode_e.Arith)
-      w = self.cur_token
-      return w, False
+      return cast(word_t, self.cur_token), False
 
     elif self.token_kind in (Kind.Lit, Kind.Left, Kind.VSub):
       w = self._ReadCompoundWord(lex_mode=lex_mode_e.Arith)
-      return w, False
+      return cast(word_t, w), False
 
     else:
       raise AssertionError(self.cur_token)
@@ -1354,7 +1358,7 @@ class WordParser(object):
 
     if self.token_kind == Kind.Eof:
       # No advance
-      return self.cur_token, False
+      return cast(word_t, self.cur_token), False
 
     # Allow Arith for ) at end of for loop?
     elif self.token_kind in (Kind.Op, Kind.Redir, Kind.Arith):
@@ -1363,7 +1367,7 @@ class WordParser(object):
         if self.cursor_was_newline:
           return no_word, True
 
-      return self.cur_token, False
+      return cast(word_t, self.cur_token), False
 
     elif self.token_kind == Kind.Right:
       if self.token_type not in (
@@ -1372,7 +1376,7 @@ class WordParser(object):
         raise AssertionError(self.cur_token)
 
       self._Next(lex_mode)
-      return self.cur_token, False
+      return cast(word_t, self.cur_token), False
 
     elif self.token_kind in (Kind.Ignored, Kind.WS):
       self._Next(lex_mode)
@@ -1398,7 +1402,7 @@ class WordParser(object):
 
       else:
         w = self._ReadCompoundWord(lex_mode=lex_mode)
-        return w, False
+        return cast(word_t, w), False
 
     else:
       raise AssertionError(
