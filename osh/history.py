@@ -10,7 +10,7 @@ import sys
 from _devbuild.gen.id_kind_asdl import Id
 from core import util
 #from core.util import log
-from frontend.match import HISTORY_LEXER
+from frontend import match
 from frontend import reader
 from osh import word_
 
@@ -35,7 +35,7 @@ class Evaluator(object):
     if not self.readline_mod:
       return line
 
-    tokens = list(HISTORY_LEXER.Tokens(line))
+    tokens = match.HistoryTokens(line)
     # Common case: no history expansion.
     if all(id_ == Id.History_Other for (id_, _) in tokens):
       return line

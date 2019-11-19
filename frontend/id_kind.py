@@ -472,7 +472,6 @@ def AddKinds(spec):
       'Star', 'QMark', 'Bang', 'Caret',
       'EscapedChar', 'BadBackslash',
       'CleanLiterals', 'OtherLiteral',
-      'Eof',
   ])
 
   # For C-escaped strings.

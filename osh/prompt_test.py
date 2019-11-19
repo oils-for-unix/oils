@@ -44,7 +44,7 @@ class PromptTest(unittest.TestCase):
         r"\[\[", r"\[\]\[\]\]", r"\]\]", r"almost valid \]", r"\[almost valid",
         r"\]\[",  # goes negative!
         ]:
-      tokens = list(match.PS1_LEXER.Tokens(invalid_prompt))
+      tokens = match.Ps1Tokens(invalid_prompt)
       self.assertEqual(
           prompt.PROMPT_ERROR, self.p._ReplaceBackslashCodes(tokens))
 

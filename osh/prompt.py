@@ -198,7 +198,7 @@ class Evaluator(object):
     try:
       tokens = self.tokens_cache[val.s]
     except KeyError:
-      tokens = list(match.PS1_LEXER.Tokens(val.s))
+      tokens = match.Ps1Tokens(val.s)
       self.tokens_cache[val.s] = tokens
 
     # Replace values.

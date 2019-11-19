@@ -95,8 +95,8 @@ class GlobEscapeTest(unittest.TestCase):
 
 
 def _ReadTokens(s):
-  lex = match.GLOB_LEXER
-  return list(lex.Tokens(s))
+  lex = match.GlobLexer(s)
+  return list(lex.Tokens())
 
 
 class GlobParserTest(unittest.TestCase):

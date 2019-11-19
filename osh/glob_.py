@@ -164,11 +164,7 @@ class _GlobParser(object):
   def _Next(self):
     # type: () -> None
     """Move to the next token."""
-    try:
-      self.token_type, self.token_val = self.lexer.next()
-    except StopIteration:
-      self.token_type = Id.Glob_Eof
-      self.token_val = ''
+    self.token_type, self.token_val = self.lexer.Next()
 
   def _ParseCharClass(self):
     # type: () -> Sequence[glob_part_t]
@@ -190,7 +186,7 @@ class _GlobParser(object):
     while True:
       self._Next()
 
-      if self.token_type == Id.Glob_Eof:
+      if self.token_type == Id.Eol_Tok:
         # TODO: location info
         self.warnings.append('Malformed character class; treating as literal')
         return [first_token] + [glob_part.Literal(id_, s) for (id_, s) in tokens]
@@ -230,7 +226,7 @@ class _GlobParser(object):
       s = self.token_val
 
       #util.log('%s %r', self.token_type, self.token_val)
-      if id_ == Id.Glob_Eof:
+      if id_ == Id.Eol_Tok:
         break
 
       if id_ in (Id.Glob_Star, Id.Glob_QMark):
@@ -324,7 +320,7 @@ def _GenerateERE(parts):
 
 def GlobToERE(pat):
   # type: (str) -> Tuple[str, List[str]]
-  lexer = match.GLOB_LEXER.Tokens(pat)
+  lexer = match.GlobLexer(pat)
   p = _GlobParser(lexer)
   parts, warnings = p.Parse()
 

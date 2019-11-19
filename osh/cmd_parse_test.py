@@ -761,8 +761,8 @@ fi
 
     # Redirects
     node = assert_ParseCommandList(self, 'foo() { echo hi; } 1>&2 2>/dev/null')
-    self.assertEqual(2, len(node.redirects))
     self.assertEqual(command_e.BraceGroup, node.body.tag)
+    self.assertEqual(2, len(node.body.redirects))
 
   def testParseKeyword(self):
     # NOTE: It chooses the longest match, which is Lit_Chars>

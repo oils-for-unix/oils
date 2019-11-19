@@ -82,25 +82,6 @@ def _MatchOshToken_Fast(lex_mode, line, start_pos):
   return tok_type, end_pos
 
 
-class _OldLexer(object):
-  """Lexer for echo -e, which interprets C-escaped strings."""
-  def __init__(self, match_func):
-    # type: (SimpleMatchFunc) -> None
-    self.match_func = match_func
-
-  def Tokens(self, line):
-    # type: (str) -> Iterator[Tuple[Id_t, str]]
-    """Yields tokens."""
-    pos = 0
-    while True:
-      tok_type, end_pos = self.match_func(line, pos)
-      # core/lexer_gen.py always inserts this.  We're always parsing lines.
-      if tok_type == Id.Eol_Tok:
-        break
-      yield tok_type, line[pos:end_pos]
-      pos = end_pos
-
-
 class _MatchTokenSlow(object):
   def __init__(self, pat_list):
     # type: (List[Tuple[bool, str, Id_t]]) -> None
@@ -173,14 +154,9 @@ else:
     # type: (str) -> bool
     return bool(_SHOULD_HIJACK_RE.match(s))
 
-ECHO_LEXER = _OldLexer(ECHO_MATCHER)
-GLOB_LEXER = _OldLexer(GLOB_MATCHER)
-PS1_LEXER = _OldLexer(PS1_MATCHER)
-HISTORY_LEXER = _OldLexer(HISTORY_MATCHER)
-BRACE_RANGE_LEXER = _OldLexer(BRACE_RANGE_MATCHER)
-
 
 class SimpleLexer(object):
+
   def __init__(self, match_func, s):
     # type: (SimpleMatchFunc, str) -> None
     self.match_func = match_func
@@ -197,7 +173,42 @@ class SimpleLexer(object):
     self.pos = end_pos
     return tok_id, val
 
+  def Tokens(self):
+    # type: () -> List[Tuple[Id_t, str]]
+    tokens = [] # type: List[Tuple[Id_t, str]]
+    while True:
+      tok_id, val = self.Next()
+      if tok_id == Id.Eol_Tok:  # NUL terminator
+        break
+      tokens.append((tok_id, val))
+    return tokens
+
+
+# Iterated over in osh/builtin_pure.py
+def EchoLexer(s):
+  # type: (str) -> SimpleLexer
+  return SimpleLexer(ECHO_MATCHER, s)
+
 
 def BraceRangeLexer(s):
   # type: (str) -> SimpleLexer
   return SimpleLexer(BRACE_RANGE_MATCHER, s)
+
+
+def GlobLexer(s):
+  # type: (str) -> SimpleLexer
+  return SimpleLexer(GLOB_MATCHER, s)
+
+
+# These tokens are "slurped"
+
+def HistoryTokens(s):
+  # type: (str) -> List[Tuple[Id_t, str]]
+  lex = SimpleLexer(HISTORY_MATCHER, s)
+  return lex.Tokens()
+
+
+def Ps1Tokens(s):
+  # type: (str) -> List[Tuple[Id_t, str]]
+  lex = SimpleLexer(PS1_MATCHER, s)
+  return lex.Tokens()

@@ -16,6 +16,7 @@ from __future__ import print_function
 
 import sys  # for sys.sdtout
 
+from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import builtin_e, cmd_value, value_e
 
 from asdl import pretty
@@ -543,7 +544,12 @@ class Echo(object):
       new_argv = []
       for a in argv:
         parts = []
-        for id_, value in match.ECHO_LEXER.Tokens(a):
+        lex = match.EchoLexer(a)
+        while True:
+          id_, value = lex.Next()
+          if id_ == Id.Eol_Tok:  # Note: This is really a NUL terminator
+            break
+
           p = word_compile.EvalCStringToken(id_, value)
 
           # Unusual behavior: '\c' prints what is there and aborts processing!

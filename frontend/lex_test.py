@@ -352,56 +352,52 @@ class RegexTest(unittest.TestCase):
 class OtherLexerTest(unittest.TestCase):
 
   def testEchoLexer(self):
-    lex = match.ECHO_LEXER
-    print(list(lex.Tokens(r'newline \n NUL \0 octal \0377 hex \x00')))
-    print(list(lex.Tokens(r'unicode \u0065 \U00000065')))
-    print(list(lex.Tokens(r'\d \e \f \g')))
-
-    # NOTE: We only test with one of these.
-    print(match.ECHO_MATCHER)  # either fast or slow
+    CASES = [
+        r'newline \n NUL \0 octal \0377 hex \x00',
+        r'unicode \u0065 \U00000065',
+        r'\d \e \f \g',
+    ]
+    for s in CASES:
+      lex = match.EchoLexer(s)
+      print(lex.Tokens())
 
   def testPS1Lexer(self):
-    lex = match.PS1_LEXER
-    print(list(lex.Tokens(r'foo')))
-    print(list(lex.Tokens(r'\h \w \$')))
+    print(list(match.Ps1Tokens(r'foo')))
+    print(list(match.Ps1Tokens(r'\h \w \$')))
 
   def testHistoryLexer(self):
-    lex = match.HISTORY_LEXER
+    print(list(match.HistoryTokens(r'echo hi')))
 
-    print(list(lex.Tokens(r'echo hi')))
-
-    print(list(lex.Tokens(r'echo !! !* !^ !$')))
+    print(list(match.HistoryTokens(r'echo !! !* !^ !$')))
 
     # No history operator with \ escape
-    tokens = list(lex.Tokens(r'echo \!!'))
+    tokens = list(match.HistoryTokens(r'echo \!!'))
     print(tokens)
     self.assert_(Id.History_Op not in [tok_type for tok_type, _ in tokens])
 
-    print(list(lex.Tokens(r'echo !3...')))
-    print(list(lex.Tokens(r'echo !-5...')))
-    print(list(lex.Tokens(r'echo !x/foo.py bar')))
+    print(list(match.HistoryTokens(r'echo !3...')))
+    print(list(match.HistoryTokens(r'echo !-5...')))
+    print(list(match.HistoryTokens(r'echo !x/foo.py bar')))
 
     print('---')
 
     # No history operator in single quotes
-    tokens = list(lex.Tokens(r"echo '!!' $'!!' "))
+    tokens = list(match.HistoryTokens(r"echo '!!' $'!!' "))
     print(tokens)
     self.assert_(Id.History_Op not in [tok_type for tok_type, _ in tokens])
 
     # No history operator in incomplete single quotes
-    tokens = list(lex.Tokens(r"echo '!! "))
+    tokens = list(match.HistoryTokens(r"echo '!! "))
     print(tokens)
     self.assert_(Id.History_Op not in [tok_type for tok_type, _ in tokens])
 
     # Quoted single quote, and then a History operator
-    tokens = list(lex.Tokens(r"echo \' !! "))
+    tokens = list(match.HistoryTokens(r"echo \' !! "))
     print(tokens)
     # YES operator
     self.assert_(Id.History_Op in [tok_type for tok_type, _ in tokens])
 
   def testHistoryDoesNotConflict(self):
-    lex = match.HISTORY_LEXER
-
     # https://github.com/oilshell/oil/issues/264
     #
     # Bash has a bunch of hacks to suppress the conflict between ! for history
@@ -424,7 +420,7 @@ class OtherLexerTest(unittest.TestCase):
     ]
 
     for s, expected_types in CASES:
-      tokens = list(lex.Tokens(s))
+      tokens = list(match.HistoryTokens(s))
       print(tokens)
       actual_types = [id_ for id_, val in tokens]
 
@@ -433,12 +429,16 @@ class OtherLexerTest(unittest.TestCase):
       self.assertEqual(expected_types, actual_types)
 
   def testBraceRangeLexer(self):
-    lex = match.BRACE_RANGE_LEXER
-    print(list(lex.Tokens('a..z')))
-    print(list(lex.Tokens('100..300')))
-    print(list(lex.Tokens('-300..-100..1')))
-    print(list(lex.Tokens('1.3')))  # invalid
-    print(list(lex.Tokens('aa')))
+    CASES = [
+        'a..z',
+        '100..300',
+        '-300..-100..1',
+        '1.3',  # invalid
+        'aa',
+    ]
+    for s in CASES:
+      lex = match.BraceRangeLexer(s)
+      print(lex.Tokens())
 
 
 if __name__ == '__main__':

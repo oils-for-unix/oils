@@ -13,7 +13,7 @@ from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str, Kind
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
-    command, command_e, command_t,
+    command, command_t,
     command__Simple, command__BraceGroup,
     command__DoGroup, command__ForExpr, command__ForEach, command__WhileUntil,
     command__Case, command__If, command__ShFunction, command__Subshell,
