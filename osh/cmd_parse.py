@@ -1059,17 +1059,19 @@ class CommandParser(object):
         body = self.ParseBraceGroup()  # type: command_t
       else:
         body = self.ParseDoGroup()
-      node = command.OilForIn(lvalue, iterable, body)  # type: command_t
+      return command.OilForIn(lvalue, iterable, body)
     else:
       self._Peek()
       if self.c_id == Id.Op_DLeftParen:
         # for (( i = 0; i < 10; i++)
-        node = self._ParseForExprLoop()
+        n1 = self._ParseForExprLoop()
+        n1.redirects = self._ParseRedirectList()
+        return n1
       else:
         # for x in a b; do echo hi; done
-        node = self._ParseForEachLoop(for_spid)
-
-    return node
+        n2 = self._ParseForEachLoop(for_spid)
+        n2.redirects = self._ParseRedirectList()
+        return n2
 
   def ParseWhileUntil(self, keyword):
     # type: (token) -> command__WhileUntil
@@ -1386,80 +1388,85 @@ class CommandParser(object):
   def ParseCompoundCommand(self):
     # type: () -> command_t
     """
-    compound_command : brace_group
-                     | subshell
-                     | for_clause
-                     | while_clause
-                     | until_clause
-                     | if_clause
-                     | case_clause
+    Refactoring: we put io_redirect* here instead of in function_body and
+    command.
 
-                     # Non-POSIX
+    compound_command : brace_group io_redirect*
+                     | subshell io_redirect*
+                     | for_clause io_redirect*
+                     | while_clause io_redirect*
+                     | until_clause io_redirect*
+                     | if_clause io_redirect*
+                     | case_clause io_redirect*
+
+                     # bash extensions
                      | time_clause
                      | [[ BoolExpr ]]
                      | (( ArithExpr ))
 
-                     # Oil
+                     # Oil extensions
                      | var ...
                      | setvar ...
                      | set ..>
                      ;
-
-    Refactoring: we put io_redirect* here instead of in function_body and
-    command!
     """
-    node = None  # type: Optional[command_t]
-
     if self.c_id == Id.Lit_LBrace:
-      node = self.ParseBraceGroup()
-    elif self.c_id == Id.Op_LParen:
-      node = self.ParseSubshell()
+      n1 = self.ParseBraceGroup()
+      n1.redirects = self._ParseRedirectList()
+      return n1
+    if self.c_id == Id.Op_LParen:
+      n2 = self.ParseSubshell()
+      n2.redirects = self._ParseRedirectList()
+      return n2
 
-    elif self.c_id == Id.KW_For:
-      node = self.ParseFor()
-    elif self.c_id in (Id.KW_While, Id.KW_Until):
+    if self.c_id == Id.KW_For:
+      # Note: Redirects parsed in this call.  POSIX for and bash for (( have
+      # redirects, but Oil for doesn't.
+      return self.ParseFor()
+    if self.c_id in (Id.KW_While, Id.KW_Until):
       keyword = _KeywordToken(self.cur_word)
-      node = self.ParseWhileUntil(keyword)
+      n3 = self.ParseWhileUntil(keyword)
+      n3.redirects = self._ParseRedirectList()
+      return n3
 
-    elif self.c_id == Id.KW_If:
-      node = self.ParseIf()
-    elif self.c_id == Id.KW_Case:
-      node = self.ParseCase()
-    elif self.c_id == Id.KW_Time:
-      node = self.ParseTime()
+    if self.c_id == Id.KW_If:
+      n4 = self.ParseIf()
+      n4.redirects = self._ParseRedirectList()
+      return n4
+    if self.c_id == Id.KW_Case:
+      n5 = self.ParseCase()
+      n5.redirects = self._ParseRedirectList()
+      return n5
 
-    # Example of redirect that is observable:
-    # $ (( $(echo one 1>&2; echo 2) > 0 )) 2> out.txt
-    elif self.c_id == Id.KW_DLeftBracket:
-      node = self.ParseDBracket()
+    # bash extensions: no redirects
+    if self.c_id == Id.KW_Time:
+      return self.ParseTime()
+    if self.c_id == Id.KW_DLeftBracket:
+      return self.ParseDBracket()
+    if self.c_id == Id.Op_DLeftParen:
+      # Trivia: this redirect is observable:
+      # $ (( $(echo one 1>&2; echo 2) > 0 )) 2> out.txt
+      return self.ParseDParen()
 
-    elif self.c_id == Id.Op_DLeftParen:
-      node = self.ParseDParen()
-
-    elif self.c_id == Id.KW_Var:
+    # Oil extensions
+    if self.c_id == Id.KW_Var:
       kw_token = word_.LiteralToken(self.cur_word)
       self._Next()
-      node = self.w_parser.ParseVarDecl(kw_token)
+      return self.w_parser.ParseVarDecl(kw_token)
 
-    elif self.c_id == Id.KW_SetVar:
+    if self.c_id == Id.KW_SetVar:
       kw_token = word_.LiteralToken(self.cur_word)
       self._Next()
-      node = self.w_parser.ParsePlaceMutation(kw_token)
+      return self.w_parser.ParsePlaceMutation(kw_token)
 
-    elif self.parse_opts.parse_set and self.c_id == Id.KW_Set:
+    if self.parse_opts.parse_set and self.c_id == Id.KW_Set:
       kw_token = word_.LiteralToken(self.cur_word)
       self._Next()
-      node = self.w_parser.ParsePlaceMutation(kw_token)
+      return self.w_parser.ParsePlaceMutation(kw_token)
 
-    if not node:
-      # Happens in function body, e.g. myfunc() oops
-      p_die('Unexpected word while parsing compound command', word=self.cur_word)
-
-    if node.tag_() not in (
-        command_e.TimeBlock, command_e.VarDecl, command_e.PlaceMutation):
-      node.redirects = self._ParseRedirectList()  # type: ignore
-
-    return node
+    # Happens in function body, e.g. myfunc() oops
+    p_die('Unexpected word while parsing compound command', word=self.cur_word)
+    assert False  # for MyPy
 
   def ParseFunctionDef(self):
     # type: () -> command__ShFunction
