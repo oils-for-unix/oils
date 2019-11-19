@@ -5,15 +5,14 @@ arith_parse.py - Parse shell arithmetic, which is based on C.
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (arith_expr, arith_expr_t, word_t)
-from core import util
+from core.util import p_die
 from frontend import tdop
 from osh import word_
+from mycpp import mylib
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
   from frontend.tdop import TdopParser
-
-p_die = util.p_die
 
 
 def NullIncDec(p, w, bp):
@@ -92,90 +91,89 @@ def LeftTernary(p, t, left, bp):
   return arith_expr.TernaryOp(left, true_expr, false_expr)
 
 
-# For overloading of , inside function calls
-def MakeShellSpec():
-  # type: () -> tdop.ParserSpec
-  """
-  Following this table:
-  http://en.cppreference.com/w/c/language/operator_precedence
+if mylib.PYTHON:
+  def MakeShellSpec():
+    # type: () -> tdop.ParserSpec
+    """
+    Following this table:
+    http://en.cppreference.com/w/c/language/operator_precedence
 
-  Bash has a table in expr.c, but it's not as cmoplete (missing grouping () and
-  array[1]).  Although it has the ** exponentation operator, not in C.
+    Bash has a table in expr.c, but it's not as cmoplete (missing grouping () and
+    array[1]).  Although it has the ** exponentation operator, not in C.
 
-  - Extensions:
-    - function calls f(a,b)
+    - Extensions:
+      - function calls f(a,b)
 
-  - Possible extensions (but save it for oil):
-    - could allow attribute/object access: obj.member and obj.method(x)
-    - could allow extended indexing: t[x,y] -- IN PLACE OF COMMA operator.
-      - also obj['member'] because dictionaries are objects
-  """
-  spec = tdop.ParserSpec()
+    - Possible extensions (but save it for oil):
+      - could allow attribute/object access: obj.member and obj.method(x)
+      - could allow extended indexing: t[x,y] -- IN PLACE OF COMMA operator.
+        - also obj['member'] because dictionaries are objects
+    """
+    spec = tdop.ParserSpec()
 
-  # -1 precedence -- doesn't matter
-  spec.Null(-1, tdop.NullConstant, [
-      Id.Word_Compound,
-  ])
-  spec.Null(-1, tdop.NullError, [
-      Id.Arith_RParen, Id.Arith_RBracket, Id.Arith_Colon,
-      Id.Eof_Real, Id.Eof_RParen, Id.Eof_Backtick,
+    # -1 precedence -- doesn't matter
+    spec.Null(-1, tdop.NullConstant, [
+        Id.Word_Compound,
+    ])
+    spec.Null(-1, tdop.NullError, [
+        Id.Arith_RParen, Id.Arith_RBracket, Id.Arith_Colon,
+        Id.Eof_Real, Id.Eof_RParen, Id.Eof_Backtick,
 
-      # Not in the arithmetic language, but useful to define here.
-      Id.Arith_Semi,  # terminates loops like for (( i = 0 ; ... ))
-      Id.Arith_RBrace,  # terminates slices like ${foo:1}
-  ])
+        # Not in the arithmetic language, but useful to define here.
+        Id.Arith_Semi,  # terminates loops like for (( i = 0 ; ... ))
+        Id.Arith_RBrace,  # terminates slices like ${foo:1}
+    ])
 
-  # 0 precedence -- doesn't bind until )
-  spec.Null(0, tdop.NullParen, [Id.Arith_LParen])  # for grouping
+    # 0 precedence -- doesn't bind until )
+    spec.Null(0, tdop.NullParen, [Id.Arith_LParen])  # for grouping
 
-  spec.Left(33, LeftIncDec, [Id.Arith_DPlus, Id.Arith_DMinus])
-  spec.Left(33, LeftIndex, [Id.Arith_LBracket])
+    spec.Left(33, LeftIncDec, [Id.Arith_DPlus, Id.Arith_DMinus])
+    spec.Left(33, LeftIndex, [Id.Arith_LBracket])
 
-  # 31 -- binds to everything except function call, indexing, postfix ops
-  spec.Null(31, NullIncDec, [Id.Arith_DPlus, Id.Arith_DMinus])
-  spec.Null(31, NullUnaryPlus, [Id.Arith_Plus])
-  spec.Null(31, NullUnaryMinus, [Id.Arith_Minus])
-  spec.Null(31, tdop.NullPrefixOp, [Id.Arith_Bang, Id.Arith_Tilde])
+    # 31 -- binds to everything except function call, indexing, postfix ops
+    spec.Null(31, NullIncDec, [Id.Arith_DPlus, Id.Arith_DMinus])
+    spec.Null(31, NullUnaryPlus, [Id.Arith_Plus])
+    spec.Null(31, NullUnaryMinus, [Id.Arith_Minus])
+    spec.Null(31, tdop.NullPrefixOp, [Id.Arith_Bang, Id.Arith_Tilde])
 
-  # Right associative: 2 ** 3 ** 2 == 2 ** (3 ** 2)
-  # NOTE: This isn't in C
-  spec.LeftRightAssoc(29, tdop.LeftBinaryOp, [Id.Arith_DStar])
+    # Right associative: 2 ** 3 ** 2 == 2 ** (3 ** 2)
+    # NOTE: This isn't in C
+    spec.LeftRightAssoc(29, tdop.LeftBinaryOp, [Id.Arith_DStar])
 
-  # * / %
-  spec.Left(27, tdop.LeftBinaryOp, [
-      Id.Arith_Star, Id.Arith_Slash, Id.Arith_Percent])
+    # * / %
+    spec.Left(27, tdop.LeftBinaryOp, [
+        Id.Arith_Star, Id.Arith_Slash, Id.Arith_Percent])
 
-  spec.Left(25, tdop.LeftBinaryOp, [Id.Arith_Plus, Id.Arith_Minus])
-  spec.Left(23, tdop.LeftBinaryOp, [Id.Arith_DLess, Id.Arith_DGreat])
-  spec.Left(21, tdop.LeftBinaryOp, [
-      Id.Arith_Less, Id.Arith_Great, Id.Arith_LessEqual, Id.Arith_GreatEqual])
+    spec.Left(25, tdop.LeftBinaryOp, [Id.Arith_Plus, Id.Arith_Minus])
+    spec.Left(23, tdop.LeftBinaryOp, [Id.Arith_DLess, Id.Arith_DGreat])
+    spec.Left(21, tdop.LeftBinaryOp, [
+        Id.Arith_Less, Id.Arith_Great, Id.Arith_LessEqual, Id.Arith_GreatEqual])
 
-  spec.Left(19, tdop.LeftBinaryOp, [Id.Arith_NEqual, Id.Arith_DEqual])
+    spec.Left(19, tdop.LeftBinaryOp, [Id.Arith_NEqual, Id.Arith_DEqual])
 
-  # NOTE: Bitwise & | ^ have lower precedence than comparisons!
-  # Python and Rust correct this:
-  # https://graydon2.dreamwidth.org/218040.html
-  spec.Left(15, tdop.LeftBinaryOp, [Id.Arith_Amp])
-  spec.Left(13, tdop.LeftBinaryOp, [Id.Arith_Caret])
-  spec.Left(11, tdop.LeftBinaryOp, [Id.Arith_Pipe])
+    # NOTE: Bitwise & | ^ have lower precedence than comparisons!
+    # Python and Rust correct this:
+    # https://graydon2.dreamwidth.org/218040.html
+    spec.Left(15, tdop.LeftBinaryOp, [Id.Arith_Amp])
+    spec.Left(13, tdop.LeftBinaryOp, [Id.Arith_Caret])
+    spec.Left(11, tdop.LeftBinaryOp, [Id.Arith_Pipe])
 
-  spec.Left(9, tdop.LeftBinaryOp, [Id.Arith_DAmp])
-  spec.Left(7, tdop.LeftBinaryOp, [Id.Arith_DPipe])
+    spec.Left(9, tdop.LeftBinaryOp, [Id.Arith_DAmp])
+    spec.Left(7, tdop.LeftBinaryOp, [Id.Arith_DPipe])
 
-  spec.Left(5, LeftTernary, [Id.Arith_QMark])
+    spec.Left(5, LeftTernary, [Id.Arith_QMark])
 
-  # Right associative: a = b = 2 is a = (b = 2)
-  spec.LeftRightAssoc(3, tdop.LeftAssign, [
-      Id.Arith_Equal,
-      Id.Arith_PlusEqual, Id.Arith_MinusEqual, Id.Arith_StarEqual,
-      Id.Arith_SlashEqual, Id.Arith_PercentEqual, Id.Arith_DLessEqual,
-      Id.Arith_DGreatEqual, Id.Arith_AmpEqual, Id.Arith_CaretEqual,
-      Id.Arith_PipeEqual
-  ])
+    # Right associative: a = b = 2 is a = (b = 2)
+    spec.LeftRightAssoc(3, tdop.LeftAssign, [
+        Id.Arith_Equal,
+        Id.Arith_PlusEqual, Id.Arith_MinusEqual, Id.Arith_StarEqual,
+        Id.Arith_SlashEqual, Id.Arith_PercentEqual, Id.Arith_DLessEqual,
+        Id.Arith_DGreatEqual, Id.Arith_AmpEqual, Id.Arith_CaretEqual,
+        Id.Arith_PipeEqual
+    ])
 
-  spec.Left(1, tdop.LeftBinaryOp, [Id.Arith_Comma])
+    spec.Left(1, tdop.LeftBinaryOp, [Id.Arith_Comma])
 
-  return spec
+    return spec
 
-
-SPEC = MakeShellSpec()
+  SPEC = MakeShellSpec()

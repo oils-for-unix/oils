@@ -1688,9 +1688,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # TODO: Should these be moved to core/pylib.py or something?
           # They are varargs functions that have to be rewritten.
           if name in ('log', 'p_die'):
-            return  # do nothing
+            continue    # do nothing
           if name in ('switch', 'tagswitch'):  # mylib
-            return  # do nothing
+            continue  # do nothing
 
           if '.' in o.id:
             last_dotted = o.id.split('.')[-1]

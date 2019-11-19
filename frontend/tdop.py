@@ -2,7 +2,7 @@
 tdop.py - Library for expression parsing.
 """
 
-from _devbuild.gen.id_kind_asdl import Id, Id_t
+from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
     arith_expr, arith_expr_e, arith_expr_t,
     arith_expr__ArithWord, arith_expr__UnaryAssign, arith_expr__VarRef,
@@ -11,9 +11,10 @@ from _devbuild.gen.syntax_asdl import (
     word_t,
 )
 from _devbuild.gen.types_asdl import lex_mode_e
-from core import util
+from core.util import p_die
 from osh import word_
-from mycpp.mylib import tagswitch
+from mycpp import mylib
+from mycpp.mylib import tagswitch, NewStr
 
 from typing import Callable, List, Dict, NoReturn, cast, TYPE_CHECKING
 
@@ -21,8 +22,6 @@ if TYPE_CHECKING:  # break circular dep
   from osh.word_parse import WordParser
   NullFunc = Callable[[TdopParser, word_t, int], arith_expr_t]
   LeftFunc = Callable[[TdopParser, word_t, arith_expr_t, int], arith_expr_t]
-
-p_die = util.p_die
 
 
 def IsIndexable(node):
@@ -140,82 +139,80 @@ def LeftAssign(p, w, left, rbp):
 # Parser definition
 #
 
-class LeftInfo(object):
-  """Row for operator.
+if mylib.PYTHON:
+  class LeftInfo(object):
+    """Row for operator.
 
-  In C++ this should be a big array.
-  """
-  def __init__(self, led=None, lbp=0, rbp=0):
-    # type: (LeftFunc, int, int) -> None
-    self.led = led or LeftError
-    self.lbp = lbp
-    self.rbp = rbp
-
-
-class NullInfo(object):
-  """Row for operator.
-
-  In C++ this should be a big array.
-  """
-  def __init__(self, nud=None, bp=0):
-    # type: (NullFunc, int) -> None
-    self.nud = nud or LeftError
-    self.bp = bp
-
-
-class ParserSpec(object):
-  """Specification for a TDOP parser.
-
-  This can be compiled to a table in C++.
-  """
-  def __init__(self):
-    # type: () -> None
-    self.nud_lookup = {}  # type: Dict[Id_t, NullInfo]
-    self.led_lookup = {}  # type: Dict[Id_t, LeftInfo]
-
-  def Null(self, bp, nud, tokens):
-    # type: (int, NullFunc, List[Id_t]) -> None
-    """Register a token that doesn't take anything on the left.
-
-    Examples: constant, prefix operator, error.
+    In C++ this should be a big array.
     """
-    for token in tokens:
-      self.nud_lookup[token] = NullInfo(nud=nud, bp=bp)
-      if token not in self.led_lookup:
-        self.led_lookup[token] = LeftInfo()  # error
-
-  def _RegisterLed(self, lbp, rbp, led, tokens):
-    # type: (int, int, LeftFunc, List[Id_t]) -> None
-    for token in tokens:
-      if token not in self.nud_lookup:
-        self.nud_lookup[token] = NullInfo(NullError)
-      self.led_lookup[token] = LeftInfo(lbp=lbp, rbp=rbp, led=led)
-
-  def Left(self, bp, led, tokens):
-    # type: (int, LeftFunc, List[Id_t]) -> None
-    """Register a token that takes an expression on the left."""
-    self._RegisterLed(bp, bp, led, tokens)
-
-  def LeftRightAssoc(self, bp, led, tokens):
-    # type: (int, LeftFunc, List[Id_t]) -> None
-    """Register a right associative operator."""
-    self._RegisterLed(bp, bp - 1, led, tokens)
-
-  def LookupNud(self, token):
-    # type: (Id_t) -> NullInfo
-    try:
-      nud = self.nud_lookup[token]
-    except KeyError:
-      raise AssertionError('No nud for token %r' % token)
-    return nud
-
-  def LookupLed(self, token):
-    # type: (Id_t) -> LeftInfo
-    """Get a left_info for the token."""
-    return self.led_lookup[token]
+    def __init__(self, led=None, lbp=0, rbp=0):
+      # type: (LeftFunc, int, int) -> None
+      self.led = led or LeftError
+      self.lbp = lbp
+      self.rbp = rbp
 
 
-#EOF_TOKEN = Token('eof', 'eof')
+  class NullInfo(object):
+    """Row for operator.
+
+    In C++ this should be a big array.
+    """
+    def __init__(self, nud=None, bp=0):
+      # type: (NullFunc, int) -> None
+      self.nud = nud or LeftError
+      self.bp = bp
+
+
+  class ParserSpec(object):
+    """Specification for a TDOP parser.
+
+    This can be compiled to a table in C++.
+    """
+    def __init__(self):
+      # type: () -> None
+      self.nud_lookup = {}  # type: Dict[Id_t, NullInfo]
+      self.led_lookup = {}  # type: Dict[Id_t, LeftInfo]
+
+    def Null(self, bp, nud, tokens):
+      # type: (int, NullFunc, List[Id_t]) -> None
+      """Register a token that doesn't take anything on the left.
+
+      Examples: constant, prefix operator, error.
+      """
+      for token in tokens:
+        self.nud_lookup[token] = NullInfo(nud=nud, bp=bp)
+        if token not in self.led_lookup:
+          self.led_lookup[token] = LeftInfo()  # error
+
+    def _RegisterLed(self, lbp, rbp, led, tokens):
+      # type: (int, int, LeftFunc, List[Id_t]) -> None
+      for token in tokens:
+        if token not in self.nud_lookup:
+          self.nud_lookup[token] = NullInfo(NullError)
+        self.led_lookup[token] = LeftInfo(lbp=lbp, rbp=rbp, led=led)
+
+    def Left(self, bp, led, tokens):
+      # type: (int, LeftFunc, List[Id_t]) -> None
+      """Register a token that takes an expression on the left."""
+      self._RegisterLed(bp, bp, led, tokens)
+
+    def LeftRightAssoc(self, bp, led, tokens):
+      # type: (int, LeftFunc, List[Id_t]) -> None
+      """Register a right associative operator."""
+      self._RegisterLed(bp, bp - 1, led, tokens)
+
+    def LookupNud(self, token):
+      # type: (Id_t) -> NullInfo
+      try:
+        nud = self.nud_lookup[token]
+      except KeyError:
+        raise AssertionError('No nud for token %r' % token)
+      return nud
+
+    def LookupLed(self, token):
+      # type: (Id_t) -> LeftInfo
+      """Get a left_info for the token."""
+      return self.led_lookup[token]
 
 
 class TdopParser(object):
@@ -237,7 +234,8 @@ class TdopParser(object):
     # type: (Id_t) -> None
     """Assert that we're at the current token and advance."""
     if not self.AtToken(token_type):
-      p_die('Parser expected %s, got %s', token_type, self.cur_word,
+      p_die('Parser expected %s, got %s',
+            NewStr(Id_str(token_type)), NewStr(Id_str(self.op_id)),
             word=self.cur_word)
     self.Next()
 
