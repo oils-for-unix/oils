@@ -374,14 +374,14 @@ class WordParser(object):
     # Now look for ops
     return part
 
-  def ReadBracedBracedVarSub(self, left_token):
+  def ReadBracedVarSub(self, left_token):
     # type: (token) -> Tuple[braced_var_sub, token]
-    """   For expressions like var x = ${x:-"default"}.  """
-    part = self._ReadBracedBracedVarSub(left_token)
+    """   For Oil expressions like var x = ${x:-"default"}.  """
+    part = self._ReadBracedVarSub(left_token)
     last_token = self.cur_token
     return part, last_token
 
-  def _ReadBracedBracedVarSub(self, left_token, d_quoted=False):
+  def _ReadBracedVarSub(self, left_token, d_quoted=False):
     # type: (token, bool) -> braced_var_sub
     """For the ${} expression language.
 
@@ -548,7 +548,7 @@ class WordParser(object):
       return self._ReadCommandSub(self.token_type)
 
     if self.token_type == Id.Left_DollarBrace:
-      return self._ReadBracedBracedVarSub(self.cur_token, d_quoted=True)
+      return self._ReadBracedVarSub(self.cur_token, d_quoted=True)
 
     if self.token_type == Id.Left_DollarDParen:
       return self._ReadArithSub()
@@ -582,7 +582,7 @@ class WordParser(object):
       return self._ReadCommandSub(self.token_type)
 
     if self.token_type == Id.Left_DollarBrace:
-      return self._ReadBracedBracedVarSub(self.cur_token, d_quoted=False)
+      return self._ReadBracedVarSub(self.cur_token, d_quoted=False)
 
     if self.token_type == Id.Left_DollarDParen:
       return self._ReadArithSub()

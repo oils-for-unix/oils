@@ -242,7 +242,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
         line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
         w_parser = parse_ctx.MakeWordParser(lex, line_reader)
 
-        part, last_token = w_parser.ReadBracedBracedVarSub(left_token)
+        part, last_token = w_parser.ReadBracedVarSub(left_token)
 
         # It's casted word_part__BracedVarSub -> dummy -> expr__BracedVarSub!
         typ = Id.Expr_CastedDummy
