@@ -10,7 +10,7 @@ cmd_parse.py - Parse high level shell commands.
 from __future__ import print_function
 
 from _devbuild.gen import grammar_nt
-from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t
+from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str, Kind
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
     command, command_e, command_t,
@@ -434,8 +434,8 @@ class CommandParser(object):
 
   def _Eat(self, c_id):
     # type: (Id_t) -> None
-    msg = 'Expected word type %s, got %s' % (
-        c_id, word_.CommandId(self.cur_word))
+    actual_id = word_.CommandId(self.cur_word)
+    msg = 'Expected word type %s, got %s' % (Id_str(c_id), Id_str(actual_id))
     self._Eat2(c_id, msg)
 
   def _Eat2(self, c_id, msg):

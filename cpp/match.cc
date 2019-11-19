@@ -28,5 +28,10 @@ SimpleLexer* BraceRangeLexer(Str* s) {
   return new SimpleLexer(&MatchBraceRangeToken, s);
 }
 
+bool IsValidVarName(Str* s) {
+  // Call generated function.  Note: this relies on operator overloading.
+  return IsValidVarName(s->data_, s->len_);
+}
+
 }  // namespace match
 

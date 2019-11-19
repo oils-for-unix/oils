@@ -38,8 +38,18 @@ class SimpleLexer {
   int pos_;
 };
 
-// "Construct" secondary lexers
+//
+// Secondary Lexers
+//
+
 SimpleLexer* BraceRangeLexer(Str* s);
+
+
+//
+// Other Matching Functions
+//
+
+bool IsValidVarName(Str* s);
 
 }  // namespace match
 

@@ -4,8 +4,10 @@ parse_lib.py - Consolidate various parser instantiations here.
 
 from _devbuild.gen.id_kind_asdl import Id_t
 from _devbuild.gen.syntax_asdl import (
-    token, command_t, expr_t, word_t, redir_t, compound_word,
-    name_type, command__Proc, command__Func, arg_list,
+    token, compound_word,
+    command_t, command__VarDecl, command__Proc, command__Func,
+    expr_t, word_t, redir_t,
+    arg_list, name_type,
 )
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen import grammar_nt
@@ -22,6 +24,7 @@ from oil_lang import expr_to_ast
 from osh import arith_parse
 from osh import cmd_parse
 from osh import word_parse
+from mycpp import mylib
 
 from typing import Any, List, Tuple, Dict, Optional, IO, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -80,29 +83,30 @@ class _BaseTrail(object):
     # type: () -> None
     pass
 
-  def PrintDebugString(self, debug_f):
-    # type: (DebugFile) -> None
+  if mylib.PYTHON:
+    def PrintDebugString(self, debug_f):
+      # type: (DebugFile) -> None
 
-    # note: could cast DebugFile to IO[str] instead of ignoring?
-    debug_f.log('  words:')
-    for w in self.words:
-      w.PrettyPrint(f=debug_f)  # type: ignore
-    debug_f.log('')
+      # note: could cast DebugFile to IO[str] instead of ignoring?
+      debug_f.log('  words:')
+      for w in self.words:
+        w.PrettyPrint(f=debug_f)  # type: ignore
+      debug_f.log('')
 
-    debug_f.log('  redirects:')
-    for r in self.redirects:
-      r.PrettyPrint(f=debug_f)  # type: ignore
-    debug_f.log('')
+      debug_f.log('  redirects:')
+      for r in self.redirects:
+        r.PrettyPrint(f=debug_f)  # type: ignore
+      debug_f.log('')
 
-    debug_f.log('  tokens:')
-    for p in self.tokens:
-      p.PrettyPrint(f=debug_f)  # type: ignore
-    debug_f.log('')
+      debug_f.log('  tokens:')
+      for p in self.tokens:
+        p.PrettyPrint(f=debug_f)  # type: ignore
+      debug_f.log('')
 
-    debug_f.log('  alias_words:')
-    for w in self.alias_words:
-      w.PrettyPrint(f=debug_f)  # type: ignore
-    debug_f.log('')
+      debug_f.log('  alias_words:')
+      for w in self.alias_words:
+        w.PrettyPrint(f=debug_f)  # type: ignore
+      debug_f.log('')
 
   def __repr__(self):
     # type: () -> str
@@ -170,36 +174,37 @@ if TYPE_CHECKING:
   AliasesInFlight = List[Tuple[str, int]]
 
 
-def MakeGrammarNames(oil_grammar):
-  # type: (Grammar) -> Dict[int, str]
+if mylib.PYTHON:
+  def MakeGrammarNames(oil_grammar):
+    # type: (Grammar) -> Dict[int, str]
 
-  # TODO: Break this dependency
-  from frontend import lex
+    # TODO: Break this dependency
+    from frontend import lex
 
-  names = {}
+    names = {}
 
-  #from _devbuild.gen.id_kind_asdl import _Id_str
-  # This is a dictionary
+    #from _devbuild.gen.id_kind_asdl import _Id_str
+    # This is a dictionary
 
-  # _Id_str()
+    # _Id_str()
 
-  for id_name, k in lex.ID_SPEC.id_str2int.items():
-    # Hm some are out of range
-    #assert k < 256, (k, id_name)
+    for id_name, k in lex.ID_SPEC.id_str2int.items():
+      # Hm some are out of range
+      #assert k < 256, (k, id_name)
 
-    # HACK: Cut it off at 256 now!  Expr/Arith/Op doesn't go higher than
-    # that.  TODO: Change NT_OFFSET?  That might affect C code though.
-    # Best to keep everything fed to pgen under 256.  This only affects
-    # pretty printing.
-    if k < 256:
-      names[k] = id_name
+      # HACK: Cut it off at 256 now!  Expr/Arith/Op doesn't go higher than
+      # that.  TODO: Change NT_OFFSET?  That might affect C code though.
+      # Best to keep everything fed to pgen under 256.  This only affects
+      # pretty printing.
+      if k < 256:
+        names[k] = id_name
 
-  for k, v in oil_grammar.number2symbol.items():
-    # eval_input == 256.  Remove?
-    assert k >= 256, (k, v)
-    names[k] = v
+    for k, v in oil_grammar.number2symbol.items():
+      # eval_input == 256.  Remove?
+      assert k >= 256, (k, v)
+      names[k] = v
 
-  return names
+    return names
 
 
 class OilParseOptions(object):
@@ -251,18 +256,20 @@ class ParseContext(object):
     # NOTE: The transformer is really a pure function.
     if oil_grammar:
       self.tr = expr_to_ast.Transformer(oil_grammar)
-      names = MakeGrammarNames(oil_grammar)
+      if mylib.PYTHON:
+        names = MakeGrammarNames(oil_grammar)
     else:  # hack for unit tests, which pass None
       self.tr = None
       names = {}
+
+    if mylib.PYTHON:
+      self.p_printer = expr_parse.ParseTreePrinter(names)  # print raw nodes
 
     self.parsing_expr = False  # "single-threaded" state
 
     # Completion state lives here since it may span multiple parsers.
     self.trail = trail or _NullTrail()
     self.one_pass_parse = one_pass_parse
-
-    self.p_printer = expr_parse.ParseTreePrinter(names)  # print raw nodes
 
   def _MakeLexer(self, line_reader):
     # type: (_Reader) -> Lexer
@@ -300,8 +307,8 @@ class ParseContext(object):
     """Used for a[x+1]=foo in the CommandParser."""
     line_reader = reader.StringLineReader(code_str, self.arena)
     lx = self._MakeLexer(line_reader)
-    w_parser = word_parse.WordParser(self, lx, line_reader,
-                                     lex_mode=lex_mode_e.Arith)
+    w_parser = word_parse.WordParser(self, lx, line_reader)
+    w_parser.Init(lex_mode_e.Arith)  # Special initialization
     a_parser = tdop.TdopParser(arith_parse.SPEC, w_parser)
     return a_parser
 
@@ -330,7 +337,7 @@ class ParseContext(object):
       self.parsing_expr = False
 
   def ParseVarDecl(self, kw_token, lexer):
-    # type: (token, Lexer) -> Tuple[command_t, token]
+    # type: (token, Lexer) -> Tuple[command__VarDecl, token]
     """e.g. var mylist = [1, 2, 3]"""
 
     # TODO: We do need re-entrancy for var x = @[ (1+2) ] and such
@@ -365,7 +372,8 @@ class ParseContext(object):
   def ParseOilArgList(self, lexer, out):
     # type: (Lexer, arg_list) -> token
     if self.parsing_expr:
-      p_die("TODO: can't be nested")
+      # TODO: get rid of parsing_expr
+      raise AssertionError()
 
     pnode, last_token = self._ParseOil(lexer, grammar_nt.oil_arglist)
 

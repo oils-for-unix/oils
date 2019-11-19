@@ -90,25 +90,29 @@ KINDS_THAT_END_WORDS = [Kind.Eof, Kind.WS, Kind.Op, Kind.Right]
 
 class WordParser(object):
 
-  def __init__(self, parse_ctx, lexer, line_reader,
-               lex_mode=lex_mode_e.ShCommand):
-    # type: (ParseContext, Lexer, _Reader, lex_mode_t) -> None
+  def __init__(self, parse_ctx, lexer, line_reader):
+    # type: (ParseContext, Lexer, _Reader) -> None
     self.parse_ctx = parse_ctx
     self.lexer = lexer
     self.line_reader = line_reader
 
     self.parse_opts = parse_ctx.parse_opts
-    self.Reset(lex_mode=lex_mode)
+    self.Reset()
 
-  def Reset(self, lex_mode=lex_mode_e.ShCommand):
+  def Init(self, lex_mode):
     # type: (lex_mode_t) -> None
+    """Used to parse arithmetic, see ParseContext."""
+    self.next_lex_mode = lex_mode
+
+  def Reset(self):
+    # type: () -> None
     """Called by interactive loop."""
     # For _Peek()
     self.cur_token = None  # type: token
     self.token_kind = Kind.Undefined
     self.token_type = Id.Undefined_Tok
 
-    self.next_lex_mode = lex_mode
+    self.next_lex_mode = lex_mode_e.ShCommand
 
     # For newline.  TODO: I think we can do this iteratively, without member
     # state.

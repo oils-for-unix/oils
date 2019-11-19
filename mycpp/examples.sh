@@ -320,10 +320,10 @@ namespace arith_nt {
     $REPO_ROOT/osh/word_.py 
     $REPO_ROOT/osh/bool_parse.py 
     $REPO_ROOT/osh/word_parse.py
-    #$REPO_ROOT/osh/cmd_parse.py 
+    $REPO_ROOT/osh/cmd_parse.py 
     #$REPO_ROOT/osh/arith_parse.py 
     #$REPO_ROOT/frontend/tdop.py
-    #$REPO_ROOT/frontend/parse_lib.py
+    $REPO_ROOT/frontend/parse_lib.py
   )
 
   translate-ordered $name "${HNODE_HEADER}$snippet" \
