@@ -644,7 +644,7 @@ class Transformer(object):
         p_die("Can't assign to this expression", token=p.tok if p.tok else None)
     return places
 
-  def VarDecl(self, p_node):
+  def MakeVarDecl(self, p_node):
     # type: (PNode) -> command__VarDecl
     """
     oil_var_decl: name_type_list '=' testlist end_stmt
@@ -660,7 +660,7 @@ class Transformer(object):
     # The caller should fill in the keyword token.
     return command.VarDecl(None, lhs, rhs)
 
-  def PlaceMutation(self, p_node):
+  def MakePlaceMutation(self, p_node):
     # type: (PNode) -> command__PlaceMutation
     """
     oil_place_mutation: place_list (augassign | '=') testlist end_stmt

@@ -211,9 +211,9 @@ class OilParseOptions(object):
 
   def __init__(self):
     # type: () -> None
-    self.at = False  # @foo, @array(a, b)
-    self.brace = False  # cd /bin { ... }
-    self.paren = False  # if (x > 0) ...
+    self.parse_at = False  # @foo, @array(a, b)
+    self.parse_brace = False  # cd /bin { ... }
+    self.parse_paren = False  # if (x > 0) ...
 
     # Should this also change r''' c''' and and c"""?  Those are hard to
     # do in command mode without changing the lexer, but useful because of
@@ -226,14 +226,14 @@ class OilParseOptions(object):
     #   hello\n
     #   '''
     # }
-    self.rawc = False  # echo r'' c''
-    self.index_expr = False  # ${a[1 + f(x)]}
+    self.parse_rawc = False  # echo r'' c''
+    self.parse_index_expr = False  # ${a[1 + f(x)]}
 
     # all:nice
-    self.equals = False  # x = 'var'
-    self.set = False  # set x = 'var'
+    self.parse_equals = False  # x = 'var'
+    self.parse_set = False  # set x = 'var'
 
-    self.do = False  # do f(x)
+    self.parse_do = False  # do f(x)
 
   #def __str__(self):
   #  return str(self.__dict__)
@@ -354,7 +354,7 @@ class ParseContext(object):
     if 0:
       self.p_printer.Print(pnode)
 
-    ast_node = self.tr.VarDecl(pnode)
+    ast_node = self.tr.MakeVarDecl(pnode)
     ast_node.keyword = kw_token  # VarDecl didn't fill this in
     return ast_node, last_token
 
@@ -366,7 +366,7 @@ class ParseContext(object):
                                             grammar_nt.oil_place_mutation)
     if 0:
       self.p_printer.Print(pnode)
-    ast_node = self.tr.PlaceMutation(pnode)
+    ast_node = self.tr.MakePlaceMutation(pnode)
     ast_node.keyword = kw_token  # VarDecl didn't fill this in
     return ast_node, last_token
 

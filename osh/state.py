@@ -426,7 +426,6 @@ class ExecOpts(object):
     if not self.mem.InGlobalNamespace():
       e_die('Syntax options must be set at the top level '
             '(outside any function)')
-    attr = attr[len('parse_'):]  # parse_at -> at
     setattr(self.parse_opts, attr, b)
 
   def SetOption(self, opt_name, b):
@@ -514,8 +513,7 @@ class ExecOpts(object):
       if opt_name in SHOPT_OPTION_NAMES:
         b = getattr(self, opt_name)
       elif opt_name in _PARSE_OPTION_NAMES:
-        attr = opt_name[len('parse_'):]  # parse_at -> at
-        b = getattr(self.parse_opts, attr)
+        b = getattr(self.parse_opts, opt_name)
       else:
         raise args.UsageError('got invalid option %r' % opt_name)
       print('shopt -%s %s' % ('s' if b else 'u', opt_name))

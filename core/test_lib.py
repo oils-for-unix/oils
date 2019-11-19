@@ -237,7 +237,7 @@ def EvalCode(code_str, parse_ctx, comp_lookup=None, mem=None, aliases=None):
 def InitWordParser(word_str, oil_at=False, arena=None):
   arena = arena or MakeArena('<test_lib>')
   parse_opts = parse_lib.OilParseOptions()
-  parse_opts.at = oil_at
+  parse_opts.parse_at = oil_at
   loader = pyutil.GetResourceLoader()
   oil_grammar = meta.LoadOilGrammar(loader)
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, oil_grammar)

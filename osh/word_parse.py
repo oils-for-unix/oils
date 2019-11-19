@@ -1203,7 +1203,7 @@ class WordParser(object):
                     token=self.cur_token)
             done = True
 
-        elif (self.parse_opts.at and self.token_type == Id.Lit_Splice and
+        elif (self.parse_opts.parse_at and self.token_type == Id.Lit_Splice and
               num_parts == 0):
 
           splice_token = self.cur_token
@@ -1312,7 +1312,7 @@ class WordParser(object):
         self._Next(lex_mode)
         num_parts += 1
 
-    if self.parse_opts.brace and num_parts > 1 and brace_count != 0:
+    if self.parse_opts.parse_brace and num_parts > 1 and brace_count != 0:
       # accept { and }, but not foo{
       p_die(
           'Word has unbalanced { }.  Maybe add a space or quote it like \{',
