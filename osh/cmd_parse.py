@@ -42,7 +42,7 @@ from frontend import reader
 from osh import braces
 from osh import bool_parse
 from osh import word_
-from mycpp.mylib import NewStr
+from mycpp.mylib import NewStr, switch
 
 from typing import Optional, List, Tuple, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -1642,7 +1642,10 @@ class CommandParser(object):
     if self.c_id == Id.KW_Proc:
       return self.ParseOilProc()
 
-    # TODO: We should have another Kind for "initial keywords".
+    # TODO: Fill this out
+    _ = switch
+    #with switch(self.c_id) as case:
+    #  pass
     if self.c_id in (
         Id.KW_DLeftBracket, Id.Op_DLeftParen, Id.Op_LParen, Id.Lit_LBrace,
         Id.KW_For, Id.KW_While, Id.KW_Until, Id.KW_If, Id.KW_Case, Id.KW_Time,
@@ -1651,7 +1654,8 @@ class CommandParser(object):
 
       # NOTE: this is unsafe within the type system because redirects aren't on
       # the base class.
-      if node.tag_() not in (command_e.TimeBlock, command_e.VarDecl):
+      if node.tag_() not in (
+          command_e.TimeBlock, command_e.VarDecl, command_e.PlaceMutation):
         node.redirects = self._ParseRedirectList()  # type: ignore
       return node
     if self.parse_opts.parse_set and self.c_id == Id.KW_Set:

@@ -45,7 +45,7 @@ pyrun-parse() {
 
 # TODO: Need a header for this.
 
-readonly HNODE_HEADER='
+readonly ASDL_RUNTIME_HEADER='
 class Str;
 namespace hnode_asdl {
   class hnode__Record;
@@ -78,7 +78,7 @@ Str* repr(void* obj) {
 }
 
 '
-  translate-ordered parse "${HNODE_HEADER}$snippet"  \
+  translate-ordered parse "${ASDL_RUNTIME_HEADER}$snippet"  \
     $REPO_ROOT/pylib/cgi.py \
     $REPO_ROOT/asdl/runtime.py \
     $REPO_ROOT/asdl/format.py \
@@ -194,7 +194,7 @@ Str* repr(syntax_asdl::source_t* obj) {
   return new Str("TODO");
 }
 '
-  translate-ordered alloc_main "${HNODE_HEADER}$snippet" \
+  translate-ordered alloc_main "${ASDL_RUNTIME_HEADER}$snippet" \
     $REPO_ROOT/asdl/runtime.py \
     $REPO_ROOT/core/alloc.py \
     examples/alloc_main.py
@@ -249,6 +249,11 @@ using id_kind_asdl::Kind_t;
 
 // Hack for now.  Every sum type should have repr()?
 Str* repr(syntax_asdl::source_t* obj) {
+  return new Str("TODO");
+}
+
+// STUB for osh/word_.py
+Str* str(syntax_asdl::word_t* w) {
   return new Str("TODO");
 }
 
@@ -337,7 +342,7 @@ namespace arith_nt {
     $REPO_ROOT/frontend/parse_lib.py
   )
 
-  translate-ordered $name "${HNODE_HEADER}$snippet" \
+  translate-ordered $name "${ASDL_RUNTIME_HEADER}$snippet" \
     "${FILES[@]}" "${PARSE_FILES[@]}" "${MORE_FILES[@]}" "${PYLIB_FILES[@]}"
     #"${FILES[@]}" "${MORE_FILES[@]}"
 
