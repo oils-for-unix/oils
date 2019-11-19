@@ -4,7 +4,7 @@ tdop.py - Library for expression parsing.
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
-    arith_expr, arith_expr_t,
+    arith_expr, arith_expr_e, arith_expr_t,
     arith_expr__ArithWord, arith_expr__UnaryAssign, arith_expr__VarRef,
     arith_expr__Binary, arith_expr__BinaryAssign,
     sh_lhs_expr, sh_lhs_expr_t, sh_lhs_expr__Name,
@@ -13,8 +13,9 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.types_asdl import lex_mode_e
 from core import util
 from osh import word_
+from mycpp.mylib import tagswitch
 
-from typing import Callable, List, Dict, NoReturn, TYPE_CHECKING
+from typing import Callable, List, Dict, NoReturn, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:  # break circular dep
   from osh.word_parse import WordParser
@@ -26,36 +27,39 @@ p_die = util.p_die
 
 def IsIndexable(node):
   # type: (arith_expr_t) -> bool
-  """Is the word callable or indexable?
-
-  Args:
-    node: ExprNode
   """
-  if isinstance(node, arith_expr__VarRef):
-    return True  # f[1] is allowed
-
-  return False
+  a[1] is allowed but a[1][1] isn't
+  """
+  return node.tag_() == arith_expr_e.VarRef
 
 
 def ToLValue(node):
   # type: (arith_expr_t) -> sh_lhs_expr_t
   """Determine if a node is a valid L-value by whitelisting tags.
 
-  Args:
-    node: ExprNode (could be VarExprNode or BinaryExprNode)
+  Valid:
+    x = y
+    a[1] = y
+  Invalid:
+    a[0][0] = y
   """
-  # foo = bar, foo[1] = bar
-  if isinstance(node, arith_expr__VarRef):
-    # For consistency with osh/cmd_parse.py, append a span_id.
-    # TODO: (( a[ x ] = 1 )) and a[x]=1 should use different LST nodes.
-    n = sh_lhs_expr.Name(node.token.val)
-    n.spids.append(node.token.span_id)
-    return n
-  if isinstance(node, arith_expr__Binary):
-    # For example, a[0][0] = 1 is NOT valid.
-    if (node.op_id == Id.Arith_LBracket and
-        isinstance(node.left, arith_expr__VarRef)):
-      return sh_lhs_expr.IndexedName(node.left.token.val, node.right)
+  UP_node = node
+  with tagswitch(node) as case:
+    if case(arith_expr_e.VarRef):
+      node = cast(arith_expr__VarRef, UP_node)
+      # For consistency with osh/cmd_parse.py, append a span_id.
+      # TODO: (( a[ x ] = 1 )) and a[x]=1 should use different LST nodes.
+      n = sh_lhs_expr.Name(node.token.val)
+      n.spids.append(node.token.span_id)
+      return n
+
+    elif case(arith_expr_e.Binary):
+      node = cast(arith_expr__Binary, UP_node)
+      if (node.op_id == Id.Arith_LBracket and
+          node.left.tag_() == arith_expr_e.VarRef):
+        left = cast(arith_expr__VarRef, node.left)
+        return sh_lhs_expr.IndexedName(left.token.val, node.right)
+      # But a[0][0] = 1 is NOT valid.
 
   return None
 

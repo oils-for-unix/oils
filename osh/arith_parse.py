@@ -49,7 +49,7 @@ def LeftIncDec(p, w, left, rbp):
   elif word_.ArithId(w) == Id.Arith_DMinus:
     op_id = Id.Node_PostDMinus
   else:
-    raise AssertionError
+    raise AssertionError()
 
   child = tdop.ToLValue(left)
   return arith_expr.UnaryAssign(op_id, child)
