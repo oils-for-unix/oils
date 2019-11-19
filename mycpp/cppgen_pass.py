@@ -1383,7 +1383,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_del_stmt(self, o: 'mypy.nodes.DelStmt') -> T:
         pass
 
-    def _write_func_args(self, arg_types, arguments):
+    def _WriteFuncParams(self, arg_types, arguments):
         first = True  # first NOT including self
         for arg_type, arg in zip(arg_types, arguments):
           if not first:
@@ -1435,9 +1435,15 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # MakeOshParser(_Reader* line_reader) {
         #   return MakeOshParser(line_reader, True);
         # }
-        if (self.current_class_name and o.name() == '_Next' and
-            len(o.arguments) == 2):
-          default_val = o.arguments[1].initializer
+
+        # TODO: restrict this
+        class_name = self.current_class_name
+        func_name = o.name()
+
+        if (class_name in ('BoolParser', 'CommandParser') and func_name == '_Next' or
+            class_name == 'ParseContext' and func_name == 'MakeOshParser'):
+
+          default_val = o.arguments[-1].initializer
           if default_val:  # e.g. osh/bool_parse.py has default val
             if self.decl:
               func_name = o.name()
@@ -1449,14 +1455,25 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             virtual = ''
             c_ret_type = get_c_type(o.type.ret_type)
             self.decl_write_ind('%s%s %s(', virtual, c_ret_type, func_name)
-            # TODO: Write all params except optional ones here
+
+            # TODO: Write all params except last optional one
+            self._WriteFuncParams(o.type.arg_types[:-1], o.arguments[:-1])
+
             self.decl_write(')')
             if self.decl:
               self.decl_write(';\n')
             else:
               self.write(' {\n')
               self.write('  %s(' % o.name())
-              # TODO: Write all args here
+
+              # Don't write self or last optional argument
+              pass_through = o.arguments[1:-1]
+              if pass_through:
+                for i, arg in enumerate(pass_through):
+                  if i != 0:
+                    self.write(', ')
+                  self.write(arg.variable.name())
+                self.write(', ')
 
               # Now write default value, e.g. lex_mode_e::DBracket
               self.accept(default_val)  
@@ -1489,7 +1506,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         c_type = get_c_type(o.type.ret_type)
         self.decl_write_ind('%s%s %s(', virtual, c_type, func_name)
 
-        self._write_func_args(o.type.arg_types, o.arguments)
+        self._WriteFuncParams(o.type.arg_types, o.arguments)
 
         if self.decl:
           self.decl_write(');\n')
@@ -1573,7 +1590,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # Constructor is named after class
             if isinstance(stmt, FuncDef) and stmt.name() == '__init__':
               self.decl_write_ind('%s(', o.name)
-              self._write_func_args(stmt.type.arg_types, stmt.arguments)
+              self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)
               self.decl_write(');\n')
 
               # Must visit these for member vars!
@@ -1609,7 +1626,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           if isinstance(stmt, FuncDef) and stmt.name() == '__init__':
             self.write('\n')
             self.write_ind('%s::%s(', o.name, o.name)
-            self._write_func_args(stmt.type.arg_types, stmt.arguments)
+            self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)
             self.write(') ')
 
             # Taking into account the docstring, look at the first statement to
