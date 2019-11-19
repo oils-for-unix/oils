@@ -238,11 +238,11 @@ using id_kind_asdl::Kind_t;
 #include "syntax_asdl.h"
 #include "types_asdl.h"
 
-// _devbuild/gen-cpp/
+// oil/_devbuild/gen-cpp
 #include "lookup.h"
 #include "grammar_nt.h"
 
-// cpp/
+// oil/cpp
 #include "pretty.h"
 #include "match.h"
 
@@ -250,6 +250,11 @@ using id_kind_asdl::Kind_t;
 // Hack for now.  Every sum type should have repr()?
 Str* repr(syntax_asdl::source_t* obj) {
   return new Str("TODO");
+}
+
+// For hnode::External in asdl/format.py
+Str* repr(void* obj) {
+  return new Str("TODO: repr()");
 }
 
 // STUBS for p_die()
@@ -282,6 +287,7 @@ namespace util {
   };
 }
 
+// for pgen2_demo.py
 namespace arith_nt {
   const int arith_expr = 1;
 }

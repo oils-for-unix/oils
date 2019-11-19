@@ -350,19 +350,9 @@ class CommandParser(object):
     word_parse: to get a stream of words
     lexer: for lookahead in function def, PushHint of ()
     line_reader: for here doc
-    eof_id: for command subs
-    arena: where to add nodes, spans, lines, etc.
-    aliases_in_flight: for preventing infinite alias expansion
   """
-  def __init__(self,
-               parse_ctx,  # type: ParseContext
-               w_parser,  # type: WordParser
-               lexer,  # type: Lexer
-               line_reader,  # type: _Reader
-               eof_id=Id.Eof_Real,  # type: Id_t
-               aliases_in_flight=None,  # type: Optional[AliasesInFlight]
-               ):
-    # type: (...) -> None
+  def __init__(self, parse_ctx, w_parser, lexer, line_reader):
+    # type: (ParseContext, WordParser, Lexer, _Reader) -> None
     self.parse_ctx = parse_ctx
     self.aliases = parse_ctx.aliases  # aliases to expand at parse time
 
@@ -370,8 +360,8 @@ class CommandParser(object):
     self.lexer = lexer  # for pushing hints, lookahead to (
     self.line_reader = line_reader  # for here docs
     self.arena = parse_ctx.arena  # for adding here doc and alias spans
-    self.eof_id = eof_id
-    self.aliases_in_flight = aliases_in_flight
+    self.eof_id = Id.Eof_Real
+    self.aliases_in_flight = None  # type: AliasesInFlight
 
     # A hacky boolean to remove 'if cd / {' ambiguity.
     self.allow_block = True
@@ -380,6 +370,15 @@ class CommandParser(object):
     self.parse_opts = parse_ctx.parse_opts
 
     self.Reset()
+
+  # These two Init_() functions simulate "keywords args" in C++.
+  def Init_EofId(self, eof_id):
+    # type: (Id_t) -> None
+    self.eof_id = eof_id
+
+  def Init_AliasesInFlight(self, aliases_in_flight):
+    # type: (AliasesInFlight) -> None
+    self.aliases_in_flight = aliases_in_flight
 
   def Reset(self):
     # type: () -> None
@@ -716,8 +715,8 @@ class CommandParser(object):
 
     # NOTE: self.arena isn't correct here.  Breaks line invariant.
     line_reader = reader.StringLineReader(code_str, self.arena)
-    cp = self.parse_ctx.MakeOshParser(line_reader,
-                                      aliases_in_flight=aliases_in_flight)
+    cp = self.parse_ctx.MakeOshParser(line_reader)
+    cp.Init_AliasesInFlight(aliases_in_flight)
 
     # The interaction between COMPLETION and ALIASES requires special care.
     # See docstring of BeginAliasExpansion() in parse_lib.py.

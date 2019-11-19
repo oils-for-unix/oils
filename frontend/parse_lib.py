@@ -283,16 +283,14 @@ class ParseContext(object):
     line_lexer = lexer.LineLexer('', self.arena)
     return lexer.Lexer(line_lexer, line_reader)
 
-  def MakeOshParser(self, line_reader, emit_comp_dummy=False,
-                    aliases_in_flight=None):
-    # type: (_Reader, bool, Optional[AliasesInFlight]) -> CommandParser
+  def MakeOshParser(self, line_reader, emit_comp_dummy=False):
+    # type: (_Reader, bool) -> CommandParser
     lx = self._MakeLexer(line_reader)
     if emit_comp_dummy:
       lx.EmitCompDummy()  # A special token before EOF!
 
     w_parser = word_parse.WordParser(self, lx, line_reader)
-    c_parser = cmd_parse.CommandParser(self, w_parser, lx, line_reader,
-                                       aliases_in_flight=aliases_in_flight)
+    c_parser = cmd_parse.CommandParser(self, w_parser, lx, line_reader)
     return c_parser
 
   def MakeWordParserForHereDoc(self, line_reader):
@@ -318,8 +316,8 @@ class ParseContext(object):
     # type: (_Reader, Lexer, Id_t) -> CommandParser
     """To parse command sub, we want a fresh word parser state."""
     w_parser = word_parse.WordParser(self, lexer, line_reader)
-    c_parser = cmd_parse.CommandParser(self, w_parser, lexer, line_reader,
-                                       eof_id=eof_id)
+    c_parser = cmd_parse.CommandParser(self, w_parser, lexer, line_reader)
+    c_parser.Init_EofId(eof_id)
     return c_parser
 
   def MakeWordParserForPlugin(self, code_str):

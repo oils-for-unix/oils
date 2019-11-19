@@ -1383,9 +1383,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_del_stmt(self, o: 'mypy.nodes.DelStmt') -> T:
         pass
 
-    def _write_func_args(self, o: 'mypy.nodes.FuncDef'):
-        first = True
-        for i, (arg_type, arg) in enumerate(zip(o.type.arg_types, o.arguments)):
+    def _write_func_args(self, arg_types, arguments):
+        first = True  # first NOT including self
+        for arg_type, arg in zip(arg_types, arguments):
           if not first:
             self.decl_write(', ')
 
@@ -1428,6 +1428,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # if not TYPE_CHECKING: def _Next()  # get UnboundType?
         # @overload decorator -- not sure how to do it, will probably cause
         # runtime overhead
+
+        # Have:
+        # MakeOshParser(_Reader* line_reader, bool emit_comp_dummy)
+        # Want:
+        # MakeOshParser(_Reader* line_reader) {
+        #   return MakeOshParser(line_reader, True);
+        # }
         if (self.current_class_name and o.name() == '_Next' and
             len(o.arguments) == 2):
           default_val = o.arguments[1].initializer
@@ -1440,14 +1447,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             # Write _Next() with no args
             virtual = ''
-            c_type = get_c_type(o.type.ret_type)
-            self.decl_write_ind('%s%s %s()', virtual, c_type, func_name)
+            c_ret_type = get_c_type(o.type.ret_type)
+            self.decl_write_ind('%s%s %s(', virtual, c_ret_type, func_name)
+            # TODO: Write all params except optional ones here
+            self.decl_write(')')
             if self.decl:
               self.decl_write(';\n')
             else:
               self.write(' {\n')
-              self.write('  _Next(')
-              self.accept(default_val)  # e.g. lex_mode_e::DBracket
+              self.write('  %s(' % o.name())
+              # TODO: Write all args here
+
+              # Now write default value, e.g. lex_mode_e::DBracket
+              self.accept(default_val)  
               self.write(');\n')
               self.write('}\n')
 
@@ -1477,7 +1489,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         c_type = get_c_type(o.type.ret_type)
         self.decl_write_ind('%s%s %s(', virtual, c_type, func_name)
 
-        self._write_func_args(o)
+        self._write_func_args(o.type.arg_types, o.arguments)
 
         if self.decl:
           self.decl_write(');\n')
@@ -1561,7 +1573,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # Constructor is named after class
             if isinstance(stmt, FuncDef) and stmt.name() == '__init__':
               self.decl_write_ind('%s(', o.name)
-              self._write_func_args(stmt)
+              self._write_func_args(stmt.type.arg_types, stmt.arguments)
               self.decl_write(');\n')
 
               # Must visit these for member vars!
@@ -1597,7 +1609,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           if isinstance(stmt, FuncDef) and stmt.name() == '__init__':
             self.write('\n')
             self.write_ind('%s::%s(', o.name, o.name)
-            self._write_func_args(stmt)
+            self._write_func_args(stmt.type.arg_types, stmt.arguments)
             self.write(') ')
 
             # Taking into account the docstring, look at the first statement to
@@ -1890,6 +1902,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_try_stmt(self, o: 'mypy.nodes.TryStmt') -> T:
         self.write_ind('try ')
         self.accept(o.body)
+        caught = False
         for t, v, handler in zip(o.types, o.vars, o.handlers):
 
           # Heuristic
@@ -1903,6 +1916,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           else:
             self.write_ind('catch (%s) ', c_type)
           self.accept(handler)
+
+          caught = True
+
+        # DUMMY to prevent compile errors
+        # TODO: Remove this
+        if not caught:
+          self.write_ind('catch (std::exception) { }')
 
         #if o.else_body:
         #  raise AssertionError('try/else not supported')
