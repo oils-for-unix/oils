@@ -1398,6 +1398,9 @@ class CommandParser(object):
                      | (( ArithExpr ))
                      ;
     """
+    # NOTE: This is hard to refactor to switch() because of upcasting idiosyncrasy
+    # (and parse_opts conditional).
+
     if self.c_id == Id.Lit_LBrace:
       return self.ParseBraceGroup()
     if self.c_id == Id.Op_LParen:
@@ -1439,7 +1442,7 @@ class CommandParser(object):
       self._Next()
       return self.w_parser.ParsePlaceMutation(kw_token)
 
-    # This never happens?
+    # Happens in function body, e.g. myfunc() oops
     p_die('Unexpected word while parsing compound command', word=self.cur_word)
     assert False  # for MyPy
 
@@ -1449,6 +1452,8 @@ class CommandParser(object):
     function_body    : compound_command io_redirect* ; /* Apply rule 9 */
     """
     func.body = self.ParseCompoundCommand()
+    # Subtlety: the redirects are on the FuncDef node, not the
+    # If/For/While/etc. node
     func.redirects = self._ParseRedirectList()
 
   def ParseFunctionDef(self):

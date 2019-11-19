@@ -113,7 +113,7 @@ all() {
   wc -l */*_gen.py | sort --numeric
   echo
 
-  echo 'GENERATED CODE (for appb undle)'
+  echo 'GENERATED CODE (for app bundle)'
   wc -l _devbuild/gen/*.{py,h} | sort --numeric
   echo
 
