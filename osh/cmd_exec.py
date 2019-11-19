@@ -1730,22 +1730,6 @@ class Executor(object):
 
     For SimpleCommand and registered completion hooks.
     """
-    # These are redirects at DEFINITION SITE.  You can also have redirects at
-    # the CALL SITE.  For example:
-    #
-    # f() { echo hi; } 1>&2
-    # f 2>&1
-
-    try:
-      def_redirects = self._EvalRedirects(func_node)
-    except util.RedirectEvalError as e:
-      ui.PrettyPrintError(e, self.arena)
-      return 1
-
-    if def_redirects:
-      if not self.fd_state.Push(def_redirects, self.waiter):
-        return 1  # error
-
     self.mem.PushCall(func_node.name, func_node.spids[0], argv)
 
     # Redirects still valid for functions.
@@ -1763,8 +1747,6 @@ class Executor(object):
       raise
     finally:
       self.mem.PopCall()
-      if def_redirects:
-        self.fd_state.Pop()
 
     return status
 

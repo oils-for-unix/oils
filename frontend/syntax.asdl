@@ -292,7 +292,7 @@ module syntax
   | WhileUntil(token keyword, command* cond, command body, redir* redirects)
   | If(if_arm* arms, command* else_action, redir* redirects)
   | Case(word to_match, case_arm* arms, redir* redirects)
-  | ShFunction(string name, command body, redir* redirects)
+  | ShFunction(string name, command body)
   | TimeBlock(command pipeline)
     -- Most nodes optimize it out as command*, but there are a few places where
     -- this is useful for type safety.

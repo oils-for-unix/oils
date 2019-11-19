@@ -42,7 +42,7 @@ from frontend import reader
 from osh import braces
 from osh import bool_parse
 from osh import word_
-from mycpp.mylib import NewStr, switch
+from mycpp.mylib import NewStr
 
 from typing import Optional, List, Tuple, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -1393,68 +1393,73 @@ class CommandParser(object):
                      | until_clause
                      | if_clause
                      | case_clause
+
+                     # Non-POSIX
                      | time_clause
                      | [[ BoolExpr ]]
                      | (( ArithExpr ))
+
+                     # Oil
+                     | var ...
+                     | setvar ...
+                     | set ..>
                      ;
+
+    Refactoring: we put io_redirect* here instead of in function_body and
+    command!
     """
-    # NOTE: This is hard to refactor to switch() because of upcasting idiosyncrasy
-    # (and parse_opts conditional).
+    node = None  # type: Optional[command_t]
 
     if self.c_id == Id.Lit_LBrace:
-      return self.ParseBraceGroup()
-    if self.c_id == Id.Op_LParen:
-      return self.ParseSubshell()
+      node = self.ParseBraceGroup()
+    elif self.c_id == Id.Op_LParen:
+      node = self.ParseSubshell()
 
-    if self.c_id == Id.KW_For:
-      return self.ParseFor()
-    if self.c_id in (Id.KW_While, Id.KW_Until):
+    elif self.c_id == Id.KW_For:
+      node = self.ParseFor()
+    elif self.c_id in (Id.KW_While, Id.KW_Until):
       keyword = _KeywordToken(self.cur_word)
-      return self.ParseWhileUntil(keyword)
+      node = self.ParseWhileUntil(keyword)
 
-    if self.c_id == Id.KW_If:
-      return self.ParseIf()
-    if self.c_id == Id.KW_Case:
-      return self.ParseCase()
-    if self.c_id == Id.KW_Time:
-      return self.ParseTime()
+    elif self.c_id == Id.KW_If:
+      node = self.ParseIf()
+    elif self.c_id == Id.KW_Case:
+      node = self.ParseCase()
+    elif self.c_id == Id.KW_Time:
+      node = self.ParseTime()
 
     # Example of redirect that is observable:
     # $ (( $(echo one 1>&2; echo 2) > 0 )) 2> out.txt
-    if self.c_id == Id.KW_DLeftBracket:
-      return self.ParseDBracket()
+    elif self.c_id == Id.KW_DLeftBracket:
+      node = self.ParseDBracket()
 
-    if self.c_id == Id.Op_DLeftParen:
-      return self.ParseDParen()
+    elif self.c_id == Id.Op_DLeftParen:
+      node = self.ParseDParen()
 
-    if self.c_id == Id.KW_Var:
+    elif self.c_id == Id.KW_Var:
       kw_token = word_.LiteralToken(self.cur_word)
       self._Next()
-      return self.w_parser.ParseVarDecl(kw_token)
+      node = self.w_parser.ParseVarDecl(kw_token)
 
-    if self.c_id == Id.KW_SetVar:
+    elif self.c_id == Id.KW_SetVar:
       kw_token = word_.LiteralToken(self.cur_word)
       self._Next()
-      return self.w_parser.ParsePlaceMutation(kw_token)
+      node = self.w_parser.ParsePlaceMutation(kw_token)
 
-    if self.parse_opts.parse_set and self.c_id == Id.KW_Set:
+    elif self.parse_opts.parse_set and self.c_id == Id.KW_Set:
       kw_token = word_.LiteralToken(self.cur_word)
       self._Next()
-      return self.w_parser.ParsePlaceMutation(kw_token)
+      node = self.w_parser.ParsePlaceMutation(kw_token)
 
-    # Happens in function body, e.g. myfunc() oops
-    p_die('Unexpected word while parsing compound command', word=self.cur_word)
-    assert False  # for MyPy
+    if not node:
+      # Happens in function body, e.g. myfunc() oops
+      p_die('Unexpected word while parsing compound command', word=self.cur_word)
 
-  def ParseFunctionBody(self, func):
-    # type: (command__ShFunction) -> None
-    """
-    function_body    : compound_command io_redirect* ; /* Apply rule 9 */
-    """
-    func.body = self.ParseCompoundCommand()
-    # Subtlety: the redirects are on the FuncDef node, not the
-    # If/For/While/etc. node
-    func.redirects = self._ParseRedirectList()
+    if node.tag_() not in (
+        command_e.TimeBlock, command_e.VarDecl, command_e.PlaceMutation):
+      node.redirects = self._ParseRedirectList()  # type: ignore
+
+    return node
 
   def ParseFunctionDef(self):
     # type: () -> command__ShFunction
@@ -1496,8 +1501,7 @@ class CommandParser(object):
 
     func = command.ShFunction()
     func.name = name
-
-    self.ParseFunctionBody(func)
+    func.body = self.ParseCompoundCommand()
 
     func.spids.append(left_spid)
     func.spids.append(after_name_spid)
@@ -1533,8 +1537,7 @@ class CommandParser(object):
 
     func = command.ShFunction()
     func.name = name
-
-    self.ParseFunctionBody(func)
+    func.body = self.ParseCompoundCommand()
 
     func.spids.append(left_spid)
     func.spids.append(after_name_spid)
@@ -1630,7 +1633,7 @@ class CommandParser(object):
     # type: () -> command_t
     """
     command          : simple_command
-                     | compound_command io_redirect*
+                     | compound_command   # Oil edit: io_redirect* folded in
                      | function_def
                      | ksh_function_def
                      ;
@@ -1647,22 +1650,11 @@ class CommandParser(object):
     if self.c_id == Id.KW_Proc:
       return self.ParseOilProc()
 
-    # TODO: Fill this out
-    _ = switch
-    #with switch(self.c_id) as case:
-    #  pass
     if self.c_id in (
         Id.KW_DLeftBracket, Id.Op_DLeftParen, Id.Op_LParen, Id.Lit_LBrace,
         Id.KW_For, Id.KW_While, Id.KW_Until, Id.KW_If, Id.KW_Case, Id.KW_Time,
         Id.KW_Var, Id.KW_SetVar):
-      node = self.ParseCompoundCommand()
-
-      # NOTE: this is unsafe within the type system because redirects aren't on
-      # the base class.
-      if node.tag_() not in (
-          command_e.TimeBlock, command_e.VarDecl, command_e.PlaceMutation):
-        node.redirects = self._ParseRedirectList()  # type: ignore
-      return node
+      return self.ParseCompoundCommand()
     if self.parse_opts.parse_set and self.c_id == Id.KW_Set:
       return self.ParseCompoundCommand()
 
@@ -1673,16 +1665,14 @@ class CommandParser(object):
       keyword = _KeywordToken(self.cur_word)
       self._Next()
       enode = self.w_parser.ParseCommandExpr()
-      node = command.Return(keyword, enode)
-      return node
+      return command.Return(keyword, enode)
 
     # TODO: Can we have parse_do here?  For do obj.method()
     if self.c_id in (Id.KW_Pass, Id.KW_Pp, Id.KW_Do):
       keyword = _KeywordToken(self.cur_word)
       self._Next()
       enode = self.w_parser.ParseCommandExpr()
-      node = command.Expr(speck(keyword.id, keyword.span_id), enode)
-      return node
+      return command.Expr(speck(keyword.id, keyword.span_id), enode)
 
     # NOTE: I added this to fix cases in parse-errors.test.sh, but it doesn't
     # work because Lit_RBrace is in END_LIST below.
