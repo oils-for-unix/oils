@@ -1001,10 +1001,22 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           call = o.rvalue
           type_expr = call.args[0]
           subtype_name = _GetCTypeForCast(type_expr)
+
           cast_kind = _GetCastKind(self.module_path, subtype_name)
-          self.write_ind(
-              '%s %s = %s<%s>(', subtype_name, lval.name, cast_kind,
-              subtype_name)
+
+          # Distinguish between UP cast and DOWN cast.
+          # osh/cmd_parse.py _MakeAssignPair does an UP cast within branches.
+          # _t is the base type, so that means it's an upcast.
+          if isinstance(type_expr, NameExpr) and type_expr.name.endswith('_t'):
+            if self.decl:
+              self.local_var_list.append((lval.name, subtype_name))
+            self.write_ind(
+                '%s = %s<%s>(', lval.name, cast_kind, subtype_name)
+          else:
+            self.write_ind(
+                '%s %s = %s<%s>(', subtype_name, lval.name, cast_kind,
+                subtype_name)
+
           self.accept(call.args[1])  # variable being casted
           self.write(');\n')
           return

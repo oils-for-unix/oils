@@ -247,7 +247,7 @@ class ParseContext(object):
 
   def __init__(self, arena, parse_opts, aliases, oil_grammar, trail=None,
                one_pass_parse=False):
-    # type: (Arena, OilParseOptions, Dict[str, Any], Grammar, Optional[_BaseTrail], bool) -> None
+    # type: (Arena, OilParseOptions, Dict[str, str], Grammar, Optional[_BaseTrail], bool) -> None
     self.arena = arena
     self.parse_opts = parse_opts
     self.aliases = aliases
@@ -260,7 +260,8 @@ class ParseContext(object):
         names = MakeGrammarNames(oil_grammar)
     else:  # hack for unit tests, which pass None
       self.tr = None
-      names = {}
+      if mylib.PYTHON:  # TODO: Simplify
+        names = {}
 
     if mylib.PYTHON:
       self.p_printer = expr_parse.ParseTreePrinter(names)  # print raw nodes

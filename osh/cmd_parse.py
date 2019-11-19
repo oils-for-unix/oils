@@ -76,9 +76,8 @@ def _KeywordToken(UP_w):
 
   part = w.parts[0]
   assert part.tag_() == word_part_e.Literal, part
-  UP_part = part
-  part = cast(word_part__Literal, UP_part)
-  return part.token
+  lit_part = cast(word_part__Literal, part)
+  return lit_part.token
 
 
 def _ReadHereLines(line_reader,  # type: _Reader
@@ -138,7 +137,8 @@ def _MakeLiteralHereLines(here_lines,  # type: List[Tuple[int, str, int]]
     span_id = arena.AddLineSpan(line_id, start_offset, len(line))
     t = syntax_asdl.token(Id.Lit_Chars, line[start_offset:], span_id)
     tokens.append(t)
-  return [word_part.Literal(t) for t in tokens]
+  parts = [cast(word_part_t, word_part.Literal(t)) for t in tokens]
+  return parts
 
 
 def _ParseHereDocBody(parse_ctx, h, line_reader, arena):
@@ -169,11 +169,8 @@ def _ParseHereDocBody(parse_ctx, h, line_reader, arena):
   h.here_end_span_id = arena.AddLineSpan(end_line_id, end_pos, len(end_line))
 
 
-def _MakeAssignPair(parse_ctx,  # type: ParseContext
-                    preparsed,  # type: Tuple[token, Optional[token], int, compound_word]
-                    arena,  # type: Arena
-                    ):
-  # type: (...) -> assign_pair
+def _MakeAssignPair(parse_ctx, preparsed, arena):
+  # type: (ParseContext, PreParsedItem, Arena) -> assign_pair
   """Create an assign_pair from a 4-tuples from DetectShAssignment."""
 
   left_token, close_token, part_offset, w = preparsed
@@ -186,10 +183,10 @@ def _MakeAssignPair(parse_ctx,  # type: ParseContext
       var_name = left_token.val[:-1]
       op = assign_op_e.Equal
 
-    lhs_ = sh_lhs_expr.Name(var_name)
-    lhs_.spids.append(left_token.span_id)
+    tmp = sh_lhs_expr.Name(var_name)
+    tmp.spids.append(left_token.span_id)
 
-    lhs = cast(sh_lhs_expr_t, lhs_)  # for MyPy
+    lhs = cast(sh_lhs_expr_t, tmp)
 
   elif left_token.id == Id.Lit_ArrayLhsOpen and parse_ctx.one_pass_parse:
     var_name = left_token.val[:-1]
@@ -233,8 +230,10 @@ def _MakeAssignPair(parse_ctx,  # type: ParseContext
       index_node = a_parser.Parse()  # may raise util.ParseError
     finally:
       arena.PopSource()
-    lhs = sh_lhs_expr.IndexedName(var_name, index_node)
-    lhs.spids.append(left_token.span_id)
+    tmp3 = sh_lhs_expr.IndexedName(var_name, index_node)
+    tmp3.spids.append(left_token.span_id)
+
+    lhs = cast(sh_lhs_expr_t, tmp3)
 
   else:
     raise AssertionError()
@@ -279,7 +278,8 @@ def _AppendMoreEnv(preparsed_list, more_env):
 
 
 if TYPE_CHECKING:
-  PreParsedList = List[Tuple[token, Optional[token], int, compound_word]]
+  PreParsedItem = Tuple[token, Optional[token], int, compound_word]
+  PreParsedList = List[PreParsedItem]
 
 def _SplitSimpleCommandPrefix(words):
   # type: (List[compound_word]) -> Tuple[PreParsedList, List[compound_word]]
