@@ -717,15 +717,15 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         right_type = 0  # not a special case
         if isinstance(t0, Instance) and t0.type.fullname() == 'builtins.str':
           left_type = 1
+          if (isinstance(t0, UnionType) and len(t0.items) == 2 and
+              isinstance(t0.items[1], NoneTyp)):
+              left_type += 1
+
         if isinstance(t1, Instance) and t1.type.fullname() == 'builtins.str':
           right_type = 1
-
-        if (isinstance(t0, UnionType) and len(t0.items) == 2 and
-            isinstance(t0.items[1], NoneTyp)):
-            left_type = 2
-        if (isinstance(t1, UnionType) and len(t1.items) == 2 and
-            isinstance(t1.items[1], NoneTyp)):
-            right_type = 2
+          if (isinstance(t1, UnionType) and len(t1.items) == 2 and
+              isinstance(t1.items[1], NoneTyp)):
+              right_type += 1
 
         if left_type > 0 and right_type > 0 and operator in ('==', '!='):
           if operator == '!=':

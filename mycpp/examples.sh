@@ -238,9 +238,14 @@ using id_kind_asdl::Kind_t;
 #include "syntax_asdl.h"
 #include "types_asdl.h"
 
+// _devbuild/gen-cpp/
 #include "lookup.h"
-#include "match.h"
 #include "grammar_nt.h"
+
+// cpp/
+#include "pretty.h"
+#include "match.h"
+
 
 // Hack for now.  Every sum type should have repr()?
 Str* repr(syntax_asdl::source_t* obj) {
@@ -316,13 +321,13 @@ namespace arith_nt {
   )
 
   PARSE_FILES=(
-    #$REPO_ROOT/asdl/format.py 
+    $REPO_ROOT/asdl/format.py 
     $REPO_ROOT/osh/word_.py 
     $REPO_ROOT/osh/bool_parse.py 
     $REPO_ROOT/osh/word_parse.py
     $REPO_ROOT/osh/cmd_parse.py 
-    #$REPO_ROOT/osh/arith_parse.py 
-    #$REPO_ROOT/frontend/tdop.py
+    $REPO_ROOT/osh/arith_parse.py 
+    $REPO_ROOT/frontend/tdop.py
     $REPO_ROOT/frontend/parse_lib.py
   )
 
