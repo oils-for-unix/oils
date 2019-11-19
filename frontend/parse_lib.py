@@ -5,7 +5,8 @@ parse_lib.py - Consolidate various parser instantiations here.
 from _devbuild.gen.id_kind_asdl import Id_t
 from _devbuild.gen.syntax_asdl import (
     token, compound_word,
-    command_t, command__VarDecl, command__Proc, command__Func,
+    command_t, command__VarDecl, command__PlaceMutation, command__Proc,
+    command__Func,
     expr_t, word_t, redir_t,
     arg_list, name_type,
 )
@@ -269,7 +270,7 @@ class ParseContext(object):
     self.parsing_expr = False  # "single-threaded" state
 
     # Completion state lives here since it may span multiple parsers.
-    self.trail = trail or _NullTrail()
+    self.trail = trail if trail else _NullTrail()
     self.one_pass_parse = one_pass_parse
 
   def _MakeLexer(self, line_reader):
@@ -359,7 +360,7 @@ class ParseContext(object):
     return ast_node, last_token
 
   def ParsePlaceMutation(self, kw_token, lexer):
-    # type: (token, Lexer) -> Tuple[command_t, token]
+    # type: (token, Lexer) -> Tuple[command__PlaceMutation, token]
 
     # TODO: Create an ExprParser so it's re-entrant.
     pnode, last_token = self.e_parser.Parse(lexer,

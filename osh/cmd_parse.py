@@ -42,6 +42,7 @@ from frontend import reader
 from osh import braces
 from osh import bool_parse
 from osh import word_
+from mycpp.mylib import NewStr
 
 from typing import Optional, List, Tuple, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -244,7 +245,9 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
     val = word.Empty()  # type: word_t
   else:
     val = compound_word(w.parts[part_offset:], None)
-    val = word_.TildeDetect(val) or val
+    tilde = word_.TildeDetect(val)
+    if tilde:
+      val = tilde
 
   pair = syntax_asdl.assign_pair(lhs, op, val, [left_token.span_id])
   return pair
@@ -435,7 +438,9 @@ class CommandParser(object):
   def _Eat(self, c_id):
     # type: (Id_t) -> None
     actual_id = word_.CommandId(self.cur_word)
-    msg = 'Expected word type %s, got %s' % (Id_str(c_id), Id_str(actual_id))
+    msg = 'Expected word type %s, got %s' % (
+        NewStr(Id_str(c_id)), NewStr(Id_str(actual_id))
+    )
     self._Eat2(c_id, msg)
 
   def _Eat2(self, c_id, msg):
@@ -507,8 +512,10 @@ class CommandParser(object):
     if self.c_kind != Kind.Word:
       p_die('Invalid token after redirect operator', word=self.cur_word)
 
-    w2 = word_.TildeDetect(self.cur_word)
-    arg_word = w2 or self.cur_word
+    arg_word = self.cur_word
+    tilde = word_.TildeDetect(arg_word)
+    if tilde:
+      arg_word = tilde
     self._Next()
 
     return redir.Redir(op_tok, fd, arg_word)
@@ -617,7 +624,9 @@ class CommandParser(object):
     """
     # Start a new list if there aren't any.  This will be passed recursively
     # through CommandParser instances.
-    aliases_in_flight = self.aliases_in_flight or []
+    aliases_in_flight = (
+        self.aliases_in_flight if self.aliases_in_flight else []
+    )
 
     # for error message
     first_word_str = None  # type: Optional[str]
