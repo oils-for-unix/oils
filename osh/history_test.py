@@ -7,6 +7,7 @@ from __future__ import print_function
 import unittest
 import sys
 
+from core import error
 from core import test_lib
 from core import util
 from osh import history  # module under test

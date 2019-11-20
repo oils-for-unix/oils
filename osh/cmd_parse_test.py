@@ -7,9 +7,9 @@ import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import command_e
+from core import error
 from core import test_lib
 from core import ui
-from core import util
 
 from osh import word_
 
@@ -21,7 +21,7 @@ def _assertParseMethod(test, code_str, method, expect_success=True):
   try:
     node = m()
 
-  except util.ParseError as e:
+  except error.Parse as e:
     ui.PrettyPrintError(e, arena)
     if expect_success:
       test.fail('%r failed' % code_str)
@@ -40,7 +40,7 @@ def _assert_ParseCommandListError(test, code_str):
 
   try:
     node = c_parser._ParseCommandLine()
-  except util.ParseError as e:
+  except error.Parse as e:
     ui.PrettyPrintError(e, arena)
   else:
     print('UNEXPECTED:')

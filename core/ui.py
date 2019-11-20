@@ -27,7 +27,7 @@ from mycpp import mylib
 from typing import List, Any, IO, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
-  from core.util import _ErrorWithLocation
+  from core.error import _ErrorWithLocation
   #from frontend.args import UsageError
 
 

@@ -758,7 +758,7 @@ def OshCommandMain(argv):
 
   try:
     node = main_loop.ParseWholeFile(c_parser)
-  except util.ParseError as e:
+  except error.Parse as e:
     ui.PrettyPrintError(e, arena)
     return 2
   assert node is not None

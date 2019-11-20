@@ -41,7 +41,7 @@ def main(argv):
 
   try:
     pnode, _ = e_parser.Parse(lex, grammar_nt.command_expr)
-  except util.ParseError as e:
+  except error.Parse as e:
     ui.PrettyPrintError(e, arena)
     return 2
 

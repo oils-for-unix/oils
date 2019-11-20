@@ -8,7 +8,7 @@ import unittest
 from _devbuild.gen.runtime_asdl import (
     scope_e, lvalue, value, value_e, var_flags_e,
 )
-from core import util
+from core import error
 from core import test_lib
 from osh import state  # module under test
 
@@ -161,7 +161,7 @@ class MemTest(unittest.TestCase):
       mem.SetVar(
           lvalue.Named('COMPREPLY'), None, (var_flags_e.Exported,),
           scope_e.Dynamic)
-    except util.FatalRuntimeError as e:
+    except error.FatalRuntime as e:
       pass
     else:
       self.fail("Expected failure")
@@ -179,7 +179,7 @@ class MemTest(unittest.TestCase):
     try:
       mem.SetVar(
           lvalue.Named('r'), value.Str('newvalue'), (), scope_e.Dynamic)
-    except util.FatalRuntimeError as e:
+    except error.FatalRuntime as e:
       pass
     else:
       self.fail("Expected failure")
@@ -211,7 +211,7 @@ class MemTest(unittest.TestCase):
     if 0:
       try:
         mem.SetVar(lhs, value.MaybeStrArray(['x', 'y', 'z']), (), scope_e.Dynamic)
-      except util.FatalRuntimeError as e:
+      except error.FatalRuntime as e:
         pass
       else:
         self.fail("Expected failure")
@@ -225,7 +225,7 @@ class MemTest(unittest.TestCase):
     try:
       # a[1]=3
       mem.SetVar(lhs, value.Str('3'), (), scope_e.Dynamic)
-    except util.FatalRuntimeError as e:
+    except error.FatalRuntime as e:
       pass
     else:
       self.fail("Expected failure")

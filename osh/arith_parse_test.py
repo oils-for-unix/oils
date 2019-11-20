@@ -12,8 +12,8 @@ arith_parse_test.py: Tests for arith_parse.py
 import unittest
 
 from _devbuild.gen.types_asdl import lex_mode_e
+from core import error
 from core import test_lib
-from core import util
 from frontend import parse_lib
 from osh import cmd_exec
 from osh import expr_eval
@@ -56,7 +56,7 @@ def testEvalExpr(e, expected):
 def testSyntaxError(ex):
   try:
     actual = ParseAndEval(ex)
-  except util.ParseError as e:
+  except error.Parse as e:
     print(ex, '\t\t', e)
   else:
     raise AssertionError('Expected parse error: %r, got %r' % (ex, actual))

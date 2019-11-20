@@ -10,9 +10,9 @@ import unittest
 from _devbuild.gen.syntax_asdl import source
 
 from core import alloc
+from core import error
 from core import meta
 from core import pyutil
-from core import util
 from core.util import log
 from frontend import parse_lib
 from frontend import reader
@@ -83,7 +83,7 @@ class ExprParseTest(unittest.TestCase):
     );""")
 
     # Test out the DisallowedLineReader
-    self.assertRaises(util.ParseError, self._ParseOsh, r"""var x = @($(echo command <<EOF
+    self.assertRaises(error.Parse, self._ParseOsh, r"""var x = @($(echo command <<EOF
 EOF
 ))""")
 
@@ -97,7 +97,7 @@ hi)
     """)
 
     # Here docs use the Reader, so aren't allowed
-    self.assertRaises(util.ParseError, self._ParseOsh, """var x = $(cat <<EOF
+    self.assertRaises(error.Parse, self._ParseOsh, """var x = $(cat <<EOF
 hi
 EOF)
     """)

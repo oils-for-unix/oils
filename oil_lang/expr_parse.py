@@ -10,9 +10,8 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_str
 from _devbuild.gen.types_asdl import lex_mode_e
 
-from core import util
-from core.util import log
-from core.util import p_die
+from core import error
+from core.util import log, p_die
 from frontend import lookup
 from frontend import reader
 from osh import braces
@@ -308,7 +307,7 @@ class ExprParser(object):
       # ParseError has a "too much input" case but I haven't been able to
       # tickle it.  Mabye it's because of the Eof tokens?
 
-      #raise util.ParseError('Syntax error in expression (%r)', e, token=e.tok)
-      raise util.ParseError('Syntax error in expression', token=e.tok)
+      #raise error.Parse('Syntax error in expression (%r)', e, token=e.tok)
+      raise error.Parse('Syntax error in expression', token=e.tok)
 
     return self.push_parser.rootnode, last_token

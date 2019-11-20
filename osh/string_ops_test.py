@@ -6,7 +6,7 @@ from __future__ import print_function
 
 import unittest
 
-from core import util
+from core import error
 from osh import string_ops  # module under test
 
 
@@ -46,7 +46,7 @@ class LibStrTest(unittest.TestCase):
           actual_indexes.append(i)
           if i >= len(input_str):
             break
-        except util.InvalidUtf8 as e:
+        except error.InvalidUtf8 as e:
           actual_indexes.append(e.msg)
           break
       self.assertEqual(expected_indexes, actual_indexes)
@@ -71,7 +71,7 @@ class LibStrTest(unittest.TestCase):
           actual_indexes.append(i)
           if i == 0:
             break
-        except util.InvalidUtf8 as e:
+        except error.InvalidUtf8 as e:
           actual_indexes.append(e.msg)
           break
       self.assertEqual(expected_indexes, actual_indexes)

@@ -8,6 +8,7 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.id_kind_asdl import Id
+from core import error
 from core import util
 #from core.util import log
 from frontend import match
@@ -63,7 +64,7 @@ class Evaluator(object):
           c_parser = self.parse_ctx.MakeOshParser(line_reader)
           try:
             c_parser.ParseLogicalLine()
-          except util.ParseError as e:
+          except error.Parse as e:
             #from core import ui
             #ui.PrettyPrintError(e, self.parse_ctx.arena)
 

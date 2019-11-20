@@ -18,6 +18,7 @@ from _devbuild.gen.syntax_asdl import (
     command_t, command,
     parse_result__EmptyLine, parse_result__Eof, parse_result__Node
 )
+from core import error
 from core import ui
 from core import util
 
@@ -66,7 +67,7 @@ def Interactive(opts, ex, c_parser, display, prompt_plugin, errfmt):
         display.EraseLines()
         print(e.UserErrorString())
         break
-      except util.ParseError as e:
+      except error.Parse as e:
         display.EraseLines()
         errfmt.PrettyPrintError(e)
         # NOTE: This should set the status interactively!  Bash does this.
@@ -148,7 +149,7 @@ def Batch(ex, c_parser, arena, nodes_out=None):
       if node is None:  # EOF
         c_parser.CheckForPendingHereDocs()  # can raise ParseError
         break
-    except util.ParseError as e:
+    except error.Parse as e:
       ui.PrettyPrintError(e, arena)
       status = 2
       break

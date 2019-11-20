@@ -41,6 +41,7 @@ from _devbuild.gen.runtime_asdl import value_e
 from _devbuild.gen.types_asdl import redir_arg_type_e
 from _devbuild.gen.id_tables import REDIR_ARG_TYPES
 
+from core import error
 from core import ui
 from core import util
 from core.util import log
@@ -290,7 +291,7 @@ class DynamicWordsAction(CompletionAction):
   def Matches(self, comp):
     try:
       val = self.word_ev.EvalWordToString(self.arg_word)
-    except util.FatalRuntimeError as e:
+    except error.FatalRuntime as e:
       ui.PrettyPrintError(e, self.arena)
       raise
 
@@ -703,7 +704,7 @@ class RootCompleter(object):
     # We want the output from parse_ctx, so we don't use the return value.
     try:
       c_parser.ParseLogicalLine()
-    except util.ParseError as e:
+    except error.Parse as e:
       # e.g. 'ls | ' will not parse.  Now inspect the parser state!
       pass
 
@@ -834,7 +835,7 @@ class RootCompleter(object):
 
           try:
             val = self.word_ev.EvalWordToString(r.arg_word)
-          except util.FatalRuntimeError as e:
+          except error.FatalRuntime as e:
             debug_f.log('Error evaluating redirect word: %s', e)
             return
           if val.tag != value_e.Str:
@@ -894,7 +895,7 @@ class RootCompleter(object):
             # can do splitting and such.
             # - We could have a variant to eval TildeSub to ~ ?
             val = self.word_ev.EvalWordToString(w)
-          except util.FatalRuntimeError:
+          except error.FatalRuntime:
             # Why would it fail?
             continue
           if val.tag == value_e.Str:
@@ -913,7 +914,7 @@ class RootCompleter(object):
           w = trail.alias_words[0]
           try:
             val = self.word_ev.EvalWordToString(w)
-          except util.FatalRuntimeError:
+          except error.FatalRuntime:
             pass
           alias_first = val.s
           debug_f.log('alias_first: %s', alias_first)
@@ -1116,7 +1117,7 @@ class ReadlineCallback(object):
     except util.UserExit as e:
       # TODO: Could use errfmt to show this
       ui.Stderr("osh: Ignoring 'exit' in completion plugin")
-    except util.FatalRuntimeError as e:
+    except error.FatalRuntime as e:
       # From -W.  TODO: -F is swallowed now.
       # We should have a nicer UI for displaying errors.  Maybe they shouldn't
       # print it to stderr.  That messes up the completion display.  We could

@@ -8,7 +8,7 @@ from _devbuild.gen.syntax_asdl import assign_op_e
 
 from asdl import runtime
 from asdl import pretty
-from core import util
+from core import error
 from core.util import log
 from osh import word_
 from pylib import os_path
@@ -190,7 +190,7 @@ class Tracer(object):
 
       try:
         ps4_word = w_parser.ReadForPlugin()
-      except util.ParseError as e:
+      except error.Parse as e:
         ps4_word = word_.ErrorWord("<ERROR: Can't parse PS4: %s>", e)
       self.parse_cache[ps4] = ps4_word
 

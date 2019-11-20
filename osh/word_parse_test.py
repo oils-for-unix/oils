@@ -18,8 +18,8 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.types_asdl import lex_mode_e
 
 from asdl import runtime
+from core import error
 from core import test_lib
-from core import util
 from osh import word_
 
 
@@ -49,7 +49,7 @@ def _assertReadWordFailure(test, word_str, oil_at=False):
   w_parser = test_lib.InitWordParser(word_str, oil_at=oil_at)
   try:
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-  except util.ParseError as e:
+  except error.Parse as e:
     print('Got expected ParseError: %s' % e)
   else:
     w.PrettyPrint()

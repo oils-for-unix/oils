@@ -35,7 +35,7 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen import syntax_asdl  # token, etc.
 
 from asdl import runtime
-from core import util
+from core import error
 from core.util import log, p_die
 from frontend import match
 from frontend import reader
@@ -228,7 +228,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
     a_parser = parse_ctx.MakeArithParser(code_str)
     arena.PushSource(source.LValue(left_token.span_id, close_token.span_id))
     try:
-      index_node = a_parser.Parse()  # may raise util.ParseError
+      index_node = a_parser.Parse()  # may raise error.Parse
     finally:
       arena.PopSource()
     tmp3 = sh_lhs_expr.IndexedName(var_name, index_node)
@@ -729,7 +729,7 @@ class CommandParser(object):
       # _ParseCommandTerm() handles multiline commands, compound commands, etc.
       # as opposed to ParseLogicalLine()
       node = cp._ParseCommandTerm()
-    except util.ParseError as e:
+    except error.Parse as e:
       # Failure to parse alias expansion is a fatal error
       # We don't need more handling here/
       raise

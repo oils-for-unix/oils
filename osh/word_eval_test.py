@@ -12,7 +12,7 @@ from __future__ import print_function
 
 import unittest
 
-from core import util
+from core import error
 from core import test_lib
 from osh.cmd_parse_test import assertParseSimpleCommand
 from osh import state
@@ -49,7 +49,7 @@ class WordEvalTest(unittest.TestCase):
       ev = InitEvaluator()
       try:
         argv = ev.EvalWordSequence2(node.words, allow_assign=True)
-      except util.FatalRuntimeError:
+      except error.FatalRuntime:
         pass
       else:
         self.fail("%r should have raised ParseError", case)

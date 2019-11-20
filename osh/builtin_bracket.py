@@ -12,7 +12,7 @@ from _devbuild.gen.syntax_asdl import word, bool_expr
 from _devbuild.gen.types_asdl import lex_mode_e
 
 from asdl import runtime
-from core import util
+from core import error
 from core.util import p_die
 
 from osh import expr_eval
@@ -191,7 +191,7 @@ class Test(object):
       if bool_node is None:
         bool_node = b_parser.ParseForBuiltin()
 
-    except util.ParseError as e:
+    except error.Parse as e:
       self.errfmt.PrettyPrintError(e, prefix='(test) ')
       return 2
 
@@ -210,7 +210,7 @@ class Test(object):
     bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, word_ev, arena)
     try:
       b = bool_ev.Eval(bool_node)
-    except util.FatalRuntimeError as e:
+    except error.FatalRuntime as e:
       # Hack: we don't get the (test) prefix but we get location info.  We
       # don't have access to mem.CurrentSpanId() here.
       if not e.HasLocation():

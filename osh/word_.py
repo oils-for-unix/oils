@@ -25,7 +25,7 @@ from mycpp.mylib import tagswitch
 
 from typing import Tuple, Optional, List, cast, TYPE_CHECKING
 if TYPE_CHECKING:
-  from core.util import _ErrorWithLocation
+  from core.error import _ErrorWithLocation
 
 
 def _LiteralId(p):

@@ -14,7 +14,7 @@ from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
 import sys
 
 from asdl import runtime
-from core import util
+from core import error
 from core.util import p_die, e_die
 from frontend import args
 from frontend import lookup
@@ -145,7 +145,6 @@ class Printf(object):
     fmt, fmt_spid = arg_r.ReadRequired2('requires a format string')
     varargs, spids = arg_r.Rest2()
 
-    #from core.util import log
     #log('fmt %s', fmt)
     #log('vals %s', vals)
 
@@ -160,7 +159,7 @@ class Printf(object):
       arena.PushSource(source.ArgvWord(fmt_spid))
       try:
         parts = p.Parse()
-      except util.ParseError as e:
+      except error.Parse as e:
         self.errfmt.PrettyPrintError(e)
         return 2  # parse error
       finally:

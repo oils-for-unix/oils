@@ -5,8 +5,8 @@ builtin_comp.py - Completion builtins
 from _devbuild.gen import help_
 from _devbuild.gen.runtime_asdl import value_e
 from core import completion
+from core import error
 from core import ui
-from core import util
 #from core.util import log
 from frontend import args
 from frontend import lex
@@ -187,7 +187,7 @@ class SpecBuilder(object):
       arena = self.parse_ctx.arena
       try:
         arg_word = w_parser.ReadForPlugin()
-      except util.ParseError as e:
+      except error.Parse as e:
         ui.PrettyPrintError(e, arena)
         raise  # Let 'complete' or 'compgen' return 2
 
@@ -264,7 +264,7 @@ class Complete(object):
     base_opts = dict(arg.opt_changes)
     try:
       user_spec = self.spec_builder.Build(argv, arg, base_opts)
-    except util.ParseError as e:
+    except error.Parse as e:
       # error printed above
       return 2
     for command in commands:
@@ -310,7 +310,7 @@ class CompGen(object):
     base_opts = dict(arg.opt_changes)
     try:
       user_spec = self.spec_builder.Build(argv, arg, base_opts)
-    except util.ParseError as e:
+    except error.Parse as e:
       # error printed above
       return 2
 
@@ -324,7 +324,7 @@ class CompGen(object):
       for m, _ in user_spec.Matches(comp):
         matched = True
         print(m)
-    except util.FatalRuntimeError:
+    except error.FatalRuntime:
       # - DynamicWordsAction: We already printed an error, so return failure.
       return 1
 

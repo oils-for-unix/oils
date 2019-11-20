@@ -21,7 +21,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.types_asdl import bool_arg_type_e
 from asdl import runtime
-from core import util
+from core import error
 from core.util import e_die
 from osh import state
 from osh import word_
@@ -292,7 +292,7 @@ class _ExprEvaluator(object):
 
     try:
       i = _StringToInteger(s, span_id=span_id)
-    except util.FatalRuntimeError as e:
+    except error.FatalRuntime as e:
       if self.exec_opts.strict_arith:
         raise
       else:
@@ -340,7 +340,7 @@ class ArithEvaluator(_ExprEvaluator):
 
     try:
       i = self._ValToArith(val, span_id)
-    except util.FatalRuntimeError as e:
+    except error.FatalRuntime as e:
       if self.exec_opts.strict_arith:
         raise
       else:
@@ -628,7 +628,7 @@ class ArithEvaluator(_ExprEvaluator):
       str
 
     Raises:
-      util.FatalRuntimeError if the expression isn't a string
+      error.FatalRuntime if the expression isn't a string
       Or if it contains a bare variable like a[x]
 
     These are allowed because they're unambiguous, unlike a[x]

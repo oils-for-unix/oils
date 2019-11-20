@@ -16,8 +16,8 @@ from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, lvalue,
     assign_arg, cmd_value, cmd_value__Assign,
 )
+from core import error
 from core import process
-from core import util
 from core.util import log, e_die
 from frontend import lookup
 from frontend import match
@@ -151,7 +151,7 @@ def _PerformSlice(val, begin, length, part):
 
       # TODO: Instead of attributing it to the word part, it would be
       # better if we attributed it to arith_expr begin.
-      raise util.InvalidSlice(
+      raise error.InvalidSlice(
           "The start index of a string slice can't be negative: %d",
           begin, part=part)
 
@@ -163,7 +163,7 @@ def _PerformSlice(val, begin, length, part):
       if length < 0:
         # TODO: Instead of attributing it to the word part, it would be
         # better if we attributed it to arith_expr begin.
-        raise util.InvalidSlice(
+        raise error.InvalidSlice(
             "The length of a string slice can't be negative: %d",
             length, part=part)
 
@@ -435,7 +435,7 @@ class _WordEvaluator(object):
         # https://stackoverflow.com/questions/17368067/length-of-string-in-bash
         try:
           length = string_ops.CountUtf8Chars(val.s)
-        except util.InvalidUtf8 as e:
+        except error.InvalidUtf8 as e:
           # Add this hear so we don't have to add it so far down the stack.
           # TODO: It's better to show BOTH this CODE an the actual DATA
           # somehow.
@@ -840,7 +840,7 @@ class _WordEvaluator(object):
 
         try:
           val = _PerformSlice(val, begin, length, part)
-        except (util.InvalidSlice, util.InvalidUtf8) as e:
+        except (error.InvalidSlice, error.InvalidUtf8) as e:
           if self.exec_opts.strict_word_eval:
             raise
           else:
@@ -1154,7 +1154,7 @@ class _WordEvaluator(object):
     self.mem.PushStatusFrame()  # to "sandbox" $? and $PIPESTATUS
     try:
       val = self.EvalWordToString(w)
-    except util.FatalRuntimeError as e:
+    except error.FatalRuntime as e:
       val = value.Str('<Runtime error: %s>' % e.UserErrorString())
     except (OSError, IOError) as e:
       # This is like the catch-all in Executor.ExecuteAndCatch().

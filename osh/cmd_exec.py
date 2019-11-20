@@ -37,6 +37,7 @@ from _devbuild.gen.types_asdl import redir_arg_type_e
 from asdl import runtime
 
 from core import main_loop
+from core import error
 from core import process
 from core import ui
 from core import util
@@ -270,7 +271,7 @@ class Executor(object):
     try:
       try:
         node = main_loop.ParseWholeFile(c_parser)
-      except util.ParseError as e:
+      except error.Parse as e:
         ui.PrettyPrintError(e, self.arena)
         return None
 
@@ -515,7 +516,7 @@ class Executor(object):
         reason = ''
         span_id = runtime.NO_SPID
 
-      raise util.ErrExitFailure(
+      raise error.ErrExit(
           'Exiting with status %d (%sPID %d)', status, reason, posix.getpid(),
           span_id=span_id, status=status)
 
@@ -532,7 +533,7 @@ class Executor(object):
         filename = val.s
         if not filename:
           # Whether this is fatal depends on errexit.
-          raise util.RedirectEvalError(
+          raise error.RedirectEval(
               "Redirect filename can't be empty", word=n.arg_word)
 
         return redirect.Path(n.op.id, fd, filename, n.op.span_id)
@@ -541,13 +542,13 @@ class Executor(object):
         val = self.word_ev.EvalWordToString(n.arg_word)
         t = val.s
         if not t:
-          raise util.RedirectEvalError(
+          raise error.RedirectEval(
               "Redirect descriptor can't be empty", word=n.arg_word)
           return None
         try:
           target_fd = int(t)
         except ValueError:
-          raise util.RedirectEvalError(
+          raise error.RedirectEval(
               "Redirect descriptor should look like an integer, got %s", val,
               word=n.arg_word)
           return None
@@ -1491,13 +1492,13 @@ class Executor(object):
         command_e.NoOp, command_e.ControlFlow, command_e.Pipeline,
         command_e.AndOr, command_e.CommandList, command_e.Sentence,
         command_e.TimeBlock, command_e.ShFunction, command_e.VarDecl,
-        command_e.PlaceMutation, command_e.OilCondition, command_e.Proc,
-        command_e.Func, command_e.Return, command_e.Expr):
+        command_e.PlaceMutation, command_e.OilCondition, command_e.OilForIn,
+        command_e.Proc, command_e.Func, command_e.Return, command_e.Expr):
       redirects = []
     else:
       try:
         redirects = self._EvalRedirects(node)
-      except util.RedirectEvalError as e:
+      except error.RedirectEval as e:
         ui.PrettyPrintError(e, self.arena)
         redirects = None
 
@@ -1584,10 +1585,10 @@ class Executor(object):
         # All shells exit 0 here.  It could be hidden behind
         # strict-control-flow if the incompatibility causes problems.
         status = 1
-    except util.ParseError as e:
+    except error.Parse as e:
       self.dumper.MaybeCollect(self, e)  # Do this before unwinding stack
       raise
-    except util.FatalRuntimeError as e:
+    except error.FatalRuntime as e:
       self.dumper.MaybeCollect(self, e)  # Do this before unwinding stack
 
       if not e.HasLocation():  # Last resort!
@@ -1641,7 +1642,7 @@ class Executor(object):
     # waiting until the command is over!
     if self.exec_opts.more_errexit:
       if self.exec_opts.ErrExit() and status != 0:
-        raise util.ErrExitFailure(
+        raise error.ErrExit(
             'Command sub exited with status %d (%r)', status,
             node.__class__.__name__)
     else:
@@ -1742,7 +1743,7 @@ class Executor(object):
       else:
         # break/continue used in the wrong place.
         e_die('Unexpected %r (in function call)', e.token.val, token=e.token)
-    except (util.FatalRuntimeError, util.ParseError) as e:
+    except (error.FatalRuntime, error.Parse) as e:
       self.dumper.MaybeCollect(self, e)  # Do this before unwinding stack
       raise
     finally:
@@ -1799,7 +1800,7 @@ class Executor(object):
       else:
         # break/continue used in the wrong place.
         e_die('Unexpected %r (in function call)', e.token.val, token=e.token)
-    except (util.FatalRuntimeError, util.ParseError) as e:
+    except (error.FatalRuntime, error.Parse) as e:
       self.dumper.MaybeCollect(self, e)  # Do this before unwinding stack
       raise
     finally:
@@ -1946,7 +1947,7 @@ class Executor(object):
     # TODO: Change this to run Oil procs and funcs too
     try:
       status = self._RunProc(func_node, argv)
-    except util.FatalRuntimeError as e:
+    except error.FatalRuntime as e:
       ui.PrettyPrintError(e, self.arena)
       status = e.exit_status if e.exit_status is not None else 1
     except _ControlFlow as e:

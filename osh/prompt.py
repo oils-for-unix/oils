@@ -14,8 +14,8 @@ from _devbuild.gen.syntax_asdl import (
 )
 from asdl import runtime
 from core import main_loop
+from core import error
 from core import ui
-from core import util
 from frontend import match
 from frontend import reader
 from osh import word_
@@ -213,7 +213,7 @@ class Evaluator(object):
       w_parser = self.parse_ctx.MakeWordParserForPlugin(ps1_str)
       try:
         ps1_word = w_parser.ReadForPlugin()
-      except util.ParseError as e:
+      except error.Parse as e:
         ps1_word = word_.ErrorWord("<ERROR: Can't parse PS1: %s>", e)
       self.parse_cache[ps1_str] = ps1_word
 
@@ -267,7 +267,7 @@ class UserPlugin(object):
       try:
         try:
           node = main_loop.ParseWholeFile(c_parser)
-        except util.ParseError as e:
+        except error.Parse as e:
           ui.PrettyPrintError(e, self.arena)
           return  # don't execute
       finally:

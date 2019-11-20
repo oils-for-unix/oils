@@ -9,11 +9,11 @@ import sys
 from _devbuild.gen.syntax_asdl import source
 from asdl import format as fmt
 from core import alloc
+from core import error
 from core import main_loop
 from core import meta
 from core import pyutil
 from core import ui
-from core import util
 from frontend import parse_lib
 from frontend import reader
 from mycpp import mylib
@@ -42,7 +42,7 @@ def main(argv):
 
   try:
     node = main_loop.ParseWholeFile(c_parser)
-  except util.ParseError as e:
+  except error.Parse as e:
     ui.PrettyPrintError(e, arena)
     return 2
   assert node is not None
