@@ -22,7 +22,7 @@ from frontend import match
 
 from oil_lang import expr_parse
 from oil_lang import expr_to_ast
-from osh import arith_parse
+from osh import arith_spec
 from osh import cmd_parse
 from osh import word_parse
 from mycpp import mylib
@@ -309,7 +309,7 @@ class ParseContext(object):
     lx = self._MakeLexer(line_reader)
     w_parser = word_parse.WordParser(self, lx, line_reader)
     w_parser.Init(lex_mode_e.Arith)  # Special initialization
-    a_parser = tdop.TdopParser(arith_parse.SPEC, w_parser)
+    a_parser = tdop.TdopParser(arith_spec.Spec(), w_parser)
     return a_parser
 
   def MakeParserForCommandSub(self, line_reader, lexer, eof_id):

@@ -72,7 +72,7 @@ from core.util import log
 from frontend import lookup
 from frontend import reader
 from frontend import tdop
-from osh import arith_parse
+from osh import arith_spec
 from osh import braces
 from osh import word_
 from mycpp.mylib import NewStr
@@ -932,7 +932,7 @@ class WordParser(object):
     See the assertion in ArithParser.Parse() -- unexpected extra input.
     """
     # calls self.ReadWord(lex_mode_e.Arith)
-    a_parser = tdop.TdopParser(arith_parse.SPEC, self)
+    a_parser = tdop.TdopParser(arith_spec.Spec(), self)
     anode = a_parser.Parse()
     return anode
 

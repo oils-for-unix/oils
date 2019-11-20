@@ -175,5 +175,3 @@ if mylib.PYTHON:
     spec.Left(1, tdop.LeftBinaryOp, [Id.Arith_Comma])
 
     return spec
-
-  SPEC = MakeShellSpec()

@@ -245,6 +245,7 @@ using id_kind_asdl::Kind_t;
 // oil/cpp
 #include "pretty.h"
 #include "match.h"
+#include "arith_spec.h"
 
 
 // Hack for now.  Every sum type should have repr()?
