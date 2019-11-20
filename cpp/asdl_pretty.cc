@@ -1,6 +1,6 @@
-// pretty.cc
+// asdl_pretty.cc: Manual port of asdl/pretty
 
-#include "pretty.h"
+#include "asdl_pretty.h"
 
 // C includes have to go together
 #include "id.h"

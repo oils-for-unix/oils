@@ -1,6 +1,6 @@
-// match.cc
+// frontend_match.cc: manual port of frontend/match
 
-#include "match.h"
+#include "frontend_match.h"
 
 // C includes have to go together
 #include "id.h"

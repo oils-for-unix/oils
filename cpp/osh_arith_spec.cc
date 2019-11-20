@@ -1,7 +1,8 @@
-#include "arith_spec.h"
+// osh_arith_spec.cc: Manual port of osh/arith_spec
+
+#include "osh_arith_spec.h"
 
 // TODO: include generated table
-
 
 namespace tdop {
 
