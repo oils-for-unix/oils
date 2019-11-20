@@ -246,6 +246,7 @@ using id_kind_asdl::Kind_t;
 #include "pretty.h"
 #include "match.h"
 #include "arith_spec.h"
+#include "core_error.h"
 
 
 // Hack for now.  Every sum type should have repr()?
@@ -278,11 +279,6 @@ void p_die(Str* s, syntax_asdl::word_part_t* part) {
 
 void p_die(Str* s, syntax_asdl::word_t* w) {
   throw AssertionError();
-}
-
-namespace error {
-  class _ErrorWithLocation {
-  };
 }
 
 // for pgen2_demo.py

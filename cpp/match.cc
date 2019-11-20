@@ -30,7 +30,8 @@ SimpleLexer* BraceRangeLexer(Str* s) {
 
 bool IsValidVarName(Str* s) {
   // Call generated function.  Note: this relies on operator overloading.
-  return IsValidVarName(s->data_, s->len_);
+  return ::IsValidVarName(
+      reinterpret_cast<const unsigned char*>(s->data_), s->len_);
 }
 
 }  // namespace match

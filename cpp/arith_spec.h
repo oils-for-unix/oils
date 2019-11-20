@@ -9,7 +9,9 @@
 using syntax_asdl::arith_expr_t;
 using syntax_asdl::word_t;
 
+// move to tdop.h?
 namespace tdop {
+
   class TdopParser;  // forward declaration
 
   typedef arith_expr_t* (*LeftFunc)(TdopParser*, word_t*, arith_expr_t*, int);
@@ -33,7 +35,8 @@ namespace tdop {
     LeftInfo* LookupLed(Id_t id);  // int is Id_t
     NullInfo* LookupNud(Id_t id);
   };
-}
+
+}  // tdop
 
 namespace arith_spec {
 

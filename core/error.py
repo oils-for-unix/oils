@@ -56,18 +56,20 @@ if mylib.PYTHON:
       return self.msg % self.args
 
 
-class Parse(_ErrorWithLocation):
-  """Used in the parsers.
+# Need a better constructor
+if mylib.PYTHON:
+  class Parse(_ErrorWithLocation):
+    """Used in the parsers.
 
-  TODO:
-  - This could just be FatalError?
-  - You might want to catch this and add multiple locations?
-    try:
-      foo
-    except ParseError as e:
-      e.AddErrorInfo('hi', token=t)
-      raise
-  """
+    TODO:
+    - This could just be FatalError?
+    - You might want to catch this and add multiple locations?
+      try:
+        foo
+      except ParseError as e:
+        e.AddErrorInfo('hi', token=t)
+        raise
+    """
 
 
 class RedirectEval(_ErrorWithLocation):
