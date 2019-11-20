@@ -11,7 +11,7 @@ from _devbuild.gen import arith_nt
 from _devbuild.gen.syntax_asdl import source__Stdin
 
 from core import alloc
-from core import util
+from core import error
 from frontend import reader
 from frontend import lexer
 from oil_lang import expr_parse
@@ -41,7 +41,7 @@ def ParseDemo(oil_grammar):
 
   try:
     pnode, _ = e_parser.Parse(lex, arith_nt.arith_expr)
-  except util.ParseError as e:
+  except error.Parse as e:
     #ui.PrettyPrintError(e, arena)
     log("Parse Error (TODO: print it)")
     return

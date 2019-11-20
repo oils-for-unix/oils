@@ -56,6 +56,7 @@ from asdl import runtime
 from core import alloc
 from core import comp_ui
 from core import dev
+from core import error
 from core import completion
 from core import main_loop
 from core import meta

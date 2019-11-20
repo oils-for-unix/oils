@@ -280,16 +280,8 @@ void p_die(Str* s, syntax_asdl::word_t* w) {
   throw AssertionError();
 }
 
-namespace parse_lib {
-  class ParseContext;
-}
-
-// STUB
-namespace util {
-  class ParseError {
-   public:
-    ParseError(Str* s, syntax_asdl::token* tok) {
-    }
+namespace error {
+  class _ErrorWithLocation {
   };
 }
 
@@ -330,6 +322,7 @@ namespace arith_nt {
     #$REPO_ROOT/core/ui.py
 
     $REPO_ROOT/core/main_loop.py
+    $REPO_ROOT/core/error.py
   )
 
   PARSE_FILES=(
