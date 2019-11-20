@@ -4,6 +4,7 @@
 #define ARITH_SPEC_H
 
 #include "id_kind_asdl.h"
+using id_kind_asdl::Id_t;
 #include "syntax_asdl.h"
 
 using syntax_asdl::arith_expr_t;
@@ -32,16 +33,23 @@ namespace tdop {
 
   class ParserSpec {
    public:
+    // TODO: initialize from a table
+    ParserSpec() {
+    }
     LeftInfo* LookupLed(Id_t id);  // int is Id_t
     NullInfo* LookupNud(Id_t id);
   };
 
-}  // tdop
+}  // namespace tdop
 
 namespace arith_spec {
 
-tdop::ParserSpec* Spec();
+extern tdop::ParserSpec kArithSpec;
 
-}  // arith_spec
+inline tdop::ParserSpec* Spec() {
+  return &kArithSpec;
+}
+
+}  // namespace arith_spec
 
 #endif  // ARITH_SPEC_H

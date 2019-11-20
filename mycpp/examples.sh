@@ -366,6 +366,7 @@ compile-pgen2_demo() {
   compile-with-asdl $name \
     ../cpp/match.cc \
     ../cpp/pretty.cc \
+    ../cpp/arith_spec.cc \
     ../_devbuild/gen-cpp/syntax_asdl.cc \
     ../_devbuild/gen-cpp/hnode_asdl.cc \
     ../_devbuild/gen-cpp/id_kind_asdl.cc \

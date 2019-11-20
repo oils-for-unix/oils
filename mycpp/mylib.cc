@@ -212,6 +212,10 @@ void BufWriter::format_d(int i) {
   len_ += len;
 }
 
+void BufWriter::format_r(Str* s) {
+  assert(0);
+}
+
 //void BufWriter::format_s(const char* s) {
 //  this->write_const(s, strlen(s));
 //}
