@@ -20,8 +20,8 @@ from typing import Callable, List, Dict, NoReturn, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:  # break circular dep
   from osh.word_parse import WordParser
-  NullFunc = Callable[[TdopParser, word_t, int], arith_expr_t]
   LeftFunc = Callable[[TdopParser, word_t, arith_expr_t, int], arith_expr_t]
+  NullFunc = Callable[[TdopParser, word_t, int], arith_expr_t]
 
 
 def IsIndexable(node):
