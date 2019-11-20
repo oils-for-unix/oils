@@ -42,28 +42,6 @@ pyrun-parse() {
   PYTHONPATH="$REPO_ROOT/mycpp:$REPO_ROOT/vendor:$REPO_ROOT" examples/parse.py
 }
 
-
-# TODO: Need a header for this.
-
-readonly ASDL_RUNTIME_HEADER='
-class Str;
-namespace hnode_asdl {
-  class hnode__Record;
-  class hnode__Leaf;
-  enum class color_e;
-  typedef color_e color_t;
-}
-
-namespace runtime {  // declare
-hnode_asdl::hnode__Record* NewRecord(Str* node_type);
-hnode_asdl::hnode__Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color);
-extern Str* TRUE_STR;
-extern Str* FALSE_STR;
-
-}  // declare namespace runtime
-'
-
-
 # classes and ASDL
 translate-parse() {
   # Need this otherwise we get type errors
@@ -78,7 +56,7 @@ Str* repr(void* obj) {
 }
 
 '
-  translate-ordered parse "${ASDL_RUNTIME_HEADER}$snippet"  \
+  translate-ordered parse "$snippet"  \
     $REPO_ROOT/pylib/cgi.py \
     $REPO_ROOT/asdl/runtime.py \
     $REPO_ROOT/asdl/format.py \
@@ -194,7 +172,7 @@ Str* repr(syntax_asdl::source_t* obj) {
   return new Str("TODO");
 }
 '
-  translate-ordered alloc_main "${ASDL_RUNTIME_HEADER}$snippet" \
+  translate-ordered alloc_main "$snippet" \
     $REPO_ROOT/asdl/runtime.py \
     $REPO_ROOT/core/alloc.py \
     examples/alloc_main.py
@@ -232,7 +210,8 @@ translate-pgen2_demo() {
   # NOTE: We didn't import source_e because we're using isinstance().
   local snippet='
 #include "id_kind_asdl.h"  // syntax.asdl depends on this
-using id_kind_asdl::Id_t;  // TODO: proper ASDL modules 
+
+using id_kind_asdl::Id_t;  // TODO: proper ASDL modules may eliminate this
 using id_kind_asdl::Kind_t;
 
 #include "syntax_asdl.h"
@@ -247,7 +226,6 @@ using id_kind_asdl::Kind_t;
 #include "match.h"
 #include "arith_spec.h"
 #include "core_error.h"
-
 
 // Hack for now.  Every sum type should have repr()?
 Str* repr(syntax_asdl::source_t* obj) {
@@ -332,7 +310,7 @@ namespace arith_nt {
     $REPO_ROOT/frontend/parse_lib.py
   )
 
-  translate-ordered $name "${ASDL_RUNTIME_HEADER}$snippet" \
+  translate-ordered $name "$snippet" \
     "${FILES[@]}" "${PARSE_FILES[@]}" "${MORE_FILES[@]}" "${PYLIB_FILES[@]}"
     #"${FILES[@]}" "${MORE_FILES[@]}"
 

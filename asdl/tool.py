@@ -100,24 +100,15 @@ namespace %s {
         f.write("""
 #include <assert.h>
 
-#include "hnode_asdl.h"
+#include "asdl_runtime.h"  // generated code uses wrappers here
 
+// Generated code uses these types
 using hnode_asdl::hnode__Record;
 using hnode_asdl::hnode__Array;
 using hnode_asdl::hnode__External;
 using hnode_asdl::hnode__Leaf;
 using hnode_asdl::field;
 using hnode_asdl::color_e;
-
-// TODO: Generate this asdl/runtime.h header and include it?
-namespace runtime {  // declare
-
-hnode_asdl::hnode__Record* NewRecord(Str* node_type);
-hnode_asdl::hnode__Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color);
-extern Str* TRUE_STR;
-extern Str* FALSE_STR;
-
-}  // declare namespace runtime
 """)
 
         f.write("""
