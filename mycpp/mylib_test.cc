@@ -138,6 +138,12 @@ void test_contains() {
   log("b = %d", b);
 }
 
+void test_files() {
+  mylib::Writer* w = mylib::Stdout();
+  bool b = w->isatty();
+  log("b = %d", b);
+}
+
 int main(int argc, char **argv) {
   List<int>* L = new List<int> {1, 2, 3};
 
@@ -189,5 +195,8 @@ int main(int argc, char **argv) {
 
   log("");
   test_contains();
+
+  log("");
+  test_files();
 }
 

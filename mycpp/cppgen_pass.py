@@ -1464,7 +1464,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               self.decl_write(';\n')
             else:
               self.write(' {\n')
-              self.write('  %s(' % o.name())
+              # return MakeOshParser()
+              kw = '' if isinstance(o.type.ret_type, NoneTyp) else 'return '
+              self.write('  %s%s(' % (kw, o.name()))
 
               # Don't write self or last optional argument
               pass_through = o.arguments[1:-1]

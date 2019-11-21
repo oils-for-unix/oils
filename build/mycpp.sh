@@ -15,7 +15,7 @@ source mycpp/examples.sh  # for PGEN2_DEMO_PREAMBLE
 readonly MYPY_REPO=~/git/languages/mypy
 
 CPPFLAGS='-std=c++11 -Wall -O2 -g -ferror-limit=1000'
-#CPPFLAGS='-std=c++11 -Wall -O2 -ferror-limit=1000'
+CPPFLAGS='-std=c++11 -Wall -O0 -g -ferror-limit=1000'
 
 readonly CXX=$CLANG_DIR_RELATIVE/bin/clang++
 #readonly CXX=c++
@@ -101,7 +101,7 @@ compile() {
     -I _devbuild/gen \
     -o $out \
     "$@" \
-    -lstdc++ 
+    -lstdc++
 }
 
 mycpp-demo() {
@@ -157,7 +157,8 @@ osh-parse() {
     _devbuild/gen-cpp/syntax_asdl.cc \
     _devbuild/gen-cpp/hnode_asdl.cc \
     _devbuild/gen-cpp/id_kind_asdl.cc \
-    _devbuild/gen-cpp/lookup.cc
+    _devbuild/gen-cpp/lookup.cc \
+  #2>&1 | tee _tmp/compile.log
 }
 
 run-osh-parse() {
