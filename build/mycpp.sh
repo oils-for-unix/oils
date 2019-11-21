@@ -124,13 +124,6 @@ osh-parse-preamble() {
   echo '// osh_parse: TODO'
 
   echo "$PGEN2_DEMO_PREAMBLE"
-
-  cat <<EOF
-// HACK for a global constant.
-namespace runtime {
-int NO_SPID = -1;
-}
-EOF
 }
 
 osh-parse() {

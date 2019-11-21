@@ -18,7 +18,7 @@ from frontend import parse_lib
 from frontend import reader
 from mycpp import mylib
 
-from typing import List, Dict, Any, TYPE_CHECKING
+from typing import List, Dict, TYPE_CHECKING
 if TYPE_CHECKING:
   from osh.cmd_parse import CommandParser
   from pgen2.grammar import Grammar

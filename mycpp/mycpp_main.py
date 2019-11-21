@@ -58,10 +58,24 @@ def get_mypy_config(paths: List[str],
 
 
 def ModulesToCompile(result, mod_names):
+  # HACK TO PUT asdl/runtime FIRST.  It has runtime::SPID.
+  #
+  # Another fix is to hoist those to the declaration phase?  Not sure if that
+  # makes sense.
+
+  # Somehow the MyPy builder reorders the modules.
+  for name, module in result.files.items():
+    if name == 'asdl.runtime':
+      yield name, module
+
   for name, module in result.files.items():
     # Only translate files that were mentioned on the command line
     suffix = name.split('.')[-1]
     if suffix not in mod_names:
+      continue
+
+    # Don't do it a second time!
+    if name == 'asdl.runtime':
       continue
 
     # Why do I get oil.asdl.tdop in addition to asdl.tdop?  This seems to
@@ -135,6 +149,11 @@ def main(argv):
   pass1 = const_pass.Collect(result.types, const_lookup, const_code)
 
   to_compile = list(ModulesToCompile(result, mod_names))
+
+  if 0:
+    for name, module in to_compile:
+      log('to_compile %s', name)
+
   for name, module in to_compile:
     pass1.visit_mypy_file(module)
 
@@ -182,9 +201,6 @@ def main(argv):
     p4 = cppgen_pass.Generate(result.types, const_lookup, f,
                               local_vars=local_vars, fmt_ids=fmt_ids)
     p4.visit_mypy_file(module)
-
-  for name, module in to_compile:
-    log('to_compile: %s', name)
 
 
 if __name__ == '__main__':
