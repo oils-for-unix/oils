@@ -239,19 +239,20 @@ Str* repr(void* obj) {
 }
 
 // STUBS for p_die()
-void p_die(Str* s, int span_id) {
+// [[noreturn]] avoids warnings
+[[noreturn]] void p_die(Str* s, int span_id) {
   throw AssertionError();
 }
 
-void p_die(Str* s, syntax_asdl::token* blame_token) {
+[[noreturn]] void p_die(Str* s, syntax_asdl::token* blame_token) {
   throw AssertionError();
 }
 
-void p_die(Str* s, syntax_asdl::word_part_t* part) {
+[[noreturn]] void p_die(Str* s, syntax_asdl::word_part_t* part) {
   throw AssertionError();
 }
 
-void p_die(Str* s, syntax_asdl::word_t* w) {
+[[noreturn]] void p_die(Str* s, syntax_asdl::word_t* w) {
   throw AssertionError();
 }
 

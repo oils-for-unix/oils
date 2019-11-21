@@ -14,7 +14,7 @@ source mycpp/examples.sh  # for PGEN2_DEMO_PREAMBLE
 
 readonly MYPY_REPO=~/git/languages/mypy
 
-CPPFLAGS='-std=c++11 -Wall -O2 -g -ferror-limit=1000'
+# note: -Weverything is more than -Wall, but too many errors now.
 CPPFLAGS='-std=c++11 -Wall -O0 -g -ferror-limit=1000'
 
 readonly CXX=$CLANG_DIR_RELATIVE/bin/clang++
