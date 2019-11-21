@@ -15,6 +15,7 @@ source mycpp/examples.sh  # for PGEN2_DEMO_PREAMBLE
 readonly MYPY_REPO=~/git/languages/mypy
 
 CPPFLAGS='-std=c++11 -Wall -O2 -g -ferror-limit=1000'
+#CPPFLAGS='-std=c++11 -Wall -O2 -ferror-limit=1000'
 
 readonly CXX=$CLANG_DIR_RELATIVE/bin/clang++
 #readonly CXX=c++
@@ -126,10 +127,12 @@ osh-parse-preamble() {
   echo "$PGEN2_DEMO_PREAMBLE"
 }
 
+readonly TMP=_tmp/mycpp
+
 osh-parse() {
   local name=${1:-osh_parse}
 
-  local tmp=_tmp/mycpp
+  local tmp=$TMP
   mkdir -p $tmp
 
   local raw=$tmp/${name}_raw.cc 
@@ -155,9 +158,25 @@ osh-parse() {
     _devbuild/gen-cpp/hnode_asdl.cc \
     _devbuild/gen-cpp/id_kind_asdl.cc \
     _devbuild/gen-cpp/lookup.cc
+}
+
+run-osh-parse() {
+  local name=${1:-osh_parse}
+  local tmp=$TMP
+
+  strip -o $tmp/${name}.stripped $tmp/$name
+  ls -l $tmp
 
   # Run it
   $tmp/$name
 }
+
+size-profile() {
+  wc -l $TMP/osh_parse.cc
+  bloaty -d compileunits $TMP/osh_parse
+  echo
+  bloaty -d symbols $TMP/osh_parse
+}
+
 
 "$@"

@@ -138,7 +138,11 @@ namespace mylib {
 // LineReader
 //
 
-Str* kEmptyString = new Str("");
+LineReader* gStdin;
+
+Str* CFileLineReader::readline() {
+  assert(0);
+}
 
 // problem: most Str methods like index() and slice() COPY so they have a
 // NUL terminator.

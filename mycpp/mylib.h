@@ -25,6 +25,8 @@ class Str;
 template <class T> class List;
 template <class K, class V> class Dict;
 
+extern Str* kEmptyString;
+
 // for hand-written code
 void log(const char* fmt, ...);
 
@@ -551,14 +553,11 @@ inline LineReader* Stdin() {
   return gStdin;
 }
 
-
 class Writer {
  public:
   virtual void write(Str* s) = 0;
   virtual bool isatty() = 0;
 };
-
-extern Str* kEmptyString;
 
 class BufWriter : public Writer {
  public:

@@ -13,7 +13,7 @@ from core import error
 #from core import main_loop
 from core import meta
 from core import pyutil
-from core import ui
+#from core import ui
 from frontend import parse_lib
 from frontend import reader
 from mycpp import mylib
@@ -70,7 +70,8 @@ def main(argv):
     #node = main_loop.ParseWholeFile(c_parser)
     node = ParseWholeFile(c_parser)
   except error.Parse as e:
-    ui.PrettyPrintError(e, arena)
+    #ui.PrettyPrintError(e, arena)
+    print('parse error')
     return 2
   assert node is not None
 
