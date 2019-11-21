@@ -42,7 +42,7 @@ readonly REPO_ROOT=$(cd $THIS_DIR/.. && pwd)
 readonly MYPY_REPO=~/git/languages/mypy
 
 source $REPO_ROOT/test/common.sh  # for R_PATH
-source $REPO_ROOT/build/common.sh  # for $CLANG_REL_PATH, $PREPARE_DIR
+source $REPO_ROOT/build/common.sh  # for $CLANG_DIR_RELATIVE, $PREPARE_DIR
 source examples.sh
 source harness.sh
 

@@ -28,9 +28,7 @@
 
 -- Refactorings:
 --
--- compound_word = (word_part* parts)
 --   cmd_token = Word %compound_word | Token %token
---   word = Compound %compound_word | Token %token | Empty
 --   arith_expr = Word %compound_word | VarRef %token
 --   bool_expr = WordTest %compound_word | ...
 --

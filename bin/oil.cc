@@ -1,5 +1,7 @@
-#include "types_asdl.h"
+#include "id_kind_asdl.h"
+using id_kind_asdl::Id_t;  // needed because of syntax.asdl code gen
 #include "syntax_asdl.h"
+#include "types_asdl.h"
 #include "runtime_asdl.h"
 
 // From _devbuild/gen.  TODO: rename these?
@@ -14,6 +16,8 @@
 
 int main(int argc, char **argv) {
   log("sizeof(int): %d", sizeof(int));
+  // TODO: reorder this so it's 16, not 24!  Measure the change.
+  log("sizeof(syntax_asdl::token): %d", sizeof(syntax_asdl::token));
 
   Str* s = new Str("foo");
   int id;

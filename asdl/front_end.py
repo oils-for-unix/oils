@@ -61,6 +61,12 @@ def _Tokenize(f):
         for m in re.finditer(r'\s*(\w+|--.*|.)', line.strip()):
             c = m.group(1)
             if c[0].isalpha():
+                # TODO: Don't use case to distinguish tokens.  Use a keyword instead:
+                #
+                # data Token = (id id, string val, int span_id)
+                # data CompoundWord = ()
+                # enum parse_result = EmptyLine | Eof | Node(command cmd)
+
                 # Some kind of identifier
                 if c[0].isupper():
                     yield Token(TokenKind.ConstructorId, c, lineno)
