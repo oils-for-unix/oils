@@ -295,8 +295,10 @@ namespace arith_nt {
     # This has errfmt.Print() which uses *args and **kwargs
     #$REPO_ROOT/core/ui.py
 
-    $REPO_ROOT/core/main_loop.py
     $REPO_ROOT/core/error.py
+    $REPO_ROOT/core/main_loop.py
+
+    #$REPO_ROOT/bin/osh_parse.py
   )
 
   PARSE_FILES=(
@@ -312,7 +314,6 @@ namespace arith_nt {
 
   translate-ordered $name "$snippet" \
     "${FILES[@]}" "${PARSE_FILES[@]}" "${MORE_FILES[@]}" "${PYLIB_FILES[@]}"
-    #"${FILES[@]}" "${MORE_FILES[@]}"
 
 
   # $REPO_ROOT/frontend/tdop.py \

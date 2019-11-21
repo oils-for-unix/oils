@@ -75,8 +75,9 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
                 return None
 
     def log(self, msg, *args):
-      ind_str = self.indent * '  '
-      log(ind_str + msg, *args)
+      if 0:  # quiet
+        ind_str = self.indent * '  '
+        log(ind_str + msg, *args)
 
     # Not in superclasses:
 

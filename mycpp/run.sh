@@ -101,7 +101,8 @@ translate-ordered() {
   local out=_gen/${name}.cc
 
   ( source _tmp/mycpp-venv/bin/activate
-    time PYTHONPATH=$MYPY_REPO ./mycpp_main.py "$@" > $raw
+    time PYTHONPATH=$MYPY_REPO MYPYPATH=$REPO_ROOT:$REPO_ROOT/native \
+      ./mycpp_main.py "$@" > $raw
   )
 
   {

@@ -61,7 +61,7 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc  # type: ignore
 
-from typing import List, Dict, Any
+from typing import List, Dict, Tuple, Any
 
 
 # These are nodes that execute more than one COMMAND.  DParen doesn't
@@ -1547,6 +1547,7 @@ class Executor(object):
     return self.mem.LastStatus()
 
   def ExecuteAndCatch(self, node, fork_external=True):
+    # type: (command_t, bool) -> Tuple[bool, bool]
     """Execute a subprogram, handling _ControlFlow and fatal exceptions.
 
     Args:
