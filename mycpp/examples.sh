@@ -204,11 +204,7 @@ typecheck-pgen2_demo() {
   typecheck-oil pgen2_demo
 }
 
-translate-pgen2_demo() {
-  local name='pgen2_demo'
-
-  # NOTE: We didn't import source_e because we're using isinstance().
-  local snippet='
+readonly PGEN2_DEMO_PREAMBLE='
 #include "id_kind_asdl.h"  // syntax.asdl depends on this
 
 using id_kind_asdl::Id_t;  // TODO: proper ASDL modules may eliminate this
@@ -264,57 +260,63 @@ namespace arith_nt {
   const int arith_expr = 1;
 }
 '
+
+# These files compile
+FILES=(
+  $REPO_ROOT/asdl/runtime.py 
+  $REPO_ROOT/core/alloc.py 
+  $REPO_ROOT/frontend/reader.py 
+  $REPO_ROOT/frontend/lexer.py 
+  $REPO_ROOT/pgen2/grammar.py 
+  $REPO_ROOT/pgen2/parse.py 
+  $REPO_ROOT/oil_lang/expr_parse.py 
+  $REPO_ROOT/oil_lang/expr_to_ast.py 
+)
+
+PYLIB_FILES=(
+  $REPO_ROOT/pylib/cgi.py
+  # join(*p) is a problem
+  #$REPO_ROOT/pylib/os_path.py
+)
+
+MORE_FILES=(
+  $REPO_ROOT/osh/braces.py
+
+  # This has errfmt.Print() which uses *args and **kwargs
+  #$REPO_ROOT/core/ui.py
+
+  $REPO_ROOT/core/error.py
+  $REPO_ROOT/core/main_loop.py
+
+  #$REPO_ROOT/bin/osh_parse.py
+)
+
+PARSE_FILES=(
+  $REPO_ROOT/asdl/format.py 
+  $REPO_ROOT/osh/word_.py 
+  $REPO_ROOT/osh/bool_parse.py 
+  $REPO_ROOT/osh/word_parse.py
+  $REPO_ROOT/osh/cmd_parse.py 
+  $REPO_ROOT/osh/arith_parse.py 
+  $REPO_ROOT/frontend/tdop.py
+  $REPO_ROOT/frontend/parse_lib.py
+)
+
+readonly PGEN2_DEMO_FILES=(
+  "${FILES[@]}" "${PARSE_FILES[@]}" "${MORE_FILES[@]}" "${PYLIB_FILES[@]}" \
+)
+
+translate-pgen2_demo() {
+  local name='pgen2_demo'
+
 # problem with isinstance() and any type
     # do we need this/
 
 # other modules:
 # core.util.ParseError: move this to core/errors.py?
 
-  # These files compile
-  FILES=(
-    $REPO_ROOT/asdl/runtime.py 
-    $REPO_ROOT/core/alloc.py 
-    $REPO_ROOT/frontend/reader.py 
-    $REPO_ROOT/frontend/lexer.py 
-    $REPO_ROOT/pgen2/grammar.py 
-    $REPO_ROOT/pgen2/parse.py 
-    $REPO_ROOT/oil_lang/expr_parse.py 
-    $REPO_ROOT/oil_lang/expr_to_ast.py 
-    examples/$name.py
-  )
-
-  PYLIB_FILES=(
-    $REPO_ROOT/pylib/cgi.py
-    # join(*p) is a problem
-    #$REPO_ROOT/pylib/os_path.py
-  )
-
-  MORE_FILES=(
-    $REPO_ROOT/osh/braces.py
-
-    # This has errfmt.Print() which uses *args and **kwargs
-    #$REPO_ROOT/core/ui.py
-
-    $REPO_ROOT/core/error.py
-    $REPO_ROOT/core/main_loop.py
-
-    #$REPO_ROOT/bin/osh_parse.py
-  )
-
-  PARSE_FILES=(
-    $REPO_ROOT/asdl/format.py 
-    $REPO_ROOT/osh/word_.py 
-    $REPO_ROOT/osh/bool_parse.py 
-    $REPO_ROOT/osh/word_parse.py
-    $REPO_ROOT/osh/cmd_parse.py 
-    $REPO_ROOT/osh/arith_parse.py 
-    $REPO_ROOT/frontend/tdop.py
-    $REPO_ROOT/frontend/parse_lib.py
-  )
-
-  translate-ordered $name "$snippet" \
-    "${FILES[@]}" "${PARSE_FILES[@]}" "${MORE_FILES[@]}" "${PYLIB_FILES[@]}"
-
+  translate-ordered $name "$PGEN2_DEMO_PREAMBLE" \
+    "${PGEN2_DEMO_FILES[@]}" examples/$name.py
 
   # $REPO_ROOT/frontend/tdop.py \
   # - function pointers for Left/Null are an issue

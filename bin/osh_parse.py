@@ -30,7 +30,7 @@ def ParseWholeFile(c_parser):
 
   This uses the same logic as Batch().
   """
-  children = []
+  children = []  # type: List[command_t]
   while True:
     node = c_parser.ParseLogicalLine()  # can raise ParseError
     if node is None:  # EOF

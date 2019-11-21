@@ -9,7 +9,12 @@ set -o errexit
 
 source build/common.sh  # for $CLANG_DIR_RELATIVE, $PREPARE_DIR
 
-CPPFLAGS='-std=c++11 -Wall -O2 -g'
+readonly REPO_ROOT=~/git/oilshell/oil
+source mycpp/examples.sh  # for PGEN2_DEMO_PREAMBLE
+
+readonly MYPY_REPO=~/git/languages/mypy
+
+CPPFLAGS='-std=c++11 -Wall -O2 -g -ferror-limit=1000'
 
 readonly CXX=$CLANG_DIR_RELATIVE/bin/clang++
 #readonly CXX=c++
@@ -26,9 +31,6 @@ asdl-demo() {
 
   _bin/oil_mycpp
 }
-
-readonly MYPY_REPO=~/git/languages/mypy
-readonly REPO_ROOT=~/git/oilshell/oil
 
 mycpp() {
   ### Run mycpp (in a virtualenv because it depends on Python 3 / MyPy)
@@ -70,6 +72,9 @@ compile() {
 
   $CXX $CPPFLAGS \
     -I mycpp \
+    -I cpp \
+    -I _devbuild/gen-cpp \
+    -I _devbuild/gen \
     -o $out \
     "$@" \
     -lstdc++ 
@@ -90,6 +95,53 @@ mycpp-demo() {
 
   # Run it
   _tmp/$name
+}
+
+osh-parse-preamble() {
+  echo '// osh_parse: TODO'
+
+  echo "$PGEN2_DEMO_PREAMBLE"
+
+  cat <<EOF
+// HACK for a global constant.
+namespace runtime {
+int NO_SPID = -1;
+}
+EOF
+}
+
+osh-parse() {
+  local name=${1:-osh_parse}
+
+  local tmp=_tmp/mycpp
+  mkdir -p $tmp
+
+  local raw=$tmp/${name}_raw.cc 
+
+  #if false; then
+  if true; then
+    mycpp $raw bin/$name.py "${PGEN2_DEMO_FILES[@]}"
+  fi
+
+  local cc=$tmp/$name.cc
+
+  { osh-parse-preamble 
+    cpp-skeleton $name $raw 
+  } > $cc
+
+  # TODO:
+  compile $tmp/$name $cc \
+    mycpp/mylib.cc \
+    cpp/frontend_match.cc \
+    cpp/asdl_pretty.cc \
+    cpp/osh_arith_spec.cc \
+    _devbuild/gen-cpp/syntax_asdl.cc \
+    _devbuild/gen-cpp/hnode_asdl.cc \
+    _devbuild/gen-cpp/id_kind_asdl.cc \
+    _devbuild/gen-cpp/lookup.cc
+
+  # Run it
+  $tmp/$name
 }
 
 "$@"

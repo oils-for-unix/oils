@@ -529,6 +529,29 @@ class BufLineReader : public LineReader {
   DISALLOW_COPY_AND_ASSIGN(BufLineReader)
 };
 
+// Wrap a FILE*
+class CFileLineReader : public LineReader {
+ public:
+  explicit CFileLineReader(FILE* f) : f_(f) {
+  }
+  virtual Str* readline();
+
+ private:
+  FILE* f_;
+
+  DISALLOW_COPY_AND_ASSIGN(CFileLineReader)
+};
+
+extern LineReader* gStdin;
+
+inline LineReader* Stdin() {
+  if (gStdin == nullptr) {
+    gStdin = new CFileLineReader(stdin);
+  }
+  return gStdin;
+}
+
+
 class Writer {
  public:
   virtual void write(Str* s) = 0;
