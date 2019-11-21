@@ -54,9 +54,9 @@ def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
     arena = alloc.Arena()
     arena.PushSource(source.MainFile('<_MakeRootCompleter>'))
     parse_opts = parse_lib.OilParseOptions()
-    trail = parse_lib.Trail()
-    parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None,
-                                       trail=trail, one_pass_parse=True)
+    parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
+    parse_ctx.Init_Trail(parse_lib.Trail())
+    parse_ctx.Init_OnePassParse(True)
 
   if 1:  # enable for details
     debug_f = util.DebugFile(sys.stdout)
@@ -420,11 +420,10 @@ class RootCompleterTest(unittest.TestCase):
     # This is here because it's hard to test readline with the spec tests.
     with open('testdata/completion/osh-unit.bash') as f:
       code_str = f.read()
-    trail = parse_lib.Trail()
     arena = test_lib.MakeArena('<completion_test.py>')
     parse_opts = parse_lib.OilParseOptions()
-    parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None,
-                                       trail=trail)
+    parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
+    parse_ctx.Init_Trail(parse_lib.Trail())
     comp_lookup = completion.Lookup()
     ex = test_lib.EvalCode(code_str, parse_ctx, comp_lookup=comp_lookup)
 
@@ -479,12 +478,11 @@ class RootCompleterTest(unittest.TestCase):
     # I put some aliases in this file.
     with open('testdata/completion/osh-unit.bash') as f:
       code_str = f.read()
-    trail = parse_lib.Trail()
     arena = test_lib.MakeArena('<completion_test.py>')
     parse_opts = parse_lib.OilParseOptions()
     aliases = {}
-    parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, None,
-                                       trail=trail)
+    parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, None)
+    parse_ctx.Init_Trail(parse_lib.Trail())
     comp_lookup = completion.Lookup()
 
     ex = test_lib.EvalCode(code_str, parse_ctx, comp_lookup=comp_lookup,
@@ -518,11 +516,10 @@ class RootCompleterTest(unittest.TestCase):
 
     with open('testdata/completion/return-124.bash') as f:
       code_str = f.read()
-    trail = parse_lib.Trail()
     arena = test_lib.MakeArena('<completion_test.py>')
     parse_opts = parse_lib.OilParseOptions()
-    parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None,
-                                       trail=trail)
+    parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
+    parse_ctx.Init_Trail(parse_lib.Trail())
 
     comp_lookup = completion.Lookup()
     ex = test_lib.EvalCode(code_str, parse_ctx, comp_lookup=comp_lookup)

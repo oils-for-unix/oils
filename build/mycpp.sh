@@ -45,7 +45,7 @@ mycpp() {
   )
 }
 
-cpp-skeleton() {
+example-skeleton() {
   local namespace=$1
   shift
 
@@ -61,6 +61,29 @@ EOF
 
 int main(int argc, char **argv) {
   $namespace::run_tests();
+}
+EOF
+
+}
+
+cpp-skeleton() {
+  local namespace=$1
+  shift
+
+  cat <<EOF
+#include "mylib.h"
+
+EOF
+
+  cat "$@"
+
+  cat <<EOF
+int main(int argc, char **argv) {
+  auto* args = new List<Str*>();
+  for (int i = 0; i < argc; ++i) {
+    args->append(new Str(argv[i]));
+  }
+  $namespace::main(args);
 }
 EOF
 
@@ -89,7 +112,7 @@ mycpp-demo() {
   mycpp $raw mycpp/examples/$name.py
 
   local cc=_tmp/$name.cc
-  cpp-skeleton $name $raw > $cc
+  example-skeleton $name $raw > $cc
 
   compile _tmp/$name $cc mycpp/mylib.cc
 

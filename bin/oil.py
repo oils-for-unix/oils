@@ -330,8 +330,8 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   if opts.one_pass_parse and not exec_opts.noexec:
     raise args.UsageError('--one-pass-parse requires noexec (-n)')
-  parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar,
-                                     one_pass_parse=opts.one_pass_parse)
+  parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
+  parse_ctx.Init_OnePassParse(opts.one_pass_parse)
 
   # Three ParseContext instances SHARE aliases.
   comp_arena = alloc.Arena()
@@ -341,15 +341,16 @@ def ShellMain(lang, argv0, argv, login_shell):
   # fix the issue where ` gets erased because it's not part of
   # set_completer_delims().
   comp_ctx = parse_lib.ParseContext(comp_arena, parse_opts, aliases,
-                                    oil_grammar, trail=trail1,
-                                    one_pass_parse=True)
+                                    oil_grammar)
+  comp_ctx.Init_Trail(trail1)
+  comp_ctx.Init_OnePassParse(True)
 
   hist_arena = alloc.Arena()
   hist_arena.PushSource(source.Unused('history'))
   trail2 = parse_lib.Trail()
   hist_ctx = parse_lib.ParseContext(hist_arena, parse_opts, aliases,
-                                    oil_grammar, 
-                                    trail=trail2)
+                                    oil_grammar)
+  hist_ctx.Init_Trail(trail2)
 
   # Deps helps manages dependencies.  These dependencies are circular:
   # - ex and word_ev, arith_ev -- for command sub, arith sub
@@ -751,8 +752,8 @@ def OshCommandMain(argv):
 
   parse_opts = parse_lib.OilParseOptions()
   # parse `` and a[x+1]=bar differently
-  parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar,
-                                     one_pass_parse=True)
+  parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
+  parse_ctx.Init_OnePassParse(True)
 
   line_reader = reader.FileLineReader(f, arena)
   c_parser = parse_ctx.MakeOshParser(line_reader)

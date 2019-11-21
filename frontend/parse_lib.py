@@ -246,9 +246,8 @@ class ParseContext(object):
   In constrast, STATE is stored in the CommandParser and WordParser instances.
   """
 
-  def __init__(self, arena, parse_opts, aliases, oil_grammar, trail=None,
-               one_pass_parse=False):
-    # type: (Arena, OilParseOptions, Dict[str, str], Grammar, Optional[_BaseTrail], bool) -> None
+  def __init__(self, arena, parse_opts, aliases, oil_grammar):
+    # type: (Arena, OilParseOptions, Dict[str, str], Grammar) -> None
     self.arena = arena
     self.parse_opts = parse_opts
     self.aliases = aliases
@@ -270,8 +269,16 @@ class ParseContext(object):
     self.parsing_expr = False  # "single-threaded" state
 
     # Completion state lives here since it may span multiple parsers.
-    self.trail = trail if trail else _NullTrail()
-    self.one_pass_parse = one_pass_parse
+    self.trail = _NullTrail()  # type: _BaseTrail
+    self.one_pass_parse = False
+
+  def Init_Trail(self, trail):
+    # type: (_BaseTrail) -> None
+    self.trail = trail
+
+  def Init_OnePassParse(self, b):
+    # type: (bool) -> None
+    self.one_pass_parse = b
 
   def _MakeLexer(self, line_reader):
     # type: (_Reader) -> Lexer

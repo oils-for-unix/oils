@@ -21,6 +21,7 @@ from mycpp import mylib
 from typing import List, Dict, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from osh.cmd_parse import CommandParser
+  from pgen2.grammar import Grammar
 
 
 # TEMP: Copied from core/main_loop.py
@@ -51,17 +52,16 @@ def main(argv):
 
   parse_opts = parse_lib.OilParseOptions()
   # Dummy value; not respecting aliases!
-  aliases = {}  # type: Dict[str, Any]
+  aliases = {}  # type: Dict[str, str]
   # parse `` and a[x+1]=bar differently
 
-  loader = pyutil.GetResourceLoader()
+  oil_grammar = None  # type: Grammar
   if mylib.PYTHON:
+    loader = pyutil.GetResourceLoader()
     oil_grammar = meta.LoadOilGrammar(loader)
-  else:
-    oil_grammar = None
 
-  parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar,
-                                     one_pass_parse=True)
+  parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
+  parse_ctx.Init_OnePassParse(True)
 
   line_reader = reader.FileLineReader(mylib.Stdin(), arena)
   c_parser = parse_ctx.MakeOshParser(line_reader)

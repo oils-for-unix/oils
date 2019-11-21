@@ -31,8 +31,8 @@ class _MockReadlineHistory(object):
 def _MakeHistoryEvaluator(history_items):
   arena = test_lib.MakeArena('<reader_test.py>')
   parse_opts = parse_lib.OilParseOptions()
-  trail = parse_lib.Trail()
-  parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None, trail=trail)
+  parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
+  parse_ctx.Init_Trail(parse_lib.Trail())
 
   debug_f = util.DebugFile(sys.stdout)
   readline = _MockReadlineHistory(history_items)

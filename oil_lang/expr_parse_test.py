@@ -30,7 +30,8 @@ class ExprParseTest(unittest.TestCase):
     oil_grammar = meta.LoadOilGrammar(loader)
 
     self.parse_ctx = parse_lib.ParseContext(self.arena, parse_opts, {},
-                                            oil_grammar, one_pass_parse=True)
+                                            oil_grammar)
+    self.parse_ctx.Init_OnePassParse(True)
 
   def _ParseOsh(self, code_str):
     """Parse a line of OSH, which can include Oil assignments."""
