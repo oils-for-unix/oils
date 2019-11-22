@@ -3,6 +3,7 @@
 #include "mylib.h"
 
 #include <assert.h>
+#include <errno.h>
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>
 #include <unistd.h>  // isatty
@@ -141,7 +142,18 @@ namespace mylib {
 LineReader* gStdin;
 
 Str* CFileLineReader::readline() {
-  assert(0);
+  char* line = nullptr;
+  size_t num_bytes = 0;
+
+  ssize_t result = getline(&line, &num_bytes, f_);
+  if (result < 0) {
+    log("FAILED %d", errno);
+    // error could be EOF, so we return an empty value.
+    // TODO: check other errors
+    return kEmptyString;
+  }
+  // Is it NUL-terminated?
+  return new Str(line, num_bytes);
 }
 
 // problem: most Str methods like index() and slice() COPY so they have a

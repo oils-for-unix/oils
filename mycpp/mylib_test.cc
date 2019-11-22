@@ -142,6 +142,14 @@ void test_files() {
   mylib::Writer* w = mylib::Stdout();
   bool b = w->isatty();
   log("b = %d", b);
+
+  FILE* f = fopen("README.md", "r");
+  auto r = new mylib::CFileLineReader(f);
+  //auto r = mylib::Stdin();
+  Str* s = r->readline();
+  log("test_files");
+  println_stderr(s);
+  log("test_files DONE");
 }
 
 int main(int argc, char **argv) {

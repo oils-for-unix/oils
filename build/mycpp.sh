@@ -169,7 +169,7 @@ run-osh-parse() {
   ls -l $tmp
 
   # Run it
-  $tmp/$name
+  $tmp/$name 'echo hi'
 }
 
 size-profile() {

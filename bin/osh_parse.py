@@ -13,10 +13,13 @@ from core import error
 #from core import main_loop
 from core import meta
 from core import pyutil
+from core.util import log
 #from core import ui
 from frontend import parse_lib
 from frontend import reader
 from mycpp import mylib
+
+_ = log
 
 from typing import List, Dict, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -63,7 +66,12 @@ def main(argv):
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
   parse_ctx.Init_OnePassParse(True)
 
-  line_reader = reader.FileLineReader(mylib.Stdin(), arena)
+  if len(argv) == 2:
+    # This path is easier to run through GDB
+    line_reader = reader.StringLineReader(argv[1], arena)
+  else:
+    line_reader = reader.FileLineReader(mylib.Stdin(), arena)
+
   c_parser = parse_ctx.MakeOshParser(line_reader)
 
   try:

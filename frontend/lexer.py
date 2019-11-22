@@ -219,7 +219,7 @@ class Lexer(object):
       t = self.line_lexer.Read(lex_mode)
 
     # e.g. translate ) or ` into EOF
-    if self.translation_stack:
+    if len(self.translation_stack):
       old_id, new_id = self.translation_stack[-1]  # top
       if t.id == old_id:
         #print('==> TRANSLATING %s ==> %s' % (t, new_s))

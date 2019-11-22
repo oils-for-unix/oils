@@ -15,6 +15,7 @@ source types/common.sh
 demo() {
   export PYTHONPATH=.
   echo 'echo hi' | bin/osh_parse.py "$@"
+  bin/osh_parse.py 'ls -l'
 }
 
 readonly PY_DEPS='_tmp/osh-parse-deps.txt'
