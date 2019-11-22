@@ -162,14 +162,16 @@ osh-parse() {
 }
 
 run-osh-parse() {
-  local name=${1:-osh_parse}
+  local code_str=${1:-'echo hi'}
+
+  local name='osh_parse'
   local tmp=$TMP
 
   strip -o $tmp/${name}.stripped $tmp/$name
   ls -l $tmp
 
   # Run it
-  $tmp/$name 'echo hi'
+  $tmp/$name "$code_str"
 }
 
 size-profile() {

@@ -1104,7 +1104,7 @@ class WordParser(object):
 
       words.append(cast(compound_word, w))
 
-    if not words:  # a=() is empty indexed array
+    if len(words) == 0:  # a=() is empty indexed array
       # Needed for type safety, doh
       no_words = []  # type: List[word_t]
       node = sh_array_literal(left_token, no_words)

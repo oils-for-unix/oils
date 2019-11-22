@@ -50,7 +50,7 @@ class ParseTreePrinter(object):
     else:
       v = '-'
     self.f.write('%s%d %s %s\n' % (ind, i, self.names[pnode.typ], v))
-    if pnode.children:  # could be None
+    if pnode.children is not None:
       for i, child in enumerate(pnode.children):
         self._Print(child, indent+1, i)
 

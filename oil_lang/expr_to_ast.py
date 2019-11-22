@@ -1079,7 +1079,7 @@ class Transformer(object):
       return posix_class(negated_speck, val)
 
     perl = PERL_CLASSES.get(val)
-    if perl:
+    if perl is not None:
       return perl_class(negated_speck, perl)
 
     p_die("%r isn't a character class", val, token=tok)
@@ -1099,7 +1099,7 @@ class Transformer(object):
       return posix_class(negated_speck, val)
 
     perl = PERL_CLASSES.get(val)
-    if perl:
+    if perl is not None:
       return perl_class(negated_speck, perl)
     p_die("%r isn't a character class", val, token=tok)
 

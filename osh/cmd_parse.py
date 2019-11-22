@@ -816,7 +816,7 @@ class CommandParser(object):
     redirects, words, block = self._ScanSimpleCommand()
     block_spid = block.spids[0] if block else runtime.NO_SPID
 
-    if not words:  # e.g.  >out.txt  # redirect without words
+    if len(words) == 0:  # e.g.  >out.txt  # redirect without words
       if block:
         p_die("Unexpected block", span_id=block_spid)
       simple = command.Simple()  # no words, more_env, or block,
@@ -824,7 +824,7 @@ class CommandParser(object):
       return simple
 
     preparsed_list, suffix_words = _SplitSimpleCommandPrefix(words)
-    if self.parse_opts.parse_equals and preparsed_list:
+    if self.parse_opts.parse_equals and len(preparsed_list):
       left_token, _, _, _ = preparsed_list[0]
       p_die("name=val isn't allowed when shopt 'parse_equals' is on.\n"
             "Hint: add 'env' before it, or spaces around =", token=left_token)
@@ -833,7 +833,7 @@ class CommandParser(object):
     # inspect this state after a failed parse.
     self.parse_ctx.trail.SetLatestWords(suffix_words, redirects)
 
-    if not suffix_words:
+    if len(suffix_words) == 0:
       if block:
         p_die("Unexpected block", span_id=block_spid)
 
@@ -852,10 +852,10 @@ class CommandParser(object):
     if kind == Kind.ControlFlow:
       if block:
         p_die("Unexpected block", span_id=block_spid)
-      if redirects:
+      if len(redirects):
         p_die("Control flow shouldn't have redirects", token=kw_token)
 
-      if preparsed_list:  # FOO=bar local spam=eggs not allowed
+      if len(preparsed_list):  # FOO=bar local spam=eggs not allowed
         # TODO: Change location as above
         left_token, _, _, _ = preparsed_list[0]
         p_die("Control flow shouldn't have environment bindings",
@@ -1488,7 +1488,7 @@ class CommandParser(object):
 
     cur_word = cast(compound_word, self.cur_word)  # caller ensures validity
     name = word_.ShFunctionName(cur_word)
-    if not name:
+    if len(name) == 0:
       p_die('Invalid function name', word=cur_word)
 
     self._Next()  # skip function name
@@ -1526,7 +1526,7 @@ class CommandParser(object):
 
     cur_word = cast(compound_word, self.cur_word)  # caller ensures validity
     name = word_.ShFunctionName(cur_word)
-    if not name:
+    if len(name) == 0:
       p_die('Invalid KSH-style function name', word=cur_word)
 
     after_name_spid = word_.LeftMostSpanForWord(self.cur_word) + 1

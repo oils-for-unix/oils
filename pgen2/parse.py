@@ -37,7 +37,7 @@ class PNode(object):
   __slots__ = ('typ', 'tok', 'children')
 
   def __init__(self, typ, tok, children):
-    # type: (int, Optional[token], List[PNode]) -> None
+    # type: (int, Optional[token], Optional[List[PNode]]) -> None
     self.typ = typ  # token or non-terminal
     self.tok = tok  # In Oil, this is syntax_asdl.token.  In OPy, it's a
                     # 3-tuple (val, prefix, loc)
@@ -149,7 +149,7 @@ class Parser(object):
                     # TODO: Does this condition translate?
                     while states[state] == [(0, state)]:
                         self.pop()
-                        if not self.stack:
+                        if len(self.stack) == 0:
                             # Done parsing!
                             return True
                         dfa, state, node = self.stack[-1]
@@ -177,7 +177,7 @@ class Parser(object):
                     if left == 0 and right == state:
                         # An accepting state, pop it and try something else
                         self.pop()
-                        if not self.stack:
+                        if len(self.stack) == 0:
                             # Done parsing, but another token is input
                             raise ParseError("too much input", typ, opaque)
                         found2 = True
@@ -208,7 +208,7 @@ class Parser(object):
         """Pop a nonterminal.  (Internal)"""
         _, _, newnode = self.stack.pop()
         if newnode is not None:
-            if self.stack:
+            if len(self.stack):
                 _, _, node = self.stack[-1]
                 node.children.append(newnode)
             else:

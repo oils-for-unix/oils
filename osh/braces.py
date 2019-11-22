@@ -234,14 +234,14 @@ def _BraceDetect(w):
         # or force this:
         # \,{a,b}
         # ?  We're forcing braces right now but not commas.
-        if stack:
+        if len(stack):
           stack[-1].saw_comma = True
           stack[-1].alt_part.words.append(compound_word(cur_parts, None))
           cur_parts = []  # clear
           append = False
 
       elif id_ == Id.Lit_RBrace:
-        if not stack:  # e.g. echo {a,b}{  -- unbalanced {
+        if len(stack) == 0:  # e.g. echo {a,b}{  -- unbalanced {
           return None  # do not expand ANYTHING because of invalid syntax
 
         # Detect {1..10} and {1..10..2}

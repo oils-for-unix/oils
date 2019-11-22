@@ -14,7 +14,7 @@ from mypy.types import (
 from mypy.nodes import (
     Expression, Statement, Block, NameExpr, IndexExpr, MemberExpr, TupleExpr,
     ExpressionStmt, AssignmentStmt, IfStmt, StrExpr, SliceExpr, FuncDef,
-    ComparisonExpr, CallExpr, IntExpr, ListComprehension)
+    UnaryExpr, ComparisonExpr, CallExpr, IntExpr, ListComprehension)
 
 import format_strings
 from crash import catch_errors
@@ -86,6 +86,25 @@ def _GetContainsFunc(t):
     contains_func = _GetContainsFunc(t.items[0])
 
   return contains_func  # None checked later
+
+
+def _CheckConditionType(t):
+  """
+  strings, lists, and dicts shouldn't be used in boolean contexts, because that
+  doesn't translate to C++.
+  """
+  if isinstance(t, Instance):
+    type_name = t.type.fullname()
+    if type_name == 'builtins.str':
+      return False
+
+    elif type_name == 'builtins.list':
+      return False
+
+    elif type_name == 'builtins.dict':
+      return False
+
+  return True
 
 
 def get_c_type(t):
@@ -1859,6 +1878,21 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         # Omit anything that looks like if __name__ == ...
         cond = o.expr[0]
+
+        if isinstance(cond, UnaryExpr) and cond.op == 'not':
+          # check 'if not mylist'
+          cond_expr = cond.expr
+        else:
+          # TODO: if x > 0 and mylist
+          #       if x > 0 and not mylist , etc.
+          cond_expr = cond
+
+        cond_type = self.types[cond_expr]
+
+        if not _CheckConditionType(cond_type):
+          raise AssertionError(
+              "Can't use str, list, or dict in boolean context")
+
         if (isinstance(cond, ComparisonExpr) and
             isinstance(cond.operands[0], NameExpr) and 
             cond.operands[0].name == '__name__'):

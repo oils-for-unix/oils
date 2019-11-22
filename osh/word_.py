@@ -270,7 +270,7 @@ def LeftMostSpanForWord(w):
   with tagswitch(w) as case:
     if case(word_e.Compound):
       w = cast(compound_word, UP_w)
-      if w.parts:
+      if len(w.parts):
         return LeftMostSpanForPart(w.parts[0])
       else:
         # This is possible for empty brace sub alternative {a,b,}
@@ -687,7 +687,7 @@ def IsVarSub(w):
 
 def SpanForLhsExpr(node):
   # type: (sh_lhs_expr__Name) -> int
-  if node.spids:
+  if len(node.spids):
     return node.spids[0]
   else:
     return runtime.NO_SPID  
