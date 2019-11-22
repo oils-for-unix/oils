@@ -73,7 +73,7 @@ class FileLineReader(_Reader):
   def _GetLine(self):
     # type: () -> Optional[str]
     line = self.f.readline()
-    if not line:
+    if len(line) == 0:
       return None
 
     return line

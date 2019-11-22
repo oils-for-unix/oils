@@ -669,7 +669,7 @@ class CommandParser(object):
         expanded.append(' ')
         break  # No more expansions
 
-    if not expanded:  # No expansions; caller does parsing.
+    if len(expanded) == 0:  # No expansions; caller does parsing.
       return None
 
     # We got some expansion.  Now copy the rest of the words.
@@ -2054,6 +2054,6 @@ class CommandParser(object):
     # type: () -> None
     # NOTE: This happens when there is no newline at the end of a file, like
     # osh -c 'cat <<EOF'
-    if self.pending_here_docs:
+    if len(self.pending_here_docs):
       node = self.pending_here_docs[0]  # Just show the first one?
       p_die('Unterminated here doc began here', word=node.here_begin)
