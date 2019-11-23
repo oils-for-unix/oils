@@ -581,6 +581,12 @@ inline LineReader* Stdin() {
   return gStdin;
 }
 
+inline LineReader* open(Str* path) {
+  // TODO: don't use data_ directly
+  FILE* f = fopen(path->data_, "r");
+  return new CFileLineReader(f);
+}
+
 class Writer {
  public:
   virtual void write(Str* s) = 0;

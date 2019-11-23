@@ -45,6 +45,10 @@ def Stdin():
   return sys.stdin
 
 
+# mylib.open is the builtin, but we have different static types mylib.pyi
+open = open
+
+
 class switch(object):
   """A ContextManager that translates to a C switch statement."""
 

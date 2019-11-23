@@ -66,11 +66,21 @@ def main(argv):
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
   parse_ctx.Init_OnePassParse(True)
 
-  if len(argv) == 2:
-    # This path is easier to run through GDB
-    line_reader = reader.StringLineReader(argv[1], arena)
-  else:
+  if len(argv) == 1:
     line_reader = reader.FileLineReader(mylib.Stdin(), arena)
+
+  elif len(argv) == 2:
+    f = mylib.open(argv[1])
+    line_reader = reader.FileLineReader(f, arena)
+
+  elif len(argv) == 3:
+    if argv[1] != '-c':
+      raise AssertionError()
+    # This path is easier to run through GDB
+    line_reader = reader.StringLineReader(argv[2], arena)
+
+  else:
+    raise AssertionError()
 
   c_parser = parse_ctx.MakeOshParser(line_reader)
 

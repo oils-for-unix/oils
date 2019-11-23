@@ -137,8 +137,8 @@ osh-parse() {
 
   local raw=$tmp/${name}_raw.cc 
 
-  #if false; then
-  if true; then
+  if false; then
+  #if true; then
     mycpp $raw bin/$name.py "${PGEN2_DEMO_FILES[@]}"
   fi
 
