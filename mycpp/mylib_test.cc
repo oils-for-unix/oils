@@ -69,6 +69,15 @@ void test_str_funcs() {
   log("i = %s", int_str->data_);
   int_str = str(-(1<<31));
   log("i = %s", int_str->data_);
+
+  log("--- rstrip()");
+  Str* s2 = new Str(" abc ");
+  log("s2.rstrip()  = [%s]", s2->rstrip()->data_);
+
+  Str* s3 = new Str(" abc");
+  log("s3.rstrip()  = [%s]", s3->rstrip()->data_);
+  Str* s4 = new Str("");
+  log("s4.rstrip()  = [%s]", s4->rstrip()->data_);
 }
 
 using mylib::BufLineReader;

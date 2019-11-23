@@ -137,8 +137,33 @@ class Str {
     return nullptr;
   }
   Str* rstrip() {
-    assert(0);
-    return nullptr;
+    if (len_ == 0) {
+      return this;
+    }
+    // index of the last character that's not a space
+    int last = len_ - 1;
+    int i = last;
+    bool done = false;
+    while (i > 0 && !done) {
+      switch (data_[i]) {
+        case ' ':
+        case '\t':
+        case '\r':
+        case '\n':
+          i--;
+        default:
+          done = true;
+          break;
+      }
+    }
+    if (i == last) {  // nothing stripped
+      return this;
+    }
+    int new_len = i+1;
+    char* buf = static_cast<char*>(malloc(new_len + 1));
+    memcpy(buf, data_, new_len);
+    buf[new_len] = '\0';
+    return new Str(buf, new_len);
   }
 
   bool startswith(Str* s) {
