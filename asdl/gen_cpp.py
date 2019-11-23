@@ -233,6 +233,28 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     Emit('}')
     Emit('')
 
+  def _DefaultValue(self, field):
+    if field.seq:  # Array
+      default = 'new List<%s>()' % _GetInnerCppType(self.type_lookup, field)
+    else:
+      if field.type == 'int':
+        default = '-1'
+      elif field.type == 'id':  # hard-coded HACK
+        default = '-1'
+      elif field.type == 'bool':
+        default = 'false'
+      elif field.type == 'string':
+        default = 'new Str("")'
+      else:
+        field_desc = self.type_lookup[field.type]
+        if isinstance(field_desc, meta.SumType) and field_desc.is_simple:
+          # Just make it the first variant.  We could define "Undef" for
+          # each enum, but it doesn't seem worth it.
+          default = '%s_e::%s' % (field.type, field_desc.simple_variants[0])
+        else:
+          default = 'nullptr'
+    return default
+
   def _GenClass(self, desc, attributes, class_name, base_classes, depth, tag):
     """For Product and Constructor."""
     if base_classes:
@@ -248,26 +270,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     if desc.fields:  # Don't emit for constructors with no fields
       default_inits = [tag_init]
       for field in all_fields:
-        if field.seq:  # Array
-          default = 'new List<%s>()' % _GetInnerCppType(self.type_lookup, field)
-        else:
-          if field.type == 'int':
-            default = '-1'
-          elif field.type == 'id':  # hard-coded HACK
-            default = '-1'
-          elif field.type == 'bool':
-            default = 'false'
-          elif field.type == 'string':
-            default = 'new Str("")'
-          else:
-            field_desc = self.type_lookup[field.type]
-            if isinstance(field_desc, meta.SumType) and field_desc.is_simple:
-              # Just make it the first variant.  We could define "Undef" for
-              # each enum, but it doesn't seem worth it.
-              default = '%s_e::%s' % (field.type, field_desc.simple_variants[0])
-            else:
-              default = 'nullptr'
-
+        default = self._DefaultValue(field)
         default_inits.append('%s(%s)' % (field.name, default))
 
       # Constructor with ZERO args
@@ -282,12 +285,17 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     for f in desc.fields:
       params.append('%s %s' % (self._GetCppType(f), f.name))
       inits.append('%s(%s)' % (f.name, f.name))
+    for f in attributes:  # spids are initialized separately
+      inits.append('%s(%s)' % (f.name, self._DefaultValue(f)))
 
     # Constructor with N args
     self.Emit("  %s(%s) : %s {" %
         (class_name, ', '.join(params), ', '.join(inits)), depth)
     self.Emit("  }")
 
+    #
+    # Members
+    #
     self.Emit('  uint16_t tag;')
     for field in all_fields:
       self.Emit("  %s %s;" % (self._GetCppType(field), field.name))
