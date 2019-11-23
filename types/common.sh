@@ -18,6 +18,15 @@ assert-one-error() {
   # 1 type error allowed for asdl/pretty.py, because our --no-strict-optional
   # conflicts with demo/typed and so forth.
   if [[ $num_errors -eq 1 ]]; then
+
+    # Assert that this is the erorr
+    if ! grep -q 'asdl/pretty.py' $log_path; then
+      cat $log_path
+      echo
+      echo FAILED
+      return 1
+    fi
+
     echo OK
     return 0
   else
