@@ -43,7 +43,7 @@ all() {
 }
 
 run-all-with-osh() {
-  bin/osh -O all:oil -- $0 all
+  bin/osh -O oil:basic -- $0 all
 }
 
 run-for-release() {

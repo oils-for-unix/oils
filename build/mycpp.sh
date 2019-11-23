@@ -188,5 +188,14 @@ size-profile() {
   bloaty -d symbols $TMP/osh_parse
 }
 
+osh-parse-smoke() {
+  #compile-osh-parse
+  for file in {benchmarks,build,test}/*.sh; do
+    echo $file
+    set +o errexit
+    _tmp/mycpp/osh_parse $file | wc -l
+    set -o errexit
+  done
+}
 
 "$@"

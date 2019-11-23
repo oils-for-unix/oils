@@ -121,6 +121,27 @@ void test_formatter() {
   log("value = %s", gBuf.getvalue()->data_);
 }
 
+void test_list_funcs() {
+  std::vector<int> v;
+  v.push_back(0);
+  log("v.size = %d", v.size());
+  v.erase(v.begin());
+  log("v.size = %d", v.size());
+
+  log("  ints");
+  auto ints = new List<int>({1, 2, 3});
+  log("-- before pop(0)");
+  for (int i = 0; i < len(ints); ++i) {
+    log("ints[%d] = %d", i, ints->index(i));
+  }
+  ints->pop(0);
+
+  log("-- after pop(0)");
+  for (int i = 0; i < len(ints); ++i) {
+    log("ints[%d] = %d", i, ints->index(i));
+  }
+}
+
 void test_contains() {
   bool b;
 
@@ -206,6 +227,7 @@ int main(int argc, char **argv) {
 
   test_str_to_int();
   test_str_funcs();
+  test_list_funcs();
 
   log("");
   Dict<int, Str*>* d = new Dict<int, Str*>();

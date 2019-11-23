@@ -294,9 +294,15 @@ class List {
     v_.push_back(item);
   }
 
-  // STUB
   void extend(List<T>* items) {
-    assert(0);
+    // Note: C++ idioms would be v_.insert() or std::copy, but we're keeping it
+    // simple.
+    //
+    // We could optimize this for the small cases Oil has?  I doubt it's a
+    // bottleneck anywhere.
+    for (int i = 0; i < items->v_.size(); ++i) {
+      v_.push_back(items->v_[i]);
+    }
   }
 
   // Reconsider?
@@ -311,7 +317,23 @@ class List {
   // Used in osh/word_parse.py to remove from front
   // TODO: Don't accept arbitrary index?
   T pop(int index) {
-    assert(0);
+    if (v_.size() == 0) {
+      // TODO: Handle this better?
+      assert(0);
+    }
+
+    v_.erase(v_.begin());
+    T result = v_.at(index);
+    return result;
+
+    /*
+    Implementation without std::vector
+    assert(index == 0);
+    for (int i = 1; i < v_.size(); ++i) {
+      v_[i-1] = v_[i];
+    }
+    v_.pop_back();
+    */
   }
 
   void clear() {
