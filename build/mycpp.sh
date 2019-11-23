@@ -198,4 +198,11 @@ osh-parse-smoke() {
   done
 }
 
+frontend-match-test() {
+  local name='frontend_match_test'
+  compile $TMP/$name cpp/frontend_match_test.cc cpp/frontend_match.cc mycpp/mylib.cc
+
+  $TMP/$name
+}
+
 "$@"

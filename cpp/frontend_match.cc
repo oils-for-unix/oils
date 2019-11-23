@@ -20,8 +20,21 @@ Tuple2<Id_t, int>* OneToken(lex_mode_t lex_mode, Str* line, int start_pos) {
 }
 
 Tuple2<Id_t, Str*>* SimpleLexer::Next() {
-  // TODO: call match_func_
-  assert(0);
+  int id;
+  int end_pos;
+  match_func_(reinterpret_cast<const unsigned char*>(s_->data_),
+              s_->len_, pos_, &id, &end_pos);
+  // TODO: Don't allocate?
+  // Str* val = new Str(s->data_ + pos_, end_pos - pos_);
+
+  int len = end_pos - pos_;
+  char* buf = static_cast<char*>(malloc(len+1));
+  memcpy(buf, s_->data_ + pos_, len);  // copy the list item
+  buf[len] = '\0';
+  Str* val = new Str(buf, len);
+
+  pos_ = end_pos;
+  return new Tuple2<Id_t, Str*>(static_cast<Id_t>(id), val);
 }
 
 SimpleLexer* BraceRangeLexer(Str* s) {
