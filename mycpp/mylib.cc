@@ -13,14 +13,17 @@
 Str* kEmptyString = new Str("", 0);
 
 void print(Str* s) {
+  // TODO: use fwrite() with len
   printf("%s\n", s->data_);
 }
 
 void println_stderr(Str* s) {
+  // TODO: use fwrite() with len
   fputs(s->data_, stderr);
   fputs("\n", stderr);
 }
 
+// for hand-written code
 void log(const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
@@ -46,6 +49,7 @@ Str* Str::replace(Str* old, Str* new_str) {
   // First pass to calculate the new length
   int replace_count = 0;
   while (p_this < last_possible) {
+    // TODO: Don't use strstr()
     const char* next = strstr(p_this, old_data);
     if (next == NULL) {
       break;

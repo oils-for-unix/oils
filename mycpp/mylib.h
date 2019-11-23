@@ -133,9 +133,11 @@ class Str {
 
   // TODO: implement these.  With switch statement.
   Str* strip() {
+    assert(0);
     return nullptr;
   }
   Str* rstrip() {
+    assert(0);
     return nullptr;
   }
 
@@ -470,6 +472,7 @@ int str_to_int(Str* s);
 
 // e.g. ('a' in 'abc')
 inline bool str_contains(Str* haystack, Str* needle) {
+  // TODO: this not rely on NUL termination
   const char* p = strstr(haystack->data_, needle->data_);
   return p != NULL;
 }

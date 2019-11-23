@@ -921,7 +921,8 @@ class CommandParser(object):
     done_spid = _KeywordSpid(self.cur_word)  # after _Eat
 
     node = command.DoGroup(c_list.children, None)  # no redirects yet
-    node.spids.extend([do_spid, done_spid])
+    node.spids.append(do_spid)
+    node.spids.append(done_spid)
     return node
 
   def ParseForWords(self):
@@ -1213,7 +1214,9 @@ class CommandParser(object):
       self._Eat(Id.KW_Esac)
     self._Next()
 
-    case_node.spids.extend([case_spid, in_spid, esac_spid])
+    case_node.spids.append(case_spid)
+    case_node.spids.append(in_spid)
+    case_node.spids.append(esac_spid)
     return case_node
 
   def _ParseOilElifElse(self, if_node):
@@ -1599,7 +1602,8 @@ class CommandParser(object):
     right_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.Right_Subshell)
 
-    node.spids.extend([left_spid, right_spid])
+    node.spids.append(left_spid)
+    node.spids.append(right_spid)
     return node
 
   def ParseDBracket(self):
