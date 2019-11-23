@@ -1400,7 +1400,25 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           raise AssertionError(expr.callee.name)
 
     def visit_del_stmt(self, o: 'mypy.nodes.DelStmt') -> T:
-        pass
+        # TODO:
+        # del mylist[:] -> mylist->clear()
+        # del mydict[mykey] -> mydict->remove(key)
+
+        d = o.expr
+        if isinstance(d, IndexExpr):
+          self.write_ind('')
+          self.accept(d.base)
+          if isinstance(d.index, SliceExpr):
+            sl = d.index
+            assert sl.begin_index is None, sl
+            assert sl.end_index is None, sl
+            self.write('->clear()')
+          else:
+            self.write('->remove(')
+            self.accept(d.index)
+            self.write(')')
+
+          self.write(';\n')
 
     def _WriteFuncParams(self, arg_types, arguments):
         first = True  # first NOT including self

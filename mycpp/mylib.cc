@@ -147,17 +147,23 @@ LineReader* gStdin;
 
 Str* CFileLineReader::readline() {
   char* line = nullptr;
-  size_t num_bytes = 0;
+  size_t allocated_size = 0;  // unused
 
-  ssize_t result = getline(&line, &num_bytes, f_);
-  if (result < 0) {
-    log("FAILED %d", errno);
-    // error could be EOF, so we return an empty value.
-    // TODO: check other errors
+  ssize_t len = getline(&line, &allocated_size, f_);
+  if (len < 0) {
+    log("getline() result: %d", len);
+    // Unexpected error
+    if (errno != 0) {
+      log("getline() error: %s", strerror(errno));
+      throw new AssertionError(errno);
+    }
+    // Expected EOF 
     return kEmptyString;
   }
-  // Is it NUL-terminated?
-  return new Str(line, num_bytes);
+  log("len = %d", len);
+
+  // Note: it's NUL terminated
+  return new Str(line, len);
 }
 
 // problem: most Str methods like index() and slice() COPY so they have a

@@ -311,6 +311,8 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
               self.log('  lval %s :: %s', lval, self.types[lval])
             except KeyError:  # TODO: handle this
               pass
+            self.accept(lval)
+
           try:
             r = self.types[o.rvalue]
           except KeyError:
@@ -340,7 +342,7 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         self.accept(o.body)
 
     def visit_del_stmt(self, o: 'mypy.nodes.DelStmt') -> T:
-        pass
+        self.accept(o.expr)
 
     def visit_func_def(self, o: 'mypy.nodes.FuncDef') -> T:
         # got the type here, nice!

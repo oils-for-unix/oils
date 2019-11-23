@@ -422,8 +422,12 @@ inline int len(Str* s) {
   return s->len_;
 }
 
-template <class T> int len(List<T>* L) {
+template <typename  T> int len(List<T>* L) {
   return L->v_.size();
+}
+
+template <typename  K, typename  V> int len(Dict<K, V>* d) {
+  assert(0);
 }
 
 //
@@ -584,6 +588,11 @@ inline LineReader* Stdin() {
 inline LineReader* open(Str* path) {
   // TODO: don't use data_ directly
   FILE* f = fopen(path->data_, "r");
+
+  // TODO: Better error checking.  IOError?
+  if (!f) {
+    throw new AssertionError("file not found");
+  }
   return new CFileLineReader(f);
 }
 

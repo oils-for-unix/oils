@@ -7,7 +7,7 @@ from __future__ import print_function
 import os
 from mylib import log
 
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 
 def ListDemo():
@@ -25,6 +25,9 @@ def ListDemo():
 
   log('1? %d', 1 in intlist)
   log('42? %d', 42 in intlist)
+
+  del intlist[:]
+  log("len() after del = %d", len(intlist))
 
   strlist = []  # type: List[str]
 
@@ -80,12 +83,24 @@ def TupleDemo():
     print('no')
 
 
+def DictDemo():
+  # type: () -> None
+
+  d = {}  # type: Dict[str, int]
+  d['foo'] = 42
+  log('len(d) = %d', len(d))
+  del d['foo']
+  log('len(d) = %d', len(d))
+
+
 def run_tests():
   # type: () -> None
 
   ListDemo()
   log('')
   TupleDemo()
+  log('')
+  DictDemo()
 
 
 def run_benchmarks():
