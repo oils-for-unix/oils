@@ -15,7 +15,9 @@ source mycpp/examples.sh  # for PGEN2_DEMO_PREAMBLE
 readonly MYPY_REPO=~/git/languages/mypy
 
 # note: -Weverything is more than -Wall, but too many errors now.
-CPPFLAGS='-std=c++11 -Wall -O0 -g -ferror-limit=1000'
+CPPFLAGS='-std=c++11 -Wall -ferror-limit=1000'
+CPPFLAGS="$CPPFLAGS -O0 -g"
+#CPPFLAGS="$CPPFLAGS -O2"
 
 readonly CXX=$CLANG_DIR_RELATIVE/bin/clang++
 #readonly CXX=c++
@@ -127,6 +129,21 @@ osh-parse-preamble() {
   echo "$PGEN2_DEMO_PREAMBLE"
 }
 
+compile-osh-parse() {
+  local name=${1:-osh_parse}
+
+  compile $TMP/$name $TMP/${name}.cc \
+    mycpp/mylib.cc \
+    cpp/frontend_match.cc \
+    cpp/asdl_pretty.cc \
+    cpp/osh_arith_spec.cc \
+    _devbuild/gen-cpp/syntax_asdl.cc \
+    _devbuild/gen-cpp/hnode_asdl.cc \
+    _devbuild/gen-cpp/id_kind_asdl.cc \
+    _devbuild/gen-cpp/lookup.cc \
+  #2>&1 | tee _tmp/compile.log
+}
+
 readonly TMP=_tmp/mycpp
 
 osh-parse() {
@@ -148,17 +165,7 @@ osh-parse() {
     cpp-skeleton $name $raw 
   } > $cc
 
-  # TODO:
-  compile $tmp/$name $cc \
-    mycpp/mylib.cc \
-    cpp/frontend_match.cc \
-    cpp/asdl_pretty.cc \
-    cpp/osh_arith_spec.cc \
-    _devbuild/gen-cpp/syntax_asdl.cc \
-    _devbuild/gen-cpp/hnode_asdl.cc \
-    _devbuild/gen-cpp/id_kind_asdl.cc \
-    _devbuild/gen-cpp/lookup.cc \
-  #2>&1 | tee _tmp/compile.log
+  compile-osh-parse $name
 }
 
 run-osh-parse() {

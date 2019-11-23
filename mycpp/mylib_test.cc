@@ -78,6 +78,14 @@ void test_str_funcs() {
   log("s3.rstrip()  = [%s]", s3->rstrip()->data_);
   Str* s4 = new Str("");
   log("s4.rstrip()  = [%s]", s4->rstrip()->data_);
+
+  log("s.startswith('') = %d", s->startswith(new Str("")));
+  log("s.startswith('ab') = %d", s->startswith(new Str("ab")));
+  log("s.startswith('bc') = %d", s->startswith(new Str("bc")));
+
+  log("s.endswith('') = %d", s->endswith(new Str("")));
+  log("s.endswith('ab') = %d", s->endswith(new Str("ab")));
+  log("s.endswith('bc') = %d", s->endswith(new Str("bc")));
 }
 
 using mylib::BufLineReader;

@@ -167,12 +167,17 @@ class Str {
   }
 
   bool startswith(Str* s) {
-    assert(false);
-    return true;
+    if (s->len_ >= len_) {
+      return false;
+    }
+    return memcmp(data_, s->data_, s->len_) == 0;
   }
   bool endswith(Str* s) {
-    assert(false);
-    return true;
+    if (s->len_ >= len_) {
+      return false;
+    }
+    const char* start = data_ + len_ - s->len_;
+    return memcmp(start, s->data_, s->len_) == 0;
   }
   bool isdigit() {
     if (len_ == 0) {

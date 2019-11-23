@@ -151,16 +151,16 @@ Str* CFileLineReader::readline() {
 
   ssize_t len = getline(&line, &allocated_size, f_);
   if (len < 0) {
-    log("getline() result: %d", len);
+    //log("getline() result: %d", len);
     // Unexpected error
     if (errno != 0) {
-      log("getline() error: %s", strerror(errno));
+      //log("getline() error: %s", strerror(errno));
       throw new AssertionError(errno);
     }
     // Expected EOF 
     return kEmptyString;
   }
-  log("len = %d", len);
+  //log("len = %d", len);
 
   // Note: it's NUL terminated
   return new Str(line, len);
