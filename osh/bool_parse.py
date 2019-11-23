@@ -68,7 +68,7 @@ class BoolParser(object):
       assert lex_mode == lex_mode_e.DBracket
       self.words[0] = self.words[1]
       self.cur_word = self.words[0]
-      del self.words[1]
+      self.words.pop()
     elif n in (0, 1):
       w = self.w_parser.ReadWord(lex_mode)  # may raise
       if n == 0:

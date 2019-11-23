@@ -88,9 +88,13 @@ def DictDemo():
 
   d = {}  # type: Dict[str, int]
   d['foo'] = 42
-  log('len(d) = %d', len(d))
-  del d['foo']
-  log('len(d) = %d', len(d))
+
+  # TODO: implement len(Dict) and Dict::remove() and enable this
+  if 0:
+    log('len(d) = %d', len(d))
+
+    del d['foo']
+    log('len(d) = %d', len(d))
 
 
 def run_tests():

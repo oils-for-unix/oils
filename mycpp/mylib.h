@@ -309,6 +309,10 @@ class List {
     assert(0);
   }
 
+  void clear() {
+    v_.clear();
+  }
+
   // STUB: For LHS assignment.
   // TODO: Handle L[-1] = 3 (pgen2 appears to do it)
   T& operator[](int index) {
@@ -362,6 +366,10 @@ class Dict {
   // STUB
   V& operator[](K key) {
     return values_[0];
+  }
+
+  void remove(K key) {
+    assert(0);
   }
 
  private:
