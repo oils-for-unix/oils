@@ -8,6 +8,7 @@ from pyannotate_runtime import collect_types
 
 #from asdl import typed_arith_parse_test
 from asdl import format_test
+from core import comp_ui_test
 from osh import arith_parse_test
 from osh import bool_parse_test
 from osh import cmd_parse_test
@@ -56,12 +57,7 @@ def Arith():
 
 
 def main():
-  #typed_arith_parse_test.main()
-
   loader = unittest.TestLoader()
-
-  modules = [
-      arith_parse_test, bool_parse_test, cmd_parse_test, word_parse_test]
 
   g = glob.glob
   py = g('frontend/*_test.py') + g('osh/*_test.py') + g('core/*_test.py') + g('')
@@ -87,10 +83,11 @@ def main():
 
   collect_types.init_types_collection()
   with collect_types.collect():
-    #runner.run(suite)
-    #TopLevel()
-    #Match()
-    Arith()
+    runner.run(suite)
+    if 0:
+      TopLevel()
+      Match()
+      Arith()
 
   collect_types.dump_stats('type_info.json')
 

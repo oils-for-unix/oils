@@ -78,6 +78,7 @@ typecheck-more-oil() {
     osh/glob_.py osh/string_ops.py frontend/location.py \
     osh/history.py \
     > $log
+    #core/comp_ui.py \
 
   assert-one-error $log
 }
@@ -110,23 +111,7 @@ peek-type-info() {
 }
 
 apply-types() {
-  #local -a files=( asdl/tdop.py asdl/typed_arith_parse*.py )
-
-  #local -a files=( core/util.py asdl/runtime.py )
-  #local -a files=(asdl/format.py )
-  #local -a files=(
-  #  frontend/lexer.py frontend/match.py frontend/reader.py core/alloc.py
-  #  core/meta.py )
-  #local -a files=(osh/word.py)
-
-  #local -a files=(frontend/parse_lib.py)
-  local -a files=(core/meta.py core/id_kind.py frontend/tdop.py osh/arith_parse.py)
-  #local -a files=(core/id_kind.py)
-  #local -a files=(frontend/match.py)
-  #local -a files=(osh/bool_parse.py)
-  #local -a files=(osh/word_parse.py)
-  #local -a files=(osh/cmd_parse.py)
-  #local -a files=(core/ui.py)
+  local -a files=(core/comp_ui.py)
 
   #local -a files=( $(cat _tmp/osh-parse-src.txt | grep -v syntax_asdl.py ) )
 
