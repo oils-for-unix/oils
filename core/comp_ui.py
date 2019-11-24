@@ -6,13 +6,9 @@ from __future__ import print_function
 import sys
 
 import libc
-from core.util import DebugFile
-from typing import Any
-from typing import List
-from typing import Optional
-from typing import Union
-from typing import Dict
-from typing import IO
+from typing import Any, List, Optional, Dict, IO, TYPE_CHECKING
+if TYPE_CHECKING:
+  from core.util import DebugFile
 
 _RESET = '\033[0;0m'
 _BOLD = '\033[1m'
@@ -67,7 +63,7 @@ class PromptState(object):
 
   def __init__(self):
     # type: () -> None
-    self.last_prompt_str = None
+    self.last_prompt_str = None  # type: Optional[str]
     self.last_prompt_len = -1
 
   def SetLastPrompt(self, prompt_str):
@@ -87,7 +83,8 @@ class State(object):
     # LINES to readline because we don't want it to do its own word splitting.
     self.display_pos = -1
 
-    self.descriptions = {}  # completion candidate descriptions
+    # completion candidate descriptions
+    self.descriptions = {}  # type: Dict[str, str]
 
 
 class _IDisplay(object):
@@ -110,6 +107,10 @@ class _IDisplay(object):
         import traceback
         traceback.print_exc()
 
+  def _PrintCandidates(self, unused_subst, matches, unused_match_len):
+    # type: (Optional[Any], List[str], Optional[Any]) -> None
+    """Abstract method."""
+    raise NotImplementedError()
 
   def Reset(self):
     # type: () -> None
@@ -127,6 +128,7 @@ class _IDisplay(object):
     pass
 
   def PrintRequired(self, msg, *args):
+    # type: (str, *Any) -> None
     # This gets called with "nothing to display"
     pass
 
@@ -198,7 +200,7 @@ class MinimalDisplay(_IDisplay):
 
 
 def _PrintPacked(matches, max_match_len, term_width, max_lines, f):
-  # type: (List[str], int, int, int, Union[IO[bytes], Any]) -> int
+  # type: (List[str], int, int, int, IO[bytes]) -> int
   # With of each candidate.  2 spaces between each.
   w = max_match_len + 2
 
@@ -311,7 +313,7 @@ class NiceDisplay(_IDisplay):
                comp_state,  # type: State
                prompt_state,  # type: PromptState
                debug_f,  # type: DebugFile
-               readline_mod,  # type: module
+               readline_mod,  # type: Any
                f=sys.stdout,  # type: IO[bytes]
                num_lines_cap=10,  # type: int
                bold_line=False,  # type: bool
@@ -336,7 +338,7 @@ class NiceDisplay(_IDisplay):
     self.m_count = 0
 
     # hash of matches -> count.  Has exactly ONE entry at a time.
-    self.dupes = {}
+    self.dupes = {}  # type: Dict[int, int]
 
   def Reset(self):
     # type: () -> None
