@@ -15,6 +15,11 @@ from frontend import match
 from frontend import reader
 from osh import word_
 
+from typing import Any, TYPE_CHECKING
+if TYPE_CHECKING:
+  from frontend.parse_lib import ParseContext
+  from core.util import DebugFile
+
 
 class Evaluator(object):
   """Expand ! commands within the command line.
@@ -26,11 +31,13 @@ class Evaluator(object):
   """
 
   def __init__(self, readline_mod, parse_ctx, debug_f):
+    # type: (Any, ParseContext, DebugFile) -> None
     self.readline_mod = readline_mod
     self.parse_ctx = parse_ctx
     self.debug_f = debug_f
 
   def Eval(self, line):
+    # type: (str) -> str
     """Returns an expanded line."""
 
     if not self.readline_mod:

@@ -74,7 +74,10 @@ typecheck-more-oil() {
   local log=_tmp/typecheck-more-oil.txt
 
   set +o errexit
-  typecheck $MYPY_FLAGS osh/glob_.py osh/string_ops.py frontend/location.py > $log
+  typecheck $MYPY_FLAGS \
+    osh/glob_.py osh/string_ops.py frontend/location.py \
+    osh/history.py \
+    > $log
 
   assert-one-error $log
 }
