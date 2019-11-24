@@ -110,6 +110,10 @@ oil-asdl-to-py() {
   gen-asdl-py 'tools/find/find.asdl'
 }
 
+arith-spec-cpp-gen() {
+  osh/arith_spec_gen.py > _devbuild/gen-cpp/arith_spec.cc
+}
+
 oil-asdl-to-cpp() {
   local dir='_devbuild/gen-cpp'
   mkdir -p $dir

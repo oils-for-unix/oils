@@ -16,7 +16,7 @@ from osh import word_
 from mycpp import mylib
 from mycpp.mylib import tagswitch, NewStr
 
-from typing import Callable, List, Dict, NoReturn, cast, TYPE_CHECKING
+from typing import Callable, List, Dict, NoReturn, Any, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:  # break circular dep
   from osh.word_parse import WordParser
@@ -140,6 +140,13 @@ def LeftAssign(p, w, left, rbp):
 #
 
 if mylib.PYTHON:
+
+  def _CppFuncName(f):
+    # type: (Any) -> str
+    namespace = f.__module__.split('.')[-1]
+    return '%s::%s' % (namespace, f.__name__)
+
+
   class LeftInfo(object):
     """Row for operator.
 
@@ -151,6 +158,11 @@ if mylib.PYTHON:
       self.lbp = lbp
       self.rbp = rbp
 
+    def __str__(self):
+      # type: () -> str
+      """Used by C++ code generation."""
+      return '{ %s, %d, %d },' % (_CppFuncName(self.led), self.lbp, self.rbp)
+
 
   class NullInfo(object):
     """Row for operator.
@@ -161,6 +173,11 @@ if mylib.PYTHON:
       # type: (NullFunc, int) -> None
       self.nud = nud or LeftError
       self.bp = bp
+
+    def __str__(self):
+      # type: () -> str
+      """Used by C++ code generation."""
+      return '{ %s, %d },' % (_CppFuncName(self.nud), self.bp)
 
 
   class ParserSpec(object):

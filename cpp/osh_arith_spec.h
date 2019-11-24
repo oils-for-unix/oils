@@ -1,4 +1,5 @@
 // Replacement for osh/arith_spec
+// TODO: This should be frontend_tdop.h,cc
 
 #ifndef ARITH_SPEC_H
 #define ARITH_SPEC_H
@@ -49,6 +50,10 @@ extern tdop::ParserSpec kArithSpec;
 inline tdop::ParserSpec* Spec() {
   return &kArithSpec;
 }
+
+// Generated tables
+extern tdop::LeftInfo kLeftLookup[];
+extern tdop::NullInfo kNullLookup[];
 
 }  // namespace arith_spec
 

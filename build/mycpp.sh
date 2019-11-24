@@ -141,6 +141,7 @@ compile-osh-parse() {
     _devbuild/gen-cpp/hnode_asdl.cc \
     _devbuild/gen-cpp/id_kind_asdl.cc \
     _devbuild/gen-cpp/lookup.cc \
+    _devbuild/gen-cpp/arith_spec.cc
   #2>&1 | tee _tmp/compile.log
 }
 
@@ -178,7 +179,7 @@ run-osh-parse() {
   ls -l $tmp
 
   # Run it
-  $tmp/$name "$code_str"
+  $tmp/$name -c "$code_str"
 }
 
 size-profile() {
