@@ -69,12 +69,28 @@ typed-arith-asdl() {
 }
 
 
+readonly MORE_OIL_MANIFEST=types/more-oil-manifest.txt
+
+
+need-typechecking() {
+    # This command is useful to find files to annotate and add to
+    # $MORE_OIL_MANIFEST.
+    # It shows all the files that are not included in
+    # $MORE_OIL_MANIFEST or $OSH_PARSE_MANIFEST, and thus are not yet
+    # typechecked by typecheck-more-oil here or
+    # `types/osh_parse.sh travis`.
+    comm -2 -3 \
+         <(metrics/source-code.sh osh-files | grep '.py$' | sed 's@^@./@') \
+         <(cat $MORE_OIL_MANIFEST $OSH_PARSE_MANIFEST | sort) \
+        | xargs wc -l | sort -n
+}
+
+
 typecheck-more-oil() {
-  local manifest=types/more-oil-manifest.txt
   local log=_tmp/typecheck-more-oil.txt
 
   set +o errexit
-  cat $manifest | xargs -- $0 typecheck $MYPY_FLAGS > $log
+  cat $MORE_OIL_MANIFEST | xargs -- $0 typecheck $MYPY_FLAGS > $log
 
   assert-one-error $log
 }

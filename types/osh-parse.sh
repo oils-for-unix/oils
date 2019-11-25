@@ -19,7 +19,6 @@ demo() {
 }
 
 readonly PY_DEPS='_tmp/osh-parse-deps.txt'
-readonly OSH_PARSE_MANIFEST='types/osh-parse-manifest.txt'
 
 deps() {
   local pythonpath='.:vendor'
