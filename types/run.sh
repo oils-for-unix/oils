@@ -68,17 +68,13 @@ typed-arith-asdl() {
   echo
 }
 
-typecheck-more-oil() {
-  #typecheck $flags osh/word_compile.py
 
+typecheck-more-oil() {
+  local manifest=types/more-oil-manifest.txt
   local log=_tmp/typecheck-more-oil.txt
 
   set +o errexit
-  typecheck $MYPY_FLAGS \
-    osh/glob_.py osh/string_ops.py frontend/location.py \
-    osh/history.py core/comp_ui.py frontend/lookup.py \
-    frontend/py_reader.py core/error.py osh/word_compile.py \
-    > $log
+  cat $manifest | xargs -- $0 typecheck $MYPY_FLAGS > $log
 
   assert-one-error $log
 }
