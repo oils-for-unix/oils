@@ -77,7 +77,7 @@ typecheck-more-oil() {
   typecheck $MYPY_FLAGS \
     osh/glob_.py osh/string_ops.py frontend/location.py \
     osh/history.py core/comp_ui.py frontend/lookup.py \
-    frontend/py_reader.py core/error.py \
+    frontend/py_reader.py core/error.py osh/word_compile.py \
     > $log
 
   assert-one-error $log
