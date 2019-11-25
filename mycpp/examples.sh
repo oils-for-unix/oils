@@ -221,7 +221,7 @@ using id_kind_asdl::Kind_t;
 #include "asdl_pretty.h"
 #include "core_error.h"
 #include "frontend_match.h"
-#include "osh_arith_spec.h"
+#include "osh_arith_parse.h"
 
 // Hack for now.  Every sum type should have repr()?
 Str* repr(syntax_asdl::source_t* obj) {
@@ -348,7 +348,7 @@ compile-pgen2_demo() {
   compile-with-asdl $name \
     ../cpp/frontend_match.cc \
     ../cpp/asdl_pretty.cc \
-    ../cpp/osh_arith_spec.cc \
+    ../cpp/osh_arith_parse.cc \
     ../_devbuild/gen-cpp/syntax_asdl.cc \
     ../_devbuild/gen-cpp/hnode_asdl.cc \
     ../_devbuild/gen-cpp/id_kind_asdl.cc \

@@ -12,7 +12,7 @@ from mycpp import mylib
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-  from osh.tdop import TdopParser
+  from osh.tdop import TdopParser, ParserSpec
 
 
 def NullIncDec(p, w, bp):
@@ -175,3 +175,11 @@ if mylib.PYTHON:
     spec.Left(1, tdop.LeftBinaryOp, [Id.Arith_Comma])
 
     return spec
+
+
+if mylib.PYTHON:
+  _SPEC = MakeShellSpec()
+
+  def Spec():
+    # type: () -> ParserSpec
+    return _SPEC

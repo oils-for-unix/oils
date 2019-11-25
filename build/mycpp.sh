@@ -82,7 +82,7 @@ EOF
 
   cat <<EOF
 int main(int argc, char **argv) {
-  //log("%p", arith_spec::kNullLookup[1].nud);
+  //log("%p", arith_parse::kNullLookup[1].nud);
   auto* args = new List<Str*>();
   for (int i = 0; i < argc; ++i) {
     args->append(new Str(argv[i]));
@@ -137,12 +137,12 @@ compile-osh-parse() {
     mycpp/mylib.cc \
     cpp/frontend_match.cc \
     cpp/asdl_pretty.cc \
-    cpp/osh_arith_spec.cc \
+    cpp/osh_arith_parse.cc \
     _devbuild/gen-cpp/syntax_asdl.cc \
     _devbuild/gen-cpp/hnode_asdl.cc \
     _devbuild/gen-cpp/id_kind_asdl.cc \
     _devbuild/gen-cpp/lookup.cc \
-    _devbuild/gen-cpp/arith_spec.cc
+    _devbuild/gen-cpp/arith_parse.cc
   #2>&1 | tee _tmp/compile.log
 }
 

@@ -23,7 +23,6 @@
 ./oil_lang/expr_parse.py
 ./oil_lang/expr_to_ast.py
 ./osh/arith_parse.py
-./osh/arith_spec.py
 ./osh/bool_parse.py
 ./osh/braces.py
 ./osh/cmd_parse.py

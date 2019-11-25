@@ -1,21 +1,21 @@
 #!/usr/bin/env python2
 """
-arith_spec_gen.py
+arith_parse_gen.py
 """
 from __future__ import print_function
 
 import collections
 import sys
 
-from osh.arith_spec import _SPEC
+from osh import arith_parse
 from core.util import log
 
 
 def main(argv):
-  spec = _SPEC
+  spec = arith_parse.Spec()
 
   print("""\
-#include "osh_arith_spec.h"
+#include "osh_arith_parse.h"
 """)
 
   to_declare = collections.defaultdict(set)
@@ -42,7 +42,7 @@ def main(argv):
       print('')
 
   print("""\
-namespace arith_spec {
+namespace arith_parse {
 
 tdop::LeftInfo kLeftLookup[] = {
   { nullptr, 0, 0 },  // empty
@@ -51,7 +51,7 @@ tdop::LeftInfo kLeftLookup[] = {
   n = max(spec.led_lookup)
   m = max(spec.nud_lookup)
   assert n == m
-  log('arith_spec_gen.py: precedence table has %d entries', n)
+  log('arith_parse_gen.py: precedence table has %d entries', n)
 
   for i in xrange(1, n):
     row = spec.led_lookup.get(i)

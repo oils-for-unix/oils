@@ -1,8 +1,9 @@
-// Replacement for osh/arith_spec
+// Replacement for osh/arith_parse
+//
 // TODO: This should be frontend_tdop.h,cc
 
-#ifndef ARITH_SPEC_H
-#define ARITH_SPEC_H
+#ifndef OSH_ARITH_PARSE_H
+#define OSH_ARITH_PARSE_H
 
 #include "id_kind_asdl.h"
 using id_kind_asdl::Id_t;
@@ -59,7 +60,7 @@ arith_expr_t* LeftIndex(TdopParser* p, word_t* w, arith_expr_t* left, int unused
 arith_expr_t* LeftTernary(TdopParser* p, word_t* t, arith_expr_t* left, int bp);
 };
 
-namespace arith_spec {
+namespace arith_parse {
 
 extern tdop::ParserSpec kArithSpec;
 
@@ -71,6 +72,6 @@ inline tdop::ParserSpec* Spec() {
 extern tdop::LeftInfo kLeftLookup[];
 extern tdop::NullInfo kNullLookup[];
 
-}  // namespace arith_spec
+}  // namespace arith_parse
 
-#endif  // ARITH_SPEC_H
+#endif  // OSH_ARITH_PARSE_H
