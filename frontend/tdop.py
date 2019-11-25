@@ -16,7 +16,9 @@ from osh import word_
 from mycpp import mylib
 from mycpp.mylib import tagswitch, NewStr
 
-from typing import Callable, List, Dict, NoReturn, Any, cast, TYPE_CHECKING
+from typing import (
+    Callable, List, Dict, Tuple, NoReturn, Any, cast, TYPE_CHECKING
+)
 
 if TYPE_CHECKING:  # break circular dep
   from osh.word_parse import WordParser
@@ -141,11 +143,14 @@ def LeftAssign(p, w, left, rbp):
 
 if mylib.PYTHON:
 
+  def _ModuleAndFuncName(f):
+    # type: (Any) -> Tuple[str, str]
+    namespace = f.__module__.split('.')[-1]
+    return namespace, f.__name__
+
   def _CppFuncName(f):
     # type: (Any) -> str
-    namespace = f.__module__.split('.')[-1]
-    return '%s::%s' % (namespace, f.__name__)
-
+    return '%s::%s' % _ModuleAndFuncName(f)
 
   class LeftInfo(object):
     """Row for operator.
@@ -163,6 +168,11 @@ if mylib.PYTHON:
       """Used by C++ code generation."""
       return '{ %s, %d, %d },' % (_CppFuncName(self.led), self.lbp, self.rbp)
 
+    def ModuleAndFuncName(self):
+      # type: () -> Tuple[str, str]
+      """Used by C++ code generation."""
+      return _ModuleAndFuncName(self.led)
+
 
   class NullInfo(object):
     """Row for operator.
@@ -178,6 +188,11 @@ if mylib.PYTHON:
       # type: () -> str
       """Used by C++ code generation."""
       return '{ %s, %d },' % (_CppFuncName(self.nud), self.bp)
+
+    def ModuleAndFuncName(self):
+      # type: () -> Tuple[str, str]
+      """Used by C++ code generation."""
+      return _ModuleAndFuncName(self.nud)
 
 
   class ParserSpec(object):

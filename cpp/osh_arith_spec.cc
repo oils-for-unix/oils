@@ -2,19 +2,17 @@
 
 #include "osh_arith_spec.h"
 
-// TODO: include generated table
-
 namespace tdop {
 
 LeftInfo* ParserSpec::LookupLed(Id_t id) {
   LeftInfo* result = &(arith_spec::kLeftLookup[id]);
-  assert(0);
+  //assert(0);
   return result;
 }
 
 NullInfo* ParserSpec::LookupNud(Id_t id) {
   NullInfo* result = &(arith_spec::kNullLookup[id]);
-  assert(0);
+  //assert(0);
   return result;
 }
 
