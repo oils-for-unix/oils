@@ -76,7 +76,8 @@ typecheck-more-oil() {
   set +o errexit
   typecheck $MYPY_FLAGS \
     osh/glob_.py osh/string_ops.py frontend/location.py \
-    osh/history.py core/comp_ui.py \
+    osh/history.py core/comp_ui.py frontend/lookup.py \
+    frontend/py_reader.py core/error.py \
     > $log
 
   assert-one-error $log
