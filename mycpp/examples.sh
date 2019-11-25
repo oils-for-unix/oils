@@ -221,6 +221,7 @@ using id_kind_asdl::Kind_t;
 #include "asdl_pretty.h"
 #include "core_error.h"
 #include "frontend_match.h"
+#include "frontend_tdop.h"
 #include "osh_arith_parse.h"
 
 // Hack for now.  Every sum type should have repr()?

@@ -137,12 +137,13 @@ compile-osh-parse() {
     mycpp/mylib.cc \
     cpp/frontend_match.cc \
     cpp/asdl_pretty.cc \
+    cpp/frontend_tdop.cc \
     cpp/osh_arith_parse.cc \
     _devbuild/gen-cpp/syntax_asdl.cc \
     _devbuild/gen-cpp/hnode_asdl.cc \
     _devbuild/gen-cpp/id_kind_asdl.cc \
     _devbuild/gen-cpp/lookup.cc \
-    _devbuild/gen-cpp/arith_parse.cc
+    _devbuild/gen-cpp/arith_parse.cc 
   #2>&1 | tee _tmp/compile.log
 }
 

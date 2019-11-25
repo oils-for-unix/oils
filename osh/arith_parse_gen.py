@@ -16,13 +16,17 @@ def main(argv):
 
   print("""\
 #include "osh_arith_parse.h"
+
+using syntax_asdl::arith_expr_t;
+using syntax_asdl::word_t;
+using tdop::TdopParser;
 """)
 
   to_declare = collections.defaultdict(set)
 
   for row in spec.nud_lookup.itervalues():
     mod_name, func_name = row.ModuleAndFuncName()
-    to_declare[mod_name].add(('tdop::NullFunc', func_name))
+    to_declare[mod_name].add(('N', func_name))
 
   log('')
   log('')
@@ -30,16 +34,22 @@ def main(argv):
   # TODO: namespace are arith_parse or tdop
   for row in spec.led_lookup.itervalues():
     mod_name, func_name = row.ModuleAndFuncName()
-    to_declare[mod_name].add(('tdop::LeftFunc', func_name))
+    to_declare[mod_name].add(('L', func_name))
 
-  if 0:
-    # main program has no headers, so here are prototypes
-    for mod_name in to_declare:
-      print('namespace %s { ' % mod_name)
-      for typ, func in sorted(to_declare[mod_name]):
-        print('  extern %s %s;' % (typ, func))
-      print('}')
-      print('')
+  # main program has no headers, so here are prototypes
+  for mod_name in to_declare:
+    print('namespace %s { ' % mod_name)
+    for typ, func in sorted(to_declare[mod_name]):
+      if typ == 'N':
+        # tdop::NullFunc
+        fmt = 'arith_expr_t* %s(TdopParser*, word_t*, int);'
+      else:
+        # tdop::LeftFunc
+        fmt = 'arith_expr_t* %s(TdopParser*, word_t*, arith_expr_t*, int);' 
+      print(fmt % func)
+
+    print('}')
+    print('')
 
   print("""\
 namespace arith_parse {
