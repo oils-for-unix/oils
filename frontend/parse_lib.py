@@ -17,11 +17,11 @@ from core import meta
 from core.util import p_die
 from frontend import lexer
 from frontend import reader
-from frontend import tdop
 from frontend import match
 
 from oil_lang import expr_parse
 from oil_lang import expr_to_ast
+from osh import tdop
 from osh import arith_spec
 from osh import cmd_parse
 from osh import word_parse
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
   from core.util import DebugFile
   from frontend.lexer import Lexer
   from frontend.reader import _Reader
-  from frontend.tdop import TdopParser
+  from osh.tdop import TdopParser
   from osh.word_parse import WordParser
   from osh.cmd_parse import CommandParser
   from pgen2.grammar import Grammar

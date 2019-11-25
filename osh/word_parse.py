@@ -71,7 +71,7 @@ from core.util import p_die
 from core.util import log
 from frontend import lookup
 from frontend import reader
-from frontend import tdop
+from osh import tdop
 from osh import arith_spec
 from osh import braces
 from osh import word_

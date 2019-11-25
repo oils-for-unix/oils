@@ -6,13 +6,13 @@ arith_parse.py - Parse shell arithmetic, which is based on C.
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (arith_expr, arith_expr_t, word_t)
 from core.util import p_die
-from frontend import tdop
+from osh import tdop
 from osh import word_
 from mycpp import mylib
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-  from frontend.tdop import TdopParser
+  from osh.tdop import TdopParser
 
 
 def NullIncDec(p, w, bp):
