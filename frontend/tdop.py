@@ -71,9 +71,10 @@ def ToLValue(node):
 
 
 def NullError(p, t, bp):
-  # type: (TdopParser, word_t, int) -> NoReturn
+  # type: (TdopParser, word_t, int) -> arith_expr_t
   # TODO: I need position information
   p_die("Token can't be used in prefix position", word=t)
+  return None  # never reached
 
 
 def NullConstant(p, w, bp):
@@ -112,9 +113,10 @@ def NullPrefixOp(p, w, bp):
 #
 
 def LeftError(p, t, left, rbp):
-  # type: (TdopParser, word_t, arith_expr_t, int) -> NoReturn
+  # type: (TdopParser, word_t, arith_expr_t, int) -> arith_expr_t
   # Hm is this not called because of binding power?
   p_die("Token can't be used in infix position", word=t)
+  return None  # never reached
 
 
 def LeftBinaryOp(p, w, left, rbp):

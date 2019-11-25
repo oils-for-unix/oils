@@ -32,13 +32,14 @@ def main(argv):
     mod_name, func_name = row.ModuleAndFuncName()
     to_declare[mod_name].add(('tdop::LeftFunc', func_name))
 
-  # main program has no headers, so here are prototypes
-  for mod_name in to_declare:
-    print('namespace %s { ' % mod_name)
-    for typ, func in sorted(to_declare[mod_name]):
-      print('  %s %s;' % (typ, func))
-    print('}')
-    print('')
+  if 0:
+    # main program has no headers, so here are prototypes
+    for mod_name in to_declare:
+      print('namespace %s { ' % mod_name)
+      for typ, func in sorted(to_declare[mod_name]):
+        print('  extern %s %s;' % (typ, func))
+      print('}')
+      print('')
 
   print("""\
 namespace arith_spec {

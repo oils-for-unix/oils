@@ -82,6 +82,7 @@ EOF
 
   cat <<EOF
 int main(int argc, char **argv) {
+  //log("%p", arith_spec::kNullLookup[1].nud);
   auto* args = new List<Str*>();
   for (int i = 0; i < argc; ++i) {
     args->append(new Str(argv[i]));

@@ -13,21 +13,27 @@ using syntax_asdl::word_t;
 
 // move to tdop.h?
 namespace tdop {
-
   class TdopParser;  // forward declaration
 
-  typedef arith_expr_t* (*LeftFunc)(TdopParser*, word_t*, arith_expr_t*, int);
-  typedef arith_expr_t* (*NullFunc)(TdopParser* , word_t*, int);
+  // Duplicated function prototypes
+  arith_expr_t* NullError(TdopParser* p, word_t* t, int bp);
+  arith_expr_t* NullConstant(TdopParser* p, word_t* w, int bp);
+  arith_expr_t* NullParen(TdopParser* p, word_t* t, int bp);
+  arith_expr_t* NullPrefixOp(TdopParser* p, word_t* w, int bp);
+  arith_expr_t* LeftError(TdopParser* p, word_t* t, arith_expr_t* left, int rbp);
+  arith_expr_t* LeftBinaryOp(TdopParser* p, word_t* w, arith_expr_t* left, int rbp);
+  arith_expr_t* LeftAssign(TdopParser* p, word_t* w, arith_expr_t* left, int rbp);
 
-  class LeftInfo {
-   public:
+  typedef arith_expr_t* (*LeftFunc)(TdopParser*, word_t*, arith_expr_t*, int);
+  typedef arith_expr_t* (*NullFunc)(TdopParser*, word_t*, int);
+
+  struct LeftInfo {
     LeftFunc led;
     int lbp;
     int rbp;
   };
 
-  class NullInfo {
-   public:
+  struct NullInfo {
     NullFunc nud;
     int bp;
   };
@@ -42,6 +48,16 @@ namespace tdop {
   };
 
 }  // namespace tdop
+
+namespace arith_parse {
+using tdop::TdopParser;
+arith_expr_t* NullIncDec(TdopParser* p, word_t* w, int bp);
+arith_expr_t* NullUnaryPlus(TdopParser* p, word_t* t, int bp);
+arith_expr_t* NullUnaryMinus(TdopParser* p, word_t* t, int bp);
+arith_expr_t* LeftIncDec(TdopParser* p, word_t* w, arith_expr_t* left, int rbp);
+arith_expr_t* LeftIndex(TdopParser* p, word_t* w, arith_expr_t* left, int unused_bp);
+arith_expr_t* LeftTernary(TdopParser* p, word_t* t, arith_expr_t* left, int bp);
+};
 
 namespace arith_spec {
 
