@@ -5,9 +5,8 @@ tdop.py - Library for expression parsing.
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
     arith_expr, arith_expr_e, arith_expr_t,
-    arith_expr__ArithWord, arith_expr__UnaryAssign, arith_expr__VarRef,
-    arith_expr__Binary, arith_expr__BinaryAssign,
-    sh_lhs_expr, sh_lhs_expr_t, sh_lhs_expr__Name,
+    arith_expr__VarRef, arith_expr__Binary,
+    sh_lhs_expr, sh_lhs_expr_t,
     word_t,
 )
 from _devbuild.gen.types_asdl import lex_mode_e
@@ -17,13 +16,13 @@ from mycpp import mylib
 from mycpp.mylib import tagswitch, NewStr
 
 from typing import (
-    Callable, List, Dict, Tuple, NoReturn, Any, cast, TYPE_CHECKING
+    Callable, List, Dict, Tuple, Any, cast, TYPE_CHECKING
 )
 
 if TYPE_CHECKING:  # break circular dep
   from osh.word_parse import WordParser
-  LeftFunc = Callable[[TdopParser, word_t, arith_expr_t, int], arith_expr_t]
-  NullFunc = Callable[[TdopParser, word_t, int], arith_expr_t]
+  LeftFunc = Callable[['TdopParser', word_t, arith_expr_t, int], arith_expr_t]
+  NullFunc = Callable[['TdopParser', word_t, int], arith_expr_t]
 
 
 def IsIndexable(node):

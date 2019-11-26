@@ -101,4 +101,14 @@ web-dir() {
   echo "Published to $dest"
 }
 
+file-to-share() {
+  local user=$1
+  local host=$user.org
+
+  local file=$2
+  local dest=$user@$host:oilshell.org/share/$(basename $file).txt
+
+  scp $file $dest
+}
+
 "$@"
