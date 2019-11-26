@@ -193,7 +193,20 @@ size-profile() {
 
 osh-parse-smoke() {
   #compile-osh-parse
-  for file in {benchmarks,build,test}/*.sh; do
+  #for file in {benchmarks,build,test}/*.sh; do
+  for file in */*.sh; do
+    case $file in
+      # Exclude _tmp/ etc.
+      _*) continue ;;
+
+      # the STDOUT blocks have invalid syntax
+      # TODO: Enable this as a separate test of syntax errors
+      #spec/*) continue ;;
+
+      # This has Oil syntax
+      test/oil-runtime-errors.sh) continue ;;
+    esac
+
     echo $file
     set +o errexit
     _tmp/mycpp/osh_parse $file | wc -l

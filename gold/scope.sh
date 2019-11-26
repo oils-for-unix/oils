@@ -12,7 +12,7 @@ printenv() {
 
 my_global=G1
 
-func() {
+myfunc() {
   # This makes a NEW local variable my_global.
   # Yeah I think this is amenable to static analysis.
   local loc1=L1 my_global loc2=L2
@@ -43,7 +43,7 @@ func2() {
 # Doesn't work until func2 is run
 inner_func || echo "inner_func not defined yet"
 
-func
+myfunc
 echo "my_global: $my_global"
 
 func2

@@ -86,6 +86,19 @@ void test_str_funcs() {
   log("s.endswith('') = %d", s->endswith(new Str("")));
   log("s.endswith('ab') = %d", s->endswith(new Str("ab")));
   log("s.endswith('bc') = %d", s->endswith(new Str("bc")));
+
+  log("repr %s", repr(new Str(""))->data_);
+  log("repr %s", repr(new Str("'single'"))->data_);
+  log("repr %s", repr(new Str("\"double\""))->data_);
+
+  // this one is truncated
+  const char* n_str = "NUL \x00 NUL";
+  int n_len = 9;  // 9 bytes long
+  log("repr %s", repr(new Str(n_str, n_len))->data_);
+  log("len %d", len(repr(new Str(n_str, n_len))));
+
+  log("repr %s", repr(new Str("tab\tline\nline\r\n"))->data_);
+  log("repr %s", repr(new Str("high \xFF \xFE high"))->data_);
 }
 
 using mylib::BufLineReader;

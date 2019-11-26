@@ -104,8 +104,10 @@ Oil has three major sources of docs:
 - [osh2oil Tests](test/other.wwz/osh2oil.txt).  Test the conversion of OSH to
   Oil.
 - [parse-errors](test/other.wwz/parse-errors.txt).  A list of all parse errors.
-- [runtime-errors](test/other.wwz/runtime-errors.txt).  A list of all runtime
+- [runtime-errors](test/other.wwz/runtime-errors.txt).  A list of shell runtime
   errors.
+- [oil-runtime-errors](test/other.wwz/oil-runtime-errors.txt).  Oil language
+  runtime errors.
 - [arena](test/other.wwz/arena.txt).  Testing an invariant for the parser.
 - [osh-usage](test/other.wwz/osh-usage.txt).  Misc tests of the `osh` binary.
 - [oshc-deps](test/other.wwz/oshc-deps.txt).  Tests for a subcommand in

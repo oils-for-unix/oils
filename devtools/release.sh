@@ -182,6 +182,7 @@ readonly -a OTHER_TESTS=(
   gold 
   osh2oil 
   parse-errors runtime-errors
+  oil-runtime-errors
   arena
   osh-usage oshc-deps
   opyc

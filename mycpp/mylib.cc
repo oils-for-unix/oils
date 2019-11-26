@@ -238,8 +238,50 @@ void BufWriter::format_d(int i) {
   len_ += len;
 }
 
+// repr() calls this too
 void BufWriter::format_r(Str* s) {
-  assert(0);
+  // Worst case: \0 becomes 4 bytes as '\\x00', and then two quote bytes.
+  int upper_bound = len_*4 + 2;
+
+  // Extend the buffer
+  data_ = static_cast<char*>(realloc(data_, len_ + upper_bound + 1));
+
+  char quote = '\'';
+  if (memchr(s->data_, '\'', s->len_) && !memchr(s->data_, '"', s->len_)) {
+    quote = '"';
+  }
+  char *p = data_ + len_;  // end of valid data
+
+  // From PyString_Repr()
+  *p++ = quote;
+  for (int i = 0; i < s->len_; ++i) {
+    char c = s->data_[i];
+    if (c == quote || c == '\\') {
+      *p++ = '\\';
+      *p++ = c;
+    } else if (c == '\t') {
+      *p++ = '\\';
+      *p++ = 't';
+    } else if (c == '\n') {
+      *p++ = '\\';
+      *p++ = 'n';
+    } else if (c == '\r') {
+      *p++ = '\\';
+      *p++ = 'r';
+    } else if (c < ' ' || c >= 0x7f) {
+      sprintf(p, "\\x%02x", c & 0xff);
+      p += 4;
+    } else {
+      *p++ = c;
+    }
+  }
+  *p++ = quote;
+  *p = '\0';
+
+  len_ = p - data_;
+  // Shrink the buffer.  This is valid usage and GNU libc says it can actually
+  // release.
+  data_ = static_cast<char*>(realloc(data_, len_ + 1));
 }
 
 //void BufWriter::format_s(const char* s) {
@@ -260,6 +302,12 @@ bool CFileWriter::isatty() {
 //
 // Free functions
 //
+
+Str* repr(Str* s) {
+  mylib::BufWriter f;
+  f.format_r(s);
+  return f.getvalue();
+}
 
 Str* str_concat(Str* a, Str* b) {
   int new_len = a->len_ + b->len_;

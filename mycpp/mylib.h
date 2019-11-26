@@ -518,11 +518,8 @@ inline Str* str(int i) {
   return new Str(buf, len);
 }
 
-// STUB that should display quoted representation of a string, e.g.
-// word_.Pretty() uses it
-inline Str* repr(Str* s) {
-  assert(0);
-}
+// Display a quoted representation of a string.  word_.Pretty() uses it.
+Str* repr(Str* s);
 
 // TODO: There should be one str() and one repr() for every sum type, that
 // dispatches on tag?  Or just repr()?
