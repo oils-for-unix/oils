@@ -184,7 +184,7 @@ class ErrorFormatter(object):
 
   def CurrentLocation(self):
     # type: () -> int
-    if self.spid_stack:
+    if len(self.spid_stack):
       return self.spid_stack[-1]
     else:
       return runtime.NO_SPID

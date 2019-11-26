@@ -75,6 +75,7 @@ cpp-skeleton() {
 
   cat <<EOF
 #include "mylib.h"
+#include "preamble.h"  // hard-coded stuff
 
 EOF
 
@@ -125,9 +126,10 @@ mycpp-demo() {
 }
 
 osh-parse-preamble() {
-  echo '// osh_parse: TODO'
+  cat <<EOF
+// osh_parse.cc: translated from Python by mycpp
 
-  echo "$PGEN2_DEMO_PREAMBLE"
+EOF
 }
 
 compile-osh-parse() {
@@ -149,6 +151,40 @@ compile-osh-parse() {
 
 readonly TMP=_tmp/mycpp
 
+# TODO: Conslidate this with types/osh-parse-manifest.txt?
+readonly OSH_PARSE_FILES=(
+  $REPO_ROOT/asdl/format.py 
+  $REPO_ROOT/asdl/runtime.py 
+
+  $REPO_ROOT/core/alloc.py 
+  $REPO_ROOT/frontend/reader.py 
+  $REPO_ROOT/frontend/lexer.py 
+  $REPO_ROOT/pgen2/grammar.py 
+  $REPO_ROOT/pgen2/parse.py 
+  $REPO_ROOT/oil_lang/expr_parse.py 
+  $REPO_ROOT/oil_lang/expr_to_ast.py 
+
+  $REPO_ROOT/pylib/cgi.py
+  # join(*p) is a problem
+  #$REPO_ROOT/pylib/os_path.py
+
+  $REPO_ROOT/osh/braces.py
+
+  # This has errfmt.Print() which uses *args and **kwargs
+  #$REPO_ROOT/core/ui.py
+
+  $REPO_ROOT/core/error.py
+  $REPO_ROOT/core/main_loop.py
+
+  $REPO_ROOT/osh/word_.py 
+  $REPO_ROOT/osh/bool_parse.py 
+  $REPO_ROOT/osh/word_parse.py
+  $REPO_ROOT/osh/cmd_parse.py 
+  $REPO_ROOT/osh/arith_parse.py 
+  $REPO_ROOT/osh/tdop.py
+  $REPO_ROOT/frontend/parse_lib.py
+)
+
 osh-parse() {
   local name=${1:-osh_parse}
 
@@ -159,7 +195,7 @@ osh-parse() {
 
   #if false; then
   if true; then
-    mycpp $raw bin/$name.py "${PGEN2_DEMO_FILES[@]}"
+    mycpp $raw bin/$name.py "${OSH_PARSE_FILES[@]}"
   fi
 
   local cc=$tmp/$name.cc
