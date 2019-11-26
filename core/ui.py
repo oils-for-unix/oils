@@ -16,7 +16,6 @@ from _devbuild.gen.syntax_asdl import (
     source__Interactive, source__CFlag, source__Stdin, source__MainFile,
     source__SourcedFile, source__EvalArg, source__Trap,
     source__Alias, source__Backticks, source__LValue
-
 )
 from _devbuild.gen.runtime_asdl import value_t, value__Str
 from asdl import runtime
@@ -28,6 +27,7 @@ from typing import List, Any, IO, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
   from core.error import _ErrorWithLocation
+  from mycpp.mylib import Writer
   #from frontend.args import UsageError
 
 
@@ -46,8 +46,8 @@ def PrettyDir(dir_name, home_dir):
 
 
 def _PrintCodeExcerpt(line, col, length, f):
-  # type: (str, int, int, IO[str]) -> None
-  print('  ' + line.rstrip(), file=f)
+  # type: (str, int, int, Writer) -> None
+  f.write('  '); f.write(line.rstrip())
   f.write('  ')
   # preserve tabs
   for c in line[:col]:
@@ -57,8 +57,9 @@ def _PrintCodeExcerpt(line, col, length, f):
   f.write('\n')
 
 
-def _PrintWithSpanId(prefix, msg, span_id, arena, f=sys.stderr):
-  # type: (str, str, int, Arena, IO[str]) -> None
+def _PrintWithSpanId(prefix, msg, span_id, arena):
+  # type: (str, str, int, Arena) -> None
+  f = mylib.Stderr()
   line_span = arena.GetLineSpan(span_id)
   orig_col = line_span.col
   line_id = line_span.line_id
@@ -122,19 +123,21 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, f=sys.stderr):
 
   # TODO: If the line is blank, it would be nice to print the last non-blank
   # line too?
-  print('%s:%d: %s%s' % (source_str, line_num, prefix, msg), file=f)
+  f = mylib.Stderr()
+  f.write('%s:%d: %s%s\n' % (source_str, line_num, prefix, msg))
 
 
-def _PrintWithOptionalSpanId(prefix, msg, span_id, arena, f):
-  # type: (str, str, int, Arena, IO[str]) -> None
+def _PrintWithOptionalSpanId(prefix, msg, span_id, arena):
+  # type: (str, str, int, Arena) -> None
   if span_id == runtime.NO_SPID:  # When does this happen?
-    print('[??? no location ???] %s%s' % (prefix, msg), file=f)
+    f = mylib.Stderr()
+    f.write('[??? no location ???] %s%s\n' % (prefix, msg))
   else:
     _PrintWithSpanId(prefix, msg, span_id, arena)
 
 
-def PrettyPrintError(err, arena, prefix='', f=sys.stderr):
-  # type: (_ErrorWithLocation, Arena, str, IO[str]) -> None
+def PrettyPrintError(err, arena, prefix=''):
+  # type: (_ErrorWithLocation, Arena, str) -> None
   """
   Args:
     prefix: in osh/cmd_exec.py we want to print 'fatal'
@@ -150,7 +153,7 @@ def PrettyPrintError(err, arena, prefix='', f=sys.stderr):
   # that is OK.
   # Problem: the column for Eof could be useful.
 
-  _PrintWithOptionalSpanId(prefix, msg, span_id, arena, f)
+  _PrintWithOptionalSpanId(prefix, msg, span_id, arena)
 
 
 # TODO:
@@ -189,14 +192,15 @@ class ErrorFormatter(object):
     else:
       return runtime.NO_SPID
 
-  def Print(self, msg, *args, **kwargs):
-    # type: (str, *Any, **Any) -> None
-    """Print a message with a code quotation based on the given span_id."""
-    span_id = kwargs.pop('span_id', self.CurrentLocation())
-    prefix = kwargs.pop('prefix', '')
-    if args:
-      msg = msg % args
-    _PrintWithOptionalSpanId(prefix, msg, span_id, self.arena, sys.stderr)
+  if mylib.PYTHON:
+    def Print(self, msg, *args, **kwargs):
+      # type: (str, *Any, **Any) -> None
+      """Print a message with a code quotation based on the given span_id."""
+      span_id = kwargs.pop('span_id', self.CurrentLocation())
+      prefix = kwargs.pop('prefix', '')
+      if args:
+        msg = msg % args
+      _PrintWithOptionalSpanId(prefix, msg, span_id, self.arena)
 
   def PrettyPrintError(self, err, prefix=''):
     # type: (_ErrorWithLocation, str) -> None
@@ -204,45 +208,47 @@ class ErrorFormatter(object):
     PrettyPrintError(err, self.arena, prefix=prefix)
 
 
-def Stderr(msg, *args):
-  # type: (str, *Any) -> None
-  """Print a message to stderr for the user.
+if mylib.PYTHON:
+  def Stderr(msg, *args):
+    # type: (str, *Any) -> None
+    """Print a message to stderr for the user.
 
-  This should be used sparingly, since it doesn't have any location info.
-  Right now we use it to print fatal I/O errors that were only caught at the
-  top level.
-  """
-  if args:
-    msg = msg % args
-  print(msg, file=sys.stderr)
+    This should be used sparingly, since it doesn't have any location info.
+    Right now we use it to print fatal I/O errors that were only caught at the
+    top level.
+    """
+    if args:
+      msg = msg % args
+    print(msg, file=sys.stderr)
 
-
-def PrintAst(nodes, opts):
-  # type: (List[command_t], Any) -> None
-  if len(nodes) == 1:
-    node = nodes[0]
-  else:
-    node = command.CommandList(nodes)
-
-  if opts.ast_format == 'none':
-    print('AST not printed.', file=sys.stderr)
-
-  else:  # text output
-    f = mylib.Stdout()
-
-    if opts.ast_format in ('text', 'abbrev-text'):
-      ast_f = fmt.DetectConsoleOutput(f)
-    elif opts.ast_format in ('html', 'abbrev-html'):
-      ast_f = fmt.HtmlOutput(f)
+  # Doesn't translate because of Any type
+  # Options may need metaprogramming!
+  def PrintAst(nodes, opts):
+    # type: (List[command_t], Any) -> None
+    if len(nodes) == 1:
+      node = nodes[0]
     else:
-      raise AssertionError
+      node = command.CommandList(nodes)
 
-    if 'abbrev-' in opts.ast_format:
-      tree = node.AbbreviatedTree()
-    else:
-      tree = node.PrettyTree()
+    if opts.ast_format == 'none':
+      print('AST not printed.', file=sys.stderr)
 
-    ast_f.FileHeader()
-    fmt.PrintTree(tree, ast_f)
-    ast_f.FileFooter()
-    ast_f.write('\n')
+    else:  # text output
+      f = mylib.Stdout()
+
+      if opts.ast_format in ('text', 'abbrev-text'):
+        ast_f = fmt.DetectConsoleOutput(f)
+      elif opts.ast_format in ('html', 'abbrev-html'):
+        ast_f = fmt.HtmlOutput(f)
+      else:
+        raise AssertionError
+
+      if 'abbrev-' in opts.ast_format:
+        tree = node.AbbreviatedTree()
+      else:
+        tree = node.PrettyTree()
+
+      ast_f.FileHeader()
+      fmt.PrintTree(tree, ast_f)
+      ast_f.FileFooter()
+      ast_f.write('\n')

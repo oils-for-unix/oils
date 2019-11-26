@@ -171,7 +171,7 @@ readonly OSH_PARSE_FILES=(
   $REPO_ROOT/osh/braces.py
 
   # This has errfmt.Print() which uses *args and **kwargs
-  #$REPO_ROOT/core/ui.py
+  $REPO_ROOT/core/ui.py
 
   $REPO_ROOT/core/error.py
   $REPO_ROOT/core/main_loop.py

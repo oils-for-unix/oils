@@ -203,6 +203,7 @@ Str* BufLineReader::readline() {
 //
 
 Writer* gStdout;
+Writer* gStderr;
 
 void BufWriter::write(Str* s) {
   int orig_len = len_;

@@ -704,6 +704,15 @@ inline Writer* Stdout() {
   return gStdout;
 }
 
+extern Writer* gStderr;
+
+inline Writer* Stderr() {
+  if (gStderr == nullptr) {
+    gStderr = new CFileWriter(stderr);
+  }
+  return gStderr;
+}
+
 }  // namespace mylib
 
 //

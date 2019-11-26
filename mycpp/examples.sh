@@ -204,8 +204,6 @@ typecheck-pgen2_demo() {
   typecheck-oil pgen2_demo
 }
 
-readonly PGEN2_DEMO_PREAMBLE=''
-
 # These files compile
 FILES=(
   $REPO_ROOT/asdl/runtime.py 
@@ -218,70 +216,14 @@ FILES=(
   $REPO_ROOT/oil_lang/expr_to_ast.py 
 )
 
-PYLIB_FILES=(
-  $REPO_ROOT/pylib/cgi.py
-  # join(*p) is a problem
-  #$REPO_ROOT/pylib/os_path.py
-)
+readonly PGEN2_DEMO_FILES=("${FILES[@]}")
 
-MORE_FILES=(
-  $REPO_ROOT/osh/braces.py
-
-  # This has errfmt.Print() which uses *args and **kwargs
-  #$REPO_ROOT/core/ui.py
-
-  $REPO_ROOT/core/error.py
-  $REPO_ROOT/core/main_loop.py
-
-  #$REPO_ROOT/bin/osh_parse.py
-)
-
-PARSE_FILES=(
-  $REPO_ROOT/asdl/format.py 
-  $REPO_ROOT/osh/word_.py 
-  $REPO_ROOT/osh/bool_parse.py 
-  $REPO_ROOT/osh/word_parse.py
-  $REPO_ROOT/osh/cmd_parse.py 
-  $REPO_ROOT/osh/arith_parse.py 
-  $REPO_ROOT/osh/tdop.py
-  $REPO_ROOT/frontend/parse_lib.py
-)
-
-readonly PGEN2_DEMO_FILES=(
-  "${FILES[@]}" "${PARSE_FILES[@]}" "${MORE_FILES[@]}" "${PYLIB_FILES[@]}" \
-)
-
+# NOTE: Doesn't compile anymore.  Moved onto bin/osh_parse.py
 translate-pgen2_demo() {
   local name='pgen2_demo'
 
-# problem with isinstance() and any type
-    # do we need this/
-
-# other modules:
-# core.util.ParseError: move this to core/errors.py?
-
-  translate-ordered $name "$PGEN2_DEMO_PREAMBLE" \
+  translate-ordered $name "$(cat ../cpp/preamble.h)" \
     "${PGEN2_DEMO_FILES[@]}" examples/$name.py
-
-  # $REPO_ROOT/frontend/tdop.py \
-  # - function pointers for Left/Null are an issue
-
-  # $REPO_ROOT/frontend/parse_lib.py \
-  # - hm lots of circular deps
-
-  # $REPO_ROOT/osh/word_parse.py \
-  # - try/finally not supported (disabled)
-  # - lots of keyword args
-  # - parse_lib deps
-
-  # TODO: these files need their own test cases, for shorter generated code
-
-  # word_.py:
-  # - changed a lot of tagswitch()
-  # - Need to fix _ErrorWithLocation -- maybe add core/errors.py
-  #   - or pylib?
-  # bool_parse.py (11 errors)
-  # - WordParser dependency
 
   compile-pgen2_demo
 } 

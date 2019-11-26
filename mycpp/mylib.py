@@ -41,6 +41,10 @@ def Stdout():
   return sys.stdout
 
 
+def Stderr():
+  return sys.stderr
+
+
 def Stdin():
   return sys.stdin
 

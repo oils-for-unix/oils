@@ -3,6 +3,7 @@
 using id_kind_asdl::Id_t;  // TODO: proper ASDL modules may eliminate this
 using id_kind_asdl::Kind_t;
 
+#include "runtime_asdl.h"
 #include "syntax_asdl.h"
 #include "types_asdl.h"
 
