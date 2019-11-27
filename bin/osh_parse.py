@@ -88,7 +88,7 @@ def main(argv):
     #node = main_loop.ParseWholeFile(c_parser)
     node = ParseWholeFile(c_parser)
   except error.Parse as e:
-    #ui.PrettyPrintError(e, arena)
+    ui.PrettyPrintError(e, arena)
     print('parse error')
     return 2
   assert node is not None

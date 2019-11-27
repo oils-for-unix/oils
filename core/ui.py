@@ -13,9 +13,8 @@ import sys
 
 from _devbuild.gen.syntax_asdl import (
     command_t, command,
-    source_e, source__Interactive, source__CFlag, source__Stdin,
-    source__MainFile, source__SourcedFile, source__EvalArg, source__Trap,
-    source__Alias, source__Backticks, source__LValue
+    source_e, source__Stdin, source__MainFile, source__SourcedFile,
+    source__EvalArg, source__Alias, source__LValue
 )
 from _devbuild.gen.runtime_asdl import value_e, value_t, value__Str
 from asdl import runtime
@@ -146,11 +145,12 @@ def _PrintWithOptionalSpanId(prefix, msg, span_id, arena):
     _PrintWithSpanId(prefix, msg, span_id, arena, f)
 
 
-def PrettyPrintError(err, arena, prefix=''):
+def _pp(err, arena, prefix):
   # type: (_ErrorWithLocation, Arena, str) -> None
   """
-  Args:
-    prefix: in osh/cmd_exec.py we want to print 'fatal'
+  Called by free function PrettyPrintError and method PrettyPrintError.  This
+  is a HACK for mycpp translation.  C++ can't find a free function
+  PrettyPrintError() when called within a METHOD of the same name.
   """
   msg = err.UserErrorString()
   span_id = word_.SpanIdFromError(err)
@@ -164,6 +164,15 @@ def PrettyPrintError(err, arena, prefix=''):
   # Problem: the column for Eof could be useful.
 
   _PrintWithOptionalSpanId(prefix, msg, span_id, arena)
+
+
+def PrettyPrintError(err, arena, prefix=''):
+  # type: (_ErrorWithLocation, Arena, str) -> None
+  """
+  Args:
+    prefix: in osh/cmd_exec.py we want to print 'fatal'
+  """
+  _pp(err, arena, prefix)
 
 
 # TODO:
@@ -215,7 +224,7 @@ class ErrorFormatter(object):
   def PrettyPrintError(self, err, prefix=''):
     # type: (_ErrorWithLocation, str) -> None
     """Print an exception that was caught."""
-    PrettyPrintError(err, self.arena, prefix=prefix)
+    _pp(err, self.arena, prefix)
 
 
 if mylib.PYTHON:

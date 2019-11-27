@@ -1478,7 +1478,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         func_name = o.name()
 
         if (class_name in ('BoolParser', 'CommandParser') and func_name == '_Next' or
-            class_name == 'ParseContext' and func_name == 'MakeOshParser'):
+            class_name == 'ParseContext' and func_name == 'MakeOshParser' or
+            class_name == 'ErrorFormatter' and func_name == 'PrettyPrintError'
+          ):
 
           default_val = o.arguments[-1].initializer
           if default_val:  # e.g. osh/bool_parse.py has default val

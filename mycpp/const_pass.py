@@ -356,6 +356,10 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.indent += 1
         for arg in o.arguments:
+          # e.g. foo=''
+          if arg.initializer:
+            self.accept(arg.initializer)
+
           # We can't use __str__ on these Argument objects?  That seems like an
           # oversight
           #self.log('%r', arg)
