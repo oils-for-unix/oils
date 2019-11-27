@@ -21,14 +21,14 @@ sleep_test() {
 
 g=0
 
-func() {
-  echo 'running func'
+myfunc() {
+  echo 'running myfunc'
   g=1
 }
 
 # Hm bash and dash both seem to behave the same here.
 var_test() {
-  func | tee _tmp/command-sub.txt
+  myfunc | tee _tmp/command-sub.txt
   { g=2; echo brace; } | tee _tmp/command-sub.txt
 
   echo "g after pipeline: $g"

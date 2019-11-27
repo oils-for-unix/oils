@@ -36,17 +36,17 @@ Str* repr(void* obj) {
 // STUBS for p_die()
 // [[noreturn]] avoids warnings
 [[noreturn]] void p_die(Str* s, int span_id) {
-  throw AssertionError();
+  throw new error::Parse(s, span_id);
 }
 
-[[noreturn]] void p_die(Str* s, syntax_asdl::token* blame_token) {
-  throw AssertionError();
+[[noreturn]] void p_die(Str* s, syntax_asdl::token* token) {
+  throw new error::Parse(s, token);
 }
 
 [[noreturn]] void p_die(Str* s, syntax_asdl::word_part_t* part) {
-  throw AssertionError();
+  throw new error::Parse(s, part);
 }
 
 [[noreturn]] void p_die(Str* s, syntax_asdl::word_t* w) {
-  throw AssertionError();
+  throw new error::Parse(s, w);
 }

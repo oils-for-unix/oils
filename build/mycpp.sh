@@ -239,6 +239,9 @@ osh-parse-smoke() {
       # TODO: Enable this as a separate test of syntax errors
       #spec/*) continue ;;
 
+      # pgen2 not done
+      spec/oil-*) continue ;;
+
       # This has Oil syntax
       test/oil-runtime-errors.sh) continue ;;
     esac

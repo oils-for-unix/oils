@@ -1479,12 +1479,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         if (class_name in ('BoolParser', 'CommandParser') and func_name == '_Next' or
             class_name == 'ParseContext' and func_name == 'MakeOshParser' or
-            class_name == 'ErrorFormatter' and func_name == 'PrettyPrintError'
+            class_name == 'ErrorFormatter' and func_name == 'PrettyPrintError' or
+            class_name is None and func_name == 'PrettyPrintError'
           ):
 
           default_val = o.arguments[-1].initializer
           if default_val:  # e.g. osh/bool_parse.py has default val
-            if self.decl:
+            if self.decl or class_name is None:
               func_name = o.name()
             else:
               func_name = '%s::%s' % (self.current_class_name, o.name())
@@ -1508,7 +1509,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               self.write('  %s%s(' % (kw, o.name()))
 
               # Don't write self or last optional argument
-              pass_through = o.arguments[1:-1]
+              first_arg_index = 0 if class_name is None else 1
+              pass_through = o.arguments[first_arg_index:-1]
+
               if pass_through:
                 for i, arg in enumerate(pass_through):
                   if i != 0:
