@@ -322,8 +322,8 @@ class List {
       assert(0);
     }
 
-    v_.erase(v_.begin());
     T result = v_.at(index);
+    v_.erase(v_.begin() + index);
     return result;
 
     /*
