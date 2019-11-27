@@ -69,17 +69,15 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, f):
   line_num = arena.GetLineNumber(line_id)  # overwritten by source__LValue case
 
   # LValue is the only case where we don't print this
-  if not src.tag_() == source_e.LValue:
+  if src.tag_() != source_e.LValue:
     _PrintCodeExcerpt(line, line_span.col, line_span.length, f)
 
   UP_src = src
   with tagswitch(src) as case:
     # TODO: Use color instead of [ ]
     if case(source_e.Interactive):
-      src = cast(source__Interactive, UP_src)
       source_str = '[ interactive ]'  # This might need some changes
     elif case(source_e.CFlag):
-      src = cast(source__CFlag, UP_src)
       source_str = '[ -c flag ]'
 
     elif case(source_e.Stdin):
@@ -98,7 +96,7 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, f):
       src = cast(source__Alias, UP_src)
       source_str = '[ expansion of alias %r ]' % src.argv0
     elif case(source_e.Backticks):
-      src = cast(source__Backticks, UP_src)
+      #src = cast(source__Backticks, UP_src)
       source_str = '[ backticks at ... ]'
     elif case(source_e.LValue):
       src = cast(source__LValue, UP_src)
@@ -127,11 +125,11 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, f):
       source_str = '[ eval at line %d of %s ]' % (line_num, outer_source)
 
     elif case(source_e.Trap):
-      src = cast(source__Trap, UP_src)
       # TODO: Look at word_spid
       source_str = '[ trap ]'
 
     else:
+      # TODO: shouldn't really get here
       source_str = repr(src)
 
   # TODO: If the line is blank, it would be nice to print the last non-blank

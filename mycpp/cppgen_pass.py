@@ -1804,6 +1804,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 'place_expr_e', 'place_expr', 
                 'word_part_e', 'word_part', 
                 'word_e', 'word',
+                'value_e', 'value'
 
                 ):
                 is_namespace = True
