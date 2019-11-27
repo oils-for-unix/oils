@@ -8,6 +8,22 @@ from __future__ import print_function
 import re
 
 
+def DecodeMyPyString(s):
+    # type: (str) -> str
+    """Workaround for MyPy's weird escaping.
+
+    Used below and in cppgen_pass.py.
+    """
+    byte_string = bytes(s, 'utf-8')
+
+    # In Python 3
+    # >>> b'\\t'.decode('unicode_escape')
+    # '\t'
+
+    raw_string = byte_string.decode('unicode_escape')
+    return raw_string
+
+
 class LiteralPart:
   def __init__(self, s):
     self.s = s

@@ -228,9 +228,10 @@ size-profile() {
 }
 
 osh-parse-smoke() {
-  #compile-osh-parse
-  #for file in {benchmarks,build,test}/*.sh; do
-  for file in */*.sh; do
+  local python=${1:-}
+
+  #for file in */*.sh; do
+  for file in spec/*.sh; do
     case $file in
       # Exclude _tmp/ etc.
       _*) continue ;;
@@ -248,7 +249,11 @@ osh-parse-smoke() {
 
     echo $file
     set +o errexit
-    _tmp/mycpp/osh_parse $file | wc -l
+    if test -n "$python"; then
+      bin/osh -n $file | wc -l
+    else
+      _tmp/mycpp/osh_parse $file | wc -l
+    fi
     set -o errexit
   done
 }

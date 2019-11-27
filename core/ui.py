@@ -48,7 +48,7 @@ def PrettyDir(dir_name, UP_home_dir):
 def _PrintCodeExcerpt(line, col, length, f):
   # type: (str, int, int, Writer) -> None
   f.write('  '); f.write(line.rstrip())
-  f.write('  ')
+  f.write('\n  ')
   # preserve tabs
   for c in line[:col]:
     f.write('\t' if c == '\t' else ' ')

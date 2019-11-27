@@ -36,6 +36,16 @@ def run_tests():
   log("str? %d", 'str' in s)
 
 
+  print("'single'")
+  print('"double"')
+
+  # test escape codes
+  print("a\tb\nc\td\n")
+
+  x = 'x'
+  print("%s\tb\n%s\td\n" % (x, x))
+
+
 def run_benchmarks():
   # type: () -> None
   pass

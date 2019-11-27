@@ -4,6 +4,8 @@ const_pass.py - AST pass that collects constants.
 Immutable string constants like 'new Str("foo")' are moved to the top level of
 the generated C++ program for efficiency.
 """
+import json
+
 from typing import overload, Union, Optional, Any, Dict, List
 
 from mypy.visitor import ExpressionVisitor, StatementVisitor
@@ -15,6 +17,8 @@ from mypy.types import Type
 
 from crash import catch_errors
 from util import log
+
+import format_strings
 
 
 T = None  # TODO: Make it type check?
@@ -110,19 +114,10 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_str_expr(self, o: 'mypy.nodes.StrExpr') -> T:
         # - Need new Str() everywhere because "foo" doesn't match Str* :-(
 
-        #import json
-
-        # TODO: Python strings are not C strings?  But MyPy seems to double the
-        # \ for you, so I can't use json.dumps()
-        #
-        # For ", you get '"'
-        # For \, you get '\\\\' for some reason?
-
-        # HACK.  Figure out the right thing.
-        c_string = o.value.replace('"', '\\"')
-
         id_ = 'str%d' % self.unique_id
-        self.out('Str* %s = new Str("%s");', id_, c_string)
+        raw_string = format_strings.DecodeMyPyString(o.value)
+
+        self.out('Str* %s = new Str(%s);', id_, json.dumps(raw_string))
         self.unique_id += 1
         self.const_lookup[o] = id_
 

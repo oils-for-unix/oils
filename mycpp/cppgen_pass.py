@@ -606,10 +606,21 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
       for part in fmt_parts:
         if isinstance(part, format_strings.LiteralPart):
-          # JSON does a decent job of escaping for now.
-          escaped = json.dumps(part.s)
+          # MyPy does bad escaping.
+          # NOTE: We could do this in the CALLER to _WriteFmtFunc?
+
+          byte_string = bytes(part.s, 'utf-8')
+
+          # In Python 3
+          # >>> b'\\t'.decode('unicode_escape')
+          # '\t'
+
+          raw_string = format_strings.DecodeMyPyString(part.s)
+          n = len(raw_string)  # NOT using part.strlen
+
+          escaped = json.dumps(raw_string)
           self.fmt_funcs.write(
-              '  gBuf.write_const(%s, %d);\n' % (escaped, part.strlen))
+              '  gBuf.write_const(%s, %d);\n' % (escaped, n))
         elif isinstance(part, format_strings.SubstPart):
           self.fmt_funcs.write(
               '  gBuf.format_%s(a%d);\n' %
