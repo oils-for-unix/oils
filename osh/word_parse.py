@@ -89,7 +89,15 @@ _ = log
 KINDS_THAT_END_WORDS = [Kind.Eof, Kind.WS, Kind.Op, Kind.Right]
 
 
-class WordParser(object):
+class WordEmitter(object):
+  """Common interface for [ and [[ """
+
+  def ReadWord(self, lex_mode):
+    # type: (lex_mode_t) -> word_t
+    raise NotImplementedError()
+
+
+class WordParser(WordEmitter):
 
   def __init__(self, parse_ctx, lexer, line_reader):
     # type: (ParseContext, Lexer, _Reader) -> None

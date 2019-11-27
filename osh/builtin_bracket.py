@@ -17,6 +17,7 @@ from core.util import p_die
 
 from osh import expr_eval
 from osh import bool_parse
+from osh import word_parse
 
 from typing import TYPE_CHECKING
 
@@ -26,7 +27,8 @@ if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import word__String, bool_expr_t
     from _devbuild.gen.types_asdl import lex_mode_t
 
-class _StringWordEmitter(object):
+
+class _StringWordEmitter(word_parse.WordEmitter):
   """For test/[, we need a word parser that returns String.
 
   The BoolParser calls word_.BoolId(w), and deals with Kind.BoolUnary,
@@ -40,7 +42,7 @@ class _StringWordEmitter(object):
     self.n = len(arg_vec.strs)
 
   def ReadWord(self, unused_lex_mode):
-    # type: (lex_mode_t) -> word__String
+    # type: (lex_mode_t) -> word_t
     """Interface for bool_parse.py."""
     if self.i == self.n:
       # Does it make sense to define Eof_Argv or something?
