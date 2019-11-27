@@ -6,7 +6,7 @@ This is called the "compile" stage because it happens after parsing, but it
 doesn't depend on any values at runtime.
 """
 
-from typing import Any, Optional
+from typing import Optional
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import class_literal_term, class_literal_term_t, token

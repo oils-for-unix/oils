@@ -34,7 +34,10 @@ except ImportError:
   from benchmarks import fake_libc as libc  # type: ignore
 
 if TYPE_CHECKING:
-    from _devbuild.gen.syntax_asdl import bool_expr_t
+  from _devbuild.gen.syntax_asdl import bool_expr_t
+  from core.ui import ErrorFormatter
+  from osh.state import Mem, ExecOpts
+  from osh.word_eval import WordEvaluator
 
 
 def _StringToInteger(s, span_id=runtime.NO_SPID):
@@ -271,8 +274,6 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
   return val, lval
 
 
-
-
 class _ExprEvaluator(object):
   """Shared between arith and bool evaluators.
 
@@ -283,10 +284,10 @@ class _ExprEvaluator(object):
   """
 
   def __init__(self, mem, exec_opts, word_ev, errfmt):
-    # type: (Mem, ExecOpts, word_eval.WordEvaluator, ErrorFormatter) -> None
+    # type: (Mem, ExecOpts, WordEvaluator, ErrorFormatter) -> None
     self.mem = mem
     self.exec_opts = exec_opts
-    self.word_ev = word_ev  # type = word_eval.WordEvaluator
+    self.word_ev = word_ev
     self.errfmt = errfmt
 
   def _StringToIntegerOrError(self, s, blame_word=None,

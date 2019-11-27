@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from core.ui import ErrorFormatter
     from _devbuild.gen.runtime_asdl import arg_vector, value__Str
-    from _devbuild.gen.syntax_asdl import word__String, bool_expr_t
+    from _devbuild.gen.syntax_asdl import word_t, word__String, bool_expr_t
     from _devbuild.gen.types_asdl import lex_mode_t
 
 

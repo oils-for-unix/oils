@@ -37,10 +37,9 @@ from core.util import p_die
 from frontend import lookup
 from osh import word_
 
-from typing import List, Optional, Union, TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from osh.word_parse import WordEmitter
-  from osh.builtin_bracket import _StringWordEmitter
 
 # import libc  # for regex_parse
 
