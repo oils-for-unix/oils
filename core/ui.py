@@ -57,9 +57,8 @@ def _PrintCodeExcerpt(line, col, length, f):
   f.write('\n')
 
 
-def _PrintWithSpanId(prefix, msg, span_id, arena):
-  # type: (str, str, int, Arena) -> None
-  f = mylib.Stderr()
+def _PrintWithSpanId(prefix, msg, span_id, arena, f):
+  # type: (str, str, int, Arena, Writer) -> None
   line_span = arena.GetLineSpan(span_id)
   orig_col = line_span.col
   line_id = line_span.line_id
@@ -123,17 +122,16 @@ def _PrintWithSpanId(prefix, msg, span_id, arena):
 
   # TODO: If the line is blank, it would be nice to print the last non-blank
   # line too?
-  f = mylib.Stderr()
   f.write('%s:%d: %s%s\n' % (source_str, line_num, prefix, msg))
 
 
 def _PrintWithOptionalSpanId(prefix, msg, span_id, arena):
   # type: (str, str, int, Arena) -> None
+  f = mylib.Stderr()
   if span_id == runtime.NO_SPID:  # When does this happen?
-    f = mylib.Stderr()
     f.write('[??? no location ???] %s%s\n' % (prefix, msg))
   else:
-    _PrintWithSpanId(prefix, msg, span_id, arena)
+    _PrintWithSpanId(prefix, msg, span_id, arena, f)
 
 
 def PrettyPrintError(err, arena, prefix=''):
