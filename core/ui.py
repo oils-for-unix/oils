@@ -13,8 +13,8 @@ import sys
 
 from _devbuild.gen.syntax_asdl import (
     command_t, command,
-    source__Interactive, source__CFlag, source__Stdin, source__MainFile,
-    source__SourcedFile, source__EvalArg, source__Trap,
+    source_e, source__Interactive, source__CFlag, source__Stdin,
+    source__MainFile, source__SourcedFile, source__EvalArg, source__Trap,
     source__Alias, source__Backticks, source__LValue
 )
 from _devbuild.gen.runtime_asdl import value_e, value_t, value__Str
@@ -22,6 +22,7 @@ from asdl import runtime
 from asdl import format as fmt
 from osh import word_
 from mycpp import mylib
+from mycpp.mylib import tagswitch
 
 from typing import List, cast, Any, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -67,58 +68,71 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, f):
   line = arena.GetLine(line_id)
   line_num = arena.GetLineNumber(line_id)  # overwritten by source__LValue case
 
-  if not isinstance(src, source__LValue):  # This is printed specially
+  # LValue is the only case where we don't print this
+  if not src.tag_() == source_e.LValue:
     _PrintCodeExcerpt(line, line_span.col, line_span.length, f)
 
-  # TODO: Use color instead of [ ]
-  if isinstance(src, source__Interactive):
-    source_str = '[ interactive ]'  # This might need some changes
-  elif isinstance(src, source__CFlag):
-    source_str = '[ -c flag ]'
+  UP_src = src
+  with tagswitch(src) as case:
+    # TODO: Use color instead of [ ]
+    if case(source_e.Interactive):
+      src = cast(source__Interactive, UP_src)
+      source_str = '[ interactive ]'  # This might need some changes
+    elif case(source_e.CFlag):
+      src = cast(source__CFlag, UP_src)
+      source_str = '[ -c flag ]'
 
-  elif isinstance(src, source__Stdin):
-    source_str = '[ stdin%s ]' % src.comment
-  elif isinstance(src, source__MainFile):
-    source_str = src.path
+    elif case(source_e.Stdin):
+      src = cast(source__Stdin, UP_src)
+      source_str = '[ stdin%s ]' % src.comment
+    elif case(source_e.MainFile):
+      src = cast(source__MainFile, UP_src)
+      source_str = src.path
 
-  elif isinstance(src, source__SourcedFile):
-    # TODO: could chain of 'source' with the spid
-    source_str = src.path
+    elif case(source_e.SourcedFile):
+      src = cast(source__SourcedFile, UP_src)
+      # TODO: could chain of 'source' with the spid
+      source_str = src.path
 
-  elif isinstance(src, source__Alias):
-    source_str = '[ expansion of alias %r ]' % src.argv0
-  elif isinstance(src, source__Backticks):
-    source_str = '[ backticks at ... ]'
-  elif isinstance(src, source__LValue):
-    span2 = arena.GetLineSpan(src.left_spid)
-    line2 = arena.GetLine(span2.line_id)
-    outer_source = arena.GetLineSourceString(span2.line_id)
-    source_str = '[ array LValue in %s ]' % outer_source
-    # NOTE: The inner line number is always 1 because of reparsing.  We
-    # overwrite it with the original span.
-    line_num = arena.GetLineNumber(span2.line_id)
+    elif case(source_e.Alias):
+      src = cast(source__Alias, UP_src)
+      source_str = '[ expansion of alias %r ]' % src.argv0
+    elif case(source_e.Backticks):
+      src = cast(source__Backticks, UP_src)
+      source_str = '[ backticks at ... ]'
+    elif case(source_e.LValue):
+      src = cast(source__LValue, UP_src)
+      span2 = arena.GetLineSpan(src.left_spid)
+      line2 = arena.GetLine(span2.line_id)
+      outer_source = arena.GetLineSourceString(span2.line_id)
+      source_str = '[ array LValue in %s ]' % outer_source
+      # NOTE: The inner line number is always 1 because of reparsing.  We
+      # overwrite it with the original span.
+      line_num = arena.GetLineNumber(span2.line_id)
 
-    # We want the excerpt to look like this:
-    #   a[x+]=1
-    #       ^
-    # Rather than quoting the internal buffer:
-    #   x+
-    #     ^
-    lbracket_col = span2.col + span2.length
-    _PrintCodeExcerpt(line2, orig_col + lbracket_col, 1, f)
+      # We want the excerpt to look like this:
+      #   a[x+]=1
+      #       ^
+      # Rather than quoting the internal buffer:
+      #   x+
+      #     ^
+      lbracket_col = span2.col + span2.length
+      _PrintCodeExcerpt(line2, orig_col + lbracket_col, 1, f)
 
-  elif isinstance(src, source__EvalArg):
-    span = arena.GetLineSpan(src.eval_spid)
-    line_num = arena.GetLineNumber(span.line_id)
-    outer_source = arena.GetLineSourceString(span.line_id)
-    source_str = '[ eval at line %d of %s ]' % (line_num, outer_source)
+    elif case(source_e.EvalArg):
+      src = cast(source__EvalArg, UP_src)
+      span = arena.GetLineSpan(src.eval_spid)
+      line_num = arena.GetLineNumber(span.line_id)
+      outer_source = arena.GetLineSourceString(span.line_id)
+      source_str = '[ eval at line %d of %s ]' % (line_num, outer_source)
 
-  elif isinstance(src, source__Trap):
-    # TODO: Look at word_spid
-    source_str = '[ trap ]'
+    elif case(source_e.Trap):
+      src = cast(source__Trap, UP_src)
+      # TODO: Look at word_spid
+      source_str = '[ trap ]'
 
-  else:
-    source_str = repr(src)
+    else:
+      source_str = repr(src)
 
   # TODO: If the line is blank, it would be nice to print the last non-blank
   # line too?
