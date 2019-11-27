@@ -6,8 +6,10 @@ This is called the "compile" stage because it happens after parsing, but it
 doesn't depend on any values at runtime.
 """
 
-from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import class_literal_term
+from typing import Any, Optional
+
+from _devbuild.gen.id_kind_asdl import Id, Id_t
+from _devbuild.gen.syntax_asdl import class_literal_term, class_literal_term_t, token
 from core import ui
 from osh import string_ops
 
@@ -29,6 +31,7 @@ _ONE_CHAR = {
 }
 
 def EvalCharLiteralForRegex(tok):
+  # type: (token) -> class_literal_term_t
   """For regex char classes.
 
   Similar logic as below.
@@ -62,6 +65,7 @@ def EvalCharLiteralForRegex(tok):
 # \d could be a syntax error -- it is better written as \\d
 
 def EvalCStringToken(id_, value):
+  # type: (Id_t, str) -> Optional[str]
   """
   This function is shared between echo -e and $''.
 

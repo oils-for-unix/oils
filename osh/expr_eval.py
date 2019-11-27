@@ -10,6 +10,7 @@ expr_eval.py -- Currently used for boolean and arithmetic expressions.
 """
 
 import stat
+from typing import TYPE_CHECKING
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.id_tables import BOOL_ARG_TYPES
@@ -31,6 +32,9 @@ try:
   import libc  # for fnmatch
 except ImportError:
   from benchmarks import fake_libc as libc  # type: ignore
+
+if TYPE_CHECKING:
+    from _devbuild.gen.syntax_asdl import bool_expr_t
 
 
 def _StringToInteger(s, span_id=runtime.NO_SPID):
@@ -279,6 +283,7 @@ class _ExprEvaluator(object):
   """
 
   def __init__(self, mem, exec_opts, word_ev, errfmt):
+    # type: (Mem, ExecOpts, word_eval.WordEvaluator, ErrorFormatter) -> None
     self.mem = mem
     self.exec_opts = exec_opts
     self.word_ev = word_ev  # type = word_eval.WordEvaluator
@@ -665,6 +670,7 @@ class BoolEvaluator(_ExprEvaluator):
     return val.s
 
   def Eval(self, node):
+    # type: (bool_expr_t) -> bool
     #print('!!', node.tag)
 
     if node.tag == bool_expr_e.WordTest:

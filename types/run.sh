@@ -68,18 +68,31 @@ typed-arith-asdl() {
   echo
 }
 
+
+readonly MORE_OIL_MANIFEST=types/more-oil-manifest.txt
+
+
+need-typechecking() {
+    # This command is useful to find files to annotate and add to
+    # $MORE_OIL_MANIFEST.
+    # It shows all the files that are not included in
+    # $MORE_OIL_MANIFEST or $OSH_PARSE_MANIFEST, and thus are not yet
+    # typechecked by typecheck-more-oil here or
+    # `types/osh_parse.sh travis`.
+    comm -2 -3 \
+         <(metrics/source-code.sh osh-files | grep '.py$' | sed 's@^@./@') \
+         <(cat $MORE_OIL_MANIFEST $OSH_PARSE_MANIFEST | sort) \
+        | xargs wc -l | sort -n
+}
+
+
 typecheck-more-oil() {
-  #typecheck $flags osh/word_compile.py
-
-  local log=_tmp/typecheck-more-oil.txt
-
-  set +o errexit
-  typecheck $MYPY_FLAGS \
-    osh/glob_.py osh/string_ops.py frontend/location.py \
-    osh/history.py core/comp_ui.py \
-    > $log
-
-  assert-one-error $log
+  # The --follow-imports=silent option allows adding type annotations
+  # in smaller steps without worrying about triggering a bunch of
+  # errors from imports.  In the end, we may want to remove it, since
+  # everything will be annotated anyway.  (that would require
+  # re-adding assert-one-error and its associated cruft, though).
+  cat $MORE_OIL_MANIFEST | xargs -- $0 typecheck --follow-imports=silent $MYPY_FLAGS
 }
 
 
