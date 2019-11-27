@@ -37,9 +37,10 @@ from core.util import p_die
 from frontend import lookup
 from osh import word_
 
-from typing import List, Optional, TYPE_CHECKING
+from typing import List, Optional, Union, TYPE_CHECKING
 if TYPE_CHECKING:
   from osh.word_parse import WordParser
+  from osh.builtin_bracket import _StringWordEmitter
 
 # import libc  # for regex_parse
 
@@ -48,7 +49,7 @@ class BoolParser(object):
   """Parses [[ at compile time and [ at runtime."""
 
   def __init__(self, w_parser):
-    # type: (WordParser) -> None
+    # type: (Union[WordParser, _StringWordEmitter]) -> None
     """
     Args:
       w_parser: WordParser

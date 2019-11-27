@@ -7,3 +7,4 @@
 ./frontend/py_reader.py
 ./core/error.py
 ./osh/word_compile.py
+./osh/builtin_bracket.py

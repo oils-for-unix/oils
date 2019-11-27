@@ -87,12 +87,12 @@ need-typechecking() {
 
 
 typecheck-more-oil() {
-  local log=_tmp/typecheck-more-oil.txt
-
-  set +o errexit
-  cat $MORE_OIL_MANIFEST | xargs -- $0 typecheck $MYPY_FLAGS > $log
-
-  assert-one-error $log
+  # The --follow-imports=silent option allows adding type annotations
+  # in smaller steps without worrying about triggering a bunch of
+  # errors from imports.  In the end, we may want to remove it, since
+  # everything will be annotated anyway.  (that would require
+  # re-adding assert-one-error and its associated cruft, though).
+  cat $MORE_OIL_MANIFEST | xargs -- $0 typecheck --follow-imports=silent $MYPY_FLAGS
 }
 
 

@@ -18,6 +18,13 @@ from core.util import p_die
 from osh import expr_eval
 from osh import bool_parse
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from core.ui import ErrorFormatter
+    from _devbuild.gen.runtime_asdl import arg_vector, value__Str
+    from _devbuild.gen.syntax_asdl import word__String, bool_expr_t
+    from _devbuild.gen.types_asdl import lex_mode_t
 
 class _StringWordEmitter(object):
   """For test/[, we need a word parser that returns String.
@@ -27,11 +34,13 @@ class _StringWordEmitter(object):
   [[ case.
   """
   def __init__(self, arg_vec):
+    # type: (arg_vector) -> None
     self.arg_vec = arg_vec
     self.i = 0
     self.n = len(arg_vec.strs)
 
   def ReadWord(self, unused_lex_mode):
+    # type: (lex_mode_t) -> word__String
     """Interface for bool_parse.py."""
     if self.i == self.n:
       # Does it make sense to define Eof_Argv or something?
@@ -62,14 +71,17 @@ class _StringWordEmitter(object):
     return w
 
   def Read(self):
+    # type: () -> word__String
     """Interface used for special cases below."""
     return self.ReadWord(lex_mode_e.ShCommand)
 
   def Peek(self, offset):
+    # type: (int) -> str
     """For special cases."""
     return self.arg_vec.strs[self.i + offset]
 
   def Rewind(self, offset):
+    # type: (int) -> None
     """For special cases."""
     self.i -= offset
 
@@ -77,6 +89,7 @@ class _StringWordEmitter(object):
 class _WordEvaluator(object):
 
   def EvalWordToString(self, w, do_fnmatch=False, do_ere=False):
+    # type: (word__String, bool, bool) -> value__Str
     # do_fnmatch: for the [[ == ]] semantics which we don't have!
     # I think I need another type of node
     # Maybe it should be BuiltinEqual and BuiltinDEqual?  Parse it into a
@@ -85,6 +98,7 @@ class _WordEvaluator(object):
 
 
 def _TwoArgs(w_parser):
+  # type: (_StringWordEmitter) -> bool_expr_t
   """Returns an expression tree to be evaluated."""
   w0 = w_parser.Read()
   w1 = w_parser.Read()
@@ -99,6 +113,7 @@ def _TwoArgs(w_parser):
 
 
 def _ThreeArgs(w_parser):
+  # type: (_StringWordEmitter) -> bool_expr_t
   """Returns an expression tree to be evaluated."""
   w0 = w_parser.Read()
   w1 = w_parser.Read()
@@ -129,10 +144,12 @@ def _ThreeArgs(w_parser):
 
 class Test(object):
   def __init__(self, need_right_bracket, errfmt):
+    # type: (bool, ErrorFormatter) -> None
     self.need_right_bracket = need_right_bracket
     self.errfmt = errfmt
 
   def __call__(self, arg_vec):
+    # type: (arg_vector) -> int
     """The test/[ builtin.
 
     The only difference between test and [ is that [ needs a matching ].
@@ -164,7 +181,7 @@ class Test(object):
     # -a is both a unary prefix operator and an infix operator.  How to fix this
     # ambiguity?
 
-    bool_node = None
+    bool_node = None # type: bool_expr_t
     n = len(arg_vec.strs) - 1
     try:
       if n == 0:
@@ -204,12 +221,13 @@ class Test(object):
     # weird case of [[ being less strict.
     class _DummyExecOpts():
       def __init__(self):
+        # type: () -> None
         self.strict_arith = True
     exec_opts = _DummyExecOpts()
 
-    bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, word_ev, arena)
+    bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, word_ev, arena) # type = expr_eval.BoolEvaluator
     try:
-      b = bool_ev.Eval(bool_node)
+      b = bool_ev.Eval(bool_node) # type = bool
     except error.FatalRuntime as e:
       # Hack: we don't get the (test) prefix but we get location info.  We
       # don't have access to mem.CurrentSpanId() here.
