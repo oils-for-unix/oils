@@ -23,7 +23,7 @@ from asdl import format as fmt
 from osh import word_
 from mycpp import mylib
 
-from typing import List, Any, IO, TYPE_CHECKING
+from typing import List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
   from core.error import _ErrorWithLocation
