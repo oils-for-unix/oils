@@ -59,7 +59,7 @@ typecheck-all() {
   fi
 
   set +o errexit
-  cat $manifest | xargs -- $0 typecheck $flags >_tmp/err.txt
+  cat $manifest | xargs -- $0 typecheck --follow-imports=silent $flags >_tmp/err.txt
   #echo "status: $?"
 
   assert-one-error _tmp/err.txt
