@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
   for (int i = 0; i < argc; ++i) {
     args->append(new Str(argv[i]));
   }
-  $namespace::main(args);
+  return $namespace::main(args);
 }
 EOF
 
@@ -230,8 +230,11 @@ size-profile() {
 osh-parse-smoke() {
   local python=${1:-}
 
-  #for file in */*.sh; do
-  for file in spec/*.sh; do
+  local parse_errors=''
+  local crashed=''
+
+  for file in */*.sh; do
+  #for file in spec/*.sh; do
     case $file in
       # Exclude _tmp/ etc.
       _*) continue ;;
@@ -254,7 +257,33 @@ osh-parse-smoke() {
     else
       _tmp/mycpp/osh_parse $file | wc -l
     fi
+    case $? in
+      0)
+        ;;
+      2)
+        parse_errors+=" $file"
+        ;;
+      *)
+        crashed+=" $file"
+        ;;
+    esac
+
     set -o errexit
+  done
+
+  echo
+  echo "Can't parse:"
+  echo
+  for file in $parse_errors; do  # split words
+    echo $file
+  done
+
+  # A couple spec tests fail because they have what looks like Oil expressions
+  echo
+  echo 'CRASHED:'
+  echo
+  for file in $crashed; do  # split words
+    echo $file
   done
 }
 
