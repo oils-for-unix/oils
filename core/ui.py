@@ -17,13 +17,13 @@ from _devbuild.gen.syntax_asdl import (
     source__SourcedFile, source__EvalArg, source__Trap,
     source__Alias, source__Backticks, source__LValue
 )
-from _devbuild.gen.runtime_asdl import value_t, value__Str
+from _devbuild.gen.runtime_asdl import value_e, value_t, value__Str
 from asdl import runtime
 from asdl import format as fmt
 from osh import word_
 from mycpp import mylib
 
-from typing import List, Any, TYPE_CHECKING
+from typing import List, cast, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
   from core.error import _ErrorWithLocation
@@ -31,16 +31,16 @@ if TYPE_CHECKING:
   #from frontend.args import UsageError
 
 
-def PrettyDir(dir_name, home_dir):
+def PrettyDir(dir_name, UP_home_dir):
   # type: (str, value_t) -> str
   """Maybe replace the home dir with ~.
 
   Used by the 'dirs' builtin and the prompt evaluator.
   """
-  if (home_dir and
-      isinstance(home_dir, value__Str) and
-      (dir_name == home_dir.s or dir_name.startswith(home_dir.s + '/'))):
-    return '~' + dir_name[len(home_dir.s):]
+  if UP_home_dir and UP_home_dir.tag_() == value_e.Str:
+    home_dir = cast(value__Str, UP_home_dir).s
+    if dir_name == home_dir or dir_name.startswith(home_dir + '/'):
+      return '~' + dir_name[len(home_dir):]
 
   return dir_name
 

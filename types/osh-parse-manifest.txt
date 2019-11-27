@@ -7,10 +7,12 @@
 ./core/error.py
 ./core/meta.py
 ./core/pyutil.py
+./core/ui.py
 ./core/util.py
 ./_devbuild/gen/grammar_nt.py
 ./_devbuild/gen/hnode_asdl.py
 ./_devbuild/gen/id_kind_asdl.py
+./_devbuild/gen/runtime_asdl.py
 ./_devbuild/gen/syntax_asdl.py
 ./_devbuild/gen/types_asdl.py
 ./frontend/id_kind.py
