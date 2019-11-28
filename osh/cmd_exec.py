@@ -407,7 +407,7 @@ class Executor(object):
           self.errfmt.Print("Can't run assignment builtin recursively",
                             span_id=span_id)
         else:
-          self.errfmt.Print("%r isn't a shell builtin", span_id=span_id)
+          self.errfmt.Print("%r isn't a shell builtin", name, span_id=span_id)
         return 1
 
       cmd_val2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:],
