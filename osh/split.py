@@ -27,11 +27,16 @@ with SPLIT_REGEX = / digit+ / {
 """
 
 from _devbuild.gen import runtime_asdl
-from _devbuild.gen.runtime_asdl import value_e, span_e
+from _devbuild.gen.runtime_asdl import value_e, span_e, value__Undef, value__Str
 from core import util
 from core.util import log
 
-from typing import List
+from typing import List, Tuple, Dict, TYPE_CHECKING, cast
+if TYPE_CHECKING:
+    from osh.state import Mem
+    from _devbuild.gen.runtime_asdl import span_t, value_t
+    Span = Tuple[span_t, int]
+
 
 # Enums for the state machine
 CH = runtime_asdl.char_kind_e
@@ -42,8 +47,9 @@ ST = runtime_asdl.state_e
 DEFAULT_IFS = ' \t\n'
 
 def _SpansToParts(s, spans):
+  # type: (str, List[Span]) -> List[str]
   """Helper for SplitForWordEval."""
-  parts = []
+  parts = [] # type: List[str]
   start_index = 0
 
   # If the last span was black, and we get a backslash, set join_next to merge
@@ -84,16 +90,20 @@ class SplitContext(object):
   """
 
   def __init__(self, mem):
+    # type: (Mem) -> None
     self.mem = mem
     # Split into (ifs_whitespace, ifs_other)
-    self.splitters = {}  # IFS value -> splitter instance
+    self.splitters = {}  # type: Dict[str, IfsSplitter]  # aka IFS value -> splitter instance
 
   def _GetSplitter(self):
+    # type: () -> IfsSplitter
     """Based on the current stack frame, get the splitter."""
-    val = self.mem.GetVar('IFS')
-    if val.tag == value_e.Undef:
+    UP_val = self.mem.GetVar('IFS')
+
+    if UP_val.tag == value_e.Undef:
       ifs = DEFAULT_IFS
-    elif val.tag == value_e.Str:
+    elif UP_val.tag == value_e.Str:
+      val = cast(value__Str, UP_val)
       ifs = val.s
     else:
       # TODO: Raise proper error
@@ -122,6 +132,7 @@ class SplitContext(object):
     return sp
 
   def GetJoinChar(self):
+    # type: () -> str
     """
     For decaying arrays by joining, eg. "$@" -> $@.
     array
@@ -134,10 +145,11 @@ class SplitContext(object):
     # by a <space> if IFS is unset. If IFS is set to a null string, this is
     # not equivalent to unsetting it; its first character does not exist, so
     # the parameter values are concatenated."
-    val = self.mem.GetVar('IFS')
-    if val.tag == value_e.Undef:
+    UP_val = self.mem.GetVar('IFS') # type: value_t
+    if UP_val.tag == value_e.Undef:
       return ' '
-    elif val.tag == value_e.Str:
+    elif UP_val.tag == value_e.Str:
+      val = cast(value__Str, UP_val)
       if val.s:
         return val.s[0]
       else:
@@ -147,6 +159,7 @@ class SplitContext(object):
       raise AssertionError("IFS shouldn't be an array")
 
   def Escape(self, s):
+    # type: (str) -> str
     """Escape IFS chars."""
     sp = self._GetSplitter()
     return sp.Escape(s)
@@ -177,16 +190,18 @@ class SplitContext(object):
     return _SpansToParts(s, spans)
 
   def SplitForRead(self, line, allow_escape):
-    # type: (str, bool) -> List[str]
+    # type: (str, bool) -> List[Span]
     sp = self._GetSplitter()
     return sp.Split(line, allow_escape)
 
 
 class _BaseSplitter(object):
   def __init__(self, escape_chars):
+    # type: (str) -> None
     self.escape_chars = escape_chars + '\\'   # Backslash is always escaped
 
   def Escape(self, s):
+    # type: (str) -> str
     # Note the characters here are DYNAMIC, unlike other usages of
     # BackslashEscape().
     return util.BackslashEscape(s, self.escape_chars)
@@ -197,10 +212,12 @@ class _BaseSplitter(object):
 class NullSplitter(_BaseSplitter):
 
   def __init__(self, ifs_whitespace):
+    # type: (str) -> None
     _BaseSplitter.__init__(self, ifs_whitespace)
     self.ifs_whitespace = ifs_whitespace
 
   def Split(self, s, allow_escape):
+    # type: (str, bool) -> List[str]
     raise NotImplementedError
 
 
@@ -291,11 +308,13 @@ class IfsSplitter(_BaseSplitter):
   """Split a string when IFS has non-whitespace characters."""
 
   def __init__(self, ifs_whitespace, ifs_other):
+    # type: (str, str) -> None
     _BaseSplitter.__init__(self, ifs_whitespace + ifs_other)
     self.ifs_whitespace = ifs_whitespace
     self.ifs_other = ifs_other
 
   def Split(self, s, allow_escape):
+    # type: (str, bool) -> List[Span]
     """
     Args:
       s: string to split
@@ -311,7 +330,7 @@ class IfsSplitter(_BaseSplitter):
     other_chars = self.ifs_other
 
     n = len(s)
-    spans = []  # NOTE: in C, could reserve() this to len(s)
+    spans = [] # type: List[Span] # NOTE: in C, could reserve() this to len(s)
 
     if n == 0:
       return spans  # empty
