@@ -4,6 +4,7 @@ state_test.py: Tests for state.py
 """
 
 import unittest
+import os.path
 
 from _devbuild.gen.runtime_asdl import (
     scope_e, lvalue, value, value_e, var_flags_e,
@@ -48,7 +49,13 @@ class MemTest(unittest.TestCase):
     self.assertEqual('bin/osh', search_path.Lookup('bin/osh'))
 
     # Not hermetic, but should be true on POSIX systems.
-    self.assertEqual('/usr/bin/env', search_path.Lookup('env'))
+    # Also see https://www.freedesktop.org/wiki/Software/systemd/TheCaseForTheUsrMerge/
+    #  - on some systems, /bin is a symlink to /usr/bin
+    if os.path.isfile('/bin/env'):
+        self.assertEqual(search_path.Lookup('env'), '/bin/env')
+    else:
+        self.assertEqual(search_path.Lookup('env'), '/usr/bin/env')
+
 
   def testPushTemp(self):
     mem = _InitMem()
