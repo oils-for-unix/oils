@@ -134,7 +134,7 @@ all() {
   echo
 
   echo 'OIL UNIT TESTS'
-  wc -l {osh,frontend,core,ovm2,native,tools}/*_test.py | sort --numeric
+  wc -l {osh,frontend,core,native,tools}/*_test.py | sort --numeric
   echo
 
   echo 'OSH (and common libraries)'
@@ -152,11 +152,6 @@ all() {
 
   echo 'DOCS'
   wc -l README.md doc/* | sort --numeric
-  echo
-
-  # Obsolete.  Delete this code/
-  echo 'OVM2'
-  wc -l ovm2/*.{py,cc} | filter-py | sort --numeric
   echo
 }
 
