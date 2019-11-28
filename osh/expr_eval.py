@@ -36,7 +36,7 @@ except ImportError:
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import bool_expr_t
   from core.ui import ErrorFormatter
-  from osh.state import Mem, ExecOpts
+  from osh.state import Mem
   from osh.word_eval import WordEvaluator
 
 
@@ -284,7 +284,8 @@ class _ExprEvaluator(object):
   """
 
   def __init__(self, mem, exec_opts, word_ev, errfmt):
-    # type: (Mem, ExecOpts, WordEvaluator, ErrorFormatter) -> None
+    # type: (Mem, Any, WordEvaluator, ErrorFormatter) -> None
+    # TODO: Remove Any by fixing _DummyExecOpts in osh/builtin_bracket.py
     self.mem = mem
     self.exec_opts = exec_opts
     self.word_ev = word_ev

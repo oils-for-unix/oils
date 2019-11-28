@@ -42,8 +42,11 @@ class _StringWordEmitter(word_parse.WordEmitter):
     self.n = len(arg_vec.strs)
 
   def ReadWord(self, unused_lex_mode):
-    # type: (lex_mode_t) -> word_t
-    """Interface for bool_parse.py."""
+    # type: (lex_mode_t) -> word__String
+    """Interface for bool_parse.py.
+
+    TODO: This should probably be word_t
+    """
     if self.i == self.n:
       # Does it make sense to define Eof_Argv or something?
       w = word.String(Id.Eof_Real, '')
@@ -227,7 +230,7 @@ class Test(object):
         self.strict_arith = True
     exec_opts = _DummyExecOpts()
 
-    bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, word_ev, arena) # type = expr_eval.BoolEvaluator
+    bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, word_ev, arena)
     try:
       b = bool_ev.Eval(bool_node) # type = bool
     except error.FatalRuntime as e:

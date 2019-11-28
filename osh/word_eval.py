@@ -1286,7 +1286,7 @@ class _WordEvaluator(object):
     return argv
 
   def _EvalAssignBuiltin(self, builtin_id, arg0, words):
-    # type: (List[compound_word]) -> cmd_value__Assign
+    # type: (builtin_e, str, List[compound_word]) -> cmd_value__Assign
     """
     Handles both static and dynamic assignment, e.g.
 
