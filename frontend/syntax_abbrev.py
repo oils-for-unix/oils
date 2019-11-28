@@ -1,5 +1,7 @@
 """
-ssyntax_abbrev.py - Abbreviations for pretty-printing syntax.asdl.
+syntax_abbrev.py - Abbreviations for pretty-printing syntax.asdl.
+
+This module is not used directly, but is combined with generated code.
 """
 
 from _devbuild.gen.id_kind_asdl import Id
