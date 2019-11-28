@@ -390,7 +390,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     if field.seq:
       iter_name = 'i%d' % counter
 
-      self.Emit('  if (this->%s) {  // ArrayType' % field.name)
+      self.Emit('  if (this->%s && len(this->%s)) {  // ArrayType' % (field.name, field.name))
       self.Emit('    hnode__Array* %s = new hnode__Array(new List<hnode_t*>());' % out_val_name)
       item_type = _GetInnerCppType(self.type_lookup, field)
       self.Emit('    for (ListIter<%s>it(this->%s); !it.Done(); it.Next()) {'

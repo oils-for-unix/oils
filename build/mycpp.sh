@@ -227,12 +227,7 @@ size-profile() {
   bloaty -d symbols $TMP/osh_parse
 }
 
-osh-parse-smoke() {
-  local python=${1:-}
-
-  local parse_errors=''
-  local crashed=''
-
+smoke-manifest() {
   for file in */*.sh; do
   #for file in spec/*.sh; do
     case $file in
@@ -251,6 +246,50 @@ osh-parse-smoke() {
     esac
 
     echo $file
+  done
+}
+
+py-parse() {
+  local id=$1
+  local file=$2
+
+  local out=_tmp/osh-parse-smoke/py/$id
+  bin/osh --ast-format text -n $file > $out
+}
+
+cpp-parse() {
+  local id=$1
+  local file=$2
+
+  local out=_tmp/osh-parse-smoke/cpp/$id
+  _tmp/mycpp/osh_parse $file > $out
+}
+
+osh-parse-smoke() {
+  local manifest='_tmp/smoke-manifest.txt'
+
+  # TODO: make the first 10 match
+
+  # nl gives the ID
+  smoke-manifest | nl > $manifest
+
+  rm -f _tmp/osh-parse-smoke/{py,cpp}/*
+  mkdir -p _tmp/osh-parse-smoke/{py,cpp}
+
+  set +o errexit
+  time head $manifest | xargs --verbose -n 2 -- $0 py-parse
+  time head $manifest | xargs --verbose -n 2 -- $0 cpp-parse
+  set -o errexit
+}
+
+osh-parse-smoke-2() {
+  ### Run and print errors
+  local python=${1:-}
+
+  local parse_errors=''
+  local crashed=''
+
+  while read file; do
     set +o errexit
     if test -n "$python"; then
       bin/osh -n $file | wc -l
@@ -269,7 +308,7 @@ osh-parse-smoke() {
     esac
 
     set -o errexit
-  done
+  done < <(smoke-manifest)
 
   echo
   echo "Can't parse:"
