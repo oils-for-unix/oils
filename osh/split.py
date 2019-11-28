@@ -27,15 +27,15 @@ with SPLIT_REGEX = / digit+ / {
 """
 
 from _devbuild.gen import runtime_asdl
-from _devbuild.gen.runtime_asdl import value_e, span_e, value__Undef, value__Str
+from _devbuild.gen.runtime_asdl import value_e, span_e, value__Str
 from core import util
 from core.util import log
 
 from typing import List, Tuple, Dict, TYPE_CHECKING, cast
 if TYPE_CHECKING:
-    from osh.state import Mem
-    from _devbuild.gen.runtime_asdl import span_t, value_t
-    Span = Tuple[span_t, int]
+  from osh.state import Mem
+  from _devbuild.gen.runtime_asdl import span_t, value_t
+  Span = Tuple[span_t, int]
 
 
 # Enums for the state machine
