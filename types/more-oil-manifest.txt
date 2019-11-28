@@ -8,3 +8,4 @@
 ./core/error.py
 ./osh/word_compile.py
 ./osh/builtin_bracket.py
+./osh/split.py

@@ -11,7 +11,7 @@ from __future__ import print_function
 
 import cStringIO
 
-from typing import List
+from typing import List, TYPE_CHECKING
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import sh_lhs_expr
@@ -29,6 +29,9 @@ from pylib import path_stat
 
 import libc
 import posix_ as posix
+
+if TYPE_CHECKING:
+    from _devbuild.gen.runtime_asdl import value_t, scope_t
 
 
 # This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".
@@ -1192,6 +1195,7 @@ class Mem(object):
     cell.val = new_val
 
   def GetVar(self, name, lookup_mode=scope_e.Dynamic):
+    # type: (str, scope_t) -> value_t
     assert isinstance(name, str), name
 
     # TODO: Short-circuit down to _FindCellAndNamespace by doing a single hash
