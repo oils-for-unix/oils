@@ -10,7 +10,6 @@ expr_eval.py -- Currently used for boolean and arithmetic expressions.
 """
 
 import stat
-from typing import TYPE_CHECKING
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.id_tables import BOOL_ARG_TYPES
@@ -33,6 +32,7 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc  # type: ignore
 
+from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import bool_expr_t
   from core.ui import ErrorFormatter
