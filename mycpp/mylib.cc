@@ -242,7 +242,7 @@ void BufWriter::format_d(int i) {
 // repr() calls this too
 void BufWriter::format_r(Str* s) {
   // Worst case: \0 becomes 4 bytes as '\\x00', and then two quote bytes.
-  int upper_bound = len_*4 + 2;
+  int upper_bound = s->len_*4 + 2;
 
   // Extend the buffer
   data_ = static_cast<char*>(realloc(data_, len_ + upper_bound + 1));

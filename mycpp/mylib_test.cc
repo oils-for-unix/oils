@@ -88,6 +88,7 @@ void test_str_funcs() {
   log("s.endswith('bc') = %d", s->endswith(new Str("bc")));
 
   log("repr %s", repr(new Str(""))->data_);
+  log("repr %s", repr(new Str("'"))->data_);
   log("repr %s", repr(new Str("'single'"))->data_);
   log("repr %s", repr(new Str("\"double\""))->data_);
 
