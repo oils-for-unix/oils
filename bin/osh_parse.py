@@ -6,7 +6,7 @@ from __future__ import print_function
 
 import sys
 
-from _devbuild.gen.syntax_asdl import source, command, command_t
+from _devbuild.gen.syntax_asdl import source, source_t, command, command_t
 from asdl import format as fmt
 from core import alloc
 from core import error
@@ -51,7 +51,6 @@ def ParseWholeFile(c_parser):
 def main(argv):
   # type: (List[str]) -> int
   arena = alloc.Arena()
-  arena.PushSource(source.Stdin(''))
 
   parse_opts = parse_lib.OilParseOptions()
   # Dummy value; not respecting aliases!
@@ -68,19 +67,25 @@ def main(argv):
 
   if len(argv) == 1:
     line_reader = reader.FileLineReader(mylib.Stdin(), arena)
+    src = source.Stdin('')  # type: source_t
 
   elif len(argv) == 2:
-    f = mylib.open(argv[1])
+    path = argv[1]
+    f = mylib.open(path)
     line_reader = reader.FileLineReader(f, arena)
+    src = source.MainFile(path)
 
   elif len(argv) == 3:
     if argv[1] != '-c':
       raise AssertionError()
     # This path is easier to run through GDB
     line_reader = reader.StringLineReader(argv[2], arena)
+    src = source.CFlag()
 
   else:
     raise AssertionError()
+
+  arena.PushSource(src)
 
   c_parser = parse_ctx.MakeOshParser(line_reader)
 

@@ -17,10 +17,15 @@ readonly MYPY_REPO=~/git/languages/mypy
 # note: -Weverything is more than -Wall, but too many errors now.
 CPPFLAGS='-std=c++11 -Wall -ferror-limit=1000'
 CPPFLAGS="$CPPFLAGS -O0 -g"
+CPPFLAGS="$CPPFLAGS -fsanitize=address"
 #CPPFLAGS="$CPPFLAGS -O2"
 
 readonly CXX=$CLANG_DIR_RELATIVE/bin/clang++
 #readonly CXX=c++
+
+export ASAN_SYMBOLIZER_PATH=$CLANG_DIR_RELATIVE/bin/llvm-symbolizer
+# https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer
+export ASAN_OPTIONS='detect_leaks=0'
 
 asdl-demo() {
   build/dev.sh oil-asdl-to-cpp
@@ -217,7 +222,7 @@ run-osh-parse() {
   ls -l $tmp
 
   # Run it
-  $tmp/$name -c "$code_str"
+  $tmp/$name "$@"
 }
 
 size-profile() {
@@ -300,6 +305,9 @@ osh-parse-smoke-2() {
 
   while read file; do
     set +o errexit
+
+    echo "_____ $file"
+
     if test -n "$python"; then
       bin/osh -n $file | wc -l
     else
