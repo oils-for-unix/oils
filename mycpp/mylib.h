@@ -103,6 +103,9 @@ class Str {
 
   // Get a string with one character
   Str* index(int i) {
+    if (i < 0) {
+      i = len_ + i;
+    }
     char* buf = static_cast<char*>(malloc(2));
     buf[0] = data_[i];
     buf[1] = '\0';

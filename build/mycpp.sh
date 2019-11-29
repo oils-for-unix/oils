@@ -240,6 +240,7 @@ smoke-manifest() {
 
       # pgen2 not done
       spec/oil-*) continue ;;
+      spec/arith-context.test.sh) continue ;;
 
       # This has Oil syntax
       test/oil-runtime-errors.sh) continue ;;

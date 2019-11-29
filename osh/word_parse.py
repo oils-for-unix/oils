@@ -178,7 +178,8 @@ class WordParser(WordEmitter):
     # NOTE: empty_ok is False only for the PatSub pattern, which means we'll
     # return a Compound with no parts, which is explicitly checked with a
     # custom error message.
-    if not w.parts and arg_lex_mode == lex_mode_e.VSub_ArgDQ and empty_ok:
+    if (len(w.parts) == 0 and arg_lex_mode == lex_mode_e.VSub_ArgDQ
+        and empty_ok):
       return word.Empty()
 
     return w
