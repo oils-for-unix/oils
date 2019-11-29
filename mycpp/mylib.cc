@@ -323,17 +323,21 @@ Str* str_concat(Str* a, Str* b) {
 }
 
 Str* str_repeat(Str* s, int times) {
+  // Python allows -1 too, and Oil used that
+  if (times <= 0) {
+    return kEmptyString;
+  }
   int len = s->len_;
   int new_len = len * times;
-  char* data_ = static_cast<char*>(malloc(new_len + 1));
+  char* data = static_cast<char*>(malloc(new_len + 1));
 
-  char* dest = data_;
+  char* dest = data;
   for (int i = 0; i < times; i++) {
     memcpy(dest, s->data_, len);
     dest += len;
   }
-  data_[new_len] = '\0';
-  return new Str(data_, new_len);
+  data[new_len] = '\0';
+  return new Str(data, new_len);
 }
 
 // Helper for str_to_int() that doesn't use exceptions.

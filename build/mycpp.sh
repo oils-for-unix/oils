@@ -246,6 +246,7 @@ smoke-manifest() {
       # pgen2 not done
       spec/oil-*) continue ;;
       spec/arith-context.test.sh) continue ;;
+      spec/builtin-eval-source.test.sh) continue ;;
 
       # This has Oil syntax
       test/oil-runtime-errors.sh) continue ;;
@@ -289,11 +290,23 @@ dump-asts() {
 }
 
 compare-asts() {
-  mkdir -p _tmp/osh-parse-smoke/{py,cpp}
+  mkdir -p _tmp/osh-parse-smoke/{py,cpp,diff}
+
+  local num_failed=0
   for path in _tmp/osh-parse-smoke/py/*; do
     echo $path
-    diff -u $path ${path//py/cpp}
+    local diff_path=${path//py/diff}
+    set +o errexit
+    diff -u $path ${path//py/cpp} > $diff_path
+    local status=$?
+    set -o errexit
+    if test $status -ne 0; then
+      num_failed=$((num_failed + 1))
+    fi
+
   done
+
+  echo "$num_failed differences"
 }
 
 osh-parse-smoke-2() {
