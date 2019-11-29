@@ -92,8 +92,10 @@ def main(argv):
     return 2
   assert node is not None
 
-  tree = node.AbbreviatedTree()
-  #tree = node.PrettyTree()
+  # C++ doesn't have the abbreviations yet (though there are some differences
+  # like omitting spids)
+  #tree = node.AbbreviatedTree()
+  tree = node.PrettyTree()
 
   ast_f = fmt.DetectConsoleOutput(mylib.Stdout())
   fmt.PrintTree(tree, ast_f)

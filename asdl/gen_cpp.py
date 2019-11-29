@@ -10,10 +10,6 @@ TODO:
 - pretty printing methods
   - so asdl/format.py get translated?
 
-- ASDL optional args to C++ default arguments?
-- what about spids?  optional?
-  - TODO: test this out in target_lang.cc
-
 - NoOp needs to be instantiated without args?
 - dict becomes Dict[str, str] ?
 - how to handle UserType(id) ?

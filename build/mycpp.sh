@@ -265,7 +265,7 @@ cpp-parse() {
   _tmp/mycpp/osh_parse $file > $out
 }
 
-osh-parse-smoke() {
+dump-asts() {
   local manifest='_tmp/smoke-manifest.txt'
 
   # TODO: make the first 10 match
@@ -277,9 +277,17 @@ osh-parse-smoke() {
   mkdir -p _tmp/osh-parse-smoke/{py,cpp}
 
   set +o errexit
-  time head $manifest | xargs --verbose -n 2 -- $0 py-parse
-  time head $manifest | xargs --verbose -n 2 -- $0 cpp-parse
+  time cat $manifest | xargs --verbose -n 2 -- $0 py-parse
+  time cat $manifest | xargs --verbose -n 2 -- $0 cpp-parse
   set -o errexit
+}
+
+compare-asts() {
+  mkdir -p _tmp/osh-parse-smoke/{py,cpp}
+  for path in _tmp/osh-parse-smoke/py/*; do
+    echo $path
+    diff -u $path ${path//py/cpp}
+  done
 }
 
 osh-parse-smoke-2() {
