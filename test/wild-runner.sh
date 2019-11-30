@@ -10,14 +10,13 @@ shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
 source test/common.sh
 
-process-file() {
+dump-html-and-translate-file() {
   local rel_path=$1
   local abs_path=$2
 
   local raw_base=_tmp/wild/raw/$rel_path
   local www_base=_tmp/wild/www/$rel_path
-  mkdir -p $(dirname $raw_base)
-  mkdir -p $(dirname $www_base)
+  mkdir -p $(dirname $raw_base) $(dirname $www_base)
 
   log "--- Processing $rel_path"
 
@@ -47,12 +46,48 @@ process-file() {
     > $out_file 2> $stderr_file
 }
 
+# In case we built with ASAN
+export ASAN_OPTIONS='detect_leaks=0'
+
+dump-text-for-file() {
+  local rel_path=$1
+  local abs_path=$2
+
+  local py_base=_tmp/wild/py/$rel_path
+  local cpp_base=_tmp/wild/cpp/$rel_path
+
+  mkdir -p $(dirname $py_base) $(dirname $cpp_base)
+
+  log "--- Processing $rel_path"
+
+  # Parse the file with Python
+  local task_file=${py_base}.task.txt
+  local stderr_file=${py_base}.stderr.txt
+  local out_file=${py_base}.ast.txt
+
+  run-task-with-status $task_file \
+    bin/osh --ast-format text -n $abs_path \
+    > $out_file #2> $stderr_file
+
+  # Parse the file with C++
+  local task_file=${cpp_base}.task.txt
+  local stderr_file=${cpp_base}.stderr.txt
+  local out_file=${cpp_base}.ast.txt
+
+  run-task-with-status $task_file \
+    _tmp/mycpp/osh_parse $abs_path \
+    > $out_file #2> $stderr_file
+}
+
+
 readonly NUM_TASKS=200
 readonly MANIFEST=_tmp/wild/MANIFEST.txt
 
 parse-in-parallel() {
+  local func=${1:-dump-html-and-translate-file}
+
   local failed=''
-  xargs -n 2 -P $JOBS -- $0 process-file || failed=1
+  xargs -n 2 -P $JOBS -- $0 $func || failed=1
 
   # Limit the output depth
   tree -L 3 _tmp/wild
@@ -63,19 +98,55 @@ parse-in-parallel() {
 
 parse-and-report() {
   local manifest_regex=${1:-}  # egrep regex for manifest line
+  local func=${2:-dump-html-and-translate-file}
 
   time {
     #test/wild.sh write-manifest
     test/wild.sh manifest-from-archive
 
     if test -n "$manifest_regex"; then
-      egrep -- "$manifest_regex" $MANIFEST | parse-in-parallel
+      egrep -- "$manifest_regex" $MANIFEST | parse-in-parallel $func
     else
-      cat $MANIFEST | parse-in-parallel
+      cat $MANIFEST | parse-in-parallel $func
     fi
 
     make-report
   }
+}
+
+dump-text-asts() {
+  local manifest_regex=${1:-}  # egrep regex for manifest line
+
+  local func=dump-text-for-file
+
+  if test -n "$manifest_regex"; then
+    egrep -- "$manifest_regex" $MANIFEST | parse-in-parallel $func
+  else
+    cat $MANIFEST | parse-in-parallel $func
+  fi
+}
+
+compare-one-ast() {
+  local left=$1
+
+  local old='/py/'
+  local new='/cpp/'
+  local right=${left/$old/$new}
+
+  #echo $left $right
+  diff -q -u $left $right
+  #md5sum $left $right
+}
+
+compare-asts() {
+  local manifest=_tmp/wild/compare.txt
+  find _tmp/wild/py -name '*.ast.txt' > $manifest
+
+  log "Comparing ..."
+  wc -l $manifest
+  echo
+
+  cat $manifest | xargs -n 1 -- $0 compare-one-ast
 }
 
 # NOTE: This depends on test/jsontemplate.py.  Should we make that part of
