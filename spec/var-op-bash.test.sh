@@ -41,3 +41,23 @@ test "$x" = "$new" && echo OK
 ## STDOUT:
 OK
 ## END
+
+#### ${!prefix@} ${!prefix*} yields sorted array of var names
+ZOO=zoo
+ZIP=zip
+ZOOM='one two'
+Z='three four'
+
+z=lower
+
+argv.py ${!Z*}
+argv.py ${!Z@}
+argv.py "${!Z*}"
+argv.py "${!Z@}"
+## STDOUT:
+['Z', 'ZIP', 'ZOO', 'ZOOM']
+['Z', 'ZIP', 'ZOO', 'ZOOM']
+['Z ZIP ZOO ZOOM']
+['Z', 'ZIP', 'ZOO', 'ZOOM']
+## END
+

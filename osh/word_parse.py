@@ -317,8 +317,8 @@ class WordParser(WordEmitter):
     part.bracket_op = bracket_op
     return part
 
-  def _ParseVarExpr(self, arg_lex_mode):
-    # type: (lex_mode_t) -> braced_var_sub
+  def _ParseVarExpr(self, arg_lex_mode, allow_query=False):
+    # type: (lex_mode_t, bool) -> braced_var_sub
     """
     Start parsing at the op -- we already skipped past the name.
     """
@@ -334,7 +334,7 @@ class WordParser(WordEmitter):
       op_id = self.token_type
       arg_word = self._ReadVarOpArg(arg_lex_mode)
       if self.token_type != Id.Right_DollarBrace:
-        p_die('Unexpected token (after VTest): %r', self.cur_token.val,
+        p_die('Unexpected token %r (after %s)', self.cur_token.val, 'VTest',
               token=self.cur_token)
 
       part.suffix_op = suffix_op.Unary(op_id, arg_word)
@@ -349,7 +349,7 @@ class WordParser(WordEmitter):
       op_id = self.token_type
       arg_word = self._ReadVarOpArg(arg_lex_mode)
       if self.token_type != Id.Right_DollarBrace:
-        p_die('Unexpected token (after VOp1): %r', self.cur_token.val,
+        p_die('Unexpected token %r (after %s)', self.cur_token.val, 'VOp1',
               token=self.cur_token)
 
       part.suffix_op = suffix_op.Unary(op_id, arg_word)
@@ -367,6 +367,7 @@ class WordParser(WordEmitter):
         # Checked by the method above
         assert self.token_type == Id.Right_DollarBrace, self.cur_token
 
+
       elif self.token_type == Id.VOp2_Colon:
         part.suffix_op = self._ReadSliceVarOp()
         # NOTE: } in arithmetic mode.
@@ -376,7 +377,18 @@ class WordParser(WordEmitter):
                 token=self.cur_token)
 
       else:
-        p_die('Unexpected token %r', self.cur_token.val, token=self.cur_token)
+        p_die('Unexpected token %r (%s)', self.cur_token.val, 'VOp2',
+              token=self.cur_token)
+
+    elif op_kind == Kind.VOp3:
+      if allow_query:
+        op_id = self.token_type
+        part.suffix_op = suffix_op.Nullary(op_id)
+        self._Next(lex_mode_e.VSub_2)  # Expecting }
+        self._Peek()
+      else:
+        p_die("Unexpected token %r (%s)", self.cur_token.val, 'VOp3',
+              token=self.cur_token)
 
     # NOTE: Arith_RBrace is for slicing, because it reads } in arithmetic
     # mode.  It's redundantly checked above.
@@ -492,7 +504,7 @@ class WordParser(WordEmitter):
         # ${!a[@]} -- this is a keys
         # No lookahead -- do it in a second step, or at runtime
         self._Next(lex_mode_e.VSub_1)
-        part = self._ParseVarExpr(arg_lex_mode)
+        part = self._ParseVarExpr(arg_lex_mode, allow_query=True)
 
         part.prefix_op = speck(ty, self.cur_token.span_id)
 

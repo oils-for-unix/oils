@@ -422,6 +422,12 @@ def AddKinds(spec):
       ('RBracket',      ']'),  #  ] for indexing
   ])
 
+  # Can only occur after ${!prefix@}
+  spec.AddKindPairs('VOp3', [
+      ('At',         '@'),
+      ('Star',       '*'),
+  ])
+
   # This kind is for Node types that are NOT tokens.
   spec.AddKind('Node', [
      # Arithmetic nodes

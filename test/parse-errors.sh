@@ -298,6 +298,16 @@ quoted-strings() {
   line 2"
 }
 
+braced-var-sub() {
+  set +o errexit
+
+  # These should have ! for a prefix query
+  _error-case 'echo ${x*}'
+  _error-case 'echo ${x@}'
+
+  _error-case 'echo ${x.}'
+}
+
 cmd-parse() {
   set +o errexit
 
@@ -559,6 +569,7 @@ cases-in-strings() {
   array-literal
   patsub
   quoted-strings
+  braced-var-sub
 
   # Arith
   arith-context

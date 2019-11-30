@@ -119,7 +119,7 @@ module syntax
   | ArrayIndex(arith_expr expr)
 
   suffix_op = 
-    Nullary(id op_id)  -- ${x@Q}
+    Nullary(id op_id)  -- ${x@Q} or ${!prefix@} (which also has prefix_op)
   | Unary(id op_id, word arg_word)  -- e.g. ${v:-default}
     -- TODO: token for / to attribute errors
   | PatSub(word pat, word? replace, id replace_mode)

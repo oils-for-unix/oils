@@ -557,7 +557,8 @@ LEXER_DEF[lex_mode_e.VSub_2] = \
     ID_SPEC.LexerPairs(Kind.VTest) + \
     ID_SPEC.LexerPairs(Kind.VOp0) + \
     ID_SPEC.LexerPairs(Kind.VOp1) + \
-    ID_SPEC.LexerPairs(Kind.VOp2) + [
+    ID_SPEC.LexerPairs(Kind.VOp2) + \
+    ID_SPEC.LexerPairs(Kind.VOp3) + [
   C('}', Id.Right_DollarBrace),
 
   C('\\\n', Id.Ignored_LineCont),
