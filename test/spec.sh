@@ -530,8 +530,13 @@ var-op-patsub() {
 
 var-op-other() {
   # dash doesn't support any of these operations
-  sh-spec spec/var-op-other.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/var-op-other.test.sh --osh-failures-allowed 0 \
     $BASH $MKSH $ZSH $OSH_LIST "$@"
+}
+
+var-op-bash() {
+  sh-spec spec/var-op-bash.test.sh --osh-failures-allowed 2 \
+    $BASH $OSH_LIST "$@"
 }
 
 var-op-strip() {
