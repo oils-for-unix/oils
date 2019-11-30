@@ -481,7 +481,7 @@ class _WordEvaluator(object):
           pass
 
         if val.s in ('@', '*'):
-          # TODO maybe_decay_array
+          # TODO: maybe_decay_array
           return value.MaybeStrArray(self.mem.GetArgv())
 
         # otherwise an array reference, like 'arr[0]' or 'arr[xyz]' or 'arr[@]'
@@ -722,10 +722,20 @@ class _WordEvaluator(object):
     if part.prefix_op:
       val = self._EmptyStrOrError(val)  # maybe error
 
-      # TODO: maybe_decay_array for "${!assoc[@]}" vs. ${!assoc[*]}
-      val = self._ApplyPrefixOp(val, part.prefix_op, part.token)
-      # NOTE: When applying the length operator, we can't have a test or
-      # suffix afterward.  And we don't want to decay the array
+      if part.suffix_op:
+        # Must be ${!prefix@}
+        assert part.prefix_op.id == Id.VSub_Bang
+        names = self.mem.VarNamesStartingWith(part.token.val)
+        names.sort()
+        val = value.MaybeStrArray(names)
+
+        # "${!prefix@}" is the only one that doesn't decay
+        maybe_decay_array = not (quoted and part.suffix_op.op_id == Id.VOp3_At)
+      else:
+        # TODO: maybe_decay_array for "${!assoc[@]}" vs. ${!assoc[*]}
+        val = self._ApplyPrefixOp(val, part.prefix_op, part.token)
+        # NOTE: When applying the length operator, we can't have a test or
+        # suffix afterward.  And we don't want to decay the array
 
     elif part.suffix_op:
       op = part.suffix_op

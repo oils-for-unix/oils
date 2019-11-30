@@ -1358,6 +1358,16 @@ class Mem(object):
       for name, _ in scope.iteritems():
         yield name
 
+  def VarNamesStartingWith(self, prefix):
+    """For ${!prefix@}"""
+    # Look up the stack, yielding all variables.  Bash seems to do this.
+    names = []
+    for scope in self.var_stack:
+      for name, _ in scope.iteritems():
+        if name.startswith(prefix):
+          names.append(name)
+    return names
+
   def GetAllVars(self):
     """Get all variables and their values, for 'set' builtin. """
     result = {}
