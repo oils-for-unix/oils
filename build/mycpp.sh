@@ -273,6 +273,8 @@ cpp-parse() {
 }
 
 dump-asts() {
+  ### Dump ASTs produced by Python and C++ 
+
   local manifest='_tmp/smoke-manifest.txt'
 
   # TODO: make the first 10 match
@@ -309,8 +311,9 @@ compare-asts() {
   echo "$num_failed differences"
 }
 
-osh-parse-smoke-2() {
-  ### Run and print errors
+osh-parse-smoke() {
+  ### Run C++ version bin/osh_parse on our shell scripts (with ASAN on)
+
   local python=${1:-}
 
   local parse_errors=''

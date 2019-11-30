@@ -63,7 +63,6 @@ def main(argv):
     oil_grammar = meta.LoadOilGrammar(loader)
 
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
-  parse_ctx.Init_OnePassParse(True)
 
   if len(argv) == 1:
     line_reader = reader.FileLineReader(mylib.Stdin(), arena)
