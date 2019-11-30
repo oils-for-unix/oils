@@ -1491,7 +1491,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if (class_name in ('BoolParser', 'CommandParser') and func_name == '_Next' or
             class_name == 'ParseContext' and func_name == 'MakeOshParser' or
             class_name == 'ErrorFormatter' and func_name == 'PrettyPrintError' or
-            class_name is None and func_name == 'PrettyPrintError'
+            class_name is None and func_name == 'PrettyPrintError' or
+            class_name == 'WordParser' and func_name == '_ParseVarExpr'
           ):
 
           default_val = o.arguments[-1].initializer
