@@ -14,7 +14,12 @@ readonly REPO_ROOT=~/git/oilshell/oil
 readonly MYPY_REPO=~/git/languages/mypy
 
 # note: -Weverything is more than -Wall, but too many errors now.
-readonly CPPFLAGS='-std=c++11 -Wall'
+CPPFLAGS='-std=c++11 -Wall'
+
+# Temporary hack for 'token* token' in GCC
+# https://stackoverflow.com/questions/8843818/what-does-the-fpermissive-flag-do
+CPPFLAGS="$CPPFLAGS -fpermissive"
+
 # This flag is Clang-only
 #-ferror-limit=1000'
 
@@ -400,6 +405,24 @@ frontend-match-test() {
   compile $TMP/$name cpp/frontend_match_test.cc cpp/frontend_match.cc mycpp/mylib.cc
 
   $TMP/$name
+}
+
+# Demo for the oil-native tarball.
+tarball-demo() {
+  mkdir -p _bin
+
+  time compile-osh-parse-opt
+
+  local bin=_bin/osh_parse.opt.stripped
+  ls -l $bin
+
+  echo
+  echo "You can now run $bin.  Example:"
+  echo
+
+  set -o xtrace
+  $bin -c 'echo "hello $name"'
+
 }
 
 "$@"
