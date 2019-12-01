@@ -106,7 +106,9 @@ file-to-share() {
   local host=$user.org
 
   local file=$2
-  local dest=$user@$host:oilshell.org/share/$(basename $file).txt
+  local dest_suffix=${3:-}  # e.g. .txt
+
+  local dest=$user@$host:oilshell.org/share/$(basename $file)$dest_suffix
 
   scp $file $dest
 }
