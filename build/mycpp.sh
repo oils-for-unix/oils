@@ -15,10 +15,12 @@ source mycpp/examples.sh  # for PGEN2_DEMO_PREAMBLE
 readonly MYPY_REPO=~/git/languages/mypy
 
 # note: -Weverything is more than -Wall, but too many errors now.
-CPPFLAGS='-std=c++11 -Wall -ferror-limit=1000'
-CPPFLAGS="$CPPFLAGS -O0 -g"
-CPPFLAGS="$CPPFLAGS -fsanitize=address"
-#CPPFLAGS="$CPPFLAGS -O2"
+readonly CPPFLAGS='-std=c++11 -Wall -ferror-limit=1000'
+
+# Always build with Address Sanitizer
+readonly DBG_FLAGS="$CPPFLAGS -O0 -g -fsanitize=address"
+
+readonly OPT_FLAGS="$CPPFLAGS -O2 -g"
 
 readonly CXX=$CLANG_DIR_RELATIVE/bin/clang++
 #readonly CXX=c++
@@ -29,7 +31,7 @@ export ASAN_OPTIONS='detect_leaks=0'
 
 asdl-demo() {
   build/dev.sh oil-asdl-to-cpp
-  $CXX -o _bin/oil_mycpp $CPPFLAGS \
+  $CXX -o _bin/oil_mycpp $DBG_FLAGS \
     -I _devbuild/gen-cpp \
     -I _devbuild/gen \
     -I mycpp \
@@ -103,7 +105,18 @@ compile() {
   local out=$1
   shift
 
-  $CXX $CPPFLAGS \
+  local flags
+  case $out in
+    *.opt)
+      flags=$OPT_FLAGS
+      ;;
+    *)
+      flags=$DBG_FLAGS
+      ;;
+  esac
+
+  # flags are split
+  $CXX $flags \
     -I mycpp \
     -I cpp \
     -I _devbuild/gen-cpp \
@@ -139,8 +152,10 @@ EOF
 
 compile-osh-parse() {
   local name=${1:-osh_parse}
+  # Add -opt to make it opt
+  local suffix=${2:-.asan}  # opt or dbg
 
-  compile $TMP/$name $TMP/${name}.cc \
+  compile _bin/$name$suffix $TMP/${name}.cc \
     mycpp/mylib.cc \
     cpp/frontend_match.cc \
     cpp/asdl_pretty.cc \
@@ -152,6 +167,20 @@ compile-osh-parse() {
     _devbuild/gen-cpp/lookup.cc \
     _devbuild/gen-cpp/arith_parse.cc 
   #2>&1 | tee _tmp/compile.log
+}
+
+compile-osh-parse-opt() {
+  compile-osh-parse '' '.opt'
+
+  local opt=_bin/osh_parse.opt
+  local stripped=_bin/osh_parse.opt.stripped 
+  local symbols=_bin/osh_parse.opt.symbols 
+
+  # As done in the Makefile for Python app bundle
+  strip -o $stripped $opt
+
+  objcopy --only-keep-debug $opt $symbols
+  objcopy --add-gnu-debuglink=$symbols $stripped
 }
 
 readonly TMP=_tmp/mycpp
@@ -227,9 +256,14 @@ run-osh-parse() {
 
 size-profile() {
   wc -l $TMP/osh_parse.cc
-  bloaty -d compileunits $TMP/osh_parse
+
+  local bin=_bin/osh_parse.opt
+
+  ls -l _bin/osh_parse*
+
+  bloaty -d compileunits $bin
   echo
-  bloaty -d symbols $TMP/osh_parse
+  bloaty -d symbols $bin
 }
 
 smoke-manifest() {
@@ -269,7 +303,7 @@ cpp-parse() {
   local file=$2
 
   local out=_tmp/osh-parse-smoke/cpp/$id
-  _tmp/mycpp/osh_parse $file > $out
+  _bin/osh_parse.asan $file > $out
 }
 
 dump-asts() {
@@ -327,7 +361,7 @@ osh-parse-smoke() {
     if test -n "$python"; then
       bin/osh -n $file | wc -l
     else
-      _tmp/mycpp/osh_parse $file | wc -l
+      _bin/osh_parse.asan $file | wc -l
     fi
     case $? in
       0)

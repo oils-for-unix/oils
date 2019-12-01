@@ -31,8 +31,6 @@ from frontend import args
 from core.util import log
 from core import pyutil
 
-from ovm2 import oheap2
-
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -431,6 +429,8 @@ def OpyCommandMain(argv):
       marshal.dump(co, out_f)
 
   elif action == 'compile-ovm':
+    # NOTE: obsolete
+    from ovm2 import oheap2
     opt, i = compile_spec.ParseArgv(argv)
     py_path = argv[i]
     out_path = argv[i+1]

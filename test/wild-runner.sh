@@ -75,7 +75,7 @@ dump-text-for-file() {
   local out_file=${cpp_base}.ast.txt
 
   run-task-with-status $task_file \
-    _tmp/mycpp/osh_parse $abs_path \
+    _bin/osh_parse.asan $abs_path \
     > $out_file #2> $stderr_file
 }
 
