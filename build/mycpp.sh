@@ -10,20 +10,21 @@ set -o errexit
 source build/common.sh  # for $CLANG_DIR_RELATIVE, $PREPARE_DIR
 
 readonly REPO_ROOT=~/git/oilshell/oil
-source mycpp/examples.sh  # for PGEN2_DEMO_PREAMBLE
 
 readonly MYPY_REPO=~/git/languages/mypy
 
 # note: -Weverything is more than -Wall, but too many errors now.
-readonly CPPFLAGS='-std=c++11 -Wall -ferror-limit=1000'
+readonly CPPFLAGS='-std=c++11 -Wall'
+# This flag is Clang-only
+#-ferror-limit=1000'
 
 # Always build with Address Sanitizer
 readonly DBG_FLAGS="$CPPFLAGS -O0 -g -fsanitize=address"
 
 readonly OPT_FLAGS="$CPPFLAGS -O2 -g"
 
-readonly CXX=$CLANG_DIR_RELATIVE/bin/clang++
-#readonly CXX=c++
+#readonly CXX=$CLANG_DIR_RELATIVE/bin/clang++
+readonly CXX=c++
 
 export ASAN_SYMBOLIZER_PATH=$CLANG_DIR_RELATIVE/bin/llvm-symbolizer
 # https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer
