@@ -244,6 +244,9 @@ minimal() {
   pylibc
   line-input
   posix_
+
+  # Require submodule
+  yajl
 }
 
 oil-grammar() {

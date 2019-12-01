@@ -60,6 +60,8 @@ manifest() {
         (shell-grammar) continue ;;
         # Just a demo
         (blog-other1) continue ;;
+        # JSON library not builtin yet
+        (oil-json) continue ;;
       esac
 
       # A list of both.

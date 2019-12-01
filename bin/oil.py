@@ -565,9 +565,8 @@ def ShellMain(lang, argv0, argv, login_shell):
     exec_opts.interactive = True
 
   else:
-    try:
-      script_name = arg_r.Peek()
-    except IndexError:
+    script_name = arg_r.Peek()
+    if script_name is None:
       if sys.stdin.isatty():
         arena.PushSource(source.Interactive())
         line_reader = py_reader.InteractiveLineReader(
@@ -907,12 +906,6 @@ def _cpython_main_hook():
 
 
 if __name__ == '__main__':
-  if 0:
-    import yajl
-    print(yajl.dumps({'foo': 42}))
-    # Gives us unicode back
-    print(yajl.loads('{"bar": 43}'))
-
   if posix.environ.get('RESOLVE') == '1':
     from opy import resolve
     resolve.Walk(dict(sys.modules))

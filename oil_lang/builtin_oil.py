@@ -18,6 +18,8 @@ from core.util import log
 from frontend import args
 from frontend import match
 
+from mycpp.mylib import tagswitch
+
 
 class Repr(object):
   """Given a list of variable names, print their values.
@@ -163,18 +165,28 @@ class Opts(object):
     raise NotImplementedError
 
 
+JSON_ECHO_SPEC = args.OilFlags()
+JSON_ECHO_SPEC.Flag('-indent', args.Int, default=2,
+                    help='Indent JSON by this amount')
+
 class Json(object):
   """Json I/O.
 
   -indent pretty prints it.  Is the default indent 2?  -pretty=0 can turn it
   off.
 
-  json echo -indent 2 :var1 :var2 {
+  json echo :myobj
+
+  json echo -indent 2 :myobj :other_obj {
     x = 1
     d = {name: 'andy'}
   }
 
   json read :x < foo.tsv2
+
+  How about:
+      json echo &myobj 
+  Well that will get confused with a redirect.
   """
   def __init__(self, mem, ex, errfmt):
     self.mem = mem
@@ -182,18 +194,50 @@ class Json(object):
     self.errfmt = errfmt
 
   def __call__(self, cmd_val):
+    # TODO: Move this to the top level when yajl is statically linked into Oil.
+    import yajl
+
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
-    #arg_r.Next()  # skip 'use'
+    arg_r.Next()  # skip 'json'
 
-    # TODO: GetVar() and print them
+    action = arg_r.Peek()
+    if action is None:
+      raise args.UsageError("json builtin expects 'read' or 'echo'")
+    arg_r.Next()
 
-    if cmd_val.block:
-      # TODO: flatten value.{Str,Obj} into a flat dict?
-      namespace = self.ex.EvalBlock(cmd_val.block)
+    if action == 'echo':
+      arg, _ = JSON_ECHO_SPEC.Parse(arg_r)
 
-      # TODO: Use JSON library
-      from pprint import pprint
-      pprint(namespace, indent=2)
+      # GetVar() of each name and print it.
+
+      for var_name in arg_r.Rest():
+        val = self.mem.GetVar(var_name)
+        with tagswitch(val) as case:
+          if case(value_e.Undef):
+            # TODO: blame the right span_id
+            self.errfmt.Print("no variable named %r is defined", var_name)
+            return 1
+          elif case(value_e.Str):
+            obj = val.s
+          elif case(value_e.MaybeStrArray):
+            obj = val.strs
+          elif case(value_e.AssocArray):
+            obj = val.d
+          elif case(value_e.Obj):
+            obj = val.obj
+          else:
+            raise AssertionError(val)
+
+        j = yajl.dumps(obj, indent=arg.indent)
+        # Hm yajl puts a trialing newline on?
+        sys.stdout.write(j)
+
+      # TODO: Accept a block.  They aren't hooked up yet.
+      if cmd_val.block:
+        # TODO: flatten value.{Str,Obj} into a flat dict?
+        namespace = self.ex.EvalBlock(cmd_val.block)
+
+        print(yajl.dump(namespace))
 
     return 0
 

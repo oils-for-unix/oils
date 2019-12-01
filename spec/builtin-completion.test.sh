@@ -155,6 +155,7 @@ compgen -A directory p | sort
 ## STDOUT:
 pgen2
 pylib
+py-yajl
 ## END
 
 #### compgen -A file

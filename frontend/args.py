@@ -61,6 +61,8 @@ from core.util import log
 
 import libc  # for regex support
 
+from typing import Optional
+
 
 class UsageError(Exception):
   """Raised by builtins upon flag parsing error."""
@@ -114,21 +116,27 @@ class Reader(object):
     self.i += 1
 
   def Peek(self):
-    return self.argv[self.i]
+    """Return the next token, or None if there are no more.
+
+    None is your SENTINEL for parsing.
+    """
+    # type: () -> Optional[str]
+    if self.i >= self.n:
+      return None
+    else:
+      return self.argv[self.i]
 
   def ReadRequired(self, error_msg):
-    try:
-      arg = self.Peek()
-    except IndexError:
+    arg = self.Peek()
+    if arg is None:
       # point at argv[0]
       raise UsageError(error_msg, span_id=self._FirstSpanId())
     self.Next()
     return arg
 
   def ReadRequired2(self, error_msg):
-    try:
-      arg = self.Peek()
-    except IndexError:
+    arg = self.Peek()
+    if arg is None:
       # point at argv[0]
       raise UsageError(error_msg, span_id=self._FirstSpanId())
     spid = self.spids[self.i]
@@ -201,9 +209,8 @@ class SetToArg(_Action):
       arg = suffix
     else:
       arg_r.Next()
-      try:
-        arg = arg_r.Peek()
-      except IndexError:
+      arg = arg_r.Peek()
+      if arg is None:
         raise UsageError(
             'expected argument to %r' % ('-' + self.name), span_id=arg_r.SpanId())
 
@@ -312,9 +319,8 @@ class SetNamedOption(_Action):
     b = (prefix == '-')
     #log('SetNamedOption %r %r %r', prefix, suffix, arg_r)
     arg_r.Next()  # always advance
-    try:
-      arg = arg_r.Peek()
-    except IndexError:
+    arg = arg_r.Peek()
+    if arg is None:
       out.show_options = True
       return True  # quit parsing
 
@@ -350,9 +356,8 @@ class SetNamedAction(_Action):
     """Called when the flag matches."""
     #log('SetNamedOption %r %r %r', prefix, suffix, arg_r)
     arg_r.Next()  # always advance
-    try:
-      arg = arg_r.Peek()
-    except IndexError:
+    arg = arg_r.Peek()
+    if arg is None:
       raise UsageError('Expected argument for action')
 
     attr_name = arg
