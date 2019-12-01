@@ -907,6 +907,12 @@ def _cpython_main_hook():
 
 
 if __name__ == '__main__':
+  if 0:
+    import yajl
+    print(yajl.dumps({'foo': 42}))
+    # Gives us unicode back
+    print(yajl.loads('{"bar": 43}'))
+
   if posix.environ.get('RESOLVE') == '1':
     from opy import resolve
     resolve.Walk(dict(sys.modules))

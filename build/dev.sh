@@ -193,6 +193,25 @@ posix_() {
   native/posix_test.py "$@" > /dev/null
 }
 
+yajl() {
+  ### Build and test yajl binding (depends on submodule)
+
+  pushd py-yajl
+  python2 setup.py build_ext --inplace
+
+  set -o xtrace
+
+  # Adapted from py-yajl/runtests.sh
+  python2 tests/unit.py
+
+  # Hm this test doesn't make any assertions.
+  zcat test_data/issue_11.gz | python2 tests/issue_11.py | wc -l
+  popd
+
+  # Link it in the repo root
+  ln -s -f py-yajl/yajl.so .
+}
+
 clean() {
   rm -f --verbose libc.so fastlex.so line_input.so posix_.so
   rm -r -f --verbose _devbuild/py-ext
