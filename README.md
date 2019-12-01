@@ -36,7 +36,12 @@ of the [CPython](https://en.wikipedia.org/wiki/CPython) interpreter.
 
 ### Quick Start on Linux
 
-Clone the repo, build the Python extension, and run `bin/osh` (or `bin/oil`):
+Fetch the source code:
+
+    git clone https://github.com/oilshell/oil.git  # or your fork
+    git submodule update --init --recursive        # to get dependencies
+
+Build the Python extension, and run `bin/osh` (or `bin/oil`):
 
     bash$ build/dev.sh minimal
     ...
