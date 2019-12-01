@@ -123,7 +123,7 @@ oil-asdl-to-cpp() {
   gen-asdl-cpp frontend/types.asdl  # no dependency on Id
 
   # Problem:
-  # - we have both _devbuild/gen/id.h 
+  # - we have both _devbuild/gen/id.h
   #           and _devbuild/gen-cpp/id_kind_asdl.h
   # - do we want enum class?
 
@@ -166,6 +166,10 @@ py-ext() {
 pylibc() {
   py-ext libc build/setup.py
   native/libc_test.py "$@" > /dev/null
+}
+
+yajl() {
+  py-ext yajl py-yajl/setup.py
 }
 
 fastlex() {

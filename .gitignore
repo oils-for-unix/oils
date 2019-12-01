@@ -17,5 +17,6 @@ fastlex.so
 libc.so
 line_input.so
 posix_.so
+yajl.so
 # Python build support
 build/temp.*
