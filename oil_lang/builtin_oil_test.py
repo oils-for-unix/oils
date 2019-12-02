@@ -8,7 +8,7 @@ import unittest
 
 import yajl  # test thi stoo
 
-from oil_lang import builtin_oil  # module under test
+#from oil_lang import builtin_oil  # module under test
 
 
 class JsonTest(unittest.TestCase):
@@ -18,6 +18,28 @@ class JsonTest(unittest.TestCase):
 
     # Gives us unicode back
     print(yajl.loads('{"bar": 43}'))
+
+    # TODO: Test 
+
+    CASES = [
+        0,
+        2 ** 31,
+        2 ** 32, 
+        #2 ** 64 -1,
+        #2 ** 64, 
+        #2 ** 128, 
+    ]
+    for i in CASES:
+      print('--')
+      print(yajl.dumps(i))
+      s = str(i)
+      print(s)
+
+      print(yajl.loads('{"k": %d}' % i))
+
+      # Why doesn't it parse raw integers?
+      #print(yajl.loads(s))
+
 
 
 if __name__ == '__main__':
