@@ -339,3 +339,14 @@ status=0
 status=0
 status=1
 ## END
+
+#### [[ ]] with redirect
+[[ $(stdout_stderr.py) == STDOUT ]] 2>$TMP/x.txt
+echo $?
+echo --
+cat $TMP/x.txt
+## STDOUT:
+0
+--
+STDERR
+## END

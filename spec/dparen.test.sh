@@ -142,3 +142,14 @@ echo $x ${A['y']}
 ## N-I zsh/mksh STDOUT:
 0
 ## END
+
+#### (( )) with redirect
+(( a = $(stdout_stderr.py 42) + 10 )) 2>$TMP/x.txt
+echo $a
+echo --
+cat $TMP/x.txt
+## STDOUT:
+52
+--
+STDERR
+## END

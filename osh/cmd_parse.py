@@ -1438,15 +1438,18 @@ class CommandParser(object):
       n5.redirects = self._ParseRedirectList()
       return n5
 
+    if self.c_id == Id.KW_DLeftBracket:
+      n6 = self.ParseDBracket()
+      n6.redirects = self._ParseRedirectList()
+      return n6
+    if self.c_id == Id.Op_DLeftParen:
+      n7 = self.ParseDParen()
+      n7.redirects = self._ParseRedirectList()
+      return n7
+
     # bash extensions: no redirects
     if self.c_id == Id.KW_Time:
       return self.ParseTime()
-    if self.c_id == Id.KW_DLeftBracket:
-      return self.ParseDBracket()
-    if self.c_id == Id.Op_DLeftParen:
-      # Trivia: this redirect is observable:
-      # $ (( $(echo one 1>&2; echo 2) > 0 )) 2> out.txt
-      return self.ParseDParen()
 
     # Oil extensions
     if self.c_id == Id.KW_Var:
