@@ -46,6 +46,7 @@ oil-python-sources() {
     -name cpython-full -a -prune -o \
     -name testdata -a -prune -o \
     -name Python-2.7.13 -a -prune -o \
+    -name py-yajl -a -prune -o \
     -name '*.py' -a -printf "$fmt"
 }
 
