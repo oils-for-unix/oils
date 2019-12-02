@@ -21,6 +21,8 @@ make-tar() {
 
   local out=_release/${app_name}-${OIL_VERSION}.tar
 
+  build/dev.sh oil-cpp
+
   # TODO:
   # - be more exact about files?
   #   - _devbuild/gen is for osh-lex

@@ -141,6 +141,11 @@ oil-asdl-to-cpp() {
   wc -l $dir/*
 }
 
+oil-cpp() {
+  oil-asdl-to-cpp
+  arith-parse-cpp-gen
+}
+
 # TODO: should fastlex.c be part of the dev build?  It means you need re2c
 # installed?  I don't think it makes sense to have 3 builds, so yes I think we
 # can put it here for simplicity.
