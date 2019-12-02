@@ -13,7 +13,7 @@ class FrontEndTest(unittest.TestCase):
 
   def testLoadSchema(self):
     with open('asdl/typed_demo.asdl') as f:
-      schema_ast, type_lookup = front_end.LoadSchema(f, {}, verbose=False)
+      schema_ast, type_lookup = front_end.LoadSchema(f, {}, verbose=True)
     #print(type_lookup)
 
     # Test fully-qualified name
@@ -22,7 +22,7 @@ class FrontEndTest(unittest.TestCase):
 
   def testSharedVariant(self):
     with open('asdl/shared_variant.asdl') as f:
-      schema_ast, type_lookup = front_end.LoadSchema(f, {}, verbose=True)
+      schema_ast, type_lookup = front_end.LoadSchema(f, {}, verbose=False)
     #print(type_lookup)
 
   def testSharedVariantCode(self):

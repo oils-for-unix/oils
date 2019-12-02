@@ -9,9 +9,13 @@ from asdl import asdl_ as asdl
 from asdl import meta
 from asdl.asdl_ import Use, Module, Type, Constructor, Field, Sum, Product
 
+_KEYWORDS = ['use', 'module', 'data', 'enum', 'attributes']
+
 _TOKENS = [
-    ('ConstructorId', ''),
-    ('TypeId', ''),
+    ('Keyword', ''),
+    ('Name', ''),
+
+    # For operators, the string matters
     ('Equals', '='),
     ('Comma', ','),
     ('Question', '?'),
@@ -60,18 +64,10 @@ def _Tokenize(f):
     for lineno, line in enumerate(f, 1):
         for m in re.finditer(r'\s*(\w+|--.*|.)', line.strip()):
             c = m.group(1)
-            if c[0].isalpha():
-                # TODO: Don't use case to distinguish tokens.  Use a keyword instead:
-                #
-                # data Token = (id id, string val, int span_id)
-                # data CompoundWord = ()
-                # enum parse_result = EmptyLine | Eof | Node(command cmd)
-
-                # Some kind of identifier
-                if c[0].isupper():
-                    yield Token(TokenKind.ConstructorId, c, lineno)
-                else:
-                    yield Token(TokenKind.TypeId, c, lineno)
+            if c in _KEYWORDS:
+                yield Token(TokenKind.Keyword, c, lineno)
+            elif c[0].isalpha():
+                yield Token(TokenKind.Name, c, lineno)
             elif c[:2] == '--':
                 # Comment
                 break
@@ -110,19 +106,36 @@ class ASDLParser(object):
                 'Expected "module" (found {})'.format(self.cur_token.value),
                 self.cur_token.lineno)
         self._advance()
-        name = self._match(self._id_kinds)
+        name = self._match(TokenKind.Name)
         self._match(TokenKind.LBrace)
 
         uses = []
         while self._at_keyword('use'):
-          uses.append(self._parse_use())
+            uses.append(self._parse_use())
 
         defs = []
-        while self.cur_token.kind == TokenKind.TypeId:
-            typename = self._advance()
-            self._match(TokenKind.Equals)
-            type = self._parse_type()
-            defs.append(Type(typename, type))
+        while True:
+            kind = self.cur_token.kind
+
+            # New Oil syntax: data Token = (...)
+            # NOTE: We're not distinguishing between data and enum.  The RHS
+            # makes it clear.
+            if kind == TokenKind.Keyword:
+                self._advance()  # skip keyword
+                typename = self._advance()
+                self._match(TokenKind.Equals)
+                type_ = self._parse_type()
+
+            # Old syntax: token = (...)
+            elif kind == TokenKind.Name:
+                typename = self._advance()
+                self._match(TokenKind.Equals)
+                type_ = self._parse_type()
+
+            else:
+                break
+
+            defs.append(Type(typename, type_))
 
         self._match(TokenKind.RBrace)
         return Module(name, uses, defs)
@@ -132,11 +145,11 @@ class ASDLParser(object):
         use = 'use' NAME '{' NAME+ '}'
         """
         self._advance()
-        mod_name = self._match(self._id_kinds)
+        mod_name = self._match(TokenKind.Name)
         self._match(TokenKind.LBrace)
 
         type_names = []
-        while self.cur_token.kind == TokenKind.TypeId:
+        while self.cur_token.kind == TokenKind.Name:
             t = self._advance()
             type_names.append(t)
             if self.cur_token.kind == TokenKind.RParen:
@@ -149,7 +162,7 @@ class ASDLParser(object):
 
     def _parse_type(self):
         """
-        constructor: ConstructorId fields?
+        constructor: Name fields?
         sum: constructor ('|' constructor)*
         type: product | sum
         """
@@ -160,7 +173,7 @@ class ASDLParser(object):
             # Otherwise it's a sum. Look for ConstructorId
             sumlist = []
             while True:
-                cons_name = self._match(TokenKind.ConstructorId)
+                cons_name = self._match(TokenKind.Name)
 
                 shared_type = None
                 fields = None
@@ -168,7 +181,7 @@ class ASDLParser(object):
                     fields = self._parse_fields()
                 elif self.cur_token.kind == TokenKind.Percent:
                     self._advance()
-                    shared_type = self._match(TokenKind.TypeId)
+                    shared_type = self._match(TokenKind.Name)
                 else:
                     pass
 
@@ -186,12 +199,14 @@ class ASDLParser(object):
     def _parse_fields(self):
         fields = []
         self._match(TokenKind.LParen)
-        while self.cur_token.kind == TokenKind.TypeId:
+        while self.cur_token.kind == TokenKind.Name:
             typename = self._advance()
             is_seq, is_opt = self._parse_optional_field_quantifier()
-            id = (self._advance() if self.cur_token.kind in self._id_kinds
-                                  else None)
-            fields.append(Field(typename, id, seq=is_seq, opt=is_opt))
+            if self.cur_token.kind == TokenKind.Name:
+                id_ = self._advance()
+            else:
+                id_ = None
+            fields.append(Field(typename, id_, seq=is_seq, opt=is_opt))
             if self.cur_token.kind == TokenKind.RParen:
                 break
             elif self.cur_token.kind == TokenKind.Comma:
@@ -227,8 +242,6 @@ class ASDLParser(object):
             self.cur_token = None
         return cur_val
 
-    _id_kinds = (TokenKind.ConstructorId, TokenKind.TypeId)
-
     def _match(self, kind):
         """The 'match' primitive of RD parsers.
 
@@ -240,8 +253,7 @@ class ASDLParser(object):
         Args:
           kind: A TokenKind, or a tuple of TokenKind
         """
-        if (isinstance(kind, tuple) and self.cur_token.kind in kind or
-            self.cur_token.kind == kind):
+        if self.cur_token.kind == kind:
             value = self.cur_token.value
             self._advance()
             return value
@@ -252,7 +264,7 @@ class ASDLParser(object):
                 self.cur_token.lineno)
 
     def _at_keyword(self, keyword):
-        return (self.cur_token.kind == TokenKind.TypeId and
+        return (self.cur_token.kind == TokenKind.Keyword and
                 self.cur_token.value == keyword)
 
 

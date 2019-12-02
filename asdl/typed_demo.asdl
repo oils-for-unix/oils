@@ -29,4 +29,9 @@ module arith {
   | Unary(word child)
   | LogicalNot(bool_expr b)
   | LogicalBinary(op_id op, bool_expr left, bool_expr right)
+
+  data Token = (string s, bool b)
+  enum cflow2 = Break | Continue | Return(int status)
+
+  other = (Token t)
 }
