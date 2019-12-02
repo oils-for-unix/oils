@@ -139,7 +139,8 @@ hello one.
     self.assertEqual(8, line_num)
     self.assertEqual('h2', tag)
     self.assertEqual(None, css_id)
-    self.assertEqual('One <a href="/">link</a>', ''.join(html))
+    # nested <a> tags are omitted!
+    self.assertEqual('One link', ''.join(html))
     self.assertEqual('One link', ''.join(text))
 
     line_num, tag, css_id, html, text = headings[1]
