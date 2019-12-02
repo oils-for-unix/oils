@@ -112,7 +112,10 @@ clean-repo:
 install:
 	@./install
 
-.PHONY: default all clean clean-repo install
+uninstall:
+	@./uninstall
+
+.PHONY: default all clean clean-repo install uninstall
 
 # For debugging
 print-%:
