@@ -263,6 +263,8 @@ demo-grammar() {
 
 # Prerequisites: build/codegen.sh {download,install}-re2c
 all() {
+  rm -f *.so  # 12/2019: to clear old symlinks, maybe get rid of
+
   minimal
   fastlex
 }
