@@ -151,8 +151,8 @@
   9316 64bd9b485abd8deafd992c1558b89ca9 _tmp/regtest/asdl/tdop.pyc
   9430 55c117fa40d8b65b5caf648db19bab2c _tmp/regtest/osh/lex_test.pyc
   9568 5f9598615b2070550e12d38a65fd48f1 _tmp/regtest/opy/byterun/pyobj.pyc
+  9875 7efb7d27d701e8113f68c6cdcc764e61 _tmp/regtest/core/util.pyc
   9881 ccdb3e893d23576857e9e68cf24bb63f _tmp/regtest/core/legacy.pyc
-  9889 612699f40c44ca452ee8dc9eef06bb1c _tmp/regtest/core/util.pyc
  10513 54a627997dabacb3c7c668b3b493d22e _tmp/regtest/runpy.pyc
  10555 607e9e9543036fc77688fbc07a3dcf45 _tmp/regtest/opy/opy_main.pyc
  10802 41b4b7f7c82b5975c2b78f9726befd1e _tmp/regtest/UserDict.pyc
