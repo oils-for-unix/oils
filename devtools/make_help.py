@@ -465,6 +465,15 @@ def _LinkLine(line):
   return html_line
 
 
+def _AttrsToString(attrs):
+  if not attrs:
+    return ''
+
+  # Important: there's a leading space here.
+  # TODO: Change href="$help:command" to href="help.html#command"
+  return ''.join(' %s="%s"' % (k, v) for (k, v) in attrs)
+
+
 class IndexLinker(HTMLParser.HTMLParser):
 
   def __init__(self, pre_class, out):
@@ -482,6 +491,13 @@ class IndexLinker(HTMLParser.HTMLParser):
     ind = self.indent * ' '
     log(ind + msg, *args)
 
+  def handle_decl(self, data):
+    """Pass through <!DOCTYPE ...>"""
+    self.out.write('<!%s>' % data)
+
+  def handle_startendtag(self, tag, attrs):
+    self.out.write('<%s%s/>' % (tag, _AttrsToString(attrs)))
+
   def handle_starttag(self, tag, attrs):
     if tag == 'pre':
       values = [v for k, v in attrs if k == 'class']
@@ -490,13 +506,7 @@ class IndexLinker(HTMLParser.HTMLParser):
       if class_name:
         self.linking = True
 
-    # TODO: Change href="$help:command" to href="help.html#command"
-    if attrs:
-      attr_str = ' '  # leading space
-      attr_str += ' '.join('%s="%s"' % (k, v) for (k, v) in attrs)
-    else:
-      attr_str = ''
-    self.out.write('<%s%s>' % (tag, attr_str))
+    self.out.write('<%s%s>' % (tag, _AttrsToString(attrs)))
 
     self.log('start tag %s %s', tag, attrs)
     self.indent += 1
