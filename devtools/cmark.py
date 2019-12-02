@@ -14,6 +14,7 @@ import optparse
 import re
 import sys
 
+import html_lib
 import doc_html  # templates
 
 # Geez find_library returns the filename and not the path?  Just hardcode it as
@@ -100,14 +101,9 @@ class TocExtractor(HTMLParser.HTMLParser):
       self.indent += 1
       self.toc_begin_line, _ = self.getpos()
 
-    if self.capturing:
-      # Hm it's a little lame we have to reconstruct the HTML?
-      if attrs:
-        attr_html = ' '.join(
-            '%s="%s"' % (k, cgi.escape(v, quote=True)) for (k, v) in attrs)
-        self._AppendHtml('<%s %s>' % (tag, attr_html))
-      else:
-        self._AppendHtml('<%s>' % tag)
+    # Can't have nested <a> tags
+    if self.capturing and tag != 'a':
+      self._AppendHtml('<%s%s>' % (tag, html_lib.AttrsToString(attrs)))
 
     if tag in self.h_tags:
       log('%s> %s %s', self.indent * '  ', tag, attrs)
@@ -133,7 +129,8 @@ class TocExtractor(HTMLParser.HTMLParser):
       log('%s< %s', self.indent * '  ', tag)
       self.capturing = False
 
-    if self.capturing:
+    # Can't have nested <a> tags
+    if self.capturing and tag != 'a':
       self._AppendHtml('</%s>' % tag)
 
   def handle_entityref(self, data):

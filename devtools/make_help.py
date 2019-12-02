@@ -43,8 +43,6 @@ TODO:
   handle_decl() -- for doctype
 
 https://bugs.python.org/issue25258
-
-
 """
 
 import cgi
@@ -53,6 +51,8 @@ import os
 import pprint
 import re
 import sys
+
+import html_lib
 
 # e.g. COMMAND LANGUAGE
 CAPS_RE = re.compile(r'^[A-Z ]+$')
@@ -465,15 +465,6 @@ def _LinkLine(line):
   return html_line
 
 
-def _AttrsToString(attrs):
-  if not attrs:
-    return ''
-
-  # Important: there's a leading space here.
-  # TODO: Change href="$help:command" to href="help.html#command"
-  return ''.join(' %s="%s"' % (k, v) for (k, v) in attrs)
-
-
 class IndexLinker(HTMLParser.HTMLParser):
 
   def __init__(self, pre_class, out):
@@ -496,7 +487,7 @@ class IndexLinker(HTMLParser.HTMLParser):
     self.out.write('<!%s>' % data)
 
   def handle_startendtag(self, tag, attrs):
-    self.out.write('<%s%s/>' % (tag, _AttrsToString(attrs)))
+    self.out.write('<%s%s/>' % (tag, html_lib.AttrsToString(attrs)))
 
   def handle_starttag(self, tag, attrs):
     if tag == 'pre':
@@ -506,7 +497,7 @@ class IndexLinker(HTMLParser.HTMLParser):
       if class_name:
         self.linking = True
 
-    self.out.write('<%s%s>' % (tag, _AttrsToString(attrs)))
+    self.out.write('<%s%s>' % (tag, html_lib.AttrsToString(attrs)))
 
     self.log('start tag %s %s', tag, attrs)
     self.indent += 1
