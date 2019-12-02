@@ -45,7 +45,8 @@ make-tar() {
 
   # See how big they are
   # 141 KB and 108 KB.
-  gzip -c $out > $out.gz
+  #gzip -c $out > $out.gz
+
   xz -c $out > $out.xz
 
   ls -l _release
@@ -57,6 +58,9 @@ test-tar() {
   mkdir -p $tmp
   cd $tmp
   tar -x < ../../_release/oil-native-$OIL_VERSION.tar
+
+  cd oil-native-$OIL_VERSION
+  build/mycpp.sh tarball-demo
 }
 
 "$@"

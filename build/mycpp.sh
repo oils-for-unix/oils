@@ -16,9 +16,12 @@ readonly MYPY_REPO=~/git/languages/mypy
 # note: -Weverything is more than -Wall, but too many errors now.
 CPPFLAGS='-std=c++11 -Wall'
 
+# sign-compare disabled because of int i < v_.size()?  Should I use size_t?
+GCC_FLAGS='-fpermissive -Wno-sign-compare'
+
 # Temporary hack for 'token* token' in GCC
 # https://stackoverflow.com/questions/8843818/what-does-the-fpermissive-flag-do
-CPPFLAGS="$CPPFLAGS -fpermissive"
+CPPFLAGS="$CPPFLAGS $GCC_FLAGS"
 
 # This flag is Clang-only
 #-ferror-limit=1000'

@@ -15,6 +15,7 @@
 #   build/cpython-defs.sh {oil-py-names,filter-methods}
 #     (regenerate C source)
 #
+#   devtools/release-native.sh {make-tar,test-tar}
 #   $0 build-and-test  # build FINAL tarball, run unit/osh2oil suites, etc.
 #     prereq: build/codegen.sh {download,install}-re2c
 #     test/gold.sh run-for-release (outside OSH_HIJACK_SHEBANG)
@@ -575,7 +576,8 @@ sync-old-tar() {
 deploy-tar() {
   mkdir -p $DOWNLOAD_DIR
 
-  cp -v _release/oil-$OIL_VERSION.tar.* $DOWNLOAD_DIR
+  # Also copy oil-native
+  cp -v _release/oil-*$OIL_VERSION.tar.* $DOWNLOAD_DIR
 
   ls -l $DOWNLOAD_DIR
 }
@@ -620,9 +622,16 @@ _tarball-links-row-html() {
 </tr>
 EOF
 
-  for name in oil-$version.tar.{xz,gz}; do
+  # only release .xz for oil-native
+  for name in oil-$version.tar.{xz,gz} oil-native-$version.tar.xz; do
     local url="/download/$name"  # The server URL
     local path="../oilshell.org__deploy/download/$name"
+
+    # The native version might not exist
+    if [[ $name == oil-native-* && ! -f $path ]]; then
+      continue
+    fi
+
     local checksum=$(sha256sum $path | awk '{print $1}')
     local size=$(pretty-size $path)
 

@@ -218,7 +218,7 @@ class Str {
   Str* join(List<Str*>* items);
 
   const char* data_;
-  size_t len_;
+  int len_;
 
   DISALLOW_COPY_AND_ASSIGN(Str)
 };
@@ -681,7 +681,7 @@ class BufWriter : public Writer {
  private:
   // Just like a string, except it's mutable
   char* data_;
-  size_t len_;
+  int len_;
 };
 
 // Wrap a FILE*
