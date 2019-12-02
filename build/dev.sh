@@ -154,12 +154,7 @@ py-ext() {
 
   mkdir -p _devbuild/py-ext
   local arch=$(uname -m)
-  $setup_script build --build-lib _devbuild/py-ext/$arch
-
-  shopt -s failglob
-  local so=$(echo _devbuild/py-ext/$arch/$name.so)
-  ln -s -f -v $so $name.so
-
+  $setup_script build_ext --inplace
   file $name.so
 }
 

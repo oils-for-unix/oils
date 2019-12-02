@@ -79,7 +79,6 @@ id-mypy-gen() {
   out=_devbuild/gen/id_tables.py
   frontend/id_kind_gen.py py-tables > $out
   log "Wrote $out"
-  cat _devbuild/gen/id_tables.py
 }
 
 id-cpp-gen() {
