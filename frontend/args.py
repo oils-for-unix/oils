@@ -116,11 +116,11 @@ class Reader(object):
     self.i += 1
 
   def Peek(self):
+    # type: () -> Optional[str]
     """Return the next token, or None if there are no more.
 
     None is your SENTINEL for parsing.
     """
-    # type: () -> Optional[str]
     if self.i >= self.n:
       return None
     else:
