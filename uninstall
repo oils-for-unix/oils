@@ -1,0 +1,68 @@
+#!/bin/sh
+#
+# POSIX shell script to uninstall oil shell from the system.
+# Distributed with the source tarball.
+
+log() {
+  # indent it a bit
+  echo "    $@" 1>&2
+}
+
+die() {
+  echo "FATAL install error: $@" 1>&2
+  exit 1
+}
+
+# NOTE: The configure step
+main() {
+  if ! . _build/detected-config.sh; then
+    die "Can't find _build/detected-config.sh.  Run './configure'"
+  fi
+  # Now $PREFIX should be defined
+
+  #
+  # Remove the shell binary
+  #
+
+  #local exec_filename=oil.ovm-dbg
+  local exec_filename=oil.ovm
+  local bin_dest="${DESTDIR}${PREFIX}/bin/"
+
+  if ! rm "$bin_dest/$exec_filename"; then
+    log "Couldn't remove $exec_filename binary in $bin_dest"
+  else
+    log "Removed executable"
+  fi
+
+  local working_dir=$PWD  # save for later
+
+  cd "$bin_dest"
+  for link in osh oil; do
+    if ! rm "$bin_dest/$link"; then
+      log "Couldn't remove $link symlink in $bin_dest"
+    else
+      log "Removed '$link' symlink"
+    fi
+  done
+
+  #
+  # Remove man page
+  #
+
+  # Relevant:
+  # https://unix.stackexchange.com/questions/90759/where-should-i-install-manual-pages-in-user-directory
+  # https://www.freebsd.org/cgi/man.cgi?query=install
+
+  cd "$working_dir"
+
+  # e.g. /usr/local/share/man/man1
+  local man_dest="${DESTDIR}${DATAROOTDIR}/man/man1/"
+
+  if ! rm "$man_dest/osh.1"; then
+    log "Couldn't remove osh.1 in $man_dest"
+  else
+    log "Removed man page"
+  fi
+}
+
+main "$@"

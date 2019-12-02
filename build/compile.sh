@@ -359,6 +359,7 @@ make-tar() {
     INSTALL.txt \
     configure \
     install \
+    uninstall \
     Makefile \
     doc/osh.1 \
     build/compile.sh \
