@@ -131,7 +131,7 @@ class Parser(object):
         # Do the "accelerators" in pgen.c have anything to do with it?
 
         while True:
-            dfa, state, node = self.stack[-1]
+            dfa, state, _ = self.stack[-1]
             states, _ = dfa
             arcs = states[state]
             # Look for a state with this label
@@ -152,14 +152,14 @@ class Parser(object):
                         if len(self.stack) == 0:
                             # Done parsing!
                             return True
-                        dfa, state, node = self.stack[-1]
+                        dfa, state, _ = self.stack[-1]
                         states, _ = dfa
                     # Done with this token
                     return False
                 elif t >= 256:
                     # See if it's a symbol and if we're in its first set
                     itsdfa = self.grammar.dfas[t]
-                    itsstates, itsfirst = itsdfa
+                    _, itsfirst = itsdfa
                     if ilabel in itsfirst:
                         # Push a symbol
                         self.push(t, opaque, self.grammar.dfas[t], newstate)

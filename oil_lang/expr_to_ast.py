@@ -1162,7 +1162,6 @@ class Transformer(object):
         # | '~' [Expr_Name | class_literal]
         typ = children[1].typ
         if ISNONTERMINAL(typ):
-          ch = children[1].children
           return re.ClassLiteral(True, self._ClassLiteral(children[1]))
         else:
           return self._NameInRegex(tok, children[1].tok)

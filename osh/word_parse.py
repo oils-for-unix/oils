@@ -998,12 +998,6 @@ class WordParser(WordEmitter):
     node.spids.append(right_span_id)
     return node
 
-  def _DollarBracketIsReserved(self):
-    # type: () -> word_part__ArithSub
-    """Non-standard arith sub $[a + 1]."""
-    left_span_id = self.cur_token.span_id
-    p_die('Use $(( instead of $[', token=self.cur_token)
-
   def ReadDParen(self):
     # type: () -> Tuple[arith_expr_t, int]
     """Read ((1+ 2))  -- command context.

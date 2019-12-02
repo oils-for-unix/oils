@@ -455,7 +455,6 @@ def IsVarLike(w):
   if len(w.parts) == 0:
     return False
 
-  part0 = w.parts[0]
   return _LiteralId(w.parts[0]) == Id.Lit_VarLike
 
 

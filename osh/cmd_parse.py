@@ -261,7 +261,7 @@ def _AppendMoreEnv(preparsed_list, more_env):
     preparsed: a list of 4-tuples from DetectShAssignment
     more_env: a list to append env_pairs to
   """
-  for left_token, close_token, part_offset, w in preparsed_list:
+  for left_token, _, part_offset, w in preparsed_list:
     if left_token.id != Id.Lit_VarLike:  # can't be a[x]=1
       p_die("Environment binding shouldn't look like an array assignment",
             token=left_token)
@@ -711,7 +711,6 @@ class CommandParser(object):
       i += 1
 
     code_str = ''.join(expanded)
-    lines = code_str.splitlines(True)  # Keep newlines
 
     # NOTE: self.arena isn't correct here.  Breaks line invariant.
     line_reader = reader.StringLineReader(code_str, self.arena)
@@ -720,8 +719,6 @@ class CommandParser(object):
 
     # The interaction between COMPLETION and ALIASES requires special care.
     # See docstring of BeginAliasExpansion() in parse_lib.py.
-
-    extent = None  # TODO: GetLineNumber / GetLineSource for current span_id?
     self.arena.PushSource(source.Alias(first_word_str, argv0_spid))
     trail = self.parse_ctx.trail
     trail.BeginAliasExpansion()
@@ -1611,7 +1608,6 @@ class CommandParser(object):
     """
     Pass the underlying word parser off to the boolean expression parser.
     """
-    maybe_error_word = self.cur_word
     left_spid = word_.LeftMostSpanForWord(self.cur_word)
     # TODO: Test interactive.  Without closing ]], you should get > prompt
     # (PS2)
@@ -1628,7 +1624,6 @@ class CommandParser(object):
 
   def ParseDParen(self):
     # type: () -> command__DParen
-    maybe_error_word = self.cur_word
     left_spid = word_.LeftMostSpanForWord(self.cur_word)
 
     self._Next()  # skip ((

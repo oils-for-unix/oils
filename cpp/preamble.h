@@ -39,7 +39,7 @@ Str* repr(void* obj) {
   throw new error::Parse(s, span_id);
 }
 
-[[noreturn]] void p_die(Str* s, syntax_asdl::token* token) {
+[[noreturn]] void p_die(Str* s, syntax_asdl::Token* token) {
   throw new error::Parse(s, token);
 }
 

@@ -10,7 +10,7 @@
 
 namespace error {
 
-using syntax_asdl::token;
+using syntax_asdl::Token;
 using syntax_asdl::word_part_t;
 using syntax_asdl::word_t;
 
@@ -21,7 +21,7 @@ class _ErrorWithLocation {
       : user_str_(user_str),
         span_id(span_id), token(nullptr), part(nullptr), word(nullptr) {
   }
-  _ErrorWithLocation(Str* user_str, token* token)
+  _ErrorWithLocation(Str* user_str, Token* token)
       : user_str_(user_str),
         span_id(runtime::NO_SPID), token(token), part(nullptr), word(nullptr) {
   }
@@ -40,7 +40,7 @@ class _ErrorWithLocation {
 
   Str* user_str_;
   int span_id;
-  syntax_asdl::token* token;
+  syntax_asdl::Token* token;
   syntax_asdl::word_part_t* part;
   syntax_asdl::word_t* word;
 };
@@ -50,7 +50,7 @@ class Parse : public _ErrorWithLocation {
   Parse(Str* user_str, int span_id)
       : _ErrorWithLocation(user_str, span_id) {
   }
-  Parse(Str* user_str, syntax_asdl::token* token)
+  Parse(Str* user_str, Token* token)
       : _ErrorWithLocation(user_str, token) {
   }
   Parse(Str* user_str, word_part_t* part)
