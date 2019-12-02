@@ -8,7 +8,7 @@
 lexer.py - Library for lexing.
 """
 
-from _devbuild.gen.syntax_asdl import token, line_span
+from _devbuild.gen.syntax_asdl import Token, line_span
 from _devbuild.gen.types_asdl import lex_mode_t
 from _devbuild.gen.id_kind_asdl import Id_t, Id, Kind_t
 from asdl import runtime
@@ -68,7 +68,7 @@ class LineLexer(object):
     return self.arena.AddLineSpan(line_id, self.line_pos, 0)
 
   def LookAhead(self, lex_mode):
-    # type: (lex_mode_t) -> token
+    # type: (lex_mode_t) -> Token
     """Look ahead for a non-space token, using the given lexer mode.
 
     Does NOT advance self.line_pos.
@@ -87,7 +87,7 @@ class LineLexer(object):
         # would involve interacting with the line reader, and we never need
         # it.  In the OUTER mode, there is an explicit newline token, but
         # ARITH doesn't have it.
-        t = token(Id.Unknown_Tok, '', runtime.NO_SPID)
+        t = Token(Id.Unknown_Tok, '', runtime.NO_SPID)
         return t
 
       tok_type, end_pos = match.OneToken(lex_mode, self.line, pos)
@@ -98,17 +98,17 @@ class LineLexer(object):
         break
       pos = end_pos
 
-    return token(tok_type, tok_val, runtime.NO_SPID)
+    return Token(tok_type, tok_val, runtime.NO_SPID)
 
   def Read(self, lex_mode):
-    # type: (lex_mode_t) -> token
+    # type: (lex_mode_t) -> Token
     # Inner loop optimization
     line = self.line
     line_pos = self.line_pos
 
     tok_type, end_pos = match.OneToken(lex_mode, line, line_pos)
     if tok_type == Id.Eol_Tok:  # Do NOT add a span for this sentinel!
-      return token(tok_type, '', runtime.NO_SPID)
+      return Token(tok_type, '', runtime.NO_SPID)
 
     tok_val = line[line_pos:end_pos]
 
@@ -125,7 +125,7 @@ class LineLexer(object):
       self.last_span_id = span_id
     #log('LineLexer.Read() span ID %d for %s', span_id, tok_type)
 
-    t = token(tok_type, tok_val, span_id)
+    t = Token(tok_type, tok_val, span_id)
     self.line_pos = end_pos
     return t
 
@@ -157,7 +157,7 @@ class Lexer(object):
     return self.line_lexer.MaybeUnreadOne()
 
   def LookAhead(self, lex_mode):
-    # type: (lex_mode_t) -> token
+    # type: (lex_mode_t) -> Token
     """Look ahead in the current line for the next non-space token.
 
     NOTE: Limiting lookahead to the current line makes the code a lot simpler
@@ -199,7 +199,7 @@ class Lexer(object):
     self.translation_stack.append((old_id, new_id))
 
   def _Read(self, lex_mode):
-    # type: (lex_mode_t) -> token
+    # type: (lex_mode_t) -> Token
     """Read from the normal line buffer, not an alias."""
     t = self.line_lexer.Read(lex_mode)
     if t.id == Id.Eol_Tok:  # hit \0, read a new line
@@ -212,7 +212,7 @@ class Lexer(object):
           self.emit_comp_dummy = False  # emit EOF the next time
         else:
           id_ = Id.Eof_Real
-        t = token(id_, '', span_id)
+        t = Token(id_, '', span_id)
         return t
 
       self.line_lexer.Reset(line, line_id, line_pos)  # fill with a new line
@@ -229,7 +229,7 @@ class Lexer(object):
     return t
 
   def Read(self, lex_mode):
-    # type: (lex_mode_t) -> token
+    # type: (lex_mode_t) -> Token
     while True:
       t = self._Read(lex_mode)
       # TODO: Change to ALL IGNORED types, once you have SPACE_TOK.  This means

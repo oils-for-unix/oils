@@ -4,7 +4,7 @@ word.py - Utility functions for words, e.g. treating them as "tokens".
 
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t, Kind_t
 from _devbuild.gen.syntax_asdl import (
-    token, compound_word, 
+    Token, compound_word, 
     double_quoted, single_quoted, simple_var_sub, braced_var_sub, command_sub,
     sh_array_literal,
     word_part, word_part_t, word_part_e,
@@ -14,7 +14,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part__ArithSub, word_part__ExtGlob,
     word_part__Splice, word_part__FuncCall, word_part__ExprSub,
 
-    word_e, word_t, token, word__BracedTree, word__String,
+    word_e, word_t, word__BracedTree, word__String,
 
     sh_lhs_expr__Name,
 )
@@ -277,7 +277,7 @@ def LeftMostSpanForWord(w):
         return runtime.NO_SPID
 
     elif case(word_e.Token):
-      tok = cast(token, UP_w)
+      tok = cast(Token, UP_w)
       return tok.span_id
 
     elif case(word_e.Empty):
@@ -314,7 +314,7 @@ def RightMostSpanForWord(w):
       return runtime.NO_SPID
 
     elif case(word_e.Token):
-      tok = cast(token, UP_w)
+      tok = cast(Token, UP_w)
       return tok.span_id
 
     else:
@@ -421,7 +421,7 @@ def ShFunctionName(w):
 
 
 def LooksLikeArithVar(UP_w):
-  # type: (word_t) -> Optional[token]
+  # type: (word_t) -> Optional[Token]
   """Return a token if this word looks like an arith var.
 
   NOTE: This can't be combined with DetectShAssignment because VarLike and
@@ -460,7 +460,7 @@ def IsVarLike(w):
 
 
 def DetectShAssignment(w):
-  # type: (compound_word) -> Tuple[Optional[token], Optional[token], int]
+  # type: (compound_word) -> Tuple[Optional[Token], Optional[Token], int]
   """Detects whether a word looks like FOO=bar or FOO[x]=bar.
 
   Returns:
@@ -482,7 +482,7 @@ def DetectShAssignment(w):
   a[x]+=()  # We parse this (as bash does), but it's never valid because arrays
             # can't be nested.
   """
-  no_token = None  # type: Optional[token]
+  no_token = None  # type: Optional[Token]
 
   n = len(w.parts)
   if n == 0:
@@ -535,13 +535,9 @@ def DetectAssocPair(w):
 
 
 def KeywordToken(w):
-  # type: (compound_word) -> Tuple[Kind_t, Optional[token]]
-  """Tests if a word is an assignment or control flow word.
-
-  Returns:
-    kind, token
-  """
-  no_token = None  # type: Optional[token]
+  # type: (compound_word) -> Tuple[Kind_t, Optional[Token]]
+  """Tests if a word is an assignment or control flow word."""
+  no_token = None  # type: Optional[Token]
   err = (Kind.Undefined, no_token)
 
   if len(w.parts) != 1:
@@ -561,7 +557,7 @@ def KeywordToken(w):
 
 
 def LiteralToken(UP_w):
-  # type: (word_t) -> Optional[token]
+  # type: (word_t) -> Optional[Token]
   """If a word consists of a literal token, return it.
   
   Otherwise return None.
@@ -587,7 +583,7 @@ def LiteralToken(UP_w):
 def ArithId(w):
   # type: (word_t) -> Id_t
   if w.tag_() == word_e.Token:
-    tok = cast(token, w)
+    tok = cast(Token, w)
     return tok.id
 
   assert isinstance(w, compound_word)
@@ -603,7 +599,7 @@ def BoolId(w):
       return w.id
 
     elif case(word_e.Token):
-      tok = cast(token, UP_w)
+      tok = cast(Token, UP_w)
       return tok.id
 
     elif case(word_e.Compound):
@@ -636,7 +632,7 @@ def CommandId(w):
   UP_w = w
   with tagswitch(w) as case:
     if case(word_e.Token):
-      tok = cast(token, UP_w)
+      tok = cast(Token, UP_w)
       return tok.id
 
     elif case(word_e.Compound):
@@ -668,7 +664,7 @@ def CommandKind(w):
   # type: (word_t) -> Kind_t
   """The CommandKind is for coarse-grained decisions in the CommandParser."""
   if w.tag_() == word_e.Token:
-    tok = cast(token, w)
+    tok = cast(Token, w)
     return lookup.LookupKind(tok.id)
 
   # NOTE: This is a bit inconsistent with CommandId, because we never
@@ -715,7 +711,7 @@ if mylib.PYTHON:
   def ErrorWord(fmt, err):
     # type: (str, _ErrorWithLocation) -> compound_word
     error_str = fmt % err.UserErrorString()
-    t = token(Id.Lit_Chars, error_str, runtime.NO_SPID)
+    t = Token(Id.Lit_Chars, error_str, runtime.NO_SPID)
     return compound_word([word_part.Literal(t)], None)
 
 

@@ -4,7 +4,7 @@ parse_lib.py - Consolidate various parser instantiations here.
 
 from _devbuild.gen.id_kind_asdl import Id_t
 from _devbuild.gen.syntax_asdl import (
-    token, compound_word,
+    Token, compound_word,
     command_t, command__VarDecl, command__PlaceMutation, command__Proc,
     command__Func,
     expr_t, word_t, redir_t,
@@ -59,7 +59,7 @@ class _BaseTrail(object):
     # This could complete $foo.
     # Problem: readline doesn't even allow that, because it spans more than one
     # line!
-    self.tokens = []  # type: List[token]
+    self.tokens = []  # type: List[Token]
 
     self.alias_words = []  # type: List[compound_word]  # words INSIDE an alias expansion
     self.expanding_alias = False
@@ -73,7 +73,7 @@ class _BaseTrail(object):
     pass
 
   def AppendToken(self, token):
-    # type: (token) -> None
+    # type: (Token) -> None
     pass
 
   def BeginAliasExpansion(self):
@@ -142,7 +142,7 @@ class Trail(_BaseTrail):
     self.redirects = redirects
 
   def AppendToken(self, token):
-    # type: (token) -> None
+    # type: (Token) -> None
     if self.expanding_alias:  # We don't want tokens inside aliases
       return
     self.tokens.append(token)
@@ -335,7 +335,7 @@ class ParseContext(object):
     return word_parse.WordParser(self, lx, line_reader)
 
   def _ParseOil(self, lexer, start_symbol):
-    # type: (Lexer, int) -> Tuple[PNode, token]
+    # type: (Lexer, int) -> Tuple[PNode, Token]
     """Helper Oil expression parsing."""
     self.parsing_expr = True
     try:
@@ -344,7 +344,7 @@ class ParseContext(object):
       self.parsing_expr = False
 
   def ParseVarDecl(self, kw_token, lexer):
-    # type: (token, Lexer) -> Tuple[command__VarDecl, token]
+    # type: (Token, Lexer) -> Tuple[command__VarDecl, Token]
     """e.g. var mylist = [1, 2, 3]"""
 
     # TODO: We do need re-entrancy for var x = @[ (1+2) ] and such
@@ -365,7 +365,7 @@ class ParseContext(object):
     return ast_node, last_token
 
   def ParsePlaceMutation(self, kw_token, lexer):
-    # type: (token, Lexer) -> Tuple[command__PlaceMutation, token]
+    # type: (Token, Lexer) -> Tuple[command__PlaceMutation, Token]
 
     # TODO: Create an ExprParser so it's re-entrant.
     pnode, last_token = self.e_parser.Parse(lexer,
@@ -377,7 +377,7 @@ class ParseContext(object):
     return ast_node, last_token
 
   def ParseOilArgList(self, lexer, out):
-    # type: (Lexer, arg_list) -> token
+    # type: (Lexer, arg_list) -> Token
     if self.parsing_expr:
       # TODO: get rid of parsing_expr
       raise AssertionError()
@@ -391,7 +391,7 @@ class ParseContext(object):
     return last_token
 
   def ParseOilExpr(self, lexer, start_symbol):
-    # type: (Lexer, int) -> Tuple[expr_t, token]
+    # type: (Lexer, int) -> Tuple[expr_t, Token]
     """For Oil expressions that aren't assignments."""
     pnode, last_token = self.e_parser.Parse(lexer, start_symbol)
 
@@ -402,7 +402,7 @@ class ParseContext(object):
     return ast_node, last_token
 
   def ParseOilForExpr(self, lexer, start_symbol):
-    # type: (Lexer, int) -> Tuple[List[name_type], expr_t, token]
+    # type: (Lexer, int) -> Tuple[List[name_type], expr_t, Token]
     """ for (x Int, y Int in foo) """
     pnode, last_token = self.e_parser.Parse(lexer, start_symbol)
 
@@ -413,7 +413,7 @@ class ParseContext(object):
     return lvalue, iterable, last_token
 
   def ParseProc(self, lexer, out):
-    # type: (Lexer, command__Proc) -> token
+    # type: (Lexer, command__Proc) -> Token
     """ proc f(x, y, @args) { """
     pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.oil_proc)
 
@@ -424,7 +424,7 @@ class ParseContext(object):
     return last_token
 
   def ParseFunc(self, lexer, out):
-    # type: (Lexer, command__Func) -> token
+    # type: (Lexer, command__Func) -> Token
     """ func f(x Int, y Int = 0, ...args; z Int = 3, ...named) { """
     pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.oil_func)
 

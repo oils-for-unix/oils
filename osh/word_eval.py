@@ -6,7 +6,7 @@ import pwd
 
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import (
-    braced_var_sub, token,
+    braced_var_sub, Token,
     word, word_e, word_t, compound_word,
     bracket_op_e, suffix_op_e, word_part_e
 )
@@ -906,7 +906,7 @@ class _WordEvaluator(object):
 
   def _EvalSimpleVarSub(self, token, part_vals, quoted):
     maybe_decay_array = False
-    # 1. Evaluate from (var_name, var_num, token) -> defined, value
+    # 1. Evaluate from (var_name, var_num, Token) -> defined, value
     if token.id == Id.VSub_DollarName:
       var_name = token.val[1:]
       val = self.mem.GetVar(var_name)
@@ -928,7 +928,7 @@ class _WordEvaluator(object):
     part_vals.append(v)
 
   def EvalSimpleVarSubToString(self, tok):
-    # type: (token) -> str
+    # type: (Token) -> str
     """For double quoted strings in Oil expressions.
 
     Example: var x = "$foo-${foo}"

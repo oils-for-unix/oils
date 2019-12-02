@@ -6,21 +6,21 @@ lexer_test.py: Tests for lexer.py
 import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import token
+from _devbuild.gen.syntax_asdl import Token
 from frontend.lex import LEXER_DEF
 
 
 class TokenTest(unittest.TestCase):
 
   def testToken(self):
-    t = token(Id.Lit_Chars, 'abc')
+    t = Token(Id.Lit_Chars, 'abc')
     print(t)
 
     # This redundancy is OK I guess.
-    t = token(Id.Lit_LBrace, '{')
+    t = Token(Id.Lit_LBrace, '{')
     print(t)
 
-    t = token(Id.Op_Semi, ';')
+    t = Token(Id.Op_Semi, ';')
     print(t)
 
   def testPrintStats(self):

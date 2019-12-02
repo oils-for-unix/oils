@@ -15,7 +15,7 @@ _ = log
 from typing import TYPE_CHECKING, Optional, Any, List
 
 if TYPE_CHECKING:
-  from _devbuild.gen.syntax_asdl import token
+  from _devbuild.gen.syntax_asdl import Token
   from pgen2.grammar import Grammar, dfa_t
 
 
@@ -23,7 +23,7 @@ class ParseError(Exception):
     """Exception to signal the parser is stuck."""
 
     def __init__(self, msg, type_, tok):
-        # type: (str, int, token) -> None
+        # type: (str, int, Token) -> None
         self.msg = msg
         self.type = type_
         self.tok = tok
@@ -37,9 +37,9 @@ class PNode(object):
   __slots__ = ('typ', 'tok', 'children')
 
   def __init__(self, typ, tok, children):
-    # type: (int, Optional[token], Optional[List[PNode]]) -> None
+    # type: (int, Optional[Token], Optional[List[PNode]]) -> None
     self.typ = typ  # token or non-terminal
-    self.tok = tok  # In Oil, this is syntax_asdl.token.  In OPy, it's a
+    self.tok = tok  # In Oil, this is syntax_asdl.Token.  In OPy, it's a
                     # 3-tuple (val, prefix, loc)
                     # NOTE: This is None for the first entry in the stack?
     self.children = children
@@ -122,7 +122,7 @@ class Parser(object):
         self.rootnode = None  # type: Optional[PNode]
 
     def addtoken(self, typ, opaque, ilabel):
-        # type: (int, token, int) -> bool
+        # type: (int, Token, int) -> bool
         """Add a token; return True iff this is the end of the program."""
         # Loop until the token is shifted; may raise exceptions
 
@@ -187,7 +187,7 @@ class Parser(object):
                     raise ParseError("bad input", typ, opaque)
 
     def shift(self, typ, opaque, newstate):
-        # type: (int, token, int) -> None
+        # type: (int, Token, int) -> None
         """Shift a token.  (Internal)"""
         dfa, _, node = self.stack[-1]
         newnode = PNode(typ, opaque, None)
@@ -196,7 +196,7 @@ class Parser(object):
         self.stack[-1] = (dfa, newstate, node)
 
     def push(self, typ, opaque, newdfa, newstate):
-        # type: (int, token, dfa_t, int) -> None
+        # type: (int, Token, dfa_t, int) -> None
         """Push a nonterminal.  (Internal)"""
         dfa, _, node = self.stack[-1]
         newnode = PNode(typ, opaque, [])

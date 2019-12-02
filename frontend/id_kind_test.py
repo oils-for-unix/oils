@@ -29,7 +29,7 @@ class TokensTest(unittest.TestCase):
 
   def testTokens(self):
     print(Id.Op_Newline)
-    print(syntax_asdl.token(Id.Op_Newline, '\n'))
+    print(syntax_asdl.Token(Id.Op_Newline, '\n'))
 
     print(Id.Op_Newline)
 
@@ -57,17 +57,17 @@ class TokensTest(unittest.TestCase):
     print()
     print('Number of IDs:', len(ID_SPEC.id_str2int))
 
-    t = syntax_asdl.token(Id.Arith_Plus, '+')
+    t = syntax_asdl.Token(Id.Arith_Plus, '+')
     self.assertEqual(Kind.Arith, LookupKind(t.id))
-    t = syntax_asdl.token(Id.Arith_CaretEqual, '^=')
+    t = syntax_asdl.Token(Id.Arith_CaretEqual, '^=')
     self.assertEqual(Kind.Arith, LookupKind(t.id))
-    t = syntax_asdl.token(Id.Arith_RBrace, '}')
+    t = syntax_asdl.Token(Id.Arith_RBrace, '}')
     self.assertEqual(Kind.Arith, LookupKind(t.id))
 
-    t = syntax_asdl.token(Id.BoolBinary_GlobDEqual, '==')
+    t = syntax_asdl.Token(Id.BoolBinary_GlobDEqual, '==')
     self.assertEqual(Kind.BoolBinary, LookupKind(t.id))
 
-    t = syntax_asdl.token(Id.BoolBinary_Equal, '=')
+    t = syntax_asdl.Token(Id.BoolBinary_Equal, '=')
     self.assertEqual(Kind.BoolBinary, LookupKind(t.id))
 
   def testLexerPairs(self):

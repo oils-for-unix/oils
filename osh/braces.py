@@ -17,7 +17,7 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
-    token, compound_word, 
+    Token, compound_word, 
     word, word_e, word_t, word__BracedTree,
     word_part, word_part_e, word_part_t,
     word_part__BracedTuple, word_part__BracedRange, word_part__Literal,
@@ -160,7 +160,7 @@ class _RangeParser(object):
 
 
 def _RangePartDetect(tok):
-  # type: (token) -> Optional[word_part_t]
+  # type: (Token) -> Optional[word_part_t]
   """Parse the token and return a new word_part if it looks like a range."""
   lexer = match.BraceRangeLexer(tok.val)
   p = _RangeParser(lexer, tok.span_id)
@@ -427,7 +427,7 @@ def _ExpandPart(parts,  # type: List[word_part_t]
           out_parts_ = []  # type: List[word_part_t]
           out_parts_.extend(prefix)
           # Preserve span_id from the original
-          t = token(Id.Lit_Chars, s, expand_part.spids[0])
+          t = Token(Id.Lit_Chars, s, expand_part.spids[0])
           out_parts_.append(word_part.Literal(t))
           out_parts_.extend(suffix)
           out.append(out_parts_)

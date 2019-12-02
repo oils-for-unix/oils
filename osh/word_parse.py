@@ -51,7 +51,7 @@ from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str, Kind
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
-    token, speck,
+    Token, speck,
     double_quoted, single_quoted, simple_var_sub, braced_var_sub, command_sub,
     sh_array_literal,
 
@@ -59,7 +59,7 @@ from _devbuild.gen.syntax_asdl import (
 
     suffix_op, suffix_op_t, suffix_op__Slice, suffix_op__PatSub,
 
-    word, word_e, word_t, compound_word, token,
+    word, word_e, word_t, compound_word,
     word_part, word_part_e, word_part_t, word_part__Literal,
     word_part__ArithSub, word_part__ExtGlob, word_part__ExprSub,
 
@@ -117,7 +117,7 @@ class WordParser(WordEmitter):
     # type: () -> None
     """Called by interactive loop."""
     # For _Peek()
-    self.cur_token = None  # type: token
+    self.cur_token = None  # type: Token
     self.token_kind = Kind.Undefined
     self.token_type = Id.Undefined_Tok
 
@@ -131,7 +131,7 @@ class WordParser(WordEmitter):
     self.buffered_word = None  # type: word_t
 
   def _Peek(self):
-    # type: () -> token
+    # type: () -> Token
     """Helper method."""
     if self.next_lex_mode != lex_mode_e.Undefined:
       self.cur_token = self.lexer.Read(self.next_lex_mode)
@@ -401,14 +401,14 @@ class WordParser(WordEmitter):
     return part
 
   def ReadBracedVarSub(self, left_token):
-    # type: (token) -> Tuple[braced_var_sub, token]
+    # type: (Token) -> Tuple[braced_var_sub, Token]
     """   For Oil expressions like var x = ${x:-"default"}.  """
     part = self._ReadBracedVarSub(left_token, False)  # not quoted
     last_token = self.cur_token
     return part, last_token
 
   def _ReadBracedVarSub(self, left_token, d_quoted):
-    # type: (token, bool) -> braced_var_sub
+    # type: (Token, bool) -> braced_var_sub
     """For the ${} expression language.
 
     NAME        = [a-zA-Z_][a-zA-Z0-9_]*
@@ -531,7 +531,7 @@ class WordParser(WordEmitter):
     # type: (lex_mode_t) -> single_quoted
     """Interal method to read a word_part."""
     left_token = self.cur_token
-    tokens = []  # type: List[token]
+    tokens = []  # type: List[Token]
     # In command mode, we never disallow backslashes like '\'
     self.ReadSingleQuoted(lex_mode, left_token, tokens, False)
 
@@ -541,7 +541,7 @@ class WordParser(WordEmitter):
     return node
 
   def ReadSingleQuoted(self, lex_mode, left_token, tokens, no_backslashes):
-    # type: (lex_mode_t, token, List[token], bool) -> token
+    # type: (lex_mode_t, Token, List[Token], bool) -> Token
     """Used by expr_parse.py."""
     done = False
     while not done:
@@ -671,7 +671,7 @@ class WordParser(WordEmitter):
     return part
 
   def _ReadLikeDQ(self, left_dq_token, out_parts):
-    # type: (Optional[token], List[word_part_t]) -> None
+    # type: (Optional[Token], List[word_part_t]) -> None
     """
     Args:
       left_dq_token: A token if we are reading a double quoted part, or None if
@@ -738,7 +738,7 @@ class WordParser(WordEmitter):
     return dq_part
 
   def ReadDoubleQuoted(self, left_token, parts):
-    # type: (token, List[word_part_t]) -> token
+    # type: (Token, List[word_part_t]) -> Token
     """For expression mode.
     
     Read var x = "${dir:-}/$name"; etc.
@@ -842,7 +842,7 @@ class WordParser(WordEmitter):
     return node
 
   def ParseVarDecl(self, kw_token):
-    # type: (token) -> command_t
+    # type: (Token) -> command_t
     """
     oil_var_decl: name_type_list '=' testlist end_stmt
 
@@ -865,7 +865,7 @@ class WordParser(WordEmitter):
     return enode
 
   def ParsePlaceMutation(self, kw_token):
-    # type: (token) -> command_t
+    # type: (Token) -> command_t
     """
     setvar a[i] = 1
     setvar i += 1
@@ -1113,7 +1113,7 @@ class WordParser(WordEmitter):
     while True:
       w = w_parser.ReadWord(lex_mode_e.ShCommand)
       if w.tag_() == word_e.Token:
-        tok = cast(token, w)
+        tok = cast(Token, w)
         if tok.id == Id.Right_ShArrayLiteral:
           break
         # Unlike command parsing, array parsing allows embedded \n.

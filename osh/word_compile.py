@@ -9,7 +9,9 @@ doesn't depend on any values at runtime.
 from typing import Optional
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
-from _devbuild.gen.syntax_asdl import class_literal_term, class_literal_term_t, token
+from _devbuild.gen.syntax_asdl import (
+    class_literal_term, class_literal_term_t, Token
+)
 from core import ui
 from osh import string_ops
 
@@ -31,7 +33,7 @@ _ONE_CHAR = {
 }
 
 def EvalCharLiteralForRegex(tok):
-  # type: (token) -> class_literal_term_t
+  # type: (Token) -> class_literal_term_t
   """For regex char classes.
 
   Similar logic as below.

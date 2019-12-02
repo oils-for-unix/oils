@@ -8,7 +8,7 @@ from mycpp import mylib
 
 from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:  # avoid circular build deps
-  from _devbuild.gen.syntax_asdl import token, word_part_t, word_t
+  from _devbuild.gen.syntax_asdl import Token, word_part_t, word_t
 
 # Break circular dependency.
 #from asdl import runtime
@@ -29,7 +29,7 @@ if mylib.PYTHON:
       # NOTE: We use a kwargs dict because Python 2 doesn't have keyword-only
       # args.
       self.span_id = kwargs.pop('span_id', NO_SPID)  # type: int
-      self.token = kwargs.pop('token', None)  # type: token
+      self.token = kwargs.pop('token', None)  # type: Token
       self.part = kwargs.pop('part', None)  # type: word_part_t
       self.word = kwargs.pop('word', None)  # type: word_t
       self.exit_status = kwargs.pop('status', None)  # type: int

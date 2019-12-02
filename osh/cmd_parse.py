@@ -23,10 +23,10 @@ from _devbuild.gen.syntax_asdl import (
 
     sh_lhs_expr, sh_lhs_expr_t,
     redir, redir_t, redir__HereDoc,
-    word, word_e, word_t, compound_word, token,
+    word, word_e, word_t, compound_word, Token,
     word_part, word_part_e, word_part_t, word_part__Literal,
 
-    token, assign_pair, env_pair,
+    assign_pair, env_pair,
     assign_op_e,
 
     source, parse_result, parse_result_t,
@@ -67,7 +67,7 @@ def _KeywordSpid(w):
 
 
 def _KeywordToken(UP_w):
-  # type: (word_t) -> token
+  # type: (word_t) -> Token
   """Given a word that IS A keyword, return the single token at the start.
 
   In C++, this casts without checking, so BE CAREFUL to call it in the right context.
@@ -133,10 +133,10 @@ def _MakeLiteralHereLines(here_lines,  # type: List[Tuple[int, str, int]]
                           ):
   # type: (...) -> List[word_part_t]  # less precise because List is invariant type
   """Create a line_span and a token for each line."""
-  tokens = []  # type: List[token]
+  tokens = []  # type: List[Token]
   for line_id, line, start_offset in here_lines:
     span_id = arena.AddLineSpan(line_id, start_offset, len(line))
-    t = syntax_asdl.token(Id.Lit_Chars, line[start_offset:], span_id)
+    t = syntax_asdl.Token(Id.Lit_Chars, line[start_offset:], span_id)
     tokens.append(t)
   parts = [cast(word_part_t, word_part.Literal(t)) for t in tokens]
   return parts
@@ -281,7 +281,7 @@ def _AppendMoreEnv(preparsed_list, more_env):
 
 
 if TYPE_CHECKING:
-  PreParsedItem = Tuple[token, Optional[token], int, compound_word]
+  PreParsedItem = Tuple[Token, Optional[Token], int, compound_word]
   PreParsedList = List[PreParsedItem]
 
 def _SplitSimpleCommandPrefix(words):
@@ -422,7 +422,7 @@ class CommandParser(object):
       # Here docs only happen in command mode, so other kinds of newlines don't
       # count.
       if w.tag_() == word_e.Token:
-        tok = cast(token, w)
+        tok = cast(Token, w)
         if tok.id == Id.Op_Newline:
           for h in self.pending_here_docs:
             _ParseHereDocBody(self.parse_ctx, h, self.line_reader, self.arena)
@@ -484,7 +484,7 @@ class CommandParser(object):
     """
     self._Peek()
     assert self.c_kind == Kind.Redir, self.cur_word
-    op_tok = cast(token, self.cur_word)  # for MyPy
+    op_tok = cast(Token, self.cur_word)  # for MyPy
 
     # For now only supporting single digit descriptor
     first_char = op_tok.val[0]
@@ -941,7 +941,7 @@ class CommandParser(object):
     while True:
       self._Peek()
       if self.c_id == Id.Op_Semi:
-        tok = cast(token, self.cur_word)
+        tok = cast(Token, self.cur_word)
         semi_spid = tok.span_id
         self._Next()
         self._NewlineOk()
@@ -1075,7 +1075,7 @@ class CommandParser(object):
         return n2
 
   def ParseWhileUntil(self, keyword):
-    # type: (token) -> command__WhileUntil
+    # type: (Token) -> command__WhileUntil
     """
     while_clause     : While command_list do_group ;
     until_clause     : Until command_list do_group ;
@@ -1878,7 +1878,7 @@ class CommandParser(object):
 
       self._Peek()
       if self.c_id in (Id.Op_Semi, Id.Op_Amp):  # also Id.Op_Amp.
-        tok = cast(token, self.cur_word)  # for MyPy
+        tok = cast(Token, self.cur_word)  # for MyPy
         child = command.Sentence(child, tok)
         self._Next()
 
@@ -1948,7 +1948,7 @@ class CommandParser(object):
           done = True
 
       elif self.c_id in (Id.Op_Semi, Id.Op_Amp):
-        tok = cast(token, self.cur_word)  # for MyPy
+        tok = cast(Token, self.cur_word)  # for MyPy
         child = command.Sentence(child, tok)
         self._Next()
 

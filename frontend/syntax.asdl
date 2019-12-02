@@ -28,18 +28,18 @@
 
 -- Refactorings:
 --
---   cmd_token = Word %compound_word | Token %token
---   arith_expr = Word %compound_word | VarRef %token
+--   cmd_token = Word %compound_word | Token %Token
+--   arith_expr = Word %compound_word | VarRef %Token
 --   bool_expr = WordTest %compound_word | ...
 --
--- Many %token references:
---   word_part = Literal %token | ...
---   type_expr = Atom %token | ...
+-- Many %Token references:
+--   word_part = Literal %Token | ...
+--   type_expr = Atom %Token | ...
 --   printf_part ...
 --
 -- Size optimization:
---   'token left' should really be 'speck left'.  Saves a lot of space.
---   SimpleVarSub(token token) could be optimized
+--   'Token left' should really be 'speck left'.  Saves a lot of space.
+--   SimpleVarSub(Token token) could be optimized
 --   SimpleVarSub(id id, string val, int span_id) without useless token 'tag'
 --   Or VarSubSpecial(id id, int span_id)
 --    | VarSubNum(id, int n, int span_id)
@@ -95,7 +95,8 @@ module syntax
   -- We use 'val' for execution, and the line_span for error messages and
   -- translation.
   -- If we can pack it, this type is probably (2+2) + 8 + 4 = 16 bytes.
-  token = (id id, string val, int span_id)
+  -- new syntax to allow capital types
+  Token = (id id, string val, int span_id)
 
   -- After parsing, we often don't need the token 'string val', so use a
   -- 'speck'.  Notes:
@@ -127,27 +128,27 @@ module syntax
   | Slice(arith_expr? begin, arith_expr? length)
   attributes (int* spids)
 
-  double_quoted = (token left, word_part* parts) attributes (int* spids)
-  single_quoted = (token left, token* tokens) attributes (int* spids)
+  double_quoted = (Token left, word_part* parts) attributes (int* spids)
+  single_quoted = (Token left, Token* tokens) attributes (int* spids)
 
   -- Note: simple_var_sub could be split up into speck for $?, (speck, int) for
   -- $0 $1, token for $foo.
-  simple_var_sub = (token token)
+  simple_var_sub = (Token token)
 
   -- TODO: Add    ${x %.3f}   ${x|html}
   braced_var_sub = (
-      token token,  -- the name
+      Token token,  -- the name
       speck? prefix_op,  -- prefix # or ! operators
       bracket_op? bracket_op,
       suffix_op? suffix_op
   ) attributes (int* spids)
 
   command_sub = (
-      token left_token, command command_list
+      Token left_token, command command_list
   ) attributes (int* spids)
 
   -- Note: can be word.BracedTree
-  sh_array_literal = (token left, word* words) attributes (int* spids)
+  sh_array_literal = (Token left, word* words) attributes (int* spids)
 
   -- Used in both expr and a word_part
   arg_list = (expr* positional, named_arg* named)
@@ -156,17 +157,17 @@ module syntax
     ShArrayLiteral %sh_array_literal
     -- alternating key and value (saving some space)
     -- Note that word.Empty isn't needed here
-  | AssocArrayLiteral(token left, compound_word* pairs)
-  | Literal(token token)
+  | AssocArrayLiteral(Token left, compound_word* pairs)
+  | Literal(Token token)
     -- escaped case is separate so the evaluator doesn't have to check token ID
-  | EscapedLiteral(token token)
+  | EscapedLiteral(Token token)
   | SingleQuoted %single_quoted
   | DoubleQuoted %double_quoted
   | SimpleVarSub %simple_var_sub
   | BracedVarSub %braced_var_sub
   | CommandSub %command_sub
     -- This should be token tilde, token rest
-  | TildeSub(token token)
+  | TildeSub(Token token)
     -- For command sub and process sub: $(...)  <(...)  >(...)
   | ArithSub(arith_expr anode)
     -- {a,b,c}
@@ -176,13 +177,13 @@ module syntax
   | BracedRange(id kind, string start, string end, int step)
     -- note: optional int may need special handling in ASDL
   -- extended globs are parsed statically, unlike globs
-  | ExtGlob(token op, word* arms)
+  | ExtGlob(Token op, word* arms)
     -- @array
-  | Splice(token name)
+  | Splice(Token name)
     -- $strfunc(x) and @arrayfunc(x)
-  | FuncCall(token name, arg_list args)
+  | FuncCall(Token name, arg_list args)
     -- $[d->key], etc.
-  | ExprSub(token left, expr child)
+  | ExprSub(Token left, expr child)
   attributes (int* spids)
 
   compound_word = (word_part* parts, int* spids)
@@ -192,7 +193,7 @@ module syntax
     -- usages may be cosmetic, because e.g. compound_word will have zero parts
     -- in the assoc array literal A=([k]=)
     Empty
-  | Token %token
+  | Token %Token
     -- A Compound word can contain any word_part except the Braced*Part.
     -- We could model this with another variant type but it incurs runtime
     -- overhead and seems like overkill.  Note that DoubleQuoted can't
@@ -218,7 +219,7 @@ module syntax
   attributes (int* spids)
 
   arith_expr =
-    VarRef(token token)  -- variable without $
+    VarRef(Token token)  -- variable without $
   | ArithWord(word w)  -- a string that looks like an integer
 
   | UnaryAssign(id op_id, sh_lhs_expr child)
@@ -237,8 +238,8 @@ module syntax
   | LogicalOr(bool_expr left, bool_expr right)
 
   redir = 
-    Redir(token op, int fd, word arg_word)
-  | HereDoc(token op, int fd,
+    Redir(Token op, int fd, word arg_word)
+  | HereDoc(Token op, int fd,
             word here_begin,  -- e.g. EOF or 'EOF'
             int here_end_span_id,  -- this span is an entire line
             word_part* stdin_parts -- one for each line
@@ -261,10 +262,10 @@ module syntax
     -- This doesn't technically belong in the LST, but it's convenient for
     -- execution
   | ExpandedAlias(command child, redir* redirects, env_pair* more_env)
-  | Sentence(command child, token terminator)
+  | Sentence(command child, Token terminator)
     -- NOTE: Only represents "bare assignment".
   | ShAssignment(assign_pair* pairs, redir* redirects)
-  | ControlFlow(token token, word? arg_word)
+  | ControlFlow(Token token, word? arg_word)
     -- Note: There are spids for every pipeline operator, parallel to
     -- stderr_indices
   | Pipeline(command* children, bool negated, int* stderr_indices)
@@ -272,7 +273,7 @@ module syntax
     -- Part of for, while, until (but not if, case, ShFunction)
   | DoGroup(command* children, redir* redirects)
     -- A brace group is a compound command, with redirects.
-    -- TODO: Combine DoGroup and BraceGroup, with 'token left' for do or {
+    -- TODO: Combine DoGroup and BraceGroup, with 'Token left' for do or {
   | BraceGroup(command* children, redir* redirects)
     -- Contains a single child, like CommandSub
   | Subshell(command command_list, redir* redirects)
@@ -287,7 +288,7 @@ module syntax
     -- order.
   | ForExpr(arith_expr? init, arith_expr? cond, arith_expr? update,
             command? body, redir* redirects)
-  | WhileUntil(token keyword, command* cond, command body, redir* redirects)
+  | WhileUntil(Token keyword, command* cond, command body, redir* redirects)
   | If(if_arm* arms, command* else_action, redir* redirects)
   | Case(word to_match, case_arm* arms, redir* redirects)
   | ShFunction(string name, command body)
@@ -299,21 +300,21 @@ module syntax
     -- Oil stuff
 
     -- For 'x = myexpr'.  There's no type and no comma allowed.
-  | BareDecl(token lhs, expr rhs)
+  | BareDecl(Token lhs, expr rhs)
     -- var, const
-  | VarDecl(token? keyword, name_type* lhs, expr rhs)
+  | VarDecl(Token? keyword, name_type* lhs, expr rhs)
     -- setvar/set, auto.  Note: op can be a speck
-  | PlaceMutation(token? keyword, place_expr* lhs, token op, expr rhs)
+  | PlaceMutation(Token? keyword, place_expr* lhs, Token op, expr rhs)
     -- do, pp, pass.  An expression for its side effects
   | Expr(speck keyword, expr e)
     -- return an Obj, not an int-like string
-  | Return(token keyword, expr e)
+  | Return(Token keyword, expr e)
   | OilCondition(expr e) -- for if/while
   | OilForIn(name_type* lhs, expr iterable, command body)
-  | Proc(token name, proc_sig sig, command body)
-  | Func(token name, 
-         param* pos_params, token? pos_splat,
-         param* named_params, token? named_splat,
+  | Proc(Token name, proc_sig sig, command body)
+  | Func(Token name, 
+         param* pos_params, Token? pos_splat,
+         param* named_params, Token? named_splat,
          type_expr* return_types, command body)
 
   attributes (int* spids)
@@ -321,9 +322,9 @@ module syntax
   -- 'open' is for proc p { }; closed is for proc p [] { }
   proc_sig =
     Open
-  | Closed(param* params, token? rest, token? block)
+  | Closed(param* params, Token? rest, Token? block)
 
-  param = (token name, type_expr? type, expr? default_val)
+  param = (Token name, type_expr? type, expr? default_val)
 
   --
   -- Glob representation, for converting ${x//} to extended regexes.
@@ -344,10 +345,10 @@ module syntax
   -- * Equivalence classes are [=
 
   printf_part =
-    Literal(token token)
+    Literal(Token token)
     -- flags are 0 hyphen space + #
     -- type is 's' for %s, etc.
-  | Percent(token? flag, token? width, token? precision, token type)
+  | Percent(Token? flag, Token? width, Token? precision, Token type)
 
   --
   -- OIL LANGUAGE
@@ -358,17 +359,17 @@ module syntax
 
   -- type expressions:   Int   Array[Int]   Dict[Str, Any]
   type_expr =
-    Simple(token name)
-  | Compound(token name, type_expr* params)
+    Simple(Token name)
+  | Compound(Token name, type_expr* params)
 
   -- LHS binding in loops, list comprehensions, and var/const
-  name_type = (token name, type_expr? typ)
+  name_type = (Token name, type_expr? typ)
 
   -- TODO: Inline this into GenExp and ListComp?  Just use a flag there?
   comprehension = (name_type* lhs, expr iter, expr? cond)
 
   -- named arguments supplied to call.  token is null for f(; ...named).
-  named_arg = (token? name, expr value)
+  named_arg = (Token? name, expr value)
 
   -- Subscripts are lists of expressions
   --   a[:i, n]      (we don't have matrices, but we have data frames)
@@ -376,26 +377,26 @@ module syntax
 
   -- Attributes are obj.attr, d->key, name::scope,
   -- TODO: op should be 'speck'
-  attribute = (expr obj, token op, token attr, expr_context ctx)
+  attribute = (expr obj, Token op, Token attr, expr_context ctx)
 
   -- Places that can be mutated.
-  -- TODO: Changed to Var %token and expr.Var %token.
+  -- TODO: Changed to Var %Token and expr.Var %Token.
   place_expr = 
-    Var(token name)
+    Var(Token name)
   | Subscript %subscript
   | Attribute %attribute
 
   expr =
-    Var(token name)  -- a variable name to evaluate
+    Var(Token name)  -- a variable name to evaluate
     -- For null, Bool, Int, Float
     -- Python uses Num(object n), which doesn't respect our "LST" invariant.
     -- speck?
-  | Const(token c)
+  | Const(Token c)
     -- @(one 'two' "$three")
   | ShArrayLiteral %sh_array_literal
     -- @[a b c] @[1 2 3] @[(1+1) (2+2)]
-  | ArrayLiteral(token left, expr* items)
-  | RegexLiteral(token left, re regex, token* flags, token? trans_pref)
+  | ArrayLiteral(Token left, expr* items)
+  | RegexLiteral(Token left, re regex, Token* flags, Token? trans_pref)
 
   | SimpleVarSub %simple_var_sub
   | BracedVarSub %braced_var_sub
@@ -406,8 +407,8 @@ module syntax
   | Lambda(name_type* params, expr body)
 
     -- TODO: speck op
-  | Unary(token op, expr child)
-  | Binary(token op, expr left, expr right)
+  | Unary(Token op, expr child)
+  | Binary(Token op, expr left, expr right)
     -- x < 4 < 3 and (x < 4) < 3
   | Compare(expr left, speck* ops, expr* comparators)
   | FuncCall(expr func, arg_list args)
@@ -467,7 +468,7 @@ module syntax
     -- [a-z]   ~[a-z]   TODO: Doesn't respect LST invariant
   | Range(string start, string end)
 
-  | CharLiteral(token tok)
+  | CharLiteral(Token tok)
 
   | SimpleVarSub %simple_var_sub
   | BracedVarSub %braced_var_sub
@@ -484,25 +485,25 @@ module syntax
 
   -- NOTE: modifier is unused now, can represent L or P
   re_repeat =
-    -- TODO: could use speck.  And add back Op(token op, id modifier)
-    Op(token op)
-  | Num(token times)
-  | Range(token? lower, token? upper)
+    -- TODO: could use speck.  And add back Op(Token op, id modifier)
+    Op(Token op)
+  | Num(Token times)
+  | Range(Token? lower, Token? upper)
   -- Haven't implemented the modifier, e.g. x{+ P}
-  -- | Num(token times, id modifier)
-  -- | Range(token? lower, token? upper, id modifier)
+  -- | Num(Token times, id modifier)
+  -- | Range(Token? lower, Token? upper, id modifier)
 
   re = 
     -- . ^ $
     Speck %speck
     -- %begin or \u123
-  | Token %token
+  | Token %Token
   | PosixClass %posix_class
   | PerlClass %perl_class
   | ClassLiteral(bool negated, class_literal_term* terms)
 
     -- @D
-  | Splice(token name)
+  | Splice(Token name)
 
     -- $literal ${literal} 'no-backslashes' "other$foo"
   | SimpleVarSub %simple_var_sub
@@ -517,8 +518,8 @@ module syntax
 
     -- TODO: model the place and type: (d+ as month Int)
   | Group(re child)
-  | Capture(re child, token? var_name, type_expr? type)
-  | Backtracking(bool negated, token name, re child)
+  | Capture(re child, Token? var_name, type_expr? type)
+  | Backtracking(bool negated, Token name, re child)
 
   -- Regex Evaluation Shares the Same Structure, but uses slightly different
   -- nodes.
