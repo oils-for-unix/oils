@@ -188,8 +188,11 @@ compile-osh-parse-opt() {
   # As done in the Makefile for Python app bundle
   strip -o $stripped $opt
 
-  objcopy --only-keep-debug $opt $symbols
-  objcopy --add-gnu-debuglink=$symbols $stripped
+  # Move the symbols elsewhere and add a link to them.
+  if command -v objcopy; then
+    objcopy --only-keep-debug $opt $symbols
+    objcopy --add-gnu-debuglink=$symbols $stripped
+  fi
 }
 
 readonly TMP=_tmp/mycpp
