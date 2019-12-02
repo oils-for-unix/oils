@@ -9,7 +9,7 @@ from asdl import asdl_ as asdl
 from asdl import meta
 from asdl.asdl_ import Use, Module, Type, Constructor, Field, Sum, Product
 
-_KEYWORDS = ['use', 'module', 'data', 'enum', 'attributes']
+_KEYWORDS = ['use', 'module', 'attributes']
 
 _TOKENS = [
     ('Keyword', ''),
@@ -114,27 +114,10 @@ class ASDLParser(object):
             uses.append(self._parse_use())
 
         defs = []
-        while True:
-            kind = self.cur_token.kind
-
-            # New Oil syntax: data Token = (...)
-            # NOTE: We're not distinguishing between data and enum.  The RHS
-            # makes it clear.
-            if kind == TokenKind.Keyword:
-                self._advance()  # skip keyword
-                typename = self._advance()
-                self._match(TokenKind.Equals)
-                type_ = self._parse_type()
-
-            # Old syntax: token = (...)
-            elif kind == TokenKind.Name:
-                typename = self._advance()
-                self._match(TokenKind.Equals)
-                type_ = self._parse_type()
-
-            else:
-                break
-
+        while self.cur_token.kind == TokenKind.Name:
+            typename = self._advance()
+            self._match(TokenKind.Equals)
+            type_ = self._parse_type()
             defs.append(Type(typename, type_))
 
         self._match(TokenKind.RBrace)
