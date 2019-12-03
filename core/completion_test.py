@@ -147,7 +147,7 @@ class CompletionTest(unittest.TestCase):
         # Dirs and files
         ('c', ['configure', 'core/', 'cpp/']),
         ('nonexistent/', []),
-        ('README', ['README.md']),
+        ('README.', ['README.md']),
         # Directory should be completed to core/ ?
         ('core', ['core/']),
         ('asdl/R', ['asdl/README.md']),

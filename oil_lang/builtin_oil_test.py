@@ -6,32 +6,36 @@ from __future__ import print_function
 
 import unittest
 
-import yajl  # test thi stoo
-
+from core.util import log
 #from oil_lang import builtin_oil  # module under test
 
+import yajl  # test this too
 
-class JsonTest(unittest.TestCase):
 
-  def testYajl(self):
+class YajlTest(unittest.TestCase):
+
+  def testMisc(self):
     print(yajl.dumps({'foo': 42}))
 
     # Gives us unicode back
     print(yajl.loads('{"bar": 43}'))
 
-    # TODO: Test 
-
+  def testIntOverflow(self):
+    log('OVERFLOW')
     CASES = [
         0,
         2 ** 31,
         2 ** 32, 
-        #2 ** 64 -1,
-        #2 ** 64, 
-        #2 ** 128, 
+        2 ** 64 -1,
+        2 ** 64, 
+        2 ** 128, 
     ]
     for i in CASES:
       print('--')
-      print(yajl.dumps(i))
+
+      # This raises Overflow?  I guess the problem is that yajl takes an
+      # integer.
+      #print(yajl.dumps(i))
       s = str(i)
       print(s)
 
@@ -40,6 +44,76 @@ class JsonTest(unittest.TestCase):
       # Why doesn't it parse raw integers?
       #print(yajl.loads(s))
 
+    log('')
+
+  def testParseError(self):
+    # TODO: Assert Location
+    if 0:
+      yajl.loads('[')
+
+  def testBool(self):
+    log('BOOL')
+    print(yajl.dumps(True))
+    print(yajl.loads('false'))
+    log('')
+
+  def testInt(self):
+    log('INT')
+    print(yajl.dumps(123))
+    if 0:  # BUG
+      print(yajl.loads('123'))
+    log('')
+
+  def testFloat(self):
+    log('FLOAT')
+    print(yajl.dumps(123.4))
+    if 0:  # BUG
+      print(yajl.loads('123.4'))
+    log('')
+
+  def testList(self):
+    log('LIST')
+    print(yajl.dumps([4, "foo", False]))
+    print(yajl.loads('[4, "foo", false]'))
+    log('')
+
+  def testDict(self):
+    log('DICT')
+    d = {"bool": False, "int": 42, "float": 3.14, "string": "s"}
+    print(yajl.dumps(d))
+
+    s = '{"bool": false, "int": 42, "float": 3.14, "string": "s"}'
+    print(yajl.loads(s))
+    log('')
+
+  def testStringEncoding(self):
+    log('STRING ENCODE')
+
+    # It should just raise with Unicode instance
+    print(yajl.dumps(u'abc\u0100def'))
+
+    # It inserts \xff literally, OK I guess that's fine.  It's not valid utf-8
+    print(yajl.dumps('\x00\xff'))
+
+    # mu character
+    print(yajl.dumps('\xCE\xBC'))
+
+  def testStringDecoding(self):
+    log('STRING DECODE')
+
+    # This should decode to a utf-8 str()!
+    # Not a unicode instance!
+
+    s = yajl.loads('"abc"')
+    print(repr(s))
+
+    u = yajl.loads('"\u03bc"')
+    print(repr(u))
+
+    # Invalid utf-8.  Doesn't give a good parse error!
+    if 0:
+      u = yajl.loads('"\xFF"')
+      print(repr(u))
 
 
 if __name__ == '__main__':
