@@ -4,8 +4,6 @@
 # this?
 cloud/sandstorm/install.sh
 
-distro/crankshaft/rpi_buildsystem/7_build_gpio2kbd.sh
-
 esoteric/setup.shl/bin/setup  # associative array ambiguity (key should be quoted)
 
 exp/shootout/timing.sh  # the $(( )) ambiguity 
