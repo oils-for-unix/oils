@@ -25,29 +25,25 @@ make-tar() {
 
   # TODO:
   # - be more exact about files?
+  #   - exclude osh-lex.re2c.h since it's intermediate
   #   - _devbuild/gen is for osh-lex
   #   - maybe mention it explicitly?
   #   - Maybe use the -I trick?
   # - Provide a way to run C++ tests?  Unit tests and smoke tests alike.
-  # - exclude osh-lex.re2c.h since it's intermediate
   #
   # Reorg?
   # _build/cpp/  or _gen/cpp ?  or _gen/c ?
 
   tar --create --transform "$sed_expr" --file $out \
     LICENSE.txt \
-    Makefile \
+    README-native.txt \
     build/common.sh \
     build/mycpp.sh \
+    cpp/ \
     mycpp/mylib.{cc,h} \
     _devbuild/gen/*.h \
     _devbuild/gen-cpp/ \
-    cpp/ \
     _tmp/mycpp/osh_parse.cc
-
-  # See how big they are
-  # 141 KB and 108 KB.
-  #gzip -c $out > $out.gz
 
   xz -c $out > $out.xz
 
