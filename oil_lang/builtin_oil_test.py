@@ -47,7 +47,6 @@ class YajlTest(unittest.TestCase):
     log('')
 
   def testParseError(self):
-    # TODO: Assert Location
     if 0:
       yajl.loads('[')
 
