@@ -1,16 +1,18 @@
 # Test out Oil's JSON support.
 
-#### json echo STRING
-s='foo'
-json echo s
+#### json write STRING
+myvar='foo'
+json write myvar
+json write :myvar
 ## STDOUT:
+"foo"
 "foo"
 ## END
 
-#### json echo ARRAY
+#### json write ARRAY
 a=(foo.cc foo.h)
-json echo a
-json echo -indent 0 a
+json write :a
+json write -indent 0 :a
 ## STDOUT:
 [
   "foo.cc",

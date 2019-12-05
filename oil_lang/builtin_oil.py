@@ -166,9 +166,11 @@ class Opts(object):
     raise NotImplementedError
 
 
-JSON_ECHO_SPEC = args.OilFlags()
-JSON_ECHO_SPEC.Flag('-indent', args.Int, default=2,
-                    help='Indent JSON by this amount')
+JSON_WRITE_SPEC = args.OilFlags()
+JSON_WRITE_SPEC.Flag('-indent', args.Int, default=2,
+                     help='Indent JSON by this amount')
+JSON_WRITE_SPEC.Flag('-pretty', args.Bool, default=True,
+                     help='Whitespace in output')
 
 class Json(object):
   """Json I/O.
@@ -203,12 +205,15 @@ class Json(object):
       raise args.UsageError("json builtin expects 'read' or 'echo'")
     arg_r.Next()
 
-    if action == 'echo':
-      arg, _ = JSON_ECHO_SPEC.Parse(arg_r)
+    if action == 'write':
+      arg, _ = JSON_WRITE_SPEC.Parse(arg_r)
 
       # GetVar() of each name and print it.
 
       for var_name in arg_r.Rest():
+        if var_name.startswith(':'):
+          var_name = var_name[1:]
+
         val = self.mem.GetVar(var_name)
         with tagswitch(val) as case:
           if case(value_e.Undef):
