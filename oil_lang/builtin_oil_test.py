@@ -59,16 +59,26 @@ class YajlTest(unittest.TestCase):
 
   def testInt(self):
     log('INT')
-    print(yajl.dumps(123))
-    if 0:  # BUG
-      print(yajl.loads('123'))
+    encoded = yajl.dumps(123)
+    print('encoded = %r' % encoded)
+    self.assertEqual('123', encoded)
+
+    # Bug fix over latest version of py-yajl: a lone int decodes
+    decoded = yajl.loads('123\n')
+    print('decoded = %r' % decoded)
+    self.assertEqual(123, decoded)
+
+    decoded = yajl.loads('{"a":123}\n')
+    print('decoded = %r' % decoded)
     log('')
 
   def testFloat(self):
     log('FLOAT')
     print(yajl.dumps(123.4))
-    if 0:  # BUG
-      print(yajl.loads('123.4'))
+
+    # Bug fix over latest version of py-yajl: a lone float decodes
+    decoded = yajl.loads('123.4')
+    self.assertEqual(123.4, decoded)
     log('')
 
   def testList(self):
@@ -90,7 +100,7 @@ class YajlTest(unittest.TestCase):
     log('STRING ENCODE')
 
     # It should just raise with Unicode instance
-    print(yajl.dumps(u'abc\u0100def'))
+    #print(yajl.dumps(u'abc\u0100def'))
 
     # It inserts \xff literally, OK I guess that's fine.  It's not valid utf-8
     print(yajl.dumps('\x00\xff'))

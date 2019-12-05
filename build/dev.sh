@@ -193,6 +193,12 @@ posix_() {
   native/posix_test.py "$@" > /dev/null
 }
 
+yajl-unit() {
+  pushd py-yajl
+  python2 tests/unit.py
+  popd
+}
+
 yajl() {
   ### Build and test yajl binding (depends on submodule)
 
