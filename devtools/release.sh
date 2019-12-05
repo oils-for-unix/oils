@@ -7,6 +7,7 @@
 #
 # Steps:
 #   build/doc.sh update-src-versions  (optional)
+#   build/dev.sh yajl-release
 #   $0 quick-oil-tarball     # build FIRST tarball
 #   build/test.sh oil-tar T  # extract, build, install
 #                            # for cpython-defs source scanning and dogfood

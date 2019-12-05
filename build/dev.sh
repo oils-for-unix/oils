@@ -199,6 +199,21 @@ yajl-unit() {
   popd
 }
 
+yajl-release() {
+  ### Creates a py-yajl/yajl/yajl-2.1.1/ dir, used by build/compile.sh
+
+  pushd py-yajl/yajl
+  ./configure
+  cmake .
+  make
+
+  #ls -l 
+
+  # TODO: Run tests too?  There are run_tests.sh files, but not all of them
+  # work.
+  popd
+}
+
 yajl() {
   ### Build and test yajl binding (depends on submodule)
 
