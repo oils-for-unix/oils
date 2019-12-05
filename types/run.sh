@@ -71,6 +71,10 @@ typed-arith-asdl() {
 
 readonly MORE_OIL_MANIFEST=types/more-oil-manifest.txt
 
+checkable-files() {
+  metrics/source-code.sh osh-files
+  metrics/source-code.sh oil-lang-files
+}
 
 need-typechecking() {
     # This command is useful to find files to annotate and add to
@@ -80,7 +84,7 @@ need-typechecking() {
     # typechecked by typecheck-more-oil here or
     # `types/osh_parse.sh travis`.
     comm -2 -3 \
-         <(metrics/source-code.sh osh-files | grep '.py$' | sed 's@^@./@') \
+         <(checkable-files | grep '.py$' | sed 's@^@./@') \
          <(cat $MORE_OIL_MANIFEST $OSH_PARSE_MANIFEST | sort) \
         | xargs wc -l | sort -n
 }

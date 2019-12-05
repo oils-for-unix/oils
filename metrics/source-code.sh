@@ -26,6 +26,10 @@ osh-files() {
     | filter-py | grep -E -v 'posixmodule.c$|line_input.c$|_gen.py$|test_lib.py$'
 }
 
+oil-lang-files() {
+  ls oil_lang/*.{py,pgen2} | filter-py 
+}
+
 # cloc doesn't understand ASDL files.
 # Use a wc-like format, filtering out blank lines and comments.
 asdl-cloc() {
@@ -142,7 +146,7 @@ all() {
   echo
 
   echo 'Oil Language'
-  ls oil_lang/*.{py,pgen2} | filter-py | xargs wc -l | sort --numeric
+  oil-lang-files | xargs wc -l | sort --numeric
   echo
 
   cpp

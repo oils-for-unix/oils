@@ -9,3 +9,4 @@
 ./osh/word_compile.py
 ./osh/builtin_bracket.py
 ./osh/split.py
+./oil_lang/expr_parse.py
