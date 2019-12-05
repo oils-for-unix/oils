@@ -17,7 +17,18 @@ def main(argv):
   # module name -> list of paths to include
   c_module_srcs = {}
 
-  for c_path in glob.glob('Modules/*.c') + glob.glob('Modules/_io/*.c'):
+  globs = [
+      'Modules/*.c',
+      'Modules/_io/*.c',
+      '../py-yajl/*.c',
+      '../py-yajl/yajl/src/*.c',
+  ]
+
+  paths = []
+  for g in globs:
+    paths.extend(glob.glob(g))
+
+  for c_path in paths:
     m = PURE_C_RE.match(c_path)
     if m:
       print(m.group(1), c_path)

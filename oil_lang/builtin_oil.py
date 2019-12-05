@@ -17,8 +17,9 @@ from _devbuild.gen.runtime_asdl import value_e
 from core.util import log
 from frontend import args
 from frontend import match
-
 from mycpp.mylib import tagswitch
+
+import yajl
 
 
 class Repr(object):
@@ -194,9 +195,6 @@ class Json(object):
     self.errfmt = errfmt
 
   def __call__(self, cmd_val):
-    # TODO: Move this to the top level when yajl is statically linked into Oil.
-    import yajl
-
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip 'json'
 

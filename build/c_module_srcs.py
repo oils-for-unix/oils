@@ -4,6 +4,7 @@ from __future__ import print_function
 c_module_srcs.py
 """
 
+import glob
 import sys
 
 
@@ -60,6 +61,18 @@ def main(argv):
         print('Modules/_io/_iomodule.c')
         print('Modules/_io/stringio.c')
         print('Modules/_io/textio.c')
+
+      elif mod_name == 'yajl':
+        # Not including headers
+        globs = [
+            'py-yajl/*.c',
+            'py-yajl/yajl/src/*.c',
+        ]
+        paths = []
+        for g in globs:
+          paths.extend(glob.glob(g))
+        for path in paths:
+          print('../' + path)
 
       else:
         print(manifest[mod_name])
