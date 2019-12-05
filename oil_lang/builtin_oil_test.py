@@ -117,8 +117,14 @@ class YajlTest(unittest.TestCase):
     s = yajl.loads('"abc"')
     print(repr(s))
 
-    u = yajl.loads('"\u03bc"')
-    print(repr(u))
+    obj = yajl.loads('"\u03bc"')
+    assert isinstance(obj, str), repr(obj)
+    self.assertEqual(obj, '\xce\xbc')
+
+    obj = yajl.loads('"\xce\xbc"')
+    assert isinstance(obj, str), repr(obj)
+    self.assertEqual(obj, '\xce\xbc')
+
 
     # Invalid utf-8.  Doesn't give a good parse error!
     if 0:
