@@ -126,6 +126,17 @@ class Reader(object):
     else:
       return self.argv[self.i]
 
+  def Peek2(self):
+    # type: () -> Tuple[Optional[str], int]
+    """Return the next token, or None if there are no more.
+
+    None is your SENTINEL for parsing.
+    """
+    if self.i >= self.n:
+      return None, -1
+    else:
+      return self.argv[self.i], self.spids[self.i]
+
   def ReadRequired(self, error_msg):
     arg = self.Peek()
     if arg is None:

@@ -24,6 +24,20 @@ json write -indent 0 :a
 ]
 ## END
 
+#### json write compact format
+
+# TODO: ORDER of keys should be PRESERVED
+
+var mydict = {name: "bob", age: 30}
+
+json write -pretty=0 :mydict
+# ignored
+json write -pretty=F -indent 4 :mydict
+## STDOUT:
+{"age":30,"name":"bob"}
+{"age":30,"name":"bob"}
+## END
+
 #### json write in command sub
 shopt -s oil:all  # for echo
 var mydict = {name: "bob", age: 30}
@@ -41,3 +55,28 @@ echo $x
 }
 ## END
 
+
+#### json read with redirect
+echo '{"age": 42}'  > $TMP/foo.txt
+json read :x < $TMP/foo.txt
+repr x
+## STDOUT:
+x = (cell val:(value.Obj obj:{'age': 42}) exported:F readonly:F)
+## END
+
+#### json read at end of pipeline (relies on lastpipe)
+echo '{"age": 43}' | json read :y
+repr y
+## STDOUT:
+y = (cell val:(value.Obj obj:{'age': 43}) exported:F readonly:F)
+## END
+
+#### invalid JSON
+echo '{' | json read :y
+echo pipeline status = $?
+repr y
+## status: 1
+## STDOUT:
+pipeline status = 1
+TODO: location info for parse error
+## END

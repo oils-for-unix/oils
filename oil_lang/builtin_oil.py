@@ -12,7 +12,8 @@ from __future__ import print_function
 
 import sys
 
-from _devbuild.gen.runtime_asdl import value_e
+from _devbuild.gen.runtime_asdl import value, value_e, scope_e
+from _devbuild.gen.syntax_asdl import sh_lhs_expr
 
 from core.util import log
 from frontend import args
@@ -20,6 +21,7 @@ from frontend import match
 from mycpp.mylib import tagswitch
 
 import yajl
+import posix_
 
 
 class Repr(object):
@@ -41,7 +43,8 @@ class Repr(object):
 
       cell = self.mem.GetCell(name)
       if cell is None:
-        print('%r is not defined' % name)
+        self.errfmt.Print("Couldn't find a variable named %r" % name,
+                          span_id=arg_vec.spids[i])
         status = 1
       else:
         sys.stdout.write('%s = ' % name)
@@ -167,10 +170,17 @@ class Opts(object):
 
 
 JSON_WRITE_SPEC = args.OilFlags()
+JSON_WRITE_SPEC.Flag('-pretty', args.Bool, default=True,
+                     help='Whitespace in output (default true)')
 JSON_WRITE_SPEC.Flag('-indent', args.Int, default=2,
                      help='Indent JSON by this amount')
-JSON_WRITE_SPEC.Flag('-pretty', args.Bool, default=True,
-                     help='Whitespace in output')
+
+JSON_READ_SPEC = args.OilFlags()
+# yajl has this option
+JSON_READ_SPEC.Flag('-validate', args.Bool, default=True,
+                     help='Validate UTF-8')
+
+_JSON_ACTION_ERROR = "builtin expects 'read' or 'write'"
 
 class Json(object):
   """Json I/O.
@@ -200,9 +210,9 @@ class Json(object):
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip 'json'
 
-    action = arg_r.Peek()
+    action, action_spid = arg_r.Peek2()
     if action is None:
-      raise args.UsageError("json builtin expects 'read' or 'echo'")
+      raise args.UsageError(_JSON_ACTION_ERROR)
     arg_r.Next()
 
     if action == 'write':
@@ -231,9 +241,17 @@ class Json(object):
           else:
             raise AssertionError(val)
 
-        j = yajl.dumps(obj, indent=arg.indent)
-        # Hm yajl puts a trialing newline on?
-        sys.stdout.write(j)
+        if arg.pretty:
+          indent = arg.indent 
+          extra_newline = False
+        else:
+          # How yajl works: if indent is -1, then everything is on one line.
+          indent = -1
+          extra_newline = True
+
+        j = yajl.dump(obj, sys.stdout, indent=indent)
+        if extra_newline:
+          sys.stdout.write('\n')
 
       # TODO: Accept a block.  They aren't hooked up yet.
       if cmd_val.block:
@@ -241,6 +259,30 @@ class Json(object):
         namespace = self.ex.EvalBlock(cmd_val.block)
 
         print(yajl.dump(namespace))
+
+    elif action == 'read':
+      arg, _ = JSON_READ_SPEC.Parse(arg_r)
+      # TODO:
+      # Respect -validate=F
+
+      var_name, _ = arg_r.ReadRequired2("expected variable name")
+      if var_name.startswith(':'):
+        var_name = var_name[1:]
+
+      # Have to use this over sys.stdin because of redirects
+      # TODO: change binding to yajl.readfd() ?
+      stdin = posix_.fdopen(0)
+      try:
+        obj = yajl.load(stdin)
+      except ValueError as e:
+        self.errfmt.Print('json read: %s', e)
+        return 1
+
+      self.mem.SetVar(
+          sh_lhs_expr.Name(var_name), value.Obj(obj), (), scope_e.LocalOnly)
+
+    else:
+      raise args.UsageError(_JSON_ACTION_ERROR, span_id=action_spid)
 
     return 0
 

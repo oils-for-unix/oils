@@ -832,7 +832,7 @@ oil-builtins() {
 }
 
 oil-json() {
-  sh-spec spec/oil-json.test.sh --cd-tmp \
+  sh-spec spec/oil-json.test.sh --cd-tmp --osh-failures-allowed 1 \
     $OSH_LIST "$@"
 }
 
