@@ -23,3 +23,21 @@ json write -indent 0 :a
 "foo.h"
 ]
 ## END
+
+#### json write in command sub
+shopt -s oil:all  # for echo
+var mydict = {name: "bob", age: 30}
+json write :mydict
+var x = $(json write :mydict)
+echo $x
+## STDOUT:
+{
+  "age": 30,
+  "name": "bob"
+}
+{
+  "age": 30,
+  "name": "bob"
+}
+## END
+
