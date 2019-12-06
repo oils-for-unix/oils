@@ -9,10 +9,20 @@ from __future__ import print_function
 from core.util import log
 from oil_lang import regex_translate
 
-from typing import Union, TYPE_CHECKING, Type, List, Dict, Any, Optional
+from typing import Union, TYPE_CHECKING, List, Dict, Any, Optional
 if TYPE_CHECKING:
+  from typing import Type
+  BoolList = List[bool]
+  IntList = List[int]
+  FloatList = List[float]
+  StrList = List[str]
+  TableDict = Dict[Any, List[Any]]
+  AssocArrayDict = Dict[Any, Any]
   from _devbuild.gen.syntax_asdl import re_t, command__Proc, command__Func, expr__Lambda
   from osh.cmd_exec import Executor
+else:
+  BoolList = IntList = FloatList = StrList = list
+  AssocArrayDict = TableDict = dict
 
 _ = log
 
@@ -42,28 +52,28 @@ class ParameterizedArray(object):
 
 # These are for data frames?
 
-class BoolArray(List[bool]):
+class BoolArray(BoolList):
   """
   var b = @[true false false]
   var b = @[T F F]
   """
   pass
 
-class IntArray(List[int]):
+class IntArray(IntList):
   """
   var b = @[1 2 3 -42]
   """
   pass
 
 
-class FloatArray(List[float]):
+class FloatArray(FloatList):
   """
   var b = @[1.1 2.2 3.9]
   """
   pass
 
 
-class StrArray(List[str]):
+class StrArray(StrList):
   """
   local oldarray=(a b c)  # only strings, but deprecated
 
@@ -81,11 +91,11 @@ class StrArray(List[str]):
 
 # TODO: Maybe use this so that 'pp my_assoc_array' works?  Or does it even
 # matter how it was defined?
-class AssocArray(Dict[Any, Any]):
+class AssocArray(AssocArrayDict):
   pass
 
 
-class Table(Dict[Any, List[Any]]):
+class Table(TableDict):
   """A table is our name for a data frame. 
   
   It's represented by a dict of arrays.
