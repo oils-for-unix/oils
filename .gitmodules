@@ -1,3 +1,3 @@
 [submodule "py-yajl"]
 	path = py-yajl
-	url = ../py-yajl.git
+	url = ../../oilshell/py-yajl.git
