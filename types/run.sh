@@ -72,7 +72,8 @@ typed-arith-asdl() {
 readonly MORE_OIL_MANIFEST=types/more-oil-manifest.txt
 
 checkable-files() {
-  metrics/source-code.sh osh-files
+  # syntax_abbrev.py is "included" in _devbuild/gen/syntax_asdl.py; it's not a standalone module
+  metrics/source-code.sh osh-files | grep -v syntax_abbrev.py
   metrics/source-code.sh oil-lang-files
 }
 
