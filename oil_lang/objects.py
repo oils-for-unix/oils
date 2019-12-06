@@ -9,9 +9,10 @@ from __future__ import print_function
 from core.util import log
 from oil_lang import regex_translate
 
-from typing import TYPE_CHECKING
+from typing import Union, TYPE_CHECKING, Type, List, Dict, Any, Optional
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime_asdl import regex_t
+  from _devbuild.gen.syntax_asdl import re_t, command__Proc, command__Func, expr__Lambda
+  from osh.cmd_exec import Executor
 
 _ = log
 
@@ -22,6 +23,7 @@ class ParameterizedArray(object):
   For Array[Bool]
   """
   def __getitem__(self, typ):
+    # type: (type) -> Union[Type[BoolArray], Type[IntArray], Type[FloatArray], Type[StrArray]]
     if typ is bool:
       return BoolArray
     if typ is int:
@@ -33,34 +35,35 @@ class ParameterizedArray(object):
     raise AssertionError('typ: %s' % typ)
 
   def __call__(self):
+    # type: () -> None
     # Array(1 2 3)
     raise AssertionError("Arrays need a parameterized type")
 
 
 # These are for data frames?
 
-class BoolArray(list):
+class BoolArray(List[bool]):
   """
   var b = @[true false false]
   var b = @[T F F]
   """
   pass
 
-class IntArray(list):
+class IntArray(List[int]):
   """
   var b = @[1 2 3 -42]
   """
   pass
 
 
-class FloatArray(list):
+class FloatArray(List[float]):
   """
   var b = @[1.1 2.2 3.9]
   """
   pass
 
 
-class StrArray(list):
+class StrArray(List[str]):
   """
   local oldarray=(a b c)  # only strings, but deprecated
 
@@ -78,11 +81,11 @@ class StrArray(list):
 
 # TODO: Maybe use this so that 'pp my_assoc_array' works?  Or does it even
 # matter how it was defined?
-class AssocArray(dict):
+class AssocArray(Dict[Any, Any]):
   pass
 
 
-class Table(dict):
+class Table(Dict[Any, List[Any]]):
   """A table is our name for a data frame. 
   
   It's represented by a dict of arrays.
@@ -102,9 +105,11 @@ class Table(dict):
   print(b[...,1]) #Equivalent to b[: ,: ,1 ] 
   """
   def __init__(self):
+    # type: () -> None
     pass
 
   def __getitem__(self, index):
+    # type: (Any) -> Any
     """
     TODO: Accept slices here.
 
@@ -125,6 +130,7 @@ class Proc(object):
   Unlike a shell proc, it has a signature, so we need to bind names to params.
   """
   def __init__(self, node, defaults):
+    # type: (command__Proc, Optional[List[Any]]) -> None
     self.docstring = ''
     self.node = node
     self.defaults = defaults
@@ -133,22 +139,26 @@ class Proc(object):
 class Func(object):
   """An Oil function declared with 'func'."""
   def __init__(self, node, pos_defaults, named_defaults, ex):
+    # type: (command__Func, List[Any], Dict[str, Any], Executor) -> None
     self.node = node
     self.pos_defaults = pos_defaults
     self.named_defaults = named_defaults
     self.ex = ex
 
   def __call__(self, *args, **kwargs):
+    # type: (Any, Any) -> Any
     return self.ex.RunOilFunc(self, args, kwargs)
 
 
 class Lambda(object):
   """An Oil function like |x| x+1 """
   def __init__(self, node, ex):
+    # type: (expr__Lambda, Executor) -> None
     self.node = node
     self.ex = ex
 
   def __call__(self, *args, **kwargs):
+    # type: (Any, Any) -> Any
     return self.ex.RunLambda(self.node, args, kwargs)
 
 
@@ -164,10 +174,11 @@ class Module(object):
   Maybe that only applies to 'proc' and not 'func'.
   """
   def __init__(self, name):
+    # type: (str) -> None
     self.name = name
     self.docstring = ''
     # items
-    self.attrs = {}
+    self.attrs = {} # type: Dict[str, Any]
 
 
 class Regex(object):
@@ -244,11 +255,12 @@ class Regex(object):
  
   """
   def __init__(self, regex):
-    # type: (regex_t) -> None
+    # type: (re_t) -> None
     self.regex = regex
-    self.as_ere = None  # Cache the evaluation
+    self.as_ere = None # type: Optional[str] # Cache the evaluation
 
   def __repr__(self):
+    # type: () -> str
     # The default because x ~ obj accepts an ERE string?
     # And because grep $/d+/ does.
     #
@@ -258,16 +270,19 @@ class Regex(object):
     return self.AsPosixEre()
 
   def AsPosixEre(self):
+    # type: () -> str
     if self.as_ere is None:
-      parts = []
+      parts = [] # type: List[str]
       regex_translate.AsPosixEre(self.regex, parts)
       self.as_ere = ''.join(parts)
     return self.as_ere
 
   def AsPcre(self):
+    # type: () -> None
     pass
 
   def AsPythonRe(self):
+    # type: () -> None
     """Very similar to PCRE, except a few constructs aren't allowed."""
     pass
 
