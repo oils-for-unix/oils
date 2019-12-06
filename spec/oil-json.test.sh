@@ -55,11 +55,21 @@ echo $x
 }
 ## END
 
+#### json read passed bad args
+json read
+echo status=$?
+json read 'z z'
+echo status=$?
+## STDOUT:
+status=2
+status=2
+## END
+
 
 #### json read with redirect
 echo '{"age": 42}'  > $TMP/foo.txt
 json read :x < $TMP/foo.txt
-repr x
+repr :x
 ## STDOUT:
 x = (cell val:(value.Obj obj:{'age': 42}) exported:F readonly:F)
 ## END
@@ -78,5 +88,5 @@ repr y
 ## status: 1
 ## STDOUT:
 pipeline status = 1
-TODO: location info for parse error
 ## END
+

@@ -37,6 +37,9 @@ class Repr(object):
     status = 0
     for i in xrange(1, len(arg_vec.strs)):
       name = arg_vec.strs[i]
+      if name.startswith(':'):
+        name = name[1:]
+
       if not match.IsValidVarName(name):
         raise args.UsageError('got invalid variable name %r' % name,
                               span_id=arg_vec.spids[i])
@@ -265,9 +268,13 @@ class Json(object):
       # TODO:
       # Respect -validate=F
 
-      var_name, _ = arg_r.ReadRequired2("expected variable name")
+      var_name, name_spid = arg_r.ReadRequired2("expected variable name")
       if var_name.startswith(':'):
         var_name = var_name[1:]
+
+      if not match.IsValidVarName(var_name):
+        raise args.UsageError('got invalid variable name %r' % var_name,
+                              span_id=name_spid)
 
       # Have to use this over sys.stdin because of redirects
       # TODO: change binding to yajl.readfd() ?
@@ -275,7 +282,7 @@ class Json(object):
       try:
         obj = yajl.load(stdin)
       except ValueError as e:
-        self.errfmt.Print('json read: %s', e)
+        self.errfmt.Print('json read: %s', e, span_id=action_spid)
         return 1
 
       self.mem.SetVar(
