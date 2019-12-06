@@ -94,7 +94,7 @@ web-dir() {
   local branch=${3:-$(current-branch-name)}
   local dest=$user@$host:oilshell.org/git-branch/$branch/web/
 
-  # This is made by copy-web in scripts/release.sh.  Reuse it here.
+  # This is made by copy-web in devtools/release.sh.  Reuse it here.
   rsync --archive --verbose \
     _release/VERSION/web/ $dest 
 
@@ -111,6 +111,22 @@ file-to-share() {
   local dest=$user@$host:oilshell.org/share/$(basename $file)$dest_suffix
 
   scp $file $dest
+}
+
+doc-preview() {
+  ### Publish a file (e.g. _release/VERSION/doc/json.html) to 
+  ### oilshell.org/git-branch/...
+  local user=$1
+  local host=$user.org
+
+  local path=$2
+
+  local dest
+  dest="$(versioned-dest)"  # no wild/ suffix, since it's wild.wwz/
+
+  ssh $user@$host mkdir --verbose -p $dest
+
+  scp $path $user@$host:$dest
 }
 
 "$@"

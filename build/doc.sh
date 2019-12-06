@@ -70,6 +70,7 @@ readonly MARKDOWN_DOCS=(
   osh-manual known-differences
   errors
   errexit
+  json
 
   # needs polish
   # Note: docs about the Oil language are prefixed 'oil-'.
