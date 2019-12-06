@@ -302,8 +302,8 @@ class OilMethodFilter(object):
     # - Do we need __sizeof__?  Is that for sys.getsizeof()?
 
     # NOTE: LoadOilGrammar needs marshal.loads().
-    # False positive for yajl.dumps()
-    if basename == 'marshal.c' and method_name in ('dump', 'dumps'):
+    # False positive for yajl.dumps() and load()
+    if basename == 'marshal.c' and method_name in ('dump', 'dumps', 'load'):
       return False
 
     # Auto-filtering gave false-positives here.
