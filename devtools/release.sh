@@ -6,7 +6,8 @@
 #   devtools/release.sh <function name>
 #
 # Steps:
-#   build/doc.sh update-src-versions  (optional)
+#   edit oil-version.txt and build/doc.sh update-src-versions
+#   $0 make-release-branch
 #   build/dev.sh yajl-release
 #   $0 quick-oil-tarball     # build FIRST tarball
 #   build/test.sh oil-tar T  # extract, build, install
@@ -66,6 +67,13 @@ source devtools/common.sh  # html-footer
 
 log() {
   echo "$@" 1>&2
+}
+
+make-release-branch() {
+  git checkout master
+  local name=release/$OIL_VERSION
+  git checkout -b $name
+  git push -u origin $name
 }
 
 # For redoing a release.  This is everything until you have to 'git pull' the
