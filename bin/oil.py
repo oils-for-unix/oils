@@ -693,14 +693,6 @@ def ShellMain(lang, argv0, argv, login_shell):
   return status
 
 
-def WokMain(main_argv):
-  raise NotImplementedError('wok')
-
-
-def BoilMain(main_argv):
-  raise NotImplementedError('boil')
-
-
 # TODO: Hook up to completion.
 SUBCOMMANDS = [
     'translate', 'arena', 'spans', 'format', 'deps', 'undefined-vars'
@@ -855,10 +847,6 @@ def AppBundleMain(argv):
 
   elif main_name == 'oil':
     return ShellMain('oil', argv0, main_argv, login_shell)
-  elif main_name == 'wok':
-    return WokMain(main_argv)
-  elif main_name == 'boil':
-    return BoilMain(main_argv)
 
   # For testing latency
   elif main_name == 'true':

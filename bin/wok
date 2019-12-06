@@ -1,3 +1,0 @@
-#!/bin/sh
-REPO_ROOT=$(cd $(dirname $(dirname $0)) && pwd)
-PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor exec $REPO_ROOT/bin/oil.py wok "$@"
