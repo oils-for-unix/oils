@@ -156,7 +156,7 @@ class Func(object):
     self.ex = ex
 
   def __call__(self, *args, **kwargs):
-    # type: (Any, Any) -> Any
+    # type: (*Any, **Any) -> Any
     return self.ex.RunOilFunc(self, args, kwargs)
 
 
@@ -168,7 +168,7 @@ class Lambda(object):
     self.ex = ex
 
   def __call__(self, *args, **kwargs):
-    # type: (Any, Any) -> Any
+    # type: (*Any, **Any) -> Any
     return self.ex.RunLambda(self.node, args, kwargs)
 
 
