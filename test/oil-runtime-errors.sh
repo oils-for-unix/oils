@@ -47,7 +47,7 @@ run-all-with-osh() {
 }
 
 run-for-release() {
-  run-other-suite-for-release runtime-errors run-all-with-osh
+  run-other-suite-for-release oil-runtime-errors run-all-with-osh
 }
 
 "$@"
