@@ -23,7 +23,8 @@ ubuntu-deps() {
   # gawk: used by spec-runner.sh for the special match() function.
   # time: used to collect the exit code and timing of a test
   # libreadline-dev: needed for the build/prepare.sh Python build.
-  sudo apt install python-dev gawk time libreadline-dev
+  # cmake: for build/dev.sh yajl-release
+  sudo apt install python-dev gawk time libreadline-dev cmake
 
   test/spec.sh install-shells
 }

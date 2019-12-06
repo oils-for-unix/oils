@@ -17,7 +17,8 @@
 #   build/cpython-defs.sh {oil-py-names,filter-methods}
 #     (regenerate C source)
 #
-#   devtools/release-native.sh {make-tar,test-tar}
+# Shortcut for below: $0 auto-machine1
+#
 #   $0 build-and-test  # build FINAL tarball, run unit/osh2oil suites, etc.
 #     prereq: build/codegen.sh {download,install}-re2c
 #     test/gold.sh run-for-release (outside OSH_HIJACK_SHEBANG)
@@ -36,13 +37,14 @@
 #     lisa: $0 benchmark-run
 #     Commit files to oilshell/benchmark-data repo and sync.
 #   benchmarks/report.sh all
+#   devtools/release-native.sh {make-tar,test-tar}
 #   $0 deploy-tar  # needed to checksum
 #   $0 build-tree
 #   $0 compress
 #   devtools/release-version.sh git-changelog-$VERSION
 #   devtools/release-version.sh announcement-$VERSION
 #   MAYBE: ./local.sh test-release-tree if you want to preview it
-#   $0 deploy-doc
+#   $0 deploy-doc (makes releases.html)
 #
 #   demo/osh-debug.sh analyze  # see what you ran
 # 
