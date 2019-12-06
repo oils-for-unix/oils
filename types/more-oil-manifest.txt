@@ -10,3 +10,5 @@
 ./osh/builtin_bracket.py
 ./osh/split.py
 ./oil_lang/expr_parse.py
+./core/main_loop.py
+./oil_lang/regex_translate.py

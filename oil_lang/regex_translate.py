@@ -5,14 +5,34 @@ regex_translate.py
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
-    re_e, re_repeat_e, class_literal_term_e, re_t
+    class_literal_term_e,
+    class_literal_term__Range,
+    class_literal_term__ByteSet,
+    class_literal_term__CodePoint,
+    posix_class,
+    perl_class,
+    re_e,
+    re__ClassLiteral,
+    re__Primitive,
+    re__LiteralChars,
+    re__Seq,
+    re__Alt,
+    re__Repeat,
+    re__Group,
+    re_repeat_e,
+    re_repeat__Op,
+    re_repeat__Num,
+    re_repeat__Range,
 )
 from _devbuild.gen.id_kind_asdl import Id
 
 from core.util import log, e_die
 from osh import glob_  # for ExtendedRegexEscape
 
-from typing import List
+from typing import List, TYPE_CHECKING, cast
+
+if TYPE_CHECKING:
+    from _devbuild.gen.syntax_asdl import class_literal_term_t, re_t
 
 _ = log
 
@@ -49,8 +69,12 @@ PERL_CLASS = {
 # general though.
 
 def _ClassLiteralToPosixEre(term, parts):
+  # type: (class_literal_term_t, List[str]) -> None
+
+  UP_term = term
   tag = term.tag
   if tag == class_literal_term_e.Range:
+    term = cast(class_literal_term__Range, UP_term)
     # \\ \^ \- can be used in ranges?
     start = glob_.EreCharClassEscape(term.start)
     end = glob_.EreCharClassEscape(term.end)
@@ -58,11 +82,13 @@ def _ClassLiteralToPosixEre(term, parts):
     return
 
   if tag == class_literal_term_e.ByteSet:
+    term = cast(class_literal_term__ByteSet, UP_term)
     # This escaping is different than ExtendedRegexEscape.
     parts.append(glob_.EreCharClassEscape(term.bytes))
     return
 
   if tag == class_literal_term_e.CodePoint:
+    term = cast(class_literal_term__CodePoint, UP_term)
     code_point = term.i
     if code_point < 128:
       parts.append(chr(code_point))
@@ -71,6 +97,7 @@ def _ClassLiteralToPosixEre(term, parts):
     return
 
   if tag == class_literal_term_e.PerlClass:
+    term = cast(perl_class, UP_term)
     n = term.name
     chars = PERL_CLASS[term.name]  # looks like '[:digit:]'
     if term.negated:
@@ -82,6 +109,7 @@ def _ClassLiteralToPosixEre(term, parts):
     return
 
   if tag == class_literal_term_e.PosixClass:
+    term = cast(posix_class, UP_term)
     n = term.name  # looks like 'digit'
     if term.negated:
       e_die("POSIX classes can't be negated in ERE",
@@ -95,13 +123,16 @@ def _ClassLiteralToPosixEre(term, parts):
 
 
 def AsPosixEre(node, parts):
-  # type: (re_t) -> List[str]
+  # type: (re_t, List[str]) -> None
   """Translate an Oil regex to a POSIX ERE.
 
   Appends to a list of parts that you hvae to join.
   """
+  UP_node = node
+
   tag = node.tag
   if tag == re_e.Primitive:
+    node = cast(re__Primitive, UP_node)
     if node.id == Id.Re_Dot:
       parts.append('.')
     elif node.id == Id.Re_Start:
@@ -113,6 +144,7 @@ def AsPosixEre(node, parts):
     return
 
   if tag == re_e.LiteralChars:
+    node = cast(re__LiteralChars, UP_node)
     # The bash [[ x =~ "." ]] construct also has to do this
 
     # TODO: What about \0 and unicode escapes?
@@ -125,11 +157,13 @@ def AsPosixEre(node, parts):
     return
 
   if tag == re_e.Seq:
+    node = cast(re__Seq, UP_node)
     for c in node.children:
       AsPosixEre(c, parts)
     return
 
   if tag == re_e.Alt:
+    node = cast(re__Alt, UP_node)
     for i, c in enumerate(node.children):
       if i != 0:
         parts.append('|')
@@ -137,19 +171,23 @@ def AsPosixEre(node, parts):
     return
 
   if tag == re_e.Repeat:
+    node = cast(re__Repeat, UP_node)
     # 'foo' or "foo" or $x or ${x} evaluated to too many chars
     if node.child.tag == re_e.LiteralChars:
-      if len(node.child.s) > 1:
+      child = cast(re__LiteralChars, node.child)
+      if len(child.s) > 1:
         # Note: Other regex dialects have non-capturing groups since we don't
         # need this.
         e_die("POSIX EREs don't have groups without capture, so this node "
-              "needs () around it.", span_id=node.child.spid)
+              "needs () around it.", span_id=child.spid)
 
     AsPosixEre(node.child, parts)
     op = node.op
     op_tag = op.tag
+    UP_op = op
 
     if op_tag == re_repeat_e.Op:
+      op = cast(re_repeat__Op, UP_op)
       op_id = op.op.id
       if op_id == Id.Arith_Plus:
         parts.append('+')
@@ -162,10 +200,12 @@ def AsPosixEre(node, parts):
       return
 
     if op_tag == re_repeat_e.Num:
+      op = cast(re_repeat__Num, UP_op)
       parts.append('{%s}' % op.times.val)
       return
 
     if op_tag == re_repeat_e.Range:
+      op = cast(re_repeat__Range, UP_op)
       lower = op.lower.val if op.lower else ''
       upper = op.upper.val if op.upper else ''
       parts.append('{%s,%s}' % (lower, upper))
@@ -174,12 +214,14 @@ def AsPosixEre(node, parts):
     raise NotImplementedError(node.op)
 
   if tag == re_e.Group:
+    node = cast(re__Group, UP_node)
     parts.append('(')
     AsPosixEre(node.child, parts)
     parts.append(')')
     return
 
   if tag == re_e.PerlClass:
+    node = cast(perl_class, UP_node)
     n = node.name
     chars = PERL_CLASS[node.name]  # looks like [:digit:]
     if node.negated:
@@ -190,6 +232,7 @@ def AsPosixEre(node, parts):
     return
 
   if tag == re_e.PosixClass:
+    node = cast(posix_class, UP_node)
     n = node.name  # looks like 'digit'
     if node.negated:
       pat = '[^[:%s:]]' % n
@@ -199,6 +242,7 @@ def AsPosixEre(node, parts):
     return
 
   if tag == re_e.ClassLiteral:
+    node = cast(re__ClassLiteral, UP_node)
     parts.append('[')
     if node.negated:
       parts.append('^')
