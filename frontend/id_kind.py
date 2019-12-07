@@ -449,12 +449,11 @@ def AddKinds(spec):
       'Time',
 
       # Oil keywords.
+      # should 'const' be 'let'?
       'Const', 'Set', 'Var', 'Auto', # assignment
       'SetVar',  # for OSH compatibility
       'Proc', 'Func',
-
-      # for printing
-      'Pass', 'Pp',
+      'Pass',  # for printing
 
       'Match', 'With',  # matching
       # not sure: yield

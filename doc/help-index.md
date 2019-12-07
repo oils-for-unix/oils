@@ -74,7 +74,7 @@ an **unimplemented** feature.
                   redir-desc  >&  <&
                   here-doc    <<  <<-  <<<
   [Other Command] dparen ((   time   X coproc   X select
-  [Oil Keywords]  proc   func   return   do   pass   pp   equal =
+  [Oil Keywords]  proc   func   return   do   pass   equal =
 X [Coil Keywords] const   try   catch   throw   switch   match
                   data   enum   module   interface   namespace
 </pre>

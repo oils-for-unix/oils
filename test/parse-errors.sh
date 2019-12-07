@@ -543,13 +543,17 @@ regex_literals() {
 oil_expr() {
   set +o errexit
   # % is not a token
-  _oil-parse-error 'pp 5 % 3'
-  _oil-parse-error 'pp >>='
-  _oil-parse-error 'pp %('
+  _oil-parse-error '= 5 % 3'
+  _oil-parse-error '= >>='
+  _oil-parse-error '= %('
 
   # Singleton tuples
-  _oil-parse-error 'pp 42,'
-  _oil-parse-error 'pp (42,)'
+  _oil-parse-error '= 42,'
+  _oil-parse-error '= (42,)'
+
+  # parse_equals
+  _oil-parse-error '=a'
+  _oil-parse-error 'name=val'
 }
 
 

@@ -565,8 +565,8 @@ echo $y
 ## END
 
 #### mod operator
-pp 5 mod 3
-pp -5 mod 3
+= 5 mod 3
+= -5 mod 3
 ## STDOUT:
 (int)   2
 (int)   1

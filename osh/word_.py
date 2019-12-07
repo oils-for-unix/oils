@@ -645,8 +645,10 @@ def CommandId(w):
       if token_type == Id.Undefined_Tok:
         return Id.Word_Compound
 
-      elif token_type in (Id.Lit_LBrace, Id.Lit_RBrace, Id.ControlFlow_Return):
-        # Return is for special processing
+      elif token_type in (
+          Id.Lit_LBrace, Id.Lit_RBrace, Id.Lit_Equals, Id.ControlFlow_Return):
+        # OSH and Oil recognize:  { }
+        # Oil recognizes:         = return
         return token_type
 
       token_kind = lookup.LookupKind(token_type)

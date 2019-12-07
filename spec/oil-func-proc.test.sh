@@ -132,9 +132,9 @@ ret=5
 #### Func with varargs
 shopt -s oil:all
 func printf(fmt, ...args) {
-  pp fmt
+  = fmt
   # Should be a LIST
-  pp args
+  = args
 }
 pass printf('foo', 'a', 42, null)
 

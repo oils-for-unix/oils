@@ -9,7 +9,6 @@ echo status=$?
 ## STDOUT:
 x = (cell val:(value.Str s:42) exported:F readonly:F)
 status=0
-'nonexistent' is not defined
 status=1
 ## END
 

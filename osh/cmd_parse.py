@@ -820,6 +820,15 @@ class CommandParser(object):
       simple.redirects = redirects
       return simple
 
+    # Disallow =a because it's confusing
+    if self.parse_opts.parse_equals:
+      part0 = words[0].parts[0]
+      if part0.tag_() == word_part_e.Literal:
+        tok = cast(word_part__Literal, part0).token
+        if tok.id == Id.Lit_Equals:
+          p_die("=word isn't allowed when shopt 'parse_equals' is on.\n"
+                "Hint: add a space after = to pretty print an expression", token=tok)
+
     preparsed_list, suffix_words = _SplitSimpleCommandPrefix(words)
     if self.parse_opts.parse_equals and len(preparsed_list):
       left_token, _, _, _ = preparsed_list[0]
@@ -1677,7 +1686,7 @@ class CommandParser(object):
       return command.Return(keyword, enode)
 
     # TODO: Can we have parse_do here?  For do obj.method()
-    if self.c_id in (Id.KW_Pass, Id.KW_Pp, Id.KW_Do):
+    if self.c_id in (Id.KW_Pass, Id.KW_Do, Id.Lit_Equals):
       keyword = _KeywordToken(self.cur_word)
       self._Next()
       enode = self.w_parser.ParseCommandExpr()

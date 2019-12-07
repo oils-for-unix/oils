@@ -2,31 +2,31 @@
 
 #### ranges have higher precedence than comparison
 # Python slices are comparable?  Why?
-pp 1:3 < 1:4
+= 1:3 < 1:4
 ## STDOUT:
 (bool)   True
 ## END
 
 #### ranges have lower precedence than bitwise operators
-pp 3:3|4
+= 3:3|4
 ## STDOUT:
 (xrange)   xrange(3, 7)
 ## END
 
 #### subscript and range of array
 var myarray = @(1 2 3 4)
-pp myarray[1]
-pp myarray[1:3]
+= myarray[1]
+= myarray[1:3]
 
 echo 'implicit'
-pp myarray[:2]
-pp myarray[2:]
+= myarray[:2]
+= myarray[2:]
 
 # Stride not supported
-#pp myarray[1:4:2]
+#= myarray[1:4:2]
 
 # Now try omitting smoe
-#pp myarray[1:4:2]
+#= myarray[1:4:2]
 ## STDOUT:
 (str)   '2'
 (list)   ['2', '3']
@@ -37,12 +37,12 @@ implicit
 
 #### subscript and range of list
 var mylist = [1,2,3,4]
-pp mylist[1]
-pp mylist[1:3]
+= mylist[1]
+= mylist[1:3]
 
 echo 'implicit'
-pp mylist[:2]
-pp mylist[2:]
+= mylist[:2]
+= mylist[2:]
 ## STDOUT:
 (int)   2
 (list)   [2, 3]
@@ -53,12 +53,12 @@ implicit
 
 #### expressions and negative indices
 var myarray = @(1 2 3 4 5)
-pp myarray[-1]
-pp myarray[-4:-2]
+= myarray[-1]
+= myarray[-4:-2]
 
 echo 'implicit'
-pp myarray[:-2]
-pp myarray[-2:]
+= myarray[:-2]
+= myarray[-2:]
 ## STDOUT:
 (str)   '5'
 (list)   ['2', '3']
@@ -130,7 +130,7 @@ echo $val
 #### Copy wtih a[:]
 var a = [1,2,3]
 var b = a[:]
-pp b
+= b
 ## STDOUT:
 (list)   [1, 2, 3]
 ## END
@@ -153,10 +153,10 @@ var t = Table()
 
 # Cut off the first two rows
 var t1 = t[2:, :]
-pp t1
+= t1
 
 var t2 = t[:2, 3:4]
-pp t2
+= t2
 
 ## STDOUT:
 (str)   'TODO: Table Slicing'

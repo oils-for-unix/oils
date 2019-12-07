@@ -1110,7 +1110,7 @@ class Executor(object):
 
     elif node.tag == command_e.Expr:
       obj = self.expr_ev.EvalExpr(node.e)
-      if node.keyword.id == Id.KW_Pp:
+      if node.keyword.id == Id.Lit_Equals:
         # NOTE: It would be nice to unify this with 'repr', but there isn't a
         # good way to do it with the value/PyObject split.
         print('(%s)   %s' % (obj.__class__.__name__, repr(obj)))
