@@ -61,7 +61,10 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc  # type: ignore
 
-from typing import List, Dict, Tuple, Any
+from typing import List, Dict, Tuple, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from _devbuild.gen.syntax_asdl import expr__Lambda
 
 
 # These are nodes that execute more than one COMMAND.  DParen doesn't
@@ -1810,7 +1813,7 @@ class Executor(object):
     return status
 
   def RunOilFunc(self, func, args, kwargs):
-    # type: (objects.Func, List[Any], Dict[str, Any]) -> Any
+    # type: (objects.Func, Tuple[Any, ...], Dict[str, Any]) -> Any
     """Run an Oil function.
 
     var x = abs(y)   do f(x)   @split(mystr)   @join(myarray)
@@ -1899,6 +1902,7 @@ class Executor(object):
     return return_val
 
   def RunLambda(self, lambda_node, args, kwargs):
+    # type: (expr__Lambda, Tuple[Any, ...], Dict[str, Any]) -> Any
     """ Run a lambda like |x| x+1 """
 
     self.mem.PushTemp()
