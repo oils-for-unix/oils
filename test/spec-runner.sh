@@ -306,8 +306,12 @@ _all-parallel() {
   html-summary $suite
 }
 
-# 8.5 seconds, 43 users.
 all-parallel() {
+  ### Run spec tests in parallel.
+
+  # Note that this function doesn't fail because 'run-cases' saves the status
+  # to a file.
+
   time $0 _all-parallel "$@"
 }
 

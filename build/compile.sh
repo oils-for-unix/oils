@@ -376,6 +376,7 @@ make-tar() {
     build/detect-*.c \
     _build/$app_name/$bytecode_zip \
     _build/$app_name/*.c \
+    py-yajl/yajl/COPYING \
     $PY27/LICENSE \
     $PY27/Modules/ovm.c \
     $c_module_srcs \

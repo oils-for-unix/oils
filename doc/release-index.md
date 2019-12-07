@@ -48,6 +48,7 @@ Oil has three major sources of docs:
   - [Known Differences Between OSH and Other
     Shells](doc/known-differences.html)
   - [Egg Expressions (Oil Regexes)](doc/eggex.html)
+  - [JSON Support](doc/json.html)
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
   - The [Oil Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments)
     wiki page has other ways of getting Oil.  These versions may not be

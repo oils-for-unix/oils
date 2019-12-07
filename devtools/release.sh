@@ -281,6 +281,11 @@ test-opy() {
 }
 
 spec-all() {
+  ### Run all spec tests
+
+  # TODO: Look at task files and fail all are green and red.  See
+  # 'test/spec-runner.sh all-parallel'.
+
   # Create the tests we're running
   test/smoosh.sh make-spec
 
@@ -288,7 +293,6 @@ spec-all() {
   export OSH_LIST="$REPO_ROOT/bin/osh $OSH_RELEASE_BINARY"
   export OIL_LIST="$REPO_ROOT/bin/oil $OIL_RELEASE_BINARY"
   test/spec.sh all-and-smoosh
-  #test/spec.sh oil-all
 }
 
 # For quickly debugging failures that don't happen in dev mode.

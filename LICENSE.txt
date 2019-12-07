@@ -1,5 +1,8 @@
-This is the license for Oil code.  The Python-2.7.13/LICENSE file applies to
-the Python interpreter source code in that subtree.
+This is the license for Oil code.
+
+- The Python interpreter license is in Python-2.7.13/LICENSE
+- py-yajl has licenses in its source files, e.g. py-yajl/*.[ch]
+- yajl's license is in py-yajl/yajl/COPYING
 
                                  Apache License
                            Version 2.0, January 2004
