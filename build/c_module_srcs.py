@@ -4,6 +4,7 @@ from __future__ import print_function
 c_module_srcs.py
 """
 
+import os
 import glob
 import sys
 
@@ -72,6 +73,9 @@ def main(argv):
         for g in globs:
           paths.extend(glob.glob(g))
         for path in paths:
+          # UNUSED file.  It's an optional layer on top.
+          if os.path.basename(path) == 'yajl_tree.c':
+            continue
           print('../' + path)
 
       else:
