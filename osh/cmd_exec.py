@@ -67,6 +67,18 @@ if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import expr__Lambda
 
 
+# Python type name -> Oil type name
+OIL_TYPE_NAMES = {
+    'bool': 'Bool',
+    'int': 'Int',
+    'float': 'Float',
+    'str': 'Str',
+    'tuple': 'Tuple',
+    'list': 'List',
+    'dict': 'Dict',
+}
+
+
 # These are nodes that execute more than one COMMAND.  DParen doesn't
 # count because there are no commands.
 # - AndOr has multiple commands, but uses exit code in boolean way
@@ -1113,7 +1125,9 @@ class Executor(object):
       if node.keyword.id == Id.Lit_Equals:
         # NOTE: It would be nice to unify this with 'repr', but there isn't a
         # good way to do it with the value/PyObject split.
-        print('(%s)   %s' % (obj.__class__.__name__, repr(obj)))
+        class_name = obj.__class__.__name__
+        oil_name = OIL_TYPE_NAMES.get(class_name, class_name)
+        print('(%s)   %s' % (oil_name, repr(obj)))
 
       # TODO: What about exceptions?  They just throw?
       status = 0

@@ -568,8 +568,8 @@ echo $y
 = 5 mod 3
 = -5 mod 3
 ## STDOUT:
-(int)   2
-(int)   1
+(Int)   2
+(Int)   1
 ## END
 
 #### Logical operators

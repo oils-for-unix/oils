@@ -139,8 +139,8 @@ func printf(fmt, ...args) {
 pass printf('foo', 'a', 42, null)
 
 ## STDOUT:
-(str)   'foo'
-(tuple)   ('a', 42, None)
+(Str)   'foo'
+(Tuple)   ('a', 42, None)
 ## END
 
 #### return expression then return builtin

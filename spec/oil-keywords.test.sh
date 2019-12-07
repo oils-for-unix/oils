@@ -4,7 +4,7 @@
 ### = to pretty print
 = 1 + 2 * 3
 ## STDOUT:
-(int)   7
+(Int)   7
 ## END
 
 #### pass
