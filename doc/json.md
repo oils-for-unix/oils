@@ -35,8 +35,8 @@ Examples:
     # Read from a file.  myvar is created in local scope.
     $ json read :myvar < stats.json
 
-    # Use = to pretty print an expression
-    $ = myvar   
+    # Use pp to pretty print an expression (TODO: change to =)
+    $ pp myvar   
     (Dict)    {'count': 42}
 
     # 'json read' is valid at the end of a pipeline (because Oil implements
@@ -105,19 +105,29 @@ Notes:
 
 Oil arrays and shell arrays both serialize to a list of strings:
 
-    $ sharray=( foo.txt *.py )
+    $ declare sharray=( foo.txt *.py )
     $ json write :sharray
-    ["foo.txt", "one.py", "two.py"]
+    [  
+       "foo.txt",
+       "one.py",
+       "two.py"
+    ]
 
     $ var oilarray = @( foo.txt *.py )
     $ json write :oilarray
-    ["foo.txt", "one.py", "two.py"]
+    [  
+       "foo.txt",
+       "one.py",
+       "two.py"
+    ]
 
 Bash-style associative arrays are printed like `Dict[Str, Str]`:
 
     $ declare -A assoc=(["key"]=value)
     $ json write :assoc
-    {"key": "value"}
+    {
+      "key": "value"
+    }
 
 ## Credits
 
