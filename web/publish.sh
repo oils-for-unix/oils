@@ -87,18 +87,48 @@ wild() {
 }
 
 web-dir() {
-  ### Publish static assets needed for the wild HTML pages.
-
   local user=$1
-  local host=${2:-${user}.org}  # default host looks like the name
-  local branch=${3:-$(current-branch-name)}
-  local dest=$user@$host:oilshell.org/git-branch/$branch/web/
+  local dest=$2
 
   # This is made by copy-web in devtools/release.sh.  Reuse it here.
   rsync --archive --verbose \
     _release/VERSION/web/ $dest 
 
   echo "Published to $dest"
+}
+
+web-dir-versioned() {
+  ### Publish static assets needed for the wild HTML pages.
+  local user=$1
+  local host=$user.org
+
+  local branch=$(current-branch-name)
+  local dest=$user@$host:oilshell.org/git-branch/$branch/web/
+  web-dir $user $dest
+}
+
+web-dir-preview() {
+  ### Publish static assets needed for the wild HTML pages.
+  local user=$1
+  local host=$user.org
+
+  local dest='oilshell.org/preview/web'
+  ssh $user@$host mkdir --verbose -p $dest
+  local dest=$user@$host:$dest
+  web-dir $user $dest
+}
+
+preview() {
+  ### Publish a file (e.g. _release/VERSION/doc/json.html) to 
+  ### oilshell.org/git-branch/...
+  local user=$1
+  local host=$user.org
+
+  local path=$2
+
+  local dest='oilshell.org/preview/doc'
+  ssh $user@$host mkdir --verbose -p $dest
+  scp $path $user@$host:$dest
 }
 
 file-to-share() {
@@ -111,22 +141,6 @@ file-to-share() {
   local dest=$user@$host:oilshell.org/share/$(basename $file)$dest_suffix
 
   scp $file $dest
-}
-
-doc-preview() {
-  ### Publish a file (e.g. _release/VERSION/doc/json.html) to 
-  ### oilshell.org/git-branch/...
-  local user=$1
-  local host=$user.org
-
-  local path=$2
-
-  local dest
-  dest="$(versioned-dest)"  # no wild/ suffix, since it's wild.wwz/
-
-  ssh $user@$host mkdir --verbose -p $dest
-
-  scp $path $user@$host:$dest
 }
 
 "$@"
