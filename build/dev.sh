@@ -83,7 +83,7 @@ gen-asdl-cpp() {
 
   local name=$(basename $asdl_path .asdl)
 
-  local out_prefix=_devbuild/gen-cpp/${name}_asdl
+  local out_prefix=_build/cpp/${name}_asdl
 
   # abbrev module is optional
   asdl/tool.py cpp $asdl_path $out_prefix
@@ -112,11 +112,11 @@ oil-asdl-to-py() {
 }
 
 arith-parse-cpp-gen() {
-  osh/arith_parse_gen.py > _devbuild/gen-cpp/arith_parse.cc
+  osh/arith_parse_gen.py > _build/cpp/arith_parse.cc
 }
 
 oil-asdl-to-cpp() {
-  local dir='_devbuild/gen-cpp'
+  local dir='_build/cpp'
   mkdir -p $dir
 
   PRETTY_PRINT_METHODS='' gen-asdl-cpp 'asdl/hnode.asdl'

@@ -41,7 +41,7 @@ export ASAN_OPTIONS='detect_leaks=0'
 asdl-demo() {
   build/dev.sh oil-asdl-to-cpp
   $CXX -o _bin/oil_mycpp $DBG_FLAGS \
-    -I _devbuild/gen-cpp \
+    -I _build/cpp \
     -I _devbuild/gen \
     -I mycpp \
     bin/oil.cc mycpp/mylib.cc -lstdc++
@@ -128,7 +128,7 @@ compile() {
   $CXX $flags \
     -I mycpp \
     -I cpp \
-    -I _devbuild/gen-cpp \
+    -I _build/cpp \
     -I _devbuild/gen \
     -o $out \
     "$@" \
@@ -164,17 +164,17 @@ compile-osh-parse() {
   # Add -opt to make it opt
   local suffix=${2:-.asan}  # opt or dbg
 
-  compile _bin/$name$suffix $TMP/${name}.cc \
+  compile _bin/$name$suffix _build/cpp/${name}.cc \
     mycpp/mylib.cc \
     cpp/frontend_match.cc \
     cpp/asdl_pretty.cc \
     cpp/frontend_tdop.cc \
     cpp/osh_arith_parse.cc \
-    _devbuild/gen-cpp/syntax_asdl.cc \
-    _devbuild/gen-cpp/hnode_asdl.cc \
-    _devbuild/gen-cpp/id_kind_asdl.cc \
-    _devbuild/gen-cpp/lookup.cc \
-    _devbuild/gen-cpp/arith_parse.cc 
+    _build/cpp/syntax_asdl.cc \
+    _build/cpp/hnode_asdl.cc \
+    _build/cpp/id_kind_asdl.cc \
+    _build/cpp/lookup.cc \
+    _build/cpp/arith_parse.cc 
   #2>&1 | tee _tmp/compile.log
 }
 
@@ -244,7 +244,7 @@ osh-parse() {
     mycpp $raw bin/$name.py "${OSH_PARSE_FILES[@]}"
   fi
 
-  local cc=$tmp/$name.cc
+  local cc=_build/cpp/$name.cc
 
   { osh-parse-preamble 
     cpp-skeleton $name $raw 
@@ -267,7 +267,7 @@ run-osh-parse() {
 }
 
 size-profile() {
-  wc -l $TMP/osh_parse.cc
+  wc -l _build/cpp/osh_parse.cc
 
   local bin=_bin/osh_parse.opt
 
@@ -408,9 +408,9 @@ osh-parse-smoke() {
 # TODO: We need a proper unit test framework
 frontend-match-test() {
   local name='frontend_match_test'
-  compile $TMP/$name cpp/frontend_match_test.cc cpp/frontend_match.cc mycpp/mylib.cc
+  compile _bin/$name cpp/frontend_match_test.cc cpp/frontend_match.cc mycpp/mylib.cc
 
-  $TMP/$name
+  _bin/$name
 }
 
 # Demo for the oil-native tarball.

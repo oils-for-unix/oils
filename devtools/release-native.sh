@@ -42,8 +42,7 @@ make-tar() {
     cpp/ \
     mycpp/mylib.{cc,h} \
     _devbuild/gen/*.h \
-    _devbuild/gen-cpp/ \
-    _tmp/mycpp/osh_parse.cc
+    _build/cpp/
 
   xz -c $out > $out.xz
 
@@ -51,7 +50,7 @@ make-tar() {
 }
 
 test-tar() {
-  local tmp=_tmp/native-tar-test  # lik oil-tar-test
+  local tmp=_tmp/native-tar-test  # like oil-tar-test
   rm -r -f $tmp
   mkdir -p $tmp
   cd $tmp

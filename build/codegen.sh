@@ -31,11 +31,13 @@ export PYTHONPATH='.:vendor/'
 # NOTE: These are in _devbuild because fastlex.so need them, and fastlex.so is
 # needed for the Makefile to properly crawl dependencies.
 #
-# _devbuild/gen/
-#    osh-types.h - lex_mode_e for now
-#    id_kind.h - id_e for now
+# _devbuild/
+#   gen/
+#     osh-types.h - lex_mode_e
+#     id_kind.h - Id
+#     osh-lex.h
+#   tmp/
 #    osh-lex.re2c.c
-#    osh-lex.c
 
 download-re2c() {
   mkdir -p _deps
@@ -82,42 +84,40 @@ id-mypy-gen() {
 }
 
 id-cpp-gen() {
-  frontend/id_kind_gen.py cpp _devbuild/gen-cpp/id_kind_asdl
+  local out_dir=_build/cpp
+  frontend/id_kind_gen.py cpp $out_dir/id_kind_asdl
 
-  frontend/id_kind_gen.py cc-tables _devbuild/gen-cpp/lookup
+  frontend/id_kind_gen.py cc-tables $out_dir/lookup
 
   #wc -l _devbuild/gen-cpp/lookup.*
 }
 
 lexer-gen() { frontend/lexer_gen.py "$@"; }
 
-# _gen/osh_lex.re2c.c
-# This includes osh_ast.h
-osh-lex-gen() {
-  lexer-gen c > _devbuild/gen/osh-lex.re2c.h
-}
-
 print-regex() { lexer-gen print-regex; }
 print-all() { lexer-gen print-all; }
 
 # re2c native.
 osh-lex-gen-native() {
+  local in=$1
+  local out=$2
   # Turn on all warnings and make them native.
   # The COMMENT state can match an empty string at the end of a line, e.g.
   # '#\n'.  So we have to turn that warning off.
-  re2c -W -Wno-match-empty-string -Werror \
-    -o _devbuild/gen/osh-lex.h _devbuild/gen/osh-lex.re2c.h
+  re2c -W -Wno-match-empty-string -Werror -o $out $in
 }
 
 # Called by build/dev.sh for fastlex.so.
 ast-id-lex() {
-  mkdir -p _devbuild/gen
+  mkdir -p _devbuild/{gen,tmp}
 
   log "-- Generating AST, IDs, and lexer in _devbuild/gen"
   types-gen
   id-c-gen
-  osh-lex-gen
-  osh-lex-gen-native
+
+  local tmp=_devbuild/tmp/osh-lex.re2c.h
+  lexer-gen c > $tmp
+  osh-lex-gen-native $tmp _devbuild/gen/osh-lex.h
 }
 
 # NOTES:
