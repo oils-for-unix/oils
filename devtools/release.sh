@@ -144,7 +144,7 @@ auto-machine1() {
 _clean-tmp-dirs() {
   rm -r -f \
     _tmp/{spec,unit,gold,parse-errors,osh2oil,wild/www} \
-    _tmp/metrics \
+    _tmp/{metrics,important-source-code} \
     _tmp/opy-test \
     _tmp/{osh-parser,osh-runtime,vm-baseline,ovm-build,oheap} \
     _tmp/oil-tar-test

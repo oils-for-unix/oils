@@ -165,7 +165,7 @@ domain-specific languages and code generation.
   elements, used in the lexer and in multiple parsers and evaluators.
 - The regex-based lexer uses two stages of code generation:
   - [frontend/lex.py](source-code.wwz/frontend/lex.py)
-  - [_devbuild/gen/osh-lex.re2c.h](source-code.wwz/_devbuild/gen/osh-lex.re2c.h)
+  - [_devbuild/tmp/osh-lex.re2c.h](source-code.wwz/_devbuild/tmp/osh-lex.re2c.h)
   - [_devbuild/gen/osh-lex.h](source-code.wwz/_devbuild/gen/osh-lex.h)
 - [frontend/syntax.asdl](source-code.wwz/frontend/syntax.asdl). The syntax tree
   for OSH and Oil.
