@@ -30,6 +30,8 @@ Test results, metrics, and benchmarks are shown below.
 
 <!-- REPLACE_WITH_DOWNLOAD_LINKS -->
 
+Note: `oil-native` is a **preview** release, not a working shell.
+
 ## What's New
 
 - Details are in the [raw git change log](changelog.html).  Not all changes
@@ -61,6 +63,8 @@ Oil has three major sources of docs:
     libraries, as measured by the [cloc][] tool.
   - [src](metrics.wwz/line-counts/src.txt).  The whole Oil repo organized by
     type of source file.
+  - [oil-cpp](metrics.wwz/line-counts/oil-cpp.txt).  The C++ code in the
+    `oil-native` tarball.
   - [OPy](metrics.wwz/line-counts/opy.txt).  How much code is in the OPy
     toolchain?
 - Lines of dependencies:

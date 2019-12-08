@@ -37,7 +37,6 @@
 #     lisa: $0 benchmark-run
 #     Commit files to oilshell/benchmark-data repo and sync.
 #   benchmarks/report.sh all
-#   devtools/release-native.sh {make-tar,test-tar}
 #   $0 deploy-tar  # needed to checksum
 #   $0 build-tree
 #   $0 compress
@@ -302,10 +301,10 @@ spec-one() {
   test/spec.sh "$@"
 }
 
-
-# TODO: Log this whole thing?  Include logs with the /release/ page?
 build-and-test() {
-  # 5 steps: clean, dev build, unit tests, release build, end-to-end tests.
+  ### Build tarballs and test them.  And preliminaries like unit tests.
+
+  # TODO: Log this whole thing?  Include logs with the /release/ page?
 
   # Before doing anything
   test/lint.sh travis
@@ -313,6 +312,12 @@ build-and-test() {
   _clean
   _dev-build
   test/unit.sh run-for-release
+
+  # oil-native
+  devtools/release-native.sh make-tar
+  devtools/release-native.sh test-tar
+
+  # App bundle
   _release-build
   _test-release-build
 
@@ -456,6 +461,7 @@ line-counts() {
   # Counting directly from the build.
   metrics/tarball.sh linecount-pydeps > $out/pydeps.txt
   metrics/tarball.sh linecount-nativedeps > $out/nativedeps.txt
+  metrics/tarball.sh linecount-oil-cpp > $out/oil-cpp.txt
 
   # My arbitrary categorization.
   metrics/source-code.sh all > $out/src.txt  # Count repo lines

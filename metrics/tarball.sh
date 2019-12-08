@@ -56,6 +56,20 @@ linecount-pydeps() {
 
 }
 
+_oil-cpp() {
+  find _tmp/native-tar-test -name '*.cc' -o -name '*.h'
+}
+
+linecount-oil-cpp() {
+  _cloc-header
+  _oil-cpp | xargs cloc
+  echo
+
+  _wc-header
+  _oil-cpp | sort | uniq | xargs wc -l | sort -n
+
+}
+
 # Without generated code.  This is a fair comparison against bash, because
 # we include everything shipped with the tarball, but count source files
 # rather than generated code.
