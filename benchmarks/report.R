@@ -91,6 +91,8 @@ ParserReport = function(in_dir, out_dir) {
       } else if (length(grep('CPython', lines)) > 0) {
         label = 'osh-cpython'
       }
+    } else if (row$shell_name == 'osh_parse.opt.stripped') {
+      label = 'osh-native'
     } else {  # same name for other shells
       label = row$shell_name
     }
@@ -126,8 +128,9 @@ ParserReport = function(in_dir, out_dir) {
     spread(key = shell_label, value = elapsed_ms) %>%
     arrange(host_label, num_lines) %>%
     mutate(filename = basename(path), filename_HREF = sourceUrl(path),
-           osh_to_bash_ratio = `osh-ovm` / bash) %>% 
-    select(c(host_label, bash, dash, mksh, zsh, `osh-ovm`, `osh-cpython`,
+           osh_to_bash_ratio = `osh-native` / bash) %>% 
+    select(c(host_label, bash, dash, mksh, zsh,
+             `osh-ovm`, `osh-cpython`, `osh-native`,
              osh_to_bash_ratio, num_lines, filename, filename_HREF)) ->
     elapsed
 
@@ -141,7 +144,8 @@ ParserReport = function(in_dir, out_dir) {
     spread(key = shell_label, value = lines_per_ms) %>%
     arrange(host_label, num_lines) %>%
     mutate(filename = basename(path), filename_HREF = sourceUrl(path)) %>% 
-    select(c(host_label, bash, dash, mksh, zsh, `osh-ovm`, `osh-cpython`,
+    select(c(host_label, bash, dash, mksh, zsh,
+             `osh-ovm`, `osh-cpython`, `osh-native`,
              num_lines, filename, filename_HREF)) ->
     rate
 

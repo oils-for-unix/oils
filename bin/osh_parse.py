@@ -64,6 +64,8 @@ def main(argv):
 
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
 
+  pretty_print = True
+
   if len(argv) == 1:
     line_reader = reader.FileLineReader(mylib.Stdin(), arena)
     src = source.Stdin('')  # type: source_t
@@ -75,11 +77,21 @@ def main(argv):
     src = source.MainFile(path)
 
   elif len(argv) == 3:
-    if argv[1] != '-c':
+    if argv[1] == '-c':
+      # This path is easier to run through GDB
+      line_reader = reader.StringLineReader(argv[2], arena)
+      src = source.CFlag()
+
+    elif argv[1] == '-n':  # For benchmarking, allow osh_parse -n file.txt
+      path = argv[2]
+      f = mylib.open(path)
+      line_reader = reader.FileLineReader(f, arena)
+      src = source.MainFile(path)
+      # This is like --ast-format none, which benchmarks/osh-helper.sh passes.
+      pretty_print = False
+
+    else:
       raise AssertionError()
-    # This path is easier to run through GDB
-    line_reader = reader.StringLineReader(argv[2], arena)
-    src = source.CFlag()
 
   else:
     raise AssertionError()
@@ -99,11 +111,12 @@ def main(argv):
   # C++ doesn't have the abbreviations yet (though there are some differences
   # like omitting spids)
   #tree = node.AbbreviatedTree()
-  tree = node.PrettyTree()
+  if pretty_print:
+    tree = node.PrettyTree()
 
-  ast_f = fmt.DetectConsoleOutput(mylib.Stdout())
-  fmt.PrintTree(tree, ast_f)
-  ast_f.write('\n')
+    ast_f = fmt.DetectConsoleOutput(mylib.Stdout())
+    fmt.PrintTree(tree, ast_f)
+    ast_f.write('\n')
 
   return 0
 

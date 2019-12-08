@@ -137,14 +137,15 @@ oil-asdl-to-cpp() {
 
   gen-asdl-cpp frontend/syntax.asdl
   gen-asdl-cpp osh/runtime.asdl
-
-  echo
-  wc -l $dir/*
 }
 
 oil-cpp() {
   oil-asdl-to-cpp
   arith-parse-cpp-gen
+  build/mycpp.sh osh-parse
+
+  echo
+  wc -l _build/cpp/*
 }
 
 # TODO: should fastlex.c be part of the dev build?  It means you need re2c

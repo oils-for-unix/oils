@@ -36,12 +36,21 @@ prereq() {
 measure-shells() {
   local base_dir=${1:-../benchmark-data}
 
-  local provenance
-  provenance=$(benchmarks/id.sh shell-provenance)  # capture the filename
+  if true; then  # to skip to parsing
+    local provenance
+    provenance=$(benchmarks/id.sh shell-provenance)  # capture the filename
 
-  benchmarks/vm-baseline.sh measure $provenance $base_dir/vm-baseline
-  benchmarks/osh-runtime.sh measure $provenance $base_dir/osh-runtime
-  benchmarks/osh-parser.sh measure $provenance $base_dir/osh-parser
+    benchmarks/vm-baseline.sh measure $provenance $base_dir/vm-baseline
+    benchmarks/osh-runtime.sh measure $provenance $base_dir/osh-runtime
+  fi
+
+  # Note: we could also use _tmp/native-tar-test/*/_bin/osh_parse...
+  local osh_parse=_bin/osh_parse.opt.stripped
+
+  local prov2
+  prov2=$(benchmarks/id.sh shell-provenance $osh_parse)
+
+  benchmarks/osh-parser.sh measure $prov2 $base_dir/osh-parser
 }
 
 measure-builds() {
@@ -57,6 +66,9 @@ measure-builds() {
 # Before this, run scripts/release.sh benchmark-build.
 
 all() {
+  # prequisite
+  build/mycpp.sh compile-osh-parse-opt
+
   measure-shells
   measure-builds
 }

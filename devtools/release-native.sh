@@ -22,17 +22,10 @@ make-tar() {
   local out=_release/${app_name}-${OIL_VERSION}.tar
 
   build/dev.sh oil-cpp
+  # Note: could run build/mycpp.sh osh-parse-smoke
 
   # TODO:
-  # - be more exact about files?
-  #   - exclude osh-lex.re2c.h since it's intermediate
-  #   - _devbuild/gen is for osh-lex
-  #   - maybe mention it explicitly?
-  #   - Maybe use the -I trick?
   # - Provide a way to run C++ tests?  Unit tests and smoke tests alike.
-  #
-  # Reorg?
-  # _build/cpp/  or _gen/cpp ?  or _gen/c ?
 
   tar --create --transform "$sed_expr" --file $out \
     LICENSE.txt \

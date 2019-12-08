@@ -189,7 +189,7 @@ compile-osh-parse-opt() {
   strip -o $stripped $opt
 
   # Move the symbols elsewhere and add a link to them.
-  if command -v objcopy; then
+  if command -v objcopy > /dev/null; then
     objcopy --only-keep-debug $opt $symbols
     objcopy --add-gnu-debuglink=$symbols $stripped
   fi
