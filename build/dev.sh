@@ -125,7 +125,7 @@ oil-asdl-to-cpp() {
 
   # Problem:
   # - we have both _devbuild/gen/id.h 
-  #           and _devbuild/gen-cpp/id_kind_asdl.h
+  #           and _build/cpp/id_kind_asdl.h
   # - do we want enum class?
 
   build/codegen.sh id-cpp-gen  # dependency on bool_arg_type_e

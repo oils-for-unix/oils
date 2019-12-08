@@ -88,8 +88,6 @@ id-cpp-gen() {
   frontend/id_kind_gen.py cpp $out_dir/id_kind_asdl
 
   frontend/id_kind_gen.py cc-tables $out_dir/lookup
-
-  #wc -l _devbuild/gen-cpp/lookup.*
 }
 
 lexer-gen() { frontend/lexer_gen.py "$@"; }

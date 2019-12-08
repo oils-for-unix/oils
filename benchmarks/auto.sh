@@ -33,6 +33,8 @@ prereq() {
   test/spec.sh all
 }
 
+readonly OIL_VERSION=$(head -n 1 oil-version.txt)
+
 measure-shells() {
   local base_dir=${1:-../benchmark-data}
 
@@ -45,7 +47,9 @@ measure-shells() {
   fi
 
   # Note: we could also use _tmp/native-tar-test/*/_bin/osh_parse...
-  local osh_parse=_bin/osh_parse.opt.stripped
+
+  local root=$PWD/../benchmark-data/src/oil-native-$OIL_VERSION
+  local osh_parse=$root/_bin/osh_parse.opt.stripped
 
   local prov2
   prov2=$(benchmarks/id.sh shell-provenance $osh_parse)
@@ -66,9 +70,7 @@ measure-builds() {
 # Before this, run scripts/release.sh benchmark-build.
 
 all() {
-  # prequisite
-  build/mycpp.sh compile-osh-parse-opt
-
+  # NOTE: Depends on oil-native being built
   measure-shells
   measure-builds
 }

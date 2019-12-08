@@ -164,6 +164,9 @@ compile-osh-parse() {
   # Add -opt to make it opt
   local suffix=${2:-.asan}  # opt or dbg
 
+  mkdir -p _bin
+
+  # Note: can't use globs here because we have _test.cc
   compile _bin/$name$suffix _build/cpp/${name}.cc \
     mycpp/mylib.cc \
     cpp/frontend_match.cc \

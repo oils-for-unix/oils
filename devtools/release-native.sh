@@ -21,6 +21,9 @@ make-tar() {
 
   local out=_release/${app_name}-${OIL_VERSION}.tar
 
+  # NOTE: Could move this to the Makefile, which will make it
+  mkdir -p _release 
+
   build/dev.sh oil-cpp
   # Note: could run build/mycpp.sh osh-parse-smoke
 
@@ -51,6 +54,21 @@ test-tar() {
 
   cd oil-native-$OIL_VERSION
   build/mycpp.sh tarball-demo
+}
+
+extract-for-benchmarks() {
+  local tar=$PWD/_release/oil-native-$OIL_VERSION.tar
+  local dest='../benchmark-data/src'
+  mkdir -p $dest
+
+  pushd $dest
+  git pull
+  tar -x < $tar
+  git add oil-native-*
+
+  git status
+  echo "Now run git commit"
+  popd
 }
 
 "$@"

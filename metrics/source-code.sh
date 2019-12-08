@@ -162,7 +162,7 @@ all() {
 cpp() {
   # NOTE: Could exclude .re2c.h file
   echo '[ C++ ] Generated Code'
-  wc -l _devbuild/gen-cpp/*.{cc,h} _devbuild/gen/*.h | sort --numeric
+  wc -l _build/cpp/*.{cc,h} _devbuild/gen/*.h | sort --numeric
   echo
 
   echo '[ C++ ] Hand-Written Code'

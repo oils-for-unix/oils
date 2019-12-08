@@ -315,7 +315,12 @@ build-and-test() {
 
   # oil-native
   devtools/release-native.sh make-tar
-  devtools/release-native.sh test-tar
+  devtools/release-native.sh extract-for-benchmarks
+  # Don't need to build it twice
+  #devtools/release-native.sh test-tar
+
+  # For benchmarks
+  _oil-native-build
 
   # App bundle
   _release-build
@@ -331,6 +336,13 @@ _install() {
   sudo apt install python-dev
 }
 
+_oil-native-build() {
+  local dest="../benchmark-data/src/oil-native-$OIL_VERSION"
+  pushd $dest
+  build/mycpp.sh compile-osh-parse-opt
+  popd
+}
+
 # Run before benchmarks/auto.sh all.  We just build, and assume we tested.
 benchmark-build() {
   if test -n "$HAVE_ROOT"; then
@@ -338,6 +350,7 @@ benchmark-build() {
   fi
   _clean
   _dev-build
+  _oil-native-build
 
   _release-build
 }
