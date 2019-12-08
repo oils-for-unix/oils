@@ -221,7 +221,7 @@ important-source-code() {
 
   for rel_path in \
     frontend/lex.py \
-    _devbuild/gen/osh-lex.re2c.h \
+    _devbuild/tmp/osh-lex.re2c.h \
     _devbuild/gen/osh-lex.h \
     _devbuild/gen/id.h \
     frontend/syntax.asdl \
