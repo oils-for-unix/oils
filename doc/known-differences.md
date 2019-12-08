@@ -120,6 +120,19 @@ Yes:
     )  # this is actually a comment
 
 
+### Spaces aren't allowed in LHS indices
+
+Bash allows:
+
+    a[1 + 2 * 3]=value
+
+OSH only allows:
+
+    a[1+2*3]=value
+
+because it parses with limited lookahead.  The first line would result in the
+execution of a command named `a[1`.
+
 ### break / continue / return are keywords, not builtins
 
 This means that they aren't "dynamic":
@@ -133,19 +146,23 @@ Static control flow will allow static analysis of shell scripts.
 
 (Test cases are in [spec/loop][]).
 
+### Oil Has More Builtins, Which Shadow External Commands
 
-### Spaces aren't allowed in LHS indices
+For example, `push` is a builtin in Oil, but not in `bash`.  Use `env push` or
+`/path/to/push` if you want to run an external command.
 
-Bash allows:
+(Note that a user-defined function `push` take priority over the builtin
+`push`.
 
-    a[1 + 2 * 3]=value
+### Oil Has More Keywords, Which Shadow Builtins, Functions, and Commands
 
-OSH only allows:
+In contrast with builtins, **keywords** affect shell parsing.
 
-    a[1+2*3]=value
+For example, `func` is a keyword in Oil, but not in `bash`.  To run a command
+named `func`, use `command func arg1`.
 
-because it parses with limited lookahead.  The first line would result in the
-execution of a command named `a[1`.
+Note that all shells have extensions that cause this issue.  For example, `[[`
+is a keyword in `bash` but not in POSIX shell.
 
 ## More Parsing Differences
 

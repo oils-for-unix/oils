@@ -183,3 +183,13 @@ f() {
 ## stdout-json: ""
 ## OK mksh status: 1
 
+#### =word is not allowed
+=word
+## OK osh status: 2
+## status: 127
+
+#### echo =word is allowed
+echo =word
+## STDOUT:
+=word
+## END

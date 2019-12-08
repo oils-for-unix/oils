@@ -821,13 +821,12 @@ class CommandParser(object):
       return simple
 
     # Disallow =a because it's confusing
-    if self.parse_opts.parse_equals:
-      part0 = words[0].parts[0]
-      if part0.tag_() == word_part_e.Literal:
-        tok = cast(word_part__Literal, part0).token
-        if tok.id == Id.Lit_Equals:
-          p_die("=word isn't allowed when shopt 'parse_equals' is on.\n"
-                "Hint: add a space after = to pretty print an expression", token=tok)
+    part0 = words[0].parts[0]
+    if part0.tag_() == word_part_e.Literal:
+      tok = cast(word_part__Literal, part0).token
+      if tok.id == Id.Lit_Equals:
+        p_die("=word isn't allowed when shopt 'parse_equals' is on.\n"
+              "Hint: add a space after = to pretty print an expression", token=tok)
 
     preparsed_list, suffix_words = _SplitSimpleCommandPrefix(words)
     if self.parse_opts.parse_equals and len(preparsed_list):
