@@ -35,9 +35,9 @@ Examples:
     # Read from a file.  myvar is created in local scope.
     $ json read :myvar < stats.json
 
-    # Use pp to pretty print an expression (TODO: change to =)
-    $ pp myvar   
-    (Dict)    {'count': 42}
+    # Use = to pretty print an expression
+    $ = myvar   
+    (Dict)   {'count': 42}
 
     # 'json read' is valid at the end of a pipeline (because Oil implements
     # shopt -s lastpipe)
