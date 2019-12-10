@@ -221,7 +221,7 @@ cpp-compile-run() {
 }
 
 target-lang() {
-  cpp-compile-run target_lang
+  cpp-compile-run target_lang ../cpp/dumb_alloc.cc -I ../cpp
 }
 
 heap() {

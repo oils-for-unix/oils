@@ -21,6 +21,8 @@
 
 #include <stdexcept>
 
+#include "dumb_alloc.h"
+
 void log(const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
@@ -212,7 +214,6 @@ namespace expr {
   typedef expr__Const Const;
 }
 
-
 int main(int argc, char **argv) {
   log("sizeof(int): %d", sizeof(int));
   log("sizeof(int*): %d", sizeof(int*));
@@ -244,4 +245,6 @@ int main(int argc, char **argv) {
   log("");
   expr::Const c(42);
   log("expr::Const = %d", c.i_);
+
+  dumb_alloc::Summarize();
 }
