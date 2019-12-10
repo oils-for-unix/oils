@@ -19,7 +19,7 @@ def _AbbreviateToken(tok, out):
   out.append(n2)
 
 
-def _token(obj):
+def _Token(obj):
   # type: (Token) -> hnode_t
   p_node = runtime.NewRecord('')  # don't show node type
   p_node.abbrev = True
