@@ -234,6 +234,11 @@ readonly OSH_PARSE_FILES=(
   $REPO_ROOT/frontend/parse_lib.py
 )
 
+# From types/more-oil-manifest.txt
+readonly MORE_OIL=(
+  $REPO_ROOT/oil_lang/regex_translate.py
+)
+
 osh-parse() {
   local name=${1:-osh_parse}
 
@@ -244,7 +249,7 @@ osh-parse() {
 
   #if false; then
   if true; then
-    mycpp $raw bin/$name.py "${OSH_PARSE_FILES[@]}"
+    mycpp $raw bin/$name.py "${OSH_PARSE_FILES[@]}" "${MORE_OIL[@]}"
   fi
 
   local cc=_build/cpp/$name.cc
@@ -257,16 +262,9 @@ osh-parse() {
 }
 
 run-osh-parse() {
-  local code_str=${1:-'echo hi'}
+  ### Wrapper for ASAN env vars
 
-  local name='osh_parse'
-  local tmp=$TMP
-
-  strip -o $tmp/${name}.stripped $tmp/$name
-  ls -l $tmp
-
-  # Run it
-  $tmp/$name "$@"
+  _bin/osh_parse.asan "$@"
 }
 
 size-profile() {
