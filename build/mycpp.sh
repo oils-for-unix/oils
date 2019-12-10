@@ -108,7 +108,22 @@ int main(int argc, char **argv) {
   for (int i = 0; i < argc; ++i) {
     args->append(new Str(argv[i]));
   }
-  int status = $namespace::main(args);
+  int status;
+
+  // For benchmarking
+  char* repeat = getenv("REPEAT");
+  if (repeat) {
+    Str* r = new Str(repeat);
+    int n = str_to_int(r);
+    log("Running %d times", n);
+    for (int i = 0; i < n; ++i) { 
+      status = $namespace::main(args);
+    }
+    // TODO: clear memory?
+  } else {
+    status = $namespace::main(args);
+  }
+
   dumb_alloc::Summarize();
   return status;
 }

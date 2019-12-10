@@ -5,7 +5,9 @@
 #include <stdio.h>
 
 // 100 MiB of memory
-char kMem[100 << 20];
+//char kMem[100 << 20];
+// 1 GiB for running 10 times
+char kMem[1 << 30];
 
 int gMemPos;
 int gNumNew = 0;
@@ -33,6 +35,7 @@ void Summarize() {
   fprintf(stderr, "dumb_alloc:\n");
   fprintf(stderr, "\tgNumNew = %d\n", gNumNew);
   fprintf(stderr, "\tgNumDelete = %d\n", gNumDelete);
+  fprintf(stderr, "\tgMemPos = %d\n", gMemPos);
 }
 
 };
