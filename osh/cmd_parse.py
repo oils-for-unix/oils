@@ -24,7 +24,7 @@ from _devbuild.gen.syntax_asdl import (
     sh_lhs_expr, sh_lhs_expr_t,
     redir, redir_t, redir__HereDoc,
     word, word_e, word_t, compound_word, Token,
-    word_part, word_part_e, word_part_t,
+    word_part_e, word_part_t,
 
     assign_pair, env_pair,
     assign_op_e,

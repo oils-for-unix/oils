@@ -12,9 +12,7 @@ word_parse_test.py: Tests for word_parse.py
 import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import (
-    arith_expr_e, word_part, Token, compound_word
-)
+from _devbuild.gen.syntax_asdl import arith_expr_e, Token, compound_word
 from _devbuild.gen.types_asdl import lex_mode_e
 
 from asdl import runtime

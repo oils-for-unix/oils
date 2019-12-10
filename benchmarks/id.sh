@@ -326,6 +326,7 @@ shell-provenance() {
   # NOTE: These are NOT the versions of bash/dash/etc. in _tmp/spec-bin!  I
   # guess we should test distro-provided binaries.
 
+  #for sh_path in bash dash bin/osh "$@"; do
   for sh_path in bash dash mksh zsh bin/osh $OSH_OVM "$@"; do
     # There will be two different OSH
     local name=$(basename $sh_path)

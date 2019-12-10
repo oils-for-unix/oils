@@ -13,7 +13,7 @@ import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    braced_var_sub, suffix_op, word_part, Token, compound_word
+    braced_var_sub, suffix_op, Token, compound_word
 )
 from core import test_lib
 from osh import state
