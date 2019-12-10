@@ -14,5 +14,7 @@ int main(int argc, char **argv) {
     log("val = %s", t->at1()->data_);
   }
 
-  log("hello");
+  // 24 bytes because we have tag (2), id (4), val, span_id
+  // Could compress tag
+  log("sizeof(Token) = %d", sizeof(syntax_asdl::Token));
 }

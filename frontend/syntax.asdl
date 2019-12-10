@@ -91,11 +91,10 @@ module syntax
   -- lines.  Encoded into LST with 'int spid'.
   line_span = (int line_id, int col, int length)
 
-  -- NOTE: The 'val' and 'span_id' fields are somewhat redundant, but useful.
-  -- We use 'val' for execution, and the line_span for error messages and
-  -- translation.
-  -- If we can pack it, this type is probably (2+2) + 8 + 4 = 16 bytes.
-  -- new syntax to allow capital types
+  -- NOTE: 'val' and 'span_id' fields redundant but useful.  'val' is for
+  -- execution, and 'span_id' is for error messages and translation.
+  -- TODO: define Id_t as uint16_t, and this should pack in (2+2) + 4 + 8 = 16
+  -- bytes.  Put 'val' at the end.
   Token = (id id, string val, int span_id)
 
   -- After parsing, we often don't need the token 'string val', so use a
