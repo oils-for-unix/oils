@@ -391,7 +391,7 @@ class WordParserTest(unittest.TestCase):
     w_parser = test_lib.InitWordParser(code)
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     assert w
-    self.assertEqual('foo', w.parts[0].token.val)
+    self.assertEqual('foo', w.parts[0].val)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     assert w
@@ -399,7 +399,7 @@ class WordParserTest(unittest.TestCase):
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     assert w
-    self.assertEqual('bar', w.parts[0].token.val)
+    self.assertEqual('bar', w.parts[0].val)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     assert w
@@ -417,11 +417,11 @@ class WordParserTest(unittest.TestCase):
 
     w = w_parser.ReadWord(lex_mode_e.BashRegex)
     assert w
-    self.assertEqual('(', w.parts[0].token.val)
-    self.assertEqual('foo', w.parts[1].token.val)
-    self.assertEqual('|', w.parts[2].token.val)
-    self.assertEqual('bar', w.parts[3].token.val)
-    self.assertEqual(')', w.parts[4].token.val)
+    self.assertEqual('(', w.parts[0].val)
+    self.assertEqual('foo', w.parts[1].val)
+    self.assertEqual('|', w.parts[2].val)
+    self.assertEqual('bar', w.parts[3].val)
+    self.assertEqual(')', w.parts[4].val)
     self.assertEqual(5, len(w.parts))
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
@@ -491,11 +491,11 @@ ls bar
 """)
     print('--MULTI')
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    parts = [word_part.Literal(Token(Id.Lit_Chars, 'ls'))]
+    parts = [Token(Id.Lit_Chars, 'ls')]
     test_lib.AssertAsdlEqual(self, compound_word(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    parts = [word_part.Literal(Token(Id.Lit_Chars, 'foo'))]
+    parts = [Token(Id.Lit_Chars, 'foo')]
     test_lib.AssertAsdlEqual(self, compound_word(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
@@ -503,11 +503,11 @@ ls bar
     test_lib.AssertAsdlEqual(self, t, w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    parts = [word_part.Literal(Token(Id.Lit_Chars, 'ls'))]
+    parts = [Token(Id.Lit_Chars, 'ls')]
     test_lib.AssertAsdlEqual(self, compound_word(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    parts = [word_part.Literal(Token(Id.Lit_Chars, 'bar'))]
+    parts = [Token(Id.Lit_Chars, 'bar')]
     test_lib.AssertAsdlEqual(self, compound_word(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)

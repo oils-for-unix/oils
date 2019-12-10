@@ -661,7 +661,7 @@ def WordEndsWithCompDummy(w):
   last_part = w.parts[-1]
   return (
       last_part.tag == word_part_e.Literal and
-      last_part.token.id == Id.Lit_CompDummy
+      last_part.id == Id.Lit_CompDummy
   )
 
 
@@ -809,12 +809,12 @@ class RootCompleter(object):
       if (len(parts) == 2 and
           parts[0].tag == word_part_e.Literal and
           parts[1].tag == word_part_e.Literal and
-          parts[0].token.id == Id.Lit_TildeLike and
-          parts[1].token.id == Id.Lit_CompDummy):
-        t2 = parts[0].token
+          parts[0].id == Id.Lit_TildeLike and
+          parts[1].id == Id.Lit_CompDummy):
+        t2 = parts[0]
 
         # +1 for ~
-        self.comp_ui_state.display_pos = _TokenStart(parts[0].token) + 1
+        self.comp_ui_state.display_pos = _TokenStart(parts[0]) + 1
 
         to_complete = t2.val[1:]
         n = len(to_complete)

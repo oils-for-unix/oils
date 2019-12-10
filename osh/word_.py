@@ -9,7 +9,7 @@ from _devbuild.gen.syntax_asdl import (
     sh_array_literal,
     word_part, word_part_t, word_part_e,
     word_part__AssocArrayLiteral,
-    word_part__Literal, word_part__EscapedLiteral,
+    word_part__EscapedLiteral,
     word_part__TildeSub,
     word_part__ArithSub, word_part__ExtGlob,
     word_part__Splice, word_part__FuncCall, word_part__ExprSub,
@@ -36,8 +36,7 @@ def _LiteralId(p):
   """
   UP_part = p
   if p.tag_() == word_part_e.Literal:
-    p = cast(word_part__Literal, UP_part)
-    return p.token.id
+    return cast(Token, UP_part).id
   else:
     return Id.Undefined_Tok  # unequal to any other Id
 
@@ -73,8 +72,8 @@ def _EvalWordPart(part):
       return False, '', False
 
     elif case(word_part_e.Literal):
-      part = cast(word_part__Literal, UP_part)
-      return True, part.token.val, False
+      tok = cast(Token, UP_part)
+      return True, tok.val, False
 
     elif case(word_part_e.EscapedLiteral):
       part = cast(word_part__EscapedLiteral, UP_part)
@@ -146,8 +145,8 @@ def LeftMostSpanForPart(part):
       return part.left.span_id  # ( location
 
     elif case(word_part_e.Literal):
-      part = cast(word_part__Literal, UP_part)
-      return part.token.span_id
+      tok = cast(Token, UP_part)
+      return tok.span_id
 
     elif case(word_part_e.EscapedLiteral):
       part = cast(word_part__EscapedLiteral, UP_part)
@@ -218,9 +217,9 @@ def _RightMostSpanForPart(part):
       return LeftMostSpanForWord(part.words[0])  # Hm this is a=(1 2 3)
 
     elif case(word_part_e.Literal):
-      part = cast(word_part__Literal, UP_part)
       # Just use the token
-      return part.token.span_id
+      tok = cast(Token, UP_part)
+      return tok.span_id
 
     elif case(word_part_e.EscapedLiteral):
       part = cast(word_part__EscapedLiteral, UP_part)
@@ -360,18 +359,18 @@ def TildeDetect(UP_w):
   UP_part0 = w.parts[0]
   if _LiteralId(UP_part0) != Id.Lit_TildeLike:
     return None
-  part0 = cast(word_part__Literal, UP_part0)
+  tok0 = cast(Token, UP_part0)
 
   if len(w.parts) == 1:  # can't be zero
-    tilde_part = word_part.TildeSub(part0.token)
+    tilde_part = word_part.TildeSub(tok0)
     return compound_word([tilde_part], None)
 
   UP_part1 = w.parts[1]
   # NOTE: We could inspect the raw tokens.
   if _LiteralId(UP_part1) == Id.Lit_Chars:
-    part1 = cast(word_part__Literal, UP_part1)
-    if part1.token.val.startswith('/'):
-      tilde_part_ = word_part.TildeSub(part0.token)  # type: word_part_t
+    tok = cast(Token, UP_part1)
+    if tok.val.startswith('/'):
+      tilde_part_ = word_part.TildeSub(tok0)  # type: word_part_t
 
       parts = [tilde_part_]
       parts.extend(w.parts[1:])
@@ -439,8 +438,7 @@ def LooksLikeArithVar(UP_w):
   if _LiteralId(UP_part0) != Id.Lit_ArithVarLike:
     return None
 
-  part0 = cast(word_part__Literal, UP_part0)
-  return part0.token
+  return cast(Token, UP_part0)
 
 
 def IsVarLike(w):
@@ -490,19 +488,19 @@ def DetectShAssignment(w):
   UP_part0 = w.parts[0]
   id0 = _LiteralId(UP_part0)
   if id0 == Id.Lit_VarLike:
-    part0 = cast(word_part__Literal, UP_part0)
-    return part0.token, no_token, 1  # everything after first token is the value
+    tok = cast(Token, UP_part0)
+    return tok, no_token, 1  # everything after first token is the value
 
   if id0 == Id.Lit_ArrayLhsOpen:
-    part0 = cast(word_part__Literal, UP_part0)
+    tok0 = cast(Token, UP_part0)
     # NOTE that a[]=x should be an error.  We don't want to silently decay.
     if n < 2:
       return no_token, no_token, 0
     for i in xrange(1, n):
       UP_part = w.parts[i]
       if _LiteralId(UP_part) == Id.Lit_ArrayLhsClose:
-        part = cast(word_part__Literal, UP_part)
-        return part0.token, part.token, i+1
+        tok_close = cast(Token, UP_part)
+        return tok0, tok_close, i+1
 
   # Nothing detected.  Could be 'foobar' or a[x+1+2/' without the closing ].
   return no_token, no_token, 0
@@ -549,8 +547,7 @@ def KeywordToken(w):
 
   token_kind = lookup.LookupKind(token_type)
   if token_kind == Kind.ControlFlow:
-    part0 = cast(word_part__Literal, UP_part0)
-    return token_kind, part0.token
+    return token_kind, cast(Token, UP_part0)
 
   return err
 
@@ -567,10 +564,9 @@ def LiteralToken(UP_w):
   if len(w.parts) != 1:
     return None
 
-  UP_part0 = w.parts[0]
-  if UP_part0.tag_() == word_part_e.Literal:
-    part0 = cast(word_part__Literal, UP_part0)
-    return part0.token
+  part0 = w.parts[0]
+  if part0.tag_() == word_part_e.Literal:
+    return cast(Token, part0)
 
   return None
 
@@ -713,7 +709,7 @@ if mylib.PYTHON:
     # type: (str, _ErrorWithLocation) -> compound_word
     error_str = fmt % err.UserErrorString()
     t = Token(Id.Lit_Chars, error_str, runtime.NO_SPID)
-    return compound_word([word_part.Literal(t)], None)
+    return compound_word([t], None)
 
 
 def Pretty(w):

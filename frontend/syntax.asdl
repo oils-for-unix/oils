@@ -157,7 +157,7 @@ module syntax
     -- alternating key and value (saving some space)
     -- Note that word.Empty isn't needed here
   | AssocArrayLiteral(Token left, compound_word* pairs)
-  | Literal(Token token)
+  | Literal %Token
     -- escaped case is separate so the evaluator doesn't have to check token ID
   | EscapedLiteral(Token token)
   | SingleQuoted %single_quoted

@@ -100,15 +100,6 @@ def _braced_var_sub(obj):
   return p_node
 
 
-def _word_part__Literal(obj):
-  # type: (word_part__Literal) -> hnode_t
-  p_node = runtime.NewRecord('')  # don't show node type
-  p_node.abbrev = True
-
-  _AbbreviateToken(obj.token, p_node.unnamed_fields)
-  return p_node
-
-
 def _command__Simple(obj):
   # type: (command__Simple) -> hnode_t
   p_node = runtime.NewRecord('C')

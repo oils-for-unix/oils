@@ -220,7 +220,7 @@ class OilParseOptions(object):
     # do in command mode without changing the lexer, but useful because of
     # redirects.  Maybe r' and c' are tokens, and then you look for '' after
     # it?  If it's off and you get the token, then you change it into
-    # word_part__Literal and start parsing.
+    # word_part::Literal and start parsing.
     #
     # proc foo {
     #   cat << c'''

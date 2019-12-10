@@ -60,7 +60,7 @@ from _devbuild.gen.syntax_asdl import (
     suffix_op, suffix_op_t, suffix_op__Slice, suffix_op__PatSub,
 
     word, word_e, word_t, compound_word,
-    word_part, word_part_e, word_part_t, word_part__Literal,
+    word_part, word_part_e, word_part_t,
     word_part__ArithSub, word_part__ExtGlob, word_part__ExprSub,
 
     command, command_t, command__ForExpr, command__Proc, command__Func,
@@ -225,8 +225,7 @@ class WordParser(WordEmitter):
       if ok and s == '/' and not quoted:  # Looks like ${a////c}, read again
         self._Next(lex_mode)
         self._Peek()
-        p = word_part.Literal(self.cur_token)
-        pat.parts.append(p)
+        pat.parts.append(self.cur_token)
 
     if len(pat.parts) == 0:
       p_die('Pattern in ${x/pat/replace} must not be empty',
@@ -236,8 +235,7 @@ class WordParser(WordEmitter):
     # Check for / # % modifier on pattern.
     UP_first_part = pat.parts[0]
     if UP_first_part.tag_() == word_part_e.Literal:
-      first_part = cast(word_part__Literal, UP_first_part)
-      lit_id = first_part.token.id
+      lit_id = cast(Token, UP_first_part).id
       if lit_id in (Id.Lit_Slash, Id.Lit_Pound, Id.Lit_Percent):
         pat.parts.pop(0)
         replace_mode = lit_id
@@ -687,7 +685,7 @@ class WordParser(WordEmitter):
         if self.token_type == Id.Lit_EscapedChar:
           part = word_part.EscapedLiteral(self.cur_token)  # type: word_part_t
         else:
-          part = word_part.Literal(self.cur_token)
+          part = self.cur_token
         out_parts.append(part)
 
       elif self.token_kind == Kind.Left:
@@ -706,7 +704,7 @@ class WordParser(WordEmitter):
           done = True
         else:
           # In a here doc, the right quote is literal!
-          out_parts.append(word_part.Literal(self.cur_token))
+          out_parts.append(self.cur_token)
 
       elif self.token_kind == Kind.Eof:
         if left_dq_token:
@@ -1198,7 +1196,7 @@ class WordParser(WordEmitter):
         if self.token_type == Id.Lit_EscapedChar:
           part = word_part.EscapedLiteral(self.cur_token)  # type: word_part_t
         else:
-          part = word_part.Literal(self.cur_token)
+          part = self.cur_token
 
         if self.token_type == Id.Lit_VarLike and num_parts == 0:  # foo=
           w.parts.append(part)

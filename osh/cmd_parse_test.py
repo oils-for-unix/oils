@@ -185,7 +185,7 @@ def assertHereDocToken(test, expected_token_val, node):
   """A sanity check for some ad hoc tests."""
   test.assertEqual(1, len(node.redirects))
   h = node.redirects[0]
-  test.assertEqual(expected_token_val, h.stdin_parts[0].token.val)
+  test.assertEqual(expected_token_val, h.stdin_parts[0].val)
 
 
 class HereDocTest(unittest.TestCase):
@@ -723,7 +723,7 @@ fi
     self.assertEqual(Id.BoolBinary_EqualTilde, node.expr.op_id)
     right = node.expr.right
     self.assertEqual(5, len(right.parts))
-    self.assertEqual('(', right.parts[0].token.val)
+    self.assertEqual('(', right.parts[0].val)
 
     # TODO: Implement BASH_REGEX_CHARS
     return

@@ -954,7 +954,7 @@ class _WordEvaluator(object):
     elif part.tag == word_part_e.Literal:
       # Split if it's in a substitution.
       # That is: echo is not split, but ${foo:-echo} is split
-      v = part_value.String(part.token.val, quoted, is_subst)
+      v = part_value.String(part.val, quoted, is_subst)
       part_vals.append(v)
 
     elif part.tag == word_part_e.EscapedLiteral:

@@ -24,7 +24,7 @@ from _devbuild.gen.syntax_asdl import (
     sh_lhs_expr, sh_lhs_expr_t,
     redir, redir_t, redir__HereDoc,
     word, word_e, word_t, compound_word, Token,
-    word_part, word_part_e, word_part_t, word_part__Literal,
+    word_part, word_part_e, word_part_t,
 
     assign_pair, env_pair,
     assign_op_e,
@@ -77,8 +77,7 @@ def _KeywordToken(UP_w):
 
   part = w.parts[0]
   assert part.tag_() == word_part_e.Literal, part
-  lit_part = cast(word_part__Literal, part)
-  return lit_part.token
+  return cast(Token, part)
 
 
 def _ReadHereLines(line_reader,  # type: _Reader
@@ -138,7 +137,7 @@ def _MakeLiteralHereLines(here_lines,  # type: List[Tuple[int, str, int]]
     span_id = arena.AddLineSpan(line_id, start_offset, len(line))
     t = syntax_asdl.Token(Id.Lit_Chars, line[start_offset:], span_id)
     tokens.append(t)
-  parts = [cast(word_part_t, word_part.Literal(t)) for t in tokens]
+  parts = [cast(word_part_t, t) for t in tokens]
   return parts
 
 
@@ -823,7 +822,7 @@ class CommandParser(object):
     # Disallow =a because it's confusing
     part0 = words[0].parts[0]
     if part0.tag_() == word_part_e.Literal:
-      tok = cast(word_part__Literal, part0).token
+      tok = cast(Token, part0)
       if tok.id == Id.Lit_Equals:
         p_die("=word isn't allowed when shopt 'parse_equals' is on.\n"
               "Hint: add a space after = to pretty print an expression", token=tok)
@@ -1715,8 +1714,7 @@ class CommandParser(object):
       if self.parse_opts.parse_equals and len(parts) == 1:
         UP_part0 = parts[0]
         if UP_part0.tag_() == word_part_e.Literal:
-          part0 = cast(word_part__Literal, UP_part0)
-          tok = part0.token
+          tok = cast(Token, UP_part0)
           # NOTE: tok.id should be Lit_Chars, but that check is redundant
           if (match.IsValidVarName(tok.val) and
               self.w_parser.LookAhead() == Id.Lit_Equals):

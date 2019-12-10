@@ -20,7 +20,7 @@ from _devbuild.gen.syntax_asdl import (
     Token, compound_word, 
     word, word_e, word_t, word__BracedTree,
     word_part, word_part_e, word_part_t,
-    word_part__BracedTuple, word_part__BracedRange, word_part__Literal,
+    word_part__BracedTuple, word_part__BracedRange,
 )
 from core.util import log, p_die
 from frontend import match
@@ -218,8 +218,8 @@ def _BraceDetect(w):
     append = True
     UP_part = part
     if part.tag_() == word_part_e.Literal:
-      part = cast(word_part__Literal, UP_part)
-      id_ = part.token.id
+      part = cast(Token, UP_part)
+      id_ = part.id
       if id_ == Id.Lit_LBrace:
         # Save prefix parts.  Start new parts list.
         new_frame = _StackFrame(cur_parts)
@@ -256,9 +256,9 @@ def _BraceDetect(w):
           # lexed as a single Lit_Chars token.
           part2 = cur_parts[0]
           if part2.tag_() == word_part_e.Literal:
-            lit_part = cast(word_part__Literal, part2)
-            if lit_part.token.id == Id.Lit_Chars:
-              range_part = _RangePartDetect(lit_part.token)
+            tok = cast(Token, part2)
+            if tok.id == Id.Lit_Chars:
+              range_part = _RangePartDetect(tok)
               if range_part:
                 frame = stack.pop()
                 cur_parts = frame.cur_parts
@@ -428,7 +428,7 @@ def _ExpandPart(parts,  # type: List[word_part_t]
           out_parts_.extend(prefix)
           # Preserve span_id from the original
           t = Token(Id.Lit_Chars, s, expand_part.spids[0])
-          out_parts_.append(word_part.Literal(t))
+          out_parts_.append(t)
           out_parts_.extend(suffix)
           out.append(out_parts_)
 
