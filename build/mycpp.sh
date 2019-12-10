@@ -93,7 +93,7 @@ cpp-skeleton() {
   shift
 
   cat <<EOF
-//#include "dumb_alloc.h"
+#include "dumb_alloc.h"
 #include "mylib.h"
 #include "preamble.h"  // hard-coded stuff
 
@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
     args->append(new Str(argv[i]));
   }
   int status = $namespace::main(args);
-  //dumb_alloc::Summarize();
+  dumb_alloc::Summarize();
   return status;
 }
 EOF
@@ -183,8 +183,8 @@ compile-osh-parse() {
     _build/cpp/hnode_asdl.cc \
     _build/cpp/id_kind_asdl.cc \
     _build/cpp/lookup.cc \
-    _build/cpp/arith_parse.cc 
-    # cpp/dumb_alloc.cc
+    _build/cpp/arith_parse.cc \
+    cpp/dumb_alloc.cc
   #2>&1 | tee _tmp/compile.log
 }
 
