@@ -22,6 +22,8 @@ GCC_FLAGS='-fpermissive -Wno-sign-compare'
 # Temporary hack for 'token* token' in GCC
 # https://stackoverflow.com/questions/8843818/what-does-the-fpermissive-flag-do
 CPPFLAGS="$CPPFLAGS $GCC_FLAGS"
+# for 'perf'
+CPPFLAGS="$CPPFLAGS -fno-omit-frame-pointer"
 
 # This flag is Clang-only
 #-ferror-limit=1000'

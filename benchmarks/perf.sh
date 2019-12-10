@@ -25,7 +25,7 @@ set -o errexit
 install() {
   # linux-tools-generic is the kernel module
   # Apparently you need a package specific to the kernel, not sure why.
-  sudo apt install linux-tools-common linux-tools-4.13.0-36-generic linux-tools-generic
+  sudo apt install linux-tools-common linux-tools-4.13.0-41-generic linux-tools-generic
 }
 
 debug-symbols() {
@@ -103,16 +103,23 @@ _record() {
 }
 record() { sudo $0 _record; }
 
+_record-cpp() {
+  # Profile parsing a big file.  More than half the time is in malloc
+  # (_int_malloc in GCC), which is not surprising!
+  local cmd=(
+   _bin/osh_parse.opt.stripped -n benchmarks/testdata/configure-coreutils
+  )
+
+  local flag='-g'
+
+  local freq=20000
+  time perf record $flag -F $freq -o perf.data -- "${cmd[@]}"
+}
+record-cpp() { sudo $0 _record-cpp "$@"; }
+
 # Perf note: Without -o, for some reason osh output is shown on the console.
 # It doesn't go to wc?
 #perf record -o perf.data -- _bin/osh -n benchmarks/testdata/abuild | wc -l
-
-# After recording, run perf-data, then 'perf report'.  It automatically shows
-# perf.data.
-
-report() {
-  perf report -n --stdio "$@"
-}
 
 _make-readable() {
   # This gets run as root
@@ -122,6 +129,10 @@ _make-readable() {
   ls -l perf.data
 }
 make-readable() { sudo $0 _make-readable; }
+
+report() {
+  perf report -n --stdio "$@"
+}
 
 # Wow 11 billion instructions!  9 billion cycles.  2.3 billion branches.  Crazy.
 # Only 21M branch misses, or 0.9%.  Interesting.
