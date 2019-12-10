@@ -22,7 +22,8 @@ GCC_FLAGS='-fpermissive -Wno-sign-compare'
 # Temporary hack for 'token* token' in GCC
 # https://stackoverflow.com/questions/8843818/what-does-the-fpermissive-flag-do
 CPPFLAGS="$CPPFLAGS $GCC_FLAGS"
-# for 'perf'
+# for 'perf'.  Technically this may slow things down, but it was in the noise
+# on parsing configure-coreutils.
 CPPFLAGS="$CPPFLAGS -fno-omit-frame-pointer"
 
 # This flag is Clang-only
@@ -92,6 +93,7 @@ cpp-skeleton() {
   shift
 
   cat <<EOF
+//#include "dumb_alloc.h"
 #include "mylib.h"
 #include "preamble.h"  // hard-coded stuff
 
@@ -106,7 +108,9 @@ int main(int argc, char **argv) {
   for (int i = 0; i < argc; ++i) {
     args->append(new Str(argv[i]));
   }
-  return $namespace::main(args);
+  int status = $namespace::main(args);
+  //dumb_alloc::Summarize();
+  return status;
 }
 EOF
 
@@ -180,6 +184,7 @@ compile-osh-parse() {
     _build/cpp/id_kind_asdl.cc \
     _build/cpp/lookup.cc \
     _build/cpp/arith_parse.cc 
+    # cpp/dumb_alloc.cc
   #2>&1 | tee _tmp/compile.log
 }
 

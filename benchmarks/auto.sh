@@ -20,6 +20,7 @@ set -o pipefail
 set -o errexit
 
 source test/common.sh  # die
+source benchmarks/common.sh  # default value of OSH_OVM
 
 _banner() {
   echo -----
@@ -35,24 +36,43 @@ prereq() {
 
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 
+# Notes:
+# - $OSH_OVM is set by devtools/release.sh to the RELATIVE path of the
+#   tar-built one.  Instead of the default of $PWD/_bin/osh.
+# - These are NOT the versions of bash/dash/etc. in _tmp/spec-bin!  I
+#   guess we should test distro-provided binaries.
+
+readonly SHELLS=( bash dash mksh zsh bin/osh $OSH_OVM )
+
 measure-shells() {
   local base_dir=${1:-../benchmark-data}
 
-  if true; then  # to skip to parsing
-    local provenance
-    provenance=$(benchmarks/id.sh shell-provenance)  # capture the filename
+  local provenance
+  # capture the filename
+  provenance=$(benchmarks/id.sh shell-provenance "${SHELLS[@]}")
 
-    benchmarks/vm-baseline.sh measure $provenance $base_dir/vm-baseline
-    benchmarks/osh-runtime.sh measure $provenance $base_dir/osh-runtime
-  fi
+  benchmarks/vm-baseline.sh measure $provenance $base_dir/vm-baseline
+  benchmarks/osh-runtime.sh measure $provenance $base_dir/osh-runtime
 
   # Note: we could also use _tmp/native-tar-test/*/_bin/osh_parse...
-
   local root=$PWD/../benchmark-data/src/oil-native-$OIL_VERSION
   local osh_parse=$root/_bin/osh_parse.opt.stripped
 
   local prov2
-  prov2=$(benchmarks/id.sh shell-provenance $osh_parse)
+  prov2=$(benchmarks/id.sh shell-provenance "${SHELLS[@]}" $osh_parse)
+
+  benchmarks/osh-parser.sh measure $prov2 $base_dir/osh-parser
+}
+
+# Quick evaluation of the parser
+osh-parser-quick() {
+  local base_dir=${1:-../benchmark-data}
+
+  # REPO VERSION
+  local osh_parse=_bin/osh_parse.opt.stripped
+
+  local prov2
+  prov2=$(benchmarks/id.sh shell-provenance bash dash mksh $osh_parse)
 
   benchmarks/osh-parser.sh measure $prov2 $base_dir/osh-parser
 }
