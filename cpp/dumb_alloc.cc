@@ -18,6 +18,7 @@ int gNumDelete = 0;
 void* operator new(size_t size) {
   char* p = &(kMem[gMemPos]);
   //fprintf(stderr, "\tnew(%d) = %p\n", size, p);
+  //printf("__ %d\n", size);
   gMemPos += size;
   ++gNumNew;
   return p;

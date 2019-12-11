@@ -109,12 +109,15 @@ _record-cpp() {
   # Profile parsing a big file.  More than half the time is in malloc
   # (_int_malloc in GCC), which is not surprising!
   local cmd=(
-   _bin/osh_parse.opt -n benchmarks/testdata/configure-coreutils
+   _bin/osh_parse.opt -n 
+   #benchmarks/testdata/configure-coreutils
+   benchmarks/testdata/configure
   )
 
   # Can repeat 13 times without blowing heap
   local freq=20000
-  time REPEAT=13 perf record $flag -F $freq -o perf.data -- "${cmd[@]}"
+  #export REPEAT=13 
+  time perf record $flag -F $freq -o perf.data -- "${cmd[@]}"
 }
 record-cpp() { sudo $0 _record-cpp "$@"; }
 

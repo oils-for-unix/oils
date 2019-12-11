@@ -46,4 +46,17 @@ replay() {
   uftrace replay -F FindModule
 }
 
+# creates uftrace.data dir
+osh-parse() {
+  #local cmd=(_bin/osh_parse.opt -c 'echo hi')
+  #local cmd=(_bin/osh_parse.opt -n configure)
+  #local cmd=(_bin/osh_parse.opt -n benchmarks/testdata/configure)
+  local cmd=(_bin/osh_parse.opt -n benchmarks/testdata/configure-coreutils)
+  uftrace record "${cmd[@]}"
+}
+
+by-call() {
+  uftrace report -s call
+}
+
 "$@"

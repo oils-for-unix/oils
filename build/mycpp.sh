@@ -22,9 +22,14 @@ GCC_FLAGS='-fpermissive -Wno-sign-compare'
 # Temporary hack for 'token* token' in GCC
 # https://stackoverflow.com/questions/8843818/what-does-the-fpermissive-flag-do
 CPPFLAGS="$CPPFLAGS $GCC_FLAGS"
+
 # for 'perf'.  Technically this may slow things down, but it was in the noise
 # on parsing configure-coreutils.
 CPPFLAGS="$CPPFLAGS -fno-omit-frame-pointer"
+
+# for uftrace
+# TODO: different filename
+CPPFLAGS="$CPPFLAGS -pg"
 
 # This flag is Clang-only
 #-ferror-limit=1000'
