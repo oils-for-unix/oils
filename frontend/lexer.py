@@ -23,8 +23,8 @@ if TYPE_CHECKING:
 
 
 # Special immutable tokens
-_UNKNOWN_TOK = Token(Id.Unknown_Tok, None, runtime.NO_SPID)
-_EOL_TOK = Token(Id.Eol_Tok, None, runtime.NO_SPID)
+_UNKNOWN_TOK = Token(Id.Unknown_Tok, runtime.NO_SPID, None)
+_EOL_TOK = Token(Id.Eol_Tok, runtime.NO_SPID, None)
 
 
 class LineLexer(object):
@@ -103,7 +103,7 @@ class LineLexer(object):
         break
       pos = end_pos
 
-    return Token(tok_type, tok_val, runtime.NO_SPID)
+    return Token(tok_type, runtime.NO_SPID, tok_val)
 
   def Read(self, lex_mode):
     # type: (lex_mode_t) -> Token
@@ -143,7 +143,7 @@ class LineLexer(object):
       self.last_span_id = span_id
     #log('LineLexer.Read() span ID %d for %s', span_id, tok_type)
 
-    t = Token(tok_type, tok_val, span_id)
+    t = Token(tok_type, span_id, tok_val)
     self.line_pos = end_pos
     return t
 
@@ -230,7 +230,7 @@ class Lexer(object):
           self.emit_comp_dummy = False  # emit EOF the next time
         else:
           id_ = Id.Eof_Real
-        t = Token(id_, '', span_id)
+        t = Token(id_, span_id, '')
         return t
 
       self.line_lexer.Reset(line, line_id, line_pos)  # fill with a new line

@@ -712,7 +712,7 @@ if mylib.PYTHON:
   def ErrorWord(fmt, err):
     # type: (str, _ErrorWithLocation) -> compound_word
     error_str = fmt % err.UserErrorString()
-    t = Token(Id.Lit_Chars, error_str, runtime.NO_SPID)
+    t = Token(Id.Lit_Chars, runtime.NO_SPID, error_str)
     return compound_word([t], None)
 
 

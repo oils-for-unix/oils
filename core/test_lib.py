@@ -13,8 +13,9 @@ import string
 import sys
 
 from _devbuild.gen.runtime_asdl import builtin_e
-from _devbuild.gen.syntax_asdl import source
+from _devbuild.gen.syntax_asdl import source, Token
 from asdl import pybase
+from asdl import runtime
 from core import alloc
 from core import completion
 from core import dev
@@ -36,6 +37,10 @@ from osh import expr_eval
 from osh import split
 from osh import state
 from osh import word_eval
+
+
+def Tok(id_, val):
+  return Token(id_, runtime.NO_SPID, val)
 
 
 def PrintableString(s):

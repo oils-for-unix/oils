@@ -427,7 +427,7 @@ def _ExpandPart(parts,  # type: List[word_part_t]
           out_parts_ = []  # type: List[word_part_t]
           out_parts_.extend(prefix)
           # Preserve span_id from the original
-          t = Token(Id.Lit_Chars, s, expand_part.spids[0])
+          t = Token(Id.Lit_Chars, expand_part.spids[0], s)
           out_parts_.append(t)
           out_parts_.extend(suffix)
           out.append(out_parts_)

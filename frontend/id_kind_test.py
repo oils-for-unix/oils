@@ -16,6 +16,7 @@ from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen import syntax_asdl 
 from frontend.lex import ID_SPEC
 from frontend.lookup import LookupKind
+from core.test_lib import Tok
 
 _kind_sizes = ID_SPEC.kind_sizes
 
@@ -29,7 +30,7 @@ class TokensTest(unittest.TestCase):
 
   def testTokens(self):
     print(Id.Op_Newline)
-    print(syntax_asdl.Token(Id.Op_Newline, '\n'))
+    print(Tok(Id.Op_Newline, '\n'))
 
     print(Id.Op_Newline)
 
@@ -57,17 +58,17 @@ class TokensTest(unittest.TestCase):
     print()
     print('Number of IDs:', len(ID_SPEC.id_str2int))
 
-    t = syntax_asdl.Token(Id.Arith_Plus, '+')
+    t = Tok(Id.Arith_Plus, '+')
     self.assertEqual(Kind.Arith, LookupKind(t.id))
-    t = syntax_asdl.Token(Id.Arith_CaretEqual, '^=')
+    t = Tok(Id.Arith_CaretEqual, '^=')
     self.assertEqual(Kind.Arith, LookupKind(t.id))
-    t = syntax_asdl.Token(Id.Arith_RBrace, '}')
+    t = Tok(Id.Arith_RBrace, '}')
     self.assertEqual(Kind.Arith, LookupKind(t.id))
 
-    t = syntax_asdl.Token(Id.BoolBinary_GlobDEqual, '==')
+    t = Tok(Id.BoolBinary_GlobDEqual, '==')
     self.assertEqual(Kind.BoolBinary, LookupKind(t.id))
 
-    t = syntax_asdl.Token(Id.BoolBinary_Equal, '=')
+    t = Tok(Id.BoolBinary_Equal, '=')
     self.assertEqual(Kind.BoolBinary, LookupKind(t.id))
 
   def testLexerPairs(self):

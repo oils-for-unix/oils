@@ -135,7 +135,7 @@ def _MakeLiteralHereLines(here_lines,  # type: List[Tuple[int, str, int]]
   tokens = []  # type: List[Token]
   for line_id, line, start_offset in here_lines:
     span_id = arena.AddLineSpan(line_id, start_offset, len(line))
-    t = syntax_asdl.Token(Id.Lit_Chars, line[start_offset:], span_id)
+    t = Token(Id.Lit_Chars, span_id, line[start_offset:])
     tokens.append(t)
   parts = [cast(word_part_t, t) for t in tokens]
   return parts

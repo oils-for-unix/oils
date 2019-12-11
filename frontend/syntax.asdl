@@ -94,8 +94,8 @@ module syntax
   -- NOTE: 'val' and 'span_id' fields redundant but useful.  'val' is for
   -- execution, and 'span_id' is for error messages and translation.
   -- TODO: define Id_t as uint16_t, and this should pack in (2+2) + 4 + 8 = 16
-  -- bytes.  Put 'val' at the end.
-  Token = (id id, string val, int span_id)
+  -- bytes.
+  Token = (id id, int span_id, string val)
 
   -- After parsing, we often don't need the token 'string val', so use a
   -- 'speck'.  Notes:

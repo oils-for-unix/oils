@@ -12,12 +12,13 @@ word_parse_test.py: Tests for word_parse.py
 import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import arith_expr_e, Token, compound_word
+from _devbuild.gen.syntax_asdl import arith_expr_e, compound_word
 from _devbuild.gen.types_asdl import lex_mode_e
 
 from asdl import runtime
 from core import error
 from core import test_lib
+from core.test_lib import Tok
 from osh import word_
 
 
@@ -29,7 +30,7 @@ def _assertReadWordWithArena(test, w_parser):
   # Next word must be Eof_Real
   w2 = w_parser.ReadWord(lex_mode_e.ShCommand)
   test.assertTrue(
-      test_lib.TokensEqual(Token(Id.Eof_Real, ''), w2),
+      test_lib.TokensEqual(Tok(Id.Eof_Real, ''), w2),
       w2)
   return w
 
@@ -489,31 +490,31 @@ ls bar
 """)
     print('--MULTI')
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    parts = [Token(Id.Lit_Chars, 'ls')]
+    parts = [Tok(Id.Lit_Chars, 'ls')]
     test_lib.AssertAsdlEqual(self, compound_word(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    parts = [Token(Id.Lit_Chars, 'foo')]
+    parts = [Tok(Id.Lit_Chars, 'foo')]
     test_lib.AssertAsdlEqual(self, compound_word(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    t = Token(Id.Op_Newline, None)
+    t = Tok(Id.Op_Newline, None)
     test_lib.AssertAsdlEqual(self, t, w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    parts = [Token(Id.Lit_Chars, 'ls')]
+    parts = [Tok(Id.Lit_Chars, 'ls')]
     test_lib.AssertAsdlEqual(self, compound_word(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    parts = [Token(Id.Lit_Chars, 'bar')]
+    parts = [Tok(Id.Lit_Chars, 'bar')]
     test_lib.AssertAsdlEqual(self, compound_word(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    t = Token(Id.Op_Newline, None)
+    t = Tok(Id.Op_Newline, None)
     test_lib.AssertAsdlEqual(self, t, w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    t = Token(Id.Eof_Real, '')
+    t = Tok(Id.Eof_Real, '')
     test_lib.AssertAsdlEqual(self, t, w)
 
   def testParseErrorLocation(self):
