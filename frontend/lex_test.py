@@ -307,13 +307,13 @@ class LineLexerTest(unittest.TestCase):
     # Lines always end with '\n'
     l = LineLexer('', self.arena)
     self.assertTokensEqual(
-        Token(Id.Unknown_Tok, ''), l.LookAhead(lex_mode_e.ShCommand))
+        Token(Id.Unknown_Tok, None), l.LookAhead(lex_mode_e.ShCommand))
 
     l = LineLexer('foo', self.arena)
     self.assertTokensEqual(
         Token(Id.Lit_Chars, 'foo'), l.Read(lex_mode_e.ShCommand))
     self.assertTokensEqual(
-        Token(Id.Unknown_Tok, ''), l.LookAhead(lex_mode_e.ShCommand))
+        Token(Id.Unknown_Tok, None), l.LookAhead(lex_mode_e.ShCommand))
 
     l = LineLexer('foo  bar', self.arena)
     self.assertTokensEqual(

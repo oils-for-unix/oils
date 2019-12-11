@@ -21,6 +21,11 @@ if TYPE_CHECKING:
   from frontend.reader import _Reader
 
 
+# Special immutable tokens
+_UNKNOWN_TOK = Token(Id.Unknown_Tok, None, runtime.NO_SPID)
+_EOL_TOK = Token(Id.Eol_Tok, None, runtime.NO_SPID)
+
+
 class LineLexer(object):
   def __init__(self, line, arena):
     # type: (str, Arena) -> None
@@ -87,8 +92,7 @@ class LineLexer(object):
         # would involve interacting with the line reader, and we never need
         # it.  In the OUTER mode, there is an explicit newline token, but
         # ARITH doesn't have it.
-        t = Token(Id.Unknown_Tok, '', runtime.NO_SPID)
-        return t
+        return _UNKNOWN_TOK
 
       tok_type, end_pos = match.OneToken(lex_mode, self.line, pos)
       tok_val = self.line[pos:end_pos]
@@ -108,7 +112,7 @@ class LineLexer(object):
 
     tok_type, end_pos = match.OneToken(lex_mode, line, line_pos)
     if tok_type == Id.Eol_Tok:  # Do NOT add a span for this sentinel!
-      return Token(tok_type, '', runtime.NO_SPID)
+      return _EOL_TOK
 
     tok_val = line[line_pos:end_pos]
 
