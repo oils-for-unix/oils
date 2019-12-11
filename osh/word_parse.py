@@ -131,7 +131,7 @@ class WordParser(WordEmitter):
     self.buffered_word = None  # type: word_t
 
   def _Peek(self):
-    # type: () -> Token
+    # type: () -> None
     """Helper method."""
     if self.next_lex_mode != lex_mode_e.Undefined:
       self.cur_token = self.lexer.Read(self.next_lex_mode)
@@ -139,7 +139,6 @@ class WordParser(WordEmitter):
       self.token_kind = lookup.LookupKind(self.token_type)
       self.parse_ctx.trail.AppendToken(self.cur_token)   # For completion
       self.next_lex_mode = lex_mode_e.Undefined
-    return self.cur_token
 
   def _Next(self, lex_mode):
     # type: (lex_mode_t) -> None
