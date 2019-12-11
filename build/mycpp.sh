@@ -27,10 +27,6 @@ CPPFLAGS="$CPPFLAGS $GCC_FLAGS"
 # on parsing configure-coreutils.
 CPPFLAGS="$CPPFLAGS -fno-omit-frame-pointer"
 
-# for uftrace
-# TODO: different filename
-CPPFLAGS="$CPPFLAGS -pg"
-
 # This flag is Clang-only
 #-ferror-limit=1000'
 
@@ -38,6 +34,11 @@ CPPFLAGS="$CPPFLAGS -pg"
 readonly DBG_FLAGS="$CPPFLAGS -O0 -g -fsanitize=address"
 
 readonly OPT_FLAGS="$CPPFLAGS -O2 -g"
+
+# -O0 creates a A LOT more data
+# vector::size(), std::forward, len(), etc. show up.  But they are inlined with
+# -O2.  Also List::List, Tuple2::at0, etc.
+readonly UFTRACE_FLAGS="$CPPFLAGS -O2 -g -pg"
 
 #readonly CXX=$CLANG_DIR_RELATIVE/bin/clang++
 readonly CXX=c++
@@ -145,6 +146,9 @@ compile() {
     *.opt)
       flags=$OPT_FLAGS
       ;;
+    *.uftrace)
+      flags=$UFTRACE_FLAGS
+      ;;
     *)
       flags=$DBG_FLAGS
       ;;
@@ -223,6 +227,10 @@ compile-osh-parse-opt() {
     objcopy --only-keep-debug $opt $symbols
     objcopy --add-gnu-debuglink=$symbols $stripped
   fi
+}
+
+compile-osh-parse-uftrace() {
+  compile-osh-parse '' '.uftrace'
 }
 
 readonly TMP=_tmp/mycpp

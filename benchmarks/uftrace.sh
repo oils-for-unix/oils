@@ -51,7 +51,7 @@ osh-parse() {
   #local cmd=(_bin/osh_parse.opt -c 'echo hi')
   #local cmd=(_bin/osh_parse.opt -n configure)
   #local cmd=(_bin/osh_parse.opt -n benchmarks/testdata/configure)
-  local cmd=(_bin/osh_parse.opt -n benchmarks/testdata/configure-coreutils)
+  local cmd=(_bin/osh_parse.uftrace -n benchmarks/testdata/configure-coreutils)
   uftrace record "${cmd[@]}"
 }
 
