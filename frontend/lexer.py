@@ -10,9 +10,10 @@ lexer.py - Library for lexing.
 
 from _devbuild.gen.syntax_asdl import Token, line_span
 from _devbuild.gen.types_asdl import lex_mode_t
-from _devbuild.gen.id_kind_asdl import Id_t, Id, Kind_t
+from _devbuild.gen.id_kind_asdl import Id_t, Id, Kind
 from asdl import runtime
 from core.util import log
+from frontend import lookup
 from frontend import match
 
 from typing import Callable, List, Tuple, TYPE_CHECKING
@@ -114,8 +115,20 @@ class LineLexer(object):
     if tok_type == Id.Eol_Tok:  # Do NOT add a span for this sentinel!
       return _EOL_TOK
 
-    tok_val = line[line_pos:end_pos]
+    # Save on allocations!  We often don't look at the token value.
+    # TODO: can inline this function with formula on 16-bit Id.
+    kind = lookup.LookupKind(tok_type)
 
+    # Whitelist doesn't work well?  Use blacklist for now.
+    # - Kind.KW is sometimes a literal in a word
+    # - Kind.Right is for " in here docs.  Lexer isn't involved.
+    # - Got an error with Kind.Left too that I don't understand
+    # if kind in (Kind.Lit, Kind.VSub, Kind.Redir, Kind.Char, Kind.Backtick, Kind.KW, Kind.Right):
+
+    if kind in (Kind.Arith, Kind.Op, Kind.WS, Kind.Ignored, Kind.Eof):
+      tok_val = None
+    else:
+      tok_val = line[line_pos:end_pos]
     # NOTE: We're putting the arena hook in LineLexer and not Lexer because we
     # want it to be "low level".  The only thing fabricated here is a newline
     # added at the last line, so we don't end with \0.
@@ -125,7 +138,8 @@ class LineLexer(object):
       span_id = self.last_span_id
       self.arena_skip = False
     else:
-      span_id = self.arena.AddLineSpan(self.line_id, line_pos, len(tok_val))
+      tok_len = end_pos - line_pos
+      span_id = self.arena.AddLineSpan(self.line_id, line_pos, tok_len)
       self.last_span_id = span_id
     #log('LineLexer.Read() span ID %d for %s', span_id, tok_type)
 

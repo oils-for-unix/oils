@@ -497,7 +497,7 @@ ls bar
     test_lib.AssertAsdlEqual(self, compound_word(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    t = Token(Id.Op_Newline, '\n')
+    t = Token(Id.Op_Newline, None)
     test_lib.AssertAsdlEqual(self, t, w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
@@ -509,7 +509,7 @@ ls bar
     test_lib.AssertAsdlEqual(self, compound_word(parts), w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
-    t = Token(Id.Op_Newline, '\n')
+    t = Token(Id.Op_Newline, None)
     test_lib.AssertAsdlEqual(self, t, w)
 
     w = w_parser.ReadWord(lex_mode_e.ShCommand)

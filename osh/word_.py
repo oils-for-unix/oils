@@ -19,6 +19,7 @@ from _devbuild.gen.syntax_asdl import (
     sh_lhs_expr__Name,
 )
 from asdl import runtime
+from core.util import log
 from frontend import lookup
 from mycpp import mylib
 from mycpp.mylib import tagswitch
@@ -26,6 +27,8 @@ from mycpp.mylib import tagswitch
 from typing import Tuple, Optional, List, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.error import _ErrorWithLocation
+
+_ = log
 
 
 def _LiteralId(p):
@@ -129,6 +132,7 @@ def StaticEval(UP_w):
     if q:
       quoted = True  # at least one part was quoted
     strs.append(s)
+  #log('StaticEval parts %s', w.parts)
   return True, ''.join(strs), quoted
 
 

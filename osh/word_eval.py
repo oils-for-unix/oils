@@ -1153,6 +1153,7 @@ class _WordEvaluator(object):
 
       strs.append(s)
 
+    #log('EvalWordToString %s', word.parts)
     return value.Str(''.join(strs))
 
   def EvalForPlugin(self, w):

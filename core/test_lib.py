@@ -62,6 +62,9 @@ def AsdlEqual(left, right):
 
   We don't use equality in the actual code, so this is relegated to test_lib.
   """
+  if left is None and right is None:
+    return True
+
   if isinstance(left, (int, str, bool, pybase.SimpleObj)):
     return left == right
 
