@@ -16,7 +16,7 @@ from core.util import log
 from frontend import lookup
 from frontend import match
 
-from typing import Callable, List, Tuple, TYPE_CHECKING
+from typing import Callable, List, Tuple, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
   from frontend.reader import _Reader
@@ -126,7 +126,7 @@ class LineLexer(object):
     # if kind in (Kind.Lit, Kind.VSub, Kind.Redir, Kind.Char, Kind.Backtick, Kind.KW, Kind.Right):
 
     if kind in (Kind.Arith, Kind.Op, Kind.WS, Kind.Ignored, Kind.Eof):
-      tok_val = None
+      tok_val = None  # type: Optional[str]
     else:
       tok_val = line[line_pos:end_pos]
     # NOTE: We're putting the arena hook in LineLexer and not Lexer because we

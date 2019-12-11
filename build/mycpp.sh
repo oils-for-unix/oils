@@ -40,8 +40,15 @@ readonly OPT_FLAGS="$CPPFLAGS -O2 -g"
 # -O2.  Also List::List, Tuple2::at0, etc.
 readonly UFTRACE_FLAGS="$CPPFLAGS -O2 -g -pg"
 
-#readonly CXX=$CLANG_DIR_RELATIVE/bin/clang++
-readonly CXX=c++
+# Note: End users most likely won't have Clang, bt we want it at deveopment for
+# speed.
+if test -f $CLANGXX; then
+  # Hm Clang binary crashes because of dumb_alloc?
+  #readonly CXX=$CLANGXX
+  readonly CXX=c++
+else
+  readonly CXX=c++
+fi
 
 export ASAN_SYMBOLIZER_PATH=$CLANG_DIR_RELATIVE/bin/llvm-symbolizer
 # https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer
@@ -197,7 +204,7 @@ compile-osh-parse() {
   mkdir -p _bin
 
   # Note: can't use globs here because we have _test.cc
-  compile _bin/$name$suffix _build/cpp/${name}.cc \
+  time compile _bin/$name$suffix _build/cpp/${name}.cc \
     mycpp/mylib.cc \
     cpp/frontend_match.cc \
     cpp/asdl_pretty.cc \

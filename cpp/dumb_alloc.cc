@@ -24,7 +24,8 @@ void* operator new(size_t size) {
   return p;
 }
 
-void operator delete(void* p) {
+// noexcept fixes Clang warning
+void operator delete(void* p) noexcept {
   //fprintf(stderr, "\tdelete %p\n", p);
   ++gNumDelete;
 }
