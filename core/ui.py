@@ -251,6 +251,15 @@ if mylib.PYTHON:
 
     if opts.ast_format == 'none':
       print('AST not printed.', file=sys.stderr)
+      if 0:
+        from _devbuild.gen.id_kind_asdl import Id_str
+        from frontend.lexer import ID_HIST
+        total = 0
+        for id_, count in ID_HIST.most_common():
+          print('%8d %s' % (count, Id_str(id_)))
+          total += count
+        print()
+        print('%8d total tokens returned' % total)
 
     else:  # text output
       f = mylib.Stdout()

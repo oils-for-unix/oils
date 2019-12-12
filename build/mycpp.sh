@@ -163,6 +163,7 @@ compile() {
 
   # flags are split
   $CXX $flags \
+    -D INSTRUMENT_MALLOC_FREE \
     -I mycpp \
     -I cpp \
     -I _build/cpp \

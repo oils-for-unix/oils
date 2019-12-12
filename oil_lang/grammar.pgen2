@@ -7,6 +7,9 @@
 #   mytuple,
 #   f(args,)
 #   func f(params,)
+# 
+# Kinds used:
+#   Left, Right, Expr, Op, Arith, Eof, Char
 
 # Oil patch: removed @= **= //=
 # We're missing div= and xor=, which now look weird.  ^= is

@@ -84,7 +84,7 @@ dump-shell-id() {
   esac
 
   case $name in
-    bash|zsh)
+    bash|zsh|yash)
       $sh --version > $out_dir/version.txt
       ;;
     osh)

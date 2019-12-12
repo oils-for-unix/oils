@@ -24,6 +24,7 @@ Iterator = None
 Any = None
 NoReturn = None
 Callable = None
+Counter = None  # for ID_HIST
 
 TYPE_CHECKING = False
 

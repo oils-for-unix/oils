@@ -15,6 +15,12 @@
 #include <climits>  // CHAR_BIT
 #include <cstdint>
 
+#if INSTRUMENT_MALLOC_FREE
+#include "dumb_alloc.h"
+#define malloc dumb_malloc
+#define free dumb_free
+#endif
+
 // To reduce code size
 
 #define DISALLOW_COPY_AND_ASSIGN(TypeName) \
@@ -247,6 +253,8 @@ class StrIter {
 template <class T>
 class List {
  public:
+  // TODO: Shoudl we assume there are 2 or 5 or 10 elements at first? Measure
+  // speed?
   List() : v_() {
   }
 

@@ -5,11 +5,9 @@
 #include <stdio.h>
 
 // 100 MiB of memory
-//char kMem[100 << 20];
-// 1 GiB for running 10 times
-char kMem[1 << 30];
+char kMem[100 << 20];
 
-int gMemPos;
+int gMemPos = 0;
 int gNumNew = 0;
 int gNumDelete = 0;
 
@@ -30,6 +28,24 @@ void operator delete(void* p) noexcept {
   ++gNumDelete;
 }
 
+char kMem2[100 << 20];
+int gMemPos2 = 0;
+int gNumMalloc = 0;
+int gNumFree = 0;
+
+void* dumb_malloc(size_t size) noexcept {
+  char* p = &(kMem2[gMemPos2]);
+  //fprintf(stderr, "malloc %d\n", size);
+  gMemPos2 += size;
+  ++gNumMalloc;
+  return p;
+}
+
+void dumb_free(void* p) noexcept {
+  //fprintf(stderr, "free\n");
+  ++gNumFree;
+}
+
 namespace dumb_alloc {
 
 void Summarize() {
@@ -38,6 +54,10 @@ void Summarize() {
   fprintf(stderr, "\tgNumNew = %d\n", gNumNew);
   fprintf(stderr, "\tgNumDelete = %d\n", gNumDelete);
   fprintf(stderr, "\tgMemPos = %d\n", gMemPos);
+  fprintf(stderr, "\n");
+  fprintf(stderr, "\tgNumMalloc = %d\n", gNumMalloc);
+  fprintf(stderr, "\tgNumFree = %d\n", gNumFree);
+  fprintf(stderr, "\tgMemPos2 = %d\n", gMemPos2);
 }
 
 };

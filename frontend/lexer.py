@@ -13,10 +13,11 @@ from _devbuild.gen.types_asdl import lex_mode_t
 from _devbuild.gen.id_kind_asdl import Id_t, Id, Kind
 from asdl import runtime
 from core.util import log
+from mycpp import mylib
 from frontend import lookup
 from frontend import match
 
-from typing import Callable, List, Tuple, Optional, TYPE_CHECKING
+from typing import Callable, List, Tuple, Optional, Counter, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
   from frontend.reader import _Reader
@@ -255,5 +256,11 @@ class Lexer(object):
       if t.id != Id.Ignored_LineCont:
         break
 
+    #ID_HIST[t.id] += 1
     #log('> Read() Returning %s', t)
     return t
+
+
+if mylib.PYTHON:
+  import collections
+  ID_HIST = collections.Counter()  # type: Counter[Id_t]

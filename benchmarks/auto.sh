@@ -72,7 +72,7 @@ osh-parser-quick() {
   local osh_parse=_bin/osh_parse.opt.stripped
 
   local prov2
-  prov2=$(benchmarks/id.sh shell-provenance bash dash mksh $osh_parse)
+  prov2=$(benchmarks/id.sh shell-provenance bash dash mksh yash $osh_parse)
 
   benchmarks/osh-parser.sh measure $prov2 $base_dir/osh-parser
 }
