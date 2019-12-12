@@ -27,18 +27,11 @@ CPPFLAGS="$CPPFLAGS $GCC_FLAGS"
 # on parsing configure-coreutils.
 CPPFLAGS="$CPPFLAGS -fno-omit-frame-pointer"
 
+# Always build with Address Sanitizer
+readonly DBG_FLAGS="$CPPFLAGS -O0 -g"
+
 # This flag is Clang-only
 #-ferror-limit=1000'
-
-# Always build with Address Sanitizer
-readonly DBG_FLAGS="$CPPFLAGS -O0 -g -fsanitize=address"
-
-readonly OPT_FLAGS="$CPPFLAGS -O2 -g"
-
-# -O0 creates a A LOT more data
-# vector::size(), std::forward, len(), etc. show up.  But they are inlined with
-# -O2.  Also List::List, Tuple2::at0, etc.
-readonly UFTRACE_FLAGS="$CPPFLAGS -O2 -g -pg"
 
 # Note: End users most likely won't have Clang, bt we want it at deveopment for
 # speed.
@@ -149,27 +142,36 @@ compile() {
   shift
 
   local flags
+  local link_flags=''
   case $out in
     *.opt)
-      flags=$OPT_FLAGS
+      flags="$CPPFLAGS -O2 -g"
       ;;
     *.uftrace)
-      flags=$UFTRACE_FLAGS
+      # -O0 creates a A LOT more data
+      # vector::size(), std::forward, len(), etc. show up.  But they are
+      # inlined with -O2.  Also List::List, Tuple2::at0, etc.
+      flags="$CPPFLAGS -O2 -g -pg"
+      ;;
+    *.tcmalloc)
+      # when we use tcmalloc, we ave
+      flags="$CPPFLAGS -D TCMALLOC"
+      link_flags='-ltcmalloc'
       ;;
     *)
-      flags=$DBG_FLAGS
+      flags="$CPPFLAGS -O0 -g -fsanitize=address"
       ;;
   esac
 
   # flags are split
   $CXX $flags \
-    -D INSTRUMENT_MALLOC_FREE \
     -I mycpp \
     -I cpp \
     -I _build/cpp \
     -I _devbuild/gen \
     -o $out \
     "$@" \
+    $link_flags \
     -lstdc++
 }
 
@@ -239,6 +241,21 @@ compile-osh-parse-opt() {
 
 compile-osh-parse-uftrace() {
   compile-osh-parse '' '.uftrace'
+}
+
+compile-osh-parse-tcmalloc() {
+  compile-osh-parse '' '.tcmalloc'
+}
+
+all-variants() {
+  compile-osh-parse
+  compile-osh-parse-opt
+  compile-osh-parse-uftrace
+  compile-osh-parse-tcmalloc
+
+  # show show linking against libasan, libtcmalloc, etc
+  ldd _bin/osh_parse*
+  ls -l _bin/osh_parse*
 }
 
 readonly TMP=_tmp/mycpp
