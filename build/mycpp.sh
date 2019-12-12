@@ -148,10 +148,15 @@ compile() {
       flags="$CPPFLAGS -O2 -g -D DUMB_ALLOC"
       ;;
     *.uftrace)
-      # -O0 creates a A LOT more data
-      # vector::size(), std::forward, len(), etc. show up.  But they are
-      # inlined with -O2.  Also List::List, Tuple2::at0, etc.
-      flags="$CPPFLAGS -O2 -g -pg"
+      # -O0 creates a A LOT more data.  But sometimes we want to see the
+      # structure of the code.
+      # vector::size(), std::forward, len(), etc. are not inlined.
+      # Also List::List, Tuple2::at0, etc.
+      #local opt='-O2'
+      local opt='-O0'
+
+      # Do we want DUMB_ALLOC here?
+      flags="$CPPFLAGS $opt -g -pg"
       ;;
     *.tcmalloc)
       # when we use tcmalloc, we ave

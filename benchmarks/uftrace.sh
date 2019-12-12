@@ -48,15 +48,28 @@ replay() {
 
 # creates uftrace.data dir
 osh-parse() {
+  local path=${1:-benchmarks/testdata/configure-coreutils}
+  local cmd=(_bin/osh_parse.uftrace -n $path)
+
   #local cmd=(_bin/osh_parse.opt -c 'echo hi')
-  #local cmd=(_bin/osh_parse.opt -n configure)
-  #local cmd=(_bin/osh_parse.opt -n benchmarks/testdata/configure)
-  local cmd=(_bin/osh_parse.uftrace -n benchmarks/testdata/configure-coreutils)
+
   uftrace record "${cmd[@]}"
 }
 
 by-call() {
   uftrace report -s call
+}
+
+# Results: List / Str are more common any individual ASDL types.
+#
+# Most common:
+# word_t / word_part_t base constructor, which does nothing
+# syntax_asdl::{Token,line_span}
+# And then compound_word is fairly far down.
+
+important-types() {
+  local pat='Str::Str|vector::vector|List::List|syntax_asdl::'
+  uftrace report -s call | egrep "$pat"
 }
 
 "$@"
