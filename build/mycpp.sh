@@ -434,7 +434,8 @@ osh-parse-smoke() {
     if test -n "$python"; then
       bin/osh -n $file | wc -l
     else
-      _bin/osh_parse.asan $file | wc -l
+      local osh_parse=_bin/osh_parse.asan 
+      $osh_parse $file | wc -l
     fi
     case $? in
       0)

@@ -249,13 +249,14 @@ class StrIter {
   DISALLOW_COPY_AND_ASSIGN(StrIter)
 };
 
-// I don't think we can use vector<> directly?  The method names are different.
+// TODO: Rewrite without vector<>, so we don't depend on libstdc++.
 template <class T>
 class List {
  public:
-  // TODO: Shoudl we assume there are 2 or 5 or 10 elements at first? Measure
-  // speed?
   List() : v_() {
+    // Note: this seems to INCREASE the number of 'new' calls.  I guess because
+    // many 'spids' lists aren't used?
+    // v_.reserve(64);
   }
 
   List(std::initializer_list<T> init) : v_() {

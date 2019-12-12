@@ -4,8 +4,8 @@
 
 #include <stdio.h>
 
-// 100 MiB of memory
-char kMem[100 << 20];
+// 200 MiB of memory
+char kMem[200 << 20];
 
 int gMemPos = 0;
 int gNumNew = 0;
@@ -37,7 +37,7 @@ void operator delete(void* p) noexcept {
 }
 #endif
 
-char kMem2[100 << 20];
+char kMem2[200 << 20];
 int gMemPos2 = 0;
 int gNumMalloc = 0;
 int gNumFree = 0;
