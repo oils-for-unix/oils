@@ -22,4 +22,6 @@ int main(int argc, char **argv) {
   // 12 for tag (2) id (4) and span_id (4)
   // TODO: Should be 8
   log("sizeof(speck) = %d", sizeof(syntax_asdl::speck));
+
+  log("sizeof(line_span) = %d", sizeof(syntax_asdl::line_span));
 }

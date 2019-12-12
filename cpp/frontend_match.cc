@@ -7,7 +7,7 @@
 #include "osh-types.h"
 #include "osh-lex.h"
 
-#ifndef TCMALLOC
+#ifdef DUMB_ALLOC
 #include "dumb_alloc.h"
 #define malloc dumb_malloc
 #define free dumb_free

@@ -145,7 +145,7 @@ compile() {
   local link_flags=''
   case $out in
     *.opt)
-      flags="$CPPFLAGS -O2 -g"
+      flags="$CPPFLAGS -O2 -g -D DUMB_ALLOC"
       ;;
     *.uftrace)
       # -O0 creates a A LOT more data
