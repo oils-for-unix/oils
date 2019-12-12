@@ -254,11 +254,10 @@ if mylib.PYTHON:
       if 0:
         from _devbuild.gen.id_kind_asdl import Id_str
         from frontend.lexer import ID_HIST
-        total = 0
-        for id_, count in ID_HIST.most_common():
+        for id_, count in ID_HIST.most_common(10):
           print('%8d %s' % (count, Id_str(id_)))
-          total += count
         print()
+        total = sum(ID_HIST.values())
         print('%8d total tokens returned' % total)
 
     else:  # text output
