@@ -37,8 +37,8 @@ readonly DBG_FLAGS="$CPPFLAGS -O0 -g"
 # speed.
 if test -f $CLANGXX; then
   # Hm Clang binary crashes because of dumb_alloc?
-  #readonly CXX=$CLANGXX
-  readonly CXX=c++
+  readonly CXX=$CLANGXX
+  #readonly CXX=c++
 else
   readonly CXX=c++
 fi
@@ -158,8 +158,13 @@ compile() {
       flags="$CPPFLAGS -D TCMALLOC"
       link_flags='-ltcmalloc'
       ;;
-    *)
+    *.asan)
+      # Note: Clang's ASAN doesn't like DUMB_ALLOC, but GCC is fine with it
       flags="$CPPFLAGS -O0 -g -fsanitize=address"
+      ;;
+    *)
+      # debug flags
+      flags="$CPPFLAGS -O0 -g"
       ;;
   esac
 
@@ -202,7 +207,7 @@ EOF
 compile-osh-parse() {
   local name=${1:-osh_parse}
   # Add -opt to make it opt
-  local suffix=${2:-.asan}  # opt or dbg
+  local suffix=${2:-.dbg}
 
   mkdir -p _bin
 
@@ -239,22 +244,20 @@ compile-osh-parse-opt() {
   fi
 }
 
-compile-osh-parse-uftrace() {
-  compile-osh-parse '' '.uftrace'
-}
-
-compile-osh-parse-tcmalloc() {
-  compile-osh-parse '' '.tcmalloc'
-}
+compile-osh-parse-asan() { compile-osh-parse '' '.asan'; }
+compile-osh-parse-uftrace() { compile-osh-parse '' '.uftrace'; }
+compile-osh-parse-tcmalloc() { compile-osh-parse '' '.tcmalloc'; }
 
 all-variants() {
   compile-osh-parse
+  compile-osh-parse-asan
   compile-osh-parse-opt
   compile-osh-parse-uftrace
   compile-osh-parse-tcmalloc
 
   # show show linking against libasan, libtcmalloc, etc
   ldd _bin/osh_parse*
+  echo
   ls -l _bin/osh_parse*
 }
 

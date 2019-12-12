@@ -20,7 +20,7 @@ inline size_t aligned(size_t n) {
 
 // This global interface is silly ...
 
-#ifndef TCMALLOC
+#ifdef DUMB_ALLOC
 void* operator new(size_t size) {
   char* p = &(kMem[gMemPos]);
   //fprintf(stderr, "\tnew(%d) = %p\n", size, p);
@@ -42,7 +42,7 @@ int gMemPos2 = 0;
 int gNumMalloc = 0;
 int gNumFree = 0;
 
-#ifndef TCMALLOC
+#ifdef DUMB_ALLOC
 void* dumb_malloc(size_t size) noexcept {
   char* p = &(kMem2[gMemPos2]);
   //fprintf(stderr, "malloc %d\n", size);

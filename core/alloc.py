@@ -30,7 +30,7 @@ class Arena(object):
   def __init__(self):
     # type: () -> None
 
-    # Three parallel arrays for line information.  indexed by line_id
+    # Three parallel arrays indexed by line_id.
     self.line_vals = []  # type: List[str]
     self.line_nums = []  # type: List[int]
     self.line_srcs = []  # type: List[source_t]
@@ -64,6 +64,13 @@ class Arena(object):
 
   def GetLine(self, line_id):
     # type: (int) -> str
+    """Return the text of a line.
+
+    TODO: This should be hidden behind an interface like Python's line cache?
+    It should store offsets (and maybe checkums).  It will have two
+    implementions: in-memory for interactive, and on-disk for batch and
+    'sourced' files.
+    """
     assert line_id >= 0, line_id
     return self.line_vals[line_id]
 
