@@ -90,14 +90,28 @@ important-types() {
 #   - _BraceDetect
 #   - _TildeDetect
 # - _ReadCompoundWord which instantiates compound_word
+# - _MaybeExpandAliases
 #
 # could you insert manual deletion here?
 # or reuse members?  
 
-analyze-lists() {
+# TODO: It would actually be better to get the DIRECT ancestor only, not the
+# full strack trace.
+
+list-creation() {
   #uftrace graph -f total,self,call 'List::List'
   # This shows how often List::List is called from each site
   uftrace graph -C 'List::List'
+}
+
+str-creation() {
+  #uftrace graph -f total,self,call 'List::List'
+  # This shows how often List::List is called from each site
+  uftrace graph -C 'Str::Str'
+}
+
+plugin() {
+  uftrace script -C 'List::List' -C 'Str::Str' -S benchmarks/uftrace_plugin.py
 }
 
 "$@"
