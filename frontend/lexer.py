@@ -97,7 +97,10 @@ class LineLexer(object):
         return _UNKNOWN_TOK
 
       tok_type, end_pos = match.OneToken(lex_mode, self.line, pos)
+
+      # TODO: Could do the same tok_val optimization based on Kind here.
       tok_val = self.line[pos:end_pos]
+
       # NOTE: Instead of hard-coding this token, we could pass it in.  This
       # one only appears in OUTER state!  LookAhead(lex_mode, past_token_type)
       if tok_type != Id.WS_Space:

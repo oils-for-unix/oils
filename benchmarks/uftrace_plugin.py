@@ -13,41 +13,48 @@ slice_callers = collections.Counter()
 
 
 def uftrace_begin(ctx):
-    print("program begins...")
+  pass
 
 def uftrace_entry(ctx):
-    # TODO: When function is List::List, get the STACK
-    func = ctx["name"]
+  # TODO: When function is List::List, get the STACK
+  func = ctx["name"]
 
-    if func == 'List::List':
-      list_callers[stack[-1]] += 1
-      #print('STACK %s' % stack)
-    elif func == 'Str::Str':
-      str_callers[stack[-1]] += 1
-    elif func == 'Str::slice':
-      slice_callers[stack[-1]] += 1
+  if func == 'List::List':
+    list_callers[stack[-1]] += 1
+    #print('STACK %s' % stack)
+  elif func == 'Str::Str':
+    str_callers[stack[-1]] += 1
+  elif func == 'Str::slice':
+    slice_callers[stack[-1]] += 1
 
-    stack.append(func)
-    #print("entry : " + func + "()")
+  stack.append(func)
+  #print("entry : " + func + "()")
 
 def uftrace_exit(ctx):
-    func = ctx["name"]
-    #print("exit  : " + func + "()")
-    stack.pop()
+  func = ctx["name"]
+  #print("exit  : " + func + "()")
+  stack.pop()
+
+
+def PrintMostCommon(c, k):
+  total = sum(c.values())
+  for caller, count in c.most_common(k):
+    percent = count * 100.0 / total
+    print('%5.2f%% %5d %s' % (percent, count, caller))
+  print('         ...')
+  print('       %5d TOTAL' % total)
+
 
 def uftrace_end():
-    k = 10
-    print('')
-    print('List')
-    for caller, count in list_callers.most_common(k):
-      print('%5d %s' % (count, caller))
+  k = 10
+  print('')
+  print('List')
+  PrintMostCommon(list_callers, k)
 
-    print('')
-    print('Str')
-    for caller, count in str_callers.most_common(k):
-      print('%5d %s' % (count, caller))
+  print('')
+  print('Str')
+  PrintMostCommon(str_callers, k)
 
-    print('')
-    print('slice')
-    for caller, count in slice_callers.most_common(k):
-      print('%5d %s' % (count, caller))
+  print('')
+  print('slice')
+  PrintMostCommon(slice_callers, k)
