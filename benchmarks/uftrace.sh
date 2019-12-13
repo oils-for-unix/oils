@@ -11,6 +11,11 @@ set -o errexit
 #  ~/src/uftrace-0.8.1/uftrace "$@"
 #}
 
+download() {
+  wget --directory _deps \
+    https://github.com/namhyung/uftrace/archive/v0.9.3.tar.gz
+}
+
 python-demo() {
   uftrace _devbuild/cpython-instrumented/python -h
 }
@@ -72,6 +77,27 @@ important-types() {
 
   # syntax_asdl ... ::tag_() is very common, but we don't care here
   uftrace report -s call | egrep "$pat" | fgrep -v '::tag_'
+}
+
+# Hm this shows EVERY call stack that produces a list!
+
+# uftrace graph usage shown here
+# https://github.com/namhyung/uftrace/wiki/Tutorial
+
+# Hot list creation:
+# - _ScanSimpleCommand
+# - _MakeSimpleCommand
+#   - _BraceDetect
+#   - _TildeDetect
+# - _ReadCompoundWord which instantiates compound_word
+#
+# could you insert manual deletion here?
+# or reuse members?  
+
+analyze-lists() {
+  #uftrace graph -f total,self,call 'List::List'
+  # This shows how often List::List is called from each site
+  uftrace graph -C 'List::List'
 }
 
 "$@"
