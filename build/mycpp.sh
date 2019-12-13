@@ -167,6 +167,10 @@ compile() {
       # Note: Clang's ASAN doesn't like DUMB_ALLOC, but GCC is fine with it
       flags="$CPPFLAGS -O0 -g -fsanitize=address"
       ;;
+    *.sizelog)
+      # debug flags
+      flags="$CPPFLAGS -O0 -g -D DUMB_ALLOC -D SIZE_LOG"
+      ;;
     *)
       # debug flags
       flags="$CPPFLAGS -O0 -g"
@@ -249,12 +253,14 @@ compile-osh-parse-opt() {
   fi
 }
 
+compile-osh-parse-sizelog() { compile-osh-parse '' '.sizelog'; }
 compile-osh-parse-asan() { compile-osh-parse '' '.asan'; }
 compile-osh-parse-uftrace() { compile-osh-parse '' '.uftrace'; }
 compile-osh-parse-tcmalloc() { compile-osh-parse '' '.tcmalloc'; }
 
 all-variants() {
   compile-osh-parse
+  compile-osh-parse-sizelog
   compile-osh-parse-asan
   compile-osh-parse-opt
   compile-osh-parse-uftrace

@@ -115,7 +115,7 @@ _record-cpp() {
   )
 
   # Can repeat 13 times without blowing heap
-  local freq=20000
+  local freq=10000
   #export REPEAT=13 
   time perf record $flag -F $freq -o perf.data -- "${cmd[@]}"
 }

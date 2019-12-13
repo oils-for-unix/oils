@@ -23,8 +23,9 @@ inline size_t aligned(size_t n) {
 #ifdef DUMB_ALLOC
 void* operator new(size_t size) {
   char* p = &(kMem[gMemPos]);
-  //fprintf(stderr, "\tnew(%d) = %p\n", size, p);
-  //printf("__ %d\n", size);
+#ifdef SIZE_LOG
+  printf("new %zu\n", size);
+#endif
   gMemPos += aligned(size);
   ++gNumNew;
   return p;
@@ -45,7 +46,9 @@ int gNumFree = 0;
 #ifdef DUMB_ALLOC
 void* dumb_malloc(size_t size) noexcept {
   char* p = &(kMem2[gMemPos2]);
-  //fprintf(stderr, "malloc %d\n", size);
+#ifdef SIZE_LOG
+  printf("malloc %zu\n", size);
+#endif
   gMemPos2 += aligned(size);
   ++gNumMalloc;
   return p;

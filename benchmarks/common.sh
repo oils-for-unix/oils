@@ -41,3 +41,8 @@ tsv2html() {
 # Need an absolute path here.
 readonly _time_tool=$PWD/benchmarks/time.py 
 time-tsv() { $_time_tool --tsv "$@"; }
+
+# also in metrics/source-code.sh
+hist() { sort | uniq -c | sort -n; }
+
+

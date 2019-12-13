@@ -69,7 +69,9 @@ by-call() {
 
 important-types() {
   local pat='Str::Str|vector::vector|List::List|syntax_asdl::'
-  uftrace report -s call | egrep "$pat"
+
+  # syntax_asdl ... ::tag_() is very common, but we don't care here
+  uftrace report -s call | egrep "$pat" | fgrep -v '::tag_'
 }
 
 "$@"

@@ -303,6 +303,12 @@ class List {
   }
 
   void append(T item) {
+#ifdef SIZE_LOG
+    // we can post process this format to find large lists
+    // except when they're constants, but that's OK?
+    printf("%p %zu\n", this, v_.size());
+#endif
+
     v_.push_back(item);
   }
 
