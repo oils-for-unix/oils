@@ -303,8 +303,8 @@ def BraceDetectAll(words):
       brace_tree = _BraceDetect(w)
       if brace_tree:
         out.append(brace_tree)
-      else:
-        out.append(w)
+        continue
+    out.append(w)
   return out
 
 
