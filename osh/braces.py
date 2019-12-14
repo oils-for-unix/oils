@@ -296,11 +296,15 @@ def BraceDetectAll(words):
   """Return a new list of words, possibly with BracedTree instances."""
   out = []  # type: List[word_t]
   for w in words:
-    brace_tree = _BraceDetect(w)
-    if brace_tree:
-      out.append(brace_tree)
-    else:
-      out.append(w)
+    # The shortest possible brace expansion is {,}.  This heuristic prevents
+    # a lot of garbage from being created, since otherwise nearly every word
+    # would be checked.  We could be even more precise but this is cheap.
+    if len(w.parts) >= 3:
+      brace_tree = _BraceDetect(w)
+      if brace_tree:
+        out.append(brace_tree)
+      else:
+        out.append(w)
   return out
 
 
