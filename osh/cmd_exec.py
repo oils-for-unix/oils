@@ -236,10 +236,6 @@ class Executor(object):
     self.traps = exec_deps.traps
     self.trap_nodes = exec_deps.trap_nodes
 
-    self.targets = []  # make syntax enters stuff here -- Target()
-                       # metaprogramming or regular target syntax
-                       # Whether argv[0] is make determines if it is executed
-
     # sleep 5 & puts a (PID, job#) entry here.  And then "jobs" displays it.
     self.job_state = exec_deps.job_state
     self.waiter = exec_deps.waiter
