@@ -269,9 +269,9 @@ class WordParser(WordEmitter):
     """
     # Lookahead to see if we get @ or *.  Otherwise read a full arithmetic
     # expression.
-    t2 = self.lexer.LookAhead(lex_mode_e.Arith)
-    if t2.id in (Id.Lit_At, Id.Arith_Star):
-      op = bracket_op.WholeArray(t2.id)  # type: bracket_op_t
+    next_id = self.lexer.LookAhead(lex_mode_e.Arith)
+    if next_id in (Id.Lit_At, Id.Arith_Star):
+      op = bracket_op.WholeArray(next_id)  # type: bracket_op_t
 
       self._Next(lex_mode_e.Arith)  # skip past [
       self._Peek()
@@ -475,8 +475,8 @@ class WordParser(WordEmitter):
 
     if ty == Id.VSub_Pound:
       # Disambiguate
-      t = self.lexer.LookAhead(lex_mode_e.VSub_1)
-      if t.id not in (Id.Unknown_Tok, Id.Right_DollarBrace):
+      next_id = self.lexer.LookAhead(lex_mode_e.VSub_1)
+      if next_id not in (Id.Unknown_Tok, Id.Right_DollarBrace):
         # e.g. a name, '#' is the prefix
         self._Next(lex_mode_e.VSub_1)
         part = self._ParseVarOf()
@@ -492,8 +492,8 @@ class WordParser(WordEmitter):
         part = self._ParseVarExpr(arg_lex_mode)
 
     elif ty == Id.VSub_Bang:
-      t = self.lexer.LookAhead(lex_mode_e.VSub_1)
-      if t.id not in (Id.Unknown_Tok, Id.Right_DollarBrace):
+      next_id = self.lexer.LookAhead(lex_mode_e.VSub_1)
+      if next_id not in (Id.Unknown_Tok, Id.Right_DollarBrace):
         # e.g. a name, '!' is the prefix
         # ${!a} -- this is a ref
         # ${!3} -- this is ref
@@ -1202,8 +1202,8 @@ class WordParser(WordEmitter):
           w.parts.append(part)
           # Unfortunately it's awkward to pull the check for a=(1 2) up to
           # _ReadWord.
-          t = self.lexer.LookAhead(lex_mode_e.ShCommand)
-          if t.id == Id.Op_LParen:
+          next_id = self.lexer.LookAhead(lex_mode_e.ShCommand)
+          if next_id == Id.Op_LParen:
             self.lexer.PushHint(Id.Op_RParen, Id.Right_ShArrayLiteral)
             part2 = self._ReadArrayLiteral()
             w.parts.append(part2)
@@ -1222,8 +1222,8 @@ class WordParser(WordEmitter):
 
           splice_token = self.cur_token
 
-          t = self.lexer.LookAhead(lex_mode_e.ShCommand)
-          if t.id == Id.Op_LParen:  # @arrayfunc(x)
+          next_id = self.lexer.LookAhead(lex_mode_e.ShCommand)
+          if next_id == Id.Op_LParen:  # @arrayfunc(x)
             arglist = arg_list()
             self._ParseCallArguments(arglist)
             part = word_part.FuncCall(splice_token, arglist)
@@ -1261,8 +1261,8 @@ class WordParser(WordEmitter):
           #   but "--name=$f(x)" not allowed?  This would BREAK EXISTING CODE.
           #   It would need a parse option.
 
-          t = self.lexer.LookAhead(lex_mode_e.ShCommand)
-          if t.id == Id.Op_LParen:
+          next_id = self.lexer.LookAhead(lex_mode_e.ShCommand)
+          if next_id == Id.Op_LParen:
             arglist = arg_list()
             self._ParseCallArguments(arglist)
             part = word_part.FuncCall(vsub_token, arglist)
@@ -1439,10 +1439,9 @@ class WordParser(WordEmitter):
     """
     assert self.token_type != Id.Undefined_Tok
     if self.cur_token.id == Id.WS_Space:
-      t = self.lexer.LookAhead(lex_mode_e.ShCommand)
+      return self.lexer.LookAhead(lex_mode_e.ShCommand)
     else:
-      t = self.cur_token
-    return t.id
+      return self.cur_token.id
 
   def ReadWord(self, lex_mode):
     # type: (lex_mode_t) -> word_t

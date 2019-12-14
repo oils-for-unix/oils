@@ -24,7 +24,6 @@ if TYPE_CHECKING:
 
 
 # Special immutable tokens
-_UNKNOWN_TOK = Token(Id.Unknown_Tok, runtime.NO_SPID, None)
 _EOL_TOK = Token(Id.Eol_Tok, runtime.NO_SPID, None)
 
 
@@ -75,7 +74,7 @@ class LineLexer(object):
     return self.arena.AddLineSpan(line_id, self.line_pos, 0)
 
   def LookAhead(self, lex_mode):
-    # type: (lex_mode_t) -> Token
+    # type: (lex_mode_t) -> Id_t
     """Look ahead for a non-space token, using the given lexer mode.
 
     Does NOT advance self.line_pos.
@@ -94,12 +93,9 @@ class LineLexer(object):
         # would involve interacting with the line reader, and we never need
         # it.  In the OUTER mode, there is an explicit newline token, but
         # ARITH doesn't have it.
-        return _UNKNOWN_TOK
+        return Id.Unknown_Tok
 
       tok_type, end_pos = match.OneToken(lex_mode, self.line, pos)
-
-      # TODO: Could do the same tok_val optimization based on Kind here.
-      tok_val = self.line[pos:end_pos]
 
       # NOTE: Instead of hard-coding this token, we could pass it in.  This
       # one only appears in OUTER state!  LookAhead(lex_mode, past_token_type)
@@ -107,7 +103,7 @@ class LineLexer(object):
         break
       pos = end_pos
 
-    return Token(tok_type, runtime.NO_SPID, tok_val)
+    return tok_type
 
   def Read(self, lex_mode):
     # type: (lex_mode_t) -> Token
@@ -179,7 +175,7 @@ class Lexer(object):
     return self.line_lexer.MaybeUnreadOne()
 
   def LookAhead(self, lex_mode):
-    # type: (lex_mode_t) -> Token
+    # type: (lex_mode_t) -> Id_t
     """Look ahead in the current line for the next non-space token.
 
     NOTE: Limiting lookahead to the current line makes the code a lot simpler
