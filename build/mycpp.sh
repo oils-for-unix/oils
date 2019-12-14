@@ -36,7 +36,7 @@ readonly DBG_FLAGS="$CPPFLAGS -O0 -g"
 # Note: End users most likely won't have Clang, bt we want it at deveopment for
 # speed.
 if test -f $CLANGXX; then
-  # Hm Clang binary crashes because of dumb_alloc?
+  # note: Clang doesn't inline MatchOshToken!
   readonly CXX=$CLANGXX
   #readonly CXX=c++
 else

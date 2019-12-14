@@ -9,7 +9,7 @@
 #   func f(params,)
 # 
 # Kinds used:
-#   Left, Right, Expr, Op, Arith, Eof, Char
+#   VSub, Left, Right, Expr, Op, Arith, Char, Eof, Unknown
 
 # Oil patch: removed @= **= //=
 # We're missing div= and xor=, which now look weird.  ^= is

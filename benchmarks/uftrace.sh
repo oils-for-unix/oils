@@ -65,15 +65,16 @@ by-call() {
   uftrace report -s call
 }
 
-# Results: List / Str are more common any individual ASDL types.
+# Results: Tuple, List / Str are more common any individual ASDL types.
 #
 # Most common:
 # word_t / word_part_t base constructor, which does nothing
 # syntax_asdl::{Token,line_span}
 # And then compound_word is fairly far down.
 
+# NOTE: requires uftrace -00
 important-types() {
-  local pat='Str::Str|vector::vector|List::List|syntax_asdl::'
+  local pat='Str::Str|List::List|Tuple.::Tuple|syntax_asdl::'
 
   # syntax_asdl ... ::tag_() is very common, but we don't care here
   uftrace report -s call | egrep "$pat" | fgrep -v '::tag_'
@@ -111,7 +112,14 @@ str-creation() {
 }
 
 plugin() {
-  uftrace script -C 'List::List' -C 'Str::Str' -S benchmarks/uftrace_plugin.py
+  # These manual filters speed it up
+  uftrace script \
+    -C 'List::List' \
+    -C 'Str::Str' \
+    -C 'Tuple2::Tuple2' \
+    -C 'Tuple3::Tuple3' \
+    -C 'Tuple4::Tuple4' \
+    -S benchmarks/uftrace_plugin.py
 }
 
 "$@"

@@ -10,6 +10,9 @@ stack = []
 list_callers = collections.Counter()
 str_callers = collections.Counter()
 slice_callers = collections.Counter()
+t2_callers = collections.Counter()
+t3_callers = collections.Counter()
+t4_callers = collections.Counter()
 
 
 def uftrace_begin(ctx):
@@ -26,6 +29,12 @@ def uftrace_entry(ctx):
     str_callers[stack[-1]] += 1
   elif func == 'Str::slice':
     slice_callers[stack[-1]] += 1
+  elif func == 'Tuple2::Tuple2':
+    t2_callers[stack[-1]] += 1
+  elif func == 'Tuple3::Tuple3':
+    t3_callers[stack[-1]] += 1
+  elif func == 'Tuple4::Tuple4':
+    t4_callers[stack[-1]] += 1
 
   stack.append(func)
   #print("entry : " + func + "()")
@@ -58,3 +67,16 @@ def uftrace_end():
   print('')
   print('slice')
   PrintMostCommon(slice_callers, k)
+
+  print('')
+  print('Tuple2')
+  PrintMostCommon(t2_callers, k)
+
+  print('')
+  print('Tuple3')
+  PrintMostCommon(t3_callers, k)
+
+  print('')
+  print('Tuple4')
+  PrintMostCommon(t4_callers, k)
+
