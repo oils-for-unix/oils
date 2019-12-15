@@ -13,6 +13,8 @@ slice_callers = collections.Counter()
 t2_callers = collections.Counter()
 t3_callers = collections.Counter()
 t4_callers = collections.Counter()
+new_callers = collections.Counter()
+malloc_callers = collections.Counter()
 
 
 def uftrace_begin(ctx):
@@ -35,6 +37,10 @@ def uftrace_entry(ctx):
     t3_callers[stack[-1]] += 1
   elif func == 'Tuple4::Tuple4':
     t4_callers[stack[-1]] += 1
+  elif func == 'operator new':
+    new_callers[stack[-1]] += 1
+  elif func == 'malloc':
+    malloc_callers[stack[-1]] += 1
 
   stack.append(func)
   #print("entry : " + func + "()")
@@ -80,3 +86,10 @@ def uftrace_end():
   print('Tuple4')
   PrintMostCommon(t4_callers, k)
 
+  print('')
+  print('operator new')
+  PrintMostCommon(new_callers, k)
+
+  print('')
+  print('malloc')
+  PrintMostCommon(malloc_callers, k)

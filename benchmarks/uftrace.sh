@@ -121,6 +121,8 @@ plugin() {
     -C 'Tuple2::Tuple2' \
     -C 'Tuple3::Tuple3' \
     -C 'Tuple4::Tuple4' \
+    -C 'operator new' \
+    -C 'malloc' \
     -S benchmarks/uftrace_plugin.py
 }
 
