@@ -1096,9 +1096,8 @@ class WordParser(WordEmitter):
     self._Next(lex_mode_e.ShCommand)  # advance past (
     self._Peek()
     if self.cur_token.id != Id.Op_LParen:
-      # TODO: nullptr crashes in C++!  Need TokenString function.
-      p_die('Expected ( after =, got %r', self.cur_token.val,
-            token=self.cur_token)
+      p_die('Expected ( after =, got %s',
+            ui.PrettyToken(self.cur_token, self.arena), token=self.cur_token)
     left_token = self.cur_token
     paren_spid = self.cur_token.span_id
 

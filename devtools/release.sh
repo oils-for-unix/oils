@@ -340,6 +340,8 @@ _oil-native-build() {
   local dest="../benchmark-data/src/oil-native-$OIL_VERSION"
   pushd $dest
   build/mycpp.sh compile-osh-parse-opt
+  # To run tests later
+  build/mycpp.sh compile-osh-parse-asan
   popd
 }
 

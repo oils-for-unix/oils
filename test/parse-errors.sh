@@ -623,7 +623,11 @@ all() {
 }
 
 run-for-release() {
-  run-other-suite-for-release parse-errors all
+  ### Test with the ASAN binary in release mode.  Run 'all' for OSH.
+  # Done in _oil-native-build
+  #build/mycpp.sh compile-osh-parse-asan
+  ASAN_OPTIONS=detect_leaks=0 SH=_bin/osh_parse.asan \
+    run-other-suite-for-release parse-errors all
 }
 
 "$@"

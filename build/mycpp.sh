@@ -33,14 +33,17 @@ readonly DBG_FLAGS="$CPPFLAGS -O0 -g"
 # This flag is Clang-only
 #-ferror-limit=1000'
 
-# Note: End users most likely won't have Clang, bt we want it at deveopment for
-# speed.
-if test -f $CLANGXX; then
-  # note: Clang doesn't inline MatchOshToken!
-  readonly CXX=$CLANGXX
-  #readonly CXX=c++
-else
-  readonly CXX=c++
+# User can set CXX=, like they can set CC= for oil.ovm
+# The ovm-build benchmark explicitly sets this to GCC or Clang.
+if test -z "${CXX:-}"; then
+  if test -f $CLANGXX; then
+    # note: Clang doesn't inline MatchOshToken!
+    CXX=$CLANGXX
+  else
+    # equivalent of 'cc' for C++ langauge
+    # https://stackoverflow.com/questions/172587/what-is-the-difference-between-g-and-gcc
+    CXX='c++'
+  fi
 fi
 
 export ASAN_SYMBOLIZER_PATH=$CLANG_DIR_RELATIVE/bin/llvm-symbolizer

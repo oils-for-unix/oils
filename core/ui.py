@@ -12,7 +12,7 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.syntax_asdl import (
-    Token, command_t, command,
+    Id, Token, command_t, command,
     source_e, source__Stdin, source__MainFile, source__SourcedFile,
     source__EvalArg, source__Alias, source__LValue
 )
@@ -34,6 +34,9 @@ if TYPE_CHECKING:
 def PrettyToken(tok, arena):
   # type: (Token, Arena) -> str
   """Returns a readable token value for the user.  For syntax errors."""
+  if tok.id == Id.Eof_Real:
+    return 'EOF'
+
   span = arena.GetLineSpan(tok.span_id)
   line = arena.GetLine(span.line_id)
   val = line[span.col: span.col + span.length]

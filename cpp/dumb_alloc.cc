@@ -63,7 +63,7 @@ void dumb_free(void* p) noexcept {
 namespace dumb_alloc {
 
 void Summarize() {
-#ifndef TCMALLOC
+#ifdef DUMB_ALLOC
   fprintf(stderr, "\n");
   fprintf(stderr, "dumb_alloc:\n");
   fprintf(stderr, "\tgNumNew = %d\n", gNumNew);
