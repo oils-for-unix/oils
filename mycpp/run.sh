@@ -160,7 +160,7 @@ compile-with-asdl() {
   local more_flags='-O0 -g'  # to debug crashes
   #local more_flags=''
   $CXX -o _bin/$name $CPPFLAGS $more_flags \
-    -I . -I ../_devbuild/gen -I ../_devbuild/gen-cpp -I _gen -I ../cpp \
+    -I . -I ../_devbuild/gen -I ../_build/cpp -I _gen -I ../cpp \
     mylib.cc $src "$@" -lstdc++
 }
 

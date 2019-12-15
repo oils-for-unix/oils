@@ -49,7 +49,7 @@ translate-parse() {
 
   local snippet='
 #include "expr_asdl.h"
-#include "pretty.h"
+#include "asdl_pretty.h"
 
 Str* repr(void* obj) {
   return new Str("TODO: repr()");
@@ -69,9 +69,9 @@ compile-parse() {
   asdl-gen cpp examples/expr.asdl _gen/expr_asdl
 
   compile-with-asdl parse \
-    ../cpp/pretty.cc \
+    ../cpp/asdl_pretty.cc \
     _gen/expr_asdl.cc \
-    ../_devbuild/gen-cpp/hnode_asdl.cc
+    ../_build/cpp/hnode_asdl.cc
 }
 
 ### parse

@@ -77,7 +77,9 @@ important-types() {
   local pat='Str::Str|List::List|Tuple.::Tuple|syntax_asdl::'
 
   # syntax_asdl ... ::tag_() is very common, but we don't care here
-  uftrace report -s call | egrep "$pat" | fgrep -v '::tag_'
+  # don't track sum types constructors like word_t::word_t because they're
+  # empty
+  uftrace report -s call | egrep "$pat" | egrep -v '::tag_|_t::'
 }
 
 # Hm this shows EVERY call stack that produces a list!
