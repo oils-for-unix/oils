@@ -2,18 +2,26 @@
 x='ABC DEF'
 echo ${x,}
 echo ${x,,}
+echo empty=${empty,}
+echo empty=${empty,,}
 ## STDOUT:
 aBC DEF
 abc def
+empty=
+empty=
 ## END
 
 #### Upper Case with ^ and ^^
 x='abc def'
 echo ${x^}
 echo ${x^^}
+echo empty=${empty^}
+echo empty=${empty^^}
 ## STDOUT:
 Abc def
 ABC DEF
+empty=
+empty=
 ## END
 
 #### Lower Case with constant string (VERY WEIRD)

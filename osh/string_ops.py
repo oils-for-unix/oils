@@ -256,7 +256,10 @@ def DoUnarySuffixOp(s, op, arg):
     elif op.op_id == Id.VOp1_Comma:  # Only lowercase the first letter
       if arg != '':
         raise NotImplementedError("%s can't have an argument" % op.op_id)
-      return s[0].lower() + s[1:]
+      if len(s):
+        return s[0].lower() + s[1:]
+      else:
+        return s
 
     elif op.op_id == Id.VOp1_DComma:
       if arg != '':
@@ -266,7 +269,10 @@ def DoUnarySuffixOp(s, op, arg):
     elif op.op_id == Id.VOp1_Caret:  # Only uppercase the first letter
       if arg != '':
         raise NotImplementedError("%s can't have an argument" % op.op_id)
-      return s[0].upper() + s[1:]
+      if len(s):
+        return s[0].upper() + s[1:]
+      else:
+        return s
 
     elif op.op_id == Id.VOp1_DCaret:
       if arg != '':
