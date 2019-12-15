@@ -120,6 +120,9 @@ class Str {
 
   // s[begin:]
   Str* slice(int begin) {
+    if (begin == 0) {
+      return this;  // s[i:] where i == 0 is common in here docs
+    }
     if (begin < 0) {
       begin = len_ + begin;
     }
@@ -275,6 +278,9 @@ class List {
 
   // L[begin:]
   List* slice(int begin) {
+    if (begin == 0) {
+      return this;
+    }
     if (begin < 0) {
       begin = v_.size() + begin;
     }
