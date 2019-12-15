@@ -530,7 +530,10 @@ def DetectAssocPair(w):
       # e.g. if we have [$x$y]=$a$b
       key = compound_word(parts[1:i], None)  # $x$y 
       value = compound_word(parts[i+1:], None)  # $a$b from
-      return key, value
+
+      # Type-annotated intermediate value for mycpp translation
+      ret = key, value  # type: Optional[Tuple[compound_word, compound_word]]
+      return ret
 
   return None
 
@@ -539,21 +542,20 @@ def KeywordToken(w):
   # type: (compound_word) -> Tuple[Kind_t, Optional[Token]]
   """Tests if a word is an assignment or control flow word."""
   no_token = None  # type: Optional[Token]
-  err = (Kind.Undefined, no_token)
 
   if len(w.parts) != 1:
-    return err
+    return Kind.Undefined, no_token
 
   UP_part0 = w.parts[0]
   token_type = _LiteralId(UP_part0)
   if token_type == Id.Undefined_Tok:
-    return err
+    return Kind.Undefined, no_token
 
   token_kind = lookup.LookupKind(token_type)
   if token_kind == Kind.ControlFlow:
     return token_kind, cast(Token, UP_part0)
 
-  return err
+  return Kind.Undefined, no_token
 
 
 def LiteralToken(UP_w):

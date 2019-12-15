@@ -8,7 +8,7 @@ import os
 
 from mylib import log
 
-from typing import Tuple
+from typing import Tuple, List
 
 
 def f(x):
@@ -26,6 +26,14 @@ def run_tests():
   i, s = f(0)
   log("i = %d", i)
   log("s = %s", s)
+
+  items = []  # type: List[Tuple[int, str]]
+  items.append((43, 'bar'))
+  log('length = %d', len(items))
+
+
+  mytuple = (44, 'spam')
+  myint, mystr = mytuple
 
 
 def run_benchmarks():

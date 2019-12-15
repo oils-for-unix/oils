@@ -16,7 +16,7 @@ namespace match {
 using types_asdl::lex_mode_t;
 
 // The big lexer
-Tuple2<Id_t, int>* OneToken(lex_mode_t lex_mode, Str* line, int start_pos);
+Tuple2<Id_t, int> OneToken(lex_mode_t lex_mode, Str* line, int start_pos);
 
 // There are 5 secondary lexers with matchers of this type
 typedef void (*MatchFunc)(const unsigned char* line, int line_len,
@@ -30,7 +30,7 @@ class SimpleLexer {
         pos_(0) {
   }
   // TODO: Implement and be careful about ownership of the buffer
-  Tuple2<Id_t, Str*>* Next();
+  Tuple2<Id_t, Str*> Next();
 
  private:
   MatchFunc match_func_;

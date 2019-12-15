@@ -52,6 +52,14 @@ class PNode(object):
     return '(PNode %s %s %s)' % (self.typ, tok_str, ch_str)
 
 
+class _StackItem(object):
+  def __init__(self, dfa, state, node):
+    # type: (dfa_t, int, PNode) -> None
+    self.dfa = dfa
+    self.state = state
+    self.node = node
+
+
 class Parser(object):
     """Parser engine.
 
@@ -118,7 +126,7 @@ class Parser(object):
         """
         newnode = PNode(start, None, [])
         # Each stack entry is a tuple: (dfa, state, node).
-        self.stack = [(self.grammar.dfas[start], 0, newnode)]
+        self.stack = [_StackItem(self.grammar.dfas[start], 0, newnode)]
         self.rootnode = None  # type: Optional[PNode]
 
     def addtoken(self, typ, opaque, ilabel):
@@ -131,9 +139,12 @@ class Parser(object):
         # Do the "accelerators" in pgen.c have anything to do with it?
 
         while True:
-            dfa, state, _ = self.stack[-1]
-            states, _ = dfa
+            top = self.stack[-1]
+            states, _ = top.dfa
+            state = top.state
+
             arcs = states[state]
+
             # Look for a state with this label
             found = False
             for ilab, newstate in arcs:
@@ -152,8 +163,10 @@ class Parser(object):
                         if len(self.stack) == 0:
                             # Done parsing!
                             return True
-                        dfa, state, _ = self.stack[-1]
-                        states, _ = dfa
+                        top = self.stack[-1]
+                        states, _ = top.dfa
+                        state = top.state
+
                     # Done with this token
                     return False
                 elif t >= 256:
@@ -189,27 +202,28 @@ class Parser(object):
     def shift(self, typ, opaque, newstate):
         # type: (int, Token, int) -> None
         """Shift a token.  (Internal)"""
-        dfa, _, node = self.stack[-1]
+        top = self.stack[-1]
         newnode = PNode(typ, opaque, None)
         if newnode is not None:
-            node.children.append(newnode)
-        self.stack[-1] = (dfa, newstate, node)
+            top.node.children.append(newnode)
+        self.stack[-1].state = newstate
 
     def push(self, typ, opaque, newdfa, newstate):
         # type: (int, Token, dfa_t, int) -> None
         """Push a nonterminal.  (Internal)"""
-        dfa, _, node = self.stack[-1]
+        top = self.stack[-1]
         newnode = PNode(typ, opaque, [])
-        self.stack[-1] = (dfa, newstate, node)
-        self.stack.append((newdfa, 0, newnode))
+        self.stack[-1].state = newstate
+        self.stack.append(_StackItem(newdfa, 0, newnode))
 
     def pop(self):
         # type: () -> None
         """Pop a nonterminal.  (Internal)"""
-        _, _, newnode = self.stack.pop()
+        top = self.stack.pop()
+        newnode = top.node
         if newnode is not None:
             if len(self.stack):
-                _, _, node = self.stack[-1]
-                node.children.append(newnode)
+                top2 = self.stack[-1]
+                top2.node.children.append(newnode)
             else:
                 self.rootnode = newnode

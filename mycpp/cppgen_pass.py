@@ -240,6 +240,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       self.local_var_list = []  # Collected at assignment
       self.prepend_to_block = None  # For writing vars after {
       self.in_func_body = False
+      self.in_return_expr = False
 
       # This is cleared when we start visiting a class.  Then we visit all the
       # methods, and accumulate the types of everything that looks like
@@ -897,12 +898,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         assert c_type.endswith('*'), c_type
         c_type = c_type[:-1]  # HACK TO CLEAN UP
 
+        maybe_new = '' if self.in_return_expr else 'new '
         if len(o.items) == 0:
-            self.write('(new %s())' % c_type)
+            self.write('(%s%s())' % (maybe_new, c_type))
         else:
             # Use initialize list.  Lists are MUTABLE so we can't pull them to
             # the top level.
-            self.write('(new %s(' % c_type)
+            self.write('(%s%s(' % (maybe_new, c_type))
             for i, item in enumerate(o.items):
                 if i != 0:
                     self.write(', ')
@@ -998,7 +1000,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_temp_node(self, o: 'mypy.nodes.TempNode') -> T:
         pass
 
-    def _write_tuple_unpacking(self, temp_name, lval_items, item_types):
+    def _write_tuple_unpacking(self, temp_name, lval_items, item_types,
+                               is_return=False):
       """Used by assignment and for loops."""
       for i, (lval_item, item_type) in enumerate(zip(lval_items, item_types)):
         #self.log('*** %s :: %s', lval_item, item_type)
@@ -1016,7 +1019,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.write_ind('')
           self.accept(lval_item)
 
-        self.write(' = %s->at%d();\n', temp_name, i)  # RHS
+        # Tuples that are return values aren't pointers
+        op = '.' if is_return else '->'
+        self.write(' = %s%sat%d();\n', temp_name, op, i)  # RHS
 
     def visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt') -> T:
         # I think there are more than one when you do a = b = 1, which I never
@@ -1144,6 +1149,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           rvalue_type = self.types[o.rvalue]
           c_type = get_c_type(rvalue_type)
 
+          is_return = isinstance(o.rvalue, CallExpr)
+          if is_return:
+            assert c_type.endswith('*')
+            c_type = c_type[:-1]
+
           temp_name = 'tup%d' % self.unique_id
           self.unique_id += 1
           self.write_ind('%s %s = ', c_type, temp_name)
@@ -1151,7 +1161,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.accept(o.rvalue)
           self.write(';\n')
 
-          self._write_tuple_unpacking(temp_name, lval.items, rvalue_type.items)
+          self._write_tuple_unpacking(temp_name, lval.items, rvalue_type.items,
+                                      is_return=is_return)
+
         else:
           raise AssertionError(lval)
 
@@ -1487,6 +1499,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # TODO: restrict this
         class_name = self.current_class_name
         func_name = o.name()
+        ret_type = o.type.ret_type
 
         if (class_name in ('BoolParser', 'CommandParser') and func_name == '_Next' or
             class_name == 'ParseContext' and func_name == 'MakeOshParser' or
@@ -1505,7 +1518,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             # Write _Next() with no args
             virtual = ''
-            c_ret_type = get_c_type(o.type.ret_type)
+            c_ret_type = get_c_type(ret_type)
+            if isinstance(ret_type, TupleType):
+              assert c_ret_type.endswith('*')
+              c_ret_type = c_ret_type[:-1]
+
             self.decl_write_ind('%s%s %s(', virtual, c_ret_type, func_name)
 
             # TODO: Write all params except last optional one
@@ -1517,7 +1534,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             else:
               self.write(' {\n')
               # return MakeOshParser()
-              kw = '' if isinstance(o.type.ret_type, NoneTyp) else 'return '
+              kw = '' if isinstance(ret_type, NoneTyp) else 'return '
               self.write('  %s%s(' % (kw, o.name()))
 
               # Don't write self or last optional argument
@@ -1559,8 +1576,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # write 'virtual' here.
         # You could also test NotImplementedError as abstract?
 
-        c_type = get_c_type(o.type.ret_type)
-        self.decl_write_ind('%s%s %s(', virtual, c_type, func_name)
+        c_ret_type = get_c_type(ret_type)
+        if isinstance(ret_type, TupleType):
+          assert c_ret_type.endswith('*')
+          c_ret_type = c_ret_type[:-1]
+        self.decl_write_ind('%s%s %s(', virtual, c_ret_type, func_name)
 
         self._WriteFuncParams(o.type.arg_types, o.arguments)
 
@@ -1902,7 +1922,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_return_stmt(self, o: 'mypy.nodes.ReturnStmt') -> T:
         self.write_ind('return ')
         if o.expr:
+          self.in_return_expr = True
           self.accept(o.expr)
+          self.in_return_expr = False
         self.write(';\n')
 
     def visit_assert_stmt(self, o: 'mypy.nodes.AssertStmt') -> T:

@@ -15,17 +15,17 @@
 
 namespace match {
 
-Tuple2<Id_t, int>* OneToken(lex_mode_t lex_mode, Str* line, int start_pos) {
+Tuple2<Id_t, int> OneToken(lex_mode_t lex_mode, Str* line, int start_pos) {
   int id;
   int end_pos;
   // TODO: get rid of these casts
   MatchOshToken(static_cast<int>(lex_mode),
                 reinterpret_cast<const unsigned char*>(line->data_),
                 line->len_, start_pos, &id, &end_pos);
-  return new Tuple2<Id_t, int>(static_cast<Id_t>(id), end_pos);
+  return Tuple2<Id_t, int>(static_cast<Id_t>(id), end_pos);
 }
 
-Tuple2<Id_t, Str*>* SimpleLexer::Next() {
+Tuple2<Id_t, Str*> SimpleLexer::Next() {
   int id;
   int end_pos;
   match_func_(reinterpret_cast<const unsigned char*>(s_->data_),
@@ -40,7 +40,7 @@ Tuple2<Id_t, Str*>* SimpleLexer::Next() {
   Str* val = new Str(buf, len);
 
   pos_ = end_pos;
-  return new Tuple2<Id_t, Str*>(static_cast<Id_t>(id), val);
+  return Tuple2<Id_t, Str*>(static_cast<Id_t>(id), val);
 }
 
 SimpleLexer* BraceRangeLexer(Str* s) {

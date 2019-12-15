@@ -251,7 +251,8 @@ class _PrettyPrinter(object):
 
       single_f = f.NewTempBuffer()
       if _TrySingleLine(val, single_f, self.max_col - chars_so_far):
-        f.WriteRaw(single_f.GetRaw())
+        s, num_chars = single_f.GetRaw()  # extra unpacking for mycpp
+        f.WriteRaw((s, num_chars))
         chars_so_far += single_f.NumChars()
       else:  # WRAP THE LINE
         f.write('\n')
@@ -279,7 +280,8 @@ class _PrettyPrinter(object):
     for item in array:
       single_f = f.NewTempBuffer()
       if _TrySingleLine(item, single_f, self.max_col - chars_so_far):
-        pieces.append(single_f.GetRaw())
+        s, num_chars = single_f.GetRaw()  # extra unpacking for mycpp
+        pieces.append((s, num_chars))
         chars_so_far += single_f.NumChars()
       else:
         all_fit = False
@@ -355,7 +357,8 @@ class _PrettyPrinter(object):
           # it on a separate line.
           single_f = f.NewTempBuffer()
           if _TrySingleLine(val, single_f, self.max_col - prefix_len):
-            f.WriteRaw(single_f.GetRaw())
+            s, num_chars = single_f.GetRaw()  # extra unpacking for mycpp
+            f.WriteRaw((s, num_chars))
           else:
             f.write('\n')
             self.PrintNode(val, f, indent+INDENT+INDENT)
@@ -383,7 +386,8 @@ class _PrettyPrinter(object):
     single_f = f.NewTempBuffer()
     single_f.write(ind)
     if _TrySingleLine(node, single_f, self.max_col - indent):
-      f.WriteRaw(single_f.GetRaw())
+      s, num_chars = single_f.GetRaw()  # extra unpacking for mycpp
+      f.WriteRaw((s, num_chars))
       return
 
     UP_node = node  # for mycpp
