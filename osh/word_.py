@@ -293,7 +293,7 @@ def LeftMostSpanForWord(w):
 
     elif case(word_e.String):
       w = cast(word__String, UP_w)
-      return w.spids[0]  # See _StringWordEmitter in osh/builtin_bracket.py
+      return w.span_id  # See _StringWordEmitter in osh/builtin_bracket.py
 
     else:
       raise AssertionError(w.tag_())

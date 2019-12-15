@@ -49,10 +49,9 @@ class _StringWordEmitter(word_parse.WordEmitter):
     """
     if self.i == self.n:
       # Does it make sense to define Eof_Argv or something?
-      w = word.String(Id.Eof_Real, '')
-      # TODO: Add a way to show this.  Show 1 char past the right-most spid of
-      # the last word?  But we only have the left-most spid.
-      w.spids.append(runtime.NO_SPID)
+      # TODO: Add a way to show this location.  Show 1 char past the right-most
+      # spid of the last word?  But we only have the left-most spid.
+      w = word.String(Id.Eof_Real, '', runtime.NO_SPID)
       return w
 
     #log('ARGV %s i %d', self.argv, self.i)
@@ -71,8 +70,7 @@ class _StringWordEmitter(word_parse.WordEmitter):
 
     # NOTE: We only have the left spid now.  It might be useful to add the
     # right one.
-    w = word.String(id_, s)
-    w.spids.append(left_spid)
+    w = word.String(id_, s, left_spid)
     return w
 
   def Read(self):

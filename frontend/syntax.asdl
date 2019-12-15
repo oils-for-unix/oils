@@ -202,8 +202,7 @@ module syntax
     -- contains any type of word_part.
   | BracedTree(word_part* parts)
     -- For dynamic parsing of test/[ -- the string is already evaluated.
-  | String(id id, string s)
-  attributes (int* spids)
+  | String(id id, string s, int span_id)
 
   -- TODO: Need more tokens/spids to translate a[x++]=1
   -- These don't follow the LST design, because they're shared for
