@@ -12,7 +12,7 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.syntax_asdl import (
-    command_t, command,
+    Token, command_t, command,
     source_e, source__Stdin, source__MainFile, source__SourcedFile,
     source__EvalArg, source__Alias, source__LValue
 )
@@ -29,6 +29,16 @@ if TYPE_CHECKING:
   from core.error import _ErrorWithLocation
   from mycpp.mylib import Writer
   #from frontend.args import UsageError
+
+
+def PrettyToken(tok, arena):
+  # type: (Token, Arena) -> str
+  """Returns a readable token value for the user.  For syntax errors."""
+  span = arena.GetLineSpan(tok.span_id)
+  line = arena.GetLine(span.line_id)
+  val = line[span.col: span.col + span.length]
+  # TODO: Print length 0 as 'EOF'?
+  return repr(val)
 
 
 def PrettyDir(dir_name, UP_home_dir):

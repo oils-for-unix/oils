@@ -557,7 +557,7 @@ int str_to_int(Str* s);
 
 // e.g. ('a' in 'abc')
 inline bool str_contains(Str* haystack, Str* needle) {
-  // TODO: this not rely on NUL termination
+  // cstring-TODO: this not rely on NUL termination
   const char* p = strstr(haystack->data_, needle->data_);
   return p != NULL;
 }
@@ -642,7 +642,7 @@ inline LineReader* Stdin() {
 }
 
 inline LineReader* open(Str* path) {
-  // TODO: don't use data_ directly
+  // cstring-TODO: don't use data_ directly
   FILE* f = fopen(path->data_, "r");
 
   // TODO: Better error checking.  IOError?

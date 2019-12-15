@@ -13,12 +13,12 @@
 Str* kEmptyString = new Str("", 0);
 
 void print(Str* s) {
-  // TODO: use fwrite() with len
+  // cstring-TODO: use fwrite() with len
   printf("%s\n", s->data_);
 }
 
 void println_stderr(Str* s) {
-  // TODO: use fwrite() with len
+  // cstring-TODO: use fwrite() with len
   fputs(s->data_, stderr);
   fputs("\n", stderr);
 }
@@ -49,7 +49,7 @@ Str* Str::replace(Str* old, Str* new_str) {
   // First pass to calculate the new length
   int replace_count = 0;
   while (p_this < last_possible) {
-    // TODO: Don't use strstr()
+    // cstring-TODO: Don't use strstr()
     const char* next = strstr(p_this, old_data);
     if (next == NULL) {
       break;
@@ -351,6 +351,8 @@ bool _str_to_int(Str* s, int* result) {
   }
 
   char* p;  // mutated by strtol
+
+  // cstring-TODO
   *result = strtol(s->data_, &p, 10);  // base 10
 
   // Return true if it consumed ALL characters.

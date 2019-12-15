@@ -259,5 +259,19 @@ int main(int argc, char **argv) {
 
   log("");
   test_files();
+
+  // Str = 16 and List = 24.
+  // Rejected ideas about slicing:
+  //
+  // - Use data[len] == '\0' as OWNING and data[len] != '\0' as a slice?
+  //   It doesn't work because s[1:] would always have that problem
+  //
+  // - s->data == (void*)(s + 1)
+  //   Owning string has the data RIGHT AFTER?
+  //   Maybe works? but probably a bad idea because of GLOBAL Str instances.
+
+  log("");
+  log("sizeof(Str) = %zu", sizeof(Str));
+  log("sizeof(List<int>) = %zu", sizeof(List<int>));
 }
 

@@ -69,6 +69,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from core.util import p_die
 from core.util import log
+from core import ui
 from frontend import lookup
 from frontend import reader
 from osh import tdop
@@ -102,6 +103,7 @@ class WordParser(WordEmitter):
   def __init__(self, parse_ctx, lexer, line_reader):
     # type: (ParseContext, Lexer, _Reader) -> None
     self.parse_ctx = parse_ctx
+    self.arena = parse_ctx.arena
     self.lexer = lexer
     self.line_reader = line_reader
 
@@ -260,7 +262,8 @@ class WordParser(WordEmitter):
       return suffix_op.PatSub(pat, replace, replace_mode)
 
     # Happens with ${x//} and ${x///foo}, see test/parse-errors.sh
-    p_die("Expected } after pat sub, got %r", self.cur_token.val,
+    p_die("Expected } after pat sub, got %s",
+          ui.PrettyToken(self.cur_token, self.arena),
           token=self.cur_token)
 
   def _ReadSubscript(self):
