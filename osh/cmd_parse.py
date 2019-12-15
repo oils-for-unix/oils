@@ -243,7 +243,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
   if part_offset == n:
     val = word.Empty()  # type: word_t
   else:
-    val = compound_word(w.parts[part_offset:], None)
+    val = compound_word(w.parts[part_offset:])
     tilde = word_.TildeDetect(val)
     if tilde:
       val = tilde
@@ -273,7 +273,7 @@ def _AppendMoreEnv(preparsed_list, more_env):
     if part_offset == n:
       val = word.Empty()  # type: word_t
     else:
-      val = compound_word(w.parts[part_offset:], None)
+      val = compound_word(w.parts[part_offset:])
 
     pair = syntax_asdl.env_pair(var_name, val, [left_token.span_id])
     more_env.append(pair)

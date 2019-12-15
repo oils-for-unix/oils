@@ -367,7 +367,7 @@ def TildeDetect(UP_w):
 
   if len(w.parts) == 1:  # can't be zero
     tilde_part = word_part.TildeSub(tok0)
-    return compound_word([tilde_part], None)
+    return compound_word([tilde_part])
 
   UP_part1 = w.parts[1]
   # NOTE: We could inspect the raw tokens.
@@ -378,7 +378,7 @@ def TildeDetect(UP_w):
 
       parts = [tilde_part_]
       parts.extend(w.parts[1:])
-      return compound_word(parts, None)
+      return compound_word(parts)
 
   # It could be something like '~foo:bar', which doesn't have a slash.
   return None
@@ -528,8 +528,8 @@ def DetectAssocPair(w):
     id_ = _LiteralId(parts[i])
     if id_ == Id.Lit_ArrayLhsClose: # ]=
       # e.g. if we have [$x$y]=$a$b
-      key = compound_word(parts[1:i], None)  # $x$y 
-      value = compound_word(parts[i+1:], None)  # $a$b from
+      key = compound_word(parts[1:i])  # $x$y 
+      value = compound_word(parts[i+1:])  # $a$b from
 
       # Type-annotated intermediate value for mycpp translation
       ret = key, value  # type: Optional[Tuple[compound_word, compound_word]]
@@ -715,7 +715,7 @@ if mylib.PYTHON:
     # type: (str, _ErrorWithLocation) -> compound_word
     error_str = fmt % err.UserErrorString()
     t = Token(Id.Lit_Chars, runtime.NO_SPID, error_str)
-    return compound_word([t], None)
+    return compound_word([t])
 
 
 def Pretty(w):

@@ -580,7 +580,7 @@ class Executor(object):
 
     elif n.tag == redir_e.HereDoc:
       # HACK: Wrap it in a word to evaluate.
-      w = compound_word(n.stdin_parts, None)
+      w = compound_word(n.stdin_parts)
       val = self.word_ev.EvalWordToString(w)
       assert val.tag == value_e.Str, val
       return redirect.HereDoc(fd, val.s, n.op.span_id)

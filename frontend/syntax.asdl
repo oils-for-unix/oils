@@ -185,7 +185,8 @@ module syntax
   | ExprSub(Token left, expr child)
   attributes (int* spids)
 
-  compound_word = (word_part* parts, int* spids)
+  compound_word = (word_part* parts)
+
   word = 
     -- Empty is for the RHS of 'x=', 'declare x=', and the argument in "${x:-}".
     -- Semantically, we need it for "${x:-}" (see osh/word_parse.py).  Other 

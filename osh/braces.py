@@ -236,7 +236,7 @@ def _BraceDetect(w):
         # ?  We're forcing braces right now but not commas.
         if len(stack):
           stack[-1].saw_comma = True
-          stack[-1].alt_part.words.append(compound_word(cur_parts, None))
+          stack[-1].alt_part.words.append(compound_word(cur_parts))
           cur_parts = []  # clear
           append = False
 
@@ -272,7 +272,7 @@ def _BraceDetect(w):
           if not stack[-1].saw_comma:  # {foo} is not a real alternative
             return None  # early return
 
-          stack[-1].alt_part.words.append(compound_word(cur_parts, None))
+          stack[-1].alt_part.words.append(compound_word(cur_parts))
 
           frame = stack.pop()
           cur_parts = frame.cur_parts
@@ -481,7 +481,7 @@ def BraceExpandWords(words):
       if case(word_e.BracedTree):
         w = cast(word__BracedTree, UP_w)
         parts_list = _BraceExpand(w.parts)
-        tmp = [compound_word(p, None) for p in parts_list]
+        tmp = [compound_word(p) for p in parts_list]
         out.extend(tmp)
 
       elif case(word_e.Compound):
