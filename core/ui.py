@@ -11,8 +11,9 @@ from __future__ import print_function
 
 import sys
 
+from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
-    Id, Token, command_t, command,
+    Token, command_t, command,
     source_e, source__Stdin, source__MainFile, source__SourcedFile,
     source__EvalArg, source__Alias, source__LValue
 )

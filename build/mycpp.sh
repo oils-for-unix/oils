@@ -174,7 +174,7 @@ compile() {
       # debug flags
       flags="$CPPFLAGS -O0 -g -D DUMB_ALLOC -D SIZE_LOG"
       ;;
-    *)
+    *.dbg)
       # debug flags
       flags="$CPPFLAGS -O0 -g"
       ;;
@@ -262,7 +262,7 @@ compile-osh-parse-uftrace() { compile-osh-parse '' '.uftrace'; }
 compile-osh-parse-tcmalloc() { compile-osh-parse '' '.tcmalloc'; }
 
 all-variants() {
-  compile-osh-parse
+  compile-osh-parse  # .dbg version is default
   compile-osh-parse-sizelog
   compile-osh-parse-asan
   compile-osh-parse-opt

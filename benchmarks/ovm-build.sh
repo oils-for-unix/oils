@@ -75,6 +75,8 @@ extract-oil() {
   # This is different than the others tarballs.
   rm -r -f -v $TAR_DIR/oil-*
   tar -x --directory $TAR_DIR --file _release/oil.tar
+
+  tar -x --directory $TAR_DIR --file _release/oil-native-$OIL_VERSION.tar
 }
 
 #
@@ -100,6 +102,9 @@ measure-sizes() {
 
   # PROBLEM: Do I need provenance for gcc/clang here?  I can just join it later
   # in R.
+
+  sizes-tsv $BASE_DIR/bin/*/osh_parse.{dbg,opt.stripped} \
+    > ${prefix}.native-sizes.tsv
 
   sizes-tsv $TAR_DIR/oil-$OIL_VERSION/_build/oil/bytecode-opy.zip \
     > ${prefix}.bytecode-size.tsv
@@ -205,6 +210,40 @@ build-task() {
       cp -v $target $bin_dir
       ;;
 
+    _bin/osh_parse.*)
+      case $action in
+        _bin/osh_parse.dbg)
+          local func='compile-osh-parse'
+          ;;
+        _bin/osh_parse.opt.stripped)
+          local func='compile-osh-parse-opt'
+          ;;
+        *)
+          die "Invalid target"
+          ;;
+      esac
+
+      # Change the C compiler into the corresponding C++ compiler
+      case $compiler_path in 
+        *gcc)
+          cxx=${compiler_path//gcc/g++}
+          ;;
+        *clang)
+          # clang -> clang++.  There is also a 'clang' in the path so we can't
+          # substitute.
+          cxx="${compiler_path}++"
+          ;;
+        *)
+          die "Invalid compiler"
+          ;;
+      esac
+
+      CXX=$cxx "${TIME_PREFIX[@]}" -- build/mycpp.sh $func
+
+      local target=$action
+      cp -v $target $bin_dir
+      ;;
+
     *)
       local target=$action  # Assume it's a target like _bin/oil.ovm
 
@@ -222,14 +261,18 @@ oil-tasks() {
 
   # NOTE: it MUST be a tarball and not the git repo, because we don't build
   # bytecode-*.zip!  We care about the "packager's experience".
-  local dir="$TAR_DIR/oil-$OIL_VERSION"
+  local oil_dir="$TAR_DIR/oil-$OIL_VERSION"
+  local oil_native_dir="$TAR_DIR/oil-native-$OIL_VERSION"
 
   # Add 1 field for each of 5 fields.
   cat $provenance | while read line; do
     # NOTE: configure is independent of compiler.
-    echo "$line" $dir configure
-    echo "$line" $dir _bin/oil.ovm
-    echo "$line" $dir _bin/oil.ovm-dbg
+    echo "$line" $oil_dir configure
+    echo "$line" $oil_dir _bin/oil.ovm
+    echo "$line" $oil_dir _bin/oil.ovm-dbg
+
+    echo "$line" $oil_native_dir _bin/osh_parse.dbg
+    echo "$line" $oil_native_dir _bin/osh_parse.opt.stripped
   done
 }
 
@@ -292,6 +335,7 @@ measure() {
   other-shell-tasks $provenance > $t2
 
   #grep dash $t2 |
+  #time cat $t1 |
   time cat $t1 $t2 |
     xargs -n $NUM_COLUMNS -- $0 build-task $raw_dir ||
     die "*** Some tasks failed. ***"
@@ -330,6 +374,13 @@ stage1() {
   b=($raw_dir/$MACHINE2.*.bin-sizes.tsv)
   tsv-concat ${a[-1]} ${b[-1]} > $x
 
+  x=$out/native-sizes.tsv
+  a=($raw_dir/$MACHINE1.*.native-sizes.tsv)
+  b=($raw_dir/$MACHINE2.*.native-sizes.tsv)
+  #tsv-concat ${b[-1]} > $x
+  tsv-concat ${a[-1]} ${b[-1]} > $x
+
+  # NOTE: unused
   # Construct a one-column TSV file
   local raw_data_tsv=$out/raw-data.tsv
   { echo 'path'
@@ -361,7 +412,7 @@ print-report() {
     </p>
     <h2>OVM Build Performance</h2>
 
-    <h3>Elapsed Time by Host and Compiler</h3>
+    <h3>Time in Seconds by Host and Compiler</h3>
 
     <p>We measure the build speed of <code>bash</code> and <code>dash</code>
     for comparison.
@@ -384,6 +435,13 @@ EOF
 EOF
   # Highlight the "default" production build
   tsv2html --css-class-pattern 'special /gcc/oil.ovm$' $in_dir/sizes.tsv
+
+  cat <<EOF
+    <h3>Native Binary Size</h3>
+
+EOF
+  # Highlight the opt build
+  tsv2html --css-class-pattern 'special /gcc/osh_parse.opt.stripped$' $in_dir/native-sizes.tsv
 
   cat <<EOF
 

@@ -13,7 +13,7 @@ source test/common.sh  # log
 #
 # stage1 : concatenate files from different machines
 # stage2 : make CSV files with report.R
-# stage3 : make HTML files.  Call the 'print-report function here.
+# stage3 : make HTML files.  Call 'print-report' function.
 
 
 stage2() {

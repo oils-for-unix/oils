@@ -382,6 +382,7 @@ OvmBuildReport = function(in_dir, out_dir) {
   times = readTsv(file.path(in_dir, 'times.tsv'))
   bytecode_size = readTsv(file.path(in_dir, 'bytecode-size.tsv'))
   bin_sizes = readTsv(file.path(in_dir, 'bin-sizes.tsv'))
+  native_sizes = readTsv(file.path(in_dir, 'native-sizes.tsv'))
   raw_data = readTsv(file.path(in_dir, 'raw-data.tsv'))
 
   times %>% filter(status != 0) -> failed
@@ -408,7 +409,9 @@ OvmBuildReport = function(in_dir, out_dir) {
     select(-c(host_name, host_hash, compiler_path, compiler_hash)) %>%
     mutate(src_dir = basename(src_dir)) %>%
     arrange(host_label, src_dir) %>%
-    select(host_label, compiler_label, src_dir, action, elapsed_secs) ->
+    select(host_label, compiler_label, src_dir, action, elapsed_secs) %>%
+    mutate(host_label = paste("host ", host_label)) %>%
+    spread(key = c(host_label), value = elapsed_secs) ->
     times
 
   #print(times)
@@ -425,10 +428,16 @@ OvmBuildReport = function(in_dir, out_dir) {
     mutate(native_code_size = num_bytes - bytecode_size) ->
     sizes
 
+    #mutate(path = basename(path)) %>%
+  native_sizes %>%
+    select(c(host_label, path, num_bytes)) ->
+    native_sizes
+
   # NOTE: These don't have the host and compiler.
   writeTsv(times, file.path(out_dir, 'times'))
   writeTsv(bytecode_size, file.path(out_dir, 'bytecode-size'))
   writeTsv(sizes, file.path(out_dir, 'sizes'))
+  writeTsv(native_sizes, file.path(out_dir, 'native-sizes'))
 
   # TODO: I want a size report too
   #writeCsv(sizes, file.path(out_dir, 'sizes'))
