@@ -77,8 +77,8 @@ extract-oil() {
   tar -x --directory $TAR_DIR --file _release/oil.tar
 
   # To run on multiple machines, use the one in the benchmarks-data repo.
-  cp --no-target-directory \
-    ../benchmark-data/src/oil-native-$OIL_VERSION $TAR_DIR
+  cp --recursive --no-target-directory \
+    ../benchmark-data/src/oil-native-$OIL_VERSION/ $TAR_DIR/
 }
 
 #
