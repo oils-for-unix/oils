@@ -260,6 +260,6 @@ class Lexer(object):
     return t
 
 
-if mylib.PYTHON:
+if 0:  # mylib.PYTHON: not: breaks tarball build
   import collections
   ID_HIST = collections.Counter()  # type: Counter[Id_t]
