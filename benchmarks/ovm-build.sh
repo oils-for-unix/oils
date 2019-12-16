@@ -78,7 +78,8 @@ extract-oil() {
 
   # To run on multiple machines, use the one in the benchmarks-data repo.
   cp --recursive --no-target-directory \
-    ../benchmark-data/src/oil-native-$OIL_VERSION/ $TAR_DIR/
+    ../benchmark-data/src/oil-native-$OIL_VERSION/ \
+    $TAR_DIR/oil-native-$OIL_VERSION/
 }
 
 #
@@ -256,6 +257,8 @@ build-task() {
   esac
 
   popd >/dev/null
+
+  log "DONE BUILD TASK $action $src_dir __ status=$?"
 }
 
 oil-tasks() {
@@ -338,9 +341,14 @@ measure() {
 
   #grep dash $t2 |
   #time cat $t1 |
-  time cat $t1 $t2 |
-    xargs -n $NUM_COLUMNS -- $0 build-task $raw_dir ||
-    die "*** Some tasks failed. ***"
+  set +o errexit
+  time cat $t1 $t2 | xargs --verbose -n $NUM_COLUMNS -- $0 build-task $raw_dir 
+  local status=$?
+  set -o errexit
+
+  if test $status -ne 0; then
+    die "*** Some tasks failed. (xargs status=$status) ***"
+  fi
 
   measure-sizes $raw_dir/$prefix
 
