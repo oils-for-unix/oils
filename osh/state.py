@@ -32,7 +32,6 @@ from typing import List, Dict, Tuple, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from _devbuild.gen.id_kind_asdl import Id_t
-    from _devbuild.gen.syntax_asdl import Token
     from _devbuild.gen.runtime_asdl import lvalue_t, value_t, scope_t, var_flags_t
 
 

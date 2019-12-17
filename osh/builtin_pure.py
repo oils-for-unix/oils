@@ -33,7 +33,6 @@ from osh import word_compile
 
 from typing import Dict, TYPE_CHECKING
 if TYPE_CHECKING:
-  from oil_lang.objects import Proc
   from osh.cmd_exec import Executor
   from osh.state import SearchPath
   from _devbuild.gen.syntax_asdl import command__ShFunction

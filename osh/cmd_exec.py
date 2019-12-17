@@ -933,11 +933,11 @@ class Executor(object):
   def _EvalTempEnv(self, more_env, flags):
     # type: (List[env_pair], Tuple[var_flags_t, ...]) -> None
     """For FOO=1 cmd."""
-    for env_pair in more_env:
-      val = self.word_ev.EvalWordToString(env_pair.val)
+    for e_pair in more_env:
+      val = self.word_ev.EvalWordToString(e_pair.val)
       # Set each var so the next one can reference it.  Example:
       # FOO=1 BAR=$FOO ls /
-      self.mem.SetVar(lvalue.Named(env_pair.name), val, flags,
+      self.mem.SetVar(lvalue.Named(e_pair.name), val, flags,
                       scope_e.LocalOnly)
 
   def _Dispatch(self, node, fork_external):
