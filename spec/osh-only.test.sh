@@ -22,7 +22,7 @@ f "${array[@]}"
 ' dummy a b c
 echo status=$?
 # Just check that we can parse it.  TODO: Test properties.
-python -m json.tool $TMP/*.json > /dev/null
+python2 -m json.tool $TMP/*.json > /dev/null
 echo status=$?
 ## STDOUT:
 status=1
