@@ -9,7 +9,8 @@ set -o errexit
 
 source test/common.sh  # for $R_PATH
 
-readonly BASE_DIR=_tmp/metrics/native-code
+readonly OVM_BASE_DIR=_tmp/metrics/ovm
+readonly OIL_BASE_DIR=_tmp/metrics/oil-native
 
 # Size profiler for binaries.
 bloaty() {
@@ -51,9 +52,9 @@ symbols() {
 # - marshal_dumps and marshal_dump!  We never use those.
 # - Remove all docstrings!!!  Like sys_doc.
 
-cpython-compileunits() {
+compileunits() {
   # Hm there doesn't seem to be a way to do this without
-  local file=_build/oil/ovm-dbg
+  local file=${1:-_build/oil/ovm-dbg}
 
   #local file=_build/oil/ovm-opt
   #local sym=_build/oil/ovm-opt.symbols
@@ -61,10 +62,10 @@ cpython-compileunits() {
   bloaty --tsv -n 0 -d compileunits $file 
 }
 
-cpython-symbols() {
+symbols() {
   # NOTE: This is different than the release binary!
   # ovm-opt.stripped doesn't show a report.
-  local file=_build/oil/ovm-opt
+  local file=${1:-_build/oil/ovm-opt}
 
   # Slightly different.
   #local file=_build/oil/ovm-dbg
@@ -76,30 +77,39 @@ cpython-symbols() {
   bloaty --tsv -n 0 -d symbols $file 
 }
 
-_report() {
-  R_LIBS_USER=$R_PATH metrics/native-code.R "$@"
-}
-
 report() {
-  _report metrics $BASE_DIR
+  R_LIBS_USER=$R_PATH metrics/native-code.R "$@"
 }
 
 build-ovm() {
   make _build/oil/ovm-{dbg,opt}
 }
 
+collect-and-report() {
+  local base_dir=$1
+  local dbg=$2
+  local opt=$3
+
+  mkdir -p $base_dir
+  symbols $opt > $base_dir/symbols.tsv
+
+  # Really 'transation units', but bloaty gives it that name.
+  compileunits $dbg > $base_dir/compileunits.tsv
+
+  head $base_dir/symbols.tsv $base_dir/compileunits.tsv
+
+  report metrics $base_dir $dbg $opt | tee $base_dir/overview.txt
+}
+
 run-for-release() {
   build-ovm
 
-  mkdir -p $BASE_DIR
-  cpython-symbols > $BASE_DIR/symbols.tsv
+  local dbg=_build/oil/ovm-dbg
+  local opt=_build/oil/ovm-opt
 
-  # Really 'transation units', but bloaty gives it that name.
-  cpython-compileunits > $BASE_DIR/compileunits.tsv
+  collect-and-report $OVM_BASE_DIR $dbg $opt
 
-  head $BASE_DIR/symbols.tsv $BASE_DIR/compileunits.tsv
-
-  report | tee $BASE_DIR/overview.txt
+  collect-and-report $OIL_BASE_DIR _bin/osh_parse.{dbg,opt}
 }
 
 "$@"

@@ -38,10 +38,10 @@ Basic = function(frame) {
 }
 
 Report = function(ctx) {
-  Banner('Summary of symbols.tsv (from _build/oil/ovm-opt):')
+  Banner('Summary of symbols.tsv (from %s):', ctx$opt)
   Basic(ctx$symbols)
 
-  Banner('Summary of compileunits.tsv (from _build/oil/ovm-dbg):')
+  Banner('Summary of compileunits.tsv (from %s):', ctx$dbg)
   Basic(ctx$compileunits)
 
   Banner('Other analysis:')
@@ -69,6 +69,10 @@ main = function(argv) {
   if (action == 'metrics') {
     in_dir = argv[[2]]
     ctx = Load(in_dir)
+
+    ctx$dbg = argv[[3]]
+    ctx$opt = argv[[4]]
+
     Report(ctx)
 
   } else {

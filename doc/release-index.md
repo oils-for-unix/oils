@@ -80,12 +80,15 @@ Oil has three major sources of docs:
     compiled with CPython (for comparison).
   - [src-bin-ratio-with-opy](metrics.wwz/bytecode/src-bin-ratio-with-opy.txt) -
     How big is the compiled output?
-- Native Code Metrics
-  - [overview](metrics.wwz/native-code/overview.txt) - An analysis of GCC's
+- OVM / CPython
+  - [overview](metrics.wwz/ovm/overview.txt) - An analysis of GCC's
     compilation of [OVM][] (a subset of CPython).  [Bloaty][] provides the
     underlying data.
   - [cpython-defs/overview](metrics.wwz/cpython-defs/overview.txt) - We try to
     ship as little of CPython as possible, and this is what's left.
+- `oil-native`.  The future of Oil is pure native code.
+  - [overview](metrics.wwz/oil-native/overview.txt) - Binary code size reported
+    by [Bloaty][].
 
 [cloc]: https://github.com/AlDanial/cloc
 [Bloaty]: https://github.com/google/bloaty
