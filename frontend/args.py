@@ -61,7 +61,7 @@ from core.util import log
 
 import libc  # for regex support
 
-from typing import Optional
+from typing import Tuple, Optional
 
 
 class UsageError(Exception):
@@ -70,6 +70,7 @@ class UsageError(Exception):
   # TODO: Should this be _ErrorWithLocation?  Probably, even though we only use
   # 'span_id'.
   def __init__(self, msg, span_id=runtime.NO_SPID):
+    # type: (str, int) -> None
     self.msg = msg
     self.span_id = span_id
 

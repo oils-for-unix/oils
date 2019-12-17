@@ -31,7 +31,11 @@ from osh import state
 from osh import string_ops
 from osh import word_compile
 
-from typing import Dict
+from typing import Dict, TYPE_CHECKING
+if TYPE_CHECKING:
+  from osh.cmd_exec import Executor
+  from osh.state import SearchPath
+  from _devbuild.gen.syntax_asdl import command__ShFunction
 
 
 ALIAS_SPEC = _Register('alias')
@@ -250,6 +254,7 @@ COMMAND_SPEC.ShortFlag('-v')
 
 class Command(object):
   def __init__(self, ex, funcs, aliases, search_path):
+    # type: (Executor, Dict[str, command__ShFunction], Dict[str, str], SearchPath) -> None
     self.ex = ex
     self.funcs = funcs
     self.aliases = aliases

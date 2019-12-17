@@ -42,6 +42,10 @@ from osh import state
 import libc
 import posix_ as posix
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+  from _devbuild.gen.runtime_asdl import builtin_t
+
 # Special builtins can't be redefined by functions.  On the other hand, 'cd'
 # CAN be redefined.
 #
@@ -170,16 +174,19 @@ def _Register(name, help_topic=None):
 
 
 def ResolveSpecial(argv0):
+  # type: (str) -> builtin_t
   """Is it a special builtin?"""
   return _SPECIAL_BUILTINS.get(argv0, builtin_e.NONE)
 
 
 def ResolveAssign(argv0):
+  # type: (str) -> builtin_t
   """Is it an assignment builtin?"""
   return _SPECIAL_ASSIGN_BUILTINS.get(argv0, builtin_e.NONE)
 
 
 def Resolve(argv0):
+  # type: (str) -> builtin_t
   """Is it any other builtin?"""
   return _NORMAL_BUILTINS.get(argv0, builtin_e.NONE)
 

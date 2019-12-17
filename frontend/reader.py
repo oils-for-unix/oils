@@ -12,7 +12,7 @@ from mycpp import mylib
 
 from core.util import p_die
 
-from typing import Optional, Tuple, List, TYPE_CHECKING
+from typing import Optional, Tuple, List, Union, IO, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import Token
   from core.alloc import Arena
@@ -62,7 +62,7 @@ class FileLineReader(_Reader):
   """For -c and stdin?"""
 
   def __init__(self, f, arena):
-    # type: (mylib.LineReader, Arena) -> None
+    # type: (Union[mylib.LineReader, IO[str]], Arena) -> None
     """
     Args:
       lines: List of (line_id, line) pairs

@@ -32,12 +32,14 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc  # type: ignore
 
-from typing import Any, TYPE_CHECKING
+from typing import Union, List, Dict, Tuple, Any, TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.syntax_asdl import bool_expr_t
+  from _devbuild.gen.syntax_asdl import bool_expr_t, arith_expr_t, sh_lhs_expr_t
+  from _devbuild.gen.runtime_asdl import lvalue_t, scope_t
   from core.ui import ErrorFormatter
-  from osh.state import Mem
-  from osh.word_eval import WordEvaluator
+  from osh.state import Mem, ExecOpts
+  from osh import word_eval
+  from osh import builtin_bracket
 
 
 def _StringToInteger(s, span_id=runtime.NO_SPID):
@@ -133,6 +135,7 @@ def _LookupVar(name, mem, exec_opts):
 
 
 def EvalLhs(node, arith_ev, mem, spid, lookup_mode):
+  # type: (sh_lhs_expr_t, ArithEvaluator, Mem, int, scope_t) -> lvalue_t
   """sh_lhs_expr -> lvalue.
 
   Used for a=b and a[x]=b
@@ -193,6 +196,7 @@ def _EvalLhsArith(node, mem, arith_ev):
 
 def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
                      lookup_mode=scope_e.Dynamic):
+  # type: (sh_lhs_expr_t, ArithEvaluator, Mem, ExecOpts, scope_t) -> Tuple[value_t, lvalue_t]
   """Evaluate the operand for i++, a[0]++, i+=2, a[0]+=2 as an R-value.
 
   Also used by the Executor for s+='x' and a[42]+='x'.
@@ -284,7 +288,7 @@ class _ExprEvaluator(object):
   """
 
   def __init__(self, mem, exec_opts, word_ev, errfmt):
-    # type: (Mem, Any, WordEvaluator, ErrorFormatter) -> None
+    # type: (Mem, Any, Union[word_eval._WordEvaluator, builtin_bracket._WordEvaluator], ErrorFormatter) -> None
     # TODO: Remove Any by fixing _DummyExecOpts in osh/builtin_bracket.py
     self.mem = mem
     self.exec_opts = exec_opts
@@ -380,6 +384,7 @@ class ArithEvaluator(_ExprEvaluator):
     self.mem.SetVar(lval, val, (), scope_e.Dynamic)
 
   def Eval(self, node):
+    # type: (arith_expr_t) -> Union[None, int, List[int], Dict[str, str]]
     """
     Args:
       node: arith_expr_t

@@ -25,7 +25,12 @@ from frontend import match
 
 import posix_ as posix
 
-from typing import Optional
+from typing import Optional, List, Tuple, IO, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from _devbuild.gen.runtime_asdl import arg_vector, redirect_t
+    from _devbuild.gen.syntax_asdl import command_t
+    from osh.cmd_exec import Executor
 
 
 def GetHomeDir():
@@ -142,6 +147,7 @@ class FdState(object):
     return fd
 
   def Open(self, path, mode='r'):
+    # type: (str, str) -> IO[str]
     """Opens a path for read, but moves it out of the reserved 3-9 fd range.
 
     Returns:
@@ -320,6 +326,7 @@ class FdState(object):
     return ok
 
   def Push(self, redirects, waiter):
+    # type: (List[redirect_t], Waiter) -> bool
     #log('> fd_state.Push %s', redirects)
     new_frame = _FdFrame()
     self.stack.append(new_frame)
@@ -350,9 +357,11 @@ class FdState(object):
     return self._PushDup(r, 0)
 
   def MakePermanent(self):
+    # type: () -> None
     self.cur_frame.Forget()
 
   def Pop(self):
+    # type: () -> None
     frame = self.stack.pop()
     #log('< Pop %s', frame)
     for saved, orig in reversed(frame.saved):
@@ -387,6 +396,7 @@ class ChildStateChange(object):
 
 class StdinFromPipe(ChildStateChange):
   def __init__(self, pipe_read_fd, w):
+    # type: (int, int) -> None
     self.r = pipe_read_fd
     self.w = w
 
@@ -403,6 +413,7 @@ class StdinFromPipe(ChildStateChange):
 
 class StdoutToPipe(ChildStateChange):
   def __init__(self, r, pipe_write_fd):
+    # type: (int, int) -> None
     self.r = r
     self.w = pipe_write_fd
 
@@ -431,6 +442,7 @@ class ExternalProgram(object):
     self.debug_f = debug_f
 
   def Exec(self, argv0_path, arg_vec, environ):
+    # type: (str, arg_vector, List[str]) -> None
     """Execute a program and exit this process.
 
     Called by:
@@ -439,7 +451,7 @@ class ExternalProgram(object):
       ( ls / )
     """
     self._Exec(argv0_path, arg_vec.strs, arg_vec.spids[0], environ, True)
-    # NO RETURN
+    assert False, "This line should never execute" # NO RETURN
 
   def _Exec(self, argv0_path, argv, argv0_spid, environ, should_retry):
     if self.hijack_shebang:
@@ -522,6 +534,7 @@ class ExternalThunk(Thunk):
   """An external executable."""
 
   def __init__(self, ext_prog, argv0_path, arg_vec, environ):
+    # type: (ExternalProgram, str, arg_vector, List[str]) -> None
     self.ext_prog = ext_prog
     self.argv0_path = argv0_path
     self.arg_vec = arg_vec
@@ -546,6 +559,7 @@ class SubProgramThunk(Thunk):
   """A subprogram that can be executed in another process."""
 
   def __init__(self, ex, node, inherit_errexit=True):
+    # type: (Executor, command_t, bool) -> None
     self.ex = ex
     self.node = node
     self.inherit_errexit = inherit_errexit  # for bash errexit compatibility
@@ -658,6 +672,7 @@ class Process(Job):
   It provides an API to manipulate file descriptor state in parent and child.
   """
   def __init__(self, thunk, job_state, parent_pipeline=None):
+    # type: (Thunk, JobState, Pipeline) -> None
     """
     Args:
       thunk: Thunk instance
@@ -682,6 +697,7 @@ class Process(Job):
     return '<Process %s>' % self.thunk
 
   def AddStateChange(self, s):
+    # type: (ChildStateChange) -> None
     self.state_changes.append(s)
 
   def AddPipeToClose(self, r, w):
@@ -694,6 +710,7 @@ class Process(Job):
       posix.close(self.close_w)
 
   def Start(self):
+    # type: () -> int
     """Start this process with fork(), handling redirects."""
     # TODO: If OSH were a job control shell, we might need to call some of
     # these here.  They control the distribution of signals, some of which
@@ -733,6 +750,7 @@ class Process(Job):
     return pid
 
   def Wait(self, waiter):
+    # type: (Waiter) -> int
     """Wait for this process to finish."""
     while True:
       #log('WAITING')
@@ -756,6 +774,7 @@ class Process(Job):
       self.parent_pipeline.WhenDone(pid, status)
 
   def Run(self, waiter):
+    # type: (Waiter) -> int
     """Run this process synchronously."""
     self.Start()
 
@@ -778,6 +797,7 @@ class Pipeline(Job):
   foo | bar | read v
   """
   def __init__(self):
+    # type: () -> None
     Job.__init__(self)
     self.procs = []
     self.pids = []  # pids in order
@@ -792,6 +812,7 @@ class Pipeline(Job):
     return '<Pipeline %s>' % ' '.join(repr(p) for p in self.procs)
 
   def Add(self, p):
+    # type: (Process) -> None
     """Append a process to the pipeline."""
     if len(self.procs) == 0:
       self.procs.append(p)
@@ -809,7 +830,8 @@ class Pipeline(Job):
     self.procs.append(p)
 
   def AddLast(self, thunk):
-    """Append the last node to the pipeline.
+    # type: (Tuple[Executor, command_t]) -> None
+    """Append the last noden to the pipeline.
 
     This is run in the CURRENT process.  It is OPTIONAL, because pipelines in
     the background are run uniformly.
@@ -828,6 +850,7 @@ class Pipeline(Job):
     self.last_pipe = (r, w)  # So we can connect it to last_thunk
 
   def Start(self, waiter):
+    # type: (Waiter) -> None
     # TODO: pipelines should be put in their own process group with setpgid().
     # I tried 'cat | cat' and Ctrl-C, and it works without this, probably
     # because of SIGPIPE?  I think you will need that for Ctrl-Z, to suspend a
@@ -847,6 +870,7 @@ class Pipeline(Job):
       self.pipe_status.append(-1)  # for self.last_thunk
 
   def LastPid(self):
+    # type: () -> int
     """For the odd $! variable.
 
     It would be better if job IDs or PGIDs were used consistently.
@@ -872,6 +896,7 @@ class Pipeline(Job):
     return self.pipe_status
 
   def Run(self, waiter, fd_state):
+    # type: (Waiter, FdState) -> List[int]
     """Run this pipeline synchronously (foreground pipeline).
 
     Returns:
@@ -968,6 +993,7 @@ class JobState(object):
     return self.last_stopped_pid
 
   def AddJob(self, job):
+    # type: (Job) -> int
     """Add a job to the list, so it can be listed and possibly resumed.
 
     A job is either a process or pipeline.

@@ -23,7 +23,13 @@ from osh import word_eval
 
 import libc
 
-from typing import Any, Optional, List
+from typing import Any, Optional, List, Union, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+  from _devbuild.gen.runtime_asdl import (
+      lvalue_t, lvalue__Named, lvalue__ObjIndex, lvalue__ObjAttr,
+  )
+
 
 _ = log
 
@@ -65,6 +71,7 @@ class OilEvaluator(object):
       return val.obj
 
   def EvalPlusEquals(self, lval, rhs_py):
+    # type: (lvalue_t, Union[int, float]) -> Union[int, float]
     lhs_py = self.LookupVar(lval.name)
     if not isinstance(lhs_py, (int, float)):
       # TODO: Could point at the variable name
@@ -157,7 +164,7 @@ class OilEvaluator(object):
       return tuple(self.EvalExpr(ind) for ind in indices)
 
   def EvalPlaceExpr(self, place):
-    # type: (place_expr_t) -> None
+    # type: (place_expr_t) -> Union[lvalue__Named, lvalue__ObjIndex, lvalue__ObjAttr]
     if place.tag == place_expr_e.Var:
       return lvalue.Named(place.name.val)
 
@@ -542,7 +549,7 @@ class OilEvaluator(object):
     raise NotImplementedError(part.__class__.__name__)
 
   def _MaybeReplaceLeaf(self, node):
-    # type: (re_t) -> Optional[re_t]
+    # type: (re_t) -> Tuple[Optional[re_t], bool]
     """
     If a leaf node needs to be evaluated, do it and return the replacement.
     Otherwise return None.
