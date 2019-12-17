@@ -116,7 +116,7 @@ def Interactive(opts, ex, c_parser, display, prompt_plugin, errfmt):
 
 
 def Batch(ex, c_parser, arena, nodes_out=None):
-  # type: (Any, CommandParser, Arena, Optional[List[command_t]]) -> Any
+  # type: (Any, CommandParser, Arena, Optional[List[command_t]]) -> int
   """Loop for batch execution.
 
   Args:

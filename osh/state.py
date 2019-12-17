@@ -11,8 +11,6 @@ from __future__ import print_function
 
 import cStringIO
 
-from typing import List, TYPE_CHECKING
-
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import sh_lhs_expr
 from _devbuild.gen.runtime_asdl import (
@@ -30,8 +28,12 @@ from pylib import path_stat
 import libc
 import posix_ as posix
 
+from typing import List, Dict, Tuple, Optional, TYPE_CHECKING
+
 if TYPE_CHECKING:
-    from _devbuild.gen.runtime_asdl import value_t, scope_t
+    from _devbuild.gen.id_kind_asdl import Id_t
+    from _devbuild.gen.syntax_asdl import Token
+    from _devbuild.gen.runtime_asdl import lvalue_t, value_t, scope_t, var_flags_t
 
 
 # This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".
@@ -45,10 +47,12 @@ class SearchPath(object):
   """For looking up files in $PATH."""
 
   def __init__(self, mem):
+    # type: (Mem) -> None
     self.mem = mem
     self.cache = {}
 
   def Lookup(self, name, exec_required=True):
+    # type: (str, bool) -> Optional[str]
     """
     Returns the path itself (for relative path), the resolve path, or None.
     """
@@ -83,6 +87,7 @@ class SearchPath(object):
     return None
 
   def CachedLookup(self, name):
+    # type: (str) -> Optional[str]
     if name in self.cache:
       return self.cache[name]
 
@@ -384,6 +389,7 @@ class ExecOpts(object):
         self._SetOption(name, True)
 
   def ErrExit(self):
+    # type: () -> bool
     return self.errexit.errexit
 
   def GetDollarHyphen(self):
@@ -526,6 +532,7 @@ class _ArgFrame(object):
   """Stack frame for arguments array."""
 
   def __init__(self, argv):
+    # type: (List[str]) -> None
     self.argv = argv
     self.num_shifted = 0
 
@@ -546,6 +553,7 @@ class _ArgFrame(object):
     return value.Str(str(self.argv[index]))
 
   def GetArgv(self):
+    # () -> List[str]
     return self.argv[self.num_shifted : ]
 
   def GetNumArgs(self):
@@ -794,6 +802,7 @@ class Mem(object):
         scope_e.GlobalOnly)
 
   def SetCurrentSpanId(self, span_id):
+    # type: (int) -> None
     """Set the current source location, for BASH_SOURCE, BASH_LINENO, LINENO,
     etc.
 
@@ -848,6 +857,7 @@ class Mem(object):
   #
 
   def PushCall(self, func_name, def_spid, argv):
+    # type: (str, int, List[str]) -> None
     """For function calls."""
     self.argv_stack.append(_ArgFrame(argv))
     self.var_stack.append({})
@@ -860,6 +870,7 @@ class Mem(object):
     self.bash_source.append(source_str)
 
   def PopCall(self):
+    # type: () -> None
     self.bash_source.pop()
     self._PopDebugStack()
 
@@ -867,6 +878,7 @@ class Mem(object):
     self.argv_stack.pop()
 
   def PushSource(self, source_name, argv):
+    # type: (str, List[str]) -> None
     """For 'source foo.sh 1 2 3."""
     if argv:
       self.argv_stack.append(_ArgFrame(argv))
@@ -876,22 +888,26 @@ class Mem(object):
     self.bash_source.append(source_name)
 
   def PopSource(self, argv):
+    # type: (List[str]) -> None
     self.bash_source.pop()
     self._PopDebugStack()
     if argv:
       self.argv_stack.pop()
 
   def PushTemp(self):
+    # type: () -> None
     """For the temporary scope in 'FOO=bar BAR=baz echo'."""
     # We don't want the 'read' builtin to write to this frame!
     self.var_stack.append({})
     self._PushDebugStack(None, None)
 
   def PopTemp(self):
+    # type: () -> None
     self._PopDebugStack()
     self.var_stack.pop()
 
   def TopNamespace(self):
+    # type: () -> Dict[str, runtime_asdl.cell]
     """For evalblock()."""
     return self.var_stack[-1]
 
@@ -933,6 +949,7 @@ class Mem(object):
     return self.argv_stack[-1].GetArgNum(arg_num)
 
   def GetArgv(self):
+    # type: () -> List[str]
     """For $* and $@."""
     return self.argv_stack[-1].GetArgv()
 
@@ -1031,6 +1048,7 @@ class Mem(object):
 
   def SetVar(self, lval, val, flags_to_set, lookup_mode, flags_to_clear=(),
              keyword_id=None):
+    # type: (lvalue_t, value_t, Tuple[var_flags_t, ...], scope_t, Tuple[var_flags_t, ...], Optional[Id_t]) -> None
     """
     Args:
       lval: lvalue
@@ -1331,6 +1349,7 @@ class Mem(object):
       return False
 
   def GetExported(self):
+    # type: () -> List[str]
     """Get all the variables that are marked exported."""
     # TODO: This is run on every SimpleCommand.  Should we have a dirty flag?
     # We have to notice these things:
@@ -1379,6 +1398,7 @@ class Mem(object):
 
 
 def SetLocalString(mem, name, s):
+  # type: (Mem, str, str) -> None
   """Set a local string.
 
   Used for:

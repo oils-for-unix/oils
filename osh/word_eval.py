@@ -14,7 +14,7 @@ from _devbuild.gen.runtime_asdl import (
     builtin_e, effect_e,
     part_value, part_value_e, part_value_t, part_value__String,
     value, value_e, value_t, lvalue,
-    assign_arg, cmd_value, cmd_value__Assign,
+    assign_arg, cmd_value_t, cmd_value, cmd_value__Assign,
 )
 from core import error
 from core import process
@@ -31,7 +31,11 @@ from osh import word_compile
 
 import posix_ as posix
 
-from typing import List
+from typing import List, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+  from _devbuild.gen.syntax_asdl import compound_word, word__Empty
+  from _devbuild.gen.runtime_asdl import value__Str, part_value_t, value_t
 
 
 def EvalSingleQuoted(part):
@@ -1073,6 +1077,7 @@ class _WordEvaluator(object):
       raise AssertionError(part.__class__.__name__)
 
   def _EvalWordToParts(self, word, quoted, part_vals, is_subst=False):
+    # type: (Union[compound_word, word__Empty], bool, List[part_value_t], bool) -> None
     """Helper for EvalRhsWord, EvalWordSequence, etc.
 
     Returns:
@@ -1100,6 +1105,7 @@ class _WordEvaluator(object):
     pass
 
   def EvalWordToString(self, word, do_fnmatch=False, do_ere=False):
+    # type: (word_t, bool, bool) -> value__Str
     """
     Args:
       word: Compound
@@ -1177,6 +1183,7 @@ class _WordEvaluator(object):
     return val
 
   def EvalRhsWord(self, word):
+    # type: (word_t) -> value_t
     """syntax.word -> value
 
     Used for RHS of assignment.  There is no splitting.
@@ -1441,6 +1448,7 @@ class _WordEvaluator(object):
     return cmd_value.Argv(strs, spids)
 
   def EvalWordSequence2(self, words, allow_assign=False):
+    # type: (List[compound_word], bool) -> cmd_value_t
     """Turns a list of Words into a list of strings.
 
     Unlike the EvalWord*() methods, it does globbing.

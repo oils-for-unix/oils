@@ -15,6 +15,10 @@ from osh.builtin import _Register  # TODO: Remove this
 
 import posix_ as posix
 
+from typing import List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+  from _devbuild.gen.syntax_asdl import command_t
 
 WAIT_SPEC = _Register('wait')
 WAIT_SPEC.ShortFlag('-n')
@@ -190,6 +194,7 @@ class _TrapHandler(object):
   Similar to process.SubProgramThunk."""
 
   def __init__(self, node, nodes_to_run):
+    # type: (command_t, List[command_t]) -> None
     self.node = node
     self.nodes_to_run = nodes_to_run
 
