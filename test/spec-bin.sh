@@ -30,12 +30,18 @@ set -o errexit
 readonly THIS_DIR=$(cd $(dirname $0) && pwd)
 readonly DIR=$THIS_DIR/../_tmp/spec-bin
 
+upstream() {
+  # Not for end users
+  wget --directory _tmp \
+    https://busybox.net/downloads/busybox-1.31.1.tar.bz2
+}
+
 # The authoritative versions!
 download() {
   mkdir -p $DIR
   wget --no-clobber --directory $DIR \
     https://www.oilshell.org/blob/spec-bin/bash-4.4.tar.gz \
-    https://www.oilshell.org/blob/spec-bin/busybox-1.22.0.tar.bz2 \
+    https://www.oilshell.org/blob/spec-bin/busybox-1.31.1.tar.bz2 \
     https://www.oilshell.org/blob/spec-bin/dash-0.5.8.tar.gz \
     https://www.oilshell.org/blob/spec-bin/mksh-R52c.tgz \
     https://www.oilshell.org/blob/spec-bin/zsh-5.1.1.tar.xz
@@ -43,11 +49,16 @@ download() {
 
 extract-all() {
   pushd $DIR
+
+  # Remove name collision: _tmp/spec-bin/mksh could be a FILE and a DIRECTORY.
+  # This is unfortunately how their tarball is laid out.
+  rm --verbose -r -f $DIR/mksh $DIR/mksh-R52c
+
   for archive in *.tar.* *.tgz; do
     echo $archive
     tar --extract --file $archive
   done
-  mv -v mksh mksh-R52c  # so it doesn't collide
+  mv --verbose --no-target-directory mksh mksh-R52c  # so it doesn't collide
   popd
 }
 
@@ -103,7 +114,7 @@ build-mksh() {
 }
 
 build-busybox() {
-  pushd $DIR/busybox-1.22.0
+  pushd $DIR/busybox-1.31.1
   make defconfig
   make
   popd
