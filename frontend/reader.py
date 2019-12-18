@@ -62,7 +62,7 @@ class FileLineReader(_Reader):
   """For -c and stdin?"""
 
   def __init__(self, f, arena):
-    # type: (Union[mylib.LineReader, IO[str]], Arena) -> None
+    # type: (mylib.LineReader, Arena) -> None
     """
     Args:
       lines: List of (line_id, line) pairs

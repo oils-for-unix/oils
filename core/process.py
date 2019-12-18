@@ -28,9 +28,10 @@ import posix_ as posix
 from typing import Optional, List, Tuple, IO, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from _devbuild.gen.runtime_asdl import arg_vector, redirect_t
-    from _devbuild.gen.syntax_asdl import command_t
-    from osh.cmd_exec import Executor
+  from _devbuild.gen.runtime_asdl import arg_vector, redirect_t
+  from _devbuild.gen.syntax_asdl import command_t
+  from osh.cmd_exec import Executor
+  from mycpp import mylib
 
 
 def GetHomeDir():
@@ -147,7 +148,7 @@ class FdState(object):
     return fd
 
   def Open(self, path, mode='r'):
-    # type: (str, str) -> IO[str]
+    # type: (str, str) -> mylib.LineReader
     """Opens a path for read, but moves it out of the reserved 3-9 fd range.
 
     Returns:
