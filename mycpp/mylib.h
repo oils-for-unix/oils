@@ -213,9 +213,17 @@ class Str {
     }
     return true;
   }
-  // STUB (for osh/braces.py)
+  // e.g. for osh/braces.py
   bool isupper() {
-    assert(0); 
+    if (len_ == 0) {
+      return false;  // special case
+    }
+    for (int i = 0; i < len_; ++i) {
+      if (! ::isupper(data_[i])) {
+        return false;
+      }
+    }
+    return true;
   }
 
   List<Str*>* splitlines(bool keep) {

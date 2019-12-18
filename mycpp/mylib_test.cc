@@ -47,6 +47,11 @@ void test_str_to_int() {
 }
 
 void test_str_funcs() {
+  assert(!(new Str(""))->isupper());
+  assert(!(new Str("a"))->isupper());
+  assert((new Str("A"))->isupper());
+  assert((new Str("AB"))->isupper());
+
   assert((new Str("abc"))->isalpha());
 
   Str* s = new Str("abc");
