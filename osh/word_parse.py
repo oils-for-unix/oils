@@ -206,8 +206,7 @@ class WordParser(WordEmitter):
       length = self._ReadArithExpr()
       return suffix_op.Slice(begin, length)
 
-    p_die("Unexpected token in slice: %r", self.cur_token.val,
-          token=self.cur_token)
+    p_die("Expected : or } in slice", token=self.cur_token)
 
   def _ReadPatSubVarOp(self, lex_mode):
     # type: (lex_mode_t) -> suffix_op__PatSub
@@ -262,9 +261,7 @@ class WordParser(WordEmitter):
       return suffix_op.PatSub(pat, replace, replace_mode)
 
     # Happens with ${x//} and ${x///foo}, see test/parse-errors.sh
-    p_die("Expected } after pat sub, got %s",
-          ui.PrettyToken(self.cur_token, self.arena),
-          token=self.cur_token)
+    p_die('Expected } or / to close pattern', token=self.cur_token)
 
   def _ReadSubscript(self):
     # type: () -> bracket_op_t
@@ -286,8 +283,7 @@ class WordParser(WordEmitter):
       op = bracket_op.ArrayIndex(anode)
 
     if self.token_type != Id.Arith_RBracket:  # Should be looking at ]
-      p_die('Expected ] after subscript, got %r', self.cur_token.val,
-            token=self.cur_token)
+      p_die('Expected ] to close subscript', token=self.cur_token)
 
     self._Next(lex_mode_e.VSub_2)  # skip past ]
     self._Peek()  # Needed to be in the same spot as no subscript
@@ -334,8 +330,7 @@ class WordParser(WordEmitter):
       op_id = self.token_type
       arg_word = self._ReadVarOpArg(arg_lex_mode)
       if self.token_type != Id.Right_DollarBrace:
-        p_die('Unexpected token %r (after %s)', self.cur_token.val, 'VTest',
-              token=self.cur_token)
+        p_die('Expected } to close ${', token=self.cur_token)
 
       part.suffix_op = suffix_op.Unary(op_id, arg_word)
 
@@ -349,8 +344,7 @@ class WordParser(WordEmitter):
       op_id = self.token_type
       arg_word = self._ReadVarOpArg(arg_lex_mode)
       if self.token_type != Id.Right_DollarBrace:
-        p_die('Unexpected token %r (after %s)', self.cur_token.val, 'VOp1',
-              token=self.cur_token)
+        p_die('Expected } to close ${', token=self.cur_token)
 
       part.suffix_op = suffix_op.Unary(op_id, arg_word)
 
@@ -367,18 +361,16 @@ class WordParser(WordEmitter):
         # Checked by the method above
         assert self.token_type == Id.Right_DollarBrace, self.cur_token
 
-
       elif self.token_type == Id.VOp2_Colon:
         part.suffix_op = self._ReadSliceVarOp()
         # NOTE: } in arithmetic mode.
         if self.token_type != Id.Arith_RBrace:
           # Token seems off; doesn't point to X in # ${a:1:2 X
-          p_die('Unexpected token after slice: %r', self.cur_token.val,
-                token=self.cur_token)
+          p_die('Expected } to close ${', token=self.cur_token)
 
       else:
-        p_die('Unexpected token %r (%s)', self.cur_token.val, 'VOp2',
-              token=self.cur_token)
+        # TODO: Does this ever happen?
+        p_die('Unexpected token in ${} (%s)', 'VOp2', token=self.cur_token)
 
     elif op_kind == Kind.VOp3:
       if allow_query:
@@ -387,15 +379,13 @@ class WordParser(WordEmitter):
         self._Next(lex_mode_e.VSub_2)  # Expecting }
         self._Peek()
       else:
-        p_die("Unexpected token %r (%s)", self.cur_token.val, 'VOp3',
-              token=self.cur_token)
+        p_die("Unexpected token in ${} (%s)", 'VOp3', token=self.cur_token)
 
     # NOTE: Arith_RBrace is for slicing, because it reads } in arithmetic
     # mode.  It's redundantly checked above.
     if self.token_type not in (Id.Right_DollarBrace, Id.Arith_RBrace):
       # ${a.} or ${!a.}
-      p_die('Expected } after var sub, got %r', self.cur_token.val,
-            token=self.cur_token)
+      p_die('Expected } to close ${', token=self.cur_token)
 
     # Now look for ops
     return part
@@ -486,8 +476,7 @@ class WordParser(WordEmitter):
 
         self._Peek()
         if self.token_type != Id.Right_DollarBrace:
-          p_die("Expected } after length expression, got %r",
-                self.cur_token.val, token=self.cur_token)
+          p_die('Expected } after length expression', token=self.cur_token)
 
         part.prefix_op = speck(ty, self.cur_token.span_id)
 
@@ -517,7 +506,7 @@ class WordParser(WordEmitter):
 
     else:
       # e.g. ${^}
-      p_die('Unexpected token %r', self.cur_token.val, token=self.cur_token)
+      p_die('Unexpected token in ${}', token=self.cur_token)
 
     part.spids.append(left_token.span_id)
 
@@ -915,7 +904,9 @@ class WordParser(WordEmitter):
     self._Peek()
     # example: 'proc f[' gets you Lit_ArrayLhsOpen
     if self.token_type != Id.Lit_Chars:
-      p_die('Invalid proc name %r', self.cur_token.val, token=self.cur_token)
+      p_die('Invalid proc name %s', ui.PrettyToken(self.cur_token, self.arena),
+            token=self.cur_token)
+
     node.name = self.cur_token
 
     last_token = self.parse_ctx.ParseProc(self.lexer, node)
@@ -979,8 +970,7 @@ class WordParser(WordEmitter):
     self._Next(lex_mode_e.Arith)
     anode = self._ReadArithExpr()
     if self.token_type != Id.Arith_RParen:
-      p_die('Expected first ) to end arith sub, got %r', self.cur_token.val,
-            token=self.cur_token)
+      p_die('Expected first ) to end arith sub', token=self.cur_token)
 
     self._Next(lex_mode_e.ShCommand)  # TODO: This could be DQ or ARITH too
 
@@ -988,8 +978,7 @@ class WordParser(WordEmitter):
     # Two right parens break the Id.Eof_RParen scheme
     self._Peek()
     if self.token_type != Id.Right_DollarDParen:
-      p_die('Expected second ) to end arith sub, got %r', self.cur_token.val,
-            token=self.cur_token)
+      p_die('Expected second ) to end arith sub', token=self.cur_token)
 
     right_span_id = self.cur_token.span_id
 
@@ -1014,15 +1003,14 @@ class WordParser(WordEmitter):
     anode = self._ReadArithExpr()
 
     if self.token_type != Id.Arith_RParen:
-      p_die('Expected first ) to end arith statement, got %r',
-            self.cur_token.val, token=self.cur_token)
+      p_die('Expected first ) to end arith statement', token=self.cur_token)
     self._Next(lex_mode_e.ShCommand)
 
     # PROBLEM: $(echo $(( 1 + 2 )) )
     self._Peek()
     if self.token_type != Id.Op_DRightParen:
-      p_die('Expected second ) to end arith statement, got %r',
-            self.cur_token.val, token=self.cur_token)
+      p_die('Expected second ) to end arith statement', token=self.cur_token)
+
     self._Next(lex_mode_e.ShCommand)
 
     return anode, self.cur_token.span_id
@@ -1064,8 +1052,7 @@ class WordParser(WordEmitter):
 
     self._Peek()
     if self.token_type != Id.Arith_RParen:
-      p_die('Expected ) to end for loop expression, got %r',
-            self.cur_token.val, token=self.cur_token)
+      p_die('Expected ) to end for loop expression', token=self.cur_token)
     self._Next(lex_mode_e.ShCommand)
 
     node = command.ForExpr()
@@ -1096,8 +1083,7 @@ class WordParser(WordEmitter):
     self._Next(lex_mode_e.ShCommand)  # advance past (
     self._Peek()
     if self.cur_token.id != Id.Op_LParen:
-      p_die('Expected ( after =, got %s',
-            ui.PrettyToken(self.cur_token, self.arena), token=self.cur_token)
+      p_die('Expected ( after =', token=self.cur_token)
     left_token = self.cur_token
     paren_spid = self.cur_token.span_id
 
@@ -1115,7 +1101,7 @@ class WordParser(WordEmitter):
           continue
         else:
           # Token
-          p_die('Unexpected token in array literal: %r', tok.val, word=w)
+          p_die('Unexpected token in array literal', word=w)
 
       words.append(cast(compound_word, w))
 
