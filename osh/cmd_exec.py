@@ -1705,7 +1705,8 @@ class Executor(object):
         command_e.AndOr, command_e.CommandList, command_e.Sentence,
         command_e.TimeBlock, command_e.ShFunction, command_e.VarDecl,
         command_e.PlaceMutation, command_e.OilCondition, command_e.OilForIn,
-        command_e.Proc, command_e.Func, command_e.Return, command_e.Expr):
+        command_e.Proc, command_e.Func, command_e.Return, command_e.Expr,
+        command_e.BareDecl):
       redirects = [] # type: List[redirect_t]
     else:
       node = cast(RedirectableCommand, UP_node)
