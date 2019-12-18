@@ -217,7 +217,7 @@ print-report() {
     elapsed time measurements, but long files are chosen to minimize its
     effect.</p>
 
-    <h3>Parse Time Summary</h3>
+    <h3>Average Parsing Rate, Measured on Two Machines (lines/ms)</h3>
 EOF
   csv2html $in_dir/summary.csv
 

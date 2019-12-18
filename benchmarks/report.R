@@ -1,6 +1,6 @@
 #!/usr/bin/Rscript
 #
-# osh-parser.R -- Analyze output from shell scripts.
+# benchmarks/report.R -- Analyze data collected by shell scripts.
 #
 # Usage:
 #   osh-parser.R OUT_DIR [TIMES_CSV...]
@@ -29,6 +29,21 @@ benchmarkDataLink = function(subdir, name, suffix) {
   #sprintf('../../../../benchmark-data/shell-id/%s', shell_id)
   sprintf('https://github.com/oilshell/benchmark-data/blob/master/%s/%s%s',
           subdir, name, suffix)
+}
+
+GetOshLabel = function(shell_hash) {
+  path = sprintf('../benchmark-data/shell-id/osh-%s/osh-version.txt',
+                 shell_hash)
+  Log('Reading %s', path)
+  lines = readLines(path)
+  if (length(grep('OVM', lines)) > 0) {
+    label = 'osh-ovm'
+  } else if (length(grep('CPython', lines)) > 0) {
+    label = 'osh-cpython'
+  } else {
+    stop("Couldn't find OVM or CPython in the version string")
+  }
+  return( label)
 }
 
 ParserReport = function(in_dir, out_dir) {
@@ -82,15 +97,7 @@ ParserReport = function(in_dir, out_dir) {
   for (i in 1:nrow(distinct_shells)) {
     row = distinct_shells[i, ]
     if (row$shell_name == 'osh') {
-      path = sprintf('../benchmark-data/shell-id/osh-%s/osh-version.txt',
-                     row$shell_hash)
-      Log('Reading %s', path)
-      lines = readLines(path)
-      if (length(grep('OVM', lines)) > 0) {
-        label = 'osh-ovm'
-      } else if (length(grep('CPython', lines)) > 0) {
-        label = 'osh-cpython'
-      }
+      label = GetOshLabel(row$shell_hash)
     } else if (row$shell_name == 'osh_parse.opt.stripped') {
       label = 'osh-native'
     } else {  # same name for other shells
@@ -114,9 +121,14 @@ ParserReport = function(in_dir, out_dir) {
 
   # Summarize rates by platform/shell
   all_times %>%
+    mutate(host_label = paste("host", host_label)) %>%
     group_by(host_label, shell_label) %>%
     summarize(total_lines = sum(num_lines), total_ms = sum(elapsed_ms)) %>%
-    mutate(lines_per_ms = total_lines / total_ms) ->
+    mutate(lines_per_ms = total_lines / total_ms) %>%
+    select(-c(total_ms)) %>%
+    spread(key = host_label, value = lines_per_ms) %>%
+    # sort by parsing rate on the fast machine
+    arrange(desc(`host lisa`)) ->
     shell_summary
 
   Log('shell_summary:')
@@ -254,8 +266,8 @@ RuntimeReport = function(in_dir, out_dir) {
     select(-c(status, elapsed_secs)) %>%
     spread(key = shell_label, value = elapsed_ms) %>%
     mutate(osh_to_bash_ratio = osh / bash) %>%
-    arrange(host_label, task_arg, osh) %>%
-    select(c(host_label, task_arg, bash, dash, osh, osh_to_bash_ratio)) ->
+    arrange(task_arg, host_label) %>%
+    select(c(task_arg, host_label, bash, dash, osh, osh_to_bash_ratio)) ->
     times
 
   print(summary(times))
@@ -275,7 +287,8 @@ RuntimeReport = function(in_dir, out_dir) {
     mutate(mem_name = paste(event, metric_name, 'MB', sep = '_')) %>%
     select(-c(event, metric_name)) %>%
     spread(key = c(mem_name), value = megabytes) %>%
-    select(c(host, task_arg, runtime_VmRSS_MB, runtime_VmPeak_MB)) ->
+    arrange(task_arg, host) %>%
+    select(c(task_arg, host, runtime_VmRSS_MB, runtime_VmPeak_MB)) ->
     vm
 
   Log('VM:')
@@ -348,8 +361,8 @@ VmBaselineReport = function(in_dir, out_dir) {
     select(-c(kib)) %>%
     spread(key = c(metric_name), value = megabytes) %>%
     rename(VmPeak_MB = VmPeak, VmRSS_MB = VmRSS) %>%
-    select(c(host, shell_name, shell_hash, VmRSS_MB, VmPeak_MB)) %>%
-    arrange(host, VmPeak_MB) ->
+    select(c(shell_name, shell_hash, host, VmRSS_MB, VmPeak_MB)) %>%
+    arrange(shell_name, shell_hash, host, VmPeak_MB) ->
     vm
 
   print(vm)

@@ -101,6 +101,8 @@ collect-and-report() {
   report metrics $base_dir $dbg $opt | tee $base_dir/overview.txt
 }
 
+readonly OIL_VERSION=$(head -n 1 oil-version.txt)
+
 run-for-release() {
   build-ovm
 
@@ -109,7 +111,8 @@ run-for-release() {
 
   collect-and-report $OVM_BASE_DIR $dbg $opt
 
-  collect-and-report $OIL_BASE_DIR _bin/osh_parse.{dbg,opt}
+  local bin_dir="../benchmark-data/src/oil-native-$OIL_VERSION"
+  collect-and-report $OIL_BASE_DIR $bin_dir/_bin/osh_parse.{dbg,opt}
 }
 
 "$@"
