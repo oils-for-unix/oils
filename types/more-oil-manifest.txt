@@ -13,3 +13,4 @@
 ./oil_lang/regex_translate.py
 ./oil_lang/objects.py
 ./osh/cmd_exec.py
+./frontend/args.py

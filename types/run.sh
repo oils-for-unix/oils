@@ -128,7 +128,7 @@ peek-type-info() {
 }
 
 apply-types() {
-  local -a files=(core/comp_ui.py)
+  local -a files=(frontend/args.py)
 
   #local -a files=( $(cat _tmp/osh-parse-src.txt | grep -v syntax_asdl.py ) )
 
