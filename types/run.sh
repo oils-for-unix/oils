@@ -90,6 +90,9 @@ need-typechecking() {
         | xargs wc -l | sort -n
 }
 
+typecheck-files() {
+  $0 typecheck --follow-imports=silent $MYPY_FLAGS "$@"
+}
 
 typecheck-more-oil() {
   # The --follow-imports=silent option allows adding type annotations
@@ -97,9 +100,8 @@ typecheck-more-oil() {
   # errors from imports.  In the end, we may want to remove it, since
   # everything will be annotated anyway.  (that would require
   # re-adding assert-one-error and its associated cruft, though).
-  cat $MORE_OIL_MANIFEST | xargs -- $0 typecheck --follow-imports=silent $MYPY_FLAGS
+  cat $MORE_OIL_MANIFEST | xargs -- $0 typecheck-files
 }
-
 
 travis() {
   typed-demo-asdl
