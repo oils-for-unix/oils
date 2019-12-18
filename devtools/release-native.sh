@@ -64,10 +64,18 @@ extract-for-benchmarks() {
   pushd $dest
   git pull
   tar -x < $tar
+
+  # For benchmarks
+  pushd oil-native-*
+  build/mycpp.sh compile-osh-parse
+  build/mycpp.sh compile-osh-parse-opt
+  popd
+
   git add oil-native-*
 
   git status
   echo "Now run git commit"
+
   popd
 }
 
