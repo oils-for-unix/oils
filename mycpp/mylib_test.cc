@@ -105,6 +105,8 @@ void test_str_funcs() {
 
   log("repr %s", repr(new Str("tab\tline\nline\r\n"))->data_);
   log("repr %s", repr(new Str("high \xFF \xFE high"))->data_);
+
+  log("ord('A') = %d", ord(new Str("A")));
 }
 
 using mylib::BufLineReader;

@@ -173,7 +173,7 @@ ParserReport = function(in_dir, out_dir) {
     select(-c(kib)) %>%
     spread(key = metric_name, value = megabytes) %>%
     left_join(lines_by_filename, by = c('filename')) %>%
-    arrange(host, num_lines) %>%
+    arrange(num_lines, host) %>%
     mutate(filename_HREF = sourceUrl2(filename)) %>% 
     rename(VmPeak_MB = VmPeak, VmRSS_MB = VmRSS) %>%
     select(c(host, VmRSS_MB, VmPeak_MB, num_lines, filename, filename_HREF)) ->

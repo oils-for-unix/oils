@@ -128,14 +128,18 @@ class _RangeParser(object):
     elif self.token_type == Id.Range_Char:
       part = self._ParseRange(self.token_type)
 
+      # Compare integers because mycpp doesn't support < on strings!
+      start_num = ord(part.start[0])
+      end_num = ord(part.end[0])
+
       # Check step validity and fill in a default
-      if part.start < part.end:
+      if start_num < end_num:
         if part.step == NO_STEP:
           part.step = 1
         if part.step <= 0:  # 0 step is not allowed
           p_die('Invalid step %d for ascending character range', part.step,
                 span_id=self.span_id)
-      elif part.start > part.end:
+      elif start_num > end_num:
         if part.step == NO_STEP:
           part.step = -1
         if part.step >= 0:  # 0 step is not allowed

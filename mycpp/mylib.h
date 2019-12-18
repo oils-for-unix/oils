@@ -532,9 +532,9 @@ inline Str* chr(int i) {
   return new Str(buf, 1);
 }
 
-// STUB
 inline int ord(Str* s) {
-  assert(0);
+  assert(s->len_ == 1);
+  return s->data_[0];
 }
 
 // https://stackoverflow.com/questions/3919995/determining-sprintf-buffer-size-whats-the-standard/11092994#11092994
