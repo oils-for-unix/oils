@@ -1054,7 +1054,8 @@ class Mem(object):
       val: value, or None if only changing flags
       flags_to_set: tuple of flags to set: ReadOnly | Exported
         () means no flags to start with
-      scope:
+
+      lookup_mode:
         Local | Global | Dynamic - for builtins, PWD, etc.
 
       NOTE: in bash, PWD=/ changes the directory.  But not in dash.
