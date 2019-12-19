@@ -157,7 +157,7 @@ osh-version-text() {
   echo
 
   echo ---
-  local my_busybox=_tmp/spec-bin/busybox-1.22.0/busybox
+  local my_busybox=_tmp/spec-bin/busybox-1.31.1/busybox
   if test -f $my_busybox; then
     { $my_busybox || true; } | head -n 1
     ls -l $my_busybox
