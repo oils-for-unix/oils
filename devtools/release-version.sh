@@ -341,6 +341,12 @@ git-changelog-0.7.pre9() {
     > _release/VERSION/changelog.html
 }
 
+git-changelog-0.7.pre10() {
+  _git-changelog origin/release/0.7.pre9 release/0.7.pre10 \
+    > _release/VERSION/changelog.html
+}
+
+
 # For announcement.html
 html-redirect() {
   local url=$1
@@ -505,20 +511,23 @@ announcement-0.7.pre5() {
 }
 
 announcement-0.7.pre6() {
-  write-no-announcement
+  html-redirect '/blog/2016/12/09.html' > $SITE_DEPLOY_DIR/release/0.7.pre6/announcement.html
 }
 
 announcement-0.7.pre7() {
-  write-no-announcement
+  html-redirect '/blog/2019/12/09.html' > $SITE_DEPLOY_DIR/release/0.7.pre7/announcement.html
 }
 
 announcement-0.7.pre8() {
-  write-no-announcement
+  html-redirect '/blog/2019/12/09.html' > $SITE_DEPLOY_DIR/release/0.7.pre8/announcement.html
 }
 
 announcement-0.7.pre9() {
-  write-no-announcement
+  html-redirect '/blog/2019/12/09.html' > $SITE_DEPLOY_DIR/release/0.7.pre9/announcement.html
 }
 
+announcement-0.7.pre10() {
+  write-no-announcement
+}
 
 "$@"
