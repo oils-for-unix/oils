@@ -293,6 +293,9 @@ class OilMethodFilter(object):
   def __call__(self, rel_path, def_name, method_name):
     basename = os.path.basename(rel_path) 
 
+    if method_name == 'count':  # False positive for {str,list,tuple}.count()
+      return False
+
     # enter/exit needed for 'with open'.  __length_hint__ is an optimization.
     if method_name in ('__enter__', '__exit__', '__length_hint__'):
       return True
