@@ -23,6 +23,9 @@ _error-case() {
 
   banner "$@"
   echo
+
+  # TODO: Change when osh_parse supports -n -c.
+
   #$SH -n -c "$@"
   $SH -c "$@"
 
@@ -510,6 +513,9 @@ invalid-brace-ranges() {
 
 oil-language() {
   set +o errexit
+
+  # disabled until we port the parser
+  case $SH in *osh_parse.asan) return ;; esac
 
   # Unterminated
   _error-case 'var x = 1 + '
