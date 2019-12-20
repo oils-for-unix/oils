@@ -252,7 +252,9 @@ spec/type-compat.test.sh
 #### compgen doesn't respect -X for user-defined functions
 # WORKAROUND: wrap in bash -i -c because non-interactive bash behaves
 # differently!
-$SH -i -c '
+case $SH in
+  *bash|*osh)
+    $SH --rcfile /dev/null -i -c '
 fun() {
   COMPREPLY=(one two three bin)
 }
@@ -260,6 +262,7 @@ compgen -X "@(two|bin)" -F fun
 echo --
 compgen -X "!@(two|bin)" -F fun
 '
+esac
 ## STDOUT:
 one
 three
@@ -271,7 +274,10 @@ bin
 #### compgen -W words -X filter
 # WORKAROUND: wrap in bash -i -c because non-interactive bash behaves
 # differently!
-$SH -i -c 'compgen -X "@(two|bin)" -W "one two three bin"'
+case $SH in
+  *bash|*osh)
+      $SH --rcfile /dev/null -i -c 'compgen -X "@(two|bin)" -W "one two three bin"'
+esac
 ## STDOUT:
 one
 three
@@ -284,7 +290,10 @@ compgen -f -- sp | sort
 echo --
 # WORKAROUND: wrap in bash -i -c because non-interactive bash behaves
 # differently!
-$SH -i -c 'compgen -f -X "!*.@(py)" -- sp'
+case $SH in
+  *bash|*osh)
+      $SH --rcfile /dev/null -i -c 'compgen -f -X "!*.@(py)" -- sp'
+esac
 ## STDOUT:
 spam.py
 spam.sh
