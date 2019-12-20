@@ -173,7 +173,7 @@ compgen -A user
 
 #### compgen -A command completes external commands
 # NOTE: this test isn't hermetic
-compgen -A command xarg
+compgen -A command xarg | uniq
 echo status=$?
 ## STDOUT:
 xargs
