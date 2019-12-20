@@ -225,6 +225,17 @@ f
 ['4']
 ## END
 
+#### $LINENO and redirections (bug regression)
+>_tmp/lineno_regression$LINENO
+ls _tmp/lineno_regression1
+echo $LINENO
+## STDOUT: 
+_tmp/lineno_regression1
+3
+## END
+## BUG zsh STDOUT: 
+## END
+
 #### $LINENO for [[
 echo one
 [[ $LINENO -eq 2 ]] && echo OK
