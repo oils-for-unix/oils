@@ -255,6 +255,7 @@ spec/type-compat.test.sh
 case $SH in
   *bash|*osh)
     $SH --rcfile /dev/null -i -c '
+shopt -s extglob
 fun() {
   COMPREPLY=(one two three bin)
 }
@@ -276,7 +277,7 @@ bin
 # differently!
 case $SH in
   *bash|*osh)
-      $SH --rcfile /dev/null -i -c 'compgen -X "@(two|bin)" -W "one two three bin"'
+      $SH --rcfile /dev/null -i -c 'shopt -s extglob; compgen -X "@(two|bin)" -W "one two three bin"'
 esac
 ## STDOUT:
 one
@@ -292,7 +293,7 @@ echo --
 # differently!
 case $SH in
   *bash|*osh)
-      $SH --rcfile /dev/null -i -c 'compgen -f -X "!*.@(py)" -- sp'
+      $SH --rcfile /dev/null -i -c 'shopt -s extglob; compgen -f -X "!*.@(py)" -- sp'
 esac
 ## STDOUT:
 spam.py
