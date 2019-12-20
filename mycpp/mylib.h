@@ -5,7 +5,6 @@
 
 #include <assert.h>
 #include <ctype.h>  // isalpha(), isdigit()
-#include <stddef.h>  // size_t
 #include <stdlib.h>  // malloc
 #include <string.h>  // strlen
 // https://stackoverflow.com/questions/3882346/forward-declare-file
@@ -294,7 +293,8 @@ class List {
     }
 
     List* result = new List();
-    for (int i = begin; i < v_.size(); i++) {
+    int len = v_.size();
+    for (int i = begin; i < len; i++) {
       result->v_.push_back(v_[i]);
     }
     return result;
@@ -332,7 +332,8 @@ class List {
     //
     // We could optimize this for the small cases Oil has?  I doubt it's a
     // bottleneck anywhere.
-    for (int i = 0; i < items->v_.size(); ++i) {
+    int len = items->v_.size();
+    for (int i = 0; i < len; ++i) {
       v_.push_back(items->v_[i]);
     }
   }
@@ -391,7 +392,8 @@ class ListIter {
     i_++;
   }
   bool Done() {
-    return i_ >= L_->v_.size();
+    // "unsigned size_t was a mistake"
+    return i_ >= static_cast<int>(L_->v_.size());
   }
   T Value() {
     return L_->v_[i_];

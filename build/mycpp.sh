@@ -17,7 +17,7 @@ readonly MYPY_REPO=~/git/languages/mypy
 CPPFLAGS='-std=c++11 -Wall'
 
 # sign-compare disabled because of int i < v_.size()?  Should I use size_t?
-GCC_FLAGS='-fpermissive -Wno-sign-compare'
+GCC_FLAGS='-fpermissive'
 
 # Temporary hack for 'token* token' in GCC
 # https://stackoverflow.com/questions/8843818/what-does-the-fpermissive-flag-do

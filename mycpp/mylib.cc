@@ -98,7 +98,8 @@ Str* Str::replace(Str* old, Str* new_str) {
 Str* Str::join(List<Str*>* items) {
   int len = 0;
   const std::vector<Str*>& v = items->v_;
-  for (int i = 0; i < v.size(); ++i) {
+  int num_parts = v.size();
+  for (int i = 0; i < num_parts; ++i) {
     len += v[i]->len_;
   }
   // add length of all the separators
@@ -110,7 +111,7 @@ Str* Str::join(List<Str*>* items) {
   char* result = static_cast<char*>(malloc(len+1));
   char* p_result = result;  // advances through
 
-  for (int i = 0; i < v.size(); ++i) {
+  for (int i = 0; i < num_parts; ++i) {
     //log("i %d", i);
     if (i != 0 && len_) {  // optimize common case of ''.join()
       memcpy(p_result, data_, len_);  // copy the separator

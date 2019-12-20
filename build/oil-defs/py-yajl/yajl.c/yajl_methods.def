@@ -1,0 +1,9 @@
+// py-yajl/yajl.c
+
+static PyMethodDef yajl_methods[] = {
+  {"dumps", (PyCFunctionWithKeywords)(py_dumps), METH_VARARGS | METH_KEYWORDS},
+  {"loads", (PyCFunction)(py_loads), METH_VARARGS},
+  {"load", (PyCFunction)(py_load), METH_VARARGS},
+  {"dump", (PyCFunctionWithKeywords)(py_dump), METH_VARARGS | METH_KEYWORDS},
+  {0},
+};

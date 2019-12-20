@@ -18,6 +18,7 @@
 
 #include <initializer_list>
 #include <vector>
+#include <memory>  // shared_ptr
 
 #include <stdexcept>
 
@@ -214,6 +215,29 @@ namespace expr {
   typedef expr__Const Const;
 }
 
+using std::shared_ptr;
+
+shared_ptr<expr__Const> f(shared_ptr<expr__Const> arg) {
+  return shared_ptr<expr__Const>(new expr__Const(arg->i_ + 10));
+}
+
+void shared_ptr_demo() { 
+  std::shared_ptr<expr__Const> e = std::make_shared<expr__Const>(5);
+  log("e->i_ = %d", e->i_);
+  // 16, not 24? 
+  // These are contiguous.
+  log("sizeof(e) = %zu", sizeof(e));
+
+  std::shared_ptr<expr__Const> e2(new expr__Const(7));
+  log("e2->i_ = %d", e2->i_);
+  log("sizeof(e2) = %zu", sizeof(e2));
+
+  std::shared_ptr<expr__Const> e3 = f(e2);
+
+  log("e3->i_ = %d", e3->i_);
+  log("sizeof(e3) = %zu", sizeof(e3));
+}
+
 int main(int argc, char **argv) {
   log("sizeof(int): %d", sizeof(int));
   log("sizeof(int*): %d", sizeof(int*));
@@ -247,4 +271,6 @@ int main(int argc, char **argv) {
   log("expr::Const = %d", c.i_);
 
   dumb_alloc::Summarize();
+
+  shared_ptr_demo();
 }
