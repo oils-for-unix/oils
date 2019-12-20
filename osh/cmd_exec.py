@@ -646,6 +646,8 @@ class Executor(object):
     UP_n = n
     if UP_n.tag == redir_e.Redir:
       n = cast(redir__Redir, UP_n)
+
+      self.mem.SetCurrentSpanId(n.op.span_id)
       fd = REDIR_DEFAULT_FD[n.op.id] if n.fd == runtime.NO_SPID else n.fd
 
       redir_type = REDIR_ARG_TYPES[n.op.id]  # could be static in the LST?
@@ -1705,7 +1707,8 @@ class Executor(object):
         command_e.AndOr, command_e.CommandList, command_e.Sentence,
         command_e.TimeBlock, command_e.ShFunction, command_e.VarDecl,
         command_e.PlaceMutation, command_e.OilCondition, command_e.OilForIn,
-        command_e.Proc, command_e.Func, command_e.Return, command_e.Expr):
+        command_e.Proc, command_e.Func, command_e.Return, command_e.Expr,
+        command_e.BareDecl):
       redirects = [] # type: List[redirect_t]
     else:
       node = cast(RedirectableCommand, UP_node)
