@@ -58,8 +58,6 @@ from _devbuild.gen.syntax_asdl import (
     proc_sig_e, proc_sig__Closed,
     redir_e, redir__Redir, redir__HereDoc,
 )
-
-
 from _devbuild.gen.runtime_asdl import (
     lvalue, lvalue_e, lvalue__ObjIndex, lvalue__ObjAttr,
     value, value_e, value_t, value__Str, value__MaybeStrArray, value__Obj,
@@ -647,6 +645,7 @@ class Executor(object):
     if UP_n.tag == redir_e.Redir:
       n = cast(redir__Redir, UP_n)
 
+      # note: needed for redirect like 'echo foo > x$LINENO'
       self.mem.SetCurrentSpanId(n.op.span_id)
       fd = REDIR_DEFAULT_FD[n.op.id] if n.fd == runtime.NO_SPID else n.fd
 

@@ -498,7 +498,7 @@ posix() {
 }
 
 special-vars() {
-  sh-spec spec/special-vars.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/special-vars.test.sh --cd-tmp --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 

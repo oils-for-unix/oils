@@ -225,15 +225,24 @@ f
 ['4']
 ## END
 
-#### $LINENO and redirections (bug regression)
->_tmp/lineno_regression$LINENO
-ls _tmp/lineno_regression1
+#### $LINENO in "bare" redirect arg (bug regression)
+> $TMP/bare$LINENO
+test -f $TMP/bare1 && echo written
 echo $LINENO
 ## STDOUT: 
-_tmp/lineno_regression1
+written
 3
 ## END
 ## BUG zsh STDOUT: 
+## END
+
+#### $LINENO in redirect arg (bug regression)
+echo x > $TMP/lineno_regression$LINENO
+test -f $TMP/lineno_regression1 && echo written
+echo $LINENO
+## STDOUT: 
+written
+3
 ## END
 
 #### $LINENO for [[
