@@ -1,0 +1,112 @@
+---
+in_progress: yes
+---
+
+Oil Builtins
+============
+
+<div id="toc">
+</div>
+
+- use
+- push, repr
+- wait, fork
+
+## Enhanced with Block
+
+- cd
+
+(not done)
+
+- wait
+- env (not done)
+- shopt
+
+
+Shell-Like Builtins
+
+    Builtins Accept Long Options
+    Changed: echo
+    New: use, push, repr
+
+Builtins Can Take Ruby-Like Blocks (partially done)
+
+    cd, env, and shopt Have Their Own Stack
+    wait and fork builtins Replace () and & Syntax
+    each { } Runs Processes in Parallel and Replaces xargs
+
+
+### cd
+
+It now takes a block:
+
+```
+cd ~/src {
+  echo $PWD
+  ls -l
+}
+
+# current directory restored here
+
+echo $PWD
+ls -l
+```
+
+(This subsumes the functinoality of bash builtins `pushd` and `popd`.)
+
+When a block is passed:
+
+- `cd` doesn't set The `OLDPWD` variable (which is used to implement the `cd -`
+  shortcut.)
+- The directory stack for `pushd` and `popd` isn't cleared, as it is with a
+	normal `cd` command.
+
+### echo
+
+`shopt -s simple_echo` changes the `echo` builtin to accept the following long
+flags, as well as the `--` separator between flags and args.
+
+- `-sep`: Characters to separate each argument.  (Default: newline)
+- `-end`: Characters to terminate the whole invocation.  (Default: newline)
+- `-n`: A synonym for `-end ''`.
+
+### push
+
+Append one or more strings to an array.
+
+```
+var array = @(1 '2 two')
+push :array three four
+echo @array  # prints 4 lines
+```
+
+## Builtin Flag Syntax
+
+Oil's builtins accept long flags like `--verbose` and short flags like `-v`.
+
+They behave like the popular GNU utilities on Linux distros, except that
+`-long` (single hyphen) means the same thing as `--long`.  It's not a shortcut
+for `-l -o -n -g` or `-l=ong`.  (This rule is consistent with the [Go flags
+  package][goflags].)
+
+[goflags]: https://golang.org/pkg/flag/
+
+In addition, all of these are equivalent:
+
+- `-sep x`
+- `-sep=x`
+- `--sep x`
+- `--sep=x`
+
+The first is preferred because it's the simplest and shortest.
+
+(Trivia: Oil's flag syntax avoids the issue where `set -oo errexit nounset` is
+a confusing equivalent to `set -o errexit -o nounset`.)
+
+### More
+
+Future work, not implemented
+
+- fork, wait
+- log, die
+- write
