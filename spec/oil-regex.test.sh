@@ -268,6 +268,19 @@ yes
 no
 ## END
 
+#### splice with capital letters
+shopt -s oil:all
+var D = /d+/;
+var ip = / D '.' D '.' D '.' D /
+echo $ip
+if ('0.0.0.0' ~ ip) { echo yes } else { echo no }
+if ('0.0.0' ~ ip) { echo yes } else { echo no }
+## STDOUT:
+[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+
+yes
+no
+## END
+
 #### Matching escaped tab character
 shopt -s oil:all
 
@@ -492,3 +505,61 @@ echo $pat
 ## status: 1
 ## stdout-json: ""
 
+#### Long Python Example
+
+# https://docs.python.org/3/reference/lexical_analysis.html#integer-literals
+
+# integer      ::=  decinteger | bininteger | octinteger | hexinteger
+# decinteger   ::=  nonzerodigit (["_"] digit)* | "0"+ (["_"] "0")*
+# bininteger   ::=  "0" ("b" | "B") (["_"] bindigit)+
+# octinteger   ::=  "0" ("o" | "O") (["_"] octdigit)+
+# hexinteger   ::=  "0" ("x" | "X") (["_"] hexdigit)+
+# nonzerodigit ::=  "1"..."9"
+# digit        ::=  "0"..."9"
+# bindigit     ::=  "0" | "1"
+# octdigit     ::=  "0"..."7"
+# hexdigit     ::=  digit | "a"..."f" | "A"..."F"
+
+shopt -s oil:all
+
+DecDigit = / [0-9] /
+BinDigit = / [0-1] /
+OctDigit = / [0-7] /
+HexDigit = / [0-9 a-f A-F] /  # note: not splicing Digit into character class
+
+DecInt   = / [1-9] ('_'? DecDigit)* | '0'+ ('_'? '0')* /
+BinInt   = / '0' ['b' 'B'] ('_'? BinDigit)+ /
+OctInt   = / '0' ['o' 'O'] ('_'? OctDigit)+ /
+HexInt   = / '0' ['x' 'X'] ('_'? HexDigit)+ /
+
+Integer  = / %start (DecInt | BinInt | OctInt | HexInt) %end /
+
+#echo $Integer
+
+if ('123' ~ Integer) { echo 'Y' }
+if (  'z' !~ Integer) { echo 'N' }
+
+if ('123_000'  ~ Integer) { echo 'Y decimal' }
+if (  '0_123' !~ Integer) { echo 'N decimal' }
+
+if ('0b100'  ~ Integer) { echo 'Y binary' }
+if ('0b10A' !~ Integer) { echo 'N binary' }
+
+if ('0o755'  ~ Integer) { echo 'Y octal' }
+if ('0o778' !~ Integer) { echo 'N octal' }
+
+if ('0xFF'  ~ Integer) { echo 'Y hex' }
+if ('0xG'  !~ Integer) { echo 'N hex' }
+
+## STDOUT:
+Y
+N
+Y decimal
+N decimal
+Y binary
+N binary
+Y octal
+N octal
+Y hex
+N hex
+## END

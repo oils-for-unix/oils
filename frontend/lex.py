@@ -797,7 +797,7 @@ LEXER_DEF[lex_mode_e.Expr] = \
     _VARS + OIL_LEFT_SUBS + OIL_LEFT_UNQUOTED + EXPR_OPS + EXPR_WORDS + \
     EXPR_CHARS + [
 
-  # https://docs.python.org/3/reference/lexical_analysis.html#literals
+  # https://docs.python.org/3/reference/lexical_analysis.html#integer-literals
   #
   # integer      ::=  decinteger | bininteger | octinteger | hexinteger
   # decinteger   ::=  nonzerodigit (["_"] digit)* | "0"+ (["_"] "0")*

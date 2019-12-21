@@ -1082,6 +1082,9 @@ class Transformer(object):
     if perl is not None:
       return perl_class(negated_speck, perl)
 
+    if val[0].isupper():  # e.g. HexDigit
+      return re.Splice(tok)
+
     p_die("%r isn't a character class", val, token=tok)
 
   def _NameInClass(self, negated_tok, tok):
