@@ -689,7 +689,7 @@ class OilEvaluator(object):
       return
 
     # TODO: How to consolidate this code with the above?
-    if node.tag == re_e.Group:
+    if node.tag in (re_e.Group, re_e.Capture):
       new_leaf, recurse = self._MaybeReplaceLeaf(node.child)
       if new_leaf:
         node.child = new_leaf

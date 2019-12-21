@@ -1167,10 +1167,30 @@ class Transformer(object):
           return self._NameInRegex(tok, children[1].tok)
 
       if tok.id == Id.Op_LParen:
-        # | '(' regex ['as' name_type] ')'
+        # | '(' regex ')'
 
-        # TODO: Add variable
+        # Note: in ERE (d+) is the same as <d+>.  That is, Group becomes
+        # Capture.
         return re.Group(self._Regex(children[1]))
+
+      if tok.id == Id.Arith_Less:
+        # | '<' regex [':' name_type] '>'
+
+        regex = self._Regex(children[1])
+
+        n = len(children)
+        if n == 5:
+          # TODO: Add type expression
+          # YES
+          #   < d+ '.' d+ : ratio Float >
+          #   < d+ : month Int >
+          # INVALID
+          #   < d+ : month List[int] >
+          name_tok = children[3].children[0].tok
+        else:
+          name_tok = None
+
+        return re.Capture(regex, name_tok)
 
       if tok.id == Id.Arith_Colon:
         # | ':' '(' regex ')'

@@ -368,18 +368,17 @@ re_atom: (
   | '@' Expr_Name
     # any %start %end are preferred
   | '.' | '^' | '$'
-    # egrep has zero-width assertions \< and \>
-    # We could make them %< and %> or %startword %endword
-  | '<' | '>'
     # literal STRINGS like $foo or ${module.foo}
   | simple_var_sub | braced_var_sub
     # In a language-independent spec, backslashes are disallowed within 'sq'.
     # Write it with char literals outside strings: 'foo' \\ 'bar' \n
   | sq_string | dq_string
-    # capturing group
-  | '(' regex ['as' name_type] ')'
-    # : is syntactic space for non-capturing group.  (! would seem like negation.)
-  | ':' '(' regex ')'
+
+    # grouping (non-capturing in Perl; capturing in ERE although < > is preferred)
+  | '(' regex ')'
+    # capturing group, with optional name
+  | '<' regex [':' name_type] '>'
+
     # syntactic space for Perl-style backtracking
     # !REF 1   !REF name
     # !AHEAD(d+)   !BEHIND(d+)  !NOT_AHEAD(d+)  !NOT_BEHIND(d+)

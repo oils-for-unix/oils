@@ -219,11 +219,11 @@ See note below: POSIX ERE has no non-capturing groups.
 
 Capture with `<pat>`:
 
-    < d+ >+        # Becomes M.group(1)
+    < d+ >        # Becomes M.group(1)
 
-Add a variable after `=` for named capture:
+Add a variable after `:` for named capture:
 
-    < d+ = myvar>  # Becomes M.group('myvar')
+    < d+ : myvar>  # Becomes M.group('myvar')
 
 ### Character Class Literals Use `[]`
 
@@ -376,12 +376,13 @@ Yes:
     <'foo'>+
     <$string_with_many_chars>+
 
-This is necessar because:
+This is necessary because ERE doesn't have non-capturing groups like Perl's
+`(?:...)`, and - Eggex only does "dumb" translations.  It doesn't silently
+insert constructs that change the meaning of the pattern.
 
-- ERE doesn't have non-capturing groups like Perl's `(?:...)`
-- Eggex only does "dumb" translations.  It doesn't silently insert constructs
-  that change the meaning of the pattern.
-
+(Exception: Although `('foo')+` is a non-capturing group, it becomes a capturing
+group when translating to ERE.  This is for convenience / familiarity.  Prefer
+`<'foo'>+`.)
 
 ### Unicode Char Literals Can't Be Used In Char Class Literals
 

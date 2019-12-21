@@ -181,6 +181,42 @@ yes
 no
 ## END
 
+#### Capture is acceptable as a group
+shopt -s oil:all
+var pat = /<%start s | d d>/
+echo $pat
+## STDOUT:
+(^[[:space:]]|[[:digit:]][[:digit:]])
+## END
+
+#### Named Capture Decays Without Name
+shopt -s oil:all
+var pat = /<d+ : month>/
+echo $pat
+
+if ('123' ~ pat) {
+  echo yes
+}
+
+## STDOUT:
+([[:digit:]]+)
+yes
+## END
+
+#### Named Capture With ~ Assigns Variable
+shopt -s oil:all
+var pat = /<d+ : month>/
+echo $pat
+
+if ('123' ~ pat) {
+  echo yes
+  = month
+}
+## STDOUT:
+([[:digit:]]+)
+yes
+TODO MONTH
+## END
 
 #### literal ''
 shopt -s oil:all
@@ -455,3 +491,4 @@ setvar pat = / [ ~digit 'z' ] /
 echo $pat
 ## status: 1
 ## stdout-json: ""
+

@@ -213,7 +213,8 @@ def AsPosixEre(node, parts):
 
     raise NotImplementedError(node.op)
 
-  if tag == re_e.Group:
+  # Special case for familiarity: () is acceptable as a group in ERE
+  if tag in (re_e.Group, re_e.Capture):
     node = cast(re__Group, UP_node)
     parts.append('(')
     AsPosixEre(node.child, parts)

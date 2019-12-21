@@ -1294,7 +1294,10 @@ class Executor(object):
 
     elif UP_node.tag == command_e.Expr:
       node = cast(command__Expr, UP_node)
+
+      self.mem.SetCurrentSpanId(node.keyword.span_id)
       obj = self.expr_ev.EvalExpr(node.e)
+
       if node.keyword.id == Id.Lit_Equals:
         # NOTE: It would be nice to unify this with 'repr', but there isn't a
         # good way to do it with the value/PyObject split.
