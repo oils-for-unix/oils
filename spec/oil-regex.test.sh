@@ -536,20 +536,20 @@ Integer  = / %start (DecInt | BinInt | OctInt | HexInt) %end /
 
 #echo $Integer
 
-if ('123' ~ Integer) { echo 'Y' }
-if (  'z' !~ Integer) { echo 'N' }
+if (    '123'  ~ Integer) { echo 'Y' }
+if (    'zzz' !~ Integer) { echo 'N' }
 
 if ('123_000'  ~ Integer) { echo 'Y decimal' }
-if (  '0_123' !~ Integer) { echo 'N decimal' }
+if ('000_123' !~ Integer) { echo 'N decimal' }
 
-if ('0b100'  ~ Integer) { echo 'Y binary' }
-if ('0b10A' !~ Integer) { echo 'N binary' }
+if (  '0b100'  ~ Integer) { echo 'Y binary' }
+if (  '0b102' !~ Integer) { echo 'N binary' }
 
-if ('0o755'  ~ Integer) { echo 'Y octal' }
-if ('0o778' !~ Integer) { echo 'N octal' }
+if (  '0o755'  ~ Integer) { echo 'Y octal' }
+if (  '0o778' !~ Integer) { echo 'N octal' }
 
-if ('0xFF'  ~ Integer) { echo 'Y hex' }
-if ('0xG'  !~ Integer) { echo 'N hex' }
+if (   '0xFF'  ~ Integer) { echo 'Y hex' }
+if (   '0xFG' !~ Integer) { echo 'N hex' }
 
 ## STDOUT:
 Y
