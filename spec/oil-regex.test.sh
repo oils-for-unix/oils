@@ -476,9 +476,9 @@ shopt -s oil:all
 
 var pat = null
 
-setvar pat = / [ s 'z' ] /
+setvar pat = / [ space 'z' ] /
 echo $pat
-#setvar pat = / [ ~s 'z' ] /
+#setvar pat = / [ ~space 'z' ] /
 #echo $pat
 
 # PROBLEM: can't negate individual POSIX classes.  They would have to be a Perl
@@ -496,10 +496,14 @@ echo $pat
 [[:digit:]z]
 ## END
 
-#### Individual Perl and POSIX Classes In Literals Can't Be Negated
-var pat = null
+#### [~d] can't be negated because it's a literal character
 setvar pat = / [ ~d 'z' ] /
 echo $pat
+## status: 2
+## stdout-json: ""
+
+#### [~digit] can't be negated in POSIX ERE (but yes in Perl)
+var pat = null
 setvar pat = / [ ~digit 'z' ] /
 echo $pat
 ## status: 1
@@ -528,9 +532,9 @@ OctDigit = / [0-7] /
 HexDigit = / [0-9 a-f A-F] /  # note: not splicing Digit into character class
 
 DecInt   = / [1-9] ('_'? DecDigit)* | '0'+ ('_'? '0')* /
-BinInt   = / '0' ['b' 'B'] ('_'? BinDigit)+ /
-OctInt   = / '0' ['o' 'O'] ('_'? OctDigit)+ /
-HexInt   = / '0' ['x' 'X'] ('_'? HexDigit)+ /
+BinInt   = / '0' [b B] ('_'? BinDigit)+ /
+OctInt   = / '0' [o O] ('_'? OctDigit)+ /
+HexInt   = / '0' [x X] ('_'? HexDigit)+ /
 
 Integer  = / %start (DecInt | BinInt | OctInt | HexInt) %end /
 

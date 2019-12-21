@@ -659,7 +659,9 @@ class OilEvaluator(object):
       elif term.tag == class_literal_term_e.CharLiteral:
         # What about \0?
         # At runtime, ERE should disallow it.  But we can also disallow it here.
-        node.terms[i] = word_compile.EvalCharLiteralForRegex(term.tok)
+        new_leaf = word_compile.EvalCharLiteralForRegex(term.tok)
+        if new_leaf:
+          node.terms[i] = new_leaf
 
       if s is not None:
         # A string like '\x7f\xff' should be presented like

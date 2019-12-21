@@ -9,6 +9,7 @@ from _devbuild.gen.syntax_asdl import (
     class_literal_term__Range,
     class_literal_term__ByteSet,
     class_literal_term__CodePoint,
+    class_literal_term__CharLiteral,
     posix_class,
     perl_class,
     re_e,
@@ -117,6 +118,11 @@ def _ClassLiteralToPosixEre(term, parts):
     else:
       pat = '[:%s:]' % n
     parts.append(pat)
+    return
+
+  if tag == class_literal_term_e.CharLiteral:
+    term = cast(class_literal_term__CharLiteral, UP_term)
+    parts.append(term.tok.val)
     return
 
   raise NotImplementedError(term) 

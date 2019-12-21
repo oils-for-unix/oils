@@ -8,7 +8,7 @@ doesn't depend on any values at runtime.
 
 from typing import Optional
 
-from _devbuild.gen.id_kind_asdl import Id, Id_t
+from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
     class_literal_term, class_literal_term_t, Token
 )
@@ -33,7 +33,7 @@ _ONE_CHAR = {
 }
 
 def EvalCharLiteralForRegex(tok):
-  # type: (Token) -> class_literal_term_t
+  # type: (Token) -> Optional[class_literal_term_t]
   """For regex char classes.
 
   Similar logic as below.
@@ -56,8 +56,11 @@ def EvalCharLiteralForRegex(tok):
     i = int(s, 16)
     return class_literal_term.CodePoint(i, tok.span_id)
 
+  elif id_ == Id.Expr_Name:  # [b B] is NOT mutated
+    return None
+
   else:
-    raise AssertionError
+    raise AssertionError(Id_str(id_))
 
 
 # TODO: Strict mode syntax errors:

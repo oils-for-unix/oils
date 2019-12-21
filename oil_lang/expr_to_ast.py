@@ -1090,7 +1090,8 @@ class Transformer(object):
   def _NameInClass(self, negated_tok, tok):
     # type: (Token, Token) -> class_literal_term_t
     """
-    Like the above, but 'dot' doesn't mean anything.
+    Like the above, but 'dot' doesn't mean anything.  And `d` is a literal 'd',
+    not `digit`.
     """
     if negated_tok:  # For error messages
       negated_speck = speck(negated_tok.id, negated_tok.span_id)
@@ -1098,6 +1099,20 @@ class Transformer(object):
       negated_speck = None
 
     val = tok.val
+
+    # A bare, unquoted character literal.  In the grammar, this is expressed as
+    # range_char without an ending.
+
+    # d is NOT 'digit', it's a literal 'd'!
+    if len(val) == 1:
+      # Expr_Name matches VAR_NAME_RE, which starts with [a-zA-Z_]
+      assert tok.id in (Id.Expr_Name, Id.Expr_DecInt)
+
+      if negated_tok:  # [~d] is not allowed, only [~digit]
+        p_die("Can't negate this symbol", token=tok)
+      return class_literal_term.CharLiteral(tok)
+
+    # digit, word, but not d, w, etc.
     if val in POSIX_CLASSES:
       return posix_class(negated_speck, val)
 
