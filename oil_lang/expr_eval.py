@@ -707,8 +707,12 @@ class OilEvaluator(object):
 
   def EvalRegex(self, node):
     # type: (re_t) -> re_t
+    """
+    Resolve the references in an eggex, e.g. Hex and $const in
     
-    # Regex Evaluation Shares the Same Structure, but uses slightly different
+    / Hex '.' $const "--$const" /
+    """
+    # Regex Evaluation Shares the Same Structure, but uses slightly different 
     # nodes.
     # * Speck/Token (syntactic concepts) -> Primitive (logical)
     # * Splice -> Resolved
