@@ -515,9 +515,9 @@ module syntax
   | Seq(re* children)
   | Alt(re* children)
 
-    -- TODO: model the place and type: (d+ as month Int)
   | Group(re child)
-  | Capture(re child, Token? var_name, type_expr? type)
+    -- TODO: <d+ : month Int> needs Token? type field
+  | Capture(re child, Token? var_name)  
   | Backtracking(bool negated, Token name, re child)
 
   -- Regex Evaluation Shares the Same Structure, but uses slightly different

@@ -14,12 +14,10 @@ from core import util
 #from core.util import log
 from frontend import match
 
-# Note: using Sequence because it's covariant and not invariant.  Maybe change
-# it back?
-from typing import Optional, List, Sequence, Tuple, Any, cast, TYPE_CHECKING
+from typing import Optional, List, Tuple, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   #from osh.state import ExecOpts
-  pass
+  from frontend.match import SimpleLexer
 
 
 def LooksLikeGlob(s):
@@ -151,11 +149,7 @@ def GlobUnescape(s):  # used by cmd_exec
 class _GlobParser(object):
 
   def __init__(self, lexer):
-    # type: (Any) -> None
-
-    # TODO: The lexer is an iterator!  Turn it into a class, because iterators
-    # won't translate to C++.
-
+    # type: (SimpleLexer) -> None
     self.lexer = lexer
     self.token_type = None  # type: Optional[Id_t]
     self.token_val = ''
@@ -167,7 +161,7 @@ class _GlobParser(object):
     self.token_type, self.token_val = self.lexer.Next()
 
   def _ParseCharClass(self):
-    # type: () -> Sequence[glob_part_t]
+    # type: () -> List[glob_part_t]
     """
     Returns:
       a CharClass if the parse suceeds, or a Literal if fails.  In the latter
@@ -189,7 +183,10 @@ class _GlobParser(object):
       if self.token_type == Id.Eol_Tok:
         # TODO: location info
         self.warnings.append('Malformed character class; treating as literal')
-        return [first_token] + [glob_part.Literal(id_, s) for (id_, s) in tokens]
+        parts = [first_token]  # type: List[glob_part_t]
+        for (id_, s) in tokens:
+          parts.append(glob_part.Literal(id_, s))
+        return parts
 
       if self.token_type == Id.Glob_LBracket:
         balance += 1
@@ -201,7 +198,7 @@ class _GlobParser(object):
       tokens.append((self.token_type, self.token_val))  # Don't append the last ]
 
     negated = False
-    if tokens:
+    if len(tokens):
       id1, _ = tokens[0]
       # NOTE: Both ! and ^ work for negation in globs
       # https://www.gnu.org/software/bash/manual/html_node/Pattern-Matching.html#Pattern-Matching
@@ -209,7 +206,8 @@ class _GlobParser(object):
       if id1 in (Id.Glob_Bang, Id.Glob_Caret):
         negated = True
         tokens = tokens[1:]
-    return [glob_part.CharClass(negated, [s for _, s in tokens])]
+    strs = [s for _, s in tokens]
+    return [glob_part.CharClass(negated, strs)]
 
   def Parse(self):
     # type: () -> Tuple[List[glob_part_t], List[str]]
@@ -382,7 +380,7 @@ class Globber(object):
       raise
     #log('glob %r -> %r', arg, g)
 
-    if g:
+    if len(g):
       return g
     else:  # Nothing matched
       if self.exec_opts.failglob:

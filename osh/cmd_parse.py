@@ -1712,9 +1712,9 @@ class CommandParser(object):
       # Parse x = 1+2*3 when parse_equals is set.
       parts = cur_word.parts
       if self.parse_opts.parse_equals and len(parts) == 1:
-        UP_part0 = parts[0]
-        if UP_part0.tag_() == word_part_e.Literal:
-          tok = cast(Token, UP_part0)
+        part0 = parts[0]
+        if part0.tag_() == word_part_e.Literal:
+          tok = cast(Token, part0)
           # NOTE: tok.id should be Lit_Chars, but that check is redundant
           if (match.IsValidVarName(tok.val) and
               self.w_parser.LookAhead() == Id.Lit_Equals):
