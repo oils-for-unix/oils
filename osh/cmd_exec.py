@@ -147,13 +147,13 @@ OIL_TYPE_NAMES = {
 # These are nodes that execute more than one COMMAND.  DParen doesn't
 # count because there are no commands.
 # - AndOr has multiple commands, but uses exit code in boolean way
-_DISALLOWED = (
+_DISALLOWED = [
     command_e.DoGroup,  # covers ForEach and ForExpr, but not WhileUntil/If
     command_e.BraceGroup, command_e.Subshell,
     command_e.WhileUntil, command_e.If, command_e.Case,
     command_e.TimeBlock,
     command_e.CommandList,  # Happens in $(command sub)
-)
+]
 
 def _DisallowErrExit(node):
   # type: (command_t) -> bool

@@ -382,6 +382,10 @@ int str_to_int(Str* s) {
   }
 }
 
+int str_to_int(Str* s, int base) {
+  assert(0);
+}
+
 //
 // Formatter
 //

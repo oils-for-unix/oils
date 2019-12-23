@@ -306,8 +306,8 @@ readonly OSH_PARSE_FILES=(
 
 # From types/more-oil-manifest.txt
 readonly MORE_OIL=(
-  $REPO_ROOT/oil_lang/regex_translate.py
   $REPO_ROOT/osh/glob_.py
+  $REPO_ROOT/osh/string_ops.py
   $REPO_ROOT/frontend/location.py
 
   # fails because of readline_mod return value
@@ -317,6 +317,20 @@ readonly MORE_OIL=(
   # maybe change both to RuntimeError?
   # except (SystemError, UnicodeError):
   #$REPO_ROOT/core/comp_ui.py
+
+  $REPO_ROOT/osh/word_compile.py
+  $REPO_ROOT/osh/builtin_bracket.py
+
+  # core/main_loop.py causes a lot of problemso
+
+  $REPO_ROOT/osh/split.py
+  $REPO_ROOT/oil_lang/regex_translate.py
+
+  # Fails because of isinstance(objects.StrArray) and Union
+  #$REPO_ROOT/osh/cmd_exec.py
+
+  # Fails because of Union[None, bool, str] -- dynamic typing
+  #$REPO_ROOT/frontend/args.py
 )
 
 osh-parse() {

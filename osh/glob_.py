@@ -14,9 +14,9 @@ from core import util
 #from core.util import log
 from frontend import match
 
-from typing import List, Tuple, cast, TYPE_CHECKING, Any
+from typing import List, Tuple, cast, TYPE_CHECKING
 if TYPE_CHECKING:
-  #from osh.state import ExecOpts
+  from osh.state import ExecOpts
   from frontend.match import SimpleLexer
 
 
@@ -341,7 +341,7 @@ def GlobToERE(pat):
 
 class Globber(object):
   def __init__(self, exec_opts):
-    # type: (Any) -> None
+    # type: (ExecOpts) -> None
     self.exec_opts = exec_opts
 
     # NOTE: Bash also respects the GLOBIGNORE variable, but no other shells

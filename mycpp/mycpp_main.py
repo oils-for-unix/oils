@@ -145,7 +145,7 @@ def main(argv):
   filtered = []
   for name, module in to_compile:
     # HACK
-    if name == 'oil.core.main_loop':
+    if 'core.main_loop' in name:
       continue
     if name.startswith('oil.') and name[4:] in names:
       continue

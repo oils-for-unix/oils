@@ -1792,7 +1792,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           # TODO: Should these be moved to core/pylib.py or something?
           # They are varargs functions that have to be rewritten.
-          if name in ('log', 'p_die'):
+          if name in ('log', 'p_die', 'e_die'):
             continue    # do nothing
           if name in ('switch', 'tagswitch'):  # mylib
             continue  # do nothing

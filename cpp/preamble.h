@@ -50,3 +50,7 @@ Str* repr(void* obj) {
 [[noreturn]] void p_die(Str* s, syntax_asdl::word_t* w) {
   throw new error::Parse(s, w);
 }
+
+[[noreturn]] void e_die(Str* s, int span_id) {
+  assert(0);
+}

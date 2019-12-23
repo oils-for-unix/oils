@@ -564,6 +564,7 @@ Str* repr(Str* s);
 
 bool _str_to_int(Str* s, int* result);  // for testing only
 int str_to_int(Str* s);
+int str_to_int(Str* s, int base);
 
 // e.g. ('a' in 'abc')
 inline bool str_contains(Str* haystack, Str* needle) {

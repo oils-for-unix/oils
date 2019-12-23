@@ -120,4 +120,4 @@ def EvalCStringToken(id_, value):
     return string_ops.Utf8Encode(i)
 
   else:
-    raise AssertionError
+    raise AssertionError()
