@@ -635,9 +635,8 @@ class _WordEvaluator(object):
     # 1. Evaluate from (var_name, var_num, token Id) -> value
     if part.token.id == Id.VSub_Name:
       var_name = part.token.val
+      # TODO: LINENO can use its own span_id!
       val = self.mem.GetVar(var_name)
-      #log('EVAL NAME %s -> %s', var_name, val)
-
     elif part.token.id == Id.VSub_Number:
       var_num = int(part.token.val)
       val = self._EvalVarNum(var_num)
@@ -913,6 +912,8 @@ class _WordEvaluator(object):
     # 1. Evaluate from (var_name, var_num, Token) -> defined, value
     if token.id == Id.VSub_DollarName:
       var_name = token.val[1:]
+
+      # TODO: Special case for LINENO
       val = self.mem.GetVar(var_name)
       if val.tag in (value_e.MaybeStrArray, value_e.AssocArray):
         e_die("Array %r can't be referred to as a scalar (without @ or *)",
