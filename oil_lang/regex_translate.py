@@ -73,7 +73,7 @@ def _ClassLiteralToPosixEre(term, parts):
   # type: (class_literal_term_t, List[str]) -> None
 
   UP_term = term
-  tag = term.tag
+  tag = term.tag_()
   if tag == class_literal_term_e.Range:
     term = cast(class_literal_term__Range, UP_term)
     # \\ \^ \- can be used in ranges?
@@ -136,7 +136,7 @@ def AsPosixEre(node, parts):
   """
   UP_node = node
 
-  tag = node.tag
+  tag = node.tag_()
   if tag == re_e.Primitive:
     node = cast(re__Primitive, UP_node)
     if node.id == Id.Re_Dot:
@@ -179,7 +179,7 @@ def AsPosixEre(node, parts):
   if tag == re_e.Repeat:
     node = cast(re__Repeat, UP_node)
     # 'foo' or "foo" or $x or ${x} evaluated to too many chars
-    if node.child.tag == re_e.LiteralChars:
+    if node.child.tag_() == re_e.LiteralChars:
       child = cast(re__LiteralChars, node.child)
       if len(child.s) > 1:
         # Note: Other regex dialects have non-capturing groups since we don't
@@ -189,7 +189,7 @@ def AsPosixEre(node, parts):
 
     AsPosixEre(node.child, parts)
     op = node.op
-    op_tag = op.tag
+    op_tag = op.tag_()
     UP_op = op
 
     if op_tag == re_repeat_e.Op:

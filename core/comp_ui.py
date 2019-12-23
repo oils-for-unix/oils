@@ -26,10 +26,12 @@ _CYAN = '\033[36m'
 #
 # Readline understands \x01 and \x02, while bash understands \[ and \].
 
-PROMPT_BOLD = '\x01%s\x02' % _BOLD
-PROMPT_RESET = '\x01%s\x02' % _RESET
-PROMPT_UNDERLINE = '\x01%s\x02' % _UNDERLINE
-PROMPT_REVERSE = '\x01%s\x02' % _REVERSE
+# NOTE: There were used in demoish.py.  Do we still want those styles?
+if 0:
+  PROMPT_BOLD = '\x01%s\x02' % _BOLD
+  PROMPT_RESET = '\x01%s\x02' % _RESET
+  PROMPT_UNDERLINE = '\x01%s\x02' % _UNDERLINE
+  PROMPT_REVERSE = '\x01%s\x02' % _REVERSE
 
 
 def _PromptLen(prompt_str):

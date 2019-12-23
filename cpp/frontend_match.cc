@@ -47,6 +47,10 @@ SimpleLexer* BraceRangeLexer(Str* s) {
   return new SimpleLexer(&MatchBraceRangeToken, s);
 }
 
+SimpleLexer* GlobLexer(Str* s) {
+  return new SimpleLexer(&MatchGlobToken, s);
+}
+
 bool IsValidVarName(Str* s) {
   // Call generated function.  Note: this relies on operator overloading.
   return ::IsValidVarName(

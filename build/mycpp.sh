@@ -16,22 +16,9 @@ readonly MYPY_REPO=~/git/languages/mypy
 # note: -Weverything is more than -Wall, but too many errors now.
 CPPFLAGS='-std=c++11 -Wall'
 
-# sign-compare disabled because of int i < v_.size()?  Should I use size_t?
-GCC_FLAGS='-fpermissive'
-
-# Temporary hack for 'token* token' in GCC
-# https://stackoverflow.com/questions/8843818/what-does-the-fpermissive-flag-do
-CPPFLAGS="$CPPFLAGS $GCC_FLAGS"
-
 # for 'perf'.  Technically this may slow things down, but it was in the noise
 # on parsing configure-coreutils.
 CPPFLAGS="$CPPFLAGS -fno-omit-frame-pointer"
-
-# Always build with Address Sanitizer
-readonly DBG_FLAGS="$CPPFLAGS -O0 -g"
-
-# This flag is Clang-only
-#-ferror-limit=1000'
 
 # User can set CXX=, like they can set CC= for oil.ovm
 # The ovm-build benchmark explicitly sets this to GCC or Clang.
@@ -39,12 +26,18 @@ if test -z "${CXX:-}"; then
   if test -f $CLANGXX; then
     # note: Clang doesn't inline MatchOshToken!
     CXX=$CLANGXX
+
+    # Show more errors -- this flag is Clang-only.
+    CPPFLAGS="$CPPFLAGS -ferror-limit=1000"
   else
     # equivalent of 'cc' for C++ langauge
     # https://stackoverflow.com/questions/172587/what-is-the-difference-between-g-and-gcc
     CXX='c++'
   fi
 fi
+
+# Always build with Address Sanitizer
+readonly DBG_FLAGS="$CPPFLAGS -O0 -g"
 
 export ASAN_SYMBOLIZER_PATH=$CLANG_DIR_RELATIVE/bin/llvm-symbolizer
 # https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer
@@ -315,6 +308,15 @@ readonly OSH_PARSE_FILES=(
 readonly MORE_OIL=(
   $REPO_ROOT/oil_lang/regex_translate.py
   $REPO_ROOT/osh/glob_.py
+  $REPO_ROOT/frontend/location.py
+
+  # fails because of readline_mod return value
+  #$REPO_ROOT/osh/history.py
+
+  # fails because of multiple exceptions in libc.wcswidth
+  # maybe change both to RuntimeError?
+  # except (SystemError, UnicodeError):
+  #$REPO_ROOT/core/comp_ui.py
 )
 
 osh-parse() {

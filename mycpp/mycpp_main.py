@@ -78,18 +78,15 @@ def ModulesToCompile(result, mod_names):
     if name == 'asdl.runtime':
       continue
 
-    # Why do I get oil.asdl.tdop in addition to asdl.tdop?  This seems to
-    # work.
-    if name.startswith('oil.'):
-      continue
-
     yield name, module
 
 
 def main(argv):
   # TODO: Put these in the shell script
   mypy_options = [
-      '--py2', '--strict', '--no-implicit-optional', '--no-strict-optional'
+     '--py2', '--strict', '--no-implicit-optional', '--no-strict-optional',
+     # for consistency?
+     '--follow-imports=silent',
   ]
      
   paths = argv[1:]  # e.g. asdl/typed_arith_parse.py
@@ -135,13 +132,6 @@ def main(argv):
   for name in result.graph:
     state = result.graph[name]
 
-  # Print the tree for debugging
-  if 0:
-    for name, module in ModulesToCompile(result, mod_names):
-      builder = debug_pass.Print(result.types)
-      builder.visit_mypy_file(module)
-    return
-
   # GLOBAL Constant pass over all modules.  We want to collect duplicate
   # strings together.  And have globally unique IDs str0, str1, ... strN.
   const_lookup = {}
@@ -150,9 +140,28 @@ def main(argv):
 
   to_compile = list(ModulesToCompile(result, mod_names))
 
-  if 0:
+  # HACK: Why do I get oil.asdl.tdop in addition to asdl.tdop?
+  names = set(name for name, _ in to_compile)
+  filtered = []
+  for name, module in to_compile:
+    # HACK
+    if name == 'oil.core.main_loop':
+      continue
+    if name.startswith('oil.') and name[4:] in names:
+      continue
+    filtered.append((name, module))
+  to_compile = filtered
+
+  if 1:
     for name, module in to_compile:
       log('to_compile %s', name)
+
+  # Print the tree for debugging
+  if 0:
+    for name, module in to_compile:
+      builder = debug_pass.Print(result.types)
+      builder.visit_mypy_file(module)
+    return
 
   for name, module in to_compile:
     pass1.visit_mypy_file(module)

@@ -43,6 +43,7 @@ class SimpleLexer {
 //
 
 SimpleLexer* BraceRangeLexer(Str* s);
+SimpleLexer* GlobLexer(Str* s);
 
 
 //

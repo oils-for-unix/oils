@@ -14,7 +14,7 @@ from core import util
 #from core.util import log
 from frontend import match
 
-from typing import Optional, List, Tuple, Any, cast, TYPE_CHECKING
+from typing import List, Tuple, cast, TYPE_CHECKING, Any
 if TYPE_CHECKING:
   #from osh.state import ExecOpts
   from frontend.match import SimpleLexer
@@ -120,7 +120,7 @@ def GlobUnescape(s):  # used by cmd_exec
   word_eval _JoinElideEscape and EvalWordToString you have to build two
   'parallel' strings -- one escaped and one not.
   """
-  unescaped = ''
+  unescaped = []  # type: List[str]
   i = 0
   n = len(s)
   while i < n:
@@ -130,13 +130,13 @@ def GlobUnescape(s):  # used by cmd_exec
       i += 1
       c2 = s[i]
       if c2 in GLOB_META_CHARS:
-        unescaped += c2
+        unescaped.append(c2)
       else:
         raise AssertionError("Unexpected escaped character %r" % c2)
     else:
-      unescaped += c
+      unescaped.append(c)
     i += 1
-  return unescaped
+  return ''.join(unescaped)
 
 
 # For ${x//foo*/y}, we need to glob patterns, but fnmatch doesn't give you the
@@ -151,7 +151,7 @@ class _GlobParser(object):
   def __init__(self, lexer):
     # type: (SimpleLexer) -> None
     self.lexer = lexer
-    self.token_type = None  # type: Optional[Id_t]
+    self.token_type = Id.Undefined_Tok
     self.token_val = ''
     self.warnings = []  # type: List[str]
 
@@ -206,8 +206,8 @@ class _GlobParser(object):
       if id1 in (Id.Glob_Bang, Id.Glob_Caret):
         negated = True
         tokens = tokens[1:]
-    strs = [s for _, s in tokens]
-    return [glob_part.CharClass(negated, strs)]
+    #strs = [s for _, s in tokens]
+    return [glob_part.CharClass(negated, [s for _, s in tokens])]
 
   def Parse(self):
     # type: () -> Tuple[List[glob_part_t], List[str]]
@@ -251,7 +251,7 @@ _REGEX_CHARS_TO_ESCAPE = '.|^$()+*?[]{}\\'
 
 def _GenerateERE(parts):
   # type: (List[glob_part_t]) -> str
-  out = []
+  out = []  # type: List[str]
 
   for part in parts:
     tag = part.tag_()
@@ -298,7 +298,7 @@ def _GenerateERE(parts):
       elif part.op_id == Id.Glob_Star:
         out.append('.*')
       else:
-        raise AssertionError
+        raise AssertionError()
 
     elif tag == glob_part_e.CharClass:
       part = cast(glob_part__CharClass, UP_part)
@@ -373,7 +373,7 @@ class Globber(object):
       # PROBLEM: / is significant and can't be escaped!  Have to avoid
       # globbing it.
       g = libc.glob(arg)
-    except Exception as e:
+    except Exception as e:  # TODO: More specific exception
       # - [C\-D] is invalid in Python?  Regex compilation error.
       # - [:punct:] not supported
       print("Error expanding glob %r: %s" % (arg, e))
@@ -385,7 +385,7 @@ class Globber(object):
     else:  # Nothing matched
       if self.exec_opts.failglob:
         # TODO: Make the command return status 1.
-        raise NotImplementedError
+        raise NotImplementedError()
       if self.exec_opts.nullglob:
         return []
       else:

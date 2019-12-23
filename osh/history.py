@@ -146,7 +146,7 @@ class Evaluator(object):
 
         # Search backward
         prefix = None
-        substring = None
+        substring = ''
         if val[1] == '?':
           substring = val[2:]
         else:
@@ -157,7 +157,7 @@ class Evaluator(object):
           cmd = self.readline_mod.get_history_item(i)
           if prefix and cmd.startswith(prefix):
             out = cmd
-          if substring and substring in cmd:
+          if len(substring) and substring in cmd:
             out = cmd
           if out is not None:
             out += last_char  # restore required space

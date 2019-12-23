@@ -797,7 +797,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write(')')
             return
 
-          assert contains_func, t1
+          assert contains_func, "RHS of 'in' has type %r" % t1
           # x in mylist => list_contains(mylist, x) 
           self.write('%s(', contains_func)
           self.accept(right)
@@ -1844,6 +1844,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 'value_e', 'value',
                 'glob_part_e', 'glob_part',
 
+                're_e', 're',
+                're_repeat_e', 're_repeat',
+                'class_literal_term_e', 'class_literal_term',
                 ):
                 is_namespace = True
 
