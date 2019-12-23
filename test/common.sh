@@ -79,8 +79,8 @@ run-all() {
 run-other-suite-for-release() {
   local suite_name=$1
   local func_name=$2
+  local out=${3:-_tmp/other/${suite_name}.txt}
 
-  local out=_tmp/other/${suite_name}.txt
   mkdir -p $(dirname $out)
 
   echo
@@ -94,7 +94,7 @@ run-other-suite-for-release() {
   local status=0
 
   set +o errexit
-  $0 $func_name 2>&1 | tee $out 
+  $0 $func_name >$out 2>&1
   status=$?  # pipefail makes this work.
   set -o errexit
 

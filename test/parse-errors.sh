@@ -580,8 +580,8 @@ regex_literals() {
   # These are too long too
   _oil-parse-error 'var x = /[abc]/'
 
-  # Single chars not allowed, should be /['abc']/
-  _oil-parse-error 'var x = /[a b c]/'
+  # Single chars not allowed, should be /['%_']/
+  _oil-parse-error 'var x = /[% _]/'
 
 }
 
@@ -669,13 +669,17 @@ all() {
 }
 
 run-for-release() {
-  ### Test with the ASAN binary in release mode.  Run 'all' for OSH.
+  ### Test with bin/osh and the ASAN binary.
+
+  run-other-suite-for-release parse-errors all
+
   # Done in _oil-native-build
   #build/mycpp.sh compile-osh-parse-asan
 
-  # TODO: osh_parse needs to accept -n -c for this to work.
+  # TODO: osh_parse should accept -n -c
+  local out=_tmp/other/parse-errors-oil-native.txt
   ASAN_OPTIONS=detect_leaks=0 SH=_bin/osh_parse.asan \
-    run-other-suite-for-release parse-errors all
+    run-other-suite-for-release parse-errors all $out
 }
 
 "$@"
