@@ -9,6 +9,7 @@ import sys
 
 from typing import List, Optional, Tuple
 
+from mypy import build
 from mypy.build import build as mypy_build
 from mypy.build import BuildSource
 from mypy.main import process_options
@@ -87,6 +88,7 @@ def main(argv):
      '--py2', '--strict', '--no-implicit-optional', '--no-strict-optional',
      # for consistency?
      '--follow-imports=silent',
+     '--verbose',
   ]
      
   paths = argv[1:]  # e.g. asdl/typed_arith_parse.py
@@ -128,6 +130,10 @@ def main(argv):
   # literals, modules, errors = genops.build_ir(file_nodes, result.graph,
   # result.types)
 
+  # TODO: Debug what comes out of here.
+  build.dump_graph(result.graph)
+  return
+
   # no-op
   for name in result.graph:
     state = result.graph[name]
@@ -152,9 +158,14 @@ def main(argv):
     filtered.append((name, module))
   to_compile = filtered
 
+  import pickle
   if 1:
     for name, module in to_compile:
       log('to_compile %s', name)
+
+      # can't pickle but now I see deserialize() nodes and stuff
+      #s = pickle.dumps(module)
+      #log('%d pickle', len(s))
 
   # Print the tree for debugging
   if 0:

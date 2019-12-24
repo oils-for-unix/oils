@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <!-- comment -->
+
+  <head>
+    <title>Pulp Testdata</title>
+
+  </head>
+
+  <body>
+
+    <!--
+      Nested
+    <?
+      directive
+    ?>
+    -->
+
+    <?
+      directive
+    ?>
+
+    <p>
+      <span id="myid">my span</span>
+      <a href="/page.html?x=42&amp;y=43">Link</a>
+
+      <a href="$xref:bash">Link</a>
+
+      <!-- HTML is pretty liberal about unquoted strings -->
+      <a href=$xref:bash>Link</a>
+
+      <a href=$blog-tag:oil-release>Link</a>
+
+    </p>
+
+    <p class="myclass">
+      this &amp; that and mu = &#x03bc;
+    </p>
+
+    <p>
+      &lt;not a tag&gt;
+    </p>
+
+    <p>
+      line break<br/>
+      line break<br/>
+    </p>
+
+    <hr/>
+
+  </body>
+</html>

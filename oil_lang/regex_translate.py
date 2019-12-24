@@ -74,6 +74,7 @@ def _ClassLiteralToPosixEre(term, parts):
 
   UP_term = term
   tag = term.tag_()
+
   if tag == class_literal_term_e.Range:
     term = cast(class_literal_term__Range, UP_term)
     # \\ \^ \- can be used in ranges?
@@ -125,7 +126,7 @@ def _ClassLiteralToPosixEre(term, parts):
     parts.append(term.tok.val)
     return
 
-  raise NotImplementedError(term) 
+  raise NotImplementedError(tag)
 
 
 def AsPosixEre(node, parts):
@@ -135,8 +136,8 @@ def AsPosixEre(node, parts):
   Appends to a list of parts that you hvae to join.
   """
   UP_node = node
-
   tag = node.tag_()
+
   if tag == re_e.Primitive:
     node = cast(re__Primitive, UP_node)
     if node.id == Id.Re_Dot:
@@ -146,7 +147,7 @@ def AsPosixEre(node, parts):
     elif node.id == Id.Re_End:
       parts.append('$')
     else:
-      raise AssertionError(node)
+      raise AssertionError(node.id)
     return
 
   if tag == re_e.LiteralChars:
@@ -217,7 +218,7 @@ def AsPosixEre(node, parts):
       parts.append('{%s,%s}' % (lower, upper))
       return
 
-    raise NotImplementedError(node.op)
+    raise NotImplementedError(op_tag)
 
   # Special case for familiarity: () is acceptable as a group in ERE
   if tag in (re_e.Group, re_e.Capture):
@@ -258,4 +259,4 @@ def AsPosixEre(node, parts):
     parts.append(']')
     return
 
-  raise NotImplementedError(node.__class__.__name__)
+  raise NotImplementedError(tag)

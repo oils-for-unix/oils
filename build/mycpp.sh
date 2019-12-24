@@ -304,6 +304,10 @@ readonly OSH_PARSE_FILES=(
   $REPO_ROOT/frontend/parse_lib.py
 )
 
+readonly TRANSLATE=(
+  $REPO_ROOT/osh/glob_.py
+)
+
 # From types/more-oil-manifest.txt
 readonly MORE_OIL=(
   $REPO_ROOT/osh/glob_.py
@@ -343,7 +347,9 @@ osh-parse() {
 
   #if false; then
   if true; then
-    mycpp $raw bin/$name.py "${OSH_PARSE_FILES[@]}" #"${MORE_OIL[@]}"
+    mycpp $raw bin/$name.py "${OSH_PARSE_FILES[@]}" \
+      "${TRANSLATE[@]}"
+      #"${MORE_OIL[@]}"
   fi
 
   local cc=_build/cpp/$name.cc

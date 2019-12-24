@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 """
 Convert markdown to HTML, then parse the HTML, generate and insert a TOC, and
 insert anchors.
@@ -14,8 +14,8 @@ import optparse
 import re
 import sys
 
-import html_lib
-import doc_html  # templates
+from devtools import html_lib
+from devtools import doc_html  # templates
 
 # Geez find_library returns the filename and not the path?  Just hardcode it as
 # a workaround.
