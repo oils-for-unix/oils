@@ -28,19 +28,35 @@ def log(msg, *args):
 
 
 class Output(object):
+  """
+  Takes an underlying input buffer and an output file.  Maintains a position in
+  the input buffer.
+
+  Print FROM the input or print new text to the output.
+  """
 
   def __init__(self, s, f):
     self.s = s
     self.f = f
     self.pos = 0
 
-  def Skip(self, pos):
+  def SkipTo(self, pos):
+    """Skip to a position."""
     self.pos = pos
 
   def PrintUntil(self, pos):
+    """Print until a position."""
     piece = self.s[self.pos : pos]
     self.f.write(piece)
     self.pos = pos
+
+  def PrintTheRest(self):
+    """Print until the end of the string."""
+    self.PrintUntil(len(self.s))
+
+  def Print(self, s):
+    """Print text to the underlying buffer."""
+    self.f.write(s)
 
 
 ( Decl, Comment, Processing,
@@ -59,10 +75,25 @@ def _MakeLexer(rules):
 #
 # Eggex
 #
-# Tag      = / ~['>']* /
+# Tag      = / ~['>']+ /
 
 # Is this valid?  A single character?
 # Tag      = / ~'>'* /
+
+# Maybe better: / [NOT '>']+/
+# capital letters not allowed there?
+#
+# But then this is confusing:
+# / [NOT ~digit]+/
+#
+# / [NOT digit] / is [^\d]
+# / ~digit /      is \D
+#
+# Or maybe:
+#
+# / [~ digit]+ /
+# / [~ '>']+ /
+# / [NOT '>']+ /
 
 # End      = / '</' Tag  '>' /
 # StartEnd = / '<'  Tag '/>' /
@@ -77,13 +108,17 @@ LEXER = [
   (r'<!-- .*? -->', Comment),
   (r'<\? .*? \?>', Processing),
 
-  (r'<! [^>]* >', Decl),
+  (r'<! [^>]+ >', Decl),  # <!DOCTYPE html>
 
-  (r'</ [^>]* >', EndTag),  # self-closing <br/>  comes FIRST
-  (r'< [^>]* />', StartEndTag),        # end </a>
-  (r'< [^>]*  >', StartTag), # start <a>
+  (r'</ [^>]+ >', EndTag),  # self-closing <br/>  comes FIRST
+  (r'< [^>]+ />', StartEndTag),        # end </a>
+  (r'< [^>]+  >', StartTag), # start <a>
 
-  # TODO: MAke this more precise
+  # TODO: Make this more precise
+  #(r'&[0-9]+;', DecChar),
+  #(r'&x[0-9a-fA-F]+;', HexChar),
+  #(r'&[a-zA-Z];', CharEntity),
+
   (r'&.*?;', EntityRef),
 
   # Exclude > for validation
@@ -93,24 +128,6 @@ LEXER = [
 ]
 
 LEXER = _MakeLexer(LEXER)
-
-# Another design:
-#
-# out = pulp.Printer(TEST_HTML, sys.stdout)
-#
-# p = html.Parser(TEST_HTML)
-# p.Next()
-
-# p.EventType()
-# p.StartPos() or p.Pos()
-# p.EndPos()
-#
-# out.PrintTo(p.StartPos())
-# out.SkipTo(p.EndPos())
-
-# for event in p.Tokens():
-#  p.StartPos()
-#  p.EndPos()
 
 
 def Tokens(s):
@@ -122,11 +139,12 @@ def Tokens(s):
   n = len(s)
 
   while pos < n:
-    for pat, cls in LEXER:
+    # Find the FIRST pattern that matches.
+    for pat, tok_id in LEXER:
       m = pat.match(s, pos)
       if m:
         end_pos = m.end()
-        yield cls, end_pos
+        yield tok_id, end_pos
         pos = end_pos
         break
 
@@ -134,8 +152,8 @@ def Tokens(s):
   yield EndOfStream, pos
 
 
-# To match <a
-_TAG_RE = re.compile(r'\s*([a-zA-Z]+)')
+# To match <a  or </a
+_TAG_RE = re.compile(r'/? \s* ([a-zA-Z]+)', re.VERBOSE)
 
 # To match href="foo"
 
@@ -163,18 +181,19 @@ class TagLexer(object):
   - What is the tag?
   - Iterate through the attributes, giving (name, value_start_pos, value_end_pos)
   """
-  def __init__(self):
-    pass
-
-  def Reset(self, s, start_pos, end_pos):
+  def __init__(self, s):
     self.s = s
+    self.start_pos = -1  # Invalid
+    self.end_pos = -1
+
+  def Reset(self, start_pos, end_pos):
     self.start_pos = start_pos
     self.end_pos = end_pos
 
   def TagString(self):
     return self.s[self.start_pos : self.end_pos]
 
-  def Tag(self):
+  def TagName(self):
     # First event
     tok_id, start, end = next(self.Tokens())
     return self.s[start : end]

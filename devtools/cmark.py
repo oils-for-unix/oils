@@ -16,6 +16,7 @@ import sys
 
 from devtools import html_lib
 from devtools import doc_html  # templates
+from lazylex import oil_doc
 
 # Geez find_library returns the filename and not the path?  Just hardcode it as
 # a workaround.
@@ -245,10 +246,10 @@ def _ApplyInsertions(lines, insertions, out_file):
 def Render(opts, in_file, out_file):
   html = md2html(in_file.read())
 
-  # TODO:
-  from lazylex import oil_doc
-
+  # Stages of transformation.
   html = oil_doc.ExpandLinks(html)
+
+  html = oil_doc.HighlightCode(html)
 
   # h2 is the title.  h1 is unused.
   if opts.toc_tags:

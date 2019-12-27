@@ -7,24 +7,21 @@ from __future__ import print_function
 import sys
 import unittest
 
-from lazylex import html  # module under test
-
-log = html.log
-
+from lazylex import html  # module under test log = html.log 
 
 with open('lazylex/testdata.html') as f:
   TEST_HTML = f.read()
 
 
 def _MakeTagLexer(s):
-  lex = html.TagLexer()
-  lex.Reset(s, 0, len(s))
+  lex = html.TagLexer(s)
+  lex.Reset(0, len(s))
   return lex
 
 
 def _PrintTokens(lex):
   log('')
-  log('tag = %r', lex.Tag())
+  log('tag = %r', lex.TagName())
   for tok, start, end in lex.Tokens():
     log('%s %r', tok, lex.s[start:end])
 
@@ -74,19 +71,6 @@ class HtmlTest(unittest.TestCase):
   def testSplit(self):
     """
     doc/help.md and help-index.md have to be split up
-    """
-    pass
-
-  def testSyntaxHighlight(self):
-    """
-    <code language="sh">
-      ls | wc -l
-    </code>
-
-    ->
-    <code language="sh">
-      <span id="">ls | wc -l</span>
-    </code>
     """
     pass
 

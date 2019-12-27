@@ -54,7 +54,45 @@ HTML has two levels:
   - Hm I think this indicates a need for **lossless** lexers as well?
     https://github.com/Byron/pulldown-cmark-to-cmark/blob/master/src/fmt.rs
   - It appears to be used in mdbook
+- [simdjson][]: This pasrer is designed for extreme speed, and the  first stage
+  of it "lazy" and uses integer indices.  (We're only trying to avoid
+  allocation; we're not avoiding branches or using SIMD!  We also aim to
+  transform the underlying data, not just parse it.)
+
+[simdjson]: https://branchfree.org/2019/02/25/paper-parsing-gigabytes-of-json-per-second/=
 
 [pulldown-cmark]: https://github.com/raphlinus/pulldown-cmark
 
+## Lessons/Claims
+
+- You can parse HTML quickly and correctly with regexes!  It has a simple
+  syntax that's almost designed for this.
+  - Key point: We're not parsing them **only** with regexes.
+  - The parser is correct in the sense that its behavior on every input is
+    fully-defined.  There are no buffer overflows on edge cases -- that's the
+    magic of regexes and the corresponding state machines.  However it doesn't
+    recognize every weird document on the web.  It recognizes something close
+    to "well-formed XML" (but it's not XHTML.)
+- Parsing with spans / integer positions is efficient, **composable**, and
+  leads  to better **syntax errors**.
+  - Example: spec test format parse errors aren't good.  Info is lost.
+    Or ASDL parser?  I guess it has some line info.
+- The API is easier to use than SAX because you're not losing the stack.
+  (Previous transformations used Python's HTMLParser, which is a SAX API.)
+- It's more efficient than a DOM API.  DOM allocates a lot and loses
+  whitespace.  (Speed matters when rebuilding the whole site.  Each page has
+  multiple stages.  It makes the code cleaner to do multiple quick passes, like
+  a compiler.)
+  - In many instances, you can MODIFY the HTML doc correctly without
+    deserializing something.  For example, adding `<b>` tags around a line
+    doesn't require unquoting and quoting `&gt;` within them.
+- Preserving whitespace is useful because I want to use 'diff' to test
+  correctness against the old pipeline.
+- Python's `pat.match(s, start_pos, end_pos)` is very useful for efficient
+  lexing.
+  - TODO: Convert to re2c to see how it does.  Need YYLIMIT.
+- TODO: Issue of non-greedy matches.
+- TODO: Issue of unquoting and quoting (escaping).
+- Open issue: Python generators (`yield`) make the code more natural, but
+  that's not possible in C or C++.  (C++20 has coroutines though.)
 

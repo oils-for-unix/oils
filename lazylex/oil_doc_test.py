@@ -15,7 +15,7 @@ with open('lazylex/testdata.html') as f:
 
 class OilDoc(unittest.TestCase):
 
-  def testReplaceLink(self):
+  def testExpandLinks(self):
     """
     <a href=$xref:bash>bash</a>
     ->
@@ -25,6 +25,15 @@ class OilDoc(unittest.TestCase):
     But we're testing it
     """
     print(oil_doc.ExpandLinks(TEST_HTML))
+
+  def testHighlightCode(self):
+    """
+    <pre><code language="sh">echo one
+    echo two
+    </code></pre>
+    """
+    print(oil_doc.HighlightCode(TEST_HTML))
+
 
 if __name__ == '__main__':
   unittest.main()
