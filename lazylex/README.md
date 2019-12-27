@@ -13,6 +13,8 @@ the doc pipeline looks like:
 Eventually it would be nice to expand this API design to more formats and make
 it available to Oil language users.
 
+Another possible name: "tagged streams".
+
 ## Why?
 
 - To report good parse errors with location info

@@ -245,6 +245,11 @@ def _ApplyInsertions(lines, insertions, out_file):
 def Render(opts, in_file, out_file):
   html = md2html(in_file.read())
 
+  # TODO:
+  from lazylex import oil_doc
+
+  html = oil_doc.ExpandLinks(html)
+
   # h2 is the title.  h1 is unused.
   if opts.toc_tags:
     toc_tags = opts.toc_tags

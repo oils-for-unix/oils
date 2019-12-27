@@ -43,121 +43,18 @@ class Output(object):
     self.pos = pos
 
 
-class _Event(object):
-  """
-  An event has a type and a (start, end)
-  Does it make more sense to store an array of (id, end) pairs?
-  And then look back in the array?
-  Well the whole event can be returned on the stack here.
-  (8, 4, 4) = 16 + tag = 18
-  """
-
-  def __init__(self, s, start_pos, end_pos):
-    self.s = s
-    self.start_pos = start_pos
-    self.end_pos = end_pos
-
-    # TODO: Should this have a span ID?
-
-    # Like the Token, except it has a kind
-    #
-    # Token(id id, int span_id, char* start, int length)
-
-  def Substring(self):
-    return self.s[self.start_pos : self.end_pos]
-
-  def __str__(self):
-    return '[%s %r]' % (self.__class__.__name__, self.Substring())
+( Decl, Comment, Processing,
+  StartTag, StartEndTag, EndTag,
+  EntityRef, RawData,
+  Invalid, EndOfStream ) = range(10)
 
 
-class Decl(_Event):
-  """
-  <!DOCTYPE html>
-
-  Usually this doesn't need to be parsed?
-  """
-  pass
-
-
-class Comment(_Event):
-  """
-  <!-- comment -->
-  """
-  pass
-
-
-class Processing(_Event):
-  """
-  Python's HTML parser has this.
-
-  <? code ?>
-  """
-  pass
-
-
-TAG_RE = re.compile(r'\s*([a-zA-Z]+)')
-
-class _AttrEvent(_Event):
-
-  def __init__(self, s, start_pos, end_pos):
-    _Event.__init__(self, s, start_pos, end_pos)
-    # lazily done
-    self.tag = None
-    self.attrs = None
-
-  def Tag(self):
-    """
-    return 'a' for <a href=""> etc.
-    """
-    # start it after the angle bracket
-    if self.tag is None:
-      m = TAG_RE.match(self.s, self.start_pos+1)
-      if not m:
-        raise RuntimeError('Invalid HTML tag: %r' % self.Substring())
-      self.tag = m.group(1)
-    return self.tag
-
-
-class StartTag(_AttrEvent):
-  pass
-
-
-class StartEndTag(_AttrEvent):
-  pass
-
-
-class EndTag(_Event):
-  pass
-
-
-class EntityRef(_Event):
-  """
-  Note: Python has 
-
-  handle_entityref
-  handle_charref
-
-  I think those should be the same?  We don't want to force clients to handle
-  them?
-  """
-  def Value(self):
-    """
-    For use when converting to text.
-    """
-    pass
-
-
-class RawData(_Event):
-  pass
-
-
-class Invalid(_Event):
-  pass
-
-
-class EndOfStream(_Event):
-  pass
-
+def _MakeLexer(rules):
+  return [
+  # DOTALL is for the comment
+    (re.compile(pat, re.VERBOSE | re.DOTALL), i) for
+    (pat, i) in rules
+  ]
 
 #
 # Eggex
@@ -186,6 +83,7 @@ LEXER = [
   (r'< [^>]* />', StartEndTag),        # end </a>
   (r'< [^>]*  >', StartTag), # start <a>
 
+  # TODO: MAke this more precise
   (r'&.*?;', EntityRef),
 
   # Exclude > for validation
@@ -194,13 +92,7 @@ LEXER = [
   (r'.', Invalid),  # error!
 ]
 
-LEXER = [
-  # DOTALL is for the comment
-  (re.compile(pat, re.VERBOSE | re.DOTALL), i) for
-  (pat, i) in LEXER
-]
-
-
+LEXER = _MakeLexer(LEXER)
 
 # Another design:
 #
@@ -216,12 +108,12 @@ LEXER = [
 # out.PrintTo(p.StartPos())
 # out.SkipTo(p.EndPos())
 
-# for event in p.Events():
+# for event in p.Tokens():
 #  p.StartPos()
 #  p.EndPos()
 
 
-def Parse(s):
+def Tokens(s):
   """
   Args:
     s: string to parse
@@ -234,22 +126,130 @@ def Parse(s):
       m = pat.match(s, pos)
       if m:
         end_pos = m.end()
-        obj = cls(s, pos, end_pos)
+        yield cls, end_pos
         pos = end_pos
-        yield obj
         break
 
   # Zero length sentinel
-  yield EndOfStream(s, pos, pos)
+  yield EndOfStream, pos
 
 
-def main(argv):
-  pass
+# To match <a
+_TAG_RE = re.compile(r'\s*([a-zA-Z]+)')
+
+# To match href="foo"
+
+_ATTR_RE = re.compile(r'''
+\s+                     # Leading whitespace is required
+([a-z]+)                # Attribute name
+(?:                     # Optional attribute value
+  \s* = \s*
+  (?:
+    " ([^>"]*) "        # double quoted value
+  | ([a-zA-Z0-9_\-]+)   # Just allow unquoted "identifiers"
+                        # TODO: relax this?  for href=$foo
+  )
+)?             
+''', re.VERBOSE)
 
 
-if __name__ == '__main__':
-  try:
-    main(sys.argv)
-  except RuntimeError as e:
-    print('FATAL: %s' % e, file=sys.stderr)
-    sys.exit(1)
+TagName, AttrName, UnquotedValue, QuotedValue = range(4)
+
+class TagLexer(object):
+  """
+  Given a tag like <a href="..."> or <link type="..." />, the TagLexer
+  provides a few operations:
+
+  - What is the tag?
+  - Iterate through the attributes, giving (name, value_start_pos, value_end_pos)
+  """
+  def __init__(self):
+    pass
+
+  def Reset(self, s, start_pos, end_pos):
+    self.s = s
+    self.start_pos = start_pos
+    self.end_pos = end_pos
+
+  def TagString(self):
+    return self.s[self.start_pos : self.end_pos]
+
+  def Tag(self):
+    # First event
+    tok_id, start, end = next(self.Tokens())
+    return self.s[start : end]
+
+  def GetSpanForAttrValue(self, attr_name):
+    # Algorithm: search for QuotedValue or UnquotedValue after AttrName
+    # TODO: Could also cache these
+
+    events = self.Tokens()
+    val = (-1, -1)
+    try:
+      while True:
+        tok_id, start, end = next(events)
+        if tok_id == AttrName:
+          name = self.s[start:end]
+          if name == attr_name:
+            # For HasAttr()
+            #val = True
+
+            # Now try to get a real value
+            tok_id, start, end = next(events)
+            if tok_id in (QuotedValue, UnquotedValue):
+
+              # TODO: Unescape this with htmlentitydefs
+              # I think we need another lexer!
+              #
+              # We could make a single pass?
+              # Shortcut: 'if '&' in substring'
+              # Then we need to unescape it
+
+              val = start, end
+              break
+
+    except StopIteration:
+      pass
+    return val
+
+  def GetAttr(self, attr_name):
+    # Algorithm: search for QuotedValue or UnquotedValue after AttrName
+    # TODO: Could also cache these
+    start, end = self.GetSpanForAttrValue(attr_name)
+    if start == -1:
+      return None
+    return self.s[start : end]
+
+  def Tokens(self):
+    """
+    Yields a sequence of tokens: Tag (AttrName AttrValue?)*
+
+    Where each Token is (Type, start_pos, end_pos)
+
+    Note that start and end are NOT redundant!  We skip over some unwanted
+    characters.
+    """
+    m = _TAG_RE.match(self.s, self.start_pos+1)
+    if not m:
+      raise RuntimeError('Invalid HTML tag: %r' % self.TagString())
+    yield TagName, m.start(1), m.end(1)
+
+    pos = m.end(0)
+
+    while True:
+      # don't search past the end
+      m = _ATTR_RE.match(self.s, pos, self.end_pos)
+      if not m:
+        # A validating parser would check that > or /> is next -- there's no junk
+        break
+
+      yield AttrName, m.start(1), m.end(1)
+
+      # Quoted is group 2, unquoted is group 3.
+      if m.group(2) is not None:
+        yield QuotedValue, m.start(2), m.end(2)
+      elif m.group(3) is not None:
+        yield UnquotedValue, m.start(3), m.end(3)
+
+      # Skip past the "
+      pos = m.end(0)
