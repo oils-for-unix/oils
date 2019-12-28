@@ -33,17 +33,37 @@ which is expanded by our plugin to:
 The <a href="/cross-ref.html#bash">GNU bash shell</a>
 ```
 
+If the argument is omitted, then the anchor text is used.  For example,
+
+```
+<a href="$xref">bash</a>
+```
+
+becomes:
+
+```
+The <a href="/cross-ref.html#bash">bash</a>
+```
+
 List of plugins:
 
 - `$xref:bash` expands to `/cross-ref.html#bash` (shown above)
 - `$blog-tag:oil-release` expands to `/blog/tags.html#oil-release`
 
 
+[bash]($xref)
+
+[oil-release]($blog-tag)
+
 [INSTALL.txt]($oil-src)
 
 [INSTALL.txt]($oil-src:INSTALL.txt)
 
 [interactive-shell/README.md]($blog-code-src)
+
+[issue 11]($issue:11)
+
+[this commit]($oil-commit:a1dad10d53b1fb94a164888d9ec277249ae98b58)
 
 ### Syntax Highlighting
 

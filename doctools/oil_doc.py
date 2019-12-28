@@ -14,72 +14,8 @@ from lazylex import html
 log = html.log
 
 
-_REPLACEMENTS = [
-  # NOTE: These could be smarter and not require repetition.
-  # instead of [bash]($xref:bash) it could be [bash]($xref)
-  # posts tagged #[oil-release]($blog-tag)
-  #
-  # pattern: if there's no arg, then use the anchor text as the arg.
-  # - works for tags and paths
-  # - could be smarter about [issue #11]($issue:11)
-  #   - but that's OK, not a problem for now
-
-  ('$xref:', '/cross-ref.html?tag=%(value)s#%(value)s'),
-  ('$blog-tag:', '/blog/tags.html?tag=%(value)s#%(value)s'),
-
-  ('$oil-src:', 'https://github.com/oilshell/oil/blob/master/%(value)s'),
-  ('$blog-code-src:', 'https://github.com/oilshell/blog-code/blob/master/%(value)s'),
-
-  ('$oil-commit:', 'https://github.com/oilshell/blog-code/blob/master/%(value)s'),
-  ('$oil-issue:', 'https://github.com/oilshell/oil/issues/%(value)s'),
-]
-
-
-def ExpandLinks(s):
-  """
-  Expand $xref:bash and so forth
-  """
-  f = cStringIO.StringIO()
-  out = html.Output(s, f)
-
-  tag_lexer = html.TagLexer(s)
-
-  start_pos = 0
-  for tok_id, end_pos in html.Tokens(s):
-    if tok_id ==  html.StartTag:
-
-      tag_lexer.Reset(start_pos, end_pos)
-      if tag_lexer.TagName() == 'a':
-        href_start, href_end = tag_lexer.GetSpanForAttrValue('href')
-        if href_start == -1:
-          continue
-
-        # TODO: Need to unescape like GetAttr()
-        href = s[href_start : href_end]
-
-        new = None
-        for prefix, fmt in _REPLACEMENTS:
-          if href.startswith(prefix):
-            value = href[len(prefix):]
-            new = fmt % {'value': value}
-            break
-
-        if new is not None:
-          out.PrintUntil(href_start)
-          f.write(cgi.escape(new))
-          out.SkipTo(href_end)
-
-    elif tok_id == html.Invalid:
-      raise html.LexError(s, start_pos)
-
-    start_pos = end_pos
-
-  out.PrintTheRest()
-
-  return f.getvalue()
-
-
 def _ReadUntilClosingTag(s, it, tag_name):
+  """Find the next </foo>."""
   tag_lexer = html.TagLexer(s)
 
   start_pos = 0
@@ -95,6 +31,92 @@ def _ReadUntilClosingTag(s, it, tag_name):
     start_pos = end_pos
 
   raise RuntimeError('No closing tag %r' % tag_name)
+
+
+class _Abbrev(object):
+  def __init__(self, fmt):
+    self.fmt = fmt
+
+  def __call__(self, value):
+    return self.fmt % {'value': value}
+
+
+_ABBREVIATIONS = {
+  'xref':
+      _Abbrev('/cross-ref.html?tag=%(value)s#%(value)s'),
+  'blog-tag':
+      _Abbrev('/blog/tags.html?tag=%(value)s#%(value)s'),
+  'oil-commit':
+      _Abbrev('https://github.com/oilshell/oil/commit/%(value)s'),
+  'oil-src':
+      _Abbrev('https://github.com/oilshell/oil/blob/master/%(value)s'),
+  'blog-code-src':
+      _Abbrev('https://github.com/oilshell/blog-code/blob/master/%(value)s'),
+  'issue':
+      _Abbrev('https://github.com/oilshell/oil/issues/%(value)s'),
+}
+
+# $xref:foo
+_SHORTCUT_RE = re.compile(r'\$ ([a-z\-]+) (?: : (\S+))?', re.VERBOSE)
+
+
+def ExpandLinks(s):
+  """
+  Expand $xref:bash and so forth
+  """
+  f = cStringIO.StringIO()
+  out = html.Output(s, f)
+
+  tag_lexer = html.TagLexer(s)
+
+  start_pos = 0
+
+  it = html.Tokens(s)
+  while True:
+    try:
+      tok_id, end_pos = next(it)
+    except StopIteration:
+      break
+
+    if tok_id ==  html.StartTag:
+
+      tag_lexer.Reset(start_pos, end_pos)
+      if tag_lexer.TagName() == 'a':
+        open_tag_right = end_pos
+
+        href_start, href_end = tag_lexer.GetSpanForAttrValue('href')
+        if href_start == -1:
+          continue
+
+        # TODO: Need to unescape like GetAttr()
+        href = s[href_start : href_end]
+
+        new = None
+        m = _SHORTCUT_RE.match(href)
+        if m:
+          kind, value = m.groups()
+          if not value:
+            close_tag_left, _ = _ReadUntilClosingTag(s, it, 'a')
+            value = s[open_tag_right : close_tag_left]
+
+          func = _ABBREVIATIONS.get(kind)
+          if not func:
+            raise RuntimeError('Invalid abbreviation %r', href)
+          new = func(value)
+
+        if new is not None:
+          out.PrintUntil(href_start)
+          f.write(cgi.escape(new))
+          out.SkipTo(href_end)
+
+    elif tok_id == html.Invalid:
+      raise html.LexError(s, start_pos)
+
+    start_pos = end_pos
+
+  out.PrintTheRest()
+
+  return f.getvalue()
 
 
 # Optional newline at end

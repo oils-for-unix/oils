@@ -109,7 +109,7 @@ Oil is implemented with DSLs and metaprogramming, for "leverage".
     pgen2/            # Parser Generator, borrowed from CPython
     mycpp/            # Experimental translator from typed Python to C++.
                       # Depends on MyPy.
-    opy/              # Python compiler in Python
+    opy/              # Python compiler in Python (mycpp/ will replace it)
       lib/            # Common code
       compiler2/      # Bytecode compiler
       byterun/        # Metacircular bytecode VM in Python
@@ -150,6 +150,7 @@ shell, of course!
                       # moved to tests/ if automated.
     misc/             # A junk drawer
     web/              # HTML/JS/CSS for tests and tools
+    lazylex/          # An HTML lexer which doctools/ builds upon.
 
 ### Temp Dirs
 
@@ -195,6 +196,7 @@ This is very different than the **developer build** of Oil.
 ### Doc Sources
 
     doc/              # A mix of docs
+    doctools/         # Tools that use lazylex/ to transform Markdown/HTML
     README.md         # This page, which is For Oil developers
 
     LICENSE.txt       # For end users
