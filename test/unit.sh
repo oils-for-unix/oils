@@ -43,13 +43,23 @@ banner() {
   echo -----
 }
 
+readonly -a UNIT_TESTS=( {asdl,build,core,doctools,frontend,lazylex,mycpp,native,oil_lang,osh,pylib,test,tools}/*_test.py )
+
 tests-to-run() {
+  local minimal=${1:-}
+
   # TODO: Add doctools which libcmark*.so is automated
-  for t in {asdl,build,core,frontend,lazylex,mycpp,native,oil_lang,osh,pylib,test,tools}/*_test.py; do
+  for t in "${UNIT_TESTS[@]}"; do
     # For Travis after build/dev.sh minimal: if we didn't build fastlex.so,
     # then skip a unit test that will fail.
-    if test $t = 'native/fastlex_test.py' && ! test -e 'fastlex.so'; then
-      continue
+
+    if test -n "$minimal"; then
+      if test $t = 'native/fastlex_test.py' && ! test -e 'fastlex.so'; then
+        continue
+      fi
+      if test $t = 'doctools/cmark_test.py' && ! test -e 'cmark.so'; then
+        continue
+      fi
     fi
 
     echo $t
@@ -73,9 +83,13 @@ run-test-and-maybe-abort() {
 all() {
   # For testing
   #export FASTLEX=0
-  time tests-to-run | xargs -n 1 -- $0 run-test-and-maybe-abort
+  time tests-to-run "$@" | xargs -n 1 -- $0 run-test-and-maybe-abort
   echo
   echo "All unit tests passed."
+}
+
+all-for-minimal() {
+  all minimal
 }
 
 # Run all unit tests in one process.
