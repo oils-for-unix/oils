@@ -4,16 +4,33 @@ Lazy, Lossless Lexing Libraries
 Right now we're using this Python code to process HTML in Oil docs.  Logically,
 the doc pipeline looks like:
 
-    Hand-written Markdown with embedded HTML --> cmark (CommonMark) -->
-    HTML --> filter using lazy lexing -->
-    HTML --> filter using lazy lexing -->
-    ...
-    Final HTML
+<style>
+ .pipeline-data {
+   color: darkblue;
+ }
+</style>
+
+<div style="text-align: center">
+
+<span class="pipeline-data">Hand-written Markdown with embedded HTML</span> <br/>
+&rarr; CommonMark renderer &rarr; <br/>
+<span class="pipeline-data">HTML</span> <br/>
+&rarr; Filter with lazy lexing &rarr; <br/>
+<span class="pipeline-data">HTML</span> <br/>
+&rarr; Filter with lazy lexing &rarr; <br/>
+<span class="pipeline-data">HTML</span> <br/>
+<br/>
+*(repeat N times)* <br/>
+<br/>
+<span class="pipeline-data">Final HTML</span> <br/>
+
+</div>
 
 Eventually it would be nice to expand this API design to more formats and make
 it available to Oil language users.
 
-Another possible name: "tagged streams".
+<div id="toc">
+</div>
 
 ## Why?
 
@@ -25,7 +42,9 @@ Another possible name: "tagged streams".
   - We get an iterator of events/spans
 - A layer to build a "lossless syntax tree" on top of.
 
-## HTML
+## Formats
+
+### HTML
 
 HTML has two levels:
 
@@ -33,13 +52,13 @@ HTML has two levels:
    instructions
 2. The `name="value"` attributes inside start tags (and self-closing tags)
 
-## TSV2
+### TSV2
 
 - This format is **designed** to be read line-by-line (unlike CSV).
 - You can skip to any column, and optionally decode the field into an Bool,
   Int, Float, or Str.
 
-## JSON
+### JSON
 
 - py-yajl is event-based, but not lazy.  And it's a parser, not a lexer.
 - We could LEX `{}` and `[] and `""` `\` in the first step.  This is lexing and
@@ -59,11 +78,13 @@ HTML has two levels:
   allocation; we're not avoiding branches or using SIMD!  We also aim to
   transform the underlying data, not just parse it.)
 
-[simdjson]: https://branchfree.org/2019/02/25/paper-parsing-gigabytes-of-json-per-second/=
+[simdjson]: https://branchfree.org/2019/02/25/paper-parsing-gigabytes-of-json-per-second/
 
 [pulldown-cmark]: https://github.com/raphlinus/pulldown-cmark
 
-## Lessons/Claims
+## Design Notes
+
+### Lessons/Claims
 
 - You can parse HTML quickly and correctly with regexes!  It has a simple
   syntax that's almost designed for this.
@@ -93,6 +114,47 @@ HTML has two levels:
   - TODO: Convert to re2c to see how it does.  Need YYLIMIT.
 - TODO: Issue of non-greedy matches.
 - TODO: Issue of unquoting and quoting (escaping).
-- Open issue: Python generators (`yield`) make the code more natural, but
-  that's not possible in C or C++.  (C++20 has coroutines though.)
+- The triple backtick extension to Markdown (part of CommonMark) is useful.
+  - Although it should generate arbitrary `<div name="val">` instead.  This
+    allow natural plugins.  You can write `<div>` in Markdown, but it's
+    annoying to manually escape `<` to `&gt;`, e.g. in graphviz or TeX.
+  HTML is analgous to shell.  A web site is a directory tree of text files!
+  - It's better than the Snip `-->` syntax, which didn't play well with syntax
+    highlighting.
+- Composable grammars: Is this the basis for Pulp?
+
+### Open Problems
+
+- Python generators (`yield`) make the code more natural, but that's not
+  possible in C or C++.  (C++20 has coroutines though.)
+  - Could write a compiler?  Would be an excuse to clean up the OPy or mycpp
+    ASTs.
+- Input handling in C/shell:
+  - Unlike Python's regex engine, libc `regexec()` doesnt have an `end_pos`,
+    requires `NUL` termination.
+  - We're also using `re2c` this way.  Can se use `YYLIMIT`?
+  - Simple solution: copy the subrange, or temporarily mutate the buffer (would
+    cause copy-on-write)
+  - Is there a zero-copytehre a 
+
+### Comparisons
+
+- mdbook (in Rust, using [pulldown-cmark][]).  Has Rust plugins.
+- pandoc.  Supports many formats, not just HTML.  Has plugins that take an AST
+  in JSON.  The AST represents pandoc-flavored Markdown.  pandoc differs from
+  Markdown in that it discourages HTML extensions.
+- ReStructuredText.  Sphinx has plugins.
+  - https://www.sphinx-doc.org/en/master/usage/extensions/index.html
+- XML Starlet (dormant, understands XPath and CSS Starlet)
+- R's Sweave?
+  - bookdown?
+- Jupyter notebooks have code and data.  Do they have plugins?
+- Are there tools in node.js?
+  - https://stackoverflow.com/questions/6657216/why-doesnt-node-js-have-a-native-dom
+  - jsdom?
+
+## To Build On Top
+
+- CSS selectors
+- DOM
 

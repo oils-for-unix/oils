@@ -60,7 +60,7 @@ _make-help() {
 
 cmark() {
   # h2 and h3 are shown in TOC.  The blog uses "legacy" h3 and h4.
-  devtools/cmark.py --toc-tag h2 --toc-tag h3 --toc-pretty-href "$@"
+  PYTHONPATH=. devtools/cmark.py --toc-tag h2 --toc-tag h3 --toc-pretty-href "$@"
 }
 
 readonly MARKDOWN_DOCS=(

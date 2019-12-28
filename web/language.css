@@ -1,0 +1,10 @@
+/* For syntax highlighting ``` blocks */
+
+.sh-prompt {
+  font-weight: bold;
+}
+
+.sh-command {
+  font-weight: bold;
+  color: darkgreen;
+}

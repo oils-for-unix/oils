@@ -177,7 +177,7 @@ def HighlightCode(s):
               code_lexer = PromptLexer(s, code_start_pos, code_end_pos)
               code_lexer.PrintHighlighted(out)
             else:
-              raise RuntimeError('Unknown language %r' % language)
+              raise RuntimeError('Unknown language %r' % css_class)
 
             # We're not writing this
             out.SkipTo(code_end_pos)

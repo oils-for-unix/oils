@@ -61,8 +61,9 @@ class Output(object):
 
 ( Decl, Comment, Processing,
   StartTag, StartEndTag, EndTag,
-  EntityRef, RawData,
-  Invalid, EndOfStream ) = range(10)
+  DecChar, HexChar, CharEntity,
+  RawData,
+  Invalid, EndOfStream ) = range(12)
 
 
 def _MakeLexer(rules):
@@ -114,12 +115,9 @@ LEXER = [
   (r'< [^>]+ />', StartEndTag),        # end </a>
   (r'< [^>]+  >', StartTag), # start <a>
 
-  # TODO: Make this more precise
-  #(r'&[0-9]+;', DecChar),
-  #(r'&x[0-9a-fA-F]+;', HexChar),
-  #(r'&[a-zA-Z];', CharEntity),
-
-  (r'&.*?;', EntityRef),
+  (r'&# [0-9]+ ;', DecChar),
+  (r'&# x[0-9a-fA-F]+ ;', HexChar),
+  (r'& [a-zA-Z]+ ;', CharEntity),
 
   # Exclude > for validation
   (r'[^&<>]+', RawData),
