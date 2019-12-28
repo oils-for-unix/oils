@@ -72,6 +72,8 @@ readonly MARKDOWN_DOCS=(
   errexit
   json
 
+  doc-toolchain
+
   # needs polish
   # Note: docs about the Oil language are prefixed 'oil-'.
   # data-model and command-vs-expression-mode span both OSH and Oil.
@@ -167,6 +169,8 @@ EOF
 special() {
   render-only 'README.md' '../web/manual.css ../web/toc.css' 'Oil Source Code'
   render-only 'INSTALL.txt' '../web/install.css' 'Installing Oil'
+
+  #
 
   split-and-render doc/release-index.md _tmp/release-index.html
 }

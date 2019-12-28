@@ -4,27 +4,17 @@ Lazy, Lossless Lexing Libraries
 Right now we're using this Python code to process HTML in Oil docs.  Logically,
 the doc pipeline looks like:
 
-<style>
- .pipeline-data {
-   color: darkblue;
- }
-</style>
-
-<div style="text-align: center">
-
-<span class="pipeline-data">Hand-written Markdown with embedded HTML</span> <br/>
+(Hand-written Markdown with embedded HTML) <br/>
 &rarr; CommonMark renderer &rarr; <br/>
-<span class="pipeline-data">HTML</span> <br/>
+(HTML) <br/>
 &rarr; Filter with lazy lexing &rarr; <br/>
-<span class="pipeline-data">HTML</span> <br/>
+(HTML) <br/>
 &rarr; Filter with lazy lexing &rarr; <br/>
-<span class="pipeline-data">HTML</span> <br/>
+(HTML) <br/>
 <br/>
-*(repeat N times)* <br/>
+*... repeat N times ...* <br/>
 <br/>
-<span class="pipeline-data">Final HTML</span> <br/>
-
-</div>
+(Final HTML) <br/>
 
 Eventually it would be nice to expand this API design to more formats and make
 it available to Oil language users.

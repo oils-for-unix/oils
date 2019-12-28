@@ -1,0 +1,108 @@
+---
+in_progress: yes
+---
+
+Oil Documentation Toolchain
+===========================
+
+The toolchain is based on hand-written Markdown and HTML filters.  See
+[lazylex/README.md]().
+
+<div id="toc">
+</div>
+
+## Plugins
+
+### Link Shortcuts
+
+This markdown:
+
+```
+The [GNU bash shell]($xref:bash)
+```
+
+is translated to this HTML:
+
+```
+The <a href="$xref:bash">GNU bash shell</a>
+```
+
+which is expanded by our plugin to:
+
+```
+The <a href="/cross-ref.html#bash">GNU bash shell</a>
+```
+
+List of plugins:
+
+- `$xref:bash` expands to `/cross-ref.html#bash` (shown above)
+- `$blog-tag:oil-release` expands to `/blog/tags.html#oil-release`
+
+
+[INSTALL.txt]($oil-src)
+
+[INSTALL.txt]($oil-src:INSTALL.txt)
+
+[interactive-shell/README.md]($blog-code-src)
+
+### Syntax Highlighting
+
+
+Plugins:
+
+`sh-prompt`:
+
+``` sh-prompt
+$ echo 'hello world'
+hello world
+```
+
+`python`:
+
+``` python
+x = 42  # comment
+
+def add(y):
+  return x + y
+
+print(add(x * 7))
+```
+
+
+### TODO:
+
+- Side-by-side sh and Oil
+- Side-by-side PCRE and Eggex
+- sh-session - How to replace the data?
+
+
+A shell session could look like this:
+
+<div shell="sh">
+
+```
+$ echo one
+$ echo two
+```
+
+</div>
+
+Embeddings:
+
+- Embed Image Preview of Web Page?
+- Embed Github Commit?
+- Graphviz
+  - LaTeX (although I don't really use it)
+
+
+## Help Toolchain
+
+- It splits `help-index.md` and `help.md` into "cards"
+- TODO: Render to ANSI
+
+## Code Location
+
+Right now there are several scripts in `devtools/*.py`.  And `build/doc.sh`.
+
+TODO: Move into `doc/`?
+

@@ -15,8 +15,23 @@ log = html.log
 
 
 _REPLACEMENTS = [
+  # NOTE: These could be smarter and not require repetition.
+  # instead of [bash]($xref:bash) it could be [bash]($xref)
+  # posts tagged #[oil-release]($blog-tag)
+  #
+  # pattern: if there's no arg, then use the anchor text as the arg.
+  # - works for tags and paths
+  # - could be smarter about [issue #11]($issue:11)
+  #   - but that's OK, not a problem for now
+
   ('$xref:', '/cross-ref.html?tag=%(value)s#%(value)s'),
   ('$blog-tag:', '/blog/tags.html?tag=%(value)s#%(value)s'),
+
+  ('$oil-src:', 'https://github.com/oilshell/oil/blob/master/%(value)s'),
+  ('$blog-code-src:', 'https://github.com/oilshell/blog-code/blob/master/%(value)s'),
+
+  ('$oil-commit:', 'https://github.com/oilshell/blog-code/blob/master/%(value)s'),
+  ('$oil-issue:', 'https://github.com/oilshell/oil/issues/%(value)s'),
 ]
 
 
@@ -75,7 +90,7 @@ def _ReadUntilClosingTag(s, it, tag_name):
       break
     tag_lexer.Reset(start_pos, end_pos)
     if tok_id == html.EndTag and tag_lexer.TagName() == tag_name:
-      return start_pos
+      return start_pos, end_pos
 
     start_pos = end_pos
 
@@ -128,6 +143,27 @@ class PromptLexer(object):
       pos = line_end
 
 
+class PygmentsPlugin(object):
+
+  def __init__(self, s, start_pos, end_pos, lang):
+    self.s = s
+    self.start_pos = start_pos
+    self.end_pos = end_pos
+    self.lang = lang
+
+  def PrintHighlighted(self, out):
+    from pygments import lexers
+    from pygments import formatters
+    from pygments import highlight
+
+    lexer = lexers.get_lexer_by_name(self.lang)
+
+    formatter = formatters.HtmlFormatter()
+    code = self.s[self.start_pos : self.end_pos]
+    highlighted = highlight(code, lexer, formatter)
+    out.Print(highlighted)
+
+
 def HighlightCode(s):
   """
   Algorithm:
@@ -155,6 +191,7 @@ def HighlightCode(s):
 
       tag_lexer.Reset(start_pos, end_pos)
       if tag_lexer.TagName() == 'pre':
+        pre_start_pos = start_pos
 
         start_pos = end_pos
         try:
@@ -168,19 +205,40 @@ def HighlightCode(s):
           css_class = tag_lexer.GetAttr('class')
           code_start_pos = end_pos
           if css_class is not None and css_class.startswith('language'):
-            # Print everything up to and including <pre><code language="...">
-            out.PrintUntil(code_start_pos)
 
-            code_end_pos = _ReadUntilClosingTag(s, it, 'code')
+            slash_code_left, slash_code_right = _ReadUntilClosingTag(s, it, 'code')
 
             if css_class == 'language-sh-prompt':
-              code_lexer = PromptLexer(s, code_start_pos, code_end_pos)
-              code_lexer.PrintHighlighted(out)
-            else:
-              raise RuntimeError('Unknown language %r' % css_class)
+              # Here's we're KEEPING the original <pre><code>
+              # Print everything up to and including <pre><code language="...">
+              out.PrintUntil(code_start_pos)
 
-            # We're not writing this
-            out.SkipTo(code_end_pos)
+              code_lexer = PromptLexer(s, code_start_pos, slash_code_left)
+              code_lexer.PrintHighlighted(out)
+
+              out.SkipTo(slash_code_left)
+            elif 1:
+              # Here's we're REMOVING the original <pre><code>
+              # Pygments gives you a <pre> already
+
+              # We just read closing </code>, and the next one should be </pre>.
+              try:
+                tok_id, end_pos = next(it)
+              except StopIteration:
+                break
+              tag_lexer.Reset(slash_code_right, end_pos)
+              assert tok_id == html.EndTag, tok_id
+              assert tag_lexer.TagName() == 'pre', tag_lexer.TagName()
+              slash_pre_right = end_pos
+
+              out.PrintUntil(pre_start_pos)
+
+              lang = css_class[len('language-'):]
+              code_lexer = PygmentsPlugin(s, code_start_pos, slash_code_left, lang)
+              code_lexer.PrintHighlighted(out)
+
+              out.SkipTo(slash_pre_right)
+              f.write('<!-- done pygments -->\n')
 
     elif tok_id == html.Invalid:
       raise RuntimeError(s[start_pos : end_pos])

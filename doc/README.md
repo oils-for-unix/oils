@@ -10,10 +10,11 @@ I build these with a wrapper around CommonMark.  Try:
 
 And then:
 
-    build/doc.sh manual
+    build/doc.sh all-markdown
 
 The output HTML shows up in `_release/VERSION/doc`.
 
+See [doc-toolchain.md]() for details.
 
 ## Man pages
 
