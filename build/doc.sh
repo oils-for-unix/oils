@@ -114,7 +114,7 @@ split-and-render() {
   devtools/split_doc.py \
     -v build_timestamp="$TIMESTAMP" \
     -v oil_version="$OIL_VERSION" \
-    -v css_files='../web/manual.css ../web/toc.css' \
+    -v css_files='../web/manual.css ../web/toc.css ../web/language.css ../web/code.css' \
     -v all_docs_url='.' \
     -v repo_url="$src" \
     $src $prefix

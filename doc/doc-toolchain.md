@@ -53,7 +53,8 @@ Plugins:
 `sh-prompt`:
 
 ``` sh-prompt
-$ echo 'hello world'
+oil$ var x = 'hello world'
+oil$ echo $x
 hello world
 ```
 
