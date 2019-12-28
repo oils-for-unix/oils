@@ -20,7 +20,7 @@ log() {
 }
 
 #
-# Deps (similar to devtools/cmark.sh and build/codegen.sh)
+# Deps (similar to doctools/cmark.sh and build/codegen.sh)
 #
 
 readonly MANDOC_DIR='_deps/mdocml-1.14.1'
@@ -55,12 +55,12 @@ _build-timestamp() {
 
 # Run with environment variable
 _make-help() {
-  devtools/make_help.py "$@"
+  doctools/make_help.py "$@"
 }
 
 cmark() {
   # h2 and h3 are shown in TOC.  The blog uses "legacy" h3 and h4.
-  PYTHONPATH=. devtools/cmark.py --toc-tag h2 --toc-tag h3 --toc-pretty-href "$@"
+  PYTHONPATH=. doctools/cmark.py --toc-tag h2 --toc-tag h3 --toc-pretty-href "$@"
 }
 
 readonly MARKDOWN_DOCS=(
@@ -111,7 +111,7 @@ split-and-render() {
   # css_files: a space-separated list
   # all_docs_url: so we link from doc/foo.html -> doc/
 
-  devtools/split_doc.py \
+  doctools/split_doc.py \
     -v build_timestamp="$TIMESTAMP" \
     -v oil_version="$OIL_VERSION" \
     -v css_files='../web/manual.css ../web/toc.css ../web/language.css ../web/code.css' \
@@ -252,13 +252,13 @@ hello
 
 EOF
 
-  devtools/split_doc.py _tmp/testdoc.md _tmp/testdoc
+  doctools/split_doc.py _tmp/testdoc.md _tmp/testdoc
 
   head _tmp/testdoc*
 }
 
 make-help-demo() {
-  devtools/make_help.py text-index <<EOF
+  doctools/make_help.py text-index <<EOF
 
 <h2 id="intro">Intro</h2>
 <pre class="help-index">
@@ -282,10 +282,10 @@ EOF
 # Generate an HTML page for the help index.  It has an extra step.
 help-index-html() {
   # TODO: split the doc
-  # Run through devtools/cmark.py?
+  # Run through doctools/cmark.py?
   # And then parse the <pre> sections?
 
-  #devtools/make_help.py html-index < doc/help-index.md
+  #doctools/make_help.py html-index < doc/help-index.md
 
   local tmp=_tmp/help-index.html
   split-and-render doc/help-index.md $tmp
@@ -293,7 +293,7 @@ help-index-html() {
   ls -l $tmp
 
   local out=_release/VERSION/doc/help-index.html
-  devtools/make_help.py html-index < $tmp > $out
+  doctools/make_help.py html-index < $tmp > $out
 
   ls -l $out
 }
@@ -307,20 +307,20 @@ help-index-text() {
   local out_dir=${1:-_devbuild/help}
 
   local py_out=$CODE_DIR/help_index.py
-  devtools/make_help.py text-index $out_dir $py_out < doc/help-index.md
+  doctools/make_help.py text-index $out_dir $py_out < doc/help-index.md
 }
 
 help-cards() {
   ### Do all cards at once
 
   # Pass the HTML.  This makes it easier to parse headings
-  #devtools/make_help.py cards \
+  #doctools/make_help.py cards \
   #  $HTML_DIR/doc/help.html $HTML_DIR/doc/help-index.html $TEXT_DIR
 
   local py_out=$CODE_DIR/help_.py
 
   # For now, the pass help markdown
-  devtools/make_help.py cards \
+  doctools/make_help.py cards \
     doc/help.md $HTML_DIR/doc/help-index.html $TEXT_DIR $py_out
 }
 

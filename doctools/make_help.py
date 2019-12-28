@@ -96,7 +96,7 @@ def log(msg, *args):
 
 
 def _StringToHref(s):
-  # lower case to match what devtools/cmark.py does
+  # lower case to match what doctools/cmark.py does
   return s.lower().replace(' ', '-')
 
 
@@ -598,7 +598,7 @@ def main(argv):
     #    split <h2></h2>
     # 2. Output a text file for each group, which appears in a <div>
     #
-    # The whole file is also processed by devtools/cmark.py.
+    # The whole file is also processed by doctools/cmark.py.
     # Or we might want to make a special HTML file?
 
     # names are <h2 id="intro">...</h2>
@@ -689,7 +689,7 @@ def main(argv):
     #   - how?  From beginning of <h4> until next <h> tag?
     # - assign it an ID for TOPIC_LOOKUP
     #   - either the prettified name, or or an explicit id=""
-    #   - like devtools/cmark.py
+    #   - like doctools/cmark.py
     # - then parse the HTML
     #   - turn <code></code> into INVERTED
     #   - turn <a> into UNDERLINE

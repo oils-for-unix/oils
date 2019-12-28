@@ -9,6 +9,8 @@ import unittest
 
 from lazylex import html  # module under test log = html.log 
 
+log = html.log
+
 with open('lazylex/testdata.html') as f:
   TEST_HTML = f.read()
 

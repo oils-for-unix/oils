@@ -14,8 +14,8 @@ import optparse
 import re
 import sys
 
-from devtools import html_lib
-from devtools import doc_html  # templates
+from doctools  import html_lib
+from doctools import doc_html  # templates
 from lazylex import oil_doc
 
 # Geez find_library returns the filename and not the path?  Just hardcode it as

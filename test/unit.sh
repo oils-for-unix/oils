@@ -44,8 +44,8 @@ banner() {
 }
 
 tests-to-run() {
-  # TODO: Add devtools which libcmark*.so is automated
-  for t in {build,test,native,asdl,core,oil_lang,osh,frontend,pylib,test,tools}/*_test.py; do
+  # TODO: Add doctools which libcmark*.so is automated
+  for t in {asdl,build,core,frontend,lazylex,mycpp,native,oil_lang,osh,pylib,test,tools}/*_test.py; do
     # For Travis after build/dev.sh minimal: if we didn't build fastlex.so,
     # then skip a unit test that will fail.
     if test $t = 'native/fastlex_test.py' && ! test -e 'fastlex.so'; then

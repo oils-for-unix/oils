@@ -36,13 +36,13 @@ demo-theirs() {
 }
 
 demo-ours() {
-  echo '*hi*' | devtools/cmark.py
+  echo '*hi*' | doctools/cmark.py
 
   # This translates to <code class="language-sh"> which is cool.
   #
   # We could do syntax highlighting in JavaScript, or simply post-process HTML
 
-  devtools/cmark.py <<'EOF'
+  doctools/cmark.py <<'EOF'
 ```sh
 code
 block
@@ -62,7 +62,7 @@ EOF
   # $oil-source-file
   # $oil-commit
 
-  devtools/cmark.py <<'EOF'
+  doctools/cmark.py <<'EOF'
 [click here]($cross-ref:re2c)
 EOF
 
@@ -70,7 +70,7 @@ EOF
   # to text, we would have to indent and insert blank lines?  I guess we can
   # parse <p> and wrap it.
 
-  devtools/cmark.py <<'EOF'
+  doctools/cmark.py <<'EOF'
 Test spacing out:
 
     echo one
