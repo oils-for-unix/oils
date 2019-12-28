@@ -328,8 +328,10 @@ all-help() {
   mkdir -p $TEXT_DIR
   rm -v -f $TEXT_DIR/*
 
-  help-index-html $HTML_DIR
-  log 'index text done'
+  if false; then
+    help-index-html $HTML_DIR
+    log 'help-index-html done'
+  fi
 
   split-and-render doc/help.md
 

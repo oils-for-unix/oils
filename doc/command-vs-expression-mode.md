@@ -114,16 +114,20 @@ Right I should have clarified – they don’t turn globbing back on. It’s jus
 
 It’s exactly like the difference between:
 
-    from glob import glob; glob('*.py')  # yes glob
-    os.listdir('*.py')  # no glob because it's not how listdir() works
+```python
+from glob import glob; glob('*.py')  # yes glob
+os.listdir('*.py')  # no glob because it's not how listdir() works
+```
 
 in Python. Single quoted strings in Oil are just like string literals in Python. Does that make sense?
 
 I’m not sure what you mean by myEcho? Both of these work in Oil just like they
 do in sh:
 
-    echo *
-    echo '*'
+```sh
+echo *
+echo '*'
+```
 
 Because you’ve never entered expression mode. You’re still in command mode.
 

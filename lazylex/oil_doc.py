@@ -70,7 +70,7 @@ def ExpandLinks(s):
           out.SkipTo(href_end)
 
     elif tok_id == html.Invalid:
-      raise RuntimeError(s[start_pos : end_pos])
+      raise html.LexError(s, start_pos)
 
     start_pos = end_pos
 
@@ -217,7 +217,12 @@ def HighlightCode(s):
               code_lexer.PrintHighlighted(out)
 
               out.SkipTo(slash_code_left)
-            elif 1:
+
+            elif css_class == 'language-oil':
+              # TODO: Write an Oil syntax highlighter.
+              pass
+
+            else:
               # Here's we're REMOVING the original <pre><code>
               # Pygments gives you a <pre> already
 
@@ -241,7 +246,7 @@ def HighlightCode(s):
               f.write('<!-- done pygments -->\n')
 
     elif tok_id == html.Invalid:
-      raise RuntimeError(s[start_pos : end_pos])
+      raise html.LexError(s, start_pos)
 
     start_pos = end_pos
 

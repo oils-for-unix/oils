@@ -27,6 +27,15 @@ def log(msg, *args):
   print(msg, file=sys.stderr)
 
 
+class LexError(Exception):
+  def __init__(self, s, pos):
+    self.s = s
+    self.pos = pos
+
+  def __str__(self):
+    return '(LexError %r)' % (self.s[self.pos : self.pos + 20])
+
+
 class Output(object):
   """
   Takes an underlying input buffer and an output file.  Maintains a position in
