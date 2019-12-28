@@ -6,7 +6,7 @@ from __future__ import print_function
 
 import unittest
 
-from lazylex import oil_doc  # module under test
+from doctools import oil_doc  # module under test
 
 
 with open('lazylex/testdata.html') as f:

@@ -16,7 +16,7 @@ import sys
 
 from doctools  import html_lib
 from doctools import doc_html  # templates
-from lazylex import oil_doc
+from doctools import oil_doc
 
 # Geez find_library returns the filename and not the path?  Just hardcode it as
 # a workaround.
