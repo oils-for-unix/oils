@@ -279,25 +279,6 @@ EOF
 # Help is both markdown and text
 #
 
-# Generate an HTML page for the help index.  It has an extra step.
-help-index-html() {
-  # TODO: split the doc
-  # Run through doctools/cmark.py?
-  # And then parse the <pre> sections?
-
-  #doctools/make_help.py html-index < doc/help-index.md
-
-  local tmp=_tmp/help-index.html
-  split-and-render doc/help-index.md $tmp
-
-  ls -l $tmp
-
-  local out=_release/VERSION/doc/help-index.html
-  doctools/make_help.py html-index < $tmp > $out
-
-  ls -l $out
-}
-
 readonly TEXT_DIR=_devbuild/help
 readonly HTML_DIR=_release/VERSION
 readonly CODE_DIR=_devbuild/gen
@@ -328,11 +309,7 @@ all-help() {
   mkdir -p $TEXT_DIR
   rm -v -f $TEXT_DIR/*
 
-  if false; then
-    help-index-html $HTML_DIR
-    log 'help-index-html done'
-  fi
-
+  split-and-render doc/help-index.md
   split-and-render doc/help.md
 
   help-index-text $TEXT_DIR $CODE_DIR

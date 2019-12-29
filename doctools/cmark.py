@@ -40,7 +40,7 @@ def log(msg, *args):
     msg = msg % args
 
   # Uncomment to debug
-  #print >>sys.stderr, msg
+  #print(msg, file=sys.stderr)
 
 
 CMARK_OPTS = 0 # defaults

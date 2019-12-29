@@ -61,7 +61,7 @@ an **unimplemented** feature.
   Command Language (<a class="group-link" href="help.html#command">command</a>)
 </h2>
 
-<pre class="help-index">
+```oil-help-index
   [Commands]      simple-command   semicolon ;
   [Conditional]   case   if   true   false   colon :
                   bang !   and &&   or ||   dbracket [[
@@ -77,7 +77,7 @@ an **unimplemented** feature.
   [Oil Keywords]  proc   func   return   do   pass   equal =
 X [Coil Keywords] const   try   catch   throw   switch   match
                   data   enum   module   interface   namespace
-</pre>
+```
 
 <h2 id="assign">
   Variable Assignments (<a class="group-link" href="help.html#assign">assign</a>)
@@ -137,7 +137,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
   Word Language (<a class="group-link" href="help.html#word">word</a>)
 </h2>
 
-<pre class="help-index">
+```oil-help-index
   [Quotes]        quotes        'abc'  $'\n'  "$var"
   [Substitutions] com-sub       $(command)   `command`
                   var-sub       ${var}   $0   $9   
@@ -153,7 +153,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
                   splice        @array @ARGV
                   X oil-printf  ${x %.3f}
                   X oil-format  ${x|html}
-</pre>
+```
 
 <h2 id="sublang">
   Other Shell Sublanguages (<a class="group-link" href="help.html#sublang">sublang</a>)
@@ -219,7 +219,7 @@ X [External Lang] BEGIN   END   when (awk)
   Shell Options (<a class="group-link" href="help.html#option">option</a>)
 </h2>
 
-<pre class="help-index">
+```oil-help-index
   [Errors]        nounset   pipefail   errexit   inherit_errexit
   [Globbing]      noglob   failglob   nullglob
   [Debugging]     xtrace   X verbose   X extdebug
@@ -261,7 +261,7 @@ X [External Lang] BEGIN   END   when (awk)
                   X no_old_syntax        [[   $(( ))  ${x%prefix}   $$
                                          $'\n'   @(*.sh|*.py)  `echo comsub`
                                          ${a[@]}
-</pre>
+```
 
 <h2 id="env">
   Environment Variables (<a class="group-link" href="help.html#env">env</a>)

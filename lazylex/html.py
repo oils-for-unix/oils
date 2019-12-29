@@ -118,6 +118,7 @@ LEXER = [
   (r'<!-- .*? -->', Comment),
   (r'<\? .*? \?>', Processing),
 
+  # NOTE: < is allowed in these.
   (r'<! [^>]+ >', Decl),  # <!DOCTYPE html>
 
   (r'</ [^>]+ >', EndTag),  # self-closing <br/>  comes FIRST
@@ -128,8 +129,9 @@ LEXER = [
   (r'&# x[0-9a-fA-F]+ ;', HexChar),
   (r'& [a-zA-Z]+ ;', CharEntity),
 
-  # Exclude > for validation
-  (r'[^&<>]+', RawData),
+  # Note: > is allowed in raw data.
+  # https://stackoverflow.com/questions/10462348/right-angle-bracket-in-html
+  (r'[^&<]+', RawData),
 
   (r'.', Invalid),  # error!
 ]

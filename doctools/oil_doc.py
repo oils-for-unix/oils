@@ -94,15 +94,15 @@ def ExpandLinks(s):
         new = None
         m = _SHORTCUT_RE.match(href)
         if m:
-          kind, value = m.groups()
-          if not value:
+          abbrev_name, arg = m.groups()
+          if not arg:
             close_tag_left, _ = _ReadUntilClosingTag(s, it, 'a')
-            value = s[open_tag_right : close_tag_left]
+            arg = s[open_tag_right : close_tag_left]
 
-          func = _ABBREVIATIONS.get(kind)
+          func = _ABBREVIATIONS.get(abbrev_name)
           if not func:
-            raise RuntimeError('Invalid abbreviation %r', href)
-          new = func(value)
+            raise RuntimeError('Invalid abbreviation %r' % abbrev_name)
+          new = func(arg)
 
         if new is not None:
           out.PrintUntil(href_start)
@@ -119,17 +119,7 @@ def ExpandLinks(s):
   return f.getvalue()
 
 
-# Optional newline at end
-_LINE_RE = re.compile(r'(.*) \n?', re.VERBOSE)
-
-# flush-left non-whitespace, then dollar and space is considered a prompt
-_PROMPT_LINE_RE = re.compile(r'(\S* \$)[ ](.*)', re.VERBOSE)
-
-
-class PromptLexer(object):
-  """
-  Highlight shell prompts.
-  """
+class _Plugin(object):
 
   def __init__(self, s, start_pos, end_pos):
     self.s = s
@@ -137,15 +127,37 @@ class PromptLexer(object):
     self.end_pos = end_pos
 
   def PrintHighlighted(self, out):
+    raise NotImplementedError()
+
+
+# Optional newline at end
+_LINE_RE = re.compile(r'(.*) \n?', re.VERBOSE)
+
+# flush-left non-whitespace, then dollar and space is considered a prompt
+_PROMPT_LINE_RE = re.compile(r'(\S* \$)[ ](.*)', re.VERBOSE)
+
+
+def Lines(s, start_pos, end_pos):
+  pos = start_pos
+  while pos < end_pos:
+    m = _LINE_RE.match(s, pos, end_pos)
+    if not m:
+      raise RuntimeError("Should have matched a line")
+    line_end = m.end(0)
+
+    yield line_end
+
+    pos = line_end
+
+
+class ShPromptPlugin(_Plugin):
+  """
+  Highlight shell prompts.
+  """
+
+  def PrintHighlighted(self, out):
     pos = self.start_pos
-    while pos < self.end_pos:
-      m = _LINE_RE.match(self.s, pos, self.end_pos)
-      if not m:
-        raise RuntimeError("Should have matched a line")
-      line_end = m.end(0)
-
-      #log('LINE %r', m.groups())
-
+    for line_end in Lines(self.s, self.start_pos, self.end_pos):
       m = _PROMPT_LINE_RE.match(self.s, pos, line_end)
       if m:
         #log('MATCH %r', m.groups())
@@ -165,12 +177,36 @@ class PromptLexer(object):
       pos = line_end
 
 
-class PygmentsPlugin(object):
+class HelpIndexPlugin(_Plugin):
+  """
+  Highlight shell prompts.
+  """
+  def PrintHighlighted(self, out):
+    from doctools import make_help
+
+    pos = self.start_pos
+    for line_end in Lines(self.s, self.start_pos, self.end_pos):
+      line = self.s[pos : line_end]
+
+      if line.startswith('  '):
+        html_line = make_help.HighlightLine(line)
+      elif line.startswith('X '):
+        html_line = make_help.RED_X + make_help.HighlightLine(line[2:])
+      else:
+        html_line = None
+
+      if html_line is not None:
+        out.PrintUntil(pos)
+        out.Print(html_line)
+        out.SkipTo(line_end)
+
+      pos = line_end
+
+
+class PygmentsPlugin(_Plugin):
 
   def __init__(self, s, start_pos, end_pos, lang):
-    self.s = s
-    self.start_pos = start_pos
-    self.end_pos = end_pos
+    _Plugin.__init__(self, s, start_pos, end_pos)
     self.lang = lang
 
   def PrintHighlighted(self, out):
@@ -190,7 +226,7 @@ def HighlightCode(s):
   """
   Algorithm:
   1. Collect what's inside <pre><code> ...
-  2. Then read lines with PromptLexer.
+  2. Then read lines with ShPromptPlugin.
   3. If the line looks like a shell prompt and command, highlight them with
      <span>
   """
@@ -222,7 +258,7 @@ def HighlightCode(s):
           break
 
         tag_lexer.Reset(start_pos, end_pos)
-        if tag_lexer.TagName() == 'code':
+        if tok_id == html.StartTag and tag_lexer.TagName() == 'code':
 
           css_class = tag_lexer.GetAttr('class')
           code_start_pos = end_pos
@@ -235,14 +271,23 @@ def HighlightCode(s):
               # Print everything up to and including <pre><code language="...">
               out.PrintUntil(code_start_pos)
 
-              code_lexer = PromptLexer(s, code_start_pos, slash_code_left)
-              code_lexer.PrintHighlighted(out)
+              plugin = ShPromptPlugin(s, code_start_pos, slash_code_left)
+              plugin.PrintHighlighted(out)
 
               out.SkipTo(slash_code_left)
 
             elif css_class == 'language-oil':
               # TODO: Write an Oil syntax highlighter.
               pass
+
+            elif css_class == 'language-oil-help-index':
+
+              out.PrintUntil(code_start_pos)
+
+              plugin = HelpIndexPlugin(s, code_start_pos, slash_code_left)
+              plugin.PrintHighlighted(out)
+
+              out.SkipTo(slash_code_left)
 
             else:
               # Here's we're REMOVING the original <pre><code>
@@ -261,8 +306,8 @@ def HighlightCode(s):
               out.PrintUntil(pre_start_pos)
 
               lang = css_class[len('language-'):]
-              code_lexer = PygmentsPlugin(s, code_start_pos, slash_code_left, lang)
-              code_lexer.PrintHighlighted(out)
+              plugin = PygmentsPlugin(s, code_start_pos, slash_code_left, lang)
+              plugin.PrintHighlighted(out)
 
               out.SkipTo(slash_pre_right)
               f.write('<!-- done pygments -->\n')

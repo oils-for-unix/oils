@@ -23,13 +23,9 @@ class MakeHelpTest(unittest.TestCase):
 
     # Do we need markup here?
 
+    line = '  [Overview] hello   there   X not-impl'
 
-    f = StringIO('''\
-INTRO
-  [Overview] hello   there   X not-impl
-''')
-
-    make_help.TableOfContents(f)
+    print(make_help.HighlightLine(line))
 
 
 if __name__ == '__main__':
