@@ -28,16 +28,17 @@ NOTE: For convenience we don't escape < > and & below, except in the case of
   - this should be turned GREEN?
 -->
 
-This is the online version of Oil's `help`.  Each help topic is linked below.
+This is the online version of Oil's `help`.  The linked help topics below are
+divided into groups and sections.
 
 For example, typing `help if` in the shell shows you how to use the `if`
-statement.  A link to this same rtext appears in the [`command`](#command)
-group below, under the `[Conditional]` section.
+statement.  A link to this same text appears in the [`command`](#command)
+**group** below, under the `[Conditional]` **section**.
 
-To view this page inside the shell itself, use:
+To view this index inside the shell, use:
 
     help index           # all 12 groups
-    help index GROUP...  # show one or more groups
+    help index GROUP+    # show one or more groups
 
 An <span style="color: darkred">X</span> next to a help topic means that it's
 an **unimplemented** feature.
@@ -50,12 +51,12 @@ an **unimplemented** feature.
   Overview (<a class="group-link" href="help.html#overview">overview</a>)
 </h2>
 
-<pre class="help-index">
+```oil-help-index
   [Usage]         bundle-usage   osh-usage   oil-usage   config   startup
                   line-editing   prompt
   [Lexing]        comments #   line-continuation \
   [Oil Lexing]    X single-command %%%   X docstring ###
-</pre>
+```
 
 <h2 id="command">
   Command Language (<a class="group-link" href="help.html#command">command</a>)
@@ -83,7 +84,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
   Variable Assignments (<a class="group-link" href="help.html#assign">assign</a>)
 </h2>
 
-<pre class="help-index">
+```oil-help-index
   [Operators]     assign        str='xyz'
                   append        str+='abc'
   [Compound Data] array         array=(a b c)   array[1]=B   "${a[@]}"
@@ -91,14 +92,14 @@ X [Coil Keywords] const   try   catch   throw   switch   match
   [Builtins]      local   readonly   export   unset   shift
                   declare   typeset   X let
   [Oil Keywords]  var   setvar   X auto
-</pre>
+```
 
 <h2 id="expr">
   Oil Expression Language (<a class="group-link" href="help.html#expr">expr</a>)
 </h2>
 
 <!-- note: <capture> is HTML escaped below -->
-<pre class="help-index">
+```oil-help-index
   [Data Types]    Str           r'\'   c'\n'   "$var"   X multiline r""" c'''
                   X Symbol      %foo
                   Null          null
@@ -131,7 +132,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
                   re-flags      ignorecase etc.
                   re-multiline  ///
                   re-glob-ops   ~   !~
-</pre>
+```
 
 <h2 id="word">
   Word Language (<a class="group-link" href="help.html#word">word</a>)
@@ -159,7 +160,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
   Other Shell Sublanguages (<a class="group-link" href="help.html#sublang">sublang</a>)
 </h2>
 
-<pre class="help-index">
+```oil-help-index
   [Arithmetic]    arith-context Where legacy arithmetic is allowed
                   num-literals  0xFF  0755  etc.
                   math          1 + 2*3
@@ -178,13 +179,13 @@ X [Coil Keywords] const   try   catch   throw   switch   match
                   regex         [[ foo =~ [a-z]+ ]]
   [Brace Expand]  braces        {alice,bob}@example.com
   [History]       histsub       !$  !!  !n
-</pre>
+```
 
 <h2 id="builtin">
   Builtin Commands (<a class="group-link" href="help.html#builtin">builtin</a>)
 </h2>
 
-<pre class="help-index">
+```oil-help-index
   [I/O]           read   echo 
                   X readarray   X mapfile
   [Run Code]      source .   eval   trap
@@ -213,7 +214,7 @@ X [Unsupported]   enable
                   X json   X tsv2
 X [External Lang] BEGIN   END   when (awk)
                   rule (make)   each (xargs)   fs (find)
-</pre>
+```
 
 <h2 id="option">
   Shell Options (<a class="group-link" href="help.html#option">option</a>)
@@ -267,18 +268,18 @@ X [External Lang] BEGIN   END   when (awk)
   Environment Variables (<a class="group-link" href="help.html#env">env</a>)
 </h2>
 
-<pre class="help-index">
+```oil-help-index
   [Shell Options] SHELLOPTS   X BASHOPTS
   [Other Env]     HOME   PATH   IFS
   [Oil Paths]     ?builtins   ?completion_plugins   ?coprocesses
-</pre>
+```
 
 
 <h2 id="special">
   Special Variables (<a class="group-link" href="help.html#special">special</a>)
 </h2>
 
-<pre class="help-index">
+```oil-help-index
   [POSIX Special] $@  $*  $#     $?  $-     $$  $!   $0  $9
   [Other Special] BASH_REMATCH   @PIPESTATUS
   [Oil Special]   ARGV   STATUS   M
@@ -296,25 +297,25 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
   [getopts]       OPTIND   OPTARG   X OPTERR
   [read]          REPLY   IFS
   [Functions]     X RANDOM   X SECONDS
-</pre>
+```
 
 <h2 id="plugin">
   Plugins and Hooks (<a class="group-link" href="help.html#plugin">plugin</a>)
 </h2>
 
-<pre class="help-index">
+```oil-help-index
   [Signals]       SIGTERM   X SIGINT   X SIGABRT   SIG...
   [Traps]         EXIT   X ERR   X DEBUG   X RETURN
   [Words]         PS1   X PS2   X PS3   PS4
   [Completion]    complete
   [Other Plugin]  X command_not_found   PROMPT_COMMAND
-</pre>
+```
 
 <h2 id="lib">
   Oil Libraries (<a class="group-link" href="help.html#lib">lib</a>)
 </h2>
 
-<pre class="help-index">
+```oil-help-index
   [Collections]   len()   min()   max()   any()   all()   tup()  
                   sorted()   reversed()
   [Iteration]     range()   enumerate()   zip()
@@ -330,7 +331,7 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
 X [Testing]       check
 X [Data Formats]  json   csv   tsv2   struct (binary)
 X [Hashing]       sha1   sha256 (etc.)
-</pre>
+```
 
 <!-- doesn't work? -->
 <!-- vim: set filetype=txt: -->

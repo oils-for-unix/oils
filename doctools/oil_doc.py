@@ -179,13 +179,16 @@ class ShPromptPlugin(_Plugin):
 
 class HelpIndexPlugin(_Plugin):
   """
-  Highlight shell prompts.
+  Highlight blocks of help-index.md.
   """
   def PrintHighlighted(self, out):
     from doctools import make_help
 
     pos = self.start_pos
     for line_end in Lines(self.s, self.start_pos, self.end_pos):
+
+      # NOTE: HighlightLine accepts an HTML ESCAPED line.  It's valid to just
+      # add tags and leave everything alone.
       line = self.s[pos : line_end]
 
       if line.startswith('  '):

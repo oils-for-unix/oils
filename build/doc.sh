@@ -284,7 +284,7 @@ readonly HTML_DIR=_release/VERSION
 readonly CODE_DIR=_devbuild/gen
 
 # NOTE: Should eventually take .html instead of .md
-help-index-text() {
+help-index-cards() {
   local out_dir=${1:-_devbuild/help}
 
   local py_out=$CODE_DIR/help_index.py
@@ -312,7 +312,7 @@ all-help() {
   split-and-render doc/help-index.md
   split-and-render doc/help.md
 
-  help-index-text $TEXT_DIR $CODE_DIR
+  help-index-cards $TEXT_DIR $CODE_DIR
   help-cards $HTML_DIR $TEXT_DIR
 
   # Better sorting
