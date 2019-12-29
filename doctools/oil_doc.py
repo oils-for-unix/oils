@@ -14,25 +14,6 @@ from lazylex import html
 log = html.log
 
 
-def _ReadUntilClosingTag(s, it, tag_name):
-  """Find the next </foo>."""
-  tag_lexer = html.TagLexer(s)
-
-  start_pos = 0
-  while True:
-    try:
-      tok_id, end_pos = next(it)
-    except StopIteration:
-      break
-    tag_lexer.Reset(start_pos, end_pos)
-    if tok_id == html.EndTag and tag_lexer.TagName() == tag_name:
-      return start_pos, end_pos
-
-    start_pos = end_pos
-
-  raise RuntimeError('No closing tag %r' % tag_name)
-
-
 class _Abbrev(object):
   def __init__(self, fmt):
     self.fmt = fmt
@@ -69,9 +50,9 @@ def ExpandLinks(s):
 
   tag_lexer = html.TagLexer(s)
 
-  start_pos = 0
+  pos = 0
 
-  it = html.Tokens(s)
+  it = html.ValidTokens(s)
   while True:
     try:
       tok_id, end_pos = next(it)
@@ -80,7 +61,7 @@ def ExpandLinks(s):
 
     if tok_id ==  html.StartTag:
 
-      tag_lexer.Reset(start_pos, end_pos)
+      tag_lexer.Reset(pos, end_pos)
       if tag_lexer.TagName() == 'a':
         open_tag_right = end_pos
 
@@ -96,7 +77,7 @@ def ExpandLinks(s):
         if m:
           abbrev_name, arg = m.groups()
           if not arg:
-            close_tag_left, _ = _ReadUntilClosingTag(s, it, 'a')
+            close_tag_left, _ = html.ReadUntilEndTag(it, tag_lexer, 'a')
             arg = s[open_tag_right : close_tag_left]
 
           func = _ABBREVIATIONS.get(abbrev_name)
@@ -109,10 +90,7 @@ def ExpandLinks(s):
           f.write(cgi.escape(new))
           out.SkipTo(href_end)
 
-    elif tok_id == html.Invalid:
-      raise html.LexError(s, start_pos)
-
-    start_pos = end_pos
+    pos = end_pos
 
   out.PrintTheRest()
 
@@ -238,9 +216,9 @@ def HighlightCode(s):
 
   tag_lexer = html.TagLexer(s)
 
-  start_pos = 0
+  pos = 0
 
-  it = html.Tokens(s)
+  it = html.ValidTokens(s)
 
   while True:
     try:
@@ -250,24 +228,25 @@ def HighlightCode(s):
 
     if tok_id == html.StartTag:
 
-      tag_lexer.Reset(start_pos, end_pos)
+      tag_lexer.Reset(pos, end_pos)
       if tag_lexer.TagName() == 'pre':
-        pre_start_pos = start_pos
+        pre_start_pos = pos
+        pos = end_pos
 
-        start_pos = end_pos
         try:
           tok_id, end_pos = next(it)
         except StopIteration:
           break
 
-        tag_lexer.Reset(start_pos, end_pos)
+        tag_lexer.Reset(pos, end_pos)
         if tok_id == html.StartTag and tag_lexer.TagName() == 'code':
 
           css_class = tag_lexer.GetAttr('class')
           code_start_pos = end_pos
           if css_class is not None and css_class.startswith('language'):
 
-            slash_code_left, slash_code_right = _ReadUntilClosingTag(s, it, 'code')
+            slash_code_left, slash_code_right = \
+                html.ReadUntilEndTag(it, tag_lexer, 'code')
 
             if css_class == 'language-sh-prompt':
               # Here's we're KEEPING the original <pre><code>
@@ -315,10 +294,7 @@ def HighlightCode(s):
               out.SkipTo(slash_pre_right)
               f.write('<!-- done pygments -->\n')
 
-    elif tok_id == html.Invalid:
-      raise html.LexError(s, start_pos)
-
-    start_pos = end_pos
+    pos = end_pos
 
   out.PrintTheRest()
 

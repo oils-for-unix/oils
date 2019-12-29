@@ -1,20 +1,11 @@
 #!/usr/bin/env python2
 """
-pulp.py - Low-Level HTML Processing.
+lazylex/html.py - Low-Level HTML Processing.
+
+See lazylex/README.md for details.
 
 TODO: This should be an Oil library eventually.  It's a "lazily-parsed data
 structure" like TSV2.
-
-In theory JSON could do use this?
-
-Features:
-
-1. Syntax errors with locations
-2. Lazy Parsing
-   note: how does the Oil language support that?  Maybe at the C API level?
-3. Lossless Syntax Tree
-   - enables 'sed' like behavior
-
 """
 from __future__ import print_function
 
@@ -28,12 +19,25 @@ def log(msg, *args):
 
 
 class LexError(Exception):
+  """For bad lexical elements like <> or && """
+
   def __init__(self, s, pos):
     self.s = s
     self.pos = pos
 
   def __str__(self):
     return '(LexError %r)' % (self.s[self.pos : self.pos + 20])
+
+
+class ParseError(Exception):
+  """For errors in the tag structure."""
+
+  def __init__(self, msg, *args):
+    self.msg = msg
+    self.args = args
+
+  def __str__(self):
+    return '(ParseError %s)' % (self.msg % self.args)
 
 
 class Output(object):
@@ -68,6 +72,7 @@ class Output(object):
     self.f.write(s)
 
 
+# HTML Tokens
 ( Decl, Comment, Processing,
   StartTag, StartEndTag, EndTag,
   DecChar, HexChar, CharEntity,
@@ -125,8 +130,8 @@ LEXER = [
   (r'< [^>]+ />', StartEndTag),        # end </a>
   (r'< [^>]+  >', StartTag), # start <a>
 
-  (r'&# [0-9]+ ;', DecChar),
-  (r'&# x[0-9a-fA-F]+ ;', HexChar),
+  (r'&\# [0-9]+ ;', DecChar),
+  (r'&\# x[0-9a-fA-F]+ ;', HexChar),
   (r'& [a-zA-Z]+ ;', CharEntity),
 
   # Note: > is allowed in raw data.
@@ -161,8 +166,24 @@ def Tokens(s):
   yield EndOfStream, pos
 
 
+def ValidTokens(s):
+  """
+  Wrapper around Tokens to prevent callers from having to handle Invalid.
+
+  I'm not combining the two functions because I might want to do a 'yield'
+  transformation on Tokens9)?  Exceptions might complicate the issue?
+  """
+  pos = 0
+  for tok_id, end_pos in Tokens(s):
+    if tok_id == Invalid:
+      raise LexError(s, pos)
+    yield tok_id, end_pos
+    pos = end_pos
+
+
 # To match <a  or </a
-_TAG_RE = re.compile(r'/? \s* ([a-zA-Z]+)', re.VERBOSE)
+# <h2 but not <2h ?
+_TAG_RE = re.compile(r'/? \s* ([a-zA-Z][a-zA-Z0-9]*)', re.VERBOSE)
 
 # To match href="foo"
 
@@ -281,3 +302,43 @@ class TagLexer(object):
 
       # Skip past the "
       pos = m.end(0)
+
+
+def ReadUntilStartTag(it, tag_lexer, tag_name):
+  """Find the next <foo>.
+
+  tag_lexer is RESET.
+  """
+  pos = 0
+  while True:
+    try:
+      tok_id, end_pos = next(it)
+    except StopIteration:
+      break
+    tag_lexer.Reset(pos, end_pos)
+    if tok_id == StartTag and tag_lexer.TagName() == tag_name:
+      return pos, end_pos
+
+    pos = end_pos
+
+  raise ParseError('No start tag %r', tag_name)
+
+
+def ReadUntilEndTag(it, tag_lexer, tag_name):
+  """Find the next </foo>.
+
+  tag_lexer is RESET.
+  """
+  pos = 0
+  while True:
+    try:
+      tok_id, end_pos = next(it)
+    except StopIteration:
+      break
+    tag_lexer.Reset(pos, end_pos)
+    if tok_id == EndTag and tag_lexer.TagName() == tag_name:
+      return pos, end_pos
+
+    pos = end_pos
+
+  raise ParseError('No end tag %r', tag_name)

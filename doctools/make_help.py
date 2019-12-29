@@ -45,14 +45,15 @@ TODO:
 https://bugs.python.org/issue25258
 """
 
-import cgi
+import cStringIO
 import HTMLParser
 import os
 import pprint
 import re
 import sys
 
-import html_lib
+from doctools import html_lib
+from lazylex import html
 
 # e.g. COMMAND LANGUAGE
 CAPS_RE = re.compile(r'^[A-Z ]+$')
@@ -288,43 +289,124 @@ def SplitIntoCards(heading_tags, contents):
   log('Parsed %d parts', len(groups))
 
 
+def IndexGroupToText(group_text):
+  """
+  TODO:
+
+  - Red X
+  - Blue Link (not clickable, but still useful)
+  """
+  f = cStringIO.StringIO()
+  out = html.Output(group_text, f)
+
+  pos = 0
+  for tok_id, end_pos in html.ValidTokens(group_text):
+    if tok_id == html.RawData:
+      out.SkipTo(pos)
+      out.PrintUntil(end_pos)
+
+    elif tok_id == html.CharEntity:  # &amp;
+
+      entity = group_text[pos+1 : end_pos-1]
+
+      out.SkipTo(pos)
+      out.Print(HTML_REFS[entity])
+      out.SkipTo(end_pos)
+
+    # Not handling these yet
+    elif tok_id == html.HexChar:
+      raise AssertionError('Hex Char %r' % group_text[pos : pos + 20])
+
+    elif tok_id == html.DecChar:
+      raise AssertionError('Dec Char %r' % group_text[pos : pos + 20])
+
+    pos = end_pos
+
+  out.PrintTheRest()
+  return f.getvalue()
+
+
+def HelpIndexCards(s):
+  tag_lexer = html.TagLexer(s)
+
+  pos = 0
+
+  it = html.ValidTokens(s)
+  while True:
+    try:
+      tok_id, end_pos = next(it)
+    except StopIteration:
+      break
+
+    if tok_id == html.StartTag:
+      tag_lexer.Reset(pos, end_pos)
+      #log('%r', tag_lexer.TagString())
+      #log('%r', tag_lexer.TagName())
+
+      # Capture <h2 id="foo"> first
+      if tag_lexer.TagName() == 'h2':
+        h2_start_right = end_pos
+
+        open_tag_right = end_pos
+        group_topic_id = tag_lexer.GetAttr('id')
+        assert group_topic_id, 'Expected id= in %r' % tag_lexer.TagString()
+
+        #log('group_topic_id = %r', group_topic_id)
+        h2_end_left, _ = html.ReadUntilEndTag(it, tag_lexer, 'h2')
+
+        anchor_html = s[h2_start_right : h2_end_left]
+        #log('anchor = %r', anchor_html)
+
+        paren_pos = anchor_html.find('(')
+        assert paren_pos != -1, anchor_html
+
+        group_name = anchor_html[: paren_pos].strip()
+
+        #log('anchor = %r', group_name)
+        #log('')
+
+        # Now find the <code></code> span
+        _, code_start_right = html.ReadUntilStartTag(it, tag_lexer, 'code')
+        css_class = tag_lexer.GetAttr('class') 
+        assert css_class == 'language-oil-help-index', tag_lexer.TagString()
+
+        code_end_left, _ = html.ReadUntilEndTag(it, tag_lexer, 'code')
+
+        group_text = s[code_start_right : code_end_left]
+        yield group_topic_id, group_name, IndexGroupToText(group_text)
+
+    pos = end_pos
+
+
 def main(argv):
   action = argv[1]
 
-  if action == 'text-index':
-    # Make text for the app bundle.  HTML is made by build/doc.sh
-
-    # 1. Read help-index.md
-    #    split <h2></h2>
-    # 2. Output a text file for each group, which appears in a <div>
-    #
-    # The whole file is also processed by doctools/cmark.py.
-    # Or we might want to make a special HTML file?
-
-    # names are <h2 id="intro">...</h2>
-
-    # TODO: title needs to be centered in text?
+  if action == 'cards-for-index':
+    # Extract sections from help-index.HTML and make them into "cards".
 
     out_dir = argv[2]
     py_out = argv[3]
 
     groups = []
-    for tag, topic_id, heading, text in SplitIntoCards(['h2'], sys.stdin.read()):
-      log('topic_id = %r', topic_id)
-      log('heading = %r', heading)
+
+    for group_id, group_desc, text in HelpIndexCards(sys.stdin.read()):
+      log('group_id = %r', group_id)
+      log('group_desc = %r', group_desc)
       #log('text = %r', text)
 
       # indices start with _
-      path = os.path.join(out_dir, '_' + topic_id)
+      path = os.path.join(out_dir, '_' + group_id)
       with open(path, 'w') as f:
-        f.write('%s %s %s\n\n' % (_REVERSE, heading, _RESET))
+        f.write('%s %s %s\n\n' % (_REVERSE, group_desc, _RESET))
         f.write(text)
       log('Wrote %s', path)
 
-      groups.append(topic_id)
+      groups.append(group_id)
 
     with open(py_out, 'w') as f:
       f.write('GROUPS = %s\n' % pprint.pformat(groups))
+    log('')
+    log('Wrote %s', py_out)
 
   elif action == 'cards':
     # Split help into cards.

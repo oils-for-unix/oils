@@ -9,23 +9,23 @@ Oil Help Topics
 <!--
 IMPORTANT: This doc is processed in TWO WAYS.  BE CAREFUL WHEN EDITING.
 
-To generate HTML:
-- split_doc.py and then 'make_help.py html-index' to add links.
+- First by doctools/{split_doc,cmark}.py to create HTML.
+  - <pre><code class="language-oil-help-index"> highlighted using 
+    make_help.HelpIndexPlugin
 
-To generate text "cards" for bin/oil
-- split_doc.py then 'make_help.py text-index' to generate files.
+- Then that HTML is split up into cards.
+  - <h2 id="assign"> is a heading
+  - <pre><code class="language-oil-help-index"> is rendered back into literal
+    text.  This makes the escaping of and & < > work.
 
-NOTE: For convenience we don't escape < > and & below, except in the case of
-'<capture>' where it really looks like a tag.
+Special rules:
+- [] at start of line is a section
+- X for deprecated
+- three spaces separating words to be highlighted
 
-- Special rules:
-  - [] at start of line is a section
-  - X for deprecated
-  - three spaces separating words to be highlighted
-
-- TODO: There should be a character for "no links past here?"
-  - or <span></span>
-  - this should be turned GREEN?
+TODO: There should be a character for "no links past here?"
+- or <span></span>
+- this should be turned GREEN?
 -->
 
 This is the online version of Oil's `help`.  The linked help topics below are

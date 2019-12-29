@@ -55,7 +55,7 @@ _build-timestamp() {
 
 # Run with environment variable
 _make-help() {
-  doctools/make_help.py "$@"
+  PYTHONPATH=. doctools/make_help.py "$@"
 }
 
 cmark() {
@@ -257,24 +257,6 @@ EOF
   head _tmp/testdoc*
 }
 
-make-help-demo() {
-  doctools/make_help.py text-index <<EOF
-
-<h2 id="intro">Intro</h2>
-<pre class="help-index">
-  [Usage]         bundle-usage   osh-usage   oil-usage   config   startup
-                  line-editing   prompt
-  [Lexing]        comments #   line-continuation \\
-  [Oil Lexing]    single-command %%%   docstring ###
-</pre>
-
-<p>foo &amp; bar</p>
-
-<h2 id="cmd">Command Language</h2>
-
-EOF
-}
-
 #
 # Help is both markdown and text
 #
@@ -285,10 +267,8 @@ readonly CODE_DIR=_devbuild/gen
 
 # NOTE: Should eventually take .html instead of .md
 help-index-cards() {
-  local out_dir=${1:-_devbuild/help}
-
   local py_out=$CODE_DIR/help_index.py
-  doctools/make_help.py text-index $out_dir $py_out < doc/help-index.md
+  _make-help cards-for-index $TEXT_DIR $py_out < $HTML_DIR/doc/help-index.html
 }
 
 help-cards() {
@@ -301,7 +281,7 @@ help-cards() {
   local py_out=$CODE_DIR/help_.py
 
   # For now, the pass help markdown
-  doctools/make_help.py cards \
+  _make-help cards \
     doc/help.md $HTML_DIR/doc/help-index.html $TEXT_DIR $py_out
 }
 
@@ -312,7 +292,7 @@ all-help() {
   split-and-render doc/help-index.md
   split-and-render doc/help.md
 
-  help-index-cards $TEXT_DIR $CODE_DIR
+  help-index-cards
   help-cards $HTML_DIR $TEXT_DIR
 
   # Better sorting
