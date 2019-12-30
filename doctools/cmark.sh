@@ -7,14 +7,14 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-readonly URL='https://github.com/commonmark/cmark/archive/0.28.3.tar.gz'
+readonly URL='https://github.com/commonmark/cmark/archive/0.29.0.tar.gz'
 
 download() {
   mkdir -p _deps
   wget --no-clobber --directory _deps $URL
 }
 
-readonly CMARK_DIR=_deps/cmark-0.28.3
+readonly CMARK_DIR=_deps/cmark-0.29.0
 
 extract() {
   pushd _deps
@@ -43,6 +43,8 @@ demo-theirs() {
 }
 
 demo-ours() {
+  export PYTHONPATH=.
+
   echo '*hi*' | doctools/cmark.py
 
   # This translates to <code class="language-sh"> which is cool.
@@ -70,7 +72,7 @@ EOF
   # $oil-commit
 
   doctools/cmark.py <<'EOF'
-[click here]($cross-ref:re2c)
+[click here]($xref:re2c)
 EOF
 
   # Hm for some reason it gets rid of the blank lines in HTML.  When rendering

@@ -43,12 +43,13 @@ def log(msg, *args):
   #print(msg, file=sys.stderr)
 
 
-CMARK_OPTS = 0 # defaults
+# Version 0.29.0 disallowed raw HTML by default!
+CMARK_OPT_UNSAFE = (1 << 17)
 
 def md2html(text):
   textbytes = text
   textlen = len(text)
-  return markdown(textbytes, textlen, CMARK_OPTS)
+  return markdown(textbytes, textlen, CMARK_OPT_UNSAFE)
 
 
 def demo():

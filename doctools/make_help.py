@@ -131,9 +131,9 @@ def HighlightLine(line):
   # Highlight [Section] at the start of a line.
   m = SECTION_RE.match(line)
   if m:
-    out.PrintUntil(m.start(1))
-
     href = _StringToHref(m.group(1))
+
+    out.PrintUntil(m.start(1))
     out.Print('<a href="help.html#%s" class="level2">' % href)
     out.PrintUntil(m.end(1))  # anchor
     out.Print('</a>')
@@ -155,13 +155,14 @@ def HighlightLine(line):
 
     if m.group(1):
       out.PrintUntil(m.start(1))
-      out.Print('<span style="color: darkred">X </span>')
-      out.SkipTo(m.end(1))
+      out.Print('<span style="color: darkred">')
+      out.PrintUntil(m.end(1))
+      out.Print('</span>')
 
     # The linked topic
     topic = m.group(2)
-    out.PrintUntil(m.start(2))
 
+    out.PrintUntil(m.start(2))
     out.Print('<a href="help.html#%s">' % topic)
     out.PrintUntil(m.end(2))
     out.Print('</a>')
