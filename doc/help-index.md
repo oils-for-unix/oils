@@ -103,7 +103,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
                   X Symbol      %foo
                   Null          null
                   Bool          true false
-                  Int           1_000_000   0b0100   0xFF  0o377  \n  \\  \u0100
+                  Int           1_000_000  0b0100  0xFF  0o377  \n  \\  \u0100
                   Float         3.14   6.022e+23
                   Array[]       @(ls -l)  @[T F F]  @[1 2 3]  @[1.5 2.5] 
                   Tuple[]       ()  tup(42)  (42, "foo")
@@ -150,7 +150,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
                   op-str        ${x//y/z}
                   op-slice      ${a[@]:0:1}
                   op-format     ${x@P}
-  [Oil Word]      expr-sub      $[f(x)]   $[obj.attr]   $[d->key]   $[obj[index]]
+  [Oil Word]      expr-sub      $[f(x)]  $[obj.attr]  $[d->key]  $[obj[index]]
                   splice        @array @ARGV
                   X oil-printf  ${x %.3f}
                   X oil-format  ${x|html}
