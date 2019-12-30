@@ -98,7 +98,6 @@ X [Coil Keywords] const   try   catch   throw   switch   match
   Oil Expression Language (<a class="group-link" href="help.html#expr">expr</a>)
 </h2>
 
-<!-- note: <capture> is HTML escaped below -->
 ```oil-help-index
   [Data Types]    Str           r'\'   c'\n'   "$var"   X multiline r""" c'''
                   X Symbol      %foo
@@ -125,10 +124,11 @@ X [Coil Keywords] const   try   catch   throw   switch   match
                   func-decl     func inc(p, p2=0; n=0, ...named) { echo hi }
                   proc-decl     proc p (x, y, @rest) { echo hi }
   [Regexes]       re-literal    /d+/
-                  re-compound   ~   (group)  &lt;capture&gt;    sequence
-                  re-primitive  %zero  @other_pattern  'sq'  "dq"  $x  ${x}
+                  re-compound   ~   (group)   <capture>   sequence
+                  re-primitive  %zero   Subpattern   @subpattern
+                                'sq'   "dq"   $x   ${x}
                   named-classes dot  digit  space  word  d  s  w
-                  class-literal [a-z 'abc' \\ \xFF \u0100]
+                  class-literal [c a-z 'abc' \\ \xFF \u0100]
                   re-flags      ignorecase etc.
                   re-multiline  ///
                   re-glob-ops   ~   !~
@@ -211,7 +211,7 @@ X [Unsupported]   enable
                   repr                   Show debug representation of vars
                   X log   X die          common functions (polyfill)
                   X getline              Instead of read -raw :name
-                  X json   X tsv2
+                  json   X tsv2
 X [External Lang] BEGIN   END   when (awk)
                   rule (make)   each (xargs)   fs (find)
 ```
@@ -226,7 +226,7 @@ X [External Lang] BEGIN   END   when (awk)
   [Debugging]     xtrace   X verbose   X extdebug
   [Interactive]   emacs   vi
   [Other Option]  X noclobber
-  [strict:all]                           All options starting with 'strict_'
+  [strict:all]    * All options starting with 'strict_'
                   strict_argv            No empty argv
                   strict_array           Arrays don't decay to strings
                   strict_arith           Fatal parse errors (on by default)
@@ -238,7 +238,7 @@ X [External Lang] BEGIN   END   when (awk)
                   X strict_backslash     Parse the sublanguage more strictly
                   X strict_glob          Parse the sublanguage more strictly
                   X strict_trap          Function name only
-  [oil:basic]                            Enable Oil functionality
+  [oil:basic]     * Enable Oil functionality
                   parse_at               echo @array @arrayfunc(x, y)
                   parse_brace            if true { ... }; cd ~/src { ... }
                   parse_paren            if (x > 0) ...
@@ -246,7 +246,7 @@ X [External Lang] BEGIN   END   when (awk)
                   X longopts             test -file, read -delim, etc.
                   more_errexit           More errexit checks --  at command sub
                   simple_word_eval       No splitting, static globbing
-  [oil:nice]                             The full Oil language
+  [oil:nice]      * The full Oil language
                   parse_equals           x = 's' (for cleaner config blocks)
                   parse_set              instead of setvar
                   simple_echo            Doesn't join args; -sep -end and --
@@ -257,8 +257,8 @@ X [External Lang] BEGIN   END   when (awk)
                   X parse_rawc           r'\'   c'\n'   c"$x\n"
                   X simple_test_builtin  Only file tests, remove [, status 2
                   X no_old_builtins      local/declare/etc.  pushd/popd/dirs
-                                         source  unset  printf  [un]alias
-                                         getopts
+                                         ... source  unset  printf  [un]alias
+                                         ... getopts
                   X no_old_syntax        [[   $(( ))  ${x%prefix}   $$
                                          $'\n'   @(*.sh|*.py)  `echo comsub`
                                          ${a[@]}
@@ -329,7 +329,7 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
                   posix::read()       raw bindings?
                   strftime()
 X [Testing]       check
-X [Data Formats]  json   csv   tsv2   struct (binary)
+  [Data Formats]  json   X csv   X tsv2   X html   X struct/binary
 X [Hashing]       sha1   sha256 (etc.)
 ```
 

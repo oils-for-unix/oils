@@ -63,7 +63,7 @@ CAPS_RE = re.compile(r'^[A-Z ]+$')
 SECTION_RE = re.compile(r'''
 \s*
 \[
-([a-zA-Z /]+)
+([a-zA-Z /:]+)  # colon for oil:nice
 \]
 ''', re.VERBOSE)
 
@@ -102,10 +102,13 @@ def _StringToHref(s):
   return s.lower().replace(' ', '-')
 
 
+# HACK HACK: These happen to have 3 spaces before them! 
+_NOT_A_TOPIC = ['compatible', 'egrep']
+
 # BUGS:
-# - Sometimes you have 3 spaces
-# - Continuation lines 
+# - Continuation lines: hacked with ...
 # - Some X before puncutation aren't highlighted
+
 
 def HighlightLine(line):
   """Convert a line of text to HTML.
@@ -149,7 +152,7 @@ def HighlightLine(line):
   while not done:
     # Now just match one
     m = TOPIC_RE.match(line, pos)
-    if not m:
+    if not m or m.group(2) in _NOT_A_TOPIC:
       break
 
     if m.group(1):
