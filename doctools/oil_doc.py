@@ -164,17 +164,11 @@ class HelpIndexPlugin(_Plugin):
 
     pos = self.start_pos
     for line_end in Lines(self.s, self.start_pos, self.end_pos):
-
       # NOTE: HighlightLine accepts an HTML ESCAPED line.  It's valid to just
       # add tags and leave everything alone.
       line = self.s[pos : line_end]
 
-      if line.startswith('  '):
-        html_line = make_help.HighlightLine(line)
-      elif line.startswith('X '):
-        html_line = make_help.RED_X + make_help.HighlightLine(line[2:])
-      else:
-        html_line = None
+      html_line = make_help.HighlightLine(line)
 
       if html_line is not None:
         out.PrintUntil(pos)

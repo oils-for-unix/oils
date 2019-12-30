@@ -37,12 +37,6 @@ thing.
 Definition lists would be nice:
   $?   exit status
   $0   first etc.
-
-TODO:
-  handle_startendtag()
-  handle_decl() -- for doctype
-
-https://bugs.python.org/issue25258
 """
 
 import cStringIO
@@ -55,32 +49,26 @@ import sys
 from doctools import html_lib
 from lazylex import html
 
-# e.g. COMMAND LANGUAGE
-CAPS_RE = re.compile(r'^[A-Z ]+$')
 
 # Sections have alphabetical characters, spaces, and '/' for I/O.  They are
 # turned into anchors.
 SECTION_RE = re.compile(r'''
-\s*
-\[
-([a-zA-Z /:]+)  # colon for oil:nice
-\]
+  \s*
+  \[
+  ([a-zA-Z /:]+)  # colon for oil:nice
+  \]
 ''', re.VERBOSE)
 
 TOPIC_RE = re.compile(r'''
-(X[ ])?           # optional deprecation symbol X, then a single space
-@?                  # optional @array, e.g. @BASH_SOURCE
-([a-zA-Z0-9_\-:]+)  # e.g. osh-usage, all:oil, BASH_REMATCH
-( [ ]\S+            # optional: single space then punctuation
-  |
-  \(\)              # or func()
-)?      
-([ ][ ][ ])?        # three spaces means we should keep highlighting
+  (X[ ])?           # optional deprecation symbol X, then a single space
+  @?                  # optional @array, e.g. @BASH_SOURCE
+  ([a-zA-Z0-9_\-:]+)  # e.g. osh-usage, all:oil, BASH_REMATCH
+  ( [ ]\S+            # optional: single space then punctuation
+    |
+    \(\)              # or func()
+  )?      
+  ([ ][ ][ ])?        # three spaces means we should keep highlighting
 ''', re.VERBOSE)
-
-
-# Can occur at the beginning of a line, or before a topic
-RED_X = '<span style="color: darkred">X </span>'
 
 
 # Copied from core/comp_ui.py
@@ -109,6 +97,7 @@ _NOT_A_TOPIC = ['compatible', 'egrep']
 # - Continuation lines: hacked with ...
 # - Some X before puncutation aren't highlighted
 
+X_LEFT_SPAN = '<span style="color: darkred">'
 
 def HighlightLine(line):
   """Convert a line of text to HTML.
@@ -121,15 +110,23 @@ def HighlightLine(line):
   Returns:
     The HTML with some tags inserted.
   """
-  parts = []  # output so far.  TODO: replace with html.Output()
-
   f = cStringIO.StringIO()
   out = html.Output(line, f)
 
-  pos = 0  # position within line
+  pos = 0 # position within line
+
+  if line.startswith('X '):
+    out.Print(X_LEFT_SPAN)
+    out.PrintUntil(2)
+    out.Print('</span>')
+    pos = 2
+  elif line.startswith('  '):
+    pos = 2
+  else:
+    return line
 
   # Highlight [Section] at the start of a line.
-  m = SECTION_RE.match(line)
+  m = SECTION_RE.match(line, pos)
   if m:
     href = _StringToHref(m.group(1))
 
@@ -155,7 +152,7 @@ def HighlightLine(line):
 
     if m.group(1):
       out.PrintUntil(m.start(1))
-      out.Print('<span style="color: darkred">')
+      out.Print(X_LEFT_SPAN)
       out.PrintUntil(m.end(1))
       out.Print('</span>')
 
