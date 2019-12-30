@@ -38,6 +38,21 @@ run-tests() {
   popd
 }
 
+travis-hack() {
+  ### Check the libcmark.so into git.  This only works on Ubuntu!
+  # We're doing this because otherwise we'll have to download the tarball on
+  # every Travis build, install cmake, build it, and install it.  That's not
+  # terrible but it slows things down a bit.
+
+  local so=$(echo $CMARK_DIR/build/src/libcmark.so.*)
+  ls -l $so
+  echo
+  ldd $so
+
+  cp -v $so doctools/travis-bin
+}
+
+
 demo-theirs() {
   echo '*hi*' | cmark
 }

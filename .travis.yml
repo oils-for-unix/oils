@@ -30,7 +30,8 @@ install:
     - pip install --user flake8 typing
     # mypy requires Python 3
     - pip3 install --user mypy
-    - build/dev.sh minimal
+    # hack for cmark
+    - TRAVIS_HACK=1 build/dev.sh minimal
 
 script:
     - test/lint.sh travis
