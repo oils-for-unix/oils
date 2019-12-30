@@ -122,30 +122,28 @@ def HighlightLine(line):
     The HTML with some tags inserted.
   """
   parts = []  # output so far.  TODO: replace with html.Output()
+
+  f = cStringIO.StringIO()
+  out = html.Output(line, f)
+
   pos = 0  # position within line
 
   # Highlight [Section] at the start of a line.
   m = SECTION_RE.match(line)
   if m:
-    parts.append(line[:m.start(1)])  # these are spaces, so don't escape
+    out.PrintUntil(m.start(1))
 
-    section = m.group(1)
-    href = _StringToHref(section)
-
-    section_link = '<a href="help.html#%s" class="level2">%s</a>' % (href, section)
-    parts.append(section_link)
+    href = _StringToHref(m.group(1))
+    out.Print('<a href="help.html#%s" class="level2">' % href)
+    out.PrintUntil(m.end(1))  # anchor
+    out.Print('</a>')
 
     pos = m.end(0)  # ADVANCE
-    parts.append(line[m.end(1): pos])
-
-  # Truncates line and appends to parts
-  #line = MaybeHighlightSection(line, parts)
 
   _WHITESPACE = re.compile(r'[ ]+')
   m = _WHITESPACE.match(line, pos)
   assert m, 'Expected whitespace %r' % line
 
-  parts.append(m.group(0))
   pos = m.end(0)
 
   done = False
@@ -156,30 +154,27 @@ def HighlightLine(line):
       break
 
     if m.group(1):
-      parts.append('<span style="color: darkred">X </span>')
+      out.PrintUntil(m.start(1))
+      out.Print('<span style="color: darkred">X </span>')
+      out.SkipTo(m.end(1))
 
     # The linked topic
     topic = m.group(2)
-    parts.append('<a href="help.html#%s">' % topic)
-    parts.append(topic)
-    parts.append('</a>')
+    out.PrintUntil(m.start(2))
 
-    # Non-linked suffix
-    if m.group(3):
-      parts.append(m.group(3))
+    out.Print('<a href="help.html#%s">' % topic)
+    out.PrintUntil(m.end(2))
+    out.Print('</a>')
 
     # Trailing 3 spaces required to continue.
-    if m.group(4):
-      parts.append(m.group(4))
-    else:
+    if not m.group(4):
       done = True
 
     pos = m.end(0)
 
-  last_piece = line[pos:]
-  parts.append(last_piece)
+  out.PrintTheRest()
 
-  return ''.join(parts)
+  return f.getvalue()
 
 
 HTML_REFS = {
