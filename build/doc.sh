@@ -305,7 +305,7 @@ minimal-help() {
   mkdir -p $TEXT_DIR
   rm -v -f $TEXT_DIR/*
 
-  help-index-text $TEXT_DIR $CODE_DIR
+  help-index-cards
   help-cards $HTML_DIR $TEXT_DIR
 }
 
