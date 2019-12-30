@@ -68,13 +68,14 @@ SECTION_RE = re.compile(r'''
 ''', re.VERBOSE)
 
 TOPIC_RE = re.compile(r'''
-\b(X[ ])?           # optional deprecation symbol X, then a single space
+(X[ ])?           # optional deprecation symbol X, then a single space
 @?                  # optional @array, e.g. @BASH_SOURCE
 ([a-zA-Z0-9_\-:]+)  # e.g. osh-usage, all:oil, BASH_REMATCH
 ( [ ]\S+            # optional: single space then punctuation
   |
   \(\)              # or func()
 )?      
+([ ][ ][ ])?        # three spaces means we should keep highlighting
 ''', re.VERBOSE)
 
 
@@ -101,27 +102,10 @@ def _StringToHref(s):
   return s.lower().replace(' ', '-')
 
 
-def MaybeHighlightSection(line, parts):
-  """
-  Highlight [Section] at the start of a line.
-  """
-  m = SECTION_RE.match(line)
-  if not m:
-    return line
-
-  #print >>sys.stderr, m.groups()
-
-  start = m.start(1)
-  end = m.end(1)
-  parts.append(line[:start])  # this is spaces, so not bothering to escape
-
-  section = m.group(1)
-  href = _StringToHref(section)
-  section_link = '<a href="help.html#%s" class="level2">%s</a>' % (href, section)
-  parts.append(section_link)
-
-  return line[end:]
-
+# BUGS:
+# - Sometimes you have 3 spaces
+# - Continuation lines 
+# - Some X before puncutation aren't highlighted
 
 def HighlightLine(line):
   """Convert a line of text to HTML.
@@ -134,53 +118,65 @@ def HighlightLine(line):
   Returns:
     The HTML with some tags inserted.
   """
-  parts = []
-  last_end = 0
-  found_one = False
+  parts = []  # output so far.  TODO: replace with html.Output()
+  pos = 0  # position within line
 
-  line = MaybeHighlightSection(line, parts)
+  # Highlight [Section] at the start of a line.
+  m = SECTION_RE.match(line)
+  if m:
+    parts.append(line[:m.start(1)])  # these are spaces, so don't escape
 
-  for m in TOPIC_RE.finditer(line):
-    #print >>sys.stderr, m.groups()
+    section = m.group(1)
+    href = _StringToHref(section)
 
-    have_x = m.group(1) is not None
-    start = m.start(1) if have_x else m.start(2)
+    section_link = '<a href="help.html#%s" class="level2">%s</a>' % (href, section)
+    parts.append(section_link)
 
-    have_suffix = m.group(3) is not None
+    pos = m.end(0)  # ADVANCE
+    parts.append(line[m.end(1): pos])
 
-    prior_piece = line[last_end:start]
-    parts.append(prior_piece)
+  # Truncates line and appends to parts
+  #line = MaybeHighlightSection(line, parts)
 
-    if have_x:
-      parts.append(RED_X)
+  _WHITESPACE = re.compile(r'[ ]+')
+  m = _WHITESPACE.match(line, pos)
+  assert m, 'Expected whitespace %r' % line
 
-    # Topics on the same line must be separated by exactly THREE spaces
-    if found_one and prior_piece not in ('   ', '   @'):
-      last_end = start
-      break  # stop linking
+  parts.append(m.group(0))
+  pos = m.end(0)
 
-    # this matters because the separator is three spaces
-    end = m.end(3) if have_suffix else m.end(2)
-    last_end = end
+  done = False
+  while not done:
+    # Now just match one
+    m = TOPIC_RE.match(line, pos)
+    if not m:
+      break
 
-    topic = line[m.start(2):m.end(2)]
-    topic_link = '<a href="help.html#%s">%s</a>' % (topic, topic)
-    parts.append(topic_link)
+    if m.group(1):
+      parts.append('<span style="color: darkred">X </span>')
 
-    if have_suffix:
+    # The linked topic
+    topic = m.group(2)
+    parts.append('<a href="help.html#%s">' % topic)
+    parts.append(topic)
+    parts.append('</a>')
+
+    # Non-linked suffix
+    if m.group(3):
       parts.append(m.group(3))
 
-    found_one = True
+    # Trailing 3 spaces required to continue.
+    if m.group(4):
+      parts.append(m.group(4))
+    else:
+      done = True
 
-  last_piece = line[last_end:len(line)]
+    pos = m.end(0)
+
+  last_piece = line[pos:]
   parts.append(last_piece)
 
-  #print >>sys.stderr, parts
-
-  html_line = ''.join(parts)
-  #print >>sys.stderr, html_line
-
-  return html_line
+  return ''.join(parts)
 
 
 HTML_REFS = {
@@ -291,10 +287,10 @@ def SplitIntoCards(heading_tags, contents):
 
 def IndexGroupToText(group_text):
   """
-  TODO:
+  Note: We cold process some tags, like:
 
-  - Red X
   - Blue Link (not clickable, but still useful)
+  - Red X
   """
   f = cStringIO.StringIO()
   out = html.Output(group_text, f)
@@ -327,10 +323,12 @@ def IndexGroupToText(group_text):
 
 
 def HelpIndexCards(s):
+  """
+  Given an HTML page, yield groups (id, desc, block of text)
+  """
   tag_lexer = html.TagLexer(s)
 
   pos = 0
-
   it = html.ValidTokens(s)
   while True:
     try:
@@ -351,19 +349,13 @@ def HelpIndexCards(s):
         group_topic_id = tag_lexer.GetAttr('id')
         assert group_topic_id, 'Expected id= in %r' % tag_lexer.TagString()
 
-        #log('group_topic_id = %r', group_topic_id)
         h2_end_left, _ = html.ReadUntilEndTag(it, tag_lexer, 'h2')
 
         anchor_html = s[h2_start_right : h2_end_left]
-        #log('anchor = %r', anchor_html)
-
         paren_pos = anchor_html.find('(')
         assert paren_pos != -1, anchor_html
 
         group_name = anchor_html[: paren_pos].strip()
-
-        #log('anchor = %r', group_name)
-        #log('')
 
         # Now find the <code></code> span
         _, code_start_right = html.ReadUntilStartTag(it, tag_lexer, 'code')
