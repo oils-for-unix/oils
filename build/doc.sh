@@ -286,9 +286,9 @@ help-cards() {
 }
 
 all-help() {
-  mkdir -p _tmp/doc
-  mkdir -p $TEXT_DIR
+
   rm -v -f $TEXT_DIR/*
+  mkdir -p _tmp/doc $TEXT_DIR $HTML_DIR/doc
 
   # Note: text depends on HTML, which depends on libcmark.so.  See
   # doctools/travis-bin/README.md.
