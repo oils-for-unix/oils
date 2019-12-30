@@ -286,9 +286,12 @@ help-cards() {
 }
 
 all-help() {
+  mkdir -p _tmp/doc
   mkdir -p $TEXT_DIR
   rm -v -f $TEXT_DIR/*
 
+  # Note: text depends on HTML, which depends on libcmark.so.  See
+  # doctools/travis-bin/README.md.
   split-and-render doc/help-index.md
   split-and-render doc/help.md
 
@@ -297,18 +300,6 @@ all-help() {
 
   # Better sorting
   LANG=C ls -l $TEXT_DIR
-}
-
-minimal-help() {
-  ### for build/dev.sh minimal
-
-  mkdir -p $TEXT_DIR
-  rm -v -f $TEXT_DIR/*
-
-  # TODO: These now depend on HTML, which depends on libcmark.so.  Gah!
-  # We need these to run unit tests?
-  help-index-cards
-  help-cards $HTML_DIR $TEXT_DIR
 }
 
 run-for-release() {
