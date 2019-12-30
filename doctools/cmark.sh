@@ -7,13 +7,20 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+readonly URL='https://github.com/commonmark/cmark/archive/0.28.3.tar.gz'
+
 download() {
   mkdir -p _deps
-  wget --no-clobber --directory _deps \
-    https://github.com/commonmark/cmark/archive/0.28.3.tar.gz
+  wget --no-clobber --directory _deps $URL
 }
 
 readonly CMARK_DIR=_deps/cmark-0.28.3
+
+extract() {
+  pushd _deps
+  tar -x -z < $(basename $URL)
+  popd
+}
 
 build() {
   pushd $CMARK_DIR

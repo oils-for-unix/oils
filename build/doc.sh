@@ -305,6 +305,10 @@ minimal-help() {
   mkdir -p $TEXT_DIR
   rm -v -f $TEXT_DIR/*
 
+  # TODO: These now depend on HTML, which depends on libcmark.so.  Gah!
+  # We need these to run unit tests?
+  return
+
   help-index-cards
   help-cards $HTML_DIR $TEXT_DIR
 }
