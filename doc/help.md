@@ -24,6 +24,10 @@ Subset of Markdown we use:
 - fenced code blocks to generate <pre><code class="language-X">
   - we COULD syntax highlight now.  At least the comments and strings?
 
+Note: <p> implies word wrapping!
+  well that's good because then you can do it dynamically.
+  note: Python has textwrap!
+
 -->
 
 This doc describes every aspect of Oil and OSH briefly, and is indexed by

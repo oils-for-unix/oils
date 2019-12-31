@@ -1,6 +1,14 @@
 #!/usr/bin/env python2
 """
 oil_doc.py: HTML processing for Oil documentation.
+
+Plugins:
+  ExpandLinks expands $xref, etc.
+  PygmentsPlugin -- for ```python, ```sh, ```c, etc.
+  HelpIndexPlugin -- for help-index.html
+
+  ShPromptPlugin -- understands $ echo hi, but doesn't run anything
+  ShSession -- runs shell snippets and caches the output
 """
 from __future__ import print_function
 
@@ -293,3 +301,51 @@ def HighlightCode(s):
   out.PrintTheRest()
 
   return f.getvalue()
+
+
+class ShellSession(object):
+  """
+  TODO: Pass this to HighlightCode as a plugin
+
+  $ x=one
+  $ echo $x
+  $ echo two
+
+  Becomes
+
+  $ x=one
+  $ echo $x
+  one
+  $ echo two
+  two
+
+  And then you will have
+  blog/2019/12/_shell_session/
+    $hash1-stdout.txt
+    $hash2-stdout.txt
+
+  It hashes the command with md5 and then brings it back.
+  If the file already exists then it doesn't run it again.
+  You can delete the file to redo it.
+
+  TODO: write a loop that reads one line at a time, writes, it, then reads
+  output from bash.
+  Use the Lines iterator to get lines.
+  For extra credit, you can solve the PS2 problem?  That's easily done with
+  Oil's parser.
+  """
+  def __init__(self, shell_exe, cache_dir):
+    """
+    Args:
+      shell_exe: sh, bash, osh, or oil.  Use the one in the $PATH by default.
+      cache_dir: ~/git/oilshell/oilshell.org/blog/2019/12/session/
+    """
+    self.shell_exe = shell_exe
+    self.cache_dir = cache_dir
+
+  def PrintHighlighted(self, s, start_pos, end_pos, out):
+    """
+    Args:
+      s: an HTML string.
+    """
+    pass
