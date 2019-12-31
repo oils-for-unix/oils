@@ -18,21 +18,35 @@ h3 {
   font-size: 1.0em;  /* Similar to default h4 */
 }
 
-/* Make it centered and skinny for readability */
+@media screen and (max-width: 800px) {
+  /* mobile: distance from left/right edge */
+  body {
+    padding: 0 1em;
+  }
+  /* mobile: horizontal scrollbar for code, so the long lines don't make the page small */
+  pre {
+    overflow: auto;
+  }
+}
+
+@media screen and (min-width: 801px) {
+  body {
+    margin: 0 auto;
+    font-size: large;
+    line-height: 1.4;  /* http://bettermotherfuckingwebsite.com/ */
+  }
+
+  /* wide screens: Make it centered and skinny for readability */
+  .skinny {
+    width: 30em;
+  }
+  .wider {
+    width: 45em;
+  }
+}
+
 body {
-  margin: 0 auto;
-
-  font-size: large;
-  line-height: 1.4;  /* http://bettermotherfuckingwebsite.com/ */
   color: #444;
-}
-
-.skinny {
-  width: 30em;
-}
-
-.wider {
-  width: 45em;
 }
 
 /* Exclude <pre><code>.  Is there a better way to do this?  */
