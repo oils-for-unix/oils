@@ -25,7 +25,7 @@ def Header(meta, f):
     <title>%(title)s</title>
     %(css_links)s
   </head>
-  <body>
+  <body class="%(body_css_class)s">
     <p id="home-link">
 ''' % meta)
 

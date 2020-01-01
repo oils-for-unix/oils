@@ -305,6 +305,12 @@ def Options():
   return p
 
 
+# width 40 by default
+DEFAULT_META = {
+    'body_css_class': 'width40'
+}
+
+
 def main(argv):
   o = Options()
   opts, argv = o.parse_args(argv)
@@ -317,9 +323,11 @@ def main(argv):
 
   # Otherwise we expect metadata and content
 
+  meta = dict(DEFAULT_META)
   import json
   with open(argv[1]) as f:
-    meta = json.load(f)
+    doc_meta = json.load(f)
+  meta.update(doc_meta)
 
   #print(meta, file=sys.stderr)
 

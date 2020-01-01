@@ -1,6 +1,6 @@
 ---
 in_progress: yes
-css_files: ../web/help-index.css ../web/toc.css
+css_files: ../web/base.css ../web/help-index.css ../web/toc.css
 ---
 
 Oil Help Topics
