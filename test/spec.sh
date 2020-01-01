@@ -188,7 +188,7 @@ sh-spec() {
   local tmp_env=$this_dir/../_tmp/spec-tmp/$(basename $test_file)
   mkdir -p $tmp_env
 
-  test/sh_spec.py \
+  PYTHONPATH=. test/sh_spec.py \
       --tmp-env $tmp_env \
       --path-env "$this_dir/../spec/bin:/bin:/usr/bin" \
       "$test_file" \
@@ -209,7 +209,7 @@ trace-var-sub() {
 
   # This prints trace with line numbers to stdout.
   #python -m trace --trace -C $out \
-  python -m trace --trackcalls -C $out \
+  PYTHONPATH=. python -m trace --trackcalls -C $out \
     test/sh_spec.py spec/var-sub.test.sh $DASH $BASH "$@"
 
   ls -l $out

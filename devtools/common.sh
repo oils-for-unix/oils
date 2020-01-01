@@ -5,14 +5,6 @@
 # Usage:
 #   source devtools/common.sh
 
-html-footer() {
-  cat <<EOF
-    </table>
-  </body>
-</html>
-EOF
-}
-
 # Copied from test/unit.sh
 banner() {
   echo -----

@@ -61,6 +61,8 @@ import subprocess
 import sys
 import time
 
+from doctools import html_head
+
 
 # Magic strings for other variants of OSH.
 
@@ -841,13 +843,12 @@ class HtmlOutput(ColorOutput):
         self.spec_name, line_num, cgi.escape(desc))
 
   def BeginCases(self, test_file):
+    css_urls = [ '../../web/base.css', '../../web/spec-tests.css' ]
+    title = '%s: spec test case results' % self.spec_name
+    html_head.Write(self.f, title, css_urls=css_urls)
+
     self.f.write('''\
-<!DOCTYPE html>
-<html>
-  <head>
-    <link href="../../web/spec-tests.css" rel="stylesheet">
-  </head>
-  <body>
+  <body class="width60">
     <p id="home-link">
       <a href=".">spec test index</a>
       /

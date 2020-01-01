@@ -6,11 +6,6 @@
   color: darkred;
 }
 
-body {
-  margin: 0 auto;
-  width: 60em;
-}
-
 tbody .name {
   font-family: monospace;
 }

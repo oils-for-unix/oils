@@ -3,16 +3,6 @@
  * built into /releases.html.
  */
 
-/* COMMON */
-body {
-  margin: 0 auto;
-  width: 40em;  /* overridden in devtools/release.sh for releases.html */
-
-  /* note: not changing 'font-size' like web/manual.css */
-  line-height: 1.4;
-  color: #444;
-}
-
 h1 {
   font-size: 1.5em;  /* reduce to what browsers apparently use for h2 */
 }
@@ -36,9 +26,6 @@ code {
   color: green;
 }
 
-#home-link {
-  text-align: right;
-}
 /* END COMMON */
 
 

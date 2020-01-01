@@ -49,16 +49,19 @@ BODY_STYLE = jsontemplate.Template("""\
 <!DOCTYPE html>
 <html>
   <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{.template TITLE}</title>
 
     <script type="text/javascript" src="{base_url}../../web/ajax.js"></script>
     <script type="text/javascript" src="{base_url}../../web/table/table-sort.js"></script>
+    <link rel="stylesheet" type="text/css" href="{base_url}../../web/base.css" />
     <link rel="stylesheet" type="text/css" href="{base_url}../../web/table/table-sort.css" />
     <link rel="stylesheet" type="text/css" href="{base_url}../../web/wild.css" />
   </head>
 
   <body onload="initPage(gUrlHash, gTables, gTableStates, kStatusElem);"
-        onhashchange="onHashChange(gUrlHash, gTableStates, kStatusElem);">
+        onhashchange="onHashChange(gUrlHash, gTableStates, kStatusElem);"
+        class="width60">
     <p id="status"></p>
 
     <p style="text-align: right"><a href="/">oilshell.org</a></p>

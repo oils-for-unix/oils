@@ -1,0 +1,22 @@
+table {
+  width: 100%;
+}
+code {
+  color: green;
+}
+.checksum {
+  font-family: monospace;
+}
+.date {
+  /*font-family: monospace;*/
+}
+.subject {
+  font-family: monospace;
+}
+
+/* Copied from oilshell.org bundle.css */
+.date {
+  font-size: medium;
+  color: #555;
+  padding-left: 1em;
+}

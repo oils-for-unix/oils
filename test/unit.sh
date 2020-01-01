@@ -163,8 +163,6 @@ run-all-and-log() {
 }
 
 
-source benchmarks/common.sh
-
 # TODO: It would be nice to have timestamps of the underlying CSV files and
 # timestamp of running the report.  This is useful for benchmarks too.
 
@@ -172,25 +170,23 @@ print-report() {
   local in_dir=${1:-_tmp/unit}
   local base_url='../../web'
 
+  html-head --title 'Oil Unit Test Results' \
+    "$base_url/table/table-sort.js" \
+    "$base_url/table/table-sort.css" \
+    "$base_url/base.css" \
+    "$base_url/benchmarks.css" 
+
   # NOTE: Using benchmarks for now.
   cat <<EOF
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Unit Test Results</title>
-    <script type="text/javascript" src="$base_url/table/table-sort.js"></script>
-    <link rel="stylesheet" type="text/css" href="$base_url/table/table-sort.css" />
-    <link rel="stylesheet" type="text/css" href="$base_url/benchmarks.css" />
-
-  </head>
-  <body>
+  <body class="width40">
     <p id="home-link">
       <a href="/">oilshell.org</a>
     </p>
     <h2>Unit Test Results</h2>
 
 EOF
-  csv2html $in_dir/report.csv
+
+  web/table/csv2html.py $in_dir/report.csv
 
   cat <<EOF
   </body>

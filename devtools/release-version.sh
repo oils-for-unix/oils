@@ -7,7 +7,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source devtools/common.sh
+source test/common.sh  # html-head
 
 # NOTE: Left to right evaluation would be nice on this!
 #
@@ -56,42 +56,11 @@ _git-changelog-header() {
   local prev_branch=$1
   local cur_branch=$2
 
-  cat <<EOF
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Commits Between $prev_branch and $cur_branch</title>
-    <style>
-      /* Make it centered and skinny for readability */
-      body {
-        margin: 0 auto;
-        width: 60em;
-      }
-      table {
-        width: 100%;
-      }
-      code {
-        color: green;
-      }
-      .checksum {
-        font-family: monospace;
-      }
-      .date {
-        /*font-family: monospace;*/
-      }
-      .subject {
-        font-family: monospace;
-      }
+  html-head --title "Commits Between Branches $prev_branch and $cur_branch" \
+    'web/base.css' 'web/changelog.css'
 
-      /* Copied from oilshell.org bundle.css */
-      .date {
-        font-size: medium;
-        color: #555;
-        padding-left: 1em;
-      }
-    </style>
-  </head>
-  <body>
+  cat <<EOF
+  <body class="width60">
     <h3>Commits Between Branches <code>$prev_branch</code> and
        <code>$cur_branch</code></h3>
     <table>
@@ -116,7 +85,11 @@ EOF
 _git-changelog() {
   _git-changelog-header "$@"
   _git-changelog-body "$@"
-  html-footer
+  cat <<EOF
+    </table>
+  </body>
+</html>
+EOF
 }
 
 git-changelog-0.1() {
@@ -364,11 +337,8 @@ EOF
 }
 
 no-announcement() {
+  html-head --title 'No announcement'
   cat <<EOF
-<!DOCTYPE html>
-<html>
-  <head>
-  </head>
   <body>
     <p>No announcement for this release.  Previous announcements are tagged
     with #<a href="/blog/tags.html?tag=oil-release#oil-release">oil-release</a>.

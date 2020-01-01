@@ -7,6 +7,8 @@ from __future__ import print_function
 import cgi
 import sys
 
+# Used by html_head.py
+JS_FMT = '<script type="text/javascript" src="%s"></script>\n'
 
 CSS_FMT = '<link rel="stylesheet" type="text/css" href="%s" />\n'
 

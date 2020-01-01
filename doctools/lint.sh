@@ -27,7 +27,7 @@ validate-html() {
 
 manifest() {
   find \
-    _release/VERSION _tmp/unit \
+    _release/VERSION _tmp/unit _tmp/spec \
     -name '*.html' 
     # There are a lot of empty <pre></pre> here which I don't care about
     # _tmp/spec \

@@ -1,5 +1,5 @@
 ---
-css_files: web/release-index.css
+css_files: web/base.css web/release-index.css
 all_docs_url: -
 version_url: -
 ---

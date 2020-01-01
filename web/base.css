@@ -12,6 +12,7 @@
   }
 }
 
+/* wide screens: Center and limit width for readability */
 @media screen and (min-width: 801px) {
   body {
     margin: 0 auto;
@@ -19,18 +20,14 @@
     line-height: 1.4;  /* http://bettermotherfuckingwebsite.com/ */
   }
 
-  /* wide screens: Make it centered and skinny for readability */
-  .skinny {
-    width: 30em;
-  }
-  .wider {
-    width: 45em;
-  }
+  .skinny { width: 30em; }  /* Most blog posts */
+  .wider { width: 45em; }   /* A few posts with tables */
 
   /* We don't want too many distinct widths, so pre-declare them here. */
-  .width40 {
-    width: 40em;
-  }
+  .width40 { width: 40em; }  /* the default for doc/*.md */
+  .width50 { width: 50em; }  /* releases.html uses this */
+  .width60 { width: 60em; }  /* test/wild, test/spec */
+  .width70 { width: 70em; }  /* benchmarks use this */
 }
 
 body {

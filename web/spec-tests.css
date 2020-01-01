@@ -2,11 +2,6 @@ h1 {
   font-size: x-large;
 }
 
-body {
-  margin: 0 auto;
-  width: 60em;
-}
-
 table {
   border-collapse: collapse;
   font-family: sans-serif;
@@ -71,8 +66,3 @@ td {
 .osh-allow-fail {
   background-color: #ffffe0;
 }
-
-#home-link {
-  text-align: right;
-}
-

@@ -115,14 +115,11 @@ _html-summary() {
   local totals=$2
   local manifest=${3:-_tmp/spec/MANIFEST.txt}
 
-  # TODO: I think the style should be shared
+  html-head --title "Spec Test Summary" \
+    ../../web/base.css ../../web/spec-tests.css
+
   cat <<EOF
-<!DOCTYPE html>
-<html>
-  <head>
-    <link href="../../web/spec-tests.css" rel="stylesheet">
-  </head>
-  <body>
+  <body class="width60">
 
 <p id="home-link">
   <!-- The release index is two dirs up -->
@@ -345,13 +342,11 @@ _test-to-html() {
   # Explicit PRE tag messes up Firefox formatting.
   #print "<td id=L" NR "><pre>" line "</pre></td>"
 
+  html-head --title "$src code listing" \
+    ../../web/base.css ../../web/spec-code.css
+
   cat <<EOF
-<!DOCTYPE html>
-<html>
-  <head>
-    <link href="../../web/spec-code.css" rel="stylesheet">
-  </head>
-  <body>
+  <body class="width40">
     <table>
 EOF
   awk < $src '

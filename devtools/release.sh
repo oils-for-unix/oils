@@ -65,7 +65,7 @@ readonly REPO_ROOT=$(cd $(dirname $0)/..; pwd)
 readonly OSH_RELEASE_BINARY=$REPO_ROOT/_tmp/oil-tar-test/oil-$OIL_VERSION/_bin/osh
 readonly OIL_RELEASE_BINARY=$REPO_ROOT/_tmp/oil-tar-test/oil-$OIL_VERSION/_bin/oil
 
-source devtools/common.sh  # html-footer
+source devtools/common.sh  # banner
 
 log() {
   echo "$@" 1>&2
@@ -772,26 +772,30 @@ EOF
 }
 
 _releases-html-header() {
+  # TODO: use html-head here, and publish web/*.css somewhere outside of
+  # /release/$VERSION/?  The list of all releases isn't versioned for obvious
+  # reasons.  Other docs are in the oilshell.org repo using the all-2020.css
+  # bundle.
+
   cat <<EOF
 <!DOCTYPE html>
 <html>
   <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Oil Releases</title>
     <style>
 EOF
 
+  cat web/base.css
   cat web/release-index.css
 
 cat <<EOF
-      body {
-        width: 50em;  /* override width */
-      }
       h1 {
         text-align: center;
       }
     </style>
   </head>
-  <body>
+  <body class="width50">
     <p id="home-link">
       <a href="/">oilshell.org</a>
     </p>
@@ -807,8 +811,15 @@ html-index() {
 
   { _releases-html-header
     _html-index $release_root_dir
-    html-footer
+
+    cat <<EOF
+    </table>
+  </body>
+</html>
+EOF
+
   } > $out
+
   ls -l $out
 }
 

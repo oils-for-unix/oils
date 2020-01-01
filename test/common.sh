@@ -121,6 +121,10 @@ date-and-git-info() {
   echo
 }
 
+html-head() {
+  PYTHONPATH=. doctools/html_head.py "$@"
+}
+
 filename=$(basename $0)
 if test "$filename" = 'common.sh'; then
   "$@"

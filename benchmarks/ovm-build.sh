@@ -406,17 +406,10 @@ print-report() {
   local in_dir=$1
   local base_url='../../web'
 
-  cat <<EOF
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>OVM Build Performance</title>
-    <script type="text/javascript" src="$base_url/table/table-sort.js"></script>
-    <link rel="stylesheet" type="text/css" href="$base_url/table/table-sort.css" />
-    <link rel="stylesheet" type="text/css" href="$base_url/benchmarks.css" />
+  benchmark-html-head 'OVM Build Performance'
 
-  </head>
-  <body>
+  cat <<EOF
+  <body class="width60">
     <p id="home-link">
       <a href="/">oilshell.org</a>
     </p>
