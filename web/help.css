@@ -1,10 +1,4 @@
-/* Style for the quick reference
- * copied and modified from web/manual.css 
- */
-
-body {
-  color: #444;
-}
+/* Style for doc/help.md */
 
 p, ul, ol {
   margin-left: 2em;
@@ -61,13 +55,4 @@ pre {
 p code, li code, h2 code, h3 code, div code {
   background-color: #eee;
   padding: 4px;
-}
-
-#home-link {
-  text-align: right;
-}
-
-#version-in-header {
-  color: darkgreen;
-  font-weight: bold;
 }

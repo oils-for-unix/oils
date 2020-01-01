@@ -18,10 +18,12 @@ def Header(meta, f):
   # CSS links are NOT escaped
   meta['title'] = cgi.escape(meta['title'])
 
+  # NOTE: 'meta viewport' so it's not small on mobile browsers
   f.write('''\
 <!DOCTYPE html>
 <html>
   <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>%(title)s</title>
     %(css_links)s
   </head>

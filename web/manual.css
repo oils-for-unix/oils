@@ -1,10 +1,6 @@
 /* Style for manual
  * Some of this is copied from oilshell.org/css/base.css */
 
-body {
-  color: #444;
-}
-
 p, ul, ol {
   margin-left: 2em;
 }
@@ -32,6 +28,8 @@ h3 {
 pre {
   background-color: #eee;
   padding: 1em;
+
+  /* matches p */
   margin-left: 2em;
 }
 
@@ -44,13 +42,4 @@ pre {
 p code, li code, h2 code, h3 code, div code {
   background-color: #eee;
   padding: 4px;
-}
-
-#home-link {
-  text-align: right;
-}
-
-#version-in-header {
-  color: darkgreen;
-  font-weight: bold;
 }

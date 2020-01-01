@@ -1,7 +1,3 @@
-body {
-  color: #444;
-}
-
 a:link {
   text-decoration: none;
 }
@@ -58,13 +54,4 @@ pre {
 #compact-title {
   font-weight: bold;
   float: left;
-}
-
-#home-link {
-  text-align: right;
-}
-
-#version-in-header {
-  color: darkgreen;
-  font-weight: bold;
 }

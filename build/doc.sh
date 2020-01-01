@@ -167,8 +167,8 @@ EOF
 }
 
 special() {
-  render-only 'README.md' '../web/manual.css ../web/toc.css' 'Oil Source Code'
-  render-only 'INSTALL.txt' '../web/install.css' 'Installing Oil'
+  render-only 'README.md' '../web/base.css ../web/manual.css ../web/toc.css' 'Oil Source Code'
+  render-only 'INSTALL.txt' '../web/base.css ../web/install.css' 'Installing Oil'
 
   #
 

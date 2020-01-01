@@ -33,3 +33,16 @@
   }
 }
 
+body {
+  color: #444;
+}
+
+#home-link {
+  text-align: right;
+}
+
+#version-in-header {
+  color: darkgreen;
+  font-weight: bold;
+}
+
