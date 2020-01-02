@@ -5,6 +5,12 @@ p, ul, ol {
   margin-left: 2em;
 }
 
+/* blocks of code */
+pre {
+  /* matches p */
+  margin-left: 2em;
+}
+
 /* h1 is the title
  * h2 is the first level shown in TOC
  * h3 is the second and last level shown in TOC
@@ -23,15 +29,6 @@ h3 {
   color: darkblue;  /* different than blog */
 }
 
-
-/* blocks of code */
-pre {
-  background-color: #eee;
-  padding: 1em;
-
-  /* matches p */
-  margin-left: 2em;
-}
 
 /* inline code 
  *

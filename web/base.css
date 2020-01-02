@@ -33,6 +33,16 @@ body {
   color: #444;
 }
 
+pre {
+  background-color: #EEE;
+  padding: 1em;
+}
+
+/* Remove left indent of bullet.  0em puts the bullet to the LEFT of
+ * surrounding text. */
+ul { padding-left: 1.2em; }
+ol { padding-left: 1.2em; }
+
 #home-link {
   text-align: right;
 }
@@ -41,8 +51,3 @@ body {
   color: darkgreen;
   font-weight: bold;
 }
-
-/* Remove left indent of bullet.  0em puts the bullet to the LEFT of
- * surrounding text. */
-ul { padding-left: 1.2em; }
-ol { padding-left: 1.2em; }

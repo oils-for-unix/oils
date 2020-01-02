@@ -45,8 +45,6 @@ p code, li code, h2 code, h3 code, div code {
 
 /* blocks of code */
 pre {
-  background-color: #eee;
-  padding: 5px;
   /* 80 character width */
   width: 80ch;
 }
