@@ -51,6 +51,12 @@ pre {
   white-space: nowrap;
 }
 
+/* BEGIN blog/ */
+
+.sep-row {
+  vertical-align: center;
+}
+
 .post-list tr {
   vertical-align: top;
 }
@@ -70,12 +76,29 @@ pre {
   color: #000;
 }
 
-
 #all-posts tbody {
   /* NOTE: This seems to make the table background solid like border-collapse:
    * collapse, but doesn't mess with spacing.
    */
   display: block;
+}
+
+/* on blog/index.html */
+#blog-tag-list {
+  /* text-align: justify; */
+  color: gray;
+}
+
+.tag-count {
+  white-space: nowrap;
+}
+
+/* END blog/ */
+
+/* For post bodies: */
+
+.blog-tag {
+  font-family: sans-serif;
 }
 
 #post-footer {
@@ -116,15 +139,6 @@ a[href^="#"]:visited {
   /* color: #bb60d5 /* Name.Variable (light purple) */
   color: purple;
 }
-
-/* on blog/index.html */
-#blog-tag-list p { text-align: justify; color: gray; }
-
-.blog-tag {
-  white-space: nowrap;
-  font-family: sans-serif;
-}
-
 .book-text-link-td {
   padding: 1em;
   border-top: solid 1px #BBB;
