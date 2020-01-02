@@ -26,8 +26,7 @@
   /* We don't want too many distinct widths, so pre-declare them here. */
   .width40 { width: 40em; }  /* the default for doc/*.md */
   .width50 { width: 50em; }  /* releases.html uses this */
-  .width60 { width: 60em; }  /* test/wild, test/spec */
-  .width70 { width: 70em; }  /* benchmarks use this */
+  .width60 { width: 60em; }  /* test/wild, test/spec, benchmarks */
 }
 
 body {
