@@ -1,6 +1,7 @@
 ---
 in_progress: yes
-css_files: ../web/base.css ../web/help.css ../web/toc.css
+css_files: ../web/base.css ../web/manual.css ../web/help.css ../web/toc.css
+body_css_class: width40 help-body
 ---
 
 Oil Help

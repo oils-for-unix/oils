@@ -1,14 +1,10 @@
-/* Style for manual
- * Some of this is copied from oilshell.org/css/base.css */
+/* Style for manual in doc/*.md */
 
-p, ul, ol {
-  margin-left: 2em;
-}
-
-/* blocks of code */
-pre {
-  /* matches p */
-  margin-left: 2em;
+/* Indent relative to headings if the screen is wide enough */
+@media screen and (min-width: 801px) {
+  p, ul, ol, pre {
+    margin-left: 2em;
+  }
 }
 
 /* h1 is the title

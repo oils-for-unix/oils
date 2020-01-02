@@ -1,29 +1,16 @@
-/* Style for doc/help.md */
+/* Style for doc/help.md -- 
+ * Extends web/manual.css except we have h4 in addition to h1-h3.
+ * There's a three-level hierarchy of group -> section -> topic.
+ * */
 
-p, ul, ol {
-  margin-left: 2em;
-}
-
-/* h1 is the title
- * h2 is the first level shown in TOC
- * h3 is the second and last level shown in TOC
- */
-h1 {
-  font-size: 1.5em;  /* reduce to what browsers apparently use for h2 */
-}
-
-h2 {
-  font-size: 1.2em;  /* reduce to what browsers apparently use for h3 */
-}
-
-h3 {
+.help-body h3 {
   font-size: 1em;
   /* margin-left: 2em; */
   padding: 1em; 
   background-color: lavender;
 }
 
-h4 {
+.help-body h4 {
   font-size: 1em;
 
   text-align: center;
@@ -36,21 +23,4 @@ h4 {
   /* font-family: monospace; */
 
   color: darkblue;  /* different than blog */
-}
-
-
-/* blocks of code */
-pre {
-  margin-left: 2em;
-}
-
-/* inline code 
- *
- * BUG FIX: Selector is 'p code' and not 'code' because markdown generates
- * <pre><code> pairs from indented blocks for some reason, and they would
- * interfere only in Chrome.
- */
-p code, li code, h2 code, h3 code, div code {
-  background-color: #eee;
-  padding: 4px;
 }
