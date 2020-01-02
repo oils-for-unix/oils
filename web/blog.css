@@ -51,15 +51,31 @@ pre {
   white-space: nowrap;
 }
 
+.post-list tr {
+  vertical-align: top;
+}
+.post-list a {
+  text-decoration: none;
+}
+.post-list a:hover {
+  text-decoration: underline;
+}
+/* Save space */
+.post-list .date {
+  padding-left: 0em;
+}
+
+/* Subtly stand out */
+.alt-month .date {
+  color: #000;
+}
+
+
 #all-posts tbody {
   /* NOTE: This seems to make the table background solid like border-collapse:
    * collapse, but doesn't mess with spacing.
    */
   display: block;
-}
-
-.alt-month {
-  background-color: #F0F0F0;
 }
 
 #post-footer {
@@ -101,17 +117,12 @@ a[href^="#"]:visited {
   color: purple;
 }
 
+/* on blog/index.html */
+#blog-tag-list p { text-align: justify; color: gray; }
+
 .blog-tag {
   white-space: nowrap;
   font-family: sans-serif;
-}
-
-.blog-tag a {
-  /* color: #c65d09; /* Generic.Prompt (orange-ish) */
-}
-
-.blog-tag a:visited {
-  color: purple;
 }
 
 .book-text-link-td {
