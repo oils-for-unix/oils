@@ -253,13 +253,14 @@ def _ApplyInsertions(lines, insertions, out_file):
     out_file.write(line)
 
 
-def Render(opts, in_file, out_file):
+def Render(opts, in_file, out_file, use_fastlex=True):
   html = md2html(in_file.read())
 
-  # Stages of transformation.
-  html = oil_doc.ExpandLinks(html)
+  if use_fastlex:
+    # Stages of transformation.
+    html = oil_doc.ExpandLinks(html)
 
-  html = oil_doc.HighlightCode(html)
+    html = oil_doc.HighlightCode(html)
 
   # h2 is the title.  h1 is unused.
   if opts.toc_tags:
@@ -302,6 +303,10 @@ def Options():
   p.add_option(
       '--toc-tag', dest='toc_tags', action='append', default=[],
       help='h tags to include in the TOC, e.g. h2 h3')
+  p.add_option(
+      '--disable-fastlex', dest='disable_fastlex', action='store_true',
+      default=False,
+      help='Hack for old blog posts')
   return p
 
 
@@ -318,7 +323,7 @@ def main(argv):
 
   if len(argv) == 1:
     # Old style for blog: it's a filter
-    Render(opts, sys.stdin, sys.stdout)
+    Render(opts, sys.stdin, sys.stdout, use_fastlex=not opts.disable_fastlex)
     return
 
   # Otherwise we expect metadata and content
@@ -328,8 +333,6 @@ def main(argv):
   with open(argv[1]) as f:
     doc_meta = json.load(f)
   meta.update(doc_meta)
-
-  #print(meta, file=sys.stderr)
 
   with open(argv[2]) as content_f:
     doc_html.Header(meta, sys.stdout)

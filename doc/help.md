@@ -250,8 +250,8 @@ below the matching pattern.
 
 <h4 id="if">if</h4>
 
-Test if a command exited with status zero (true).  If so, execute a block of
-code.
+Test if a command exited with status zero (true).  If so, execute the
+corresponding block of code.
 
 Shell:
 

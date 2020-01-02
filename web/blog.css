@@ -7,9 +7,14 @@ h1 {
   text-align: center;
 }
 
+.blog-post-title {
+  text-align: left;
+  font-size: 1.3em;
+}
+
 h2 {
   /* x-large is too big; causes most titles to wrap badly (on Chrome/Firefox desktop). */
-  font-size: 1.3em;
+  font-size: 1.2em;
 }
 
 h3 {
@@ -25,11 +30,12 @@ p code, div code, li code, h2 code, h3 code {
 
 blockquote {
   background-color: papayawhip;
-  padding: 0.5em;
+  padding: 1.0em;
 }
 
 pre {
-  border: none;
+  /* TODO: It would be nice to remove this, but many code blocks wrap.
+     Other solutions: A skinny font.  Make the whole page 35em? (not great) */
   font-size: medium;
 }
 
