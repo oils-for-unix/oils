@@ -503,6 +503,9 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
 static int
 has_finalizer(PyObject *op)
 {
+#ifdef OBJECTS_ONLY
+    assert(0);
+#else
     if (PyInstance_Check(op)) {
         assert(delstr != NULL);
         return _PyInstance_Lookup(op, delstr) != NULL;
@@ -513,6 +516,7 @@ has_finalizer(PyObject *op)
         return PyGen_NeedsFinalizing((PyGenObject *)op);
     else
         return 0;
+#endif
 }
 
 /* Try to untrack all currently tracked dictionaries */
