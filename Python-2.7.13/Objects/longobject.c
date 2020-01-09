@@ -31,6 +31,9 @@
 #define MAX(x, y) ((x) < (y) ? (y) : (x))
 #define MIN(x, y) ((x) > (y) ? (y) : (x))
 
+#ifdef OBJECTS_ONLY
+#define SIGCHECK(PyTryBlock)
+#else
 #define SIGCHECK(PyTryBlock)                            \
     do {                                                \
         if (--_Py_Ticker < 0) {                         \
@@ -38,6 +41,7 @@
             if (PyErr_CheckSignals()) PyTryBlock        \
                                           }             \
     } while(0)
+#endif
 
 /* Normalize (remove leading zeros from) a long int object.
    Doesn't attempt to free the storage--in most cases, due to the nature

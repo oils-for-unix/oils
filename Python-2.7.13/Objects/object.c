@@ -2065,6 +2065,7 @@ PyObject _Py_NotImplementedStruct = {
     1, &PyNotImplemented_Type
 };
 
+#ifndef OBJECTS_ONLY
 void
 _Py_ReadyTypes(void)
 {
@@ -2220,6 +2221,7 @@ _Py_ReadyTypes(void)
     if (PyType_Ready(&PySeqIter_Type) < 0)
         Py_FatalError("Can't initialize sequence iterator type");
 }
+#endif  // OBJECTS_ONLY
 
 
 #ifdef Py_TRACE_REFS

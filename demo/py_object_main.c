@@ -1,10 +1,252 @@
 #include "Python.h"
 
+int Py_VerboseFlag; /* pythonrun.c, does only intobject.c use it? */
+
+PyThreadState *_PyThreadState_Current = NULL;
+
 struct _inittab _PyImport_Inittab[] = {
     /* Sentinel */
     {0, 0}
 };
 
+void
+Py_FatalError(const char *msg)
+{
+    fprintf(stderr, "Fatal Python error: %s\n", msg);
+    abort();
+}
+
+/* Even smaller than Python/sigcheck.c */
+int
+PyErr_CheckSignals(void)
+{
+	return -1;
+}
+
+/* APIs to write to sys.stdout or sys.stderr using a printf-like interface.
+   Adapted from code submitted by Just van Rossum.
+
+   PySys_WriteStdout(format, ...)
+   PySys_WriteStderr(format, ...)
+
+      The first function writes to sys.stdout; the second to sys.stderr.  When
+      there is a problem, they write to the real (C level) stdout or stderr;
+      no exceptions are raised.
+
+      Both take a printf-style format string as their first argument followed
+      by a variable length argument list determined by the format string.
+
+      *** WARNING ***
+
+      The format should limit the total size of the formatted output string to
+      1000 bytes.  In particular, this means that no unrestricted "%s" formats
+      should occur; these should be limited using "%.<N>s where <N> is a
+      decimal number calculated so that <N> plus the maximum size of other
+      formatted text does not exceed 1000 bytes.  Also watch out for "%f",
+      which can print hundreds of digits for very large numbers.
+
+ */
+
+static void
+mywrite(char *name, FILE *fp, const char *format, va_list va)
+{
+    PyObject *file;
+    PyObject *error_type, *error_value, *error_traceback;
+
+    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    file = PySys_GetObject(name);
+    if (file == NULL || PyFile_AsFile(file) == fp)
+        vfprintf(fp, format, va);
+    else {
+        char buffer[1001];
+        const int written = PyOS_vsnprintf(buffer, sizeof(buffer),
+                                           format, va);
+        if (PyFile_WriteString(buffer, file) != 0) {
+            PyErr_Clear();
+            fputs(buffer, fp);
+        }
+        if (written < 0 || (size_t)written >= sizeof(buffer)) {
+            const char *truncated = "... truncated";
+            if (PyFile_WriteString(truncated, file) != 0) {
+                PyErr_Clear();
+                fputs(truncated, fp);
+            }
+        }
+    }
+    PyErr_Restore(error_type, error_value, error_traceback);
+}
+
+/*
+void
+PySys_WriteStdout(const char *format, ...)
+{
+    va_list va;
+
+    va_start(va, format);
+    mywrite("stdout", stdout, format, va);
+    va_end(va);
+}
+*/
+
+void
+PySys_WriteStderr(const char *format, ...)
+{
+    va_list va;
+
+    va_start(va, format);
+    mywrite("stderr", stderr, format, va);
+    va_end(va);
+}
+
+
+#define FILE_BEGIN_ALLOW_THREADS(fobj)
+#define FILE_END_ALLOW_THREADS(fobj)
+
+static PyObject *
+err_closed(void)
+{
+    PyErr_SetString(PyExc_ValueError, "I/O operation on closed file");
+    return NULL;
+}
+
+/* Interfaces to write objects/strings to file-like objects */
+
+int
+PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
+{
+    PyObject *writer, *value, *args, *result;
+    if (f == NULL) {
+        PyErr_SetString(PyExc_TypeError, "writeobject with NULL file");
+        return -1;
+    }
+    else if (PyFile_Check(f)) {
+        PyFileObject *fobj = (PyFileObject *) f;
+#ifdef Py_USING_UNICODE
+        PyObject *enc = fobj->f_encoding;
+        int result;
+#endif
+        if (fobj->f_fp == NULL) {
+            err_closed();
+            return -1;
+        }
+#ifdef Py_USING_UNICODE
+        if ((flags & Py_PRINT_RAW) &&
+            PyUnicode_Check(v) && enc != Py_None) {
+            char *cenc = PyString_AS_STRING(enc);
+            char *errors = fobj->f_errors == Py_None ?
+              "strict" : PyString_AS_STRING(fobj->f_errors);
+            value = PyUnicode_AsEncodedString(v, cenc, errors);
+            if (value == NULL)
+                return -1;
+        } else {
+            value = v;
+            Py_INCREF(value);
+        }
+        result = file_PyObject_Print(value, fobj, flags);
+        Py_DECREF(value);
+        return result;
+#else
+        return file_PyObject_Print(v, fobj, flags);
+#endif
+    }
+    writer = PyObject_GetAttrString(f, "write");
+    if (writer == NULL)
+        return -1;
+    if (flags & Py_PRINT_RAW) {
+        if (PyUnicode_Check(v)) {
+            value = v;
+            Py_INCREF(value);
+        } else
+            value = PyObject_Str(v);
+    }
+    else
+        value = PyObject_Repr(v);
+    if (value == NULL) {
+        Py_DECREF(writer);
+        return -1;
+    }
+    args = PyTuple_Pack(1, value);
+    if (args == NULL) {
+        Py_DECREF(value);
+        Py_DECREF(writer);
+        return -1;
+    }
+    result = PyEval_CallObject(writer, args);
+    Py_DECREF(args);
+    Py_DECREF(value);
+    Py_DECREF(writer);
+    if (result == NULL)
+        return -1;
+    Py_DECREF(result);
+    return 0;
+}
+
+int
+PyFile_WriteString(const char *s, PyObject *f)
+{
+
+    if (f == NULL) {
+        /* Should be caused by a pre-existing error */
+        if (!PyErr_Occurred())
+            PyErr_SetString(PyExc_SystemError,
+                            "null file for PyFile_WriteString");
+        return -1;
+    }
+    else if (PyFile_Check(f)) {
+        PyFileObject *fobj = (PyFileObject *) f;
+        FILE *fp = PyFile_AsFile(f);
+        if (fp == NULL) {
+            err_closed();
+            return -1;
+        }
+        FILE_BEGIN_ALLOW_THREADS(fobj)
+        fputs(s, fp);
+        FILE_END_ALLOW_THREADS(fobj)
+        return 0;
+    }
+    else if (!PyErr_Occurred()) {
+        PyObject *v = PyString_FromString(s);
+        int err;
+        if (v == NULL)
+            return -1;
+        err = PyFile_WriteObject(v, f, Py_PRINT_RAW);
+        Py_DECREF(v);
+        return err;
+    }
+    else
+        return -1;
+}
+
+
+/* Stub of function in Python/_warnings.c */
+int
+PyErr_WarnEx(PyObject *category, const char *text, Py_ssize_t stack_level)
+{
+  return 0;
+}
+
+/* from Python/ceval.c */
+
+#define Py_DEFAULT_RECURSION_LIMIT 1000
+/* a lot of code uses this too */
+int _Py_CheckRecursionLimit = Py_DEFAULT_RECURSION_LIMIT;
+
+int
+Py_GetRecursionLimit(void)
+{
+    return Py_DEFAULT_RECURSION_LIMIT;
+}
+
+void
+Py_SetRecursionLimit(int new_limit)
+{
+}
+
+int
+_Py_CheckRecursiveCall(const char *where)
+{
+  return 0;
+}
 
 int main(int argc, char **argv) {
   // TODO:

@@ -89,7 +89,6 @@ Modules/gcmodule.c
 _MODOBJS='
 Modules/errnomodule.c
 Modules/_weakref.c
-Modules/zipimport.c
 Modules/signalmodule.c
 '
 
@@ -103,6 +102,52 @@ $_OVM_PYTHON_OBJS
 $_MODULE_OBJS
 $_MODOBJS
 "
+
+# TODO: Get rid of intobject.c in favor of longobject.c.  But it's tied in to
+# many objects.  Probably need test coverage to do it safely.
+
+_OVM_LIBRARY_OBJS="
+Python/mysnprintf.c
+
+Python/getargs.c
+Python/modsupport.c
+Python/errors.c
+
+Objects/boolobject.c
+
+Python/mystrtoul.c
+Objects/intobject.c
+
+Python/pystrtod.c
+Python/dtoa.c
+Python/pymath.c
+Objects/floatobject.c
+
+Python/pyctype.c
+Objects/stringobject.c
+
+Objects/longobject.c
+Objects/tupleobject.c
+
+Objects/sliceobject.c
+Objects/listobject.c
+
+Objects/dictobject.c
+Objects/iterobject.c
+Objects/typeobject.c
+
+Objects/abstract.c
+Objects/object.c
+Objects/obmalloc.c
+
+Objects/exceptions.c
+
+Modules/gcmodule.c
+
+Objects/weakrefobject.c
+"
+# causes more errors?
+#Objects/classobject.c
 
 demo() {
   local abs_out=$PWD/_tmp/demo
@@ -131,6 +176,7 @@ demo() {
     ${CFLAGS} \
     "${INCLUDE_PATHS[@]}" \
     "${PREPROC_FLAGS[@]}" \
+    -D OBJECTS_ONLY \
     -D PREFIX="\"$PREFIX\"" \
     -D EXEC_PREFIX="\"$PREFIX\"" \
     -o $abs_out \

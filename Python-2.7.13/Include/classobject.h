@@ -38,8 +38,15 @@ typedef struct {
 
 PyAPI_DATA(PyTypeObject) PyClass_Type, PyInstance_Type, PyMethod_Type;
 
-#define PyClass_Check(op) ((op)->ob_type == &PyClass_Type)
-#define PyInstance_Check(op) ((op)->ob_type == &PyInstance_Type)
+#ifdef OBJECTS_ONLY
+  /* Always false */
+  #define PyClass_Check(op) 0
+  #define PyInstance_Check(op) 0
+#else
+  #define PyClass_Check(op) ((op)->ob_type == &PyClass_Type)
+  #define PyInstance_Check(op) ((op)->ob_type == &PyInstance_Type)
+#endif
+
 #define PyMethod_Check(op) ((op)->ob_type == &PyMethod_Type)
 
 PyAPI_FUNC(PyObject *) PyClass_New(PyObject *, PyObject *, PyObject *);
