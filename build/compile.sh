@@ -416,4 +416,6 @@ count-c-lines() {
   popd
 }
 
-"$@"
+if test $(basename $0) = 'compile.sh'; then
+  "$@"
+fi
