@@ -153,8 +153,8 @@ Objects/weakrefobject.c
 # causes more errors?
 #Objects/classobject.c
 
-demo() {
-  local abs_out=$PWD/_tmp/demo
+build() {
+  local abs_out=$PWD/_tmp/py_object_main
   local main=$PWD/demo/py_object_main.c
 
   # From ./configure
@@ -190,6 +190,8 @@ demo() {
     ${BASE_LDFLAGS} \
     ${LDFLAGS} \
     "$@" || true
+
+  ls -l $abs_out
 }
 
 # 35K lines of .c files, and 40K lines with headers

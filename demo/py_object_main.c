@@ -331,8 +331,20 @@ PyEval_CallObjectWithKeywords(PyObject *func, PyObject *arg, PyObject *kw)
 }
 
 int main(int argc, char **argv) {
+  PyObject* long1 = PyLong_FromLong(42);
+  PyObject* long2 = PyLong_FromLong(1);
+
+  binaryfunc long_add = PyLong_Type.tp_as_number->nb_add;
+  PyObject* result = long_add(long1, long2);
+
+  reprfunc long_repr = PyLong_Type.tp_repr;
+  PyObject* repr = long_repr(result);
+
+  PyStringObject* s = (PyStringObject*) repr;
+
+  fprintf(stderr, "42 + 1 = %.*s\n", (int)s->ob_size, s->ob_sval);
+
   // TODO:
-  // - Create all types
   // - Create objects of each type
   // - Perform operations on them
 	return 42;
