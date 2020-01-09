@@ -4369,6 +4369,7 @@ PyTypeObject PyLong_Type = {
     PyObject_Del,                               /* tp_free */
 };
 
+#ifndef OVM_MAIN
 static PyTypeObject Long_InfoType;
 
 PyDoc_STRVAR(long_info__doc__,
@@ -4408,12 +4409,15 @@ PyLong_GetInfo(void)
     }
     return long_info;
 }
+#endif
 
 int
 _PyLong_Init(void)
 {
+#ifndef OVM_MAIN
     /* initialize long_info */
     if (Long_InfoType.tp_name == 0)
         PyStructSequence_InitType(&Long_InfoType, &long_info_desc);
+#endif
     return 1;
 }

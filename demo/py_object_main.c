@@ -248,6 +248,77 @@ _Py_CheckRecursiveCall(const char *where)
   return 0;
 }
 
+/* Extract a slice index from a PyInt or PyLong or an object with the
+   nb_index slot defined, and store in *pi.
+   Silently reduce values larger than PY_SSIZE_T_MAX to PY_SSIZE_T_MAX,
+   and silently boost values less than -PY_SSIZE_T_MAX-1 to -PY_SSIZE_T_MAX-1.
+   Return 0 on error, 1 on success.
+*/
+/* Note:  If v is NULL, return success without storing into *pi.  This
+   is because_PyEval_SliceIndex() is called by apply_slice(), which can be
+   called by the SLICE opcode with v and/or w equal to NULL.
+*/
+int
+_PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
+{
+    if (v != NULL) {
+        Py_ssize_t x;
+        if (PyInt_Check(v)) {
+            /* XXX(nnorwitz): I think PyInt_AS_LONG is correct,
+               however, it looks like it should be AsSsize_t.
+               There should be a comment here explaining why.
+            */
+            x = PyInt_AS_LONG(v);
+        }
+        else if (PyIndex_Check(v)) {
+            x = PyNumber_AsSsize_t(v, NULL);
+            if (x == -1 && PyErr_Occurred())
+                return 0;
+        }
+        else {
+            PyErr_SetString(PyExc_TypeError,
+                            "slice indices must be integers or "
+                            "None or have an __index__ method");
+            return 0;
+        }
+        *pi = x;
+    }
+    return 1;
+}
+
+/* External interface to call any callable object.
+   The arg must be a tuple or NULL.  The kw must be a dict or NULL. */
+
+PyObject *
+PyEval_CallObjectWithKeywords(PyObject *func, PyObject *arg, PyObject *kw)
+{
+    PyObject *result;
+
+    if (arg == NULL) {
+        arg = PyTuple_New(0);
+        if (arg == NULL)
+            return NULL;
+    }
+    else if (!PyTuple_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "argument list must be a tuple");
+        return NULL;
+    }
+    else
+        Py_INCREF(arg);
+
+    if (kw != NULL && !PyDict_Check(kw)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "keyword list must be a dictionary");
+        Py_DECREF(arg);
+        return NULL;
+    }
+
+    result = PyObject_Call(func, arg, kw);
+    Py_DECREF(arg);
+    return result;
+}
+
 int main(int argc, char **argv) {
   // TODO:
   // - Create all types

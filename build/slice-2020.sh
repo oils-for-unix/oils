@@ -141,9 +141,9 @@ Objects/object.c
 Objects/obmalloc.c
 
 Objects/exceptions.c
-
 Modules/gcmodule.c
 
+Objects/capsule.c
 Objects/weakrefobject.c
 "
 # causes more errors?

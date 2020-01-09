@@ -65,6 +65,7 @@ PyFloat_GetMin(void)
     return DBL_MIN;
 }
 
+#ifndef OVM_MAIN
 static PyTypeObject FloatInfoType = {0, 0, 0, 0, 0, 0};
 
 PyDoc_STRVAR(floatinfo__doc__,
@@ -137,6 +138,7 @@ PyFloat_GetInfo(void)
     }
     return floatinfo;
 }
+#endif  // OVM_MAIN
 
 PyObject *
 PyFloat_FromDouble(double fval)
@@ -2216,9 +2218,11 @@ _PyFloat_Init(void)
     double_format = detected_double_format;
     float_format = detected_float_format;
 
+#ifndef OVM_MAIN
     /* Init float info */
     if (FloatInfoType.tp_name == 0)
         PyStructSequence_InitType(&FloatInfoType, &floatinfo_desc);
+#endif
 }
 
 int

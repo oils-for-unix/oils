@@ -792,6 +792,7 @@ PyErr_SyntaxLocation(const char *filename, int lineno)
 PyObject *
 PyErr_ProgramText(const char *filename, int lineno)
 {
+#ifndef OBJECTS_ONLY
     FILE *fp;
     int i;
     char linebuf[1000];
@@ -821,6 +822,7 @@ PyErr_ProgramText(const char *filename, int lineno)
             p++;
         return PyString_FromString(p);
     }
+#endif
     return NULL;
 }
 

@@ -32,6 +32,9 @@ PyObject *
 Py_InitModule4(const char *name, PyMethodDef *methods, const char *doc,
                PyObject *passthrough, int module_api_version)
 {
+#ifdef OBJECTS_ONLY
+    return NULL;
+#else
     PyObject *m, *d, *v, *n;
     PyMethodDef *ml;
     PyInterpreterState *interp = PyThreadState_Get()->interp;
@@ -101,6 +104,7 @@ Py_InitModule4(const char *name, PyMethodDef *methods, const char *doc,
         Py_DECREF(v);
     }
     return m;
+#endif  // OBJECTS_ONLY
 }
 
 
@@ -619,6 +623,7 @@ PyEval_CallMethod(PyObject *obj, const char *methodname, const char *format, ...
 int
 PyModule_AddObject(PyObject *m, const char *name, PyObject *o)
 {
+#ifndef OBJECTS_ONLY
     PyObject *dict;
     if (!PyModule_Check(m)) {
         PyErr_SetString(PyExc_TypeError,
@@ -642,6 +647,7 @@ PyModule_AddObject(PyObject *m, const char *name, PyObject *o)
     if (PyDict_SetItemString(dict, name, o))
         return -1;
     Py_DECREF(o);
+#endif
     return 0;
 }
 
