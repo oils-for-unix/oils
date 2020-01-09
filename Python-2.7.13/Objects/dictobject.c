@@ -2285,12 +2285,14 @@ static PyMethodDef mapp_methods[] = {
      items__doc__},
     {"values",          (PyCFunction)dict_values,       METH_NOARGS,
      values__doc__},
+#ifndef OVM_MAIN
     {"viewkeys",        (PyCFunction)dictkeys_new,      METH_NOARGS,
      viewkeys__doc__},
     {"viewitems",       (PyCFunction)dictitems_new,     METH_NOARGS,
      viewitems__doc__},
     {"viewvalues",      (PyCFunction)dictvalues_new,    METH_NOARGS,
      viewvalues__doc__},
+#endif
     {"update",          (PyCFunction)dict_update,       METH_VARARGS | METH_KEYWORDS,
      update__doc__},
     {"fromkeys",        (PyCFunction)dict_fromkeys,     METH_VARARGS | METH_CLASS,

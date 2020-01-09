@@ -837,6 +837,8 @@ delete_garbage(PyGC_Head *collectable, PyGC_Head *old)
 static void
 clear_freelists(void)
 {
+    /* Don't free anything; we want to use our own per-proc allocator! */
+#ifndef OBJECTS_ONLY
     (void)PyMethod_ClearFreeList();
     (void)PyFrame_ClearFreeList();
     (void)PyCFunction_ClearFreeList();
@@ -846,6 +848,7 @@ clear_freelists(void)
 #endif
     (void)PyInt_ClearFreeList();
     (void)PyFloat_ClearFreeList();
+#endif
 }
 
 static double
@@ -1386,6 +1389,7 @@ static PyMethodDef GcMethods[] = {
 };
 #endif
 
+#ifndef OBJECTS_ONLY
 PyMODINIT_FUNC
 initgc(void)
 {
@@ -1430,6 +1434,7 @@ initgc(void)
     ADD_INT(DEBUG_LEAK);
 #undef ADD_INT
 }
+#endif
 
 /* API to invoke gc.collect() from C */
 Py_ssize_t

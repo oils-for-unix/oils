@@ -33,7 +33,7 @@ Py_InitModule4(const char *name, PyMethodDef *methods, const char *doc,
                PyObject *passthrough, int module_api_version)
 {
 #ifdef OBJECTS_ONLY
-    return NULL;
+    assert(0);
 #else
     PyObject *m, *d, *v, *n;
     PyMethodDef *ml;
@@ -623,7 +623,9 @@ PyEval_CallMethod(PyObject *obj, const char *methodname, const char *format, ...
 int
 PyModule_AddObject(PyObject *m, const char *name, PyObject *o)
 {
-#ifndef OBJECTS_ONLY
+#ifdef OBJECTS_ONLY
+    assert(0);
+#else
     PyObject *dict;
     if (!PyModule_Check(m)) {
         PyErr_SetString(PyExc_TypeError,

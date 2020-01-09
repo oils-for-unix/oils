@@ -24,6 +24,7 @@ extern "C" {
 void
 PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
 {
+#ifndef OBJECTS_ONLY
     PyThreadState *tstate = PyThreadState_GET();
     PyObject *oldtype, *oldvalue, *oldtraceback;
 
@@ -47,6 +48,7 @@ PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
     Py_XDECREF(oldtype);
     Py_XDECREF(oldvalue);
     Py_XDECREF(oldtraceback);
+#endif
 }
 
 void
@@ -662,6 +664,9 @@ PyErr_NewExceptionWithDoc(char *name, char *doc, PyObject *base, PyObject *dict)
 void
 PyErr_WriteUnraisable(PyObject *obj)
 {
+#ifdef OBJECTS_ONLY
+    assert(0);
+#else
     PyObject *f, *t, *v, *tb;
     PyErr_Fetch(&t, &v, &tb);
     f = PySys_GetObject("stderr");
@@ -714,6 +719,7 @@ PyErr_WriteUnraisable(PyObject *obj)
     Py_XDECREF(t);
     Py_XDECREF(v);
     Py_XDECREF(tb);
+#endif
 }
 
 extern PyObject *PyModule_GetWarningsModule(void);
@@ -792,7 +798,9 @@ PyErr_SyntaxLocation(const char *filename, int lineno)
 PyObject *
 PyErr_ProgramText(const char *filename, int lineno)
 {
-#ifndef OBJECTS_ONLY
+#ifdef OBJECTS_ONLY
+    assert(0);
+#else
     FILE *fp;
     int i;
     char linebuf[1000];

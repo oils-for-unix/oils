@@ -106,6 +106,9 @@ $_MODOBJS
 # TODO: Get rid of intobject.c in favor of longobject.c.  But it's tied in to
 # many objects.  Probably need test coverage to do it safely.
 
+# Note: setobject.c makes dictobject.c compile more easily.  Are we supporting
+# it in Oil?
+
 _OVM_LIBRARY_OBJS="
 Python/mysnprintf.c
 
@@ -133,6 +136,7 @@ Objects/sliceobject.c
 Objects/listobject.c
 
 Objects/dictobject.c
+Objects/setobject.c
 Objects/iterobject.c
 Objects/typeobject.c
 
@@ -191,6 +195,15 @@ demo() {
 # 35K lines of .c files, and 40K lines with headers
 # of course we have some other dependencies like math and string libs.
 source-files() {
+  echo $_OVM_LIBRARY_OBJS
+
+  # These are mostly small
+  for f in Include/*object.h; do
+    echo $f
+  done
+
+  return
+
   egrep -v 'class|frame|set' <<EOF
 Objects/boolobject.c
 Objects/cellobject.c
@@ -217,11 +230,6 @@ Objects/tupleobject.c
 Objects/typeobject.c
 EOF
   #return
-
-  # These are mostly small
-  for f in Include/*object.h; do
-    echo $f
-  done
 }
 
 count() {

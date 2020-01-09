@@ -194,6 +194,9 @@ PyCapsule_SetContext(PyObject *o, void *context)
 void *
 PyCapsule_Import(const char *name, int no_block)
 {
+#ifdef OBJECTS_ONLY
+    assert(0);
+#else
     PyObject *object = NULL;
     void *return_value = NULL;
     char *trace;
@@ -250,6 +253,7 @@ EXIT:
         PyMem_FREE(name_dup);
     }
     return return_value;
+#endif
 }
 
 

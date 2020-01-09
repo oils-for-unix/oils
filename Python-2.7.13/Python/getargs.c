@@ -1031,14 +1031,16 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 
     case 'e': {/* encoded string */
         char **buffer;
+#ifdef Py_USING_UNICODE
         const char *encoding;
+#endif
         PyObject *s;
         Py_ssize_t size;
         int recode_strings;
 
+#ifdef Py_USING_UNICODE
         /* Get 'e' parameter: the encoding name */
         encoding = (const char *)va_arg(*p_va, const char *);
-#ifdef Py_USING_UNICODE
         if (encoding == NULL)
             encoding = PyUnicode_GetDefaultEncoding();
 #endif

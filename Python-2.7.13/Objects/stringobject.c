@@ -4268,8 +4268,9 @@ PyString_Format(PyObject *format, PyObject *args)
     Py_ssize_t arglen, argidx;
     Py_ssize_t reslen, rescnt, fmtcnt;
     int args_owned = 0;
-    PyObject *result, *orig_args;
+    PyObject *result;
 #ifdef Py_USING_UNICODE
+    PyObject *orig_args;
     PyObject *v, *w;
 #endif
     PyObject *dict = NULL;
@@ -4277,7 +4278,9 @@ PyString_Format(PyObject *format, PyObject *args)
         PyErr_BadInternalCall();
         return NULL;
     }
+#ifdef Py_USING_UNICODE
     orig_args = args;
+#endif
     fmt = PyString_AS_STRING(format);
     fmtcnt = PyString_GET_SIZE(format);
     reslen = rescnt = fmtcnt + 100;

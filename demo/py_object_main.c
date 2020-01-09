@@ -50,6 +50,9 @@ PyErr_CheckSignals(void)
 static void
 mywrite(char *name, FILE *fp, const char *format, va_list va)
 {
+#ifdef OBJECTS_ONLY
+    assert(0);
+#else
     PyObject *file;
     PyObject *error_type, *error_value, *error_traceback;
 
@@ -74,6 +77,7 @@ mywrite(char *name, FILE *fp, const char *format, va_list va)
         }
     }
     PyErr_Restore(error_type, error_value, error_traceback);
+#endif
 }
 
 /*
@@ -114,6 +118,9 @@ err_closed(void)
 int
 PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
 {
+#ifdef OBJECTS_ONLY
+    assert(0);
+#else
     PyObject *writer, *value, *args, *result;
     if (f == NULL) {
         PyErr_SetString(PyExc_TypeError, "writeobject with NULL file");
@@ -178,13 +185,16 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
     if (result == NULL)
         return -1;
     Py_DECREF(result);
+#endif
     return 0;
 }
 
 int
 PyFile_WriteString(const char *s, PyObject *f)
 {
-
+#ifdef OBJECTS_ONLY
+    assert(0);
+#else
     if (f == NULL) {
         /* Should be caused by a pre-existing error */
         if (!PyErr_Occurred())
@@ -215,6 +225,7 @@ PyFile_WriteString(const char *s, PyObject *f)
     }
     else
         return -1;
+#endif
 }
 
 

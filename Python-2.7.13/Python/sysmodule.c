@@ -1465,10 +1465,15 @@ _PySys_Init(void)
                         PyInt_FromLong(PyInt_GetMax()));
     SET_SYS_FROM_STRING("py3kwarning",
                         PyBool_FromLong(Py_Py3kWarningFlag));
+#ifndef OVM_MAIN
+    /* Note: could restore these if we build in Objects/structseq.c
+     * May be useful on embedded platforms.
+     */
     SET_SYS_FROM_STRING("float_info",
                         PyFloat_GetInfo());
     SET_SYS_FROM_STRING("long_info",
                         PyLong_GetInfo());
+#endif
 #ifdef Py_USING_UNICODE
     SET_SYS_FROM_STRING("maxunicode",
                         PyInt_FromLong(PyUnicode_GetMax()));

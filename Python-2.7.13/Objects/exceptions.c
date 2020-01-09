@@ -2124,6 +2124,9 @@ _PyExc_Init(void)
     PRE_INIT(UnicodeWarning)
     PRE_INIT(BytesWarning)
 
+#ifndef OBJECTS_ONLY
+    /* No modules at all, including __builtin__ module */
+
     m = Py_InitModule4("exceptions", functions, exceptions_doc,
         (PyObject *)NULL, PYTHON_API_VERSION);
     if (m == NULL)
@@ -2220,6 +2223,7 @@ _PyExc_Init(void)
         Py_DECREF(args_tuple);
     }
     Py_DECREF(bltinmod);
+#endif  // OBJECTS_ONLY
 }
 
 void
