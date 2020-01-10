@@ -2394,7 +2394,7 @@ PyMem_Free(void *p)
 
 #define KEY "Py_Repr"
 
-/* OBJECTS_ONLY: A GLBOAL instead of thread local.  TODO: Put this in a VM
+/* OBJECTS_ONLY: Use a GLOBAL instead of thread local.  TODO: Put this in a VM
  * object.
  */
 PyObject* _Py_Repr = NULL;
@@ -2418,7 +2418,9 @@ Py_ReprEnter(PyObject *obj)
         list = PyList_New(0);
         if (list == NULL)
             return -1;
-#ifndef OBJECTS_ONLY
+#ifdef OBJECTS_ONLY
+        _Py_Repr = list;
+#else
         if (PyDict_SetItemString(dict, KEY, list) < 0)
             return -1;
 #endif

@@ -1,5 +1,17 @@
 #include "Python.h"
 
+#include <stdarg.h>  // va_list, etc.
+#include <stdio.h>  // vprintf
+
+void Log(const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  vprintf(fmt, args);
+  va_end(args);
+  printf("\n");
+}
+
+
 int Py_VerboseFlag; /* pythonrun.c, does only intobject.c use it? */
 
 PyThreadState *_PyThreadState_Current = NULL;
@@ -330,6 +342,33 @@ PyEval_CallObjectWithKeywords(PyObject *func, PyObject *arg, PyObject *kw)
     return result;
 }
 
+/* NOTE: Can't use a switch here because it's not an integer constant!
+ *
+ * Instead of "with tagswitch", do "with typeswitch"?
+ * */
+
+void Type(PyObject* obj) {
+    struct _typeobject* type = obj->ob_type;
+
+    if (type == &PyBool_Type) {
+        Log("bool");
+    } else if (type == &PyLong_Type) {
+        Log("long");
+    } else if (type == &PyFloat_Type) {
+        Log("float");
+    } else if (type == &PyString_Type) {
+        Log("string");
+    } else if (type == &PyTuple_Type) {
+        Log("tuple");
+    } else if (type == &PyList_Type) {
+        Log("list");
+    } else if (type == &PyDict_Type) {
+        Log("dict");
+    } else {
+        Log("unknown type");
+    }
+}
+
 int main(int argc, char **argv) {
   PyObject* bool1 = PyBool_FromLong(1);
 
@@ -382,15 +421,13 @@ int main(int argc, char **argv) {
 
   fprintf(stderr, "foo + bar = %.*s\n", (int)rstr2->ob_size, rstr2->ob_sval);
 
+  // List
+
   PyObject* list = PyList_New(3);
   PyList_SetItem(list, 0, long_sum);
   PyList_SetItem(list, 1, float_sum);
-#if 0
-  /* Test check for cyclic data structure */
+  /* Test the printing of cyclic data structures */
   PyList_SetItem(list, 2, list);
-#else
-  PyList_SetItem(list, 2, concat);
-#endif
 
   reprfunc list_repr = PyList_Type.tp_repr;
   PyObject* r5 = list_repr(list);
@@ -398,6 +435,8 @@ int main(int argc, char **argv) {
   PyStringObject* rstr5 = (PyStringObject*) r5;
 
   fprintf(stderr, "list = %.*s\n", (int)rstr5->ob_size, rstr5->ob_sval);
+
+  // Tuple
 
   PyObject* tuple = PyTuple_New(3);
   PyTuple_SetItem(tuple, 0, long_sum);
@@ -412,8 +451,40 @@ int main(int argc, char **argv) {
 
   fprintf(stderr, "tuple = %.*s\n", (int)rstr4->ob_size, rstr4->ob_sval);
 
+  // Dict
+
+  PyObject* dict = PyDict_New();
+  PyDict_SetItem(dict, concat, long_sum);
+
+  reprfunc dict_repr = PyDict_Type.tp_repr;
+  PyObject* d = dict_repr(dict);
+  assert(d != NULL);
+
+  PyStringObject* dr = (PyStringObject*) d;
+
+  fprintf(stderr, "dict = %.*s\n", (int)dr->ob_size, dr->ob_sval);
+
+  // suceess
+  PyObject* val = PyDict_GetItem(dict, concat);
+  Log("val = %p", val);
+
+  // fail
+  PyObject* val2 = PyDict_GetItem(dict, long1);
+  Log("val2 = %p", val2);
+  // TODO: How to get exception?
+
+  Type(long_sum);
+  Type(float_sum);
+  Type(list);
+  Type(dict);
+
+
   // TODO:
-  // - Create objects of each type
-  // - Perform operations on them
+  // - Iterate over dicts and lists
+  // - Call methods -- how?
+  // - Test exceptions like IndexError, KeyError, and more
+  // - Other types: slices?  What about range and enumeration?
+  // - repr(None)?  How?  Py_None
+  //   It's in object.h and has no type?  So repr() is special?
 	return 0;
 }
