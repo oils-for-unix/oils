@@ -338,14 +338,28 @@ int main(int argc, char **argv) {
   PyObject* result = long_add(long1, long2);
 
   reprfunc long_repr = PyLong_Type.tp_repr;
-  PyObject* repr = long_repr(result);
+  PyObject* r = long_repr(result);
 
-  PyStringObject* s = (PyStringObject*) repr;
+  PyStringObject* rstr = (PyStringObject*) r;
 
-  fprintf(stderr, "42 + 1 = %.*s\n", (int)s->ob_size, s->ob_sval);
+  fprintf(stderr, "42 + 1 = %.*s\n", (int)rstr->ob_size, rstr->ob_sval);
+
+
+  PyObject* str1 = PyString_FromString("foo ");
+  PyObject* str2 = PyString_FromString("bar");
+
+  binaryfunc str_add = PyString_Type.tp_as_sequence->sq_concat;
+  PyObject* concat = str_add(str1, str2);
+
+  reprfunc str_repr = PyString_Type.tp_repr;
+  PyObject* r2 = str_repr(concat);
+
+  PyStringObject* rstr2 = (PyStringObject*) r2;
+
+  fprintf(stderr, "foo + bar = %.*s\n", (int)rstr2->ob_size, rstr2->ob_sval);
 
   // TODO:
   // - Create objects of each type
   // - Perform operations on them
-	return 42;
+	return 0;
 }
