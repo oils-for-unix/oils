@@ -165,3 +165,30 @@ f=shell
 f=setvar
 ## END
 
+
+#### circular dict
+var d = {name: 'foo'}
+= d
+setvar d['name'] = 123
+= d
+setvar d['name'] = 'mystr'
+= d
+setvar d['name'] = d
+= d
+## STDOUT:
+(Dict)   {'name': 'foo'}
+(Dict)   {'name': 123}
+(Dict)   {'name': 'mystr'}
+(Dict)   {'name': {...}}
+## END
+
+#### circular list
+var L = [1,2,3]
+= L
+setvar L[0] = L
+= L
+## STDOUT:
+(List)   [1, 2, 3]
+(List)   [[...], 2, 3]
+## END
+

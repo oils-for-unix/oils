@@ -1155,42 +1155,43 @@ class Executor(object):
 
       if node.op.id == Id.Arith_Equal:
         py_val = self.expr_ev.EvalExpr(node.rhs)
-        pm_lvals = [] # type: List[lvalue_t]
-        vals = []
+
+        lvals_ = []  # type: List[lvalue_t]
+        py_vals = []
         if len(node.lhs) == 1:  # TODO: Optimize this common case (but measure)
           # See ShAssignment
           # EvalLhs
           # EvalLhsAndLookup for +=
+          lval_ = self.expr_ev.EvalPlaceExpr(node.lhs[0]) # type: lvalue_t
 
-          pm_lval = self.expr_ev.EvalPlaceExpr(node.lhs[0]) # type: lvalue_t
-          val = _PyObjectToVal(py_val)
-
-          pm_lvals.append(pm_lval)
-          vals.append(val)
+          lvals_.append(lval_)
+          py_vals.append(py_val)
         else:
           it = py_val.__iter__()
           for pm_lhs in node.lhs:
-            pm_lval = self.expr_ev.EvalPlaceExpr(pm_lhs)
-            val = _PyObjectToVal(it.next())
+            lval_ = self.expr_ev.EvalPlaceExpr(pm_lhs)
+            py_val = it.next()
 
-            pm_lvals.append(pm_lval)
-            vals.append(val)
+            lvals_.append(lval_)
+            py_vals.append(py_val)
 
         # TODO: Change this to LocalOrGlobal
         lookup_mode = scope_e.Dynamic
 
         # TODO: Resolve the asymmetry betwen Named vs ObjIndex,ObjAttr.
-        for pm_lval, val in zip(pm_lvals, vals):
-          UP_pm_lval = pm_lval
-          if UP_pm_lval.tag == lvalue_e.ObjIndex:
-            pm_lval = cast(lvalue__ObjIndex, UP_pm_lval)
-            pm_lval.obj[pm_lval.index] = val.obj
-          elif UP_pm_lval.tag == lvalue_e.ObjAttr:
-            pm_lval = cast(lvalue__ObjAttr, UP_pm_lval)
-            setattr(pm_lval.obj, pm_lval.attr, val.obj)
+        for UP_lval_, py_val in zip(lvals_, py_vals):
+          tag = UP_lval_.tag_()
+          if tag == lvalue_e.ObjIndex:
+            lval_ = cast(lvalue__ObjIndex, UP_lval_)
+            lval_.obj[lval_.index] = py_val
+          elif tag == lvalue_e.ObjAttr:
+            lval_ = cast(lvalue__ObjAttr, UP_lval_)
+            setattr(lval_.obj, lval_.attr, py_val)
           else:
+            val = _PyObjectToVal(py_val)
             # top level variable
-            self.mem.SetVar(pm_lval, val, (), lookup_mode, keyword_id=node.keyword.id)
+            self.mem.SetVar(UP_lval_, val, (), lookup_mode,
+                            keyword_id=node.keyword.id)
 
       # TODO: Other augmented assignments
       elif node.op.id == Id.Arith_PlusEqual:

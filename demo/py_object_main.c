@@ -331,6 +331,16 @@ PyEval_CallObjectWithKeywords(PyObject *func, PyObject *arg, PyObject *kw)
 }
 
 int main(int argc, char **argv) {
+  PyObject* bool1 = PyBool_FromLong(1);
+
+  reprfunc bool_repr = PyBool_Type.tp_repr;
+  PyObject* r4 = bool_repr(bool1);
+
+  PyStringObject* rstr4 = (PyStringObject*) r4;
+
+  fprintf(stderr, "true = %.*s\n", (int)rstr4->ob_size, rstr4->ob_sval);
+
+
   PyObject* long1 = PyLong_FromLong(42);
   PyObject* long2 = PyLong_FromLong(1);
 
@@ -343,6 +353,20 @@ int main(int argc, char **argv) {
   PyStringObject* rstr = (PyStringObject*) r;
 
   fprintf(stderr, "42 + 1 = %.*s\n", (int)rstr->ob_size, rstr->ob_sval);
+
+
+  PyObject* float1 = PyFloat_FromDouble(42.1);
+  PyObject* float2 = PyFloat_FromDouble(1.2);
+
+  binaryfunc float_add = PyFloat_Type.tp_as_number->nb_add;
+  PyObject* float_sum = float_add(float1, float2);
+
+  reprfunc float_repr = PyFloat_Type.tp_repr;
+  PyObject* r3 = float_repr(float_sum);
+
+  PyStringObject* rstr3 = (PyStringObject*) r3;
+
+  fprintf(stderr, "42.1 + 1.2 = %.*s\n", (int)rstr3->ob_size, rstr3->ob_sval);
 
 
   PyObject* str1 = PyString_FromString("foo ");
