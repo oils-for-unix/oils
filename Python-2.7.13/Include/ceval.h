@@ -45,11 +45,18 @@ PyAPI_FUNC(int) Py_MakePendingCalls(void);
 PyAPI_FUNC(void) Py_SetRecursionLimit(int);
 PyAPI_FUNC(int) Py_GetRecursionLimit(void);
 
+#ifdef OBJECTS_ONLY
+/* TODO: restore this check without thread state.  Could use a global. */
+#define Py_EnterRecursiveCall(where) 0
+#define Py_LeaveRecursiveCall()
+#else
 #define Py_EnterRecursiveCall(where)                                    \
             (_Py_MakeRecCheck(PyThreadState_GET()->recursion_depth) &&  \
              _Py_CheckRecursiveCall(where))
 #define Py_LeaveRecursiveCall()                         \
             (--PyThreadState_GET()->recursion_depth)
+#endif
+
 PyAPI_FUNC(int) _Py_CheckRecursiveCall(const char *where);
 PyAPI_DATA(int) _Py_CheckRecursionLimit;
 #ifdef USE_STACKCHECK

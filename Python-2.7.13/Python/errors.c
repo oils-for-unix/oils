@@ -79,9 +79,14 @@ PyErr_SetString(PyObject *exception, const char *string)
 PyObject *
 PyErr_Occurred(void)
 {
+#ifdef OBJECTS_ONLY
+    // Just like the one in pgen
+    return 0;
+#else
     PyThreadState *tstate = PyThreadState_GET();
 
     return tstate->curexc_type;
+#endif
 }
 
 

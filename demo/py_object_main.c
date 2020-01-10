@@ -1,5 +1,7 @@
 #include "Python.h"
 
+// #include "longintrepr.h"  // 32 bytes
+
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>  // vprintf
 
@@ -369,6 +371,14 @@ void Type(PyObject* obj) {
     }
 }
 
+void PrintList(reprfunc list_repr, PyObject* list) {
+  PyObject* r = list_repr(list);
+  assert(r != NULL);
+  PyStringObject* rstr = (PyStringObject*) r;
+
+  fprintf(stderr, "list = %.*s\n", (int)rstr->ob_size, rstr->ob_sval);
+}
+
 int main(int argc, char **argv) {
   PyObject* bool1 = PyBool_FromLong(1);
 
@@ -436,6 +446,23 @@ int main(int argc, char **argv) {
 
   fprintf(stderr, "list = %.*s\n", (int)rstr5->ob_size, rstr5->ob_sval);
 
+  Log("");
+
+  // Sort and reverse list
+  PyObject* list2 = PyList_New(3);
+  PyList_SetItem(list2, 0, long1);
+  PyList_SetItem(list2, 1, long2);
+  PyList_SetItem(list2, 2, long_sum);
+  PrintList(list_repr, list2);
+
+  PyList_Sort(list2);
+  PrintList(list_repr, list2);
+
+  PyList_Reverse(list2);
+  PrintList(list_repr, list2);
+
+  Log("");
+
   // Tuple
 
   PyObject* tuple = PyTuple_New(3);
@@ -478,6 +505,15 @@ int main(int argc, char **argv) {
   Type(list);
   Type(dict);
 
+  Log("sizeof(PyBoolObject) = %zu", sizeof(PyBoolObject));  // 24
+  // 32 bytes, needs header
+  //Log("sizeof(PyLongObject) = %zu", sizeof(PyLongObject));
+  Log("sizeof(PyFloatObject) = %zu", sizeof(PyFloatObject));  // 24
+  Log("sizeof(PyStringObject) = %zu", sizeof(PyStringObject));  // 40
+  Log("sizeof(PyTupleObject) = %zu", sizeof(PyTupleObject));  // 32
+  Log("sizeof(PyListObject) = %zu", sizeof(PyListObject));  // 40
+  Log("sizeof(PyDictObject) = %zu", sizeof(PyDictObject));  // 248
+
 
   // TODO:
   // - Iterate over dicts and lists
@@ -485,6 +521,6 @@ int main(int argc, char **argv) {
   // - Test exceptions like IndexError, KeyError, and more
   // - Other types: slices?  What about range and enumeration?
   // - repr(None)?  How?  Py_None
-  //   It's in object.h and has no type?  So repr() is special?
+  //   object.c has PyNone_Type, but it's not in a header!
 	return 0;
 }

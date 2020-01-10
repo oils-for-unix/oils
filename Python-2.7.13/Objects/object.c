@@ -2397,7 +2397,19 @@ PyMem_Free(void *p)
 /* OBJECTS_ONLY: Use a GLOBAL instead of thread local.  TODO: Put this in a VM
  * object.
  */
-PyObject* _Py_Repr = NULL;
+PyObject* _dict = NULL;
+
+PyObject *
+_GetDict(void)
+{
+    if (_dict == NULL) {
+        PyObject *d;
+        _dict = d = PyDict_New();
+        if (d == NULL)
+            PyErr_Clear();
+    }
+    return _dict;
+}
 
 int
 Py_ReprEnter(PyObject *obj)
@@ -2407,29 +2419,26 @@ Py_ReprEnter(PyObject *obj)
     Py_ssize_t i;
 
 #ifdef OBJECTS_ONLY
-    list = _Py_Repr;
-#elif
+    dict = _GetDict();
+#else
     dict = PyThreadState_GetDict();
+#endif
     if (dict == NULL)
         return 0;
     list = PyDict_GetItemString(dict, KEY);
-#endif
     if (list == NULL) {
         list = PyList_New(0);
         if (list == NULL)
             return -1;
-#ifdef OBJECTS_ONLY
-        _Py_Repr = list;
-#else
         if (PyDict_SetItemString(dict, KEY, list) < 0)
             return -1;
-#endif
         Py_DECREF(list);
     }
     i = PyList_GET_SIZE(list);
     while (--i >= 0) {
-        if (PyList_GET_ITEM(list, i) == obj)
+        if (PyList_GET_ITEM(list, i) == obj) {
             return 1;
+        }
     }
     PyList_Append(list, obj);
     return 0;
@@ -2443,13 +2452,13 @@ Py_ReprLeave(PyObject *obj)
     Py_ssize_t i;
 
 #ifdef OBJECTS_ONLY
-    list = _Py_Repr;
+    dict = _GetDict();
 #else
     dict = PyThreadState_GetDict();
+#endif
     if (dict == NULL)
         return;
     list = PyDict_GetItemString(dict, KEY);
-#endif
     if (list == NULL || !PyList_Check(list))
         return;
     i = PyList_GET_SIZE(list);
