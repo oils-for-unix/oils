@@ -2394,29 +2394,34 @@ PyMem_Free(void *p)
 
 #define KEY "Py_Repr"
 
+/* OBJECTS_ONLY: A GLBOAL instead of thread local.  TODO: Put this in a VM
+ * object.
+ */
+PyObject* _Py_Repr = NULL;
+
 int
 Py_ReprEnter(PyObject *obj)
 {
-#ifdef OBJECTS_ONLY
-    /* CPython uses a thread local here to prevent infinite recursion in
-     * repr()!
-     * We don't have that in Oil but we could use a "heap" ? */
-    assert(0);
-#else
     PyObject *dict;
     PyObject *list;
     Py_ssize_t i;
 
+#ifdef OBJECTS_ONLY
+    list = _Py_Repr;
+#elif
     dict = PyThreadState_GetDict();
     if (dict == NULL)
         return 0;
     list = PyDict_GetItemString(dict, KEY);
+#endif
     if (list == NULL) {
         list = PyList_New(0);
         if (list == NULL)
             return -1;
+#ifndef OBJECTS_ONLY
         if (PyDict_SetItemString(dict, KEY, list) < 0)
             return -1;
+#endif
         Py_DECREF(list);
     }
     i = PyList_GET_SIZE(list);
@@ -2426,24 +2431,23 @@ Py_ReprEnter(PyObject *obj)
     }
     PyList_Append(list, obj);
     return 0;
-#endif
 }
 
 void
 Py_ReprLeave(PyObject *obj)
 {
-#ifdef OBJECTS_ONLY
-    /* See comment above */
-    assert(0);
-#else
     PyObject *dict;
     PyObject *list;
     Py_ssize_t i;
 
+#ifdef OBJECTS_ONLY
+    list = _Py_Repr;
+#else
     dict = PyThreadState_GetDict();
     if (dict == NULL)
         return;
     list = PyDict_GetItemString(dict, KEY);
+#endif
     if (list == NULL || !PyList_Check(list))
         return;
     i = PyList_GET_SIZE(list);
@@ -2454,7 +2458,6 @@ Py_ReprLeave(PyObject *obj)
             break;
         }
     }
-#endif
 }
 
 /* Trashcan support. */

@@ -288,10 +288,15 @@ tuplerepr(PyTupleObject *v)
 
     /* Do repr() on each element. */
     for (i = 0; i < n; ++i) {
+        /* This relies on interpreter state we don't have? */
+#ifndef OBJECTS_ONLY
         if (Py_EnterRecursiveCall(" while getting the repr of a tuple"))
             goto Done;
+#endif
         s = PyObject_Repr(v->ob_item[i]);
+#ifndef OBJECTS_ONLY
         Py_LeaveRecursiveCall();
+#endif
         if (s == NULL)
             goto Done;
         PyTuple_SET_ITEM(pieces, i, s);

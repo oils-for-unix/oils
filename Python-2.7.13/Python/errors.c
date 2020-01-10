@@ -24,7 +24,9 @@ extern "C" {
 void
 PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
 {
-#ifndef OBJECTS_ONLY
+#ifdef OBJECTS_ONLY
+    assert(0);
+#else
     PyThreadState *tstate = PyThreadState_GET();
     PyObject *oldtype, *oldvalue, *oldtraceback;
 

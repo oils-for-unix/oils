@@ -383,10 +383,14 @@ list_repr(PyListObject *v)
        so must refetch the list size on each iteration. */
     for (i = 0; i < Py_SIZE(v); ++i) {
         int status;
+#ifndef OBJECTS_ONLY
         if (Py_EnterRecursiveCall(" while getting the repr of a list"))
             goto Done;
+#endif
         s = PyObject_Repr(v->ob_item[i]);
+#ifndef OBJECTS_ONLY
         Py_LeaveRecursiveCall();
+#endif
         if (s == NULL)
             goto Done;
         status = PyList_Append(pieces, s);

@@ -20,7 +20,7 @@ Py_FatalError(const char *msg)
 int
 PyErr_CheckSignals(void)
 {
-	return -1;
+	return 0;
 }
 
 /* APIs to write to sys.stdout or sys.stderr using a printf-like interface.
@@ -334,21 +334,21 @@ int main(int argc, char **argv) {
   PyObject* bool1 = PyBool_FromLong(1);
 
   reprfunc bool_repr = PyBool_Type.tp_repr;
-  PyObject* r4 = bool_repr(bool1);
+  PyObject* b = bool_repr(bool1);
 
-  PyStringObject* rstr4 = (PyStringObject*) r4;
+  PyStringObject* br = (PyStringObject*) b;
 
-  fprintf(stderr, "true = %.*s\n", (int)rstr4->ob_size, rstr4->ob_sval);
+  fprintf(stderr, "true = %.*s\n", (int)br->ob_size, br->ob_sval);
 
 
   PyObject* long1 = PyLong_FromLong(42);
   PyObject* long2 = PyLong_FromLong(1);
 
   binaryfunc long_add = PyLong_Type.tp_as_number->nb_add;
-  PyObject* result = long_add(long1, long2);
+  PyObject* long_sum = long_add(long1, long2);
 
   reprfunc long_repr = PyLong_Type.tp_repr;
-  PyObject* r = long_repr(result);
+  PyObject* r = long_repr(long_sum);
 
   PyStringObject* rstr = (PyStringObject*) r;
 
@@ -381,6 +381,36 @@ int main(int argc, char **argv) {
   PyStringObject* rstr2 = (PyStringObject*) r2;
 
   fprintf(stderr, "foo + bar = %.*s\n", (int)rstr2->ob_size, rstr2->ob_sval);
+
+  PyObject* list = PyList_New(3);
+  PyList_SetItem(list, 0, long_sum);
+  PyList_SetItem(list, 1, float_sum);
+#if 0
+  /* Test check for cyclic data structure */
+  PyList_SetItem(list, 2, list);
+#else
+  PyList_SetItem(list, 2, concat);
+#endif
+
+  reprfunc list_repr = PyList_Type.tp_repr;
+  PyObject* r5 = list_repr(list);
+  assert(r5 != NULL);
+  PyStringObject* rstr5 = (PyStringObject*) r5;
+
+  fprintf(stderr, "list = %.*s\n", (int)rstr5->ob_size, rstr5->ob_sval);
+
+  PyObject* tuple = PyTuple_New(3);
+  PyTuple_SetItem(tuple, 0, long_sum);
+  PyTuple_SetItem(tuple, 1, float_sum);
+  PyTuple_SetItem(tuple, 2, concat);
+
+  reprfunc tuple_repr = PyTuple_Type.tp_repr;
+  PyObject* r4 = tuple_repr(tuple);
+  assert(r4 != NULL);
+
+  PyStringObject* rstr4 = (PyStringObject*) r4;
+
+  fprintf(stderr, "tuple = %.*s\n", (int)rstr4->ob_size, rstr4->ob_sval);
 
   // TODO:
   // - Create objects of each type
