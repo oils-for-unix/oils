@@ -1,5 +1,25 @@
 #include "Python.h"
 
+// Notes on thread-local state that objects use (PyThreadState)
+//
+// Py_EnterRecursiveCall / Py_LeaveRecursiveCall -- so we don't blow the stack
+// Py_ReprEnter / Py_ReprLeave -- for printing [...] in self-referential structures
+//
+// PyErr_Occurred -- check for exceptions, stubbed in pgenmain
+// PyErr_CheckSignals -- for OS signals, stubbed in sigcheck.c, and here
+//
+// Notes on builtins like int().  See Python/bltinmodule.c.
+//
+// #define SETBUILTIN(NAME, OBJECT) \
+//     if (PyDict_SetItemString(dict, NAME, (PyObject *)OBJECT) < 0)       \
+//         return NULL;                                                    \
+//     ADD_TO_ALL(OBJECT)
+//
+// SETBUILTIN("int",                   &PyInt_Type);
+//
+// It creates the __builtin__ module, which has a __dict__.  And then the types
+// are here.   So you can just call a type directly?  Sure.
+
 // #include "longintrepr.h"  // 32 bytes
 
 #include <stdarg.h>  // va_list, etc.
@@ -455,11 +475,18 @@ int main(int argc, char **argv) {
   PyList_SetItem(list2, 2, long_sum);
   PrintList(list_repr, list2);
 
+  // These are internal API calls.  listsort() and listreverse() are in the
+  // method table, and do less work.
   PyList_Sort(list2);
   PrintList(list_repr, list2);
 
   PyList_Reverse(list2);
   PrintList(list_repr, list2);
+
+  /* Works if you make it non-static
+  listreverse(list2);
+  PrintList(list_repr, list2);
+  */
 
   Log("");
 
@@ -518,9 +545,12 @@ int main(int argc, char **argv) {
   // TODO:
   // - Iterate over dicts and lists
   // - Call methods -- how?
+  //   - .keys() and .value() -- see addmethods()
+  //   - respect calling convention flags for L.sort() and L.reverse()
   // - Test exceptions like IndexError, KeyError, and more
   // - Other types: slices?  What about range and enumeration?
   // - repr(None)?  How?  Py_None
   //   object.c has PyNone_Type, but it's not in a header!
+  // - builtins like int() str()
 	return 0;
 }
