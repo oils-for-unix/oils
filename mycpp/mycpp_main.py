@@ -88,7 +88,7 @@ def main(argv):
      '--py2', '--strict', '--no-implicit-optional', '--no-strict-optional',
      # for consistency?
      '--follow-imports=silent',
-     '--verbose',
+     #'--verbose',
   ]
      
   paths = argv[1:]  # e.g. asdl/typed_arith_parse.py
@@ -131,8 +131,8 @@ def main(argv):
   # result.types)
 
   # TODO: Debug what comes out of here.
-  build.dump_graph(result.graph)
-  return
+  #build.dump_graph(result.graph)
+  #return
 
   # no-op
   for name in result.graph:
