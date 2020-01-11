@@ -1,10 +1,21 @@
 # Test a[1]
 
-#### ranges have higher precedence than comparison
-# Python slices are comparable?  Why?
-= 1:3 < 1:4
+#### ranges have higher precedence than comparison (disabled)
+
+# This test exposed nondeterminism in CPython itself!  Gah.  Is this because of
+# the hashing?
+# Python xrange objects probably shouldn't even be comparable!
+#
+# = 1:3 < 1:4
+# >>> xrange(1,3)  < xrange(1,4)
+# False
+# >>> xrange(1,3)  < xrange(1,4)
+# True
+
+= 1:3
+
 ## STDOUT:
-(Bool)   True
+(xrange)   xrange(1, 3)
 ## END
 
 #### ranges have lower precedence than bitwise operators
