@@ -8,9 +8,7 @@
 source test/common.sh
 
 regex_literals() {
-
   var sq = / 'foo'+ /
-
   var dq = / "foo"+ /
 
   var literal = 'foo'
@@ -27,23 +25,20 @@ regex_literals() {
   echo $bvs
 }
 
-_run_test() {
-  local t=$1
+_run-test() {
+  local name=$1
 
-  echo -- "--------"
-  echo -- "    CASE: $t"
-  # Run in subshell so the whole thing doesn't exit
-  ( $t )
-  echo -- "    STATUS: $?"
-  echo
-}
-
-all() {
-  _run_test regex_literals
+  bin/osh -O oil:basic -- $0 $name
+  local status=$?
+  if test $status -ne 1; then
+    die "Expected status 1, got $status"
+  fi
 }
 
 run-all-with-osh() {
-  bin/osh -O oil:basic -- $0 all
+  _run-test regex_literals
+
+  return 0  # success
 }
 
 run-for-release() {
