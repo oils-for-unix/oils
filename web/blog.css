@@ -23,6 +23,13 @@ h3 {
   font-size: 1.0em;  /* Similar to default h4 */
 }
 
+/* Same as h4, but doesn't appear in TOC */
+h4 {
+  margin: 0em;
+  color: darkgreen;
+  font-size: 1.0em;
+}
+
 /* Exclude <pre><code>.  Is there a better way to do this?  */
 p code, div code, li code, h2 code, h3 code {
   color: green;

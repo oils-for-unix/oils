@@ -509,4 +509,9 @@ announcement-0.7.pre11() {
   write-no-announcement
 }
 
+blog-redirect() {
+  html-redirect 'making-plans.html' > $SITE_DEPLOY_DIR/blog/2020/01/11.html
+}
+
+
 "$@"
