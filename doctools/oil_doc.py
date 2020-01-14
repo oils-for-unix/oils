@@ -119,8 +119,14 @@ class _Plugin(object):
 # Optional newline at end
 _LINE_RE = re.compile(r'(.*) \n?', re.VERBOSE)
 
-# flush-left non-whitespace, then dollar and space is considered a prompt
-_PROMPT_LINE_RE = re.compile(r'(\S* \$)[ ](.*)', re.VERBOSE)
+_PROMPT_LINE_RE = re.compile(r'''
+(\S* \$)[ ]  # flush-left non-whitespace, then dollar and space is a prompt
+(.*?)        # arbitrary command
+(?:
+  [ ][ ]([#] .*)  # optionally: two spcaes then a comment
+)?
+$
+''', re.VERBOSE)
 
 
 def Lines(s, start_pos, end_pos):
@@ -144,6 +150,9 @@ class ShPromptPlugin(_Plugin):
   def PrintHighlighted(self, out):
     pos = self.start_pos
     for line_end in Lines(self.s, self.start_pos, self.end_pos):
+
+      # TODO:  Check for comments on non-prompt lines too?
+
       m = _PROMPT_LINE_RE.match(self.s, pos, line_end)
       if m:
         #log('MATCH %r', m.groups())
@@ -157,6 +166,12 @@ class ShPromptPlugin(_Plugin):
         out.Print('<span class="sh-command">')
         out.PrintUntil(m.end(2))
         out.Print('</span>')
+
+        if m.group(3):
+          out.PrintUntil(m.start(3))
+          out.Print('<span class="sh-comment">')
+          out.PrintUntil(m.end(3))
+          out.Print('</span>')
 
       out.PrintUntil(line_end)
 
