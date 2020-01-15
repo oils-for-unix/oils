@@ -233,8 +233,6 @@ yajl() {
   pushd py-yajl
   python2 setup.py build_ext --inplace
 
-  set -o xtrace
-
   # Adapted from py-yajl/runtests.sh
   python2 tests/unit.py
 
@@ -281,6 +279,23 @@ minimal() {
 
   # Require submodule
   yajl
+
+  minimal-warning
+}
+
+minimal-warning() {
+  cat <<EOF
+
+*****
+'build/dev.sh minimal' succeeded
+
+  It allows you to run and modify Oil quickly, but the lexer will be slow and
+  the help builtin won't work.
+
+'build/dev.sh all' requires re2c and libcmark.so.  (Issue #513 is related, ask
+on #oil-dev)
+*****
+EOF
 }
 
 oil-grammar() {
