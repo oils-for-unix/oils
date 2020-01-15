@@ -428,6 +428,10 @@ builtin-special() {
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
+builtin-times() {
+  sh-spec spec/builtin-times.test.sh $BASH $ZSH $OSH_LIST "$@"
+}
+
 command-parsing() {
   sh-spec spec/command-parsing.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
