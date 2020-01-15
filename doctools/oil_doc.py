@@ -120,11 +120,22 @@ class _Plugin(object):
 _LINE_RE = re.compile(r'(.*) \n?', re.VERBOSE)
 
 _PROMPT_LINE_RE = re.compile(r'''
-(\S* \$)[ ]  # flush-left non-whitespace, then dollar and space is a prompt
-(.*?)        # arbitrary command
-(?:
-  [ ][ ]([#] .*)  # optionally: two spcaes then a comment
+(\S* \$)[ ]       # flush-left non-whitespace, then dollar and space is a prompt
+(.*?)             # arbitrary text
+(?:               # don't highlight tab completion
+  (&lt;TAB&gt;)   # it's HTML escaped!!!
+  .*?
 )?
+(?:
+  [ ][ ]([#] .*)  # optionally: two spaces then a comment
+)?
+$
+''', re.VERBOSE)
+
+
+_COMMENT_RE = re.compile(r'''
+.*?             # arbitrary text
+[ ][ ]([#] .*)  # two spaces then a comment
 $
 ''', re.VERBOSE)
 
@@ -169,8 +180,21 @@ class ShPromptPlugin(_Plugin):
 
         if m.group(3):
           out.PrintUntil(m.start(3))
-          out.Print('<span class="sh-comment">')
+          out.Print('<span class="sh-tab-complete">')
           out.PrintUntil(m.end(3))
+          out.Print('</span>')
+
+        if m.group(4):
+          out.PrintUntil(m.start(4))
+          out.Print('<span class="sh-comment">')
+          out.PrintUntil(m.end(4))
+          out.Print('</span>')
+      else:
+        m = _COMMENT_RE.match(self.s, pos, line_end)
+        if m:
+          out.PrintUntil(m.start(1))
+          out.Print('<span class="sh-comment">')
+          out.PrintUntil(m.end(1))
           out.Print('</span>')
 
       out.PrintUntil(line_end)
