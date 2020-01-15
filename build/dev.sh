@@ -250,7 +250,7 @@ clean() {
 }
 
 # No fastlex, because we don't want to require re2c installation.
-minimal() {
+_minimal() {
   mkdir -p _tmp _devbuild/gen
 
   # need -r because Python 3 puts a __pycache__ here
@@ -279,11 +279,11 @@ minimal() {
 
   # Require submodule
   yajl
-
-  minimal-warning
 }
 
-minimal-warning() {
+minimal() {
+  _minimal
+
   cat <<EOF
 
 *****
@@ -297,6 +297,7 @@ on #oil-dev)
 *****
 EOF
 }
+
 
 oil-grammar() {
   oil_lang/grammar_gen.py marshal oil_lang/grammar.pgen2 _devbuild/gen
@@ -314,7 +315,8 @@ demo-grammar() {
 all() {
   rm -f *.so  # 12/2019: to clear old symlinks, maybe get rid of
 
-  minimal
+  _minimal
+  build/doc.sh all-help
   fastlex
 }
 

@@ -235,16 +235,22 @@ _AGGRESSIVE_RUNTIME_OPTIONS = [
     'simple_echo',  # -sep, -end, --, etc.
 ]
 
+# No-ops for bash compatibility
+_NO_OPS = [
+    'expand_aliases', 'extglob', 'lastpipe',  # language features always on
+
+    'progcomp',
+    'histappend',  # stubbed out for issue #218
+    'hostcomplete',  # complete words with '@' ?
+    'cmdhist',  # multi-line commands in history
+]
+
 # Used by core/builtin_comp.py too.
 SHOPT_OPTION_NAMES = [
     'nullglob', 'failglob',
     'inherit_errexit',
-
-    # No-ops for bash compatibility
-    'expand_aliases', 'extglob', 'lastpipe',  # language features always on
-    'progcomp', 'histappend', 'hostcomplete',  # not sure what these are
-    'cmdhist',  # multi-line commands in history
-] + _STRICT_OPTION_NAMES + _BASIC_RUNTIME_OPTIONS + _AGGRESSIVE_RUNTIME_OPTIONS
+] + _NO_OPS + _STRICT_OPTION_NAMES + _BASIC_RUNTIME_OPTIONS + \
+    _AGGRESSIVE_RUNTIME_OPTIONS
 
 # Oil parse options only.
 _BASIC_PARSE_OPTIONS = [
@@ -343,15 +349,8 @@ class ExecOpts(object):
     self.failglob = False
     self.inherit_errexit = False
 
-    # No-ops for bash compatibility.
-    self.expand_aliases = False  # We always expand aliases.
-    self.extglob = False  # extended globs are always on (where implemented)
-    self.lastpipe = False  # Always on in our pipeline implementation.
-
-    self.cmdhist = False  # multi-line commands in history
-    self.histappend = False  # stubbed out for issue #218
-    self.hostcomplete = False  # complete words with '@' ?
-    self.progcomp = False
+    for attr_name in _NO_OPS:
+      setattr(self, attr_name, False)
 
     self.vi = False
     self.emacs = False
