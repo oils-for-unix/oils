@@ -503,3 +503,27 @@ status=1
 ## N-I dash/mksh STDOUT:
 status=127
 ## END
+
+#### stubbed out bash options
+for name in foo autocd cdable_vars checkwinsize; do
+  shopt -s $name
+  echo $?
+done
+## STDOUT:
+2
+0
+0
+0
+## END
+## OK bash STDOUT:
+1
+0
+0
+0
+## END
+## OK dash/mksh STDOUT:
+127
+127
+127
+127
+## END

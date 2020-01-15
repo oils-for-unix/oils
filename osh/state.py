@@ -239,10 +239,39 @@ _AGGRESSIVE_RUNTIME_OPTIONS = [
 _NO_OPS = [
     'expand_aliases', 'extglob', 'lastpipe',  # language features always on
 
+    # Handled one by one
     'progcomp',
     'histappend',  # stubbed out for issue #218
     'hostcomplete',  # complete words with '@' ?
     'cmdhist',  # multi-line commands in history
+
+    # Copied from https://www.gnu.org/software/bash/manual/bash.txt
+    # except 'compat*' because they were deemed too ugly
+    'assoc_expand_once', 'autocd', 'cdable_vars',
+    'cdspell', 'checkhash', 'checkjobs', 'checkwinsize',
+    'complete_fullquote',  # Set by default
+         # If set, Bash quotes all shell metacharacters in filenames and
+         # directory names when performing completion.  If not set, Bash
+         # removes metacharacters such as the dollar sign from the set of
+         # characters that will be quoted in completed filenames when
+         # these metacharacters appear in shell variable references in
+         # words to be completed.  This means that dollar signs in
+         # variable names that expand to directories will not be quoted;
+         # however, any dollar signs appearing in filenames will not be
+         # quoted, either.  This is active only when bash is using
+         # backslashes to quote completed filenames.  This variable is
+         # set by default, which is the default Bash behavior in versions
+         # through 4.2.
+
+    'direxpand', 'dirspell', 'dotglob', 'execfail',
+    'extdebug',  # for --debugger?
+    'extquote', 'force_fignore', 'globasciiranges',
+    'globstar',  # TODO:  implement **
+    'gnu_errfmt', 'histreedit', 'histverify', 'huponexit',
+    'interactive_comments', 'lithist', 'localvar_inherit', 'localvar_unset',
+    'login_shell', 'mailwarn', 'no_empty_cmd_completion', 'nocaseglob',
+    'nocasematch', 'progcomp_alias', 'promptvars', 'restricted_shell',
+    'shift_verbose', 'sourcepath', 'xpg_echo',
 ]
 
 # Used by core/builtin_comp.py too.
