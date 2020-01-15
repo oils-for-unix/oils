@@ -15,6 +15,7 @@ from osh.builtin import _Register
 
 EXPORT_SPEC = _Register('export')
 EXPORT_SPEC.ShortFlag('-n')
+EXPORT_SPEC.ShortFlag('-f')  # stubbed
 
 
 class Export(object):
@@ -26,6 +27,10 @@ class Export(object):
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
     arg, arg_index = EXPORT_SPEC.Parse(arg_r)
+
+    if arg.f:
+      raise args.UsageError(
+          "doesn't accept -f because it's dangerous.  (The code can usually be restructured with 'source')")
 
     positional = cmd_val.argv[arg_index:]
     if arg.n:
