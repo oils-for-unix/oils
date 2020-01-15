@@ -28,16 +28,7 @@ from doctools import oil_doc
 
 libname = '/usr/local/lib/libcmark.so'
 
-# Hack for Travis.  Will only work on 64-bit Ubuntu (and ABI compatible
-# machines)
-if not os.path.exists(libname) and os.getenv('TRAVIS_HACK'):
-  import glob
-  _paths = glob.glob('doctools/travis-bin/libcmark.so.*')
-  assert len(_paths) == 1, _paths
-  libname = _paths[0]
-
 cmark = ctypes.CDLL(libname)
-#print dir(cmark)
 
 markdown = cmark.cmark_markdown_to_html
 markdown.restype = ctypes.c_char_p

@@ -285,13 +285,16 @@ help-cards() {
     doc/help.md $HTML_DIR/doc/help-index.html $TEXT_DIR $py_out
 }
 
+minimal-help() {
+  echo 'Skipping help'
+}
+
 all-help() {
+  ### Build HTML and text help, which depends on libcmark.so
 
   rm -v -f $TEXT_DIR/*
   mkdir -p _tmp/doc $TEXT_DIR $HTML_DIR/doc
 
-  # Note: text depends on HTML, which depends on libcmark.so.  See
-  # doctools/travis-bin/README.md.
   split-and-render doc/help-index.md
   split-and-render doc/help.md
 

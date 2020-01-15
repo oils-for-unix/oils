@@ -262,7 +262,7 @@ minimal() {
   touch _devbuild/__init__.py  _devbuild/gen/__init__.py
 
   # Generates _devbuild/help
-  build/doc.sh all-help
+  build/doc.sh minimal-help
 
   oil-asdl-to-py  # depends on Id
 

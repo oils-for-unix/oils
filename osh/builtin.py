@@ -30,7 +30,6 @@ from __future__ import print_function
 import termios  # for read -n
 import sys
 
-from _devbuild.gen import help_index  # generated file
 from _devbuild.gen.runtime_asdl import (
   value_e, scope_e, span_e, builtin_e
 )
@@ -41,6 +40,14 @@ from osh import state
 
 import libc
 import posix_ as posix
+
+from mycpp import mylib
+if mylib.PYTHON:
+  # Hack because we don't want libcmark.so dependency for build/dev.sh minimal
+  try:
+    from _devbuild.gen import help_index  # generated file
+  except ImportError:
+    help_index = None
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:

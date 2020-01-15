@@ -2,7 +2,6 @@
 builtin_comp.py - Completion builtins
 """
 
-from _devbuild.gen import help_
 from _devbuild.gen.runtime_asdl import value_e
 from core import completion
 from core import error
@@ -12,6 +11,16 @@ from frontend import args
 from frontend import lex
 from osh import builtin
 from osh import state
+
+from mycpp import mylib
+if mylib.PYTHON:
+  # Hack because we don't want libcmark.so dependency for build/dev.sh minimal
+  try:
+    from _devbuild.gen import help_
+  except ImportError:
+    class _DummyModule(object): pass
+    help_ = _DummyModule()
+    help_.TOPICS = []
 
 
 def _DefineFlags(spec):
