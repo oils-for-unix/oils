@@ -54,7 +54,7 @@ an **unimplemented** feature.
 ```oil-help-index
   [Usage]         bundle-usage   osh-usage   oil-usage   config   startup
                   line-editing   prompt
-  [Lexing]        comments #   line-continuation \
+  [Lexing]        comment #   line-continuation \
   [Oil Lexing]    X single-command %%%   X docstring ###
 ```
 
@@ -75,9 +75,7 @@ an **unimplemented** feature.
                   redir-desc  >&  <&
                   here-doc    <<  <<-  <<<
   [Other Command] dparen ((   time   X coproc   X select
-  [Oil Keywords]  proc   func   return   do   pass   equal =
-X [Coil Keywords] const   try   catch   throw   switch   match
-                  data   enum   module   interface   namespace
+  [Oil Keywords]  proc   return   equal =
 ```
 
 <h2 id="assign">
@@ -91,7 +89,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
                   assoc         assoc=(['a']=1 ['b']=2)   assoc['x']=b
   [Builtins]      local   readonly   export   unset   shift
                   declare   typeset   X let
-  [Oil Keywords]  var   setvar   X auto
+  [Oil Keywords]  var   set   setvar   const   X auto
 ```
 
 <h2 id="expr">
@@ -99,30 +97,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
 </h2>
 
 ```oil-help-index
-  [Data Types]    Str           r'\'   c'\n'   "$var"   X multiline r""" c'''
-                  X Symbol      %foo
-                  Null          null
-                  Bool          true false
-                  Int           1_000_000  0b0100  0xFF  0o377  \n  \\  \u0100
-                  Float         3.14   6.022e+23
-                  Array[]       @(ls -l)  @[T F F]  @[1 2 3]  @[1.5 2.5] 
-                  Tuple[]       ()  tup(42)  (42, "foo")
-                  List          [1, 'str', false]  (for JSON compatibility)
-                  Dict[]        {name: 'oil'}  {['name']: 'oil'}  {name}
-                  Regex         /d+/
-                  X Func        fn(x) x+1   func(x) { return x+1 }
-                  X Buf         file-like, mutable string
-  [Operators]     unary         -a
-                  binary        a+b   base^exp  a xor b  p div q  0:n
-                  ternary       a if cond else b
-                  subscript     a[b, c]   a[start:end]
-                  X chain       pass a => f(y, z) => var new
-                  getattr       d->key is like d['key'] or d.key
-                  scope-attr    module::name
-                  genexp   listcomp   X dictcomp
-  [Functions]     inline-call   $strfunc(x, y) @arrayfunc(z)
-                  func-decl     func inc(p, p2=0; n=0, ...named) { echo hi }
-                  proc-decl     proc p (x, y, @rest) { echo hi }
+  [Functions]     proc-decl     proc p (x, y, @rest, &block) { echo hi }
   [Regexes]       re-literal    /d+/
                   re-compound   ~   (group)   <capture>   sequence
                   re-primitive  %zero   Subpattern   @subpattern
@@ -150,7 +125,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
                   op-str        ${x//y/z}
                   op-slice      ${a[@]:0:1}
                   op-format     ${x@P}
-  [Oil Word]      expr-sub      $[f(x)]  $[obj.attr]  $[d->key]  $[obj[index]]
+  [Oil Word]      inline-call   $strfunc(x, y) @arrayfunc(z)
                   splice        @array @ARGV
                   X oil-printf  ${x %.3f}
                   X oil-format  ${x|html}
@@ -316,9 +291,7 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
 </h2>
 
 ```oil-help-index
-  [Collections]   len()   min()   max()   any()   all()   tup()  
-                  sorted()   reversed()
-  [Iteration]     range()   enumerate()   zip()
+  [Collections]   len()
   [Math]          sum()   abs()
   [Pattern]       regmatch()   fnmatch()
   [String]        find()   sub()   join() 
@@ -332,6 +305,3 @@ X [Testing]       check
   [Data Formats]  json   X csv   X tsv2   X html   X struct/binary
 X [Hashing]       sha1   sha256 (etc.)
 ```
-
-<!-- doesn't work? -->
-<!-- vim: set filetype=txt: -->
