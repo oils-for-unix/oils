@@ -38,6 +38,10 @@ if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import value__Str, part_value_t, value_t
 
 
+# For compatibility, ${BASH_SOURCE} and ${BASH_SOURCE[@]} are both valid.
+_STRING_AND_ARRAY = 'BASH_SOURCE'
+
+
 def EvalSingleQuoted(part):
   if part.left.id == Id.Left_SingleQuoteRaw:
     s = ''.join(t.val for t in part.tokens)
@@ -582,9 +586,16 @@ class _WordEvaluator(object):
     return self._PartValsToString(part_vals, dq_part.left.span_id)
 
   def _DecayArray(self, val):
+    """Decay $* to a string."""
     assert val.tag == value_e.MaybeStrArray, val
     sep = self.splitter.GetJoinChar()
     return value.Str(sep.join(s for s in val.strs if s is not None))
+
+  def _BashArrayCompat(self, val):
+    """Decay ${array} to ${array[0]}."""
+    assert val.tag == value_e.MaybeStrArray, val
+    s = val.strs[0] if val.strs else ''
+    return value.Str(s)
 
   def _EmptyStrOrError(self, val, token=None):
     assert isinstance(val, value_t), val
@@ -629,6 +640,7 @@ class _WordEvaluator(object):
     # 3. Process maybe_decay_array here before returning.
 
     maybe_decay_array = False  # for $*, ${a[*]}, etc.
+    bash_array_compat = False  # for ${BASH_SOURCE}
 
     var_name = None  # For ${foo=default}
 
@@ -719,8 +731,11 @@ class _WordEvaluator(object):
     else:  # no bracket op
       # When the array is "$@", var_name is None
       if var_name and val.tag in (value_e.MaybeStrArray, value_e.AssocArray):
-        e_die("Array %r can't be referred to as a scalar (without @ or *)",
-              var_name, part=part)
+        if var_name == _STRING_AND_ARRAY:
+          bash_array_compat = True
+        else:
+          e_die("Array %r can't be referred to as a scalar (without @ or *)",
+                var_name, part=part)
 
     if part.prefix_op:
       val = self._EmptyStrOrError(val)  # maybe error
@@ -866,8 +881,11 @@ class _WordEvaluator(object):
               raise NotImplementedError
 
     # After applying suffixes, process maybe_decay_array here.
-    if maybe_decay_array and val.tag == value_e.MaybeStrArray:
-      val = self._DecayArray(val)
+    if val.tag == value_e.MaybeStrArray:
+      if maybe_decay_array:
+        val = self._DecayArray(val)
+      elif bash_array_compat:
+        val = self._BashArrayCompat(val)
 
     # For the case where there are no prefix or suffix ops.
     val = self._EmptyStrOrError(val)
@@ -909,6 +927,8 @@ class _WordEvaluator(object):
 
   def _EvalSimpleVarSub(self, token, part_vals, quoted):
     maybe_decay_array = False
+    bash_array_compat = False
+
     # 1. Evaluate from (var_name, var_num, Token) -> defined, value
     if token.id == Id.VSub_DollarName:
       var_name = token.val[1:]
@@ -916,8 +936,11 @@ class _WordEvaluator(object):
       # TODO: Special case for LINENO
       val = self.mem.GetVar(var_name)
       if val.tag in (value_e.MaybeStrArray, value_e.AssocArray):
-        e_die("Array %r can't be referred to as a scalar (without @ or *)",
-              var_name, token=token)
+        if var_name == _STRING_AND_ARRAY:
+          bash_array_compat = True
+        else:
+          e_die("Array %r can't be referred to as a scalar (without @ or *)",
+                var_name, token=token)
 
     elif token.id == Id.VSub_Number:
       var_num = int(token.val[1:])
@@ -927,8 +950,12 @@ class _WordEvaluator(object):
 
     #log('SIMPLE %s', part)
     val = self._EmptyStrOrError(val, token=token)
-    if maybe_decay_array and val.tag == value_e.MaybeStrArray:
-      val = self._DecayArray(val)
+    if val.tag == value_e.MaybeStrArray:
+      if maybe_decay_array:
+        val = self._DecayArray(val)
+      elif bash_array_compat:
+        val = self._BashArrayCompat(val)
+
     v = _ValueToPartValue(val, quoted)
     part_vals.append(v)
 
