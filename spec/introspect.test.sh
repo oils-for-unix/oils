@@ -57,6 +57,24 @@ argv.py "${FUNCNAME[@]}"
 []
 ## END
 
+
+#### ${BASH_SOURCE} usable as a string (e.g. for virtualenv)
+
+# https://github.com/pypa/virtualenv/blob/master/virtualenv_embedded/activate.sh
+
+argv.py "$BASH_SOURCE"  # SimpleVarSUb
+argv.py "${BASH_SOURCE}"  # BracedVarSub
+source spec/testdata/bash-source-string.sh
+
+## STDOUT:
+['']
+['']
+['spec/testdata/bash-source-string.sh']
+['spec/testdata/bash-source-string.sh']
+['spec/testdata/bash-source-string2.sh']
+['spec/testdata/bash-source-string2.sh']
+## END
+
 #### ${BASH_SOURCE[@]} with source and function name
 argv.py "${BASH_SOURCE[@]}"
 source spec/testdata/bash-source-simple.sh
