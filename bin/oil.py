@@ -493,10 +493,15 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.UMASK: builtin_process.Umask,
 
       # Oil
-      builtin_e.REPR: builtin_oil.Repr(mem, errfmt),
       builtin_e.PUSH: builtin_oil.Push(mem, errfmt),
+      builtin_e.APPEND: builtin_oil.Append(mem, errfmt),
+
+      builtin_e.WRITE: builtin_oil.Write(mem, errfmt),
+      builtin_e.GETLINE: builtin_oil.Getline(mem, errfmt),
+
+      builtin_e.REPR: builtin_oil.Repr(mem, errfmt),
       builtin_e.USE: builtin_oil.Use(mem, errfmt),
-      builtin_e.CSTR: builtin_oil.Cstr(mem, errfmt),
+      builtin_e.OPTS: builtin_oil.Opts(mem, errfmt),
   }
 
   ex = cmd_exec.Executor(mem, fd_state, procs, builtins, exec_opts,

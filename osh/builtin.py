@@ -131,12 +131,16 @@ _NORMAL_BUILTINS = {
     "alias": builtin_e.ALIAS,
     "unalias": builtin_e.UNALIAS,
 
-    # OSH only
-    "repr": builtin_e.REPR,
+    # Oil only
     "push": builtin_e.PUSH,
-    "use": builtin_e.USE,
-    "cstr": builtin_e.CSTR,
+    "append": builtin_e.APPEND,
+
+    "write": builtin_e.WRITE,
+    "getline": builtin_e.GETLINE,
     "json": builtin_e.JSON,
+
+    "repr": builtin_e.REPR,
+    "use": builtin_e.USE,
 }
 
 # This is used by completion.

@@ -48,6 +48,13 @@ X [Coil Keywords] const   try   catch   throw   switch   match
   [Oil Word]      expr-sub      $[f(x)]  $[obj.attr]  $[d->key]  $[obj[index]]
 ```
 
+<h2 id="builtin">
+  Builtin Commands (<a class="group-link" href="help.html#builtin">builtin</a>)
+</h2>
+
+```oil-help-index
+  [Oil Builtins]  X dirname   X basename optimizations
+```
 
 <h2 id="lib">
   Oil Libraries (<a class="group-link" href="help.html#lib">lib</a>)

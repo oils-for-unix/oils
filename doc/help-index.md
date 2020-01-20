@@ -180,15 +180,14 @@ X [Unsupported]   enable
                   X fork   X wait        replaces & and (), takes a block
                   X fopen                Many open streams, takes a block
                   X use                  source with namespace, file-relative 
-                  X dirname   X basename optimizations
                   X opts                 getopts replacement
                   push                   add elements to end of array
                   append                 add bytes to end of string
                   repr                   Show debug representation of vars
                   X log   X die          common functions (polyfill)
                   X getline              Instead of read -raw :name
-                  json   X tsv2
-  [Data Formats]  X cstr   json   X tsv2   X html   X struct/binary
+                  write                  like echo, but with --, -sep, -end
+  [Data Formats]  json   X tsv2   X html   X struct/binary
 X [External Lang] BEGIN   END   when (awk)
                   rule (make)   each (xargs)   fs (find)
 ```
@@ -226,7 +225,6 @@ X [External Lang] BEGIN   END   when (awk)
   [oil:nice]      * The full Oil language
                   parse_equals           x = 's' (for cleaner config blocks)
                   parse_set              instead of setvar
-                  simple_echo            Doesn't join args; -sep -end and --
                   parse_do               do f(x)
                   X parse_amp            echo hi &2 > /dev/null
                   X parse_dollar_slash   egrep $/ d+ / *.txt

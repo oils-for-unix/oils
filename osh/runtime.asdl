@@ -17,8 +17,10 @@ module runtime
   | BUILTIN
   | ALIAS | UNALIAS
   -- Oil
-  | REPR | PUSH | APPEND | USE | ENV | FORK | OPTS
-  | CSTR | JSON 
+  | PUSH | APPEND 
+  | WRITE | GETLINE | JSON 
+  | REPR | USE | OPTS
+  | ENV | FORK 
 
   -- Evaluating SimpleCommand results in either an argv array or an assignment.
   -- in 'local foo', rval is None
