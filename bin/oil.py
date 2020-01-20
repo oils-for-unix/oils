@@ -496,6 +496,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.REPR: builtin_oil.Repr(mem, errfmt),
       builtin_e.PUSH: builtin_oil.Push(mem, errfmt),
       builtin_e.USE: builtin_oil.Use(mem, errfmt),
+      builtin_e.CSTR: builtin_oil.Cstr(mem, errfmt),
   }
 
   ex = cmd_exec.Executor(mem, fd_state, procs, builtins, exec_opts,

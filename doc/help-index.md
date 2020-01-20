@@ -89,7 +89,7 @@ an **unimplemented** feature.
                   assoc         assoc=(['a']=1 ['b']=2)   assoc['x']=b
   [Builtins]      local   readonly   export   unset   shift
                   declare   typeset   X let
-  [Oil Keywords]  var   set   setvar   const   X auto
+  [Oil Keywords]  var   set   setvar   setref   const
 ```
 
 <h2 id="expr">
@@ -182,11 +182,13 @@ X [Unsupported]   enable
                   X use                  source with namespace, file-relative 
                   X dirname   X basename optimizations
                   X opts                 getopts replacement
-                  push                   sugar for 'do array.push( @(a b) )'
+                  push                   add elements to end of array
+                  append                 add bytes to end of string
                   repr                   Show debug representation of vars
                   X log   X die          common functions (polyfill)
                   X getline              Instead of read -raw :name
                   json   X tsv2
+  [Data Formats]  X cstr   json   X tsv2   X html   X struct/binary
 X [External Lang] BEGIN   END   when (awk)
                   rule (make)   each (xargs)   fs (find)
 ```
@@ -292,16 +294,12 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
 
 ```oil-help-index
   [Collections]   len()
-  [Math]          sum()   abs()
   [Pattern]       regmatch()   fnmatch()
   [String]        find()   sub()   join() 
                   split()             $IFS, awk algorithm, regex
   [Block]         setvar()            for procs to set in outer scope
                   evalblock()         procs evaluate block to namespace
-  [libc]          read(n)             better than read -n, no short reads?
-                  posix::read()       raw bindings?
-                  strftime()
+  [libc]          strftime()
 X [Testing]       check
-  [Data Formats]  json   X csv   X tsv2   X html   X struct/binary
 X [Hashing]       sha1   sha256 (etc.)
 ```

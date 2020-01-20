@@ -135,6 +135,7 @@ _NORMAL_BUILTINS = {
     "repr": builtin_e.REPR,
     "push": builtin_e.PUSH,
     "use": builtin_e.USE,
+    "cstr": builtin_e.CSTR,
     "json": builtin_e.JSON,
 }
 

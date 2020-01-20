@@ -56,5 +56,8 @@ X [Coil Keywords] const   try   catch   throw   switch   match
 ```oil-help-index
   [Collections]   min()   max()   any()   all()   tup()  
                   sorted()   reversed()
+  [Math]          sum()   abs()
   [Iteration]     range()   enumerate()   zip()
+  [libc]          read(n)             better than read -n, no short reads?
+                  posix::read()       raw bindings?
 ```

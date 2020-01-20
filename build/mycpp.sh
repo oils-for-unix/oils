@@ -325,7 +325,7 @@ readonly MORE_OIL=(
   $REPO_ROOT/osh/word_compile.py
   $REPO_ROOT/osh/builtin_bracket.py
 
-  # core/main_loop.py causes a lot of problemso
+  # core/main_loop.py causes a lot of problems
 
   $REPO_ROOT/osh/split.py
   $REPO_ROOT/oil_lang/regex_translate.py

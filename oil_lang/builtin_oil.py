@@ -56,6 +56,13 @@ class Repr(object):
     return status
 
 
+class Append(object):
+  """Append to a string.
+  
+  The newer version of foo+='suffix'
+  """
+
+
 class Push(object):
   """Push args onto an array.
 
@@ -292,6 +299,20 @@ class Json(object):
       raise args.UsageError(_JSON_ACTION_ERROR, span_id=action_spid)
 
     return 0
+
+
+class Cstr(object):
+  """CSTR I/O, which is a subset of TSV2.
+
+  'cstr read' is better than 'read -r' in shell.
+  Each things appears on one line.
+  """
+  def __init__(self, mem, errfmt):
+    self.mem = mem
+    self.errfmt = errfmt
+
+  def __call__(self, cmd_val):
+    raise NotImplementedError
 
 
 class Tsv2(object):
