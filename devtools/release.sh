@@ -743,7 +743,6 @@ _html-index() {
   </td>
   <td>
     <p>                <a href="release/$version/announcement.html">Announcement</a>
-       &nbsp; | &nbsp; <a href="release/$version/doc/INSTALL.html">INSTALL</a>
        &nbsp; | &nbsp; <a href="release/$version/">Docs and Details</a>
     </p>
   </td>
