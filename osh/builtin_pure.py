@@ -488,15 +488,6 @@ ECHO_SPEC = _Register('echo')
 ECHO_SPEC.ShortFlag('-e')  # no backslash escapes
 ECHO_SPEC.ShortFlag('-n')
 
-OIL_ECHO_SPEC = args.OilFlags()
-OIL_ECHO_SPEC.Flag('-sep', args.Str, default='\n',
-                    help='Characters to separate each argument')
-OIL_ECHO_SPEC.Flag('-end', args.Str, default='\n',
-                    help='Characters to terminate the whole invocation')
-OIL_ECHO_SPEC.Flag('-n', args.Bool, default=False,
-                    help="Omit newline (synonym for -end '')")
-
-
 class Echo(object):
   """echo builtin.
 
@@ -519,29 +510,6 @@ class Echo(object):
     self.exec_opts = exec_opts
 
   def __call__(self, arg_vec):
-    if self.exec_opts.simple_echo:
-      arg_r = args.Reader(arg_vec.strs, spids=arg_vec.spids)
-      arg_r.Next()  # skip 'echo'
-
-      arg, _ = OIL_ECHO_SPEC.Parse(arg_r)
-      #print(arg)
-
-      i = 0
-      while not arg_r.AtEnd():
-        if i != 0:
-          sys.stdout.write(arg.sep)
-        s = arg_r.Peek()
-        sys.stdout.write(s)
-        arg_r.Next()
-        i += 1
-
-      if arg.n:
-        pass
-      elif arg.end:
-        sys.stdout.write(arg.end)
-
-      return 0
-
     argv = arg_vec.strs[1:]
     arg, arg_index = ECHO_SPEC.ParseLikeEcho(argv)
     argv = argv[arg_index:]

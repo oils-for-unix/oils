@@ -30,7 +30,6 @@ class _Builtin(object):
     self.errfmt = errfmt
 
 
-
 class Repr(_Builtin):
   """Given a list of variable names, print their values.
 
@@ -294,6 +293,15 @@ class Json(object):
     return 0
 
 
+WRITE_SPEC = args.OilFlags()
+WRITE_SPEC.Flag('-sep', args.Str, default='\n',
+                    help='Characters to separate each argument')
+WRITE_SPEC.Flag('-end', args.Str, default='\n',
+                    help='Characters to terminate the whole invocation')
+WRITE_SPEC.Flag('-n', args.Bool, default=False,
+                    help="Omit newline (synonym for -end '')")
+
+
 class Write(_Builtin):
   """
   write -- @strs
@@ -303,7 +311,28 @@ class Write(_Builtin):
   write --cstr --sep $'\t' -- @strs   # this is like TSV2!
   """
   def __call__(self, cmd_val):
-    raise NotImplementedError
+    arg_r = args.Reader(cmd_val.strs, spids=cmd_val.spids)
+    arg_r.Next()  # skip 'echo'
+
+    arg, _ = WRITE_SPEC.Parse(arg_r)
+    #print(arg)
+
+    i = 0
+    while not arg_r.AtEnd():
+      if i != 0:
+        sys.stdout.write(arg.sep)
+      s = arg_r.Peek()
+      sys.stdout.write(s)
+      arg_r.Next()
+      i += 1
+
+    if arg.n:
+      pass
+    elif arg.end:
+      sys.stdout.write(arg.end)
+
+    return 0
+
 
 
 class Getline(_Builtin):

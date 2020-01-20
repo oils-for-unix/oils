@@ -111,7 +111,7 @@ for (i in range(1, 7, 2)) {
 shopt -s oil:all
 var mylist = [0,1,2,3,4,5,6,7,8]
 var x = mylist[slice(1, 7, 2)]
-echo @x
+write @x
 ## STDOUT:
 1
 3
@@ -179,7 +179,7 @@ shopt -s oil:all
 var mylist = [1,2,3,4,5]
 var r = 1:3
 var myslice = mylist[r]
-echo @myslice
+write @myslice
 ## STDOUT:
 a
 ## END
@@ -187,7 +187,7 @@ a
 #### Range with list constructor
 shopt -s oil:all
 var mylist = List(0:3)
-echo @mylist
+write @mylist
 ## STDOUT:
 0
 1

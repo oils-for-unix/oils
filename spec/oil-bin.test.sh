@@ -2,7 +2,7 @@
 
 #### Array func
 func a(x) { return @(1 2 $x) }
-echo @a(42)
+write @a(42)
 ## STDOUT:
 1
 2

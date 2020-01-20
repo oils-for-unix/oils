@@ -2,7 +2,7 @@
 
 #### integer array
 var x = @[1 2 3]
-echo len=$len(x)
+write len=$len(x)
 ## STDOUT:
 len=3
 ## END
@@ -11,9 +11,9 @@ len=3
 shopt -s oil:all
 
 var x = 1
-var a = @[$x $(echo hi) 'sq' "dq $x"]
-echo len=$len(a)
-echo @a
+var a = @[$x $(write hi) 'sq' "dq $x"]
+write len=$len(a)
+write @a
 ## STDOUT:
 len=4
 1
@@ -31,8 +31,8 @@ var x = 5
 var y = 6
 var a = @[(x) (x+1) (y*2)]
 
-echo len=$len(a)
-echo @a
+write len=$len(a)
+write @a
 
 ## STDOUT:
 len=3
@@ -48,13 +48,13 @@ var b = Array[Bool]()
 var i = Array[Int]()
 
 #var f = Array[Float]()
-echo len=$len(b)
-echo len=$len(i)
+write len=$len(b)
+write len=$len(i)
 
 var b2 = Array[Bool]([true, false])
-echo @b2
+write @b2
 
-#echo len=$len(f)
+#write len=$len(f)
 ## STDOUT:
 len=0
 len=0
@@ -70,9 +70,9 @@ var b = Array[Bool](true for _ in 1:3)
 
 var i = Array[Int](j+1 for j in 1:3)
 #var f = Array[Float](i * 2.5 for i in 1:3)
-echo @b
-echo @i
-#echo @f
+write @b
+write @i
+#write @f
 ## STDOUT:
 True
 True
@@ -84,7 +84,7 @@ True
 var x = (i+1 for i in 1:3)
 # This is NOT a list.  TODO: This test is overspecified.
 repr x | grep -o '<generator'
-echo status=$?
+write status=$?
 ## STDOUT:
 <generator
 status=0

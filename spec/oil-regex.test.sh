@@ -288,8 +288,8 @@ shopt -s oil:all
 var lines=@($'aa\tbb' $'cc\tdd')
 
 var pat = / ('a' [\t] 'b') /
-echo pat=$pat
-echo @lines | egrep $pat 
+write pat=$pat
+write @lines | egrep $pat 
 
 ## stdout-json: "pat=(a[\t]b)\naa\tbb\n"
 
@@ -360,8 +360,8 @@ shopt -s oil:all
 var lines=@($'aa\tbb' $'cc\tdd')
 
 var pat = / ('a' [\t] 'b') /
-echo pat=$pat
-echo @lines | egrep $pat 
+write pat=$pat
+write @lines | egrep $pat 
 
 ## stdout-json: "pat=(a[\t]b)\naa\tbb\n"
 
@@ -381,8 +381,8 @@ var lines=@(
 # []abc] works.  But [abc\]] does NOT work.  Stupid rule!
 
 var pat = / [ ']' \\ \' \" ] /
-echo pat=$pat
-echo @lines | egrep $pat 
+write pat=$pat
+write @lines | egrep $pat 
 
 ## STDOUT:
 pat=[]\\'"]
@@ -397,8 +397,8 @@ shopt -s oil:all
 
 var literal = '-'
 var pat = / [ 'a' $literal 'b' ${literal} "-" ] /
-echo pat=$pat
-echo 'c-d' 'ab' 'cd' | grep $pat
+write pat=$pat
+write 'c-d' 'ab' 'cd' | grep $pat
 ## STDOUT:
 pat=[a\-b\-\-]
 c-d

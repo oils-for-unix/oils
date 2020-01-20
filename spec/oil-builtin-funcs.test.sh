@@ -5,7 +5,7 @@
 #### Bool()
 var a = Bool( @() )
 var b = Bool( @(foo) )
-echo $a $b
+write $a $b
 ## STDOUT:
 False
 True
@@ -14,7 +14,7 @@ True
 #### Int()
 var a = Int("3")
 var b = Int("-35")
-echo $a $b
+write $a $b
 ## STDOUT:
 3
 -35
@@ -24,7 +24,7 @@ echo $a $b
 # TODO: This needs a lot more testing, for precision, etc.
 var a = Float("1.2")
 var b = Float("3.4")
-echo $a $b
+write $a $b
 ## STDOUT:
 1.2
 3.4
@@ -34,7 +34,7 @@ echo $a $b
 # TODO: more testing
 var a = Str(5)
 var b = Str(42)
-echo $a $b
+write $a $b
 ## STDOUT:
 5
 42
@@ -43,7 +43,7 @@ echo $a $b
 #### Tuple()
 # TODO: more testing
 var a = Tuple()
-echo $a
+write $a
 ## STDOUT:
 ()
 ## END
@@ -51,7 +51,7 @@ echo $a
 #### List()
 # TODO: more testing
 var a = List(range(3))
-echo $a
+write $a
 ## STDOUT:
 [0, 1, 2]
 ## END
@@ -60,7 +60,7 @@ echo $a
 # TODO: more testing
 var a = Dict()
 #repr a
-echo $len(a)
+write $len(a)
 ## STDOUT:
 0
 ## END
@@ -81,8 +81,8 @@ argv.py $z
 #### abs
 
 # Also test smooshing
-echo $abs(-5)$abs(-0)$abs(5)
-echo $abs(-5) $abs(-0) $abs(5)
+write $abs(-5)$abs(-0)$abs(5)
+write $abs(-5) $abs(-0) $abs(5)
 ## STDOUT:
 505
 5
@@ -95,13 +95,13 @@ var a1 = all( @(yes yes) )
 var a2 = all( @(yes '') )
 var a3 = all( @('' '') )
 # This should be true and false or what?
-echo $a1 $a2 $a3
-echo __
+write $a1 $a2 $a3
+write __
 
 var x1 = any( @(yes yes) )
 var x2 = any( @(yes '') )
 var x3 = any( @('' '') )
-echo $x1 $x2 $x3
+write $x1 $x2 $x3
 
 ## STDOUT:
 True
@@ -116,9 +116,9 @@ False
 #### sum()
 var start = 42
 
-echo $sum( range(3) )
-echo $sum( range(3), start)
-echo $sum( range(0), start)
+write $sum( range(3) )
+write $sum( range(3), start)
+write $sum( range(0), start)
 ## STDOUT:
 3
 45
@@ -127,7 +127,7 @@ echo $sum( range(0), start)
 
 #### sorted()
 var x = sorted(range(3))
-echo @x
+write @x
 ## STDOUT:
 0
 1
@@ -136,7 +136,7 @@ echo @x
 
 #### reversed()
 var x = reversed(range(3))
-echo @x
+write @x
 ## STDOUT:
 2
 1
@@ -144,10 +144,10 @@ echo @x
 ## END
 
 #### enumerate()
-echo $enumerate
+write $enumerate
 # TODO: need new for loop syntax
 for (i, a in enumerate( @(a b c) )) {
-  echo $i $a
+  write $i $a
 }
 ## STDOUT:
 0 a
@@ -156,11 +156,11 @@ for (i, a in enumerate( @(a b c) )) {
 ## END
 
 #### zip()
-echo $zip
+write $zip
 var a = @(1 2 3)
 var b = @(a b c)
 for (item in zip(a, b)) {
-  echo $item
+  write $item
 }
 ## STDOUT:
 1 a

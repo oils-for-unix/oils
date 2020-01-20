@@ -232,7 +232,6 @@ _BASIC_RUNTIME_OPTIONS = [
 ]
 
 _AGGRESSIVE_RUNTIME_OPTIONS = [
-    'simple_echo',  # -sep, -end, --, etc.
 ]
 
 # No-ops for bash compatibility
@@ -398,7 +397,6 @@ class ExecOpts(object):
     # local still needs to fail.
     self.more_errexit = False
 
-    self.simple_echo = False
     self.simple_test_builtin = False
 
     #
