@@ -226,23 +226,27 @@ f
 ## END
 
 #### $LINENO in "bare" redirect arg (bug regression)
+filename=$TMP/bare3
+rm -f $filename
 > $TMP/bare$LINENO
-test -f $TMP/bare1 && echo written
+test -f $filename && echo written
 echo $LINENO
 ## STDOUT: 
 written
-3
+5
 ## END
 ## BUG zsh STDOUT: 
 ## END
 
 #### $LINENO in redirect arg (bug regression)
+filename=$TMP/lineno_regression3
+rm -f $filename
 echo x > $TMP/lineno_regression$LINENO
-test -f $TMP/lineno_regression1 && echo written
+test -f $filename && echo written
 echo $LINENO
 ## STDOUT: 
 written
-3
+5
 ## END
 
 #### $LINENO for [[

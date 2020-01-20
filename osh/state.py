@@ -1309,10 +1309,10 @@ class Mem(object):
       return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
 
     if name == 'LINENO':
+      assert self.current_spid != -1, self.current_spid
       span = self.arena.GetLineSpan(self.current_spid)
       # TODO: maybe use interned GetLineNumStr?
-      s = str(self.arena.GetLineNumber(span.line_id))
-      self.line_num.s = s
+      self.line_num.s = str(self.arena.GetLineNumber(span.line_id))
       return self.line_num
 
     # This is OSH-specific.  Get rid of it in favor of ${BASH_SOURCE[0]} ?
