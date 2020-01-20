@@ -61,15 +61,6 @@ When a block is passed:
 - The directory stack for `pushd` and `popd` isn't cleared, as it is with a
 	normal `cd` command.
 
-### echo
-
-`shopt -s simple_echo` changes the `echo` builtin to accept the following long
-flags, as well as the `--` separator between flags and args.
-
-- `-sep`: Characters to separate each argument.  (Default: newline)
-- `-end`: Characters to terminate the whole invocation.  (Default: newline)
-- `-n`: A synonym for `-end ''`.
-
 ### push
 
 Append one or more strings to an array.
@@ -103,7 +94,36 @@ The first is preferred because it's the simplest and shortest.
 (Trivia: Oil's flag syntax avoids the issue where `set -oo errexit nounset` is
 a confusing equivalent to `set -o errexit -o nounset`.)
 
-### More
+## I/O Builtins
+
+Oil uses `write` and `getline` along with the `CSTR` format.  `echo` looks more
+familiar and is OK in many cases, but isn't strictly necessary.
+
+Shell:
+
+- uses `echo` and `read`
+- `echo` isn't good because `echo $x` is a bug
+- `read` isn't good because `-r` isn't the default.  And the `\` format doesn't
+  occupy one line.
+
+Oil:
+
+- `write -- @items`
+  - `--sep $'\t'`, `--end $'\n'`  (do we need shorthand?)
+  - `-n` is a shortcut `--end ''`
+  - `write --cstr -- @items`
+- `getline`
+  - `--cstr`
+
+
+### echo
+
+- `-sep`: Characters to separate each argument.  (Default: newline)
+- `-end`: Characters to terminate the whole invocation.  (Default: newline)
+- `-n`: A synonym for `-end ''`.
+
+
+## More
 
 Future work, not implemented
 
