@@ -33,8 +33,11 @@ def RemoveComments(s):
 
   for tok_id, end_pos in html.ValidTokens(s):
     if tok_id == html.Comment:
-      out.PrintUntil(pos)
-      out.SkipTo(end_pos)
+      value = s[pos : end_pos]
+      # doc/release-index.md has <!-- REPLACE_WITH_DATE --> etc.
+      if 'REPLACE' not in value:
+        out.PrintUntil(pos)
+        out.SkipTo(end_pos)
     pos = end_pos
 
   out.PrintTheRest()
