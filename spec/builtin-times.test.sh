@@ -1,10 +1,10 @@
 #!/bin/bash
 
-#### `times` yields two formatted lines
+#### times shows two formatted lines
 output=$(times)
 echo "$output" | while read line
 do
-	echo "$line" | egrep -q '[0-9]+m[0-9]+.[0-9]{3}s [0-9]+m[0-9]+.[0-9]{3}s' && echo "pass"
+	echo "$line" | egrep -q '[0-9]+m[0-9]+.[0-9]+s [0-9]+m[0-9]+.[0-9]+s' && echo "pass"
 done
 
 echo "$output" | wc -l

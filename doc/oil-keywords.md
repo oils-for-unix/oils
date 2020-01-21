@@ -8,7 +8,80 @@ Oil Keywords
 <div id="toc">
 </div>
 
+## Basics: `const`, `var`, and `setvar`
+
+These will work in OSH or Oil.
+
+### Syntactic Sugar with Oil: `s = 'foo'`
+
+These are the same:
+
+```
+const s = 'foo'
+s = 'foo'
+```
+
+## Advanced: `setref`
+
+To return a value.
+
+```
+proc decode (s, :out) {
+  setref out = '123'
+}
+```
+
+## Stricter Style With Oil: `set` and `setglobal`
+
+<!--
+
+LATER: If we ever get true integers and floats!
+
+## Autovivification with `setvar`
+
+Or honestly this could be auto?
+
+auto count += 1
+auto hist['key'] += 1
+
+
+proc main { 
+  setvar count += 1   # it's now 1
+
+  hist = {}
+  setvar hist['key'] += 1
+
+  setvar hist['key'] += weight  # later: floating point
+}
+
+-->
+
+
 ## Assignment Keywords
+
+- dynamic scope vs. local
+  - all Oil keywords have local scope
+
+
+- `setvar` always works.  This is a shell-like, awk-like style.
+  - TODO: it should work for setvar i++ and setvar a[key] += weight too
+  - local scope only
+  - note: you can't mutate a global shadowed by a local this way
+  - actually maybe setglobal?  from global scope.  But setvar always works at
+    the top level too.
+- `var` and `set` are for a stricter style
+  - var will error if it's already declared in the scope
+  - set will error if it's NOT declared in the scope
+- const is like readonly.  Same rules as 'var'.
+
+
+- special case for `const port = 80`
+  - `port = 80`
+  - "huffman coding"
+
+
+TODO: See data-model.md
+
 
 ### Use `var` to initialize variables
 
