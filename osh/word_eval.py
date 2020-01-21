@@ -8,11 +8,15 @@ from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import (
     braced_var_sub, Token,
     word, word_e, word_t, compound_word,
-    word_part__AssocArrayLiteral,
     bracket_op_e, suffix_op_e, word_part_e,
     bracket_op__ArrayIndex, bracket_op__WholeArray,
     suffix_op__Nullary, suffix_op__PatSub, suffix_op__Slice,
     suffix_op__Unary, sh_array_literal,
+    single_quoted, double_quoted, simple_var_sub, command_sub,
+    word_part__ArithSub, word_part__EscapedLiteral,
+    word_part__AssocArrayLiteral, word_part__ExprSub,
+    word_part__ExtGlob, word_part__FuncCall,
+    word_part__Splice, word_part__TildeSub,
 )
 from _devbuild.gen.runtime_asdl import (
     builtin_e, effect_e,
@@ -42,10 +46,8 @@ from typing import Any, Optional, Tuple, List, Union, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.id_kind_asdl import Id_t
   from _devbuild.gen.syntax_asdl import (
-    command_sub, command_t, double_quoted, simple_var_sub, single_quoted, speck,
-    word__Empty, word_part__ArithSub, word_part__EscapedLiteral,
-    word_part__ExprSub, word_part__ExtGlob, word_part__FuncCall,
-    word_part__Splice, word_part__TildeSub, word_part_t
+    command_t, speck,
+    word__Empty, word_part_t
   )
   from _devbuild.gen.runtime_asdl import (
     builtin_t, effect_t, lvalue__Named
