@@ -101,12 +101,14 @@ add-imports() {
   # TYPE_CHECKING:' block of a single module, if the relevant
   # classes are found in one of COMMON_TYPE_MODULES
 
-  # Also, this prints out the typechecking output, to avoid having
-  # to run two redundant (and slow) typechecking commands.
+  # Also, this saves the typechecking output to the file named by
+  # $typecheck_out, to make it possible to avoid having to run two
+  # redundant (and slow) typechecking commands.  You can just cat that
+  # file after running this function.
   local module=$1
   export PYTHONPATH=.
-  module_tmp=_tmp/add-imports-module.tmp
-  typecheck_out=_tmp/add-imports-typecheck-output
+  readonly module_tmp=_tmp/add-imports-module.tmp
+  readonly typecheck_out=_tmp/add-imports-typecheck-output
   set +o pipefail
   # unbuffer is just to preserve colorization (it tricks the command
   # into thinking it's writing to a pty instead of a pipe)
@@ -120,8 +122,8 @@ add-imports() {
   then
     cp $module "_tmp/add-imports.$(basename $module).bak"
     mv "$module_tmp" "$module"
+	echo "Updated $module"
   fi
-  cat "$typecheck_out"
 }
 
 typecheck-more-oil() {
