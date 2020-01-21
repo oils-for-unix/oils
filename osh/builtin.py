@@ -41,6 +41,9 @@ from osh import state
 import libc
 import posix_ as posix
 
+import os
+import resource
+
 from mycpp import mylib
 if mylib.PYTHON:
   # Hack because we don't want libcmark.so dependency for build/dev.sh minimal
@@ -67,7 +70,7 @@ _SPECIAL_BUILTINS = {
 
     "set": builtin_e.SET,
     "shift": builtin_e.SHIFT,
-    #"times": builtin_e.TIMES,  # no implemented
+    "times": builtin_e.TIMES,
     "trap": builtin_e.TRAP,
     "unset": builtin_e.UNSET,
 
@@ -275,6 +278,28 @@ def _AppendParts(s, spans, max_results, join_next, parts):
 
   #log('PARTS %s', parts)
   return done, join_next
+
+
+TIMES_SPEC = _Register('times')
+
+class Times(object):
+  def __call__(self, arg_vec):
+    if "SC_CLK_TCK" in os.sysconf_names:
+      clock_ticks_per_second = os.sysconf("SC_CLK_TCK")
+      # Convert resource usage (clock ticks) to seconds before pretty printing
+      print("%dm%1.3fs %dm%1.3fs" %
+         ((resource.getrusage(resource.RUSAGE_SELF).ru_utime / clock_ticks_per_second) / 60,
+          (resource.getrusage(resource.RUSAGE_SELF).ru_utime / clock_ticks_per_second) % 60,
+          (resource.getrusage(resource.RUSAGE_SELF).ru_stime / clock_ticks_per_second) / 60,
+          (resource.getrusage(resource.RUSAGE_SELF).ru_stime / clock_ticks_per_second) % 60))
+
+      print("%dm%1.3fs %dm%1.3fs" %
+         ((resource.getrusage(resource.RUSAGE_CHILDREN).ru_utime / clock_ticks_per_second) / 60,
+          (resource.getrusage(resource.RUSAGE_CHILDREN).ru_utime / clock_ticks_per_second) % 60,
+          (resource.getrusage(resource.RUSAGE_CHILDREN).ru_stime / clock_ticks_per_second) / 60,
+          (resource.getrusage(resource.RUSAGE_CHILDREN).ru_stime / clock_ticks_per_second) % 60))
+
+    return 0
 
 
 READ_SPEC = _Register('read')

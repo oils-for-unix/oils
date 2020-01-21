@@ -14,7 +14,7 @@ module runtime
   | COLON
   | TEST | BRACKET | GETOPTS
   | COMMAND | TYPE | HASH | HELP | HISTORY
-  | BUILTIN
+  | TIMES | BUILTIN
   | ALIAS | UNALIAS
   -- Oil
   | PUSH | APPEND 

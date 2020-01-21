@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#### times yields two formatted lines
+#### `times` yields two formatted lines
 output=$(times)
 echo "$output" | while read line
 do
