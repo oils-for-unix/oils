@@ -257,7 +257,7 @@ def _PyObjectToVal(py_val):
   They are opposites.
   """
   if isinstance(py_val, str):  # var s = "hello $name"
-    val = value.Str(py_val) # type: Any
+    val = value.Str(py_val)  # type: Any
   elif isinstance(py_val, objects.StrArray):  # var a = @(a b)
     # It's safe to convert StrArray to MaybeStrArray.
     val = value.MaybeStrArray(py_val)
@@ -959,22 +959,11 @@ class Executor(object):
 
       # Find span_id for a basic implementation of $LINENO, e.g.
       # PS4='+$SOURCE_NAME:$LINENO:'
-      # NOTE: osh2oil uses node.more_env, but we don't need that.
-      span_id = runtime.NO_SPID # type: Any
+      # Note that for '> $LINENO' the span_id is set in _EvalRedirect.
+      # TODO: Can we avoid setting this so many times?  See issue #567.
       if node.words:
         span_id = word_.LeftMostSpanForWord(node.words[0])
-      elif node.redirects:
-        redirect = node.redirects[0]
-        UP_redirect = redirect
-        if UP_redirect.tag == redir_e.Redir:
-          redirect = cast(redir__Redir, UP_redirect)
-          span_id = redirect.op # TODO: this seems wrong!
-        elif UP_redirect.tag == redir_e.HereDoc:
-          # note: this branch is possible?
-          redirect = cast(redir__HereDoc, UP_redirect)
-          span_id = redirect.op
-
-      self.mem.SetCurrentSpanId(span_id)
+        self.mem.SetCurrentSpanId(span_id)
 
       # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
       # redirected here, which screws up logging.  For example, 'echo hi

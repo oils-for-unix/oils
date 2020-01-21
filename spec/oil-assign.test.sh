@@ -93,7 +93,7 @@ shopt -s oil:all
 var mylist = [1,2,3]
 setvar mylist[1] = 42
 
-echo -sep ' ' @mylist
+write  -sep ' ' @mylist
 ## STDOUT:
 1 42 3
 ## END
@@ -121,7 +121,7 @@ func f() {
   return mylist
 }
 setvar f()[2] = 42
-echo @mylist
+write @mylist
 ## STDOUT:
 1
 2

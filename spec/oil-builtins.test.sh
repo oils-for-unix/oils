@@ -50,30 +50,30 @@ push - a b
 echo status=$?
 ## stdout: status=2
 
-#### echo -sep, -end, -n, varying flag syntax
+#### write -sep, -end, -n, varying flag syntax
 shopt -s oil:all
 var a = @('a b' 'c d')
-echo @a
-echo .
-echo -- @a
-echo .
+write @a
+write .
+write -- @a
+write .
 
-echo -sep '' -end '' @a; echo
-echo .
+write -sep '' -end '' @a; write
+write .
 
-echo -sep '_' -- @a
-echo -sep '_' -end $' END\n' -- @a
+write -sep '_' -- @a
+write -sep '_' -end $' END\n' -- @a
 
 # with =
-echo -sep='_' -end=$' END\n' -- @a
+write -sep='_' -end=$' END\n' -- @a
 # long flags
-echo --sep '_' --end $' END\n' -- @a
+write --sep '_' --end $' END\n' -- @a
 # long flags with =
-echo --sep='_' --end=$' END\n' -- @a
+write --sep='_' --end=$' END\n' -- @a
 
-echo -n x
-echo -n y
-echo
+write -n x
+write -n y
+write
 
 ## STDOUT:
 a b
@@ -92,29 +92,29 @@ a b_c d END
 xy
 ## END
 
-#### echo -e not supported
+#### write  -e not supported
 shopt -s oil:all
-echo -e foo
-echo status=$?
+write -e foo
+write status=$?
 ## stdout-json: ""
 ## status: 2
 
-#### echo syntax error
+#### write syntax error
 shopt -s oil:all
-echo ---end foo
-echo status=$?
+write ---end foo
+write status=$?
 ## stdout-json: ""
 ## status: 2
 
-#### echo --
+#### write --
 shopt -s oil:all
-echo --
+write --
 # This is annoying
-echo -- --
-echo done
+write -- --
+write done
 
 # this is a syntax error!  Doh.
-echo ---
+write ---
 ## status: 2
 ## STDOUT:
 

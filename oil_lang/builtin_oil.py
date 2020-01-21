@@ -24,15 +24,17 @@ import yajl
 import posix_
 
 
-class Repr(object):
-  """Given a list of variable names, print their values.
-
-  'repr a' is a lot easier to type than 'argv.py "${a[@]}"'.
-  """
+class _Builtin(object):
   def __init__(self, mem, errfmt):
     self.mem = mem
     self.errfmt = errfmt
 
+
+class Repr(_Builtin):
+  """Given a list of variable names, print their values.
+
+  'repr a' is a lot easier to type than 'argv.py "${a[@]}"'.
+  """
   def __call__(self, arg_vec):
     status = 0
     for i in xrange(1, len(arg_vec.strs)):
@@ -56,15 +58,18 @@ class Repr(object):
     return status
 
 
-class Push(object):
+class Append(_Builtin):
+  """Append to a string.
+  
+  The newer version of foo+='suffix'
+  """
+
+
+class Push(_Builtin):
   """Push args onto an array.
 
   Note: this could also be in builtins_pure.py?
   """
-  def __init__(self, mem, errfmt):
-    self.mem = mem
-    self.errfmt = errfmt
-
   def __call__(self, arg_vec):
     arg_r = args.Reader(arg_vec.strs, spids=arg_vec.spids)
     arg_r.Next()  # skip 'push'
@@ -89,7 +94,7 @@ class Push(object):
     return 0
 
 
-class Use(object):
+class Use(_Builtin):
   """use lib, bin, env.  Respects namespaces.
 
   use lib foo.sh {  # "punning" on block syntax.  1 or 3 words.
@@ -97,11 +102,6 @@ class Use(object):
     func2 as myalias
   }
   """
-
-  def __init__(self, mem, errfmt):
-    self.mem = mem
-    self.errfmt = errfmt
-
   def __call__(self, cmd_val):
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip 'use'
@@ -133,12 +133,15 @@ class Use(object):
     return 0
 
 
-class Env(object):
-  """env {} blocks are preferred over 'export'."""
+class Env(_Builtin):
+  """env {} blocks are preferred over 'export'.
+
+  Should be compatible with POSIX, but also take a block.
+  """
   pass
 
 
-class Fork(object):
+class Fork(_Builtin):
   """Replaces &.  Takes a block.
 
   Similar to Wait, which is in osh/builtin_process.py.
@@ -146,7 +149,7 @@ class Fork(object):
   pass
 
 
-class Opts(object):
+class Opts(_Builtin):
   """getopts replacement.
 
   opts :grep_opts {
@@ -164,10 +167,6 @@ class Opts(object):
   opt.pattern
   opt.file
   """
-  def __init__(self, mem, errfmt):
-    self.mem = mem
-    self.errfmt = errfmt
-
   def __call__(self, cmd_val):
     raise NotImplementedError
 
@@ -294,7 +293,58 @@ class Json(object):
     return 0
 
 
-class Tsv2(object):
+WRITE_SPEC = args.OilFlags()
+WRITE_SPEC.Flag('-sep', args.Str, default='\n',
+                    help='Characters to separate each argument')
+WRITE_SPEC.Flag('-end', args.Str, default='\n',
+                    help='Characters to terminate the whole invocation')
+WRITE_SPEC.Flag('-n', args.Bool, default=False,
+                    help="Omit newline (synonym for -end '')")
+
+
+class Write(_Builtin):
+  """
+  write -- @strs
+  write --sep ' ' --end '' -- @strs
+  write -n -- @
+  write --cstr -- @strs   # argv serialization
+  write --cstr --sep $'\t' -- @strs   # this is like TSV2!
+  """
+  def __call__(self, cmd_val):
+    arg_r = args.Reader(cmd_val.strs, spids=cmd_val.spids)
+    arg_r.Next()  # skip 'echo'
+
+    arg, _ = WRITE_SPEC.Parse(arg_r)
+    #print(arg)
+
+    i = 0
+    while not arg_r.AtEnd():
+      if i != 0:
+        sys.stdout.write(arg.sep)
+      s = arg_r.Peek()
+      sys.stdout.write(s)
+      arg_r.Next()
+      i += 1
+
+    if arg.n:
+      pass
+    elif arg.end:
+      sys.stdout.write(arg.end)
+
+    return 0
+
+
+
+class Getline(_Builtin):
+  """
+  getline :mystr
+  getline --cstr :mystr  # better version of read -r
+  """
+  def __call__(self, cmd_val):
+    raise NotImplementedError
+
+
+class Tsv2(_Builtin):
   """TSV2 I/O.
 
   # Takes a block.

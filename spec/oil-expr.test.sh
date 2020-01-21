@@ -152,7 +152,7 @@ argv.py @split(x)
 
 #### @range()
 shopt -s oil:all
-echo @range(10, 15, 2)
+write @range(10, 15, 2)
 ## STDOUT:
 10
 12
@@ -168,7 +168,7 @@ TODO
 
 #### Wrong sigil @max(3, 4)
 shopt -s oil:basic
-echo @max(3, 4)
+write @max(3, 4)
 ## STDOUT:
 TODO
 ## END
@@ -406,13 +406,13 @@ echo $len(two)
 shopt -s oil:all
 
 var n = [i*2 for i in range(5)]
-echo -sep ' ' @n
+write -sep ' ' @n
 
 # TODO: Test this
 #var n = [i*2 for i,j in range(5)]
 
 var even = [i*2 for i in range(5) if i mod 2 == 0]
-echo -sep ' ' @even
+write -sep ' ' @even
 ## STDOUT:
 0 2 4 6 8
 0 4 8

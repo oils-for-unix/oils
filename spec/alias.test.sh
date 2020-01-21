@@ -345,12 +345,12 @@ hello outside
 ## END
 
 #### alias with redirects works
+shopt -s expand_aliases
 alias e_=echo
 >$TMP/alias1.txt e_ 1
 e_ >$TMP/alias2.txt 2
 e_ 3 >$TMP/alias3.txt
 cat $TMP/alias1.txt $TMP/alias2.txt $TMP/alias3.txt
-## BUG bash stdout-json: ""
 ## STDOUT:
 1
 2
@@ -358,16 +358,13 @@ cat $TMP/alias1.txt $TMP/alias2.txt $TMP/alias3.txt
 ## END
 
 #### alias with environment bindings works
+shopt -s expand_aliases
 alias p_=printenv.py
 FOO=1 printenv.py FOO
 FOO=2 p_ FOO
 ## STDOUT:
 1
 2
-## END
-## BUG bash status: 127
-## BUG bash STDOUT:
-1
 ## END
 
 #### alias with line continuation in the middle

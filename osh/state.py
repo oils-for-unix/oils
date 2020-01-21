@@ -232,7 +232,6 @@ _BASIC_RUNTIME_OPTIONS = [
 ]
 
 _AGGRESSIVE_RUNTIME_OPTIONS = [
-    'simple_echo',  # -sep, -end, --, etc.
 ]
 
 # No-ops for bash compatibility
@@ -398,7 +397,6 @@ class ExecOpts(object):
     # local still needs to fail.
     self.more_errexit = False
 
-    self.simple_echo = False
     self.simple_test_builtin = False
 
     #
@@ -1309,10 +1307,10 @@ class Mem(object):
       return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
 
     if name == 'LINENO':
+      assert self.current_spid != -1, self.current_spid
       span = self.arena.GetLineSpan(self.current_spid)
       # TODO: maybe use interned GetLineNumStr?
-      s = str(self.arena.GetLineNumber(span.line_id))
-      self.line_num.s = s
+      self.line_num.s = str(self.arena.GetLineNumber(span.line_id))
       return self.line_num
 
     # This is OSH-specific.  Get rid of it in favor of ${BASH_SOURCE[0]} ?

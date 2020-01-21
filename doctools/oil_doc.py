@@ -22,6 +22,28 @@ from lazylex import html
 log = html.log
 
 
+def RemoveComments(s):
+  """ Remove <!-- comments --> """
+  f = cStringIO.StringIO()
+  out = html.Output(s, f)
+
+  tag_lexer = html.TagLexer(s)
+
+  pos = 0
+
+  for tok_id, end_pos in html.ValidTokens(s):
+    if tok_id == html.Comment:
+      value = s[pos : end_pos]
+      # doc/release-index.md has <!-- REPLACE_WITH_DATE --> etc.
+      if 'REPLACE' not in value:
+        out.PrintUntil(pos)
+        out.SkipTo(end_pos)
+    pos = end_pos
+
+  out.PrintTheRest()
+  return f.getvalue()
+
+
 class _Abbrev(object):
   def __init__(self, fmt):
     self.fmt = fmt

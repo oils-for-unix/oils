@@ -548,13 +548,6 @@ add-date-and-links() {
   '
 }
 
-# TODO:
-# Test out web/ *.css,js,html
-# metrics/line-counts.wwz/
-#   src.txt
-#   pydeps.txt
-#   nativedeps.txt
-
 build-tree() {
   local root=_release/VERSION
   mkdir -p $root/{doc,test}
@@ -569,6 +562,7 @@ build-tree() {
   # Writes _release/VERSION and _tmp/release-index.html
   build/doc.sh run-for-release
 
+  # Note: this truncates the date!
   add-date-and-links $release_date < _tmp/release-index.html > $root/index.html
 
   # Problem: You can't preview it without .wwz!
@@ -749,7 +743,6 @@ _html-index() {
   </td>
   <td>
     <p>                <a href="release/$version/announcement.html">Announcement</a>
-       &nbsp; | &nbsp; <a href="release/$version/doc/INSTALL.html">INSTALL</a>
        &nbsp; | &nbsp; <a href="release/$version/">Docs and Details</a>
     </p>
   </td>

@@ -53,7 +53,7 @@ f=3
 #### Positional Spread
 shopt -s oil:all
 func add(x, y, ...args) {
-  echo @args
+  write @args
   return x + y
 }
 var args = @[5 6 7 8]
@@ -115,7 +115,7 @@ x=5
 shopt -s oil:all
 func add(x, y; verbose=true, ...named) {
   if (verbose) { echo 'verbose' }
-  echo @named | sort
+  write @named | sort
   return x + y
 }
 var args = {verbose: false, a: 1, b: 2}
@@ -192,7 +192,7 @@ status=42
 #### Open proc has "$@"
 shopt -s oil:all
 proc foo { 
-  echo ARGV "$@"
+  write ARGV "$@"
 }
 builtin set -- a b c
 foo x y z
@@ -206,8 +206,8 @@ z
 #### Closed proc doesn't have "$@"
 shopt -s oil:all
 proc foo(d, e, f) { 
-  echo params $d $e $f
-  echo ARGV "$@"
+  write params $d $e $f
+  write ARGV "$@"
 }
 builtin set -- a b c
 foo x y z
@@ -256,7 +256,7 @@ status=42
 shopt -s oil:all
 
 proc f(@names) {
-  echo names: @names
+  write names: @names
 }
 # this gets called with 3 args then?
 f a b c
@@ -293,9 +293,9 @@ hi
 shopt -s oil:all
 
 func f(a, b=0, ...args; c, d=0, ...named) {
-  echo __ args: @args
-  echo __ named:
-  echo @named | sort
+  write __ args: @args
+  write __ named:
+  write @named | sort
   if (named) {
     return [a, b, c, d]
   } else {
@@ -306,11 +306,11 @@ var a = [42, 43]
 var n = {x: 99, y: 100}
 
 echo ____
-echo string $f(0, 1, ...a, c=2, d=3)
+write string $f(0, 1, ...a, c=2, d=3)
 
 # Now get a list back
 echo ____
-echo array @f(5, 6, ...a, c=7, d=8; ...n)
+write array @f(5, 6, ...a, c=7, d=8; ...n)
 
 ## STDOUT:
 ____

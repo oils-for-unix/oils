@@ -464,13 +464,13 @@ two
 ## END
 
 #### parse_paren: for loop
-shopt -s oil:basic simple_echo
+shopt -s oil:basic
 var array = @(one two three)
 for (item in array) {
   echo $item
 }
 
-echo -- ---
+echo ---
 
 declare -A A=([k]=v [k2]=v2)  # iterate over keys
 for (key in A) {
