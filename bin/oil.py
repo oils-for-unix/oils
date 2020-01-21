@@ -446,6 +446,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.DIRS: builtin.Dirs(mem, dir_stack, errfmt),
       builtin_e.PWD: builtin.Pwd(mem, errfmt),
 
+      builtin_e.TIMES: builtin.Times(),
       builtin_e.READ: builtin.Read(splitter, mem),
       builtin_e.HELP: builtin.Help(loader, errfmt),
       builtin_e.HISTORY: builtin.History(line_input),

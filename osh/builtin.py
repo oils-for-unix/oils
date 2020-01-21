@@ -41,6 +41,8 @@ from osh import state
 import libc
 import posix_ as posix
 
+import os
+
 from mycpp import mylib
 if mylib.PYTHON:
   # Hack because we don't want libcmark.so dependency for build/dev.sh minimal
@@ -67,7 +69,7 @@ _SPECIAL_BUILTINS = {
 
     "set": builtin_e.SET,
     "shift": builtin_e.SHIFT,
-    #"times": builtin_e.TIMES,  # no implemented
+    "times": builtin_e.TIMES,
     "trap": builtin_e.TRAP,
     "unset": builtin_e.UNSET,
 
@@ -275,6 +277,17 @@ def _AppendParts(s, spans, max_results, join_next, parts):
 
   #log('PARTS %s', parts)
   return done, join_next
+
+
+TIMES_SPEC = _Register('times')
+
+class Times(object):
+  def __call__(self, arg_vec):
+    utime, stime, cutime, cstime, elapsed = os.times()
+    print("%dm%1.3fs %dm%1.3fs" % (utime / 60, utime % 60, stime / 60, stime % 60))
+    print("%dm%1.3fs %dm%1.3fs" % (cutime / 60, cutime % 60, cstime / 60, cstime % 60))
+
+    return 0
 
 
 READ_SPEC = _Register('read')
