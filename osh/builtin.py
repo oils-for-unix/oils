@@ -42,7 +42,6 @@ import libc
 import posix_ as posix
 
 import os
-import resource
 
 from mycpp import mylib
 if mylib.PYTHON:
@@ -284,20 +283,9 @@ TIMES_SPEC = _Register('times')
 
 class Times(object):
   def __call__(self, arg_vec):
-    if "SC_CLK_TCK" in os.sysconf_names:
-      clock_ticks_per_second = os.sysconf("SC_CLK_TCK")
-      # Convert resource usage (clock ticks) to seconds before pretty printing
-      print("%dm%1.3fs %dm%1.3fs" %
-         ((resource.getrusage(resource.RUSAGE_SELF).ru_utime / clock_ticks_per_second) / 60,
-          (resource.getrusage(resource.RUSAGE_SELF).ru_utime / clock_ticks_per_second) % 60,
-          (resource.getrusage(resource.RUSAGE_SELF).ru_stime / clock_ticks_per_second) / 60,
-          (resource.getrusage(resource.RUSAGE_SELF).ru_stime / clock_ticks_per_second) % 60))
-
-      print("%dm%1.3fs %dm%1.3fs" %
-         ((resource.getrusage(resource.RUSAGE_CHILDREN).ru_utime / clock_ticks_per_second) / 60,
-          (resource.getrusage(resource.RUSAGE_CHILDREN).ru_utime / clock_ticks_per_second) % 60,
-          (resource.getrusage(resource.RUSAGE_CHILDREN).ru_stime / clock_ticks_per_second) / 60,
-          (resource.getrusage(resource.RUSAGE_CHILDREN).ru_stime / clock_ticks_per_second) % 60))
+    utime, stime, cutime, cstime, elapsed = os.times()
+    print("%dm%1.3fs %dm%1.3fs" % (utime / 60, utime % 60, stime / 60, stime % 60))
+    print("%dm%1.3fs %dm%1.3fs" % (cutime / 60, cutime % 60, cstime / 60, cstime % 60))
 
     return 0
 
