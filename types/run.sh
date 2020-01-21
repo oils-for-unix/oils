@@ -94,6 +94,37 @@ typecheck-files() {
   $0 typecheck --follow-imports=silent $MYPY_FLAGS "$@"
 }
 
+readonly -a COMMON_TYPE_MODULES=(_devbuild/gen/runtime_asdl.py _devbuild/gen/syntax_asdl.py)
+
+add-imports() {
+	# Temporary helper to add missing class imports to the 'if
+	# TYPE_CHECKING:' block of a single module, if the relevant
+	# classes are found in one of COMMON_TYPE_MODULES
+
+	# Also, this prints out the typechecking output, to avoid having
+	# to run two redundant (and slow) typechecking commands.
+	local module=$1
+	export PYTHONPATH=.
+	module_tmp=$(mktemp)
+	typecheck_out=$(mktemp)
+	trap 'rm -f -- "$module_tmp" "$typecheck_out"' INT TERM HUP EXIT
+	set +o pipefail
+	# unbuffer is just to preserve colorization (it tricks the command
+	# into thinking it's writing to a pty instead of a pipe)
+	unbuffer types/run.sh typecheck-files "$module" | tee "$typecheck_out" | \
+		grep 'Name.*is not defined' | sed -r 's/.*'\''(\w+)'\''.*/\1/' | \
+		sort -u | python devtools/findclassdefs.py "${COMMON_TYPE_MODULES[@]}" | \
+		xargs python devtools/typeimports.py "$module" > "$module_tmp"
+	set -o pipefail
+
+	if ! diff -q "$module_tmp" "$module" > /dev/null
+	then
+		cp $module "$(mktemp -p /tmp oil-add-imports.XXXXXXXXX)"
+		mv "$module_tmp" "$module"
+	fi
+	cat "$typecheck_out"
+}
+
 typecheck-more-oil() {
   # The --follow-imports=silent option allows adding type annotations
   # in smaller steps without worrying about triggering a bunch of
