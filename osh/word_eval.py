@@ -1666,7 +1666,7 @@ class _WordEvaluator(object):
       argv: list of string arguments, or None if there was an eval error
     """
     if self.exec_opts.simple_word_eval:
-      return self.StaticEvalWordSequence2(words, allow_assign) # follow
+      return self.StaticEvalWordSequence2(words, allow_assign)
 
     # Parse time:
     # 1. brace expansion.  TODO: Do at parse time.
@@ -1704,7 +1704,7 @@ class _WordEvaluator(object):
         if isinstance(val0, part_value__String) and not val0.quoted:
           builtin_id = builtin.ResolveAssign(val0.s)
           if builtin_id != builtin_e.NONE:
-            return self._EvalAssignBuiltin(builtin_id, val0.s, words) # follow
+            return self._EvalAssignBuiltin(builtin_id, val0.s, words)
 
       if 0:
         log('')
