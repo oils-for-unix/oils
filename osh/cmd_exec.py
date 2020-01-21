@@ -128,6 +128,7 @@ if TYPE_CHECKING:
   from osh import word_eval
   from osh import builtin_process
   from osh import prompt
+  from osh import split
 else:
   RedirectableCommand = Any
 
@@ -220,7 +221,7 @@ class _ControlFlow(RuntimeError):
 class Deps(object):
   def __init__(self):
     # type: () -> None
-    self.splitter = None
+    self.splitter = None    # type: split.SplitContext
 
     self.word_ev = None     # type: word_eval.NormalWordEvaluator
     self.arith_ev = None    # type: expr_eval.ArithEvaluator

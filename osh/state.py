@@ -418,6 +418,7 @@ class ExecOpts(object):
     return self.errexit.errexit
 
   def GetDollarHyphen(self):
+    # type: () -> str
     chars = []
     if self.interactive:
       chars.append('i')
@@ -968,6 +969,7 @@ class Mem(object):
       return 1  # silent error
 
   def GetArgNum(self, arg_num):
+    # type: (int) -> value__Str
     if arg_num == 0:
       return value.Str(self.dollar0)
 
@@ -988,6 +990,7 @@ class Mem(object):
   #
 
   def GetSpecialVar(self, op_id):
+    # type: (int) -> value_t
     if op_id == Id.VSub_Bang:  # $!
       n = self.last_bg_pid
       if n == -1:
@@ -1404,6 +1407,7 @@ class Mem(object):
         yield name
 
   def VarNamesStartingWith(self, prefix):
+    # type: (str) -> List[str]
     """For ${!prefix@}"""
     # Look up the stack, yielding all variables.  Bash seems to do this.
     names = []

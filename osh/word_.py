@@ -339,7 +339,7 @@ def RightMostSpanForWord(w):
 # We only detect ~Lit_Chars and split.  So we might as well just write a regex.
 
 def TildeDetect(UP_w):
-  # type: (word_t) -> Optional[word_t]
+  # type: (word_t) -> Optional[compound_word]
   """Detect tilde expansion in a word.
 
   It might begin with  Literal that needs to be turned into a TildeSub.
