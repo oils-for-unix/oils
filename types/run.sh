@@ -105,9 +105,8 @@ add-imports() {
   # to run two redundant (and slow) typechecking commands.
   local module=$1
   export PYTHONPATH=.
-  module_tmp=$(mktemp)
-  typecheck_out=$(mktemp)
-  trap 'rm -f -- "$module_tmp" "$typecheck_out"' INT TERM HUP EXIT
+  module_tmp=_tmp/add-imports-module.tmp
+  typecheck_out=_tmp/add-imports-typecheck-output
   set +o pipefail
   # unbuffer is just to preserve colorization (it tricks the command
   # into thinking it's writing to a pty instead of a pipe)
@@ -119,7 +118,7 @@ add-imports() {
 
   if ! diff -q "$module_tmp" "$module" > /dev/null
   then
-    cp $module "$(mktemp -p /tmp oil-add-imports.XXXXXXXXX)"
+    cp $module "_tmp/add-imports.$(basename $module).bak"
     mv "$module_tmp" "$module"
   fi
   cat "$typecheck_out"
