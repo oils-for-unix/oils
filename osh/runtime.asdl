@@ -3,7 +3,7 @@
 module runtime
 {
   builtin = 
-    NONE | READ | ECHO | PRINTF | SHIFT
+    NONE | TIMES | READ | ECHO | PRINTF | SHIFT
   | CD | PWD | PUSHD | POPD | DIRS
   | EXPORT | READONLY | LOCAL | DECLARE | TYPESET 
   | UNSET | SET | SHOPT
@@ -14,7 +14,7 @@ module runtime
   | COLON
   | TEST | BRACKET | GETOPTS
   | COMMAND | TYPE | HASH | HELP | HISTORY
-  | TIMES | BUILTIN
+  | BUILTIN
   | ALIAS | UNALIAS
   -- Oil
   | PUSH | APPEND 
