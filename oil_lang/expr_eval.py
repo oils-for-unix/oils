@@ -23,12 +23,13 @@ from osh import word_eval
 
 import libc
 
-from typing import Any, Optional, List, Union, Tuple, TYPE_CHECKING
+from typing import Any, Dict, Optional, List, Union, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import (
       lvalue_t, lvalue__Named, lvalue__ObjIndex, lvalue__ObjAttr,
   )
+  from _devbuild.gen.syntax_asdl import arg_list
 
 
 _ = log
@@ -138,6 +139,7 @@ class OilEvaluator(object):
       return False
 
   def EvalArgList(self, args):
+    # type: (arg_list) -> Tuple[List[Any], Dict[str, Any]]
     """ Used by do f(x) and echo $f(x). """
     pos_args = []
     for arg in args.positional:

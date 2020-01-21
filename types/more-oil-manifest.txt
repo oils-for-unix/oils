@@ -14,3 +14,4 @@
 ./oil_lang/objects.py
 ./osh/cmd_exec.py
 ./frontend/args.py
+./osh/word_eval.py

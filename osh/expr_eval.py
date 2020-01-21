@@ -632,6 +632,7 @@ class ArithEvaluator(_ExprEvaluator):
     raise AssertionError("Unhandled node %r" % node.__class__.__name__)
 
   def EvalWordToString(self, node):
+    # type: (arith_expr_t) -> str
     """
     Args:
       node: arith_expr_t
@@ -655,6 +656,7 @@ class ArithEvaluator(_ExprEvaluator):
     return val.s
 
   def EvalToIndex(self, node):
+    # type: (arith_expr_t) -> int
     index = self.Eval(node)
     if not isinstance(index, int):
       e_die("Expected integer for array index, got %r", index)
