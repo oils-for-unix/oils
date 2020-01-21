@@ -78,16 +78,16 @@ checkable-files() {
 }
 
 need-typechecking() {
-    # This command is useful to find files to annotate and add to
-    # $MORE_OIL_MANIFEST.
-    # It shows all the files that are not included in
-    # $MORE_OIL_MANIFEST or $OSH_PARSE_MANIFEST, and thus are not yet
-    # typechecked by typecheck-more-oil here or
-    # `types/osh_parse.sh travis`.
-    comm -2 -3 \
-         <(checkable-files | sort | grep '.py$' | sed 's@^@./@') \
-         <(cat $MORE_OIL_MANIFEST $OSH_PARSE_MANIFEST | sort) \
-        | xargs wc -l | sort -n
+  # This command is useful to find files to annotate and add to
+  # $MORE_OIL_MANIFEST.
+  # It shows all the files that are not included in
+  # $MORE_OIL_MANIFEST or $OSH_PARSE_MANIFEST, and thus are not yet
+  # typechecked by typecheck-more-oil here or
+  # `types/osh_parse.sh travis`.
+  comm -2 -3 \
+    <(checkable-files | sort | grep '.py$' | sed 's@^@./@') \
+    <(cat $MORE_OIL_MANIFEST $OSH_PARSE_MANIFEST | sort) \
+    | xargs wc -l | sort -n
 }
 
 typecheck-files() {
@@ -97,32 +97,32 @@ typecheck-files() {
 readonly -a COMMON_TYPE_MODULES=(_devbuild/gen/runtime_asdl.py _devbuild/gen/syntax_asdl.py)
 
 add-imports() {
-	# Temporary helper to add missing class imports to the 'if
-	# TYPE_CHECKING:' block of a single module, if the relevant
-	# classes are found in one of COMMON_TYPE_MODULES
+  # Temporary helper to add missing class imports to the 'if
+  # TYPE_CHECKING:' block of a single module, if the relevant
+  # classes are found in one of COMMON_TYPE_MODULES
 
-	# Also, this prints out the typechecking output, to avoid having
-	# to run two redundant (and slow) typechecking commands.
-	local module=$1
-	export PYTHONPATH=.
-	module_tmp=$(mktemp)
-	typecheck_out=$(mktemp)
-	trap 'rm -f -- "$module_tmp" "$typecheck_out"' INT TERM HUP EXIT
-	set +o pipefail
-	# unbuffer is just to preserve colorization (it tricks the command
-	# into thinking it's writing to a pty instead of a pipe)
-	unbuffer types/run.sh typecheck-files "$module" | tee "$typecheck_out" | \
-		grep 'Name.*is not defined' | sed -r 's/.*'\''(\w+)'\''.*/\1/' | \
-		sort -u | python devtools/findclassdefs.py "${COMMON_TYPE_MODULES[@]}" | \
-		xargs python devtools/typeimports.py "$module" > "$module_tmp"
-	set -o pipefail
+  # Also, this prints out the typechecking output, to avoid having
+  # to run two redundant (and slow) typechecking commands.
+  local module=$1
+  export PYTHONPATH=.
+  module_tmp=$(mktemp)
+  typecheck_out=$(mktemp)
+  trap 'rm -f -- "$module_tmp" "$typecheck_out"' INT TERM HUP EXIT
+  set +o pipefail
+  # unbuffer is just to preserve colorization (it tricks the command
+  # into thinking it's writing to a pty instead of a pipe)
+  unbuffer types/run.sh typecheck-files "$module" | tee "$typecheck_out" | \
+    grep 'Name.*is not defined' | sed -r 's/.*'\''(\w+)'\''.*/\1/' | \
+    sort -u | python devtools/findclassdefs.py "${COMMON_TYPE_MODULES[@]}" | \
+    xargs python devtools/typeimports.py "$module" > "$module_tmp"
+  set -o pipefail
 
-	if ! diff -q "$module_tmp" "$module" > /dev/null
-	then
-		cp $module "$(mktemp -p /tmp oil-add-imports.XXXXXXXXX)"
-		mv "$module_tmp" "$module"
-	fi
-	cat "$typecheck_out"
+  if ! diff -q "$module_tmp" "$module" > /dev/null
+  then
+    cp $module "$(mktemp -p /tmp oil-add-imports.XXXXXXXXX)"
+    mv "$module_tmp" "$module"
+  fi
+  cat "$typecheck_out"
 }
 
 typecheck-more-oil() {
