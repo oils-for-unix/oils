@@ -36,21 +36,88 @@ x=7
 x=11
 ## END
 
-#### setvar when variable isn't declared results in fatal error
+#### 'setvar' mutates local
+proc f {
+  var x = 'local'
+  echo x=$x
+  setvar x = 'mutated'
+  echo x=$x
+}
+
+var x = 'global'
+echo x=$x
+f
+echo x=$x
+## STDOUT:
+x=global
+x=local
+x=mutated
+x=global
+## END
+
+#### 'setvar' CREATES global
+setvar x = 'global'
+echo x=$x
+## STDOUT:
+x=global
+## END
+
+#### 'set' when variable isn't declared results in fatal error
+shopt -s oil:all
+
 var x = 1
 f() {
   # setting global is OK
-  setvar x = 2
+  setglobal x = 'XX'
   echo x=$x
 
-  setvar y = 3  # NOT DECLARED
+  # setvar CREATES a variable
+  setvar y = 'YY'
   echo y=$y
+
+  set z = 3  # NOT DECLARED
+  echo z=$z
 }
 f
 ## status: 1
 ## STDOUT:
-x=2
+x=XX
+y=YY
 ## END
+
+#### setglobal
+f() {
+  var x = 'local'
+  echo x=$x
+  setglobal x = 'mutated'
+}
+var x = 'global'
+echo x=$x
+f
+echo x=$x
+## STDOUT:
+x=global
+x=local
+x=mutated
+## END
+
+#### setglobal of undeclared var is an error
+var x = 'XX'
+echo x=$x
+setglobal x = 'xx'
+echo x=$x
+
+# fatal error
+setglobal y = 'YY'
+
+## status: 1
+## STDOUT:
+x=XX
+x=xx
+## END
+
+
+
 
 #### var/setvar x, y = 1, 2
 
@@ -141,7 +208,7 @@ var x = "redeclaration is an error"
 x=local
 ## END
 
-#### setvar dynamic scope (TODO: change this?)
+#### setvar modified local or global scope
 modify_with_shell_assignment() {
   f=shell
 }
@@ -159,6 +226,8 @@ f() {
   # modifies the GLOBAL, not the one in parent scope
   modify_with_setvar
   echo f=$f
+  setvar f = 'local'
+  echo f=$f
 }
 var f = 'outer'
 echo f=$f
@@ -169,6 +238,7 @@ f=outer
 f=1
 f=shell
 f=shell
+f=local
 f=setvar
 ## END
 

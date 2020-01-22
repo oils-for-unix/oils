@@ -1081,7 +1081,7 @@ class Mem(object):
       # TODO: Point at the ORIGINAL declaration!
       e_die("%r has already been declared", lval.name)
 
-    if cell is None and keyword_id in (Id.KW_Set, Id.KW_SetVar):
+    if cell is None and keyword_id in (Id.KW_Set, Id.KW_SetGlobal):
       # NOTE: all 3 variants of 'lvalue' have 'name'
       e_die("%r hasn't been declared", lval.name)
 

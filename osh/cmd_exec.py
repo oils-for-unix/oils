@@ -88,6 +88,8 @@ from osh import expr_eval
 from osh import state
 from osh import word_
 
+from mycpp.mylib import switch
+
 import posix_ as posix
 try:
   import libc  # for fnmatch
@@ -1142,13 +1144,23 @@ class Executor(object):
         status = 0
 
     elif UP_node.tag == command_e.PlaceMutation:
-      # TODO:
-      #   set: local scope only
-      #   setglobal: global scope only
-      #   setref: indirect reference
 
       node = cast(command__PlaceMutation, UP_node)
       self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to setvar/set
+
+      with switch(node.keyword.id) as case:
+        if case(Id.KW_SetVar):
+          lookup_mode = scope_e.LocalOrGlobal
+        elif case(Id.KW_Set):
+          lookup_mode = scope_e.LocalOnly
+        elif case(Id.KW_SetGlobal):
+          lookup_mode = scope_e.GlobalOnly
+        elif case(Id.KW_SetRef):
+          # TODO: setref upvalue = 'returned'
+          # So this can modify two levels up?
+          lookup_mode = scope_e.Dynamic
+        else:
+          raise AssertionError(kw_id)
 
       if node.op.id == Id.Arith_Equal:
         py_val = self.expr_ev.EvalExpr(node.rhs)
@@ -1184,7 +1196,7 @@ class Executor(object):
           else:
             val = _PyObjectToVal(py_val)
             # top level variable
-            self.mem.SetVar(UP_lval_, val, (), scope_e.LocalOrGlobal,
+            self.mem.SetVar(UP_lval_, val, (), lookup_mode,
                             keyword_id=node.keyword.id)
 
       # TODO: Other augmented assignments
@@ -1200,7 +1212,7 @@ class Executor(object):
         # This should only be an int or float, so we don't need the logic above
         val = value.Obj(new_py_val)
 
-        self.mem.SetVar(pe_lval, val, (), scope_e.LocalOrGlobal,
+        self.mem.SetVar(pe_lval, val, (), lookup_mode,
                         keyword_id=node.keyword.id)
 
       else:
