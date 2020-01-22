@@ -1157,9 +1157,11 @@ class Executor(object):
         elif case(Id.KW_SetGlobal):
           lookup_mode = scope_e.GlobalOnly
         elif case(Id.KW_SetRef):
-          # TODO: setref upvalue = 'returned'
           # So this can modify two levels up?
           lookup_mode = scope_e.Dynamic
+
+          # TODO: setref upvalue = 'returned'
+          e_die("setref isn't implemented")
         else:
           raise AssertionError(node.keyword.id)
 

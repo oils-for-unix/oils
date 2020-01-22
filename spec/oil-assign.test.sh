@@ -271,6 +271,21 @@ f=local
 f=setvar
 ## END
 
+#### setref (not implemented)
+
+# TODO: should be :out (rather than out Ref, because procs have no types?)
+# or (out Ref, b Block) ?
+proc p (s, out) {
+  setref out = 'YY'
+}
+var x = 'XX'
+echo x=$x
+p abcd :x
+echo x=$x
+## STDOUT:
+x=XX
+x=YY
+## END
 
 #### circular dict
 var d = {name: 'foo'}
@@ -297,4 +312,5 @@ setvar L[0] = L
 (List)   [1, 2, 3]
 (List)   [[...], 2, 3]
 ## END
+
 
