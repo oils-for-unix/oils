@@ -155,12 +155,19 @@ f() {
   echo f=$f
   modify_with_shell_assignment
   echo f=$f
+
+  # modifies the GLOBAL, not the one in parent scope
   modify_with_setvar
   echo f=$f
 }
+var f = 'outer'
+echo f=$f
 f
+echo f=$f
 ## STDOUT:
+f=outer
 f=1
+f=shell
 f=shell
 f=setvar
 ## END

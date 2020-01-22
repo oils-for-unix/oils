@@ -449,23 +449,23 @@ def AddKinds(spec):
       'Time',
 
       # Oil keywords.
-      # should 'const' be 'let'?
-      'Const', 'Set', 'Var', 'Auto', # assignment
-      'SetVar',  # for OSH compatibility
+      'Const', 'Var', 'SetVar', 'SetRef', # OSH style
+      'Set',  'SetGlobal',  # Strict Oil style
+      # later: Auto
       'Proc', 'Func',
       'Pass',  # for printing
 
-      'Match', 'With',  # matching
+      # 'Match', 'With',  # matching
       # not sure: yield
       # mycpp
-      'Switch', 
+      # 'Switch', 
       # module (class) 
       #   - 'init' (constructor) and maybe 'call'
       # data (struct)
       # enum
       # try except (no finally?)
 
-      # builtins, NOT keywords: use, fork, wait, wok, rule, etc.
+      # builtins, NOT keywords: use, fork, wait, etc.
       # Things that don't affect parsing shouldn't be keywords.
   ])
 

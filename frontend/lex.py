@@ -191,12 +191,17 @@ _KEYWORDS = [
   C('time',     Id.KW_Time),
 
   # Oil integration
-  C('var',      Id.KW_Var),
-  C('setvar',   Id.KW_SetVar),
-  C('set',      Id.KW_Set),
-  C('func',     Id.KW_Func),
-  C('proc',     Id.KW_Proc),
-  C('pass',     Id.KW_Pass),
+  C('const',     Id.KW_Const),
+  C('var',       Id.KW_Var),
+  C('setvar',    Id.KW_SetVar),
+  C('setref',    Id.KW_SetRef),
+  C('set',       Id.KW_Set),
+  C('setglobal', Id.KW_SetGlobal),
+  C('proc',      Id.KW_Proc),
+
+  # Not used, but reserved for now?
+  C('pass',      Id.KW_Pass),
+  C('func',      Id.KW_Func),
 ]
 
 # These are treated like builtins in bash, but keywords in OSH.  However, we
@@ -680,35 +685,6 @@ BRACE_RANGE_DEF = [
 # Oil lexing.  TODO: Move to a different file?
 #
 
-
-_OIL_KEYWORDS = [
-  # Blocks
-  C('const',     Id.KW_Const),
-  C('set',       Id.KW_Set),
-  C('var',       Id.KW_Var),
-
-  # Blocks
-  C('proc',      Id.KW_Proc),
-  C('func',      Id.KW_Func),
-
-  C('do',        Id.KW_Do),
-  C('time',      Id.KW_Time),  # Or should this be time do ?
-
-  # Loops
-  C('for',       Id.KW_For),
-  C('in',        Id.KW_In),
-  C('while',     Id.KW_While),
-
-  # Conditionals
-  C('if',        Id.KW_If),
-  C('else',      Id.KW_Else),
-  C('elif',      Id.KW_Elif),  # Python and shell both use elif
-
-  C('switch',    Id.KW_Switch),  # for C translation
-  C('match',     Id.KW_Match),
-  C('case',      Id.KW_Case),
-  C('with',      Id.KW_With),
-]
 
 # Valid in lex_mode_e.{Expr,DQ_Oil}
 # Used by oil_lang/grammar_gen.py

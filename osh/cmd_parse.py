@@ -1459,12 +1459,12 @@ class CommandParser(object):
       return self.ParseTime()
 
     # Oil extensions
-    if self.c_id == Id.KW_Var:
+    if self.c_id in (Id.KW_Var, Id.KW_Const):
       kw_token = word_.LiteralToken(self.cur_word)
       self._Next()
       return self.w_parser.ParseVarDecl(kw_token)
 
-    if self.c_id == Id.KW_SetVar:
+    if self.c_id in (Id.KW_SetVar, Id.KW_SetRef, Id.KW_SetGlobal):
       kw_token = word_.LiteralToken(self.cur_word)
       self._Next()
       return self.w_parser.ParsePlaceMutation(kw_token)
@@ -1669,7 +1669,7 @@ class CommandParser(object):
     if self.c_id in (
         Id.KW_DLeftBracket, Id.Op_DLeftParen, Id.Op_LParen, Id.Lit_LBrace,
         Id.KW_For, Id.KW_While, Id.KW_Until, Id.KW_If, Id.KW_Case, Id.KW_Time,
-        Id.KW_Var, Id.KW_SetVar):
+        Id.KW_Var, Id.KW_Const, Id.KW_SetVar, Id.KW_SetGlobal, Id.KW_SetRef):
       return self.ParseCompoundCommand()
     if self.parse_opts.parse_set and self.c_id == Id.KW_Set:
       return self.ParseCompoundCommand()

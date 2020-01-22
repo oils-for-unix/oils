@@ -81,7 +81,9 @@ module runtime
   -- 'declare -A' it, it will be undefined and waiting to turn into an
   -- associative array.
   var_flags = Exported | ReadOnly
-  scope = LocalOnly | GlobalOnly | Dynamic
+
+  -- Dynamic is for shell; LocalOrGlobal is for Oil
+  scope = LocalOnly | GlobalOnly | Dynamic | LocalOrGlobal
 
   -- For OSH assignment, evaluated from osh_ast.lhs_expr
   -- TODO: Rename this to sh_place?

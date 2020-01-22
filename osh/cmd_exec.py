@@ -1100,6 +1100,8 @@ class Executor(object):
 
     # TODO: Change x = 1 + 2*3 into its own Decl node.
     elif UP_node.tag == command_e.VarDecl:
+      # TODO: This should be constant, equivalent to const x = 'foo'
+
       node = cast(command__VarDecl, UP_node)
       if node.keyword is None:
         self.mem.SetCurrentSpanId(node.lhs[0].name.span_id)  # point to var name
@@ -1140,6 +1142,11 @@ class Executor(object):
         status = 0
 
     elif UP_node.tag == command_e.PlaceMutation:
+      # TODO:
+      #   set: local scope only
+      #   setglobal: global scope only
+      #   setref: indirect reference
+
       node = cast(command__PlaceMutation, UP_node)
       self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to setvar/set
 
@@ -1165,9 +1172,6 @@ class Executor(object):
             lvals_.append(lval_)
             py_vals.append(py_val)
 
-        # TODO: Change this to LocalOrGlobal
-        lookup_mode = scope_e.Dynamic
-
         # TODO: Resolve the asymmetry betwen Named vs ObjIndex,ObjAttr.
         for UP_lval_, py_val in zip(lvals_, py_vals):
           tag = UP_lval_.tag_()
@@ -1180,7 +1184,7 @@ class Executor(object):
           else:
             val = _PyObjectToVal(py_val)
             # top level variable
-            self.mem.SetVar(UP_lval_, val, (), lookup_mode,
+            self.mem.SetVar(UP_lval_, val, (), scope_e.LocalOrGlobal,
                             keyword_id=node.keyword.id)
 
       # TODO: Other augmented assignments
@@ -1196,8 +1200,7 @@ class Executor(object):
         # This should only be an int or float, so we don't need the logic above
         val = value.Obj(new_py_val)
 
-        # TODO: This should be LocalOrGlobal too
-        self.mem.SetVar(pe_lval, val, (), scope_e.LocalOnly,
+        self.mem.SetVar(pe_lval, val, (), scope_e.LocalOrGlobal,
                         keyword_id=node.keyword.id)
 
       else:

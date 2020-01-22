@@ -1043,6 +1043,17 @@ class Mem(object):
       namespace = self.var_stack[0]
       return namespace.get(name), namespace
 
+    elif lookup_mode == scope_e.LocalOrGlobal:
+      # Local
+      namespace = self.var_stack[-1]
+      cell = namespace.get(name)
+      if cell:
+        return cell, namespace
+
+      # Global
+      namespace = self.var_stack[0]
+      return namespace.get(name), namespace
+
     else:
       raise AssertionError(lookup_mode)
 
