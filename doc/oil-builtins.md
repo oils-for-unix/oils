@@ -66,10 +66,47 @@ When a block is passed:
 Append one or more strings to an array.
 
 ```
-var array = @(1 '2 two')
-push :array three four
-echo @array  # prints 4 lines
+var a = @(1 '2 two')
+push :a three four
+echo @a # prints 4 lines
 ```
+
+`push` is a shortcut for:
+
+```
+setvar a = @( @a three four )
+```
+
+<!-- 
+
+### append
+
+You can append to a string like this:
+
+```
+var s = 'foo'
+setvar s = "${s}suffix"
+```
+
+Or maybe:
+
+```
+append :s suffix
+```
+
+But I think the more logical thing is:
+
+    echo ${s}suffix
+
+or
+
+    push :parts foo bar baz
+
+    write -sep '' -end '' @parts
+
+(Note: Oil doesn't currently support the equivalent of shell's `s+=suffix`.)
+
+-->
 
 ## Builtin Flag Syntax
 

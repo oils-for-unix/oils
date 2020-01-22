@@ -629,13 +629,49 @@ For 'set -o xtrace'.  The leading character is special.
 
 ### Collections
 
-### Iteration
+`len()`
 
-### Math
+- `len(mystr)` is its length in bytes
+- `len(myarray)` is the number of elements
+- `len(assocarray)` is the number of pairs
+
+`copy()`:
+
+```
+var d = {name: value}
+
+var alias = d  # illegal, because it can create ownership problems
+               # reference cycles
+var new = copy(d)  # valid
+```
 
 ### Pattern
 
+- `regmatch(/d+/, s)` returns a match object
+- `fnmatch('*.py', s)`  returns a boolean
+
 ### String
+
+### Better Syntax
+
+These functions give better syntax to existing shell constructs.
+
+- `shquote()` for `printf %q` and `${x@Q}`
+- `lstrip()` for `${x#prefix}` and  `${x##prefix}`
+- `rstrip()` for `${x%suffix}` and  `${x%%suffix} 
+- `lstripglob()` and `rstripglob()` for slow, legacy glob
+- `upper()` for `${x^^}
+- `lower()` for `${x,,}
+- `strftime()`: hidden in `printf`
+
+### Arrays
+
+- `index(A, item)` is like the awk function
+
+### Assoc Arrays
+
+- `@names()`
+- `values()`.  Problem: these aren't all strings?
 
 ### Block
 
@@ -646,10 +682,5 @@ For 'set -o xtrace'.  The leading character is special.
 Useful for logging callbacks.  NOTE: bash has this with the obscure printf
 '%(...)' syntax.
 
-<h3>Testing</h3>
-
-### Data Formats
-
 ### Hashing
-
 
