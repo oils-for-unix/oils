@@ -18,6 +18,7 @@ from _devbuild.gen.syntax_asdl import sh_lhs_expr
 from core.util import log
 from frontend import args
 from frontend import match
+from osh import builtin  # ReadLineFromStdin
 from mycpp.mylib import tagswitch
 
 import yajl
@@ -334,14 +335,52 @@ class Write(_Builtin):
     return 0
 
 
+GETLINE_SPEC = args.OilFlags()
+GETLINE_SPEC.Flag('-cstr', args.Bool,
+                    help='Decode the line in CSTR format')
+GETLINE_SPEC.Flag('-end', args.Bool, default=False,
+                    help='Whether to return the trailing newline, if any')
 
 class Getline(_Builtin):
   """
   getline :mystr
   getline --cstr :mystr  # better version of read -r
+
+  What if there are multiple vars?  Try TSV2 then?
   """
   def __call__(self, cmd_val):
-    raise NotImplementedError
+    arg_r = args.Reader(cmd_val.strs, spids=cmd_val.spids)
+    arg_r.Next()
+    arg, _ = GETLINE_SPEC.Parse(arg_r)
+    if arg.cstr:
+      # TODO: implement it
+      # returns error if it can't decode
+      raise NotImplementedError()
+
+    var_name, var_spid = arg_r.ReadRequired2(
+        'requires a variable name')
+
+    if var_name.startswith(':'):  # optional : sigil
+      var_name = var_name[1:]
+
+    next_arg, next_spid = arg_r.Peek2()
+    if next_arg is not None:
+      raise args.UsageError('got extra argument', span_id=next_spid)
+
+    # TODO: use a more efficient function in C
+    line = builtin.ReadLineFromStdin()
+    if not line:  # EOF
+      return 1
+
+    if not arg.end:
+      if line.endswith('\r\n'):
+        line = line[:-2]
+      elif line.endswith('\n'):
+        line = line[:-1]
+
+    self.mem.SetVar(
+        sh_lhs_expr.Name(var_name), value.Str(line), (), scope_e.LocalOnly)
+    return 0
 
 
 class Tsv2(_Builtin):

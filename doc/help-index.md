@@ -182,11 +182,11 @@ X [Unsupported]   enable
                   X use                  source with namespace, file-relative 
                   X opts                 getopts replacement
                   push                   add elements to end of array
-                  append                 add bytes to end of string
+                  X append               add bytes to end of string
                   repr                   Show debug representation of vars
-                  X log   X die          common functions (polyfill)
-                  X getline              Instead of read -raw :name
+                  getline                Instead of read -raw :name
                   write                  like echo, but with --, -sep, -end
+                  X log   X die          common functions (polyfill)
   [Data Formats]  json   X tsv2   X html   X struct/binary
 X [External Lang] BEGIN   END   when (awk)
                   rule (make)   each (xargs)   fs (find)

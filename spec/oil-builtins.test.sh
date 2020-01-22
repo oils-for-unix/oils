@@ -121,3 +121,21 @@ write ---
 --
 done
 ## END
+
+#### getline
+shopt -s oil:basic
+
+# Hm this preserves the newline?
+seq 3 | while getline :line {
+  write line=$line
+}
+write a b | while getline --end=T :line {
+  write -end '' line=$line
+}
+## STDOUT:
+line=1
+line=2
+line=3
+line=a
+line=b
+## END
