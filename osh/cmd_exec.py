@@ -1105,7 +1105,7 @@ class Executor(object):
       # TODO: This should be constant, equivalent to const x = 'foo'
 
       node = cast(command__VarDecl, UP_node)
-      if node.keyword is None:
+      if node.keyword is None or node.keyword.id == Id.KW_Const:
         self.mem.SetCurrentSpanId(node.lhs[0].name.span_id)  # point to var name
 
         # Note: there's only one LHS
@@ -1113,7 +1113,8 @@ class Executor(object):
         py_val = self.expr_ev.EvalExpr(node.rhs)
         val = _PyObjectToVal(py_val)
 
-        self.mem.SetVar(vd_lval, val, (), scope_e.LocalOnly, keyword_id=None)
+        self.mem.SetVar(vd_lval, val, (var_flags_e.ReadOnly,),
+                        scope_e.LocalOnly, keyword_id=None)
         status = 0
 
       else:
@@ -1160,7 +1161,7 @@ class Executor(object):
           # So this can modify two levels up?
           lookup_mode = scope_e.Dynamic
         else:
-          raise AssertionError(kw_id)
+          raise AssertionError(node.keyword.id)
 
       if node.op.id == Id.Arith_Equal:
         py_val = self.expr_ev.EvalExpr(node.rhs)

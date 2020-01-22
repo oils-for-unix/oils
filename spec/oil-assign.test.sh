@@ -36,6 +36,35 @@ x=7
 x=11
 ## END
 
+#### const can't be mutated
+proc f {
+  const x = 'local'
+  echo x=$x
+  setvar x = 'mutated'
+  echo x=$x
+}
+var x = 'global'
+echo x=$x
+f
+echo x=$x
+## status: 1
+## STDOUT:
+x=global
+x=local
+## END
+
+#### const can't be redeclared
+shopt -s oil:all
+
+x = 'foo'
+echo x=$x
+const x = 'bar'
+echo x=$x
+## status: 1
+## STDOUT:
+x=foo
+## END
+
 #### 'setvar' mutates local
 proc f {
   var x = 'local'
