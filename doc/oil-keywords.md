@@ -8,22 +8,118 @@ Oil Keywords
 <div id="toc">
 </div>
 
-## Basics: `const`, `var`, and `setvar`
+## Two Styles for Declaration and Assignment
 
-These will work in OSH or Oil.
+### `const`, `var`, and `setvar` are shell-like and interactive
 
-### Syntactic Sugar with Oil: `s = 'foo'`
-
-These are the same:
+Shell:
 
 ```
-const s = 'foo'
-s = 'foo'
+readonly c=C
+
+myfunc() {
+  local x=L
+  x=mutated
+
+  newglobal=G
+}
 ```
 
-## Advanced: `setref`
+OSH:
 
-To return a value.
+```
+const c = 'C'
+
+proc myproc {
+  var x = 'L'
+  setvar x = 'mutated'
+
+  setvar newglobal = 'G'
+}
+```
+
+- `var` declares a new variable in the current scope (global or local)
+- `const` is like `var`, except the binding can never be changed
+- `setvar x = 'y'` is like `x=y` in shell (except that it doesn't obey [dynamic
+  scope]($xref:dynamic-scope).)
+  - If a local `x` exists, it mutates it.
+  - Otherwise it creates a new global `x`.
+  - If you want stricter behavior, use `set` rather than `setvar`.
+
+### `var` and `set`/`setglobal` are Oil-like and stricter
+
+- `set` mutates a local that's been declared
+- `setglobal` mutates a global that's been decalred
+- `c = 'X'` is syntactic sugar for `const c = 'X'`.  This is to make it more
+  compact, i.e. for "Huffman coding" of programs.
+
+```
+c = 'X'  # syntactic sugar for const c = 'X'
+
+proc myproc {
+  var x = 'L'
+  set x = 'mutated' 
+
+  set notglobal = 'G'   # ERROR: neither a local or global
+}
+```
+
+It's rarely necessary to mutate globals in shell scripts, but if you do, use
+the `setglobal` keyword:
+
+```
+var g = 'G'
+proc myproc {
+  setglobal g = 'mutated'
+
+  setglobal notglobal = 'G'  # ERROR: not a global
+}
+```
+
+## Other Kinds of Assignment
+
+### Mutating Arrays
+
+You can use `setvar` or `set`:
+
+Shell:
+
+```
+a=(one two three)
+a[0]=zz
+```
+
+Oil:
+
+```
+var a = @(one two three)
+set a[0] = 'zz'
+
+setvar a[0] = 'zz'  # also acceptable
+```
+
+### Mutating Associative Arrays
+
+Shell:
+
+```
+declare -A A=(['name']=foo ['type']='dir')
+A['type']=file
+```
+
+Oil:
+
+```
+var A = {name: 'foo', type: 'dir'}
+set A['type'] = 'file'
+
+setvar A['type'] = 'file'  # also acceptable
+```
+
+
+### Advanced: `setref` is for "out parameters"
+
+To return a value.  Like "named references" in [bash]($xref:bash).
 
 ```
 proc decode (s, :out) {
@@ -31,7 +127,17 @@ proc decode (s, :out) {
 }
 ```
 
-## Stricter Style With Oil: `set` and `setglobal`
+### `=` pretty prints an expression
+
+Useful interactively.
+
+```sh-prompt
+$ = 'foo'
+(Str)   'foo'
+
+$ = @(one two)
+(StrArray)   ['one', 'two']
+```
 
 <!--
 
@@ -57,70 +163,7 @@ proc main {
 -->
 
 
-## Assignment Keywords
-
-- dynamic scope vs. local
-  - all Oil keywords have local scope
-
-
-- `setvar` always works.  This is a shell-like, awk-like style.
-  - TODO: it should work for setvar i++ and setvar a[key] += weight too
-  - local scope only
-  - note: you can't mutate a global shadowed by a local this way
-  - actually maybe setglobal?  from global scope.  But setvar always works at
-    the top level too.
-- `var` and `set` are for a stricter style
-  - var will error if it's already declared in the scope
-  - set will error if it's NOT declared in the scope
-- const is like readonly.  Same rules as 'var'.
-
-
-- special case for `const port = 80`
-  - `port = 80`
-  - "huffman coding"
-
-
-TODO: See data-model.md
-
-
-### Use `var` to initialize variables
-
-Python- or JavaScript- like syntax on RHS.
-
-```
-var myint = 1
-var mystring = 'str'
-var doublequoted = "hello $name"
-var myarray = @(ls -a -l)
-var mydict = {name: 'bob', age: 10}
-var mylist = [42, false, "hello"]
-```
-
-### Use `setvar` or `set` to mutate variables
-
-```
-setvar myint = 1
-```
-
-Spelled with `set`:
-
-```
-shopt -s parse-set
-
-set mylist[0] = 43
-set mylist[0] += 1  # increment by 1
-set mydict['name'] = 'other'
-```
-
-In Oil, `set` is a keyword.  To use the `set` builtin, prefix it with `builtin`:
-
-```
-builtin set -o errexit
-builtin set -- a b c
-```
-
-You can also turn on `set` options with the `shopt -o` flag: `shopt -o -s
-errexit`.
+<!--
 
 ### Declaration / Assignment
 
@@ -141,30 +184,63 @@ set x.foo, x.bar = foo, bar
 
 https://github.com/oilshell/oil/commit/64e1e9c91c541e495fee4a39e5a23bc775ae3104
 
-### More
+-->
+
+
+<!--
 
 Future work, not implemented:
 
-- `const` (compile-time?)
-  - or `let`?
 - `auto` for "auto-vivifcation"
 
+when we get integers.
 
-## Other Keywords
+-->
+
+
+## Defining "Functions"
 
 ### `proc` declares a shell-like "function"
 
+```
+proc p {
+  echo one
+  echo two
+}
+
+p > file.txt
+```
+
+<!--
 ### `func` declares a true function
 
 LIke Python or JavaScript.
+
+-->
 
 ### `return` is a keyword in Oil
 
 It takes an expression, not a word.  See command vs. expression mode.
 
-### `do`, `pass`, and `pp`
+```
+proc p {
+  var status = '1'
 
-Maybe `=` too.
+  echo 'hello'
+
+  return status  # not $status
+}
+
+p
+echo $?  # prints 1
+```
+
+(This is intended to be consistent with a future `func`.)
+
+
+
+<!--
+### `do` and `pass`
 
 
 - `pass` evaluates an expression and throws away its result.   It's intended to be used for left-to-right function calls.  See the `sub()` example in this thread:
@@ -198,6 +274,10 @@ Kind of ugly ... :neutral:
 
 https://github.com/oilshell/oil/commit/dc7a0474b006287f2152b54f78d56df8c3d13281
 
+-->
+
+
+<!--
 
 ## Variables and Assignment
 
@@ -276,3 +356,5 @@ builtin set -- a b c
 Most programs shouldn't need to use the `set` builtin in Oil.  Of course, `shopt -u parse_set` unsets it if desired.
 
 Comments welcome!
+
+-->

@@ -89,7 +89,7 @@ an **unimplemented** feature.
                   assoc         assoc=(['a']=1 ['b']=2)   assoc['x']=b
   [Builtins]      local   readonly   export   unset   shift
                   declare   typeset   X let
-  [Oil Keywords]  var   set   setvar   setref   const
+  [Oil Keywords]  const   var   setvar   set   setglobal   setref
 ```
 
 <h2 id="expr">
