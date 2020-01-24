@@ -32,6 +32,14 @@ status=2
 status=0
 ## END
 
+#### popd returns error on empty directory stack
+message=$(popd 2>&1)
+echo $?
+echo "$message" | grep -o "directory stack empty"
+## STDOUT:
+1
+directory stack empty
+## END
 
 #### dirs builtin
 cd /
