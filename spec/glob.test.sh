@@ -113,6 +113,7 @@ touch _tmp/foo.-
 echo _tmp/*.[[:punct:]] _tmp/*.[[:punct\:]]
 ## stdout: _tmp/foo.- _tmp/*.[[:punct:]]
 ## BUG mksh stdout: _tmp/*.[[:punct:]] _tmp/*.[[:punct:]]
+## BUG ash stdout: _tmp/foo.- _tmp/foo.-
 
 #### Redirect to glob, not evaluated
 # This writes to *.F, not foo.F

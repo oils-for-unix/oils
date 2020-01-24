@@ -448,10 +448,6 @@ status=1
 status=2
 status=2
 ## END
-## BUG ash STDOUT:
-status=0
-status=0
-## END
 
 #### printf %q
 x='a b'

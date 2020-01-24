@@ -134,10 +134,8 @@ i=0
 echo done
 ## stdout-json: ""
 ## status: 1
-## N-I dash status: 127
-## N-I dash stdout-json: ""
-## BUG ash status: 0
-## BUG ash stdout: done
+## N-I dash/ash status: 127
+## N-I dash/ash stdout-json: ""
 
 #### errexit with subshell
 set -o errexit
@@ -146,10 +144,6 @@ echo three
 ## status: 1
 ## STDOUT:
 one
-## BUG ash status: 0
-## BUG ash STDOUT:
-one
-three
 ## END
 
 #### set -o errexit while it's being ignored (moot with strict_errexit)

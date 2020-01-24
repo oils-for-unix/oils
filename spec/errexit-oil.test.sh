@@ -363,8 +363,8 @@ f $TMP
 f /nonexistent # should fail
 echo done
 
-## N-I dash/ash status: 2
-## N-I dash/ash stdout-json: ""
+## N-I dash status: 2
+## N-I dash stdout-json: ""
 ## STDOUT:
 done
 ## END
