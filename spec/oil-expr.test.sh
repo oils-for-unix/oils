@@ -63,13 +63,29 @@ argv.py @x
 ['a', 'b c']
 ## END
 
-#### Splice in a Python list (i.e. Oil Obj var in word evaluator)
-shopt -s parse_at simple_word_eval
-var mylist = ["one", "two"]
-argv.py @mylist
+#### Splice in array
+shopt -s oil:basic
+var a = @(one two three)
+argv.py @a
 ## STDOUT:
-['one', 'two']
+['one', 'two', 'three']
 ## END
+
+#### Splice in assoc array
+shopt -s oil:basic
+declare -A A=(['foo']=bar, ['spam']=eggs)
+write -- @A | sort
+## STDOUT:
+foo
+spam
+## END
+
+#### Can't splice string
+shopt -s oil:basic
+var mystr = 'abc'
+argv.py @mystr
+## status: 1
+## stdout-json: ""
 
 #### Can't splice undefined
 shopt -s oil:basic
@@ -402,7 +418,7 @@ echo $len(two)
 2
 ## END
 
-#### List comprehension
+#### List comprehension (deferred)
 shopt -s oil:all
 
 var n = [i*2 for i in range(5)]
@@ -701,22 +717,25 @@ default
 ## END
 
 
-#### M can be saved and used later
+#### M can be saved and used later (deferred)
 shopt -s oil:basic
 
 var pat = '.([[:alpha:]]+)'  # ERE syntax
 if ('foo' ~ pat) {
-  var m1 = M
+  var m1 = copy(M)
   if ('bar' ~ pat) {
-    var m2 = M
+    var m2 = copy(M)
   }
 }
 argv.py @m1
 argv.py @m2
-## STDOUT:
-['foo', 'oo']
-['bar', 'ar']
-## END
+# STDOUT:
+#['foo', 'oo']
+#['bar', 'ar']
+# END
+
+## status: 1
+
 
 
 #### obj.attr and obj.method()

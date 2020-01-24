@@ -30,6 +30,8 @@ set -o errexit
 readonly THIS_DIR=$(cd $(dirname $0) && pwd)
 readonly DIR=$THIS_DIR/../_tmp/spec-bin
 
+readonly BUSYBOX_NAME='busybox-1.31.1'
+
 upstream() {
   # Not for end users
   wget --directory _tmp \
@@ -114,7 +116,7 @@ build-mksh() {
 }
 
 build-busybox() {
-  pushd $DIR/busybox-1.31.1
+  pushd $DIR/$BUSYBOX_NAME
   make defconfig
   make
   popd
@@ -135,7 +137,7 @@ copy-all() {
   cp -f -v bash-4.4/bash .
   cp -f -v dash-0.5.8/src/dash .
   cp -f -v mksh-R52c/mksh .
-  cp -f -v busybox-1.22.0/busybox .
+  cp -f -v $BUSYBOX_NAME/busybox .
   ln -s -f -v busybox ash
 
   # In its own tree

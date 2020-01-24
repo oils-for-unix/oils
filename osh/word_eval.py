@@ -39,9 +39,11 @@ from osh import state
 from osh import word_
 from osh import word_compile
 
+from mycpp.mylib import tagswitch
+
 import posix_ as posix
 
-from typing import Any, Optional, Tuple, List, Union, cast, TYPE_CHECKING
+from typing import Optional, Tuple, List, Union, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.id_kind_asdl import Id_t
@@ -1204,29 +1206,24 @@ class _WordEvaluator(object):
       val = self.mem.GetVar(var_name)
 
       UP_val = val
-      if UP_val.tag == value_e.Str:
-        val = cast(value__Str, UP_val)
-        obj = val.s # type: Any
-      elif UP_val.tag == value_e.MaybeStrArray:
-        val = cast(value__MaybeStrArray, UP_val)
-        obj = val.strs
-      elif UP_val.tag == value_e.AssocArray:
-        val = cast(value__AssocArray, UP_val)
-        obj = val.d
-      elif UP_val.tag == value_e.Obj:
-        val = cast(value__Obj, UP_val)
-        obj = val.obj
-      else:
-        e_die("Can't splice %r", var_name, part=part)
+      with tagswitch(val) as case:
+        if case(value_e.MaybeStrArray):
+          val = cast(value__MaybeStrArray, UP_val)
+          items = val.strs
+        elif case(value_e.AssocArray):
+          val = cast(value__AssocArray, UP_val)
+          items = val.d.keys()
 
-      # Use iterable protocol and convert each item to a string.  This means
-      # you can splice in dicts too.  # TODO: Optimize this so it doesn't make
-      # a copy in the common case that it's already an Array/string.
-      #
-      # TODO: Strings should not be iterable over their bytes either!  Need
-      # separate .bytes() and .runes().
-      av = part_value.Array([str(item) for item in obj])
-      part_vals.append(av)
+        # TODO: Get rid of this case!  Need to DEFER a lot of oil spec
+        # tests though.
+        elif case(value_e.Obj):
+          val = cast(value__Obj, UP_val)
+          items = [str(item) for item in val.obj]
+
+        else:
+          e_die("Can't splice %r", var_name, part=part)
+
+      part_vals.append(part_value.Array(items))
 
     elif UP_part.tag == word_part_e.FuncCall:
       part = cast(word_part__FuncCall, UP_part)
@@ -1284,17 +1281,6 @@ class _WordEvaluator(object):
 
     else:
       raise AssertionError(word.__class__.__name__)
-
-  # Do we need this?
-  def EvalWordToPattern(self, word):
-    # type: (Any) -> None
-    """
-    Given a word, returns pattern.ERE if has an ExtGlob, or pattern.Fnmatch
-    otherwise.
-
-    NOTE: Have to handle nested extglob like: [[ foo == ${empty:-@(foo|bar) ]]
-    """
-    pass
 
   def EvalWordToString(self, word, do_fnmatch=False, do_ere=False):
     # type: (word_t, bool, bool) -> value__Str
