@@ -88,7 +88,8 @@ from osh import expr_eval
 from osh import state
 from osh import word_
 
-from mycpp.mylib import switch
+from mycpp import mylib
+from mycpp.mylib import switch, tagswitch
 
 import posix_ as posix
 try:
@@ -107,21 +108,6 @@ if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import (
       Token, source_t, redir_t, expr__Lambda, env_pair, proc_sig__Closed,
   )
-  RedirectableCommand = Union[
-      command__Simple,
-      command__ExpandedAlias,
-      command__ShAssignment,
-      command__DoGroup,
-      command__BraceGroup,
-      command__Subshell,
-      command__DParen,
-      command__DBracket,
-      command__ForEach,
-      command__ForExpr,
-      command__WhileUntil,
-      command__If,
-      command__Case,
-  ]
   from core.ui import ErrorFormatter
   from frontend.parse_lib import ParseContext
   from core import dev
@@ -131,8 +117,6 @@ if TYPE_CHECKING:
   from osh import builtin_process
   from osh import prompt
   from osh import split
-else:
-  RedirectableCommand = Any
 
 
 # Python type name -> Oil type name
@@ -251,26 +235,27 @@ class Deps(object):
     self.waiter = None      # type: process.Waiter
 
 
-def _PyObjectToVal(py_val):
-  # type: (Any) -> Any
-  """
-  Maintain the 'value' invariant in osh/runtime.asdl.
+if mylib.PYTHON:
+  def _PyObjectToVal(py_val):
+    # type: (Any) -> Any
+    """
+    Maintain the 'value' invariant in osh/runtime.asdl.
 
-  TODO: Move this to Mem and combine with LookupVar in oil_lang/expr_eval.py.
-  They are opposites.
-  """
-  if isinstance(py_val, str):  # var s = "hello $name"
-    val = value.Str(py_val)  # type: Any
-  elif isinstance(py_val, objects.StrArray):  # var a = @(a b)
-    # It's safe to convert StrArray to MaybeStrArray.
-    val = value.MaybeStrArray(py_val)
-  elif isinstance(py_val, dict):  # var d = {name: "bob"}
-    # TODO: Is this necessary?  Shell assoc arrays aren't nested and don't have
-    # arbitrary values.
-    val = value.AssocArray(py_val)
-  else:
-    val = value.Obj(py_val)
-  return val
+    TODO: Move this to Mem and combine with LookupVar in oil_lang/expr_eval.py.
+    They are opposites.
+    """
+    if isinstance(py_val, str):  # var s = "hello $name"
+      val = value.Str(py_val)  # type: Any
+    elif isinstance(py_val, objects.StrArray):  # var a = @(a b)
+      # It's safe to convert StrArray to MaybeStrArray.
+      val = value.MaybeStrArray(py_val)
+    elif isinstance(py_val, dict):  # var d = {name: "bob"}
+      # TODO: Is this necessary?  Shell assoc arrays aren't nested and don't have
+      # arbitrary values.
+      val = value.AssocArray(py_val)
+    else:
+      val = value.Obj(py_val)
+    return val
 
 
 class Executor(object):
@@ -705,7 +690,7 @@ class Executor(object):
       raise AssertionError('Unknown redirect type')
 
   def _EvalRedirects(self, node):
-    # type: (RedirectableCommand) -> List[redirect_t]
+    # type: (command_t) -> List[redirect_t]
     """Evaluate redirect nodes to concrete objects.
 
     We have to do this every time, because you could have something like:
@@ -720,7 +705,57 @@ class Executor(object):
     Raises:
       RedirectEvalError
     """
-    return [self._EvalRedirect(redir) for redir in node.redirects]
+    # This is kind of lame because we have two switches over command_e: one for
+    # redirects, and to evaluate the node.  But it's what you would do in C++ I
+    # suppose.  We could also inline them.  Or maybe use RAII.
+    UP_node = node
+    with tagswitch(node) as case:
+      if case(command_e.Simple):
+        node = cast(command__Simple, UP_node)
+        redirects = node.redirects
+      elif case(command_e.ExpandedAlias):
+        node = cast(command__ExpandedAlias, UP_node)
+        redirects = node.redirects
+      elif case(command_e.ShAssignment):
+        node = cast(command__ShAssignment, UP_node)
+        redirects = node.redirects
+      elif case(command_e.DoGroup):
+        node = cast(command__DoGroup, UP_node)
+        redirects = node.redirects
+      elif case(command_e.BraceGroup):
+        node = cast(command__BraceGroup, UP_node)
+        redirects = node.redirects
+      elif case(command_e.Subshell):
+        node = cast(command__Subshell, UP_node)
+        redirects = node.redirects
+      elif case(command_e.DParen):
+        node = cast(command__DParen, UP_node)
+        redirects = node.redirects
+      elif case(command_e.DBracket):
+        node = cast(command__DBracket, UP_node)
+        redirects = node.redirects
+      elif case(command_e.ForEach):
+        node = cast(command__ForEach, UP_node)
+        redirects = node.redirects
+      elif case(command_e.ForExpr):
+        node = cast(command__ForExpr, UP_node)
+        redirects = node.redirects
+      elif case(command_e.WhileUntil):
+        node = cast(command__WhileUntil, UP_node)
+        redirects = node.redirects
+      elif case(command_e.If):
+        node = cast(command__If, UP_node)
+        redirects = node.redirects
+      elif case(command_e.Case):
+        node = cast(command__Case, UP_node)
+        redirects = node.redirects
+      else:
+        raise AssertionError
+
+    result = []
+    for redir in redirects:
+      result.append(self._EvalRedirect(redir))
+    return result
 
   def _MakeProcess(self, node, parent_pipeline=None, inherit_errexit=True):
     # type: (command_t, process.Pipeline, bool) -> process.Process
@@ -992,11 +1027,10 @@ class Executor(object):
       else:
         argv = ['TODO: trace string for assignment']
         if node.block:
-          # TODO: what's the best way to handle this?
-          node_block = cast(Any, node.block)
-
+          assert node.block.tag_() == command_e.BraceGroup, node
+          block = cast(command__BraceGroup, node.block)
           e_die("ShAssignment builtins don't accept blocks",
-                span_id=node_block.spids[0])
+                span_id=block.spids[0])
 
       # This comes before evaluating env, in case there are problems evaluating
       # it.  We could trace the env separately?  Also trace unevaluated code
@@ -1708,21 +1742,17 @@ class Executor(object):
         e_die("errexit is disabled here, but strict_errexit disallows it "
               "with a compound command (%s)", node_str, span_id=span_id)
 
-    UP_node = node
-    # These nodes have no redirects.  NOTE: Function definitions have
-    # redirects, but we do NOT want to evaluate them yet!  They're evaluated
-    # on every invocation.
+    # These nodes have no redirects.
     # TODO: Speed this up with some kind of bit mask?
-    if UP_node.tag in (
+    if node.tag in (
         command_e.NoOp, command_e.ControlFlow, command_e.Pipeline,
         command_e.AndOr, command_e.CommandList, command_e.Sentence,
         command_e.TimeBlock, command_e.ShFunction, command_e.VarDecl,
         command_e.PlaceMutation, command_e.OilCondition, command_e.OilForIn,
         command_e.Proc, command_e.Func, command_e.Return, command_e.Expr,
         command_e.BareDecl):
-      redirects = [] # type: List[redirect_t]
+      redirects = []  # type: List[redirect_t]
     else:
-      node = cast(RedirectableCommand, UP_node)
       try:
         redirects = self._EvalRedirects(node)
       except error.RedirectEval as e:
@@ -2045,111 +2075,112 @@ class Executor(object):
 
     return status
 
-  def RunOilFunc(self, func, args, kwargs):
-    # type: (objects.Func, Tuple[Any, ...], Dict[str, Any]) -> Any
-    """Run an Oil function.
+  if mylib.PYTHON:
+    def RunOilFunc(self, func, args, kwargs):
+      # type: (objects.Func, Tuple[Any, ...], Dict[str, Any]) -> Any
+      """Run an Oil function.
 
-    var x = abs(y)   do f(x)   @split(mystr)   @join(myarray)
-    """
-    # TODO:
-    # - Return value register should be separate?
-    #   - But how does 'return 345' work?  Is that the return builtin
-    #     raising an exception?
-    #     Or is it setting the register?
-    #   - I think the exception can have any type, but when you catch it
-    #     you determine whether it's LastStatus() or it's something else.
-    #   - Something declared with 'func' CANNOT have both?
-    #
-    # - Type checking
-    #   - If the arguments are all strings, make them @ARGV?
-    #     That isn't happening right now.
+      var x = abs(y)   do f(x)   @split(mystr)   @join(myarray)
+      """
+      # TODO:
+      # - Return value register should be separate?
+      #   - But how does 'return 345' work?  Is that the return builtin
+      #     raising an exception?
+      #     Or is it setting the register?
+      #   - I think the exception can have any type, but when you catch it
+      #     you determine whether it's LastStatus() or it's something else.
+      #   - Something declared with 'func' CANNOT have both?
+      #
+      # - Type checking
+      #   - If the arguments are all strings, make them @ARGV?
+      #     That isn't happening right now.
 
-    #log('RunOilFunc kwargs %s', kwargs)
-    #log('RunOilFunc named_defaults %s', func.named_defaults)
+      #log('RunOilFunc kwargs %s', kwargs)
+      #log('RunOilFunc named_defaults %s', func.named_defaults)
 
-    node = func.node
-    self.mem.PushTemp()
+      node = func.node
+      self.mem.PushTemp()
 
-    # Bind positional arguments
-    n_args = len(args)
-    n_params = len(node.pos_params)
-    for i, param in enumerate(node.pos_params):
-      if i < n_args:
-        py_val = args[i]
-        val = _PyObjectToVal(py_val)
-      else:
-        val = func.pos_defaults[i]
-        if val is None:
-          # Python raises TypeError.  Should we do something else?
-          raise TypeError('No value provided for param %r', param.name)
-      self.mem.SetVar(lvalue.Named(param.name.val), val, (), scope_e.LocalOnly)
-
-    if node.pos_splat:
-      splat_name = node.pos_splat.val
-
-      # NOTE: This is a heterogeneous TUPLE, not list.
-      leftover = value.Obj(args[n_params:])
-      self.mem.SetVar(lvalue.Named(splat_name), leftover, (), scope_e.LocalOnly)
-    else:
-      if n_args > n_params:
-        raise TypeError(
-            "func %r expected %d arguments, but got %d" %
-            (node.name.val, n_params, n_args))
-
-    # Bind named arguments
-    for i, param in enumerate(node.named_params):
-      name = param.name
-      if name.val in kwargs:
-        py_val = kwargs.pop(name.val)  # REMOVE it
-        val = _PyObjectToVal(py_val)
-      else:
-        if name.val in func.named_defaults:
-          val = func.named_defaults[name.val]
+      # Bind positional arguments
+      n_args = len(args)
+      n_params = len(node.pos_params)
+      for i, param in enumerate(node.pos_params):
+        if i < n_args:
+          py_val = args[i]
+          val = _PyObjectToVal(py_val)
         else:
+          val = func.pos_defaults[i]
+          if val is None:
+            # Python raises TypeError.  Should we do something else?
+            raise TypeError('No value provided for param %r', param.name)
+        self.mem.SetVar(lvalue.Named(param.name.val), val, (), scope_e.LocalOnly)
+
+      if node.pos_splat:
+        splat_name = node.pos_splat.val
+
+        # NOTE: This is a heterogeneous TUPLE, not list.
+        leftover = value.Obj(args[n_params:])
+        self.mem.SetVar(lvalue.Named(splat_name), leftover, (), scope_e.LocalOnly)
+      else:
+        if n_args > n_params:
           raise TypeError(
-              "Named argument %r wasn't passed, and it doesn't have a default "
-              "value" % name.val)
+              "func %r expected %d arguments, but got %d" %
+              (node.name.val, n_params, n_args))
 
-      self.mem.SetVar(lvalue.Named(name.val), val, (), scope_e.LocalOnly)
+      # Bind named arguments
+      for i, param in enumerate(node.named_params):
+        name = param.name
+        if name.val in kwargs:
+          py_val = kwargs.pop(name.val)  # REMOVE it
+          val = _PyObjectToVal(py_val)
+        else:
+          if name.val in func.named_defaults:
+            val = func.named_defaults[name.val]
+          else:
+            raise TypeError(
+                "Named argument %r wasn't passed, and it doesn't have a default "
+                "value" % name.val)
 
-    if node.named_splat:
-      splat_name = node.named_splat.val
-      # Note: this dict is not an AssocArray
-      leftover = value.Obj(kwargs)
-      self.mem.SetVar(lvalue.Named(splat_name), leftover, (), scope_e.LocalOnly)
-    else:
-      if kwargs:
-        raise TypeError(
-            'func %r got unexpected named arguments: %s' %
-            (node.name.val, ', '.join(kwargs.keys())))
+        self.mem.SetVar(lvalue.Named(name.val), val, (), scope_e.LocalOnly)
 
-    return_val = None
-    try:
-      self._Execute(node.body)
-    except _ControlFlow as e:
-      if e.IsReturn():
-        # TODO: Rename this
-        return_val = e.StatusCode()
-    finally:
-      self.mem.PopTemp()
-    return return_val
+      if node.named_splat:
+        splat_name = node.named_splat.val
+        # Note: this dict is not an AssocArray
+        leftover = value.Obj(kwargs)
+        self.mem.SetVar(lvalue.Named(splat_name), leftover, (), scope_e.LocalOnly)
+      else:
+        if kwargs:
+          raise TypeError(
+              'func %r got unexpected named arguments: %s' %
+              (node.name.val, ', '.join(kwargs.keys())))
 
-  def RunLambda(self, lambda_node, args, kwargs):
-    # type: (expr__Lambda, Tuple[Any, ...], Dict[str, Any]) -> Any
-    """ Run a lambda like |x| x+1 """
+      return_val = None
+      try:
+        self._Execute(node.body)
+      except _ControlFlow as e:
+        if e.IsReturn():
+          # TODO: Rename this
+          return_val = e.StatusCode()
+      finally:
+        self.mem.PopTemp()
+      return return_val
 
-    self.mem.PushTemp()
-    # Bind params.  TODO: Reject kwargs, etc.
-    for i, param in enumerate(lambda_node.params):
-      val = value.Obj(args[i])
-      self.mem.SetVar(lvalue.Named(param.name.val), val, (), scope_e.LocalOnly)
+    def RunLambda(self, lambda_node, args, kwargs):
+      # type: (expr__Lambda, Tuple[Any, ...], Dict[str, Any]) -> Any
+      """ Run a lambda like |x| x+1 """
 
-    return_val = None
-    try:
-      return_val = self.expr_ev.EvalExpr(lambda_node.body)
-    finally:
-      self.mem.PopTemp()
-    return return_val
+      self.mem.PushTemp()
+      # Bind params.  TODO: Reject kwargs, etc.
+      for i, param in enumerate(lambda_node.params):
+        val = value.Obj(args[i])
+        self.mem.SetVar(lvalue.Named(param.name.val), val, (), scope_e.LocalOnly)
+
+      return_val = None
+      try:
+        return_val = self.expr_ev.EvalExpr(lambda_node.body)
+      finally:
+        self.mem.PopTemp()
+      return return_val
 
   def EvalBlock(self, block):
     # type: (command_t) -> Dict[str, cell]
