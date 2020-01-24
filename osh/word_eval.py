@@ -43,7 +43,7 @@ from mycpp.mylib import tagswitch
 
 import posix_ as posix
 
-from typing import Optional, Tuple, List, Union, cast, TYPE_CHECKING
+from typing import Optional, Tuple, List, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.id_kind_asdl import Id_t
@@ -87,10 +87,8 @@ def _BackslashEscape(s):
   return s.replace('\\', '\\\\')
 
 
-def _ValueToPartValue(val,  # type: value_t
-                      quoted,  # type: bool
-                      ):
-  # type: (...) -> Union[part_value__Array, part_value__String]
+def _ValueToPartValue(val, quoted):
+  # type: (value_t, bool) -> part_value_t
   """Helper for VarSub evaluation.
 
   Called by _EvalBracedVarSub and _EvalWordPart for SimpleVarSub.
@@ -578,7 +576,8 @@ class _WordEvaluator(object):
         # otherwise an array reference, like 'arr[0]' or 'arr[xyz]' or 'arr[@]'
         i = val.s.find('[')
         if i >= 0 and val.s[-1] == ']':
-          name, index = val.s[:i], val.s[i+1:-1]
+          name = val.s[:i]
+          index = val.s[i+1:-1]
           result = self._EvalIndirectArrayExpansion(name, index)
           if result is not None:
             return result
@@ -589,11 +588,13 @@ class _WordEvaluator(object):
 
       elif UP_val.tag == value_e.MaybeStrArray:
         val = cast(value__MaybeStrArray, UP_val)
+        # translation issue: tuple indices not supported in list comprehensions
         indices = [str(i) for i, s in enumerate(val.strs) if s is not None]
         return value.MaybeStrArray(indices)
 
       elif UP_val.tag == value_e.AssocArray:
         val = cast(value__AssocArray, UP_val)
+        # translation problem: val.d has an Any type?
         indices = [str(k) for k in val.d]
         return value.MaybeStrArray(indices)
       else:
@@ -866,7 +867,7 @@ class _WordEvaluator(object):
         val = value.MaybeStrArray(names)
 
         assert isinstance(part.suffix_op, (suffix_op__Nullary, suffix_op__Unary))
-        suffix_op = part.suffix_op # type: Union[suffix_op__Nullary, suffix_op__Unary]
+        suffix_op = part.suffix_op
 
         # "${!prefix@}" is the only one that doesn't decay
         maybe_decay_array = not (quoted and suffix_op.op_id == Id.VOp3_At)
@@ -1263,7 +1264,7 @@ class _WordEvaluator(object):
       raise AssertionError(part.__class__.__name__)
 
   def _EvalWordToParts(self, word, quoted, part_vals, is_subst=False):
-    # type: (Union[word_t], bool, List[part_value_t], bool) -> None
+    # type: (word_t, bool, List[part_value_t], bool) -> None
     """Helper for EvalRhsWord, EvalWordSequence, etc.
 
     Returns:
@@ -1547,7 +1548,7 @@ class _WordEvaluator(object):
 
           left = lvalue.Named(tok_val[:-1])
           if part_offset == len(w.parts):
-            rhs_word = word.Empty()  # type: Union[word__Empty, compound_word]
+            rhs_word = word.Empty()  # type: word_t
           else:
             rhs_word = compound_word(w.parts[part_offset:])
             # tilde detection only happens on static assignments!

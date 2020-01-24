@@ -305,7 +305,12 @@ readonly OSH_PARSE_FILES=(
 )
 
 readonly TRANSLATE=(
-  $REPO_ROOT/osh/glob_.py
+  #$REPO_ROOT/osh/glob_.py
+
+  $REPO_ROOT/osh/word_eval.py
+
+  # has Union because of cmd_val
+  #$REPO_ROOT/osh/cmd_exec.py
 )
 
 # From types/more-oil-manifest.txt
@@ -347,8 +352,7 @@ osh-parse() {
 
   #if false; then
   if true; then
-    mycpp $raw bin/$name.py "${OSH_PARSE_FILES[@]}"
-      #"${TRANSLATE[@]}"
+    mycpp $raw bin/$name.py "${OSH_PARSE_FILES[@]}" "${TRANSLATE[@]}"
       #"${MORE_OIL[@]}"
   fi
 
