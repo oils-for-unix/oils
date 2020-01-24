@@ -304,9 +304,21 @@ readonly OSH_PARSE_FILES=(
   $REPO_ROOT/frontend/parse_lib.py
 )
 
-readonly TRANSLATE=(
-  #$REPO_ROOT/osh/glob_.py
+readonly CAN_TRANSLATE=(
+  # These translate but don't compile
+  $REPO_ROOT/osh/glob_.py
+  $REPO_ROOT/osh/string_ops.py
+  $REPO_ROOT/osh/word_compile.py
+  $REPO_ROOT/osh/builtin_bracket.py
+  $REPO_ROOT/osh/split.py
+  $REPO_ROOT/oil_lang/regex_translate.py
+)
 
+
+readonly TRANSLATE=(
+  # crash:
+  # list comprehensions and value.AssocArray typing
+  # should be Dict[str, str] for now
   $REPO_ROOT/osh/word_eval.py
 
   # has Union because of cmd_val
@@ -335,7 +347,7 @@ readonly MORE_OIL=(
   $REPO_ROOT/osh/split.py
   $REPO_ROOT/oil_lang/regex_translate.py
 
-  # Fails because of isinstance(objects.StrArray) and Union
+  # has Union because of cmd_val
   #$REPO_ROOT/osh/cmd_exec.py
 
   # Fails because of Union[None, bool, str] -- dynamic typing

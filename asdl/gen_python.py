@@ -100,6 +100,10 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       # This is used for value.Obj().
       code_str = 'hnode.External(%s)' % var_name
 
+    elif isinstance(desc, meta.AssocType):
+      # Is this valid?
+      code_str = 'hnode.External(%s)' % var_name
+
     elif isinstance(desc, meta.UserType):  # e.g. Id
       # This assumes it's Id, which is a simple SumType.  TODO: Remove this.
       code_str = 'hnode.Leaf(Id_str(%s), color_e.UserType)' % var_name
@@ -200,6 +204,9 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
       elif isinstance(field_desc, meta.AnyType):
         type_str = 'Any'
+
+      elif isinstance(field_desc, meta.AssocType):
+        type_str = 'Dict[str, str]'
 
       elif isinstance(field_desc, meta.UserType):
         type_str = field_desc.type_name

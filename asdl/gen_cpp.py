@@ -50,6 +50,7 @@ _BUILTINS = {
     # TODO: frontend/syntax.asdl should properly import id enum instead of
     # hard-coding it here.
     'id': 'Id_t',
+    'assoc': 'Dict<Str*, Str*>*',
 }
 
 
@@ -353,6 +354,10 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
     elif isinstance(desc, meta.AnyType):
       # This is used for value.Obj().
+      code_str = 'new hnode__External(%s)' % var_name
+
+    elif isinstance(desc, meta.AssocType):
+      # TODO: Is this valid?
       code_str = 'new hnode__External(%s)' % var_name
 
     elif isinstance(desc, meta.UserType):

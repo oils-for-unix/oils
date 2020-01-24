@@ -15,3 +15,4 @@
 ./osh/cmd_exec.py
 ./frontend/args.py
 ./osh/word_eval.py
+./_devbuild/gen/runtime_asdl.py

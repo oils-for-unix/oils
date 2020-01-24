@@ -1100,6 +1100,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.accept(seq)
             self.write('); !it.Done(); it.Next()) {\n')
 
+            # TODO: What if it's assoc == Optional[Dict[str, str]] ?
             item_type = seq_type.args[0]  # get 'int' from 'List<int>'
             self.write_ind('  %s ', get_c_type(item_type))
             self.accept(index_expr)

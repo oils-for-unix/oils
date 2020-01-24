@@ -589,12 +589,16 @@ class _WordEvaluator(object):
       elif UP_val.tag == value_e.MaybeStrArray:
         val = cast(value__MaybeStrArray, UP_val)
         # translation issue: tuple indices not supported in list comprehensions
-        indices = [str(i) for i, s in enumerate(val.strs) if s is not None]
+        #indices = [str(i) for i, s in enumerate(val.strs) if s is not None]
+        indices = []
+        for i, s in enumerate(val.strs):
+          if s is not None:
+            indices.append(str(i))
         return value.MaybeStrArray(indices)
 
       elif UP_val.tag == value_e.AssocArray:
         val = cast(value__AssocArray, UP_val)
-        # translation problem: val.d has an Any type?
+        assert val.d is not None  # for MyPy, so it's not Optional[]
         indices = [str(k) for k in val.d]
         return value.MaybeStrArray(indices)
       else:
@@ -665,7 +669,7 @@ class _WordEvaluator(object):
     # Special case for "".  The parser outputs (DoubleQuoted []), instead
     # of (DoubleQuoted [Literal '']).  This is better but it means we
     # have to check for it.
-    if not parts:
+    if len(parts) == 0:
       v = part_value.String('', True, False)
       part_vals.append(v)
       return
@@ -679,7 +683,7 @@ class _WordEvaluator(object):
 
     Example: var x = "$foo-${foo}"
     """
-    part_vals = [] # type: List[part_value_t]
+    part_vals = []  # type: List[part_value_t]
     self._EvalDoubleQuoted(dq_part.parts, part_vals)
     return self._PartValsToString(part_vals, dq_part.left.span_id)
 
@@ -866,11 +870,15 @@ class _WordEvaluator(object):
         names.sort()
         val = value.MaybeStrArray(names)
 
-        assert isinstance(part.suffix_op, (suffix_op__Nullary, suffix_op__Unary))
-        suffix_op = part.suffix_op
+        # Test for maybe_decay_array
+        UP_suffix_op = part.suffix_op
+        if UP_suffix_op.tag_() == suffix_op_e.Nullary:
+          suffix_op = cast(suffix_op__Nullary, UP_suffix_op)
+          # "${!prefix@}" is the only one that doesn't decay
+          maybe_decay_array = not (quoted and suffix_op.op_id == Id.VOp3_At)
+        else:
+          raise AssertionError
 
-        # "${!prefix@}" is the only one that doesn't decay
-        maybe_decay_array = not (quoted and suffix_op.op_id == Id.VOp3_At)
       else:
         # TODO: maybe_decay_array for "${!assoc[@]}" vs. ${!assoc[*]}
         val = self._ApplyPrefixOp(val, part.prefix_op, part.token)
@@ -951,7 +959,7 @@ class _WordEvaluator(object):
           replace_str = ''
 
         regex, warnings = glob_.GlobToERE(pat_val.s)
-        if warnings:
+        if len(warnings):
           # TODO:
           # - Add 'set -o strict-glob' mode and expose warnings.
           #   "Glob is not in CANONICAL FORM".
