@@ -319,10 +319,9 @@ readonly TRANSLATE=(
   # crash:
   # list comprehensions and value.AssocArray typing
   # should be Dict[str, str] for now
-  $REPO_ROOT/osh/word_eval.py
+  #$REPO_ROOT/osh/word_eval.py
 
-  # has Union because of cmd_val
-  #$REPO_ROOT/osh/cmd_exec.py
+  $REPO_ROOT/osh/cmd_exec.py
 )
 
 # From types/more-oil-manifest.txt

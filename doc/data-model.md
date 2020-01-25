@@ -326,12 +326,22 @@ Oil supports various shell and bash operations to view the interpretr state.
 
 Pretty prints state.
 
-## Future Work: The Oil Data Model
 
-- Similar to Python and JavaScript
-- Garbage Collection
-- JSON serialization
-- Typed Arrays and Data Frames
+## `cmd_value` for shell builtins
+
+Another important type:
+
+```
+  assign_arg = (lvalue lval, value? rval, int spid)
+
+  cmd_value =
+    Argv(string* argv, int* arg_spids, command__BraceGroup? block)
+  | Assign(builtin builtin_id,
+           string* argv, int* arg_spids,
+           assign_arg* pairs)
+```
+
+<!-- TODO: change BraceGroup to something more accurate -->
 
 ## Links
 

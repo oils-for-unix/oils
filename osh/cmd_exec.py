@@ -473,7 +473,7 @@ class Executor(object):
       status = b(cmd_val, fork_external)
 
     elif builtin_id == builtin_e.BUILTIN:  # NOTE: uses early return style
-      if not argv:
+      if len(argv) == 0:
         return 0  # this could be an error in strict mode?
 
       name = cmd_val.argv[1]
@@ -803,7 +803,7 @@ class Executor(object):
     span_id = cmd_val.arg_spids[0] if cmd_val.arg_spids else runtime.NO_SPID
 
     # This happens when you write "$@" but have no arguments.
-    if not argv:
+    if len(argv) == 0:
       if self.exec_opts.strict_argv:
         e_die("Command evaluated to an empty argv array",
               span_id=span_id)
@@ -859,11 +859,12 @@ class Executor(object):
       # isinstance(val.obj, objects.Proc)
       UP_val = self.mem.GetVar(arg0)
 
-      if UP_val.tag == value_e.Obj:
-        val = cast(value__Obj, UP_val)
-        if isinstance(val.obj, objects.Proc):
-          status = self._RunOilProc(val.obj, argv[1:])
-          return status
+      if mylib.PYTHON:  # Not reusing CPython objects
+        if UP_val.tag == value_e.Obj:
+          val = cast(value__Obj, UP_val)
+          if isinstance(val.obj, objects.Proc):
+            status = self._RunOilProc(val.obj, argv[1:])
+            return status
 
     builtin_id = builtin.Resolve(arg0)
 
@@ -986,7 +987,7 @@ class Executor(object):
       # PS4='+$SOURCE_NAME:$LINENO:'
       # Note that for '> $LINENO' the span_id is set in _EvalRedirect.
       # TODO: Can we avoid setting this so many times?  See issue #567.
-      if node.words:
+      if len(node.words):
         span_id = word_.LeftMostSpanForWord(node.words[0])
         self.mem.SetCurrentSpanId(span_id)
 
@@ -1024,7 +1025,7 @@ class Executor(object):
       self.tracer.OnSimpleCommand(argv)
 
       # NOTE: RunSimpleCommand never returns when fork_external=False!
-      if node.more_env:  # I think this guard is necessary?
+      if len(node.more_env):  # I think this guard is necessary?
         is_other_special = False  # TODO: There are other special builtins too!
         if cmd_val.tag == cmd_value_e.Assign or is_other_special:
           # Special builtins have their temp env persisted.
@@ -1048,7 +1049,7 @@ class Executor(object):
       # TODO: SetCurrentSpanId to OUTSIDE?  Don't bother with stuff inside
       # expansion, since aliases are discouarged.
 
-      if node.more_env:
+      if len(node.more_env):
         self.mem.PushTemp()
         try:
           self._EvalTempEnv(node.more_env, (var_flags_e.Exported,))
@@ -1069,7 +1070,7 @@ class Executor(object):
     elif UP_node.tag == command_e.Pipeline:
       node = cast(command__Pipeline, UP_node)
       check_errexit = True
-      if node.stderr_indices:
+      if len(node.stderr_indices):
         e_die("|& isn't supported", span_id=node.spids[0])
 
       if node.negated:
