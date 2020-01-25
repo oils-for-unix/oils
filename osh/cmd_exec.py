@@ -62,7 +62,7 @@ from _devbuild.gen.runtime_asdl import (
     lvalue, lvalue_e, lvalue__ObjIndex, lvalue__ObjAttr,
     value, value_e, value_t, value__Str, value__MaybeStrArray, value__Obj,
     redirect, scope_e, var_flags_e, builtin_e,
-    arg_vector, cmd_value, cmd_value_e,
+    cmd_value__Argv, cmd_value, cmd_value_e,
     cmd_value__Argv, cmd_value__Assign,
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
@@ -325,17 +325,17 @@ class Executor(object):
     finally:
       self.arena.PopSource()
 
-  def _Eval(self, arg_vec):
-    # type: (arg_vector) -> int
+  def _Eval(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     if self.exec_opts.strict_eval_builtin:
       # To be less confusing, eval accepts EXACTLY one string arg.
-      n = len(arg_vec.strs)
+      n = len(cmd_val.argv)
       if n != 2:
         raise args.UsageError('requires exactly 1 argument, got %d' % (n-1))
-      code_str = arg_vec.strs[1]
+      code_str = cmd_val.argv[1]
     else:
-      code_str = ' '.join(arg_vec.strs[1:])
-    eval_spid = arg_vec.spids[0]
+      code_str = ' '.join(cmd_val.argv[1:])
+    eval_spid = cmd_val.arg_spids[0]
 
     line_reader = reader.StringLineReader(code_str, self.arena)
     c_parser = self.parse_ctx.MakeOshParser(line_reader)
@@ -366,10 +366,10 @@ class Executor(object):
 
     return node
 
-  def _Source(self, arg_vec):
-    # type: (arg_vector) -> int
-    argv = arg_vec.strs
-    call_spid = arg_vec.spids[0]
+  def _Source(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    argv = cmd_val.argv
+    call_spid = cmd_val.arg_spids[0]
 
     try:
       path = argv[1]
@@ -383,7 +383,7 @@ class Executor(object):
       f = self.fd_state.Open(resolved)  # Shell can't use descriptors 3-9
     except OSError as e:
       self.errfmt.Print('source %r failed: %s', path, posix.strerror(e.errno),
-                        span_id=arg_vec.spids[1])
+                        span_id=cmd_val.arg_spids[1])
       return 1
 
     try:
@@ -410,23 +410,23 @@ class Executor(object):
     finally:
       f.close()
 
-  def _Exec(self, arg_vec):
-    # type: (arg_vector) -> int
+  def _Exec(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     # Apply redirects in this shell.  # NOTE: Redirects were processed earlier.
-    if len(arg_vec.strs) == 1:
+    if len(cmd_val.argv) == 1:
       return 0
 
     environ = self.mem.GetExported()
-    cmd = arg_vec.strs[1]
+    cmd = cmd_val.argv[1]
     argv0_path = self.search_path.CachedLookup(cmd)
     if argv0_path is None:
       self.errfmt.Print('exec: %r not found', cmd,
-                        span_id=arg_vec.spids[1])
+                        span_id=cmd_val.arg_spids[1])
       sys.exit(127)  # exec never returns
 
     # shift off 'exec'
-    arg_vec2 = arg_vector(arg_vec.strs[1:], arg_vec.spids[1:])
-    self.ext_prog.Exec(argv0_path, arg_vec2, environ)  # NEVER RETURNS
+    c2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:])
+    self.ext_prog.Exec(argv0_path, c2, environ)  # NEVER RETURNS
     assert False, "This line should never be reached" # makes mypy happy
 
   def _RunBuiltinAndRaise(self, builtin_id, cmd_val, fork_external):
@@ -437,9 +437,6 @@ class Executor(object):
     """
     # Shift one arg.  Builtins don't need to know their own name.
     argv = cmd_val.argv[1:]
-
-    # STUB for compatibility
-    arg_vec = arg_vector(cmd_val.argv, cmd_val.arg_spids)
 
     # TODO: For now, hard-code the builtins that take a block, and pass them
     # cmd_val.
@@ -457,16 +454,16 @@ class Executor(object):
     # Some builtins "belong" to the executor.
 
     elif builtin_id == builtin_e.EXEC:
-      status = self._Exec(arg_vec)  # may never return
+      status = self._Exec(cmd_val)  # may never return
       # But if it returns, then we want to permanently apply the redirects
       # associated with it.
       self.fd_state.MakePermanent()
 
     elif builtin_id == builtin_e.EVAL:
-      status = self._Eval(arg_vec)
+      status = self._Eval(cmd_val)
 
     elif builtin_id in (builtin_e.SOURCE, builtin_e.DOT):
-      status = self._Source(arg_vec)
+      status = self._Source(cmd_val)
 
     elif builtin_id == builtin_e.COMMAND:
       # TODO: How do we handle fork_external?  It doesn't fit the common
@@ -885,14 +882,13 @@ class Executor(object):
       self.errfmt.Print('%r not found', arg0, span_id=span_id)
       return 127
 
-    arg_vec = arg_vector(cmd_val.argv, cmd_val.arg_spids)
     if fork_external:
-      thunk = process.ExternalThunk(self.ext_prog, argv0_path, arg_vec, environ)
+      thunk = process.ExternalThunk(self.ext_prog, argv0_path, cmd_val, environ)
       p = process.Process(thunk, self.job_state)
       status = p.Run(self.waiter)
       return status
 
-    self.ext_prog.Exec(argv0_path, arg_vec, environ)  # NEVER RETURNS
+    self.ext_prog.Exec(argv0_path, cmd_val, environ)  # NEVER RETURNS
     assert False, "This line should never be reached" # makes mypy happy
 
   def _RunPipeline(self, node):

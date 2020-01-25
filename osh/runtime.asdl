@@ -33,13 +33,6 @@ module runtime
            string* argv, int* arg_spids,
            assign_arg* pairs)
 
-  -- TODO: Remove arg_vector in favor of cmd_value.Argv.
-  -- The spids array is parallel to strs, the argv values.  Note that each
-  -- entry in argv came from a single word, but a word can produce multiple
-  -- argv entries.
-  -- 'rhs' is for assignment builtins.
-  arg_vector = (string* strs, int* spids)
-
   -- A parse-time word_part from syntax.asdl is evaluated to a runtime
   -- part_value.
   part_value = 

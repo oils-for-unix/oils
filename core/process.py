@@ -28,7 +28,7 @@ import posix_ as posix
 from typing import Optional, List, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime_asdl import arg_vector, redirect_t
+  from _devbuild.gen.runtime_asdl import cmd_value__Argv, redirect_t
   from _devbuild.gen.syntax_asdl import command_t
   from osh.cmd_exec import Executor
   from mycpp import mylib
@@ -442,8 +442,8 @@ class ExternalProgram(object):
     self.errfmt = errfmt
     self.debug_f = debug_f
 
-  def Exec(self, argv0_path, arg_vec, environ):
-    # type: (str, arg_vector, List[str]) -> None
+  def Exec(self, argv0_path, cmd_val, environ):
+    # type: (str, cmd_value__Argv, List[str]) -> None
     """Execute a program and exit this process.
 
     Called by:
@@ -451,7 +451,7 @@ class ExternalProgram(object):
       exec ls /
       ( ls / )
     """
-    self._Exec(argv0_path, arg_vec.strs, arg_vec.spids[0], environ, True)
+    self._Exec(argv0_path, cmd_val.argv, cmd_val.arg_spids[0], environ, True)
     assert False, "This line should never execute" # NO RETURN
 
   def _Exec(self, argv0_path, argv, argv0_spid, environ, should_retry):
@@ -534,11 +534,11 @@ class Thunk(object):
 class ExternalThunk(Thunk):
   """An external executable."""
 
-  def __init__(self, ext_prog, argv0_path, arg_vec, environ):
-    # type: (ExternalProgram, str, arg_vector, List[str]) -> None
+  def __init__(self, ext_prog, argv0_path, cmd_val, environ):
+    # type: (ExternalProgram, str, cmd_value__Argv, List[str]) -> None
     self.ext_prog = ext_prog
     self.argv0_path = argv0_path
-    self.arg_vec = arg_vec
+    self.cmd_val = cmd_val
     self.environ = environ
 
   def DisplayLine(self):
@@ -547,13 +547,13 @@ class ExternalThunk(Thunk):
     # bash displays        sleep $n & (code)
     # but OSH displays     sleep 1 &  (argv array)
     # We could switch the former but I'm not sure it's necessary.
-    return '[process] %s' % ' '.join(pretty.String(a) for a in self.arg_vec.strs)
+    return '[process] %s' % ' '.join(pretty.String(a) for a in self.cmd_val.argv)
 
   def Run(self):
     """
     An ExternalThunk is run in parent for the exec builtin.
     """
-    self.ext_prog.Exec(self.argv0_path, self.arg_vec, self.environ)
+    self.ext_prog.Exec(self.argv0_path, self.cmd_val, self.environ)
 
 
 class SubProgramThunk(Thunk):

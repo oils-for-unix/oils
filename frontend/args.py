@@ -62,7 +62,7 @@ from core.util import log
 import libc  # for regex support
 
 from typing import Tuple, Optional, Dict, Union, List, Any, IO, TYPE_CHECKING
-from _devbuild.gen.runtime_asdl import arg_vector, cmd_value__Argv
+from _devbuild.gen.runtime_asdl import cmd_value__Argv
 
 if TYPE_CHECKING:
   OptChange = Tuple[str, bool]

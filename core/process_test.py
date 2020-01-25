@@ -7,7 +7,7 @@ import os
 import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import redirect, arg_vector
+from _devbuild.gen.runtime_asdl import redirect, cmd_value
 from core import process  # module under test
 from core import test_lib
 from core import ui
@@ -46,7 +46,7 @@ def _CommandNode(code_str, arena):
 
 
 def _ExtProc(argv):
-  arg_vec = arg_vector(argv, [0] * len(argv))
+  arg_vec = cmd_value.Argv(argv, [0] * len(argv))
   argv0_path = None
   for path_entry in ['/bin', '/usr/bin']:
     full_path = os.path.join(path_entry, argv[0])

@@ -149,7 +149,7 @@ builtin_pure.AddOptionsToArgSpec(OSH_SPEC)
 
 
 def _MakeBuiltinArgv(argv):
-  argv = [''] + argv  # add dummy since arg_vec includes argv[0]
+  argv = [''] + argv  # add dummy for argv[0]
   # no location info
   return cmd_value.Argv(argv, [runtime.NO_SPID] * len(argv))
 
@@ -481,9 +481,9 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.HASH: builtin_pure.Hash(exec_deps.search_path),
       builtin_e.GETOPTS: builtin_pure.GetOpts(mem, errfmt),
 
-      builtin_e.COLON: lambda arg_vec: 0,  # a "special" builtin 
-      builtin_e.TRUE: lambda arg_vec: 0,
-      builtin_e.FALSE: lambda arg_vec: 1,
+      builtin_e.COLON: lambda cmd_val: 0,  # a "special" builtin 
+      builtin_e.TRUE: lambda cmd_val: 0,
+      builtin_e.FALSE: lambda cmd_val: 1,
 
       # Process
       builtin_e.WAIT: builtin_process.Wait(exec_deps.waiter,
