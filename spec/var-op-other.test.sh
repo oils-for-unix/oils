@@ -136,3 +136,33 @@ slice
 -bcd-
 ## END
 
+#### Slice with an index that's an array itself not allowed
+i=(3 4 5)
+mystr=abcdefg
+echo assigned
+echo ${mystr:$i:2}
+## status: 1
+## STDOUT:
+assigned
+## END
+## BUG mksh/bash status: 0
+## BUG mksh/bash STDOUT:
+assigned
+de
+## END
+
+#### Slice with an assoc array
+declare -A A=(['5']=3 ['6']=4)
+mystr=abcdefg
+echo assigned
+echo ${mystr:$A:2}
+## status: 1
+## STDOUT:
+assigned
+## END
+## N-I mksh stdout-json: ""
+## BUG bash/zsh status: 0
+## BUG bash/zsh STDOUT:
+assigned
+ab
+## END

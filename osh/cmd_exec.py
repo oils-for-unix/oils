@@ -1109,6 +1109,7 @@ class Executor(object):
 
       check_errexit = True
       i = self.arith_ev.Eval(node.child)
+      # TODO: check val.i.  What if it returns a AssocArray or Array?
       status = 0 if i != 0 else 1
 
     elif UP_node.tag == command_e.OilCondition:
