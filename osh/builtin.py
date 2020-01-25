@@ -739,8 +739,16 @@ class History(object):
 
     # Delete history entry by id number
     if arg.d:
-      cmd_index = int(rest[0]) - 1  # readline is indexed from 1
-      readline_mod.remove_history_item(cmd_index)
+      try:
+        cmd_index = int(rest[0]) - 1  # readline is indexed from 1
+      except IndexError:
+        raise args.UsageError('Requires a numeric argument')
+
+      try:
+        readline_mod.remove_history_item(cmd_index)
+      except ValueError:
+        raise args.UsageError('%r : history position out of range' % arg0)
+
       return 0
 
 
