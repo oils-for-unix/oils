@@ -79,7 +79,6 @@ from core.util import log, e_die
 from frontend import args
 from frontend import reader
 
-from oil_lang import builtin_oil
 from oil_lang import objects
 from osh import braces
 from osh import builtin
@@ -97,7 +96,7 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc  # type: ignore
 
-from typing import List, Dict, Tuple, Any, Callable, Union, cast, TYPE_CHECKING
+from typing import List, Dict, Tuple, Any, Callable, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.id_kind_asdl import Id_t
@@ -268,10 +267,7 @@ class Executor(object):
                mem,          # type: state.Mem
                fd_state,     # type: process.FdState
                procs,        # type: Dict[str, command__ShFunction]
-               # the Union[...] callable argument is needed because regular
-               # builtins work differently from assignment builtins
-               # (anything in osh.builtin_assign).
-               builtins,     # type: Dict[builtin_t, Callable[[Union[arg_vector, cmd_value__Assign]], int]]
+               builtins,     # type: Dict[builtin_t, Callable[[cmd_value_t], int]]
                exec_opts,    # type: state.ExecOpts
                parse_ctx,    # type: ParseContext
                exec_deps,    # type: Deps
@@ -456,12 +452,7 @@ class Executor(object):
     # Most builtins dispatch with a dictionary
     builtin_func = self.builtins.get(builtin_id)
     if builtin_func is not None:
-      # Pass the block
-      if isinstance(builtin_func,
-          (builtin.Cd, builtin_oil.Use, builtin_oil.Json)):
-        status = builtin_func(cmd_val)
-      else:
-        status = builtin_func(arg_vec)
+      status = builtin_func(cmd_val)
 
     # Some builtins "belong" to the executor.
 
@@ -482,20 +473,20 @@ class Executor(object):
       # signature.  We also don't handle 'command local', etc.
       b = builtin_pure.Command(self, self.procs, self.aliases,
                                self.search_path)
-      status = b(arg_vec, fork_external)
+      status = b(cmd_val, fork_external)
 
     elif builtin_id == builtin_e.BUILTIN:  # NOTE: uses early return style
       if not argv:
         return 0  # this could be an error in strict mode?
 
-      name = arg_vec.strs[1]
+      name = cmd_val.argv[1]
 
       # Run regular builtin or special builtin
       to_run = builtin.Resolve(name)
       if to_run == builtin_e.NONE:
         to_run = builtin.ResolveSpecial(name)
       if to_run == builtin_e.NONE:
-        span_id = arg_vec.spids[1]
+        span_id = cmd_val.arg_spids[1]
         if builtin.ResolveAssign(name) != builtin_e.NONE:
           # NOTE: There's a similar restriction for 'command'
           self.errfmt.Print("Can't run assignment builtin recursively",
@@ -1017,9 +1008,8 @@ class Executor(object):
 
       words = braces.BraceExpandWords(node.words)
       cmd_val = self.word_ev.EvalWordSequence2(words, allow_assign=True)
-      UP_cmd_val = cmd_val
 
-      # STUB for compatibility.
+      UP_cmd_val = cmd_val
       if UP_cmd_val.tag == cmd_value_e.Argv:
         cmd_val = cast(cmd_value__Argv, UP_cmd_val)
         argv = cmd_val.argv

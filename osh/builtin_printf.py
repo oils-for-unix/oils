@@ -134,11 +134,11 @@ class Printf(object):
     self.errfmt = errfmt
     self.parse_cache = {}  # Dict[str, printf_part]
 
-  def __call__(self, arg_vec):
+  def __call__(self, cmd_val):
     """
     printf: printf [-v var] format [argument ...]
     """
-    arg_r = args.Reader(arg_vec.strs, spids=arg_vec.spids)
+    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip argv[0]
     arg, _ = PRINTF_SPEC.Parse(arg_r)
 

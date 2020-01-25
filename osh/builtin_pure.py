@@ -36,6 +36,7 @@ if TYPE_CHECKING:
   from osh.cmd_exec import Executor
   from osh.state import SearchPath
   from _devbuild.gen.syntax_asdl import command__ShFunction
+  from _devbuild.gen.runtime_asdl import cmd_value__Argv
 
 
 ALIAS_SPEC = _Register('alias')
@@ -46,8 +47,10 @@ class Alias(object):
     self.aliases = aliases
     self.errfmt = errfmt
 
-  def __call__(self, arg_vec):
-    if len(arg_vec.strs) == 1:
+  def __call__(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    argv = cmd_val.argv
+    if len(argv) == 1:
       for name in sorted(self.aliases):
         alias_exp = self.aliases[name]
         # This is somewhat like bash, except we use %r for ''.
@@ -55,14 +58,15 @@ class Alias(object):
       return 0
 
     status = 0
-    for i in xrange(1, len(arg_vec.strs)):
-      arg = arg_vec.strs[i]
+    for i in xrange(1, len(argv)):
+      arg = argv[i]
       parts = arg.split('=', 1)
       if len(parts) == 1:  # if we get a plain word without, print alias
         name = parts[0]
         alias_exp = self.aliases.get(name)
         if alias_exp is None:
-          self.errfmt.Print('No alias named %r', name, span_id=arg_vec.spids[i])
+          self.errfmt.Print('No alias named %r', name,
+                            span_id=cmd_val.arg_spids[i])
           status = 1
         else:
           print('alias %s=%r' % (name, alias_exp))
@@ -83,17 +87,20 @@ class UnAlias(object):
     self.aliases = aliases
     self.errfmt = errfmt
 
-  def __call__(self, arg_vec):
-    if len(arg_vec.strs) == 1:
+  def __call__(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    argv = cmd_val.argv
+    if len(argv) == 1:
       raise args.UsageError('unalias NAME...')
 
     status = 0
-    for i in xrange(1, len(arg_vec.strs)):
-      name = arg_vec.strs[i]
+    for i in xrange(1, len(argv)):
+      name = argv[i]
       try:
         del self.aliases[name]
       except KeyError:
-        self.errfmt.Print('No alias named %r', name, span_id=arg_vec.spids[i])
+        self.errfmt.Print('No alias named %r', name,
+                          span_id=cmd_val.arg_spids[i])
         status = 1
     return status
 
@@ -129,11 +136,11 @@ class Set(object):
     self.exec_opts = exec_opts
     self.mem = mem
 
-  def __call__(self, arg_vec):
+  def __call__(self, cmd_val):
     # TODO:
     # - How to integrate this with auto-completion?  Have to handle '+'.
 
-    if len(arg_vec.strs) == 1:
+    if len(cmd_val.argv) == 1:
       # 'set' without args shows visible variable names and values.  According
       # to POSIX:
       # - the names should be sorted, and 
@@ -149,7 +156,7 @@ class Set(object):
         print(code_str)
       return 0
 
-    arg_r = args.Reader(arg_vec.strs, spids=arg_vec.spids)
+    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip 'set'
     arg = SET_SPEC.Parse(arg_r)
 
@@ -178,9 +185,9 @@ class Shopt(object):
   def __init__(self, exec_opts):
     self.exec_opts = exec_opts
 
-  def __call__(self, arg_vec):
-    arg, i = SHOPT_SPEC.ParseVec(arg_vec)
-    opt_names = arg_vec.strs[i:]
+  def __call__(self, cmd_val):
+    arg, i = SHOPT_SPEC.ParseVec(cmd_val)
+    opt_names = cmd_val.argv[i:]
 
     if arg.p:  # print values
       if arg.o:  # use set -o names
@@ -260,11 +267,11 @@ class Command(object):
     self.aliases = aliases
     self.search_path = search_path
 
-  def __call__(self, arg_vec, fork_external):
-    arg, arg_index = COMMAND_SPEC.ParseVec(arg_vec)
+  def __call__(self, cmd_val, fork_external):
+    arg, arg_index = COMMAND_SPEC.ParseVec(cmd_val)
     if arg.v:
       status = 0
-      names = arg_vec.strs[arg_index:]
+      names = cmd_val.argv[arg_index:]
       for kind, arg in _ResolveNames(names, self.funcs, self.aliases,
                                      self.search_path):
         if kind is None:
@@ -275,7 +282,7 @@ class Command(object):
       return status
 
     # shift by one
-    cmd_val = cmd_value.Argv(arg_vec.strs[1:], arg_vec.spids[1:])
+    cmd_val = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:])
     # 'command ls' suppresses function lookup.
     return self.ex.RunSimpleCommand(cmd_val, fork_external, funcs=False)
 
@@ -293,8 +300,8 @@ class Type(object):
     self.aliases = aliases
     self.search_path = search_path
 
-  def __call__(self, arg_vec):
-    arg, i = TYPE_SPEC.ParseVec(arg_vec)
+  def __call__(self, cmd_val):
+    arg, i = TYPE_SPEC.ParseVec(cmd_val)
 
     if arg.f:
       funcs = []
@@ -302,7 +309,7 @@ class Type(object):
       funcs = self.funcs
 
     status = 0
-    r = _ResolveNames(arg_vec.strs[i:], funcs, self.aliases, self.search_path)
+    r = _ResolveNames(cmd_val.argv[i:], funcs, self.aliases, self.search_path)
     for kind, name in r:
       if kind is None:
         status = 1  # nothing printed, but we fail
@@ -343,8 +350,8 @@ class Hash(object):
   def __init__(self, search_path):
     self.search_path = search_path
 
-  def __call__(self, arg_vec):
-    arg_r = args.Reader(arg_vec.strs, spids=arg_vec.spids)
+  def __call__(self, cmd_val):
+    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip 'hash'
     arg, i = HASH_SPEC.Parse(arg_r)
 
@@ -439,8 +446,8 @@ class GetOpts(object):
     self.errfmt = errfmt
     self.spec_cache = {}  # type: Dict[str, Dict[str, bool]]
 
-  def __call__(self, arg_vec):
-    arg_r = args.Reader(arg_vec.strs, spids=arg_vec.spids)
+  def __call__(self, cmd_val):
+    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
 
     # NOTE: If first char is a colon, error reporting is different.  Alpine
@@ -509,8 +516,8 @@ class Echo(object):
   def __init__(self, exec_opts):
     self.exec_opts = exec_opts
 
-  def __call__(self, arg_vec):
-    argv = arg_vec.strs[1:]
+  def __call__(self, cmd_val):
+    argv = cmd_val.argv[1:]
     arg, arg_index = ECHO_SPEC.ParseLikeEcho(argv)
     argv = argv[arg_index:]
     if arg.e:

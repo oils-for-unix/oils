@@ -48,7 +48,7 @@ _tlog('before imports')
 import atexit
 import errno
 
-from _devbuild.gen.runtime_asdl import builtin_e, arg_vector
+from _devbuild.gen.runtime_asdl import builtin_e, cmd_value
 from _devbuild.gen.syntax_asdl import source
 
 from asdl import runtime
@@ -148,18 +148,18 @@ OSH_SPEC.LongFlag('--rcfile', args.Str)
 builtin_pure.AddOptionsToArgSpec(OSH_SPEC)
 
 
-def _MakeArgVector(argv):
+def _MakeBuiltinArgv(argv):
   argv = [''] + argv  # add dummy since arg_vec includes argv[0]
   # no location info
-  return arg_vector(argv, [runtime.NO_SPID] * len(argv))
+  return cmd_value.Argv(argv, [runtime.NO_SPID] * len(argv))
 
 
 def _InitDefaultCompletions(ex, complete_builtin, comp_lookup):
   # register builtins and words
-  complete_builtin(_MakeArgVector(['-E', '-A', 'command']))
+  complete_builtin(_MakeBuiltinArgv(['-E', '-A', 'command']))
   # register path completion
   # Add -o filenames?  Or should that be automatic?
-  complete_builtin(_MakeArgVector(['-D', '-A', 'file']))
+  complete_builtin(_MakeBuiltinArgv(['-D', '-A', 'file']))
 
   # TODO: Move this into demo/slow-completion.sh
   if 1:

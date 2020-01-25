@@ -48,8 +48,7 @@ from typing import Optional, Tuple, List, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.id_kind_asdl import Id_t
   from _devbuild.gen.syntax_asdl import (
-    command_t, speck,
-    word__Empty, word_part_t
+    command_t, speck, word_part_t
   )
   from _devbuild.gen.runtime_asdl import (
     builtin_t, effect_t, lvalue__Named

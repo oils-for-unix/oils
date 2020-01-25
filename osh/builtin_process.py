@@ -48,10 +48,10 @@ class Wait(object):
     self.mem = mem
     self.errfmt = errfmt
 
-  def __call__(self, arg_vec):
-    arg, arg_index = WAIT_SPEC.ParseVec(arg_vec)
-    job_ids = arg_vec.strs[arg_index:]
-    arg_count = len(arg_vec.strs)
+  def __call__(self, cmd_val):
+    arg, arg_index = WAIT_SPEC.ParseVec(cmd_val)
+    job_ids = cmd_val.argv[arg_index:]
+    arg_count = len(cmd_val.argv)
 
     if arg.n:
       # wait -n returns the exit status of the JOB.
@@ -100,8 +100,8 @@ class Wait(object):
     # code of last one to FINISH.
     status = 1  # error
     for i in xrange(arg_index, arg_count):
-      job_id = arg_vec.strs[i]
-      span_id = arg_vec.spids[i]
+      job_id = cmd_val.argv[i]
+      span_id = cmd_val.arg_spids[i]
 
       # The % syntax is sort of like ! history sub syntax, with various queries.
       # https://stackoverflow.com/questions/35026395/bash-what-is-a-jobspec
@@ -134,7 +134,7 @@ class Jobs(object):
   def __init__(self, job_state):
     self.job_state = job_state
 
-  def __call__(self, arg_vec):
+  def __call__(self, cmd_val):
     # NOTE: the + and - in the jobs list mean 'current' and 'previous', and are
     # addressed with %+ and %-.
 
@@ -152,7 +152,7 @@ class Fg(object):
     self.job_state = job_state
     self.waiter = waiter
 
-  def __call__(self, arg_vec):
+  def __call__(self, cmd_val):
     # Get job instead of PID, and then do
     #
     # Should we also have job.SendContinueSignal() ?
@@ -181,7 +181,7 @@ class Bg(object):
   def __init__(self, job_state):
     self.job_state = job_state
 
-  def __call__(self, arg_vec):
+  def __call__(self, cmd_val):
     # How does this differ from 'fg'?  It doesn't wait and it sets controlling
     # terminal?
 
@@ -266,8 +266,8 @@ class Trap(object):
     self.ex = ex  # TODO: ParseTrapCode could be inlined below
     self.errfmt = errfmt
 
-  def __call__(self, arg_vec):
-    arg, _ = TRAP_SPEC.ParseVec(arg_vec)
+  def __call__(self, cmd_val):
+    arg, _ = TRAP_SPEC.ParseVec(cmd_val)
 
     if arg.p:  # Print registered handlers
       for name, value in self.traps.iteritems():
@@ -288,7 +288,7 @@ class Trap(object):
 
       return 0
 
-    arg_r = args.Reader(arg_vec.strs, spids=arg_vec.spids)
+    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip argv[0]
     code_str = arg_r.ReadRequired('requires a code string')
     sig_spec, sig_spid = arg_r.ReadRequired2('requires a signal or hook name')
@@ -308,7 +308,7 @@ class Trap(object):
 
     if sig_key is None:
       self.errfmt.Print("Invalid signal or hook %r", sig_spec,
-                        span_id=arg_vec.spids[2])
+                        span_id=cmd_val.arg_spids[2])
       return 1
 
     # NOTE: sig_spec isn't validated when removing handlers.
@@ -366,8 +366,8 @@ class Trap(object):
   # Then hit Ctrl-C.
 
 
-def Umask(arg_vec):
-  argv = arg_vec.strs[1:]
+def Umask(cmd_val):
+  argv = cmd_val.argv[1:]
   if len(argv) == 0:
     # umask() has a dumb API: you can't get it without modifying it first!
     # NOTE: dash disables interrupts around the two umask() calls, but that

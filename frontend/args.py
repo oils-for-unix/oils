@@ -736,10 +736,10 @@ class BuiltinFlags(object):
 
     return out, arg_r.i
 
-  def ParseVec(self, arg_vec):
-    # type: (arg_vector) -> Tuple[_Attributes, int]
+  def ParseVec(self, cmd_val):
+    # type: (cmd_value__Argv) -> Tuple[_Attributes, int]
     """For OSH builtins."""
-    arg_r = Reader(arg_vec.strs, spids=arg_vec.spids)
+    arg_r = Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # move past the builtin name
     return self.Parse(arg_r)
 

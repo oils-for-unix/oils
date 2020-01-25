@@ -39,7 +39,6 @@ if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from osh.state import Mem, ExecOpts
   from osh import word_eval
-  from osh import builtin_bracket
 
 
 def _StringToInteger(s, span_id=runtime.NO_SPID):

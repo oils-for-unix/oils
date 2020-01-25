@@ -102,4 +102,11 @@ grep-span-funcs() {
   grep MostSpan {osh,core,frontend}/*.py
 }
 
+cmd-val() {
+  local file=$1
+  sed -i 's/arg_vec.strs/cmd_val.argv/g' $file
+  sed -i 's/arg_vec.spids/cmd_val.arg_spids/g' $file
+  sed -i 's/arg_vec/cmd_val/g' $file
+}
+
 "$@"

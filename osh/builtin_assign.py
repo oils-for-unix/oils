@@ -237,13 +237,13 @@ class Unset(object):
                         span_id=spid)
     return ok, found
 
-  def __call__(self, arg_vec):
-    arg, offset = UNSET_SPEC.ParseVec(arg_vec)
-    n = len(arg_vec.strs)
+  def __call__(self, cmd_val):
+    arg, offset = UNSET_SPEC.ParseVec(cmd_val)
+    n = len(cmd_val.argv)
 
     for i in xrange(offset, n):
-      name = arg_vec.strs[i]
-      spid = arg_vec.spids[i]
+      name = cmd_val.argv[i]
+      spid = cmd_val.arg_spids[i]
 
       if arg.f:
         if name in self.funcs:
@@ -270,12 +270,12 @@ class Shift(object):
   def __init__(self, mem):
     self.mem = mem
 
-  def __call__(self, arg_vec):
-    num_args = len(arg_vec.strs) - 1
+  def __call__(self, cmd_val):
+    num_args = len(cmd_val.argv) - 1
     if num_args == 0:
       n = 1
     elif num_args == 1:
-      arg = arg_vec.strs[1]
+      arg = cmd_val.argv[1]
       try:
         n = int(arg)
       except ValueError:

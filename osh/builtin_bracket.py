@@ -27,7 +27,7 @@ from typing import cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from core.ui import ErrorFormatter
-    from _devbuild.gen.runtime_asdl import arg_vector, value__Str
+    from _devbuild.gen.runtime_asdl import cmd_value__Argv, value__Str
     from _devbuild.gen.syntax_asdl import word__String, bool_expr_t
     from _devbuild.gen.types_asdl import lex_mode_t
 
@@ -39,11 +39,11 @@ class _StringWordEmitter(word_parse.WordEmitter):
   Kind.BoolBinary, etc.  This is instead of Compound/Token (as in the
   [[ case.
   """
-  def __init__(self, arg_vec):
-    # type: (arg_vector) -> None
-    self.arg_vec = arg_vec
+  def __init__(self, cmd_val):
+    # type: (cmd_value__Argv) -> None
+    self.cmd_val = cmd_val
     self.i = 0
-    self.n = len(arg_vec.strs)
+    self.n = len(cmd_val.argv)
 
   def ReadWord(self, unused_lex_mode):
     # type: (lex_mode_t) -> word__String
@@ -59,8 +59,8 @@ class _StringWordEmitter(word_parse.WordEmitter):
       return w
 
     #log('ARGV %s i %d', self.argv, self.i)
-    s = self.arg_vec.strs[self.i]
-    left_spid = self.arg_vec.spids[self.i]
+    s = self.cmd_val.argv[self.i]
+    left_spid = self.cmd_val.arg_spids[self.i]
     self.i += 1
 
     # default is an operand word
@@ -85,7 +85,7 @@ class _StringWordEmitter(word_parse.WordEmitter):
   def Peek(self, offset):
     # type: (int) -> str
     """For special cases."""
-    return self.arg_vec.strs[self.i + offset]
+    return self.cmd_val.argv[self.i + offset]
 
   def Rewind(self, offset):
     # type: (int) -> None
@@ -157,22 +157,22 @@ class Test(object):
     self.need_right_bracket = need_right_bracket
     self.errfmt = errfmt
 
-  def __call__(self, arg_vec):
-    # type: (arg_vector) -> int
+  def __call__(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     """The test/[ builtin.
 
     The only difference between test and [ is that [ needs a matching ].
     """
     if self.need_right_bracket:  # Preprocess right bracket
-      strs = arg_vec.strs
+      strs = cmd_val.argv
       if not strs or strs[-1] != ']':
-        self.errfmt.Print('missing closing ]', span_id=arg_vec.spids[0])
+        self.errfmt.Print('missing closing ]', span_id=cmd_val.arg_spids[0])
         return 2
       # Remove the right bracket
-      arg_vec.strs.pop()
-      arg_vec.spids.pop()
+      cmd_val.argv.pop()
+      cmd_val.arg_spids.pop()
 
-    w_parser = _StringWordEmitter(arg_vec)
+    w_parser = _StringWordEmitter(cmd_val)
     w_parser.Read()  # dummy: advance past argv[0]
     b_parser = bool_parse.BoolParser(w_parser)
 
@@ -191,7 +191,7 @@ class Test(object):
     # ambiguity?
 
     bool_node = None # type: bool_expr_t
-    n = len(arg_vec.strs) - 1
+    n = len(cmd_val.argv) - 1
     try:
       if n == 0:
         return 1  # [ ] is False

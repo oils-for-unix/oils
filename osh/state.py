@@ -1433,6 +1433,7 @@ class Mem(object):
     result = {}
     for scope in self.var_stack:
       for name, cell in scope.iteritems():
+        # TODO: Show other types?
         if isinstance(cell.val, value__Str):
           result[name] = cell.val.s
     return result

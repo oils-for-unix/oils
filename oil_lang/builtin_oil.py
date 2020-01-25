@@ -36,21 +36,21 @@ class Repr(_Builtin):
 
   'repr a' is a lot easier to type than 'argv.py "${a[@]}"'.
   """
-  def __call__(self, arg_vec):
+  def __call__(self, cmd_val):
     status = 0
-    for i in xrange(1, len(arg_vec.strs)):
-      name = arg_vec.strs[i]
+    for i in xrange(1, len(cmd_val.argv)):
+      name = cmd_val.argv[i]
       if name.startswith(':'):
         name = name[1:]
 
       if not match.IsValidVarName(name):
         raise args.UsageError('got invalid variable name %r' % name,
-                              span_id=arg_vec.spids[i])
+                              span_id=cmd_val.arg_spids[i])
 
       cell = self.mem.GetCell(name)
       if cell is None:
         self.errfmt.Print("Couldn't find a variable named %r" % name,
-                          span_id=arg_vec.spids[i])
+                          span_id=cmd_val.arg_spids[i])
         status = 1
       else:
         sys.stdout.write('%s = ' % name)
@@ -71,8 +71,8 @@ class Push(_Builtin):
 
   Note: this could also be in builtins_pure.py?
   """
-  def __call__(self, arg_vec):
-    arg_r = args.Reader(arg_vec.strs, spids=arg_vec.spids)
+  def __call__(self, cmd_val):
+    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip 'push'
 
     var_name, var_spid = arg_r.ReadRequired2(
@@ -312,7 +312,7 @@ class Write(_Builtin):
   write --cstr --sep $'\t' -- @strs   # this is like TSV2!
   """
   def __call__(self, cmd_val):
-    arg_r = args.Reader(cmd_val.strs, spids=cmd_val.spids)
+    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip 'echo'
 
     arg, _ = WRITE_SPEC.Parse(arg_r)
@@ -349,7 +349,7 @@ class Getline(_Builtin):
   What if there are multiple vars?  Try TSV2 then?
   """
   def __call__(self, cmd_val):
-    arg_r = args.Reader(cmd_val.strs, spids=cmd_val.spids)
+    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
     arg, _ = GETLINE_SPEC.Parse(arg_r)
     if arg.cstr:

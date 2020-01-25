@@ -388,7 +388,8 @@ builtins2() {
 
 # dash and mksh don't implement 'dirs'
 builtin-dirs() {
-  sh-spec spec/builtin-dirs.test.sh $BASH $ZSH $OSH_LIST "$@"
+  sh-spec spec/builtin-dirs.test.sh --osh-failures-allowed 1 \
+    $BASH $ZSH $OSH_LIST "$@"
 }
 
 builtin-vars() {
