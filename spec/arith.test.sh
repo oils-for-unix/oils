@@ -428,3 +428,38 @@ echo $(( a[1][1] ))
 ## OK zsh STDOUT:
 1
 ## END
+
+#### result of ArithSub is array
+a=(4 5 6)
+echo declared
+b=$(( a ))
+echo $b
+## status: 1
+## STDOUT:
+declared
+## END
+## BUG bash/mksh status: 0
+## BUG bash/mksh STDOUT:
+declared
+4
+## END
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+
+#### result of ArithSub is assoc array
+declare -A A=(['foo']=bar ['spam']=eggs)
+echo declared
+b=$(( A ))
+echo $b
+## status: 1
+## STDOUT:
+declared
+## END
+## N-I mksh stdout-json: ""
+## BUG bash/zsh status: 0
+## BUG bash/zsh STDOUT:
+declared
+0
+## END
+## N-I dash status: 2
+## N-I dash stdout-json: ""

@@ -288,7 +288,7 @@ class _ExprEvaluator(object):
   """
 
   def __init__(self, mem, exec_opts, word_ev, errfmt):
-    # type: (Mem, Any, Union[word_eval._WordEvaluator, builtin_bracket._WordEvaluator], ErrorFormatter) -> None
+    # type: (Mem, Any, word_eval.SimpleWordEvaluator, ErrorFormatter) -> None
     # TODO: Remove Any by fixing _DummyExecOpts in osh/builtin_bracket.py
     self.mem = mem
     self.exec_opts = exec_opts

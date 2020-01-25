@@ -8,7 +8,10 @@ from _devbuild.gen.id_tables import (
     TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP, TEST_OTHER_LOOKUP
 )
 from _devbuild.gen.runtime_asdl import value
-from _devbuild.gen.syntax_asdl import word, bool_expr
+from _devbuild.gen.syntax_asdl import (
+    word, word_e, word_t, word__String,
+    bool_expr,
+)
 from _devbuild.gen.types_asdl import lex_mode_e
 
 from asdl import runtime
@@ -18,8 +21,9 @@ from core.util import p_die
 from osh import expr_eval
 from osh import bool_parse
 from osh import word_parse
+from osh import word_eval
 
-from typing import TYPE_CHECKING
+from typing import cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from core.ui import ErrorFormatter
@@ -89,15 +93,17 @@ class _StringWordEmitter(word_parse.WordEmitter):
     self.i -= offset
 
 
-class _WordEvaluator(object):
+class _WordEvaluator(word_eval.SimpleWordEvaluator):
 
   def EvalWordToString(self, w, do_fnmatch=False, do_ere=False):
-    # type: (word__String, bool, bool) -> value__Str
+    # type: (word_t, bool, bool) -> value__Str
     # do_fnmatch: for the [[ == ]] semantics which we don't have!
     # I think I need another type of node
     # Maybe it should be BuiltinEqual and BuiltinDEqual?  Parse it into a
     # different tree.
-    return value.Str(w.s)
+    assert w.tag_() == word_e.String
+    string_word = cast(word__String, w)
+    return value.Str(string_word.s)
 
 
 def _TwoArgs(w_parser):

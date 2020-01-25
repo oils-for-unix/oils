@@ -252,7 +252,15 @@ def _PerformSlice(val,  # type: value_t
   return val
 
 
-class _WordEvaluator(object):
+class SimpleWordEvaluator(object):
+  """For use by the _ExprEvaluator."""
+
+  def EvalWordToString(self, w, do_fnmatch=False, do_ere=False):
+    # type: (word_t, bool, bool) -> value__Str
+    raise NotImplementedError
+
+
+class _WordEvaluator(SimpleWordEvaluator):
   """Abstract base class for word evaluators.
 
   Public entry points:
