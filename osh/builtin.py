@@ -696,7 +696,7 @@ class Help(object):
 
 HISTORY_SPEC = _Register('history')
 HISTORY_SPEC.ShortFlag('-c')
-HISTORY_SPEC.ShortFlag('-d')
+HISTORY_SPEC.ShortFlag('-d', args.Int)
 
 class History(object):
   """Show interactive command history."""
