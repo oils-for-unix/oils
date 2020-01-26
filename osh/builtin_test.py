@@ -4,10 +4,15 @@ builtin_test.py: Tests for builtin.py
 """
 from __future__ import print_function
 
+import cStringIO
 import unittest
+# We use native/line_input.c, a fork of readline.c, but this is good enough for
+# unit testing
+import readline
 import sys
 
 from core import pyutil
+from core import test_lib
 from osh import split
 from osh import builtin  # module under test
 
@@ -46,6 +51,44 @@ class BuiltinTest(unittest.TestCase):
       print(name)
       spec.PrintHelp(sys.stdout)
       print()
+
+  def testHistoryBuiltin(self):
+     test_path = '_tmp/builtin_test_history.txt'
+     with open(test_path, 'w') as f:
+       f.write("""
+echo hello
+ls one/
+ls two/
+echo bye
+""")
+     readline.read_history_file(test_path)
+
+     # Show all
+     f = cStringIO.StringIO()
+     out = _TestHistory(['history'])
+
+     self.assertEqual(out, """\
+    1  echo hello
+    2  ls one/
+    3  ls two/
+    4  echo bye
+""")
+
+     # Show two history items
+     out = _TestHistory(['history', '2'])
+     # Note: whitespace here is exact
+     self.assertEqual(out, """\
+    3  ls two/
+    4  echo bye
+""")
+
+
+def _TestHistory(argv):
+   f = cStringIO.StringIO()
+   b = builtin.History(readline, f=f)
+   cmd_val = test_lib.MakeBuiltinArgv(argv)
+   b(cmd_val)
+   return f.getvalue()
 
 
 if __name__ == '__main__':

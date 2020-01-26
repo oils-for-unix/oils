@@ -700,8 +700,9 @@ HISTORY_SPEC = _Register('history')
 class History(object):
   """Show interactive command history."""
 
-  def __init__(self, readline_mod):
+  def __init__(self, readline_mod, f=sys.stdout):
     self.readline_mod = readline_mod
+    self.f = f
 
   def __call__(self, cmd_val):
     # NOTE: This builtin doesn't do anything in non-interactive mode in bash?
@@ -737,5 +738,5 @@ class History(object):
 
     for i in xrange(start_index, num_items+1):  # 1-based index
       item = readline_mod.get_history_item(i)
-      print('%5d  %s' % (i, item))
+      self.f.write('%5d  %s\n' % (i, item))
     return 0
