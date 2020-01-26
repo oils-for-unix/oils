@@ -737,19 +737,17 @@ class History(object):
       readline_mod.clear_history()
       return 0
 
-    # Delete history entry by id number
+   # Delete history entry by id number
     if arg.d:
-      try:
-        cmd_index = arg.d
-      except IndexError:
-        raise args.UsageError('Requires a numeric argument')
+      cmd_index = arg.d - 1
 
       try:
         readline_mod.remove_history_item(cmd_index)
       except ValueError:
-        raise args.UsageError('%r : history position out of range' % arg0)
+        raise args.UsageError('history position out of range')
 
       return 0
+
 
     # TODO:
     # - Exclude lines that don't parse from the history!  bash and zsh don't do
