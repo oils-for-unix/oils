@@ -72,7 +72,7 @@ It would be nice to generate plain C, but it would also be significantly more
 work because we use several C++ features.
 
 And IMO the generated code is more readable in C++.  For example, classes and
-methods preserve the strucutre of the source.  And if we didn't have
+methods preserve the structure of the source.  And if we didn't have
 namespaces, we'd have to use long generated function names.
 
 - Templates for `List`, `Dict`, `Tuple`, etc.
