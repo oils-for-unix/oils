@@ -4,7 +4,7 @@ word_eval.py - Evaluator for the word language.
 
 import pwd
 
-from _devbuild.gen.id_kind_asdl import Id, Kind
+from _devbuild.gen.id_kind_asdl import Id, Kind, Id_str, Kind_str
 from _devbuild.gen.syntax_asdl import (
     braced_var_sub, Token,
     word, word_e, word_t, compound_word,
@@ -73,7 +73,7 @@ def EvalSingleQuoted(part):
     s = ''.join(word_compile.EvalCStringToken(t.id, t.val)
                 for t in part.tokens)
   else:
-    raise AssertionError(part.left.id)
+    raise AssertionError(Id_str(part.left.id))
   return s
 
 
@@ -116,7 +116,7 @@ def _ValueToPartValue(val, quoted):
 
     else:
       # Undef should be caught by _EmptyStrOrError().
-      raise AssertionError(val.__class__.__name__)
+      raise AssertionError(val.tag_())
 
 
 def _MakeWordFrames(part_vals):
@@ -251,7 +251,7 @@ def _PerformSlice(val,  # type: value_t
       e_die("Can't slice associative arrays", part=part)
 
     else:
-      raise NotImplementedError(val.__class__.__name__)
+      raise NotImplementedError(val.tag_())
 
   return val
 
@@ -261,7 +261,7 @@ class SimpleWordEvaluator(object):
 
   def EvalWordToString(self, w, do_fnmatch=False, do_ere=False):
     # type: (word_t, bool, bool) -> value__Str
-    raise NotImplementedError
+    raise NotImplementedError()
 
 
 class _WordEvaluator(SimpleWordEvaluator):
@@ -297,7 +297,7 @@ class _WordEvaluator(SimpleWordEvaluator):
     Returns:
        part_value
     """
-    raise NotImplementedError
+    raise NotImplementedError()
 
   def _EvalProcessSub(self, part, id_):
     # type: (command_t, int) -> part_value_t
@@ -309,7 +309,7 @@ class _WordEvaluator(SimpleWordEvaluator):
     Returns:
        part_value
     """
-    raise NotImplementedError
+    raise NotImplementedError()
 
   def _EvalTildeSub(self, token):
     # type: (Token) -> str
@@ -404,7 +404,7 @@ class _WordEvaluator(SimpleWordEvaluator):
 
       echo ${a:-x"$@"x}
     """
-    undefined = (val.tag == value_e.Undef)
+    undefined = (val.tag_() == value_e.Undef)
 
     # TODO: Change this to a bitwise test?
     if op.op_id in (
@@ -467,7 +467,7 @@ class _WordEvaluator(SimpleWordEvaluator):
         return None, effect_e.NoOp
 
     else:
-      raise NotImplementedError(id)
+      raise NotImplementedError(Id_str(op.op_id))
 
   def _EvalIndirectArrayExpansion(self, name, index):
     # type: (str, str) -> Optional[value_t]
@@ -509,7 +509,7 @@ class _WordEvaluator(SimpleWordEvaluator):
       elif case(value_e.AssocArray):
         val = cast(value__AssocArray, UP_val)
         if index in ('@', '*'):
-          raise NotImplementedError
+          raise NotImplementedError()
         try:
           return value.Str(val.d[index])
         except KeyError:
@@ -669,7 +669,7 @@ class _WordEvaluator(SimpleWordEvaluator):
           raise AssertionError(val.tag_())
 
     else:
-      raise AssertionError(op_kind)
+      raise AssertionError(Kind_str(op_kind))
 
     return new_val
 
@@ -877,7 +877,7 @@ class _WordEvaluator(SimpleWordEvaluator):
               raise AssertionError(val.tag_())
 
         else:
-          raise AssertionError(bracket_op.tag)
+          raise AssertionError(bracket_op.tag_())
 
     else:  # no bracket op
       # When the array is "$@", var_name is None
@@ -905,7 +905,7 @@ class _WordEvaluator(SimpleWordEvaluator):
           # "${!prefix@}" is the only one that doesn't decay
           maybe_decay_array = not (quoted and suffix_op.op_id == Id.VOp3_At)
         else:
-          raise AssertionError
+          raise AssertionError()
 
       else:
         # TODO: maybe_decay_array for "${!assoc[@]}" vs. ${!assoc[*]}
@@ -1262,7 +1262,7 @@ class _WordEvaluator(SimpleWordEvaluator):
               val = cast(value__Obj, UP_val)
               items = [str(item) for item in val.obj]
             else:
-              raise AssertionError
+              raise AssertionError()
 
           else:
             e_die("Can't splice %r", var_name, part=part)
@@ -1326,7 +1326,7 @@ class _WordEvaluator(SimpleWordEvaluator):
         part_vals.append(part_value.String('', quoted, not quoted))
 
       else:
-        raise AssertionError(word.__class__.__name__)
+        raise AssertionError(word.tag_())
 
   def EvalWordToString(self, word, do_fnmatch=False, do_ere=False):
     # type: (word_t, bool, bool) -> value__Str
