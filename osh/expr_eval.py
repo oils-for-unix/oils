@@ -35,7 +35,7 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc  # type: ignore
 
-from typing import List, Dict, Tuple, cast, Any, TYPE_CHECKING
+from typing import Tuple, cast, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import bool_expr_t, arith_expr_t, sh_lhs_expr_t
   from _devbuild.gen.runtime_asdl import lvalue_t, scope_t

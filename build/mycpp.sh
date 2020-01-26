@@ -316,13 +316,11 @@ readonly CAN_TRANSLATE=(
 
 
 readonly TRANSLATE=(
-  # crash:
-  # list comprehensions and value.AssocArray typing
-  # should be Dict[str, str] for now
-  #$REPO_ROOT/osh/word_eval.py
+  # except (e1, e2) isn't supported for InvalidSlice, utf-8
+  $REPO_ROOT/osh/word_eval.py
 
   # except (e1, e2) isn't supported
-  $REPO_ROOT/osh/cmd_exec.py
+  #$REPO_ROOT/osh/cmd_exec.py
 )
 
 # From types/more-oil-manifest.txt
