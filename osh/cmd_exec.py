@@ -1167,80 +1167,81 @@ class Executor(object):
 
     elif UP_node.tag == command_e.PlaceMutation:
 
-      node = cast(command__PlaceMutation, UP_node)
-      self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to setvar/set
+      if mylib.PYTHON:  # DISABLED because it relies on CPytho now
+        node = cast(command__PlaceMutation, UP_node)
+        self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to setvar/set
 
-      with switch(node.keyword.id) as case:
-        if case(Id.KW_SetVar):
-          lookup_mode = scope_e.LocalOrGlobal
-        elif case(Id.KW_Set):
-          lookup_mode = scope_e.LocalOnly
-        elif case(Id.KW_SetGlobal):
-          lookup_mode = scope_e.GlobalOnly
-        elif case(Id.KW_SetRef):
-          # So this can modify two levels up?
-          lookup_mode = scope_e.Dynamic
+        with switch(node.keyword.id) as case:
+          if case(Id.KW_SetVar):
+            lookup_mode = scope_e.LocalOrGlobal
+          elif case(Id.KW_Set):
+            lookup_mode = scope_e.LocalOnly
+          elif case(Id.KW_SetGlobal):
+            lookup_mode = scope_e.GlobalOnly
+          elif case(Id.KW_SetRef):
+            # So this can modify two levels up?
+            lookup_mode = scope_e.Dynamic
 
-          # TODO: setref upvalue = 'returned'
-          e_die("setref isn't implemented")
-        else:
-          raise AssertionError(node.keyword.id)
+            # TODO: setref upvalue = 'returned'
+            e_die("setref isn't implemented")
+          else:
+            raise AssertionError(node.keyword.id)
 
-      if node.op.id == Id.Arith_Equal:
-        py_val = self.expr_ev.EvalExpr(node.rhs)
+        if node.op.id == Id.Arith_Equal:
+          py_val = self.expr_ev.EvalExpr(node.rhs)
 
-        lvals_ = []  # type: List[lvalue_t]
-        py_vals = []
-        if len(node.lhs) == 1:  # TODO: Optimize this common case (but measure)
-          # See ShAssignment
-          # EvalLhs
-          # EvalLhsAndLookup for +=
-          lval_ = self.expr_ev.EvalPlaceExpr(node.lhs[0]) # type: lvalue_t
-
-          lvals_.append(lval_)
-          py_vals.append(py_val)
-        else:
-          it = py_val.__iter__()
-          for pm_lhs in node.lhs:
-            lval_ = self.expr_ev.EvalPlaceExpr(pm_lhs)
-            py_val = it.next()
+          lvals_ = []  # type: List[lvalue_t]
+          py_vals = []
+          if len(node.lhs) == 1:  # TODO: Optimize this common case (but measure)
+            # See ShAssignment
+            # EvalLhs
+            # EvalLhsAndLookup for +=
+            lval_ = self.expr_ev.EvalPlaceExpr(node.lhs[0]) # type: lvalue_t
 
             lvals_.append(lval_)
             py_vals.append(py_val)
-
-        # TODO: Resolve the asymmetry betwen Named vs ObjIndex,ObjAttr.
-        for UP_lval_, py_val in zip(lvals_, py_vals):
-          tag = UP_lval_.tag_()
-          if tag == lvalue_e.ObjIndex:
-            lval_ = cast(lvalue__ObjIndex, UP_lval_)
-            lval_.obj[lval_.index] = py_val
-          elif tag == lvalue_e.ObjAttr:
-            lval_ = cast(lvalue__ObjAttr, UP_lval_)
-            setattr(lval_.obj, lval_.attr, py_val)
           else:
-            val = _PyObjectToVal(py_val)
-            # top level variable
-            self.mem.SetVar(UP_lval_, val, (), lookup_mode,
-                            keyword_id=node.keyword.id)
+            it = py_val.__iter__()
+            for pm_lhs in node.lhs:
+              lval_ = self.expr_ev.EvalPlaceExpr(pm_lhs)
+              py_val = it.next()
 
-      # TODO: Other augmented assignments
-      elif node.op.id == Id.Arith_PlusEqual:
-        # NOTE: x, y += 1 in Python is a SYNTAX error, but it's checked in the
-        # transformer and not the grammar.  We should do that too.
+              lvals_.append(lval_)
+              py_vals.append(py_val)
 
-        place_expr = cast(place_expr__Var, node.lhs[0])
-        pe_lval = lvalue.Named(place_expr.name.val)
-        py_val = self.expr_ev.EvalExpr(node.rhs)
+          # TODO: Resolve the asymmetry betwen Named vs ObjIndex,ObjAttr.
+          for UP_lval_, py_val in zip(lvals_, py_vals):
+            tag = UP_lval_.tag_()
+            if tag == lvalue_e.ObjIndex:
+              lval_ = cast(lvalue__ObjIndex, UP_lval_)
+              lval_.obj[lval_.index] = py_val
+            elif tag == lvalue_e.ObjAttr:
+              lval_ = cast(lvalue__ObjAttr, UP_lval_)
+              setattr(lval_.obj, lval_.attr, py_val)
+            else:
+              val = _PyObjectToVal(py_val)
+              # top level variable
+              self.mem.SetVar(UP_lval_, val, (), lookup_mode,
+                              keyword_id=node.keyword.id)
 
-        new_py_val = self.expr_ev.EvalPlusEquals(pe_lval, py_val)
-        # This should only be an int or float, so we don't need the logic above
-        val = value.Obj(new_py_val)
+        # TODO: Other augmented assignments
+        elif node.op.id == Id.Arith_PlusEqual:
+          # NOTE: x, y += 1 in Python is a SYNTAX error, but it's checked in the
+          # transformer and not the grammar.  We should do that too.
 
-        self.mem.SetVar(pe_lval, val, (), lookup_mode,
-                        keyword_id=node.keyword.id)
+          place_expr = cast(place_expr__Var, node.lhs[0])
+          pe_lval = lvalue.Named(place_expr.name.val)
+          py_val = self.expr_ev.EvalExpr(node.rhs)
 
-      else:
-        raise NotImplementedError(node.op)
+          new_py_val = self.expr_ev.EvalPlusEquals(pe_lval, py_val)
+          # This should only be an int or float, so we don't need the logic above
+          val = value.Obj(new_py_val)
+
+          self.mem.SetVar(pe_lval, val, (), lookup_mode,
+                          keyword_id=node.keyword.id)
+
+        else:
+          raise NotImplementedError(node.op)
 
       status = 0  # TODO: what should status be?
 
@@ -1507,7 +1508,12 @@ class Executor(object):
     elif UP_node.tag == command_e.ForExpr:
       node = cast(command__ForExpr, UP_node)
       status = 0
-      init, cond, body, update = node.init, node.cond, node.body, node.update
+
+      init = node.init
+      cond = node.cond
+      body = node.body
+      update = node.update
+
       if init:
         self.arith_ev.Eval(init)
 
@@ -1712,7 +1718,7 @@ class Executor(object):
     # See core/builtin.py for the Python signal handler that appends to this
     # list.
 
-    if self.trap_nodes:
+    if len(self.trap_nodes) == 0:
       # Make a copy and clear it so we don't cause an infinite loop.
       to_run = list(self.trap_nodes)
       del self.trap_nodes[:]
@@ -1752,7 +1758,7 @@ class Executor(object):
     if redirects is None:  # evaluation error
       status = 1
 
-    elif redirects:
+    elif len(redirects):
       if self.fd_state.Push(redirects, self.waiter):
         try:
           status, check_errexit = self._Dispatch(node, fork_external)
@@ -1881,7 +1887,7 @@ class Executor(object):
     posix.close(w)  # not going to write
     while True:
       byte_str = posix.read(r, 4096)
-      if not byte_str:
+      if len(byte_str) == 0:
         break
       chunks.append(byte_str)
     posix.close(r)

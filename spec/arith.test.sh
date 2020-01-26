@@ -463,3 +463,19 @@ declared
 ## END
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
+
+#### comma operator
+a=(4 5 6)
+
+# assignment is evaluated
+echo $(( a, last = a[2], 42 ))
+echo last=$last
+## STDOUT:
+42
+last=6
+## END
+# zsh doesn't want to evaluate the array
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+## BUG zsh status: 1
+## BUG zsh stdout-json: ""
