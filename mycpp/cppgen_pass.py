@@ -1831,7 +1831,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
                 # syntax_asdl
                 're', 're_repeat', 'class_literal_term', 'proc_sig',
-                'bracket_op', 'source', 'suffix_op',
+                'bracket_op', 'bracket_op_e',
+                'source', 'source_e',
+                'suffix_op', 'suffix_op_e',
 
                 'sh_lhs_expr', 'redir', 'parse_result',
 
@@ -1842,7 +1844,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 'place_expr_e', 'place_expr', 
                 'word_part_e', 'word_part', 
                 'word_e', 'word',
+
+                'lvalue_e', 'lvalue',
                 'value_e', 'value',
+                'part_value_e', 'part_value',
+                'cmd_value_e', 'cmd_value',
+
                 'glob_part_e', 'glob_part',
 
                 're_e', 're',

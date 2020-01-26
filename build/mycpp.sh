@@ -320,7 +320,7 @@ readonly TRANSLATE=(
   $REPO_ROOT/osh/word_eval.py
 
   # except (e1, e2) isn't supported
-  $REPO_ROOT/osh/cmd_exec.py
+  #$REPO_ROOT/osh/cmd_exec.py
 )
 
 # From types/more-oil-manifest.txt
