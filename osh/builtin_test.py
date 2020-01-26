@@ -82,6 +82,38 @@ echo bye
     4  echo bye
 """)
 
+    
+     # Delete single history item.
+     # This functionlity is *silent*
+     # so call history again after 
+     # this to feed the test assertion
+    
+     _TestHistory(['history', '-d', '4' ])
+
+     # Call history
+     out = _TestHistory(['history'])
+
+     # Note: whitespace here is exact
+     self.assertEqual(out, """\
+    1  echo hello
+    2  ls one/
+    3  ls two/
+""")
+
+
+     # Clear history
+     # This functionlity is *silent*
+     # so call history again after 
+     # this to feed the test assertion
+
+     _TestHistory(['history', '-c'])
+
+     # Call history
+     out = _TestHistory(['history'])
+
+     self.assertEqual(out, """\
+""")
+
 
 def _TestHistory(argv):
    f = cStringIO.StringIO()

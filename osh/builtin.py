@@ -594,7 +594,7 @@ class Dirs(object):
 
     # Following bash order of flag priority
     if arg.l:
-      home_dir = None  # disable pretty ~ 
+      home_dir = None  # disable pretty ~
     if arg.c:
       self.dir_stack.Reset()
       return 0
@@ -682,7 +682,7 @@ class Help(object):
       # info zzz
       # help help
       # We should do something smarter.
-      
+
       # NOTE: This is mostly an interactive command.  Is it obnoxious to
       # quote the line of code?
       self.errfmt.Print('no help topics match %r', topic,
@@ -695,7 +695,8 @@ class Help(object):
 
 
 HISTORY_SPEC = _Register('history')
-
+HISTORY_SPEC.ShortFlag('-c')
+HISTORY_SPEC.ShortFlag('-d', args.Int)
 
 class History(object):
   """Show interactive command history."""
@@ -730,6 +731,23 @@ class History(object):
       start_index = max(1, num_items + 1 - num_to_show)
     else:
       raise args.UsageError('Too many arguments')
+
+    # Clear all history
+    if arg.c:
+      readline_mod.clear_history()
+      return 0
+
+   # Delete history entry by id number
+    if arg.d:
+      cmd_index = arg.d - 1
+
+      try:
+        readline_mod.remove_history_item(cmd_index)
+      except ValueError:
+        raise args.UsageError('history position out of range')
+
+      return 0
+
 
     # TODO:
     # - Exclude lines that don't parse from the history!  bash and zsh don't do
