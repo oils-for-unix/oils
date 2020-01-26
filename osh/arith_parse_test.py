@@ -42,8 +42,7 @@ def ParseAndEval(code_str):
   ev = word_eval.CompletionWordEvaluator(mem, exec_opts, exec_deps, arena)
 
   arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, ev, arena)
-  value = arith_ev.Eval(anode)
-  return value
+  return arith_ev.EvalToInt(anode)
 
 
 def testEvalExpr(e, expected):

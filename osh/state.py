@@ -1159,6 +1159,7 @@ class Mem(object):
         e_die("Can't export array")  # TODO: error context
 
     elif lval.tag == lvalue_e.Indexed:
+      assert isinstance(lval.index, int), lval
       # There is no syntax 'declare a[x]'
       assert val is not None, val
 

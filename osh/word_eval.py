@@ -830,7 +830,7 @@ class _WordEvaluator(SimpleWordEvaluator):
 
         elif UP_val.tag == value_e.MaybeStrArray:
           val = cast(value__MaybeStrArray, UP_val)
-          index = self.arith_ev.EvalToIndex(anode)
+          index = self.arith_ev.EvalToInt(anode)
           try:
             # could be None because representation is sparse
             s = val.strs[index]
@@ -1003,14 +1003,12 @@ class _WordEvaluator(SimpleWordEvaluator):
         val = self._EmptyStrOrError(val)  # ${undef:3:1}
 
         if op.begin:
-          begin = self.arith_ev.Eval(op.begin)
-          assert isinstance(begin, int)
+          begin = self.arith_ev.EvalToInt(op.begin)
         else:
           begin = 0
 
         if op.length:
-          length = self.arith_ev.Eval(op.length)
-          assert isinstance(length, int)
+          length = self.arith_ev.EvalToInt(op.length)
         else:
           length = None
 
@@ -1201,7 +1199,7 @@ class _WordEvaluator(SimpleWordEvaluator):
 
     elif UP_part.tag == word_part_e.ArithSub:
       part = cast(word_part__ArithSub, UP_part)
-      num = self.arith_ev.Eval(part.anode)
+      num = self.arith_ev.EvalToInt(part.anode)
       v = part_value.String(str(num), quoted, not quoted)
       part_vals.append(v)
 

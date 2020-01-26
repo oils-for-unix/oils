@@ -154,15 +154,13 @@ cat $TMP/x.txt
 STDERR
 ## END
 
-#### Can't make reference to an array (( b = a ))
+#### Can't make assign whole array to var (( b = a ))
 a=(4 5 6)
 (( b = a ))
 echo "${a[@]}"
 echo "${b[@]}"
 ## status: 1
-## STDOUT:
-4 5 6
-## END
+## stdout-json: ""
 ## BUG bash/mksh status: 0
 ## BUG bash/mksh STDOUT:
 4 5 6

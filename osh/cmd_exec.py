@@ -1108,9 +1108,8 @@ class Executor(object):
       self.mem.SetCurrentSpanId(span_id)
 
       check_errexit = True
-      i = self.arith_ev.Eval(node.child)
-      # TODO: check val.i.  What if it returns a AssocArray or Array?
-      status = 0 if i != 0 else 1
+      i = self.arith_ev.EvalToInt(node.child)
+      status = 1 if i == 0 else 0
 
     elif UP_node.tag == command_e.OilCondition:
       node = cast(command__OilCondition, UP_node)
@@ -1516,8 +1515,9 @@ class Executor(object):
       try:
         while True:
           if cond:
-            b = self.arith_ev.Eval(cond)
-            if not b:
+            # We only accept integers as conditions
+            cond_int = self.arith_ev.EvalToInt(cond)
+            if cond_int == 0:  # false
               break
 
           try:

@@ -14,10 +14,11 @@ import stat
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.id_tables import BOOL_ARG_TYPES
 from _devbuild.gen.runtime_asdl import (
-    lvalue, value, value_e, value_t, scope_e,
+    scope_e, lvalue,
+    value, value_e, value_t, value__MaybeStrArray, value__AssocArray,
 )
 from _devbuild.gen.syntax_asdl import (
-    arith_expr_e, sh_lhs_expr_e, sh_lhs_expr_t, bool_expr_e,
+    arith_expr_e, sh_lhs_expr_e, sh_lhs_expr_t, bool_expr_e, word_t
 )
 from _devbuild.gen.types_asdl import bool_arg_type_e
 from asdl import runtime
@@ -26,13 +27,15 @@ from core.util import e_die
 from osh import state
 from osh import word_
 
+from mycpp.mylib import tagswitch
+
 import posix_ as posix
 try:
   import libc  # for fnmatch
 except ImportError:
   from benchmarks import fake_libc as libc  # type: ignore
 
-from typing import Union, List, Dict, Tuple, Any, TYPE_CHECKING
+from typing import List, Dict, Tuple, cast, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import bool_expr_t, arith_expr_t, sh_lhs_expr_t
   from _devbuild.gen.runtime_asdl import lvalue_t, scope_t
@@ -152,7 +155,7 @@ def EvalLhs(node, arith_ev, mem, spid, lookup_mode):
       lval = lvalue.Keyed(node.name, key)
       lval.spids.append(node.spids[0])  # copy left-most token over
     else:
-      index = arith_ev.EvalToIndex(node.index)
+      index = arith_ev.EvalToInt(node.index)
       lval = lvalue.Indexed(node.name, index)
       lval.spids.append(node.spids[0])  # copy left-most token over
 
@@ -182,7 +185,7 @@ def _EvalLhsArith(node, mem, arith_ev):
       key = arith_ev.EvalWordToString(node.index)
       lval = lvalue.Keyed(node.name, key)
     else:
-      index = arith_ev.EvalToIndex(node.index)
+      index = arith_ev.EvalToInt(node.index)
       lval = lvalue.Indexed(node.name, index)
       # TODO: location info.  Use the = token?
       #lval.spids.append(node.spids[0])
@@ -233,7 +236,7 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
       # TODO: Does this code ever get triggered?  It seems like the error is
       # caught earlier.
 
-      index = arith_ev.Eval(node.index)
+      index = arith_ev.EvalToInt(node.index)
       lval = lvalue.Indexed(node.name, index)
       if exec_opts.nounset:
         e_die("Undefined variable can't be indexed")
@@ -244,7 +247,7 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
 
       #log('ARRAY %s -> %s, index %d', node.name, array, index)
       array = val.strs
-      index = arith_ev.Eval(node.index)
+      index = arith_ev.EvalToInt(node.index)
       lval = lvalue.Indexed(node.name, index)
       # NOTE: Similar logic in RHS Arith_LBracket
       try:
@@ -313,51 +316,37 @@ class _ExprEvaluator(object):
 
 class ArithEvaluator(_ExprEvaluator):
 
-  def _ValToArith(self, val, span_id):
-    """Convert value_t to a Python int or list of strings."""
-    assert isinstance(val, value_t), '%r %r' % (val, type(val))
-
-    if val.tag == value_e.Undef:  # 'nounset' already handled before got here
-      # Happens upon a[undefined]=42, which unfortunately turns into a[0]=42.
-      #log('blame_word %s   arena %s', blame_word, self.arena)
-      e_die('Undefined value in arithmetic context', span_id=span_id)
-      return 0
-
-    if val.tag == value_e.Str:
-      return _StringToInteger(val.s, span_id=span_id)  # calls e_die
-
-    if val.tag == value_e.MaybeStrArray:  # array is valid on RHS, but not LHS
-      return val.strs
-
-    if val.tag == value_e.AssocArray:
-      return val.d
-
-    if val.tag == value_e.Obj:
-      if isinstance(val.obj, int):
-        return val.obj
-      # NOTE: This doesn't happen because we convert it.
-      #elif isinstance(val.obj, str):
-      #  return _StringToInteger(val.obj, span_id=span_id)  # calls e_die
-      else:
-        e_die("Object %r can't be used in shell arirhmetic", val.obj)
-
-    raise AssertionError(val)
-
-  def _ValToArithOrError(self, val, blame_word=None, span_id=runtime.NO_SPID):
+  def _ValToIntOrError(self, val, blame_word=None, span_id=runtime.NO_SPID):
+    # type: (value_t, word_t, int) -> int
     if span_id == runtime.NO_SPID and blame_word:
       span_id = word_.LeftMostSpanForWord(blame_word)
-    #log('_ValToArithOrError span=%s blame=%s', span_id, blame_word)
+    #log('_ValToIntOrError span=%s blame=%s', span_id, blame_word)
 
     try:
-      i = self._ValToArith(val, span_id)
+      if val.tag == value_e.Undef:  # 'nounset' already handled before got here
+        # Happens upon a[undefined]=42, which unfortunately turns into a[0]=42.
+        #log('blame_word %s   arena %s', blame_word, self.arena)
+        e_die('Undefined value in arithmetic context', span_id=span_id)
+
+      if val.tag == value_e.Int:
+        return val.i
+
+      if val.tag == value_e.Str:
+        return _StringToInteger(val.s, span_id=span_id)  # calls e_die
+
     except error.FatalRuntime as e:
       if self.exec_opts.strict_arith:
         raise
       else:
-        i = 0
         span_id = word_.SpanIdFromError(e)
         self.errfmt.PrettyPrintError(e, prefix='warning: ')
-    return i
+        return 0
+
+    # Arrays and associative arrays always fail -- not controlled by strict_arith.
+    # In bash, (( a )) is like (( a[0] )), but I don't want that.
+    # And returning '0' gives different results.
+    e_die("Expected a value convertible to integer, got %s", val,
+          span_id=span_id)
 
   def _EvalLhsAndLookupArith(self, node):
     """
@@ -375,15 +364,25 @@ class ArithEvaluator(_ExprEvaluator):
     # TODO: attribute a span ID here.  There are a few cases, like UnaryAssign
     # and BinaryAssign.
     span_id = word_.SpanForLhsExpr(node)
-    i = self._ValToArithOrError(val, span_id=span_id)
+    i = self._ValToIntOrError(val, span_id=span_id)
     return i, lval
 
   def _Store(self, lval, new_int):
     val = value.Str(str(new_int))
     self.mem.SetVar(lval, val, (), scope_e.Dynamic)
 
+  def EvalToInt(self, node):
+    # type: (arith_expr_t) -> int
+    """Used externally by ${a[i+1]} and ${a:start:len}.
+
+    Also used internally.
+    """
+    val = self.Eval(node)
+    i = self._ValToIntOrError(val)
+    return i
+
   def Eval(self, node):
-    # type: (arith_expr_t) -> Union[None, int, List[int], Dict[str, str]]
+    # type: (arith_expr_t) -> value_t
     """
     Args:
       node: arith_expr_t
@@ -404,12 +403,10 @@ class ArithEvaluator(_ExprEvaluator):
 
     if node.tag == arith_expr_e.VarRef:  # $(( x ))  (can be array)
       tok = node.token
-      val = _LookupVar(tok.val, self.mem, self.exec_opts)
-      return self._ValToArithOrError(val, span_id=tok.span_id)
+      return _LookupVar(tok.val, self.mem, self.exec_opts)
 
     if node.tag == arith_expr_e.ArithWord:  # $(( $x )) $(( ${x}${y} )), etc.
-      val = self.word_ev.EvalWordToString(node.w)
-      return self._ValToArithOrError(val, blame_word=node.w)
+      return self.word_ev.EvalWordToString(node.w)
 
     if node.tag == arith_expr_e.UnaryAssign:  # a++
       op_id = node.op_id
@@ -436,19 +433,21 @@ class ArithEvaluator(_ExprEvaluator):
 
       #log('old %d new %d ret %d', old_int, new_int, ret)
       self._Store(lval, new_int)
-      return ret
+      return value.Int(ret)
 
     if node.tag == arith_expr_e.BinaryAssign:  # a=1, a+=5, a[1]+=5
       op_id = node.op_id
 
       if op_id == Id.Arith_Equal:
-        rhs = self.Eval(node.right)
         lval = _EvalLhsArith(node.left, self.mem, self)
-        self._Store(lval, rhs)
-        return rhs
+        # Disallowing (( a = myarray ))
+        # It has to be an integer
+        rhs_int = self.EvalToInt(node.right)
+        self._Store(lval, rhs_int)
+        return value.Int(rhs_int)
 
       old_int, lval = self._EvalLhsAndLookupArith(node.left)
-      rhs = self.Eval(node.right)
+      rhs = self.EvalToInt(node.right)
 
       if op_id == Id.Arith_PlusEqual:
         new_int = old_int + rhs
@@ -479,92 +478,97 @@ class ArithEvaluator(_ExprEvaluator):
         raise AssertionError(op_id)  # shouldn't get here
 
       self._Store(lval, new_int)
-      return new_int
+      return value.Int(new_int)
 
     if node.tag == arith_expr_e.Unary:
       op_id = node.op_id
 
+      i = self.EvalToInt(node.child)
+
       if op_id == Id.Node_UnaryPlus:
-        return self.Eval(node.child)
-      if op_id == Id.Node_UnaryMinus:
-        return -self.Eval(node.child)
+        ret = i
+      elif op_id == Id.Node_UnaryMinus:
+        ret = -i
 
-      if op_id == Id.Arith_Bang:  # logical negation
-        return int(not self.Eval(node.child))
-      if op_id == Id.Arith_Tilde:  # bitwise complement
-        return ~self.Eval(node.child)
+      elif op_id == Id.Arith_Bang:  # logical negation
+        ret = 1 if i == 0 else 0
+      elif op_id == Id.Arith_Tilde:  # bitwise complement
+        ret = ~i
+      else:
+        raise AssertionError(op_id)  # shouldn't get here
 
-      raise AssertionError(op_id)
+      return value.Int(ret)
 
     if node.tag == arith_expr_e.Binary:
       op_id = node.op_id
 
-      lhs = self.Eval(node.left)
-
       # Short-circuit evaluation for || and &&.
       if op_id == Id.Arith_DPipe:
+        lhs = self.EvalToInt(node.left)
         if lhs == 0:
-          rhs = self.Eval(node.right)
-          return int(rhs != 0)
+          rhs = self.EvalToInt(node.right)
+          ret = int(rhs != 0)
         else:
-          return 1  # true
-      if op_id == Id.Arith_DAmp:
-        if lhs == 0:
-          return 0  # false
-        else:
-          rhs = self.Eval(node.right)
-          return int(rhs != 0)
+          ret = 1  # true
+        return value.Int(ret)
 
-      rhs = self.Eval(node.right)  # eager evaluation for the rest
+      if op_id == Id.Arith_DAmp:
+        lhs = self.EvalToInt(node.left)
+        if lhs == 0:
+          ret = 0  # false
+        else:
+          rhs = self.EvalToInt(node.right)
+          ret = int(rhs != 0)
+        return value.Int(ret)
 
       if op_id == Id.Arith_LBracket:
-        # MaybeStrArray or AssocArray
-        if isinstance(lhs, list):
-          if not isinstance(rhs, int):
-            e_die('Expected index to be an integer, got %r', rhs)
-          try:
-            item = lhs[rhs]
-          except IndexError:
-            if self.exec_opts.nounset:
-              e_die('Index out of bounds')
-            else:
-              # TODO: Should be None for Undef instead?  Or ''?
-              return 0
+        # NOTE: Similar to bracket_op_e.ArrayIndex in osh/word_eval.py
 
-        # Quirk: (( A[$key] = 42 )) works
-        #        (( x = A[$key] )) doesn't work because $key is coerced to
-        #        an integer
-        # We could relax this restriction by using value_t here instead of the
-        # None/int/list representation.
+        lhs = self.Eval(node.left)
+        UP_lhs = lhs
+        with tagswitch(lhs) as case:
+          if case(value_e.MaybeStrArray):
+            lhs = cast(value__MaybeStrArray, UP_lhs)
+            rhs_int = self.EvalToInt(node.right)
+            try:
+              # could be None because representation is sparse
+              s = lhs.strs[rhs_int]
+            except IndexError:
+              s = None
 
-        elif isinstance(lhs, dict):
-          e_die("Can't evaluate associative arrays in arithmetic contexts")
+          elif case(value_e.AssocArray):
+            lhs = cast(value__AssocArray, UP_lhs)
+            key = self.arith_ev.EvalWordToString(node.right)
+            s = lhs.d.get(key)
 
+          else:
+            # TODO: Add error context
+            e_die('Expected array or assoc in index expression, got %s', lhs)
+
+        if s is None:
+          val = value.Undef()
         else:
-          # TODO: Add error context
-          e_die('Expected array in index expression, got %s', lhs)
+          val = value.Str(s)
 
-        assert isinstance(item, str), item
-        return self._StringToIntegerOrError(item)
+        return val
 
       if op_id == Id.Arith_Comma:
-        return rhs
+        self.Eval(node.left)  # throw away result
+        return self.Eval(node.right)
 
-      # Do additional type checking after indexing and comma.
-      if not isinstance(lhs, int):
-        e_die('LHS should be an integer, got %s', lhs)
-      if not isinstance(rhs, int):
-        e_die('RHS should be an integer, got %s', rhs)
+      # Rest are integers
+      lhs = self.EvalToInt(node.left)
+      rhs = self.EvalToInt(node.right)
 
       if op_id == Id.Arith_Plus:
-        return lhs + rhs
-      if op_id == Id.Arith_Minus:
-        return lhs - rhs
-      if op_id == Id.Arith_Star:
-        return lhs * rhs
-      if op_id == Id.Arith_Slash:
+        ret = lhs + rhs
+      elif op_id == Id.Arith_Minus:
+        ret = lhs - rhs
+      elif op_id == Id.Arith_Star:
+        ret =  lhs * rhs
+      elif op_id == Id.Arith_Slash:
         try:
-          return lhs / rhs
+          ret = lhs / rhs
         except ZeroDivisionError:
           # TODO: _ErrorWithLocation should also accept arith_expr ?  I
           # think I needed that for other stuff.
@@ -578,51 +582,52 @@ class ArithEvaluator(_ExprEvaluator):
           else:
             e_die('Divide by zero')
 
-      if op_id == Id.Arith_Percent:
-        return lhs % rhs
+      elif op_id == Id.Arith_Percent:
+        ret= lhs % rhs
 
-      if op_id == Id.Arith_DStar:
+      elif op_id == Id.Arith_DStar:
         # OVM is stripped of certain functions that are somehow necessary for
         # exponentiation.
         # Python/ovm_stub_pystrtod.c:21: PyOS_double_to_string: Assertion `0'
         # failed.
         if rhs < 0:
           e_die("Exponent can't be less than zero")  # TODO: error location
-        result = 1
+        ret = 1
         for i in xrange(rhs):
-          result *= lhs
-        return result
+          ret *= lhs
 
-      if op_id == Id.Arith_DEqual:
-        return int(lhs == rhs)
-      if op_id == Id.Arith_NEqual:
-        return int(lhs != rhs)
-      if op_id == Id.Arith_Great:
-        return int(lhs > rhs)
-      if op_id == Id.Arith_GreatEqual:
-        return int(lhs >= rhs)
-      if op_id == Id.Arith_Less:
-        return int(lhs < rhs)
-      if op_id == Id.Arith_LessEqual:
-        return int(lhs <= rhs)
+      elif op_id == Id.Arith_DEqual:
+        ret = int(lhs == rhs)
+      elif op_id == Id.Arith_NEqual:
+        ret = int(lhs != rhs)
+      elif op_id == Id.Arith_Great:
+        ret = int(lhs > rhs)
+      elif op_id == Id.Arith_GreatEqual:
+        ret = int(lhs >= rhs)
+      elif op_id == Id.Arith_Less:
+        ret = int(lhs < rhs)
+      elif op_id == Id.Arith_LessEqual:
+        ret = int(lhs <= rhs)
 
-      if op_id == Id.Arith_Pipe:
-        return lhs | rhs
-      if op_id == Id.Arith_Amp:
-        return lhs & rhs
-      if op_id == Id.Arith_Caret:
-        return lhs ^ rhs
+      elif op_id == Id.Arith_Pipe:
+        ret = lhs | rhs
+      elif op_id == Id.Arith_Amp:
+        ret = lhs & rhs
+      elif op_id == Id.Arith_Caret:
+        ret = lhs ^ rhs
 
       # Note: how to define shift of negative numbers?
-      if op_id == Id.Arith_DLess:
-        return lhs << rhs
-      if op_id == Id.Arith_DGreat:
-        return lhs >> rhs
+      elif op_id == Id.Arith_DLess:
+        ret = lhs << rhs
+      elif op_id == Id.Arith_DGreat:
+        ret = lhs >> rhs
+      else:
+        raise AssertionError(op_id)
 
-      raise AssertionError(op_id)
+      return value.Int(ret)
 
     if node.tag == arith_expr_e.TernaryOp:
-      cond = self.Eval(node.cond)
+      cond = self.EvalToInt(node.cond)
       if cond:  # nonzero
         return self.Eval(node.true_expr)
       else:
@@ -653,13 +658,6 @@ class ArithEvaluator(_ExprEvaluator):
 
     val = self.word_ev.EvalWordToString(node.w)
     return val.s
-
-  def EvalToIndex(self, node):
-    # type: (arith_expr_t) -> int
-    index = self.Eval(node)
-    if not isinstance(index, int):
-      e_die("Expected integer for array index, got %r", index)
-    return index
 
 
 class BoolEvaluator(_ExprEvaluator):
