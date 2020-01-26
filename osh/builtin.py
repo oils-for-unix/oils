@@ -715,6 +715,22 @@ class History(object):
 
     arg, arg_index = HISTORY_SPEC.ParseVec(cmd_val)
 
+    # Clear all history
+    if arg.c:
+      readline_mod.clear_history()
+      return 0
+
+    # Delete history entry by id number
+    if arg.d:
+      cmd_index = arg.d - 1
+
+      try:
+        readline_mod.remove_history_item(cmd_index)
+      except ValueError:
+        raise args.UsageError("couldn't find item %d" % arg.d)
+
+      return 0
+
     # Returns 0 items in non-interactive mode?
     num_items = readline_mod.get_current_history_length()
     #log('len = %d', num_items)
@@ -731,23 +747,6 @@ class History(object):
       start_index = max(1, num_items + 1 - num_to_show)
     else:
       raise args.UsageError('Too many arguments')
-
-    # Clear all history
-    if arg.c:
-      readline_mod.clear_history()
-      return 0
-
-   # Delete history entry by id number
-    if arg.d:
-      cmd_index = arg.d - 1
-
-      try:
-        readline_mod.remove_history_item(cmd_index)
-      except ValueError:
-        raise args.UsageError('history position out of range')
-
-      return 0
-
 
     # TODO:
     # - Exclude lines that don't parse from the history!  bash and zsh don't do
