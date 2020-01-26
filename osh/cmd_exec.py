@@ -1718,7 +1718,7 @@ class Executor(object):
     # See core/builtin.py for the Python signal handler that appends to this
     # list.
 
-    if len(self.trap_nodes) == 0:
+    if len(self.trap_nodes):
       # Make a copy and clear it so we don't cause an infinite loop.
       to_run = list(self.trap_nodes)
       del self.trap_nodes[:]

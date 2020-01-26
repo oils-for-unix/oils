@@ -2024,6 +2024,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # Heuristic
           if isinstance(t, MemberExpr):
             c_type = '%s::%s*' % (t.expr.name, t.name)
+          elif isinstance(t, TupleExpr):
+            c_type = 'MultipleExceptions'  # TODO: implement this
           else:
             c_type = '%s*' % t.name
 

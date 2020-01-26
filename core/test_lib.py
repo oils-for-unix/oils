@@ -130,6 +130,7 @@ def MakeTestEvaluator():
 
   exec_deps = cmd_exec.Deps()
   exec_deps.splitter = split.SplitContext(mem)
+  exec_deps.trap_nodes = []
 
   ev = word_eval.CompletionWordEvaluator(mem, exec_opts, exec_deps, arena)
   return ev
@@ -185,6 +186,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   exec_deps = cmd_exec.Deps()
   exec_deps.search_path = state.SearchPath(mem)
   exec_deps.errfmt = errfmt
+  exec_deps.trap_nodes = []
   exec_deps.job_state = job_state
   exec_deps.waiter = process.Waiter(exec_deps.job_state, exec_opts)
 
