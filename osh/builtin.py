@@ -696,7 +696,7 @@ class Help(object):
 
 HISTORY_SPEC = _Register('history')
 HISTORY_SPEC.ShortFlag('-c')
-HISTORY_SPEC.ShortFlag('-d')
+HISTORY_SPEC.ShortFlag('-d', args.Int)
 
 class History(object):
   """Show interactive command history."""
@@ -737,11 +737,10 @@ class History(object):
       readline_mod.clear_history()
       return 0
 
-
     # Delete history entry by id number
     if arg.d:
       try:
-        cmd_index = int(rest[0]) - 1  # readline is indexed from 1
+        cmd_index = arg.d
       except IndexError:
         raise args.UsageError('Requires a numeric argument')
 
@@ -751,7 +750,6 @@ class History(object):
         raise args.UsageError('%r : history position out of range' % arg0)
 
       return 0
-
 
     # TODO:
     # - Exclude lines that don't parse from the history!  bash and zsh don't do
