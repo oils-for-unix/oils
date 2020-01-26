@@ -66,7 +66,8 @@ _STRING_AND_ARRAY = 'BASH_SOURCE'
 def EvalSingleQuoted(part):
   # type: (single_quoted) -> str
   if part.left.id == Id.Left_SingleQuoteRaw:
-    s = ''.join(t.val for t in part.tokens)
+    tmp = [t.val for t in part.tokens]
+    s = ''.join(tmp)
   elif part.left.id == Id.Left_SingleQuoteC:
     # NOTE: This could be done at compile time
     # TODO: Add location info for invalid backslash
@@ -186,7 +187,9 @@ def _DecayPartValuesToString(part_vals, join_char):
         out.append(p.s)
       else:
         p = cast(part_value__Array, UP_p)
-        out.append(join_char.join(s for s in p.strs if s is not None))
+        # TODO: Eliminate double join for speed?
+        tmp = [s for s in p.strs if s is not None]
+        out.append(join_char.join(tmp))
   return ''.join(out)
 
 
@@ -719,7 +722,8 @@ class _WordEvaluator(SimpleWordEvaluator):
     """Decay $* to a string."""
     assert val.tag == value_e.MaybeStrArray, val
     sep = self.splitter.GetJoinChar()
-    return value.Str(sep.join(s for s in val.strs if s is not None))
+    tmp = [s for s in val.strs if s is not None]
+    return value.Str(sep.join(tmp))
 
   def _BashArrayCompat(self, val):
     # type: (value__MaybeStrArray) -> value__Str
@@ -881,7 +885,7 @@ class _WordEvaluator(SimpleWordEvaluator):
 
     else:  # no bracket op
       # When the array is "$@", var_name is None
-      if var_name and val.tag in (value_e.MaybeStrArray, value_e.AssocArray):
+      if var_name and val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray):
         if var_name == _STRING_AND_ARRAY:
           bash_array_compat = True
         else:
@@ -1085,7 +1089,9 @@ class _WordEvaluator(SimpleWordEvaluator):
                   span_id=span_id)
           else:
             # It appears to not respect IFS
-            s = ' '.join(s for s in part_val.strs if s is not None)
+            # TODO: eliminate double join()?
+            tmp = [s for s in part_val.strs if s is not None]
+            s = ' '.join(tmp)
 
       strs.append(s)
 
@@ -1386,7 +1392,8 @@ class _WordEvaluator(SimpleWordEvaluator):
             #      'To assign arrays, use b=( "${a[@]}" )')
           else:
             # It appears to not respect IFS
-            s = ' '.join(s for s in part_val.strs if s is not None)
+            tmp = [s for s in part_val.strs if s is not None]
+            s = ' '.join(tmp)  # TODO: eliminate double join()?
 
       strs.append(s)
 
@@ -1477,7 +1484,8 @@ class _WordEvaluator(SimpleWordEvaluator):
     # If every frag is quoted, e.g. "$a$b" or any part in "${a[@]}"x, then
     # don't do word splitting or globbing.
     if all_quoted:
-      a = ''.join(s for s, _, _ in frame)
+      tmp = [s for s, _, _ in frame]
+      a = ''.join(tmp)
       argv.append(a)
       return
 
@@ -1536,7 +1544,8 @@ class _WordEvaluator(SimpleWordEvaluator):
     argv = []
     for frame in frames:
       if len(frame):  # empty array gives empty frame!
-        argv.append(''.join(s for (s, _, _) in frame))  # no split or glob
+        tmp = [s for (s, _, _) in frame]
+        argv.append(''.join(tmp))  # no split or glob
     #log('argv: %s', argv)
     return argv
 
@@ -1683,7 +1692,8 @@ class _WordEvaluator(SimpleWordEvaluator):
       # disallows such expressions at parse time.
       for frame in frames:
         if len(frame):  # empty array gives empty frame!
-          strs.append(''.join(s for (s, _, _) in frame))  # no split or glob
+          tmp = [s for (s, _, _) in frame]
+          strs.append(''.join(tmp))  # no split or glob
           spids.append(word_spid)
 
     return cmd_value.Argv(strs, spids)
