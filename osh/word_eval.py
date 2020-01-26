@@ -40,6 +40,7 @@ from osh import word_
 from osh import word_compile
 
 from mycpp.mylib import tagswitch
+from mycpp import mylib
 
 import posix_ as posix
 
@@ -1231,8 +1232,11 @@ class _WordEvaluator(SimpleWordEvaluator):
         # TODO: Get rid of this case!  Need to DEFER a lot of oil spec
         # tests though.
         elif case(value_e.Obj):
-          val = cast(value__Obj, UP_val)
-          items = [str(item) for item in val.obj]
+          if mylib.PYTHON:
+            val = cast(value__Obj, UP_val)
+            items = [str(item) for item in val.obj]
+          else:
+            raise AssertionError
 
         else:
           e_die("Can't splice %r", var_name, part=part)
@@ -1241,31 +1245,32 @@ class _WordEvaluator(SimpleWordEvaluator):
 
     elif UP_part.tag == word_part_e.FuncCall:
       part = cast(word_part__FuncCall, UP_part)
-      func_name = part.name.val[1:]
+      if mylib.PYTHON:
+        func_name = part.name.val[1:]
 
-      fn_val = self.mem.GetVar(func_name) # type: value_t
-      if fn_val.tag != value_e.Obj:
-        e_die("Expected function named %r, got %r ", func_name, fn_val)
-      assert isinstance(fn_val, value__Obj)
+        fn_val = self.mem.GetVar(func_name) # type: value_t
+        if fn_val.tag != value_e.Obj:
+          e_die("Expected function named %r, got %r ", func_name, fn_val)
+        assert isinstance(fn_val, value__Obj)
 
-      func = fn_val.obj
-      pos_args, named_args = self.expr_ev.EvalArgList(part.args)
+        func = fn_val.obj
+        pos_args, named_args = self.expr_ev.EvalArgList(part.args)
 
-      id_ = part.name.id
-      if id_ == Id.VSub_DollarName:
-        s = str(func(*pos_args, **named_args))
-        part_val = part_value.String(s) # type: part_value_t
+        id_ = part.name.id
+        if id_ == Id.VSub_DollarName:
+          s = str(func(*pos_args, **named_args))
+          part_val = part_value.String(s) # type: part_value_t
 
-      elif id_ == Id.Lit_Splice:
-        # NOTE: Using iterable protocol as with @array.  TODO: Optimize this so
-        # it doesn't make a copy?
-        a = [str(item) for item in func(*pos_args, **named_args)]
-        part_val = part_value.Array(a)
+        elif id_ == Id.Lit_Splice:
+          # NOTE: Using iterable protocol as with @array.  TODO: Optimize this so
+          # it doesn't make a copy?
+          a = [str(item) for item in func(*pos_args, **named_args)]
+          part_val = part_value.Array(a)
 
-      else:
-        raise AssertionError(id_)
+        else:
+          raise AssertionError(id_)
 
-      part_vals.append(part_val)
+        part_vals.append(part_val)
 
     elif UP_part.tag == word_part_e.ExprSub:
       part = cast(word_part__ExprSub, UP_part)
@@ -1427,7 +1432,7 @@ class _WordEvaluator(SimpleWordEvaluator):
     #log('--- frame %s', frame)
 
     for s, quoted, _ in frame:
-      if s:
+      if len(s):
         all_empty = False
 
       if quoted:
@@ -1500,7 +1505,7 @@ class _WordEvaluator(SimpleWordEvaluator):
     frames = _MakeWordFrames(part_vals)
     argv = []
     for frame in frames:
-      if frame:  # empty array gives empty frame!
+      if len(frame):  # empty array gives empty frame!
         argv.append(''.join(s for (s, _, _) in frame))  # no split or glob
     #log('argv: %s', argv)
     return argv
@@ -1647,7 +1652,7 @@ class _WordEvaluator(SimpleWordEvaluator):
       # We will still allow x"${a[@]"x, though it's deprecated by @a, which
       # disallows such expressions at parse time.
       for frame in frames:
-        if frame:  # empty array gives empty frame!
+        if len(frame):  # empty array gives empty frame!
           strs.append(''.join(s for (s, _, _) in frame))  # no split or glob
           spids.append(word_spid)
 
