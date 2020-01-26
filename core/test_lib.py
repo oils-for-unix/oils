@@ -12,7 +12,7 @@ test_lib.py - Functions for testing.
 import string
 import sys
 
-from _devbuild.gen.runtime_asdl import builtin_e
+from _devbuild.gen.runtime_asdl import builtin_e, cmd_value
 from _devbuild.gen.syntax_asdl import source, Token
 from asdl import pybase
 from asdl import runtime
@@ -37,6 +37,10 @@ from osh import expr_eval
 from osh import split
 from osh import state
 from osh import word_eval
+
+
+def MakeBuiltinArgv(argv):
+  return cmd_value.Argv(argv, [0] * len(argv))
 
 
 def Tok(id_, val):

@@ -52,6 +52,9 @@ module runtime
     -- An Undef value is different than "no binding" because of dynamic scope.
     Undef
   | Str(string s)
+    -- Important: This is NOT stored in state.Mem now.  It's used only by
+    -- the arithmetic evaluator.
+  | Int(int i)
     -- "holes" in the array are represented by None
   | MaybeStrArray(string* strs)
     -- d will be a dict
