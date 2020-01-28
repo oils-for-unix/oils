@@ -55,10 +55,14 @@ Str* repr(void* obj) {
   assert(0);
 }
 
-[[noreturn]] void e_die(Str* s, int syntax_asdl::word_part_t* part) {
+[[noreturn]] void e_die(Str* s, syntax_asdl::Token* token) {
   assert(0);
 }
 
-[[noreturn]] void e_die(Str* s, int syntax_asdl::word_t* w) {
+[[noreturn]] void e_die(Str* s, syntax_asdl::word_part_t* part) {
+  assert(0);
+}
+
+[[noreturn]] void e_die(Str* s, syntax_asdl::word_t* w) {
   assert(0);
 }

@@ -112,8 +112,11 @@ def _ValueToPartValue(val, quoted):
       return part_value.Array(val.d.values())
 
     elif case(value_e.Obj):
-      val = cast(value__Obj, UP_val)
-      return part_value.String(str(val.obj), quoted, not quoted)
+      if mylib.PYTHON:
+        val = cast(value__Obj, UP_val)
+        return part_value.String(str(val.obj), quoted, not quoted)
+      # Not in C++
+      raise AssertionError()
 
     else:
       # Undef should be caught by _EmptyStrOrError().
@@ -336,7 +339,7 @@ class _WordEvaluator(SimpleWordEvaluator):
     try:
       e = pwd.getpwnam(name)
     except KeyError:
-      # If not found, it's ~nonexistente.  TODO: In strict mode, this should be
+      # If not found, it's ~nonexistent.  TODO: In strict mode, this should be
       # an error, kind of like failglob and nounset.  Perhaps strict-tilde or
       # even strict-word-eval.
       result = token.val
@@ -409,6 +412,8 @@ class _WordEvaluator(SimpleWordEvaluator):
     """
     undefined = (val.tag_() == value_e.Undef)
 
+    no = None  # type: List[part_value_t]
+
     # TODO: Change this to a bitwise test?
     if op.op_id in (
         Id.VTest_ColonHyphen, Id.VTest_ColonEquals, Id.VTest_ColonQMark,
@@ -433,18 +438,18 @@ class _WordEvaluator(SimpleWordEvaluator):
       if is_falsey:
         assert op.arg_word
         self._EvalWordToParts(op.arg_word, quoted, part_vals, is_subst=True)
-        return None, effect_e.SpliceParts
+        return no, effect_e.SpliceParts
       else:
-        return None, effect_e.NoOp
+        return no, effect_e.NoOp
 
     elif op.op_id in (Id.VTest_ColonPlus, Id.VTest_Plus):
       # Inverse of the above.
       if is_falsey:
-        return None, effect_e.NoOp
+        return no, effect_e.NoOp
       else:
         assert op.arg_word
         self._EvalWordToParts(op.arg_word, quoted, part_vals, is_subst=True)
-        return None, effect_e.SpliceParts
+        return no, effect_e.SpliceParts
 
     elif op.op_id in (Id.VTest_ColonEquals, Id.VTest_Equals):
       if is_falsey:
@@ -457,7 +462,7 @@ class _WordEvaluator(SimpleWordEvaluator):
         part_vals.extend(assign_part_vals)
         return assign_part_vals, effect_e.SpliceAndAssign
       else:
-        return None, effect_e.NoOp
+        return no, effect_e.NoOp
 
     elif op.op_id in (Id.VTest_ColonQMark, Id.VTest_QMark):
       if is_falsey:
@@ -467,7 +472,7 @@ class _WordEvaluator(SimpleWordEvaluator):
                               is_subst=True)
         return error_part_vals, effect_e.Error
       else:
-        return None, effect_e.NoOp
+        return no, effect_e.NoOp
 
     else:
       raise NotImplementedError(Id_str(op.op_id))
@@ -489,7 +494,6 @@ class _WordEvaluator(SimpleWordEvaluator):
 
     with tagswitch(val) as case:
       if case(value_e.Undef):
-        val = cast(value__Undef, UP_val)
         return value.Undef()
 
       elif case(value_e.Str):
@@ -561,7 +565,10 @@ class _WordEvaluator(SimpleWordEvaluator):
         elif case(value_e.MaybeStrArray):
           val = cast(value__MaybeStrArray, UP_val)
           # There can be empty placeholder values in the array.
-          length = sum(1 for s in val.strs if s is not None)
+          length = 0
+          for s in val.strs:
+            if s is not None:
+              length += 1
 
         elif case(value_e.AssocArray):
           val = cast(value__AssocArray, UP_val)
@@ -1304,15 +1311,16 @@ class _WordEvaluator(SimpleWordEvaluator):
           part_vals.append(part_val)
 
       elif case(word_part_e.ExprSub):
-        part = cast(word_part__ExprSub, UP_part)
-        py_val = self.expr_ev.EvalExpr(part.child)
-        part_val = part_value.String(str(py_val))
-        part_vals.append(part_val)
+        if mylib.PYTHON:
+          part = cast(word_part__ExprSub, UP_part)
+          py_val = self.expr_ev.EvalExpr(part.child)
+          part_val = part_value.String(str(py_val))
+          part_vals.append(part_val)
 
       else:
         raise AssertionError(part.tag_())
 
-  def _EvalWordToParts(self, word, quoted, part_vals, is_subst=False):
+  def _EvalWordToParts(self, w, quoted, part_vals, is_subst=False):
     # type: (word_t, bool, List[part_value_t], bool) -> None
     """Helper for EvalRhsWord, EvalWordSequence, etc.
 
@@ -1320,24 +1328,24 @@ class _WordEvaluator(SimpleWordEvaluator):
       List of part_value.
       But note that this is a TREE.
     """
-    UP_word = word
-    with tagswitch(word) as case:
+    UP_w = w
+    with tagswitch(w) as case:
       if case(word_e.Compound):
-        word = cast(compound_word, UP_word)
-        for p in word.parts:
+        w = cast(compound_word, UP_w)
+        for p in w.parts:
           self._EvalWordPart(p, part_vals, quoted=quoted, is_subst=is_subst)
 
       elif case(word_e.Empty):
         part_vals.append(part_value.String('', quoted, not quoted))
 
       else:
-        raise AssertionError(word.tag_())
+        raise AssertionError(w.tag_())
 
-  def EvalWordToString(self, word, do_fnmatch=False, do_ere=False):
+  def EvalWordToString(self, UP_w, do_fnmatch=False, do_ere=False):
     # type: (word_t, bool, bool) -> value__Str
     """
     Args:
-      word: Compound
+      w: Compound
 
     Used for redirect arg, ControlFlow arg, ArithWord, BoolWord, etc.
 
@@ -1351,14 +1359,14 @@ class _WordEvaluator(SimpleWordEvaluator):
 
     TODO: Raise AssertionError if it has ExtGlob.
     """
-    if word.tag_() == word_e.Empty:
+    if UP_w.tag_() == word_e.Empty:
       return value.Str('')
 
-    assert word.tag_() == word_e.Compound, word
-    word = cast(compound_word, word)
+    assert UP_w.tag_() == word_e.Compound, UP_w
+    w = cast(compound_word, UP_w)
 
     part_vals = []  # type: List[part_value_t]
-    for p in word.parts:
+    for p in w.parts:
       self._EvalWordPart(p, part_vals, quoted=False)
 
     strs = []  # type: List[str]
@@ -1385,7 +1393,7 @@ class _WordEvaluator(SimpleWordEvaluator):
             # flat list of part_vals.  The only case where we really get arrays
             # is "$@", "${a[@]}", "${a[@]//pat/replace}", etc.
             e_die("This word should yield a string, but it contains an array",
-                  word=word)
+                  word=w)
 
             # TODO: Maybe add detail like this.
             #e_die('RHS of assignment should only have strings.  '
@@ -1397,7 +1405,7 @@ class _WordEvaluator(SimpleWordEvaluator):
 
       strs.append(s)
 
-    #log('EvalWordToString %s', word.parts)
+    #log('EvalWordToString %s', w.parts)
     return value.Str(''.join(strs))
 
   def EvalForPlugin(self, w):
@@ -1421,20 +1429,18 @@ class _WordEvaluator(SimpleWordEvaluator):
       self.mem.PopStatusFrame()
     return val
 
-  def EvalRhsWord(self, word):
+  def EvalRhsWord(self, UP_w):
     # type: (word_t) -> value_t
-    """syntax.word -> value
-
-    Used for RHS of assignment.  There is no splitting.
+    """Used for RHS of assignment.  There is no splitting.
     """
-    if word.tag_() == word_e.Empty:
+    if UP_w.tag_() == word_e.Empty:
       return value.Str('')
 
-    assert word.tag_() == word_e.Compound, word
-    word = cast(compound_word, word)
+    assert UP_w.tag_() == word_e.Compound, UP_w
+    w = cast(compound_word, UP_w)
 
-    if len(word.parts) == 1:
-      part0 = word.parts[0]
+    if len(w.parts) == 1:
+      part0 = w.parts[0]
       UP_part0 = part0
       tag = part0.tag_()
       # Special case for a=(1 2).  ShArrayLiteral won't appear in words that
@@ -1460,7 +1466,7 @@ class _WordEvaluator(SimpleWordEvaluator):
         return value.AssocArray(d)
 
     # If RHS doens't look like a=( ... ), then it must be a string.
-    return self.EvalWordToString(word)
+    return self.EvalWordToString(w)
 
   def _EvalWordFrame(self, frame, argv):
     # type: (List[Tuple[str, bool, bool]], List[str]) -> None
@@ -1567,20 +1573,6 @@ class _WordEvaluator(SimpleWordEvaluator):
     # There is also command -p, but we haven't implemented it.  Maybe just punt
     # on it.  Punted on 'builtin' and 'command' for now too.
 
-    def _SplitAssignArg(arg,  # type: str
-                        w,  # type: compound_word
-                        ):
-      # type: (...) -> Tuple[lvalue__Named, Optional[value__Str]]
-      i = arg.find('=')
-      prefix = arg[:i]
-      if i != -1 and match.IsValidVarName(prefix):
-        return lvalue.Named(prefix), value.Str(arg[i+1:]),
-      else:
-        if match.IsValidVarName(arg):  # local foo   # foo becomes undefined
-          return lvalue.Named(arg), None
-        else:
-          e_die("Invalid variable name %r", arg, word=w)
-
     started_pairs = False
 
     flags = [arg0]
@@ -1611,7 +1603,9 @@ class _WordEvaluator(SimpleWordEvaluator):
           else:
             rhs_word = compound_word(w.parts[part_offset:])
             # tilde detection only happens on static assignments!
-            rhs_word = word_.TildeDetect(rhs_word) or rhs_word
+            tmp = word_.TildeDetect(rhs_word) 
+            if tmp:
+              rhs_word = tmp
 
           right = self.EvalRhsWord(rhs_word)
           arg2 = assign_arg(left, right, word_spid)
@@ -1698,7 +1692,7 @@ class _WordEvaluator(SimpleWordEvaluator):
           strs.append(''.join(tmp))  # no split or glob
           spids.append(word_spid)
 
-    return cmd_value.Argv(strs, spids)
+    return cmd_value.Argv(strs, spids, None)
 
   def EvalWordSequence2(self, words, allow_assign=False):
     # type: (List[compound_word], bool) -> cmd_value_t
@@ -1783,16 +1777,29 @@ class _WordEvaluator(SimpleWordEvaluator):
     # A non-assignment command.
     # NOTE: Can't look up builtins here like we did for assignment, because
     # functions can override builtins.
-    return cmd_value.Argv(strs, spids)
+    return cmd_value.Argv(strs, spids, None)
 
   def EvalWordSequence(self, words):
     # type: (List[compound_word]) -> List[str]
     """For arrays and for loops.  They don't allow assignment builtins."""
-    cmd_val = self.EvalWordSequence2(words)
+    UP_cmd_val = self.EvalWordSequence2(words)
 
-    assert cmd_val.tag_() == cmd_value_e.Argv
-    cmd_val = cast(cmd_value__Argv, cmd_val)
+    assert UP_cmd_val.tag_() == cmd_value_e.Argv
+    cmd_val = cast(cmd_value__Argv, UP_cmd_val)
     return cmd_val.argv
+
+
+def _SplitAssignArg(arg, w):
+  # type: (str, compound_word) -> Tuple[lvalue__Named, Optional[value__Str]]
+  i = arg.find('=')
+  prefix = arg[:i]
+  if i != -1 and match.IsValidVarName(prefix):
+    return lvalue.Named(prefix), value.Str(arg[i+1:]),
+  else:
+    if match.IsValidVarName(arg):  # local foo   # foo becomes undefined
+      return lvalue.Named(arg), None
+    else:
+      e_die("Invalid variable name %r", arg, word=w)
 
 
 class NormalWordEvaluator(_WordEvaluator):

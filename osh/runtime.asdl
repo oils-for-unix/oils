@@ -117,6 +117,7 @@ module runtime
 
   -- word_eval.py: SliceParts is for ${a-} and ${a+}, Error is for ${a?}, and
   -- SliceAndAssign is for ${a=}.
+  -- TODO: Could be cleaner if Error and SpliceAndAssign have part_vals
   effect = SpliceParts | Error | SpliceAndAssign | NoOp
 
   -- core/process.py
