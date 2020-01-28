@@ -71,8 +71,8 @@ def EvalSingleQuoted(part):
   elif part.left.id == Id.Left_SingleQuoteC:
     # NOTE: This could be done at compile time
     # TODO: Add location info for invalid backslash
-    s = ''.join(word_compile.EvalCStringToken(t.id, t.val)
-                for t in part.tokens)
+    tmp = [word_compile.EvalCStringToken(t.id, t.val) for t in part.tokens]
+    s = ''.join(tmp)
   else:
     raise AssertionError(Id_str(part.left.id))
   return s
@@ -178,7 +178,7 @@ def _MakeWordFrames(part_vals):
 def _DecayPartValuesToString(part_vals, join_char):
   # type: (List[part_value_t], str) -> str
   # Decay ${a=x"$@"x} to string.
-  out = []
+  out = []  # type: List[part_value_t]
   for p in part_vals:
     UP_p = p
     with tagswitch(p) as case:
@@ -241,7 +241,7 @@ def _PerformSlice(val,  # type: value_t
               length, part=part)
 
       # NOTE: unset elements don't count towards the length.
-      strs = []
+      strs = []  # type: List[str]
       for s in val.strs[begin:]:
         if s is not None:
           strs.append(s)
@@ -449,7 +449,7 @@ class _WordEvaluator(SimpleWordEvaluator):
     elif op.op_id in (Id.VTest_ColonEquals, Id.VTest_Equals):
       if is_falsey:
         # Collect new part vals.
-        assign_part_vals = [] # type: List[part_value_t]
+        assign_part_vals = []  # type: List[part_value_t]
         self._EvalWordToParts(op.arg_word, quoted, assign_part_vals,
                               is_subst=True)
 
@@ -462,7 +462,7 @@ class _WordEvaluator(SimpleWordEvaluator):
     elif op.op_id in (Id.VTest_ColonQMark, Id.VTest_QMark):
       if is_falsey:
         # The arg is the error mesage
-        error_part_vals = [] # type: List[part_value_t]
+        error_part_vals = []  # type: List[part_value_t]
         self._EvalWordToParts(op.arg_word, quoted, error_part_vals,
                               is_subst=True)
         return error_part_vals, effect_e.Error
@@ -615,7 +615,7 @@ class _WordEvaluator(SimpleWordEvaluator):
           val = cast(value__MaybeStrArray, UP_val)
           # translation issue: tuple indices not supported in list comprehensions
           #indices = [str(i) for i, s in enumerate(val.strs) if s is not None]
-          indices = []
+          indices = []  # type: List[int]
           for i, s in enumerate(val.strs):
             if s is not None:
               indices.append(str(i))
@@ -655,7 +655,7 @@ class _WordEvaluator(SimpleWordEvaluator):
         elif case(value_e.MaybeStrArray):
           val = cast(value__MaybeStrArray, UP_val)
           # ${a[@]#prefix} is VECTORIZED on arrays.  Oil should have this too.
-          strs = []
+          strs = []  # type: List[str]
           for s in val.strs:
             if s is not None:
               strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s))
@@ -663,7 +663,7 @@ class _WordEvaluator(SimpleWordEvaluator):
 
         elif case(value_e.AssocArray):
           val = cast(value__AssocArray, UP_val)
-          strs = []
+          strs = []  # type: List[str]
           for s in val.d.itervalues():
             strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s))
           new_val = value.MaybeStrArray(strs)
@@ -1009,7 +1009,7 @@ class _WordEvaluator(SimpleWordEvaluator):
 
             elif case2(value_e.MaybeStrArray):
               val = cast(value__MaybeStrArray, UP_val)
-              strs = []
+              strs = []  # type: List[str]
               for s in val.strs:
                 if s is not None:
                   strs.append(replacer.Replace(s, op))
@@ -1017,7 +1017,7 @@ class _WordEvaluator(SimpleWordEvaluator):
 
             elif case2(value_e.AssocArray):
               val = cast(value__AssocArray, UP_val)
-              strs = []
+              strs = []  # type: List[str]
               for s in val.d.itervalues():
                 strs.append(replacer.Replace(s, op))
               val = value.MaybeStrArray(strs)
@@ -1073,7 +1073,7 @@ class _WordEvaluator(SimpleWordEvaluator):
 
   def _PartValsToString(self, part_vals, span_id):
     # type: (List[part_value_t], int) -> str
-    strs = []
+    strs = []  # type: List[str]
     for part_val in part_vals:
       UP_part_val = part_val
       with tagswitch(part_val) as case:
@@ -1151,7 +1151,7 @@ class _WordEvaluator(SimpleWordEvaluator):
 
     Example: var x = "$foo-${foo}"
     """
-    part_vals = [] # type: List[part_value_t]
+    part_vals = []  # type: List[part_value_t]
     self._EvalSimpleVarSub(tok, part_vals, False)
     return self._PartValsToString(part_vals, tok.span_id)
 
@@ -1357,11 +1357,11 @@ class _WordEvaluator(SimpleWordEvaluator):
 
     assert isinstance(word, compound_word)
 
-    part_vals = [] # type: List[part_value_t]
+    part_vals = []  # type: List[part_value_t]
     for p in word.parts:
       self._EvalWordPart(p, part_vals, quoted=False)
 
-    strs = []
+    strs = []  # type: List[str]
     for part_val in part_vals:
       UP_part_val = part_val
       with tagswitch(part_val) as case:
@@ -1492,7 +1492,7 @@ class _WordEvaluator(SimpleWordEvaluator):
     will_glob = not self.exec_opts.noglob
 
     # Array of strings, some of which are BOTH IFS-escaped and GLOB escaped!
-    frags = []
+    frags = []  # type: List[str]
     for frag, quoted, do_split in frame:
       if will_glob:
         if quoted:
@@ -1538,10 +1538,10 @@ class _WordEvaluator(SimpleWordEvaluator):
     Example: declare -"${a[@]}" b=(1 2)
     where a is [x b=a d=a]
     """
-    part_vals = [] # type: List[part_value_t]
+    part_vals = []  # type: List[part_value_t]
     self._EvalWordToParts(w, False, part_vals)  # not double quoted
     frames = _MakeWordFrames(part_vals)
-    argv = []
+    argv = []  # type: List[str]
     for frame in frames:
       if len(frame):  # empty array gives empty frame!
         tmp = [s for (s, _, _) in frame]
@@ -1583,7 +1583,7 @@ class _WordEvaluator(SimpleWordEvaluator):
 
     flags = [arg0]
     flag_spids = [word_.LeftMostSpanForWord(words[0])]
-    assign_args = []
+    assign_args = []  # type: List[assign_arg]
 
     n = len(words)
     for i in xrange(1, n):  # skip first word
@@ -1640,8 +1640,8 @@ class _WordEvaluator(SimpleWordEvaluator):
     # type: (List[compound_word], bool) -> cmd_value_t
     """Static word evaluation for Oil."""
     #log('W %s', words)
-    strs = []
-    spids = []
+    strs = []  # type: List[str]
+    spids = []  # type: List[int]
 
     n = 0
     for i, w in enumerate(words):
@@ -1670,7 +1670,7 @@ class _WordEvaluator(SimpleWordEvaluator):
           spids.append(word_spid)
         continue
 
-      part_vals = [] # type: List[part_value_t]
+      part_vals = []  # type: List[part_value_t]
       self._EvalWordToParts(w, False, part_vals)  # not double quoted
 
       if 0:
@@ -1726,12 +1726,12 @@ class _WordEvaluator(SimpleWordEvaluator):
     # 5. globbing -- several exec_opts affect this: nullglob, safeglob, etc.
 
     #log('W %s', words)
-    strs = [] # type: List[str]
-    spids = []
+    strs = []  # type: List[str]
+    spids = []  # type: List[int]
 
     n = 0
     for i, w in enumerate(words):
-      part_vals = [] # type: List[part_value_t]
+      part_vals = []  # type: List[part_value_t]
       self._EvalWordToParts(w, False, part_vals)  # not double quoted
 
       # DYNAMICALLY detect if we're going to run an assignment builtin, and
