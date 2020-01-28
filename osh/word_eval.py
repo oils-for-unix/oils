@@ -22,7 +22,8 @@ from _devbuild.gen.runtime_asdl import (
     builtin_e, effect_e,
     part_value, part_value_e, part_value_t, part_value__String, part_value__Array,
     value, value_e, value_t, lvalue,
-    assign_arg, cmd_value_t, cmd_value, cmd_value__Assign, cmd_value__Argv,
+    assign_arg, 
+    cmd_value_e, cmd_value_t, cmd_value, cmd_value__Assign, cmd_value__Argv,
     value__Str, value__AssocArray, value__MaybeStrArray, value__Obj,
     value__Undef,
 )
@@ -94,7 +95,6 @@ def _ValueToPartValue(val, quoted):
 
   Called by _EvalBracedVarSub and _EvalWordPart for SimpleVarSub.
   """
-  assert isinstance(val, value_t), val
   UP_val = val
 
   with tagswitch(val) as case:
@@ -178,7 +178,7 @@ def _MakeWordFrames(part_vals):
 def _DecayPartValuesToString(part_vals, join_char):
   # type: (List[part_value_t], str) -> str
   # Decay ${a=x"$@"x} to string.
-  out = []  # type: List[part_value_t]
+  out = []  # type: List[str]
   for p in part_vals:
     UP_p = p
     with tagswitch(p) as case:
@@ -615,7 +615,7 @@ class _WordEvaluator(SimpleWordEvaluator):
           val = cast(value__MaybeStrArray, UP_val)
           # translation issue: tuple indices not supported in list comprehensions
           #indices = [str(i) for i, s in enumerate(val.strs) if s is not None]
-          indices = []  # type: List[int]
+          indices = []  # type: List[str]
           for i, s in enumerate(val.strs):
             if s is not None:
               indices.append(str(i))
@@ -663,7 +663,7 @@ class _WordEvaluator(SimpleWordEvaluator):
 
         elif case(value_e.AssocArray):
           val = cast(value__AssocArray, UP_val)
-          strs = []  # type: List[str]
+          strs = []
           for s in val.d.itervalues():
             strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s))
           new_val = value.MaybeStrArray(strs)
@@ -734,8 +734,6 @@ class _WordEvaluator(SimpleWordEvaluator):
 
   def _EmptyStrOrError(self, val, token=None):
     # type: (value_t, Optional[Token]) -> value_t
-    assert isinstance(val, value_t), val
-
     if val.tag_() == value_e.Undef:
       if self.exec_opts.nounset:
         if token is None:
@@ -929,7 +927,8 @@ class _WordEvaluator(SimpleWordEvaluator):
             p = prompt.replace('\x01', '').replace('\x02', '')
             val = value.Str(p)
           elif op.op_id == Id.VOp0_Q:
-            assert isinstance(val, value__Str)
+            assert val.tag_() == value_e.Str, val
+            val = cast(value__Str, val)
             val = value.Str(string_ops.ShellQuote(val.s))
           else:
             raise NotImplementedError(op.op_id)
@@ -1017,7 +1016,7 @@ class _WordEvaluator(SimpleWordEvaluator):
 
             elif case2(value_e.AssocArray):
               val = cast(value__AssocArray, UP_val)
-              strs = []  # type: List[str]
+              strs = []
               for s in val.d.itervalues():
                 strs.append(replacer.Replace(s, op))
               val = value.MaybeStrArray(strs)
@@ -1355,7 +1354,8 @@ class _WordEvaluator(SimpleWordEvaluator):
     if word.tag_() == word_e.Empty:
       return value.Str('')
 
-    assert isinstance(word, compound_word)
+    assert word.tag_() == word_e.Compound, word
+    word = cast(compound_word, word)
 
     part_vals = []  # type: List[part_value_t]
     for p in word.parts:
@@ -1429,7 +1429,9 @@ class _WordEvaluator(SimpleWordEvaluator):
     """
     if word.tag_() == word_e.Empty:
       return value.Str('')
-    assert isinstance(word, compound_word)
+
+    assert word.tag_() == word_e.Compound, word
+    word = cast(compound_word, word)
 
     if len(word.parts) == 1:
       part0 = word.parts[0]
@@ -1746,10 +1748,13 @@ class _WordEvaluator(SimpleWordEvaluator):
 
       if allow_assign and i == 0 and len(part_vals) == 1:
         val0 = part_vals[0]
-        if isinstance(val0, part_value__String) and not val0.quoted:
-          builtin_id = builtin.ResolveAssign(val0.s)
-          if builtin_id != builtin_e.NONE:
-            return self._EvalAssignBuiltin(builtin_id, val0.s, words)
+        UP_val0 = val0
+        if val0.tag_() == part_value_e.String:
+          val0 = cast(part_value__String, UP_val0)
+          if not val0.quoted:
+            builtin_id = builtin.ResolveAssign(val0.s)
+            if builtin_id != builtin_e.NONE:
+              return self._EvalAssignBuiltin(builtin_id, val0.s, words)
 
       if 0:
         log('')
@@ -1784,7 +1789,9 @@ class _WordEvaluator(SimpleWordEvaluator):
     # type: (List[compound_word]) -> List[str]
     """For arrays and for loops.  They don't allow assignment builtins."""
     cmd_val = self.EvalWordSequence2(words)
-    assert isinstance(cmd_val, (cmd_value__Argv, cmd_value__Assign))
+
+    assert cmd_val.tag_() == cmd_value_e.Argv
+    cmd_val = cast(cmd_value__Argv, cmd_val)
     return cmd_val.argv
 
 

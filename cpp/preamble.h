@@ -54,3 +54,11 @@ Str* repr(void* obj) {
 [[noreturn]] void e_die(Str* s, int span_id) {
   assert(0);
 }
+
+[[noreturn]] void e_die(Str* s, int syntax_asdl::word_part_t* part) {
+  assert(0);
+}
+
+[[noreturn]] void e_die(Str* s, int syntax_asdl::word_t* w) {
+  assert(0);
+}
