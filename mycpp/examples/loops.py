@@ -10,6 +10,35 @@ import mylib
 from mylib import log
 
 
+def ListComp():
+  # type: () -> None
+  log('--- list comprehension')
+
+  x = [1, 2, 3, 4]
+
+  y = [i*5 for i in x[1:]]
+
+  log("len = %d", len(y))
+  log("y[0] = %d", y[0])
+  log("y[-1] = %d", y[-1])
+
+  log('--- list comprehension changing type')
+
+  z = ['[%d]' % i for i in x[1:-1]]
+  if mylib.PYTHON:
+    #log("z = %s", z)
+    pass
+
+  log("len = %d", len(z))
+  log("z[0] = %s", z[0])
+  log("z[-1] = %s", z[-1])
+
+  pairs = [('one', 1), ('two', 2)]
+  first = [s for s, _ in pairs]
+  for s2 in first:
+    log('first = %s', s2)
+
+
 CATS = ['big', 'small', 'hairless']
 
 
@@ -45,26 +74,7 @@ def run_tests():
     index, s = pair
     log('%d %d %s', i, index, s)
 
-  log('--- list comprehension')
-
-  x = [1, 2, 3, 4]
-
-  y = [i*5 for i in x[1:]]
-
-  log("len = %d", len(y))
-  log("y[0] = %d", y[0])
-  log("y[-1] = %d", y[-1])
-
-  log('--- list comprehension changing type')
-
-  z = ['[%d]' % i for i in x[1:-1]]
-  if mylib.PYTHON:
-    #log("z = %s", z)
-    pass
-
-  log("len = %d", len(z))
-  log("z[0] = %s", z[0])
-  log("z[-1] = %s", z[-1])
+  ListComp()
 
 
 def run_benchmarks():

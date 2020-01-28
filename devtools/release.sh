@@ -49,7 +49,11 @@
 #   demo/osh-debug.sh analyze  # see what you ran
 # 
 # - Go to oilshell.org__deploy and "git add release/$VERSION".
-# - Go to oilshell.org repo and do ./deploy.sh site.
+# - Go to oilshell.org repo and do:
+#   ./deploy.sh bump-index-version
+#   make
+#   ./deploy.sh site.
+#   ./deploy.sh bump-release-version
 
 set -o nounset
 set -o pipefail
