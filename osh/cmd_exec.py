@@ -20,7 +20,7 @@ import time
 import sys
 
 from _devbuild.gen.id_tables import REDIR_ARG_TYPES, REDIR_DEFAULT_FD
-from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.syntax_asdl import (
     compound_word,
     command_e, command_t,
@@ -102,8 +102,7 @@ from typing import List, Dict, Tuple, Any, Callable, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.id_kind_asdl import Id_t
   from _devbuild.gen.runtime_asdl import (
-      cmd_value_t, var_flags_t, cell, lvalue_t,
-      builtin_t, redirect_t,
+      cmd_value_t, var_flags_t, cell, lvalue_t, builtin_t, redirect_t,
   )
   from _devbuild.gen.syntax_asdl import (
       Token, source_t, redir_t, expr__Lambda, env_pair, proc_sig__Closed,
@@ -144,13 +143,14 @@ _DISALLOWED = [
 
 def _DisallowErrExit(node):
   # type: (command_t) -> bool
-  if node.tag in _DISALLOWED:
+  tag = node.tag_()
+  if tag in _DISALLOWED:
     return True
 
   UP_node = node # type: command_t
   # '! foo' is a pipeline according to the POSIX shell grammar, but it's NOT
   # disallowed!  It's not more than one command.
-  if UP_node.tag == command_e.Pipeline:
+  if tag == command_e.Pipeline:
     node = cast(command__Pipeline, UP_node)
     return len(node.children) > 1
   return False
@@ -588,28 +588,28 @@ class Executor(object):
       # bad redirect.  Also, pipelines can fail twice.
 
       UP_node = node
-
-      if UP_node.tag == command_e.Simple:
-        node = cast(command__Simple, UP_node)
-        reason = 'command in '
-        span_id = word_.LeftMostSpanForWord(node.words[0])
-      elif node.tag == command_e.ShAssignment:
-        node = cast(command__ShAssignment, UP_node)
-        reason = 'assignment in '
-        span_id = self._SpanIdForShAssignment(node)
-      elif node.tag == command_e.Subshell:
-        node = cast(command__Subshell, UP_node)
-        reason = 'subshell invoked from '
-        span_id = node.spids[0]
-      elif node.tag == command_e.Pipeline:
-        node = cast(command__Pipeline, UP_node)
-        # The whole pipeline can fail separately
-        reason = 'pipeline invoked from '
-        span_id = node.spids[0]  # only one spid
-      else:
-        # NOTE: The fallback of CurrentSpanId() fills this in.
-        reason = ''
-        span_id = runtime.NO_SPID
+      with tagswitch(node) as case:
+        if case(command_e.Simple):
+          node = cast(command__Simple, UP_node)
+          reason = 'command in '
+          span_id = word_.LeftMostSpanForWord(node.words[0])
+        elif case(command_e.ShAssignment):
+          node = cast(command__ShAssignment, UP_node)
+          reason = 'assignment in '
+          span_id = self._SpanIdForShAssignment(node)
+        elif case(command_e.Subshell):
+          node = cast(command__Subshell, UP_node)
+          reason = 'subshell invoked from '
+          span_id = node.spids[0]
+        elif case(command_e.Pipeline):
+          node = cast(command__Pipeline, UP_node)
+          # The whole pipeline can fail separately
+          reason = 'pipeline invoked from '
+          span_id = node.spids[0]  # only one spid
+        else:
+          # NOTE: The fallback of CurrentSpanId() fills this in.
+          reason = ''
+          span_id = runtime.NO_SPID
 
       raise error.ErrExit(
           'Exiting with status %d (%sPID %d)', status, reason, posix.getpid(),
@@ -619,64 +619,65 @@ class Executor(object):
     # type: (redir_t) -> redirect_t
 
     UP_n = n
-    if UP_n.tag == redir_e.Redir:
-      n = cast(redir__Redir, UP_n)
+    with tagswitch(n) as case:
+      if case(redir_e.Redir):
+        n = cast(redir__Redir, UP_n)
 
-      # note: needed for redirect like 'echo foo > x$LINENO'
-      self.mem.SetCurrentSpanId(n.op.span_id)
-      fd = REDIR_DEFAULT_FD[n.op.id] if n.fd == runtime.NO_SPID else n.fd
+        # note: needed for redirect like 'echo foo > x$LINENO'
+        self.mem.SetCurrentSpanId(n.op.span_id)
+        fd = REDIR_DEFAULT_FD[n.op.id] if n.fd == runtime.NO_SPID else n.fd
 
-      redir_type = REDIR_ARG_TYPES[n.op.id]  # could be static in the LST?
+        redir_type = REDIR_ARG_TYPES[n.op.id]  # could be static in the LST?
 
-      if redir_type == redir_arg_type_e.Path:
-        # NOTES
-        # - no globbing.  You can write to a file called '*.py'.
-        # - set -o strict-array prevents joining by spaces
-        val = self.word_ev.EvalWordToString(n.arg_word)
-        filename = val.s
-        if not filename:
-          # Whether this is fatal depends on errexit.
-          raise error.RedirectEval(
-              "Redirect filename can't be empty", word=n.arg_word)
+        if redir_type == redir_arg_type_e.Path:
+          # NOTES
+          # - no globbing.  You can write to a file called '*.py'.
+          # - set -o strict-array prevents joining by spaces
+          val = self.word_ev.EvalWordToString(n.arg_word)
+          filename = val.s
+          if not filename:
+            # Whether this is fatal depends on errexit.
+            raise error.RedirectEval(
+                "Redirect filename can't be empty", word=n.arg_word)
 
-        return redirect.Path(n.op.id, fd, filename, n.op.span_id)
+          return redirect.Path(n.op.id, fd, filename, n.op.span_id)
 
-      elif redir_type == redir_arg_type_e.Desc:  # e.g. 1>&2
-        val = self.word_ev.EvalWordToString(n.arg_word)
-        t = val.s
-        if not t:
-          raise error.RedirectEval(
-              "Redirect descriptor can't be empty", word=n.arg_word)
-          return None
-        try:
-          target_fd = int(t)
-        except ValueError:
-          raise error.RedirectEval(
-              "Redirect descriptor should look like an integer, got %s", val,
-              word=n.arg_word)
-          return None
+        elif redir_type == redir_arg_type_e.Desc:  # e.g. 1>&2
+          val = self.word_ev.EvalWordToString(n.arg_word)
+          t = val.s
+          if not t:
+            raise error.RedirectEval(
+                "Redirect descriptor can't be empty", word=n.arg_word)
+            return None
+          try:
+            target_fd = int(t)
+          except ValueError:
+            raise error.RedirectEval(
+                "Redirect descriptor should look like an integer, got %s", val,
+                word=n.arg_word)
+            return None
 
-        return redirect.FileDesc(n.op.id, fd, target_fd, n.op.span_id)
+          return redirect.FileDesc(n.op.id, fd, target_fd, n.op.span_id)
 
-      elif redir_type == redir_arg_type_e.Here:  # here word
-        val = self.word_ev.EvalWordToString(n.arg_word)
+        elif redir_type == redir_arg_type_e.Here:  # here word
+          val = self.word_ev.EvalWordToString(n.arg_word)
+          assert val.tag == value_e.Str, val
+          # NOTE: bash and mksh both add \n
+          return redirect.HereDoc(fd, val.s + '\n', n.op.span_id)
+        else:
+          raise AssertionError('Unknown redirect op')
+
+      elif case(redir_e.HereDoc):
+        n = cast(redir__HereDoc, UP_n)
+        fd = REDIR_DEFAULT_FD[n.op.id] if n.fd == runtime.NO_SPID else n.fd
+        # HACK: Wrap it in a word to evaluate.
+        w = compound_word(n.stdin_parts)
+        val = self.word_ev.EvalWordToString(w)
         assert val.tag == value_e.Str, val
-        # NOTE: bash and mksh both add \n
-        return redirect.HereDoc(fd, val.s + '\n', n.op.span_id)
+        return redirect.HereDoc(fd, val.s, n.op.span_id)
+
       else:
-        raise AssertionError('Unknown redirect op')
-
-    elif UP_n.tag == redir_e.HereDoc:
-      n = cast(redir__HereDoc, UP_n)
-      fd = REDIR_DEFAULT_FD[n.op.id] if n.fd == runtime.NO_SPID else n.fd
-      # HACK: Wrap it in a word to evaluate.
-      w = compound_word(n.stdin_parts)
-      val = self.word_ev.EvalWordToString(w)
-      assert val.tag == value_e.Str, val
-      return redirect.HereDoc(fd, val.s, n.op.span_id)
-
-    else:
-      raise AssertionError('Unknown redirect type')
+        raise AssertionError('Unknown redirect type')
 
   def _EvalRedirects(self, node):
     # type: (command_t) -> List[redirect_t]
@@ -739,9 +740,9 @@ class Executor(object):
         node = cast(command__Case, UP_node)
         redirects = node.redirects
       else:
-        raise AssertionError
+        raise AssertionError()
 
-    result = []
+    result = []  # type: List[redirect_t]
     for redir in redirects:
       result.append(self._EvalRedirect(redir))
     return result
@@ -753,7 +754,7 @@ class Executor(object):
     """
 
     UP_node = node
-    if UP_node.tag == command_e.ControlFlow:
+    if UP_node.tag_() == command_e.ControlFlow:
       node = cast(command__ControlFlow, UP_node)
       # Pipeline or subshells with control flow are invalid, e.g.:
       # - break | less
@@ -781,15 +782,17 @@ class Executor(object):
     """Private interface to run a simple command (including assignment)."""
 
     UP_cmd_val = cmd_val
-    if UP_cmd_val.tag == cmd_value_e.Argv:
-      cmd_val = cast(cmd_value__Argv, UP_cmd_val)
-      return self.RunSimpleCommand(cmd_val, fork_external)
+    with tagswitch(UP_cmd_val) as case:
+      if case(cmd_value_e.Argv):
+        cmd_val = cast(cmd_value__Argv, UP_cmd_val)
+        return self.RunSimpleCommand(cmd_val, fork_external)
 
-    elif UP_cmd_val.tag == cmd_value_e.Assign:
-      cmd_val = cast(cmd_value__Assign, UP_cmd_val)
-      return self._RunAssignBuiltin(cmd_val)
-    else:
-      raise AssertionError
+      elif case(cmd_value_e.Assign):
+        cmd_val = cast(cmd_value__Assign, UP_cmd_val)
+        return self._RunAssignBuiltin(cmd_val)
+
+      else:
+        raise AssertionError()
 
   def RunSimpleCommand(self, cmd_val, fork_external, funcs=True):
     # type: (cmd_value__Argv, bool, bool) -> int
@@ -932,7 +935,7 @@ class Executor(object):
     #  makes bookkeeping somewhat simpler."
     UP_node = node
 
-    if UP_node.tag == command_e.Pipeline:
+    if UP_node.tag_() == command_e.Pipeline:
       node = cast(command__Pipeline, UP_node)
       pi = process.Pipeline()
       for child in node.children:
@@ -1008,7 +1011,7 @@ class Executor(object):
       cmd_val = self.word_ev.EvalWordSequence2(words, allow_assign=True)
 
       UP_cmd_val = cmd_val
-      if UP_cmd_val.tag == cmd_value_e.Argv:
+      if UP_cmd_val.tag_() == cmd_value_e.Argv:
         cmd_val = cast(cmd_value__Argv, UP_cmd_val)
         argv = cmd_val.argv
         cmd_val.block = node.block  # may be None
@@ -1131,7 +1134,7 @@ class Executor(object):
         self.mem.SetCurrentSpanId(node.lhs[0].name.span_id)  # point to var name
 
         # Note: there's only one LHS
-        vd_lval = lvalue.Named(node.lhs[0].name.val)
+        vd_lval = lvalue.Named(node.lhs[0].name.val)  # type: lvalue_t
         py_val = self.expr_ev.EvalExpr(node.rhs)
         val = _PyObjectToVal(py_val)
 
@@ -1143,8 +1146,8 @@ class Executor(object):
         self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to var
 
         py_val = self.expr_ev.EvalExpr(node.rhs)
-        vd_lvals = []
-        vals = []
+        vd_lvals = []  # type: List[lvalue_t]
+        vals = []  # type: List[value_t]
         if len(node.lhs) == 1:  # TODO: optimize this common case (but measure)
           vd_lval = lvalue.Named(node.lhs[0].name.val)
           val = _PyObjectToVal(py_val)
@@ -1242,7 +1245,7 @@ class Executor(object):
                           keyword_id=node.keyword.id)
 
         else:
-          raise NotImplementedError(node.op)
+          raise NotImplementedError(Id_str(node.op.id))
 
       status = 0  # TODO: what should status be?
 
@@ -1704,7 +1707,7 @@ class Executor(object):
       libc.print_time(real, user, sys_)
 
     else:
-      raise NotImplementedError(node.__class__.__name__)
+      raise NotImplementedError(node.tag_())
 
     return status, check_errexit
 
@@ -1741,7 +1744,7 @@ class Executor(object):
 
     # These nodes have no redirects.
     # TODO: Speed this up with some kind of bit mask?
-    if node.tag in (
+    if node.tag_() in (
         command_e.NoOp, command_e.ControlFlow, command_e.Pipeline,
         command_e.AndOr, command_e.CommandList, command_e.Sentence,
         command_e.TimeBlock, command_e.ShFunction, command_e.VarDecl,
@@ -1886,7 +1889,7 @@ class Executor(object):
     _ = p.Start()
     #log('Command sub started %d', pid)
 
-    chunks = []
+    chunks = []  # type: List[str]
     posix.close(w)  # not going to write
     while True:
       byte_str = posix.read(r, 4096)
@@ -1958,7 +1961,7 @@ class Executor(object):
       redir = process.StdinFromPipe(r, w)
 
     else:
-      raise AssertionError
+      raise AssertionError()
 
     p.AddStateChange(redir)
 
@@ -1971,7 +1974,7 @@ class Executor(object):
     elif op_id == Id.Left_ProcSubOut:
       posix.close(r)
     else:
-      raise AssertionError
+      raise AssertionError()
 
     # NOTE: Like bash, we never actually wait on it!
     # TODO: At least set $! ?
@@ -1984,7 +1987,7 @@ class Executor(object):
       return '/dev/fd/%d' % w
 
     else:
-      raise AssertionError
+      raise AssertionError()
 
   def _RunProc(self, func_node, argv):
     # type: (command__ShFunction, List[str]) -> int
@@ -2019,9 +2022,9 @@ class Executor(object):
     """
     node = proc.node
     sig = node.sig
-    if sig.tag == proc_sig_e.Closed:
+    if sig.tag_() == proc_sig_e.Closed:
       # We're binding named params.  User should use @rest.  No 'shift'.
-      proc_argv = [] # type: List[str]
+      proc_argv = []  # type: List[str]
     else:
       proc_argv = argv
 
@@ -2151,7 +2154,7 @@ class Executor(object):
               'func %r got unexpected named arguments: %s' %
               (node.name.val, ', '.join(kwargs.keys())))
 
-      return_val = None
+      return_val = None  # type: int
       try:
         self._Execute(node.body)
       except _ControlFlow as e:
@@ -2191,7 +2194,7 @@ class Executor(object):
     foo = {a:1}
 
     """
-    status = None
+    status = None  # type: int
     self.mem.PushTemp()  # So variables don't conflict
     try:
       self._Execute(block)  # can raise FatalRuntimeError, etc.

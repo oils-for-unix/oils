@@ -1540,7 +1540,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             class_name == 'WordParser' and func_name == '_ParseVarExpr' or
             class_name == '_WordEvaluator' and 
               func_name in ('EvalWordSequence2', '_EvalWordToParts',
-                            '_EmptyStrOrError', '_EvalWordPart', 'EvalWordToString')
+                            '_EmptyStrOrError', '_EvalWordPart', 'EvalWordToString') or
+            class_name == 'Executor' and func_name == '_Execute'
           ):
 
           default_val = o.arguments[-1].initializer
@@ -1878,17 +1879,21 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 'place_expr_e', 'place_expr', 
                 'word_part_e', 'word_part', 
                 'word_e', 'word',
-
-                'lvalue_e', 'lvalue',
-                'value_e', 'value',
-                'part_value_e', 'part_value',
-                'cmd_value_e', 'cmd_value',
+                'redir_e', 'redir',
+                'proc_sig_e', 'proc_sig',
 
                 'glob_part_e', 'glob_part',
 
                 're_e', 're',
                 're_repeat_e', 're_repeat',
                 'class_literal_term_e', 'class_literal_term',
+
+                # runtime_asdl
+                'lvalue_e', 'lvalue',
+                'value_e', 'value',
+                'part_value_e', 'part_value',
+                'cmd_value_e', 'cmd_value',
+                'redirect_e', 'redirect',
                 ):
                 is_namespace = True
 
