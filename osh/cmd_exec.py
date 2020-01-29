@@ -982,554 +982,594 @@ class Executor(object):
     check_errexit = False  # for errexit
 
     UP_node = node
+    with tagswitch(node) as case:
+      if case(command_e.Simple):
+        node = cast(command__Simple, UP_node)
+        check_errexit = True
 
-    if UP_node.tag == command_e.Simple:
-      node = cast(command__Simple, UP_node)
-      check_errexit = True
+        # Find span_id for a basic implementation of $LINENO, e.g.
+        # PS4='+$SOURCE_NAME:$LINENO:'
+        # Note that for '> $LINENO' the span_id is set in _EvalRedirect.
+        # TODO: Can we avoid setting this so many times?  See issue #567.
+        if len(node.words):
+          span_id = word_.LeftMostSpanForWord(node.words[0])
+          self.mem.SetCurrentSpanId(span_id)
 
-      # Find span_id for a basic implementation of $LINENO, e.g.
-      # PS4='+$SOURCE_NAME:$LINENO:'
-      # Note that for '> $LINENO' the span_id is set in _EvalRedirect.
-      # TODO: Can we avoid setting this so many times?  See issue #567.
-      if len(node.words):
-        span_id = word_.LeftMostSpanForWord(node.words[0])
-        self.mem.SetCurrentSpanId(span_id)
+        # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
+        # redirected here, which screws up logging.  For example, 'echo hi
+        # >/dev/null 2>&1'.  We want to evaluate argv and log it BEFORE applying
+        # redirects.
 
-      # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
-      # redirected here, which screws up logging.  For example, 'echo hi
-      # >/dev/null 2>&1'.  We want to evaluate argv and log it BEFORE applying
-      # redirects.
+        # Another problem:
+        # - tracing can be called concurrently from multiple processes, leading
+        # to overlap.  Maybe have a mode that creates a file per process.
+        # xtrace-proc
+        # - line numbers for every command would be very nice.  But then you have
+        # to print the filename too.
 
-      # Another problem:
-      # - tracing can be called concurrently from multiple processes, leading
-      # to overlap.  Maybe have a mode that creates a file per process.
-      # xtrace-proc
-      # - line numbers for every command would be very nice.  But then you have
-      # to print the filename too.
+        words = braces.BraceExpandWords(node.words)
+        cmd_val = self.word_ev.EvalWordSequence2(words, allow_assign=True)
 
-      words = braces.BraceExpandWords(node.words)
-      cmd_val = self.word_ev.EvalWordSequence2(words, allow_assign=True)
-
-      UP_cmd_val = cmd_val
-      if UP_cmd_val.tag_() == cmd_value_e.Argv:
-        cmd_val = cast(cmd_value__Argv, UP_cmd_val)
-        argv = cmd_val.argv
-        cmd_val.block = node.block  # may be None
-      else:
-        argv = ['TODO: trace string for assignment']
-        if node.block:
-          assert node.block.tag_() == command_e.BraceGroup, node
-          block = cast(command__BraceGroup, node.block)
-          e_die("ShAssignment builtins don't accept blocks",
-                span_id=block.spids[0])
-
-      # This comes before evaluating env, in case there are problems evaluating
-      # it.  We could trace the env separately?  Also trace unevaluated code
-      # with set-o verbose?
-      self.tracer.OnSimpleCommand(argv)
-
-      # NOTE: RunSimpleCommand never returns when fork_external=False!
-      if len(node.more_env):  # I think this guard is necessary?
-        is_other_special = False  # TODO: There are other special builtins too!
-        if cmd_val.tag == cmd_value_e.Assign or is_other_special:
-          # Special builtins have their temp env persisted.
-          self._EvalTempEnv(node.more_env, ())
-          status = self._RunSimpleCommand(cmd_val, fork_external)
+        UP_cmd_val = cmd_val
+        if UP_cmd_val.tag_() == cmd_value_e.Argv:
+          cmd_val = cast(cmd_value__Argv, UP_cmd_val)
+          argv = cmd_val.argv
+          cmd_val.block = node.block  # may be None
         else:
+          argv = ['TODO: trace string for assignment']
+          if node.block:
+            assert node.block.tag_() == command_e.BraceGroup, node
+            block = cast(command__BraceGroup, node.block)
+            e_die("ShAssignment builtins don't accept blocks",
+                  span_id=block.spids[0])
+
+        # This comes before evaluating env, in case there are problems evaluating
+        # it.  We could trace the env separately?  Also trace unevaluated code
+        # with set-o verbose?
+        self.tracer.OnSimpleCommand(argv)
+
+        # NOTE: RunSimpleCommand never returns when fork_external=False!
+        if len(node.more_env):  # I think this guard is necessary?
+          is_other_special = False  # TODO: There are other special builtins too!
+          if cmd_val.tag == cmd_value_e.Assign or is_other_special:
+            # Special builtins have their temp env persisted.
+            self._EvalTempEnv(node.more_env, ())
+            status = self._RunSimpleCommand(cmd_val, fork_external)
+          else:
+            self.mem.PushTemp()
+            try:
+              self._EvalTempEnv(node.more_env, (var_flags_e.Exported,))
+              status = self._RunSimpleCommand(cmd_val, fork_external)
+            finally:
+              self.mem.PopTemp()
+        else:
+          status = self._RunSimpleCommand(cmd_val, fork_external)
+
+      elif case(command_e.ExpandedAlias):
+        node = cast(command__ExpandedAlias, UP_node)
+        # Expanded aliases need redirects and env bindings from the calling
+        # context, as well as redirects in the expansion!
+
+        # TODO: SetCurrentSpanId to OUTSIDE?  Don't bother with stuff inside
+        # expansion, since aliases are discouarged.
+
+        if len(node.more_env):
           self.mem.PushTemp()
           try:
             self._EvalTempEnv(node.more_env, (var_flags_e.Exported,))
-            status = self._RunSimpleCommand(cmd_val, fork_external)
+            status = self._Execute(node.child)
           finally:
             self.mem.PopTemp()
-      else:
-        status = self._RunSimpleCommand(cmd_val, fork_external)
-
-    elif UP_node.tag == command_e.ExpandedAlias:
-      node = cast(command__ExpandedAlias, UP_node)
-      # Expanded aliases need redirects and env bindings from the calling
-      # context, as well as redirects in the expansion!
-
-      # TODO: SetCurrentSpanId to OUTSIDE?  Don't bother with stuff inside
-      # expansion, since aliases are discouarged.
-
-      if len(node.more_env):
-        self.mem.PushTemp()
-        try:
-          self._EvalTempEnv(node.more_env, (var_flags_e.Exported,))
+        else:
           status = self._Execute(node.child)
-        finally:
-          self.mem.PopTemp()
-      else:
-        status = self._Execute(node.child)
 
-    elif UP_node.tag == command_e.Sentence:
-      node = cast(command__Sentence, UP_node)
-      # Don't check_errexit since this isn't a real node!
-      if node.terminator.id == Id.Op_Semi:
-        status = self._Execute(node.child)
-      else:
-        status = self._RunJobInBackground(node.child)
-
-    elif UP_node.tag == command_e.Pipeline:
-      node = cast(command__Pipeline, UP_node)
-      check_errexit = True
-      if len(node.stderr_indices):
-        e_die("|& isn't supported", span_id=node.spids[0])
-
-      if node.negated:
-        self._PushErrExit(node.spids[0])  # ! spid
-        try:
-          status2 = self._RunPipeline(node)
-        finally:
-          self._PopErrExit()
-
-        # errexit is disabled for !.
-        check_errexit = False
-        status = 1 if status2 == 0 else 0
-      else:
-        status = self._RunPipeline(node)
-
-    elif UP_node.tag == command_e.Subshell:
-      node = cast(command__Subshell, UP_node)
-      check_errexit = True
-      # This makes sure we don't waste a process if we'd launch one anyway.
-      p = self._MakeProcess(node.command_list)
-      status = p.Run(self.waiter)
-
-    elif UP_node.tag == command_e.DBracket:
-      node = cast(command__DBracket, UP_node)
-      span_id = node.spids[0]
-      self.mem.SetCurrentSpanId(span_id)
-
-      check_errexit = True
-      result = self.bool_ev.Eval(node.expr)
-      status = 0 if result else 1
-
-    elif UP_node.tag == command_e.DParen:
-      node = cast(command__DParen, UP_node)
-      span_id = node.spids[0]
-      self.mem.SetCurrentSpanId(span_id)
-
-      check_errexit = True
-      i = self.arith_ev.EvalToInt(node.child)
-      status = 1 if i == 0 else 0
-
-    elif UP_node.tag == command_e.OilCondition:
-      node = cast(command__OilCondition, UP_node)
-      # TODO: Do we need location information?  Yes, probably for execptions in
-      # Oil expressions.
-      #span_id = node.spids[0]
-      #self.mem.SetCurrentSpanId(span_id)
-
-      obj = self.expr_ev.EvalExpr(node.e)
-      status = 0 if obj else 1
-
-    # TODO: Change x = 1 + 2*3 into its own Decl node.
-    elif UP_node.tag == command_e.VarDecl:
-      # TODO: This should be constant, equivalent to const x = 'foo'
-
-      node = cast(command__VarDecl, UP_node)
-      if node.keyword is None or node.keyword.id == Id.KW_Const:
-        self.mem.SetCurrentSpanId(node.lhs[0].name.span_id)  # point to var name
-
-        # Note: there's only one LHS
-        vd_lval = lvalue.Named(node.lhs[0].name.val)  # type: lvalue_t
-        py_val = self.expr_ev.EvalExpr(node.rhs)
-        val = _PyObjectToVal(py_val)
-
-        self.mem.SetVar(vd_lval, val, (var_flags_e.ReadOnly,),
-                        scope_e.LocalOnly, keyword_id=None)
-        status = 0
-
-      else:
-        self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to var
-
-        py_val = self.expr_ev.EvalExpr(node.rhs)
-        vd_lvals = []  # type: List[lvalue_t]
-        vals = []  # type: List[value_t]
-        if len(node.lhs) == 1:  # TODO: optimize this common case (but measure)
-          vd_lval = lvalue.Named(node.lhs[0].name.val)
-          val = _PyObjectToVal(py_val)
-
-          vd_lvals.append(vd_lval)
-          vals.append(val)
+      elif case(command_e.Sentence):
+        node = cast(command__Sentence, UP_node)
+        # Don't check_errexit since this isn't a real node!
+        if node.terminator.id == Id.Op_Semi:
+          status = self._Execute(node.child)
         else:
-          it = py_val.__iter__()
-          for vd_lhs in node.lhs:
-            vd_lval = lvalue.Named(vd_lhs.name.val)
-            val = _PyObjectToVal(it.next())
+          status = self._RunJobInBackground(node.child)
 
-            vd_lvals.append(vd_lval)
-            vals.append(val)
+      elif case(command_e.Pipeline):
+        node = cast(command__Pipeline, UP_node)
+        check_errexit = True
+        if len(node.stderr_indices):
+          e_die("|& isn't supported", span_id=node.spids[0])
 
-        for vd_lval, val in zip(vd_lvals, vals):
-          self.mem.SetVar(
-              vd_lval, val, (), scope_e.LocalOnly, keyword_id=node.keyword.id)
-
-        status = 0
-
-    elif UP_node.tag == command_e.PlaceMutation:
-
-      if mylib.PYTHON:  # DISABLED because it relies on CPytho now
-        node = cast(command__PlaceMutation, UP_node)
-        self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to setvar/set
-
-        with switch(node.keyword.id) as case:
-          if case(Id.KW_SetVar):
-            lookup_mode = scope_e.LocalOrGlobal
-          elif case(Id.KW_Set):
-            lookup_mode = scope_e.LocalOnly
-          elif case(Id.KW_SetGlobal):
-            lookup_mode = scope_e.GlobalOnly
-          elif case(Id.KW_SetRef):
-            # So this can modify two levels up?
-            lookup_mode = scope_e.Dynamic
-
-            # TODO: setref upvalue = 'returned'
-            e_die("setref isn't implemented")
-          else:
-            raise AssertionError(node.keyword.id)
-
-        if node.op.id == Id.Arith_Equal:
-          py_val = self.expr_ev.EvalExpr(node.rhs)
-
-          lvals_ = []  # type: List[lvalue_t]
-          py_vals = []
-          if len(node.lhs) == 1:  # TODO: Optimize this common case (but measure)
-            # See ShAssignment
-            # EvalLhs
-            # EvalLhsAndLookup for +=
-            lval_ = self.expr_ev.EvalPlaceExpr(node.lhs[0]) # type: lvalue_t
-
-            lvals_.append(lval_)
-            py_vals.append(py_val)
-          else:
-            it = py_val.__iter__()
-            for pm_lhs in node.lhs:
-              lval_ = self.expr_ev.EvalPlaceExpr(pm_lhs)
-              py_val = it.next()
-
-              lvals_.append(lval_)
-              py_vals.append(py_val)
-
-          # TODO: Resolve the asymmetry betwen Named vs ObjIndex,ObjAttr.
-          for UP_lval_, py_val in zip(lvals_, py_vals):
-            tag = UP_lval_.tag_()
-            if tag == lvalue_e.ObjIndex:
-              lval_ = cast(lvalue__ObjIndex, UP_lval_)
-              lval_.obj[lval_.index] = py_val
-            elif tag == lvalue_e.ObjAttr:
-              lval_ = cast(lvalue__ObjAttr, UP_lval_)
-              setattr(lval_.obj, lval_.attr, py_val)
-            else:
-              val = _PyObjectToVal(py_val)
-              # top level variable
-              self.mem.SetVar(UP_lval_, val, (), lookup_mode,
-                              keyword_id=node.keyword.id)
-
-        # TODO: Other augmented assignments
-        elif node.op.id == Id.Arith_PlusEqual:
-          # NOTE: x, y += 1 in Python is a SYNTAX error, but it's checked in the
-          # transformer and not the grammar.  We should do that too.
-
-          place_expr = cast(place_expr__Var, node.lhs[0])
-          pe_lval = lvalue.Named(place_expr.name.val)
-          py_val = self.expr_ev.EvalExpr(node.rhs)
-
-          new_py_val = self.expr_ev.EvalPlusEquals(pe_lval, py_val)
-          # This should only be an int or float, so we don't need the logic above
-          val = value.Obj(new_py_val)
-
-          self.mem.SetVar(pe_lval, val, (), lookup_mode,
-                          keyword_id=node.keyword.id)
-
-        else:
-          raise NotImplementedError(Id_str(node.op.id))
-
-      status = 0  # TODO: what should status be?
-
-    elif UP_node.tag == command_e.ShAssignment:  # Only unqualified assignment
-      node = cast(command__ShAssignment, UP_node)
-
-      lookup_mode = scope_e.Dynamic
-      for pair in node.pairs:
-        # Use the spid of each pair.
-        self.mem.SetCurrentSpanId(pair.spids[0])
-
-        if pair.op == assign_op_e.PlusEqual:
-          assert pair.rhs, pair.rhs  # I don't think a+= is valid?
-          val = self.word_ev.EvalRhsWord(pair.rhs)
-          old_val, lval = expr_eval.EvalLhsAndLookup(pair.lhs, self.arith_ev,
-                                                     self.mem, self.exec_opts,
-                                                     lookup_mode=lookup_mode)
-          UP_old_val = old_val
-          UP_val = val
-          sig = (old_val.tag, val.tag)
-          if sig == (value_e.Undef, value_e.Str):
-            pass  # val is RHS
-          elif sig == (value_e.Undef, value_e.MaybeStrArray):
-            pass  # val is RHS
-          elif sig == (value_e.Str, value_e.Str):
-            old_val = cast(value__Str, old_val)
-            val = cast(value__Str, val)
-            val = value.Str(old_val.s + val.s)
-          elif sig == (value_e.Str, value_e.MaybeStrArray):
-            e_die("Can't append array to string")
-          elif sig == (value_e.MaybeStrArray, value_e.Str):
-            e_die("Can't append string to array")
-          elif sig == (value_e.MaybeStrArray, value_e.MaybeStrArray):
-            old_val = cast(value__MaybeStrArray, old_val)
-            val = cast(value__MaybeStrArray, val)
-            val = value.MaybeStrArray(old_val.strs + val.strs)
-
-        else:  # plain assignment
-          spid = pair.spids[0]  # Source location for tracing
-          lval = expr_eval.EvalLhs(pair.lhs, self.arith_ev, self.mem, spid,
-                                   lookup_mode)
-
-          # RHS can be a string or array.
-          if pair.rhs:
-            val = self.word_ev.EvalRhsWord(pair.rhs)
-            assert isinstance(val, value_t), val
-
-          else:  # e.g. 'readonly x' or 'local x'
-            val = None
-
-        # NOTE: In bash and mksh, declare -a myarray makes an empty cell with
-        # Undef value, but the 'array' attribute.
-
-        #log('setting %s to %s with flags %s', lval, val, flags)
-        flags = ()
-        self.mem.SetVar(lval, val, flags, lookup_mode)
-        self.tracer.OnShAssignment(lval, pair.op, val, flags, lookup_mode)
-
-      # PATCH to be compatible with existing shells: If the assignment had a
-      # command sub like:
-      #
-      # s=$(echo one; false)
-      #
-      # then its status will be in mem.last_status, and we can check it here.
-      # If there was NOT a command sub in the assignment, then we don't want to
-      # check it.
-
-      # Only do this if there was a command sub?  How?  Look at node?
-      # Set a flag in mem?   self.mem.last_status or
-      if self.check_command_sub_status:
-        last_status = self.mem.LastStatus()
-        self._CheckStatus(last_status, node)
-        status = last_status  # A global assignment shouldn't clear $?.
-      else:
-        status = 0
-
-    elif UP_node.tag == command_e.Return:
-      node = cast(command__Return, UP_node)
-      val = self.expr_ev.EvalExpr(node.e)
-      raise _ControlFlow(node.keyword, val)
-
-    elif UP_node.tag == command_e.Expr:
-      node = cast(command__Expr, UP_node)
-
-      self.mem.SetCurrentSpanId(node.keyword.span_id)
-      obj = self.expr_ev.EvalExpr(node.e)
-
-      if node.keyword.id == Id.Lit_Equals:
-        # NOTE: It would be nice to unify this with 'repr', but there isn't a
-        # good way to do it with the value/PyObject split.
-        class_name = obj.__class__.__name__
-        oil_name = OIL_TYPE_NAMES.get(class_name, class_name)
-        print('(%s)   %s' % (oil_name, repr(obj)))
-
-      # TODO: What about exceptions?  They just throw?
-      status = 0
-
-    elif UP_node.tag == command_e.ControlFlow:
-      node = cast(command__ControlFlow, UP_node)
-      tok = node.token
-
-      if node.arg_word:  # Evaluate the argument
-        val = self.word_ev.EvalWordToString(node.arg_word)
-        assert val.tag == value_e.Str
-        try:
-          arg = int(val.s)  # They all take integers
-        except ValueError:
-          e_die('%r expected a number, got %r',
-              node.token.val, val.s, word=node.arg_word)
-      else:
-        if tok.id in (Id.ControlFlow_Exit, Id.ControlFlow_Return):
-          arg = self.mem.LastStatus()
-        else:
-          arg = 0  # break 0 levels, nothing for continue
-
-      # NOTE: A top-level 'return' is OK, unlike in bash.  If you can return
-      # from a sourced script, it makes sense to return from a main script.
-      ok = True
-      if (tok.id in (Id.ControlFlow_Break, Id.ControlFlow_Continue) and
-          self.loop_level == 0):
-        ok = False
-
-      if ok:
-        if tok.id == Id.ControlFlow_Exit:
-          raise util.UserExit(arg)  # handled differently than other control flow
-        else:
-          raise _ControlFlow(tok, arg)
-      else:
-        msg = 'Invalid control flow at top level'
-        if self.exec_opts.strict_control_flow:
-          e_die(msg, token=tok)
-        else:
-          # Only print warnings, never fatal.
-          # Bash oddly only exits 1 for 'return', but no other shell does.
-          self.errfmt.Print(msg, prefix='warning: ', span_id=tok.span_id)
-          status = 0
-
-    # The only difference between these next two is that CommandList
-    # has no redirects.  We already took care of that above.  But we
-    # need to split them up for mycpp.
-    elif UP_node.tag == command_e.CommandList:
-      node = cast(command__CommandList, UP_node)
-      status = self._ExecuteList(node.children)
-      check_errexit = False
-
-    elif UP_node.tag == command_e.BraceGroup:
-      node = cast(command__BraceGroup, UP_node)
-      status = self._ExecuteList(node.children)
-      check_errexit = False
-
-    elif UP_node.tag == command_e.AndOr:
-      node = cast(command__AndOr, UP_node)
-      # NOTE: && and || have EQUAL precedence in command mode.  See case #13
-      # in dbracket.test.sh.
-
-      left = node.children[0]
-
-      # Suppress failure for every child except the last one.
-      self._PushErrExit(node.spids[0])
-      try:
-        status = self._Execute(left)
-      finally:
-        self._PopErrExit()
-
-      i = 1
-      n = len(node.children)
-      while i < n:
-        #log('i %d status %d', i, status)
-        child = node.children[i]
-        op_id = node.ops[i-1]
-
-        #log('child %s op_id %s', child, op_id)
-
-        if op_id == Id.Op_DPipe and status == 0:
-          i += 1
-          continue  # short circuit
-
-        elif op_id == Id.Op_DAmp and status != 0:
-          i += 1
-          continue  # short circuit
-
-        if i == n - 1:  # errexit handled differently for last child
-          status = self._Execute(child)
-          check_errexit = True
-        else:
-          self._PushErrExit(node.spids[i])  # blame the right && or ||
+        if node.negated:
+          self._PushErrExit(node.spids[0])  # ! spid
           try:
-            status = self._Execute(child)
+            status2 = self._RunPipeline(node)
           finally:
             self._PopErrExit()
 
-        i += 1
+          # errexit is disabled for !.
+          check_errexit = False
+          status = 1 if status2 == 0 else 0
+        else:
+          status = self._RunPipeline(node)
 
-    elif UP_node.tag == command_e.WhileUntil:
-      node = cast(command__WhileUntil, UP_node)
-      status = 0
+      elif case(command_e.Subshell):
+        node = cast(command__Subshell, UP_node)
+        check_errexit = True
+        # This makes sure we don't waste a process if we'd launch one anyway.
+        p = self._MakeProcess(node.command_list)
+        status = p.Run(self.waiter)
 
-      self.loop_level += 1
-      try:
-        while True:
+      elif case(command_e.DBracket):
+        node = cast(command__DBracket, UP_node)
+        span_id = node.spids[0]
+        self.mem.SetCurrentSpanId(span_id)
+
+        check_errexit = True
+        result = self.bool_ev.Eval(node.expr)
+        status = 0 if result else 1
+
+      elif case(command_e.DParen):
+        node = cast(command__DParen, UP_node)
+        span_id = node.spids[0]
+        self.mem.SetCurrentSpanId(span_id)
+
+        check_errexit = True
+        i = self.arith_ev.EvalToInt(node.child)
+        status = 1 if i == 0 else 0
+
+      elif case(command_e.OilCondition):
+        node = cast(command__OilCondition, UP_node)
+        # TODO: Do we need location information?  Yes, probably for execptions in
+        # Oil expressions.
+        #span_id = node.spids[0]
+        #self.mem.SetCurrentSpanId(span_id)
+
+        obj = self.expr_ev.EvalExpr(node.e)
+        status = 0 if obj else 1
+
+      # TODO: Change x = 1 + 2*3 into its own Decl node.
+      elif case(command_e.VarDecl):
+        # TODO: This should be constant, equivalent to const x = 'foo'
+
+        node = cast(command__VarDecl, UP_node)
+        if node.keyword is None or node.keyword.id == Id.KW_Const:
+          self.mem.SetCurrentSpanId(node.lhs[0].name.span_id)  # point to var name
+
+          # Note: there's only one LHS
+          vd_lval = lvalue.Named(node.lhs[0].name.val)  # type: lvalue_t
+          py_val = self.expr_ev.EvalExpr(node.rhs)
+          val = _PyObjectToVal(py_val)
+
+          self.mem.SetVar(vd_lval, val, (var_flags_e.ReadOnly,),
+                          scope_e.LocalOnly, keyword_id=None)
+          status = 0
+
+        else:
+          self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to var
+
+          py_val = self.expr_ev.EvalExpr(node.rhs)
+          vd_lvals = []  # type: List[lvalue_t]
+          vals = []  # type: List[value_t]
+          if len(node.lhs) == 1:  # TODO: optimize this common case (but measure)
+            vd_lval = lvalue.Named(node.lhs[0].name.val)
+            val = _PyObjectToVal(py_val)
+
+            vd_lvals.append(vd_lval)
+            vals.append(val)
+          else:
+            it = py_val.__iter__()
+            for vd_lhs in node.lhs:
+              vd_lval = lvalue.Named(vd_lhs.name.val)
+              val = _PyObjectToVal(it.next())
+
+              vd_lvals.append(vd_lval)
+              vals.append(val)
+
+          for vd_lval, val in zip(vd_lvals, vals):
+            self.mem.SetVar(
+                vd_lval, val, (), scope_e.LocalOnly, keyword_id=node.keyword.id)
+
+          status = 0
+
+      elif case(command_e.PlaceMutation):
+
+        if mylib.PYTHON:  # DISABLED because it relies on CPytho now
+          node = cast(command__PlaceMutation, UP_node)
+          self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to setvar/set
+
+          with switch(node.keyword.id) as case:
+            if case(Id.KW_SetVar):
+              lookup_mode = scope_e.LocalOrGlobal
+            elif case(Id.KW_Set):
+              lookup_mode = scope_e.LocalOnly
+            elif case(Id.KW_SetGlobal):
+              lookup_mode = scope_e.GlobalOnly
+            elif case(Id.KW_SetRef):
+              # So this can modify two levels up?
+              lookup_mode = scope_e.Dynamic
+
+              # TODO: setref upvalue = 'returned'
+              e_die("setref isn't implemented")
+            else:
+              raise AssertionError(node.keyword.id)
+
+          if node.op.id == Id.Arith_Equal:
+            py_val = self.expr_ev.EvalExpr(node.rhs)
+
+            lvals_ = []  # type: List[lvalue_t]
+            py_vals = []
+            if len(node.lhs) == 1:  # TODO: Optimize this common case (but measure)
+              # See ShAssignment
+              # EvalLhs
+              # EvalLhsAndLookup for +=
+              lval_ = self.expr_ev.EvalPlaceExpr(node.lhs[0]) # type: lvalue_t
+
+              lvals_.append(lval_)
+              py_vals.append(py_val)
+            else:
+              it = py_val.__iter__()
+              for pm_lhs in node.lhs:
+                lval_ = self.expr_ev.EvalPlaceExpr(pm_lhs)
+                py_val = it.next()
+
+                lvals_.append(lval_)
+                py_vals.append(py_val)
+
+            # TODO: Resolve the asymmetry betwen Named vs ObjIndex,ObjAttr.
+            for UP_lval_, py_val in zip(lvals_, py_vals):
+              tag = UP_lval_.tag_()
+              if tag == lvalue_e.ObjIndex:
+                lval_ = cast(lvalue__ObjIndex, UP_lval_)
+                lval_.obj[lval_.index] = py_val
+              elif tag == lvalue_e.ObjAttr:
+                lval_ = cast(lvalue__ObjAttr, UP_lval_)
+                setattr(lval_.obj, lval_.attr, py_val)
+              else:
+                val = _PyObjectToVal(py_val)
+                # top level variable
+                self.mem.SetVar(UP_lval_, val, (), lookup_mode,
+                                keyword_id=node.keyword.id)
+
+          # TODO: Other augmented assignments
+          elif node.op.id == Id.Arith_PlusEqual:
+            # NOTE: x, y += 1 in Python is a SYNTAX error, but it's checked in the
+            # transformer and not the grammar.  We should do that too.
+
+            place_expr = cast(place_expr__Var, node.lhs[0])
+            pe_lval = lvalue.Named(place_expr.name.val)
+            py_val = self.expr_ev.EvalExpr(node.rhs)
+
+            new_py_val = self.expr_ev.EvalPlusEquals(pe_lval, py_val)
+            # This should only be an int or float, so we don't need the logic above
+            val = value.Obj(new_py_val)
+
+            self.mem.SetVar(pe_lval, val, (), lookup_mode,
+                            keyword_id=node.keyword.id)
+
+          else:
+            raise NotImplementedError(Id_str(node.op.id))
+
+        status = 0  # TODO: what should status be?
+
+      elif case(command_e.ShAssignment):  # Only unqualified assignment
+        node = cast(command__ShAssignment, UP_node)
+
+        lookup_mode = scope_e.Dynamic
+        for pair in node.pairs:
+          # Use the spid of each pair.
+          self.mem.SetCurrentSpanId(pair.spids[0])
+
+          if pair.op == assign_op_e.PlusEqual:
+            assert pair.rhs, pair.rhs  # I don't think a+= is valid?
+            val = self.word_ev.EvalRhsWord(pair.rhs)
+            old_val, lval = expr_eval.EvalLhsAndLookup(pair.lhs, self.arith_ev,
+                                                       self.mem, self.exec_opts,
+                                                       lookup_mode=lookup_mode)
+            UP_old_val = old_val
+            UP_val = val
+            sig = (old_val.tag, val.tag)
+            if sig == (value_e.Undef, value_e.Str):
+              pass  # val is RHS
+            elif sig == (value_e.Undef, value_e.MaybeStrArray):
+              pass  # val is RHS
+            elif sig == (value_e.Str, value_e.Str):
+              old_val = cast(value__Str, old_val)
+              val = cast(value__Str, val)
+              val = value.Str(old_val.s + val.s)
+            elif sig == (value_e.Str, value_e.MaybeStrArray):
+              e_die("Can't append array to string")
+            elif sig == (value_e.MaybeStrArray, value_e.Str):
+              e_die("Can't append string to array")
+            elif sig == (value_e.MaybeStrArray, value_e.MaybeStrArray):
+              old_val = cast(value__MaybeStrArray, old_val)
+              val = cast(value__MaybeStrArray, val)
+              val = value.MaybeStrArray(old_val.strs + val.strs)
+
+          else:  # plain assignment
+            spid = pair.spids[0]  # Source location for tracing
+            lval = expr_eval.EvalLhs(pair.lhs, self.arith_ev, self.mem, spid,
+                                     lookup_mode)
+
+            # RHS can be a string or array.
+            if pair.rhs:
+              val = self.word_ev.EvalRhsWord(pair.rhs)
+              assert isinstance(val, value_t), val
+
+            else:  # e.g. 'readonly x' or 'local x'
+              val = None
+
+          # NOTE: In bash and mksh, declare -a myarray makes an empty cell with
+          # Undef value, but the 'array' attribute.
+
+          #log('setting %s to %s with flags %s', lval, val, flags)
+          flags = ()
+          self.mem.SetVar(lval, val, flags, lookup_mode)
+          self.tracer.OnShAssignment(lval, pair.op, val, flags, lookup_mode)
+
+        # PATCH to be compatible with existing shells: If the assignment had a
+        # command sub like:
+        #
+        # s=$(echo one; false)
+        #
+        # then its status will be in mem.last_status, and we can check it here.
+        # If there was NOT a command sub in the assignment, then we don't want to
+        # check it.
+
+        # Only do this if there was a command sub?  How?  Look at node?
+        # Set a flag in mem?   self.mem.last_status or
+        if self.check_command_sub_status:
+          last_status = self.mem.LastStatus()
+          self._CheckStatus(last_status, node)
+          status = last_status  # A global assignment shouldn't clear $?.
+        else:
+          status = 0
+
+      elif case(command_e.Return):
+        node = cast(command__Return, UP_node)
+        val = self.expr_ev.EvalExpr(node.e)
+        raise _ControlFlow(node.keyword, val)
+
+      elif case(command_e.Expr):
+        node = cast(command__Expr, UP_node)
+
+        self.mem.SetCurrentSpanId(node.keyword.span_id)
+        obj = self.expr_ev.EvalExpr(node.e)
+
+        if node.keyword.id == Id.Lit_Equals:
+          # NOTE: It would be nice to unify this with 'repr', but there isn't a
+          # good way to do it with the value/PyObject split.
+          class_name = obj.__class__.__name__
+          oil_name = OIL_TYPE_NAMES.get(class_name, class_name)
+          print('(%s)   %s' % (oil_name, repr(obj)))
+
+        # TODO: What about exceptions?  They just throw?
+        status = 0
+
+      elif case(command_e.ControlFlow):
+        node = cast(command__ControlFlow, UP_node)
+        tok = node.token
+
+        if node.arg_word:  # Evaluate the argument
+          val = self.word_ev.EvalWordToString(node.arg_word)
+          assert val.tag == value_e.Str
           try:
-            self._PushErrExit(node.spids[0])  # while/until spid
+            arg = int(val.s)  # They all take integers
+          except ValueError:
+            e_die('%r expected a number, got %r',
+                node.token.val, val.s, word=node.arg_word)
+        else:
+          if tok.id in (Id.ControlFlow_Exit, Id.ControlFlow_Return):
+            arg = self.mem.LastStatus()
+          else:
+            arg = 0  # break 0 levels, nothing for continue
+
+        # NOTE: A top-level 'return' is OK, unlike in bash.  If you can return
+        # from a sourced script, it makes sense to return from a main script.
+        ok = True
+        if (tok.id in (Id.ControlFlow_Break, Id.ControlFlow_Continue) and
+            self.loop_level == 0):
+          ok = False
+
+        if ok:
+          if tok.id == Id.ControlFlow_Exit:
+            raise util.UserExit(arg)  # handled differently than other control flow
+          else:
+            raise _ControlFlow(tok, arg)
+        else:
+          msg = 'Invalid control flow at top level'
+          if self.exec_opts.strict_control_flow:
+            e_die(msg, token=tok)
+          else:
+            # Only print warnings, never fatal.
+            # Bash oddly only exits 1 for 'return', but no other shell does.
+            self.errfmt.Print(msg, prefix='warning: ', span_id=tok.span_id)
+            status = 0
+
+      # The only difference between these next two is that CommandList
+      # has no redirects.  We already took care of that above.  But we
+      # need to split them up for mycpp.
+      elif case(command_e.CommandList):
+        node = cast(command__CommandList, UP_node)
+        status = self._ExecuteList(node.children)
+        check_errexit = False
+
+      elif case(command_e.BraceGroup):
+        node = cast(command__BraceGroup, UP_node)
+        status = self._ExecuteList(node.children)
+        check_errexit = False
+
+      elif case(command_e.AndOr):
+        node = cast(command__AndOr, UP_node)
+        # NOTE: && and || have EQUAL precedence in command mode.  See case #13
+        # in dbracket.test.sh.
+
+        left = node.children[0]
+
+        # Suppress failure for every child except the last one.
+        self._PushErrExit(node.spids[0])
+        try:
+          status = self._Execute(left)
+        finally:
+          self._PopErrExit()
+
+        i = 1
+        n = len(node.children)
+        while i < n:
+          #log('i %d status %d', i, status)
+          child = node.children[i]
+          op_id = node.ops[i-1]
+
+          #log('child %s op_id %s', child, op_id)
+
+          if op_id == Id.Op_DPipe and status == 0:
+            i += 1
+            continue  # short circuit
+
+          elif op_id == Id.Op_DAmp and status != 0:
+            i += 1
+            continue  # short circuit
+
+          if i == n - 1:  # errexit handled differently for last child
+            status = self._Execute(child)
+            check_errexit = True
+          else:
+            self._PushErrExit(node.spids[i])  # blame the right && or ||
             try:
-              cond_status = self._ExecuteList(node.cond)
+              status = self._Execute(child)
             finally:
               self._PopErrExit()
 
-            if node.keyword.id == Id.KW_While:
-              if cond_status != 0:
+          i += 1
+
+      elif case(command_e.WhileUntil):
+        node = cast(command__WhileUntil, UP_node)
+        status = 0
+
+        self.loop_level += 1
+        try:
+          while True:
+            try:
+              self._PushErrExit(node.spids[0])  # while/until spid
+              try:
+                cond_status = self._ExecuteList(node.cond)
+              finally:
+                self._PopErrExit()
+
+              if node.keyword.id == Id.KW_While:
+                if cond_status != 0:
+                  break
+              else:
+                if cond_status == 0:
+                  break
+              status = self._Execute(node.body)  # last one wins
+
+            except _ControlFlow as e:
+              # Important: 'break' can occur in the CONDITION or body
+              if e.IsBreak():
+                status = 0
                 break
-            else:
-              if cond_status == 0:
+              elif e.IsContinue():
+                status = 0
+                continue
+              else:  # return needs to pop up more
+                raise
+        finally:
+          self.loop_level -= 1
+
+      elif case(command_e.ForEach):
+        node = cast(command__ForEach, UP_node)
+        self.mem.SetCurrentSpanId(node.spids[0])  # for x in $LINENO
+
+        iter_name = node.iter_name
+        if node.do_arg_iter:
+          iter_list = self.mem.GetArgv()
+        else:
+          words = braces.BraceExpandWords(node.iter_words)
+          iter_list = self.word_ev.EvalWordSequence(words)
+          # We need word splitting and so forth
+          # NOTE: This expands globs too.  TODO: We should pass in a Globber()
+          # object.
+
+        status = 0  # in case we don't loop
+        self.loop_level += 1
+        try:
+          for x in iter_list:
+            #log('> ForEach setting %r', x)
+            state.SetLocalString(self.mem, iter_name, x)
+            #log('<')
+
+            try:
+              status = self._Execute(node.body)  # last one wins
+            except _ControlFlow as e:
+              if e.IsBreak():
+                status = 0
                 break
-            status = self._Execute(node.body)  # last one wins
+              elif e.IsContinue():
+                status = 0
+              else:  # return needs to pop up more
+                raise
+        finally:
+          self.loop_level -= 1
 
-          except _ControlFlow as e:
-            # Important: 'break' can occur in the CONDITION or body
-            if e.IsBreak():
-              status = 0
-              break
-            elif e.IsContinue():
-              status = 0
-              continue
-            else:  # return needs to pop up more
-              raise
-      finally:
-        self.loop_level -= 1
+      elif case(command_e.ForExpr):
+        node = cast(command__ForExpr, UP_node)
+        status = 0
 
-    elif UP_node.tag == command_e.ForEach:
-      node = cast(command__ForEach, UP_node)
-      self.mem.SetCurrentSpanId(node.spids[0])  # for x in $LINENO
+        init = node.init
+        cond = node.cond
+        body = node.body
+        update = node.update
 
-      iter_name = node.iter_name
-      if node.do_arg_iter:
-        iter_list = self.mem.GetArgv()
-      else:
-        words = braces.BraceExpandWords(node.iter_words)
-        iter_list = self.word_ev.EvalWordSequence(words)
-        # We need word splitting and so forth
-        # NOTE: This expands globs too.  TODO: We should pass in a Globber()
-        # object.
+        if init:
+          self.arith_ev.Eval(init)
 
-      status = 0  # in case we don't loop
-      self.loop_level += 1
-      try:
-        for x in iter_list:
-          #log('> ForEach setting %r', x)
-          state.SetLocalString(self.mem, iter_name, x)
-          #log('<')
+        self.loop_level += 1
+        try:
+          while True:
+            if cond:
+              # We only accept integers as conditions
+              cond_int = self.arith_ev.EvalToInt(cond)
+              if cond_int == 0:  # false
+                break
 
-          try:
-            status = self._Execute(node.body)  # last one wins
-          except _ControlFlow as e:
-            if e.IsBreak():
-              status = 0
-              break
-            elif e.IsContinue():
-              status = 0
-            else:  # return needs to pop up more
-              raise
-      finally:
-        self.loop_level -= 1
+            try:
+              status = self._Execute(body)
+            except _ControlFlow as e:
+              if e.IsBreak():
+                status = 0
+                break
+              elif e.IsContinue():
+                status = 0
+              else:  # return needs to pop up more
+                raise
 
-    elif UP_node.tag == command_e.ForExpr:
-      node = cast(command__ForExpr, UP_node)
-      status = 0
+            if update:
+              self.arith_ev.Eval(update)
 
-      init = node.init
-      cond = node.cond
-      body = node.body
-      update = node.update
+        finally:
+          self.loop_level -= 1
 
-      if init:
-        self.arith_ev.Eval(init)
+      elif case(command_e.OilForIn):
+        node = cast(command__OilForIn, UP_node)
+        # NOTE: This is a metacircular implementation using the iterable
+        # protocol.
+        status = 0
 
-      self.loop_level += 1
-      try:
+        obj = self.expr_ev.EvalExpr(node.iterable)
+        if isinstance(obj, str):
+          e_die("Strings aren't iterable")
+        else:
+          it = obj.__iter__()
+
+        body = node.body
+        iter_name = node.lhs[0].name.val  # TODO: proper lvalue
         while True:
-          if cond:
-            # We only accept integers as conditions
-            cond_int = self.arith_ev.EvalToInt(cond)
-            if cond_int == 0:  # false
-              break
+          try:
+            loop_val = it.next()
+          except StopIteration:
+            break
+          self.mem.SetVar(lvalue.Named(iter_name), _PyObjectToVal(loop_val), (),
+                          scope_e.LocalOnly)
 
+          # Copied from above
           try:
             status = self._Execute(body)
           except _ControlFlow as e:
@@ -1541,173 +1581,133 @@ class Executor(object):
             else:  # return needs to pop up more
               raise
 
-          if update:
-            self.arith_ev.Eval(update)
+      elif case(command_e.DoGroup):
+        node = cast(command__DoGroup, UP_node)
+        status = self._ExecuteList(node.children)
+        check_errexit = False  # not real statements
 
-      finally:
-        self.loop_level -= 1
+      elif case(command_e.ShFunction):
+        node = cast(command__ShFunction, UP_node)
+        # TODO: if shopt -s namespaces, then enter it in self.mem
+        # self.mem.SetVar(value.Obj(...))
 
-    elif UP_node.tag == command_e.OilForIn:
-      node = cast(command__OilForIn, UP_node)
-      # NOTE: This is a metacircular implementation using the iterable
-      # protocol.
-      status = 0
+        # NOTE: Would it make sense to evaluate the redirects BEFORE entering?
+        # It will save time on function calls.
+        self.procs[node.name] = node
+        status = 0
 
-      obj = self.expr_ev.EvalExpr(node.iterable)
-      if isinstance(obj, str):
-        e_die("Strings aren't iterable")
-      else:
-        it = obj.__iter__()
+      elif case(command_e.Proc):
+        node = cast(command__Proc, UP_node)
+        UP_proc_sig = node.sig
+        if UP_proc_sig.tag == proc_sig_e.Closed:
+          proc_sig = cast(proc_sig__Closed, UP_proc_sig)
+          defaults = [None] * len(proc_sig.params)
+          for i, param in enumerate(proc_sig.params):
+            if param.default_val:
+              py_val = self.expr_ev.EvalExpr(param.default_val)
+              defaults[i] = _PyObjectToVal(py_val)
+        else:
+          defaults = None
 
-      body = node.body
-      iter_name = node.lhs[0].name.val  # TODO: proper lvalue
-      while True:
-        try:
-          loop_val = it.next()
-        except StopIteration:
-          break
-        self.mem.SetVar(lvalue.Named(iter_name), _PyObjectToVal(loop_val), (),
-                        scope_e.LocalOnly)
+        obj = objects.Proc(node, defaults)
 
-        # Copied from above
-        try:
-          status = self._Execute(body)
-        except _ControlFlow as e:
-          if e.IsBreak():
-            status = 0
-            break
-          elif e.IsContinue():
-            status = 0
-          else:  # return needs to pop up more
-            raise
+        self.mem.SetVar(
+            lvalue.Named(node.name.val), value.Obj(obj), (), scope_e.GlobalOnly)
+        status = 0
 
-    elif UP_node.tag == command_e.DoGroup:
-      node = cast(command__DoGroup, UP_node)
-      status = self._ExecuteList(node.children)
-      check_errexit = False  # not real statements
+      elif case(command_e.Func):
+        node = cast(command__Func, UP_node)
+        # Note: funcs have the Python pitfall where mutable objects shouldn't be
+        # used as default args.
 
-    elif UP_node.tag == command_e.ShFunction:
-      node = cast(command__ShFunction, UP_node)
-      # TODO: if shopt -s namespaces, then enter it in self.mem
-      # self.mem.SetVar(value.Obj(...))
-
-      # NOTE: Would it make sense to evaluate the redirects BEFORE entering?
-      # It will save time on function calls.
-      self.procs[node.name] = node
-      status = 0
-
-    elif UP_node.tag == command_e.Proc:
-      node = cast(command__Proc, UP_node)
-      UP_proc_sig = node.sig
-      if UP_proc_sig.tag == proc_sig_e.Closed:
-        proc_sig = cast(proc_sig__Closed, UP_proc_sig)
-        defaults = [None] * len(proc_sig.params)
-        for i, param in enumerate(proc_sig.params):
+        pos_defaults = [None] * len(node.pos_params)
+        for i, param in enumerate(node.pos_params):
           if param.default_val:
             py_val = self.expr_ev.EvalExpr(param.default_val)
-            defaults[i] = _PyObjectToVal(py_val)
+            pos_defaults[i] = _PyObjectToVal(py_val)
+
+        named_defaults = {}
+        for i, param in enumerate(node.named_params):
+          if param.default_val:
+            obj = self.expr_ev.EvalExpr(param.default_val)
+            named_defaults[param.name.val] = value.Obj(obj)
+
+        obj = objects.Func(node, pos_defaults, named_defaults, self)
+        self.mem.SetVar(
+            lvalue.Named(node.name.val), value.Obj(obj), (), scope_e.GlobalOnly)
+        status = 0
+
+      elif case(command_e.If):
+        node = cast(command__If, UP_node)
+        done = False
+        for if_arm in node.arms:
+          self._PushErrExit(if_arm.spids[0])  # if/elif spid
+          try:
+            status = self._ExecuteList(if_arm.cond)
+          finally:
+            self._PopErrExit()
+
+          if status == 0:
+            status = self._ExecuteList(if_arm.action)
+            done = True
+            break
+        # TODO: The compiler should flatten this
+        if not done and node.else_action is not None:
+          status = self._ExecuteList(node.else_action)
+
+      elif case(command_e.NoOp):
+        node = cast(command__NoOp, UP_node)
+        status = 0  # make it true
+
+      elif case(command_e.Case):
+        node = cast(command__Case, UP_node)
+        val = self.word_ev.EvalWordToString(node.to_match)
+        to_match = val.s
+
+        status = 0  # If there are no arms, it should be zero?
+        done = False
+
+        for case_arm in node.arms:
+          for pat_word in case_arm.pat_list:
+            # NOTE: Is it OK that we're evaluating these as we go?
+
+            # TODO: case "$@") shouldn't succeed?  That's a type error?
+            # That requires strict-array?
+
+            pat_val = self.word_ev.EvalWordToString(pat_word,
+                                                    quote_kind=quote_e.FnMatch)
+
+            #log('Matching word %r against pattern %r', to_match, pat_val.s)
+            if libc.fnmatch(pat_val.s, to_match):
+              status = self._ExecuteList(case_arm.action)
+              done = True  # TODO: Parse ;;& and for fallthrough and such?
+              break  # Only execute action ONCE
+          if done:
+            break
+
+      elif case(command_e.TimeBlock):
+        node = cast(command__TimeBlock, UP_node)
+        # TODO:
+        # - When do we need RUSAGE_CHILDREN?
+        # - Respect TIMEFORMAT environment variable.
+        # "If this variable is not set, Bash acts as if it had the value"
+        # $'\nreal\t%3lR\nuser\t%3lU\nsys\t%3lS'
+        # "A trailing newline is added when the format string is displayed."
+
+        start_t = time.time()  # calls gettimeofday() under the hood
+        start_u = resource.getrusage(resource.RUSAGE_SELF)
+        status = self._Execute(node.pipeline)
+
+        end_t = time.time()
+        end_u = resource.getrusage(resource.RUSAGE_SELF)
+
+        real = end_t - start_t
+        user = end_u.ru_utime - start_u.ru_utime
+        sys_ = end_u.ru_stime - start_u.ru_stime
+        libc.print_time(real, user, sys_)
+
       else:
-        defaults = None
-
-      obj = objects.Proc(node, defaults)
-
-      self.mem.SetVar(
-          lvalue.Named(node.name.val), value.Obj(obj), (), scope_e.GlobalOnly)
-      status = 0
-
-    elif UP_node.tag == command_e.Func:
-      node = cast(command__Func, UP_node)
-      # Note: funcs have the Python pitfall where mutable objects shouldn't be
-      # used as default args.
-
-      pos_defaults = [None] * len(node.pos_params)
-      for i, param in enumerate(node.pos_params):
-        if param.default_val:
-          py_val = self.expr_ev.EvalExpr(param.default_val)
-          pos_defaults[i] = _PyObjectToVal(py_val)
-
-      named_defaults = {}
-      for i, param in enumerate(node.named_params):
-        if param.default_val:
-          obj = self.expr_ev.EvalExpr(param.default_val)
-          named_defaults[param.name.val] = value.Obj(obj)
-
-      obj = objects.Func(node, pos_defaults, named_defaults, self)
-      self.mem.SetVar(
-          lvalue.Named(node.name.val), value.Obj(obj), (), scope_e.GlobalOnly)
-      status = 0
-
-    elif UP_node.tag == command_e.If:
-      node = cast(command__If, UP_node)
-      done = False
-      for if_arm in node.arms:
-        self._PushErrExit(if_arm.spids[0])  # if/elif spid
-        try:
-          status = self._ExecuteList(if_arm.cond)
-        finally:
-          self._PopErrExit()
-
-        if status == 0:
-          status = self._ExecuteList(if_arm.action)
-          done = True
-          break
-      # TODO: The compiler should flatten this
-      if not done and node.else_action is not None:
-        status = self._ExecuteList(node.else_action)
-
-    elif UP_node.tag == command_e.NoOp:
-      node = cast(command__NoOp, UP_node)
-      status = 0  # make it true
-
-    elif UP_node.tag == command_e.Case:
-      node = cast(command__Case, UP_node)
-      val = self.word_ev.EvalWordToString(node.to_match)
-      to_match = val.s
-
-      status = 0  # If there are no arms, it should be zero?
-      done = False
-
-      for case_arm in node.arms:
-        for pat_word in case_arm.pat_list:
-          # NOTE: Is it OK that we're evaluating these as we go?
-
-          # TODO: case "$@") shouldn't succeed?  That's a type error?
-          # That requires strict-array?
-
-          pat_val = self.word_ev.EvalWordToString(pat_word,
-                                                  quote_kind=quote_e.FnMatch)
-
-          #log('Matching word %r against pattern %r', to_match, pat_val.s)
-          if libc.fnmatch(pat_val.s, to_match):
-            status = self._ExecuteList(case_arm.action)
-            done = True  # TODO: Parse ;;& and for fallthrough and such?
-            break  # Only execute action ONCE
-        if done:
-          break
-
-    elif UP_node.tag == command_e.TimeBlock:
-      node = cast(command__TimeBlock, UP_node)
-      # TODO:
-      # - When do we need RUSAGE_CHILDREN?
-      # - Respect TIMEFORMAT environment variable.
-      # "If this variable is not set, Bash acts as if it had the value"
-      # $'\nreal\t%3lR\nuser\t%3lU\nsys\t%3lS'
-      # "A trailing newline is added when the format string is displayed."
-
-      start_t = time.time()  # calls gettimeofday() under the hood
-      start_u = resource.getrusage(resource.RUSAGE_SELF)
-      status = self._Execute(node.pipeline)
-
-      end_t = time.time()
-      end_u = resource.getrusage(resource.RUSAGE_SELF)
-
-      real = end_t - start_t
-      user = end_u.ru_utime - start_u.ru_utime
-      sys_ = end_u.ru_stime - start_u.ru_stime
-      libc.print_time(real, user, sys_)
-
-    else:
-      raise NotImplementedError(node.tag_())
+        raise NotImplementedError(node.tag_())
 
     return status, check_errexit
 
