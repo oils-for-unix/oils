@@ -366,22 +366,24 @@ class _WordEvaluator(SimpleWordEvaluator):
     # - If it's $@ in a normal context, return a STRING, which then will be
     # subject to splitting.
 
+    maybe_decay_array = False
+
     if op_id in (Id.VSub_At, Id.VSub_Star):
       argv = self.mem.GetArgv()
       val = value.MaybeStrArray(argv)  # type: value_t
       if op_id == Id.VSub_At:
         # "$@" evaluates to an array, $@ should be decayed
-        return val, not quoted
-      else:  # $@ $* "$*"
-        return val, True
+        maybe_decay_array = not quoted
+      else:  # $* "$*" are both decayed
+        maybe_decay_array = True
 
     elif op_id == Id.VSub_Hyphen:
       val = value.Str(self.exec_opts.GetDollarHyphen())
-      return val, False
 
     else:
       val = self.mem.GetSpecialVar(op_id)
-      return val, False  # don't decay
+
+    return val, maybe_decay_array
 
   def _ApplyTestOp(self,
                    val,  # type: value_t
@@ -859,11 +861,11 @@ class _WordEvaluator(SimpleWordEvaluator):
                     token=part.token)
 
             elif case2(value_e.MaybeStrArray):
-              val = cast(value__MaybeStrArray, UP_val)
+              array_val = cast(value__MaybeStrArray, UP_val)
               index = self.arith_ev.EvalToInt(anode)
               try:
                 # could be None because representation is sparse
-                s = val.strs[index]
+                s = array_val.strs[index]
               except IndexError:
                 s = None
 
@@ -873,9 +875,9 @@ class _WordEvaluator(SimpleWordEvaluator):
                 val = value.Str(s)
 
             elif case2(value_e.AssocArray):
-              val = cast(value__AssocArray, UP_val)
+              assoc_val = cast(value__AssocArray, UP_val)
               key = self.arith_ev.EvalWordToString(anode)
-              s = val.d.get(key)
+              s = assoc_val.d.get(key)
 
               if s is None:
                 val = value.Undef()
@@ -1006,25 +1008,24 @@ class _WordEvaluator(SimpleWordEvaluator):
             pass
           replacer = string_ops.GlobReplacer(regex, replace_str, op.spids[0])
 
-          UP_val = val
           with tagswitch(val) as case2:
             if case2(value_e.Str):
-              val = cast(value__Str, UP_val)
-              s = replacer.Replace(val.s, op)
+              str_val = cast(value__Str, val)
+              s = replacer.Replace(str_val.s, op)
               val = value.Str(s)
 
             elif case2(value_e.MaybeStrArray):
-              val = cast(value__MaybeStrArray, UP_val)
+              array_val = cast(value__MaybeStrArray, val)
               strs = []  # type: List[str]
-              for s in val.strs:
+              for s in array_val.strs:
                 if s is not None:
                   strs.append(replacer.Replace(s, op))
               val = value.MaybeStrArray(strs)
 
             elif case2(value_e.AssocArray):
-              val = cast(value__AssocArray, UP_val)
+              assoc_val = cast(value__AssocArray, val)
               strs = []
-              for s in val.d.values():
+              for s in assoc_val.d.values():
                 strs.append(replacer.Replace(s, op))
               val = value.MaybeStrArray(strs)
 
@@ -1066,11 +1067,13 @@ class _WordEvaluator(SimpleWordEvaluator):
     # After applying suffixes, process maybe_decay_array here.
     UP_val = val
     if val.tag_() == value_e.MaybeStrArray:
-      val = cast(value__MaybeStrArray, UP_val)
+      array_val = cast(value__MaybeStrArray, UP_val)
       if maybe_decay_array:
-        val = self._DecayArray(val)
+        val = self._DecayArray(array_val)
       elif bash_array_compat:
-        val = self._BashArrayCompat(val)
+        val = self._BashArrayCompat(array_val)
+      else:
+        val = array_val
 
     # For the case where there are no prefix or suffix ops.
     val = self._EmptyStrOrError(val)
@@ -1145,11 +1148,13 @@ class _WordEvaluator(SimpleWordEvaluator):
     val = self._EmptyStrOrError(val, token=token)
     UP_val = val
     if val.tag_() == value_e.MaybeStrArray:
-      val = cast(value__MaybeStrArray, UP_val)
+      array_val = cast(value__MaybeStrArray, UP_val)
       if maybe_decay_array:
-        val = self._DecayArray(val)
+        val = self._DecayArray(array_val)
       elif bash_array_compat:
-        val = self._BashArrayCompat(val)
+        val = self._BashArrayCompat(array_val)
+      else:
+        val = array_val
 
     v = _ValueToPartValue(val, quoted)
     part_vals.append(v)
