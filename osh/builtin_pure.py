@@ -17,7 +17,9 @@ from __future__ import print_function
 import sys  # for sys.sdtout
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import builtin_e, cmd_value, value_e
+from _devbuild.gen.runtime_asdl import (
+    builtin_e, cmd_value, cmd_value_t, value_e
+)
 
 from asdl import pretty
 from core.util import e_die
@@ -26,7 +28,7 @@ from frontend import args
 from frontend import lex
 from frontend import match
 from osh.builtin import Resolve, ResolveSpecial, ResolveAssign
-from osh.builtin import _Register  # TODO: Remove this
+from osh.builtin import _Builtin, _Register
 from osh import state
 from osh import string_ops
 from osh import word_compile
@@ -35,12 +37,11 @@ from typing import Dict, TYPE_CHECKING
 if TYPE_CHECKING:
   from osh.cmd_exec import Executor
   from osh.state import SearchPath
-  from osh.builtin import _Builtin
   from _devbuild.gen.syntax_asdl import command__ShFunction
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
 
 
-class Boolean(object):
+class Boolean(_Builtin):
   """For :, true, false."""
   def __init__(self, status):
     # type: (int) -> None

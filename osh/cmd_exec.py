@@ -97,7 +97,7 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc  # type: ignore
 
-from typing import List, Dict, Tuple, Any, Callable, cast, TYPE_CHECKING
+from typing import List, Dict, Tuple, Any, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.id_kind_asdl import Id_t
@@ -2037,7 +2037,7 @@ class Executor(object):
     n_args = len(argv)
     UP_sig = sig
 
-    if UP_sig.tag == proc_sig_e.Closed:  # proc is-closed []
+    if UP_sig.tag_() == proc_sig_e.Closed:  # proc is-closed []
       sig = cast(proc_sig__Closed, UP_sig)
       for i, p in enumerate(sig.params):
         if i < n_args:

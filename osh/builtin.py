@@ -31,7 +31,7 @@ import termios  # for read -n
 import sys
 
 from _devbuild.gen.runtime_asdl import (
-  value_e, scope_e, span_e, builtin_e
+    value_e, scope_e, span_e, builtin_e, cmd_value_t
 )
 from core import ui
 from frontend import args

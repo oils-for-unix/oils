@@ -125,6 +125,9 @@ def get_c_type(t):
     if type_name == 'builtins.int':
       c_type = 'int'
 
+    elif type_name == 'builtins.float':
+      c_type = 'double'
+
     elif type_name == 'builtins.bool':
       c_type = 'bool'
 
