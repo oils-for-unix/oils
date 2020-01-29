@@ -441,6 +441,10 @@ class Dict {
     assert(0);
   }
 
+  List<K>* keys() {
+    assert(0);
+  }
+
   // For AssocArray transformations
   List<V>* values() {
     assert(0);

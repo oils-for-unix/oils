@@ -18,7 +18,8 @@ from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__MaybeStrArray, value__AssocArray,
 )
 from _devbuild.gen.syntax_asdl import (
-    arith_expr_e, sh_lhs_expr_e, sh_lhs_expr_t, bool_expr_e, word_t
+    arith_expr_e, sh_lhs_expr_e, sh_lhs_expr_t, bool_expr_e, word_t,
+    compound_word,
 )
 from _devbuild.gen.types_asdl import bool_arg_type_e
 from asdl import runtime

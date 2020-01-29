@@ -25,7 +25,6 @@ from _devbuild.gen.runtime_asdl import (
     assign_arg, 
     cmd_value_e, cmd_value_t, cmd_value, cmd_value__Assign, cmd_value__Argv,
     value__Str, value__AssocArray, value__MaybeStrArray, value__Obj,
-    value__Undef,
     quote_e, quote_t,
 )
 from core import error
@@ -369,7 +368,7 @@ class _WordEvaluator(SimpleWordEvaluator):
 
     if op_id in (Id.VSub_At, Id.VSub_Star):
       argv = self.mem.GetArgv()
-      val = value.MaybeStrArray(argv) # type: value_t
+      val = value.MaybeStrArray(argv)  # type: value_t
       if op_id == Id.VSub_At:
         # "$@" evaluates to an array, $@ should be decayed
         return val, not quoted
@@ -377,8 +376,9 @@ class _WordEvaluator(SimpleWordEvaluator):
         return val, True
 
     elif op_id == Id.VSub_Hyphen:
-      s = self.exec_opts.GetDollarHyphen()
-      return value.Str(s), False
+      val = value.Str(self.exec_opts.GetDollarHyphen())
+      return val, False
+
     else:
       val = self.mem.GetSpecialVar(op_id)
       return val, False  # don't decay
@@ -632,8 +632,7 @@ class _WordEvaluator(SimpleWordEvaluator):
         elif case(value_e.AssocArray):
           val = cast(value__AssocArray, UP_val)
           assert val.d is not None  # for MyPy, so it's not Optional[]
-          indices = [str(k) for k in val.d]
-          return value.MaybeStrArray(indices)
+          return value.MaybeStrArray(val.d.keys())
 
         else:
           raise NotImplementedError(val.tag_())
@@ -1786,10 +1785,11 @@ def _SplitAssignArg(arg, w):
   i = arg.find('=')
   prefix = arg[:i]
   if i != -1 and match.IsValidVarName(prefix):
-    return lvalue.Named(prefix), value.Str(arg[i+1:]),
+    return lvalue.Named(prefix), value.Str(arg[i+1:])
   else:
     if match.IsValidVarName(arg):  # local foo   # foo becomes undefined
-      return lvalue.Named(arg), None
+      no_str = None  # type: Optional[value__Str]
+      return lvalue.Named(arg), no_str
     else:
       e_die("Invalid variable name %r", arg, word=w)
 
