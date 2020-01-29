@@ -116,6 +116,7 @@ if TYPE_CHECKING:
   from osh import builtin_process
   from osh import prompt
   from osh import split
+  from osh.builtin import _Builtin
 
 
 # Python type name -> Oil type name
@@ -268,7 +269,7 @@ class Executor(object):
                mem,          # type: state.Mem
                fd_state,     # type: process.FdState
                procs,        # type: Dict[str, command__ShFunction]
-               builtins,     # type: Dict[builtin_t, Callable[[cmd_value_t], int]]
+               builtins,     # type: Dict[builtin_t, _Builtin]
                exec_opts,    # type: state.ExecOpts
                parse_ctx,    # type: ParseContext
                exec_deps,    # type: Deps
@@ -450,7 +451,7 @@ class Executor(object):
     # Most builtins dispatch with a dictionary
     builtin_func = self.builtins.get(builtin_id)
     if builtin_func is not None:
-      status = builtin_func(cmd_val)
+      status = builtin_func.Run(cmd_val)
 
     # Some builtins "belong" to the executor.
 
@@ -471,7 +472,7 @@ class Executor(object):
       # signature.  We also don't handle 'command local', etc.
       b = builtin_pure.Command(self, self.procs, self.aliases,
                                self.search_path)
-      status = b(cmd_val, fork_external)
+      status = b.Run(cmd_val, fork_external)
 
     elif builtin_id == builtin_e.BUILTIN:  # NOTE: uses early return style
       if len(argv) == 0:
@@ -542,7 +543,7 @@ class Executor(object):
     self.errfmt.PushLocation(cmd_val.arg_spids[0])  # defult
     builtin_func = self.builtins[cmd_val.builtin_id]  # must be there
     try:
-      status = builtin_func(cmd_val)
+      status = builtin_func.Run(cmd_val)
     except args.UsageError as e:  # Copied from _RunBuiltin
       arg0 = cmd_val.argv[0]
       if e.span_id == runtime.NO_SPID:  # fill in default location.

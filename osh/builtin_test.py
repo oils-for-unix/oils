@@ -119,7 +119,7 @@ def _TestHistory(argv):
    f = cStringIO.StringIO()
    b = builtin.History(readline, f=f)
    cmd_val = test_lib.MakeBuiltinArgv(argv)
-   b(cmd_val)
+   b.Run(cmd_val)
    return f.getvalue()
 
 

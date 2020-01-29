@@ -156,10 +156,10 @@ def _MakeBuiltinArgv(argv):
 
 def _InitDefaultCompletions(ex, complete_builtin, comp_lookup):
   # register builtins and words
-  complete_builtin(_MakeBuiltinArgv(['-E', '-A', 'command']))
+  complete_builtin.Run(_MakeBuiltinArgv(['-E', '-A', 'command']))
   # register path completion
   # Add -o filenames?  Or should that be automatic?
-  complete_builtin(_MakeBuiltinArgv(['-D', '-A', 'file']))
+  complete_builtin.Run(_MakeBuiltinArgv(['-D', '-A', 'file']))
 
   # TODO: Move this into demo/slow-completion.sh
   if 1:
@@ -481,9 +481,9 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.HASH: builtin_pure.Hash(exec_deps.search_path),
       builtin_e.GETOPTS: builtin_pure.GetOpts(mem, errfmt),
 
-      builtin_e.COLON: lambda cmd_val: 0,  # a "special" builtin 
-      builtin_e.TRUE: lambda cmd_val: 0,
-      builtin_e.FALSE: lambda cmd_val: 1,
+      builtin_e.COLON: builtin_pure.Boolean(0),  # a "special" builtin 
+      builtin_e.TRUE: builtin_pure.Boolean(0),
+      builtin_e.FALSE: builtin_pure.Boolean(1),
 
       # Process
       builtin_e.WAIT: builtin_process.Wait(exec_deps.waiter,
@@ -491,7 +491,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.JOBS: builtin_process.Jobs(exec_deps.job_state),
       builtin_e.FG: builtin_process.Fg(exec_deps.job_state, exec_deps.waiter),
       builtin_e.BG: builtin_process.Bg(exec_deps.job_state),
-      builtin_e.UMASK: builtin_process.Umask,
+      builtin_e.UMASK: builtin_process.Umask(),
 
       # Oil
       builtin_e.PUSH: builtin_oil.Push(mem, errfmt),

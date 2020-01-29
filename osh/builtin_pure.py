@@ -35,8 +35,20 @@ from typing import Dict, TYPE_CHECKING
 if TYPE_CHECKING:
   from osh.cmd_exec import Executor
   from osh.state import SearchPath
+  from osh.builtin import _Builtin
   from _devbuild.gen.syntax_asdl import command__ShFunction
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
+
+
+class Boolean(object):
+  """For :, true, false."""
+  def __init__(self, status):
+    # type: (int) -> None
+    self.status = status
+
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    return self.status
 
 
 ALIAS_SPEC = _Register('alias')
@@ -47,7 +59,7 @@ class Alias(object):
     self.aliases = aliases
     self.errfmt = errfmt
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     argv = cmd_val.argv
     if len(argv) == 1:
@@ -87,7 +99,7 @@ class UnAlias(object):
     self.aliases = aliases
     self.errfmt = errfmt
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     argv = cmd_val.argv
     if len(argv) == 1:
@@ -136,7 +148,7 @@ class Set(object):
     self.exec_opts = exec_opts
     self.mem = mem
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     # TODO:
     # - How to integrate this with auto-completion?  Have to handle '+'.
 
@@ -185,7 +197,7 @@ class Shopt(object):
   def __init__(self, exec_opts):
     self.exec_opts = exec_opts
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     arg, i = SHOPT_SPEC.ParseVec(cmd_val)
     opt_names = cmd_val.argv[i:]
 
@@ -267,7 +279,8 @@ class Command(object):
     self.aliases = aliases
     self.search_path = search_path
 
-  def __call__(self, cmd_val, fork_external):
+  def Run(self, cmd_val, fork_external):
+    # type: (cmd_value_t, bool) -> int
     arg, arg_index = COMMAND_SPEC.ParseVec(cmd_val)
     if arg.v:
       status = 0
@@ -300,7 +313,7 @@ class Type(object):
     self.aliases = aliases
     self.search_path = search_path
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     arg, i = TYPE_SPEC.ParseVec(cmd_val)
 
     if arg.f:
@@ -350,7 +363,7 @@ class Hash(object):
   def __init__(self, search_path):
     self.search_path = search_path
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip 'hash'
     arg, i = HASH_SPEC.Parse(arg_r)
@@ -446,7 +459,7 @@ class GetOpts(object):
     self.errfmt = errfmt
     self.spec_cache = {}  # type: Dict[str, Dict[str, bool]]
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
 
@@ -516,7 +529,7 @@ class Echo(object):
   def __init__(self, exec_opts):
     self.exec_opts = exec_opts
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     argv = cmd_val.argv[1:]
     arg, arg_index = ECHO_SPEC.ParseLikeEcho(argv)
     argv = argv[arg_index:]

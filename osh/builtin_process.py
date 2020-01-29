@@ -11,7 +11,7 @@ import signal  # for calculating numbers
 from core import ui
 from core.util import log
 from frontend import args
-from osh.builtin import _Register  # TODO: Remove this
+from osh.builtin import _Builtin, _Register
 
 import posix_ as posix
 
@@ -48,7 +48,7 @@ class Wait(object):
     self.mem = mem
     self.errfmt = errfmt
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     arg, arg_index = WAIT_SPEC.ParseVec(cmd_val)
     job_ids = cmd_val.argv[arg_index:]
     arg_count = len(cmd_val.argv)
@@ -134,7 +134,7 @@ class Jobs(object):
   def __init__(self, job_state):
     self.job_state = job_state
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     # NOTE: the + and - in the jobs list mean 'current' and 'previous', and are
     # addressed with %+ and %-.
 
@@ -152,7 +152,7 @@ class Fg(object):
     self.job_state = job_state
     self.waiter = waiter
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     # Get job instead of PID, and then do
     #
     # Should we also have job.SendContinueSignal() ?
@@ -181,7 +181,7 @@ class Bg(object):
   def __init__(self, job_state):
     self.job_state = job_state
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     # How does this differ from 'fg'?  It doesn't wait and it sets controlling
     # terminal?
 
@@ -266,7 +266,7 @@ class Trap(object):
     self.ex = ex  # TODO: ParseTrapCode could be inlined below
     self.errfmt = errfmt
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     arg, _ = TRAP_SPEC.ParseVec(cmd_val)
 
     if arg.p:  # Print registered handlers
@@ -366,27 +366,30 @@ class Trap(object):
   # Then hit Ctrl-C.
 
 
-def Umask(cmd_val):
-  argv = cmd_val.argv[1:]
-  if len(argv) == 0:
-    # umask() has a dumb API: you can't get it without modifying it first!
-    # NOTE: dash disables interrupts around the two umask() calls, but that
-    # shouldn't be a concern for us.  Signal handlers won't call umask().
-    mask = posix.umask(0)
-    posix.umask(mask)  #
-    print('0%03o' % mask)  # octal format
-    return 0
+class Umask(_Builtin):
 
-  if len(argv) == 1:
-    a = argv[0]
-    try:
-      new_mask = int(a, 8)
-    except ValueError:
-      # NOTE: This happens if we have '8' or '9' in the input too.
-      ui.Stderr("osh warning: umask with symbolic input isn't implemented")
-      return 1
-    else:
-      posix.umask(new_mask)
+  def Run(self, cmd_val):
+    # type: (cmd_value_t) -> int
+    argv = cmd_val.argv[1:]
+    if len(argv) == 0:
+      # umask() has a dumb API: you can't get it without modifying it first!
+      # NOTE: dash disables interrupts around the two umask() calls, but that
+      # shouldn't be a concern for us.  Signal handlers won't call umask().
+      mask = posix.umask(0)
+      posix.umask(mask)  #
+      print('0%03o' % mask)  # octal format
       return 0
 
-  raise args.UsageError('umask: unexpected arguments')
+    if len(argv) == 1:
+      a = argv[0]
+      try:
+        new_mask = int(a, 8)
+      except ValueError:
+        # NOTE: This happens if we have '8' or '9' in the input too.
+        ui.Stderr("osh warning: umask with symbolic input isn't implemented")
+        return 1
+      else:
+        posix.umask(new_mask)
+        return 0
+
+    raise args.UsageError('umask: unexpected arguments')

@@ -157,7 +157,7 @@ class Test(object):
     self.need_right_bracket = need_right_bracket
     self.errfmt = errfmt
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     """The test/[ builtin.
 

@@ -204,10 +204,31 @@ def Resolve(argv0):
   """Is it any other builtin?"""
   return _NORMAL_BUILTINS.get(argv0, builtin_e.NONE)
 
+#
+# Abstract base class
+#
+
+class _Builtin(object):
+  """All builtins except 'command' obey this interface."""
+  def Run(self, cmd_val):
+    # type: (cmd_value_t) -> int
+    raise NotImplementedError()
 
 #
 # Implementation of builtins.
 #
+
+
+TIMES_SPEC = _Register('times')
+
+class Times(_Builtin):
+  def Run(self, cmd_val):
+    utime, stime, cutime, cstime, elapsed = os.times()
+    print("%dm%1.3fs %dm%1.3fs" % (utime / 60, utime % 60, stime / 60, stime % 60))
+    print("%dm%1.3fs %dm%1.3fs" % (cutime / 60, cutime % 60, cstime / 60, cstime % 60))
+
+    return 0
+
 
 # The Read builtin splits using IFS.
 #
@@ -279,17 +300,6 @@ def _AppendParts(s, spans, max_results, join_next, parts):
   return done, join_next
 
 
-TIMES_SPEC = _Register('times')
-
-class Times(object):
-  def __call__(self, cmd_val):
-    utime, stime, cutime, cstime, elapsed = os.times()
-    print("%dm%1.3fs %dm%1.3fs" % (utime / 60, utime % 60, stime / 60, stime % 60))
-    print("%dm%1.3fs %dm%1.3fs" % (cutime / 60, cutime % 60, cstime / 60, cstime % 60))
-
-    return 0
-
-
 READ_SPEC = _Register('read')
 READ_SPEC.ShortFlag('-r')
 READ_SPEC.ShortFlag('-n', args.Int)
@@ -318,7 +328,7 @@ class Read(object):
     self.splitter = splitter
     self.mem = mem
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     arg, i = READ_SPEC.ParseVec(cmd_val)
 
     names = cmd_val.argv[i:]
@@ -417,7 +427,7 @@ class Cd(object):
     self.ex = ex  # To run blocks
     self.errfmt = errfmt
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     arg, i = CD_SPEC.ParseCmdVal(cmd_val)
     try:
       dest_dir = cmd_val.argv[i]
@@ -514,7 +524,7 @@ class Pushd(object):
     self.dir_stack = dir_stack
     self.errfmt = errfmt
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     num_args = len(cmd_val.argv) - 1
     if num_args == 0:
       # TODO: It's suppose to try another dir before doing this?
@@ -563,7 +573,7 @@ class Popd(object):
     self.dir_stack = dir_stack
     self.errfmt = errfmt
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     if len(cmd_val.arg_spids) > 1:
       raise args.UsageError('got extra argument', span_id=cmd_val.arg_spids[1])
 
@@ -586,7 +596,7 @@ class Dirs(object):
     self.dir_stack = dir_stack
     self.errfmt = errfmt
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     home_dir = self.mem.GetVar('HOME')
 
     arg, i = DIRS_SPEC.ParseVec(cmd_val)
@@ -621,7 +631,7 @@ class Pwd(object):
     self.mem = mem
     self.errfmt = errfmt
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     arg, _ = PWD_SPEC.ParseVec(cmd_val)
 
     # NOTE: 'pwd' will succeed even if the directory has disappeared.  Other
@@ -651,7 +661,7 @@ class Help(object):
     self.loader = loader
     self.errfmt = errfmt
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     try:
       topic = cmd_val.argv[1]
     except IndexError:
@@ -705,7 +715,7 @@ class History(object):
     self.readline_mod = readline_mod
     self.f = f
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     # NOTE: This builtin doesn't do anything in non-interactive mode in bash?
     # It silently exits zero.
     # zsh -c 'history' produces an error.

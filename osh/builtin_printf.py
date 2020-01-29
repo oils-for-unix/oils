@@ -134,7 +134,7 @@ class Printf(object):
     self.errfmt = errfmt
     self.parse_cache = {}  # Dict[str, printf_part]
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     """
     printf: printf [-v var] format [argument ...]
     """

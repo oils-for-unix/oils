@@ -36,7 +36,7 @@ class Repr(_Builtin):
 
   'repr a' is a lot easier to type than 'argv.py "${a[@]}"'.
   """
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     status = 0
     for i in xrange(1, len(cmd_val.argv)):
       name = cmd_val.argv[i]
@@ -71,7 +71,7 @@ class Push(_Builtin):
 
   Note: this could also be in builtins_pure.py?
   """
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip 'push'
 
@@ -103,7 +103,7 @@ class Use(_Builtin):
     func2 as myalias
   }
   """
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip 'use'
 
@@ -168,7 +168,7 @@ class Opts(_Builtin):
   opt.pattern
   opt.file
   """
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     raise NotImplementedError
 
 
@@ -209,7 +209,7 @@ class Json(object):
     self.ex = ex
     self.errfmt = errfmt
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip 'json'
 
@@ -311,7 +311,7 @@ class Write(_Builtin):
   write --cstr -- @strs   # argv serialization
   write --cstr --sep $'\t' -- @strs   # this is like TSV2!
   """
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip 'echo'
 
@@ -348,7 +348,7 @@ class Getline(_Builtin):
 
   What if there are multiple vars?  Try TSV2 then?
   """
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
     arg, _ = GETLINE_SPEC.Parse(arg_r)

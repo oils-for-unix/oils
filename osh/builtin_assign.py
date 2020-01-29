@@ -23,7 +23,7 @@ class Export(object):
     self.mem = mem
     self.errfmt = errfmt
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
     arg, arg_index = EXPORT_SPEC.Parse(arg_r)
@@ -72,7 +72,7 @@ class Readonly(object):
     self.mem = mem
     self.errfmt = errfmt
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
     arg, arg_index = READONLY_SPEC.Parse(arg_r)
@@ -125,7 +125,7 @@ class NewVar(object):
     self.funcs = funcs
     self.errfmt = errfmt
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
     arg, arg_index = NEW_VAR_SPEC.Parse(arg_r)
@@ -237,7 +237,7 @@ class Unset(object):
                         span_id=spid)
     return ok, found
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     arg, offset = UNSET_SPEC.ParseVec(cmd_val)
     n = len(cmd_val.argv)
 
@@ -270,7 +270,7 @@ class Shift(object):
   def __init__(self, mem):
     self.mem = mem
 
-  def __call__(self, cmd_val):
+  def Run(self, cmd_val):
     num_args = len(cmd_val.argv) - 1
     if num_args == 0:
       n = 1
