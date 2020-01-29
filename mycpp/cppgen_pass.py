@@ -1540,7 +1540,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             class_name == 'WordParser' and func_name == '_ParseVarExpr' or
             class_name == '_WordEvaluator' and 
               func_name in ('EvalWordSequence2', '_EvalWordToParts',
-                            '_EmptyStrOrError', '_EvalWordPart')
+                            '_EmptyStrOrError', '_EvalWordPart', 'EvalWordToString')
           ):
 
           default_val = o.arguments[-1].initializer

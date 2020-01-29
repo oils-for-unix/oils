@@ -7,7 +7,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.id_tables import (
     TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP, TEST_OTHER_LOOKUP
 )
-from _devbuild.gen.runtime_asdl import value
+from _devbuild.gen.runtime_asdl import value, quote_e, quote_t
 from _devbuild.gen.syntax_asdl import (
     word, word_e, word_t, word__String,
     bool_expr,
@@ -95,8 +95,8 @@ class _StringWordEmitter(word_parse.WordEmitter):
 
 class _WordEvaluator(word_eval.SimpleWordEvaluator):
 
-  def EvalWordToString(self, w, do_fnmatch=False, do_ere=False):
-    # type: (word_t, bool, bool) -> value__Str
+  def EvalWordToString(self, w, quote_kind=quote_e.Default):
+    # type: (word_t, quote_t) -> value__Str
     # do_fnmatch: for the [[ == ]] semantics which we don't have!
     # I think I need another type of node
     # Maybe it should be BuiltinEqual and BuiltinDEqual?  Parse it into a

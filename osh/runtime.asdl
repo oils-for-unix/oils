@@ -33,6 +33,8 @@ module runtime
            string* argv, int* arg_spids,
            assign_arg* pairs)
 
+  quote = Default | FnMatch | ERE
+
   -- A parse-time word_part from syntax.asdl is evaluated to a runtime
   -- part_value.
   part_value = 

@@ -59,6 +59,7 @@ from _devbuild.gen.syntax_asdl import (
     redir_e, redir__Redir, redir__HereDoc,
 )
 from _devbuild.gen.runtime_asdl import (
+    quote_e,
     lvalue, lvalue_e, lvalue__ObjIndex, lvalue__ObjAttr,
     value, value_e, value_t, value__Str, value__MaybeStrArray, value__Obj,
     redirect, scope_e, var_flags_e, builtin_e,
@@ -1670,7 +1671,9 @@ class Executor(object):
           # TODO: case "$@") shouldn't succeed?  That's a type error?
           # That requires strict-array?
 
-          pat_val = self.word_ev.EvalWordToString(pat_word, do_fnmatch=True)
+          pat_val = self.word_ev.EvalWordToString(pat_word,
+                                                  quote_kind=quote_e.FnMatch)
+
           #log('Matching word %r against pattern %r', to_match, pat_val.s)
           if libc.fnmatch(pat_val.s, to_match):
             status = self._ExecuteList(case_arm.action)

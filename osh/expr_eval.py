@@ -14,7 +14,7 @@ import stat
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.id_tables import BOOL_ARG_TYPES
 from _devbuild.gen.runtime_asdl import (
-    scope_e, lvalue,
+    scope_e, lvalue, quote_e, quote_t,
     value, value_e, value_t, value__MaybeStrArray, value__AssocArray,
 )
 from _devbuild.gen.syntax_asdl import (
@@ -27,7 +27,7 @@ from core.util import e_die
 from osh import state
 from osh import word_
 
-from mycpp.mylib import tagswitch
+from mycpp.mylib import tagswitch, switch
 
 import posix_ as posix
 try:
@@ -666,13 +666,9 @@ class BoolEvaluator(_ExprEvaluator):
     """For ~= to set the BASH_REMATCH array."""
     state.SetGlobalArray(self.mem, 'BASH_REMATCH', matches)
 
-  def _EvalCompoundWord(self, word, do_fnmatch=False, do_ere=False):
-    """
-    Args:
-      node: Id.Word_Compound
-    """
-    val = self.word_ev.EvalWordToString(word, do_fnmatch=do_fnmatch,
-                                        do_ere=do_ere)
+  def _EvalCompoundWord(self, word, quote_kind=quote_e.Default):
+    # type: (compound_word, quote_t) -> str
+    val = self.word_ev.EvalWordToString(word, quote_kind=quote_kind)
     return val.s
 
   def Eval(self, node):
@@ -806,11 +802,16 @@ class BoolEvaluator(_ExprEvaluator):
 
       s1 = self._EvalCompoundWord(node.left)
       # Whether to glob escape
-      do_fnmatch = op_id in (Id.BoolBinary_GlobEqual, Id.BoolBinary_GlobDEqual,
-                             Id.BoolBinary_GlobNEqual)
-      do_ere = (op_id == Id.BoolBinary_EqualTilde)
-      s2 = self._EvalCompoundWord(node.right, do_fnmatch=do_fnmatch,
-                                  do_ere=do_ere)
+      with switch(op_id) as case:
+        if case(Id.BoolBinary_GlobEqual, Id.BoolBinary_GlobDEqual,
+                Id.BoolBinary_GlobNEqual):
+          quote_kind = quote_e.FnMatch
+        elif case(Id.BoolBinary_EqualTilde):
+          quote_kind = quote_e.ERE
+        else:
+          quote_kind = quote_e.Default
+
+      s2 = self._EvalCompoundWord(node.right, quote_kind=quote_kind)
 
       # Now dispatch on arg type
       arg_type = BOOL_ARG_TYPES[op_id]

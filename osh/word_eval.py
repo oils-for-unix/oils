@@ -26,6 +26,7 @@ from _devbuild.gen.runtime_asdl import (
     cmd_value_e, cmd_value_t, cmd_value, cmd_value__Assign, cmd_value__Argv,
     value__Str, value__AssocArray, value__MaybeStrArray, value__Obj,
     value__Undef,
+    quote_e, quote_t,
 )
 from core import error
 from core import process
@@ -265,8 +266,8 @@ def _PerformSlice(val,  # type: value_t
 class SimpleWordEvaluator(object):
   """For use by the _ExprEvaluator."""
 
-  def EvalWordToString(self, w, do_fnmatch=False, do_ere=False):
-    # type: (word_t, bool, bool) -> value__Str
+  def EvalWordToString(self, w, quote_kind=quote_e.Default):
+    # type: (word_t, quote_t) -> value__Str
     raise NotImplementedError()
 
 
@@ -648,7 +649,7 @@ class _WordEvaluator(SimpleWordEvaluator):
 
     if op_kind == Kind.VOp1:
       # NOTE: glob syntax is supported in ^ ^^ , ,, !  As well as % %% # ##.
-      arg_val = self.EvalWordToString(op.arg_word, do_fnmatch=True)
+      arg_val = self.EvalWordToString(op.arg_word, quote_kind=quote_e.FnMatch)
       assert arg_val.tag == value_e.Str
 
       UP_val = val
@@ -987,7 +988,7 @@ class _WordEvaluator(SimpleWordEvaluator):
           val = self._EmptyStrOrError(val)  # ${undef//x/y}
 
           # globs are supported in the pattern
-          pat_val = self.EvalWordToString(op.pat, do_fnmatch=True)
+          pat_val = self.EvalWordToString(op.pat, quote_kind=quote_e.FnMatch)
           assert pat_val.tag == value_e.Str, pat_val
 
           if op.replace:
@@ -1344,23 +1345,11 @@ class _WordEvaluator(SimpleWordEvaluator):
       else:
         raise AssertionError(w.tag_())
 
-  def EvalWordToString(self, UP_w, do_fnmatch=False, do_ere=False):
-    # type: (word_t, bool, bool) -> value__Str
-    """
-    Args:
-      w: Compound
+  def EvalWordToString(self, UP_w, quote_kind=quote_e.Default):
+    # type: (word_t, quote_t) -> value__Str
+    """Given a word, return a string.
 
-    Used for redirect arg, ControlFlow arg, ArithWord, BoolWord, etc.
-
-    do_fnmatch is true for case $pat and RHS of [[ == ]].
-
-    pat="*.py"
-    case $x in
-      $pat) echo 'matches glob pattern' ;;
-      "$pat") echo 'equal to glob string' ;;  # must be glob escaped
-    esac
-
-    TODO: Raise AssertionError if it has ExtGlob.
+    Apply the given quote algorithm to the word.
     """
     if UP_w.tag_() == word_e.Empty:
       return value.Str('')
@@ -1378,13 +1367,13 @@ class _WordEvaluator(SimpleWordEvaluator):
       with tagswitch(part_val) as case:
         if case(part_value_e.String):
           part_val = cast(part_value__String, UP_part_val)
-          # [[ foo == */"*".py ]] or case *.py) ... esac
-          if do_fnmatch and part_val.quoted:
-            s = glob_.GlobEscape(part_val.s)
-          elif do_ere and part_val.quoted:
-            s = glob_.ExtendedRegexEscape(part_val.s)
-          else:
-            s = part_val.s
+          s = part_val.s
+          if part_val.quoted:
+            if quote_kind == quote_e.FnMatch:
+              # [[ foo == */"*".py ]] or case *.py) ... esac
+              s = glob_.GlobEscape(s)
+            elif quote_kind == quote_e.ERE:
+              s = glob_.ExtendedRegexEscape(s)
 
         elif case(part_value_e.Array):
           part_val = cast(part_value__Array, UP_part_val)
