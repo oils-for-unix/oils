@@ -233,6 +233,10 @@ class Str {
   Str* replace(Str* old, Str* new_str);
   Str* join(List<Str*>* items);
 
+  int find(Str* s) {
+    assert(0);
+  }
+
   const char* data_;
   int len_;
 
@@ -373,6 +377,10 @@ class List {
     v_.clear();
   }
 
+  void sort() {
+    assert(0);
+  }
+
   // STUB: For LHS assignment.
   // TODO: Handle L[-1] = 3 (pgen2 appears to do it)
   T& operator[](int index) {
@@ -430,6 +438,11 @@ class Dict {
   }
 
   void remove(K key) {
+    assert(0);
+  }
+
+  // For AssocArray transformations
+  List<V>* values() {
     assert(0);
   }
 

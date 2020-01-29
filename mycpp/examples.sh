@@ -21,6 +21,29 @@ typecheck-oil() {
 }
 
 #
+# examples/varargs
+#
+
+translate-varargs() {
+  # Need this otherwise we get type errors
+  codegen-parse
+
+  local snippet='
+#include "preamble.h"
+#include "asdl_runtime.h"
+
+'
+  translate-ordered varargs "$snippet"  \
+    $REPO_ROOT/asdl/runtime.py \
+    examples/varargs.py
+} 
+
+compile-varargs() {
+  # need -I flag
+  compile-with-asdl varargs
+}
+
+#
 # examples/parse
 #
 

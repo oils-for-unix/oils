@@ -26,7 +26,10 @@ def run_tests():
 
   log("log %d %s", 42, "LL")
 
-  p_die('hello %d %s', 3, "PP", tok='mytok')
+  span_id = 123
+  p_die('hello %d %s', 3, "PP", span_id=span_id)
+
+  #p_die('hello')
 
 
 def run_benchmarks():

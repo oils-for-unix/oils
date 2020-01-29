@@ -45,7 +45,7 @@ from mycpp import mylib
 
 import posix_ as posix
 
-from typing import Optional, Tuple, List, cast, TYPE_CHECKING
+from typing import Optional, Tuple, List, Dict, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.id_kind_asdl import Id_t
@@ -198,7 +198,8 @@ def _DecayPartValuesToString(part_vals, join_char):
 
 def _PerformSlice(val,  # type: value_t
                   begin,  # type: int
-                  length,  # type: Optional[int]
+                  length,  # type: int
+                  has_length,  # type: bool
                   part,  # type: braced_var_sub
                   ):
   # type: (...) -> value_t
@@ -220,9 +221,7 @@ def _PerformSlice(val,  # type: value_t
 
       byte_begin = string_ops.AdvanceUtf8Chars(s, begin, 0)
 
-      if length is None:
-        byte_end = len(s)
-      else:
+      if has_length:
         if length < 0:
           # TODO: Instead of attributing it to the word part, it would be
           # better if we attributed it to arith_expr begin.
@@ -231,6 +230,8 @@ def _PerformSlice(val,  # type: value_t
               length, part=part)
 
         byte_end = string_ops.AdvanceUtf8Chars(s, length, byte_begin)
+      else:
+        byte_end = len(s)
 
       substr = s[byte_begin : byte_end]
       val = value.Str(substr)
@@ -239,7 +240,7 @@ def _PerformSlice(val,  # type: value_t
       val = cast(value__MaybeStrArray, UP_val)
       # NOTE: This error is ALWAYS fatal in bash.  It's inconsistent with
       # strings.
-      if length and length < 0:
+      if has_length and length < 0:
         e_die("The length index of a array slice can't be negative: %d",
               length, part=part)
 
@@ -248,12 +249,11 @@ def _PerformSlice(val,  # type: value_t
       for s in val.strs[begin:]:
         if s is not None:
           strs.append(s)
-          if len(strs) == length:  # never true for unspecified length
+          if has_length and len(strs) == length:
             break
       val = value.MaybeStrArray(strs)
 
     elif case(value_e.AssocArray):
-      val = cast(value__AssocArray, UP_val)
       e_die("Can't slice associative arrays", part=part)
 
     else:
@@ -671,7 +671,7 @@ class _WordEvaluator(SimpleWordEvaluator):
         elif case(value_e.AssocArray):
           val = cast(value__AssocArray, UP_val)
           strs = []
-          for s in val.d.itervalues():
+          for s in val.d.values():
             strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s))
           new_val = value.MaybeStrArray(strs)
 
@@ -1024,7 +1024,7 @@ class _WordEvaluator(SimpleWordEvaluator):
             elif case2(value_e.AssocArray):
               val = cast(value__AssocArray, UP_val)
               strs = []
-              for s in val.d.itervalues():
+              for s in val.d.values():
                 strs.append(replacer.Replace(s, op))
               val = value.MaybeStrArray(strs)
 
@@ -1040,13 +1040,16 @@ class _WordEvaluator(SimpleWordEvaluator):
           else:
             begin = 0
 
+          # Note: bash allows lengths to be negative (with odd semantics), but
+          # we don't allow that right now.
+          has_length = False
+          length = -1
           if op.length:
+            has_length = True
             length = self.arith_ev.EvalToInt(op.length)
-          else:
-            length = None
 
           try:
-            val = _PerformSlice(val, begin, length, part)
+            val = _PerformSlice(val, begin, length, has_length, part)
           except (error.InvalidSlice, error.InvalidUtf8) as e:
             if self.exec_opts.strict_word_eval:
               raise
@@ -1455,7 +1458,7 @@ class _WordEvaluator(SimpleWordEvaluator):
 
       if tag == word_part_e.AssocArrayLiteral:
         part0 = cast(word_part__AssocArrayLiteral, UP_part0)
-        d = {}
+        d = {}  # type: Dict[str, str]
         n = len(part0.pairs)
         i = 0
         while i < n:
