@@ -1128,45 +1128,45 @@ class Executor(object):
 
       # TODO: Change x = 1 + 2*3 into its own Decl node.
       elif case(command_e.VarDecl):
-        # TODO: This should be constant, equivalent to const x = 'foo'
-
         node = cast(command__VarDecl, UP_node)
-        if node.keyword is None or node.keyword.id == Id.KW_Const:
-          self.mem.SetCurrentSpanId(node.lhs[0].name.span_id)  # point to var name
 
-          # Note: there's only one LHS
-          vd_lval = lvalue.Named(node.lhs[0].name.val)  # type: lvalue_t
-          py_val = self.expr_ev.EvalExpr(node.rhs)
-          val = _PyObjectToVal(py_val)
+        if mylib.PYTHON:
+          if node.keyword is None or node.keyword.id == Id.KW_Const:
+            self.mem.SetCurrentSpanId(node.lhs[0].name.span_id)  # point to var name
 
-          self.mem.SetVar(vd_lval, val, (var_flags_e.ReadOnly,),
-                          scope_e.LocalOnly, keyword_id=None)
-          status = 0
-
-        else:
-          self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to var
-
-          py_val = self.expr_ev.EvalExpr(node.rhs)
-          vd_lvals = []  # type: List[lvalue_t]
-          vals = []  # type: List[value_t]
-          if len(node.lhs) == 1:  # TODO: optimize this common case (but measure)
-            vd_lval = lvalue.Named(node.lhs[0].name.val)
+            # Note: there's only one LHS
+            vd_lval = lvalue.Named(node.lhs[0].name.val)  # type: lvalue_t
+            py_val = self.expr_ev.EvalExpr(node.rhs)
             val = _PyObjectToVal(py_val)
 
-            vd_lvals.append(vd_lval)
-            vals.append(val)
+            self.mem.SetVar(vd_lval, val, (var_flags_e.ReadOnly,),
+                            scope_e.LocalOnly, keyword_id=None)
+            status = 0
+
           else:
-            it = py_val.__iter__()
-            for vd_lhs in node.lhs:
-              vd_lval = lvalue.Named(vd_lhs.name.val)
-              val = _PyObjectToVal(it.next())
+            self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to var
+
+            py_val = self.expr_ev.EvalExpr(node.rhs)
+            vd_lvals = []  # type: List[lvalue_t]
+            vals = []  # type: List[value_t]
+            if len(node.lhs) == 1:  # TODO: optimize this common case (but measure)
+              vd_lval = lvalue.Named(node.lhs[0].name.val)
+              val = _PyObjectToVal(py_val)
 
               vd_lvals.append(vd_lval)
               vals.append(val)
+            else:
+              it = py_val.__iter__()
+              for vd_lhs in node.lhs:
+                vd_lval = lvalue.Named(vd_lhs.name.val)
+                val = _PyObjectToVal(it.next())
 
-          for vd_lval, val in zip(vd_lvals, vals):
-            self.mem.SetVar(
-                vd_lval, val, (), scope_e.LocalOnly, keyword_id=node.keyword.id)
+                vd_lvals.append(vd_lval)
+                vals.append(val)
+
+            for vd_lval, val in zip(vd_lvals, vals):
+              self.mem.SetVar(
+                  vd_lval, val, (), scope_e.LocalOnly, keyword_id=node.keyword.id)
 
           status = 0
 
@@ -1554,33 +1554,34 @@ class Executor(object):
         # protocol.
         status = 0
 
-        obj = self.expr_ev.EvalExpr(node.iterable)
-        if isinstance(obj, str):
-          e_die("Strings aren't iterable")
-        else:
-          it = obj.__iter__()
+        if mylib.PYTHON:
+          obj = self.expr_ev.EvalExpr(node.iterable)
+          if isinstance(obj, str):
+            e_die("Strings aren't iterable")
+          else:
+            it = obj.__iter__()
 
-        body = node.body
-        iter_name = node.lhs[0].name.val  # TODO: proper lvalue
-        while True:
-          try:
-            loop_val = it.next()
-          except StopIteration:
-            break
-          self.mem.SetVar(lvalue.Named(iter_name), _PyObjectToVal(loop_val), (),
-                          scope_e.LocalOnly)
-
-          # Copied from above
-          try:
-            status = self._Execute(body)
-          except _ControlFlow as e:
-            if e.IsBreak():
-              status = 0
+          body = node.body
+          iter_name = node.lhs[0].name.val  # TODO: proper lvalue
+          while True:
+            try:
+              loop_val = it.next()
+            except StopIteration:
               break
-            elif e.IsContinue():
-              status = 0
-            else:  # return needs to pop up more
-              raise
+            self.mem.SetVar(lvalue.Named(iter_name), _PyObjectToVal(loop_val), (),
+                            scope_e.LocalOnly)
+
+            # Copied from above
+            try:
+              status = self._Execute(body)
+            except _ControlFlow as e:
+              if e.IsBreak():
+                status = 0
+                break
+              elif e.IsContinue():
+                status = 0
+              else:  # return needs to pop up more
+                raise
 
       elif case(command_e.DoGroup):
         node = cast(command__DoGroup, UP_node)
@@ -1599,21 +1600,22 @@ class Executor(object):
 
       elif case(command_e.Proc):
         node = cast(command__Proc, UP_node)
-        UP_proc_sig = node.sig
-        if UP_proc_sig.tag == proc_sig_e.Closed:
-          proc_sig = cast(proc_sig__Closed, UP_proc_sig)
-          defaults = [None] * len(proc_sig.params)
-          for i, param in enumerate(proc_sig.params):
-            if param.default_val:
-              py_val = self.expr_ev.EvalExpr(param.default_val)
-              defaults[i] = _PyObjectToVal(py_val)
-        else:
-          defaults = None
+        if mylib.PYTHON:
+          UP_proc_sig = node.sig
+          if UP_proc_sig.tag == proc_sig_e.Closed:
+            proc_sig = cast(proc_sig__Closed, UP_proc_sig)
+            defaults = [None] * len(proc_sig.params)
+            for i, param in enumerate(proc_sig.params):
+              if param.default_val:
+                py_val = self.expr_ev.EvalExpr(param.default_val)
+                defaults[i] = _PyObjectToVal(py_val)
+          else:
+            defaults = None
 
-        obj = objects.Proc(node, defaults)
+          obj = objects.Proc(node, defaults)
 
-        self.mem.SetVar(
-            lvalue.Named(node.name.val), value.Obj(obj), (), scope_e.GlobalOnly)
+          self.mem.SetVar(
+              lvalue.Named(node.name.val), value.Obj(obj), (), scope_e.GlobalOnly)
         status = 0
 
       elif case(command_e.Func):
@@ -1621,21 +1623,22 @@ class Executor(object):
         # Note: funcs have the Python pitfall where mutable objects shouldn't be
         # used as default args.
 
-        pos_defaults = [None] * len(node.pos_params)
-        for i, param in enumerate(node.pos_params):
-          if param.default_val:
-            py_val = self.expr_ev.EvalExpr(param.default_val)
-            pos_defaults[i] = _PyObjectToVal(py_val)
+        if mylib.PYTHON:
+          pos_defaults = [None] * len(node.pos_params)
+          for i, param in enumerate(node.pos_params):
+            if param.default_val:
+              py_val = self.expr_ev.EvalExpr(param.default_val)
+              pos_defaults[i] = _PyObjectToVal(py_val)
 
-        named_defaults = {}
-        for i, param in enumerate(node.named_params):
-          if param.default_val:
-            obj = self.expr_ev.EvalExpr(param.default_val)
-            named_defaults[param.name.val] = value.Obj(obj)
+          named_defaults = {}
+          for i, param in enumerate(node.named_params):
+            if param.default_val:
+              obj = self.expr_ev.EvalExpr(param.default_val)
+              named_defaults[param.name.val] = value.Obj(obj)
 
-        obj = objects.Func(node, pos_defaults, named_defaults, self)
-        self.mem.SetVar(
-            lvalue.Named(node.name.val), value.Obj(obj), (), scope_e.GlobalOnly)
+          obj = objects.Func(node, pos_defaults, named_defaults, self)
+          self.mem.SetVar(
+              lvalue.Named(node.name.val), value.Obj(obj), (), scope_e.GlobalOnly)
         status = 0
 
       elif case(command_e.If):
