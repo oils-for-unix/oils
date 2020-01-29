@@ -1031,7 +1031,7 @@ class Executor(object):
         # NOTE: RunSimpleCommand never returns when fork_external=False!
         if len(node.more_env):  # I think this guard is necessary?
           is_other_special = False  # TODO: There are other special builtins too!
-          if cmd_val.tag == cmd_value_e.Assign or is_other_special:
+          if cmd_val.tag_() == cmd_value_e.Assign or is_other_special:
             # Special builtins have their temp env persisted.
             self._EvalTempEnv(node.more_env, ())
             status = self._RunSimpleCommand(cmd_val, fork_external)
@@ -1175,14 +1175,14 @@ class Executor(object):
           node = cast(command__PlaceMutation, UP_node)
           self.mem.SetCurrentSpanId(node.keyword.span_id)  # point to setvar/set
 
-          with switch(node.keyword.id) as case:
-            if case(Id.KW_SetVar):
+          with switch(node.keyword.id) as case2:
+            if case2(Id.KW_SetVar):
               lookup_mode = scope_e.LocalOrGlobal
-            elif case(Id.KW_Set):
+            elif case2(Id.KW_Set):
               lookup_mode = scope_e.LocalOnly
-            elif case(Id.KW_SetGlobal):
+            elif case2(Id.KW_SetGlobal):
               lookup_mode = scope_e.GlobalOnly
-            elif case(Id.KW_SetRef):
+            elif case2(Id.KW_SetRef):
               # So this can modify two levels up?
               lookup_mode = scope_e.Dynamic
 
