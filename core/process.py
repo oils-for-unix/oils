@@ -288,7 +288,7 @@ class FdState(object):
         if not self._PushDup(r.target_fd, r.fd):
           ok = False
       else:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     elif r.tag == redirect_e.HereDoc:
       # NOTE: Do these descriptors have to be moved out of the range 0-9?
@@ -392,7 +392,7 @@ class FdState(object):
 class ChildStateChange(object):
 
   def Apply(self):
-    raise NotImplementedError
+    raise NotImplementedError()
 
 
 class StdinFromPipe(ChildStateChange):
@@ -520,7 +520,7 @@ class Thunk(object):
 
   def Run(self):
     """Returns a status code."""
-    raise NotImplementedError
+    raise NotImplementedError()
 
   def DisplayLine(self):
     """Display for the 'jobs' list."""
@@ -661,7 +661,7 @@ class Job(object):
       An int for a process
       A list of ints for a pipeline
     """
-    raise NotImplementedError
+    raise NotImplementedError()
 
 
 class Process(Job):

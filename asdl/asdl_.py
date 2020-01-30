@@ -47,7 +47,7 @@ def is_simple(sum):
 
 class AST(object):
     def Print(self, f, indent):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def __repr__(self):
         f = cStringIO.StringIO()

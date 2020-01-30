@@ -62,7 +62,7 @@ class BracesTest(unittest.TestCase):
         self.assertEqual(step, part.step)
 
       else:
-        raise AssertionError
+        raise AssertionError()
 
       log('%r\t%s', s, part)
 

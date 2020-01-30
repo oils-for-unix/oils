@@ -795,7 +795,7 @@ def OshCommandMain(argv):
     deps.Deps(node)
 
   elif action == 'undefined-vars':  # could be environment variables
-    raise NotImplementedError
+    raise NotImplementedError()
 
   else:
     raise AssertionError  # Checked above

@@ -282,7 +282,7 @@ if mylib.PYTHON:
       elif opts.ast_format in ('html', 'abbrev-html'):
         ast_f = fmt.HtmlOutput(f)
       else:
-        raise AssertionError
+        raise AssertionError()
 
       if 'abbrev-' in opts.ast_format:
         tree = node.AbbreviatedTree()

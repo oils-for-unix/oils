@@ -1439,10 +1439,10 @@ class Mem(object):
         return True, False
 
     elif lval.tag == lvalue_e.Indexed:  # unset a[1]
-      raise NotImplementedError
+      raise NotImplementedError()
 
     else:
-      raise AssertionError
+      raise AssertionError()
 
   def ClearFlag(self, name, flag, lookup_mode):
     # type: (str, int, scope_t) -> bool
@@ -1456,7 +1456,7 @@ class Mem(object):
       if flag == var_flags.Exported:
         cell.exported = False
       else:
-        raise AssertionError
+        raise AssertionError()
       return True
     else:
       return False

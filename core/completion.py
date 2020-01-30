@@ -920,7 +920,7 @@ class RootCompleter(object):
           debug_f.log('alias_first: %s', alias_first)
 
         if num_partial == 0:  # should never happen because of Lit_CompDummy
-          raise AssertionError
+          raise AssertionError()
         elif num_partial == 1:
           base_opts, user_spec = self.comp_lookup.GetFirstSpec()
 
@@ -982,7 +982,7 @@ class RootCompleter(object):
           # and run 'complete' to mutate comp_lookup, and we want to get that
           # new entry.
           if num_partial == 0:
-            raise AssertionError
+            raise AssertionError()
           elif num_partial == 1:
             base_opts, user_spec = self.comp_lookup.GetFirstSpec()
           else:

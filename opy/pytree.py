@@ -78,7 +78,7 @@ class Base(object):
         Nodes should be considered equal if they have the same structure,
         ignoring the prefix string and other context information.
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def clone(self):
         """
@@ -86,7 +86,7 @@ class Base(object):
 
         This must be implemented by the concrete subclass.
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def replace(self, new):
         """Replace this node with a new one in the parent."""

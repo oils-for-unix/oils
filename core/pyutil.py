@@ -18,7 +18,7 @@ class _ResourceLoader(object):
 
   def open(self, rel_path):
     # type: (str) -> IO[str]
-    raise NotImplementedError
+    raise NotImplementedError()
 
 
 class _FileResourceLoader(_ResourceLoader):

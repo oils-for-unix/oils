@@ -57,7 +57,7 @@ def Interactive(opts, ex, c_parser, display, prompt_plugin, errfmt):
         elif isinstance(result, parse_result__Node):
           node = result.cmd
         else:
-          raise AssertionError
+          raise AssertionError()
 
       except util.HistoryError as e:  # e.g. expansion failed
         # Where this happens:

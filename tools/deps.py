@@ -20,7 +20,7 @@ class Visitor(object):
   # I'm using ASDL metaprogramming instead.
 
   def Visit(self, node):
-    raise NotImplementedError
+    raise NotImplementedError()
 
   # Like ast.NodeVisitor().generic_visit!
   def VisitChildren(self, node):

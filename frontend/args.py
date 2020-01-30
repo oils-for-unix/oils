@@ -217,7 +217,7 @@ class _Action(object):
     Returns:
       True if flag parsing should be aborted.
     """
-    raise NotImplementedError
+    raise NotImplementedError()
 
 
 class SetToArg(_Action):
@@ -272,7 +272,7 @@ class SetToArg(_Action):
               'expected number after %r, got %r' % ('-' + self.name, arg),
               span_id=arg_r.SpanId())
       else:
-        raise AssertionError
+        raise AssertionError()
 
     out.Set(self.name, value)
     return self.quit_parsing_flags

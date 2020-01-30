@@ -169,7 +169,7 @@ class Opts(_Builtin):
   opt.file
   """
   def Run(self, cmd_val):
-    raise NotImplementedError
+    raise NotImplementedError()
 
 
 JSON_WRITE_SPEC = args.OilFlags()

@@ -236,10 +236,10 @@ class Printf(object):
               elif typ == 'X':
                 s = '%X' % d
             else:
-              raise AssertionError
+              raise AssertionError()
 
           else:
-            raise AssertionError
+            raise AssertionError()
 
           if part.width:
             width = int(part.width.val)
@@ -258,7 +258,7 @@ class Printf(object):
           arg_index += 1
 
         else:
-          raise AssertionError
+          raise AssertionError()
 
       if arg_index >= num_args:
         break

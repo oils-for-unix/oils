@@ -502,7 +502,7 @@ class Stats(object):
       if sh_label in OSH_CPYTHON + OIL_CPYTHON:
         c['osh_num_passed'] += 1
     else:
-      raise AssertionError
+      raise AssertionError()
 
 
 PIPE = subprocess.PIPE
@@ -1194,7 +1194,7 @@ def main(argv):
 
     out = HtmlOutput(sys.stdout, opts.verbose, spec_name, sh_labels, cases)
   else:
-    raise AssertionError
+    raise AssertionError()
 
   out.BeginCases(os.path.basename(test_file))
 

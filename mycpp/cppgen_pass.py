@@ -34,7 +34,7 @@ def _GetCTypeForCast(type_expr):
     # List[word_t] would be a problem.
     # But worked around it in osh/word_parse.py
     #subtype_name = 'List<word_t>'
-    raise AssertionError
+    raise AssertionError()
   else:
     subtype_name = type_expr.name
 
@@ -576,7 +576,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.write('(')
 
-        # Don't pass any args to AssertionError
+        # Don't pass any args to AssertionError()
         if callee_name != 'AssertionError':
           for i, arg in enumerate(o.args):
             if i != 0:
@@ -1240,7 +1240,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write(') ')
 
           else:
-            raise AssertionError
+            raise AssertionError()
 
           self.accept(o.body)
           return
