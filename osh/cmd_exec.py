@@ -1266,23 +1266,36 @@ class Executor(object):
                                                        lookup_mode=lookup_mode)
             UP_old_val = old_val
             UP_val = val
-            sig = (old_val.tag, val.tag)
-            if sig == (value_e.Undef, value_e.Str):
+
+            old_tag = old_val.tag_()
+            tag = val.tag_()
+
+            if old_tag == value_e.Undef and tag == value_e.Str:
               pass  # val is RHS
-            elif sig == (value_e.Undef, value_e.MaybeStrArray):
+            elif old_tag == value_e.Undef and tag == value_e.MaybeStrArray:
               pass  # val is RHS
-            elif sig == (value_e.Str, value_e.Str):
-              old_val = cast(value__Str, old_val)
-              val = cast(value__Str, val)
+
+            elif old_tag == value_e.Str and tag == value_e.Str:
+              old_val = cast(value__Str, UP_old_val)
+              val = cast(value__Str, UP_val)
               val = value.Str(old_val.s + val.s)
-            elif sig == (value_e.Str, value_e.MaybeStrArray):
+
+            elif old_tag == value_e.Str and tag == value_e.MaybeStrArray:
               e_die("Can't append array to string")
-            elif sig == (value_e.MaybeStrArray, value_e.Str):
+
+            elif old_tag == value_e.MaybeStrArray and tag == value_e.Str:
               e_die("Can't append string to array")
-            elif sig == (value_e.MaybeStrArray, value_e.MaybeStrArray):
-              old_val = cast(value__MaybeStrArray, old_val)
-              val = cast(value__MaybeStrArray, val)
-              val = value.MaybeStrArray(old_val.strs + val.strs)
+
+            elif (old_tag == value_e.MaybeStrArray and
+                  tag == value_e.MaybeStrArray):
+              old_val = cast(value__MaybeStrArray, UP_old_val)
+              to_append = cast(value__MaybeStrArray, UP_val)
+
+              # TODO: Could MUTATE the old one for efficiency?
+              strs = []  # type: List[str]
+              strs.extend(old_val.strs)
+              strs.extend(to_append.strs)
+              val = value.MaybeStrArray(strs)
 
           else:  # plain assignment
             spid = pair.spids[0]  # Source location for tracing
