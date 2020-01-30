@@ -23,7 +23,7 @@ from _devbuild.gen.id_tables import REDIR_ARG_TYPES, REDIR_DEFAULT_FD
 from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.syntax_asdl import (
     compound_word,
-    command_e, command_t,
+    command_e, command_t, command_str,
     command__AndOr,
     command__BraceGroup,
     command__Case,
@@ -157,7 +157,7 @@ def _DisallowErrExit(node):
   return False
 
 
-class _ControlFlow(RuntimeError):
+class _ControlFlow(Exception):
   """Internal execption for control flow.
 
   break and continue are caught by loops, return is caught by functions.
@@ -210,7 +210,7 @@ class Deps(object):
     # type: () -> None
     self.splitter = None    # type: split.SplitContext
 
-    self.word_ev = None     # type: word_eval.NormalWordEvaluator
+    self.word_ev = None     # type: word_eval._WordEvaluator
     self.arith_ev = None    # type: expr_eval.ArithEvaluator
     self.bool_ev = None     # type: expr_eval.BoolEvaluator
     self.expr_ev = None     # type: oil_expr_eval.OilEvaluator
@@ -427,7 +427,7 @@ class Executor(object):
       sys.exit(127)  # exec never returns
 
     # shift off 'exec'
-    c2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:])
+    c2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:], cmd_val.block)
     self.ext_prog.Exec(argv0_path, c2, environ)  # NEVER RETURNS
     assert False, "This line should never be reached" # makes mypy happy
 
@@ -1331,15 +1331,16 @@ class Executor(object):
       elif case(command_e.Expr):
         node = cast(command__Expr, UP_node)
 
-        self.mem.SetCurrentSpanId(node.keyword.span_id)
-        obj = self.expr_ev.EvalExpr(node.e)
+        if mylib.PYTHON:
+          self.mem.SetCurrentSpanId(node.keyword.span_id)
+          obj = self.expr_ev.EvalExpr(node.e)
 
-        if node.keyword.id == Id.Lit_Equals:
-          # NOTE: It would be nice to unify this with 'repr', but there isn't a
-          # good way to do it with the value/PyObject split.
-          class_name = obj.__class__.__name__
-          oil_name = OIL_TYPE_NAMES.get(class_name, class_name)
-          print('(%s)   %s' % (oil_name, repr(obj)))
+          if node.keyword.id == Id.Lit_Equals:
+            # NOTE: It would be nice to unify this with 'repr', but there isn't a
+            # good way to do it with the value/PyObject split.
+            class_name = obj.__class__.__name__
+            oil_name = OIL_TYPE_NAMES.get(class_name, class_name)
+            print('(%s)   %s' % (oil_name, repr(obj)))
 
         # TODO: What about exceptions?  They just throw?
         status = 0
@@ -1742,7 +1743,7 @@ class Executor(object):
 
       span_id = eo.errexit.SpidIfDisabled()
       if span_id != runtime.NO_SPID:
-        node_str = node.__class__.__name__.split('_')[-1]  # e.g. BraceGroup
+        node_str = command_str(node.tag_())  # e.g. command.BraceGroup
         e_die("errexit is disabled here, but strict_errexit disallows it "
               "with a compound command (%s)", node_str, span_id=span_id)
 
@@ -1910,7 +1911,7 @@ class Executor(object):
       if self.exec_opts.ErrExit() and status != 0:
         raise error.ErrExit(
             'Command sub exited with status %d (%r)', status,
-            node.__class__.__name__)
+            command_str(node.tag_()))
     else:
       # Set a flag so we check errexit at the same time as bash.  Example:
       #
