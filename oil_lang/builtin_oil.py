@@ -286,7 +286,7 @@ class Json(object):
         return 1
 
       self.mem.SetVar(
-          sh_lhs_expr.Name(var_name), value.Obj(obj), (), scope_e.LocalOnly)
+          sh_lhs_expr.Name(var_name), value.Obj(obj), scope_e.LocalOnly)
 
     else:
       raise args.UsageError(_JSON_ACTION_ERROR, span_id=action_spid)
@@ -379,7 +379,7 @@ class Getline(_Builtin):
         line = line[:-1]
 
     self.mem.SetVar(
-        sh_lhs_expr.Name(var_name), value.Str(line), (), scope_e.LocalOnly)
+        sh_lhs_expr.Name(var_name), value.Str(line), scope_e.LocalOnly)
     return 0
 
 

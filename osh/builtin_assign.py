@@ -43,8 +43,8 @@ class Export(object):
     else:
       for pair in cmd_val.pairs:
         # NOTE: when rval is None, only flags are changed
-        self.mem.SetVar(
-            pair.lval, pair.rval, (var_flags.Exported,), scope_e.Dynamic)
+        self.mem.SetVar(pair.lval, pair.rval, scope_e.Dynamic,
+                        flags_to_set=var_flags.Exported)
 
     return 0
 
@@ -94,7 +94,8 @@ class Readonly(object):
       # NOTE:
       # - when rval is None, only flags are changed
       # - dynamic scope because flags on locals can be changed, etc.
-      self.mem.SetVar(pair.lval, rval, (var_flags.ReadOnly,), scope_e.Dynamic)
+      self.mem.SetVar(pair.lval, rval, scope_e.Dynamic,
+                      flags_to_set=var_flags.ReadOnly)
 
     return 0
 
@@ -179,17 +180,17 @@ class NewVar(object):
       else:
         lookup_mode = scope_e.LocalOnly
 
-    flags_to_set = []
+    flags_to_set = 0
     if arg.x == '-': 
-      flags_to_set.append(var_flags.Exported)
+      flags_to_set |= var_flags.Exported
     if arg.r == '-':
-      flags_to_set.append(var_flags.ReadOnly)
+      flags_to_set |= var_flags.ReadOnly
 
-    flags_to_clear = []
+    flags_to_clear = 0
     if arg.x == '+': 
-      flags_to_clear.append(var_flags.Exported)
+      flags_to_clear |= var_flags.Exported
     if arg.r == '+':
-      flags_to_clear.append(var_flags.ReadOnly)
+      flags_to_clear |= var_flags.ReadOnly
 
     for pair in cmd_val.pairs:
       if pair.rval is None:
@@ -204,7 +205,8 @@ class NewVar(object):
 
       if not _CheckType(rval, arg, self.errfmt, pair.spid):
         return 1
-      self.mem.SetVar(pair.lval, rval, flags_to_set, lookup_mode,
+      self.mem.SetVar(pair.lval, rval, lookup_mode,
+                      flags_to_set=flags_to_set,
                       flags_to_clear=flags_to_clear)
 
     return status

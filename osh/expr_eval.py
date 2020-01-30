@@ -370,7 +370,7 @@ class ArithEvaluator(_ExprEvaluator):
 
   def _Store(self, lval, new_int):
     val = value.Str(str(new_int))
-    self.mem.SetVar(lval, val, (), scope_e.Dynamic)
+    self.mem.SetVar(lval, val, scope_e.Dynamic)
 
   def EvalToInt(self, node):
     # type: (arith_expr_t) -> int

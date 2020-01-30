@@ -102,7 +102,7 @@ from typing import List, Dict, Tuple, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.id_kind_asdl import Id_t
   from _devbuild.gen.runtime_asdl import (
-      cmd_value_t, var_flags_t, cell, lvalue_t, builtin_t, redirect_t,
+      cmd_value_t, cell, lvalue_t, builtin_t, redirect_t,
   )
   from _devbuild.gen.syntax_asdl import (
       Token, source_t, redir_t, expr__Lambda, env_pair, proc_sig__Closed,
@@ -963,14 +963,14 @@ class Executor(object):
     return 0
 
   def _EvalTempEnv(self, more_env, flags):
-    # type: (List[env_pair], Tuple[var_flags_t, ...]) -> None
+    # type: (List[env_pair], int) -> None
     """For FOO=1 cmd."""
     for e_pair in more_env:
       val = self.word_ev.EvalWordToString(e_pair.val)
       # Set each var so the next one can reference it.  Example:
       # FOO=1 BAR=$FOO ls /
-      self.mem.SetVar(lvalue.Named(e_pair.name), val, flags,
-                      scope_e.LocalOnly)
+      self.mem.SetVar(lvalue.Named(e_pair.name), val, scope_e.LocalOnly,
+                      flags_to_set=flags)
 
   def _Dispatch(self, node, fork_external):
     # type: (command_t, bool) -> Tuple[int, bool]
@@ -1034,12 +1034,12 @@ class Executor(object):
           is_other_special = False  # TODO: There are other special builtins too!
           if cmd_val.tag_() == cmd_value_e.Assign or is_other_special:
             # Special builtins have their temp env persisted.
-            self._EvalTempEnv(node.more_env, ())
+            self._EvalTempEnv(node.more_env, 0)
             status = self._RunSimpleCommand(cmd_val, fork_external)
           else:
             self.mem.PushTemp()
             try:
-              self._EvalTempEnv(node.more_env, (var_flags.Exported,))
+              self._EvalTempEnv(node.more_env, var_flags.Exported)
               status = self._RunSimpleCommand(cmd_val, fork_external)
             finally:
               self.mem.PopTemp()
@@ -1057,7 +1057,7 @@ class Executor(object):
         if len(node.more_env):
           self.mem.PushTemp()
           try:
-            self._EvalTempEnv(node.more_env, (var_flags.Exported,))
+            self._EvalTempEnv(node.more_env, var_flags.Exported)
             status = self._Execute(node.child)
           finally:
             self.mem.PopTemp()
@@ -1139,8 +1139,8 @@ class Executor(object):
             py_val = self.expr_ev.EvalExpr(node.rhs)
             val = _PyObjectToVal(py_val)
 
-            self.mem.SetVar(vd_lval, val, (var_flags.ReadOnly,),
-                            scope_e.LocalOnly, keyword_id=None)
+            self.mem.SetVar(vd_lval, val, scope_e.LocalOnly, 
+                            flags_to_set=var_flags.ReadOnly, keyword_id=None)
             status = 0
 
           else:
@@ -1166,7 +1166,7 @@ class Executor(object):
 
             for vd_lval, val in zip(vd_lvals, vals):
               self.mem.SetVar(
-                  vd_lval, val, (), scope_e.LocalOnly, keyword_id=node.keyword.id)
+                  vd_lval, val, scope_e.LocalOnly, keyword_id=node.keyword.id)
 
           status = 0
 
@@ -1226,7 +1226,7 @@ class Executor(object):
               else:
                 val = _PyObjectToVal(py_val)
                 # top level variable
-                self.mem.SetVar(UP_lval_, val, (), lookup_mode,
+                self.mem.SetVar(UP_lval_, val, lookup_mode,
                                 keyword_id=node.keyword.id)
 
           # TODO: Other augmented assignments
@@ -1242,7 +1242,7 @@ class Executor(object):
             # This should only be an int or float, so we don't need the logic above
             val = value.Obj(new_py_val)
 
-            self.mem.SetVar(pe_lval, val, (), lookup_mode,
+            self.mem.SetVar(pe_lval, val, lookup_mode,
                             keyword_id=node.keyword.id)
 
           else:
@@ -1315,8 +1315,8 @@ class Executor(object):
           # Undef value, but the 'array' attribute.
 
           #log('setting %s to %s with flags %s', lval, val, flags)
-          flags = ()
-          self.mem.SetVar(lval, val, flags, lookup_mode)
+          flags = 0
+          self.mem.SetVar(lval, val, lookup_mode, flags_to_set=flags)
           self.tracer.OnShAssignment(lval, pair.op, val, flags, lookup_mode)
 
         # PATCH to be compatible with existing shells: If the assignment had a
@@ -1583,7 +1583,7 @@ class Executor(object):
               loop_val = it.next()
             except StopIteration:
               break
-            self.mem.SetVar(lvalue.Named(iter_name), _PyObjectToVal(loop_val), (),
+            self.mem.SetVar(lvalue.Named(iter_name), _PyObjectToVal(loop_val),
                             scope_e.LocalOnly)
 
             # Copied from above
@@ -1630,7 +1630,7 @@ class Executor(object):
           obj = objects.Proc(node, defaults)
 
           self.mem.SetVar(
-              lvalue.Named(node.name.val), value.Obj(obj), (), scope_e.GlobalOnly)
+              lvalue.Named(node.name.val), value.Obj(obj), scope_e.GlobalOnly)
         status = 0
 
       elif case(command_e.Func):
@@ -1653,7 +1653,7 @@ class Executor(object):
 
           obj = objects.Func(node, pos_defaults, named_defaults, self)
           self.mem.SetVar(
-              lvalue.Named(node.name.val), value.Obj(obj), (), scope_e.GlobalOnly)
+              lvalue.Named(node.name.val), value.Obj(obj), scope_e.GlobalOnly)
         status = 0
 
       elif case(command_e.If):
@@ -2061,13 +2061,13 @@ class Executor(object):
           val = proc.defaults[i]
           if val is None:
             e_die("No value provided for param %r", p.name.val)
-        self.mem.SetVar(lvalue.Named(p.name.val), val, (), scope_e.LocalOnly)
+        self.mem.SetVar(lvalue.Named(p.name.val), val, scope_e.LocalOnly)
 
       n_params = len(sig.params)
       if sig.rest:
         leftover = value.MaybeStrArray(argv[n_params:])
         self.mem.SetVar(
-            lvalue.Named(sig.rest.val), leftover, (), scope_e.LocalOnly)
+            lvalue.Named(sig.rest.val), leftover, scope_e.LocalOnly)
       else:
         if n_args > n_params:
           raise TypeError(
@@ -2132,14 +2132,14 @@ class Executor(object):
           if val is None:
             # Python raises TypeError.  Should we do something else?
             raise TypeError('No value provided for param %r', param.name)
-        self.mem.SetVar(lvalue.Named(param.name.val), val, (), scope_e.LocalOnly)
+        self.mem.SetVar(lvalue.Named(param.name.val), val, scope_e.LocalOnly)
 
       if node.pos_splat:
         splat_name = node.pos_splat.val
 
         # NOTE: This is a heterogeneous TUPLE, not list.
         leftover = value.Obj(args[n_params:])
-        self.mem.SetVar(lvalue.Named(splat_name), leftover, (), scope_e.LocalOnly)
+        self.mem.SetVar(lvalue.Named(splat_name), leftover, scope_e.LocalOnly)
       else:
         if n_args > n_params:
           raise TypeError(
@@ -2160,13 +2160,13 @@ class Executor(object):
                 "Named argument %r wasn't passed, and it doesn't have a default "
                 "value" % name.val)
 
-        self.mem.SetVar(lvalue.Named(name.val), val, (), scope_e.LocalOnly)
+        self.mem.SetVar(lvalue.Named(name.val), val, scope_e.LocalOnly)
 
       if node.named_splat:
         splat_name = node.named_splat.val
         # Note: this dict is not an AssocArray
         leftover = value.Obj(kwargs)
-        self.mem.SetVar(lvalue.Named(splat_name), leftover, (), scope_e.LocalOnly)
+        self.mem.SetVar(lvalue.Named(splat_name), leftover, scope_e.LocalOnly)
       else:
         if kwargs:
           raise TypeError(
@@ -2192,7 +2192,7 @@ class Executor(object):
       # Bind params.  TODO: Reject kwargs, etc.
       for i, param in enumerate(lambda_node.params):
         val = value.Obj(args[i])
-        self.mem.SetVar(lvalue.Named(param.name.val), val, (), scope_e.LocalOnly)
+        self.mem.SetVar(lvalue.Named(param.name.val), val, scope_e.LocalOnly)
 
       return_val = None
       try:

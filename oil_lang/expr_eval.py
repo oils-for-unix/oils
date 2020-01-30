@@ -427,8 +427,7 @@ class OilEvaluator(object):
         except StopIteration:
           break
         self.mem.SetVar(
-            lvalue.Named(iter_name), value.Obj(loop_val), (),
-            scope_e.LocalOnly)
+            lvalue.Named(iter_name), value.Obj(loop_val), scope_e.LocalOnly)
 
         if comp.cond:
           b = self.EvalExpr(comp.cond)
@@ -460,8 +459,7 @@ class OilEvaluator(object):
           except StopIteration:
             break
           self.mem.SetVar(
-              lvalue.Named(iter_name), value.Obj(loop_val), (),
-              scope_e.LocalOnly)
+              lvalue.Named(iter_name), value.Obj(loop_val), scope_e.LocalOnly)
 
           if comp.cond:
             b = self.EvalExpr(comp.cond)

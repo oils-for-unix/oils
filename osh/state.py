@@ -28,11 +28,11 @@ from pylib import path_stat
 import libc
 import posix_ as posix
 
-from typing import List, Dict, Tuple, Optional, TYPE_CHECKING
+from typing import List, Dict, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from _devbuild.gen.id_kind_asdl import Id_t
-    from _devbuild.gen.runtime_asdl import lvalue_t, value_t, scope_t, var_flags_t
+    from _devbuild.gen.runtime_asdl import lvalue_t, value_t, scope_t
 
 
 # This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".
@@ -799,8 +799,8 @@ class Mem(object):
     # 'environ' variable into shell variables.  Bash has an export_env
     # variable.  Dash has a loop through environ in init.c
     for n, v in environ.iteritems():
-      self.SetVar(sh_lhs_expr.Name(n), value.Str(v),
-                 (var_flags.Exported,), scope_e.GlobalOnly)
+      self.SetVar(sh_lhs_expr.Name(n), value.Str(v), scope_e.GlobalOnly,
+                  flags_to_set=var_flags.Exported)
 
     # If it's not in the environment, initialize it.  This makes it easier to
     # update later in ExecOpts.
@@ -813,8 +813,8 @@ class Mem(object):
       SetGlobalString(self, 'SHELLOPTS', '')
     # Now make it readonly
     self.SetVar(
-        sh_lhs_expr.Name('SHELLOPTS'), None, (var_flags.ReadOnly,),
-        scope_e.GlobalOnly)
+        sh_lhs_expr.Name('SHELLOPTS'), None, scope_e.GlobalOnly,
+        flags_to_set=var_flags.ReadOnly)
 
     # Usually we inherit PWD from the parent shell.  When it's not set, we may
     # compute it.
@@ -824,8 +824,8 @@ class Mem(object):
     # Now mark it exported, no matter what.  This is one of few variables
     # EXPORTED.  bash and dash both do it.  (e.g. env -i -- dash -c env)
     self.SetVar(
-        sh_lhs_expr.Name('PWD'), None, (var_flags.Exported,),
-        scope_e.GlobalOnly)
+        sh_lhs_expr.Name('PWD'), None, scope_e.GlobalOnly,
+        flags_to_set=var_flags.Exported)
 
   def SetCurrentSpanId(self, span_id):
     # type: (int) -> None
@@ -1085,9 +1085,9 @@ class Mem(object):
       # NOTE: all 3 variants of 'lvalue' have 'name'
       e_die("%r hasn't been declared", lval.name)
 
-  def SetVar(self, lval, val, flags_to_set, lookup_mode, flags_to_clear=(),
+  def SetVar(self, lval, val, lookup_mode, flags_to_set=0, flags_to_clear=0,
              keyword_id=None):
-    # type: (lvalue_t, value_t, Tuple[var_flags_t, ...], scope_t, Tuple[var_flags_t, ...], Optional[Id_t]) -> None
+    # type: (lvalue_t, value_t, scope_t, int, int, Optional[Id_t]) -> None
     """
     Args:
       lval: lvalue
@@ -1124,9 +1124,9 @@ class Mem(object):
       if cell:
         # Clear before checking readonly bit.
         # NOTE: Could be cell.flags &= flag_clear_mask 
-        if var_flags.Exported in flags_to_clear:
+        if var_flags.Exported & flags_to_clear:
           cell.exported = False
-        if var_flags.ReadOnly in flags_to_clear:
+        if var_flags.ReadOnly & flags_to_clear:
           cell.readonly = False
 
         if val is not None:  # e.g. declare -rx existing
@@ -1136,9 +1136,9 @@ class Mem(object):
           cell.val = val
 
         # NOTE: Could be cell.flags |= flag_set_mask 
-        if var_flags.Exported in flags_to_set:
+        if var_flags.Exported & flags_to_set:
           cell.exported = True
-        if var_flags.ReadOnly in flags_to_set:
+        if var_flags.ReadOnly & flags_to_set:
           cell.readonly = True
 
       else:
@@ -1147,8 +1147,8 @@ class Mem(object):
           val = value.Undef()  # export foo, readonly foo
 
         cell = runtime_asdl.cell(val,
-                                 var_flags.Exported in flags_to_set,
-                                 var_flags.ReadOnly in flags_to_set)
+                                 bool(var_flags.Exported & flags_to_set),
+                                 bool(var_flags.ReadOnly & flags_to_set))
         namespace[lval.name] = cell
 
       # Maintain invariant that only strings and undefined cells can be
@@ -1236,7 +1236,7 @@ class Mem(object):
     new_value = value.MaybeStrArray(items)
 
     # arrays can't be exported; can't have AssocArray flag
-    readonly = var_flags.ReadOnly in flags_to_set
+    readonly = var_flags.ReadOnly & flags_to_set
     namespace[lval.name] = runtime_asdl.cell(new_value, False, readonly)
 
   def InternalSetGlobal(self, name, new_val):
@@ -1450,7 +1450,7 @@ def SetLocalString(mem, name, s):
   3) read builtin
   """
   assert isinstance(s, str)
-  mem.SetVar(sh_lhs_expr.Name(name), value.Str(s), (), scope_e.LocalOnly)
+  mem.SetVar(sh_lhs_expr.Name(name), value.Str(s), scope_e.LocalOnly)
 
 
 def SetStringDynamic(mem, name, s):
@@ -1459,7 +1459,7 @@ def SetStringDynamic(mem, name, s):
   Used for getopts.
   """
   assert isinstance(s, str)
-  mem.SetVar(sh_lhs_expr.Name(name), value.Str(s), (), scope_e.Dynamic)
+  mem.SetVar(sh_lhs_expr.Name(name), value.Str(s), scope_e.Dynamic)
 
 
 def SetArrayDynamic(mem, name, a):
@@ -1468,34 +1468,34 @@ def SetArrayDynamic(mem, name, a):
   Used for _init_completion.
   """
   assert isinstance(a, list)
-  mem.SetVar(sh_lhs_expr.Name(name), value.MaybeStrArray(a), (), scope_e.Dynamic)
+  mem.SetVar(sh_lhs_expr.Name(name), value.MaybeStrArray(a), scope_e.Dynamic)
 
 
 def SetGlobalString(mem, name, s):
   """Helper for completion, etc."""
   assert isinstance(s, str)
   val = value.Str(s)
-  mem.SetVar(sh_lhs_expr.Name(name), val, (), scope_e.GlobalOnly)
+  mem.SetVar(sh_lhs_expr.Name(name), val, scope_e.GlobalOnly)
 
 
 def SetGlobalArray(mem, name, a):
   """Helper for completion."""
   assert isinstance(a, list)
-  mem.SetVar(sh_lhs_expr.Name(name), value.MaybeStrArray(a), (), scope_e.GlobalOnly)
+  mem.SetVar(sh_lhs_expr.Name(name), value.MaybeStrArray(a), scope_e.GlobalOnly)
 
 
 def SetLocalArray(mem, name, a):
   """Helper for completion."""
   assert isinstance(a, list)
-  mem.SetVar(sh_lhs_expr.Name(name), value.MaybeStrArray(a), (), scope_e.LocalOnly)
+  mem.SetVar(sh_lhs_expr.Name(name), value.MaybeStrArray(a), scope_e.LocalOnly)
 
 
 def ExportGlobalString(mem, name, s):
   """Helper for completion, $PWD, $OLDPWD, etc."""
   assert isinstance(s, str)
   val = value.Str(s)
-  mem.SetVar(sh_lhs_expr.Name(name), val, (var_flags.Exported,),
-             scope_e.GlobalOnly)
+  mem.SetVar(sh_lhs_expr.Name(name), val, scope_e.GlobalOnly,
+             flags_to_set=var_flags.Exported)
 
 
 def GetGlobal(mem, name):
