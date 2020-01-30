@@ -14,7 +14,7 @@ import cStringIO
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import sh_lhs_expr
 from _devbuild.gen.runtime_asdl import (
-    value, value_e, lvalue_e, scope_e, var_flags_e, value__Str
+    value, value_e, lvalue_e, scope_e, var_flags, value__Str
 )
 from _devbuild.gen import runtime_asdl  # for cell
 
@@ -800,7 +800,7 @@ class Mem(object):
     # variable.  Dash has a loop through environ in init.c
     for n, v in environ.iteritems():
       self.SetVar(sh_lhs_expr.Name(n), value.Str(v),
-                 (var_flags_e.Exported,), scope_e.GlobalOnly)
+                 (var_flags.Exported,), scope_e.GlobalOnly)
 
     # If it's not in the environment, initialize it.  This makes it easier to
     # update later in ExecOpts.
@@ -813,7 +813,7 @@ class Mem(object):
       SetGlobalString(self, 'SHELLOPTS', '')
     # Now make it readonly
     self.SetVar(
-        sh_lhs_expr.Name('SHELLOPTS'), None, (var_flags_e.ReadOnly,),
+        sh_lhs_expr.Name('SHELLOPTS'), None, (var_flags.ReadOnly,),
         scope_e.GlobalOnly)
 
     # Usually we inherit PWD from the parent shell.  When it's not set, we may
@@ -824,7 +824,7 @@ class Mem(object):
     # Now mark it exported, no matter what.  This is one of few variables
     # EXPORTED.  bash and dash both do it.  (e.g. env -i -- dash -c env)
     self.SetVar(
-        sh_lhs_expr.Name('PWD'), None, (var_flags_e.Exported,),
+        sh_lhs_expr.Name('PWD'), None, (var_flags.Exported,),
         scope_e.GlobalOnly)
 
   def SetCurrentSpanId(self, span_id):
@@ -1124,9 +1124,9 @@ class Mem(object):
       if cell:
         # Clear before checking readonly bit.
         # NOTE: Could be cell.flags &= flag_clear_mask 
-        if var_flags_e.Exported in flags_to_clear:
+        if var_flags.Exported in flags_to_clear:
           cell.exported = False
-        if var_flags_e.ReadOnly in flags_to_clear:
+        if var_flags.ReadOnly in flags_to_clear:
           cell.readonly = False
 
         if val is not None:  # e.g. declare -rx existing
@@ -1136,9 +1136,9 @@ class Mem(object):
           cell.val = val
 
         # NOTE: Could be cell.flags |= flag_set_mask 
-        if var_flags_e.Exported in flags_to_set:
+        if var_flags.Exported in flags_to_set:
           cell.exported = True
-        if var_flags_e.ReadOnly in flags_to_set:
+        if var_flags.ReadOnly in flags_to_set:
           cell.readonly = True
 
       else:
@@ -1147,8 +1147,8 @@ class Mem(object):
           val = value.Undef()  # export foo, readonly foo
 
         cell = runtime_asdl.cell(val,
-                                 var_flags_e.Exported in flags_to_set,
-                                 var_flags_e.ReadOnly in flags_to_set)
+                                 var_flags.Exported in flags_to_set,
+                                 var_flags.ReadOnly in flags_to_set)
         namespace[lval.name] = cell
 
       # Maintain invariant that only strings and undefined cells can be
@@ -1236,7 +1236,7 @@ class Mem(object):
     new_value = value.MaybeStrArray(items)
 
     # arrays can't be exported; can't have AssocArray flag
-    readonly = var_flags_e.ReadOnly in flags_to_set
+    readonly = var_flags.ReadOnly in flags_to_set
     namespace[lval.name] = runtime_asdl.cell(new_value, False, readonly)
 
   def InternalSetGlobal(self, name, new_val):
@@ -1381,7 +1381,7 @@ class Mem(object):
     """
     cell, namespace = self._FindCellAndNamespace(name, lookup_mode)
     if cell:
-      if flag == var_flags_e.Exported:
+      if flag == var_flags.Exported:
         cell.exported = False
       else:
         raise AssertionError
@@ -1494,7 +1494,7 @@ def ExportGlobalString(mem, name, s):
   """Helper for completion, $PWD, $OLDPWD, etc."""
   assert isinstance(s, str)
   val = value.Str(s)
-  mem.SetVar(sh_lhs_expr.Name(name), val, (var_flags_e.Exported,),
+  mem.SetVar(sh_lhs_expr.Name(name), val, (var_flags.Exported,),
              scope_e.GlobalOnly)
 
 

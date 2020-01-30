@@ -62,7 +62,7 @@ from _devbuild.gen.runtime_asdl import (
     quote_e,
     lvalue, lvalue_e, lvalue__ObjIndex, lvalue__ObjAttr,
     value, value_e, value_t, value__Str, value__MaybeStrArray, value__Obj,
-    redirect, scope_e, var_flags_e, builtin_e,
+    redirect, scope_e, var_flags, builtin_e,
     cmd_value__Argv, cmd_value, cmd_value_e,
     cmd_value__Argv, cmd_value__Assign,
 )
@@ -89,7 +89,7 @@ from osh import state
 from osh import word_
 
 from mycpp import mylib
-from mycpp.mylib import switch, tagswitch
+from mycpp.mylib import switch, tagswitch, NewStr
 
 import posix_ as posix
 try:
@@ -1039,7 +1039,7 @@ class Executor(object):
           else:
             self.mem.PushTemp()
             try:
-              self._EvalTempEnv(node.more_env, (var_flags_e.Exported,))
+              self._EvalTempEnv(node.more_env, (var_flags.Exported,))
               status = self._RunSimpleCommand(cmd_val, fork_external)
             finally:
               self.mem.PopTemp()
@@ -1057,7 +1057,7 @@ class Executor(object):
         if len(node.more_env):
           self.mem.PushTemp()
           try:
-            self._EvalTempEnv(node.more_env, (var_flags_e.Exported,))
+            self._EvalTempEnv(node.more_env, (var_flags.Exported,))
             status = self._Execute(node.child)
           finally:
             self.mem.PopTemp()
@@ -1139,7 +1139,7 @@ class Executor(object):
             py_val = self.expr_ev.EvalExpr(node.rhs)
             val = _PyObjectToVal(py_val)
 
-            self.mem.SetVar(vd_lval, val, (var_flags_e.ReadOnly,),
+            self.mem.SetVar(vd_lval, val, (var_flags.ReadOnly,),
                             scope_e.LocalOnly, keyword_id=None)
             status = 0
 
@@ -1278,7 +1278,8 @@ class Executor(object):
             elif old_tag == value_e.Str and tag == value_e.Str:
               old_val = cast(value__Str, UP_old_val)
               val = cast(value__Str, UP_val)
-              val = value.Str(old_val.s + val.s)
+              # Note: this is how to concaenate two strings in mycpp!
+              val = value.Str('%s%s' % (old_val.s, val.s))
 
             elif old_tag == value_e.Str and tag == value_e.MaybeStrArray:
               e_die("Can't append array to string")
@@ -1756,7 +1757,7 @@ class Executor(object):
 
       span_id = eo.errexit.SpidIfDisabled()
       if span_id != runtime.NO_SPID:
-        node_str = command_str(node.tag_())  # e.g. command.BraceGroup
+        node_str = NewStr(command_str(node.tag_()))  # e.g. command.BraceGroup
         e_die("errexit is disabled here, but strict_errexit disallows it "
               "with a compound command (%s)", node_str, span_id=span_id)
 
@@ -1924,7 +1925,7 @@ class Executor(object):
       if self.exec_opts.ErrExit() and status != 0:
         raise error.ErrExit(
             'Command sub exited with status %d (%r)', status,
-            command_str(node.tag_()))
+            NewStr(command_str(node.tag_())))
     else:
       # Set a flag so we check errexit at the same time as bash.  Example:
       #

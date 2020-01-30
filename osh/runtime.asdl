@@ -78,6 +78,8 @@ module runtime
   -- An undefined variable can become an indexed array with s[x]=1.  But if we
   -- 'declare -A' it, it will be undefined and waiting to turn into an
   -- associative array.
+  -- IMPORTANT: This is special cased with 'simple_int_sums' in asdl/tool.py.
+  -- Maybe that should be expressable in this schema?
   var_flags = Exported | ReadOnly
 
   -- Dynamic is for shell; LocalOrGlobal is for Oil

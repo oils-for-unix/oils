@@ -147,6 +147,12 @@ class Str {
     assert(0);
     return nullptr;
   }
+
+  // Used for CommandSub in osh/cmd_exec.py
+  Str* rstrip(Str* chars) {
+    assert(0);
+  }
+
   Str* rstrip() {
     if (len_ == 0) {
       return this;

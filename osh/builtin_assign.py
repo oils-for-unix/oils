@@ -5,7 +5,7 @@ builtin_assign.py
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import (
-    value, value_e, lvalue, scope_e, var_flags_e, builtin_e
+    value, value_e, lvalue, scope_e, var_flags, builtin_e
 )
 #from core.util import log
 from frontend import args
@@ -39,12 +39,12 @@ class Export(object):
           raise args.UsageError("doesn't accept RHS with -n", span_id=pair.spid)
 
         # NOTE: we don't care if it wasn't found, like bash.
-        self.mem.ClearFlag(pair.lval.name, var_flags_e.Exported, scope_e.Dynamic)
+        self.mem.ClearFlag(pair.lval.name, var_flags.Exported, scope_e.Dynamic)
     else:
       for pair in cmd_val.pairs:
         # NOTE: when rval is None, only flags are changed
         self.mem.SetVar(
-            pair.lval, pair.rval, (var_flags_e.Exported,), scope_e.Dynamic)
+            pair.lval, pair.rval, (var_flags.Exported,), scope_e.Dynamic)
 
     return 0
 
@@ -94,7 +94,7 @@ class Readonly(object):
       # NOTE:
       # - when rval is None, only flags are changed
       # - dynamic scope because flags on locals can be changed, etc.
-      self.mem.SetVar(pair.lval, rval, (var_flags_e.ReadOnly,), scope_e.Dynamic)
+      self.mem.SetVar(pair.lval, rval, (var_flags.ReadOnly,), scope_e.Dynamic)
 
     return 0
 
@@ -181,15 +181,15 @@ class NewVar(object):
 
     flags_to_set = []
     if arg.x == '-': 
-      flags_to_set.append(var_flags_e.Exported)
+      flags_to_set.append(var_flags.Exported)
     if arg.r == '-':
-      flags_to_set.append(var_flags_e.ReadOnly)
+      flags_to_set.append(var_flags.ReadOnly)
 
     flags_to_clear = []
     if arg.x == '+': 
-      flags_to_clear.append(var_flags_e.Exported)
+      flags_to_clear.append(var_flags.Exported)
     if arg.r == '+':
-      flags_to_clear.append(var_flags_e.ReadOnly)
+      flags_to_clear.append(var_flags.ReadOnly)
 
     for pair in cmd_val.pairs:
       if pair.rval is None:

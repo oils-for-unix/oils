@@ -14,6 +14,10 @@ from asdl import meta
 
 #from core.util import log
 
+# Special case to use like a bit mask, not a typed enum.
+_SIMPLE = ['var_flags']
+
+
 def main(argv):
   try:
     action = argv[1]
@@ -82,7 +86,8 @@ namespace %s {
       v.VisitModule(schema_ast)
 
       v2 = gen_cpp.ClassDefVisitor(f, type_lookup,
-                                   pretty_print_methods=pretty_print_methods)
+                                   pretty_print_methods=pretty_print_methods,
+                                   simple_int_sums=_SIMPLE)
       v2.VisitModule(schema_ast)
 
       f.write("""
@@ -119,7 +124,8 @@ namespace %s {
 """ % (ns, ns))
 
         v3 = gen_cpp.MethodDefVisitor(f, type_lookup,
-                                      pretty_print_methods=pretty_print_methods)
+                                      pretty_print_methods=pretty_print_methods,
+                                      simple_int_sums=_SIMPLE)
         v3.VisitModule(schema_ast)
 
         f.write("""
@@ -168,7 +174,8 @@ from _devbuild.gen.hnode_asdl import color_e, hnode, hnode_e, hnode_t, field
     abbrev_mod_entries = dir(abbrev_mod) if abbrev_mod else []
     v = gen_python.GenMyPyVisitor(f, type_lookup, abbrev_mod_entries,
                                   pretty_print_methods=pretty_print_methods,
-                                  optional_fields=optional_fields)
+                                  optional_fields=optional_fields,
+                                  simple_int_sums=_SIMPLE)
     v.VisitModule(schema_ast)
 
     if abbrev_mod:
