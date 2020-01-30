@@ -172,6 +172,7 @@ class BuiltinDef(object):
     self.to_complete = sorted(names)
 
   def Register(self, name, help_topic=None):
+    # type: (str, str) -> args.BuiltinFlags
     # The help topics are in the quick ref.  TODO: We should match them up?
     #help_topic = help_topic or name
     arg_spec = args.BuiltinFlags()
@@ -183,7 +184,9 @@ class BuiltinDef(object):
 BUILTIN_DEF = BuiltinDef()
 
 
+# TODO: Are we using this?
 def _Register(name, help_topic=None):
+  # type: (str, str) -> args.BuiltinFlags
   return BUILTIN_DEF.Register(name, help_topic=help_topic)
 
 

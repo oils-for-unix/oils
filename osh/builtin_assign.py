@@ -5,12 +5,18 @@ builtin_assign.py
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import (
-    value, value_e, lvalue, scope_e, var_flags, builtin_e
+    value, value_e, value_t, lvalue, scope_e, var_flags, builtin_e,
+    cmd_value__Argv, cmd_value__Assign,
 )
 #from core.util import log
 from frontend import args
 from frontend import match
 from osh.builtin import _Register
+
+from typing import Dict, Tuple, Any, TYPE_CHECKING
+if TYPE_CHECKING:
+  from osh.state import Mem
+  from core.ui import ErrorFormatter
 
 
 EXPORT_SPEC = _Register('export')
@@ -20,10 +26,12 @@ EXPORT_SPEC.ShortFlag('-f')  # stubbed
 
 class Export(object):
   def __init__(self, mem, errfmt):
+    # type: (Mem, ErrorFormatter) -> None
     self.mem = mem
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Assign) -> int
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
     arg, arg_index = EXPORT_SPEC.Parse(arg_r)
@@ -50,11 +58,12 @@ class Export(object):
 
 
 def _CheckType(rval, arg, errfmt, span_id):
+  # type: (value_t, Any, ErrorFormatter, int) -> bool
   """Shared between NewVar and Readonly."""
-  if arg.a and rval and rval.tag != value_e.MaybeStrArray:
+  if arg.a and rval and rval.tag_() != value_e.MaybeStrArray:
     errfmt.Print("Got -a but RHS isn't an array", span_id=span_id)
     return False
-  if arg.A and rval and rval.tag != value_e.AssocArray:
+  if arg.A and rval and rval.tag_() != value_e.AssocArray:
     errfmt.Print("Got -A but RHS isn't an associative array", span_id=span_id)
     return False
   return True
@@ -69,10 +78,12 @@ READONLY_SPEC.ShortFlag('-A')
 
 class Readonly(object):
   def __init__(self, mem, errfmt):
+    # type: (Mem, ErrorFormatter) -> None
     self.mem = mem
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Assign) -> int
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
     arg, arg_index = READONLY_SPEC.Parse(arg_r)
@@ -80,7 +91,7 @@ class Readonly(object):
     for pair in cmd_val.pairs:
       if pair.rval is None:
         if arg.a:
-          rval = value.MaybeStrArray([])
+          rval = value.MaybeStrArray([])  # type: value_t
         elif arg.A:
           rval = value.AssocArray({})
         else:
@@ -122,11 +133,13 @@ class NewVar(object):
   """declare/typeset/local."""
 
   def __init__(self, mem, funcs, errfmt):
+    # type: (Mem, Dict[str, Any], ErrorFormatter) -> None
     self.mem = mem
     self.funcs = funcs
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Assign) -> int
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
     arg, arg_index = NEW_VAR_SPEC.Parse(arg_r)
@@ -195,7 +208,7 @@ class NewVar(object):
     for pair in cmd_val.pairs:
       if pair.rval is None:
         if arg.a:
-          rval = value.MaybeStrArray([])
+          rval = value.MaybeStrArray([])  # type: value_t
         elif arg.A:
           rval = value.AssocArray({})
         else:
@@ -224,11 +237,13 @@ UNSET_SPEC.ShortFlag('-f')
 
 class Unset(object):
   def __init__(self, mem, funcs, errfmt):
+    # type: (Mem, Dict[str, Any], ErrorFormatter) -> None
     self.mem = mem
     self.funcs = funcs
     self.errfmt = errfmt
 
   def _UnsetVar(self, name, spid):
+    # type: (str, int) -> Tuple[bool, bool]
     if not match.IsValidVarName(name):
       raise args.UsageError(
           'got invalid variable name %r' % name, span_id=spid)
@@ -240,6 +255,7 @@ class Unset(object):
     return ok, found
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     arg, offset = UNSET_SPEC.ParseVec(cmd_val)
     n = len(cmd_val.argv)
 
@@ -270,9 +286,11 @@ class Unset(object):
 
 class Shift(object):
   def __init__(self, mem):
+    # type: (Mem) -> None
     self.mem = mem
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     num_args = len(cmd_val.argv) - 1
     if num_args == 0:
       n = 1
