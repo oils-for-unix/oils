@@ -162,7 +162,7 @@ peek-type-info() {
 }
 
 apply-types() {
-  local -a files=(frontend/args.py)
+  local -a files=(osh/state.py)
 
   #local -a files=( $(cat _tmp/osh-parse-src.txt | grep -v syntax_asdl.py ) )
 

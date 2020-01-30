@@ -8,6 +8,7 @@ import stat
 
 
 def exists(path):
+    # type: (str) -> bool
     """Test whether a path exists.  Returns False for broken symbolic links"""
     try:
         posix.stat(path)
@@ -17,6 +18,7 @@ def exists(path):
 
 
 def isdir(s):
+    # type: (str) -> bool
     """Return true if the pathname refers to an existing directory."""
     try:
         st = posix.stat(s)

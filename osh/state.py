@@ -11,10 +11,11 @@ from __future__ import print_function
 
 import cStringIO
 
-from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import sh_lhs_expr
+from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.runtime_asdl import (
-    value, value_e, lvalue_e, scope_e, var_flags, value__Str
+    value, value_e, value_t, value__Str, value__MaybeStrArray,
+    lvalue, lvalue_e, lvalue_t, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
+    scope_e, scope_t, var_flags,
 )
 from _devbuild.gen import runtime_asdl  # for cell
 
@@ -25,14 +26,20 @@ from osh import split
 from pylib import os_path
 from pylib import path_stat
 
+from mycpp import mylib
+from mycpp.mylib import tagswitch
+
 import libc
 import posix_ as posix
 
-from typing import List, Dict, Optional, TYPE_CHECKING
+from typing import (
+    Iterator, Tuple, List, Dict, Optional, Any, cast, TYPE_CHECKING
+)
 
 if TYPE_CHECKING:
-    from _devbuild.gen.id_kind_asdl import Id_t
-    from _devbuild.gen.runtime_asdl import lvalue_t, value_t, scope_t
+    from frontend.parse_lib import OilParseOptions
+    from core.alloc import Arena
+    from _devbuild.gen.runtime_asdl import cell
 
 
 # This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".
@@ -48,7 +55,7 @@ class SearchPath(object):
   def __init__(self, mem):
     # type: (Mem) -> None
     self.mem = mem
-    self.cache = {}
+    self.cache = {}  # type: Dict[str, str]
 
   def Lookup(self, name, exec_required=True):
     # type: (str, bool) -> Optional[str]
@@ -96,6 +103,7 @@ class SearchPath(object):
     return full_path
 
   def MaybeRemoveEntry(self, name):
+    # type: (str) -> None
     """When the file system changes."""
     try:
       del self.cache[name]
@@ -103,10 +111,12 @@ class SearchPath(object):
       pass
 
   def ClearCache(self):
+    # type: () -> None
     """For hash -r."""
     self.cache.clear()
 
   def CachedCommands(self):
+    # type: () -> List[str]
     """For hash -r."""
     return sorted(self.cache.values())
 
@@ -128,7 +138,7 @@ class _ErrExit(object):
     # SUBTLE INVARIANT: There's only ONE valid integer in the stack that's not
     # runtime.NO_SPID, and it's either a valid span_id or 0.  Push() and Set()
     # enforce this.
-    self.stack = []
+    self.stack = []  # type: List[int]
 
   def Push(self, span_id):
     # type: (int) -> None
@@ -319,6 +329,7 @@ META_OPTIONS = ['strict:all', 'oil:basic', 'oil:all']  # Passed to flag parser
 class ExecOpts(object):
 
   def __init__(self, mem, parse_opts, readline):
+    # type: (Mem, OilParseOptions, Optional[Any]) -> None
     """
     Args:
       mem: state.Mem, for SHELLOPTS
@@ -367,8 +378,9 @@ class ExecOpts(object):
     self.strict_word_eval = False  # Bad slices and bad unicode
 
     # This comes after all the 'set' options.
-    shellopts = self.mem.GetVar('SHELLOPTS')
-    assert shellopts.tag == value_e.Str, shellopts
+    UP_shellopts = self.mem.GetVar('SHELLOPTS')
+    assert UP_shellopts.tag == value_e.Str, UP_shellopts
+    shellopts = cast(value__Str, UP_shellopts)
     self._InitOptionsFromEnv(shellopts.s)
 
     # shopt -s / -u.  NOTE: bash uses $BASHOPTS rather than $SHELLOPTS for
@@ -407,6 +419,7 @@ class ExecOpts(object):
     self.strict_backslash = False  # BadBackslash for echo -e, printf, PS1, etc.
 
   def _InitOptionsFromEnv(self, shellopts):
+    # type: (str) -> None
     # e.g. errexit:nounset:pipefail
     lookup = set(shellopts.split(':'))
     for _, name in SET_OPTIONS:
@@ -440,6 +453,7 @@ class ExecOpts(object):
     return ''.join(chars)
 
   def _SetOption(self, opt_name, b):
+    # type: (str, bool) -> None
     """Private version for synchronizing from SHELLOPTS."""
     assert '_' not in opt_name
     if opt_name not in SET_OPTION_NAMES:
@@ -458,12 +472,14 @@ class ExecOpts(object):
       setattr(self, opt_name, b)
 
   def _SetParseOption(self, attr, b):
+    # type: (str, bool) -> None
     if not self.mem.InGlobalNamespace():
       e_die('Syntax options must be set at the top level '
             '(outside any function)')
     setattr(self.parse_opts, attr, b)
 
   def SetOption(self, opt_name, b):
+    # type: (str, bool) -> None
     """ For set -o, set +o, or shopt -s/-u -o. """
     self._SetOption(opt_name, b)
 
@@ -491,6 +507,7 @@ class ExecOpts(object):
         self.mem.InternalSetGlobal('SHELLOPTS', new_val)
 
   def SetShoptOption(self, opt_name, b):
+    # type: (str, bool) -> None
     """ For shopt -s/-u. """
 
     # shopt -s all:oil turns on all Oil options, which includes all strict #
@@ -528,6 +545,7 @@ class ExecOpts(object):
       raise args.UsageError('got invalid option %r' % opt_name)
 
   def ShowOptions(self, opt_names):
+    # type: (List[str]) -> None
     """ For 'set -o' and 'shopt -p -o' """
     # TODO: Maybe sort them differently?
     opt_names = opt_names or SET_OPTION_NAMES
@@ -542,6 +560,7 @@ class ExecOpts(object):
       print('set %so %s' % ('-' if b else '+', opt_name))
 
   def ShowShoptOptions(self, opt_names):
+    # type: (List[str]) -> None
     """ For 'shopt -p' """
     opt_names = opt_names or ALL_SHOPT_OPTIONS  # show all
     for opt_name in opt_names:
@@ -563,15 +582,18 @@ class _ArgFrame(object):
     self.num_shifted = 0
 
   def __repr__(self):
+    # type: () -> str
     return '<_ArgFrame %s %d at %x>' % (self.argv, self.num_shifted, id(self))
 
   def Dump(self):
+    # type: () -> Dict[str, Any]
     return {
         'argv': self.argv,
         'num_shifted': self.num_shifted,
     }
 
   def GetArgNum(self, arg_num):
+    # type: (int) -> value__Str
     index = self.num_shifted + arg_num - 1
     if index >= len(self.argv):
       return value.Undef()
@@ -579,18 +601,22 @@ class _ArgFrame(object):
     return value.Str(str(self.argv[index]))
 
   def GetArgv(self):
+    # type: () -> List[str]
     # () -> List[str]
     return self.argv[self.num_shifted : ]
 
   def GetNumArgs(self):
+    # type: () -> int
     return len(self.argv) - self.num_shifted
 
   def SetArgv(self, argv):
+    # type: (List[str]) -> None
     self.argv = argv
     self.num_shifted = 0
 
 
 def _DumpVarFrame(frame):
+  # type: (Dict[str, cell]) -> Any
   """Dump the stack frame as reasonably compact and readable JSON."""
 
   vars_json = {}
@@ -624,40 +650,49 @@ def _DumpVarFrame(frame):
 class DirStack(object):
   """For pushd/popd/dirs."""
   def __init__(self):
-    self.stack = []
+    # type: () -> None
+    self.stack = []  # type: List[str]
     self.Reset()  # Invariant: it always has at least ONE entry.
 
   def Reset(self):
+    # type: () -> None
     del self.stack[:] 
     self.stack.append(posix.getcwd())
 
   def Push(self, entry):
+    # type: (str) -> None
     self.stack.append(entry)
 
   def Pop(self):
+    # type: () -> str
     if len(self.stack) <= 1:
       return None
     self.stack.pop()  # remove last
     return self.stack[-1]  # return second to last
 
   def Iter(self):
+    # type: () -> List[str]
     """Iterate in reverse order."""
     return reversed(self.stack)
 
 
-def _FormatStack(var_stack):
-  """Temporary debugging.
+# NOTE: not used!
+if mylib.PYTHON:
+  def _FormatStack(var_stack):
+    # type: (List[Any]) -> str
+    """Temporary debugging.
 
-  TODO: Turn this into a real JSON dump or something.
-  """
-  f = cStringIO.StringIO()
-  for i, entry in enumerate(var_stack):
-    f.write('[%d] %s' % (i, entry))
-    f.write('\n')
-  return f.getvalue()
+    TODO: Turn this into a real JSON dump or something.
+    """
+    f = cStringIO.StringIO()
+    for i, entry in enumerate(var_stack):
+      f.write('[%d] %s' % (i, entry))
+      f.write('\n')
+    return f.getvalue()
 
 
 def _GetWorkingDir():
+  # type: () -> str
   """Fallback for pwd and $PWD when there's no 'cd' and no inherited $PWD."""
   try:
     return posix.getcwd()
@@ -679,6 +714,7 @@ class Mem(object):
   Modules: cmd_exec, word_eval, expr_eval, completion
   """
   def __init__(self, dollar0, argv, environ, arena, has_main=False):
+    # type: (str, List[str], Dict[str, str], Arena, bool) -> None
     self.dollar0 = dollar0
     self.argv_stack = [_ArgFrame(argv)]
     self.var_stack = [{}]
@@ -716,6 +752,7 @@ class Mem(object):
     self.arena = arena
 
   def __repr__(self):
+    # type: () -> str
     parts = []
     parts.append('<Mem')
     for i, frame in enumerate(self.var_stack):
@@ -726,14 +763,17 @@ class Mem(object):
     return '\n'.join(parts) + '\n'
 
   def SetPwd(self, pwd):
+    # type: (str) -> None
     """Used by builtins."""
     self.pwd = pwd
 
   def InGlobalNamespace(self):
+    # type: () -> bool
     """For checking that syntax options are only used at the top level."""
     return len(self.argv_stack) == 1
 
   def Dump(self):
+    # type: () -> Tuple[Any, Any, Any]
     """Copy state before unwinding the stack."""
     var_stack = [_DumpVarFrame(frame) for frame in self.var_stack]
     argv_stack = [frame.Dump() for frame in self.argv_stack]
@@ -762,6 +802,7 @@ class Mem(object):
     return var_stack, argv_stack, debug_stack
 
   def _InitDefaults(self):
+    # type: () -> None
 
     # Default value; user may unset it.
     # $ echo -n "$IFS" | python -c 'import sys;print repr(sys.stdin.read())'
@@ -795,11 +836,12 @@ class Mem(object):
     #   set_home_var ();
 
   def _InitVarsFromEnv(self, environ):
+    # type: (Dict) -> None
     # This is the way dash and bash work -- at startup, they turn everything in
     # 'environ' variable into shell variables.  Bash has an export_env
     # variable.  Dash has a loop through environ in init.c
     for n, v in environ.iteritems():
-      self.SetVar(sh_lhs_expr.Name(n), value.Str(v), scope_e.GlobalOnly,
+      self.SetVar(lvalue.Named(n), value.Str(v), scope_e.GlobalOnly,
                   flags_to_set=var_flags.Exported)
 
     # If it's not in the environment, initialize it.  This makes it easier to
@@ -813,7 +855,7 @@ class Mem(object):
       SetGlobalString(self, 'SHELLOPTS', '')
     # Now make it readonly
     self.SetVar(
-        sh_lhs_expr.Name('SHELLOPTS'), None, scope_e.GlobalOnly,
+        lvalue.Named('SHELLOPTS'), None, scope_e.GlobalOnly,
         flags_to_set=var_flags.ReadOnly)
 
     # Usually we inherit PWD from the parent shell.  When it's not set, we may
@@ -824,7 +866,7 @@ class Mem(object):
     # Now mark it exported, no matter what.  This is one of few variables
     # EXPORTED.  bash and dash both do it.  (e.g. env -i -- dash -c env)
     self.SetVar(
-        sh_lhs_expr.Name('PWD'), None, scope_e.GlobalOnly,
+        lvalue.Named('PWD'), None, scope_e.GlobalOnly,
         flags_to_set=var_flags.Exported)
 
   def SetCurrentSpanId(self, span_id):
@@ -938,6 +980,7 @@ class Mem(object):
     return self.var_stack[-1]
 
   def _PushDebugStack(self, func_name, source_name):
+    # type: (Optional[str], Optional[Any]) -> None
     # self.current_spid is set before every SimpleCommand, ShAssignment, [[, ((,
     # etc.  Function calls and 'source' are both SimpleCommand.
 
@@ -952,6 +995,7 @@ class Mem(object):
     )
 
   def _PopDebugStack(self):
+    # type: () -> None
     self.debug_stack.pop()
 
   #
@@ -959,6 +1003,7 @@ class Mem(object):
   #
 
   def Shift(self, n):
+    # type: (int) -> int
     frame = self.argv_stack[-1]
     num_args = len(frame.argv)
 
@@ -981,6 +1026,7 @@ class Mem(object):
     return self.argv_stack[-1].GetArgv()
 
   def SetArgv(self, argv):
+    # type: (List[str]) -> None
     """For set -- 1 2 3."""
     # from set -- 1 2 3
     self.argv_stack[-1].SetArgv(argv)
@@ -1016,6 +1062,7 @@ class Mem(object):
   #
 
   def _FindCellAndNamespace(self, name, lookup_mode):
+    # type: (str, scope_t) -> Tuple[Optional[cell], Dict[str, cell]]
     """Helper for getting and setting variable.
 
     Args:
@@ -1058,6 +1105,7 @@ class Mem(object):
       raise AssertionError(lookup_mode)
 
   def IsAssocArray(self, name, lookup_mode):
+    # type: (str, scope_t) -> bool
     """Returns whether a name resolve to a cell with an associative array.
     
     We need to know this to evaluate the index expression properly -- should it
@@ -1069,14 +1117,18 @@ class Mem(object):
         return True
     return False
 
-  def _CheckOilKeyword(self, keyword_id, lval, cell):
+  def _CheckOilKeyword(self,
+                       keyword_id,  # type: Id_t
+                       lval,  # type: lvalue__Named
+                       cell,  # type: Optional[cell]
+                       ):
+    # type: (...) -> None
     """Check that 'var' and setvar/set are used correctly.
 
     NOTE: These are dynamic checks, but the syntactic difference between
     definition and mutation will help translate the Oil subset of OSH to static
     languages.
     """
-
     if cell and keyword_id == Id.KW_Var:
       # TODO: Point at the ORIGINAL declaration!
       e_die("%r has already been declared", lval.name)
@@ -1118,118 +1170,125 @@ class Mem(object):
     # - Other validity: $HOME could be checked for existence
 
     assert flags_to_set is not None
-    if lval.tag == lvalue_e.Named:
-      cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
-      self._CheckOilKeyword(keyword_id, lval, cell)
-      if cell:
-        # Clear before checking readonly bit.
-        # NOTE: Could be cell.flags &= flag_clear_mask 
-        if var_flags.Exported & flags_to_clear:
-          cell.exported = False
-        if var_flags.ReadOnly & flags_to_clear:
-          cell.readonly = False
+    UP_lval = lval
+    with tagswitch(lval) as case:
+      if case(lvalue_e.Named):
+        lval = cast(lvalue__Named, UP_lval)
+        cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
+        self._CheckOilKeyword(keyword_id, lval, cell)
+        if cell:
+          # Clear before checking readonly bit.
+          # NOTE: Could be cell.flags &= flag_clear_mask 
+          if var_flags.Exported & flags_to_clear:
+            cell.exported = False
+          if var_flags.ReadOnly & flags_to_clear:
+            cell.readonly = False
 
-        if val is not None:  # e.g. declare -rx existing
-          if cell.readonly:
-            # TODO: error context
-            e_die("Can't assign to readonly value %r", lval.name)
-          cell.val = val
+          if val is not None:  # e.g. declare -rx existing
+            if cell.readonly:
+              # TODO: error context
+              e_die("Can't assign to readonly value %r", lval.name)
+            cell.val = val
 
-        # NOTE: Could be cell.flags |= flag_set_mask 
-        if var_flags.Exported & flags_to_set:
-          cell.exported = True
-        if var_flags.ReadOnly & flags_to_set:
-          cell.readonly = True
+          # NOTE: Could be cell.flags |= flag_set_mask 
+          if var_flags.Exported & flags_to_set:
+            cell.exported = True
+          if var_flags.ReadOnly & flags_to_set:
+            cell.readonly = True
+
+        else:
+          if val is None:  # declare -rx nonexistent
+            # set -o nounset; local foo; echo $foo  # It's still undefined!
+            val = value.Undef()  # export foo, readonly foo
+
+          cell = runtime_asdl.cell(val,
+                                   bool(var_flags.Exported & flags_to_set),
+                                   bool(var_flags.ReadOnly & flags_to_set))
+          namespace[lval.name] = cell
+
+        # Maintain invariant that only strings and undefined cells can be
+        # exported.
+        if (cell.val is not None and
+            cell.val.tag not in (value_e.Undef, value_e.Str) and
+            cell.exported):
+          e_die("Can't export array")  # TODO: error context
+
+      elif case(lvalue_e.Indexed):
+        lval = cast(lvalue__Indexed, UP_lval)
+        assert isinstance(lval.index, int), lval
+        # There is no syntax 'declare a[x]'
+        assert val is not None, val
+
+        # TODO: All paths should have this?  We can get here by a[x]=1 or
+        # (( a[ x ] = 1 )).  Maybe we should make them different?
+        left_spid = lval.spids[0] if lval.spids else runtime.NO_SPID
+
+        # bash/mksh have annoying behavior of letting you do LHS assignment to
+        # Undef, which then turns into an INDEXED array.  (Undef means that set
+        # -o nounset fails.)
+        cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
+        self._CheckOilKeyword(keyword_id, lval, cell)
+        if not cell:
+          self._BindNewArrayWithEntry(namespace, lval, val, flags_to_set)
+          return
+
+        if cell.readonly:
+          e_die("Can't assign to readonly array", span_id=left_spid)
+
+        UP_cell_val = cell.val
+        # undef[0]=y is allowed
+        with tagswitch(UP_cell_val) as case2:
+          if case2(value_e.Undef):
+            self._BindNewArrayWithEntry(namespace, lval, val, flags_to_set)
+            return
+
+          elif case2(value_e.Str):
+            # s=x
+            # s[1]=y  # invalid
+            e_die("Entries in value of type %s can't be assigned to",
+                  cell.val.__class__.__name__, span_id=left_spid)
+
+          elif case2(value_e.MaybeStrArray):
+            cell_val = cast(value__MaybeStrArray, UP_cell_val)
+            strs = cell_val.strs
+            try:
+              strs[lval.index] = val.s
+            except IndexError:
+              # Fill it in with None.  It could look like this:
+              # ['1', 2, 3, None, None, '4', None]
+              # Then ${#a[@]} counts the entries that are not None.
+              #
+              # TODO: strict_array for Oil arrays won't auto-fill.
+              n = lval.index - len(strs) + 1
+              strs.extend([None] * n)
+              strs[lval.index] = val.s
+            return
+
+        # AssocArray shouldn't happen because we query IsAssocArray before
+        # evaluating sh_lhs_expr.
+        e_die("Object of this type can't be indexed: %s", cell.val)
+
+      elif case(lvalue_e.Keyed):
+        lval = cast(lvalue__Keyed, UP_lval)
+        # There is no syntax 'declare A["x"]'
+        assert val is not None, val
+
+        left_spid = lval.spids[0] if lval.spids else runtime.NO_SPID
+
+        cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
+        self._CheckOilKeyword(keyword_id, lval, cell)
+        # We already looked it up before making the lvalue
+        assert cell.val.tag == value_e.AssocArray, cell
+        if cell.readonly:
+          e_die("Can't assign to readonly associative array", span_id=left_spid)
+
+        cell.val.d[lval.key] = val.s
 
       else:
-        if val is None:  # declare -rx nonexistent
-          # set -o nounset; local foo; echo $foo  # It's still undefined!
-          val = value.Undef()  # export foo, readonly foo
-
-        cell = runtime_asdl.cell(val,
-                                 bool(var_flags.Exported & flags_to_set),
-                                 bool(var_flags.ReadOnly & flags_to_set))
-        namespace[lval.name] = cell
-
-      # Maintain invariant that only strings and undefined cells can be
-      # exported.
-      if (cell.val is not None and
-          cell.val.tag not in (value_e.Undef, value_e.Str) and
-          cell.exported):
-        e_die("Can't export array")  # TODO: error context
-
-    elif lval.tag == lvalue_e.Indexed:
-      assert isinstance(lval.index, int), lval
-      # There is no syntax 'declare a[x]'
-      assert val is not None, val
-
-      # TODO: All paths should have this?  We can get here by a[x]=1 or
-      # (( a[ x ] = 1 )).  Maybe we should make them different?
-      left_spid = lval.spids[0] if lval.spids else runtime.NO_SPID
-
-      # bash/mksh have annoying behavior of letting you do LHS assignment to
-      # Undef, which then turns into an INDEXED array.  (Undef means that set
-      # -o nounset fails.)
-      cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
-      self._CheckOilKeyword(keyword_id, lval, cell)
-      if not cell:
-        self._BindNewArrayWithEntry(namespace, lval, val, flags_to_set)
-        return
-
-      if cell.readonly:
-        e_die("Can't assign to readonly array", span_id=left_spid)
-
-      cell_tag = cell.val.tag
-
-      # undef[0]=y is allowed
-      if cell_tag == value_e.Undef:
-        self._BindNewArrayWithEntry(namespace, lval, val, flags_to_set)
-        return
-
-      if cell_tag == value_e.Str:
-        # s=x
-        # s[1]=y  # invalid
-        e_die("Entries in value of type %s can't be assigned to",
-              cell.val.__class__.__name__, span_id=left_spid)
-
-      if cell_tag == value_e.MaybeStrArray:
-        strs = cell.val.strs
-        try:
-          strs[lval.index] = val.s
-        except IndexError:
-          # Fill it in with None.  It could look like this:
-          # ['1', 2, 3, None, None, '4', None]
-          # Then ${#a[@]} counts the entries that are not None.
-          #
-          # TODO: strict_array for Oil arrays won't auto-fill.
-          n = lval.index - len(strs) + 1
-          strs.extend([None] * n)
-          strs[lval.index] = val.s
-        return
-
-      # AssocArray shouldn't happen because we query IsAssocArray before
-      # evaluating sh_lhs_expr.
-      e_die("Object of this type can't be indexed: %s", cell.val)
-
-    elif lval.tag == lvalue_e.Keyed:
-      # There is no syntax 'declare A["x"]'
-      assert val is not None, val
-
-      left_spid = lval.spids[0] if lval.spids else runtime.NO_SPID
-
-      cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
-      self._CheckOilKeyword(keyword_id, lval, cell)
-      # We already looked it up before making the lvalue
-      assert cell.val.tag == value_e.AssocArray, cell
-      if cell.readonly:
-        e_die("Can't assign to readonly associative array", span_id=left_spid)
-
-      cell.val.d[lval.key] = val.s
-
-    else:
-      raise AssertionError(lval.__class__.__name__)
+        raise AssertionError(lval.__class__.__name__)
 
   def _BindNewArrayWithEntry(self, namespace, lval, val, flags_to_set):
+    # type: (Dict[str, cell], lvalue__Indexed, value__Str, int) -> None
     """Fill 'namespace' with a new indexed array entry."""
     items = [None] * lval.index
     items.append(val.s)
@@ -1240,6 +1299,7 @@ class Mem(object):
     namespace[lval.name] = runtime_asdl.cell(new_value, False, readonly)
 
   def InternalSetGlobal(self, name, new_val):
+    # type: (str, value_t) -> None
     """For setting read-only globals internally.
 
     Args:
@@ -1343,11 +1403,13 @@ class Mem(object):
     return value.Undef()
 
   def GetCell(self, name):
+    # type: (str) -> cell
     """For the 'repr' builtin."""
     cell, _ = self._FindCellAndNamespace(name, scope_e.Dynamic)
     return cell
 
   def Unset(self, lval, lookup_mode):
+    # type: (lvalue__Named, scope_t) -> Tuple[bool, bool]
     """
     Returns:
       ok bool, found bool.
@@ -1374,6 +1436,7 @@ class Mem(object):
       raise AssertionError
 
   def ClearFlag(self, name, flag, lookup_mode):
+    # type: (str, int, scope_t) -> bool
     """Used for export -n.
 
     We don't use SetVar() because even if rval is None, it will make an Undef
@@ -1409,6 +1472,7 @@ class Mem(object):
     return exported
 
   def VarNames(self):
+    # type: () -> Iterator[str]
     """For internal OSH completion and compgen -A variable.
 
     NOTE: We could also add $? $$ etc.?
@@ -1430,6 +1494,7 @@ class Mem(object):
     return names
 
   def GetAllVars(self):
+    # type: () -> Dict[str, cell]
     """Get all variables and their values, for 'set' builtin. """
     result = {}
     for scope in self.var_stack:
@@ -1450,54 +1515,61 @@ def SetLocalString(mem, name, s):
   3) read builtin
   """
   assert isinstance(s, str)
-  mem.SetVar(sh_lhs_expr.Name(name), value.Str(s), scope_e.LocalOnly)
+  mem.SetVar(lvalue.Named(name), value.Str(s), scope_e.LocalOnly)
 
 
 def SetStringDynamic(mem, name, s):
+  # type: (Mem, str, str) -> None
   """Set a string by looking up the stack.
 
   Used for getopts.
   """
   assert isinstance(s, str)
-  mem.SetVar(sh_lhs_expr.Name(name), value.Str(s), scope_e.Dynamic)
+  mem.SetVar(lvalue.Named(name), value.Str(s), scope_e.Dynamic)
 
 
 def SetArrayDynamic(mem, name, a):
+  # type: (Mem, str, List[str]) -> None
   """Set an array by looking up the stack.
 
   Used for _init_completion.
   """
   assert isinstance(a, list)
-  mem.SetVar(sh_lhs_expr.Name(name), value.MaybeStrArray(a), scope_e.Dynamic)
+  mem.SetVar(lvalue.Named(name), value.MaybeStrArray(a), scope_e.Dynamic)
 
 
 def SetGlobalString(mem, name, s):
+  # type: (Mem, str, str) -> None
   """Helper for completion, etc."""
   assert isinstance(s, str)
   val = value.Str(s)
-  mem.SetVar(sh_lhs_expr.Name(name), val, scope_e.GlobalOnly)
+  mem.SetVar(lvalue.Named(name), val, scope_e.GlobalOnly)
 
 
 def SetGlobalArray(mem, name, a):
+  # type: (Mem, str, List[str]) -> None
   """Helper for completion."""
   assert isinstance(a, list)
-  mem.SetVar(sh_lhs_expr.Name(name), value.MaybeStrArray(a), scope_e.GlobalOnly)
+  mem.SetVar(lvalue.Named(name), value.MaybeStrArray(a), scope_e.GlobalOnly)
 
 
 def SetLocalArray(mem, name, a):
+  # type: (Mem, str, List[str]) -> None
   """Helper for completion."""
   assert isinstance(a, list)
-  mem.SetVar(sh_lhs_expr.Name(name), value.MaybeStrArray(a), scope_e.LocalOnly)
+  mem.SetVar(lvalue.Named(name), value.MaybeStrArray(a), scope_e.LocalOnly)
 
 
 def ExportGlobalString(mem, name, s):
+  # type: (Mem, str, str) -> None
   """Helper for completion, $PWD, $OLDPWD, etc."""
   assert isinstance(s, str)
   val = value.Str(s)
-  mem.SetVar(sh_lhs_expr.Name(name), val, scope_e.GlobalOnly,
+  mem.SetVar(lvalue.Named(name), val, scope_e.GlobalOnly,
              flags_to_set=var_flags.Exported)
 
 
 def GetGlobal(mem, name):
+  # type: (Mem, str) -> value__MaybeStrArray
   assert isinstance(name, str), name
   return mem.GetVar(name, scope_e.GlobalOnly)
