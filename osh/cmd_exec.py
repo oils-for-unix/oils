@@ -92,10 +92,7 @@ from mycpp import mylib
 from mycpp.mylib import switch, tagswitch, NewStr
 
 import posix_ as posix
-try:
-  import libc  # for fnmatch
-except ImportError:
-  from benchmarks import fake_libc as libc  # type: ignore
+import libc  # for fnmatch
 
 from typing import List, Dict, Tuple, Any, cast, TYPE_CHECKING
 

@@ -13,7 +13,7 @@ import cStringIO
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.runtime_asdl import (
-    value, value_e, value_t, value__Str, value__MaybeStrArray,
+    value, value_e, value_t, value__Str, value__MaybeStrArray, value__AssocArray,
     lvalue, lvalue_e, lvalue_t, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
     scope_e, scope_t, var_flags,
 )
@@ -593,7 +593,7 @@ class _ArgFrame(object):
     }
 
   def GetArgNum(self, arg_num):
-    # type: (int) -> value__Str
+    # type: (int) -> value_t
     index = self.num_shifted + arg_num - 1
     if index >= len(self.argv):
       return value.Undef()
@@ -602,7 +602,6 @@ class _ArgFrame(object):
 
   def GetArgv(self):
     # type: () -> List[str]
-    # () -> List[str]
     return self.argv[self.num_shifted : ]
 
   def GetNumArgs(self):
@@ -632,15 +631,25 @@ def _DumpVarFrame(frame):
       cell_json['flags'] = flags
 
     # For compactness, just put the value right in the cell.
-    tag = cell.val.tag
-    if tag == value_e.Undef:
-      cell_json['type'] = 'Undef'
-    elif tag == value_e.Str:
-      cell_json['type'] = 'Str'
-      cell_json['value'] = cell.val.s
-    elif tag == value_e.MaybeStrArray:
-      cell_json['type'] = 'MaybeStrArray'
-      cell_json['value'] = cell.val.strs
+    val = None  # type: value_t
+    with tagswitch(cell.val) as case:
+      if case(value_e.Undef):
+        cell_json['type'] = 'Undef'
+
+      elif case(value_e.Str):
+        val = cast(value__Str, cell.val)
+        cell_json['type'] = 'Str'
+        cell_json['value'] = val.s
+
+      elif case(value_e.MaybeStrArray):
+        val = cast(value__MaybeStrArray, cell.val)
+        cell_json['type'] = 'MaybeStrArray'
+        cell_json['value'] = val.strs
+
+      elif case(value_e.AssocArray):
+        val = cast(value__AssocArray, cell.val)
+        cell_json['type'] = 'AssocArray'
+        cell_json['value'] = val.d
 
     vars_json[name] = cell_json
 
@@ -717,14 +726,14 @@ class Mem(object):
     # type: (str, List[str], Dict[str, str], Arena, bool) -> None
     self.dollar0 = dollar0
     self.argv_stack = [_ArgFrame(argv)]
-    self.var_stack = [{}]
+    self.var_stack = [{}]  # type: List[Dict[str, cell]]
 
     # The debug_stack isn't strictly necessary for execution.  We use it for
     # crash dumps and for 3 parallel arrays: FUNCNAME, CALL_SOURCE,
     # BASH_LINENO.  The First frame points at the global vars and argv.
     self.debug_stack = [(None, None, runtime.NO_SPID, 0, 0)]
 
-    self.bash_source = []  # for implementing BASH_SOURCE
+    self.bash_source = []  # type: List[str] # for implementing BASH_SOURCE
     self.has_main = has_main
     if has_main:
       self.bash_source.append(dollar0)  # e.g. the filename
@@ -836,7 +845,7 @@ class Mem(object):
     #   set_home_var ();
 
   def _InitVarsFromEnv(self, environ):
-    # type: (Dict) -> None
+    # type: (Dict[str, str]) -> None
     # This is the way dash and bash work -- at startup, they turn everything in
     # 'environ' variable into shell variables.  Bash has an export_env
     # variable.  Dash has a loop through environ in init.c
@@ -850,8 +859,8 @@ class Mem(object):
     # TODO: IFS, etc. should follow this pattern.  Maybe need a SysCall
     # interface?  self.syscall.getcwd() etc.
 
-    v = self.GetVar('SHELLOPTS')
-    if v.tag == value_e.Undef:
+    val = self.GetVar('SHELLOPTS')
+    if val.tag_() == value_e.Undef:
       SetGlobalString(self, 'SHELLOPTS', '')
     # Now make it readonly
     self.SetVar(
@@ -860,8 +869,8 @@ class Mem(object):
 
     # Usually we inherit PWD from the parent shell.  When it's not set, we may
     # compute it.
-    v = self.GetVar('PWD')
-    if v.tag == value_e.Undef:
+    val = self.GetVar('PWD')
+    if val.tag_() == value_e.Undef:
       SetGlobalString(self, 'PWD', _GetWorkingDir())
     # Now mark it exported, no matter what.  This is one of few variables
     # EXPORTED.  bash and dash both do it.  (e.g. env -i -- dash -c env)
@@ -1014,7 +1023,7 @@ class Mem(object):
       return 1  # silent error
 
   def GetArgNum(self, arg_num):
-    # type: (int) -> value__Str
+    # type: (int) -> value_t
     if arg_num == 0:
       return value.Str(self.dollar0)
 
@@ -1290,12 +1299,12 @@ class Mem(object):
   def _BindNewArrayWithEntry(self, namespace, lval, val, flags_to_set):
     # type: (Dict[str, cell], lvalue__Indexed, value__Str, int) -> None
     """Fill 'namespace' with a new indexed array entry."""
-    items = [None] * lval.index
+    items = [None] * lval.index  # type: List[str]
     items.append(val.s)
     new_value = value.MaybeStrArray(items)
 
     # arrays can't be exported; can't have AssocArray flag
-    readonly = var_flags.ReadOnly & flags_to_set
+    readonly = bool(var_flags.ReadOnly & flags_to_set)
     namespace[lval.name] = runtime_asdl.cell(new_value, False, readonly)
 
   def InternalSetGlobal(self, name, new_val):
@@ -1453,22 +1462,23 @@ class Mem(object):
       return False
 
   def GetExported(self):
-    # type: () -> List[str]
+    # type: () -> Dict[str, str]
     """Get all the variables that are marked exported."""
     # TODO: This is run on every SimpleCommand.  Should we have a dirty flag?
     # We have to notice these things:
     # - If an exported variable is changed.
     # - If the set of exported variables changes.
 
-    exported = {}
+    exported = {}  # type: Dict[str, str]
     # Search from globals up.  Names higher on the stack will overwrite names
     # lower on the stack.
     for scope in self.var_stack:
       for name, cell in scope.iteritems():
         # TODO: Disallow exporting at assignment time.  If an exported Str is
         # changed to MaybeStrArray, also clear its 'exported' flag.
-        if cell.exported and cell.val.tag == value_e.Str:
-          exported[name] = cell.val.s
+        if cell.exported and cell.val.tag_() == value_e.Str:
+          val = cast(value__Str, cell.val)
+          exported[name] = val.s
     return exported
 
   def VarNames(self):
@@ -1494,9 +1504,9 @@ class Mem(object):
     return names
 
   def GetAllVars(self):
-    # type: () -> Dict[str, cell]
+    # type: () -> Dict[str, str]
     """Get all variables and their values, for 'set' builtin. """
-    result = {}
+    result = {}  # type: Dict[str, str]
     for scope in self.var_stack:
       for name, cell in scope.iteritems():
         # TODO: Show other types?
@@ -1570,6 +1580,6 @@ def ExportGlobalString(mem, name, s):
 
 
 def GetGlobal(mem, name):
-  # type: (Mem, str) -> value__MaybeStrArray
+  # type: (Mem, str) -> value_t
   assert isinstance(name, str), name
   return mem.GetVar(name, scope_e.GlobalOnly)

@@ -42,7 +42,7 @@ def Utf8Encode(code):
   else:
     return '\xEF\xBF\xBD'  # unicode replacement character
 
-  bytes_ = []
+  bytes_ = []  # type: List[int]
   for _ in xrange(num_cont_bytes):
     bytes_.append(0x80 | (code & 0x3F))
     code >>= 6
@@ -52,7 +52,8 @@ def Utf8Encode(code):
   bytes_.reverse()
 
   # mod 256 because Python ints don't wrap around!
-  return ''.join(chr(b & 0xFF) for b in bytes_)
+  tmp = [chr(b & 0xFF) for b in bytes_]
+  return ''.join(tmp)
 
 
 # TODO: Add details of the invalid character/byte here?
@@ -358,7 +359,7 @@ def _AllMatchPositions(s, regex):
 
   (If there are no matches, it returns the empty list.)
   """
-  matches = []
+  matches = []  # type: List[Tuple[int, int]]
   pos = 0
   n = len(s)
   while pos < n:  # needed to prevent infinite loop in (.*) case
@@ -373,7 +374,7 @@ def _AllMatchPositions(s, regex):
 
 def _PatSubAll(s, regex, replace_str):
   # type: (str, str, str) -> str
-  parts = []
+  parts = []  # type: List[str]
   prev_end = 0
   for start, end in _AllMatchPositions(s, regex):
     parts.append(s[prev_end:start])

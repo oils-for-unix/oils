@@ -243,6 +243,14 @@ class Str {
     assert(0);
   }
 
+  Str* upper() {
+    assert(0);
+  }
+
+  Str* lower() {
+    assert(0);
+  }
+
   const char* data_;
   int len_;
 
@@ -384,6 +392,11 @@ class List {
   }
 
   void sort() {
+    assert(0);
+  }
+
+  // in osh/string_ops.py
+  void reverse() {
     assert(0);
   }
 

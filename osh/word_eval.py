@@ -349,7 +349,7 @@ class _WordEvaluator(SimpleWordEvaluator):
     return result
 
   def _EvalVarNum(self, var_num):
-    # type: (int) -> value__Str
+    # type: (int) -> value_t
     assert var_num >= 0
     return self.mem.GetArgNum(var_num)
 

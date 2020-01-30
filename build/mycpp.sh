@@ -316,17 +316,25 @@ readonly CAN_TRANSLATE=(
 
 
 readonly TRANSLATE=(
-  # except (e1, e2) isn't supported for InvalidSlice, utf-8
-  $REPO_ROOT/osh/word_eval.py
+  # Format strings not constant, in PrintRequired
+  #$REPO_ROOT/core/comp_ui.py
+  $REPO_ROOT/osh/split.py
 
-  # except (e1, e2) isn't supported
-  $REPO_ROOT/osh/cmd_exec.py
+  #$REPO_ROOT/osh/word_compile.py
+  #$REPO_ROOT/osh/glob_.py
+  #$REPO_ROOT/osh/string_ops.py
+
+  ## except (e1, e2) isn't supported for InvalidSlice, utf-8
+  #$REPO_ROOT/osh/word_eval.py
+
+  ## except (e1, e2) isn't supported
+  #$REPO_ROOT/osh/cmd_exec.py
 )
 
 # From types/more-oil-manifest.txt
 readonly MORE_OIL=(
-  $REPO_ROOT/osh/glob_.py
-  $REPO_ROOT/osh/string_ops.py
+  $REPO_ROOT/osh/glob_.py  # translates pretty well
+  $REPO_ROOT/osh/string_ops.py  # translation problems
   $REPO_ROOT/frontend/location.py
 
   # fails because of readline_mod return value
@@ -337,16 +345,13 @@ readonly MORE_OIL=(
   # except (SystemError, UnicodeError):
   #$REPO_ROOT/core/comp_ui.py
 
-  $REPO_ROOT/osh/word_compile.py
+  $REPO_ROOT/osh/word_compile.py  # translates well
   $REPO_ROOT/osh/builtin_bracket.py
 
   # core/main_loop.py causes a lot of problems
 
   $REPO_ROOT/osh/split.py
   $REPO_ROOT/oil_lang/regex_translate.py
-
-  # has Union because of cmd_val
-  #$REPO_ROOT/osh/cmd_exec.py
 
   # Fails because of Union[None, bool, str] -- dynamic typing
   #$REPO_ROOT/frontend/args.py

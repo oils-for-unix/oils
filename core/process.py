@@ -443,7 +443,7 @@ class ExternalProgram(object):
     self.debug_f = debug_f
 
   def Exec(self, argv0_path, cmd_val, environ):
-    # type: (str, cmd_value__Argv, List[str]) -> None
+    # type: (str, cmd_value__Argv, Dict[str, str]) -> None
     """Execute a program and exit this process.
 
     Called by:
@@ -535,7 +535,7 @@ class ExternalThunk(Thunk):
   """An external executable."""
 
   def __init__(self, ext_prog, argv0_path, cmd_val, environ):
-    # type: (ExternalProgram, str, cmd_value__Argv, List[str]) -> None
+    # type: (ExternalProgram, str, cmd_value__Argv, Dict[str, str]) -> None
     self.ext_prog = ext_prog
     self.argv0_path = argv0_path
     self.cmd_val = cmd_val

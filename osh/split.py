@@ -30,6 +30,7 @@ from _devbuild.gen import runtime_asdl
 from _devbuild.gen.runtime_asdl import value_e, span_e, value__Str
 from core import util
 from core.util import log
+from mycpp.mylib import tagswitch
 
 from typing import List, Tuple, Dict, TYPE_CHECKING, cast
 if TYPE_CHECKING:
@@ -98,16 +99,18 @@ class SplitContext(object):
   def _GetSplitter(self):
     # type: () -> IfsSplitter
     """Based on the current stack frame, get the splitter."""
-    UP_val = self.mem.GetVar('IFS')
+    val = self.mem.GetVar('IFS')
 
-    if UP_val.tag == value_e.Undef:
-      ifs = DEFAULT_IFS
-    elif UP_val.tag == value_e.Str:
-      val = cast(value__Str, UP_val)
-      ifs = val.s
-    else:
-      # TODO: Raise proper error
-      raise AssertionError("IFS shouldn't be an array")
+    UP_val = val
+    with tagswitch(val) as case:
+      if case(value_e.Undef):
+        ifs = DEFAULT_IFS
+      elif case(value_e.Str):
+        val = cast(value__Str, UP_val)
+        ifs = val.s
+      else:
+        # TODO: Raise proper error
+        raise AssertionError("IFS shouldn't be an array")
 
     try:
       sp = self.splitters[ifs]
@@ -145,18 +148,20 @@ class SplitContext(object):
     # by a <space> if IFS is unset. If IFS is set to a null string, this is
     # not equivalent to unsetting it; its first character does not exist, so
     # the parameter values are concatenated."
-    UP_val = self.mem.GetVar('IFS') # type: value_t
-    if UP_val.tag == value_e.Undef:
-      return ' '
-    elif UP_val.tag == value_e.Str:
-      val = cast(value__Str, UP_val)
-      if val.s:
-        return val.s[0]
+    val = self.mem.GetVar('IFS') # type: value_t
+    UP_val = val
+    with tagswitch(val) as case:
+      if case(value_e.Undef):
+        return ' '
+      elif case(value_e.Str):
+        val = cast(value__Str, UP_val)
+        if val.s:
+          return val.s[0]
+        else:
+          return ''
       else:
-        return ''
-    else:
-      # TODO: Raise proper error
-      raise AssertionError("IFS shouldn't be an array")
+        # TODO: Raise proper error
+        raise AssertionError("IFS shouldn't be an array")
 
   def Escape(self, s):
     # type: (str) -> str
@@ -218,7 +223,7 @@ class NullSplitter(_BaseSplitter):
 
   def Split(self, s, allow_escape):
     # type: (str, bool) -> List[str]
-    raise NotImplementedError
+    raise NotImplementedError()
 
 
 # IFS splitting is complicated in general.  We handle it with three concepts:
@@ -385,7 +390,7 @@ class IfsSplitter(_BaseSplitter):
       elif action == EMIT.Nothing:
         pass
       else:
-        raise AssertionError
+        raise AssertionError()
 
       state = new_state
       i += 1
@@ -402,6 +407,6 @@ class IfsSplitter(_BaseSplitter):
     elif last_action == EMIT.Nothing:
       pass
     else:
-      raise AssertionError
+      raise AssertionError()
 
     return spans
