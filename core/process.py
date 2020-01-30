@@ -25,7 +25,7 @@ from frontend import match
 
 import posix_ as posix
 
-from typing import Optional, List, Tuple, TYPE_CHECKING
+from typing import Optional, List, Tuple, Dict, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv, redirect_t

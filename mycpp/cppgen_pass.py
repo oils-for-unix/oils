@@ -1901,12 +1901,18 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 is_namespace = True
 
             if is_namespace:
+              # No aliases yet?
+              #lhs = alias if alias else name
               self.write_ind(
                   'namespace %s = %s::%s;\n', name, last_dotted, name)
             else:
-              #   from _devbuild.gen.id_kind_asdl import Id
-              # -> using id_kind_asdl::Id.
-              self.write_ind('using %s::%s;\n', last_dotted, name)
+              if alias:
+                # using runtime_asdl::emit_e = EMIT;
+                self.write_ind('using %s = %s::%s;\n', alias, last_dotted, name)
+              else:
+                #   from _devbuild.gen.id_kind_asdl import Id
+                # -> using id_kind_asdl::Id.
+                self.write_ind('using %s::%s;\n', last_dotted, name)
           else:
             # If we're importing a module without an alias, we don't need to do
             # anything.  'namespace cmd_exec' is already defined.

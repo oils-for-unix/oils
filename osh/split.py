@@ -28,6 +28,12 @@ with SPLIT_REGEX = / digit+ / {
 
 from _devbuild.gen import runtime_asdl
 from _devbuild.gen.runtime_asdl import value_e, span_e, value__Str
+
+# Shorter names for state machine enums
+from _devbuild.gen.runtime_asdl import emit_e as EMIT
+from _devbuild.gen.runtime_asdl import char_kind_e as CH
+from _devbuild.gen.runtime_asdl import state_e as ST
+
 from core import util
 from core.util import log
 from mycpp.mylib import tagswitch
@@ -37,12 +43,6 @@ if TYPE_CHECKING:
   from osh.state import Mem
   from _devbuild.gen.runtime_asdl import span_t, value_t
   Span = Tuple[span_t, int]
-
-
-# Enums for the state machine
-CH = runtime_asdl.char_kind_e
-EMIT = runtime_asdl.emit_e
-ST = runtime_asdl.state_e
 
 
 DEFAULT_IFS = ' \t\n'
