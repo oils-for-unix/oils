@@ -8,7 +8,7 @@ from __future__ import print_function
 
 import signal  # for calculating numbers
 
-from _devbuild.gen.runtime_asdl import cmd_value_t, cmd_value__Argv
+from _devbuild.gen.runtime_asdl import cmd_value__Argv
 from core import ui
 from core.util import log
 from frontend import args

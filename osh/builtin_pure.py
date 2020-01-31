@@ -17,9 +17,7 @@ from __future__ import print_function
 import sys  # for sys.sdtout
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import (
-    builtin_e, cmd_value, cmd_value_t, value_e
-)
+from _devbuild.gen.runtime_asdl import builtin_e, cmd_value, value_e
 
 from asdl import pretty
 from core.util import e_die

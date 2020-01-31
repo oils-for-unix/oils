@@ -26,7 +26,6 @@ with SPLIT_REGEX = / digit+ / {
 }
 """
 
-from _devbuild.gen import runtime_asdl
 from _devbuild.gen.runtime_asdl import value_e, span_e, value__Str
 
 # Shorter names for state machine enums
