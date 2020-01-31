@@ -84,7 +84,7 @@ from oil_lang import objects
 from osh import braces
 from osh import builtin
 from osh import builtin_pure
-from osh import expr_eval
+from osh import sh_expr_eval
 from osh import state
 from osh import word_
 
@@ -107,7 +107,7 @@ if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from frontend.parse_lib import ParseContext
   from core import dev
-  from oil_lang import expr_eval as oil_expr_eval
+  from oil_lang import expr_eval
   from osh.cmd_parse import CommandParser
   from osh import word_eval
   from osh import builtin_process
@@ -208,9 +208,9 @@ class Deps(object):
     self.splitter = None    # type: split.SplitContext
 
     self.word_ev = None     # type: word_eval._WordEvaluator
-    self.arith_ev = None    # type: expr_eval.ArithEvaluator
-    self.bool_ev = None     # type: expr_eval.BoolEvaluator
-    self.expr_ev = None     # type: oil_expr_eval.OilEvaluator
+    self.arith_ev = None    # type: sh_expr_eval.ArithEvaluator
+    self.bool_ev = None     # type: sh_expr_eval.BoolEvaluator
+    self.expr_ev = None     # type: expr_eval.OilEvaluator
     self.ex = None          # type: Executor
     self.prompt_ev = None   # type: prompt.Evaluator
 
@@ -1258,9 +1258,9 @@ class Executor(object):
           if pair.op == assign_op_e.PlusEqual:
             assert pair.rhs, pair.rhs  # I don't think a+= is valid?
             val = self.word_ev.EvalRhsWord(pair.rhs)
-            old_val, lval = expr_eval.EvalLhsAndLookup(pair.lhs, self.arith_ev,
-                                                       self.mem, self.exec_opts,
-                                                       lookup_mode=lookup_mode)
+            old_val, lval = sh_expr_eval.EvalLhsAndLookup(
+                pair.lhs, self.arith_ev, self.mem, self.exec_opts,
+                lookup_mode=lookup_mode)
             UP_old_val = old_val
             UP_val = val
 
@@ -1297,8 +1297,8 @@ class Executor(object):
 
           else:  # plain assignment
             spid = pair.spids[0]  # Source location for tracing
-            lval = expr_eval.EvalLhs(pair.lhs, self.arith_ev, self.mem, spid,
-                                     lookup_mode)
+            lval = sh_expr_eval.EvalLhs(pair.lhs, self.arith_ev, self.mem, spid,
+                                        lookup_mode)
 
             # RHS can be a string or array.
             if pair.rhs:

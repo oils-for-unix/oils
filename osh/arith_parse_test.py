@@ -16,7 +16,7 @@ from core import error
 from core import test_lib
 from frontend import parse_lib
 from osh import cmd_exec
-from osh import expr_eval
+from osh import sh_expr_eval
 from osh import split
 from osh import word_eval
 from osh import state
@@ -41,7 +41,7 @@ def ParseAndEval(code_str):
 
   ev = word_eval.CompletionWordEvaluator(mem, exec_opts, exec_deps, arena)
 
-  arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, ev, arena)
+  arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, ev, arena)
   return arith_ev.EvalToInt(anode)
 
 

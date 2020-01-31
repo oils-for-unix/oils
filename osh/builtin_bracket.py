@@ -18,7 +18,7 @@ from asdl import runtime
 from core import error
 from core.util import p_die
 
-from osh import expr_eval
+from osh import sh_expr_eval
 from osh import bool_parse
 from osh import word_parse
 from osh import word_eval
@@ -234,7 +234,7 @@ class Test(object):
         self.strict_arith = True
     exec_opts = _DummyExecOpts()
 
-    bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, word_ev, arena)
+    bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, word_ev, arena)
     try:
       b = bool_ev.Eval(bool_node) # type = bool
     except error.FatalRuntime as e:

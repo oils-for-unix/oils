@@ -86,7 +86,7 @@ from osh import builtin_printf
 from osh import builtin_process
 from osh import builtin_pure
 from osh import cmd_exec
-from osh import expr_eval as osh_expr_eval
+from osh import sh_expr_eval
 from osh import history
 from osh import prompt
 from osh import split
@@ -516,11 +516,11 @@ def ShellMain(lang, argv0, argv, login_shell):
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, exec_deps, arena)
   exec_deps.word_ev = word_ev
 
-  arith_ev = osh_expr_eval.ArithEvaluator(mem, exec_opts, word_ev, errfmt)
+  arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, word_ev, errfmt)
   exec_deps.arith_ev = arith_ev
   word_ev.arith_ev = arith_ev  # Another circular dependency
 
-  bool_ev = osh_expr_eval.BoolEvaluator(mem, exec_opts, word_ev, errfmt)
+  bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, word_ev, errfmt)
   exec_deps.bool_ev = bool_ev
 
   expr_ev = expr_eval.OilEvaluator(mem, procs, ex, word_ev, errfmt)

@@ -241,8 +241,8 @@ _BASIC_RUNTIME_OPTIONS = [
     'simple_test_builtin',  # only file tests (no strings), remove [, status 2
 ]
 
-_AGGRESSIVE_RUNTIME_OPTIONS = [
-]
+# Used to be simple_echo -- do we need it?
+_AGGRESSIVE_RUNTIME_OPTIONS = []  # type: List[str]
 
 # No-ops for bash compatibility
 _NO_OPS = [

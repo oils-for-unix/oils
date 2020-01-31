@@ -33,7 +33,7 @@ from osh import builtin_assign
 from osh import builtin_comp
 from osh import builtin_pure
 from osh import cmd_exec
-from osh import expr_eval
+from osh import sh_expr_eval
 from osh import split
 from osh import state
 from osh import word_eval
@@ -205,12 +205,12 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, exec_deps, arena)
   exec_deps.word_ev = word_ev
 
-  arith_ev = expr_eval.ArithEvaluator(mem, exec_opts, word_ev, arena)
+  arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, word_ev, arena)
   exec_deps.arith_ev = arith_ev
 
   word_ev.arith_ev = arith_ev  # Circular
 
-  bool_ev = expr_eval.BoolEvaluator(mem, exec_opts, word_ev, arena)
+  bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, word_ev, arena)
   exec_deps.bool_ev = bool_ev
 
   tracer = dev.Tracer(parse_ctx, exec_opts, mem, word_ev, debug_f)
