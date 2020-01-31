@@ -31,7 +31,7 @@ import termios  # for read -n
 import sys
 
 from _devbuild.gen.runtime_asdl import (
-    value_e, scope_e, span_e, builtin_e, cmd_value_t
+    value_e, scope_e, span_e, builtin_e, cmd_value_t, cmd_value__Argv
 )
 from core import ui
 from frontend import args
@@ -212,7 +212,10 @@ def Resolve(argv0):
 #
 
 class _Builtin(object):
-  """All builtins except 'command' obey this interface."""
+  """All builtins except 'command' obey this interface.
+
+  Assignment builtins use cmd_value__Assign; others use cmd_value__Argv.
+  """
   def Run(self, cmd_val):
     # type: (cmd_value_t) -> int
     raise NotImplementedError()
@@ -226,6 +229,7 @@ TIMES_SPEC = _Register('times')
 
 class Times(_Builtin):
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     utime, stime, cutime, cstime, elapsed = os.times()
     print("%dm%1.3fs %dm%1.3fs" % (utime / 60, utime % 60, stime / 60, stime % 60))
     print("%dm%1.3fs %dm%1.3fs" % (cutime / 60, cutime % 60, cstime / 60, cstime % 60))
@@ -332,6 +336,7 @@ class Read(object):
     self.mem = mem
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     arg, i = READ_SPEC.ParseVec(cmd_val)
 
     names = cmd_val.argv[i:]
@@ -431,6 +436,7 @@ class Cd(object):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     arg, i = CD_SPEC.ParseCmdVal(cmd_val)
     try:
       dest_dir = cmd_val.argv[i]
@@ -528,6 +534,7 @@ class Pushd(object):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     num_args = len(cmd_val.argv) - 1
     if num_args == 0:
       # TODO: It's suppose to try another dir before doing this?
@@ -577,6 +584,7 @@ class Popd(object):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     if len(cmd_val.arg_spids) > 1:
       raise args.UsageError('got extra argument', span_id=cmd_val.arg_spids[1])
 
@@ -600,6 +608,7 @@ class Dirs(object):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     home_dir = self.mem.GetVar('HOME')
 
     arg, i = DIRS_SPEC.ParseVec(cmd_val)
@@ -635,6 +644,7 @@ class Pwd(object):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     arg, _ = PWD_SPEC.ParseVec(cmd_val)
 
     # NOTE: 'pwd' will succeed even if the directory has disappeared.  Other
@@ -665,6 +675,7 @@ class Help(object):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     try:
       topic = cmd_val.argv[1]
     except IndexError:
@@ -719,6 +730,7 @@ class History(object):
     self.f = f
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     # NOTE: This builtin doesn't do anything in non-interactive mode in bash?
     # It silently exits zero.
     # zsh -c 'history' produces an error.

@@ -150,6 +150,8 @@ class Set(object):
     self.mem = mem
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+
     # TODO:
     # - How to integrate this with auto-completion?  Have to handle '+'.
 
@@ -199,6 +201,7 @@ class Shopt(object):
     self.exec_opts = exec_opts
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     arg, i = SHOPT_SPEC.ParseVec(cmd_val)
     opt_names = cmd_val.argv[i:]
 
@@ -281,7 +284,7 @@ class Command(object):
     self.search_path = search_path
 
   def Run(self, cmd_val, fork_external):
-    # type: (cmd_value_t, bool) -> int
+    # type: (cmd_value__Argv, bool) -> int
     arg, arg_index = COMMAND_SPEC.ParseVec(cmd_val)
     if arg.v:
       status = 0
@@ -315,6 +318,7 @@ class Type(object):
     self.search_path = search_path
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     arg, i = TYPE_SPEC.ParseVec(cmd_val)
 
     if arg.f:
@@ -365,6 +369,7 @@ class Hash(object):
     self.search_path = search_path
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip 'hash'
     arg, i = HASH_SPEC.Parse(arg_r)
@@ -461,6 +466,7 @@ class GetOpts(object):
     self.spec_cache = {}  # type: Dict[str, Dict[str, bool]]
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
 
@@ -531,6 +537,7 @@ class Echo(object):
     self.exec_opts = exec_opts
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     argv = cmd_val.argv[1:]
     arg, arg_index = ECHO_SPEC.ParseLikeEcho(argv)
     argv = argv[arg_index:]

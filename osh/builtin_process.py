@@ -8,7 +8,7 @@ from __future__ import print_function
 
 import signal  # for calculating numbers
 
-from _devbuild.gen.runtime_asdl import cmd_value_t
+from _devbuild.gen.runtime_asdl import cmd_value_t, cmd_value__Argv
 from core import ui
 from core.util import log
 from frontend import args
@@ -50,6 +50,7 @@ class Wait(object):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     arg, arg_index = WAIT_SPEC.ParseVec(cmd_val)
     job_ids = cmd_val.argv[arg_index:]
     arg_count = len(cmd_val.argv)
@@ -136,6 +137,8 @@ class Jobs(object):
     self.job_state = job_state
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+
     # NOTE: the + and - in the jobs list mean 'current' and 'previous', and are
     # addressed with %+ and %-.
 
@@ -154,6 +157,8 @@ class Fg(object):
     self.waiter = waiter
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+
     # Get job instead of PID, and then do
     #
     # Should we also have job.SendContinueSignal() ?
@@ -183,6 +188,8 @@ class Bg(object):
     self.job_state = job_state
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+
     # How does this differ from 'fg'?  It doesn't wait and it sets controlling
     # terminal?
 
@@ -268,6 +275,8 @@ class Trap(object):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+
     arg, _ = TRAP_SPEC.ParseVec(cmd_val)
 
     if arg.p:  # Print registered handlers
@@ -370,7 +379,8 @@ class Trap(object):
 class Umask(_Builtin):
 
   def Run(self, cmd_val):
-    # type: (cmd_value_t) -> int
+    # type: (cmd_value__Argv) -> int
+
     argv = cmd_val.argv[1:]
     if len(argv) == 0:
       # umask() has a dumb API: you can't get it without modifying it first!
