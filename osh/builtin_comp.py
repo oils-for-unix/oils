@@ -12,6 +12,17 @@ from frontend import lex
 from osh import builtin
 from osh import state
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+  from core.completion import Lookup
+  from frontend.parse_lib import ParseContext
+  from osh.cmd_exec import Executor
+  from osh.split import SplitContext
+  from osh.word_eval import NormalWordEvaluator
+  from core.completion import OptionState
+  from core.ui import ErrorFormatter
+  from osh.state import Mem
+
 from mycpp import mylib
 if mylib.PYTHON:
   # Hack because we don't want libcmark.so dependency for build/dev.sh minimal
@@ -96,7 +107,14 @@ class _FixedWordsAction(completion.CompletionAction):
 
 class SpecBuilder(object):
 
-  def __init__(self, ex, parse_ctx, word_ev, splitter, comp_lookup):
+  def __init__(self,
+               ex,  # type: Executor
+               parse_ctx,  # type: ParseContext
+               word_ev,  # type: NormalWordEvaluator
+               splitter,  # type: SplitContext
+               comp_lookup,  # type: Lookup
+               ):
+    # type: (...) -> None
     """
     Args:
       ex: Executor for compgen -F
@@ -249,6 +267,7 @@ class Complete(object):
   needs an Executor.
   """
   def __init__(self, spec_builder, comp_lookup):
+    # type: (SpecBuilder, Lookup) -> None
     self.spec_builder = spec_builder
     self.comp_lookup = comp_lookup
 
@@ -298,6 +317,7 @@ class CompGen(object):
   """Print completions on stdout."""
 
   def __init__(self, spec_builder):
+    # type: (SpecBuilder) -> None
     self.spec_builder = spec_builder
 
   def Run(self, cmd_val):
@@ -355,6 +375,7 @@ class CompOpt(object):
   """Adjust options inside user-defined completion functions."""
 
   def __init__(self, comp_state, errfmt):
+    # type: (OptionState, ErrorFormatter) -> None
     self.comp_state = comp_state
     self.errfmt = errfmt
 
@@ -391,6 +412,7 @@ class CompAdjust(object):
   splitting.
   """
   def __init__(self, mem):
+    # type: (Mem) -> None
     self.mem = mem
 
   def Run(self, cmd_val):

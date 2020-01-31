@@ -6,11 +6,16 @@ from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import value, scope_e
 from _devbuild.gen.syntax_asdl import sh_lhs_expr
-
 from oil_lang import objects
+
+from typing import Callable, Union, TYPE_CHECKING
+if TYPE_CHECKING:
+  from oil_lang.objects import ParameterizedArray
+  from osh.state import Mem
 
 
 def SetGlobalFunc(mem, name, func):
+  # type: (Mem, str, Union[Callable, ParameterizedArray, type]) -> None
   """Used by bin/oil.py to set split(), etc."""
   assert callable(func), func
   mem.SetVar(sh_lhs_expr.Name(name), value.Obj(func), scope_e.GlobalOnly)
@@ -25,6 +30,7 @@ def _Join(array, delim=''):
 
 
 def Init(mem):
+  # type: (Mem) -> None
   """Populate the top level namespace with some builtin functions."""
 
   #

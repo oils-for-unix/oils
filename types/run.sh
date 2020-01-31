@@ -164,7 +164,7 @@ osh-annotated() {
 
 osh-demo() {
   rm -f -v *.json
-  osh-annotated -c 'echo annotate'
+  osh-annotated -c 'pushd /; echo hi; popd'
   ls -l *.json
 }
 
@@ -175,7 +175,7 @@ peek-type-info() {
 apply-types() {
   local json=${1:-type_info.json}
   shift
-  local -a files=(osh/builtin.py)
+  local -a files=(*/*.py)
 
   #local -a files=( $(cat _tmp/osh-parse-src.txt | grep -v syntax_asdl.py ) )
 

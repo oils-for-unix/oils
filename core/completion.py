@@ -127,6 +127,7 @@ class OptionState(object):
   """Stores the compopt state of the CURRENT completion."""
 
   def __init__(self):
+    # type: () -> None
     # For the IN-PROGRESS completion.
     self.currently_completing = False
     # should be SET to a COPY of the registration options by the completer.
@@ -137,6 +138,7 @@ class Lookup(object):
   """Stores completion hooks registered by the user."""
 
   def __init__(self):
+    # type: () -> None
     # command name -> UserSpec
     # Pseudo-commands __first and __fallback are for -E and -D.
     self.lookup = {

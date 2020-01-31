@@ -17,9 +17,13 @@ import posix_ as posix
 
 from typing import List, Dict, Any, TYPE_CHECKING
 if TYPE_CHECKING:
-  from core.error import _ErrorWithLocation
   from _devbuild.gen.syntax_asdl import assign_op_t
   from _devbuild.gen.runtime_asdl import lvalue_t, value_t, scope_t
+  from core.error import _ErrorWithLocation
+  from core.util import DebugFile
+  from frontend.parse_lib import ParseContext
+  from osh.state import ExecOpts, Mem
+  from osh.word_eval import NormalWordEvaluator
   #from osh.cmd_exec import Executor
 
 
@@ -154,7 +158,14 @@ class Tracer(object):
     - set -x doesn't print line numbers!  OH but you can do that with
       PS4=$LINENO
   """
-  def __init__(self, parse_ctx, exec_opts, mem, word_ev, f):
+  def __init__(self,
+               parse_ctx,  # type: ParseContext
+               exec_opts,  # type: ExecOpts
+               mem,  # type: Mem
+               word_ev,  # type: NormalWordEvaluator
+               f,  # type: DebugFile
+               ):
+    # type: (...) -> None
     """
     Args:
       parse_ctx: For parsing PS4.

@@ -17,6 +17,13 @@ from osh.builtin import _Builtin, _Register
 import posix_ as posix
 
 from typing import List, TYPE_CHECKING
+from core.process import JobState
+from core.process import Waiter
+from core.ui import ErrorFormatter
+from osh.state import Mem
+from core.process import SignalState
+from osh.cmd_exec import Executor
+from typing import Dict
 
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command_t
@@ -44,6 +51,7 @@ class Wait(object):
       option is given.
   """
   def __init__(self, waiter, job_state, mem, errfmt):
+    # type: (Waiter, JobState, Mem, ErrorFormatter) -> None
     self.waiter = waiter
     self.job_state = job_state
     self.mem = mem
@@ -134,6 +142,7 @@ class Wait(object):
 class Jobs(object):
   """List jobs."""
   def __init__(self, job_state):
+    # type: (JobState) -> None
     self.job_state = job_state
 
   def Run(self, cmd_val):
@@ -153,6 +162,7 @@ class Jobs(object):
 class Fg(object):
   """Put a job in the foreground"""
   def __init__(self, job_state, waiter):
+    # type: (JobState, Waiter) -> None
     self.job_state = job_state
     self.waiter = waiter
 
@@ -185,6 +195,7 @@ class Fg(object):
 class Bg(object):
   """Put a job in the background"""
   def __init__(self, job_state):
+    # type: (JobState) -> None
     self.job_state = job_state
 
   def Run(self, cmd_val):
@@ -268,6 +279,7 @@ TRAP_SPEC.ShortFlag('-l')
 
 class Trap(object):
   def __init__(self, sig_state, traps, nodes_to_run, ex, errfmt):
+    # type: (SignalState, Dict, List, Executor, ErrorFormatter) -> None
     self.sig_state = sig_state
     self.traps = traps
     self.nodes_to_run = nodes_to_run

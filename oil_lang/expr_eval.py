@@ -30,7 +30,10 @@ if TYPE_CHECKING:
       lvalue_t, lvalue__Named, lvalue__ObjIndex, lvalue__ObjAttr,
   )
   from _devbuild.gen.syntax_asdl import arg_list
-
+  from core.ui import ErrorFormatter
+  from osh.cmd_exec import Executor
+  from osh.state import Mem
+  from osh.word_eval import NormalWordEvaluator
 
 _ = log
 
@@ -44,7 +47,14 @@ class OilEvaluator(object):
   2. Look up variables and evaluate words.
   """
 
-  def __init__(self, mem, funcs, ex, word_ev, errfmt):
+  def __init__(self,
+               mem,  # type: Mem
+               funcs,  # type: Dict
+               ex,  # type: Executor
+               word_ev,  # type: NormalWordEvaluator
+               errfmt,  # type: ErrorFormatter
+               ):
+    # type: (...) -> None
     self.mem = mem
     self.funcs = funcs
     self.ex = ex

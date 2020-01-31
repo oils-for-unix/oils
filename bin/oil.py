@@ -24,6 +24,7 @@ from __future__ import print_function
 import posix_ as posix
 import sys
 import time  # for perf measurement
+from typing import List, NoReturn
 
 _trace_path = posix.environ.get('_PY_TRACE')
 if _trace_path:
@@ -37,10 +38,12 @@ else:
 if posix.environ.get('OIL_TIMING'):
   start_time = time.time()
   def _tlog(msg):
+    # type: (str) -> None
     pid = posix.getpid()  # TODO: Maybe remove PID later.
     print('[%d] %.3f %s' % (pid, (time.time() - start_time) * 1000, msg))
 else:
   def _tlog(msg):
+    # type: (str) -> None
     pass
 
 _tlog('before imports')
@@ -256,6 +259,7 @@ def SourceStartupFile(rc_path, lang, parse_ctx, ex):
 
 
 def ShellMain(lang, argv0, argv, login_shell):
+  # type: (str, str, List[str], bool) -> int
   """Used by bin/osh and bin/oil.
 
   Args:
@@ -809,6 +813,7 @@ APPLETS = ['osh', 'oshc']
 
 
 def AppBundleMain(argv):
+  # type: (List[str]) -> int
   login_shell = False
 
   b = os_path.basename(argv[0])
@@ -867,6 +872,7 @@ def AppBundleMain(argv):
 
 
 def main(argv):
+  # type: (List[str]) -> NoReturn
   try:
     return AppBundleMain(argv)
   except NotImplementedError as e:

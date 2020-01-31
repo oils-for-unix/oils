@@ -23,10 +23,14 @@ from mycpp.mylib import tagswitch
 
 import yajl
 import posix_
+from core.ui import ErrorFormatter
+from osh.state import Mem
+from osh.cmd_exec import Executor
 
 
 class _Builtin(object):
   def __init__(self, mem, errfmt):
+    # type: (Mem, ErrorFormatter) -> None
     self.mem = mem
     self.errfmt = errfmt
 
@@ -205,6 +209,7 @@ class Json(object):
   Well that will get confused with a redirect.
   """
   def __init__(self, mem, ex, errfmt):
+    # type: (Mem, Executor, ErrorFormatter) -> None
     self.mem = mem
     self.ex = ex
     self.errfmt = errfmt

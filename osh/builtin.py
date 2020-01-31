@@ -27,8 +27,9 @@ http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_
 """
 from __future__ import print_function
 
-import termios  # for read -n
+import os
 import sys
+import termios  # for read -n
 
 from _devbuild.gen.runtime_asdl import (
     value_e, scope_e, span_e, builtin_e, cmd_value_t, cmd_value__Argv
@@ -41,8 +42,6 @@ from osh import state
 import libc
 import posix_ as posix
 
-import os
-
 from mycpp import mylib
 if mylib.PYTHON:
   # Hack because we don't want libcmark.so dependency for build/dev.sh minimal
@@ -51,9 +50,9 @@ if mylib.PYTHON:
   except ImportError:
     help_index = None
 
-from typing import TYPE_CHECKING
+from typing import Any, Optional, IO, TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime_asdl import builtin_t
+  from _devbuild.gen.runtime_asdl import builtin_t, value__Str
   from osh.split import SplitContext
   from osh.state import Mem
   from core.ui import ErrorFormatter
@@ -520,6 +519,7 @@ WITHOUT_LINE_NUMBERS = 2
 SINGLE_LINE = 3
 
 def _PrintDirStack(dir_stack, style, home_dir):
+  # type: (DirStack, int, value__Str) -> None
   """Helper for 'dirs'."""
 
   if style == WITH_LINE_NUMBERS:
@@ -569,6 +569,7 @@ class Pushd(object):
 
 
 def _PopDirStack(mem, dir_stack, errfmt):
+  # type: (Mem, DirStack, ErrorFormatter) -> Optional[Any]
   """Helper for popd and cd { ... }."""
   dest_dir = dir_stack.Pop()
   if dest_dir is None:
@@ -739,7 +740,7 @@ class History(object):
   """Show interactive command history."""
 
   def __init__(self, readline_mod, f=sys.stdout):
-    # type: (module, IO[bytes]) -> None
+    # type: (Any, IO[bytes]) -> None
     self.readline_mod = readline_mod
     self.f = f
 

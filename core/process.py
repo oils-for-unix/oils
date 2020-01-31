@@ -30,6 +30,9 @@ from typing import Optional, List, Tuple, Dict, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv, redirect_t
   from _devbuild.gen.syntax_asdl import command_t
+  from core.ui import ErrorFormatter
+  from core.util import NullDebugFile
+  from osh.state import SearchPath, ExecOpts
   from osh.cmd_exec import Executor
   from mycpp import mylib
 
@@ -69,11 +72,13 @@ class SignalState(object):
   """All changes to global signal state go through this object."""
 
   def __init__(self):
+    # type: () -> None
     # Before doing anything else, save the original handler that raises
     # KeyboardInterrupt.
     self.orig_sigint_handler = signal.getsignal(signal.SIGINT)
 
   def InitShell(self):
+    # type: () -> None
     """Always called when initializing the shell process."""
     pass
 
@@ -101,6 +106,7 @@ class SignalState(object):
 
 class _FdFrame(object):
   def __init__(self):
+    # type: () -> None
     self.saved = []
     self.need_close = []
     self.need_wait = []
@@ -121,6 +127,7 @@ class FdState(object):
   For example, you can do 'myfunc > out.txt' without forking.
   """
   def __init__(self, errfmt, job_state):
+    # type: (ErrorFormatter, JobState) -> None
     """
     Args:
       errfmt: for errors
@@ -430,7 +437,14 @@ class StdoutToPipe(ChildStateChange):
 
 
 class ExternalProgram(object):
-  def __init__(self, hijack_shebang, fd_state, search_path, errfmt, debug_f):
+  def __init__(self,
+               hijack_shebang,  # type: str
+               fd_state,  # type: FdState
+               search_path,  # type: SearchPath
+               errfmt,  # type: ErrorFormatter
+               debug_f,  # type: NullDebugFile
+               ):
+    # type: (...) -> None
     """
     Args:
       hijack_shebang: The path of an interpreter to run instead of the one
@@ -955,6 +969,7 @@ class JobState(object):
   """Global list of jobs, used by a few builtins."""
 
   def __init__(self):
+    # type: () -> None
     # pid -> Job instance
     # This is for display in 'jobs' builtin and for %+ %1 lookup.
     self.jobs = {}
@@ -1114,6 +1129,7 @@ class Waiter(object):
   process OR a background process!  So you have to distinguish between them.
   """
   def __init__(self, job_state, exec_opts):
+    # type: (JobState, ExecOpts) -> None
     self.job_state = job_state
     self.exec_opts = exec_opts
     self.last_status = 127  # wait -n error code

@@ -31,12 +31,15 @@ from osh import state
 from osh import string_ops
 from osh import word_compile
 
-from typing import Dict, TYPE_CHECKING
+from typing import List, Dict, TYPE_CHECKING
 if TYPE_CHECKING:
   from osh.cmd_exec import Executor
   from osh.state import SearchPath
   from _devbuild.gen.syntax_asdl import command__ShFunction
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
+  from core.ui import ErrorFormatter
+  from osh.state import ExecOpts
+  from osh.state import Mem
 
 
 class Boolean(_Builtin):
@@ -55,6 +58,7 @@ ALIAS_SPEC = _Register('alias')
 
 class Alias(object):
   def __init__(self, aliases, errfmt):
+    # type: (Dict, ErrorFormatter) -> None
     self.aliases = aliases
     self.errfmt = errfmt
 
@@ -95,6 +99,7 @@ UNALIAS_SPEC = _Register('unalias')
 
 class UnAlias(object):
   def __init__(self, aliases, errfmt):
+    # type: (Dict, ErrorFormatter) -> None
     self.aliases = aliases
     self.errfmt = errfmt
 
@@ -133,6 +138,7 @@ AddOptionsToArgSpec(SET_SPEC)
 
 
 def SetExecOpts(exec_opts, opt_changes, shopt_changes):
+  # type: (ExecOpts, List, List) -> None
   """Used by bin/oil.py too."""
 
   for opt_name, b in opt_changes:
@@ -144,6 +150,7 @@ def SetExecOpts(exec_opts, opt_changes, shopt_changes):
 
 class Set(object):
   def __init__(self, exec_opts, mem):
+    # type: (ExecOpts, Mem) -> None
     self.exec_opts = exec_opts
     self.mem = mem
 
@@ -196,6 +203,7 @@ SHOPT_SPEC.ShortFlag('-q')  # query option settings
 
 class Shopt(object):
   def __init__(self, exec_opts):
+    # type: (ExecOpts) -> None
     self.exec_opts = exec_opts
 
   def Run(self, cmd_val):
@@ -311,6 +319,7 @@ TYPE_SPEC.ShortFlag('-P')
 
 class Type(object):
   def __init__(self, funcs, aliases, search_path):
+    # type: (Dict, Dict, SearchPath) -> None
     self.funcs = funcs
     self.aliases = aliases
     self.search_path = search_path
@@ -364,6 +373,7 @@ HASH_SPEC.ShortFlag('-r')
 
 class Hash(object):
   def __init__(self, search_path):
+    # type: (SearchPath) -> None
     self.search_path = search_path
 
   def Run(self, cmd_val):
@@ -459,6 +469,7 @@ class GetOpts(object):
   """
 
   def __init__(self, mem, errfmt):
+    # type: (Mem, ErrorFormatter) -> None
     self.mem = mem
     self.errfmt = errfmt
     self.spec_cache = {}  # type: Dict[str, Dict[str, bool]]
@@ -532,6 +543,7 @@ class Echo(object):
   - echo '---' should print ---, not fail
   """
   def __init__(self, exec_opts):
+    # type: (ExecOpts) -> None
     self.exec_opts = exec_opts
 
   def Run(self, cmd_val):
