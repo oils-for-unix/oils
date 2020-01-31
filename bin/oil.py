@@ -901,7 +901,18 @@ def _cpython_main_hook():
 
 
 if __name__ == '__main__':
-  if posix.environ.get('RESOLVE') == '1':
+  types_out = posix.environ.get('TYPES_OUT')
+
+  if types_out:
+    from pyannotate_runtime import collect_types
+
+    collect_types.init_types_collection()
+    with collect_types.collect():
+      status = main(sys.argv)
+    collect_types.dump_stats(types_out)
+    sys.exit(status)
+
+  elif posix.environ.get('RESOLVE') == '1':
     from opy import resolve
     resolve.Walk(dict(sys.modules))
 
@@ -909,5 +920,6 @@ if __name__ == '__main__':
     # NOTE: This could end up as opy.InferTypes(), opy.GenerateCode(), etc.
     from opy import callgraph
     callgraph.Walk(main, sys.modules)
+
   else:
     sys.exit(main(sys.argv))

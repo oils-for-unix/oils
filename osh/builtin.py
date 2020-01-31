@@ -54,6 +54,12 @@ if mylib.PYTHON:
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import builtin_t
+  from osh.split import SplitContext
+  from osh.state import Mem
+  from core.ui import ErrorFormatter
+  from osh.cmd_exec import Executor
+  from osh.state import DirStack
+  from core.pyutil import _FileResourceLoader
 
 # Special builtins can't be redefined by functions.  On the other hand, 'cd'
 # CAN be redefined.
@@ -332,6 +338,7 @@ def ReadLineFromStdin():
 
 class Read(object):
   def __init__(self, splitter, mem):
+    # type: (SplitContext, Mem) -> None
     self.splitter = splitter
     self.mem = mem
 
@@ -430,6 +437,7 @@ CD_SPEC.ShortFlag('-P')
 
 class Cd(object):
   def __init__(self, mem, dir_stack, ex, errfmt):
+    # type: (Mem, DirStack, Executor, ErrorFormatter) -> None
     self.mem = mem
     self.dir_stack = dir_stack
     self.ex = ex  # To run blocks
@@ -529,6 +537,7 @@ def _PrintDirStack(dir_stack, style, home_dir):
 
 class Pushd(object):
   def __init__(self, mem, dir_stack, errfmt):
+    # type: (Mem, DirStack, ErrorFormatter) -> None
     self.mem = mem
     self.dir_stack = dir_stack
     self.errfmt = errfmt
@@ -579,6 +588,7 @@ def _PopDirStack(mem, dir_stack, errfmt):
 
 class Popd(object):
   def __init__(self, mem, dir_stack, errfmt):
+    # type: (Mem, DirStack, ErrorFormatter) -> None
     self.mem = mem
     self.dir_stack = dir_stack
     self.errfmt = errfmt
@@ -603,6 +613,7 @@ DIRS_SPEC.ShortFlag('-v')
 
 class Dirs(object):
   def __init__(self, mem, dir_stack, errfmt):
+    # type: (Mem, DirStack, ErrorFormatter) -> None
     self.mem = mem
     self.dir_stack = dir_stack
     self.errfmt = errfmt
@@ -640,6 +651,7 @@ class Pwd(object):
   symlink).
   """
   def __init__(self, mem, errfmt):
+    # type: (Mem, ErrorFormatter) -> None
     self.mem = mem
     self.errfmt = errfmt
 
@@ -671,6 +683,7 @@ HELP_SPEC.ShortFlag('-i')  # show index
 class Help(object):
 
   def __init__(self, loader, errfmt):
+    # type: (_FileResourceLoader, ErrorFormatter) -> None
     self.loader = loader
     self.errfmt = errfmt
 
@@ -726,6 +739,7 @@ class History(object):
   """Show interactive command history."""
 
   def __init__(self, readline_mod, f=sys.stdout):
+    # type: (module, IO[bytes]) -> None
     self.readline_mod = readline_mod
     self.f = f
 

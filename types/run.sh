@@ -157,16 +157,29 @@ collect-types() {
   wc -l type_info.json
 }
 
+osh-annotated() {
+  export PYTHONPATH=".:$PYANN_REPO"
+  TYPES_OUT='a1.json' bin/oil.py osh "$@"
+}
+
+osh-demo() {
+  rm -f -v *.json
+  osh-annotated -c 'echo annotate'
+  ls -l *.json
+}
+
 peek-type-info() {
   grep path type_info.json | sort | uniq -c | sort -n
 }
 
 apply-types() {
-  local -a files=(osh/state.py)
+  local json=${1:-type_info.json}
+  shift
+  local -a files=(osh/builtin.py)
 
   #local -a files=( $(cat _tmp/osh-parse-src.txt | grep -v syntax_asdl.py ) )
 
-  pyann-patched --type-info type_info.json "${files[@]}" "$@"
+  pyann-patched --type-info $json "${files[@]}" "$@"
 }
 
 sub() {
