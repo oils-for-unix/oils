@@ -157,15 +157,24 @@ collect-types() {
   wc -l type_info.json
 }
 
-osh-annotated() {
+osh-pyann() {
   export PYTHONPATH=".:$PYANN_REPO"
-  TYPES_OUT='a1.json' bin/oil.py osh "$@"
+  PYANN_OUT='a1.json' bin/oil.py osh "$@"
 }
 
-osh-demo() {
+pyann-demo() {
   rm -f -v *.json
-  osh-annotated -c 'pushd /; echo hi; popd'
+  osh-pyann -c 'pushd /; echo hi; popd'
   ls -l *.json
+}
+
+pyann-spec-demo() {
+  local dir=_tmp/pyann-spec
+  mkdir -p $dir
+  export OSH_LIST=bin/osh-pyann
+  test/spec.sh append --pyann-out-dir $dir "$@"
+
+  ls -l $dir
 }
 
 peek-type-info() {
@@ -175,11 +184,17 @@ peek-type-info() {
 apply-types() {
   local json=${1:-type_info.json}
   shift
-  local -a files=(*/*.py)
+  local -a files=(osh/expr_eval.py)
 
   #local -a files=( $(cat _tmp/osh-parse-src.txt | grep -v syntax_asdl.py ) )
 
   pyann-patched --type-info $json "${files[@]}" "$@"
+}
+
+apply-many() {
+  for j in _tmp/pyann-spec/*.json; do
+    apply-types $j -w
+  done
 }
 
 sub() {

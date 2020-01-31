@@ -907,15 +907,15 @@ def _cpython_main_hook():
 
 
 if __name__ == '__main__':
-  types_out = posix.environ.get('TYPES_OUT')
+  pyann_out = posix.environ.get('PYANN_OUT')
 
-  if types_out:
+  if pyann_out:
     from pyannotate_runtime import collect_types
 
     collect_types.init_types_collection()
     with collect_types.collect():
       status = main(sys.argv)
-    collect_types.dump_stats(types_out)
+    collect_types.dump_stats(pyann_out)
     sys.exit(status)
 
   elif posix.environ.get('RESOLVE') == '1':

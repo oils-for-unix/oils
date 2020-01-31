@@ -1,0 +1,12 @@
+#!/bin/sh
+#
+# Copy of bin/osh, but modify PYTHONPATH for pyannotate.
+# See types/run.sh
+
+REPO_ROOT=$(cd $(dirname $(dirname $0)) && pwd)
+
+# TODO: You have to have the repo here!
+PYANN_REPO=/home/andy/git/oilshell/pyannotate
+
+# Excluding vendor/ because 'typing' module isn't complete.
+PYTHONPATH=$REPO_ROOT:$PYANN_REPO exec $REPO_ROOT/bin/oil.py osh "$@"

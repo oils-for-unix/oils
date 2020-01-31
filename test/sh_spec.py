@@ -597,8 +597,14 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
         os.mkdir(env['TMP'])
       cwd = env['TMP'] if opts.cd_tmp else None
 
+      case_env = sh_env[shell_index]
+      if opts.pyann_out_dir:
+        case_env = dict(case_env)
+        case_env['PYANN_OUT'] = os.path.join(
+            opts.pyann_out_dir, '%d.json' % i)
+
       try:
-        p = subprocess.Popen(argv, env=sh_env[shell_index], cwd=cwd,
+        p = subprocess.Popen(argv, env=case_env, cwd=cwd,
                              stdin=PIPE, stdout=PIPE, stderr=PIPE)
       except OSError as e:
         print('Error running %r: %s' % (sh_path, e), file=sys.stderr)
@@ -1041,6 +1047,7 @@ def MakeTestEnv(opts):
   for p in opts.env_pair:
     name, value = p.split('=', 1)
     env[name] = value
+
   return env
 
 
@@ -1114,6 +1121,10 @@ def Options():
   p.add_option(
       '--rm-tmp', dest='rm_tmp', default=False, action='store_true',
       help='clear the tmp dir after running each test case')
+
+  p.add_option(
+      '--pyann-out-dir', dest='pyann_out_dir', default=None,
+      help='Run OSH with PYANN_OUT=$dir/$case_num.json')
 
   return p
 

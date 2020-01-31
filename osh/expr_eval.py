@@ -46,6 +46,7 @@ if TYPE_CHECKING:
 
 
 def _StringToInteger(s, span_id=runtime.NO_SPID):
+  # type: (str, int) -> int
   """Use bash-like rules to coerce a string to an integer.
 
   Runtime parsing enables silly stuff like $(( $(echo 1)$(echo 2) + 1 )) => 13
@@ -129,6 +130,7 @@ def _StringToInteger(s, span_id=runtime.NO_SPID):
 
 
 def _LookupVar(name, mem, exec_opts):
+  # type: (str, Mem, ExecOpts) -> value_t
   val = mem.GetVar(name)
   # By default, undefined variables are the ZERO value.  TODO: Respect
   # nounset and raise an exception.
