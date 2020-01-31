@@ -1890,6 +1890,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 're_e', 're',
                 're_repeat_e', 're_repeat',
                 'class_literal_term_e', 'class_literal_term',
+                'sh_lhs_expr_e', 'sh_lhs_expr',
 
                 # runtime_asdl
                 'lvalue_e', 'lvalue',

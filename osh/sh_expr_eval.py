@@ -81,7 +81,9 @@ def _StringToInteger(s, span_id=runtime.NO_SPID):
     return integer
 
   if '#' in s:
-    b, digits = s.split('#', 1)
+    parts = s.split('#', 1)  # mycpp rewrite: can't use dynamic unpacking of List
+    b = parts[0]
+    digits = parts[1]
     try:
       base = int(b)
     except ValueError:
@@ -965,4 +967,5 @@ class BoolEvaluator(_ExprEvaluator):
 
           raise AssertionError(op_id)  # should never happen
 
-      raise AssertionError(node.tag_())
+      else:
+        raise AssertionError(node.tag_())
