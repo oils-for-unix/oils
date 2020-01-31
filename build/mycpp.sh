@@ -318,17 +318,17 @@ readonly CAN_TRANSLATE=(
 readonly TRANSLATE=(
   # Format strings not constant, in PrintRequired
   #$REPO_ROOT/core/comp_ui.py
-  $REPO_ROOT/osh/split.py
+  #$REPO_ROOT/osh/split.py
 
   #$REPO_ROOT/osh/word_compile.py
   #$REPO_ROOT/osh/glob_.py
   #$REPO_ROOT/osh/string_ops.py
 
   ## except (e1, e2) isn't supported for InvalidSlice, utf-8
-  #$REPO_ROOT/osh/word_eval.py
+  $REPO_ROOT/osh/word_eval.py
 
   ## except (e1, e2) isn't supported
-  #$REPO_ROOT/osh/cmd_exec.py
+  $REPO_ROOT/osh/cmd_exec.py
 )
 
 # From types/more-oil-manifest.txt

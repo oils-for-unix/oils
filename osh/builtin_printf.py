@@ -5,8 +5,9 @@ builtin_printf
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Kind
+from _devbuild.gen.runtime_asdl import cmd_value__Argv
 from _devbuild.gen.syntax_asdl import (
-    printf_part, #printf_part_t,
+    printf_part, printf_part_t,
     source
 )
 from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
@@ -25,6 +26,14 @@ from osh import state
 from osh import string_ops
 from osh import word_compile
 
+from typing import Dict, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+  from frontend.lexer import Lexer
+  from frontend.parse_lib import ParseContext
+  from osh.state import Mem
+  from core.ui import ErrorFormatter
+
 
 PRINTF_SPEC = builtin._Register('printf')  # TODO: Don't need this?
 PRINTF_SPEC.ShortFlag('-v', args.Str)
@@ -41,6 +50,7 @@ class _FormatStringParser(object):
   Maybe: bash also supports %(strftime)T
   """
   def __init__(self, lexer):
+    # type: (Lexer) -> None
     self.lexer = lexer
 
   def _Next(self, lex_mode):
@@ -54,6 +64,7 @@ class _FormatStringParser(object):
     self.token_kind = lookup.LookupKind(self.token_type)
 
   def _ParseFormatStr(self):
+    # type: () -> printf_part_t
     self._Next(lex_mode_e.PrintfPercent)  # move past %
 
     part = printf_part.Percent()
@@ -102,8 +113,9 @@ class _FormatStringParser(object):
     return part
 
   def Parse(self):
+    # type: () -> List[printf_part_t]
     self._Next(lex_mode_e.PrintfOuter)
-    parts = []
+    parts = []  # type: List[printf_part_t]
     while True:
       if (self.token_kind == Kind.Char or
           self.token_type == Id.Format_EscapedPercent):
@@ -128,13 +140,16 @@ class _FormatStringParser(object):
 
 
 class Printf(object):
+
   def __init__(self, mem, parse_ctx, errfmt):
+    # type: (Mem, ParseContext, ErrorFormatter) -> None
     self.mem = mem
     self.parse_ctx = parse_ctx
     self.errfmt = errfmt
-    self.parse_cache = {}  # Dict[str, printf_part]
+    self.parse_cache = {}  # type: Dict[str, List[printf_part_t]]
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     """
     printf: printf [-v var] format [argument ...]
     """
