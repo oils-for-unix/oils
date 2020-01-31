@@ -171,3 +171,17 @@ echo "${b[@]}"
 4 5 6
 
 ## END
+
+#### set associative array
+declare -A A=(['foo']=bar ['spam']=42)
+(( x = A['spam'] ))
+echo $x
+## STDOUT:
+42
+## END
+## N-I mksh status: 1
+## N-I mksh stdout-json: ""
+## N-I zsh STDOUT:
+0
+## END
+

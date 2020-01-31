@@ -14,12 +14,17 @@ import stat
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.id_tables import BOOL_ARG_TYPES
 from _devbuild.gen.runtime_asdl import (
-    scope_e, lvalue, quote_e, quote_t,
-    value, value_e, value_t, value__MaybeStrArray, value__AssocArray,
+    scope_e, scope_t,
+    quote_e, quote_t,
+    lvalue, lvalue_t, 
+    value, value_e, value_t, value__Str, value__Int, value__MaybeStrArray,
+    value__AssocArray,
 )
 from _devbuild.gen.syntax_asdl import (
-    arith_expr_e, sh_lhs_expr_e, sh_lhs_expr_t, bool_expr_e, word_t,
-    compound_word,
+    arith_expr_e, arith_expr_t,
+    bool_expr_e, bool_expr_t,
+    sh_lhs_expr_e, sh_lhs_expr_t, sh_lhs_expr__Name, sh_lhs_expr__IndexedName,
+    word_t, compound_word,
 )
 from _devbuild.gen.types_asdl import bool_arg_type_e
 from asdl import runtime
@@ -36,10 +41,8 @@ try:
 except ImportError:
   from benchmarks import fake_libc as libc  # type: ignore
 
-from typing import Tuple, cast, Any, TYPE_CHECKING
+from typing import List, Tuple, Optional, cast, Any, TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.syntax_asdl import bool_expr_t, arith_expr_t, sh_lhs_expr_t
-  from _devbuild.gen.runtime_asdl import lvalue_t, scope_t
   from core.ui import ErrorFormatter
   from osh.state import Mem, ExecOpts
   from osh import word_eval
@@ -147,54 +150,65 @@ def EvalLhs(node, arith_ev, mem, spid, lookup_mode):
   """
   assert isinstance(node, sh_lhs_expr_t), node
 
-  if node.tag == sh_lhs_expr_e.Name:  # a=x
-    lval = lvalue.Named(node.name)
-    lval.spids.append(spid)
+  UP_node = node
+  with tagswitch(node) as case:
+    if case(sh_lhs_expr_e.Name):  # a=x
+      node = cast(sh_lhs_expr__Name, UP_node)
 
-  elif node.tag == sh_lhs_expr_e.IndexedName:  # a[1+2]=x
+      lval = lvalue.Named(node.name)  # type: lvalue_t
+      lval.spids.append(spid)
 
-    if mem.IsAssocArray(node.name, lookup_mode):
-      key = arith_ev.EvalWordToString(node.index)
-      lval = lvalue.Keyed(node.name, key)
-      lval.spids.append(node.spids[0])  # copy left-most token over
+    elif case(sh_lhs_expr_e.IndexedName):  # a[1+2]=x
+      node = cast(sh_lhs_expr__IndexedName, UP_node)
+
+      if mem.IsAssocArray(node.name, lookup_mode):
+        key = arith_ev.EvalWordToString(node.index)
+        lval = lvalue.Keyed(node.name, key)
+        lval.spids.append(node.spids[0])  # copy left-most token over
+      else:
+        index = arith_ev.EvalToInt(node.index)
+        lval = lvalue.Indexed(node.name, index)
+        lval.spids.append(node.spids[0])  # copy left-most token over
+
     else:
-      index = arith_ev.EvalToInt(node.index)
-      lval = lvalue.Indexed(node.name, index)
-      lval.spids.append(node.spids[0])  # copy left-most token over
-
-  else:
-    raise AssertionError(node.tag)
+      raise AssertionError(node.tag_())
 
   return lval
 
 
 def _EvalLhsArith(node, mem, arith_ev):
+  # type: (sh_lhs_expr_t, Mem, ArithEvaluator) -> lvalue_t
   """sh_lhs_expr -> lvalue.
   
   Very similar to EvalLhs above in core/cmd_exec.
   """
   assert isinstance(node, sh_lhs_expr_t), node
 
-  if node.tag == sh_lhs_expr_e.Name:  # (( i = 42 ))
-    lval = lvalue.Named(node.name)
-    # TODO: location info.  Use the = token?
-    #lval.spids.append(spid)
-    return lval
+  UP_node = node
+  with tagswitch(node) as case:
+    if case(sh_lhs_expr_e.Name):  # (( i = 42 ))
+      node = cast(sh_lhs_expr__Name, UP_node)
 
-  elif node.tag == sh_lhs_expr_e.IndexedName:  # (( a[42] = 42 ))
-    # The index of MaybeStrArray needs to be coerced to int, but not the index of
-    # an AssocArray.
-    if mem.IsAssocArray(node.name, scope_e.Dynamic):
-      key = arith_ev.EvalWordToString(node.index)
-      lval = lvalue.Keyed(node.name, key)
-    else:
-      index = arith_ev.EvalToInt(node.index)
-      lval = lvalue.Indexed(node.name, index)
+      lval = lvalue.Named(node.name)  # type: lvalue_t
       # TODO: location info.  Use the = token?
-      #lval.spids.append(node.spids[0])
+      #lval.spids.append(spid)
 
-  else:
-    raise AssertionError(node.tag)
+    elif case(sh_lhs_expr_e.IndexedName):  # (( a[42] = 42 ))
+      node = cast(sh_lhs_expr__IndexedName, UP_node)
+
+      # The index of MaybeStrArray needs to be coerced to int, but not the
+      # index of an AssocArray.
+      if mem.IsAssocArray(node.name, scope_e.Dynamic):
+        key = arith_ev.EvalWordToString(node.index)
+        lval = lvalue.Keyed(node.name, key)
+      else:
+        index = arith_ev.EvalToInt(node.index)
+        lval = lvalue.Indexed(node.name, index)
+        # TODO: location info.  Use the = token?
+        #lval.spids.append(node.spids[0])
+
+    else:
+      raise AssertionError(node.tag_())
 
   return lval
 
@@ -216,69 +230,78 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
 
   assert isinstance(node, sh_lhs_expr_t), node
 
-  if node.tag == sh_lhs_expr_e.Name:  # a = b
-    # Problem: It can't be an array?
-    # a=(1 2)
-    # (( a++ ))
-    lval = lvalue.Named(node.name)
-    val = _LookupVar(node.name, mem, exec_opts)
+  UP_node = node
+  with tagswitch(node) as case:
+    if case(sh_lhs_expr_e.Name):  # a = b
+      node = cast(sh_lhs_expr__Name, UP_node)
+      # Problem: It can't be an array?
+      # a=(1 2)
+      # (( a++ ))
+      lval = lvalue.Named(node.name)  # type: lvalue_t
+      val = _LookupVar(node.name, mem, exec_opts)
 
-  elif node.tag == sh_lhs_expr_e.IndexedName:  # a[1] = b
-    # See tdop.IsIndexable for valid values:
-    # - VarRef (not Name): a[1]
-    # - FuncCall: f(x), 1
-    # - Binary LBracket: f[1][1] -- no semantics for this?
+    elif case(sh_lhs_expr_e.IndexedName):  # a[1] = b
+      node = cast(sh_lhs_expr__IndexedName, UP_node)
+      # See tdop.IsIndexable for valid values:
+      # - VarRef (not Name): a[1]
+      # - FuncCall: f(x), 1
+      # - Binary LBracket: f[1][1] -- no semantics for this?
 
-    val = mem.GetVar(node.name)
+      val = mem.GetVar(node.name)
 
-    if val.tag == value_e.Str:
-      e_die("Can't assign to characters of string %r", node.name)
+      UP_val = val
+      with tagswitch(val) as case2:
+        if case2(value_e.Str):
+          e_die("Can't assign to characters of string %r", node.name)
 
-    elif val.tag == value_e.Undef:
-      # compatible behavior: Treat it like an array.
-      # TODO: Does this code ever get triggered?  It seems like the error is
-      # caught earlier.
+        elif case2(value_e.Undef):
+          # compatible behavior: Treat it like an array.
+          # TODO: Does this code ever get triggered?  It seems like the error is
+          # caught earlier.
 
-      index = arith_ev.EvalToInt(node.index)
-      lval = lvalue.Indexed(node.name, index)
-      if exec_opts.nounset:
-        e_die("Undefined variable can't be indexed")
-      else:
-        val = value.Str('')
+          index = arith_ev.EvalToInt(node.index)
+          lval = lvalue.Indexed(node.name, index)
+          if exec_opts.nounset:
+            e_die("Undefined variable can't be indexed")
+          else:
+            val = value.Str('')
 
-    elif val.tag == value_e.MaybeStrArray:
+        elif case2(value_e.MaybeStrArray):
+          val = cast(value__MaybeStrArray, UP_val)
 
-      #log('ARRAY %s -> %s, index %d', node.name, array, index)
-      array = val.strs
-      index = arith_ev.EvalToInt(node.index)
-      lval = lvalue.Indexed(node.name, index)
-      # NOTE: Similar logic in RHS Arith_LBracket
-      try:
-        s = array[index]
-      except IndexError:
-        s = None
+          #log('ARRAY %s -> %s, index %d', node.name, array, index)
+          array = val.strs
+          index = arith_ev.EvalToInt(node.index)
+          lval = lvalue.Indexed(node.name, index)
+          # NOTE: Similar logic in RHS Arith_LBracket
+          try:
+            s = array[index]
+          except IndexError:
+            s = None
 
-      if s is None:
-        val = value.Str('')  # NOTE: Other logic is value.Undef()?  0?
-      else:
-        assert isinstance(s, str), s
-        val = value.Str(s)
+          if s is None:
+            val = value.Str('')  # NOTE: Other logic is value.Undef()?  0?
+          else:
+            assert isinstance(s, str), s
+            val = value.Str(s)
 
-    elif val.tag == value_e.AssocArray:  # declare -A a; a['x']+=1
-      key = arith_ev.EvalWordToString(node.index)
-      lval = lvalue.Keyed(node.name, key)
+        elif case2(value_e.AssocArray):  # declare -A a; a['x']+=1
+          val = cast(value__AssocArray, UP_val)
 
-      s = val.d.get(key)
-      if s is None:
-        val = value.Str('')
-      else:
-        val = value.Str(s)
+          key = arith_ev.EvalWordToString(node.index)
+          lval = lvalue.Keyed(node.name, key)
+
+          s = val.d.get(key)
+          if s is None:
+            val = value.Str('')
+          else:
+            val = value.Str(s)
+
+        else:
+          raise AssertionError(val.tag_())
 
     else:
-      raise AssertionError(val.tag)
-
-  else:
-    raise AssertionError(node.tag)
+      raise AssertionError(node.tag_())
 
   return val, lval
 
@@ -302,6 +325,7 @@ class _ExprEvaluator(object):
 
   def _StringToIntegerOrError(self, s, blame_word=None,
                               span_id=runtime.NO_SPID):
+    # type: (str, Optional[word_t], int) -> int
     """Used by both [[ $x -gt 3 ]] and (( $x ))."""
     if span_id == runtime.NO_SPID and blame_word:
       span_id = word_.LeftMostSpanForWord(blame_word)
@@ -326,16 +350,20 @@ class ArithEvaluator(_ExprEvaluator):
     #log('_ValToIntOrError span=%s blame=%s', span_id, blame_word)
 
     try:
-      if val.tag == value_e.Undef:  # 'nounset' already handled before got here
-        # Happens upon a[undefined]=42, which unfortunately turns into a[0]=42.
-        #log('blame_word %s   arena %s', blame_word, self.arena)
-        e_die('Undefined value in arithmetic context', span_id=span_id)
+      UP_val = val
+      with tagswitch(val) as case:
+        if case(value_e.Undef):  # 'nounset' already handled before got here
+          # Happens upon a[undefined]=42, which unfortunately turns into a[0]=42.
+          #log('blame_word %s   arena %s', blame_word, self.arena)
+          e_die('Undefined value in arithmetic context', span_id=span_id)
 
-      if val.tag == value_e.Int:
-        return val.i
+        elif case(value_e.Int):
+          val = cast(value__Int, UP_val)
+          return val.i
 
-      if val.tag == value_e.Str:
-        return _StringToInteger(val.s, span_id=span_id)  # calls e_die
+        elif case(value_e.Str):
+          val = cast(value__Str, UP_val)
+          return _StringToInteger(val.s, span_id=span_id)  # calls e_die
 
     except error.FatalRuntime as e:
       if self.exec_opts.strict_arith:
@@ -352,6 +380,7 @@ class ArithEvaluator(_ExprEvaluator):
           span_id=span_id)
 
   def _EvalLhsAndLookupArith(self, node):
+    # type: (sh_lhs_expr_t) -> Tuple[int, lvalue_t]
     """
     Args:
       node: sh_lhs_expr
@@ -371,6 +400,7 @@ class ArithEvaluator(_ExprEvaluator):
     return i, lval
 
   def _Store(self, lval, new_int):
+    # type: (lvalue_t, int) -> None
     val = value.Str(str(new_int))
     self.mem.SetVar(lval, val, scope_e.Dynamic)
 
@@ -527,29 +557,29 @@ class ArithEvaluator(_ExprEvaluator):
       if op_id == Id.Arith_LBracket:
         # NOTE: Similar to bracket_op_e.ArrayIndex in osh/word_eval.py
 
-        lhs = self.Eval(node.left)
-        UP_lhs = lhs
-        with tagswitch(lhs) as case:
+        left = self.Eval(node.left)
+        UP_left = left
+        with tagswitch(left) as case:
           if case(value_e.MaybeStrArray):
-            lhs = cast(value__MaybeStrArray, UP_lhs)
+            left = cast(value__MaybeStrArray, UP_left)
             rhs_int = self.EvalToInt(node.right)
             try:
               # could be None because representation is sparse
-              s = lhs.strs[rhs_int]
+              s = left.strs[rhs_int]
             except IndexError:
               s = None
 
           elif case(value_e.AssocArray):
-            lhs = cast(value__AssocArray, UP_lhs)
-            key = self.arith_ev.EvalWordToString(node.right)
-            s = lhs.d.get(key)
+            left = cast(value__AssocArray, UP_left)
+            key = self.EvalWordToString(node.right)
+            s = left.d.get(key)
 
           else:
             # TODO: Add error context
-            e_die('Expected array or assoc in index expression, got %s', lhs)
+            e_die('Expected array or assoc in index expression, got %s', left)
 
         if s is None:
-          val = value.Undef()
+          val = value.Undef()  # type: value_t
         else:
           val = value.Str(s)
 
@@ -666,6 +696,7 @@ class ArithEvaluator(_ExprEvaluator):
 class BoolEvaluator(_ExprEvaluator):
 
   def _SetRegexMatches(self, matches):
+    # type: (List[str]) -> None
     """For ~= to set the BASH_REMATCH array."""
     state.SetGlobalArray(self.mem, 'BASH_REMATCH', matches)
 

@@ -172,7 +172,7 @@ pyann-spec-demo() {
   local dir=_tmp/pyann-spec
   mkdir -p $dir
   export OSH_LIST=bin/osh-pyann
-  test/spec.sh append --pyann-out-dir $dir "$@"
+  test/spec.sh assign --pyann-out-dir $dir "$@"
 
   ls -l $dir
 }
@@ -184,7 +184,7 @@ peek-type-info() {
 apply-types() {
   local json=${1:-type_info.json}
   shift
-  local -a files=(osh/expr_eval.py)
+  local -a files=(osh/state.py)
 
   #local -a files=( $(cat _tmp/osh-parse-src.txt | grep -v syntax_asdl.py ) )
 
