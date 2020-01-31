@@ -16,3 +16,4 @@
 ./frontend/args.py
 ./osh/word_eval.py
 ./_devbuild/gen/runtime_asdl.py
+./osh/expr_eval.py

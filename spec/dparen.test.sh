@@ -124,23 +124,22 @@ values = 0
 ## N-I mksh stdout-json: ""
 ## N-I mksh status: 1
 
-#### literal strings not properly supported in ( ))
+#### literal strings inside (( ))
 declare -A A
-A['x']=x
+A['x']=42
 (( x = A['x'] ))
 (( A['y'] = 'y' ))  # y is a variable, gets coerced to 0
 echo $x ${A['y']}
-## status: 1
-## stdout-json: ""
-
-# bash behavior is very confusing
-## BUG bash status: 0
-## BUG bash STDOUT:
-0 0
+## STDOUT:
+42 0
 ## END
-## BUG zsh/mksh status: 0
-## N-I zsh/mksh STDOUT:
+## BUG mksh status: 0
+## N-I mksh STDOUT:
 0
+## END
+## BUG zsh status: 0
+## N-I zsh STDOUT:
+42
 ## END
 
 #### (( )) with redirect

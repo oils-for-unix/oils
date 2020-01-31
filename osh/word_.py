@@ -15,8 +15,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part__Splice, word_part__FuncCall, word_part__ExprSub,
 
     word_e, word_t, word__BracedTree, word__String,
-
-    sh_lhs_expr__Name,
+    sh_lhs_expr_t,
 )
 from asdl import runtime
 from core.util import log
@@ -685,7 +684,7 @@ def IsVarSub(w):
 
 
 def SpanForLhsExpr(node):
-  # type: (sh_lhs_expr__Name) -> int
+  # type: (sh_lhs_expr_t) -> int
   if len(node.spids):
     return node.spids[0]
   else:

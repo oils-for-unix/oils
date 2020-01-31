@@ -371,10 +371,6 @@ echo $var
 42
 42
 ## END
-## N-I osh status: 1
-## N-I osh STDOUT:
-42
-## END
 
 #### (( A[5] += 42 ))
 declare -A A

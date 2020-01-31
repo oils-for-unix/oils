@@ -21,10 +21,14 @@ from _devbuild.gen.runtime_asdl import (
     value__AssocArray,
 )
 from _devbuild.gen.syntax_asdl import (
-    arith_expr_e, arith_expr_t,
-    bool_expr_e, bool_expr_t,
+    arith_expr_e, arith_expr_t, arith_expr__VarRef, arith_expr__ArithWord,
+    arith_expr__Unary, arith_expr__Binary, arith_expr__UnaryAssign,
+    arith_expr__BinaryAssign, arith_expr__TernaryOp,
+    bool_expr_e, bool_expr_t, bool_expr__WordTest, bool_expr__LogicalNot,
+    bool_expr__LogicalAnd, bool_expr__LogicalOr, bool_expr__Unary,
+    bool_expr__Binary,
     sh_lhs_expr_e, sh_lhs_expr_t, sh_lhs_expr__Name, sh_lhs_expr__IndexedName,
-    word_t, compound_word,
+    word_t,
 )
 from _devbuild.gen.types_asdl import bool_arg_type_e
 from asdl import runtime
@@ -155,20 +159,19 @@ def EvalLhs(node, arith_ev, mem, spid, lookup_mode):
     if case(sh_lhs_expr_e.Name):  # a=x
       node = cast(sh_lhs_expr__Name, UP_node)
 
-      lval = lvalue.Named(node.name)  # type: lvalue_t
-      lval.spids.append(spid)
+      lval = lvalue.Named(node.name, [spid])  # type: lvalue_t
 
     elif case(sh_lhs_expr_e.IndexedName):  # a[1+2]=x
       node = cast(sh_lhs_expr__IndexedName, UP_node)
 
       if mem.IsAssocArray(node.name, lookup_mode):
         key = arith_ev.EvalWordToString(node.index)
-        lval = lvalue.Keyed(node.name, key)
-        lval.spids.append(node.spids[0])  # copy left-most token over
+        # copy left-mode spid
+        lval = lvalue.Keyed(node.name, key, [node.spids[0]])
       else:
         index = arith_ev.EvalToInt(node.index)
-        lval = lvalue.Indexed(node.name, index)
-        lval.spids.append(node.spids[0])  # copy left-most token over
+        # copy left-mode spid
+        lval = lvalue.Indexed(node.name, index, [node.spids[0]])
 
     else:
       raise AssertionError(node.tag_())
@@ -434,239 +437,254 @@ class ArithEvaluator(_ExprEvaluator):
     # can.  ${foo:-3}4 is OK.  $? will be a compound word too, so we don't have
     # to handle that as a special case.
 
-    if node.tag == arith_expr_e.VarRef:  # $(( x ))  (can be array)
-      tok = node.token
-      return _LookupVar(tok.val, self.mem, self.exec_opts)
+    UP_node = node
+    with tagswitch(node) as case:
+      if case(arith_expr_e.VarRef):  # $(( x ))  (can be array)
+        node = cast(arith_expr__VarRef, UP_node)
+        tok = node.token
+        return _LookupVar(tok.val, self.mem, self.exec_opts)
 
-    if node.tag == arith_expr_e.ArithWord:  # $(( $x )) $(( ${x}${y} )), etc.
-      return self.word_ev.EvalWordToString(node.w)
+      elif case(arith_expr_e.ArithWord):  # $(( $x )) $(( ${x}${y} )), etc.
+        node = cast(arith_expr__ArithWord, UP_node)
+        return self.word_ev.EvalWordToString(node.w)
 
-    if node.tag == arith_expr_e.UnaryAssign:  # a++
-      op_id = node.op_id
-      old_int, lval = self._EvalLhsAndLookupArith(node.child)
+      elif case(arith_expr_e.UnaryAssign):  # a++
+        node = cast(arith_expr__UnaryAssign, UP_node)
 
-      if op_id == Id.Node_PostDPlus:  # post-increment
-        new_int = old_int + 1
-        ret = old_int
+        op_id = node.op_id
+        old_int, lval = self._EvalLhsAndLookupArith(node.child)
 
-      elif op_id == Id.Node_PostDMinus:  # post-decrement
-        new_int = old_int - 1
-        ret = old_int
+        if op_id == Id.Node_PostDPlus:  # post-increment
+          new_int = old_int + 1
+          ret = old_int
 
-      elif op_id == Id.Arith_DPlus:  # pre-increment
-        new_int = old_int + 1
-        ret = new_int
+        elif op_id == Id.Node_PostDMinus:  # post-decrement
+          new_int = old_int - 1
+          ret = old_int
 
-      elif op_id == Id.Arith_DMinus:  # pre-decrement
-        new_int = old_int - 1
-        ret = new_int
+        elif op_id == Id.Arith_DPlus:  # pre-increment
+          new_int = old_int + 1
+          ret = new_int
 
-      else:
-        raise AssertionError(op_id)
+        elif op_id == Id.Arith_DMinus:  # pre-decrement
+          new_int = old_int - 1
+          ret = new_int
 
-      #log('old %d new %d ret %d', old_int, new_int, ret)
-      self._Store(lval, new_int)
-      return value.Int(ret)
-
-    if node.tag == arith_expr_e.BinaryAssign:  # a=1, a+=5, a[1]+=5
-      op_id = node.op_id
-
-      if op_id == Id.Arith_Equal:
-        lval = _EvalLhsArith(node.left, self.mem, self)
-        # Disallowing (( a = myarray ))
-        # It has to be an integer
-        rhs_int = self.EvalToInt(node.right)
-        self._Store(lval, rhs_int)
-        return value.Int(rhs_int)
-
-      old_int, lval = self._EvalLhsAndLookupArith(node.left)
-      rhs = self.EvalToInt(node.right)
-
-      if op_id == Id.Arith_PlusEqual:
-        new_int = old_int + rhs
-      elif op_id == Id.Arith_MinusEqual:
-        new_int = old_int - rhs
-      elif op_id == Id.Arith_StarEqual:
-        new_int = old_int * rhs
-      elif op_id == Id.Arith_SlashEqual:
-        try:
-          new_int = old_int / rhs
-        except ZeroDivisionError:
-          # TODO: location
-          e_die('Divide by zero')
-      elif op_id == Id.Arith_PercentEqual:
-        new_int = old_int % rhs
-
-      elif op_id == Id.Arith_DGreatEqual:
-        new_int = old_int >> rhs
-      elif op_id == Id.Arith_DLessEqual:
-        new_int = old_int << rhs
-      elif op_id == Id.Arith_AmpEqual:
-        new_int = old_int & rhs
-      elif op_id == Id.Arith_PipeEqual:
-        new_int = old_int | rhs
-      elif op_id == Id.Arith_CaretEqual:
-        new_int = old_int ^ rhs
-      else:
-        raise AssertionError(op_id)  # shouldn't get here
-
-      self._Store(lval, new_int)
-      return value.Int(new_int)
-
-    if node.tag == arith_expr_e.Unary:
-      op_id = node.op_id
-
-      i = self.EvalToInt(node.child)
-
-      if op_id == Id.Node_UnaryPlus:
-        ret = i
-      elif op_id == Id.Node_UnaryMinus:
-        ret = -i
-
-      elif op_id == Id.Arith_Bang:  # logical negation
-        ret = 1 if i == 0 else 0
-      elif op_id == Id.Arith_Tilde:  # bitwise complement
-        ret = ~i
-      else:
-        raise AssertionError(op_id)  # shouldn't get here
-
-      return value.Int(ret)
-
-    if node.tag == arith_expr_e.Binary:
-      op_id = node.op_id
-
-      # Short-circuit evaluation for || and &&.
-      if op_id == Id.Arith_DPipe:
-        lhs = self.EvalToInt(node.left)
-        if lhs == 0:
-          rhs = self.EvalToInt(node.right)
-          ret = int(rhs != 0)
         else:
-          ret = 1  # true
+          raise AssertionError(op_id)
+
+        #log('old %d new %d ret %d', old_int, new_int, ret)
+        self._Store(lval, new_int)
         return value.Int(ret)
 
-      if op_id == Id.Arith_DAmp:
-        lhs = self.EvalToInt(node.left)
-        if lhs == 0:
-          ret = 0  # false
-        else:
-          rhs = self.EvalToInt(node.right)
-          ret = int(rhs != 0)
-        return value.Int(ret)
+      elif case(arith_expr_e.BinaryAssign):  # a=1, a+=5, a[1]+=5
+        node = cast(arith_expr__BinaryAssign, UP_node)
+        op_id = node.op_id
 
-      if op_id == Id.Arith_LBracket:
-        # NOTE: Similar to bracket_op_e.ArrayIndex in osh/word_eval.py
+        if op_id == Id.Arith_Equal:
+          lval = _EvalLhsArith(node.left, self.mem, self)
+          # Disallowing (( a = myarray ))
+          # It has to be an integer
+          rhs_int = self.EvalToInt(node.right)
+          self._Store(lval, rhs_int)
+          return value.Int(rhs_int)
 
-        left = self.Eval(node.left)
-        UP_left = left
-        with tagswitch(left) as case:
-          if case(value_e.MaybeStrArray):
-            left = cast(value__MaybeStrArray, UP_left)
-            rhs_int = self.EvalToInt(node.right)
-            try:
-              # could be None because representation is sparse
-              s = left.strs[rhs_int]
-            except IndexError:
-              s = None
+        old_int, lval = self._EvalLhsAndLookupArith(node.left)
+        rhs = self.EvalToInt(node.right)
 
-          elif case(value_e.AssocArray):
-            left = cast(value__AssocArray, UP_left)
-            key = self.EvalWordToString(node.right)
-            s = left.d.get(key)
-
-          else:
-            # TODO: Add error context
-            e_die('Expected array or assoc in index expression, got %s', left)
-
-        if s is None:
-          val = value.Undef()  # type: value_t
-        else:
-          val = value.Str(s)
-
-        return val
-
-      if op_id == Id.Arith_Comma:
-        self.Eval(node.left)  # throw away result
-        return self.Eval(node.right)
-
-      # Rest are integers
-      lhs = self.EvalToInt(node.left)
-      rhs = self.EvalToInt(node.right)
-
-      if op_id == Id.Arith_Plus:
-        ret = lhs + rhs
-      elif op_id == Id.Arith_Minus:
-        ret = lhs - rhs
-      elif op_id == Id.Arith_Star:
-        ret =  lhs * rhs
-      elif op_id == Id.Arith_Slash:
-        try:
-          ret = lhs / rhs
-        except ZeroDivisionError:
-          # TODO: _ErrorWithLocation should also accept arith_expr ?  I
-          # think I needed that for other stuff.
-          # Or I could blame the '/' token, instead of op_id.
-          error_expr = node.right  # node is Binary
-          if error_expr.tag == arith_expr_e.VarRef:
-            # TODO: VarRef should store a token instead of a string!
-            e_die('Divide by zero (name)')
-          elif error_expr.tag == arith_expr_e.ArithWord:
-            e_die('Divide by zero', word=node.right.w)
-          else:
+        if op_id == Id.Arith_PlusEqual:
+          new_int = old_int + rhs
+        elif op_id == Id.Arith_MinusEqual:
+          new_int = old_int - rhs
+        elif op_id == Id.Arith_StarEqual:
+          new_int = old_int * rhs
+        elif op_id == Id.Arith_SlashEqual:
+          try:
+            new_int = old_int / rhs
+          except ZeroDivisionError:
+            # TODO: location
             e_die('Divide by zero')
+        elif op_id == Id.Arith_PercentEqual:
+          new_int = old_int % rhs
 
-      elif op_id == Id.Arith_Percent:
-        ret= lhs % rhs
+        elif op_id == Id.Arith_DGreatEqual:
+          new_int = old_int >> rhs
+        elif op_id == Id.Arith_DLessEqual:
+          new_int = old_int << rhs
+        elif op_id == Id.Arith_AmpEqual:
+          new_int = old_int & rhs
+        elif op_id == Id.Arith_PipeEqual:
+          new_int = old_int | rhs
+        elif op_id == Id.Arith_CaretEqual:
+          new_int = old_int ^ rhs
+        else:
+          raise AssertionError(op_id)  # shouldn't get here
 
-      elif op_id == Id.Arith_DStar:
-        # OVM is stripped of certain functions that are somehow necessary for
-        # exponentiation.
-        # Python/ovm_stub_pystrtod.c:21: PyOS_double_to_string: Assertion `0'
-        # failed.
-        if rhs < 0:
-          e_die("Exponent can't be less than zero")  # TODO: error location
-        ret = 1
-        for i in xrange(rhs):
-          ret *= lhs
+        self._Store(lval, new_int)
+        return value.Int(new_int)
 
-      elif op_id == Id.Arith_DEqual:
-        ret = int(lhs == rhs)
-      elif op_id == Id.Arith_NEqual:
-        ret = int(lhs != rhs)
-      elif op_id == Id.Arith_Great:
-        ret = int(lhs > rhs)
-      elif op_id == Id.Arith_GreatEqual:
-        ret = int(lhs >= rhs)
-      elif op_id == Id.Arith_Less:
-        ret = int(lhs < rhs)
-      elif op_id == Id.Arith_LessEqual:
-        ret = int(lhs <= rhs)
+      elif case(arith_expr_e.Unary):
+        node = cast(arith_expr__Unary, UP_node)
+        op_id = node.op_id
 
-      elif op_id == Id.Arith_Pipe:
-        ret = lhs | rhs
-      elif op_id == Id.Arith_Amp:
-        ret = lhs & rhs
-      elif op_id == Id.Arith_Caret:
-        ret = lhs ^ rhs
+        i = self.EvalToInt(node.child)
 
-      # Note: how to define shift of negative numbers?
-      elif op_id == Id.Arith_DLess:
-        ret = lhs << rhs
-      elif op_id == Id.Arith_DGreat:
-        ret = lhs >> rhs
+        if op_id == Id.Node_UnaryPlus:
+          ret = i
+        elif op_id == Id.Node_UnaryMinus:
+          ret = -i
+
+        elif op_id == Id.Arith_Bang:  # logical negation
+          ret = 1 if i == 0 else 0
+        elif op_id == Id.Arith_Tilde:  # bitwise complement
+          ret = ~i
+        else:
+          raise AssertionError(op_id)  # shouldn't get here
+
+        return value.Int(ret)
+
+      elif case(arith_expr_e.Binary):
+        node = cast(arith_expr__Binary, UP_node)
+        op_id = node.op_id
+
+        # Short-circuit evaluation for || and &&.
+        if op_id == Id.Arith_DPipe:
+          lhs = self.EvalToInt(node.left)
+          if lhs == 0:
+            rhs = self.EvalToInt(node.right)
+            ret = int(rhs != 0)
+          else:
+            ret = 1  # true
+          return value.Int(ret)
+
+        if op_id == Id.Arith_DAmp:
+          lhs = self.EvalToInt(node.left)
+          if lhs == 0:
+            ret = 0  # false
+          else:
+            rhs = self.EvalToInt(node.right)
+            ret = int(rhs != 0)
+          return value.Int(ret)
+
+        if op_id == Id.Arith_LBracket:
+          # NOTE: Similar to bracket_op_e.ArrayIndex in osh/word_eval.py
+
+          left = self.Eval(node.left)
+          UP_left = left
+          with tagswitch(left) as case:
+            if case(value_e.MaybeStrArray):
+              left = cast(value__MaybeStrArray, UP_left)
+              rhs_int = self.EvalToInt(node.right)
+              try:
+                # could be None because representation is sparse
+                s = left.strs[rhs_int]
+              except IndexError:
+                s = None
+
+            elif case(value_e.AssocArray):
+              left = cast(value__AssocArray, UP_left)
+              key = self.EvalWordToString(node.right)
+              s = left.d.get(key)
+
+            else:
+              # TODO: Add error context
+              e_die('Expected array or assoc in index expression, got %s', left)
+
+          if s is None:
+            val = value.Undef()  # type: value_t
+          else:
+            val = value.Str(s)
+
+          return val
+
+        if op_id == Id.Arith_Comma:
+          self.Eval(node.left)  # throw away result
+          return self.Eval(node.right)
+
+        # Rest are integers
+        lhs = self.EvalToInt(node.left)
+        rhs = self.EvalToInt(node.right)
+
+        if op_id == Id.Arith_Plus:
+          ret = lhs + rhs
+        elif op_id == Id.Arith_Minus:
+          ret = lhs - rhs
+        elif op_id == Id.Arith_Star:
+          ret =  lhs * rhs
+        elif op_id == Id.Arith_Slash:
+          try:
+            ret = lhs / rhs
+          except ZeroDivisionError:
+            # TODO: _ErrorWithLocation should also accept arith_expr ?  I
+            # think I needed that for other stuff.
+            # Or I could blame the '/' token, instead of op_id.
+            error_expr = node.right  # node is Binary
+            UP_error_expr = error_expr
+            with tagswitch(error_expr) as case2:
+              if case(arith_expr_e.VarRef):
+                # TODO: VarRef should store a token instead of a string!
+                e_die('Divide by zero (name)')
+              elif case(arith_expr_e.ArithWord):
+                error_expr = cast(arith_expr__ArithWord, UP_error_expr)
+                e_die('Divide by zero', word=error_expr.w)
+              else:
+                e_die('Divide by zero')
+
+        elif op_id == Id.Arith_Percent:
+          ret = lhs % rhs
+
+        elif op_id == Id.Arith_DStar:
+          # OVM is stripped of certain functions that are somehow necessary for
+          # exponentiation.
+          # Python/ovm_stub_pystrtod.c:21: PyOS_double_to_string: Assertion `0'
+          # failed.
+          if rhs < 0:
+            e_die("Exponent can't be less than zero")  # TODO: error location
+          ret = 1
+          for i in xrange(rhs):
+            ret *= lhs
+
+        elif op_id == Id.Arith_DEqual:
+          ret = int(lhs == rhs)
+        elif op_id == Id.Arith_NEqual:
+          ret = int(lhs != rhs)
+        elif op_id == Id.Arith_Great:
+          ret = int(lhs > rhs)
+        elif op_id == Id.Arith_GreatEqual:
+          ret = int(lhs >= rhs)
+        elif op_id == Id.Arith_Less:
+          ret = int(lhs < rhs)
+        elif op_id == Id.Arith_LessEqual:
+          ret = int(lhs <= rhs)
+
+        elif op_id == Id.Arith_Pipe:
+          ret = lhs | rhs
+        elif op_id == Id.Arith_Amp:
+          ret = lhs & rhs
+        elif op_id == Id.Arith_Caret:
+          ret = lhs ^ rhs
+
+        # Note: how to define shift of negative numbers?
+        elif op_id == Id.Arith_DLess:
+          ret = lhs << rhs
+        elif op_id == Id.Arith_DGreat:
+          ret = lhs >> rhs
+        else:
+          raise AssertionError(op_id)
+
+        return value.Int(ret)
+
+      elif case(arith_expr_e.TernaryOp):
+        node = cast(arith_expr__TernaryOp, UP_node)
+
+        cond = self.EvalToInt(node.cond)
+        if cond:  # nonzero
+          return self.Eval(node.true_expr)
+        else:
+          return self.Eval(node.false_expr)
+
       else:
-        raise AssertionError(op_id)
-
-      return value.Int(ret)
-
-    if node.tag == arith_expr_e.TernaryOp:
-      cond = self.EvalToInt(node.cond)
-      if cond:  # nonzero
-        return self.Eval(node.true_expr)
-      else:
-        return self.Eval(node.false_expr)
-
-    raise AssertionError("Unhandled node %r" % node.__class__.__name__)
+        raise AssertionError(node.tag_())
 
   def EvalWordToString(self, node):
     # type: (arith_expr_t) -> str
@@ -685,12 +703,14 @@ class ArithEvaluator(_ExprEvaluator):
 
     a[$x] a["$x"] a["x"] a['x']
     """
-    if node.tag != arith_expr_e.ArithWord:  # $(( $x )) $(( ${x}${y} )), etc.
+    UP_node = node
+    if node.tag_() == arith_expr_e.ArithWord:  # $(( $x )) $(( ${x}${y} )), etc.
+      node = cast(arith_expr__ArithWord, UP_node)
+      val = self.word_ev.EvalWordToString(node.w)
+      return val.s
+    else:
       # TODO: location info for orginal
       e_die("Associative array keys must be strings: $x 'x' \"$x\" etc.")
-
-    val = self.word_ev.EvalWordToString(node.w)
-    return val.s
 
 
 class BoolEvaluator(_ExprEvaluator):
@@ -701,241 +721,248 @@ class BoolEvaluator(_ExprEvaluator):
     state.SetGlobalArray(self.mem, 'BASH_REMATCH', matches)
 
   def _EvalCompoundWord(self, word, quote_kind=quote_e.Default):
-    # type: (compound_word, quote_t) -> str
+    # type: (word_t, quote_t) -> str
     val = self.word_ev.EvalWordToString(word, quote_kind=quote_kind)
     return val.s
 
   def Eval(self, node):
     # type: (bool_expr_t) -> bool
-    #print('!!', node.tag)
 
-    if node.tag == bool_expr_e.WordTest:
-      s = self._EvalCompoundWord(node.w)
-      return bool(s)
+    UP_node = node
+    with tagswitch(node) as case:
+      if case(bool_expr_e.WordTest):
+        node = cast(bool_expr__WordTest, UP_node)
+        s = self._EvalCompoundWord(node.w)
+        return bool(s)
 
-    if node.tag == bool_expr_e.LogicalNot:
-      b = self.Eval(node.child)
-      return not b
+      elif case(bool_expr_e.LogicalNot):
+        node = cast(bool_expr__LogicalNot, UP_node)
+        b = self.Eval(node.child)
+        return not b
 
-    if node.tag == bool_expr_e.LogicalAnd:
-      # Short-circuit evaluation
-      if self.Eval(node.left):
-        return self.Eval(node.right)
-      else:
-        return False
-
-    if node.tag == bool_expr_e.LogicalOr:
-      if self.Eval(node.left):
-        return True
-      else:
-        return self.Eval(node.right)
-
-    if node.tag == bool_expr_e.Unary:
-      op_id = node.op_id
-      s = self._EvalCompoundWord(node.child)
-
-      # Now dispatch on arg type
-      arg_type = BOOL_ARG_TYPES[op_id]  # could be static in the LST?
-
-      if arg_type == bool_arg_type_e.Path:
-        # Only use lstat if we're testing for a symlink.
-        if op_id in (Id.BoolUnary_h, Id.BoolUnary_L):
-          try:
-            mode = posix.lstat(s).st_mode
-          except OSError:
-            # TODO: simple_test_builtin should this as status=2.
-            #e_die("lstat() error: %s", e, word=node.child)
-            return False
-
-          return stat.S_ISLNK(mode)
-
-        try:
-          st = posix.stat(s)
-        except OSError as e:
-          # TODO: simple_test_builtin should this as status=2.
-          # Problem: we really need errno, because test -f / is bad argument,
-          # while test -f /nonexistent is a good argument but failed.  Gah.
-          # ENOENT vs. ENAMETOOLONG.
-          #e_die("stat() error: %s", e, word=node.child)
-          return False
-        mode = st.st_mode
-
-        if op_id in (Id.BoolUnary_e, Id.BoolUnary_a):  # -a is alias for -e
-          return True
-
-        if op_id == Id.BoolUnary_f:
-          return stat.S_ISREG(mode)
-
-        if op_id == Id.BoolUnary_d:
-          return stat.S_ISDIR(mode)
-
-        if op_id == Id.BoolUnary_b:
-          return stat.S_ISBLK(mode)
-
-        if op_id == Id.BoolUnary_c:
-          return stat.S_ISCHR(mode)
-
-        if op_id == Id.BoolUnary_p:
-          return stat.S_ISFIFO(mode)
-
-        if op_id == Id.BoolUnary_S:
-          return stat.S_ISSOCK(mode)
-
-        if op_id == Id.BoolUnary_x:
-          return posix.access(s, posix.X_OK)
-
-        if op_id == Id.BoolUnary_r:
-          return posix.access(s, posix.R_OK)
-
-        if op_id == Id.BoolUnary_w:
-          return posix.access(s, posix.W_OK)
-
-        if op_id == Id.BoolUnary_s:
-          return st.st_size != 0
-
-        if op_id == Id.BoolUnary_O:
-          return st.st_uid == posix.geteuid()
-
-        if op_id == Id.BoolUnary_G:
-          return st.st_gid == posix.getegid()
-
-        e_die("%s isn't implemented", op_id)  # implicit location
-
-      if arg_type == bool_arg_type_e.Str:
-        if op_id == Id.BoolUnary_z:
-          return not bool(s)
-        if op_id == Id.BoolUnary_n:
-          return bool(s)
-
-        raise AssertionError(op_id)  # should never happen
-
-      if arg_type == bool_arg_type_e.Other:
-        if op_id == Id.BoolUnary_t:
-          try:
-            fd = int(s)
-          except ValueError:
-            # TODO: Need location information of [
-            e_die('Invalid file descriptor %r', s, word=node.child)
-          try:
-            return posix.isatty(fd)
-          # fd is user input, and causes this exception in the binding.
-          except OverflowError:
-            e_die('File descriptor %r is too big', s, word=node.child)
-
-        # See whether 'set -o' options have been set
-        if op_id == Id.BoolUnary_o:
-          b = getattr(self.exec_opts, s, None)
-          return False if b is None else b
-
-        e_die("%s isn't implemented", op_id)  # implicit location
-
-      raise AssertionError(arg_type)  # should never happen
-
-    if node.tag == bool_expr_e.Binary:
-      op_id = node.op_id
-
-      s1 = self._EvalCompoundWord(node.left)
-      # Whether to glob escape
-      with switch(op_id) as case:
-        if case(Id.BoolBinary_GlobEqual, Id.BoolBinary_GlobDEqual,
-                Id.BoolBinary_GlobNEqual):
-          quote_kind = quote_e.FnMatch
-        elif case(Id.BoolBinary_EqualTilde):
-          quote_kind = quote_e.ERE
+      elif case(bool_expr_e.LogicalAnd):
+        node = cast(bool_expr__LogicalAnd, UP_node)
+        # Short-circuit evaluation
+        if self.Eval(node.left):
+          return self.Eval(node.right)
         else:
-          quote_kind = quote_e.Default
+          return False
 
-      s2 = self._EvalCompoundWord(node.right, quote_kind=quote_kind)
-
-      # Now dispatch on arg type
-      arg_type = BOOL_ARG_TYPES[op_id]
-
-      if arg_type == bool_arg_type_e.Path:
-        try:
-          st1 = posix.stat(s1)
-        except OSError:
-          st1 = None
-        try:
-          st2 = posix.stat(s2)
-        except OSError:
-          st2 = None
-
-        if op_id in (Id.BoolBinary_nt, Id.BoolBinary_ot):
-          # pretend it's a very old file
-          m1 = 0 if st1 is None else st1.st_mtime
-          m2 = 0 if st2 is None else st2.st_mtime
-          if op_id == Id.BoolBinary_nt:
-            return m1 > m2
-          else:
-            return m1 < m2
-
-        if op_id == Id.BoolBinary_ef:
-          if st1 is None:
-            return False
-          if st2 is None:
-            return False
-          return st1.st_dev == st2.st_dev and st1.st_ino == st2.st_ino
-
-        raise AssertionError(op_id)
-
-      if arg_type == bool_arg_type_e.Int:
-        # NOTE: We assume they are constants like [[ 3 -eq 3 ]].
-        # Bash also allows [[ 1+2 -eq 3 ]].
-        i1 = self._StringToIntegerOrError(s1, blame_word=node.left)
-        i2 = self._StringToIntegerOrError(s2, blame_word=node.right)
-
-        if op_id == Id.BoolBinary_eq:
-          return i1 == i2
-        if op_id == Id.BoolBinary_ne:
-          return i1 != i2
-        if op_id == Id.BoolBinary_gt:
-          return i1 > i2
-        if op_id == Id.BoolBinary_ge:
-          return i1 >= i2
-        if op_id == Id.BoolBinary_lt:
-          return i1 < i2
-        if op_id == Id.BoolBinary_le:
-          return i1 <= i2
-
-        raise AssertionError(op_id)  # should never happen
-
-      if arg_type == bool_arg_type_e.Str:
-
-        if op_id in (Id.BoolBinary_GlobEqual, Id.BoolBinary_GlobDEqual):
-          #log('Matching %s against pattern %s', s1, s2)
-          return libc.fnmatch(s2, s1)
-
-        if op_id == Id.BoolBinary_GlobNEqual:
-          return not libc.fnmatch(s2, s1)
-
-        if op_id in (Id.BoolBinary_Equal, Id.BoolBinary_DEqual):
-          return s1 == s2
-
-        if op_id == Id.BoolBinary_NEqual:
-          return s1 != s2
-
-        if op_id == Id.BoolBinary_EqualTilde:
-          # TODO: This should go to --debug-file
-          #log('Matching %r against regex %r', s1, s2)
-          try:
-            matches = libc.regex_match(s2, s1)
-          except RuntimeError:
-            # Status 2 indicates a regex parse error.  This is fatal in OSH but
-            # not in bash, which treats [[ like a command with an exit code.
-            e_die("Invalid regex %r", s2, word=node.right, status=2)
-
-          if matches is None:
-            return False
-
-          self._SetRegexMatches(matches)
+      elif case(bool_expr_e.LogicalOr):
+        node = cast(bool_expr__LogicalOr, UP_node)
+        if self.Eval(node.left):
           return True
+        else:
+          return self.Eval(node.right)
 
-        if op_id == Id.Op_Less:
-          return s1 < s2
+      elif case(bool_expr_e.Unary):
+        node = cast(bool_expr__Unary, UP_node)
+        op_id = node.op_id
+        s = self._EvalCompoundWord(node.child)
 
-        if op_id == Id.Op_Great:
-          return s1 > s2
+        # Now dispatch on arg type
+        arg_type = BOOL_ARG_TYPES[op_id]  # could be static in the LST?
 
-        raise AssertionError(op_id)  # should never happen
+        if arg_type == bool_arg_type_e.Path:
+          # Only use lstat if we're testing for a symlink.
+          if op_id in (Id.BoolUnary_h, Id.BoolUnary_L):
+            try:
+              mode = posix.lstat(s).st_mode
+            except OSError:
+              # TODO: simple_test_builtin should this as status=2.
+              #e_die("lstat() error: %s", e, word=node.child)
+              return False
 
-    raise AssertionError(node.tag)
+            return stat.S_ISLNK(mode)
+
+          try:
+            st = posix.stat(s)
+          except OSError as e:
+            # TODO: simple_test_builtin should this as status=2.
+            # Problem: we really need errno, because test -f / is bad argument,
+            # while test -f /nonexistent is a good argument but failed.  Gah.
+            # ENOENT vs. ENAMETOOLONG.
+            #e_die("stat() error: %s", e, word=node.child)
+            return False
+          mode = st.st_mode
+
+          if op_id in (Id.BoolUnary_e, Id.BoolUnary_a):  # -a is alias for -e
+            return True
+
+          if op_id == Id.BoolUnary_f:
+            return stat.S_ISREG(mode)
+
+          if op_id == Id.BoolUnary_d:
+            return stat.S_ISDIR(mode)
+
+          if op_id == Id.BoolUnary_b:
+            return stat.S_ISBLK(mode)
+
+          if op_id == Id.BoolUnary_c:
+            return stat.S_ISCHR(mode)
+
+          if op_id == Id.BoolUnary_p:
+            return stat.S_ISFIFO(mode)
+
+          if op_id == Id.BoolUnary_S:
+            return stat.S_ISSOCK(mode)
+
+          if op_id == Id.BoolUnary_x:
+            return posix.access(s, posix.X_OK)
+
+          if op_id == Id.BoolUnary_r:
+            return posix.access(s, posix.R_OK)
+
+          if op_id == Id.BoolUnary_w:
+            return posix.access(s, posix.W_OK)
+
+          if op_id == Id.BoolUnary_s:
+            return st.st_size != 0
+
+          if op_id == Id.BoolUnary_O:
+            return st.st_uid == posix.geteuid()
+
+          if op_id == Id.BoolUnary_G:
+            return st.st_gid == posix.getegid()
+
+          e_die("%s isn't implemented", op_id)  # implicit location
+
+        if arg_type == bool_arg_type_e.Str:
+          if op_id == Id.BoolUnary_z:
+            return not bool(s)
+          if op_id == Id.BoolUnary_n:
+            return bool(s)
+
+          raise AssertionError(op_id)  # should never happen
+
+        if arg_type == bool_arg_type_e.Other:
+          if op_id == Id.BoolUnary_t:
+            try:
+              fd = int(s)
+            except ValueError:
+              # TODO: Need location information of [
+              e_die('Invalid file descriptor %r', s, word=node.child)
+            try:
+              return posix.isatty(fd)
+            # fd is user input, and causes this exception in the binding.
+            except OverflowError:
+              e_die('File descriptor %r is too big', s, word=node.child)
+
+          # See whether 'set -o' options have been set
+          if op_id == Id.BoolUnary_o:
+            b = getattr(self.exec_opts, s, None)
+            return False if b is None else b
+
+          e_die("%s isn't implemented", op_id)  # implicit location
+
+        raise AssertionError(arg_type)  # should never happen
+
+      elif case(bool_expr_e.Binary):
+        node = cast(bool_expr__Binary, UP_node)
+
+        op_id = node.op_id
+        # Whether to glob escape
+        with switch(op_id) as case2:
+          if case2(Id.BoolBinary_GlobEqual, Id.BoolBinary_GlobDEqual,
+                  Id.BoolBinary_GlobNEqual):
+            quote_kind = quote_e.FnMatch
+          elif case2(Id.BoolBinary_EqualTilde):
+            quote_kind = quote_e.ERE
+          else:
+            quote_kind = quote_e.Default
+
+        s1 = self._EvalCompoundWord(node.left)
+        s2 = self._EvalCompoundWord(node.right, quote_kind=quote_kind)
+
+        # Now dispatch on arg type
+        arg_type = BOOL_ARG_TYPES[op_id]
+
+        if arg_type == bool_arg_type_e.Path:
+          try:
+            st1 = posix.stat(s1)
+          except OSError:
+            st1 = None
+          try:
+            st2 = posix.stat(s2)
+          except OSError:
+            st2 = None
+
+          if op_id in (Id.BoolBinary_nt, Id.BoolBinary_ot):
+            # pretend it's a very old file
+            m1 = 0 if st1 is None else st1.st_mtime
+            m2 = 0 if st2 is None else st2.st_mtime
+            if op_id == Id.BoolBinary_nt:
+              return m1 > m2
+            else:
+              return m1 < m2
+
+          if op_id == Id.BoolBinary_ef:
+            if st1 is None:
+              return False
+            if st2 is None:
+              return False
+            return st1.st_dev == st2.st_dev and st1.st_ino == st2.st_ino
+
+          raise AssertionError(op_id)
+
+        if arg_type == bool_arg_type_e.Int:
+          # NOTE: We assume they are constants like [[ 3 -eq 3 ]].
+          # Bash also allows [[ 1+2 -eq 3 ]].
+          i1 = self._StringToIntegerOrError(s1, blame_word=node.left)
+          i2 = self._StringToIntegerOrError(s2, blame_word=node.right)
+
+          if op_id == Id.BoolBinary_eq:
+            return i1 == i2
+          if op_id == Id.BoolBinary_ne:
+            return i1 != i2
+          if op_id == Id.BoolBinary_gt:
+            return i1 > i2
+          if op_id == Id.BoolBinary_ge:
+            return i1 >= i2
+          if op_id == Id.BoolBinary_lt:
+            return i1 < i2
+          if op_id == Id.BoolBinary_le:
+            return i1 <= i2
+
+          raise AssertionError(op_id)  # should never happen
+
+        if arg_type == bool_arg_type_e.Str:
+
+          if op_id in (Id.BoolBinary_GlobEqual, Id.BoolBinary_GlobDEqual):
+            #log('Matching %s against pattern %s', s1, s2)
+            return libc.fnmatch(s2, s1)
+
+          if op_id == Id.BoolBinary_GlobNEqual:
+            return not libc.fnmatch(s2, s1)
+
+          if op_id in (Id.BoolBinary_Equal, Id.BoolBinary_DEqual):
+            return s1 == s2
+
+          if op_id == Id.BoolBinary_NEqual:
+            return s1 != s2
+
+          if op_id == Id.BoolBinary_EqualTilde:
+            # TODO: This should go to --debug-file
+            #log('Matching %r against regex %r', s1, s2)
+            try:
+              matches = libc.regex_match(s2, s1)
+            except RuntimeError:
+              # Status 2 indicates a regex parse error.  This is fatal in OSH but
+              # not in bash, which treats [[ like a command with an exit code.
+              e_die("Invalid regex %r", s2, word=node.right, status=2)
+
+            if matches is None:
+              return False
+
+            self._SetRegexMatches(matches)
+            return True
+
+          if op_id == Id.Op_Less:
+            return s1 < s2
+
+          if op_id == Id.Op_Great:
+            return s1 > s2
+
+          raise AssertionError(op_id)  # should never happen
+
+      raise AssertionError(node.tag_())
