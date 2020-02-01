@@ -17,3 +17,4 @@
 ./osh/word_eval.py
 ./_devbuild/gen/runtime_asdl.py
 ./osh/sh_expr_eval.py
+./osh/state.py

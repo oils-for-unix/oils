@@ -111,8 +111,6 @@ if TYPE_CHECKING:
   from osh.cmd_parse import CommandParser
   from osh import word_eval
   from osh import builtin_process
-  from osh import prompt
-  from osh import split
   from osh.builtin import _Builtin
 
 

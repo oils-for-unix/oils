@@ -55,10 +55,8 @@ if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import (
     builtin_t, effect_t, lvalue__Named
   )
-  from core.alloc import Arena
   from core.ui import ErrorFormatter
   from osh import cmd_exec
-  from osh.cmd_exec import Deps, Executor
   from osh.split import SplitContext
   from osh.state import ExecOpts, Mem
   from osh import prompt

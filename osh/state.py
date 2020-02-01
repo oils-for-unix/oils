@@ -215,7 +215,7 @@ SET_OPTIONS = [
 ]
 
 # Used by core/builtin_comp.py too.
-SET_OPTION_NAMES = set(name for _, name in SET_OPTIONS)
+SET_OPTION_NAMES = [name for _, name in SET_OPTIONS]
 
 _STRICT_OPTION_NAMES = [
     # NOTE:
@@ -424,7 +424,7 @@ class ExecOpts(object):
   def _InitOptionsFromEnv(self, shellopts):
     # type: (str) -> None
     # e.g. errexit:nounset:pipefail
-    lookup = set(shellopts.split(':'))
+    lookup = shellopts.split(':')
     for _, name in SET_OPTIONS:
       if name in lookup:
         self._SetOption(name, True)
@@ -552,7 +552,10 @@ class ExecOpts(object):
     # type: (List[str]) -> None
     """ For 'set -o' and 'shopt -p -o' """
     # TODO: Maybe sort them differently?
-    opt_names = opt_names or SET_OPTION_NAMES
+
+    if len(opt_names) == 0:  # if none, supplied, show all
+      opt_names = SET_OPTION_NAMES
+
     for opt_name in opt_names:
       if opt_name not in SET_OPTION_NAMES:
         raise args.UsageError('got invalid option %r' % opt_name)
@@ -626,13 +629,13 @@ def _DumpVarFrame(frame):
   for name, cell in frame.iteritems():
     cell_json = {}  # type: Dict[str, Any]
 
-    flags = ''
+    flags = []
     if cell.exported:
-      flags += 'x'
+      flags.append('x')
     if cell.readonly:
-      flags += 'r'
-    if flags:
-      cell_json['flags'] = flags
+      flags.append('r')
+    if len(flags):
+      cell_json['flags'] = ''.join(flags)
 
     # For compactness, just put the value right in the cell.
     val = None  # type: value_t
@@ -970,7 +973,7 @@ class Mem(object):
   def PushSource(self, source_name, argv):
     # type: (str, List[str]) -> None
     """For 'source foo.sh 1 2 3."""
-    if argv:
+    if len(argv):
       self.argv_stack.append(_ArgFrame(argv))
     # Match bash's behavior for ${FUNCNAME[@]}.  But it would be nicer to add
     # the name of the script here?
@@ -981,7 +984,7 @@ class Mem(object):
     # type: (List[str]) -> None
     self.bash_source.pop()
     self._PopDebugStack()
-    if argv:
+    if len(argv):
       self.argv_stack.pop()
 
   def PushTemp(self):
@@ -1139,16 +1142,14 @@ class Mem(object):
         return True
     return False
 
-  def _CheckOilKeyword(self, keyword_id, lval, cell):
-    # type: (Id_t, lvalue_t, Optional[cell]) -> None
+  def _CheckOilKeyword(self, keyword_id, name, cell):
+    # type: (Id_t, str, Optional[cell]) -> None
     """Check that 'var' and setvar/set are used correctly.
 
     NOTE: These are dynamic checks, but the syntactic difference between
     definition and mutation will help translate the Oil subset of OSH to static
     languages.
     """
-    # NOTE: all 3 variants of 'lvalue' have 'name'
-    name = lval.name
     if cell and keyword_id == Id.KW_Var:
       # TODO: Point at the ORIGINAL declaration!
       e_die("%r has already been declared", name)
@@ -1194,7 +1195,7 @@ class Mem(object):
       if case(lvalue_e.Named):
         lval = cast(lvalue__Named, UP_lval)
         cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
-        self._CheckOilKeyword(keyword_id, lval, cell)
+        self._CheckOilKeyword(keyword_id, lval.name, cell)
         if cell:
           # Clear before checking readonly bit.
           # NOTE: Could be cell.flags &= flag_clear_mask 
@@ -1248,7 +1249,7 @@ class Mem(object):
         # Undef, which then turns into an INDEXED array.  (Undef means that set
         # -o nounset fails.)
         cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
-        self._CheckOilKeyword(keyword_id, lval, cell)
+        self._CheckOilKeyword(keyword_id, lval.name, cell)
         if not cell:
           self._BindNewArrayWithEntry(namespace, lval, rval, flags_to_set)
           return
@@ -1299,7 +1300,7 @@ class Mem(object):
         left_spid = lval.spids[0] if lval.spids else runtime.NO_SPID
 
         cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
-        self._CheckOilKeyword(keyword_id, lval, cell)
+        self._CheckOilKeyword(keyword_id, lval.name, cell)
         if cell.readonly:
           e_die("Can't assign to readonly associative array", span_id=left_spid)
 

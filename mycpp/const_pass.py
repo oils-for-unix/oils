@@ -233,7 +233,18 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         pass
 
     def visit_list_comprehension(self, o: 'mypy.nodes.ListComprehension') -> T:
-        pass
+        gen = o.generator  # GeneratorExpr
+        left_expr = gen.left_expr
+        index_expr = gen.indices[0]
+        seq = gen.sequences[0]
+        cond = gen.condlists[0]
+
+        # We might use all of these, so collect constants.
+        self.accept(left_expr)
+        self.accept(index_expr)
+        self.accept(seq)
+        # Why does this cause a crash?
+        #self.accept(cond)
 
     def visit_set_comprehension(self, o: 'mypy.nodes.SetComprehension') -> T:
         pass

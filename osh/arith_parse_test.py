@@ -16,7 +16,6 @@ from core import error
 from core import test_lib
 from core import ui
 from frontend import parse_lib
-from osh import cmd_exec
 from osh import sh_expr_eval
 from osh import split
 from osh import word_eval
