@@ -68,6 +68,7 @@ from core import pyutil
 from core import ui
 from core import util
 from core.util import log
+from core import vm
 
 from frontend import args
 from frontend import reader
@@ -509,34 +510,18 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.OPTS: builtin_oil.Opts(mem, errfmt),
   }
 
+  arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, errfmt)
+  bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, errfmt)
+  expr_ev = expr_eval.OilEvaluator(mem, procs, errfmt)
+  word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, exec_deps)
   ex = cmd_exec.Executor(mem, fd_state, procs, builtins, exec_opts,
                          parse_ctx, exec_deps)
-  exec_deps.ex = ex
-
-  word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, exec_deps)
-  exec_deps.word_ev = word_ev
-
-  arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, word_ev, errfmt)
-  exec_deps.arith_ev = arith_ev
-  word_ev.arith_ev = arith_ev  # Another circular dependency
-
-  bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, word_ev, errfmt)
-  exec_deps.bool_ev = bool_ev
-
-  expr_ev = expr_eval.OilEvaluator(mem, procs, ex, word_ev, errfmt)
-  exec_deps.expr_ev = expr_ev
-
+  # PromptEvaluator rendering is needed in non-interactive shells for @P.
+  prompt_ev = prompt.Evaluator(lang, parse_ctx, ex, mem)
   tracer = dev.Tracer(parse_ctx, exec_opts, mem, word_ev, trace_f)
-  exec_deps.tracer = tracer
 
-  # HACK for circular deps
-  ex.word_ev = word_ev
-  ex.arith_ev = arith_ev
-  ex.bool_ev = bool_ev
-  ex.expr_ev = expr_ev
-  ex.tracer = tracer
-
-  word_ev.expr_ev = expr_ev
+  # Wire up circular dependencies.
+  vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, ex, prompt_ev, tracer)
 
   spec_builder = builtin_comp.SpecBuilder(ex, parse_ctx, word_ev, splitter,
                                           comp_lookup)
@@ -554,18 +539,6 @@ def ShellMain(lang, argv0, argv, login_shell):
   builtins[builtin_e.TRAP] = builtin_process.Trap(sig_state, exec_deps.traps,
                                                   exec_deps.trap_nodes, ex,
                                                   errfmt)
-
-  # PromptEvaluator rendering is needed in non-interactive shells for @P.
-  prompt_ev = prompt.Evaluator(lang, parse_ctx, ex, mem)
-  exec_deps.prompt_ev = prompt_ev
-  word_ev.prompt_ev = prompt_ev  # HACK for circular deps
-
-  arith_ev.CheckCircularDeps()
-  bool_ev.CheckCircularDeps()
-  expr_ev.CheckCircularDeps()
-  word_ev.CheckCircularDeps()
-  prompt_ev.CheckCircularDeps()
-  ex.CheckCircularDeps()
 
   # History evaluation is a no-op if line_input is None.
   hist_ev = history.Evaluator(line_input, hist_ctx, debug_f)
@@ -622,7 +595,12 @@ def ShellMain(lang, argv0, argv, login_shell):
     if line_input:
       # NOTE: We're using a different WordEvaluator here.
       ev = word_eval.CompletionWordEvaluator(mem, exec_opts, exec_deps)
+
+      ev.arith_ev = arith_ev
+      ev.expr_ev = expr_ev
+      ev.prompt_ev = prompt_ev
       ev.CheckCircularDeps()
+
       root_comp = completion.RootCompleter(ev, mem, comp_lookup, compopt_state,
                                            comp_ui_state, comp_ctx, debug_f)
 

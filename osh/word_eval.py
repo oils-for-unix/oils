@@ -286,9 +286,9 @@ class _WordEvaluator(SimpleWordEvaluator):
   """
   def __init__(self, mem, exec_opts, exec_deps):
     # type: (Mem, ExecOpts, Deps) -> None
-    self.arith_ev = exec_deps.arith_ev  # type: sh_expr_eval.ArithEvaluator
-    self.expr_ev = exec_deps.expr_ev  # type: expr_eval.OilEvaluator
-    self.prompt_ev = exec_deps.prompt_ev  # type: prompt.Evaluator
+    self.arith_ev = None  # type: sh_expr_eval.ArithEvaluator
+    self.expr_ev = None  # type: expr_eval.OilEvaluator
+    self.prompt_ev = None  # type: prompt.Evaluator
 
     self.mem = mem  # for $HOME, $1, etc.
     self.exec_opts = exec_opts  # for nounset
@@ -1812,14 +1812,14 @@ class NormalWordEvaluator(_WordEvaluator):
   def __init__(self, mem, exec_opts, exec_deps):
     # type: (Mem, ExecOpts, Deps) -> None
     _WordEvaluator.__init__(self, mem, exec_opts, exec_deps)
-    self.ex = exec_deps.ex  # type: cmd_exec.Executor
+    self.ex = None  # type: cmd_exec.Executor
 
   def CheckCircularDeps(self):
     # type: () -> None
-    assert self.prompt_ev is not None
     assert self.arith_ev is not None
     assert self.expr_ev is not None
     assert self.ex is not None
+    assert self.prompt_ev is not None
 
   def _EvalCommandSub(self, node, quoted):
     # type: (command_t, bool) -> part_value__String

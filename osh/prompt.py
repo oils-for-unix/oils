@@ -99,11 +99,10 @@ class Evaluator(object):
   """
   def __init__(self, lang, parse_ctx, ex, mem):
     # type: (str, ParseContext, cmd_exec.Executor, state.Mem) -> None
-    self.ex = ex  # type: cmd_exec.Executor
-
     assert lang in ('osh', 'oil'), lang
     self.lang = lang
     self.parse_ctx = parse_ctx
+    self.ex = ex
     self.mem = mem
 
     # The default prompt is osh$ or oil$ for now.  bash --noprofile --norc ->
@@ -116,10 +115,6 @@ class Evaluator(object):
     self.tokens_cache = {}  # type: Dict[str, List[Tuple[Id, str]]]
     self.parse_cache = {}  # type: Dict[str, compound_word]
  
-  def CheckCircularDeps(self):
-    # type: () -> None
-    assert self.ex is not None
-
   def _ReplaceBackslashCodes(self, tokens):
     # type: (List[Tuple[Id, str]]) -> str
     ret = []

@@ -234,7 +234,9 @@ class Test(object):
         self.strict_arith = True
     exec_opts = _DummyExecOpts()
 
-    bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, word_ev, arena)
+    bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, arena)
+    bool_ev.word_ev = word_ev
+    bool_ev.CheckCircularDeps()
     try:
       b = bool_ev.Eval(bool_node) # type = bool
     except error.FatalRuntime as e:

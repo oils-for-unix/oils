@@ -50,13 +50,11 @@ class OilEvaluator(object):
   def __init__(self,
                mem,  # type: Mem
                funcs,  # type: Dict
-               ex,  # type: Executor
-               word_ev,  # type: SimpleWordEvaluator
                errfmt,  # type: ErrorFormatter
                ):
     # type: (...) -> None
-    self.ex = ex  # type: Executor
-    self.word_ev = word_ev  # type: SimpleWordEvaluator
+    self.ex = None  # type: Executor
+    self.word_ev = None  # type: SimpleWordEvaluator
 
     self.mem = mem
     self.funcs = funcs

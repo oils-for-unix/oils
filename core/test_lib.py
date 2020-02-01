@@ -25,6 +25,7 @@ from core import process
 from core import pyutil
 from core import ui
 from core import util
+from core import vm
 from frontend import lexer
 from frontend import parse_lib
 from frontend import reader
@@ -33,10 +34,12 @@ from osh import builtin_assign
 from osh import builtin_comp
 from osh import builtin_pure
 from osh import cmd_exec
+from osh import prompt
 from osh import sh_expr_eval
 from osh import split
 from osh import state
 from osh import word_eval
+from oil_lang import expr_eval
 
 
 def MakeBuiltinArgv(argv):
@@ -202,22 +205,18 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   splitter = split.SplitContext(mem)
   exec_deps.splitter = splitter
 
+  procs = {}
+
+  arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, errfmt)
+  bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, errfmt)
+  expr_ev = expr_eval.OilEvaluator(mem, procs, errfmt)
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, exec_deps)
-  exec_deps.word_ev = word_ev
-
-  arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, word_ev, arena)
-  exec_deps.arith_ev = arith_ev
-
-  word_ev.arith_ev = arith_ev  # Circular
-
-  bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, word_ev, arena)
-  exec_deps.bool_ev = bool_ev
-
-  tracer = dev.Tracer(parse_ctx, exec_opts, mem, word_ev, debug_f)
-  exec_deps.tracer = tracer
-
   ex = cmd_exec.Executor(mem, fd_state, funcs, builtins, exec_opts,
                          parse_ctx, exec_deps)
+  prompt_ev = prompt.Evaluator('osh', parse_ctx, ex, mem)
+  tracer = dev.Tracer(parse_ctx, exec_opts, mem, word_ev, debug_f)
+
+  vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, ex, prompt_ev, tracer)
 
   spec_builder = builtin_comp.SpecBuilder(ex, parse_ctx, word_ev, splitter,
                                           comp_lookup)

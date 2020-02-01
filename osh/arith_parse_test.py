@@ -39,9 +39,10 @@ def ParseAndEval(code_str):
   splitter = split.SplitContext(mem)
   exec_deps.splitter = splitter
 
-  ev = word_eval.CompletionWordEvaluator(mem, exec_opts, exec_deps)
+  word_ev = word_eval.CompletionWordEvaluator(mem, exec_opts, exec_deps)
 
-  arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, ev, arena)
+  arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, arena)
+  arith_ev.word_ev = word_ev
   return arith_ev.EvalToInt(anode)
 
 

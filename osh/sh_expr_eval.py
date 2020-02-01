@@ -320,10 +320,10 @@ class _ExprEvaluator(object):
   2. Look up variables and evaluate words.
   """
 
-  def __init__(self, mem, exec_opts, word_ev, errfmt):
-    # type: (Mem, Any, word_eval.SimpleWordEvaluator, ErrorFormatter) -> None
+  def __init__(self, mem, exec_opts, errfmt):
+    # type: (Mem, Any, ErrorFormatter) -> None
 
-    self.word_ev = word_ev  # type: word_eval.SimpleWordEvaluator
+    self.word_ev = None  # type: word_eval.SimpleWordEvaluator
 
     # TODO: Remove Any by fixing _DummyExecOpts in osh/builtin_bracket.py
     self.mem = mem

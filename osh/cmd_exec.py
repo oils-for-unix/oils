@@ -207,13 +207,6 @@ class Deps(object):
     # type: () -> None
     self.splitter = None    # type: split.SplitContext
 
-    self.word_ev = None     # type: word_eval._WordEvaluator
-    self.arith_ev = None    # type: sh_expr_eval.ArithEvaluator
-    self.bool_ev = None     # type: sh_expr_eval.BoolEvaluator
-    self.expr_ev = None     # type: expr_eval.OilEvaluator
-    self.ex = None          # type: Executor
-    self.prompt_ev = None   # type: prompt.Evaluator
-
     self.search_path = None # type: state.SearchPath
     self.ext_prog = None    # type: process.ExternalProgram
 
@@ -282,6 +275,12 @@ class Executor(object):
       parse_ctx: for instantiating parsers
       exec_deps: A bundle of stateless code
     """
+    self.arith_ev = None  # type: sh_expr_eval.ArithEvaluator
+    self.bool_ev = None  # type: sh_expr_eval.BoolEvaluator
+    self.expr_ev = None  # type: expr_eval.OilEvaluator
+    self.word_ev = None  # type: word_eval._WordEvaluator
+    self.tracer = None  # type: dev.Tracer
+
     self.mem = mem
     self.fd_state = fd_state
     self.procs = procs
@@ -297,11 +296,6 @@ class Executor(object):
     self.errfmt = exec_deps.errfmt
     self.debug_f = exec_deps.debug_f  # Used by ShellFuncAction too
 
-    self.word_ev = exec_deps.word_ev
-    self.arith_ev = exec_deps.arith_ev
-    self.bool_ev = exec_deps.bool_ev
-    self.expr_ev = exec_deps.expr_ev
-
     self.search_path = exec_deps.search_path
     self.ext_prog = exec_deps.ext_prog
     self.traps = exec_deps.traps
@@ -310,8 +304,6 @@ class Executor(object):
     # sleep 5 & puts a (PID, job#) entry here.  And then "jobs" displays it.
     self.job_state = exec_deps.job_state
     self.waiter = exec_deps.waiter
-
-    self.tracer = exec_deps.tracer
 
     self.loop_level = 0  # for detecting bad top-level break/continue
     self.check_command_sub_status = False  # a hack
