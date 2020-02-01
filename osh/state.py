@@ -14,6 +14,7 @@ import cStringIO
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Str, value__MaybeStrArray, value__AssocArray,
+    value_str,
     lvalue, lvalue_e, lvalue_t, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
     scope_e, scope_t, var_flags,
 )
@@ -33,7 +34,7 @@ import libc
 import posix_ as posix
 
 from typing import (
-    Iterator, Tuple, List, Dict, Optional, Any, cast, TYPE_CHECKING
+    Tuple, List, Dict, Optional, Any, cast, TYPE_CHECKING
 )
 
 if TYPE_CHECKING:
@@ -724,6 +725,18 @@ def _GetWorkingDir():
     e_die("Can't determine working directory: %s", posix.strerror(e.errno))
 
 
+class _DebugFrame(object):
+
+  def __init__(self, func_name, source_name, call_spid, argv_i, var_i):
+    # type: (Optional[str], Optional[str], int, int, int) -> None
+    self.func_name = func_name
+    self.source_name = source_name
+    self.call_spid = call_spid 
+    self.argv_i = argv_i
+    self.var_i = var_i
+
+
+
 class Mem(object):
   """For storing variables.
 
@@ -747,7 +760,7 @@ class Mem(object):
     # crash dumps and for 3 parallel arrays: FUNCNAME, CALL_SOURCE,
     # BASH_LINENO.  The First frame points at the global vars and argv.
     no_str = None  # type: Optional[str]
-    self.debug_stack = [(no_str, no_str, runtime.NO_SPID, 0, 0)]
+    self.debug_stack = [_DebugFrame(no_str, no_str, runtime.NO_SPID, 0, 0)]
 
     self.bash_source = []  # type: List[str] # for implementing BASH_SOURCE
     self.has_main = has_main
@@ -807,25 +820,25 @@ class Mem(object):
       var_stack = [_DumpVarFrame(frame) for frame in self.var_stack]
       argv_stack = [frame.Dump() for frame in self.argv_stack]
       debug_stack = []  # type: List[Dict[str, Any]]
-      for func_name, source_name, call_spid, argv_i, var_i in self.debug_stack:
+      for frame in self.debug_stack:
         d = {}  # type: Dict[str, Any]
-        if func_name:
-          d['func_called'] = func_name
-        elif source_name:
-          d['file_sourced'] = source_name
+        if frame.func_name:
+          d['func_called'] = frame.func_name
+        elif frame.source_name:
+          d['file_sourced'] = frame.source_name
         else:
           pass  # It's a frame for FOO=bar?  Or the top one?
 
-        d['call_spid'] = call_spid
-        if call_spid != runtime.NO_SPID:  # first frame has this issue
-          span = self.arena.GetLineSpan(call_spid)
+        d['call_spid'] = frame.call_spid
+        if frame.call_spid != runtime.NO_SPID:  # first frame has this issue
+          span = self.arena.GetLineSpan(frame.call_spid)
           line_id = span.line_id
           d['call_source'] = self.arena.GetLineSourceString(line_id)
           d['call_line_num'] = self.arena.GetLineNumber(line_id)
           d['call_line'] = self.arena.GetLine(line_id)
 
-        d['argv_frame'] = argv_i
-        d['var_frame'] = var_i
+        d['argv_frame'] = frame.argv_i
+        d['var_frame'] = frame.var_i
         debug_stack.append(d)
 
       return var_stack, argv_stack, debug_stack
@@ -1022,7 +1035,7 @@ class Mem(object):
     # The stack is a 5-tuple, where func_name and source_name are optional.  If
     # both are unset, then it's a "temp frame".
     self.debug_stack.append(
-        (func_name, source_name, self.current_spid, argv_i, var_i)
+        _DebugFrame(func_name, source_name, self.current_spid, argv_i, var_i)
     )
 
   def _PopDebugStack(self):
@@ -1111,7 +1124,8 @@ class Mem(object):
         if name in name_map:
           cell = name_map[name]
           return cell, name_map
-      return None, self.var_stack[0]  # set in global name_map
+      no_cell = None  # type: Optional[runtime_asdl.cell]
+      return no_cell, self.var_stack[0]  # set in global name_map
 
     elif lookup_mode == scope_e.LocalOnly:
       name_map = self.var_stack[-1]
@@ -1274,7 +1288,7 @@ class Mem(object):
             # s=x
             # s[1]=y  # invalid
             e_die("Entries in value of type %s can't be assigned to",
-                  cell.val.__class__.__name__, span_id=left_spid)
+                  value_str(cell.val.tag_()), span_id=left_spid)
 
           elif case2(value_e.MaybeStrArray):
             cell_val = cast(value__MaybeStrArray, UP_cell_val)
@@ -1370,10 +1384,10 @@ class Mem(object):
       # bash wants it in reverse order.  This is a little inefficient but we're
       # not depending on deque().
       strs = []  # type: List[str]
-      for func_name, source_name, _, _, _ in reversed(self.debug_stack):
-        if func_name:
-          strs.append(func_name)
-        if source_name:
+      for frame in reversed(self.debug_stack):
+        if frame.func_name:
+          strs.append(frame.func_name)
+        if frame.source_name:
           strs.append('source')  # bash doesn't give name
         # Temp stacks are ignored
 
@@ -1389,11 +1403,11 @@ class Mem(object):
     # This is how bash source SHOULD be defined, but it's not!
     if name == 'CALL_SOURCE':
       strs = []
-      for func_name, source_name, call_spid, _, _ in reversed(self.debug_stack):
+      for frame in reversed(self.debug_stack):
         # should only happen for the first entry
-        if call_spid == runtime.NO_SPID:
+        if frame.call_spid == runtime.NO_SPID:
           continue
-        span = self.arena.GetLineSpan(call_spid)
+        span = self.arena.GetLineSpan(frame.call_spid)
         source_str = self.arena.GetLineSourceString(span.line_id)
         strs.append(source_str)
       if self.has_main:
@@ -1402,11 +1416,11 @@ class Mem(object):
 
     if name == 'BASH_LINENO':
       strs = []
-      for _, _, call_spid, _, _ in reversed(self.debug_stack):
+      for frame in reversed(self.debug_stack):
         # should only happen for the first entry
-        if call_spid == runtime.NO_SPID:
+        if frame.call_spid == runtime.NO_SPID:
           continue
-        span = self.arena.GetLineSpan(call_spid)
+        span = self.arena.GetLineSpan(frame.call_spid)
         line_num = self.arena.GetLineNumber(span.line_id)
         strs.append(str(line_num))
       if self.has_main:
@@ -1505,15 +1519,17 @@ class Mem(object):
     return exported
 
   def VarNames(self):
-    # type: () -> Iterator[str]
+    # type: () -> List[str]
     """For internal OSH completion and compgen -A variable.
 
     NOTE: We could also add $? $$ etc.?
     """
+    ret = []  # type: List[str]
     # Look up the stack, yielding all variables.  Bash seems to do this.
     for scope in self.var_stack:
       for name, _ in scope.iteritems():
-        yield name
+        ret.append(name)
+    return ret
 
   def VarNamesStartingWith(self, prefix):
     # type: (str) -> List[str]

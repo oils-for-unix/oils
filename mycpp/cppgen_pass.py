@@ -1544,7 +1544,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             class_name == '_WordEvaluator' and 
               func_name in ('EvalWordSequence2', '_EvalWordToParts',
                             '_EmptyStrOrError', '_EvalWordPart', 'EvalWordToString') or
-            class_name == 'Executor' and func_name == '_Execute'
+            class_name == 'Executor' and func_name == '_Execute' and
+            class_name == 'Mem' and func_name == 'GetVar'
           ):
 
           default_val = o.arguments[-1].initializer
