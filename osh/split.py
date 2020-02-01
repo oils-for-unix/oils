@@ -59,7 +59,7 @@ def _SpansToParts(s, spans):
 
   for span_type, end_index in spans:
     if span_type == span_e.Black:
-      if parts and join_next:
+      if len(parts) and join_next:
         parts[-1] += s[start_index:end_index]
         join_next = False
       else:

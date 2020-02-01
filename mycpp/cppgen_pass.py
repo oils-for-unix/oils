@@ -1898,6 +1898,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 'part_value_e', 'part_value',
                 'cmd_value_e', 'cmd_value',
                 'redirect_e', 'redirect',
+
+                'var_flags',
                 ):
                 is_namespace = True
 

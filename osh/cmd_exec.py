@@ -1269,9 +1269,8 @@ class Executor(object):
 
             elif old_tag == value_e.Str and tag == value_e.Str:
               old_val = cast(value__Str, UP_old_val)
-              val = cast(value__Str, UP_val)
-              # Note: this is how to concaenate two strings in mycpp!
-              val = value.Str('%s%s' % (old_val.s, val.s))
+              str_to_append = cast(value__Str, UP_val)
+              val = value.Str(old_val.s + str_to_append.s)
 
             elif old_tag == value_e.Str and tag == value_e.MaybeStrArray:
               e_die("Can't append array to string")
@@ -1284,7 +1283,7 @@ class Executor(object):
               old_val = cast(value__MaybeStrArray, UP_old_val)
               to_append = cast(value__MaybeStrArray, UP_val)
 
-              # TODO: Could MUTATE the old one for efficiency?
+              # TODO: MUTATE the existing value for efficiency?
               strs = []  # type: List[str]
               strs.extend(old_val.strs)
               strs.extend(to_append.strs)

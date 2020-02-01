@@ -142,6 +142,10 @@ class Str {
     return new Str(buf, new_len);
   }
 
+  List<Str*>* split(Str* sep) {
+    assert(0);
+  }
+
   // TODO: implement these.  With switch statement.
   Str* strip() {
     assert(0);

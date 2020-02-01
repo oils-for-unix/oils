@@ -435,7 +435,7 @@ class ExecOpts(object):
 
   def GetDollarHyphen(self):
     # type: () -> str
-    chars = []
+    chars = []  # type: List[str]
     if self.interactive:
       chars.append('i')
 
@@ -569,7 +569,8 @@ class ExecOpts(object):
   def ShowShoptOptions(self, opt_names):
     # type: (List[str]) -> None
     """ For 'shopt -p' """
-    opt_names = opt_names or ALL_SHOPT_OPTIONS  # show all
+    if len(opt_names) == 0:
+      opt_names = ALL_SHOPT_OPTIONS  # if none supplied, show all
     for opt_name in opt_names:
       if opt_name in SHOPT_OPTION_NAMES:
         b = getattr(self, opt_name)
@@ -621,46 +622,48 @@ class _ArgFrame(object):
     self.num_shifted = 0
 
 
-def _DumpVarFrame(frame):
-  # type: (Dict[str, cell]) -> Any
-  """Dump the stack frame as reasonably compact and readable JSON."""
+if mylib.PYTHON:
+  def _DumpVarFrame(frame):
+    # type: (Dict[str, cell]) -> Any
+    """Dump the stack frame as reasonably compact and readable JSON."""
 
-  vars_json = {}
-  for name, cell in frame.iteritems():
-    cell_json = {}  # type: Dict[str, Any]
+    vars_json = {}
+    for name, cell in frame.iteritems():
+      cell_json = {}  # type: Dict[str, Any]
 
-    flags = []
-    if cell.exported:
-      flags.append('x')
-    if cell.readonly:
-      flags.append('r')
-    if len(flags):
-      cell_json['flags'] = ''.join(flags)
+      # mycpp TODO: change back to += for fewer allocations?
+      flags = []  # type: List[str]
+      if cell.exported:
+        flags.append('x')
+      if cell.readonly:
+        flags.append('r')
+      if len(flags):
+        cell_json['flags'] = ''.join(flags)
 
-    # For compactness, just put the value right in the cell.
-    val = None  # type: value_t
-    with tagswitch(cell.val) as case:
-      if case(value_e.Undef):
-        cell_json['type'] = 'Undef'
+      # For compactness, just put the value right in the cell.
+      val = None  # type: value_t
+      with tagswitch(cell.val) as case:
+        if case(value_e.Undef):
+          cell_json['type'] = 'Undef'
 
-      elif case(value_e.Str):
-        val = cast(value__Str, cell.val)
-        cell_json['type'] = 'Str'
-        cell_json['value'] = val.s
+        elif case(value_e.Str):
+          val = cast(value__Str, cell.val)
+          cell_json['type'] = 'Str'
+          cell_json['value'] = val.s
 
-      elif case(value_e.MaybeStrArray):
-        val = cast(value__MaybeStrArray, cell.val)
-        cell_json['type'] = 'MaybeStrArray'
-        cell_json['value'] = val.strs
+        elif case(value_e.MaybeStrArray):
+          val = cast(value__MaybeStrArray, cell.val)
+          cell_json['type'] = 'MaybeStrArray'
+          cell_json['value'] = val.strs
 
-      elif case(value_e.AssocArray):
-        val = cast(value__AssocArray, cell.val)
-        cell_json['type'] = 'AssocArray'
-        cell_json['value'] = val.d
+        elif case(value_e.AssocArray):
+          val = cast(value__AssocArray, cell.val)
+          cell_json['type'] = 'AssocArray'
+          cell_json['value'] = val.d
 
-    vars_json[name] = cell_json
+      vars_json[name] = cell_json
 
-  return vars_json
+    return vars_json
 
 
 class DirStack(object):
@@ -691,7 +694,7 @@ class DirStack(object):
     """Iterate in reverse order."""
     # mycpp REWRITE:
     #return reversed(self.stack)
-    ret = []
+    ret = []  # type: List[str]
     ret.extend(self.stack)
     ret.reverse()
     return ret
@@ -778,7 +781,7 @@ class Mem(object):
 
   def __repr__(self):
     # type: () -> str
-    parts = []
+    parts = []  # type: List[str]
     parts.append('<Mem')
     for i, frame in enumerate(self.var_stack):
       parts.append('  -- %d --' % i)
@@ -800,31 +803,34 @@ class Mem(object):
   def Dump(self):
     # type: () -> Tuple[Any, Any, Any]
     """Copy state before unwinding the stack."""
-    var_stack = [_DumpVarFrame(frame) for frame in self.var_stack]
-    argv_stack = [frame.Dump() for frame in self.argv_stack]
-    debug_stack = []
-    for func_name, source_name, call_spid, argv_i, var_i in self.debug_stack:
-      d = {}  # type: Dict[str, Any]
-      if func_name:
-        d['func_called'] = func_name
-      elif source_name:
-        d['file_sourced'] = source_name
-      else:
-        pass  # It's a frame for FOO=bar?  Or the top one?
+    if mylib.PYTHON:
+      var_stack = [_DumpVarFrame(frame) for frame in self.var_stack]
+      argv_stack = [frame.Dump() for frame in self.argv_stack]
+      debug_stack = []  # type: List[Dict[str, Any]]
+      for func_name, source_name, call_spid, argv_i, var_i in self.debug_stack:
+        d = {}  # type: Dict[str, Any]
+        if func_name:
+          d['func_called'] = func_name
+        elif source_name:
+          d['file_sourced'] = source_name
+        else:
+          pass  # It's a frame for FOO=bar?  Or the top one?
 
-      d['call_spid'] = call_spid
-      if call_spid != runtime.NO_SPID:  # first frame has this issue
-        span = self.arena.GetLineSpan(call_spid)
-        line_id = span.line_id
-        d['call_source'] = self.arena.GetLineSourceString(line_id)
-        d['call_line_num'] = self.arena.GetLineNumber(line_id)
-        d['call_line'] = self.arena.GetLine(line_id)
+        d['call_spid'] = call_spid
+        if call_spid != runtime.NO_SPID:  # first frame has this issue
+          span = self.arena.GetLineSpan(call_spid)
+          line_id = span.line_id
+          d['call_source'] = self.arena.GetLineSourceString(line_id)
+          d['call_line_num'] = self.arena.GetLineNumber(line_id)
+          d['call_line'] = self.arena.GetLine(line_id)
 
-      d['argv_frame'] = argv_i
-      d['var_frame'] = var_i
-      debug_stack.append(d)
+        d['argv_frame'] = argv_i
+        d['var_frame'] = var_i
+        debug_stack.append(d)
 
-    return var_stack, argv_stack, debug_stack
+      return var_stack, argv_stack, debug_stack
+
+    raise AssertionError()
 
   def _InitDefaults(self):
     # type: () -> None
@@ -834,7 +840,7 @@ class Mem(object):
     # ' \t\n'
     SetGlobalString(self, 'IFS', split.DEFAULT_IFS)
 
-    # NOTE: Should we put these in a namespace for Oil?
+    # NOTE: Should we put these in a name_map for Oil?
     SetGlobalString(self, 'UID', str(posix.getuid()))
     SetGlobalString(self, 'EUID', str(posix.geteuid()))
     SetGlobalString(self, 'PPID', str(posix.getppid()))
@@ -1097,37 +1103,37 @@ class Mem(object):
     Returns:
       cell: The cell corresponding to looking up 'name' with the given mode, or
         None if it's not found.
-      namespace: The namespace it should be set to or deleted from.
+      name_map: The name_map it should be set to or deleted from.
     """
     if lookup_mode == scope_e.Dynamic:
       for i in xrange(len(self.var_stack) - 1, -1, -1):
-        namespace = self.var_stack[i]
-        if name in namespace:
-          cell = namespace[name]
-          return cell, namespace
-      return None, self.var_stack[0]  # set in global namespace
+        name_map = self.var_stack[i]
+        if name in name_map:
+          cell = name_map[name]
+          return cell, name_map
+      return None, self.var_stack[0]  # set in global name_map
 
     elif lookup_mode == scope_e.LocalOnly:
-      namespace = self.var_stack[-1]
-      return namespace.get(name), namespace
+      name_map = self.var_stack[-1]
+      return name_map.get(name), name_map
 
     elif lookup_mode == scope_e.GlobalOnly:
-      namespace = self.var_stack[0]
-      return namespace.get(name), namespace
+      name_map = self.var_stack[0]
+      return name_map.get(name), name_map
 
     elif lookup_mode == scope_e.LocalOrGlobal:
       # Local
-      namespace = self.var_stack[-1]
-      cell = namespace.get(name)
+      name_map = self.var_stack[-1]
+      cell = name_map.get(name)
       if cell:
-        return cell, namespace
+        return cell, name_map
 
       # Global
-      namespace = self.var_stack[0]
-      return namespace.get(name), namespace
+      name_map = self.var_stack[0]
+      return name_map.get(name), name_map
 
     else:
-      raise AssertionError(lookup_mode)
+      raise AssertionError()
 
   def IsAssocArray(self, name, lookup_mode):
     # type: (str, scope_t) -> bool
@@ -1194,7 +1200,7 @@ class Mem(object):
     with tagswitch(lval) as case:
       if case(lvalue_e.Named):
         lval = cast(lvalue__Named, UP_lval)
-        cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
+        cell, name_map = self._FindCellAndNamespace(lval.name, lookup_mode)
         self._CheckOilKeyword(keyword_id, lval.name, cell)
         if cell:
           # Clear before checking readonly bit.
@@ -1224,7 +1230,7 @@ class Mem(object):
           cell = runtime_asdl.cell(bool(var_flags.Exported & flags_to_set),
                                    bool(var_flags.ReadOnly & flags_to_set),
                                    val)
-          namespace[lval.name] = cell
+          name_map[lval.name] = cell
 
         # Maintain invariant that only strings and undefined cells can be
         # exported.
@@ -1248,10 +1254,10 @@ class Mem(object):
         # bash/mksh have annoying behavior of letting you do LHS assignment to
         # Undef, which then turns into an INDEXED array.  (Undef means that set
         # -o nounset fails.)
-        cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
+        cell, name_map = self._FindCellAndNamespace(lval.name, lookup_mode)
         self._CheckOilKeyword(keyword_id, lval.name, cell)
         if not cell:
-          self._BindNewArrayWithEntry(namespace, lval, rval, flags_to_set)
+          self._BindNewArrayWithEntry(name_map, lval, rval, flags_to_set)
           return
 
         if cell.readonly:
@@ -1261,7 +1267,7 @@ class Mem(object):
         # undef[0]=y is allowed
         with tagswitch(UP_cell_val) as case2:
           if case2(value_e.Undef):
-            self._BindNewArrayWithEntry(namespace, lval, rval, flags_to_set)
+            self._BindNewArrayWithEntry(name_map, lval, rval, flags_to_set)
             return
 
           elif case2(value_e.Str):
@@ -1299,7 +1305,7 @@ class Mem(object):
 
         left_spid = lval.spids[0] if lval.spids else runtime.NO_SPID
 
-        cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
+        cell, name_map = self._FindCellAndNamespace(lval.name, lookup_mode)
         self._CheckOilKeyword(keyword_id, lval.name, cell)
         if cell.readonly:
           e_die("Can't assign to readonly associative array", span_id=left_spid)
@@ -1313,16 +1319,16 @@ class Mem(object):
       else:
         raise AssertionError(lval.tag_())
 
-  def _BindNewArrayWithEntry(self, namespace, lval, val, flags_to_set):
+  def _BindNewArrayWithEntry(self, name_map, lval, val, flags_to_set):
     # type: (Dict[str, cell], lvalue__Indexed, value__Str, int) -> None
-    """Fill 'namespace' with a new indexed array entry."""
+    """Fill 'name_map' with a new indexed array entry."""
     items = [None] * lval.index  # type: List[str]
     items.append(val.s)
     new_value = value.MaybeStrArray(items)
 
     # arrays can't be exported; can't have AssocArray flag
     readonly = bool(var_flags.ReadOnly & flags_to_set)
-    namespace[lval.name] = runtime_asdl.cell(False, readonly, new_value)
+    name_map[lval.name] = runtime_asdl.cell(False, readonly, new_value)
 
   def InternalSetGlobal(self, name, new_val):
     # type: (str, value_t) -> None
@@ -1363,7 +1369,7 @@ class Mem(object):
     if name == 'FUNCNAME':
       # bash wants it in reverse order.  This is a little inefficient but we're
       # not depending on deque().
-      strs = []
+      strs = []  # type: List[str]
       for func_name, source_name, _, _, _ in reversed(self.debug_stack):
         if func_name:
           strs.append(func_name)
@@ -1444,12 +1450,12 @@ class Mem(object):
       found is false if the name is not there.
     """
     if lval.tag == lvalue_e.Named:  # unset x
-      cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
+      cell, name_map = self._FindCellAndNamespace(lval.name, lookup_mode)
       if cell:
         found = True
         if cell.readonly:
           return False, found
-        namespace[lval.name].val = value.Undef()
+        name_map[lval.name].val = value.Undef()
         cell.exported = False
         return True, found # found
       else:
@@ -1468,7 +1474,7 @@ class Mem(object):
     We don't use SetVar() because even if rval is None, it will make an Undef
     value in a scope.
     """
-    cell, namespace = self._FindCellAndNamespace(name, lookup_mode)
+    cell, name_map = self._FindCellAndNamespace(name, lookup_mode)
     if cell:
       if flag == var_flags.Exported:
         cell.exported = False
@@ -1513,7 +1519,7 @@ class Mem(object):
     # type: (str) -> List[str]
     """For ${!prefix@}"""
     # Look up the stack, yielding all variables.  Bash seems to do this.
-    names = []
+    names = []  # type: List[str]
     for scope in self.var_stack:
       for name, _ in scope.iteritems():
         if name.startswith(prefix):
