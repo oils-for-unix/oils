@@ -69,11 +69,9 @@ module runtime
     -- * or a user-defined type
   | Obj(any obj)
 
-  -- For storing a variable.
-  -- TODO:
-  -- * add spid for last-assigned location
-  -- * use a bitfield for flags.
-  cell = (value val, bool exported, bool readonly)
+  -- A cell is a wrapper for a value.  16 bytes in C++.
+  -- TODO: add spid for last-assigned location
+  cell = (bool exported, bool readonly, value val)
 
   -- An undefined variable can become an indexed array with s[x]=1.  But if we
   -- 'declare -A' it, it will be undefined and waiting to turn into an

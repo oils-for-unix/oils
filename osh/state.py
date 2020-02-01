@@ -1221,15 +1221,15 @@ class Mem(object):
             # set -o nounset; local foo; echo $foo  # It's still undefined!
             val = value.Undef()  # export foo, readonly foo
 
-          cell = runtime_asdl.cell(val,
-                                   bool(var_flags.Exported & flags_to_set),
-                                   bool(var_flags.ReadOnly & flags_to_set))
+          cell = runtime_asdl.cell(bool(var_flags.Exported & flags_to_set),
+                                   bool(var_flags.ReadOnly & flags_to_set),
+                                   val)
           namespace[lval.name] = cell
 
         # Maintain invariant that only strings and undefined cells can be
         # exported.
         if (cell.val is not None and
-            cell.val.tag not in (value_e.Undef, value_e.Str) and
+            cell.val.tag_() not in (value_e.Undef, value_e.Str) and
             cell.exported):
           e_die("Can't export array")  # TODO: error context
 
@@ -1322,7 +1322,7 @@ class Mem(object):
 
     # arrays can't be exported; can't have AssocArray flag
     readonly = bool(var_flags.ReadOnly & flags_to_set)
-    namespace[lval.name] = runtime_asdl.cell(new_value, False, readonly)
+    namespace[lval.name] = runtime_asdl.cell(False, readonly, new_value)
 
   def InternalSetGlobal(self, name, new_val):
     # type: (str, value_t) -> None

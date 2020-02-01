@@ -1,17 +1,19 @@
 #include "frontend_match.h"
 #include "id.h"
 
+#include "runtime_asdl.h"  // for cell
+
 int main(int argc, char **argv) {
   match::SimpleLexer* lex = match::BraceRangeLexer(new Str("{-1..22}"));
 
   while (true) {
     auto t = lex->Next();
-    int id = t->at0();
+    int id = t.at0();
     if (id == id__Eol_Tok) {
       break;
     }
     log("id = %d", id);
-    log("val = %s", t->at1()->data_);
+    log("val = %s", t.at1()->data_);
   }
 
   // Without sed hack, it's 24 bytes because we have tag (2), id (4), val,
@@ -25,6 +27,9 @@ int main(int argc, char **argv) {
 
   // 16 bytes: 2 byte tag + 3 integer fields
   log("sizeof(line_span) = %d", sizeof(syntax_asdl::line_span));
+
+  // Reordered to be 16 bytes
+  log("sizeof(cell) = %d", sizeof(runtime_asdl::cell));
 
   // 16 bytes: pointer and length
   log("sizeof(Str) = %d", sizeof(Str));

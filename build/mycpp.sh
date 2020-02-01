@@ -137,7 +137,7 @@ compile() {
   local out=$1
   shift
 
-  local flags
+  local flags="$CPPFLAGS"
   local link_flags=''
   case $out in
     *.opt)
