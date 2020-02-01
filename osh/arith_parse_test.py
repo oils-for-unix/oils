@@ -14,6 +14,7 @@ import unittest
 from _devbuild.gen.types_asdl import lex_mode_e
 from core import error
 from core import test_lib
+from core import ui
 from frontend import parse_lib
 from osh import cmd_exec
 from osh import sh_expr_eval
@@ -35,11 +36,10 @@ def ParseAndEval(code_str):
   parse_opts = parse_lib.OilParseOptions()
   exec_opts = state.ExecOpts(mem, parse_opts, None)
 
-  exec_deps = cmd_exec.Deps()
   splitter = split.SplitContext(mem)
-  exec_deps.splitter = splitter
+  errfmt = ui.ErrorFormatter(arena)
 
-  word_ev = word_eval.CompletionWordEvaluator(mem, exec_opts, exec_deps)
+  word_ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter, errfmt)
 
   arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, arena)
   arith_ev.word_ev = word_ev

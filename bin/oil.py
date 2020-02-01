@@ -414,7 +414,6 @@ def ShellMain(lang, argv0, argv, login_shell):
                                                errfmt, debug_f)
 
   splitter = split.SplitContext(mem)
-  exec_deps.splitter = splitter
 
   # split() builtin
   builtin_funcs.SetGlobalFunc(
@@ -513,7 +512,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, errfmt)
   bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, errfmt)
   expr_ev = expr_eval.OilEvaluator(mem, procs, errfmt)
-  word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, exec_deps)
+  word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
   ex = cmd_exec.Executor(mem, fd_state, procs, builtins, exec_opts,
                          parse_ctx, exec_deps)
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
@@ -594,7 +593,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
     if line_input:
       # NOTE: We're using a different WordEvaluator here.
-      ev = word_eval.CompletionWordEvaluator(mem, exec_opts, exec_deps)
+      ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter, errfmt)
 
       ev.arith_ev = arith_ev
       ev.expr_ev = expr_ev

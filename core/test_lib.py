@@ -132,10 +132,12 @@ def MakeTestEvaluator():
   exec_opts = state.ExecOpts(mem, parse_opts, None)
 
   exec_deps = cmd_exec.Deps()
-  exec_deps.splitter = split.SplitContext(mem)
   exec_deps.trap_nodes = []
 
-  ev = word_eval.CompletionWordEvaluator(mem, exec_opts, exec_deps)
+  splitter = split.SplitContext(mem)
+  errfmt = ui.ErrorFormatter(arena)
+
+  ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter, errfmt)
   return ev
 
 
@@ -203,14 +205,13 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   exec_deps.trace_f = debug_f
 
   splitter = split.SplitContext(mem)
-  exec_deps.splitter = splitter
 
   procs = {}
 
   arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, errfmt)
   bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, errfmt)
   expr_ev = expr_eval.OilEvaluator(mem, procs, errfmt)
-  word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, exec_deps)
+  word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
   ex = cmd_exec.Executor(mem, fd_state, funcs, builtins, exec_opts,
                          parse_ctx, exec_deps)
   prompt_ev = prompt.Evaluator('osh', parse_ctx, ex, mem)

@@ -56,8 +56,10 @@ if TYPE_CHECKING:
     builtin_t, effect_t, lvalue__Named
   )
   from core.alloc import Arena
+  from core.ui import ErrorFormatter
   from osh import cmd_exec
   from osh.cmd_exec import Deps, Executor
+  from osh.split import SplitContext
   from osh.state import ExecOpts, Mem
   from osh import prompt
   from osh import sh_expr_eval
@@ -284,16 +286,16 @@ class _WordEvaluator(SimpleWordEvaluator):
     EvalWordSequence
     EvalWordSequence2
   """
-  def __init__(self, mem, exec_opts, exec_deps):
-    # type: (Mem, ExecOpts, Deps) -> None
+  def __init__(self, mem, exec_opts, splitter, errfmt):
+    # type: (Mem, ExecOpts, SplitContext, ErrorFormatter) -> None
     self.arith_ev = None  # type: sh_expr_eval.ArithEvaluator
     self.expr_ev = None  # type: expr_eval.OilEvaluator
     self.prompt_ev = None  # type: prompt.Evaluator
 
     self.mem = mem  # for $HOME, $1, etc.
     self.exec_opts = exec_opts  # for nounset
-    self.splitter = exec_deps.splitter
-    self.errfmt = exec_deps.errfmt
+    self.splitter = splitter
+    self.errfmt = errfmt
 
     self.globber = glob_.Globber(exec_opts)
 
@@ -1809,9 +1811,9 @@ def _SplitAssignArg(arg, w):
 
 class NormalWordEvaluator(_WordEvaluator):
 
-  def __init__(self, mem, exec_opts, exec_deps):
-    # type: (Mem, ExecOpts, Deps) -> None
-    _WordEvaluator.__init__(self, mem, exec_opts, exec_deps)
+  def __init__(self, mem, exec_opts, splitter, errfmt):
+    # type: (Mem, ExecOpts, SplitContext, ErrorFormatter) -> None
+    _WordEvaluator.__init__(self, mem, exec_opts, splitter, errfmt)
     self.ex = None  # type: cmd_exec.Executor
 
   def CheckCircularDeps(self):

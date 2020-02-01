@@ -205,8 +205,6 @@ class _ControlFlow(Exception):
 class Deps(object):
   def __init__(self):
     # type: () -> None
-    self.splitter = None    # type: split.SplitContext
-
     self.search_path = None # type: state.SearchPath
     self.ext_prog = None    # type: process.ExternalProgram
 
