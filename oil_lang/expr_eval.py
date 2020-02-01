@@ -33,7 +33,7 @@ if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from osh.cmd_exec import Executor
   from osh.state import Mem
-  from osh.word_eval import NormalWordEvaluator
+  from osh.word_eval import SimpleWordEvaluator
 
 _ = log
 
@@ -51,15 +51,21 @@ class OilEvaluator(object):
                mem,  # type: Mem
                funcs,  # type: Dict
                ex,  # type: Executor
-               word_ev,  # type: NormalWordEvaluator
+               word_ev,  # type: SimpleWordEvaluator
                errfmt,  # type: ErrorFormatter
                ):
     # type: (...) -> None
+    self.ex = ex  # type: Executor
+    self.word_ev = word_ev  # type: SimpleWordEvaluator
+
     self.mem = mem
     self.funcs = funcs
-    self.ex = ex
-    self.word_ev = word_ev
     self.errfmt = errfmt
+
+  def CheckCircularDeps(self):
+    # type: () -> None
+    assert self.ex is not None
+    assert self.word_ev is not None
 
   def LookupVar(self, var_name):
     """Convert to a Python object so we can calculate on it natively."""

@@ -56,8 +56,12 @@ if TYPE_CHECKING:
     builtin_t, effect_t, lvalue__Named
   )
   from core.alloc import Arena
-  from osh.cmd_exec import Deps
+  from osh import cmd_exec
+  from osh.cmd_exec import Deps, Executor
   from osh.state import ExecOpts, Mem
+  from osh import prompt
+  from osh import sh_expr_eval
+  from oil_lang import expr_eval
 
 
 # For compatibility, ${BASH_SOURCE} and ${BASH_SOURCE[@]} are both valid.
@@ -280,18 +284,22 @@ class _WordEvaluator(SimpleWordEvaluator):
     EvalWordSequence
     EvalWordSequence2
   """
-  def __init__(self, mem, exec_opts, exec_deps, arena):
-    # type: (Mem, ExecOpts, Deps, Arena) -> None
+  def __init__(self, mem, exec_opts, exec_deps):
+    # type: (Mem, ExecOpts, Deps) -> None
+    self.arith_ev = exec_deps.arith_ev  # type: sh_expr_eval.ArithEvaluator
+    self.expr_ev = exec_deps.expr_ev  # type: expr_eval.OilEvaluator
+    self.prompt_ev = exec_deps.prompt_ev  # type: prompt.Evaluator
+
     self.mem = mem  # for $HOME, $1, etc.
     self.exec_opts = exec_opts  # for nounset
     self.splitter = exec_deps.splitter
-    self.prompt_ev = exec_deps.prompt_ev
-    self.arith_ev = exec_deps.arith_ev
-    self.expr_ev = exec_deps.expr_ev
     self.errfmt = exec_deps.errfmt
 
     self.globber = glob_.Globber(exec_opts)
-    # TODO: Consolidate into exec_deps.  Executor also instantiates one.
+
+  def CheckCircularDeps(self):
+    # type: () -> None
+    raise NotImplementedError
 
   def _EvalCommandSub(self, part, quoted):
     # type: (command_t, bool) -> part_value_t
@@ -1801,10 +1809,17 @@ def _SplitAssignArg(arg, w):
 
 class NormalWordEvaluator(_WordEvaluator):
 
-  def __init__(self, mem, exec_opts, exec_deps, arena):
-    # type: (Mem, ExecOpts, Deps, Arena) -> None
-    _WordEvaluator.__init__(self, mem, exec_opts, exec_deps, arena)
-    self.ex = exec_deps.ex
+  def __init__(self, mem, exec_opts, exec_deps):
+    # type: (Mem, ExecOpts, Deps) -> None
+    _WordEvaluator.__init__(self, mem, exec_opts, exec_deps)
+    self.ex = exec_deps.ex  # type: cmd_exec.Executor
+
+  def CheckCircularDeps(self):
+    # type: () -> None
+    assert self.prompt_ev is not None
+    assert self.arith_ev is not None
+    assert self.expr_ev is not None
+    assert self.ex is not None
 
   def _EvalCommandSub(self, node, quoted):
     # type: (command_t, bool) -> part_value__String
@@ -1826,6 +1841,12 @@ class CompletionWordEvaluator(_WordEvaluator):
   inner command as the last one, and knows that it is not at the end of the
   line.
   """
+  def CheckCircularDeps(self):
+    # type: () -> None
+    assert self.prompt_ev is not None
+    assert self.arith_ev is not None
+    assert self.expr_ev is not None
+
   def _EvalCommandSub(self, node, quoted):
     # type: (command_t, bool) -> part_value__String
     return part_value.String('__NO_COMMAND_SUB__', quoted, not quoted)

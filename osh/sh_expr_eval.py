@@ -322,11 +322,17 @@ class _ExprEvaluator(object):
 
   def __init__(self, mem, exec_opts, word_ev, errfmt):
     # type: (Mem, Any, word_eval.SimpleWordEvaluator, ErrorFormatter) -> None
+
+    self.word_ev = word_ev  # type: word_eval.SimpleWordEvaluator
+
     # TODO: Remove Any by fixing _DummyExecOpts in osh/builtin_bracket.py
     self.mem = mem
     self.exec_opts = exec_opts
-    self.word_ev = word_ev
     self.errfmt = errfmt
+
+  def CheckCircularDeps(self):
+    # type: () -> None
+    assert self.word_ev is not None
 
   def _StringToIntegerOrError(self, s, blame_word=None,
                               span_id=runtime.NO_SPID):
@@ -967,5 +973,4 @@ class BoolEvaluator(_ExprEvaluator):
 
           raise AssertionError(op_id)  # should never happen
 
-      else:
-        raise AssertionError(node.tag_())
+    raise AssertionError(node.tag_())

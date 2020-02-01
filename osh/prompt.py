@@ -26,10 +26,9 @@ import posix_ as posix
 
 from typing import Any, Dict, List, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
-  #from osh.state import Mem
   from frontend.parse_lib import ParseContext
-  # commented out so --strict doesn't follow all
-  #from osh.cmd_exec import Executor
+  from osh import cmd_exec
+  from osh import state
 
 #
 # Prompt Evaluation
@@ -99,11 +98,12 @@ class Evaluator(object):
   prompt.
   """
   def __init__(self, lang, parse_ctx, ex, mem):
-    # type: (str, ParseContext, Any, Any) -> None
+    # type: (str, ParseContext, cmd_exec.Executor, state.Mem) -> None
+    self.ex = ex  # type: cmd_exec.Executor
+
     assert lang in ('osh', 'oil'), lang
     self.lang = lang
     self.parse_ctx = parse_ctx
-    self.ex = ex
     self.mem = mem
 
     # The default prompt is osh$ or oil$ for now.  bash --noprofile --norc ->
@@ -115,6 +115,10 @@ class Evaluator(object):
     # reparse the prompt twice every time you hit enter.
     self.tokens_cache = {}  # type: Dict[str, List[Tuple[Id, str]]]
     self.parse_cache = {}  # type: Dict[str, compound_word]
+ 
+  def CheckCircularDeps(self):
+    # type: () -> None
+    assert self.ex is not None
 
   def _ReplaceBackslashCodes(self, tokens):
     # type: (List[Tuple[Id, str]]) -> str
@@ -150,7 +154,7 @@ class Evaluator(object):
           r = self.cache.Get('user')
 
         elif char == 'h':
-          r = self.cache.Get('hostname').split('.')[0]
+          r = self.cache.Get('hostname').split('.', 1)[0]
 
         elif char == 'H':
           r = self.cache.Get('hostname')

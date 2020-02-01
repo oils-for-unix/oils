@@ -316,6 +316,13 @@ class Executor(object):
     self.loop_level = 0  # for detecting bad top-level break/continue
     self.check_command_sub_status = False  # a hack
 
+  def CheckCircularDeps(self):
+    # type: () -> None
+    assert self.arith_ev is not None
+    assert self.bool_ev is not None
+    assert self.expr_ev is not None
+    assert self.word_ev is not None
+
   def _EvalHelper(self, c_parser, src):
     # type: (CommandParser, source_t) -> int
     self.arena.PushSource(src)
@@ -1497,9 +1504,6 @@ class Executor(object):
         else:
           words = braces.BraceExpandWords(node.iter_words)
           iter_list = self.word_ev.EvalWordSequence(words)
-          # We need word splitting and so forth
-          # NOTE: This expands globs too.  TODO: We should pass in a Globber()
-          # object.
 
         status = 0  # in case we don't loop
         self.loop_level += 1

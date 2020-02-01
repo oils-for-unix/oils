@@ -132,7 +132,7 @@ def MakeTestEvaluator():
   exec_deps.splitter = split.SplitContext(mem)
   exec_deps.trap_nodes = []
 
-  ev = word_eval.CompletionWordEvaluator(mem, exec_opts, exec_deps, arena)
+  ev = word_eval.CompletionWordEvaluator(mem, exec_opts, exec_deps)
   return ev
 
 
@@ -202,7 +202,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   splitter = split.SplitContext(mem)
   exec_deps.splitter = splitter
 
-  word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, exec_deps, arena)
+  word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, exec_deps)
   exec_deps.word_ev = word_ev
 
   arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, word_ev, arena)

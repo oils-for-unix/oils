@@ -513,7 +513,7 @@ def ShellMain(lang, argv0, argv, login_shell):
                          parse_ctx, exec_deps)
   exec_deps.ex = ex
 
-  word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, exec_deps, arena)
+  word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, exec_deps)
   exec_deps.word_ev = word_ev
 
   arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, word_ev, errfmt)
@@ -559,6 +559,13 @@ def ShellMain(lang, argv0, argv, login_shell):
   prompt_ev = prompt.Evaluator(lang, parse_ctx, ex, mem)
   exec_deps.prompt_ev = prompt_ev
   word_ev.prompt_ev = prompt_ev  # HACK for circular deps
+
+  arith_ev.CheckCircularDeps()
+  bool_ev.CheckCircularDeps()
+  expr_ev.CheckCircularDeps()
+  word_ev.CheckCircularDeps()
+  prompt_ev.CheckCircularDeps()
+  ex.CheckCircularDeps()
 
   # History evaluation is a no-op if line_input is None.
   hist_ev = history.Evaluator(line_input, hist_ctx, debug_f)
@@ -614,7 +621,8 @@ def ShellMain(lang, argv0, argv, login_shell):
 
     if line_input:
       # NOTE: We're using a different WordEvaluator here.
-      ev = word_eval.CompletionWordEvaluator(mem, exec_opts, exec_deps, arena)
+      ev = word_eval.CompletionWordEvaluator(mem, exec_opts, exec_deps)
+      ev.CheckCircularDeps()
       root_comp = completion.RootCompleter(ev, mem, comp_lookup, compopt_state,
                                            comp_ui_state, comp_ctx, debug_f)
 
