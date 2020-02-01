@@ -296,6 +296,9 @@ class OilMethodFilter(object):
     if method_name == 'count':  # False positive for {str,list,tuple}.count()
       return False
 
+    if method_name == 'collect':  # False positive: pyannotate and gcmodule.c
+      return False
+
     # enter/exit needed for 'with open'.  __length_hint__ is an optimization.
     if method_name in ('__enter__', '__exit__', '__length_hint__'):
       return True

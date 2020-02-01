@@ -27,7 +27,6 @@ http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_
 """
 from __future__ import print_function
 
-import os
 import sys
 import termios  # for read -n
 
@@ -235,7 +234,7 @@ TIMES_SPEC = _Register('times')
 class Times(_Builtin):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    utime, stime, cutime, cstime, elapsed = os.times()
+    utime, stime, cutime, cstime, elapsed = posix.times()
     print("%dm%1.3fs %dm%1.3fs" % (utime / 60, utime % 60, stime / 60, stime % 60))
     print("%dm%1.3fs %dm%1.3fs" % (cutime / 60, cutime % 60, cstime / 60, cstime % 60))
 
