@@ -70,9 +70,11 @@ class SearchPath(object):
 
     # TODO: Could cache this computation to avoid allocating every time for all
     # the splitting.
-    path_val = self.mem.GetVar('PATH')
-    if path_val.tag == value_e.Str and path_val.s:
-      path_list = path_val.s.split(':')
+    val = self.mem.GetVar('PATH')
+    UP_val = val
+    if val.tag_() == value_e.Str:
+      val = cast(value__Str, UP_val)
+      path_list = val.s.split(':')
     else:
       path_list = []  # treat as empty path
 
@@ -379,6 +381,7 @@ class ExecOpts(object):
 
     # This comes after all the 'set' options.
     UP_shellopts = self.mem.GetVar('SHELLOPTS')
+    # Should be true since it's readonly
     assert UP_shellopts.tag == value_e.Str, UP_shellopts
     shellopts = cast(value__Str, UP_shellopts)
     self._InitOptionsFromEnv(shellopts.s)
@@ -483,8 +486,9 @@ class ExecOpts(object):
     """ For set -o, set +o, or shopt -s/-u -o. """
     self._SetOption(opt_name, b)
 
-    val = self.mem.GetVar('SHELLOPTS')
-    assert val.tag == value_e.Str
+    UP_val = self.mem.GetVar('SHELLOPTS')
+    assert UP_val.tag == value_e.Str, UP_val
+    val = cast(value__Str, UP_val)
     shellopts = val.s
 
     # Now check if SHELLOPTS needs to be updated.  It may be exported.
@@ -620,7 +624,7 @@ def _DumpVarFrame(frame):
 
   vars_json = {}
   for name, cell in frame.iteritems():
-    cell_json = {}
+    cell_json = {}  # type: Dict[str, Any]
 
     flags = ''
     if cell.exported:
@@ -682,7 +686,12 @@ class DirStack(object):
   def Iter(self):
     # type: () -> List[str]
     """Iterate in reverse order."""
-    return reversed(self.stack)
+    # mycpp REWRITE:
+    #return reversed(self.stack)
+    ret = []
+    ret.extend(self.stack)
+    ret.reverse()
+    return ret
 
 
 # NOTE: not used!
@@ -731,7 +740,8 @@ class Mem(object):
     # The debug_stack isn't strictly necessary for execution.  We use it for
     # crash dumps and for 3 parallel arrays: FUNCNAME, CALL_SOURCE,
     # BASH_LINENO.  The First frame points at the global vars and argv.
-    self.debug_stack = [(None, None, runtime.NO_SPID, 0, 0)]
+    no_str = None  # type: Optional[str]
+    self.debug_stack = [(no_str, no_str, runtime.NO_SPID, 0, 0)]
 
     self.bash_source = []  # type: List[str] # for implementing BASH_SOURCE
     self.has_main = has_main
@@ -756,7 +766,10 @@ class Mem(object):
     self._InitVarsFromEnv(environ)
     # MUTABLE GLOBAL that's SEPARATE from $PWD.  Used by the 'pwd' builtin, but
     # it can't be modified by users.
-    self.pwd = self.GetVar('PWD').s
+    val = self.GetVar('PWD')
+    # should be true since it's exported
+    assert val.tag_() == value_e.Str, val
+    self.pwd = cast(value__Str, val).s
 
     self.arena = arena
 
@@ -788,7 +801,7 @@ class Mem(object):
     argv_stack = [frame.Dump() for frame in self.argv_stack]
     debug_stack = []
     for func_name, source_name, call_spid, argv_i, var_i in self.debug_stack:
-      d = {}
+      d = {}  # type: Dict[str, Any]
       if func_name:
         d['func_called'] = func_name
       elif source_name:
@@ -1122,29 +1135,26 @@ class Mem(object):
     """
     cell, _ = self._FindCellAndNamespace(name, lookup_mode)
     if cell:
-      if cell.val.tag == value_e.AssocArray:  # foo=([key]=value)
+      if cell.val.tag_() == value_e.AssocArray:  # foo=([key]=value)
         return True
     return False
 
-  def _CheckOilKeyword(self,
-                       keyword_id,  # type: Id_t
-                       lval,  # type: lvalue__Named
-                       cell,  # type: Optional[cell]
-                       ):
-    # type: (...) -> None
+  def _CheckOilKeyword(self, keyword_id, lval, cell):
+    # type: (Id_t, lvalue_t, Optional[cell]) -> None
     """Check that 'var' and setvar/set are used correctly.
 
     NOTE: These are dynamic checks, but the syntactic difference between
     definition and mutation will help translate the Oil subset of OSH to static
     languages.
     """
+    # NOTE: all 3 variants of 'lvalue' have 'name'
+    name = lval.name
     if cell and keyword_id == Id.KW_Var:
       # TODO: Point at the ORIGINAL declaration!
-      e_die("%r has already been declared", lval.name)
+      e_die("%r has already been declared", name)
 
     if cell is None and keyword_id in (Id.KW_Set, Id.KW_SetGlobal):
-      # NOTE: all 3 variants of 'lvalue' have 'name'
-      e_die("%r hasn't been declared", lval.name)
+      e_die("%r hasn't been declared", name)
 
   def SetVar(self, lval, val, lookup_mode, flags_to_set=0, flags_to_clear=0,
              keyword_id=None):
@@ -1227,6 +1237,8 @@ class Mem(object):
         assert isinstance(lval.index, int), lval
         # There is no syntax 'declare a[x]'
         assert val is not None, val
+        assert val.tag_() == value_e.Str, val
+        rval = cast(value__Str, val)
 
         # TODO: All paths should have this?  We can get here by a[x]=1 or
         # (( a[ x ] = 1 )).  Maybe we should make them different?
@@ -1238,7 +1250,7 @@ class Mem(object):
         cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
         self._CheckOilKeyword(keyword_id, lval, cell)
         if not cell:
-          self._BindNewArrayWithEntry(namespace, lval, val, flags_to_set)
+          self._BindNewArrayWithEntry(namespace, lval, rval, flags_to_set)
           return
 
         if cell.readonly:
@@ -1248,7 +1260,7 @@ class Mem(object):
         # undef[0]=y is allowed
         with tagswitch(UP_cell_val) as case2:
           if case2(value_e.Undef):
-            self._BindNewArrayWithEntry(namespace, lval, val, flags_to_set)
+            self._BindNewArrayWithEntry(namespace, lval, rval, flags_to_set)
             return
 
           elif case2(value_e.Str):
@@ -1261,7 +1273,7 @@ class Mem(object):
             cell_val = cast(value__MaybeStrArray, UP_cell_val)
             strs = cell_val.strs
             try:
-              strs[lval.index] = val.s
+              strs[lval.index] = rval.s
             except IndexError:
               # Fill it in with None.  It could look like this:
               # ['1', 2, 3, None, None, '4', None]
@@ -1270,7 +1282,7 @@ class Mem(object):
               # TODO: strict_array for Oil arrays won't auto-fill.
               n = lval.index - len(strs) + 1
               strs.extend([None] * n)
-              strs[lval.index] = val.s
+              strs[lval.index] = rval.s
             return
 
         # AssocArray shouldn't happen because we query IsAssocArray before
@@ -1281,20 +1293,24 @@ class Mem(object):
         lval = cast(lvalue__Keyed, UP_lval)
         # There is no syntax 'declare A["x"]'
         assert val is not None, val
+        assert val.tag_() == value_e.Str, val
+        rval = cast(value__Str, val)
 
         left_spid = lval.spids[0] if lval.spids else runtime.NO_SPID
 
         cell, namespace = self._FindCellAndNamespace(lval.name, lookup_mode)
         self._CheckOilKeyword(keyword_id, lval, cell)
-        # We already looked it up before making the lvalue
-        assert cell.val.tag == value_e.AssocArray, cell
         if cell.readonly:
           e_die("Can't assign to readonly associative array", span_id=left_spid)
 
-        cell.val.d[lval.key] = val.s
+        # We already looked it up before making the lvalue
+        assert cell.val.tag == value_e.AssocArray, cell
+        cell_val2 = cast(value__AssocArray, cell.val)
+
+        cell_val2.d[lval.key] = rval.s
 
       else:
-        raise AssertionError(lval.__class__.__name__)
+        raise AssertionError(lval.tag_())
 
   def _BindNewArrayWithEntry(self, namespace, lval, val, flags_to_set):
     # type: (Dict[str, cell], lvalue__Indexed, value__Str, int) -> None
