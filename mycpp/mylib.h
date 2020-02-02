@@ -142,10 +142,6 @@ class Str {
     return new Str(buf, new_len);
   }
 
-  List<Str*>* split(Str* sep) {
-    assert(0);
-  }
-
   // TODO: implement these.  With switch statement.
   Str* strip() {
     assert(0);
@@ -235,13 +231,18 @@ class Str {
     return true;
   }
 
+  List<Str*>* split(Str* sep) {
+    assert(0);
+  }
+
   List<Str*>* splitlines(bool keep) {
     assert(keep == true);
     return nullptr;
   }
 
-  Str* replace(Str* old, Str* new_str);
   Str* join(List<Str*>* items);
+
+  Str* replace(Str* old, Str* new_str);
 
   int find(Str* s) {
     assert(0);
@@ -289,6 +290,10 @@ class List {
     // Note: this seems to INCREASE the number of 'new' calls.  I guess because
     // many 'spids' lists aren't used?
     // v_.reserve(64);
+  }
+
+  // Used by list_repeat
+  List(int n) : v_(n, nullptr) {
   }
 
   List(std::initializer_list<T> init) : v_() {
@@ -626,6 +631,13 @@ inline bool list_contains(List<Str*>* haystack, Str* needle) {
     }
   }
   return false;
+}
+
+// e.g. [None] * 3
+template <typename T>
+List<T>* list_repeat(T item, int times) {
+  assert(item == nullptr);
+  return new List<T>(times);
 }
 
 // ints, floats, enums like Kind

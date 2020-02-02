@@ -101,3 +101,12 @@ Not using:
 
 - I/O Streams, RTTI, etc.
 - `const`
+
+### Notes on mylib
+
+- A `Str` is immutable, and can be used as a key to a `Dict` (at the Python
+  level), and thus an `AssocArray` (at the Oil level).
+  - TODO: It can share underlying storage of `data_`?
+- A `BufWriter` is mutable.  It's an alias for `cStringIO.StringIO()`.  You
+  build it with repeated calls to`write()`, and then call `getvalue()` at the
+  end.

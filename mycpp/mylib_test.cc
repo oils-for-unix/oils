@@ -161,6 +161,9 @@ void test_list_funcs() {
   for (int i = 0; i < len(ints); ++i) {
     log("ints[%d] = %d", i, ints->index(i));
   }
+
+  auto L = list_repeat<Str*>(nullptr, 3);
+  log("list_repeat length = %d", len(L));
 }
 
 void test_contains() {

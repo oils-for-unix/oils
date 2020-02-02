@@ -7,7 +7,7 @@ from __future__ import print_function
 import os
 from mylib import log
 
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional
 
 
 def ListDemo():
@@ -47,6 +47,10 @@ def ListDemo():
   # seg fault
   #log("x = %s", x)
 
+  n = 3
+  no_str = None  # type: Optional[str]
+  blank = [no_str] * n
+  log("len(blank) = %d", len(blank))
 
 
 class Point(object):

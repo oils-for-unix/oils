@@ -606,7 +606,7 @@ class _ArgFrame(object):
     if index >= len(self.argv):
       return value.Undef()
 
-    return value.Str(str(self.argv[index]))
+    return value.Str(self.argv[index])
 
   def GetArgv(self):
     # type: () -> List[str]
@@ -1301,7 +1301,8 @@ class Mem(object):
               #
               # TODO: strict_array for Oil arrays won't auto-fill.
               n = lval.index - len(strs) + 1
-              strs.extend([None] * n)
+              for i in xrange(n):
+                strs.append(None)
               strs[lval.index] = rval.s
             return
 
@@ -1335,7 +1336,8 @@ class Mem(object):
   def _BindNewArrayWithEntry(self, name_map, lval, val, flags_to_set):
     # type: (Dict[str, cell], lvalue__Indexed, value__Str, int) -> None
     """Fill 'name_map' with a new indexed array entry."""
-    items = [None] * lval.index  # type: List[str]
+    no_str = None  # type: Optional[str]
+    items = [no_str] * lval.index
     items.append(val.s)
     new_value = value.MaybeStrArray(items)
 

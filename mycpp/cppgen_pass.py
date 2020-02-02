@@ -696,6 +696,15 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.write(')')
           return
 
+        # [None] * 3  =>  list_repeat(None, 3)
+        if left_ctype.startswith('List<') and right_ctype == 'int' and c_op == '*':
+          self.write('list_repeat(')
+          self.accept(o.left.items[0])
+          self.write(', ')
+          self.accept(o.right)
+          self.write(')')
+          return
+
         # RHS can be primitive or tuple
         if left_ctype == 'Str*' and c_op == '%':
           if not isinstance(o.left, StrExpr):
