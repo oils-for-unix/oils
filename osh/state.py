@@ -120,8 +120,7 @@ class SearchPath(object):
 
   def CachedCommands(self):
     # type: () -> List[str]
-    """For hash -r."""
-    return sorted(self.cache.values())
+    return self.cache.values()
 
 
 class _ErrExit(object):
@@ -632,14 +631,14 @@ if mylib.PYTHON:
     for name, cell in frame.iteritems():
       cell_json = {}  # type: Dict[str, Any]
 
-      # mycpp TODO: change back to += for fewer allocations?
-      flags = []  # type: List[str]
+      buf = mylib.BufWriter()
       if cell.exported:
-        flags.append('x')
+        buf.write('x')
       if cell.readonly:
-        flags.append('r')
+        buf.write('r')
+      flags = buf.getvalue()
       if len(flags):
-        cell_json['flags'] = ''.join(flags)
+        cell_json['flags'] = flags
 
       # For compactness, just put the value right in the cell.
       val = None  # type: value_t

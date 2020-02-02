@@ -397,7 +397,9 @@ class Hash(object):
           ui.Stderr('hash: %r not found', cmd)
           status = 1
     else:  # print cache
-      for cmd in self.search_path.CachedCommands():
+      commands = self.search_path.CachedCommands()
+      commands.sort()
+      for cmd in commands:
         print(cmd)
 
     return status

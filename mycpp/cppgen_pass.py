@@ -1563,7 +1563,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               func_name in ('EvalWordSequence2', '_EvalWordToParts',
                             '_EmptyStrOrError', '_EvalWordPart', 'EvalWordToString') or
             class_name == 'Executor' and func_name == '_Execute' or
-            class_name == 'Mem' and func_name == 'GetVar'
+            class_name == 'Mem' and func_name == 'GetVar' or
+            class_name == 'SearchPath' and func_name == 'Lookup'
           ):
 
           default_val = o.arguments[-1].initializer

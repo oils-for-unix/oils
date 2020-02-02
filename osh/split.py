@@ -35,6 +35,7 @@ from _devbuild.gen.runtime_asdl import state_e as ST
 
 from core import util
 from core.util import log
+from mycpp import mylib
 from mycpp.mylib import tagswitch
 
 from typing import List, Tuple, Dict, TYPE_CHECKING, cast
@@ -49,7 +50,7 @@ DEFAULT_IFS = ' \t\n'
 def _SpansToParts(s, spans):
   # type: (str, List[Span]) -> List[str]
   """Helper for SplitForWordEval."""
-  parts = [] # type: List[str]
+  parts = [] # type: List[mylib.BufWriter]
   start_index = 0
 
   # If the last span was black, and we get a backslash, set join_next to merge
@@ -60,10 +61,13 @@ def _SpansToParts(s, spans):
   for span_type, end_index in spans:
     if span_type == span_e.Black:
       if len(parts) and join_next:
-        parts[-1] += s[start_index:end_index]
+        parts[-1].write(s[start_index:end_index])
         join_next = False
       else:
-        parts.append(s[start_index:end_index])
+        buf = mylib.BufWriter()
+        buf.write(s[start_index:end_index])
+        parts.append(buf)
+
       last_span_was_black = True
 
     elif span_type == span_e.Backslash:
@@ -76,7 +80,8 @@ def _SpansToParts(s, spans):
 
     start_index = end_index
 
-  return parts
+  result = [buf.getvalue() for buf in parts]
+  return result
 
 
 class SplitContext(object):
@@ -116,15 +121,15 @@ class SplitContext(object):
     except KeyError:
       # Figure out what kind of splitter we should instantiate.
 
-      ifs_whitespace = ''
-      ifs_other = ''
+      ifs_whitespace = mylib.BufWriter()
+      ifs_other = mylib.BufWriter()
       for c in ifs:
         if c in ' \t\n':  # Happens to be the same as DEFAULT_IFS
-          ifs_whitespace += c
+          ifs_whitespace.write(c)
         else:
-          ifs_other += c
+          ifs_other.write(c)
 
-      sp = IfsSplitter(ifs_whitespace, ifs_other)
+      sp = IfsSplitter(ifs_whitespace.getvalue(), ifs_other.getvalue())
 
       # NOTE: Technically, we could make the key more precise.  IFS=$' \t' is
       # the same as IFS=$'\t '.  But most programs probably don't do that, and

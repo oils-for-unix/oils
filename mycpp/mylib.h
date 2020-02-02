@@ -473,6 +473,10 @@ class Dict {
     assert(0);
   }
 
+  void clear() {
+    assert(0);
+  }
+
  private:
   V values_[1];
 };
@@ -720,7 +724,9 @@ class BufWriter : public Writer {
   // For cStringIO API
   Str* getvalue() {
     if (data_) {
-      return new Str(data_, len_);
+      Str* ret = new Str(data_, len_);
+      reset();  // Invalidate this instance
+      return ret;
     } else {
       // log('') translates to this
       // Strings are immutable so we can do this.
