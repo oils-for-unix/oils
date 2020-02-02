@@ -7,7 +7,7 @@ echo status=$?
 repr nonexistent
 echo status=$?
 ## STDOUT:
-x = (cell val:(value.Str s:42) exported:F readonly:F)
+x = (cell exported:F readonly:F val:(value.Str s:42))
 status=0
 status=1
 ## END
@@ -17,7 +17,7 @@ declare -a array
 array[3]=42
 repr array
 ## STDOUT:
-array = (cell val:(value.MaybeStrArray strs:[_ _ _ 42]) exported:F readonly:F)
+array = (cell exported:F readonly:F val:(value.MaybeStrArray strs:[_ _ _ 42]))
 ## END
 
 

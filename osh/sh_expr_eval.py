@@ -18,7 +18,7 @@ from _devbuild.gen.runtime_asdl import (
     quote_e, quote_t,
     lvalue, lvalue_t, 
     value, value_e, value_t, value__Str, value__Int, value__MaybeStrArray,
-    value__AssocArray,
+    value__AssocArray, value__Obj,
 )
 from _devbuild.gen.syntax_asdl import (
     arith_expr_e, arith_expr_t, arith_expr__VarRef, arith_expr__ArithWord,
@@ -37,6 +37,7 @@ from core.util import e_die
 from osh import state
 from osh import word_
 
+from mycpp import mylib
 from mycpp.mylib import tagswitch, switch
 
 import posix_ as posix
@@ -375,6 +376,14 @@ class ArithEvaluator(_ExprEvaluator):
         elif case(value_e.Str):
           val = cast(value__Str, UP_val)
           return _StringToInteger(val.s, span_id=span_id)  # calls e_die
+
+        elif case(value_e.Obj):
+          # Note: this handles var x = 42; echo $(( x > 2 )).
+          if mylib.PYTHON:
+            val = cast(value__Obj, UP_val)
+            if isinstance(val.obj, int):
+              return val.obj
+          raise AssertionError()  # not in C++
 
     except error.FatalRuntime as e:
       if self.exec_opts.strict_arith:
