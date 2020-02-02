@@ -51,6 +51,10 @@ Str* repr(void* obj) {
   throw new error::Parse(s, w);
 }
 
+[[noreturn]] void e_die(Str* s) {
+  assert(0);
+}
+
 [[noreturn]] void e_die(Str* s, int span_id) {
   assert(0);
 }

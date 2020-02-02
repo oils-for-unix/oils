@@ -512,10 +512,22 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.write('))')
           return
 
+        # TODO: Consolidate X_die() and log()?  It has an extra arg though.
         if o.callee.name in ('p_die', 'e_die'):
-          # TODO: Consolidate this
           args = o.args
-          rest = args[1:-1]
+          log('o.arg_names %s', o.arg_names)
+          has_keyword_arg = o.arg_names[-1] is not None
+          if has_keyword_arg:
+            rest = args[1:-1]
+          else:
+            rest = args[1:]
+
+          # If there are no arguments, it must look like
+          # Same with
+          # e_die('constant string')
+          if not rest:
+            pass
+
           if self.decl:
             fmt_arg = args[0]
             if isinstance(fmt_arg, StrExpr):
@@ -533,9 +545,15 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if i != 0:
               self.write(', ')
             self.accept(arg)
-          self.write('), ')
-          self.accept(args[-1])
+
+          if has_keyword_arg:
+            self.write('), ')
+            self.accept(args[-1])
+          else:
+            self.write(')')
+
           self.write(')')
+
           return
 
         callee_name = o.callee.name
@@ -1544,7 +1562,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             class_name == '_WordEvaluator' and 
               func_name in ('EvalWordSequence2', '_EvalWordToParts',
                             '_EmptyStrOrError', '_EvalWordPart', 'EvalWordToString') or
-            class_name == 'Executor' and func_name == '_Execute' and
+            class_name == 'Executor' and func_name == '_Execute' or
             class_name == 'Mem' and func_name == 'GetVar'
           ):
 

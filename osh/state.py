@@ -1024,7 +1024,7 @@ class Mem(object):
     return self.var_stack[-1]
 
   def _PushDebugStack(self, func_name, source_name):
-    # type: (Optional[str], Optional[Any]) -> None
+    # type: (Optional[str], Optional[str]) -> None
     # self.current_spid is set before every SimpleCommand, ShAssignment, [[, ((,
     # etc.  Function calls and 'source' are both SimpleCommand.
 

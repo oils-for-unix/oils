@@ -20,16 +20,27 @@ if mylib.PYTHON:
     tok = kwargs.get('tok')
     print(tok)
 
+  def e_die(msg, *args, **kwargs):
+    # type: (str, Any, Any) -> None
+    tok = kwargs.get('tok')
+    print(tok)
+
 
 def run_tests():
   # type: () -> None
 
+  log('constant string')
+
+  # Positional args
   log("log %d %s", 42, "LL")
 
+  # Keyword args give location info for X_die()
   span_id = 123
   p_die('hello %d %s', 3, "PP", span_id=span_id)
 
-  #p_die('hello')
+  # No keyword arguments
+  e_die('hello %d', 42)
+  e_die('hello')
 
 
 def run_benchmarks():

@@ -15,7 +15,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part__Splice, word_part__FuncCall, word_part__ExprSub,
 
     word_e, word_t, word__BracedTree, word__String,
-    sh_lhs_expr_t,
+    sh_lhs_expr_e, sh_lhs_expr_t, sh_lhs_expr__Name, sh_lhs_expr__IndexedName,
 )
 from asdl import runtime
 from core.util import log
@@ -685,13 +685,26 @@ def IsVarSub(w):
 
 def SpanForLhsExpr(node):
   # type: (sh_lhs_expr_t) -> int
-  if len(node.spids):
-    return node.spids[0]
+
+  # This switch is annoying but we don't have inheritance from the sum type
+  # (because of diamond issue).  We might change the schema later, which maeks
+  # it moot.  See the comment in frontend/syntax.asdl.
+  UP_node = node
+  with tagswitch(node) as case:
+    if case(sh_lhs_expr_e.Name):
+      node = cast(sh_lhs_expr__Name, UP_node)
+      spids = node.spids
+    elif case(sh_lhs_expr_e.IndexedName):
+      node = cast(sh_lhs_expr__IndexedName, UP_node)
+      spids = node.spids
+    else:
+      # Should not see UnparsedIndex
+      raise AssertionError()
+
+  if len(spids):
+    return spids[0]
   else:
     return runtime.NO_SPID  
-  # TODO: IndexedName needs span_id.
-  #if isinstance(node, sh_lhs_expr__Name):
-  #elif isinstance(node, sh_lhs_expr__IndexedName):
 
 
 def SpanIdFromError(error):
