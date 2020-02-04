@@ -21,11 +21,12 @@ from frontend import reader
 from mycpp import mylib
 
 # Evaluators
+# This causes errors in oil_lang/{objects,regex_translate}, builtin_pure, etc.
+# builtin_pure.Command maybe shouldn't be hard-coded?
 #from osh import cmd_exec
 from osh import sh_expr_eval
 from osh import state
-# This causes many errors in osh/builtin.py and core/process.py
-#from osh import word_eval
+from osh import word_eval
 
 _ = log
 
@@ -125,7 +126,9 @@ def main(argv):
   exec_opts = state.ExecOpts(mem, parse_opts, None)
   errfmt = ui.ErrorFormatter(arena)
 
+  splitter = None
   arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, errfmt)
+  word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
 
   # C++ doesn't have the abbreviations yet (though there are some differences
   # like omitting spids)

@@ -7,6 +7,8 @@ from __future__ import print_function
 from _devbuild.gen.runtime_asdl import builtin_e, builtin_t
 from frontend import args
 
+from typing import Dict
+
 # Special builtins can't be redefined by functions.  On the other hand, 'cd'
 # CAN be redefined.
 #
@@ -112,6 +114,7 @@ class BuiltinDef(object):
   to arg spec.  There might not be any flags.
   """
   def __init__(self):
+    # type: () -> None
     # Is this what we want?
     names = set()
     names.update(_NORMAL_BUILTINS.keys())
@@ -120,7 +123,7 @@ class BuiltinDef(object):
     # TODO: Also complete keywords first for, while, etc.  Bash/zsh/fish/yash
     # all do this.  See osh/lex/{_KEYWORDS, _MORE_KEYWORDS}.
 
-    self.arg_specs = {}
+    self.arg_specs = {}  # type: Dict[str, args.BuiltinFlags]
     self.to_complete = sorted(names)
 
   def Register(self, name, help_topic=None):

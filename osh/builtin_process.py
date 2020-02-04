@@ -10,23 +10,20 @@ import signal  # for calculating numbers
 
 from _devbuild.gen.runtime_asdl import cmd_value__Argv
 from core import ui
+from core.builtin_def import _Register
 from core.util import log
 from frontend import args
-from osh.builtin import _Builtin, _Register
+from osh.builtin import _Builtin
 
 import posix_ as posix
 
-from typing import List, TYPE_CHECKING
-from core.process import JobState
-from core.process import Waiter
-from core.ui import ErrorFormatter
-from osh.state import Mem
-from core.process import SignalState
-from osh.cmd_exec import Executor
-from typing import Dict
-
+from typing import List, Dict, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command_t
+  from core.ui import ErrorFormatter
+  from core.process import JobState, Waiter, SignalState
+  from osh.cmd_exec import Executor
+  from osh.state import Mem
 
 WAIT_SPEC = _Register('wait')
 WAIT_SPEC.ShortFlag('-n')

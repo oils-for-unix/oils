@@ -16,24 +16,30 @@ import signal
 import sys
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import redirect_e, job_state_e
+from _devbuild.gen.runtime_asdl import (
+    job_state_e, job_state_t,
+    redirect_e, redirect_t,
+    redirect__Path, redirect__FileDesc, redirect__HereDoc,
+)
 from asdl import pretty
 from core import util
 from core import ui
 from core.util import log
 from frontend import match
+from mycpp.mylib import tagswitch
 
 import posix_ as posix
 
-from typing import Optional, List, Tuple, Dict, TYPE_CHECKING
+from typing import Optional, List, Tuple, Dict, Any, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime_asdl import cmd_value__Argv, redirect_t
+  from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from _devbuild.gen.syntax_asdl import command_t
   from core.ui import ErrorFormatter
   from core.util import NullDebugFile
-  from osh.state import SearchPath, ExecOpts
+  from core.comp_ui import _IDisplay
   from osh.cmd_exec import Executor
+  from osh.state import SearchPath, ExecOpts
   from mycpp import mylib
 
 
@@ -54,6 +60,7 @@ def GetHomeDir():
 
 
 def SignalState_AfterForkingChild():
+  # type: () -> None
   """Not a member of SignalState since we didn't do dependency injection."""
   # Respond to Ctrl-\ (core dump)
   signal.signal(signal.SIGQUIT, signal.SIG_DFL)
@@ -83,6 +90,7 @@ class SignalState(object):
     pass
 
   def InitInteractiveShell(self, display):
+    # type: (_IDisplay) -> None
     """Called when initializing an interactive shell."""
     # The shell itself should ignore Ctrl-\.
     signal.signal(signal.SIGQUIT, signal.SIG_IGN)
@@ -95,10 +103,12 @@ class SignalState(object):
     signal.signal(signal.SIGWINCH, lambda x, y: display.OnWindowChange())
 
   def AddUserTrap(self, sig_num, handler):
+    # type: (int, Any) -> None
     """For user-defined handlers registered with the 'trap' builtin."""
     signal.signal(sig_num, handler)
 
   def RemoveUserTrap(self, sig_num):
+    # type: (int) -> None
     """For user-defined handlers registered with the 'trap' builtin."""
     # Restore default
     signal.signal(sig_num, signal.SIG_DFL)
@@ -107,17 +117,19 @@ class SignalState(object):
 class _FdFrame(object):
   def __init__(self):
     # type: () -> None
-    self.saved = []
-    self.need_close = []
-    self.need_wait = []
+    self.saved = []  # type: List[Tuple[int, int]]
+    self.need_close = []  # type: List[int]
+    self.need_wait = []  # type: List[Tuple[Process, Waiter]]
 
   def Forget(self):
+    # type: () -> None
     """For exec 1>&2."""
     del self.saved[:]  # like list.clear() in Python 3.3
     del self.need_close[:]
     del self.need_wait[:]
 
   def __repr__(self):
+    # type: () -> str
     return '<_FdFrame %s %s>' % (self.saved, self.need_close)
 
 
@@ -142,6 +154,7 @@ class FdState(object):
   # the difference.
 
   def _GetFreeDescriptor(self):
+    # type: () -> int
     """Return a free file descriptor above 10 that isn't used."""
     fd = 10
     while True:
@@ -182,6 +195,7 @@ class FdState(object):
     return f
 
   def _PushDup(self, fd1, fd2):
+    # type: (int, int) -> bool
     """Save fd2, and dup fd1 onto fd2.
 
     Mutates self.cur_frame.saved.
@@ -225,111 +239,122 @@ class FdState(object):
     return True
 
   def _PushClose(self, fd):
+    # type: (int) -> None
     self.cur_frame.need_close.append(fd)
 
   def _PushWait(self, proc, waiter):
+    # type: (Process, Waiter) -> None
     self.cur_frame.need_wait.append((proc, waiter))
 
   def _ApplyRedirect(self, r, waiter):
+    # type: (redirect_t, Waiter) -> bool
     ok = True
 
-    if r.tag == redirect_e.Path:
-      if r.op_id in (Id.Redir_Great, Id.Redir_AndGreat):  # >   &>
-        # NOTE: This is different than >| because it respects noclobber, but
-        # that option is almost never used.  See test/wild.sh.
-        mode = posix.O_CREAT | posix.O_WRONLY | posix.O_TRUNC
-      elif r.op_id == Id.Redir_Clobber:  # >|
-        mode = posix.O_CREAT | posix.O_WRONLY | posix.O_TRUNC
-      elif r.op_id in (Id.Redir_DGreat, Id.Redir_AndDGreat):  # >>   &>>
-        mode = posix.O_CREAT | posix.O_WRONLY | posix.O_APPEND
-      elif r.op_id == Id.Redir_Less:  # <
-        mode = posix.O_RDONLY
-      else:
-        raise NotImplementedError(r.op_id)
+    UP_r = r
+    with tagswitch(r) as case:
 
-      # NOTE: 0666 is affected by umask, all shells use it.
-      try:
-        target_fd = posix.open(r.filename, mode, 0o666)
-      except OSError as e:
-        self.errfmt.Print(
-            "Can't open %r: %s", r.filename, posix.strerror(e.errno),
-            span_id=r.op_spid)
-        return False
+      if case(redirect_e.Path):
+        r = cast(redirect__Path, UP_r)
 
-      # Apply redirect
-      if not self._PushDup(target_fd, r.fd):
-        ok = False
+        if r.op_id in (Id.Redir_Great, Id.Redir_AndGreat):  # >   &>
+          # NOTE: This is different than >| because it respects noclobber, but
+          # that option is almost never used.  See test/wild.sh.
+          mode = posix.O_CREAT | posix.O_WRONLY | posix.O_TRUNC
+        elif r.op_id == Id.Redir_Clobber:  # >|
+          mode = posix.O_CREAT | posix.O_WRONLY | posix.O_TRUNC
+        elif r.op_id in (Id.Redir_DGreat, Id.Redir_AndDGreat):  # >>   &>>
+          mode = posix.O_CREAT | posix.O_WRONLY | posix.O_APPEND
+        elif r.op_id == Id.Redir_Less:  # <
+          mode = posix.O_RDONLY
+        else:
+          raise NotImplementedError(r.op_id)
 
-      # Now handle the extra redirects for aliases &> and &>>.
-      #
-      # We can rewrite
-      #   stdout_stderr.py &> out-err.txt
-      # as
-      #   stdout_stderr.py > out-err.txt 2>&1
-      #
-      # And rewrite
-      #   stdout_stderr.py 3&> out-err.txt
-      # as
-      #   stdout_stderr.py 3> out-err.txt 2>&3
-      if ok:
-        if r.op_id == Id.Redir_AndGreat:
-          if not self._PushDup(r.fd, 2):
-            ok = False
-        elif r.op_id == Id.Redir_AndDGreat:
-          if not self._PushDup(r.fd, 2):
-            ok = False
+        # NOTE: 0666 is affected by umask, all shells use it.
+        try:
+          target_fd = posix.open(r.filename, mode, 0o666)
+        except OSError as e:
+          self.errfmt.Print(
+              "Can't open %r: %s", r.filename, posix.strerror(e.errno),
+              span_id=r.op_spid)
+          return False
 
-      posix.close(target_fd)  # We already made a copy of it.
-      # I don't think we need to close(0) because it will be restored from its
-      # saved position (10), which closes it.
-      #self._PushClose(r.fd)
-
-    elif r.tag == redirect_e.FileDesc:  # e.g. echo hi 1>&2
-
-      if r.op_id == Id.Redir_GreatAnd:  # 1>&2
-        if not self._PushDup(r.target_fd, r.fd):
+        # Apply redirect
+        if not self._PushDup(target_fd, r.fd):
           ok = False
-      elif r.op_id == Id.Redir_LessAnd:  # 0<&5
-        # The only difference between >& and <& is the default file
-        # descriptor argument.
-        if not self._PushDup(r.target_fd, r.fd):
+
+        # Now handle the extra redirects for aliases &> and &>>.
+        #
+        # We can rewrite
+        #   stdout_stderr.py &> out-err.txt
+        # as
+        #   stdout_stderr.py > out-err.txt 2>&1
+        #
+        # And rewrite
+        #   stdout_stderr.py 3&> out-err.txt
+        # as
+        #   stdout_stderr.py 3> out-err.txt 2>&3
+        if ok:
+          if r.op_id == Id.Redir_AndGreat:
+            if not self._PushDup(r.fd, 2):
+              ok = False
+          elif r.op_id == Id.Redir_AndDGreat:
+            if not self._PushDup(r.fd, 2):
+              ok = False
+
+        posix.close(target_fd)  # We already made a copy of it.
+        # I don't think we need to close(0) because it will be restored from its
+        # saved position (10), which closes it.
+        #self._PushClose(r.fd)
+
+      elif case(redirect_e.FileDesc):  # e.g. echo hi 1>&2
+        r = cast(redirect__FileDesc, UP_r)
+
+        if r.op_id == Id.Redir_GreatAnd:  # 1>&2
+          if not self._PushDup(r.target_fd, r.fd):
+            ok = False
+        elif r.op_id == Id.Redir_LessAnd:  # 0<&5
+          # The only difference between >& and <& is the default file
+          # descriptor argument.
+          if not self._PushDup(r.target_fd, r.fd):
+            ok = False
+        else:
+          raise NotImplementedError()
+
+      elif case(redirect_e.HereDoc):
+        r = cast(redirect__HereDoc, UP_r)
+
+        # NOTE: Do these descriptors have to be moved out of the range 0-9?
+        read_fd, write_fd = posix.pipe()
+
+        if not self._PushDup(read_fd, r.fd):  # stdin is now the pipe
           ok = False
-      else:
-        raise NotImplementedError()
 
-    elif r.tag == redirect_e.HereDoc:
-      # NOTE: Do these descriptors have to be moved out of the range 0-9?
-      read_fd, write_fd = posix.pipe()
+        # We can't close like we do in the filename case above?  The writer can
+        # get a "broken pipe".
+        self._PushClose(read_fd)
 
-      if not self._PushDup(read_fd, r.fd):  # stdin is now the pipe
-        ok = False
+        thunk = _HereDocWriterThunk(write_fd, r.body)
 
-      # We can't close like we do in the filename case above?  The writer can
-      # get a "broken pipe".
-      self._PushClose(read_fd)
+        # TODO: Use PIPE_SIZE to save a process in the case of small here docs,
+        # which are the common case.  (dash does this.)
+        start_process = True
+        #start_process = False
 
-      thunk = _HereDocWriterThunk(write_fd, r.body)
+        if start_process:
+          here_proc = Process(thunk, self.job_state)
 
-      # TODO: Use PIPE_SIZE to save a process in the case of small here docs,
-      # which are the common case.  (dash does this.)
-      start_process = True
-      #start_process = False
+          # NOTE: we could close the read pipe here, but it doesn't really
+          # matter because we control the code.
+          _ = here_proc.Start()
+          #log('Started %s as %d', here_proc, pid)
+          self._PushWait(here_proc, waiter)
 
-      if start_process:
-        here_proc = Process(thunk, self.job_state)
+          # Now that we've started the child, close it in the parent.
+          posix.close(write_fd)
 
-        # NOTE: we could close the read pipe here, but it doesn't really
-        # matter because we control the code.
-        _ = here_proc.Start()
-        #log('Started %s as %d', here_proc, pid)
-        self._PushWait(here_proc, waiter)
-
-        # Now that we've started the child, close it in the parent.
-        posix.close(write_fd)
-
-      else:
-        posix.write(write_fd, r.body)
-        posix.close(write_fd)
+        else:
+          posix.write(write_fd, r.body)
+          posix.close(write_fd)
 
     return ok
 
@@ -341,8 +366,23 @@ class FdState(object):
     self.cur_frame = new_frame
 
     for r in redirects:
+      # TODO: Could we use inheritance to make this cheaper?
+      UP_r = r
+      with tagswitch(r) as case:
+        if case(redirect_e.Path):
+          r = cast(redirect__Path, UP_r)
+          op_spid = r.op_spid
+        elif case(redirect_e.FileDesc):
+          r = cast(redirect__FileDesc, UP_r)
+          op_spid = r.op_spid
+        elif case(redirect_e.HereDoc):
+          r = cast(redirect__HereDoc, UP_r)
+          op_spid = r.op_spid
+        else:
+          raise AssertionError()
+
       #log('apply %s', r)
-      self.errfmt.PushLocation(r.op_spid)
+      self.errfmt.PushLocation(op_spid)
       try:
         if not self._ApplyRedirect(r, waiter):
           return False  # for bad descriptor
@@ -352,6 +392,7 @@ class FdState(object):
     return True
 
   def PushStdinFromPipe(self, r):
+    # type: (int) -> bool
     """Save the current stdin and make it come from descriptor 'r'.
 
     'r' is typically the read-end of a pipe.  For 'lastpipe'/ZSH semantics of
@@ -399,6 +440,7 @@ class FdState(object):
 class ChildStateChange(object):
 
   def Apply(self):
+    # type: () -> None
     raise NotImplementedError()
 
 
@@ -409,9 +451,11 @@ class StdinFromPipe(ChildStateChange):
     self.w = w
 
   def __repr__(self):
+    # type: () -> str
     return '<StdinFromPipe %d %d>' % (self.r, self.w)
 
   def Apply(self):
+    # type: () -> None
     posix.dup2(self.r, 0)
     posix.close(self.r)  # close after dup
 
@@ -426,9 +470,11 @@ class StdoutToPipe(ChildStateChange):
     self.w = pipe_write_fd
 
   def __repr__(self):
+    # type: () -> str
     return '<StdoutToPipe %d %d>' % (self.r, self.w)
 
   def Apply(self):
+    # type: () -> None
     posix.dup2(self.w, 1)
     posix.close(self.w)  # close after dup
 
@@ -469,6 +515,7 @@ class ExternalProgram(object):
     assert False, "This line should never execute" # NO RETURN
 
   def _Exec(self, argv0_path, argv, argv0_spid, environ, should_retry):
+    # type: (str, List[str], int, Dict[str, str], bool) -> None
     if self.hijack_shebang:
       try:
         f = self.fd_state.Open(argv0_path)
@@ -478,7 +525,7 @@ class ExternalProgram(object):
         try:
           # Test if the shebang looks like a shell.  The file might be binary
           # with no newlines, so read 80 bytes instead of readline().
-          line = f.read(80)
+          line = f.read(80)  # type: ignore  # TODO: fix this
           if match.ShouldHijack(line):
             argv = [self.hijack_shebang, argv0_path] + argv[1:]
             argv0_path = self.hijack_shebang
@@ -533,14 +580,17 @@ class Thunk(object):
   """Abstract base class for things runnable in another process."""
 
   def Run(self):
+    # type: () -> None
     """Returns a status code."""
     raise NotImplementedError()
 
   def DisplayLine(self):
+    # type: () -> str
     """Display for the 'jobs' list."""
-    pass
+    raise NotImplementedError()
 
   def __str__(self):
+    # type: () -> str
     # For debugging
     return self.DisplayLine()
 
@@ -556,14 +606,16 @@ class ExternalThunk(Thunk):
     self.environ = environ
 
   def DisplayLine(self):
-    # NOTE: This is the format the Tracer uses.
+    # type: () -> str
 
+    # NOTE: This is the format the Tracer uses.
     # bash displays        sleep $n & (code)
     # but OSH displays     sleep 1 &  (argv array)
     # We could switch the former but I'm not sure it's necessary.
     return '[process] %s' % ' '.join(pretty.String(a) for a in self.cmd_val.argv)
 
   def Run(self):
+    # type: () -> None
     """
     An ExternalThunk is run in parent for the exec builtin.
     """
@@ -580,11 +632,15 @@ class SubProgramThunk(Thunk):
     self.inherit_errexit = inherit_errexit  # for bash errexit compatibility
 
   def DisplayLine(self):
+    # type: () -> str
+
     # NOTE: These can be pieces of a pipeline, so they're arbitrary nodes.
     # TODO: We should extract the SPIDS from each node!
     return '[subprog] %s' % self.node.__class__.__name__
 
   def Run(self):
+    # type: () -> None
+
     # NOTE: may NOT return due to exec().
     if not self.inherit_errexit:
       self.ex.exec_opts.errexit.Disable()
@@ -616,16 +672,20 @@ class _HereDocWriterThunk(Thunk):
   May be be executed in either a child process or the main shell process.
   """
   def __init__(self, w, body_str):
+    # type: (int, str) -> None
     self.w = w
     self.body_str = body_str
 
   def DisplayLine(self):
+    # type: () -> str
+
     # You can hit Ctrl-Z and the here doc writer will be suspended!  Other
     # shells don't have this problem because they use temp files!  That's a bit
     # unfortunate.
     return '[here doc writer]'
 
   def Run(self):
+    # type: () -> None
     """
     do_exit: For small pipelines
     """
@@ -655,13 +715,16 @@ class Job(object):
   """
 
   def __init__(self):
+    # type: () -> None
     # Initial state with & or Ctrl-Z is Running.
     self.state = job_state_e.Running
 
   def State(self):
+    # type: () -> job_state_t
     return self.state
 
   def Send_SIGCONT(self, waiter):
+    # type: (Waiter) -> None
     """Resume the job -- for 'fg' and 'bg' builtins.
 
     We need to know the process group.
@@ -669,6 +732,7 @@ class Job(object):
     pass
 
   def Wait(self, waiter):
+    # type: (Waiter) -> None
     """Wait for this process/pipeline to be stopped or finished.
 
     Returns:
@@ -701,7 +765,7 @@ class Process(Job):
     self.parent_pipeline = parent_pipeline
 
     # For pipelines
-    self.state_changes = []
+    self.state_changes = []  # type: List[ChildStateChange]
     self.close_r = -1
     self.close_w = -1
 
@@ -709,6 +773,7 @@ class Process(Job):
     self.status = -1
 
   def __repr__(self):
+    # type: () -> str
     return '<Process %s>' % self.thunk
 
   def AddStateChange(self, s):
@@ -716,10 +781,12 @@ class Process(Job):
     self.state_changes.append(s)
 
   def AddPipeToClose(self, r, w):
+    # type: (int, int) -> None
     self.close_r = r
     self.close_w = w
 
   def MaybeClosePipe(self):
+    # type: () -> None
     if self.close_r != -1:
       posix.close(self.close_r)
       posix.close(self.close_w)
@@ -776,9 +843,11 @@ class Process(Job):
     return self.status
 
   def WhenStopped(self):
+    # type: () -> None
     self.state = job_state_e.Stopped
 
   def WhenDone(self, pid, status):
+    # type: (int, int) -> None
     """Called by the Waiter when this Process finishes."""
 
     #log('WhenDone %d %d', pid, status)
@@ -814,16 +883,17 @@ class Pipeline(Job):
   def __init__(self):
     # type: () -> None
     Job.__init__(self)
-    self.procs = []
-    self.pids = []  # pids in order
-    self.pipe_status = []  # status in order
+    self.procs = []  # type: List[Process]
+    self.pids = []  # type: List[int]  # pids in order
+    self.pipe_status = []  # type: List[int]  # status in order
     self.status = -1  # for 'wait' jobs
 
     # Optional for foregroud
-    self.last_thunk = None
-    self.last_pipe = None
+    self.last_thunk = None  # type: Tuple[Executor, command_t]
+    self.last_pipe = None  # type: Tuple[int, int]
 
   def __repr__(self):
+    # type: () -> str
     return '<Pipeline %s>' % ' '.join(repr(p) for p in self.procs)
 
   def Add(self, p):
@@ -893,6 +963,7 @@ class Pipeline(Job):
     return self.pids[-1]
 
   def Wait(self, waiter):
+    # type: (Waiter) -> List[int]
     """Wait for this pipeline to finish.
 
     Called by the 'wait' builtin.
@@ -954,6 +1025,7 @@ class Pipeline(Job):
       return self.pipe_status  # singleton foreground pipeline, e.g. '! func'
 
   def WhenDone(self, pid, status):
+    # type: (int, int) -> None
     """Called by Process.WhenDone. """
     #log('Pipeline WhenDone %d %d', pid, status)
     i = self.pids.index(pid)
@@ -970,14 +1042,15 @@ class JobState(object):
 
   def __init__(self):
     # type: () -> None
+
     # pid -> Job instance
     # This is for display in 'jobs' builtin and for %+ %1 lookup.
-    self.jobs = {}
+    self.jobs = {}  # type: Dict[int, Job]
 
     # pid -> Process.  This is for STOP notification.
-    self.child_procs = {}
+    self.child_procs = {}  # type: Dict[int, Process]
 
-    self.last_stopped_pid = None  # for basic 'fg' implementation
+    self.last_stopped_pid = None  # type: int  # for basic 'fg' implementation
     self.job_id = 1  # Strictly increasing
 
   # TODO: This isn't a PID.  This is a process group ID?
@@ -994,6 +1067,8 @@ class JobState(object):
   # [job_id, flag, pgid, job_state, node]
 
   def NotifyStopped(self, pid):
+    # type: (int) -> None
+
     # TODO: Look up the PID.
     # And display it in the table?
     # What if it's not here?
@@ -1005,6 +1080,8 @@ class JobState(object):
     self.last_stopped_pid = pid
 
   def GetLastStopped(self):
+    # type: () -> int
+
     # This be GetCurrent()?  %+ in bash?  That's what 'fg' takes.
     return self.last_stopped_pid
 
@@ -1025,6 +1102,7 @@ class JobState(object):
     return job_id
 
   def AddChildProcess(self, pid, proc):
+    # type: (int, Process) -> None
     """Every child process should be added here as soon as we know its PID.
 
     When the Waiter gets an EXITED or STOPPED notification, we need to know
@@ -1033,6 +1111,7 @@ class JobState(object):
     self.child_procs[pid] = proc
 
   def JobFromPid(self, pid):
+    # type: (int) -> Process
     """For wait $PID.
 
     There's no way to wait for a pipeline with a PID.  That uses job syntax, e.g. 
@@ -1041,6 +1120,7 @@ class JobState(object):
     return self.child_procs.get(pid)
 
   def List(self):
+    # type: () -> None
     """Used by the 'jobs' builtin.
 
     https://pubs.opengroup.org/onlinepubs/9699919799/utilities/jobs.html
@@ -1082,10 +1162,12 @@ class JobState(object):
       print('%d %s %s' % (pid, proc.state, proc.thunk.DisplayLine()))
 
   def ListRecent(self):
+    # type: () -> None
     """For jobs -n, which I think is also used in the interactive prompt."""
     pass
 
   def NoneAreRunning(self):
+    # type: () -> bool
     """Test if all jobs are done.  Used by 'wait' builtin."""
     for job in self.jobs.itervalues():
       if job.State() == job_state_e.Running:
@@ -1093,6 +1175,7 @@ class JobState(object):
     return True
 
   def MaybeRemove(self, pid):
+    # type: (int) -> None
     """Process and Pipeline can call this."""
     # Problem: This only happens after an explicit wait()?
     # I think the main_loop in bash waits without blocking?
@@ -1135,6 +1218,7 @@ class Waiter(object):
     self.last_status = 127  # wait -n error code
 
   def WaitForOne(self):
+    # type: () -> bool
     """Wait until the next process returns (or maybe Ctrl-C).
 
     Returns:

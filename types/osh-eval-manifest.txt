@@ -4,6 +4,7 @@
 ./asdl/runtime.py
 ./bin/osh_eval.py
 ./core/alloc.py
+./core/builtin_def.py
 ./core/error.py
 ./core/meta.py
 ./core/pyutil.py
@@ -30,10 +31,14 @@
 ./osh/bool_parse.py
 ./osh/braces.py
 ./osh/cmd_parse.py
+./osh/glob_.py
 ./osh/sh_expr_eval.py
 ./osh/split.py
 ./osh/state.py
+./osh/string_ops.py
 ./osh/tdop.py
+./osh/word_compile.py
+./osh/word_eval.py
 ./osh/word_parse.py
 ./osh/word_.py
 ./pgen2/grammar.py
