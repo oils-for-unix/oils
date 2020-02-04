@@ -155,10 +155,9 @@ namespace %s {
         f.write('\n')
 
     # NOTE: Dict, Any are for AssocArray with 'dict' type.
-    # TYPE_CHECKING is for the simple_int_sums guard, which could be removed.
     f.write("""\
 from asdl import pybase
-from typing import Optional, List, Tuple, Dict, Any, cast, TYPE_CHECKING
+from typing import Optional, List, Tuple, Dict, Any, cast
 """)
 
     pretty_print_methods = bool(os.getenv('PRETTY_PRINT_METHODS', 'yes'))

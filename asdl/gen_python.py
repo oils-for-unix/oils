@@ -53,10 +53,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       variants.append((variant, tag_num))
 
     if name in self.simple_int_sums:
-      self.Emit('if TYPE_CHECKING:')
-      self.Emit('  %s_t = int  # type alias for integer' % name)
-      self.Emit('else:')
-      self.Emit('  %s_t = None  # mycpp hack' % name)
+      self.Emit('%s_t = int  # type alias for integer' % name)
       self.Emit('')
 
       self.Emit('class %s(object):' % name, depth)
