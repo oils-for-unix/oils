@@ -38,7 +38,7 @@ script:
     # Type checking with MyPy.  Problem: mypy requires Python 3, but Oil
     # requires Python 2.  The Travis environment doesn't like that.
     - types/run.sh travis
-    - types/osh-parse.sh travis
+    - types/oil-slice.sh travis
     # Unit tests
     - test/unit.sh all-for-minimal
     # Spec tests
