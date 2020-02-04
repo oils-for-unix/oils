@@ -5,6 +5,7 @@ osh_parse.py
 from __future__ import print_function
 
 import sys
+import posix_ as posix
 
 from _devbuild.gen.syntax_asdl import source, source_t, command, command_t
 from asdl import format as fmt
@@ -22,6 +23,7 @@ from mycpp import mylib
 # Evaluators
 #from osh import cmd_exec
 from osh import sh_expr_eval
+from osh import state
 # This causes many errors in osh/builtin.py and core/process.py
 #from osh import word_eval
 
@@ -113,6 +115,17 @@ def main(argv):
     ui.PrettyPrintError(e, arena)
     return 2
   assert node is not None
+
+  # New osh_eval.py instantiations
+
+  dollar0 = argv[0]
+  mem = state.Mem(dollar0, argv, posix.environ, arena,
+                  has_main=True)
+  # no readline module
+  exec_opts = state.ExecOpts(mem, parse_opts, None)
+  errfmt = ui.ErrorFormatter(arena)
+
+  arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, errfmt)
 
   # C++ doesn't have the abbreviations yet (though there are some differences
   # like omitting spids)

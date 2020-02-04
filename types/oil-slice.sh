@@ -14,8 +14,14 @@ source types/common.sh
 
 demo() {
   export PYTHONPATH=.
+
   echo 'echo hi' | bin/osh_parse.py "$@"
-  bin/osh_parse.py 'ls -l'
+  bin/osh_parse.py -c 'ls -l'
+
+  # TODO: These should run the code with cmd_exec!  But we need more type
+  # annotations.
+  echo 'echo hi' | bin/osh_eval.py "$@"
+  bin/osh_eval.py -c 'for x in 1 2 3; do echo $x; done'
 }
 
 readonly OSH_PARSE_DEPS='_tmp/osh_parse-deps.txt'
