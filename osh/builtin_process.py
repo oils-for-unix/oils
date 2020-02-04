@@ -17,7 +17,7 @@ from osh.builtin import _Builtin
 
 import posix_ as posix
 
-from typing import List, Dict, TYPE_CHECKING
+from typing import List, Dict, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command_t
   from core.ui import ErrorFormatter
@@ -215,23 +215,27 @@ class _TrapHandler(object):
     self.nodes_to_run = nodes_to_run
 
   def __call__(self, unused_signalnum, unused_frame):
+    # type: (int, Any) -> None
     """For Python's signal module."""
     # TODO: set -o xtrace/verbose should enable this.
     #log('*** SETTING TRAP for %d ***', unused_signalnum)
     self.nodes_to_run.append(self.node)
 
   def __str__(self):
+    # type: () -> str
     # Used by trap -p
     # TODO: Abbreviate with fmt.PrettyPrint?
     return '<Trap %s>' % self.node
 
 
+# TODO: Requires code generation.
 def _MakeSignals():
+  # type: () -> Dict[str, int]
   """Piggy-back on CPython to get a list of portable signals.
 
   When Oil is ported to C, we might want to do something like bash/dash.
   """
-  names = {}
+  names = {}  # type: Dict[str, int]
   for name in dir(signal):
     # don't want SIG_DFL or SIG_IGN
     if name.startswith('SIG') and not name.startswith('SIG_'):
@@ -242,6 +246,8 @@ def _MakeSignals():
 
 
 def _GetSignalNumber(sig_spec):
+  # type: (str) -> int
+
   # POSIX lists the numbers that are required.
   # http://pubs.opengroup.org/onlinepubs/9699919799/
   #
@@ -276,7 +282,7 @@ TRAP_SPEC.ShortFlag('-l')
 
 class Trap(object):
   def __init__(self, sig_state, traps, nodes_to_run, ex, errfmt):
-    # type: (SignalState, Dict, List, Executor, ErrorFormatter) -> None
+    # type: (SignalState, Dict[str, _TrapHandler], List[command_t], Executor, ErrorFormatter) -> None
     self.sig_state = sig_state
     self.traps = traps
     self.nodes_to_run = nodes_to_run
@@ -323,7 +329,7 @@ class Trap(object):
     else:
       sig_num = _GetSignalNumber(sig_spec)
       if sig_num is not None:
-        sig_key = sig_num
+        sig_key = sig_num  # TODO: fix dynamic typing here
 
     if sig_key is None:
       self.errfmt.Print("Invalid signal or hook %r", sig_spec,

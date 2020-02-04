@@ -61,6 +61,11 @@ module runtime
   | MaybeStrArray(string* strs)
     -- d will be a dict
   | AssocArray(assoc d)
+    -- any should be re_t.  Need syntax.asdl here
+  | Eggex(any expr, string as_ere)
+    -- what about Proc or Module here?  are they first class?
+    -- then you can reflect on them?  Get name and docstring?
+
     -- A Python-style object.  'any' is not currently type checked.
     -- invariant for 'proc' stack:
     -- * s bool, int, float, (NOT str), or...
@@ -102,10 +107,9 @@ module runtime
     -- here doc or here word
   | HereDoc(int fd, string body, int op_spid)
 
-  -- NOTE: not used right now, isinstance() check works fine
   job_status =
-    Process(int status)
-  | Pipeline(int* statuses)
+    Proc(int code)
+  | Pipeline(int* codes)
 
   -- For word splitting in legacy.py
   span = Black | Delim | Backslash

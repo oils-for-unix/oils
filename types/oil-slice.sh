@@ -20,7 +20,9 @@ demo() {
 
   # TODO: These should run the code with cmd_exec!  But we need more type
   # annotations.
+
   echo 'echo hi' | bin/osh_eval.py "$@"
+  echo '(( a = 1 + 2 * 3 ))' | bin/osh_eval.py "$@"
   bin/osh_eval.py -c 'for x in 1 2 3; do echo $x; done'
 }
 
