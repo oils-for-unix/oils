@@ -735,7 +735,6 @@ class _DebugFrame(object):
     self.var_i = var_i
 
 
-
 class Mem(object):
   """For storing variables.
 

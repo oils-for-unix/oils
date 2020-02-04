@@ -25,15 +25,18 @@ from core import util
 from typing import Any, Optional, List, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
+  from core.comp_ui import _IDisplay
   from core.ui import ErrorFormatter
   from osh.cmd_parse import CommandParser
-  # commented out so --strict doesn't follow all
-  #from osh import prompt
-  #from osh.cmd_exec import Executor
+  from osh.cmd_exec import Executor
+  from osh.prompt import UserPlugin
 
 
 def Interactive(opts, ex, c_parser, display, prompt_plugin, errfmt):
-  # type: (Any, Any, CommandParser, Any, Any, ErrorFormatter) -> Any
+  # type: (Any, Executor, CommandParser, _IDisplay, UserPlugin, ErrorFormatter) -> int
+
+  # TODO: Any could be _Attributes from frontend/args.py
+
   status = 0
   done = False
   while not done:

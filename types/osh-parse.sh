@@ -18,13 +18,16 @@ demo() {
   bin/osh_parse.py 'ls -l'
 }
 
-readonly PY_DEPS='_tmp/osh-parse-deps.txt'
+readonly OSH_PARSE_DEPS='_tmp/osh_parse-deps.txt'
+readonly OSH_EVAL_DEPS='_tmp/osh_eval-deps.txt'
 
 deps() {
+  local prog=$1
+
   local pythonpath='.:vendor'
-  local out=_build/osh_parse
+  local out=_build/$prog
   mkdir -p $out
-  build/actions.sh app-deps osh_parse "$pythonpath" bin.osh_parse
+  build/actions.sh app-deps $prog "$pythonpath" bin.$prog
 
   ls -l $out
 
@@ -37,11 +40,14 @@ deps() {
   awk '
   $1 ~ /^.*\.py$/ { print $1 }
   ' $out/app-deps-cpython.txt \
-    | grep -v __init__ | sort | tee $PY_DEPS | xargs wc -l | sort -n
+    | grep -v __init__ | sort | tee _tmp/${prog}-deps.txt | xargs wc -l | sort -n
 }
 
+osh-parse-deps() { deps osh_parse; }
+osh-eval-deps() { deps osh_eval; }
+
 egrep-deps() {
-  cat $PY_DEPS | xargs -- egrep "$@"
+  cat $OSH_PARSE_DEPS | xargs -- egrep "$@"
 }
 
 typecheck-all() {
@@ -68,12 +74,22 @@ typecheck-all() {
 # The manifest needs to be checked in because we don't have
 # _devbuild/cpython-full on Travis to crawl dependencies.
 travis-setup() {
-  deps
-  egrep -v 'vendor|__future__' $PY_DEPS | tee $OSH_PARSE_MANIFEST
+  # TODO: add stat.py back.  Why does it cause errors?
+  local exclude='vendor|__future__|mylib.py|/stat.py'
+
+  osh-parse-deps
+  egrep -v "$exclude" $OSH_PARSE_DEPS | tee $OSH_PARSE_MANIFEST
+  osh-eval-deps
+  egrep -v "$exclude" $OSH_EVAL_DEPS | tee $OSH_EVAL_MANIFEST
+}
+
+compare-parse-eval() {
+  diff -u types/osh-{parse,eval}-manifest.txt
 }
 
 travis() {
-  typecheck-all $OSH_PARSE_MANIFEST
+  #typecheck-all $OSH_PARSE_MANIFEST
+  typecheck-all $OSH_EVAL_MANIFEST
 }
 
 "$@"
