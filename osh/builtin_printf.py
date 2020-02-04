@@ -15,13 +15,13 @@ from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
 import sys
 
 from asdl import runtime
+from core.builtin_def import _Register
 from core import error
 from core.util import p_die, e_die
 from frontend import args
 from frontend import lookup
 from frontend import match
 from frontend import reader
-from osh import builtin
 from osh import state
 from osh import string_ops
 from osh import word_compile
@@ -35,7 +35,7 @@ if TYPE_CHECKING:
   from core.ui import ErrorFormatter
 
 
-PRINTF_SPEC = builtin._Register('printf')  # TODO: Don't need this?
+PRINTF_SPEC = _Register('printf')  # TODO: Don't need this?
 PRINTF_SPEC.ShortFlag('-v', args.Str)
 
 

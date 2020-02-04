@@ -27,13 +27,13 @@ from _devbuild.gen.runtime_asdl import (
     value__Str, value__AssocArray, value__MaybeStrArray, value__Obj,
     quote_e, quote_t,
 )
+from core import builtin_def
 from core import error
 from core import process
 from core.util import log, e_die
 from frontend import lookup
 from frontend import match
 from osh import braces
-from osh import builtin
 from osh import glob_
 from osh import string_ops
 from osh import state
@@ -1652,7 +1652,7 @@ class _WordEvaluator(SimpleWordEvaluator):
         strs0 = self._EvalWordToArgv(w)  # respects strict-array
         if len(strs0) == 1:
           arg0 = strs0[0]
-          builtin_id = builtin.ResolveAssign(arg0)
+          builtin_id = builtin_def.ResolveAssign(arg0)
           if builtin_id != builtin_e.NONE:
             # Same logic as legacy word eval, with no splitting
             return self._EvalAssignBuiltin(builtin_id, arg0, words)
@@ -1750,7 +1750,7 @@ class _WordEvaluator(SimpleWordEvaluator):
         if val0.tag_() == part_value_e.String:
           val0 = cast(part_value__String, UP_val0)
           if not val0.quoted:
-            builtin_id = builtin.ResolveAssign(val0.s)
+            builtin_id = builtin_def.ResolveAssign(val0.s)
             if builtin_id != builtin_e.NONE:
               return self._EvalAssignBuiltin(builtin_id, val0.s, words)
 

@@ -70,8 +70,9 @@ from _devbuild.gen.types_asdl import redir_arg_type_e
 
 from asdl import runtime
 
-from core import main_loop
+from core import builtin_def
 from core import error
+from core import main_loop
 from core import process
 from core import ui
 from core import util
@@ -82,7 +83,6 @@ from frontend import reader
 
 from oil_lang import objects
 from osh import braces
-from osh import builtin
 from osh import builtin_pure
 from osh import sh_expr_eval
 from osh import state
@@ -473,12 +473,12 @@ class Executor(object):
       name = cmd_val.argv[1]
 
       # Run regular builtin or special builtin
-      to_run = builtin.Resolve(name)
+      to_run = builtin_def.Resolve(name)
       if to_run == builtin_e.NONE:
-        to_run = builtin.ResolveSpecial(name)
+        to_run = builtin_def.ResolveSpecial(name)
       if to_run == builtin_e.NONE:
         span_id = cmd_val.arg_spids[1]
-        if builtin.ResolveAssign(name) != builtin_e.NONE:
+        if builtin_def.ResolveAssign(name) != builtin_e.NONE:
           # NOTE: There's a similar restriction for 'command'
           self.errfmt.Print("Can't run assignment builtin recursively",
                             span_id=span_id)
@@ -809,7 +809,7 @@ class Executor(object):
 
     arg0 = argv[0]
 
-    builtin_id = builtin.ResolveAssign(arg0)
+    builtin_id = builtin_def.ResolveAssign(arg0)
     if builtin_id != builtin_e.NONE:
       # command readonly is disallowed, for technical reasons.  Could relax it
       # later.
@@ -817,7 +817,7 @@ class Executor(object):
                         span_id=span_id)
       return 1
 
-    builtin_id = builtin.ResolveSpecial(arg0)
+    builtin_id = builtin_def.ResolveSpecial(arg0)
     if builtin_id != builtin_e.NONE:
       status = self._RunBuiltin(builtin_id, cmd_val, fork_external)
       # TODO: Enable this and fix spec test failures.
@@ -863,7 +863,7 @@ class Executor(object):
             status = self._RunOilProc(val.obj, argv[1:])
             return status
 
-    builtin_id = builtin.Resolve(arg0)
+    builtin_id = builtin_def.Resolve(arg0)
 
     if builtin_id != builtin_e.NONE:
       return self._RunBuiltin(builtin_id, cmd_val, fork_external)

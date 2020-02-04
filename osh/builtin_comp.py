@@ -3,13 +3,13 @@ builtin_comp.py - Completion builtins
 """
 
 from _devbuild.gen.runtime_asdl import value_e
+from core import builtin_def
 from core import completion
 from core import error
 from core import ui
 #from core.util import log
 from frontend import args
 from frontend import lex
-from osh import builtin
 from osh import state
 
 from typing import TYPE_CHECKING
@@ -155,7 +155,7 @@ class SpecBuilder(object):
         # functions, keywords, external commands relative to the current
         # directory, and external commands in $PATH.
 
-        actions.append(_FixedWordsAction(builtin.BUILTIN_NAMES))
+        actions.append(_FixedWordsAction(builtin_def.BUILTIN_NAMES))
         actions.append(_FixedWordsAction(ex.aliases))
         actions.append(_FixedWordsAction(ex.procs))
         actions.append(_FixedWordsAction(lex.OSH_KEYWORD_NAMES))

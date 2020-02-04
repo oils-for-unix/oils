@@ -11,6 +11,7 @@ import unittest
 import readline
 import sys
 
+from core import builtin_def
 from core import pyutil
 from core import test_lib
 from osh import split
@@ -47,7 +48,7 @@ class BuiltinTest(unittest.TestCase):
     loader = pyutil.GetResourceLoader()
     builtin.Help([], loader)
 
-    for name, spec in builtin.BUILTIN_DEF.arg_specs.iteritems():
+    for name, spec in builtin_def.BUILTIN_DEF.arg_specs.iteritems():
       print(name)
       spec.PrintHelp(sys.stdout)
       print()

@@ -20,13 +20,14 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import builtin_e, cmd_value, value_e
 
 from asdl import pretty
+from core import builtin_def
+from core.builtin_def import _Register
 from core.util import e_die
 from core import ui
 from frontend import args
 from frontend import lex
 from frontend import match
-from osh.builtin import Resolve, ResolveSpecial, ResolveAssign
-from osh.builtin import _Builtin, _Register
+from osh.builtin import _Builtin
 from osh import state
 from osh import string_ops
 from osh import word_compile
@@ -255,11 +256,11 @@ def _ResolveNames(names, funcs, aliases, search_path):
       kind = ('function', name)
     elif name in aliases:
       kind = ('alias', name)
-    elif Resolve(name) != builtin_e.NONE:
+    elif builtin_def.Resolve(name) != builtin_e.NONE:
       kind = ('builtin', name)
-    elif ResolveSpecial(name) != builtin_e.NONE:
+    elif builtin_def.ResolveSpecial(name) != builtin_e.NONE:
       kind = ('builtin', name)
-    elif ResolveAssign(name) != builtin_e.NONE:
+    elif builtin_def.ResolveAssign(name) != builtin_e.NONE:
       kind = ('builtin', name)
     elif lex.IsOtherBuiltin(name):  # continue, etc.
       kind = ('builtin', name)

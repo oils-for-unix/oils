@@ -11,7 +11,7 @@ from _devbuild.gen.runtime_asdl import (
 #from core.util import log
 from frontend import args
 from frontend import match
-from osh.builtin import _Register
+from core.builtin_def import _Register
 
 from typing import Dict, Tuple, Any, TYPE_CHECKING
 if TYPE_CHECKING:
