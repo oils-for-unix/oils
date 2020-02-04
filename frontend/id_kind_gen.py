@@ -118,7 +118,7 @@ namespace id_kind_asdl {
 
     f.write("""\
 from asdl import pybase
-from typing import List
+from typing import List, TYPE_CHECKING
 
 """)
     # Minor style issue: we want Id and Kind, not Id_e and Kind_e

@@ -202,14 +202,15 @@ mycpp-demo() {
   _tmp/$name
 }
 
-osh-parse-preamble() {
+preamble() {
+  local name=$1
   cat <<EOF
-// osh_parse.cc: translated from Python by mycpp
+// $name.cc: translated from Python by mycpp
 
 EOF
 }
 
-compile-osh-parse() {
+compile-slice() {
   local name=${1:-osh_parse}
   # Add -opt to make it opt
   local suffix=${2:-.dbg}
@@ -232,8 +233,8 @@ compile-osh-parse() {
   #2>&1 | tee _tmp/compile.log
 }
 
-compile-osh-parse-opt() {
-  compile-osh-parse '' '.opt'
+compile-slice-opt() {
+  compile-slice '' '.opt'
 
   local opt=_bin/osh_parse.opt
   local stripped=_bin/osh_parse.opt.stripped 
@@ -249,18 +250,18 @@ compile-osh-parse-opt() {
   fi
 }
 
-compile-osh-parse-sizelog() { compile-osh-parse '' '.sizelog'; }
-compile-osh-parse-asan() { compile-osh-parse '' '.asan'; }
-compile-osh-parse-uftrace() { compile-osh-parse '' '.uftrace'; }
-compile-osh-parse-tcmalloc() { compile-osh-parse '' '.tcmalloc'; }
+compile-slice-sizelog() { compile-slice '' '.sizelog'; }
+compile-slice-asan() { compile-slice '' '.asan'; }
+compile-slice-uftrace() { compile-slice '' '.uftrace'; }
+compile-slice-tcmalloc() { compile-slice '' '.tcmalloc'; }
 
 all-variants() {
-  compile-osh-parse  # .dbg version is default
-  compile-osh-parse-sizelog
-  compile-osh-parse-asan
-  compile-osh-parse-opt
-  compile-osh-parse-uftrace
-  compile-osh-parse-tcmalloc
+  compile-slice  # .dbg version is default
+  compile-slice-sizelog
+  compile-slice-asan
+  compile-slice-opt
+  compile-slice-uftrace
+  compile-slice-tcmalloc
 
   # show show linking against libasan, libtcmalloc, etc
   ldd _bin/osh_parse*
@@ -370,17 +371,51 @@ osh-parse() {
 
   #if false; then
   if true; then
-    mycpp $raw bin/$name.py "${OSH_PARSE_FILES[@]}" "${TRANSLATE[@]}"
+    mycpp $raw bin/$name.py "${OSH_PARSE_FILES[@]}" #"${TRANSLATE[@]}"
       #"${MORE_OIL[@]}"
   fi
 
   local cc=_build/cpp/$name.cc
 
-  { osh-parse-preamble 
+  { preamble $name
     cpp-skeleton $name $raw 
   } > $cc
 
-  compile-osh-parse $name
+  compile-slice $name
+}
+
+osh-eval() {
+  local name=${1:-osh_eval}
+
+  local tmp=$TMP
+  mkdir -p $tmp
+
+  local raw=$tmp/${name}_raw.cc 
+
+  #if false; then
+  if true; then
+    # relies on splitting
+    # _devbuild is ASDL stuff
+    # frontend/lex.py is metaprogramming
+    # frontend/match.py is cpp/
+    # asdl/pretty.py is cpp/
+    # core/process.py - not ready
+    # pyutil.py -- Python only (Resource Loader, etc.)
+    # core/util.py -- not ready
+    # frontend/args.py -- has Union
+    # os_path.py: crashes on path += '/' + b
+
+    local exclude='_devbuild/|match.py|lex.py|pretty.py|process.py|pyutil.py|util.py|args.py|os_path.py'
+    mycpp $raw $(egrep -v "$exclude" types/osh-eval-manifest.txt)
+  fi
+
+  local cc=_build/cpp/$name.cc
+
+  { preamble $name
+    cpp-skeleton $name $raw 
+  } > $cc
+
+  compile-slice $name
 }
 
 run-osh-parse() {
@@ -541,7 +576,7 @@ frontend-match-test() {
 tarball-demo() {
   mkdir -p _bin
 
-  time compile-osh-parse-opt
+  time compile-slice-opt
 
   local bin=_bin/osh_parse.opt.stripped
   ls -l $bin
