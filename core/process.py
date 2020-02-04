@@ -18,6 +18,7 @@ import sys
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
     job_state_e, job_state_t,
+    job_status, job_status_t,
     redirect_e, redirect_t,
     redirect__Path, redirect__FileDesc, redirect__HereDoc,
 )
@@ -731,14 +732,9 @@ class Job(object):
     """
     pass
 
-  def Wait(self, waiter):
-    # type: (Waiter) -> None
-    """Wait for this process/pipeline to be stopped or finished.
-
-    Returns:
-      An int for a process
-      A list of ints for a pipeline
-    """
+  def JobWait(self, waiter):
+    # type: (Waiter) -> job_status_t
+    """Wait for this process/pipeline to be stopped or finished."""
     raise NotImplementedError()
 
 
@@ -841,6 +837,11 @@ class Process(Job):
       if self.state != job_state_e.Running:
         break
     return self.status
+
+  def JobWait(self, waiter):
+    # type: (Waiter) -> job_status_t
+    exit_code = self.Wait(waiter)
+    return job_status.Proc(exit_code)
 
   def WhenStopped(self):
     # type: () -> None
@@ -980,6 +981,11 @@ class Pipeline(Job):
         break
 
     return self.pipe_status
+
+  def JobWait(self, waiter):
+    # type: (Waiter) -> job_status_t
+    pipe_status = self.Wait(waiter)
+    return job_status.Pipeline(pipe_status)
 
   def Run(self, waiter, fd_state):
     # type: (Waiter, FdState) -> List[int]

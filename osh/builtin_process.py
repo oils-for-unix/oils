@@ -8,16 +8,20 @@ from __future__ import print_function
 
 import signal  # for calculating numbers
 
-from _devbuild.gen.runtime_asdl import cmd_value__Argv
+from _devbuild.gen.runtime_asdl import (
+    cmd_value__Argv,
+    job_status_e, job_status__Proc, job_status__Pipeline,
+)
 from core import ui
 from core.builtin_def import _Register
 from core.util import log
 from frontend import args
 from osh.builtin import _Builtin
+from mycpp.mylib import tagswitch
 
 import posix_ as posix
 
-from typing import List, Dict, Any, TYPE_CHECKING
+from typing import List, Dict, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command_t
   from core.ui import ErrorFormatter
@@ -130,8 +134,21 @@ class Wait(object):
                           span_id=span_id)
         return 127
 
-      # TODO: Wait for pipelines, and handle PIPESTATUS from Pipeline.Wait().
-      status = job.Wait(self.waiter)
+      # TODO: Does this wait for pipelines?
+      job_status = job.JobWait(self.waiter)
+
+      UP_job_status = job_status
+      with tagswitch(job_status) as case:
+        if case(job_status_e.Proc):
+          job_status = cast(job_status__Proc, UP_job_status)
+          status = job_status.code
+        elif case(job_status_e.Pipeline):
+          # TODO: handle PIPESTATUS?
+          job_status = cast(job_status__Pipeline, UP_job_status)
+          # Is this right?
+          status = job_status.codes[-1]
+        else:
+          raise AssertionError
 
     return status
 
