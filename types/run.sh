@@ -86,7 +86,7 @@ need-typechecking() {
   # `types/osh_parse.sh travis`.
   comm -2 -3 \
     <(checkable-files | sort | grep '.py$' | sed 's@^@./@') \
-    <(cat $MORE_OIL_MANIFEST $OSH_PARSE_MANIFEST | sort) \
+    <(cat $MORE_OIL_MANIFEST $OSH_EVAL_MANIFEST | sort) \
     | xargs wc -l | sort -n
 }
 
