@@ -55,7 +55,7 @@ osh-parse-deps() { deps osh_parse; }
 osh-eval-deps() { deps osh_eval; }
 
 egrep-deps() {
-  cat $OSH_PARSE_DEPS | xargs -- egrep "$@"
+  cat $OSH_EVAL_DEPS | xargs -- egrep "$@"
 }
 
 typecheck-all() {

@@ -427,7 +427,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # imported names.  Might be a problem with names like 'word'?
           if (isinstance(o.expr, NameExpr) and (
               o.expr.name in self.imported_names or
-              o.expr.name == 'mylib' or
+              o.expr.name in ('mylib', 'libc', 'posix') or
               o.name == '__init__'
               )):
             op = '::'
@@ -588,7 +588,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         # Namespace.
         if callee_name == 'int':  # int('foo') in Python conflicts with keyword
-          self.write('str_to_int')
+          self.write('to_int')
         else:
           self.accept(o.callee)  # could be f() or obj.method()
 

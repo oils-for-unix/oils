@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
   char* repeat = getenv("REPEAT");
   if (repeat) {
     Str* r = new Str(repeat);
-    int n = str_to_int(r);
+    int n = to_int(r);
     log("Running %d times", n);
     for (int i = 0; i < n; ++i) { 
       status = $namespace::main(args);
@@ -215,6 +215,8 @@ compile-slice() {
   # Add -opt to make it opt
   local suffix=${2:-.dbg}
 
+  shift 2
+
   mkdir -p _bin
 
   # Note: can't use globs here because we have _test.cc
@@ -229,7 +231,9 @@ compile-slice() {
     _build/cpp/id_kind_asdl.cc \
     _build/cpp/lookup.cc \
     _build/cpp/arith_parse.cc \
-    cpp/dumb_alloc.cc
+    cpp/dumb_alloc.cc \
+    "$@"
+
   #2>&1 | tee _tmp/compile.log
 }
 
@@ -381,7 +385,7 @@ osh-parse() {
     cpp-skeleton $name $raw 
   } > $cc
 
-  compile-slice $name
+  compile-slice $name '.dbg'
 }
 
 osh-eval() {
@@ -408,7 +412,7 @@ osh-eval() {
     # frontend/args.py -- has Union
     # os_path.py: crashes on path += '/' + b
 
-    local exclude='_devbuild/|id_kind.py|match.py|lex.py|meta.py|pretty.py|process.py|pyutil.py|util.py|args.py|os_path.py'
+    local exclude='_devbuild/|pybase.py|id_kind.py|match.py|lex.py|meta.py|pretty.py|process.py|pyutil.py|util.py|args.py|os_path.py'
     mycpp $raw $(egrep -v "$exclude" types/osh-eval-manifest.txt)
   fi
 
@@ -418,7 +422,9 @@ osh-eval() {
     cpp-skeleton $name $raw 
   } > $cc
 
-  compile-slice $name
+  # Add more on top of what's compiled for osh_parse
+  compile-slice $name '.dbg' \
+    cpp/posix.cc cpp/libc.cc
 }
 
 run-osh-parse() {

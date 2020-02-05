@@ -17,6 +17,9 @@ using id_kind_asdl::Kind_t;
 #include "frontend_match.h"
 #include "frontend_tdop.h"
 #include "osh_arith_parse.h"
+// added for osh_eval
+#include "libc.h"
+#include "posix.h"
 
 // Hack for now.  Every sum type should have repr()?
 Str* repr(syntax_asdl::source_t* obj) {

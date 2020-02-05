@@ -373,7 +373,7 @@ bool _str_to_int(Str* s, int* result) {
 }
 
 // Python-like wrapper
-int str_to_int(Str* s) {
+int to_int(Str* s) {
   int i;
   if (_str_to_int(s, &i)) {
     return i;
@@ -382,7 +382,7 @@ int str_to_int(Str* s) {
   }
 }
 
-int str_to_int(Str* s, int base) {
+int to_int(Str* s, int base) {
   assert(0);
 }
 

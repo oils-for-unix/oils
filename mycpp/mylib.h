@@ -612,8 +612,13 @@ Str* repr(Str* s);
 // }
 
 bool _str_to_int(Str* s, int* result);  // for testing only
-int str_to_int(Str* s);
-int str_to_int(Str* s, int base);
+int to_int(Str* s);
+int to_int(Str* s, int base);
+
+// int(a == b) used in arithmetic evaluator 
+inline int to_int(bool b) {
+  return b;
+}
 
 // e.g. ('a' in 'abc')
 inline bool str_contains(Str* haystack, Str* needle) {

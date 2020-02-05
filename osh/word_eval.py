@@ -299,7 +299,7 @@ class _WordEvaluator(SimpleWordEvaluator):
 
   def CheckCircularDeps(self):
     # type: () -> None
-    raise NotImplementedError
+    raise NotImplementedError()
 
   def _EvalCommandSub(self, part, quoted):
     # type: (command_t, bool) -> part_value_t
