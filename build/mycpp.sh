@@ -396,8 +396,11 @@ osh-eval() {
   if true; then
     # relies on splitting
     # _devbuild is ASDL stuff
-    # frontend/lex.py is metaprogramming
-    # frontend/match.py is cpp/
+    # frontend metaprogramming:
+    #   lex.py 
+    #   match.py is cpp/
+    #   id_kind.py
+    # core/meta.py
     # asdl/pretty.py is cpp/
     # core/process.py - not ready
     # pyutil.py -- Python only (Resource Loader, etc.)
@@ -405,7 +408,7 @@ osh-eval() {
     # frontend/args.py -- has Union
     # os_path.py: crashes on path += '/' + b
 
-    local exclude='_devbuild/|match.py|lex.py|pretty.py|process.py|pyutil.py|util.py|args.py|os_path.py'
+    local exclude='_devbuild/|id_kind.py|match.py|lex.py|meta.py|pretty.py|process.py|pyutil.py|util.py|args.py|os_path.py'
     mycpp $raw $(egrep -v "$exclude" types/osh-eval-manifest.txt)
   fi
 
