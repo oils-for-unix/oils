@@ -412,7 +412,7 @@ osh-eval() {
     # frontend/args.py -- has Union
     # os_path.py: crashes on path += '/' + b
 
-    local exclude='_devbuild/|pybase.py|id_kind.py|match.py|lex.py|meta.py|pretty.py|process.py|pyutil.py|util.py|args.py|os_path.py'
+    local exclude='_devbuild/|pybase.py|id_kind.py|match.py|lex.py|meta.py|pretty.py|process.py|pyutil.py|util.py|args.py|os_path.py|path_stat.py|bool_stat.py'
     mycpp $raw $(egrep -v "$exclude" types/osh-eval-manifest.txt)
   fi
 

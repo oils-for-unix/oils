@@ -20,7 +20,9 @@ void glob() {
   assert(0);
 }
 
-void regex_match() {
+// Raises RuntimeError if the pattern is invalid.  TODO: Use a different
+// exception?
+List<Str*>* regex_match(Str* pattern, Str* str) {
   assert(0);
 }
 

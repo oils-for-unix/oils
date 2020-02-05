@@ -13,6 +13,15 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t
 from core.util import e_die
 
 
+def isatty(fd, s, blame_word):
+  # type: (int, str, word_t) -> bool
+  try:
+    return posix.isatty(fd)
+  # fd is user input, and causes this exception in the binding.
+  except OverflowError:
+    e_die('File descriptor %r is too big', s, word=blame_word)
+
+
 def DoUnaryOp(op_id, s):
   # type: (Id_t, str) -> bool
 

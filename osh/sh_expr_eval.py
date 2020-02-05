@@ -155,11 +155,15 @@ def EvalLhs(node, arith_ev, mem, spid, lookup_mode):
   assert isinstance(node, sh_lhs_expr_t), node
 
   UP_node = node
+  lval = None  # type: lvalue_t
   with tagswitch(node) as case:
     if case(sh_lhs_expr_e.Name):  # a=x
       node = cast(sh_lhs_expr__Name, UP_node)
 
-      lval = lvalue.Named(node.name, [spid])  # type: lvalue_t
+      # Note: C++ constructor doesn't take spids directly.  Should we add that?
+      lval1 = lvalue.Named(node.name)
+      lval1.spids.append(spid)
+      lval = lval1
 
     elif case(sh_lhs_expr_e.IndexedName):  # a[1+2]=x
       node = cast(sh_lhs_expr__IndexedName, UP_node)
@@ -167,11 +171,15 @@ def EvalLhs(node, arith_ev, mem, spid, lookup_mode):
       if mem.IsAssocArray(node.name, lookup_mode):
         key = arith_ev.EvalWordToString(node.index)
         # copy left-mode spid
-        lval = lvalue.Keyed(node.name, key, [node.spids[0]])
+        lval2 = lvalue.Keyed(node.name, key)
+        lval2.spids.append(node.spids[0])
+        lval = lval2
       else:
         index = arith_ev.EvalToInt(node.index)
         # copy left-mode spid
-        lval = lvalue.Indexed(node.name, index, [node.spids[0]])
+        lval3 = lvalue.Indexed(node.name, index)
+        lval3.spids.append(node.spids[0])
+        lval = lval3
 
     else:
       raise AssertionError(node.tag_())
@@ -407,7 +415,9 @@ class ArithEvaluator(_ExprEvaluator):
     Also used internally.
     """
     val = self.Eval(node)
-    i = self._ValToIntOrError(val)
+    # TODO: Can we avoid the runtime cost of adding location info?
+    span_id = location.SpanForArithExpr(node)
+    i = self._ValToIntOrError(val, span_id=span_id)
     return i
 
   def Eval(self, node):
@@ -788,11 +798,7 @@ class BoolEvaluator(_ExprEvaluator):
             except ValueError:
               # TODO: Need location information of [
               e_die('Invalid file descriptor %r', s, word=node.child)
-            try:
-              return posix.isatty(fd)
-            # fd is user input, and causes this exception in the binding.
-            except OverflowError:
-              e_die('File descriptor %r is too big', s, word=node.child)
+            return bool_stat.isatty(fd, s, node.child)
 
           # See whether 'set -o' options have been set
           if op_id == Id.BoolUnary_o:
@@ -810,7 +816,7 @@ class BoolEvaluator(_ExprEvaluator):
         # Whether to glob escape
         with switch(op_id) as case2:
           if case2(Id.BoolBinary_GlobEqual, Id.BoolBinary_GlobDEqual,
-                  Id.BoolBinary_GlobNEqual):
+                   Id.BoolBinary_GlobNEqual):
             quote_kind = quote_e.FnMatch
           elif case2(Id.BoolBinary_EqualTilde):
             quote_kind = quote_e.ERE
