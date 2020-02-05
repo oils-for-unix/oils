@@ -108,7 +108,6 @@ def ExtendedRegexEscape(s):
   return util.BackslashEscape(s, ERE_META_CHARS)
 
 
-
 def GlobUnescape(s):  # used by cmd_exec
   # type: (str) -> str
   """Remove glob escaping from a string.

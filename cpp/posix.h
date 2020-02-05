@@ -7,6 +7,11 @@
 
 namespace posix {
 
+// aliases in this namespace
+extern int X_OK;
+extern int R_OK;
+extern int W_OK;
+
 int access(Str *pathname, int mode) {
   assert(0);
 }
@@ -32,6 +37,10 @@ int getppid() {
 }
 
 int getuid() {
+  assert(0);
+}
+
+bool isatty(int fd) {
   assert(0);
 }
 

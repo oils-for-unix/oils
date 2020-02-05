@@ -2,8 +2,6 @@
 word_eval.py - Evaluator for the word language.
 """
 
-import pwd
-
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_str, Kind_str
 from _devbuild.gen.syntax_asdl import (
     braced_var_sub, Token,
@@ -29,6 +27,7 @@ from _devbuild.gen.runtime_asdl import (
 )
 from core import builtin_def
 from core import error
+from core import passwd
 from core import process
 from core.util import log, e_die
 from frontend import lookup
@@ -341,20 +340,7 @@ class _WordEvaluator(SimpleWordEvaluator):
         return val.s
       return process.GetHomeDir()
 
-    # For ~otheruser/src.  TODO: Should this be cached?
-    # http://linux.die.net/man/3/getpwnam
-    name = token.val[1:]
-    try:
-      e = pwd.getpwnam(name)
-    except KeyError:
-      # If not found, it's ~nonexistent.  TODO: In strict mode, this should be
-      # an error, kind of like failglob and nounset.  Perhaps strict-tilde or
-      # even strict-word-eval.
-      result = token.val
-    else:
-      result = e.pw_dir
-
-    return result
+    return passwd.GetHomeDir(token)
 
   def _EvalVarNum(self, var_num):
     # type: (int) -> value_t

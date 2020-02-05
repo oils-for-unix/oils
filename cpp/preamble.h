@@ -18,8 +18,17 @@ using id_kind_asdl::Kind_t;
 #include "frontend_tdop.h"
 #include "osh_arith_parse.h"
 // added for osh_eval
+#include "core_passwd.h"
 #include "libc.h"
 #include "posix.h"
+
+// Stubs for Python exceptions.  TODO: Move to mylib if they're used?
+
+class ValueError {
+};
+
+class OSError {
+};
 
 // Hack for now.  Every sum type should have repr()?
 Str* repr(syntax_asdl::source_t* obj) {

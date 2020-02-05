@@ -332,8 +332,8 @@ readonly TRANSLATE=(
   #$REPO_ROOT/osh/sh_expr_eval.py
 
   ## except (e1, e2) isn't supported for InvalidSlice, utf-8
-  #$REPO_ROOT/osh/word_eval.py
-  $REPO_ROOT/osh/state.py
+  $REPO_ROOT/osh/word_eval.py
+  #$REPO_ROOT/osh/state.py
 
   ## except (e1, e2) isn't supported
   #$REPO_ROOT/osh/cmd_exec.py
@@ -375,7 +375,7 @@ osh-parse() {
 
   #if false; then
   if true; then
-    mycpp $raw bin/$name.py "${OSH_PARSE_FILES[@]}" #"${TRANSLATE[@]}"
+    mycpp $raw bin/$name.py "${OSH_PARSE_FILES[@]}" "${TRANSLATE[@]}"
       #"${MORE_OIL[@]}"
   fi
 
