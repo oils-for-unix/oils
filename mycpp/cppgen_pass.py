@@ -1570,7 +1570,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             class_name == 'WordParser' and func_name == '_ParseVarExpr' or
             class_name == '_WordEvaluator' and 
               func_name in ('EvalWordSequence2', '_EvalWordToParts',
-                            '_EmptyStrOrError', '_EvalWordPart', 'EvalWordToString') or
+                            '_EmptyStrOrError', '_EvalWordPart') or
+            # virtual method in several classes
+            func_name == 'EvalWordToString' or
+            class_name == 'ArithEvaluator' and func_name == '_ValToIntOrError' or
+            class_name is None and func_name == '_StringToInteger' or
+            class_name == 'BoolEvaluator' and func_name in ('_EvalCompoundWord', '_StringToIntegerOrError') or
             class_name == 'Executor' and func_name == '_Execute' or
             class_name == 'Mem' and func_name == 'GetVar' or
             class_name == 'SearchPath' and func_name == 'Lookup'

@@ -235,6 +235,10 @@ class Str {
     assert(0);
   }
 
+  List<Str*>* split(Str* sep, int max_split) {
+    assert(0);
+  }
+
   List<Str*>* splitlines(bool keep) {
     assert(keep == true);
     return nullptr;

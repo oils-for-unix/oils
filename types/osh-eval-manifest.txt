@@ -31,6 +31,7 @@
 ./oil_lang/expr_to_ast.py
 ./osh/arith_parse.py
 ./osh/bool_parse.py
+./osh/bool_stat.py
 ./osh/braces.py
 ./osh/cmd_parse.py
 ./osh/glob_.py

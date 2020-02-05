@@ -9,8 +9,6 @@
 expr_eval.py -- Currently used for boolean and arithmetic expressions.
 """
 
-import stat
-
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.id_tables import BOOL_ARG_TYPES
 from _devbuild.gen.runtime_asdl import (
@@ -34,6 +32,7 @@ from _devbuild.gen.types_asdl import bool_arg_type_e
 from asdl import runtime
 from core import error
 from core.util import e_die
+from osh import bool_stat
 from osh import state
 from osh import word_
 
@@ -41,10 +40,7 @@ from mycpp import mylib
 from mycpp.mylib import tagswitch, switch
 
 import posix_ as posix
-try:
-  import libc  # for fnmatch
-except ImportError:
-  from benchmarks import fake_libc as libc  # type: ignore
+import libc  # for fnmatch
 
 from typing import List, Tuple, Optional, cast, Any, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -92,17 +88,17 @@ def _StringToInteger(s, span_id=runtime.NO_SPID):
 
     integer = 0
     n = 1
-    for char in digits:
-      if 'a' <= char and char <= 'z':
-        digit = ord(char) - ord('a') + 10
-      elif 'A' <= char and char <= 'Z':
-        digit = ord(char) - ord('A') + 36
-      elif char == '@':  # horrible syntax
+    for ch in digits:
+      if 'a' <= ch and ch <= 'z':
+        digit = ord(ch) - ord('a') + 10
+      elif 'A' <= ch and ch <= 'Z':
+        digit = ord(ch) - ord('A') + 36
+      elif ch == '@':  # horrible syntax
         digit = 62
-      elif char == '_':
+      elif ch == '_':
         digit = 63
-      elif char.isdigit():
-        digit = int(char)
+      elif ch.isdigit():
+        digit = int(ch)
       else:
         e_die('Invalid digits for numeric constant %r', digits, span_id=span_id)
 
@@ -144,7 +140,7 @@ def _LookupVar(name, mem, exec_opts):
   val = mem.GetVar(name)
   # By default, undefined variables are the ZERO value.  TODO: Respect
   # nounset and raise an exception.
-  if val.tag == value_e.Undef and exec_opts.nounset:
+  if val.tag_() == value_e.Undef and exec_opts.nounset:
     e_die('Undefined variable %r', name)  # TODO: need token
   return val
 
@@ -335,32 +331,11 @@ class _ExprEvaluator(object):
     # type: () -> None
     assert self.word_ev is not None
 
-  def _StringToIntegerOrError(self, s, blame_word=None,
-                              span_id=runtime.NO_SPID):
-    # type: (str, Optional[word_t], int) -> int
-    """Used by both [[ $x -gt 3 ]] and (( $x ))."""
-    if span_id == runtime.NO_SPID and blame_word:
-      span_id = word_.LeftMostSpanForWord(blame_word)
-
-    try:
-      i = _StringToInteger(s, span_id=span_id)
-    except error.FatalRuntime as e:
-      if self.exec_opts.strict_arith:
-        raise
-      else:
-        self.errfmt.PrettyPrintError(e, prefix='warning: ')
-        i = 0
-    return i
-
 
 class ArithEvaluator(_ExprEvaluator):
 
-  def _ValToIntOrError(self, val, blame_word=None, span_id=runtime.NO_SPID):
-    # type: (value_t, word_t, int) -> int
-    if span_id == runtime.NO_SPID and blame_word:
-      span_id = word_.LeftMostSpanForWord(blame_word)
-    #log('_ValToIntOrError span=%s blame=%s', span_id, blame_word)
-
+  def _ValToIntOrError(self, val, span_id=runtime.NO_SPID):
+    # type: (value_t, int) -> int
     try:
       UP_val = val
       with tagswitch(val) as case:
@@ -410,7 +385,7 @@ class ArithEvaluator(_ExprEvaluator):
     """
     val, lval = EvalLhsAndLookup(node, self, self.mem, self.exec_opts)
 
-    if val.tag == value_e.MaybeStrArray:
+    if val.tag_() == value_e.MaybeStrArray:
       e_die("Can't use assignment like ++ or += on arrays")
 
     # TODO: attribute a span ID here.  There are a few cases, like UnaryAssign
@@ -732,15 +707,33 @@ class ArithEvaluator(_ExprEvaluator):
 
 class BoolEvaluator(_ExprEvaluator):
 
-  def _SetRegexMatches(self, matches):
-    # type: (List[str]) -> None
-    """For ~= to set the BASH_REMATCH array."""
-    state.SetGlobalArray(self.mem, 'BASH_REMATCH', matches)
+  def _StringToIntegerOrError(self, s, blame_word=None):
+    # type: (str, Optional[word_t]) -> int
+    """Used by both [[ $x -gt 3 ]] and (( $x ))."""
+    if blame_word:
+      span_id = word_.LeftMostSpanForWord(blame_word)
+    else:
+      span_id = runtime.NO_SPID
+
+    try:
+      i = _StringToInteger(s, span_id=span_id)
+    except error.FatalRuntime as e:
+      if self.exec_opts.strict_arith:
+        raise
+      else:
+        self.errfmt.PrettyPrintError(e, prefix='warning: ')
+        i = 0
+    return i
 
   def _EvalCompoundWord(self, word, quote_kind=quote_e.Default):
     # type: (word_t, quote_t) -> str
     val = self.word_ev.EvalWordToString(word, quote_kind=quote_kind)
     return val.s
+
+  def _SetRegexMatches(self, matches):
+    # type: (List[str]) -> None
+    """For ~= to set the BASH_REMATCH array."""
+    state.SetGlobalArray(self.mem, 'BASH_REMATCH', matches)
 
   def Eval(self, node):
     # type: (bool_expr_t) -> bool
@@ -781,68 +774,7 @@ class BoolEvaluator(_ExprEvaluator):
         arg_type = BOOL_ARG_TYPES[op_id]  # could be static in the LST?
 
         if arg_type == bool_arg_type_e.Path:
-          # Only use lstat if we're testing for a symlink.
-          if op_id in (Id.BoolUnary_h, Id.BoolUnary_L):
-            try:
-              mode = posix.lstat(s).st_mode
-            except OSError:
-              # TODO: simple_test_builtin should this as status=2.
-              #e_die("lstat() error: %s", e, word=node.child)
-              return False
-
-            return stat.S_ISLNK(mode)
-
-          try:
-            st = posix.stat(s)
-          except OSError as e:
-            # TODO: simple_test_builtin should this as status=2.
-            # Problem: we really need errno, because test -f / is bad argument,
-            # while test -f /nonexistent is a good argument but failed.  Gah.
-            # ENOENT vs. ENAMETOOLONG.
-            #e_die("stat() error: %s", e, word=node.child)
-            return False
-          mode = st.st_mode
-
-          if op_id in (Id.BoolUnary_e, Id.BoolUnary_a):  # -a is alias for -e
-            return True
-
-          if op_id == Id.BoolUnary_f:
-            return stat.S_ISREG(mode)
-
-          if op_id == Id.BoolUnary_d:
-            return stat.S_ISDIR(mode)
-
-          if op_id == Id.BoolUnary_b:
-            return stat.S_ISBLK(mode)
-
-          if op_id == Id.BoolUnary_c:
-            return stat.S_ISCHR(mode)
-
-          if op_id == Id.BoolUnary_p:
-            return stat.S_ISFIFO(mode)
-
-          if op_id == Id.BoolUnary_S:
-            return stat.S_ISSOCK(mode)
-
-          if op_id == Id.BoolUnary_x:
-            return posix.access(s, posix.X_OK)
-
-          if op_id == Id.BoolUnary_r:
-            return posix.access(s, posix.R_OK)
-
-          if op_id == Id.BoolUnary_w:
-            return posix.access(s, posix.W_OK)
-
-          if op_id == Id.BoolUnary_s:
-            return st.st_size != 0
-
-          if op_id == Id.BoolUnary_O:
-            return st.st_uid == posix.geteuid()
-
-          if op_id == Id.BoolUnary_G:
-            return st.st_gid == posix.getegid()
-
-          e_die("%s isn't implemented", op_id)  # implicit location
+          return bool_stat.DoUnaryOp(op_id, s)
 
         if arg_type == bool_arg_type_e.Str:
           if op_id == Id.BoolUnary_z:
@@ -895,32 +827,7 @@ class BoolEvaluator(_ExprEvaluator):
         arg_type = BOOL_ARG_TYPES[op_id]
 
         if arg_type == bool_arg_type_e.Path:
-          try:
-            st1 = posix.stat(s1)
-          except OSError:
-            st1 = None
-          try:
-            st2 = posix.stat(s2)
-          except OSError:
-            st2 = None
-
-          if op_id in (Id.BoolBinary_nt, Id.BoolBinary_ot):
-            # pretend it's a very old file
-            m1 = 0 if st1 is None else st1.st_mtime
-            m2 = 0 if st2 is None else st2.st_mtime
-            if op_id == Id.BoolBinary_nt:
-              return m1 > m2
-            else:
-              return m1 < m2
-
-          if op_id == Id.BoolBinary_ef:
-            if st1 is None:
-              return False
-            if st2 is None:
-              return False
-            return st1.st_dev == st2.st_dev and st1.st_ino == st2.st_ino
-
-          raise AssertionError(op_id)
+          return bool_stat.DoBinaryOp(op_id, s1, s2)
 
         if arg_type == bool_arg_type_e.Int:
           # NOTE: We assume they are constants like [[ 3 -eq 3 ]].

@@ -30,6 +30,9 @@ class ValueError {
 class OSError {
 };
 
+class KeyboardInterrupt {
+};
+
 // Hack for now.  Every sum type should have repr()?
 Str* repr(syntax_asdl::source_t* obj) {
   return new Str("TODO");

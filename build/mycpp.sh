@@ -329,7 +329,7 @@ readonly TRANSLATE=(
   #$REPO_ROOT/osh/glob_.py
   #$REPO_ROOT/osh/string_ops.py
 
-  #$REPO_ROOT/osh/sh_expr_eval.py
+  $REPO_ROOT/osh/sh_expr_eval.py
 
   ## except (e1, e2) isn't supported for InvalidSlice, utf-8
   $REPO_ROOT/osh/word_eval.py

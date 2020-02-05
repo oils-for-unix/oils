@@ -781,7 +781,7 @@ class _WordEvaluator(SimpleWordEvaluator):
     maybe_decay_array = False  # for $*, ${a[*]}, etc.
     bash_array_compat = False  # for ${BASH_SOURCE}
 
-    var_name = None  # For ${foo=default}
+    var_name = None  # type: str  # For ${foo=default}
 
     # 1. Evaluate from (var_name, var_num, token Id) -> value
     if part.token.id == Id.VSub_Name:
