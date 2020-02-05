@@ -40,10 +40,9 @@ from osh import word_
 from mycpp import mylib
 from mycpp.mylib import tagswitch, switch
 
-import posix_ as posix
 import libc  # for fnmatch
 
-from typing import List, Tuple, Optional, cast, Any, TYPE_CHECKING
+from typing import List, Tuple, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from osh.state import Mem, ExecOpts
@@ -327,11 +326,8 @@ class _ExprEvaluator(object):
   """
 
   def __init__(self, mem, exec_opts, errfmt):
-    # type: (Mem, Any, ErrorFormatter) -> None
-
+    # type: (Mem, ExecOpts, ErrorFormatter) -> None
     self.word_ev = None  # type: word_eval.SimpleWordEvaluator
-
-    # TODO: Remove Any by fixing _DummyExecOpts in osh/builtin_bracket.py
     self.mem = mem
     self.exec_opts = exec_opts
     self.errfmt = errfmt
@@ -714,6 +710,16 @@ class ArithEvaluator(_ExprEvaluator):
 
 class BoolEvaluator(_ExprEvaluator):
 
+  def __init__(self, mem, exec_opts, errfmt):
+    # type: (Mem, ExecOpts, ErrorFormatter) -> None
+    _ExprEvaluator.__init__(self, mem, exec_opts, errfmt)
+    self.always_strict = False
+
+  def Init_AlwaysStrict(self):
+    # type: () -> None
+    """For builtin_bracket.py."""
+    self.always_strict = True
+
   def _StringToIntegerOrError(self, s, blame_word=None):
     # type: (str, Optional[word_t]) -> int
     """Used by both [[ $x -gt 3 ]] and (( $x ))."""
@@ -725,7 +731,7 @@ class BoolEvaluator(_ExprEvaluator):
     try:
       i = _StringToInteger(s, span_id=span_id)
     except error.FatalRuntime as e:
-      if self.exec_opts.strict_arith:
+      if self.always_strict or self.exec_opts.strict_arith:
         raise
       else:
         self.errfmt.PrettyPrintError(e, prefix='warning: ')

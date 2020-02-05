@@ -10,6 +10,7 @@ import stat
 import posix_ as posix
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
+from _devbuild.gen.syntax_asdl import word_t
 from core.util import e_die
 
 

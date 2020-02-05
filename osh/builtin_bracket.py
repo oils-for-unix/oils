@@ -26,10 +26,11 @@ from osh import word_eval
 from typing import cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from core.ui import ErrorFormatter
-    from _devbuild.gen.runtime_asdl import cmd_value__Argv, value__Str
-    from _devbuild.gen.syntax_asdl import word__String, bool_expr_t
-    from _devbuild.gen.types_asdl import lex_mode_t
+  from _devbuild.gen.runtime_asdl import cmd_value__Argv, value__Str
+  from _devbuild.gen.syntax_asdl import word__String, bool_expr_t
+  from _devbuild.gen.types_asdl import lex_mode_t
+  from core.ui import ErrorFormatter
+  from osh.state import ExecOpts
 
 
 class _StringWordEmitter(word_parse.WordEmitter):
@@ -152,9 +153,10 @@ def _ThreeArgs(w_parser):
 
 
 class Test(object):
-  def __init__(self, need_right_bracket, errfmt):
-    # type: (bool, ErrorFormatter) -> None
+  def __init__(self, need_right_bracket, exec_opts, errfmt):
+    # type: (bool, ExecOpts, ErrorFormatter) -> None
     self.need_right_bracket = need_right_bracket
+    self.exec_opts = exec_opts
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
@@ -224,17 +226,11 @@ class Test(object):
     # mem: Don't need it for BASH_REMATCH?  Or I guess you could support it
     mem = None  # Not necessary
     word_ev = _WordEvaluator()
-    arena = None
 
+    bool_ev = sh_expr_eval.BoolEvaluator(mem, self.exec_opts, self.errfmt)
     # We want [ a -eq a ] to always be an error, unlike [[ a -eq a ]].  This is a
     # weird case of [[ being less strict.
-    class _DummyExecOpts():
-      def __init__(self):
-        # type: () -> None
-        self.strict_arith = True
-    exec_opts = _DummyExecOpts()
-
-    bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, arena)
+    bool_ev.Init_AlwaysStrict()
     bool_ev.word_ev = word_ev
     bool_ev.CheckCircularDeps()
     try:

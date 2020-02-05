@@ -460,8 +460,8 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.COMPADJUST: builtin_comp.CompAdjust(mem),
 
       # test / [ differ by need_right_bracket
-      builtin_e.TEST: builtin_bracket.Test(False, errfmt),
-      builtin_e.BRACKET: builtin_bracket.Test(True, errfmt),
+      builtin_e.TEST: builtin_bracket.Test(False, exec_opts, errfmt),
+      builtin_e.BRACKET: builtin_bracket.Test(True, exec_opts, errfmt),
 
       # ShAssignment (which are pure)
       builtin_e.DECLARE: new_var,

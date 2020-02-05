@@ -425,6 +425,7 @@ test -o nounset
 echo status=$?
 
 set -o nounset
+test -o nounset
 echo status=$?
 
 test -o _bad_name_
@@ -436,7 +437,7 @@ status=1
 ## END
 ## N-I dash STDOUT:
 status=2
-status=0
+status=2
 status=2
 ## END
 
