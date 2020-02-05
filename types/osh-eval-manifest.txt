@@ -23,6 +23,7 @@
 ./frontend/id_kind.py
 ./frontend/lexer.py
 ./frontend/lex.py
+./frontend/location.py
 ./frontend/lookup.py
 ./frontend/match.py
 ./frontend/parse_lib.py

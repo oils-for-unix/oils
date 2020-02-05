@@ -12,11 +12,16 @@ from _devbuild.gen.syntax_asdl import (
     command_e, command_t, command__Pipeline, command__AndOr,
     command__DoGroup, command__BraceGroup, command__Subshell,
     command__WhileUntil, command__If, command__Case, command__TimeBlock,
+
+    arith_expr_e, arith_expr_t, arith_expr__ArithWord,
 )
 from asdl import runtime
 from core.util import log
+from mycpp.mylib import tagswitch
+from osh import word_
 
 from typing import cast
+
 
 def SpanForCommand(node):
   # type: (command_t) -> int
@@ -56,5 +61,19 @@ def SpanForCommand(node):
   # We never have this case?
   #if node.tag == command_e.CommandList:
   #  pass
+
+  return runtime.NO_SPID
+
+
+def SpanForArithExpr(node):
+  # type: (arith_expr_t) -> int
+  UP_node = node
+  with tagswitch(node) as case:
+    if case(arith_expr_e.VarRef):
+      # TODO: VarRef should store a token instead of a string!
+      return runtime.NO_SPID
+    elif case(arith_expr_e.ArithWord):
+      node = cast(arith_expr__ArithWord, UP_node)
+      return word_.LeftMostSpanForWord(node.w)
 
   return runtime.NO_SPID

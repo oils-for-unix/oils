@@ -32,6 +32,7 @@ from _devbuild.gen.types_asdl import bool_arg_type_e
 from asdl import runtime
 from core import error
 from core.util import e_die
+from frontend import location
 from osh import bool_stat
 from osh import state
 from osh import word_
@@ -490,13 +491,15 @@ class ArithEvaluator(_ExprEvaluator):
           new_int = old_int - rhs
         elif op_id == Id.Arith_StarEqual:
           new_int = old_int * rhs
+
         elif op_id == Id.Arith_SlashEqual:
-          try:
-            new_int = old_int / rhs
-          except ZeroDivisionError:
-            # TODO: location
-            e_die('Divide by zero')
+          if rhs == 0:
+            e_die('Divide by zero')  # TODO: location
+          new_int = old_int / rhs
+
         elif op_id == Id.Arith_PercentEqual:
+          if rhs == 0:
+            e_die('Divide by zero')  # TODO: location
           new_int = old_int % rhs
 
         elif op_id == Id.Arith_DGreatEqual:
@@ -604,25 +607,19 @@ class ArithEvaluator(_ExprEvaluator):
         elif op_id == Id.Arith_Star:
           ret =  lhs * rhs
         elif op_id == Id.Arith_Slash:
-          try:
-            ret = lhs / rhs
-          except ZeroDivisionError:
-            # TODO: _ErrorWithLocation should also accept arith_expr ?  I
-            # think I needed that for other stuff.
-            # Or I could blame the '/' token, instead of op_id.
-            error_expr = node.right  # node is Binary
-            UP_error_expr = error_expr
-            with tagswitch(error_expr) as case2:
-              if case(arith_expr_e.VarRef):
-                # TODO: VarRef should store a token instead of a string!
-                e_die('Divide by zero (name)')
-              elif case(arith_expr_e.ArithWord):
-                error_expr = cast(arith_expr__ArithWord, UP_error_expr)
-                e_die('Divide by zero', word=error_expr.w)
-              else:
-                e_die('Divide by zero')
+          if rhs == 0:
+            # TODO: Could also blame /
+            e_die('Divide by zero',
+                  span_id=location.SpanForArithExpr(node.right))
+
+          ret = lhs / rhs
 
         elif op_id == Id.Arith_Percent:
+          if rhs == 0:
+            # TODO: Could also blame /
+            e_die('Divide by zero',
+                  span_id=location.SpanForArithExpr(node.right))
+
           ret = lhs % rhs
 
         elif op_id == Id.Arith_DStar:

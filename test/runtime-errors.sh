@@ -339,27 +339,18 @@ nounset_arith() {
 }
 
 divzero() {
-  echo $(( 1 / 0 ))
+  _error-case 'echo $(( 1 / 0 ))'
+  _error-case 'echo $(( 1 % 0 ))'
 
-  echo 'SHOULD NOT GET HERE'
-}
+  _error-case 'zero=0; echo $(( 1 / zero ))'
+  _error-case 'zero=0; echo $(( 1 % zero ))'
 
-divzero_var() {
-  local zero=0
-  echo $(( 1 / zero ))
+  _error-case '(( a = 1 / 0 )); echo non-fatal; exit 1'
+  _error-case '(( a = 1 % 0 )); echo non-fatal; exit 1'
 
-  echo 'SHOULD NOT GET HERE'
-}
-
-divzero_dparen() {
-  (( 1 / 0 ))
-
-  echo 'Divide by zero in dparen is non-fatal unless errexit!'
-
-  set -o errexit
-  (( 1 / 0 ))
-
-  echo 'SHOULD NOT GET HERE'
+  # fatal!
+  _error-case 'set -e; (( a = 1 / 0 ));'
+  _error-case 'set -e; (( a = 1 % 0 ));'
 }
 
 # Only dash flags this as an error.
@@ -708,7 +699,8 @@ all() {
     pipefail_while pipefail_multiple \
     core_process osh_state \
     nounset bad_var_ref \
-    nounset_arith divzero divzero_var array_arith undef_arith undef_arith2 \
+    nounset_arith divzero \
+    array_arith undef_arith undef_arith2 \
     undef_assoc_array \
     string_to_int_arith string_to_hex string_to_octal \
     string_to_intbase string_to_int_bool string_as_array \
