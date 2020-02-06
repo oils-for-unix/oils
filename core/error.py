@@ -88,14 +88,19 @@ class FatalRuntime(_ErrorWithLocation):
   """
 
 
-class InvalidSlice(FatalRuntime):
-  """Whether this is fatal depends on set -o strict-word-eval.
+class Strict(_ErrorWithLocation):
   """
+  Whether this is fatal depends on shell options, e.g.
 
+    set -o strict_arith
+    set -o strict_word_eval
 
-class InvalidUtf8(FatalRuntime):
-  """Whether this is fatal depends on set -o strict-word-eval.
+  TODO: We could do
+
+  OIL_STRICT_PRINT=2   # print warnings at level 2 and above
+  OIL_STRICT_DIE=1  # abort the program at level 1 and above
   """
+  # TODO: This should have a level too?
 
 
 class ErrExit(FatalRuntime):

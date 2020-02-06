@@ -29,7 +29,7 @@ from core import builtin_def
 from core import error
 from core import passwd
 from core import process
-from core.util import log, e_die
+from core.util import log, e_die, e_strict
 from frontend import lookup
 from frontend import match
 from osh import braces
@@ -218,7 +218,7 @@ def _PerformSlice(val,  # type: value_t
 
         # TODO: Instead of attributing it to the word part, it would be
         # better if we attributed it to arith_expr begin.
-        raise error.InvalidSlice(
+        e_strict(
             "The start index of a string slice can't be negative: %d",
             begin, part=part)
 
@@ -228,7 +228,7 @@ def _PerformSlice(val,  # type: value_t
         if length < 0:
           # TODO: Instead of attributing it to the word part, it would be
           # better if we attributed it to arith_expr begin.
-          raise error.InvalidSlice(
+          e_strict(
               "The length of a string slice can't be negative: %d",
               length, part=part)
 
@@ -545,8 +545,8 @@ class _WordEvaluator(SimpleWordEvaluator):
           # https://stackoverflow.com/questions/17368067/length-of-string-in-bash
           try:
             length = string_ops.CountUtf8Chars(val.s)
-          except error.InvalidUtf8 as e:
-            # Add this hear so we don't have to add it so far down the stack.
+          except error.Strict as e:
+            # Add this here so we don't have to add it so far down the stack.
             # TODO: It's better to show BOTH this CODE an the actual DATA
             # somehow.
             e.span_id = token.span_id
@@ -1045,7 +1045,7 @@ class _WordEvaluator(SimpleWordEvaluator):
 
           try:
             val = _PerformSlice(val, begin, length, has_length, part)
-          except (error.InvalidSlice, error.InvalidUtf8) as e:
+          except error.Strict as e:
             if self.exec_opts.strict_word_eval:
               raise
             else:

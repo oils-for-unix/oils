@@ -52,6 +52,15 @@ def e_die(msg, *args, **kwargs):
   raise error.FatalRuntime(msg, *args, **kwargs)
 
 
+def e_strict(msg, *args, **kwargs):
+  # type: (str, *Any, **Any) -> NoReturn
+  """Convenience wrapper for strictness errors.
+
+  TODO: This could have a level too?
+  """
+  raise error.Strict(msg, *args, **kwargs)
+
+
 def log(msg, *args):
   # type: (str, *Any) -> None
   if args:

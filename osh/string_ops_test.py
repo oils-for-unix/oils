@@ -46,7 +46,7 @@ class LibStrTest(unittest.TestCase):
           actual_indexes.append(i)
           if i >= len(input_str):
             break
-        except error.InvalidUtf8 as e:
+        except error.Strict as e:
           actual_indexes.append(e.msg)
           break
       self.assertEqual(expected_indexes, actual_indexes)
@@ -71,7 +71,7 @@ class LibStrTest(unittest.TestCase):
           actual_indexes.append(i)
           if i == 0:
             break
-        except error.InvalidUtf8 as e:
+        except error.Strict  as e:
           actual_indexes.append(e.msg)
           break
       self.assertEqual(expected_indexes, actual_indexes)

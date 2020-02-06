@@ -66,7 +66,7 @@ INVALID_START = 'Invalid start of UTF-8 character'
 def _CheckContinuationByte(byte):
   # type: (str) -> None
   if (ord(byte) >> 6) != 0b10:
-    raise error.InvalidUtf8(INVALID_CONT)
+    raise error.Strict(INVALID_CONT)
 
 
 def _Utf8CharLen(starting_byte):
@@ -80,7 +80,7 @@ def _Utf8CharLen(starting_byte):
   elif (starting_byte >> 3) == 0b11110:
     return 4
   else:
-    raise error.InvalidUtf8(INVALID_START)
+    raise error.Strict(INVALID_START)
 
 
 def _NextUtf8Char(s, i):
@@ -101,7 +101,7 @@ def _NextUtf8Char(s, i):
       _CheckContinuationByte(s[j])
     i += length
   except IndexError:
-    raise error.InvalidUtf8(INCOMPLETE_CHAR)
+    raise error.Strict(INCOMPLETE_CHAR)
 
   return i
 
@@ -149,10 +149,10 @@ def _PreviousUtf8Char(s, i):
         # Leaving a generic error for now, but if we want to, it's not
         # hard to calculate the position where things go wrong.  Note
         # that offset might be more than 4, for an invalid utf-8 string.
-        raise error.InvalidUtf8(INVALID_START)
+        raise error.Strict(INVALID_START)
       return i
 
-  raise error.InvalidUtf8(INVALID_START)
+  raise error.Strict(INVALID_START)
 
 
 def CountUtf8Chars(s):
