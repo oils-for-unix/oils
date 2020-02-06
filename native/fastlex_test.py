@@ -12,7 +12,7 @@ from __future__ import print_function
 
 import unittest
 
-#from core.util import log
+from core.util import log
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.types_asdl import lex_mode_e
 
@@ -50,6 +50,12 @@ class LexTest(unittest.TestCase):
     TokenizeLineOuter(line)
     line = 'end of file\0'
     TokenizeLineOuter(line)
+
+  def testMatchOption(self):
+    log('MatchOption')
+    for case in ['', 'pipefail', 'foo', 'pipefai', 'pipefail_', 'strict_errexit']:
+      result = fastlex.MatchOption(case)
+      log('case %r, result = %s', case, result)
 
   def testOutOfBounds(self):
     print(MatchOshToken(lex_mode_e.ShCommand, 'line', 3))

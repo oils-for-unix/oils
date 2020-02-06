@@ -90,6 +90,17 @@ id-cpp-gen() {
   frontend/id_kind_gen.py cc-tables $out_dir/lookup
 }
 
+option-mypy-gen() {
+  local out=_devbuild/gen/option_asdl.py
+  frontend/option_gen.py mypy > $out
+  log "Wrote $out"
+}
+
+option-cpp-gen() {
+  local out_dir=_build/cpp
+  frontend/option_gen.py cpp $out_dir/option_asdl
+}
+
 lexer-gen() { frontend/lexer_gen.py "$@"; }
 
 print-regex() { lexer-gen print-regex; }

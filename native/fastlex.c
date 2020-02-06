@@ -173,6 +173,20 @@ fastlex_MatchBraceRangeToken(PyObject *self, PyObject *args) {
 }
 
 static PyObject *
+fastlex_MatchOption(PyObject *self, PyObject *args) {
+  unsigned char* s;
+  int len;
+
+  if (!PyArg_ParseTuple(args, "s#", &s, &len)) {
+    return NULL;
+  }
+
+  int id = 999;
+  MatchOption(s, len, &id);
+  return PyInt_FromLong(id);
+}
+
+static PyObject *
 fastlex_IsValidVarName(PyObject *self, PyObject *args) {
   const char *name;
   int len;
@@ -221,6 +235,8 @@ static PyMethodDef methods[] = {
    "(line, start_pos) -> (id, end_pos)."},
   {"MatchBraceRangeToken", fastlex_MatchBraceRangeToken, METH_VARARGS,
    "(line, start_pos) -> (id, end_pos)."},
+  {"MatchOption", fastlex_MatchOption, METH_VARARGS,
+   "(line, start_pos) -> int."},
   {"IsValidVarName", fastlex_IsValidVarName, METH_VARARGS,
    "Is it a valid var name?"},
   {"IsPlainWord", fastlex_IsPlainWord, METH_VARARGS,

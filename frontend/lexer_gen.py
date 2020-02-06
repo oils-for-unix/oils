@@ -14,7 +14,7 @@ import sre_constants
 
 from asdl import pretty  # For PLAIN_WORD_RE
 from frontend import lex
-from frontend import options
+from frontend import option_def
 
 
 def PrintTree(re_tree, depth=2):
@@ -209,7 +209,7 @@ def TranslateRegex(pat):
 def TranslateSimpleLexer(func_name, lexer_def):
   print(r"""
 static inline void %s(const unsigned char* line, int line_len,
-                                  int start_pos, int* id, int* end_pos) {
+    int start_pos, int* id, int* end_pos) {
   assert(start_pos <= line_len);  /* caller should have checked */
 
   const unsigned char* p = line + start_pos;  /* modified by re2c */
@@ -239,6 +239,41 @@ static inline void %s(const unsigned char* line, int line_len,
   *end_pos = p - line;  /* relative */
 }
 """)
+
+
+def StringToInt(func_name, name_def):
+  print(r"""
+static inline void %s(const unsigned char* s, int len, int* id) {
+  const unsigned char* p = s;  /* modified by re2c */
+  const unsigned char* end = s + len;
+
+  const unsigned char* YYMARKER;
+
+  //fprintf(stderr, "*** s = %%s\n", s);
+
+  for (;;) {
+    /*!re2c
+""" % func_name)
+
+  for name, enum in name_def:
+    re2c_pat = TranslateConstant(name)
+    print('      %-30s { *id = %s; break; }' % (re2c_pat, enum))
+
+  # Not found.  * matches anything else.
+  print('      %-30s { *id = 0; return; }' % \
+      r'*')
+
+  print(r"""
+    */
+  }
+  if (p != end) {
+    //fprintf(stderr, "EXTRA CHARS\n", s);
+    *id = 0;  // Not an exact match
+  }
+}
+""")
+
+  # TODO: Check that we're at the END OF THE STRING
 
 
 def TranslateOshLexer(lexer_def):
@@ -372,6 +407,12 @@ def main(argv):
     TranslateSimpleLexer('MatchPS1Token', lex.PS1_DEF)
     TranslateSimpleLexer('MatchHistoryToken', lex.HISTORY_DEF)
     TranslateSimpleLexer('MatchBraceRangeToken', lex.BRACE_RANGE_DEF)
+
+    # e.g. "pipefail" -> option::pipefail
+    StringToInt('MatchOption', option_def.OPTION_DEF)
+    # TODO:
+    #StringToInt('MatchBuiltin', builtin_def.BUILTIN_DEF)
+
     TranslateRegexToPredicate(lex.VAR_NAME_RE, 'IsValidVarName')
     TranslateRegexToPredicate(pretty.PLAIN_WORD_RE, 'IsPlainWord')
     TranslateRegexToPredicate(lex.SHOULD_HIJACK_RE, 'ShouldHijack')

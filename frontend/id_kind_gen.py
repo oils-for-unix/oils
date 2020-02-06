@@ -75,7 +75,7 @@ def main(argv):
     out_prefix = argv[2]
 
     with open(out_prefix + '.h', 'w') as f:
-      f.write("""
+      f.write("""\
 #ifndef ID_KIND_ASDL_H
 #define ID_KIND_ASDL_H
 
@@ -118,7 +118,6 @@ namespace id_kind_asdl {
 
     f.write("""\
 from asdl import pybase
-from typing import List
 
 """)
     # Minor style issue: we want Id and Kind, not Id_e and Kind_e

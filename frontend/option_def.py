@@ -141,3 +141,20 @@ ALL_STRICT = _STRICT_OPTION_NAMES + _MORE_STRICT + ['nullglob']
 ALL_SHOPT_OPTIONS = SHOPT_OPTION_NAMES + PARSE_OPTION_NAMES
 
 META_OPTIONS = ['strict:all', 'oil:basic', 'oil:all']  # Passed to flag parser
+
+# 38 options without no-ops.  81 options with no-ops.
+# We could use uint64 later?
+ALL_OPTION_NAMES = SET_OPTION_NAMES + ALL_SHOPT_OPTIONS + META_OPTIONS
+
+
+# Used to generate a lexer.
+OPTION_DEF = []
+for i, name in enumerate(ALL_OPTION_NAMES):
+  #from core.util import log
+  #log('NAME %s', name)
+  #enum = 'option::' + name.replace(':', '_')
+
+  # TODO: oil:basic is different?
+
+  enum = i + 1
+  OPTION_DEF.append((name, enum))

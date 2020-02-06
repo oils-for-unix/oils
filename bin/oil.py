@@ -317,6 +317,9 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   job_state = process.JobState()
   fd_state = process.FdState(errfmt, job_state)
+
+  # TODO: state.ShellOptions
+  # wrapped by options.Exec() and options.Parse()
   parse_opts = parse_lib.OilParseOptions()
   exec_opts = state.ExecOpts(mem, parse_opts, line_input)
 

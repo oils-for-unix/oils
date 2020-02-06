@@ -185,7 +185,7 @@ fastlex() {
   build/codegen.sh ast-id-lex
 
   # Why do we need this?  It gets stale otherwise.
-  rm -f _devbuild/py-ext/x86_64/fastlex.so
+  rm -v -f fastlex.so
 
   py-ext fastlex build/setup_fastlex.py
   native/fastlex_test.py "$@" > /dev/null
@@ -193,14 +193,14 @@ fastlex() {
 
 line-input() {
   # Why do we need this?  It gets stale otherwise.
-  rm -f _devbuild/py-ext/x86_64/line_input.so
+  rm -v -f line_input.so
 
   py-ext line_input build/setup_line_input.py
   native/line_input_test.py "$@" > /dev/null
 }
 
 posix_() {
-  rm -f _devbuild/py-ext/x86_64/posix_.so
+  rm -v -f posix_.so
 
   py-ext posix_ build/setup_posix.py
   native/posix_test.py "$@" > /dev/null
