@@ -14,6 +14,7 @@ import sre_constants
 
 from asdl import pretty  # For PLAIN_WORD_RE
 from frontend import lex
+from frontend import options
 
 
 def PrintTree(re_tree, depth=2):

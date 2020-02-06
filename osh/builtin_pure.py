@@ -27,6 +27,7 @@ from core import ui
 from frontend import args
 from frontend import lex
 from frontend import match
+from frontend import option_def
 from osh.builtin import _Builtin
 from osh import state
 from osh import string_ops
@@ -34,13 +35,11 @@ from osh import word_compile
 
 from typing import List, Dict, TYPE_CHECKING
 if TYPE_CHECKING:
-  from osh.cmd_exec import Executor
-  from osh.state import SearchPath
-  from _devbuild.gen.syntax_asdl import command__ShFunction
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
+  from _devbuild.gen.syntax_asdl import command__ShFunction
   from core.ui import ErrorFormatter
-  from osh.state import ExecOpts
-  from osh.state import Mem
+  from osh.cmd_exec import Executor
+  from osh.state import ExecOpts, Mem, SearchPath
 
 
 class Boolean(_Builtin):
@@ -127,10 +126,10 @@ class UnAlias(object):
 
 def AddOptionsToArgSpec(spec):
   """Shared between 'set' builtin and the shell's own arg parser."""
-  for short_flag, opt_name in state.SET_OPTIONS:
+  for short_flag, opt_name in option_def.SET_OPTIONS:
     spec.Option(short_flag, opt_name)
 
-  for shopt_name in state.ALL_SHOPT_OPTIONS + state.META_OPTIONS:
+  for shopt_name in option_def.ALL_SHOPT_OPTIONS + option_def.META_OPTIONS:
     spec.ShoptOption(shopt_name)
 
 

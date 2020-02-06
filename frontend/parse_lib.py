@@ -230,7 +230,7 @@ class OilParseOptions(object):
     self.parse_rawc = False  # echo r'' c''
     self.parse_index_expr = False  # ${a[1 + f(x)]}
 
-    # all:nice
+    # oil:all
     self.parse_equals = False  # x = 'var'
     self.parse_set = False  # set x = 'var'
 

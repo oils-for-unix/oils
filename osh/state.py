@@ -19,28 +19,25 @@ from _devbuild.gen.runtime_asdl import (
     scope_e, scope_t, var_flags,
 )
 from _devbuild.gen import runtime_asdl  # for cell
-
 from asdl import runtime
 from core.util import log, e_die
 from frontend import args
+from frontend import option_def
+from mycpp import mylib
+from mycpp.mylib import tagswitch
 from osh import split
 from pylib import os_path
 from pylib import path_stat
 
-from mycpp import mylib
-from mycpp.mylib import tagswitch
-
 import libc
 import posix_ as posix
 
-from typing import (
-    Tuple, List, Dict, Optional, Any, cast, TYPE_CHECKING
-)
+from typing import Tuple, List, Dict, Optional, Any, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from frontend.parse_lib import OilParseOptions
-    from core.alloc import Arena
-    from _devbuild.gen.runtime_asdl import cell
+  from _devbuild.gen.runtime_asdl import cell
+  from core.alloc import Arena
+  from frontend.parse_lib import OilParseOptions
 
 
 # This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".
@@ -189,145 +186,6 @@ class _ErrExit(object):
     self.errexit = False
 
 
-# Used by builtin
-SET_OPTIONS = [
-    # NOTE: set -i and +i is explicitly disallowed.  Only osh -i or +i is valid
-    # https://unix.stackexchange.com/questions/339506/can-an-interactive-shell-become-non-interactive-or-vice-versa
-
-    ('e', 'errexit'),
-    ('n', 'noexec'),
-    ('u', 'nounset'),
-    ('x', 'xtrace'),
-    ('v', 'verbose'),
-    ('f', 'noglob'),
-    ('C', 'noclobber'),
-    ('h', 'hashall'),
-    (None, 'pipefail'),
-    # A no-op for modernish.
-    (None, 'posix'),
-
-    (None, 'vi'),
-    (None, 'emacs'),
-
-    # TODO: Add strict_arg_parse?  For example, 'trap 1 2 3' shouldn't be
-    # valid, because it has an extra argument.  Builtins are inconsistent about
-    # checking this.
-]
-
-# Used by core/builtin_comp.py too.
-SET_OPTION_NAMES = [name for _, name in SET_OPTIONS]
-
-_STRICT_OPTION_NAMES = [
-    # NOTE:
-    # - some are PARSING: strict_glob, strict_backslash
-    # - some are runtime: strict_arith, strict_word_eval
-
-    'strict_argv',  # empty argv not allowed
-    'strict_arith',  # string to integer conversions
-    'strict_array',  # no implicit conversion between string and array
-    'strict_control_flow',  # break/continue at top level is fatal
-    'strict_errexit',  # errexit can't be disabled during function body execution
-    'strict_eval_builtin',  # single arg
-    'strict_word_eval',  # negative slices, unicode
-
-    # Not implemented
-    'strict_backslash',  # BadBackslash
-    'strict_glob',  # GlobParser
-]
-
-# These will break some programs, but the fix should be simple.
-_BASIC_RUNTIME_OPTIONS = [
-    'simple_word_eval',  # No splitting (arity isn't data-dependent)
-                         # Don't reparse program data as globs
-    'more_errexit',  # check after command sub
-    'simple_test_builtin',  # only file tests (no strings), remove [, status 2
-]
-
-# Used to be simple_echo -- do we need it?
-_AGGRESSIVE_RUNTIME_OPTIONS = []  # type: List[str]
-
-# No-ops for bash compatibility
-_NO_OPS = [
-    'expand_aliases', 'extglob', 'lastpipe',  # language features always on
-
-    # Handled one by one
-    'progcomp',
-    'histappend',  # stubbed out for issue #218
-    'hostcomplete',  # complete words with '@' ?
-    'cmdhist',  # multi-line commands in history
-
-    # Copied from https://www.gnu.org/software/bash/manual/bash.txt
-    # except 'compat*' because they were deemed too ugly
-    'assoc_expand_once', 'autocd', 'cdable_vars',
-    'cdspell', 'checkhash', 'checkjobs', 'checkwinsize',
-    'complete_fullquote',  # Set by default
-         # If set, Bash quotes all shell metacharacters in filenames and
-         # directory names when performing completion.  If not set, Bash
-         # removes metacharacters such as the dollar sign from the set of
-         # characters that will be quoted in completed filenames when
-         # these metacharacters appear in shell variable references in
-         # words to be completed.  This means that dollar signs in
-         # variable names that expand to directories will not be quoted;
-         # however, any dollar signs appearing in filenames will not be
-         # quoted, either.  This is active only when bash is using
-         # backslashes to quote completed filenames.  This variable is
-         # set by default, which is the default Bash behavior in versions
-         # through 4.2.
-
-    'direxpand', 'dirspell', 'dotglob', 'execfail',
-    'extdebug',  # for --debugger?
-    'extquote', 'force_fignore', 'globasciiranges',
-    'globstar',  # TODO:  implement **
-    'gnu_errfmt', 'histreedit', 'histverify', 'huponexit',
-    'interactive_comments', 'lithist', 'localvar_inherit', 'localvar_unset',
-    'login_shell', 'mailwarn', 'no_empty_cmd_completion', 'nocaseglob',
-    'nocasematch', 'progcomp_alias', 'promptvars', 'restricted_shell',
-    'shift_verbose', 'sourcepath', 'xpg_echo',
-]
-
-# Used by core/builtin_comp.py too.
-SHOPT_OPTION_NAMES = [
-    'nullglob', 'failglob',
-    'inherit_errexit',
-] + _NO_OPS + _STRICT_OPTION_NAMES + _BASIC_RUNTIME_OPTIONS + \
-    _AGGRESSIVE_RUNTIME_OPTIONS
-
-# Oil parse options only.
-_BASIC_PARSE_OPTIONS = [
-    'parse_at',
-    'parse_brace',
-    'parse_index_expr',
-    'parse_paren',
-    'parse_rawc',
-]
-
-# Extra stuff that breaks too many programs.
-_AGGRESSIVE_PARSE_OPTIONS = [
-    'parse_set',
-    'parse_equals',
-    'parse_do',
-]
-
-_PARSE_OPTION_NAMES = _BASIC_PARSE_OPTIONS + _AGGRESSIVE_PARSE_OPTIONS
-
-_OIL_AGGRESSIVE = _AGGRESSIVE_PARSE_OPTIONS + _AGGRESSIVE_RUNTIME_OPTIONS
-
-# errexit is also set, but handled separately
-_MORE_STRICT = ['nounset', 'pipefail', 'inherit_errexit']
-
-_OIL_BASIC = (
-    _STRICT_OPTION_NAMES + _MORE_STRICT + _BASIC_PARSE_OPTIONS +
-    _BASIC_RUNTIME_OPTIONS
-)
-# nullglob instead of simple-word-eval
-_ALL_STRICT = _STRICT_OPTION_NAMES + _MORE_STRICT + ['nullglob']
-
-# Used in builtin_pure.py
-ALL_SHOPT_OPTIONS = SHOPT_OPTION_NAMES + _PARSE_OPTION_NAMES
-
-META_OPTIONS = ['strict:all', 'oil:basic', 'oil:all']  # Passed to flag parser
-
-
 class ExecOpts(object):
 
   def __init__(self, mem, parse_opts, readline):
@@ -392,7 +250,7 @@ class ExecOpts(object):
     self.failglob = False
     self.inherit_errexit = False
 
-    for attr_name in _NO_OPS:
+    for attr_name in option_def.NO_OPS:
       setattr(self, attr_name, False)
 
     self.vi = False
@@ -425,7 +283,7 @@ class ExecOpts(object):
     # type: (str) -> None
     # e.g. errexit:nounset:pipefail
     lookup = shellopts.split(':')
-    for _, name in SET_OPTIONS:
+    for name in option_def.SET_OPTION_NAMES:
       if name in lookup:
         self._SetOption(name, True)
 
@@ -459,7 +317,7 @@ class ExecOpts(object):
     # type: (str, bool) -> None
     """Private version for synchronizing from SHELLOPTS."""
     assert '_' not in opt_name
-    if opt_name not in SET_OPTION_NAMES:
+    if opt_name not in option_def.SET_OPTION_NAMES:
       raise args.UsageError('got invalid option %r' % opt_name)
     if opt_name == 'errexit':
       self.errexit.Set(b)
@@ -517,8 +375,8 @@ class ExecOpts(object):
     # shopt -s all:oil turns on all Oil options, which includes all strict #
     # options
     if opt_name == 'oil:basic':
-      for attr in _OIL_BASIC:
-        if attr in _PARSE_OPTION_NAMES:
+      for attr in option_def.OIL_BASIC:
+        if attr in option_def.PARSE_OPTION_NAMES:
           self._SetParseOption(attr, b)
         else:
           setattr(self, attr, b)
@@ -527,7 +385,7 @@ class ExecOpts(object):
       return
 
     if opt_name == 'oil:all':
-      for attr in _OIL_BASIC + _OIL_AGGRESSIVE:
+      for attr in option_def.OIL_BASIC + option_def.OIL_AGGRESSIVE:
         self._SetParseOption(attr, b)
         setattr(self, attr, b)
 
@@ -535,15 +393,15 @@ class ExecOpts(object):
       return
 
     if opt_name == 'strict:all':
-      for attr in _ALL_STRICT:
+      for attr in option_def.ALL_STRICT:
         setattr(self, attr, b)
 
       self.errexit.Set(b)  # Special case
       return
 
-    if opt_name in SHOPT_OPTION_NAMES:
+    if opt_name in option_def.SHOPT_OPTION_NAMES:
       setattr(self, opt_name, b)
-    elif opt_name in _PARSE_OPTION_NAMES:
+    elif opt_name in option_def.PARSE_OPTION_NAMES:
       self._SetParseOption(opt_name, b)
     else:
       raise args.UsageError('got invalid option %r' % opt_name)
@@ -554,10 +412,10 @@ class ExecOpts(object):
     # TODO: Maybe sort them differently?
 
     if len(opt_names) == 0:  # if none, supplied, show all
-      opt_names = SET_OPTION_NAMES
+      opt_names = option_def.SET_OPTION_NAMES
 
     for opt_name in opt_names:
-      if opt_name not in SET_OPTION_NAMES:
+      if opt_name not in option_def.SET_OPTION_NAMES:
         raise args.UsageError('got invalid option %r' % opt_name)
 
       if opt_name == 'errexit':
@@ -570,11 +428,11 @@ class ExecOpts(object):
     # type: (List[str]) -> None
     """ For 'shopt -p' """
     if len(opt_names) == 0:
-      opt_names = ALL_SHOPT_OPTIONS  # if none supplied, show all
+      opt_names = option_def.ALL_SHOPT_OPTIONS  # if none supplied, show all
     for opt_name in opt_names:
-      if opt_name in SHOPT_OPTION_NAMES:
+      if opt_name in option_def.SHOPT_OPTION_NAMES:
         b = getattr(self, opt_name)
-      elif opt_name in _PARSE_OPTION_NAMES:
+      elif opt_name in option_def.PARSE_OPTION_NAMES:
         b = getattr(self.parse_opts, opt_name)
       else:
         raise args.UsageError('got invalid option %r' % opt_name)

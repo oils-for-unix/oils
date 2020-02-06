@@ -10,17 +10,17 @@ from core import ui
 #from core.util import log
 from frontend import args
 from frontend import lex
+from frontend import option_def
 from osh import state
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-  from core.completion import Lookup
+  from core.completion import Lookup, OptionState
+  from core.ui import ErrorFormatter
   from frontend.parse_lib import ParseContext
   from osh.cmd_exec import Executor
   from osh.split import SplitContext
   from osh.word_eval import NormalWordEvaluator
-  from core.completion import OptionState
-  from core.ui import ErrorFormatter
   from osh.state import Mem
 
 from mycpp import mylib
@@ -187,10 +187,10 @@ class SpecBuilder(object):
         a = _FixedWordsAction(help_.TOPICS)
 
       elif name == 'setopt':
-        a = _FixedWordsAction(state.SET_OPTION_NAMES)
+        a = _FixedWordsAction(option_def.SET_OPTION_NAMES)
 
       elif name == 'shopt':
-        a = _FixedWordsAction(state.SHOPT_OPTION_NAMES)
+        a = _FixedWordsAction(option_def.SHOPT_OPTION_NAMES)
 
       elif name == 'signal':
         a = _FixedWordsAction(['TODO:signals'])
