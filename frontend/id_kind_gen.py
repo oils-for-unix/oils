@@ -142,9 +142,13 @@ from typing import List
 #define LOOKUP_H
 
 #include "id_kind_asdl.h"
+#include "types_asdl.h"
 
 namespace lookup {
 
+int RedirDefaultFd(id_kind_asdl::Id_t id);
+types_asdl::redir_arg_type_t RedirArgType(id_kind_asdl::Id_t id);
+types_asdl::bool_arg_type_t BoolArgType(id_kind_asdl::Id_t id);
 id_kind_asdl::Kind LookupKind(id_kind_asdl::Id_t id);
 
 }  // namespace lookup
@@ -164,9 +168,54 @@ using id_kind_asdl::Kind;
 
 namespace lookup {
 """)
-      out('Kind LookupKind(id_kind_asdl::Id_t id) {')
-      out('  // relies on "switch lowering"')
-      out('  switch (id) {')
+
+      out("""\
+int RedirDefaultFd(id_kind_asdl::Id_t id) {
+  // relies on "switch lowering"
+  switch (id) {
+""")
+      for id_ in sorted(REDIR_DEFAULT_FD):
+        a = Id_str(id_).replace('.','::')
+        b = REDIR_DEFAULT_FD[id_]
+        out('  case %s: return %s;' % (a, b))
+      out("""\
+  }
+}
+""")
+
+      out("""\
+types_asdl::redir_arg_type_t RedirArgType(id_kind_asdl::Id_t id) {
+  // relies on "switch lowering"
+  switch (id) {
+""")
+      for id_ in sorted(REDIR_ARG_TYPES):
+        a = Id_str(id_).replace('.','::')
+        b = redir_arg_type_str(REDIR_ARG_TYPES[id_]).replace('.', '::')
+        out('  case %s: return %s;' % (a, b))
+      out("""\
+  }
+}
+""")
+
+      out("""\
+types_asdl::bool_arg_type_t BoolArgType(id_kind_asdl::Id_t id) {
+  // relies on "switch lowering"
+  switch (id) {
+""")
+      for id_ in sorted(BOOL_ARG_TYPES):
+        a = Id_str(id_).replace('.','::')
+        b = bool_arg_type_str(BOOL_ARG_TYPES[id_]).replace('.', '::')
+        out('  case %s: return %s;' % (a, b))
+      out("""\
+  }
+}
+""")
+
+      out("""\
+Kind LookupKind(id_kind_asdl::Id_t id) {
+  // relies on "switch lowering"
+  switch (id) {
+""")
       for id_ in sorted(ID_TO_KIND):
         a = Id_str(id_).replace('.','::')
         b = Kind_str(ID_TO_KIND[id_]).replace('.', '::')
@@ -174,7 +223,9 @@ namespace lookup {
       out("""\
   }
 }
+""")
 
+      out("""\
 }  // namespace lookup
 """)
 

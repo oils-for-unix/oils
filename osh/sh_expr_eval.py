@@ -10,7 +10,6 @@ expr_eval.py -- Currently used for boolean and arithmetic expressions.
 """
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.id_tables import BOOL_ARG_TYPES
 from _devbuild.gen.runtime_asdl import (
     scope_e, scope_t,
     quote_e, quote_t,
@@ -33,6 +32,7 @@ from asdl import runtime
 from core import error
 from core.util import e_die
 from frontend import location
+from frontend import lookup
 from osh import bool_stat
 from osh import state
 from osh import word_
@@ -277,15 +277,14 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
             val = value.Str('')
 
         elif case2(value_e.MaybeStrArray):
-          val = cast(value__MaybeStrArray, UP_val)
+          array_val = cast(value__MaybeStrArray, UP_val)
 
           #log('ARRAY %s -> %s, index %d', node.name, array, index)
-          array = val.strs
           index = arith_ev.EvalToInt(node.index)
           lval = lvalue.Indexed(node.name, index)
           # NOTE: Similar logic in RHS Arith_LBracket
           try:
-            s = array[index]
+            s = array_val.strs[index]
           except IndexError:
             s = None
 
@@ -296,12 +295,12 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
             val = value.Str(s)
 
         elif case2(value_e.AssocArray):  # declare -A a; a['x']+=1
-          val = cast(value__AssocArray, UP_val)
+          assoc_val = cast(value__AssocArray, UP_val)
 
           key = arith_ev.EvalWordToString(node.index)
           lval = lvalue.Keyed(node.name, key)
 
-          s = val.d.get(key)
+          s = assoc_val.d.get(key)
           if s is None:
             val = value.Str('')
           else:
@@ -784,7 +783,7 @@ class BoolEvaluator(_ExprEvaluator):
         s = self._EvalCompoundWord(node.child)
 
         # Now dispatch on arg type
-        arg_type = BOOL_ARG_TYPES[op_id]  # could be static in the LST?
+        arg_type = lookup.BoolArgType(op_id)  # could be static in the LST?
 
         if arg_type == bool_arg_type_e.Path:
           return bool_stat.DoUnaryOp(op_id, s)
@@ -833,7 +832,7 @@ class BoolEvaluator(_ExprEvaluator):
         s2 = self._EvalCompoundWord(node.right, quote_kind=quote_kind)
 
         # Now dispatch on arg type
-        arg_type = BOOL_ARG_TYPES[op_id]
+        arg_type = lookup.BoolArgType(op_id)
 
         if arg_type == bool_arg_type_e.Path:
           return bool_stat.DoBinaryOp(op_id, s1, s2)

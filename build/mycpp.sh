@@ -333,7 +333,7 @@ readonly TRANSLATE=(
 
   ## except (e1, e2) isn't supported for InvalidSlice, utf-8
   $REPO_ROOT/osh/word_eval.py
-  #$REPO_ROOT/osh/state.py
+  $REPO_ROOT/osh/state.py
 
   ## except (e1, e2) isn't supported
   #$REPO_ROOT/osh/cmd_exec.py
