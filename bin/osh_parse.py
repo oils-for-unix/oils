@@ -6,6 +6,7 @@ from __future__ import print_function
 
 import sys
 
+from _devbuild.gen.option_asdl import option
 from _devbuild.gen.syntax_asdl import source, source_t, command, command_t
 from asdl import format as fmt
 from core import alloc
@@ -52,7 +53,8 @@ def main(argv):
   # type: (List[str]) -> int
   arena = alloc.Arena()
 
-  parse_opts = parse_lib.OilParseOptions()
+  opt_array = [False] * option.ARRAY_SIZE
+  parse_opts = parse_lib.OilParseOptions(opt_array)
   # Dummy value; not respecting aliases!
   aliases = {}  # type: Dict[str, str]
   # parse `` and a[x+1]=bar differently

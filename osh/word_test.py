@@ -10,7 +10,6 @@ from _devbuild.gen.id_kind_asdl import Id
 
 from core import test_lib
 from core.util import log
-from frontend import parse_lib
 from osh import cmd_parse  # reparse input
 from osh import word_parse_test  # parse words
 
@@ -42,9 +41,7 @@ def _Detect(test, word_str, expected):
 
   test.assertEqual(expected_part_offset, part_offset)
 
-  arena = test_lib.MakeArena('word_test.py')
-  parse_opts = parse_lib.OilParseOptions()
-  parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
+  parse_ctx = test_lib.InitParseContext()
 
   if left_token and left_token.id in (Id.Lit_VarLike, Id.Lit_ArrayLhsOpen):
     more_env = []

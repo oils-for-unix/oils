@@ -210,31 +210,21 @@ if mylib.PYTHON:
 
 class OilParseOptions(object):
 
-  def __init__(self):
-    # type: () -> None
-    self.parse_at = False  # @foo, @array(a, b)
-    self.parse_brace = False  # cd /bin { ... }
-    self.parse_paren = False  # if (x > 0) ...
+  def __init__(self, opt_array):
+    # type: (List[bool]) -> None
+    self.opt_array = opt_array
 
-    # Should this also change r''' c''' and and c"""?  Those are hard to
-    # do in command mode without changing the lexer, but useful because of
-    # redirects.  Maybe r' and c' are tokens, and then you look for '' after
-    # it?  If it's off and you get the token, then you change it into
-    # word_part::Literal and start parsing.
-    #
-    # proc foo {
-    #   cat << c'''
-    #   hello\n
-    #   '''
-    # }
-    self.parse_rawc = False  # echo r'' c''
-    self.parse_index_expr = False  # ${a[1 + f(x)]}
+  def __getattr__(self, opt_name):
+    # type: (str) -> bool
 
-    # oil:all
-    self.parse_equals = False  # x = 'var'
-    self.parse_set = False  # set x = 'var'
-
-    self.parse_do = False  # do f(x)
+    from frontend import option_def
+    # TODO: Could exclude parse options here?
+    if opt_name in option_def.PARSE_OPTION_NAMES:
+      #return _Getter(self.opt_array, name)
+      num = match.MatchOption(opt_name)
+      return self.opt_array[num]
+    else:
+      raise AttributeError(opt_name)
 
   #def __str__(self):
   #  return str(self.__dict__)

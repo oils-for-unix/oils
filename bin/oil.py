@@ -51,6 +51,7 @@ _tlog('before imports')
 import atexit
 import errno
 
+from _devbuild.gen.option_asdl import option
 from _devbuild.gen.runtime_asdl import builtin_e, cmd_value
 from _devbuild.gen.syntax_asdl import source
 
@@ -318,10 +319,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   job_state = process.JobState()
   fd_state = process.FdState(errfmt, job_state)
 
-  # TODO: state.ShellOptions
-  # wrapped by options.Exec() and options.Parse()
-  parse_opts = parse_lib.OilParseOptions()
-  exec_opts = state.ExecOpts(mem, parse_opts, line_input)
+  parse_opts, exec_opts = state.MakeOpts(mem, line_input)
 
   if opts.show_options:  # special case: sh -o
     exec_opts.ShowOptions([])
@@ -740,7 +738,8 @@ def OshCommandMain(argv):
   loader = pyutil.GetResourceLoader()
   oil_grammar = meta.LoadOilGrammar(loader)
 
-  parse_opts = parse_lib.OilParseOptions()
+  opt_array = [False] * option.ARRAY_SIZE
+  parse_opts = parse_lib.OilParseOptions(opt_array)
   # parse `` and a[x+1]=bar differently
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
   parse_ctx.Init_OnePassParse(True)

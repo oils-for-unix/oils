@@ -105,6 +105,7 @@ oil-asdl-to-py() {
   gen-asdl-py frontend/types.asdl  # no dependency on Id
 
   build/codegen.sh id-mypy-gen  # dependency on bool_arg_type_e
+  build/codegen.sh option-mypy-gen
 
   gen-asdl-py frontend/syntax.asdl 'frontend.syntax_abbrev'
   gen-asdl-py osh/runtime.asdl
@@ -129,6 +130,7 @@ oil-asdl-to-cpp() {
   # - do we want enum class?
 
   build/codegen.sh id-cpp-gen  # dependency on bool_arg_type_e
+  build/codegen.sh option-cpp-gen
 
   # We also want to generate the lexer here.
   # TranslateOshLexer can have a flag to use different Ids?

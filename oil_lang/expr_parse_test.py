@@ -13,8 +13,8 @@ from core import alloc
 from core import error
 from core import meta
 from core import pyutil
+from core import test_lib
 from core.util import log
-from frontend import parse_lib
 from frontend import reader
 
 
@@ -24,13 +24,12 @@ class ExprParseTest(unittest.TestCase):
     """Done on every test."""
     self.arena = alloc.Arena()
     self.arena.PushSource(source.Unused(''))
-    parse_opts = parse_lib.OilParseOptions()
 
     loader = pyutil.GetResourceLoader()
     oil_grammar = meta.LoadOilGrammar(loader)
 
-    self.parse_ctx = parse_lib.ParseContext(self.arena, parse_opts, {},
-                                            oil_grammar)
+    self.parse_ctx = test_lib.InitParseContext(arena=self.arena,
+                                               oil_grammar=oil_grammar)
     self.parse_ctx.Init_OnePassParse(True)
 
   def _ParseOsh(self, code_str):

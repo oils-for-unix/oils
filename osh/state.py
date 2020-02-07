@@ -12,6 +12,7 @@ from __future__ import print_function
 import cStringIO
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
+from _devbuild.gen.option_asdl import option
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Str, value__MaybeStrArray, value__AssocArray,
     value_str,
@@ -23,6 +24,7 @@ from asdl import runtime
 from core.util import log, e_die
 from frontend import args
 from frontend import option_def
+from frontend import match
 from mycpp import mylib
 from mycpp.mylib import tagswitch
 from osh import split
@@ -186,16 +188,42 @@ class _ErrExit(object):
     self.errexit = False
 
 
+class _Getter(object):
+
+  def __init__(self, opt_array, opt_name):
+    # type: (List[bool], str) -> None
+    self.opt_array = opt_array
+    self.num = match.MatchOption(opt_name)
+    assert self.num != 0, opt_name
+
+  def __call__(self):
+    # type: () -> bool
+    return self.opt_array[self.num]
+
+
+def MakeOpts(mem, line_input):
+  # type: (Mem, Optional[Any]) -> Tuple[OilParseOptions, ExecOpts]
+  opt_array = [False] * option.ARRAY_SIZE
+
+  from frontend import parse_lib
+  parse_opts = parse_lib.OilParseOptions(opt_array)
+  exec_opts = ExecOpts(mem, opt_array, line_input)
+  return parse_opts, exec_opts
+
+
 class ExecOpts(object):
 
-  def __init__(self, mem, parse_opts, readline):
-    # type: (Mem, OilParseOptions, Optional[Any]) -> None
+  def __init__(self, mem, opt_array, readline):
+    # type: (Mem, List[bool], Optional[Any]) -> None
     """
     Args:
       mem: state.Mem, for SHELLOPTS
     """
     self.mem = mem
-    self.parse_opts = parse_opts
+    self.opt_array = opt_array
+    # On by default
+    self.opt_array[option.hashall] = True
+
     # Used for 'set -o vi/emacs'
     self.readline = readline
 
@@ -205,37 +233,6 @@ class ExecOpts(object):
 
     # set -o / set +o
     self.errexit = _ErrExit()  # -e
-    self.nounset = False  # -u
-    self.pipefail = False
-    self.xtrace = False  # NOTE: uses PS4
-    self.verbose = False  # like xtrace, but prints unevaluated commands
-    self.noglob = False  # -f
-    self.noexec = False  # -n
-    self.noclobber = False  # -C
-    self.posix = False
-    # We don't do anything with this yet.  But Aboriginal calls 'set +h'.
-    self.hashall = True  # -h is true by default.
-
-    # OSH-specific options.
-
-    # e.g. x=foo; echo $(( x )) is fatal
-    self.strict_arith = False
-
-    self.strict_argv = False
-
-    # No implicit conversions between string and array.
-    # - foo="$@" not allowed because it decays.  Should be foo=( "$@" ).
-    # - ${a} not ${a[0]} (not implemented)
-    self.strict_array = False
-
-    # sane-array: compare arrays like [[ "$@" == "${a[@]}" ]], which is
-    #             incompatible because bash coerces
-    # default:    do not allow
-
-    self.strict_control_flow = False  # break at top level is fatal, etc.
-    self.strict_errexit = False
-    self.strict_eval_builtin = False  # only accepts single arg
-    self.strict_word_eval = False  # Bad slices and bad unicode
 
     # This comes after all the 'set' options.
     UP_shellopts = self.mem.GetVar('SHELLOPTS')
@@ -244,40 +241,20 @@ class ExecOpts(object):
     shellopts = cast(value__Str, UP_shellopts)
     self._InitOptionsFromEnv(shellopts.s)
 
-    # shopt -s / -u.  NOTE: bash uses $BASHOPTS rather than $SHELLOPTS for
-    # these.
-    self.nullglob = False
-    self.failglob = False
-    self.inherit_errexit = False
+  def __getattr__(self, opt_name):
+    # type: (str) -> bool
+    """Get an option value.
 
-    for attr_name in option_def.NO_OPS:
-      setattr(self, attr_name, False)
-
-    self.vi = False
-    self.emacs = False
-
-    # 
-    # Turned on with shopt -s all:oil
-    #
-    self.simple_word_eval = False
-
-    # more_errexit makes 'local foo=$(false)' and echo $(false) fail.
-    # By default, we have mimic bash's undesirable behavior of ignoring
-    # these failures, since ash copied it, and Alpine's abuild relies on it.
-    #
-    # bash 4.4 also has shopt -s inherit_errexit, which says that command subs
-    # inherit the value of errexit.  # I don't believe it is strict enough --
-    # local still needs to fail.
-    self.more_errexit = False
-
-    self.simple_test_builtin = False
-
-    #
-    # OSH-specific options that are NOT YET IMPLEMENTED.
-    #
-
-    self.strict_glob = False  # glob_.py GlobParser has warnings
-    self.strict_backslash = False  # BadBackslash for echo -e, printf, PS1, etc.
+    self.exec_opts.nounset()
+    """
+    # excludes PARSE_OPTION_NAMES
+    if (opt_name in option_def.SET_OPTION_NAMES or
+        opt_name in option_def.SHOPT_OPTION_NAMES):
+      #return _Getter(self.opt_array, name)
+      num = match.MatchOption(opt_name)
+      return self.opt_array[num]
+    else:
+      raise AttributeError(opt_name)
 
   def _InitOptionsFromEnv(self, shellopts):
     # type: (str) -> None
@@ -313,15 +290,27 @@ class ExecOpts(object):
     # - B for brace expansion
     return ''.join(chars)
 
+  def _SetArrayByName(self, opt_name, b):
+    # type: (str, bool) -> None
+    if (opt_name in option_def.PARSE_OPTION_NAMES and
+        not self.mem.InGlobalNamespace()):
+      e_die('Syntax options must be set at the top level '
+            '(outside any function)')
+
+    index = match.MatchOption(opt_name)
+    if index == 0:
+      # Could be an assert sometimes, but check anyway
+      raise args.UsageError('got invalid option %r' % opt_name)
+    self.opt_array[index] = b
+
   def _SetOption(self, opt_name, b):
     # type: (str, bool) -> None
     """Private version for synchronizing from SHELLOPTS."""
     assert '_' not in opt_name
-    if opt_name not in option_def.SET_OPTION_NAMES:
-      raise args.UsageError('got invalid option %r' % opt_name)
+    assert opt_name in option_def.SET_OPTION_NAMES
     if opt_name == 'errexit':
       self.errexit.Set(b)
-    elif opt_name in ('vi', 'emacs'):
+    elif opt_name == 'vi' or opt_name == 'emacs':
       if self.readline:
         self.readline.parse_and_bind("set editing-mode " + opt_name);
       else:
@@ -330,18 +319,13 @@ class ExecOpts(object):
     else:
       if opt_name == 'verbose' and b:
         log('Warning: set -o verbose not implemented')
-      setattr(self, opt_name, b)
-
-  def _SetParseOption(self, attr, b):
-    # type: (str, bool) -> None
-    if not self.mem.InGlobalNamespace():
-      e_die('Syntax options must be set at the top level '
-            '(outside any function)')
-    setattr(self.parse_opts, attr, b)
+      self._SetArrayByName(opt_name, b)
 
   def SetOption(self, opt_name, b):
     # type: (str, bool) -> None
     """ For set -o, set +o, or shopt -s/-u -o. """
+    if opt_name not in option_def.SET_OPTION_NAMES:
+      raise args.UsageError('got invalid option %r' % opt_name)
     self._SetOption(opt_name, b)
 
     UP_val = self.mem.GetVar('SHELLOPTS')
@@ -376,35 +360,26 @@ class ExecOpts(object):
     # options
     if opt_name == 'oil:basic':
       for attr in option_def.OIL_BASIC:
-        if attr in option_def.PARSE_OPTION_NAMES:
-          self._SetParseOption(attr, b)
-        else:
-          setattr(self, attr, b)
+        self._SetArrayByName(attr, b)
 
       self.errexit.Set(b)  # Special case
       return
 
     if opt_name == 'oil:all':
       for attr in option_def.OIL_BASIC + option_def.OIL_AGGRESSIVE:
-        self._SetParseOption(attr, b)
-        setattr(self, attr, b)
+        self._SetArrayByName(attr, b)
 
       self.errexit.Set(b)  # Special case
       return
 
     if opt_name == 'strict:all':
       for attr in option_def.ALL_STRICT:
-        setattr(self, attr, b)
+        self._SetArrayByName(attr, b)
 
       self.errexit.Set(b)  # Special case
       return
 
-    if opt_name in option_def.SHOPT_OPTION_NAMES:
-      setattr(self, opt_name, b)
-    elif opt_name in option_def.PARSE_OPTION_NAMES:
-      self._SetParseOption(opt_name, b)
-    else:
-      raise args.UsageError('got invalid option %r' % opt_name)
+    self._SetArrayByName(opt_name, b)
 
   def ShowOptions(self, opt_names):
     # type: (List[str]) -> None
@@ -421,7 +396,9 @@ class ExecOpts(object):
       if opt_name == 'errexit':
         b = self.errexit.errexit
       else:
-        b = getattr(self, opt_name)
+        index = match.MatchOption(opt_name)
+        assert index != 0, opt_name
+        b = self.opt_array[index]
       print('set %so %s' % ('-' if b else '+', opt_name))
 
   def ShowShoptOptions(self, opt_names):
@@ -430,12 +407,10 @@ class ExecOpts(object):
     if len(opt_names) == 0:
       opt_names = option_def.ALL_SHOPT_OPTIONS  # if none supplied, show all
     for opt_name in opt_names:
-      if opt_name in option_def.SHOPT_OPTION_NAMES:
-        b = getattr(self, opt_name)
-      elif opt_name in option_def.PARSE_OPTION_NAMES:
-        b = getattr(self.parse_opts, opt_name)
-      else:
+      index = match.MatchOption(opt_name)
+      if index == 0:
         raise args.UsageError('got invalid option %r' % opt_name)
+      b = self.opt_array[index]
       print('shopt -%s %s' % ('s' if b else 'u', opt_name))
 
 

@@ -62,6 +62,11 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         line = '  %s = %d' % (variant.name, tag_num)
         self.Emit(line, depth)
 
+      # Help in sizing array.  Note that we're 1-based.
+      line = '  %s = %d' % ('ARRAY_SIZE', len(variants) + 1)
+      self.Emit(line, depth)
+     
+
     else:
       # First emit a type
       self.Emit('class %s_t(pybase.SimpleObj):' % name, depth)

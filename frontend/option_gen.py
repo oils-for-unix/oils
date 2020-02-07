@@ -36,8 +36,6 @@ def _CreateModule(option_names):
   return schema_ast
 
 
-
-
 def main(argv):
   try:
     action = argv[1]

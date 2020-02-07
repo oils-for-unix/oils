@@ -5,6 +5,7 @@ match.py - match with generated re2c code or Python regexes.
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.types_asdl import lex_mode_t
 from frontend import lex
+from frontend import option_def
 
 from typing import Iterator, Tuple, Callable, Dict, List, Any, TYPE_CHECKING
 
@@ -132,6 +133,7 @@ if fastlex:
   BRACE_RANGE_MATCHER = _MatchBraceRangeToken_Fast
   IsValidVarName = fastlex.IsValidVarName
   ShouldHijack = fastlex.ShouldHijack
+  MatchOption = fastlex.MatchOption
 else:
   OneToken = _MatchOshToken_Slow(lex.LEXER_DEF)
   ECHO_MATCHER = _MatchTokenSlow(lex.ECHO_E_DEF)
@@ -153,6 +155,10 @@ else:
   def ShouldHijack(s):
     # type: (str) -> bool
     return bool(_SHOULD_HIJACK_RE.match(s))
+
+  def MatchOption(s):
+    # type: (str) -> int
+    return option_def.OPTION_DICT.get(s, 0)  # 0 means not found
 
 
 class SimpleLexer(object):

@@ -12,6 +12,7 @@ test_lib.py - Functions for testing.
 import string
 import sys
 
+from _devbuild.gen.option_asdl import option
 from _devbuild.gen.runtime_asdl import builtin_e, cmd_value
 from _devbuild.gen.syntax_asdl import source, Token
 from asdl import pybase
@@ -128,8 +129,9 @@ def InitLexer(s, arena):
 def MakeTestEvaluator():
   arena = MakeArena('<MakeTestEvaluator>')
   mem = state.Mem('', [], {}, arena)
-  parse_opts = parse_lib.OilParseOptions()
-  exec_opts = state.ExecOpts(mem, parse_opts, None)
+  opt_array = [False] * option.ARRAY_SIZE
+  parse_opts = parse_lib.OilParseOptions(opt_array)
+  exec_opts = state.ExecOpts(mem, opt_array, None)
 
   exec_deps = cmd_exec.Deps()
   exec_deps.trap_nodes = []
@@ -143,16 +145,18 @@ def MakeTestEvaluator():
 
 def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
                  aliases=None, ext_prog=None):
+  opt_array = [False] * option.ARRAY_SIZE
   if parse_ctx:
     arena = parse_ctx.arena
     parse_opts = parse_ctx.parse_opts
   else:
     arena or MakeArena('<InitExecutor>')
-    parse_opts = parse_lib.OilParseOptions()
+    parse_opts = parse_lib.OilParseOptions(opt_array)
     parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
 
   mem = mem or state.Mem('', [], {}, arena)
-  exec_opts = state.ExecOpts(mem, parse_opts, None)
+  exec_opts = state.ExecOpts(mem, opt_array, None)
+
   errfmt = ui.ErrorFormatter(arena)
   job_state = process.JobState()
   fd_state = process.FdState(errfmt, job_state)
@@ -185,7 +189,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   }
 
   # For the tests, we do not use 'readline'.
-  exec_opts = state.ExecOpts(mem, parse_opts, None)
+  exec_opts = state.ExecOpts(mem, opt_array, None)
 
   debug_f = util.DebugFile(sys.stderr)
   exec_deps = cmd_exec.Deps()
@@ -248,9 +252,18 @@ def EvalCode(code_str, parse_ctx, comp_lookup=None, mem=None, aliases=None):
   return ex
 
 
+def InitParseContext(arena=None, oil_grammar=None):
+  arena = arena or MakeArena('<test_lib>')
+  opt_array = [False] * option.ARRAY_SIZE
+  parse_opts = parse_lib.OilParseOptions(opt_array)
+  parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, oil_grammar)
+  return parse_ctx
+
+
 def InitWordParser(word_str, oil_at=False, arena=None):
   arena = arena or MakeArena('<test_lib>')
-  parse_opts = parse_lib.OilParseOptions()
+  opt_array = [False] * option.ARRAY_SIZE
+  parse_opts = parse_lib.OilParseOptions(opt_array)
   parse_opts.parse_at = oil_at
   loader = pyutil.GetResourceLoader()
   oil_grammar = meta.LoadOilGrammar(loader)
@@ -263,8 +276,7 @@ def InitWordParser(word_str, oil_at=False, arena=None):
 
 def InitCommandParser(code_str, arena=None):
   arena = arena or MakeArena('<test_lib>')
-  parse_opts = parse_lib.OilParseOptions()
-  parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
+  parse_ctx = InitParseContext(arena=arena)
   line_reader, _ = InitLexer(code_str, arena)
   c_parser = parse_ctx.MakeOshParser(line_reader)
   return c_parser

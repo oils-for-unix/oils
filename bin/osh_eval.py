@@ -99,7 +99,10 @@ def main(argv):
   # type: (List[str]) -> int
   arena = alloc.Arena()
 
-  parse_opts = parse_lib.OilParseOptions()
+  dollar0 = argv[0]
+  mem = state.Mem(dollar0, argv, posix.environ, arena,
+                  has_main=True)
+  parse_opts, exec_opts = state.MakeOpts(mem, None)
   # Dummy value; not respecting aliases!
   aliases = {}  # type: Dict[str, str]
   # parse `` and a[x+1]=bar differently
@@ -168,11 +171,6 @@ def main(argv):
 
   # New osh_eval.py instantiations
 
-  dollar0 = argv[0]
-  mem = state.Mem(dollar0, argv, posix.environ, arena,
-                  has_main=True)
-  # no readline module
-  exec_opts = state.ExecOpts(mem, parse_opts, None)
   errfmt = ui.ErrorFormatter(arena)
 
   splitter = None

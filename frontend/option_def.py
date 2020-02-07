@@ -13,9 +13,10 @@ SET_OPTIONS = [
     ('n', 'noexec'),
     ('u', 'nounset'),
     ('x', 'xtrace'),
-    ('v', 'verbose'),
+    ('v', 'verbose'),  # like xtrace, but prints unevaluated commands
     ('f', 'noglob'),
     ('C', 'noclobber'),
+    # We don't do anything with this,  But Aboriginal calls 'set +h'.
     ('h', 'hashall'),
     (None, 'pipefail'),
     # A no-op for modernish.
@@ -38,19 +39,35 @@ _STRICT_OPTION_NAMES = [
     # - some are runtime: strict_arith, strict_word_eval
 
     'strict_argv',  # empty argv not allowed
-    'strict_arith',  # string to integer conversions
-    'strict_array',  # no implicit conversion between string and array
+    'strict_arith',  # string to integer conversions, e.g. x=foo; echo $(( x ))
+    # No implicit conversions between string and array.
+    # - foo="$@" not allowed because it decays.  Should be foo=( "$@" ).
+    # - ${a} not ${a[0]} (not implemented)
+    # sane-array?  compare arrays like [[ "$@" == "${a[@]}" ]], which is
+    #              incompatible because bash coerces
+    # default:    do not allow
+
+    'strict_array',
     'strict_control_flow',  # break/continue at top level is fatal
     'strict_errexit',  # errexit can't be disabled during function body execution
     'strict_eval_builtin',  # single arg
     'strict_word_eval',  # negative slices, unicode
 
     # Not implemented
-    'strict_backslash',  # BadBackslash
-    'strict_glob',  # GlobParser
+    'strict_backslash',  # BadBackslash for echo -e, printf, PS1, etc.
+    'strict_glob',  # glob_.py GlobParser has warnings
 ]
 
+# Turned on with shopt -s all:oil
 # These will break some programs, but the fix should be simple.
+
+# more_errexit makes 'local foo=$(false)' and echo $(false) fail.
+# By default, we have mimic bash's undesirable behavior of ignoring
+# these failures, since ash copied it, and Alpine's abuild relies on it.
+#
+# bash 4.4 also has shopt -s inherit_errexit, which says that command subs
+# inherit the value of errexit.  # I don't believe it is strict enough --
+# local still needs to fail.
 _BASIC_RUNTIME_OPTIONS = [
     'simple_word_eval',  # No splitting (arity isn't data-dependent)
                          # Don't reparse program data as globs
@@ -102,6 +119,8 @@ NO_OPS = [
 
 # Used by core/builtin_comp.py too.
 SHOPT_OPTION_NAMES = [
+    # shopt -s / -u.  NOTE: bash uses $BASHOPTS rather than $SHELLOPTS for
+    # these.
     'nullglob', 'failglob',
     'inherit_errexit',
 ] + NO_OPS + _STRICT_OPTION_NAMES + _BASIC_RUNTIME_OPTIONS + \
@@ -109,18 +128,32 @@ SHOPT_OPTION_NAMES = [
 
 # Oil parse options only.
 _BASIC_PARSE_OPTIONS = [
-    'parse_at',
-    'parse_brace',
-    'parse_index_expr',
-    'parse_paren',
-    'parse_rawc',
+    'parse_at',  # @foo, @array(a, b)
+    'parse_brace',  # cd /bin { ... }
+    'parse_index_expr',  # ${a[1 + f(x)]}  -- can this just be $[]?
+     
+    # TODO: also allow bare (x > 0) for awk dialect?
+    'parse_paren',  # if (x > 0) ...
+
+    # Should this also change r''' c''' and and c"""?  Those are hard to
+    # do in command mode without changing the lexer, but useful because of
+    # redirects.  Maybe r' and c' are tokens, and then you look for '' after
+    # it?  If it's off and you get the token, then you change it into
+    # word_part::Literal and start parsing.
+    #
+    # proc foo {
+    #   cat << c'''
+    #   hello\n
+    #   '''
+    # }
+    'parse_rawc',  # echo r'' c''
 ]
 
 # Extra stuff that breaks too many programs.
 _AGGRESSIVE_PARSE_OPTIONS = [
-    'parse_set',
-    'parse_equals',
-    'parse_do',
+    'parse_set',  # set x = 'var'
+    'parse_equals',  # x = 'var'
+    'parse_do',  # do f(x) -- TODO: get rid of this
 ]
 
 PARSE_OPTION_NAMES = _BASIC_PARSE_OPTIONS + _AGGRESSIVE_PARSE_OPTIONS
@@ -144,11 +177,12 @@ META_OPTIONS = ['strict:all', 'oil:basic', 'oil:all']  # Passed to flag parser
 
 # 38 options without no-ops.  81 options with no-ops.
 # We could use uint64 later?
-ALL_OPTION_NAMES = SET_OPTION_NAMES + ALL_SHOPT_OPTIONS + META_OPTIONS
+ALL_OPTION_NAMES = SET_OPTION_NAMES + ALL_SHOPT_OPTIONS
 
 
 # Used to generate a lexer.
 OPTION_DEF = []
+OPTION_DICT = {}
 for i, name in enumerate(ALL_OPTION_NAMES):
   #from core.util import log
   #log('NAME %s', name)
@@ -158,3 +192,4 @@ for i, name in enumerate(ALL_OPTION_NAMES):
 
   enum = i + 1
   OPTION_DEF.append((name, enum))
+  OPTION_DICT[name] = enum

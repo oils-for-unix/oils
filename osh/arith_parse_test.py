@@ -15,7 +15,6 @@ from _devbuild.gen.types_asdl import lex_mode_e
 from core import error
 from core import test_lib
 from core import ui
-from frontend import parse_lib
 from osh import sh_expr_eval
 from osh import split
 from osh import word_eval
@@ -32,8 +31,7 @@ def ParseAndEval(code_str):
   print('node:', anode)
 
   mem = state.Mem('', [], {}, arena)
-  parse_opts = parse_lib.OilParseOptions()
-  exec_opts = state.ExecOpts(mem, parse_opts, None)
+  parse_opts, exec_opts = state.MakeOpts(mem, None)
 
   splitter = split.SplitContext(mem)
   errfmt = ui.ErrorFormatter(arena)

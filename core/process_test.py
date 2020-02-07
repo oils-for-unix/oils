@@ -7,6 +7,7 @@ import os
 import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.option_asdl import option
 from _devbuild.gen.runtime_asdl import redirect, cmd_value
 from core import process  # module under test
 from core import test_lib
@@ -29,8 +30,9 @@ def Banner(msg):
 # TODO: Put these all in a function.
 _ARENA = test_lib.MakeArena('process_test.py')
 _MEM = state.Mem('', [], {}, _ARENA)
-_PARSE_OPTS = parse_lib.OilParseOptions()
-_EXEC_OPTS = state.ExecOpts(_MEM, _PARSE_OPTS, None)
+_OPT_ARRAY = [False] * option.ARRAY_SIZE
+_PARSE_OPTS = parse_lib.OilParseOptions(_OPT_ARRAY)
+_EXEC_OPTS = state.ExecOpts(_MEM, _OPT_ARRAY, None)
 _JOB_STATE = process.JobState()
 _WAITER = process.Waiter(_JOB_STATE, _EXEC_OPTS)
 _ERRFMT = ui.ErrorFormatter(_ARENA)

@@ -14,6 +14,7 @@ import os
 import unittest
 import sys
 
+from _devbuild.gen.option_asdl import option
 from _devbuild.gen.runtime_asdl import value_e
 from _devbuild.gen.syntax_asdl import source
 from core import alloc
@@ -37,6 +38,8 @@ mem = state.Mem('', [], {}, None)
 FIRST = completion.TestAction(['grep', 'sed', 'test'])
 U2 = completion.UserSpec([FIRST], [], [], lambda candidate: True)
 
+OPT_ARRAY = [False] * option.ARRAY_SIZE
+
 
 def MockApi(line):
   """Match readline's get_begidx() / get_endidx()."""
@@ -53,7 +56,7 @@ def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
   if not parse_ctx:
     arena = alloc.Arena()
     arena.PushSource(source.MainFile('<_MakeRootCompleter>'))
-    parse_opts = parse_lib.OilParseOptions()
+    parse_opts = parse_lib.OilParseOptions(OPT_ARRAY)
     parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
     parse_ctx.Init_Trail(parse_lib.Trail())
     parse_ctx.Init_OnePassParse(True)
@@ -421,7 +424,7 @@ class RootCompleterTest(unittest.TestCase):
     with open('testdata/completion/osh-unit.bash') as f:
       code_str = f.read()
     arena = test_lib.MakeArena('<completion_test.py>')
-    parse_opts = parse_lib.OilParseOptions()
+    parse_opts = parse_lib.OilParseOptions(OPT_ARRAY)
     parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
     parse_ctx.Init_Trail(parse_lib.Trail())
     comp_lookup = completion.Lookup()
@@ -479,7 +482,7 @@ class RootCompleterTest(unittest.TestCase):
     with open('testdata/completion/osh-unit.bash') as f:
       code_str = f.read()
     arena = test_lib.MakeArena('<completion_test.py>')
-    parse_opts = parse_lib.OilParseOptions()
+    parse_opts = parse_lib.OilParseOptions(OPT_ARRAY)
     aliases = {}
     parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, None)
     parse_ctx.Init_Trail(parse_lib.Trail())
@@ -517,7 +520,7 @@ class RootCompleterTest(unittest.TestCase):
     with open('testdata/completion/return-124.bash') as f:
       code_str = f.read()
     arena = test_lib.MakeArena('<completion_test.py>')
-    parse_opts = parse_lib.OilParseOptions()
+    parse_opts = parse_lib.OilParseOptions(OPT_ARRAY)
     parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
     parse_ctx.Init_Trail(parse_lib.Trail())
 
@@ -719,7 +722,7 @@ class InitCompletionTest(unittest.TestCase):
       }
 
       arena = test_lib.MakeArena('<InitCompletionTest>')
-      parse_opts = parse_lib.OilParseOptions()
+      parse_opts = parse_lib.OilParseOptions(OPT_ARRAY)
       parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
       mem = state.Mem('', [], {}, arena)
 
