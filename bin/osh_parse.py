@@ -11,6 +11,7 @@ from _devbuild.gen.syntax_asdl import source, source_t, command, command_t
 from asdl import format as fmt
 from core import alloc
 from core import error
+from core import optview
 #from core import main_loop
 from core import meta
 from core import pyutil
@@ -54,7 +55,7 @@ def main(argv):
   arena = alloc.Arena()
 
   opt_array = [False] * option.ARRAY_SIZE
-  parse_opts = parse_lib.OilParseOptions(opt_array)
+  parse_opts = optview.Parse(opt_array)
   # Dummy value; not respecting aliases!
   aliases = {}  # type: Dict[str, str]
   # parse `` and a[x+1]=bar differently

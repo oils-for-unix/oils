@@ -256,7 +256,7 @@ class Executor(object):
                fd_state,     # type: process.FdState
                procs,        # type: Dict[str, command__ShFunction]
                builtins,     # type: Dict[builtin_t, _Builtin]
-               exec_opts,    # type: state.ExecOpts
+               exec_opts,    # type: state.MutableOpts
                parse_ctx,    # type: ParseContext
                exec_deps,    # type: Deps
   ):
@@ -267,7 +267,7 @@ class Executor(object):
       fd_state: FdState() for managing descriptors
       procs: dict of SHELL functions or 'procs'
       builtins: dict of builtin callables (TODO: migrate all builtins here)
-      exec_opts: ExecOpts
+      exec_opts: MutableOpts
       parse_ctx: for instantiating parsers
       exec_deps: A bundle of stateless code
     """

@@ -64,6 +64,7 @@ from core import error
 from core import completion
 from core import main_loop
 from core import meta
+from core import optview
 from core import process
 from core import pyutil
 from core import ui
@@ -319,17 +320,17 @@ def ShellMain(lang, argv0, argv, login_shell):
   job_state = process.JobState()
   fd_state = process.FdState(errfmt, job_state)
 
-  parse_opts, exec_opts = state.MakeOpts(mem, line_input)
+  parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, line_input)
 
   if opts.show_options:  # special case: sh -o
-    exec_opts.ShowOptions([])
+    mutable_opts.ShowOptions([])
     return 0
 
   # Set these BEFORE processing flags, so they can be overridden.
   if lang == 'oil':
-    exec_opts.SetShoptOption('oil:all', True)
+    mutable_opts.SetShoptOption('oil:all', True)
 
-  builtin_pure.SetExecOpts(exec_opts, opts.opt_changes, opts.shopt_changes)
+  builtin_pure.SetShellOpts(mutable_opts, opts.opt_changes, opts.shopt_changes)
   aliases = {}  # feedback between runtime and parser
 
   oil_grammar = meta.LoadOilGrammar(loader)
@@ -443,7 +444,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   new_var = builtin_assign.NewVar(mem, procs, errfmt)
 
   builtins = {  # Lookup
-      builtin_e.ECHO: builtin_pure.Echo(exec_opts),
+      builtin_e.ECHO: builtin_pure.Echo(),
       builtin_e.PRINTF: builtin_printf.Printf(mem, parse_ctx, errfmt),
 
       builtin_e.PUSHD: builtin.Pushd(mem, dir_stack, errfmt),
@@ -476,8 +477,8 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.SHIFT: builtin_assign.Shift(mem),
 
       # Pure
-      builtin_e.SET: builtin_pure.Set(exec_opts, mem),
-      builtin_e.SHOPT: builtin_pure.Shopt(exec_opts),
+      builtin_e.SET: builtin_pure.Set(mutable_opts, mem),
+      builtin_e.SHOPT: builtin_pure.Shopt(mutable_opts),
 
       builtin_e.ALIAS: builtin_pure.Alias(aliases, errfmt),
       builtin_e.UNALIAS: builtin_pure.UnAlias(aliases, errfmt),
@@ -547,13 +548,13 @@ def ShellMain(lang, argv0, argv, login_shell):
     arena.PushSource(source.CFlag())
     line_reader = reader.StringLineReader(opts.c, arena)
     if opts.i:  # -c and -i can be combined
-      exec_opts.interactive = True
+      exec_opts.SetInteractive()
 
   elif opts.i:  # force interactive
     arena.PushSource(source.Stdin(' -i'))
     line_reader = py_reader.InteractiveLineReader(
         arena, prompt_ev, hist_ev, line_input, prompt_state)
-    exec_opts.interactive = True
+    exec_opts.SetInteractive()
 
   else:
     script_name = arg_r.Peek()
@@ -562,7 +563,7 @@ def ShellMain(lang, argv0, argv, login_shell):
         arena.PushSource(source.Interactive())
         line_reader = py_reader.InteractiveLineReader(
             arena, prompt_ev, hist_ev, line_input, prompt_state)
-        exec_opts.interactive = True
+        exec_opts.SetInteractive()
       else:
         arena.PushSource(source.Stdin(''))
         line_reader = reader.FileLineReader(sys.stdin, arena)
@@ -739,7 +740,7 @@ def OshCommandMain(argv):
   oil_grammar = meta.LoadOilGrammar(loader)
 
   opt_array = [False] * option.ARRAY_SIZE
-  parse_opts = parse_lib.OilParseOptions(opt_array)
+  parse_opts = optview.Parse(opt_array)
   # parse `` and a[x+1]=bar differently
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
   parse_ctx.Init_OnePassParse(True)

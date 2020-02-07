@@ -373,7 +373,7 @@ osh-parse() {
 
   #if false; then
   if true; then
-    mycpp $raw bin/$name.py "${OSH_PARSE_FILES[@]}" "${TRANSLATE[@]}"
+    mycpp $raw bin/$name.py "${OSH_PARSE_FILES[@]}" #"${TRANSLATE[@]}"
       #"${MORE_OIL[@]}"
   fi
 

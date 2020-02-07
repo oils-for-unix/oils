@@ -11,6 +11,7 @@ from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.syntax_asdl import source
 
 from core import alloc
+from core import optview
 from core.util import log
 from frontend import lexer, reader, lex
 from pgen2 import parse, pgen
@@ -170,7 +171,7 @@ def main(argv):
 
     is_expr = grammar_name in ('calc', 'grammar')
 
-    parse_opts = parse_lib.OilParseOptions()
+    parse_opts = optview.Parse()
     parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, gr)
     p = expr_parse.ExprParser(parse_ctx, gr)
     try:

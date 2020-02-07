@@ -31,7 +31,7 @@ def ParseAndEval(code_str):
   print('node:', anode)
 
   mem = state.Mem('', [], {}, arena)
-  parse_opts, exec_opts = state.MakeOpts(mem, None)
+  parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
 
   splitter = split.SplitContext(mem)
   errfmt = ui.ErrorFormatter(arena)

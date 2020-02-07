@@ -45,7 +45,7 @@ import libc  # for fnmatch
 from typing import List, Tuple, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.ui import ErrorFormatter
-  from osh.state import Mem, ExecOpts
+  from osh.state import Mem, MutableOpts
   from osh import word_eval
 
 
@@ -136,7 +136,7 @@ def _StringToInteger(s, span_id=runtime.NO_SPID):
 
 
 def _LookupVar(name, mem, exec_opts):
-  # type: (str, Mem, ExecOpts) -> value_t
+  # type: (str, Mem, MutableOpts) -> value_t
   val = mem.GetVar(name)
   # By default, undefined variables are the ZERO value.  TODO: Respect
   # nounset and raise an exception.
@@ -225,7 +225,7 @@ def _EvalLhsArith(node, mem, arith_ev):
 
 def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
                      lookup_mode=scope_e.Dynamic):
-  # type: (sh_lhs_expr_t, ArithEvaluator, Mem, ExecOpts, scope_t) -> Tuple[value_t, lvalue_t]
+  # type: (sh_lhs_expr_t, ArithEvaluator, Mem, MutableOpts, scope_t) -> Tuple[value_t, lvalue_t]
   """Evaluate the operand for i++, a[0]++, i+=2, a[0]+=2 as an R-value.
 
   Also used by the Executor for s+='x' and a[42]+='x'.
@@ -325,7 +325,7 @@ class _ExprEvaluator(object):
   """
 
   def __init__(self, mem, exec_opts, errfmt):
-    # type: (Mem, ExecOpts, ErrorFormatter) -> None
+    # type: (Mem, MutableOpts, ErrorFormatter) -> None
     self.word_ev = None  # type: word_eval.SimpleWordEvaluator
     self.mem = mem
     self.exec_opts = exec_opts
@@ -710,7 +710,7 @@ class ArithEvaluator(_ExprEvaluator):
 class BoolEvaluator(_ExprEvaluator):
 
   def __init__(self, mem, exec_opts, errfmt):
-    # type: (Mem, ExecOpts, ErrorFormatter) -> None
+    # type: (Mem, MutableOpts, ErrorFormatter) -> None
     _ExprEvaluator.__init__(self, mem, exec_opts, errfmt)
     self.always_strict = False
 

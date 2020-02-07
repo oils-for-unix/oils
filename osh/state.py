@@ -22,6 +22,7 @@ from _devbuild.gen.runtime_asdl import (
 from _devbuild.gen import runtime_asdl  # for cell
 from asdl import runtime
 from core.util import log, e_die
+from core import optview
 from frontend import args
 from frontend import option_def
 from frontend import match
@@ -39,7 +40,6 @@ from typing import Tuple, List, Dict, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cell
   from core.alloc import Arena
-  from frontend.parse_lib import OilParseOptions
 
 
 # This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".
@@ -202,16 +202,17 @@ class _Getter(object):
 
 
 def MakeOpts(mem, line_input):
-  # type: (Mem, Optional[Any]) -> Tuple[OilParseOptions, ExecOpts]
+  # type: (Mem, Optional[Any]) -> Tuple[optview.Parse, MutableOpts, MutableOpts]
   opt_array = [False] * option.ARRAY_SIZE
 
-  from frontend import parse_lib
-  parse_opts = parse_lib.OilParseOptions(opt_array)
-  exec_opts = ExecOpts(mem, opt_array, line_input)
-  return parse_opts, exec_opts
+  parse_opts = optview.Parse(opt_array)
+  #exec_opts = optview.Exec(opt_array)
+  mutable_opts = MutableOpts(mem, opt_array, line_input)
+  exec_opts = mutable_opts
+  return parse_opts, exec_opts, mutable_opts
 
 
-class ExecOpts(object):
+class MutableOpts(object):
 
   def __init__(self, mem, opt_array, readline):
     # type: (Mem, List[bool], Optional[Any]) -> None
@@ -267,6 +268,10 @@ class ExecOpts(object):
   def ErrExit(self):
     # type: () -> bool
     return self.errexit.errexit
+
+  def SetInteractive(self):
+    # type: () -> None
+    self.interactive = True
 
   def GetDollarHyphen(self):
     # type: () -> str
@@ -720,7 +725,7 @@ class Mem(object):
                   flags_to_set=var_flags.Exported)
 
     # If it's not in the environment, initialize it.  This makes it easier to
-    # update later in ExecOpts.
+    # update later in MutableOpts.
 
     # TODO: IFS, etc. should follow this pattern.  Maybe need a SysCall
     # interface?  self.syscall.getcwd() etc.

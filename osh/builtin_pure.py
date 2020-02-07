@@ -39,7 +39,7 @@ if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command__ShFunction
   from core.ui import ErrorFormatter
   from osh.cmd_exec import Executor
-  from osh.state import ExecOpts, Mem, SearchPath
+  from osh.state import MutableOpts, Mem, SearchPath
 
 
 class Boolean(_Builtin):
@@ -137,8 +137,8 @@ SET_SPEC = args.FlagsAndOptions()
 AddOptionsToArgSpec(SET_SPEC)
 
 
-def SetExecOpts(exec_opts, opt_changes, shopt_changes):
-  # type: (ExecOpts, List, List) -> None
+def SetShellOpts(exec_opts, opt_changes, shopt_changes):
+  # type: (MutableOpts, List, List) -> None
   """Used by bin/oil.py too."""
 
   for opt_name, b in opt_changes:
@@ -150,7 +150,7 @@ def SetExecOpts(exec_opts, opt_changes, shopt_changes):
 
 class Set(object):
   def __init__(self, exec_opts, mem):
-    # type: (ExecOpts, Mem) -> None
+    # type: (MutableOpts, Mem) -> None
     self.exec_opts = exec_opts
     self.mem = mem
 
@@ -186,7 +186,7 @@ class Set(object):
       self.exec_opts.ShowOptions([])
       return 0
 
-    SetExecOpts(self.exec_opts, arg.opt_changes, arg.shopt_changes)
+    SetShellOpts(self.exec_opts, arg.opt_changes, arg.shopt_changes)
     # Hm do we need saw_double_dash?
     if arg.saw_double_dash or not arg_r.AtEnd():
       self.mem.SetArgv(arg_r.Rest())
@@ -203,7 +203,7 @@ SHOPT_SPEC.ShortFlag('-q')  # query option settings
 
 class Shopt(object):
   def __init__(self, exec_opts):
-    # type: (ExecOpts) -> None
+    # type: (MutableOpts) -> None
     self.exec_opts = exec_opts
 
   def Run(self, cmd_val):
@@ -544,10 +544,6 @@ class Echo(object):
   - 'echo -c' should print '-c', not fail
   - echo '---' should print ---, not fail
   """
-  def __init__(self, exec_opts):
-    # type: (ExecOpts) -> None
-    self.exec_opts = exec_opts
-
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     argv = cmd_val.argv[1:]

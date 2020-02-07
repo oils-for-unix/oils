@@ -22,7 +22,7 @@ if TYPE_CHECKING:
   from core.error import _ErrorWithLocation
   from core.util import DebugFile
   from frontend.parse_lib import ParseContext
-  from osh.state import ExecOpts, Mem
+  from osh.state import MutableOpts, Mem
   from osh.word_eval import NormalWordEvaluator
   #from osh.cmd_exec import Executor
 
@@ -160,7 +160,7 @@ class Tracer(object):
   """
   def __init__(self,
                parse_ctx,  # type: ParseContext
-               exec_opts,  # type: ExecOpts
+               exec_opts,  # type: MutableOpts
                mem,  # type: Mem
                word_ev,  # type: NormalWordEvaluator
                f,  # type: DebugFile

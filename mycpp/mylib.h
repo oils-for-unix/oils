@@ -297,7 +297,7 @@ class List {
   }
 
   // Used by list_repeat
-  List(int n) : v_(n, nullptr) {
+  List(T item, int n) : v_(n, item) {
   }
 
   List(std::initializer_list<T> init) : v_() {
@@ -645,8 +645,7 @@ inline bool list_contains(List<Str*>* haystack, Str* needle) {
 // e.g. [None] * 3
 template <typename T>
 List<T>* list_repeat(T item, int times) {
-  assert(item == nullptr);
-  return new List<T>(times);
+  return new List<T>(item, times);
 }
 
 // ints, floats, enums like Kind

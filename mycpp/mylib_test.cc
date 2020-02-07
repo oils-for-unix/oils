@@ -164,6 +164,11 @@ void test_list_funcs() {
 
   auto L = list_repeat<Str*>(nullptr, 3);
   log("list_repeat length = %d", len(L));
+
+  auto L2 = list_repeat<bool>(true, 3);
+  log("list_repeat length = %d", len(L2));
+  log("item 0 %d", L2->index(0));
+  log("item 1 %d", L2->index(1));
 }
 
 void test_contains() {

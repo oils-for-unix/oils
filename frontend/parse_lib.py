@@ -31,6 +31,7 @@ from typing import Any, List, Tuple, Dict, Optional, IO, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
   from core.util import DebugFile
+  from core import optview
   from frontend.lexer import Lexer
   from frontend.reader import _Reader
   from osh.tdop import TdopParser
@@ -208,28 +209,6 @@ if mylib.PYTHON:
     return names
 
 
-class OilParseOptions(object):
-
-  def __init__(self, opt_array):
-    # type: (List[bool]) -> None
-    self.opt_array = opt_array
-
-  def __getattr__(self, opt_name):
-    # type: (str) -> bool
-
-    from frontend import option_def
-    # TODO: Could exclude parse options here?
-    if opt_name in option_def.PARSE_OPTION_NAMES:
-      #return _Getter(self.opt_array, name)
-      num = match.MatchOption(opt_name)
-      return self.opt_array[num]
-    else:
-      raise AttributeError(opt_name)
-
-  #def __str__(self):
-  #  return str(self.__dict__)
-
-
 class ParseContext(object):
   """Context shared between the mutually recursive Command and Word parsers.
 
@@ -237,7 +216,7 @@ class ParseContext(object):
   """
 
   def __init__(self, arena, parse_opts, aliases, oil_grammar):
-    # type: (Arena, OilParseOptions, Dict[str, str], Grammar) -> None
+    # type: (Arena, optview.Parse, Dict[str, str], Grammar) -> None
     self.arena = arena
     self.parse_opts = parse_opts
     self.aliases = aliases

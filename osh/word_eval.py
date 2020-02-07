@@ -57,7 +57,7 @@ if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from osh import cmd_exec
   from osh.split import SplitContext
-  from osh.state import ExecOpts, Mem
+  from osh.state import MutableOpts, Mem
   from osh import prompt
   from osh import sh_expr_eval
   from oil_lang import expr_eval
@@ -284,7 +284,7 @@ class _WordEvaluator(SimpleWordEvaluator):
     EvalWordSequence2
   """
   def __init__(self, mem, exec_opts, splitter, errfmt):
-    # type: (Mem, ExecOpts, SplitContext, ErrorFormatter) -> None
+    # type: (Mem, MutableOpts, SplitContext, ErrorFormatter) -> None
     self.arith_ev = None  # type: sh_expr_eval.ArithEvaluator
     self.expr_ev = None  # type: expr_eval.OilEvaluator
     self.prompt_ev = None  # type: prompt.Evaluator
@@ -1796,7 +1796,7 @@ def _SplitAssignArg(arg, w):
 class NormalWordEvaluator(_WordEvaluator):
 
   def __init__(self, mem, exec_opts, splitter, errfmt):
-    # type: (Mem, ExecOpts, SplitContext, ErrorFormatter) -> None
+    # type: (Mem, MutableOpts, SplitContext, ErrorFormatter) -> None
     _WordEvaluator.__init__(self, mem, exec_opts, splitter, errfmt)
     self.ex = None  # type: cmd_exec.Executor
 

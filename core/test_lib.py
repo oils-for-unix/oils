@@ -22,6 +22,7 @@ from core import completion
 from core import dev
 from core import main_loop
 from core import meta
+from core import optview
 from core import process
 from core import pyutil
 from core import ui
@@ -130,8 +131,8 @@ def MakeTestEvaluator():
   arena = MakeArena('<MakeTestEvaluator>')
   mem = state.Mem('', [], {}, arena)
   opt_array = [False] * option.ARRAY_SIZE
-  parse_opts = parse_lib.OilParseOptions(opt_array)
-  exec_opts = state.ExecOpts(mem, opt_array, None)
+  parse_opts = optview.Parse(opt_array)
+  exec_opts = state.MutableOpts(mem, opt_array, None)
 
   exec_deps = cmd_exec.Deps()
   exec_deps.trap_nodes = []
@@ -150,12 +151,10 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
     arena = parse_ctx.arena
     parse_opts = parse_ctx.parse_opts
   else:
-    arena or MakeArena('<InitExecutor>')
-    parse_opts = parse_lib.OilParseOptions(opt_array)
-    parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
+    parse_ctx = InitParseContext()
 
   mem = mem or state.Mem('', [], {}, arena)
-  exec_opts = state.ExecOpts(mem, opt_array, None)
+  exec_opts = state.MutableOpts(mem, opt_array, None)
 
   errfmt = ui.ErrorFormatter(arena)
   job_state = process.JobState()
@@ -169,7 +168,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   readline = None  # simulate not having it
   new_var = builtin_assign.NewVar(mem, funcs, errfmt)
   builtins = {  # Lookup
-      builtin_e.ECHO: builtin_pure.Echo(exec_opts),
+      builtin_e.ECHO: builtin_pure.Echo(),
       builtin_e.SHIFT: builtin_assign.Shift(mem),
 
       builtin_e.HISTORY: builtin.History(readline),
@@ -189,7 +188,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   }
 
   # For the tests, we do not use 'readline'.
-  exec_opts = state.ExecOpts(mem, opt_array, None)
+  exec_opts = state.MutableOpts(mem, opt_array, None)
 
   debug_f = util.DebugFile(sys.stderr)
   exec_deps = cmd_exec.Deps()
@@ -252,18 +251,20 @@ def EvalCode(code_str, parse_ctx, comp_lookup=None, mem=None, aliases=None):
   return ex
 
 
-def InitParseContext(arena=None, oil_grammar=None):
+def InitParseContext(arena=None, oil_grammar=None, aliases=None):
   arena = arena or MakeArena('<test_lib>')
+  if aliases is None:
+    aliases = {}
   opt_array = [False] * option.ARRAY_SIZE
-  parse_opts = parse_lib.OilParseOptions(opt_array)
-  parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, oil_grammar)
+  parse_opts = optview.Parse(opt_array)
+  parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
   return parse_ctx
 
 
 def InitWordParser(word_str, oil_at=False, arena=None):
   arena = arena or MakeArena('<test_lib>')
   opt_array = [False] * option.ARRAY_SIZE
-  parse_opts = parse_lib.OilParseOptions(opt_array)
+  parse_opts = optview.Parse(opt_array)
   parse_opts.parse_at = oil_at
   loader = pyutil.GetResourceLoader()
   oil_grammar = meta.LoadOilGrammar(loader)

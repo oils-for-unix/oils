@@ -40,7 +40,7 @@ if TYPE_CHECKING:
   from core.util import NullDebugFile
   from core.comp_ui import _IDisplay
   from osh.cmd_exec import Executor
-  from osh.state import SearchPath, ExecOpts
+  from osh.state import SearchPath, MutableOpts
   from mycpp import mylib
 
 
@@ -1218,7 +1218,7 @@ class Waiter(object):
   process OR a background process!  So you have to distinguish between them.
   """
   def __init__(self, job_state, exec_opts):
-    # type: (JobState, ExecOpts) -> None
+    # type: (JobState, MutableOpts) -> None
     self.job_state = job_state
     self.exec_opts = exec_opts
     self.last_status = 127  # wait -n error code

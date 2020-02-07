@@ -16,8 +16,6 @@ import sys
 
 from _devbuild.gen.option_asdl import option
 from _devbuild.gen.runtime_asdl import value_e
-from _devbuild.gen.syntax_asdl import source
-from core import alloc
 from core import completion  # module under test
 from core import comp_ui
 from core import test_lib
@@ -54,10 +52,7 @@ def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
   ev = test_lib.MakeTestEvaluator()
 
   if not parse_ctx:
-    arena = alloc.Arena()
-    arena.PushSource(source.MainFile('<_MakeRootCompleter>'))
-    parse_opts = parse_lib.OilParseOptions(OPT_ARRAY)
-    parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
+    parse_ctx = test_lib.InitParseContext()
     parse_ctx.Init_Trail(parse_lib.Trail())
     parse_ctx.Init_OnePassParse(True)
 
@@ -423,10 +418,10 @@ class RootCompleterTest(unittest.TestCase):
     # This is here because it's hard to test readline with the spec tests.
     with open('testdata/completion/osh-unit.bash') as f:
       code_str = f.read()
-    arena = test_lib.MakeArena('<completion_test.py>')
-    parse_opts = parse_lib.OilParseOptions(OPT_ARRAY)
-    parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
+
+    parse_ctx = test_lib.InitParseContext()
     parse_ctx.Init_Trail(parse_lib.Trail())
+
     comp_lookup = completion.Lookup()
     ex = test_lib.EvalCode(code_str, parse_ctx, comp_lookup=comp_lookup)
 
@@ -481,10 +476,8 @@ class RootCompleterTest(unittest.TestCase):
     # I put some aliases in this file.
     with open('testdata/completion/osh-unit.bash') as f:
       code_str = f.read()
-    arena = test_lib.MakeArena('<completion_test.py>')
-    parse_opts = parse_lib.OilParseOptions(OPT_ARRAY)
     aliases = {}
-    parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, None)
+    parse_ctx = test_lib.InitParseContext(aliases=aliases)
     parse_ctx.Init_Trail(parse_lib.Trail())
     comp_lookup = completion.Lookup()
 
@@ -519,9 +512,7 @@ class RootCompleterTest(unittest.TestCase):
 
     with open('testdata/completion/return-124.bash') as f:
       code_str = f.read()
-    arena = test_lib.MakeArena('<completion_test.py>')
-    parse_opts = parse_lib.OilParseOptions(OPT_ARRAY)
-    parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
+    parse_ctx = test_lib.InitParseContext()
     parse_ctx.Init_Trail(parse_lib.Trail())
 
     comp_lookup = completion.Lookup()
@@ -722,8 +713,7 @@ class InitCompletionTest(unittest.TestCase):
       }
 
       arena = test_lib.MakeArena('<InitCompletionTest>')
-      parse_opts = parse_lib.OilParseOptions(OPT_ARRAY)
-      parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, None)
+      parse_ctx = test_lib.InitParseContext(arena=arena)
       mem = state.Mem('', [], {}, arena)
 
       #
