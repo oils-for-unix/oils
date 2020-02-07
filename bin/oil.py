@@ -518,7 +518,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   ex = cmd_exec.Executor(mem, fd_state, procs, builtins, exec_opts,
                          parse_ctx, exec_deps)
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
-  prompt_ev = prompt.Evaluator(lang, parse_ctx, ex, mem)
+  prompt_ev = prompt.Evaluator(lang, parse_ctx, mem)
   tracer = dev.Tracer(parse_ctx, exec_opts, mem, word_ev, trace_f)
 
   # Wire up circular dependencies.

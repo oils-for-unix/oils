@@ -34,8 +34,11 @@ def InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, ex, prompt_ev, tracer)
   ex.word_ev = word_ev
   ex.tracer = tracer
 
+  prompt_ev.word_ev = word_ev
+
   arith_ev.CheckCircularDeps()
   bool_ev.CheckCircularDeps()
   expr_ev.CheckCircularDeps()
   word_ev.CheckCircularDeps()
   ex.CheckCircularDeps()
+  prompt_ev.CheckCircularDeps()

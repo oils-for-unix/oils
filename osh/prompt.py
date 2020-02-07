@@ -27,8 +27,9 @@ import posix_ as posix
 from typing import Any, Dict, List, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
   from frontend.parse_lib import ParseContext
-  from osh import cmd_exec
-  from osh import state
+  from osh.cmd_exec import Executor
+  from osh.state import Mem
+  from osh.word_eval import _WordEvaluator
 
 #
 # Prompt Evaluation
@@ -97,12 +98,13 @@ class Evaluator(object):
   another '!' (that is, "!!" ) shall place the literal character '!' in the
   prompt.
   """
-  def __init__(self, lang, parse_ctx, ex, mem):
-    # type: (str, ParseContext, cmd_exec.Executor, state.Mem) -> None
+  def __init__(self, lang, parse_ctx, mem):
+    # type: (str, ParseContext, Mem) -> None
+    self.word_ev = None  # type: _WordEvaluator
+
     assert lang in ('osh', 'oil'), lang
     self.lang = lang
     self.parse_ctx = parse_ctx
-    self.ex = ex
     self.mem = mem
 
     # The default prompt is osh$ or oil$ for now.  bash --noprofile --norc ->
@@ -115,6 +117,10 @@ class Evaluator(object):
     self.tokens_cache = {}  # type: Dict[str, List[Tuple[Id, str]]]
     self.parse_cache = {}  # type: Dict[str, compound_word]
  
+  def CheckCircularDeps(self):
+    # type: () -> None
+    assert self.word_ev is not None
+
   def _ReplaceBackslashCodes(self, tokens):
     # type: (List[Tuple[Id, str]]) -> str
     ret = []
@@ -217,7 +223,7 @@ class Evaluator(object):
       self.parse_cache[ps1_str] = ps1_word
 
     # Evaluate, e.g. "${debian_chroot}\u" -> '\u'
-    val2 = self.ex.word_ev.EvalForPlugin(ps1_word)
+    val2 = self.word_ev.EvalForPlugin(ps1_word)
     return val2.s
 
   def EvalFirstPrompt(self):
@@ -237,7 +243,7 @@ class UserPlugin(object):
   Similar to core/dev.py:Tracer, which caches $PS4.
   """
   def __init__(self, mem, parse_ctx, ex):
-    # type: (Any, ParseContext, Any) -> None
+    # type: (Mem, ParseContext, Executor) -> None
     self.mem = mem
     self.parse_ctx = parse_ctx
     self.ex = ex

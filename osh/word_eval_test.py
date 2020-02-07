@@ -19,7 +19,7 @@ from osh import state
 
 
 def InitEvaluator():
-  word_ev = test_lib.MakeTestEvaluator()
+  word_ev = test_lib.InitWordEvaluator()
   state.SetLocalString(word_ev.mem, 'x', '- -- ---')
   state.SetLocalString(word_ev.mem, 'y', 'y yy')
   state.SetLocalString(word_ev.mem, 'empty', '')

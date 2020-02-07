@@ -49,7 +49,7 @@ def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
   compopt_state = completion.OptionState()
   comp_ui_state = comp_ui.State()
   comp_lookup = comp_lookup or completion.Lookup()
-  ev = test_lib.MakeTestEvaluator()
+  ev = test_lib.InitWordEvaluator()
 
   if not parse_ctx:
     parse_ctx = test_lib.InitParseContext()

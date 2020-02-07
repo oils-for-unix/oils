@@ -127,8 +127,8 @@ def InitLexer(s, arena):
   return line_reader, lx
 
 
-def MakeTestEvaluator():
-  arena = MakeArena('<MakeTestEvaluator>')
+def InitWordEvaluator():
+  arena = MakeArena('<InitWordEvaluator>')
   mem = state.Mem('', [], {}, arena)
   opt_array = [False] * option.ARRAY_SIZE
   parse_opts = optview.Parse(opt_array)
@@ -217,7 +217,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
   ex = cmd_exec.Executor(mem, fd_state, funcs, builtins, exec_opts,
                          parse_ctx, exec_deps)
-  prompt_ev = prompt.Evaluator('osh', parse_ctx, ex, mem)
+  prompt_ev = prompt.Evaluator('osh', parse_ctx, mem)
   tracer = dev.Tracer(parse_ctx, exec_opts, mem, word_ev, debug_f)
 
   vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, ex, prompt_ev, tracer)

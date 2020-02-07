@@ -21,7 +21,7 @@ from osh import state
 
 
 def InitEvaluator():
-  word_ev = test_lib.MakeTestEvaluator()
+  word_ev = test_lib.InitWordEvaluator()
   state.SetLocalString(word_ev.mem, 'x', 'xxx')
   state.SetLocalString(word_ev.mem, 'y', 'yyy')
   return word_ev

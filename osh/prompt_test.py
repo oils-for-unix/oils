@@ -15,12 +15,13 @@ from osh import prompt  # module under test
 
 class PromptTest(unittest.TestCase):
 
-  @classmethod
-  def setUpClass(cls):
+  def setUp(self):
     arena = test_lib.MakeArena('<ui_test.py>')
     mem = state.Mem('', [], {}, arena)
-    ex = test_lib.InitExecutor(arena=arena)
-    cls.p = prompt.Evaluator('osh', ex.parse_ctx, ex, mem)
+    parse_ctx = test_lib.InitParseContext()
+    self.p = prompt.Evaluator('osh', parse_ctx, mem)
+    # note: this has a separate 'mem' object
+    self.p.word_ev = test_lib.InitWordEvaluator()
 
   def testEvaluator(self):
     # Regression for caching bug!
