@@ -129,6 +129,9 @@ int main(int argc, char **argv) {
   dumb_alloc::Summarize();
   return status;
 }
+
+// hard-coded definitions!
+#include "postamble.cc"
 EOF
 
 }
@@ -310,6 +313,10 @@ readonly OSH_PARSE_FILES=(
   $REPO_ROOT/osh/arith_parse.py 
   $REPO_ROOT/osh/tdop.py
   $REPO_ROOT/frontend/parse_lib.py
+
+  # Note: optview depends on errexit.  But we only need optview::Parse, not
+  # optview::exec.
+  $REPO_ROOT/osh/state.py
 )
 
 readonly CAN_TRANSLATE=(

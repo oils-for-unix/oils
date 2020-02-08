@@ -57,5 +57,12 @@ bool IsValidVarName(Str* s) {
       reinterpret_cast<const unsigned char*>(s->data_), s->len_);
 }
 
+int MatchOption(Str* s) {
+  int id;
+  ::MatchOption(reinterpret_cast<const unsigned char*>(s->data_),
+                s->len_, &id);
+  return id;
+}
+
 }  // namespace match
 

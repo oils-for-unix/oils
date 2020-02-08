@@ -53,9 +53,18 @@ class LexTest(unittest.TestCase):
 
   def testMatchOption(self):
     log('MatchOption')
-    for case in ['', 'pipefail', 'foo', 'pipefai', 'pipefail_', 'strict_errexit']:
-      result = fastlex.MatchOption(case)
-      log('case %r, result = %s', case, result)
+    CASES = [
+        ('', False),
+        ('pipefail', True),
+        ('foo', False),
+        ('pipefai', False),
+        ('pipefail_', False),
+        ('strict_errexit', True),
+    ]
+    for s, expected_bool in CASES:
+      result = fastlex.MatchOption(s)
+      self.assertEqual(expected_bool, bool(result))
+      log('case %r, result = %s', s, result)
 
   def testOutOfBounds(self):
     print(MatchOshToken(lex_mode_e.ShCommand, 'line', 3))

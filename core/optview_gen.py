@@ -28,10 +28,7 @@ def main(argv):
 
 // duplication because mycpp doesn't export headers
 namespace state {
-class _ErrExit {
- public:
-  bool value();
-};
+class _ErrExit; 
 }
 
 namespace optview {
@@ -58,9 +55,8 @@ class Exec {
       : opt_array(opt_array), errexit_(errexit) {
   }
 
-  bool errexit() {
-    return errexit_->value();
-  }
+  // definition in cpp/postamble.cc
+  bool errexit();
 """)
 
   GenMethods(option_def.EXEC_OPTION_NAMES, f)

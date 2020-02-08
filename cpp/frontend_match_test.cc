@@ -16,6 +16,13 @@ int main(int argc, char **argv) {
     log("val = %s", t.at1()->data_);
   }
 
+  // Similar to native/fastlex_test.py.  Just test that it matched
+  assert(match::MatchOption(new Str("")) == 0);
+  assert(match::MatchOption(new Str("pipefail")) > 0);
+  assert(match::MatchOption(new Str("pipefai")) == 0);
+  assert(match::MatchOption(new Str("pipefail_")) == 0);
+
+
   // Without sed hack, it's 24 bytes because we have tag (2), id (4), val,
   // span_id.
   // Now 16 bytes.

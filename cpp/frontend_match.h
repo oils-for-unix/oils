@@ -52,6 +52,10 @@ SimpleLexer* GlobLexer(Str* s);
 
 bool IsValidVarName(Str* s);
 
+// StringToInt
+
+int MatchOption(Str* s);
+
 }  // namespace match
 
 #endif  // MATCH_H
