@@ -135,7 +135,7 @@ class _ErrExit(object):
   """
   def __init__(self):
     # type: () -> None
-    self.errexit = False  # the setting
+    self._value = False  # the setting
     # SUBTLE INVARIANT: There's only ONE valid integer in the stack that's not
     # runtime.NO_SPID, and it's either a valid span_id or 0.  Push() and Set()
     # enforce this.
@@ -145,8 +145,8 @@ class _ErrExit(object):
     # type: (int) -> None
     """Temporarily disable errexit."""
     assert span_id != runtime.NO_SPID
-    if self.errexit:
-      self.errexit = False
+    if self._value:
+      self._value = False
       self.stack.append(span_id)  # value to restore
     else:
       self.stack.append(runtime.NO_SPID)  # INVALID span ID / "False"
@@ -154,7 +154,7 @@ class _ErrExit(object):
   def Pop(self):
     # type: () -> None
     """Restore the previous value."""
-    self.errexit = (self.stack.pop() != runtime.NO_SPID)
+    self._value = (self.stack.pop() != runtime.NO_SPID)
 
   def SpidIfDisabled(self):
     # type: () -> int
@@ -180,12 +180,16 @@ class _ErrExit(object):
         self.stack[i] = 0 if b else runtime.NO_SPID
         return
 
-    self.errexit = b  # Otherwise just set it
+    self._value = b  # Otherwise just set it
 
   def Disable(self):
     # type: () -> None
     """For bash compatibility in command sub."""
-    self.errexit = False
+    self._value = False
+
+  def value(self):
+    # type: () -> bool
+    return self._value
 
 
 class _Getter(object):
@@ -357,7 +361,7 @@ class MutableOpts(object):
         raise args.UsageError('got invalid option %r' % opt_name)
 
       if opt_name == 'errexit':
-        b = self.errexit.errexit
+        b = self.errexit.value()
       else:
         index = match.MatchOption(opt_name)
         assert index != 0, opt_name

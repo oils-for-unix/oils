@@ -58,4 +58,4 @@ class Exec(_View):
 
   def errexit(self):
     # type: () -> bool
-    return self._errexit.errexit
+    return self._errexit.value()

@@ -164,6 +164,8 @@ id_kind_asdl::Kind LookupKind(id_kind_asdl::Id_t id);
 
 namespace Id = id_kind_asdl::Id;
 using id_kind_asdl::Kind;
+using types_asdl::redir_arg_type_e;
+using types_asdl::bool_arg_type_e;
 
 namespace lookup {
 """)
@@ -189,7 +191,8 @@ types_asdl::redir_arg_type_t RedirArgType(id_kind_asdl::Id_t id) {
 """)
       for id_ in sorted(REDIR_ARG_TYPES):
         a = Id_str(id_).replace('.','::')
-        b = redir_arg_type_str(REDIR_ARG_TYPES[id_]).replace('.', '::')
+        # redir_arg_type_e::Path, etc.
+        b = redir_arg_type_str(REDIR_ARG_TYPES[id_]).replace('.', '_e::')
         out('  case %s: return %s;' % (a, b))
       out("""\
   }
@@ -203,7 +206,8 @@ types_asdl::bool_arg_type_t BoolArgType(id_kind_asdl::Id_t id) {
 """)
       for id_ in sorted(BOOL_ARG_TYPES):
         a = Id_str(id_).replace('.','::')
-        b = bool_arg_type_str(BOOL_ARG_TYPES[id_]).replace('.', '::')
+        # bool_arg_type_e::Str, etc.
+        b = bool_arg_type_str(BOOL_ARG_TYPES[id_]).replace('.', '_e::')
         out('  case %s: return %s;' % (a, b))
       out("""\
   }

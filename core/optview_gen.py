@@ -26,8 +26,12 @@ def main(argv):
 #include "mylib.h"
 #include "option_asdl.h"
 
+// duplication because mycpp doesn't export headers
 namespace state {
-class _ErrExit;
+class _ErrExit {
+ public:
+  bool value();
+};
 }
 
 namespace optview {
@@ -55,12 +59,11 @@ class Exec {
   }
 
   bool errexit() {
-    return errexit_->errexit;
+    return errexit_->value();
   }
 """)
 
   GenMethods(option_def.EXEC_OPTION_NAMES, f)
-
 
   f.write("""\
 
