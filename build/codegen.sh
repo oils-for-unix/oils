@@ -99,6 +99,9 @@ option-mypy-gen() {
 option-cpp-gen() {
   local out_dir=_build/cpp
   frontend/option_gen.py cpp $out_dir/option_asdl
+
+  core/optview_gen.py > $out_dir/core_optview.h
+  log "Wrote $out_dir/core_optview.h"
 }
 
 lexer-gen() { frontend/lexer_gen.py "$@"; }

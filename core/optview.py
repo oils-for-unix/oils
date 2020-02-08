@@ -53,9 +53,7 @@ class Exec(_View):
   def __init__(self, opt_array, errexit):
     # type: (List[bool], _ErrExit) -> None
 
-    # Excludes parse options
-    allowed = option_def.SET_OPTION_NAMES + option_def.SHOPT_OPTION_NAMES
-    _View.__init__(self, opt_array, allowed)
+    _View.__init__(self, opt_array, option_def.EXEC_OPTION_NAMES)
     self._errexit = errexit
 
   def errexit(self):

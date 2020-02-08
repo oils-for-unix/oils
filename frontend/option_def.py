@@ -162,6 +162,12 @@ _AGGRESSIVE_PARSE_OPTIONS = [
 
 PARSE_OPTION_NAMES = _BASIC_PARSE_OPTIONS + _AGGRESSIVE_PARSE_OPTIONS
 
+# Excludes parse options.
+EXEC_OPTION_NAMES = SET_OPTION_NAMES + SHOPT_OPTION_NAMES
+# Remove special case for now.  This is only used in core/optview*.py.
+EXEC_OPTION_NAMES.remove('errexit')
+
+
 OIL_AGGRESSIVE = _AGGRESSIVE_PARSE_OPTIONS + _AGGRESSIVE_RUNTIME_OPTIONS
 
 # errexit is also set, but handled separately

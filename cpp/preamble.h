@@ -8,9 +8,10 @@ using id_kind_asdl::Kind_t;
 #include "syntax_asdl.h"
 #include "types_asdl.h"
 
-// oil/_devbuild/gen-cpp
+// _build/cpp
 #include "lookup.h"
 #include "grammar_nt.h"
+#include "core_optview.h"
 
 // oil/cpp
 #include "asdl_pretty.h"
