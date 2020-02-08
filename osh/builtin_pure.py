@@ -220,9 +220,10 @@ class Shopt(object):
 
     if arg.q:  # query values
       for name in opt_names:
-        if not hasattr(self.exec_opts, name):
+        index = match.MatchOption(name)
+        if index == 0:
           return 2  # bash gives 1 for invalid option; 2 is better
-        if not getattr(self.exec_opts, name):
+        if not self.exec_opts.opt_array[index]:
           return 1  # at least one option is not true
       return 0  # all options are true
 

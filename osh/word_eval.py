@@ -274,6 +274,29 @@ class SimpleWordEvaluator(object):
     raise NotImplementedError()
 
 
+def _GetDollarHyphen(exec_opts):
+  # type: (optview.Exec) -> str
+  chars = []  # type: List[str]
+  if exec_opts.interactive:
+    chars.append('i')
+
+  if exec_opts.errexit():
+    chars.append('e')
+  if exec_opts.nounset:
+    chars.append('u')
+  # NO letter for pipefail?
+  if exec_opts.xtrace:
+    chars.append('x')
+  if exec_opts.noexec:
+    chars.append('n')
+
+  # bash has:
+  # - c for sh -c, i for sh -i (mksh also has this)
+  # - h for hashing (mksh also has this)
+  # - B for brace expansion
+  return ''.join(chars)
+
+
 class _WordEvaluator(SimpleWordEvaluator):
   """Abstract base class for word evaluators.
 
@@ -373,7 +396,7 @@ class _WordEvaluator(SimpleWordEvaluator):
         maybe_decay_array = True
 
     elif op_id == Id.VSub_Hyphen:
-      val = value.Str(self.exec_opts.GetDollarHyphen())
+      val = value.Str(_GetDollarHyphen(self.exec_opts))
 
     else:
       val = self.mem.GetSpecialVar(op_id)

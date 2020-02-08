@@ -237,21 +237,6 @@ class MutableOpts(object):
     shellopts = cast(value__Str, UP_shellopts)
     self._InitOptionsFromEnv(shellopts.s)
 
-  def __getattr__(self, opt_name):
-    # type: (str) -> bool
-    """Get an option value.
-
-    self.exec_opts.nounset()
-    """
-    # excludes PARSE_OPTION_NAMES
-    if (opt_name in option_def.SET_OPTION_NAMES or
-        opt_name in option_def.SHOPT_OPTION_NAMES):
-      #return _Getter(self.opt_array, name)
-      num = match.MatchOption(opt_name)
-      return self.opt_array[num]
-    else:
-      raise AttributeError(opt_name)
-
   def _InitOptionsFromEnv(self, shellopts):
     # type: (str) -> None
     # e.g. errexit:nounset:pipefail
@@ -259,10 +244,6 @@ class MutableOpts(object):
     for name in option_def.SET_OPTION_NAMES:
       if name in lookup:
         self._SetOption(name, True)
-
-  def ErrExit(self):
-    # type: () -> bool
-    return self.errexit.errexit
 
   def SetInteractive(self):
     # type: () -> None

@@ -133,7 +133,7 @@ def InitWordEvaluator():
   opt_array = [False] * option.ARRAY_SIZE
   errexit = state._ErrExit()
   parse_opts = optview.Parse(opt_array)
-  exec_opts = state.MutableOpts(mem, opt_array, errexit, None)
+  exec_opts = optview.Exec(opt_array, errexit)
 
   exec_deps = cmd_exec.Deps()
   exec_deps.trap_nodes = []

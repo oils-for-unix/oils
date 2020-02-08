@@ -841,8 +841,8 @@ class Executor(object):
 
       func_node = self.procs.get(arg0)
       if func_node is not None:
-        mo = self.mutable_opts
-        if mo.strict_errexit and mo.errexit.SpidIfDisabled() != runtime.NO_SPID:
+        if (self.exec_opts.strict_errexit and 
+            self.mutable_opts.errexit.SpidIfDisabled() != runtime.NO_SPID):
           # NOTE: This would be checked below, but this gives a better error
           # message.
           e_die("can't disable errexit running a function. "
