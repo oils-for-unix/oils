@@ -1901,6 +1901,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               if name.endswith('_n') or name in (
                 'Id', 'hnode_e', 'source_e', 'place_e',
 
+                # option_asdl
+                'option',
+
                 # syntax_asdl
                 're', 're_repeat', 'class_literal_term', 'proc_sig',
                 'bracket_op', 'bracket_op_e',
@@ -1934,6 +1937,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 'redirect_e', 'redirect',
 
                 'var_flags',
+
                 ):
                 is_namespace = True
 

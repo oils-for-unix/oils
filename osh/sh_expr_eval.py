@@ -33,6 +33,7 @@ from core import error
 from core.util import e_die
 from frontend import location
 from frontend import lookup
+from frontend import match
 from osh import bool_stat
 from osh import state
 from osh import word_
@@ -141,7 +142,7 @@ def _LookupVar(name, mem, exec_opts):
   val = mem.GetVar(name)
   # By default, undefined variables are the ZERO value.  TODO: Respect
   # nounset and raise an exception.
-  if val.tag_() == value_e.Undef and exec_opts.nounset:
+  if val.tag_() == value_e.Undef and exec_opts.nounset():
     e_die('Undefined variable %r', name)  # TODO: need token
   return val
 
@@ -272,7 +273,7 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
 
           index = arith_ev.EvalToInt(node.index)
           lval = lvalue.Indexed(node.name, index)
-          if exec_opts.nounset:
+          if exec_opts.nounset():
             e_die("Undefined variable can't be indexed")
           else:
             val = value.Str('')
@@ -366,7 +367,7 @@ class ArithEvaluator(_ExprEvaluator):
           raise AssertionError()  # not in C++
 
     except error.FatalRuntime as e:
-      if self.exec_opts.strict_arith:
+      if self.exec_opts.strict_arith():
         raise
       else:
         span_id = word_.SpanIdFromError(e)
@@ -731,7 +732,7 @@ class BoolEvaluator(_ExprEvaluator):
     try:
       i = _StringToInteger(s, span_id=span_id)
     except error.FatalRuntime as e:
-      if self.always_strict or self.exec_opts.strict_arith:
+      if self.always_strict or self.exec_opts.strict_arith():
         raise
       else:
         self.errfmt.PrettyPrintError(e, prefix='warning: ')
@@ -808,8 +809,11 @@ class BoolEvaluator(_ExprEvaluator):
 
           # See whether 'set -o' options have been set
           if op_id == Id.BoolUnary_o:
-            b = getattr(self.exec_opts, s, None)
-            return False if b is None else b
+            index = match.MatchOption(s)
+            if index == 0:
+              return False
+            else:
+              return self.exec_opts.opt_array[index]
 
           e_die("%s isn't implemented", op_id)  # implicit location
 

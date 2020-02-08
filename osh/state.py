@@ -245,9 +245,13 @@ class MutableOpts(object):
       if name in lookup:
         self._SetOption(name, True)
 
-  def SetInteractive(self):
+  def set_interactive(self):
     # type: () -> None
     self.opt_array[option.interactive] = True
+
+  def set_xtrace(self, b):
+    # type: (bool) -> None
+    self.opt_array[option.xtrace] = b
 
   def _SetArrayByName(self, opt_name, b):
     # type: (str, bool) -> None

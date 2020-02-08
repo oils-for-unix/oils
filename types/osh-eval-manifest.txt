@@ -7,6 +7,7 @@
 ./core/builtin_def.py
 ./core/error.py
 ./core/meta.py
+./core/optview.py
 ./core/passwd.py
 ./core/process.py
 ./core/pyutil.py
@@ -15,7 +16,7 @@
 ./_devbuild/gen/grammar_nt.py
 ./_devbuild/gen/hnode_asdl.py
 ./_devbuild/gen/id_kind_asdl.py
-./_devbuild/gen/id_tables.py
+./_devbuild/gen/option_asdl.py
 ./_devbuild/gen/runtime_asdl.py
 ./_devbuild/gen/syntax_asdl.py
 ./_devbuild/gen/types_asdl.py
@@ -26,6 +27,7 @@
 ./frontend/location.py
 ./frontend/lookup.py
 ./frontend/match.py
+./frontend/option_def.py
 ./frontend/parse_lib.py
 ./frontend/reader.py
 ./oil_lang/expr_parse.py

@@ -277,17 +277,17 @@ class SimpleWordEvaluator(object):
 def _GetDollarHyphen(exec_opts):
   # type: (optview.Exec) -> str
   chars = []  # type: List[str]
-  if exec_opts.interactive:
+  if exec_opts.interactive():
     chars.append('i')
 
   if exec_opts.errexit():
     chars.append('e')
-  if exec_opts.nounset:
+  if exec_opts.nounset():
     chars.append('u')
   # NO letter for pipefail?
-  if exec_opts.xtrace:
+  if exec_opts.xtrace():
     chars.append('x')
-  if exec_opts.noexec:
+  if exec_opts.noexec():
     chars.append('n')
 
   # bash has:
@@ -575,7 +575,7 @@ class _WordEvaluator(SimpleWordEvaluator):
             # somehow.
             e.span_id = token.span_id
 
-            if self.exec_opts.strict_word_eval:
+            if self.exec_opts.strict_word_eval():
               raise
             else:
               # NOTE: Doesn't make the command exit with 1; it just returns a
@@ -762,7 +762,7 @@ class _WordEvaluator(SimpleWordEvaluator):
   def _EmptyStrOrError(self, val, token=None):
     # type: (value_t, Optional[Token]) -> value_t
     if val.tag_() == value_e.Undef:
-      if self.exec_opts.nounset:
+      if self.exec_opts.nounset():
         if token is None:
           e_die('Undefined variable')
         else:
@@ -776,7 +776,7 @@ class _WordEvaluator(SimpleWordEvaluator):
   def _EmptyMaybeStrArrayOrError(self, token):
     # type: (Token) -> value_t
     assert token is not None
-    if self.exec_opts.nounset:
+    if self.exec_opts.nounset():
       e_die('Undefined array %r', token.val, token=token)
     else:
       return value.MaybeStrArray([])
@@ -1070,7 +1070,7 @@ class _WordEvaluator(SimpleWordEvaluator):
           try:
             val = _PerformSlice(val, begin, length, has_length, part)
           except error.Strict as e:
-            if self.exec_opts.strict_word_eval:
+            if self.exec_opts.strict_word_eval():
               raise
             else:
               self.errfmt.PrettyPrintError(e, prefix='warning: ')
@@ -1113,7 +1113,7 @@ class _WordEvaluator(SimpleWordEvaluator):
 
         elif case(part_value_e.Array):
           part_val = cast(part_value__Array, UP_part_val)
-          if self.exec_opts.strict_array:
+          if self.exec_opts.strict_array():
             # Examples: echo f > "$@"; local foo="$@"
             e_die("Illegal array word part (strict_array)",
                   span_id=span_id)
@@ -1399,7 +1399,7 @@ class _WordEvaluator(SimpleWordEvaluator):
 
         elif case(part_value_e.Array):
           part_val = cast(part_value__Array, UP_part_val)
-          if self.exec_opts.strict_array:
+          if self.exec_opts.strict_array():
             # Examples: echo f > "$@"; local foo="$@"
 
             # TODO: This attributes too coarsely, to the word rather than the
@@ -1511,7 +1511,7 @@ class _WordEvaluator(SimpleWordEvaluator):
       argv.append(a)
       return
 
-    will_glob = not self.exec_opts.noglob
+    will_glob = not self.exec_opts.noglob()
 
     # Array of strings, some of which are BOTH IFS-escaped and GLOB escaped!
     frags = []  # type: List[str]
@@ -1720,7 +1720,7 @@ class _WordEvaluator(SimpleWordEvaluator):
     Returns:
       argv: list of string arguments, or None if there was an eval error
     """
-    if self.exec_opts.simple_word_eval:
+    if self.exec_opts.simple_word_eval():
       return self.StaticEvalWordSequence2(words, allow_assign)
 
     # Parse time:

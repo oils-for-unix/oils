@@ -324,7 +324,7 @@ class Executor(object):
 
   def _Eval(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    if self.exec_opts.strict_eval_builtin:
+    if self.exec_opts.strict_eval_builtin():
       # To be less confusing, eval accepts EXACTLY one string arg.
       n = len(cmd_val.argv)
       if n != 2:
@@ -514,7 +514,7 @@ class Executor(object):
       self.errfmt.Print(e.msg, prefix='%r ' % arg0, span_id=e.span_id)
       status = 2  # consistent error code for usage error
     except KeyboardInterrupt:
-      if self.exec_opts.interactive:
+      if self.exec_opts.interactive():
         print()  # newline after ^C
         status = 130  # 128 + 2 for SIGINT
       else:
@@ -546,7 +546,7 @@ class Executor(object):
       self.errfmt.Print(e.msg, prefix='%r ' % arg0, span_id=e.span_id)
       status = 2  # consistent error code for usage error
     except KeyboardInterrupt:
-      if self.exec_opts.interactive:
+      if self.exec_opts.interactive():
         print()  # newline after ^C
         status = 130  # 128 + 2 for SIGINT
       else:
@@ -804,7 +804,7 @@ class Executor(object):
 
     # This happens when you write "$@" but have no arguments.
     if len(argv) == 0:
-      if self.exec_opts.strict_argv:
+      if self.exec_opts.strict_argv():
         e_die("Command evaluated to an empty argv array",
               span_id=span_id)
       else:
@@ -841,7 +841,7 @@ class Executor(object):
 
       func_node = self.procs.get(arg0)
       if func_node is not None:
-        if (self.exec_opts.strict_errexit and 
+        if (self.exec_opts.strict_errexit() and 
             self.mutable_opts.errexit.SpidIfDisabled() != runtime.NO_SPID):
           # NOTE: This would be checked below, but this gives a better error
           # message.
@@ -908,7 +908,7 @@ class Executor(object):
     pipe_status = pi.Run(self.waiter, self.fd_state)
     self.mem.SetPipeStatus(pipe_status)
 
-    if self.exec_opts.pipefail:
+    if self.exec_opts.pipefail():
       # The status is that of the last command that is non-zero.
       status = 0
       for st in pipe_status:
@@ -1385,7 +1385,7 @@ class Executor(object):
             raise _ControlFlow(tok, arg)
         else:
           msg = 'Invalid control flow at top level'
-          if self.exec_opts.strict_control_flow:
+          if self.exec_opts.strict_control_flow():
             e_die(msg, token=tok)
           else:
             # Only print warnings, never fatal.
@@ -1743,7 +1743,7 @@ class Executor(object):
 
     # strict_errexit check for all compound commands.
     # TODO: Speed this up with some kind of bit mask?
-    if self.exec_opts.strict_errexit and _DisallowErrExit(node):
+    if self.exec_opts.strict_errexit() and _DisallowErrExit(node):
 
       span_id = self.mutable_opts.errexit.SpidIfDisabled()
       if span_id != runtime.NO_SPID:
@@ -1891,7 +1891,7 @@ class Executor(object):
   def RunCommandSub(self, node):
     # type: (command_t) -> str
     p = self._MakeProcess(node,
-                          inherit_errexit=self.exec_opts.inherit_errexit)
+                          inherit_errexit=self.exec_opts.inherit_errexit())
 
     r, w = posix.pipe()
     p.AddStateChange(process.StdoutToPipe(r, w))
@@ -1911,7 +1911,7 @@ class Executor(object):
 
     # OSH has the concept of aborting in the middle of a WORD.  We're not
     # waiting until the command is over!
-    if self.exec_opts.more_errexit:
+    if self.exec_opts.more_errexit():
       if self.exec_opts.errexit() and status != 0:
         raise error.ErrExit(
             'Command sub exited with status %d (%r)', status,

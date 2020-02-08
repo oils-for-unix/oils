@@ -88,7 +88,7 @@ def Interactive(opts, ex, c_parser, display, prompt_plugin, errfmt):
       display.EraseLines()  # Clear candidates right before executing
 
       # to debug the slightly different interactive prasing
-      if ex.exec_opts.noexec:
+      if ex.exec_opts.noexec():
         ui.PrintAst([node], opts)
         break
 

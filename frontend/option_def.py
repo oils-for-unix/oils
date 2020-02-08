@@ -4,6 +4,8 @@ option_def.py
 """
 from __future__ import print_function
 
+from typing import List
+
 # Used by builtin
 SET_OPTIONS = [
     # NOTE: set -i and +i is explicitly disallowed.  Only osh -i or +i is valid

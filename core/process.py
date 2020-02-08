@@ -1253,7 +1253,7 @@ class Waiter(object):
       # NOTE: Another way to handle this is to disable SIGINT when a process is
       # running.  Not sure if there's any real difference.  bash and dash
       # handle SIGINT pretty differently.
-      if self.exec_opts.interactive:
+      if self.exec_opts.interactive():
         # Caller should keep waiting.  If we run 'sleep 3' and hit Ctrl-C, both
         # processes will get SIGINT, but the shell has to wait again to get the
         # exit code.

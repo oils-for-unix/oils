@@ -167,6 +167,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       self.Emit('namespace %s {' % enum_name, depth)
       for name, tag_num in enum:
         self.Emit('const int %s = %d;' % (name, tag_num), depth + 1)
+
+      # Help in sizing array.  Note that we're 1-based.
+      self.Emit('const int %s = %d;' % ('ARRAY_SIZE', len(enum) + 1), depth + 1)
       self.Emit('};', depth)
 
       self.Emit('', depth)

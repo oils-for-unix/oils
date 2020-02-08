@@ -110,4 +110,9 @@ cmd-val() {
   sed -i 's/arg_vec/cmd_val/g' $file
 }
 
+opts-accessor() {
+  sed --regexp-extended -i 's/exec_opts[.][a-z_]+/\0\(\)/g' */*.py
+  sed --regexp-extended -i 's/parse_opts[.][a-z_]+/\0\(\)/g' */*.py
+}
+
 "$@"

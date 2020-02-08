@@ -34,13 +34,11 @@ class _View(object):
     self.allowed = allowed
 
   def __getattr__(self, opt_name):
-    # type: (str) -> bool
-
-    # TODO: Could exclude parse options here?
+    # type: (str) -> _Getter
     if opt_name in self.allowed:
-      #return _Getter(self.opt_array, name)
-      num = match.MatchOption(opt_name)
-      return self.opt_array[num]
+      return _Getter(self.opt_array, opt_name)
+      #num = match.MatchOption(opt_name)
+      #return self.opt_array[num]
     else:
       raise AttributeError(opt_name)
 

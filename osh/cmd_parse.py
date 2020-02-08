@@ -468,7 +468,7 @@ class CommandParser(object):
     # type: () -> bool
     if self.c_id in SECONDARY_KEYWORDS:
       return True
-    if self.c_id == Id.KW_Do and not self.parse_opts.parse_do:
+    if self.c_id == Id.KW_Do and not self.parse_opts.parse_do():
       return True
     return False
 
@@ -553,7 +553,7 @@ class CommandParser(object):
         redirects.append(node)
 
       elif self.c_kind == Kind.Word:
-        if self.parse_opts.parse_brace:
+        if self.parse_opts.parse_brace():
           # Treat { and } more like operators
           if self.c_id == Id.Lit_LBrace:
             if self.allow_block:  # Disabled for if/while condition, etc.
@@ -828,7 +828,7 @@ class CommandParser(object):
               "Hint: add a space after = to pretty print an expression", token=tok)
 
     preparsed_list, suffix_words = _SplitSimpleCommandPrefix(words)
-    if self.parse_opts.parse_equals and len(preparsed_list):
+    if self.parse_opts.parse_equals() and len(preparsed_list):
       left_token, _, _, _ = preparsed_list[0]
       p_die("name=val isn't allowed when shopt 'parse_equals' is on.\n"
             "Hint: add 'env' before it, or spaces around =", token=left_token)
@@ -953,7 +953,7 @@ class CommandParser(object):
       elif self.c_id == Id.Op_Newline:
         self._Next()
         break
-      elif self.parse_opts.parse_brace and self.c_id == Id.Lit_LBrace:
+      elif self.parse_opts.parse_brace() and self.c_id == Id.Lit_LBrace:
         break
 
       if self.cur_word.tag_() != word_e.Compound:
@@ -1035,7 +1035,7 @@ class CommandParser(object):
       p_die('Unexpected word after for loop variable', word=self.cur_word)
 
     self._Peek()
-    if self.c_id == Id.Lit_LBrace:  # parse_opts.parse_brace must be on
+    if self.c_id == Id.Lit_LBrace:  # parse_opts.parse_brace() must be on
       node.body = self.ParseBraceGroup()
     else:
       node.body = self.ParseDoGroup()
@@ -1086,7 +1086,7 @@ class CommandParser(object):
     """
     self._Next()  # skip keyword
 
-    if self.parse_opts.parse_paren and self.w_parser.LookAhead() == Id.Op_LParen:
+    if self.parse_opts.parse_paren() and self.w_parser.LookAhead() == Id.Op_LParen:
       enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
       # NOTE: OilCondition could have spids of ( and ) ?
       cond_list = [command.OilCondition(enode)]  # type: List[command_t]
@@ -1099,7 +1099,7 @@ class CommandParser(object):
     # NOTE: The LSTs will be different for Oil and OSH, but the execution
     # should be unchanged.  To be sure we should desugar.
     self._Peek()
-    if self.parse_opts.parse_brace and self.c_id == Id.Lit_LBrace:
+    if self.parse_opts.parse_brace() and self.c_id == Id.Lit_LBrace:
       # while test -f foo {
       body_node = self.ParseBraceGroup()  # type: command_t
     else:
@@ -1172,7 +1172,7 @@ class CommandParser(object):
       # case item begins with a command word or (
       if self.c_id == Id.KW_Esac:
         break
-      if self.parse_opts.parse_brace and self.c_id == Id.Lit_RBrace:
+      if self.parse_opts.parse_brace() and self.c_id == Id.Lit_RBrace:
         break
       if self.c_kind != Kind.Word and self.c_id != Id.Op_LParen:
         break
@@ -1199,7 +1199,7 @@ class CommandParser(object):
     self._NewlineOk()
     in_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Peek()
-    if self.parse_opts.parse_brace and self.c_id == Id.Lit_LBrace:
+    if self.parse_opts.parse_brace() and self.c_id == Id.Lit_LBrace:
       self._Next()
     else:
       self._Eat(Id.KW_In)
@@ -1212,7 +1212,7 @@ class CommandParser(object):
 
     esac_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Peek()
-    if self.parse_opts.parse_brace and self.c_id == Id.Lit_RBrace:
+    if self.parse_opts.parse_brace() and self.c_id == Id.Lit_RBrace:
       self._Next()
     else:
       self._Eat(Id.KW_Esac)
@@ -1240,7 +1240,7 @@ class CommandParser(object):
     while self.c_id == Id.KW_Elif:
       elif_spid = word_.LeftMostSpanForWord(self.cur_word)
       self._Next()  # skip elif
-      if self.parse_opts.parse_paren and self.w_parser.LookAhead() == Id.Op_LParen:
+      if self.parse_opts.parse_paren() and self.w_parser.LookAhead() == Id.Op_LParen:
         enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
         # NOTE: OilCondition could have spids of ( and ) ?
         cond_list = [command.OilCondition(enode)]  # type: List[command_t]
@@ -1345,7 +1345,7 @@ class CommandParser(object):
     self._Next()  # skip if
 
     # Remove ambiguity with if cd / {
-    if self.parse_opts.parse_paren and self.w_parser.LookAhead() == Id.Op_LParen:
+    if self.parse_opts.parse_paren() and self.w_parser.LookAhead() == Id.Op_LParen:
       enode, _ = self.parse_ctx.ParseOilExpr(self.lexer, grammar_nt.oil_expr)
       # NOTE: OilCondition could have spids of ( and ) ?
       cond_list = [command.OilCondition(enode)]  # type: List[command_t]
@@ -1356,7 +1356,7 @@ class CommandParser(object):
       cond_list = cond.children
 
     self._Peek()
-    if self.parse_opts.parse_brace and self.c_id == Id.Lit_LBrace:
+    if self.parse_opts.parse_brace() and self.c_id == Id.Lit_LBrace:
       # if foo {
       return self._ParseOilIf(if_spid, cond_list)
 
@@ -1469,7 +1469,7 @@ class CommandParser(object):
       self._Next()
       return self.w_parser.ParsePlaceMutation(kw_token)
 
-    if self.parse_opts.parse_set and self.c_id == Id.KW_Set:
+    if self.parse_opts.parse_set() and self.c_id == Id.KW_Set:
       kw_token = word_.LiteralToken(self.cur_word)
       self._Next()
       return self.w_parser.ParsePlaceMutation(kw_token)
@@ -1671,7 +1671,7 @@ class CommandParser(object):
         Id.KW_For, Id.KW_While, Id.KW_Until, Id.KW_If, Id.KW_Case, Id.KW_Time,
         Id.KW_Var, Id.KW_Const, Id.KW_SetVar, Id.KW_SetGlobal, Id.KW_SetRef):
       return self.ParseCompoundCommand()
-    if self.parse_opts.parse_set and self.c_id == Id.KW_Set:
+    if self.parse_opts.parse_set() and self.c_id == Id.KW_Set:
       return self.ParseCompoundCommand()
 
     # return (x+y).  NOTE: We're not calling ParseCompoundCommand.  That
@@ -1711,7 +1711,7 @@ class CommandParser(object):
 
       # Parse x = 1+2*3 when parse_equals is set.
       parts = cur_word.parts
-      if self.parse_opts.parse_equals and len(parts) == 1:
+      if self.parse_opts.parse_equals() and len(parts) == 1:
         part0 = parts[0]
         if part0.tag_() == word_part_e.Literal:
           tok = cast(Token, part0)
@@ -1973,7 +1973,7 @@ class CommandParser(object):
         done = True
 
       # For if test -f foo; test -f bar {
-      elif self.parse_opts.parse_brace and self.c_id == Id.Lit_LBrace:
+      elif self.parse_opts.parse_brace() and self.c_id == Id.Lit_LBrace:
         done = True
 
       else:

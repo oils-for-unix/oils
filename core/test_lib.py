@@ -157,6 +157,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   mem = mem or state.Mem('', [], {}, arena)
   errexit = state._ErrExit()
   exec_opts = optview.Exec(opt_array, errexit)
+  mutable_opts = state.MutableOpts(mem, opt_array, errexit, None)
   # No 'readline' in the tests.
 
   errfmt = ui.ErrorFormatter(arena)
@@ -220,7 +221,8 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
                          parse_ctx, exec_deps)
   assert ex.mutable_opts is not None, ex
   prompt_ev = prompt.Evaluator('osh', parse_ctx, mem)
-  tracer = dev.Tracer(parse_ctx, exec_opts, mem, word_ev, debug_f)
+  tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, word_ev,
+                      debug_f)
 
   vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, ex, prompt_ev, tracer)
 
@@ -267,7 +269,7 @@ def InitWordParser(word_str, oil_at=False, arena=None):
   arena = arena or MakeArena('<test_lib>')
   opt_array = [False] * option.ARRAY_SIZE
   parse_opts = optview.Parse(opt_array)
-  parse_opts.parse_at = oil_at
+  opt_array[option.parse_at] = oil_at
   loader = pyutil.GetResourceLoader()
   oil_grammar = meta.LoadOilGrammar(loader)
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, oil_grammar)

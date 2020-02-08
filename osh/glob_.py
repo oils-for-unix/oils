@@ -364,7 +364,7 @@ class Globber(object):
     if not LooksLikeGlob(arg):
       u = GlobUnescape(arg)
       return [u]
-    if self.exec_opts.noglob:
+    if self.exec_opts.noglob():
       return [arg]
 
     try:
@@ -382,10 +382,10 @@ class Globber(object):
     if len(g):
       return g
     else:  # Nothing matched
-      if self.exec_opts.failglob:
+      if self.exec_opts.failglob():
         # TODO: Make the command return status 1.
         raise NotImplementedError()
-      if self.exec_opts.nullglob:
+      if self.exec_opts.nullglob():
         return []
       else:
         # Return the original string

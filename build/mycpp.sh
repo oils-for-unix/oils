@@ -275,7 +275,10 @@ all-variants() {
 
 readonly TMP=_tmp/mycpp
 
-# TODO: Conslidate this with types/osh-parse-manifest.txt?
+# TODO: Consolidate this with types/osh-parse-manifest.txt?
+
+# must be generated
+  #$REPO_ROOT/core/optview.py 
 readonly OSH_PARSE_FILES=(
   $REPO_ROOT/asdl/format.py 
   $REPO_ROOT/asdl/runtime.py 

@@ -9,6 +9,7 @@ from _devbuild.gen.syntax_asdl import assign_op_e
 from asdl import runtime
 from asdl import pretty
 from core import error
+from core import optview
 from core.util import log
 from osh import word_
 from pylib import os_path
@@ -160,7 +161,8 @@ class Tracer(object):
   """
   def __init__(self,
                parse_ctx,  # type: ParseContext
-               exec_opts,  # type: MutableOpts
+               exec_opts,  # type: optview.Exec
+               mutable_opts,  # type: MutableOpts
                mem,  # type: Mem
                word_ev,  # type: NormalWordEvaluator
                f,  # type: DebugFile
@@ -175,6 +177,7 @@ class Tracer(object):
     """
     self.parse_ctx = parse_ctx
     self.exec_opts = exec_opts
+    self.mutable_opts = mutable_opts
     self.mem = mem
     self.word_ev = word_ev
     self.f = f  # can be the --debug-file as well
@@ -217,18 +220,18 @@ class Tracer(object):
     # and $OIL_XTRACE_PREFIX.
 
     # Prevent infinite loop when PS4 has command sub!
-    assert self.exec_opts.xtrace  # We shouldn't call this unless it's on!
-    self.exec_opts.xtrace = False
+    assert self.exec_opts.xtrace()  # We shouldn't call this unless it's on!
+    self.mutable_opts.set_xtrace(False)
     try:
       prefix = self.word_ev.EvalForPlugin(ps4_word)
     finally:
-      self.exec_opts.xtrace = True
+      self.mutable_opts.set_xtrace(True)
     return first_char, prefix.s
 
   def OnSimpleCommand(self, argv):
     # type: (List[str]) -> None
     # NOTE: I think tracing should be on by default?  For post-mortem viewing.
-    if not self.exec_opts.xtrace:
+    if not self.exec_opts.xtrace():
       return
 
     first_char, prefix = self._EvalPS4()
@@ -238,7 +241,7 @@ class Tracer(object):
   def OnShAssignment(self, lval, op, val, flags, lookup_mode):
     # type: (lvalue_t, assign_op_t, value_t, Any, scope_t) -> None
     # NOTE: I think tracing should be on by default?  For post-mortem viewing.
-    if not self.exec_opts.xtrace:
+    if not self.exec_opts.xtrace():
       return
 
     first_char, prefix = self._EvalPS4()

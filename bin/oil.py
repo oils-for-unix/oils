@@ -335,7 +335,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   oil_grammar = meta.LoadOilGrammar(loader)
 
-  if opts.one_pass_parse and not exec_opts.noexec:
+  if opts.one_pass_parse and not exec_opts.noexec():
     raise args.UsageError('--one-pass-parse requires noexec (-n)')
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
   parse_ctx.Init_OnePassParse(opts.one_pass_parse)
@@ -374,7 +374,6 @@ def ShellMain(lang, argv0, argv, login_shell):
   exec_deps.trap_nodes = []  # TODO: Clear on fork() to avoid duplicates
 
   exec_deps.job_state = job_state
-  # note: exec_opts.interactive set later
   exec_deps.waiter = process.Waiter(job_state, exec_opts)
   exec_deps.errfmt = errfmt
 
@@ -520,7 +519,7 @@ def ShellMain(lang, argv0, argv, login_shell):
                          parse_ctx, exec_deps)
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
   prompt_ev = prompt.Evaluator(lang, parse_ctx, mem)
-  tracer = dev.Tracer(parse_ctx, exec_opts, mem, word_ev, trace_f)
+  tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, word_ev, trace_f)
 
   # Wire up circular dependencies.
   vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, ex, prompt_ev, tracer)
@@ -549,13 +548,13 @@ def ShellMain(lang, argv0, argv, login_shell):
     arena.PushSource(source.CFlag())
     line_reader = reader.StringLineReader(opts.c, arena)
     if opts.i:  # -c and -i can be combined
-      mutable_opts.SetInteractive()
+      mutable_opts.set_interactive()
 
   elif opts.i:  # force interactive
     arena.PushSource(source.Stdin(' -i'))
     line_reader = py_reader.InteractiveLineReader(
         arena, prompt_ev, hist_ev, line_input, prompt_state)
-    mutable_opts.SetInteractive()
+    mutable_opts.set_interactive()
 
   else:
     script_name = arg_r.Peek()
@@ -564,7 +563,7 @@ def ShellMain(lang, argv0, argv, login_shell):
         arena.PushSource(source.Interactive())
         line_reader = py_reader.InteractiveLineReader(
             arena, prompt_ev, hist_ev, line_input, prompt_state)
-        mutable_opts.SetInteractive()
+        mutable_opts.set_interactive()
       else:
         arena.PushSource(source.Stdin(''))
         line_reader = reader.FileLineReader(sys.stdin, arena)
@@ -582,7 +581,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   # TODO: .rc file needs its own arena.
   c_parser = parse_ctx.MakeOshParser(line_reader)
 
-  if exec_opts.interactive:
+  if exec_opts.interactive():
     # Calculate ~/.config/oil/oshrc or oilrc
     # Use ~/.config/oil to avoid cluttering the user's home directory.  Some
     # users may want to ln -s ~/.config/oil/oshrc ~/oshrc or ~/.oshrc.
@@ -645,7 +644,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       status = e.status
     return status
 
-  nodes_out = [] if exec_opts.noexec else None
+  nodes_out = [] if exec_opts.noexec() else None
 
   if nodes_out is None and opts.parser_mem_dump:
     raise args.UsageError('--parser-mem-dump can only be used with -n')
