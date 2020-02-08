@@ -30,7 +30,7 @@ if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import word__String, bool_expr_t
   from _devbuild.gen.types_asdl import lex_mode_t
   from core.ui import ErrorFormatter
-  from osh.state import MutableOpts
+  from core import optview
 
 
 class _StringWordEmitter(word_parse.WordEmitter):
@@ -154,7 +154,7 @@ def _ThreeArgs(w_parser):
 
 class Test(object):
   def __init__(self, need_right_bracket, exec_opts, errfmt):
-    # type: (bool, MutableOpts, ErrorFormatter) -> None
+    # type: (bool, optview.Exec, ErrorFormatter) -> None
     self.need_right_bracket = need_right_bracket
     self.exec_opts = exec_opts
     self.errfmt = errfmt

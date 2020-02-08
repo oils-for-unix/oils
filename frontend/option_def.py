@@ -32,6 +32,8 @@ SET_OPTIONS = [
 
 # Used by core/builtin_comp.py too.
 SET_OPTION_NAMES = [name for _, name in SET_OPTIONS]
+# This is a cell, even though it's disallowed
+SET_OPTION_NAMES.append('interactive')
 
 _STRICT_OPTION_NAMES = [
     # NOTE:

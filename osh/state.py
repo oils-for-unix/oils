@@ -202,38 +202,33 @@ class _Getter(object):
 
 
 def MakeOpts(mem, line_input):
-  # type: (Mem, Optional[Any]) -> Tuple[optview.Parse, MutableOpts, MutableOpts]
+  # type: (Mem, Optional[Any]) -> Tuple[optview.Parse, optview.Exec, MutableOpts]
   opt_array = [False] * option.ARRAY_SIZE
 
+  errexit = _ErrExit()
   parse_opts = optview.Parse(opt_array)
-  #exec_opts = optview.Exec(opt_array)
-  mutable_opts = MutableOpts(mem, opt_array, line_input)
-  exec_opts = mutable_opts
+  exec_opts = optview.Exec(opt_array, errexit)
+  mutable_opts = MutableOpts(mem, opt_array, errexit, line_input)
+  #exec_opts = mutable_opts
   return parse_opts, exec_opts, mutable_opts
 
 
 class MutableOpts(object):
 
-  def __init__(self, mem, opt_array, readline):
-    # type: (Mem, List[bool], Optional[Any]) -> None
+  def __init__(self, mem, opt_array, errexit, readline):
+    # type: (Mem, List[bool], _ErrExit, Optional[Any]) -> None
     """
     Args:
       mem: state.Mem, for SHELLOPTS
     """
     self.mem = mem
     self.opt_array = opt_array
+    self.errexit = errexit
     # On by default
     self.opt_array[option.hashall] = True
 
     # Used for 'set -o vi/emacs'
     self.readline = readline
-
-    # Depends on the shell invocation (sh -i, etc.)  This is not technically an
-    # 'set' option, but it appears in $-.
-    self.interactive = False
-
-    # set -o / set +o
-    self.errexit = _ErrExit()  # -e
 
     # This comes after all the 'set' options.
     UP_shellopts = self.mem.GetVar('SHELLOPTS')
@@ -271,29 +266,7 @@ class MutableOpts(object):
 
   def SetInteractive(self):
     # type: () -> None
-    self.interactive = True
-
-  def GetDollarHyphen(self):
-    # type: () -> str
-    chars = []  # type: List[str]
-    if self.interactive:
-      chars.append('i')
-
-    if self.ErrExit():
-      chars.append('e')
-    if self.nounset:
-      chars.append('u')
-    # NO letter for pipefail?
-    if self.xtrace:
-      chars.append('x')
-    if self.noexec:
-      chars.append('n')
-
-    # bash has:
-    # - c for sh -c, i for sh -i (mksh also has this)
-    # - h for hashing (mksh also has this)
-    # - B for brace expansion
-    return ''.join(chars)
+    self.opt_array[option.interactive] = True
 
   def _SetArrayByName(self, opt_name, b):
     # type: (str, bool) -> None

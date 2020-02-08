@@ -365,6 +365,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   # - ex and builtins (which execute code, like eval)
   # - prompt_ev needs word_ev for $PS1, which needs prompt_ev for @P
   exec_deps = cmd_exec.Deps()
+  exec_deps.mutable_opts = mutable_opts
 
   # TODO: In general, exec_deps are shared between the mutually recursive
   # evaluators.  Some of the four below are only shared between a builtin and
@@ -548,13 +549,13 @@ def ShellMain(lang, argv0, argv, login_shell):
     arena.PushSource(source.CFlag())
     line_reader = reader.StringLineReader(opts.c, arena)
     if opts.i:  # -c and -i can be combined
-      exec_opts.SetInteractive()
+      mutable_opts.SetInteractive()
 
   elif opts.i:  # force interactive
     arena.PushSource(source.Stdin(' -i'))
     line_reader = py_reader.InteractiveLineReader(
         arena, prompt_ev, hist_ev, line_input, prompt_state)
-    exec_opts.SetInteractive()
+    mutable_opts.SetInteractive()
 
   else:
     script_name = arg_r.Peek()
@@ -563,7 +564,7 @@ def ShellMain(lang, argv0, argv, login_shell):
         arena.PushSource(source.Interactive())
         line_reader = py_reader.InteractiveLineReader(
             arena, prompt_ev, hist_ev, line_input, prompt_state)
-        exec_opts.SetInteractive()
+        mutable_opts.SetInteractive()
       else:
         arena.PushSource(source.Stdin(''))
         line_reader = reader.FileLineReader(sys.stdin, arena)

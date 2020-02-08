@@ -105,8 +105,9 @@ if TYPE_CHECKING:
       Token, source_t, redir_t, expr__Lambda, env_pair, proc_sig__Closed,
   )
   from core.ui import ErrorFormatter
-  from frontend.parse_lib import ParseContext
   from core import dev
+  from core import optview
+  from frontend.parse_lib import ParseContext
   from oil_lang import expr_eval
   from osh.cmd_parse import CommandParser
   from osh import word_eval
@@ -203,6 +204,7 @@ class _ControlFlow(Exception):
 class Deps(object):
   def __init__(self):
     # type: () -> None
+    self.mutable_opts = None  # type: state.MutableOpts
     self.search_path = None # type: state.SearchPath
     self.ext_prog = None    # type: process.ExternalProgram
 
@@ -256,7 +258,7 @@ class Executor(object):
                fd_state,     # type: process.FdState
                procs,        # type: Dict[str, command__ShFunction]
                builtins,     # type: Dict[builtin_t, _Builtin]
-               exec_opts,    # type: state.MutableOpts
+               exec_opts,    # type: optview.Exec
                parse_ctx,    # type: ParseContext
                exec_deps,    # type: Deps
   ):
@@ -288,6 +290,7 @@ class Executor(object):
     self.arena = parse_ctx.arena
     self.aliases = parse_ctx.aliases  # alias name -> string
 
+    self.mutable_opts = exec_deps.mutable_opts
     self.dumper = exec_deps.dumper
     self.errfmt = exec_deps.errfmt
     self.debug_f = exec_deps.debug_f  # Used by ShellFuncAction too
@@ -560,11 +563,11 @@ class Executor(object):
 
   def _PushErrExit(self, span_id):
     # type: (int) -> None
-    self.exec_opts.errexit.Push(span_id)
+    self.mutable_opts.errexit.Push(span_id)
 
   def _PopErrExit(self):
     # type: () -> None
-    self.exec_opts.errexit.Pop()
+    self.mutable_opts.errexit.Pop()
 
   # TODO: Also change to BareAssign (set global or mutate local) and
   # KeywordAssign.  The latter may have flags too.
@@ -576,7 +579,7 @@ class Executor(object):
   def _CheckStatus(self, status, node):
     # type: (int, command_t) -> None
     """Raises ErrExitFailure, maybe with location info attached."""
-    if self.exec_opts.ErrExit() and status != 0:
+    if self.exec_opts.errexit() and status != 0:
       # NOTE: Sometimes location info is duplicated, like on UsageError, or a
       # bad redirect.  Also, pipelines can fail twice.
 
@@ -838,8 +841,8 @@ class Executor(object):
 
       func_node = self.procs.get(arg0)
       if func_node is not None:
-        eo = self.exec_opts
-        if eo.strict_errexit and eo.errexit.SpidIfDisabled() != runtime.NO_SPID:
+        mo = self.mutable_opts
+        if mo.strict_errexit and mo.errexit.SpidIfDisabled() != runtime.NO_SPID:
           # NOTE: This would be checked below, but this gives a better error
           # message.
           e_die("can't disable errexit running a function. "
@@ -1740,10 +1743,9 @@ class Executor(object):
 
     # strict_errexit check for all compound commands.
     # TODO: Speed this up with some kind of bit mask?
-    eo = self.exec_opts
-    if eo.strict_errexit and _DisallowErrExit(node):
+    if self.exec_opts.strict_errexit and _DisallowErrExit(node):
 
-      span_id = eo.errexit.SpidIfDisabled()
+      span_id = self.mutable_opts.errexit.SpidIfDisabled()
       if span_id != runtime.NO_SPID:
         node_str = NewStr(command_str(node.tag_()))  # e.g. command.BraceGroup
         e_die("errexit is disabled here, but strict_errexit disallows it "
@@ -1910,7 +1912,7 @@ class Executor(object):
     # OSH has the concept of aborting in the middle of a WORD.  We're not
     # waiting until the command is over!
     if self.exec_opts.more_errexit:
-      if self.exec_opts.ErrExit() and status != 0:
+      if self.exec_opts.errexit() and status != 0:
         raise error.ErrExit(
             'Command sub exited with status %d (%r)', status,
             NewStr(command_str(node.tag_())))

@@ -131,8 +131,9 @@ def InitWordEvaluator():
   arena = MakeArena('<InitWordEvaluator>')
   mem = state.Mem('', [], {}, arena)
   opt_array = [False] * option.ARRAY_SIZE
+  errexit = state._ErrExit()
   parse_opts = optview.Parse(opt_array)
-  exec_opts = state.MutableOpts(mem, opt_array, None)
+  exec_opts = state.MutableOpts(mem, opt_array, errexit, None)
 
   exec_deps = cmd_exec.Deps()
   exec_deps.trap_nodes = []
@@ -154,7 +155,9 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
     parse_ctx = InitParseContext()
 
   mem = mem or state.Mem('', [], {}, arena)
-  exec_opts = state.MutableOpts(mem, opt_array, None)
+  errexit = state._ErrExit()
+  exec_opts = optview.Exec(opt_array, errexit)
+  # No 'readline' in the tests.
 
   errfmt = ui.ErrorFormatter(arena)
   job_state = process.JobState()
@@ -187,11 +190,9 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
       builtin_e.READONLY: builtin_assign.Readonly(mem, errfmt),
   }
 
-  # For the tests, we do not use 'readline'.
-  exec_opts = state.MutableOpts(mem, opt_array, None)
-
   debug_f = util.DebugFile(sys.stderr)
   exec_deps = cmd_exec.Deps()
+  exec_deps.mutable_opts = state.MutableOpts(mem, opt_array, errexit, None)
   exec_deps.search_path = state.SearchPath(mem)
   exec_deps.errfmt = errfmt
   exec_deps.trap_nodes = []
@@ -217,6 +218,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
   ex = cmd_exec.Executor(mem, fd_state, funcs, builtins, exec_opts,
                          parse_ctx, exec_deps)
+  assert ex.mutable_opts is not None, ex
   prompt_ev = prompt.Evaluator('osh', parse_ctx, mem)
   tracer = dev.Tracer(parse_ctx, exec_opts, mem, word_ev, debug_f)
 

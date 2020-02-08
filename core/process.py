@@ -644,7 +644,7 @@ class SubProgramThunk(Thunk):
 
     # NOTE: may NOT return due to exec().
     if not self.inherit_errexit:
-      self.ex.exec_opts.errexit.Disable()
+      self.ex.mutable_opts.errexit.Disable()
 
     try:
       self.ex.ExecuteAndCatch(self.node, fork_external=False)
