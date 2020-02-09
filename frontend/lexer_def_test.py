@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-lex_test.py: Tests for lex.py
+lexer_def_test.py: Tests for lexer_def.py
 """
 from __future__ import print_function
 
@@ -11,7 +11,7 @@ from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.types_asdl import lex_mode_e
 from core.test_lib import Tok
 from core import test_lib
-from frontend import lex
+from frontend import lexer_def
 from frontend import lexer
 from frontend import lookup
 from frontend.lexer import LineLexer
@@ -335,7 +335,7 @@ class RegexTest(unittest.TestCase):
     self.assertEqual(False, bool(nul_pat.match('x')))
     self.assertEqual(True, bool(nul_pat.match('\0')))
 
-    _, p, _ = lex.ECHO_E_DEF[-1]
+    _, p, _ = lexer_def.ECHO_E_DEF[-1]
     print('P %r' % p)
     last_echo_e_pat = re.compile(p)
     self.assertEqual(True, bool(last_echo_e_pat.match('x')))

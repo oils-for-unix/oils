@@ -43,12 +43,12 @@ def TopLevel():
 
 def Match():
   from frontend.match import _MatchOshToken_Slow, _MatchTokenSlow
-  from frontend import lex
-  MATCHER = _MatchOshToken_Slow(lex.LEXER_DEF)
-  ECHO_MATCHER = _MatchTokenSlow(lex.ECHO_E_DEF)
-  GLOB_MATCHER = _MatchTokenSlow(lex.GLOB_DEF)
-  PS1_MATCHER = _MatchTokenSlow(lex.PS1_DEF)
-  HISTORY_MATCHER = _MatchTokenSlow(lex.HISTORY_DEF)
+  from frontend import lexer_def
+  MATCHER = _MatchOshToken_Slow(lexer_def.LEXER_DEF)
+  ECHO_MATCHER = _MatchTokenSlow(lexer_def.ECHO_E_DEF)
+  GLOB_MATCHER = _MatchTokenSlow(lexer_def.GLOB_DEF)
+  PS1_MATCHER = _MatchTokenSlow(lexer_def.PS1_DEF)
+  HISTORY_MATCHER = _MatchTokenSlow(lexer_def.HISTORY_DEF)
 
 
 def Arith():

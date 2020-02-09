@@ -22,8 +22,8 @@
 ./_devbuild/gen/types_asdl.py
 ./frontend/args.py
 ./frontend/id_kind.py
+./frontend/lexer_def.py
 ./frontend/lexer.py
-./frontend/lex.py
 ./frontend/location.py
 ./frontend/lookup.py
 ./frontend/match.py

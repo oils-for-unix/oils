@@ -7,7 +7,7 @@ import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
 from core.test_lib import Tok
-from frontend.lex import LEXER_DEF
+from frontend.lexer_def import LEXER_DEF
 
 
 class TokenTest(unittest.TestCase):

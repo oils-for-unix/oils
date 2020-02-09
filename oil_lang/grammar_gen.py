@@ -13,7 +13,9 @@ from _devbuild.gen.syntax_asdl import source
 from core import alloc
 from core import optview
 from core.util import log
-from frontend import lexer, reader, lex
+from frontend import lexer
+from frontend import lexer_def
+from frontend import reader
 from pgen2 import parse, pgen
 
 
@@ -84,16 +86,16 @@ def main(argv):
 
   # Note: We have two lists of ops because Id.Op_Semi is used, not
   # Id.Arith_Semi.
-  for _, token_str, id_ in lex.EXPR_OPS:
+  for _, token_str, id_ in lexer_def.EXPR_OPS:
     assert token_str not in OPS, token_str
     OPS[token_str] = id_
 
   # Tokens that look like / or ${ or @{
   triples = (
-      lex.ID_SPEC.LexerPairs(Kind.Arith) +
-      lex.OIL_LEFT_SUBS +
-      lex.OIL_LEFT_UNQUOTED +
-      lex.EXPR_WORDS
+      lexer_def.ID_SPEC.LexerPairs(Kind.Arith) +
+      lexer_def.OIL_LEFT_SUBS +
+      lexer_def.OIL_LEFT_UNQUOTED +
+      lexer_def.EXPR_WORDS
   )
   more_ops = {}
   for _, token_str, id_ in triples:
@@ -102,7 +104,7 @@ def main(argv):
 
   # Tokens that look like 'for'
   keyword_ops = {}
-  for _, token_str, id_ in lex.EXPR_WORDS:  # for, in, etc.
+  for _, token_str, id_ in lexer_def.EXPR_WORDS:  # for, in, etc.
     assert token_str not in keyword_ops, token_str
     keyword_ops[token_str] = id_
 

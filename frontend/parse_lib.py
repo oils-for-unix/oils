@@ -181,7 +181,7 @@ if mylib.PYTHON:
     # type: (Grammar) -> Dict[int, str]
 
     # TODO: Break this dependency
-    from frontend import lex
+    from frontend import lexer_def
 
     names = {}
 
@@ -190,7 +190,7 @@ if mylib.PYTHON:
 
     # _Id_str()
 
-    for id_name, k in lex.ID_SPEC.id_str2int.items():
+    for id_name, k in lexer_def.ID_SPEC.id_str2int.items():
       # Hm some are out of range
       #assert k < 256, (k, id_name)
 

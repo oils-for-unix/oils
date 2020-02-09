@@ -9,7 +9,7 @@ from core import error
 from core import ui
 #from core.util import log
 from frontend import args
-from frontend import lex
+from frontend import lexer_def
 from frontend import option_def
 from osh import state
 
@@ -158,7 +158,7 @@ class SpecBuilder(object):
         actions.append(_FixedWordsAction(builtin_def.BUILTIN_NAMES))
         actions.append(_FixedWordsAction(ex.aliases))
         actions.append(_FixedWordsAction(ex.procs))
-        actions.append(_FixedWordsAction(lex.OSH_KEYWORD_NAMES))
+        actions.append(_FixedWordsAction(lexer_def.OSH_KEYWORD_NAMES))
         actions.append(completion.FileSystemAction(exec_only=True))
 
         # Look on the file system.

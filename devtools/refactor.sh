@@ -115,4 +115,9 @@ opts-accessor() {
   sed --regexp-extended -i 's/parse_opts[.][a-z_]+/\0\(\)/g' */*.py
 }
 
+lexer-def() {
+  sed --regexp-extended -i 's/import lex$/import lexer_def/' */*.py
+  #sed --regexp-extended -i 's/\blex[.]/lexer_def./g' */*.py
+}
+
 "$@"

@@ -656,7 +656,7 @@ class Mem(object):
     SetGlobalString(self, 'EUID', str(posix.geteuid()))
     SetGlobalString(self, 'PPID', str(posix.getppid()))
 
-    SetGlobalString(self, 'HOSTNAME', str(libc.gethostname()))
+    SetGlobalString(self, 'HOSTNAME', libc.gethostname())
 
     # In bash, this looks like 'linux-gnu', 'linux-musl', etc.  Scripts test
     # for 'darwin' and 'freebsd' too.  They generally don't like at 'gnu' or

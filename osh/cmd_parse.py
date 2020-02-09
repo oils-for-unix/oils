@@ -451,7 +451,7 @@ class CommandParser(object):
     """
     self._Peek()
     # TODO: Printing something like KW_Do is not friendly.  We can map
-    # backwards using the _KEYWORDS list in osh/lex.py.
+    # backwards using the _KEYWORDS list in frontend/lexer_def.py.
     if self.c_id != c_id:
       p_die(msg, word=self.cur_word)
     self._Next()

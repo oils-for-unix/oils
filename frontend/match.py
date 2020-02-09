@@ -4,7 +4,7 @@ match.py - match with generated re2c code or Python regexes.
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.types_asdl import lex_mode_t
-from frontend import lex
+from frontend import lexer_def
 from frontend import option_def
 
 from typing import Iterator, Tuple, Callable, Dict, List, Any, TYPE_CHECKING
@@ -135,22 +135,22 @@ if fastlex:
   ShouldHijack = fastlex.ShouldHijack
   MatchOption = fastlex.MatchOption
 else:
-  OneToken = _MatchOshToken_Slow(lex.LEXER_DEF)
-  ECHO_MATCHER = _MatchTokenSlow(lex.ECHO_E_DEF)
-  GLOB_MATCHER = _MatchTokenSlow(lex.GLOB_DEF)
-  PS1_MATCHER = _MatchTokenSlow(lex.PS1_DEF)
-  HISTORY_MATCHER = _MatchTokenSlow(lex.HISTORY_DEF)
-  BRACE_RANGE_MATCHER = _MatchTokenSlow(lex.BRACE_RANGE_DEF)
+  OneToken = _MatchOshToken_Slow(lexer_def.LEXER_DEF)
+  ECHO_MATCHER = _MatchTokenSlow(lexer_def.ECHO_E_DEF)
+  GLOB_MATCHER = _MatchTokenSlow(lexer_def.GLOB_DEF)
+  PS1_MATCHER = _MatchTokenSlow(lexer_def.PS1_DEF)
+  HISTORY_MATCHER = _MatchTokenSlow(lexer_def.HISTORY_DEF)
+  BRACE_RANGE_MATCHER = _MatchTokenSlow(lexer_def.BRACE_RANGE_DEF)
 
   # Used by osh/cmd_parse.py to validate for loop name.  Note it must be
   # anchored on the right.
-  _VAR_NAME_RE = re.compile(lex.VAR_NAME_RE + '$')  # type: ignore
+  _VAR_NAME_RE = re.compile(lexer_def.VAR_NAME_RE + '$')  # type: ignore
 
   def IsValidVarName(s):
     # type: (str) -> bool
     return bool(_VAR_NAME_RE.match(s))
 
-  _SHOULD_HIJACK_RE = re.compile(lex.SHOULD_HIJACK_RE + '$')  # type: ignore
+  _SHOULD_HIJACK_RE = re.compile(lexer_def.SHOULD_HIJACK_RE + '$')  # type: ignore
 
   def ShouldHijack(s):
     # type: (str) -> bool

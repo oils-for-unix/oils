@@ -172,7 +172,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   readline = None  # simulate not having it
   new_var = builtin_assign.NewVar(mem, funcs, errfmt)
   builtins = {  # Lookup
-      builtin_e.ECHO: builtin_pure.Echo(),
+      builtin_e.ECHO: builtin_pure.Echo(exec_opts),
       builtin_e.SHIFT: builtin_assign.Shift(mem),
 
       builtin_e.HISTORY: builtin.History(readline),

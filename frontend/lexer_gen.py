@@ -13,7 +13,7 @@ import sre_parse
 import sre_constants
 
 from asdl import pretty  # For PLAIN_WORD_RE
-from frontend import lex
+from frontend import lexer_def
 from frontend import option_def
 
 
@@ -395,31 +395,31 @@ static inline int %s(const unsigned char* s, int len) {
   # limit should be the end of string
   # line + line_len
 def main(argv):
-  # This becomes osh-lex.re2c.c.  It is compiled to osh-lex.c and then
+  # This becomes osh-lexer_def.re2c.c.  It is compiled to osh-lexer_def.c and then
   # included.
 
   action = argv[1]
   if action == 'c':
     # Print code to stdout.
-    TranslateOshLexer(lex.LEXER_DEF)
-    TranslateSimpleLexer('MatchEchoToken', lex.ECHO_E_DEF)
-    TranslateSimpleLexer('MatchGlobToken', lex.GLOB_DEF)
-    TranslateSimpleLexer('MatchPS1Token', lex.PS1_DEF)
-    TranslateSimpleLexer('MatchHistoryToken', lex.HISTORY_DEF)
-    TranslateSimpleLexer('MatchBraceRangeToken', lex.BRACE_RANGE_DEF)
+    TranslateOshLexer(lexer_def.LEXER_DEF)
+    TranslateSimpleLexer('MatchEchoToken', lexer_def.ECHO_E_DEF)
+    TranslateSimpleLexer('MatchGlobToken', lexer_def.GLOB_DEF)
+    TranslateSimpleLexer('MatchPS1Token', lexer_def.PS1_DEF)
+    TranslateSimpleLexer('MatchHistoryToken', lexer_def.HISTORY_DEF)
+    TranslateSimpleLexer('MatchBraceRangeToken', lexer_def.BRACE_RANGE_DEF)
 
     # e.g. "pipefail" -> option::pipefail
     StringToInt('MatchOption', option_def.OPTION_DEF)
     # TODO:
     #StringToInt('MatchBuiltin', builtin_def.BUILTIN_DEF)
 
-    TranslateRegexToPredicate(lex.VAR_NAME_RE, 'IsValidVarName')
+    TranslateRegexToPredicate(lexer_def.VAR_NAME_RE, 'IsValidVarName')
     TranslateRegexToPredicate(pretty.PLAIN_WORD_RE, 'IsPlainWord')
-    TranslateRegexToPredicate(lex.SHOULD_HIJACK_RE, 'ShouldHijack')
+    TranslateRegexToPredicate(lexer_def.SHOULD_HIJACK_RE, 'ShouldHijack')
 
   elif action == 'print-all':
     # Top level is a switch statement.
-    for state, pat_list in lex.LEXER_DEF.iteritems():
+    for state, pat_list in lexer_def.LEXER_DEF.iteritems():
       print(state)
       # This level is re2c patterns.
       for is_regex, pat, token_id in pat_list:
@@ -435,7 +435,7 @@ def main(argv):
     unique = set()
 
     num_regexes = 0
-    for state, pat_list in lex.LEXER_DEF.iteritems():
+    for state, pat_list in lexer_def.LEXER_DEF.iteritems():
       print(state)
       # This level is re2c patterns.
       for is_regex, pat, token_id in pat_list:

@@ -1,5 +1,5 @@
 """
-lex.py -- A lexer for both shell and Oil.
+lexer_def.py -- A lexer for both shell and Oil.
 
 It consists of a series of lexer modes, each with a regex -> Id mapping.
 

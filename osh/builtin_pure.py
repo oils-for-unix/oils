@@ -23,9 +23,10 @@ from asdl import pretty
 from core import builtin_def
 from core.builtin_def import _Register
 from core.util import e_die
+from core import optview
 from core import ui
 from frontend import args
-from frontend import lex
+from frontend import lexer_def
 from frontend import match
 from frontend import option_def
 from osh.builtin import _Builtin
@@ -262,9 +263,9 @@ def _ResolveNames(names, funcs, aliases, search_path):
       kind = ('builtin', name)
     elif builtin_def.ResolveAssign(name) != builtin_e.NONE:
       kind = ('builtin', name)
-    elif lex.IsOtherBuiltin(name):  # continue, etc.
+    elif lexer_def.IsOtherBuiltin(name):  # continue, etc.
       kind = ('builtin', name)
-    elif lex.IsKeyword(name):
+    elif lexer_def.IsKeyword(name):
       kind = ('keyword', name)
     else:
       resolved = search_path.Lookup(name)
