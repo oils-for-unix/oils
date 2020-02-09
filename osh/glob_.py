@@ -205,8 +205,8 @@ class _GlobParser(object):
       if id1 in (Id.Glob_Bang, Id.Glob_Caret):
         negated = True
         tokens = tokens[1:]
-    #strs = [s for _, s in tokens]
-    return [glob_part.CharClass(negated, [s for _, s in tokens])]
+    strs = [s for _, s in tokens]
+    return [glob_part.CharClass(negated, strs)]
 
   def Parse(self):
     # type: () -> Tuple[List[glob_part_t], List[str]]

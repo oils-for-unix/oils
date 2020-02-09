@@ -188,9 +188,11 @@ sh-spec() {
   local tmp_env=$this_dir/../_tmp/spec-tmp/$(basename $test_file)
   mkdir -p $tmp_env
 
+  # prepend spec/bin on the front of the $PATH.  We can't isolate $PATH because
+  # we might be running in Nix, etc.
   PYTHONPATH=. test/sh_spec.py \
       --tmp-env $tmp_env \
-      --path-env "$this_dir/../spec/bin:/bin:/usr/bin" \
+      --path-env "$this_dir/../spec/bin:$PATH" \
       "$test_file" \
       "$@"
 }
