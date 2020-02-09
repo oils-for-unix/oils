@@ -973,16 +973,15 @@ class Mem(object):
     definition and mutation will help translate the Oil subset of OSH to static
     languages.
     """
-    if cell and keyword_id == Id.KW_Var:
+    if cell and keyword_id in (Id.KW_Var, Id.KW_Const):
       # TODO: Point at the ORIGINAL declaration!
       e_die("%r has already been declared", name)
 
     if cell is None and keyword_id in (Id.KW_Set, Id.KW_SetGlobal):
       e_die("%r hasn't been declared", name)
 
-  def SetVar(self, lval, val, lookup_mode, flags=0,
-             keyword_id=None):
-    # type: (lvalue_t, value_t, scope_t, int, Optional[Id_t]) -> None
+  def SetVar(self, lval, val, lookup_mode, flags=0):
+    # type: (lvalue_t, value_t, scope_t, int) -> None
     """
     Args:
       lval: lvalue
@@ -993,6 +992,7 @@ class Mem(object):
 
       NOTE: in bash, PWD=/ changes the directory.  But not in dash.
     """
+    keyword_id = flags >> 8  # opposite of _PackFlags
     # STRICTNESS / SANENESS:
     #
     # 1) Don't create arrays automatically, e.g. a[1000]=x

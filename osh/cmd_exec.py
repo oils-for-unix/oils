@@ -247,6 +247,13 @@ if mylib.PYTHON:
     return val
 
 
+def _PackFlags(keyword_id, flags=0):
+  # type: (Id_t, int) -> int
+
+  # Set/Clear are lower 8 bits, and keyword is the rest
+  return (keyword_id << 8) | flags
+
+
 class Executor(object):
   """Executes the program by tree-walking.
 
@@ -1126,6 +1133,7 @@ class Executor(object):
         node = cast(command__VarDecl, UP_node)
 
         if mylib.PYTHON:
+          # x = 'foo' is a shortcut for const x = 'foo'
           if node.keyword is None or node.keyword.id == Id.KW_Const:
             self.mem.SetCurrentSpanId(node.lhs[0].name.span_id)  # point to var name
 
@@ -1135,7 +1143,7 @@ class Executor(object):
             val = _PyObjectToVal(py_val)
 
             self.mem.SetVar(vd_lval, val, scope_e.LocalOnly, 
-                            flags=state.SetReadOnly, keyword_id=None)
+                            flags=_PackFlags(Id.KW_Const, state.SetReadOnly))
             status = 0
 
           else:
@@ -1160,8 +1168,8 @@ class Executor(object):
                 vals.append(val)
 
             for vd_lval, val in zip(vd_lvals, vals):
-              self.mem.SetVar(
-                  vd_lval, val, scope_e.LocalOnly, keyword_id=node.keyword.id)
+              self.mem.SetVar(vd_lval, val, scope_e.LocalOnly,
+                              flags=_PackFlags(node.keyword.id))
 
           status = 0
 
@@ -1222,7 +1230,7 @@ class Executor(object):
                 val = _PyObjectToVal(py_val)
                 # top level variable
                 self.mem.SetVar(UP_lval_, val, lookup_mode,
-                                keyword_id=node.keyword.id)
+                                flags=_PackFlags(node.keyword.id))
 
           # TODO: Other augmented assignments
           elif node.op.id == Id.Arith_PlusEqual:
@@ -1238,7 +1246,7 @@ class Executor(object):
             val = value.Obj(new_py_val)
 
             self.mem.SetVar(pe_lval, val, lookup_mode,
-                            keyword_id=node.keyword.id)
+                            flags=_PackFlags(node.keyword.id))
 
           else:
             raise NotImplementedError(Id_str(node.op.id))
