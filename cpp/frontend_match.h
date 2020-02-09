@@ -6,7 +6,7 @@
 #include "mylib.h"
 
 #include "id_kind_asdl.h"  // syntax.asdl depends on this
-using id_kind_asdl::Id_t;  // TODO: proper ASDL modules 
+using id_kind_asdl::Id_t;  // TODO: proper ASDL modules
 
 #include "syntax_asdl.h"
 #include "types_asdl.h"

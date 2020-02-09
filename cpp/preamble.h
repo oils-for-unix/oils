@@ -12,6 +12,7 @@ using id_kind_asdl::Kind_t;
 #include "lookup.h"
 #include "grammar_nt.h"
 #include "core_optview.h"
+#include "osh_bool_stat.h"
 
 // oil/cpp
 #include "asdl_pretty.h"

@@ -10,6 +10,6 @@ namespace passwd {
 
 Str* GetHomeDir(syntax_asdl::Token* token);
 
-}  // namespace posix
+}  // namespace passwd
 
 #endif  // CORE_PASSWD_H

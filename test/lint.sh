@@ -28,7 +28,7 @@ get-cpplint() {
 cpplint() {
   # we don't have subdir names on the header guard
   _tmp/cpplint.py --filter \
-    -readability/todo,-legal/copyright,-build/header_guard,-whitespace/comments "$@"
+    -readability/todo,-legal/copyright,-build/header_guard,-build/include,-whitespace/comments "$@"
 }
 
 clang-format() {
@@ -40,18 +40,10 @@ clang-format() {
     "$@"
 }
 
-# TODO: -i
-# Integrate with editor.
+# Not ready to do this yet?
+# I don't like one liners like Constructor : v_() {}
 format-oil() {
-  #clang-format -i shell/util.cc shell/util.h shell/string_piece.h
-  #clang-format -i shell/lex.re2c.cc shell/lex.h
-
-  clang-format -i *.{cc,h} shell/*.{cc,h}
-  git diff
-}
-
-format-demo() {
-  clang-format -i demo/*.cc
+  clang-format -i cpp/*.{cc,h} mycpp/*.{cc,h}
   git diff
 }
 

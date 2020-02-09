@@ -76,4 +76,4 @@ void Summarize() {
 #endif
 }
 
-};
+}  // namespace dumb_alloc
