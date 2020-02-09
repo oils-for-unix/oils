@@ -34,10 +34,15 @@ cpplint() {
 clang-format() {
   #$CLANG_DIR/bin/clang-format -style=Google "$@"
 
+  # I like consistent Python-style functions and blocks, e.g. not if (x) return
+  local style='{ BasedOnStyle: Google,
+      IndentCaseLabels: false,
+      AllowShortFunctionsOnASingleLine: None,
+      AllowShortBlocksOnASingleLine: false,
+    }
+  '
   # We have a lot of switch statements, and the extra indent doesn't help.
-  $CLANG_DIR/bin/clang-format \
-    -style="{BasedOnStyle: Google, IndentCaseLabels: false}" \
-    "$@"
+  $CLANG_DIR/bin/clang-format -style="$style" "$@"
 }
 
 # Not ready to do this yet?

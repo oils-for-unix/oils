@@ -19,19 +19,31 @@ class _ErrorWithLocation {
  public:
   _ErrorWithLocation(Str* user_str, int span_id)
       : user_str_(user_str),
-        span_id(span_id), token(nullptr), part(nullptr), word(nullptr) {
+        span_id(span_id),
+        token(nullptr),
+        part(nullptr),
+        word(nullptr) {
   }
   _ErrorWithLocation(Str* user_str, Token* token)
       : user_str_(user_str),
-        span_id(runtime::NO_SPID), token(token), part(nullptr), word(nullptr) {
+        span_id(runtime::NO_SPID),
+        token(token),
+        part(nullptr),
+        word(nullptr) {
   }
   _ErrorWithLocation(Str* user_str, word_part_t* part)
       : user_str_(user_str),
-        span_id(runtime::NO_SPID), token(nullptr), part(part), word(nullptr) {
+        span_id(runtime::NO_SPID),
+        token(nullptr),
+        part(part),
+        word(nullptr) {
   }
   _ErrorWithLocation(Str* user_str, word_t* word)
       : user_str_(user_str),
-        span_id(runtime::NO_SPID), token(nullptr), part(nullptr), word(word) {
+        span_id(runtime::NO_SPID),
+        token(nullptr),
+        part(nullptr),
+        word(word) {
   }
 
   Str* UserErrorString() {
@@ -47,17 +59,13 @@ class _ErrorWithLocation {
 
 class Parse : public _ErrorWithLocation {
  public:
-  Parse(Str* user_str, int span_id)
-      : _ErrorWithLocation(user_str, span_id) {
+  Parse(Str* user_str, int span_id) : _ErrorWithLocation(user_str, span_id) {
   }
-  Parse(Str* user_str, Token* token)
-      : _ErrorWithLocation(user_str, token) {
+  Parse(Str* user_str, Token* token) : _ErrorWithLocation(user_str, token) {
   }
-  Parse(Str* user_str, word_part_t* part)
-      : _ErrorWithLocation(user_str, part) {
+  Parse(Str* user_str, word_part_t* part) : _ErrorWithLocation(user_str, part) {
   }
-  Parse(Str* user_str, word_t* word)
-      : _ErrorWithLocation(user_str, word) {
+  Parse(Str* user_str, word_t* word) : _ErrorWithLocation(user_str, word) {
   }
 };
 

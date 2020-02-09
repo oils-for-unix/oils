@@ -4,8 +4,8 @@
 
 // C includes have to go together
 #include "id.h"
-#include "osh-types.h"
 #include "osh-lex.h"
+#include "osh-types.h"
 
 namespace pretty {
 
@@ -18,4 +18,3 @@ Str* String(Str* s) {
 }
 
 }  // namespace pretty
-

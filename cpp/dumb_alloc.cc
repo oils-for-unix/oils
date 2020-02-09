@@ -15,10 +15,10 @@ int gNumDelete = 0;
 inline size_t aligned(size_t n) {
   // https://stackoverflow.com/questions/2022179/c-quick-calculation-of-next-multiple-of-4
   return (n + 7) & ~7;
-  //return (n + 15) & ~15;
+  // return (n + 15) & ~15;
 }
 
-// This global interface is silly ...
+  // This global interface is silly ...
 
 #ifdef DUMB_ALLOC
 void* operator new(size_t size) {
@@ -33,7 +33,7 @@ void* operator new(size_t size) {
 
 // noexcept fixes Clang warning
 void operator delete(void* p) noexcept {
-  //fprintf(stderr, "\tdelete %p\n", p);
+  // fprintf(stderr, "\tdelete %p\n", p);
   ++gNumDelete;
 }
 #endif
@@ -55,7 +55,7 @@ void* dumb_malloc(size_t size) noexcept {
 }
 
 void dumb_free(void* p) noexcept {
-  //fprintf(stderr, "free\n");
+  // fprintf(stderr, "free\n");
   ++gNumFree;
 }
 #endif

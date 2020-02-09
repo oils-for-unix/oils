@@ -4,15 +4,15 @@
 #define MYLIB_H
 
 #include <assert.h>
-#include <ctype.h>  // isalpha(), isdigit()
+#include <ctype.h>   // isalpha(), isdigit()
 #include <stdlib.h>  // malloc
 #include <string.h>  // strlen
 // https://stackoverflow.com/questions/3882346/forward-declare-file
-#include <cstdio>  // FILE*
-#include <vector>
-#include <initializer_list>
 #include <climits>  // CHAR_BIT
 #include <cstdint>
+#include <cstdio>  // FILE*
+#include <initializer_list>
+#include <vector>
 
 #ifdef DUMB_ALLOC
 #include "dumb_alloc.h"
@@ -23,12 +23,14 @@
 // To reduce code size
 
 #define DISALLOW_COPY_AND_ASSIGN(TypeName) \
-TypeName(TypeName&) = delete;              \
-void operator=(TypeName) = delete;
+  TypeName(TypeName&) = delete;            \
+  void operator=(TypeName) = delete;
 
 class Str;
-template <class T> class List;
-template <class K, class V> class Dict;
+template <class T>
+class List;
+template <class K, class V>
+class Dict;
 
 extern Str* kEmptyString;
 
@@ -44,14 +46,11 @@ void println_stderr(Str* s);
 // TODO: Fill exceptions in
 //
 
-class IndexError {
-};
+class IndexError {};
 
-class KeyError {
-};
+class KeyError {};
 
-class EOFError {
-};
+class EOFError {};
 
 class NotImplementedError {
  public:
@@ -71,12 +70,11 @@ class AssertionError {
   }
   explicit AssertionError(int i) {  // e.g. in expr_to_ast
   }
-  explicit AssertionError(const char*  s) {
+  explicit AssertionError(const char* s) {
   }
   explicit AssertionError(Str* s) {
   }
 };
-
 
 //
 // Data Types
@@ -163,20 +161,20 @@ class Str {
     bool done = false;
     while (i > 0 && !done) {
       switch (data_[i]) {
-        case ' ':
-        case '\t':
-        case '\r':
-        case '\n':
-          i--;
-        default:
-          done = true;
-          break;
+      case ' ':
+      case '\t':
+      case '\r':
+      case '\n':
+        i--;
+      default:
+        done = true;
+        break;
       }
     }
     if (i == last) {  // nothing stripped
       return this;
     }
-    int new_len = i+1;
+    int new_len = i + 1;
     char* buf = static_cast<char*>(malloc(new_len + 1));
     memcpy(buf, data_, new_len);
     buf[new_len] = '\0';
@@ -201,7 +199,7 @@ class Str {
       return false;  // special case
     }
     for (int i = 0; i < len_; ++i) {
-      if (! ::isdigit(data_[i])) {
+      if (!::isdigit(data_[i])) {
         return false;
       }
     }
@@ -212,7 +210,7 @@ class Str {
       return false;  // special case
     }
     for (int i = 0; i < len_; ++i) {
-      if (! ::isalpha(data_[i])) {
+      if (!::isalpha(data_[i])) {
         return false;
       }
     }
@@ -224,7 +222,7 @@ class Str {
       return false;  // special case
     }
     for (int i = 0; i < len_; ++i) {
-      if (! ::isupper(data_[i])) {
+      if (!::isupper(data_[i])) {
         return false;
       }
     }
@@ -419,7 +417,7 @@ class List {
     return v_[0];
   }
 
-// private:
+  // private:
   std::vector<T> v_;  // ''.join accesses this directly
 };
 
@@ -495,8 +493,12 @@ class Tuple2 {
  public:
   Tuple2(A a, B b) : a_(a), b_(b) {
   }
-  A at0() { return a_; }
-  B at1() { return b_; }
+  A at0() {
+    return a_;
+  }
+  B at1() {
+    return b_;
+  }
 
  private:
   A a_;
@@ -508,9 +510,15 @@ class Tuple3 {
  public:
   Tuple3(A a, B b, C c) : a_(a), b_(b), c_(c) {
   }
-  A at0() { return a_; }
-  B at1() { return b_; }
-  C at2() { return c_; }
+  A at0() {
+    return a_;
+  }
+  B at1() {
+    return b_;
+  }
+  C at2() {
+    return c_;
+  }
 
  private:
   A a_;
@@ -523,10 +531,18 @@ class Tuple4 {
  public:
   Tuple4(A a, B b, C c, D d) : a_(a), b_(b), c_(c), d_(d) {
   }
-  A at0() { return a_; }
-  B at1() { return b_; }
-  C at2() { return c_; }
-  D at3() { return d_; }
+  A at0() {
+    return a_;
+  }
+  B at1() {
+    return b_;
+  }
+  C at2() {
+    return c_;
+  }
+  D at3() {
+    return d_;
+  }
 
  private:
   A a_;
@@ -534,7 +550,6 @@ class Tuple4 {
   C c_;
   D d_;
 };
-
 
 //
 // Overloaded free function len()
@@ -544,11 +559,13 @@ inline int len(Str* s) {
   return s->len_;
 }
 
-template <typename  T> int len(List<T>* L) {
+template <typename T>
+int len(List<T>* L) {
   return L->v_.size();
 }
 
-template <typename  K, typename  V> int len(Dict<K, V>* d) {
+template <typename K, typename V>
+int len(Dict<K, V>* d) {
   assert(0);
 }
 
@@ -619,7 +636,7 @@ bool _str_to_int(Str* s, int* result);  // for testing only
 int to_int(Str* s);
 int to_int(Str* s, int base);
 
-// int(a == b) used in arithmetic evaluator 
+// int(a == b) used in arithmetic evaluator
 inline int to_int(bool b) {
   return b;
 }
@@ -687,6 +704,7 @@ class BufLineReader : public LineReader {
   explicit BufLineReader(Str* s) : s_(s), pos_(s->data_) {
   }
   virtual Str* readline();
+
  private:
   Str* s_;
   const char* pos_;

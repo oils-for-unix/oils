@@ -9,9 +9,9 @@ using id_kind_asdl::Kind_t;
 #include "types_asdl.h"
 
 // _build/cpp
-#include "lookup.h"
-#include "grammar_nt.h"
 #include "core_optview.h"
+#include "grammar_nt.h"
+#include "lookup.h"
 #include "osh_bool_stat.h"
 
 // oil/cpp
@@ -28,18 +28,13 @@ using id_kind_asdl::Kind_t;
 // Stubs for Python exceptions.  TODO: Move to mylib if they're used?
 
 // e.g. libc::regex_match raises it
-class RuntimeError {
-};
+class RuntimeError {};
 
-class ValueError {
-};
+class ValueError {};
 
-class OSError {
-};
+class OSError {};
 
-class KeyboardInterrupt {
-};
-
+class KeyboardInterrupt {};
 
 // Hack for now.  Every sum type should have repr()?
 Str* repr(syntax_asdl::source_t* obj) {

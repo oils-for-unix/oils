@@ -12,7 +12,7 @@ extern int X_OK;
 extern int R_OK;
 extern int W_OK;
 
-int access(Str *pathname, int mode) {
+int access(Str* pathname, int mode) {
   assert(0);
 }
 
@@ -66,8 +66,7 @@ void lstat() {
 int environ;
 
 // Dummy exception posix::error
-class error {
-};
+class error {};
 
 }  // namespace posix
 

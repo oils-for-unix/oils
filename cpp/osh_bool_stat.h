@@ -21,8 +21,7 @@ bool DoUnaryOp(Id_t op_id, Str* s) {
 bool DoBinaryOp(Id_t op_id, Str* s1, Str* s2) {
   assert(0);
 }
- 
+
 }  // namespace bool_stat
 
 #endif  // OSH_BOOL_STAT_H
-

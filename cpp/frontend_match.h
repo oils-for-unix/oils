@@ -25,9 +25,7 @@ typedef void (*MatchFunc)(const unsigned char* line, int line_len,
 class SimpleLexer {
  public:
   SimpleLexer(MatchFunc match_func, Str* s)
-      : match_func_(match_func),
-        s_(s),
-        pos_(0) {
+      : match_func_(match_func), s_(s), pos_(0) {
   }
   // TODO: Implement and be careful about ownership of the buffer
   Tuple2<Id_t, Str*> Next();
@@ -44,7 +42,6 @@ class SimpleLexer {
 
 SimpleLexer* BraceRangeLexer(Str* s);
 SimpleLexer* GlobLexer(Str* s);
-
 
 //
 // Other Matching Functions

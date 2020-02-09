@@ -3,7 +3,7 @@
 
 #include "runtime_asdl.h"  // for cell
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   match::SimpleLexer* lex = match::BraceRangeLexer(new Str("{-1..22}"));
 
   while (true) {
@@ -21,7 +21,6 @@ int main(int argc, char **argv) {
   assert(match::MatchOption(new Str("pipefail")) > 0);
   assert(match::MatchOption(new Str("pipefai")) == 0);
   assert(match::MatchOption(new Str("pipefail_")) == 0);
-
 
   // Without sed hack, it's 24 bytes because we have tag (2), id (4), val,
   // span_id.

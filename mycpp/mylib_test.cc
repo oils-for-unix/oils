@@ -1,13 +1,13 @@
-#include <stdarg.h>  // va_list, etc.
-#include <stdio.h>  // vprintf
 #include <assert.h>
+#include <stdarg.h>  // va_list, etc.
+#include <stdio.h>   // vprintf
 
 #include "mylib.h"
 
 void test_str_to_int() {
   int i;
   bool ok;
- 
+
   ok = _str_to_int(new Str("345"), &i);
   assert(ok);
   assert(i == 345);
@@ -63,16 +63,16 @@ void test_str_funcs() {
   log("r3 = %s", r3->data_);
 
   Str* int_str;
-  int_str = str((1<<31) - 1);
+  int_str = str((1 << 31) - 1);
   log("i = %s", int_str->data_);
 
   // wraps with - sign
-  int_str = str(1<<31);
+  int_str = str(1 << 31);
   log("i = %s", int_str->data_);
 
-  int_str = str(-(1<<31) + 1);
+  int_str = str(-(1 << 31) + 1);
   log("i = %s", int_str->data_);
-  int_str = str(-(1<<31));
+  int_str = str(-(1 << 31));
   log("i = %s", int_str->data_);
 
   log("--- rstrip()");
@@ -212,15 +212,15 @@ void test_files() {
 
   FILE* f = fopen("README.md", "r");
   auto r = new mylib::CFileLineReader(f);
-  //auto r = mylib::Stdin();
+  // auto r = mylib::Stdin();
   Str* s = r->readline();
   log("test_files");
   println_stderr(s);
   log("test_files DONE");
 }
 
-int main(int argc, char **argv) {
-  List<int>* L = new List<int> {1, 2, 3};
+int main(int argc, char** argv) {
+  List<int>* L = new List<int>{1, 2, 3};
 
   // TODO: How to do this?
 
@@ -246,8 +246,8 @@ int main(int argc, char **argv) {
 
   log("");
 
-  auto t4 = new Tuple4<int, Str*, Str*, int>(
-      42, new Str("4"), new Str("four"), -42);
+  auto t4 =
+      new Tuple4<int, Str*, Str*, int>(42, new Str("4"), new Str("four"), -42);
 
   log("t4[0] = %d", t4->at0());
   log("t4[1] = %s", t4->at1()->data_);
@@ -289,4 +289,3 @@ int main(int argc, char **argv) {
   log("sizeof(Str) = %zu", sizeof(Str));
   log("sizeof(List<int>) = %zu", sizeof(List<int>));
 }
-

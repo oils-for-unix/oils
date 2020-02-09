@@ -8,4 +8,4 @@ bool Exec::errexit() {
   return errexit_->value();
 }
 
-}
+}  // namespace optview

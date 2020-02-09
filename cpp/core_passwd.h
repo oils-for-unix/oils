@@ -3,8 +3,8 @@
 #ifndef CORE_PASSWD_H
 #define CORE_PASSWD_H
 
-#include "syntax_asdl.h"
 #include "mylib.h"
+#include "syntax_asdl.h"
 
 namespace passwd {
 

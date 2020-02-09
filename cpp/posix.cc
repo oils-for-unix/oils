@@ -11,4 +11,3 @@ int R_OK = ::R_OK;
 int W_OK = ::W_OK;
 
 }  // namespace posix
-

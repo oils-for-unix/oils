@@ -316,7 +316,7 @@ readonly OSH_PARSE_FILES=(
 
   # Note: optview depends on errexit.  But we only need optview::Parse, not
   # optview::exec.
-  $REPO_ROOT/osh/state.py
+  $REPO_ROOT/core/state.py
 )
 
 readonly CAN_TRANSLATE=(
@@ -342,7 +342,7 @@ readonly TRANSLATE=(
   #$REPO_ROOT/osh/sh_expr_eval.py
 
   #$REPO_ROOT/osh/word_eval.py
-  $REPO_ROOT/osh/state.py
+  #$REPO_ROOT/core/state.py
 
   #$REPO_ROOT/osh/cmd_exec.py
 )

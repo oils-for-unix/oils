@@ -39,7 +39,7 @@ void log(const char* fmt, ...) {
 //     len(new) as well.
 // - we're not handling internal NULs (because of strstr())
 Str* Str::replace(Str* old, Str* new_str) {
-  //log("replacing %s with %s", old_data, new_str->data_);
+  // log("replacing %s with %s", old_data, new_str->data_);
 
   const char* old_data = old->data_;
   const char* last_possible = data_ + len_ - old->len_;
@@ -58,14 +58,14 @@ Str* Str::replace(Str* old, Str* new_str) {
     p_this = next + old->len_;  // skip past
   }
 
-  //log("done %d", replace_count);
+  // log("done %d", replace_count);
 
   if (replace_count == 0) {
     return this;  // Reuse the string if there were no replacements
   }
 
-  int len = this->len_ - (replace_count * old->len_)
-                       + (replace_count * new_str->len_);
+  int len = this->len_ - (replace_count * old->len_) +
+            (replace_count * new_str->len_);
 
   char* result = static_cast<char*>(malloc(len + 1));  // +1 for NUL
 
@@ -90,7 +90,7 @@ Str* Str::replace(Str* old, Str* new_str) {
     p_this = next + old->len_;
   }
   memcpy(p_result, p_this, data_ + len_ - p_this);  // Copy the rest of 'this'
-  result[len] = '\0';  // NUL terminate
+  result[len] = '\0';                               // NUL terminate
 
   return new Str(result);
 }
@@ -105,22 +105,22 @@ Str* Str::join(List<Str*>* items) {
   // add length of all the separators
   len += len_ * (v.size() - 1);
 
-  //log("len: %d", len);
-  //log("v.size(): %d", v.size());
+  // log("len: %d", len);
+  // log("v.size(): %d", v.size());
 
-  char* result = static_cast<char*>(malloc(len+1));
+  char* result = static_cast<char*>(malloc(len + 1));
   char* p_result = result;  // advances through
 
   for (int i = 0; i < num_parts; ++i) {
-    //log("i %d", i);
-    if (i != 0 && len_) {  // optimize common case of ''.join()
+    // log("i %d", i);
+    if (i != 0 && len_) {             // optimize common case of ''.join()
       memcpy(p_result, data_, len_);  // copy the separator
       p_result += len_;
-      //log("len_ %d", len_);
+      // log("len_ %d", len_);
     }
 
     int n = v[i]->len_;
-    //log("n: %d", n);
+    // log("n: %d", n);
     memcpy(p_result, v[i]->data_, n);  // copy the list item
     p_result += n;
   }
@@ -152,8 +152,8 @@ Str* CFileLineReader::readline() {
 
   ssize_t len = getline(&line, &allocated_size, f_);
   if (len < 0) {
-    //log("getline() result: %d", len);
-    // Why does tcmalloc mess up errno ???
+  // log("getline() result: %d", len);
+  // Why does tcmalloc mess up errno ???
 #ifndef TCMALLOC
     if (errno != 0) {
       // Unexpected error
@@ -161,10 +161,10 @@ Str* CFileLineReader::readline() {
       throw new AssertionError(errno);
     }
 #endif
-    // Expected EOF 
+    // Expected EOF
     return kEmptyString;
   }
-  //log("len = %d", len);
+  // log("len = %d", len);
 
   // Note: it's NUL terminated
   return new Str(line, len);
@@ -182,7 +182,7 @@ Str* BufLineReader::readline() {
 
   const char* orig_pos = pos_;
   const char* new_pos = strchr(pos_, '\n');
-  //log("pos_ = %s", pos_);
+  // log("pos_ = %s", pos_);
   int len;
   if (new_pos) {
     len = new_pos - pos_ + 1;  // past newline char
@@ -192,13 +192,13 @@ Str* BufLineReader::readline() {
     pos_ = end;
   }
 
-  char* result = static_cast<char*>(malloc(len+1));
+  char* result = static_cast<char*>(malloc(len + 1));
   memcpy(result, orig_pos, len);  // copy the list item
   result[len] = '\0';
   Str* line = new Str(result, len);
 
   // Easier way:
-  //Str* line = new Str(pos_, new_pos - pos_);
+  // Str* line = new Str(pos_, new_pos - pos_);
   return line;
 }
 
@@ -246,7 +246,7 @@ void BufWriter::format_d(int i) {
 // repr() calls this too
 void BufWriter::format_r(Str* s) {
   // Worst case: \0 becomes 4 bytes as '\\x00', and then two quote bytes.
-  int upper_bound = s->len_*4 + 2;
+  int upper_bound = s->len_ * 4 + 2;
 
   // Extend the buffer
   data_ = static_cast<char*>(realloc(data_, len_ + upper_bound + 1));
@@ -255,7 +255,7 @@ void BufWriter::format_r(Str* s) {
   if (memchr(s->data_, '\'', s->len_) && !memchr(s->data_, '"', s->len_)) {
     quote = '"';
   }
-  char *p = data_ + len_;  // end of valid data
+  char* p = data_ + len_;  // end of valid data
 
   // From PyString_Repr()
   *p++ = quote;
@@ -289,7 +289,7 @@ void BufWriter::format_r(Str* s) {
   data_ = static_cast<char*>(realloc(data_, len_ + 1));
 }
 
-//void BufWriter::format_s(const char* s) {
+// void BufWriter::format_s(const char* s) {
 //  this->write_const(s, strlen(s));
 //}
 
@@ -391,4 +391,3 @@ int to_int(Str* s, int base) {
 //
 
 mylib::BufWriter gBuf;
-

@@ -14,11 +14,11 @@
 //   - C++ 20 coroutines (but we're almost certainly not using this)
 
 #include <stdarg.h>  // va_list, etc.
-#include <stdio.h>  // vprintf
+#include <stdio.h>   // vprintf
 
 #include <initializer_list>
-#include <vector>
 #include <memory>  // shared_ptr
+#include <vector>
 
 #include <stdexcept>
 
@@ -34,9 +34,7 @@ void log(const char* fmt, ...) {
 
 class List {
  public:
-  List(std::initializer_list<int> init)
-      : v_() {
-
+  List(std::initializer_list<int> init) : v_() {
     for (int i : init) {
       v_.push_back(i);
     }
@@ -50,9 +48,7 @@ class Array {
   Array() : v_() {
   }
 
-  Array(std::initializer_list<T> init)
-      : v_() {
-
+  Array(std::initializer_list<T> init) : v_() {
     for (T i : init) {
       v_.push_back(i);
     }
@@ -73,7 +69,9 @@ class ParseError {
  public:
   ParseError(const char* reason) : reason_(reason) {
   }
-  const char* reason() const { return reason_; }
+  const char* reason() const {
+    return reason_;
+  }
 
  private:
   const char* reason_;
@@ -81,7 +79,7 @@ class ParseError {
 
 // https://stackoverflow.com/questions/8480640/how-to-throw-a-c-exception
 int compare(int a, int b) {
-  if ( a < 0 || b < 0 ) {
+  if (a < 0 || b < 0) {
     throw std::invalid_argument("received negative value");
   }
   return a < b;
@@ -100,8 +98,7 @@ void except_demo() {
 
   try {
     log("compare(-1, 3): %d", compare(-1, 3));
-  }
-  catch (const std::invalid_argument& e) {
+  } catch (const std::invalid_argument& e) {
     log("Got exception: %s", e.what());
   }
 
@@ -109,15 +106,13 @@ void except_demo() {
 
   try {
     log("parse('foo'): %d", parse("foo"));
-  }
-  catch (const ParseError& e) {
+  } catch (const ParseError& e) {
     log("Got exception: %s", e.reason());
   }
 
   try {
     log("parse('bar'): %d", parse("bar"));
-  }
-  catch (const ParseError& e) {
+  } catch (const ParseError& e) {
     log("Got exception: %s", e.reason());
   }
 }
@@ -130,8 +125,8 @@ void template_demo() {
   log("a.size() = %d", a.size());
 
   Array<List*> a2;
-  a2.append(new List {1, 2, 3});
-  a2.append(new List {4, 5, 6});
+  a2.append(new List{1, 2, 3});
+  a2.append(new List{4, 5, 6});
   log("a2.size() = %d", a2.size());
 }
 
@@ -149,50 +144,49 @@ void default_args_demo() {
 }
 
 namespace core {
-  namespace util {
-    void p_die(const char* s) {
-      log("p_die %s", s);
-    }
-  }
+namespace util {
+void p_die(const char* s) {
+  log("p_die %s", s);
 }
+}  // namespace util
+}  // namespace core
 
 namespace tdop {
-  using core::util::p_die;
+using core::util::p_die;
 
-  class Parser {
-   public:
-    Parser(int token) : token_(token) {
-      log("Parser %d", token);
-      p_die("Parser");
-    }
-    int token_;
-  };
-}
+class Parser {
+ public:
+  Parser(int token) : token_(token) {
+    log("Parser %d", token);
+    p_die("Parser");
+  }
+  int token_;
+};
+}  // namespace tdop
 
 namespace typed_arith_parse {
-  //using namespace core;  This makes EVERYTHING available.
+// using namespace core;  This makes EVERYTHING available.
 
-  namespace util = core::util;
+namespace util = core::util;
 
-  // This lets us use "Parser""
-  using tdop::Parser;
+// This lets us use "Parser""
+using tdop::Parser;
 
-  void namespace_demo() {
-    log("");
-    log("namespace_demo()");
-    f(42);
-    auto p = new tdop::Parser(42);
-    auto p2 = new Parser(43);
+void namespace_demo() {
+  log("");
+  log("namespace_demo()");
+  f(42);
+  auto p = new tdop::Parser(42);
+  auto p2 = new Parser(43);
 
-    util::p_die("ns");
-  }
+  util::p_die("ns");
 }
+}  // namespace typed_arith_parse
 
 // Conclusion: every Python module should have is own namespace
 //
 // from core.util import log => using core::util::log
 // from core import util => namespace util = core::util;
-
 
 // test out the size of 5 uint16_t.  OK it's actually padded, which is nice!
 // Because there is no big element.
@@ -212,7 +206,7 @@ class expr__Const {
 };
 
 namespace expr {
-  typedef expr__Const Const;
+typedef expr__Const Const;
 }
 
 using std::shared_ptr;
@@ -221,10 +215,10 @@ shared_ptr<expr__Const> f(shared_ptr<expr__Const> arg) {
   return shared_ptr<expr__Const>(new expr__Const(arg->i_ + 10));
 }
 
-void shared_ptr_demo() { 
+void shared_ptr_demo() {
   std::shared_ptr<expr__Const> e = std::make_shared<expr__Const>(5);
   log("e->i_ = %d", e->i_);
-  // 16, not 24? 
+  // 16, not 24?
   // These are contiguous.
   log("sizeof(e) = %zu", sizeof(e));
 
@@ -238,7 +232,7 @@ void shared_ptr_demo() {
   log("sizeof(e3) = %zu", sizeof(e3));
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   log("sizeof(int): %d", sizeof(int));
   log("sizeof(int*): %d", sizeof(int*));
   log("sizeof(Extent): %d", sizeof(Extent));
@@ -248,7 +242,7 @@ int main(int argc, char **argv) {
   Extent ext_array[5];
   log("sizeof(ext_array): %d", sizeof(ext_array));
 
-  List l {1, 2, 3};
+  List l{1, 2, 3};
 
   // TODO: How to do this?
 

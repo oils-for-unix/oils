@@ -14,7 +14,7 @@
 //   be improved with macros.
 
 #include <stdarg.h>  // va_list, etc.
-#include <stdio.h>  // vprintf
+#include <stdio.h>   // vprintf
 
 #include <initializer_list>
 #include <vector>
@@ -38,7 +38,7 @@ Cell8* gBase8;
 Cell16* gBase16;
 
 // TODO:
-// pool_id && 0x11 = 
+// pool_id && 0x11 =
 //   00 for gBase4
 //   01 for gBase8
 //   10 for gBase16
@@ -51,7 +51,7 @@ Cell16* gBase16;
 // and mark-sweep does a naive Lisp cons-cell.  Maybe look at OCaml.
 
 // These are arrays of mark bits parallel to arrays of cells.
-// 
+//
 // NOTE:
 // - Micro Python uses 2 bits per cell
 // - oscar uses one bit
@@ -96,14 +96,13 @@ typedef uint32_t SliceRef;
 // And then overload operator *?  Actually that's a good idea and maybe it's
 // what v8 does.
 
-
 // TODO:
 // - makeSlab() -> bump allocate into gBase4 and return ID with 00
 // - makeList() -> bump allocate into gBase8 and return ID with 01
 
 // The garbage collector doesn't statically know the types.
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   log("heap.cc");
   log("sizeof(Slab) = %d", sizeof(Slab));
   log("sizeof(Slice) = %d", sizeof(Slice));
