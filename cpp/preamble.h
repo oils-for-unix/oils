@@ -12,7 +12,6 @@ using id_kind_asdl::Kind_t;
 #include "core_optview.h"
 #include "grammar_nt.h"
 #include "lookup.h"
-#include "osh_bool_stat.h"
 
 // oil/cpp
 #include "asdl_pretty.h"
@@ -22,6 +21,9 @@ using id_kind_asdl::Kind_t;
 #include "osh_arith_parse.h"
 // added for osh_eval
 #include "core_passwd.h"
+#include "osh_bool_stat.h"
+#include "pylib_os_path.h"
+#include "pylib_path_stat.h"
 #include "libc.h"
 #include "posix.h"
 

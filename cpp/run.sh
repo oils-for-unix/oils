@@ -40,6 +40,8 @@ EOF
 
 namespace $ns {
 
+// TODO: fill in
+
 }  // namespace $ns
 EOF
 
