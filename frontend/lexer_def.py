@@ -31,17 +31,17 @@ it doesn't require need a sentinel like \0.
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.types_asdl import lex_mode_e
 
-from frontend import id_kind
+from frontend import id_kind_def
 
 from typing import Tuple
 
 # Initialize spec that the lexer depends on.
 # NOTE: This is duplicated in frontend/id_kind_gen.py.
-ID_SPEC = id_kind.IdSpec({}, {})
+ID_SPEC = id_kind_def.IdSpec({}, {})
 
-id_kind.AddKinds(ID_SPEC)
-id_kind.AddBoolKinds(ID_SPEC)  # must come second
-id_kind.SetupTestBuiltin(ID_SPEC, {}, {}, {})
+id_kind_def.AddKinds(ID_SPEC)
+id_kind_def.AddBoolKinds(ID_SPEC)  # must come second
+id_kind_def.SetupTestBuiltin(ID_SPEC, {}, {}, {})
 
 
 def C(pat, tok_type):

@@ -6,7 +6,7 @@
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
-id_kind_test.py: Tests for id_kind.py
+id_kind_test.py: Tests for id_kind_def.py
 """
 from __future__ import print_function
 

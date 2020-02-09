@@ -26,13 +26,13 @@ def TopLevel():
       TEST_BINARY_LOOKUP, TEST_OTHER_LOOKUP,
       types_asdl
   )
-  from core import id_kind
+  from core import id_kind_def
 
-  ID_SPEC = id_kind.IdSpec(_ID_TO_KIND_INTEGERS, BOOL_ARG_TYPES)
+  ID_SPEC = id_kind_def.IdSpec(_ID_TO_KIND_INTEGERS, BOOL_ARG_TYPES)
 
-  id_kind.AddKinds(ID_SPEC)
-  id_kind.AddBoolKinds(ID_SPEC, types_asdl.bool_arg_type_e)  # must come second
-  id_kind.SetupTestBuiltin(ID_SPEC,
+  id_kind_def.AddKinds(ID_SPEC)
+  id_kind_def.AddBoolKinds(ID_SPEC, types_asdl.bool_arg_type_e)  # must come second
+  id_kind_def.SetupTestBuiltin(ID_SPEC,
                            TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP,
                            TEST_OTHER_LOOKUP,
                            types_asdl.bool_arg_type_e)

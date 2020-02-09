@@ -120,4 +120,9 @@ lexer-def() {
   #sed --regexp-extended -i 's/\blex[.]/lexer_def./g' */*.py
 }
 
+id-kind() {
+  sed --regexp-extended -i 's/import id_kind$/import id_kind_def/' */*.py
+  sed --regexp-extended -i 's/id_kind[.]/id_kind_def./g' */*.py
+}
+
 "$@"

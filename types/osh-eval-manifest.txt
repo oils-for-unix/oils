@@ -21,7 +21,7 @@
 ./_devbuild/gen/syntax_asdl.py
 ./_devbuild/gen/types_asdl.py
 ./frontend/args.py
-./frontend/id_kind.py
+./frontend/id_kind_def.py
 ./frontend/lexer_def.py
 ./frontend/lexer.py
 ./frontend/location.py

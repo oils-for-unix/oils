@@ -6,14 +6,14 @@
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
-id_kind_gen.py - Code generation for id_kind.py.
+id_kind_gen.py - Code generation for id_kind_def.py.
 """
 from __future__ import print_function
 
 import sys
 
 from asdl.visitor import FormatLines
-from frontend import id_kind
+from frontend import id_kind_def
 
 
 def Emit(s, f, depth=0):
@@ -52,12 +52,12 @@ def main(argv):
   TEST_BINARY_LOOKUP = {}
   TEST_OTHER_LOOKUP = {}
 
-  ID_SPEC = id_kind.IdSpec(ID_TO_KIND, BOOL_ARG_TYPES)
+  ID_SPEC = id_kind_def.IdSpec(ID_TO_KIND, BOOL_ARG_TYPES)
 
-  id_kind.AddKinds(ID_SPEC)
-  id_kind.AddBoolKinds(ID_SPEC)  # must come second
+  id_kind_def.AddKinds(ID_SPEC)
+  id_kind_def.AddBoolKinds(ID_SPEC)  # must come second
 
-  id_kind.SetupTestBuiltin(ID_SPEC, TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP,
+  id_kind_def.SetupTestBuiltin(ID_SPEC, TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP,
                            TEST_OTHER_LOOKUP)
 
   ids = ID_SPEC.id_str2int.items()
