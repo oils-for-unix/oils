@@ -9,7 +9,7 @@ import os.path
 from _devbuild.gen.runtime_asdl import scope_e, lvalue, value, value_e
 from core import error
 from core import test_lib
-from osh import state  # module under test
+from core import state  # module under test
 
 
 def _InitMem():

@@ -22,7 +22,7 @@ from frontend import args
 from frontend import lookup
 from frontend import match
 from frontend import reader
-from osh import state
+from core import state
 from osh import string_ops
 from osh import word_compile
 
@@ -31,7 +31,7 @@ from typing import Dict, List, TYPE_CHECKING
 if TYPE_CHECKING:
   from frontend.lexer import Lexer
   from frontend.parse_lib import ParseContext
-  from osh.state import Mem
+  from core.state import Mem
   from core.ui import ErrorFormatter
 
 

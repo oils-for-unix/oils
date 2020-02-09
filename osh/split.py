@@ -40,7 +40,7 @@ from mycpp.mylib import tagswitch
 
 from typing import List, Tuple, Dict, TYPE_CHECKING, cast
 if TYPE_CHECKING:
-  from osh.state import Mem
+  from core.state import Mem
   from _devbuild.gen.runtime_asdl import span_t, value_t
   Span = Tuple[span_t, int]
 

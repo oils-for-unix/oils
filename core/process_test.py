@@ -16,7 +16,7 @@ from core import ui
 from core import util
 from core.util import log
 from osh import builtin
-from osh import state
+from core import state
 
 Process = process.Process
 ExternalThunk = process.ExternalThunk

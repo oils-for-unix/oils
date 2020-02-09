@@ -12,11 +12,11 @@ from _devbuild.gen.runtime_asdl import (
 from frontend import args
 from frontend import match
 from core.builtin_def import _Register
-from osh import state
+from core import state
 
 from typing import Dict, Tuple, Any, TYPE_CHECKING
 if TYPE_CHECKING:
-  from osh.state import Mem
+  from core.state import Mem
   from core.ui import ErrorFormatter
 
 

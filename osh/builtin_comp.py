@@ -11,7 +11,7 @@ from core import ui
 from frontend import args
 from frontend import lexer_def
 from frontend import option_def
-from osh import state
+from core import state
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
   from osh.cmd_exec import Executor
   from osh.split import SplitContext
   from osh.word_eval import NormalWordEvaluator
-  from osh.state import Mem
+  from core.state import Mem
 
 from mycpp import mylib
 if mylib.PYTHON:

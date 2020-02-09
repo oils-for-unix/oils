@@ -39,7 +39,7 @@ from osh import cmd_exec
 from osh import prompt
 from osh import sh_expr_eval
 from osh import split
-from osh import state
+from core import state
 from osh import word_eval
 from oil_lang import expr_eval
 

@@ -37,7 +37,7 @@ from core import ui
 from core.builtin_def import _Register
 from frontend import args
 from pylib import os_path
-from osh import state
+from core import state
 
 import libc
 import posix_ as posix
@@ -54,10 +54,10 @@ from typing import Any, Optional, IO, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import value__Str
   from osh.split import SplitContext
-  from osh.state import Mem
+  from core.state import Mem
   from core.ui import ErrorFormatter
   from osh.cmd_exec import Executor
-  from osh.state import DirStack
+  from core.state import DirStack
   from core.pyutil import _FileResourceLoader
 
 #

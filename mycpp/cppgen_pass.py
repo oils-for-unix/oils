@@ -1579,7 +1579,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             class_name == 'Executor' and func_name == '_Execute' or
             class_name is None and func_name == '_PackFlags' or
             class_name == 'Mem' and func_name in ('GetVar', 'SetVar') or
-            class_name == 'SearchPath' and func_name == 'Lookup'
+            class_name == 'SearchPath' and func_name == 'Lookup' or
+            # osh/sh_expr_eval.py
+            class_name is None and func_name == 'EvalLhsAndLookup'
           ):
 
           default_val = o.arguments[-1].initializer

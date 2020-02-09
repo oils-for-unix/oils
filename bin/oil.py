@@ -93,7 +93,7 @@ from osh import sh_expr_eval
 from osh import history
 from osh import prompt
 from osh import split
-from osh import state
+from core import state
 from osh import word_eval
 
 from pylib import os_path

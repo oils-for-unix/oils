@@ -41,7 +41,7 @@ if TYPE_CHECKING:
   from core.comp_ui import _IDisplay
   from core import optview
   from osh.cmd_exec import Executor
-  from osh.state import SearchPath
+  from core.state import SearchPath
   from mycpp import mylib
 
 

@@ -11,6 +11,7 @@
 ./core/passwd.py
 ./core/process.py
 ./core/pyutil.py
+./core/state.py
 ./core/ui.py
 ./core/util.py
 ./_devbuild/gen/grammar_nt.py
@@ -40,7 +41,6 @@
 ./osh/glob_.py
 ./osh/sh_expr_eval.py
 ./osh/split.py
-./osh/state.py
 ./osh/string_ops.py
 ./osh/tdop.py
 ./osh/word_compile.py

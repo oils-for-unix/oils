@@ -9,7 +9,7 @@ from frontend import match
 
 from typing import List, TYPE_CHECKING
 if TYPE_CHECKING:
-  from osh.state import _ErrExit
+  from core.state import _ErrExit
 
 
 class _Getter(object):

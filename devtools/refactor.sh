@@ -125,4 +125,9 @@ id-kind() {
   sed --regexp-extended -i 's/id_kind[.]/id_kind_def./g' */*.py
 }
 
+state() {
+  sed --regexp-extended -i 's/from osh import state/from core import state/' */*.py
+  sed --regexp-extended -i 's/from osh.state/from core.state/' */*.py
+}
+
 "$@"

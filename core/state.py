@@ -668,7 +668,7 @@ class Mem(object):
     # In bash, this looks like 'linux-gnu', 'linux-musl', etc.  Scripts test
     # for 'darwin' and 'freebsd' too.  They generally don't like at 'gnu' or
     # 'musl'.  We don't have that info, so just make it 'linux'.
-    SetGlobalString(self, 'OSTYPE', str(posix.uname()[0].lower()))
+    SetGlobalString(self, 'OSTYPE', posix.uname()[0].lower())
 
     # For getopts builtin
     SetGlobalString(self, 'OPTIND', '1')

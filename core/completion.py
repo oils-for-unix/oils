@@ -49,7 +49,7 @@ from frontend import reader
 from pylib import os_path
 from pylib import path_stat
 from osh import word_
-from osh import state
+from core import state
 from osh.string_ops import ShellQuoteB
 
 import libc

@@ -35,7 +35,7 @@ from frontend import match
 from osh import braces
 from osh import glob_
 from osh import string_ops
-from osh import state
+from core import state
 from osh import word_
 from osh import word_compile
 
@@ -58,7 +58,7 @@ if TYPE_CHECKING:
   from core import optview
   from osh import cmd_exec
   from osh.split import SplitContext
-  from osh.state import Mem
+  from core.state import Mem
   from osh import prompt
   from osh import sh_expr_eval
   from oil_lang import expr_eval

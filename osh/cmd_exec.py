@@ -85,7 +85,7 @@ from oil_lang import objects
 from osh import braces
 from osh import builtin_pure
 from osh import sh_expr_eval
-from osh import state
+from core import state
 from osh import word_
 
 from mycpp import mylib

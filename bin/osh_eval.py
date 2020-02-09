@@ -29,7 +29,7 @@ from mycpp.mylib import tagswitch
 # builtin_pure.Command maybe shouldn't be hard-coded?
 #from osh import cmd_exec
 from osh import sh_expr_eval
-from osh import state
+from core import state
 from osh import word_eval
 
 _ = log

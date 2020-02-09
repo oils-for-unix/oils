@@ -24,7 +24,7 @@ from mycpp.mylib import tagswitch
 import yajl
 import posix_
 from core.ui import ErrorFormatter
-from osh.state import Mem
+from core.state import Mem
 from osh.cmd_exec import Executor
 
 

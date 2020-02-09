@@ -16,7 +16,7 @@ bool fnmatch(Str* s, Str* t) {
 }
 
 // TODO: Write correct signatures
-void glob() {
+List<Str*>* glob(Str* pat) {
   assert(0);
 }
 
@@ -26,7 +26,7 @@ List<Str*>* regex_match(Str* pattern, Str* str) {
   assert(0);
 }
 
-void regex_first_group_match() {
+Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
   assert(0);
 }
 

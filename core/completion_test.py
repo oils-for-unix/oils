@@ -23,7 +23,7 @@ from core import util
 from core.util import log
 
 from frontend import parse_lib
-from osh import state
+from core import state
 from testdata.completion import bash_oracle
 
 A1 = completion.TestAction(['foo.py', 'foo', 'bar.py'])

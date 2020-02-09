@@ -35,7 +35,7 @@ from frontend import location
 from frontend import lookup
 from frontend import match
 from osh import bool_stat
-from osh import state
+from core import state
 from osh import word_
 
 from mycpp import mylib
@@ -47,7 +47,7 @@ from typing import List, Tuple, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from core import optview
-  from osh.state import Mem
+  from core.state import Mem
   from osh import word_eval
 
 

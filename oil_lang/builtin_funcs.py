@@ -11,7 +11,7 @@ from oil_lang import objects
 from typing import Callable, Union, TYPE_CHECKING
 if TYPE_CHECKING:
   from oil_lang.objects import ParameterizedArray
-  from osh.state import Mem
+  from core.state import Mem
 
 
 def SetGlobalFunc(mem, name, func):

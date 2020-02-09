@@ -23,7 +23,7 @@ if TYPE_CHECKING:
   from core.error import _ErrorWithLocation
   from core.util import DebugFile
   from frontend.parse_lib import ParseContext
-  from osh.state import MutableOpts, Mem
+  from core.state import MutableOpts, Mem
   from osh.word_eval import NormalWordEvaluator
   #from osh.cmd_exec import Executor
 

@@ -30,7 +30,7 @@ from frontend import lexer_def
 from frontend import match
 from frontend import option_def
 from osh.builtin import _Builtin
-from osh import state
+from core import state
 from osh import string_ops
 from osh import word_compile
 
@@ -40,7 +40,7 @@ if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command__ShFunction
   from core.ui import ErrorFormatter
   from osh.cmd_exec import Executor
-  from osh.state import MutableOpts, Mem, SearchPath
+  from core.state import MutableOpts, Mem, SearchPath
 
 
 class Boolean(_Builtin):

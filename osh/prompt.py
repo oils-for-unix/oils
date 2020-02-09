@@ -28,7 +28,7 @@ from typing import Any, Dict, List, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
   from frontend.parse_lib import ParseContext
   from osh.cmd_exec import Executor
-  from osh.state import Mem
+  from core.state import Mem
   from osh.word_eval import AbstractWordEvaluator
 
 #

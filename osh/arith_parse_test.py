@@ -18,7 +18,7 @@ from core import ui
 from osh import sh_expr_eval
 from osh import split
 from osh import word_eval
-from osh import state
+from core import state
 
 #from osh import arith_parse
 

@@ -9,7 +9,7 @@ import unittest
 from _devbuild.gen.runtime_asdl import value
 from core import test_lib
 from frontend import match
-from osh import state
+from core import state
 from osh import prompt  # module under test
 
 

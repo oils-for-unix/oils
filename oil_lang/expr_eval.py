@@ -17,7 +17,7 @@ from core.util import log
 from frontend import lookup
 from oil_lang import objects
 from osh import braces
-from osh import state
+from core import state
 from osh import word_compile
 from osh import word_eval
 
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import arg_list
   from core.ui import ErrorFormatter
   from osh.cmd_exec import Executor
-  from osh.state import Mem
+  from core.state import Mem
   from osh.word_eval import StringWordEvaluator
 
 _ = log

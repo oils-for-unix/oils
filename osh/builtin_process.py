@@ -27,7 +27,7 @@ if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from core.process import JobState, Waiter, SignalState
   from osh.cmd_exec import Executor
-  from osh.state import Mem
+  from core.state import Mem
 
 WAIT_SPEC = _Register('wait')
 WAIT_SPEC.ShortFlag('-n')
