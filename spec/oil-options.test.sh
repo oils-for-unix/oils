@@ -527,9 +527,20 @@ do f(42)
 foo 42
 ## END
 
-#### nullglob is on with oil:basic
+#### nullglob is on with oil:basic 
+echo one *.zzz two
 shopt -s oil:basic
 echo one *.zzz two
 ## STDOUT:
+one *.zzz two
+one two
+## END
+
+#### nullglob is on with oil:all
+echo one *.zzz two
+shopt -s oil:all
+echo one *.zzz two
+## STDOUT:
+one *.zzz two
 one two
 ## END
