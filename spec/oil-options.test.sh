@@ -172,6 +172,7 @@ shopt -p | grep -- ' -s '
 set -o errexit
 set -o nounset
 set -o pipefail
+shopt -s nullglob
 shopt -s inherit_errexit
 shopt -s strict_argv
 shopt -s strict_arith
@@ -524,4 +525,11 @@ func f(x) {
 do f(42)
 ## STDOUT:
 foo 42
+## END
+
+#### nullglob is on with oil:basic
+shopt -s oil:basic
+echo one *.zzz two
+## STDOUT:
+one two
 ## END

@@ -171,14 +171,13 @@ EXEC_OPTION_NAMES.remove('errexit')
 OIL_AGGRESSIVE = _AGGRESSIVE_PARSE_OPTIONS + _AGGRESSIVE_RUNTIME_OPTIONS
 
 # errexit is also set, but handled separately
-_MORE_STRICT = ['nounset', 'pipefail', 'inherit_errexit']
+_MORE_STRICT = ['nounset', 'pipefail', 'inherit_errexit', 'nullglob']
 
 OIL_BASIC = (
     _STRICT_OPTION_NAMES + _MORE_STRICT + _BASIC_PARSE_OPTIONS +
     _BASIC_RUNTIME_OPTIONS
 )
-# nullglob instead of simple-word-eval
-ALL_STRICT = _STRICT_OPTION_NAMES + _MORE_STRICT + ['nullglob']
+ALL_STRICT = _STRICT_OPTION_NAMES + _MORE_STRICT
 
 # Used in builtin_pure.py
 ALL_SHOPT_OPTIONS = SHOPT_OPTION_NAMES + PARSE_OPTION_NAMES
