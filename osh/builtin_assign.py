@@ -5,13 +5,14 @@ builtin_assign.py
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import (
-    value, value_e, value_t, lvalue, scope_e, var_flags, builtin_e,
+    value, value_e, value_t, lvalue, scope_e, builtin_e,
     cmd_value__Argv, cmd_value__Assign,
 )
 #from core.util import log
 from frontend import args
 from frontend import match
 from core.builtin_def import _Register
+from osh import state
 
 from typing import Dict, Tuple, Any, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -47,12 +48,12 @@ class Export(object):
           raise args.UsageError("doesn't accept RHS with -n", span_id=pair.spid)
 
         # NOTE: we don't care if it wasn't found, like bash.
-        self.mem.ClearFlag(pair.lval.name, var_flags.Exported, scope_e.Dynamic)
+        self.mem.ClearFlag(pair.lval.name, state.ClearExport, scope_e.Dynamic)
     else:
       for pair in cmd_val.pairs:
         # NOTE: when rval is None, only flags are changed
         self.mem.SetVar(pair.lval, pair.rval, scope_e.Dynamic,
-                        flags_to_set=var_flags.Exported)
+                        flags=state.SetExport)
 
     return 0
 
@@ -106,7 +107,7 @@ class Readonly(object):
       # - when rval is None, only flags are changed
       # - dynamic scope because flags on locals can be changed, etc.
       self.mem.SetVar(pair.lval, rval, scope_e.Dynamic,
-                      flags_to_set=var_flags.ReadOnly)
+                      flags=state.SetReadOnly)
 
     return 0
 
@@ -193,17 +194,17 @@ class NewVar(object):
       else:
         lookup_mode = scope_e.LocalOnly
 
-    flags_to_set = 0
+    flags = 0
     if arg.x == '-': 
-      flags_to_set |= var_flags.Exported
+      flags |= state.SetExport
     if arg.r == '-':
-      flags_to_set |= var_flags.ReadOnly
+      flags |= state.SetReadOnly
 
     flags_to_clear = 0
     if arg.x == '+': 
-      flags_to_clear |= var_flags.Exported
+      flags |= state.ClearExport
     if arg.r == '+':
-      flags_to_clear |= var_flags.ReadOnly
+      flags |= state.ClearReadOnly
 
     for pair in cmd_val.pairs:
       if pair.rval is None:
@@ -218,9 +219,7 @@ class NewVar(object):
 
       if not _CheckType(rval, arg, self.errfmt, pair.spid):
         return 1
-      self.mem.SetVar(pair.lval, rval, lookup_mode,
-                      flags_to_set=flags_to_set,
-                      flags_to_clear=flags_to_clear)
+      self.mem.SetVar(pair.lval, rval, lookup_mode, flags=flags)
 
     return status
 

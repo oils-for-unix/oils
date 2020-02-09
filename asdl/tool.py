@@ -14,8 +14,8 @@ from asdl import meta
 
 #from core.util import log
 
-# Special case to use like a bit mask, not a typed enum.
-_SIMPLE = ['var_flags']
+# Special cases like Id
+_SIMPLE = []
 
 
 def main(argv):

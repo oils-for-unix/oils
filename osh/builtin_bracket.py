@@ -94,7 +94,7 @@ class _StringWordEmitter(word_parse.WordEmitter):
     self.i -= offset
 
 
-class _WordEvaluator(word_eval.SimpleWordEvaluator):
+class _WordEvaluator(word_eval.StringWordEvaluator):
 
   def EvalWordToString(self, w, quote_kind=quote_e.Default):
     # type: (word_t, quote_t) -> value__Str

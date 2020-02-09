@@ -328,7 +328,7 @@ class _ExprEvaluator(object):
 
   def __init__(self, mem, exec_opts, errfmt):
     # type: (Mem, optview.Exec, ErrorFormatter) -> None
-    self.word_ev = None  # type: word_eval.SimpleWordEvaluator
+    self.word_ev = None  # type: word_eval.StringWordEvaluator
     self.mem = mem
     self.exec_opts = exec_opts
     self.errfmt = errfmt

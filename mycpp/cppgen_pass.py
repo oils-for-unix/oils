@@ -1568,7 +1568,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             class_name == 'ErrorFormatter' and func_name == 'PrettyPrintError' or
             class_name is None and func_name == 'PrettyPrintError' or
             class_name == 'WordParser' and func_name == '_ParseVarExpr' or
-            class_name == '_WordEvaluator' and 
+            class_name == 'AbstractWordEvaluator' and 
               func_name in ('EvalWordSequence2', '_EvalWordToParts',
                             '_EmptyStrOrError', '_EvalWordPart') or
             # virtual method in several classes
@@ -1935,9 +1935,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 'part_value_e', 'part_value',
                 'cmd_value_e', 'cmd_value',
                 'redirect_e', 'redirect',
-
-                'var_flags',
-
                 ):
                 is_namespace = True
 

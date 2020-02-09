@@ -29,7 +29,7 @@ if TYPE_CHECKING:
   from frontend.parse_lib import ParseContext
   from osh.cmd_exec import Executor
   from osh.state import Mem
-  from osh.word_eval import _WordEvaluator
+  from osh.word_eval import AbstractWordEvaluator
 
 #
 # Prompt Evaluation
@@ -100,7 +100,7 @@ class Evaluator(object):
   """
   def __init__(self, lang, parse_ctx, mem):
     # type: (str, ParseContext, Mem) -> None
-    self.word_ev = None  # type: _WordEvaluator
+    self.word_ev = None  # type: AbstractWordEvaluator
 
     assert lang in ('osh', 'oil'), lang
     self.lang = lang

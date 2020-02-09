@@ -266,7 +266,7 @@ def _PerformSlice(val,  # type: value_t
   return val
 
 
-class SimpleWordEvaluator(object):
+class StringWordEvaluator(object):
   """For use by the _ExprEvaluator."""
 
   def EvalWordToString(self, w, quote_kind=quote_e.Default):
@@ -297,7 +297,7 @@ def _GetDollarHyphen(exec_opts):
   return ''.join(chars)
 
 
-class _WordEvaluator(SimpleWordEvaluator):
+class AbstractWordEvaluator(StringWordEvaluator):
   """Abstract base class for word evaluators.
 
   Public entry points:
@@ -1817,11 +1817,11 @@ def _SplitAssignArg(arg, w):
       e_die("Invalid variable name %r", arg, word=w)
 
 
-class NormalWordEvaluator(_WordEvaluator):
+class NormalWordEvaluator(AbstractWordEvaluator):
 
   def __init__(self, mem, exec_opts, splitter, errfmt):
     # type: (Mem, optview.Exec, SplitContext, ErrorFormatter) -> None
-    _WordEvaluator.__init__(self, mem, exec_opts, splitter, errfmt)
+    AbstractWordEvaluator.__init__(self, mem, exec_opts, splitter, errfmt)
     self.ex = None  # type: cmd_exec.Executor
 
   def CheckCircularDeps(self):
@@ -1843,7 +1843,7 @@ class NormalWordEvaluator(_WordEvaluator):
     return part_value.String(dev_path, True, False)
 
 
-class CompletionWordEvaluator(_WordEvaluator):
+class CompletionWordEvaluator(AbstractWordEvaluator):
   """An evaluator that has no access to an executor.
 
   NOTE: core/completion.py doesn't actually try to use these strings to

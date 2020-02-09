@@ -17,7 +17,7 @@ from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Str, value__MaybeStrArray, value__AssocArray,
     value_str,
     lvalue, lvalue_e, lvalue_t, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
-    scope_e, scope_t, var_flags,
+    scope_e, scope_t,
 )
 from _devbuild.gen import runtime_asdl  # for cell
 from asdl import runtime
@@ -47,6 +47,13 @@ if TYPE_CHECKING:
 # we have to set it back!
 # Used in both core/competion.py and osh/state.py
 _READLINE_DELIMS = ' \t\n"\'><=;|&(:'
+
+
+# flags for SetVar
+SetExport     = 1 << 0
+SetReadOnly   = 1 << 1
+ClearExport   = 1 << 2
+ClearReadOnly = 1 << 3
 
 
 class SearchPath(object):
@@ -684,7 +691,7 @@ class Mem(object):
     # variable.  Dash has a loop through environ in init.c
     for n, v in environ.iteritems():
       self.SetVar(lvalue.Named(n), value.Str(v), scope_e.GlobalOnly,
-                  flags_to_set=var_flags.Exported)
+                  flags=SetExport)
 
     # If it's not in the environment, initialize it.  This makes it easier to
     # update later in MutableOpts.
@@ -697,8 +704,7 @@ class Mem(object):
       SetGlobalString(self, 'SHELLOPTS', '')
     # Now make it readonly
     self.SetVar(
-        lvalue.Named('SHELLOPTS'), None, scope_e.GlobalOnly,
-        flags_to_set=var_flags.ReadOnly)
+        lvalue.Named('SHELLOPTS'), None, scope_e.GlobalOnly, flags=SetReadOnly)
 
     # Usually we inherit PWD from the parent shell.  When it's not set, we may
     # compute it.
@@ -708,8 +714,7 @@ class Mem(object):
     # Now mark it exported, no matter what.  This is one of few variables
     # EXPORTED.  bash and dash both do it.  (e.g. env -i -- dash -c env)
     self.SetVar(
-        lvalue.Named('PWD'), None, scope_e.GlobalOnly,
-        flags_to_set=var_flags.Exported)
+        lvalue.Named('PWD'), None, scope_e.GlobalOnly, flags=SetExport)
 
   def SetCurrentSpanId(self, span_id):
     # type: (int) -> None
@@ -975,18 +980,16 @@ class Mem(object):
     if cell is None and keyword_id in (Id.KW_Set, Id.KW_SetGlobal):
       e_die("%r hasn't been declared", name)
 
-  def SetVar(self, lval, val, lookup_mode, flags_to_set=0, flags_to_clear=0,
+  def SetVar(self, lval, val, lookup_mode, flags=0,
              keyword_id=None):
-    # type: (lvalue_t, value_t, scope_t, int, int, Optional[Id_t]) -> None
+    # type: (lvalue_t, value_t, scope_t, int, Optional[Id_t]) -> None
     """
     Args:
       lval: lvalue
       val: value, or None if only changing flags
-      flags_to_set: tuple of flags to set: ReadOnly | Exported
-        () means no flags to start with
-
       lookup_mode:
         Local | Global | Dynamic - for builtins, PWD, etc.
+      flags: bit mask of set/clear flags
 
       NOTE: in bash, PWD=/ changes the directory.  But not in dash.
     """
@@ -1007,7 +1010,6 @@ class Mem(object):
     # - $PS1 and $PS4 should be PARSED when they are set, to avoid the error on use
     # - Other validity: $HOME could be checked for existence
 
-    assert flags_to_set is not None
     UP_lval = lval
     with tagswitch(lval) as case:
       if case(lvalue_e.Named):
@@ -1017,9 +1019,9 @@ class Mem(object):
         if cell:
           # Clear before checking readonly bit.
           # NOTE: Could be cell.flags &= flag_clear_mask 
-          if var_flags.Exported & flags_to_clear:
+          if flags & ClearExport:
             cell.exported = False
-          if var_flags.ReadOnly & flags_to_clear:
+          if flags & ClearReadOnly:
             cell.readonly = False
 
           if val is not None:  # e.g. declare -rx existing
@@ -1029,9 +1031,9 @@ class Mem(object):
             cell.val = val
 
           # NOTE: Could be cell.flags |= flag_set_mask 
-          if var_flags.Exported & flags_to_set:
+          if flags & SetExport:
             cell.exported = True
-          if var_flags.ReadOnly & flags_to_set:
+          if flags & SetReadOnly:
             cell.readonly = True
 
         else:
@@ -1039,8 +1041,8 @@ class Mem(object):
             # set -o nounset; local foo; echo $foo  # It's still undefined!
             val = value.Undef()  # export foo, readonly foo
 
-          cell = runtime_asdl.cell(bool(var_flags.Exported & flags_to_set),
-                                   bool(var_flags.ReadOnly & flags_to_set),
+          cell = runtime_asdl.cell(bool(flags & SetExport),
+                                   bool(flags & SetReadOnly),
                                    val)
           name_map[lval.name] = cell
 
@@ -1069,7 +1071,7 @@ class Mem(object):
         cell, name_map = self._FindCellAndNamespace(lval.name, lookup_mode)
         self._CheckOilKeyword(keyword_id, lval.name, cell)
         if not cell:
-          self._BindNewArrayWithEntry(name_map, lval, rval, flags_to_set)
+          self._BindNewArrayWithEntry(name_map, lval, rval, flags)
           return
 
         if cell.readonly:
@@ -1079,7 +1081,7 @@ class Mem(object):
         # undef[0]=y is allowed
         with tagswitch(UP_cell_val) as case2:
           if case2(value_e.Undef):
-            self._BindNewArrayWithEntry(name_map, lval, rval, flags_to_set)
+            self._BindNewArrayWithEntry(name_map, lval, rval, flags)
             return
 
           elif case2(value_e.Str):
@@ -1132,7 +1134,7 @@ class Mem(object):
       else:
         raise AssertionError(lval.tag_())
 
-  def _BindNewArrayWithEntry(self, name_map, lval, val, flags_to_set):
+  def _BindNewArrayWithEntry(self, name_map, lval, val, flags):
     # type: (Dict[str, cell], lvalue__Indexed, value__Str, int) -> None
     """Fill 'name_map' with a new indexed array entry."""
     no_str = None  # type: Optional[str]
@@ -1141,7 +1143,7 @@ class Mem(object):
     new_value = value.MaybeStrArray(items)
 
     # arrays can't be exported; can't have AssocArray flag
-    readonly = bool(var_flags.ReadOnly & flags_to_set)
+    readonly = bool(flags & SetReadOnly)
     name_map[lval.name] = runtime_asdl.cell(False, readonly, new_value)
 
   def InternalSetGlobal(self, name, new_val):
@@ -1290,7 +1292,7 @@ class Mem(object):
     """
     cell, name_map = self._FindCellAndNamespace(name, lookup_mode)
     if cell:
-      if flag == var_flags.Exported:
+      if flag == ClearExport:
         cell.exported = False
       else:
         raise AssertionError()
@@ -1414,8 +1416,7 @@ def ExportGlobalString(mem, name, s):
   """Helper for completion, $PWD, $OLDPWD, etc."""
   assert isinstance(s, str)
   val = value.Str(s)
-  mem.SetVar(lvalue.Named(name), val, scope_e.GlobalOnly,
-             flags_to_set=var_flags.Exported)
+  mem.SetVar(lvalue.Named(name), val, scope_e.GlobalOnly, flags=SetExport)
 
 
 def GetGlobal(mem, name):

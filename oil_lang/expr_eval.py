@@ -33,7 +33,7 @@ if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from osh.cmd_exec import Executor
   from osh.state import Mem
-  from osh.word_eval import SimpleWordEvaluator
+  from osh.word_eval import StringWordEvaluator
 
 _ = log
 
@@ -54,7 +54,7 @@ class OilEvaluator(object):
                ):
     # type: (...) -> None
     self.ex = None  # type: Executor
-    self.word_ev = None  # type: SimpleWordEvaluator
+    self.word_ev = None  # type: StringWordEvaluator
 
     self.mem = mem
     self.funcs = funcs

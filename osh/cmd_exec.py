@@ -62,7 +62,7 @@ from _devbuild.gen.runtime_asdl import (
     quote_e,
     lvalue, lvalue_e, lvalue__ObjIndex, lvalue__ObjAttr,
     value, value_e, value_t, value__Str, value__MaybeStrArray, value__Obj,
-    redirect, scope_e, var_flags, builtin_e,
+    redirect, scope_e, builtin_e,
     cmd_value__Argv, cmd_value, cmd_value_e,
     cmd_value__Argv, cmd_value__Assign,
 )
@@ -276,7 +276,7 @@ class Executor(object):
     self.arith_ev = None  # type: sh_expr_eval.ArithEvaluator
     self.bool_ev = None  # type: sh_expr_eval.BoolEvaluator
     self.expr_ev = None  # type: expr_eval.OilEvaluator
-    self.word_ev = None  # type: word_eval._WordEvaluator
+    self.word_ev = None  # type: word_eval.AbstractWordEvaluator
     self.tracer = None  # type: dev.Tracer
 
     self.mem = mem
@@ -965,7 +965,7 @@ class Executor(object):
       # Set each var so the next one can reference it.  Example:
       # FOO=1 BAR=$FOO ls /
       self.mem.SetVar(lvalue.Named(e_pair.name), val, scope_e.LocalOnly,
-                      flags_to_set=flags)
+                      flags=flags)
 
   def _Dispatch(self, node, fork_external):
     # type: (command_t, bool) -> Tuple[int, bool]
@@ -1034,7 +1034,7 @@ class Executor(object):
           else:
             self.mem.PushTemp()
             try:
-              self._EvalTempEnv(node.more_env, var_flags.Exported)
+              self._EvalTempEnv(node.more_env, state.SetExport)
               status = self._RunSimpleCommand(cmd_val, fork_external)
             finally:
               self.mem.PopTemp()
@@ -1052,7 +1052,7 @@ class Executor(object):
         if len(node.more_env):
           self.mem.PushTemp()
           try:
-            self._EvalTempEnv(node.more_env, var_flags.Exported)
+            self._EvalTempEnv(node.more_env, state.SetExport)
             status = self._Execute(node.child)
           finally:
             self.mem.PopTemp()
@@ -1135,7 +1135,7 @@ class Executor(object):
             val = _PyObjectToVal(py_val)
 
             self.mem.SetVar(vd_lval, val, scope_e.LocalOnly, 
-                            flags_to_set=var_flags.ReadOnly, keyword_id=None)
+                            flags=state.SetReadOnly, keyword_id=None)
             status = 0
 
           else:
@@ -1310,7 +1310,7 @@ class Executor(object):
 
           #log('setting %s to %s with flags %s', lval, val, flags)
           flags = 0
-          self.mem.SetVar(lval, val, lookup_mode, flags_to_set=flags)
+          self.mem.SetVar(lval, val, lookup_mode, flags=flags)
           self.tracer.OnShAssignment(lval, pair.op, val, flags, lookup_mode)
 
         # PATCH to be compatible with existing shells: If the assignment had a
