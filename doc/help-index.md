@@ -207,6 +207,7 @@ X [Testing]       check
                   strict_array           Arrays don't decay to strings
                   strict_arith           Fatal parse errors (on by default)
                   strict_errexit         Disallow code that ignores failure
+                  strict_echo            echo takes 0 or 1 arguments
                   strict_eval_builtin    eval takes exactly 1 argument
                   strict_control_flow    Do we need this?  Special builtins?
                   strict_word_eval       Expose unicode and slicing errors

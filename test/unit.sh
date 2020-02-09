@@ -48,7 +48,6 @@ readonly -a UNIT_TESTS=( {asdl,build,core,doctools,frontend,lazylex,mycpp,native
 tests-to-run() {
   local minimal=${1:-}
 
-  # TODO: Add doctools which libcmark*.so is automated
   for t in "${UNIT_TESTS[@]}"; do
     # For Travis after build/dev.sh minimal: if we didn't build fastlex.so,
     # then skip a unit test that will fail.
@@ -57,7 +56,7 @@ tests-to-run() {
       if test $t = 'native/fastlex_test.py' && ! test -e 'fastlex.so'; then
         continue
       fi
-      if test $t = 'doctools/cmark_test.py' && ! test -e 'cmark.so'; then
+      if test $t = 'doctools/cmark_test.py' && ! test -e '/usr/local/lib/cmark.so'; then
         continue
       fi
     fi

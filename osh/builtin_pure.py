@@ -545,6 +545,10 @@ class Echo(object):
   - 'echo -c' should print '-c', not fail
   - echo '---' should print ---, not fail
   """
+  def __init__(self, exec_opts):
+    # type: (optview.Exec) -> None
+    self.exec_opts = exec_opts
+
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     argv = cmd_val.argv[1:]
@@ -577,11 +581,23 @@ class Echo(object):
       # Replace it
       argv = new_argv
 
-    #log('echo argv %s', argv)
-    for i, a in enumerate(argv):
-      if i != 0:
-        sys.stdout.write(' ')  # arg separator
-      sys.stdout.write(a)
+    if self.exec_opts.strict_echo():
+      n = len(argv)
+      if n == 0:
+        pass
+      elif n == 1:
+        sys.stdout.write(argv[0])
+      else:
+        # TODO: span_id could be more accurate
+        raise args.UsageError(
+            "takes at most one arg when strict_echo is on (hint: add quotes)")
+    else:
+      #log('echo argv %s', argv)
+      for i, a in enumerate(argv):
+        if i != 0:
+          sys.stdout.write(' ')  # arg separator
+        sys.stdout.write(a)
+
     if not arg.n:
       sys.stdout.write('\n')
 

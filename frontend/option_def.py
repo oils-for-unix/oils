@@ -53,13 +53,14 @@ _STRICT_OPTION_NAMES = [
 
     'strict_array',
     'strict_control_flow',  # break/continue at top level is fatal
-    'strict_errexit',  # errexit can't be disabled during function body execution
-    'strict_eval_builtin',  # single arg
-    'strict_word_eval',  # negative slices, unicode
+    'strict_echo',          # echo takes 0 or 1 arguments
+    'strict_errexit',       # errexit can't be disabled in compound commands
+    'strict_eval_builtin',  # eval takes exactly 1 argument
+    'strict_word_eval',     # negative slices, unicode
 
     # Not implemented
     'strict_backslash',  # BadBackslash for echo -e, printf, PS1, etc.
-    'strict_glob',  # glob_.py GlobParser has warnings
+    'strict_glob',       # glob_.py GlobParser has warnings
 ]
 
 # Turned on with shopt -s all:oil

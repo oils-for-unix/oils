@@ -156,6 +156,7 @@ shopt -s strict_argv
 shopt -s strict_arith
 shopt -s strict_array
 shopt -s strict_control_flow
+shopt -s strict_echo
 shopt -s strict_errexit
 shopt -s strict_eval_builtin
 shopt -s strict_word_eval
@@ -178,6 +179,7 @@ shopt -s strict_argv
 shopt -s strict_arith
 shopt -s strict_array
 shopt -s strict_control_flow
+shopt -s strict_echo
 shopt -s strict_errexit
 shopt -s strict_eval_builtin
 shopt -s strict_word_eval
@@ -194,9 +196,11 @@ shopt -s parse_rawc
 ## END
 
 #### osh -O oil:basic 
-$SH -O oil:basic -c 'var x = @(one two three); echo @x'
+$SH -O oil:basic -c 'var x = @(one two three); write @x'
 ## STDOUT:
-one two three
+one
+two
+three
 ## END
 
 #### strict:all includes inherit_errexit
@@ -528,19 +532,46 @@ foo 42
 ## END
 
 #### nullglob is on with oil:basic 
-echo one *.zzz two
+write one *.zzz two
 shopt -s oil:basic
-echo one *.zzz two
+write __
+write one *.zzz two
 ## STDOUT:
-one *.zzz two
-one two
+one
+*.zzz
+two
+__
+one
+two
 ## END
 
 #### nullglob is on with oil:all
-echo one *.zzz two
+write  one *.zzz two
 shopt -s oil:all
-echo one *.zzz two
+write __
+write one *.zzz two
 ## STDOUT:
-one *.zzz two
-one two
+one
+*.zzz
+two
+__
+one
+two
 ## END
+
+#### shopt -s strict_echo
+foo='one   two'
+echo $foo   # bad split then join
+shopt -s strict_echo
+echo
+echo "$foo"  # good
+echo -e "$foo"  # still good
+echo $foo
+## status: 2
+## STDOUT:
+one two
+
+one   two
+one   two
+## END
+
