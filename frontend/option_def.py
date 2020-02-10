@@ -123,13 +123,15 @@ NO_OPS = [
 ]
 
 # Used by core/builtin_comp.py too.
-SHOPT_OPTION_NAMES = [
+VISIBLE_SHOPT_NAMES = [
     # shopt -s / -u.  NOTE: bash uses $BASHOPTS rather than $SHELLOPTS for
     # these.
     'nullglob', 'failglob',
     'inherit_errexit',
-] + NO_OPS + _STRICT_OPTION_NAMES + _BASIC_RUNTIME_OPTIONS + \
+] + _STRICT_OPTION_NAMES + _BASIC_RUNTIME_OPTIONS + \
     _AGGRESSIVE_RUNTIME_OPTIONS
+
+SHOPT_OPTION_NAMES = VISIBLE_SHOPT_NAMES + NO_OPS
 
 # Oil parse options only.
 _BASIC_PARSE_OPTIONS = [

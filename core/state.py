@@ -382,7 +382,7 @@ class MutableOpts(object):
     # type: (List[str]) -> None
     """ For 'shopt -p' """
     if len(opt_names) == 0:
-      opt_names = option_def.ALL_SHOPT_OPTIONS  # if none supplied, show all
+      opt_names = option_def.VISIBLE_SHOPT_NAMES  # if none supplied, show all
     for opt_name in opt_names:
       index = match.MatchOption(opt_name)
       if index == 0:

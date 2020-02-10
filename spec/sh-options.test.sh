@@ -551,3 +551,16 @@ nounset off
 ## N-I dash/mksh STDOUT:
 N-I
 ## END
+
+#### no-ops not in shopt -p output
+shopt -p | grep xpg
+echo --
+## STDOUT:
+--
+## END
+## OK bash STDOUT:
+shopt -u xpg_echo
+--
+## END
+
+
