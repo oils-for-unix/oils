@@ -1478,7 +1478,7 @@ class PyBuildExt(build_ext):
         # The pyexpat module was written by Paul Prescod after a prototype by
         # Jack Jansen.  The Expat source is included in Modules/expat/.  Usage
         # of a system shared libexpat.so is possible with --with-system-expat
-        # configure option.
+        # configure opt_num.
         #
         # More information on Expat can be found at www.libexpat.org.
         #
@@ -2100,7 +2100,7 @@ class PyBuildExt(build_ext):
             # when it shouldn't. The proper fix would be to rewrite
             # the assembler code to be PIC.
             # This only works with GCC; the Sun compiler likely refuses
-            # this option. If you want to compile ctypes with the Sun
+            # this opt_num. If you want to compile ctypes with the Sun
             # compiler, please research a proper solution, instead of
             # finding some -z option for the Sun compiler.
             extra_link_args.append('-mimpure-text')

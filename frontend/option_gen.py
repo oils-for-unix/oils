@@ -9,6 +9,8 @@ import sys
 from asdl.visitor import FormatLines
 from frontend import option_def
 
+_TYPE_NAME = 'opt_num'
+_SIMPLE = [_TYPE_NAME]
 
 def _CreateModule(option_names):
   """ 
@@ -31,7 +33,7 @@ def _CreateModule(option_names):
   option_sum = asdl_.Sum(
       [asdl_.Constructor(name.replace(':', '_')) for name in option_names])
 
-  option = asdl_.Type('option', option_sum)
+  option = asdl_.Type(_TYPE_NAME, option_sum)
   schema_ast = asdl_.Module('option', [], [option])
   return schema_ast
 
@@ -65,7 +67,7 @@ namespace option_asdl {
 
       # TODO: Could suppress option_str
       v = gen_cpp.ClassDefVisitor(f, {}, e_suffix=False,
-                                  simple_int_sums=['option'])
+                                  simple_int_sums=_SIMPLE)
       v.VisitModule(schema_ast)
 
       f.write("""
@@ -84,7 +86,7 @@ namespace option_asdl {
 """)
 
       v = gen_cpp.MethodDefVisitor(f, {}, e_suffix=False,
-                                   simple_int_sums=['option'])
+                                   simple_int_sums=_SIMPLE)
 
       v.VisitModule(schema_ast)
 
@@ -101,7 +103,7 @@ from asdl import pybase
 """)
     # Minor style issue: we want Id and Kind, not Id_e and Kind_e
     v = gen_python.GenMyPyVisitor(f, None, e_suffix=False,
-                                  simple_int_sums=['option'])
+                                  simple_int_sums=_SIMPLE)
     v.VisitModule(schema_ast)
 
   elif action == 'cc-tables':

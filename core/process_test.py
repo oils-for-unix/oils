@@ -7,7 +7,7 @@ import os
 import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.option_asdl import option
+from _devbuild.gen.option_asdl import opt_num
 from _devbuild.gen.runtime_asdl import redirect, cmd_value
 from core import optview
 from core import process  # module under test
@@ -30,7 +30,7 @@ def Banner(msg):
 # TODO: Put these all in a function.
 _ARENA = test_lib.MakeArena('process_test.py')
 _MEM = state.Mem('', [], {}, _ARENA)
-_OPT_ARRAY = [False] * option.ARRAY_SIZE
+_OPT_ARRAY = [False] * opt_num.ARRAY_SIZE
 _PARSE_OPTS = optview.Parse(_OPT_ARRAY)
 _ERREXIT = state._ErrExit()
 _EXEC_OPTS = state.MutableOpts(_MEM, _OPT_ARRAY, _ERREXIT, None)

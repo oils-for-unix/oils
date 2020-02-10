@@ -169,7 +169,7 @@ READ_SPEC.ShortFlag('-a', args.Str)  # name of array to read into
 # sys.stdin.readline() in Python has buffering!  TODO: Rewrite this tight loop
 # in C?  Less garbage probably.
 # NOTE that dash, mksh, and zsh all read a single byte at a time.  It appears
-# to be required by POSIX?  Could try libc getline and make this an option.
+# to be required by POSIX?  Could try libc getline and make this an opt_num.
 def ReadLineFromStdin():
   chars = []
   while True:

@@ -51,7 +51,7 @@ _tlog('before imports')
 import atexit
 import errno
 
-from _devbuild.gen.option_asdl import option
+from _devbuild.gen.option_asdl import opt_num
 from _devbuild.gen.runtime_asdl import builtin_e, cmd_value
 from _devbuild.gen.syntax_asdl import source
 
@@ -739,7 +739,7 @@ def OshCommandMain(argv):
   loader = pyutil.GetResourceLoader()
   oil_grammar = meta.LoadOilGrammar(loader)
 
-  opt_array = [False] * option.ARRAY_SIZE
+  opt_array = [False] * opt_num.ARRAY_SIZE
   parse_opts = optview.Parse(opt_array)
   # parse `` and a[x+1]=bar differently
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)

@@ -232,7 +232,7 @@ class ArgsTest(unittest.TestCase):
     arg, i = s.ParseArgv(['-retries=3'])
     self.assertEqual(3, arg.retries)
 
-    # Like GNU: anything that starts with -- is parsed like an option.
+    # Like GNU: anything that starts with -- is parsed like an opt_num.
     self.assertRaises(args.UsageError, s.ParseArgv, ['---'])
 
     self.assertRaises(args.UsageError, s.ParseArgv, ['-oops'])

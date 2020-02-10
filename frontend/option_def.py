@@ -35,7 +35,7 @@ class Option(object):
     )
 
 
-class OptionDef(object):
+class _OptionDef(object):
   """Description of all shell options.
 
   Similar to id_kind_def.IdSpec
@@ -189,38 +189,8 @@ _AGGRESSIVE_PARSE_OPTIONS = [
 ]
 
 
-_OPTION_DEF = OptionDef()
-
-def All():
-  # type: () -> List[Option]
-  """Return a list of options with metadata.
-
-  - Used by osh/builtin_pure.py to construct the arg spec.
-  - Used by frontend/lexer_gen.py to construct the lexer/matcher
-  """
-  return _OPTION_DEF.opts
-
-
-def OptionDict():
-  # type: () -> Dict[str, int]
-  """For the slow path in frontend/match.py."""
-  return dict((opt.name, opt.index) for opt in _OPTION_DEF.opts)
-
-
-def ParseOptNames():
-  # type: () -> List[str]
-  """Used by core/optview*.py"""
-  return [opt.name for opt in _OPTION_DEF.opts if opt.is_parse]
-
-
-def ExecOptNames():
-  # type: () -> List[str]
-  """Used by core/optview*.py"""
-  return [opt.name for opt in _OPTION_DEF.opts if opt.is_exec]
-
-
-def Init(opt_def):
-  # type: (OptionDef) -> None
+def _Init(opt_def):
+  # type: (_OptionDef) -> None
 
   # Note: this is in all three groups, but it's handled explicitly in
   # core/state.py.
@@ -277,7 +247,37 @@ def Init(opt_def):
     opt_def.Add(name, groups=['oil:all'])
 
 
-Init(_OPTION_DEF)
+def All():
+  # type: () -> List[Option]
+  """Return a list of options with metadata.
+
+  - Used by osh/builtin_pure.py to construct the arg spec.
+  - Used by frontend/lexer_gen.py to construct the lexer/matcher
+  """
+  return _OPTION_DEF.opts
+
+
+def OptionDict():
+  # type: () -> Dict[str, int]
+  """For the slow path in frontend/match.py."""
+  return dict((opt.name, opt.index) for opt in _OPTION_DEF.opts)
+
+
+def ParseOptNames():
+  # type: () -> List[str]
+  """Used by core/optview*.py"""
+  return [opt.name for opt in _OPTION_DEF.opts if opt.is_parse]
+
+
+def ExecOptNames():
+  # type: () -> List[str]
+  """Used by core/optview*.py"""
+  return [opt.name for opt in _OPTION_DEF.opts if opt.is_exec]
+
+
+_OPTION_DEF = _OptionDef()
+
+_Init(_OPTION_DEF)
 
 # Used by core/state.py.
 
