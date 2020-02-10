@@ -527,3 +527,27 @@ done
 127
 127
 ## END
+
+#### shopt -s nounset doesn't work (may relax this later)
+case $SH in
+  *dash|*mksh)
+    echo N-I
+    exit
+    ;;
+esac
+shopt -s nounset
+echo status=$?
+# get rid of extra space in bash
+set -o | grep nounset | sed 's/[ \t]\+/ /g'
+
+## STDOUT:
+status=2
+set +o nounset
+## END
+## OK bash STDOUT:
+status=1
+nounset off
+# END
+## N-I dash/mksh STDOUT:
+N-I
+## END

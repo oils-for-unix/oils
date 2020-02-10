@@ -353,6 +353,9 @@ class MutableOpts(object):
       self.errexit.Set(b)  # Special case
       return
 
+    if opt_name not in option_def.ALL_SHOPT_OPTIONS:
+      raise args.UsageError('got invalid option %r' % opt_name)
+
     self._SetArrayByName(opt_name, b)
 
   def ShowOptions(self, opt_names):

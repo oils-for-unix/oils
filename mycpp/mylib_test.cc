@@ -175,27 +175,29 @@ void test_contains() {
   bool b;
 
   b = str_contains(new Str("foo"), new Str("oo"));
-  log("b = %d", b);
+  assert(b == true);
 
   b = str_contains(new Str("foo"), new Str("ood"));
-  log("b = %d", b);
+  assert(b == false);
 
   log("  strs");
   auto strs = new List<Str*>();
   strs->append(new Str("bar"));
 
   b = list_contains(strs, new Str("foo"));
-  log("b = %d", b);
+  assert(b == false);
+
   strs->append(new Str("foo"));
   b = list_contains(strs, new Str("foo"));
-  log("b = %d", b);
+  assert(b == true);
 
   log("  ints");
   auto ints = new List<int>({1, 2, 3});
   b = list_contains(ints, 1);
-  log("b = %d", b);
+  assert(b == true);
+
   b = list_contains(ints, 42);
-  log("b = %d", b);
+  assert(b == false);
 
   log("  floats");
   auto floats = new List<double>({0.5, 0.25, 0.0});
