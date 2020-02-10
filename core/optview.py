@@ -46,14 +46,14 @@ class _View(object):
 class Parse(_View):
   def __init__(self, opt_array):
     # type: (List[bool]) -> None
-    _View.__init__(self, opt_array, option_def.PARSE_OPTION_NAMES)
+    _View.__init__(self, opt_array, option_def.ParseOptNames())
 
 
 class Exec(_View):
   def __init__(self, opt_array, errexit):
     # type: (List[bool], _ErrExit) -> None
 
-    _View.__init__(self, opt_array, option_def.EXEC_OPTION_NAMES)
+    _View.__init__(self, opt_array, option_def.ExecOptNames())
     self._errexit = errexit
 
   def errexit(self):

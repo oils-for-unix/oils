@@ -340,20 +340,20 @@ class MutableOpts(object):
       return
 
     if opt_name == 'oil:all':
-      for attr in option_def.OIL_BASIC + option_def.OIL_AGGRESSIVE:
+      for attr in option_def.OIL_ALL:
         self._SetArrayByName(attr, b)
 
       self.errexit.Set(b)  # Special case
       return
 
     if opt_name == 'strict:all':
-      for attr in option_def.ALL_STRICT:
+      for attr in option_def.STRICT_ALL:
         self._SetArrayByName(attr, b)
 
       self.errexit.Set(b)  # Special case
       return
 
-    if opt_name not in option_def.ALL_SHOPT_OPTIONS:
+    if opt_name not in option_def.SHOPT_OPTION_NAMES:
       raise args.UsageError('got invalid option %r' % opt_name)
 
     self._SetArrayByName(opt_name, b)

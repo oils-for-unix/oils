@@ -42,7 +42,7 @@ class Parse {
   }
 """)
 
-  GenMethods(option_def.PARSE_OPTION_NAMES, f)
+  GenMethods(option_def.ParseOptNames(), f)
 
   f.write("""\
 
@@ -59,7 +59,7 @@ class Exec {
   bool errexit();
 """)
 
-  GenMethods(option_def.EXEC_OPTION_NAMES, f)
+  GenMethods(option_def.ExecOptNames(), f)
 
   f.write("""\
 

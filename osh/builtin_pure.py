@@ -127,11 +127,20 @@ class UnAlias(object):
 
 def AddOptionsToArgSpec(spec):
   """Shared between 'set' builtin and the shell's own arg parser."""
-  for short_flag, opt_name in option_def.SET_OPTIONS:
-    spec.Option(short_flag, opt_name)
+  for opt in option_def.All():
+    if opt.builtin == 'set':
+      spec.Option(opt.short_flag, opt.name)
+    elif opt.builtin == 'shopt':
+      # unimplemented options are accepted in bin/osh and in shopt -s foo
+      spec.ShoptOption(opt.name)
+    else:
+      # 'interactive' Has a cell for internal use, but isn't allowed to be
+      # modified.
+      pass
 
-  for shopt_name in option_def.ALL_SHOPT_OPTIONS + option_def.META_OPTIONS:
-    spec.ShoptOption(shopt_name)
+  # Add strict:all, etc.
+  for name in option_def.META_OPTIONS:
+    spec.ShoptOption(name)
 
 
 SET_SPEC = args.FlagsAndOptions()

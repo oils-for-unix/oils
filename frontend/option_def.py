@@ -4,23 +4,65 @@ option_def.py
 """
 from __future__ import print_function
 
-from typing import List
+from typing import List, Dict, Optional, Any
+
+
+class Option(object):
+
+  def __init__(self, index, name, short_flag=None, builtin='shopt',
+               implemented=True, groups=None):
+    # type: (int, str, str, Optional[str], bool, List[str]) -> None
+    self.index = index
+    self.name = name  # e.g. 'errexit'
+    self.short_flag = short_flag  # 'e' for -e
+
+    if short_flag:
+      self.builtin = 'set'
+    else:
+      # The 'interactive' option is the only one where builtin is None.  It has
+      # a cell but you can't change it.  Only the shell can.
+      self.builtin = builtin
+
+    self.implemented = implemented
+    self.groups = groups or []  # list of groups
+
+    # for optview
+    self.is_parse = name.startswith('parse_')
+    # errexit is a special case for now
+    # interactive() is an accessor
+    self.is_exec = (
+        implemented and not self.is_parse and name != 'errexit'
+    )
+
+
+class OptionDef(object):
+  """Description of all shell options.
+
+  Similar to id_kind_def.IdSpec
+  """
+  def __init__(self):
+    # type: () -> None
+    self.opts = []  # type: List[Option]
+    self.index = 1  # start with 1
+
+  def Add(self, *args, **kwargs):
+    # type: (Any, Any) -> None
+    self.opts.append(Option(self.index, *args, **kwargs))
+    self.index += 1
 
 # Used by builtin
-SET_OPTIONS = [
+_OTHER_SET_OPTIONS = [
     # NOTE: set -i and +i is explicitly disallowed.  Only osh -i or +i is valid
     # https://unix.stackexchange.com/questions/339506/can-an-interactive-shell-become-non-interactive-or-vice-versa
 
-    ('e', 'errexit'),
     ('n', 'noexec'),
-    ('u', 'nounset'),
     ('x', 'xtrace'),
     ('v', 'verbose'),  # like xtrace, but prints unevaluated commands
     ('f', 'noglob'),
     ('C', 'noclobber'),
     # We don't do anything with this,  But Aboriginal calls 'set +h'.
     ('h', 'hashall'),
-    (None, 'pipefail'),
+
     # A no-op for modernish.
     (None, 'posix'),
 
@@ -31,11 +73,6 @@ SET_OPTIONS = [
     # valid, because it has an extra argument.  Builtins are inconsistent about
     # checking this.
 ]
-
-# Used by core/builtin_comp.py too.
-SET_OPTION_NAMES = [name for _, name in SET_OPTIONS]
-# This is a cell, even though it's disallowed
-SET_OPTION_NAMES.append('interactive')
 
 _STRICT_OPTION_NAMES = [
     # NOTE:
@@ -63,7 +100,6 @@ _STRICT_OPTION_NAMES = [
     'strict_glob',       # glob_.py GlobParser has warnings
 ]
 
-# Turned on with shopt -s all:oil
 # These will break some programs, but the fix should be simple.
 
 # more_errexit makes 'local foo=$(false)' and echo $(false) fail.
@@ -80,11 +116,8 @@ _BASIC_RUNTIME_OPTIONS = [
     'simple_test_builtin',  # only file tests (no strings), remove [, status 2
 ]
 
-# Used to be simple_echo -- do we need it?
-_AGGRESSIVE_RUNTIME_OPTIONS = []  # type: List[str]
-
 # No-ops for bash compatibility
-NO_OPS = [
+_NO_OPS = [
     'expand_aliases', 'extglob', 'lastpipe',  # language features always on
 
     # Handled one by one
@@ -122,16 +155,6 @@ NO_OPS = [
     'shift_verbose', 'sourcepath', 'xpg_echo',
 ]
 
-# Used by core/builtin_comp.py too.
-VISIBLE_SHOPT_NAMES = [
-    # shopt -s / -u.  NOTE: bash uses $BASHOPTS rather than $SHELLOPTS for
-    # these.
-    'nullglob', 'failglob',
-    'inherit_errexit',
-] + _STRICT_OPTION_NAMES + _BASIC_RUNTIME_OPTIONS + \
-    _AGGRESSIVE_RUNTIME_OPTIONS
-
-SHOPT_OPTION_NAMES = VISIBLE_SHOPT_NAMES + NO_OPS
 
 # Oil parse options only.
 _BASIC_PARSE_OPTIONS = [
@@ -160,48 +183,123 @@ _BASIC_PARSE_OPTIONS = [
 _AGGRESSIVE_PARSE_OPTIONS = [
     'parse_set',  # set x = 'var'
     'parse_equals',  # x = 'var'
-    'parse_do',  # do f(x) -- TODO: get rid of this
+
+    # TODO: get rid of this.  parse_paren is better
+    'parse_do',  # do f(x) 
 ]
 
-PARSE_OPTION_NAMES = _BASIC_PARSE_OPTIONS + _AGGRESSIVE_PARSE_OPTIONS
 
-# Excludes parse options.
-EXEC_OPTION_NAMES = SET_OPTION_NAMES + SHOPT_OPTION_NAMES
-# Remove special case for now.  This is only used in core/optview*.py.
-EXEC_OPTION_NAMES.remove('errexit')
+_OPTION_DEF = OptionDef()
+
+def All():
+  # type: () -> List[Option]
+  """Return a list of options with metadata.
+
+  - Used by osh/builtin_pure.py to construct the arg spec.
+  - Used by frontend/lexer_gen.py to construct the lexer/matcher
+  """
+  return _OPTION_DEF.opts
 
 
-OIL_AGGRESSIVE = _AGGRESSIVE_PARSE_OPTIONS + _AGGRESSIVE_RUNTIME_OPTIONS
+def OptionDict():
+  # type: () -> Dict[str, int]
+  """For the slow path in frontend/match.py."""
+  return dict((opt.name, opt.index) for opt in _OPTION_DEF.opts)
 
-# errexit is also set, but handled separately
-_MORE_STRICT = ['nounset', 'pipefail', 'inherit_errexit', 'nullglob']
 
-OIL_BASIC = (
-    _STRICT_OPTION_NAMES + _MORE_STRICT + _BASIC_PARSE_OPTIONS +
-    _BASIC_RUNTIME_OPTIONS
-)
-ALL_STRICT = _STRICT_OPTION_NAMES + _MORE_STRICT
+def ParseOptNames():
+  # type: () -> List[str]
+  """Used by core/optview*.py"""
+  return [opt.name for opt in _OPTION_DEF.opts if opt.is_parse]
 
-# Used in builtin_pure.py
-ALL_SHOPT_OPTIONS = SHOPT_OPTION_NAMES + PARSE_OPTION_NAMES
+
+def ExecOptNames():
+  # type: () -> List[str]
+  """Used by core/optview*.py"""
+  return [opt.name for opt in _OPTION_DEF.opts if opt.is_exec]
+
+
+def Init(opt_def):
+  # type: (OptionDef) -> None
+
+  # Note: this is in all three groups, but it's handled explicitly in
+  # core/state.py.
+  opt_def.Add('errexit', short_flag='e', builtin='set')
+
+  # Two more strict options from bash's set
+  opt_def.Add('nounset', short_flag='u', builtin='set', 
+              groups=['strict:all', 'oil:basic', 'oil:all'])
+
+  opt_def.Add('pipefail', builtin='set', 
+              groups=['strict:all', 'oil:basic', 'oil:all'])
+
+  # set -o noclobber, etc.
+  for short_flag, name in _OTHER_SET_OPTIONS:
+    opt_def.Add(name, short_flag=short_flag, builtin='set')
+
+  # The only one where builtin=None.  Only the shell can change it.
+  opt_def.Add('interactive', builtin=None)
+
+  #
+  # shopt
+  # (bash uses $BASHOPTS rather than $SHELLOPTS)
+  #
+
+  # Stubs for shopt -s xpg_echo, etc.
+  for name in _NO_OPS:
+    opt_def.Add(name, implemented=False)
+
+  # shopt option that's not in any groups.
+  for name in ['failglob']:
+    opt_def.Add(name)
+
+  # Two strict options that from bash's shopt
+  for name in ['nullglob', 'inherit_errexit']:
+    opt_def.Add(name, groups=['strict:all', 'oil:basic', 'oil:all'])
+
+  # shopt -s strict_arith, etc.
+  # TODO: Some of these shouldn't be in oil:basic, like maybe strict_echo.
+  for name in _STRICT_OPTION_NAMES:
+    opt_def.Add(name, groups=['strict:all', 'oil:basic', 'oil:all'])
+
+  #
+  # Options that enable Oil language features
+  #
+
+  # shopt -s simple_word_eval, etc.
+  for name in _BASIC_RUNTIME_OPTIONS:
+    opt_def.Add(name, groups=['oil:basic', 'oil:all'])
+
+  for name in _BASIC_PARSE_OPTIONS:
+    opt_def.Add(name, groups=['oil:basic', 'oil:all'])
+
+  for name in _AGGRESSIVE_PARSE_OPTIONS:
+    opt_def.Add(name, groups=['oil:all'])
+
+
+Init(_OPTION_DEF)
+
+# Used by core/state.py.
+
+# TODO: Change all of these to numbers.
+SET_OPTION_NAMES = [
+    opt.name for opt in _OPTION_DEF.opts if opt.builtin == 'set'
+]
+
+# Include the unimplemented ones
+SHOPT_OPTION_NAMES = [
+    opt.name for opt in _OPTION_DEF.opts if opt.builtin == 'shopt'
+]
+
+PARSE_OPTION_NAMES = ParseOptNames()
+
+VISIBLE_SHOPT_NAMES = [
+    opt.name for opt in _OPTION_DEF.opts
+    if opt.builtin == 'shopt' and opt.implemented
+]
+
+OIL_BASIC = [opt.name for opt in _OPTION_DEF.opts if 'oil:basic' in opt.groups]
+OIL_ALL = [opt.name for opt in _OPTION_DEF.opts if 'oil:all' in opt.groups]
+STRICT_ALL = [opt.name for opt in _OPTION_DEF.opts if 'strict:all' in opt.groups]
 
 META_OPTIONS = ['strict:all', 'oil:basic', 'oil:all']  # Passed to flag parser
-
-# 38 options without no-ops.  81 options with no-ops.
-# We could use uint64 later?
-ALL_OPTION_NAMES = SET_OPTION_NAMES + ALL_SHOPT_OPTIONS
-
-
-# Used to generate a lexer.
-OPTION_DEF = []
-OPTION_DICT = {}
-for i, name in enumerate(ALL_OPTION_NAMES):
-  #from core.util import log
-  #log('NAME %s', name)
-  #enum = 'option::' + name.replace(':', '_')
-
-  # TODO: oil:basic is different?
-
-  enum = i + 1
-  OPTION_DEF.append((name, enum))
-  OPTION_DICT[name] = enum

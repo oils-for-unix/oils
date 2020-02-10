@@ -48,7 +48,7 @@ def main(argv):
   # And in Python do the same.
 
 
-  schema_ast = _CreateModule(option_def.ALL_OPTION_NAMES)
+  schema_ast = _CreateModule([opt.name for opt in option_def.All()])
 
   if action == 'cpp':
     from asdl import gen_cpp

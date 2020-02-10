@@ -409,7 +409,8 @@ def main(argv):
     TranslateSimpleLexer('MatchBraceRangeToken', lexer_def.BRACE_RANGE_DEF)
 
     # e.g. "pipefail" -> option::pipefail
-    StringToInt('MatchOption', option_def.OPTION_DEF)
+    pairs = [(opt.name, opt.index) for opt in option_def.All()]
+    StringToInt('MatchOption', pairs)
     # TODO:
     #StringToInt('MatchBuiltin', builtin_def.BUILTIN_DEF)
 

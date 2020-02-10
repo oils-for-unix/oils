@@ -156,9 +156,10 @@ else:
     # type: (str) -> bool
     return bool(_SHOULD_HIJACK_RE.match(s))
 
+  _OPTION_DICT = option_def.OptionDict()
   def MatchOption(s):
     # type: (str) -> int
-    return option_def.OPTION_DICT.get(s, 0)  # 0 means not found
+    return _OPTION_DICT.get(s, 0)  # 0 means not found
 
 
 class SimpleLexer(object):

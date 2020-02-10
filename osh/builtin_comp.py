@@ -187,10 +187,12 @@ class SpecBuilder(object):
         a = _FixedWordsAction(help_.TOPICS)
 
       elif name == 'setopt':
-        a = _FixedWordsAction(option_def.SET_OPTION_NAMES)
+        names = [opt.name for opt in option_def.All() if opt.builtin == 'set']
+        a = _FixedWordsAction(names)
 
       elif name == 'shopt':
-        a = _FixedWordsAction(option_def.SHOPT_OPTION_NAMES)
+        names = [opt.name for opt in option_def.All() if opt.builtin == 'shopt']
+        a = _FixedWordsAction(names)
 
       elif name == 'signal':
         a = _FixedWordsAction(['TODO:signals'])

@@ -58,7 +58,7 @@ def main(argv):
   id_kind_def.AddBoolKinds(ID_SPEC)  # must come second
 
   id_kind_def.SetupTestBuiltin(ID_SPEC, TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP,
-                           TEST_OTHER_LOOKUP)
+                               TEST_OTHER_LOOKUP)
 
   ids = ID_SPEC.id_str2int.items()
   ids.sort(key=lambda pair: pair[1])  # Sort by ID
