@@ -1247,7 +1247,7 @@ class WordParser(WordEmitter):
           # Look ahead for $strfunc(x)
           #   $f(x) or --name=$f(x) is allowed
           #   but "--name=$f(x)" not allowed?  This would BREAK EXISTING CODE.
-          #   It would need a parse opt_num.
+          #   It would need a parse option.
 
           next_id = self.lexer.LookAhead(lex_mode_e.ShCommand)
           if next_id == Id.Op_LParen:
