@@ -19,7 +19,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from asdl import runtime
 from core.util import log
-from frontend import lookup
+from frontend import consts
 from mycpp import mylib
 from mycpp.mylib import tagswitch
 
@@ -550,7 +550,7 @@ def KeywordToken(w):
   if token_type == Id.Undefined_Tok:
     return Kind.Undefined, no_token
 
-  token_kind = lookup.LookupKind(token_type)
+  token_kind = consts.GetKind(token_type)
   if token_kind == Kind.ControlFlow:
     return token_kind, cast(Token, UP_part0)
 
@@ -616,7 +616,7 @@ def BoolId(w):
       if token_type in (Id.KW_Bang, Id.Lit_DRightBracket):
         return token_type  # special boolean "tokens"
 
-      token_kind = lookup.LookupKind(token_type)
+      token_kind = consts.GetKind(token_type)
       if token_kind in (Kind.BoolUnary, Kind.BoolBinary):
         return token_type  # boolean operators
 
@@ -652,7 +652,7 @@ def CommandId(w):
         # Oil recognizes:         = return
         return token_type
 
-      token_kind = lookup.LookupKind(token_type)
+      token_kind = consts.GetKind(token_type)
       if token_kind == Kind.KW:
         return token_type
 
@@ -667,7 +667,7 @@ def CommandKind(w):
   """The CommandKind is for coarse-grained decisions in the CommandParser."""
   if w.tag_() == word_e.Token:
     tok = cast(Token, w)
-    return lookup.LookupKind(tok.id)
+    return consts.GetKind(tok.id)
 
   # NOTE: This is a bit inconsistent with CommandId, because we never
   # return Kind.KW (or Kind.Lit).  But the CommandParser is easier to write

@@ -19,7 +19,7 @@ from core.builtin_def import _Register
 from core import error
 from core.util import p_die, e_die
 from frontend import args
-from frontend import lookup
+from frontend import consts
 from frontend import match
 from frontend import reader
 from core import state
@@ -61,7 +61,7 @@ class _FormatStringParser(object):
     """
     self.cur_token = self.lexer.Read(lex_mode)
     self.token_type = self.cur_token.id
-    self.token_kind = lookup.LookupKind(self.token_type)
+    self.token_kind = consts.GetKind(self.token_type)
 
   def _ParseFormatStr(self):
     # type: () -> printf_part_t

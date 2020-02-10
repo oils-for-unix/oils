@@ -22,11 +22,11 @@
 ./_devbuild/gen/syntax_asdl.py
 ./_devbuild/gen/types_asdl.py
 ./frontend/args.py
+./frontend/consts.py
 ./frontend/id_kind_def.py
 ./frontend/lexer_def.py
 ./frontend/lexer.py
 ./frontend/location.py
-./frontend/lookup.py
 ./frontend/match.py
 ./frontend/option_def.py
 ./frontend/parse_lib.py

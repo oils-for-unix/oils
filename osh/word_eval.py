@@ -30,7 +30,7 @@ from core import error
 from core import passwd
 from core import process
 from core.util import log, e_die, e_strict
-from frontend import lookup
+from frontend import consts
 from frontend import match
 from osh import braces
 from osh import glob_
@@ -664,7 +664,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # type: (value_t, suffix_op__Unary) -> value_t
     assert val.tag != value_e.Undef
 
-    op_kind = lookup.LookupKind(op.op_id)
+    op_kind = consts.GetKind(op.op_id)
 
     if op_kind == Kind.VOp1:
       # NOTE: glob syntax is supported in ^ ^^ , ,, !  As well as % %% # ##.
@@ -962,7 +962,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         elif case(suffix_op_e.Unary):
           op = cast(suffix_op__Unary, UP_op)
-          if lookup.LookupKind(op.op_id) == Kind.VTest:
+          if consts.GetKind(op.op_id) == Kind.VTest:
             # TODO: Change style to:
             # if self._ApplyTestOp(...)
             #   return

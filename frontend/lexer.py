@@ -14,7 +14,7 @@ from _devbuild.gen.id_kind_asdl import Id_t, Id, Kind
 from asdl import runtime
 from core.util import log
 from mycpp import mylib
-from frontend import lookup
+from frontend import consts
 from frontend import match
 
 from typing import Callable, List, Tuple, Optional, Counter, TYPE_CHECKING
@@ -117,7 +117,7 @@ class LineLexer(object):
 
     # Save on allocations!  We often don't look at the token value.
     # TODO: can inline this function with formula on 16-bit Id.
-    kind = lookup.LookupKind(tok_type)
+    kind = consts.GetKind(tok_type)
 
     # Whitelist doesn't work well?  Use blacklist for now.
     # - Kind.KW is sometimes a literal in a word

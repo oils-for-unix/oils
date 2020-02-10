@@ -13,7 +13,7 @@ from core.test_lib import Tok
 from core import test_lib
 from frontend import lexer_def
 from frontend import lexer
-from frontend import lookup
+from frontend import consts
 from frontend.lexer import LineLexer
 from frontend import match
 
@@ -137,7 +137,7 @@ class LexerTest(unittest.TestCase):
     lex = _InitLexer('-z foo')
     t = lex.Read(lex_mode_e.DBracket)
     self.assertTokensEqual(Tok(Id.BoolUnary_z, '-z'), t)
-    self.assertEqual(Kind.BoolUnary, lookup.LookupKind(t.id))
+    self.assertEqual(Kind.BoolUnary, consts.GetKind(t.id))
 
   def testMode_DollarSq(self):
     lexer = _InitLexer(r'foo bar\n \x00 \000 \u0065')

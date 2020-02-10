@@ -214,13 +214,17 @@ class _Getter(object):
 
 def MakeOpts(mem, line_input):
   # type: (Mem, Optional[Any]) -> Tuple[optview.Parse, optview.Exec, MutableOpts]
+
+  # 38 options
+  #log('opts = %d', option_def.ArraySize())
+
   opt_array = [False] * opt_num.ARRAY_SIZE
 
   errexit = _ErrExit()
   parse_opts = optview.Parse(opt_array)
   exec_opts = optview.Exec(opt_array, errexit)
   mutable_opts = MutableOpts(mem, opt_array, errexit, line_input)
-  #exec_opts = mutable_opts
+
   return parse_opts, exec_opts, mutable_opts
 
 

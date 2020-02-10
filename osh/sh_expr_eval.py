@@ -32,7 +32,7 @@ from asdl import runtime
 from core import error
 from core.util import e_die
 from frontend import location
-from frontend import lookup
+from frontend import consts
 from frontend import match
 from osh import bool_stat
 from core import state
@@ -785,7 +785,7 @@ class BoolEvaluator(_ExprEvaluator):
         s = self._EvalCompoundWord(node.child)
 
         # Now dispatch on arg type
-        arg_type = lookup.BoolArgType(op_id)  # could be static in the LST?
+        arg_type = consts.BoolArgType(op_id)  # could be static in the LST?
 
         if arg_type == bool_arg_type_e.Path:
           return bool_stat.DoUnaryOp(op_id, s)
@@ -837,7 +837,7 @@ class BoolEvaluator(_ExprEvaluator):
         s2 = self._EvalCompoundWord(node.right, quote_kind=quote_kind)
 
         # Now dispatch on arg type
-        arg_type = lookup.BoolArgType(op_id)
+        arg_type = consts.BoolArgType(op_id)
 
         if arg_type == bool_arg_type_e.Path:
           return bool_stat.DoBinaryOp(op_id, s1, s2)

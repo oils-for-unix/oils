@@ -34,7 +34,7 @@ from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import word_t, word_e, bool_expr, bool_expr_t
 from core.util import p_die
-from frontend import lookup
+from frontend import consts
 from osh import word_
 
 from typing import List, Optional, TYPE_CHECKING
@@ -75,7 +75,7 @@ class BoolParser(object):
 
     assert self.cur_word is not None
     self.op_id = word_.BoolId(self.cur_word)
-    self.b_kind = lookup.LookupKind(self.op_id)
+    self.b_kind = consts.GetKind(self.op_id)
     #log('--- word %s', self.cur_word)
     #log('op_id %s %s %s', self.op_id, self.b_kind, lex_mode)
 
@@ -204,7 +204,7 @@ class BoolParser(object):
       # Peek ahead another token.
       t2 = self._LookAhead()
       t2_op_id = word_.BoolId(t2)
-      t2_b_kind = lookup.LookupKind(t2_op_id)
+      t2_b_kind = consts.GetKind(t2_op_id)
 
       #log('t2 %s / t2_op_id %s / t2_b_kind %s', t2, t2_op_id, t2_b_kind)
       # Op for < and >, -a and -o pun

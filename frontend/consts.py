@@ -8,7 +8,7 @@ from _devbuild.gen.types_asdl import redir_arg_type_e, bool_arg_type_t
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind_t
 
 
-def LookupKind(id_):
+def GetKind(id_):
   # type: (Id_t) -> Kind_t
   """To make coarse-grained parsing decisions."""
 

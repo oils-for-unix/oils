@@ -44,11 +44,16 @@ class _OptionDef(object):
     # type: () -> None
     self.opts = []  # type: List[Option]
     self.index = 1  # start with 1
+    self.array_size = -1
 
   def Add(self, *args, **kwargs):
     # type: (Any, Any) -> None
     self.opts.append(Option(self.index, *args, **kwargs))
     self.index += 1
+
+  def DoneWithImplementedOptions(self):
+    # type: () -> None
+    self.array_size = self.index
 
 # Used by builtin
 _OTHER_SET_OPTIONS = [
@@ -215,10 +220,6 @@ def _Init(opt_def):
   # (bash uses $BASHOPTS rather than $SHELLOPTS)
   #
 
-  # Stubs for shopt -s xpg_echo, etc.
-  for name in _NO_OPS:
-    opt_def.Add(name, implemented=False)
-
   # shopt option that's not in any groups.
   for name in ['failglob']:
     opt_def.Add(name)
@@ -246,6 +247,14 @@ def _Init(opt_def):
   for name in _AGGRESSIVE_PARSE_OPTIONS:
     opt_def.Add(name, groups=['oil:all'])
 
+  opt_def.DoneWithImplementedOptions()
+
+  # NO_OPS
+
+  # Stubs for shopt -s xpg_echo, etc.
+  for name in _NO_OPS:
+    opt_def.Add(name, implemented=False)
+
 
 def All():
   # type: () -> List[Option]
@@ -255,6 +264,15 @@ def All():
   - Used by frontend/lexer_gen.py to construct the lexer/matcher
   """
   return _OPTION_DEF.opts
+
+
+def ArraySize():
+  # type: () -> int
+  """
+  Unused now, since we use opt_num::ARRAY_SIZE.  We could get rid of
+  unimplemented options and shrink the array.
+  """
+  return _OPTION_DEF.array_size
 
 
 def OptionDict():

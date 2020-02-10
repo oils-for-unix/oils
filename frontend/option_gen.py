@@ -49,8 +49,9 @@ def main(argv):
   # 
   # And in Python do the same.
 
-
   schema_ast = _CreateModule([opt.name for opt in option_def.All()])
+  # TODO: could shrink array later.
+  # [opt.name for opt in option_def.All() if opt.implemented])
 
   if action == 'cpp':
     from asdl import gen_cpp

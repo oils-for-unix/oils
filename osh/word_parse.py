@@ -70,7 +70,7 @@ from _devbuild.gen.syntax_asdl import (
 from core.util import p_die
 from core.util import log
 from core import ui
-from frontend import lookup
+from frontend import consts
 from frontend import reader
 from osh import tdop
 from osh import arith_parse
@@ -138,7 +138,7 @@ class WordParser(WordEmitter):
     if self.next_lex_mode != lex_mode_e.Undefined:
       self.cur_token = self.lexer.Read(self.next_lex_mode)
       self.token_type = self.cur_token.id
-      self.token_kind = lookup.LookupKind(self.token_type)
+      self.token_kind = consts.GetKind(self.token_type)
       self.parse_ctx.trail.AppendToken(self.cur_token)   # For completion
       self.next_lex_mode = lex_mode_e.Undefined
 

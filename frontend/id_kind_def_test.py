@@ -14,8 +14,8 @@ import unittest
 
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen import syntax_asdl 
+from frontend import consts
 from frontend.lexer_def import ID_SPEC
-from frontend.lookup import LookupKind
 from core.test_lib import Tok
 
 _kind_sizes = ID_SPEC.kind_sizes
@@ -59,17 +59,17 @@ class TokensTest(unittest.TestCase):
     print('Number of IDs:', len(ID_SPEC.id_str2int))
 
     t = Tok(Id.Arith_Plus, '+')
-    self.assertEqual(Kind.Arith, LookupKind(t.id))
+    self.assertEqual(Kind.Arith, consts.GetKind(t.id))
     t = Tok(Id.Arith_CaretEqual, '^=')
-    self.assertEqual(Kind.Arith, LookupKind(t.id))
+    self.assertEqual(Kind.Arith, consts.GetKind(t.id))
     t = Tok(Id.Arith_RBrace, '}')
-    self.assertEqual(Kind.Arith, LookupKind(t.id))
+    self.assertEqual(Kind.Arith, consts.GetKind(t.id))
 
     t = Tok(Id.BoolBinary_GlobDEqual, '==')
-    self.assertEqual(Kind.BoolBinary, LookupKind(t.id))
+    self.assertEqual(Kind.BoolBinary, consts.GetKind(t.id))
 
     t = Tok(Id.BoolBinary_Equal, '=')
-    self.assertEqual(Kind.BoolBinary, LookupKind(t.id))
+    self.assertEqual(Kind.BoolBinary, consts.GetKind(t.id))
 
   def testLexerPairs(self):
     def MakeLookup(p):
