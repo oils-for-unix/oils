@@ -26,7 +26,10 @@ from doctools import oil_doc
 #libname = find_library("cmark")
 #assert libname, "cmark not found"
 
-libname = '/usr/local/lib/libcmark.so'
+# There's some ongoing discussion about how to deal with the same in Nix.
+# I think normally you'd just patch/substitute this path during the Nix build.
+# See note in shell.nix
+libname = os.environ.get('_NIX_SHELL_LIBCMARK', '/usr/local/lib/libcmark.so')
 
 cmark = ctypes.CDLL(libname)
 
