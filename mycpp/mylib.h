@@ -464,6 +464,29 @@ class ReverseListIter {
 };
 
 template <class K, class V>
+class DictIter {
+ public:
+  explicit DictIter(Dict<K, V>* D) : D_(D), i_(0) {
+  }
+  void Next() {
+    i_++;
+  }
+  bool Done() {
+    assert(0);
+  }
+  K Key() {
+    assert(0);
+  }
+  V Value() {
+    assert(0);
+  }
+
+ private:
+  Dict<K, V>* D_;
+  int i_;
+};
+
+template <class K, class V>
 class Dict {
  public:
   // TODO: Implement it!
@@ -503,6 +526,10 @@ class Dict {
 
   void clear() {
     assert(0);
+  }
+
+  DictIter<K, V>* iteritems() {
+    return new DictIter<K, V>(this);
   }
 
  private:

@@ -1,4 +1,4 @@
-from typing import IO, Any
+from typing import IO, Any, Dict, Iterator, Tuple, TypeVar
 
 CPP: bool
 PYTHON: bool
@@ -52,3 +52,8 @@ class tagswitch(object):
   def __exit__(self, type: Any, value: Any, traceback: Any) -> bool: ...
 
   def __call__(self, *cases: Any) -> bool: ...
+
+
+K = TypeVar('K')
+V = TypeVar('V')
+def iteritems(d: Dict[K, V]) -> Iterator[Tuple[K, V]]: ...

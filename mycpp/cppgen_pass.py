@@ -1302,6 +1302,17 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           reverse = True  # use different iterate
 
+        elif func_name == 'iteritems':
+          item_type = o.inferred_item_type
+          index_expr = o.index
+
+          args = o.expr.args
+          assert len(args) == 1, args
+          # This should be a dict
+          iterated_over = args[0]
+
+          log('------------ ITERITEMS OVER %s', iterated_over)
+
         else:
           item_type = o.inferred_item_type
           index_expr = o.index
@@ -1309,6 +1320,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         over_type = self.types[iterated_over]
         self.log('  iterating over type %s', over_type)
+        self.log('  iterating over type %s', over_type.type.fullname())
+
+        over_dict = False
 
         if over_type.type.fullname() == 'builtins.list':
           c_type = get_c_type(over_type)
@@ -1318,9 +1332,23 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # ReverseListIter!
           if reverse:
             c_iter_type = 'Reverse' + c_iter_type
-        else:
+
+        elif over_type.type.fullname() == 'builtins.dict':
+          # Iterator
+          c_type = get_c_type(over_type)
+          assert c_type.endswith('*'), c_type
+          c_iter_type = c_type.replace('Dict', 'DictIter', 1)[:-1]  # remove *
+
+          over_dict = True
+
+          assert not reverse
+
+        elif over_type.type.fullname() == 'builtins.str':
           c_iter_type = 'StrIter'
           assert not reverse  # can't reverse iterate over string yet
+
+        else:  # assume it's like d.iteritems()?  Iterator type
+          assert False, over_type
 
         if index0_name:
           # can't initialize two things in a for loop, so do it on a separate line
@@ -1337,36 +1365,53 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         # for x in it: ...
         # for i, x in enumerate(pairs): ...
+
         if isinstance(item_type, Instance) or index0_name:
           c_item_type = get_c_type(item_type)
           self.write_ind('  %s ', c_item_type)
           self.accept(index_expr)
-          self.write(' = it.Value();\n')
+          if over_dict:
+            self.write(' = it.Key();\n')
+          else: 
+            self.write(' = it.Value();\n')
 
         elif isinstance(item_type, TupleType):  # for x, y in pairs
-          # Example:
-          # for (ListIter it(mylist); !it.Done(); it.Next()) {
-          #   Tuple2<int, Str*> tup1 = it.Value();
-          #   int i = tup1->at0();
-          #   Str* s = tup1->at1();
-          #   log("%d %s", i, s);
-          # }
+          if over_dict:
+            assert isinstance(o.index, TupleExpr), o.index
+            index_items = o.index.items
+            assert len(index_items) == 2, index_items
+            assert len(item_type.items) == 2, item_type.items
 
-          c_item_type = get_c_type(item_type)
+            key_type = get_c_type(item_type.items[0])
+            val_type = get_c_type(item_type.items[1])
 
-          if isinstance(o.index, TupleExpr):
-            temp_name = 'tup%d' % self.unique_id
-            self.unique_id += 1
-            self.write_ind('  %s %s = it.Value();\n', c_item_type, temp_name)
+            self.write_ind('  %s %s = it.Key();\n', key_type, index_items[0].name)
+            self.write_ind('  %s %s = it.Value();\n', val_type, index_items[1].name)
 
-            self.indent += 1
-
-            self._write_tuple_unpacking(
-                temp_name, o.index.items, item_type.items)
-
-            self.indent -= 1
           else:
-            self.write_ind('  %s %s = it.Value();\n', c_item_type, o.index.name)
+            # Example:
+            # for (ListIter it(mylist); !it.Done(); it.Next()) {
+            #   Tuple2<int, Str*> tup1 = it.Value();
+            #   int i = tup1->at0();
+            #   Str* s = tup1->at1();
+            #   log("%d %s", i, s);
+            # }
+
+            c_item_type = get_c_type(item_type)
+
+            if isinstance(o.index, TupleExpr):
+              temp_name = 'tup%d' % self.unique_id
+              self.unique_id += 1
+              self.write_ind('  %s %s = it.Value();\n', c_item_type, temp_name)
+
+              self.indent += 1
+
+              self._write_tuple_unpacking(
+                  temp_name, o.index.items, item_type.items)
+
+              self.indent -= 1
+            else:
+              self.write_ind('  %s %s = it.Value();\n', c_item_type, o.index.name)
 
         else:
           raise AssertionError('Unexpected type %s' % item_type)

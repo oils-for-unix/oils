@@ -91,3 +91,8 @@ class tagswitch(object):
   def __call__(self, *cases):
     # type: (*Any) -> bool
     return self.tag in cases
+
+
+def iteritems(d):
+  """Make translation a bit easier."""
+  return d.iteritems()

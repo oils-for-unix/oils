@@ -7,10 +7,12 @@ from __future__ import print_function
 import os
 
 import mylib
-from mylib import log
+from mylib import log, iteritems
+
+from typing import Dict
 
 
-def ListComp():
+def TestListComp():
   # type: () -> None
   log('--- list comprehension')
 
@@ -37,6 +39,25 @@ def ListComp():
   first = [s for s, _ in pairs]
   for s2 in first:
     log('first = %s', s2)
+
+
+def TestDict():
+  # type: () -> None
+  log('--- Dict')
+  d = {}  # type: Dict[str, int]
+  d['a'] = 99
+  d['c'] = 42
+  d['b'] = 0
+
+  log('a = %d', d['a'])
+  log('b = %d', d['b'])
+  log('c = %d', d['c'])
+
+  for k in d:
+    log("k = %s", k)
+
+  for k, v in iteritems(d):
+    log("k = %s, v = %d", k, v)
 
 
 CATS = ['big', 'small', 'hairless']
@@ -97,7 +118,10 @@ def run_tests():
   for i, item in reversed(list_of_tuples):
     log("- [%d] %s", i, item)
 
-  ListComp()
+  TestListComp()
+
+  TestDict()
+
 
 
 def run_benchmarks():
