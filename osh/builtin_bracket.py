@@ -4,7 +4,7 @@ builtin_bracket.py
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.id_tables import (
+from _devbuild.gen.id_kind import (
     TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP, TEST_OTHER_LOOKUP
 )
 from _devbuild.gen.runtime_asdl import value, quote_e, quote_t

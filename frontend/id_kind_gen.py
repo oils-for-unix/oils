@@ -126,9 +126,11 @@ from asdl import pybase
     v.VisitModule(schema_ast)
 
   elif action == 'cpp-consts':
-    from frontend.consts import REDIR_DEFAULT_FD, REDIR_ARG_TYPES
+    from frontend import consts
     from _devbuild.gen.id_kind_asdl import Id_str, Kind_str
     from _devbuild.gen.types_asdl import redir_arg_type_str, bool_arg_type_str
+
+    LIST_INT = ['STRICT_ALL', 'OIL_BASIC', 'OIL_ALL']
 
     prefix = argv[2]
 
@@ -144,6 +146,12 @@ from asdl import pybase
 #include "types_asdl.h"
 
 namespace consts {
+""")
+
+      for name in LIST_INT:
+        out('extern List<int>* %s;', name)
+
+      out("""\
 
 int RedirDefaultFd(id_kind_asdl::Id_t id);
 types_asdl::redir_arg_type_t RedirArgType(id_kind_asdl::Id_t id);
@@ -170,14 +178,21 @@ using types_asdl::bool_arg_type_e;
 namespace consts {
 """)
 
+      # Note: could use opt_num:: instead of raw ints
+      for name in LIST_INT:
+        val = getattr(consts, name)
+        val_str = ', '.join(str(i) for i in val)
+        out('List<int>* %s = new List({%s});', name, val_str)
+
       out("""\
+
 int RedirDefaultFd(id_kind_asdl::Id_t id) {
   // relies on "switch lowering"
   switch (id) {
 """)
-      for id_ in sorted(REDIR_DEFAULT_FD):
+      for id_ in sorted(consts.REDIR_DEFAULT_FD):
         a = Id_str(id_).replace('.','::')
-        b = REDIR_DEFAULT_FD[id_]
+        b = consts.REDIR_DEFAULT_FD[id_]
         out('  case %s: return %s;' % (a, b))
       out("""\
   }
@@ -189,10 +204,10 @@ types_asdl::redir_arg_type_t RedirArgType(id_kind_asdl::Id_t id) {
   // relies on "switch lowering"
   switch (id) {
 """)
-      for id_ in sorted(REDIR_ARG_TYPES):
+      for id_ in sorted(consts.REDIR_ARG_TYPES):
         a = Id_str(id_).replace('.','::')
         # redir_arg_type_e::Path, etc.
-        b = redir_arg_type_str(REDIR_ARG_TYPES[id_]).replace('.', '_e::')
+        b = redir_arg_type_str(consts.REDIR_ARG_TYPES[id_]).replace('.', '_e::')
         out('  case %s: return %s;' % (a, b))
       out("""\
   }
@@ -237,7 +252,7 @@ Kind GetKind(id_kind_asdl::Id_t id) {
     # It's kind of weird to use the generated code to generate more code.
     # Can we do this instead with the parsed module for "id" and "types.asdl"?
 
-    from frontend.consts import REDIR_DEFAULT_FD, REDIR_ARG_TYPES
+    from frontend import consts
     from _devbuild.gen.id_kind_asdl import Id_str, Kind_str
     from _devbuild.gen.types_asdl import redir_arg_type_str, bool_arg_type_str
 
@@ -246,21 +261,22 @@ from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.types_asdl import redir_arg_type_e, bool_arg_type_e
 """)
 
-    print('')
-    print('REDIR_DEFAULT_FD = {')
-    for id_ in sorted(REDIR_DEFAULT_FD):
-      v = REDIR_DEFAULT_FD[id_]
-      print('  %s: %s,' % (Id_str(id_), v))
-    print('}')
+    if 0:
+      print('')
+      print('REDIR_DEFAULT_FD = {')
+      for id_ in sorted(consts.REDIR_DEFAULT_FD):
+        v = consts.REDIR_DEFAULT_FD[id_]
+        print('  %s: %s,' % (Id_str(id_), v))
+      print('}')
 
-    print('')
-    print('REDIR_ARG_TYPES = {')
-    for id_ in sorted(REDIR_ARG_TYPES):
-      v = REDIR_ARG_TYPES[id_]
-      # HACK
-      v = redir_arg_type_str(v).replace('.', '_e.')
-      print('  %s: %s,' % (Id_str(id_), v))
-    print('}')
+      print('')
+      print('REDIR_ARG_TYPES = {')
+      for id_ in sorted(consts.REDIR_ARG_TYPES):
+        v = consts.REDIR_ARG_TYPES[id_]
+        # HACK
+        v = redir_arg_type_str(v).replace('.', '_e.')
+        print('  %s: %s,' % (Id_str(id_), v))
+      print('}')
 
     print('')
     print('BOOL_ARG_TYPES = {')

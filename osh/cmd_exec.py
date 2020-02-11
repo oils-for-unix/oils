@@ -19,7 +19,6 @@ import resource
 import time
 import sys
 
-from _devbuild.gen.id_tables import REDIR_ARG_TYPES, REDIR_DEFAULT_FD
 from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.syntax_asdl import (
     compound_word,
@@ -79,6 +78,7 @@ from core import util
 from core.util import log, e_die
 
 from frontend import args
+from frontend import consts
 from frontend import reader
 
 from oil_lang import objects
@@ -628,9 +628,9 @@ class Executor(object):
 
         # note: needed for redirect like 'echo foo > x$LINENO'
         self.mem.SetCurrentSpanId(n.op.span_id)
-        fd = REDIR_DEFAULT_FD[n.op.id] if n.fd == runtime.NO_SPID else n.fd
+        fd = consts.RedirDefaultFd(n.op.id) if n.fd == runtime.NO_SPID else n.fd
 
-        redir_type = REDIR_ARG_TYPES[n.op.id]  # could be static in the LST?
+        redir_type = consts.RedirArgType(n.op.id)  # could be static in the LST?
 
         if redir_type == redir_arg_type_e.Path:
           # NOTES
@@ -672,7 +672,7 @@ class Executor(object):
 
       elif case(redir_e.HereDoc):
         n = cast(redir__HereDoc, UP_n)
-        fd = REDIR_DEFAULT_FD[n.op.id] if n.fd == runtime.NO_SPID else n.fd
+        fd = consts.RedirDefaultFd(n.op.id) if n.fd == runtime.NO_SPID else n.fd
         # HACK: Wrap it in a word to evaluate.
         w = compound_word(n.stdin_parts)
         val = self.word_ev.EvalWordToString(w)

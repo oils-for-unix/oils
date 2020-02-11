@@ -316,7 +316,7 @@ readonly OSH_PARSE_FILES=(
 
   # Note: optview depends on errexit.  But we only need optview::Parse, not
   # optview::exec.
-  #$REPO_ROOT/core/state.py
+  $REPO_ROOT/core/state.py
 )
 
 readonly CAN_TRANSLATE=(
@@ -420,7 +420,7 @@ osh-eval() {
     # frontend/args.py -- has Union
     # os_path.py: crashes on path += '/' + b
 
-    local exclude='_devbuild/|pybase.py|optview.py|option_def.py|id_kind_def.py|match.py|lexer_def.py|meta.py|pretty.py|process.py|pyutil.py|util.py|args.py|os_path.py|path_stat.py|bool_stat.py|passwd.py|builtin_def.py|lookup.py'
+    local exclude='_devbuild/|pybase.py|optview.py|option_def.py|id_kind_def.py|match.py|lexer_def.py|meta.py|pretty.py|process.py|pyutil.py|util.py|args.py|os_path.py|path_stat.py|bool_stat.py|passwd.py|builtin_def.py|consts.py'
     mycpp $raw $(egrep -v "$exclude" types/osh-eval-manifest.txt)
   fi
 

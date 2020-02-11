@@ -24,7 +24,7 @@ from asdl import runtime
 from core.util import log, e_die
 from core import optview
 from frontend import args
-from frontend import option_def
+from frontend import consts
 from frontend import match
 from mycpp import mylib
 from mycpp.mylib import tagswitch
@@ -256,7 +256,7 @@ class MutableOpts(object):
     # type: (str) -> None
     # e.g. errexit:nounset:pipefail
     lookup = shellopts.split(':')
-    for name in option_def.SET_OPTION_NAMES:
+    for name in consts.SET_OPTION_NAMES:
       if name in lookup:
         self._SetOption(name, True)
 
@@ -270,7 +270,7 @@ class MutableOpts(object):
 
   def _SetArrayByName(self, opt_name, b):
     # type: (str, bool) -> None
-    if (opt_name in option_def.PARSE_OPTION_NAMES and
+    if (opt_name in consts.PARSE_OPTION_NAMES and
         not self.mem.InGlobalNamespace()):
       e_die('Syntax options must be set at the top level '
             '(outside any function)')
@@ -285,7 +285,7 @@ class MutableOpts(object):
     # type: (str, bool) -> None
     """Private version for synchronizing from SHELLOPTS."""
     assert '_' not in opt_name
-    assert opt_name in option_def.SET_OPTION_NAMES
+    assert opt_name in consts.SET_OPTION_NAMES
     if opt_name == 'errexit':
       self.errexit.Set(b)
     elif opt_name == 'vi' or opt_name == 'emacs':
@@ -302,7 +302,7 @@ class MutableOpts(object):
   def SetOption(self, opt_name, b):
     # type: (str, bool) -> None
     """ For set -o, set +o, or shopt -s/-u -o. """
-    if opt_name not in option_def.SET_OPTION_NAMES:
+    if opt_name not in consts.SET_OPTION_NAMES:
       raise args.UsageError('got invalid option %r' % opt_name)
     self._SetOption(opt_name, b)
 
@@ -337,27 +337,27 @@ class MutableOpts(object):
     # shopt -s all:oil turns on all Oil options, which includes all strict #
     # options
     if opt_name == 'oil:basic':
-      for attr in option_def.OIL_BASIC:
-        self._SetArrayByName(attr, b)
+      for opt_num in consts.OIL_BASIC:
+        self.opt_array[opt_num] = b
 
       self.errexit.Set(b)  # Special case
       return
 
     if opt_name == 'oil:all':
-      for attr in option_def.OIL_ALL:
-        self._SetArrayByName(attr, b)
+      for opt_num in consts.OIL_ALL:
+        self.opt_array[opt_num] = b
 
       self.errexit.Set(b)  # Special case
       return
 
     if opt_name == 'strict:all':
-      for attr in option_def.STRICT_ALL:
-        self._SetArrayByName(attr, b)
+      for opt_num in consts.STRICT_ALL:
+        self.opt_array[opt_num] = b
 
       self.errexit.Set(b)  # Special case
       return
 
-    if opt_name not in option_def.SHOPT_OPTION_NAMES:
+    if opt_name not in consts.SHOPT_OPTION_NAMES:
       raise args.UsageError('got invalid option %r' % opt_name)
 
     self._SetArrayByName(opt_name, b)
@@ -368,10 +368,10 @@ class MutableOpts(object):
     # TODO: Maybe sort them differently?
 
     if len(opt_names) == 0:  # if none, supplied, show all
-      opt_names = option_def.SET_OPTION_NAMES
+      opt_names = consts.SET_OPTION_NAMES
 
     for opt_name in opt_names:
-      if opt_name not in option_def.SET_OPTION_NAMES:
+      if opt_name not in consts.SET_OPTION_NAMES:
         raise args.UsageError('got invalid option %r' % opt_name)
 
       if opt_name == 'errexit':
@@ -386,7 +386,7 @@ class MutableOpts(object):
     # type: (List[str]) -> None
     """ For 'shopt -p' """
     if len(opt_names) == 0:
-      opt_names = option_def.VISIBLE_SHOPT_NAMES  # if none supplied, show all
+      opt_names = consts.VISIBLE_SHOPT_NAMES  # if none supplied, show all
     for opt_name in opt_names:
       index = match.MatchOption(opt_name)
       if index == 0:

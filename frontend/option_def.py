@@ -316,8 +316,8 @@ VISIBLE_SHOPT_NAMES = [
     if opt.builtin == 'shopt' and opt.implemented
 ]
 
-OIL_BASIC = [opt.name for opt in _OPTION_DEF.opts if 'oil:basic' in opt.groups]
-OIL_ALL = [opt.name for opt in _OPTION_DEF.opts if 'oil:all' in opt.groups]
-STRICT_ALL = [opt.name for opt in _OPTION_DEF.opts if 'strict:all' in opt.groups]
+OIL_BASIC = [opt.index for opt in _OPTION_DEF.opts if 'oil:basic' in opt.groups]
+OIL_ALL = [opt.index for opt in _OPTION_DEF.opts if 'oil:all' in opt.groups]
+STRICT_ALL = [opt.index for opt in _OPTION_DEF.opts if 'strict:all' in opt.groups]
 
 META_OPTIONS = ['strict:all', 'oil:basic', 'oil:all']  # Passed to flag parser

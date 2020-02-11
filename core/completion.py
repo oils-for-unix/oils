@@ -39,12 +39,12 @@ import time
 from _devbuild.gen.syntax_asdl import word_part_e, redir_e, Id
 from _devbuild.gen.runtime_asdl import value_e
 from _devbuild.gen.types_asdl import redir_arg_type_e
-from _devbuild.gen.id_tables import REDIR_ARG_TYPES
 
 from core import error
 from core import ui
 from core import util
 from core.util import log
+from frontend import consts
 from frontend import reader
 from pylib import os_path
 from pylib import path_stat
@@ -831,7 +831,7 @@ class RootCompleter(object):
       r = trail.redirects[-1]
       # Only complete 'echo >', but not 'echo >&' or 'cat <<'
       if (r.tag == redir_e.Redir and
-          REDIR_ARG_TYPES[r.op.id] == redir_arg_type_e.Path):
+          consts.RedirArgType(r.op.id) == redir_arg_type_e.Path):
         if WordEndsWithCompDummy(r.arg_word):
           debug_f.log('Completing redirect arg')
 

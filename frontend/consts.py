@@ -4,8 +4,23 @@ lookup.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.types_asdl import redir_arg_type_e, bool_arg_type_t
+from _devbuild.gen.types_asdl import (
+    redir_arg_type_e, redir_arg_type_t, bool_arg_type_t
+)
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind_t
+from frontend import option_def 
+
+
+# Used as consts::STRICT_ALL, etc.  Do it explicitly to satisfy MyPy.
+STRICT_ALL = option_def.STRICT_ALL
+OIL_BASIC = option_def.OIL_BASIC
+OIL_ALL = option_def.OIL_ALL
+
+# TODO: These could be changed to numbers
+SET_OPTION_NAMES = option_def.SET_OPTION_NAMES
+SHOPT_OPTION_NAMES = option_def.SHOPT_OPTION_NAMES
+VISIBLE_SHOPT_NAMES = option_def.VISIBLE_SHOPT_NAMES
+PARSE_OPTION_NAMES = option_def.PARSE_OPTION_NAMES
 
 
 def GetKind(id_):
@@ -25,8 +40,6 @@ def BoolArgType(id_):
 
 #
 # Redirect Tables associated with IDs
-#
-# These might be osh specific.
 #
 
 REDIR_DEFAULT_FD = {
@@ -70,3 +83,12 @@ REDIR_ARG_TYPES = {
     # note: here docs aren't included
 }
 
+
+def RedirArgType(id_):
+  # type: (Id_t) -> redir_arg_type_t
+  return REDIR_ARG_TYPES[id_]
+
+
+def RedirDefaultFd(id_):
+  # type: (Id_t) -> int
+  return REDIR_DEFAULT_FD[id_]
