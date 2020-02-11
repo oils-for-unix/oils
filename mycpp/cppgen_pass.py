@@ -1272,6 +1272,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.accept(o.body)
           return
 
+        reverse = False
+
         # for i, x in enumerate(...):
         index0_name = None
         if func_name == 'enumerate':
@@ -1287,6 +1289,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # enumerate(mylist) turns into iteration over mylist with variable i
           assert len(o.expr.args) == 1, o.expr.args
           iterated_over = o.expr.args[0]
+
+        elif func_name == 'reversed':
+          # NOTE: enumerate() and reversed() can't be mixed yet.  But you CAN
+          # reverse iter over tuples.
+          item_type = o.inferred_item_type
+          index_expr = o.index
+
+          args = o.expr.args
+          assert len(args) == 1, args
+          iterated_over = args[0]
+
+          reverse = True  # use different iterate
+
         else:
           item_type = o.inferred_item_type
           index_expr = o.index
@@ -1299,8 +1314,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           c_type = get_c_type(over_type)
           assert c_type.endswith('*'), c_type
           c_iter_type = c_type.replace('List', 'ListIter', 1)[:-1]  # remove *
+
+          # ReverseListIter!
+          if reverse:
+            c_iter_type = 'Reverse' + c_iter_type
         else:
           c_iter_type = 'StrIter'
+          assert not reverse  # can't reverse iterate over string yet
 
         if index0_name:
           # can't initialize two things in a for loop, so do it on a separate line

@@ -16,11 +16,6 @@ from asdl.visitor import FormatLines
 from frontend import id_kind_def
 
 
-def Emit(s, f, depth=0):
-  for line in FormatLines(s, depth):
-    f.write(line)
-
-
 def _CreateModule(id_spec, ids):
   """ 
   Create a SYNTHETIC ASDL module to generate code from.

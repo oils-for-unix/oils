@@ -171,6 +171,21 @@ void test_list_funcs() {
   log("item 1 %d", L2->index(1));
 }
 
+void test_list_iters() {
+  log("  forward iteration over list");
+  auto ints = new List<int>({1, 2, 3});
+  for (ListIter<int> it(ints); !it.Done(); it.Next()) {
+    int x = it.Value();
+    log("x = %d", x);
+  }
+
+  log("  backward iteration over list");
+  for (ReverseListIter<int> it(ints); !it.Done(); it.Next()) {
+    int x = it.Value();
+    log("x = %d", x);
+  }
+}
+
 void test_contains() {
   bool b;
 
@@ -221,12 +236,24 @@ void test_files() {
   log("test_files DONE");
 }
 
-int main(int argc, char** argv) {
-  List<int>* L = new List<int>{1, 2, 3};
-
-  // TODO: How to do this?
+void test_dict() {
+  // TODO: How to initialize constants?
 
   // Dict d {{"key", 1}, {"val", 2}};
+  Dict<int, Str*>* d = new Dict<int, Str*>();
+  (*d)[1] = new Str("foo");
+  log("d[1] = %s", d->index(1)->data_);
+
+  /*
+  auto d2 = new Dict<Str*, int>();
+  Str* key = new Str("key");
+  (*d)[key] = 42;
+  log("d['key'] = %d", d->index(key));
+  */
+}
+
+int main(int argc, char** argv) {
+  List<int>* L = new List<int>{1, 2, 3};
 
   log("size: %d", len(L));
   log("");
@@ -259,11 +286,11 @@ int main(int argc, char** argv) {
   test_str_to_int();
   test_str_funcs();
   test_list_funcs();
+  test_list_iters();
 
   log("");
-  Dict<int, Str*>* d = new Dict<int, Str*>();
-  (*d)[1] = new Str("foo");
-  log("d[1] = %s", d->index(1)->data_);
+  log("DICT");
+  test_dict();
 
   log("");
   test_buf_line_reader();

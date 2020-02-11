@@ -442,6 +442,27 @@ class ListIter {
   int i_;
 };
 
+// TODO: Does using pointers rather than indices make this more efficient?
+template <class T>
+class ReverseListIter {
+ public:
+  explicit ReverseListIter(List<T>* L) : L_(L), i_(L_->v_.size() - 1) {
+  }
+  void Next() {
+    i_--;
+  }
+  bool Done() {
+    return i_ < 0;
+  }
+  T Value() {
+    return L_->v_[i_];
+  }
+
+ private:
+  List<T>* L_;
+  int i_;
+};
+
 template <class K, class V>
 class Dict {
  public:

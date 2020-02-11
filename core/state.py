@@ -1207,7 +1207,11 @@ class Mem(object):
     # This isn't the call source, it's the source of the function DEFINITION
     # (or the sourced # file itself).
     if name == 'BASH_SOURCE':
-      return value.MaybeStrArray(list(reversed(self.bash_source)))
+      # mycpp REWRITE:
+      #strs = list(reversed(self.bash_source)))
+      strs = list(self.bash_source)  # copy
+      strs.reverse()
+      return value.MaybeStrArray(strs)
 
     # This is how bash source SHOULD be defined, but it's not!
     if name == 'CALL_SOURCE':
@@ -1336,7 +1340,7 @@ class Mem(object):
     ret = []  # type: List[str]
     # Look up the stack, yielding all variables.  Bash seems to do this.
     for scope in self.var_stack:
-      for name, _ in scope.iteritems():
+      for name in scope:
         ret.append(name)
     return ret
 
@@ -1346,7 +1350,7 @@ class Mem(object):
     # Look up the stack, yielding all variables.  Bash seems to do this.
     names = []  # type: List[str]
     for scope in self.var_stack:
-      for name, _ in scope.iteritems():
+      for name in scope:
         if name.startswith(prefix):
           names.append(name)
     return names

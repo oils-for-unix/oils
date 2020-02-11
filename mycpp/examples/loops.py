@@ -45,10 +45,21 @@ CATS = ['big', 'small', 'hairless']
 def run_tests():
   # type: () -> None
 
+  log('--- iterate over bytes in string')
+  for ch in 'abc':
+    log('ch = %s', ch)
+
+  log('--- iterate over items in list')
+  for item in ['xx', 'yy']:
+    log('item = %s', item)
+
+  # TODO: iterate over items in dict
+  # DictIter gives pairs?  Just do .Key() and .Value()?  Hm that makes sense.
+
   log('--- tuple unpacking')
 
-  mylist = [(5, 'five'), (6, 'six')]
-  for i, item in mylist:
+  list_of_tuples = [(5, 'five'), (6, 'six')]
+  for i, item in list_of_tuples:
     log("- [%d] %s", i, item)
 
   log('--- one arg xrange()')
@@ -70,9 +81,21 @@ def run_tests():
   for i, c in enumerate(CATS):
     log('%d %s', i, c)
 
-  for i, pair in enumerate(mylist):
+  for i, pair in enumerate(list_of_tuples):
     index, s = pair
     log('%d %d %s', i, index, s)
+
+  # TODO: Note: might want to combine with enumerate?  But we're not using
+  # that.  We can specialize it for a list.  ReverseListIter().
+  log('--- reversed() list')
+
+  list_of_strings = ['spam', 'eggs']
+  for item in reversed(list_of_strings):
+    log("- %s", item)
+
+  log('--- reversed() list with tuple unpacking')
+  for i, item in reversed(list_of_tuples):
+    log("- [%d] %s", i, item)
 
   ListComp()
 

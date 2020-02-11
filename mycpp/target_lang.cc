@@ -19,10 +19,13 @@
 #include <initializer_list>
 #include <memory>  // shared_ptr
 #include <vector>
+#include <unordered_map>
 
 #include <stdexcept>
 
 #include "dumb_alloc.h"
+
+using std::unordered_map;
 
 void log(const char* fmt, ...) {
   va_list args;
@@ -232,6 +235,33 @@ void shared_ptr_demo() {
   log("sizeof(e3) = %zu", sizeof(e3));
 }
 
+void map_demo() {
+  unordered_map<int, int> m;
+  log("m.size = %d", m.size());
+
+  // Hm integers have a hash function
+  m[3] = 4;
+  m[5] = 9;
+  log("m.size = %d", m.size());
+
+  // Hm you always get the pairs
+  // Should this be const auto& or something?
+  for (auto item : m) {
+    log("iterating %d %d", item.first, item.second);
+  }
+
+  log("---");
+
+  unordered_map<Extent*, int> m2;
+  log("m2.size = %d", m2.size());
+
+  // hm do I want this operator overloading?
+  m2[nullptr] = 42;
+  log("m2.size = %d", m2.size());
+
+  log("retrieved = %d", m2[nullptr]);
+}
+
 int main(int argc, char** argv) {
   log("sizeof(int): %d", sizeof(int));
   log("sizeof(int*): %d", sizeof(int*));
@@ -267,4 +297,6 @@ int main(int argc, char** argv) {
   dumb_alloc::Summarize();
 
   shared_ptr_demo();
+
+  map_demo();
 }
