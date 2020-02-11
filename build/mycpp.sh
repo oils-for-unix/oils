@@ -316,7 +316,7 @@ readonly OSH_PARSE_FILES=(
 
   # Note: optview depends on errexit.  But we only need optview::Parse, not
   # optview::exec.
-  $REPO_ROOT/core/state.py
+  #$REPO_ROOT/core/state.py
 )
 
 readonly CAN_TRANSLATE=(

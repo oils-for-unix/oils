@@ -125,8 +125,8 @@ from asdl import pybase
                                   simple_int_sums=['Id'])
     v.VisitModule(schema_ast)
 
-  elif action == 'cc-tables':
-    from frontend.lookup import REDIR_DEFAULT_FD, REDIR_ARG_TYPES
+  elif action == 'cpp-consts':
+    from frontend.consts import REDIR_DEFAULT_FD, REDIR_ARG_TYPES
     from _devbuild.gen.id_kind_asdl import Id_str, Kind_str
     from _devbuild.gen.types_asdl import redir_arg_type_str, bool_arg_type_str
 
@@ -143,14 +143,14 @@ from asdl import pybase
 #include "id_kind_asdl.h"
 #include "types_asdl.h"
 
-namespace lookup {
+namespace consts {
 
 int RedirDefaultFd(id_kind_asdl::Id_t id);
 types_asdl::redir_arg_type_t RedirArgType(id_kind_asdl::Id_t id);
 types_asdl::bool_arg_type_t BoolArgType(id_kind_asdl::Id_t id);
-id_kind_asdl::Kind LookupKind(id_kind_asdl::Id_t id);
+id_kind_asdl::Kind GetKind(id_kind_asdl::Id_t id);
 
-}  // namespace lookup
+}  // namespace consts
 
 #endif  // LOOKUP_H
 """)
@@ -160,14 +160,14 @@ id_kind_asdl::Kind LookupKind(id_kind_asdl::Id_t id);
         print(fmt % args, file=f)
 
       out("""\
-#include "lookup.h"
+#include "consts.h"
 
 namespace Id = id_kind_asdl::Id;
 using id_kind_asdl::Kind;
 using types_asdl::redir_arg_type_e;
 using types_asdl::bool_arg_type_e;
 
-namespace lookup {
+namespace consts {
 """)
 
       out("""\
@@ -215,7 +215,7 @@ types_asdl::bool_arg_type_t BoolArgType(id_kind_asdl::Id_t id) {
 """)
 
       out("""\
-Kind LookupKind(id_kind_asdl::Id_t id) {
+Kind GetKind(id_kind_asdl::Id_t id) {
   // relies on "switch lowering"
   switch (id) {
 """)
@@ -229,15 +229,15 @@ Kind LookupKind(id_kind_asdl::Id_t id) {
 """)
 
       out("""\
-}  // namespace lookup
+}  // namespace consts
 """)
 
 
-  elif action == 'py-tables':
+  elif action == 'py-consts':
     # It's kind of weird to use the generated code to generate more code.
     # Can we do this instead with the parsed module for "id" and "types.asdl"?
 
-    from frontend.lookup import REDIR_DEFAULT_FD, REDIR_ARG_TYPES
+    from frontend.consts import REDIR_DEFAULT_FD, REDIR_ARG_TYPES
     from _devbuild.gen.id_kind_asdl import Id_str, Kind_str
     from _devbuild.gen.types_asdl import redir_arg_type_str, bool_arg_type_str
 

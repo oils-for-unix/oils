@@ -1905,7 +1905,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 'Id', 'hnode_e', 'source_e', 'place_e',
 
                 # option_asdl
-                'option',
+                'opt_num',
 
                 # syntax_asdl
                 're', 're_repeat', 'class_literal_term', 'proc_sig',

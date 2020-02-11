@@ -20,12 +20,12 @@ def _CreateModule(option_names):
 
   C++:
 
-  using option_asdl::option
-  option::nounset
+  using option_asdl::opt_num
+  opt_num::nounset
 
   Python:
-  from _devbuild.gen.option_asdl import option
-  option.nounset
+  from _devbuild.gen.option_asdl import opt_num
+  opt_num.nounset
   """
   from asdl import asdl_
 
@@ -106,12 +106,6 @@ from asdl import pybase
     v = gen_python.GenMyPyVisitor(f, None, e_suffix=False,
                                   simple_int_sums=_SIMPLE)
     v.VisitModule(schema_ast)
-
-  elif action == 'cc-tables':
-    pass
-
-  elif action == 'py-tables':
-    pass
 
   else:
     raise RuntimeError('Invalid action %r' % action)

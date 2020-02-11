@@ -12,14 +12,14 @@ def GetKind(id_):
   # type: (Id_t) -> Kind_t
   """To make coarse-grained parsing decisions."""
 
-  from _devbuild.gen.id_tables import ID_TO_KIND  # break circular dep
+  from _devbuild.gen.id_kind import ID_TO_KIND  # break circular dep
   return ID_TO_KIND[id_]
 
 
 def BoolArgType(id_):
   # type: (Id_t) -> bool_arg_type_t
 
-  from _devbuild.gen.id_tables import BOOL_ARG_TYPES  # break circular dep
+  from _devbuild.gen.id_kind import BOOL_ARG_TYPES  # break circular dep
   return BOOL_ARG_TYPES[id_]
 
 

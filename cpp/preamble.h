@@ -11,7 +11,7 @@ using id_kind_asdl::Kind_t;
 // _build/cpp
 #include "core_optview.h"
 #include "grammar_nt.h"
-#include "lookup.h"
+#include "consts.h"
 
 // oil/cpp
 #include "asdl_pretty.h"

@@ -13,7 +13,7 @@ from frontend import option_def
 
 def GenMethods(opt_names, f):
   for n in opt_names:
-    f.write('  bool %s() { return opt_array->index(option::%s); }\n' % (n, n))
+    f.write('  bool %s() { return opt_array->index(opt_num::%s); }\n' % (n, n))
 
 
 def main(argv):
@@ -33,7 +33,7 @@ class _ErrExit;
 
 namespace optview {
 
-namespace option = option_asdl::option;
+namespace opt_num = option_asdl::opt_num;
 
 class Parse {
  public:

@@ -78,16 +78,18 @@ id-mypy-gen() {
   frontend/id_kind_gen.py mypy > $out
   log "Wrote $out"
 
-  out=_devbuild/gen/id_tables.py
-  frontend/id_kind_gen.py py-tables > $out
+  out=_devbuild/gen/id_kind.py
+  frontend/id_kind_gen.py py-consts > $out
   log "Wrote $out"
 }
 
 id-cpp-gen() {
   local out_dir=_build/cpp
   frontend/id_kind_gen.py cpp $out_dir/id_kind_asdl
+  ls -l $out_dir/id_kind_asdl*
 
-  frontend/id_kind_gen.py cc-tables $out_dir/lookup
+  frontend/id_kind_gen.py cpp-consts $out_dir/consts
+  ls -l $out_dir/consts*
 }
 
 option-mypy-gen() {
