@@ -6,7 +6,7 @@
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
-id_kind_gen.py - Code generation for id_kind_def.py.
+consts_gen.py - Code generation for consts.py, id_kind_def.py, etc.
 """
 from __future__ import print_function
 
@@ -131,6 +131,11 @@ from asdl import pybase
     from _devbuild.gen.types_asdl import redir_arg_type_str, bool_arg_type_str
 
     LIST_INT = ['STRICT_ALL', 'OIL_BASIC', 'OIL_ALL']
+    # TODO: These could be changed to numbers
+    LIST_STR = [
+        'SET_OPTION_NAMES', 'SHOPT_OPTION_NAMES', 'VISIBLE_SHOPT_NAMES',
+        'PARSE_OPTION_NAMES'
+    ]
 
     prefix = argv[2]
 
@@ -150,6 +155,8 @@ namespace consts {
 
       for name in LIST_INT:
         out('extern List<int>* %s;', name)
+      for name in LIST_STR:
+        out('extern List<Str*>* %s;', name)
 
       out("""\
 
@@ -182,6 +189,11 @@ namespace consts {
       for name in LIST_INT:
         val = getattr(consts, name)
         val_str = ', '.join(str(i) for i in val)
+        out('List<int>* %s = new List({%s});', name, val_str)
+
+      for name in LIST_STR:
+        val = getattr(consts, name)
+        val_str = '/* TODO */'
         out('List<int>* %s = new List({%s});', name, val_str)
 
       out("""\

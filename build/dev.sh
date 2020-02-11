@@ -104,7 +104,7 @@ oil-asdl-to-py() {
 
   gen-asdl-py frontend/types.asdl  # no dependency on Id
 
-  build/codegen.sh id-mypy-gen  # dependency on bool_arg_type_e
+  build/codegen.sh const-mypy-gen  # dependency on bool_arg_type_e
   build/codegen.sh option-mypy-gen
 
   gen-asdl-py frontend/syntax.asdl 'frontend.syntax_abbrev'
@@ -129,7 +129,7 @@ oil-asdl-to-cpp() {
   #           and _build/cpp/id_kind_asdl.h
   # - do we want enum class?
 
-  build/codegen.sh id-cpp-gen  # dependency on bool_arg_type_e
+  build/codegen.sh const-cpp-gen  # dependency on bool_arg_type_e
   build/codegen.sh option-cpp-gen
 
   # We also want to generate the lexer here.

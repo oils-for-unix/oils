@@ -70,25 +70,25 @@ types-gen() {
 }
 
 id-c-gen() {
-  frontend/id_kind_gen.py c > _devbuild/gen/id.h
+  frontend/consts_gen.py c > _devbuild/gen/id.h
 }
 
-id-mypy-gen() {
+const-mypy-gen() {
   local out=_devbuild/gen/id_kind_asdl.py
-  frontend/id_kind_gen.py mypy > $out
+  frontend/consts_gen.py mypy > $out
   log "Wrote $out"
 
   out=_devbuild/gen/id_kind.py
-  frontend/id_kind_gen.py py-consts > $out
+  frontend/consts_gen.py py-consts > $out
   log "Wrote $out"
 }
 
-id-cpp-gen() {
+const-cpp-gen() {
   local out_dir=_build/cpp
-  frontend/id_kind_gen.py cpp $out_dir/id_kind_asdl
+  frontend/consts_gen.py cpp $out_dir/id_kind_asdl
   ls -l $out_dir/id_kind_asdl*
 
-  frontend/id_kind_gen.py cpp-consts $out_dir/consts
+  frontend/consts_gen.py cpp-consts $out_dir/consts
   ls -l $out_dir/consts*
 }
 
@@ -135,7 +135,7 @@ ast-id-lex() {
 }
 
 # NOTES:
-# - frontend/id_kind_gen.py generates the mapping from Id to Kind.
+# - frontend/consts_gen.py generates the mapping from Id to Kind.
 #   - It needs a mapping output by the Python superoptimizatio script.
 # - asdl/gen_cpp.py generates oheap code in main().
 #   - It should probably be factored into a library and main driver.
