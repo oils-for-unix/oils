@@ -103,6 +103,10 @@ build-all() {
       continue
     fi
 
+    echo -----
+    echo "EXAMPLE $name"
+    echo -----
+
     translate-example $name
     compile-example $name
   done

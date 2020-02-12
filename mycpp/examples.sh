@@ -71,6 +71,7 @@ translate-parse() {
   codegen-parse
 
   local snippet='
+
 #include "expr_asdl.h"
 #include "asdl_pretty.h"
 

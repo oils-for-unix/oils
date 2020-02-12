@@ -2,10 +2,12 @@
 
 #include "asdl_pretty.h"
 
-// C includes have to go together
+// This order is required to get it to compile, despite clang-format
+// clang-format off
+#include "osh-types.h"
 #include "id.h"
 #include "osh-lex.h"
-#include "osh-types.h"
+// clang-format on
 
 namespace pretty {
 

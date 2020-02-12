@@ -27,7 +27,7 @@ from frontend import args
 from frontend import consts
 from frontend import match
 from mycpp import mylib
-from mycpp.mylib import tagswitch
+from mycpp.mylib import tagswitch, iteritems
 from osh import split
 from pylib import os_path
 from pylib import path_stat
@@ -696,7 +696,7 @@ class Mem(object):
     # This is the way dash and bash work -- at startup, they turn everything in
     # 'environ' variable into shell variables.  Bash has an export_env
     # variable.  Dash has a loop through environ in init.c
-    for n, v in environ.iteritems():
+    for n, v in iteritems(environ):
       self.SetVar(lvalue.Named(n), value.Str(v), scope_e.GlobalOnly,
                   flags=SetExport)
 
@@ -1323,7 +1323,7 @@ class Mem(object):
     # Search from globals up.  Names higher on the stack will overwrite names
     # lower on the stack.
     for scope in self.var_stack:
-      for name, cell in scope.iteritems():
+      for name, cell in iteritems(scope):
         # TODO: Disallow exporting at assignment time.  If an exported Str is
         # changed to MaybeStrArray, also clear its 'exported' flag.
         if cell.exported and cell.val.tag_() == value_e.Str:
@@ -1360,10 +1360,12 @@ class Mem(object):
     """Get all variables and their values, for 'set' builtin. """
     result = {}  # type: Dict[str, str]
     for scope in self.var_stack:
-      for name, cell in scope.iteritems():
+      for name, cell in iteritems(scope):
         # TODO: Show other types?
-        if isinstance(cell.val, value__Str):
-          result[name] = cell.val.s
+        val = cell.val
+        if val.tag_() == value_e.Str:
+          str_val = cast(value__Str, val)
+          result[name] = str_val.s
     return result
 
 

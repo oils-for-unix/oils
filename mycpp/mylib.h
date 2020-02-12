@@ -528,10 +528,6 @@ class Dict {
     assert(0);
   }
 
-  DictIter<K, V>* iteritems() {
-    return new DictIter<K, V>(this);
-  }
-
  private:
   V values_[1];
 };
