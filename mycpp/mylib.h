@@ -13,6 +13,7 @@
 #include <cstdio>  // FILE*
 #include <initializer_list>
 #include <vector>
+#include <unordered_map>
 
 #ifdef DUMB_ALLOC
 #include "dumb_alloc.h"
@@ -304,6 +305,12 @@ class List {
     }
   }
 
+  // a[x] = 42 becomes a->set(x, 42);
+  // TODO: Handle L->set(-1, 3) -- pgen2 appears to do it
+  void set(int index, T value) {
+    v_[index] = value;
+  }
+
   T index(int i) {
     if (i < 0) {
       int j = v_.size() + i;
@@ -411,12 +418,6 @@ class List {
     assert(0);
   }
 
-  // STUB: For LHS assignment.
-  // TODO: Handle L[-1] = 3 (pgen2 appears to do it)
-  T& operator[](int index) {
-    return v_[0];
-  }
-
   // private:
   std::vector<T> v_;  // ''.join accesses this directly
 };
@@ -466,50 +467,62 @@ class ReverseListIter {
 template <class K, class V>
 class DictIter {
  public:
-  explicit DictIter(Dict<K, V>* D) : D_(D), i_(0) {
+  explicit DictIter(Dict<K, V>* D) : it_(D->m_.begin()), end_(D->m_.end()) {
   }
   void Next() {
-    i_++;
+    ++it_;
   }
   bool Done() {
-    assert(0);
+    return it_ == end_;
   }
   K Key() {
-    assert(0);
+    return it_->first;
   }
   V Value() {
-    assert(0);
+    return it_->second;
   }
 
  private:
-  Dict<K, V>* D_;
-  int i_;
+  typename std::unordered_map<K, V>::iterator it_;
+  typename std::unordered_map<K, V>::iterator end_;
 };
 
 template <class K, class V>
 class Dict {
  public:
-  // TODO: Implement it!
-  // Used unordered_map or what?
-  V index(K key) {
-    return values_[0];
+  Dict() : m_() {
   }
-  // STUB
+
+  // d[key] in Python: raises KeyError if not found
+  // TODO: This shouldn't be used because it's slow?  But .get(k) can't be used
+  // for non-pointer types.
+  // May you need has() too.
+  V index(K key) {
+    return m_[key];
+  }
+
+
   // TODO: Can't use this for non-pointer types
+  // Returns nullptr if not found
   V get(K key) {
-    return values_[0];
+    assert(0);
   }
 
   // STUB
   // expr_parse.py uses OTHER_BALANCE
   V get(K key, V default_val) {
-    return values_[0];
+    assert(0);
+  }
+
+  // d->set(key, val) is like (*d)[key] = val;
+  void set(K key, V val) {
+    m_[key] = val;
   }
 
   // STUB
-  V& operator[](K key) {
-    return values_[0];
-  }
+  //V& operator[](K key) {
+  //  return values_[0];
+  //}
 
   void remove(K key) {
     assert(0);
@@ -528,8 +541,7 @@ class Dict {
     assert(0);
   }
 
- private:
-  V values_[1];
+  std::unordered_map<K, V> m_;
 };
 
 template <class A, class B>

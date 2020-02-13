@@ -19,6 +19,10 @@ def ListDemo():
   intlist.append(1)
   intlist.append(2)
   intlist.append(3)
+
+  # turned into intlist->set(1, 42)
+  intlist[1] = 42
+
   log("len(intlist) = %d", len(intlist))
   for i in intlist:
     log("i = %d", i)

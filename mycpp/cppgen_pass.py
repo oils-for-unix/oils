@@ -1191,13 +1191,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.member_vars[lval.name] = lval_type
 
         elif isinstance(lval, IndexExpr):  # a[x] = 1
-          self.write_ind('(*')
+          # TODO: a->set(x, 1) for both List and Dict
           self.accept(lval.base)
-          self.write(')[')
+          self.write('->set(')
           self.accept(lval.index)
-          self.write('] = ')
+          self.write(', ')
           self.accept(o.rvalue)
-          self.write(';\n')
+          self.write(');\n')
 
         elif isinstance(lval, TupleExpr):
           # An assignment to an n-tuple turns into n+1 statements.  Example:

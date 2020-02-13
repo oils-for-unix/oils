@@ -162,6 +162,13 @@ void test_list_funcs() {
     log("ints[%d] = %d", i, ints->index(i));
   }
 
+  ints->set(0, 42);
+  ints->set(1, 43);
+  log("-- after mutation");
+  for (int i = 0; i < len(ints); ++i) {
+    log("ints[%d] = %d", i, ints->index(i));
+  }
+
   auto L = list_repeat<Str*>(nullptr, 3);
   log("list_repeat length = %d", len(L));
 
@@ -241,15 +248,21 @@ void test_dict() {
 
   // Dict d {{"key", 1}, {"val", 2}};
   Dict<int, Str*>* d = new Dict<int, Str*>();
-  (*d)[1] = new Str("foo");
+  d->set(1, new Str("foo"));
   log("d[1] = %s", d->index(1)->data_);
 
-  /*
   auto d2 = new Dict<Str*, int>();
   Str* key = new Str("key");
-  (*d)[key] = 42;
-  log("d['key'] = %d", d->index(key));
-  */
+  d2->set(key, 42);
+  log("d2['key'] = %d", d2->index(key));
+  d2->set(new Str("key2"), 2);
+  d2->set(new Str("key3"), 3);
+
+  log("  iterating over Dict");
+  for (DictIter<Str*, int> it(d2); !it.Done(); it.Next()) {
+    log("k = %s", it.Key()->data_);
+    log("v = %d", it.Value());
+  }
 }
 
 int main(int argc, char** argv) {
