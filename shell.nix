@@ -105,12 +105,15 @@ in mkShell rec {
   # Need nix to relax before it'll link against a local file.
   NIX_ENFORCE_PURITY = 0;
 
-  # Andy--can you try with each of the options below enabled in turn?
-  # option A
+  # Note: failing spec test with either of these LOCALE_ARCHIVE settings.
+  #
+  # $ test/spec.sh oil-options -r 0 -v
+  # if libc.fnmatch(pat_val.s, to_match):
+  #  SystemError: Invalid locale for LC_CTYPE
   LOCALE_ARCHIVE =
     if stdenv.isLinux then "${glibcLocales}/lib/locale/locale-archive" else "";
 
-  # option B
+  # a different option:
   # LOCALE_ARCHIVE = lib.optionalString (stdenv.hostPlatform.libc == "glibc") "${glibcLocales}/lib/locale/locale-archive";
 
   # do setup work you want to do every time you enter the shell
@@ -128,12 +131,6 @@ in mkShell rec {
       echo "    'build/dev.sh clean' and "
       echo "    'build/dev.sh all' or 'build/dev.sh minimal'"
     fi
-
-    # I added oil/bin to the path, but that may not be what you want
-    PATH="$PATH:$PWD/bin"
-
-    # Add current path to PYTHONPATH so python scripts can find modules
-    PYTHONPATH="$PYTHONPATH:$PWD"
 
     ${cleanup_oil}
   '';
