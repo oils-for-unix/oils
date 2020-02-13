@@ -27,7 +27,7 @@ from frontend import args
 from frontend import consts
 from frontend import match
 from mycpp import mylib
-from mycpp.mylib import tagswitch, iteritems
+from mycpp.mylib import tagswitch, iteritems, NewStr
 from osh import split
 from pylib import os_path
 from pylib import path_stat
@@ -1094,8 +1094,7 @@ class Mem(object):
           elif case2(value_e.Str):
             # s=x
             # s[1]=y  # invalid
-            e_die("Entries in value of type %s can't be assigned to",
-                  value_str(cell.val.tag_()), span_id=left_spid)
+            e_die("Can't assign to items in a string", span_id=left_spid)
 
           elif case2(value_e.MaybeStrArray):
             cell_val = cast(value__MaybeStrArray, UP_cell_val)
@@ -1114,9 +1113,11 @@ class Mem(object):
               strs[lval.index] = rval.s
             return
 
-        # AssocArray shouldn't happen because we query IsAssocArray before
-        # evaluating sh_lhs_expr.
-        e_die("Object of this type can't be indexed: %s", cell.val)
+        # This could be an object, eggex object, etc.  It won't be
+        # AssocArray shouldn because we query IsAssocArray before evaluating
+        # sh_lhs_expr.  Could conslidate with s[i] case above
+        e_die("Object of type %s can't be indexed",
+              NewStr(value_str(cell.val.tag_())), span_id=left_spid)
 
       elif case(lvalue_e.Keyed):
         lval = cast(lvalue__Keyed, UP_lval)

@@ -721,6 +721,16 @@ List<T>* list_repeat(T item, int times) {
   return new List<T>(item, times);
 }
 
+// list(L) copies the list
+template <typename T>
+List<T>* list(List<T>* other) {
+  auto result = new List<T>();
+  for (int i = 0; i < len(other); ++i) {
+    result->set(i, other->index(i));
+  }
+  return result;
+}
+
 // ints, floats, enums like Kind
 // e.g. 1 in [1, 2, 3]
 template <typename T>

@@ -1935,7 +1935,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # They are varargs functions that have to be rewritten.
           if name in ('log', 'p_die', 'e_die', 'e_strict'):
             continue    # do nothing
-          if name in ('switch', 'tagswitch'):  # mylib
+          if name in ('switch', 'tagswitch', 'iteritems'):  # mylib
             continue  # do nothing
 
           if '.' in o.id:
