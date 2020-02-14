@@ -9,7 +9,7 @@ from _devbuild.gen.runtime_asdl import builtin_e
 from _devbuild.gen.syntax_asdl import command
 from asdl import pybase
 from core.util import log
-from osh import builtin
+from frontend import consts
 from osh import word_
 
 
@@ -106,9 +106,9 @@ class DepsVisitor(Visitor):
         log("Couldn't statically evaluate %r", w)
         return
 
-      if (builtin.ResolveSpecial(argv0) == builtin_e.NONE and
-          builtin.ResolveAssign(argv0) == builtin_e.NONE and
-          builtin.Resolve(argv0) == builtin_e.NONE):
+      if (consts.ResolveSpecial(argv0) == builtin_e.NONE and
+          consts.ResolveAssign(argv0) == builtin_e.NONE and
+          consts.Resolve(argv0) == builtin_e.NONE):
         self.progs_used[argv0] = True
 
       # NOTE: If argv1 is $0, then we do NOT print a warning!

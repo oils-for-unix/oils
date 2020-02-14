@@ -130,4 +130,9 @@ state() {
   sed --regexp-extended -i 's/from osh.state/from core.state/' */*.py
 }
 
+builtin() {
+  sed --regexp-extended -i 's/from osh import builtin$/from osh import builtin_misc/' */*.py
+  #sed --regexp-extended -i 's/builtin[.]/builtin_misc./' */*.py
+}
+
 "$@"

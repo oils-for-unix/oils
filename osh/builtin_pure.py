@@ -24,13 +24,13 @@ from core import builtin_def
 from core.builtin_def import _Register
 from core.util import e_die
 from core import optview
+from core import state
 from core import ui
 from frontend import args
 from frontend import lexer_def
 from frontend import match
 from frontend import option_def
-from osh.builtin import _Builtin
-from core import state
+from osh.builtin_misc import _Builtin
 from osh import string_ops
 from osh import word_compile
 

@@ -81,7 +81,7 @@ from oil_lang import expr_eval
 from oil_lang import builtin_oil
 from oil_lang import builtin_funcs
 
-from osh import builtin
+from osh import builtin_misc
 from osh import builtin_assign
 from osh import builtin_bracket
 from osh import builtin_comp
@@ -292,7 +292,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   loader = pyutil.GetResourceLoader()
 
   if opts.help:
-    builtin.Help(['%s-usage' % lang], loader)
+    builtin_misc.Help(['%s-usage' % lang], loader)
     return 0
   if opts.version:
     # OSH version is the only binary in Oil right now, so it's all one version.
@@ -447,15 +447,15 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_e.ECHO: builtin_pure.Echo(exec_opts),
       builtin_e.PRINTF: builtin_printf.Printf(mem, parse_ctx, errfmt),
 
-      builtin_e.PUSHD: builtin.Pushd(mem, dir_stack, errfmt),
-      builtin_e.POPD: builtin.Popd(mem, dir_stack, errfmt),
-      builtin_e.DIRS: builtin.Dirs(mem, dir_stack, errfmt),
-      builtin_e.PWD: builtin.Pwd(mem, errfmt),
+      builtin_e.PUSHD: builtin_misc.Pushd(mem, dir_stack, errfmt),
+      builtin_e.POPD: builtin_misc.Popd(mem, dir_stack, errfmt),
+      builtin_e.DIRS: builtin_misc.Dirs(mem, dir_stack, errfmt),
+      builtin_e.PWD: builtin_misc.Pwd(mem, errfmt),
 
-      builtin_e.TIMES: builtin.Times(),
-      builtin_e.READ: builtin.Read(splitter, mem),
-      builtin_e.HELP: builtin.Help(loader, errfmt),
-      builtin_e.HISTORY: builtin.History(line_input),
+      builtin_e.TIMES: builtin_misc.Times(),
+      builtin_e.READ: builtin_misc.Read(splitter, mem),
+      builtin_e.HELP: builtin_misc.Help(loader, errfmt),
+      builtin_e.HISTORY: builtin_misc.History(line_input),
 
       # Completion (more added below)
       builtin_e.COMPOPT: builtin_comp.CompOpt(compopt_state, errfmt),
@@ -531,7 +531,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
   builtins[builtin_e.COMPLETE] = complete_builtin
   builtins[builtin_e.COMPGEN] = builtin_comp.CompGen(spec_builder)
-  builtins[builtin_e.CD] = builtin.Cd(mem, dir_stack, ex, errfmt)
+  builtins[builtin_e.CD] = builtin_misc.Cd(mem, dir_stack, ex, errfmt)
   builtins[builtin_e.JSON] = builtin_oil.Json(mem, ex, errfmt)
 
   sig_state = process.SignalState()
@@ -817,7 +817,7 @@ def AppBundleMain(argv):
       raise args.UsageError('Missing required applet name.')
 
     if first_arg in ('-h', '--help'):
-      builtin.Help(['bundle-usage'], pyutil.GetResourceLoader())
+      builtin_misc.Help(['bundle-usage'], pyutil.GetResourceLoader())
       sys.exit(0)
 
     if first_arg in ('-V', '--version'):

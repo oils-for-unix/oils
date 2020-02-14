@@ -9,6 +9,11 @@ from _devbuild.gen.types_asdl import (
 )
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind_t
 from frontend import option_def 
+from core import builtin_def
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+  from _devbuild.gen.runtime_asdl import builtin_t
 
 
 # Used as consts::STRICT_ALL, etc.  Do it explicitly to satisfy MyPy.
@@ -92,6 +97,43 @@ def RedirArgType(id_):
 def RedirDefaultFd(id_):
   # type: (Id_t) -> int
   return REDIR_DEFAULT_FD[id_]
+
+
+#
+# Builtins
+#
+
+
+_BUILTIN_DICT = builtin_def.BuiltinDict()
+
+def ResolveSpecial(argv0):
+  # type: (str) -> int
+  """Is it a special builtin?"""
+  b = _BUILTIN_DICT.get(argv0)
+  if b and b.kind == 'special':
+    return b.index
+  else:
+    return 0  # not found
+
+
+def ResolveAssign(argv0):
+  # type: (str) -> int
+  """Is it an assignment builtin?"""
+  b = _BUILTIN_DICT.get(argv0)
+  if b and b.kind == 'assign':
+    return b.index
+  else:
+    return 0  # not found
+
+
+def Resolve(argv0):
+  # type: (str) -> int
+  """Is it any other builtin?"""
+  b = _BUILTIN_DICT.get(argv0)
+  if b and b.kind == 'normal':
+    return b.index
+  else:
+    return 0  # not found
 
 
 #
@@ -184,4 +226,5 @@ LAST_SPAN_ACTION = {
     ST.DE_Gray: EMIT.Delim,
     ST.DE_White2: EMIT.Delim,
 }
+
 

@@ -15,8 +15,8 @@ from core import test_lib
 from core import ui
 from core import util
 from core.util import log
-from osh import builtin
 from core import state
+from osh import builtin_misc
 
 Process = process.Process
 ExternalThunk = process.ExternalThunk
@@ -76,11 +76,11 @@ class ProcessTest(unittest.TestCase):
 
     r = redirect.Path(Id.Redir_Less, 0, PATH)
     fd_state.Push([r], waiter)
-    line1 = builtin.ReadLineFromStdin()
+    line1 = builtin_misc.ReadLineFromStdin()
     fd_state.Pop()
 
     fd_state.Push([r], waiter)
-    line2 = builtin.ReadLineFromStdin()
+    line2 = builtin_misc.ReadLineFromStdin()
     fd_state.Pop()
 
     # sys.stdin.readline() would erroneously return 'two' because of buffering.

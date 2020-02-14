@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-builtin_test.py: Tests for builtin.py
+builtin_misc_test.py: Tests for builtin_misc.py
 """
 from __future__ import print_function
 
@@ -9,13 +9,11 @@ import unittest
 # We use native/line_input.c, a fork of readline.c, but this is good enough for
 # unit testing
 import readline
-import sys
 
-from core import builtin_def
 from core import pyutil
 from core import test_lib
 from osh import split
-from osh import builtin  # module under test
+from osh import builtin_misc  # module under test
 
 
 class BuiltinTest(unittest.TestCase):
@@ -35,7 +33,7 @@ class BuiltinTest(unittest.TestCase):
         print('  %s %s' % span)
 
       parts = []
-      builtin._AppendParts(line, spans, max_results, False, parts)
+      builtin_misc._AppendParts(line, spans, max_results, False, parts)
       self.assertEqual(expected_parts, parts)
 
       print('---')
@@ -46,12 +44,7 @@ class BuiltinTest(unittest.TestCase):
     # generated?  Because I don't want to deal with a C toolchain for it.
 
     loader = pyutil.GetResourceLoader()
-    builtin.Help([], loader)
-
-    for name, spec in builtin_def.BUILTIN_DEF.arg_specs.iteritems():
-      print(name)
-      spec.PrintHelp(sys.stdout)
-      print()
+    builtin_misc.Help([], loader)
 
   def testHistoryBuiltin(self):
      test_path = '_tmp/builtin_test_history.txt'
@@ -118,7 +111,7 @@ echo bye
 
 def _TestHistory(argv):
    f = cStringIO.StringIO()
-   b = builtin.History(readline, f=f)
+   b = builtin_misc.History(readline, f=f)
    cmd_val = test_lib.MakeBuiltinArgv(argv)
    b.Run(cmd_val)
    return f.getvalue()

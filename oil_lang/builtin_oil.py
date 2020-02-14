@@ -14,18 +14,20 @@ import sys
 
 from _devbuild.gen.runtime_asdl import value, value_e, scope_e
 from _devbuild.gen.syntax_asdl import sh_lhs_expr
-
 from core.util import log
 from frontend import args
 from frontend import match
-from osh import builtin  # ReadLineFromStdin
 from mycpp.mylib import tagswitch
+from osh import builtin_misc  # ReadLineFromStdin
 
 import yajl
 import posix_
-from core.ui import ErrorFormatter
-from core.state import Mem
-from osh.cmd_exec import Executor
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+  from core.ui import ErrorFormatter
+  from core.state import Mem
+  from osh.cmd_exec import Executor
 
 
 class _Builtin(object):
@@ -373,7 +375,7 @@ class Getline(_Builtin):
       raise args.UsageError('got extra argument', span_id=next_spid)
 
     # TODO: use a more efficient function in C
-    line = builtin.ReadLineFromStdin()
+    line = builtin_misc.ReadLineFromStdin()
     if not line:  # EOF
       return 1
 

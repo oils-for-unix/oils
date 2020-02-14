@@ -31,9 +31,9 @@ from core import vm
 from frontend import lexer
 from frontend import parse_lib
 from frontend import reader
-from osh import builtin
 from osh import builtin_assign
 from osh import builtin_comp
+from osh import builtin_misc
 from osh import builtin_pure
 from osh import cmd_exec
 from osh import prompt
@@ -175,7 +175,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
       builtin_e.ECHO: builtin_pure.Echo(exec_opts),
       builtin_e.SHIFT: builtin_assign.Shift(mem),
 
-      builtin_e.HISTORY: builtin.History(readline),
+      builtin_e.HISTORY: builtin_misc.History(readline),
 
       builtin_e.COMPOPT: builtin_comp.CompOpt(compopt_state, errfmt),
       builtin_e.COMPADJUST: builtin_comp.CompAdjust(mem),

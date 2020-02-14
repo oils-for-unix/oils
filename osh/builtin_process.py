@@ -16,8 +16,8 @@ from core import ui
 from core.builtin_def import _Register
 from core.util import log
 from frontend import args
-from osh.builtin import _Builtin
 from mycpp.mylib import tagswitch
+from osh.builtin_misc import _Builtin
 
 import posix_ as posix
 
@@ -28,6 +28,7 @@ if TYPE_CHECKING:
   from core.process import JobState, Waiter, SignalState
   from osh.cmd_exec import Executor
   from core.state import Mem
+
 
 WAIT_SPEC = _Register('wait')
 WAIT_SPEC.ShortFlag('-n')

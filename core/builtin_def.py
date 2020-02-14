@@ -5,9 +5,10 @@ builtin_def.py
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import builtin_e, builtin_t
-from frontend import args
 
-from typing import Dict
+from typing import Dict, List, Any, TYPE_CHECKING
+if TYPE_CHECKING:
+  from frontend import args  # circular build dependency
 
 # Special builtins can't be redefined by functions.  On the other hand, 'cd'
 # CAN be redefined.
@@ -106,7 +107,16 @@ BUILTIN_NAMES = (
 )
 
 
-class BuiltinDef(object):
+class _Builtin(object):
+
+  def __init__(self, index, name, kind='normal'):
+    # type: (int, str, str) -> None
+    self.index = index
+    self.name = name
+    self.kind = kind
+
+
+class _BuiltinDef(object):
   """
   NOTE: This isn't used anywhere!  We're registering nothing.
 
@@ -115,36 +125,47 @@ class BuiltinDef(object):
   """
   def __init__(self):
     # type: () -> None
-    # Is this what we want?
-    names = set()
-    names.update(_NORMAL_BUILTINS.keys())
-    names.update(_SPECIAL_BUILTINS.keys())
-    names.update(_SPECIAL_ASSIGN_BUILTINS.keys())
-    # TODO: Also complete keywords first for, while, etc.  Bash/zsh/fish/yash
-    # all do this.  See osh/lex/{_KEYWORDS, _MORE_KEYWORDS}.
+    self.builtins = []  # type: List[_Builtin]
+    self.index = 1  # start with 1
 
-    self.arg_specs = {}  # type: Dict[str, args.BuiltinFlags]
-    self.to_complete = sorted(names)
-
-  def Register(self, name, help_topic=None):
-    # type: (str, str) -> args.BuiltinFlags
-    # The help topics are in the quick ref.  TODO: We should match them up?
-    #help_topic = help_topic or name
-    arg_spec = args.BuiltinFlags()
-    self.arg_specs[name] = arg_spec
-    return arg_spec
+  def Add(self, *args, **kwargs):
+    # type: (Any, Any) -> None
+    self.builtins.append(_Builtin(self.index, *args, **kwargs))
+    self.index += 1
 
 
-# Global instance for "metaprogramming" before main().
-BUILTIN_DEF = BuiltinDef()
+def _Init(builtin_def):
+  # type: (_BuiltinDef) -> None
+
+  # TODO: Add special, assign, etc.
+  pass
 
 
-# TODO: Are we using this?
+_BUILTIN_DEF = _BuiltinDef()
+
+_Init(_BUILTIN_DEF)
+
+
+def BuiltinDict():
+  # type: () -> Dict[str, _Builtin]
+  """For the slow path in frontend/match.py."""
+  return dict((b.name, b) for b in _BUILTIN_DEF.builtins)
+
+
+# TODO: Simplify
+# This should just check that it's defined?
+# We want to connect args
+# But if args are going to generate code, they should be all in one file?
 def _Register(name, help_topic=None):
   # type: (str, str) -> args.BuiltinFlags
-  return BUILTIN_DEF.Register(name, help_topic=help_topic)
+
+  from frontend import args  # circular build dependency
+
+  arg_spec = args.BuiltinFlags()
+  return arg_spec
 
 
+# TODO: Remove these
 def ResolveSpecial(argv0):
   # type: (str) -> builtin_t
   """Is it a special builtin?"""
