@@ -92,3 +92,96 @@ def RedirArgType(id_):
 def RedirDefaultFd(id_):
   # type: (Id_t) -> int
   return REDIR_DEFAULT_FD[id_]
+
+
+#
+# Constants used by osh/split.py
+#
+
+# IFS splitting is complicated in general.  We handle it with three concepts:
+#
+# - CH.* - Kinds of characters (edge labels)
+# - ST.* - States (node labels)
+# - EMIT.*  Actions
+#
+# The Split() loop below classifies characters, follows state transitions, and
+# emits spans.  A span is a (ignored Bool, end_index Int) pair.
+
+# As an example, consider this string:
+# 'a _ b'
+#
+# The character classes are:
+#
+# a      ' '        _        ' '        b
+# Black  DE_White   DE_Gray  DE_White   Black
+#
+# The states are:
+#
+# a      ' '        _        ' '        b
+# Black  DE_White1  DE_Gray  DE_White2  Black
+#
+# DE_White2 is whitespace that follows a "gray" non-whitespace IFS character.
+#
+# The spans emitted are:
+#
+# (part 'a', ignored ' _ ', part 'b')
+
+# SplitForRead() will check if the last two spans are a \ and \\n.  Easy.
+
+
+# Shorter names for state machine enums
+from _devbuild.gen.runtime_asdl import emit_e as EMIT
+from _devbuild.gen.runtime_asdl import char_kind_e as CH
+from _devbuild.gen.runtime_asdl import state_e as ST
+
+TRANSITIONS = {
+    # Whitespace should have been stripped
+    (ST.Start, CH.DE_White):  (ST.Invalid,   EMIT.Nothing),      # ' '
+    (ST.Start, CH.DE_Gray):   (ST.DE_Gray,   EMIT.Empty),        # '_'
+    (ST.Start, CH.Black):     (ST.Black,     EMIT.Nothing),      # 'a'
+    (ST.Start, CH.Backslash): (ST.Backslash, EMIT.Nothing),      # '\'
+
+    (ST.DE_White1, CH.DE_White):  (ST.DE_White1, EMIT.Nothing),  # '  '
+    (ST.DE_White1, CH.DE_Gray):   (ST.DE_Gray,   EMIT.Nothing),  # ' _'
+    (ST.DE_White1, CH.Black):     (ST.Black,     EMIT.Delim),    # ' a'
+    (ST.DE_White1, CH.Backslash): (ST.Backslash, EMIT.Delim),    # ' \'
+
+    (ST.DE_Gray, CH.DE_White):  (ST.DE_White2, EMIT.Nothing),    # '_ '
+    (ST.DE_Gray, CH.DE_Gray):   (ST.DE_Gray,   EMIT.Empty),      # '__'
+    (ST.DE_Gray, CH.Black):     (ST.Black,     EMIT.Delim),      # '_a'
+    (ST.DE_Gray, CH.Backslash): (ST.Black,     EMIT.Delim),      # '_\'
+
+    (ST.DE_White2, CH.DE_White):  (ST.DE_White2, EMIT.Nothing),  # '_  '
+    (ST.DE_White2, CH.DE_Gray):   (ST.DE_Gray,   EMIT.Empty),    # '_ _'
+    (ST.DE_White2, CH.Black):     (ST.Black,     EMIT.Delim),    # '_ a'
+    (ST.DE_White2, CH.Backslash): (ST.Backslash, EMIT.Delim),    # '_ \'
+
+    (ST.Black, CH.DE_White):  (ST.DE_White1, EMIT.Part),         # 'a '
+    (ST.Black, CH.DE_Gray):   (ST.DE_Gray,   EMIT.Part),         # 'a_'
+    (ST.Black, CH.Black):     (ST.Black,     EMIT.Nothing),      # 'aa'
+    (ST.Black, CH.Backslash): (ST.Backslash, EMIT.Part),         # 'a\'
+
+    # Here we emit an ignored \ and the second character as well.
+    # We're emitting TWO spans here; we don't wait until the subsequent
+    # character.  That is OK.
+    #
+    # Problem: if '\ ' is the last one, we don't want to emit a trailing span?
+    # In all other cases we do.
+
+    (ST.Backslash, CH.DE_White):  (ST.Black,     EMIT.Escape),   # '\ '
+    (ST.Backslash, CH.DE_Gray):   (ST.Black,     EMIT.Escape),   # '\_'
+    (ST.Backslash, CH.Black):     (ST.Black,     EMIT.Escape),   # '\a'
+    # NOTE: second character is a backslash, but new state is ST.Black!
+    (ST.Backslash, CH.Backslash): (ST.Black,     EMIT.Escape),   # '\\'
+}
+
+LAST_SPAN_ACTION = {
+    ST.Black: EMIT.Part,
+    ST.Backslash: EMIT.Escape,
+    # Ignore trailing IFS whitespace too.  This is necessary for the case:
+    # IFS=':' ; read x y z <<< 'a : b : c :'.
+    ST.DE_White1: EMIT.Nothing,
+    ST.DE_Gray: EMIT.Delim,
+    ST.DE_White2: EMIT.Delim,
+}
+

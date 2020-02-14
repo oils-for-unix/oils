@@ -104,7 +104,7 @@ module runtime
     Proc(int code)
   | Pipeline(int* codes)
 
-  -- For word splitting in legacy.py
+  -- For word splitting (in frontend/consts.py and osh/split.py)
   span = Black | Delim | Backslash
   emit = Part | Delim | Empty | Escape | Nothing
   state = Invalid | Start | DE_White1 | DE_Gray | DE_White2 | Black | Backslash

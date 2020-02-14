@@ -17,7 +17,6 @@ from _devbuild.gen.types_asdl import lex_mode_e
 from asdl import runtime
 from core import error
 from core.util import p_die
-
 from osh import sh_expr_eval
 from osh import bool_parse
 from osh import word_parse

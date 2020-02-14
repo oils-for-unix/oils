@@ -6,41 +6,40 @@ from _devbuild.gen.id_kind_asdl import Id, Kind, Id_str, Kind_str
 from _devbuild.gen.syntax_asdl import (
     braced_var_sub, Token,
     word, word_e, word_t, compound_word,
-    bracket_op_e, suffix_op_e, word_part_e,
-    bracket_op__ArrayIndex, bracket_op__WholeArray,
-    suffix_op__Nullary, suffix_op__PatSub, suffix_op__Slice,
-    suffix_op__Unary, sh_array_literal,
-    single_quoted, double_quoted, simple_var_sub, command_sub,
-    word_part__ArithSub, word_part__EscapedLiteral,
-    word_part__AssocArrayLiteral, word_part__ExprSub,
-    word_part__ExtGlob, word_part__FuncCall,
-    word_part__Splice, word_part__TildeSub,
+    bracket_op_e, bracket_op__ArrayIndex, bracket_op__WholeArray,
+    suffix_op_e, suffix_op__Nullary, suffix_op__PatSub, suffix_op__Slice,
+    suffix_op__Unary,
+    sh_array_literal, single_quoted, double_quoted, simple_var_sub,
+    command_sub,
+    word_part_e, word_part__ArithSub, word_part__EscapedLiteral,
+    word_part__AssocArrayLiteral, word_part__ExprSub, word_part__ExtGlob,
+    word_part__FuncCall, word_part__Splice, word_part__TildeSub,
 )
 from _devbuild.gen.runtime_asdl import (
     builtin_e, effect_e,
-    part_value, part_value_e, part_value_t, part_value__String, part_value__Array,
-    value, value_e, value_t, lvalue,
-    assign_arg, 
+    part_value, part_value_e, part_value_t, part_value__String,
+    part_value__Array,
+    value, value_e, value_t, value__Str, value__AssocArray,
+    value__MaybeStrArray, value__Obj,
+    lvalue, assign_arg, 
     cmd_value_e, cmd_value_t, cmd_value, cmd_value__Assign, cmd_value__Argv,
-    value__Str, value__AssocArray, value__MaybeStrArray, value__Obj,
     quote_e, quote_t,
 )
 from core import builtin_def
 from core import error
 from core import passwd
 from core import process
+from core import state
 from core.util import log, e_die, e_strict
 from frontend import consts
 from frontend import match
+from mycpp.mylib import tagswitch
+from mycpp import mylib
 from osh import braces
 from osh import glob_
 from osh import string_ops
-from core import state
 from osh import word_
 from osh import word_compile
-
-from mycpp.mylib import tagswitch
-from mycpp import mylib
 
 import posix_ as posix
 

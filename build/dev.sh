@@ -1,14 +1,11 @@
 #!/usr/bin/env bash
 #
 # Set up a development build of Oil on CPython.
-# This is in constrast to the release build, which bundles Oil with "OVM" (a
+# This is in contrast to the release build, which bundles Oil with "OVM" (a
 # slight fork of CPython).
-
-# Build Python extension modules.  We use symlinks instead of installing them
-# globally (or using virtualenv).
 #
 # Usage:
-#   ./pybuild.sh <function name>
+#   build/dev.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -102,14 +99,16 @@ gen-asdl-cpp() {
 oil-asdl-to-py() {
   OPTIONAL_FIELDS='' PRETTY_PRINT_METHODS='' gen-asdl-py 'asdl/hnode.asdl'
 
-  gen-asdl-py frontend/types.asdl  # no dependency on Id
+  gen-asdl-py frontend/types.asdl
+  gen-asdl-py osh/runtime.asdl
+  gen-asdl-py 'tools/find/find.asdl'
 
   build/codegen.sh const-mypy-gen  # dependency on bool_arg_type_e
   build/codegen.sh option-mypy-gen
 
+  # does __import__ of syntax_abbrev.py, which depends on Id.  We could use the
+  # AST module later?
   gen-asdl-py frontend/syntax.asdl 'frontend.syntax_abbrev'
-  gen-asdl-py osh/runtime.asdl
-  gen-asdl-py 'tools/find/find.asdl'
 }
 
 arith-parse-cpp-gen() {
