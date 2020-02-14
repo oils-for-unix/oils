@@ -20,6 +20,7 @@ import time
 import sys
 
 from _devbuild.gen.id_kind_asdl import Id, Id_str
+from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.syntax_asdl import (
     compound_word,
     command_e, command_t, command_str,
@@ -61,7 +62,7 @@ from _devbuild.gen.runtime_asdl import (
     quote_e,
     lvalue, lvalue_e, lvalue__ObjIndex, lvalue__ObjAttr,
     value, value_e, value_t, value__Str, value__MaybeStrArray, value__Obj,
-    redirect, scope_e, builtin_e,
+    redirect, scope_e,
     cmd_value__Argv, cmd_value, cmd_value_e,
     cmd_value__Argv, cmd_value__Assign,
 )
@@ -69,7 +70,6 @@ from _devbuild.gen.types_asdl import redir_arg_type_e
 
 from asdl import runtime
 
-from core import builtin_def
 from core import error
 from core import main_loop
 from core import process
@@ -457,38 +457,38 @@ class Executor(object):
 
     # Some builtins "belong" to the executor.
 
-    elif builtin_id == builtin_e.EXEC:
+    elif builtin_id == builtin_i.exec_:
       status = self._Exec(cmd_val)  # may never return
       # But if it returns, then we want to permanently apply the redirects
       # associated with it.
       self.fd_state.MakePermanent()
 
-    elif builtin_id == builtin_e.EVAL:
+    elif builtin_id == builtin_i.eval:
       status = self._Eval(cmd_val)
 
-    elif builtin_id in (builtin_e.SOURCE, builtin_e.DOT):
+    elif builtin_id in (builtin_i.source, builtin_i.dot):
       status = self._Source(cmd_val)
 
-    elif builtin_id == builtin_e.COMMAND:
+    elif builtin_id == builtin_i.command:
       # TODO: How do we handle fork_external?  It doesn't fit the common
       # signature.  We also don't handle 'command local', etc.
       b = builtin_pure.Command(self, self.procs, self.aliases,
                                self.search_path)
       status = b.Run(cmd_val, fork_external)
 
-    elif builtin_id == builtin_e.BUILTIN:  # NOTE: uses early return style
+    elif builtin_id == builtin_i.builtin:  # NOTE: uses early return style
       if len(argv) == 0:
         return 0  # this could be an error in strict mode?
 
       name = cmd_val.argv[1]
 
       # Run regular builtin or special builtin
-      to_run = builtin_def.Resolve(name)
-      if to_run == builtin_e.NONE:
-        to_run = builtin_def.ResolveSpecial(name)
-      if to_run == builtin_e.NONE:
+      to_run = consts.LookupNormalBuiltin(name)
+      if to_run == consts.NO_INDEX:
+        to_run = consts.LookupSpecialBuiltin(name)
+      if to_run == consts.NO_INDEX:
         span_id = cmd_val.arg_spids[1]
-        if builtin_def.ResolveAssign(name) != builtin_e.NONE:
+        if consts.LookupAssignBuiltin(name) != consts.NO_INDEX:
           # NOTE: There's a similar restriction for 'command'
           self.errfmt.Print("Can't run assignment builtin recursively",
                             span_id=span_id)
@@ -819,16 +819,16 @@ class Executor(object):
 
     arg0 = argv[0]
 
-    builtin_id = builtin_def.ResolveAssign(arg0)
-    if builtin_id != builtin_e.NONE:
+    builtin_id = consts.LookupAssignBuiltin(arg0)
+    if builtin_id != consts.NO_INDEX:
       # command readonly is disallowed, for technical reasons.  Could relax it
       # later.
       self.errfmt.Print("Can't run assignment builtin recursively",
                         span_id=span_id)
       return 1
 
-    builtin_id = builtin_def.ResolveSpecial(arg0)
-    if builtin_id != builtin_e.NONE:
+    builtin_id = consts.LookupSpecialBuiltin(arg0)
+    if builtin_id != consts.NO_INDEX:
       status = self._RunBuiltin(builtin_id, cmd_val, fork_external)
       # TODO: Enable this and fix spec test failures.
       # Also update _SPECIAL_BUILTINS in osh/builtin.py.
@@ -873,9 +873,9 @@ class Executor(object):
             status = self._RunOilProc(val.obj, argv[1:])
             return status
 
-    builtin_id = builtin_def.Resolve(arg0)
+    builtin_id = consts.LookupNormalBuiltin(arg0)
 
-    if builtin_id != builtin_e.NONE:
+    if builtin_id != consts.NO_INDEX:
       return self._RunBuiltin(builtin_id, cmd_val, fork_external)
 
     environ = self.mem.GetExported()  # Include temporary variables

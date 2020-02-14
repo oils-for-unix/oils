@@ -51,8 +51,8 @@ _tlog('before imports')
 import atexit
 import errno
 
-from _devbuild.gen.option_asdl import opt_num
-from _devbuild.gen.runtime_asdl import builtin_e, cmd_value
+from _devbuild.gen.option_asdl import opt_num, builtin_i
+from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import source
 
 from asdl import runtime
@@ -444,71 +444,71 @@ def ShellMain(lang, argv0, argv, login_shell):
   new_var = builtin_assign.NewVar(mem, procs, errfmt)
 
   builtins = {  # Lookup
-      builtin_e.ECHO: builtin_pure.Echo(exec_opts),
-      builtin_e.PRINTF: builtin_printf.Printf(mem, parse_ctx, errfmt),
+      builtin_i.echo: builtin_pure.Echo(exec_opts),
+      builtin_i.printf: builtin_printf.Printf(mem, parse_ctx, errfmt),
 
-      builtin_e.PUSHD: builtin_misc.Pushd(mem, dir_stack, errfmt),
-      builtin_e.POPD: builtin_misc.Popd(mem, dir_stack, errfmt),
-      builtin_e.DIRS: builtin_misc.Dirs(mem, dir_stack, errfmt),
-      builtin_e.PWD: builtin_misc.Pwd(mem, errfmt),
+      builtin_i.pushd: builtin_misc.Pushd(mem, dir_stack, errfmt),
+      builtin_i.popd: builtin_misc.Popd(mem, dir_stack, errfmt),
+      builtin_i.dirs: builtin_misc.Dirs(mem, dir_stack, errfmt),
+      builtin_i.pwd: builtin_misc.Pwd(mem, errfmt),
 
-      builtin_e.TIMES: builtin_misc.Times(),
-      builtin_e.READ: builtin_misc.Read(splitter, mem),
-      builtin_e.HELP: builtin_misc.Help(loader, errfmt),
-      builtin_e.HISTORY: builtin_misc.History(line_input),
+      builtin_i.times: builtin_misc.Times(),
+      builtin_i.read: builtin_misc.Read(splitter, mem),
+      builtin_i.help: builtin_misc.Help(loader, errfmt),
+      builtin_i.history: builtin_misc.History(line_input),
 
       # Completion (more added below)
-      builtin_e.COMPOPT: builtin_comp.CompOpt(compopt_state, errfmt),
-      builtin_e.COMPADJUST: builtin_comp.CompAdjust(mem),
+      builtin_i.compopt: builtin_comp.CompOpt(compopt_state, errfmt),
+      builtin_i.compadjust: builtin_comp.CompAdjust(mem),
 
       # test / [ differ by need_right_bracket
-      builtin_e.TEST: builtin_bracket.Test(False, exec_opts, errfmt),
-      builtin_e.BRACKET: builtin_bracket.Test(True, exec_opts, errfmt),
+      builtin_i.test: builtin_bracket.Test(False, exec_opts, errfmt),
+      builtin_i.bracket: builtin_bracket.Test(True, exec_opts, errfmt),
 
       # ShAssignment (which are pure)
-      builtin_e.DECLARE: new_var,
-      builtin_e.TYPESET: new_var,
-      builtin_e.LOCAL: new_var,
+      builtin_i.declare: new_var,
+      builtin_i.typeset: new_var,
+      builtin_i.local: new_var,
 
-      builtin_e.EXPORT: builtin_assign.Export(mem, errfmt),
-      builtin_e.READONLY: builtin_assign.Readonly(mem, errfmt),
+      builtin_i.export: builtin_assign.Export(mem, errfmt),
+      builtin_i.readonly: builtin_assign.Readonly(mem, errfmt),
 
-      builtin_e.UNSET: builtin_assign.Unset(mem, procs, errfmt),
-      builtin_e.SHIFT: builtin_assign.Shift(mem),
+      builtin_i.unset: builtin_assign.Unset(mem, procs, errfmt),
+      builtin_i.shift: builtin_assign.Shift(mem),
 
       # Pure
-      builtin_e.SET: builtin_pure.Set(mutable_opts, mem),
-      builtin_e.SHOPT: builtin_pure.Shopt(mutable_opts),
+      builtin_i.set: builtin_pure.Set(mutable_opts, mem),
+      builtin_i.shopt: builtin_pure.Shopt(mutable_opts),
 
-      builtin_e.ALIAS: builtin_pure.Alias(aliases, errfmt),
-      builtin_e.UNALIAS: builtin_pure.UnAlias(aliases, errfmt),
+      builtin_i.alias: builtin_pure.Alias(aliases, errfmt),
+      builtin_i.unalias: builtin_pure.UnAlias(aliases, errfmt),
 
-      builtin_e.TYPE: builtin_pure.Type(procs, aliases, exec_deps.search_path),
-      builtin_e.HASH: builtin_pure.Hash(exec_deps.search_path),
-      builtin_e.GETOPTS: builtin_pure.GetOpts(mem, errfmt),
+      builtin_i.type: builtin_pure.Type(procs, aliases, exec_deps.search_path),
+      builtin_i.hash: builtin_pure.Hash(exec_deps.search_path),
+      builtin_i.getopts: builtin_pure.GetOpts(mem, errfmt),
 
-      builtin_e.COLON: builtin_pure.Boolean(0),  # a "special" builtin 
-      builtin_e.TRUE: builtin_pure.Boolean(0),
-      builtin_e.FALSE: builtin_pure.Boolean(1),
+      builtin_i.colon: builtin_pure.Boolean(0),  # a "special" builtin 
+      builtin_i.true: builtin_pure.Boolean(0),
+      builtin_i.false: builtin_pure.Boolean(1),
 
       # Process
-      builtin_e.WAIT: builtin_process.Wait(exec_deps.waiter,
+      builtin_i.wait: builtin_process.Wait(exec_deps.waiter,
                                            exec_deps.job_state, mem, errfmt),
-      builtin_e.JOBS: builtin_process.Jobs(exec_deps.job_state),
-      builtin_e.FG: builtin_process.Fg(exec_deps.job_state, exec_deps.waiter),
-      builtin_e.BG: builtin_process.Bg(exec_deps.job_state),
-      builtin_e.UMASK: builtin_process.Umask(),
+      builtin_i.jobs: builtin_process.Jobs(exec_deps.job_state),
+      builtin_i.fg: builtin_process.Fg(exec_deps.job_state, exec_deps.waiter),
+      builtin_i.bg: builtin_process.Bg(exec_deps.job_state),
+      builtin_i.umask: builtin_process.Umask(),
 
       # Oil
-      builtin_e.PUSH: builtin_oil.Push(mem, errfmt),
-      builtin_e.APPEND: builtin_oil.Append(mem, errfmt),
+      builtin_i.push: builtin_oil.Push(mem, errfmt),
+      builtin_i.append: builtin_oil.Append(mem, errfmt),
 
-      builtin_e.WRITE: builtin_oil.Write(mem, errfmt),
-      builtin_e.GETLINE: builtin_oil.Getline(mem, errfmt),
+      builtin_i.write: builtin_oil.Write(mem, errfmt),
+      builtin_i.getline: builtin_oil.Getline(mem, errfmt),
 
-      builtin_e.REPR: builtin_oil.Repr(mem, errfmt),
-      builtin_e.USE: builtin_oil.Use(mem, errfmt),
-      builtin_e.OPTS: builtin_oil.Opts(mem, errfmt),
+      builtin_i.repr: builtin_oil.Repr(mem, errfmt),
+      builtin_i.use: builtin_oil.Use(mem, errfmt),
+      builtin_i.opts: builtin_oil.Opts(mem, errfmt),
   }
 
   arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, errfmt)
@@ -529,15 +529,15 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   # Add some builtins that depend on the executor!
   complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
-  builtins[builtin_e.COMPLETE] = complete_builtin
-  builtins[builtin_e.COMPGEN] = builtin_comp.CompGen(spec_builder)
-  builtins[builtin_e.CD] = builtin_misc.Cd(mem, dir_stack, ex, errfmt)
-  builtins[builtin_e.JSON] = builtin_oil.Json(mem, ex, errfmt)
+  builtins[builtin_i.complete] = complete_builtin
+  builtins[builtin_i.compgen] = builtin_comp.CompGen(spec_builder)
+  builtins[builtin_i.cd] = builtin_misc.Cd(mem, dir_stack, ex, errfmt)
+  builtins[builtin_i.json] = builtin_oil.Json(mem, ex, errfmt)
 
   sig_state = process.SignalState()
   sig_state.InitShell()
 
-  builtins[builtin_e.TRAP] = builtin_process.Trap(sig_state, exec_deps.traps,
+  builtins[builtin_i.trap] = builtin_process.Trap(sig_state, exec_deps.traps,
                                                   exec_deps.trap_nodes, ex,
                                                   errfmt)
 

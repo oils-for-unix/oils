@@ -13,7 +13,10 @@ from core import builtin_def
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime_asdl import builtin_t
+  from _devbuild.gen.option_asdl import builtin_i_t
+
+
+NO_INDEX = 0  # for Resolve
 
 
 # Used as consts::STRICT_ALL, etc.  Do it explicitly to satisfy MyPy.
@@ -26,6 +29,8 @@ SET_OPTION_NAMES = option_def.SET_OPTION_NAMES
 SHOPT_OPTION_NAMES = option_def.SHOPT_OPTION_NAMES
 VISIBLE_SHOPT_NAMES = option_def.VISIBLE_SHOPT_NAMES
 PARSE_OPTION_NAMES = option_def.PARSE_OPTION_NAMES
+
+BUILTIN_NAMES = builtin_def.BUILTIN_NAMES
 
 
 def GetKind(id_):
@@ -106,34 +111,34 @@ def RedirDefaultFd(id_):
 
 _BUILTIN_DICT = builtin_def.BuiltinDict()
 
-def ResolveSpecial(argv0):
-  # type: (str) -> int
+def LookupSpecialBuiltin(argv0):
+  # type: (str) -> builtin_i_t
   """Is it a special builtin?"""
   b = _BUILTIN_DICT.get(argv0)
   if b and b.kind == 'special':
     return b.index
   else:
-    return 0  # not found
+    return NO_INDEX
 
 
-def ResolveAssign(argv0):
-  # type: (str) -> int
+def LookupAssignBuiltin(argv0):
+  # type: (str) -> builtin_i_t
   """Is it an assignment builtin?"""
   b = _BUILTIN_DICT.get(argv0)
   if b and b.kind == 'assign':
     return b.index
   else:
-    return 0  # not found
+    return NO_INDEX
 
 
-def Resolve(argv0):
-  # type: (str) -> int
+def LookupNormalBuiltin(argv0):
+  # type: (str) -> builtin_i_t
   """Is it any other builtin?"""
   b = _BUILTIN_DICT.get(argv0)
   if b and b.kind == 'normal':
     return b.index
   else:
-    return 0  # not found
+    return NO_INDEX
 
 
 #
@@ -226,5 +231,4 @@ LAST_SPAN_ACTION = {
     ST.DE_Gray: EMIT.Delim,
     ST.DE_White2: EMIT.Delim,
 }
-
 

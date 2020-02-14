@@ -4,9 +4,7 @@ builtin_def.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import builtin_e, builtin_t
-
-from typing import Dict, List, Any, TYPE_CHECKING
+from typing import Dict, List, Optional, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from frontend import args  # circular build dependency
 
@@ -16,103 +14,48 @@ if TYPE_CHECKING:
 # http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_14
 # https://www.gnu.org/software/bash/manual/html_node/Special-Builtins.html
 
-_SPECIAL_BUILTINS = {
-    ":": builtin_e.COLON,
-    ".": builtin_e.DOT,
-    "eval": builtin_e.EVAL,
-    "exec": builtin_e.EXEC,
+_NORMAL_BUILTINS = [
+    'read', 'echo', 'printf',
 
-    "set": builtin_e.SET,
-    "shift": builtin_e.SHIFT,
-    "times": builtin_e.TIMES,
-    "trap": builtin_e.TRAP,
-    "unset": builtin_e.UNSET,
+    'cd', 'pushd', 'popd', 'dirs', 'pwd',
 
-    "builtin": builtin_e.BUILTIN,
+    'source',  # note that . alias is special
 
-    # Not treated as builtins by OSH.  TODO: Need to auto-complete these
-    # break continue return
-}
+    'umask', 'wait', 'jobs', 'fg', 'bg',
 
-_SPECIAL_ASSIGN_BUILTINS = {
-    # May be a builtin or an assignment
-    "readonly": builtin_e.READONLY,
-    "local": builtin_e.LOCAL,
-    "declare": builtin_e.DECLARE,
-    "typeset": builtin_e.TYPESET,
-    "export": builtin_e.EXPORT,
-}
+    'shopt',
+    'complete', 'compgen', 'compopt', 'compadjust',
 
-_NORMAL_BUILTINS = {
-    "read": builtin_e.READ,
-    "echo": builtin_e.ECHO,
-    "printf": builtin_e.PRINTF,
+    'true', 'false',
 
-    "cd": builtin_e.CD,
-    "pushd": builtin_e.PUSHD,
-    "popd": builtin_e.POPD,
-    "dirs": builtin_e.DIRS,
-    "pwd": builtin_e.PWD,
+    'getopts',
 
-    "source": builtin_e.SOURCE,  # note that . alias is special
+    # introspection
+    'command', 'type', 'hash', 'help', 'history',
 
-    "umask": builtin_e.UMASK,
-    "wait": builtin_e.WAIT,
-    "jobs": builtin_e.JOBS,
-    "fg": builtin_e.FG,
-    "bg": builtin_e.BG,
+    # Why are these duplicated?
+    #'declare': builtin_e.DECLARE,
+    #'typeset': builtin_e.TYPESET,
 
-    "shopt": builtin_e.SHOPT,
-    "complete": builtin_e.COMPLETE,
-    "compgen": builtin_e.COMPGEN,
-    "compopt": builtin_e.COMPOPT,
-    "compadjust": builtin_e.COMPADJUST,
-
-    "true": builtin_e.TRUE,
-    "false": builtin_e.FALSE,
-
-    "test": builtin_e.TEST,
-    "[": builtin_e.BRACKET,
-
-    "getopts": builtin_e.GETOPTS,
-
-    "command": builtin_e.COMMAND,
-    "type": builtin_e.TYPE,
-    "hash": builtin_e.HASH,
-    "help": builtin_e.HELP,
-    "history": builtin_e.HISTORY,
-
-    "declare": builtin_e.DECLARE,
-    "typeset": builtin_e.TYPESET,
-
-    "alias": builtin_e.ALIAS,
-    "unalias": builtin_e.UNALIAS,
+    'alias', 'unalias',
 
     # Oil only
-    "push": builtin_e.PUSH,
-    "append": builtin_e.APPEND,
-
-    "write": builtin_e.WRITE,
-    "getline": builtin_e.GETLINE,
-    "json": builtin_e.JSON,
-
-    "repr": builtin_e.REPR,
-    "use": builtin_e.USE,
-}
-
-# This is used by completion.
-BUILTIN_NAMES = (
-    _SPECIAL_BUILTINS.keys() + _SPECIAL_ASSIGN_BUILTINS.keys() +
-    _NORMAL_BUILTINS.keys()
-)
+    'push', 'append',
+    'write', 'getline', 'json',
+    'repr', 'use', 'opts',
+]
 
 
 class _Builtin(object):
 
-  def __init__(self, index, name, kind='normal'):
-    # type: (int, str, str) -> None
+  def __init__(self, index, name, enum_name=None, kind='normal'):
+    # type: (int, str, Optional[str], str) -> None
+    """
+    kind: normal, special, assign
+    """
     self.index = index
-    self.name = name
+    self.name = name  # e.g. : or [
+    self.enum_name = enum_name or name  # e.g. builtin_num::colon
     self.kind = kind
 
 
@@ -134,16 +77,51 @@ class _BuiltinDef(object):
     self.index += 1
 
 
-def _Init(builtin_def):
+def _Init(b):
   # type: (_BuiltinDef) -> None
 
-  # TODO: Add special, assign, etc.
-  pass
+  #
+  # Special builtins
+  #
+
+  b.Add(':', enum_name='colon', kind='special')
+  b.Add('.', enum_name='dot', kind='special')
+  # Python keyword
+  b.Add('exec', enum_name='exec_', kind='special')
+  for name in [
+      'eval', 'set', 'shift', 'times', 'trap', 'unset', 'builtin']:
+    b.Add(name, kind='special')
+
+  #
+  # Assignment builtins.
+  # Note: control flow aren't builtins in OSH: break continue return
+  #
+
+  for name in ["readonly", "local", "declare", "typeset", "export"]:
+    b.Add(name, kind='assign')
+
+  # Normal builtins
+
+  # Slight variants
+  b.Add('test')
+  b.Add('[', enum_name='bracket')
+
+  for name in _NORMAL_BUILTINS:
+    b.Add(name)
 
 
 _BUILTIN_DEF = _BuiltinDef()
 
 _Init(_BUILTIN_DEF)
+
+
+# Exposed in consts.py for completion
+BUILTIN_NAMES = [b.name for b in _BUILTIN_DEF.builtins]
+
+
+def All():
+  # type: () -> List[_Builtin]
+  return _BUILTIN_DEF.builtins
 
 
 def BuiltinDict():
@@ -163,22 +141,3 @@ def _Register(name, help_topic=None):
 
   arg_spec = args.BuiltinFlags()
   return arg_spec
-
-
-# TODO: Remove these
-def ResolveSpecial(argv0):
-  # type: (str) -> builtin_t
-  """Is it a special builtin?"""
-  return _SPECIAL_BUILTINS.get(argv0, builtin_e.NONE)
-
-
-def ResolveAssign(argv0):
-  # type: (str) -> builtin_t
-  """Is it an assignment builtin?"""
-  return _SPECIAL_ASSIGN_BUILTINS.get(argv0, builtin_e.NONE)
-
-
-def Resolve(argv0):
-  # type: (str) -> builtin_t
-  """Is it any other builtin?"""
-  return _NORMAL_BUILTINS.get(argv0, builtin_e.NONE)

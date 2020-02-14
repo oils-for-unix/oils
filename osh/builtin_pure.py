@@ -17,16 +17,16 @@ from __future__ import print_function
 import sys  # for sys.sdtout
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import builtin_e, cmd_value, value_e
+from _devbuild.gen.runtime_asdl import cmd_value, value_e
 
 from asdl import pretty
-from core import builtin_def
 from core.builtin_def import _Register
 from core.util import e_die
 from core import optview
 from core import state
 from core import ui
 from frontend import args
+from frontend import consts
 from frontend import lexer_def
 from frontend import match
 from frontend import option_def
@@ -266,14 +266,17 @@ def _ResolveNames(names, funcs, aliases, search_path):
       kind = ('function', name)
     elif name in aliases:
       kind = ('alias', name)
-    elif builtin_def.Resolve(name) != builtin_e.NONE:
+
+    # TODO: Use match instead?
+    elif consts.LookupNormalBuiltin(name) != 0:
       kind = ('builtin', name)
-    elif builtin_def.ResolveSpecial(name) != builtin_e.NONE:
+    elif consts.LookupSpecialBuiltin(name) != 0:
       kind = ('builtin', name)
-    elif builtin_def.ResolveAssign(name) != builtin_e.NONE:
+    elif consts.LookupAssignBuiltin(name) != 0:
       kind = ('builtin', name)
     elif lexer_def.IsOtherBuiltin(name):  # continue, etc.
       kind = ('builtin', name)
+
     elif lexer_def.IsKeyword(name):
       kind = ('keyword', name)
     else:

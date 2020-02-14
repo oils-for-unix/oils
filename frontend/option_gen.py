@@ -6,17 +6,20 @@ from __future__ import print_function
 
 import sys
 
+from asdl import asdl_
 from asdl.visitor import FormatLines
 from frontend import option_def
+from core import builtin_def
 
-_TYPE_NAME = 'opt_num'
-_SIMPLE = [_TYPE_NAME]
+_OPT_ENUM = 'opt_num'  # TODO: rename to opt_i?
+_BUILTIN_ENUM = 'builtin_i'
+_SIMPLE = [_OPT_ENUM, _BUILTIN_ENUM]
 
-def _CreateModule(option_names):
+
+def _CreateSum(sum_name, variant_names):
   """ 
-  Create a SYNTHETIC ASDL module to generate code from.
-
   Similar to frontend/id_kind_gen.py
+  Usage of SYNTHETIC ASDL module:
 
   C++:
 
@@ -27,15 +30,9 @@ def _CreateModule(option_names):
   from _devbuild.gen.option_asdl import opt_num
   opt_num.nounset
   """
-  from asdl import asdl_
-
-  # oil:basic -> oil_basic
-  option_sum = asdl_.Sum(
-      [asdl_.Constructor(name.replace(':', '_')) for name in option_names])
-
-  option = asdl_.Type(_TYPE_NAME, option_sum)
-  schema_ast = asdl_.Module('option', [], [option])
-  return schema_ast
+  sum_ = asdl_.Sum([asdl_.Constructor(name) for name in variant_names])
+  typ = asdl_.Type(sum_name, sum_)
+  return typ
 
 
 def main(argv):
@@ -49,9 +46,13 @@ def main(argv):
   # 
   # And in Python do the same.
 
-  schema_ast = _CreateModule([opt.name for opt in option_def.All()])
+  option = _CreateSum(_OPT_ENUM, [opt.name for opt in option_def.All()])
+  builtin = _CreateSum(_BUILTIN_ENUM, [b.enum_name for b in builtin_def.All()])
   # TODO: could shrink array later.
   # [opt.name for opt in option_def.All() if opt.implemented])
+
+  schema_ast = asdl_.Module('option', [], [option, builtin])
+
 
   if action == 'cpp':
     from asdl import gen_cpp

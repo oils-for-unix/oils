@@ -2,26 +2,6 @@
 
 module runtime
 {
-  builtin = 
-    NONE | TIMES | READ | ECHO | PRINTF | SHIFT
-  | CD | PWD | PUSHD | POPD | DIRS
-  | EXPORT | READONLY | LOCAL | DECLARE | TYPESET 
-  | UNSET | SET | SHOPT
-  | TRAP | UMASK
-  | SOURCE | DOT | EVAL | EXEC | WAIT | JOBS | FG | BG
-  | COMPLETE | COMPGEN | COMPOPT | COMPADJUST
-  | TRUE | FALSE
-  | COLON
-  | TEST | BRACKET | GETOPTS
-  | COMMAND | TYPE | HASH | HELP | HISTORY
-  | BUILTIN
-  | ALIAS | UNALIAS
-  -- Oil
-  | PUSH | APPEND 
-  | WRITE | GETLINE | JSON 
-  | REPR | USE | OPTS
-  | ENV | FORK 
-
   -- Evaluating SimpleCommand results in either an argv array or an assignment.
   -- in 'local foo', rval is None
   assign_arg = (lvalue lval, value? rval, int spid)
@@ -29,7 +9,7 @@ module runtime
   -- ASDL issue: I need to import the 'command' type from frontend/syntax.asdl!
   cmd_value =
     Argv(string* argv, int* arg_spids, any? block)
-  | Assign(builtin builtin_id,
+  | Assign(int builtin_id,
            string* argv, int* arg_spids,
            assign_arg* pairs)
 

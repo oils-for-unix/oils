@@ -16,7 +16,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part__FuncCall, word_part__Splice, word_part__TildeSub,
 )
 from _devbuild.gen.runtime_asdl import (
-    builtin_e, effect_e,
+    effect_e,
     part_value, part_value_e, part_value_t, part_value__String,
     part_value__Array,
     value, value_e, value_t, value__Str, value__AssocArray,
@@ -25,7 +25,6 @@ from _devbuild.gen.runtime_asdl import (
     cmd_value_e, cmd_value_t, cmd_value, cmd_value__Assign, cmd_value__Argv,
     quote_e, quote_t,
 )
-from core import builtin_def
 from core import error
 from core import passwd
 from core import process
@@ -50,9 +49,8 @@ if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import (
     command_t, speck, word_part_t
   )
-  from _devbuild.gen.runtime_asdl import (
-    builtin_t, effect_t, lvalue__Named
-  )
+  from _devbuild.gen.runtime_asdl import effect_t, lvalue__Named
+  from _devbuild.gen.option_asdl import builtin_i_t
   from core.ui import ErrorFormatter
   from core import optview
   from osh import cmd_exec
@@ -1571,7 +1569,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return argv
 
   def _EvalAssignBuiltin(self, builtin_id, arg0, words):
-    # type: (builtin_t, str, List[compound_word]) -> cmd_value__Assign
+    # type: (builtin_i_t, str, List[compound_word]) -> cmd_value__Assign
     """
     Handles both static and dynamic assignment, e.g.
 
@@ -1661,8 +1659,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
         strs0 = self._EvalWordToArgv(w)  # respects strict-array
         if len(strs0) == 1:
           arg0 = strs0[0]
-          builtin_id = builtin_def.ResolveAssign(arg0)
-          if builtin_id != builtin_e.NONE:
+          builtin_id = consts.LookupAssignBuiltin(arg0)
+          if builtin_id != consts.NO_INDEX:
             # Same logic as legacy word eval, with no splitting
             return self._EvalAssignBuiltin(builtin_id, arg0, words)
 
@@ -1759,8 +1757,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
         if val0.tag_() == part_value_e.String:
           val0 = cast(part_value__String, UP_val0)
           if not val0.quoted:
-            builtin_id = builtin_def.ResolveAssign(val0.s)
-            if builtin_id != builtin_e.NONE:
+            builtin_id = consts.LookupAssignBuiltin(val0.s)
+            if builtin_id != consts.NO_INDEX:
               return self._EvalAssignBuiltin(builtin_id, val0.s, words)
 
       if 0:

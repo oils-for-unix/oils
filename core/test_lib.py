@@ -12,8 +12,8 @@ test_lib.py - Functions for testing.
 import string
 import sys
 
-from _devbuild.gen.option_asdl import opt_num
-from _devbuild.gen.runtime_asdl import builtin_e, cmd_value
+from _devbuild.gen.option_asdl import builtin_i, opt_num
+from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import source, Token
 from asdl import pybase
 from asdl import runtime
@@ -172,23 +172,23 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   readline = None  # simulate not having it
   new_var = builtin_assign.NewVar(mem, funcs, errfmt)
   builtins = {  # Lookup
-      builtin_e.ECHO: builtin_pure.Echo(exec_opts),
-      builtin_e.SHIFT: builtin_assign.Shift(mem),
+      builtin_i.echo: builtin_pure.Echo(exec_opts),
+      builtin_i.shift: builtin_assign.Shift(mem),
 
-      builtin_e.HISTORY: builtin_misc.History(readline),
+      builtin_i.history: builtin_misc.History(readline),
 
-      builtin_e.COMPOPT: builtin_comp.CompOpt(compopt_state, errfmt),
-      builtin_e.COMPADJUST: builtin_comp.CompAdjust(mem),
+      builtin_i.compopt: builtin_comp.CompOpt(compopt_state, errfmt),
+      builtin_i.compadjust: builtin_comp.CompAdjust(mem),
 
-      builtin_e.ALIAS: builtin_pure.Alias(aliases, errfmt),
-      builtin_e.UNALIAS: builtin_pure.UnAlias(aliases, errfmt),
+      builtin_i.alias: builtin_pure.Alias(aliases, errfmt),
+      builtin_i.unalias: builtin_pure.UnAlias(aliases, errfmt),
 
-      builtin_e.DECLARE: new_var,
-      builtin_e.TYPESET: new_var,
-      builtin_e.LOCAL: new_var,
+      builtin_i.declare: new_var,
+      builtin_i.typeset: new_var,
+      builtin_i.local: new_var,
 
-      builtin_e.EXPORT: builtin_assign.Export(mem, errfmt),
-      builtin_e.READONLY: builtin_assign.Readonly(mem, errfmt),
+      builtin_i.export: builtin_assign.Export(mem, errfmt),
+      builtin_i.readonly: builtin_assign.Readonly(mem, errfmt),
   }
 
   debug_f = util.DebugFile(sys.stderr)
@@ -230,8 +230,8 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
                                           comp_lookup)
   # Add some builtins that depend on the executor!
   complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
-  builtins[builtin_e.COMPLETE] = complete_builtin
-  builtins[builtin_e.COMPGEN] = builtin_comp.CompGen(spec_builder)
+  builtins[builtin_i.complete] = complete_builtin
+  builtins[builtin_i.compgen] = builtin_comp.CompGen(spec_builder)
 
   return ex
 

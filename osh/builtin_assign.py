@@ -4,8 +4,9 @@ builtin_assign.py
 """
 from __future__ import print_function
 
+from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import (
-    value, value_e, value_t, lvalue, scope_e, builtin_e,
+    value, value_e, value_t, lvalue, scope_e,
     cmd_value__Argv, cmd_value__Assign,
 )
 #from core.util import log
@@ -186,7 +187,7 @@ class NewVar(object):
     #
 
     #raise args.UsageError("doesn't understand %s" % cmd_val.argv[1:])
-    if cmd_val.builtin_id == builtin_e.LOCAL:
+    if cmd_val.builtin_id == builtin_i.local:
       lookup_mode = scope_e.LocalOnly
     else:  # declare/typeset
       if arg.g:  

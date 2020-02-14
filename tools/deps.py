@@ -5,7 +5,6 @@ deps.py
 
 import sys
 
-from _devbuild.gen.runtime_asdl import builtin_e
 from _devbuild.gen.syntax_asdl import command
 from asdl import pybase
 from core.util import log
@@ -106,9 +105,9 @@ class DepsVisitor(Visitor):
         log("Couldn't statically evaluate %r", w)
         return
 
-      if (consts.ResolveSpecial(argv0) == builtin_e.NONE and
-          consts.ResolveAssign(argv0) == builtin_e.NONE and
-          consts.Resolve(argv0) == builtin_e.NONE):
+      if (consts.ResolveSpecial(argv0) == consts.NO_INDEX and
+          consts.ResolveAssign(argv0) == consts.NO_INDEX and
+          consts.Resolve(argv0) == consts.NO_INDEX):
         self.progs_used[argv0] = True
 
       # NOTE: If argv1 is $0, then we do NOT print a warning!
