@@ -5,7 +5,6 @@ builtin_def.py
 from __future__ import print_function
 
 from typing import Dict, List, Optional, Any
-from frontend import args
 
 # Special builtins can't be redefined by functions.  On the other hand, 'cd'
 # CAN be redefined.
@@ -137,6 +136,9 @@ def BuiltinDict():
 # We want to connect args
 # But if args are going to generate code, they should be all in one file?
 def _Register(name, help_topic=None):
-  # type: (str, str) -> args.BuiltinFlags
+  # type: (str, str) -> Any
+  # Any type to work around circular build dep / type checking issue
+
+  from frontend import args  # circular build dep
   arg_spec = args.BuiltinFlags()
   return arg_spec
