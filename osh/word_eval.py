@@ -931,7 +931,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           # "${!prefix@}" is the only one that doesn't decay
           maybe_decay_array = not (quoted and suffix_op.op_id == Id.VOp3_At)
         else:
-          raise AssertionError()
+          e_die('Not implemented', part=part)
 
       else:
         # TODO: maybe_decay_array for "${!assoc[@]}" vs. ${!assoc[*]}

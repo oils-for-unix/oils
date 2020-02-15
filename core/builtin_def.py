@@ -129,16 +129,3 @@ def BuiltinDict():
   # type: () -> Dict[str, _Builtin]
   """For the slow path in frontend/match.py."""
   return dict((b.name, b) for b in _BUILTIN_DEF.builtins)
-
-
-# TODO: Simplify
-# This should just check that it's defined?
-# We want to connect args
-# But if args are going to generate code, they should be all in one file?
-def _Register(name, help_topic=None):
-  # type: (str, str) -> Any
-  # Any type to work around circular build dep / type checking issue
-
-  from frontend import args  # circular build dep
-  arg_spec = args.BuiltinFlags()
-  return arg_spec

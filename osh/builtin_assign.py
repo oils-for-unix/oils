@@ -12,18 +12,35 @@ from _devbuild.gen.runtime_asdl import (
 #from core.util import log
 from frontend import args
 from frontend import match
-from core.builtin_def import _Register
 from core import state
+from mycpp import mylib
 
 from typing import Dict, Tuple, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.state import Mem
   from core.ui import ErrorFormatter
 
+if mylib.PYTHON:
+  from frontend import arg_def
 
-EXPORT_SPEC = _Register('export')
-EXPORT_SPEC.ShortFlag('-n')
-EXPORT_SPEC.ShortFlag('-f')  # stubbed
+
+if mylib.PYTHON:
+  EXPORT_SPEC = arg_def.Register('export')
+  EXPORT_SPEC.ShortFlag('-n')
+  EXPORT_SPEC.ShortFlag('-f')  # stubbed
+  # Instead of Reader?  Or just make everything take a reader/
+  # They should check for extra args?
+  #spec.AcceptsCmdVal()
+
+  # Later, use it like:
+  #
+  # from _devbuild.gen import arg_parse
+  #
+  # arg = arg_parse.export_cmdval(cmd_val)?
+  # arg = arg_parse.echo(arg_r)
+  # arg = arg_parse.bin_oil(arg_r)?
+  #
+  # So from arg_def you generate arg_parse.
 
 
 class Export(object):
@@ -71,11 +88,12 @@ def _CheckType(rval, arg, errfmt, span_id):
   return True
 
 
-READONLY_SPEC = _Register('readonly')
+if mylib.PYTHON:
+  READONLY_SPEC = arg_def.Register('readonly')
 
 # TODO: Check the consistency of -a and -A against values, here and below.
-READONLY_SPEC.ShortFlag('-a')
-READONLY_SPEC.ShortFlag('-A')
+  READONLY_SPEC.ShortFlag('-a')
+  READONLY_SPEC.ShortFlag('-A')
 
 
 class Readonly(object):
@@ -113,22 +131,23 @@ class Readonly(object):
     return 0
 
 
-NEW_VAR_SPEC = _Register('declare')
+if mylib.PYTHON:
+  NEW_VAR_SPEC = arg_def.Register('declare')
 
 # print stuff
-NEW_VAR_SPEC.ShortFlag('-f')
-NEW_VAR_SPEC.ShortFlag('-F')
-NEW_VAR_SPEC.ShortFlag('-p')
+  NEW_VAR_SPEC.ShortFlag('-f')
+  NEW_VAR_SPEC.ShortFlag('-F')
+  NEW_VAR_SPEC.ShortFlag('-p')
 
-NEW_VAR_SPEC.ShortFlag('-g')  # Look up in global scope
+  NEW_VAR_SPEC.ShortFlag('-g')  # Look up in global scope
 
 # Options +r +x
-NEW_VAR_SPEC.ShortOption('x')  # export
-NEW_VAR_SPEC.ShortOption('r')  # readonly
+  NEW_VAR_SPEC.ShortOption('x')  # export
+  NEW_VAR_SPEC.ShortOption('r')  # readonly
 
 # Common between readonly/declare
-NEW_VAR_SPEC.ShortFlag('-a')
-NEW_VAR_SPEC.ShortFlag('-A')
+  NEW_VAR_SPEC.ShortFlag('-a')
+  NEW_VAR_SPEC.ShortFlag('-A')
 
 
 class NewVar(object):
@@ -225,9 +244,10 @@ class NewVar(object):
     return status
 
 
-UNSET_SPEC = _Register('unset')
-UNSET_SPEC.ShortFlag('-v')
-UNSET_SPEC.ShortFlag('-f')
+if mylib.PYTHON:
+  UNSET_SPEC = arg_def.Register('unset')
+  UNSET_SPEC.ShortFlag('-v')
+  UNSET_SPEC.ShortFlag('-f')
 
 
 # TODO:

@@ -13,9 +13,10 @@ from _devbuild.gen.runtime_asdl import (
     job_status_e, job_status__Proc, job_status__Pipeline,
 )
 from core import ui
-from core.builtin_def import _Register
 from core.util import log
 from frontend import args
+from frontend import arg_def
+from mycpp import mylib
 from mycpp.mylib import tagswitch
 from osh.builtin_misc import _Builtin
 
@@ -30,8 +31,9 @@ if TYPE_CHECKING:
   from core.state import Mem
 
 
-WAIT_SPEC = _Register('wait')
-WAIT_SPEC.ShortFlag('-n')
+if mylib.PYTHON:
+  WAIT_SPEC = arg_def.Register('wait')
+  WAIT_SPEC.ShortFlag('-n')
 
 
 class Wait(object):
@@ -284,9 +286,10 @@ _SIGNAL_NAMES = _MakeSignals()
 _HOOK_NAMES = ('EXIT', 'ERR', 'RETURN', 'DEBUG')
 
 
-TRAP_SPEC = _Register('trap')
-TRAP_SPEC.ShortFlag('-p')
-TRAP_SPEC.ShortFlag('-l')
+if mylib.PYTHON:
+  TRAP_SPEC = arg_def.Register('trap')
+  TRAP_SPEC.ShortFlag('-p')
+  TRAP_SPEC.ShortFlag('-l')
 
 # TODO:
 #

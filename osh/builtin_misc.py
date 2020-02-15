@@ -33,16 +33,16 @@ import termios  # for read -n
 from _devbuild.gen.runtime_asdl import (
     value_e, scope_e, span_e, cmd_value_t, cmd_value__Argv
 )
-from core import ui
-from core.builtin_def import _Register
-from frontend import args
-from pylib import os_path
 from core import state
+from core import ui
+from frontend import args
+from frontend import arg_def
+from mycpp import mylib
+from pylib import os_path
 
 import libc
 import posix_ as posix
 
-from mycpp import mylib
 if mylib.PYTHON:
   # Hack because we don't want libcmark.so dependency for build/dev.sh minimal
   try:
@@ -78,7 +78,8 @@ class _Builtin(object):
 #
 
 
-TIMES_SPEC = _Register('times')
+if mylib.PYTHON:
+  TIMES_SPEC = arg_def.Register('times')
 
 class Times(_Builtin):
   def Run(self, cmd_val):
@@ -160,10 +161,11 @@ def _AppendParts(s, spans, max_results, join_next, parts):
   return done, join_next
 
 
-READ_SPEC = _Register('read')
-READ_SPEC.ShortFlag('-r')
-READ_SPEC.ShortFlag('-n', args.Int)
-READ_SPEC.ShortFlag('-a', args.Str)  # name of array to read into
+if mylib.PYTHON:
+  READ_SPEC = arg_def.Register('read')
+  READ_SPEC.ShortFlag('-r')
+  READ_SPEC.ShortFlag('-n', args.Int)
+  READ_SPEC.ShortFlag('-a', args.Str)  # name of array to read into
 
 
 # sys.stdin.readline() in Python has buffering!  TODO: Rewrite this tight loop
@@ -278,9 +280,11 @@ class Read(object):
     return status
 
 
-CD_SPEC = _Register('cd')
-CD_SPEC.ShortFlag('-L')
-CD_SPEC.ShortFlag('-P')
+if mylib.PYTHON:
+  CD_SPEC = arg_def.Register('cd')
+  CD_SPEC.ShortFlag('-L')
+  CD_SPEC.ShortFlag('-P')
+
 
 class Cd(object):
   def __init__(self, mem, dir_stack, ex, errfmt):
@@ -453,11 +457,12 @@ class Popd(object):
     return 0
 
 
-DIRS_SPEC = _Register('dirs')
-DIRS_SPEC.ShortFlag('-c')
-DIRS_SPEC.ShortFlag('-l')
-DIRS_SPEC.ShortFlag('-p')
-DIRS_SPEC.ShortFlag('-v')
+if mylib.PYTHON:
+  DIRS_SPEC = arg_def.Register('dirs')
+  DIRS_SPEC.ShortFlag('-c')
+  DIRS_SPEC.ShortFlag('-l')
+  DIRS_SPEC.ShortFlag('-p')
+  DIRS_SPEC.ShortFlag('-v')
 
 
 class Dirs(object):
@@ -489,9 +494,10 @@ class Dirs(object):
     return 0
 
 
-PWD_SPEC = _Register('pwd')
-PWD_SPEC.ShortFlag('-L')
-PWD_SPEC.ShortFlag('-P')
+if mylib.PYTHON:
+  PWD_SPEC = arg_def.Register('pwd')
+  PWD_SPEC.ShortFlag('-L')
+  PWD_SPEC.ShortFlag('-P')
 
 
 class Pwd(object):
@@ -521,10 +527,11 @@ class Pwd(object):
     return 0
 
 
-HELP_SPEC = _Register('help')
+if mylib.PYTHON:
+  HELP_SPEC = arg_def.Register('help')
 
 # Use Oil flags?  -index?
-HELP_SPEC.ShortFlag('-i')  # show index
+  HELP_SPEC.ShortFlag('-i')  # show index
 # Note: bash has help -d -m -s, which change the formatting
 
 # TODO: Need $VERSION inside all pages?
@@ -580,9 +587,11 @@ class Help(object):
     return 0
 
 
-HISTORY_SPEC = _Register('history')
-HISTORY_SPEC.ShortFlag('-c')
-HISTORY_SPEC.ShortFlag('-d', args.Int)
+if mylib.PYTHON:
+  HISTORY_SPEC = arg_def.Register('history')
+  HISTORY_SPEC.ShortFlag('-c')
+  HISTORY_SPEC.ShortFlag('-d', args.Int)
+
 
 class History(object):
   """Show interactive command history."""

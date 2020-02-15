@@ -20,16 +20,17 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import cmd_value, value_e
 
 from asdl import pretty
-from core.builtin_def import _Register
 from core.util import e_die
 from core import optview
 from core import state
 from core import ui
 from frontend import args
+from frontend import arg_def
 from frontend import consts
 from frontend import lexer_def
 from frontend import match
 from frontend import option_def
+from mycpp import mylib
 from osh.builtin_misc import _Builtin
 from osh import string_ops
 from osh import word_compile
@@ -54,7 +55,8 @@ class Boolean(_Builtin):
     return self.status
 
 
-ALIAS_SPEC = _Register('alias')
+if mylib.PYTHON:
+  ALIAS_SPEC = arg_def.Register('alias')
 
 
 class Alias(object):
@@ -95,7 +97,8 @@ class Alias(object):
     return status
 
 
-UNALIAS_SPEC = _Register('unalias')
+if mylib.PYTHON:
+  UNALIAS_SPEC = arg_def.Register('unalias')
 
 
 class UnAlias(object):
@@ -203,12 +206,13 @@ class Set(object):
     return 0
 
 
-SHOPT_SPEC = _Register('shopt')
-SHOPT_SPEC.ShortFlag('-s')  # set
-SHOPT_SPEC.ShortFlag('-u')  # unset
-SHOPT_SPEC.ShortFlag('-o')  # use 'set -o' up names
-SHOPT_SPEC.ShortFlag('-p')  # print
-SHOPT_SPEC.ShortFlag('-q')  # query option settings
+if mylib.PYTHON:
+  SHOPT_SPEC = arg_def.Register('shopt')
+  SHOPT_SPEC.ShortFlag('-s')  # set
+  SHOPT_SPEC.ShortFlag('-u')  # unset
+  SHOPT_SPEC.ShortFlag('-o')  # use 'set -o' up names
+  SHOPT_SPEC.ShortFlag('-p')  # print
+  SHOPT_SPEC.ShortFlag('-q')  # query option settings
 
 
 class Shopt(object):
@@ -290,8 +294,9 @@ def _ResolveNames(names, funcs, aliases, search_path):
   return results
 
 
-COMMAND_SPEC = _Register('command')
-COMMAND_SPEC.ShortFlag('-v')
+if mylib.PYTHON:
+  COMMAND_SPEC = arg_def.Register('command')
+  COMMAND_SPEC.ShortFlag('-v')
 #COMMAND_SPEC.ShortFlag('-V')  # Another verbose mode.
 
 
@@ -324,11 +329,12 @@ class Command(object):
     return self.ex.RunSimpleCommand(cmd_val, fork_external, funcs=False)
 
 
-TYPE_SPEC = _Register('type')
-TYPE_SPEC.ShortFlag('-f')
-TYPE_SPEC.ShortFlag('-t')
-TYPE_SPEC.ShortFlag('-p')
-TYPE_SPEC.ShortFlag('-P')
+if mylib.PYTHON:
+  TYPE_SPEC = arg_def.Register('type')
+  TYPE_SPEC.ShortFlag('-f')
+  TYPE_SPEC.ShortFlag('-t')
+  TYPE_SPEC.ShortFlag('-p')
+  TYPE_SPEC.ShortFlag('-P')
 
 
 class Type(object):
@@ -381,8 +387,9 @@ class Type(object):
     return status
 
 
-HASH_SPEC = _Register('hash')
-HASH_SPEC.ShortFlag('-r')
+if mylib.PYTHON:
+  HASH_SPEC = arg_def.Register('hash')
+  HASH_SPEC.ShortFlag('-r')
 
 
 class Hash(object):
@@ -536,9 +543,11 @@ class GetOpts(object):
     return status
 
 
-ECHO_SPEC = _Register('echo')
-ECHO_SPEC.ShortFlag('-e')  # no backslash escapes
-ECHO_SPEC.ShortFlag('-n')
+if mylib.PYTHON:
+  ECHO_SPEC = arg_def.Register('echo')
+  ECHO_SPEC.ShortFlag('-e')  # no backslash escapes
+  ECHO_SPEC.ShortFlag('-n')
+
 
 class Echo(object):
   """echo builtin.
