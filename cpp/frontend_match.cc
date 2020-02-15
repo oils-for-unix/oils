@@ -59,6 +59,13 @@ bool IsValidVarName(Str* s) {
                           s->len_);
 }
 
+int MatchBuiltin(Str* s) {
+  int id;
+  ::MatchBuiltin(reinterpret_cast<const unsigned char*>(s->data_), s->len_, &id);
+  return id;
+}
+
+
 int MatchOption(Str* s) {
   int id;
   ::MatchOption(reinterpret_cast<const unsigned char*>(s->data_), s->len_, &id);

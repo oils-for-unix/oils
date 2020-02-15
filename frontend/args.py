@@ -675,9 +675,7 @@ class BuiltinFlags(object):
 
   def Parse(self, arg_r):
     # type: (Reader) -> Tuple[_Attributes, int]
-    """
-    For builtins that need both flags and args.
-    """
+    """For builtins to read args after we parse flags."""
     # NOTE about -:
     # 'set -' ignores it, vs set
     # 'unset -' or 'export -' seems to treat it as a variable name
@@ -736,16 +734,9 @@ class BuiltinFlags(object):
 
     return out, arg_r.i
 
-  def ParseVec(self, cmd_val):
-    # type: (cmd_value__Argv) -> Tuple[_Attributes, int]
-    """For OSH builtins."""
-    arg_r = Reader(cmd_val.argv, spids=cmd_val.arg_spids)
-    arg_r.Next()  # move past the builtin name
-    return self.Parse(arg_r)
-
   def ParseCmdVal(self, cmd_val):
     # type: (cmd_value__Argv) -> Tuple[_Attributes, int]
-    """Newer style for OSH builtins."""
+    """Used by builtins that don't need to read more args from."""
     arg_r = Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # move past the builtin name
     return self.Parse(arg_r)

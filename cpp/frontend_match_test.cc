@@ -22,6 +22,11 @@ int main(int argc, char** argv) {
   assert(match::MatchOption(new Str("pipefai")) == 0);
   assert(match::MatchOption(new Str("pipefail_")) == 0);
 
+  assert(match::MatchBuiltin(new Str("")) == 0);
+  assert(match::MatchBuiltin(new Str("echo")) > 0);
+  assert(match::MatchBuiltin(new Str("ech")) == 0);
+  assert(match::MatchBuiltin(new Str("echo_")) == 0);
+
   // Without sed hack, it's 24 bytes because we have tag (2), id (4), val,
   // span_id.
   // Now 16 bytes.

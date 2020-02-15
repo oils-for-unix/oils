@@ -15,6 +15,7 @@ import sre_constants
 from asdl import pretty  # For PLAIN_WORD_RE
 from frontend import lexer_def
 from frontend import option_def
+from core import builtin_def
 
 
 def PrintTree(re_tree, depth=2):
@@ -408,11 +409,13 @@ def main(argv):
     TranslateSimpleLexer('MatchHistoryToken', lexer_def.HISTORY_DEF)
     TranslateSimpleLexer('MatchBraceRangeToken', lexer_def.BRACE_RANGE_DEF)
 
-    # e.g. "pipefail" -> option::pipefail
+    # e.g. "pipefail" -> option-I::pipefail
     pairs = [(opt.name, opt.index) for opt in option_def.All()]
     StringToInt('MatchOption', pairs)
-    # TODO:
-    #StringToInt('MatchBuiltin', builtin_def.BUILTIN_DEF)
+
+    # e.g. "echo" -> builtin_i::echo
+    pairs = [(b.name, b.index) for b in builtin_def.All()]
+    StringToInt('MatchBuiltin', pairs)
 
     TranslateRegexToPredicate(lexer_def.VAR_NAME_RE, 'IsValidVarName')
     TranslateRegexToPredicate(pretty.PLAIN_WORD_RE, 'IsPlainWord')

@@ -12,7 +12,6 @@ from __future__ import print_function
 
 import sys
 
-from asdl.visitor import FormatLines
 from frontend import id_kind_def
 
 

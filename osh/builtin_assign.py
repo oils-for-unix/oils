@@ -256,7 +256,7 @@ class Unset(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    arg, offset = UNSET_SPEC.ParseVec(cmd_val)
+    arg, offset = UNSET_SPEC.ParseCmdVal(cmd_val)
     n = len(cmd_val.argv)
 
     for i in xrange(offset, n):

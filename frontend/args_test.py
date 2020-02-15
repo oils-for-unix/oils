@@ -117,30 +117,30 @@ class ArgsTest(unittest.TestCase):
     s.ShortOption('r')
     s.ShortOption('x')
 
-    arg, i = s.ParseVec(_MakeBuiltinArgv(['-f', 'foo', 'bar']))
+    arg, i = s.ParseCmdVal(_MakeBuiltinArgv(['-f', 'foo', 'bar']))
     self.assertEqual(1, i-1)
     self.assertEqual(True, arg.f)
     self.assertEqual(None, arg.n)
 
     self.assertRaises(
-        args.UsageError, s.ParseVec, _MakeBuiltinArgv(['-f', '-d']))
+        args.UsageError, s.ParseCmdVal, _MakeBuiltinArgv(['-f', '-d']))
 
-    arg, i = s.ParseVec(_MakeBuiltinArgv(['-d', ' ', 'foo']))
+    arg, i = s.ParseCmdVal(_MakeBuiltinArgv(['-d', ' ', 'foo']))
     self.assertEqual(2, i-1)
     self.assertEqual(' ', arg.d)
 
-    arg, i = s.ParseVec(_MakeBuiltinArgv(['-d,',  'foo']))
+    arg, i = s.ParseCmdVal(_MakeBuiltinArgv(['-d,',  'foo']))
     self.assertEqual(1, i-1)
     self.assertEqual(',', arg.d)
     self.assertEqual(None, arg.r)
 
-    arg, i = s.ParseVec(_MakeBuiltinArgv(['-d,', '-r', '-x']))
+    arg, i = s.ParseCmdVal(_MakeBuiltinArgv(['-d,', '-r', '-x']))
     self.assertEqual(4, i)
     self.assertEqual(',', arg.d)
     self.assertEqual('-', arg.r)
     self.assertEqual('-', arg.x)
 
-    arg, i = s.ParseVec(_MakeBuiltinArgv(['-d,', '+rx']))
+    arg, i = s.ParseCmdVal(_MakeBuiltinArgv(['-d,', '+rx']))
     self.assertEqual(3, i)
     self.assertEqual(',', arg.d)
     self.assertEqual('+', arg.r)
@@ -152,16 +152,16 @@ class ArgsTest(unittest.TestCase):
     s.ShortFlag('-t', args.Float)  # timeout
     s.ShortFlag('-p', args.Str)  # prompt string
 
-    arg, i = s.ParseVec(_MakeBuiltinArgv(['-r', 'foo']))
+    arg, i = s.ParseCmdVal(_MakeBuiltinArgv(['-r', 'foo']))
     self.assertEqual(True, arg.r)
     self.assertEqual(1, i-1)
 
-    arg, i = s.ParseVec(_MakeBuiltinArgv(['-p', '>']))
+    arg, i = s.ParseCmdVal(_MakeBuiltinArgv(['-p', '>']))
     self.assertEqual(None, arg.r)
     self.assertEqual('>', arg.p)
     self.assertEqual(2, i-1)
 
-    arg, i = s.ParseVec(_MakeBuiltinArgv(['-rp', '>']))
+    arg, i = s.ParseCmdVal(_MakeBuiltinArgv(['-rp', '>']))
     self.assertEqual(True, arg.r)
     self.assertEqual('>', arg.p)
     self.assertEqual(2, i-1)
@@ -171,18 +171,18 @@ class ArgsTest(unittest.TestCase):
     # Does that mean anything with an arity consumes the rest?
     # read -p line
     #
-    arg, i = s.ParseVec(_MakeBuiltinArgv(['-rpr']))
+    arg, i = s.ParseCmdVal(_MakeBuiltinArgv(['-rpr']))
     self.assertEqual(True, arg.r)
     self.assertEqual('r', arg.p)
     self.assertEqual(1, i-1)
 
     argv = ['-t1.5', '>']
-    arg, i = s.ParseVec(_MakeBuiltinArgv(argv))
+    arg, i = s.ParseCmdVal(_MakeBuiltinArgv(argv))
     self.assertEqual(1.5, arg.t)
     self.assertEqual(1, i-1)
 
     # Invalid flag 'z'
-    self.assertRaises(args.UsageError, s.ParseVec, _MakeBuiltinArgv(['-rz']))
+    self.assertRaises(args.UsageError, s.ParseCmdVal, _MakeBuiltinArgv(['-rz']))
 
   def testParseLikeEcho(self):
     s = args.BuiltinFlags()

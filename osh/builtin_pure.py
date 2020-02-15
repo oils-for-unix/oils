@@ -218,7 +218,7 @@ class Shopt(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    arg, i = SHOPT_SPEC.ParseVec(cmd_val)
+    arg, i = SHOPT_SPEC.ParseCmdVal(cmd_val)
     opt_names = cmd_val.argv[i:]
 
     if arg.p:  # print values
@@ -305,7 +305,7 @@ class Command(object):
 
   def Run(self, cmd_val, fork_external):
     # type: (cmd_value__Argv, bool) -> int
-    arg, arg_index = COMMAND_SPEC.ParseVec(cmd_val)
+    arg, arg_index = COMMAND_SPEC.ParseCmdVal(cmd_val)
     if arg.v:
       status = 0
       names = cmd_val.argv[arg_index:]
@@ -340,7 +340,7 @@ class Type(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    arg, i = TYPE_SPEC.ParseVec(cmd_val)
+    arg, i = TYPE_SPEC.ParseCmdVal(cmd_val)
 
     if arg.f:
       funcs = []

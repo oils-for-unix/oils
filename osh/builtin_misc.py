@@ -191,7 +191,7 @@ class Read(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    arg, i = READ_SPEC.ParseVec(cmd_val)
+    arg, i = READ_SPEC.ParseCmdVal(cmd_val)
 
     names = cmd_val.argv[i:]
     if arg.n is not None:  # read a certain number of bytes
@@ -471,7 +471,7 @@ class Dirs(object):
     # type: (cmd_value__Argv) -> int
     home_dir = self.mem.GetVar('HOME')
 
-    arg, i = DIRS_SPEC.ParseVec(cmd_val)
+    arg, i = DIRS_SPEC.ParseCmdVal(cmd_val)
     style = SINGLE_LINE
 
     # Following bash order of flag priority
@@ -506,7 +506,7 @@ class Pwd(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    arg, _ = PWD_SPEC.ParseVec(cmd_val)
+    arg, _ = PWD_SPEC.ParseCmdVal(cmd_val)
 
     # NOTE: 'pwd' will succeed even if the directory has disappeared.  Other
     # shells behave that way too.
@@ -601,7 +601,7 @@ class History(object):
     if not readline_mod:
       raise args.UsageError("OSH wasn't compiled with the readline module.")
 
-    arg, arg_index = HISTORY_SPEC.ParseVec(cmd_val)
+    arg, arg_index = HISTORY_SPEC.ParseCmdVal(cmd_val)
 
     # Clear all history
     if arg.c:

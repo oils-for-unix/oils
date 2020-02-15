@@ -52,6 +52,7 @@ bool IsValidVarName(Str* s);
 // StringToInt
 
 int MatchOption(Str* s);
+int MatchBuiltin(Str* s);
 
 }  // namespace match
 

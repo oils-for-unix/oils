@@ -61,7 +61,7 @@ class Wait(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    arg, arg_index = WAIT_SPEC.ParseVec(cmd_val)
+    arg, arg_index = WAIT_SPEC.ParseCmdVal(cmd_val)
     job_ids = cmd_val.argv[arg_index:]
     arg_count = len(cmd_val.argv)
 
@@ -310,7 +310,7 @@ class Trap(object):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
 
-    arg, _ = TRAP_SPEC.ParseVec(cmd_val)
+    arg, _ = TRAP_SPEC.ParseCmdVal(cmd_val)
 
     if arg.p:  # Print registered handlers
       for name, value in self.traps.iteritems():
