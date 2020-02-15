@@ -4,9 +4,8 @@ builtin_def.py
 """
 from __future__ import print_function
 
-from typing import Dict, List, Optional, Any, TYPE_CHECKING
-if TYPE_CHECKING:
-  from frontend import args  # circular build dependency
+from typing import Dict, List, Optional, Any
+from frontend import args
 
 # Special builtins can't be redefined by functions.  On the other hand, 'cd'
 # CAN be redefined.
@@ -69,9 +68,10 @@ class _BuiltinDef(object):
     self.builtins = []  # type: List[_Builtin]
     self.index = 1  # start with 1
 
-  def Add(self, *args, **kwargs):
+  def Add(self, *posargs, **kwargs):
     # type: (Any, Any) -> None
-    self.builtins.append(_Builtin(self.index, *args, **kwargs))
+    # NOTE: *posargs works around flake8/pyflakes bug!
+    self.builtins.append(_Builtin(self.index, *posargs, **kwargs))
     self.index += 1
 
 
@@ -138,8 +138,5 @@ def BuiltinDict():
 # But if args are going to generate code, they should be all in one file?
 def _Register(name, help_topic=None):
   # type: (str, str) -> args.BuiltinFlags
-
-  from frontend import args  # circular build dependency
-
   arg_spec = args.BuiltinFlags()
   return arg_spec
