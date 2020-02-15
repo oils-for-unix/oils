@@ -470,7 +470,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_i.typeset: new_var,
       builtin_i.local: new_var,
 
-      builtin_i.export: builtin_assign.Export(mem, errfmt),
+      builtin_i.export_: builtin_assign.Export(mem, errfmt),
       builtin_i.readonly: builtin_assign.Readonly(mem, errfmt),
 
       builtin_i.unset: builtin_assign.Unset(mem, procs, errfmt),
@@ -488,8 +488,8 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_i.getopts: builtin_pure.GetOpts(mem, errfmt),
 
       builtin_i.colon: builtin_pure.Boolean(0),  # a "special" builtin 
-      builtin_i.true: builtin_pure.Boolean(0),
-      builtin_i.false: builtin_pure.Boolean(1),
+      builtin_i.true_: builtin_pure.Boolean(0),
+      builtin_i.false_: builtin_pure.Boolean(1),
 
       # Process
       builtin_i.wait: builtin_process.Wait(exec_deps.waiter,

@@ -13,7 +13,7 @@ from core import builtin_def
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.option_asdl import builtin_i_t
+  from _devbuild.gen.option_asdl import builtin_t
 
 
 NO_INDEX = 0  # for Resolve
@@ -112,7 +112,7 @@ def RedirDefaultFd(id_):
 _BUILTIN_DICT = builtin_def.BuiltinDict()
 
 def LookupSpecialBuiltin(argv0):
-  # type: (str) -> builtin_i_t
+  # type: (str) -> builtin_t
   """Is it a special builtin?"""
   b = _BUILTIN_DICT.get(argv0)
   if b and b.kind == 'special':
@@ -122,7 +122,7 @@ def LookupSpecialBuiltin(argv0):
 
 
 def LookupAssignBuiltin(argv0):
-  # type: (str) -> builtin_i_t
+  # type: (str) -> builtin_t
   """Is it an assignment builtin?"""
   b = _BUILTIN_DICT.get(argv0)
   if b and b.kind == 'assign':
@@ -132,7 +132,7 @@ def LookupAssignBuiltin(argv0):
 
 
 def LookupNormalBuiltin(argv0):
-  # type: (str) -> builtin_i_t
+  # type: (str) -> builtin_t
   """Is it any other builtin?"""
   b = _BUILTIN_DICT.get(argv0)
   if b and b.kind == 'normal':

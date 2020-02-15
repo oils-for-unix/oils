@@ -127,7 +127,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     else:
       return c_type
 
-  def _EmitEnum(self, sum, sum_name, depth, strong=False):
+  def _EmitEnum(self, sum, sum_name, depth, strong=False, is_simple=False):
     enum = []
     for i, variant in enumerate(sum.types):
       if variant.shared_type:  # Copied from gen_python.py
@@ -145,9 +145,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         tag_num = i + 1
       enum.append((variant.name, tag_num))  # zero is reserved
 
-    enum_name = '%s_e' % sum_name if self.e_suffix else sum_name
-
     if strong:
+      enum_name = '%s_e' % sum_name if self.e_suffix else sum_name
+
       # Simple sum types can be STRONG since there's no possibility of multiple
       # inheritance!
 
@@ -164,12 +164,19 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       self.Emit('', depth)
 
     else:
+      if is_simple:
+        enum_name = '%s_i' % sum_name if self.e_suffix else sum_name
+      else:
+        enum_name = '%s_e' % sum_name if self.e_suffix else sum_name
+
       self.Emit('namespace %s {' % enum_name, depth)
       for name, tag_num in enum:
         self.Emit('const int %s = %d;' % (name, tag_num), depth + 1)
 
-      # Help in sizing array.  Note that we're 1-based.
-      self.Emit('const int %s = %d;' % ('ARRAY_SIZE', len(enum) + 1), depth + 1)
+      if is_simple:
+        # Help in sizing array.  Note that we're 1-based.
+        self.Emit('const int %s = %d;' % ('ARRAY_SIZE', len(enum) + 1),
+                  depth + 1)
       self.Emit('};', depth)
 
       self.Emit('', depth)
@@ -179,7 +186,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
   def VisitSimpleSum(self, sum, name, depth):
     if name in self.simple_int_sums:
-      self._EmitEnum(sum, name, depth, strong=False)
+      self._EmitEnum(sum, name, depth, strong=False, is_simple=True)
       self.Emit('typedef int %s_t;' % name)
       self.Emit('')
     else:

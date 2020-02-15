@@ -56,7 +56,9 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       self.Emit('%s_t = int  # type alias for integer' % name)
       self.Emit('')
 
-      self.Emit('class %s(object):' % name, depth)
+      i_name = ('%s_i' % name) if self.e_suffix else name
+
+      self.Emit('class %s(object):' % i_name, depth)
 
       for variant, tag_num in variants:
         line = '  %s = %d' % (variant.name, tag_num)

@@ -14,7 +14,7 @@ import os
 import unittest
 import sys
 
-from _devbuild.gen.option_asdl import opt_num
+from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import value_e
 from core import completion  # module under test
 from core import comp_ui
@@ -36,7 +36,7 @@ mem = state.Mem('', [], {}, None)
 FIRST = completion.TestAction(['grep', 'sed', 'test'])
 U2 = completion.UserSpec([FIRST], [], [], lambda candidate: True)
 
-OPT_ARRAY = [False] * opt_num.ARRAY_SIZE
+OPT_ARRAY = [False] * option_i.ARRAY_SIZE
 
 
 def MockApi(line):

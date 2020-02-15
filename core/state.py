@@ -12,7 +12,7 @@ from __future__ import print_function
 import cStringIO
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
-from _devbuild.gen.option_asdl import opt_num
+from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Str, value__MaybeStrArray, value__AssocArray,
     value_str,
@@ -218,7 +218,7 @@ def MakeOpts(mem, line_input):
   # 38 options
   #log('opts = %d', option_def.ArraySize())
 
-  opt_array = [False] * opt_num.ARRAY_SIZE
+  opt_array = [False] * option_i.ARRAY_SIZE
 
   errexit = _ErrExit()
   parse_opts = optview.Parse(opt_array)
@@ -240,7 +240,7 @@ class MutableOpts(object):
     self.opt_array = opt_array
     self.errexit = errexit
     # On by default
-    self.opt_array[opt_num.hashall] = True
+    self.opt_array[option_i.hashall] = True
 
     # Used for 'set -o vi/emacs'
     self.readline = readline
@@ -262,11 +262,11 @@ class MutableOpts(object):
 
   def set_interactive(self):
     # type: () -> None
-    self.opt_array[opt_num.interactive] = True
+    self.opt_array[option_i.interactive] = True
 
   def set_xtrace(self, b):
     # type: (bool) -> None
-    self.opt_array[opt_num.xtrace] = b
+    self.opt_array[option_i.xtrace] = b
 
   def _SetArrayByName(self, opt_name, b):
     # type: (str, bool) -> None

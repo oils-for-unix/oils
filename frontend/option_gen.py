@@ -11,8 +11,8 @@ from asdl.visitor import FormatLines
 from frontend import option_def
 from core import builtin_def
 
-_OPT_ENUM = 'opt_num'  # TODO: rename to opt_i?
-_BUILTIN_ENUM = 'builtin_i'
+_OPT_ENUM = 'option'
+_BUILTIN_ENUM = 'builtin'
 _SIMPLE = [_OPT_ENUM, _BUILTIN_ENUM]
 
 
@@ -68,8 +68,7 @@ namespace option_asdl {
 """)
 
       # TODO: Could suppress option_str
-      v = gen_cpp.ClassDefVisitor(f, {}, e_suffix=False,
-                                  simple_int_sums=_SIMPLE)
+      v = gen_cpp.ClassDefVisitor(f, {}, simple_int_sums=_SIMPLE)
       v.VisitModule(schema_ast)
 
       f.write("""
@@ -87,8 +86,7 @@ namespace option_asdl {
 
 """)
 
-      v = gen_cpp.MethodDefVisitor(f, {}, e_suffix=False,
-                                   simple_int_sums=_SIMPLE)
+      v = gen_cpp.MethodDefVisitor(f, {}, simple_int_sums=_SIMPLE)
 
       v.VisitModule(schema_ast)
 
@@ -103,9 +101,8 @@ namespace option_asdl {
 from asdl import pybase
 
 """)
-    # Minor style issue: we want Id and Kind, not Id_e and Kind_e
-    v = gen_python.GenMyPyVisitor(f, None, e_suffix=False,
-                                  simple_int_sums=_SIMPLE)
+    # option_i type
+    v = gen_python.GenMyPyVisitor(f, None, simple_int_sums=_SIMPLE)
     v.VisitModule(schema_ast)
 
   else:

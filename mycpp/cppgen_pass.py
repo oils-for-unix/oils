@@ -1966,11 +1966,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             is_namespace = False
 
             if last_dotted.endswith('_asdl'):
-              if name.endswith('_n') or name in (
+              if name.endswith('_n') or name.endswith('_i') or name in (
                 'Id', 'hnode_e', 'source_e', 'place_e',
-
-                # option_asdl
-                'opt_num',
 
                 # syntax_asdl
                 're', 're_repeat', 'class_literal_term', 'proc_sig',

@@ -50,7 +50,7 @@ if TYPE_CHECKING:
     command_t, speck, word_part_t
   )
   from _devbuild.gen.runtime_asdl import effect_t, lvalue__Named
-  from _devbuild.gen.option_asdl import builtin_i_t
+  from _devbuild.gen.option_asdl import builtin_t
   from core.ui import ErrorFormatter
   from core import optview
   from osh import cmd_exec
@@ -1569,7 +1569,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return argv
 
   def _EvalAssignBuiltin(self, builtin_id, arg0, words):
-    # type: (builtin_i_t, str, List[compound_word]) -> cmd_value__Assign
+    # type: (builtin_t, str, List[compound_word]) -> cmd_value__Assign
     """
     Handles both static and dynamic assignment, e.g.
 

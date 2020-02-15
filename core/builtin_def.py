@@ -26,8 +26,6 @@ _NORMAL_BUILTINS = [
     'shopt',
     'complete', 'compgen', 'compopt', 'compadjust',
 
-    'true', 'false',
-
     'getopts',
 
     # introspection
@@ -97,14 +95,18 @@ def _Init(b):
   # Note: control flow aren't builtins in OSH: break continue return
   #
 
-  for name in ["readonly", "local", "declare", "typeset", "export"]:
+  for name in ["readonly", "local", "declare", "typeset"]:
     b.Add(name, kind='assign')
+  b.Add('export', enum_name='export_', kind='assign')
 
   # Normal builtins
 
   # Slight variants
   b.Add('test')
   b.Add('[', enum_name='bracket')
+
+  b.Add('true', enum_name='true_')
+  b.Add('false', enum_name='false_')
 
   for name in _NORMAL_BUILTINS:
     b.Add(name)

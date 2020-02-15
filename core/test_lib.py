@@ -12,7 +12,7 @@ test_lib.py - Functions for testing.
 import string
 import sys
 
-from _devbuild.gen.option_asdl import builtin_i, opt_num
+from _devbuild.gen.option_asdl import builtin_i, option_i
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import source, Token
 from asdl import pybase
@@ -130,7 +130,7 @@ def InitLexer(s, arena):
 def InitWordEvaluator():
   arena = MakeArena('<InitWordEvaluator>')
   mem = state.Mem('', [], {}, arena)
-  opt_array = [False] * opt_num.ARRAY_SIZE
+  opt_array = [False] * option_i.ARRAY_SIZE
   errexit = state._ErrExit()
   parse_opts = optview.Parse(opt_array)
   exec_opts = optview.Exec(opt_array, errexit)
@@ -147,7 +147,7 @@ def InitWordEvaluator():
 
 def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
                  aliases=None, ext_prog=None):
-  opt_array = [False] * opt_num.ARRAY_SIZE
+  opt_array = [False] * option_i.ARRAY_SIZE
   if parse_ctx:
     arena = parse_ctx.arena
     parse_opts = parse_ctx.parse_opts
@@ -187,7 +187,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
       builtin_i.typeset: new_var,
       builtin_i.local: new_var,
 
-      builtin_i.export: builtin_assign.Export(mem, errfmt),
+      builtin_i.export_: builtin_assign.Export(mem, errfmt),
       builtin_i.readonly: builtin_assign.Readonly(mem, errfmt),
   }
 
@@ -259,7 +259,7 @@ def InitParseContext(arena=None, oil_grammar=None, aliases=None):
   arena = arena or MakeArena('<test_lib>')
   if aliases is None:
     aliases = {}
-  opt_array = [False] * opt_num.ARRAY_SIZE
+  opt_array = [False] * option_i.ARRAY_SIZE
   parse_opts = optview.Parse(opt_array)
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
   return parse_ctx
@@ -267,9 +267,9 @@ def InitParseContext(arena=None, oil_grammar=None, aliases=None):
 
 def InitWordParser(word_str, oil_at=False, arena=None):
   arena = arena or MakeArena('<test_lib>')
-  opt_array = [False] * opt_num.ARRAY_SIZE
+  opt_array = [False] * option_i.ARRAY_SIZE
   parse_opts = optview.Parse(opt_array)
-  opt_array[opt_num.parse_at] = oil_at
+  opt_array[option_i.parse_at] = oil_at
   loader = pyutil.GetResourceLoader()
   oil_grammar = meta.LoadOilGrammar(loader)
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, oil_grammar)

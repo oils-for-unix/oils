@@ -7,6 +7,7 @@ module runtime
   assign_arg = (lvalue lval, value? rval, int spid)
 
   -- ASDL issue: I need to import the 'command' type from frontend/syntax.asdl!
+  -- and 'builtin' from synthetic option_asdl
   cmd_value =
     Argv(string* argv, int* arg_spids, any? block)
   | Assign(int builtin_id,
