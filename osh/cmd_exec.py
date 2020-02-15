@@ -20,7 +20,7 @@ import time
 import sys
 
 from _devbuild.gen.id_kind_asdl import Id, Id_str
-from _devbuild.gen.option_asdl import builtin_i
+from _devbuild.gen.option_asdl import builtin_i, builtin_t
 from _devbuild.gen.syntax_asdl import (
     compound_word,
     command_e, command_t, command_str,
@@ -99,7 +99,7 @@ from typing import List, Dict, Tuple, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.id_kind_asdl import Id_t
   from _devbuild.gen.runtime_asdl import (
-      cmd_value_t, cell, lvalue_t, builtin_t, redirect_t,
+      cmd_value_t, cell, lvalue_t, redirect_t,
   )
   from _devbuild.gen.syntax_asdl import (
       Token, source_t, redir_t, expr__Lambda, env_pair, proc_sig__Closed,
@@ -112,7 +112,7 @@ if TYPE_CHECKING:
   from osh.cmd_parse import CommandParser
   from osh import word_eval
   from osh import builtin_process
-  from osh.builtin import _Builtin
+  from osh.builtin_misc import _Builtin
 
 
 # Python type name -> Oil type name

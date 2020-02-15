@@ -143,6 +143,7 @@ from asdl import pybase
 #define LOOKUP_H
 
 #include "id_kind_asdl.h"
+#include "option_asdl.h"
 #include "types_asdl.h"
 
 namespace consts {
@@ -155,10 +156,15 @@ namespace consts {
 
       out("""\
 
+extern int NO_INDEX;
+
 int RedirDefaultFd(id_kind_asdl::Id_t id);
 types_asdl::redir_arg_type_t RedirArgType(id_kind_asdl::Id_t id);
 types_asdl::bool_arg_type_t BoolArgType(id_kind_asdl::Id_t id);
 id_kind_asdl::Kind GetKind(id_kind_asdl::Id_t id);
+option_asdl::builtin_t LookupNormalBuiltin(Str* s);
+option_asdl::builtin_t LookupAssignBuiltin(Str* s);
+option_asdl::builtin_t LookupSpecialBuiltin(Str* s);
 
 }  // namespace consts
 
@@ -176,6 +182,9 @@ namespace Id = id_kind_asdl::Id;
 using id_kind_asdl::Kind;
 using types_asdl::redir_arg_type_e;
 using types_asdl::bool_arg_type_e;
+using option_asdl::builtin_t;
+
+int NO_INDEX = 0;  // duplicated from frontend/consts.py
 
 namespace consts {
 """)
@@ -247,6 +256,20 @@ Kind GetKind(id_kind_asdl::Id_t id) {
         out('  case %s: return %s;' % (a, b))
       out("""\
   }
+}
+""")
+      out("""\
+
+builtin_t LookupNormalBuiltin(Str* s) {
+  assert(0);
+}
+
+builtin_t LookupAssignBuiltin(Str* s) {
+  assert(0);
+}
+
+builtin_t LookupSpecialBuiltin(Str* s) {
+  assert(0);
 }
 """)
 
