@@ -128,7 +128,7 @@ flake8-all() {
   # Step 1: Stop the build if there are Python syntax errors, undefined names,
   # unused imports
   local fatal_errors='E901,E999,F821,F822,F823,F401'
-  bin-flake8 "${dirs[@]}" "${exclude[@]}" \
+  bin-flake8 -j 1 -v "${dirs[@]}" "${exclude[@]}" \
     --count --select "$fatal_errors" --show-source --statistics
 
   # Make unused variable fatal.  Hm there are some I want.
