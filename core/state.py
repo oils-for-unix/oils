@@ -50,10 +50,12 @@ _READLINE_DELIMS = ' \t\n"\'><=;|&(:'
 
 
 # flags for SetVar
-SetExport     = 1 << 0
-SetReadOnly   = 1 << 1
-ClearExport   = 1 << 2
-ClearReadOnly = 1 << 3
+SetReadOnly   = 1 << 0
+ClearReadOnly = 1 << 1
+SetExport     = 1 << 2
+ClearExport   = 1 << 3
+SetNameref    = 1 << 4
+ClearNameref  = 1 << 5
 
 
 class SearchPath(object):
@@ -1055,8 +1057,9 @@ class Mem(object):
 
         # Maintain invariant that only strings and undefined cells can be
         # exported.
-        if (cell.val is not None and
-            cell.val.tag_() not in (value_e.Undef, value_e.Str) and
+        assert cell.val is not None, cell
+
+        if (cell.val.tag_() not in (value_e.Undef, value_e.Str) and
             cell.exported):
           e_die("Can't export array")  # TODO: error context
 

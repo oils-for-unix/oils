@@ -57,7 +57,10 @@ module runtime
 
   -- A cell is a wrapper for a value.  16 bytes in C++.
   -- TODO: add spid for last-assigned location
-  cell = (bool exported, bool readonly, value val)
+
+  -- Invariant: if exported or nameref is set, the val should be Str or Undef.
+  -- This is enforced in mem.SetVar but isn't expressed in the schema.
+  cell = (bool exported, bool readonly, bool nameref, value val)
 
   -- Dynamic is for shell; LocalOrGlobal is for Oil
   scope = LocalOnly | GlobalOnly | Dynamic | LocalOrGlobal

@@ -134,20 +134,22 @@ class Readonly(object):
 if mylib.PYTHON:
   NEW_VAR_SPEC = arg_def.Register('declare')
 
-# print stuff
+  # print stuff
   NEW_VAR_SPEC.ShortFlag('-f')
   NEW_VAR_SPEC.ShortFlag('-F')
   NEW_VAR_SPEC.ShortFlag('-p')
 
   NEW_VAR_SPEC.ShortFlag('-g')  # Look up in global scope
 
-# Options +r +x
+  # Options +r +x +n
   NEW_VAR_SPEC.ShortOption('x')  # export
   NEW_VAR_SPEC.ShortOption('r')  # readonly
+  NEW_VAR_SPEC.ShortOption('n')  # named ref
 
-# Common between readonly/declare
+  # Common between readonly/declare
   NEW_VAR_SPEC.ShortFlag('-a')
   NEW_VAR_SPEC.ShortFlag('-A')
+
 
 
 class NewVar(object):

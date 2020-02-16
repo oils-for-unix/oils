@@ -12,7 +12,7 @@ b=c
 echo ref ${!a} ${a}
 ## stdout: ref c b
 
-#### var ref: positional params
+#### var ref with 1 and @ and *
 set -- x y
 ref=1; printf "|%s" "${!ref}" $'\n'
 ref=@; printf "|%s" "${!ref}" $'\n'
@@ -190,8 +190,7 @@ echo done
 ## OK bash stdout: done
 
 #### declare -n and ${!a}
-# NOTE: This is like named-ref.test.sh.  OSH doesn't implement it at all.
-# Maybe we should throw an error on '-n'.
+# NOTE: This is like named-ref.test.sh.
 declare -n a
 a=b
 b=c

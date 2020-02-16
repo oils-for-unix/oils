@@ -693,11 +693,10 @@ var-ref() {
     $BASH $OSH_LIST "$@"
 }
 
-# local -n
-# mksh implements some of this.  OSH doesn't implement it at all.
+# declare / local -n
 named-ref() {
-  sh-spec spec/named-ref.test.sh \
-    $BASH $MKSH "$@"
+  sh-spec spec/named-ref.test.sh --osh-failures-allowed 9 \
+    $BASH $MKSH $OSH_LIST "$@"
 }
 
 let() {

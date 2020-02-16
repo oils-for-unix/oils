@@ -8,7 +8,7 @@ Instead of:
     var y = x -> sub( Glob/a*/, 'b', :ALL)  # maybe a glob literal
 """
 
-from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.id_kind_asdl import Id, Id_str
 from core import error
 from core import util
 from core.util import e_die
@@ -256,7 +256,8 @@ def DoUnarySuffixOp(s, op, arg):
     # These operators take glob arguments, we don't implement that obscure case.
     elif op.op_id == Id.VOp1_Comma:  # Only lowercase the first letter
       if arg != '':
-        raise NotImplementedError("%s can't have an argument" % op.op_id)
+        # TODO: location info for op
+        e_die("%s can't have an argument", Id_str(op.op_id))
       if len(s):
         return s[0].lower() + s[1:]
       else:
@@ -264,12 +265,12 @@ def DoUnarySuffixOp(s, op, arg):
 
     elif op.op_id == Id.VOp1_DComma:
       if arg != '':
-        raise NotImplementedError("%s can't have an argument" % op.op_id)
+        e_die("%s can't have an argument", Id_str(op.op_id))
       return s.lower()
 
     elif op.op_id == Id.VOp1_Caret:  # Only uppercase the first letter
       if arg != '':
-        raise NotImplementedError("%s can't have an argument" % op.op_id)
+        e_die("%s can't have an argument", Id_str(op.op_id))
       if len(s):
         return s[0].upper() + s[1:]
       else:
@@ -277,7 +278,7 @@ def DoUnarySuffixOp(s, op, arg):
 
     elif op.op_id == Id.VOp1_DCaret:
       if arg != '':
-        raise NotImplementedError("%s can't have an argument" % op.op_id)
+        e_die("%s can't have an argument", Id_str(op.op_id))
       return s.upper()
 
     else:  # e.g. ^ ^^ , ,,
