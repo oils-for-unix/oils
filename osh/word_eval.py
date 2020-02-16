@@ -917,29 +917,29 @@ class AbstractWordEvaluator(StringWordEvaluator):
     if part.prefix_op:
       val = self._EmptyStrOrError(val)  # maybe error
 
-      if part.suffix_op:
-        # Must be ${!prefix@}
+      # ${!prefix@} has both prefix and suffix ops
+      if part.suffix_op and part.suffix_op.tag_() == suffix_op_e.Nullary:
         assert part.prefix_op.id == Id.VSub_Bang
         names = self.mem.VarNamesStartingWith(part.token.val)
         names.sort()
         val = value.MaybeStrArray(names)
 
-        # Test for maybe_decay_array
-        UP_suffix_op = part.suffix_op
-        if UP_suffix_op.tag_() == suffix_op_e.Nullary:
-          suffix_op = cast(suffix_op__Nullary, UP_suffix_op)
-          # "${!prefix@}" is the only one that doesn't decay
-          maybe_decay_array = not (quoted and suffix_op.op_id == Id.VOp3_At)
-        else:
-          e_die('Not implemented', part=part)
+        suffix_op = cast(suffix_op__Nullary, part.suffix_op)
+        # "${!prefix@}" is the only one that doesn't decay
+        maybe_decay_array = not (quoted and suffix_op.op_id == Id.VOp3_At)
 
+        part.suffix_op = None  # don't process it later
       else:
-        # TODO: maybe_decay_array for "${!assoc[@]}" vs. ${!assoc[*]}
+        # could be
+        # - ${!ref-default}
+        # - "${!assoc[@]}" vs. ${!assoc[*]} (TODO: maybe_decay_array for this
+        #   case)
         val = self._ApplyPrefixOp(val, part.prefix_op, part.token)
-        # NOTE: When applying the length operator, we can't have a test or
-        # suffix afterward.  And we don't want to decay the array
 
-    elif part.suffix_op:
+        # NOTE: The length operator followed by a suffix operator is a SYNTAX
+        # error.
+
+    if part.suffix_op:
       op = part.suffix_op
       UP_op = op
       with tagswitch(op) as case:

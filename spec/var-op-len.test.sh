@@ -194,3 +194,27 @@ echo ${#undef}
 ## status: 1
 ## OK dash status: 2
 
+#### Length operator can't be followed by test operator
+echo ${#x-default}
+
+x=''
+echo ${#x-default}
+
+x='foo'
+echo ${#x-default}
+
+## status: 2
+## OK bash/mksh status: 1
+## stdout-json: ""
+## BUG zsh status: 0
+## BUG zsh STDOUT:
+7
+0
+3
+## END
+## BUG dash status: 0
+## BUG dash STDOUT:
+0
+0
+3
+## END

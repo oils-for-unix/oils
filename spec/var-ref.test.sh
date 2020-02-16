@@ -225,3 +225,22 @@ a
 x
 y
 ## END
+
+#### ${!ref-default}
+
+ref=x
+
+echo x=${!ref-default}
+
+x=''
+echo x=${!ref-default}
+
+x=foo
+echo x=${!ref-default}
+
+## STDOUT:
+x=default
+x=
+x=foo
+## END
+
