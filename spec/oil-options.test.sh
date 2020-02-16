@@ -159,6 +159,7 @@ shopt -s strict_control_flow
 shopt -s strict_echo
 shopt -s strict_errexit
 shopt -s strict_eval_builtin
+shopt -s strict_nameref
 shopt -s strict_word_eval
 shopt -s strict_backslash
 shopt -s strict_glob
@@ -182,6 +183,7 @@ shopt -s strict_control_flow
 shopt -s strict_echo
 shopt -s strict_errexit
 shopt -s strict_eval_builtin
+shopt -s strict_nameref
 shopt -s strict_word_eval
 shopt -s strict_backslash
 shopt -s strict_glob

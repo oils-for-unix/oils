@@ -566,6 +566,9 @@ class Mem(object):
   """
   def __init__(self, dollar0, argv, environ, arena, has_main=False):
     # type: (str, List[str], Dict[str, str], Arena, bool) -> None
+    # circular dep initialized out of line
+    self.exec_opts = None  # type: optview.Exec
+
     self.dollar0 = dollar0
     self.argv_stack = [_ArgFrame(argv)]
     self.var_stack = [{}]  # type: List[Dict[str, cell]]
@@ -917,7 +920,7 @@ class Mem(object):
   # Named Vars
   #
 
-  def _FindCellAndNamespace(self, name, lookup_mode):
+  def _ResolveNameOnly(self, name, lookup_mode):
     # type: (str, scope_t) -> Tuple[Optional[cell], Dict[str, cell]]
     """Helper for getting and setting variable.
 
@@ -961,6 +964,56 @@ class Mem(object):
     else:
       raise AssertionError()
 
+  def _ResolveNameOrRef(self, name, lookup_mode):
+    # type: (str, scope_t) -> Tuple[Optional[cell], Dict[str, cell], str]
+    """Look up a cell and namespace, but respect the nameref flag."""
+    cell, name_map = self._ResolveNameOnly(name, lookup_mode)
+
+    if not cell or not cell.nameref:
+      return cell, name_map, name  # not a nameref
+
+    val = cell.val
+    UP_val = val
+    with tagswitch(val) as case:
+      if case(value_e.Undef):
+        # This is 'local -n undef_ref', which is kind of useless, because the
+        # more common idiom is 'local -n ref=$1'.  Note that you can mutate
+        # references themselves with local -n ref=new.
+        if self.exec_opts.strict_nameref():
+          e_die('nameref %r is undefined', name)
+        else:
+          return cell, name_map, name  # fallback
+
+      elif case(value_e.Str):
+        val = cast(value__Str, UP_val)
+        new_name = val.s
+
+      else:
+        # SetVar() protects the invariant that nameref is Undef or Str
+        raise AssertionError(val.tag_())
+
+    if not match.IsValidVarName(new_name):
+      # e.g. '#' or '1' or ''
+      if self.exec_opts.strict_nameref():
+        e_die('nameref %r contains invalid variable name %r', name, new_name)
+      else:
+        # Bash has this odd behavior of clearing the nameref bit when
+        # ref=#invalid#.  strict_nameref avoids it.
+        cell.nameref = False
+        return cell, name_map, name  # fallback
+
+    # Old "use" Check for circular namerefs.
+    #if ref_trail is None:
+    #  ref_trail = [name]
+    #else:
+    #  if new_name in ref_trail:
+    #    e_die('Circular nameref %s', ref_trail)
+    #ref_trail.append(new_name)
+
+    # You could have a "trail" parameter here?
+    cell, name_map, cell_name = self._ResolveNameOrRef(new_name, lookup_mode)
+    return cell, name_map, cell_name
+
   def IsAssocArray(self, name, lookup_mode):
     # type: (str, scope_t) -> bool
     """Returns whether a name resolve to a cell with an associative array.
@@ -968,7 +1021,7 @@ class Mem(object):
     We need to know this to evaluate the index expression properly -- should it
     be coerced to an integer or not?
     """
-    cell, _ = self._FindCellAndNamespace(name, lookup_mode)
+    cell, _, _ = self._ResolveNameOrRef(name, lookup_mode)
     if cell:
       if cell.val.tag_() == value_e.AssocArray:  # foo=([key]=value)
         return True
@@ -988,6 +1041,35 @@ class Mem(object):
 
     if cell is None and keyword_id in (Id.KW_Set, Id.KW_SetGlobal):
       e_die("%r hasn't been declared", name)
+
+  def _DisallowNamerefCycle(self, name, ref_trail):
+    # type: (str, List[str]) -> None
+    """Recursively resolve names until the trail ends or a cycle is detected.
+
+    Note: we're using dynamic scope because that's the most general.  This
+    could produce false positives if the actual lookup mode is different
+    (LocalOnly), but those should be rare and easily worked around.
+    
+    The other possibility is to do it during _ResolveNameOrRef, but that delays
+    tne error.
+    """
+    cell, _ = self._ResolveNameOnly(name, scope_e.Dynamic)
+
+    if not cell or not cell.nameref:
+      return
+
+    val = cell.val
+    if val.tag_() != value_e.Str:
+      return
+
+    str_val = cast(value__Str, val)
+    new_name = str_val.s
+
+    if new_name in ref_trail:
+      e_die('nameref cycle: %s', ' -> '.join(ref_trail))
+    ref_trail.append(new_name)
+
+    self._DisallowNamerefCycle(new_name, ref_trail)
 
   def SetVar(self, lval, val, lookup_mode, flags=0):
     # type: (lvalue_t, value_t, scope_t, int) -> None
@@ -1023,7 +1105,15 @@ class Mem(object):
     with tagswitch(lval) as case:
       if case(lvalue_e.Named):
         lval = cast(lvalue__Named, UP_lval)
-        cell, name_map = self._FindCellAndNamespace(lval.name, lookup_mode)
+
+        if flags & SetNameref or flags & ClearNameref:
+          # declare -n ref=x  # refers to the ref itself
+          cell, name_map = self._ResolveNameOnly(lval.name, lookup_mode)
+          cell_name = lval.name
+        else:
+          # ref=x  # mutates THROUGH the reference
+          cell, name_map, cell_name = self._ResolveNameOrRef(lval.name, lookup_mode)
+
         self._CheckOilKeyword(keyword_id, lval.name, cell)
         if cell:
           # Clear before checking readonly bit.
@@ -1032,18 +1122,22 @@ class Mem(object):
             cell.exported = False
           if flags & ClearReadOnly:
             cell.readonly = False
+          if flags & ClearNameref:
+            cell.nameref = False
 
           if val is not None:  # e.g. declare -rx existing
             if cell.readonly:
               # TODO: error context
               e_die("Can't assign to readonly value %r", lval.name)
-            cell.val = val
+            cell.val = val  # CHANGE VAL
 
           # NOTE: Could be cell.flags |= flag_set_mask 
           if flags & SetExport:
             cell.exported = True
           if flags & SetReadOnly:
             cell.readonly = True
+          if flags & SetNameref:
+            cell.nameref = True
 
         else:
           if val is None:  # declare -rx nonexistent
@@ -1052,16 +1146,24 @@ class Mem(object):
 
           cell = runtime_asdl.cell(bool(flags & SetExport),
                                    bool(flags & SetReadOnly),
+                                   bool(flags & SetNameref),
                                    val)
-          name_map[lval.name] = cell
+          name_map[cell_name] = cell
 
         # Maintain invariant that only strings and undefined cells can be
         # exported.
         assert cell.val is not None, cell
 
-        if (cell.val.tag_() not in (value_e.Undef, value_e.Str) and
-            cell.exported):
-          e_die("Can't export array")  # TODO: error context
+        if cell.val.tag_() not in (value_e.Undef, value_e.Str):
+          if cell.exported:
+            e_die("Only strings can be exported")  # TODO: error context
+          if cell.nameref:
+            e_die("nameref must be a string")
+
+        # Note: we check for circular namerefs on every definition, like mksh.
+        if cell.nameref:
+          ref_trail = []  # type: List[str]
+          self._DisallowNamerefCycle(cell_name, ref_trail)
 
       elif case(lvalue_e.Indexed):
         lval = cast(lvalue__Indexed, UP_lval)
@@ -1078,7 +1180,7 @@ class Mem(object):
         # bash/mksh have annoying behavior of letting you do LHS assignment to
         # Undef, which then turns into an INDEXED array.  (Undef means that set
         # -o nounset fails.)
-        cell, name_map = self._FindCellAndNamespace(lval.name, lookup_mode)
+        cell, name_map, _ = self._ResolveNameOrRef(lval.name, lookup_mode)
         self._CheckOilKeyword(keyword_id, lval.name, cell)
         if not cell:
           self._BindNewArrayWithEntry(name_map, lval, rval, flags)
@@ -1131,7 +1233,7 @@ class Mem(object):
 
         left_spid = lval.spids[0] if lval.spids else runtime.NO_SPID
 
-        cell, name_map = self._FindCellAndNamespace(lval.name, lookup_mode)
+        cell, name_map, _ = self._ResolveNameOrRef(lval.name, lookup_mode)
         self._CheckOilKeyword(keyword_id, lval.name, cell)
         if cell.readonly:
           e_die("Can't assign to readonly associative array", span_id=left_spid)
@@ -1155,7 +1257,7 @@ class Mem(object):
 
     # arrays can't be exported; can't have AssocArray flag
     readonly = bool(flags & SetReadOnly)
-    name_map[lval.name] = runtime_asdl.cell(False, readonly, new_value)
+    name_map[lval.name] = runtime_asdl.cell(False, readonly, False, new_value)
 
   def InternalSetGlobal(self, name, new_val):
     # type: (str, value_t) -> None
@@ -1176,7 +1278,7 @@ class Mem(object):
     # type: (str, scope_t) -> value_t
     assert isinstance(name, str), name
 
-    # TODO: Short-circuit down to _FindCellAndNamespace by doing a single hash
+    # TODO: Short-circuit down to _ResolveNameOrRef by doing a single hash
     # lookup:
     # COMPUTED_VARS = {'PIPESTATUS': 1, 'FUNCNAME': 1, ...}
     # if name not in COMPUTED_VARS: ...
@@ -1258,7 +1360,8 @@ class Mem(object):
       self.source_name.s = self.arena.GetLineSourceString(span.line_id)
       return self.source_name
 
-    cell, _ = self._FindCellAndNamespace(name, lookup_mode)
+    cell, _, _ = self._ResolveNameOrRef(name, lookup_mode)
+    #cell, _, = self._ResolveNameOnly(name, lookup_mode)
 
     if cell:
       return cell.val
@@ -1268,7 +1371,7 @@ class Mem(object):
   def GetCell(self, name):
     # type: (str) -> cell
     """For the 'repr' builtin."""
-    cell, _ = self._FindCellAndNamespace(name, scope_e.Dynamic)
+    cell, _ = self._ResolveNameOnly(name, scope_e.Dynamic)
     return cell
 
   def Unset(self, lval, lookup_mode):
@@ -1281,13 +1384,16 @@ class Mem(object):
       found is false if the name is not there.
     """
     if lval.tag == lvalue_e.Named:  # unset x
-      cell, name_map = self._FindCellAndNamespace(lval.name, lookup_mode)
+      cell, name_map, cell_name = self._ResolveNameOrRef(lval.name, lookup_mode)
+      #log('cell %s', cell)
       if cell:
         found = True
         if cell.readonly:
           return False, found
-        name_map[lval.name].val = value.Undef()
+        name_map[cell_name].val = value.Undef()
         cell.exported = False
+        # This should never happen because we do recursive lookups of namerefs.
+        assert not cell.nameref, cell
         return True, found # found
       else:
         return True, False
@@ -1305,12 +1411,12 @@ class Mem(object):
     We don't use SetVar() because even if rval is None, it will make an Undef
     value in a scope.
     """
-    cell, name_map = self._FindCellAndNamespace(name, lookup_mode)
+    cell, name_map = self._ResolveNameOnly(name, lookup_mode)
     if cell:
-      if flag == ClearExport:
+      if flag & ClearExport:
         cell.exported = False
-      else:
-        raise AssertionError()
+      if flag & ClearNameref:
+        cell.nameref = False
       return True
     else:
       return False

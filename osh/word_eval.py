@@ -623,6 +623,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             # TODO: maybe_decay_array
             return value.MaybeStrArray(self.mem.GetArgv())
 
+          # note: case 6 in var-ref.test.sh passes because of this
           # otherwise an array reference, like 'arr[0]' or 'arr[xyz]' or 'arr[@]'
           i = val.s.find('[')
           if i >= 0 and val.s[-1] == ']':

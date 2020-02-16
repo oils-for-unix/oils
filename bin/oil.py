@@ -321,6 +321,8 @@ def ShellMain(lang, argv0, argv, login_shell):
   fd_state = process.FdState(errfmt, job_state)
 
   parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, line_input)
+  # TODO: only MutableOpts needs mem, so it's not a true circular dep.
+  mem.exec_opts = exec_opts  # circular dep
 
   if opts.show_options:  # special case: sh -o
     mutable_opts.ShowOptions([])

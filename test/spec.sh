@@ -689,13 +689,14 @@ extglob-match() {
 # ${!var} syntax -- oil should replace this with associative arrays.
 # mksh has completely different behavior for this syntax.  Not worth testing.
 var-ref() {
-  sh-spec spec/var-ref.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/var-ref.test.sh --osh-failures-allowed 3 \
     $BASH $OSH_LIST "$@"
 }
 
 # declare / local -n
-named-ref() {
-  sh-spec spec/named-ref.test.sh --osh-failures-allowed 9 \
+# there is one divergence when combining -n and ${!ref}
+nameref() {
+  sh-spec spec/nameref.test.sh --osh-failures-allowed 1 \
     $BASH $MKSH $OSH_LIST "$@"
 }
 

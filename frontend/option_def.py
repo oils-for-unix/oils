@@ -98,6 +98,7 @@ _STRICT_OPTION_NAMES = [
     'strict_echo',          # echo takes 0 or 1 arguments
     'strict_errexit',       # errexit can't be disabled in compound commands
     'strict_eval_builtin',  # eval takes exactly 1 argument
+    'strict_nameref',       # trap invalid variable names
     'strict_word_eval',     # negative slices, unicode
 
     # Not implemented

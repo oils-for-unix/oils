@@ -221,12 +221,16 @@ class NewVar(object):
       flags |= state.SetExport
     if arg.r == '-':
       flags |= state.SetReadOnly
+    if arg.n == '-':
+      flags |= state.SetNameref
 
     flags_to_clear = 0
     if arg.x == '+': 
       flags |= state.ClearExport
     if arg.r == '+':
       flags |= state.ClearReadOnly
+    if arg.n == '+':
+      flags |= state.ClearNameref
 
     for pair in cmd_val.pairs:
       if pair.rval is None:

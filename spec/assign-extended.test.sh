@@ -339,11 +339,11 @@ E
 None
 ## END
 
-#### typeset +r removes read-only attribute
+#### typeset +r removes read-only attribute (TODO: documented in bash to do nothing)
 readonly r=r1
 echo r=$r
 
-# clear the readonly flag.  Why is this accepted in bash/mksh, but doesn't do
+# clear the readonly flag.  Why is this accepted in bash, but doesn't do
 # anything?
 typeset +r r=r2 
 echo r=$r
@@ -358,7 +358,7 @@ r=r2
 r=r3
 ## END
 
-# bash doesn't allow you to unset
+# mksh doesn't allow you to unset
 ## OK mksh status: 2
 ## OK mksh STDOUT:
 r=r1

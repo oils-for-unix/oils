@@ -130,10 +130,12 @@ def InitLexer(s, arena):
 def InitWordEvaluator():
   arena = MakeArena('<InitWordEvaluator>')
   mem = state.Mem('', [], {}, arena)
+
   opt_array = [False] * option_i.ARRAY_SIZE
   errexit = state._ErrExit()
   parse_opts = optview.Parse(opt_array)
   exec_opts = optview.Exec(opt_array, errexit)
+  mem.exec_opts = exec_opts  # circular dep
 
   exec_deps = cmd_exec.Deps()
   exec_deps.trap_nodes = []

@@ -71,14 +71,14 @@ echo '{"age": 42}'  > $TMP/foo.txt
 json read :x < $TMP/foo.txt
 repr :x
 ## STDOUT:
-x = (cell exported:F readonly:F val:(value.Obj obj:{'age': 42}))
+x = (cell exported:F readonly:F nameref:F val:(value.Obj obj:{'age': 42}))
 ## END
 
 #### json read at end of pipeline (relies on lastpipe)
 echo '{"age": 43}' | json read :y
 repr y
 ## STDOUT:
-y = (cell exported:F readonly:F val:(value.Obj obj:{'age': 43}))
+y = (cell exported:F readonly:F nameref:F val:(value.Obj obj:{'age': 43}))
 ## END
 
 #### invalid JSON

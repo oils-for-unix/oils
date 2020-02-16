@@ -204,12 +204,13 @@ X [Testing]       check
   [Other Option]  X noclobber
   [strict:all]    * All options starting with 'strict_'
                   strict_argv            No empty argv
-                  strict_array           Arrays don't decay to strings
                   strict_arith           Fatal parse errors (on by default)
-                  strict_errexit         Disallow code that ignores failure
+                  strict_array           Arrays don't decay to strings
+                  strict_control_flow    trap misplaced break/continue
                   strict_echo            echo takes 0 or 1 arguments
+                  strict_errexit         Disallow code that ignores failure
                   strict_eval_builtin    eval takes exactly 1 argument
-                  strict_control_flow    Do we need this?  Special builtins?
+                  strict_nameref         trap invalid variable names
                   strict_word_eval       Expose unicode and slicing errors
                   X strict_tilde         Tilde subst can result in error
                   X strict_backslash     Parse the sublanguage more strictly
