@@ -8,8 +8,8 @@ from _devbuild.gen.types_asdl import (
     redir_arg_type_e, redir_arg_type_t, bool_arg_type_t
 )
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind_t
+from frontend import builtin_def
 from frontend import option_def 
-from core import builtin_def
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:

@@ -8,8 +8,8 @@ import sys
 
 from asdl import asdl_
 from asdl.visitor import FormatLines
+from frontend import builtin_def
 from frontend import option_def
-from core import builtin_def
 
 _OPT_ENUM = 'option'
 _BUILTIN_ENUM = 'builtin'
