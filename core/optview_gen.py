@@ -49,6 +49,7 @@ class Parse {
   List<bool>* opt_array;
 };
 
+#ifndef OSH_PARSE  // hack for osh_parse, set in build/mycpp.sh
 class Exec {
  public:
   Exec(List<bool>* opt_array, state::_ErrExit* errexit)
@@ -66,6 +67,7 @@ class Exec {
   List<bool>* opt_array;
   state::_ErrExit* errexit_;
 };
+#endif  // OSH_PARSE
 
 }  // namespace optview
 

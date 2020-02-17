@@ -192,12 +192,12 @@ namespace consts {
       for name in LIST_INT:
         val = getattr(consts, name)
         val_str = ', '.join(str(i) for i in val)
-        out('List<int>* %s = new List({%s});', name, val_str)
+        out('List<int>* %s = new List<int>({%s});', name, val_str)
 
       for name in LIST_STR:
         val = getattr(consts, name)
         val_str = '/* TODO */'
-        out('List<int>* %s = new List({%s});', name, val_str)
+        out('List<Str*>* %s = new List<Str*>({%s});', name, val_str)
 
       out("""\
 

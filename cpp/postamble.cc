@@ -4,8 +4,10 @@
 
 namespace optview {
 
+#ifndef OSH_PARSE  // hack for osh_parse, set in build/mycpp.sh
 bool Exec::errexit() {
   return errexit_->value();
 }
+#endif  // OSH_PARSE
 
 }  // namespace optview

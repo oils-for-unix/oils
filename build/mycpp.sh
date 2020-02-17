@@ -176,6 +176,13 @@ compile() {
       ;;
   esac
 
+  # Hack to remove optview::Exec
+  case $out in
+    *osh_parse*)
+      flags="$flags -D OSH_PARSE"
+      ;;
+  esac
+
   # flags are split
   $CXX $flags \
     -I mycpp \
@@ -232,7 +239,7 @@ compile-slice() {
     _build/cpp/syntax_asdl.cc \
     _build/cpp/hnode_asdl.cc \
     _build/cpp/id_kind_asdl.cc \
-    _build/cpp/lookup.cc \
+    _build/cpp/consts.cc \
     _build/cpp/arith_parse.cc \
     cpp/dumb_alloc.cc \
     "$@"
@@ -316,7 +323,7 @@ readonly OSH_PARSE_FILES=(
 
   # Note: optview depends on errexit.  But we only need optview::Parse, not
   # optview::exec.
-  $REPO_ROOT/core/state.py
+  #$REPO_ROOT/core/state.py
 )
 
 readonly CAN_TRANSLATE=(

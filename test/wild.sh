@@ -9,8 +9,6 @@
 # - There are a lot of hard-coded source paths here.  These files could
 # published in a tarball or torrent.
 # - Add gentoo
-# - Add a quick smoke test that excludes distros and big ones, etc.
-#   - 'all' accepts a regex
 
 set -o nounset
 set -o pipefail
@@ -540,6 +538,11 @@ wild-types() {
 # Make a report for all, but only run some
 all() {
   test/wild-runner.sh parse-and-report "$@"
+}
+
+smoke-test() {
+  ### Smoke test on Oil's own source; takes a few seconds
+  all oil
 }
 
 find-tracebacks() {
