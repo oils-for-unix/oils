@@ -505,7 +505,8 @@ class Dict {
   // TODO: Can't use this for non-pointer types
   // Returns nullptr if not found
   V get(K key) {
-    assert(0);
+    //assert(0);
+    return nullptr;  // stub for bin/osh_parse (_CommandParser.aliases)
   }
 
   // STUB
