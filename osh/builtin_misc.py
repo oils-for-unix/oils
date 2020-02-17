@@ -50,15 +50,14 @@ if mylib.PYTHON:
   except ImportError:
     help_index = None
 
-from typing import Optional, IO, TYPE_CHECKING
+from typing import Any, IO, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import value__Str
-  from osh.split import SplitContext
-  from core.state import Mem
+  from core.pyutil import _FileResourceLoader
+  from core.state import Mem, DirStack
   from core.ui import ErrorFormatter
   from osh.cmd_exec import Executor
-  from core.state import DirStack
-  from core.pyutil import _FileResourceLoader
+  from osh.split import SplitContext
 
 #
 # Abstract base class
