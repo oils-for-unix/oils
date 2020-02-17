@@ -7,6 +7,7 @@ static PyMethodDef methods[] = {
   {"MatchPS1Token", fastlex_MatchPS1Token, METH_VARARGS},
   {"MatchHistoryToken", fastlex_MatchHistoryToken, METH_VARARGS},
   {"MatchBraceRangeToken", fastlex_MatchBraceRangeToken, METH_VARARGS},
+  {"MatchOption", fastlex_MatchOption, METH_VARARGS},
   {"IsValidVarName", fastlex_IsValidVarName, METH_VARARGS},
   {"IsPlainWord", fastlex_IsPlainWord, METH_VARARGS},
   {"ShouldHijack", fastlex_ShouldHijack, METH_VARARGS},

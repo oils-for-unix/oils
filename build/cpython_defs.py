@@ -11,7 +11,7 @@ import sys
 
 from core.util import log
 # TODO: Could move these to a place where they don't depend on Oil
-from frontend.lex import C, R
+from frontend.lexer_def import C, R
 
 
 C_DEF = [
@@ -316,7 +316,7 @@ class OilMethodFilter(object):
     # We don't need top-level next().  The method should be good enough.
     # iter is a field name
     if (basename == 'bltinmodule.c' and
-        method_name in ('compile', 'format', 'next', 'vars', 'iter')):
+        method_name in ('compile', 'format', 'next', 'vars', 'iter', 'eval')):
       return False
     if basename == 'bltinmodule.c':
       # Get "bootstrapping error" without this.
