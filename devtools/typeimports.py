@@ -32,6 +32,7 @@ Limitations:
   `cast(...)` statements.  You'll probably have to go through
   afterward and move some imports to the top level of the module.
 """
+from __future__ import print_function
 
 from collections import defaultdict
 import sys
@@ -97,7 +98,7 @@ def main():
 		module = ast.parse(src, filename)
 		src = add_import(src, module, import_mod, import_names)
 	compile(src, '', 'exec')
-	print src,
+	print(src, end='')
 
 if __name__ == '__main__':
 	main()

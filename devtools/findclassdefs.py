@@ -6,6 +6,8 @@ each of the classes, if they are defined in one of the given modules.
 Used with typeimports.py to auto-add imports when adding type
 annotations.
 """
+from __future__ import print_function
+
 from collections import defaultdict
 import re
 import sys
@@ -29,7 +31,7 @@ def main():
 		class_name = class_name.strip()
 		mod_paths = name_to_module[class_name]
 		if len(mod_paths) == 1:
-			print mod_paths[0] + '.' + class_name
+			print(mod_paths[0] + '.' + class_name)
 
 if __name__ == '__main__':
 	main()
