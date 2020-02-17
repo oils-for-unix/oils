@@ -4,7 +4,6 @@
 ./asdl/runtime.py
 ./bin/osh_eval.py
 ./core/alloc.py
-./core/builtin_def.py
 ./core/error.py
 ./core/meta.py
 ./core/optview.py
@@ -22,6 +21,7 @@
 ./_devbuild/gen/syntax_asdl.py
 ./_devbuild/gen/types_asdl.py
 ./frontend/args.py
+./frontend/builtin_def.py
 ./frontend/consts.py
 ./frontend/id_kind_def.py
 ./frontend/lexer_def.py

@@ -499,6 +499,20 @@ View on the web: http://www.oilshell.org/$VERSION/doc/osh-quick-ref.html
 
 ### strict:all
 
+<h4 id="strict_nameref">strict_nameref</h4>
+
+When `strict_nameref` is set, undefined references produce fatal errors:
+
+    declare -n ref
+    echo $ref  # fatal error, not empty string
+    ref=x      # fatal error instead of decaying to non-reference
+
+References that don't contain variables also produce hard errors:
+
+    declare -n ref='not a var'
+    echo $ref  # fatal
+    ref=x      # fatal
+
 ### oil:basic
 
 ### oil:all

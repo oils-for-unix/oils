@@ -17,6 +17,7 @@
 ./_devbuild/gen/runtime_asdl.py
 ./_devbuild/gen/syntax_asdl.py
 ./_devbuild/gen/types_asdl.py
+./frontend/builtin_def.py
 ./frontend/consts.py
 ./frontend/id_kind_def.py
 ./frontend/lexer_def.py

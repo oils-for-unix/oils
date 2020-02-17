@@ -13,4 +13,4 @@
 ./osh/cmd_exec.py
 ./osh/word_eval.py
 ./core/vm.py
-./core/builtin_def.py
+./frontend/builtin_def.py
