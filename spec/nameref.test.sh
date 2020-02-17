@@ -502,3 +502,21 @@ ref=z
 x=XX
 y=z
 ## END
+
+#### a[2] in nameref
+typeset -n ref='a[2]'
+a=(zero one two three)
+echo ref=$ref
+## STDOUT:
+ref=two
+## END
+
+#### a[expr] in nameref -- DYNAMIC PARSING, don't want this
+
+# this confuses code and data
+typeset -n ref='a[$(echo 2) + 1]'
+a=(zero one two three)
+echo ref=$ref
+## STDOUT:
+ref=three
+## END
