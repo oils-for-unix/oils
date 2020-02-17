@@ -50,7 +50,7 @@ if mylib.PYTHON:
   except ImportError:
     help_index = None
 
-from typing import Any, Optional, IO, TYPE_CHECKING
+from typing import Optional, IO, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import value__Str
   from osh.split import SplitContext
