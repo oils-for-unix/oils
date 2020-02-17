@@ -515,6 +515,9 @@ class DirStack(object):
     ret.reverse()
     return ret
 
+  def __repr__(self):
+    return str(self.stack)
+
 
 # NOTE: not used!
 if mylib.PYTHON:

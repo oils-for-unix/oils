@@ -357,7 +357,9 @@ class Cd(object):
       try:
         unused = self.ex.EvalBlock(cmd_val.block)
       finally:  # TODO: Change this to a context manager.
-        _PopDirStack(self.mem, self.dir_stack, self.errfmt)
+        # note: it might be more consistent to use an exception here.
+        if not _PopDirStack(self.mem, self.dir_stack, self.errfmt):
+          return 1
 
     else:  # No block
       state.ExportGlobalString(self.mem, 'OLDPWD', pwd.s)
@@ -421,22 +423,23 @@ class Pushd(object):
 
 
 def _PopDirStack(mem, dir_stack, errfmt):
-  # type: (Mem, DirStack, ErrorFormatter) -> Optional[Any]
+  # type: (Mem, DirStack, ErrorFormatter) -> bool
   """Helper for popd and cd { ... }."""
   dest_dir = dir_stack.Pop()
   if dest_dir is None:
     errfmt.Print('popd: directory stack is empty')
-    return 1
+    return False
 
   try:
     posix.chdir(dest_dir)
   except OSError as e:
     # Happens if a directory is deleted in pushing and popping
     errfmt.Print("popd: %r: %s", dest_dir, posix.strerror(e.errno))
-    return 1
+    return False
 
   state.SetGlobalString(mem, 'PWD', dest_dir)
   mem.SetPwd(dest_dir)
+  return True
 
 
 class Popd(object):
@@ -451,7 +454,8 @@ class Popd(object):
     if len(cmd_val.arg_spids) > 1:
       raise args.UsageError('got extra argument', span_id=cmd_val.arg_spids[1])
 
-    _PopDirStack(self.mem, self.dir_stack, self.errfmt)
+    if not _PopDirStack(self.mem, self.dir_stack, self.errfmt):
+      return 1  # error
 
     _PrintDirStack(self.dir_stack, SINGLE_LINE, self.mem.GetVar('HOME'))
     return 0
