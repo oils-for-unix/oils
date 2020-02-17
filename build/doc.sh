@@ -224,7 +224,7 @@ important-source-code() {
   mkdir -p $dest
 
   for rel_path in \
-    frontend/lex.py \
+    frontend/lexer_def.py \
     _devbuild/tmp/osh-lex.re2c.h \
     _devbuild/gen/osh-lex.h \
     _devbuild/gen/id.h \

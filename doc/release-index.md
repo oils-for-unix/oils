@@ -169,7 +169,7 @@ domain-specific languages and code generation.
 - [_devbuild/gen/id.h](source-code.wwz/_devbuild/gen/id.h). A list of language
   elements, used in the lexer and in multiple parsers and evaluators.
 - The regex-based lexer uses two stages of code generation:
-  - [frontend/lex.py](source-code.wwz/frontend/lex.py)
+  - [frontend/lexer_def.py](source-code.wwz/frontend/lexer_def.py)
   - [_devbuild/tmp/osh-lex.re2c.h](source-code.wwz/_devbuild/tmp/osh-lex.re2c.h)
   - [_devbuild/gen/osh-lex.h](source-code.wwz/_devbuild/gen/osh-lex.h)
 - [frontend/syntax.asdl](source-code.wwz/frontend/syntax.asdl). The syntax tree
