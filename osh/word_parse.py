@@ -1190,7 +1190,7 @@ class WordParser(WordEmitter):
           w.parts.append(part)
           # Unfortunately it's awkward to pull the check for a=(1 2) up to
           # _ReadWord.
-          next_id = self.lexer.LookAhead(lex_mode_e.ShCommand)
+          next_id = self.lexer.LookAhead(lex_mode)
           if next_id == Id.Op_LParen:
             self.lexer.PushHint(Id.Op_RParen, Id.Right_ShArrayLiteral)
             part2 = self._ReadArrayLiteral()
@@ -1210,7 +1210,7 @@ class WordParser(WordEmitter):
 
           splice_token = self.cur_token
 
-          next_id = self.lexer.LookAhead(lex_mode_e.ShCommand)
+          next_id = self.lexer.LookAhead(lex_mode)
           if next_id == Id.Op_LParen:  # @arrayfunc(x)
             arglist = arg_list()
             self._ParseCallArguments(arglist)
@@ -1249,7 +1249,7 @@ class WordParser(WordEmitter):
           #   but "--name=$f(x)" not allowed?  This would BREAK EXISTING CODE.
           #   It would need a parse option.
 
-          next_id = self.lexer.LookAhead(lex_mode_e.ShCommand)
+          next_id = self.lexer.LookAhead(lex_mode)
           if next_id == Id.Op_LParen:
             arglist = arg_list()
             self._ParseCallArguments(arglist)

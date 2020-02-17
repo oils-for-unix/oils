@@ -306,3 +306,39 @@ pat2='^[\x01\x02]+$'
 status=0
 status=1
 ## END
+
+#### pattern $f(x)  -- regression
+f=fff
+[[ fffx =~ $f(x) ]]
+echo status=$?
+[[ ffx =~ $f(x) ]]
+echo status=$?
+## STDOUT:
+status=0
+status=1
+## END
+
+#### pattern a=(1) 
+[[ a=x =~ a=(x) ]]
+echo status=$?
+[[ =x =~ a=(x) ]]
+echo status=$?
+## STDOUT:
+status=0
+status=1
+## END
+## BUG zsh status: 1
+## BUG zsh STDOUT:
+status=0
+## END
+
+#### pattern @f(x)
+shopt -s parse_at
+[[ @fx =~ @f(x) ]]
+echo status=$?
+[[ fx =~ @f(x) ]]
+echo status=$?
+## STDOUT:
+status=0
+status=1
+## END
