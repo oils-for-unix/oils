@@ -596,6 +596,23 @@ frontend-match-test() {
   _bin/$name
 }
 
+#
+# Public
+#
+
+# Used by devtools/release.sh and devtools/release-native.sh
+compile-osh-parse() {
+  compile-slice '' ''
+}
+
+compile-osh-parse-opt() {
+  compile-slice-opt "$@"
+}
+
+compile-osh-parse-asan() {
+  compile-slice-asan "$@"
+}
+
 # Demo for the oil-native tarball.
 tarball-demo() {
   mkdir -p _bin
@@ -613,5 +630,6 @@ tarball-demo() {
   $bin -c 'echo "hello $name"'
 
 }
+
 
 "$@"
