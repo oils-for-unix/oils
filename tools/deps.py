@@ -29,7 +29,7 @@ class Visitor(object):
     """
     #print 'CHILD', node.ASDL_TYPE
 
-    for name, _ in node.ASDL_TYPE.GetFields():
+    for name in node.__slots__:
       child = getattr(node, name)
       #log('Considering child %s', name)
 
