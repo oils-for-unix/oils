@@ -321,10 +321,13 @@ build-and-test() {
   # oil-native
   devtools/release-native.sh make-tar
   devtools/release-native.sh extract-for-benchmarks
-  # Don't need to build it twice
-  #devtools/release-native.sh test-tar
+
+  # This builds the tarball from _tmp/native-tar-test
+  devtools/release-native.sh test-tar
 
   # For benchmarks
+  # This builds the tarball in ../benchmark-data.  (Could we combine these
+  # steps?)
   _oil-native-build
 
   # App bundle
