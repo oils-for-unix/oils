@@ -76,7 +76,7 @@ def EvalSingleQuoted(part):
     tmp = [word_compile.EvalCStringToken(t.id, t.val) for t in part.tokens]
     s = ''.join(tmp)
   else:
-    raise AssertionError(Id_str(part.left.id))
+    raise AssertionError(part.left.id)
   return s
 
 
@@ -493,7 +493,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         return no, effect_e.NoOp
 
     else:
-      raise NotImplementedError(Id_str(op.op_id))
+      raise NotImplementedError(op.op_id)
 
   def _EvalIndirectArrayExpansion(self, name, index):
     # type: (str, str) -> Optional[value_t]

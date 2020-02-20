@@ -27,6 +27,10 @@ using id_kind_asdl::Kind_t;
 #include "libc.h"
 #include "posix.h"
 
+#ifdef OSH_EVAL
+#include "osh_eval_stubs.h"
+#endif
+
 // Stubs for Python exceptions.  TODO: Move to mylib if they're used?
 
 // e.g. libc::regex_match raises it

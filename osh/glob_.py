@@ -10,6 +10,7 @@ from _devbuild.gen.syntax_asdl import (
     glob_part_e, glob_part, glob_part_t,
     glob_part__Literal, glob_part__Operator, glob_part__CharClass,
 )
+from core import ui
 from core import util
 #from core.util import log
 from frontend import match
@@ -372,10 +373,12 @@ class Globber(object):
       # PROBLEM: / is significant and can't be escaped!  Have to avoid
       # globbing it.
       g = libc.glob(arg)
-    except Exception as e:  # TODO: More specific exception
-      # - [C\-D] is invalid in Python?  Regex compilation error.
-      # - [:punct:] not supported
-      print("Error expanding glob %r: %s" % (arg, e))
+    except RuntimeError as e:
+      # These errors should be rare: I/O error, out of memory, or unknown
+      # There are no syntax errors.  (But see comment about globerr() in
+      # native/libc.c.)
+      # TODO: Should this be an OSError then?  I guess there's no errno.
+      ui.Stderr("Error expanding glob %r: %s", arg, e)
       raise
     #log('glob %r -> %r', arg, g)
 

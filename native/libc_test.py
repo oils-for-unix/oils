@@ -114,6 +114,7 @@ class LibcTest(unittest.TestCase):
     print(libc.glob('\\'))
     # This one will match a file named \
     print(libc.glob('\\\\'))
+    print(libc.glob('[[:punct:]]'))
 
   def testRegexParse(self):
     self.assertEqual(True, libc.regex_parse(r'.*\.py'))

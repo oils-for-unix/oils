@@ -181,6 +181,9 @@ compile() {
     *osh_parse*)
       flags="$flags -D OSH_PARSE"
       ;;
+    *osh_eval*)
+      flags="$flags -D OSH_EVAL"
+      ;;
   esac
 
   # flags are split

@@ -146,7 +146,9 @@ func_glob(PyObject *self, PyObject *args) {
     break;
   }
   if (err_str) {
-    fprintf(stderr, "func_glob: %s: %s\n", pattern, err_str);
+    //fprintf(stderr, "func_glob: %s: %s\n", pattern, err_str);
+    PyErr_SetString(PyExc_RuntimeError, err_str);
+    return NULL;
   }
 
   // http://stackoverflow.com/questions/3512414/does-this-pylist-appendlist-py-buildvalue-leak
