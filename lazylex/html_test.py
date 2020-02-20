@@ -79,7 +79,7 @@ class HtmlTest(unittest.TestCase):
   def testCommentParse(self):
     """
     """
-    for tok_id, end_pos in html.Tokens(TEST_HTML):
+    for tok_id, end_pos in html._Tokens(TEST_HTML):
       if tok_id == html.Invalid:
         raise RuntimeError(event)
       print(tok_id)

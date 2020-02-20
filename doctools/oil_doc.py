@@ -261,6 +261,7 @@ class PygmentsPlugin(_Plugin):
     lexer = lexers.get_lexer_by_name(self.lang)
 
     formatter = formatters.HtmlFormatter()
+    # TODO: Use lazylex.ToText()
     code = self.s[self.start_pos : self.end_pos]
     highlighted = highlight(code, lexer, formatter)
     out.Print(highlighted)
@@ -349,6 +350,8 @@ def HighlightCode(s):
               slash_pre_right = end_pos
 
               out.PrintUntil(pre_start_pos)
+
+              # TODO: We have to add escaping here
 
               lang = css_class[len('language-'):]
               plugin = PygmentsPlugin(s, code_start_pos, slash_code_left, lang)

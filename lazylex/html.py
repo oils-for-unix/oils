@@ -9,6 +9,7 @@ structure" like TSV2.
 """
 from __future__ import print_function
 
+import cStringIO
 import re
 import sys
 
@@ -48,10 +49,14 @@ class Output(object):
   Print FROM the input or print new text to the output.
   """
 
-  def __init__(self, s, f):
+  def __init__(self, s, f, left_pos=0, right_pos=0):
     self.s = s
     self.f = f
-    self.pos = 0
+    self.pos = left_pos
+    if right_pos == 0:
+      self.right_pos = len(s)
+    else:
+      self.right_pos = right_pos
 
   def SkipTo(self, pos):
     """Skip to a position."""
@@ -65,7 +70,7 @@ class Output(object):
 
   def PrintTheRest(self):
     """Print until the end of the string."""
-    self.PrintUntil(len(self.s))
+    self.PrintUntil(self.right_pos)
 
   def Print(self, s):
     """Print text to the underlying buffer."""
@@ -144,13 +149,17 @@ LEXER = [
 LEXER = _MakeLexer(LEXER)
 
 
-def Tokens(s):
+def _Tokens(s, left_pos, right_pos):
   """
   Args:
     s: string to parse
+    left_pos, right_pos: Optional span boundaries.
   """
-  pos = 0
-  n = len(s)
+  pos = left_pos
+  if right_pos == 0:
+    n = len(s)
+  else:
+    n = right_pos
 
   while pos < n:
     # Find the FIRST pattern that matches.
@@ -166,15 +175,15 @@ def Tokens(s):
   yield EndOfStream, pos
 
 
-def ValidTokens(s):
+def ValidTokens(s, left_pos=0, right_pos=0):
   """
-  Wrapper around Tokens to prevent callers from having to handle Invalid.
+  Wrapper around _Tokens to prevent callers from having to handle Invalid.
 
   I'm not combining the two functions because I might want to do a 'yield'
-  transformation on Tokens9)?  Exceptions might complicate the issue?
+  transformation on Tokens()?  Exceptions might complicate the issue?
   """
-  pos = 0
-  for tok_id, end_pos in Tokens(s):
+  pos = left_pos
+  for tok_id, end_pos in _Tokens(s, left_pos, right_pos):
     if tok_id == Invalid:
       raise LexError(s, pos)
     yield tok_id, end_pos
@@ -342,3 +351,58 @@ def ReadUntilEndTag(it, tag_lexer, tag_name):
     pos = end_pos
 
   raise ParseError('No end tag %r', tag_name)
+
+
+CHAR_ENTITY = {
+    'amp': '&',
+    'lt': '<',
+    'gt': '>',
+    'quot': '"',
+}
+
+
+def ToText(s, left_pos=0, right_pos=0):
+  """
+  Given HTML, return text by unquoting &gt; and &lt; etc.
+
+  Used by:
+    doctools/oil_doc.py: PygmentsPlugin
+    doctool/make_help.py: HelpIndexCards
+
+  In the latter case, we cold process some tags, like:
+
+  - Blue Link (not clickable, but still useful)
+  - Red X
+
+  That should be html.ToAnsi.
+  """
+  f = cStringIO.StringIO()
+  out = Output(s, f, left_pos, right_pos)
+
+  pos = left_pos
+  for tok_id, end_pos in ValidTokens(s, left_pos, right_pos):
+    if tok_id == RawData:
+      out.SkipTo(pos)
+      out.PrintUntil(end_pos)
+
+    elif tok_id == CharEntity:  # &amp;
+
+      entity = s[pos+1 : end_pos-1]
+
+      out.SkipTo(pos)
+      out.Print(CHAR_ENTITY[entity])
+      out.SkipTo(end_pos)
+
+    # Not handling these yet
+    elif tok_id == HexChar:
+      raise AssertionError('Hex Char %r' % s[pos : pos + 20])
+
+    elif tok_id == DecChar:
+      raise AssertionError('Dec Char %r' % s[pos : pos + 20])
+
+    pos = end_pos
+
+  out.PrintTheRest()
+  return f.getvalue()
+
+

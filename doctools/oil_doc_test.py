@@ -46,6 +46,16 @@ class OilDoc(unittest.TestCase):
     out = html.Output(line, sys.stdout)
     plugin.PrintHighlighted(out)
 
+  def testPygmentsPlugin(self):
+
+    HTML = '''
+<pre><code class="language-sh">
+  echo hi &gt; out.txt
+</code></pre>
+    '''
+    h = oil_doc.HighlightCode(HTML)
+    print(h)
+
 
 if __name__ == '__main__':
   unittest.main()

@@ -175,14 +175,6 @@ def HighlightLine(line):
   return f.getvalue()
 
 
-HTML_REFS = {
-    'amp': '&',
-    'lt': '<',
-    'gt': '>',
-    'quot': '"',
-}
-
-
 class Splitter(HTMLParser.HTMLParser):
   """
   Split an HTML stream starting at each of the heading tags.
@@ -235,7 +227,7 @@ class Splitter(HTMLParser.HTMLParser):
     This method is called to process a named character reference of the form
     &name; (e.g. &gt;), where name is a general entity reference (e.g. 'gt').
     """
-    c = HTML_REFS[name]
+    c = html.CHAR_ENTITY[name]
     if self.in_heading:
       self.cur_group[2].append(c)
     else:
@@ -281,43 +273,6 @@ def SplitIntoCards(heading_tags, contents):
   log('Parsed %d parts', len(groups))
 
 
-def IndexGroupToText(group_text):
-  """
-  Note: We cold process some tags, like:
-
-  - Blue Link (not clickable, but still useful)
-  - Red X
-  """
-  f = cStringIO.StringIO()
-  out = html.Output(group_text, f)
-
-  pos = 0
-  for tok_id, end_pos in html.ValidTokens(group_text):
-    if tok_id == html.RawData:
-      out.SkipTo(pos)
-      out.PrintUntil(end_pos)
-
-    elif tok_id == html.CharEntity:  # &amp;
-
-      entity = group_text[pos+1 : end_pos-1]
-
-      out.SkipTo(pos)
-      out.Print(HTML_REFS[entity])
-      out.SkipTo(end_pos)
-
-    # Not handling these yet
-    elif tok_id == html.HexChar:
-      raise AssertionError('Hex Char %r' % group_text[pos : pos + 20])
-
-    elif tok_id == html.DecChar:
-      raise AssertionError('Dec Char %r' % group_text[pos : pos + 20])
-
-    pos = end_pos
-
-  out.PrintTheRest()
-  return f.getvalue()
-
-
 def HelpIndexCards(s):
   """
   Given an HTML page, yield groups (id, desc, block of text)
@@ -360,8 +315,8 @@ def HelpIndexCards(s):
 
         code_end_left, _ = html.ReadUntilEndTag(it, tag_lexer, 'code')
 
-        group_text = s[code_start_right : code_end_left]
-        yield group_topic_id, group_name, IndexGroupToText(group_text)
+        text = html.ToText(s, code_start_right, code_end_left)
+        yield group_topic_id, group_name, text
 
     pos = end_pos
 
@@ -370,7 +325,7 @@ def main(argv):
   action = argv[1]
 
   if action == 'cards-for-index':
-    # Extract sections from help-index.HTML and make them into "cards".
+    # Extract sections from help-index.html and make them into "cards".
 
     out_dir = argv[2]
     py_out = argv[3]
