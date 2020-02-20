@@ -2,7 +2,7 @@
 word_eval.py - Evaluator for the word language.
 """
 
-from _devbuild.gen.id_kind_asdl import Id, Kind, Id_str, Kind_str
+from _devbuild.gen.id_kind_asdl import Id, Kind, Kind_str
 from _devbuild.gen.syntax_asdl import (
     braced_var_sub, Token,
     word, word_e, word_t, compound_word,

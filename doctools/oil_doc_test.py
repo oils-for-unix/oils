@@ -54,6 +54,9 @@ class OilDoc(unittest.TestCase):
 </code></pre>
     '''
     h = oil_doc.HighlightCode(HTML)
+
+    # assert there's no double escaping
+    self.assert_('hi &gt; out.txt' in h, h)
     print(h)
 
 
