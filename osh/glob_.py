@@ -356,15 +356,21 @@ class Globber(object):
     # do.  Could a default GLOBIGNORE to ignore flags on the file system be
     # part of the security solution?  It doesn't seem totally sound.
 
-  def Expand(self, arg):
-    # type: (str) -> List[str]
-    """Given a string that could be a glob, return a list of strings."""
-    # e.g. don't glob 'echo' because it doesn't look like a glob
+  def Expand(self, arg, out):
+    # type: (str, List[str]) -> int
+    """Given a string that could be a glob, append a list of strings to 'out'.
+
+    Returns:
+      Number of items appended.
+    """
     if not LooksLikeGlob(arg):
-      u = GlobUnescape(arg)
-      return [u]
+      # e.g. don't glob 'echo' because it doesn't look like a glob
+      out.append(GlobUnescape(arg))
+      return 1
     if self.exec_opts.noglob():
-      return [arg]
+      # we didn't glob escape it in osh/word_eval.py
+      out.append(arg)
+      return 1
 
     try:
       g = libc.glob(arg)
@@ -378,7 +384,8 @@ class Globber(object):
     #log('glob %r -> %r', arg, g)
 
     if len(g):  # Something matched
-      return g
+      out.extend(g)
+      return len(g)
 
     # Nothing matched
     #if self.exec_opts.failglob():
@@ -388,8 +395,8 @@ class Globber(object):
     #  raise NotImplementedError()
 
     if self.exec_opts.nullglob():
-      return []
+      return 0
 
     # Return the original string
-    u = GlobUnescape(arg)
-    return [u]
+    out.append(GlobUnescape(arg))
+    return 1

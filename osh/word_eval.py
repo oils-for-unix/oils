@@ -1544,9 +1544,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     #log('split args: %r', args)
     for a in args:
-      # TODO: Expand() should take an 'out' param.
-      results = self.globber.Expand(a)
-      argv.extend(results)
+      self.globber.Expand(a, argv)
 
   def _EvalWordToArgv(self, w):
     # type: (compound_word) -> List[str]
@@ -1671,9 +1669,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
       if glob_.LooksLikeStaticGlob(w):
         val = self.EvalWordToString(w)  # respects strict-array
-        results = self.globber.Expand(val.s)
-        strs.extend(results)
-        for _ in results:
+        num_appended = self.globber.Expand(val.s, strs)
+        for _ in xrange(num_appended):
           spids.append(word_spid)
         continue
 
