@@ -65,6 +65,7 @@ from core import completion
 from core import main_loop
 from core import meta
 from core import optview
+from core import passwd
 from core import process
 from core import pyutil
 from core import ui
@@ -589,7 +590,7 @@ def ShellMain(lang, argv0, argv, login_shell):
     # users may want to ln -s ~/.config/oil/oshrc ~/oshrc or ~/.oshrc.
 
     # https://unix.stackexchange.com/questions/24347/why-do-some-applications-use-config-appname-for-their-config-data-while-other
-    home_dir = process.GetHomeDir()
+    home_dir = passwd.GetMyHomeDir()
     assert home_dir is not None
     rc_path = opts.rcfile or os_path.join(home_dir, '.config/oil', lang + 'rc')
 

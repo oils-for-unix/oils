@@ -359,7 +359,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       if val.tag_() == value_e.Str:
         val = cast(value__Str, UP_val)
         return val.s
-      return process.GetHomeDir()
+      return passwd.GetMyHomeDir()
 
     return passwd.GetHomeDir(token)
 

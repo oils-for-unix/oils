@@ -11,7 +11,6 @@ from __future__ import print_function
 
 import errno
 import fcntl
-import pwd
 import signal
 import sys
 
@@ -31,7 +30,7 @@ from mycpp.mylib import tagswitch
 
 import posix_ as posix
 
-from typing import Optional, List, Tuple, Dict, Any, cast, TYPE_CHECKING
+from typing import List, Tuple, Dict, Any, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
@@ -43,22 +42,6 @@ if TYPE_CHECKING:
   from osh.cmd_exec import Executor
   from core.state import SearchPath
   from mycpp import mylib
-
-
-def GetHomeDir():
-  # type: () -> Optional[str]
-  """Get the user's home directory from the /etc/passwd.
-
-  Used by $HOME initialization in osh/state.py.  Tilde expansion and readline
-  initialization use mem.GetVar('HOME').
-  """
-  uid = posix.getuid()
-  try:
-    e = pwd.getpwuid(uid)
-  except KeyError:
-    return None
-  else:
-    return e.pw_dir
 
 
 def SignalState_AfterForkingChild():
