@@ -163,6 +163,7 @@ shopt -s strict_nameref
 shopt -s strict_word_eval
 shopt -s strict_backslash
 shopt -s strict_glob
+shopt -s glob_dash
 ## END
 
 #### shopt -s oil:basic
@@ -577,3 +578,22 @@ one   two
 one   two
 ## END
 
+#### shopt -s glob_dash
+mkdir globdir
+cd globdir
+
+touch -- file -v
+
+argv.py *
+
+shopt -s oil:basic  # turns OFF glob_dash
+argv.py *
+
+shopt -s glob_dash  # turn it ON
+argv.py *
+
+## STDOUT:
+['-v', 'file']
+['file']
+['-v', 'file']
+## END

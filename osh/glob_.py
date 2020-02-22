@@ -373,7 +373,7 @@ class Globber(object):
       return 1
 
     try:
-      g = libc.glob(arg)
+      results = libc.glob(arg)
     except RuntimeError as e:
       # These errors should be rare: I/O error, out of memory, or unknown
       # There are no syntax errors.  (But see comment about globerr() in
@@ -383,9 +383,16 @@ class Globber(object):
       raise
     #log('glob %r -> %r', arg, g)
 
-    if len(g):  # Something matched
-      out.extend(g)
-      return len(g)
+    n = len(results)
+    if n:  # Something matched
+      for name in results:
+        # Omit files starting with - to solve the --.
+        # dash_glob turned OFF with shopt -s oil:basic.
+        if name.startswith('-') and not self.exec_opts.glob_dash():
+          n -= 1
+          continue
+        out.append(name)
+      return n
 
     # Nothing matched
     #if self.exec_opts.failglob():

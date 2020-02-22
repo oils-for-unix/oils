@@ -243,6 +243,7 @@ class MutableOpts(object):
     self.errexit = errexit
     # On by default
     self.opt_array[option_i.hashall] = True
+    self.opt_array[option_i.glob_dash] = True
 
     # Used for 'set -o vi/emacs'
     self.readline = readline
@@ -340,21 +341,22 @@ class MutableOpts(object):
     # options
     if opt_name == 'oil:basic':
       for opt_num in consts.OIL_BASIC:
-        self.opt_array[opt_num] = b
+        # INVERT the option
+        self.opt_array[opt_num] = not self.opt_array[opt_num]
 
       self.errexit.Set(b)  # Special case
       return
 
     if opt_name == 'oil:all':
       for opt_num in consts.OIL_ALL:
-        self.opt_array[opt_num] = b
+        self.opt_array[opt_num] = not self.opt_array[opt_num]
 
       self.errexit.Set(b)  # Special case
       return
 
     if opt_name == 'strict:all':
       for opt_num in consts.STRICT_ALL:
-        self.opt_array[opt_num] = b
+        self.opt_array[opt_num] = not self.opt_array[opt_num]
 
       self.errexit.Set(b)  # Special case
       return

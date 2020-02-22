@@ -118,7 +118,11 @@ _STRICT_OPTION_NAMES = [
 _BASIC_RUNTIME_OPTIONS = [
     'simple_word_eval',  # No splitting (arity isn't data-dependent)
                          # Don't reparse program data as globs
-    'more_errexit',  # check after command sub
+    'glob_dash',         # omit -
+    'more_errexit',      # check after command sub
+
+    # TODO: Move this?  (not implemented yet) Anything that removes
+    # functionality sould be in oil:all or oil:pure
     'simple_test_builtin',  # only file tests (no strings), remove [, status 2
 ]
 

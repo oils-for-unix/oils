@@ -491,6 +491,23 @@ View on the web: http://www.oilshell.org/$VERSION/doc/osh-quick-ref.html
 
 ### Globbing
 
+<h4 id="glob_dash">glob_dash</h4>
+
+Whether a glob includes files that start with `-`.  It's on by default in
+`bin/osh`, but off when Oil is enabled.
+
+Turning it off prevents a command like `rm *` from being confused by a file
+called `-rf`.
+
+    $ touch -- myfile -rf
+
+    $ echo *
+    -rf myfile
+
+    $ shopt -u glob_dash
+    $ echo *
+    myfile
+
 ### Debugging
 
 ### Interactive
