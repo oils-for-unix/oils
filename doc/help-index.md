@@ -198,7 +198,7 @@ X [Testing]       check
 
 ```oil-help-index
   [Errors]        nounset   pipefail   errexit   inherit_errexit
-  [Globbing]      noglob   failglob   nullglob
+  [Globbing]      noglob   nullglob   X failglob
   [Debugging]     xtrace   X verbose   X extdebug
   [Interactive]   emacs   vi
   [Other Option]  X noclobber

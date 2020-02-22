@@ -1011,6 +1011,7 @@ class Executor(object):
         # to print the filename too.
 
         words = braces.BraceExpandWords(node.words)
+        # note: we could catch the 'failglob' exception here and return 1.
         cmd_val = self.word_ev.EvalWordSequence2(words, allow_assign=True)
 
         UP_cmd_val = cmd_val

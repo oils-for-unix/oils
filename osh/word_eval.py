@@ -1545,7 +1545,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     #log('split args: %r', args)
     for a in args:
-      # TODO: Expand() should take out parameter.
+      # TODO: Expand() should take an 'out' param.
       results = self.globber.Expand(a)
       argv.extend(results)
 

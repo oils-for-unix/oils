@@ -344,19 +344,17 @@ class Globber(object):
     # type: (optview.Exec) -> None
     self.exec_opts = exec_opts
 
+    # Other unimplemented bash options:
+    #
+    # dotglob           dotfiles are matched
+    # globstar          ** for directories
+    # globasciiranges   ascii or unicode char classes (unicode by default)
+    # nocaseglob
+    # extglob          the !() syntax -- only respected for fnmatch(), not glob
+    #
     # NOTE: Bash also respects the GLOBIGNORE variable, but no other shells
     # do.  Could a default GLOBIGNORE to ignore flags on the file system be
     # part of the security solution?  It doesn't seem totally sound.
-
-    # shopt: why the difference?  No command line switch I guess.
-    self.dotglob = False  # dotfiles are matched
-    self.globstar = False  # ** for directories
-    # globasciiranges - ascii or unicode char classes (unicode by default)
-    # nocaseglob
-    # extglob: the !() syntax
-
-    # TODO: Figure out which ones are in other shells, and only support those?
-    # - Include globstar since I use it, and zsh has it.
 
   def Expand(self, arg):
     # type: (str) -> List[str]
@@ -369,9 +367,6 @@ class Globber(object):
       return [arg]
 
     try:
-      #g = glob.glob(arg)  # Bad Python glob
-      # PROBLEM: / is significant and can't be escaped!  Have to avoid
-      # globbing it.
       g = libc.glob(arg)
     except RuntimeError as e:
       # These errors should be rare: I/O error, out of memory, or unknown
@@ -382,15 +377,19 @@ class Globber(object):
       raise
     #log('glob %r -> %r', arg, g)
 
-    if len(g):
+    if len(g):  # Something matched
       return g
-    else:  # Nothing matched
-      if self.exec_opts.failglob():
-        # TODO: Make the command return status 1.
-        raise NotImplementedError()
-      if self.exec_opts.nullglob():
-        return []
-      else:
-        # Return the original string
-        u = GlobUnescape(arg)
-        return [u]
+
+    # Nothing matched
+    #if self.exec_opts.failglob():
+      # note: to match bash, the whole command has to return 1.  But this also
+      # happens in for loop and array literal contexts.  It might not be worth
+      # it?
+    #  raise NotImplementedError()
+
+    if self.exec_opts.nullglob():
+      return []
+
+    # Return the original string
+    u = GlobUnescape(arg)
+    return [u]

@@ -158,13 +158,38 @@ argv.py _tmp/spec-tmp/*.nonexistent
 ## stdout-json: "['_tmp/spec-tmp/*.nonexistent']\n[]\n"
 ## N-I dash/mksh/ash stdout-json: "['_tmp/spec-tmp/*.nonexistent']\n['_tmp/spec-tmp/*.nonexistent']\n"
 
-#### shopt -s failglob
+#### shopt -s failglob in command context
 argv.py *.ZZ
 shopt -s failglob
 argv.py *.ZZ  # nothing is printed, not []
 echo status=$?
-## stdout-json: "['*.ZZ']\nstatus=1\n"
-## N-I dash/mksh/ash stdout-json: "['*.ZZ']\n['*.ZZ']\nstatus=0\n"
+## STDOUT:
+['*.ZZ']
+status=1
+## END
+## N-I dash/mksh/ash STDOUT:
+['*.ZZ']
+['*.ZZ']
+status=0
+## END
+
+#### shopt -s failglob in loop context
+for x in *.ZZ; do echo $x; done
+echo status=$?
+shopt -s failglob
+for x in *.ZZ; do echo $x; done
+echo status=$?
+## STDOUT:
+*.ZZ
+status=0
+status=1
+## END
+## N-I dash/mksh/ash STDOUT:
+*.ZZ
+status=0
+*.ZZ
+status=0
+## END
 
 #### Don't glob flags on file system with GLOBIGNORE
 # This is a bash-specific extension.

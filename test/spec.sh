@@ -449,7 +449,7 @@ sh-func() {
 }
 
 glob() {
-  sh-spec spec/glob.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/glob.test.sh --osh-failures-allowed 6 \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
