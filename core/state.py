@@ -241,9 +241,10 @@ class MutableOpts(object):
     self.mem = mem
     self.opt_array = opt_array
     self.errexit = errexit
+
     # On by default
-    self.opt_array[option_i.hashall] = True
-    self.opt_array[option_i.glob_dash] = True
+    for opt_num in consts.DEFAULT_TRUE:
+      self.opt_array[opt_num] = True
 
     # Used for 'set -o vi/emacs'
     self.readline = readline
@@ -333,6 +334,14 @@ class MutableOpts(object):
         new_val = value.Str(':'.join(names))
         self.mem.InternalSetGlobal('SHELLOPTS', new_val)
 
+  def _SetGroup(self, opt_nums, b):
+    # type: (List[int], bool) -> None
+    for opt_num in opt_nums:
+      b2 = not b if opt_num in consts.DEFAULT_TRUE else b
+      self.opt_array[opt_num] = b2
+
+    self.errexit.Set(b)  # Special case for all option groups
+
   def SetShoptOption(self, opt_name, b):
     # type: (str, bool) -> None
     """ For shopt -s/-u. """
@@ -340,25 +349,15 @@ class MutableOpts(object):
     # shopt -s all:oil turns on all Oil options, which includes all strict #
     # options
     if opt_name == 'oil:basic':
-      for opt_num in consts.OIL_BASIC:
-        # INVERT the option
-        self.opt_array[opt_num] = not self.opt_array[opt_num]
-
-      self.errexit.Set(b)  # Special case
+      self._SetGroup(consts.OIL_BASIC, b)
       return
 
     if opt_name == 'oil:all':
-      for opt_num in consts.OIL_ALL:
-        self.opt_array[opt_num] = not self.opt_array[opt_num]
-
-      self.errexit.Set(b)  # Special case
+      self._SetGroup(consts.OIL_ALL, b)
       return
 
     if opt_name == 'strict:all':
-      for opt_num in consts.STRICT_ALL:
-        self.opt_array[opt_num] = not self.opt_array[opt_num]
-
-      self.errexit.Set(b)  # Special case
+      self._SetGroup(consts.STRICT_ALL, b)
       return
 
     if opt_name not in consts.SHOPT_OPTION_NAMES:

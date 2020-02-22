@@ -597,3 +597,36 @@ argv.py *
 ['file']
 ['-v', 'file']
 ## END
+
+#### shopt -s oil:basic turns some options on and others off
+show() {
+  shopt -p | egrep 'glob_dash|strict_arith'
+}
+
+show
+echo ---
+
+shopt -s strict_arith
+show
+echo ---
+
+shopt -s oil:basic  # strict_arith should still be on after this!
+show
+echo ---
+
+shopt -u oil:basic  # strict_arith should still be on after this!
+show
+
+## STDOUT:
+shopt -u strict_arith
+shopt -s glob_dash
+---
+shopt -s strict_arith
+shopt -s glob_dash
+---
+shopt -s strict_arith
+shopt -u glob_dash
+---
+shopt -u strict_arith
+shopt -s glob_dash
+## END

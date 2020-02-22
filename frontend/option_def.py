@@ -10,8 +10,8 @@ from typing import List, Dict, Optional, Any
 class Option(object):
 
   def __init__(self, index, name, short_flag=None, builtin='shopt',
-               implemented=True, groups=None):
-    # type: (int, str, str, Optional[str], bool, List[str]) -> None
+               default=False, implemented=True, groups=None):
+    # type: (int, str, str, Optional[str], bool, bool, List[str]) -> None
     self.index = index
     self.name = name  # e.g. 'errexit'
     self.short_flag = short_flag  # 'e' for -e
@@ -23,6 +23,7 @@ class Option(object):
       # a cell but you can't change it.  Only the shell can.
       self.builtin = builtin
 
+    self.default = default  # default value is True in some cases
     self.implemented = implemented
     self.groups = groups or []  # list of groups
 
@@ -65,8 +66,6 @@ _OTHER_SET_OPTIONS = [
     ('v', 'verbose'),  # like xtrace, but prints unevaluated commands
     ('f', 'noglob'),
     ('C', 'noclobber'),
-    # We don't do anything with this,  But Aboriginal calls 'set +h'.
-    ('h', 'hashall'),
 
     # A no-op for modernish.
     (None, 'posix'),
@@ -116,14 +115,15 @@ _STRICT_OPTION_NAMES = [
 # inherit the value of errexit.  # I don't believe it is strict enough --
 # local still needs to fail.
 _BASIC_RUNTIME_OPTIONS = [
-    'simple_word_eval',  # No splitting (arity isn't data-dependent)
-                         # Don't reparse program data as globs
-    'glob_dash',         # omit -
-    'more_errexit',      # check after command sub
+    ('simple_word_eval', False),  # No splitting (arity isn't data-dependent)
+                                  # Don't reparse program data as globs
+    ('glob_dash', True),          # do globs include results starting with - ?
+    ('more_errexit', False),      # check after command sub
 
     # TODO: Move this?  (not implemented yet) Anything that removes
     # functionality sould be in oil:all or oil:pure
-    'simple_test_builtin',  # only file tests (no strings), remove [, status 2
+    # only file tests (no strings), remove [, status 2
+    ('simple_test_builtin', False),
 ]
 
 # No-ops for bash compatibility
@@ -210,6 +210,10 @@ def _Init(opt_def):
   opt_def.Add('nounset', short_flag='u', builtin='set', 
               groups=['strict:all', 'oil:basic', 'oil:all'])
 
+  # bash --norc -c 'set -o' shows this is on by default
+  opt_def.Add('hashall', short_flag='h', builtin='set', default=True,
+              groups=['strict:all', 'oil:basic', 'oil:all'])
+
   opt_def.Add('pipefail', builtin='set', 
               groups=['strict:all', 'oil:basic', 'oil:all'])
 
@@ -243,8 +247,8 @@ def _Init(opt_def):
   #
 
   # shopt -s simple_word_eval, etc.
-  for name in _BASIC_RUNTIME_OPTIONS:
-    opt_def.Add(name, groups=['oil:basic', 'oil:all'])
+  for name, default in _BASIC_RUNTIME_OPTIONS:
+    opt_def.Add(name, default=default, groups=['oil:basic', 'oil:all'])
 
   for name in _BASIC_PARSE_OPTIONS:
     opt_def.Add(name, groups=['oil:basic', 'oil:all'])
@@ -324,5 +328,7 @@ VISIBLE_SHOPT_NAMES = [
 OIL_BASIC = [opt.index for opt in _OPTION_DEF.opts if 'oil:basic' in opt.groups]
 OIL_ALL = [opt.index for opt in _OPTION_DEF.opts if 'oil:all' in opt.groups]
 STRICT_ALL = [opt.index for opt in _OPTION_DEF.opts if 'strict:all' in opt.groups]
+DEFAULT_TRUE = [opt.index for opt in _OPTION_DEF.opts if opt.default]
 
 META_OPTIONS = ['strict:all', 'oil:basic', 'oil:all']  # Passed to flag parser
+

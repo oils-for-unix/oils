@@ -23,6 +23,7 @@ NO_INDEX = 0  # for Resolve
 STRICT_ALL = option_def.STRICT_ALL
 OIL_BASIC = option_def.OIL_BASIC
 OIL_ALL = option_def.OIL_ALL
+DEFAULT_TRUE = option_def.DEFAULT_TRUE
 
 # TODO: These could be changed to numbers
 SET_OPTION_NAMES = option_def.SET_OPTION_NAMES
