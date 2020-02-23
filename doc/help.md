@@ -491,7 +491,22 @@ View on the web: http://www.oilshell.org/$VERSION/doc/osh-quick-ref.html
 
 ### Globbing
 
-<h4 id="dashglob">dashglob</h4>
+#### nullglob
+
+Normally, when no files match  a glob, the glob itself is returned:
+
+    $ echo L *.py R  # no Python files in this dir
+    L *.py R
+
+With nullglob on, the glob expands to no arguments:
+
+    shopt -s nullglob
+    $ echo L *.py R
+    L R
+
+(This option is in GNU bash as well.)
+
+### dashglob
 
 Do globs return results that start with `-`?  It's on by default in `bin/osh`,
 but off when Oil is enabled.
@@ -516,7 +531,7 @@ called `-rf`.
 
 ### strict:all
 
-<h4 id="strict_nameref">strict_nameref</h4>
+#### strict_nameref
 
 When `strict_nameref` is set, undefined references produce fatal errors:
 

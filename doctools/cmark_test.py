@@ -54,7 +54,7 @@ def f():
 </pre></div>
 """)
 
-NEW_DOC = cStringIO.StringIO("""
+NEW_DOC = """
 Title
 =====
 
@@ -63,13 +63,19 @@ Title
 
 ## One
 
-hello one.
+hello h2.
 
 ### subheading `backticks`
 
+hello H3.
+
+#### subsubheading
+
+This kind of heading gets an h4.  It's not in the TOC, but it can be linked to.
+
 ## Two &amp; Three
 
-""")
+"""
 
 
 DOC_WITH_METADATA = cStringIO.StringIO("""
@@ -101,13 +107,30 @@ class RenderTest(unittest.TestCase):
     new_flags = ['--toc-tag', 'h2', '--toc-tag', 'h3']
     opts, _ = cmark.Options().parse_args(new_flags)
 
+    in_file = cStringIO.StringIO(NEW_DOC)
     out_file = cStringIO.StringIO()
-    cmark.Render(opts, NEW_DOC, out_file)
-    print(out_file.getvalue())
+    cmark.Render(opts, in_file, out_file)
+
+    h = out_file.getvalue()
+    self.assert_('<div class="toclevel1"><a href="#one">' in h, h)
+
+  def testNewPrettyHref(self):
+    # New style of doc
+
+    new_flags = ['--toc-tag', 'h2', '--toc-tag', 'h3', '--toc-pretty-href']
+    opts, _ = cmark.Options().parse_args(new_flags)
+
+    in_file = cStringIO.StringIO(NEW_DOC)
+    out_file = cStringIO.StringIO()
+    cmark.Render(opts, in_file, out_file)
+    h = out_file.getvalue()
+    self.assert_('<a name="subsubheading">' in h, h)
+
+    self.assert_('<div class="toclevel1"><a href="#one">' in h, h)
+    print(h)
 
   def testExtractor(self):
-    toc_tags = ['h2', 'h3']
-    parser = cmark.TocExtractor(toc_tags)
+    parser = cmark.TocExtractor()
     parser.feed('''
 <p>dummy
 </p>

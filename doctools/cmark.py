@@ -86,9 +86,11 @@ class TocExtractor(HTMLParser.HTMLParser):
   - <a name=""> before each heading
   - The TOC after <div id="toc">
   """
-  def __init__(self, h_tags):
+  def __init__(self):
     HTMLParser.HTMLParser.__init__(self)
-    self.h_tags = h_tags
+
+    # make targets for these, regardless of whether the TOC links to them.
+    self.h_tags = ['h2', 'h3', 'h4']
     self.indent = 0
 
     # The TOC will be inserted after this.
@@ -171,9 +173,13 @@ class TocExtractor(HTMLParser.HTMLParser):
 TAG_TO_CSS = {'h2': 'toclevel1', 'h3': 'toclevel2', 'h4': 'toclevel3'}
 
 
-def _MakeTocAndAnchors(opts, headings, toc_pos):
+def _MakeTocAndAnchors(opts, toc_tags, headings, toc_pos):
   """
   Given a list of extract headings and TOC position, render HTML to insert.
+
+  Args:
+    toc_tags: List of HTML tags ['h2', 'h3'] to SHOW in TOC.  But we LINK to
+    all of them.
   """
   # Example:
   # <div class="toclevel2"><a href="#_toc_0">Introduction</a></div>
@@ -205,8 +211,11 @@ def _MakeTocAndAnchors(opts, headings, toc_pos):
 
     line = '  <div class="%s"><a href="#%s">%s</a></div>\n' % (
         css_class, toc_href, ''.join(html_parts))
-    toc_lines.append(line)
+    if tag in toc_tags:
+      toc_lines.append(line)
 
+    # TODO: We should just use the damn <h2 id="foo"> attribute!  I didn't know
+    # those are valid anchors.  We don't need to add <a name=""> ever.
     FMT = '<a name="%s"></a>\n'
 
     targets = []
@@ -268,7 +277,7 @@ def Render(opts, in_file, out_file, use_fastlex=True):
   else:
     toc_tags = ('h3', 'h4')
 
-  parser = TocExtractor(toc_tags)
+  parser = TocExtractor()
   parser.feed(html)
 
   log('')
@@ -280,7 +289,7 @@ def Render(opts, in_file, out_file, use_fastlex=True):
     out_file.write(html)  # Pass through
     return
 
-  insertions = _MakeTocAndAnchors(opts, parser.headings, parser.toc_begin_line)
+  insertions = _MakeTocAndAnchors(opts, toc_tags, parser.headings, parser.toc_begin_line)
 
   log('')
   log('*** Text Insertions:')
