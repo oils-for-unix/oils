@@ -55,6 +55,8 @@ class _Abbrev(object):
 _ABBREVIATIONS = {
   'xref':
       _Abbrev('/cross-ref.html?tag=%(value)s#%(value)s'),
+  'help':
+      _Abbrev('help.html?topic=%(value)s#%(value)s'),
   'blog-tag':
       _Abbrev('/blog/tags.html?tag=%(value)s#%(value)s'),
   'oil-commit':

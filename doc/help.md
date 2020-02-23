@@ -291,7 +291,32 @@ Do nothing and return status 1.
       echo hello
     fi
 
-<h3>Iteration</h3>
+### Iteration
+
+#### for
+
+For loops iterate over words.
+
+Oil style:
+
+    var mystr = 'one'
+    var myarray = @(two three)
+
+    for i in $mystr @myarray *.py; done
+      echo $i
+    done
+
+
+Shell style:
+
+    mystr='one'
+    myarray=(two three)
+
+    for i in "mystr" "${myarray[@]}" *.py; done
+      echo $i
+    done
+
+Both fragments output 3 lines and then Python files on remaining lines.
 
 ### Control Flow
 
@@ -369,21 +394,41 @@ Note that time is a KEYWORD, not a builtin!
 
 ### Compound Data
 
+#### array
+
+Array literals in shell accept any sequence of words, just like a command does:
+
+    ls $mystr "$@" *.py
+
+    # Put it in an array
+    a=(ls $mystr "$@" *.py)
+
+In Oil, use [oil-array]($help).
+
 ### Builtins
 
 ### Oil Keywords
 
 <!-- CONFLICT: This duplicates the above -->
 
-<h2 id="expr">Oil Expression Language</h2>
-
-### Data Types
-
-### Operators
-
-<!-- CONFLICT: This duplicates the above -->
+## Oil Expression Language
 
 ### Functions
+
+#### proc-decl
+
+#### func-call
+
+### Literals
+
+#### oil-array
+
+Like shell arays, Oil arrays accept anything that can appear in a command:
+
+    ls $mystr @ARGV *.py
+
+    # Put it in an array
+    var a = @(ls $mystr @ARGV *.py)
 
 ### Regexes
 
@@ -530,6 +575,14 @@ called `-rf`.
 ### Other Option
 
 ### strict:all
+
+#### strict_tilde
+
+TODO: Failed tilde expansions don't evaluate to code.
+
+#### strict_word_eval
+
+TODO
 
 #### strict_nameref
 

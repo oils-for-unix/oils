@@ -229,7 +229,7 @@ def _Init(opt_def):
   # (bash uses $BASHOPTS rather than $SHELLOPTS)
   #
 
-  # shopt option that's not in any groups.
+  # shopt option that's not in any groups.  Note: not implemented.
   for name in ['failglob']:
     opt_def.Add(name)
 
