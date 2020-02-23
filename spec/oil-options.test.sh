@@ -163,7 +163,7 @@ shopt -s strict_nameref
 shopt -s strict_word_eval
 shopt -s strict_backslash
 shopt -s strict_glob
-shopt -s glob_dash
+shopt -s dashglob
 ## END
 
 #### shopt -s oil:basic
@@ -578,7 +578,7 @@ one   two
 one   two
 ## END
 
-#### shopt -s glob_dash
+#### shopt -s dashglob
 mkdir globdir
 cd globdir
 
@@ -586,10 +586,10 @@ touch -- file -v
 
 argv.py *
 
-shopt -s oil:basic  # turns OFF glob_dash
+shopt -s oil:basic  # turns OFF dashglob
 argv.py *
 
-shopt -s glob_dash  # turn it ON
+shopt -s dashglob  # turn it ON
 argv.py *
 
 ## STDOUT:
@@ -600,7 +600,7 @@ argv.py *
 
 #### shopt -s oil:basic turns some options on and others off
 show() {
-  shopt -p | egrep 'glob_dash|strict_arith'
+  shopt -p | egrep 'dashglob|strict_arith'
 }
 
 show
@@ -619,14 +619,14 @@ show
 
 ## STDOUT:
 shopt -u strict_arith
-shopt -s glob_dash
+shopt -s dashglob
 ---
 shopt -s strict_arith
-shopt -s glob_dash
+shopt -s dashglob
 ---
 shopt -s strict_arith
-shopt -u glob_dash
+shopt -u dashglob
 ---
 shopt -u strict_arith
-shopt -s glob_dash
+shopt -s dashglob
 ## END

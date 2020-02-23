@@ -198,7 +198,7 @@ X [Testing]       check
 
 ```oil-help-index
   [Errors]        nounset   pipefail   errexit   inherit_errexit
-  [Globbing]      noglob   nullglob   X failglob   glob_dash
+  [Globbing]      noglob   nullglob   X failglob   dashglob
   [Debugging]     xtrace   X verbose   X extdebug
   [Interactive]   emacs   vi
   [Other Option]  X noclobber
@@ -224,6 +224,7 @@ X [Testing]       check
                   X longopts             test -file, read -delim, etc.
                   more_errexit           More errexit checks --  at command sub
                   simple_word_eval       No splitting, static globbing
+                  dashglob               Disabled to avoid files like -rf
   [oil:nice]      * The full Oil language
                   parse_equals           x = 's' (for cleaner config blocks)
                   parse_set              instead of setvar

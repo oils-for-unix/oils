@@ -388,7 +388,7 @@ class Globber(object):
       for name in results:
         # Omit files starting with - to solve the --.
         # dash_glob turned OFF with shopt -s oil:basic.
-        if name.startswith('-') and not self.exec_opts.glob_dash():
+        if name.startswith('-') and not self.exec_opts.dashglob():
           n -= 1
           continue
         out.append(name)

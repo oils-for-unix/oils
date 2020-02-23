@@ -289,3 +289,21 @@ __a__ __μ__
 __a__
 ## END
 # note: zsh also passes this, but it doesn't run with this file.
+
+#### dotglob (bash option that dashglob is roughly consistent with)
+mkdir -p $TMP/dotglob
+cd $TMP/dotglob
+touch .foorc other
+
+echo *
+shopt -s dotglob
+echo *
+## STDOUT:
+other
+.foorc other
+## END
+## N-I dash/mksh/ash STDOUT:
+other
+other
+## END
+

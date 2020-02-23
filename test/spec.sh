@@ -28,9 +28,9 @@ readonly MKSH=$(shell-path mksh)
 readonly ZSH=$(shell-path zsh)
 
 if test -f _tmp/spec-bin/ash; then
-  readonly BUSYBOX_ASH=_tmp/spec-bin/ash
+  readonly BUSYBOX_ASH=$PWD/_tmp/spec-bin/ash
 else
-  readonly BUSYBOX_ASH=_tmp/shells/ash
+  readonly BUSYBOX_ASH=$PWD/_tmp/shells/ash
 fi
 
 # Usage: callers can override OSH_LIST to test on more than one version.
@@ -449,7 +449,9 @@ sh-func() {
 }
 
 glob() {
-  sh-spec spec/glob.test.sh --osh-failures-allowed 6 \
+  # TODO: It would nice to pass --cd-tmp here, but there are too many _tmp
+  # paths in the test.
+  sh-spec spec/glob.test.sh --osh-failures-allowed 7 \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 

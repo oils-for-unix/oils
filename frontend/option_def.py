@@ -117,7 +117,7 @@ _STRICT_OPTION_NAMES = [
 _BASIC_RUNTIME_OPTIONS = [
     ('simple_word_eval', False),  # No splitting (arity isn't data-dependent)
                                   # Don't reparse program data as globs
-    ('glob_dash', True),          # do globs include results starting with - ?
+    ('dashglob', True),           # do globs return results starting with - ?
     ('more_errexit', False),      # check after command sub
 
     # TODO: Move this?  (not implemented yet) Anything that removes
