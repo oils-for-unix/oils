@@ -71,6 +71,7 @@ readonly MARKDOWN_DOCS=(
   errors
   errexit
   json
+  simple-word-eval
 
   doc-toolchain
 

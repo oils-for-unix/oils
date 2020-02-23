@@ -354,12 +354,14 @@ There's no real difference.
 
 #### here-doc
 
-    cat &lt;&lt;EOF
+TODO: unbalanced HTML if we use \<\<?
+
+    cat <<EOF
     here doc with $double ${quoted} substitution
     EOF
 
     myfunc() {
-            cat &lt;&lt;-EOF
+            cat <<-EOF
             here doc with one tab leading tab stripped
             EOF
     }
@@ -384,7 +386,53 @@ Note that time is a KEYWORD, not a builtin!
 
 <!-- Note: bash respects TIMEFORMAT -->
 
-<h3>Oil Keywords</h3>
+### Oil Keywords
+
+#### const 
+
+Initializes a constant name to the Oil expression on the right.
+
+    const c = 'mystr'        # equivalent to readonly c=mystr
+    const pat = / digit+ /   # an eggex, with no shell equivalent
+
+It's either a global constant or scoped to the current function.
+
+#### var
+
+Initializes a name to the Oil expression on the right.
+
+    var s = 'mystr'        # equivalent to declare s=mystr
+    var pat = / digit+ /   # an eggex, with no shell equivalent
+
+It's either a global or scoped to the current function.
+
+#### setvar
+
+Like shell's `x=1`, `setvar x = 1` either:
+
+- Mutates an existing variable (e.g. declared with `var`)
+- Creates a new **global** variable.
+
+It's meant for interactive use and to easily convert existing shell scripts.
+
+New Oil programs should use `set`, `setglobal`, or `setref` instead of
+`setvar`.
+
+#### set 
+
+Mutates an existing variable in the current scope.  If it doesn't exist, the
+shell exits with a fatal error.
+
+#### setglobal
+
+Mutates a global variable.  If it doesn't exist, the shell exits with a fatal
+error.
+
+#### setref
+
+Mutates a variable through a named reference.  TODO: Show example.
+
+
 
 ### Coil Keywords
 
@@ -421,6 +469,23 @@ In Oil, use [oil-array]($help).
 
 ### Literals
 
+#### oil-string
+
+Oil strings appear in expression contexts, and look like shell strings:
+
+    var s = 'foo'
+    var double = "hello $world and $(hostname)"
+
+However, strings with backslashes are forced to specify whether they're **raw**
+strings or C-style strings:
+
+    var s = 'line\n'    # parse error: ambiguous
+
+    var s = c'line\n'   # C-style string
+    var s = $'line\n'   # also accepted for compatibility
+
+    var s = r'[a-z]\n'  # raw strings are useful for regexes (not eggexes)
+
 #### oil-array
 
 Like shell arays, Oil arrays accept anything that can appear in a command:
@@ -436,7 +501,50 @@ Like shell arays, Oil arrays accept anything that can appear in a command:
 
 ### Quotes
 
+#### quotes
+
+- Single quotes
+- Double Quotes
+- C-style strings: `$'\n'`
+
+Also see [oil-string]($help).
+
 ### Substitutions
+
+#### com-sub
+
+Evaluates to the stdout of a command.  If a trailing newline is returned, it's
+stripped:
+
+    $ hostname
+    example.com
+
+    $ x=$(hostname)
+    $ echo $x
+    example.com
+
+#### var-sub
+
+Evaluates to the value of a variable:
+
+    $ x=X
+    $ echo $x ${x}
+    X X
+
+#### arith-sub
+
+Shell has C-style arithmetic:
+
+    $ echo $(( 1 + 2*3 ))
+    7
+
+
+#### tilde-sub
+
+Used as a shortcut for a user's home directory:
+
+    ~/src     # my home dir
+    ~bob/src  # user bob's home dir
 
 <h3>Var Ops</h3>
 
@@ -551,7 +659,7 @@ With nullglob on, the glob expands to no arguments:
 
 (This option is in GNU bash as well.)
 
-### dashglob
+#### dashglob
 
 Do globs return results that start with `-`?  It's on by default in `bin/osh`,
 but off when Oil is enabled.
@@ -599,6 +707,12 @@ References that don't contain variables also produce hard errors:
     ref=x      # fatal
 
 ### oil:basic
+
+#### simple_word_eval
+
+TODO:
+
+<!-- See doc/simple-word-eval.html -->
 
 ### oil:all
 

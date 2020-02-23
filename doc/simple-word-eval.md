@@ -1,7 +1,3 @@
----
-in_progress: yes
----
-
 Simple Word Evaluation in Unix Shell
 ====================================
 
@@ -13,15 +9,16 @@ Simple Word Evaluation in Unix Shell
 </style>
 
 This document describes Oil's word evaluation semantics (`shopt -s
-simple_word_eval`) for experienced shell users.  It may be useful to
-implementers who want to adopt this behavior in another shell.
+simple_word_eval`) for experienced shell users.  It may also be useful to
+those who want to implement this behavior in another shell.
 
 The main idea is that Oil behaves like a traditional programming language:
 
-1. It's **parsed** from start to end [in a single pass][parsing-shell]:
-2. It's **evaluated** in a single step too.  Data isn't re-parsed and
-   re-evaluated as code.
+1. It's **parsed** from start to end [in a single pass][parsing-shell].
+2. It's **evaluated** in a single step too.
 
+That is, parsing and evaluation aren't interleaved, and code and data aren't
+confused.
 
 [parsing-shell]: https://www.oilshell.org/blog/2019/02/07.html
 
@@ -31,30 +28,40 @@ The main idea is that Oil behaves like a traditional programming language:
 <div id="toc">
 </div>
 
-## An Analogy
+## An Analogy: Word Expressions Should Be Like Arithmetic Expressions
 
 In Oil, "word expressions" like
 
+    $x
+    "hello $name"
+    $(hostname)
     'abc'$x${y:-${z//pat/replace}}"$(echo hi)$((a[i] * 3))"
     
-are parsed and evaluated in a straightforward way, like this arithmetic
-expression when `x` is `2`:
+are parsed and evaluated in a straightforward way, like this expression when `x
+== 2`:
 
-    1 + x/2 + x*3 => 8
+```sh-prompt
+1 + x / 2 + x * 3        → 8  # Python, JS, Ruby, etc. work this way
+```
 
-In contrast, in shell, such code is "expanded" in multiple stages, like:
+In contrast, in shell, words are "expanded" in multiple stages, like this:
 
-    1 + "x/2 + \"x*3\"" => 8
+```sh-prompt
+1 + "x / 2 + \"x * 3\""  → 8  # Hypothetical, confusing language
+```
 
-Programmers used to languages like C, Python, and JavaScript are surprised by
-this, which leads to incorrect programs.
+That is, it would be odd if Python looked *inside a program's strings* for
+expressions to evaluate, but that's exactly what shell does!  There are
+multiple places where there's a silent `eval`, and you need **quoting** to
+inhibit it.  Neglecting this can cause security problems due to confusing code
+and data (links below).
 
-That is, the **defaults are wrong**.  There's essentially a silent `eval`, and
-you need quoting to inhibit it.  It can cause security problems due to
-confusing code and data (links below).
+In other words, the **defaults are wrong**.  Programmers are surprised by shell's
+behavior, and it leads to incorrect programs.
 
 So in Oil, you can opt out of the multiple "word expansion" stages described in
-the [POSIX shell spec][posix-spec].  There's only **one stage**: evaluation.
+the [POSIX shell spec][posix-spec].  Instead, there's only **one stage**:
+evaluation.
 
 ## Design Goals
 
@@ -62,8 +69,8 @@ The new semantics should be easily adoptable by existing shell scripts.
 
 - Importantly, `bin/osh` is POSIX-compatible and runs real [bash]($xref)
   scripts.  You can gradually opt into **stricter and saner** behavior with
-  `shopt` options (or by running `bin/oil`).  The most important one is `shopt
-  -s simple_word_eval`, and the others are listed below.
+  `shopt` options (or by running `bin/oil`).  The most important one is
+  [simple_word_eval]($help), and the others are listed below.
 - Even after opting in, the new syntax shouldn't break many scripts.  If it
   does break, the change to fix it should be small.  For example, `echo @foo`
   is not too common, and it can be made bash-compatible by quoting it: `echo
@@ -84,15 +91,35 @@ $ argv one "two three"
 ['one', 'two three']
 ```
 
+I also use Oil's [var]($help) keyword for assignments.  *(TODO: This could be
+rewritten with shell assignment for the benefit of shell implementers)*
+
 [argv]: $oil-src:spec/bin/argv.py
 
 ### No Implicit Splitting, Dynamic Globbing, or Empty Elision
 
-Oil, these constructs in the word sublanguage always evaluate to **one
-argument**:
+In Oil, the following constructs always evaluate to **one argument**:
 
-That is, quotes aren't necessary to avoid word splitting, "empty elision", or
-dynamic globbing:
+- Variable / "parameter" substitution: `$x`, `${y}`
+- Command sub: `$(echo hi)` or backticks
+- Arithmetic sub: `$(( 1 + 2 ))`
+
+
+<!--
+Related help topics: [com-sub]($help), [var-sub]($help), [arith-sub]($help).
+Not shown: [tilde-sub]($help).
+-->
+
+That is, quotes aren't necessary to avoid:
+
+- **Word Splitting**, which uses `$IFS`.
+- **Empty Elision**.  For example, `x=''; ls $x` passes `ls` no arguments.
+- **Dynamic Globbing**.  Globs are *dynamic* when the pattern comes from
+  program data rather than the source code.
+
+<!-- - Tilde Sub: `~bob/src` -->
+
+Here's an example showing that each construct evaluates to one arg in Oil:
 
 ```sh-prompt
 oil$ var pic = 'my pic.jpg'  # filename with spaces
@@ -103,7 +130,9 @@ oil$ argv ${pic} $empty $pat $(cat foo.txt) $((1 + 2))
 ['my pic.jpg', '', '*.py', 'contents of foo.txt', '3']
 ```
 
-Shell:
+In contrast, shell applies splitting, globbing, and empty elision after the
+substitutions.  Each of these operations returns an indeterminate number of
+strings:
 
 ```sh-prompt
 sh$ pic='my pic.jpg'  # filename with spaces
@@ -114,28 +143,22 @@ sh$ argv ${pic} $empty $pat $(cat foo.txt) $((1 + 2))
 ['my', 'pic.jpg', 'a.py', 'b.py', 'contents', 'of', 'foo.txt', '3']
 ```
 
-To get the desired behavior, you'd have to quote everything:
+To get the desired behavior, you have to use double quotes:
 
 ```sh-prompt
 sh$ argv "${pic}" "$empty" "$pat", "$(cat foo.txt)" "$((1 + 2))"
 ['my pic.jpg', '', '*.py', 'contents of foo.txt', '3']
 ```
 
-<!--
-com-sub
-var-sub
-arith-sub
-not used: tilde-sub
--->
-
 ### Splicing, Static Globbing, and Brace Expansion
 
 The constructs in the last section evaluate to a **single argument**.  In
 contrast, these three constructs evaluate to **0 to N arguments**:
 
-1. Splicing an array: `"$@"` and `"${myarray[@]}"`
-2. Static globbing: `echo *.py`
-3. Brace expansion: `{alice,bob}@example.com`
+1. **Splicing** an array: `"$@"` and `"${myarray[@]}"`
+2. **Static Globbing**: `echo *.py`.  Globs are *static* when they occur in the
+   program text.
+3. **Brace expansion**: `{alice,bob}@example.com`
 
 In Oil, `shopt -s parse_at` enables these shortcuts for splicing:
 
@@ -159,12 +182,25 @@ is just like:
 bash$ myarray=('a b' c)
 bash$ set -- 'd e' f
 
-bash$ argv "${myarray[@]}" "$@" *.py {alice,bob}@sh.com
+bash$ argv "${myarray[@]}" "$@" *.py {ian,jack}@sh.com
 ['a b', 'c', 'd e', 'f', 'g.py', 'h.py', 'ian@sh.com', 'jack@sh.com']
 ```
 
-These globs are **static** because they occur in the program text, not in user
-data (e.g. an environment variable, a file, etc.)
+Unchanged: quotes disable globbing and brace expansion:
+
+```sh-prompt
+$ echo *.py
+foo.py bar.py
+
+$ echo "*.py"            # globbing disabled with quotes
+*.py
+
+$ echo {spam,eggs}.sh
+spam.sh eggs.sh
+
+$ echo "{spam,eggs}.sh"  # brace expansion disabled with quotes
+{spam,eggs}.sh
+```
 
 <!--
 Key differences is **quoting** and the `@` **splice** operator.
@@ -186,25 +222,27 @@ More:
 
 -->
 
-### Joining
+## Where These Rules Apply
 
-Shell has these odd "joining" semantics, which are supported in Oil but
-generally discouraged:
+These rules apply when a **sequence** of words is being evaluated, exactly as
+in shell:
 
-    set -- 'a b' 'c d'
-    argv.py X"$@"X
-    ['Xa', 'b', 'c', 'dX']
+1. [Command]($help:simple-command): `echo $x foo`
+2. [For loop]($help:for): `for i in $x foo; do ...`
+3. [Array Literals]($help:array): `a=($x foo)` and `var a = @($x foo)` ([oil-array]($help))
 
-In Oil, the RHS of an assignment is an expression, and joining only occurs
-within double quotes:
+Shell has other word evaluation contexts like:
 
-    # Oil
-    var joined = $x$y    # parse error
-    var joined = "$x$y"  # OK
+```sh-prompt
+sh$ x="${not_array[@]}"
+sh$ echo hi > "${not_array[@]}"
+```
 
-    # shell
-    joined=$x$y          # OK
-    joined="$x$y"        # OK
+which aren't affected by [simple_word_eval]($help).
+
+<!--
+EvalWordSequence
+-->
 
 ## Opt In to the Old Behavior With Explicit Expressions
 
@@ -216,14 +254,14 @@ Oil can express everything that shell can.
   then splice that array into a command.  See the [example in the last
   section](#elision-example).
 
-
 ## More Word Evaluation Issues
 
 ### More `shopt` Options
 
 - [nullglob]($help) - Globs matching nothing don't evaluate to code.
-- [dashglob]($help) is *disabled* when Oil is enabled.  Files that begin with
-  `-` aren't returned.
+- [dashglob]($help) is true by default, but **disabled** when Oil is enabled, so that
+  files that begin with `-` aren't returned.  This avoids confusing **flags and
+  files**.
 
 Strict options cause fatal errors:
 
@@ -234,57 +272,6 @@ Strict options cause fatal errors:
 
 This is an intentional incompatibility described in the [Known
 Differences](known-differences.html#static-parsing) doc.
-
-### Oil Discourages Context-Sensitive Evaluation
-
-The three contexts where splitting and globbing apply are the ones where a
-**sequence** of words is evaluated (`EvalWordSequence`):
-
-1. [Command]($help:simple-command): `echo $x foo`
-2. [For loop]($help:for): `for i in $x foo; do ...`
-3. [Array Literals]($help:array): `a=($x foo)` and `var a = @($x foo)` ([oil-array]($help))
-
-Shell also has contexts where it evaluates words to a **single string**, rather
-than a sequence, like:
-
-```sh
-# RHS of Assignemnt
-x="${not_array[@]}"
-x=*.py  # not a glob
-
-# Redirect Arg
-echo foo > "${not_array[@]}"
-echo foo > *.py  # not a glob
-
-# Case variables and patterns
-case "${not_array1[@]}" in 
-  "${not_array2[@]}")
-    echo oops
-    ;;
-esac
-
-case *.sh in   # not a glob
-  *.py)        # a string pattern, not a file system glob
-    echo oops
-    ;;
-esac
-```
-
-The behavior of these snippets diverges a lot in existing shells.  That is,
-shells are buggy and poorly-specified.
-
-Oil disallows most of them.  Arrays are considered separate from strings and
-don't randomly "decay".
-
-Related: the RHS of an Oil assignment is an expression, which can be of any
-type, including an array:
-
-```
-var parts = split(x)       # returns an array
-var python = glob('*.py')  # ditto
-
-var s = join(parts)        # returns a string
-```
 
 <!--
 TODO: also allow
@@ -298,21 +285,23 @@ var python = @glob('*.py')
 Oil word evaluation is enabled with `shopt -s simple_word_eval`, and proceeds
 in a single step.
 
-There's no implicit splitting, globbing, or elision of empty words.  You can
-opt into those behaviors with explicit expressions like `@split(mystr)`, which
-evaluates to an array.
-
 Variable, command, and arithmetic substitutions predictably evaluate to a
 **single argument**, regardless of whether they're empty or have spaces.
+There's no implicit splitting, globbing, or elision of empty words.
 
-Oil supports shell features that evaluate to **0 to N arguments**: splicing,
-globbing, and brace expansion.
+You can opt into those behaviors with explicit expressions like
+`@split(mystr)`, which evaluates to an array.
+
+Oil also supports shell features that evaluate to **0 to N arguments**:
+splicing, globbing, and brace expansion.
 
 There are other options that "clean up" word evaluation.  All options are
 designed to be gradually adopted by other shells, shell scripts, and eventually
 POSIX.
 
-## Links
+## Notes
+
+### Related Documents
 
 - [The Simplest Explanation of
   Oil](http://www.oilshell.org/blog/2020/01/simplest-explanation.html).  Some
@@ -331,12 +320,9 @@ POSIX.
     I rediscovered in January 2019.  It appears in all [ksh]($xref)-derived shells, and some shells
     recently patched it.  I wasn't able to exploit in a "real" context;
     otherwise I'd have made more noise about it.
+  - Also described by the Fedora Security team: [Defensive Coding: Shell Double Expansion](https://docs.fedoraproject.org/en-US/Fedora_Security_Team/1/html/Defensive_Coding/sect-Defensive_Coding-Shell-Double_Expansion.html)
 
 [wiki-word-eval]: https://github.com/oilshell/oil/wiki/OSH-Word-Evaluation-Algorithm
-
-
-## Notes
-
 
 ### Tip: View the Syntax Tree With `-n`
 
@@ -366,31 +352,6 @@ You can pass `--ast-format text` for more details.
 
 Evaluation of the syntax tree is a single step.
 
-### Shell Usage Tip: Use Only `"$@"`
-
-This applies to all shells, not just Oil.
-
-There's no reason to use anything but `"$@"`.  All the other forms like `$*`
-can be disallowed, because if you want to join to a string, you can just write:
-
-```
-joined_str="$@"
-```
-
-The same advice applies to arrays for shells that have it.  You can always use
-`"${myarray[@]}"`; you never need to use `${myarray[*]}` or any other form.
-
-Related: [Thirteen Incorrect Ways and Two Awkward Ways to Use Arrays](http://www.oilshell.org/blog/2016/11/06.html)
-
-### Oil vs. Bash Array Literals
-
-Oil has a new array syntax, but it also supports the bash-compatible syntax:
-
-```
-local myarray=(one two *.py)  # bash
-
-var myarray = @(one two *.py)  # Oil style
-```
 
 ### Elision Example
 

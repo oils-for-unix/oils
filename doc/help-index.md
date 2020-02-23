@@ -99,7 +99,8 @@ an **unimplemented** feature.
 ```oil-help-index
   [Functions]     proc-decl     proc p (x, y, @rest, &block) { echo hi }
                   func-call     f(x, y)
-  [Literals]      oil-array     @(a b c)
+  [Literals]      oil-string    c'line\n'  r'[a-z]\n'
+                  oil-array     @(a b c)
   [Regexes]       re-literal    /d+/
                   re-compound   ~   (group)   <capture>   sequence
                   re-primitive  %zero   Subpattern   @subpattern

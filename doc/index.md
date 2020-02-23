@@ -40,6 +40,7 @@ language.  It's **our upgrade path from bash**.
 - [Oil Builtins](oil-builtins.html) (Shell builtins aren't discussed.)
 - [Word Language](oil-word-language.html) - Oil extends the "word language".
   - [Special Variables](oil-special-vars.html)
+  - [Simple Word Evaluation](simple-word-eval.html)
 - [Egg Expressions](eggex.html).  Oil has a new regex syntax called "egg
   expressions", abbreviated *eggexes*.
 

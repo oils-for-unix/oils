@@ -176,8 +176,7 @@ def HighlightLine(line):
 
 
 class Splitter(HTMLParser.HTMLParser):
-  """
-  Split an HTML stream starting at each of the heading tags.
+  """Split an HTML stream starting at each of the heading tags.
   
   - h2 for help-index
   - h2, h3, h4 for help
@@ -186,6 +185,16 @@ class Splitter(HTMLParser.HTMLParser):
 
   After feed(), self.out is populated with a list of groups, and each group is
   (id_value Str, heading_text Str, parts List[Str]).
+
+  TODO: Turn this:
+
+  <h4>simple-command</h4>
+
+  into:
+
+  <h4 id="simple-command">simple-command</h4>
+
+  So that cards are extracted properly.
   """
   def __init__(self, heading_tags, out):
     HTMLParser.HTMLParser.__init__(self)
