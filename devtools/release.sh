@@ -52,7 +52,7 @@
 # - Go to oilshell.org repo and do:
 #   ./deploy.sh bump-index-version
 #   make
-#   ./deploy.sh site.
+#   ./deploy.sh site
 #   ./deploy.sh bump-release-version
 
 set -o nounset

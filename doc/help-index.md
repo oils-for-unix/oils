@@ -301,6 +301,7 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
   [Pattern]       regmatch()   fnmatch()
   [String]        find()   sub()   join() 
                   split()             $IFS, awk algorithm, regex
+  [Word]          glob()   maybe()
   [Better Syntax] shquote()
                   lstrip()   rstrip()   lstripglob()   rstripglob()
                   upper()   lower()

@@ -250,9 +250,7 @@ Oil can express everything that shell can.
 
 - Split with `@split(mystr)`
 - Glob with `@glob(mypat)` (not implemented)
-- Elide an empty string by converting it to an array of length 0 or 1,
-  then splice that array into a command.  See the [example in the last
-  section](#elision-example).
+- Elision with `@maybe(s)` (not implemented)
 
 ## More Word Evaluation Issues
 
@@ -353,33 +351,20 @@ You can pass `--ast-format text` for more details.
 Evaluation of the syntax tree is a single step.
 
 
-### Elision Example
+<!--
 
-The elision of empty strings from commands is verbose but we could simplify it
-with a builtin function if necessary:
+### Elision Without @maybe()
 
-```sh-prompt
+The `@maybe(s)` function is a shortcut for something like:
+
+```
 var x = ''         # empty in this case
 var tmp = @()
 if (x) {           # test if string is non-empty
   append :tmp $x   # appends 'x' to the array variable 'tmp'
 }
-
-argv a @tmp b
-
-# OUTPUT:
-# ['a', 'b']
 ```
 
-When it's not empty:
+This is how it's used:
 
-```sh-prompt
-var x = 'X'
-
-...
-
-argv a @tmp b
-
-# OUTPUT:
-# ['a', 'X', 'b']
-```
+-->
