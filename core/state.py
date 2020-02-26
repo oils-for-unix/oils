@@ -1321,18 +1321,20 @@ class Mem(object):
       return value.MaybeStrArray(strs)
 
     # This is how bash source SHOULD be defined, but it's not!
-    if name == 'CALL_SOURCE':
-      strs = []
-      for frame in reversed(self.debug_stack):
-        # should only happen for the first entry
-        if frame.call_spid == runtime.NO_SPID:
-          continue
-        span = self.arena.GetLineSpan(frame.call_spid)
-        source_str = self.arena.GetLineSourceString(span.line_id)
-        strs.append(source_str)
-      if self.has_main:
-        strs.append('-')  # Bash does this to line up with main?
-      return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
+    if 0:
+      if name == 'CALL_SOURCE':
+        strs = []
+        for frame in reversed(self.debug_stack):
+          # should only happen for the first entry
+          if frame.call_spid == runtime.NO_SPID:
+            continue
+          span = self.arena.GetLineSpan(frame.call_spid)
+          source_str = self.arena.GetLineSourceString(span.line_id)
+          strs.append(source_str)
+        if self.has_main:
+          strs.append('-')  # Bash does this to line up with main?
+          pass
+        return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
 
     if name == 'BASH_LINENO':
       strs = []
@@ -1354,15 +1356,7 @@ class Mem(object):
       self.line_num.s = str(self.arena.GetLineNumber(span.line_id))
       return self.line_num
 
-    # This is OSH-specific.  Get rid of it in favor of ${BASH_SOURCE[0]} ?
-    if name == 'SOURCE_NAME':
-      # Update and reuse an object.
-      span = self.arena.GetLineSpan(self.current_spid)
-      self.source_name.s = self.arena.GetLineSourceString(span.line_id)
-      return self.source_name
-
     cell, _, _ = self._ResolveNameOrRef(name, lookup_mode)
-    #cell, _, = self._ResolveNameOnly(name, lookup_mode)
 
     if cell:
       return cell.val
