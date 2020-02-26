@@ -231,7 +231,6 @@ X [Testing]       check
   [oil:nice]      * The full Oil language
                   parse_equals           x = 's' (for cleaner config blocks)
                   parse_set              instead of setvar
-                  parse_do               do f(x)
                   X parse_amp            echo hi &2 > /dev/null
                   X parse_dollar_slash   egrep $/ d+ / *.txt
                   X parse_dparen         remove ((

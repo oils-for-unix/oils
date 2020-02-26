@@ -337,9 +337,8 @@ def _MakeSimpleCommand(preparsed_list, suffix_words, redirects, block):
   return node
 
 
-# Note: 'do' depends on parse_do
 SECONDARY_KEYWORDS = [
-    Id.KW_Done, Id.KW_Then, Id.KW_Fi, Id.KW_Elif, Id.KW_Else, Id.KW_Esac
+    Id.KW_Do, Id.KW_Done, Id.KW_Then, Id.KW_Fi, Id.KW_Elif, Id.KW_Else, Id.KW_Esac
 ]
 
 
@@ -467,8 +466,6 @@ class CommandParser(object):
   def _AtSecondaryKeyword(self):
     # type: () -> bool
     if self.c_id in SECONDARY_KEYWORDS:
-      return True
-    if self.c_id == Id.KW_Do and not self.parse_opts.parse_do():
       return True
     return False
 
@@ -1683,8 +1680,7 @@ class CommandParser(object):
       enode = self.w_parser.ParseCommandExpr()
       return command.Return(keyword, enode)
 
-    # TODO: Can we have parse_do here?  For do obj.method()
-    if self.c_id in (Id.KW_Pass, Id.KW_Do, Id.Lit_Equals):
+    if self.c_id in (Id.KW_Pass, Id.Lit_Equals):
       keyword = _KeywordToken(self.cur_word)
       self._Next()
       enode = self.w_parser.ParseCommandExpr()
@@ -1705,6 +1701,9 @@ class CommandParser(object):
 
       # NOTE: At the top level, only Token and Compound are possible.
       # Can this be modelled better in the type system, removing asserts?
+      #
+      # TODO: Oil has parse_paren() set, and this can be a function CALL.
+      # Definitions are done with 'proc' or 'func'.
       if (self.w_parser.LookAhead() == Id.Op_LParen and
           not word_.IsVarLike(cur_word)):
           return self.ParseFunctionDef()  # f() { echo; }  # function

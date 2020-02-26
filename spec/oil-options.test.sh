@@ -524,12 +524,12 @@ echo @lines
 ## END
 
 
-#### do f(x)
-shopt -s parse_do
+#### parse_paren allows f(x)
+shopt -s parse_paren
 func f(x) {
   echo foo $x
 }
-do f(42)
+f(42)
 ## STDOUT:
 foo 42
 ## END

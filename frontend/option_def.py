@@ -193,9 +193,6 @@ _BASIC_PARSE_OPTIONS = [
 _AGGRESSIVE_PARSE_OPTIONS = [
     'parse_set',  # set x = 'var'
     'parse_equals',  # x = 'var'
-
-    # TODO: get rid of this.  parse_paren is better
-    'parse_do',  # do f(x) 
 ]
 
 
