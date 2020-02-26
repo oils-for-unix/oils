@@ -312,15 +312,15 @@ def ShellMain(lang, argv0, argv, login_shell):
     frame0 = state.DebugFrame(dollar0, 'main', no_str, state.LINE_ZERO, 0, 0)
     debug_stack.append(frame0)
 
-  # Copy quirky bash behavior
+  # Copy quirky bash behavior.
   frame1 = state.DebugFrame(no_str, no_str, no_str, runtime.NO_SPID, 0, 0)
   debug_stack.append(frame1)
 
   arena = alloc.Arena()
   errfmt = ui.ErrorFormatter(arena)
 
-  mem = state.Mem(dollar0, argv[arg_r.i + 1:], posix.environ, arena,
-                  debug_stack)
+  mem = state.Mem(dollar0, argv[arg_r.i + 1:], arena, debug_stack)
+  state.InitMem(mem, posix.environ)
   builtin_funcs.Init(mem)
 
   procs = {}

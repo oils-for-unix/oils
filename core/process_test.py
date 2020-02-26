@@ -29,7 +29,10 @@ def Banner(msg):
 
 # TODO: Put these all in a function.
 _ARENA = test_lib.MakeArena('process_test.py')
-_MEM = state.Mem('', [], {}, _ARENA)
+
+_MEM = state.Mem('', [], _ARENA, [])
+state.InitMem(_MEM, {})
+
 _OPT_ARRAY = [False] * option_i.ARRAY_SIZE
 _PARSE_OPTS = optview.Parse(_OPT_ARRAY)
 _ERREXIT = state._ErrExit()

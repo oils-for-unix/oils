@@ -17,7 +17,7 @@ def _InitMem():
   arena = test_lib.MakeArena('<state_test.py>')
   line_id = arena.AddLine(1, 'foo')
   unused = arena.AddLineSpan(line_id, 0, 1)  # dummy
-  return state.Mem('', [], {}, arena)
+  return state.Mem('', [], arena, [])
 
 
 class MemTest(unittest.TestCase):
@@ -298,7 +298,7 @@ class MemTest(unittest.TestCase):
     self.assertEqual(['a', 'b'], mem.GetArgv())
 
   def testArgv2(self):
-    mem = state.Mem('', ['x', 'y'], {}, None)
+    mem = state.Mem('', ['x', 'y'], None, [])
 
     mem.Shift(1)
     self.assertEqual(['y'], mem.GetArgv())

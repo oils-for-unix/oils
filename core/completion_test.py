@@ -34,8 +34,6 @@ U1 = completion.UserSpec([A1], [], [], lambda candidate: True)
 
 BASE_OPTS = {}
 
-mem = state.Mem('', [], {}, None)
-
 FIRST = completion.TestAction(['grep', 'sed', 'test'])
 U2 = completion.UserSpec([FIRST], [], [], lambda candidate: True)
 
@@ -63,6 +61,10 @@ def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
     debug_f = util.DebugFile(sys.stdout)
   else:
     debug_f = util.NullDebugFile()
+
+  mem = state.Mem('', [], None, [])
+  state.InitMem(mem, {})
+
   return completion.RootCompleter(ev, mem, comp_lookup, compopt_state,
                                   comp_ui_state, parse_ctx, debug_f)
 
@@ -117,7 +119,7 @@ class CompletionTest(unittest.TestCase):
     print('rb', comp_rb)
 
   def testExternalCommandAction(self):
-    mem = state.Mem('dummy', [], {}, None)
+    mem = state.Mem('dummy', [], None, [])
     a = completion.ExternalCommandAction(mem)
     comp = self._CompApi([], 0, 'f')
     print(list(a.Matches(comp)))
@@ -720,7 +722,7 @@ class InitCompletionTest(unittest.TestCase):
 
       arena = test_lib.MakeArena('<InitCompletionTest>')
       parse_ctx = test_lib.InitParseContext(arena=arena)
-      mem = state.Mem('', [], {}, arena)
+      mem = state.Mem('', [], arena, [])
 
       #
       # Allow our code to access oracle data

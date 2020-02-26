@@ -236,10 +236,6 @@ class MutableOpts(object):
 
   def __init__(self, mem, opt_array, errexit, readline):
     # type: (Mem, List[bool], _ErrExit, Optional[Any]) -> None
-    """
-    Args:
-      mem: state.Mem, for SHELLOPTS
-    """
     self.mem = mem
     self.opt_array = opt_array
     self.errexit = errexit
@@ -560,6 +556,92 @@ class DebugFrame(object):
     self.var_i = var_i
 
 
+def _InitDefaults(mem):
+  # type: (Mem) -> None
+
+  # Default value; user may unset it.
+  # $ echo -n "$IFS" | python -c 'import sys;print repr(sys.stdin.read())'
+  # ' \t\n'
+  SetGlobalString(mem, 'IFS', split.DEFAULT_IFS)
+
+  # NOTE: Should we put these in a name_map for Oil?
+  SetGlobalString(mem, 'UID', str(posix.getuid()))
+  SetGlobalString(mem, 'EUID', str(posix.geteuid()))
+  SetGlobalString(mem, 'PPID', str(posix.getppid()))
+
+  SetGlobalString(mem, 'HOSTNAME', libc.gethostname())
+
+  # In bash, this looks like 'linux-gnu', 'linux-musl', etc.  Scripts test
+  # for 'darwin' and 'freebsd' too.  They generally don't like at 'gnu' or
+  # 'musl'.  We don't have that info, so just make it 'linux'.
+  SetGlobalString(mem, 'OSTYPE', posix.uname()[0].lower())
+
+  # For getopts builtin
+  SetGlobalString(mem, 'OPTIND', '1')
+
+  # For xtrace
+  SetGlobalString(mem, 'PS4', '+ ')
+
+  # bash-completion uses this.  Value copied from bash.  It doesn't integrate
+  # with 'readline' yet.
+  SetGlobalString(mem, 'COMP_WORDBREAKS', _READLINE_DELIMS)
+
+  # TODO on $HOME: bash sets it if it's a login shell and not in POSIX mode!
+  # if (login_shell == 1 && posixly_correct == 0)
+  #   set_home_var ();
+
+
+def _InitVarsFromEnv(mem, environ):
+  # type: (Mem, Dict[str, str]) -> None
+
+  # This is the way dash and bash work -- at startup, they turn everything in
+  # 'environ' variable into shell variables.  Bash has an export_env
+  # variable.  Dash has a loop through environ in init.c
+  for n, v in iteritems(environ):
+    mem.SetVar(lvalue.Named(n), value.Str(v), scope_e.GlobalOnly,
+                flags=SetExport)
+
+  # If it's not in the environment, initialize it.  This makes it easier to
+  # update later in MutableOpts.
+
+  # TODO: IFS, etc. should follow this pattern.  Maybe need a SysCall
+  # interface?  self.syscall.getcwd() etc.
+
+  val = mem.GetVar('SHELLOPTS')
+  if val.tag_() == value_e.Undef:
+    SetGlobalString(mem, 'SHELLOPTS', '')
+  # Now make it readonly
+  mem.SetVar(
+      lvalue.Named('SHELLOPTS'), None, scope_e.GlobalOnly, flags=SetReadOnly)
+
+  # Usually we inherit PWD from the parent shell.  When it's not set, we may
+  # compute it.
+  val = mem.GetVar('PWD')
+  if val.tag_() == value_e.Undef:
+    SetGlobalString(mem, 'PWD', _GetWorkingDir())
+  # Now mark it exported, no matter what.  This is one of few variables
+  # EXPORTED.  bash and dash both do it.  (e.g. env -i -- dash -c env)
+  mem.SetVar(
+      lvalue.Named('PWD'), None, scope_e.GlobalOnly, flags=SetExport)
+
+
+def InitMem(mem, environ):
+  # type: (Mem, Dict[str, str]) -> None
+  """
+  Initialize memory with shell defaults.  Other interpreters could have
+  different builtin variables.
+  """
+  _InitDefaults(mem)
+  _InitVarsFromEnv(mem, environ)
+  # MUTABLE GLOBAL that's SEPARATE from $PWD.  Used by the 'pwd' builtin, but
+  # it can't be modified by users.
+  val = mem.GetVar('PWD')
+  # should be true since it's exported
+  assert val.tag_() == value_e.Str, val
+  pwd = cast(value__Str, val).s
+  mem.SetPwd(pwd)
+
+
 class Mem(object):
   """For storing variables.
 
@@ -573,8 +655,12 @@ class Mem(object):
 
   Modules: cmd_exec, word_eval, expr_eval, completion
   """
-  def __init__(self, dollar0, argv, environ, arena, debug_stack=None):
-    # type: (str, List[str], Dict[str, str], Arena, List[DebugFrame]) -> None
+  def __init__(self, dollar0, argv, arena, debug_stack):
+    # type: (str, List[str], Arena, List[DebugFrame]) -> None
+    """
+    Args:
+      arena: for computing BASH_SOURCE, etc.  Could be factored out
+    """
     # circular dep initialized out of line
     self.exec_opts = None  # type: optview.Exec
 
@@ -582,10 +668,12 @@ class Mem(object):
     self.argv_stack = [_ArgFrame(argv)]
     self.var_stack = [{}]  # type: List[Dict[str, cell]]
 
+    self.arena = arena
+
     # The debug_stack isn't strictly necessary for execution.  We use it for
-    # crash dumps and for 3 parallel arrays: FUNCNAME, CALL_SOURCE,
-    # BASH_LINENO.  The First frame points at the global vars and argv.
-    self.debug_stack = debug_stack or []
+    # crash dumps and for 4 parallel arrays: BASH_SOURCE, FUNCNAME,
+    # CALL_SOURCE, and BASH_LINENO.
+    self.debug_stack = debug_stack
 
     self.current_spid = runtime.NO_SPID
 
@@ -600,17 +688,6 @@ class Mem(object):
 
     # Done ONCE on initialization
     self.root_pid = posix.getpid()
-
-    self._InitDefaults()
-    self._InitVarsFromEnv(environ)
-    # MUTABLE GLOBAL that's SEPARATE from $PWD.  Used by the 'pwd' builtin, but
-    # it can't be modified by users.
-    val = self.GetVar('PWD')
-    # should be true since it's exported
-    assert val.tag_() == value_e.Str, val
-    self.pwd = cast(value__Str, val).s
-
-    self.arena = arena
 
   def __repr__(self):
     # type: () -> str
@@ -664,72 +741,6 @@ class Mem(object):
       return var_stack, argv_stack, debug_stack
 
     raise AssertionError()
-
-  def _InitDefaults(self):
-    # type: () -> None
-
-    # Default value; user may unset it.
-    # $ echo -n "$IFS" | python -c 'import sys;print repr(sys.stdin.read())'
-    # ' \t\n'
-    SetGlobalString(self, 'IFS', split.DEFAULT_IFS)
-
-    # NOTE: Should we put these in a name_map for Oil?
-    SetGlobalString(self, 'UID', str(posix.getuid()))
-    SetGlobalString(self, 'EUID', str(posix.geteuid()))
-    SetGlobalString(self, 'PPID', str(posix.getppid()))
-
-    SetGlobalString(self, 'HOSTNAME', libc.gethostname())
-
-    # In bash, this looks like 'linux-gnu', 'linux-musl', etc.  Scripts test
-    # for 'darwin' and 'freebsd' too.  They generally don't like at 'gnu' or
-    # 'musl'.  We don't have that info, so just make it 'linux'.
-    SetGlobalString(self, 'OSTYPE', posix.uname()[0].lower())
-
-    # For getopts builtin
-    SetGlobalString(self, 'OPTIND', '1')
-
-    # For xtrace
-    SetGlobalString(self, 'PS4', '+ ')
-
-    # bash-completion uses this.  Value copied from bash.  It doesn't integrate
-    # with 'readline' yet.
-    SetGlobalString(self, 'COMP_WORDBREAKS', _READLINE_DELIMS)
-
-    # TODO on $HOME: bash sets it if it's a login shell and not in POSIX mode!
-    # if (login_shell == 1 && posixly_correct == 0)
-    #   set_home_var ();
-
-  def _InitVarsFromEnv(self, environ):
-    # type: (Dict[str, str]) -> None
-    # This is the way dash and bash work -- at startup, they turn everything in
-    # 'environ' variable into shell variables.  Bash has an export_env
-    # variable.  Dash has a loop through environ in init.c
-    for n, v in iteritems(environ):
-      self.SetVar(lvalue.Named(n), value.Str(v), scope_e.GlobalOnly,
-                  flags=SetExport)
-
-    # If it's not in the environment, initialize it.  This makes it easier to
-    # update later in MutableOpts.
-
-    # TODO: IFS, etc. should follow this pattern.  Maybe need a SysCall
-    # interface?  self.syscall.getcwd() etc.
-
-    val = self.GetVar('SHELLOPTS')
-    if val.tag_() == value_e.Undef:
-      SetGlobalString(self, 'SHELLOPTS', '')
-    # Now make it readonly
-    self.SetVar(
-        lvalue.Named('SHELLOPTS'), None, scope_e.GlobalOnly, flags=SetReadOnly)
-
-    # Usually we inherit PWD from the parent shell.  When it's not set, we may
-    # compute it.
-    val = self.GetVar('PWD')
-    if val.tag_() == value_e.Undef:
-      SetGlobalString(self, 'PWD', _GetWorkingDir())
-    # Now mark it exported, no matter what.  This is one of few variables
-    # EXPORTED.  bash and dash both do it.  (e.g. env -i -- dash -c env)
-    self.SetVar(
-        lvalue.Named('PWD'), None, scope_e.GlobalOnly, flags=SetExport)
 
   def SetCurrentSpanId(self, span_id):
     # type: (int) -> None

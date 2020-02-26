@@ -17,7 +17,7 @@ class PromptTest(unittest.TestCase):
 
   def setUp(self):
     arena = test_lib.MakeArena('<ui_test.py>')
-    mem = state.Mem('', [], {}, arena)
+    mem = state.Mem('', [], arena, [])
     parse_ctx = test_lib.InitParseContext()
     self.p = prompt.Evaluator('osh', parse_ctx, mem)
     # note: this has a separate 'mem' object
