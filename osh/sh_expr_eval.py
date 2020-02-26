@@ -340,6 +340,11 @@ class _ExprEvaluator(object):
 
 class ArithEvaluator(_ExprEvaluator):
 
+  def __init__(self, mem, exec_opts, errfmt):
+    # type: (Mem, optview.Exec, ErrorFormatter) -> None
+    """Redundant constructor for mycpp."""
+    _ExprEvaluator.__init__(self, mem, exec_opts, errfmt)
+
   def _ValToIntOrError(self, val, span_id=runtime.NO_SPID):
     # type: (value_t, int) -> int
     try:

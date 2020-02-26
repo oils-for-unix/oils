@@ -5,7 +5,6 @@ osh_parse.py
 from __future__ import print_function
 
 import sys
-import posix_ as posix
 
 from _devbuild.gen.syntax_asdl import (
     source, source_t, command, command_e, command_t, command_str,
@@ -23,6 +22,7 @@ from frontend import parse_lib
 from frontend import reader
 from mycpp import mylib
 from mycpp.mylib import tagswitch
+from osh import split
 
 # Evaluators
 # This causes errors in oil_lang/{objects,regex_translate}, builtin_pure, etc.
@@ -173,7 +173,7 @@ def main(argv):
 
   errfmt = ui.ErrorFormatter(arena)
 
-  splitter = None
+  splitter = split.SplitContext(mem)
   arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, errfmt)
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
 
