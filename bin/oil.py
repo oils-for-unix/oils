@@ -300,20 +300,27 @@ def ShellMain(lang, argv0, argv, login_shell):
     _ShowVersion()
     return 0
 
+  no_str = None  # type: str
+
+  debug_stack = []
   if arg_r.AtEnd():
     dollar0 = argv0
-    has_main = False
   else:
     dollar0 = arg_r.Peek()  # the script name, or the arg after -c
-    has_main = True
+
+    # Copy quirky bash behavior.
+    frame0 = state.DebugFrame(dollar0, 'main', no_str, state.LINE_ZERO, 0, 0)
+    debug_stack.append(frame0)
+
+  # Copy quirky bash behavior
+  frame1 = state.DebugFrame(no_str, no_str, no_str, runtime.NO_SPID, 0, 0)
+  debug_stack.append(frame1)
 
   arena = alloc.Arena()
   errfmt = ui.ErrorFormatter(arena)
 
-  # NOTE: has_main is only for ${BASH_SOURCE[@} and family.  Could be a
-  # required arg.
   mem = state.Mem(dollar0, argv[arg_r.i + 1:], posix.environ, arena,
-                  has_main=has_main)
+                  debug_stack)
   builtin_funcs.Init(mem)
 
   procs = {}

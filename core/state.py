@@ -48,6 +48,8 @@ if TYPE_CHECKING:
 # Used in both core/competion.py and osh/state.py
 _READLINE_DELIMS = ' \t\n"\'><=;|&(:'
 
+LINE_ZERO = -2  # special value that's not runtime.NO_SPID
+
 
 # flags for SetVar
 SetReadOnly   = 1 << 0
@@ -541,12 +543,18 @@ def _GetWorkingDir():
     e_die("Can't determine working directory: %s", posix.strerror(e.errno))
 
 
-class _DebugFrame(object):
+class DebugFrame(object):
 
-  def __init__(self, func_name, source_name, call_spid, argv_i, var_i):
-    # type: (Optional[str], Optional[str], int, int, int) -> None
-    self.func_name = func_name
+  def __init__(self, bash_source, func_name, source_name, call_spid, argv_i,
+               var_i):
+    # type: (Optional[str], Optional[str], Optional[str], int, int, int) -> None
+    self.bash_source = bash_source
+
+    # ONE of these is set.  func_name for 'myproc a b', and source_name for
+    # 'source lib.sh'
+    self.func_name = func_name  #
     self.source_name = source_name
+
     self.call_spid = call_spid 
     self.argv_i = argv_i
     self.var_i = var_i
@@ -565,8 +573,8 @@ class Mem(object):
 
   Modules: cmd_exec, word_eval, expr_eval, completion
   """
-  def __init__(self, dollar0, argv, environ, arena, has_main=False):
-    # type: (str, List[str], Dict[str, str], Arena, bool) -> None
+  def __init__(self, dollar0, argv, environ, arena, debug_stack=None):
+    # type: (str, List[str], Dict[str, str], Arena, List[DebugFrame]) -> None
     # circular dep initialized out of line
     self.exec_opts = None  # type: optview.Exec
 
@@ -577,13 +585,7 @@ class Mem(object):
     # The debug_stack isn't strictly necessary for execution.  We use it for
     # crash dumps and for 3 parallel arrays: FUNCNAME, CALL_SOURCE,
     # BASH_LINENO.  The First frame points at the global vars and argv.
-    no_str = None  # type: Optional[str]
-    self.debug_stack = [_DebugFrame(no_str, no_str, runtime.NO_SPID, 0, 0)]
-
-    self.bash_source = []  # type: List[str] # for implementing BASH_SOURCE
-    self.has_main = has_main
-    if has_main:
-      self.bash_source.append(dollar0)  # e.g. the filename
+    self.debug_stack = debug_stack or []
 
     self.current_spid = runtime.NO_SPID
 
@@ -790,18 +792,15 @@ class Mem(object):
     self.argv_stack.append(_ArgFrame(argv))
     self.var_stack.append({})
 
-    # bash uses this order: top of stack first.
-    self._PushDebugStack(func_name, None)
-
     span = self.arena.GetLineSpan(def_spid)
     source_str = self.arena.GetLineSourceString(span.line_id)
-    self.bash_source.append(source_str)
+
+    # bash uses this order: top of stack first.
+    self._PushDebugStack(source_str, func_name, None)
 
   def PopCall(self):
     # type: () -> None
-    self.bash_source.pop()
     self._PopDebugStack()
-
     self.var_stack.pop()
     self.argv_stack.pop()
 
@@ -812,12 +811,10 @@ class Mem(object):
       self.argv_stack.append(_ArgFrame(argv))
     # Match bash's behavior for ${FUNCNAME[@]}.  But it would be nicer to add
     # the name of the script here?
-    self._PushDebugStack(None, source_name)
-    self.bash_source.append(source_name)
+    self._PushDebugStack(source_name, None, source_name)
 
   def PopSource(self, argv):
     # type: (List[str]) -> None
-    self.bash_source.pop()
     self._PopDebugStack()
     if len(argv):
       self.argv_stack.pop()
@@ -827,7 +824,7 @@ class Mem(object):
     """For the temporary scope in 'FOO=bar BAR=baz echo'."""
     # We don't want the 'read' builtin to write to this frame!
     self.var_stack.append({})
-    self._PushDebugStack(None, None)
+    self._PushDebugStack(None, None, None)
 
   def PopTemp(self):
     # type: () -> None
@@ -839,8 +836,8 @@ class Mem(object):
     """For evalblock()."""
     return self.var_stack[-1]
 
-  def _PushDebugStack(self, func_name, source_name):
-    # type: (Optional[str], Optional[str]) -> None
+  def _PushDebugStack(self, bash_source, func_name, source_name):
+    # type: (Optional[str], Optional[str], Optional[str]) -> None
     # self.current_spid is set before every SimpleCommand, ShAssignment, [[, ((,
     # etc.  Function calls and 'source' are both SimpleCommand.
 
@@ -851,7 +848,7 @@ class Mem(object):
     # The stack is a 5-tuple, where func_name and source_name are optional.  If
     # both are unset, then it's a "temp frame".
     self.debug_stack.append(
-        _DebugFrame(func_name, source_name, self.current_spid, argv_i, var_i)
+        DebugFrame(bash_source, func_name, source_name, self.current_spid, argv_i, var_i)
     )
 
   def _PopDebugStack(self):
@@ -1306,19 +1303,16 @@ class Mem(object):
         if frame.source_name:
           strs.append('source')  # bash doesn't give name
         # Temp stacks are ignored
-
-      if self.has_main:
-        strs.append('main')  # bash does this
       return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
 
     # This isn't the call source, it's the source of the function DEFINITION
     # (or the sourced # file itself).
     if name == 'BASH_SOURCE':
-      # mycpp REWRITE:
-      #strs = list(reversed(self.bash_source)))
-      strs = list(self.bash_source)  # copy
-      strs.reverse()
-      return value.MaybeStrArray(strs)
+      strs = []
+      for frame in reversed(self.debug_stack):
+        if frame.bash_source:
+          strs.append(frame.bash_source)
+      return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
 
     # This is how bash source SHOULD be defined, but it's not!
     if 0:
@@ -1328,12 +1322,12 @@ class Mem(object):
           # should only happen for the first entry
           if frame.call_spid == runtime.NO_SPID:
             continue
+          if frame.call_spid == -2:
+            strs.append('-')  # Bash does this to line up with main?
+            continue
           span = self.arena.GetLineSpan(frame.call_spid)
           source_str = self.arena.GetLineSourceString(span.line_id)
           strs.append(source_str)
-        if self.has_main:
-          strs.append('-')  # Bash does this to line up with main?
-          pass
         return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
 
     if name == 'BASH_LINENO':
@@ -1342,11 +1336,12 @@ class Mem(object):
         # should only happen for the first entry
         if frame.call_spid == runtime.NO_SPID:
           continue
+        if frame.call_spid == LINE_ZERO:
+          strs.append('0')  # Bash does this to line up with main?
+          continue
         span = self.arena.GetLineSpan(frame.call_spid)
         line_num = self.arena.GetLineNumber(span.line_id)
         strs.append(str(line_num))
-      if self.has_main:
-        strs.append('0')  # Bash does this to line up with main?
       return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
 
     if name == 'LINENO':

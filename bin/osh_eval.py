@@ -100,8 +100,8 @@ def main(argv):
   arena = alloc.Arena()
 
   dollar0 = argv[0]
-  mem = state.Mem(dollar0, argv, posix.environ, arena,
-                  has_main=True)
+  debug_stack = []  # type: List[state.DebugFrame]
+  mem = state.Mem(dollar0, argv, posix.environ, arena, debug_stack)
   parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
   # Dummy value; not respecting aliases!
   aliases = {}  # type: Dict[str, str]
