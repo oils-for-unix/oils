@@ -7,7 +7,7 @@
 # Useful for test frameworks!
 #
 # Usage:
-#   ./errexit.sh <function name>
+#   demo/dollar0-errexit.sh <function name>
 
 set -o nounset
 set -o pipefail
