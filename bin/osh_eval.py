@@ -82,14 +82,15 @@ class TestEvaluator(object):
             log('arg %s', arg)
         for w in node.words:
           val = self.word_ev.EvalWordToString(w)
-          # TODO: tagswitch
-          log('arg %s', val)
+          # TODO: how to print repr() in C++?
+          log('arg %d', val.tag_())
 
       elif case(command_e.DParen):
         node = cast(command__DParen, UP_node)
 
         a = self.arith_ev.Eval(node.child)
-        log('arith val %s', a)
+        # TODO: how to print repr() in C++?
+        log('arith val %d', a.tag_())
 
       else:
         log('Unhandled node %s', command_str(node.tag_()))

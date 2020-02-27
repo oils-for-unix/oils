@@ -15,14 +15,14 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
     Token, command_t, command,
     source_e, source__Stdin, source__MainFile, source__SourcedFile,
-    source__EvalArg, source__Alias, source__LValue
+    source__EvalArg, source__Alias, source__LValue,
 )
-from _devbuild.gen.runtime_asdl import value_e, value_t, value__Str
+from _devbuild.gen.runtime_asdl import value_str, value_e, value_t, value__Str
 from asdl import runtime
 from asdl import format as fmt
 from osh import word_
 from mycpp import mylib
-from mycpp.mylib import tagswitch
+from mycpp.mylib import tagswitch, NewStr
 
 from typing import List, cast, Any, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -30,6 +30,14 @@ if TYPE_CHECKING:
   from core.error import _ErrorWithLocation
   from mycpp.mylib import Writer
   #from frontend.args import UsageError
+
+
+def ValType(val):
+  # type: (value_t) -> str
+  """For displaying type errors in the UI."""
+
+  # Displays 'value.MaybeStrArray' for now, maybe change it.
+  return NewStr(value_str(val.tag_()))
 
 
 def PrettyToken(tok, arena):

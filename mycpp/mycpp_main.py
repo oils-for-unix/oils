@@ -203,7 +203,10 @@ def main(argv):
   #log('V %s', virtual.virtuals)
 
   local_vars = {}  # FuncDef node -> (name, c_type) list
-  fmt_ids = {}  # Node -> fmt_name
+
+  # Node -> fmt_name, plus a hack for the counter
+  # TODO: This could be a class with 2 members
+  fmt_ids = {'_counter': 0}
 
   # First generate ALL C++ declarations / "headers".
   # class Foo { void method(); }; class Bar { void method(); };

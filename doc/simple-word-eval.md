@@ -258,8 +258,8 @@ Oil can express everything that shell can.
 
 - [nullglob]($help) - Globs matching nothing don't evaluate to code.
 - [dashglob]($help) is true by default, but **disabled** when Oil is enabled, so that
-  files that begin with `-` aren't returned.  This avoids confusing **flags and
-  files**.
+  files that begin with `-` aren't returned.  This avoids [confusing flags and
+  files](https://www.oilshell.org/blog/2020/02/dashglob.html).
 
 Strict options cause fatal errors:
 

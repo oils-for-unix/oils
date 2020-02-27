@@ -612,8 +612,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       Returns:
         the temp fmtX() name we used.
       """
-      temp_name = 'fmt%d' % self.unique_id
-      self.unique_id += 1
+      temp_name = 'fmt%d' % self.fmt_ids['_counter']
+      self.fmt_ids['_counter'] += 1
 
       fmt_parts = format_strings.Parse(fmt)
       self.fmt_funcs.write('Str* %s(' % temp_name)

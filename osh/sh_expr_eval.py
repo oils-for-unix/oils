@@ -36,6 +36,7 @@ from frontend import consts
 from frontend import match
 from osh import bool_stat
 from core import state
+from core import ui
 from osh import word_
 
 from mycpp import mylib
@@ -382,8 +383,8 @@ class ArithEvaluator(_ExprEvaluator):
     # Arrays and associative arrays always fail -- not controlled by strict_arith.
     # In bash, (( a )) is like (( a[0] )), but I don't want that.
     # And returning '0' gives different results.
-    e_die("Expected a value convertible to integer, got %s", val,
-          span_id=span_id)
+    e_die("Expected a value convertible to integer, got %s",
+          ui.ValType(val), span_id=span_id)
 
   def _EvalLhsAndLookupArith(self, node):
     # type: (sh_lhs_expr_t) -> Tuple[int, lvalue_t]
@@ -595,7 +596,8 @@ class ArithEvaluator(_ExprEvaluator):
 
             else:
               # TODO: Add error context
-              e_die('Expected array or assoc in index expression, got %s', left)
+              e_die('Expected array or assoc in index expression, got %s',
+                    ui.ValType(left))
 
           if s is None:
             val = value.Undef()  # type: value_t
