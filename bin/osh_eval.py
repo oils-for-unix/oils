@@ -21,7 +21,7 @@ from core import ui
 from frontend import parse_lib
 from frontend import reader
 from mycpp import mylib
-from mycpp.mylib import tagswitch
+from mycpp.mylib import tagswitch, NewStr
 from osh import split
 
 # Evaluators
@@ -93,7 +93,7 @@ class TestEvaluator(object):
         log('arith val %d', a.tag_())
 
       else:
-        log('Unhandled node %s', command_str(node.tag_()))
+        log('Unhandled node %s', NewStr(command_str(node.tag_())))
 
 
 def main(argv):

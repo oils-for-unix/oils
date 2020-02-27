@@ -11,7 +11,7 @@ from __future__ import print_function
 
 import sys
 
-from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
     Token, command_t, command,
     source_e, source__Stdin, source__MainFile, source__SourcedFile,
@@ -38,6 +38,14 @@ def ValType(val):
 
   # Displays 'value.MaybeStrArray' for now, maybe change it.
   return NewStr(value_str(val.tag_()))
+
+
+def PrettyId(id_):
+  # type: (Id_t) -> str
+  """For displaying type errors in the UI."""
+
+  # Displays 'Id.BoolUnary_v' for now
+  return NewStr(Id_str(id_))
 
 
 def PrettyToken(tok, arena):

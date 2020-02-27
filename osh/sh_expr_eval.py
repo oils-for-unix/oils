@@ -822,7 +822,7 @@ class BoolEvaluator(_ExprEvaluator):
             else:
               return self.exec_opts.opt_array[index]
 
-          e_die("%s isn't implemented", op_id)  # implicit location
+          e_die("%s isn't implemented", ui.PrettyId(op_id))  # implicit location
 
         raise AssertionError(arg_type)  # should never happen
 

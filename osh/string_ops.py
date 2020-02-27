@@ -8,11 +8,11 @@ Instead of:
     var y = x -> sub( Glob/a*/, 'b', :ALL)  # maybe a glob literal
 """
 
-from _devbuild.gen.id_kind_asdl import Id, Id_str
+from _devbuild.gen.id_kind_asdl import Id
 from core import error
+from core import ui
 from core import util
 from core.util import e_die
-from mycpp.mylib import NewStr
 from osh import glob_
 
 import libc
@@ -258,7 +258,7 @@ def DoUnarySuffixOp(s, op, arg):
     elif op.op_id == Id.VOp1_Comma:  # Only lowercase the first letter
       if arg != '':
         # TODO: location info for op
-        e_die("%s can't have an argument", NewStr(Id_str(op.op_id)))
+        e_die("%s can't have an argument", ui.PrettyId(op.op_id))
       if len(s):
         return s[0].lower() + s[1:]
       else:
@@ -266,12 +266,12 @@ def DoUnarySuffixOp(s, op, arg):
 
     elif op.op_id == Id.VOp1_DComma:
       if arg != '':
-        e_die("%s can't have an argument", NewStr(Id_str(op.op_id)))
+        e_die("%s can't have an argument", ui.PrettyId(op.op_id))
       return s.lower()
 
     elif op.op_id == Id.VOp1_Caret:  # Only uppercase the first letter
       if arg != '':
-        e_die("%s can't have an argument", NewStr(Id_str(op.op_id)))
+        e_die("%s can't have an argument", ui.PrettyId(op.op_id))
       if len(s):
         return s[0].upper() + s[1:]
       else:
@@ -279,7 +279,7 @@ def DoUnarySuffixOp(s, op, arg):
 
     elif op.op_id == Id.VOp1_DCaret:
       if arg != '':
-        e_die("%s can't have an argument", NewStr(Id_str(op.op_id)))
+        e_die("%s can't have an argument", ui.PrettyId(op.op_id))
       return s.upper()
 
     else:  # e.g. ^ ^^ , ,,
@@ -352,7 +352,7 @@ def DoUnarySuffixOp(s, op, arg):
     return s
 
   else:
-    raise NotImplementedError("Can't use %s with pattern" % op.op_id)
+    raise NotImplementedError(ui.PrettyId(op.op_id))
 
 
 def _AllMatchPositions(s, regex):
