@@ -46,8 +46,9 @@ script:
     # Make sure dev build of yajl works
     - test/spec.sh oil-json
     - test/spec.sh interactive
-    # TODO: get other spec tests running on Travis.
-    # - test/spec.sh all
+    # Running serially is slow, but easier to debug ...
+    - test/spec.sh oil-all-serial
+    - test/spec.sh osh-all-serial
 
 notifications:
     on_success: change

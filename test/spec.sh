@@ -230,6 +230,14 @@ oil-all() {
   test/spec-runner.sh all-parallel oil "$@"
 }
 
+osh-all-serial() {
+  MAX_PROCS=1 $0 osh-all "$@"
+}
+
+oil-all-serial() {
+  MAX_PROCS=1 $0 oil-all "$@"
+}
+
 # Usgae: test/spec.sh dbg smoke, dbg-all
 dbg() {
   OSH_LIST='_bin/osh-dbg' $0 "$@"

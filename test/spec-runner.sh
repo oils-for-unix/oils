@@ -291,7 +291,7 @@ _all-parallel() {
   manifest
 
   set +o errexit
-  head -n $NUM_TASKS $manifest | xargs -n 1 -P $JOBS --verbose -- $0 run-cases
+  head -n $NUM_TASKS $manifest | xargs -n 1 -P $MAX_PROCS --verbose -- $0 run-cases
   set -o errexit
 
   #ls -l _tmp/spec
@@ -310,21 +310,6 @@ all-parallel() {
   # to a file.
 
   time $0 _all-parallel "$@"
-}
-
-# For debugging only: run tests serially.
-# TODO: We could get rid of 'all-serial' and the 'osh-oil' suite.
-all-serial() {
-  mkdir -p _tmp/spec
-
-  cat _tmp/spec/SUITE-osh-oil.txt | while read t; do
-    echo $t
-    # Run the wrapper function here
-    test/spec.sh $t --format html > _tmp/spec/${t}.html || {
-      echo "FAILED"
-      exit 1
-    }
-  done
 }
 
 # NOTES:
@@ -387,7 +372,7 @@ test-to-html() {
 all-tests-to-html() {
   local manifest=$1
   head -n $NUM_TASKS $manifest \
-    | xargs -n 1 -P $JOBS --verbose -- $0 test-to-html
+    | xargs -n 1 -P $MAX_PROCS --verbose -- $0 test-to-html
 }
 
 filename=$(basename $0)

@@ -87,7 +87,7 @@ parse-in-parallel() {
   local func=${1:-dump-html-and-translate-file}
 
   local failed=''
-  xargs -n 2 -P $JOBS -- $0 $func || failed=1
+  xargs -n 2 -P $MAX_PROCS -- $0 $func || failed=1
 
   # Limit the output depth
   tree -L 3 _tmp/wild

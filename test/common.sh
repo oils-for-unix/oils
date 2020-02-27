@@ -14,7 +14,7 @@ readonly __TEST_COMMON_SH=1
 readonly OSH=${OSH:-bin/osh}
 
 # For xargs -P in spec-runner.sh, wild-runner.sh.
-readonly JOBS=$(( $(nproc) - 1 ))
+MAX_PROCS=${MAX_PROCS:-$(( $(nproc) - 1 ))}
 
 readonly R_PATH=~/R  # Like PYTHONPATH, but for running R scripts
 
