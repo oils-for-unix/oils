@@ -157,11 +157,13 @@ $
 ''', re.VERBOSE)
 
 
-_COMMENT_RE = re.compile(r'''
+_EOL_COMMENT_RE = re.compile(r'''
 .*?             # arbitrary text
 [ ][ ]([#] .*)  # two spaces then a comment
 $
 ''', re.VERBOSE)
+
+_COMMENT_LINE_RE = re.compile(r'#.*')
 
 
 def Lines(s, start_pos, end_pos):
@@ -186,40 +188,45 @@ class ShPromptPlugin(_Plugin):
     pos = self.start_pos
     for line_end in Lines(self.s, self.start_pos, self.end_pos):
 
-      # TODO:  Check for comments on non-prompt lines too?
-
-      m = _PROMPT_LINE_RE.match(self.s, pos, line_end)
+      m = _COMMENT_LINE_RE.match(self.s, pos, line_end)
       if m:
-        #log('MATCH %r', m.groups())
-
-        out.PrintUntil(m.start(1))
-        out.Print('<span class="sh-prompt">')
-        out.PrintUntil(m.end(1))
+        out.PrintUntil(m.start(0))
+        out.Print('<span class="sh-comment">')
+        out.PrintUntil(m.end(0))
         out.Print('</span>')
-
-        out.PrintUntil(m.start(2))
-        out.Print('<span class="sh-command">')
-        out.PrintUntil(m.end(2))
-        out.Print('</span>')
-
-        if m.group(3):
-          out.PrintUntil(m.start(3))
-          out.Print('<span class="sh-tab-complete">')
-          out.PrintUntil(m.end(3))
-          out.Print('</span>')
-
-        if m.group(4):
-          out.PrintUntil(m.start(4))
-          out.Print('<span class="sh-comment">')
-          out.PrintUntil(m.end(4))
-          out.Print('</span>')
       else:
-        m = _COMMENT_RE.match(self.s, pos, line_end)
+        m = _PROMPT_LINE_RE.match(self.s, pos, line_end)
         if m:
+          #log('MATCH %r', m.groups())
+
           out.PrintUntil(m.start(1))
-          out.Print('<span class="sh-comment">')
+          out.Print('<span class="sh-prompt">')
           out.PrintUntil(m.end(1))
           out.Print('</span>')
+
+          out.PrintUntil(m.start(2))
+          out.Print('<span class="sh-command">')
+          out.PrintUntil(m.end(2))
+          out.Print('</span>')
+
+          if m.group(3):
+            out.PrintUntil(m.start(3))
+            out.Print('<span class="sh-tab-complete">')
+            out.PrintUntil(m.end(3))
+            out.Print('</span>')
+
+          if m.group(4):
+            out.PrintUntil(m.start(4))
+            out.Print('<span class="sh-comment">')
+            out.PrintUntil(m.end(4))
+            out.Print('</span>')
+        else:
+          m = _EOL_COMMENT_RE.match(self.s, pos, line_end)
+          if m:
+            out.PrintUntil(m.start(1))
+            out.Print('<span class="sh-comment">')
+            out.PrintUntil(m.end(1))
+            out.Print('</span>')
 
       out.PrintUntil(line_end)
 
