@@ -30,7 +30,8 @@ ___
 #### split with explicit IFS argument
 shopt -s oil:basic
 
-output=$(echo '1 one'; echo '2 two')
+# demonstrate that -- is not special to 'write'
+output=$(echo '1 one'; echo --; echo '2 two')
 
 # TODO: accept named arg IFS=
 for x in @split(output, $'\n'); do
@@ -39,6 +40,7 @@ done
 
 ## STDOUT:
 1 one
+--
 2 two
 ## END
 
