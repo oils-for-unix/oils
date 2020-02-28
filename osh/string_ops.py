@@ -411,6 +411,8 @@ class GlobReplacer(object):
       try:
         return _PatSubAll(s, regex, self.replace_str)  # loop over matches
       except RuntimeError as e:
+        # libc.regex_first_group_match raises RuntimeError.
+        # TODO: We want errors with
         e_die('Error matching regex %r: %s', regex, e, span_id=self.slash_spid)
 
     if op.replace_mode == Id.Lit_Pound:

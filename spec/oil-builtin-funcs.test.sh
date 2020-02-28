@@ -167,3 +167,53 @@ for (item in zip(a, b)) {
 2 b
 3 c
 ## END
+
+#### @split(x) respects IFS
+setvar IFS = ":"
+var x = "one:two:three"
+argv.py @split(x)
+## STDOUT:
+['one', 'two', 'three']
+## END
+
+#### @maybe(x)
+setvar empty = ''
+setvar x = 'X'
+argv.py a @maybe(empty) @maybe(x) b
+
+setvar n = null
+argv.py a @maybe(n) b
+
+## STDOUT:
+['a', 'X', 'b']
+['a', 'b']
+## END
+
+#### @maybe on invalid type is fatal error
+
+# not allowed
+setvar marray = @()
+argv.py a @maybe(marray) b
+echo done
+## status: 1
+## STDOUT:
+## END
+
+
+#### @glob(x)
+touch -- a.z b.z -.z
+write -- @glob('?.z')
+echo ___
+
+# add it back
+shopt -s dashglob
+write -- @glob('?.z')
+
+## STDOUT:
+a.z
+b.z
+___
+-.z
+a.z
+b.z
+## END

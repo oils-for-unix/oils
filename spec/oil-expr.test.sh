@@ -157,15 +157,6 @@ echo $x $max(1+2, 3+4,)
 7 7
 ## END
 
-#### @split(x) 
-shopt -s oil:basic
-setvar IFS = ":"
-var x = "one:two:three"
-argv.py @split(x)
-## STDOUT:
-['one', 'two', 'three']
-## END
-
 #### @range()
 shopt -s oil:all
 write @range(10, 15, 2)

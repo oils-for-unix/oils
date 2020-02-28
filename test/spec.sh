@@ -888,6 +888,12 @@ oil-builtin-funcs() {
     $OIL_LIST "$@"
 }
 
+oil-demo() {
+  # Using OSH for minimalism
+  sh-spec spec/oil-demo.test.sh --cd-tmp --osh-failures-allowed 0 \
+    $OSH_LIST "$@"
+}
+
 # Use bin/oil
 
 oil-keywords() {

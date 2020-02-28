@@ -101,21 +101,22 @@ class SplitContext(object):
     # Split into (ifs_whitespace, ifs_other)
     self.splitters = {}  # type: Dict[str, IfsSplitter]  # aka IFS value -> splitter instance
 
-  def _GetSplitter(self):
-    # type: () -> IfsSplitter
+  def _GetSplitter(self, ifs=None):
+    # type: (str) -> IfsSplitter
     """Based on the current stack frame, get the splitter."""
-    val = self.mem.GetVar('IFS')
+    if ifs is None:
+      val = self.mem.GetVar('IFS')
 
-    UP_val = val
-    with tagswitch(val) as case:
-      if case(value_e.Undef):
-        ifs = DEFAULT_IFS
-      elif case(value_e.Str):
-        val = cast(value__Str, UP_val)
-        ifs = val.s
-      else:
-        # TODO: Raise proper error
-        raise AssertionError("IFS shouldn't be an array")
+      UP_val = val
+      with tagswitch(val) as case:
+        if case(value_e.Undef):
+          ifs = DEFAULT_IFS
+        elif case(value_e.Str):
+          val = cast(value__Str, UP_val)
+          ifs = val.s
+        else:
+          # TODO: Raise proper error
+          raise AssertionError("IFS shouldn't be an array")
 
     try:
       sp = self.splitters[ifs]
@@ -174,25 +175,12 @@ class SplitContext(object):
     sp = self._GetSplitter()
     return sp.Escape(s)
 
-  def SplitForWordEval(self, s):
-    # type: (str) -> List[str]
-    """Split the string into slices, some of which are marked ignored.
-
-    IGNORED can be used for two reasons:
-    1. The slice is a delimiter.
-    2. The slice is a a backslash escape.
-
-    Example: If you have one\:two, then there are four slices.  Only the
-    backslash one is ignored.  In 'one:two', then you have three slices.  The
-    colon is ignored.
-
-    Args:
-      allow_escape, whether \ can escape IFS characters and newlines.
-
-    Returns:
-      Array of (ignored Bool, start_index Int) tuples.
+  def SplitForWordEval(self, s, ifs=None):
+    # type: (str, str) -> List[str]
     """
-    sp = self._GetSplitter()
+    Split used by word evaluation.  Also used by the explicit @split() functino.
+    """
+    sp = self._GetSplitter(ifs=ifs)
     spans = sp.Split(s, True)
     if 0:
       for span in spans:

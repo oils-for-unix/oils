@@ -68,6 +68,7 @@ from core import optview
 from core import passwd
 from core import process
 from core import pyutil
+from core import state
 from core import ui
 from core import util
 from core.util import log
@@ -90,11 +91,11 @@ from osh import builtin_printf
 from osh import builtin_process
 from osh import builtin_pure
 from osh import cmd_exec
-from osh import sh_expr_eval
+from osh import glob_
 from osh import history
 from osh import prompt
+from osh import sh_expr_eval
 from osh import split
-from core import state
 from osh import word_eval
 
 from pylib import os_path
@@ -428,8 +429,15 @@ def ShellMain(lang, argv0, argv, login_shell):
   splitter = split.SplitContext(mem)
 
   # split() builtin
+  # TODO: Accept IFS as a named arg?  split('a b', IFS=' ')
   builtin_funcs.SetGlobalFunc(
-      mem, 'split', lambda s: splitter.SplitForWordEval(s))
+      mem, 'split', lambda s, ifs=None: splitter.SplitForWordEval(s, ifs=ifs))
+
+  # glob() builtin
+  # TODO: This is instantiation is duplicated in osh/word_eval.py
+  globber = glob_.Globber(exec_opts)
+  builtin_funcs.SetGlobalFunc(
+      mem, 'glob', lambda s: globber.OilFuncCall(s))
 
   # This could just be OSH_DEBUG_STREAMS='debug crash' ?  That might be
   # stuffing too much into one, since a .json crash dump isn't a stream.

@@ -6,6 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import value, scope_e
 from _devbuild.gen.syntax_asdl import sh_lhs_expr
+from core.util import e_die
 from oil_lang import objects
 
 from typing import Callable, Union, TYPE_CHECKING
@@ -29,6 +30,25 @@ def _Join(array, delim=''):
   return delim.join(array)
 
 
+def _Maybe(obj):
+  """
+  func join(items Array[Str]) Str ...
+  """
+  if obj is None:
+    return []
+
+  # TODO: Need proper span IDs
+  if not isinstance(obj, str):
+    raise e_die('maybe() passed arg of invalid type %r',
+                obj.__class__.__name__)
+
+  s = obj
+  if len(s):
+    return [s]
+  else:
+    return []
+
+
 def Init(mem):
   # type: (Mem) -> None
   """Populate the top level namespace with some builtin functions."""
@@ -38,6 +58,7 @@ def Init(mem):
   #
 
   SetGlobalFunc(mem, 'join', _Join)
+  SetGlobalFunc(mem, 'maybe', _Maybe)
   # NOTE: split() is set in main(), since it depends on the Splitter() object /
   # $IFS.
   # TODO: How to ask for Python's split algorithm?  Or Awk's?

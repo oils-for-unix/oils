@@ -407,3 +407,10 @@ class Globber(object):
     # Return the original string
     out.append(GlobUnescape(arg))
     return 1
+
+  def OilFuncCall(self, arg):
+    # type: (str) -> List[str]
+    """User-facing function."""
+    out = []  # type: List[str]
+    self.Expand(arg, out)
+    return out
