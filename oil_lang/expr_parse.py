@@ -11,13 +11,14 @@ from _devbuild.gen.id_kind_asdl import Id, Kind, Id_str
 from _devbuild.gen.types_asdl import lex_mode_e
 
 from core import error
+from core import ui
 from core.util import log, p_die
 from frontend import consts
 from frontend import reader
+from mycpp import mylib
 from osh import braces
 from osh import word_
 from pgen2 import parse
-from mycpp import mylib
 
 _ = log
 
@@ -77,7 +78,7 @@ def _Classify(gr, tok):
   if typ in gr.tokens:
     return gr.tokens[typ]
 
-  type_str = '' if tok.id == Id.Unknown_Tok else (' (%s)' % mylib.NewStr(Id_str(tok.id)))
+  type_str = '' if tok.id == Id.Unknown_Tok else (' (%s)' % ui.PrettyId(tok.id))
   p_die('Unexpected token in expression mode%s', type_str, token=tok)
 
 

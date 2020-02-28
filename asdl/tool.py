@@ -98,7 +98,7 @@ namespace %s {
 
       with open(out_prefix + '.cc', 'w') as f:
         # HACK until we support 'use'
-        if schema_filename == 'syntax.asdl':
+        if schema_filename in ('runtime.asdl', 'syntax.asdl'):
           f.write('#include "id_kind_asdl.h"  // hack\n')
           f.write('using id_kind_asdl::Id_t;  // hack\n')
 

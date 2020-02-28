@@ -239,6 +239,7 @@ compile-slice() {
     cpp/asdl_pretty.cc \
     cpp/frontend_tdop.cc \
     cpp/osh_arith_parse.cc \
+    _build/cpp/runtime_asdl.cc \
     _build/cpp/syntax_asdl.cc \
     _build/cpp/hnode_asdl.cc \
     _build/cpp/id_kind_asdl.cc \

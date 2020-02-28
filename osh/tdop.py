@@ -2,7 +2,7 @@
 tdop.py - Library for expression parsing.
 """
 
-from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
+from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
     arith_expr, arith_expr_e, arith_expr_t,
     arith_expr__VarRef, arith_expr__Binary,
@@ -11,9 +11,10 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.types_asdl import lex_mode_e
 from core.util import p_die
-from osh import word_
+from core import ui
 from mycpp import mylib
-from mycpp.mylib import tagswitch, NewStr
+from mycpp.mylib import tagswitch
+from osh import word_
 
 from typing import (
     Callable, List, Dict, Tuple, Any, cast, TYPE_CHECKING
@@ -268,7 +269,7 @@ class TdopParser(object):
     """Assert that we're at the current token and advance."""
     if not self.AtToken(token_type):
       p_die('Parser expected %s, got %s',
-            NewStr(Id_str(token_type)), NewStr(Id_str(self.op_id)),
+            ui.PrettyId(token_type), ui.PrettyId(self.op_id),
             word=self.cur_word)
     self.Next()
 

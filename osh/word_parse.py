@@ -48,7 +48,7 @@ lex_mode_e.VSub_ArgDQ
 """
 
 from _devbuild.gen import grammar_nt
-from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str, Kind
+from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
     Token, speck,
@@ -76,7 +76,6 @@ from osh import tdop
 from osh import arith_parse
 from osh import braces
 from osh import word_
-from mycpp.mylib import NewStr
 
 from typing import List, Optional, Tuple, cast
 from typing import TYPE_CHECKING
@@ -256,7 +255,7 @@ class WordParser(WordEmitter):
         # We're either in the VS_ARG_UNQ or VS_ARG_DQ lex state, and everything
         # there is Lit_ or Left_, except for }.
         p_die("Expected } after replacement string, got %s",
-              NewStr(Id_str(self.token_type)), token=self.cur_token)
+              ui.PrettyId(self.token_type), token=self.cur_token)
 
       return suffix_op.PatSub(pat, replace, replace_mode)
 

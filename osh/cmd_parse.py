@@ -10,7 +10,7 @@ cmd_parse.py - Parse high level shell commands.
 from __future__ import print_function
 
 from _devbuild.gen import grammar_nt
-from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str, Kind
+from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
     command, command_t,
@@ -36,13 +36,13 @@ from _devbuild.gen import syntax_asdl  # token, etc.
 
 from asdl import runtime
 from core import error
+from core import ui
 from core.util import log, p_die
 from frontend import match
 from frontend import reader
 from osh import braces
 from osh import bool_parse
 from osh import word_
-from mycpp.mylib import NewStr
 
 from typing import Optional, List, Tuple, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -436,7 +436,7 @@ class CommandParser(object):
     # type: (Id_t) -> None
     actual_id = word_.CommandId(self.cur_word)
     msg = 'Expected word type %s, got %s' % (
-        NewStr(Id_str(c_id)), NewStr(Id_str(actual_id))
+        ui.PrettyId(c_id), ui.PrettyId(actual_id)
     )
     self._Eat2(c_id, msg)
 

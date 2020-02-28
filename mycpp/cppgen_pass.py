@@ -1646,7 +1646,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             class_name == 'Mem' and func_name in ('GetVar', 'SetVar') or
             class_name == 'SearchPath' and func_name == 'Lookup' or
             # osh/sh_expr_eval.py
-            class_name is None and func_name == 'EvalLhsAndLookup'
+            class_name is None and func_name == 'EvalLhsAndLookup' or
+            class_name == 'SplitContext' and
+              func_name in ('SplitForWordEval', '_GetSplitter')
           ):
 
           default_val = o.arguments[-1].initializer

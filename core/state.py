@@ -15,19 +15,19 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Str, value__MaybeStrArray, value__AssocArray,
-    value_str,
     lvalue, lvalue_e, lvalue_t, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
     scope_e, scope_t,
 )
 from _devbuild.gen import runtime_asdl  # for cell
 from asdl import runtime
+from core import ui
 from core.util import log, e_die
 from core import optview
 from frontend import args
 from frontend import consts
 from frontend import match
 from mycpp import mylib
-from mycpp.mylib import tagswitch, iteritems, NewStr
+from mycpp.mylib import tagswitch, iteritems
 from osh import split
 from pylib import os_path
 from pylib import path_stat
@@ -1231,7 +1231,7 @@ class Mem(object):
         # AssocArray shouldn because we query IsAssocArray before evaluating
         # sh_lhs_expr.  Could conslidate with s[i] case above
         e_die("Object of type %s can't be indexed",
-              NewStr(value_str(cell.val.tag_())), span_id=left_spid)
+              ui.ValType(cell.val), span_id=left_spid)
 
       elif case(lvalue_e.Keyed):
         lval = cast(lvalue__Keyed, UP_lval)
