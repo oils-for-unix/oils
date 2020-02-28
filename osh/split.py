@@ -129,6 +129,7 @@ class SplitContext(object):
         if c in ' \t\n':  # Happens to be the same as DEFAULT_IFS
           ifs_whitespace.write(c)
         else:
+          # TODO: \ not supported
           ifs_other.write(c)
 
       sp = IfsSplitter(ifs_whitespace.getvalue(), ifs_other.getvalue())
@@ -205,20 +206,6 @@ class _BaseSplitter(object):
     return util.BackslashEscape(s, self.escape_chars)
 
 
-# TODO: Used this when IFS='' or IFS isn't set?  This is the fast path for Oil!
-
-class NullSplitter(_BaseSplitter):
-
-  def __init__(self, ifs_whitespace):
-    # type: (str) -> None
-    _BaseSplitter.__init__(self, ifs_whitespace)
-    self.ifs_whitespace = ifs_whitespace
-
-  def Split(self, s, allow_escape):
-    # type: (str, bool) -> List[str]
-    raise NotImplementedError()
-
-
 class IfsSplitter(_BaseSplitter):
   """Split a string when IFS has non-whitespace characters."""
 
@@ -268,16 +255,21 @@ class IfsSplitter(_BaseSplitter):
       return spans
 
     state = ST.Start
-    while i < n:
-      c = s[i]
-      if c in ws_chars:
-        ch = CH.DE_White
-      elif c in other_chars:
-        ch = CH.DE_Gray
-      elif allow_escape and c == '\\':
-        ch = CH.Backslash
+    while state != ST.Done:
+      if i < n:
+        c = s[i]
+        if c in ws_chars:
+          ch = CH.DE_White
+        elif c in other_chars:
+          ch = CH.DE_Gray
+        elif allow_escape and c == '\\':
+          ch = CH.Backslash
+        else:
+          ch = CH.Black
+      elif i == n:
+        ch = CH.Sentinel  # one more iterations for the end of string
       else:
-        ch = CH.Black
+        raise AssertionError()  # shouldn't happen
 
       new_state, action = consts.TRANSITIONS[state, ch]
       if new_state == ST.Invalid:
@@ -304,19 +296,5 @@ class IfsSplitter(_BaseSplitter):
 
       state = new_state
       i += 1
-
-    last_action = consts.LAST_SPAN_ACTION[state]
-    #log('n %d state %s last_action %s', n, state, last_action)
-
-    if last_action == EMIT.Part:
-      spans.append((span_e.Black, n))
-    elif last_action == EMIT.Delim:
-      spans.append((span_e.Delim, n))
-    elif last_action == EMIT.Escape:
-      spans.append((span_e.Backslash, n))
-    elif last_action == EMIT.Nothing:
-      pass
-    else:
-      raise AssertionError()
 
     return spans

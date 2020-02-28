@@ -91,12 +91,12 @@ module runtime
   -- For word splitting (in frontend/consts.py and osh/split.py)
   span = Black | Delim | Backslash
   emit = Part | Delim | Empty | Escape | Nothing
-  state = Invalid | Start | DE_White1 | DE_Gray | DE_White2 | Black | Backslash
+  state = Invalid | Start | DE_White1 | DE_Gray | DE_White2 | Black | Backslash | Done
 
   -- Edges are characters.  DE_ is the delimiter prefix.  DE_White is for
   -- whitespace; DE_Gray is for other IFS chars; Black is for significant
-  -- characters.
-  char_kind = DE_White | DE_Gray | Black | Backslash
+  -- characters.  Sentinel is the end of the string.
+  char_kind = DE_White | DE_Gray | Black | Backslash | Sentinel
 
   -- word_eval.py: SliceParts is for ${a-} and ${a+}, Error is for ${a?}, and
   -- SliceAndAssign is for ${a=}.

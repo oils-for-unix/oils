@@ -188,26 +188,33 @@ TRANSITIONS = {
     (ST.Start, CH.DE_Gray):   (ST.DE_Gray,   EMIT.Empty),        # '_'
     (ST.Start, CH.Black):     (ST.Black,     EMIT.Nothing),      # 'a'
     (ST.Start, CH.Backslash): (ST.Backslash, EMIT.Nothing),      # '\'
+    (ST.Start, CH.Sentinel):  (ST.Done,      EMIT.Nothing),      # ''
 
     (ST.DE_White1, CH.DE_White):  (ST.DE_White1, EMIT.Nothing),  # '  '
     (ST.DE_White1, CH.DE_Gray):   (ST.DE_Gray,   EMIT.Nothing),  # ' _'
     (ST.DE_White1, CH.Black):     (ST.Black,     EMIT.Delim),    # ' a'
     (ST.DE_White1, CH.Backslash): (ST.Backslash, EMIT.Delim),    # ' \'
+    # Ignore trailing IFS whitespace too.  This is necessary for the case:
+    # IFS=':' ; read x y z <<< 'a : b : c :'.
+    (ST.DE_White1, CH.Sentinel):  (ST.Done,      EMIT.Nothing),  # 'zz '
 
     (ST.DE_Gray, CH.DE_White):  (ST.DE_White2, EMIT.Nothing),    # '_ '
     (ST.DE_Gray, CH.DE_Gray):   (ST.DE_Gray,   EMIT.Empty),      # '__'
     (ST.DE_Gray, CH.Black):     (ST.Black,     EMIT.Delim),      # '_a'
     (ST.DE_Gray, CH.Backslash): (ST.Black,     EMIT.Delim),      # '_\'
+    (ST.DE_Gray, CH.Sentinel):  (ST.Done,      EMIT.Delim),   # 'zz:' IFS=': '
 
     (ST.DE_White2, CH.DE_White):  (ST.DE_White2, EMIT.Nothing),  # '_  '
     (ST.DE_White2, CH.DE_Gray):   (ST.DE_Gray,   EMIT.Empty),    # '_ _'
     (ST.DE_White2, CH.Black):     (ST.Black,     EMIT.Delim),    # '_ a'
     (ST.DE_White2, CH.Backslash): (ST.Backslash, EMIT.Delim),    # '_ \'
+    (ST.DE_White2, CH.Sentinel):  (ST.Done,      EMIT.Delim), # 'zz: ' IFS=': '
 
     (ST.Black, CH.DE_White):  (ST.DE_White1, EMIT.Part),         # 'a '
     (ST.Black, CH.DE_Gray):   (ST.DE_Gray,   EMIT.Part),         # 'a_'
     (ST.Black, CH.Black):     (ST.Black,     EMIT.Nothing),      # 'aa'
     (ST.Black, CH.Backslash): (ST.Backslash, EMIT.Part),         # 'a\'
+    (ST.Black, CH.Sentinel):  (ST.Done,      EMIT.Part),         # 'zz' IFS=': '
 
     # Here we emit an ignored \ and the second character as well.
     # We're emitting TWO spans here; we don't wait until the subsequent
@@ -221,15 +228,5 @@ TRANSITIONS = {
     (ST.Backslash, CH.Black):     (ST.Black,     EMIT.Escape),   # '\a'
     # NOTE: second character is a backslash, but new state is ST.Black!
     (ST.Backslash, CH.Backslash): (ST.Black,     EMIT.Escape),   # '\\'
+    (ST.Backslash, CH.Sentinel):  (ST.Done,      EMIT.Escape),   # 'zz\'
 }
-
-LAST_SPAN_ACTION = {
-    ST.Black: EMIT.Part,
-    ST.Backslash: EMIT.Escape,
-    # Ignore trailing IFS whitespace too.  This is necessary for the case:
-    # IFS=':' ; read x y z <<< 'a : b : c :'.
-    ST.DE_White1: EMIT.Nothing,
-    ST.DE_Gray: EMIT.Delim,
-    ST.DE_White2: EMIT.Delim,
-}
-
