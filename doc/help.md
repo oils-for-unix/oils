@@ -871,10 +871,10 @@ These functions give better syntax to existing shell constructs.
 
 - `shquote()` for `printf %q` and `${x@Q}`
 - `lstrip()` for `${x#prefix}` and  `${x##prefix}`
-- `rstrip()` for `${x%suffix}` and  `${x%%suffix} 
+- `rstrip()` for `${x%suffix}` and  `${x%%suffix}` 
 - `lstripglob()` and `rstripglob()` for slow, legacy glob
-- `upper()` for `${x^^}
-- `lower()` for `${x,,}
+- `upper()` for `${x^^}`
+- `lower()` for `${x,,}`
 - `strftime()`: hidden in `printf`
 
 ### Arrays
