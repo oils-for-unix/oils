@@ -110,3 +110,8 @@ Str* repr(void* obj) {
 [[noreturn]] void e_strict(Str* s, syntax_asdl::word_t* w) {
   assert(0);
 }
+
+// Used without args in osh/string_ops.py
+[[noreturn]] void e_strict(Str* s) {
+  assert(0);
+}

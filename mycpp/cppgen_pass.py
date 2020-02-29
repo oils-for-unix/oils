@@ -496,6 +496,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         if o.callee.name == 'log':
           args = o.args
+          if len(args) == 1:  # log(CONST)
+            self.write('println_stderr(')
+            self.accept(args[0])
+            self.write(')')
+            return
+
           rest = args[1:]
           if self.decl:
             fmt = args[0].value
@@ -515,6 +521,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # TODO: Consolidate X_die() and log()?  It has an extra arg though.
         if o.callee.name in ('p_die', 'e_die', 'e_strict'):
           args = o.args
+          if len(args) == 1:  # log(CONST)
+            self.write('%s(' % o.callee.name)
+            self.accept(args[0])
+            self.write(')')
+            return
+
           log('o.arg_names %s', o.arg_names)
           has_keyword_arg = o.arg_names[-1] is not None
           if has_keyword_arg:

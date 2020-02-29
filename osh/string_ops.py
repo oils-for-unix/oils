@@ -9,10 +9,9 @@ Instead of:
 """
 
 from _devbuild.gen.id_kind_asdl import Id
-from core import error
 from core import ui
 from core import util
-from core.util import e_die
+from core.util import e_die, e_strict
 from osh import glob_
 
 import libc
@@ -67,7 +66,7 @@ INVALID_START = 'Invalid start of UTF-8 character'
 def _CheckContinuationByte(byte):
   # type: (str) -> None
   if (ord(byte) >> 6) != 0b10:
-    raise error.Strict(INVALID_CONT)
+    e_strict(INVALID_CONT)
 
 
 def _Utf8CharLen(starting_byte):
@@ -81,7 +80,7 @@ def _Utf8CharLen(starting_byte):
   elif (starting_byte >> 3) == 0b11110:
     return 4
   else:
-    raise error.Strict(INVALID_START)
+    e_strict(INVALID_START)
 
 
 def _NextUtf8Char(s, i):
@@ -102,7 +101,7 @@ def _NextUtf8Char(s, i):
       _CheckContinuationByte(s[j])
     i += length
   except IndexError:
-    raise error.Strict(INCOMPLETE_CHAR)
+    e_strict(INCOMPLETE_CHAR)
 
   return i
 
@@ -150,10 +149,10 @@ def _PreviousUtf8Char(s, i):
         # Leaving a generic error for now, but if we want to, it's not
         # hard to calculate the position where things go wrong.  Note
         # that offset might be more than 4, for an invalid utf-8 string.
-        raise error.Strict(INVALID_START)
+        e_strict(INVALID_START)
       return i
 
-  raise error.Strict(INVALID_START)
+  e_strict(INVALID_START)
 
 
 def CountUtf8Chars(s):

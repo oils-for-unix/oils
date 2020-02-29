@@ -26,6 +26,8 @@ if mylib.PYTHON:
     print(tok)
 
 
+CONST = "myconst"
+
 def run_tests():
   # type: () -> None
 
@@ -33,6 +35,9 @@ def run_tests():
 
   # Positional args
   log("log %d %s", 42, "LL")
+
+  log(CONST)
+  p_die(CONST, span_id=-1)
 
   # Keyword args give location info for X_die()
   span_id = 123
