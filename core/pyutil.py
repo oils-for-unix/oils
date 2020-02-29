@@ -29,6 +29,20 @@ def e_usage(msg, *pos_args, **kwargs):
   raise args.UsageError(msg, *pos_args, **kwargs)
 
 
+# TODO: Remove ui.Stderr in favor of this
+def stderr_line(msg, *args):
+  # type: (str, *Any) -> None
+  """Print a message to stderr for the user.
+
+  This should be used sparingly, since it doesn't have any location info.
+  Right now we use it to print fatal I/O errors that were only caught at the
+  top level.
+  """
+  if args:
+    msg = msg % args
+  print(msg, file=sys.stderr)
+
+
 class _ResourceLoader(object):
 
   def open(self, rel_path):

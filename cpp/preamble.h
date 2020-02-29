@@ -34,7 +34,10 @@ using id_kind_asdl::Kind_t;
 // Stubs for Python exceptions.  TODO: Move to mylib if they're used?
 
 // e.g. libc::regex_match raises it
-class RuntimeError {};
+class RuntimeError {
+ public:
+  Str* message;
+};
 
 class ValueError {};
 

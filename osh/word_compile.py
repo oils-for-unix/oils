@@ -12,7 +12,7 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
     class_literal_term, class_literal_term_t, Token
 )
-from core import ui
+from core.pyutil import stderr_line
 from osh import string_ops
 
 
@@ -85,7 +85,7 @@ def EvalCStringToken(id_, value):
       # - make this an error in strict mode
       # - improve the error message.  We don't have a span_id!
       # Either \A or trailing \ (A is not a valid backslash escape)
-      ui.Stderr('warning: Invalid backslash escape in C-style string')
+      stderr_line('warning: Invalid backslash escape in C-style string')
     return value
 
   elif id_ == Id.Char_OneChar:

@@ -10,8 +10,8 @@ from _devbuild.gen.syntax_asdl import (
     glob_part_e, glob_part, glob_part_t,
     glob_part__Literal, glob_part__Operator, glob_part__CharClass,
 )
-from core import ui
 from core import util
+from core.pyutil import stderr_line
 #from core.util import log
 from frontend import match
 
@@ -378,8 +378,9 @@ class Globber(object):
       # These errors should be rare: I/O error, out of memory, or unknown
       # There are no syntax errors.  (But see comment about globerr() in
       # native/libc.c.)
-      # TODO: Should this be an OSError then?  I guess there's no errno.
-      ui.Stderr("Error expanding glob %r: %s", arg, e)
+      # note: MyPy doesn't know RuntimeError has e.message (and e.args)
+      msg = e.message  # type: str
+      stderr_line("Error expanding glob %r: %s", arg, msg)
       raise
     #log('glob %r -> %r', arg, g)
 

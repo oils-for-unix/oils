@@ -5,6 +5,7 @@ varargs.py
 from __future__ import print_function
 
 import os
+import sys
 
 import mylib
 from mylib import log
@@ -25,6 +26,12 @@ if mylib.PYTHON:
     tok = kwargs.get('tok')
     print(tok)
 
+  def stderr_line(msg, *args):
+    # type: (str, Any) -> None
+    if args:
+      msg = msg % args
+    print(msg, file=sys.stderr)
+
 
 CONST = "myconst"
 
@@ -32,6 +39,8 @@ def run_tests():
   # type: () -> None
 
   log('constant string')
+
+  stderr_line('stderr_line')
 
   # Positional args
   log("log %d %s", 42, "LL")

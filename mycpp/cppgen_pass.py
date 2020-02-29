@@ -494,7 +494,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # Maybe I should rename them all printf()
         # or fprintf()?  Except p_die() has extra args
 
-        if o.callee.name == 'log':
+        if o.callee.name == 'log' or o.callee.name == 'stderr_line':
           args = o.args
           if len(args) == 1:  # log(CONST)
             self.write('println_stderr(')
@@ -527,7 +527,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write(')')
             return
 
-          log('o.arg_names %s', o.arg_names)
           has_keyword_arg = o.arg_names[-1] is not None
           if has_keyword_arg:
             rest = args[1:-1]
@@ -1066,6 +1065,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.write(' = %s%sat%d();\n', temp_name, op, i)  # RHS
 
     def visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt') -> T:
+        # Declare constant strings.  They have to be at the top level.
+        if self.decl and self.indent == 0 and len(o.lvalues) == 1:
+          lval = o.lvalues[0]
+          c_type = get_c_type(self.types[lval])
+          if not lval.name.startswith('_'):
+            self.decl_write('extern %s %s;\n', c_type, lval.name)
+
         # I think there are more than one when you do a = b = 1, which I never
         # use.
         assert len(o.lvalues) == 1, o.lvalues
@@ -1947,7 +1953,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           # TODO: Should these be moved to core/pylib.py or something?
           # They are varargs functions that have to be rewritten.
-          if name in ('log', 'p_die', 'e_die', 'e_strict', 'e_usage'):
+          if name in ('log', 'p_die', 'e_die', 'e_strict', 'e_usage',
+                      'stderr_line'):
             continue    # do nothing
           if name in ('switch', 'tagswitch', 'iteritems'):  # mylib
             continue  # do nothing
