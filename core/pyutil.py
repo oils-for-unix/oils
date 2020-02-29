@@ -11,7 +11,22 @@ from pylib import os_path
 
 import posix_ as posix
 
-from typing import IO
+from typing import IO, NoReturn, Any
+
+
+# TODO: Move log, p_die, and e_die here too.  They have different
+# implementations in C++.
+
+def e_usage(msg, *pos_args, **kwargs):
+  # type: (str, *Any, **Any) -> NoReturn
+  """Convenience wrapper for arg parsing / validation errors.
+
+  Usually causes a builtin to fail with status 2, but the script can continue
+  if 'set +o errexit'.  Main programs like bin/oil also use this.
+  """
+  from frontend import args
+  # TODO: Should be error.Usage
+  raise args.UsageError(msg, *pos_args, **kwargs)
 
 
 class _ResourceLoader(object):
@@ -69,10 +84,11 @@ def GetResourceLoader():
     _loader = _FileResourceLoader(root_dir)
 
   else:
-    # NOTE: This assumes all unit tests are one directory deep, e.g.
-    # core/util_test.py.
-    bin_dir = os_path.dirname(os_path.abspath(sys.argv[0]))  # ~/git/oil/bin
-    root_dir = os_path.join(bin_dir, '..')  # ~/git/oil/osh
+    # Find resources relative to the binary, e.g.
+    # ~/git/oilshell/oil/bin/oil.py.  But it also assumes that all unit tests
+    # that use resources are are one directory deep, e.g. core/util_test.py.
+    bin_dir = os_path.dirname(os_path.abspath(sys.argv[0]))
+    root_dir = os_path.join(bin_dir, '..')  # ~/git/oilshell/oil
     _loader = _FileResourceLoader(root_dir)
 
   return _loader

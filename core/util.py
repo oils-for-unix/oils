@@ -42,19 +42,27 @@ class HistoryError(Exception):
 
 def p_die(msg, *args, **kwargs):
   # type: (str, *Any, **Any) -> NoReturn
-  """Convenience wrapper for parse errors."""
+  """Convenience wrapper for parse errors.
+
+  Exits with status 2.  See core/main_loop.py.
+  """
   raise error.Parse(msg, *args, **kwargs)
 
 
 def e_die(msg, *args, **kwargs):
   # type: (str, *Any, **Any) -> NoReturn
-  """Convenience wrapper for runtime errors."""
+  """Convenience wrapper for fatal runtime errors.
+
+  Usually exits with status 1.  See osh/cmd_exec.py.
+  """
   raise error.FatalRuntime(msg, *args, **kwargs)
 
 
 def e_strict(msg, *args, **kwargs):
   # type: (str, *Any, **Any) -> NoReturn
   """Convenience wrapper for strictness errors.
+
+  Like e_die(), except the script MAY continue executing after these errors.
 
   TODO: This could have a level too?
   """

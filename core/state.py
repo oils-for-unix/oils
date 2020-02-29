@@ -20,10 +20,10 @@ from _devbuild.gen.runtime_asdl import (
 )
 from _devbuild.gen import runtime_asdl  # for cell
 from asdl import runtime
+from core.pyutil import e_usage
 from core import ui
 from core.util import log, e_die
 from core import optview
-from frontend import args
 from frontend import consts
 from frontend import match
 from mycpp import mylib
@@ -280,7 +280,7 @@ class MutableOpts(object):
     index = match.MatchOption(opt_name)
     if index == 0:
       # Could be an assert sometimes, but check anyway
-      raise args.UsageError('got invalid option %r' % opt_name)
+      e_usage('got invalid option %r' % opt_name)
     self.opt_array[index] = b
 
   def _SetOption(self, opt_name, b):
@@ -305,7 +305,7 @@ class MutableOpts(object):
     # type: (str, bool) -> None
     """ For set -o, set +o, or shopt -s/-u -o. """
     if opt_name not in consts.SET_OPTION_NAMES:
-      raise args.UsageError('got invalid option %r' % opt_name)
+      e_usage('got invalid option %r' % opt_name)
     self._SetOption(opt_name, b)
 
     UP_val = self.mem.GetVar('SHELLOPTS')
@@ -359,7 +359,7 @@ class MutableOpts(object):
       return
 
     if opt_name not in consts.SHOPT_OPTION_NAMES:
-      raise args.UsageError('got invalid option %r' % opt_name)
+      e_usage('got invalid option %r' % opt_name)
 
     self._SetArrayByName(opt_name, b)
 
@@ -373,7 +373,7 @@ class MutableOpts(object):
 
     for opt_name in opt_names:
       if opt_name not in consts.SET_OPTION_NAMES:
-        raise args.UsageError('got invalid option %r' % opt_name)
+        e_usage('got invalid option %r' % opt_name)
 
       if opt_name == 'errexit':
         b = self.errexit.value()
@@ -391,7 +391,7 @@ class MutableOpts(object):
     for opt_name in opt_names:
       index = match.MatchOption(opt_name)
       if index == 0:
-        raise args.UsageError('got invalid option %r' % opt_name)
+        e_usage('got invalid option %r' % opt_name)
       b = self.opt_array[index]
       print('shopt -%s %s' % ('s' if b else 'u', opt_name))
 

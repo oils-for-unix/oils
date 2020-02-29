@@ -115,3 +115,8 @@ Str* repr(void* obj) {
 [[noreturn]] void e_strict(Str* s) {
   assert(0);
 }
+
+// e.g. used in core/state.py
+[[noreturn]] void e_usage(Str* s) {
+  assert(0);
+}

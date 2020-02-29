@@ -519,7 +519,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           return
 
         # TODO: Consolidate X_die() and log()?  It has an extra arg though.
-        if o.callee.name in ('p_die', 'e_die', 'e_strict'):
+        if o.callee.name in ('p_die', 'e_die', 'e_strict', 'e_usage'):
           args = o.args
           if len(args) == 1:  # log(CONST)
             self.write('%s(' % o.callee.name)
@@ -1947,7 +1947,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           # TODO: Should these be moved to core/pylib.py or something?
           # They are varargs functions that have to be rewritten.
-          if name in ('log', 'p_die', 'e_die', 'e_strict'):
+          if name in ('log', 'p_die', 'e_die', 'e_strict', 'e_usage'):
             continue    # do nothing
           if name in ('switch', 'tagswitch', 'iteritems'):  # mylib
             continue  # do nothing
