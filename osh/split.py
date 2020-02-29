@@ -271,7 +271,7 @@ class IfsSplitter(_BaseSplitter):
       else:
         raise AssertionError()  # shouldn't happen
 
-      new_state, action = consts.TRANSITIONS[state, ch]
+      new_state, action = consts.IfsEdge(state, ch)
       if new_state == ST.Invalid:
         raise AssertionError(
             'Invalid transition from %r with %r' % (state, ch))

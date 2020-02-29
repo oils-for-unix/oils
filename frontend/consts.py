@@ -11,7 +11,7 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind_t
 from frontend import builtin_def
 from frontend import option_def 
 
-from typing import TYPE_CHECKING
+from typing import Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.option_asdl import builtin_t
 
@@ -178,11 +178,12 @@ def LookupNormalBuiltin(argv0):
 
 
 # Shorter names for state machine enums
+from _devbuild.gen.runtime_asdl import state_t, emit_t, char_kind_t
 from _devbuild.gen.runtime_asdl import emit_e as EMIT
 from _devbuild.gen.runtime_asdl import char_kind_e as CH
 from _devbuild.gen.runtime_asdl import state_e as ST
 
-TRANSITIONS = {
+_IFS_EDGES = {
     # Whitespace should have been stripped
     (ST.Start, CH.DE_White):  (ST.Invalid,   EMIT.Nothing),      # ' '
     (ST.Start, CH.DE_Gray):   (ST.DE_Gray,   EMIT.Empty),        # '_'
@@ -230,3 +231,9 @@ TRANSITIONS = {
     (ST.Backslash, CH.Backslash): (ST.Black,     EMIT.Escape),   # '\\'
     (ST.Backslash, CH.Sentinel):  (ST.Done,      EMIT.Escape),   # 'zz\'
 }
+
+
+def IfsEdge(state, ch):
+  # type: (state_t, char_kind_t) -> Tuple[state_t, emit_t]
+  """Follow edges of the IFS state machine."""
+  return _IFS_EDGES[state, ch]

@@ -74,7 +74,7 @@ using hnode_asdl::hnode_t;
 
       if app_types:
         f.write("""\
-using id_kind_asdl::Id_str;
+using id_kind_asdl::Id_t;
 """)
 
       f.write("""\
@@ -101,6 +101,9 @@ namespace %s {
         if schema_filename in ('runtime.asdl', 'syntax.asdl'):
           f.write('#include "id_kind_asdl.h"  // hack\n')
           f.write('using id_kind_asdl::Id_t;  // hack\n')
+
+        if app_types:
+          f.write('using id_kind_asdl::Id_str;\n')
 
         f.write("""
 #include <assert.h>

@@ -141,8 +141,10 @@ from asdl import pybase
 #ifndef LOOKUP_H
 #define LOOKUP_H
 
+#include "mylib.h"
 #include "id_kind_asdl.h"
 #include "option_asdl.h"
+#include "runtime_asdl.h"
 #include "types_asdl.h"
 
 namespace consts {
@@ -164,6 +166,7 @@ id_kind_asdl::Kind GetKind(id_kind_asdl::Id_t id);
 option_asdl::builtin_t LookupNormalBuiltin(Str* s);
 option_asdl::builtin_t LookupAssignBuiltin(Str* s);
 option_asdl::builtin_t LookupSpecialBuiltin(Str* s);
+Tuple2<runtime_asdl::state_t, runtime_asdl::emit_t> IfsEdge(runtime_asdl::state_t state, runtime_asdl::char_kind_t ch);
 
 }  // namespace consts
 
