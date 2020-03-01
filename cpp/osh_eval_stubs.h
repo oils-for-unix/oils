@@ -17,7 +17,9 @@ namespace expr_eval {
 namespace prompt {
   class Evaluator {
    public:
-    Str* EvalPrompt(runtime_asdl::value_t* val);
+    Str* EvalPrompt(runtime_asdl::value_t* val) {
+      assert(0);
+    }
   };
 }
 
@@ -25,19 +27,29 @@ namespace prompt {
 namespace cmd_exec {
   class Executor {
    public:
-    Str* RunCommandSub(syntax_asdl::command_t* node);
-    Str* RunProcessSub(syntax_asdl::command_t* node, Id_t id);
+    Str* RunCommandSub(syntax_asdl::command_t* node) {
+      assert(0);
+    }
+    Str* RunProcessSub(syntax_asdl::command_t* node, Id_t id) {
+      assert(0);
+    }
   };
 }
 
 namespace util {
-  Str* BackslashEscape(Str* a, Str* b);
+  inline Str* BackslashEscape(Str* a, Str* b) {
+    assert(0);
+  }
 }
 
 // TODO: Should these have their own file?
 namespace pyutil {
-  Str* strerror_IO(IOError* e);
-  Str* strerror_OS(OSError* e);
+  inline Str* strerror_IO(IOError* e) {
+    assert(0);
+  }
+  inline Str* strerror_OS(OSError* e) {
+    assert(0);
+  }
 }
 
 

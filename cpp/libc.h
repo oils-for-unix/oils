@@ -7,26 +7,26 @@
 
 namespace libc {
 
-Str* gethostname() {
+inline Str* gethostname() {
   assert(0);
 }
 
-bool fnmatch(Str* s, Str* t) {
+inline bool fnmatch(Str* s, Str* t) {
   assert(0);
 }
 
 // TODO: Write correct signatures
-List<Str*>* glob(Str* pat) {
+inline List<Str*>* glob(Str* pat) {
   assert(0);
 }
 
 // Raises RuntimeError if the pattern is invalid.  TODO: Use a different
 // exception?
-List<Str*>* regex_match(Str* pattern, Str* str) {
+inline List<Str*>* regex_match(Str* pattern, Str* str) {
   assert(0);
 }
 
-Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
+inline Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
   assert(0);
 }
 

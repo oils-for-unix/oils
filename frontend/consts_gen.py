@@ -186,9 +186,9 @@ using types_asdl::redir_arg_type_e;
 using types_asdl::bool_arg_type_e;
 using option_asdl::builtin_t;
 
-int NO_INDEX = 0;  // duplicated from frontend/consts.py
-
 namespace consts {
+
+int NO_INDEX = 0;  // duplicated from frontend/consts.py
 """)
 
       # Note: could use opt_num:: instead of raw ints
@@ -273,6 +273,11 @@ builtin_t LookupAssignBuiltin(Str* s) {
 builtin_t LookupSpecialBuiltin(Str* s) {
   assert(0);
 }
+
+Tuple2<runtime_asdl::state_t, runtime_asdl::emit_t> IfsEdge(runtime_asdl::state_t state, runtime_asdl::char_kind_t ch) {
+  assert(0);
+}
+
 """)
 
       out("""\

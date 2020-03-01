@@ -8,8 +8,12 @@
 
 namespace passwd {
 
-Str* GetMyHomeDir();
-Str* GetHomeDir(syntax_asdl::Token* token);
+inline Str* GetMyHomeDir() {
+  assert(0);
+}
+inline Str* GetHomeDir(syntax_asdl::Token* token) {
+  assert(0);
+}
 
 }  // namespace passwd
 

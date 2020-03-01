@@ -12,58 +12,55 @@ extern int X_OK_;
 extern int R_OK_;
 extern int W_OK_;
 
-int access(Str* pathname, int mode) {
+inline int access(Str* pathname, int mode) {
   assert(0);
 }
 
-Str* getcwd() {
+inline Str* getcwd() {
   assert(0);
 }
 
-int getegid() {
+inline int getegid() {
   assert(0);
 }
 
-int geteuid() {
+inline int geteuid() {
   assert(0);
 }
 
-int getpid() {
+inline int getpid() {
   assert(0);
 }
 
-int getppid() {
+inline int getppid() {
   assert(0);
 }
 
-int getuid() {
+inline int getuid() {
   assert(0);
 }
 
-bool isatty(int fd) {
+inline bool isatty(int fd) {
   assert(0);
 }
 
-Str* strerror(int errno) {
+inline Str* strerror(int errno) {
   assert(0);
 }
 
-Str* uname() {
+inline Str* uname() {
   assert(0);
 }
 
 // TODO: write proper signatures
 // stat returns stat_result
-void stat() {
+inline void stat() {
   assert(0);
 }
 
-void lstat() {
+inline void lstat() {
   assert(0);
 }
-
-// replace with getenv() and setenv()?
-int environ;
 
 // Dummy exception posix::error
 class error {};

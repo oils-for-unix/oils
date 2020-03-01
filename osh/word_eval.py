@@ -837,7 +837,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 val = self._EmptyMaybeStrArrayOrError(part.token)
               elif case2(value_e.Str):
                 val = cast(value__Str, UP_val)
-                e_die("Can't index string with @: %r", val, part=part)
+                e_die("Can't index string with @", part=part)
               elif case2(value_e.MaybeStrArray):
                 val = cast(value__MaybeStrArray, UP_val)
                 # TODO: Is this a no-op?  Just leave 'val' alone.
@@ -851,7 +851,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 val = self._EmptyMaybeStrArrayOrError(part.token)
               elif case2(value_e.Str):
                 val = cast(value__Str, UP_val)
-                e_die("Can't index string with *: %r", val, part=part)
+                e_die("Can't index string with *", part=part)
               elif case2(value_e.MaybeStrArray):
                 val = cast(value__MaybeStrArray, UP_val)
                 # TODO: Is this a no-op?  Just leave 'val' alone.
