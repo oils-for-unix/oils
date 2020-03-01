@@ -21,6 +21,7 @@ from _devbuild.gen.runtime_asdl import (
 from _devbuild.gen import runtime_asdl  # for cell
 from asdl import runtime
 from core.pyutil import e_usage
+from core import pyutil
 from core import ui
 from core.util import log, e_die
 from core import optview
@@ -536,7 +537,7 @@ def _GetWorkingDir():
   try:
     return posix.getcwd()
   except OSError as e:
-    e_die("Can't determine working directory: %s", posix.strerror(e.errno))
+    e_die("Can't determine working directory: %s", pyutil.strerror_OS(e))
 
 
 class DebugFrame(object):

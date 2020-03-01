@@ -23,6 +23,12 @@ namespace util {
   Str* BackslashEscape(Str* a, Str* b);
 }
 
+// TODO: Should these have their own file?
+namespace pyutil {
+  Str* strerror_IO(IOError* e);
+  Str* strerror_OS(OSError* e);
+}
+
 
 #endif  // OSH_EVAL_STUBS_H
 

@@ -27,6 +27,7 @@ from _devbuild.gen.runtime_asdl import (
 )
 from core import error
 from core import passwd
+from core import pyutil
 from core import state
 from core.util import log, e_die, e_strict
 from frontend import consts
@@ -1431,9 +1432,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
       val = self.EvalWordToString(w)
     except error.FatalRuntime as e:
       val = value.Str('<Runtime error: %s>' % e.UserErrorString())
-    except (OSError, IOError) as e:
-      # This is like the catch-all in Executor.ExecuteAndCatch().
-      val = value.Str('<I/O error: %s>' % posix.strerror(e.errno))
+
+    # C++ doesn't support catching multiple exceptions at once.  TODO: Patch
+    # CPython to use just one of (OSError, IOError)?
+    except OSError as e:
+      val = value.Str('<I/O error: %s>' % pyutil.strerror_OS(e))
+    except IOError as e:
+      val = value.Str('<I/O error: %s>' % pyutil.strerror_IO(e))
+
     except KeyboardInterrupt:
       val = value.Str('<Ctrl-C>')
     finally:

@@ -41,8 +41,6 @@ class RuntimeError {
 
 class ValueError {};
 
-class OSError {};
-
 class KeyboardInterrupt {};
 
 // Hack for now.  Every sum type should have repr()?

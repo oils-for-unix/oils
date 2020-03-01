@@ -47,6 +47,9 @@ void println_stderr(Str* s);
 // TODO: Fill exceptions in
 //
 
+class IOError {};
+class OSError {};
+
 class IndexError {};
 
 class KeyError {};

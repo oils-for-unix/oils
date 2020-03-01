@@ -43,6 +43,19 @@ def stderr_line(msg, *args):
   print(msg, file=sys.stderr)
 
 
+# Note: we have to hide the 'errno' field under pyutil, because it doesn't
+# translate well.  'errno' is a macro.
+# Also Python 2 forces us to have both methods.
+
+def strerror_IO(e):
+  # type: (IOError) -> str
+  return posix.strerror(e.errno)
+
+def strerror_OS(e):
+  # type: (OSError) -> str
+  return posix.strerror(e.errno)
+
+
 class _ResourceLoader(object):
 
   def open(self, rel_path):
