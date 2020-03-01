@@ -8,7 +8,6 @@
 ./core/meta.py
 ./core/optview.py
 ./core/passwd.py
-./core/process.py
 ./core/pyutil.py
 ./core/state.py
 ./core/ui.py
@@ -20,7 +19,6 @@
 ./_devbuild/gen/runtime_asdl.py
 ./_devbuild/gen/syntax_asdl.py
 ./_devbuild/gen/types_asdl.py
-./frontend/args.py
 ./frontend/builtin_def.py
 ./frontend/consts.py
 ./frontend/id_kind_def.py

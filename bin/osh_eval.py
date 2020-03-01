@@ -18,11 +18,13 @@ from core import error
 from core import meta
 from core import pyutil
 from core.util import log
+from core import state
 from core import ui
 from frontend import parse_lib
 from frontend import reader
 from mycpp import mylib
 from mycpp.mylib import tagswitch, NewStr
+from osh import braces
 from osh import split
 
 # Evaluators
@@ -30,7 +32,6 @@ from osh import split
 # builtin_pure.Command maybe shouldn't be hard-coded?
 #from osh import cmd_exec
 from osh import sh_expr_eval
-from core import state
 from osh import word_eval
 
 _ = log
@@ -81,7 +82,8 @@ class TestEvaluator(object):
           cmd_val = self.word_ev.EvalWordSequence2(node.words, allow_assign=True)
           for arg in cmd_val.argv:
             log('arg %s', arg)
-        for w in node.words:
+        words = braces.BraceExpandWords(node.words)
+        for w in words:
           val = self.word_ev.EvalWordToString(w)
           if val.tag_() == value_e.Str:
             str_val = cast(value__Str, val)

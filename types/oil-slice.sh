@@ -23,6 +23,10 @@ demo() {
 
   echo 'echo hi' | bin/osh_eval.py "$@"
   echo '(( a = 1 + 2 * 3 ))' | bin/osh_eval.py "$@"
+
+  bin/osh_eval.py -c \
+    'echo "hello"x $$ ${$} $((1 + 2 * 3)) {foo,bar}@example.com'
+
   bin/osh_eval.py -c 'for x in 1 2 3; do echo $x; done'
 }
 
