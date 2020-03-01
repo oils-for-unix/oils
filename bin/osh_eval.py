@@ -6,6 +6,7 @@ from __future__ import print_function
 
 import sys
 
+from _devbuild.gen.runtime_asdl import value_e, value__Str
 from _devbuild.gen.syntax_asdl import (
     source, source_t, command, command_e, command_t, command_str,
     command__Simple, command__DParen,
@@ -82,8 +83,11 @@ class TestEvaluator(object):
             log('arg %s', arg)
         for w in node.words:
           val = self.word_ev.EvalWordToString(w)
-          # TODO: how to print repr() in C++?
-          log('arg %d', val.tag_())
+          if val.tag_() == value_e.Str:
+            str_val = cast(value__Str, val)
+            log('arg %r', str_val.s)
+          else:
+            raise AssertionError()
 
       elif case(command_e.DParen):
         node = cast(command__DParen, UP_node)

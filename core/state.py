@@ -262,10 +262,9 @@ class MutableOpts(object):
 
     # This comes after all the 'set' options.
     UP_shellopts = self.mem.GetVar('SHELLOPTS')
-    # Should be true since it's readonly
-    assert UP_shellopts.tag == value_e.Str, UP_shellopts
-    shellopts = cast(value__Str, UP_shellopts)
-    self._InitOptionsFromEnv(shellopts.s)
+    if UP_shellopts.tag_() == value_e.Str:  # Always true in Oil, see Init above
+      shellopts = cast(value__Str, UP_shellopts)
+      self._InitOptionsFromEnv(shellopts.s)
 
   def _InitOptionsFromEnv(self, shellopts):
     # type: (str) -> None

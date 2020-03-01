@@ -3,6 +3,8 @@
 #ifndef POSIX_H
 #define POSIX_H
 
+#include <unistd.h>
+
 #include "mylib.h"
 
 namespace posix {
@@ -29,7 +31,7 @@ inline int geteuid() {
 }
 
 inline int getpid() {
-  assert(0);
+  return ::getpid();
 }
 
 inline int getppid() {

@@ -246,17 +246,20 @@ compile-slice() {
     _build/cpp/consts.cc \
     _build/cpp/arith_parse.cc \
     cpp/dumb_alloc.cc \
+    cpp/posix.cc \
+    cpp/libc.cc \
     "$@"
 
   #2>&1 | tee _tmp/compile.log
 }
 
 compile-slice-opt() {
-  compile-slice '' '.opt'
+  local name=${1:-osh_parse}
+  compile-slice $name '.opt'
 
-  local opt=_bin/osh_parse.opt
-  local stripped=_bin/osh_parse.opt.stripped 
-  local symbols=_bin/osh_parse.opt.symbols 
+  local opt=_bin/$name.opt
+  local stripped=_bin/$name.opt.stripped 
+  local symbols=_bin/$name.opt.symbols 
 
   # As done in the Makefile for Python app bundle
   strip -o $stripped $opt
@@ -268,23 +271,26 @@ compile-slice-opt() {
   fi
 }
 
-compile-slice-sizelog() { compile-slice '' '.sizelog'; }
-compile-slice-asan() { compile-slice '' '.asan'; }
-compile-slice-uftrace() { compile-slice '' '.uftrace'; }
-compile-slice-tcmalloc() { compile-slice '' '.tcmalloc'; }
+compile-slice-sizelog() { compile-slice "${1:-}" '.sizelog'; }
+compile-slice-asan() { compile-slice "${1:-}" '.asan'; }
+compile-slice-uftrace() { compile-slice "${1:-}" '.uftrace'; }
+compile-slice-tcmalloc() { compile-slice "${1:-}" '.tcmalloc'; }
 
 all-variants() {
-  compile-slice  # .dbg version is default
-  compile-slice-sizelog
-  compile-slice-asan
-  compile-slice-opt
-  compile-slice-uftrace
-  compile-slice-tcmalloc
+  local name=${1:-osh_parse}
+
+  compile-slice $name ''  # .dbg version is default
+  compile-slice-opt $name
+
+  compile-slice-sizelog $name
+  compile-slice-asan $name
+  compile-slice-uftrace $name
+  compile-slice-tcmalloc $name
 
   # show show linking against libasan, libtcmalloc, etc
-  ldd _bin/osh_parse*
+  ldd _bin/$name*
   echo
-  ls -l _bin/osh_parse*
+  ls -l _bin/$name*
 }
 
 readonly TMP=_tmp/mycpp
@@ -407,12 +413,6 @@ osh-parse() {
   compile-slice $name '.dbg'
 }
 
-compile-osh-eval() {
-  # Add more on top of what's compiled for osh_parse
-  compile-slice 'osh_eval' '.dbg' \
-    cpp/posix.cc cpp/libc.cc
-}
-
 osh-eval() {
   local name=${1:-osh_eval}
 
@@ -447,7 +447,7 @@ osh-eval() {
     cpp-skeleton $name $raw 
   } > $cc
 
-  compile-osh-eval
+  compile-slice 'osh_eval' '.dbg'
 }
 
 run-osh-parse() {
