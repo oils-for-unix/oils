@@ -97,7 +97,7 @@ class SearchPath(object):
       # -t').  OSH follows mksh and zsh.  Note that we can still get EPERM if
       # the permissions are changed between check and use.
       if exec_required:
-        found = posix.access(full_path, posix.X_OK)
+        found = posix.access(full_path, posix.X_OK_)
       else:
         found = path_stat.exists(full_path)  # for 'source'
 

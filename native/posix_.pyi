@@ -27,7 +27,7 @@ EX_SOFTWARE = ...  # type: int
 EX_TEMPFAIL = ...  # type: int
 EX_UNAVAILABLE = ...  # type: int
 EX_USAGE = ...  # type: int
-F_OK = ...  # type: int
+F_OK_ = ...  # type: int
 NGROUPS_MAX = ...  # type: int
 O_APPEND = ...  # type: int
 O_ASYNC = ...  # type: int
@@ -48,13 +48,13 @@ O_RSYNC = ...  # type: int
 O_SYNC = ...  # type: int
 O_TRUNC = ...  # type: int
 O_WRONLY = ...  # type: int
-R_OK = ...  # type: int
+R_OK_ = ...  # type: int
 TMP_MAX = ...  # type: int
 WCONTINUED = ...  # type: int
 WNOHANG = ...  # type: int
 WUNTRACED = ...  # type: int
-W_OK = ...  # type: int
-X_OK = ...  # type: int
+W_OK_ = ...  # type: int
+X_OK_ = ...  # type: int
 
 def WCOREDUMP(status: int) -> bool: ...
 def WEXITSTATUS(status: int) -> bool: ...

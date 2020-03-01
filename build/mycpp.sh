@@ -407,6 +407,12 @@ osh-parse() {
   compile-slice $name '.dbg'
 }
 
+compile-osh-eval() {
+  # Add more on top of what's compiled for osh_parse
+  compile-slice 'osh_eval' '.dbg' \
+    cpp/posix.cc cpp/libc.cc
+}
+
 osh-eval() {
   local name=${1:-osh_eval}
 
@@ -441,9 +447,7 @@ osh-eval() {
     cpp-skeleton $name $raw 
   } > $cc
 
-  # Add more on top of what's compiled for osh_parse
-  compile-slice $name '.dbg' \
-    cpp/posix.cc cpp/libc.cc
+  compile-osh-eval
 }
 
 run-osh-parse() {

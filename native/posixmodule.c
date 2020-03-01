@@ -2606,17 +2606,20 @@ ins(PyObject *module, char *symbol, long value)
 static int
 all_ins(PyObject *d)
 {
+  /* Oil PATCH: X_OK -> X_OK_ to avoid name conflict with macro after
+   * translation */
+
 #ifdef F_OK
-    if (ins(d, "F_OK", (long)F_OK)) return -1;
+    if (ins(d, "F_OK_", (long)F_OK)) return -1;
 #endif
 #ifdef R_OK
-    if (ins(d, "R_OK", (long)R_OK)) return -1;
+    if (ins(d, "R_OK_", (long)R_OK)) return -1;
 #endif
 #ifdef W_OK
-    if (ins(d, "W_OK", (long)W_OK)) return -1;
+    if (ins(d, "W_OK_", (long)W_OK)) return -1;
 #endif
 #ifdef X_OK
-    if (ins(d, "X_OK", (long)X_OK)) return -1;
+    if (ins(d, "X_OK_", (long)X_OK)) return -1;
 #endif
 #ifdef NGROUPS_MAX
     if (ins(d, "NGROUPS_MAX", (long)NGROUPS_MAX)) return -1;

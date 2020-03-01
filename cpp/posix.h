@@ -8,9 +8,9 @@
 namespace posix {
 
 // aliases in this namespace
-extern int X_OK;
-extern int R_OK;
-extern int W_OK;
+extern int X_OK_;
+extern int R_OK_;
+extern int W_OK_;
 
 int access(Str* pathname, int mode) {
   assert(0);

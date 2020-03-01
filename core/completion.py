@@ -359,7 +359,7 @@ class FileSystemAction(CompletionAction):
         if self.exec_only:
           # TODO: Handle exception if file gets deleted in between listing and
           # check?
-          if not posix.access(path, posix.X_OK):
+          if not posix.access(path, posix.X_OK_):
             continue
 
         if self.add_slash and path_stat.isdir(path):
@@ -529,7 +529,7 @@ class ExternalCommandAction(CompletionAction):
           path = os_path.join(d, name)
           # TODO: Handle exception if file gets deleted in between listing and
           # check?
-          if not posix.access(path, posix.X_OK):
+          if not posix.access(path, posix.X_OK_):
             continue
           dir_exes.append(name)  # append the name, not the path
 

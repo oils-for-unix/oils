@@ -70,13 +70,13 @@ def DoUnaryOp(op_id, s):
     return stat.S_ISSOCK(mode)
 
   if op_id == Id.BoolUnary_x:
-    return posix.access(s, posix.X_OK)
+    return posix.access(s, posix.X_OK_)
 
   if op_id == Id.BoolUnary_r:
-    return posix.access(s, posix.R_OK)
+    return posix.access(s, posix.R_OK_)
 
   if op_id == Id.BoolUnary_w:
-    return posix.access(s, posix.W_OK)
+    return posix.access(s, posix.W_OK_)
 
   if op_id == Id.BoolUnary_s:
     return st.st_size != 0
