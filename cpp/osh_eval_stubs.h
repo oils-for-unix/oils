@@ -5,18 +5,29 @@
 
 // Hacky stubs
 
+#include "id_kind_asdl.h"
+#include "runtime_asdl.h"
+#include "syntax_asdl.h"
+
 namespace expr_eval {
   class OilEvaluator;
 }
 
 // problem: incomplete type
 namespace prompt {
-  class Evaluator;
+  class Evaluator {
+   public:
+    Str* EvalPrompt(runtime_asdl::value_t* val);
+  };
 }
 
 // problem: incomplete type
 namespace cmd_exec {
-  class Executor;
+  class Executor {
+   public:
+    Str* RunCommandSub(syntax_asdl::command_t* node);
+    Str* RunProcessSub(syntax_asdl::command_t* node, Id_t id);
+  };
 }
 
 namespace util {

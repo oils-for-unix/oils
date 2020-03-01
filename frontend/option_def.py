@@ -306,21 +306,22 @@ _Init(_OPTION_DEF)
 # Used by core/state.py.
 
 # TODO: Change all of these to numbers.
-SET_OPTION_NAMES = [
+SET_OPTION_NAMES = sorted(
     opt.name for opt in _OPTION_DEF.opts if opt.builtin == 'set'
-]
+)
 
 # Include the unimplemented ones
-SHOPT_OPTION_NAMES = [
+SHOPT_OPTION_NAMES = sorted(
     opt.name for opt in _OPTION_DEF.opts if opt.builtin == 'shopt'
-]
+)
 
 PARSE_OPTION_NAMES = ParseOptNames()
 
-VISIBLE_SHOPT_NAMES = [
+# Sorted because 'shopt -o -p' should be sorted, etc.
+VISIBLE_SHOPT_NAMES = sorted(
     opt.name for opt in _OPTION_DEF.opts
     if opt.builtin == 'shopt' and opt.implemented
-]
+)
 
 OIL_BASIC = [opt.index for opt in _OPTION_DEF.opts if 'oil:basic' in opt.groups]
 OIL_ALL = [opt.index for opt in _OPTION_DEF.opts if 'oil:all' in opt.groups]

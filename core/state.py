@@ -20,8 +20,8 @@ from _devbuild.gen.runtime_asdl import (
 )
 from _devbuild.gen import runtime_asdl  # for cell
 from asdl import runtime
-from core.pyutil import e_usage
 from core import pyutil
+from core.pyutil import e_usage, stderr_line
 from core import ui
 from core.util import log, e_die
 from core import optview
@@ -289,17 +289,26 @@ class MutableOpts(object):
     """Private version for synchronizing from SHELLOPTS."""
     assert '_' not in opt_name
     assert opt_name in consts.SET_OPTION_NAMES
-    if opt_name == 'errexit':
-      self.errexit.Set(b)
-    elif opt_name == 'vi' or opt_name == 'emacs':
+
+    if opt_name == 'vi' or opt_name == 'emacs':
+      # TODO: Replace with a hook?  Just like setting LANG= can have a hook.
       if self.readline:
         self.readline.parse_and_bind("set editing-mode " + opt_name);
       else:
         e_die("Can't set option %r because Oil wasn't built with the readline "
               "library.", opt_name)
+
+      # Invert: they are mutually exclusive!
+      if opt_name == 'vi':
+        self.opt_array[option_i.emacs] = not b
+      elif opt_name == 'emacs':
+        self.opt_array[option_i.vi] = not b
+
+    if opt_name == 'errexit':
+      self.errexit.Set(b)
     else:
       if opt_name == 'verbose' and b:
-        log('Warning: set -o verbose not implemented')
+        stderr_line('Warning: set -o verbose not implemented')
       self._SetArrayByName(opt_name, b)
 
   def SetOption(self, opt_name, b):

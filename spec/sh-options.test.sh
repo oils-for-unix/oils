@@ -77,6 +77,36 @@ echo $?
 0
 ## END
 
+#### vi and emacs are mutually exclusive
+show() {
+  shopt -o -p | egrep 'emacs$|vi$'
+  echo ___
+};
+show
+
+set -o emacs
+show
+
+set -o vi
+show
+
+## STDOUT:
+set +o emacs
+set +o vi
+___
+set -o emacs
+set +o vi
+___
+set +o emacs
+set -o vi
+___
+## END
+## N-I dash/mksh STDOUT:
+___
+___
+___
+## END
+
 #### nounset
 echo "[$unset]"
 set -o nounset
