@@ -6,8 +6,9 @@
 
 namespace posix {
 
-int X_OK = ::X_OK;
-int R_OK = ::R_OK;
-int W_OK = ::W_OK;
+// Aliases in this namespace.
+int X_OK = X_OK;
+int R_OK = R_OK;
+int W_OK = W_OK;
 
 }  // namespace posix
