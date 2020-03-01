@@ -103,7 +103,8 @@ def main(argv):
   dollar0 = argv[0]
   debug_stack = []  # type: List[state.DebugFrame]
   mem = state.Mem(dollar0, argv, arena, debug_stack)
-  parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
+  opt_hook = state.OptHook()
+  parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, opt_hook)
   # Dummy value; not respecting aliases!
   aliases = {}  # type: Dict[str, str]
   # parse `` and a[x+1]=bar differently

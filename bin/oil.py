@@ -258,6 +258,34 @@ def SourceStartupFile(rc_path, lang, parse_ctx, ex):
       raise
 
 
+class ShellOptHook(state.OptHook):
+  def __init__(self, line_input):
+    self.line_input = line_input
+
+  def OnChange(self, opt_array, opt_name, b):
+    # type: (List[bool], str, bool) -> bool
+    """This method is called whenever an option is changed.
+
+    Returns success or failure.
+    """
+    if opt_name == 'vi' or opt_name == 'emacs':
+      # TODO: Replace with a hook?  Just like setting LANG= can have a hook.
+      if self.line_input:
+        self.line_input.parse_and_bind("set editing-mode " + opt_name);
+      else:
+        stderr_line(
+            "Warning: Can't set option %r because Oil wasn't built with line editing (e.g. GNU readline)", opt_name)
+        return False
+
+      # Invert: they are mutually exclusive!
+      if opt_name == 'vi':
+        opt_array[option_i.emacs] = not b
+      elif opt_name == 'emacs':
+        opt_array[option_i.vi] = not b
+
+    return True
+
+
 def ShellMain(lang, argv0, argv, login_shell):
   # type: (str, str, List[str], bool) -> int
   """Used by bin/osh and bin/oil.
@@ -324,7 +352,8 @@ def ShellMain(lang, argv0, argv, login_shell):
   job_state = process.JobState()
   fd_state = process.FdState(errfmt, job_state)
 
-  parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, line_input)
+  opt_hook = ShellOptHook(line_input)
+  parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, opt_hook)
   # TODO: only MutableOpts needs mem, so it's not a true circular dep.
   mem.exec_opts = exec_opts  # circular dep
 

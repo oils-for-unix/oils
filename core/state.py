@@ -217,8 +217,20 @@ class _Getter(object):
     return self.opt_array[self.num]
 
 
-def MakeOpts(mem, line_input):
-  # type: (Mem, Optional[Any]) -> Tuple[optview.Parse, optview.Exec, MutableOpts]
+class OptHook(object):
+  """Interface for option hooks."""
+
+  def OnChange(self, opt_array, opt_name, b):
+    # type: (List[bool], str, bool) -> bool
+    """This method is called whenever an option is changed.
+
+    Returns success or failure.
+    """
+    return True
+
+
+def MakeOpts(mem, opt_hook):
+  # type: (Mem, OptHook) -> Tuple[optview.Parse, optview.Exec, MutableOpts]
 
   # 38 options
   #log('opts = %d', option_def.ArraySize())
@@ -228,15 +240,15 @@ def MakeOpts(mem, line_input):
   errexit = _ErrExit()
   parse_opts = optview.Parse(opt_array)
   exec_opts = optview.Exec(opt_array, errexit)
-  mutable_opts = MutableOpts(mem, opt_array, errexit, line_input)
+  mutable_opts = MutableOpts(mem, opt_array, errexit, opt_hook)
 
   return parse_opts, exec_opts, mutable_opts
 
 
 class MutableOpts(object):
 
-  def __init__(self, mem, opt_array, errexit, readline):
-    # type: (Mem, List[bool], _ErrExit, Optional[Any]) -> None
+  def __init__(self, mem, opt_array, errexit, opt_hook):
+    # type: (Mem, List[bool], _ErrExit, OptHook) -> None
     self.mem = mem
     self.opt_array = opt_array
     self.errexit = errexit
@@ -246,7 +258,7 @@ class MutableOpts(object):
       self.opt_array[opt_num] = True
 
     # Used for 'set -o vi/emacs'
-    self.readline = readline
+    self.opt_hook = opt_hook
 
     # This comes after all the 'set' options.
     UP_shellopts = self.mem.GetVar('SHELLOPTS')
@@ -290,26 +302,16 @@ class MutableOpts(object):
     assert '_' not in opt_name
     assert opt_name in consts.SET_OPTION_NAMES
 
-    if opt_name == 'vi' or opt_name == 'emacs':
-      # TODO: Replace with a hook?  Just like setting LANG= can have a hook.
-      if self.readline:
-        self.readline.parse_and_bind("set editing-mode " + opt_name);
-      else:
-        e_die("Can't set option %r because Oil wasn't built with the readline "
-              "library.", opt_name)
-
-      # Invert: they are mutually exclusive!
-      if opt_name == 'vi':
-        self.opt_array[option_i.emacs] = not b
-      elif opt_name == 'emacs':
-        self.opt_array[option_i.vi] = not b
-
     if opt_name == 'errexit':
       self.errexit.Set(b)
     else:
       if opt_name == 'verbose' and b:
         stderr_line('Warning: set -o verbose not implemented')
       self._SetArrayByName(opt_name, b)
+
+    # note: may FAIL before we get here.
+
+    success = self.opt_hook.OnChange(self.opt_array, opt_name, b)
 
   def SetOption(self, opt_name, b):
     # type: (str, bool) -> None
