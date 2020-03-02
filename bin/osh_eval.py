@@ -36,7 +36,7 @@ from osh import word_eval
 
 _ = log
 
-from typing import List, Dict, cast, TYPE_CHECKING
+from typing import List, Dict, Tuple, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from osh.cmd_parse import CommandParser
   from pgen2.grammar import Grammar
@@ -85,11 +85,7 @@ class TestEvaluator(object):
         words = braces.BraceExpandWords(node.words)
         for w in words:
           val = self.word_ev.EvalWordToString(w)
-          if val.tag_() == value_e.Str:
-            str_val = cast(value__Str, val)
-            log('arg %r', str_val.s)
-          else:
-            raise AssertionError()
+          log('arg %r', val.s)
 
       elif case(command_e.DParen):
         node = cast(command__DParen, UP_node)
@@ -100,6 +96,37 @@ class TestEvaluator(object):
 
       else:
         log('Unhandled node %s', NewStr(command_str(node.tag_())))
+
+
+def Parse(argv):
+  # type: (List[str]) -> Tuple[int, Optional[str], bool]
+  """
+  returns the -n and -c value
+  """
+  i = 0  
+
+  flag_n = False
+  flag_c = None  # type: str
+
+  n = len(argv)
+
+  while i < n:
+    if argv[i] == '-n':
+      flag_n = True
+
+    elif argv[i] == '-c':
+      if i >= n:
+        raise AssertionError(argv)
+
+      i += 1
+      flag_c = argv[i]
+
+    else:
+      break
+
+    i += 1
+
+  return i, flag_c, flag_n
 
 
 def main(argv):
@@ -122,40 +149,35 @@ def main(argv):
 
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
 
-  pretty_print = True
+  argv = argv[1:]  # remove binary name
+  i, flag_c, flag_n = Parse(argv)
 
-  if len(argv) == 1:
+  argv = argv[i:]  # truncate
+
+  if flag_c:
+    # This path is easier to run through GDB
+    line_reader = reader.StringLineReader(flag_c, arena)
+    src = source.CFlag()  # type: source_t
+
+  elif len(argv) == 0:
     line_reader = reader.FileLineReader(mylib.Stdin(), arena)
-    src = source.Stdin('')  # type: source_t
+    src = source.Stdin('')
 
-  elif len(argv) == 2:
-    path = argv[1]
+  elif len(argv) == 1:
+    path = argv[0]
     f = mylib.open(path)
     line_reader = reader.FileLineReader(f, arena)
     src = source.MainFile(path)
 
-  elif len(argv) == 3:
-    if argv[1] == '-c':
-      # This path is easier to run through GDB
-      line_reader = reader.StringLineReader(argv[2], arena)
-      src = source.CFlag()
-
-    elif argv[1] == '-n':  # For benchmarking, allow osh_parse -n file.txt
-      path = argv[2]
-      f = mylib.open(path)
-      line_reader = reader.FileLineReader(f, arena)
-      src = source.MainFile(path)
-      # This is like --ast-format none, which benchmarks/osh-helper.sh passes.
-      pretty_print = False
-
-    else:
-      raise AssertionError()
-
   else:
-    raise AssertionError()
+    raise AssertionError(argv)
+
+  pretty_print = True
+  if flag_n and not flag_c:
+    # for benchmarking, osh_eval -n foo.sh shouldn't pretty print
+    pretty_print = False
 
   arena.PushSource(src)
-
   c_parser = parse_ctx.MakeOshParser(line_reader)
 
   try:
@@ -170,12 +192,14 @@ def main(argv):
   # C++ doesn't have the abbreviations yet (though there are some differences
   # like omitting spids)
   #tree = node.AbbreviatedTree()
-  if 0:
-    tree = node.PrettyTree()
+  if flag_n:
+    if pretty_print:
+      tree = node.PrettyTree()
 
-    ast_f = fmt.DetectConsoleOutput(mylib.Stdout())
-    fmt.PrintTree(tree, ast_f)
-    ast_f.write('\n')
+      ast_f = fmt.DetectConsoleOutput(mylib.Stdout())
+      fmt.PrintTree(tree, ast_f)
+      ast_f.write('\n')
+    return 0
 
   # New osh_eval.py instantiations
 

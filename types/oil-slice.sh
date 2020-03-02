@@ -15,19 +15,24 @@ source types/common.sh
 demo() {
   export PYTHONPATH=.
 
-  echo 'echo hi' | bin/osh_parse.py "$@"
+  echo 'echo hi' | bin/osh_parse.py
   bin/osh_parse.py -c 'ls -l'
 
-  # TODO: These should run the code with cmd_exec!  But we need more type
-  # annotations.
+  local osh_eval=${1:-bin/osh_eval.py}
 
-  echo 'echo hi' | bin/osh_eval.py "$@"
-  echo '(( a = 1 + 2 * 3 ))' | bin/osh_eval.py "$@"
+  # Same functionality in bin/osh_eval
+  echo 'echo hi' | $osh_eval
+  $osh_eval -n -c 'ls -l'
 
-  bin/osh_eval.py -c \
+  echo '-----'
+
+  # Now test some more exotic stuff
+  $osh_eval -c '(( a = 1 + 2 * 3 ))'
+
+  $osh_eval -c \
     'echo "hello"x $$ ${$} $((1 + 2 * 3)) {foo,bar}@example.com'
 
-  bin/osh_eval.py -c 'for x in 1 2 3; do echo $x; done'
+  $osh_eval -c 'for x in 1 2 3; do echo $x; done'
 }
 
 readonly OSH_PARSE_DEPS='_tmp/osh_parse-deps.txt'
