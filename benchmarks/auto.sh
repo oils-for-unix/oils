@@ -46,13 +46,16 @@ readonly SHELLS=( bash dash mksh zsh bin/osh $OSH_OVM )
 
 measure-shells() {
   local base_dir=${1:-../benchmark-data}
+  local quick=${2:-}
 
   local provenance
   # capture the filename
   provenance=$(benchmarks/id.sh shell-provenance "${SHELLS[@]}")
 
-  benchmarks/vm-baseline.sh measure $provenance $base_dir/vm-baseline
-  benchmarks/osh-runtime.sh measure $provenance $base_dir/osh-runtime
+  if test -z "$quick"; then
+    benchmarks/vm-baseline.sh measure $provenance $base_dir/vm-baseline
+    benchmarks/osh-runtime.sh measure $provenance $base_dir/osh-runtime
+  fi
 
   # Note: we could also use _tmp/native-tar-test/*/_bin/osh_eval...
   local root=$PWD/../benchmark-data/src/oil-native-$OIL_VERSION
@@ -87,7 +90,7 @@ measure-builds() {
 }
 
 # Run the whole benchmark from a clean git checkout.
-# Before this, run scripts/release.sh benchmark-build.
+# Before this, run devtools/release.sh benchmark-build.
 
 all() {
   # NOTE: Depends on oil-native being built
@@ -103,7 +106,7 @@ demo-tasks() {
   local provenance=$1
 
   # Strip everything after the first dot.
-  local name=$(basename $provenance)
+ su local name=$(basename $provenance)
   local job_id=${name%.provenance.txt}
 
   echo "JOB ID: $job_id"

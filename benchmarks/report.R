@@ -100,6 +100,11 @@ ParserReport = function(in_dir, out_dir) {
       label = GetOshLabel(row$shell_hash)
     } else if (row$shell_name == 'osh_eval.opt.stripped') {
       label = 'osh-native'
+
+    # TODO: delete when migrated
+    } else if (row$shell_name == 'osh_parse.opt.stripped') {
+      label = 'osh-native'
+
     } else {  # same name for other shells
       label = row$shell_name
     }

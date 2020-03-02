@@ -4,6 +4,15 @@
 #
 # Usage:
 #   ./osh-parser.sh <function name>
+#
+# Hacky way to run it by itself:
+#
+#   devtools/release-native.sh make-tar
+#   devtools/release-native.sh extract-for-benchmarks
+#   devtools/release.sh benchmark-build
+#   make  # to build _bin/osh
+#   benchmark/auto.sh measure-shells QUICK
+#   benchmarks/report.sh osh-parser
 
 set -o nounset
 set -o pipefail

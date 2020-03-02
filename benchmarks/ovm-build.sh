@@ -5,6 +5,11 @@
 #
 # Usage:
 #   ./ovm-build.sh <function name>
+#
+# Run on its own:
+#   1. Follow common instructions in benchmarks/osh-parser.sh
+#   2. benchmarks/auto.sh measure-builds
+#   3. benchmarks/report.sh ovm-build
 
 # Directories used:
 #
