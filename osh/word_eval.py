@@ -40,8 +40,6 @@ from osh import string_ops
 from osh import word_
 from osh import word_compile
 
-import posix_ as posix
-
 from typing import Optional, Tuple, List, Dict, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:

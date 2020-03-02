@@ -98,7 +98,7 @@ ParserReport = function(in_dir, out_dir) {
     row = distinct_shells[i, ]
     if (row$shell_name == 'osh') {
       label = GetOshLabel(row$shell_hash)
-    } else if (row$shell_name == 'osh_parse.opt.stripped') {
+    } else if (row$shell_name == 'osh_eval.opt.stripped') {
       label = 'osh-native'
     } else {  # same name for other shells
       label = row$shell_name

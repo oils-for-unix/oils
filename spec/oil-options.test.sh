@@ -150,20 +150,20 @@ shopt -p | grep -- ' -s '
 set -o errexit
 set -o nounset
 set -o pipefail
-shopt -s nullglob
+shopt -s dashglob
 shopt -s inherit_errexit
+shopt -s nullglob
 shopt -s strict_argv
 shopt -s strict_arith
 shopt -s strict_array
+shopt -s strict_backslash
 shopt -s strict_control_flow
 shopt -s strict_echo
 shopt -s strict_errexit
 shopt -s strict_eval_builtin
+shopt -s strict_glob
 shopt -s strict_nameref
 shopt -s strict_word_eval
-shopt -s strict_backslash
-shopt -s strict_glob
-shopt -s dashglob
 ## END
 
 #### shopt -s oil:basic
@@ -175,27 +175,27 @@ shopt -p | grep -- ' -s '
 set -o errexit
 set -o nounset
 set -o pipefail
-shopt -s nullglob
 shopt -s inherit_errexit
-shopt -s strict_argv
-shopt -s strict_arith
-shopt -s strict_array
-shopt -s strict_control_flow
-shopt -s strict_echo
-shopt -s strict_errexit
-shopt -s strict_eval_builtin
-shopt -s strict_nameref
-shopt -s strict_word_eval
-shopt -s strict_backslash
-shopt -s strict_glob
-shopt -s simple_word_eval
 shopt -s more_errexit
-shopt -s simple_test_builtin
+shopt -s nullglob
 shopt -s parse_at
 shopt -s parse_brace
 shopt -s parse_index_expr
 shopt -s parse_paren
 shopt -s parse_rawc
+shopt -s simple_test_builtin
+shopt -s simple_word_eval
+shopt -s strict_argv
+shopt -s strict_arith
+shopt -s strict_array
+shopt -s strict_backslash
+shopt -s strict_control_flow
+shopt -s strict_echo
+shopt -s strict_errexit
+shopt -s strict_eval_builtin
+shopt -s strict_glob
+shopt -s strict_nameref
+shopt -s strict_word_eval
 ## END
 
 #### osh -O oil:basic 
@@ -618,15 +618,15 @@ shopt -u oil:basic  # strict_arith should still be on after this!
 show
 
 ## STDOUT:
+shopt -s dashglob
 shopt -u strict_arith
-shopt -s dashglob
 ---
-shopt -s strict_arith
 shopt -s dashglob
----
 shopt -s strict_arith
+---
 shopt -u dashglob
+shopt -s strict_arith
 ---
-shopt -u strict_arith
 shopt -s dashglob
+shopt -u strict_arith
 ## END

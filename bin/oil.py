@@ -63,6 +63,7 @@ from core import optview
 from core import passwd
 from core import process
 from core import pyutil
+from core.pyutil import stderr_line
 from core import state
 from core import ui
 from core import util

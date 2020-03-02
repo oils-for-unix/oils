@@ -6,7 +6,6 @@ from __future__ import print_function
 
 import sys
 
-from _devbuild.gen.runtime_asdl import value_e, value__Str
 from _devbuild.gen.syntax_asdl import (
     source, source_t, command, command_e, command_t, command_str,
     command__Simple, command__DParen,
