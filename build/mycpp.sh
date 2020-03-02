@@ -565,7 +565,12 @@ osh-parse-smoke() {
     else
       local osh_parse=_bin/osh_parse.asan 
       $osh_parse $file | wc -l
+
+      # This also works
+      #local osh_eval=_bin/osh_eval.asan 
+      #$osh_eval -n $file | wc -l
     fi
+
     case $? in
       0)
         ;;
@@ -604,30 +609,35 @@ frontend-match-test() {
   _bin/$name
 }
 
+osh-eval-demo() {
+  types/oil-slice.sh demo _bin/osh_eval.dbg
+}
+
 #
 # Public
 #
 
 # Used by devtools/release.sh and devtools/release-native.sh
-compile-osh-parse() {
-  compile-slice '' ''
+# This is the demo we're releasing to users!
+compile-oil-native() {
+  compile-slice osh_eval ''
 }
 
-compile-osh-parse-opt() {
-  compile-slice-opt "$@"
+compile-oil-native-opt() {
+  compile-slice-opt osh_eval ''
 }
 
-compile-osh-parse-asan() {
-  compile-slice-asan "$@"
+compile-oil-native-asan() {
+  compile-slice-asan osh_eval ''
 }
 
 # Demo for the oil-native tarball.
 tarball-demo() {
   mkdir -p _bin
 
-  time compile-slice-opt
+  time compile-oil-native-opt
 
-  local bin=_bin/osh_parse.opt.stripped
+  local bin=_bin/osh_eval.opt.stripped
   ls -l $bin
 
   echo
@@ -635,8 +645,7 @@ tarball-demo() {
   echo
 
   set -o xtrace
-  $bin -c 'echo "hello $name"'
-
+  $bin -n -c 'echo "hello $name"'
 }
 
 

@@ -106,7 +106,7 @@ measure-sizes() {
   # PROBLEM: Do I need provenance for gcc/clang here?  I can just join it later
   # in R.
 
-  sizes-tsv $BASE_DIR/bin/*/osh_parse.{dbg,opt.stripped} \
+  sizes-tsv $BASE_DIR/bin/*/osh_eval.{dbg,opt.stripped} \
     > ${prefix}.native-sizes.tsv
 
   sizes-tsv $TAR_DIR/oil-$OIL_VERSION/_build/oil/bytecode-opy.zip \
@@ -213,13 +213,13 @@ build-task() {
       cp -v $target $bin_dir
       ;;
 
-    _bin/osh_parse.*)
+    _bin/osh_eval.*)
       case $action in
-        _bin/osh_parse.dbg)
-          local func='compile-osh-parse'
+        _bin/osh_eval.dbg)
+          local func='compile-oil-native'
           ;;
-        _bin/osh_parse.opt.stripped)
-          local func='compile-osh-parse-opt'
+        _bin/osh_eval.opt.stripped)
+          local func='compile-oil-native-opt'
           ;;
         *)
           die "Invalid target"
@@ -276,8 +276,8 @@ oil-tasks() {
     echo "$line" $oil_dir _bin/oil.ovm
     echo "$line" $oil_dir _bin/oil.ovm-dbg
 
-    echo "$line" $oil_native_dir _bin/osh_parse.dbg
-    echo "$line" $oil_native_dir _bin/osh_parse.opt.stripped
+    echo "$line" $oil_native_dir _bin/osh_eval.dbg
+    echo "$line" $oil_native_dir _bin/osh_eval.opt.stripped
   done
 }
 
@@ -444,7 +444,7 @@ EOF
 
 EOF
   # Highlight the opt build
-  tsv2html --css-class-pattern 'special /gcc/osh_parse.opt.stripped$' $in_dir/native-sizes.tsv
+  tsv2html --css-class-pattern 'special /gcc/osh_eval.opt.stripped$' $in_dir/native-sizes.tsv
 
   cat <<EOF
 

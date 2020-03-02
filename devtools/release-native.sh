@@ -67,8 +67,8 @@ extract-for-benchmarks() {
 
   # For benchmarks
   pushd oil-native-$OIL_VERSION
-  build/mycpp.sh compile-osh-parse
-  build/mycpp.sh compile-osh-parse-opt
+  build/mycpp.sh compile-oil-native
+  build/mycpp.sh compile-oil-native-opt
   popd
 
   git add oil-native-$OIL_VERSION

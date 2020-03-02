@@ -22,7 +22,7 @@ download() {
     'https://github.com/gperftools/gperftools/releases/download/gperftools-2.7/gperftools-2.7.tar.gz'
 }
 
-# Run compile-osh-parse-opt
+# Run compile-oil-native-opt
 # TODO: Make osh-parse-tcmalloc
 
 osh-parse-small() {

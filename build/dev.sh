@@ -154,7 +154,7 @@ oil-asdl-to-cpp() {
 oil-cpp() {
   oil-asdl-to-cpp
   arith-parse-cpp-gen
-  build/mycpp.sh osh-parse
+  build/mycpp.sh osh-eval  # used to be osh-parse
 
   echo
   wc -l _build/cpp/*

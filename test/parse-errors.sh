@@ -24,10 +24,7 @@ _error-case() {
   banner "$@"
   echo
 
-  # TODO: Change when osh_parse supports -n -c.
-
-  #$SH -n -c "$@"
-  $SH -c "$@"
+  $SH -n -c "$@"
 
   # NOTE: This works with osh, not others.
   local status=$?
@@ -40,7 +37,7 @@ _runtime-parse-error() {
   ### Assert that a parse error happens at runtime
 
   case $SH in
-    *osh_parse.asan)
+    *osh_*.asan)
       echo 'skipping _runtime-parse-error'
       return
       ;;
@@ -61,7 +58,7 @@ _oil-parse-error() {
   ### Assert that a parse error happens with Oil options on
 
   case $SH in
-    *osh_parse.asan)
+    *osh_*.asan)
       echo 'skipping _oil-parse-error'
       return
       ;;
@@ -168,7 +165,7 @@ arith-context() {
   _error-case 'echo $(( '
   _error-case 'echo $(( 1'
 
-  # Disable Oil stuff for osh_parse.asan
+  # Disable Oil stuff for osh_{parse,eval}.asan
   if false; then
     # Non-standard arith sub $[1 + 2]
     _error-case 'echo $[ 1 + 2 ;'
@@ -515,7 +512,7 @@ oil-language() {
   set +o errexit
 
   # disabled until we port the parser
-  case $SH in *osh_parse.asan) return ;; esac
+  case $SH in *osh_*.asan) return ;; esac
 
   # Unterminated
   _error-case 'var x = 1 + '
@@ -674,11 +671,10 @@ run-for-release() {
   run-other-suite-for-release parse-errors all
 
   # Done in _oil-native-build
-  #build/mycpp.sh compile-osh-parse-asan
+  #build/mycpp.sh compile-oil-native-asan
 
-  # TODO: osh_parse should accept -n -c
   local out=_tmp/other/parse-errors-oil-native.txt
-  ASAN_OPTIONS=detect_leaks=0 SH=_bin/osh_parse.asan \
+  ASAN_OPTIONS=detect_leaks=0 SH=_bin/osh_eval.asan \
     run-other-suite-for-release parse-errors all $out
 }
 

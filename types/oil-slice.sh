@@ -23,6 +23,9 @@ demo() {
   # Same functionality in bin/osh_eval
   echo 'echo hi' | $osh_eval
   $osh_eval -n -c 'ls -l'
+  echo ---
+  # ast format is none
+  $osh_eval -a none -n -c 'ls -l'
 
   echo '-----'
 

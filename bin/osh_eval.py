@@ -99,20 +99,29 @@ class TestEvaluator(object):
 
 
 def Parse(argv):
-  # type: (List[str]) -> Tuple[int, Optional[str], bool]
+  # type: (List[str]) -> Tuple[int, bool, Optional[str], bool]
   """
   returns the -n and -c value
   """
   i = 0  
 
-  flag_n = False
+  flag_a = True
   flag_c = None  # type: str
+  flag_n = False
 
   n = len(argv)
 
   while i < n:
     if argv[i] == '-n':
       flag_n = True
+
+    elif argv[i] == '-a':
+      if i >= n:
+        raise AssertionError(argv)
+
+      i += 1
+      if argv[i] == "none":
+        flag_a = False
 
     elif argv[i] == '-c':
       if i >= n:
@@ -126,7 +135,7 @@ def Parse(argv):
 
     i += 1
 
-  return i, flag_c, flag_n
+  return i, flag_a, flag_c, flag_n
 
 
 def main(argv):
@@ -150,7 +159,7 @@ def main(argv):
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
 
   argv = argv[1:]  # remove binary name
-  i, flag_c, flag_n = Parse(argv)
+  i, flag_a, flag_c, flag_n = Parse(argv)
 
   argv = argv[i:]  # truncate
 
@@ -172,11 +181,6 @@ def main(argv):
   else:
     raise AssertionError(argv)
 
-  pretty_print = True
-  if flag_n and not flag_c:
-    # for benchmarking, osh_eval -n foo.sh shouldn't pretty print
-    pretty_print = False
-
   arena.PushSource(src)
   c_parser = parse_ctx.MakeOshParser(line_reader)
 
@@ -188,12 +192,11 @@ def main(argv):
     return 2
   assert node is not None
 
-
   # C++ doesn't have the abbreviations yet (though there are some differences
   # like omitting spids)
   #tree = node.AbbreviatedTree()
   if flag_n:
-    if pretty_print:
+    if flag_a:
       tree = node.PrettyTree()
 
       ast_f = fmt.DetectConsoleOutput(mylib.Stdout())

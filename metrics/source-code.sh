@@ -70,16 +70,17 @@ osh-cloc() {
 # everything into an array.  An hash table of arrays would be useful here.
 all() {
   echo 'BUILD AUTOMATION'
-  wc -l build/*.{mk,sh,py} Makefile *.mk configure install |
-    filter-py | sort --numeric
+  ls build/*.{mk,sh,py} Makefile *.mk configure install |
+    filter-py | xargs wc -l | sort --numeric
   echo
 
   echo 'TEST AUTOMATION'
-  wc -l test/*.{sh,py,R} | filter-py | sort --numeric
+  ls test/*.{sh,py,R} | filter-py | grep -v jsontemplate.py |
+    xargs wc -l | sort --numeric
   echo
 
   echo 'RELEASE AUTOMATION'
-  wc -l devtools/release.sh | sort --numeric
+  wc -l devtools/release*.sh | sort --numeric
   echo
 
   echo 'BENCHMARKS'
@@ -130,7 +131,7 @@ all() {
   echo
 
   echo 'BORROWED FROM STDLIB'
-  wc -l pylib/*.py | filter-py | sort --numeric
+  ls pylib/*.py | filter-py | xargs wc -l | sort --numeric
   echo
 
   echo 'OTHER UNIT TESTS'

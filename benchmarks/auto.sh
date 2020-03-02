@@ -54,12 +54,12 @@ measure-shells() {
   benchmarks/vm-baseline.sh measure $provenance $base_dir/vm-baseline
   benchmarks/osh-runtime.sh measure $provenance $base_dir/osh-runtime
 
-  # Note: we could also use _tmp/native-tar-test/*/_bin/osh_parse...
+  # Note: we could also use _tmp/native-tar-test/*/_bin/osh_eval...
   local root=$PWD/../benchmark-data/src/oil-native-$OIL_VERSION
-  local osh_parse=$root/_bin/osh_parse.opt.stripped
+  local osh_eval=$root/_bin/osh_eval.opt.stripped
 
   local prov2
-  prov2=$(benchmarks/id.sh shell-provenance "${SHELLS[@]}" $osh_parse)
+  prov2=$(benchmarks/id.sh shell-provenance "${SHELLS[@]}" $osh_eval)
 
   benchmarks/osh-parser.sh measure $prov2 $base_dir/osh-parser
 }
@@ -69,10 +69,10 @@ osh-parser-quick() {
   local base_dir=${1:-../benchmark-data}
 
   # REPO VERSION
-  local osh_parse=_bin/osh_parse.opt.stripped
+  local osh_eval=_bin/osh_eval.opt.stripped
 
   local prov2
-  prov2=$(benchmarks/id.sh shell-provenance bash dash mksh yash $osh_parse)
+  prov2=$(benchmarks/id.sh shell-provenance bash dash mksh yash $osh_eval)
 
   benchmarks/osh-parser.sh measure $prov2 $base_dir/osh-parser
 }
