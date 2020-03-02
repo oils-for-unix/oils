@@ -46,16 +46,13 @@ readonly SHELLS=( bash dash mksh zsh bin/osh $OSH_OVM )
 
 measure-shells() {
   local base_dir=${1:-../benchmark-data}
-  local quick=${2:-}
 
   local provenance
   # capture the filename
   provenance=$(benchmarks/id.sh shell-provenance "${SHELLS[@]}")
 
-  if test -z "$quick"; then
-    benchmarks/vm-baseline.sh measure $provenance $base_dir/vm-baseline
-    benchmarks/osh-runtime.sh measure $provenance $base_dir/osh-runtime
-  fi
+  benchmarks/vm-baseline.sh measure $provenance $base_dir/vm-baseline
+  benchmarks/osh-runtime.sh measure $provenance $base_dir/osh-runtime
 
   # Note: we could also use _tmp/native-tar-test/*/_bin/osh_eval...
   local root=$PWD/../benchmark-data/src/oil-native-$OIL_VERSION
@@ -75,7 +72,7 @@ osh-parser-quick() {
   local osh_eval=_bin/osh_eval.opt.stripped
 
   local prov2
-  prov2=$(benchmarks/id.sh shell-provenance bash dash mksh yash $osh_eval)
+  prov2=$(benchmarks/id.sh shell-provenance "${SHELLS[@]}" $osh_eval)
 
   benchmarks/osh-parser.sh measure $prov2 $base_dir/osh-parser
 }

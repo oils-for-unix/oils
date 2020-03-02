@@ -99,11 +99,11 @@ ParserReport = function(in_dir, out_dir) {
     if (row$shell_name == 'osh') {
       label = GetOshLabel(row$shell_hash)
     } else if (row$shell_name == 'osh_eval.opt.stripped') {
-      label = 'osh-native'
+      label = 'oil-native'
 
     # TODO: delete when migrated
     } else if (row$shell_name == 'osh_parse.opt.stripped') {
-      label = 'osh-native'
+      label = 'oil-native'
 
     } else {  # same name for other shells
       label = row$shell_name
@@ -145,9 +145,9 @@ ParserReport = function(in_dir, out_dir) {
     spread(key = shell_label, value = elapsed_ms) %>%
     arrange(host_label, num_lines) %>%
     mutate(filename = basename(path), filename_HREF = sourceUrl(path),
-           osh_to_bash_ratio = `osh-native` / bash) %>% 
+           osh_to_bash_ratio = `oil-native` / bash) %>% 
     select(c(host_label, bash, dash, mksh, zsh,
-             `osh-ovm`, `osh-cpython`, `osh-native`,
+             `osh-ovm`, `osh-cpython`, `oil-native`,
              osh_to_bash_ratio, num_lines, filename, filename_HREF)) ->
     elapsed
 
@@ -162,7 +162,7 @@ ParserReport = function(in_dir, out_dir) {
     arrange(host_label, num_lines) %>%
     mutate(filename = basename(path), filename_HREF = sourceUrl(path)) %>% 
     select(c(host_label, bash, dash, mksh, zsh,
-             `osh-ovm`, `osh-cpython`, `osh-native`,
+             `osh-ovm`, `osh-cpython`, `oil-native`,
              num_lines, filename, filename_HREF)) ->
     rate
 

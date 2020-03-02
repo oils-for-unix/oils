@@ -11,7 +11,11 @@
 #   devtools/release-native.sh extract-for-benchmarks
 #   devtools/release.sh benchmark-build
 #   make  # to build _bin/osh
-#   benchmark/auto.sh measure-shells QUICK
+#   lisa:
+#     benchmark/auto.sh osh-parser-quick
+#   flanders:
+#     TODO: fix this.  sometimes we use _bin/osh_eval.*, and sometimes the
+#     ../benchmark-data/ version.
 #   benchmarks/report.sh osh-parser
 
 set -o nounset
