@@ -112,7 +112,7 @@ run-for-release() {
   collect-and-report $OVM_BASE_DIR $dbg $opt
 
   local bin_dir="../benchmark-data/src/oil-native-$OIL_VERSION"
-  collect-and-report $OIL_BASE_DIR $bin_dir/_bin/osh_parse.{dbg,opt}
+  collect-and-report $OIL_BASE_DIR $bin_dir/_bin/osh_eval.{dbg,opt}
 }
 
 "$@"
