@@ -3,7 +3,11 @@
 # For textual code generation.
 #
 # Usage:
-#   ./codegen.sh <function name>
+#   build/codegen.sh <function name>
+#
+# Examples:
+#   build/codegen.sh download-re2c
+#   build/codegen.sh install-re2c
 #
 # We want a single step build from the git tree, but we also want the generated
 # code to be distributed in the release tarball.

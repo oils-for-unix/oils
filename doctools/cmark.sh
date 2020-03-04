@@ -1,7 +1,14 @@
 #!/bin/bash
 #
 # Usage:
-#   ./cmark.sh <function name>
+#   doctools/cmark.sh <function name>
+#
+# Example:
+#   doctools/cmark.sh download
+#   doctools/cmark.sh extract
+#   doctools/cmark.sh build
+#   doctools/cmark.sh run-tests (also installs it)
+#   doctools/cmark.sh demo-ours  # smoke test
 
 set -o nounset
 set -o pipefail
@@ -37,21 +44,6 @@ run-tests() {
   sudo make install
   popd
 }
-
-travis-hack() {
-  ### Check the libcmark.so into git.  This only works on Ubuntu!
-  # We're doing this because otherwise we'll have to download the tarball on
-  # every Travis build, install cmake, build it, and install it.  That's not
-  # terrible but it slows things down a bit.
-
-  local so=$(echo $CMARK_DIR/build/src/libcmark.so.*)
-  ls -l $so
-  echo
-  ldd $so
-
-  cp -v $so doctools/travis-bin
-}
-
 
 demo-theirs() {
   echo '*hi*' | cmark
