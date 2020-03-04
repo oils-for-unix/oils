@@ -46,9 +46,11 @@ script:
     # Make sure dev build of yajl works
     - test/spec.sh oil-json
     - test/spec.sh interactive
+    # Test if help works, since it may require cmark to build
+    - test/spec.sh builtin-bash
     # Running serially is slow, but easier to debug ...
-    - test/spec.sh oil-all-serial
-    - test/spec.sh osh-all-serial
+    #- test/spec.sh oil-all-serial
+    #- test/spec.sh osh-all-serial
 
 notifications:
     on_success: change
