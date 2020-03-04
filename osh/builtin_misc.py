@@ -33,6 +33,7 @@ import termios  # for read -n
 from _devbuild.gen.runtime_asdl import (
     value_e, scope_e, span_e, cmd_value_t, cmd_value__Argv
 )
+from asdl import runtime
 from core import state
 from core import ui
 from frontend import args
@@ -550,8 +551,10 @@ class Help(object):
     # type: (cmd_value__Argv) -> int
     try:
       topic = cmd_val.argv[1]
+      blame_spid = cmd_val.arg_spids[1]
     except IndexError:
       topic = 'help'
+      blame_spid = runtime.NO_SPID
 
     # TODO: Should be -i for index?  Or -l?
     if topic == 'index':
@@ -573,16 +576,20 @@ class Help(object):
     try:
       f = self.loader.open('_devbuild/help/%s' % topic)
     except IOError:
-      # NOTE: bash suggests:
+      # Notes:
+      # 1. bash suggests:
       # man -k zzz
       # info zzz
       # help help
       # We should do something smarter.
 
-      # NOTE: This is mostly an interactive command.  Is it obnoxious to
+      # 2. This also happens on 'build/dev.sh minimal', which isn't quite
+      # accurate.  We don't have an exact list of help topics!
+
+      # 3. This is mostly an interactive command.  Is it obnoxious to
       # quote the line of code?
       self.errfmt.Print('no help topics match %r', topic,
-                        span_id=cmd_val.arg_spids[1])
+                        span_id=blame_spid)
       return 1
 
     print(f.read())
