@@ -248,9 +248,9 @@ EvalWordSequence
 
 Oil can express everything that shell can.
 
-- Split with `@split(mystr)`
-- Glob with `@glob(mypat)` (not implemented)
-- Elision with `@maybe(s)` (not implemented)
+- Split with `@split(mystr, IFS?)`
+- Glob with `@glob(mypat)`
+- Elision with `@maybe(s)`
 
 ## More Word Evaluation Issues
 

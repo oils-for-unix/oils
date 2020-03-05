@@ -314,3 +314,34 @@ X="X"
 Yspaces=" Y "
 
 
+#### IFS='' with $@ and $*
+set -- a 'b c'
+IFS=''
+argv.py at $@
+argv.py star $*
+
+# zsh agrees
+## STDOUT:
+['at', 'a', 'b c']
+['star', 'a', 'b c']
+## END
+## OK dash/ash/osh STDOUT:
+['at', 'ab c']
+['star', 'ab c']
+## END
+
+#### IFS='' with $@ and $* and printf
+set -- a 'b c'
+IFS=''
+printf '[%s]\n' $@
+printf '[%s]\n' $*
+## STDOUT:
+[a]
+[b c]
+[a]
+[b c]
+## END
+## OK dash/ash/osh STDOUT:
+[ab c]
+[ab c]
+## END
