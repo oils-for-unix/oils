@@ -1059,7 +1059,8 @@ class Mem(object):
       # TODO: Point at the ORIGINAL declaration!
       e_die("%r has already been declared", name)
 
-    if cell is None and keyword_id in (Id.KW_Set, Id.KW_SetGlobal):
+    if cell is None and keyword_id in (Id.KW_Set, Id.KW_SetLocal,
+                                       Id.KW_SetGlobal):
       e_die("%r hasn't been declared", name)
 
   def _DisallowNamerefCycle(self, name, ref_trail):

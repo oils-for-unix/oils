@@ -196,6 +196,7 @@ _KEYWORDS = [
   C('setvar',    Id.KW_SetVar),
   C('setref',    Id.KW_SetRef),
   C('set',       Id.KW_Set),
+  C('setlocal',  Id.KW_SetLocal),
   C('setglobal', Id.KW_SetGlobal),
   C('proc',      Id.KW_Proc),
 

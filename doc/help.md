@@ -420,6 +420,12 @@ New Oil programs should use `set`, `setglobal`, or `setref` instead of
 
 #### set 
 
+A shorter name for `setlocal` in the Oil language.  Requires `shopt -s
+parse_set`, because otherwise it would conflict with the `set` builtin.  Use
+`builtin set -- 1 2 3` to get the builtin, or `shopt -o` to change options.
+
+#### setlocal
+
 Mutates an existing variable in the current scope.  If it doesn't exist, the
 shell exits with a fatal error.
 

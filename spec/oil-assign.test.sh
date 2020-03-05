@@ -114,6 +114,41 @@ x=XX
 y=YY
 ## END
 
+#### setlocal works (with bin/osh, no shopt)
+proc p {
+  var x = 5
+  echo $x
+  setlocal x = 42
+  echo $x
+}
+p
+## STDOUT:
+5
+42
+## END
+
+#### setlocal at top level
+var x = 1
+setlocal x = 42
+echo $x
+setlocal y = 50  # error because it's not declared
+## status: 1
+## STDOUT:
+42
+## END
+
+#### setlocal doesn't mutate globals
+proc p() {
+  var g = 1
+  setlocal g = 2
+}
+var g = 42
+p
+echo $g
+## STDOUT:
+42
+## END
+
 #### setglobal
 f() {
   var x = 'local'

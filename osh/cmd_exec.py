@@ -1183,7 +1183,7 @@ class Executor(object):
           with switch(node.keyword.id) as case2:
             if case2(Id.KW_SetVar):
               lookup_mode = scope_e.LocalOrGlobal
-            elif case2(Id.KW_Set):
+            elif case2(Id.KW_Set, Id.KW_SetLocal):
               lookup_mode = scope_e.LocalOnly
             elif case2(Id.KW_SetGlobal):
               lookup_mode = scope_e.GlobalOnly
