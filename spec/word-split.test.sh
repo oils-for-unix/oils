@@ -325,7 +325,7 @@ argv.py star $*
 ['at', 'a', 'b c']
 ['star', 'a', 'b c']
 ## END
-## OK dash/ash/osh STDOUT:
+## BUG dash/ash STDOUT:
 ['at', 'ab c']
 ['star', 'ab c']
 ## END
@@ -341,7 +341,20 @@ printf '[%s]\n' $*
 [a]
 [b c]
 ## END
-## OK dash/ash/osh STDOUT:
+## BUG dash/ash STDOUT:
 [ab c]
 [ab c]
 ## END
+
+#### IFS='' with ${a[@]} and ${a[*]}
+myarray=(a 'b c')
+IFS=''
+argv.py at ${myarray[@]}
+argv.py star ${myarray[*]}
+
+## STDOUT:
+['at', 'a', 'b c']
+['star', 'a', 'b c']
+## END
+## N-I dash/ash status: 2
+## N-I dash/ash stdout-json: ""

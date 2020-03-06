@@ -308,7 +308,7 @@ comments() {
 }
 
 word-split() {
-  sh-spec spec/word-split.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/word-split.test.sh --osh-failures-allowed 6 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
