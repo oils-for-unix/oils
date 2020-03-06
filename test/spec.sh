@@ -9,6 +9,7 @@ set -o errexit
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
 source test/common.sh
+source test/spec-common.sh
 
 readonly REPO_ROOT=$(cd $(dirname $0)/..; pwd)
 
@@ -169,32 +170,6 @@ osh-version-text() {
 
   maybe-show /etc/debian_version
   maybe-show /etc/lsb-release
-}
-
-#
-# Helpers
-#
-
-sh-spec() {
-  local test_file=$1
-  shift
-
-  if [[ $test_file != *.test.sh ]]; then
-    die "Test file should end with .test.sh"
-  fi
-
-  local this_dir=$(cd $(dirname $0); pwd)
-
-  local tmp_env=$this_dir/../_tmp/spec-tmp/$(basename $test_file)
-  mkdir -p $tmp_env
-
-  # prepend spec/bin on the front of the $PATH.  We can't isolate $PATH because
-  # we might be running in Nix, etc.
-  PYTHONPATH=. test/sh_spec.py \
-      --tmp-env $tmp_env \
-      --path-env "$this_dir/../spec/bin:$PATH" \
-      "$test_file" \
-      "$@"
 }
 
 #
@@ -910,6 +885,5 @@ oil-interactive() {
   sh-spec spec/oil-interactive.test.sh --cd-tmp --osh-failures-allowed 0 \
     $OIL_LIST "$@"
 }
-
 
 "$@"
