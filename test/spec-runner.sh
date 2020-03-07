@@ -283,11 +283,6 @@ html-summary() {
   echo "Results: file://$PWD/$out"
 }
 
-link-web() {
-  # No long flags like --verbose because of busybox
-  ln -s -f -v $PWD/web _tmp
-}
-
 _all-parallel() {
   local suite=${1:-osh-oil}
   local manifest="_tmp/spec/SUITE-$suite.txt"
@@ -304,7 +299,7 @@ _all-parallel() {
 
   all-tests-to-html $manifest
 
-  link-web
+  # note: the HTML links to ../../web/, which is in the repo.
 
   html-summary $suite
 }

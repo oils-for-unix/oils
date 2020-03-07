@@ -51,6 +51,7 @@ setup-dns() {
 
 # bash, make, gcc, musl-dev: to compile Oil
 # python2, gawk: to run spec tests
+# zip: for publishing it
 #
 # What about xargs?  It uses --verbose, which busybox doesn't have.
 # I think I should run a minimal serial test runner, in Python maybe?
@@ -60,7 +61,7 @@ add-oil-build-deps() {
   local chroot_dir=${1:-$CHROOT_DIR}
   sudo chroot $chroot_dir /bin/sh <<EOF
 apk update
-apk add bash make gcc musl-dev python2 gawk
+apk add bash make gcc musl-dev python2 gawk zip
 EOF
 }
 
@@ -79,13 +80,13 @@ test-tar() {
 make-oil-spec() {
   # TODO: maybe get rid of doctools
   # test/spec.sh is just for reference
-  # web/ dir because we want the end user to be able to see it
+  # web/*.css dir because we want the end user to be able to see it
   find \
     benchmarks/time_.py \
     test/sh_spec.py doctools/{html_head,doc_html,__init__}.py \
     test/{common,spec-common,spec,spec-alpine,spec-runner}.sh \
     spec/ \
-    web/ \
+    web/*.css \
     -type f \
     | xargs tar --create > _tmp/oil-spec.tar
 }

@@ -99,8 +99,78 @@ all() {
   export OSH_LIST=osh OIL_LIST=oil SPEC_RUNNER='test/spec-alpine.sh run-test'
 
   # this is like test/spec.sh {oil,osh}-all
+  test/spec-runner.sh all-parallel oil "$@"
   test/spec-runner.sh all-parallel osh "$@"
-  #test/spec-runner.sh all-parallel oil "$@"
+}
+
+home-page() {
+  cat <<EOF
+<h1>Spec Test Results</h2>
+
+<a href="_tmp/spec/osh.html">osh.html</a> <br/>
+<a href="_tmp/spec/oil.html">oil.html</a> <br/>
+
+EOF
+}
+
+# oilshell.org/spec-results/$date-$hostname-$distro.wwz/
+#   _tmp/spec/     # from _tmp/spec
+#     osh.html
+#     oil.html
+#   web/           # from web
+
+manifest() {
+  find index.html _tmp/spec/ web/ -type f 
+}
+
+archive-results() {
+  local archive_type=${1:-zip}  # zip or tar
+
+  home-page > index.html
+  local out_name="$(date +%Y-%m-%d__%H-%M-%S)__$(hostname)"
+
+  case $archive_type in
+    # zip isn't in POSIX so some systems might not have it.
+    tar)
+      local out=$out_name.tar.gz
+      manifest | xargs -- tar -c -z > $out
+      ;;
+
+    zip)
+      # .wwz is just a zip file that is served
+      local out=$out_name.wwz
+      manifest | xargs -- zip $out
+      ;;
+
+    *)
+      die "Invalid type $archive_type"
+      ;;
+  esac
+
+  ls -l $out
+}
+
+# similar to web/publish.sh
+
+publish() {
+  ### Publish results to oilshell.org/spec-results
+  local user=$1
+  local host=$user.org
+
+  local path=$2
+
+  local dest='oilshell.org/spec-results'
+  ssh $user@$host mkdir --verbose -p $dest
+  scp $path $user@$host:$dest
+
+  echo "Visit http://$dest/$(basename $path)/"
+}
+
+copy-out() {
+  local out=_tmp/spec-results
+  mkdir -p $out
+  cp -v _chroot/spec-alpine/src/oil-spec/*.wwz $out
+  ls -l $out
 }
 
 "$@"
