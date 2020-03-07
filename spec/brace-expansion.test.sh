@@ -169,10 +169,29 @@ echo {foo~,~}/bar
 #### Two kinds of tilde expansion
 # NOTE: osh matches mksh.  Is that OK?
 # ~/foo and ~bar
+# necessary to establish ~ == ~current_user?
+# (could be a separate test now?)
+[[ ~ == $(eval printf \'%s\\\n\' \~$LOGNAME) ]]
+_must_exist(){ test -d "$1" && test -d "$2"; }
+_check_paths(){
+  echo $1
+  if test -d "$2"; then
+    # hope root's homedir ends in root
+    echo $2 | grep -E -o "/root$"
+  else
+    echo $2
+  fi
+}
+_must_exist ~{,root}
 HOME=/home/bob
-echo ~{/src,root}
-## stdout: /home/bob/src /root
-## OK osh/mksh stdout: ~/src ~root
+_check_paths ~{,root}
+## STDOUT:
+/home/bob
+/root
+## OK osh/mksh STDOUT:
+~
+~root
+## END
 
 #### Tilde expansion come before var expansion
 HOME=/home/bob
