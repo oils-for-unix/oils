@@ -42,9 +42,9 @@ run-task-with-status() {
   shift
 
   # --quiet suppresses a warning message
-  /usr/bin/env time \
+  benchmarks/time_.py \
+    --tsv \
     --output $out_file \
-    --format '%x %e' \
     -- "$@" || true  # suppress failure
 
   # Hack to get around the fact that --quiet is Debian-specific:

@@ -167,11 +167,11 @@ benchmark-all() {
 
     echo
     echo $'\t[ C++ ]'
-    time-tsv -o $out --field $name --field 'C++' -- _bin/$name
+    time-tsv --append -o $out --field $name --field 'C++' -- _bin/$name
 
     echo
     echo $'\t[ Python ]'
-    time-tsv -o $out --field $name --field 'Python' -- $0 pyrun-example $name
+    time-tsv --append -o $out --field $name --field 'Python' -- $0 pyrun-example $name
   done
 
   cat $out

@@ -10,7 +10,7 @@ set -o errexit
 source test/common.sh
 
 time-tool() {
-  $(dirname $0)/time.py "$@"
+  $(dirname $0)/time_.py "$@"
 }
 
 test-tsv() {
@@ -39,9 +39,19 @@ test-append() {
 }
 
 test-usage() {
+  # no args
+  set +o errexit
+
+  time-tool; status=$?
+  test $status = 2 || fail "Unexpected status $status"
+  time-tool --output; status=$?
+  test $status = 2 || fail "Unexpected status $status"
+
   time-tool sleep 0.1
   time-tool --append sleep 0.1; status=$?
   test $status = 0 || fail "Unexpected status $status"
+
+  set -o errexit
 }
 
 test-cannot-serialize() {

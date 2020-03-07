@@ -88,7 +88,7 @@ runtime-task() {
   mkdir -p $vm_out_dir $files_out_dir
 
   local -a TIME_PREFIX=(
-    $PWD/benchmarks/time.py \
+    $PWD/benchmarks/time_.py \
     --append \
     --output $times_out \
     --field "$host" --field "$host_hash" \
@@ -319,7 +319,7 @@ abuild-h() {
 
   echo 'status,elapsed_secs,sh_path' > $out
   for sh_path in bash dash mksh zsh $OSH_OVM; do
-    benchmarks/time.py --append --output $out --field "$sh_path" -- \
+    benchmarks/time_.py --append --output $out --field "$sh_path" -- \
       $sh_path benchmarks/testdata/abuild -h
   done
 }

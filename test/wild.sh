@@ -642,7 +642,7 @@ parse-aboriginal() {
   #return
 
   find $ABORIGINAL_DIR -name '*.sh' | xargs -n 1 -- \
-    benchmarks/time.py --append --output $AB_TIMES -- \
+    benchmarks/time_.py --append --output $AB_TIMES -- \
     bin/osh -n --ast-format none
 }
 

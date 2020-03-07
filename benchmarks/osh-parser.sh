@@ -87,7 +87,7 @@ parser-task() {
 
   # exit code, time in seconds, host_hash, shell_hash, path.  \0
   # would have been nice here!
-  benchmarks/time.py \
+  benchmarks/time_.py \
     --append \
     --output $times_out \
     --field "$host" --field "$host_hash" \
@@ -271,7 +271,7 @@ EOF
 }
 
 time-test() {
-  benchmarks/time.py \
+  benchmarks/time_.py \
     --field bash --field foo.txt \
     --append --output _tmp/bench.csv \
     sleep 0.123

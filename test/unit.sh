@@ -121,7 +121,7 @@ run-test-and-log() {
   local log=_tmp/unit/$t.txt
   mkdir -p $(dirname $log)
 
-  benchmarks/time.py --append --out $tasks_csv \
+  benchmarks/time_.py --append --out $tasks_csv \
     --field $t --field "$t.txt" -- \
     $t >$log 2>&1
 }

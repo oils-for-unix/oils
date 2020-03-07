@@ -51,7 +51,7 @@ readonly CXX=$REPO_ROOT/$CLANG_DIR_RELATIVE/bin/clang++
 #readonly CXX='c++'
 
 time-tsv() {
-  $REPO_ROOT/benchmarks/time.py --tsv "$@"
+  $REPO_ROOT/benchmarks/time_.py --tsv "$@"
 }
 
 create-venv() {

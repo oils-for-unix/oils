@@ -177,6 +177,7 @@ build-task() {
   # Definitions that depends on $PWD.
   local -a TIME_PREFIX=(
     time-tsv \
+    --append \
     --output $times_out \
     --field "$host" --field "$host_hash" \
     --field "$compiler_path" --field "$compiler_hash" \

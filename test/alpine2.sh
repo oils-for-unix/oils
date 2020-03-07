@@ -52,9 +52,6 @@ setup-dns() {
 # bash, make, gcc, musl-dev: to compile Oil
 # python2, gawk: to run spec tests
 #
-# TODO: test/common.sh run-task-with-status uses /usr/bin/time with GNU flags
-# Can we change that to Python?  Just use benchmarks/time.py?  Although does
-# that work in parallel?
 # What about xargs?  It uses --verbose, which busybox doesn't have.
 # I think I should run a minimal serial test runner, in Python maybe?
 
@@ -83,6 +80,7 @@ make-oil-spec() {
   # TODO: maybe get rid of doctools
   # test/spec.sh is just for reference
   find \
+    benchmarks/time_.py \
     test/sh_spec.py doctools/{html_head,doc_html,__init__}.py \
     test/{common,spec-common,spec,spec-alpine,spec-runner}.sh \
     spec/ \

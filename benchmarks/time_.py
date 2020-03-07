@@ -52,6 +52,10 @@ def Options():
 def main(argv):
   (opts, child_argv) = Options().parse_args(argv[1:])
 
+  if not child_argv:
+    log('time.py: Expected a command')
+    return 2
+
   start_time = time.time()
   try:
     exit_code = subprocess.call(child_argv)
