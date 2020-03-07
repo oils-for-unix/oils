@@ -114,6 +114,10 @@ oil-version-text() {
     $bin --version
     echo
   done
+
+  maybe-show /etc/alpine-release
+  maybe-show /etc/debian_version
+  maybe-show /etc/lsb-release
 }
 
 # This has to be in test/spec because it uses $OSH_LIST, etc.

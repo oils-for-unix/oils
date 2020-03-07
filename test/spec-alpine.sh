@@ -150,27 +150,4 @@ archive-results() {
   ls -l $out
 }
 
-# similar to web/publish.sh
-
-publish() {
-  ### Publish results to oilshell.org/spec-results
-  local user=$1
-  local host=$user.org
-
-  local path=$2
-
-  local dest='oilshell.org/spec-results'
-  ssh $user@$host mkdir --verbose -p $dest
-  scp $path $user@$host:$dest
-
-  echo "Visit http://$dest/$(basename $path)/"
-}
-
-copy-out() {
-  local out=_tmp/spec-results
-  mkdir -p $out
-  cp -v _chroot/spec-alpine/src/oil-spec/*.wwz $out
-  ls -l $out
-}
-
 "$@"
