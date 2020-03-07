@@ -358,6 +358,7 @@ f() {
 		echo ${PIPESTATUS[@]}
 	fi
 }
+rmdir $TMP/_tmp || true
 rm -f $TMP/*
 f $TMP
 f /nonexistent # should fail
@@ -385,6 +386,7 @@ f() {
     echo foo
 	fi
 }
+rmdir $TMP/_tmp || true
 rm -f $TMP/*
 f $TMP
 f /nonexistent # should fail

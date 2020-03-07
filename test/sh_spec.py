@@ -595,6 +595,7 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
       if opts.rm_tmp:  # Remove BEFORE the test case runs.
         shutil.rmtree(env['TMP'])
         os.mkdir(env['TMP'])
+
       cwd = env['TMP'] if opts.cd_tmp else None
 
       case_env = sh_env[shell_index]
@@ -1116,8 +1117,8 @@ def Options():
       '--sh-env-var-name', dest='sh_env_var_name', default='SH',
       help="Set this environment variable to the path of the shell")
   p.add_option(
-      '--cd-tmp', dest='cd_tmp', default=False, action='store_true',
-      help='cd to the $TMP dir first')
+      '--no-cd-tmp', dest='cd_tmp', default=True, action='store_false',
+      help="Don't cd to the $TMP dir first")
   p.add_option(
       '--rm-tmp', dest='rm_tmp', default=False, action='store_true',
       help='clear the tmp dir after running each test case')

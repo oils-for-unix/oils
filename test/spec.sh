@@ -255,7 +255,8 @@ osh-only() {
 
 # Regress bugs
 bugs() {
-  sh-spec spec/bugs.test.sh ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
+  sh-spec spec/bugs.test.sh \
+    ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
 blog1() {
@@ -332,7 +333,7 @@ quote() {
 }
 
 loop() {
-  sh-spec spec/loop.test.sh \
+  sh-spec spec/loop.test.sh --no-cd-tmp \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
@@ -347,12 +348,12 @@ if_() {
 }
 
 builtins() {
-  sh-spec spec/builtins.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/builtins.test.sh --no-cd-tmp --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 builtin-eval-source() {
-  sh-spec spec/builtin-eval-source.test.sh \
+  sh-spec spec/builtin-eval-source.test.sh --no-cd-tmp \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
@@ -388,12 +389,12 @@ builtin-getopts() {
 }
 
 builtin-bracket() {
-  sh-spec spec/builtin-bracket.test.sh \
+  sh-spec spec/builtin-bracket.test.sh --no-cd-tmp \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 builtin-trap() {
-  sh-spec spec/builtin-trap.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/builtin-trap.test.sh --no-cd-tmp --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -405,7 +406,8 @@ builtin-bash() {
 
 # This is bash/OSH only
 builtin-completion() {
-  sh-spec spec/builtin-completion.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/builtin-completion.test.sh \
+    --no-cd-tmp --osh-failures-allowed 1 \
     $BASH $OSH_LIST "$@"
 }
 
@@ -432,9 +434,8 @@ sh-func() {
 }
 
 glob() {
-  # TODO: It would nice to pass --cd-tmp here, but there are too many _tmp
-  # paths in the test.
-  sh-spec spec/glob.test.sh --osh-failures-allowed 7 \
+  # Note: can't pass because it assumes 'bin' exists, etc.
+  sh-spec spec/glob.test.sh --no-cd-tmp --osh-failures-allowed 7 \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
@@ -490,12 +491,12 @@ posix() {
 }
 
 special-vars() {
-  sh-spec spec/special-vars.test.sh --cd-tmp --osh-failures-allowed 4 \
+  sh-spec spec/special-vars.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 introspect() {
-  sh-spec spec/introspect.test.sh \
+  sh-spec spec/introspect.test.sh --no-cd-tmp \
     $BASH $OSH_LIST "$@"
 }
 
@@ -510,7 +511,7 @@ var-op-test() {
 }
 
 var-op-len() {
-  sh-spec spec/var-op-len.test.sh \
+  sh-spec spec/var-op-len.test.sh --no-cd-tmp \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
@@ -569,7 +570,7 @@ xtrace() {
 }
 
 strict-options() {
-  sh-spec spec/strict-options.test.sh \
+  sh-spec spec/strict-options.test.sh --no-cd-tmp \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -584,7 +585,7 @@ errexit() {
 }
 
 errexit-oil() {
-  sh-spec spec/errexit-oil.test.sh \
+  sh-spec spec/errexit-oil.test.sh --no-cd-tmp \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
@@ -723,7 +724,7 @@ sh-spec-smoosh-env() {
   sh-spec $test_file \
     --sh-env-var-name TEST_SHELL \
     --posix \
-    --cd-tmp \
+    \
     --rm-tmp \
     --env-pair "TEST_UTIL=$SMOOSH_REPO/tests/util" \
     --env-pair "LOGNAME=$LOGNAME" \
@@ -804,85 +805,85 @@ all-and-smoosh() {
 #
 
 oil-array() {
-  sh-spec spec/oil-array.test.sh --cd-tmp --osh-failures-allowed 1 \
+  sh-spec spec/oil-array.test.sh --osh-failures-allowed 1 \
     $OSH_LIST "$@"
 }
 
 oil-assign() {
-  sh-spec spec/oil-assign.test.sh --cd-tmp --osh-failures-allowed 1 \
+  sh-spec spec/oil-assign.test.sh --osh-failures-allowed 1 \
     $OSH_LIST "$@"
 }
 
 oil-blocks() {
-  sh-spec spec/oil-blocks.test.sh --cd-tmp \
+  sh-spec spec/oil-blocks.test.sh \
     $OSH_LIST "$@"
 }
 
 oil-builtins() {
-  sh-spec spec/oil-builtins.test.sh --cd-tmp \
+  sh-spec spec/oil-builtins.test.sh \
     $OSH_LIST "$@"
 }
 
 oil-json() {
-  sh-spec spec/oil-json.test.sh --cd-tmp --osh-failures-allowed 0 \
+  sh-spec spec/oil-json.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
 oil-options() {
-  sh-spec spec/oil-options.test.sh --cd-tmp --osh-failures-allowed 2 \
+  sh-spec spec/oil-options.test.sh --osh-failures-allowed 2 \
     $OSH_LIST "$@"
 }
 
 oil-expr() {
-  sh-spec spec/oil-expr.test.sh --cd-tmp --osh-failures-allowed 5 \
+  sh-spec spec/oil-expr.test.sh --osh-failures-allowed 5 \
     $OSH_LIST "$@"
 }
 
 oil-expr-sub() {
-  sh-spec spec/oil-expr-sub.test.sh --cd-tmp --osh-failures-allowed 0 \
+  sh-spec spec/oil-expr-sub.test.sh --osh-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 
 oil-slice-range() {
-  sh-spec spec/oil-slice-range.test.sh --cd-tmp --osh-failures-allowed 1 \
+  sh-spec spec/oil-slice-range.test.sh --osh-failures-allowed 1 \
     $OSH_LIST "$@"
 }
 
 oil-regex() {
-  sh-spec spec/oil-regex.test.sh --cd-tmp --osh-failures-allowed 2 \
+  sh-spec spec/oil-regex.test.sh --osh-failures-allowed 2 \
     $OSH_LIST "$@"
 }
 
 oil-func-proc() {
-  sh-spec spec/oil-func-proc.test.sh --cd-tmp --osh-failures-allowed 0 \
+  sh-spec spec/oil-func-proc.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
 oil-builtin-funcs() {
-  sh-spec spec/oil-builtin-funcs.test.sh --cd-tmp --osh-failures-allowed 2 \
+  sh-spec spec/oil-builtin-funcs.test.sh --osh-failures-allowed 2 \
     $OIL_LIST "$@"
 }
 
 oil-demo() {
   # Using OSH for minimalism
-  sh-spec spec/oil-demo.test.sh --cd-tmp --osh-failures-allowed 0 \
+  sh-spec spec/oil-demo.test.sh --osh-failures-allowed 0 \
     $OSH_LIST "$@"
 }
 
 # Use bin/oil
 
 oil-keywords() {
-  sh-spec spec/oil-keywords.test.sh --cd-tmp --osh-failures-allowed 0 \
+  sh-spec spec/oil-keywords.test.sh --osh-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 
 oil-tuple() {
-  sh-spec spec/oil-tuple.test.sh --cd-tmp --osh-failures-allowed 1 \
+  sh-spec spec/oil-tuple.test.sh --osh-failures-allowed 1 \
     $OIL_LIST "$@"
 }
 
 oil-interactive() {
-  sh-spec spec/oil-interactive.test.sh --cd-tmp --osh-failures-allowed 0 \
+  sh-spec spec/oil-interactive.test.sh --osh-failures-allowed 0 \
     $OIL_LIST "$@"
 }
 
