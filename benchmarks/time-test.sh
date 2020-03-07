@@ -23,6 +23,27 @@ test-tsv() {
   cat $out
 }
 
+test-append() {
+  local out=_tmp/overwrite.tsv
+  for i in 4 5; do
+    time-tool --tsv -o $out -- sleep 0.0${i}
+  done
+  local num_lines=$(cat $out | wc -l)
+  test $num_lines -eq 1 || fail "Expected 1 line, got $num_lines"
+
+  local out=_tmp/append.tsv
+  for i in 4 5; do
+    time-tool --tsv -o $out --append -- sleep 0.0${i}
+  done
+  wc -l $out
+}
+
+test-usage() {
+  time-tool sleep 0.1
+  time-tool --append sleep 0.1; status=$?
+  test $status = 0 || fail "Unexpected status $status"
+}
+
 test-cannot-serialize() {
   local out=_tmp/time2.tsv
   rm -f $out
@@ -55,7 +76,9 @@ test-cannot-serialize() {
 }
 
 all-passing() {
+  test-usage
   test-tsv
+  test-append
   test-cannot-serialize
 
   echo

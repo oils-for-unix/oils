@@ -96,6 +96,8 @@ manifest() {
 run-cases() {
   local spec_name=$1
 
+  log "__ $spec_name"
+
   run-task-with-status \
     _tmp/spec/${spec_name}.task.txt \
     test/spec.sh $spec_name \
@@ -291,7 +293,7 @@ _all-parallel() {
   manifest
 
   set +o errexit
-  head -n $NUM_TASKS $manifest | xargs -n 1 -P $MAX_PROCS --verbose -- $0 run-cases
+  head -n $NUM_TASKS $manifest | xargs -n 1 -P $MAX_PROCS -- $0 run-cases
   set -o errexit
 
   #ls -l _tmp/spec
@@ -372,7 +374,8 @@ test-to-html() {
 all-tests-to-html() {
   local manifest=$1
   head -n $NUM_TASKS $manifest \
-    | xargs -n 1 -P $MAX_PROCS --verbose -- $0 test-to-html
+    | xargs -n 1 -P $MAX_PROCS -- $0 test-to-html
+  log "done: all-tests-to-html"
 }
 
 filename=$(basename $0)

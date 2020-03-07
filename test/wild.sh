@@ -641,8 +641,9 @@ parse-aboriginal() {
   #find $ABORIGINAL_DIR -name '*.sh' | xargs wc -l | sort -n
   #return
 
-  find $ABORIGINAL_DIR -name '*.sh' | xargs -n1 -- \
-    benchmarks/time.py --output $AB_TIMES -- bin/osh -n --ast-format none
+  find $ABORIGINAL_DIR -name '*.sh' | xargs -n 1 -- \
+    benchmarks/time.py --append --output $AB_TIMES -- \
+    bin/osh -n --ast-format none
 }
 
 # 80 ms max.  That is good enough for sure.

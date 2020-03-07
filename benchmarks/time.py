@@ -39,7 +39,10 @@ def Options():
       help='Write output in TSV format')
   p.add_option(
       '-o', '--output', dest='output', default=None,
-      help='Name of output file to write to')
+      help='Name of output file to write to to')
+  p.add_option(
+      '-a', '--append', dest='append', default=False, action='store_true',
+      help='Append to the file instead of overwriting it')
   p.add_option(
       '--field', dest='fields', default=[], action='append',
       help='A string to append to each row, after the exit code and status')
@@ -57,17 +60,21 @@ def main(argv):
     return 1
 
   elapsed = time.time() - start_time
-
   fields = tuple(opts.fields)
-  with open(opts.output, 'a') as f:
-    if opts.tsv:
-      # TSV output.
-      out = csv.writer(f, delimiter='\t', doublequote=False,
-                       quoting=csv.QUOTE_NONE)
-    else:
-      out = csv.writer(f)
-    row = (exit_code, '%.4f' % elapsed) + fields
-    out.writerow(row)
+  row = (exit_code, '%.4f' % elapsed) + fields
+
+  if opts.output:
+    mode = 'a' if opts.append else 'w'
+    with open(opts.output, mode) as f:
+      if opts.tsv:
+        # TSV output.
+        out = csv.writer(f, delimiter='\t', doublequote=False,
+                         quoting=csv.QUOTE_NONE)
+      else:
+        out = csv.writer(f)
+      out.writerow(row)
+  else:
+    log("time.py wasn't passed -o: %s", row)
 
   # Preserve the command's exit code.  (This means you can't distinguish
   # between a failure of time.py and the command, but that's better than
