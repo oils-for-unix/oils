@@ -646,7 +646,10 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
           d = (i, sh_label, actual['stdout'], actual['stderr'], messages)
           out.AddDetails(d)
 
-      result_row.append(cell_result)
+      if opts.format == 'diffable':
+        result_row.append((sh_label, cell_result))
+      else:
+        result_row.append(cell_result)
 
       stats.ReportCell(cell_result, sh_label)
 
@@ -788,7 +791,8 @@ class ColorOutput(object):
       print('%s stderr:' % shell, file=self.f)
       try:
         print(stderr.decode('utf-8'), file=self.f)
-      except UnicodeDecodeError:
+      # I got errors here without adding encode; was decode correct?
+      except (UnicodeDecodeError, UnicodeEncodeError):
         print(stderr, file=self.f)
       print('', file=self.f)
 
@@ -1035,6 +1039,111 @@ class HtmlOutput(ColorOutput):
     self.f.write('</table>')
 
 
+DIFFABLE_CELLS = {
+    Result.TIMEOUT: 'timed out\n',
+    Result.FAIL: 'failed\n',
+    Result.BUG: 'known bug\n',
+    Result.NI: 'not implemented\n',
+    Result.OK: 'ok (not great)\n',
+    Result.PASS: 'passed\n',
+}
+
+# This is only useful if stdout is captured and
+# printed all at once.
+class DiffableOutput(ColorOutput):
+
+  def __init__(self, f, verbose, spec_name, sh_labels, cases):
+    ColorOutput.__init__(self, f, verbose)
+    self.spec_name = spec_name
+    self.sh_labels = sh_labels  # saved from header
+    self.cases = cases  # for linking to code
+    self.rows = []  # buffered
+    self.test_file = None
+
+  def _SourceLink(self, line_num, desc):
+    return 'subl %s.test.sh:%d' % (self.spec_name, line_num)
+
+  def BeginCases(self, test_file):
+    self.test_file = test_file
+    # self.f.write("Results for %s\n" % test_file)
+
+  def _WriteShellSummary(self, sh_labels, stats):
+    pass
+
+  def WriteHeader(self, sh_labels):
+    pass
+
+  def WriteRow(self, i, line_num, row, desc):
+    f = cStringIO.StringIO()
+
+    show_details = False
+
+    for shell, result in row:
+      c = DIFFABLE_CELLS[result]
+      f.write('%s %s (%5s): ' % (self.test_file, desc, shell))
+      f.write(c)
+
+    self.rows.append(f.getvalue())  # buffer it
+
+  def _WriteStats(self, stats):
+    # skipping stats for now, but maybe write them to a file
+    pass
+
+  def EndCases(self, sh_labels, stats):
+    self._WriteShellSummary(sh_labels, stats)
+
+    # Write all the buffered rows
+    for h in self.rows:
+      self.f.write(h)
+
+    self._WriteStats(stats)
+    # if stats.Get('osh_num_failed'):
+    #   self.f.write('%(osh_num_failed)d failed under osh\n' % stats.counters)
+
+    if self.details:
+      self._WriteDetails()
+
+  def _WriteDetails(self):
+    # skip for now, focus on p/f
+    pass
+
+  # keeping this just because I already cut it down
+  # but it would need to write to separate file(s)
+  def _WriteDetails_disabled(self):
+    self.f.write("Details on runs that didn't PASS\n\n")
+
+    for case_index, sh_label, stdout, stderr, messages in self.details:
+      self.f.write(sh_label)
+
+      # Write description and link to the code
+      case = self.cases[case_index]
+      line_num = case['line_num']
+      desc = case['desc']
+      self.f.write(' %d: %s\n' % (case_index, desc))
+
+      for m in messages:
+        self.f.write('%s\n' % cgi.escape(m))
+      if messages:
+        self.f.write('\n')
+
+      def _WriteRaw(s):
+        # We output utf-8-encoded HTML.  If we get invalid utf-8 as stdout
+        # (which is very possible), then show the ASCII repr().
+        try:
+          s.decode('utf-8')
+        except UnicodeDecodeError:
+          valid_utf8 = repr(s)  # ASCII representation
+        else:
+          valid_utf8 = s
+        self.f.write(cgi.escape(valid_utf8))
+
+      self.f.write('stdout:\n')
+      _WriteRaw(stdout)
+
+      self.f.write('stderr:\n')
+      _WriteRaw(stderr)
+
+
 def MakeTestEnv(opts):
   if not opts.tmp_env:
     raise RuntimeError('--tmp-env required')
@@ -1072,7 +1181,7 @@ def Options():
       '--list', dest='do_list', action='store_true', default=None,
       help='Just list tests')
   p.add_option(
-      '--format', dest='format', choices=['ansi', 'html'], default='ansi',
+      '--format', dest='format', choices=['ansi', 'html', 'diffable'], default='ansi',
       help="Output format (default 'ansi')")
   p.add_option(
       '--stats-file', dest='stats_file', default=None,
@@ -1205,6 +1314,14 @@ def main(argv):
     sh_labels = [label for label, _ in shell_pairs]
 
     out = HtmlOutput(sys.stdout, opts.verbose, spec_name, sh_labels, cases)
+  elif opts.format == 'diffable':
+    spec_name = os.path.basename(test_file)
+    spec_name = spec_name.split('.')[0]
+    log('Running %s', spec_name)
+
+    sh_labels = [label for label, _ in shell_pairs]
+
+    out = DiffableOutput(sys.stdout, opts.verbose, spec_name, sh_labels, cases)
   else:
     raise AssertionError()
 
