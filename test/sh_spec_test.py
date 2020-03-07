@@ -117,7 +117,7 @@ class ShSpecTest(unittest.TestCase):
 
   def testRunCases(self):
     o = Options()
-    opts, _ = o.parse_args([])
+    opts, _ = o.parse_args(['--no-cd-tmp'])
 
     shells = [('bash', '/bin/bash'), ('osh', 'bin/osh')]
     env = {}
