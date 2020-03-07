@@ -79,11 +79,13 @@ test-tar() {
 make-oil-spec() {
   # TODO: maybe get rid of doctools
   # test/spec.sh is just for reference
+  # web/ dir because we want the end user to be able to see it
   find \
     benchmarks/time_.py \
     test/sh_spec.py doctools/{html_head,doc_html,__init__}.py \
     test/{common,spec-common,spec,spec-alpine,spec-runner}.sh \
     spec/ \
+    web/ \
     -type f \
     | xargs tar --create > _tmp/oil-spec.tar
 }

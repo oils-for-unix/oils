@@ -127,6 +127,14 @@ osh-version-text() {
     echo
   done
 
+  # e.g. when running test/spec-alpine.sh
+  if test -n "${SPEC_RUNNER:-}"; then
+    maybe-show /etc/alpine-release
+    return
+  fi
+
+  # $BASH and $ZSH should exist
+
   echo ---
   $BASH --version | head -n 1
   ls -l $BASH

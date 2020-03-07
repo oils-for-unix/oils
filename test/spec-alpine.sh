@@ -80,4 +80,27 @@ var-op-len() {
   sh-spec spec/var-op-len.test.sh --no-cd-tmp $SH "$@"
 }
 
+run-test() {
+  ### Run a test with the given name.
+
+  local test_name=$1
+  shift
+
+  if declare -F "$test_name"; then
+    # Delegate to a function in this file.
+    "$test_name" "$@"
+  else
+    # Run it with OSH
+    sh-spec spec/$test_name.test.sh $SH "$@"
+  fi
+}
+
+all() {
+  export OSH_LIST=osh OIL_LIST=oil SPEC_RUNNER='test/spec-alpine.sh run-test'
+
+  # this is like test/spec.sh {oil,osh}-all
+  test/spec-runner.sh all-parallel osh "$@"
+  #test/spec-runner.sh all-parallel oil "$@"
+}
+
 "$@"

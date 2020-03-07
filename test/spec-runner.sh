@@ -98,9 +98,12 @@ run-cases() {
 
   log "__ $spec_name"
 
+  # could be 'test/spec-alpine.sh run-test', which WILL BE SPLIT!
+  local spec_runner=${SPEC_RUNNER:-test/spec.sh}
+
   run-task-with-status \
     _tmp/spec/${spec_name}.task.txt \
-    test/spec.sh $spec_name \
+    $spec_runner $spec_name \
       --format html \
       --stats-file _tmp/spec/${spec_name}.stats.txt \
       --stats-template \
@@ -281,7 +284,8 @@ html-summary() {
 }
 
 link-web() {
-  ln -s -f --verbose $PWD/web _tmp
+  # No long flags like --verbose because of busybox
+  ln -s -f -v $PWD/web _tmp
 }
 
 _all-parallel() {
