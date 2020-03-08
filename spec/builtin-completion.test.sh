@@ -113,7 +113,7 @@ PWD
 
 #### compgen with actions: function / variable / file 
 mkdir -p $TMP/compgen2
-touch $TMP/compgen2/PA_FILE_{1,2}
+touch $TMP/compgen2/{PA,Q}_FILE
 cd $TMP/compgen2  # depends on previous test above!
 PA_FUNC() { echo P; }
 Q_FUNC() { echo Q; }
@@ -121,8 +121,7 @@ compgen -A function -A variable -A file PA
 ## STDOUT:
 PA_FUNC
 PATH
-PA_FILE_1
-PA_FILE_2
+PA_FILE
 ## END
 
 #### compgen with actions: alias, setopt
