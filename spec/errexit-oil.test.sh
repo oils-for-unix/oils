@@ -218,7 +218,7 @@ fun || true  # this is OK
 shopt -s strict_errexit || true
 
 echo 'builtin ok' || true
-/bin/echo 'external ok' || true
+env echo 'external ok' || true
 
 fun || true  # this fails
 
