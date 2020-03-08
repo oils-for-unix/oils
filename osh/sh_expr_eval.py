@@ -124,17 +124,17 @@ def _StringToInteger(s, span_id=runtime.NO_SPID):
 # Common logic for Arith and Command/Word variants of the same expression
 #
 # Calls EvalLhs()
-#   a[$key]=$val                 # osh/cmd_exec.py:814  (command_e.ShAssignment)
+#   a[$key]=$val             # osh/cmd_exec.py:814  (command_e.ShAssignment)
 # Calls _EvalLhsArith()
-#   (( a[key] = val ))           # osh/expr_eval.py:326 (_EvalLhsArith)
+#   (( a[key] = val ))       # osh/sh_expr_eval.py:326 (_EvalLhsArith)
 #
 # Calls EvalLhsAndLookup():
-#   a[$key]+=$val                # osh/cmd_exec.py:795  (assign_op_e.PlusEqual)
-#   (( a[key] += val ))          # osh/expr_eval.py:308 (_EvalLhsAndLookupArith)
+#   a[$key]+=$val            # osh/cmd_exec.py:795     (assign_op_e.PlusEqual)
+#   (( a[key] += val ))      # osh/sh_expr_eval.py:308 (_EvalLhsAndLookupArith)
 #
 # Uses Python's [] operator
-#   val=${a[$key]}               # osh/word_eval.py:639 (bracket_op_e.ArrayIndex)
-#   (( val = a[key] ))           # osh/expr_eval.py:509 (Id.Arith_LBracket)
+#   val=${a[$key]}           # osh/word_eval.py:639 (bracket_op_e.ArrayIndex)
+#   (( val = a[key] ))       # osh/sh_expr_eval.py:509 (Id.Arith_LBracket)
 #
 
 
@@ -191,9 +191,9 @@ def EvalLhs(node, arith_ev, mem, spid, lookup_mode):
 
 def _EvalLhsArith(node, mem, arith_ev):
   # type: (sh_lhs_expr_t, Mem, ArithEvaluator) -> lvalue_t
-  """sh_lhs_expr -> lvalue.
+  """Evaluate LHS for arithmetic.
   
-  Very similar to EvalLhs above in core/cmd_exec.
+  Very similar to EvalLhs above, called in osh/cmd_exec.py.
   """
   assert isinstance(node, sh_lhs_expr_t), node
 

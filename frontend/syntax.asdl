@@ -221,6 +221,8 @@ module syntax
     VarRef(Token token)  -- variable without $
   | ArithWord(word w)  -- a string that looks like an integer
 
+    -- TODO: instead of sh_lhs_expr, could be arith_expr with
+    -- VarRef|ArithWord|Binary for a[]
   | UnaryAssign(id op_id, sh_lhs_expr child)
   | BinaryAssign(id op_id, sh_lhs_expr left, arith_expr right)
   | Unary(id op_id, arith_expr child)

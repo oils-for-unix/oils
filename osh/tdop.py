@@ -5,7 +5,7 @@ tdop.py - Library for expression parsing.
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
     arith_expr, arith_expr_e, arith_expr_t,
-    arith_expr__VarRef, arith_expr__Binary,
+    arith_expr__VarRef, arith_expr__Binary, arith_expr__ArithWord,
     sh_lhs_expr, sh_lhs_expr_t,
     word_t,
 )
@@ -30,8 +30,11 @@ def IsIndexable(node):
   # type: (arith_expr_t) -> bool
   """
   a[1] is allowed but a[1][1] isn't
+
   """
   return node.tag_() == arith_expr_e.VarRef
+  # TODO: x$foo[1] is also allowed
+  #return node.tag_() in (arith_expr_e.VarRef, arith_expr_e.ArithWord)
 
 
 def ToLValue(node):
@@ -50,6 +53,7 @@ def ToLValue(node):
       node = cast(arith_expr__VarRef, UP_node)
       # For consistency with osh/cmd_parse.py, append a span_id.
       # TODO: (( a[ x ] = 1 )) and a[x]=1 should use different LST nodes.
+      # sh_lhs_expr should be an "IR".
       n = sh_lhs_expr.Name(node.token.val)
       n.spids.append(node.token.span_id)
       return n

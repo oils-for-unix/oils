@@ -479,3 +479,55 @@ last=6
 ## N-I dash stdout-json: ""
 ## BUG zsh status: 1
 ## BUG zsh stdout-json: ""
+
+#### assignment with dynamic var name
+foo=bar
+echo $(( x$foo = 42 ))
+echo xbar=$xbar
+## STDOUT:
+42
+xbar=42
+## END
+
+#### array assignment with dynamic array name
+foo=bar
+echo $(( x$foo[5] = 42 ))
+echo 'xbar[5]='${xbar[5]}
+## STDOUT:
+42
+xbar[5]=42
+## END
+## BUG zsh STDOUT:
+42
+xbar[5]=
+## END
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+
+#### unary assignment with dynamic var name
+foo=bar
+xbar=42
+echo $(( x$foo++ ))
+echo xbar=$xbar
+## STDOUT:
+42
+xbar=43
+## END
+## BUG dash status: 2
+## BUG dash stdout-json: ""
+
+#### unary array assignment with dynamic var name
+foo=bar
+xbar[5]=42
+echo $(( x$foo[5]++ ))
+echo 'xbar[5]='${xbar[5]}
+## STDOUT:
+42
+xbar[5]=43
+## END
+## BUG zsh STDOUT:
+0
+xbar[5]=42
+## END
+## N-I dash status: 2
+## N-I dash stdout-json: ""

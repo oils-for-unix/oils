@@ -51,6 +51,8 @@ def LeftIncDec(p, w, left, rbp):
     raise AssertionError()
 
   child = tdop.ToLValue(left)
+  if child is None:
+    p_die("This value can't be assigned to", word=w)
   return arith_expr.UnaryAssign(op_id, child)
 
 
@@ -75,7 +77,7 @@ def LeftIndex(p, w, left, unused_bp):
   3. strings don't have mutable characters.
   """
   if not tdop.IsIndexable(left):
-    p_die("The [ operarator doesn't apply to this expression", word=w)
+    p_die("The [ operator doesn't apply to this expression", word=w)
   index = p.ParseUntil(0)
   p.Eat(Id.Arith_RBracket)
 
