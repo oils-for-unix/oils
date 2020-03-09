@@ -184,3 +184,20 @@ echo $x
 0
 ## END
 
+#### Example of incrementing associative array entry with var key (ble.sh)
+declare -A A=(['foo']=42)
+key='foo'
+
+# note: in bash, (( A[\$key] += 1 )) works the same way.
+
+set -- 1 2
+(( A[$key] += $2 ))
+
+echo foo=${A['foo']}
+
+## STDOUT:
+foo=44
+## END
+## N-I mksh/zsh status: 1
+## N-I mksh/zsh stdout-json: ""
+
