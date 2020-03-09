@@ -35,8 +35,10 @@ Note that you can opt into more errors with `shopt -s strict_arith`.
 
 ### Static Parsing
 
-Arithmetic is statically parsed, so expressions like `$(( 1 $op 2 ))` fail with
+Arithmetic is [statically parsed](https://www.oilshell.org/blog/2016/10/22.html), so expressions like `$(( 1 $op 2 ))` fail with
 a parse error.  Use an explicit `eval` for these rare use cases.
+
+Related: [A 30-year-old security problem](https://www.oilshell.org/blog/2019/01/18.html#a-story-about-a-30-year-old-security-problem) / [Simple Word Evaluation](simple-word-eval.html)
 
 ### printf '%d' and other numeric formats require a valid integer
 
