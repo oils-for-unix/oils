@@ -170,8 +170,18 @@ echo {foo~,~}/bar
 # NOTE: osh matches mksh.  Is that OK?
 # ~/foo and ~bar
 HOME=/home/bob
-echo ~{/src,root}
-## stdout: /home/bob/src /root
+expected_root_home=$(awk -F: -v v="root" '{if ($1==v) print $6}' /etc/passwd)
+test_expansion(){
+  if [[ "$1" == "~/src" && "$2" == "~root" ]]; then
+    echo "$1 $2"
+  elif [[ "$1" == "/home/bob/src" && "$2" == "$expected_root_home" ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+test_expansion ~{/src,root}
+## status: 0
 ## OK osh/mksh stdout: ~/src ~root
 
 #### Tilde expansion come before var expansion
