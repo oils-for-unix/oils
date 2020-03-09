@@ -738,6 +738,19 @@ HTML_CELLS = {
 }
 
 
+def _ValidUtf8String(s):
+  """Return an arbitrary string as a readable utf-8 string.
+
+  We output utf-8 to either HTML or the console.  If we get invalid utf-8 as
+  stdout/stderr (which is very possible), then show the ASCII repr().
+  """
+  try:
+    s.decode('utf-8')
+    return s  # it decoded OK
+  except UnicodeDecodeError:
+    return repr(s)  # ASCII representation
+
+
 class ColorOutput(object):
 
   def __init__(self, f, verbose):
@@ -780,16 +793,14 @@ class ColorOutput(object):
       print('case: %d' % case_index, file=self.f)
       for m in messages:
         print(m, file=self.f)
+
+      # Assume the terminal can show utf-8, but we don't want random binary.
       print('%s stdout:' % shell, file=self.f)
-      try:
-        print(stdout.decode('utf-8'), file=self.f)
-      except UnicodeDecodeError:
-        print(stdout, file=self.f)
+      print(_ValidUtf8String(stdout), file=self.f)
+
       print('%s stderr:' % shell, file=self.f)
-      try:
-        print(stderr.decode('utf-8'), file=self.f)
-      except UnicodeDecodeError:
-        print(stderr, file=self.f)
+      print(_ValidUtf8String(stderr), file=self.f)
+
       print('', file=self.f)
 
   def _WriteStats(self, stats):
@@ -1012,14 +1023,10 @@ class HtmlOutput(ColorOutput):
 
       def _WriteRaw(s):
         self.f.write('<pre>')
-        # We output utf-8-encoded HTML.  If we get invalid utf-8 as stdout
-        # (which is very possible), then show the ASCII repr().
-        try:
-          s.decode('utf-8')
-        except UnicodeDecodeError:
-          valid_utf8 = repr(s)  # ASCII representation
-        else:
-          valid_utf8 = s
+
+        # stdout might contain invalid utf-8; make it valid;
+        valid_utf8 = _ValidUtf8String(s)
+
         self.f.write(cgi.escape(valid_utf8))
         self.f.write('</pre>')
 
