@@ -65,8 +65,8 @@ def DoUnaryOp(op_id, s):
     return stat.S_ISCHR(mode)
 
   if op_id == Id.BoolUnary_k:
-    # TODO: sticky bit
-    e_die("%s isn't implemented", ui.PrettyId(op_id))
+    # need 'bool' for MyPy
+    return bool(stat.S_IMODE(mode) & stat.S_ISVTX)
 
   if op_id == Id.BoolUnary_p:
     return stat.S_ISFIFO(mode)

@@ -823,6 +823,10 @@ class BoolEvaluator(_ExprEvaluator):
             else:
               return self.exec_opts.opt_array[index]
 
+          if op_id == Id.BoolUnary_v:
+            val = self.mem.GetVar(s)
+            return val.tag_() != value_e.Undef
+
           e_die("%s isn't implemented", ui.PrettyId(op_id))  # implicit location
 
         raise AssertionError(arg_type)  # should never happen

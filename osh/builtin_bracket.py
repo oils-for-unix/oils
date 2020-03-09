@@ -30,6 +30,7 @@ if TYPE_CHECKING:
   from _devbuild.gen.types_asdl import lex_mode_t
   from core.ui import ErrorFormatter
   from core import optview
+  from core import state
 
 
 class _StringWordEmitter(word_parse.WordEmitter):
@@ -152,10 +153,11 @@ def _ThreeArgs(w_parser):
 
 
 class Test(object):
-  def __init__(self, need_right_bracket, exec_opts, errfmt):
-    # type: (bool, optview.Exec, ErrorFormatter) -> None
+  def __init__(self, need_right_bracket, exec_opts, mem, errfmt):
+    # type: (bool, optview.Exec, state.Mem, ErrorFormatter) -> None
     self.need_right_bracket = need_right_bracket
     self.exec_opts = exec_opts
+    self.mem = mem
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
@@ -223,10 +225,9 @@ class Test(object):
       return 2
 
     # mem: Don't need it for BASH_REMATCH?  Or I guess you could support it
-    mem = None  # Not necessary
     word_ev = _WordEvaluator()
+    bool_ev = sh_expr_eval.BoolEvaluator(self.mem, self.exec_opts, self.errfmt)
 
-    bool_ev = sh_expr_eval.BoolEvaluator(mem, self.exec_opts, self.errfmt)
     # We want [ a -eq a ] to always be an error, unlike [[ a -eq a ]].  This is a
     # weird case of [[ being less strict.
     bool_ev.Init_AlwaysStrict()

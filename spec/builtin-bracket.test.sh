@@ -276,6 +276,20 @@ yes
 no
 ## END
 
+#### -k for sticky bit
+# not isolated: /tmp usually has sticky bit on
+# https://en.wikipedia.org/wiki/Sticky_bit
+
+test -k /tmp
+echo status=$?
+
+test -k /bin
+echo status=$?
+## STDOUT:
+status=0
+status=1
+## END
+
 #### -h and -L test for symlink
 tmp=$TMP/builtin-test-1
 mkdir -p $tmp
@@ -418,6 +432,45 @@ status=0
 status=1
 ## END
 
+#### -v to test variable
+test -v nonexistent
+echo global=$?
+
+g=1
+test -v g
+echo global=$?
+
+f() {
+  local f_var=0
+  g
+}
+
+g() {
+  test -v f_var
+  echo dynamic=$?
+  test -v g
+  echo dynamic=$?
+  test -v nonexistent
+  echo dynamic=$?
+}
+f
+
+## STDOUT:
+global=1
+global=0
+dynamic=0
+dynamic=0
+dynamic=1
+## END
+## N-I dash/mksh STDOUT:
+global=2
+global=2
+dynamic=2
+dynamic=2
+dynamic=2
+## END
+
+
 #### test -o for options
 # note: it's lame that the 'false' case is confused with the 'typo' case.
 # but checking for error code 2 is unlikely anyway.
@@ -475,3 +528,4 @@ status=2
 ## OK dash/bash STDOUT:
 status=1
 ## END
+

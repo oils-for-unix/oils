@@ -505,8 +505,8 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_i.compadjust: builtin_comp.CompAdjust(mem),
 
       # test / [ differ by need_right_bracket
-      builtin_i.test: builtin_bracket.Test(False, exec_opts, errfmt),
-      builtin_i.bracket: builtin_bracket.Test(True, exec_opts, errfmt),
+      builtin_i.test: builtin_bracket.Test(False, exec_opts, mem, errfmt),
+      builtin_i.bracket: builtin_bracket.Test(True, exec_opts, mem, errfmt),
 
       # ShAssignment (which are pure)
       builtin_i.declare: new_var,
