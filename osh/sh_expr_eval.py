@@ -30,17 +30,16 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.types_asdl import bool_arg_type_e
 from asdl import runtime
 from core import error
-from core.util import e_die
+from core import state
+from core import ui
+from core.util import e_die, log
 from frontend import location
 from frontend import consts
 from frontend import match
-from osh import bool_stat
-from core import state
-from core import ui
-from osh import word_
-
 from mycpp import mylib
 from mycpp.mylib import tagswitch, switch
+from osh import bool_stat
+from osh import word_
 
 import libc  # for fnmatch
 
@@ -50,6 +49,8 @@ if TYPE_CHECKING:
   from core import optview
   from core.state import Mem
   from osh import word_eval
+
+_ = log
 
 
 def _StringToInteger(s, span_id=runtime.NO_SPID):

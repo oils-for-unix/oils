@@ -5,7 +5,7 @@ tdop.py - Library for expression parsing.
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
     arith_expr, arith_expr_e, arith_expr_t,
-    arith_expr__VarRef, arith_expr__Binary, arith_expr__ArithWord,
+    arith_expr__VarRef, arith_expr__Binary,
     sh_lhs_expr, sh_lhs_expr_t,
     word_t,
 )

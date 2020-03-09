@@ -499,7 +499,7 @@ def AddKinds(spec):
 # Shared between [[ and test/[.
 _UNARY_STR_CHARS = 'zn'  # -z -n
 _UNARY_OTHER_CHARS = 'otvR'  # -o is overloaded
-_UNARY_PATH_CHARS = 'abcdefghLprsSuwxOGN'  # -a is overloaded
+_UNARY_PATH_CHARS = 'abcdefghkLprsSuwxOGN'  # -a is overloaded
 
 _BINARY_PATH = ['ef', 'nt', 'ot']
 _BINARY_INT = ['eq', 'ne', 'gt', 'ge', 'lt', 'le']

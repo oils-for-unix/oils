@@ -12,6 +12,7 @@ import posix_ as posix
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import word_t
 from core.util import e_die
+from core import ui
 
 
 def isatty(fd, s, blame_word):
@@ -63,6 +64,10 @@ def DoUnaryOp(op_id, s):
   if op_id == Id.BoolUnary_c:
     return stat.S_ISCHR(mode)
 
+  if op_id == Id.BoolUnary_k:
+    # TODO: sticky bit
+    e_die("%s isn't implemented", ui.PrettyId(op_id))
+
   if op_id == Id.BoolUnary_p:
     return stat.S_ISFIFO(mode)
 
@@ -87,7 +92,7 @@ def DoUnaryOp(op_id, s):
   if op_id == Id.BoolUnary_G:
     return st.st_gid == posix.getegid()
 
-  e_die("%s isn't implemented", op_id)  # implicit location
+  e_die("%s isn't implemented", ui.PrettyId(op_id))  # implicit location
 
 
 def DoBinaryOp(op_id, s1, s2):
