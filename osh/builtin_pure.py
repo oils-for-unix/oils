@@ -278,8 +278,8 @@ def _ResolveNames(names, funcs, aliases, search_path):
       kind = ('builtin', name)
     elif consts.LookupAssignBuiltin(name) != 0:
       kind = ('builtin', name)
-    elif lexer_def.IsOtherBuiltin(name):  # continue, etc.
-      kind = ('builtin', name)
+    elif lexer_def.IsControlFlow(name):  # continue, etc.
+      kind = ('keyword', name)
 
     elif lexer_def.IsKeyword(name):
       kind = ('keyword', name)

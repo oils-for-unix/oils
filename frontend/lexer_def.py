@@ -207,7 +207,7 @@ _KEYWORDS = [
 
 # These are treated like builtins in bash, but keywords in OSH.  However, we
 # maintain compatibility with bash for the 'type' builtin.
-_MORE_KEYWORDS = [
+_CONTROL_FLOW = [
   C('break',    Id.ControlFlow_Break),
   C('continue', Id.ControlFlow_Continue),
   C('return',   Id.ControlFlow_Return),
@@ -246,12 +246,13 @@ EXPR_WORDS = [
 # The 'compen' and 'type' builtins introspect on keywords and builtins.
 OSH_KEYWORD_NAMES = [name for _, name, _ in _KEYWORDS]
 OSH_KEYWORD_NAMES.append('{')  # not in our lexer list
-OTHER_OSH_BUILTINS = [name for _, name, _ in _MORE_KEYWORDS]
 
 
-def IsOtherBuiltin(name):
+_CF_NAMES = [name for _, name, _ in _CONTROL_FLOW]
+
+def IsControlFlow(name):
   # type: (str) -> bool
-  return name in OTHER_OSH_BUILTINS
+  return name in _CF_NAMES
 
 
 def IsKeyword(name):
@@ -306,7 +307,7 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
   C(r'&>', Id.Redir_AndGreat),
   C(r'&>>', Id.Redir_AndDGreat),
 
-] + _KEYWORDS + _MORE_KEYWORDS + _UNQUOTED + _EXTGLOB_BEGIN
+] + _KEYWORDS + _CONTROL_FLOW + _UNQUOTED + _EXTGLOB_BEGIN
 
 # Preprocessing before Outer
 LEXER_DEF[lex_mode_e.Backtick] = [

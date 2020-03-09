@@ -27,10 +27,8 @@ type -t foo
 ## stdout: alias
 
 #### type -t -> builtin
-type -t echo read : [ declare local break continue
+type -t echo read : [ declare local
 ## STDOUT:
-builtin
-builtin
 builtin
 builtin
 builtin
@@ -49,6 +47,24 @@ keyword
 keyword
 keyword
 ## END
+
+#### type -t control flow
+
+# this differs from bash, but don't lie!
+type -t break continue return exit
+## STDOUT:
+keyword
+keyword
+keyword
+keyword
+## END
+## OK bash STDOUT:
+builtin
+builtin
+builtin
+builtin
+## END
+
 
 #### type -t -> file
 type -t find xargs
