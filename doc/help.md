@@ -712,6 +712,14 @@ References that don't contain variables also produce hard errors:
     echo $ref  # fatal
     ref=x      # fatal
 
+#### parse_ignored
+
+For compatibility, Oil will parse some constructs it doesn't execute, like:
+
+    return 0 2>&1  # redirect on control flow
+
+When this option is disabled, that statement is a syntax error.
+
 ### oil:basic
 
 #### simple_word_eval

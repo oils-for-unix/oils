@@ -853,7 +853,7 @@ class CommandParser(object):
     if kind == Kind.ControlFlow:
       if block:
         p_die("Unexpected block", span_id=block_spid)
-      if len(redirects):
+      if not self.parse_opts.parse_ignored() and len(redirects):
         p_die("Control flow shouldn't have redirects", token=kw_token)
 
       if len(preparsed_list):  # FOO=bar local spam=eggs not allowed

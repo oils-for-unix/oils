@@ -219,6 +219,7 @@ X [Testing]       check
                   X strict_backslash     Parse the sublanguage more strictly
                   X strict_glob          Parse the sublanguage more strictly
                   X strict_trap          Function name only
+                  parse_ignored          Parse and silently ignore?
   [oil:basic]     * Enable Oil functionality
                   parse_at               echo @array @arrayfunc(x, y)
                   parse_brace            if true { ... }; cd ~/src { ... }

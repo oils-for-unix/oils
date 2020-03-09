@@ -37,7 +37,22 @@ done
 ## OK osh status: 2
 ## OK osh stdout-json: ""
 
-#### Redirect on control flow
+#### Redirect on control flow (ignored in OSH)
+rm -f _tmp/r.txt
+for x in a b c; do
+  break > _tmp/r.txt
+done
+if test -f _tmp/r.txt; then
+  echo REDIRECTED
+else
+  echo NO
+fi
+## status: 0
+## stdout: REDIRECTED
+## OK osh stdout: NO
+
+#### Redirect on control flow with oil:basic
+shopt -s oil:basic
 rm -f _tmp/r.txt
 for x in a b c; do
   break > _tmp/r.txt

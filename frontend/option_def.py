@@ -250,6 +250,10 @@ def _Init(opt_def):
   for name in _BASIC_PARSE_OPTIONS:
     opt_def.Add(name, groups=['oil:basic', 'oil:all'])
 
+  # By default we parse 'return 2>&1', even though it does nothing in Oil.
+  opt_def.Add('parse_ignored', groups=['strict:all', 'oil:basic', 'oil:all'],
+              default=True)
+
   for name in _AGGRESSIVE_PARSE_OPTIONS:
     opt_def.Add(name, groups=['oil:all'])
 
