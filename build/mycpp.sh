@@ -239,6 +239,7 @@ compile-slice() {
     cpp/asdl_pretty.cc \
     cpp/frontend_tdop.cc \
     cpp/osh_arith_parse.cc \
+    cpp/pgen2_parse.cc \
     _build/cpp/runtime_asdl.cc \
     _build/cpp/syntax_asdl.cc \
     _build/cpp/hnode_asdl.cc \
@@ -436,8 +437,9 @@ osh-eval() {
     # core/util.py -- not ready
     # frontend/args.py -- has Union
     # os_path.py: crashes on path += '/' + b
+    # pgen2/parse.py: prefer hand-written C
 
-    local exclude='_devbuild/|pybase.py|optview.py|option_def.py|id_kind_def.py|match.py|lexer_def.py|meta.py|pretty.py|process.py|pyutil.py|util.py|args.py|os_path.py|path_stat.py|bool_stat.py|passwd.py|builtin_def.py|consts.py'
+    local exclude='_devbuild/|pybase.py|optview.py|option_def.py|id_kind_def.py|match.py|lexer_def.py|meta.py|pretty.py|process.py|pyutil.py|util.py|args.py|os_path.py|path_stat.py|bool_stat.py|passwd.py|builtin_def.py|consts.py|pgen2/parse.py'
     mycpp $raw $(egrep -v "$exclude" types/osh-eval-manifest.txt)
   fi
 

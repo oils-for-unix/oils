@@ -18,11 +18,11 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen import grammar_nt
 
 from core.util import log, p_die
-from pgen2.parse import PNode
 
 from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:
   from pgen2.grammar import Grammar
+  from pgen2.pnode import PNode
 
 _ = log
 

@@ -37,5 +37,6 @@
 ./osh/word_.py
 ./pgen2/grammar.py
 ./pgen2/parse.py
+./pgen2/pnode.py
 ./pylib/cgi.py
 ./pylib/os_path.py

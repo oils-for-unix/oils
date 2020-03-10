@@ -27,7 +27,7 @@ if TYPE_CHECKING:
   from frontend.lexer import Lexer
   from frontend.parse_lib import ParseContext
   from pgen2.grammar import Grammar
-  from pgen2.parse import PNode
+  from pgen2.pnode import PNode
 
 
 class ParseTreePrinter(object):
@@ -288,7 +288,11 @@ class ExprParser(object):
     self.parse_ctx = parse_ctx
     self.gr = gr
     # Reused multiple times.
-    self.push_parser = parse.Parser(gr)
+    if mylib.PYTHON:
+      self.push_parser = parse.Parser(gr)
+    else:
+      # In C, the grammar is a constant!
+      self.push_parser = parse.Parser(None)
 
   def Parse(self, lexer, start_symbol):
     # type: (Lexer, int) -> Tuple[PNode, Token]

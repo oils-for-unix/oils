@@ -38,7 +38,7 @@ if TYPE_CHECKING:
   from osh.word_parse import WordParser
   from osh.cmd_parse import CommandParser
   from pgen2.grammar import Grammar
-  from pgen2.parse import PNode
+  from pgen2.pnode import PNode
 
 class _BaseTrail(object):
 
