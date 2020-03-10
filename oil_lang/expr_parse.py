@@ -288,11 +288,7 @@ class ExprParser(object):
     self.parse_ctx = parse_ctx
     self.gr = gr
     # Reused multiple times.
-    if mylib.PYTHON:
-      self.push_parser = parse.Parser(gr)
-    else:
-      # In C, the grammar is a constant!
-      self.push_parser = parse.Parser(None)
+    self.push_parser = parse.Parser(gr)
 
   def Parse(self, lexer, start_symbol):
     # type: (Lexer, int) -> Tuple[PNode, Token]
