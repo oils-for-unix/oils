@@ -213,9 +213,18 @@ arith-expr() {
 
   _error-case '$(( $ ))'
 
-  # "Can't assign to None" is misleading.
   # From wild/src/distro/portage/bin/helper-functions.sh
   _error-case '$(( ${var} = fd ))'
+
+  # Invalid assignments
+  _error-case '$(( x+1 = 42 ))'
+  _error-case '$(( (x+42)++ ))'
+  _error-case '$(( ++(x+42) ))'
+
+  # Note these aren't caught because '1' is an ArithWord like 0x$x
+  _error-case '$(( 1 = foo ))'
+  _error-case '$(( 1++ ))'
+  _error-case '$(( ++1 ))'
 }
 
 command-sub() {
@@ -352,7 +361,8 @@ cmd-parse() {
 
   _error-case 'FOO=1 break'
   _error-case 'break 1 2'
-  _error-case 'break >out'
+  # only if shopt -u parse_ignored
+  #_error-case 'break >out'
 
   _error-case 'for x in &'
 
