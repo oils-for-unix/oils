@@ -151,7 +151,7 @@ def _LookupVar(name, mem, exec_opts):
 
 def EvalLhs(node, arith_ev, mem, spid, lookup_mode):
   # type: (sh_lhs_expr_t, ArithEvaluator, Mem, int, scope_t) -> lvalue_t
-  """sh_lhs_expr -> lvalue.
+  """Evaluate a shell "place" expression.
 
   Used for a=b and a[x]=b
   """
@@ -192,7 +192,7 @@ def EvalLhs(node, arith_ev, mem, spid, lookup_mode):
 
 def _EvalLhsArith(node, mem, arith_ev):
   # type: (sh_lhs_expr_t, Mem, ArithEvaluator) -> lvalue_t
-  """Evaluate LHS for arithmetic.
+  """Evaluate an arithmetic "place" expression.
   
   Very similar to EvalLhs above, called in osh/cmd_exec.py.
   """

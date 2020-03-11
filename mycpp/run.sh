@@ -11,8 +11,8 @@
 #
 #   Clone mypy into $MYPY_REPO, and then:
 #
-#   Switch to the release-0.670 branch.  As of April 2019, that's the latest
-#   release, and what I tested against.
+#   Switch to the release-0.730 branch.  As of March 2020, that's the latest
+#   release I've tested against.
 #
 #   Then install typeshed:
 #
