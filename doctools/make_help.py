@@ -46,6 +46,7 @@ import pprint
 import re
 import sys
 
+from core import ansi
 from doctools import html_lib
 from lazylex import html
 
@@ -69,14 +70,6 @@ TOPIC_RE = re.compile(r'''
   )?      
   ([ ][ ][ ])?        # three spaces means we should keep highlighting
 ''', re.VERBOSE)
-
-
-# Copied from core/comp_ui.py
-
-_RESET = '\033[0;0m'
-_BOLD = '\033[1m'
-_UNDERLINE = '\033[4m'
-_REVERSE = '\033[7m'  # reverse video
 
 
 def log(msg, *args):
@@ -349,7 +342,7 @@ def main(argv):
       # indices start with _
       path = os.path.join(out_dir, '_' + group_id)
       with open(path, 'w') as f:
-        f.write('%s %s %s\n\n' % (_REVERSE, group_desc, _RESET))
+        f.write('%s %s %s\n\n' % (ansi.REVERSE, group_desc, ansi.RESET))
         f.write(text)
       log('Wrote %s', path)
 
@@ -384,7 +377,7 @@ def main(argv):
       # indices start with _
       path = os.path.join(out_dir, topic_id)
       with open(path, 'w') as f:
-        f.write('%s %s %s\n\n' % (_REVERSE, heading, _RESET))
+        f.write('%s %s %s\n\n' % (ansi.REVERSE, heading, ansi.RESET))
         f.write(text)
       log('Wrote %s', path)
 

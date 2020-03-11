@@ -5,20 +5,12 @@ from __future__ import print_function
 
 import sys
 
+from core import ansi
 import libc
+
 from typing import Any, List, Optional, Dict, IO, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.util import DebugFile
-
-_RESET = '\033[0;0m'
-_BOLD = '\033[1m'
-_UNDERLINE = '\033[4m'
-_REVERSE = '\033[7m'  # reverse video
-
-_YELLOW = '\033[33m'
-_BLUE = '\033[34m'
-#_MAGENTA = '\033[35m'
-_CYAN = '\033[36m'
 
 
 # ANSI escape codes affect the prompt!
@@ -28,10 +20,10 @@ _CYAN = '\033[36m'
 
 # NOTE: There were used in demoish.py.  Do we still want those styles?
 if 0:
-  PROMPT_BOLD = '\x01%s\x02' % _BOLD
-  PROMPT_RESET = '\x01%s\x02' % _RESET
-  PROMPT_UNDERLINE = '\x01%s\x02' % _UNDERLINE
-  PROMPT_REVERSE = '\x01%s\x02' % _REVERSE
+  PROMPT_BOLD = '\x01%s\x02' % ansi.BOLD
+  PROMPT_RESET = '\x01%s\x02' % ansi.RESET
+  PROMPT_UNDERLINE = '\x01%s\x02' % ansi.UNDERLINE
+  PROMPT_REVERSE = '\x01%s\x02' % ansi.REVERSE
 
 
 def _PromptLen(prompt_str):
@@ -242,7 +234,7 @@ def _PrintPacked(matches, max_match_len, term_width, max_lines, f):
 
   if too_many:
     # TODO: Save this in the Display class
-    fmt2 = _BOLD + _BLUE + '%' + str(term_width-2) + 's' + _RESET
+    fmt2 = ansi.BOLD + ansi.BLUE + '%' + str(term_width-2) + 's' + ansi.RESET
     num_left = len(matches) - i
     if num_left:
       f.write(fmt2 % '... and %d more\n' % num_left)
@@ -272,7 +264,7 @@ def _PrintLong(matches,  # type: List[str]
   # Subtract 3 chars: 1 for left and right margin, and then 1 for the space in
   # between.
   max_desc = max(0, term_width - max_match_len - 3)
-  fmt = ' %-' + str(max_match_len) + 's ' + _YELLOW + '%s' + _RESET + '\n'
+  fmt = ' %-' + str(max_match_len) + 's ' + ansi.YELLOW + '%s' + ansi.RESET + '\n'
 
   num_lines = 0
 
@@ -290,7 +282,7 @@ def _PrintLong(matches,  # type: List[str]
 
     if num_lines == max_lines:
       # right justify
-      fmt2 = _BOLD + _BLUE + '%' + str(term_width-1) + 's' + _RESET
+      fmt2 = ansi.BOLD + ansi.BLUE + '%' + str(term_width-1) + 's' + ansi.RESET
       num_left = len(matches) - num_lines
       if num_left:
         f.write(fmt2 % '... and %d more\n' % num_left)
@@ -366,7 +358,7 @@ class NiceDisplay(_IDisplay):
     self.f.write('\x1b[%dC' % n)  # RIGHT
 
     if self.bold_line:
-      self.f.write(_BOLD)  # Experiment
+      self.f.write(ansi.BOLD)  # Experiment
 
     self.f.flush()
 
@@ -453,7 +445,7 @@ class NiceDisplay(_IDisplay):
 
     # NOTE: \n at end is REQUIRED.  Otherwise we get drawing problems when on
     # the last line.
-    fmt = _BOLD + _BLUE + '%' + str(max_len) + 's' + _RESET + '\n'
+    fmt = ansi.BOLD + ansi.BLUE + '%' + str(max_len) + 's' + ansi.RESET + '\n'
     self.f.write(fmt % msg)
 
     self._ReturnToPrompt(2)
@@ -473,7 +465,7 @@ class NiceDisplay(_IDisplay):
     # We avoid drawing problems if we print it on its own line:
     # - inserting text doesn't push it to the right
     # - you can't overwrite it
-    self.f.write(spaces + _REVERSE + ' ' + rendered + ' ' + _RESET + '\r\n')
+    self.f.write(spaces + ansi.REVERSE + ' ' + rendered + ' ' + ansi.RESET + '\r\n')
 
   def EraseLines(self):
     # type: () -> None
@@ -488,7 +480,7 @@ class NiceDisplay(_IDisplay):
     there.
     """
     if self.bold_line:
-      self.f.write(_RESET)  # if command is bold
+      self.f.write(ansi.RESET)  # if command is bold
       self.f.flush()
 
     n = self.num_lines_last_displayed

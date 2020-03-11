@@ -21,6 +21,7 @@ from _devbuild.gen.hnode_asdl import (
     hnode__External, color_e, color_t, color_str, hnode_str,
 )
 from asdl import pretty
+from core import ansi
 from pylib import cgi
 from mycpp import mylib
 
@@ -185,18 +186,6 @@ class HtmlOutput(ColorOutput):
     self.num_chars += len(s)  # Only count visible characters!
 
 
-# ANSI color constants (also in sh_spec.py)
-_RESET = '\033[0;0m'
-_BOLD = '\033[1m'
-
-_RED = '\033[31m'
-_GREEN = '\033[32m'
-_BLUE = '\033[34m'
-
-_YELLOW = '\033[33m'
-_CYAN = '\033[36m'
-
-
 class AnsiOutput(ColorOutput):
   """For the console."""
 
@@ -211,21 +200,21 @@ class AnsiOutput(ColorOutput):
   def PushColor(self, e_color):
     # type: (color_t) -> None
     if e_color == color_e.TypeName:
-      self.f.write(_YELLOW)
+      self.f.write(ansi.YELLOW)
     elif e_color == color_e.StringConst:
-      self.f.write(_BOLD)
+      self.f.write(ansi.BOLD)
     elif e_color == color_e.OtherConst:
-      self.f.write(_GREEN)
+      self.f.write(ansi.GREEN)
     elif e_color == color_e.External:
-      self.f.write(_BOLD + _BLUE)
+      self.f.write(ansi.BOLD + ansi.BLUE)
     elif e_color == color_e.UserType:
-      self.f.write(_GREEN)  # Same color as other literals for now
+      self.f.write(ansi.GREEN)  # Same color as other literals for now
     else:
       raise AssertionError(color_str(e_color))
 
   def PopColor(self):
     # type: () -> None
-    self.f.write(_RESET)
+    self.f.write(ansi.RESET)
 
 
 INDENT = 2
