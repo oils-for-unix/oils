@@ -899,4 +899,24 @@ oil-interactive() {
     $OIL_LIST "$@"
 }
 
+travis() {
+  if test -n "${TRAVIS_SKIP:-}"; then
+    echo "TRAVIS_SKIP: Skipping $0"
+    return
+  fi
+
+  smoke
+
+  # Make sure dev build of yajl works
+  oil-json
+  interactive
+
+  # TODO: This fails on Travis because we only did build/dev.sh minimal
+  # builtin-bash
+
+  # Running serially is slow, but easier to debug ...
+  # oil-all-serial
+  # osh-all-serial
+}
+
 "$@"

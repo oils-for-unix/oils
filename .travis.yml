@@ -6,6 +6,10 @@
 dist: xenial
 cache: pip
 
+# Enable this to quickly test the deploy step at the end
+env:
+  - TRAVIS_SKIP=1
+
 addons:
     apt:
         packages:
@@ -34,26 +38,23 @@ install:
     - build/dev.sh minimal
 
 script:
-    - test/lint.sh travis
+    #- test/lint.sh travis
     # Type checking with MyPy.  Problem: mypy requires Python 3, but Oil
     # requires Python 2.  The Travis environment doesn't like that.
     - types/run.sh travis
     - types/oil-slice.sh travis
-    # Unit tests
-    - test/unit.sh all-for-minimal
-    # Spec tests
-    - test/spec.sh smoke
-    # Make sure dev build of yajl works
-    - test/spec.sh oil-json
-    - test/spec.sh interactive
-    # Test if help works, since it may require cmark to build
-    # TODO: This fails on Travis because we only did build/dev.sh minimal
-    #- test/spec.sh builtin-bash
-    #
-    # Running serially is slow, but easier to debug ...
-    #- test/spec.sh oil-all-serial
-    #- test/spec.sh osh-all-serial
+    - test/unit.sh travis
+    - test/spec.sh travis
 
 notifications:
     on_success: change
     on_failure: change  # `always` will be the setting once code changes slow down
+
+# from https://docs.travis-ci.com/user/deployment/script/
+deploy:
+  # deploy develop to the staging environment
+  - provider: script
+    script: services/travis.sh deploy-demo
+    on:
+      branch: dev/andy-21
+      branch: master

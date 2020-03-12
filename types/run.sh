@@ -136,6 +136,11 @@ typecheck-more-oil() {
 }
 
 travis() {
+  if test -n "${TRAVIS_SKIP:-}"; then
+    echo "TRAVIS_SKIP: Skipping $0"
+    return
+  fi
+
   typed-demo-asdl
   # Avoid spew on Travis.
   typed-arith-asdl > /dev/null
