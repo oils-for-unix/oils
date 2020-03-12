@@ -5,7 +5,7 @@ tdop.py - Library for expression parsing.
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
     arith_expr, arith_expr_e, arith_expr_t,
-    arith_expr__VarRef, arith_expr__Binary,
+    arith_expr__VarRef, arith_expr__Binary, arith_expr__ArithWord,
     sh_lhs_expr, sh_lhs_expr_t,
     word_t,
 )
@@ -22,6 +22,7 @@ from typing import (
 
 if TYPE_CHECKING:  # break circular dep
   from osh.word_parse import WordParser
+  from core import optview
   LeftFunc = Callable[['TdopParser', word_t, arith_expr_t, int], arith_expr_t]
   NullFunc = Callable[['TdopParser', word_t, int], arith_expr_t]
 
@@ -37,8 +38,8 @@ def IsIndexable(node):
   #return node.tag_() in (arith_expr_e.VarRef, arith_expr_e.ArithWord)
 
 
-def ToLValue(node):
-  # type: (arith_expr_t) -> sh_lhs_expr_t
+def ToLValue(node, parse_unimplemented):
+  # type: (arith_expr_t, bool) -> sh_lhs_expr_t
   """Determine if a node is a valid L-value by whitelisting tags.
 
   Valid:
@@ -58,12 +59,23 @@ def ToLValue(node):
       n.spids.append(node.token.span_id)
       return n
 
+    elif case(arith_expr_e.ArithWord):
+      if parse_unimplemented:
+        node = cast(arith_expr__ArithWord, UP_node)
+        return sh_lhs_expr.Name('DUMMY_parse_unimplemented')
+
     elif case(arith_expr_e.Binary):
       node = cast(arith_expr__Binary, UP_node)
-      if (node.op_id == Id.Arith_LBracket and
-          node.left.tag_() == arith_expr_e.VarRef):
-        left = cast(arith_expr__VarRef, node.left)
-        return sh_lhs_expr.IndexedName(left.token.val, node.right)
+      if node.op_id == Id.Arith_LBracket:
+        UP_left = node.left
+        if node.left.tag_() == arith_expr_e.VarRef:
+          left = cast(arith_expr__VarRef, UP_left)
+          return sh_lhs_expr.IndexedName(left.token.val, node.right)
+
+        if parse_unimplemented and node.left.tag_() == arith_expr_e.ArithWord:
+          return sh_lhs_expr.IndexedName(
+              'DUMMY_parse_unimplemented', node.right)
+
       # But a[0][0] = 1 is NOT valid.
 
   return None
@@ -134,7 +146,7 @@ def LeftAssign(p, w, left, rbp):
   # type: (TdopParser, word_t, arith_expr_t, int) -> arith_expr_t
   """ Normal binary operator like 1+2 or 2*3, etc. """
   # x += 1, or a[i] += 1
-  lhs = ToLValue(left)
+  lhs = ToLValue(left, p.parse_opts.parse_unimplemented())
   if lhs is None:
     # TODO: It would be nice to point at 'left', but osh/word.py doesn't
     # support arbitrary arith_expr_t.
@@ -257,10 +269,12 @@ class TdopParser(object):
   """
   Parser state.  Current token and lookup stack.
   """
-  def __init__(self, spec, w_parser):
-    # type: (ParserSpec, WordParser) -> None
+  def __init__(self, spec, w_parser, parse_opts):
+    # type: (ParserSpec, WordParser, optview.Parse) -> None
     self.spec = spec
     self.w_parser = w_parser
+    self.parse_opts = parse_opts
+
     self.cur_word = None  # type: word_t  # current token
     self.op_id = Id.Undefined_Tok
 

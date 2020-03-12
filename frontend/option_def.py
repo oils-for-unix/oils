@@ -254,6 +254,10 @@ def _Init(opt_def):
   opt_def.Add('parse_ignored', groups=['strict:all', 'oil:basic', 'oil:all'],
               default=True)
 
+  # Undocumented option to parse things that won't run.  For ble.sh's dynamic
+  # LHS arithmetic, but can be used for other things too.
+  opt_def.Add('parse_unimplemented', default=False)
+
   for name in _AGGRESSIVE_PARSE_OPTIONS:
     opt_def.Add(name, groups=['oil:all'])
 

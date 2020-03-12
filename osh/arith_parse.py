@@ -19,7 +19,7 @@ def NullIncDec(p, w, bp):
   # type: (TdopParser, word_t, int) -> arith_expr_t
   """ ++x or ++x[1] """
   right = p.ParseUntil(bp)
-  child = tdop.ToLValue(right)
+  child = tdop.ToLValue(right, p.parse_opts.parse_unimplemented())
   if child is None:
     p_die("This value can't be assigned to", word=w)
   return arith_expr.UnaryAssign(word_.ArithId(w), child)
@@ -50,7 +50,7 @@ def LeftIncDec(p, w, left, rbp):
   else:
     raise AssertionError()
 
-  child = tdop.ToLValue(left)
+  child = tdop.ToLValue(left, p.parse_opts.parse_unimplemented())
   if child is None:
     p_die("This value can't be assigned to", word=w)
   return arith_expr.UnaryAssign(op_id, child)
