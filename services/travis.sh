@@ -30,6 +30,10 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+log() {
+  echo "$@" 1>&2
+}
+
 #
 # Key Generation: One Time Setup
 #
@@ -73,6 +77,76 @@ deploy-public-key() {
 # Run inside the Travis build
 #
 
+readonly USER='travis_admin'
+readonly HOST='travis-ci.oilshell.org'
+
+home-page() {
+  ### travis-ci.oilshell.org home page
+
+  cat <<EOF
+<!DOCTYPE html>    
+<html>
+  <head>
+    <title>travis-ci.oilshell.org</title>
+    <link rel="stylesheet" type="text/css" href="base.css" />
+    <link rel="stylesheet" type="text/css" href="toil.css" />
+  </head>
+
+  <body class="width40">
+    <p id="home-link">
+      <a href="//oilshell.org/">oilshell.org</a>
+    </p>
+
+    <h1>travis-ci.oilshell.org</h1>
+
+    <table>
+      <thead>
+        <tr>
+          <td>Platform</td>
+        </tr>
+      </thead>
+EOF
+  echo 'dev-minimal' | while read platform; do
+    echo "<tr>"
+    echo "  <td><a href="$platform/">$platform</a></td>"
+    echo "</tr>"
+    echo
+  done
+  cat <<EOF
+    </table>
+  </body>
+</html>
+EOF
+}
+
+init-server-html() {
+  ssh $USER@$HOST mkdir -v -p $HOST/dev-minimal
+
+  home-page > _tmp/index.html
+
+  # note: duplicating CSS
+  scp _tmp/index.html web/{base,toil}.css $USER@$HOST:$HOST/
+}
+
+decrypt-key() {
+  local out=$1
+  openssl aes-256-cbc \
+    -K $encrypted_a65247dffca0_key -iv $encrypted_a65247dffca0_iv \
+    -in services/rsa_travis.enc -out $out -d
+}
+
+scp-results() {
+  # could also use Travis known_hosts addon?
+  scp -o StrictHostKeyChecking=no "$@" \
+    travis_admin@travis-ci.oilshell.org:travis-ci.oilshell.org/dev-minimal/
+}
+
+list-remote-results() {
+  # could also use Travis known_hosts addon?
+  ssh -o StrictHostKeyChecking=no \
+    travis_admin@travis-ci.oilshell.org ls 'travis-ci.oilshell.org/dev-minimal/'
+}
+
 # Dummy that doesn't depend on results
 deploy-test-wwz() {
   set -x
@@ -87,16 +161,138 @@ EOF
 
   zip $wwz index.html build/*.txt
 
-  # could also use Travis known_hosts addon?
-  scp -o StrictHostKeyChecking=no \
-    $wwz travis_admin@travis-ci.oilshell.org:travis-ci.oilshell.org/results/
+  scp-results $wwz
 }
 
-decrypt-key() {
-  local out=$1
-  openssl aes-256-cbc \
-    -K $encrypted_a65247dffca0_key -iv $encrypted_a65247dffca0_iv \
-    -in services/rsa_travis.enc -out $out -d
+format-wwz-index() {
+  ### What's displayed in $ID.wwz/index.html
+
+  local job_id=$1
+  local tsv=${2:-_tmp/toil/INDEX.tsv}
+
+  cat <<EOF
+<!DOCTYPE html>    
+<html>
+  <head>
+    <title>Toil Results</title>
+    <link rel="stylesheet" type="text/css" href="web/base.css" />
+    <link rel="stylesheet" type="text/css" href="web/toil.css" />
+  </head>
+
+  <body class="width40">
+    <p id="home-link">
+      <a href="/">travis-ci.oilshell.org</a>
+      | <a href="//oilshell.org/">oilshell.org</a>
+    </p>
+
+    <h1>Job <code>$job_id</code></h1>
+
+    <table>
+      <thead>
+        <tr>
+          <td>Status</td>
+          <td>Elapsed</td>
+          <td>Task Log</td>
+        </tr>
+      </thead>
+EOF
+  cat $tsv | while read status elapsed task _; do
+    echo "<tr>"
+    echo "  <td>$status</td>"
+    echo "  <td>$elapsed</td>"
+    echo "  <td><a href="_tmp/toil/$task.log.txt">$task</a></td>"
+    echo "</tr>"
+    echo
+  done
+  cat <<EOF
+    </table>
+  </body>
+</html>
+EOF
+}
+
+make-results-wwz() {
+  local job_id=${1:-test-job}
+
+  local wwz=$job_id.wwz
+
+  local index=_tmp/toil/INDEX.tsv 
+  format-wwz-index $job_id $index > index.html
+
+  # All the logs are here, see services/toil-worker.sh
+  zip $wwz index.html web/{base,toil}.css _tmp/toil/*
+
+}
+
+deploy-results() {
+  local job_id="$(date +%Y-%m-%d__%H-%M-%S)"
+
+  make-results-wwz $job_id
+
+  # So we don't have to unzip it
+  cp _tmp/toil/INDEX.tsv $job_id.tsv
+
+  # Copy all such files
+  scp-results $job_id.*
+
+  # TODO: git-log.txt, .json for hostname
+  # - $job_id.git-log.txt: commit, branch, commit date, author?
+  # - $job_id.json: hostname, date, etc.?
+}
+
+format-jobs-index() {
+  cat <<EOF
+<!DOCTYPE html>    
+<html>
+  <head>
+    <title>Toil Results</title>
+    <link rel="stylesheet" type="text/css" href="base.css" />
+    <link rel="stylesheet" type="text/css" href="toil.css" />
+  </head>
+
+  <body class="width40">
+    <p id="home-link">
+      <a href="/">travis-ci.oilshell.org</a>
+      | <a href="//oilshell.org/">oilshell.org</a>
+    </p>
+
+    <h1>Continuous Build: <code>dev-minimal</code> Jobs</h1>
+
+    <table>
+      <thead>
+        <tr>
+          <td>Job ID</td>
+        </tr>
+      </thead>
+EOF
+  while read wwz; do
+    echo '<tr>'
+    echo "  <td><a href="$wwz/">$wwz</a></td>"
+    echo '</tr>'
+  done
+
+  cat <<EOF
+    </table>
+  </body>
+</html>
+EOF
+}
+
+rewrite-index() {
+  ### Rewrite travis-ci.oilshell.org/results/index.html
+  
+  # TODO: replace with toil_web.py?
+
+  log "listing remote .wwz"
+  list-remote-results > _tmp/listing.txt
+  ls -l _tmp/listing.txt
+
+  egrep 'wwz$' _tmp/listing.txt | format-jobs-index > _tmp/index.html
+
+  log "copying index.html"
+
+  # Duplicating CSS inside and OUTSIDE the .wwz files
+  scp-results _tmp/index.html web/{base,toil}.css
 }
 
 publish-html() {
@@ -107,7 +303,8 @@ publish-html() {
   eval "$(ssh-agent -s)"
   ssh-add $privkey
 
-  deploy-test-wwz
+  deploy-results
+  rewrite-index
 }
 
 "$@"

@@ -151,6 +151,7 @@ shell, of course!
     misc/             # A junk drawer
     web/              # HTML/JS/CSS for tests and tools
     lazylex/          # An HTML lexer which doctools/ builds upon.
+    services/         # Integration with cloud services (e.g. Travis CI)
 
 ### Temp Dirs
 
