@@ -17,11 +17,14 @@ sh-spec() {
   # note: this other _tmp dir is for tests that assume '_tmp' is available
   mkdir -p $tmp_env $tmp_env/_tmp
 
-  # prepend spec/bin on the front of the $PATH.  We can't isolate $PATH because
-  # we might be running in Nix, etc.
+  # - Prepend spec/bin on the front of the $PATH.  We can't isolate $PATH
+  #   because we might be running in Nix, etc.
+  # - LOCALE_ARCHIVE is allowed to leak for Nix.
+
   PYTHONPATH=. test/sh_spec.py \
       --tmp-env $tmp_env \
       --path-env "$this_dir/../spec/bin:$PATH" \
+      --env-pair "LOCALE_ARCHIVE=${LOCALE_ARCHIVE:-}" \
       "$test_file" \
       "$@"
 }

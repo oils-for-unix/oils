@@ -726,7 +726,6 @@ sh-spec-smoosh-env() {
   sh-spec $test_file \
     --sh-env-var-name TEST_SHELL \
     --posix \
-    \
     --rm-tmp \
     --env-pair "TEST_UTIL=$SMOOSH_REPO/tests/util" \
     --env-pair "LOGNAME=$LOGNAME" \
