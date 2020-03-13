@@ -4,7 +4,9 @@
 # specific to a Python version.  MyPy needs both in the same environment.
 ---
 
-language: minimal # just overriding the default ruby
+# Travis-ci's default language is ruby. Using minimal, which is an alias for
+# shell, to avoid pulling in an unnecessary language.
+language: minimal
 os: linux
 
 _minimal_in_tree: &minimal_in_tree
