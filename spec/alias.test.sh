@@ -491,7 +491,7 @@ a $((1 + 2))
 #### Alias and PS4
 # dash enters an infinite loop!
 case $SH in
-  */dash)
+  dash)
     exit 1
     ;;
 esac

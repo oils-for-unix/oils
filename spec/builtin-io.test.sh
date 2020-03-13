@@ -60,7 +60,7 @@ echo -ez 'abc\n'
 
 #### echo -e with embedded newline 
 flags='-e'
-case $SH in */dash) flags='' ;; esac
+case $SH in dash) flags='' ;; esac
 
 echo $flags 'foo
 bar'
@@ -71,7 +71,7 @@ bar
 
 #### echo -e line continuation
 flags='-e'
-case $SH in */dash) flags='' ;; esac
+case $SH in dash) flags='' ;; esac
 
 echo $flags 'foo\
 bar'
@@ -101,7 +101,7 @@ echo -e 'ab\0cd'
 
 #### \c stops processing input
 flags='-e'
-case $SH in */dash) flags='' ;; esac
+case $SH in dash) flags='' ;; esac
 
 echo $flags xy  'ab\cde'  'ab\cde'
 ## stdout-json: "xy ab"
@@ -114,14 +114,14 @@ echo -e 'abcd\x65f'
 
 #### echo -e with octal escape
 flags='-e'
-case $SH in */dash) flags='' ;; esac
+case $SH in dash) flags='' ;; esac
 
 echo $flags 'abcd\044e'
 ## stdout-json: "abcd$e\n"
 
 #### echo -e with 4 digit unicode escape
 flags='-e'
-case $SH in */dash) flags='' ;; esac
+case $SH in dash) flags='' ;; esac
 
 echo $flags 'abcd\u0065f'
 ## STDOUT:
@@ -131,7 +131,7 @@ abcdef
 
 #### echo -e with 8 digit unicode escape
 flags='-e'
-case $SH in */dash) flags='' ;; esac
+case $SH in dash) flags='' ;; esac
 
 echo $flags 'abcd\U00000065f'
 ## STDOUT:
@@ -153,7 +153,7 @@ echo -en '\04000' | od -A n -t x1 | sed 's/ \+/ /g'
 
 #### \0777 is out of range
 flags='-en'
-case $SH in */dash) flags='-n' ;; esac
+case $SH in dash) flags='-n' ;; esac
 
 echo $flags '\0777' | od -A n -t x1 | sed 's/ \+/ /g'
 ## stdout-json: " ff\n"
@@ -174,7 +174,7 @@ echo -e '\x' '\xg' | od -A n -c | sed 's/ \+/ /g'
 
 #### incomplete octal escape
 flags='-en'
-case $SH in */dash) flags='-n' ;; esac
+case $SH in dash) flags='-n' ;; esac
 
 echo $flags 'abcd\04' | od -A n -c | sed 's/ \+/ /g'
 ## stdout-json: " a b c d 004\n"
@@ -187,7 +187,7 @@ echo -en 'abcd\u006' | od -A n -c | sed 's/ \+/ /g'
 
 #### \u6
 flags='-en'
-case $SH in */dash) flags='-n' ;; esac
+case $SH in dash) flags='-n' ;; esac
 
 echo $flags '\u6' | od -A n -c | sed 's/ \+/ /g'
 ## stdout-json: " 006\n"
@@ -197,7 +197,7 @@ echo $flags '\u6' | od -A n -c | sed 's/ \+/ /g'
 # \0 is special, but \1 isn't in bash
 # \1 is special in dash!  geez
 flags='-en'
-case $SH in */dash) flags='-n' ;; esac
+case $SH in dash) flags='-n' ;; esac
 
 echo $flags '\0' '\1' '\8' | od -A n -c | sed 's/ \+/ /g'
 ## stdout-json: " \\0 \\ 1 \\ 8\n"

@@ -103,7 +103,7 @@ echo "$foo"
 ## N-I zsh status: 1
 
 #### printf -v dynamic scope
-case $SH in *mksh|*zsh|*dash|*/ash) echo not implemented; exit ;; esac
+case $SH in mksh|zsh|dash|ash) echo not implemented; exit ;; esac
 # OK so printf is like assigning to a var.
 # printf -v foo %q "$bar" is like
 # foo=${bar@Q}

@@ -11,28 +11,18 @@ shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 source test/common.sh
 source test/spec-common.sh
 
+if test -z "${IN_NIX_SHELL:-}"; then
+  source build/dev-shell.sh  # to run 'dash', etc.
+fi
+
 readonly REPO_ROOT=$(cd $(dirname $0)/..; pwd)
 
-# For now, fall back to the shell in $PATH.
-shell-path() {
-  local name=$1
-  if test -f _tmp/spec-bin/$name; then
-    echo $REPO_ROOT/_tmp/spec-bin/$name
-  else
-    which $name
-  fi
-}
-
-readonly DASH=$(shell-path dash)
-readonly BASH=$(shell-path bash)
-readonly MKSH=$(shell-path mksh)
-readonly ZSH=$(shell-path zsh)
-
-if test -f _tmp/spec-bin/ash; then
-  readonly BUSYBOX_ASH=$PWD/_tmp/spec-bin/ash
-else
-  readonly BUSYBOX_ASH=$PWD/_tmp/shells/ash
-fi
+# TODO: Get rid of this indirection.
+readonly DASH=dash
+readonly BASH=bash
+readonly MKSH=mksh
+readonly ZSH=zsh
+readonly BUSYBOX_ASH=ash
 
 # Usage: callers can override OSH_LIST to test on more than one version.
 #
@@ -140,19 +130,19 @@ osh-version-text() {
   # $BASH and $ZSH should exist
 
   echo ---
-  $BASH --version | head -n 1
-  ls -l $BASH
+  bash --version | head -n 1
+  ls -l $(type -p bash)
   echo
 
   echo ---
-  $ZSH --version | head -n 1
-  ls -l $ZSH
+  zsh --version | head -n 1
+  ls -l $(type -p zsh)
   echo
 
   # No -v or -V or --version.  TODO: Only use hermetic version on release.
 
   echo ---
-  local my_dash=_tmp/spec-bin/dash
+  local my_dash=$(type -p dash)
   if test -f $my_dash; then
     ls -l $my_dash
   else
@@ -161,7 +151,7 @@ osh-version-text() {
   echo
 
   echo ---
-  local my_mksh=_tmp/spec-bin/mksh
+  local my_mksh=$(type -p mksh)
   if test -f $my_mksh; then
     ls -l $my_mksh
   else

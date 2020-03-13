@@ -1231,22 +1231,27 @@ def main(argv):
   if stats.Get('num_failed') == 0:
     return 0
 
+  # spec/smoke.test.sh -> smoke
+  test_name = os.path.basename(test_file).split('.')[0]
+
   allowed = opts.osh_failures_allowed
   all_count = stats.Get('num_failed')
   osh_count = stats.Get('osh_num_failed')
   if allowed == 0:
     log('')
-    log('FATAL: %d tests failed (%d osh failures)', all_count, osh_count)
+    log('%s: FATAL: %d tests failed (%d osh failures)', test_name, all_count,
+        osh_count)
     log('')
   else:
     # If we got EXACTLY the allowed number of failures, exit 0.
     if allowed == all_count and all_count == osh_count:
-      log('note: Got %d allowed osh failures (exit with code 0)', allowed)
+      log('%s: note: Got %d allowed osh failures (exit with code 0)',
+          test_name, allowed)
       return 0
     else:
       log('')
-      log('FATAL: Got %d failures (%d osh failures), but %d are allowed',
-          all_count, osh_count, allowed)
+      log('%s: FATAL: Got %d failures (%d osh failures), but %d are allowed',
+          test_name, all_count, osh_count, allowed)
       log('')
 
   return 1

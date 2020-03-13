@@ -24,6 +24,10 @@ source build/common.sh
 
 export PYTHONPATH='.:vendor/'
 
+if test -z "${IN_NIX_SHELL:-}"; then
+  source build/dev-shell.sh  # to run 're2c'
+fi
+
 # Files
 #
 # native/lex.c -- calls generated function?
@@ -56,8 +60,6 @@ install-re2c() {
   ./configure
   make
 }
-
-re2c() { _deps/re2c-1.0.3/re2c "$@"; }
 
 download-clang() {
   wget --directory _deps \

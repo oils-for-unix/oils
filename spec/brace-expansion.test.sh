@@ -429,7 +429,7 @@ echo {1__3}
 
 #### Invalid brace expansions mixing characters and numbers
 # zsh does something crazy like : ; < = > that I'm not writing
-case $SH in */zsh) echo BUG; exit ;; esac
+case $SH in *zsh) echo BUG; exit ;; esac
 echo {1..a}
 echo {z..3}
 ## STDOUT:
