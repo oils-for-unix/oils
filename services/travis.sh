@@ -303,8 +303,26 @@ publish-html() {
   eval "$(ssh-agent -s)"
   ssh-add $privkey
 
-  deploy-results
-  rewrite-index
+  #deploy-results
+  #rewrite-index
+  deploy-test-wwz
 }
+
+# TODO:
+#
+# - Share /web/*.css across all 3.  So it's always up to date and not cached.
+# - Use html_head.py everywhere -- this is in benchmarks/common.sh
+# - job index
+#   - SUM up the times
+#   - SUM up the failures -- did it fail?
+#   - I guess do this with awk or something?
+# - show commit description and diffstats
+#   - you can embed this in the .wwz file
+#
+# Later:
+# - spec test HTML
+#
+# Nice to have:
+# - link to fast/compact git diff?  I don't like Githubs
 
 "$@"
