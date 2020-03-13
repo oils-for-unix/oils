@@ -2,49 +2,111 @@
 # It says Xenial has Python 2.7, 3.6, and 3.7 (?)
 # We're not using language: python because that creates a virtualenv, which is
 # specific to a Python version.  MyPy needs both in the same environment.
+---
 
-dist: xenial
-cache: pip
+language: minimal # just overriding the default ruby
+os: linux
 
-# Enable this to quickly test the deploy step at the end
-env:
-    - TRAVIS_SKIP=''
-
-addons:
-    apt:
-        packages:
-            # build/dev.sh ubuntu-deps
-            - python-dev
-            - gawk
-            - time
-            - libreadline-dev
-            # test/spec.sh install-shells
-            - busybox-static
-            - mksh
-            - zsh
-              # since we're not using language: python
-            - python3-setuptools
-            - python-pip
-            - python3-pip
-
-before_install:
+_minimal_in_tree: &minimal_in_tree
+  before_install:
     - test/spec.sh link-busybox-ash
-
-install:
+  install:
     - pip install --user flake8 typing
     # mypy requires Python 3
     - pip3 install --user mypy
     # hack for cmark
     - build/dev.sh minimal
+  script:
+    - ./test.sh
 
-script:
-    - test/lint.sh travis
-    # Type checking with MyPy.  Problem: mypy requires Python 3, but Oil
-    # requires Python 2.  The Travis environment doesn't like that.
-    - types/run.sh travis
-    - types/oil-slice.sh travis
-    - test/unit.sh travis
-    - test/spec.sh travis
+_nix_full: &nix_full
+  language: nix
+
+  install:
+    - nix-env -iA cachix -f https://cachix.org/api/v1/install
+    - cachix use abathur
+
+  script:
+    - if [ -n "$CACHIX_SIGNING_KEY" ]; then cachix push abathur --watch-store; fi &
+    - echo build command = $NIX_BUILD_TYPE
+    - $NIX_BUILD_TYPE
+    - sleep 10 # to allow cachix finish uploading
+
+_nix_macos: &nix_macos
+  os: osx
+  before_install:
+    # macOS needs this to run 'cachix use <user>'
+    - sudo mkdir -p /etc/nix
+    - echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf
+    - sudo launchctl kickstart -k system/org.nixos.nix-daemon || true
+
+_nix_build: &nix_build
+  env: NIX_BUILD_TYPE='nix-build'
+
+_nix_shell: &nix_shell
+  env: NIX_BUILD_TYPE="nix-shell --pure --run ./test.sh"
+
+jobs:
+  include:
+  # macOS builds tend to take longer; let's see if
+  # starting them first cuts total run clock time
+  - name: "macos minimal in-tree"
+    os: osx
+    <<: *minimal_in_tree
+    cache:
+      - brew
+      - pip
+
+  - name: "nix-build macos"
+    <<: *nix_build
+    <<: *nix_full
+    <<: *nix_macos
+
+  - name: "nix-shell macos"
+    <<: *nix_shell
+    <<: *nix_full
+    <<: *nix_macos
+
+  - name: "linux minimal in-tree"
+    <<: *minimal_in_tree
+    os: linux
+    dist: xenial
+    cache:
+      - apt
+      - pip
+    addons:
+      apt:
+        packages:
+          - python-dev
+          - gawk
+          - time
+          - libreadline-dev
+          # test/spec.sh install-shells
+          - busybox-static
+          - mksh
+          - zsh
+          # since we're not using language: python
+          - python3-setuptools
+          - python-pip
+          - python3-pip
+
+
+  - name: "nix-build linux"
+    os: linux
+    <<: *nix_build
+    <<: *nix_full
+
+
+  - name: "nix-shell linux"
+    os: linux
+    <<: *nix_shell
+    <<: *nix_full
+
+  # report status when required jobs finish
+  fast_finish: true
+  allow_failures:
+  - os: osx
+  - language: nix
 
 notifications:
     on_success: change
@@ -58,3 +120,10 @@ deploy:
       on:
           branch: master
           #branch: dev/andy-21
+
+env:
+  global:
+    # Enable this to quickly test the deploy step at the end
+    - TRAVIS_SKIP=''
+    # token for cachix
+    - secure: "tzg0cVSgJ5KzNbC2Ne9zvSTjnIe+dvc/Re3QA/7xXfH0cukSigmUQySEwAeEUw37Q3n8Z5Z1AdLnQcN13IMFCNL0azL5OGRU4tyF6FOoUIrPe9GEYfQKfQ+US3pAr4BcaOR6To+redAxVOL+CjpB8LRkZcoR2PFMIPEBxhq2R/RrCU3eAeWP1mFXkvmB+gR77iFrLAKVW3elY3Jo77Kv8EbpD6d1CIsc1aboKHXt4kYRLUSLZcCpei49VLGp7h9oZ9nMc0A2wBnpbE8uO/Mlt9o/PTA0REAt3ecWuhhJDKL0qLfU8frhhWSwY4SukpPibs/u/FGyFPZLHxx44WLYbnfkRb+vrHS87lipBhHECSRhAJbKjAEDnHhscN9qOyI5j0P21qG+NQGIUOmtbSBm9/GOatrI9dEukrXgwSay0qw9kt/DovAxvWM0TKDp9ULRHj+5kMIGtF/XMeIPhcssC1c7Odq2suCDBOnKtj+swzb018NYuM2XHBcm7ljR/GRm0CDtKYecy50w0Qgo5y2hkF+vNMoMXPVIQVktuqhWWfln8ZAy5bVPGJtTpKfVQiGaDJxCPevfoMHR4i8Zb+BwXn0q+hsf0++iamQPrNuFaWWct2JuTRAbhzP03I0XOsAcIh7QQUvLMiQdkNdlJnCOI6PBTJ87KTu+yWctLuFtseQ="

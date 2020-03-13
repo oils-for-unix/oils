@@ -1,0 +1,3 @@
+include _devbuild/gen/*.marshal
+include oil-version.txt
+include _devbuild/help/*

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # For textual code generation.
 #
@@ -24,7 +24,7 @@ source build/common.sh
 
 export PYTHONPATH='.:vendor/'
 
-if test -z "${IN_NIX_SHELL:-}"; then
+if test -z "${IN_NIX_SHELL:-}${NIX_BUILD_TOP:-}"; then
   source build/dev-shell.sh  # to run 're2c'
 fi
 
