@@ -9,6 +9,8 @@ set -o errexit
 
 source types/common.sh
 
+readonly PY_PATH='.:vendor/'  # note: could consolidate with other scripts
+
 deps() {
   set -x
   #pip install typing pyannotate
@@ -40,7 +42,7 @@ typed-demo-asdl() {
   typecheck --strict \
     _devbuild/gen/typed_demo_asdl.py asdl/typed_demo.py
 
-  PYTHONPATH=. asdl/typed_demo.py "$@"
+  PYTHONPATH=$PY_PATH asdl/typed_demo.py "$@"
 }
 
 check-arith() {
@@ -48,7 +50,7 @@ check-arith() {
   # translation.
 
   local strict='--strict'
-  MYPYPATH=. PYTHONPATH=. typecheck $strict \
+  MYPYPATH=. PYTHONPATH=$PY_PATH typecheck $strict \
     asdl/typed_arith_parse.py asdl/typed_arith_parse_test.py asdl/tdop.py
 }
 
@@ -56,7 +58,7 @@ typed-arith-asdl() {
   asdl/run.sh gen-typed-arith-asdl
   check-arith
 
-  export PYTHONPATH=. 
+  export PYTHONPATH=$PY_PATH
   asdl/typed_arith_parse_test.py
 
   echo '---'
@@ -106,7 +108,7 @@ add-imports() {
   # redundant (and slow) typechecking commands.  You can just cat that
   # file after running this function.
   local module=$1
-  export PYTHONPATH=.
+  export PYTHONPATH=$PY_PATH
   readonly module_tmp=_tmp/add-imports-module.tmp
   readonly typecheck_out=_tmp/add-imports-typecheck-output
   set +o pipefail
@@ -231,7 +233,7 @@ audit-hacks() {
 #
 
 expr-parse() {
-  export PYTHONPATH=.
+  export PYTHONPATH=$PY_PATH
   echo '1 + 2*3' | bin/expr_parse.py "$@"
 }
 
