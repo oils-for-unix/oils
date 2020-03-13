@@ -4,12 +4,12 @@
 # By default fetch the most-recent 19.09 version of the stable NixOS release.
 # This should be fine, but if it causes trouble it can be pinned to ensure
 # everyone is running exactly the same versions.
-{ pkgs ? import ./nixpkgs.nix, dev ? "all", test ? "smoke", cleanup ? true }:
+{ pkgs ? import ./nix/nixpkgs.nix, dev ? "all", test ? "smoke", cleanup ? true }:
 
 let
-  shells = import ./test_shells.nix { inherit pkgs; };
+  shells = import ./nix/test_shells.nix { inherit pkgs; };
   drv = import ./default.nix { inherit pkgs; };
-  deps = import ./oil_deps.nix { inherit pkgs; };
+  deps = import ./nix/oil_deps.nix { inherit pkgs; };
   # Added the following 3 declarations (and parameters/defaults above) to
   # demonstrate how you could make the behavior a little configurable.
   #

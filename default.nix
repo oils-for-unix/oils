@@ -4,12 +4,12 @@
 # By default fetch the most-recent 19.09 version of the stable NixOS release.
 # This should be fine, but if it causes trouble it can be pinned to ensure
 # everyone is running exactly the same versions.
-{ pkgs ? import ./nixpkgs.nix }:
+{ pkgs ? import ./nix/nixpkgs.nix }:
 
 with pkgs;
 let
-  shells = import ./test_shells.nix { inherit pkgs; };
-  deps = import ./oil_deps.nix { inherit pkgs; };
+  shells = import ./nix/test_shells.nix { inherit pkgs; };
+  deps = import ./nix/oil_deps.nix { inherit pkgs; };
 
   # Standard builder from Nixpkgs that we use to build oil
 in pkgs.python27Packages.buildPythonPackage rec {
