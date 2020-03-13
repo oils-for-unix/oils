@@ -99,7 +99,7 @@ decrypt-key() {
     -in services/rsa_travis.enc -out $out -d
 }
 
-deploy-demo() {
+publish-html() {
   local privkey=/tmp/rsa_travis
 
   decrypt-key $privkey
