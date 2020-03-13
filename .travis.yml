@@ -8,7 +8,7 @@ cache: pip
 
 # Enable this to quickly test the deploy step at the end
 env:
-  - TRAVIS_SKIP=1
+  - TRAVIS_SKIP=''
 
 addons:
     apt:
@@ -38,7 +38,7 @@ install:
     - build/dev.sh minimal
 
 script:
-    #- test/lint.sh travis
+    - test/lint.sh travis
     # Type checking with MyPy.  Problem: mypy requires Python 3, but Oil
     # requires Python 2.  The Travis environment doesn't like that.
     - types/run.sh travis
@@ -56,5 +56,5 @@ deploy:
   - provider: script
     script: services/travis.sh deploy-demo
     on:
-      branch: dev/andy-21
       branch: master
+      #branch: dev/andy-21
