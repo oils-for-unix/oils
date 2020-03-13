@@ -36,16 +36,7 @@ rec {
           "--without-bash-malloc"
           "--disable-nls"
         ];
-      buildInputs = [ makeWrapper ];
       outputs = [ "out" ];
-
-      # wrap this bash to fix LOCALE_ARCHIVE for libc
-      # and THEN substitute bang_bash into the wrapper's shebang
-      postInstall = if glibcLocales != null then ''
-        wrapProgram "$out/bin/bash" --run "export LOCALE_ARCHIVE='${glibcLocales}/lib/locale/locale-archive'"
-        substituteInPlace $out/bin/bash --replace "$runtimeShell" "${bang_bash}/bin/bash"
-      '' else
-        "" + (oldAttrs.postInstall or "");
     });
 
   test_busybox = pkgs.busybox-sandbox-shell.overrideAttrs (oldAttrs: rec {
