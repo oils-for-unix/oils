@@ -263,6 +263,11 @@ deploy-results() {
   # Copy wwz, tsv, json
   scp-results $job_id.*
 
+  log ''
+  log "http://travis-ci.oilshell.org/dev-minimal/"
+  log "http://travis-ci.oilshell.org/dev-minimal/$job_id.wwz/"
+  log ''
+
   # TODO: git-log.txt, .json for hostname
   # - $job_id.git-log.txt: commit, branch, commit date, author?
   # - $job_id.json: hostname, date, etc.?

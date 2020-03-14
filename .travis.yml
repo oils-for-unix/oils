@@ -8,7 +8,7 @@ cache: pip
 
 # Enable this to quickly test the deploy step at the end
 env:
-    - TRAVIS_SKIP=1
+    - TRAVIS_SKIP=''
 
 addons:
     apt:
