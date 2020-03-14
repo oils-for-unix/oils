@@ -36,20 +36,18 @@ _minimal_in_tree: &minimal_in_tree
 _nix_full: &nix_full
   language: nix
 
-  script:
-    - echo build command = $NIX_BUILD_TYPE
-    - $NIX_BUILD_TYPE
-
 # This building block adds some macos-specific setup to support nix builds.
 _nix_macos: &nix_macos
   os: osx
 
 # The next two building blocks specify which build command Nix should use.
 _nix_build: &nix_build
-  env: NIX_BUILD_TYPE='nix-build'
+  script:
+    - nix-build
 
 _nix_shell: &nix_shell
-  env: NIX_BUILD_TYPE="nix-shell --pure --run 'services/toil-worker.sh run-dev-minimal'"
+  script:
+    - nix-shell --pure --run "services/toil-worker.sh run-dev-minimal"
 
 jobs:
   include:
