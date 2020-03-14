@@ -337,10 +337,10 @@ publish-html() {
   eval "$(ssh-agent -s)"
   ssh-add $privkey
 
-  if false; then
+  if true; then
     deploy-results
   else
-    deploy-test-wwz  # test
+    deploy-test-wwz  # dummy data that doesn't depend on the build
   fi
 
   rewrite-index

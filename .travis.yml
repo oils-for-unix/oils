@@ -32,19 +32,13 @@ before_install:
 
 install:
     - pip install --user flake8 typing
-    # mypy requires Python 3
+    # MyPy requires Python 3, but Oil requires Python 2.
     - pip3 install --user mypy
     # hack for cmark
     - build/dev.sh minimal
 
 script:
-    - test/lint.sh travis
-    # Type checking with MyPy.  Problem: mypy requires Python 3, but Oil
-    # requires Python 2.  The Travis environment doesn't like that.
-    - types/run.sh travis
-    - types/oil-slice.sh travis
-    - test/unit.sh travis
-    - test/spec.sh travis
+    - services/toil-worker.sh run-dev-minimal
 
 notifications:
     on_success: change
