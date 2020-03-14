@@ -511,6 +511,12 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
   """
   Run a list of test 'cases' for all 'shells' and write output to 'out'.
   """
+  if opts.trace:
+    for _, sh in shells:
+      log('\tshell: %s', sh)
+      log('\twhich:')
+      subprocess.call(['which', sh])
+
   #pprint.pprint(cases)
 
   sh_labels = [sh_label for sh_label, _ in shells]

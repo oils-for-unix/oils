@@ -11,8 +11,32 @@ set -o errexit
 
 source test/common.sh
 
+time-tsv() {
+  benchmarks/time_.py --tsv "$@"
+}
+
+dummy() {
+  echo 'dummy task with env:'
+  echo
+
+  env
+}
+
+dummy-tasks() {
+  ### Print tasks that execute quickly
+
+  # (task_name, script, action, result_html)
+  cat <<EOF
+dummy           services/toil-worker.sh dummy  -
+EOF
+}
+
+run-dummy() {
+  dummy-tasks | run-tasks
+}
+
 dev-minimal-tasks() {
-  ### Print tasks for the dev build
+  ### Print tasks for the 'dev-minimal' build
 
   # (task_name, script, action, result_html)
   cat <<EOF
@@ -26,11 +50,20 @@ osh-spec        test/spec.sh osh-travis     _tmp/spec/osh.html
 EOF
 }
 
-time-tsv() {
-  benchmarks/time_.py --tsv "$@"
+dev-all-nix-tasks() {
+  ### Print tasks for the 'dev-all' build
+
+  # (task_name, script, action, result_html)
+  cat <<EOF
+build-all       build/dev.sh all            -
+oil-spec        test/spec.sh oil-all-serial _tmp/spec/oil.html
+osh-spec        test/spec.sh osh-travis     _tmp/spec/osh.html
+EOF
 }
 
-run-dev-minimal() {
+run-tasks() {
+  ### Run the tasks on stdin and write _tmp/toil/INDEX.tsv.
+
   local out_dir=_tmp/toil
   mkdir -p $out_dir
 
@@ -38,8 +71,7 @@ run-dev-minimal() {
   local tsv=$out_dir/INDEX.tsv
   rm -f $tsv
 
-  #export TRAVIS_SKIP=1
-  dev-minimal-tasks | while read task_name script action result_html; do
+  while read task_name script action result_html; do
     log "--- task: $task_name ---"
 
     local log_path=$out_dir/$task_name.log.txt 
@@ -71,6 +103,46 @@ run-dev-minimal() {
     END   { exit(max) }
     ' _tmp/toil/INDEX.tsv
   fi
+}
+
+run-dev-minimal() {
+  ### Travis job dev-minimal
+
+  #export TRAVIS_SKIP=1
+  dev-minimal-tasks | run-tasks
+}
+
+_run-dev-all-nix() {
+  dev-all-nix-tasks | run-tasks
+  return
+
+  # --- DEBUGGING THROUGH STDOUT ---
+
+  # makes _tmp
+  build/dev.sh all
+
+  # So we have something to deploy
+  dummy-tasks | run-tasks
+
+  if false; then
+    test/spec.sh check-shells-exist
+    # this hangs because nix bash doesn't have 'compgen' apparently
+    test/spec.sh builtin-completion -v -t
+  fi
+
+  test/spec.sh osh-travis
+
+}
+
+run-dev-all-nix() {
+  ### Travis job dev-all-nix
+
+  # Run tasks the nix environment
+  nix-shell \
+    --argstr dev "none" \
+    --argstr test "none" \
+    --argstr cleanup "none" \
+    --run "$0 _run-dev-all-nix"
 }
 
 "$@"

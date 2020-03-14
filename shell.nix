@@ -54,7 +54,7 @@ let
 
   # nixpkgs: busybox linux only; no smoosh
   # could append something like: ++ lib.optionals stdenv.isLinux [ busybox ]
-  spec_tests = [ bash dash mksh zsh ];
+  spec_tests = [ bash dash mksh zsh busybox ];
 
   static_analysis = [
     mypy # This is the Python 3 version

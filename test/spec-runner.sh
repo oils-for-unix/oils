@@ -60,6 +60,13 @@ manifest() {
         (shell-grammar) continue ;;
         # Just a demo
         (blog-other1) continue ;;
+
+        (builtin-completion)
+          if test -n "${IN_NIX_SHELL:-}"; then
+            log 'IN_NIX_SHELL: skipping builtin-completion '
+            continue
+          fi
+          ;;
       esac
 
       # A list of both.

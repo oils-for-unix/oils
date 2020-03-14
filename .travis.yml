@@ -7,7 +7,42 @@ jobs:
     - name: dummy
       # Travis's default is Ruby, but we don't need it.
       language: minimal
-      script: sh -c 'echo hello from dummy'
+      script: services/toil-worker.sh run-dummy
+
+      deploy:
+        # https://docs.travis-ci.com/user/deployment#uploading-files-and-skip_cleanup
+        # otherwise we can't zip up _tmp/toil, etc.
+        - provider: script
+          skip_cleanup: true
+          script: services/travis.sh publish-html
+          on:
+            branch: master
+        # duplicate block for testing on dev/andy-21
+        - provider: script
+          skip_cleanup: true
+          script: services/travis.sh publish-html
+          on:
+            branch: dev/andy-21
+
+    - name: dev-all-nix
+      # Travis's default is Ruby, but we don't need it.
+      language: nix
+      script: services/toil-worker.sh run-dev-all-nix
+
+      deploy:
+        # https://docs.travis-ci.com/user/deployment#uploading-files-and-skip_cleanup
+        # otherwise we can't zip up _tmp/toil, etc.
+        - provider: script
+          skip_cleanup: true
+          script: services/travis.sh publish-html
+          on:
+            branch: master
+        # duplicate block for testing on dev/andy-21
+        - provider: script
+          skip_cleanup: true
+          script: services/travis.sh publish-html
+          on:
+            branch: dev/andy-21
 
     # Low-dependency developer build.  Spec tests broken because we don't have
     # exact versions of shells.
