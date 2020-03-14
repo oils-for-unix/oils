@@ -9,6 +9,12 @@
 language: minimal
 os: linux
 
+# This first section sets up building blocks used later to compose the actual
+# CI jobs. The &<identifier> syntax is an *anchor*. Later in the jobs section
+# these anchors will be referred to with the *<identifier> (alias) syntax.
+
+# This building block should take mostly platform-independent steps
+# necessary to perform dev-minimal in-tree build.
 _minimal_in_tree: &minimal_in_tree
   before_install:
     - test/spec.sh link-busybox-ash
@@ -21,10 +27,13 @@ _minimal_in_tree: &minimal_in_tree
   script:
     - ./test.sh
 
+# This building block does most of the work for all nix-based builds
+# additional building blocks just add/modify this template.
 _nix_full: &nix_full
   language: nix
 
   install:
+    # cachix is a Nix build-cache; reduces run time
     - nix-env -iA cachix -f https://cachix.org/api/v1/install
     - cachix use abathur
 
@@ -34,6 +43,8 @@ _nix_full: &nix_full
     - $NIX_BUILD_TYPE
     - sleep 10 # to allow cachix finish uploading
 
+# This building block adds some macos-specific setup to support nix builds.
+# At the moment, this is limited to supporting cachix.
 _nix_macos: &nix_macos
   os: osx
   before_install:
@@ -42,6 +53,7 @@ _nix_macos: &nix_macos
     - echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf
     - sudo launchctl kickstart -k system/org.nixos.nix-daemon || true
 
+# The next two building blocks specify which build command Nix should use.
 _nix_build: &nix_build
   env: NIX_BUILD_TYPE='nix-build'
 
@@ -52,24 +64,26 @@ jobs:
   include:
   # macOS builds tend to take longer; let's see if
   # starting them first cuts total run clock time
-  - name: "macos minimal in-tree"
+  - name: "dev-minimal in-tree macos"
     os: osx
+    # The <<: syntax merges the corresponding *<identifier>
+    # building block in at this location.
     <<: *minimal_in_tree
     cache:
       - brew
       - pip
 
-  - name: "nix-build macos"
+  - name: "dev-all/pyoil nix-build macos"
     <<: *nix_build
     <<: *nix_full
     <<: *nix_macos
 
-  - name: "nix-shell macos"
+  - name: "dev-all/pyoil nix-shell macos"
     <<: *nix_shell
     <<: *nix_full
     <<: *nix_macos
 
-  - name: "linux minimal in-tree"
+  - name: "dev-minimal in-tree linux"
     <<: *minimal_in_tree
     os: linux
     dist: xenial
@@ -93,13 +107,12 @@ jobs:
           - python3-pip
 
 
-  - name: "nix-build linux"
+  - name: "dev-all/pyoil nix-build linux"
     os: linux
     <<: *nix_build
     <<: *nix_full
 
-
-  - name: "nix-shell linux"
+  - name: "dev-all/pyoil nix-shell linux"
     os: linux
     <<: *nix_shell
     <<: *nix_full
