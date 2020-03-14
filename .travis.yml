@@ -52,5 +52,10 @@ deploy:
       skip_cleanup: true
       script: services/travis.sh publish-html
       on:
+          branch: master
+    # duplicate block for testing on dev/andy-21
+    - provider: script
+      skip_cleanup: true
+      script: services/travis.sh publish-html
+      on:
           branch: dev/andy-21
-          #branch: master
