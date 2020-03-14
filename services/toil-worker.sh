@@ -11,7 +11,7 @@ set -o errexit
 
 source test/common.sh
 
-dev-tasks() {
+dev-minimal-tasks() {
   ### Print tasks for the dev build
 
   # (name, script)
@@ -29,7 +29,7 @@ time-tsv() {
   benchmarks/time_.py --tsv "$@"
 }
 
-run-dev-tasks() {
+run-dev-minimal() {
   local out_dir=_tmp/toil
   mkdir -p $out_dir
 
@@ -38,7 +38,7 @@ run-dev-tasks() {
   rm -f $tsv
 
   #export TRAVIS_SKIP=1
-  dev-tasks | while read task_name script; do
+  dev-minimal-tasks | while read task_name script; do
     log "--- task: $task_name ---"
 
     local log=$out_dir/$task_name.log.txt 

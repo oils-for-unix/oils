@@ -293,8 +293,15 @@ EOF
     local job_id=$(basename $wwz .wwz)
     echo '<tr>'
     echo "  <td><a href="$wwz/">$wwz</a></td>"
-    echo "  <td><a href="$job_id.json">JSON</a></td>"
-    echo "  <td><a href="$job_id.tsv">TSV</a></td>"
+    if [[ $job_id == *test ]]; then
+      # don't show misleading links
+      echo "  <td>-</td>"
+      echo "  <td>-</td>"
+    else
+      echo "  <td><a href="$job_id.json">JSON</a></td>"
+      echo "  <td><a href="$job_id.tsv">TSV</a></td>"
+    fi
+
     echo '</tr>'
   done
 
