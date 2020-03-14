@@ -9,7 +9,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source test/common.sh
+source services/common.sh
 
 time-tsv() {
   benchmarks/time_.py --tsv "$@"
@@ -19,7 +19,8 @@ dummy() {
   echo 'dummy task with env:'
   echo
 
-  env
+  # mangles multi-line values, but that's OK here
+  dump-env
 }
 
 dummy-tasks() {

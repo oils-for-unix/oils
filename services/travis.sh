@@ -30,9 +30,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-log() {
-  echo "$@" 1>&2
-}
+source services/common.sh
 
 html-head() {
   PYTHONPATH=. doctools/html_head.py "$@"
@@ -183,7 +181,7 @@ deploy-test-wwz() {
 <a href="env.txt">env.txt</a> <br/>
 EOF
 
-  env > env.txt
+  dump-env > env.txt
 
   zip $wwz env.txt index.html build/*.txt
 
@@ -262,6 +260,8 @@ deploy-job-results() {
   make-job-wwz $job_id
 
   services/env_to_json.py \
+    TRAVIS_JOB_NAME \
+    TRAVIS_OS_NAME \
     TRAVIS_TIMER_START_TIME \
     TRAVIS_BUILD_WEB_URL \
     TRAVIS_JOB_WEB_URL \

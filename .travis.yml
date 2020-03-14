@@ -64,7 +64,6 @@ jobs:
             # build/dev.sh ubuntu-deps
             - python-dev
             - gawk
-            - time
             - libreadline-dev
             # test/spec.sh install-shells
             - busybox-static

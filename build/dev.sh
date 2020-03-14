@@ -21,7 +21,7 @@ ubuntu-deps() {
   # time: used to collect the exit code and timing of a test
   # libreadline-dev: needed for the build/prepare.sh Python build.
   # cmake: for build/dev.sh yajl-release
-  sudo apt install python-dev gawk time libreadline-dev cmake
+  sudo apt install python-dev gawk libreadline-dev cmake
 
   test/spec.sh install-shells
 }
