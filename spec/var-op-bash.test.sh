@@ -62,10 +62,21 @@ argv.py ${!Z*}
 argv.py ${!Z@}
 argv.py "${!Z*}"
 argv.py "${!Z@}"
+for i in 1 2; do argv.py ${!Z*}  ; done
+for i in 1 2; do argv.py ${!Z@}  ; done
+for i in 1 2; do argv.py "${!Z*}"; done
+for i in 1 2; do argv.py "${!Z@}"; done
 ## STDOUT:
 ['Z', 'ZIP', 'ZOO', 'ZOOM']
 ['Z', 'ZIP', 'ZOO', 'ZOOM']
 ['Z ZIP ZOO ZOOM']
 ['Z', 'ZIP', 'ZOO', 'ZOOM']
+['Z', 'ZIP', 'ZOO', 'ZOOM']
+['Z', 'ZIP', 'ZOO', 'ZOOM']
+['Z', 'ZIP', 'ZOO', 'ZOOM']
+['Z', 'ZIP', 'ZOO', 'ZOOM']
+['Z ZIP ZOO ZOOM']
+['Z ZIP ZOO ZOOM']
+['Z', 'ZIP', 'ZOO', 'ZOOM']
+['Z', 'ZIP', 'ZOO', 'ZOOM']
 ## END
-
