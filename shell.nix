@@ -41,7 +41,7 @@ in with pkgs;
 # Create a shell with packages we need.
 mkShell rec {
   # pull most deps from default.nix
-  buildInputs = with shells; [ test_bash test_dash test_mksh test_zsh ] ++ drv.buildInputs ++ [
+  buildInputs = with shells; [ test_bash test_dash test_mksh test_zsh ] ++ lib.optionals (stdenv.isLinux) [ test_busybox ] ++ drv.buildInputs ++ [
     nixfmt # `nixfmt *.nix` to format in place
   ];
 
