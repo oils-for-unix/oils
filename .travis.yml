@@ -39,8 +39,8 @@ jobs:
 
       script: services/toil-worker.sh run-ovm-tarball
 
-      # One step is build/dev.sh all.  Do we really need that?
-      # TODO: Fix cmark.
+      # For building Python extensions like posix_.so and yajl.so.  We import
+      # them to build a tarball.
       addons:
         apt:
           packages:

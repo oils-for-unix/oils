@@ -831,6 +831,31 @@ tarball-size() {
   build/test.sh oil-tar  # Ctrl-C this, then run metrics/tarball.sh
 }
 
+tarball-build-deps() {
+  ### Tools and libs needed to build the tarball.
+
+  # On Travis, the _devbuild and _deps dirs should be cached.
+
+  if test -d _devbuild/cpython-full; then
+    echo '_devbuild/cpython-full exists: skipping build/prepare.sh'
+  else
+    build/prepare.sh configure
+    build/prepare.sh build-python
+  fi
+
+  if test -d _deps; then
+    echo '_deps exists: skipping re2c and cmark'
+  else
+    build/codegen.sh download-re2c
+    build/codegen.sh install-re2c
+
+    doctools/cmark.sh download
+    doctools/cmark.sh extract
+    doctools/cmark.sh build
+    doctools/cmark.sh make-symlink
+  fi
+}
+
 # This is a hack because the Makefile dependencies aren't correct.
 quick-oil-tarball() {
   make clean-repo

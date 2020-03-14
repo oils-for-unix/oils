@@ -46,13 +46,6 @@ make-symlink() {
   ls -l _deps/libcmark.so
 }
 
-travis-setup() {
-  download
-  extract
-  build
-  make-symlink
-}
-
 demo-theirs() {
   echo '*hi*' | cmark
 }

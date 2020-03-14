@@ -68,14 +68,13 @@ EOF
 ovm-tarball-tasks() {
   ### Print tasks for the 'ovm-tarball' build
 
+  # note: dev-all needed to crawl dependencies to make tarball.
+
   # (task_name, script, action, result_html)
   cat <<EOF
-cpython-configure build/prepare.sh configure             -
-cpython-build     build/prepare.sh build-python          -
-download-re2c     build/codegen.sh download-re2c         -
-install-re2c      build/codegen.sh install-re2c          -
-install-cmark     doctools/cmark.sh travis-setup         -
-build-all         build/dev.sh all                       -
+download-deps     devtools/release.sh tarball-build-deps -
+dev-all           build/dev.sh all                       -
+yajl              build/dev.sh yajl-release              -
 make-tarball      devtools/release.sh quick-oil-tarball  -
 build-tarball     build/test.sh oil-tar                  -
 EOF
