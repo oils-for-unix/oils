@@ -8,7 +8,7 @@ cache: pip
 
 # Enable this to quickly test the deploy step at the end
 env:
-    - TRAVIS_SKIP=''
+    - TRAVIS_SKIP=1
 
 addons:
     apt:
@@ -52,9 +52,11 @@ notifications:
 
 # from https://docs.travis-ci.com/user/deployment/script/
 deploy:
-    # deploy develop to the staging environment
+    # https://docs.travis-ci.com/user/deployment#uploading-files-and-skip_cleanup
+    # otherwise we can't zip up _tmp/toil, etc.
     - provider: script
+      skip_cleanup: true
       script: services/travis.sh publish-html
       on:
-          branch: master
-          #branch: dev/andy-21
+          branch: dev/andy-21
+          #branch: master

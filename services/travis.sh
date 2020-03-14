@@ -34,6 +34,19 @@ log() {
   echo "$@" 1>&2
 }
 
+html-head() {
+  PYTHONPATH=. doctools/html_head.py "$@"
+}
+
+travis-html-head() {
+  local title="$1"
+
+  local base_url='../../web'
+
+  # These files live at the root
+  html-head --title "$title" "/web/base.css" "/web/toil.css" 
+}
+
 #
 # Key Generation: One Time Setup
 #
@@ -80,18 +93,19 @@ deploy-public-key() {
 readonly USER='travis_admin'
 readonly HOST='travis-ci.oilshell.org'
 
+# Print the list of Travis jobs.
+job-config() {
+  # (artifact, platform)
+  cat <<EOF
+dev-minimal ubuntu-xenial
+EOF
+}
+
 home-page() {
   ### travis-ci.oilshell.org home page
 
+  travis-html-head 'travis.ci.oilshell.org'
   cat <<EOF
-<!DOCTYPE html>    
-<html>
-  <head>
-    <title>travis-ci.oilshell.org</title>
-    <link rel="stylesheet" type="text/css" href="base.css" />
-    <link rel="stylesheet" type="text/css" href="toil.css" />
-  </head>
-
   <body class="width40">
     <p id="home-link">
       <a href="//oilshell.org/">oilshell.org</a>
@@ -99,16 +113,24 @@ home-page() {
 
     <h1>travis-ci.oilshell.org</h1>
 
+    <p>This server receives build results from 
+       <a href="https://travis-ci.org/oilshell/oil">travis-ci.org/oilshell/oil</a>.
+       See
+       <a href="https://github.com/oilshell/oil/wiki/Travis-CI-for-Oil">Travis CI for Oil</a> for details.
+    </p>
+
     <table>
       <thead>
         <tr>
+          <td>Artifact</td>
           <td>Platform</td>
         </tr>
       </thead>
 EOF
-  echo 'dev-minimal' | while read platform; do
+  job-config | while read artifact platform; do
     echo "<tr>"
-    echo "  <td><a href="$platform/">$platform</a></td>"
+    echo "  <td><a href="$artifact/">$artifact</a></td>"
+    echo "  <td>$platform</td>"
     echo "</tr>"
     echo
   done
@@ -120,12 +142,13 @@ EOF
 }
 
 init-server-html() {
-  ssh $USER@$HOST mkdir -v -p $HOST/dev-minimal
+  ssh $USER@$HOST mkdir -v -p $HOST/dev-minimal $HOST/web
 
   home-page > _tmp/index.html
 
   # note: duplicating CSS
-  scp _tmp/index.html web/{base,toil}.css $USER@$HOST:$HOST/
+  scp _tmp/index.html $USER@$HOST:$HOST/
+  scp web/{base,toil}.css $USER@$HOST:$HOST/web
 }
 
 decrypt-key() {
@@ -150,16 +173,19 @@ list-remote-results() {
 # Dummy that doesn't depend on results
 deploy-test-wwz() {
   set -x
-  local out_name="$(date +%Y-%m-%d__%H-%M-%S)__$(hostname)"
+  local out_name="$(date +%Y-%m-%d__%H-%M-%S)_test"
 
   local wwz=$out_name.wwz
 
   cat >index.html <<EOF
 <a href="build/oil-manifest.txt">build/oil-manifest.txt</a> <br/>
 <a href="build/opy-manifest.txt">build/opy-manifest.txt</a> <br/>
+<a href="env.txt">env.txt</a> <br/>
 EOF
 
-  zip $wwz index.html build/*.txt
+  env > env.txt
+
+  zip $wwz env.txt index.html build/*.txt
 
   scp-results $wwz
 }
@@ -170,15 +196,9 @@ format-wwz-index() {
   local job_id=$1
   local tsv=${2:-_tmp/toil/INDEX.tsv}
 
-  cat <<EOF
-<!DOCTYPE html>    
-<html>
-  <head>
-    <title>Toil Results</title>
-    <link rel="stylesheet" type="text/css" href="web/base.css" />
-    <link rel="stylesheet" type="text/css" href="web/toil.css" />
-  </head>
+  travis-html-head "$job_id results"
 
+  cat <<EOF
   <body class="width40">
     <p id="home-link">
       <a href="/">travis-ci.oilshell.org</a>
@@ -221,7 +241,6 @@ make-results-wwz() {
 
   # All the logs are here, see services/toil-worker.sh
   zip $wwz index.html web/{base,toil}.css _tmp/toil/*
-
 }
 
 deploy-results() {
@@ -229,10 +248,19 @@ deploy-results() {
 
   make-results-wwz $job_id
 
+  services/env_to_json.py \
+    TRAVIS_TIMER_START_TIME \
+    TRAVIS_JOB_BUILD_URL \
+    TRAVIS_JOB_WEB_URL \
+    TRAVIS_BRANCH \
+    TRAVIS_COMMIT \
+    TRAVIS_COMMIT_MESSAGE \
+    > $job_id.json
+
   # So we don't have to unzip it
   cp _tmp/toil/INDEX.tsv $job_id.tsv
 
-  # Copy all such files
+  # Copy wwz, tsv, json
   scp-results $job_id.*
 
   # TODO: git-log.txt, .json for hostname
@@ -241,15 +269,9 @@ deploy-results() {
 }
 
 format-jobs-index() {
-  cat <<EOF
-<!DOCTYPE html>    
-<html>
-  <head>
-    <title>Toil Results</title>
-    <link rel="stylesheet" type="text/css" href="base.css" />
-    <link rel="stylesheet" type="text/css" href="toil.css" />
-  </head>
+  travis-html-head 'dev-minimal jobs'
 
+  cat <<EOF
   <body class="width40">
     <p id="home-link">
       <a href="/">travis-ci.oilshell.org</a>
@@ -261,13 +283,18 @@ format-jobs-index() {
     <table>
       <thead>
         <tr>
-          <td>Job ID</td>
+          <td>Task</td>
+          <td>JSON</td>
+          <td>TSV</td>
         </tr>
       </thead>
 EOF
   while read wwz; do
+    local job_id=$(basename $wwz .wwz)
     echo '<tr>'
     echo "  <td><a href="$wwz/">$wwz</a></td>"
+    echo "  <td><a href="$job_id.json">JSON</a></td>"
+    echo "  <td><a href="$job_id.tsv">TSV</a></td>"
     echo '</tr>'
   done
 
@@ -292,7 +319,7 @@ rewrite-index() {
   log "copying index.html"
 
   # Duplicating CSS inside and OUTSIDE the .wwz files
-  scp-results _tmp/index.html web/{base,toil}.css
+  scp-results _tmp/index.html
 }
 
 publish-html() {
@@ -303,21 +330,24 @@ publish-html() {
   eval "$(ssh-agent -s)"
   ssh-add $privkey
 
-  #deploy-results
-  #rewrite-index
-  deploy-test-wwz
+  if false; then
+    deploy-results
+  else
+    deploy-test-wwz  # test
+  fi
+
+  rewrite-index
 }
 
 # TODO:
 #
-# - Share /web/*.css across all 3.  So it's always up to date and not cached.
-# - Use html_head.py everywhere -- this is in benchmarks/common.sh
 # - job index
+#   - print JSON fields: job URL, etc.
 #   - SUM up the times
 #   - SUM up the failures -- did it fail?
-#   - I guess do this with awk or something?
-# - show commit description and diffstats
-#   - you can embed this in the .wwz file
+#     - do this in Python
+#   - show commit description and diffstats
+#     - you can embed this in the .wwz file
 #
 # Later:
 # - spec test HTML
