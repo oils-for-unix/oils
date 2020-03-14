@@ -9,9 +9,13 @@
 language: minimal
 os: linux
 
-# This first section sets up building blocks used later to compose the actual
+env:
+    - TRAVIS_SKIP=''
+
+# This next section sets up building blocks used later to compose the actual
 # CI jobs. The &<identifier> syntax is an *anchor*. Later in the jobs section
 # these anchors will be referred to with the *<identifier> (alias) syntax.
+# Enable this to quickly test the deploy step at the end
 
 # This building block should take mostly platform-independent steps
 # necessary to perform dev-minimal in-tree build.
@@ -20,12 +24,12 @@ _minimal_in_tree: &minimal_in_tree
     - test/spec.sh link-busybox-ash
   install:
     - pip install --user flake8 typing
-    # mypy requires Python 3
+    # MyPy requires Python 3, but Oil requires Python 2.
     - pip3 install --user mypy
     # hack for cmark
     - build/dev.sh minimal
   script:
-    - ./test.sh
+    - services/toil-worker.sh run-dev-minimal
 
 # This building block does most of the work for all nix-based builds
 # additional building blocks just add/modify this template.
@@ -45,7 +49,7 @@ _nix_build: &nix_build
   env: NIX_BUILD_TYPE='nix-build'
 
 _nix_shell: &nix_shell
-  env: NIX_BUILD_TYPE="nix-shell --pure --run ./test.sh"
+  env: NIX_BUILD_TYPE="nix-shell --pure --run 'services/toil-worker.sh run-dev-minimal'"
 
 jobs:
   include:
@@ -116,14 +120,16 @@ notifications:
 
 # from https://docs.travis-ci.com/user/deployment/script/
 deploy:
-    # deploy develop to the staging environment
+    # https://docs.travis-ci.com/user/deployment#uploading-files-and-skip_cleanup
+    # otherwise we can't zip up _tmp/toil, etc.
     - provider: script
+      skip_cleanup: true
       script: services/travis.sh publish-html
       on:
           branch: master
-          #branch: dev/andy-21
-
-env:
-  global:
-    # Enable this to quickly test the deploy step at the end
-    - TRAVIS_SKIP=''
+    # duplicate block for testing on dev/andy-21
+    - provider: script
+      skip_cleanup: true
+      script: services/travis.sh publish-html
+      on:
+          branch: dev/andy-21

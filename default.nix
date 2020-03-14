@@ -86,7 +86,7 @@ in pkgs.python27Packages.buildPythonPackage rec {
   '';
 
   checkPhase = ''
-    ./test.sh
+    services/toil-worker.sh run-dev-minimal
   '';
 
   prePatch = ''
