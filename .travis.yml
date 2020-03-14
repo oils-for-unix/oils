@@ -32,26 +32,13 @@ _minimal_in_tree: &minimal_in_tree
 _nix_full: &nix_full
   language: nix
 
-  install:
-    # cachix is a Nix build-cache; reduces run time
-    - nix-env -iA cachix -f https://cachix.org/api/v1/install
-    - cachix use abathur
-
   script:
-    - if [ -n "$CACHIX_SIGNING_KEY" ]; then cachix push abathur --watch-store; fi &
     - echo build command = $NIX_BUILD_TYPE
     - $NIX_BUILD_TYPE
-    - sleep 10 # to allow cachix finish uploading
 
 # This building block adds some macos-specific setup to support nix builds.
-# At the moment, this is limited to supporting cachix.
 _nix_macos: &nix_macos
   os: osx
-  before_install:
-    # macOS needs this to run 'cachix use <user>'
-    - sudo mkdir -p /etc/nix
-    - echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf
-    - sudo launchctl kickstart -k system/org.nixos.nix-daemon || true
 
 # The next two building blocks specify which build command Nix should use.
 _nix_build: &nix_build
@@ -140,5 +127,3 @@ env:
   global:
     # Enable this to quickly test the deploy step at the end
     - TRAVIS_SKIP=''
-    # token for cachix
-    - secure: "tzg0cVSgJ5KzNbC2Ne9zvSTjnIe+dvc/Re3QA/7xXfH0cukSigmUQySEwAeEUw37Q3n8Z5Z1AdLnQcN13IMFCNL0azL5OGRU4tyF6FOoUIrPe9GEYfQKfQ+US3pAr4BcaOR6To+redAxVOL+CjpB8LRkZcoR2PFMIPEBxhq2R/RrCU3eAeWP1mFXkvmB+gR77iFrLAKVW3elY3Jo77Kv8EbpD6d1CIsc1aboKHXt4kYRLUSLZcCpei49VLGp7h9oZ9nMc0A2wBnpbE8uO/Mlt9o/PTA0REAt3ecWuhhJDKL0qLfU8frhhWSwY4SukpPibs/u/FGyFPZLHxx44WLYbnfkRb+vrHS87lipBhHECSRhAJbKjAEDnHhscN9qOyI5j0P21qG+NQGIUOmtbSBm9/GOatrI9dEukrXgwSay0qw9kt/DovAxvWM0TKDp9ULRHj+5kMIGtF/XMeIPhcssC1c7Odq2suCDBOnKtj+swzb018NYuM2XHBcm7ljR/GRm0CDtKYecy50w0Qgo5y2hkF+vNMoMXPVIQVktuqhWWfln8ZAy5bVPGJtTpKfVQiGaDJxCPevfoMHR4i8Zb+BwXn0q+hsf0++iamQPrNuFaWWct2JuTRAbhzP03I0XOsAcIh7QQUvLMiQdkNdlJnCOI6PBTJ87KTu+yWctLuFtseQ="
