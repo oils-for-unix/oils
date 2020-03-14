@@ -231,7 +231,7 @@ EOF
 EOF
 }
 
-make-results-wwz() {
+make-job-wwz() {
   local job_id=${1:-test-job}
 
   local wwz=$job_id.wwz
@@ -243,14 +243,14 @@ make-results-wwz() {
   zip $wwz index.html web/{base,toil}.css _tmp/toil/*
 }
 
-deploy-results() {
+deploy-job-results() {
   local job_id="$(date +%Y-%m-%d__%H-%M-%S)"
 
-  make-results-wwz $job_id
+  make-job-wwz $job_id
 
   services/env_to_json.py \
     TRAVIS_TIMER_START_TIME \
-    TRAVIS_JOB_BUILD_URL \
+    TRAVIS_BUILD_WEB_URL \
     TRAVIS_JOB_WEB_URL \
     TRAVIS_BRANCH \
     TRAVIS_COMMIT \
@@ -262,6 +262,11 @@ deploy-results() {
 
   # Copy wwz, tsv, json
   scp-results $job_id.*
+
+  log ''
+  log "http://travis-ci.oilshell.org/dev-minimal/"
+  log "http://travis-ci.oilshell.org/dev-minimal/$job_id.wwz/"
+  log ''
 
   # TODO: git-log.txt, .json for hostname
   # - $job_id.git-log.txt: commit, branch, commit date, author?
@@ -312,7 +317,7 @@ EOF
 EOF
 }
 
-rewrite-index() {
+rewrite-job-index() {
   ### Rewrite travis-ci.oilshell.org/results/index.html
   
   # TODO: replace with toil_web.py?
@@ -321,7 +326,11 @@ rewrite-index() {
   list-remote-results > _tmp/listing.txt
   ls -l _tmp/listing.txt
 
-  egrep 'wwz$' _tmp/listing.txt | format-jobs-index > _tmp/index.html
+  # Pass all .wwz files in reverse order.
+  egrep 'wwz$' _tmp/listing.txt \
+    | sort --reverse \
+    | format-jobs-index \
+    > _tmp/index.html
 
   log "copying index.html"
 
@@ -337,13 +346,13 @@ publish-html() {
   eval "$(ssh-agent -s)"
   ssh-add $privkey
 
-  if false; then
-    deploy-results
+  if true; then
+    deploy-job-results
   else
-    deploy-test-wwz  # test
+    deploy-test-wwz  # dummy data that doesn't depend on the build
   fi
 
-  rewrite-index
+  rewrite-job-index
 }
 
 # TODO:
