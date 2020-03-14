@@ -1,18 +1,31 @@
-# https://docs.travis-ci.com/user/reference/xenial/#python-support
-# It says Xenial has Python 2.7, 3.6, and 3.7 (?)
-# We're not using language: python because that creates a virtualenv, which is
-# specific to a Python version.  MyPy needs both in the same environment.
+# Parallel Travis jobs for Oil.  We delegate most logic to
+# services/toil-worker.sh.
 
-dist: xenial
-cache: pip
+jobs:
+  include:
+    # Job for testing
+    - name: dummy
+      # Travis's default is Ruby, but we don't need it.
+      language: minimal
+      script: sh -c 'echo hello from dummy'
 
-# Enable this to quickly test the deploy step at the end
-env:
-    - TRAVIS_SKIP=1
+    # Low-dependency developer build.  Spec tests broken because we don't have
+    # exact versions of shells.
+    - name: dev-minimal
+      # https://docs.travis-ci.com/user/reference/xenial/#python-support
+      # It says Xenial has Python 2.7, 3.6, and 3.7 (?)
+      # We're not using language: python because that creates a virtualenv, which is
+      # specific to a Python version.  MyPy needs both in the same environment.
+      dist: xenial
+      cache: pip
 
-addons:
-    apt:
-        packages:
+      # Enable this to quickly test the deploy step at the end
+      env:
+        - TRAVIS_SKIP=1
+
+      addons:
+        apt:
+          packages:
             # build/dev.sh ubuntu-deps
             - python-dev
             - gawk
@@ -27,32 +40,32 @@ addons:
             - python-pip
             - python3-pip
 
-install:
-    - pip install --user flake8 typing
-    # MyPy requires Python 3, but Oil requires Python 2.
-    - pip3 install --user mypy
-    # After this symlink is made, build/dev-shell.sh will modify $PATH to include it
-    - test/spec.sh link-busybox-ash
+      install:
+        - pip install --user flake8 typing
+        # MyPy requires Python 3, but Oil requires Python 2.
+        - pip3 install --user mypy
+        # After this symlink is made, build/dev-shell.sh will modify $PATH to include it
+        - test/spec.sh link-busybox-ash
 
-script:
-    - services/toil-worker.sh run-dev-minimal
+      script:
+        - services/toil-worker.sh run-dev-minimal
 
-notifications:
-    on_success: change
-    on_failure: change  # `always` will be the setting once code changes slow down
+      notifications:
+        on_success: change
+        on_failure: change  # `always` will be the setting once code changes slow down
 
-# from https://docs.travis-ci.com/user/deployment/script/
-deploy:
-    # https://docs.travis-ci.com/user/deployment#uploading-files-and-skip_cleanup
-    # otherwise we can't zip up _tmp/toil, etc.
-    - provider: script
-      skip_cleanup: true
-      script: services/travis.sh publish-html
-      on:
-          branch: master
-    # duplicate block for testing on dev/andy-21
-    - provider: script
-      skip_cleanup: true
-      script: services/travis.sh publish-html
-      on:
-          branch: dev/andy-21
+      # from https://docs.travis-ci.com/user/deployment/script/
+      deploy:
+        # https://docs.travis-ci.com/user/deployment#uploading-files-and-skip_cleanup
+        # otherwise we can't zip up _tmp/toil, etc.
+        - provider: script
+          skip_cleanup: true
+          script: services/travis.sh publish-html
+          on:
+            branch: master
+        # duplicate block for testing on dev/andy-21
+        - provider: script
+          skip_cleanup: true
+          script: services/travis.sh publish-html
+          on:
+            branch: dev/andy-21
