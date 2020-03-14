@@ -11,12 +11,18 @@
 # test/spec-bin.sh builds binaries
 readonly SPEC_DIR="$PWD/_tmp/spec-bin"
 
+# FALLBACK without test/spec-bin: test/spec.sh link-busybox-ash
+readonly ASH_SYMLINK_DIR="$PWD/_tmp/shells"
+
 # build/codegen.sh builds binaries
 readonly RE2C_DIR="$PWD/_deps/re2c-1.0.3"
 
 if test -d $SPEC_DIR; then
   export PATH="$SPEC_DIR:$PATH"
-  #echo $PATH
+fi
+
+if test -d $ASH_SYMLINK_DIR; then
+  export PATH="$ASH_SYMLINK_DIR:$PATH"
 fi
 
 if test -d $RE2C_DIR; then

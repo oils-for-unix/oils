@@ -72,7 +72,8 @@ def main(argv):
     with open(opts.output, mode) as f:
       if opts.tsv:
         # TSV output.
-        out = csv.writer(f, delimiter='\t', doublequote=False,
+        out = csv.writer(f, delimiter='\t', lineterminator='\n',
+                         doublequote=False,
                          quoting=csv.QUOTE_NONE)
       else:
         out = csv.writer(f)

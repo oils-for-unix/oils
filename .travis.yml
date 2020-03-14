@@ -8,7 +8,7 @@ cache: pip
 
 # Enable this to quickly test the deploy step at the end
 env:
-    - TRAVIS_SKIP=''
+    - TRAVIS_SKIP=1
 
 addons:
     apt:
@@ -27,15 +27,12 @@ addons:
             - python-pip
             - python3-pip
 
-before_install:
-    - test/spec.sh link-busybox-ash
-
 install:
     - pip install --user flake8 typing
     # MyPy requires Python 3, but Oil requires Python 2.
     - pip3 install --user mypy
-    # hack for cmark
-    - build/dev.sh minimal
+    # After this symlink is made, build/dev-shell.sh will modify $PATH to include it
+    - test/spec.sh link-busybox-ash
 
 script:
     - services/toil-worker.sh run-dev-minimal

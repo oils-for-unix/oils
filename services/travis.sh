@@ -213,14 +213,25 @@ format-wwz-index() {
           <td>Status</td>
           <td>Elapsed</td>
           <td>Task Log</td>
+          <td>Results</td>
         </tr>
       </thead>
 EOF
-  cat $tsv | while read status elapsed task _; do
+  cat $tsv | while read status elapsed task script action result_html; do
     echo "<tr>"
     echo "  <td>$status</td>"
     echo "  <td>$elapsed</td>"
     echo "  <td><a href="_tmp/toil/$task.log.txt">$task</a></td>"
+
+    case $result_html in
+      (-)
+        echo "  <td>-</td>"
+        ;;
+      (*)
+        echo "  <td><a href=$result_html>Results</a></td>"
+        ;;
+    esac
+
     echo "</tr>"
     echo
   done
@@ -239,8 +250,10 @@ make-job-wwz() {
   local index=_tmp/toil/INDEX.tsv 
   format-wwz-index $job_id $index > index.html
 
-  # All the logs are here, see services/toil-worker.sh
-  zip $wwz index.html web/{base,toil}.css _tmp/toil/*
+  # _tmp/toil: Logs are in _tmp, see services/toil-worker.sh
+  # web/ : spec test HTML references this.
+  #        Note that that index references /web/{base,toil}.css, outside the .wwz
+  zip -r $wwz index.html _tmp/toil _tmp/spec web/{base,spec-tests}.css
 }
 
 deploy-job-results() {

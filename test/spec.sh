@@ -78,11 +78,22 @@ install-shells() {
   link-busybox-ash
 }
 
-# TODO: Maybe do this before running all tests.
-check-shells() {
-  for sh in "${REF_SHELLS[@]}" $ZSH $OSH_LIST; do
-    test -e $sh || { echo "ERROR: $sh does not exist"; break; }
-    test -x $sh || { echo "ERROR: $sh isn't executable"; break; }
+check-shells-exist() {
+  # We need these shells to run OSH spec tests.
+
+  echo "PWD = $PWD"
+  echo "PATH = $PATH"
+  ls -l _tmp/shells || true
+
+  /bin/busybox ash -c 'echo "hello from /bin/busybox"'
+
+  for sh in "${REF_SHELLS[@]}" $ZSH $BUSYBOX_ASH $OSH_LIST; do
+
+    # note: shells are in $PATH, but not $OSH_LIST
+    if ! $sh -c 'echo -n "hello from $0: "; command -v $0 || true'; then 
+      echo "ERROR: $sh does not exist"
+      return 1
+    fi
   done
 }
 
@@ -211,11 +222,16 @@ osh-all-serial() {
   MAX_PROCS=1 $0 osh-all "$@"
 }
 
+osh-travis() {
+  check-shells-exist  # e.g. depends on link-busybox-ash
+  osh-all-serial
+}
+
 oil-all-serial() {
   MAX_PROCS=1 $0 oil-all "$@"
 }
 
-# Usgae: test/spec.sh dbg smoke, dbg-all
+# Usage: test/spec.sh dbg smoke, dbg-all
 dbg() {
   OSH_LIST='_bin/osh-dbg' $0 "$@"
 }
