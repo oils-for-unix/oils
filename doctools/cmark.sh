@@ -7,21 +7,22 @@
 #   doctools/cmark.sh download
 #   doctools/cmark.sh extract
 #   doctools/cmark.sh build
-#   doctools/cmark.sh run-tests (also installs it)
+#   doctools/cmark.sh make-symlink
 #   doctools/cmark.sh demo-ours  # smoke test
 
 set -o nounset
 set -o pipefail
 set -o errexit
 
-readonly URL='https://github.com/commonmark/cmark/archive/0.29.0.tar.gz'
+readonly CMARK_VERSION=0.29.0
+readonly URL="https://github.com/commonmark/cmark/archive/$CMARK_VERSION.tar.gz"
 
 download() {
   mkdir -p _deps
   wget --no-clobber --directory _deps $URL
 }
 
-readonly CMARK_DIR=_deps/cmark-0.29.0
+readonly CMARK_DIR=_deps/cmark-$CMARK_VERSION
 
 extract() {
   pushd _deps
@@ -33,16 +34,23 @@ build() {
   pushd $CMARK_DIR
   # GNU make calls cmake?
   make
+  make test
   popd
 
   # Binaries are in build/src
 }
 
-run-tests() {
-  pushd $CMARK_DIR
-  make test
-  sudo make install
-  popd
+make-symlink() {
+  #sudo make install
+  ln -s -f -v cmark-$CMARK_VERSION/build/src/libcmark.so _deps/
+  ls -l _deps/libcmark.so
+}
+
+travis-setup() {
+  download
+  extract
+  build
+  make-symlink
 }
 
 demo-theirs() {

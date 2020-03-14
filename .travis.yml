@@ -1,6 +1,23 @@
 # Parallel Travis jobs for Oil.  We delegate most logic to
 # services/toil-worker.sh.
 
+# Every job uses this deploy step.
+_publish_html: &publish_html
+  deploy:
+    # https://docs.travis-ci.com/user/deployment#uploading-files-and-skip_cleanup
+    # otherwise we can't zip up _tmp/toil, etc.
+    - provider: script
+      skip_cleanup: true
+      script: services/travis.sh publish-html
+      on:
+        branch: master
+    # duplicate block for testing on dev/andy-21
+    - provider: script
+      skip_cleanup: true
+      script: services/travis.sh publish-html
+      on:
+        branch: dev/andy-21
+
 jobs:
   include:
     # Job for testing
@@ -9,40 +26,35 @@ jobs:
       language: minimal
       script: services/toil-worker.sh run-dummy
 
-      deploy:
-        # https://docs.travis-ci.com/user/deployment#uploading-files-and-skip_cleanup
-        # otherwise we can't zip up _tmp/toil, etc.
-        - provider: script
-          skip_cleanup: true
-          script: services/travis.sh publish-html
-          on:
-            branch: master
-        # duplicate block for testing on dev/andy-21
-        - provider: script
-          skip_cleanup: true
-          script: services/travis.sh publish-html
-          on:
-            branch: dev/andy-21
+      <<: *publish_html
 
+    # Make a tarball to build oil.ovm.
+    - name: ovm-tarball
+      # Travis's default is Ruby, but we don't need it.
+      language: minimal
+      cache:
+        directories:
+          - _devbuild/cpython-full  # Python-2.x/ in the repo doesn't change much
+          - _deps/                  # re2c doesn't change much
+
+      script: services/toil-worker.sh run-ovm-tarball
+
+      # One step is build/dev.sh all.  Do we really need that?
+      # TODO: Fix cmark.
+      addons:
+        apt:
+          packages:
+            - python-dev
+
+      <<: *publish_html
+
+    # Developer build that can run all spec tests.
     - name: dev-all-nix
       # Travis's default is Ruby, but we don't need it.
       language: nix
       script: services/toil-worker.sh run-dev-all-nix
 
-      deploy:
-        # https://docs.travis-ci.com/user/deployment#uploading-files-and-skip_cleanup
-        # otherwise we can't zip up _tmp/toil, etc.
-        - provider: script
-          skip_cleanup: true
-          script: services/travis.sh publish-html
-          on:
-            branch: master
-        # duplicate block for testing on dev/andy-21
-        - provider: script
-          skip_cleanup: true
-          script: services/travis.sh publish-html
-          on:
-            branch: dev/andy-21
+      <<: *publish_html
 
     # Low-dependency developer build.  Spec tests broken because we don't have
     # exact versions of shells.
@@ -52,7 +64,9 @@ jobs:
       # We're not using language: python because that creates a virtualenv, which is
       # specific to a Python version.  MyPy needs both in the same environment.
       dist: xenial
-      cache: pip
+      cache:
+      - apt
+      - pip
 
       # Enable this to quickly test the deploy step at the end
       env:
@@ -88,18 +102,4 @@ jobs:
         on_success: change
         on_failure: change  # `always` will be the setting once code changes slow down
 
-      # from https://docs.travis-ci.com/user/deployment/script/
-      deploy:
-        # https://docs.travis-ci.com/user/deployment#uploading-files-and-skip_cleanup
-        # otherwise we can't zip up _tmp/toil, etc.
-        - provider: script
-          skip_cleanup: true
-          script: services/travis.sh publish-html
-          on:
-            branch: master
-        # duplicate block for testing on dev/andy-21
-        - provider: script
-          skip_cleanup: true
-          script: services/travis.sh publish-html
-          on:
-            branch: dev/andy-21
+      <<: *publish_html

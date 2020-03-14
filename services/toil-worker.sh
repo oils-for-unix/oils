@@ -62,6 +62,29 @@ osh-spec        test/spec.sh osh-travis     _tmp/spec/osh.html
 EOF
 }
 
+
+# https://github.com/oilshell/oil/wiki/Contributing
+
+ovm-tarball-tasks() {
+  ### Print tasks for the 'ovm-tarball' build
+
+  # (task_name, script, action, result_html)
+  cat <<EOF
+cpython-configure build/prepare.sh configure             -
+cpython-build     build/prepare.sh build-python          -
+download-re2c     build/codegen.sh download-re2c         -
+install-re2c      build/codegen.sh install-re2c          -
+install-cmark     doctools/cmark.sh travis-setup         -
+build-all         build/dev.sh all                       -
+make-tarball      devtools/release.sh quick-oil-tarball  -
+build-tarball     build/test.sh oil-tar                  -
+EOF
+
+  # TODO: cache 
+  # -_devbuild/cpython-full  # rarely changes
+  # -_deps/                  # re2c rarely changes
+}
+
 run-tasks() {
   ### Run the tasks on stdin and write _tmp/toil/INDEX.tsv.
 
@@ -133,6 +156,10 @@ _run-dev-all-nix() {
 
   test/spec.sh osh-travis
 
+}
+
+run-ovm-tarball() {
+  ovm-tarball-tasks | run-tasks
 }
 
 run-dev-all-nix() {
