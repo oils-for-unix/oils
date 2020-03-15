@@ -1,9 +1,17 @@
-#!/usr/bin/env bash
+# builtin-eval-source.test.sh
 
 #### Eval
 eval "a=3"
 echo $a
 ## stdout: 3
+
+#### eval accepts/ignores --
+eval -- echo hi
+## STDOUT:
+hi
+## END
+## BUG dash status: 127
+## BUG dash stdout-json: ""
 
 #### Source
 lib=$TMP/spec-test-lib.sh

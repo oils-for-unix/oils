@@ -1,9 +1,17 @@
-#!/bin/bash
+# builtin-trap.test.sh
 
 #### trap -l
 trap -l | grep INT >/dev/null
 ## status: 0
 ## N-I dash/mksh status: 1
+
+#### trap accepts/ignores --
+trap -- 'echo hi' EXIT
+echo done
+## STDOUT:
+done
+hi
+## END
 
 #### trap 'echo hi' KILL (regression test, caught by smoosh suite)
 trap 'echo hi' 9
