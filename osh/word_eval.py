@@ -60,7 +60,8 @@ if TYPE_CHECKING:
 
 
 # For compatibility, ${BASH_SOURCE} and ${BASH_SOURCE[@]} are both valid.
-_STRING_AND_ARRAY = 'BASH_SOURCE'
+# ${FUNCNAME} and ${BASH_LINENO} are also the same type of of special variables.
+_STRING_AND_ARRAY = ('BASH_SOURCE', 'FUNCNAME', 'BASH_LINENO')
 
 
 def EvalSingleQuoted(part):
@@ -907,7 +908,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     else:  # no bracket op
       # When the array is "$@", var_name is None
       if var_name and val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray):
-        if var_name == _STRING_AND_ARRAY:
+        if var_name in _STRING_AND_ARRAY:
           bash_array_compat = True
         else:
           e_die("Array %r can't be referred to as a scalar (without @ or *)",
@@ -1146,7 +1147,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       # TODO: Special case for LINENO
       val = self.mem.GetVar(var_name)
       if val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray):
-        if var_name == _STRING_AND_ARRAY:
+        if var_name in _STRING_AND_ARRAY:
           bash_array_compat = True
         else:
           e_die("Array %r can't be referred to as a scalar (without @ or *)",
