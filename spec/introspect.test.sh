@@ -57,27 +57,48 @@ echo -----
 
 argv.py "${FUNCNAME[@]}"
 
+# Show bash inconsistency.  FUNCNAME doesn't behave like a normal array.
+case $SH in 
+  (bash)
+    echo -----
+    a=('A')
+    argv.py '  @' "${a[@]}"
+    argv.py '  0' "${a[0]}"
+    argv.py '${}' "${a}"
+    argv.py '  $' "$a"
+    ;;
+esac
+
 ## STDOUT:
-['source', 'f', 'g']
-['source']
-['source']
+['  @', 'source', 'f', 'g']
+['  0', 'source']
+['${}', 'source']
+['  $', 'source']
 -----
-['source']
-['source']
-['source']
+['  @', 'source']
+['  0', 'source']
+['${}', 'source']
+['  $', 'source']
 -----
 []
 ## END
 ## BUG bash STDOUT:
-['source', 'f', 'g']
-['source']
-['source']
+['  @', 'source', 'f', 'g']
+['  0', 'source']
+['${}', 'source']
+['  $', 'source']
 -----
-['source']
-['']
-['']
+['  @', 'source']
+['  0', 'source']
+['${}', '']
+['  $', '']
 -----
 []
+-----
+['  @', 'A']
+['  0', 'A']
+['${}', 'A']
+['  $', 'A']
 ## END
 
 
