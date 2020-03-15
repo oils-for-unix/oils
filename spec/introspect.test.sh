@@ -41,34 +41,58 @@ f
 ['f']
 ## END
 
-#### FUNCNAME with source
+#### FUNCNAME with source (scalar or array)
 f() {
   . spec/testdata/echo-funcname.sh
 }
 g() {
   f
 }
+
 g
+echo -----
+
 . spec/testdata/echo-funcname.sh
+echo -----
+
 argv.py "${FUNCNAME[@]}"
+
 ## STDOUT:
 ['source', 'f', 'g']
 ['source']
+['source']
+-----
+['source']
+['source']
+['source']
+-----
+[]
+## END
+## BUG bash STDOUT:
+['source', 'f', 'g']
+['source']
+['source']
+-----
+['source']
+['']
+['']
+-----
 []
 ## END
 
 
-#### ${BASH_SOURCE}, etc. usable as a string (e.g. for virtualenv)
+#### BASH_SOURCE and BASH_LINENO scalar or array (e.g. for virtualenv)
 
 # https://github.com/pypa/virtualenv/blob/master/virtualenv_embedded/activate.sh
 # https://github.com/akinomyoga/ble.sh/blob/6f6c2e5/ble.pp#L374
 
-argv.py "$BASH_SOURCE"  # SimpleVarSUb
+argv.py "$BASH_SOURCE"  # SimpleVarSub
 argv.py "${BASH_SOURCE}"  # BracedVarSub
-argv.py "$BASH_LINENO"  # SimpleVarSUb
+argv.py "$BASH_LINENO"  # SimpleVarSub
 argv.py "${BASH_LINENO}"  # BracedVarSub
-argv.py "$FUNCNAME"  # SimpleVarSUb
+argv.py "$FUNCNAME"  # SimpleVarSub
 argv.py "${FUNCNAME}"  # BracedVarSub
+echo __
 source spec/testdata/bash-source-string.sh
 
 ## STDOUT:
@@ -78,18 +102,16 @@ source spec/testdata/bash-source-string.sh
 ['']
 ['']
 ['']
+__
 ['spec/testdata/bash-source-string.sh']
 ['spec/testdata/bash-source-string.sh']
-['7']
-['7']
-['source']
-['source']
+['8']
+['8']
+____
 ['spec/testdata/bash-source-string2.sh']
 ['spec/testdata/bash-source-string2.sh']
 ['11']
 ['11']
-['source']
-['source']
 ## END
 
 #### ${BASH_SOURCE[@]} with source and function name

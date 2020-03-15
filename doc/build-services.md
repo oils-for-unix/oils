@@ -37,3 +37,13 @@ Listening to `oilshell/tarballs`:
 All of these build both oil.ovm and oil-native.  Need maintainers.  We build
 them as a "start".
 
+## Code
+
+- `services/toil-worker.sh` runs on each build service node.  For each job, it
+  publishes a few files to `travis-ci.oilshell.org`:
+  - JSON metadata about the commit and build environment
+  - TSV metadata for each "toil" step
+  - A `.wwz` file (servable zip file) of logs
+- `services/toil_web.py` runs on `travis-ci.oilshell.org` and reads the
+  metadata from every job to construct an `index.html`.
+

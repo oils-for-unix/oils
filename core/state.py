@@ -559,7 +559,7 @@ class DebugFrame(object):
 
     # ONE of these is set.  func_name for 'myproc a b', and source_name for
     # 'source lib.sh'
-    self.func_name = func_name  #
+    self.func_name = func_name
     self.source_name = source_name
 
     self.call_spid = call_spid 
@@ -688,9 +688,6 @@ class Mem(object):
 
     self.current_spid = runtime.NO_SPID
 
-    # Note: we're reusing these objects because they change on every single
-    # line!  Don't want to allocate more than necsesary.
-    self.source_name = value.Str('')
     self.line_num = value.Str('')
 
     self.last_status = [0]  # type: List[int]  # a stack
@@ -1324,7 +1321,7 @@ class Mem(object):
         if frame.func_name:
           strs.append(frame.func_name)
         if frame.source_name:
-          strs.append('source')  # bash doesn't give name
+          strs.append('source')  # bash doesn't tell you the filename.
         # Temp stacks are ignored
       return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
 
