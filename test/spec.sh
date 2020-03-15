@@ -539,9 +539,9 @@ var-op-patsub() {
     $BASH $MKSH $ZSH $OSH_LIST "$@"
 }
 
-var-op-other() {
+var-op-slice() {
   # dash doesn't support any of these operations
-  sh-spec spec/var-op-other.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/var-op-slice.test.sh --osh-failures-allowed 0 \
     $BASH $MKSH $ZSH $OSH_LIST "$@"
 }
 
