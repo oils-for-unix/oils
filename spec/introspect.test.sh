@@ -42,6 +42,10 @@ f
 ## END
 
 #### FUNCNAME with source (scalar or array)
+
+# Comments on bash quirk:
+# https://github.com/oilshell/oil/pull/656#issuecomment-599162211
+
 f() {
   . spec/testdata/echo-funcname.sh
 }
