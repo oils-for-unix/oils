@@ -50,7 +50,6 @@ jobs:
 
     # Developer build that can run all spec tests.
     - name: dev-all-nix
-      # Travis's default is Ruby, but we don't need it.
       language: nix
       script: services/toil-worker.sh run-dev-all-nix
 
@@ -64,6 +63,7 @@ jobs:
       # We're not using language: python because that creates a virtualenv, which is
       # specific to a Python version.  MyPy needs both in the same environment.
       dist: xenial
+      language: minimal
       cache:
       - apt
       - pip
