@@ -391,7 +391,7 @@ write-jobs-raw() {
 
   # Pass all .wwz files in reverse order.
   # Empty list is OK.
-  egrep 'wwz$' _tmp/listing.txt || true \
+  { egrep 'wwz$' _tmp/listing.txt || true; } \
     | sort --reverse \
     | format-jobs-index \
     > _tmp/raw.html
