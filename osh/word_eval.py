@@ -201,6 +201,7 @@ def _PerformSlice(val,  # type: value_t
                   length,  # type: int
                   has_length,  # type: bool
                   part,  # type: braced_var_sub
+                  arg0_val, # type: value_t
                   ):
   # type: (...) -> value_t
   UP_val = val
@@ -244,8 +245,17 @@ def _PerformSlice(val,  # type: value_t
         e_die("The length index of a array slice can't be negative: %d",
               length, part=part)
 
-      # NOTE: unset elements don't count towards the length.
       strs = []  # type: List[str]
+
+      # NOTE: "begin" for positional arguments ($@ and $*) counts $0.
+      if arg0_val is not None:
+        if begin == 0:
+          if not has_length or length > 0:
+            strs.append(arg0_val.s)
+        elif begin > 0:
+          begin -= 1
+
+      # NOTE: unset elements don't count towards the length.
       for s in val.strs[begin:]:
         if s is not None:
           strs.append(s)
@@ -1066,7 +1076,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
             length = self.arith_ev.EvalToInt(op.length)
 
           try:
-            val = _PerformSlice(val, begin, length, has_length, part)
+            arg0_val = None
+            if var_name is None: # $* or $@
+               arg0_val = self.mem.GetArgNum(0)
+            val = _PerformSlice(val, begin, length, has_length, part, arg0_val)
           except error.Strict as e:
             if self.exec_opts.strict_word_eval():
               raise
