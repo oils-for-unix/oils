@@ -914,6 +914,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           e_die("Array %r can't be referred to as a scalar (without @ or *)",
                 var_name, part=part)
 
+    suffix_processed = False
     if part.prefix_op:
       val = self._EmptyStrOrError(val)  # maybe error
 
@@ -928,7 +929,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         # "${!prefix@}" is the only one that doesn't decay
         maybe_decay_array = not (quoted and suffix_op.op_id == Id.VOp3_At)
 
-        part.suffix_op = None  # don't process it later
+        suffix_processed = True
       else:
         # could be
         # - ${!ref-default}
@@ -939,7 +940,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         # NOTE: The length operator followed by a suffix operator is a SYNTAX
         # error.
 
-    if part.suffix_op:
+    if part.suffix_op and not suffix_processed:
       op = part.suffix_op
       UP_op = op
       with tagswitch(op) as case:
