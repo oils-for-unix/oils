@@ -55,6 +55,106 @@ fun() { argv.py "-$@-"; }
 fun "a 1" "b 2" "c 3"
 ## stdout: ['-a 1', 'b 2', 'c 3-']
 
+#### ${@:offset} and ${*:offset}
+argv.shell-name-checked () {
+  argv.py "${@//$0/SHELL}"
+}
+fun() {
+  argv.shell-name-checked -${*:0}- # include $0
+  argv.shell-name-checked -${*:1}- # from $1
+  argv.shell-name-checked -${*:3}- # last parameter $3
+  argv.shell-name-checked -${*:4}- # empty
+  argv.shell-name-checked -${*:5}- # out of boundary
+  argv.shell-name-checked -${@:0}-
+  argv.shell-name-checked -${@:1}-
+  argv.shell-name-checked -${@:3}-
+  argv.shell-name-checked -${@:4}-
+  argv.shell-name-checked -${@:5}-
+  argv.shell-name-checked "-${*:0}-"
+  argv.shell-name-checked "-${*:1}-"
+  argv.shell-name-checked "-${*:3}-"
+  argv.shell-name-checked "-${*:4}-"
+  argv.shell-name-checked "-${*:5}-"
+  argv.shell-name-checked "-${@:0}-"
+  argv.shell-name-checked "-${@:1}-"
+  argv.shell-name-checked "-${@:3}-"
+  argv.shell-name-checked "-${@:4}-"
+  argv.shell-name-checked "-${@:5}-"
+}
+fun "a 1" "b 2" "c 3"
+## STDOUT:
+['-SHELL', 'a', '1', 'b', '2', 'c', '3-']
+['-a', '1', 'b', '2', 'c', '3-']
+['-c', '3-']
+['--']
+['--']
+['-SHELL', 'a', '1', 'b', '2', 'c', '3-']
+['-a', '1', 'b', '2', 'c', '3-']
+['-c', '3-']
+['--']
+['--']
+['-SHELL a 1 b 2 c 3-']
+['-a 1 b 2 c 3-']
+['-c 3-']
+['--']
+['--']
+['-SHELL', 'a 1', 'b 2', 'c 3-']
+['-a 1', 'b 2', 'c 3-']
+['-c 3-']
+['--']
+['--']
+## END
+
+#### ${@:offset:length} and ${*:offset:length}
+argv.shell-name-checked () {
+  argv.py "${@//$0/SHELL}"
+}
+fun() {
+  argv.shell-name-checked -${*:0:2}- # include $0
+  argv.shell-name-checked -${*:1:2}- # from $1
+  argv.shell-name-checked -${*:3:2}- # last parameter $3
+  argv.shell-name-checked -${*:4:2}- # empty
+  argv.shell-name-checked -${*:5:2}- # out of boundary
+  argv.shell-name-checked -${@:0:2}-
+  argv.shell-name-checked -${@:1:2}-
+  argv.shell-name-checked -${@:3:2}-
+  argv.shell-name-checked -${@:4:2}-
+  argv.shell-name-checked -${@:5:2}-
+  argv.shell-name-checked "-${*:0:2}-"
+  argv.shell-name-checked "-${*:1:2}-"
+  argv.shell-name-checked "-${*:3:2}-"
+  argv.shell-name-checked "-${*:4:2}-"
+  argv.shell-name-checked "-${*:5:2}-"
+  argv.shell-name-checked "-${@:0:2}-"
+  argv.shell-name-checked "-${@:1:2}-"
+  argv.shell-name-checked "-${@:3:2}-"
+  argv.shell-name-checked "-${@:4:2}-"
+  argv.shell-name-checked "-${@:5:2}-"
+}
+fun "a 1" "b 2" "c 3"
+## STDOUT:
+['-SHELL', 'a', '1-']
+['-a', '1', 'b', '2-']
+['-c', '3-']
+['--']
+['--']
+['-SHELL', 'a', '1-']
+['-a', '1', 'b', '2-']
+['-c', '3-']
+['--']
+['--']
+['-SHELL a 1-']
+['-a 1 b 2-']
+['-c 3-']
+['--']
+['--']
+['-SHELL', 'a 1-']
+['-a 1', 'b 2-']
+['-c 3-']
+['--']
+['--']
+## END
+
 #### empty argv
 argv.py 1 "$@" 2 $@ 3 "$*" 4 $* 5
 ## stdout: ['1', '2', '3', '', '4', '5']
@@ -295,7 +395,6 @@ argv.py "$s"
 # TODO:
 # - unquoted args of whitespace are not elided (when IFS = null)
 # - empty quoted args are kept
-# - Test ${@:1} and so forth?
 #
 # - $* $@ with empty IFS
 # - $* $@ with custom IFS
