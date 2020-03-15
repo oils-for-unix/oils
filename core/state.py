@@ -889,6 +889,11 @@ class Mem(object):
     else:
       return 1  # silent error
 
+  def GetArg0(self):
+    # type: () -> value__Str
+    """Like GetArgNum(0) but with a more specific type."""
+    return value.Str(self.dollar0)
+
   def GetArgNum(self, arg_num):
     # type: (int) -> value_t
     if arg_num == 0:

@@ -166,3 +166,128 @@ assigned
 assigned
 ab
 ## END
+
+#### Simple ${@:offset}
+
+set -- 4 5 6
+argv.py ${@:0} | sed 's/'$0'/SHELL/'
+argv.py ${@:1}
+argv.py ${@:2}
+## STDOUT:
+['SHELL', '4', '5', '6']
+['4', '5', '6']
+['5', '6']
+## END
+## N-I mksh status: 1
+## N-I mksh stdout-json: ""
+
+
+#### ${@:offset} and ${*:offset}
+case $SH in (zsh) return ;; esac  # zsh is very different
+
+argv.shell-name-checked () {
+  argv.py "${@//$0/SHELL}"
+}
+fun() {
+  argv.shell-name-checked -${*:0}- # include $0
+  argv.shell-name-checked -${*:1}- # from $1
+  argv.shell-name-checked -${*:3}- # last parameter $3
+  argv.shell-name-checked -${*:4}- # empty
+  argv.shell-name-checked -${*:5}- # out of boundary
+  argv.shell-name-checked -${@:0}-
+  argv.shell-name-checked -${@:1}-
+  argv.shell-name-checked -${@:3}-
+  argv.shell-name-checked -${@:4}-
+  argv.shell-name-checked -${@:5}-
+  argv.shell-name-checked "-${*:0}-"
+  argv.shell-name-checked "-${*:1}-"
+  argv.shell-name-checked "-${*:3}-"
+  argv.shell-name-checked "-${*:4}-"
+  argv.shell-name-checked "-${*:5}-"
+  argv.shell-name-checked "-${@:0}-"
+  argv.shell-name-checked "-${@:1}-"
+  argv.shell-name-checked "-${@:3}-"
+  argv.shell-name-checked "-${@:4}-"
+  argv.shell-name-checked "-${@:5}-"
+}
+fun "a 1" "b 2" "c 3"
+## STDOUT:
+['-SHELL', 'a', '1', 'b', '2', 'c', '3-']
+['-a', '1', 'b', '2', 'c', '3-']
+['-c', '3-']
+['--']
+['--']
+['-SHELL', 'a', '1', 'b', '2', 'c', '3-']
+['-a', '1', 'b', '2', 'c', '3-']
+['-c', '3-']
+['--']
+['--']
+['-SHELL a 1 b 2 c 3-']
+['-a 1 b 2 c 3-']
+['-c 3-']
+['--']
+['--']
+['-SHELL', 'a 1', 'b 2', 'c 3-']
+['-a 1', 'b 2', 'c 3-']
+['-c 3-']
+['--']
+['--']
+## END
+## N-I mksh status: 1
+## N-I mksh stdout-json: ""
+## BUG zsh stdout-json: ""
+
+#### ${@:offset:length} and ${*:offset:length}
+case $SH in (zsh) return ;; esac  # zsh is very different
+
+argv.shell-name-checked () {
+  argv.py "${@//$0/SHELL}"
+}
+fun() {
+  argv.shell-name-checked -${*:0:2}- # include $0
+  argv.shell-name-checked -${*:1:2}- # from $1
+  argv.shell-name-checked -${*:3:2}- # last parameter $3
+  argv.shell-name-checked -${*:4:2}- # empty
+  argv.shell-name-checked -${*:5:2}- # out of boundary
+  argv.shell-name-checked -${@:0:2}-
+  argv.shell-name-checked -${@:1:2}-
+  argv.shell-name-checked -${@:3:2}-
+  argv.shell-name-checked -${@:4:2}-
+  argv.shell-name-checked -${@:5:2}-
+  argv.shell-name-checked "-${*:0:2}-"
+  argv.shell-name-checked "-${*:1:2}-"
+  argv.shell-name-checked "-${*:3:2}-"
+  argv.shell-name-checked "-${*:4:2}-"
+  argv.shell-name-checked "-${*:5:2}-"
+  argv.shell-name-checked "-${@:0:2}-"
+  argv.shell-name-checked "-${@:1:2}-"
+  argv.shell-name-checked "-${@:3:2}-"
+  argv.shell-name-checked "-${@:4:2}-"
+  argv.shell-name-checked "-${@:5:2}-"
+}
+fun "a 1" "b 2" "c 3"
+## STDOUT:
+['-SHELL', 'a', '1-']
+['-a', '1', 'b', '2-']
+['-c', '3-']
+['--']
+['--']
+['-SHELL', 'a', '1-']
+['-a', '1', 'b', '2-']
+['-c', '3-']
+['--']
+['--']
+['-SHELL a 1-']
+['-a 1 b 2-']
+['-c 3-']
+['--']
+['--']
+['-SHELL', 'a 1-']
+['-a 1', 'b 2-']
+['-c 3-']
+['--']
+['--']
+## END
+## N-I mksh status: 1
+## N-I mksh stdout-json: ""
+## BUG zsh stdout-json: ""

@@ -201,7 +201,7 @@ def _PerformSlice(val,  # type: value_t
                   length,  # type: int
                   has_length,  # type: bool
                   part,  # type: braced_var_sub
-                  arg0_val, # type: value_t
+                  arg0_val, # type: value__Str
                   ):
   # type: (...) -> value_t
   UP_val = val
@@ -247,15 +247,18 @@ def _PerformSlice(val,  # type: value_t
 
       strs = []  # type: List[str]
 
-      # NOTE: "begin" for positional arguments ($@ and $*) counts $0.
+      # Quirk: "begin" for positional arguments ($@ and $*) counts $0.
       if arg0_val is not None:
+        # Equivalent to:
+        # val.strs = [arg0_val.s] + val.strs
+        # but more efficient.
         if begin == 0:
           if not has_length or length > 0:
             strs.append(arg0_val.s)
         elif begin > 0:
           begin -= 1
 
-      # NOTE: unset elements don't count towards the length.
+      # NOTE: Unset elements don't count towards the length.
       for s in val.strs[begin:]:
         if s is not None:
           strs.append(s)
@@ -1078,7 +1081,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           try:
             arg0_val = None
             if var_name is None: # $* or $@
-               arg0_val = self.mem.GetArgNum(0)
+              arg0_val = self.mem.GetArg0()
             val = _PerformSlice(val, begin, length, has_length, part, arg0_val)
           except error.Strict as e:
             if self.exec_opts.strict_word_eval():
