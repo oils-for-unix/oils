@@ -15,10 +15,21 @@ This script should generate an index.html with links to all the logs.
 from __future__ import print_function
 
 import sys
+from doctools import html_head
 
 
 def main(argv):
-  print('Hello from build_dashboard.py')
+  html_head.Write(sys.stdout, 'Recent Jobs',
+      css_urls=['/web/base.css', '/web/toil.css'])
+
+  print('''\
+  </body>
+</html>
+''')
+
+  # TODO: read jobs on stdin
+  # - open .tsv and JSON
+  # - write HTML to output
 
 
 if __name__ == '__main__':

@@ -96,6 +96,7 @@ job-config() {
   # (artifact, platform)
   cat <<EOF
 dev-minimal ubuntu-xenial
+jobs        foo
 EOF
 }
 
@@ -139,8 +140,55 @@ EOF
 EOF
 }
 
+#
+# ~/
+#   toil-web/
+#    doctools/
+#      html_head.py
+#    services/
+#      toil_web.py
+#      toil-web.sh
+#   travis-ci.oilshell.org/
+#     index.html
+#     web/
+#       base.css
+#       toil.css
+#     jobs/
+#       index.html   # rewritten on every job
+#       1581.1.wwz   # build 1581 has multiple jobs
+#       1581.2.wwz
+#       1581.3.wwz
+#     builds/
+#       src/
+#         oil-48ab99c.tar.xz  # named after commits?  Or jobs?
+#         oil-58a669c.tar.xz
+#       x86_64_musl/   # binaries
+#         linux
+
+toil-web-manifest() {
+  PYTHONPATH=. /usr/bin/env python2 \
+    build/app_deps.py py-manifest services.toil_web \
+  | grep oilshell/oil  # only stuff in the repo
+
+  # Add a shell script
+  echo $PWD/services/toil-web.sh services/toil-web.sh
+}
+
+# Also used in test/wild.sh
+multi() { ~/hg/tree-tools/bin/multi "$@"; }
+
+deploy-toil-web() {
+  toil-web-manifest | multi cp _tmp/toil-web
+  tree _tmp/toil-web
+  rsync --archive --verbose _tmp/toil-web/ $USER@$HOST:toil-web/
+}
+
+remote-test() {
+  ssh $USER@$HOST toil-web/services/toil-web.sh test
+}
+
 init-server-html() {
-  ssh $USER@$HOST mkdir -v -p $HOST/dev-minimal $HOST/web
+  ssh $USER@$HOST mkdir -v -p $HOST/{jobs,web,builds/src}
 
   home-page > _tmp/index.html
 
@@ -159,13 +207,13 @@ decrypt-key() {
 scp-results() {
   # could also use Travis known_hosts addon?
   scp -o StrictHostKeyChecking=no "$@" \
-    travis_admin@travis-ci.oilshell.org:travis-ci.oilshell.org/dev-minimal/
+    travis_admin@travis-ci.oilshell.org:travis-ci.oilshell.org/jobs/
 }
 
 list-remote-results() {
   # could also use Travis known_hosts addon?
   ssh -o StrictHostKeyChecking=no \
-    travis_admin@travis-ci.oilshell.org ls 'travis-ci.oilshell.org/dev-minimal/'
+    travis_admin@travis-ci.oilshell.org ls 'travis-ci.oilshell.org/jobs/'
 }
 
 # Dummy that doesn't depend on results
@@ -332,25 +380,25 @@ EOF
 EOF
 }
 
-rewrite-job-index() {
-  ### Rewrite travis-ci.oilshell.org/results/index.html
+write-jobs-raw() {
+  ### Rewrite travis-ci.oilshell.org/jobs/raw.html
   
   # TODO: replace with toil_web.py?
 
-  log "listing remote .wwz"
+  log "Listing remote .wwz"
   list-remote-results > _tmp/listing.txt
   ls -l _tmp/listing.txt
 
   # Pass all .wwz files in reverse order.
-  egrep 'wwz$' _tmp/listing.txt \
+  # Empty list is OK.
+  egrep 'wwz$' _tmp/listing.txt || true \
     | sort --reverse \
     | format-jobs-index \
-    > _tmp/index.html
+    > _tmp/raw.html
 
-  log "copying index.html"
+  log "Copying raw.html"
 
-  # Duplicating CSS inside and OUTSIDE the .wwz files
-  scp-results _tmp/index.html
+  scp-results _tmp/raw.html
 }
 
 publish-html() {
@@ -367,7 +415,7 @@ publish-html() {
     deploy-test-wwz  # dummy data that doesn't depend on the build
   fi
 
-  rewrite-job-index
+  write-jobs-raw
 }
 
 # TODO:
