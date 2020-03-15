@@ -106,3 +106,17 @@ echo should not get here
 v=foo
 echo ${v+v is not unset} ${unset:+is not unset}
 ## stdout: v is not unset
+
+#### ${var=x} dynamic scope
+f() { : "${hello:=x}"; echo $hello; }
+f
+echo hello=$hello
+
+f() { hello=x; }
+f
+echo hello=$hello
+## STDOUT:
+x
+hello=x
+hello=x
+## END

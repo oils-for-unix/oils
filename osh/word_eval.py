@@ -997,7 +997,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 # avoid it.
                 rhs_str = _DecayPartValuesToString(effect_part_vals,
                                                    self.splitter.GetJoinChar())
-                state.SetLocalString(self.mem, var_name, rhs_str)
+                state.SetStringDynamic(self.mem, var_name, rhs_str)
               return  # EARLY RETURN, part_vals mutated
 
             elif effect == effect_e.Error:
