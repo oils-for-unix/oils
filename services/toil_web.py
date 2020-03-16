@@ -1,16 +1,15 @@
 #!/usr/bin/env python2
 """
-toil_index.py
+toil_web.py
 
 Each continuous build run is assigned an ID.  Then it will generate:
 
-- $ID.git-log 
 - $ID.json  # metadata
 - $ID.tsv   # benchmarks/time.py output?  success/failure for each task
 - $ID.wwz   # files
 
-This script should generate an index.html with links to all the logs.
-
+This script generates an index.html with a table of metadata and links to the
+logs.
 """
 from __future__ import print_function
 
@@ -57,14 +56,25 @@ def ParseJobs(stdin):
     meta['max_status'] = max_status
     meta['total_elapsed'] = total_elapsed
 
-    # Note: this isn't what I think it is
+    # Note: this isn't a Unix timestamp
     #microseconds = int(meta['TRAVIS_TIMER_START_TIME']) / 1e6
     #log('ts = %d', microseconds)
-    d = datetime.datetime.now()
-    meta['start_time_str'] = d.strftime('TODO')
 
-    meta['commit_line'] = meta['TRAVIS_COMMIT_MESSAGE'].splitlines()[0]
-    meta['commit_hash'] = meta['TRAVIS_COMMIT'][-8:]  # last 8 chars
+    # TODO: We could show "X minutes ago" etc.
+    d = datetime.datetime.now()
+    meta['start_time_str'] = meta.get('TASK_RUN_START_TIME', '?')
+
+    try:
+      commit_line = meta['TRAVIS_COMMIT_MESSAGE'].splitlines()[0]
+    except AttributeError:
+      commit_line = '?'
+    meta['commit_line'] = commit_line
+
+    try:
+      commit_hash = meta['TRAVIS_COMMIT'][-8:]  # last 8 chars
+    except TypeError:
+      commit_hash = '?'
+    meta['commit_hash']  = commit_hash
 
     filename = os.path.basename(json_path)
     basename, _ = os.path.splitext(filename)
@@ -74,21 +84,34 @@ def ParseJobs(stdin):
 
 # TODO:
 # - Use JSON Template to escape it
-# - Red/Green for pass/fail from spec tests
+# - Red/Green for pass/fail (spec test CSS)
+# - Can we publish spec test numbers in JSON?
 
-ROW_TEMPLATE = '''
-<tr class="commit-row" style="padding-top: 1em">
-  <td> <code>%(TRAVIS_BRANCH)s</code> </td>
-  <td> <code>%(commit_hash)s</code> </td>
-  <td colspan="4">%(commit_line)s</td>
+BUILD_ROW_TEMPLATE = '''\
+<tr class="spacer">
+  <td colspan=5><td/>
 </tr>
+<tr class="commit-row">
+  <td> %(TRAVIS_BUILD_NUMBER)s </td>
+  <td> <code>%(TRAVIS_BRANCH)s</code> </td>
+  <td>
+    <code><a href="https://github.com/oilshell/oil/commit/%(TRAVIS_COMMIT)s">%(commit_hash)s</a></code>
+  </td>
+  <td class="commit-line" colspan="2">%(commit_line)s</td>
+</tr>
+<tr class="spacer">
+  <td colspan=5><td/>
+</tr>
+'''
+
+
+JOB_ROW_TEMPLATE = '''\
 <tr>
-  <td>%(max_status)d</td>
-  <td>%(start_time_str)s</td>
-  <td>%(total_elapsed).2f</td>
-  <td>%(TRAVIS_JOB_NAME)s</td>
   <td><a href="%(TRAVIS_JOB_WEB_URL)s">%(TRAVIS_JOB_NUMBER)s</a></td>
-  <td><a href="%(basename)s.wwz/">Details</a></td>
+  <td> <code>%(TRAVIS_JOB_NAME)s</code> </td>
+  <td>%(start_time_str)s</td>
+  <td><a href="%(basename)s.wwz/">%(total_elapsed).2f</a></td>
+  <td>%(max_status)d</td>
 </tr>
 '''
 
@@ -98,8 +121,10 @@ def main(argv):
 
   if action == 'index':
 
+    # Bust cache (e.g. Safari iPad seems to cache aggressively and doesn't
+    # have Ctrl-F5)
     html_head.Write(sys.stdout, 'Recent Jobs',
-        css_urls=['../web/base.css', '../web/toil.css'])
+        css_urls=['../web/base.css?cache=0', '../web/toil.css?cache=0'])
 
     print('''
   <body class="width40">
@@ -110,43 +135,65 @@ def main(argv):
 
     <h1>Recent Jobs</h1>
 
-    <p>
-      <a href="raw.html">raw data</a>
-    </p>
-
     <table>
       <thead>
+        <!--
+        <tr class="commit-row">
+          <td>Build #</td>
+          <td>Branch</td>
+          <td>Commit</td>
+          <td class="commit-line" colspan=2>Description</td>
+        </tr>
+        -->
         <tr>
-          <td>Status</td>
+          <td>Job #</td>
+          <td>Job Name</td>
           <td>Start Time</td>
           <td>Elapsed</td>
-          <td>Job Name</td>
-          <td>Job ID</td>
-          <td>Details</td>
+          <td>Status</td>
         </tr>
       </thead>
 ''')
 
-    # TODO:
-    # - Group by git commit
-    # - Show description and escape it
-
     rows = list(ParseJobs(sys.stdin))
-    rows.sort(
-        key=lambda row: int(row['TRAVIS_TIMER_START_TIME']), reverse=True)
+    import itertools
 
-    for row in rows:
-      print(ROW_TEMPLATE % row)
+    # Sort by descending build number
+    def ByBuildNum(row):
+      return int(row.get('TRAVIS_BUILD_NUMBER', 0))
+
+    def ByTaskRunStartTime(row):
+      return int(row.get('TASK_RUN_START_TIME', 0))
+
+    rows.sort(key=ByBuildNum, reverse=True)
+    groups = itertools.groupby(rows, key=ByBuildNum)
+    #print(list(groups))
+
+    for build_num, group in groups:
+      build_num = int(build_num)
+      log('---')
+      log('build %d', build_num)
+
+      jobs = list(group)
+
+      # Sort by start time
+      jobs.sort(key=ByTaskRunStartTime, reverse=True)
+
+      # The first job should have the same branch/commit/commit_line
+      print(BUILD_ROW_TEMPLATE % jobs[0])
+
+      for job in jobs:
+        print(JOB_ROW_TEMPLATE % job)
 
     print('''\
     </table>
+
+    <p>
+      <a href="raw.html">raw data</a>
+    </p>
   </body>
 </html>
   ''')
-
-    # TODO: read jobs on stdin
-    # - open .tsv and JSON
-    # - write HTML to output
 
   else:
     raise RuntimeError('Invalid action %r' % action)

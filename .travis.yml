@@ -1,6 +1,14 @@
 # Parallel Travis jobs for Oil.  We delegate most logic to
 # services/toil-worker.sh.
 
+# https://github.com/travis-ci/travis-ci/issues/1147
+# Might want to turn this on.
+
+#branches:
+#  only:
+#    - master
+
+
 # Every job uses this deploy step.
 _publish_html: &publish_html
   deploy:

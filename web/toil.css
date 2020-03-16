@@ -8,7 +8,33 @@ table {
 }
 
 thead {
-  font-weight: bold;
   background-color: #eee;
+  font-weight: bold;
+  font-size: medium;
+}
+
+td {
+  padding-top: 0.1em;
+  padding-bottom: 0.1em;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+  text-align: right;
+}
+
+thead tr td {
+  padding-top: 1em;
+  padding-bottom: 1em;
+}
+
+.commit-line {
+  text-align: left;
+}
+
+.commit-row td {
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+
+  background-color: oldlace;
+
 }
 

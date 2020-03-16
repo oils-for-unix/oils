@@ -41,8 +41,8 @@ travis-html-head() {
 
   local base_url='../../web'
 
-  # These files live at the root
-  html-head --title "$title" "/web/base.css" "/web/toil.css" 
+  # These files live at the root.  Bust cache.
+  html-head --title "$title" "/web/base.css?cache=0" "/web/toil.css?cache=0" 
 }
 
 #
@@ -91,15 +91,6 @@ deploy-public-key() {
 readonly USER='travis_admin'
 readonly HOST='travis-ci.oilshell.org'
 
-# Print the list of Travis jobs.
-job-config() {
-  # (artifact, platform)
-  cat <<EOF
-dev-minimal ubuntu-xenial
-jobs        foo
-EOF
-}
-
 home-page() {
   ### travis-ci.oilshell.org home page
 
@@ -118,23 +109,15 @@ home-page() {
        <a href="https://github.com/oilshell/oil/wiki/Travis-CI-for-Oil">Travis CI for Oil</a> for details.
     </p>
 
-    <table>
-      <thead>
-        <tr>
-          <td>Artifact</td>
-          <td>Platform</td>
-        </tr>
-      </thead>
-EOF
-  job-config | while read artifact platform; do
-    echo "<tr>"
-    echo "  <td><a href="$artifact/">$artifact</a></td>"
-    echo "  <td>$platform</td>"
-    echo "</tr>"
-    echo
-  done
-  cat <<EOF
-    </table>
+    <ul>
+      <li>
+        <a href="jobs/">Jobs</a>
+      </li>
+      <li>
+        <a href="builds/">Builds</a>
+      </li>
+    </ul>
+
   </body>
 </html>
 EOF
@@ -314,7 +297,17 @@ deploy-job-results() {
 
   make-job-wwz $job_id
 
+  # Written by toil-worker.sh
+  # TODO:
+  # - Don't export these, just pass to env_to_json
+  # - if it exists, publish _tmp/spec/*.stats.txt and publish it?
+  #   - osh failures and total failures
+  export TASK_RUN_START_TIME=$(cat _tmp/toil/task-run-start-time.txt)
+  export TASK_DEPLOY_START_TIME=$(date +%s)
+
   services/env_to_json.py \
+    TASK_RUN_START_TIME \
+    TASK_DEPLOY_START_TIME \
     TRAVIS_JOB_NAME \
     TRAVIS_OS_NAME \
     TRAVIS_TIMER_START_TIME \
@@ -337,14 +330,10 @@ deploy-job-results() {
   log "http://travis-ci.oilshell.org/jobs/"
   log "http://travis-ci.oilshell.org/jobs/$job_id.wwz/"
   log ''
-
-  # TODO: git-log.txt, .json for hostname
-  # - $job_id.git-log.txt: commit, branch, commit date, author?
-  # - $job_id.json: hostname, date, etc.?
 }
 
 format-jobs-index() {
-  travis-html-head 'dev-minimal jobs'
+  travis-html-head 'Recent Jobs (raw data)'
 
   cat <<EOF
   <body class="width40">
@@ -353,12 +342,12 @@ format-jobs-index() {
       | <a href="//oilshell.org/">oilshell.org</a>
     </p>
 
-    <h1>Continuous Build: <code>dev-minimal</code> Jobs</h1>
+    <h1>Recent Jobs (raw data)</h1>
 
     <table>
       <thead>
         <tr>
-          <td>Task</td>
+          <td>Job Archive</td>
           <td>JSON</td>
           <td>TSV</td>
         </tr>
@@ -390,8 +379,6 @@ EOF
 write-jobs-raw() {
   ### Rewrite travis-ci.oilshell.org/jobs/raw.html
   
-  # TODO: replace with toil_web.py?
-
   log "Listing remote .wwz"
   list-remote-results > _tmp/listing.txt
   ls -l _tmp/listing.txt
@@ -425,21 +412,5 @@ publish-html() {
   write-jobs-raw
   remote-rewrite-jobs-index
 }
-
-# TODO:
-#
-# - job index
-#   - print JSON fields: job URL, etc.
-#   - SUM up the times
-#   - SUM up the failures -- did it fail?
-#     - do this in Python
-#   - show commit description and diffstats
-#     - you can embed this in the .wwz file
-#
-# Later:
-# - spec test HTML
-#
-# Nice to have:
-# - link to fast/compact git diff?  I don't like Githubs
 
 "$@"

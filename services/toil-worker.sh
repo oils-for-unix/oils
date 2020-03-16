@@ -90,6 +90,9 @@ run-tasks() {
   local out_dir=_tmp/toil
   mkdir -p $out_dir
 
+  # For the later deploy step to pick up
+  date +%s > $out_dir/task-run-start-time.txt
+
   # This data can go on the dashboard index
   local tsv=$out_dir/INDEX.tsv
   rm -f $tsv
