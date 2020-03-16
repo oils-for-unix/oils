@@ -172,6 +172,7 @@ toil-web-manifest() {
 
   # Add a shell script
   echo $PWD/services/toil-web.sh services/toil-web.sh
+  echo $PWD/services/common.sh services/common.sh
 }
 
 # Also used in test/wild.sh
@@ -184,7 +185,13 @@ deploy-toil-web() {
 }
 
 remote-test() {
-  ssh $USER@$HOST toil-web/services/toil-web.sh test
+  ssh $USER@$HOST \
+    toil-web/services/toil-web.sh smoke-test '~/travis-ci.oilshell.org/jobs'
+}
+
+remote-rewrite-jobs-index() {
+  ssh $USER@$HOST \
+    toil-web/services/toil-web.sh rewrite-jobs-index
 }
 
 init-server-html() {
@@ -327,8 +334,8 @@ deploy-job-results() {
   scp-results $job_id.*
 
   log ''
-  log "http://travis-ci.oilshell.org/dev-minimal/"
-  log "http://travis-ci.oilshell.org/dev-minimal/$job_id.wwz/"
+  log "http://travis-ci.oilshell.org/jobs/"
+  log "http://travis-ci.oilshell.org/jobs/$job_id.wwz/"
   log ''
 
   # TODO: git-log.txt, .json for hostname
@@ -416,6 +423,7 @@ publish-html() {
   fi
 
   write-jobs-raw
+  remote-rewrite-jobs-index
 }
 
 # TODO:
