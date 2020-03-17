@@ -69,6 +69,7 @@ osh-cloc() {
 # TODO: Sum up all the support material.  It's more than Oil itself!  Turn
 # everything into an array.  An hash table of arrays would be useful here.
 all() {
+
   echo 'BUILD AUTOMATION'
   ls build/*.{mk,sh,py} Makefile *.mk configure install |
     filter-py | xargs wc -l | sort --numeric
@@ -81,6 +82,10 @@ all() {
 
   echo 'RELEASE AUTOMATION'
   wc -l devtools/release*.sh | sort --numeric
+  echo
+
+  echo 'SERVICES'
+  wc -l services/*.{sh,py} | sort --numeric
   echo
 
   echo 'BENCHMARKS'
@@ -110,6 +115,10 @@ all() {
 
   echo 'PGEN2 (parser generator)'
   ls pgen2/*.py | filter-py | xargs wc -l | sort --numeric
+  echo
+
+  echo 'DOC TOOLS'
+  ls {doctools,lazylex}/*.py | filter-py | xargs wc -l | sort --numeric
   echo
 
   # NOTE: OPy is counted separately.
