@@ -2,14 +2,18 @@
 """
 toil_web.py
 
-Each continuous build run is assigned an ID.  Then it will generate:
+Each job assigned an ID.  THe job generates:
 
 - $ID.json  # metadata
-- $ID.tsv   # benchmarks/time.py output?  success/failure for each task
+- $ID.tsv   # benchmarks/time.py output.  Success/failure for each task.
 - $ID.wwz   # files
 
 This script generates an index.html with a table of metadata and links to the
 logs.
+
+TODO:
+- Use JSON Template to escape HTML
+- Can we publish spec test numbers in JSON?
 """
 from __future__ import print_function
 
@@ -150,11 +154,6 @@ def ParseJobs(stdin):
     meta['basename'] = basename
     yield meta
 
-
-# TODO:
-# - Use JSON Template to escape it
-# - Red/Green for pass/fail (spec test CSS)
-# - Can we publish spec test numbers in JSON?
 
 BUILD_ROW_TEMPLATE = '''\
 <tr class="spacer">

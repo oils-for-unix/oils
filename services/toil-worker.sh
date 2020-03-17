@@ -78,10 +78,6 @@ yajl              build/dev.sh yajl-release              -
 make-tarball      devtools/release.sh quick-oil-tarball  -
 build-tarball     build/test.sh oil-tar                  -
 EOF
-
-  # TODO: cache 
-  # -_devbuild/cpython-full  # rarely changes
-  # -_deps/                  # re2c rarely changes
 }
 
 run-tasks() {
@@ -97,6 +93,8 @@ run-tasks() {
   local tsv=$out_dir/INDEX.tsv
   rm -f $tsv
 
+  local max_status=0
+
   while read task_name script action result_html; do
     log "--- task: $task_name ---"
 
@@ -105,7 +103,12 @@ run-tasks() {
     set +o errexit
     time-tsv -o $tsv --append --field $task_name --field $script --field $action --field $result_html -- \
       $script $action >$log_path 2>&1
+    status=$?
     set -o errexit
+
+    if test $status -gt $max_status; then
+      max_status=$status
+    fi
 
     # show the last line
 
@@ -127,8 +130,11 @@ run-tasks() {
     BEGIN { max = 0 }
           { if ($1 > max) { max = $1 } }
     END   { exit(max) }
-    ' _tmp/toil/INDEX.tsv
+    ' $tsv
   fi
+
+  # So the deploy step can fail later
+  echo $max_status > $out_dir/exit-status.txt
 }
 
 run-dev-minimal() {

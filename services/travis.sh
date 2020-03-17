@@ -339,6 +339,9 @@ deploy-job-results() {
   log "http://travis-ci.oilshell.org/jobs/"
   log "http://travis-ci.oilshell.org/jobs/$job_id.wwz/"
   log ''
+
+  # toil-worker.sh recorded this for us
+  return $(cat _tmp/toil/exit-status.txt)
 }
 
 format-jobs-index() {
