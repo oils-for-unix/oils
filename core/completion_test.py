@@ -575,8 +575,13 @@ fail() {
 arrays_equal() {
   local n=$1
   shift
-  local left=(${@: 0 : n})
-  local right=(${@: n : 2*n - 1})
+
+  # Copy to avoid silly ${@ : : } semantics
+  local argv=("$@")
+
+  local left=( "${argv[@]: 0 : n}" )
+  local right=( "${argv[@]: n : 2*n - 1}" )
+
   for (( i = 0; i < n; i++ )); do
     if [[ ${left[i]} != ${right[i]} ]]; then
       echo -n 'left : '; argv "${left[@]}"
@@ -754,8 +759,8 @@ class InitCompletionTest(unittest.TestCase):
 
       # Our test shell script records what passed in an array.
       val = mem.GetVar('PASSED')
-      self.assertEqual(
-          value_e.MaybeStrArray, val.tag, "Expected array, got %s" % val)
+      self.assertEqual(value_e.MaybeStrArray, val.tag,
+          "[case %d] Expected array, got %s" % (i, val))
       actually_passed = val.strs
 
       should_pass = [
