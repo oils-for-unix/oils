@@ -148,30 +148,6 @@ EOF
 #       x86_64_musl/   # binaries
 #         linux
 
-toil-web-manifest() {
-  PYTHONPATH=. /usr/bin/env python2 \
-    build/app_deps.py py-manifest services.toil_web \
-  | grep oilshell/oil  # only stuff in the repo
-
-  # Add a shell script
-  echo $PWD/services/toil-web.sh services/toil-web.sh
-  echo $PWD/services/common.sh services/common.sh
-}
-
-# Also used in test/wild.sh
-multi() { ~/hg/tree-tools/bin/multi "$@"; }
-
-deploy-toil-web() {
-  toil-web-manifest | multi cp _tmp/toil-web
-  tree _tmp/toil-web
-  rsync --archive --verbose _tmp/toil-web/ $USER@$HOST:toil-web/
-}
-
-remote-test() {
-  ssh $USER@$HOST \
-    toil-web/services/toil-web.sh smoke-test '~/travis-ci.oilshell.org/jobs'
-}
-
 remote-rewrite-jobs-index() {
   ssh $USER@$HOST \
     toil-web/services/toil-web.sh rewrite-jobs-index
@@ -255,7 +231,7 @@ format-wwz-index() {
 EOF
   cat $tsv | while read status elapsed task script action result_html; do
     echo "<tr>"
-    echo "  <td><a href="_tmp/toil/$task.log.txt">$task</a></td>"
+    echo "  <td><code><a href="_tmp/toil/$task.log.txt">$task</a></code></td>"
     echo "  <td>$elapsed</td>"
 
     case $status in

@@ -106,7 +106,7 @@ def ParseJobs(stdin):
 
     num_failures = len(failed_tasks)
     if num_failures == 0:
-      s_html = '<span class="pass">PASS</span>'
+      s_html = '<span class="pass">pass</span>'
     else:
       if num_failures == 1:
         fail_html = 'task <code>%s</code>' % failed_tasks[0]
