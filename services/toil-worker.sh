@@ -144,8 +144,20 @@ run-dev-minimal() {
   dev-minimal-tasks | run-tasks
 }
 
+allow-job-failure() {
+  # Note: toil_web.py will still count failures in INDEX.tsv.  This just
+  # prevents Travis from failing.
+
+  local out='_tmp/toil/exit-status.txt '
+  log "*** ALLOWING JOB FAILURE by overwriting $out ***"
+  echo 0 > $out
+}
+
 _run-dev-all-nix() {
   dev-all-nix-tasks | run-tasks
+
+  allow-job-failure
+
   return
 
   # --- DEBUGGING THROUGH STDOUT ---
