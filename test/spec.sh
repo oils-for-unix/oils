@@ -395,7 +395,7 @@ builtin-eval-source() {
 }
 
 builtin-io() {
-  sh-spec spec/builtin-io.test.sh \
+  sh-spec spec/builtin-io.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 

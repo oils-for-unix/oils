@@ -433,3 +433,45 @@ done | { read -$FLAG 3; echo $REPLY; }
 
 # zsh appears to hang with -k
 ## N-I zsh stdout-json: ""
+
+#### read -d : (colon-separated records)
+printf a,b,c:d,e,f:g,h,i | {
+  IFS=,
+  read -d : v1
+  echo "v1=$v1"
+  read -d : v1 v2
+  echo "v1=$v1 v2=$v2"
+  read -d : v1 v2 v3
+  echo "v1=$v1 v2=$v2 v3=$v3"
+}
+## STDOUT:
+v1=a,b,c
+v1=d v2=e,f
+v1=g v2=h v3=i
+## END
+## N-I dash/ash STDOUT:
+v1=
+v1= v2=
+v1= v2= v3=
+## END
+
+#### read -d '' (null-separated records)
+printf 'a,b,c\0d,e,f\0g,h,i' | {
+  IFS=,
+  read -d '' v1
+  echo "v1=$v1"
+  read -d '' v1 v2
+  echo "v1=$v1 v2=$v2"
+  read -d '' v1 v2 v3
+  echo "v1=$v1 v2=$v2 v3=$v3"
+}
+## STDOUT:
+v1=a,b,c
+v1=d v2=e,f
+v1=g v2=h v3=i
+## END
+## N-I dash/ash STDOUT:
+v1=
+v1= v2=
+v1= v2= v3=
+## END
