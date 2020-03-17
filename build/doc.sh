@@ -72,6 +72,7 @@ readonly MARKDOWN_DOCS=(
   errexit
   json
   simple-word-eval
+  quirks
 
   doc-toolchain
 
@@ -93,8 +94,10 @@ readonly MARKDOWN_DOCS=(
   eggex
   unicode
 
+  # Internal stuff
   data-model
   architecture-notes
+  toil
 )
 
 readonly TIMESTAMP=$(date)

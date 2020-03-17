@@ -292,7 +292,7 @@ typeset -a "$code"  # note: -a flag is required
 echo status=$?
 argv.py "$x"
 ## STDOUT:
-status=1
+status=2
 ['']
 ## END
 ## OK mksh STDOUT:

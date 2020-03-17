@@ -27,6 +27,7 @@ language.  It's **our upgrade path from bash**.
 - [OSH User Manual](osh-manual.html). How do I use OSH as my shell?
 - [Known Differences](known-differences.html) is trivia for advanced users.
   It lists differences between OSH and other shells.
+- [Quirks](quirks.html)
 - [errexit](errexit.html) (in progress)
 
 ## Oil is a New Shell Language
@@ -66,6 +67,7 @@ Internal Details:
   - TODO: Rules for scope
 - [Architecture Notes](architecture-notes.html) -- The interpreter
 - [Error List](errors.html) 
+- [Toil](toil.html).  Continuous Testing on Many Platforms.
 
 ## For Contributors
 

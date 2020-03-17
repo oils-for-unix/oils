@@ -6,7 +6,8 @@ from __future__ import print_function
 
 from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import (
-    value, value_e, value_t, lvalue, scope_e,
+    value, value_e, value_t, value__MaybeStrArray,
+    lvalue, scope_e,
     cmd_value__Argv, cmd_value__Assign,
 )
 #from core.util import log
@@ -15,7 +16,7 @@ from frontend import match
 from core import state
 from mycpp import mylib
 
-from typing import Dict, Tuple, Any, TYPE_CHECKING
+from typing import cast, Dict, Tuple, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.state import Mem
   from core.ui import ErrorFormatter
@@ -76,16 +77,33 @@ class Export(object):
     return 0
 
 
-def _CheckType(rval, arg, errfmt, span_id):
-  # type: (value_t, Any, ErrorFormatter, int) -> bool
-  """Shared between NewVar and Readonly."""
+def _ReconcileTypes(rval, arg, errfmt, span_id):
+  # type: (value_t, Any, ErrorFormatter, int) -> value_t
+  """Check that -a and -A flags are consistent with RHS.
+
+  Special case: () is allowed to mean empty indexed array or empty assoc array
+  if the context is clear.
+
+  Shared between NewVar and Readonly.
+  """
   if arg.a and rval and rval.tag_() != value_e.MaybeStrArray:
-    errfmt.Print("Got -a but RHS isn't an array", span_id=span_id)
-    return False
-  if arg.A and rval and rval.tag_() != value_e.AssocArray:
-    errfmt.Print("Got -A but RHS isn't an associative array", span_id=span_id)
-    return False
-  return True
+    raise args.UsageError(
+        "Got -a but RHS isn't an array", span_id=span_id)
+
+  if arg.A and rval:
+    # Special case: declare -A A=() is OK.  The () is changed to mean an empty
+    # associative array.
+    if rval.tag_() == value_e.MaybeStrArray:
+      array_val = cast(value__MaybeStrArray, rval)
+      if len(array_val.strs) == 0:
+        return value.AssocArray({})
+        #return value.MaybeStrArray([])
+
+    if rval.tag_() != value_e.AssocArray:
+      raise args.UsageError(
+          "Got -A but RHS isn't an associative array", span_id=span_id)
+
+  return rval
 
 
 if mylib.PYTHON:
@@ -119,8 +137,7 @@ class Readonly(object):
       else:
         rval = pair.rval
 
-      if not _CheckType(rval, arg, self.errfmt, pair.spid):
-        return 1
+      rval = _ReconcileTypes(rval, arg, self.errfmt, pair.spid)
 
       # NOTE:
       # - when rval is None, only flags are changed
@@ -243,8 +260,7 @@ class NewVar(object):
       else:
         rval = pair.rval
 
-      if not _CheckType(rval, arg, self.errfmt, pair.spid):
-        return 1
+      rval = _ReconcileTypes(rval, arg, self.errfmt, pair.spid)
       self.mem.SetVar(pair.lval, rval, lookup_mode, flags=flags)
 
     return status

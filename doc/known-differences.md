@@ -309,7 +309,24 @@ In OSH, omit the quotes if you want splitting:
 
 I think OSH is more consistent, but it disagrees with other shells.
 
+### Values Are Tagged with Types, Not Cells
+
+In bash, **cells** (locations for values) are tagged with types.  For example,
+these two statements are different:
+
+    declare -A assoc     # unset cell that will LATER be an assoc array
+    declare -A assoc=()  # empty associative array
+    set -u               # now we can tell the difference
+
+Oil behaves more like Python or JavaScript: **values** are tagged with types
+like `Str` and `AssocArray`.
+
+See the [Quirks][quirks.html] documentation for details on how Oil uses this
+cleaner model while staying compatible with bash.
+
 ### Indexed and Associative Arrays are Distinct
+
+This is a consequence of the previous point.
 
 OSH has bash-compatible arrays, which are created like this:
 

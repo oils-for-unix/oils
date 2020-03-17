@@ -58,7 +58,7 @@ k2
 declare -A A=(1 2 3)
 echo status=$?
 ## STDOUT:
-status=1
+status=2
 ## END
 
 # bash prints warnings to stderr but gives no indication of the problem
@@ -72,7 +72,7 @@ declare -a a=([xx]=1 [yy]=2 [zz]=3)
 echo status=$?
 argv.py "${a[@]}"
 ## STDOUT:
-status=1
+status=2
 []
 ## END
 ## BUG bash STDOUT:
@@ -445,5 +445,28 @@ echo ${a["k2"]}
 ## END
 ## BUG bash STDOUT:
 [k2]=-a-
+## END
+
+#### declare -A A=() alowed
+set -o nounset
+shopt -s strict_arith || true
+
+declare -A ASSOC=()
+echo len=${#ASSOC[@]}
+
+# Check that it really can be used like an associative array
+ASSOC['k']='32'
+echo len=${#ASSOC[@]}
+#repr ASSOC
+
+# bash allows a variable to be an associative array AND unset, while OSH
+# doesn't
+set +o nounset
+declare -A u
+echo unset len=${#u[@]}
+## STDOUT:
+len=0
+len=1
+unset len=0
 ## END
 

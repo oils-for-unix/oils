@@ -2,16 +2,17 @@
 in_progress: yes
 ---
 
-Notes on Build Services
-=======================
+Toil: Continuous Testing on Many Platforms
+===========================================
+
 
 Listening to `oilshell/oil`:
 
 - `dev-minimal`
   - Can a contributor quickly get started with the Oil repo?
   - They just want to run bin/osh without installing much
-
-- `dev-all`
+- `ovm-tarball`
+- TODO: `dev-all`
   - run spec tests against `dev-all`
     - TODO: requires test/spec-bin.sh, which should be moved to `_deps/spec-bin`
   - build oil.ovm tarball
@@ -20,7 +21,6 @@ Listening to `oilshell/oil`:
   - TODO: push metadata to https://github.com/oilshell/tarballs
     - you need a Github token for this
   - Content lives on http://travis-ci.oilshell.org/tarballs/
-
 - `dev-all-nix`
   - nix environment
   - Run spec tests.  Can also run the release.

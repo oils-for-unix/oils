@@ -52,6 +52,7 @@ Oil has three major sources of docs:
   - [Egg Expressions (Oil Regexes)](doc/eggex.html)
   - [JSON Support](doc/json.html)
   - [Simple Word Evaluation](doc/simple-word-eval.html)
+  - [Quirks](doc/quirks.html)
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
   - The [Oil Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments)
     wiki page has other ways of getting Oil.  These versions may not be
