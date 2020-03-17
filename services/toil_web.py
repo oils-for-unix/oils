@@ -109,10 +109,10 @@ def ParseJobs(stdin):
       s_html = '<span class="pass">PASS</span>'
     else:
       if num_failures == 1:
-        fail_str = 'task %r' % failed_tasks[0]
+        fail_html = 'task <code>%s</code>' % failed_tasks[0]
       else:
-        fail_str = '%d of %d tasks' % (num_failures, num_tasks)
-      s_html = '<span class="fail">FAIL</span><br/><span class="fail-detail">%s</span>' % fail_str
+        fail_html = '%d of %d tasks' % (num_failures, num_tasks)
+      s_html = '<span class="fail">FAIL</span><br/><span class="fail-detail">%s</span>' % fail_html
     meta['status_html'] = s_html
 
     total_elapsed = int(total_elapsed)
@@ -136,7 +136,7 @@ def ParseJobs(stdin):
       t = datetime.datetime.fromtimestamp(start_time)
       # %-I avoids leading 0, and is 12 hour date.
       # lower() for 'pm' instead of 'PM'.
-      start_time_str = t.strftime('%m/%d at %-I:%M%p').lower()
+      start_time_str = t.strftime('%-m/%d at %-I:%M%p').lower()
 
       #start_time_str = PrettyTime(now, start_time)
 
@@ -171,7 +171,7 @@ BUILD_ROW_TEMPLATE = '''\
     <code><a href="https://github.com/oilshell/oil/commit/%(TRAVIS_COMMIT)s">%(commit_hash)s</a></code>
   </td>
   <td class="commit-line" colspan=3>
-    %(commit_line)s
+    <code>%(commit_line)s</code>
   </td>
 </tr>
 <tr class="spacer">
@@ -182,10 +182,10 @@ BUILD_ROW_TEMPLATE = '''\
 
 JOB_ROW_TEMPLATE = '''\
 <tr>
-  <td><a href="%(TRAVIS_JOB_WEB_URL)s">%(TRAVIS_JOB_NUMBER)s</a></td>
-  <td> <code>%(TRAVIS_JOB_NAME)s</code> </td>
-  <td>%(start_time_str)s</td>
-  <td><a href="%(basename)s.wwz/">%(elapsed_str)s</a></td>
+  <td>%(TRAVIS_JOB_NUMBER)s</td>
+  <td> <code><a href="%(basename)s.wwz/">%(TRAVIS_JOB_NAME)s</a></code> </td>
+  <td><a href="%(TRAVIS_JOB_WEB_URL)s">%(start_time_str)s</a></td>
+  <td>%(elapsed_str)s</td>
   <td>%(status_html)s</td>
   <!-- todo; spec details
   <td> </td>
