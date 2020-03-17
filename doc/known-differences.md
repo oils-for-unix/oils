@@ -318,11 +318,13 @@ these two statements are different:
     declare -A assoc=()  # empty associative array
     set -u               # now we can tell the difference
 
-Oil behaves more like Python or JavaScript: **values** are tagged with types
+OSH behaves more like Python or JavaScript: **values** are tagged with types
 like `Str` and `AssocArray`.
 
-See the [Quirks][quirks.html] documentation for details on how Oil uses this
-cleaner model while staying compatible with bash.
+- The [repr]($help:repr) builtin is useful for gaining an understanding of the
+data model.
+- See the [Quirks](quirks.html) doc for details on how Oil uses this cleaner
+  model while staying compatible with bash.
 
 ### Indexed and Associative Arrays are Distinct
 

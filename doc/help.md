@@ -644,6 +644,11 @@ View on the web: http://www.oilshell.org/$VERSION/doc/osh-quick-ref.html
 
 ### Oil Builtins
 
+#### repr
+
+Displays the internal representation of a cell.  (Cells are locations for
+values like strings and arrays.)
+
 <h2 id="option">Shell Options</h2>
 
 ### Errors
