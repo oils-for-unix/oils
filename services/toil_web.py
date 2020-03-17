@@ -86,7 +86,7 @@ def ParseJobs(stdin):
     tsv_path = json_path[:-5] + '.tsv'
     log('%s', tsv_path)
 
-    num_failures = 0
+    failed_tasks = []
     total_elapsed = 0.0
     num_tasks = 0
 
@@ -95,19 +95,24 @@ def ParseJobs(stdin):
 
       for row in reader:
         status = int(row[0])
+        task_name = row[2]
         if status != 0:
-          num_failures += 1
+          failed_tasks.append(task_name)
 
         elapsed = float(row[1])
         total_elapsed += elapsed
 
         num_tasks += 1
 
+    num_failures = len(failed_tasks)
     if num_failures == 0:
       s_html = '<span class="pass">PASS</span>'
     else:
-      s_html = '<span class="fail">%d failed (of %d)</span>' % (
-          num_failures, num_tasks)
+      if num_failures == 1:
+        fail_str = 'task %r' % failed_tasks[0]
+      else:
+        fail_str = '%d of %d tasks' % (num_failures, num_tasks)
+      s_html = '<span class="fail">FAIL</span><br/><span class="fail-detail">%s</span>' % fail_str
     meta['status_html'] = s_html
 
     total_elapsed = int(total_elapsed)

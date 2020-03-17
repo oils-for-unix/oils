@@ -38,20 +38,54 @@ rewrite-jobs-index() {
 
   local tmp=/tmp/$$.index.html
 
+  # TODO: Limit to 50 jobs?
   ls $dir/*.json | index > $tmp
 
   mv $tmp $dir/index.html
 }
 
+#
+# Release
+#
+
 readonly USER='travis_admin'
 readonly HOST='travis-ci.oilshell.org'
+
+toil-web-manifest() {
+  PYTHONPATH=. /usr/bin/env python2 \
+    build/app_deps.py py-manifest services.toil_web \
+  | grep oilshell/oil  # only stuff in the repo
+
+  # Add a shell script
+  echo $PWD/services/toil-web.sh services/toil-web.sh
+  echo $PWD/services/common.sh services/common.sh
+}
+
+# Also used in test/wild.sh
+multi() { ~/hg/tree-tools/bin/multi "$@"; }
+
+deploy() {
+  toil-web-manifest | multi cp _tmp/toil-web
+  tree _tmp/toil-web
+  rsync --archive --verbose _tmp/toil-web/ $USER@$HOST:toil-web/
+}
+
+remote-test() {
+  ssh $USER@$HOST \
+    toil-web/services/toil-web.sh smoke-test '~/travis-ci.oilshell.org/jobs'
+}
+
+#
+# Dev Tools
+#
 
 sync-testdata() {
   rsync --archive --verbose \
     $USER@$HOST:$HOST/jobs/ _tmp/jobs/
 }
 
-smoke-test() {
+local-test() {
+  ### Used the sync'd testdata
   local dir=${1:-_tmp/jobs}
   local out='_tmp/jobs.html'
 
@@ -59,5 +93,10 @@ smoke-test() {
   echo "Wrote $out"
 }
 
+smoke-test() {
+  ### Run on remote machine
+  local dir=${1:-_tmp/jobs}
+  ls $dir/*.json | index 
+}
 
 "$@"
