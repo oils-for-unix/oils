@@ -123,6 +123,8 @@ readonly NUM_TASKS=400
 
 
 _html-summary() {
+  ### Print an HTML summary to stdout and return whether all tests succeeded
+
   local sh_label=$1  # osh or oil
   local totals=$2
   local manifest=${3:-_tmp/spec/MANIFEST.txt}
@@ -247,9 +249,11 @@ EOF
       print "*** All " num_passed " tests PASSED" > "/dev/stderr"
     } else {
       print "*** " num_failed " tests FAILED" > "/dev/stderr"
+      exit(1)  # failure
   }
   }
   '
+  all_passed=$?
 
   cat <<EOF
     </table>
@@ -265,6 +269,8 @@ EOF
   </body>
 </html>
 EOF
+
+  return $all_passed
 }
 
 html-summary() {
@@ -277,6 +283,7 @@ html-summary() {
   local out=_tmp/spec/$suite.html
 
   _html-summary $suite $totals $manifest > $tmp
+  all_passed=$?
 
   awk -v totals="$(cat $totals)" '
   /<!-- TOTALS -->/ {
@@ -288,6 +295,8 @@ html-summary() {
 
   echo
   echo "Results: file://$PWD/$out"
+
+  return $all_passed
 }
 
 _all-parallel() {
@@ -298,6 +307,7 @@ _all-parallel() {
 
   manifest
 
+  # The exit codes are recorded in files for html-summary to aggregate.
   set +o errexit
   head -n $NUM_TASKS $manifest | xargs -n 1 -P $MAX_PROCS -- $0 run-cases
   set -o errexit
@@ -308,7 +318,7 @@ _all-parallel() {
 
   # note: the HTML links to ../../web/, which is in the repo.
 
-  html-summary $suite
+  html-summary $suite  # returns whether all passed
 }
 
 all-parallel() {
