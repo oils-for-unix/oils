@@ -246,18 +246,24 @@ format-wwz-index() {
     <table>
       <thead>
         <tr>
-          <td>Status</td>
+          <td>Task</td>
           <td>Elapsed</td>
-          <td>Task Log</td>
-          <td>Results</td>
+          <td>Status</td>
+          <td>Details</td>
         </tr>
       </thead>
 EOF
   cat $tsv | while read status elapsed task script action result_html; do
     echo "<tr>"
-    echo "  <td>$status</td>"
-    echo "  <td>$elapsed</td>"
     echo "  <td><a href="_tmp/toil/$task.log.txt">$task</a></td>"
+    echo "  <td>$elapsed</td>"
+
+    local class=''
+    if test $status -ne 0; then
+      class='class="fail"'
+    fi
+
+    echo "  <td $class>$status</td>"
 
     case $result_html in
       (-)

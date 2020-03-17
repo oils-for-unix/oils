@@ -32,19 +32,15 @@ index() {
 
 rewrite-jobs-index() {
   ### Atomic update of travis-ci.oilshell.org/jobs/
+  local dir=${1:-~/travis-ci.oilshell.org/jobs/}
 
   log "toil-web: Rewriting jobs/index.html"
 
-  local dir=${1:-~/travis-ci.oilshell.org/jobs/}
-  local index=$dir/index.html
-
   local tmp=/tmp/$$.index.html
-
-  # TODO: List the jobs here? and the thing to rewrite?
 
   ls $dir/*.json | index > $tmp
 
-  mv $tmp $index
+  mv $tmp $dir/index.html
 }
 
 readonly USER='travis_admin'

@@ -38,3 +38,10 @@ thead tr td {
 
 }
 
+/* for task and job status */
+.pass {
+  color: darkgreen;
+}
+.fail {
+  color: darkred;
+}

@@ -60,9 +60,15 @@ def main(argv):
   css_urls = []
   js_urls = []
   for arg in argv:
-    if arg.endswith('.js'):
+    i = arg.rfind('?')  # account for query param
+    if i != -1:
+      url = arg[:i]
+    else:
+      url = arg
+
+    if url.endswith('.js'):
       js_urls.append(arg)
-    elif arg.endswith('.css'):
+    elif url.endswith('.css'):
       css_urls.append(arg)
     else:
       raise RuntimeError("Expected URL with .js or .css, got %r" % arg)

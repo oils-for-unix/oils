@@ -27,6 +27,47 @@ def log(msg, *args):
   print(msg, file=sys.stderr)
 
 
+# *** UNUSED because it only makes sense on a dynamic web page! ***
+# Loosely based on
+# https://stackoverflow.com/questions/1551382/user-friendly-time-format-in-python
+
+SECS_IN_DAY = 86400
+
+
+def PrettyTime(now, start_time):
+  """
+  Return a pretty string like 'an hour ago', 'Yesterday', '3 months ago', 'just
+  now', etc
+  """
+  delta = now - start_time
+
+  if delta < 10:
+      return "just now"
+  if delta < 60:
+      return "%d seconds ago" % delta
+  if delta < 120:
+      return "a minute ago"
+  if delta < 3600:
+      return "%d minutes ago" % (delta // 60)
+  if delta < 7200:
+      return "an hour ago"
+  if delta < SECS_IN_DAY:
+      return "%d hours ago" % (delta // 3600)
+
+  if delta < 2 * SECS_IN_DAY:
+      return "Yesterday"
+  if delta < 7 * SECS_IN_DAY:
+      return "%d days ago" % (delta // SECS_IN_DAY)
+
+  if day_diff < 31 * SECS_IN_DAY:
+      return "%d weeks ago" % (delta / SECS_IN_DAY / 7)
+
+  if day_diff < 365:
+      return "%d months ago" % (delta / SECS_IN_DAY / 30) 
+
+  return "%d years ago" % (delta / SECS_IN_DAY / 365)
+
+
 def ParseJobs(stdin):
   for line in stdin:
     json_path = line.strip()
@@ -40,29 +81,56 @@ def ParseJobs(stdin):
     tsv_path = json_path[:-5] + '.tsv'
     log('%s', tsv_path)
 
-    max_status = 0
+    num_failures = 0
     total_elapsed = 0.0
+    num_tasks = 0
 
     with open(tsv_path) as f:
       reader = csv.reader(f, delimiter='\t')
 
       for row in reader:
         status = int(row[0])
-        elapsed = float(row[1])
+        if status != 0:
+          num_failures += 1
 
-        max_status = max(status, max_status)
+        elapsed = float(row[1])
         total_elapsed += elapsed
 
-    meta['max_status'] = max_status
-    meta['total_elapsed'] = total_elapsed
+        num_tasks += 1
+
+    if num_failures == 0:
+      s_html = '<span class="pass">PASS</span>'
+    else:
+      s_html = '<span class="fail">%d failed (of %d)</span>' % (
+          num_failures, num_tasks)
+    meta['status_html'] = s_html
+
+    total_elapsed = int(total_elapsed)
+    minutes = total_elapsed / 60
+    seconds = total_elapsed % 60
+    meta['elapsed_str'] = '%d:%02d' % (minutes, seconds)
 
     # Note: this isn't a Unix timestamp
     #microseconds = int(meta['TRAVIS_TIMER_START_TIME']) / 1e6
     #log('ts = %d', microseconds)
 
-    # TODO: We could show "X minutes ago" etc.
-    d = datetime.datetime.now()
-    meta['start_time_str'] = meta.get('TASK_RUN_START_TIME', '?')
+    start_time = meta.get('TASK_RUN_START_TIME')
+    if start_time is None:
+      start_time_str = '?'
+    else:
+      # Note: this is different clock!  Could be desynchronized.
+      # Doesn't make sense this is static!
+      #now = time.time()
+      start_time = int(start_time)
+
+      t = datetime.datetime.fromtimestamp(start_time)
+      # %-I avoids leading 0, and is 12 hour date.
+      # lower() for 'pm' instead of 'PM'.
+      start_time_str = t.strftime('%m/%d at %-I:%M%p').lower()
+
+      #start_time_str = PrettyTime(now, start_time)
+
+    meta['start_time_str'] = start_time_str
 
     try:
       commit_line = meta['TRAVIS_COMMIT_MESSAGE'].splitlines()[0]
@@ -89,18 +157,17 @@ def ParseJobs(stdin):
 
 BUILD_ROW_TEMPLATE = '''\
 <tr class="spacer">
-  <td colspan=5><td/>
+  <td colspan=6><td/>
 </tr>
 <tr class="commit-row">
-  <td> %(TRAVIS_BUILD_NUMBER)s </td>
   <td> <code>%(TRAVIS_BRANCH)s</code> </td>
   <td>
     <code><a href="https://github.com/oilshell/oil/commit/%(TRAVIS_COMMIT)s">%(commit_hash)s</a></code>
   </td>
-  <td class="commit-line" colspan="2">%(commit_line)s</td>
+  <td class="commit-line" colspan="4">%(commit_line)s</td>
 </tr>
 <tr class="spacer">
-  <td colspan=5><td/>
+  <td colspan=6><td/>
 </tr>
 '''
 
@@ -110,8 +177,9 @@ JOB_ROW_TEMPLATE = '''\
   <td><a href="%(TRAVIS_JOB_WEB_URL)s">%(TRAVIS_JOB_NUMBER)s</a></td>
   <td> <code>%(TRAVIS_JOB_NAME)s</code> </td>
   <td>%(start_time_str)s</td>
-  <td><a href="%(basename)s.wwz/">%(total_elapsed).2f</a></td>
-  <td>%(max_status)d</td>
+  <td><a href="%(basename)s.wwz/">%(elapsed_str)s</a></td>
+  <td>%(status_html)s</td>
+  <td> <!-- TODO: spec --> </td>
 </tr>
 '''
 
@@ -127,7 +195,7 @@ def main(argv):
         css_urls=['../web/base.css?cache=0', '../web/toil.css?cache=0'])
 
     print('''
-  <body class="width40">
+  <body class="width50">
     <p id="home-link">
       <a href="/">travis-ci.oilshell.org</a>
       | <a href="//oilshell.org/">oilshell.org</a>
@@ -142,7 +210,7 @@ def main(argv):
           <td>Build #</td>
           <td>Branch</td>
           <td>Commit</td>
-          <td class="commit-line" colspan=2>Description</td>
+          <td class="commit-line" colspan=3>Description</td>
         </tr>
         -->
         <tr>
@@ -151,6 +219,7 @@ def main(argv):
           <td>Start Time</td>
           <td>Elapsed</td>
           <td>Status</td>
+          <td>Details</td>
         </tr>
       </thead>
 ''')

@@ -282,9 +282,12 @@ html-summary() {
 
   local out=_tmp/spec/$suite.html
 
+  set +o errexit
   _html-summary $suite $totals $manifest > $tmp
   all_passed=$?
+  set -o errexit
 
+  # Total rows are displayed at both the top and bottom.
   awk -v totals="$(cat $totals)" '
   /<!-- TOTALS -->/ {
     print totals
