@@ -126,7 +126,7 @@ _html-summary() {
   ### Print an HTML summary to stdout and return whether all tests succeeded
 
   local sh_label=$1  # osh or oil
-  local totals=$2
+  local totals=$2  # path to print HTML to
   local manifest=${3:-_tmp/spec/MANIFEST.txt}
 
   html-head --title "Spec Test Summary" \
@@ -281,6 +281,16 @@ html-summary() {
   local tmp=_tmp/spec/tmp-$suite.html
 
   local out=_tmp/spec/$suite.html
+
+  # TODO: Do we also need _tmp/spec/{osh,oil}-details-for-toil.json
+  # osh failures, and all failures
+  # When deploying, if they exist, them copy them outside?
+  # I guess toil_web.py can use the zipfile module?
+  # To get _tmp/spec/...
+  # it can read JSON like:
+  # { "task_tsv": "_tmp/toil/INDEX.tsv",
+  #   "details_json": [ ... ],
+  # }
 
   set +o errexit
   _html-summary $suite $totals $manifest > $tmp

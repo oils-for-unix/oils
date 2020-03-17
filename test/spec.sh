@@ -185,6 +185,10 @@ osh-version-text() {
   maybe-show /etc/lsb-release
 }
 
+osh-minimal-version-text() {
+  osh-version-text
+}
+
 #
 # Misc
 #
@@ -216,6 +220,21 @@ osh-all() {
 
 oil-all() {
   test/spec-runner.sh all-parallel oil "$@"
+}
+
+osh-minimal() {
+  check-shells-exist  # e.g. depends on link-busybox-ash
+
+  # oil-json: for testing yajl
+  cat >_tmp/spec/SUITE-osh-minimal.txt <<EOF
+smoke
+oil-json
+interactive
+EOF
+# this fails because the 'help' builtin doesn't have its data
+# builtin-bash
+
+  MAX_PROCS=1 test/spec-runner.sh all-parallel osh-minimal "$@"
 }
 
 osh-all-serial() {
@@ -902,26 +921,6 @@ oil-tuple() {
 oil-interactive() {
   sh-spec spec/oil-interactive.test.sh --osh-failures-allowed 0 \
     $OIL_LIST "$@"
-}
-
-travis() {
-  if test -n "${TRAVIS_SKIP:-}"; then
-    echo "TRAVIS_SKIP: Skipping $0"
-    return
-  fi
-
-  smoke
-
-  # Make sure dev build of yajl works
-  oil-json
-  interactive
-
-  # TODO: This fails on Travis because we only did build/dev.sh minimal
-  # builtin-bash
-
-  # Running serially is slow, but easier to debug ...
-  # oil-all-serial
-  # osh-all-serial
 }
 
 "$@"

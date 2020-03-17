@@ -53,7 +53,10 @@ sync-testdata() {
 
 smoke-test() {
   local dir=${1:-_tmp/jobs}
-  ls $dir/*.json | index 
+  local out='_tmp/jobs.html'
+
+  ls $dir/*.json | index > $out
+  echo "Wrote $out"
 }
 
 

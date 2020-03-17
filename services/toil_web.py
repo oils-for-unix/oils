@@ -16,6 +16,7 @@ from __future__ import print_function
 import csv
 import datetime
 import json
+import itertools
 import os
 import sys
 from doctools import html_head
@@ -157,17 +158,20 @@ def ParseJobs(stdin):
 
 BUILD_ROW_TEMPLATE = '''\
 <tr class="spacer">
-  <td colspan=6><td/>
+  <td colspan=5><td/>
 </tr>
 <tr class="commit-row">
-  <td> <code>%(TRAVIS_BRANCH)s</code> </td>
-  <td>
+  <td colspan=2>
+    <code>%(TRAVIS_BRANCH)s</code>
+    &nbsp;
     <code><a href="https://github.com/oilshell/oil/commit/%(TRAVIS_COMMIT)s">%(commit_hash)s</a></code>
   </td>
-  <td class="commit-line" colspan="4">%(commit_line)s</td>
+  <td class="commit-line" colspan=3>
+    %(commit_line)s
+  </td>
 </tr>
 <tr class="spacer">
-  <td colspan=6><td/>
+  <td colspan=5><td/>
 </tr>
 '''
 
@@ -179,7 +183,9 @@ JOB_ROW_TEMPLATE = '''\
   <td>%(start_time_str)s</td>
   <td><a href="%(basename)s.wwz/">%(elapsed_str)s</a></td>
   <td>%(status_html)s</td>
-  <td> <!-- TODO: spec --> </td>
+  <!-- todo; spec details
+  <td> </td>
+  -->
 </tr>
 '''
 
@@ -205,27 +211,20 @@ def main(argv):
 
     <table>
       <thead>
-        <!--
-        <tr class="commit-row">
-          <td>Build #</td>
-          <td>Branch</td>
-          <td>Commit</td>
-          <td class="commit-line" colspan=3>Description</td>
-        </tr>
-        -->
         <tr>
           <td>Job #</td>
           <td>Job Name</td>
           <td>Start Time</td>
           <td>Elapsed</td>
           <td>Status</td>
+          <!--
           <td>Details</td>
+          -->
         </tr>
       </thead>
 ''')
 
     rows = list(ParseJobs(sys.stdin))
-    import itertools
 
     # Sort by descending build number
     def ByBuildNum(row):

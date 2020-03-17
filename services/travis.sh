@@ -258,12 +258,15 @@ EOF
     echo "  <td><a href="_tmp/toil/$task.log.txt">$task</a></td>"
     echo "  <td>$elapsed</td>"
 
-    local class=''
-    if test $status -ne 0; then
-      class='class="fail"'
-    fi
-
-    echo "  <td $class>$status</td>"
+    case $status in
+      (0)  # exit code 0 is success
+        echo "  <td>$status</td>"
+        ;;
+      (*)  # everything else is a failure
+        # Add extra text to make red stand out.
+        echo "  <td class=\"fail\">status: $status</td>"
+        ;;
+    esac
 
     case $result_html in
       (-)

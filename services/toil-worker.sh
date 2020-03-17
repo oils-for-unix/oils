@@ -47,7 +47,7 @@ typecheck-slice types/oil-slice.sh travis   -
 typecheck-other types/run.sh travis         -
 unit            test/unit.sh travis         -
 oil-spec        test/spec.sh oil-all-serial _tmp/spec/oil.html
-osh-spec        test/spec.sh osh-travis     _tmp/spec/osh.html
+osh-minimal     test/spec.sh osh-minimal    _tmp/spec/osh-minimal.html
 EOF
 }
 
