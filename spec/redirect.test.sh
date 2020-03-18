@@ -272,11 +272,23 @@ ok
 ## N-I dash stderr: STDERR
 ## N-I dash status: 1
 
-#### 1>&2- to close file descriptor
-# NOTE: "hi\n" goes to stderr, but it's hard to test this because other shells
-# put errors on stderr.
-echo hi 1>&2-
-## stdout-json: ""
+#### 1>&- to close file descriptor
+exec 5> "$TMP/f.txt"
+echo hello >&5
+exec 5>&-
+echo world >&5
+cat "$TMP/f.txt"
+## stdout-json: "hello\n"
+
+#### 1>&2- to move file descriptor
+exec 5> "$TMP/f.txt"
+echo hello5 >&5
+exec 6>&5-
+echo world5 >&5
+echo world6 >&6
+exec 6>&-
+cat "$TMP/f.txt"
+## stdout-json: "hello5\nworld6\n"
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 ## N-I mksh status: 1
@@ -291,6 +303,18 @@ echo second 1>&8
 echo CONTENTS
 cat $TMP/rw.txt
 ## stdout-json: "line=first\nCONTENTS\nfirst\nsecond\n"
+
+#### <> for read/write named pipes
+rm -f "$TMP/f.pipe"
+mkfifo "$TMP/f.pipe"
+exec 8<> "$TMP/f.pipe"
+echo first >&8
+echo second >&8
+read line1 <&8
+read line2 <&8
+exec 8<&-
+echo line1=$line1 line2=$line2
+## stdout: line1=first line2=second
 
 #### &>> appends stdout and stderr
 
