@@ -1,7 +1,3 @@
----
-in_progress: yes
----
-
 Notes on OSH Architecture
 =========================
 
@@ -15,15 +11,50 @@ Notes on OSH Architecture
 This doc is for contributors or users who want to understand the Oil codebase.
 These internal details are subject to change.
 
-This article is more polished and covers some of the same material: [How to
-Parse Shell Like a Programming Language][parse-shell].
-
-[parse-shell]: https://www.oilshell.org/blog/2019/02/07.html#three-nice-properties-of-a-parser
-
 <div id="toc">
 </div>
 
+## Source Code
+
+[README](README.html) describes how the code is organized.
+
+### Build Dependencies
+
+- Essential: [libc]($xref)
+- Optional: GNU [readline]($xref) (TODO: other line editing libraries).
+- Only in the OVM build (as of March 2020): [yajl]($xref)
+
+### Borrowed Code
+
+- [ASDL]($oil-src:asdl/) front end from [CPython]($xref:cpython) (heavily
+  refactored)
+- [frontend/tdop.py]($oil-src): Adapted from tinypy, but almost no original code
+  remains
+- [pgen2]($oil-src:pgen2/)
+- All of OPy (will be obsolete)
+  - compiler2 from stdlib
+  - byterun
+- Build Dependency: [MyPy]($xref:mypy)
+
+### Metaprogramming / Generated Code
+
+- Try `ls */*_def.py */*_gen.py`
+  - The `def.py` files are abstract definitions.  They're not translated by
+    [mycpp]($xref).
+  - The `gen.py` files generate source code in Python and C++ from these
+    definitions.
+  - For example, we define the core `Id` type and the lexing rules abstractly.
+- See [build/dev.sh]($oil-src) and [build/codegen.sh]($oil-src)
+
+
 ## Lexing
+
+Note: This article is more polished and covers some of the material in the
+next two sections: [How to Parse Shell Like a Programming
+Language][parse-shell].
+
+[parse-shell]: https://www.oilshell.org/blog/2019/02/07.html
+
 
 ### List of Regex-Based Lexers
 
@@ -32,7 +63,7 @@ Oil uses regex-based lexers, which are turned into efficient C code with
 strings char-by-char, since that strategy is error prone; it's inevitable that
 rare cases will be mishandled.
 
-The list of lexers can be found by looking at [native/fastlex.c]($oil-src):
+The list of lexers can be found by looking at [native/fastlex.c]($oil-src).
 
 - The large, modal OSH/Oil lexer in [frontend/lexer_def.py]($oil-src).
 - Lexers for OSH sublanguages
@@ -118,7 +149,7 @@ These are handled up front, but not in a single pass.
 
 - See [frontend/parse_lib.py]($oil-src) and its callers.
 
-## Runtime Issues
+## Runtime Parsing
 
 ### Where OSH Dynamically Parses
 
@@ -221,36 +252,6 @@ Other Pairs:
 - Later:
   - [printf]($help) can have a static variant like `${myfloat %.3f}`
   - `find` and our own language (although this may be done with blocks)
-
-## Build Time
-
-### Dependencies
-
-- Essential: [libc]($xref)
-- Optional: readline
-- Only in OVM now: [yajl]($xref)
-
-### Borrowed Code
-
-- [ASDL]($oil-src:asdl/) front end from [CPython]($xref:cpython) (heavily
-  refactored)
-- [frontend/tdop.py]($oil-src): Adapted from tinypy, but almost no original code
-  remains
-- [pgen2]($oil-src:pgen2/)
-- All of OPy (will be obsolete)
-  - compiler2 from stdlib
-  - byterun
-- Build Dependency: [MyPy]($xref:mypy)
-
-### Metaprogramming / Generated Code
-
-- Try `ls */*_def.py */*_gen.py`
-  - The `def.py` files are abstract definitions.  They're not translated by
-    [mycpp]($xref).
-  - The `gen.py` files generate source code in Python and C++ from these
-    definitions.
-  - For example, we define the core `Id` type and the lexing rules abstractly.
-- See [build/dev.sh]($oil-src) and [build/codegen.sh]($oil-src)
 
 ## State Machines
 

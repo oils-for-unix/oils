@@ -43,8 +43,9 @@ Note: `oil-native` is a **preview** release, not a working shell.
 
 Oil has three major sources of docs:
 
-- The [Doc Overview](doc/) links to all other docs, including the Manual and
-  Oil Language Reference.  It's work in progress.  Up-to-date docs include:
+- The [Doc Overview](doc/) links to all other docs, including the Manual
+  and Oil Language Reference.  It's work in progress.  Up-to-date docs
+  include:
   - [INSTALL][]
   - [OSH User Manual](doc/osh-manual.html)
   - [Known Differences Between OSH and Other
@@ -53,6 +54,9 @@ Oil has three major sources of docs:
   - [JSON Support](doc/json.html)
   - [Simple Word Evaluation](doc/simple-word-eval.html)
   - [Quirks](doc/quirks.html)
+  - [Notes on OSH Architecture](doc/architecture-notes.html)
+- [Online Help](help-index.html) (incomplete).  This document underlies the
+  `help` builtin.  It links to sections in the [Help](help.html) page.
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
   - The [Oil Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments)
     wiki page has other ways of getting Oil.  These versions may not be
