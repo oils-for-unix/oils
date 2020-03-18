@@ -5,23 +5,37 @@ in_progress: yes
 Notes on OSH Architecture
 =========================
 
-This doc is written for contributors or users who want to understand the Oil
-codebase.  These internal details are subject to change.
+<style>
+/* override language.css */
+.sh-command {
+  font-weight: unset;
+}
+</style>
+
+This doc is for contributors or users who want to understand the Oil codebase.
+These internal details are subject to change.
+
+This article is more polished and covers some of the same material: [How to
+Parse Shell Like a Programming Language][parse-shell].
+
+[parse-shell]: https://www.oilshell.org/blog/2019/02/07.html#three-nice-properties-of-a-parser
 
 <div id="toc">
 </div>
 
-## List of Regex-Based Lexers
+## Lexing
+
+### List of Regex-Based Lexers
 
 Oil uses regex-based lexers, which are turned into efficient C code with
-[re2c][].  We intentionally avoid hand-written code that manipulates strings
-char-by-char, since that strategy is error prone; it's inevitable that rare
-cases will be mishandled.
+[re2c]($xref).  We intentionally avoid hand-written code that manipulates
+strings char-by-char, since that strategy is error prone; it's inevitable that
+rare cases will be mishandled.
 
-The list of lexers can be found by looking at `native/fastlex.c`:
+The list of lexers can be found by looking at [native/fastlex.c]($oil-src):
 
-- The huge combined OSH/Oil lexer.
-- OSH lexers:
+- The large, modal OSH/Oil lexer in [frontend/lexer_def.py]($oil-src).
+- Lexers for OSH sublanguages
   - For `echo -e`
   - For `PS1` backslash escapes.
   - For history expansion, e.g. `!$`.
@@ -33,13 +47,33 @@ The list of lexers can be found by looking at `native/fastlex.c`:
 
 [re2c]: http://re2c.org/
 
-## Parser Issues
+### Sublanguages We Don't Lex or Parse
+
+These constructs aren't recognized by Oil's front end.  Instead, they're punted
+to [libc]($xref):
+
+- Glob patterns, e.g. `*.py` (in most cases)
+- Extended glob patterns, e.g. `@(*.py|*.sh)`
+- `strftime` format strings, e.g. `printf '%(%Y-%m-%d)T' $timestamp`
+
+### Lexer Unread
+
+[osh/word_parse.py]($oil-src) calls `lexer.MaybeUnreadOne()` to handle right
+parens in this case:
+
+```
+(case x in x) ;; esac )
+```
+
+This is sort of like the `ungetc()` I've seen in other shell lexers.
+
+## Parsing Issues
 
 This section is about extra passes ("irregularities") at **parse time**.  In
 the "Runtime Issues" section below, we discuss cases that involve parsing after
 variable expansion, etc.
 
-### Where We Re-parse Previously Parsed Text (Unfortunately)
+### Where We Parse More Than Once (statically, and unfortunately)
 
 This makes it harder to produce good error messages with source location info.
 It also implications for translation, because we break the "arena invariant".
@@ -55,12 +89,10 @@ happen compared with `$()`.
 
 (in `_ReadCommandSubPart` in `osh/word_parse.py`)
 
-### Where VirtualLineReader is Used
+### Where We Read More Than Once (`VirtualLineReader`)
 
-This isn't necessarily re-parsing, but it's re-reading.
-
-- alias expansion
-- here documents:  We first read lines, and then parse them.
+- [Here documents]($xref:here-doc):  We first read lines, and then parse them.
+- [alias]($help) expansion
 
 ### Extra Passes Over the LST
 
@@ -72,87 +104,79 @@ These are handled up front, but not in a single pass.
 - Brace Detection in a few places: `echo {a,b}`
 - Tilde Detection: `echo ~bob`, `home=~bob`
 
-### Parser Lookahead
+### Lookahead in Recursive Descent Parsers
 
-- `func() { echo hi; }` vs.  `func=()  # an array`
-- precedence parsing?  I think this is also a single token.
-
-### Lexer Unread
-
-`osh/word_parse.py` calls `lexer.MaybeUnreadOne() to handle right parens in
-this case:
-
-```
-(case x in x) ;; esac )
-```
-
-This is sort of like the `ungetc()` I've seen in other shell lexers.
+- `myfunc() { echo hi; }` vs.  `myfunc=()  # an array`
+- `shopt -s parse_equals`: For `x = 1 + 2*3`
 
 ### Where the Arena Invariant is Broken
 
-- Here docs with <<-.  The leading tab is lost, because we don't need it for
+- Here docs with `<<-`.  The leading tab is lost, because we don't need it for
   translation.
 
 ### Where Parsers are Instantiated
 
-- See `osh/parse_lib.py` and its callers.
+- See [frontend/parse_lib.py]($oil-src) and its callers.
 
 ## Runtime Issues
 
-### Where OSH Parses Code in Strings Formed at Runtime
+### Where OSH Dynamically Parses
 
-(1) **Alias expansion** like `alias foo='ls | wc -l'`.  Aliases are like
+1. **Alias expansion** like `alias foo='ls | wc -l'`.  Aliases are like
 "lexical macros".
-
-(2) **Prompt strings**.  `$PS1` and family first undergo `\` substitution, and
+2. **Prompt strings**.  `$PS1` and family first undergo `\` substitution, and
 then the resulting strings are parsed as words, with `$` escaped to `\$`.
+3. **Builtins**.
+   - `eval` 
+   - `trap` builtin
+     - exit
+     - debug
+     - err
+     - signals
+   - `source` — the filename is formed dynamically, but the code is generally
+     static.
 
-(3) **Builtins**.
-
-- `eval` 
-- `trap` builtin
-  - exit
-  - debug
-  - err
-  - signals
-- `source` — the filename is formed dynamically, but the code is generally
-  static.
-
-### Where Bash Parses Code in Strings Formed at Runtime (perhaps unintentionally)
+### Where Bash Dynamically Parses (perhaps unintentionally)
 
 All of the cases above, plus:
 
 (1) Recursive **Arithmetic Evaluation**:
 
-    $ a='1+2'
-    $ b='a+3'
-    $ echo $(( b ))
-    6
+```sh-prompt
+$ a='1+2'
+$ b='a+3'
+$ echo $(( b ))
+6
+```
 
 This also happens for the operands to `[[ x -eq x ]]`.
 
-NOTE that `a='$(echo 3)` results in a **syntax error**.  I believe this was due
-to the ShellShock mitigation.
+Note that `a='$(echo 3)'` results in a **syntax error**.  I believe this was
+due to the ShellShock mitigation.
 
 (2) The **`unset` builtin** takes an LValue.  (not yet implemented in OSH)
 
-    $ a=(1 2 3 4)
-    $ expr='a[1+1]'
-    $ unset "$expr"
-    $ argv "${a[@]}"
-    ['1', '2', '4']
+```sh-prompt
+$ a=(1 2 3 4)
+$ expr='a[1+1]'
+$ unset "$expr"
+$ argv "${a[@]}"
+['1', '2', '4']
+```
 
 (3) **printf -v** takes an "LValue".
 
 (4) **Var refs** with `${!x}` takes a "cell".  (not yet implemented OSH.
 Relied on by `bash-completion`, as discovered by Greg Price)
 
-    $ a=(1 2 3 4)
-    $ expr='a[$(echo 2 | tee BAD)]'
-    $ echo ${!expr}
-    3
-    $ cat BAD
-    2
+```sh-prompt
+$ a=(1 2 3 4)
+$ expr='a[$(echo 2 | tee BAD)]'
+$ echo ${!expr}
+3
+$ cat BAD
+2
+```
 
 (5) **test -v** takes a "cell".
 
@@ -161,22 +185,22 @@ a certain pattern.
 
 ### Parse Errors at Runtime (Need Line Numbers)
 
-- [ -a -a -a ]
-- command line flag usage errors
-- alias parse errors
+- `test` / `[`, e.g. `[ -a -a -a ]`
+- Command line flag usage errors
+- [alias]($help) parse errors
 
 ## Other Cross-Cutting Observations
 
 ### Where $IFS is Used
 
 - Splitting of unquoted substitutions
-- read
+- The [read]($help) builtin
 - To split words in `compgen -W` (bash only)
 
 ### Shell Function Callbacks
 
-- completion hooks registered by `complete -F ls_complete_func ls`
-- bash has a `command_not_found` hook; osh doesn't yet
+- Completion hooks registered by `complete -F ls_complete_func ls`
+- bash has a `command_not_found` hook; OSH doesn't yet
 
 ### Where Unicode is Respected
 
@@ -184,76 +208,70 @@ See the doc on [Unicode](unicode.html).
 
 ### Parse-time and Runtime Pairs
 
-- echo -e '\x00\n' and echo $'\x00\n' (shared in OSH)
-- test / [ and [[ (shared in OSH)
-- static vs. dynamic assignment.  `local x=$y` vs. `s='x=$y'; local $s`.
-  - shells are very consistent here, but they have both notions!
+In OSH:
 
-### Other Pairs
+- `echo -e '\x00\n'` and `echo $'\x00\n'` (OSH shares lexer rules between them)
+- `test` / `[` and `[[` (OSH shares the parser and evaluator)
+- Static vs. Dynamic Assignment.  `local x=$y` vs. `s='x=$y'; local $s`.
+  - All shells have both notions!
 
-- expr and $(( )) (expr not in shell)
-- later: find and our own language
+Other Pairs:
+
+- `expr` and `$(( ))` (`expr` not in shell)
+- Later:
+  - [printf]($help) can have a static variant like `${myfloat %.3f}`
+  - `find` and our own language (although this may be done with blocks)
 
 ## Build Time
 
 ### Dependencies
 
+- Essential: [libc]($xref)
 - Optional: readline
+- Only in OVM now: [yajl]($xref)
 
 ### Borrowed Code
 
-- All of OPy:
-  - pgen2
+- [ASDL]($oil-src:asdl/) front end from [CPython]($xref:cpython) (heavily
+  refactored)
+- [frontend/tdop.py]($oil-src): Adapted from tinypy, but almost no original code
+  remains
+- [pgen2]($oil-src:pgen2/)
+- All of OPy (will be obsolete)
   - compiler2 from stdlib
   - byterun
-- ASDL front end from CPython (heavily refactored)
-- core/tdop.py: Heavily adapted from tinypy
+- Build Dependency: [MyPy]($xref:mypy)
 
-### Generated Code
+### Metaprogramming / Generated Code
 
-- See `build/dev.sh`
-
-## More
-
-## The OSH Parser
-
-TODO: Move this
-
-The OSH parser is better than other shell parsers:
-
-- It statically parses interleaved sublanguages/dialects (e.g. the word
-  language, arithmetic, etc.)
-- `$PS2` just works (due to `_Peek()` and `_Next()`).  Other shells use special
-  annotations in the parser to handle newlines.  (TODO: link them)
-- It's used for interactive completion!  The `ParseContext()` collects
-  "trails".
-- It produces an LST, so it can be used for translation.  This structure could
-  also be used for linting/reformatting.
-
-Bad: it's a slower!  This needs to be fixed.
-
-Where the parser is reused:
-
-- The `eval` builtin.  (I'm sure bash does this too.)
-- Expanding aliases.
-- Parsing the prompt string `$PS1`, which may contain substitutions, and hence
-  arbitrary code.  Also `$PS{2,4}`.
-- For interactive completion.  (bash does NOT do this).
-- Upcoming: for history expansion, e.g. `!$` to pick off the last word.  (bash
-  does NOT do this.)
+- Try `ls */*_def.py */*_gen.py`
+  - The `def.py` files are abstract definitions.  They're not translated by
+    [mycpp]($xref).
+  - The `gen.py` files generate source code in Python and C++ from these
+    definitions.
+  - For example, we define the core `Id` type and the lexing rules abstractly.
+- See [build/dev.sh]($oil-src) and [build/codegen.sh]($oil-src)
 
 ## State Machines
 
 - `$IFS` splitting in `osh/split.py`
 - compadjust needs to split partial `argv` by user-defined delimiters, e.g.
   `:=`
-- TODO: Model the prompt and completion as a state machine
-- outside example: vtparse.
+- TODO: Model the prompt and completion as a state machine (?)
+
+<!-- Another good example: vtparse. -->
 
 The point of a state machine is to make sure all cases are handled!
 
+## Other Topics
+
+- [Dependency Injection]($xref:dependency-injection)
+
 ## Links
 
+- [README](README.html) describes how the code is organized.
+- [Data Model](data-model.html) describes the interpreter's user-facing data
+  structures.
 - [OSH Word Evaluation Algorithm][word-eval] on the wiki
 
 [word-eval]: https://github.com/oilshell/oil/wiki/OSH-Word-Evaluation-Algorithm
