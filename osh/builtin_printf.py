@@ -73,7 +73,7 @@ class _FormatStringParser(object):
     self._Next(lex_mode_e.PrintfPercent)  # move past %
 
     part = printf_part.Percent()
-    if self.token_type == Id.Format_Flag:
+    if self.token_type in (Id.Format_Flag, Id.Format_Zero):
       part.flag = self.cur_token
       self._Next(lex_mode_e.PrintfPercent)
 
@@ -82,20 +82,20 @@ class _FormatStringParser(object):
       if flag in '# +':
         p_die("osh printf doesn't support the %r flag", flag, token=part.flag)
 
-    if self.token_type == Id.Format_Num:
+    if self.token_type in (Id.Format_Num, Id.Format_Star):
       part.width = self.cur_token
       self._Next(lex_mode_e.PrintfPercent)
 
     if self.token_type == Id.Format_Dot:
       dot_spid = self.cur_token.span_id
       self._Next(lex_mode_e.PrintfPercent)  # past dot
-      if self.token_type == Id.Format_Num or self.cur_token.val == '0':
+      if self.token_type in (Id.Format_Num, Id.Format_Star, Id.Format_Zero):
         part.precision = self.cur_token
         self._Next(lex_mode_e.PrintfPercent)
       else:
         part.precision = Token(Id.Format_Num, dot_spid, '0')
 
-    if self.token_type == Id.Format_Type:
+    if self.token_type in (Id.Format_Type, Id.Format_Time):
       part.type = self.cur_token
 
       # ADDITIONAL VALIDATION outside the "grammar".
@@ -214,16 +214,19 @@ class Printf(object):
         elif isinstance(part, printf_part.Percent):
           width = None
           if part.width:
-            if part.width.val != '*':
+            if part.width.id in (Id.Format_Num, Id.Format_Zero):
               width = part.width.val
               width_spid = part.width.span_id
-            elif arg_index < num_args:
-              width = varargs[arg_index]
-              width_spid = spids[arg_index]
-              arg_index += 1
+            elif part.width.id == Id.Format_Star:
+              if arg_index < num_args:
+                width = varargs[arg_index]
+                width_spid = spids[arg_index]
+                arg_index += 1
+              else:
+                width = ''
+                width_spid = runtime.NO_SPID
             else:
-              width = ''
-              width_spid = runtime.NO_SPID
+              raise AssertionError()
 
             try:
               width = int(width)
@@ -236,16 +239,19 @@ class Printf(object):
 
           precision = None
           if part.precision:
-            if part.precision.val != '*':
+            if part.precision.id in (Id.Format_Num, Id.Format_Zero):
               precision = part.precision.val
               precision_spid = part.precision.span_id
-            elif arg_index < num_args:
-              precision = varargs[arg_index]
-              precision_spid = spids[arg_index]
-              arg_index += 1
+            elif part.precision.id == Id.Format_Star:
+              if arg_index < num_args:
+                precision = varargs[arg_index]
+                precision_spid = spids[arg_index]
+                arg_index += 1
+              else:
+                precision = ''
+                precision_spid = runtime.NO_SPID
             else:
-              precision = ''
-              precision_spid = runtime.NO_SPID
+              raise AssertionError()
 
             try:
               precision = int(precision)
@@ -256,10 +262,11 @@ class Printf(object):
                                 span_id = precision_spid)
               return 1
 
-          try:
+          if arg_index < num_args:
             s = varargs[arg_index]
             word_spid = spids[arg_index]
-          except IndexError:
+            arg_index += 1
+          else:
             s = ''
             word_spid = runtime.NO_SPID
 
@@ -269,7 +276,7 @@ class Printf(object):
               s = s[:precision]  # truncate
           elif typ == 'q':
             s = string_ops.ShellQuoteOneLine(s)
-          elif typ in 'diouxX' or typ.endswith('T'):
+          elif typ in 'diouxX' or part.type.id == Id.Format_Time:
             try:
               d = int(s)
             except ValueError:
@@ -277,7 +284,7 @@ class Printf(object):
                 # TODO: utf-8 decode s[1:] to be more correct.  Probably
                 # depends on issue #366, a utf-8 library.
                 d = ord(s[1])
-              elif len(s) == 0 and typ.endswith('T'):
+              elif len(s) == 0 and part.type.id == Id.Format_Time:
                 d = -1
               else:
                 # This works around the fact that in the arg recycling case, you have no spid.
@@ -304,7 +311,7 @@ class Printf(object):
                 s = '%x' % d
               elif typ == 'X':
                 s = '%X' % d
-            elif typ.endswith('T'):
+            elif part.type.id == Id.Format_Time:
               # set timezone
               tzcell = self.mem.GetCell('TZ')
               if tzcell and tzcell.exported and tzcell.val.tag_() == value_e.Str:
@@ -339,7 +346,6 @@ class Printf(object):
               s = s.rjust(width, ' ')
 
           out.append(s)
-          arg_index += 1
 
         else:
           raise AssertionError()

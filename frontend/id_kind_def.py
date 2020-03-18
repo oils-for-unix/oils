@@ -485,7 +485,7 @@ def AddKinds(spec):
   spec.AddKind('Format', [
       'EscapedPercent',
       'Percent',  # starts another lexer mode
-      'Flag', 'Num', 'Dot', 'Type',
+      'Flag', 'Num', 'Dot', 'Type', 'Star', 'Time', 'Zero',
   ])
 
   # For parsing prompt strings like PS1.
