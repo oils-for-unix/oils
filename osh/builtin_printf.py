@@ -48,7 +48,9 @@ class _FormatStringParser(object):
   """
   Grammar:
 
-    fmt           = Format_Percent Flag? Num? (Dot Num)? Type
+    width         = Num | Star
+    precision     = Dot (Num | Star | Zero)?
+    fmt           = Percent (Flag | Zero)* width? precision? (Type | Time)
     part          = Char_* | Format_EscapedPercent | fmt
     printf_format = part* Eof_Real   # we're using the main lexer
 
