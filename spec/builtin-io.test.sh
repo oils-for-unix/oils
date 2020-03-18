@@ -449,10 +449,15 @@ v1=a,b,c
 v1=d v2=e,f
 v1=g v2=h v3=i
 ## END
-## N-I dash/ash STDOUT:
+## N-I dash STDOUT:
 v1=
 v1= v2=
 v1= v2= v3=
+## END
+## BUG ash STDOUT:
+v1=a,b,c
+v1=d,e,f v2=
+v1=g,h,i v2= v3=
 ## END
 
 #### read -d '' (null-separated records)
@@ -470,8 +475,13 @@ v1=a,b,c
 v1=d v2=e,f
 v1=g v2=h v3=i
 ## END
-## N-I dash/ash STDOUT:
+## N-I dash STDOUT:
 v1=
+v1= v2=
+v1= v2= v3=
+## END
+## BUG ash STDOUT:
+v1=a,b,cd,e,fg,h,i
 v1= v2=
 v1= v2= v3=
 ## END

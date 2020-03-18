@@ -79,11 +79,11 @@ class ProcessTest(unittest.TestCase):
 
     r = redirect.Path(Id.Redir_Less, 0, PATH)
     fd_state.Push([r], waiter)
-    line1 = builtin_misc.ReadLineFromStdin()
+    line1 = builtin_misc.ReadLineFromStdin(None)
     fd_state.Pop()
 
     fd_state.Push([r], waiter)
-    line2 = builtin_misc.ReadLineFromStdin()
+    line2 = builtin_misc.ReadLineFromStdin(None)
     fd_state.Pop()
 
     # sys.stdin.readline() would erroneously return 'two' because of buffering.

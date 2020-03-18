@@ -36,6 +36,7 @@ from _devbuild.gen.runtime_asdl import (
 from asdl import runtime
 from core import state
 from core import ui
+from core.util import log
 from frontend import args
 from frontend import arg_def
 from mycpp import mylib
@@ -51,7 +52,7 @@ if mylib.PYTHON:
   except ImportError:
     help_index = None
 
-from typing import Any, IO, TYPE_CHECKING
+from typing import Any, Optional, IO, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import value__Str
   from core.pyutil import _FileResourceLoader
@@ -59,6 +60,8 @@ if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from osh.cmd_exec import Executor
   from osh.split import SplitContext
+
+_ = log
 
 #
 # Abstract base class
@@ -166,18 +169,25 @@ if mylib.PYTHON:
   READ_SPEC.ShortFlag('-r')
   READ_SPEC.ShortFlag('-n', args.Int)
   READ_SPEC.ShortFlag('-a', args.Str)  # name of array to read into
+  READ_SPEC.ShortFlag('-d', args.Str)
 
 
 # sys.stdin.readline() in Python has buffering!  TODO: Rewrite this tight loop
 # in C?  Less garbage probably.
 # NOTE that dash, mksh, and zsh all read a single byte at a time.  It appears
 # to be required by POSIX?  Could try libc getline and make this an option.
-def ReadLineFromStdin():
+def ReadLineFromStdin(delim_char):
+  # type: (Optional[str]) -> str
+  """Read a line, or read up until delim_char if set."""
   chars = []
   while True:
     c = posix.read(0, 1)
     if not c:
       break
+
+    if c == delim_char:
+      break
+
     chars.append(c)
 
     if c == '\n':
@@ -194,8 +204,8 @@ class Read(object):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     arg, i = READ_SPEC.ParseCmdVal(cmd_val)
-
     names = cmd_val.argv[i:]
+
     if arg.n is not None:  # read a certain number of bytes
       stdin = sys.stdin.fileno()
       try:
@@ -240,13 +250,20 @@ class Read(object):
     else:
       max_results = len(names)
 
+    if arg.d is not None:
+      if len(arg.d):
+        delim_char = arg.d[0]
+      else:
+        delim_char = '\0'  # -d '' delimits by NUL
+    else:
+      delim_char = None  # read a line
+
     # We have to read more than one line if there is a line continuation (and
     # it's not -r).
-
     parts = []
     join_next = False
     while True:
-      line = ReadLineFromStdin()
+      line = ReadLineFromStdin(delim_char)
       #log('LINE %r', line)
       if not line:  # EOF
         status = 1

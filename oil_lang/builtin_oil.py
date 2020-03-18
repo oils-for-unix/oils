@@ -375,7 +375,7 @@ class Getline(_Builtin):
       raise args.UsageError('got extra argument', span_id=next_spid)
 
     # TODO: use a more efficient function in C
-    line = builtin_misc.ReadLineFromStdin()
+    line = builtin_misc.ReadLineFromStdin(None)
     if not line:  # EOF
       return 1
 
