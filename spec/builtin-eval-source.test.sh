@@ -13,6 +13,28 @@ hi
 ## BUG dash status: 127
 ## BUG dash stdout-json: ""
 
+#### eval usage
+eval -
+echo $?
+eval -z
+echo $?
+## STDOUT:
+127
+2
+## END
+## OK dash STDOUT:
+127
+127
+## END
+## OK mksh status: 1
+## OK mksh STDOUT:
+127
+## END
+## OK zsh STDOUT:
+0
+127
+## END
+
 #### Source
 lib=$TMP/spec-test-lib.sh
 echo 'LIBVAR=libvar' > $lib

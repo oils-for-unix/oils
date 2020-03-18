@@ -209,7 +209,7 @@ argv.py "${undef[@]}"
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 
-#### strict_eval-builtin
+#### strict_eval_builtin
 for i in 1 2; do
   eval  # zero args
   echo status=$?

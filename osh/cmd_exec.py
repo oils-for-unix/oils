@@ -73,11 +73,13 @@ from asdl import runtime
 from core import error
 from core import main_loop
 from core import process
+from core import state
 from core import ui
 from core import util
 from core.util import log, e_die
 
 from frontend import args
+from frontend import arg_def
 from frontend import consts
 from frontend import reader
 
@@ -85,7 +87,6 @@ from oil_lang import objects
 from osh import braces
 from osh import builtin_pure
 from osh import sh_expr_eval
-from core import state
 from osh import word_
 
 from mycpp import mylib
@@ -113,6 +114,10 @@ if TYPE_CHECKING:
   from osh import word_eval
   from osh import builtin_process
   from osh.builtin_misc import _Builtin
+
+
+if mylib.PYTHON:
+  EVAL_SPEC = arg_def.Register('eval')
 
 
 # Python type name -> Oil type name
@@ -290,6 +295,7 @@ class Executor(object):
     self.fd_state = fd_state
     self.procs = procs
     self.builtins = builtins
+
     # This is for shopt and set -o.  They are initialized by flags.
     self.exec_opts = exec_opts
 
@@ -331,15 +337,20 @@ class Executor(object):
 
   def _Eval(self, cmd_val):
     # type: (cmd_value__Argv) -> int
+
+    # There are no flags, but we need it to respect --
+    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+    arg_r.Next()  # skip 'eval'
+    arg = EVAL_SPEC.Parse(arg_r)
+
     if self.exec_opts.strict_eval_builtin():
-      # To be less confusing, eval accepts EXACTLY one string arg.
-      n = len(cmd_val.argv)
-      if n != 2:
-        raise args.UsageError('requires exactly 1 argument, got %d' % (n-1))
-      code_str = cmd_val.argv[1]
+      code_str, eval_spid = arg_r.ReadRequired2('requires code string')
+      if not arg_r.AtEnd():
+        raise args.UsageError('requires exactly 1 argument')
     else:
-      code_str = ' '.join(cmd_val.argv[1:])
-    eval_spid = cmd_val.arg_spids[0]
+      code_str = ' '.join(cmd_val.argv[arg_r.i:])
+      # code_str could be EMPTY, so just use the first one
+      eval_spid = cmd_val.arg_spids[0]
 
     line_reader = reader.StringLineReader(code_str, self.arena)
     c_parser = self.parse_ctx.MakeOshParser(line_reader)
