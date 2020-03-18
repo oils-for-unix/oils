@@ -229,6 +229,20 @@ printf '[%0.s]\n' foo
 ## N-I mksh stdout-json: "[      ]\n["
 ## N-I mksh status: 1
 
+#### printf %*.*s (width/precision from args)
+printf '[%*s]\n' 9 hello
+printf '[%.*s]\n' 3 hello
+printf '[%*.3s]\n' 9 hello
+printf '[%9.*s]\n' 3 hello
+printf '[%*.*s]\n' 9 3 hello
+## STDOUT:
+[    hello]
+[hel]
+[      hel]
+[      hel]
+[      hel]
+## END
+
 #### unsigned / octal / hex
 printf '[%u]\n' 42
 printf '[%o]\n' 42

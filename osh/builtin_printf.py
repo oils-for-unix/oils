@@ -8,7 +8,7 @@ from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.runtime_asdl import cmd_value__Argv, value_e, value__Str
 from _devbuild.gen.syntax_asdl import (
     printf_part, printf_part_t,
-    source
+    source, Token
 )
 from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
 
@@ -212,6 +212,50 @@ class Printf(object):
           out.append(s)
 
         elif isinstance(part, printf_part.Percent):
+          width = None
+          if part.width:
+            if part.width.val != '*':
+              width = part.width.val
+              width_spid = part.width.span_id
+            elif arg_index < num_args:
+              width = varargs[arg_index]
+              width_spid = spids[arg_index]
+              arg_index += 1
+            else:
+              width = ''
+              width_spid = runtime.NO_SPID
+
+            try:
+              width = int(width)
+            except ValueError:
+              if width_spid == runtime.NO_SPID:
+                width_spid = part.width.span_id
+              self.errfmt.Print("printf got invalid number %r for the width", s,
+                                span_id = width_spid)
+              return 1
+
+          precision = None
+          if part.precision:
+            if part.precision.val != '*':
+              precision = part.precision.val
+              precision_spid = part.precision.span_id
+            elif arg_index < num_args:
+              precision = varargs[arg_index]
+              precision_spid = spids[arg_index]
+              arg_index += 1
+            else:
+              precision = ''
+              precision_spid = runtime.NO_SPID
+
+            try:
+              precision = int(precision)
+            except ValueError:
+              if precision_spid == runtime.NO_SPID:
+                precision_spid = part.precision.span_id
+              self.errfmt.Print("printf got invalid number %r for the precision", s,
+                                span_id = precision_spid)
+              return 1
+
           try:
             s = varargs[arg_index]
             word_spid = spids[arg_index]
@@ -221,8 +265,7 @@ class Printf(object):
 
           typ = part.type.val
           if typ == 's':
-            if part.precision:
-              precision = int(part.precision.val)
+            if precision is not None:
               s = s[:precision]  # truncate
           elif typ == 'q':
             s = string_ops.ShellQuoteOneLine(s)
@@ -283,8 +326,7 @@ class Printf(object):
           else:
             raise AssertionError()
 
-          if part.width:
-            width = int(part.width.val)
+          if width is not None:
             if part.flag:
               flag = part.flag.val
               if flag == '-':
