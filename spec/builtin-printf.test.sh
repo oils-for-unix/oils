@@ -515,17 +515,22 @@ printf '[% d]\n' -42
 
 #### printf # flag
 # I didn't know these existed -- I only knew about - and 0 !
-printf '[%#o]\n' 42
-printf '[%#x]\n' 42
-printf '[%#X]\n' 42
+# Note: '#' flag for integers outputs a prefix ONLY WHEN the value is non-zero
+printf '[%#o][%#o]\n' 0 42
+printf '[%#x][%#x]\n' 0 42
+printf '[%#X][%#X]\n' 0 42
 echo ---
-printf '[%#f]\n' 3
+# Note: '#' flag for %f, %g always outputs the decimal point.
+printf '[%.0f][%#.0f]\n' 3 3
+# Note: In addition, '#' flag for %g does not omit zeroes in fraction
+printf '[%g][%#g]\n' 3 3
 ## STDOUT:
-[052]
-[0x2a]
-[0X2A]
+[0][052]
+[0][0x2a]
+[0][0X2A]
 ---
-[3.000000]
+[3][3.]
+[3][3.00000]
 ## END
 ## N-I osh STDOUT:
 ---
