@@ -278,6 +278,10 @@ class MutableOpts(object):
     # type: () -> None
     self.opt_array[option_i.interactive] = True
 
+  def set_emacs(self):
+    # type: () -> None
+    self.opt_array[option_i.emacs] = True
+
   def set_xtrace(self, b):
     # type: (bool) -> None
     self.opt_array[option_i.xtrace] = b

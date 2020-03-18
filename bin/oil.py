@@ -625,6 +625,9 @@ def ShellMain(lang, argv0, argv, login_shell):
   c_parser = parse_ctx.MakeOshParser(line_reader)
 
   if exec_opts.interactive():
+    # bash: 'set -o emacs' is the default only in the interactive shell
+    mutable_opts.set_emacs()
+
     # Calculate ~/.config/oil/oshrc or oilrc
     # Use ~/.config/oil to avoid cluttering the user's home directory.  Some
     # users may want to ln -s ~/.config/oil/oshrc ~/oshrc or ~/.oshrc.
