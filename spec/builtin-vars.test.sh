@@ -389,12 +389,33 @@ x z len=2
 status=0
  y z len=3
 ## END
-## N-I osh STDOUT:
-status=2
-x y z len=3
-## END
 
-#### Unset array member with expression
+#### unset -v (mentioned on issue #661)
+case $SH in (dash|mksh|zsh) return; esac
+
+declare -A dict=()
+key=1],a[1
+dict["$key"]=foo
+echo ${#dict[@]}
+echo keys=${!dict[@]}
+echo vals=${dict[@]}
+
+unset -v 'dict["$key"]'
+echo ${#dict[@]}
+echo keys=${!dict[@]}
+echo vals=${dict[@]}
+## STDOUT:
+1
+keys=1],a[1
+vals=foo
+0
+keys=
+vals=
+## END
+## N-I dash/mksh/zsh stdout-json: ""
+
+
+#### Unset array member with dynamic parsing
 i=1
 a=(w x y z)
 unset 'a[ i - 1 ]' a[i+1]  # note: can't have space between a and [
