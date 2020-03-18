@@ -313,7 +313,9 @@ class Trap(object):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
 
-    arg, _ = TRAP_SPEC.ParseCmdVal(cmd_val)
+    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+    arg_r.Next()  # skip 'trap'
+    arg, _ = TRAP_SPEC.Parse(arg_r)
 
     if arg.p:  # Print registered handlers
       for name, value in self.traps.iteritems():
@@ -334,8 +336,6 @@ class Trap(object):
 
       return 0
 
-    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
-    arg_r.Next()  # skip argv[0]
     code_str = arg_r.ReadRequired('requires a code string')
     sig_spec, sig_spid = arg_r.ReadRequired2('requires a signal or hook name')
 

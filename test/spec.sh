@@ -390,7 +390,7 @@ builtins() {
 }
 
 builtin-eval-source() {
-  sh-spec spec/builtin-eval-source.test.sh --no-cd-tmp --osh-failures-allowed 1 \
+  sh-spec spec/builtin-eval-source.test.sh --no-cd-tmp \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
@@ -431,7 +431,7 @@ builtin-bracket() {
 }
 
 builtin-trap() {
-  sh-spec spec/builtin-trap.test.sh --no-cd-tmp --osh-failures-allowed 4 \
+  sh-spec spec/builtin-trap.test.sh --no-cd-tmp --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
