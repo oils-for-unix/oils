@@ -87,9 +87,13 @@ class _FormatStringParser(object):
       self._Next(lex_mode_e.PrintfPercent)
 
     if self.token_type == Id.Format_Dot:
+      dot_spid = self.cur_token.span_id
       self._Next(lex_mode_e.PrintfPercent)  # past dot
-      part.precision = self.cur_token
-      self._Next(lex_mode_e.PrintfPercent)
+      if self.token_type == Id.Format_Num or self.cur_token.val == '0':
+        part.precision = self.cur_token
+        self._Next(lex_mode_e.PrintfPercent)
+      else:
+        part.precision = Token(Id.Format_Num, dot_spid, '0')
 
     if self.token_type == Id.Format_Type:
       part.type = self.cur_token

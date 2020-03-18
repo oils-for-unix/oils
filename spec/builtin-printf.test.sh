@@ -219,6 +219,16 @@ printf '[%0.0s]\n' foo
 ## N-I mksh stdout-json: "[      ]\n["
 ## N-I mksh status: 1
 
+#### printf %6.s and %0.s
+printf '[%6.s]\n' foo
+printf '[%0.s]\n' foo
+## STDOUT:
+[      ]
+[]
+## END
+## N-I mksh stdout-json: "[      ]\n["
+## N-I mksh status: 1
+
 #### unsigned / octal / hex
 printf '[%u]\n' 42
 printf '[%o]\n' 42
