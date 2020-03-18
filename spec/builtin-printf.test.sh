@@ -584,3 +584,19 @@ status=0
 ## N-I dash/mksh/zsh/ash STDOUT:
 status=1
 ## END
+
+#### %10.5(strftime format)T
+# The result depends on timezone
+export TZ=Asia/Tokyo
+printf '[%10.5(%Y-%m-%d)T]\n' 1557978599
+export TZ=US/Eastern
+printf '[%10.5(%Y-%m-%d)T]\n' 1557978599
+echo status=$?
+## STDOUT:
+[     2019-]
+[     2019-]
+status=0
+## END
+## N-I dash/mksh/zsh/ash STDOUT:
+[[status=1
+## END

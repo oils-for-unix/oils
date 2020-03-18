@@ -115,7 +115,7 @@ class _FormatStringParser(object):
       p_die(msg, token=self.cur_token)
 
     # Do this check AFTER the floating point checks
-    if part.precision and part.type.val not in 'fs':
+    if part.precision and part.type.val[-1] not in 'fsT':
       p_die("precision can't be specified when here",
             token=part.precision)
 
@@ -329,6 +329,8 @@ class Printf(object):
               elif d == -2: # shell start time
                 d = shell_start_time
               s = time.strftime(typ[1:-2], time.localtime(d));
+              if precision is not None:
+                s = s[:precision]  # truncate
 
             else:
               raise AssertionError()
