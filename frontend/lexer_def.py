@@ -535,8 +535,8 @@ LEXER_DEF[lex_mode_e.PrintfPercent] = [
   R('[1-9][0-9]*', Id.Format_Num),
   C('.', Id.Format_Dot),
   # We support dsq.  The others we parse to display an error message.
-  R('[disqbcouxXeEfFgG]', Id.Format_Type),
-  R(r'[^\0]', Id.Unknown_Tok),  # any otehr char
+  R('[disqbcouxXeEfFgG]|\([^()]*\)T', Id.Format_Type),
+  R(r'[^\0]', Id.Unknown_Tok),  # any other char
 ]
 
 LEXER_DEF[lex_mode_e.VSub_1] = [

@@ -541,15 +541,17 @@ status=1
 ## END
 
 #### %(strftime format)T
+# The result depends on timezone
+export TZ=Asia/Tokyo
+printf '%(%Y-%m-%d)T\n' 1557978599
+export TZ=US/Eastern
 printf '%(%Y-%m-%d)T\n' 1557978599
 echo status=$?
 ## STDOUT:
+2019-05-16
 2019-05-15
 status=0
 ## END
 ## N-I dash/mksh/zsh/ash STDOUT:
 status=1
-## END
-## N-I osh STDOUT:
-status=2
 ## END

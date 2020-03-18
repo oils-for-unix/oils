@@ -5,7 +5,7 @@ builtin_printf
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Kind
-from _devbuild.gen.runtime_asdl import cmd_value__Argv
+from _devbuild.gen.runtime_asdl import cmd_value__Argv, value_e, value__Str
 from _devbuild.gen.syntax_asdl import (
     printf_part, printf_part_t,
     source
@@ -13,6 +13,8 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
 
 import sys
+import time
+import os
 
 from asdl import runtime
 from core import error
@@ -27,7 +29,7 @@ from mycpp import mylib
 from osh import string_ops
 from osh import word_compile
 
-from typing import Dict, List, TYPE_CHECKING
+from typing import Dict, List, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
   from frontend.lexer import Lexer
@@ -40,6 +42,7 @@ if mylib.PYTHON:
   PRINTF_SPEC = arg_def.Register('printf')  # TODO: Don't need this?
   PRINTF_SPEC.ShortFlag('-v', args.Str)
 
+shell_start_time = time.time()
 
 class _FormatStringParser(object):
   """
@@ -219,7 +222,7 @@ class Printf(object):
               s = s[:precision]  # truncate
           elif typ == 'q':
             s = string_ops.ShellQuoteOneLine(s)
-          elif typ in 'diouxX':
+          elif typ in 'diouxX' or typ.endswith('T'):
             try:
               d = int(s)
             except ValueError:
@@ -227,6 +230,8 @@ class Printf(object):
                 # TODO: utf-8 decode s[1:] to be more correct.  Probably
                 # depends on issue #366, a utf-8 library.
                 d = ord(s[1])
+              elif len(s) == 0 and typ.endswith('T'):
+                d = -1
               else:
                 # This works around the fact that in the arg recycling case, you have no spid.
                 if word_spid == runtime.NO_SPID:
@@ -252,6 +257,22 @@ class Printf(object):
                 s = '%x' % d
               elif typ == 'X':
                 s = '%X' % d
+            elif typ.endswith('T'):
+              # set timezone
+              tzcell = self.mem.GetCell('TZ')
+              if tzcell and tzcell.exported and tzcell.val.tag_() == value_e.Str:
+                tzval = cast(value__Str, tzcell.val)
+                os.environ['TZ'] = tzval.s
+              elif 'TZ' in os.environ:
+                del os.environ['TZ']
+              time.tzset()
+
+              if d == -1: # now
+                d = None
+              elif d == -2: # shell start time
+                d = shell_start_time
+              s = time.strftime(typ[1:-2], time.localtime(d));
+
             else:
               raise AssertionError()
 
