@@ -61,7 +61,7 @@ if TYPE_CHECKING:
 
 # For compatibility, ${BASH_SOURCE} and ${BASH_SOURCE[@]} are both valid.
 # ${FUNCNAME} and ${BASH_LINENO} are also the same type of of special variables.
-_STRING_AND_ARRAY = ('BASH_SOURCE', 'FUNCNAME', 'BASH_LINENO')
+_STRING_AND_ARRAY = ['BASH_SOURCE', 'FUNCNAME', 'BASH_LINENO']
 
 
 def EvalSingleQuoted(part):
@@ -1079,7 +1079,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             length = self.arith_ev.EvalToInt(op.length)
 
           try:
-            arg0_val = None
+            arg0_val = None  # type: value__Str
             if var_name is None: # $* or $@
               arg0_val = self.mem.GetArg0()
             val = _PerformSlice(val, begin, length, has_length, part, arg0_val)

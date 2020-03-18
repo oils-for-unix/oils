@@ -77,8 +77,8 @@ class Export(object):
     return 0
 
 
-def _ReconcileTypes(rval, arg, errfmt, span_id):
-  # type: (value_t, Any, ErrorFormatter, int) -> value_t
+def _ReconcileTypes(rval, arg, span_id):
+  # type: (value_t, Any, int) -> value_t
   """Check that -a and -A flags are consistent with RHS.
 
   Special case: () is allowed to mean empty indexed array or empty assoc array
@@ -137,7 +137,7 @@ class Readonly(object):
       else:
         rval = pair.rval
 
-      rval = _ReconcileTypes(rval, arg, self.errfmt, pair.spid)
+      rval = _ReconcileTypes(rval, arg, pair.spid)
 
       # NOTE:
       # - when rval is None, only flags are changed
@@ -260,7 +260,7 @@ class NewVar(object):
       else:
         rval = pair.rval
 
-      rval = _ReconcileTypes(rval, arg, self.errfmt, pair.spid)
+      rval = _ReconcileTypes(rval, arg, pair.spid)
       self.mem.SetVar(pair.lval, rval, lookup_mode, flags=flags)
 
     return status

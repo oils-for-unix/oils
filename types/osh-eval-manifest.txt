@@ -4,6 +4,7 @@
 ./asdl/runtime.py
 ./bin/osh_eval.py
 ./core/alloc.py
+./core/ansi.py
 ./core/error.py
 ./core/meta.py
 ./core/optview.py
