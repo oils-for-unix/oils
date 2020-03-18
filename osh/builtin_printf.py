@@ -8,7 +8,7 @@ from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.runtime_asdl import cmd_value__Argv, value_e, value__Str
 from _devbuild.gen.syntax_asdl import (
     printf_part, printf_part_t,
-    source, Token
+    source,
 )
 from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
 
@@ -89,13 +89,11 @@ class _FormatStringParser(object):
       self._Next(lex_mode_e.PrintfPercent)
 
     if self.token_type == Id.Format_Dot:
-      dot_spid = self.cur_token.span_id
+      part.precision = self.cur_token
       self._Next(lex_mode_e.PrintfPercent)  # past dot
       if self.token_type in (Id.Format_Num, Id.Format_Star, Id.Format_Zero):
         part.precision = self.cur_token
         self._Next(lex_mode_e.PrintfPercent)
-      else:
-        part.precision = Token(Id.Format_Num, dot_spid, '0')
 
     if self.token_type in (Id.Format_Type, Id.Format_Time):
       part.type = self.cur_token
@@ -241,7 +239,10 @@ class Printf(object):
 
           precision = None
           if part.precision:
-            if part.precision.id in (Id.Format_Num, Id.Format_Zero):
+            if part.precision.id == Id.Format_Dot:
+              precision = '0'
+              precision_spid = part.precision.span_id
+            elif part.precision.id in (Id.Format_Num, Id.Format_Zero):
               precision = part.precision.val
               precision_spid = part.precision.span_id
             elif part.precision.id == Id.Format_Star:
