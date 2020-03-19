@@ -75,14 +75,14 @@ class _FormatStringParser(object):
     self._Next(lex_mode_e.PrintfPercent)  # move past %
 
     part = printf_part.Percent()
-    if self.token_type in (Id.Format_Flag, Id.Format_Zero):
-      part.flag = self.cur_token
-      self._Next(lex_mode_e.PrintfPercent)
-
+    while self.token_type in (Id.Format_Flag, Id.Format_Zero):
       # space and + could be implemented
-      flag = part.flag.val
+      flag = self.cur_token.val
       if flag in '# +':
-        p_die("osh printf doesn't support the %r flag", flag, token=part.flag)
+        p_die("osh printf doesn't support the %r flag", flag, token=self.cur_token)
+
+      part.flags.append(self.cur_token)
+      self._Next(lex_mode_e.PrintfPercent)
 
     if self.token_type in (Id.Format_Num, Id.Format_Star):
       part.width = self.cur_token
@@ -212,6 +212,12 @@ class Printf(object):
           out.append(s)
 
         elif isinstance(part, printf_part.Percent):
+          flags = None
+          if len(part.flags) > 0:
+            flags = ''
+            for flag_token in part.flags:
+              flags += flag_token.val
+
           width = None
           if part.width:
             if part.width.id in (Id.Format_Num, Id.Format_Zero):
@@ -356,11 +362,10 @@ class Printf(object):
             raise AssertionError()
 
           if width is not None:
-            if part.flag:
-              flag = part.flag.val
-              if flag == '-':
+            if flags:
+              if '-' in flags:
                 s = s.ljust(width, ' ')
-              elif flag == '0':
+              elif '0' in flags:
                 s = s.rjust(width, '0')
               else:
                 pass
