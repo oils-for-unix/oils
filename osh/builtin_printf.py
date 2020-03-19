@@ -287,7 +287,10 @@ class Printf(object):
                 # TODO: utf-8 decode s[1:] to be more correct.  Probably
                 # depends on issue #366, a utf-8 library.
                 d = ord(s[1])
-              elif len(s) == 0 and part.type.id == Id.Format_Time:
+              elif part.type.id == Id.Format_Time and len(s) == 0 and word_spid == runtime.NO_SPID:
+                # Note: No argument means -1 for %(...)T as in Bash Reference
+                #   Manual 4.2 "If no argument is specified, conversion behaves
+                #   as if -1 had been given."
                 d = -1
               else:
                 # This works around the fact that in the arg recycling case, you have no spid.
@@ -315,7 +318,14 @@ class Printf(object):
               elif typ == 'X':
                 s = '%X' % d
             elif part.type.id == Id.Format_Time:
-              # set timezone
+              # %(...)T
+
+              # Initialize timezone:
+              #   `localtime' uses the current timezone information initialized
+              #   by `tzset'.  The function `tzset' refers to the environment
+              #   variable `TZ'.  When the exported variable `TZ' is present,
+              #   its value should be reflected in the real environment
+              #   variable `TZ' before call of `tzset'.
               tzcell = self.mem.GetCell('TZ')
               if tzcell and tzcell.exported and tzcell.val.tag_() == value_e.Str:
                 tzval = cast(value__Str, tzcell.val)
@@ -324,11 +334,18 @@ class Printf(object):
                 del os.environ['TZ']
               time.tzset()
 
-              if d == -1: # now
-                d = None
-              elif d == -2: # shell start time
+              # Handle special values:
+              #   User can specify two special values -1 and -2 as in Bash
+              #   Reference Manual 4.2: "Two special argument values may be
+              #   used: -1 represents the current time, and -2 represents the
+              #   time the shell was invoked." from
+              #   https://www.gnu.org/software/bash/manual/html_node/Bash-Builtins.html#index-printf
+              if d == -1: # the current time
+                d = time.time()
+              elif d == -2: # the shell start time
                 d = shell_start_time
-              s = time.strftime(typ[1:-2], time.localtime(d));
+
+              s = time.strftime(typ[1:-2], time.localtime(d))
               if precision is not None:
                 s = s[:precision]  # truncate
 
