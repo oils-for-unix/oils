@@ -226,6 +226,10 @@ printf '[%0.s]\n' foo
 [      ]
 []
 ## END
+## BUG zsh STDOUT:
+[   foo]
+[foo]
+## END
 ## N-I mksh stdout-json: "[      ]\n["
 ## N-I mksh status: 1
 
