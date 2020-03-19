@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-#
 # printf
 # bash-completion uses this odd printf -v construction.  It seems to mostly use
 # %s and %q though.
@@ -436,9 +434,13 @@ echo status=$?
 [$]
 status=0
 ## END
-## N-I osh STDOUT:
-[\044]
-status=2
+
+#### printf %b with \c early return
+printf '[%b]\n' 'ab\ncd\cxy'
+echo $?
+## STDOUT:
+[ab
+cd0
 ## END
 
 #### printf %c -- doesn't respect UTF-8!  Bad.

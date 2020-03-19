@@ -103,9 +103,9 @@ echo -e 'ab\0cd'
 flags='-e'
 case $SH in dash) flags='' ;; esac
 
-echo $flags xy  'ab\cde'  'ab\cde'
+echo $flags xy  'ab\cde'  'zzz'
 ## stdout-json: "xy ab"
-## N-I mksh stdout-json: "xy abde abde"
+## N-I mksh stdout-json: "xy abde zzz"
 
 #### echo -e with hex escape
 echo -e 'abcd\x65f'

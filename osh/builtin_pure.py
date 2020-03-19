@@ -576,12 +576,15 @@ class Echo(object):
     argv = cmd_val.argv[1:]
     arg, arg_index = ECHO_SPEC.ParseLikeEcho(argv)
     argv = argv[arg_index:]
+
+    backslash_c = False  # \c terminates input
+
     if arg.e:
       new_argv = []
       for a in argv:
-        parts = []
+        parts = []  # type: List[str]
         lex = match.EchoLexer(a)
-        while True:
+        while not backslash_c:
           id_, value = lex.Next()
           if id_ == Id.Eol_Tok:  # Note: This is really a NUL terminator
             break
@@ -590,15 +593,14 @@ class Echo(object):
 
           # Unusual behavior: '\c' prints what is there and aborts processing!
           if p is None:
-            new_argv.append(''.join(parts))
-            for i, a in enumerate(new_argv):
-              if i != 0:
-                sys.stdout.write(' ')  # arg separator
-              sys.stdout.write(a)
-            return 0  # EARLY RETURN
+            backslash_c = True
+            break
 
           parts.append(p)
+
         new_argv.append(''.join(parts))
+        if backslash_c:  # no more args either
+          break
 
       # Replace it
       argv = new_argv
@@ -620,7 +622,7 @@ class Echo(object):
           sys.stdout.write(' ')  # arg separator
         sys.stdout.write(a)
 
-    if not arg.n:
+    if not arg.n and not backslash_c:
       sys.stdout.write('\n')
 
     return 0

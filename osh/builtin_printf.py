@@ -103,8 +103,6 @@ class _FormatStringParser(object):
       if part.type.val in 'eEfFgG':
         p_die("osh printf doesn't support floating point", token=part.type)
       # These two could be implemented.  %c needs utf-8 decoding.
-      if part.type.val == 'b':
-        p_die("osh printf doesn't support backslash escaping (try $'\\n')", token=part.type)
       if part.type.val == 'c':
         p_die("osh printf doesn't support single characters (bytes)", token=part.type)
 
@@ -201,6 +199,7 @@ class Printf(object):
     out = []
     arg_index = 0
     num_args = len(varargs)
+    backslash_c = False
 
     while True:
       for part in parts:
@@ -284,8 +283,30 @@ class Printf(object):
           if typ == 's':
             if precision is not None:
               s = s[:precision]  # truncate
+
           elif typ == 'q':
             s = string_ops.ShellQuoteOneLine(s)
+
+          elif typ == 'b':
+            # Process just like echo -e, except \c handling is simpler.
+
+            parts = []  # type: List[str]
+            lex = match.EchoLexer(s)
+            while True:
+              id_, value = lex.Next()
+              if id_ == Id.Eol_Tok:  # Note: This is really a NUL terminator
+                break
+
+              p = word_compile.EvalCStringToken(id_, value)
+
+              # Unusual behavior: '\c' aborts processing!
+              if p is None:
+                backslash_c = True
+                break
+
+              parts.append(p)
+            s = ''.join(parts)
+
           elif typ in 'diouxX' or part.type.id == Id.Format_Time:
             try:
               d = int(s)
@@ -377,6 +398,9 @@ class Printf(object):
 
         else:
           raise AssertionError()
+
+        if backslash_c:  # 'printf %b a\cb xx' - \c terminates processing!
+          break
 
       if arg_index >= num_args:
         break
