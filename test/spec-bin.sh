@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Build binaries for the spec tests.  This is necessary because they tickle
 # behavior in minor versions of each shell.
@@ -28,15 +28,9 @@ set -o pipefail
 set -o errexit
 
 readonly THIS_DIR=$(cd $(dirname $0) && pwd)
-readonly DIR=$THIS_DIR/../_tmp/spec-bin
+readonly DIR=$THIS_DIR/../_deps/spec-bin
 
 readonly BUSYBOX_NAME='busybox-1.31.1'
-
-upstream() {
-  # Not for end users
-  wget --directory _tmp \
-    https://busybox.net/downloads/busybox-1.31.1.tar.bz2
-}
 
 # The authoritative versions!
 download() {
@@ -52,7 +46,7 @@ download() {
 extract-all() {
   pushd $DIR
 
-  # Remove name collision: _tmp/spec-bin/mksh could be a FILE and a DIRECTORY.
+  # Remove name collision: _deps/spec-bin/mksh could be a FILE and a DIRECTORY.
   # This is unfortunately how their tarball is laid out.
   rm --verbose -r -f $DIR/mksh $DIR/mksh-R52c
 

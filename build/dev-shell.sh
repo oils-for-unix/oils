@@ -1,5 +1,3 @@
-#!/bin/bash
-#
 # Sets $PATH to the locations of some precompiled binaries.
 # An alternative to nix-shell.
 #
@@ -9,7 +7,7 @@
 # Note: assumes that $REPO_ROOT is $PWD.
 
 # test/spec-bin.sh builds binaries
-readonly SPEC_DIR="$PWD/_tmp/spec-bin"
+readonly SPEC_DIR="$PWD/_deps/spec-bin"
 
 # FALLBACK without test/spec-bin: test/spec.sh link-busybox-ash
 readonly ASH_SYMLINK_DIR="$PWD/_tmp/shells"
