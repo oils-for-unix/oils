@@ -96,6 +96,7 @@ readonly MARKDOWN_DOCS=(
 
   # Internal stuff
   data-model
+  process-model
   architecture-notes
   toil
 )

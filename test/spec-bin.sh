@@ -17,11 +17,6 @@
 # all at once with:
 #
 #   test/spec-bin.sh all-steps
-#
-# Could also build these:
-# - coreutils
-# - re2c for the OSH build (now in build/codegen.sh)
-# - cmark
 
 set -o nounset
 set -o pipefail

@@ -5,16 +5,39 @@ in_progress: yes
 Data Model for OSH and Oil
 ==========================
 
-This doc internal data structure in the Oil interpreter, and gives examples of
-how you manipulate them with shell or Oil code.
+<style>
+/* override language.css */
+.sh-command {
+  font-weight: unset;
+}
+</style>
 
-The interpreter is "unified".
+It's confusing that shell has many syntaxes for the same semantics.  For
+example, in bash, these four statements do similar things:
 
-- OSH semantics are based on:
-  - POSIX shell for strings
-  - bash and ksh for arrays and associative arrays.   bash largely follows ksh
-    is the case of arrays.  Its associative arrays are quirkier.
-- TODO: Python coercions.
+```sh-prompt
+$ foo='bar'
+$ declare -g foo=bar
+$ x='foo=bar'; typeset $x
+$ printf -v foo bar
+
+$ echo $foo
+bar
+```
+
+In addition Oil, adds JavaScript-like syntax:
+
+```
+var foo = 'bar'
+```
+
+This syntax can express more data types, may also confuse new users.
+
+SoTtis document describes user-facing data structures in the Oil interpreter.
+which should help users reason about the meaning of programs.
+
+A shortcut: after creating shell variables, use the `repr` builtin to inspect
+them!
 
 <!--
 TODO:
@@ -24,42 +47,201 @@ TODO:
   - and run through BOTH bash and osh
     - and link to this doc
   - bash 4.4 in a sandbox?
-
-- Move "operations on arrays" to a legacy arrays doc?
-
 -->
 
 
 <div id="toc">
 </div>
 
+## Design Goals
 
-## Why Use this Information?
+### Simplify and Rationalize bash
 
-The goal of Oil is to replace this quirky language.  But we still made it
-compatible.
+POSIX shell has a fairly simple model: everything is a string, and `"$@"` is a
+special case.
 
-If you want to write scripts compatible with OSH and bash.
+Bash adds many features on top of POSIX, including arrays and associative
+arrays.  Oil implements those features, and a few more.
+
+However, it also significantly simplifies the model.
+
+A primary difference is mentioned in [Known Differences](known-differences.html):
+
+- In bash, the *locations* of values are tagged with types, e.g. `declare -A
+  unset_assoc_array`.
+- In Oil, *values* are tagged with types.  This is how common dynamic languages
+  like Python and JavaScript behave.
+
+In other words, Oil "salvages" the confusing semantics of bash and produces
+something simpler, while still being very compatible.
+
+### Add New Features and Types
+
+TODO
+
+- eggex type
+- later: floating point type
+
+## High Level Description
+
+### Memory Is a Stack
+
+Shell has a stack but no heap.  It has values and locations, but no
+references/pointers.
+
+Oil adds references to data structures on the heap, which may be recurisve.
+
+- The stack also has the **arguments array** which is spelled `"$@"` in shell,
+  and `@ARGV` in Oil.
+
+### Functions and Variables Are Separate
+
+There are two distinct namespaces.  For example:
+
+```
+foo() {
+  echo 'function named foo'
+}
+foo=bar   # a variable; doesn't affect the function
+```
+
+### Variable Name Lookup with "Dynamic Scope"
+
+OSH has it, but Oil limits it.
+
+### Limitations of Arrays And Compound Data Structures
+
+Shell is a value-oriented language.
+
+- Can't Be Nested 
+- Can't Be Passed to Functions or Returned From Functions
+- Can't Take References; Must be Copied
+
+Example:
+
+```
+declare -a myarray=("${other_array[@]}")   # shell
+
+var myarray = @( @other_array )            # Oil
+```
+
+Reason: There's no Garbage collection.
+
+### Integers and Coercion
+
+- Strings are coerced to integers to do math.
+- What about `-i` in bash?
 
 
-## Oil's Data Model is Slightly Different Than Bash
+### Unix `fork()` Has Copy-On-Write Semantics
 
-It's meant to be more sane.
+See the [Process Model](process-model.html) document.
 
-See [Known Differences](known-differences.html).
 
-I salvaged these semantics.
+## Key Data Types
 
-Worst of the language!  Newest and most "grafted on".
+TODO: [osh/runtime.asdl]($oil-src)
 
+<!-- 
+TODO:
+- move this to core/runtime.asdl ? 
+- Make a graphviz diagram once everything is settled?
+-->
+
+### `cell`
+
+TODO
+
+- [export]($help) only applies to **strings**
+
+### `value`
+
+Undef, Str, Sequential/Indexed Arrays, Associative Array
+
+- "array" refers to both.
+  - although Oil has a "homogeneous array type" that's entirely different
+  - OSH array vs. Oil array
+- no integers, but there is (( ))
+- "$@" is an array, and "${a[@]}" too
+  - not true in bash -- it's fuzzy there
+  - but $@ and ${a[@]}  are NOT arrays
+- flags: readonly and exported (but arrays/assoc arrays shouldn't be exported)
+  - TODO: find that
+
+### `cmd_value` for shell builtins
+
+Another important type:
+
+```
+  assign_arg = (lvalue lval, value? rval, int spid)
+
+  cmd_value =
+    Argv(string* argv, int* arg_spids, command__BraceGroup? block)
+  | Assign(builtin builtin_id,
+           string* argv, int* arg_spids,
+           assign_arg* pairs)
+```
+
+
+## Printing State
+
+### Shell Builtins
+
+Oil supports various shell and bash operations to view the interpretr state.
+
+- `set` prints variables and their values
+- `set -o` prints options
+- `declare/typeset/readonly/export -p` prints a subset of variables
+- `test -v` tests if a variable is defined.
+
+### [repr]($help) in Oil
+
+Pretty prints a cell.
+
+This is cleaner!
+
+TODO: What about functions
+
+
+
+
+## Modifying State
+
+### Oil Keywords
+
+TODO: See Oil Keywords doc.
+
+### Shell Assignment Builtins: declare/typeset, readonly, export
+
+...
+
+### [unset]($help)
+
+You can't unset an array in OSH?  But you can in bash.
+
+### Other Builtins
+
+- [read]($help).  Sometimes sets the magic `$REPLY` variable.
+- [getopts]($help)
+
+
+## Links
+
+- <https://opensource.com/article/18/5/you-dont-know-bash-intro-bash-arrays>
+- <https://www.thegeekstuff.com/2010/06/bash-array-tutorial>
+
+## Appendix: Bash Issues
+
+<!--
 ### Surprising Parsing
 
 Parsing bash is undecidable.
 
     A[x]
     a[x]
+-->
 
-### Surprising Coercions
+### Strings and Arrays Are Confused
 
     Horrible
 
@@ -79,209 +261,20 @@ Associative arrays and being undefined
   - case $x in "$@"
 - half an associative array type
 
-### Bugs
+### Indexed Arrays and Associative Arrays Are Confused
 
-- test -v
+### Empty and Unset Are Confused
+
 - empty array conflicts with `set -o nounset` (in bash 4.3).  I can't recommend
-  in good faith
+  in good faith.
 
-## Memory
+<!--
+test -v (???)  Was there a bug here?
+-->
 
 
-Shell has a stack but no heap.  It has values and locations, but no
-references/pointers.
 
-Oil adds references to data structures on the heap, which may be recurisve.
-
-
-### Undef, Str, Sequential/Indexed Arrays, Associative Array
-
-- "array" refers to both.
-  - although Oil has a "homogeneous array type" that's entirely different
-  - OSH array vs. Oil array
-- no integers, but there is (( ))
-- "$@" is an array, and "${a[@]}" too
-  - not true in bash -- it's fuzzy there
-  - but $@ and ${a[@]}  are NOT arrays
-- flags: readonly and exported (but arrays/assoc arrays shouldn't be exported)
-  - TODO: find that
-
-### Arrays Can't Be Nested and Can't Escape Functions
-
-- Big limitation!  Lifting it in Oil
-- You have to splice
-- There's no Garbage collection.
-
-### OSH Doesn't have True Integers
-
-We save those for Oil!
-
-There are lots of coercions instead. 
-
-bash has '-i' but that's true anyway.
-
-
-## Operations on All Variables
-
-### assignment
-
-### unset
-
-You can't unset an array in OSH?  But you can in bash.
-
-### readonly
-
-### export only applies to strings
-
-
-## Operations on Arrays
-
-### Initialization
-
-    declare -a array 
-    declare -a array=()
-
-    declare -A assoc
-    # there is no empty literal here
-
-Also valid, but not necessary since `declare` is local:
-
-    local -a array
-    local -A assoc
-
-Makes a global array:
-
-    array=()
-
-### Array Literals
-
-Respects the normal rules of argv.
-
-    prefix=foo
-    myarray=(one two -{three,four}- {5..8} *.py "$prefix*.py" '$prefix*.py')
-
-    myarray=(
-      $var ${var} "$var" 
-      $(echo hi) "$(echo hi)"
-      $(1 + 2 * 3)
-    )
-
-### Associative Array Literals
-
-    (['k']=v)
-
-    Unlike bash, ([0]=v) is still an associative array literal.
-
-    It's not an indexed array literal.  This matters when you take slices and
-    so forth?
-
-
-### "${a[@]}" is Evaluating (Splicing)
-
-    echo "${array[@]}"
-    echo "${assoc[@]}"
-
-Not Allowed, unlike in bash!
-
-    $assoc  ${assoc}  "${assoc}"
-    ${!assoc}  ${assoc//pattern/replace}  # etc.
-
-
-### Iteration
-
-Note that since a for loop takes an array of words, evaluating/splicing works:
-
-    for i in "${a1[@]}" "${a2[@]}"; do
-      echo $i
-    done
-
-### ${#a[@]} is the Length
-
-
-    echo ${#array[@]}
-    echo ${#assoc[@]}
-
-
-### Coercion to String by Joining Elements
-
-    echo ${!array[@]}
-    echo ${!assoc[@]}
-
-    echo ${!array[*]}
-    echo ${!assoc[*]}
-
-    echo "${!array[*]}"
-    echo "${!assoc[*]}"
-
-### Look Up By Index / Key With a[]
-
-  matrix:
-    a['x'] a["x"]
-    a["$x"]
-    a[$x]
-    a[${x}]
-    a[${x#a}]
-
-    a[x] -- allowed
-    A[x] -- NOT allowed?  It should be a string
-
-    (( 'a' )) -- parsed, but can't evaluate
-
-    # This is a string in both cases
-    a[0]
-    A[0]
-
-
-undef[0]=1 automatically creates an INDEXED array
-undef=(1)
-
-### Assign / Append To Location Specified by Index / Key
-
-    a[expr]=    # int_coerce
-    A[expr]=    # no integer coercion
-
-Just like you can append to strings:
-
-    s+='foo'
-
-Append to elements of an array, which are strings:
-
-    a[x+1]+=x
-    a[x+1]+=$x
-
-### Slicing With ${a[@]:5:2}
-
-    ${array[@]:1:3}
-
-Note the presence of DISALLOWED VALUES.
-
-
-    # TODO: disallow this?  because no order
-    ${assoc[@]:1:3}
-
-
-NOTE: string slicing:
-
-
-
-### Append Array to Array
-
-    a=(1 2 3)
-    a+=(4 5 6)
-
-
-### Get All Indices With ${!a[@]}
-
-    echo ${!array[@]}
-    echo ${!assoc[@]}
-
-
-### Vectorized String Operations
-
-    echo ${array[@]//x/X}
-
-    echo ${assoc[@]//x/X}
-
+<!--
 
 ## Quirky Syntax and Semantics in Shell Sublanguages
 
@@ -313,38 +306,5 @@ SURPRISING!  Avoid if you can!!!
 
 Operates on strings only.  Can't compare
 
-## Introspection
-
-Oil supports various shell and bash operations to view the interpretr state.
-
-- `set` prints variables and their values
-- `set -o` prints options
-- `declare/typeset/readonly/export -p` prints a subset of variables
-- `test -v` tests if a variable is defined.
-
-### repr (Oil only)
-
-Pretty prints state.
-
-
-## `cmd_value` for shell builtins
-
-Another important type:
-
-```
-  assign_arg = (lvalue lval, value? rval, int spid)
-
-  cmd_value =
-    Argv(string* argv, int* arg_spids, command__BraceGroup? block)
-  | Assign(builtin builtin_id,
-           string* argv, int* arg_spids,
-           assign_arg* pairs)
-```
-
-<!-- TODO: change BraceGroup to something more accurate -->
-
-## Links
-
-- <https://opensource.com/article/18/5/you-dont-know-bash-intro-bash-arrays>
-- <https://www.thegeekstuff.com/2010/06/bash-array-tutorial>
+-->
 

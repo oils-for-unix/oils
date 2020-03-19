@@ -64,7 +64,8 @@ These docs span both OSH and Oil.
 Internal Details:
 
 - [Data Model](data-model.html) -- The interpreter.
-  - TODO: Rules for scope
+- [Process Model](process-model.html).  Shell is a language that lets you use
+  low-level Unix constructs.
 - [Architecture Notes](architecture-notes.html) -- The interpreter
 - [Error List](errors.html) 
 - [Toil](toil.html).  Continuous Testing on Many Platforms.
