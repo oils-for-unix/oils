@@ -185,7 +185,8 @@ publish-tmp() {
 }
 
 all-steps() {
-  if test -d $DIR; then
+  #if test -d $DIR; then
+  if false; then
     echo "$DIR exists: skipping build of shells"
   else
     download     # Get the right version of every tarball

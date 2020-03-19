@@ -217,18 +217,23 @@ echo DONE
 ## OK dash status: 2
 
 #### Redirect to file descriptor that's not open
-# BUGS:
-# - dash doesn't allow file descriptors greater than 9.  (This is a good thing,
-# because the bash chapter in AOSA book mentions that juggling user vs. system
-# file descriptors is a huge pain.)
-# - But somehow running in parallel under spec-runner.sh changes whether descriptor
-# 3 is open.  e.g. 'echo hi 1>&3'.  Possibly because of /usr/bin/time.  The
-# _tmp/spec/*.task.txt file gets corrupted!
+# Notes:
+# - dash doesn't allow file descriptors greater than 9.  (This is a good
+#   thing, because the bash chapter in AOSA book mentions that juggling user
+#   vs.  system file descriptors is a huge pain.)
+# - But somehow running in parallel under spec-runner.sh changes whether
+#   descriptor 3 is open.  e.g. 'echo hi 1>&3'.  Possibly because of
+#   /usr/bin/time.  The _tmp/spec/*.task.txt file gets corrupted!
 # - Oh this is because I use time --output-file.  That opens descriptor 3.  And
 #   then time forks the shell script.  The file descriptor table is inherited.
 #   - You actually have to set the file descriptor to something.  What do
 #   configure and debootstrap too?
-echo hi 1>&9
+
+# 3/2020 note: file descriptor 9 failed on Travis, so I changed it to 8.  The
+# process state isn't necessarly clean.  TODO: Close the descriptor when OSH
+# supports it?
+
+echo hi 1>&8
 ## status: 1
 ## OK dash status: 2
 

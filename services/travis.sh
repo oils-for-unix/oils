@@ -274,7 +274,10 @@ make-job-wwz() {
   # _tmp/toil: Logs are in _tmp, see services/toil-worker.sh
   # web/ : spec test HTML references this.
   #        Note that that index references /web/{base,toil}.css, outside the .wwz
-  zip -r $wwz index.html _tmp/toil _tmp/spec web/{base,spec-tests}.css
+  # temporary: debug dash
+  zip -r $wwz \
+    index.html _tmp/toil _tmp/spec web/{base,spec-code,spec-tests}.css \
+    _deps/spec-bin/dash
 }
 
 deploy-job-results() {

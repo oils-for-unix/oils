@@ -5,12 +5,11 @@
 # https://www.reddit.com/r/oilshell/comments/5ykpi3/oildev_is_alive/
 
 #### : is special and prefix assignments persist after special builtins
-# Bash only implements it behind the posix option
-#test -n "$BASH_VERSION" && set -o posix
 case $SH in
-  *dash|*zsh|*osh)
+  dash|zsh|*osh)
     ;;
   *)
+    # for bash
     set -o posix
     ;;
 esac
@@ -24,12 +23,13 @@ foo=
 ## END
 
 #### readonly is special and prefix assignments persist
+
 # Bash only implements it behind the posix option
-#test -n "$BASH_VERSION" && set -o posix
 case $SH in
-  *dash|*zsh|*osh)
+  dash|zsh|*osh)
     ;;
   *)
+    # for bash
     set -o posix
     ;;
 esac
