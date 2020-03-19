@@ -14,7 +14,6 @@ from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
 
 import sys
 import time
-import os
 
 from asdl import runtime
 from core import error
@@ -28,6 +27,8 @@ from frontend import reader
 from mycpp import mylib
 from osh import string_ops
 from osh import word_compile
+
+import posix_ as posix
 
 from typing import Dict, List, TYPE_CHECKING, cast
 
@@ -335,9 +336,9 @@ class Printf(object):
               tzcell = self.mem.GetCell('TZ')
               if tzcell and tzcell.exported and tzcell.val.tag_() == value_e.Str:
                 tzval = cast(value__Str, tzcell.val)
-                os.environ['TZ'] = tzval.s
-              elif 'TZ' in os.environ:
-                del os.environ['TZ']
+                posix.putenv('TZ', tzval.s)
+              elif posix.getenv('TZ'):
+                posix.unsetenv('TZ')
               time.tzset()
 
               # Handle special values:
