@@ -354,12 +354,18 @@ class Printf(object):
               #   variable `TZ'.  When the exported variable `TZ' is present,
               #   its value should be reflected in the real environment
               #   variable `TZ' before call of `tzset'.
+              #
+              # Note: unlike LANG, TZ doesn't seem to change behavior if it's
+              # not exported.
+              #
+              # TODO: In Oil, provide an API that doesn't rely on libc's
+              # global state.
+
               tzcell = self.mem.GetCell('TZ')
               if tzcell and tzcell.exported and tzcell.val.tag_() == value_e.Str:
                 tzval = cast(value__Str, tzcell.val)
                 posix.putenv('TZ', tzval.s)
-              elif posix.getenv('TZ'):
-                posix.unsetenv('TZ')
+
               time.tzset()
 
               # Handle special values:

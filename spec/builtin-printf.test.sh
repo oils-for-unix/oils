@@ -591,6 +591,34 @@ status=0
 status=1
 ## END
 
+#### %(strftime format)T doesn't respect TZ if not exported
+TZ=Asia/Tokyo  # NOT exported
+printf '%(%Y-%m-%d)T\n' 1557978599
+echo status=$?
+## STDOUT:
+2019-05-15
+status=0
+## END
+## N-I dash/mksh/zsh/ash STDOUT:
+status=1
+## END
+
+#### %(strftime format)T TZ in environ but not set in shell
+
+export TZ=Asia/Tokyo
+unset TZ  # unset in the shell, but still in the environment
+#repr TZ
+
+printf '%(%Y-%m-%d)T\n' 1557978599
+echo status=$?
+## STDOUT:
+2019-05-15
+status=0
+## END
+## N-I dash/mksh/zsh/ash STDOUT:
+status=1
+## END
+
 #### %10.5(strftime format)T
 # The result depends on timezone
 export TZ=Asia/Tokyo

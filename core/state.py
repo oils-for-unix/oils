@@ -614,7 +614,7 @@ def _InitVarsFromEnv(mem, environ):
   # variable.  Dash has a loop through environ in init.c
   for n, v in iteritems(environ):
     mem.SetVar(lvalue.Named(n), value.Str(v), scope_e.GlobalOnly,
-                flags=SetExport)
+               flags=SetExport)
 
   # If it's not in the environment, initialize it.  This makes it easier to
   # update later in MutableOpts.

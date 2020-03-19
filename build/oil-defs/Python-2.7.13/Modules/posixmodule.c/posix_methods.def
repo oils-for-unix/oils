@@ -33,6 +33,7 @@ static PyMethodDef posix_methods[] = {
   {"isatty", posix_isatty, METH_VARARGS},
   {"pipe", posix_pipe, METH_NOARGS},
   {"putenv", posix_putenv, METH_VARARGS},
+  /*{"unsetenv", posix_unsetenv, METH_VARARGS},*/
   {"strerror", posix_strerror, METH_VARARGS},
 
   /* job control stuff */
