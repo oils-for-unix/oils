@@ -185,11 +185,15 @@ publish-tmp() {
 }
 
 all-steps() {
-  download     # Get the right version of every tarball
-  extract-all  # Extract source
-  build-all    # Compile
-  copy-all     # Put them in _tmp/spec-bin
-  test-all     # Run a small smoke test
+  if test -d $DIR; then
+    echo "$DIR exists: skipping build of shells"
+  else
+    download     # Get the right version of every tarball
+    extract-all  # Extract source
+    build-all    # Compile
+    copy-all     # Put them in _tmp/spec-bin
+    test-all     # Run a small smoke test
+  fi
 }
 
 "$@"

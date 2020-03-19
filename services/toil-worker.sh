@@ -72,9 +72,11 @@ ovm-tarball-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-download-deps     devtools/release.sh tarball-build-deps -
+tarball-deps      devtools/release.sh tarball-build-deps -
+spec-deps         test/spec-bin.sh all-steps             -
 dev-all           build/dev.sh all                       -
 yajl              build/dev.sh yajl-release              -
+osh-spec          test/spec.sh osh-travis                _tmp/spec/osh.html
 make-tarball      devtools/release.sh quick-oil-tarball  -
 build-tarball     build/test.sh oil-tar                  -
 EOF
