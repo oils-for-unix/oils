@@ -219,6 +219,30 @@ printf '[%0.0s]\n' foo
 ## N-I mksh stdout-json: "[      ]\n["
 ## N-I mksh status: 1
 
+#### printf %6.s and %0.s
+printf '[%6.s]\n' foo
+printf '[%0.s]\n' foo
+## STDOUT:
+[      ]
+[]
+## END
+## N-I mksh stdout-json: "[      ]\n["
+## N-I mksh status: 1
+
+#### printf %*.*s (width/precision from args)
+printf '[%*s]\n' 9 hello
+printf '[%.*s]\n' 3 hello
+printf '[%*.3s]\n' 9 hello
+printf '[%9.*s]\n' 3 hello
+printf '[%*.*s]\n' 9 3 hello
+## STDOUT:
+[    hello]
+[hel]
+[      hel]
+[      hel]
+[      hel]
+## END
+
 #### unsigned / octal / hex
 printf '[%u]\n' 42
 printf '[%o]\n' 42
@@ -491,17 +515,22 @@ printf '[% d]\n' -42
 
 #### printf # flag
 # I didn't know these existed -- I only knew about - and 0 !
-printf '[%#o]\n' 42
-printf '[%#x]\n' 42
-printf '[%#X]\n' 42
+# Note: '#' flag for integers outputs a prefix ONLY WHEN the value is non-zero
+printf '[%#o][%#o]\n' 0 42
+printf '[%#x][%#x]\n' 0 42
+printf '[%#X][%#X]\n' 0 42
 echo ---
-printf '[%#f]\n' 3
+# Note: '#' flag for %f, %g always outputs the decimal point.
+printf '[%.0f][%#.0f]\n' 3 3
+# Note: In addition, '#' flag for %g does not omit zeroes in fraction
+printf '[%g][%#g]\n' 3 3
 ## STDOUT:
-[052]
-[0x2a]
-[0X2A]
+[0][052]
+[0][0x2a]
+[0][0X2A]
 ---
-[3.000000]
+[3][3.]
+[3][3.00000]
 ## END
 ## N-I osh STDOUT:
 ---
@@ -541,15 +570,33 @@ status=1
 ## END
 
 #### %(strftime format)T
+# The result depends on timezone
+export TZ=Asia/Tokyo
+printf '%(%Y-%m-%d)T\n' 1557978599
+export TZ=US/Eastern
 printf '%(%Y-%m-%d)T\n' 1557978599
 echo status=$?
 ## STDOUT:
+2019-05-16
 2019-05-15
 status=0
 ## END
 ## N-I dash/mksh/zsh/ash STDOUT:
 status=1
 ## END
-## N-I osh STDOUT:
-status=2
+
+#### %10.5(strftime format)T
+# The result depends on timezone
+export TZ=Asia/Tokyo
+printf '[%10.5(%Y-%m-%d)T]\n' 1557978599
+export TZ=US/Eastern
+printf '[%10.5(%Y-%m-%d)T]\n' 1557978599
+echo status=$?
+## STDOUT:
+[     2019-]
+[     2019-]
+status=0
+## END
+## N-I dash/mksh/zsh/ash STDOUT:
+[[status=1
 ## END

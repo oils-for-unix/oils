@@ -5,14 +5,16 @@ builtin_printf
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Kind
-from _devbuild.gen.runtime_asdl import cmd_value__Argv
+from _devbuild.gen.runtime_asdl import cmd_value__Argv, value_e, value__Str
 from _devbuild.gen.syntax_asdl import (
     printf_part, printf_part_t,
-    source
+    source,
 )
 from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
 
 import sys
+import time
+import os
 
 from asdl import runtime
 from core import error
@@ -27,7 +29,7 @@ from mycpp import mylib
 from osh import string_ops
 from osh import word_compile
 
-from typing import Dict, List, TYPE_CHECKING
+from typing import Dict, List, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
   from frontend.lexer import Lexer
@@ -40,12 +42,15 @@ if mylib.PYTHON:
   PRINTF_SPEC = arg_def.Register('printf')  # TODO: Don't need this?
   PRINTF_SPEC.ShortFlag('-v', args.Str)
 
+shell_start_time = time.time()
 
 class _FormatStringParser(object):
   """
   Grammar:
 
-    fmt           = Format_Percent Flag? Num? (Dot Num)? Type
+    width         = Num | Star
+    precision     = Dot (Num | Star | Zero)?
+    fmt           = Percent (Flag | Zero)* width? precision? (Type | Time)
     part          = Char_* | Format_EscapedPercent | fmt
     printf_format = part* Eof_Real   # we're using the main lexer
 
@@ -70,25 +75,27 @@ class _FormatStringParser(object):
     self._Next(lex_mode_e.PrintfPercent)  # move past %
 
     part = printf_part.Percent()
-    if self.token_type == Id.Format_Flag:
-      part.flag = self.cur_token
+    while self.token_type in (Id.Format_Flag, Id.Format_Zero):
+      # space and + could be implemented
+      flag = self.cur_token.val
+      if flag in '# +':
+        p_die("osh printf doesn't support the %r flag", flag, token=self.cur_token)
+
+      part.flags.append(self.cur_token)
       self._Next(lex_mode_e.PrintfPercent)
 
-      # space and + could be implemented
-      flag = part.flag.val
-      if flag in '# +':
-        p_die("osh printf doesn't support the %r flag", flag, token=part.flag)
-
-    if self.token_type == Id.Format_Num:
+    if self.token_type in (Id.Format_Num, Id.Format_Star):
       part.width = self.cur_token
       self._Next(lex_mode_e.PrintfPercent)
 
     if self.token_type == Id.Format_Dot:
-      self._Next(lex_mode_e.PrintfPercent)  # past dot
       part.precision = self.cur_token
-      self._Next(lex_mode_e.PrintfPercent)
+      self._Next(lex_mode_e.PrintfPercent)  # past dot
+      if self.token_type in (Id.Format_Num, Id.Format_Star, Id.Format_Zero):
+        part.precision = self.cur_token
+        self._Next(lex_mode_e.PrintfPercent)
 
-    if self.token_type == Id.Format_Type:
+    if self.token_type in (Id.Format_Type, Id.Format_Time):
       part.type = self.cur_token
 
       # ADDITIONAL VALIDATION outside the "grammar".
@@ -108,7 +115,7 @@ class _FormatStringParser(object):
       p_die(msg, token=self.cur_token)
 
     # Do this check AFTER the floating point checks
-    if part.precision and part.type.val not in 'fs':
+    if part.precision and part.type.val[-1] not in 'fsT':
       p_die("precision can't be specified when here",
             token=part.precision)
 
@@ -205,21 +212,80 @@ class Printf(object):
           out.append(s)
 
         elif isinstance(part, printf_part.Percent):
-          try:
+          flags = None
+          if len(part.flags) > 0:
+            flags = ''
+            for flag_token in part.flags:
+              flags += flag_token.val
+
+          width = None
+          if part.width:
+            if part.width.id in (Id.Format_Num, Id.Format_Zero):
+              width = part.width.val
+              width_spid = part.width.span_id
+            elif part.width.id == Id.Format_Star:
+              if arg_index < num_args:
+                width = varargs[arg_index]
+                width_spid = spids[arg_index]
+                arg_index += 1
+              else:
+                width = ''
+                width_spid = runtime.NO_SPID
+            else:
+              raise AssertionError()
+
+            try:
+              width = int(width)
+            except ValueError:
+              if width_spid == runtime.NO_SPID:
+                width_spid = part.width.span_id
+              self.errfmt.Print("printf got invalid number %r for the width", s,
+                                span_id = width_spid)
+              return 1
+
+          precision = None
+          if part.precision:
+            if part.precision.id == Id.Format_Dot:
+              precision = '0'
+              precision_spid = part.precision.span_id
+            elif part.precision.id in (Id.Format_Num, Id.Format_Zero):
+              precision = part.precision.val
+              precision_spid = part.precision.span_id
+            elif part.precision.id == Id.Format_Star:
+              if arg_index < num_args:
+                precision = varargs[arg_index]
+                precision_spid = spids[arg_index]
+                arg_index += 1
+              else:
+                precision = ''
+                precision_spid = runtime.NO_SPID
+            else:
+              raise AssertionError()
+
+            try:
+              precision = int(precision)
+            except ValueError:
+              if precision_spid == runtime.NO_SPID:
+                precision_spid = part.precision.span_id
+              self.errfmt.Print("printf got invalid number %r for the precision", s,
+                                span_id = precision_spid)
+              return 1
+
+          if arg_index < num_args:
             s = varargs[arg_index]
             word_spid = spids[arg_index]
-          except IndexError:
+            arg_index += 1
+          else:
             s = ''
             word_spid = runtime.NO_SPID
 
           typ = part.type.val
           if typ == 's':
-            if part.precision:
-              precision = int(part.precision.val)
+            if precision is not None:
               s = s[:precision]  # truncate
           elif typ == 'q':
             s = string_ops.ShellQuoteOneLine(s)
-          elif typ in 'diouxX':
+          elif typ in 'diouxX' or part.type.id == Id.Format_Time:
             try:
               d = int(s)
             except ValueError:
@@ -227,6 +293,11 @@ class Printf(object):
                 # TODO: utf-8 decode s[1:] to be more correct.  Probably
                 # depends on issue #366, a utf-8 library.
                 d = ord(s[1])
+              elif part.type.id == Id.Format_Time and len(s) == 0 and word_spid == runtime.NO_SPID:
+                # Note: No argument means -1 for %(...)T as in Bash Reference
+                #   Manual 4.2 "If no argument is specified, conversion behaves
+                #   as if -1 had been given."
+                d = -1
               else:
                 # This works around the fact that in the arg recycling case, you have no spid.
                 if word_spid == runtime.NO_SPID:
@@ -252,19 +323,49 @@ class Printf(object):
                 s = '%x' % d
               elif typ == 'X':
                 s = '%X' % d
+            elif part.type.id == Id.Format_Time:
+              # %(...)T
+
+              # Initialize timezone:
+              #   `localtime' uses the current timezone information initialized
+              #   by `tzset'.  The function `tzset' refers to the environment
+              #   variable `TZ'.  When the exported variable `TZ' is present,
+              #   its value should be reflected in the real environment
+              #   variable `TZ' before call of `tzset'.
+              tzcell = self.mem.GetCell('TZ')
+              if tzcell and tzcell.exported and tzcell.val.tag_() == value_e.Str:
+                tzval = cast(value__Str, tzcell.val)
+                os.environ['TZ'] = tzval.s
+              elif 'TZ' in os.environ:
+                del os.environ['TZ']
+              time.tzset()
+
+              # Handle special values:
+              #   User can specify two special values -1 and -2 as in Bash
+              #   Reference Manual 4.2: "Two special argument values may be
+              #   used: -1 represents the current time, and -2 represents the
+              #   time the shell was invoked." from
+              #   https://www.gnu.org/software/bash/manual/html_node/Bash-Builtins.html#index-printf
+              if d == -1: # the current time
+                d = time.time()
+              elif d == -2: # the shell start time
+                d = shell_start_time
+
+              s = time.strftime(typ[1:-2], time.localtime(d))
+              if precision is not None:
+                s = s[:precision]  # truncate
+
             else:
               raise AssertionError()
 
           else:
             raise AssertionError()
 
-          if part.width:
-            width = int(part.width.val)
-            if part.flag:
-              flag = part.flag.val
-              if flag == '-':
+          if width is not None:
+            if flags:
+              if '-' in flags:
                 s = s.ljust(width, ' ')
-              elif flag == '0':
+              elif '0' in flags:
                 s = s.rjust(width, '0')
               else:
                 pass
@@ -272,7 +373,6 @@ class Printf(object):
               s = s.rjust(width, ' ')
 
           out.append(s)
-          arg_index += 1
 
         else:
           raise AssertionError()

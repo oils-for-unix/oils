@@ -530,13 +530,16 @@ LEXER_DEF[lex_mode_e.PrintfOuter] = _C_STRING_COMMON + [
 # Maybe: bash also supports %(strftime)T
 LEXER_DEF[lex_mode_e.PrintfPercent] = [
   # Flags
-  R('[-0 +#]', Id.Format_Flag),
+  R('[- +#]', Id.Format_Flag),
+  C('0', Id.Format_Zero),
 
   R('[1-9][0-9]*', Id.Format_Num),
+  C('*', Id.Format_Star),
   C('.', Id.Format_Dot),
   # We support dsq.  The others we parse to display an error message.
   R('[disqbcouxXeEfFgG]', Id.Format_Type),
-  R(r'[^\0]', Id.Unknown_Tok),  # any otehr char
+  R('\([^()]*\)T', Id.Format_Time),
+  R(r'[^\0]', Id.Unknown_Tok),  # any other char
 ]
 
 LEXER_DEF[lex_mode_e.VSub_1] = [

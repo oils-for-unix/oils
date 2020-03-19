@@ -349,7 +349,7 @@ module syntax
     Literal(Token token)
     -- flags are 0 hyphen space + #
     -- type is 's' for %s, etc.
-  | Percent(Token? flag, Token? width, Token? precision, Token type)
+  | Percent(Token* flags, Token? width, Token? precision, Token type)
 
   --
   -- OIL LANGUAGE
