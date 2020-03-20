@@ -182,9 +182,6 @@ echo-x echo-x
 ## STDOUT:
 x echo-x
 ## END
-## BUG dash STDOUT:
-x echo x
-## END
 
 #### first and second word are the same alias, with trailing space
 shopt -s expand_aliases  # bash requires this

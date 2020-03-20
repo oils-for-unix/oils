@@ -26,14 +26,15 @@ readonly THIS_DIR=$(cd $(dirname $0) && pwd)
 readonly DIR=$THIS_DIR/../_deps/spec-bin
 
 readonly BUSYBOX_NAME='busybox-1.31.1'
+readonly DASH_NAME='dash-0.5.10.2'
 
 # The authoritative versions!
 download() {
   mkdir -p $DIR
   wget --no-clobber --directory $DIR \
     https://www.oilshell.org/blob/spec-bin/bash-4.4.tar.gz \
-    https://www.oilshell.org/blob/spec-bin/busybox-1.31.1.tar.bz2 \
-    https://www.oilshell.org/blob/spec-bin/dash-0.5.8.tar.gz \
+    https://www.oilshell.org/blob/spec-bin/$BUSYBOX_NAME.tar.bz2 \
+    https://www.oilshell.org/blob/spec-bin/$DASH_NAME.tar.gz \
     https://www.oilshell.org/blob/spec-bin/mksh-R52c.tgz \
     https://www.oilshell.org/blob/spec-bin/zsh-5.1.1.tar.xz
 }
@@ -92,7 +93,7 @@ build-bash() {
 }
 
 build-dash() {
-  pushd $DIR/dash-0.5.8
+  pushd $DIR/$DASH_NAME
   ./configure
   make
   popd
@@ -124,7 +125,7 @@ build-all() {
 copy-all() {
   pushd $DIR
   cp -f -v bash-4.4/bash .
-  cp -f -v dash-0.5.8/src/dash .
+  cp -f -v $DASH_NAME/src/dash .
   cp -f -v mksh-R52c/mksh .
   cp -f -v $BUSYBOX_NAME/busybox .
   ln -s -f -v busybox ash
@@ -156,8 +157,7 @@ _wget() {
   wget --no-clobber --directory _tmp/src "$@"
 }
 
-# As of March 2017
-download-shell-source() {
+download-original-source() {
   mkdir -p _tmp/src
 
   # https://tiswww.case.edu/php/chet/bash/bashtop.html - 9/2016 release
@@ -169,11 +169,22 @@ download-shell-source() {
 
   # https://tracker.debian.org/pkg/dash  -- old versions
   # http://www.linuxfromscratch.org/blfs/view/svn/postlfs/dash.html
-  # Site seems down now.
-  # _wget http://gondor.apana.org.au/~herbert/dash/files/dash-0.5.9.1.tar.gz
+  _wget http://gondor.apana.org.au/~herbert/dash/files/dash-0.5.10.2.tar.gz
 
   # http://zsh.sourceforge.net/News/ - 12/2016 release
   _wget https://downloads.sourceforge.net/project/zsh/zsh/5.3.1/zsh-5.3.1.tar.xz
+}
+
+publish-mirror() {
+  ### Mirror the source tarballs at oilshell.org/blob/spec-bin
+  local user=$1
+  local host=$user.org
+
+  local file=$2
+
+  local dest=$user@$host:oilshell.org/blob/spec-bin
+
+  scp $file $dest
 }
 
 publish-tmp() {
