@@ -597,38 +597,47 @@ status=2
 ## END
 
 #### %(strftime format)T doesn't respect TZ if not exported
-TZ=Asia/Tokyo  # NOT exported
-printf '%(%Y-%m-%d)T\n' 1557978599
-echo status=$?
+
+# note: this test leaks!  It assumes that /etc/localtime is NOT Portugal.
+
+TZ=Portugal  # NOT exported
+localtime=$(printf '%(%Y-%m-%d %H:%M:%S)T\n' 1557978599)
+
+# TZ is respected
+export TZ=Portugal
+tz=$(printf '%(%Y-%m-%d %H:%M:%S)T\n' 1557978599)
+
+#echo $localtime
+#echo $tz
+
+if ! test "$localtime" = "$tz"; then
+  echo 'not equal'
+fi
 ## STDOUT:
-2019-05-15
-status=0
+not equal
 ## END
-## N-I mksh/zsh/ash STDOUT:
-status=1
-## END
-## N-I dash STDOUT:
-status=2
-## END
+## N-I mksh/zsh/ash/dash stdout-json: ""
 
-#### %(strftime format)T TZ in environ but not set in shell
+#### %(strftime format)T TZ in environ but not in shell's memory
 
-export TZ=Asia/Tokyo
+# note: this test leaks!  It assumes that /etc/localtime is NOT Portugal.
+
+# TZ is respected
+export TZ=Portugal
+tz=$(printf '%(%Y-%m-%d %H:%M:%S)T\n' 1557978599)
+
 unset TZ  # unset in the shell, but still in the environment
-#repr TZ
 
-printf '%(%Y-%m-%d)T\n' 1557978599
-echo status=$?
+localtime=$(printf '%(%Y-%m-%d %H:%M:%S)T\n' 1557978599)
+
+if ! test "$localtime" = "$tz"; then
+  echo 'not equal'
+fi
+
 ## STDOUT:
-2019-05-15
-status=0
+not equal
 ## END
-## N-I mksh/zsh/ash STDOUT:
-status=1
-## END
-## N-I dash STDOUT:
-status=2
-## END
+## N-I mksh/zsh/ash/dash stdout-json: ""
 
 #### %10.5(strftime format)T
 # The result depends on timezone

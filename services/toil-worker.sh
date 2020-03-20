@@ -15,12 +15,16 @@ time-tsv() {
   benchmarks/time_.py --tsv "$@"
 }
 
-dummy() {
-  echo 'dummy task with env:'
-  echo
+dump-timezone() {
 
-  # mangles multi-line values, but that's OK here
-  dump-env
+  # On Travis:
+  #  /usr/share/zoneinfo/UTC
+  # On my machine
+  #  /usr/share/zoneinfo/America/Los_Angeles
+
+  read md5 _ <<< $(md5sum /etc/localtime)
+  log "md5 = $md5"
+  find /usr/share/zoneinfo -type f | xargs md5sum | grep $md5
 }
 
 dummy-tasks() {
@@ -28,7 +32,8 @@ dummy-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-dummy           services/toil-worker.sh dummy  -
+dump-env      services/toil-worker.sh dump-env      -
+dump-timezone services/toil-worker.sh dump-timezone -
 EOF
 }
 
