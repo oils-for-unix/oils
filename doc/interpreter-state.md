@@ -2,8 +2,8 @@
 in_progress: yes
 ---
 
-Data Model for OSH and Oil
-==========================
+Interpreter State
+=================
 
 <style>
 /* override language.css */
@@ -12,7 +12,36 @@ Data Model for OSH and Oil
 }
 </style>
 
-It's confusing that shell has many syntaxes for the same semantics.  For
+The Oil project has a single interpreter that supports both the OSH and Oil
+languages.
+
+In other words, It's useful to think of Unix shell in historical layers:
+
+- [OSH]($xref:osh-language): A compatible but cleaned-up shell language.
+  1. Thompson Shell (pipelines, exit status)
+  2. Bourne Shell (variables, functions)
+  3. [Korn Shell]($xref:ksh) (indexed arrays)
+  4. [Bash]($xref:bash) (`shopt`, associative arrays)
+- [Oil]($xref:oil-language): A new shell language that manipulates the same
+  interpreter state in a cleaner way.
+
+<!--
+TODO:
+
+- New "Pulp"?
+- Use fenced code blocks
+  - and run through BOTH bash and osh
+    - and link to this doc
+  - bash 4.4 in a sandbox?
+-->
+
+
+<div id="toc">
+</div>
+
+## Example
+
+Shell has many syntaxes for the same semantics, which can be confusing.  For
 example, in bash, these four statements do similar things:
 
 ```sh-prompt
@@ -31,27 +60,12 @@ In addition Oil, adds JavaScript-like syntax:
 var foo = 'bar'
 ```
 
-This syntax can express more data types, may also confuse new users.
+Oil's syntax can express more data types, but it may also confuse new users.
 
-SoTtis document describes user-facing data structures in the Oil interpreter.
-which should help users reason about the meaning of programs.
+So the sections below describe the shell from a **semantic** perspective, which
+should help users reason about their programs.
 
-A shortcut: after creating shell variables, use the `repr` builtin to inspect
-them!
-
-<!--
-TODO:
-
-- New "Pulp"?
-- Use fenced code blocks
-  - and run through BOTH bash and osh
-    - and link to this doc
-  - bash 4.4 in a sandbox?
--->
-
-
-<div id="toc">
-</div>
+Quick tip: Use the [repr]($help) builtin to inspect shell variables.
 
 ## Design Goals
 
@@ -86,13 +100,23 @@ TODO
 
 ### Memory Is a Stack
 
-Shell has a stack but no heap.  It has values and locations, but no
-references/pointers.
+- Shell has a stack but no heap.  The stack stores:
+  - Variables that are local to a function.
+  - The **arguments array** which is spelled `"$@"` in shell, and `@ARGV` in
+    Oil.
+- Shell's memory has values and locations, but **no** references/pointers.
 
-Oil adds references to data structures on the heap, which may be recurisve.
+<!--
+later: Oil adds references to data structures on the heap, which may be recurisve.
+-->
 
-- The stack also has the **arguments array** which is spelled `"$@"` in shell,
-  and `@ARGV` in Oil.
+### Enviroment Variables Become Global Variables
+
+On initialization, environment variables like `PYTHONPATH=.` are copied into
+the shell's memory as global variables, with the `export` flag set.
+
+Global variables are stored in the first stack frame, i.e. the one at index
+`0`.
 
 ### Functions and Variables Are Separate
 
@@ -227,8 +251,10 @@ You can't unset an array in OSH?  But you can in bash.
 
 ## Links
 
+- [Process Model](process-mode.html)
 - <https://opensource.com/article/18/5/you-dont-know-bash-intro-bash-arrays>
 - <https://www.thegeekstuff.com/2010/06/bash-array-tutorial>
+
 
 ## Appendix: Bash Issues
 

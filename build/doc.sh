@@ -95,9 +95,10 @@ readonly MARKDOWN_DOCS=(
   unicode
 
   # Internal stuff
-  data-model
+  interpreter-state
   process-model
   architecture-notes
+  parser-architecture
   toil
 )
 

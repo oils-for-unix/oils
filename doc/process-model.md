@@ -13,8 +13,8 @@ Process Model
 </style>
 
 
-Related: [Data Model](data-model.html).  These two docs are the missing
-documentation for shell!
+Related: [Interpreter State](interpreter-state.html).  These two docs are the
+missing documentation for shell!
 
 
 <div id="toc">
