@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import (
-    value, value_e, value_t, value__MaybeStrArray,
+    value, value_e, value_t, value__Str, value__MaybeStrArray, value__AssocArray,
     lvalue, scope_e,
     cmd_value__Argv, cmd_value__Assign,
 )
@@ -15,6 +15,7 @@ from frontend import args
 from frontend import match
 from core import state
 from mycpp import mylib
+from osh import string_ops
 
 from typing import cast, Dict, Tuple, Any, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -25,10 +26,108 @@ if mylib.PYTHON:
   from frontend import arg_def
 
 
+def _PrintVariables(mem, cmd_val, arg, print_flags, readonly = False, exported = False):
+  flag_g = getattr(arg, 'g', None)
+  flag_n = getattr(arg, 'n', None)
+  flag_r = getattr(arg, 'r', None)
+  flag_x = getattr(arg, 'x', None)
+  flag_a = getattr(arg, 'a', None)
+  flag_A = getattr(arg, 'A', None)
+
+  lookup_mode = scope_e.Dynamic
+  if cmd_val.builtin_id == builtin_i.local:
+    if flag_g and not mem.IsGlobalScope():
+      return 1
+    lookup_mode = scope_e.LocalOnly
+  elif flag_g:
+    lookup_mode = scope_e.GlobalOnly
+
+  if len(cmd_val.pairs) == 0:
+    print_all = True
+    cells = mem.GetAllCells(lookup_mode)
+    names = sorted(cells)
+  else:
+    print_all = False
+    names = []
+    cells = {}
+    for pair in cmd_val.pairs:
+      name = pair.lval.name
+      if pair.rval and pair.rval.tag == value_e.Str:
+        name += "=" + cast(value__Str, pair.rval).s
+        names.append(name)
+        cells[name] = None
+      else:
+        names.append(name)
+        cells[name] = mem.GetCell(name, lookup_mode)
+
+  count = 0
+  for name in names:
+    cell = cells[name]
+    if cell is None: continue
+    val = cell.val
+
+    if val.tag == value_e.Undef: continue
+    if readonly and not cell.readonly: continue
+    if exported and not cell.exported: continue
+    if flag_n == '-' and not cell.nameref: continue
+    if flag_n == '+' and cell.nameref: continue
+    if flag_r == '-' and not cell.readonly: continue
+    if flag_r == '+' and cell.readonly: continue
+    if flag_x == '-' and not cell.exported: continue
+    if flag_x == '+' and cell.exported: continue
+    if flag_a and val.tag != value_e.MaybeStrArray: continue
+    if flag_A and val.tag != value_e.AssocArray: continue
+
+    if print_flags:
+      flags = '-'
+      if cell.nameref: flags += 'n'
+      if cell.readonly: flags += 'r'
+      if cell.exported: flags += 'x'
+      if val.tag == value_e.MaybeStrArray:
+        flags += 'a'
+      elif val.tag == value_e.AssocArray:
+        flags += 'A'
+      if flags == '-': flags += '-'
+
+      decl = 'declare ' + flags + ' ' + name
+    else:
+      decl = name
+
+    if val.tag == value_e.Str:
+      str_val = cast(value__Str, val)
+      decl += "=" + string_ops.ShellQuote(str_val.s)
+    elif val.tag == value_e.MaybeStrArray:
+      array_val = cast(value__MaybeStrArray, val)
+      body = ''
+      for element in array_val.strs:
+        if body: body += ' '
+        body += string_ops.ShellQuote(element or '')
+      decl += "=(" + body + ")"
+    elif val.tag == value_e.AssocArray:
+      assoc_val = cast(value__AssocArray, val)
+      body = ''
+      for key in sorted(assoc_val.d):
+        if body: body += ' '
+        key_quoted = string_ops.ShellQuote(key)
+        value_quoted = string_ops.ShellQuote(assoc_val.d[key] or '')
+        body += '[' + key_quoted + ']=' + value_quoted
+      if body:
+        decl += "=(" + body + ")"
+
+    print(decl)
+    count += 1
+
+  if print_all or count == len(names):
+    return 0
+  else:
+    return 1
+
+
 if mylib.PYTHON:
   EXPORT_SPEC = arg_def.Register('export')
   EXPORT_SPEC.ShortFlag('-n')
   EXPORT_SPEC.ShortFlag('-f')  # stubbed
+  EXPORT_SPEC.ShortFlag('-p')
   # Instead of Reader?  Or just make everything take a reader/
   # They should check for extra args?
   #spec.AcceptsCmdVal()
@@ -59,6 +158,9 @@ class Export(object):
     if arg.f:
       raise args.UsageError(
           "doesn't accept -f because it's dangerous.  (The code can usually be restructured with 'source')")
+
+    if arg.p or len(cmd_val.pairs) == 0:
+      return _PrintVariables(self.mem, cmd_val, arg, True, exported = True)
 
     positional = cmd_val.argv[arg_index:]
     if arg.n:
@@ -112,6 +214,7 @@ if mylib.PYTHON:
 # TODO: Check the consistency of -a and -A against values, here and below.
   READONLY_SPEC.ShortFlag('-a')
   READONLY_SPEC.ShortFlag('-A')
+  READONLY_SPEC.ShortFlag('-p')
 
 
 class Readonly(object):
@@ -125,6 +228,9 @@ class Readonly(object):
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
     arg, arg_index = READONLY_SPEC.Parse(arg_r)
+
+    if arg.p or len(cmd_val.pairs) == 0:
+      return _PrintVariables(self.mem, cmd_val, arg, True, readonly = True)
 
     for pair in cmd_val.pairs:
       if pair.rval is None:
@@ -206,19 +312,9 @@ class NewVar(object):
       return status
 
     if arg.p:  # Lookup and print variables.
-      names = [pair.lval.name for pair in cmd_val.pairs]
-      if names:
-        for name in names:
-          val = self.mem.GetVar(name)
-          if val.tag != value_e.Undef:
-            # TODO: Print flags.
-
-            print(name)
-          else:
-            status = 1
-      else:
-        raise args.UsageError('declare/typeset -p without args')
-      return status
+      return _PrintVariables(self.mem, cmd_val, arg, True)
+    elif len(cmd_val.pairs) == 0:
+      return _PrintVariables(self.mem, cmd_val, arg, False)
 
     #
     # Set variables

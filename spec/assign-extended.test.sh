@@ -77,7 +77,7 @@ declare -f ek
 ## N-I mksh stdout-json: ""
 ## N-I mksh status: 127
 
-#### declare -p 
+#### declare -p var (exit status)
 var1() { echo func; }  # function names are NOT found.
 declare -p var1 var2 >/dev/null
 echo $?
@@ -98,6 +98,366 @@ echo $?
 127
 127
 ## END
+
+#### declare
+test_var1=111
+readonly test_var2=222
+export test_var3=333
+declare -n test_var4=test_var1
+f1() {
+  local test_var5=555
+  {
+    echo '[declare]'
+    declare
+    echo '[readonly]'
+    readonly
+    echo '[export]'
+    export
+    echo '[local]'
+    local
+  } | grep -E '^\[|^\b.*test_var.\b'
+}
+f1
+## STDOUT:
+[declare]
+test_var1='111'
+test_var2='222'
+test_var3='333'
+test_var4='test_var1'
+test_var5='555'
+[readonly]
+declare -r test_var2='222'
+[export]
+declare -x test_var3='333'
+[local]
+test_var5='555'
+## END
+## OK bash STDOUT:
+[declare]
+test_var1=111
+test_var2=222
+test_var3=333
+test_var4=test_var1
+test_var5=555
+[readonly]
+declare -r test_var2="222"
+[export]
+declare -x test_var3="333"
+[local]
+test_var5=555
+## END
+## N-I mksh STDOUT:
+[declare]
+[readonly]
+test_var2
+[export]
+test_var3
+[local]
+typeset test_var1
+typeset -r test_var2
+typeset -x test_var3
+typeset test_var5
+## END
+
+#### declare -p
+# BUG: bash doesn't output flags with "local -p", which seems to contradict
+#   with manual.
+test_var1=111
+readonly test_var2=222
+export test_var3=333
+declare -n test_var4=test_var1
+f1() {
+  local test_var5=555
+  {
+    echo '[declare]'
+    declare -p
+    echo '[readonly]'
+    readonly -p
+    echo '[export]'
+    export -p
+    echo '[local]'
+    local -p
+  } | grep -E '^\[|^\b.*test_var.\b'
+}
+f1
+## STDOUT:
+[declare]
+declare -- test_var1='111'
+declare -r test_var2='222'
+declare -x test_var3='333'
+declare -n test_var4='test_var1'
+declare -- test_var5='555'
+[readonly]
+declare -r test_var2='222'
+[export]
+declare -x test_var3='333'
+[local]
+declare -- test_var5='555'
+## END
+## BUG bash STDOUT:
+[declare]
+declare -- test_var1="111"
+declare -r test_var2="222"
+declare -x test_var3="333"
+declare -n test_var4="test_var1"
+declare -- test_var5="555"
+[readonly]
+declare -r test_var2="222"
+[export]
+declare -x test_var3="333"
+[local]
+test_var5=555
+## END
+## N-I mksh STDOUT:
+[declare]
+[readonly]
+readonly test_var2=222
+[export]
+export test_var3=333
+[local]
+typeset test_var1=111
+typeset -r test_var2=222
+typeset -x test_var3=333
+typeset test_var5=555
+## END
+
+#### declare -p var
+# BUG? bash doesn't output anything for 'local/readonly -p var', which seems to
+#   contradict with manual.  Besides, 'export -p var' is not described in
+#   manual
+test_var1=111
+readonly test_var2=222
+export test_var3=333
+declare -n test_var4=test_var1
+f1() {
+  local test_var5=555
+  {
+    echo '[declare]'
+    declare -p test_var{0..5}
+    echo '[readonly]'
+    readonly -p test_var{0..5}
+    echo '[export]'
+    export -p test_var{0..5}
+    echo '[local]'
+    local -p test_var{0..5}
+  } | grep -E '^\[|^\b.*test_var.\b'
+}
+f1
+## STDOUT:
+[declare]
+declare -- test_var1='111'
+declare -r test_var2='222'
+declare -x test_var3='333'
+declare -n test_var4='test_var1'
+declare -- test_var5='555'
+[readonly]
+declare -r test_var2='222'
+[export]
+declare -x test_var3='333'
+[local]
+declare -- test_var5='555'
+## END
+## BUG bash STDOUT:
+[declare]
+declare -- test_var1="111"
+declare -r test_var2="222"
+declare -x test_var3="333"
+declare -n test_var4="test_var1"
+declare -- test_var5="555"
+[readonly]
+[export]
+[local]
+## END
+## N-I mksh STDOUT:
+[declare]
+[readonly]
+## END
+
+#### declare -p arr
+test_arr1=()
+declare -a test_arr2=()
+declare -A test_arr3=()
+test_arr4=(1 2 3)
+declare -a test_arr5=(1 2 3)
+declare -A test_arr6=(['a']=1 ['b']=2 ['c']=3)
+test_arr7=()
+test_arr7[3]=foo
+declare -p test_arr{1..7}
+## STDOUT:
+declare -a test_arr1=()
+declare -a test_arr2=()
+declare -A test_arr3
+declare -a test_arr4=('1' '2' '3')
+declare -a test_arr5=('1' '2' '3')
+declare -A test_arr6=(['a']='1' ['b']='2' ['c']='3')
+declare -a test_arr7=('' '' '' 'foo')
+## END
+## OK bash STDOUT:
+declare -a test_arr1=()
+declare -a test_arr2=()
+declare -A test_arr3=()
+declare -a test_arr4=([0]="1" [1]="2" [2]="3")
+declare -a test_arr5=([0]="1" [1]="2" [2]="3")
+declare -A test_arr6=([a]="1" [b]="2" [c]="3" )
+declare -a test_arr7=([3]="foo")
+## END
+## N-I mksh stdout-json: ""
+## N-I mksh status: 1
+
+#### declare -pnrx
+test_var1=111
+readonly test_var2=222
+export test_var3=333
+declare -n test_var4=test_var1
+f1() {
+  local test_var5=555
+  {
+    echo '[declare -pn]'
+    declare -pn
+    echo '[declare -pr]'
+    declare -pr
+    echo '[declare -px]'
+    declare -px
+  } | grep -E '^\[|^\b.*test_var.\b'
+}
+f1
+## STDOUT:
+[declare -pn]
+declare -n test_var4='test_var1'
+[declare -pr]
+declare -r test_var2='222'
+[declare -px]
+declare -x test_var3='333'
+## END
+## OK bash STDOUT:
+[declare -pn]
+declare -n test_var4="test_var1"
+[declare -pr]
+declare -r test_var2="222"
+[declare -px]
+declare -x test_var3="333"
+## END
+## N-I mksh STDOUT:
+[declare -pn]
+[declare -pr]
+[declare -px]
+## END
+
+#### declare -paA
+declare -a test_var6=()
+declare -A test_var7=()
+f1() {
+  {
+    echo '[declare -pa]'
+    declare -pa
+    echo '[declare -pA]'
+    declare -pA
+  } | grep -E '^\[|^\b.*test_var.\b'
+}
+f1
+## STDOUT:
+[declare -pa]
+declare -a test_var6=()
+[declare -pA]
+declare -A test_var7
+## END
+## OK bash STDOUT:
+[declare -pa]
+declare -a test_var6=()
+[declare -pA]
+declare -A test_var7=()
+## END
+## N-I mksh stdout-json: ""
+## N-I mksh status: 1
+
+#### declare -pnrx var
+# Note: Bash ignores other flags (-nrx) when variable names are supplied while
+#   Oil uses other flags to select variables.  Bash's behavior is documented.
+test_var1=111
+readonly test_var2=222
+export test_var3=333
+declare -n test_var4=test_var1
+f1() {
+  local test_var5=555
+  {
+    echo '[declare -pn]'
+    declare -pn test_var{0..5}
+    echo '[declare -pr]'
+    declare -pr test_var{0..5}
+    echo '[declare -px]'
+    declare -px test_var{0..5}
+  } | grep -E '^\[|^\b.*test_var.\b'
+}
+f1
+## STDOUT:
+[declare -pn]
+declare -n test_var4='test_var1'
+[declare -pr]
+declare -r test_var2='222'
+[declare -px]
+declare -x test_var3='333'
+## END
+## N-I bash STDOUT:
+[declare -pn]
+declare -- test_var1="111"
+declare -r test_var2="222"
+declare -x test_var3="333"
+declare -n test_var4="test_var1"
+declare -- test_var5="555"
+[declare -pr]
+declare -- test_var1="111"
+declare -r test_var2="222"
+declare -x test_var3="333"
+declare -n test_var4="test_var1"
+declare -- test_var5="555"
+[declare -px]
+declare -- test_var1="111"
+declare -r test_var2="222"
+declare -x test_var3="333"
+declare -n test_var4="test_var1"
+declare -- test_var5="555"
+## END
+## N-I mksh STDOUT:
+[declare -pn]
+[declare -pr]
+[declare -px]
+## END
+
+#### declare -pg
+test_var1=global
+f1() {
+  local test_var1=local
+  {
+    declare -pg
+  } | grep -E '^\[|^\b[^"]*test_var.\b'
+}
+f1
+## STDOUT:
+declare -- test_var1='global'
+## END
+## N-I bash STDOUT:
+declare -- test_var1="local"
+## END
+## N-I mksh stdout-json: ""
+## N-I mksh status: 1
+
+#### declare -pg var
+test_var1=global
+f1() {
+  local test_var1=local
+  {
+    declare -pg test_var1
+  } | grep -E '^\[|^\b.*test_var.\b'
+}
+f1
+## STDOUT:
+declare -- test_var1='global'
+## END
+## N-I bash STDOUT:
+declare -- test_var1="local"
+## END
+## N-I mksh stdout-json: ""
+## N-I mksh status: 1
 
 #### typeset -f 
 # mksh implement typeset but not declare
