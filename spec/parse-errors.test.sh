@@ -60,8 +60,6 @@ echo "status=$?"
 ## stdout-json: ""
 ## status: 2
 ## OK mksh status: 1
-## BUG dash stdout: status=127
-## BUG dash status: 0
 
 #### } on the second line
 set -o errexit

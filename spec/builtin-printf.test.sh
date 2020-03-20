@@ -15,7 +15,7 @@
 #### printf with no args
 printf
 ## status: 2
-## OK dash/mksh/zsh status: 1
+## OK mksh/zsh status: 1
 ## stdout-json: ""
 
 #### printf -v %s
@@ -474,7 +474,7 @@ status=1
 status=1
 ## END
 # osh emits parse errors
-## OK osh STDOUT:
+## OK dash/osh STDOUT:
 status=2
 status=2
 ## END
@@ -489,7 +489,8 @@ printf '[%q]\n' "$x"
 [a\ b]
 ## END
 ## N-I ash/dash stdout-json: "["
-## N-I ash/dash status: 1
+## N-I ash status: 1
+## N-I dash status: 2
 
 #### printf %6q (width)
 # NOTE: coreutils /usr/bin/printf does NOT implement this %6q !!!
@@ -502,7 +503,8 @@ printf '[%6q]\n' "$x"
 [  a\ b]
 ## END
 ## N-I mksh/ash/dash stdout-json: "["
-## N-I mksh/ash/dash status: 1
+## N-I mksh/ash status: 1
+## N-I dash status: 2
 
 #### printf + and space flags
 # I didn't know these existed -- I only knew about - and 0 !
@@ -587,8 +589,11 @@ echo status=$?
 2019-05-15
 status=0
 ## END
-## N-I dash/mksh/zsh/ash STDOUT:
+## N-I mksh/zsh/ash STDOUT:
 status=1
+## END
+## N-I dash STDOUT:
+status=2
 ## END
 
 #### %(strftime format)T doesn't respect TZ if not exported
@@ -599,8 +604,11 @@ echo status=$?
 2019-05-15
 status=0
 ## END
-## N-I dash/mksh/zsh/ash STDOUT:
+## N-I mksh/zsh/ash STDOUT:
 status=1
+## END
+## N-I dash STDOUT:
+status=2
 ## END
 
 #### %(strftime format)T TZ in environ but not set in shell
@@ -615,8 +623,11 @@ echo status=$?
 2019-05-15
 status=0
 ## END
-## N-I dash/mksh/zsh/ash STDOUT:
+## N-I mksh/zsh/ash STDOUT:
 status=1
+## END
+## N-I dash STDOUT:
+status=2
 ## END
 
 #### %10.5(strftime format)T
@@ -633,4 +644,7 @@ status=0
 ## END
 ## N-I dash/mksh/zsh/ash STDOUT:
 [[status=1
+## END
+## N-I dash STDOUT:
+[[status=2
 ## END

@@ -128,7 +128,7 @@ foo]
 foo]
 foo]
 ## END
-## OK dash/mksh STDOUT:
+## OK mksh STDOUT:
 [foo]
 foo]
 [foo]
@@ -151,7 +151,7 @@ foo[]
 foo[]
 foo[]
 ## END
-## OK dash/mksh/zsh STDOUT:
+## OK mksh/zsh STDOUT:
 []foo[]
 foo[]
 []foo[]

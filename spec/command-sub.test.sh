@@ -38,15 +38,10 @@ $(echo ec)$(echo ho) split builtin
 ## stdout: split builtin
 
 #### Making keyword out of command sub should NOT work
-# This doesn't work in bash or dash!  Hm builtins are different than keywords /
-# reserved words I guess.
-# dash fails, but gives code 0
 $(echo f)$(echo or) i in a b c; do echo $i; done
 echo status=$?
 ## stdout-json: ""
 ## status: 2
-## BUG dash stdout-json: "\nstatus=0\n"
-## BUG dash status: 0
 ## OK mksh status: 1
 
 #### Command sub with here doc

@@ -173,23 +173,17 @@ foo='a b c d'
 argv.py ${foo%'c d'} ${foo%'c  d'}
 ## stdout: ['a', 'b', 'a', 'b', 'c', 'd']
 
-#### Strip a string with single quotes, double quoted, with unescaped '
-# We're in a double quoted context, so we should be able to use a literal
-# single quote.  This is very much the case with :-.
+#### Syntax error for single quote in double quote
 foo="'a b c d'"
 argv.py "${foo%d'}"
-## stdout: ["'a b c "]
-## BUG bash/mksh stdout-json: ""
-## BUG bash status: 2
-## BUG mksh status: 1
+## stdout-json: ""
+## status: 2
+## OK mksh status: 1
 
 #### The string to strip can be single quoted, outer is double quoted
-# This is an inconsistency in bash/mksh because '' are treated as literals in
-# double quotes.  The correct ways are above.
 foo='a b c d'
 argv.py "${foo%'c d'}" "${foo%'c  d'}"
-## stdout: ['a b c d', 'a b c d']
-## BUG bash/mksh stdout: ['a b ', 'a b c d']
+## stdout: ['a b ', 'a b c d']
 
 #### $'' allowed within VarSub arguments
 # Odd behavior of bash/mksh: $'' is recognized but NOT ''!
@@ -218,7 +212,7 @@ echo -"${var#'a'}"-
 -'a'-
 -'a'-
 ## END
-## OK dash/ash STDOUT:
+## OK ash STDOUT:
 --
 -a-
 -'a'-

@@ -106,7 +106,7 @@ $"
 echo $\
 ?
 ## stdout: $?
-## OK bash/mksh/ash stdout: 0
+## OK dash/bash/mksh/ash stdout: 0
 
 #
 # Bad quotes

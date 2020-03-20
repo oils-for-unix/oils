@@ -96,8 +96,7 @@ echo -e '\n\r\t\v'
 #### \0
 echo -e 'ab\0cd'
 ## stdout-json: "ab\u0000cd\n"
-# dash truncates it
-## BUG dash stdout-json: "-e ab\n"
+## N-I dash stdout-json: "-e ab\u0000cd\n"
 
 #### \c stops processing input
 flags='-e'
@@ -149,7 +148,7 @@ echo -en '\03777' | od -A n -t x1 | sed 's/ \+/ /g'
 echo -en '\04000' | od -A n -t x1 | sed 's/ \+/ /g'
 ## stdout-json: " 00 30\n"
 ## BUG ash stdout-json: " 20 30 30\n"
-## N-I dash stdout-json: " 2d 65 6e 20\n"
+## N-I dash stdout-json: " 2d 65 6e 20 00 30 0a\n"
 
 #### \0777 is out of range
 flags='-en'
@@ -201,8 +200,7 @@ case $SH in dash) flags='-n' ;; esac
 
 echo $flags '\0' '\1' '\8' | od -A n -c | sed 's/ \+/ /g'
 ## stdout-json: " \\0 \\ 1 \\ 8\n"
-## BUG dash stdout-json: " 001 \\ 8\n"
-## BUG ash stdout-json: " \\0 001 \\ 8\n"
+## BUG dash/ash stdout-json: " \\0 001 \\ 8\n"
 
 #### Read builtin
 # NOTE: there are TABS below
@@ -236,7 +234,6 @@ FG
 EOF
 echo "[$x/$y/$z]"
 ## stdout: [A/B/C D E]
-## BUG dash stdout: [A/B/C D E ]
 ## status: 0
 
 #### Read builtin with not enough variables

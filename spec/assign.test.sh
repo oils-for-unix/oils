@@ -119,9 +119,8 @@ foo\=bar
 # dash gives 0 because there is stuff after for?  Should really give an error.
 # mksh gives acceptable error of 1.
 FOO=bar for i in a b; do printenv.py $FOO; done
-## BUG dash status: 0
-## OK  mksh/zsh status: 1
 ## status: 2
+## OK mksh/zsh status: 1
 
 #### Trying to run keyword 'for'
 FOO=bar for
@@ -305,13 +304,6 @@ x=local
 x=
 x=global
 ## END
-## BUG dash STDOUT:
-x=temp-binding
-x=mutated-temp
-x=local
-x=
-x=mutated-temp
-## END
 ## BUG bash STDOUT:
 x=temp-binding
 x=mutated-temp
@@ -357,7 +349,7 @@ x=mutated-temp
 x=
 x=global
 ## END
-## BUG dash/mksh/yash STDOUT:
+## BUG mksh/yash STDOUT:
 x=temp-binding
 x=mutated-temp
 x=
