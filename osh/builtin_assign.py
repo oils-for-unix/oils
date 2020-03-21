@@ -79,55 +79,56 @@ def _PrintVariables(mem, cmd_val, arg, print_flags, readonly=False, exported=Fal
     if flag_a and val.tag_() != value_e.MaybeStrArray: continue
     if flag_A and val.tag_() != value_e.AssocArray: continue
 
+    decl = []
     if print_flags:
-      flags = '-'
-      if cell.nameref: flags += 'n'
-      if cell.readonly: flags += 'r'
-      if cell.exported: flags += 'x'
+      flags = []
+      if cell.nameref: flags.append('n')
+      if cell.readonly: flags.append('r')
+      if cell.exported: flags.append('x')
       if val.tag_() == value_e.MaybeStrArray:
-        flags += 'a'
+        flags.append('a')
       elif val.tag_() == value_e.AssocArray:
-        flags += 'A'
-      if flags == '-': flags += '-'
+        flags.append('A')
+      if len(flags) == 0: flags.append('-')
 
-      decl = 'declare ' + flags + ' ' + name
+      decl.extend(["declare -", ''.join(flags), " ", name])
     else:
-      decl = name
+      decl.append(name)
 
     if val.tag_() == value_e.Str:
       str_val = cast(value__Str, val)
-      decl += "=" + string_ops.ShellQuote(str_val.s)
+      decl.extend(["=", string_ops.ShellQuote(str_val.s)])
     elif val.tag_() == value_e.MaybeStrArray:
       array_val = cast(value__MaybeStrArray, val)
       if None in array_val.strs:
         # Note: Arrays with unset elements are printed in the form:
         #   declare -p arr=(); arr[3]='' arr[4]='foo' ...
-        decl += "=()"
+        decl.append("=()")
         first = True
         for i, element in enumerate(array_val.strs):
           if element is not None:
             if first:
-              decl += ";"
+              decl.append(";")
               first = False
-            decl += " " + name + "[" + str(i) + "]=" + string_ops.ShellQuote(element)
+            decl.extend([" ", name, "[", str(i), "]=", string_ops.ShellQuote(element)])
       else:
-        body = ''
+        body = []
         for element in array_val.strs:
-          if body: body += ' '
-          body += string_ops.ShellQuote(element or '')
-        decl += "=(" + body + ")"
+          if len(body) > 0: body.append(" ")
+          body.append(string_ops.ShellQuote(element or ''))
+        decl.extend(["=(", ''.join(body), ")"])
     elif val.tag_() == value_e.AssocArray:
       assoc_val = cast(value__AssocArray, val)
-      body = ''
+      body = []
       for key in sorted(assoc_val.d):
-        if body: body += ' '
+        if len(body) > 0: body.append(" ")
         key_quoted = string_ops.ShellQuote(key)
         value_quoted = string_ops.ShellQuote(assoc_val.d[key] or '')
-        body += "[" + key_quoted + "]=" + value_quoted
-      if body:
-        decl += "=(" + body + ")"
+        body.extend(["[", key_quoted, "]=", value_quoted])
+      if len(body) > 0:
+        decl.extend(["=(", ''.join(body), ")"])
 
-    print(decl)
+    print(''.join(decl))
     count += 1
 
   if print_all or count == len(names):
