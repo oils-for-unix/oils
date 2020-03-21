@@ -363,7 +363,7 @@ class ArithEvaluator(_ExprEvaluator):
 
         elif case(value_e.Str):
           val = cast(value__Str, UP_val)
-          return _StringToInteger(val.s, span_id=span_id)  # calls e_die
+          return _StringToInteger(val.s, span_id=span_id)  # calls e_strict
 
         elif case(value_e.Obj):
           # Note: this handles var x = 42; echo $(( x > 2 )).
@@ -377,8 +377,6 @@ class ArithEvaluator(_ExprEvaluator):
       if self.exec_opts.strict_arith():
         raise
       else:
-        span_id = word_.SpanIdFromError(e)
-        self.errfmt.PrettyPrintError(e, prefix='warning: ')
         return 0
 
     # Arrays and associative arrays always fail -- not controlled by
@@ -744,7 +742,6 @@ class BoolEvaluator(_ExprEvaluator):
       if self.always_strict or self.exec_opts.strict_arith():
         raise
       else:
-        self.errfmt.PrettyPrintError(e, prefix='warning: ')
         i = 0
     return i
 
