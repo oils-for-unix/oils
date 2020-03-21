@@ -184,9 +184,11 @@ class FdState(object):
     return f
 
   def _WriteFdToMem(self, fd_name, fd):
+    # type: (string, int) -> None
     if self.mem:
       self.mem.SetVar(lvalue.Named(fd_name), value.Str(str(fd)), scope_e.Dynamic)
   def _ReadFdFromMem(self, fd_name):
+    # type: (string) -> int?
     if self.mem is None: return None
 
     val = self.mem.GetVar(fd_name)
