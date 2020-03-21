@@ -629,6 +629,18 @@ class Executor(object):
           'Exiting with status %d (%sPID %d)', status, reason, posix.getpid(),
           span_id=span_id, status=status)
 
+  def _DecodeFdSpec(self, fdspec, opid):
+    # type: (string) -> Tuple(int, string)
+    fd = process.NO_FD
+    fd_name = None
+    if fdspec == '':
+      fd = consts.RedirDefaultFd(opid)
+    elif fdspec[0].isdigit():
+      fd = int(fdspec)
+    else:
+      fd_name = fdspec[1:-1]
+    return fd, fd_name
+
   def _EvalRedirect(self, n):
     # type: (redir_t) -> redirect_t
 
@@ -639,10 +651,7 @@ class Executor(object):
 
         # note: needed for redirect like 'echo foo > x$LINENO'
         self.mem.SetCurrentSpanId(n.op.span_id)
-        fd = n.fd
-        fd_name = n.fd_name
-        if fd == process.NO_FD and not fd_name:
-          fd = consts.RedirDefaultFd(n.op.id)
+        fd, fd_name = self._DecodeFdSpec(n.fdspec, n.op.id)
 
         redir_type = consts.RedirArgType(n.op.id)  # could be static in the LST?
 
@@ -692,10 +701,7 @@ class Executor(object):
 
       elif case(redir_e.HereDoc):
         n = cast(redir__HereDoc, UP_n)
-        fd = n.fd
-        fd_name = n.fd_name
-        if fd == process.NO_FD and fd_name is None:
-          fd = consts.RedirDefaultFd(n.op.id)
+        fd, fd_name = self._DecodeFdSpec(n.fdspec, n.op.id)
         # HACK: Wrap it in a word to evaluate.
         w = compound_word(n.stdin_parts)
         val = self.word_ev.EvalWordToString(w)
