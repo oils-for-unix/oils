@@ -32,7 +32,7 @@ from asdl import runtime
 from core import error
 from core import state
 from core import ui
-from core.util import e_die, log
+from core.util import e_die, e_strict, log
 from frontend import location
 from frontend import consts
 from frontend import match
@@ -71,14 +71,14 @@ def _StringToInteger(s, span_id=runtime.NO_SPID):
     try:
       integer = int(s, 16)
     except ValueError:
-      e_die('Invalid hex constant %r', s, span_id=span_id)
+      e_strict('Invalid hex constant %r', s, span_id=span_id)
     return integer
 
   if s.startswith('0'):
     try:
       integer = int(s, 8)
     except ValueError:
-      e_die('Invalid octal constant %r', s, span_id=span_id)
+      e_strict('Invalid octal constant %r', s, span_id=span_id)
     return integer
 
   if '#' in s:
@@ -88,7 +88,7 @@ def _StringToInteger(s, span_id=runtime.NO_SPID):
     try:
       base = int(b)
     except ValueError:
-      e_die('Invalid base for numeric constant %r',  b, span_id=span_id)
+      e_strict('Invalid base for numeric constant %r',  b, span_id=span_id)
 
     integer = 0
     n = 1
@@ -104,10 +104,10 @@ def _StringToInteger(s, span_id=runtime.NO_SPID):
       elif ch.isdigit():
         digit = int(ch)
       else:
-        e_die('Invalid digits for numeric constant %r', digits, span_id=span_id)
+        e_strict('Invalid digits for numeric constant %r', digits, span_id=span_id)
 
       if digit >= base:
-        e_die('Digits %r out of range for base %d', digits, base, span_id=span_id)
+        e_strict('Digits %r out of range for base %d', digits, base, span_id=span_id)
 
       integer += digit * n
       n *= base
@@ -117,7 +117,7 @@ def _StringToInteger(s, span_id=runtime.NO_SPID):
   try:
     integer = int(s)
   except ValueError:
-    e_die("Invalid integer constant %r", s, span_id=span_id)
+    e_strict("Invalid integer constant %r", s, span_id=span_id)
   return integer
 
 
@@ -355,7 +355,7 @@ class ArithEvaluator(_ExprEvaluator):
         if case(value_e.Undef):  # 'nounset' already handled before got here
           # Happens upon a[undefined]=42, which unfortunately turns into a[0]=42.
           #log('blame_word %s   arena %s', blame_word, self.arena)
-          e_die('Undefined value in arithmetic context', span_id=span_id)
+          e_strict('Undefined value in arithmetic context', span_id=span_id)
 
         elif case(value_e.Int):
           val = cast(value__Int, UP_val)
@@ -373,7 +373,7 @@ class ArithEvaluator(_ExprEvaluator):
               return val.obj
           raise AssertionError()  # not in C++
 
-    except error.FatalRuntime as e:
+    except error.Strict as e:
       if self.exec_opts.strict_arith():
         raise
       else:
@@ -381,7 +381,8 @@ class ArithEvaluator(_ExprEvaluator):
         self.errfmt.PrettyPrintError(e, prefix='warning: ')
         return 0
 
-    # Arrays and associative arrays always fail -- not controlled by strict_arith.
+    # Arrays and associative arrays always fail -- not controlled by
+    # strict_arith.
     # In bash, (( a )) is like (( a[0] )), but I don't want that.
     # And returning '0' gives different results.
     e_die("Expected a value convertible to integer, got %s",
@@ -739,7 +740,7 @@ class BoolEvaluator(_ExprEvaluator):
 
     try:
       i = _StringToInteger(s, span_id=span_id)
-    except error.FatalRuntime as e:
+    except error.Strict as e:
       if self.always_strict or self.exec_opts.strict_arith():
         raise
       else:

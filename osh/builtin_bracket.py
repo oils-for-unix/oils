@@ -235,7 +235,10 @@ class Test(object):
     bool_ev.CheckCircularDeps()
     try:
       b = bool_ev.Eval(bool_node) # type = bool
-    except error.FatalRuntime as e:
+    except (error.FatalRuntime, error.Strict) as e:
+      # TODO: use a different exception for FatalRuntime?  It's not really
+      # fatal.
+
       # Hack: we don't get the (test) prefix but we get location info.  We
       # don't have access to mem.CurrentSpanId() here.
       if not e.HasLocation():
