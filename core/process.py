@@ -42,7 +42,7 @@ if TYPE_CHECKING:
   from core.comp_ui import _IDisplay
   from core import optview
   from osh.cmd_exec import Executor
-  from core.state import SearchPath
+  from core.state import SearchPath, Mem
   from mycpp import mylib
 
 
@@ -185,11 +185,12 @@ class FdState(object):
     return f
 
   def _WriteFdToMem(self, fd_name, fd):
-    # type: (string, int) -> None
+    # type: (str, int) -> None
     if self.mem:
       self.mem.SetVar(lvalue.Named(fd_name), value.Str(str(fd)), scope_e.Dynamic)
+
   def _ReadFdFromMem(self, fd_name):
-    # type: (string) -> int
+    # type: (str) -> int
     if self.mem is None: return NO_FD
 
     val = self.mem.GetVar(fd_name)
@@ -232,18 +233,13 @@ class FdState(object):
 
     return need_restore
 
-  def _PushDup(self, fd1, fd2, fd2name=None):
-    # type: (int, int, string) -> bool
-    """Save fd2, and dup fd1 onto fd2.
+  def _PushDup(self, fd1, fd2, fd2_name=None):
+    # type: (int, int, str) -> bool
+    """Save fd2, and dup fd1 onto fd2.  Returns bool success."""
+    if fd1 == fd2:
+      return True
 
-    Mutates self.cur_frame.saved.
-
-    Returns:
-      success Bool
-    """
-    if fd1 == fd2: return True
-
-    if fd2name:
+    if fd2_name:
       try:
         new_fd = fcntl.fcntl(fd1, fcntl.F_DUPFD, 10)
       except IOError as e:
@@ -253,7 +249,7 @@ class FdState(object):
           raise
         return False
 
-      self._WriteFdToMem(fd2name, new_fd)
+      self._WriteFdToMem(fd2_name, new_fd)
       return True
 
     need_restore = self._PushSave(fd2)
@@ -276,7 +272,7 @@ class FdState(object):
     return True
 
   def _PushCloseFd(self, fd, fd_name):
-    # type: (int, string) -> bool
+    # type: (int, str) -> bool
     if fd_name:
       fd = self._ReadFdFromMem(fd_name)
       if fd == NO_FD: return False
@@ -284,10 +280,10 @@ class FdState(object):
     self._PushSave(fd)
     return True
 
-  def _PushMoveFd(self, fd1, fd2, fd2name=None):
-    # type: (int, int) -> bool
+  def _PushMoveFd(self, fd1, fd2, fd2_name=None):
+    # type: (int, int, str) -> bool
 
-    if fd2name:
+    if fd2_name:
       try:
         new_fd = fcntl.fcntl(fd1, fcntl.F_DUPFD, 10)
       except IOError as e:
@@ -297,7 +293,7 @@ class FdState(object):
           raise
         return False
 
-      self._WriteFdToMem(fd2name, new_fd)
+      self._WriteFdToMem(fd2_name, new_fd)
       posix.close(fd1)
       self.cur_frame.saved.append((new_fd, fd1, False))
       return True
