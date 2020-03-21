@@ -192,7 +192,7 @@ class FdState(object):
     if self.mem is None: return None
 
     val = self.mem.GetVar(fd_name)
-    if val.tag == value_e.Str:
+    if val.tag_() == value_e.Str:
       try:
         return int(cast(value__Str, val).s)
       except ValueError:
