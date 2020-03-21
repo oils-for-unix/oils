@@ -231,7 +231,7 @@ class FdState(object):
 
     return need_restore
 
-  def _PushDup(self, fd1, fd2, fd2name = None):
+  def _PushDup(self, fd1, fd2, fd2name=None):
     # type: (int, int, string) -> bool
     """Save fd2, and dup fd1 onto fd2.
 
@@ -283,7 +283,7 @@ class FdState(object):
     self._PushSave(fd)
     return True
 
-  def _PushMoveFd(self, fd1, fd2, fd2name = None):
+  def _PushMoveFd(self, fd1, fd2, fd2name=None):
     # type: (int, int) -> bool
 
     if fd2name:
@@ -1052,7 +1052,7 @@ class Pipeline(Job):
       self.pids.append(pid)
       self.pipe_status.append(-1)  # uninitialized
 
-      # NOTE: This is done in the SHELL PROCESS after every fork() call.rr
+      # NOTE: This is done in the SHELL PROCESS after every fork() call.
       # It can't be done at the end; otherwise processes will have descriptors
       # from non-adjacent pipes.
       proc.MaybeClosePipe()

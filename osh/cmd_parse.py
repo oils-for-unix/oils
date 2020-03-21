@@ -487,7 +487,7 @@ class CommandParser(object):
     if op_tok.val[0] == '{':
       index = op_tok.val.find('}')
       if index < 0:
-        p_die('Invalid token after redirect operator', word = self.cur_word)
+        p_die('Invalid token after redirect operator', word=self.cur_word)
       fd_name = op_tok.val[1:index]
     else:
       index = 0
