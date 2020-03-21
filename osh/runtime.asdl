@@ -79,12 +79,12 @@ module runtime
 
   -- evaluated version of syntax.redir
   redirect = 
-    Path(id op_id, int fd, string? fd_name, string filename, int op_spid)
-  | FileDesc(id op_id, int fd, string? fd_name, int target_fd, int op_spid)
-  | CloseFd(id op_id, int fd, string? fd_name, int op_spid)
-  | MoveFd(id op_id, int fd, string? fd_name, int target_fd, int op_spid)
+    Path(id op_id, string fdspec, string filename, int op_spid)
+  | FileDesc(id op_id, string fdspec, int target_fd, int op_spid)
+  | CloseFd(id op_id, string fdspec, int op_spid)
+  | MoveFd(id op_id, string fdspec, int target_fd, int op_spid)
     -- here doc or here word
-  | HereDoc(int fd, string? fd_name, string body, int op_spid)
+  | HereDoc(string fdspec, string body, int op_spid)
 
   job_status =
     Proc(int code)

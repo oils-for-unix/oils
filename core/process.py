@@ -331,6 +331,15 @@ class FdState(object):
     # type: (Process, Waiter) -> None
     self.cur_frame.need_wait.append((proc, waiter))
 
+  def _ResolveFd(self, fdspec):
+    fd = NO_FD
+    fd_name = ''
+    if fdspec[0].isdigit():
+      fd = int(fdspec)
+    else:
+      fd_name = fdspec[1:-1]
+    return fd, fd_name
+
   def _ApplyRedirect(self, r, waiter):
     # type: (redirect_t, Waiter) -> bool
     ok = True
@@ -357,8 +366,9 @@ class FdState(object):
           raise NotImplementedError(r.op_id)
 
         # NOTE: 0666 is affected by umask, all shells use it.
+        fd, fd_name = self._ResolveFd(r.fdspec)
 
-        fd = self._GetFreeDescriptor() if r.fd_name else r.fd
+        new_fd = self._GetFreeDescriptor() if fd_name else fd
         try:
           open_fd = posix.open(r.filename, mode, 0o666)
         except OSError as e:
@@ -368,15 +378,15 @@ class FdState(object):
           return False
 
         # Apply redirect
-        if open_fd != fd:
-          if not self._PushDup(open_fd, fd):
+        if open_fd != new_fd:
+          if not self._PushDup(open_fd, new_fd):
             ok = False
           posix.close(open_fd)  # We already made a copy of it.
 
         if ok:
-          if r.fd_name:
-            self._WriteFdToMem(r.fd_name, fd)
-          self._PushClose(fd)
+          if fd_name:
+            self._WriteFdToMem(fd_name, new_fd)
+          self._PushClose(new_fd)
 
         # Now handle the extra redirects for aliases &> and &>>.
         #
@@ -391,43 +401,47 @@ class FdState(object):
         #   stdout_stderr.py 3> out-err.txt 2>&3
         if ok:
           if r.op_id == Id.Redir_AndGreat:
-            if not self._PushDup(fd, 2):
+            if not self._PushDup(new_fd, 2):
               ok = False
           elif r.op_id == Id.Redir_AndDGreat:
-            if not self._PushDup(fd, 2):
+            if not self._PushDup(new_fd, 2):
               ok = False
 
       elif case(redirect_e.FileDesc):  # e.g. echo hi 1>&2
         r = cast(redirect__FileDesc, UP_r)
 
+        fd, fd_name = self._ResolveFd(r.fdspec)
         if r.op_id == Id.Redir_GreatAnd:  # 1>&2
-          if not self._PushDup(r.target_fd, r.fd, r.fd_name):
+          if not self._PushDup(r.target_fd, fd, fd_name):
             ok = False
         elif r.op_id == Id.Redir_LessAnd:  # 0<&5
           # The only difference between >& and <& is the default file
           # descriptor argument.
-          if not self._PushDup(r.target_fd, r.fd, r.fd_name):
+          if not self._PushDup(r.target_fd, fd, fd_name):
             ok = False
         else:
           raise NotImplementedError()
 
       elif case(redirect_e.CloseFd):  # e.g. echo hi 5>&-
         r = cast(redirect__CloseFd, UP_r)
-        if not self._PushCloseFd(r.fd, r.fd_name):
+        fd, fd_name = self._ResolveFd(r.fdspec)
+        if not self._PushCloseFd(fd, fd_name):
           ok = False
 
       elif case(redirect_e.MoveFd):  # e.g. echo hi 5>&6-
         r = cast(redirect__MoveFd, UP_r)
-        if not self._PushMoveFd(r.target_fd, r.fd, r.fd_name):
+        fd, fd_name = self._ResolveFd(r.fdspec)
+        if not self._PushMoveFd(r.target_fd, fd, fd_name):
           ok = False
 
       elif case(redirect_e.HereDoc):
         r = cast(redirect__HereDoc, UP_r)
+        fd, fd_name = self._ResolveFd(r.fdspec)
 
         # NOTE: Do these descriptors have to be moved out of the range 0-9?
         read_fd, write_fd = posix.pipe()
 
-        if not self._PushDup(read_fd, r.fd, r.fd_name):  # stdin is now the pipe
+        if not self._PushDup(read_fd, fd, fd_name):  # stdin is now the pipe
           ok = False
 
         # We can't close like we do in the filename case above?  The writer can
