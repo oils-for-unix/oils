@@ -459,6 +459,48 @@ declare -- test_var1="local"
 ## N-I mksh stdout-json: ""
 ## N-I mksh status: 1
 
+#### ble.sh: eval -- "$(declare -p var arr)"
+# This illustrates an example usage of "eval & declare" for exporting
+# multiple variables from $().
+eval -- "$(
+  printf '%s\n' a{1..10} | {
+    sum=0 i=0 arr=()
+    while read line; do
+      ((sum+=${#line},i++))
+      arr[$((i/3))]=$line
+    done
+    declare -p sum arr
+  })"
+echo sum=$sum
+for ((i=0;i<${#arr[@]};i++)); do
+  echo "arr[$i]=${arr[i]}"
+done
+## STDOUT:
+sum=21
+arr[0]=a2
+arr[1]=a5
+arr[2]=a8
+arr[3]=a10
+## END
+## N-I mksh stdout-json: ""
+## N-I mksh status: 1
+
+#### eval -- "$(declare -p arr)" (restore arrays w/ unset elements)
+arr=(1 2 3)
+eval -- "$(arr=(); arr[3]= arr[4]=foo; declare -p arr)"
+for i in {0..4}; do
+  echo "arr[$i]: ${arr[$i]+set ... [}${arr[$i]-unset}${arr[$i]+]}"
+done
+## STDOUT:
+arr[0]: unset
+arr[1]: unset
+arr[2]: unset
+arr[3]: set ... []
+arr[4]: set ... [foo]
+## END
+## N-I mksh stdout-json: ""
+## N-I mksh status: 1
+
 #### typeset -f 
 # mksh implement typeset but not declare
 typeset  -f myfunc func2
