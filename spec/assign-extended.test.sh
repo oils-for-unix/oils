@@ -290,7 +290,7 @@ declare -A test_arr3
 declare -a test_arr4=('1' '2' '3')
 declare -a test_arr5=('1' '2' '3')
 declare -A test_arr6=(['a']='1' ['b']='2' ['c']='3')
-declare -a test_arr7=('' '' '' 'foo')
+declare -a test_arr7=(); test_arr7[3]='foo'
 ## END
 ## OK bash STDOUT:
 declare -a test_arr1=()

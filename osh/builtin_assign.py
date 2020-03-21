@@ -98,11 +98,23 @@ def _PrintVariables(mem, cmd_val, arg, print_flags, readonly = False, exported =
       decl += "=" + string_ops.ShellQuote(str_val.s)
     elif val.tag == value_e.MaybeStrArray:
       array_val = cast(value__MaybeStrArray, val)
-      body = ''
-      for element in array_val.strs:
-        if body: body += ' '
-        body += string_ops.ShellQuote(element or '')
-      decl += "=(" + body + ")"
+      if None in array_val.strs:
+        # Note: Arrays with unset elements are printed in the form:
+        #   declare -p arr=(); arr[3]='' arr[4]='foo' ...
+        decl += "=()"
+        first = True
+        for i, element in enumerate(array_val.strs):
+          if element is not None:
+            if first:
+              decl += ";"
+              first = False
+            decl += " " + name + "[" + str(i) + "]=" + string_ops.ShellQuote(element)
+      else:
+        body = ''
+        for element in array_val.strs:
+          if body: body += ' '
+          body += string_ops.ShellQuote(element or '')
+        decl += "=(" + body + ")"
     elif val.tag == value_e.AssocArray:
       assoc_val = cast(value__AssocArray, val)
       body = ''
@@ -110,7 +122,7 @@ def _PrintVariables(mem, cmd_val, arg, print_flags, readonly = False, exported =
         if body: body += ' '
         key_quoted = string_ops.ShellQuote(key)
         value_quoted = string_ops.ShellQuote(assoc_val.d[key] or '')
-        body += '[' + key_quoted + ']=' + value_quoted
+        body += "[" + key_quoted + "]=" + value_quoted
       if body:
         decl += "=(" + body + ")"
 
