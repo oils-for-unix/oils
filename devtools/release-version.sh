@@ -552,5 +552,16 @@ filter-demo() {
 
 }
 
+# TODO: use jq to get
+# - .number
+# - .title
+# - .html_url
+#
+# And then format as HTML.
+
+issues-demo() {
+  curl 'https://api.github.com/repos/oilshell/oil/issues?labels=pending-release'
+}
+
 
 "$@"

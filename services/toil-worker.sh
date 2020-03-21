@@ -108,7 +108,9 @@ run-tasks() {
     local log_path=$out_dir/$task_name.log.txt 
 
     set +o errexit
-    time-tsv -o $tsv --append --field $task_name --field $script --field $action --field $result_html -- \
+    time-tsv -o $tsv --append --time-fmt '%.2f' \
+      --field $task_name --field $script --field $action \
+      --field $result_html -- \
       $script $action >$log_path 2>&1
     status=$?
     set -o errexit
