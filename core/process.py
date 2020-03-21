@@ -220,6 +220,7 @@ class FdState(object):
     Returns:
       success Bool
     """
+    if fd1 == fd2: return True
 
     need_restore = self._PushSave(fd2)
 
@@ -311,8 +312,10 @@ class FdState(object):
           return False
 
         # Apply redirect
-        if not self._PushDup(target_fd, r.fd):
-          ok = False
+        if target_fd != r.fd:
+          if not self._PushDup(target_fd, r.fd):
+            ok = False
+          posix.close(target_fd)  # We already made a copy of it.
 
         # Now handle the extra redirects for aliases &> and &>>.
         #
@@ -333,7 +336,6 @@ class FdState(object):
             if not self._PushDup(r.fd, 2):
               ok = False
 
-        posix.close(target_fd)  # We already made a copy of it.
         # I don't think we need to close(0) because it will be restored from its
         # saved position (10), which closes it.
         #self._PushClose(r.fd)
