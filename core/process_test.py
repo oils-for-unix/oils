@@ -17,6 +17,7 @@ from core import util
 from core.util import log
 from core import state
 from osh import builtin_misc
+from asdl import runtime
 
 Process = process.Process
 ExternalThunk = process.ExternalThunk
@@ -77,7 +78,7 @@ class ProcessTest(unittest.TestCase):
 
     # Should get the first line twice, because Pop() closes it!
 
-    r = redirect.Path(Id.Redir_Less, 0, PATH)
+    r = redirect.Path(Id.Redir_Less, 0, PATH, runtime.NO_SPID)
     fd_state.Push([r], waiter)
     line1 = builtin_misc.ReadLineFromStdin(None)
     fd_state.Pop()
