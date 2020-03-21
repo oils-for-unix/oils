@@ -315,6 +315,9 @@ class FdState(object):
             ok = False
           posix.close(target_fd)  # We already made a copy of it.
 
+        if ok:
+          self._PushClose(r.fd)
+
         # Now handle the extra redirects for aliases &> and &>>.
         #
         # We can rewrite
@@ -333,10 +336,6 @@ class FdState(object):
           elif r.op_id == Id.Redir_AndDGreat:
             if not self._PushDup(r.fd, 2):
               ok = False
-
-        # I don't think we need to close(0) because it will be restored from its
-        # saved position (10), which closes it.
-        #self._PushClose(r.fd)
 
       elif case(redirect_e.FileDesc):  # e.g. echo hi 1>&2
         r = cast(redirect__FileDesc, UP_r)
