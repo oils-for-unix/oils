@@ -531,3 +531,53 @@ xbar[5]=42
 ## END
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
+
+#### ble.sh (dynamic var name with prefix): assign
+vec2_set () {
+  local this=$1 x=$2 y=$3
+  : $(( ${this}_x = $2 ))
+  : $(( ${this}_y = y ))
+}
+vec2_set a 3 4
+vec2_set b 5 12
+echo a_x=$a_x a_y=$a_y
+echo b_x=$b_x b_y=$b_y
+## STDOUT:
+a_x=3 a_y=4
+b_x=5 b_y=12
+## END
+
+#### ble.sh (dynamic var name with prefix): read
+vec2_load() {
+  local this=$1
+  x=$(( ${this}_x ))
+  : $(( y = ${this}_y ))
+}
+a_x=12 a_y=34
+vec2_load a
+echo x=$x y=$y
+## STDOUT:
+x=12 y=34
+## END
+
+#### ble.sh (dynamic var name with prefix): copy/add
+vec2_copy () {
+  local this=$1 rhs=$2
+  : $(( ${this}_x = $(( ${rhs}_x )) ))
+  : $(( ${this}_y = ${rhs}_y ))
+}
+vec2_add () {
+  local this=$1 rhs=$2
+  : $(( ${this}_x += $(( ${rhs}_x )) ))
+  : $(( ${this}_y += ${rhs}_y ))
+}
+a_x=3 a_y=4
+b_x=4 b_y=20
+vec2_copy c a
+echo c_x=$c_x c_y=$c_y
+vec2_add c b
+echo c_x=$c_x c_y=$c_y
+## STDOUT:
+c_x=3 c_y=4
+c_x=7 c_y=24
+## END
