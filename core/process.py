@@ -103,19 +103,17 @@ class _FdFrame(object):
   def __init__(self):
     # type: () -> None
     self.saved = []  # type: List[Tuple[int, int]]
-    self.need_close = []  # type: List[int]
     self.need_wait = []  # type: List[Tuple[Process, Waiter]]
 
   def Forget(self):
     # type: () -> None
     """For exec 1>&2."""
     del self.saved[:]  # like list.clear() in Python 3.3
-    del self.need_close[:]
     del self.need_wait[:]
 
   def __repr__(self):
     # type: () -> str
-    return '<_FdFrame %s %s>' % (self.saved, self.need_close)
+    return '<_FdFrame %s>' % self.saved
 
 
 class FdState(object):
@@ -271,7 +269,7 @@ class FdState(object):
 
   def _PushClose(self, fd):
     # type: (int) -> None
-    self.cur_frame.need_close.append(fd)
+    self.cur_frame.saved.append((-1, fd))
 
   def _PushWait(self, proc, waiter):
     # type: (Process, Waiter) -> None
@@ -464,23 +462,23 @@ class FdState(object):
     frame = self.stack.pop()
     #log('< Pop %s', frame)
     for saved, orig in reversed(frame.saved):
-      try:
-        posix.dup2(saved, orig)
-      except OSError as e:
-        log('dup2(%d, %d) error: %s', saved, orig, e)
-        #log('fd state:')
-        #posix.system('ls -l /proc/%s/fd' % posix.getpid())
-        raise
-      posix.close(saved)
-      #log('dup2 %s %s', saved, orig)
-
-    for fd in frame.need_close:
-      #log('Close %d', fd)
-      try:
-        posix.close(fd)
-      except OSError as e:
-        log('Error closing descriptor %d: %s', fd, e)
-        raise
+      if saved == -1:
+        #log('Close %d', orig)
+        try:
+          posix.close(orig)
+        except OSError as e:
+          log('Error closing descriptor %d: %s', orig, e)
+          raise
+      else:
+        try:
+          posix.dup2(saved, orig)
+        except OSError as e:
+          log('dup2(%d, %d) error: %s', saved, orig, e)
+          #log('fd state:')
+          #posix.system('ls -l /proc/%s/fd' % posix.getpid())
+          raise
+        posix.close(saved)
+        #log('dup2 %s %s', saved, orig)
 
     # Wait for here doc processes to finish.
     for proc, waiter in frame.need_wait:
