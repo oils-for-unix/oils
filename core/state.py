@@ -1387,7 +1387,7 @@ class Mem(object):
 
     return value.Undef()
 
-  def GetCell(self, name, lookup_mode = scope_e.Dynamic):
+  def GetCell(self, name, lookup_mode=scope_e.Dynamic):
     # type: (str, scope_t) -> cell
     """For the 'repr' builtin."""
     cell, _ = self._ResolveNameOnly(name, lookup_mode)
@@ -1497,7 +1497,7 @@ class Mem(object):
           result[name] = str_val.s
     return result
 
-  def GetAllCells(self, lookup_mode = scope_e.Dynamic):
+  def GetAllCells(self, lookup_mode=scope_e.Dynamic):
     # type: (scope_t) -> Dict[str, cell]
     """Get all variables and their values, for 'set' builtin. """
     result = {}  # type: Dict[str, str]

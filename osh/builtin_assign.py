@@ -26,7 +26,7 @@ if mylib.PYTHON:
   from frontend import arg_def
 
 
-def _PrintVariables(mem, cmd_val, arg, print_flags, readonly = False, exported = False):
+def _PrintVariables(mem, cmd_val, arg, print_flags, readonly=False, exported=False):
   # type: (Mem, value_t, Any, bool, bool, bool) -> int
   flag_g = getattr(arg, 'g', None)
   flag_n = getattr(arg, 'n', None)
@@ -173,7 +173,7 @@ class Export(object):
           "doesn't accept -f because it's dangerous.  (The code can usually be restructured with 'source')")
 
     if arg.p or len(cmd_val.pairs) == 0:
-      return _PrintVariables(self.mem, cmd_val, arg, True, exported = True)
+      return _PrintVariables(self.mem, cmd_val, arg, True, exported=True)
 
     positional = cmd_val.argv[arg_index:]
     if arg.n:
@@ -243,7 +243,7 @@ class Readonly(object):
     arg, arg_index = READONLY_SPEC.Parse(arg_r)
 
     if arg.p or len(cmd_val.pairs) == 0:
-      return _PrintVariables(self.mem, cmd_val, arg, True, readonly = True)
+      return _PrintVariables(self.mem, cmd_val, arg, True, readonly=True)
 
     for pair in cmd_val.pairs:
       if pair.rval is None:
