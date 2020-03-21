@@ -1388,7 +1388,7 @@ class Mem(object):
     return value.Undef()
 
   def GetCell(self, name, lookup_mode = scope_e.Dynamic):
-    # type: (str) -> cell
+    # type: (str, scope_t) -> cell
     """For the 'repr' builtin."""
     cell, _ = self._ResolveNameOnly(name, lookup_mode)
     return cell
@@ -1498,7 +1498,7 @@ class Mem(object):
     return result
 
   def GetAllCells(self, lookup_mode = scope_e.Dynamic):
-    # type: () -> Dict[str, cell]
+    # type: (scope_t) -> Dict[str, cell]
     """Get all variables and their values, for 'set' builtin. """
     result = {}  # type: Dict[str, str]
 
@@ -1521,6 +1521,7 @@ class Mem(object):
     return result
 
   def IsGlobalScope(self):
+    # type: () -> bool
     return len(self.var_stack) == 1
 
 def SetLocalString(mem, name, s):

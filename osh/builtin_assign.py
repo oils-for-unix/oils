@@ -27,6 +27,7 @@ if mylib.PYTHON:
 
 
 def _PrintVariables(mem, cmd_val, arg, print_flags, readonly = False, exported = False):
+  # type: (Mem, value_t, Any, bool, bool, bool) -> int
   flag_g = getattr(arg, 'g', None)
   flag_n = getattr(arg, 'n', None)
   flag_r = getattr(arg, 'r', None)
