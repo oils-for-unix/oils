@@ -2,6 +2,9 @@
 
 /* Indent relative to headings if the screen is wide enough */
 @media screen and (min-width: 801px) {
+  body {
+    font-size: large;
+  }
   p, ul, ol, pre {
     margin-left: 2em;
   }

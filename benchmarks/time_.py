@@ -46,6 +46,9 @@ def Options():
   p.add_option(
       '--field', dest='fields', default=[], action='append',
       help='A string to append to each row, after the exit code and status')
+  p.add_option(
+      '--time-fmt', dest='time_fmt', default='%.4f',
+      help='sprintf format for elapsed seconds (float)')
   return p
 
 
@@ -65,7 +68,7 @@ def main(argv):
 
   elapsed = time.time() - start_time
   fields = tuple(opts.fields)
-  row = (exit_code, '%.4f' % elapsed) + fields
+  row = (exit_code, opts.time_fmt % elapsed) + fields
 
   if opts.output:
     mode = 'a' if opts.append else 'w'

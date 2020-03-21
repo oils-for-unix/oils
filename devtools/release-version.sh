@@ -30,6 +30,7 @@ print re.sub(
 _git-changelog-body() {
   local prev_branch=$1
   local cur_branch=$2
+  shift 2
 
   # - a trick for HTML escaping (avoid XSS): surround %s with unlikely bytes,
   #   \x00 and \x01.  Then pipe Python to escape.
@@ -49,6 +50,7 @@ _git-changelog-body() {
     --reverse \
     --pretty="format:$format" \
     --date=short \
+    "$@" \
   | escape-segments
 }
 
@@ -538,6 +540,16 @@ announcement-0.8.pre2() {
 
 blog-redirect() {
   html-redirect 'making-plans.html' > $SITE_DEPLOY_DIR/blog/2020/01/11.html
+}
+
+#
+# Other
+#
+
+filter-demo() {
+  # show commits not made by me
+  _git-changelog-body release/0.8.pre2 master --author 'Andy Chu' --invert-grep
+
 }
 
 

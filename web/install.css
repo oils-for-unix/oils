@@ -1,5 +1,11 @@
 /* For INSTALL.txt as HTML */
 
+@media screen and (min-width: 801px) {
+  body {
+    font-size: large;
+  }
+}
+
 body {
   font-family: monospace;
 }

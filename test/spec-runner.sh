@@ -133,7 +133,7 @@ _html-summary() {
     ../../web/base.css ../../web/spec-tests.css
 
   cat <<EOF
-  <body class="width60">
+  <body class="width50">
 
 <p id="home-link">
   <!-- The release index is two dirs up -->

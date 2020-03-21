@@ -18,7 +18,7 @@ test-tsv() {
   rm -f $out
 
   for i in 1 2 3; do
-    time-tool --tsv -o $out -- sleep 0.0${i}
+    time-tool --tsv -o $out --append --time-fmt '%.2f' -- sleep 0.0${i}
   done
   cat $out
 }

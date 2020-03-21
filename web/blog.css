@@ -1,3 +1,9 @@
+@media screen and (min-width: 801px) {
+  body {
+    font-size: large;
+  }
+}
+
 #latch-status {
   text-align: center;
   color: grey;

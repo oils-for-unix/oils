@@ -38,12 +38,15 @@ assert() {
 }
 
 run-task-with-status() {
+  ### Run a process and write a file with status and time
+
   local out_file=$1
   shift
 
-  # --quiet suppresses a warning message
+  # spec/wild tests only need two digits of precision
   benchmarks/time_.py \
     --tsv \
+    --time-fmt '%.2f' \
     --output $out_file \
     -- "$@" || true  # suppress failure
 
