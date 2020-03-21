@@ -1387,10 +1387,10 @@ class Mem(object):
 
     return value.Undef()
 
-  def GetCell(self, name):
-    # type: (str) -> cell
+  def GetCell(self, name, lookup_mode=scope_e.Dynamic):
+    # type: (str, scope_t) -> cell
     """For the 'repr' builtin."""
-    cell, _ = self._ResolveNameOnly(name, scope_e.Dynamic)
+    cell, _ = self._ResolveNameOnly(name, lookup_mode)
     return cell
 
   def Unset(self, lval, lookup_mode):
@@ -1497,6 +1497,32 @@ class Mem(object):
           result[name] = str_val.s
     return result
 
+  def GetAllCells(self, lookup_mode=scope_e.Dynamic):
+    # type: (scope_t) -> Dict[str, cell]
+    """Get all variables and their values, for 'set' builtin. """
+    result = {}  # type: Dict[str, str]
+
+    if lookup_mode == scope_e.Dynamic:
+      scopes = self.var_stack
+    elif lookup_mode == scope_e.LocalOnly:
+      scopes = self.var_stack[-1:]
+    elif lookup_mode == scope_e.GlobalOnly:
+      scopes = self.var_stack[0:1]
+    elif lookup_mode == scope_e.LocalOrGlobal:
+      scopes = self.var_stack[0:1]
+      if len(self.var_stack) > 1:
+        scopes.append(self.var_stack[-1])
+    else:
+      raise AssertionError()
+
+    for scope in scopes:
+      for name, cell in iteritems(scope):
+        result[name] = cell
+    return result
+
+  def IsGlobalScope(self):
+    # type: () -> bool
+    return len(self.var_stack) == 1
 
 def SetLocalString(mem, name, s):
   # type: (Mem, str, str) -> None

@@ -438,7 +438,7 @@ def ShellQuote(s):
   It doesn't necessarily match bash byte-for-byte.  IIRC bash isn't consistent
   with it anyway.
 
-  Used for 'printf %q', ${x@Q}, and 'set'.
+  Used for 'printf %q', ${x@Q}, 'set', and `declare -p`.
   """
   # Could be made slightly nicer by e.g. returning unmodified when
   # there's nothing that needs to be quoted.  Bash's `printf %q`
