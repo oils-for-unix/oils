@@ -102,12 +102,16 @@ class SignalState(object):
 class _FdFrame(object):
   def __init__(self):
     # type: () -> None
-    self.saved = []  # type: List[Tuple[int, int]]
+    self.saved = []  # type: List[Tuple[int, int, bool]]
     self.need_wait = []  # type: List[Tuple[Process, Waiter]]
 
   def Forget(self):
     # type: () -> None
     """For exec 1>&2."""
+    for saved, orig, forget in reversed(self.saved):
+      if saved != -1 and forget:
+        posix.close(saved)
+
     del self.saved[:]  # like list.clear() in Python 3.3
     del self.need_wait[:]
 
@@ -205,7 +209,7 @@ class FdState(object):
       fcntl.fcntl(new_fd, fcntl.F_SETFD, fcntl.FD_CLOEXEC)
 
     if need_restore:
-      self.cur_frame.saved.append((new_fd, fd))
+      self.cur_frame.saved.append((new_fd, fd, True))
 
     return need_restore
 
@@ -264,12 +268,12 @@ class FdState(object):
       return False
 
     posix.close(fd1)
-    self.cur_frame.saved.append((fd2, fd1))
+    self.cur_frame.saved.append((fd2, fd1, False))
     return True
 
   def _PushClose(self, fd):
     # type: (int) -> None
-    self.cur_frame.saved.append((-1, fd))
+    self.cur_frame.saved.append((-1, fd, False))
 
   def _PushWait(self, proc, waiter):
     # type: (Process, Waiter) -> None
@@ -460,7 +464,7 @@ class FdState(object):
     # type: () -> None
     frame = self.stack.pop()
     #log('< Pop %s', frame)
-    for saved, orig in reversed(frame.saved):
+    for saved, orig, _ in reversed(frame.saved):
       if saved == -1:
         #log('Close %d', orig)
         try:
