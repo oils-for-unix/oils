@@ -621,6 +621,8 @@ case $SH in *dash) exit 99 ;; esac  # stderr unpredictable
 
 foo=bar
 typeset -p foo 1>&2
+
+# zsh and mksh agree on exact output, which we don't really care about
 ## STDERR:
 typeset foo=bar
 ## END
@@ -628,7 +630,7 @@ typeset foo=bar
 declare -- foo="bar"
 ## END
 ## OK osh STDERR:
-foo
+declare -- foo='bar'
 ## END
 ## N-I dash status: 99
 ## N-I dash stderr-json: ""
