@@ -532,7 +532,7 @@ xbar[5]=42
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 
-#### dynamic var name (prefix): assign
+#### ble.sh (dynamic var name with prefix): assign
 vec2_set () {
   local this=$1 x=$2 y=$3
   : $(( ${this}_x = $2 ))
@@ -547,7 +547,7 @@ a_x=3 a_y=4
 b_x=5 b_y=12
 ## END
 
-#### dynamic var name (prefix): read
+#### ble.sh (dynamic var name with prefix): read
 vec2_load() {
   local this=$1
   x=$(( ${this}_x ))
@@ -560,7 +560,7 @@ echo x=$x y=$y
 x=12 y=34
 ## END
 
-#### dynamic var name (prefix): copy/add
+#### ble.sh (dynamic var name with prefix): copy/add
 vec2_copy () {
   local this=$1 rhs=$2
   : $(( ${this}_x = $(( ${rhs}_x )) ))
