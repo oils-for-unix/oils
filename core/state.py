@@ -1500,7 +1500,7 @@ class Mem(object):
   def GetAllCells(self, lookup_mode=scope_e.Dynamic):
     # type: (scope_t) -> Dict[str, cell]
     """Get all variables and their values, for 'set' builtin. """
-    result = {}  # type: Dict[str, str]
+    result = {}  # type: Dict[str, cell]
 
     if lookup_mode == scope_e.Dynamic:
       scopes = self.var_stack
