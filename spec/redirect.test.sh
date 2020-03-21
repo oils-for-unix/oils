@@ -333,12 +333,12 @@ cat "$TMP/f.txt"
 ## N-I mksh stdout-json: ""
 
 #### 1>&2- (Bash bug: fail to restore closed fd)
-exec 5> "$TMP/f.txt"
-: 6>&5 5>&-
-echo hello >&5
-: 6>&5-
-echo world >&5
-exec 5>&-
+exec 7> "$TMP/f.txt"
+: 8>&7 7>&-
+echo hello >&7
+: 8>&7-
+echo world >&7
+exec 7>&-
 cat "$TMP/f.txt"
 ## STDOUT:
 hello
