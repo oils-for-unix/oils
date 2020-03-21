@@ -181,6 +181,39 @@ cat $TMP/named-fd.txt
 ## N-I dash/mksh stdout-json: ""
 ## N-I dash/mksh status: 127
 
+#### Double digit fd (20> file)
+exec 20> "$TMP/double-digit-fd.txt"
+echo hello20 >&20
+cat "$TMP/double-digit-fd.txt"
+## stdout: hello20
+## BUG dash stdout-json: ""
+## BUG dash status: 127
+
+#### : 9> fdleak (OSH regression)
+: 9> "$TMP/fd.txt"
+( echo world >&9 )
+cat "$TMP/fd.txt"
+## stdout-json: ""
+
+#### : 3>&3 (OSH regression)
+: 3>&3
+echo hello
+## stdout: hello
+## BUG mksh stdout-json: ""
+## BUG mksh status: 1
+
+#### : 3>&- << EOF (OSH regression: fail to restore fds)
+exec 3> "$TMP/fd.txt"
+echo hello 3>&- << EOF
+EOF
+echo world >&3
+exec 3>&-
+cat "$TMP/fd.txt"
+## STDOUT:
+hello
+world
+## END
+
 #### Redirect function stdout
 f() { echo one; echo two; }
 f > $TMP/redirect-func.txt
@@ -294,6 +327,24 @@ echo world6 >&6
 exec 6>&-
 cat "$TMP/f.txt"
 ## stdout-json: "hello5\nworld6\n"
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+## N-I mksh status: 1
+## N-I mksh stdout-json: ""
+
+#### 1>&2- (Bash bug: fail to restore closed fd)
+exec 5> "$TMP/f.txt"
+: 6>&5 5>&-
+echo hello >&5
+: 6>&5-
+echo world >&5
+exec 5>&-
+cat "$TMP/f.txt"
+## STDOUT:
+hello
+world
+## END
+## BUG bash stdout: hello
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 ## N-I mksh status: 1

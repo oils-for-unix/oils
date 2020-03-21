@@ -639,7 +639,7 @@ class Executor(object):
 
         # note: needed for redirect like 'echo foo > x$LINENO'
         self.mem.SetCurrentSpanId(n.op.span_id)
-        fd = consts.RedirDefaultFd(n.op.id) if n.fd == runtime.NO_SPID else n.fd
+        fdspec = n.fdspec or str(consts.RedirDefaultFd(n.op.id))
 
         redir_type = consts.RedirArgType(n.op.id)  # could be static in the LST?
 
@@ -654,41 +654,47 @@ class Executor(object):
             raise error.RedirectEval(
                 "Redirect filename can't be empty", word=n.arg_word)
 
-          return redirect.Path(n.op.id, fd, filename, n.op.span_id)
+          return redirect.Path(n.op.id, fdspec, filename, n.op.span_id)
 
-        elif redir_type == redir_arg_type_e.Desc:  # e.g. 1>&2
+        elif redir_type == redir_arg_type_e.Desc:  # e.g. 1>&2, 1>&-, 1>&2-
           val = self.word_ev.EvalWordToString(n.arg_word)
           t = val.s
           if not t:
             raise error.RedirectEval(
                 "Redirect descriptor can't be empty", word=n.arg_word)
             return None
+
           try:
-            target_fd = int(t)
+            if t == '-':
+              return redirect.CloseFd(n.op.id, fdspec, n.op.span_id)
+            elif t[-1] == '-':
+              target_fd = int(t[:-1])
+              return redirect.MoveFd(n.op.id, fdspec, target_fd, n.op.span_id)
+            else:
+              target_fd = int(t)
+              return redirect.FileDesc(n.op.id, fdspec, target_fd, n.op.span_id)
           except ValueError:
             raise error.RedirectEval(
-                "Redirect descriptor should look like an integer, got %s", val,
+                "Redirect descriptor should look like an integer, '-', or an integer + '-', got %s", val,
                 word=n.arg_word)
             return None
 
-          return redirect.FileDesc(n.op.id, fd, target_fd, n.op.span_id)
-
         elif redir_type == redir_arg_type_e.Here:  # here word
           val = self.word_ev.EvalWordToString(n.arg_word)
-          assert val.tag == value_e.Str, val
+          assert val.tag_() == value_e.Str, val
           # NOTE: bash and mksh both add \n
-          return redirect.HereDoc(fd, val.s + '\n', n.op.span_id)
+          return redirect.HereDoc(fdspec, val.s + '\n', n.op.span_id)
         else:
           raise AssertionError('Unknown redirect op')
 
       elif case(redir_e.HereDoc):
         n = cast(redir__HereDoc, UP_n)
-        fd = consts.RedirDefaultFd(n.op.id) if n.fd == runtime.NO_SPID else n.fd
+        fdspec = n.fdspec or str(consts.RedirDefaultFd(n.op.id))
         # HACK: Wrap it in a word to evaluate.
         w = compound_word(n.stdin_parts)
         val = self.word_ev.EvalWordToString(w)
-        assert val.tag == value_e.Str, val
-        return redirect.HereDoc(fd, val.s, n.op.span_id)
+        assert val.tag_() == value_e.Str, val
+        return redirect.HereDoc(fdspec, val.s, n.op.span_id)
 
       else:
         raise AssertionError('Unknown redirect type')
@@ -815,7 +821,7 @@ class Executor(object):
     Args:
       fork_external: for subshell ( ls / ) or ( command ls / )
     """
-    assert cmd_val.tag == cmd_value_e.Argv
+    assert cmd_val.tag_() == cmd_value_e.Argv
 
     argv = cmd_val.argv
     span_id = cmd_val.arg_spids[0] if cmd_val.arg_spids else runtime.NO_SPID
@@ -878,7 +884,7 @@ class Executor(object):
       UP_val = self.mem.GetVar(arg0)
 
       if mylib.PYTHON:  # Not reusing CPython objects
-        if UP_val.tag == value_e.Obj:
+        if UP_val.tag_() == value_e.Obj:
           val = cast(value__Obj, UP_val)
           if isinstance(val.obj, objects.Proc):
             status = self._RunOilProc(val.obj, argv[1:])
@@ -1379,7 +1385,7 @@ class Executor(object):
 
         if node.arg_word:  # Evaluate the argument
           val = self.word_ev.EvalWordToString(node.arg_word)
-          assert val.tag == value_e.Str
+          assert val.tag_() == value_e.Str
           try:
             arg = int(val.s)  # They all take integers
           except ValueError:
@@ -1628,7 +1634,7 @@ class Executor(object):
         node = cast(command__Proc, UP_node)
         if mylib.PYTHON:
           UP_proc_sig = node.sig
-          if UP_proc_sig.tag == proc_sig_e.Closed:
+          if UP_proc_sig.tag_() == proc_sig_e.Closed:
             proc_sig = cast(proc_sig__Closed, UP_proc_sig)
             defaults = [None] * len(proc_sig.params)
             for i, param in enumerate(proc_sig.params):

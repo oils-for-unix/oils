@@ -37,6 +37,7 @@ from _devbuild.gen import syntax_asdl  # token, etc.
 from asdl import runtime
 from core import error
 from core import ui
+from core import process
 from core.util import log, p_die
 from frontend import match
 from frontend import reader
@@ -482,12 +483,18 @@ class CommandParser(object):
     assert self.c_kind == Kind.Redir, self.cur_word
     op_tok = cast(Token, self.cur_word)  # for MyPy
 
-    # For now only supporting single digit descriptor
-    first_char = op_tok.val[0]
-    if first_char.isdigit():
-      fd = int(first_char)
+    fdspec = ''
+    if op_tok.val[0] == '{':
+      index = op_tok.val.find('}')
+      if index < 0:
+        p_die('Invalid token after redirect operator', word=self.cur_word)
+      fdspec = op_tok.val[:index+1]
     else:
-      fd = runtime.NO_SPID
+      index = 0
+      while index < len(op_tok.val) and op_tok.val[index].isdigit():
+        index += 1
+      if index > 0:
+        fdspec = op_tok.val[:index]
 
     self._Next()
     self._Peek()
@@ -496,7 +503,7 @@ class CommandParser(object):
     if op_tok.id in (Id.Redir_DLess, Id.Redir_DLessDash):
       h = redir.HereDoc()  # no stdin_parts yet
       h.op = op_tok
-      h.fd = fd
+      h.fdspec = fdspec
       h.here_begin = self.cur_word
       self.pending_here_docs.append(h)  # will be filled on next newline.
 
@@ -513,7 +520,7 @@ class CommandParser(object):
       arg_word = tilde
     self._Next()
 
-    return redir.Redir(op_tok, fd, arg_word)
+    return redir.Redir(op_tok, fdspec, arg_word)
 
   def _ParseRedirectList(self):
     # type: () -> List[redir_t]

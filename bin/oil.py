@@ -351,7 +351,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   procs = {}
 
   job_state = process.JobState()
-  fd_state = process.FdState(errfmt, job_state)
+  fd_state = process.FdState(errfmt, job_state, mem)
 
   opt_hook = ShellOptHook(line_input)
   parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, opt_hook)

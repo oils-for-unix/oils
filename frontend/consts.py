@@ -59,7 +59,7 @@ REDIR_DEFAULT_FD = {
     Id.Redir_Great: 1,
     Id.Redir_DGreat: 1,
     Id.Redir_Clobber: 1,
-    Id.Redir_LessGreat: 1,  # TODO: What does echo <>foo do?
+    Id.Redir_LessGreat: 0,  # 'exec <> foo' opens a file with read/write
     # bash &> and &>>
     Id.Redir_AndGreat: 1,
     Id.Redir_AndDGreat: 1,
