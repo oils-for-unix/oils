@@ -59,18 +59,26 @@ echo ${foo:3:-1} ${foo: 3: -2} ${foo:3 :-3 }
 
 
 #### strict_word_eval with string slice
-shopt -s strict_word_eval || true
-echo slice
 s='abc'
+echo -${s: -1}-
 echo -${s: -2}-
+echo -${s: -3}-
+shopt -s strict_word_eval || true
+echo -${s: -2}-
+echo ----
 ## STDOUT:
-slice
+--
+--
+--
 ## END
 ## status: 1
 ## N-I bash/mksh/zsh status: 0
 ## N-I bash/mksh/zsh STDOUT:
-slice
+-c-
 -bc-
+-abc-
+-bc-
+----
 ## END
 
 #### String slice with math

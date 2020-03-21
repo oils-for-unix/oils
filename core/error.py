@@ -88,19 +88,23 @@ class FatalRuntime(_ErrorWithLocation):
   """
 
 
-class Strict(_ErrorWithLocation):
-  """
-  Whether this is fatal depends on shell options, e.g.
+class Strict(FatalRuntime):
+  """Depending on shell options, these errors may be caught and ignored.
+
+  For example, if options like these are ON:
 
     set -o strict_arith
     set -o strict_word_eval
 
-  TODO: We could do
+  then we re-raise the error so it's caught by the top level.  Otherwise
+  we catch it and return a dummy value like '' or -1 (i.e. what bash commonly
+  does.)
+
+  TODO: Have levels, like:
 
   OIL_STRICT_PRINT=2   # print warnings at level 2 and above
   OIL_STRICT_DIE=1  # abort the program at level 1 and above
   """
-  # TODO: This should have a level too?
 
 
 class ErrExit(FatalRuntime):

@@ -407,6 +407,9 @@ def CreateAssertions(case, sh_label):
       a = EqualAssertion('status', 0)
       assertions.append(a)
 
+  no_traceback = SubstringAssertion('stderr', 'Traceback (most recent')
+  assertions.append(no_traceback)
+
   #print 'SHELL', shell
   #pprint.pprint(case)
   #print(assertions)
@@ -428,7 +431,8 @@ class Result(object):
 
 
 class EqualAssertion(object):
-  """An expected value in a record."""
+  """Check that two values are equal."""
+
   def __init__(self, key, expected, qualifier=None):
     self.key = key
     self.expected = expected  # expected value
@@ -450,6 +454,24 @@ class EqualAssertion(object):
     if self.qualifier == 'OK':  # equal, but ok (not ideal)
       return Result.OK, ''
     return Result.PASS, ''  # ideal behavior
+
+
+class SubstringAssertion(object):
+  """Check that a string like stderr doesn't have a substring."""
+
+  def __init__(self, key, substring):
+    self.key = key
+    self.substring = substring
+
+  def __repr__(self):
+    return '<SubstringAssertion %s == %r>' % (self.key, self.substring)
+
+  def Check(self, shell, record):
+    actual = record[self.key]
+    if self.substring in actual:
+      msg = '[%s %s] Found %r' % (shell, self.key, self.substring)
+      return Result.FAIL, msg
+    return Result.PASS, ''
 
 
 class Stats(object):
