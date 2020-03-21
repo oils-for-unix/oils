@@ -127,7 +127,7 @@ class FdState(object):
 
   For example, you can do 'myfunc > out.txt' without forking.
   """
-  def __init__(self, errfmt, job_state, mem = None):
+  def __init__(self, errfmt, job_state, mem=None):
     # type: (ErrorFormatter, JobState, Mem) -> None
     """
     Args:
