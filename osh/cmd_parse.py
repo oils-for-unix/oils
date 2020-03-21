@@ -37,6 +37,7 @@ from _devbuild.gen import syntax_asdl  # token, etc.
 from asdl import runtime
 from core import error
 from core import ui
+from core import process
 from core.util import log, p_die
 from frontend import match
 from frontend import reader
@@ -482,7 +483,7 @@ class CommandParser(object):
     assert self.c_kind == Kind.Redir, self.cur_word
     op_tok = cast(Token, self.cur_word)  # for MyPy
 
-    fd = runtime.NO_SPID
+    fd = process.NO_FD
     fd_name = None
     if op_tok.val[0] == '{':
       index = op_tok.val.find('}')

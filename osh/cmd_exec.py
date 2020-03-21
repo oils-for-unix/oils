@@ -641,7 +641,7 @@ class Executor(object):
         self.mem.SetCurrentSpanId(n.op.span_id)
         fd = n.fd
         fd_name = n.fd_name
-        if fd == runtime.NO_SPID and not fd_name:
+        if fd == process.NO_FD and not fd_name:
           fd = consts.RedirDefaultFd(n.op.id)
 
         redir_type = consts.RedirArgType(n.op.id)  # could be static in the LST?
@@ -694,7 +694,7 @@ class Executor(object):
         n = cast(redir__HereDoc, UP_n)
         fd = n.fd
         fd_name = n.fd_name
-        if fd == runtime.NO_SPID and fd_name is None:
+        if fd == process.NO_FD and fd_name is None:
           fd = consts.RedirDefaultFd(n.op.id)
         # HACK: Wrap it in a word to evaluate.
         w = compound_word(n.stdin_parts)

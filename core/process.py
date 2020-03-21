@@ -30,6 +30,7 @@ from frontend import match
 from mycpp.mylib import tagswitch
 
 import posix_ as posix
+NO_FD = -1
 
 from typing import List, Tuple, Dict, Any, cast, TYPE_CHECKING
 
@@ -110,7 +111,7 @@ class _FdFrame(object):
     # type: () -> None
     """For exec 1>&2."""
     for saved, orig, forget in reversed(self.saved):
-      if saved != -1 and forget:
+      if saved != NO_FD and forget:
         posix.close(saved)
 
     del self.saved[:]  # like list.clear() in Python 3.3
@@ -188,16 +189,16 @@ class FdState(object):
     if self.mem:
       self.mem.SetVar(lvalue.Named(fd_name), value.Str(str(fd)), scope_e.Dynamic)
   def _ReadFdFromMem(self, fd_name):
-    # type: (string) -> int?
-    if self.mem is None: return None
+    # type: (string) -> int
+    if self.mem is None: return NO_FD
 
     val = self.mem.GetVar(fd_name)
     if val.tag_() == value_e.Str:
       try:
         return int(cast(value__Str, val).s)
       except ValueError:
-        return None
-    return None
+        return NO_FD
+    return NO_FD
 
   def _PushSave(self, fd):
     # type: (int) -> bool
@@ -278,7 +279,7 @@ class FdState(object):
     # type: (int, string) -> bool
     if fd_name:
       fd = self._ReadFdFromMem(fd_name)
-      if fd is None: return False
+      if fd == NO_FD: return False
       
     self._PushSave(fd)
     return True
@@ -324,7 +325,7 @@ class FdState(object):
 
   def _PushClose(self, fd):
     # type: (int) -> None
-    self.cur_frame.saved.append((-1, fd, False))
+    self.cur_frame.saved.append((NO_FD, fd, False))
 
   def _PushWait(self, proc, waiter):
     # type: (Process, Waiter) -> None
@@ -520,7 +521,7 @@ class FdState(object):
     frame = self.stack.pop()
     #log('< Pop %s', frame)
     for saved, orig, _ in reversed(frame.saved):
-      if saved == -1:
+      if saved == NO_FD:
         #log('Close %d', orig)
         try:
           posix.close(orig)
