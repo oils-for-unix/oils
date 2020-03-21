@@ -19,7 +19,7 @@ from _devbuild.gen.runtime_asdl import (
     job_state_e, job_state_t,
     job_status, job_status_t,
     redirect_e, redirect_t,
-    redirect__Path, redirect__FileDesc, redirect__HereDoc,
+    redirect__Path, redirect__FileDesc, redirect__CloseFd, redirect__MoveFd, redirect__HereDoc,
 )
 from asdl import pretty
 from core import util
@@ -179,9 +179,9 @@ class FdState(object):
       raise OSError(*e.args)  # Consistently raise OSError
     return f
 
-  def _PushDup(self, fd1, fd2):
-    # type: (int, int) -> bool
-    """Save fd2, and dup fd1 onto fd2.
+  def _PushSave(self, fd):
+    # type: (int) -> bool
+    """Save fd.
 
     Mutates self.cur_frame.saved.
 
@@ -189,10 +189,10 @@ class FdState(object):
       success Bool
     """
     new_fd = self._GetFreeDescriptor()
-    #log('---- _PushDup %s %s', fd1, fd2)
+    #log('---- _PushSave %s', fd)
     need_restore = True
     try:
-      fcntl.fcntl(fd2, fcntl.F_DUPFD, new_fd)
+      fcntl.fcntl(fd, fcntl.F_DUPFD, new_fd)
     except IOError as e:
       # Example program that causes this error: exec 4>&1.  Descriptor 4 isn't
       # open.
@@ -203,8 +203,25 @@ class FdState(object):
       else:
         raise
     else:
-      posix.close(fd2)
+      posix.close(fd)
       fcntl.fcntl(new_fd, fcntl.F_SETFD, fcntl.FD_CLOEXEC)
+
+    if need_restore:
+      self.cur_frame.saved.append((new_fd, fd))
+
+    return need_restore
+
+  def _PushDup(self, fd1, fd2):
+    # type: (int, int) -> bool
+    """Save fd2, and dup fd1 onto fd2.
+
+    Mutates self.cur_frame.saved.
+
+    Returns:
+      success Bool
+    """
+
+    need_restore = self._PushSave(fd2)
 
     #log('==== dup %s %s\n' % (fd1, fd2))
     try:
@@ -214,13 +231,41 @@ class FdState(object):
       self.errfmt.Print('%d: %s', fd1, posix.strerror(e.errno))
 
       # Restore and return error
-      posix.dup2(new_fd, fd2)
-      posix.close(new_fd)
+      if need_restore:
+        new_fd, fd2 = self.cur_frame.saved.pop()
+        posix.dup2(new_fd, fd2)
+        posix.close(new_fd)
       # Undo it
       return False
 
-    if need_restore:
-      self.cur_frame.saved.append((new_fd, fd2))
+    return True
+
+  def _PushCloseFd(self, fd):
+    # type: (int, int) -> bool
+    self._PushSave(fd)
+    return True
+
+  def _PushMoveFd(self, fd1, fd2):
+    # type: (int, int) -> bool
+    need_restore = self._PushSave(fd2)
+
+    #log('==== move %s %s\n' % (fd1, fd2))
+    try:
+      posix.dup2(fd1, fd2)
+    except OSError as e:
+      # bash/dash give this error too, e.g. for 'echo hi 1>&3-'
+      self.errfmt.Print('%d: %s', fd1, posix.strerror(e.errno))
+
+      # Restore and return error
+      if need_restore:
+        new_fd, fd2 = self.cur_frame.saved.pop()
+        posix.dup2(new_fd, fd2)
+        posix.close(new_fd)
+      # Undo it
+      return False
+
+    posix.close(fd1)
+    self.cur_frame.saved.append((fd2, fd1))
     return True
 
   def _PushClose(self, fd):
@@ -251,6 +296,8 @@ class FdState(object):
           mode = posix.O_CREAT | posix.O_WRONLY | posix.O_APPEND
         elif r.op_id == Id.Redir_Less:  # <
           mode = posix.O_RDONLY
+        elif r.op_id == Id.Redir_LessGreat: # <>
+          mode = posix.O_CREAT | posix.O_RDWR
         else:
           raise NotImplementedError(r.op_id)
 
@@ -304,6 +351,16 @@ class FdState(object):
             ok = False
         else:
           raise NotImplementedError()
+
+      elif case(redirect_e.CloseFd):  # e.g. echo hi 5>&-
+        r = cast(redirect__CloseFd, UP_r)
+        if not self._PushCloseFd(r.fd):
+          ok = False
+
+      elif case(redirect_e.MoveFd):  # e.g. echo hi 5>&6-
+        r = cast(redirect__MoveFd, UP_r)
+        if not self._PushMoveFd(r.target_fd, r.fd):
+          ok = False
 
       elif case(redirect_e.HereDoc):
         r = cast(redirect__HereDoc, UP_r)
@@ -359,6 +416,12 @@ class FdState(object):
           op_spid = r.op_spid
         elif case(redirect_e.FileDesc):
           r = cast(redirect__FileDesc, UP_r)
+          op_spid = r.op_spid
+        elif case(redirect_e.CloseFd):
+          r = cast(redirect__CloseFd, UP_r)
+          op_spid = r.op_spid
+        elif case(redirect_e.MoveFd):
+          r = cast(redirect__MoveFd, UP_r)
           op_spid = r.op_spid
         elif case(redirect_e.HereDoc):
           r = cast(redirect__HereDoc, UP_r)

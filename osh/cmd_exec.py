@@ -656,22 +656,28 @@ class Executor(object):
 
           return redirect.Path(n.op.id, fd, filename, n.op.span_id)
 
-        elif redir_type == redir_arg_type_e.Desc:  # e.g. 1>&2
+        elif redir_type == redir_arg_type_e.Desc:  # e.g. 1>&2, 1>&-, 1>&2-
           val = self.word_ev.EvalWordToString(n.arg_word)
           t = val.s
           if not t:
             raise error.RedirectEval(
                 "Redirect descriptor can't be empty", word=n.arg_word)
             return None
+
           try:
-            target_fd = int(t)
+            if t == '-':
+              return redirect.CloseFd(n.op.id, fd, n.op.span_id)
+            elif t[-1] == '-':
+              target_fd = int(t[:-1])
+              return redirect.MoveFd(n.op.id, fd, target_fd, n.op.span_id)
+            else:
+              target_fd = int(t)
+              return redirect.FileDesc(n.op.id, fd, target_fd, n.op.span_id)
           except ValueError:
             raise error.RedirectEval(
-                "Redirect descriptor should look like an integer, got %s", val,
+                "Redirect descriptor should look like an integer, '-', or an integer + '-', got %s", val,
                 word=n.arg_word)
             return None
-
-          return redirect.FileDesc(n.op.id, fd, target_fd, n.op.span_id)
 
         elif redir_type == redir_arg_type_e.Here:  # here word
           val = self.word_ev.EvalWordToString(n.arg_word)

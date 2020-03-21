@@ -81,6 +81,8 @@ module runtime
   redirect = 
     Path(id op_id, int fd, string filename, int op_spid)
   | FileDesc(id op_id, int fd, int target_fd, int op_spid)
+  | CloseFd(id op_id, int fd, int op_spid)
+  | MoveFd(id op_id, int fd, int target_fd, int op_spid)
     -- here doc or here word
   | HereDoc(int fd, string body, int op_spid)
 
