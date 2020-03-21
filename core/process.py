@@ -20,6 +20,7 @@ from _devbuild.gen.runtime_asdl import (
     job_status, job_status_t,
     redirect_e, redirect_t,
     redirect__Path, redirect__FileDesc, redirect__CloseFd, redirect__MoveFd, redirect__HereDoc,
+    value, value_e, lvalue, scope_e, value__Str,
 )
 from asdl import pretty
 from core import util
@@ -125,8 +126,8 @@ class FdState(object):
 
   For example, you can do 'myfunc > out.txt' without forking.
   """
-  def __init__(self, errfmt, job_state):
-    # type: (ErrorFormatter, JobState) -> None
+  def __init__(self, errfmt, job_state, mem = None):
+    # type: (ErrorFormatter, JobState, Mem) -> None
     """
     Args:
       errfmt: for errors
@@ -136,6 +137,7 @@ class FdState(object):
     self.job_state = job_state
     self.cur_frame = _FdFrame()  # for the top level
     self.stack = [self.cur_frame]
+    self.mem = mem
 
   # TODO: Use fcntl(F_DUPFD) and look at the return value!  I didn't understand
   # the difference.
@@ -181,6 +183,20 @@ class FdState(object):
       raise OSError(*e.args)  # Consistently raise OSError
     return f
 
+  def _WriteFdToMem(self, fd_name, fd):
+    if self.mem:
+      self.mem.SetVar(lvalue.Named(fd_name), value.Str(str(fd)), scope_e.Dynamic)
+  def _ReadFdFromMem(self, fd_name):
+    if self.mem is None: return None
+
+    val = self.mem.GetVar(fd_name)
+    if val.tag == value_e.Str:
+      try:
+        return int(cast(value__Str, val).s)
+      except ValueError:
+        return None
+    return None
+
   def _PushSave(self, fd):
     # type: (int) -> bool
     """Save fd.
@@ -213,8 +229,8 @@ class FdState(object):
 
     return need_restore
 
-  def _PushDup(self, fd1, fd2):
-    # type: (int, int) -> bool
+  def _PushDup(self, fd1, fd2, fd2name = None):
+    # type: (int, int, string) -> bool
     """Save fd2, and dup fd1 onto fd2.
 
     Mutates self.cur_frame.saved.
@@ -223,6 +239,19 @@ class FdState(object):
       success Bool
     """
     if fd1 == fd2: return True
+
+    if fd2name:
+      try:
+        new_fd = fcntl.fcntl(fd1, fcntl.F_DUPFD, 10)
+      except IOError as e:
+        if e.errno == errno.EBADF:
+          self.errfmt.Print('%d: %s', fd1, posix.strerror(e.errno))
+        else:
+          raise
+        return False
+
+      self._WriteFdToMem(fd2name, new_fd)
+      return True
 
     need_restore = self._PushSave(fd2)
 
@@ -235,7 +264,7 @@ class FdState(object):
 
       # Restore and return error
       if need_restore:
-        new_fd, fd2 = self.cur_frame.saved.pop()
+        new_fd, fd2, _ = self.cur_frame.saved.pop()
         posix.dup2(new_fd, fd2)
         posix.close(new_fd)
       # Undo it
@@ -243,13 +272,33 @@ class FdState(object):
 
     return True
 
-  def _PushCloseFd(self, fd):
-    # type: (int, int) -> bool
+  def _PushCloseFd(self, fd, fd_name):
+    # type: (int, string) -> bool
+    if fd_name:
+      fd = self._ReadFdFromMem(fd_name)
+      if fd is None: return False
+      
     self._PushSave(fd)
     return True
 
-  def _PushMoveFd(self, fd1, fd2):
+  def _PushMoveFd(self, fd1, fd2, fd2name = None):
     # type: (int, int) -> bool
+
+    if fd2name:
+      try:
+        new_fd = fcntl.fcntl(fd1, fcntl.F_DUPFD, 10)
+      except IOError as e:
+        if e.errno == errno.EBADF:
+          self.errfmt.Print('%d: %s', fd1, posix.strerror(e.errno))
+        else:
+          raise
+        return False
+
+      self._WriteFdToMem(fd2name, new_fd)
+      posix.close(fd1)
+      self.cur_frame.saved.append((new_fd, fd1, False))
+      return True
+
     need_restore = self._PushSave(fd2)
 
     #log('==== move %s %s\n' % (fd1, fd2))
@@ -305,8 +354,10 @@ class FdState(object):
           raise NotImplementedError(r.op_id)
 
         # NOTE: 0666 is affected by umask, all shells use it.
+
+        fd = self._GetFreeDescriptor() if r.fd_name else r.fd
         try:
-          target_fd = posix.open(r.filename, mode, 0o666)
+          open_fd = posix.open(r.filename, mode, 0o666)
         except OSError as e:
           self.errfmt.Print(
               "Can't open %r: %s", r.filename, posix.strerror(e.errno),
@@ -314,13 +365,15 @@ class FdState(object):
           return False
 
         # Apply redirect
-        if target_fd != r.fd:
-          if not self._PushDup(target_fd, r.fd):
+        if open_fd != fd:
+          if not self._PushDup(open_fd, fd):
             ok = False
-          posix.close(target_fd)  # We already made a copy of it.
+          posix.close(open_fd)  # We already made a copy of it.
 
         if ok:
-          self._PushClose(r.fd)
+          if r.fd_name:
+            self._WriteFdToMem(r.fd_name, fd)
+          self._PushClose(fd)
 
         # Now handle the extra redirects for aliases &> and &>>.
         #
@@ -335,34 +388,34 @@ class FdState(object):
         #   stdout_stderr.py 3> out-err.txt 2>&3
         if ok:
           if r.op_id == Id.Redir_AndGreat:
-            if not self._PushDup(r.fd, 2):
+            if not self._PushDup(fd, 2):
               ok = False
           elif r.op_id == Id.Redir_AndDGreat:
-            if not self._PushDup(r.fd, 2):
+            if not self._PushDup(fd, 2):
               ok = False
 
       elif case(redirect_e.FileDesc):  # e.g. echo hi 1>&2
         r = cast(redirect__FileDesc, UP_r)
 
         if r.op_id == Id.Redir_GreatAnd:  # 1>&2
-          if not self._PushDup(r.target_fd, r.fd):
+          if not self._PushDup(r.target_fd, r.fd, r.fd_name):
             ok = False
         elif r.op_id == Id.Redir_LessAnd:  # 0<&5
           # The only difference between >& and <& is the default file
           # descriptor argument.
-          if not self._PushDup(r.target_fd, r.fd):
+          if not self._PushDup(r.target_fd, r.fd, r.fd_name):
             ok = False
         else:
           raise NotImplementedError()
 
       elif case(redirect_e.CloseFd):  # e.g. echo hi 5>&-
         r = cast(redirect__CloseFd, UP_r)
-        if not self._PushCloseFd(r.fd):
+        if not self._PushCloseFd(r.fd, r.fd_name):
           ok = False
 
       elif case(redirect_e.MoveFd):  # e.g. echo hi 5>&6-
         r = cast(redirect__MoveFd, UP_r)
-        if not self._PushMoveFd(r.target_fd, r.fd):
+        if not self._PushMoveFd(r.target_fd, r.fd, r.fd_name):
           ok = False
 
       elif case(redirect_e.HereDoc):
@@ -371,7 +424,7 @@ class FdState(object):
         # NOTE: Do these descriptors have to be moved out of the range 0-9?
         read_fd, write_fd = posix.pipe()
 
-        if not self._PushDup(read_fd, r.fd):  # stdin is now the pipe
+        if not self._PushDup(read_fd, r.fd, r.fd_name):  # stdin is now the pipe
           ok = False
 
         # We can't close like we do in the filename case above?  The writer can
@@ -997,7 +1050,7 @@ class Pipeline(Job):
       self.pids.append(pid)
       self.pipe_status.append(-1)  # uninitialized
 
-      # NOTE: This is done in the SHELL PROCESS after every fork() call.
+      # NOTE: This is done in the SHELL PROCESS after every fork() call.rr
       # It can't be done at the end; otherwise processes will have descriptors
       # from non-adjacent pipes.
       proc.MaybeClosePipe()

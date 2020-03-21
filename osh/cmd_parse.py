@@ -482,12 +482,19 @@ class CommandParser(object):
     assert self.c_kind == Kind.Redir, self.cur_word
     op_tok = cast(Token, self.cur_word)  # for MyPy
 
-    # For now only supporting single digit descriptor
-    first_char = op_tok.val[0]
-    if first_char.isdigit():
-      fd = int(first_char)
+    fd = runtime.NO_SPID
+    fd_name = None
+    if op_tok.val[0] == '{':
+      index = op_tok.val.find('}')
+      if index < 0:
+        p_die('Invalid token after redirect operator', word = self.cur_word)
+      fd_name = op_tok.val[1:index]
     else:
-      fd = runtime.NO_SPID
+      index = 0
+      while index < len(op_tok.val) and op_tok.val[index].isdigit():
+        index += 1
+      if index > 0:
+        fd = int(op_tok.val[:index])
 
     self._Next()
     self._Peek()
@@ -497,6 +504,7 @@ class CommandParser(object):
       h = redir.HereDoc()  # no stdin_parts yet
       h.op = op_tok
       h.fd = fd
+      h.fd_name = fd_name
       h.here_begin = self.cur_word
       self.pending_here_docs.append(h)  # will be filled on next newline.
 
@@ -513,7 +521,7 @@ class CommandParser(object):
       arg_word = tilde
     self._Next()
 
-    return redir.Redir(op_tok, fd, arg_word)
+    return redir.Redir(op_tok, fd, fd_name, arg_word)
 
   def _ParseRedirectList(self):
     # type: () -> List[redir_t]

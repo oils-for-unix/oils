@@ -239,8 +239,8 @@ module syntax
   | LogicalOr(bool_expr left, bool_expr right)
 
   redir = 
-    Redir(Token op, int fd, word arg_word)
-  | HereDoc(Token op, int fd,
+    Redir(Token op, int fd, string? fd_name, word arg_word)
+  | HereDoc(Token op, int fd, string? fd_name,
             word here_begin,  -- e.g. EOF or 'EOF'
             int here_end_span_id,  -- this span is an entire line
             word_part* stdin_parts -- one for each line

@@ -78,7 +78,7 @@ class ProcessTest(unittest.TestCase):
 
     # Should get the first line twice, because Pop() closes it!
 
-    r = redirect.Path(Id.Redir_Less, 0, PATH, runtime.NO_SPID)
+    r = redirect.Path(Id.Redir_Less, 0, None, PATH, runtime.NO_SPID)
     fd_state.Push([r], waiter)
     line1 = builtin_misc.ReadLineFromStdin(None)
     fd_state.Pop()

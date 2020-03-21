@@ -639,7 +639,10 @@ class Executor(object):
 
         # note: needed for redirect like 'echo foo > x$LINENO'
         self.mem.SetCurrentSpanId(n.op.span_id)
-        fd = consts.RedirDefaultFd(n.op.id) if n.fd == runtime.NO_SPID else n.fd
+        fd = n.fd
+        fd_name = n.fd_name
+        if fd == runtime.NO_SPID and not fd_name:
+          fd = consts.RedirDefaultFd(n.op.id)
 
         redir_type = consts.RedirArgType(n.op.id)  # could be static in the LST?
 
@@ -654,7 +657,7 @@ class Executor(object):
             raise error.RedirectEval(
                 "Redirect filename can't be empty", word=n.arg_word)
 
-          return redirect.Path(n.op.id, fd, filename, n.op.span_id)
+          return redirect.Path(n.op.id, fd, fd_name, filename, n.op.span_id)
 
         elif redir_type == redir_arg_type_e.Desc:  # e.g. 1>&2, 1>&-, 1>&2-
           val = self.word_ev.EvalWordToString(n.arg_word)
@@ -666,13 +669,13 @@ class Executor(object):
 
           try:
             if t == '-':
-              return redirect.CloseFd(n.op.id, fd, n.op.span_id)
+              return redirect.CloseFd(n.op.id, fd, fd_name, n.op.span_id)
             elif t[-1] == '-':
               target_fd = int(t[:-1])
-              return redirect.MoveFd(n.op.id, fd, target_fd, n.op.span_id)
+              return redirect.MoveFd(n.op.id, fd, fd_name, target_fd, n.op.span_id)
             else:
               target_fd = int(t)
-              return redirect.FileDesc(n.op.id, fd, target_fd, n.op.span_id)
+              return redirect.FileDesc(n.op.id, fd, fd_name, target_fd, n.op.span_id)
           except ValueError:
             raise error.RedirectEval(
                 "Redirect descriptor should look like an integer, '-', or an integer + '-', got %s", val,
@@ -683,18 +686,21 @@ class Executor(object):
           val = self.word_ev.EvalWordToString(n.arg_word)
           assert val.tag == value_e.Str, val
           # NOTE: bash and mksh both add \n
-          return redirect.HereDoc(fd, val.s + '\n', n.op.span_id)
+          return redirect.HereDoc(fd, fd_name, val.s + '\n', n.op.span_id)
         else:
           raise AssertionError('Unknown redirect op')
 
       elif case(redir_e.HereDoc):
         n = cast(redir__HereDoc, UP_n)
-        fd = consts.RedirDefaultFd(n.op.id) if n.fd == runtime.NO_SPID else n.fd
+        fd = n.fd
+        fd_name = n.fd_name
+        if fd == runtime.NO_SPID and fd_name is None:
+          fd = consts.RedirDefaultFd(n.op.id)
         # HACK: Wrap it in a word to evaluate.
         w = compound_word(n.stdin_parts)
         val = self.word_ev.EvalWordToString(w)
         assert val.tag == value_e.Str, val
-        return redirect.HereDoc(fd, val.s, n.op.span_id)
+        return redirect.HereDoc(fd, fd_name, val.s, n.op.span_id)
 
       else:
         raise AssertionError('Unknown redirect type')
