@@ -259,6 +259,7 @@ def IsKeyword(name):
   # type: (str) -> bool
   return name in OSH_KEYWORD_NAMES
 
+FD_VAR_NAME = r'\{' + VAR_NAME_RE + r'\}'
 
 # These two can must be recognized in the Outer state, but can't nested within
 # [[.
@@ -303,16 +304,16 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
   R(r'[0-9]*<>', Id.Redir_LessGreat),
   R(r'[0-9]*>\|', Id.Redir_Clobber),
 
-  R(r'\{[_a-zA-Z][_a-zA-Z0-9]*\}<', Id.Redir_Less),
-  R(r'\{[_a-zA-Z][_a-zA-Z0-9]*\}>', Id.Redir_Great),
-  R(r'\{[_a-zA-Z][_a-zA-Z0-9]*\}<<', Id.Redir_DLess),
-  R(r'\{[_a-zA-Z][_a-zA-Z0-9]*\}<<<', Id.Redir_TLess),
-  R(r'\{[_a-zA-Z][_a-zA-Z0-9]*\}>>', Id.Redir_DGreat),
-  R(r'\{[_a-zA-Z][_a-zA-Z0-9]*\}<<-', Id.Redir_DLessDash),
-  R(r'\{[_a-zA-Z][_a-zA-Z0-9]*\}>&', Id.Redir_GreatAnd),
-  R(r'\{[_a-zA-Z][_a-zA-Z0-9]*\}<&', Id.Redir_LessAnd),
-  R(r'\{[_a-zA-Z][_a-zA-Z0-9]*\}<>', Id.Redir_LessGreat),
-  R(r'\{[_a-zA-Z][_a-zA-Z0-9]*\}>\|', Id.Redir_Clobber),
+  R(FD_VAR_NAME + r'<', Id.Redir_Less),
+  R(FD_VAR_NAME + r'>', Id.Redir_Great),
+  R(FD_VAR_NAME + r'<<', Id.Redir_DLess),
+  R(FD_VAR_NAME + r'<<<', Id.Redir_TLess),
+  R(FD_VAR_NAME + r'>>', Id.Redir_DGreat),
+  R(FD_VAR_NAME + r'<<-', Id.Redir_DLessDash),
+  R(FD_VAR_NAME + r'>&', Id.Redir_GreatAnd),
+  R(FD_VAR_NAME + r'<&', Id.Redir_LessAnd),
+  R(FD_VAR_NAME + r'<>', Id.Redir_LessGreat),
+  R(FD_VAR_NAME + r'>\|', Id.Redir_Clobber),
 
   # No leading descriptor (2 is implied)
   C(r'&>', Id.Redir_AndGreat),
