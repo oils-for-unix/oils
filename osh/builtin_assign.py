@@ -53,7 +53,7 @@ def _PrintVariables(mem, cmd_val, arg, print_flags, readonly=False, exported=Fal
     cells = {}
     for pair in cmd_val.pairs:
       name = pair.lval.name
-      if pair.rval and pair.rval.tag == value_e.Str:
+      if pair.rval and pair.rval.tag_() == value_e.Str:
         name += "=" + cast(value__Str, pair.rval).s
         names.append(name)
         cells[name] = None
@@ -67,7 +67,7 @@ def _PrintVariables(mem, cmd_val, arg, print_flags, readonly=False, exported=Fal
     if cell is None: continue
     val = cell.val
 
-    if val.tag == value_e.Undef: continue
+    if val.tag_() == value_e.Undef: continue
     if readonly and not cell.readonly: continue
     if exported and not cell.exported: continue
     if flag_n == '-' and not cell.nameref: continue
@@ -76,17 +76,17 @@ def _PrintVariables(mem, cmd_val, arg, print_flags, readonly=False, exported=Fal
     if flag_r == '+' and cell.readonly: continue
     if flag_x == '-' and not cell.exported: continue
     if flag_x == '+' and cell.exported: continue
-    if flag_a and val.tag != value_e.MaybeStrArray: continue
-    if flag_A and val.tag != value_e.AssocArray: continue
+    if flag_a and val.tag_() != value_e.MaybeStrArray: continue
+    if flag_A and val.tag_() != value_e.AssocArray: continue
 
     if print_flags:
       flags = '-'
       if cell.nameref: flags += 'n'
       if cell.readonly: flags += 'r'
       if cell.exported: flags += 'x'
-      if val.tag == value_e.MaybeStrArray:
+      if val.tag_() == value_e.MaybeStrArray:
         flags += 'a'
-      elif val.tag == value_e.AssocArray:
+      elif val.tag_() == value_e.AssocArray:
         flags += 'A'
       if flags == '-': flags += '-'
 
@@ -94,10 +94,10 @@ def _PrintVariables(mem, cmd_val, arg, print_flags, readonly=False, exported=Fal
     else:
       decl = name
 
-    if val.tag == value_e.Str:
+    if val.tag_() == value_e.Str:
       str_val = cast(value__Str, val)
       decl += "=" + string_ops.ShellQuote(str_val.s)
-    elif val.tag == value_e.MaybeStrArray:
+    elif val.tag_() == value_e.MaybeStrArray:
       array_val = cast(value__MaybeStrArray, val)
       if None in array_val.strs:
         # Note: Arrays with unset elements are printed in the form:
@@ -116,7 +116,7 @@ def _PrintVariables(mem, cmd_val, arg, print_flags, readonly=False, exported=Fal
           if body: body += ' '
           body += string_ops.ShellQuote(element or '')
         decl += "=(" + body + ")"
-    elif val.tag == value_e.AssocArray:
+    elif val.tag_() == value_e.AssocArray:
       assoc_val = cast(value__AssocArray, val)
       body = ''
       for key in sorted(assoc_val.d):
