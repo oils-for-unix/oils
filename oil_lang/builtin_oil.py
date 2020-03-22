@@ -21,7 +21,7 @@ from mycpp.mylib import tagswitch
 from osh import builtin_misc  # ReadLineFromStdin
 
 import yajl
-import posix_
+import posix_ as posix
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -191,6 +191,11 @@ JSON_READ_SPEC.Flag('-validate', args.Bool, default=True,
 
 _JSON_ACTION_ERROR = "builtin expects 'read' or 'write'"
 
+# global file object that can be passed to yajl.load(), and that also can be
+# used with redirects.  See comment below.
+_STDIN = posix.fdopen(0)
+
+
 class Json(object):
   """Json I/O.
 
@@ -283,11 +288,19 @@ class Json(object):
         raise args.UsageError('got invalid variable name %r' % var_name,
                               span_id=name_spid)
 
-      # Have to use this over sys.stdin because of redirects
-      # TODO: change binding to yajl.readfd() ?
-      stdin = posix_.fdopen(0)
       try:
-        obj = yajl.load(stdin)
+        # Use a global _STDIN, because we get EBADF on a redirect if we use a
+        # local.  A Py_DECREF closes the file, which we don't want, because the
+        # redirect is responsible for freeing it.
+        #
+        # https://github.com/oilshell/oil/issues/675
+        #
+        # TODO: write a better binding like yajl.readfd()
+        #
+        # It should use streaming like here:
+        # https://lloyd.github.io/yajl/
+
+        obj = yajl.load(_STDIN)
       except ValueError as e:
         self.errfmt.Print('json read: %s', e, span_id=action_spid)
         return 1
