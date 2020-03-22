@@ -261,6 +261,10 @@ def IsKeyword(name):
 
 FD_VAR_NAME = r'\{' + VAR_NAME_RE + r'\}'
 
+# file descriptors can only have two digits, like mksh
+# dash/zsh/etc. can have one
+FD_NUM = r'[0-9]?[0-9]?'
+
 # These two can must be recognized in the Outer state, but can't nested within
 # [[.
 # Keywords have to be checked before _UNQUOTED so we get <KW_If "if"> instead
@@ -293,16 +297,16 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
   # @array and @func(1, c)
   R('@' + VAR_NAME_RE, Id.Lit_Splice),  # for Oil splicing
 
-  R(r'[0-9]*<', Id.Redir_Less),
-  R(r'[0-9]*>', Id.Redir_Great),
-  R(r'[0-9]*<<', Id.Redir_DLess),
-  R(r'[0-9]*<<<', Id.Redir_TLess),
-  R(r'[0-9]*>>', Id.Redir_DGreat),
-  R(r'[0-9]*<<-', Id.Redir_DLessDash),
-  R(r'[0-9]*>&', Id.Redir_GreatAnd),
-  R(r'[0-9]*<&', Id.Redir_LessAnd),
-  R(r'[0-9]*<>', Id.Redir_LessGreat),
-  R(r'[0-9]*>\|', Id.Redir_Clobber),
+  R(FD_NUM + r'<', Id.Redir_Less),
+  R(FD_NUM + r'>', Id.Redir_Great),
+  R(FD_NUM + r'<<', Id.Redir_DLess),
+  R(FD_NUM + r'<<<', Id.Redir_TLess),
+  R(FD_NUM + r'>>', Id.Redir_DGreat),
+  R(FD_NUM + r'<<-', Id.Redir_DLessDash),
+  R(FD_NUM + r'>&', Id.Redir_GreatAnd),
+  R(FD_NUM + r'<&', Id.Redir_LessAnd),
+  R(FD_NUM + r'<>', Id.Redir_LessGreat),
+  R(FD_NUM + r'>\|', Id.Redir_Clobber),
 
   R(FD_VAR_NAME + r'<', Id.Redir_Less),
   R(FD_VAR_NAME + r'>', Id.Redir_Great),

@@ -190,7 +190,7 @@ cat "$TMP/double-digit-fd.txt"
 ## BUG dash status: 127
 
 #### : 9> fdleak (OSH regression)
-: 9> "$TMP/fd.txt"
+true 9> "$TMP/fd.txt"
 ( echo world >&9 )
 cat "$TMP/fd.txt"
 ## stdout-json: ""
@@ -202,13 +202,49 @@ echo hello
 ## BUG mksh stdout-json: ""
 ## BUG mksh status: 1
 
-#### : 3>&- << EOF (OSH regression: fail to restore fds)
+#### : 3>&3-
+: 3>&3-
+echo hello
+## stdout: hello
+## N-I dash/mksh stdout-json: ""
+## N-I mksh status: 1
+## N-I dash status: 2
+
+#### 3>&- << EOF (OSH regression: fail to restore fds)
 exec 3> "$TMP/fd.txt"
 echo hello 3>&- << EOF
 EOF
 echo world >&3
-exec 3>&-
+exec 3>&-  # close
 cat "$TMP/fd.txt"
+## STDOUT:
+hello
+world
+## END
+
+#### Open file on descriptor 3 and write to it many times
+
+# different than case below because 3 is the likely first FD of open()
+
+exec 3> "$TMP/fd3.txt"
+echo hello >&3
+echo world >&3
+exec 3>&-  # close
+cat "$TMP/fd3.txt"
+## STDOUT:
+hello
+world
+## END
+
+#### Open file on descriptor 4 and write to it many times
+
+# different than the case above because because 4 isn't the likely first FD
+
+exec 4> "$TMP/fd4.txt"
+echo hello >&4
+echo world >&4
+exec 4>&-  # close
+cat "$TMP/fd4.txt"
 ## STDOUT:
 hello
 world
@@ -340,15 +376,11 @@ echo hello >&7
 echo world >&7
 exec 7>&-
 cat "$TMP/f.txt"
-## STDOUT:
-hello
-world
-## END
+## status: 2
+## stdout-json: ""
+## OK mksh status: 1
+## BUG bash status: 0
 ## BUG bash stdout: hello
-## N-I dash status: 2
-## N-I dash stdout-json: ""
-## N-I mksh status: 1
-## N-I mksh stdout-json: ""
 
 #### <> for read/write
 echo first >$TMP/rw.txt
@@ -451,4 +483,26 @@ status=127
 ## END
 ## OK mksh/dash STDOUT:
 status=0
+## END
+
+#### can't mention big file descriptor
+echo hi 9>&1
+# 23 is the max descriptor fo rmksh
+#echo hi 24>&1
+echo hi 99>&1
+echo hi 100>&1
+## OK osh STDOUT:
+hi
+hi
+hi 100
+## END
+## STDOUT:
+hi
+hi 99
+hi 100
+## END
+## BUG bash STDOUT:
+hi
+hi
+hi
 ## END

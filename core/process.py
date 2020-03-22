@@ -146,23 +146,6 @@ class FdState(object):
     self.stack = [self.cur_frame]
     self.mem = mem
 
-  # TODO: Use fcntl(F_DUPFD) and look at the return value!  I didn't understand
-  # the difference.
-
-  def _GetFreeDescriptor(self):
-    # type: () -> int
-    """Return a free file descriptor above 10 that isn't used."""
-    fd = 10
-    while True:
-      try:
-        fcntl.fcntl(fd, fcntl.F_GETFD)
-      except IOError as e:
-        if e.errno == errno.EBADF:
-          break
-      fd += 1
-
-    return fd
-
   def Open(self, path, mode='r'):
     # type: (str, str) -> mylib.LineReader
     """Opens a path for read, but moves it out of the reserved 3-9 fd range.
@@ -181,9 +164,12 @@ class FdState(object):
       raise AssertionError(mode)
 
     fd = posix.open(path, fd_mode, 0o666)  # may raise OSError
-    new_fd = self._GetFreeDescriptor()
-    posix.dup2(fd, new_fd)
+
+    # Immediately move it to a new location
+    new_fd = fcntl.fcntl(fd, fcntl.F_DUPFD, _SHELL_MIN_FD)
     posix.close(fd)
+
+    # Return a Python file handle
     try:
       f = posix.fdopen(new_fd, mode)  # Might raise IOError
     except IOError as e:
@@ -197,9 +183,6 @@ class FdState(object):
 
   def _ReadFdFromMem(self, fd_name):
     # type: (str) -> int
-    if self.mem is None:
-      return NO_FD
-
     val = self.mem.GetVar(fd_name)
     if val.tag_() == value_e.Str:
       try:
@@ -210,13 +193,7 @@ class FdState(object):
 
   def _PushSave(self, fd):
     # type: (int) -> bool
-    """Save fd.
-
-    Mutates self.cur_frame.saved.
-
-    Returns:
-      success Bool
-    """
+    """Save fd to a new location and remember to restore it later."""
     #log('---- _PushSave %s', fd)
     need_restore = True
     try:
@@ -226,7 +203,7 @@ class FdState(object):
       # open.
       # This seems to be ignored in dash too in savefd()?
       if e.errno == errno.EBADF:
-        #log('ERROR %s', e)
+        #log('ERROR fd %d: %s', fd, e)
         need_restore = False
       else:
         raise
@@ -234,96 +211,74 @@ class FdState(object):
       posix.close(fd)
       fcntl.fcntl(new_fd, fcntl.F_SETFD, fcntl.FD_CLOEXEC)
 
+    #util.ShowFdState()
     if need_restore:
       self.cur_frame.saved.append((new_fd, fd, True))
+    else:
+      # if we got EBADF, we still need to close the original on Pop()
+      self._PushClose(fd)
+      #pass
 
     return need_restore
 
   def _PushDup(self, fd1, fd2, fd2_name=None):
-    # type: (int, int, str) -> bool
-    """Save fd2, and dup fd1 onto fd2.  Returns bool success."""
-    if fd1 == fd2:
-      return True
+    # type: (int, int, str) -> Tuple[bool, int]
+    """Save fd2 in a higher range, and dup fd1 onto fd2.
 
-    if fd2_name:
+    Returns whether F_DUPFD/dup2 succeeded, and the new descriptor.
+    """
+    if fd1 == fd2:
+      # The user could have asked for it to be open on descrptor 3, but open()
+      # already returned 3, e.g. echo 3>out.txt
+      return NO_FD
+
+    if fd2_name:  # named descriptor
       try:
+        # F_DUPFD: GREATER than range
         new_fd = fcntl.fcntl(fd1, fcntl.F_DUPFD, _SHELL_MIN_FD)
       except IOError as e:
         if e.errno == errno.EBADF:
           self.errfmt.Print('%d: %s', fd1, posix.strerror(e.errno))
+          return NO_FD
         else:
-          raise
-        return False
+          raise  # this redirect failed
 
       self._WriteFdToMem(fd2_name, new_fd)
-      return True
 
-    need_restore = self._PushSave(fd2)
+    else:  # specific number
+      need_restore = self._PushSave(fd2)
 
-    #log('==== dup %s %s\n' % (fd1, fd2))
-    try:
-      posix.dup2(fd1, fd2)
-    except OSError as e:
-      # bash/dash give this error too, e.g. for 'echo hi 1>&3'
-      self.errfmt.Print('%d: %s', fd1, posix.strerror(e.errno))
+      #log('==== dup2 %s %s\n' % (fd1, fd2))
+      try:
+        posix.dup2(fd1, fd2)
+      except OSError as e:
+        # bash/dash give this error too, e.g. for 'echo hi 1>&3'
+        self.errfmt.Print('%d: %s', fd1, posix.strerror(e.errno))
 
-      # Restore and return error
-      if need_restore:
-        new_fd, fd2, _ = self.cur_frame.saved.pop()
-        posix.dup2(new_fd, fd2)
-        posix.close(new_fd)
-      # Undo it
-      return False
+        # Restore and return error
+        if need_restore:
+          new_fd, fd2, _ = self.cur_frame.saved.pop()
+          posix.dup2(new_fd, fd2)
+          posix.close(new_fd)
 
-    return True
+        raise  # this redirect failed
+
+      new_fd = fd2
+
+    return new_fd
 
   def _PushCloseFd(self, fd, fd_name):
     # type: (int, str) -> bool
+    """For 2>&-"""
+    # exec {fd}>&- means close the named descriptor
     if fd_name:
       fd = self._ReadFdFromMem(fd_name)
       if fd == NO_FD:
         return False
-      
-    self._PushSave(fd)
-    return True
 
-  def _PushMoveFd(self, fd1, fd2, fd2_name=None):
-    # type: (int, int, str) -> bool
+    else:
+      self._PushSave(fd)
 
-    if fd2_name:
-      try:
-        new_fd = fcntl.fcntl(fd1, fcntl.F_DUPFD, _SHELL_MIN_FD)
-      except IOError as e:
-        if e.errno == errno.EBADF:
-          self.errfmt.Print('%d: %s', fd1, posix.strerror(e.errno))
-        else:
-          raise
-        return False
-
-      self._WriteFdToMem(fd2_name, new_fd)
-      posix.close(fd1)
-      self.cur_frame.saved.append((new_fd, fd1, False))
-      return True
-
-    need_restore = self._PushSave(fd2)
-
-    #log('==== move %s %s\n' % (fd1, fd2))
-    try:
-      posix.dup2(fd1, fd2)
-    except OSError as e:
-      # bash/dash give this error too, e.g. for 'echo hi 1>&3-'
-      self.errfmt.Print('%d: %s', fd1, posix.strerror(e.errno))
-
-      # Restore and return error
-      if need_restore:
-        new_fd, fd2, _ = self.cur_frame.saved.pop()
-        posix.dup2(new_fd, fd2)
-        posix.close(new_fd)
-      # Undo it
-      return False
-
-    posix.close(fd1)
-    self.cur_frame.saved.append((fd2, fd1, False))
     return True
 
   def _PushClose(self, fd):
@@ -364,65 +319,51 @@ class FdState(object):
           mode = posix.O_CREAT | posix.O_WRONLY | posix.O_APPEND
         elif r.op_id == Id.Redir_Less:  # <
           mode = posix.O_RDONLY
-        elif r.op_id == Id.Redir_LessGreat: # <>
+        elif r.op_id == Id.Redir_LessGreat:  # <>
           mode = posix.O_CREAT | posix.O_RDWR
         else:
           raise NotImplementedError(r.op_id)
 
-        # NOTE: 0666 is affected by umask, all shells use it.
         fd, fd_name = self._ResolveFd(r.fdspec)
 
-        new_fd = self._GetFreeDescriptor() if fd_name else fd
+        # NOTE: 0666 is affected by umask, all shells use it.
         try:
           open_fd = posix.open(r.filename, mode, 0o666)
         except OSError as e:
           self.errfmt.Print(
               "Can't open %r: %s", r.filename, posix.strerror(e.errno),
               span_id=r.op_spid)
-          return False
+          raise  # redirect failed
 
-        # Apply redirect
-        if open_fd != new_fd:
-          if not self._PushDup(open_fd, new_fd):
-            ok = False
-          posix.close(open_fd)  # We already made a copy of it.
+        new_fd = self._PushDup(open_fd, fd, fd_name)
+        if new_fd != NO_FD:
+          posix.close(open_fd)
 
-        if ok:
-          if fd_name:
-            self._WriteFdToMem(fd_name, new_fd)
-          self._PushClose(new_fd)
-
-        # Now handle the extra redirects for aliases &> and &>>.
+        # Now handle &> and &>> and their variants.  These pairs are the same:
         #
-        # We can rewrite
         #   stdout_stderr.py &> out-err.txt
-        # as
         #   stdout_stderr.py > out-err.txt 2>&1
         #
-        # And rewrite
         #   stdout_stderr.py 3&> out-err.txt
-        # as
         #   stdout_stderr.py 3> out-err.txt 2>&3
-        if ok:
-          if r.op_id == Id.Redir_AndGreat:
-            if not self._PushDup(new_fd, 2):
-              ok = False
-          elif r.op_id == Id.Redir_AndDGreat:
-            if not self._PushDup(new_fd, 2):
-              ok = False
+        #
+        # Ditto for {fd}> and {fd}&>
+
+        if r.op_id in (Id.Redir_AndGreat, Id.Redir_AndDGreat):
+          self._PushDup(new_fd, 2)
 
       elif case(redirect_e.FileDesc):  # e.g. echo hi 1>&2
         r = cast(redirect__FileDesc, UP_r)
 
         fd, fd_name = self._ResolveFd(r.fdspec)
         if r.op_id == Id.Redir_GreatAnd:  # 1>&2
-          if not self._PushDup(r.target_fd, fd, fd_name):
-            ok = False
+          self._PushDup(r.target_fd, fd, fd_name)
+
         elif r.op_id == Id.Redir_LessAnd:  # 0<&5
           # The only difference between >& and <& is the default file
           # descriptor argument.
-          if not self._PushDup(r.target_fd, fd, fd_name):
-            ok = False
+          self._PushDup(r.target_fd, fd, fd_name)
+
         else:
           raise NotImplementedError()
 
@@ -435,8 +376,10 @@ class FdState(object):
       elif case(redirect_e.MoveFd):  # e.g. echo hi 5>&6-
         r = cast(redirect__MoveFd, UP_r)
         fd, fd_name = self._ResolveFd(r.fdspec)
-        if not self._PushMoveFd(r.target_fd, fd, fd_name):
-          ok = False
+        new_fd = self._PushDup(r.target_fd, fd, fd_name)
+        if new_fd != NO_FD:
+          posix.close(r.target_fd)
+          self.cur_frame.saved.append((new_fd, fd, False))
 
       elif case(redirect_e.HereDoc):
         r = cast(redirect__HereDoc, UP_r)
@@ -445,8 +388,7 @@ class FdState(object):
         # NOTE: Do these descriptors have to be moved out of the range 0-9?
         read_fd, write_fd = posix.pipe()
 
-        if not self._PushDup(read_fd, fd, fd_name):  # stdin is now the pipe
-          ok = False
+        self._PushDup(read_fd, fd, fd_name)  # stdin is now the pipe
 
         # We can't close like we do in the filename case above?  The writer can
         # get a "broken pipe".
@@ -479,6 +421,8 @@ class FdState(object):
 
   def Push(self, redirects, waiter):
     # type: (List[redirect_t], Waiter) -> bool
+    """Apply a group of redirects and remember to undo them."""
+
     #log('> fd_state.Push %s', redirects)
     new_frame = _FdFrame()
     self.stack.append(new_frame)
@@ -509,8 +453,9 @@ class FdState(object):
       #log('apply %s', r)
       self.errfmt.PushLocation(op_spid)
       try:
-        if not self._ApplyRedirect(r, waiter):
-          return False  # for bad descriptor
+        self._ApplyRedirect(r, waiter)
+      except (IOError, OSError) as e:
+        return False  # for bad descriptor, etc.
       finally:
         self.errfmt.PopLocation()
     #log('done applying %d redirects', len(redirects))
@@ -528,7 +473,8 @@ class FdState(object):
     self.stack.append(new_frame)
     self.cur_frame = new_frame
 
-    return self._PushDup(r, 0)
+    self._PushDup(r, 0)
+    return True
 
   def MakePermanent(self):
     # type: () -> None
