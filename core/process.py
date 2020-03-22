@@ -30,7 +30,6 @@ from frontend import match
 from mycpp.mylib import tagswitch
 
 import posix_ as posix
-NO_FD = -1
 
 from typing import List, Tuple, Dict, Any, cast, TYPE_CHECKING
 
@@ -44,6 +43,13 @@ if TYPE_CHECKING:
   from osh.cmd_exec import Executor
   from core.state import SearchPath, Mem
   from mycpp import mylib
+
+
+NO_FD = -1
+
+# Minimum file descriptor that the shell can use.  Other descriptors can be
+# directly used by user programs, e.g. exec 9>&1
+_SHELL_MIN_FD = 10
 
 
 def SignalState_AfterForkingChild():
@@ -191,7 +197,8 @@ class FdState(object):
 
   def _ReadFdFromMem(self, fd_name):
     # type: (str) -> int
-    if self.mem is None: return NO_FD
+    if self.mem is None:
+      return NO_FD
 
     val = self.mem.GetVar(fd_name)
     if val.tag_() == value_e.Str:
@@ -210,11 +217,10 @@ class FdState(object):
     Returns:
       success Bool
     """
-    new_fd = self._GetFreeDescriptor()
     #log('---- _PushSave %s', fd)
     need_restore = True
     try:
-      fcntl.fcntl(fd, fcntl.F_DUPFD, new_fd)
+      new_fd = fcntl.fcntl(fd, fcntl.F_DUPFD, _SHELL_MIN_FD)
     except IOError as e:
       # Example program that causes this error: exec 4>&1.  Descriptor 4 isn't
       # open.
@@ -241,7 +247,7 @@ class FdState(object):
 
     if fd2_name:
       try:
-        new_fd = fcntl.fcntl(fd1, fcntl.F_DUPFD, 10)
+        new_fd = fcntl.fcntl(fd1, fcntl.F_DUPFD, _SHELL_MIN_FD)
       except IOError as e:
         if e.errno == errno.EBADF:
           self.errfmt.Print('%d: %s', fd1, posix.strerror(e.errno))
@@ -275,7 +281,8 @@ class FdState(object):
     # type: (int, str) -> bool
     if fd_name:
       fd = self._ReadFdFromMem(fd_name)
-      if fd == NO_FD: return False
+      if fd == NO_FD:
+        return False
       
     self._PushSave(fd)
     return True
@@ -285,7 +292,7 @@ class FdState(object):
 
     if fd2_name:
       try:
-        new_fd = fcntl.fcntl(fd1, fcntl.F_DUPFD, 10)
+        new_fd = fcntl.fcntl(fd1, fcntl.F_DUPFD, _SHELL_MIN_FD)
       except IOError as e:
         if e.errno == errno.EBADF:
           self.errfmt.Print('%d: %s', fd1, posix.strerror(e.errno))
