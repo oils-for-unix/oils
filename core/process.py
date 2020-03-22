@@ -222,7 +222,7 @@ class FdState(object):
     return need_restore
 
   def _PushDup(self, fd1, fd2, fd2_name=None):
-    # type: (int, int, str) -> Tuple[bool, int]
+    # type: (int, int, str) -> int
     """Save fd2 in a higher range, and dup fd1 onto fd2.
 
     Returns whether F_DUPFD/dup2 succeeded, and the new descriptor.
@@ -235,7 +235,7 @@ class FdState(object):
     if fd2_name:  # named descriptor
       try:
         # F_DUPFD: GREATER than range
-        new_fd = fcntl.fcntl(fd1, fcntl.F_DUPFD, _SHELL_MIN_FD)
+        new_fd = fcntl.fcntl(fd1, fcntl.F_DUPFD, _SHELL_MIN_FD)  # type: int
       except IOError as e:
         if e.errno == errno.EBADF:
           self.errfmt.Print('%d: %s', fd1, posix.strerror(e.errno))
