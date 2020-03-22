@@ -316,7 +316,7 @@ class FdState(object):
 
       # Restore and return error
       if need_restore:
-        new_fd, fd2 = self.cur_frame.saved.pop()
+        new_fd, fd2, _ = self.cur_frame.saved.pop()
         posix.dup2(new_fd, fd2)
         posix.close(new_fd)
       # Undo it
@@ -335,6 +335,7 @@ class FdState(object):
     self.cur_frame.need_wait.append((proc, waiter))
 
   def _ResolveFd(self, fdspec):
+    # type: (str) -> Tuple[int, str]
     fd = NO_FD
     fd_name = ''
     if fdspec[0].isdigit():
