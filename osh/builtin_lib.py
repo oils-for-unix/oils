@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from osh.builtin_misc import _Builtin
 
-from typing import List, Dict, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from core.ui import ErrorFormatter
