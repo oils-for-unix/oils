@@ -6,24 +6,7 @@
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
-builtins.py - Metadata for all builtins, and some implementations.
-
-Metadata:
-
-- Is used for lookup in cmd_exec.py
-- Should be used for completion
-  - complete names of builtins
-  - complete flags they take
-  - handle aliases : . and source, [ and test
-- Should be reflected in the contents of the 'help' builtin
-
-NOTE: bash has help -d -m -s.  Default is -s, like a man page.
-
-Links on special builtins:
-http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_14
-
-- syntax errors in special builtins may cause the shell to abort, but NOT for
-  regular builtins?
+builtin_misc.py - Misc builtins.
 """
 from __future__ import print_function
 

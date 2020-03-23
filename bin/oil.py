@@ -83,6 +83,7 @@ from osh import builtin_misc
 from osh import builtin_assign
 from osh import builtin_bracket
 from osh import builtin_comp
+from osh import builtin_lib
 from osh import builtin_printf
 from osh import builtin_process
 from osh import builtin_pure
@@ -503,6 +504,9 @@ def ShellMain(lang, argv0, argv, login_shell):
       # Completion (more added below)
       builtin_i.compopt: builtin_comp.CompOpt(compopt_state, errfmt),
       builtin_i.compadjust: builtin_comp.CompAdjust(mem),
+
+      # interactive
+      builtin_i.bind: builtin_lib.Bind(line_input, errfmt),
 
       # test / [ differ by need_right_bracket
       builtin_i.test: builtin_bracket.Test(False, exec_opts, mem, errfmt),

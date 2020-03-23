@@ -1,6 +1,20 @@
 #!/usr/bin/env python2
 """
 builtin_def.py
+
+Metadata:
+
+- Is used for lookup in cmd_exec.py
+- Should be used for completion
+  - complete names of builtins
+  - complete flags they take
+  - handle aliases : . and source, [ and test
+- Should be reflected in the contents of the 'help' builtin
+
+NOTE: bash has help -d -m -s.  Default is -s, like a man page.
+
+Links on special builtins:
+http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_14
 """
 from __future__ import print_function
 
@@ -34,6 +48,7 @@ _NORMAL_BUILTINS = [
     #'typeset': builtin_e.TYPESET,
 
     'alias', 'unalias',
+    'bind',
 
     # Oil only
     'push', 'append',
