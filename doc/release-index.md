@@ -55,8 +55,8 @@ Oil has three major sources of docs:
   - [Simple Word Evaluation](doc/simple-word-eval.html)
   - [Quirks](doc/quirks.html)
   - [Notes on OSH Architecture](doc/architecture-notes.html)
-- [Online Help](help-index.html) (incomplete).  This document underlies the
-  `help` builtin.  It links to sections in the [Help](help.html) page.
+- [Online Help](doc/help-index.html) (incomplete).  This document underlies the
+  `help` builtin.  It links to sections in the [Help](doc/help.html) page.
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
   - The [Oil Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments)
     wiki page has other ways of getting Oil.  These versions may not be
