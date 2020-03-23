@@ -18,8 +18,12 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
     job_state_e, job_state_t,
     job_status, job_status_t,
-    redirect_e, redirect_t,
-    redirect__Path, redirect__FileDesc, redirect__CloseFd, redirect__MoveFd, redirect__HereDoc,
+    redirect,
+    redirect_arg_e, redirect_arg_t, 
+    redirect_arg__Path, redirect_arg__CopyFd, redirect_arg__CloseFd,
+    redirect_arg__MoveFd, redirect_arg__HereDoc,
+    redirect_loc, redirect_loc_e, redirect_loc_t,
+    redirect_loc__VarName, redirect_loc__Fd,
     value, value_e, lvalue, scope_e, value__Str,
 )
 from asdl import pretty
@@ -225,18 +229,15 @@ class FdState(object):
 
     return need_restore
 
-  def _PushDup(self, fd1, fd2, fd2_name=None):
-    # type: (int, int, str) -> int
+  def _PushDup(self, fd1, loc):
+    # type: (int, redirect_loc_t) -> int
     """Save fd2 in a higher range, and dup fd1 onto fd2.
 
     Returns whether F_DUPFD/dup2 succeeded, and the new descriptor.
     """
-    if fd1 == fd2:
-      # The user could have asked for it to be open on descrptor 3, but open()
-      # already returned 3, e.g. echo 3>out.txt
-      return NO_FD
-
-    if fd2_name:  # named descriptor
+    UP_loc = loc
+    if loc.tag_() == redirect_loc_e.VarName:
+      fd2_name = cast(redirect_loc__VarName, UP_loc).name
       try:
         # F_DUPFD: GREATER than range
         new_fd = fcntl.fcntl(fd1, fcntl.F_DUPFD, _SHELL_MIN_FD)  # type: int
@@ -249,7 +250,14 @@ class FdState(object):
 
       self._WriteFdToMem(fd2_name, new_fd)
 
-    else:  # specific number
+    elif loc.tag_() == redirect_loc_e.Fd:
+      fd2 = cast(redirect_loc__Fd, UP_loc).fd
+
+      if fd1 == fd2:
+        # The user could have asked for it to be open on descrptor 3, but open()
+        # already returned 3, e.g. echo 3>out.txt
+        return NO_FD
+
       need_restore = self._PushSave(fd2)
 
       #log('==== dup2 %s %s\n' % (fd1, fd2))
@@ -269,19 +277,29 @@ class FdState(object):
 
       new_fd = fd2
 
+    else:
+      raise AssertionError()
+
     return new_fd
 
-  def _PushCloseFd(self, fd, fd_name):
-    # type: (int, str) -> bool
+  def _PushCloseFd(self, loc):
+    # type: (redirect_loc_t) -> bool
     """For 2>&-"""
     # exec {fd}>&- means close the named descriptor
-    if fd_name:
+
+    UP_loc = loc
+    if loc.tag_() == redirect_loc_e.VarName:
+      fd_name = cast(redirect_loc__VarName, UP_loc).name
       fd = self._ReadFdFromMem(fd_name)
       if fd == NO_FD:
         return False
 
-    else:
+    elif loc.tag_() == redirect_loc_e.Fd:
+      fd = cast(redirect_loc__Fd, UP_loc).fd
       self._PushSave(fd)
+
+    else:
+      raise AssertionError()
 
     return True
 
@@ -293,25 +311,14 @@ class FdState(object):
     # type: (Process, Waiter) -> None
     self.cur_frame.need_wait.append((proc, waiter))
 
-  def _ResolveFd(self, fdspec):
-    # type: (str) -> Tuple[int, str]
-    fd = NO_FD
-    fd_name = ''
-    if fdspec[0].isdigit():
-      fd = int(fdspec)
-    else:
-      fd_name = fdspec[1:-1]
-    return fd, fd_name
-
   def _ApplyRedirect(self, r, waiter):
-    # type: (redirect_t, Waiter) -> bool
-    ok = True
+    # type: (redirect, Waiter) -> None
+    arg = r.arg
+    UP_arg = arg
+    with tagswitch(arg) as case:
 
-    UP_r = r
-    with tagswitch(r) as case:
-
-      if case(redirect_e.Path):
-        r = cast(redirect__Path, UP_r)
+      if case(redirect_arg_e.Path):
+        arg = cast(redirect_arg__Path, UP_arg)
 
         if r.op_id in (Id.Redir_Great, Id.Redir_AndGreat):  # >   &>
           # NOTE: This is different than >| because it respects noclobber, but
@@ -328,18 +335,16 @@ class FdState(object):
         else:
           raise NotImplementedError(r.op_id)
 
-        fd, fd_name = self._ResolveFd(r.fdspec)
-
         # NOTE: 0666 is affected by umask, all shells use it.
         try:
-          open_fd = posix.open(r.filename, mode, 0o666)
+          open_fd = posix.open(arg.filename, mode, 0o666)
         except OSError as e:
           self.errfmt.Print(
-              "Can't open %r: %s", r.filename, posix.strerror(e.errno),
+              "Can't open %r: %s", arg.filename, posix.strerror(e.errno),
               span_id=r.op_spid)
           raise  # redirect failed
 
-        new_fd = self._PushDup(open_fd, fd, fd_name)
+        new_fd = self._PushDup(open_fd, r.loc)
         if new_fd != NO_FD:
           posix.close(open_fd)
 
@@ -354,51 +359,52 @@ class FdState(object):
         # Ditto for {fd}> and {fd}&>
 
         if r.op_id in (Id.Redir_AndGreat, Id.Redir_AndDGreat):
-          self._PushDup(new_fd, 2)
+          self._PushDup(new_fd, redirect_loc.Fd(2))
 
-      elif case(redirect_e.FileDesc):  # e.g. echo hi 1>&2
-        r = cast(redirect__FileDesc, UP_r)
+      elif case(redirect_arg_e.CopyFd):  # e.g. echo hi 1>&2
+        arg = cast(redirect_arg__CopyFd, UP_arg)
 
-        fd, fd_name = self._ResolveFd(r.fdspec)
         if r.op_id == Id.Redir_GreatAnd:  # 1>&2
-          self._PushDup(r.target_fd, fd, fd_name)
+          self._PushDup(arg.target_fd, r.loc)
 
         elif r.op_id == Id.Redir_LessAnd:  # 0<&5
           # The only difference between >& and <& is the default file
           # descriptor argument.
-          self._PushDup(r.target_fd, fd, fd_name)
+          self._PushDup(arg.target_fd, r.loc)
 
         else:
           raise NotImplementedError()
 
-      elif case(redirect_e.CloseFd):  # e.g. echo hi 5>&-
-        r = cast(redirect__CloseFd, UP_r)
-        fd, fd_name = self._ResolveFd(r.fdspec)
-        if not self._PushCloseFd(fd, fd_name):
-          ok = False
-
-      elif case(redirect_e.MoveFd):  # e.g. echo hi 5>&6-
-        r = cast(redirect__MoveFd, UP_r)
-        fd, fd_name = self._ResolveFd(r.fdspec)
-        new_fd = self._PushDup(r.target_fd, fd, fd_name)
+      elif case(redirect_arg_e.MoveFd):  # e.g. echo hi 5>&6-
+        arg = cast(redirect_arg__MoveFd, UP_arg)
+        new_fd = self._PushDup(arg.target_fd, r.loc)
         if new_fd != NO_FD:
-          posix.close(r.target_fd)
+          posix.close(arg.target_fd)
+
+          UP_loc = r.loc
+          if r.loc.tag_() == redirect_loc_e.Fd:
+            fd = cast(redirect_loc__Fd, UP_loc).fd
+          else:
+            fd = NO_FD
+
           self.cur_frame.saved.append((new_fd, fd, False))
 
-      elif case(redirect_e.HereDoc):
-        r = cast(redirect__HereDoc, UP_r)
-        fd, fd_name = self._ResolveFd(r.fdspec)
+      elif case(redirect_arg_e.CloseFd):  # e.g. echo hi 5>&-
+        self._PushCloseFd(r.loc)
+
+      elif case(redirect_arg_e.HereDoc):
+        arg = cast(redirect_arg__HereDoc, UP_arg)
 
         # NOTE: Do these descriptors have to be moved out of the range 0-9?
         read_fd, write_fd = posix.pipe()
 
-        self._PushDup(read_fd, fd, fd_name)  # stdin is now the pipe
+        self._PushDup(read_fd, r.loc)  # stdin is now the pipe
 
         # We can't close like we do in the filename case above?  The writer can
         # get a "broken pipe".
         self._PushClose(read_fd)
 
-        thunk = _HereDocWriterThunk(write_fd, r.body)
+        thunk = _HereDocWriterThunk(write_fd, arg.body)
 
         # TODO: Use PIPE_SIZE to save a process in the case of small here docs,
         # which are the common case.  (dash does this.)
@@ -418,13 +424,11 @@ class FdState(object):
           posix.close(write_fd)
 
         else:
-          posix.write(write_fd, r.body)
+          posix.write(write_fd, arg.body)
           posix.close(write_fd)
 
-    return ok
-
   def Push(self, redirects, waiter):
-    # type: (List[redirect_t], Waiter) -> bool
+    # type: (List[redirect], Waiter) -> bool
     """Apply a group of redirects and remember to undo them."""
 
     #log('> fd_state.Push %s', redirects)
@@ -433,29 +437,8 @@ class FdState(object):
     self.cur_frame = new_frame
 
     for r in redirects:
-      # TODO: Could we use inheritance to make this cheaper?
-      UP_r = r
-      with tagswitch(r) as case:
-        if case(redirect_e.Path):
-          r = cast(redirect__Path, UP_r)
-          op_spid = r.op_spid
-        elif case(redirect_e.FileDesc):
-          r = cast(redirect__FileDesc, UP_r)
-          op_spid = r.op_spid
-        elif case(redirect_e.CloseFd):
-          r = cast(redirect__CloseFd, UP_r)
-          op_spid = r.op_spid
-        elif case(redirect_e.MoveFd):
-          r = cast(redirect__MoveFd, UP_r)
-          op_spid = r.op_spid
-        elif case(redirect_e.HereDoc):
-          r = cast(redirect__HereDoc, UP_r)
-          op_spid = r.op_spid
-        else:
-          raise AssertionError()
-
       #log('apply %s', r)
-      self.errfmt.PushLocation(op_spid)
+      self.errfmt.PushLocation(r.op_spid)
       try:
         self._ApplyRedirect(r, waiter)
       except (IOError, OSError) as e:
@@ -477,7 +460,7 @@ class FdState(object):
     self.stack.append(new_frame)
     self.cur_frame = new_frame
 
-    self._PushDup(r, 0)
+    self._PushDup(r, redirect_loc.Fd(0))
     return True
 
   def MakePermanent(self):

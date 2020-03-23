@@ -184,7 +184,7 @@ class OldStaticParsing(object):
 def assertHereDocToken(test, expected_token_val, node):
   """A sanity check for some ad hoc tests."""
   test.assertEqual(1, len(node.redirects))
-  h = node.redirects[0]
+  h = node.redirects[0].arg
   test.assertEqual(expected_token_val, h.stdin_parts[0].val)
 
 
@@ -200,7 +200,7 @@ $v
 EOF
 """)
     self.assertEqual(1, len(node.redirects))
-    h = node.redirects[0]
+    h = node.redirects[0].arg
     # 4 literal parts: VarSub, newline, right ", "two\n"
     self.assertEqual(4, len(h.stdin_parts))
 
@@ -213,7 +213,7 @@ $v
 EOF
 """)
     self.assertEqual(1, len(node.redirects))
-    h = node.redirects[0]
+    h = node.redirects[0].arg
     self.assertEqual(2, len(h.stdin_parts))  # 2 literal parts
 
     node = assert_ParseCommandLine(self, """\
@@ -222,7 +222,7 @@ single-quoted: $var
 EOF
 """)
     self.assertEqual(1, len(node.redirects))
-    h = node.redirects[0]
+    h = node.redirects[0].arg
     self.assertEqual(1, len(h.stdin_parts))  # 1 line, one literal part
 
     # \ escape
@@ -232,7 +232,7 @@ single-quoted: $var
 EOF
 """)
     self.assertEqual(1, len(node.redirects))
-    h = node.redirects[0]
+    h = node.redirects[0].arg
     self.assertEqual(1, len(h.stdin_parts))  # 1 line, one literal part
 
   def testLeadingTabs(self):

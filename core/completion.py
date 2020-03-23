@@ -36,7 +36,7 @@ from __future__ import print_function
 import pwd
 import time
 
-from _devbuild.gen.syntax_asdl import word_part_e, redir_e, Id
+from _devbuild.gen.syntax_asdl import word_part_e, redir_arg_e, Id
 from _devbuild.gen.runtime_asdl import value_e
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
@@ -830,13 +830,15 @@ class RootCompleter(object):
     if trail.redirects:
       r = trail.redirects[-1]
       # Only complete 'echo >', but not 'echo >&' or 'cat <<'
-      if (r.tag == redir_e.Redir and
+      # TODO: Don't complete <<< 'h'
+      if (r.arg.tag_() == redir_arg_e.Word and
           consts.RedirArgType(r.op.id) == redir_arg_type_e.Path):
-        if WordEndsWithCompDummy(r.arg_word):
+        arg_word = r.arg
+        if WordEndsWithCompDummy(arg_word):
           debug_f.log('Completing redirect arg')
 
           try:
-            val = self.word_ev.EvalWordToString(r.arg_word)
+            val = self.word_ev.EvalWordToString(r.arg)
           except error.FatalRuntime as e:
             debug_f.log('Error evaluating redirect word: %s', e)
             return
@@ -844,7 +846,7 @@ class RootCompleter(object):
             debug_f.log("Didn't get a string from redir arg")
             return
 
-          span_id = word_.LeftMostSpanForWord(r.arg_word)
+          span_id = word_.LeftMostSpanForWord(arg_word)
           span = arena.GetLineSpan(span_id)
 
           self.comp_ui_state.display_pos = span.col

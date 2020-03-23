@@ -17,11 +17,6 @@
 -- * coprocesses -- one with arg and one without
 -- * select block
 -- * case fallthrough ;& and ;;&
--- * 1>&2- to close redirect
--- * named descriptors (bash): cmd {fd1}>left.txt {fd2}>right.txt
-
--- Parsed but Not Implemented:
--- * <> redirect
 
 -- TODO: Preserve these source differences:
 -- * order of redirects: 'echo >out.txt hi'  vs echo hi >out.txt
@@ -238,13 +233,13 @@ module syntax
   | LogicalAnd(bool_expr left, bool_expr right)
   | LogicalOr(bool_expr left, bool_expr right)
 
-  redir = 
-    Redir(Token op, string fdspec, word arg_word)
-  | HereDoc(Token op, string fdspec,
-            word here_begin,  -- e.g. EOF or 'EOF'
-            int here_end_span_id,  -- this span is an entire line
-            word_part* stdin_parts -- one for each line
-           )
+  redir_arg =
+    Word %compound_word
+  | HereLiteral(word here_begin,  -- e.g. EOF or 'EOF'
+                int here_end_span_id,  -- this span is an entire line
+                word_part* stdin_parts -- one for each line
+               )
+  redir = (Token op, redir_arg arg)
 
   assign_op = Equal | PlusEqual
   assign_pair = (sh_lhs_expr lhs, assign_op op, word? rhs, int* spids)

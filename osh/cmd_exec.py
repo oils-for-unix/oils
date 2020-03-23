@@ -56,13 +56,13 @@ from _devbuild.gen.syntax_asdl import (
     assign_op_e, source,
     place_expr__Var,
     proc_sig_e, proc_sig__Closed,
-    redir_e, redir__Redir, redir__HereDoc,
+    redir_arg_e, redir_arg__HereLiteral,
 )
 from _devbuild.gen.runtime_asdl import (
     quote_e,
     lvalue, lvalue_e, lvalue__ObjIndex, lvalue__ObjAttr,
     value, value_e, value_t, value__Str, value__MaybeStrArray, value__Obj,
-    redirect, scope_e,
+    redirect, redirect_loc, redirect_loc_t, redirect_arg, scope_e,
     cmd_value__Argv, cmd_value, cmd_value_e,
     cmd_value__Argv, cmd_value__Assign,
 )
@@ -100,10 +100,10 @@ from typing import List, Dict, Tuple, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.id_kind_asdl import Id_t
   from _devbuild.gen.runtime_asdl import (
-      cmd_value_t, cell, lvalue_t, redirect_t,
+      cmd_value_t, cell, lvalue_t,
   )
   from _devbuild.gen.syntax_asdl import (
-      Token, source_t, redir_t, expr__Lambda, env_pair, proc_sig__Closed,
+      Token, source_t, redir, expr__Lambda, env_pair, proc_sig__Closed,
   )
   from core.ui import ErrorFormatter
   from core import dev
@@ -629,78 +629,98 @@ class Executor(object):
           'Exiting with status %d (%sPID %d)', status, reason, posix.getpid(),
           span_id=span_id, status=status)
 
-  def _EvalRedirect(self, n):
-    # type: (redir_t) -> redirect_t
+  def _EvalRedirect(self, r):
+    # type: (redir) -> redirect
 
-    UP_n = n
-    with tagswitch(n) as case:
-      if case(redir_e.Redir):
-        n = cast(redir__Redir, UP_n)
+    op_val = r.op.val
+    if op_val[0] == '{':
+      pos = op_val.find('}')
+      assert pos != -1  # lexer ensures thsi
+      loc = redirect_loc.VarName(op_val[1:pos])  # type: redirect_loc_t
+
+    elif op_val[0].isdigit():
+      pos = 1
+      if op_val[1].isdigit():
+        pos = 2
+      loc = redirect_loc.Fd(int(op_val[:pos]))
+
+    else:
+      loc = redirect_loc.Fd(consts.RedirDefaultFd(r.op.id))
+
+    result = redirect(r.op.id, r.op.span_id, loc, None)
+
+    arg = r.arg
+    UP_arg = arg
+    with tagswitch(arg) as case:
+      if case(redir_arg_e.Word):
+        arg_word = cast(compound_word, UP_arg)
 
         # note: needed for redirect like 'echo foo > x$LINENO'
-        self.mem.SetCurrentSpanId(n.op.span_id)
-        fdspec = n.fdspec or str(consts.RedirDefaultFd(n.op.id))
+        self.mem.SetCurrentSpanId(r.op.span_id)
 
-        redir_type = consts.RedirArgType(n.op.id)  # could be static in the LST?
+        redir_type = consts.RedirArgType(r.op.id)  # could be static in the LST?
 
         if redir_type == redir_arg_type_e.Path:
           # NOTES
           # - no globbing.  You can write to a file called '*.py'.
           # - set -o strict-array prevents joining by spaces
-          val = self.word_ev.EvalWordToString(n.arg_word)
+          val = self.word_ev.EvalWordToString(arg_word)
           filename = val.s
           if not filename:
             # Whether this is fatal depends on errexit.
             raise error.RedirectEval(
-                "Redirect filename can't be empty", word=n.arg_word)
+                "Redirect filename can't be empty", word=arg_word)
 
-          return redirect.Path(n.op.id, fdspec, filename, n.op.span_id)
+          result.arg = redirect_arg.Path(filename)
+          return result
 
         elif redir_type == redir_arg_type_e.Desc:  # e.g. 1>&2, 1>&-, 1>&2-
-          val = self.word_ev.EvalWordToString(n.arg_word)
+          val = self.word_ev.EvalWordToString(arg_word)
           t = val.s
           if not t:
             raise error.RedirectEval(
-                "Redirect descriptor can't be empty", word=n.arg_word)
+                "Redirect descriptor can't be empty", word=arg_word)
             return None
 
           try:
             if t == '-':
-              return redirect.CloseFd(n.op.id, fdspec, n.op.span_id)
+              result.arg = redirect_arg.CloseFd()
             elif t[-1] == '-':
               target_fd = int(t[:-1])
-              return redirect.MoveFd(n.op.id, fdspec, target_fd, n.op.span_id)
+              result.arg = redirect_arg.MoveFd(target_fd)
             else:
-              target_fd = int(t)
-              return redirect.FileDesc(n.op.id, fdspec, target_fd, n.op.span_id)
+              result.arg = redirect_arg.CopyFd(int(t))
           except ValueError:
             raise error.RedirectEval(
                 "Redirect descriptor should look like an integer, '-', or an integer + '-', got %s", val,
-                word=n.arg_word)
+                word=arg_word)
             return None
 
+          return result
+
         elif redir_type == redir_arg_type_e.Here:  # here word
-          val = self.word_ev.EvalWordToString(n.arg_word)
+          val = self.word_ev.EvalWordToString(arg_word)
           assert val.tag_() == value_e.Str, val
           # NOTE: bash and mksh both add \n
-          return redirect.HereDoc(fdspec, val.s + '\n', n.op.span_id)
+          result.arg = redirect_arg.HereDoc(val.s + '\n')
+          return result
+
         else:
           raise AssertionError('Unknown redirect op')
 
-      elif case(redir_e.HereDoc):
-        n = cast(redir__HereDoc, UP_n)
-        fdspec = n.fdspec or str(consts.RedirDefaultFd(n.op.id))
-        # HACK: Wrap it in a word to evaluate.
-        w = compound_word(n.stdin_parts)
+      elif case(redir_arg_e.HereLiteral):
+        arg = cast(redir_arg__HereLiteral, UP_arg)
+        w = compound_word(arg.stdin_parts)  # HACK: Wrap it in a word to eval
         val = self.word_ev.EvalWordToString(w)
         assert val.tag_() == value_e.Str, val
-        return redirect.HereDoc(fdspec, val.s, n.op.span_id)
+        result.arg = redirect_arg.HereDoc(val.s)
+        return result
 
       else:
         raise AssertionError('Unknown redirect type')
 
   def _EvalRedirects(self, node):
-    # type: (command_t) -> List[redirect_t]
+    # type: (command_t) -> List[redirect]
     """Evaluate redirect nodes to concrete objects.
 
     We have to do this every time, because you could have something like:
@@ -762,7 +782,7 @@ class Executor(object):
       else:
         raise AssertionError()
 
-    result = []  # type: List[redirect_t]
+    result = []  # type: List[redirect]
     for redir in redirects:
       result.append(self._EvalRedirect(redir))
     return result
@@ -1786,7 +1806,7 @@ class Executor(object):
         command_e.PlaceMutation, command_e.OilCondition, command_e.OilForIn,
         command_e.Proc, command_e.Func, command_e.Return, command_e.Expr,
         command_e.BareDecl):
-      redirects = []  # type: List[redirect_t]
+      redirects = []  # type: List[redirect]
     else:
       try:
         redirects = self._EvalRedirects(node)

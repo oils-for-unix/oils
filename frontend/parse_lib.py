@@ -7,7 +7,7 @@ from _devbuild.gen.syntax_asdl import (
     Token, compound_word,
     command_t, command__VarDecl, command__PlaceMutation, command__Proc,
     command__Func,
-    expr_t, word_t, redir_t,
+    expr_t, word_t, redir,
     arg_list, name_type,
 )
 from _devbuild.gen.types_asdl import lex_mode_e
@@ -47,7 +47,7 @@ class _BaseTrail(object):
     # word from a partially completed command.
     # Filled in by _ScanSimpleCommand in osh/cmd_parse.py.
     self.words = []  # type: List[compound_word]
-    self.redirects = []  # type: List[redir_t]
+    self.redirects = []  # type: List[redir]
     # TODO: We should maintain the LST invariant and have a single list, but
     # that I ran into the "cases classes are better than variants" problem.
 
@@ -70,7 +70,7 @@ class _BaseTrail(object):
     pass
 
   def SetLatestWords(self, words, redirects):
-    # type: (List[compound_word], List[redir_t]) -> None
+    # type: (List[compound_word], List[redir]) -> None
     pass
 
   def AppendToken(self, token):
@@ -135,7 +135,7 @@ class Trail(_BaseTrail):
     del self.alias_words[:]
 
   def SetLatestWords(self, words, redirects):
-    # type: (List[compound_word], List[redir_t]) -> None
+    # type: (List[compound_word], List[redir]) -> None
     if self.expanding_alias:
       self.alias_words = words  # Save these separately
       return

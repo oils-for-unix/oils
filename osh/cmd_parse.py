@@ -22,7 +22,7 @@ from _devbuild.gen.syntax_asdl import (
     case_arm,
 
     sh_lhs_expr, sh_lhs_expr_t,
-    redir, redir_t, redir__HereDoc,
+    redir, redir_arg, redir_arg__HereLiteral,
     word, word_e, word_t, compound_word, Token,
     word_part_e, word_part_t,
 
@@ -81,7 +81,7 @@ def _KeywordToken(UP_w):
 
 
 def _ReadHereLines(line_reader,  # type: _Reader
-                   h,  # type: redir__HereDoc
+                   h,  # type: redir
                    delimiter,  # type: str
                    ):
   # type: (...) -> Tuple[List[Tuple[int, str, int]], Tuple[int, str, int]]
@@ -141,9 +141,10 @@ def _MakeLiteralHereLines(here_lines,  # type: List[Tuple[int, str, int]]
   return parts
 
 
-def _ParseHereDocBody(parse_ctx, h, line_reader, arena):
-  # type: (ParseContext, redir__HereDoc, _Reader, Arena) -> None
+def _ParseHereDocBody(parse_ctx, r, line_reader, arena):
+  # type: (ParseContext, redir, _Reader, Arena) -> None
   """Fill in attributes of a pending here doc node."""
+  h = cast(redir_arg__HereLiteral, r.arg)
   # "If any character in word is quoted, the delimiter shall be formed by
   # performing quote removal on word, and the here-document lines shall not
   # be expanded. Otherwise, the delimiter shall be the word itself."
@@ -152,7 +153,7 @@ def _ParseHereDocBody(parse_ctx, h, line_reader, arena):
   if not ok:
     p_die('Invalid here doc delimiter', word=h.here_begin)
 
-  here_lines, last_line = _ReadHereLines(line_reader, h, delimiter)
+  here_lines, last_line = _ReadHereLines(line_reader, r, delimiter)
 
   if delim_quoted:  # << 'EOF'
     # Literal for each line.
@@ -306,7 +307,7 @@ def _SplitSimpleCommandPrefix(words):
 
 
 def _MakeSimpleCommand(preparsed_list, suffix_words, redirects, block):
-  # type: (PreParsedList, List[compound_word], List[redir_t], Optional[command_t]) -> command__Simple
+  # type: (PreParsedList, List[compound_word], List[redir], Optional[command_t]) -> command__Simple
   """Create an command.Simple node."""
 
   # FOO=(1 2 3) ls is not allowed.
@@ -390,7 +391,7 @@ class CommandParser(object):
     self.c_kind = Kind.Undefined
     self.c_id = Id.Undefined_Tok
 
-    self.pending_here_docs = []  # type: List[redir__HereDoc]
+    self.pending_here_docs = []  # type: List[redir]  # should have HereLiteral arg
 
   def ResetInputObjects(self):
     # type: () -> None
@@ -470,7 +471,7 @@ class CommandParser(object):
     return False
 
   def ParseRedirect(self):
-    # type: () -> redir_t
+    # type: () -> redir
     """
     Problem: You don't know which kind of redir_node to instantiate before
     this?  You could stuff them all in one node, and then have a switch() on
@@ -482,32 +483,19 @@ class CommandParser(object):
     assert self.c_kind == Kind.Redir, self.cur_word
     op_tok = cast(Token, self.cur_word)  # for MyPy
 
-    fdspec = ''
-    if op_tok.val[0] == '{':
-      index = op_tok.val.find('}')
-      if index < 0:
-        p_die('Invalid token after redirect operator', word=self.cur_word)
-      fdspec = op_tok.val[:index+1]
-    else:
-      index = 0
-      while index < len(op_tok.val) and op_tok.val[index].isdigit():
-        index += 1
-      if index > 0:
-        fdspec = op_tok.val[:index]
-
     self._Next()
     self._Peek()
 
     # Here doc
     if op_tok.id in (Id.Redir_DLess, Id.Redir_DLessDash):
-      h = redir.HereDoc()  # no stdin_parts yet
-      h.op = op_tok
-      h.fdspec = fdspec
-      h.here_begin = self.cur_word
-      self.pending_here_docs.append(h)  # will be filled on next newline.
+      arg = redir_arg.HereLiteral()
+      arg.here_begin = self.cur_word
+      r = redir(op_tok, arg)
+
+      self.pending_here_docs.append(r)  # will be filled on next newline.
 
       self._Next()
-      return h
+      return r
 
     # Other redirect
     if self.c_kind != Kind.Word:
@@ -519,17 +507,19 @@ class CommandParser(object):
       arg_word = tilde
     self._Next()
 
-    return redir.Redir(op_tok, fdspec, arg_word)
+    # We should never get Empty, Token, etc.
+    assert arg_word.tag_() == word_e.Compound, arg_word
+    return redir(op_tok, cast(compound_word, arg_word))
 
   def _ParseRedirectList(self):
-    # type: () -> List[redir_t]
+    # type: () -> List[redir]
     """Try parsing any redirects at the cursor.
 
     This is used for blocks only, not commands.
 
     Return None on error.
     """
-    redirects = []  # type: List[redir_t]
+    redirects = []  # type: List[redir]
     while True:
       self._Peek()
 
@@ -544,9 +534,9 @@ class CommandParser(object):
     return redirects
 
   def _ScanSimpleCommand(self):
-    # type: () -> Tuple[List[redir_t], List[compound_word], Optional[command__BraceGroup]]
+    # type: () -> Tuple[List[redir], List[compound_word], Optional[command__BraceGroup]]
     """First pass: Split into redirects and words."""
-    redirects = []  # type: List[redir_t]
+    redirects = []  # type: List[redir]
     words = []  # type: List[compound_word]
     block = None  # type: Optional[command__BraceGroup]
     while True:
@@ -2071,4 +2061,5 @@ class CommandParser(object):
     # osh -c 'cat <<EOF'
     if len(self.pending_here_docs):
       node = self.pending_here_docs[0]  # Just show the first one?
-      p_die('Unterminated here doc began here', word=node.here_begin)
+      h = cast(redir_arg__HereLiteral, node.arg)
+      p_die('Unterminated here doc began here', word=h.here_begin)
