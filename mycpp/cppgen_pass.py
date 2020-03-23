@@ -1996,7 +1996,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 'source', 'source_e',
                 'suffix_op', 'suffix_op_e',
 
-                'sh_lhs_expr', 'redir', 'parse_result',
+                'sh_lhs_expr', 'parse_result',
 
                 'command_e', 'command', 
                 'arith_expr_e', 'arith_expr',
@@ -2005,7 +2005,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 'place_expr_e', 'place_expr', 
                 'word_part_e', 'word_part', 
                 'word_e', 'word',
-                'redir_e', 'redir',
+                'redir_loc_e', 'redir_loc',
+                'redir_param_e', 'redir_param',
                 'proc_sig_e', 'proc_sig',
 
                 'glob_part_e', 'glob_part',

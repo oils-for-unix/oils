@@ -100,7 +100,7 @@ oil-asdl-to-py() {
   OPTIONAL_FIELDS='' PRETTY_PRINT_METHODS='' gen-asdl-py 'asdl/hnode.asdl'
 
   gen-asdl-py frontend/types.asdl
-  gen-asdl-py osh/runtime.asdl
+  gen-asdl-py core/runtime.asdl
   gen-asdl-py 'tools/find/find.asdl'
 
   build/codegen.sh const-mypy-gen  # dependency on bool_arg_type_e
@@ -136,7 +136,7 @@ oil-asdl-to-cpp() {
   # Instead of id__Eol_Tok, use Id::Eol_Tok.
   # case lex_mode_e::Expr
 
-  gen-asdl-cpp osh/runtime.asdl
+  gen-asdl-cpp core/runtime.asdl
 
   gen-asdl-cpp frontend/syntax.asdl
 
