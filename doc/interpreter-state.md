@@ -164,11 +164,10 @@ See the [Process Model](process-model.html) document.
 
 ## Key Data Types
 
-TODO: [osh/runtime.asdl]($oil-src)
+TODO: [core/runtime.asdl]($oil-src)
 
 <!-- 
 TODO:
-- move this to core/runtime.asdl ? 
 - Make a graphviz diagram once everything is settled?
 -->
 
