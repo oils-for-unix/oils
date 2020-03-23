@@ -167,7 +167,7 @@
  12881 93d533afff1007b9e56148b1a497770f _tmp/regtest/Lib/posixpath.pyc
  13124 0242d85137329e1b61ecac8f6e7ed811 _tmp/regtest/traceback.pyc
  13397 593e37a5b33d471c5ea821e2730673f1 _tmp/regtest/core/tdop.pyc
- 13445 bc36e373919162d5201287a75340e528 _tmp/regtest/_devbuild/gen/runtime_asdl.pyc
+ 13435 28a868b5b4e4240412be728c27e92ed4 _tmp/regtest/_devbuild/gen/runtime_asdl.pyc
  13538 e92d94ff8a07d9db4b5371dca8a06443 _tmp/regtest/asdl/gen_cpp.pyc
  13604 4eefbd52c2231537fd5014f41f4b7486 _tmp/regtest/textwrap.pyc
  13677 2c60c3eff642e1e82b819d8fc206e3e5 _tmp/regtest/sre_compile.pyc
