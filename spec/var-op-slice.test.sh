@@ -178,7 +178,8 @@ ab
 #### Simple ${@:offset}
 
 set -- 4 5 6
-argv.py ${@:0} | sed 's/'$0'/SHELL/'
+result=$(argv.py ${@:0})
+echo ${result//"$0"/'SHELL'}
 argv.py ${@:1}
 argv.py ${@:2}
 ## STDOUT:
@@ -187,7 +188,7 @@ argv.py ${@:2}
 ['5', '6']
 ## END
 ## N-I mksh status: 1
-## N-I mksh stdout-json: ""
+## N-I mksh stdout-json: "\n"
 
 
 #### ${@:offset} and ${*:offset}
