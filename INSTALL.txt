@@ -11,8 +11,8 @@ Quick Start
 
 If you haven't already done so, extract the tarball:
  
-    tar -x --xz < oil-0.8.pre2.tar.xz
-    cd oil-0.8.pre2
+    tar -x --xz < oil-0.8.pre3.tar.xz
+    cd oil-0.8.pre3
 
 Either install as /usr/local/bin/osh:
 
@@ -33,7 +33,7 @@ The latter doesn't require root access, but it requires:
   (See manpath or $MANPATH.)
 
 NOTE: Out-of-tree builds are NOT currently supported, so you have to be in the
-oil-0.8.pre2 directory.
+oil-0.8.pre3 directory.
 
 Smoke Test
 ----------
