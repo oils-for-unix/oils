@@ -542,26 +542,6 @@ blog-redirect() {
   html-redirect 'making-plans.html' > $SITE_DEPLOY_DIR/blog/2020/01/11.html
 }
 
-#
-# Other
-#
-
-filter-demo() {
-  # show commits not made by me
-  _git-changelog-body release/0.8.pre2 master --author 'Andy Chu' --invert-grep
-
-}
-
-# TODO: use jq to get
-# - .number
-# - .title
-# - .html_url
-#
-# And then format as HTML.
-
-issues-demo() {
-  curl 'https://api.github.com/repos/oilshell/oil/issues?labels=pending-release'
-}
-
-
-"$@"
+if test $(basename $0) = 'release-version.sh'; then
+  "$@"
+fi
