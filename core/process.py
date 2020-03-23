@@ -18,13 +18,12 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
     job_state_e, job_state_t,
     job_status, job_status_t,
-    redirect,
-    redirect_arg_e, redirect_arg_t, 
-    redirect_arg__Path, redirect_arg__CopyFd, redirect_arg__CloseFd,
+    redirect, redirect_arg_e, redirect_arg__Path, redirect_arg__CopyFd,
     redirect_arg__MoveFd, redirect_arg__HereDoc,
-    redirect_loc, redirect_loc_e, redirect_loc_t,
-    redirect_loc__VarName, redirect_loc__Fd,
     value, value_e, lvalue, scope_e, value__Str,
+)
+from _devbuild.gen.syntax_asdl import (
+    redir_loc, redir_loc_e, redir_loc_t, redir_loc__VarName, redir_loc__Fd,
 )
 from asdl import pretty
 from core import util
@@ -230,14 +229,14 @@ class FdState(object):
     return need_restore
 
   def _PushDup(self, fd1, loc):
-    # type: (int, redirect_loc_t) -> int
+    # type: (int, redir_loc_t) -> int
     """Save fd2 in a higher range, and dup fd1 onto fd2.
 
     Returns whether F_DUPFD/dup2 succeeded, and the new descriptor.
     """
     UP_loc = loc
-    if loc.tag_() == redirect_loc_e.VarName:
-      fd2_name = cast(redirect_loc__VarName, UP_loc).name
+    if loc.tag_() == redir_loc_e.VarName:
+      fd2_name = cast(redir_loc__VarName, UP_loc).name
       try:
         # F_DUPFD: GREATER than range
         new_fd = fcntl.fcntl(fd1, fcntl.F_DUPFD, _SHELL_MIN_FD)  # type: int
@@ -250,8 +249,8 @@ class FdState(object):
 
       self._WriteFdToMem(fd2_name, new_fd)
 
-    elif loc.tag_() == redirect_loc_e.Fd:
-      fd2 = cast(redirect_loc__Fd, UP_loc).fd
+    elif loc.tag_() == redir_loc_e.Fd:
+      fd2 = cast(redir_loc__Fd, UP_loc).fd
 
       if fd1 == fd2:
         # The user could have asked for it to be open on descrptor 3, but open()
@@ -283,19 +282,19 @@ class FdState(object):
     return new_fd
 
   def _PushCloseFd(self, loc):
-    # type: (redirect_loc_t) -> bool
+    # type: (redir_loc_t) -> bool
     """For 2>&-"""
     # exec {fd}>&- means close the named descriptor
 
     UP_loc = loc
-    if loc.tag_() == redirect_loc_e.VarName:
-      fd_name = cast(redirect_loc__VarName, UP_loc).name
+    if loc.tag_() == redir_loc_e.VarName:
+      fd_name = cast(redir_loc__VarName, UP_loc).name
       fd = self._ReadFdFromMem(fd_name)
       if fd == NO_FD:
         return False
 
-    elif loc.tag_() == redirect_loc_e.Fd:
-      fd = cast(redirect_loc__Fd, UP_loc).fd
+    elif loc.tag_() == redir_loc_e.Fd:
+      fd = cast(redir_loc__Fd, UP_loc).fd
       self._PushSave(fd)
 
     else:
@@ -359,7 +358,7 @@ class FdState(object):
         # Ditto for {fd}> and {fd}&>
 
         if r.op_id in (Id.Redir_AndGreat, Id.Redir_AndDGreat):
-          self._PushDup(new_fd, redirect_loc.Fd(2))
+          self._PushDup(new_fd, redir_loc.Fd(2))
 
       elif case(redirect_arg_e.CopyFd):  # e.g. echo hi 1>&2
         arg = cast(redirect_arg__CopyFd, UP_arg)
@@ -382,8 +381,8 @@ class FdState(object):
           posix.close(arg.target_fd)
 
           UP_loc = r.loc
-          if r.loc.tag_() == redirect_loc_e.Fd:
-            fd = cast(redirect_loc__Fd, UP_loc).fd
+          if r.loc.tag_() == redir_loc_e.Fd:
+            fd = cast(redir_loc__Fd, UP_loc).fd
           else:
             fd = NO_FD
 
@@ -460,7 +459,7 @@ class FdState(object):
     self.stack.append(new_frame)
     self.cur_frame = new_frame
 
-    self._PushDup(r, redirect_loc.Fd(0))
+    self._PushDup(r, redir_loc.Fd(0))
     return True
 
   def MakePermanent(self):

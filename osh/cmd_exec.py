@@ -56,13 +56,13 @@ from _devbuild.gen.syntax_asdl import (
     assign_op_e, source,
     place_expr__Var,
     proc_sig_e, proc_sig__Closed,
-    redir_arg_e, redir_arg__HereLiteral,
+    redir_param_e, redir_param__MultiLine,
 )
 from _devbuild.gen.runtime_asdl import (
     quote_e,
     lvalue, lvalue_e, lvalue__ObjIndex, lvalue__ObjAttr,
     value, value_e, value_t, value__Str, value__MaybeStrArray, value__Obj,
-    redirect, redirect_loc, redirect_loc_t, redirect_arg, scope_e,
+    redirect, redirect_arg, scope_e,
     cmd_value__Argv, cmd_value, cmd_value_e,
     cmd_value__Argv, cmd_value__Assign,
 )
@@ -632,27 +632,12 @@ class Executor(object):
   def _EvalRedirect(self, r):
     # type: (redir) -> redirect
 
-    op_val = r.op.val
-    if op_val[0] == '{':
-      pos = op_val.find('}')
-      assert pos != -1  # lexer ensures thsi
-      loc = redirect_loc.VarName(op_val[1:pos])  # type: redirect_loc_t
-
-    elif op_val[0].isdigit():
-      pos = 1
-      if op_val[1].isdigit():
-        pos = 2
-      loc = redirect_loc.Fd(int(op_val[:pos]))
-
-    else:
-      loc = redirect_loc.Fd(consts.RedirDefaultFd(r.op.id))
-
-    result = redirect(r.op.id, r.op.span_id, loc, None)
+    result = redirect(r.op.id, r.op.span_id, r.loc, None)
 
     arg = r.arg
     UP_arg = arg
     with tagswitch(arg) as case:
-      if case(redir_arg_e.Word):
+      if case(redir_param_e.Word):
         arg_word = cast(compound_word, UP_arg)
 
         # note: needed for redirect like 'echo foo > x$LINENO'
@@ -708,8 +693,8 @@ class Executor(object):
         else:
           raise AssertionError('Unknown redirect op')
 
-      elif case(redir_arg_e.HereLiteral):
-        arg = cast(redir_arg__HereLiteral, UP_arg)
+      elif case(redir_param_e.MultiLine):
+        arg = cast(redir_param__MultiLine, UP_arg)
         w = compound_word(arg.stdin_parts)  # HACK: Wrap it in a word to eval
         val = self.word_ev.EvalWordToString(w)
         assert val.tag_() == value_e.Str, val

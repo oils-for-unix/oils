@@ -77,7 +77,6 @@ module runtime
   | ObjAttr(any obj, string attr)
   attributes (int* spids)
 
-  redirect_loc = Fd(int fd) | VarName(string name)
   redirect_arg =
     Path(string filename)
   | CopyFd(int target_fd)
@@ -86,7 +85,8 @@ module runtime
   | HereDoc(string body)  -- call this String and combine with Path?
 
   -- evaluated version of syntax.redir
-  redirect = (id op_id, int op_spid, redirect_loc loc, redirect_arg arg)
+  -- TODO: loc should be redir_loc
+  redirect = (id op_id, int op_spid, any loc, redirect_arg arg)
 
   job_status =
     Proc(int code)

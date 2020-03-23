@@ -36,7 +36,7 @@ from __future__ import print_function
 import pwd
 import time
 
-from _devbuild.gen.syntax_asdl import word_part_e, redir_arg_e, Id
+from _devbuild.gen.syntax_asdl import word_part_e, redir_param_e, Id
 from _devbuild.gen.runtime_asdl import value_e
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
@@ -831,7 +831,7 @@ class RootCompleter(object):
       r = trail.redirects[-1]
       # Only complete 'echo >', but not 'echo >&' or 'cat <<'
       # TODO: Don't complete <<< 'h'
-      if (r.arg.tag_() == redir_arg_e.Word and
+      if (r.arg.tag_() == redir_param_e.Word and
           consts.RedirArgType(r.op.id) == redir_arg_type_e.Path):
         arg_word = r.arg
         if WordEndsWithCompDummy(arg_word):

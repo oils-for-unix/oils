@@ -280,7 +280,8 @@ class OilPrinter(object):
     # - How to handle here docs and here docs?
     # - >> becomes >+ or >-, or maybe >>>
 
-    if node.tag == redir_e.Redir:
+    #if node.tag == redir_e.Redir:
+    if False:
       if node.fd == runtime.NO_SPID:
         if op_id == Id.Redir_Great:
           self.f.write('>')  # Allow us to replace the operator
@@ -305,7 +306,8 @@ class OilPrinter(object):
 
       self.DoWordInCommand(node.arg_word, local_symbols)
 
-    elif node.tag == redir_e.HereDoc:
+    #elif node.tag == redir_e.HereDoc:
+    elif False:
       ok, delimiter, delim_quoted = word_.StaticEval(node.here_begin)
       if not ok:
         p_die('Invalid here doc delimiter', word=node.here_begin)

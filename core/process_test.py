@@ -9,8 +9,9 @@ import unittest
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (
-    redirect, redirect_arg, redirect_loc, cmd_value
+    redirect, redirect_arg, cmd_value
 )
+from _devbuild.gen.syntax_asdl import redir_loc
 from core import optview
 from core import process  # module under test
 from core import test_lib
@@ -80,7 +81,7 @@ class ProcessTest(unittest.TestCase):
 
     # Should get the first line twice, because Pop() closes it!
 
-    r = redirect(Id.Redir_Less, runtime.NO_SPID, redirect_loc.Fd(0),
+    r = redirect(Id.Redir_Less, runtime.NO_SPID, redir_loc.Fd(0),
                  redirect_arg.Path(PATH))
 
     fd_state.Push([r], waiter)

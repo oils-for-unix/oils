@@ -233,13 +233,14 @@ module syntax
   | LogicalAnd(bool_expr left, bool_expr right)
   | LogicalOr(bool_expr left, bool_expr right)
 
-  redir_arg =
+  redir_loc = Fd(int fd) | VarName(string name)
+  redir_param =
     Word %compound_word
-  | HereLiteral(word here_begin,  -- e.g. EOF or 'EOF'
-                int here_end_span_id,  -- this span is an entire line
-                word_part* stdin_parts -- one for each line
-               )
-  redir = (Token op, redir_arg arg)
+  | MultiLine(word here_begin,  -- e.g. EOF or 'EOF'
+              int here_end_span_id,  -- this span is an entire line
+              word_part* stdin_parts -- one for each line
+              )
+  redir = (Token op, redir_loc loc, redir_param arg)
 
   assign_op = Equal | PlusEqual
   assign_pair = (sh_lhs_expr lhs, assign_op op, word? rhs, int* spids)

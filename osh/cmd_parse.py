@@ -22,7 +22,8 @@ from _devbuild.gen.syntax_asdl import (
     case_arm,
 
     sh_lhs_expr, sh_lhs_expr_t,
-    redir, redir_arg, redir_arg__HereLiteral,
+    redir, redir_param, redir_param__MultiLine,
+    redir_loc, redir_loc_t,
     word, word_e, word_t, compound_word, Token,
     word_part_e, word_part_t,
 
@@ -38,6 +39,7 @@ from asdl import runtime
 from core import error
 from core import ui
 from core.util import log, p_die
+from frontend import consts
 from frontend import match
 from frontend import reader
 from osh import braces
@@ -144,7 +146,7 @@ def _MakeLiteralHereLines(here_lines,  # type: List[Tuple[int, str, int]]
 def _ParseHereDocBody(parse_ctx, r, line_reader, arena):
   # type: (ParseContext, redir, _Reader, Arena) -> None
   """Fill in attributes of a pending here doc node."""
-  h = cast(redir_arg__HereLiteral, r.arg)
+  h = cast(redir_param__MultiLine, r.arg)
   # "If any character in word is quoted, the delimiter shall be formed by
   # performing quote removal on word, and the here-document lines shall not
   # be expanded. Otherwise, the delimiter shall be the word itself."
@@ -483,14 +485,29 @@ class CommandParser(object):
     assert self.c_kind == Kind.Redir, self.cur_word
     op_tok = cast(Token, self.cur_word)  # for MyPy
 
+    op_val = op_tok.val
+    if op_val[0] == '{':
+      pos = op_val.find('}')
+      assert pos != -1  # lexer ensures thsi
+      loc = redir_loc.VarName(op_val[1:pos])  # type: redir_loc_t
+
+    elif op_val[0].isdigit():
+      pos = 1
+      if op_val[1].isdigit():
+        pos = 2
+      loc = redir_loc.Fd(int(op_val[:pos]))
+
+    else:
+      loc = redir_loc.Fd(consts.RedirDefaultFd(op_tok.id))
+
     self._Next()
     self._Peek()
 
     # Here doc
     if op_tok.id in (Id.Redir_DLess, Id.Redir_DLessDash):
-      arg = redir_arg.HereLiteral()
+      arg = redir_param.MultiLine()
       arg.here_begin = self.cur_word
-      r = redir(op_tok, arg)
+      r = redir(op_tok, loc, arg)
 
       self.pending_here_docs.append(r)  # will be filled on next newline.
 
@@ -509,7 +526,7 @@ class CommandParser(object):
 
     # We should never get Empty, Token, etc.
     assert arg_word.tag_() == word_e.Compound, arg_word
-    return redir(op_tok, cast(compound_word, arg_word))
+    return redir(op_tok, loc, cast(compound_word, arg_word))
 
   def _ParseRedirectList(self):
     # type: () -> List[redir]
@@ -2061,5 +2078,5 @@ class CommandParser(object):
     # osh -c 'cat <<EOF'
     if len(self.pending_here_docs):
       node = self.pending_here_docs[0]  # Just show the first one?
-      h = cast(redir_arg__HereLiteral, node.arg)
+      h = cast(redir_param__MultiLine, node.arg)
       p_die('Unterminated here doc began here', word=h.here_begin)
