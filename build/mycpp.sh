@@ -439,7 +439,7 @@ osh-eval() {
     # os_path.py: crashes on path += '/' + b
     # pgen2/parse.py: prefer hand-written C
 
-    local exclude='_devbuild/|pybase.py|optview.py|option_def.py|id_kind_def.py|match.py|lexer_def.py|meta.py|pretty.py|process.py|pyutil.py|util.py|args.py|os_path.py|path_stat.py|bool_stat.py|passwd.py|builtin_def.py|consts.py|pgen2/parse.py'
+    local exclude='_devbuild/|pybase.py|optview.py|option_def.py|id_kind_def.py|match.py|lexer_def.py|meta.py|pretty.py|process.py|pyutil.py|util.py|args.py|os_path.py|path_stat.py|bool_stat.py|passwd.py|builtin_def.py|consts.py|pgen2/parse.py|core/main_loop.py|oil_lang/objects.py|arg_def.py|builtin_misc.py|builtin_pure.py'
     mycpp $raw $(egrep -v "$exclude" types/osh-eval-manifest.txt)
   fi
 

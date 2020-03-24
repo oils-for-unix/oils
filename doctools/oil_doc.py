@@ -67,6 +67,8 @@ _ABBREVIATIONS = {
       _Abbrev('https://github.com/oilshell/blog-code/blob/master/%(value)s'),
   'issue':
       _Abbrev('https://github.com/oilshell/oil/issues/%(value)s'),
+  'wiki':
+      _Abbrev('https://github.com/oilshell/oil/wiki/%(value)s'),
 }
 
 # $xref:foo
@@ -111,6 +113,11 @@ def ExpandLinks(s):
           if not arg:
             close_tag_left, _ = html.ReadUntilEndTag(it, tag_lexer, 'a')
             arg = s[open_tag_right : close_tag_left]
+
+          # Hack to so we can write [Wiki Page]($wiki) and have the link look
+          # like /Wiki-Page/
+          if abbrev_name == 'wiki':
+            arg = arg.replace(' ', '-')
 
           func = _ABBREVIATIONS.get(abbrev_name)
           if not func:
