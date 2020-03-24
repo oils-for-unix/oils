@@ -26,9 +26,8 @@ toil-web() {
   PYTHONPATH=$REPO_ROOT $REPO_ROOT/services/toil_web.py "$@"
 }
 
-index() {
-  toil-web index "$@"
-}
+index() { toil-web index "$@"; }
+cleanup() { toil-web cleanup "$@"; }
 
 rewrite-jobs-index() {
   ### Atomic update of travis-ci.oilshell.org/jobs/
@@ -38,11 +37,33 @@ rewrite-jobs-index() {
 
   local tmp=/tmp/$$.index.html
 
-  # TODO: Limit to 50 jobs?
-  ls $dir/*.json | index > $tmp
+  # Limit to last 100 jobs.  Glob is in alphabetical order and jobs look like
+  # 2020-03-20__...
 
-  mv $tmp $dir/index.html
+  # suppress SIGPIPE failure
+  { ls $dir/*.json || true; } | tail -n -100 | index > $tmp
+  echo status=${PIPESTATUS[@]}
+
+  mv -v $tmp $dir/index.html
 }
+
+cleanup-jobs-index() {
+  local dir=${1:-~/travis-ci.oilshell.org/jobs/}
+  local dry_run=${2:-true}
+
+  # Pass it all JSON, and then it figures out what files to delete (TSV, etc.)
+  case $dry_run in
+    false)
+      ls $dir/*.json | cleanup | xargs -- rm -v
+      ;;
+    true)
+      ls $dir/*.json | cleanup
+      ;;
+    *)
+      log 'Expected true or false for dry_run'
+  esac
+}
+
 
 #
 # Release

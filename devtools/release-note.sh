@@ -150,18 +150,16 @@ EOF
 
 ## What's Next?
 
-Here ares ome notable Open Issues
+Here are some notable Open Issues
+
+- [Provide APIs to allow users to write their own line editor / interactive
+interface](\$issue:663)
 
 ## Appendix: Metrics for the $OIL_VERSION Release
 
-The last time I reviewed metrics was in the [February release](../02/18.html)
-of OSH [0.6.pre15](/release/0.6.pre8/).  Let's compare it with version
-[0.6.0](/release/0.6.0/) rather than 0.7.pre1, since I like round numbers.
+Let's compare this release with the previous one, version [$metric_prev](/release/$metric_prev).
 
-New features and bug fixes made more than 114 new [spec test][spec-test] cases
-pass.  I also marked failures as [known
-differences](/release/0.7.pre1/doc/known-differences.html), which led to the
-failure count dropping:
+OSH spec tests:
 
 [spec-test]: \$xref:spec-test
 
@@ -173,19 +171,34 @@ Oil spec tests:
 - [Oil spec tests for $metric_prev](//www.oilshell.org/release/$metric_prev/test/spec.wwz/oil.html): **1260** tests, **1116** passing, **104** failing
 - [Oil spec tests for $OIL_VERSION](//www.oilshell.org/release/$OIL_VERSION/test/spec.wwz/oil.html): **1393** tests, **1230** passing, **78** failing
 
-We have ~1400 new significant lines of code:
+We have X significant lines of code:
 
 - [cloc for $metric_prev](//www.oilshell.org/release/$metric_prev/metrics.wwz/line-counts/osh-cloc.txt):
   **11,041** lines of Python and C, **~200** lines of ASDL (excluding
   testdata).
 - [cloc for $OIL_VERSION](//www.oilshell.org/release/$OIL_VERSION/metrics.wwz/line-counts/osh-cloc.txt): **12,447** lines of Python and C, **239** lines of ASDL
 
-And ~2800 new lines of physical code:
+And X new lines of physical code:
 
 - [src for
   $metric_prev](//www.oilshell.org/release/$metric_prev/metrics.wwz/line-counts/src.txt):
   **20,553** lines of Python
-- [src for $OIL_VERSION](//www.oilshell.org/release/0.6.0/metrics.wwz/line-counts/src.txt): **23,343** lines of Python
+- [src for $OIL_VERSION](//www.oilshell.org/release/$OIL_VERSION/metrics.wwz/line-counts/src.txt): **23,343** lines of Python
+
+### Benchmarks
+
+- [Parser Performance for
+  $metric_prev](//www.oilshell.org/release/$metric_prev/benchmarks.wwz/osh-parser/):
+  X lines/ms and X lines/ms
+- [Parser Performance for
+$OIL_VERSION](//www.oilshell.org/release/$OIL_VERSION/benchmarks.wwz/osh-parser/): Y lines/ms and Y lines/ms
+
+Runtime:
+
+- [Runtime Performance for
+  $metric_prev](//www.oilshell.org/release/$metric_prev/benchmarks.wwz/osh-runtime/):
+- [Runtime Performance for
+$OIL_VERSION](//www.oilshell.org/release/$OIL_VERSION/benchmarks.wwz/osh-runtime/):
 
 ### Native Code Metrics
 

@@ -153,6 +153,12 @@ remote-rewrite-jobs-index() {
     toil-web/services/toil-web.sh rewrite-jobs-index
 }
 
+remote-cleanup-jobs-index() {
+  # clean it up for real!
+  ssh $USER@$HOST \
+    toil-web/services/toil-web.sh cleanup-jobs-index '' false
+}
+
 init-server-html() {
   ssh $USER@$HOST mkdir -v -p $HOST/{jobs,web,builds/src}
 
@@ -399,6 +405,9 @@ publish-html() {
 
   write-jobs-raw
   remote-rewrite-jobs-index
+
+  # note: we could speed jobs up by doing this separately?
+  remote-cleanup-jobs-index
 
   # toil-worker.sh recorded this for us
   return $(cat _tmp/toil/exit-status.txt)

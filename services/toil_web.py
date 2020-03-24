@@ -243,7 +243,6 @@ def main(argv):
 
     for build_num, group in groups:
       build_num = int(build_num)
-      log('---')
       log('build %d', build_num)
 
       jobs = list(group)
@@ -266,6 +265,26 @@ def main(argv):
   </body>
 </html>
   ''')
+
+  elif action == 'cleanup':
+    prefixes = []
+    for line in sys.stdin:
+      json_path = line.strip()
+
+      log('%s', json_path)
+      prefixes.append(json_path[:-5])
+
+    # looks like 2020-03-20, so sort ascending means the oldest are first
+    prefixes.sort()
+
+    # Keep 200 jobs.  We only display the last 100.
+    prefixes = prefixes[:-200]
+
+    # Show what to delete.  Then the user can pipe to xargs rm to remove it.
+    for prefix in prefixes:
+      print(prefix + '.json')
+      print(prefix + '.tsv')
+      print(prefix + '.wwz')
 
   else:
     raise RuntimeError('Invalid action %r' % action)
