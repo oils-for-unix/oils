@@ -64,6 +64,14 @@ inline void lstat() {
   assert(0);
 }
 
+inline Tuple2<int, int> pipe() {
+  assert(0);
+}
+
+void close(int fd) {
+  assert(0);
+}
+
 // Dummy exception posix::error
 class error {};
 

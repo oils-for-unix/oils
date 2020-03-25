@@ -24,6 +24,7 @@ namespace prompt {
 }
 
 // problem: incomplete type
+#ifdef 0
 namespace cmd_exec {
   class Executor {
    public:
@@ -35,6 +36,7 @@ namespace cmd_exec {
     }
   };
 }
+#endif
 
 namespace util {
   inline Str* BackslashEscape(Str* a, Str* b) {
@@ -52,6 +54,17 @@ namespace pyutil {
   }
 }
 
+//
+// Stubs added for osh/cmd_exec.py
+//
+
+namespace builtin_misc {
+  class _Builtin {
+    int Run(runtime_asdl::cmd_value_t* cmd_val) {
+      assert(0);
+    }
+  };
+};
 
 #endif  // OSH_EVAL_STUBS_H
 

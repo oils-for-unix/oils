@@ -2021,7 +2021,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 'value_e', 'value',
                 'part_value_e', 'part_value',
                 'cmd_value_e', 'cmd_value',
-                'redirect_e', 'redirect',
+                'redirect_arg_e', 'redirect_arg',
                 ):
                 is_namespace = True
 
