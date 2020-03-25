@@ -540,11 +540,11 @@ announcement-0.8.pre1() {
 }
 
 announcement-0.8.pre2() {
-  write-no-announcement
+  html-redirect '/blog/2020/03/release-metrics.html' > $SITE_DEPLOY_DIR/release/0.8.pre2/announcement.html
 }
 
 announcement-0.8.pre3() {
-  write-no-announcement
+  html-redirect '/blog/2020/03/release-0.8.pre3.html' > $SITE_DEPLOY_DIR/release/0.8.pre3/announcement.html
 }
 
 blog-redirect() {
