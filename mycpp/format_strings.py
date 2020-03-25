@@ -60,8 +60,8 @@ def Parse(fmt):
         part = LiteralPart('%')
       else:
         part = SubstPart(char_code, arg_num)
+        arg_num += 1
       parts.append(part)
-      arg_num += 1
 
     #print('end =', m.end(0))
 

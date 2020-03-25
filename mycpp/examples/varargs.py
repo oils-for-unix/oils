@@ -45,6 +45,9 @@ def run_tests():
   # Positional args
   log("log %d %s", 42, "LL")
 
+  # Escaped %%
+  log("[%%] %d %s", 42, "LL")
+
   log(CONST)
   p_die(CONST, span_id=-1)
 
