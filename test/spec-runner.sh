@@ -47,11 +47,6 @@ _spec-names() {
 
 manifest() {
   { _spec-names | while read t; do
-      # file descriptors
-      local oil=7
-      local osh=8
-      local both=9
-
       # First filter.
       case $t in
         # This is for file system globs.  We have tests elsewhere for the [[ case.
@@ -83,21 +78,17 @@ manifest() {
       esac
 
     done 
-  } 7>_tmp/spec/SUITE-oil.txt \
-    8>_tmp/spec/SUITE-osh.txt \
-    9>_tmp/spec/SUITE-osh-oil.txt
+  } {oil}>_tmp/spec/SUITE-oil.txt \
+    {osh}>_tmp/spec/SUITE-osh.txt \
+    {both}>_tmp/spec/SUITE-osh-oil.txt
 
-  # TODO: Fix bug where osh leaks descriptors 7, 8, 9 here!
   #ls -l /proc/$$/fd
 
   # Used to use this obscure bash syntax.  How do we do this in Oil?  Probably
   # with 'fopen :both foo.txt' builtin.
 
-  # {oil}>_tmp/spec/SUITE-oil.txt \
-  # {osh}>_tmp/spec/SUITE-osh.txt \
-  # {both}>_tmp/spec/SUITE-osh-oil.txt
-
-  #wc -l _tmp/spec/*.txt | sort -n
+  #wc -l _tmp/spec/SUITE-*.txt | sort -n
+  #ls -l _tmp/spec/SUITE-*.txt
 }
 
 run-cases() {

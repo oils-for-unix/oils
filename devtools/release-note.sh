@@ -92,8 +92,8 @@ This is the latest version of Oil, a bash-compatible shell:
 - [Oil version $OIL_VERSION][release-index]
 
 Please try it on your shell scripts and [report bugs][github-bugs]!  To build
-and run it, follow the instructions in [INSTALL.txt][].  Please report bugs [on
-Github][github-bugs].
+and run it, follow the instructions in [INSTALL.txt][].  The wiki has more tips
+on [How To Test OSH](\$wiki).
 
 If you're new to the project, see [Why Create a New Shell?][why-oil] and the
 [2019 FAQ](../06/17.html).
