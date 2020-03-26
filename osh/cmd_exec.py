@@ -69,26 +69,23 @@ from _devbuild.gen.runtime_asdl import (
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
 from asdl import runtime
-
 from core import error
 from core import main_loop
 from core import process
+from core import pyutil
 from core import state
 from core import ui
 from core import util
 from core.util import log, e_die
-
 from frontend import args
 from frontend import arg_def
 from frontend import consts
 from frontend import reader
-
 from oil_lang import objects
 from osh import braces
 from osh import builtin_pure
 from osh import sh_expr_eval
 from osh import word_
-
 from mycpp import mylib
 from mycpp.mylib import switch, tagswitch, NewStr
 
@@ -397,7 +394,7 @@ class Executor(object):
     try:
       f = self.fd_state.Open(resolved)  # Shell can't use descriptors 3-9
     except OSError as e:
-      self.errfmt.Print('source %r failed: %s', path, posix.strerror(e.errno),
+      self.errfmt.Print('source %r failed: %s', path, pyutil.strerror_OS(e),
                         span_id=cmd_val.arg_spids[1])
       return 1
 
@@ -533,7 +530,7 @@ class Executor(object):
       status = 2  # consistent error code for usage error
     except KeyboardInterrupt:
       if self.exec_opts.interactive():
-        print()  # newline after ^C
+        print('')  # newline after ^C
         status = 130  # 128 + 2 for SIGINT
       else:
         # Abort a batch script
@@ -565,7 +562,7 @@ class Executor(object):
       status = 2  # consistent error code for usage error
     except KeyboardInterrupt:
       if self.exec_opts.interactive():
-        print()  # newline after ^C
+        print('')  # newline after ^C
         status = 130  # 128 + 2 for SIGINT
       else:
         raise
@@ -1163,7 +1160,7 @@ class Executor(object):
             # Note: there's only one LHS
             vd_lval = lvalue.Named(node.lhs[0].name.val)  # type: lvalue_t
             py_val = self.expr_ev.EvalExpr(node.rhs)
-            val = _PyObjectToVal(py_val)
+            val = _PyObjectToVal(py_val)  # type: value_t
 
             self.mem.SetVar(vd_lval, val, scope_e.LocalOnly, 
                             flags=_PackFlags(Id.KW_Const, state.SetReadOnly))

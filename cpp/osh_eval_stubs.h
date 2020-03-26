@@ -24,7 +24,7 @@ namespace prompt {
 }
 
 // problem: incomplete type
-#ifdef 0
+#if 0
 namespace cmd_exec {
   class Executor {
    public:
@@ -65,6 +65,11 @@ namespace builtin_misc {
     }
   };
 };
+
+namespace dev {
+  class CrashDumper;
+  class Tracer;
+}
 
 #endif  // OSH_EVAL_STUBS_H
 
