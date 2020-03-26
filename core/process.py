@@ -543,7 +543,6 @@ class ExternalProgram(object):
   def __init__(self,
                hijack_shebang,  # type: str
                fd_state,  # type: FdState
-               search_path,  # type: SearchPath
                errfmt,  # type: ErrorFormatter
                debug_f,  # type: NullDebugFile
                ):
@@ -555,7 +554,6 @@ class ExternalProgram(object):
     """
     self.hijack_shebang = hijack_shebang
     self.fd_state = fd_state
-    self.search_path = search_path
     self.errfmt = errfmt
     self.debug_f = debug_f
 

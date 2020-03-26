@@ -5,13 +5,27 @@ passwd.py
 Wrapper around the 'pwd' module.  Its API uses large tuples e.g. Tuple7, which
 can't be translated directly by mycpp.
 
+TODO: Rename this to io.py?  sys_.py?
+
+Python files that won't be translated:
+
+  pylib/  # directly copied from stdlib
+  mycpp/
+    mylib.py  # data structures
+  core/
+    sys_.py
+  */*_def.py  # abstract definitions with their own code generators
+
 """
 from __future__ import print_function
 
 import pwd
+import resource
+import time
+
 import posix_ as posix
 
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import Token
 
@@ -49,3 +63,10 @@ def GetHomeDir(token):
     result = e.pw_dir
 
   return result
+
+
+def Time():
+  # type: () -> Tuple[float, float, float]
+  t = time.time()  # calls gettimeofday() under the hood
+  u = resource.getrusage(resource.RUSAGE_SELF)
+  return t, u.ru_utime, u.ru_stime

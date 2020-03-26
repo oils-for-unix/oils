@@ -15,8 +15,6 @@ This just does head?  Last one wins.
 """
 from __future__ import print_function
 
-import resource
-import time
 import sys
 
 from _devbuild.gen.id_kind_asdl import Id, Id_str
@@ -71,6 +69,7 @@ from _devbuild.gen.types_asdl import redir_arg_type_e
 from asdl import runtime
 from core import error
 from core import main_loop
+from core import passwd  # Time().  TODO: rename
 from core import process
 from core import pyutil
 from core import state
@@ -111,10 +110,6 @@ if TYPE_CHECKING:
   from osh import word_eval
   from osh import builtin_process
   from osh.builtin_misc import _Builtin
-
-
-if mylib.PYTHON:
-  EVAL_SPEC = arg_def.Register('eval')
 
 
 # Python type name -> Oil type name
@@ -161,15 +156,15 @@ class _ControlFlow(Exception):
   break and continue are caught by loops, return is caught by functions.
 
   NOTE: I tried representing this in ASDL, but in Python the base class has to
-  be BaseException.  Also, 'token' is in syntax.asdl but not runtime.asdl.
+  be BaseException.  Also, 'Token' is in syntax.asdl but not runtime.asdl.
 
   cflow =
     -- break, continue, return, exit
-    Shell(token keyword, int arg)
+    Shell(Token keyword, int arg)
     -- break, continue
-  | OilLoop(token keyword)
+  | OilLoop(Token keyword)
     -- return
-  | OilReturn(token keyword, value val)
+  | OilReturn(Token keyword, value val)
   """
 
   def __init__(self, token, arg):
@@ -332,29 +327,6 @@ class Executor(object):
     finally:
       self.arena.PopSource()
 
-  def _Eval(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
-
-    # There are no flags, but we need it to respect --
-    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
-    arg_r.Next()  # skip 'eval'
-    arg = EVAL_SPEC.Parse(arg_r)
-
-    if self.exec_opts.strict_eval_builtin():
-      code_str, eval_spid = arg_r.ReadRequired2('requires code string')
-      if not arg_r.AtEnd():
-        raise args.UsageError('requires exactly 1 argument')
-    else:
-      code_str = ' '.join(cmd_val.argv[arg_r.i:])
-      # code_str could be EMPTY, so just use the first one
-      eval_spid = cmd_val.arg_spids[0]
-
-    line_reader = reader.StringLineReader(code_str, self.arena)
-    c_parser = self.parse_ctx.MakeOshParser(line_reader)
-
-    src = source.EvalArg(eval_spid)
-    return self._EvalHelper(c_parser, src)
-
   def ParseTrapCode(self, code_str):
     # type: (str) -> command_t
     """
@@ -434,7 +406,7 @@ class Executor(object):
     if argv0_path is None:
       self.errfmt.Print('exec: %r not found', cmd,
                         span_id=cmd_val.arg_spids[1])
-      sys.exit(127)  # exec never returns
+      raise SystemExit(127)  # exec builtin never returns
 
     # shift off 'exec'
     c2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:], cmd_val.block)
@@ -470,9 +442,6 @@ class Executor(object):
       # But if it returns, then we want to permanently apply the redirects
       # associated with it.
       self.fd_state.MakePermanent()
-
-    elif builtin_id == builtin_i.eval:
-      status = self._Eval(cmd_val)
 
     elif builtin_id in (builtin_i.source, builtin_i.dot):
       status = self._Source(cmd_val)
@@ -1362,6 +1331,7 @@ class Executor(object):
       elif case(command_e.Return):
         node = cast(command__Return, UP_node)
         val = self.expr_ev.EvalExpr(node.e)
+        # TODO: Does this have to be an integer?
         raise _ControlFlow(node.keyword, val)
 
       elif case(command_e.Expr):
@@ -1732,17 +1702,10 @@ class Executor(object):
         # $'\nreal\t%3lR\nuser\t%3lU\nsys\t%3lS'
         # "A trailing newline is added when the format string is displayed."
 
-        start_t = time.time()  # calls gettimeofday() under the hood
-        start_u = resource.getrusage(resource.RUSAGE_SELF)
+        s_real, s_user, s_sys = passwd.Time()
         status = self._Execute(node.pipeline)
-
-        end_t = time.time()
-        end_u = resource.getrusage(resource.RUSAGE_SELF)
-
-        real = end_t - start_t
-        user = end_u.ru_utime - start_u.ru_utime
-        sys_ = end_u.ru_stime - start_u.ru_stime
-        libc.print_time(real, user, sys_)
+        e_real, e_user, e_sys = passwd.Time()
+        libc.print_time(e_real - s_real, e_user - s_user, e_sys - s_sys)
 
       else:
         raise NotImplementedError(node.tag_())

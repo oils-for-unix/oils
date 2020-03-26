@@ -79,10 +79,11 @@ from oil_lang import expr_eval
 from oil_lang import builtin_oil
 from oil_lang import builtin_funcs
 
-from osh import builtin_misc
 from osh import builtin_assign
 from osh import builtin_bracket
 from osh import builtin_comp
+from osh import builtin_meta
+from osh import builtin_misc
 from osh import builtin_lib
 from osh import builtin_printf
 from osh import builtin_process
@@ -449,7 +450,6 @@ def ShellMain(lang, argv0, argv, login_shell):
   interp = posix.environ.get('OSH_HIJACK_SHEBANG', '')
   exec_deps.search_path = state.SearchPath(mem)
   exec_deps.ext_prog = process.ExternalProgram(interp, fd_state,
-                                               exec_deps.search_path,
                                                errfmt, debug_f)
 
   splitter = split.SplitContext(mem)
@@ -575,6 +575,8 @@ def ShellMain(lang, argv0, argv, login_shell):
                                           comp_lookup)
 
   # Add some builtins that depend on the executor!
+  builtins[builtin_i.eval]  = builtin_meta.Eval(parse_ctx, exec_opts, ex)
+
   complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
   builtins[builtin_i.complete] = complete_builtin
   builtins[builtin_i.compgen] = builtin_comp.CompGen(spec_builder)
