@@ -9,7 +9,7 @@ from __future__ import print_function
 import signal  # for calculating numbers
 
 from _devbuild.gen.runtime_asdl import (
-    cmd_value__Argv,
+    cmd_value, cmd_value__Argv,
     job_status_e, job_status__Proc, job_status__Pipeline,
 )
 from _devbuild.gen.syntax_asdl import source
@@ -31,9 +31,53 @@ from typing import List, Dict, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command_t
   from core.ui import ErrorFormatter
-  from core.process import JobState, Waiter, SignalState
-  from core.state import Mem
-  from frontend import ParseContext
+  from core.process import (
+      ExternalProgram, FdState, JobState, SignalState, Waiter
+  )
+  from core.state import Mem, SearchPath
+  from frontend.parse_lib import ParseContext
+
+
+if mylib.PYTHON:
+  EXEC_SPEC = arg_def.Register('exec')
+
+
+class Exec(object):
+
+  def __init__(self, mem, ext_prog, fd_state, search_path, errfmt):
+    # type: (Mem, ExternalProgram, FdState, SearchPath, ErrorFormatter) -> None
+    self.mem = mem
+    self.ext_prog = ext_prog
+    self.fd_state = fd_state
+    self.search_path = search_path
+    self.errfmt = errfmt
+
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+
+    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+    arg_r.Next()  # skip 'exec'
+    _ = EXEC_SPEC.Parse(arg_r)  # no flags now, but accepts --
+
+    # Apply redirects in this shell.  # NOTE: Redirects were processed earlier.
+    if arg_r.AtEnd():
+      self.fd_state.MakePermanent()
+      return 0
+
+    environ = self.mem.GetExported()
+    i = arg_r.i
+    cmd = cmd_val.argv[i]
+    argv0_path = self.search_path.CachedLookup(cmd)
+    if argv0_path is None:
+      self.errfmt.Print('exec: %r not found', cmd,
+                        span_id=cmd_val.arg_spids[1])
+      raise SystemExit(127)  # exec builtin never returns
+
+    # shift off 'exec'
+    c2 = cmd_value.Argv(cmd_val.argv[i:], cmd_val.arg_spids[i:], cmd_val.block)
+    self.ext_prog.Exec(argv0_path, c2, environ)  # NEVER RETURNS
+    assert False, "This line should never be reached" # makes mypy happy
+
 
 
 if mylib.PYTHON:

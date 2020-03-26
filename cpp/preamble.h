@@ -44,6 +44,13 @@ class ValueError {};
 
 class KeyboardInterrupt {};
 
+class SystemExit {
+ public:
+  SystemExit(int status) : status_(status) {
+  }
+ int status_;
+};
+
 // Hack for now.  Every sum type should have repr()?
 Str* repr(syntax_asdl::source_t* obj) {
   return new Str("TODO");

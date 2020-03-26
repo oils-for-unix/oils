@@ -14,7 +14,30 @@ echo 'to stderr'
 # This has in a separate file because both code and data can be read from
 # stdin.
 $SH spec/builtins-exec-here-doc-helper.sh
-## stdout-json: "x=one\ny=two\nDONE\n"
+## STDOUT:
+x=one
+y=two
+DONE
+## END
+
+#### exec builtin accepts --
+exec -- echo hi
+## STDOUT:
+hi
+## END
+## BUG dash status: 127
+## BUG dash stdout-json: ""
+
+#### exec -- 2>&1
+exec -- 3>&1
+echo stdout 1>&3
+## STDOUT:
+stdout
+## END
+## BUG dash status: 127
+## BUG dash stdout-json: ""
+## BUG mksh status: -11
+## BUG mksh stdout-json: ""
 
 #### cd and $PWD
 cd /

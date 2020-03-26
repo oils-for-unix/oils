@@ -4,7 +4,6 @@ error.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.id_kind_asdl import Id
 from mycpp import mylib
 
 from typing import Any, TYPE_CHECKING
@@ -44,14 +43,20 @@ class _ControlFlow(Exception):
 
   def IsReturn(self):
     # type: () -> bool
+
+    from _devbuild.gen.id_kind_asdl import Id  # TODO: fix circular dep
     return self.token.id == Id.ControlFlow_Return
 
   def IsBreak(self):
     # type: () -> bool
+
+    from _devbuild.gen.id_kind_asdl import Id  # TODO: fix circular dep
     return self.token.id == Id.ControlFlow_Break
 
   def IsContinue(self):
     # type: () -> bool
+
+    from _devbuild.gen.id_kind_asdl import Id  # TODO: fix circular dep
     return self.token.id == Id.ControlFlow_Continue
 
   def StatusCode(self):

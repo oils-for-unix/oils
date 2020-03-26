@@ -539,6 +539,9 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_i.false_: builtin_pure.Boolean(1),
 
       # Process
+      builtin_i.exec_: builtin_process.Exec(mem, exec_deps.ext_prog,
+                                            fd_state, exec_deps.search_path,
+                                            errfmt),
       builtin_i.wait: builtin_process.Wait(exec_deps.waiter,
                                            exec_deps.job_state, mem, errfmt),
       builtin_i.jobs: builtin_process.Jobs(exec_deps.job_state),

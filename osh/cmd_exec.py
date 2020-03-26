@@ -222,7 +222,7 @@ class Executor(object):
       procs: dict of SHELL functions or 'procs'
       builtins: dict of builtin callables (TODO: migrate all builtins here)
       exec_opts: MutableOpts
-      parse_ctx: for instantiating parsers
+      parse_ctx: for arena and aliases
       exec_deps: A bundle of stateless code
     """
     self.arith_ev = None  # type: sh_expr_eval.ArithEvaluator
@@ -267,25 +267,6 @@ class Executor(object):
     assert self.expr_ev is not None
     assert self.word_ev is not None
 
-  def _Exec(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
-    # Apply redirects in this shell.  # NOTE: Redirects were processed earlier.
-    if len(cmd_val.argv) == 1:
-      return 0
-
-    environ = self.mem.GetExported()
-    cmd = cmd_val.argv[1]
-    argv0_path = self.search_path.CachedLookup(cmd)
-    if argv0_path is None:
-      self.errfmt.Print('exec: %r not found', cmd,
-                        span_id=cmd_val.arg_spids[1])
-      raise SystemExit(127)  # exec builtin never returns
-
-    # shift off 'exec'
-    c2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:], cmd_val.block)
-    self.ext_prog.Exec(argv0_path, c2, environ)  # NEVER RETURNS
-    assert False, "This line should never be reached" # makes mypy happy
-
   def _RunBuiltinAndRaise(self, builtin_id, cmd_val, fork_external):
     # type: (builtin_t, cmd_value__Argv, bool) -> int
     """
@@ -307,14 +288,6 @@ class Executor(object):
     builtin_func = self.builtins.get(builtin_id)
     if builtin_func is not None:
       status = builtin_func.Run(cmd_val)
-
-    # Some builtins "belong" to the executor.
-
-    elif builtin_id == builtin_i.exec_:
-      status = self._Exec(cmd_val)  # may never return
-      # But if it returns, then we want to permanently apply the redirects
-      # associated with it.
-      self.fd_state.MakePermanent()
 
     elif builtin_id == builtin_i.command:
       # TODO: How do we handle fork_external?  It doesn't fit the common
