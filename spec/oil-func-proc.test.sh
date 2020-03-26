@@ -349,3 +349,24 @@ echo $f(42)
 43
 ## END
 
+#### proc returning wrong type
+
+# this should print an error message
+proc f {
+  var a = @(one two)
+  return a
+}
+f
+## STDOUT:
+## END
+
+#### proc returning invalid string
+
+# this should print an error message
+proc f {
+  var s = 'not an integer status'
+  return s
+}
+f
+## STDOUT:
+## END

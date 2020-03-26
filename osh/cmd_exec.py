@@ -59,7 +59,8 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.runtime_asdl import (
     quote_e,
     lvalue, lvalue_e, lvalue__ObjIndex, lvalue__ObjAttr,
-    value, value_e, value_t, value__Str, value__MaybeStrArray, value__Obj,
+    value, value_e, value_t, value__Int, value__Str, value__MaybeStrArray,
+    value__Obj,
     redirect, redirect_arg, scope_e,
     cmd_value__Argv, cmd_value, cmd_value_e,
     cmd_value__Argv, cmd_value__Assign,
@@ -273,17 +274,6 @@ class Executor(object):
     Raises:
       args.UsageError
     """
-    # Shift one arg.  Builtins don't need to know their own name.
-    argv = cmd_val.argv[1:]
-
-    # TODO: For now, hard-code the builtins that take a block, and pass them
-    # cmd_val.
-    # Later, we should give builtins signatures like this and check them:
-    #
-    # proc cd(argv Array[Str], b Block) {
-    #   do evaluate(b, locals, globals)
-    # }
-
     # Most builtins dispatch with a dictionary
     builtin_func = self.builtins.get(builtin_id)
     if builtin_func is not None:
@@ -297,7 +287,7 @@ class Executor(object):
       status = b.Run(cmd_val, fork_external)
 
     elif builtin_id == builtin_i.builtin:  # NOTE: uses early return style
-      if len(argv) == 0:
+      if len(cmd_val.argv) == 1:
         return 0  # this could be an error in strict mode?
 
       name = cmd_val.argv[1]
@@ -721,12 +711,18 @@ class Executor(object):
       self.errfmt.Print('%r not found', arg0, span_id=span_id)
       return 127
 
+    # SubProgramThunk sets this to false
+    #log('[PID %d] fork_external: %s', posix.getpid(), fork_external)
+
+    # Normal case: ls /
     if fork_external:
       thunk = process.ExternalThunk(self.ext_prog, argv0_path, cmd_val, environ)
       p = process.Process(thunk, self.job_state)
       status = p.Run(self.waiter)
       return status
 
+    # Already forked for pipeline: ls / | wc -l
+    # TODO: count subshell?  ( ls / ) vs. ( ls /; ls / )
     self.ext_prog.Exec(argv0_path, cmd_val, environ)  # NEVER RETURNS
     assert False, "This line should never be reached" # makes mypy happy
 
@@ -1173,9 +1169,28 @@ class Executor(object):
 
       elif case(command_e.Return):
         node = cast(command__Return, UP_node)
-        val = self.expr_ev.EvalExpr(node.e)
-        # TODO: Does this have to be an integer?
-        raise _ControlFlow(node.keyword, val)
+        obj = self.expr_ev.EvalExpr(node.e)
+
+        if 0:
+          val = _PyObjectToVal(obj)
+
+          status_code = -1
+          UP_val = val
+          with tagswitch(val) as case:
+            if case(value_e.Int):
+              val = cast(value__Int, UP_val)
+              status_code = val.i
+            elif case(value_e.Str):
+              val = cast(value__Str, UP_val)
+              try:
+                status_code = int(val.s)
+              except ValueError:
+                e_die('Invalid return value %r', val.s, token=node.keyword)
+            else:
+              e_die('Expected integer return value, got %r', val,
+                    token=node.keyword)
+
+        raise _ControlFlow(node.keyword, obj)
 
       elif case(command_e.Expr):
         node = cast(command__Expr, UP_node)
@@ -1548,6 +1563,7 @@ class Executor(object):
         s_real, s_user, s_sys = passwd.Time()
         status = self._Execute(node.pipeline)
         e_real, e_user, e_sys = passwd.Time()
+        # note: mycpp doesn't support %.3f
         libc.print_time(e_real - s_real, e_user - s_user, e_sys - s_sys)
 
       else:

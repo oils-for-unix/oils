@@ -9,6 +9,7 @@ BOLD = '\x1b[1m'
 UNDERLINE = '\x1b[4m'
 REVERSE = '\x1b[7m'  # reverse video
 
+RED = '\x1b[31m'
 GREEN = '\x1b[32m'
 YELLOW = '\x1b[33m'
 BLUE = '\x1b[34m'

@@ -24,6 +24,7 @@ from core.util import e_die
 from core import optview
 from core import state
 from core import ui
+from core.util import log
 from frontend import args
 from frontend import arg_def
 from frontend import consts
@@ -42,6 +43,8 @@ if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from osh.cmd_exec import Executor
   from core.state import MutableOpts, Mem, SearchPath
+
+_ = log
 
 
 class Boolean(_Builtin):
@@ -326,6 +329,15 @@ class Command(object):
     # shift by one
     cmd_val = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:])
     # 'command ls' suppresses function lookup.
+
+    # BUG: fork_external doesn't appear to have any effect here!
+    #log('cmd fork_external %s', fork_external)
+
+    # For example in 'command ls / |  wc -l', we don't need to fork a process
+    # for 'ls /' -- it can just exec.
+
+    # This makes it fail!
+    #fork_external = True
     return self.ex.RunSimpleCommand(cmd_val, fork_external, funcs=False)
 
 

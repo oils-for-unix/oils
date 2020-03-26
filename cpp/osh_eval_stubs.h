@@ -60,6 +60,7 @@ namespace pyutil {
 
 namespace builtin_misc {
   class _Builtin {
+   public:
     int Run(runtime_asdl::cmd_value_t* cmd_val) {
       assert(0);
     }

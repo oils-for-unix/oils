@@ -11,7 +11,7 @@ from core import pyutil  # strerror_OS
 from frontend import args
 from frontend import arg_def
 from frontend import reader
-from osh.builtin_misc import _Builtin
+#from osh.builtin_misc import _Builtin
 from mycpp import mylib
 
 from typing import TYPE_CHECKING
@@ -40,7 +40,8 @@ def _EvalHelper(arena, ex, c_parser, src):
     arena.PopSource()
 
 
-class Eval(_Builtin):
+class Eval(object):
+
   def __init__(self, parse_ctx, exec_opts, ex):
     # type: (ParseContext, optview.Exec, Executor) -> None
     self.parse_ctx = parse_ctx
@@ -72,7 +73,8 @@ class Eval(_Builtin):
     return _EvalHelper(self.arena, self.ex, c_parser, src)
 
 
-class Source(_Builtin):
+class Source(object):
+
   def __init__(self, parse_ctx, search_path, ex, errfmt):
     # type: (ParseContext, state.SearchPath, Executor, ui.ErrorFormatter) -> None
     self.parse_ctx = parse_ctx

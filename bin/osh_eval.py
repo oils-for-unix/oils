@@ -34,7 +34,7 @@ from osh import sh_expr_eval
 from osh import word_eval
 
 _ = log
-_ = cmd_exec
+_2 = cmd_exec  # lint ignore
 
 from typing import List, Dict, Tuple, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:

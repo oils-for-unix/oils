@@ -30,6 +30,10 @@ inline Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos
   assert(0);
 }
 
+inline void print_time(double real, double user, double sys) {
+  assert(0);
+}
+
 }  // namespace libc
 
 #endif  // LIBC_H
