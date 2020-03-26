@@ -575,7 +575,12 @@ def ShellMain(lang, argv0, argv, login_shell):
                                           comp_lookup)
 
   # Add some builtins that depend on the executor!
-  builtins[builtin_i.eval]  = builtin_meta.Eval(parse_ctx, exec_opts, ex)
+  builtins[builtin_i.eval] = builtin_meta.Eval(parse_ctx, exec_opts, ex)
+
+  source_builtin = builtin_meta.Source(
+      parse_ctx, exec_deps.search_path, ex, errfmt)
+  builtins[builtin_i.source] = source_builtin
+  builtins[builtin_i.dot] = source_builtin
 
   complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
   builtins[builtin_i.complete] = complete_builtin
@@ -587,8 +592,8 @@ def ShellMain(lang, argv0, argv, login_shell):
   sig_state.InitShell()
 
   builtins[builtin_i.trap] = builtin_process.Trap(sig_state, exec_deps.traps,
-                                                  exec_deps.trap_nodes, ex,
-                                                  errfmt)
+                                                  exec_deps.trap_nodes,
+                                                  parse_ctx, errfmt)
 
   # History evaluation is a no-op if line_input is None.
   hist_ev = history.Evaluator(line_input, hist_ctx, debug_f)

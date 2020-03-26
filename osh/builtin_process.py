@@ -12,10 +12,15 @@ from _devbuild.gen.runtime_asdl import (
     cmd_value__Argv,
     job_status_e, job_status__Proc, job_status__Pipeline,
 )
+from _devbuild.gen.syntax_asdl import source
+from asdl import runtime
+from core import error
+from core import main_loop
 from core import ui
 from core.util import log
 from frontend import args
 from frontend import arg_def
+from frontend import reader
 from mycpp import mylib
 from mycpp.mylib import tagswitch
 from osh.builtin_misc import _Builtin
@@ -27,8 +32,8 @@ if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command_t
   from core.ui import ErrorFormatter
   from core.process import JobState, Waiter, SignalState
-  from osh.cmd_exec import Executor
   from core.state import Mem
+  from frontend import ParseContext
 
 
 if mylib.PYTHON:
@@ -302,13 +307,37 @@ if mylib.PYTHON:
 # OVM match sh/bash more closely.
 
 class Trap(object):
-  def __init__(self, sig_state, traps, nodes_to_run, ex, errfmt):
-    # type: (SignalState, Dict[str, _TrapHandler], List[command_t], Executor, ErrorFormatter) -> None
+  def __init__(self, sig_state, traps, nodes_to_run, parse_ctx, errfmt):
+    # type: (SignalState, Dict[str, _TrapHandler], List[command_t], ParseContext, ErrorFormatter) -> None
     self.sig_state = sig_state
     self.traps = traps
     self.nodes_to_run = nodes_to_run
-    self.ex = ex  # TODO: ParseTrapCode could be inlined below
+    self.parse_ctx = parse_ctx
+    self.arena = parse_ctx.arena
     self.errfmt = errfmt
+
+  def _ParseTrapCode(self, code_str):
+    # type: (str) -> command_t
+    """
+    Returns:
+      A node, or None if the code is invalid.
+    """
+    line_reader = reader.StringLineReader(code_str, self.arena)
+    c_parser = self.parse_ctx.MakeOshParser(line_reader)
+
+    # TODO: the SPID should be passed through argv
+    self.arena.PushSource(source.Trap(runtime.NO_SPID))
+    try:
+      try:
+        node = main_loop.ParseWholeFile(c_parser)
+      except error.Parse as e:
+        ui.PrettyPrintError(e, self.arena)
+        return None
+
+    finally:
+      self.arena.PopSource()
+
+    return node
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
@@ -378,7 +407,7 @@ class Trap(object):
       raise AssertionError('Signal or trap')
 
     # Try parsing the code first.
-    node = self.ex.ParseTrapCode(code_str)
+    node = self._ParseTrapCode(code_str)
     if node is None:
       return 1  # ParseTrapCode() prints an error for us.
 

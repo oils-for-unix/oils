@@ -51,7 +51,7 @@ from _devbuild.gen.syntax_asdl import (
     command__TimeBlock,
     command__VarDecl,
     command__WhileUntil,
-    assign_op_e, source,
+    assign_op_e,
     place_expr__Var,
     proc_sig_e, proc_sig__Closed,
     redir_param_e, redir_param__MultiLine,
@@ -68,18 +68,15 @@ from _devbuild.gen.types_asdl import redir_arg_type_e
 
 from asdl import runtime
 from core import error
-from core import main_loop
+from core.error import _ControlFlow
 from core import passwd  # Time().  TODO: rename
 from core import process
-from core import pyutil
 from core import state
 from core import ui
 from core import util
 from core.util import log, e_die
 from frontend import args
-from frontend import arg_def
 from frontend import consts
-from frontend import reader
 from oil_lang import objects
 from osh import braces
 from osh import builtin_pure
@@ -99,14 +96,13 @@ if TYPE_CHECKING:
       cmd_value_t, cell, lvalue_t,
   )
   from _devbuild.gen.syntax_asdl import (
-      Token, source_t, redir, expr__Lambda, env_pair, proc_sig__Closed,
+      redir, expr__Lambda, env_pair, proc_sig__Closed,
   )
   from core.ui import ErrorFormatter
   from core import dev
   from core import optview
   from frontend.parse_lib import ParseContext
   from oil_lang import expr_eval
-  from osh.cmd_parse import CommandParser
   from osh import word_eval
   from osh import builtin_process
   from osh.builtin_misc import _Builtin
@@ -148,54 +144,6 @@ def _DisallowErrExit(node):
     node = cast(command__Pipeline, UP_node)
     return len(node.children) > 1
   return False
-
-
-class _ControlFlow(Exception):
-  """Internal execption for control flow.
-
-  break and continue are caught by loops, return is caught by functions.
-
-  NOTE: I tried representing this in ASDL, but in Python the base class has to
-  be BaseException.  Also, 'Token' is in syntax.asdl but not runtime.asdl.
-
-  cflow =
-    -- break, continue, return, exit
-    Shell(Token keyword, int arg)
-    -- break, continue
-  | OilLoop(Token keyword)
-    -- return
-  | OilReturn(Token keyword, value val)
-  """
-
-  def __init__(self, token, arg):
-    # type: (Token, int) -> None
-    """
-    Args:
-      token: the keyword token
-    """
-    self.token = token
-    self.arg = arg
-
-  def IsReturn(self):
-    # type: () -> bool
-    return self.token.id == Id.ControlFlow_Return
-
-  def IsBreak(self):
-    # type: () -> bool
-    return self.token.id == Id.ControlFlow_Break
-
-  def IsContinue(self):
-    # type: () -> bool
-    return self.token.id == Id.ControlFlow_Continue
-
-  def StatusCode(self):
-    # type: () -> int
-    assert self.IsReturn()
-    return self.arg
-
-  def __repr__(self):
-    # type: () -> str
-    return '<_ControlFlow %s>' % self.token
 
 
 class Deps(object):
@@ -319,81 +267,6 @@ class Executor(object):
     assert self.expr_ev is not None
     assert self.word_ev is not None
 
-  def _EvalHelper(self, c_parser, src):
-    # type: (CommandParser, source_t) -> int
-    self.arena.PushSource(src)
-    try:
-      return main_loop.Batch(self, c_parser, self.arena)
-    finally:
-      self.arena.PopSource()
-
-  def ParseTrapCode(self, code_str):
-    # type: (str) -> command_t
-    """
-    Returns:
-      A node, or None if the code is invalid.
-    """
-    line_reader = reader.StringLineReader(code_str, self.arena)
-    c_parser = self.parse_ctx.MakeOshParser(line_reader)
-
-    # TODO: the SPID should be passed through argv
-    self.arena.PushSource(source.Trap(runtime.NO_SPID))
-    try:
-      try:
-        node = main_loop.ParseWholeFile(c_parser)
-      except error.Parse as e:
-        ui.PrettyPrintError(e, self.arena)
-        return None
-
-    finally:
-      self.arena.PopSource()
-
-    return node
-
-  def _Source(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
-    argv = cmd_val.argv
-    call_spid = cmd_val.arg_spids[0]
-
-    try:
-      path = argv[1]
-    except IndexError:
-      raise args.UsageError('missing required argument')
-
-    resolved = self.search_path.Lookup(path, exec_required=False)
-    if resolved is None:
-      resolved = path
-    try:
-      f = self.fd_state.Open(resolved)  # Shell can't use descriptors 3-9
-    except OSError as e:
-      self.errfmt.Print('source %r failed: %s', path, pyutil.strerror_OS(e),
-                        span_id=cmd_val.arg_spids[1])
-      return 1
-
-    try:
-      line_reader = reader.FileLineReader(f, self.arena)
-      c_parser = self.parse_ctx.MakeOshParser(line_reader)
-
-      # A sourced module CAN have a new arguments array, but it always shares
-      # the same variable scope as the caller.  The caller could be at either a
-      # global or a local scope.
-      source_argv = argv[2:]
-      self.mem.PushSource(path, source_argv)
-      try:
-        status = self._EvalHelper(c_parser, source.SourcedFile(path, call_spid))
-      finally:
-        self.mem.PopSource(source_argv)
-
-      return status
-
-    except _ControlFlow as e:
-      if e.IsReturn():
-        return e.StatusCode()
-      else:
-        raise
-    finally:
-      f.close()
-
   def _Exec(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     # Apply redirects in this shell.  # NOTE: Redirects were processed earlier.
@@ -442,9 +315,6 @@ class Executor(object):
       # But if it returns, then we want to permanently apply the redirects
       # associated with it.
       self.fd_state.MakePermanent()
-
-    elif builtin_id in (builtin_i.source, builtin_i.dot):
-      status = self._Source(cmd_val)
 
     elif builtin_id == builtin_i.command:
       # TODO: How do we handle fork_external?  It doesn't fit the common
@@ -1821,11 +1691,6 @@ class Executor(object):
     Also:
     - SubProgramThunk for pipelines, subshell, command sub, process sub
     - TODO: Signals besides EXIT trap
-
-    Most other clients call _Execute():
-    - _Source() for source builtin
-    - _Eval() for eval builtin
-    - _RunProc() for function call
     """
     is_return = False
     is_fatal = False
