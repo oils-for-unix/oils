@@ -282,8 +282,8 @@ make-job-wwz() {
   #        Note that that index references /web/{base,toil}.css, outside the .wwz
   # temporary: debug dash
   zip -r $wwz \
-    index.html _tmp/toil _tmp/spec web/{base,spec-code,spec-tests}.css \
-    _deps/spec-bin/dash
+    index.html _tmp/toil _tmp/spec _tmp/syscall \
+    web/{base,spec-code,spec-tests}.css
 }
 
 deploy-job-results() {

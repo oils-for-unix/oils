@@ -20,11 +20,12 @@ import collections
 import re
 import sys
 
-from core import ansi
 
+def Cell(i):
+  """Visually show number of processes.
 
-def Color(i):
-  #return str(i)
+  ^  ^^  ^^^  etc.
+  """
   s = '^' * i
   return '%6s' % s
 
@@ -107,7 +108,7 @@ def main(argv):
     min_procs = 20
     for sh in proc_sh:
       n = num_procs[case_id, sh]
-      f.write(Color(n) + "\t")
+      f.write(Cell(n) + "\t")
       min_procs = min(n, min_procs)
 
     osh_count = num_procs[case_id, 'osh']

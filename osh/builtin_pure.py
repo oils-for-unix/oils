@@ -304,6 +304,10 @@ if mylib.PYTHON:
 
 
 class Command(object):
+  """
+  'command ls' suppresses function lookup.
+  """
+
   def __init__(self, ex, funcs, aliases, search_path):
     # type: (Executor, Dict[str, command__ShFunction], Dict[str, str], SearchPath) -> None
     self.ex = ex
@@ -328,15 +332,12 @@ class Command(object):
 
     # shift by one
     cmd_val = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:])
-    # 'command ls' suppresses function lookup.
 
-    # BUG: fork_external doesn't appear to have any effect here!
-    #log('cmd fork_external %s', fork_external)
+    # Our score on test/syscall goes from 61 -> 62 without respecting
+    #
+    # 'fork-external'!  But there are a lot of other problems.
+    # case 13 'command date | wc -l' takes 4 instead of 3.
 
-    # For example in 'command ls / |  wc -l', we don't need to fork a process
-    # for 'ls /' -- it can just exec.
-
-    # This makes it fail!
     #fork_external = True
     return self.ex.RunSimpleCommand(cmd_val, fork_external, funcs=False)
 

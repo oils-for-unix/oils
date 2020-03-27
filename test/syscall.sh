@@ -13,7 +13,7 @@ source build/dev-shell.sh
 
 # TODO: Add yash to test/spec-bin.sh, since it starts the fewest number of
 # processes!
-readonly -a SHELLS=(dash bash mksh zsh ash osh yash)
+readonly -a SHELLS=(dash bash mksh zsh ash osh)
 
 readonly BASE_DIR='_tmp/syscall'  # What we'll publish
 readonly RAW_DIR='_tmp/syscall-raw'  # Raw data
