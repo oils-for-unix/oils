@@ -1,7 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
+# Measure the number of syscalls that shells use.
 #
 # Usage:
-#   ./count-procs.sh <function name>
+#   test/syscall.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -148,18 +150,19 @@ run-cases() {
 }
 
 print-table() {
-  PYTHONPATH=. test/count_procs.py "$@"
+  PYTHONPATH=. test/syscall.py "$@"
 }
 
 summarize() {
   cat $BASE_DIR/counts.txt \
-    | print-table $BASE_DIR/cases.txt | tee $BASE_DIR/table.txt
+    | print-table $BASE_DIR/cases.txt \
+    | tee $BASE_DIR/table.txt
 }
 
 # TODO: 
 # - assert failures
-# - clean up output -- spaces not tabs for numbers
 # - publish to 'toil'
+# - add 'run-for-release' function
 
 
 "$@"
