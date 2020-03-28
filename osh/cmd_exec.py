@@ -583,9 +583,6 @@ class Executor(object):
       # NOTE: This could be done at parse time too.
       e_die('Invalid control flow %r in pipeline / subshell / background',
             node.token.val, token=node.token)
-    elif node.tag_() == command_e.Subshell:
-      # Optimization: strip off extra subshell
-      pass
 
     # NOTE: If ErrExit(), we could be verbose about subprogram errors?  This
     # only really matters when executing 'exit 42', because the child shell
@@ -1259,7 +1256,7 @@ class Executor(object):
       # need to split them up for mycpp.
       elif case(command_e.CommandList):
         node = cast(command__CommandList, UP_node)
-        status = self._ExecuteList(node.children)
+        status = self._ExecuteList(node.children, fork_external=fork_external)
         check_errexit = False
 
       elif case(command_e.BraceGroup):
@@ -1658,11 +1655,12 @@ class Executor(object):
       self._CheckStatus(status, node)
     return status
 
-  def _ExecuteList(self, children):
+  def _ExecuteList(self, children, fork_external=True):
     # type: (List[command_t]) -> int
     status = 0  # for empty list
     for child in children:
-      status = self._Execute(child)  # last status wins
+      # last status wins
+      status = self._Execute(child, fork_external=fork_external)
     return status
 
   def LastStatus(self):

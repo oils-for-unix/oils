@@ -71,6 +71,9 @@ date; date
 
 (date)
 
+# Sentence in Oil
+(date;) > /tmp/out.txt
+
 (date; echo hi)
 
 # command sub
