@@ -54,7 +54,7 @@ cleanup-jobs-index() {
   # Pass it all JSON, and then it figures out what files to delete (TSV, etc.)
   case $dry_run in
     false)
-      ls $dir/*.json | cleanup | xargs -- rm -v
+      ls $dir/*.json | cleanup | xargs --no-run-if-empty -- rm -v 
       ;;
     true)
       ls $dir/*.json | cleanup

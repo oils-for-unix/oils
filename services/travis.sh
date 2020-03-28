@@ -155,8 +155,14 @@ remote-rewrite-jobs-index() {
 
 remote-cleanup-jobs-index() {
   # clean it up for real!
+
+  # Shell can do this!  Don't need commands module as I said here!
+  # http://www.oilshell.org/blog/2017/01/31.html
+  #
+  # This is Bernstein chaining through ssh.
+
   ssh $USER@$HOST \
-    toil-web/services/toil-web.sh cleanup-jobs-index '' false
+    "$(printf '%q ' toil-web/services/toil-web.sh cleanup-jobs-index '' false)"
 }
 
 init-server-html() {
