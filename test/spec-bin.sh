@@ -211,8 +211,8 @@ publish-tmp() {
 
 all-steps() {
   # Uncomment to rebuild the Travis cache in _deps/
-  #if false; then
-  if test -d $DIR; then
+  if false; then
+  #if test -d $DIR; then
     echo "$DIR exists: skipping build of shells"
   else
     download     # Get the right version of every tarball

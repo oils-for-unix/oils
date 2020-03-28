@@ -69,6 +69,10 @@ date; date
 # dash and zsh somehow optimize this to 1
 (echo hi)
 
+(date)
+
+(date; echo hi)
+
 # command sub
 echo \$(date)
 
