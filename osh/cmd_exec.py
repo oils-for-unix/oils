@@ -924,9 +924,13 @@ class Executor(object):
       elif case(command_e.Subshell):
         node = cast(command__Subshell, UP_node)
         check_errexit = True
-        # This makes sure we don't waste a process if we'd launch one anyway.
-        p = self._MakeProcess(node.command_list)
-        status = p.Run(self.waiter)
+        if fork_external:
+          # This makes sure we don't waste a process if we'd launch one anyway.
+          p = self._MakeProcess(node.command_list)
+          status = p.Run(self.waiter)
+        else:
+          # optimization for sh -c '(date)' etc.
+          status = self._Dispatch(node.command_list, fork_external)
 
       elif case(command_e.DBracket):
         node = cast(command__DBracket, UP_node)

@@ -171,7 +171,7 @@ syscall-py() {
 
 summarize() {
   cat $BASE_DIR/counts.txt \
-    | syscall-py --not-minimum 15 --more-than-bash 6 $BASE_DIR/cases.txt \
+    | syscall-py --not-minimum 17 --more-than-bash 6 $BASE_DIR/cases.txt \
     | tee $BASE_DIR/table.txt
 
   echo 'OK'
