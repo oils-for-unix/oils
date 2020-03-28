@@ -533,9 +533,6 @@ class Executor(object):
       elif case(command_e.ShAssignment):
         node = cast(command__ShAssignment, UP_node)
         redirects = node.redirects
-      elif case(command_e.DoGroup):
-        node = cast(command__DoGroup, UP_node)
-        redirects = node.redirects
       elif case(command_e.BraceGroup):
         node = cast(command__BraceGroup, UP_node)
         redirects = node.redirects
@@ -576,9 +573,8 @@ class Executor(object):
     """
     Assume we will run the node in another process.  Return a process.
     """
-
     UP_node = node
-    if UP_node.tag_() == command_e.ControlFlow:
+    if node.tag_() == command_e.ControlFlow:
       node = cast(command__ControlFlow, UP_node)
       # Pipeline or subshells with control flow are invalid, e.g.:
       # - break | less
@@ -587,6 +583,9 @@ class Executor(object):
       # NOTE: This could be done at parse time too.
       e_die('Invalid control flow %r in pipeline / subshell / background',
             node.token.val, token=node.token)
+    elif node.tag_() == command_e.Subshell:
+      # Optimization: strip off extra subshell
+      pass
 
     # NOTE: If ErrExit(), we could be verbose about subprogram errors?  This
     # only really matters when executing 'exit 42', because the child shell
@@ -924,13 +923,15 @@ class Executor(object):
       elif case(command_e.Subshell):
         node = cast(command__Subshell, UP_node)
         check_errexit = True
+
+        # TODO: optimize ( date )
         if fork_external:
           # This makes sure we don't waste a process if we'd launch one anyway.
           p = self._MakeProcess(node.command_list)
           status = p.Run(self.waiter)
         else:
-          # optimization for sh -c '(date)' etc.
-          status = self._Dispatch(node.command_list, fork_external)
+          # optimization for '( echo a; echo b ) | wc -l' etc.
+          status, check_errexit = self._Dispatch(node.command_list, fork_external)
 
       elif case(command_e.DBracket):
         node = cast(command__DBracket, UP_node)
@@ -1609,7 +1610,8 @@ class Executor(object):
     # TODO: Speed this up with some kind of bit mask?
     if node.tag_() in (
         command_e.NoOp, command_e.ControlFlow, command_e.Pipeline,
-        command_e.AndOr, command_e.CommandList, command_e.Sentence,
+        command_e.AndOr, command_e.CommandList, command_e.DoGroup,
+        command_e.Sentence,
         command_e.TimeBlock, command_e.ShFunction, command_e.VarDecl,
         command_e.PlaceMutation, command_e.OilCondition, command_e.OilForIn,
         command_e.Proc, command_e.Func, command_e.Return, command_e.Expr,

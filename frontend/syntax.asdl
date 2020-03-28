@@ -267,10 +267,9 @@ module syntax
     -- stderr_indices
   | Pipeline(command* children, bool negated, int* stderr_indices)
   | AndOr(id* ops, command* children)
-    -- Part of for, while, until (but not if, case, ShFunction)
-  | DoGroup(command* children, redir* redirects)
+    -- Part of for, while, until (but not if, case, ShFunction).  No redirects.
+  | DoGroup(command* children)
     -- A brace group is a compound command, with redirects.
-    -- TODO: Combine DoGroup and BraceGroup, with 'Token left' for do or {
   | BraceGroup(command* children, redir* redirects)
     -- Contains a single child, like CommandSub
   | Subshell(command command_list, redir* redirects)
