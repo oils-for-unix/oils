@@ -24,7 +24,7 @@ _publish_html: &publish_html
       skip_cleanup: true
       script: services/travis.sh publish-html
       on:
-        branch: dev/andy-22
+        branch: dev/andy-23
 
 jobs:
   include:

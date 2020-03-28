@@ -173,11 +173,20 @@ syscall-py() {
 }
 
 summarize() {
+  local out=$BASE_DIR/table.txt
+  set +o errexit
   cat $BASE_DIR/counts.txt \
-    | syscall-py --not-minimum 17 --more-than-bash 6 $BASE_DIR/cases.txt \
-    | tee $BASE_DIR/table.txt
+    | syscall-py --not-minimum 15 --more-than-bash 2 $BASE_DIR/cases.txt \
+    > $out
+  local status=$?
+  set -o errexit
 
-  echo 'OK'
+  echo "Wrote $out"
+  if test $status -eq 0; then
+    echo 'OK'
+  else
+    echo 'FAIL'
+  fi
 }
 
 # TODO: 

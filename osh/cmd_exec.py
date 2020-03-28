@@ -894,7 +894,7 @@ class Executor(object):
         node = cast(command__Sentence, UP_node)
         # Don't check_errexit since this isn't a real node!
         if node.terminator.id == Id.Op_Semi:
-          status = self._Execute(node.child)
+          status = self._Execute(node.child)  #fork_external=fork_external)
         else:
           status = self._RunJobInBackground(node.child)
 
@@ -1656,7 +1656,7 @@ class Executor(object):
     return status
 
   def _ExecuteList(self, children, fork_external=True):
-    # type: (List[command_t]) -> int
+    # type: (List[command_t], bool) -> int
     status = 0  # for empty list
     for child in children:
       # last status wins

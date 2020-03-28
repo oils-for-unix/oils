@@ -45,3 +45,29 @@ Errors:
     declare -a x=(['k']=v)  # inconsistent
 
 
+<!--
+
+### errexit message and optimized subshells
+
+For all shells:
+
+    sh -c 'date'
+
+gets rewritten into:
+
+    sh -c 'exec date'
+
+That is, they **reuse the parent process**.
+
+Most shells don't print any diagnostic info when `errexit` is on.  However, Oil
+does:
+
+    osh -o errexit -c 'false'
+    [ -c flag ]:1: fatal: Exiting with status 1
+
+`false` is a builtin rather than an external process, so Oil can print that
+message.  But when running an external process, the message is lost:
+
+    osh -o errexit -c 'env false'
+    (silently fails with code 1)
+-->

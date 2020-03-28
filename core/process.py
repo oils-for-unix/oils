@@ -1062,6 +1062,11 @@ class Pipeline(Job):
       r, w = self.last_pipe  # set in AddLast()
       posix.close(w)  # we will not write here
       fd_state.PushStdinFromPipe(r)
+
+      # TODO: determine fork_external here, so we can go BEYOND lastpipe.  Not
+      # only do we run builtins in the same process.  External processes will
+      # exec() rather than fork/exec().
+
       try:
         ex.ExecuteAndCatch(node)
       finally:

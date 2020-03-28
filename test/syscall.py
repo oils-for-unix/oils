@@ -22,6 +22,12 @@ import re
 import sys
 
 
+def log(msg, *args):
+  if args:
+    msg = msg % args
+  print(msg, file=sys.stderr)
+
+
 def Cell(i):
   """Visually show number of processes.
 
@@ -185,18 +191,23 @@ def main(argv):
     f.write('%6d\t' % syscalls_by_shell[sh])
   f.write('\n\n')
 
+  ok = True
   if more_than_bash != opts.more_than_bash:
-    raise RuntimeError('Expected %d more than bash, got %d' %
-                       (opts.more_than_bash, more_than_bash))
+    log('Expected %d more than bash, got %d', opts.more_than_bash,
+        more_than_bash)
+    ok = False
+
   if not_minimum != opts.not_minimum:
-    raise RuntimeError('Expected %d that are not minimal, got %d' %
-                       (opts.not_minimum, not_minimum))
+    log('Expected %d that are not minimal, got %d', opts.not_minimum,
+        not_minimum)
+    ok = False
+
+  return 0 if ok else 1
 
 
 if __name__ == '__main__':
   try:
-    main(sys.argv)
+    sys.exit(main(sys.argv))
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)
-
