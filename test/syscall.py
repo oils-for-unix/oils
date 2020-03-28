@@ -17,6 +17,7 @@ Input looks like
 from __future__ import print_function
 
 import collections
+import optparse
 import re
 import sys
 
@@ -46,12 +47,26 @@ WC_LINE = re.compile(r'''
 
 assert WC_LINE.match('    68 01-ash.19610')
 
-# TODO:
-# - Print the test snippet somewhere
+
+def Options():
+  """Returns an option parser instance."""
+  p = optparse.OptionParser()
+  p.add_option(
+      '--not-minimum', dest='not_minimum', type=int, default=0,
+      help="Expected number of cases where OSH doesn't start the minimum number of"
+           "processes")
+  p.add_option(
+      '--more-than-bash', dest='more_than_bash', type=int, default=0,
+      help='Expected number of cases where OSH starts more processes than bash')
+  return p
+
 
 def main(argv):
+  o = Options()
+  opts, argv = o.parse_args(argv[1:])
+
   code_strs = {}
-  with open(argv[1]) as f:
+  with open(argv[0]) as f:
     for line in f:
       case_id, code_str = line.split(None, 1)  # whitespace
       code_strs[case_id] = code_str
@@ -93,15 +108,19 @@ def main(argv):
 
   f.write('Number of Processes Started, by shell and code string\n\n')
 
-  def WriteHeader(shells):
+  def WriteHeader(shells, col=''):
     f.write("\t")
     for sh in shells:
       f.write("%6s\t" % sh)
-    f.write('osh>min\t')
+    f.write('%s\t' % col)
     f.write('code')
     f.write("\n")
 
-  WriteHeader(proc_sh)
+  WriteHeader(proc_sh, col='osh>min')
+
+  not_minimum = 0
+  more_than_bash = 0
+  fewer_than_bash = 0
 
   for case_id in sorted(cases):
     f.write(case_id + "\t")
@@ -114,8 +133,15 @@ def main(argv):
     osh_count = num_procs[case_id, 'osh']
     if osh_count != min_procs:
       f.write('%d>%d\t' % (osh_count, min_procs))
+      not_minimum += 1
     else:
       f.write('\t')
+
+    bash_count = num_procs[case_id, 'bash']
+    if osh_count > bash_count:
+      more_than_bash += 1
+    if osh_count < bash_count:
+      fewer_than_bash += 1
 
     f.write(code_strs[case_id])
     f.write("\n")
@@ -124,7 +150,10 @@ def main(argv):
   for sh in proc_sh:
     f.write('%6d\t' % procs_by_shell[sh])
   f.write('\n\n')
-
+  f.write("Cases where ...\n")
+  f.write("  Oil isn't the minimum: %d\n" % not_minimum)
+  f.write("  Oil starts more than bash: %d\n" % more_than_bash)
+  f.write("  Oil starts fewer than bash: %d\n\n" % fewer_than_bash)
 
   #
   # Print
@@ -155,6 +184,13 @@ def main(argv):
   for sh in syscall_sh:
     f.write('%6d\t' % syscalls_by_shell[sh])
   f.write('\n\n')
+
+  if more_than_bash != opts.more_than_bash:
+    raise RuntimeError('Expected %d more than bash, got %d' %
+                       (opts.more_than_bash, more_than_bash))
+  if not_minimum != opts.not_minimum:
+    raise RuntimeError('Expected %d that are not minimal, got %d' %
+                       (opts.not_minimum, not_minimum))
 
 
 if __name__ == '__main__':

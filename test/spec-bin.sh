@@ -27,6 +27,7 @@ readonly DIR=$THIS_DIR/../_deps/spec-bin
 
 readonly BUSYBOX_NAME='busybox-1.31.1'
 readonly DASH_NAME='dash-0.5.10.2'
+readonly YASH_NAME='yash-2.49'
 
 # The authoritative versions!
 download() {
@@ -36,7 +37,8 @@ download() {
     https://www.oilshell.org/blob/spec-bin/$BUSYBOX_NAME.tar.bz2 \
     https://www.oilshell.org/blob/spec-bin/$DASH_NAME.tar.gz \
     https://www.oilshell.org/blob/spec-bin/mksh-R52c.tgz \
-    https://www.oilshell.org/blob/spec-bin/zsh-5.1.1.tar.xz
+    https://www.oilshell.org/blob/spec-bin/zsh-5.1.1.tar.xz \
+    https://www.oilshell.org/blob/spec-bin/$YASH_NAME.tar.xz
 }
 
 extract-all() {
@@ -112,11 +114,19 @@ build-busybox() {
   popd
 }
 
+build-yash() {
+  pushd $DIR/$YASH_NAME
+  ./configure
+  make
+  popd
+}
+
 build-all() {
   build-bash
   build-dash
   build-mksh
   build-busybox
+  build-yash
 
   # ZSH is a bit special
   build-zsh
@@ -128,6 +138,8 @@ copy-all() {
   cp -f -v $DASH_NAME/src/dash .
   cp -f -v mksh-R52c/mksh .
   cp -f -v $BUSYBOX_NAME/busybox .
+  cp -f -v $YASH_NAME/yash .
+
   ln -s -f -v busybox ash
 
   # In its own tree
@@ -139,7 +151,7 @@ copy-all() {
 }
 
 test-all() {
-  for sh in bash dash zsh mksh ash; do
+  for sh in bash dash zsh mksh ash yash; do
     $DIR/$sh -c 'echo "Hello from $0"'
 
     # bash and zsh depend on libtinfo, but others don't
@@ -173,6 +185,8 @@ download-original-source() {
 
   # http://zsh.sourceforge.net/News/ - 12/2016 release
   _wget https://downloads.sourceforge.net/project/zsh/zsh/5.3.1/zsh-5.3.1.tar.xz
+
+  _wget https://osdn.net/dl/yash/yash-2.49.tar.xz
 }
 
 publish-mirror() {
@@ -196,6 +210,7 @@ publish-tmp() {
 }
 
 all-steps() {
+  # Uncomment to rebuild the Travis cache in _deps/
   #if false; then
   if test -d $DIR; then
     echo "$DIR exists: skipping build of shells"

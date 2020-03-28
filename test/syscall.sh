@@ -11,9 +11,7 @@ set -o errexit
 
 source build/dev-shell.sh
 
-# TODO: Add yash to test/spec-bin.sh, since it starts the fewest number of
-# processes!
-readonly -a SHELLS=(dash bash mksh zsh ash osh)
+readonly -a SHELLS=(dash bash mksh zsh ash yash osh)
 
 readonly BASE_DIR='_tmp/syscall'  # What we'll publish
 readonly RAW_DIR='_tmp/syscall-raw'  # Raw data
@@ -59,6 +57,12 @@ echo hi
 # external command
 date
 
+# external then builtin
+date; echo hi
+
+# builtin then external
+echo hi; date
+
 # two external commands
 date; date
 
@@ -80,7 +84,7 @@ echo \$( ( date ); echo hi )
 # 2 processes for all shells
 ( echo hi ); echo done
 
-# 3 processes
+# simple pipeline
 date | wc -l
 
 # every shell does 3
@@ -117,6 +121,14 @@ date | read x
 # osh does 5 when others do 3.
 ( echo a; echo b ) | ( wc -l )
 EOF
+
+# Discarded because they're identical
+# pipeline with redirect last
+#date | wc -l > /tmp/out.txt
+
+# pipeline with redirect first
+#date 2>&1 | wc -l
+
 }
 
 number-cases() {
@@ -149,14 +161,16 @@ run-cases() {
   summarize
 }
 
-print-table() {
+syscall-py() {
   PYTHONPATH=. test/syscall.py "$@"
 }
 
 summarize() {
   cat $BASE_DIR/counts.txt \
-    | print-table $BASE_DIR/cases.txt \
+    | syscall-py --not-minimum 15 --more-than-bash 6 $BASE_DIR/cases.txt \
     | tee $BASE_DIR/table.txt
+
+  echo 'OK'
 }
 
 # TODO: 
