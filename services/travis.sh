@@ -148,21 +148,22 @@ EOF
 #       x86_64_musl/   # binaries
 #         linux
 
-remote-rewrite-jobs-index() {
-  ssh $USER@$HOST \
-    toil-web/services/toil-web.sh rewrite-jobs-index
-}
-
-remote-cleanup-jobs-index() {
-  # clean it up for real!
-
-  # Shell can do this!  Don't need commands module as I said here!
+sshq() {
+  # Don't need commands module as I said here!
   # http://www.oilshell.org/blog/2017/01/31.html
   #
   # This is Bernstein chaining through ssh.
 
-  ssh $USER@$HOST \
-    "$(printf '%q ' toil-web/services/toil-web.sh cleanup-jobs-index '' false)"
+  ssh $USER@$HOST "$(printf '%q ' "$@")"
+}
+
+remote-rewrite-jobs-index() {
+  sshq toil-web/services/toil-web.sh rewrite-jobs-index
+}
+
+remote-cleanup-jobs-index() {
+  # clean it up for real!
+  sshq toil-web/services/toil-web.sh cleanup-jobs-index '' false
 }
 
 init-server-html() {

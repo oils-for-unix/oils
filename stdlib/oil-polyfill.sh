@@ -31,3 +31,8 @@ die() {
   exit 1
 }
 
+# Idea: from services/travis.sh, to fix Bernstein chaining.
+#
+# ssh $USER@$HOST "$(printf '%q ' "$@")"
+#
+# Also need one for scp.
