@@ -579,8 +579,9 @@ class Executor(object):
       # - continue | less
       # - ( return )
       # NOTE: This could be done at parse time too.
-      e_die('Invalid control flow %r in pipeline / subshell / background',
-            node.token.val, token=node.token)
+      if node.token.id != Id.ControlFlow_Exit:
+        e_die('Invalid control flow %r in pipeline / subshell / background',
+              node.token.val, token=node.token)
 
     # NOTE: If ErrExit(), we could be verbose about subprogram errors?  This
     # only really matters when executing 'exit 42', because the child shell
@@ -915,15 +916,8 @@ class Executor(object):
       elif case(command_e.Subshell):
         node = cast(command__Subshell, UP_node)
         check_errexit = True
-
-        # TODO: optimize ( date )
-        if True:
-          # This makes sure we don't waste a process if we'd launch one anyway.
-          p = self._MakeProcess(node.command_list)
-          status = p.Run(self.waiter)
-        else:
-          # optimization for '( echo a; echo b ) | wc -l' etc.
-          status, check_errexit = self._Dispatch(node.command_list)
+        p = self._MakeProcess(node.child)
+        status = p.Run(self.waiter)
 
       elif case(command_e.DBracket):
         node = cast(command__DBracket, UP_node)
@@ -1710,7 +1704,7 @@ class Executor(object):
           # redirects.  Some shells appear to do that.
           if 0:
             log('removing subshell')
-          return node.command_list
+          return node.child
     return node
 
   def ExecuteAndCatch(self, node, optimize=False):

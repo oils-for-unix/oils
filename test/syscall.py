@@ -86,6 +86,10 @@ def main(argv):
   num_syscalls = collections.defaultdict(int)
   syscalls_by_shell = collections.defaultdict(int)
 
+  #
+  # Summarize Data
+  #
+
   for line in sys.stdin:
     m = WC_LINE.match(line)
     if not m:
@@ -109,19 +113,19 @@ def main(argv):
                    key=lambda sh: (procs_by_shell[sh], sh))
   syscall_sh = sorted(syscalls_by_shell,
                       key=lambda sh: (syscalls_by_shell[sh], sh))
-  #print(proc_sh)
-  #print(syscall_sh)
 
-  # Print Number of processes
+  #
+  # Print Tables
+  #
 
-  f.write('Number of Processes Started, by shell and code string\n\n')
+  f.write('Number of Processes Started, by shell and test case\n\n')
 
   def WriteHeader(shells, col=''):
-    f.write("\t")
+    f.write("ID\t")
     for sh in shells:
       f.write("%6s\t" % sh)
     f.write('%s\t' % col)
-    f.write('code')
+    f.write('Description')
     f.write("\n")
 
   WriteHeader(proc_sh, col='osh>min')
@@ -164,7 +168,7 @@ def main(argv):
   f.write("  Oil starts fewer than bash: %d\n\n" % fewer_than_bash)
 
   #
-  # Print
+  # Print Table of Syscall Counts
   #
 
   f.write('Number of Syscalls\n\n')

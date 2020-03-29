@@ -1250,10 +1250,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
         part = cast(command_sub, UP_part)
         id_ = part.left_token.id
         if id_ in (Id.Left_DollarParen, Id.Left_Backtick):
-          sv = self._EvalCommandSub(part.command_list, quoted) # type: part_value_t
+          sv = self._EvalCommandSub(part.child, quoted) # type: part_value_t
 
         elif id_ in (Id.Left_ProcSubIn, Id.Left_ProcSubOut):
-          sv = self._EvalProcessSub(part.command_list, id_)
+          sv = self._EvalProcessSub(part.child, id_)
 
         else:
           raise AssertionError(id_)

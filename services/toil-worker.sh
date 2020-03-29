@@ -81,7 +81,8 @@ tarball-deps      devtools/release.sh tarball-build-deps -
 spec-deps         test/spec-bin.sh all-steps             -
 dev-all           build/dev.sh all                       -
 yajl              build/dev.sh yajl-release              -
-test-syscall      test/syscall.sh run-cases              _tmp/syscall/table.txt
+syscall-by-code   test/syscall.sh by-code                _tmp/syscall/by-code.txt
+syscall-by-input  test/syscall.sh by-input               _tmp/syscall/by-input.txt
 osh-spec          test/spec.sh osh-travis                _tmp/spec/osh.html
 make-tarball      devtools/release.sh quick-oil-tarball  -
 build-tarball     build/test.sh oil-tar                  -

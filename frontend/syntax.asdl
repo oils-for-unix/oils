@@ -137,9 +137,7 @@ module syntax
       suffix_op? suffix_op
   ) attributes (int* spids)
 
-  command_sub = (
-      Token left_token, command command_list
-  ) attributes (int* spids)
+  command_sub = (Token left_token, command child) attributes (int* spids)
 
   -- Note: can be word.BracedTree
   sh_array_literal = (Token left, word* words) attributes (int* spids)
@@ -275,7 +273,7 @@ module syntax
     -- A brace group is a compound command, with redirects.
   | BraceGroup(command* children, redir* redirects)
     -- Contains a single child, like CommandSub
-  | Subshell(command command_list, redir* redirects)
+  | Subshell(command child, redir* redirects)
   | DParen(arith_expr child, redir* redirects)
   | DBracket(bool_expr expr, redir* redirects)
     -- do_arg_iter: whether to implicitly loop over "$@"

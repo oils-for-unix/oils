@@ -249,7 +249,7 @@ class OilEvaluator(object):
       return self.LookupVar(node.name.val)
 
     if node.tag == expr_e.CommandSub:
-      return self.ex.RunCommandSub(node.command_list)
+      return self.ex.RunCommandSub(node.child)
 
     if node.tag == expr_e.ShArrayLiteral:
       words = braces.BraceExpandWords(node.words)

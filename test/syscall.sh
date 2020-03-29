@@ -188,11 +188,13 @@ number-cases() {
   print-cases | nl --number-format rz --number-width 2
 }
 
-other-cases() {
-  #echo -n 'date; date' > _tmp/multiline.sh
+by-input() {
+  ### Run cases that vary by input reader
+
+  local suite='by-input'
 
   shopt -s nullglob
-  rm -f -v $RAW_DIR/* $BASE_DIR/* 
+  rm -f -v $RAW_DIR/*
 
   # Wow this newline makes a difference in shells!
 
@@ -234,13 +236,13 @@ other-cases() {
   # This is identical for all shells
   #run-case 32 $'date; date\n#comment\n'
 
-  cat >$BASE_DIR/cases.txt <<EOF
-30 date date: zero lines
-31 date date: one line
-32 date date: one line and comment
-33 date date: comment first
-34 date date: newline
-35 date date: newline2
+  cat >$BASE_DIR/${suite}-cases.txt <<EOF
+30 -c: zero lines
+31 -c: one line
+32 -c: one line and comment
+33 -c: comment first
+34 -c: newline
+35 -c: newline2
 40 file: zero lines
 41 file: one line
 42 file: one line and comment
@@ -255,19 +257,17 @@ other-cases() {
 55 stdin: newline2
 EOF
 
-  count-lines
-  summarize
+  count-lines $suite
+  summarize $suite 3 0
 
-}
-
-count-lines() {
-  ( cd $RAW_DIR && wc -l * ) | head -n -1 > $BASE_DIR/counts.txt
 }
 
 readonly MAX_CASES=100
 #readonly MAX_CASES=3
 
-run-cases() {
+by-code() {
+  ### Run cases that vary by code snippet
+
   local max_cases=${1:-$MAX_CASES}
 
   mkdir -p $RAW_DIR $BASE_DIR
@@ -275,10 +275,13 @@ run-cases() {
   write-sourced
 
   shopt -s nullglob
-  rm -f -v $RAW_DIR/* $BASE_DIR/* 
+  rm -f -v $RAW_DIR/*
 
-  number-cases > $BASE_DIR/cases.txt
-  cat $BASE_DIR/cases.txt | head -n $max_cases | while read -r num code_str; do
+  local suite='by-code'
+  local cases=$BASE_DIR/${suite}-cases.txt
+
+  number-cases > $cases
+  head -n $max_cases $cases | while read -r num code_str; do
     echo
     echo '==='
     echo "$num     $code_str"
@@ -288,8 +291,8 @@ run-cases() {
   done
 
   # omit total line
-  count-lines
-  summarize
+  count-lines $suite
+  summarize $suite 3 0
 }
 
 syscall-py() {
@@ -300,11 +303,21 @@ write-sourced() {
   echo -n 'date; date' > _tmp/sourced.sh
 }
 
+count-lines() {
+  local suite=${1:-by-code}
+  ( cd $RAW_DIR && wc -l * ) | head -n -1 > $BASE_DIR/${suite}-counts.txt
+}
+
 summarize() {
-  local out=$BASE_DIR/table.txt
+  local suite=${1:-by-code}
+  local not_minimum=${2:-0}
+  local more_than_bash=${3:-0}
+
+  local out=$BASE_DIR/${suite}.txt
   set +o errexit
-  cat $BASE_DIR/counts.txt \
-    | syscall-py --not-minimum 4 --more-than-bash 0 $BASE_DIR/cases.txt \
+  cat $BASE_DIR/${suite}-counts.txt \
+    | syscall-py --not-minimum $not_minimum --more-than-bash $more_than_bash \
+                 $BASE_DIR/${suite}-cases.txt \
     > $out
   local status=$?
   set -o errexit
