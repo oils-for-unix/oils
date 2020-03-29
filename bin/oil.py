@@ -711,7 +711,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   _tlog('Execute(node)')
   try:
-    status = main_loop.Batch(ex, c_parser, arena, nodes_out=nodes_out)
+    status = main_loop.Batch(ex, c_parser, arena, nodes_out=nodes_out, is_main=True)
     if ex.MaybeRunExitTrap():
       status = ex.LastStatus()
   except util.UserExit as e:

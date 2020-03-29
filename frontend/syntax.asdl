@@ -254,8 +254,11 @@ module syntax
 
   command = 
     NoOp
-    -- NOTE: block is always a BraceGroup.
-  | Simple(word* words, redir* redirects, env_pair* more_env, command? block)
+    -- notes:
+    -- * block is always a BraceGroup
+    -- * do_fork is semantic, not syntactic
+  | Simple(word* words, redir* redirects, env_pair* more_env, command? block,
+           bool do_fork)
     -- This doesn't technically belong in the LST, but it's convenient for
     -- execution
   | ExpandedAlias(command child, redir* redirects, env_pair* more_env)
@@ -289,8 +292,11 @@ module syntax
   | Case(word to_match, case_arm* arms, redir* redirects)
   | ShFunction(string name, command body)
   | TimeBlock(command pipeline)
-    -- Most nodes optimize it out as command*, but there are a few places where
-    -- this is useful for type safety.
+    -- Some nodes optimize it out as command*, but we use this for
+    -- 1. the top level
+    -- 2. ls ; ls & ls  (same line)
+    -- 3. command_sub -- single child that's a CommandList
+    -- 4. Subshell -- single child that's a CommandList
   | CommandList(command* children)
 
     -- Oil stuff

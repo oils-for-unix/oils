@@ -336,7 +336,8 @@ def _MakeSimpleCommand(preparsed_list, suffix_words, redirects, block):
 
   more_env = []  # type: List[env_pair]
   _AppendMoreEnv(preparsed_list, more_env)
-  node = command.Simple(words3, redirects, more_env, block)
+  # do_fork by default
+  node = command.Simple(words3, redirects, more_env, block, True)
   return node
 
 

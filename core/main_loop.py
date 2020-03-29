@@ -21,6 +21,7 @@ from _devbuild.gen.syntax_asdl import (
 from core import error
 from core import ui
 from core import util
+from core.util import log
 
 from typing import Any, Optional, List, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -30,6 +31,8 @@ if TYPE_CHECKING:
   from osh.cmd_parse import CommandParser
   from osh.cmd_exec import Executor
   from osh.prompt import UserPlugin
+
+_ = log
 
 
 def Interactive(opts, ex, c_parser, display, prompt_plugin, errfmt):
@@ -118,8 +121,8 @@ def Interactive(opts, ex, c_parser, display, prompt_plugin, errfmt):
   return status
 
 
-def Batch(ex, c_parser, arena, nodes_out=None):
-  # type: (Any, CommandParser, Arena, Optional[List[command_t]]) -> int
+def Batch(ex, c_parser, arena, nodes_out=None, is_main=False):
+  # type: (Any, CommandParser, Arena, Optional[List[command_t]], bool) -> int
   """Loop for batch execution.
 
   Args:
@@ -161,9 +164,11 @@ def Batch(ex, c_parser, arena, nodes_out=None):
       nodes_out.append(node)
       continue
 
-    #log('parsed %s', node)
+    # Only optimize if we're on the last line like -c "echo hi" etc.
+    optimize = is_main and c_parser.line_reader.LastLineHint()
 
-    is_return, is_fatal = ex.ExecuteAndCatch(node)
+    # can't optimize this because we haven't seen the end yet
+    is_return, is_fatal = ex.ExecuteAndCatch(node, optimize=optimize)
     status = ex.LastStatus()
     # e.g. 'return' in middle of script, or divide by zero
     if is_return or is_fatal:
@@ -176,7 +181,7 @@ def ParseWholeFile(c_parser):
   # type: (CommandParser) -> command_t
   """Parse an entire shell script.
 
-  This uses the same logic as Batch().
+  For osh -n.  This uses the same logic as Batch().
   """
   children = []
   while True:

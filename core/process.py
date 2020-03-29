@@ -701,7 +701,8 @@ class SubProgramThunk(Thunk):
       self.ex.mutable_opts.errexit.Disable()
 
     try:
-      self.ex.ExecuteAndCatch(self.node, fork_external=False)
+      # optimize to eliminate redundant subshells like ( echo hi ) | wc -l etc.
+      self.ex.ExecuteAndCatch(self.node, optimize=True)
       status = self.ex.LastStatus()
       # NOTE: We ignore the is_fatal return value.  The user should set -o
       # errexit so failures in subprocesses cause failures in the parent.

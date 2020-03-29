@@ -268,8 +268,8 @@ class Executor(object):
     assert self.expr_ev is not None
     assert self.word_ev is not None
 
-  def _RunBuiltinAndRaise(self, builtin_id, cmd_val, fork_external):
-    # type: (builtin_t, cmd_value__Argv, bool) -> int
+  def _RunBuiltinAndRaise(self, builtin_id, cmd_val):
+    # type: (builtin_t, cmd_value__Argv) -> int
     """
     Raises:
       args.UsageError
@@ -280,11 +280,9 @@ class Executor(object):
       status = builtin_func.Run(cmd_val)
 
     elif builtin_id == builtin_i.command:
-      # TODO: How do we handle fork_external?  It doesn't fit the common
-      # signature.  We also don't handle 'command local', etc.
       b = builtin_pure.Command(self, self.procs, self.aliases,
                                self.search_path)
-      status = b.Run(cmd_val, fork_external)
+      status = b.Run(cmd_val, True)
 
     elif builtin_id == builtin_i.builtin:  # NOTE: uses early return style
       if len(cmd_val.argv) == 1:
@@ -308,7 +306,7 @@ class Executor(object):
 
       cmd_val2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:],
                                 cmd_val.block)
-      status = self._RunBuiltinAndRaise(to_run, cmd_val2, fork_external)
+      status = self._RunBuiltinAndRaise(to_run, cmd_val2)
 
     else:
       raise AssertionError('Unhandled builtin: %s' % builtin_id)
@@ -316,11 +314,11 @@ class Executor(object):
     assert isinstance(status, int)
     return status
 
-  def _RunBuiltin(self, builtin_id, cmd_val, fork_external):
-    # type: (builtin_t, cmd_value__Argv, bool) -> int
+  def _RunBuiltin(self, builtin_id, cmd_val):
+    # type: (builtin_t, cmd_value__Argv) -> int
     self.errfmt.PushLocation(cmd_val.arg_spids[0])
     try:
-      status = self._RunBuiltinAndRaise(builtin_id, cmd_val, fork_external)
+      status = self._RunBuiltinAndRaise(builtin_id, cmd_val)
     except args.UsageError as e:
       arg0 = cmd_val.argv[0]
       # fill in default location.  e.g. osh/state.py raises UsageError without
@@ -597,7 +595,7 @@ class Executor(object):
     p = process.Process(thunk, self.job_state, parent_pipeline=parent_pipeline)
     return p
 
-  def _RunSimpleCommand(self, cmd_val, fork_external):
+  def _RunSimpleCommand(self, cmd_val, do_fork):
     # type: (cmd_value_t, bool) -> int
     """Private interface to run a simple command (including assignment)."""
 
@@ -605,7 +603,7 @@ class Executor(object):
     with tagswitch(UP_cmd_val) as case:
       if case(cmd_value_e.Argv):
         cmd_val = cast(cmd_value__Argv, UP_cmd_val)
-        return self.RunSimpleCommand(cmd_val, fork_external)
+        return self.RunSimpleCommand(cmd_val, do_fork)
 
       elif case(cmd_value_e.Assign):
         cmd_val = cast(cmd_value__Assign, UP_cmd_val)
@@ -614,12 +612,12 @@ class Executor(object):
       else:
         raise AssertionError()
 
-  def RunSimpleCommand(self, cmd_val, fork_external, funcs=True):
+  def RunSimpleCommand(self, cmd_val, do_fork, funcs=True):
     # type: (cmd_value__Argv, bool, bool) -> int
     """Public interface to run a simple command (excluding assignment)
 
     Args:
-      fork_external: for subshell ( ls / ) or ( command ls / )
+      funcs:
     """
     assert cmd_val.tag_() == cmd_value_e.Argv
 
@@ -646,7 +644,7 @@ class Executor(object):
 
     builtin_id = consts.LookupSpecialBuiltin(arg0)
     if builtin_id != consts.NO_INDEX:
-      status = self._RunBuiltin(builtin_id, cmd_val, fork_external)
+      status = self._RunBuiltin(builtin_id, cmd_val)
       # TODO: Enable this and fix spec test failures.
       # Also update _SPECIAL_BUILTINS in osh/builtin.py.
       #if status != 0:
@@ -693,7 +691,7 @@ class Executor(object):
     builtin_id = consts.LookupNormalBuiltin(arg0)
 
     if builtin_id != consts.NO_INDEX:
-      return self._RunBuiltin(builtin_id, cmd_val, fork_external)
+      return self._RunBuiltin(builtin_id, cmd_val)
 
     environ = self.mem.GetExported()  # Include temporary variables
 
@@ -707,11 +705,8 @@ class Executor(object):
       self.errfmt.Print('%r not found', arg0, span_id=span_id)
       return 127
 
-    # SubProgramThunk sets this to false
-    #log('[PID %d] fork_external: %s', posix.getpid(), fork_external)
-
     # Normal case: ls /
-    if fork_external:
+    if do_fork:
       thunk = process.ExternalThunk(self.ext_prog, argv0_path, cmd_val, environ)
       p = process.Process(thunk, self.job_state)
       status = p.Run(self.waiter)
@@ -797,8 +792,8 @@ class Executor(object):
       self.mem.SetVar(lvalue.Named(e_pair.name), val, scope_e.LocalOnly,
                       flags=flags)
 
-  def _Dispatch(self, node, fork_external):
-    # type: (command_t, bool) -> Tuple[int, bool]
+  def _Dispatch(self, node):
+    # type: (command_t) -> Tuple[int, bool]
     # If we call RunCommandSub in a recursive call to the executor, this will
     # be set true (if strict-errexit is false).  But it only lasts for one
     # command.
@@ -855,22 +850,22 @@ class Executor(object):
         # with set-o verbose?
         self.tracer.OnSimpleCommand(argv)
 
-        # NOTE: RunSimpleCommand never returns when fork_external=False!
+        # NOTE: RunSimpleCommand never returns when do_fork=False!
         if len(node.more_env):  # I think this guard is necessary?
           is_other_special = False  # TODO: There are other special builtins too!
           if cmd_val.tag_() == cmd_value_e.Assign or is_other_special:
             # Special builtins have their temp env persisted.
             self._EvalTempEnv(node.more_env, 0)
-            status = self._RunSimpleCommand(cmd_val, fork_external)
+            status = self._RunSimpleCommand(cmd_val, node.do_fork)
           else:
             self.mem.PushTemp()
             try:
               self._EvalTempEnv(node.more_env, state.SetExport)
-              status = self._RunSimpleCommand(cmd_val, fork_external)
+              status = self._RunSimpleCommand(cmd_val, node.do_fork)
             finally:
               self.mem.PopTemp()
         else:
-          status = self._RunSimpleCommand(cmd_val, fork_external)
+          status = self._RunSimpleCommand(cmd_val, node.do_fork)
 
       elif case(command_e.ExpandedAlias):
         node = cast(command__ExpandedAlias, UP_node)
@@ -894,7 +889,7 @@ class Executor(object):
         node = cast(command__Sentence, UP_node)
         # Don't check_errexit since this isn't a real node!
         if node.terminator.id == Id.Op_Semi:
-          status = self._Execute(node.child)  #fork_external=fork_external)
+          status = self._Execute(node.child)
         else:
           status = self._RunJobInBackground(node.child)
 
@@ -922,13 +917,13 @@ class Executor(object):
         check_errexit = True
 
         # TODO: optimize ( date )
-        if fork_external:
+        if True:
           # This makes sure we don't waste a process if we'd launch one anyway.
           p = self._MakeProcess(node.command_list)
           status = p.Run(self.waiter)
         else:
           # optimization for '( echo a; echo b ) | wc -l' etc.
-          status, check_errexit = self._Dispatch(node.command_list, fork_external)
+          status, check_errexit = self._Dispatch(node.command_list)
 
       elif case(command_e.DBracket):
         node = cast(command__DBracket, UP_node)
@@ -1256,7 +1251,7 @@ class Executor(object):
       # need to split them up for mycpp.
       elif case(command_e.CommandList):
         node = cast(command__CommandList, UP_node)
-        status = self._ExecuteList(node.children, fork_external=fork_external)
+        status = self._ExecuteList(node.children)
         check_errexit = False
 
       elif case(command_e.BraceGroup):
@@ -1573,15 +1568,12 @@ class Executor(object):
 
     return status, check_errexit
 
-  def _Execute(self, node, fork_external=True):
-    # type: (command_t, bool) -> int
+  def _Execute(self, node):
+    # type: (command_t) -> int
     """Apply redirects, call _Dispatch(), and performs the errexit check.
 
     Args:
       node: syntax_asdl.command_t
-      fork_external: if we get a SimpleCommand that is an external command,
-        should we fork first?  This is disabled in the context of a pipeline
-        process and a subshell.
     """
     # See core/builtin.py for the Python signal handler that appends to this
     # list.
@@ -1629,7 +1621,7 @@ class Executor(object):
     elif len(redirects):
       if self.fd_state.Push(redirects, self.waiter):
         try:
-          status, check_errexit = self._Dispatch(node, fork_external)
+          status, check_errexit = self._Dispatch(node)
         finally:
           self.fd_state.Pop()
         #log('_dispatch returned %d', status)
@@ -1637,7 +1629,7 @@ class Executor(object):
         status = 1
 
     else:  # No redirects
-      status, check_errexit = self._Dispatch(node, fork_external)
+      status, check_errexit = self._Dispatch(node)
 
     self.mem.SetLastStatus(status)
 
@@ -1655,12 +1647,12 @@ class Executor(object):
       self._CheckStatus(status, node)
     return status
 
-  def _ExecuteList(self, children, fork_external=True):
-    # type: (List[command_t], bool) -> int
+  def _ExecuteList(self, children):
+    # type: (List[command_t]) -> int
     status = 0  # for empty list
     for child in children:
       # last status wins
-      status = self._Execute(child, fork_external=fork_external)
+      status = self._Execute(child)
     return status
 
   def LastStatus(self):
@@ -1668,27 +1660,91 @@ class Executor(object):
     """For main_loop.py to determine the exit code of the shell itself."""
     return self.mem.LastStatus()
 
-  def ExecuteAndCatch(self, node, fork_external=True):
+  def _NoForkLast(self, node):
+    # type: (command_t) -> None
+
+    if 0:
+      log('optimizing')
+      node.PrettyPrint(sys.stderr)
+      log('')
+
+    UP_node = node
+    with tagswitch(node) as case:
+      if case(command_e.Simple):
+        node = cast(command__Simple, UP_node)
+        node.do_fork = False
+        if 0:
+          log('Simple optimized')
+
+      if case(command_e.Pipeline):
+        node = cast(command__Pipeline, UP_node)
+        if not node.negated:
+          log ('pipe')
+          self._NoForkLast(node.children[-1])
+
+      elif case(command_e.Sentence):
+        node = cast(command__Sentence, UP_node)
+        self._NoForkLast(node.child)
+
+      elif case(command_e.CommandList):
+        # Subshells start with CommandList, even if there's only one.
+        node = cast(command__CommandList, UP_node)
+        self._NoForkLast(node.children[-1])
+
+      elif case(command_e.BraceGroup):
+        # TODO: What about redirects?
+        node = cast(command__BraceGroup, UP_node)
+        self._NoForkLast(node.children[-1])
+
+  def _RemoveSubshells(self, node):
+    # type: (command_t) -> command_t
+    """
+    Eliminate redundant subshells like ( echo hi ) | wc -l etc.
+    """
+    UP_node = node
+    with tagswitch(node) as case:
+      if case(command_e.Subshell):
+        node = cast(command__Subshell, UP_node)
+        if not node.redirects:
+          # Note: technically we could optimize this into BraceGroup with
+          # redirects.  Some shells appear to do that.
+          if 0:
+            log('removing subshell')
+          return node.command_list
+    return node
+
+  def ExecuteAndCatch(self, node, optimize=False):
     # type: (command_t, bool) -> Tuple[bool, bool]
     """Execute a subprogram, handling _ControlFlow and fatal exceptions.
 
     Args:
       node: LST subtree
-      fork_external: whether external commands require forking
+      optimize: Whether to exec the last process rather than fork/exec
 
     Returns:
       TODO: use enum 'why' instead of the 2 booleans
 
-    Used by main_loop.py.
-
-    Also:
+    Used by
+    - main_loop.py.
     - SubProgramThunk for pipelines, subshell, command sub, process sub
     - TODO: Signals besides EXIT trap
+
+    Note: To do what optimize does, dash has EV_EXIT flag and yash has a
+    finally_exit boolean.  We use a different algorithm.
     """
+    if optimize:
+      node = self._RemoveSubshells(node)
+      self._NoForkLast(node)  # turn the last ones into exec
+
+    if 0:
+      log('after opt:')
+      node.PrettyPrint()
+      log('')
+
     is_return = False
     is_fatal = False
     try:
-      status = self._Execute(node, fork_external=fork_external)
+      status = self._Execute(node)
     except _ControlFlow as e:
       # Return at top level is OK, unlike in bash.
       if e.IsReturn():

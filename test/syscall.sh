@@ -22,16 +22,17 @@ REPO_ROOT=$(cd $(dirname $(dirname $0)) && pwd)
 count-procs() {
   local out_prefix=$1
   local sh=$2
-  local code=$3
+  shift 2
 
   case $sh in 
     # avoid the extra processes that bin/osh starts!
+    # relies on word splitting
     osh)
       sh="env PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor $REPO_ROOT/bin/oil.py osh"
       ;;
   esac
 
-  strace -ff -o $out_prefix -- $sh -c "$code"
+  strace -ff -o $out_prefix -- $sh "$@"
 }
 
 run-case() {
@@ -43,9 +44,38 @@ run-case() {
   for sh in "${SHELLS[@]}"; do
     local out_prefix=$RAW_DIR/$num-$sh
     echo "--- $sh"
-    count-procs $out_prefix $sh "$code_str"
+    count-procs $out_prefix $sh -c "$code_str"
   done
 }
+
+run-case-file() {
+  ### Like the above, but the shell reads from a file
+
+  local num=$1
+  local code_str=$2
+
+  echo -n "$code_str" > _tmp/$num.sh
+
+  for sh in "${SHELLS[@]}"; do
+    local out_prefix=$RAW_DIR/$num-$sh
+    echo "--- $sh"
+    count-procs $out_prefix $sh _tmp/$num.sh
+  done
+}
+
+run-case-stdin() {
+  ### Like the above, but read from a pipe
+
+  local num=$1
+  local code_str=$2
+
+  for sh in "${SHELLS[@]}"; do
+    local out_prefix=$RAW_DIR/$num-$sh
+    echo "--- $sh"
+    echo -n "$code_str" | count-procs $out_prefix $sh
+  done
+}
+
 
 print-cases() {
   # format:  number, whitespace, then an arbitrary code string
@@ -57,6 +87,9 @@ echo hi
 # external command
 date
 
+# Oil sentence
+date ;
+
 # external then builtin
 date; echo hi
 
@@ -66,10 +99,21 @@ echo hi; date
 # two external commands
 date; date
 
+# does a brace group make a difference?
+{ date; date; }
+
+# singleton brace group
+date; { date; }
+
+# does it behave differently if sourced?
+. _tmp/sourced.sh
+
 # dash and zsh somehow optimize this to 1
 (echo hi)
 
 (date)
+
+echo hi; (date)
 
 # Sentence in Oil
 (date;) > /tmp/out.txt
@@ -144,17 +188,97 @@ number-cases() {
   print-cases | nl --number-format rz --number-width 2
 }
 
+other-cases() {
+  #echo -n 'date; date' > _tmp/multiline.sh
+
+  shopt -s nullglob
+  rm -f -v $RAW_DIR/* $BASE_DIR/* 
+
+  # Wow this newline makes a difference in shells!
+
+  # This means that Id.Eof_Real is different than Id.Op_Newline?
+  # Should we create a Sentence for it too then?
+  # That is possible in _ParseCommandLine
+
+  zero=$'date; date'
+  one=$'date; date\n'
+  two=$'date; date\n#comment\n'
+  comment=$'# comment\ndate;date'
+  newline=$'date\n\ndate'
+  newline2=$'date\n\ndate\n#comment'
+
+  # zsh is the only shell to optimize all 6 cases!  2 processes instead of 3.
+  run-case 30 "$zero"
+  run-case 31 "$one"
+  run-case 32 "$two"
+  run-case 33 "$comment"
+  run-case 34 "$newline"
+  run-case 35 "$newline2"
+
+  run-case-file 40 "$zero"
+  run-case-file 41 "$one"
+  run-case-file 42 "$two"
+  run-case-file 43 "$comment"
+  run-case-file 44 "$newline2"
+  run-case-file 45 "$newline2"
+
+  # yash is the only shell to optimize the stdin case at all!
+  # it looks for a lack of trailing newline.
+  run-case-stdin 50 "$zero"
+  run-case-stdin 51 "$one"
+  run-case-stdin 52 "$two"
+  run-case-stdin 53 "$comment"
+  run-case-stdin 54 "$newline2"
+  run-case-stdin 55 "$newline2"
+
+  # This is identical for all shells
+  #run-case 32 $'date; date\n#comment\n'
+
+  cat >$BASE_DIR/cases.txt <<EOF
+30 date date: zero lines
+31 date date: one line
+32 date date: one line and comment
+33 date date: comment first
+34 date date: newline
+35 date date: newline2
+40 file: zero lines
+41 file: one line
+42 file: one line and comment
+43 file: comment first
+44 file: newline
+45 file: newline2
+50 stdin: zero lines
+51 stdin: one line
+52 stdin: one line and comment
+53 stdin: comment first
+54 stdin: newline
+55 stdin: newline2
+EOF
+
+  count-lines
+  summarize
+
+}
+
+count-lines() {
+  ( cd $RAW_DIR && wc -l * ) | head -n -1 > $BASE_DIR/counts.txt
+}
+
 readonly MAX_CASES=100
-#readonly MAX_CASES=5
+#readonly MAX_CASES=3
 
 run-cases() {
+  local max_cases=${1:-$MAX_CASES}
+
   mkdir -p $RAW_DIR $BASE_DIR
+
+  write-sourced
 
   shopt -s nullglob
   rm -f -v $RAW_DIR/* $BASE_DIR/* 
 
   number-cases > $BASE_DIR/cases.txt
-  cat $BASE_DIR/cases.txt | head -n $MAX_CASES | while read -r num code_str; do
+  cat $BASE_DIR/cases.txt | head -n $max_cases | while read -r num code_str; do
     echo
     echo '==='
     echo "$num     $code_str"
@@ -164,7 +288,7 @@ run-cases() {
   done
 
   # omit total line
-  ( cd $RAW_DIR && wc -l * ) | head -n -1 > $BASE_DIR/counts.txt
+  count-lines
   summarize
 }
 
@@ -172,11 +296,15 @@ syscall-py() {
   PYTHONPATH=. test/syscall.py "$@"
 }
 
+write-sourced() {
+  echo -n 'date; date' > _tmp/sourced.sh
+}
+
 summarize() {
   local out=$BASE_DIR/table.txt
   set +o errexit
   cat $BASE_DIR/counts.txt \
-    | syscall-py --not-minimum 15 --more-than-bash 2 $BASE_DIR/cases.txt \
+    | syscall-py --not-minimum 4 --more-than-bash 0 $BASE_DIR/cases.txt \
     > $out
   local status=$?
   set -o errexit

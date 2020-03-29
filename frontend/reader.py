@@ -44,6 +44,14 @@ class _Reader(object):
     """Called after command execution in main_loop.py."""
     pass
 
+  def LastLineHint(self):
+    # type: () -> bool
+    """A hint if we're on the last line, for optimization.
+
+    This is only for performance, not correctness.
+    """
+    return False
+
 
 class DisallowedLineReader(_Reader):
   """For CommandParser in Oil expressions."""
@@ -69,6 +77,7 @@ class FileLineReader(_Reader):
     """
     _Reader.__init__(self, arena)
     self.f = f
+    self.last_line_hint = False
 
   def _GetLine(self):
     # type: () -> Optional[str]
@@ -76,7 +85,14 @@ class FileLineReader(_Reader):
     if len(line) == 0:
       return None
 
+    if not line.endswith('\n'):
+      self.last_line_hint = True
+
     return line
+
+  def LastLineHint(self):
+    # type: () -> bool
+    return self.last_line_hint
 
 
 def StringLineReader(s, arena):

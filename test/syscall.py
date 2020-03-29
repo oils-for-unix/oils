@@ -104,9 +104,11 @@ def main(argv):
 
   f = sys.stdout
 
-  # Orders for shells
-  proc_sh = sorted(procs_by_shell, key=lambda sh: procs_by_shell[sh])
-  syscall_sh = sorted(syscalls_by_shell, key=lambda sh: syscalls_by_shell[sh])
+  # Orders columns by how good the results are, then shell name.
+  proc_sh = sorted(procs_by_shell,
+                   key=lambda sh: (procs_by_shell[sh], sh))
+  syscall_sh = sorted(syscalls_by_shell,
+                      key=lambda sh: (syscalls_by_shell[sh], sh))
   #print(proc_sh)
   #print(syscall_sh)
 
