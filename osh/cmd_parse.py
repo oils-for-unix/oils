@@ -1616,7 +1616,12 @@ class CommandParser(object):
     self.lexer.PushHint(Id.Op_RParen, Id.Right_Subshell)
 
     c_list = self._ParseCommandList()
-    node = command.Subshell(c_list, None)  # no redirects yet
+    if len(c_list.children) == 1:
+      child = c_list.children[0]
+    else:
+      child = c_list
+
+    node = command.Subshell(child, None)  # no redirects yet
 
     right_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.Right_Subshell)
@@ -2001,7 +2006,6 @@ class CommandParser(object):
 
     return command.CommandList(children)
 
-  # TODO: Make this private.
   def _ParseCommandList(self):
     # type: () -> command__CommandList
     """
@@ -2070,8 +2074,11 @@ class CommandParser(object):
 
     # This calls ParseAndOr(), but I think it should be a loop that calls
     # _ParseCommandLine(), like oil.InteractiveLoop.
-    node = self._ParseCommandTerm()
-    return node
+    c_list = self._ParseCommandTerm()
+    if len(c_list.children) == 1:
+      return c_list.children[0]
+    else:
+      return c_list
 
   def CheckForPendingHereDocs(self):
     # type: () -> None
