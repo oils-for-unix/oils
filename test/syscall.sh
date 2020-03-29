@@ -113,6 +113,10 @@ date; { date; }
 
 (date)
 
+( ( date ) )
+
+( ( date ) ); echo hi
+
 echo hi; (date)
 
 # Sentence in Oil

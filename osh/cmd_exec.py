@@ -1704,7 +1704,8 @@ class Executor(object):
           # redirects.  Some shells appear to do that.
           if 0:
             log('removing subshell')
-          return node.child
+          # Optimize ( ( date ) ) etc.
+          return self._RemoveSubshells(node.child)
     return node
 
   def ExecuteAndCatch(self, node, optimize=False):
