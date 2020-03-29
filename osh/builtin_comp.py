@@ -144,7 +144,7 @@ class SpecBuilder(object):
     # NOTE: We need completion for -A action itself!!!  bash seems to have it.
     for name in arg.actions:
       if name == 'alias':
-        a = _FixedWordsAction(ex.aliases)
+        a = _FixedWordsAction(self.parse_ctx.aliases)
 
       elif name == 'binding':
         # TODO: Where do we get this from?
@@ -156,7 +156,7 @@ class SpecBuilder(object):
         # directory, and external commands in $PATH.
 
         actions.append(_FixedWordsAction(consts.BUILTIN_NAMES))
-        actions.append(_FixedWordsAction(ex.aliases))
+        actions.append(_FixedWordsAction(self.parse_ctx.aliases))
         actions.append(_FixedWordsAction(ex.procs))
         actions.append(_FixedWordsAction(lexer_def.OSH_KEYWORD_NAMES))
         actions.append(completion.FileSystemAction(exec_only=True))

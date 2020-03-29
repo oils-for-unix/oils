@@ -469,6 +469,7 @@ here-doc-delimiter() {
 args-parse-builtin() {
   set +o errexit
   _runtime-parse-error 'read -x'  # invalid
+  _runtime-parse-error 'builtin read -x'  # ditto
 
   _runtime-parse-error 'read -n'  # expected argument for -n
   _runtime-parse-error 'read -n x'  # expected integer

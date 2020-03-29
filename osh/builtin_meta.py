@@ -4,20 +4,23 @@ builtin_meta.py - Builtins that call back into the interpreter.
 """
 from __future__ import print_function
 
+from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import source
 from core.error import _ControlFlow
 from core import main_loop
 from core import pyutil  # strerror_OS
 from frontend import args
 from frontend import arg_def
+from frontend import consts
 from frontend import reader
 #from osh.builtin_misc import _Builtin
+from osh.builtin_pure import ResolveNames
 from mycpp import mylib
 
-from typing import TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
-  from _devbuild.gen.syntax_asdl import source_t
+  from _devbuild.gen.syntax_asdl import source_t, command__ShFunction
   from frontend.parse_lib import ParseContext
   from core.alloc import Arena
   from core import optview
@@ -132,3 +135,81 @@ class Source(object):
         raise
     finally:
       f.close()
+
+
+if mylib.PYTHON:
+  COMMAND_SPEC = arg_def.Register('command')
+  COMMAND_SPEC.ShortFlag('-v')
+  # COMMAND_SPEC.ShortFlag('-V')  # Another verbose mode.
+
+
+class Command(object):
+  """
+  'command ls' suppresses function lookup.
+  """
+
+  def __init__(self, ex, funcs, aliases, search_path):
+    # type: (Executor, Dict[str, command__ShFunction], Dict[str, str], state.SearchPath) -> None
+    self.ex = ex
+    self.funcs = funcs
+    self.aliases = aliases
+    self.search_path = search_path
+
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    arg, arg_index = COMMAND_SPEC.ParseCmdVal(cmd_val)
+    if arg.v:  # type: ignore
+      status = 0
+      names = cmd_val.argv[arg_index:]
+      for kind, arg in ResolveNames(names, self.funcs, self.aliases,
+                                    self.search_path):
+        if kind is None:
+          status = 1  # nothing printed, but we fail
+        else:
+          # This is for -v, -V is more detailed.
+          print(arg)
+      return status
+
+    # shift by one
+    cmd_val = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:])
+
+    # If we respected do_fork here instead of passing True, the case
+    # 'command date | wc -l' would take 2 processes instead of 3.  But no other
+    # shell does that, and this rare case isn't worth the bookkeeping.
+    # See test/syscall
+    return self.ex.RunSimpleCommand(cmd_val, True, funcs=False)
+
+
+class Builtin(object):
+  """
+  """
+  def __init__(self, ex, errfmt):
+    # type: (Executor, ui.ErrorFormatter) -> None
+    self.ex = ex
+    self.errfmt = errfmt
+
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+
+    if len(cmd_val.argv) == 1:
+      return 0  # this could be an error in strict mode?
+
+    name = cmd_val.argv[1]
+
+    # Run regular builtin or special builtin
+    to_run = consts.LookupNormalBuiltin(name)
+    if to_run == consts.NO_INDEX:
+      to_run = consts.LookupSpecialBuiltin(name)
+    if to_run == consts.NO_INDEX:
+      span_id = cmd_val.arg_spids[1]
+      if consts.LookupAssignBuiltin(name) != consts.NO_INDEX:
+        # NOTE: There's a similar restriction for 'command'
+        self.errfmt.Print("Can't run assignment builtin recursively",
+                          span_id=span_id)
+      else:
+        self.errfmt.Print("%r isn't a shell builtin", name, span_id=span_id)
+      return 1
+
+    cmd_val2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:],
+                              cmd_val.block)
+    return self.ex.RunBuiltin(to_run, cmd_val2)

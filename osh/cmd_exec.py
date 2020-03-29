@@ -18,7 +18,7 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.id_kind_asdl import Id, Id_str
-from _devbuild.gen.option_asdl import builtin_i, builtin_t
+from _devbuild.gen.option_asdl import builtin_t
 from _devbuild.gen.syntax_asdl import (
     compound_word,
     command_e, command_t, command_str,
@@ -62,8 +62,7 @@ from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Int, value__Str, value__MaybeStrArray,
     value__Obj,
     redirect, redirect_arg, scope_e,
-    cmd_value__Argv, cmd_value, cmd_value_e,
-    cmd_value__Argv, cmd_value__Assign,
+    cmd_value_e, cmd_value__Argv, cmd_value__Assign,
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
@@ -80,7 +79,6 @@ from frontend import args
 from frontend import consts
 from oil_lang import objects
 from osh import braces
-from osh import builtin_pure
 from osh import sh_expr_eval
 from osh import word_
 from mycpp import mylib
@@ -223,7 +221,7 @@ class Executor(object):
       procs: dict of SHELL functions or 'procs'
       builtins: dict of builtin callables (TODO: migrate all builtins here)
       exec_opts: MutableOpts
-      parse_ctx: for arena and aliases
+      parse_ctx: for arena
       exec_deps: A bundle of stateless code
     """
     self.arith_ev = None  # type: sh_expr_eval.ArithEvaluator
@@ -242,7 +240,6 @@ class Executor(object):
 
     self.parse_ctx = parse_ctx
     self.arena = parse_ctx.arena
-    self.aliases = parse_ctx.aliases  # alias name -> string
 
     self.mutable_opts = exec_deps.mutable_opts
     self.dumper = exec_deps.dumper
@@ -268,57 +265,17 @@ class Executor(object):
     assert self.expr_ev is not None
     assert self.word_ev is not None
 
-  def _RunBuiltinAndRaise(self, builtin_id, cmd_val):
+  def RunBuiltin(self, builtin_id, cmd_val):
     # type: (builtin_t, cmd_value__Argv) -> int
-    """
-    Raises:
-      args.UsageError
-    """
-    # Most builtins dispatch with a dictionary
-    builtin_func = self.builtins.get(builtin_id)
-    if builtin_func is not None:
-      status = builtin_func.Run(cmd_val)
+    """Run a builtin.  Also called by the 'builtin' builtin."""
 
-    elif builtin_id == builtin_i.command:
-      b = builtin_pure.Command(self, self.procs, self.aliases,
-                               self.search_path)
-      status = b.Run(cmd_val, True)
+    builtin_func = self.builtins[builtin_id]
 
-    elif builtin_id == builtin_i.builtin:  # NOTE: uses early return style
-      if len(cmd_val.argv) == 1:
-        return 0  # this could be an error in strict mode?
-
-      name = cmd_val.argv[1]
-
-      # Run regular builtin or special builtin
-      to_run = consts.LookupNormalBuiltin(name)
-      if to_run == consts.NO_INDEX:
-        to_run = consts.LookupSpecialBuiltin(name)
-      if to_run == consts.NO_INDEX:
-        span_id = cmd_val.arg_spids[1]
-        if consts.LookupAssignBuiltin(name) != consts.NO_INDEX:
-          # NOTE: There's a similar restriction for 'command'
-          self.errfmt.Print("Can't run assignment builtin recursively",
-                            span_id=span_id)
-        else:
-          self.errfmt.Print("%r isn't a shell builtin", name, span_id=span_id)
-        return 1
-
-      cmd_val2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:],
-                                cmd_val.block)
-      status = self._RunBuiltinAndRaise(to_run, cmd_val2)
-
-    else:
-      raise AssertionError('Unhandled builtin: %s' % builtin_id)
-
-    assert isinstance(status, int)
-    return status
-
-  def _RunBuiltin(self, builtin_id, cmd_val):
-    # type: (builtin_t, cmd_value__Argv) -> int
+    # note: could be second word, like 'builtin read'
     self.errfmt.PushLocation(cmd_val.arg_spids[0])
     try:
-      status = self._RunBuiltinAndRaise(builtin_id, cmd_val)
+      status = builtin_func.Run(cmd_val)
+      assert isinstance(status, int)
     except args.UsageError as e:
       arg0 = cmd_val.argv[0]
       # fill in default location.  e.g. osh/state.py raises UsageError without
@@ -349,12 +306,12 @@ class Executor(object):
 
   def _RunAssignBuiltin(self, cmd_val):
     # type: (cmd_value__Assign) -> int
-    """Run an assignment builtin.  Except blocks copied from _RunBuiltin above."""
-    self.errfmt.PushLocation(cmd_val.arg_spids[0])  # defult
+    """Run an assignment builtin.  Except blocks copied from RunBuiltin above."""
+    self.errfmt.PushLocation(cmd_val.arg_spids[0])  # default
     builtin_func = self.builtins[cmd_val.builtin_id]  # must be there
     try:
       status = builtin_func.Run(cmd_val)
-    except args.UsageError as e:  # Copied from _RunBuiltin
+    except args.UsageError as e:  # Copied from RunBuiltin
       arg0 = cmd_val.argv[0]
       if e.span_id == runtime.NO_SPID:  # fill in default location.
         e.span_id = self.errfmt.CurrentLocation()
@@ -645,7 +602,7 @@ class Executor(object):
 
     builtin_id = consts.LookupSpecialBuiltin(arg0)
     if builtin_id != consts.NO_INDEX:
-      status = self._RunBuiltin(builtin_id, cmd_val)
+      status = self.RunBuiltin(builtin_id, cmd_val)
       # TODO: Enable this and fix spec test failures.
       # Also update _SPECIAL_BUILTINS in osh/builtin.py.
       #if status != 0:
@@ -692,7 +649,7 @@ class Executor(object):
     builtin_id = consts.LookupNormalBuiltin(arg0)
 
     if builtin_id != consts.NO_INDEX:
-      return self._RunBuiltin(builtin_id, cmd_val)
+      return self.RunBuiltin(builtin_id, cmd_val)
 
     environ = self.mem.GetExported()  # Include temporary variables
 

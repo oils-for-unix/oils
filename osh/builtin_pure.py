@@ -17,7 +17,7 @@ from __future__ import print_function
 import sys  # for sys.sdtout
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import cmd_value, value_e
+from _devbuild.gen.runtime_asdl import value_e
 
 from asdl import pretty
 from core.util import e_die
@@ -41,7 +41,6 @@ if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from _devbuild.gen.syntax_asdl import command__ShFunction
   from core.ui import ErrorFormatter
-  from osh.cmd_exec import Executor
   from core.state import MutableOpts, Mem, SearchPath
 
 _ = log
@@ -266,7 +265,8 @@ class Shopt(object):
     return 0
 
 
-def _ResolveNames(names, funcs, aliases, search_path):
+def ResolveNames(names, funcs, aliases, search_path):
+  # type: (List[str], Dict[str, command__ShFunction], Dict[str, str], SearchPath) -> Tuple[str, str]
   results = []
   for name in names:
     if name in funcs:
@@ -298,51 +298,6 @@ def _ResolveNames(names, funcs, aliases, search_path):
 
 
 if mylib.PYTHON:
-  COMMAND_SPEC = arg_def.Register('command')
-  COMMAND_SPEC.ShortFlag('-v')
-#COMMAND_SPEC.ShortFlag('-V')  # Another verbose mode.
-
-
-class Command(object):
-  """
-  'command ls' suppresses function lookup.
-  """
-
-  def __init__(self, ex, funcs, aliases, search_path):
-    # type: (Executor, Dict[str, command__ShFunction], Dict[str, str], SearchPath) -> None
-    self.ex = ex
-    self.funcs = funcs
-    self.aliases = aliases
-    self.search_path = search_path
-
-  def Run(self, cmd_val, fork_external):
-    # type: (cmd_value__Argv, bool) -> int
-    arg, arg_index = COMMAND_SPEC.ParseCmdVal(cmd_val)
-    if arg.v:
-      status = 0
-      names = cmd_val.argv[arg_index:]
-      for kind, arg in _ResolveNames(names, self.funcs, self.aliases,
-                                     self.search_path):
-        if kind is None:
-          status = 1  # nothing printed, but we fail
-        else:
-          # This is for -v, -V is more detailed.
-          print(arg)
-      return status
-
-    # shift by one
-    cmd_val = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:])
-
-    # Our score on test/syscall goes from 61 -> 62 without respecting
-    #
-    # 'fork-external'!  But there are a lot of other problems.
-    # case 13 'command date | wc -l' takes 4 instead of 3.
-
-    #fork_external = True
-    return self.ex.RunSimpleCommand(cmd_val, fork_external, funcs=False)
-
-
-if mylib.PYTHON:
   TYPE_SPEC = arg_def.Register('type')
   TYPE_SPEC.ShortFlag('-f')
   TYPE_SPEC.ShortFlag('-t')
@@ -367,7 +322,7 @@ class Type(object):
       funcs = self.funcs
 
     status = 0
-    r = _ResolveNames(cmd_val.argv[i:], funcs, self.aliases, self.search_path)
+    r = ResolveNames(cmd_val.argv[i:], funcs, self.aliases, self.search_path)
     for kind, name in r:
       if kind is None:
         status = 1  # nothing printed, but we fail

@@ -585,6 +585,10 @@ def ShellMain(lang, argv0, argv, login_shell):
   builtins[builtin_i.source] = source_builtin
   builtins[builtin_i.dot] = source_builtin
 
+  builtins[builtin_i.builtin]  = builtin_meta.Builtin(ex, errfmt)
+  builtins[builtin_i.command]  = builtin_meta.Command(ex, procs, aliases,
+                                                      exec_deps.search_path)
+
   complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
   builtins[builtin_i.complete] = complete_builtin
   builtins[builtin_i.compgen] = builtin_comp.CompGen(spec_builder)
