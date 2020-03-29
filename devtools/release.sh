@@ -151,7 +151,7 @@ _clean-tmp-dirs() {
     _tmp/{spec,unit,gold,parse-errors,osh2oil,wild/www} \
     _tmp/{metrics,important-source-code} \
     _tmp/opy-test \
-    _tmp/{osh-parser,osh-runtime,vm-baseline,ovm-build,oheap} \
+    _tmp/{osh-parser,osh-runtime,vm-baseline,ovm-build,oheap,syscall} \
     _tmp/oil-tar-test
 }
 
@@ -202,6 +202,7 @@ readonly -a OTHER_TESTS=(
   arena
   osh-usage oshc-deps
   opyc
+  syscall
 )
 
 run-other-tests() {

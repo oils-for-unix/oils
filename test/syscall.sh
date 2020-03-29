@@ -27,7 +27,8 @@ count-procs() {
   case $sh in 
     # avoid the extra processes that bin/osh starts!
     # relies on word splitting
-    osh)
+    #(X)  # to compare against osh 0.8.pre3 installed
+    (osh)
       sh="env PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor $REPO_ROOT/bin/oil.py osh"
       ;;
   esac
@@ -334,10 +335,22 @@ summarize() {
   fi
 }
 
-# TODO: 
-# - assert failures
-# - publish to 'toil'
-# - add 'run-for-release' function
+run-for-release() {
+  ### Run the two syscall suites
+
+  # Invoked as one of the "other" tests.  Note: This is different than what
+  # 'toil' runs.  Might want to unify them.
+
+  by-code
+  by-input
+
+  local dest=_tmp/other/syscall/
+  mkdir -p $dest
+
+  cp -v ${BASE_DIR}/by-code.txt ${BASE_DIR}/by-input.txt $dest
+
+  echo 'OK'
+}
 
 
 "$@"
