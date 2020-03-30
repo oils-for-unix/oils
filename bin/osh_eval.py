@@ -33,13 +33,15 @@ from osh import cmd_exec
 from osh import sh_expr_eval
 from osh import word_eval
 
-_ = log
-_2 = cmd_exec  # lint ignore
-
 from typing import List, Dict, Tuple, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from osh.cmd_parse import CommandParser
   from pgen2.grammar import Grammar
+
+
+if mylib.PYTHON:
+  unused1 = log
+  unused2 = cmd_exec  # lint ignore
 
 
 # TEMP: Copied from core/main_loop.py

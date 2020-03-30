@@ -1623,7 +1623,7 @@ class Executor(object):
         if 0:
           log('Simple optimized')
 
-      if case(command_e.Pipeline):
+      elif case(command_e.Pipeline):
         node = cast(command__Pipeline, UP_node)
         if not node.negated:
           log ('pipe')
@@ -1652,7 +1652,7 @@ class Executor(object):
     with tagswitch(node) as case:
       if case(command_e.Subshell):
         node = cast(command__Subshell, UP_node)
-        if not node.redirects:
+        if len(node.redirects) == 0:
           # Note: technically we could optimize this into BraceGroup with
           # redirects.  Some shells appear to do that.
           if 0:
