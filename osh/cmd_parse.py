@@ -935,7 +935,7 @@ class CommandParser(object):
     self._Eat(Id.KW_Done)
     done_spid = _KeywordSpid(self.cur_word)  # after _Eat
 
-    node = command.DoGroup(c_list.children, None)  # no redirects yet
+    node = command.DoGroup(c_list.children)
     node.spids.append(do_spid)
     node.spids.append(done_spid)
     return node

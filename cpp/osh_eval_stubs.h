@@ -65,11 +65,41 @@ namespace builtin_misc {
       assert(0);
     }
   };
-};
+}
+
+namespace builtin_process {
+  class _TrapHandler;
+}
+
 
 namespace dev {
   class CrashDumper;
   class Tracer;
+}
+
+namespace executor {
+  class ShellExecutor {
+   public:
+     int RunSimpleCommand(runtime_asdl::cmd_value__Argv* cmd_val,
+                          bool do_fork, bool call_procs) {
+       assert(0);
+     }
+     int RunBackgroundJob(syntax_asdl::command_t* node) {
+       assert(0);
+     }
+     int RunPipeline(syntax_asdl::command__Pipeline* node) {
+       assert(0);
+     }
+     int RunSubshell(syntax_asdl::command__Subshell* node) {
+       assert(0);
+     }
+     Str* RunCommandSub(syntax_asdl::command_t* node) {
+       assert(0);
+     }
+     Str* RunProcessSub(syntax_asdl::command_t* node, Id_t op_id) {
+       assert(0);
+     }
+  };
 }
 
 #endif  // OSH_EVAL_STUBS_H
