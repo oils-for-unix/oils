@@ -566,7 +566,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   expr_ev = expr_eval.OilEvaluator(mem, procs, errfmt)
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
   ex = cmd_exec.Executor(mem, fd_state, procs, builtins, exec_opts,
-                         parse_ctx, exec_deps)
+                         arena, exec_deps)
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
   prompt_ev = prompt.Evaluator(lang, parse_ctx, mem)
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, word_ev, trace_f)

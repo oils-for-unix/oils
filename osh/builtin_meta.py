@@ -161,13 +161,13 @@ class Command(object):
     if arg.v:  # type: ignore
       status = 0
       names = cmd_val.argv[arg_index:]
-      for kind, arg in ResolveNames(names, self.funcs, self.aliases,
-                                    self.search_path):
+      for kind, argument in ResolveNames(names, self.funcs, self.aliases,
+                                         self.search_path):
         if kind is None:
           status = 1  # nothing printed, but we fail
         else:
           # This is for -v, -V is more detailed.
-          print(arg)
+          print(argument)
       return status
 
     # shift by one

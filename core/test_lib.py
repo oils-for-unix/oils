@@ -220,7 +220,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   expr_ev = expr_eval.OilEvaluator(mem, procs, errfmt)
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
   ex = cmd_exec.Executor(mem, fd_state, funcs, builtins, exec_opts,
-                         parse_ctx, exec_deps)
+                         arena, exec_deps)
   assert ex.mutable_opts is not None, ex
   prompt_ev = prompt.Evaluator('osh', parse_ctx, mem)
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, word_ev,

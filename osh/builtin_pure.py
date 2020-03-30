@@ -36,7 +36,7 @@ from osh.builtin_misc import _Builtin
 from osh import string_ops
 from osh import word_compile
 
-from typing import List, Dict, TYPE_CHECKING
+from typing import List, Dict, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from _devbuild.gen.syntax_asdl import command__ShFunction

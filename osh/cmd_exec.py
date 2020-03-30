@@ -98,9 +98,9 @@ if TYPE_CHECKING:
       redir, expr__Lambda, env_pair, proc_sig__Closed,
   )
   from core.ui import ErrorFormatter
+  from core.alloc import Arena
   from core import dev
   from core import optview
-  from frontend.parse_lib import ParseContext
   from oil_lang import expr_eval
   from osh import word_eval
   from osh import builtin_process
@@ -210,7 +210,7 @@ class Executor(object):
                procs,        # type: Dict[str, command__ShFunction]
                builtins,     # type: Dict[builtin_t, _Builtin]
                exec_opts,    # type: optview.Exec
-               parse_ctx,    # type: ParseContext
+               arena,        # type: Arena
                exec_deps,    # type: Deps
   ):
     # type: (...) -> None
@@ -220,8 +220,6 @@ class Executor(object):
       fd_state: FdState() for managing descriptors
       procs: dict of SHELL functions or 'procs'
       builtins: dict of builtin callables (TODO: migrate all builtins here)
-      exec_opts: MutableOpts
-      parse_ctx: for arena
       exec_deps: A bundle of stateless code
     """
     self.arith_ev = None  # type: sh_expr_eval.ArithEvaluator
@@ -237,9 +235,7 @@ class Executor(object):
 
     # This is for shopt and set -o.  They are initialized by flags.
     self.exec_opts = exec_opts
-
-    self.parse_ctx = parse_ctx
-    self.arena = parse_ctx.arena
+    self.arena = arena
 
     self.mutable_opts = exec_deps.mutable_opts
     self.dumper = exec_deps.dumper
