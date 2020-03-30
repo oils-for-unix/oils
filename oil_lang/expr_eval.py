@@ -30,8 +30,8 @@ if TYPE_CHECKING:
       lvalue_t, lvalue__Named, lvalue__ObjIndex, lvalue__ObjAttr,
   )
   from _devbuild.gen.syntax_asdl import arg_list
+  from core.executor import ShellExecutor
   from core.ui import ErrorFormatter
-  from osh.cmd_exec import Executor
   from core.state import Mem
   from osh.word_eval import StringWordEvaluator
 
@@ -53,7 +53,7 @@ class OilEvaluator(object):
                errfmt,  # type: ErrorFormatter
                ):
     # type: (...) -> None
-    self.ex = None  # type: Executor
+    self.shell_ex = None  # type: ShellExecutor
     self.word_ev = None  # type: StringWordEvaluator
 
     self.mem = mem
@@ -62,7 +62,7 @@ class OilEvaluator(object):
 
   def CheckCircularDeps(self):
     # type: () -> None
-    assert self.ex is not None
+    assert self.shell_ex is not None
     assert self.word_ev is not None
 
   def LookupVar(self, var_name):
@@ -249,7 +249,7 @@ class OilEvaluator(object):
       return self.LookupVar(node.name.val)
 
     if node.tag == expr_e.CommandSub:
-      return self.ex.RunCommandSub(node.child)
+      return self.shell_ex.RunCommandSub(node.child)
 
     if node.tag == expr_e.ShArrayLiteral:
       words = braces.BraceExpandWords(node.words)
@@ -487,7 +487,9 @@ class OilEvaluator(object):
       return _gen()
 
     if node.tag == expr_e.Lambda:
-      return objects.Lambda(node, self.ex)
+      raise NotImplementedError()
+      # This used to depend on cmd_ev, but we no longer have it.
+      #return objects.Lambda(node, None)
 
     if node.tag == expr_e.FuncCall:
       func = self.EvalExpr(node.func)

@@ -149,8 +149,6 @@ class Deps(object):
   def __init__(self):
     # type: () -> None
     self.mutable_opts = None  # type: state.MutableOpts
-    self.search_path = None # type: state.SearchPath
-    self.ext_prog = None    # type: process.ExternalProgram
 
     self.dumper = None      # type: dev.CrashDumper
     self.tracer = None      # type: dev.Tracer
@@ -164,7 +162,6 @@ class Deps(object):
     # appended to by signal handlers
     self.trap_nodes = None  # type: List[command_t]
 
-    self.job_state = None   # type: process.JobState
     self.waiter = None      # type: process.Waiter
 
 
@@ -220,7 +217,8 @@ class Executor(object):
       mem: Mem instance for storing variables
       fd_state: FdState() for managing descriptors
       procs: dict of SHELL functions or 'procs'
-      builtins: dict of builtin callables (TODO: migrate all builtins here)
+      builtins: dict of builtin callables
+                TODO: This should only be for assignment builtins?
       exec_deps: A bundle of stateless code
     """
     self.arith_ev = None  # type: sh_expr_eval.ArithEvaluator
@@ -244,17 +242,13 @@ class Executor(object):
     self.errfmt = exec_deps.errfmt
     self.debug_f = exec_deps.debug_f  # Used by ShellFuncAction too
 
-    self.search_path = exec_deps.search_path
-    self.ext_prog = exec_deps.ext_prog
     self.traps = exec_deps.traps
     self.trap_nodes = exec_deps.trap_nodes
 
-    # sleep 5 & puts a (PID, job#) entry here.  And then "jobs" displays it.
-    self.job_state = exec_deps.job_state
     self.waiter = exec_deps.waiter
 
     self.loop_level = 0  # for detecting bad top-level break/continue
-    self.check_command_sub_status = False  # a hack
+    self.check_command_sub_status = False  # a hack.  Modified by ShellExecutor
 
   def CheckCircularDeps(self):
     # type: () -> None
@@ -481,36 +475,6 @@ class Executor(object):
     for redir in redirects:
       result.append(self._EvalRedirect(redir))
     return result
-
-  def _MakeProcess(self, node, parent_pipeline=None, inherit_errexit=True):
-    # type: (command_t, process.Pipeline, bool) -> process.Process
-    """
-    Assume we will run the node in another process.  Return a process.
-    """
-    UP_node = node
-    if node.tag_() == command_e.ControlFlow:
-      node = cast(command__ControlFlow, UP_node)
-      # Pipeline or subshells with control flow are invalid, e.g.:
-      # - break | less
-      # - continue | less
-      # - ( return )
-      # NOTE: This could be done at parse time too.
-      if node.token.id != Id.ControlFlow_Exit:
-        e_die('Invalid control flow %r in pipeline / subshell / background',
-              node.token.val, token=node.token)
-
-    # NOTE: If ErrExit(), we could be verbose about subprogram errors?  This
-    # only really matters when executing 'exit 42', because the child shell
-    # inherits errexit and will be verbose.  Other notes:
-    #
-    # - We might want errors to fit on a single line so they don't get
-    # interleaved.
-    # - We could turn the `exit` builtin into a FatalRuntimeError exception and
-    # get this check for "free".
-    thunk = process.SubProgramThunk(self, node,
-                                    inherit_errexit=inherit_errexit)
-    p = process.Process(thunk, self.job_state, parent_pipeline=parent_pipeline)
-    return p
 
   def _RunSimpleCommand(self, cmd_val, do_fork):
     # type: (cmd_value_t, bool) -> int
@@ -1532,116 +1496,6 @@ class Executor(object):
       return is_return  # explicit 'return' in the trap handler!
     else:
       return False  # nothing run, don't use its status
-
-  def RunCommandSub(self, node):
-    # type: (command_t) -> str
-    p = self._MakeProcess(node,
-                          inherit_errexit=self.exec_opts.inherit_errexit())
-
-    r, w = posix.pipe()
-    p.AddStateChange(process.StdoutToPipe(r, w))
-    _ = p.Start()
-    #log('Command sub started %d', pid)
-
-    chunks = []  # type: List[str]
-    posix.close(w)  # not going to write
-    while True:
-      byte_str = posix.read(r, 4096)
-      if len(byte_str) == 0:
-        break
-      chunks.append(byte_str)
-    posix.close(r)
-
-    status = p.Wait(self.waiter)
-
-    # OSH has the concept of aborting in the middle of a WORD.  We're not
-    # waiting until the command is over!
-    if self.exec_opts.more_errexit():
-      if self.exec_opts.errexit() and status != 0:
-        raise error.ErrExit(
-            'Command sub exited with status %d (%r)', status,
-            NewStr(command_str(node.tag_())))
-    else:
-      # Set a flag so we check errexit at the same time as bash.  Example:
-      #
-      # a=$(false)
-      # echo foo  # no matter what comes here, the flag is reset
-      #
-      # Set ONLY until this command node has finished executing.
-      self.check_command_sub_status = True
-      self.mem.SetLastStatus(status)
-
-    # Runtime errors test case: # $("echo foo > $@")
-    # Why rstrip()?
-    # https://unix.stackexchange.com/questions/17747/why-does-shell-command-substitution-gobble-up-a-trailing-newline-char
-    return ''.join(chunks).rstrip('\n')
-
-  def RunProcessSub(self, node, op_id):
-    # type: (command_t, Id_t) -> str
-    """Process sub creates a forks a process connected to a pipe.
-
-    The pipe is typically passed to another process via a /dev/fd/$FD path.
-
-    TODO:
-
-    sane-proc-sub:
-    - wait for all the words
-
-    Otherwise, set $!  (mem.last_bg_pid)
-
-    strict-proc-sub:
-    - Don't allow it anywhere except SimpleCommand, any redirect, or
-    ShAssignment?  And maybe not even assignment?
-
-    Should you put return codes in @PROCESS_SUB_STATUS?  You need two of them.
-    """
-    p = self._MakeProcess(node)
-
-    r, w = posix.pipe()
-
-    if op_id == Id.Left_ProcSubIn:
-      # Example: cat < <(head foo.txt)
-      #
-      # The head process should write its stdout to a pipe.
-      redir = process.StdoutToPipe(r, w) # type: process.ChildStateChange
-
-    elif op_id == Id.Left_ProcSubOut:
-      # Example: head foo.txt > >(tac)
-      #
-      # The tac process should read its stdin from a pipe.
-      #
-      # NOTE: This appears to hang in bash?  At least when done interactively.
-      # It doesn't work at all in osh interactively?
-      redir = process.StdinFromPipe(r, w)
-
-    else:
-      raise AssertionError()
-
-    p.AddStateChange(redir)
-
-    # Fork, letting the child inherit the pipe file descriptors.
-    pid = p.Start()
-
-    # After forking, close the end of the pipe we're not using.
-    if op_id == Id.Left_ProcSubIn:
-      posix.close(w)
-    elif op_id == Id.Left_ProcSubOut:
-      posix.close(r)
-    else:
-      raise AssertionError()
-
-    # NOTE: Like bash, we never actually wait on it!
-    # TODO: At least set $! ?
-
-    # Is /dev Linux-specific?
-    if op_id == Id.Left_ProcSubIn:
-      return '/dev/fd/%d' % r
-
-    elif op_id == Id.Left_ProcSubOut:
-      return '/dev/fd/%d' % w
-
-    else:
-      raise AssertionError()
 
   def RunProc(self, func_node, argv):
     # type: (command__ShFunction, List[str]) -> int

@@ -199,13 +199,12 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   debug_f = util.DebugFile(sys.stderr)
   exec_deps = cmd_exec.Deps()
   exec_deps.mutable_opts = mutable_opts
-  exec_deps.search_path = state.SearchPath(mem)
+  search_path = state.SearchPath(mem)
   exec_deps.errfmt = errfmt
   exec_deps.trap_nodes = []
-  exec_deps.job_state = job_state
-  exec_deps.waiter = process.Waiter(exec_deps.job_state, exec_opts)
+  exec_deps.waiter = process.Waiter(job_state, exec_opts)
 
-  exec_deps.ext_prog = \
+  ext_prog = \
       ext_prog or process.ExternalProgram('', fd_state, errfmt, debug_f)
 
   exec_deps.dumper = dev.CrashDumper('')
@@ -220,8 +219,8 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
 
   shell_ex = executor.ShellExecutor(
-      mem, exec_opts, mutable_opts, procs, builtins, exec_deps.search_path,
-      exec_deps.ext_prog, exec_deps.waiter, job_state, fd_state, errfmt)
+      mem, exec_opts, mutable_opts, procs, builtins, search_path,
+      ext_prog, exec_deps.waiter, job_state, fd_state, errfmt)
 
   ex = cmd_exec.Executor(mem, shell_ex, fd_state, procs, builtins, exec_opts,
                          arena, exec_deps)
@@ -230,8 +229,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, word_ev,
                       debug_f)
 
-  shell_ex.cmd_ev = ex  # TODO: move this
-  vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, ex, prompt_ev, tracer)
+  vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, ex, shell_ex, prompt_ev, tracer)
 
   spec_builder = builtin_comp.SpecBuilder(ex, parse_ctx, word_ev, splitter,
                                           comp_lookup)

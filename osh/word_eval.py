@@ -44,14 +44,12 @@ from typing import Optional, Tuple, List, Dict, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.id_kind_asdl import Id_t
-  from _devbuild.gen.syntax_asdl import (
-    command_t, speck, word_part_t
-  )
+  from _devbuild.gen.syntax_asdl import command_t, speck, word_part_t
   from _devbuild.gen.runtime_asdl import effect_t, lvalue__Named
   from _devbuild.gen.option_asdl import builtin_t
-  from core.ui import ErrorFormatter
+  from core import executor
   from core import optview
-  from osh import cmd_exec
+  from core.ui import ErrorFormatter
   from osh.split import SplitContext
   from core.state import Mem
   from osh import prompt
@@ -1838,23 +1836,23 @@ class NormalWordEvaluator(AbstractWordEvaluator):
   def __init__(self, mem, exec_opts, splitter, errfmt):
     # type: (Mem, optview.Exec, SplitContext, ErrorFormatter) -> None
     AbstractWordEvaluator.__init__(self, mem, exec_opts, splitter, errfmt)
-    self.ex = None  # type: cmd_exec.Executor
+    self.shell_ex = None  # type: executor.ShellExecutor
 
   def CheckCircularDeps(self):
     # type: () -> None
     assert self.arith_ev is not None
     assert self.expr_ev is not None
-    assert self.ex is not None
+    assert self.shell_ex is not None
     assert self.prompt_ev is not None
 
   def _EvalCommandSub(self, node, quoted):
     # type: (command_t, bool) -> part_value__String
-    stdout = self.ex.RunCommandSub(node)
+    stdout = self.shell_ex.RunCommandSub(node)
     return part_value.String(stdout, quoted, not quoted)
 
   def _EvalProcessSub(self, node, id_):
     # type: (command_t, Id_t) -> part_value__String
-    dev_path = self.ex.RunProcessSub(node, id_)
+    dev_path = self.shell_ex.RunProcessSub(node, id_)
     # pretend it's quoted; no split or glob
     return part_value.String(dev_path, True, False)
 

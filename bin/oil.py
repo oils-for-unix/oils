@@ -412,7 +412,6 @@ def ShellMain(lang, argv0, argv, login_shell):
   exec_deps.traps = {}
   exec_deps.trap_nodes = []  # TODO: Clear on fork() to avoid duplicates
 
-  exec_deps.job_state = job_state
   exec_deps.waiter = process.Waiter(job_state, exec_opts)
   exec_deps.errfmt = errfmt
 
@@ -449,9 +448,8 @@ def ShellMain(lang, argv0, argv, login_shell):
     debug_f.log('Writing logs to %r', debug_path)
 
   interp = posix.environ.get('OSH_HIJACK_SHEBANG', '')
-  exec_deps.search_path = state.SearchPath(mem)
-  exec_deps.ext_prog = process.ExternalProgram(interp, fd_state,
-                                               errfmt, debug_f)
+  search_path = state.SearchPath(mem)
+  ext_prog = process.ExternalProgram(interp, fd_state, errfmt, debug_f)
 
   splitter = split.SplitContext(mem)
 
@@ -531,8 +529,8 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_i.alias: builtin_pure.Alias(aliases, errfmt),
       builtin_i.unalias: builtin_pure.UnAlias(aliases, errfmt),
 
-      builtin_i.type: builtin_pure.Type(procs, aliases, exec_deps.search_path),
-      builtin_i.hash: builtin_pure.Hash(exec_deps.search_path),
+      builtin_i.type: builtin_pure.Type(procs, aliases, search_path),
+      builtin_i.hash: builtin_pure.Hash(search_path),
       builtin_i.getopts: builtin_pure.GetOpts(mem, errfmt),
 
       builtin_i.colon: builtin_pure.Boolean(0),  # a "special" builtin 
@@ -540,14 +538,14 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_i.false_: builtin_pure.Boolean(1),
 
       # Process
-      builtin_i.exec_: builtin_process.Exec(mem, exec_deps.ext_prog,
-                                            fd_state, exec_deps.search_path,
+      builtin_i.exec_: builtin_process.Exec(mem, ext_prog,
+                                            fd_state, search_path,
                                             errfmt),
       builtin_i.wait: builtin_process.Wait(exec_deps.waiter,
-                                           exec_deps.job_state, mem, errfmt),
-      builtin_i.jobs: builtin_process.Jobs(exec_deps.job_state),
-      builtin_i.fg: builtin_process.Fg(exec_deps.job_state, exec_deps.waiter),
-      builtin_i.bg: builtin_process.Bg(exec_deps.job_state),
+                                           job_state, mem, errfmt),
+      builtin_i.jobs: builtin_process.Jobs(job_state),
+      builtin_i.fg: builtin_process.Fg(job_state, exec_deps.waiter),
+      builtin_i.bg: builtin_process.Bg(job_state),
       builtin_i.umask: builtin_process.Umask(),
 
       # Oil
@@ -568,8 +566,8 @@ def ShellMain(lang, argv0, argv, login_shell):
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
 
   shell_ex = executor.ShellExecutor(
-      mem, exec_opts, mutable_opts, procs, builtins, exec_deps.search_path,
-      exec_deps.ext_prog, exec_deps.waiter, job_state, fd_state, errfmt)
+      mem, exec_opts, mutable_opts, procs, builtins, search_path,
+      ext_prog, exec_deps.waiter, job_state, fd_state, errfmt)
 
   ex = cmd_exec.Executor(mem, shell_ex, fd_state, procs, builtins, exec_opts,
                          arena, exec_deps)
@@ -577,10 +575,8 @@ def ShellMain(lang, argv0, argv, login_shell):
   prompt_ev = prompt.Evaluator(lang, parse_ctx, mem)
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, word_ev, trace_f)
 
-  shell_ex.cmd_ev = ex  # circular dep.  TODO: move this.
-
   # Wire up circular dependencies.
-  vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, ex, prompt_ev, tracer)
+  vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, ex, shell_ex, prompt_ev, tracer)
 
   spec_builder = builtin_comp.SpecBuilder(ex, parse_ctx, word_ev, splitter,
                                           comp_lookup)
@@ -589,13 +585,13 @@ def ShellMain(lang, argv0, argv, login_shell):
   builtins[builtin_i.eval] = builtin_meta.Eval(parse_ctx, exec_opts, ex)
 
   source_builtin = builtin_meta.Source(
-      parse_ctx, exec_deps.search_path, ex, errfmt)
+      parse_ctx, search_path, ex, errfmt)
   builtins[builtin_i.source] = source_builtin
   builtins[builtin_i.dot] = source_builtin
 
   builtins[builtin_i.builtin] = builtin_meta.Builtin(shell_ex, errfmt)
   builtins[builtin_i.command] = builtin_meta.Command(shell_ex, procs, aliases,
-                                                      exec_deps.search_path)
+                                                      search_path)
 
   complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
   builtins[builtin_i.complete] = complete_builtin
