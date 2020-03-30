@@ -56,6 +56,7 @@ from core import alloc
 from core import comp_ui
 from core import dev
 from core import error
+from core import executor
 from core import completion
 from core import main_loop
 from core import meta
@@ -565,11 +566,18 @@ def ShellMain(lang, argv0, argv, login_shell):
   bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, errfmt)
   expr_ev = expr_eval.OilEvaluator(mem, procs, errfmt)
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
-  ex = cmd_exec.Executor(mem, fd_state, procs, builtins, exec_opts,
+
+  shell_ex = executor.ShellExecutor(
+      mem, exec_opts, mutable_opts, procs, builtins, exec_deps.search_path,
+      exec_deps.ext_prog, exec_deps.waiter, job_state, fd_state, errfmt)
+
+  ex = cmd_exec.Executor(mem, shell_ex, fd_state, procs, builtins, exec_opts,
                          arena, exec_deps)
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
   prompt_ev = prompt.Evaluator(lang, parse_ctx, mem)
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, word_ev, trace_f)
+
+  shell_ex.cmd_ev = ex  # circular dep.  TODO: move this.
 
   # Wire up circular dependencies.
   vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, ex, prompt_ev, tracer)
@@ -585,8 +593,8 @@ def ShellMain(lang, argv0, argv, login_shell):
   builtins[builtin_i.source] = source_builtin
   builtins[builtin_i.dot] = source_builtin
 
-  builtins[builtin_i.builtin]  = builtin_meta.Builtin(ex, errfmt)
-  builtins[builtin_i.command]  = builtin_meta.Command(ex, procs, aliases,
+  builtins[builtin_i.builtin] = builtin_meta.Builtin(shell_ex, errfmt)
+  builtins[builtin_i.command] = builtin_meta.Command(shell_ex, procs, aliases,
                                                       exec_deps.search_path)
 
   complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)

@@ -26,8 +26,9 @@ if TYPE_CHECKING:
   from core import optview
   from core import state
   from core import ui
-  from osh.cmd_exec import Executor
+  from core.executor import ShellExecutor
   from osh.cmd_parse import CommandParser
+  from osh.cmd_exec import Executor
 
 
 if mylib.PYTHON:
@@ -148,9 +149,9 @@ class Command(object):
   'command ls' suppresses function lookup.
   """
 
-  def __init__(self, ex, funcs, aliases, search_path):
-    # type: (Executor, Dict[str, command__ShFunction], Dict[str, str], state.SearchPath) -> None
-    self.ex = ex
+  def __init__(self, shell_ex, funcs, aliases, search_path):
+    # type: (ShellExecutor, Dict[str, command__ShFunction], Dict[str, str], state.SearchPath) -> None
+    self.shell_ex = shell_ex
     self.funcs = funcs
     self.aliases = aliases
     self.search_path = search_path
@@ -177,15 +178,14 @@ class Command(object):
     # 'command date | wc -l' would take 2 processes instead of 3.  But no other
     # shell does that, and this rare case isn't worth the bookkeeping.
     # See test/syscall
-    return self.ex.RunSimpleCommand(cmd_val, True, funcs=False)
+    return self.shell_ex.RunSimpleCommand(cmd_val, True, call_procs=False)
 
 
 class Builtin(object):
-  """
-  """
-  def __init__(self, ex, errfmt):
-    # type: (Executor, ui.ErrorFormatter) -> None
-    self.ex = ex
+
+  def __init__(self, shell_ex, errfmt):
+    # type: (ShellExecutor, ui.ErrorFormatter) -> None
+    self.shell_ex = shell_ex
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
@@ -212,4 +212,4 @@ class Builtin(object):
 
     cmd_val2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:],
                               cmd_val.block)
-    return self.ex.RunBuiltin(to_run, cmd_val2)
+    return self.shell_ex.RunBuiltin(to_run, cmd_val2)

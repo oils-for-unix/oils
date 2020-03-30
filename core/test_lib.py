@@ -20,6 +20,7 @@ from asdl import runtime
 from core import alloc
 from core import completion
 from core import dev
+from core import executor
 from core import main_loop
 from core import meta
 from core import optview
@@ -167,14 +168,14 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   errfmt = ui.ErrorFormatter(arena)
   job_state = process.JobState()
   fd_state = process.FdState(errfmt, job_state)
-  funcs = {}
   aliases = {} if aliases is None else aliases
+  procs = {}
 
   compopt_state = completion.OptionState()
   comp_lookup = comp_lookup or completion.Lookup()
 
   readline = None  # simulate not having it
-  new_var = builtin_assign.NewVar(mem, funcs, errfmt)
+  new_var = builtin_assign.NewVar(mem, procs, errfmt)
   builtins = {  # Lookup
       builtin_i.echo: builtin_pure.Echo(exec_opts),
       builtin_i.shift: builtin_assign.Shift(mem),
@@ -197,7 +198,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
 
   debug_f = util.DebugFile(sys.stderr)
   exec_deps = cmd_exec.Deps()
-  exec_deps.mutable_opts = state.MutableOpts(mem, opt_array, errexit, None)
+  exec_deps.mutable_opts = mutable_opts
   exec_deps.search_path = state.SearchPath(mem)
   exec_deps.errfmt = errfmt
   exec_deps.trap_nodes = []
@@ -213,19 +214,23 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
 
   splitter = split.SplitContext(mem)
 
-  procs = {}
-
   arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, errfmt)
   bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, errfmt)
   expr_ev = expr_eval.OilEvaluator(mem, procs, errfmt)
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
-  ex = cmd_exec.Executor(mem, fd_state, funcs, builtins, exec_opts,
+
+  shell_ex = executor.ShellExecutor(
+      mem, exec_opts, mutable_opts, procs, builtins, exec_deps.search_path,
+      exec_deps.ext_prog, exec_deps.waiter, job_state, fd_state, errfmt)
+
+  ex = cmd_exec.Executor(mem, shell_ex, fd_state, procs, builtins, exec_opts,
                          arena, exec_deps)
   assert ex.mutable_opts is not None, ex
   prompt_ev = prompt.Evaluator('osh', parse_ctx, mem)
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, word_ev,
                       debug_f)
 
+  shell_ex.cmd_ev = ex  # TODO: move this
   vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, ex, prompt_ev, tracer)
 
   spec_builder = builtin_comp.SpecBuilder(ex, parse_ctx, word_ev, splitter,
