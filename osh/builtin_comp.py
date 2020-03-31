@@ -18,7 +18,7 @@ if TYPE_CHECKING:
   from core.completion import Lookup, OptionState
   from core.ui import ErrorFormatter
   from frontend.parse_lib import ParseContext
-  from osh.cmd_exec import CommandEvaluator
+  from osh.cmd_eval import CommandEvaluator
   from osh.split import SplitContext
   from osh.word_eval import NormalWordEvaluator
   from core.state import Mem

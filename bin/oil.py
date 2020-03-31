@@ -89,7 +89,7 @@ from osh import builtin_lib
 from osh import builtin_printf
 from osh import builtin_process
 from osh import builtin_pure
-from osh import cmd_exec
+from osh import cmd_eval
 from osh import glob_
 from osh import history
 from osh import prompt
@@ -403,7 +403,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   # - arith_ev and word_ev -- for $(( ${a} )) and $x$(( 1 )) 
   # - cmd_ev and builtins (which execute code, like eval)
   # - prompt_ev needs word_ev for $PS1, which needs prompt_ev for @P
-  exec_deps = cmd_exec.Deps()
+  exec_deps = cmd_eval.Deps()
   exec_deps.mutable_opts = mutable_opts
 
   # TODO: In general, exec_deps are shared between the mutually recursive
@@ -568,7 +568,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       mem, exec_opts, mutable_opts, procs, builtins, search_path,
       ext_prog, waiter, job_state, fd_state, errfmt)
 
-  cmd_ev = cmd_exec.CommandEvaluator(mem, shell_ex, procs, builtins, exec_opts,
+  cmd_ev = cmd_eval.CommandEvaluator(mem, shell_ex, procs, builtins, exec_opts,
                                      arena, exec_deps)
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
   prompt_ev = prompt.Evaluator(lang, parse_ctx, mem)

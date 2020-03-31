@@ -43,7 +43,7 @@ if TYPE_CHECKING:
   from core.util import NullDebugFile
   from core.comp_ui import _IDisplay
   from core import optview
-  from osh.cmd_exec import CommandEvaluator
+  from osh.cmd_eval import CommandEvaluator
   from core.state import Mem
   from mycpp import mylib
 

@@ -19,7 +19,7 @@ Completion should run in threads?  For two reasons:
 - completion can be in another process anyway?
 
 Does that mean the user code gets run in an entirely separate interpreter?  The
-whole lexer/parser/cmd_exec combo has to be thread-safe.  Does it get a copy of
+whole lexer/parser/cmd_eval combo has to be thread-safe.  Does it get a copy of
 the same startup state?
 
 Features TODO:

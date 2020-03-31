@@ -6,7 +6,7 @@
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
-cmd_exec_test.py: Tests for cmd_exec.py
+cmd_eval_test.py: Tests for cmd_eval.py
 """
 
 import unittest
@@ -30,7 +30,7 @@ def InitEvaluator():
 class ExpansionTest(unittest.TestCase):
 
   def testBraceExpand(self):
-    arena = test_lib.MakeArena('<cmd_exec_test.py>')
+    arena = test_lib.MakeArena('<cmd_eval_test.py>')
     c_parser = test_lib.InitCommandParser('echo _{a,b}_', arena=arena)
     node = c_parser._ParseCommandLine()
     print(node)

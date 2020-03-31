@@ -36,7 +36,7 @@ from osh import builtin_assign
 from osh import builtin_comp
 from osh import builtin_misc
 from osh import builtin_pure
-from osh import cmd_exec
+from osh import cmd_eval
 from osh import prompt
 from osh import sh_expr_eval
 from osh import split
@@ -139,7 +139,7 @@ def InitWordEvaluator():
   exec_opts = optview.Exec(opt_array, errexit)
   mem.exec_opts = exec_opts  # circular dep
 
-  exec_deps = cmd_exec.Deps()
+  exec_deps = cmd_eval.Deps()
   exec_deps.trap_nodes = []
 
   splitter = split.SplitContext(mem)
@@ -197,7 +197,7 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   }
 
   debug_f = util.DebugFile(sys.stderr)
-  exec_deps = cmd_exec.Deps()
+  exec_deps = cmd_eval.Deps()
   exec_deps.mutable_opts = mutable_opts
   search_path = state.SearchPath(mem)
   exec_deps.errfmt = errfmt
@@ -221,7 +221,7 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
       mem, exec_opts, mutable_opts, procs, builtins, search_path,
       ext_prog, waiter, job_state, fd_state, errfmt)
 
-  cmd_ev = cmd_exec.CommandEvaluator(mem, shell_ex, procs, builtins, exec_opts,
+  cmd_ev = cmd_eval.CommandEvaluator(mem, shell_ex, procs, builtins, exec_opts,
                                      arena, exec_deps)
   assert cmd_ev.mutable_opts is not None, cmd_ev
   prompt_ev = prompt.Evaluator('osh', parse_ctx, mem)

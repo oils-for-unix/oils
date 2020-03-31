@@ -36,7 +36,7 @@ if TYPE_CHECKING:
   from core import state
   from core import ui
   from osh.builtin_misc import _Builtin
-  from osh import cmd_exec
+  from osh import cmd_eval
 
 
 class ShellExecutor(object):
@@ -58,7 +58,7 @@ class ShellExecutor(object):
       errfmt  # type: ui.ErrorFormatter
     ):
     # type: (...) -> None
-    self.cmd_ev = None  # type: cmd_exec.CommandEvaluator
+    self.cmd_ev = None  # type: cmd_eval.CommandEvaluator
 
     self.mem = mem
     self.exec_opts = exec_opts

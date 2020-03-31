@@ -20,29 +20,18 @@ from mycpp import mylib
 from typing import Dict, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
-  from _devbuild.gen.syntax_asdl import source_t, command__ShFunction
+  from _devbuild.gen.syntax_asdl import command__ShFunction
   from frontend.parse_lib import ParseContext
-  from core.alloc import Arena
   from core import optview
   from core import process
   from core import state
   from core import ui
   from core.executor import ShellExecutor
-  from osh.cmd_parse import CommandParser
-  from osh.cmd_exec import CommandEvaluator
+  from osh.cmd_eval import CommandEvaluator
 
 
 if mylib.PYTHON:
   EVAL_SPEC = arg_def.Register('eval')
-
-
-def _EvalHelper(arena, cmd_ev, c_parser, src):
-  # type: (Arena, CommandEvaluator, CommandParser, source_t) -> int
-  arena.PushSource(src)
-  try:
-    return main_loop.Batch(cmd_ev, c_parser, arena)
-  finally:
-    arena.PopSource()
 
 
 class Eval(object):
@@ -75,7 +64,11 @@ class Eval(object):
     c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
     src = source.EvalArg(eval_spid)
-    return _EvalHelper(self.arena, self.cmd_ev, c_parser, src)
+    self.arena.PushSource(src)
+    try:
+      return main_loop.Batch(self.cmd_ev, c_parser, self.arena)
+    finally:
+      self.arena.PopSource()
 
 
 class Source(object):
@@ -121,11 +114,14 @@ class Source(object):
       # the same variable scope as the caller.  The caller could be at either a
       # global or a local scope.
       source_argv = argv[2:]
-      src = source.SourcedFile(path, call_spid)
       self.mem.PushSource(path, source_argv)
+
+      src = source.SourcedFile(path, call_spid)
+      self.arena.PushSource(src)
       try:
-        status = _EvalHelper(self.arena, self.cmd_ev, c_parser, src)
+        status = main_loop.Batch(self.cmd_ev, c_parser, self.arena)
       finally:
+        self.arena.PopSource()
         self.mem.PopSource(source_argv)
 
       return status

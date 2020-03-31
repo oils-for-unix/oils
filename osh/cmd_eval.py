@@ -6,7 +6,7 @@
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
-cmd_exec.py -- Interpreter for the command language.
+cmd_eval.py -- Interpreter for the command language.
 
 Problems:
 $ < Makefile cat | < NOTES.txt head

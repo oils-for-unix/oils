@@ -4,7 +4,7 @@ builtin_def.py
 
 Metadata:
 
-- Is used for lookup in cmd_exec.py
+- Is used for lookup in cmd_eval.py
 - Should be used for completion
   - complete names of builtins
   - complete flags they take

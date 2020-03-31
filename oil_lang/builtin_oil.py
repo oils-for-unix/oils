@@ -27,7 +27,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from core.state import Mem
-  from osh.cmd_exec import CommandEvaluator
+  from osh.cmd_eval import CommandEvaluator
 
 
 class _Builtin(object):

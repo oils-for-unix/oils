@@ -19,7 +19,7 @@ if TYPE_CHECKING:
   TableDict = Dict[Any, List[Any]]
   AssocArrayDict = Dict[Any, Any]
   from _devbuild.gen.syntax_asdl import re_t, command__Proc, command__Func, expr__Lambda
-  from osh.cmd_exec import CommandEvaluator
+  from osh.cmd_eval import CommandEvaluator
 else:
   BoolList = IntList = FloatList = StrList = list
   AssocArrayDict = TableDict = dict

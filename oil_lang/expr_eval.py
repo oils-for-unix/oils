@@ -420,7 +420,7 @@ class OilEvaluator(object):
     if node.tag == expr_e.ListComp:
 
       # TODO:
-      # - Consolidate with command_e.OilForIn in osh/cmd_exec.py?
+      # - Consolidate with command_e.OilForIn in osh/cmd_eval.py?
       # - Do I have to push a temp frame here?
       #   Hm... lexical or dynamic scope is an issue.
       result = []

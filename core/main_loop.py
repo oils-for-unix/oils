@@ -29,7 +29,7 @@ if TYPE_CHECKING:
   from core.comp_ui import _IDisplay
   from core.ui import ErrorFormatter
   from osh.cmd_parse import CommandParser
-  from osh.cmd_exec import CommandEvaluator
+  from osh.cmd_eval import CommandEvaluator
   from osh.prompt import UserPlugin
 
 _ = log

@@ -27,7 +27,7 @@ import posix_ as posix
 from typing import Any, Dict, List, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
   from frontend.parse_lib import ParseContext
-  from osh.cmd_exec import CommandEvaluator
+  from osh.cmd_eval import CommandEvaluator
   from core.state import Mem
   from osh.word_eval import AbstractWordEvaluator
 

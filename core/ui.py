@@ -200,7 +200,7 @@ def PrettyPrintError(err, arena, prefix=''):
   # type: (_ErrorWithLocation, Arena, str) -> None
   """
   Args:
-    prefix: in osh/cmd_exec.py we want to print 'fatal'
+    prefix: in osh/cmd_eval.py we want to print 'fatal'
   """
   _pp(err, arena, prefix)
 

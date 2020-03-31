@@ -668,7 +668,7 @@ class Mem(object):
     Completion engine: for COMP_WORDS, etc.
     Builtins call it implicitly: read, cd for $PWD, $OLDPWD, etc.
 
-  Modules: cmd_exec, word_eval, expr_eval, completion
+  Modules: cmd_eval, word_eval, expr_eval, completion
   """
   def __init__(self, dollar0, argv, arena, debug_stack):
     # type: (str, List[str], Arena, List[DebugFrame]) -> None

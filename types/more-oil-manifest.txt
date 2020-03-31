@@ -11,8 +11,6 @@
 ./core/main_loop.py
 ./oil_lang/regex_translate.py
 ./oil_lang/objects.py
-./osh/cmd_exec.py
-./osh/word_eval.py
 ./core/vm.py
 ./core/process.py
 ./frontend/builtin_def.py

@@ -41,7 +41,7 @@ if TYPE_CHECKING:
   from core.pyutil import _FileResourceLoader
   from core.state import Mem, DirStack
   from core.ui import ErrorFormatter
-  from osh.cmd_exec import CommandEvaluator
+  from osh.cmd_eval import CommandEvaluator
   from osh.split import SplitContext
 
 _ = log

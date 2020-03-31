@@ -53,7 +53,7 @@ def e_die(msg, *args, **kwargs):
   # type: (str, *Any, **Any) -> NoReturn
   """Convenience wrapper for fatal runtime errors.
 
-  Usually exits with status 1.  See osh/cmd_exec.py.
+  Usually exits with status 1.  See osh/cmd_eval.py.
   """
   raise error.FatalRuntime(msg, *args, **kwargs)
 

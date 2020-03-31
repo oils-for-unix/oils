@@ -2040,7 +2040,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 self.write_ind('using %s::%s;\n', last_dotted, name)
           else:
             # If we're importing a module without an alias, we don't need to do
-            # anything.  'namespace cmd_exec' is already defined.
+            # anything.  'namespace cmd_eval' is already defined.
             if not alias:
               return
 

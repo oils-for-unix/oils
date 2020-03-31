@@ -10,7 +10,7 @@ if TYPE_CHECKING:
   from osh.sh_expr_eval import BoolEvaluator
   from oil_lang.expr_eval import OilEvaluator
   from osh.word_eval import NormalWordEvaluator
-  from osh.cmd_exec import CommandEvaluator
+  from osh.cmd_eval import CommandEvaluator
   from osh import prompt
   from core import dev
   from core import executor

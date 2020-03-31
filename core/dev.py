@@ -25,7 +25,7 @@ if TYPE_CHECKING:
   from frontend.parse_lib import ParseContext
   from core.state import MutableOpts, Mem
   from osh.word_eval import NormalWordEvaluator
-  #from osh.cmd_exec import CommandEvaluator
+  #from osh.cmd_eval import CommandEvaluator
 
 
 class CrashDumper(object):
