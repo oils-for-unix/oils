@@ -8,7 +8,7 @@ import sys
 
 #from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import (value_e, value__Obj)
+from _devbuild.gen.runtime_asdl import (value_e, value__Obj, redirect)
 from _devbuild.gen.syntax_asdl import (
     command_e, command__Pipeline, command__ControlFlow,
     command_str,
@@ -450,10 +450,10 @@ class ShellExecutor(object):
     # type: () -> None
     pass
 
-  def PushRedirects(self):
-    # type: () -> None
-    pass
+  def PushRedirects(self, redirects):
+    # type: (List[redirect]) -> bool
+    return self.fd_state.Push(redirects, self.waiter)
 
   def PopRedirects(self):
     # type: () -> None
-    pass
+    self.fd_state.Pop()

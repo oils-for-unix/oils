@@ -24,6 +24,7 @@ if TYPE_CHECKING:
   from frontend.parse_lib import ParseContext
   from core.alloc import Arena
   from core import optview
+  from core import process
   from core import state
   from core import ui
   from core.executor import ShellExecutor
@@ -79,15 +80,15 @@ class Eval(object):
 
 class Source(object):
 
-  def __init__(self, parse_ctx, search_path, ex, errfmt):
-    # type: (ParseContext, state.SearchPath, Executor, ui.ErrorFormatter) -> None
+  def __init__(self, parse_ctx, search_path, ex, fd_state, errfmt):
+    # type: (ParseContext, state.SearchPath, Executor, process.FdState, ui.ErrorFormatter) -> None
     self.parse_ctx = parse_ctx
     self.arena = parse_ctx.arena
 
     self.search_path = search_path
 
     self.ex = ex
-    self.fd_state = ex.fd_state
+    self.fd_state = fd_state
     self.mem = ex.mem
 
     self.errfmt = errfmt

@@ -80,6 +80,11 @@ namespace dev {
 namespace executor {
   class ShellExecutor {
    public:
+     // overload
+     int RunSimpleCommand(runtime_asdl::cmd_value__Argv* cmd_val,
+                          bool do_fork) {
+       assert(0);
+     }
      int RunSimpleCommand(runtime_asdl::cmd_value__Argv* cmd_val,
                           bool do_fork, bool call_procs) {
        assert(0);
@@ -91,6 +96,12 @@ namespace executor {
        assert(0);
      }
      int RunSubshell(syntax_asdl::command__Subshell* node) {
+       assert(0);
+     }
+     bool PushRedirects(List<runtime_asdl::redirect*>* redirects) {
+       assert(0);
+     }
+     void PopRedirects() {
        assert(0);
      }
      Str* RunCommandSub(syntax_asdl::command_t* node) {

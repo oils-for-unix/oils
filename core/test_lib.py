@@ -202,7 +202,7 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   search_path = state.SearchPath(mem)
   exec_deps.errfmt = errfmt
   exec_deps.trap_nodes = []
-  exec_deps.waiter = process.Waiter(job_state, exec_opts)
+  waiter = process.Waiter(job_state, exec_opts)
 
   ext_prog = \
       ext_prog or process.ExternalProgram('', fd_state, errfmt, debug_f)
@@ -220,9 +220,9 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
 
   shell_ex = executor.ShellExecutor(
       mem, exec_opts, mutable_opts, procs, builtins, search_path,
-      ext_prog, exec_deps.waiter, job_state, fd_state, errfmt)
+      ext_prog, waiter, job_state, fd_state, errfmt)
 
-  ex = cmd_exec.Executor(mem, shell_ex, fd_state, procs, builtins, exec_opts,
+  ex = cmd_exec.Executor(mem, shell_ex, procs, builtins, exec_opts,
                          arena, exec_deps)
   assert ex.mutable_opts is not None, ex
   prompt_ev = prompt.Evaluator('osh', parse_ctx, mem)

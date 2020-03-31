@@ -462,10 +462,6 @@ class FdState(object):
     self._PushDup(r, redir_loc.Fd(0))
     return True
 
-  def MakePermanent(self):
-    # type: () -> None
-    self.cur_frame.Forget()
-
   def Pop(self):
     # type: () -> None
     frame = self.stack.pop()
@@ -492,6 +488,10 @@ class FdState(object):
     # Wait for here doc processes to finish.
     for proc, waiter in frame.need_wait:
       unused_status = proc.Wait(waiter)
+
+  def MakePermanent(self):
+    # type: () -> None
+    self.cur_frame.Forget()
 
 
 class ChildStateChange(object):

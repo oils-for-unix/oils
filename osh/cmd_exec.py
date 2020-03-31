@@ -68,7 +68,6 @@ from asdl import runtime
 from core import error
 from core.error import _ControlFlow
 from core import passwd  # Time().  TODO: rename
-from core import process
 from core import state
 from core import ui
 from core import util
@@ -162,8 +161,6 @@ class Deps(object):
     # appended to by signal handlers
     self.trap_nodes = None  # type: List[command_t]
 
-    self.waiter = None      # type: process.Waiter
-
 
 if mylib.PYTHON:
   def _PyObjectToVal(py_val):
@@ -204,7 +201,6 @@ class Executor(object):
   def __init__(self,
                mem,          # type: state.Mem
                shell_ex,     # type: ShellExecutor
-               fd_state,     # type: process.FdState
                procs,        # type: Dict[str, command__ShFunction]
                builtins,     # type: Dict[builtin_t, _Builtin]
                exec_opts,    # type: optview.Exec
@@ -215,7 +211,6 @@ class Executor(object):
     """
     Args:
       mem: Mem instance for storing variables
-      fd_state: FdState() for managing descriptors
       procs: dict of SHELL functions or 'procs'
       builtins: dict of builtin callables
                 TODO: This should only be for assignment builtins?
@@ -229,7 +224,6 @@ class Executor(object):
 
     self.mem = mem
     self.shell_ex = shell_ex
-    self.fd_state = fd_state
     self.procs = procs
     self.builtins = builtins
 
@@ -244,8 +238,6 @@ class Executor(object):
 
     self.traps = exec_deps.traps
     self.trap_nodes = exec_deps.trap_nodes
-
-    self.waiter = exec_deps.waiter
 
     self.loop_level = 0  # for detecting bad top-level break/continue
     self.check_command_sub_status = False  # a hack.  Modified by ShellExecutor
@@ -1322,11 +1314,11 @@ class Executor(object):
       status = 1
 
     elif len(redirects):
-      if self.fd_state.Push(redirects, self.waiter):
+      if self.shell_ex.PushRedirects(redirects):
         try:
           status, check_errexit = self._Dispatch(node)
         finally:
-          self.fd_state.Pop()
+          self.shell_ex.PopRedirects()
         #log('_dispatch returned %d', status)
       else:  # Error applying redirects, e.g. bad file descriptor.
         status = 1
@@ -1703,6 +1695,7 @@ class Executor(object):
 
     """
     status = None  # type: int
+    namespace_ = None  # type: Dict[str, cell]
     self.mem.PushTemp()  # So variables don't conflict
     try:
       self._Execute(block)  # can raise FatalRuntimeError, etc.
@@ -1712,7 +1705,7 @@ class Executor(object):
       else:
         raise
     finally:
-      namespace = self.mem.TopNamespace() # type: Dict[str, cell]
+      namespace_ = self.mem.TopNamespace()
       self.mem.PopTemp()
     # This is the thing on self.mem?
     # Filter out everything beginning with _ ?
@@ -1723,7 +1716,7 @@ class Executor(object):
     # because it's an int and values of the namespace dict should be
     # cells, so I've commented it out.
     #namespace['_returned'] = status
-    return namespace
+    return namespace_
 
   def RunFuncForCompletion(self, func_node, argv):
     # type: (command__ShFunction, List[str]) -> int

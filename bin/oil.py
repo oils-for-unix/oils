@@ -412,7 +412,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   exec_deps.traps = {}
   exec_deps.trap_nodes = []  # TODO: Clear on fork() to avoid duplicates
 
-  exec_deps.waiter = process.Waiter(job_state, exec_opts)
+  waiter = process.Waiter(job_state, exec_opts)
   exec_deps.errfmt = errfmt
 
   my_pid = posix.getpid()
@@ -541,10 +541,10 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_i.exec_: builtin_process.Exec(mem, ext_prog,
                                             fd_state, search_path,
                                             errfmt),
-      builtin_i.wait: builtin_process.Wait(exec_deps.waiter,
+      builtin_i.wait: builtin_process.Wait(waiter,
                                            job_state, mem, errfmt),
       builtin_i.jobs: builtin_process.Jobs(job_state),
-      builtin_i.fg: builtin_process.Fg(job_state, exec_deps.waiter),
+      builtin_i.fg: builtin_process.Fg(job_state, waiter),
       builtin_i.bg: builtin_process.Bg(job_state),
       builtin_i.umask: builtin_process.Umask(),
 
@@ -567,9 +567,9 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   shell_ex = executor.ShellExecutor(
       mem, exec_opts, mutable_opts, procs, builtins, search_path,
-      ext_prog, exec_deps.waiter, job_state, fd_state, errfmt)
+      ext_prog, waiter, job_state, fd_state, errfmt)
 
-  ex = cmd_exec.Executor(mem, shell_ex, fd_state, procs, builtins, exec_opts,
+  ex = cmd_exec.Executor(mem, shell_ex, procs, builtins, exec_opts,
                          arena, exec_deps)
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
   prompt_ev = prompt.Evaluator(lang, parse_ctx, mem)
@@ -585,7 +585,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   builtins[builtin_i.eval] = builtin_meta.Eval(parse_ctx, exec_opts, ex)
 
   source_builtin = builtin_meta.Source(
-      parse_ctx, search_path, ex, errfmt)
+      parse_ctx, search_path, ex, fd_state, errfmt)
   builtins[builtin_i.source] = source_builtin
   builtins[builtin_i.dot] = source_builtin
 
