@@ -253,15 +253,8 @@ class Tracer(object):
 
     first_char, prefix = self._EvalPS4()
 
-    # Very verbose way of doing what I did in one line in Python...
-    op_str = None  # type: str
-    with switch(op) as case:
-      if case(assign_op_e.Equal):
-        op_str = '='
-      elif case(assign_op_e.PlusEqual):
-        op_str = '+='
-      else:
-        raise AssertionError()
+    # Only two possibilities here
+    op_str = '+=' if op == assign_op_e.PlusEqual else '='
 
     # TODO: Need a way to print arbitrary 'val' here
     self.f.log('%s%s%s %s %s', first_char, prefix, lval, op_str, val)

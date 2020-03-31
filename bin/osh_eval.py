@@ -43,6 +43,7 @@ if TYPE_CHECKING:
 if mylib.PYTHON:
   unused1 = log
   unused2 = cmd_eval  # lint ignore
+  unused3 = dev
 
 
 # TEMP: Copied from core/main_loop.py
