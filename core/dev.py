@@ -3,7 +3,7 @@ dev.py - Devtools / introspection.
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import value_e
+from _devbuild.gen.runtime_asdl import value_e, value__Str
 from _devbuild.gen.syntax_asdl import assign_op_e
 
 from asdl import runtime
@@ -13,12 +13,13 @@ from core import optview
 from core.util import log
 from osh import word_
 from pylib import os_path
+from mycpp import mylib
 
 import posix_ as posix
 
-from typing import List, Dict, Any, TYPE_CHECKING
+from typing import List, Dict, Tuple, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.syntax_asdl import assign_op_t
+  from _devbuild.gen.syntax_asdl import assign_op_t, compound_word
   from _devbuild.gen.runtime_asdl import lvalue_t, value_t, scope_t
   from core.error import _ErrorWithLocation
   from core.util import DebugFile
@@ -80,28 +81,29 @@ class CrashDumper(object):
     if not self.do_collect:  # Either we already did it, or there is no file
       return
 
-    self.var_stack, self.argv_stack, self.debug_stack = cmd_ev.mem.Dump()
-    span_id = word_.SpanIdFromError(err)
+    if mylib.PYTHON:  # can't translate yet due to dynamic typing
+      self.var_stack, self.argv_stack, self.debug_stack = cmd_ev.mem.Dump()
+      span_id = word_.SpanIdFromError(err)
 
-    self.error = {
-       'msg': err.UserErrorString(),
-       'span_id': span_id,
-    }
+      self.error = {
+         'msg': err.UserErrorString(),
+         'span_id': span_id,
+      }
 
-    if span_id != runtime.NO_SPID:
-      span = cmd_ev.arena.GetLineSpan(span_id)
-      line_id = span.line_id
+      if span_id != runtime.NO_SPID:
+        span = cmd_ev.arena.GetLineSpan(span_id)
+        line_id = span.line_id
 
-      # Could also do msg % args separately, but JavaScript won't be able to
-      # render that.
-      self.error['source'] = cmd_ev.arena.GetLineSourceString(line_id)
-      self.error['line_num'] = cmd_ev.arena.GetLineNumber(line_id)
-      self.error['line'] = cmd_ev.arena.GetLine(line_id)
+        # Could also do msg % args separately, but JavaScript won't be able to
+        # render that.
+        self.error['source'] = cmd_ev.arena.GetLineSourceString(line_id)
+        self.error['line_num'] = cmd_ev.arena.GetLineNumber(line_id)
+        self.error['line'] = cmd_ev.arena.GetLine(line_id)
 
-    # TODO: Collect functions, aliases, etc.
+      # TODO: Collect functions, aliases, etc.
 
-    self.do_collect = False
-    self.collected = True
+      self.do_collect = False
+      self.collected = True
 
   def MaybeDump(self, status):
     # type: (int) -> None
@@ -123,26 +125,28 @@ class CrashDumper(object):
     if not self.collected:
       return
 
-    my_pid = posix.getpid()  # Get fresh PID here
+    if mylib.PYTHON:  # can't translate due to open()
 
-    # Other things we need: the reason for the crash!  _ErrorWithLocation is
-    # required I think.
-    d = {
-        'var_stack': self.var_stack,
-        'argv_stack': self.argv_stack,
-        'debug_stack': self.debug_stack,
-        'error': self.error,
-        'status': status,
-        'pid': my_pid,
-    }
+      my_pid = posix.getpid()  # Get fresh PID here
 
-    # TODO: Add PID here
-    path = os_path.join(self.crash_dump_dir, '%d-osh-crash-dump.json' % my_pid)
-    with open(path, 'w') as f:
-      import json
-      json.dump(d, f, indent=2)
-      #print(repr(d), file=f)
-    log('[%d] Wrote crash dump to %s', my_pid, path)
+      # Other things we need: the reason for the crash!  _ErrorWithLocation is
+      # required I think.
+      d = {
+          'var_stack': self.var_stack,
+          'argv_stack': self.argv_stack,
+          'debug_stack': self.debug_stack,
+          'error': self.error,
+          'status': status,
+          'pid': my_pid,
+      }
+
+      # TODO: Add PID here
+      path = os_path.join(self.crash_dump_dir, '%d-osh-crash-dump.json' % my_pid)
+      with open(path, 'w') as f:
+        import json
+        json.dump(d, f, indent=2)
+        #print(repr(d), file=f)
+      log('[%d] Wrote crash dump to %s', my_pid, path)
 
 
 class Tracer(object):
@@ -182,19 +186,21 @@ class Tracer(object):
     self.word_ev = word_ev
     self.f = f  # can be the --debug-file as well
 
-    self.parse_cache = {}  # PS4 value -> compound_word.  PS4 is scoped.
+    # PS4 value -> compound_word.  PS4 is scoped.
+    self.parse_cache = {}  # type: Dict[str, compound_word]
 
   def _EvalPS4(self):
+    # type: () -> Tuple[str, str]
     """For set -x."""
 
+    first_char = '+'
+    ps4 = ' '  # default
     val = self.mem.GetVar('PS4')
-    assert val.tag == value_e.Str
-
-    s = val.s
-    if s:
-      first_char, ps4 = s[0], s[1:]
-    else:
-      first_char, ps4 = '+', ' '  # default
+    if val.tag_() == value_e.Str:
+      s = cast(value__Str, val).s
+      if s:
+        first_char = s[0]
+        ps4 = s[1:]
 
     # NOTE: This cache is slightly broken because aliases are mutable!  I think
     # that is more or less harmless though.
@@ -235,20 +241,33 @@ class Tracer(object):
       return
 
     first_char, prefix = self._EvalPS4()
-    cmd = ' '.join(pretty.String(a) for a in argv)
+    tmp = [pretty.String(a) for a in argv]
+    cmd = ' '.join(tmp)
     self.f.log('%s%s%s', first_char, prefix, cmd)
 
   def OnShAssignment(self, lval, op, val, flags, lookup_mode):
-    # type: (lvalue_t, assign_op_t, value_t, Any, scope_t) -> None
+    # type: (lvalue_t, assign_op_t, value_t, int, scope_t) -> None
     # NOTE: I think tracing should be on by default?  For post-mortem viewing.
     if not self.exec_opts.xtrace():
       return
 
     first_char, prefix = self._EvalPS4()
-    op_str = {assign_op_e.Equal: '=', assign_op_e.PlusEqual: '+='}[op]
+
+    # Very verbose way of doing what I did in one line in Python...
+    op_str = None  # type: str
+    with switch(op) as case:
+      if case(assign_op_e.Equal):
+        op_str = '='
+      elif case(assign_op_e.PlusEqual):
+        op_str = '+='
+      else:
+        raise AssertionError()
+
+    # TODO: Need a way to print arbitrary 'val' here
     self.f.log('%s%s%s %s %s', first_char, prefix, lval, op_str, val)
 
   def Event(self):
+    # type: () -> None
     """
     Other events:
 

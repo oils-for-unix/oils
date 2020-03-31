@@ -71,10 +71,8 @@ namespace builtin_process {
   class _TrapHandler;
 }
 
-
-namespace dev {
-  class CrashDumper;
-  class Tracer;
+namespace util {
+  class DebugFile;
 }
 
 namespace executor {

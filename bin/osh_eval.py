@@ -12,6 +12,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from asdl import format as fmt
 from core import alloc
+from core import dev
 from core import error
 #from core import main_loop
 from core import meta
