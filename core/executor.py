@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 
 class ShellExecutor(object):
   """
-  This Executor is combined with the OSH language evaluators in osh/ to create
+  This CommandEvaluator is combined with the OSH language evaluators in osh/ to create
   a shell interpreter.
   """
   def __init__(self,
@@ -58,7 +58,7 @@ class ShellExecutor(object):
       errfmt  # type: ui.ErrorFormatter
     ):
     # type: (...) -> None
-    self.cmd_ev = None  # type: cmd_exec.Executor
+    self.cmd_ev = None  # type: cmd_exec.CommandEvaluator
 
     self.mem = mem
     self.exec_opts = exec_opts

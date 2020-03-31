@@ -148,13 +148,9 @@ class Deps(object):
   def __init__(self):
     # type: () -> None
     self.mutable_opts = None  # type: state.MutableOpts
-
     self.dumper = None      # type: dev.CrashDumper
-    self.tracer = None      # type: dev.Tracer
-
     self.errfmt = None      # type: ErrorFormatter
     self.debug_f = None     # type: util.DebugFile
-    self.trace_f = None     # type: util.DebugFile
 
     # signal/hook name -> handler
     self.traps = None       # type: Dict[str, builtin_process._TrapHandler]
@@ -192,7 +188,7 @@ def _PackFlags(keyword_id, flags=0):
   return (keyword_id << 8) | flags
 
 
-class Executor(object):
+class CommandEvaluator(object):
   """Executes the program by tree-walking.
 
   It also does some double-dispatch by passing itself into Eval() for

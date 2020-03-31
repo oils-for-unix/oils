@@ -41,7 +41,7 @@ if TYPE_CHECKING:
   from core.pyutil import _FileResourceLoader
   from core.state import Mem, DirStack
   from core.ui import ErrorFormatter
-  from osh.cmd_exec import Executor
+  from osh.cmd_exec import CommandEvaluator
   from osh.split import SplitContext
 
 _ = log
@@ -287,11 +287,11 @@ if mylib.PYTHON:
 
 
 class Cd(object):
-  def __init__(self, mem, dir_stack, ex, errfmt):
-    # type: (Mem, DirStack, Executor, ErrorFormatter) -> None
+  def __init__(self, mem, dir_stack, cmd_ev, errfmt):
+    # type: (Mem, DirStack, CommandEvaluator, ErrorFormatter) -> None
     self.mem = mem
     self.dir_stack = dir_stack
-    self.ex = ex  # To run blocks
+    self.cmd_ev = cmd_ev  # To run blocks
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
@@ -355,7 +355,7 @@ class Cd(object):
     if cmd_val.block:
       self.dir_stack.Push(real_dest_dir)
       try:
-        unused = self.ex.EvalBlock(cmd_val.block)
+        unused = self.cmd_ev.EvalBlock(cmd_val.block)
       finally:  # TODO: Change this to a context manager.
         # note: it might be more consistent to use an exception here.
         if not _PopDirStack(self.mem, self.dir_stack, self.errfmt):

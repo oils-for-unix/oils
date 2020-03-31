@@ -29,30 +29,30 @@ if TYPE_CHECKING:
   from core import ui
   from core.executor import ShellExecutor
   from osh.cmd_parse import CommandParser
-  from osh.cmd_exec import Executor
+  from osh.cmd_exec import CommandEvaluator
 
 
 if mylib.PYTHON:
   EVAL_SPEC = arg_def.Register('eval')
 
 
-def _EvalHelper(arena, ex, c_parser, src):
-  # type: (Arena, Executor, CommandParser, source_t) -> int
+def _EvalHelper(arena, cmd_ev, c_parser, src):
+  # type: (Arena, CommandEvaluator, CommandParser, source_t) -> int
   arena.PushSource(src)
   try:
-    return main_loop.Batch(ex, c_parser, arena)
+    return main_loop.Batch(cmd_ev, c_parser, arena)
   finally:
     arena.PopSource()
 
 
 class Eval(object):
 
-  def __init__(self, parse_ctx, exec_opts, ex):
-    # type: (ParseContext, optview.Exec, Executor) -> None
+  def __init__(self, parse_ctx, exec_opts, cmd_ev):
+    # type: (ParseContext, optview.Exec, CommandEvaluator) -> None
     self.parse_ctx = parse_ctx
     self.arena = parse_ctx.arena
     self.exec_opts = exec_opts
-    self.ex = ex
+    self.cmd_ev = cmd_ev
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
@@ -75,21 +75,21 @@ class Eval(object):
     c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
     src = source.EvalArg(eval_spid)
-    return _EvalHelper(self.arena, self.ex, c_parser, src)
+    return _EvalHelper(self.arena, self.cmd_ev, c_parser, src)
 
 
 class Source(object):
 
-  def __init__(self, parse_ctx, search_path, ex, fd_state, errfmt):
-    # type: (ParseContext, state.SearchPath, Executor, process.FdState, ui.ErrorFormatter) -> None
+  def __init__(self, parse_ctx, search_path, cmd_ev, fd_state, errfmt):
+    # type: (ParseContext, state.SearchPath, CommandEvaluator, process.FdState, ui.ErrorFormatter) -> None
     self.parse_ctx = parse_ctx
     self.arena = parse_ctx.arena
 
     self.search_path = search_path
 
-    self.ex = ex
+    self.cmd_ev = cmd_ev
     self.fd_state = fd_state
-    self.mem = ex.mem
+    self.mem = cmd_ev.mem
 
     self.errfmt = errfmt
 
@@ -124,7 +124,7 @@ class Source(object):
       src = source.SourcedFile(path, call_spid)
       self.mem.PushSource(path, source_argv)
       try:
-        status = _EvalHelper(self.arena, self.ex, c_parser, src)
+        status = _EvalHelper(self.arena, self.cmd_ev, c_parser, src)
       finally:
         self.mem.PopSource(source_argv)
 

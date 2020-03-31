@@ -43,7 +43,7 @@ if TYPE_CHECKING:
   from core.util import NullDebugFile
   from core.comp_ui import _IDisplay
   from core import optview
-  from osh.cmd_exec import Executor
+  from osh.cmd_exec import CommandEvaluator
   from core.state import Mem
   from mycpp import mylib
 
@@ -680,9 +680,9 @@ class ExternalThunk(Thunk):
 class SubProgramThunk(Thunk):
   """A subprogram that can be executed in another process."""
 
-  def __init__(self, ex, node, inherit_errexit=True):
-    # type: (Executor, command_t, bool) -> None
-    self.ex = ex
+  def __init__(self, cmd_ev, node, inherit_errexit=True):
+    # type: (CommandEvaluator, command_t, bool) -> None
+    self.cmd_ev = cmd_ev
     self.node = node
     self.inherit_errexit = inherit_errexit  # for bash errexit compatibility
 
@@ -698,12 +698,12 @@ class SubProgramThunk(Thunk):
 
     # NOTE: may NOT return due to exec().
     if not self.inherit_errexit:
-      self.ex.mutable_opts.errexit.Disable()
+      self.cmd_ev.mutable_opts.errexit.Disable()
 
     try:
       # optimize to eliminate redundant subshells like ( echo hi ) | wc -l etc.
-      self.ex.ExecuteAndCatch(self.node, optimize=True)
-      status = self.ex.LastStatus()
+      self.cmd_ev.ExecuteAndCatch(self.node, optimize=True)
+      status = self.cmd_ev.LastStatus()
       # NOTE: We ignore the is_fatal return value.  The user should set -o
       # errexit so failures in subprocesses cause failures in the parent.
     except util.UserExit as e:
@@ -945,7 +945,7 @@ class Pipeline(Job):
     self.status = -1  # for 'wait' jobs
 
     # Optional for foregroud
-    self.last_thunk = None  # type: Tuple[Executor, command_t]
+    self.last_thunk = None  # type: Tuple[CommandEvaluator, command_t]
     self.last_pipe = None  # type: Tuple[int, int]
 
   def __repr__(self):
@@ -971,7 +971,7 @@ class Pipeline(Job):
     self.procs.append(p)
 
   def AddLast(self, thunk):
-    # type: (Tuple[Executor, command_t]) -> None
+    # type: (Tuple[CommandEvaluator, command_t]) -> None
     """Append the last noden to the pipeline.
 
     This is run in the CURRENT process.  It is OPTIONAL, because pipelines in
@@ -1056,7 +1056,7 @@ class Pipeline(Job):
     # ls | wc -l
     # echo foo | read line  # no need to fork
 
-    ex, node = self.last_thunk
+    cmd_ev, node = self.last_thunk
 
     #log('thunk %s', self.last_thunk)
     if self.last_pipe is not None:
@@ -1069,7 +1069,7 @@ class Pipeline(Job):
       # exec() rather than fork/exec().
 
       try:
-        ex.ExecuteAndCatch(node)
+        cmd_ev.ExecuteAndCatch(node)
       finally:
         fd_state.Pop()
       # We won't read anymore.  If we don't do this, then 'cat' in 'cat
@@ -1078,11 +1078,11 @@ class Pipeline(Job):
 
     else:
       if self.procs:
-        ex.ExecuteAndCatch(node)  # Background pipeline without last_pipe
+        cmd_ev.ExecuteAndCatch(node)  # Background pipeline without last_pipe
       else:
-        ex._Execute(node)  # singleton foreground pipeline, e.g. '! func'
+        cmd_ev._Execute(node)  # singleton foreground pipeline, e.g. '! func'
 
-    self.pipe_status[-1] = ex.LastStatus()
+    self.pipe_status[-1] = cmd_ev.LastStatus()
     #log('pipestatus before all have finished = %s', self.pipe_status)
 
     if self.procs:
@@ -1259,7 +1259,7 @@ class JobState(object):
 class Waiter(object):
   """A capability to wait for processes.
 
-  This must be a singleton (and is because Executor is a singleton).
+  This must be a singleton (and is because CommandEvaluator is a singleton).
 
   Invariants:
   - Every child process is registered once

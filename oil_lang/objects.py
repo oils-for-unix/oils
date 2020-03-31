@@ -19,7 +19,7 @@ if TYPE_CHECKING:
   TableDict = Dict[Any, List[Any]]
   AssocArrayDict = Dict[Any, Any]
   from _devbuild.gen.syntax_asdl import re_t, command__Proc, command__Func, expr__Lambda
-  from osh.cmd_exec import Executor
+  from osh.cmd_exec import CommandEvaluator
 else:
   BoolList = IntList = FloatList = StrList = list
   AssocArrayDict = TableDict = dict
@@ -148,28 +148,28 @@ class Proc(object):
 
 class Func(object):
   """An Oil function declared with 'func'."""
-  def __init__(self, node, pos_defaults, named_defaults, ex):
-    # type: (command__Func, List[Any], Dict[str, Any], Executor) -> None
+  def __init__(self, node, pos_defaults, named_defaults, cmd_ev):
+    # type: (command__Func, List[Any], Dict[str, Any], CommandEvaluator) -> None
     self.node = node
     self.pos_defaults = pos_defaults
     self.named_defaults = named_defaults
-    self.ex = ex
+    self.cmd_ev = cmd_ev
 
   def __call__(self, *args, **kwargs):
     # type: (*Any, **Any) -> Any
-    return self.ex.RunOilFunc(self, args, kwargs)
+    return self.cmd_ev.RunOilFunc(self, args, kwargs)
 
 
 class Lambda(object):
   """An Oil function like |x| x+1 """
-  def __init__(self, node, ex):
-    # type: (expr__Lambda, Executor) -> None
+  def __init__(self, node, cmd_ev):
+    # type: (expr__Lambda, CommandEvaluator) -> None
     self.node = node
-    self.ex = ex
+    self.cmd_ev = cmd_ev
 
   def __call__(self, *args, **kwargs):
     # type: (*Any, **Any) -> Any
-    return self.ex.RunLambda(self.node, args, kwargs)
+    return self.cmd_ev.RunLambda(self.node, args, kwargs)
 
 
 class Module(object):

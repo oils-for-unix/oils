@@ -51,13 +51,13 @@ def testEvalExpr(e, expected):
     raise AssertionError('%s => %r, expected %r' % (e, actual, expected))
 
 
-def testSyntaxError(ex):
+def testSyntaxError(expr):
   try:
-    actual = ParseAndEval(ex)
+    actual = ParseAndEval(expr)
   except error.Parse as e:
-    print(ex, '\t\t', e)
+    print(expr, '\t\t', e)
   else:
-    raise AssertionError('Expected parse error: %r, got %r' % (ex, actual))
+    raise AssertionError('Expected parse error: %r, got %r' % (expr, actual))
 
 
 class ArithTest(unittest.TestCase):

@@ -149,7 +149,7 @@ def InitWordEvaluator():
   return ev
 
 
-def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
+def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
                  aliases=None, ext_prog=None):
   opt_array = [False] * option_i.ARRAY_SIZE
   if parse_ctx:
@@ -209,7 +209,6 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
 
   exec_deps.dumper = dev.CrashDumper('')
   exec_deps.debug_f = debug_f
-  exec_deps.trace_f = debug_f
 
   splitter = split.SplitContext(mem)
 
@@ -222,28 +221,29 @@ def InitExecutor(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
       mem, exec_opts, mutable_opts, procs, builtins, search_path,
       ext_prog, waiter, job_state, fd_state, errfmt)
 
-  ex = cmd_exec.Executor(mem, shell_ex, procs, builtins, exec_opts,
-                         arena, exec_deps)
-  assert ex.mutable_opts is not None, ex
+  cmd_ev = cmd_exec.CommandEvaluator(mem, shell_ex, procs, builtins, exec_opts,
+                                     arena, exec_deps)
+  assert cmd_ev.mutable_opts is not None, cmd_ev
   prompt_ev = prompt.Evaluator('osh', parse_ctx, mem)
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, word_ev,
                       debug_f)
 
-  vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, ex, shell_ex, prompt_ev, tracer)
+  vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
+                      prompt_ev, tracer)
 
-  spec_builder = builtin_comp.SpecBuilder(ex, parse_ctx, word_ev, splitter,
+  spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev, splitter,
                                           comp_lookup)
   # Add some builtins that depend on the executor!
   complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
   builtins[builtin_i.complete] = complete_builtin
   builtins[builtin_i.compgen] = builtin_comp.CompGen(spec_builder)
 
-  return ex
+  return cmd_ev
 
 
 def EvalCode(code_str, parse_ctx, comp_lookup=None, mem=None, aliases=None):
   """
-  Unit tests can evaluate code strings and then use the resulting Executor.
+  Unit tests can evaluate code strings and then use the resulting CommandEvaluator.
   """
   arena = parse_ctx.arena
 
@@ -254,11 +254,11 @@ def EvalCode(code_str, parse_ctx, comp_lookup=None, mem=None, aliases=None):
   line_reader, _ = InitLexer(code_str, arena)
   c_parser = parse_ctx.MakeOshParser(line_reader)
 
-  ex = InitExecutor(parse_ctx=parse_ctx, comp_lookup=comp_lookup, arena=arena,
+  cmd_ev = InitCommandEvaluator(parse_ctx=parse_ctx, comp_lookup=comp_lookup, arena=arena,
                     mem=mem, aliases=aliases)
 
-  main_loop.Batch(ex, c_parser, arena)  # Parse and execute!
-  return ex
+  main_loop.Batch(cmd_ev, c_parser, arena)  # Parse and execute!
+  return cmd_ev
 
 
 def InitParseContext(arena=None, oil_grammar=None, aliases=None):

@@ -161,7 +161,7 @@ def _MakeBuiltinArgv(argv):
   return cmd_value.Argv(argv, [runtime.NO_SPID] * len(argv))
 
 
-def _InitDefaultCompletions(ex, complete_builtin, comp_lookup):
+def _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup):
   # register builtins and words
   complete_builtin.Run(_MakeBuiltinArgv(['-E', '-A', 'command']))
   # register path completion
@@ -231,7 +231,7 @@ def _ShowVersion():
   pyutil.ShowAppVersion('Oil')
 
 
-def SourceStartupFile(rc_path, lang, parse_ctx, ex):
+def SourceStartupFile(rc_path, lang, parse_ctx, cmd_ev):
   # Right now this is called when the shell is interactive.  (Maybe it should
   # be called on login_shel too.)
   #
@@ -254,7 +254,7 @@ def SourceStartupFile(rc_path, lang, parse_ctx, ex):
       arena.PushSource(source.SourcedFile(rc_path))
       try:
         # TODO: don't ignore status, e.g. status == 2 when there's a parse error.
-        status = main_loop.Batch(ex, rc_c_parser, arena)
+        status = main_loop.Batch(cmd_ev, rc_c_parser, arena)
       finally:
         arena.PopSource()
   except IOError as e:
@@ -399,16 +399,16 @@ def ShellMain(lang, argv0, argv, login_shell):
   hist_ctx.Init_Trail(trail2)
 
   # Deps helps manages dependencies.  These dependencies are circular:
-  # - ex and word_ev, arith_ev -- for command sub, arith sub
+  # - cmd_ev and word_ev, arith_ev -- for command sub, arith sub
   # - arith_ev and word_ev -- for $(( ${a} )) and $x$(( 1 )) 
-  # - ex and builtins (which execute code, like eval)
+  # - cmd_ev and builtins (which execute code, like eval)
   # - prompt_ev needs word_ev for $PS1, which needs prompt_ev for @P
   exec_deps = cmd_exec.Deps()
   exec_deps.mutable_opts = mutable_opts
 
   # TODO: In general, exec_deps are shared between the mutually recursive
   # evaluators.  Some of the four below are only shared between a builtin and
-  # the Executor, so we could put them somewhere else.
+  # the CommandEvaluator, so we could put them somewhere else.
   exec_deps.traps = {}
   exec_deps.trap_nodes = []  # TODO: Clear on fork() to avoid duplicates
 
@@ -473,7 +473,6 @@ def ShellMain(lang, argv0, argv, login_shell):
     trace_f = debug_f
   else:
     trace_f = util.DebugFile(sys.stderr)
-  exec_deps.trace_f = trace_f
 
   comp_lookup = completion.Lookup()
 
@@ -569,23 +568,24 @@ def ShellMain(lang, argv0, argv, login_shell):
       mem, exec_opts, mutable_opts, procs, builtins, search_path,
       ext_prog, waiter, job_state, fd_state, errfmt)
 
-  ex = cmd_exec.Executor(mem, shell_ex, procs, builtins, exec_opts,
-                         arena, exec_deps)
+  cmd_ev = cmd_exec.CommandEvaluator(mem, shell_ex, procs, builtins, exec_opts,
+                                     arena, exec_deps)
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
   prompt_ev = prompt.Evaluator(lang, parse_ctx, mem)
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, word_ev, trace_f)
 
   # Wire up circular dependencies.
-  vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, ex, shell_ex, prompt_ev, tracer)
+  vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
+                      prompt_ev, tracer)
 
-  spec_builder = builtin_comp.SpecBuilder(ex, parse_ctx, word_ev, splitter,
+  spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev, splitter,
                                           comp_lookup)
 
   # Add some builtins that depend on the executor!
-  builtins[builtin_i.eval] = builtin_meta.Eval(parse_ctx, exec_opts, ex)
+  builtins[builtin_i.eval] = builtin_meta.Eval(parse_ctx, exec_opts, cmd_ev)
 
   source_builtin = builtin_meta.Source(
-      parse_ctx, search_path, ex, fd_state, errfmt)
+      parse_ctx, search_path, cmd_ev, fd_state, errfmt)
   builtins[builtin_i.source] = source_builtin
   builtins[builtin_i.dot] = source_builtin
 
@@ -596,8 +596,8 @@ def ShellMain(lang, argv0, argv, login_shell):
   complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
   builtins[builtin_i.complete] = complete_builtin
   builtins[builtin_i.compgen] = builtin_comp.CompGen(spec_builder)
-  builtins[builtin_i.cd] = builtin_misc.Cd(mem, dir_stack, ex, errfmt)
-  builtins[builtin_i.json] = builtin_oil.Json(mem, ex, errfmt)
+  builtins[builtin_i.cd] = builtin_misc.Cd(mem, dir_stack, cmd_ev, errfmt)
+  builtins[builtin_i.json] = builtin_oil.Json(mem, cmd_ev, errfmt)
 
   sig_state = process.SignalState()
   sig_state.InitShell()
@@ -687,7 +687,7 @@ def ShellMain(lang, argv0, argv, login_shell):
         display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 
       _InitReadline(line_input, history_filename, root_comp, display, debug_f)
-      _InitDefaultCompletions(ex, complete_builtin, comp_lookup)
+      _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
 
     else:  # Without readline module
       display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
@@ -696,18 +696,18 @@ def ShellMain(lang, argv0, argv, login_shell):
 
     # NOTE: Call this AFTER _InitDefaultCompletions.
     try:
-      SourceStartupFile(rc_path, lang, parse_ctx, ex)
+      SourceStartupFile(rc_path, lang, parse_ctx, cmd_ev)
     except util.UserExit as e:
       return e.status
 
     line_reader.Reset()  # After sourcing startup file, render $PS1
 
-    prompt_plugin = prompt.UserPlugin(mem, parse_ctx, ex)
+    prompt_plugin = prompt.UserPlugin(mem, parse_ctx, cmd_ev)
     try:
-      status = main_loop.Interactive(opts, ex, c_parser, display,
+      status = main_loop.Interactive(opts, cmd_ev, c_parser, display,
                                      prompt_plugin, errfmt)
-      if ex.MaybeRunExitTrap():
-        status = ex.LastStatus()
+      if cmd_ev.MaybeRunExitTrap():
+        status = cmd_ev.LastStatus()
     except util.UserExit as e:
       status = e.status
     return status
@@ -719,9 +719,9 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   _tlog('Execute(node)')
   try:
-    status = main_loop.Batch(ex, c_parser, arena, nodes_out=nodes_out, is_main=True)
-    if ex.MaybeRunExitTrap():
-      status = ex.LastStatus()
+    status = main_loop.Batch(cmd_ev, c_parser, arena, nodes_out=nodes_out, is_main=True)
+    if cmd_ev.MaybeRunExitTrap():
+      status = cmd_ev.LastStatus()
   except util.UserExit as e:
     status = e.status
 

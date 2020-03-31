@@ -18,7 +18,7 @@ if TYPE_CHECKING:
   from core.completion import Lookup, OptionState
   from core.ui import ErrorFormatter
   from frontend.parse_lib import ParseContext
-  from osh.cmd_exec import Executor
+  from osh.cmd_exec import CommandEvaluator
   from osh.split import SplitContext
   from osh.word_eval import NormalWordEvaluator
   from core.state import Mem
@@ -108,7 +108,7 @@ class _FixedWordsAction(completion.CompletionAction):
 class SpecBuilder(object):
 
   def __init__(self,
-               ex,  # type: Executor
+               cmd_ev,  # type: CommandEvaluator
                parse_ctx,  # type: ParseContext
                word_ev,  # type: NormalWordEvaluator
                splitter,  # type: SplitContext
@@ -117,10 +117,10 @@ class SpecBuilder(object):
     # type: (...) -> None
     """
     Args:
-      ex: Executor for compgen -F
+      cmd_ev: CommandEvaluator for compgen -F
       parse_ctx, word_ev, splitter: for compgen -W
     """
-    self.ex = ex
+    self.cmd_ev = cmd_ev
     self.parse_ctx = parse_ctx
     self.word_ev = word_ev
     self.splitter = splitter
@@ -128,7 +128,7 @@ class SpecBuilder(object):
 
   def Build(self, argv, arg, base_opts):
     """Given flags to complete/compgen, return a UserSpec."""
-    ex = self.ex
+    cmd_ev = self.cmd_ev
 
     actions = []
 
@@ -136,10 +136,10 @@ class SpecBuilder(object):
     # obviously it's better to check here.
     if arg.F:
       func_name = arg.F
-      func = ex.procs.get(func_name)
+      func = cmd_ev.procs.get(func_name)
       if func is None:
         raise args.UsageError('Function %r not found' % func_name)
-      actions.append(completion.ShellFuncAction(ex, func, self.comp_lookup))
+      actions.append(completion.ShellFuncAction(cmd_ev, func, self.comp_lookup))
 
     # NOTE: We need completion for -A action itself!!!  bash seems to have it.
     for name in arg.actions:
@@ -157,12 +157,12 @@ class SpecBuilder(object):
 
         actions.append(_FixedWordsAction(consts.BUILTIN_NAMES))
         actions.append(_FixedWordsAction(self.parse_ctx.aliases))
-        actions.append(_FixedWordsAction(ex.procs))
+        actions.append(_FixedWordsAction(cmd_ev.procs))
         actions.append(_FixedWordsAction(lexer_def.OSH_KEYWORD_NAMES))
         actions.append(completion.FileSystemAction(exec_only=True))
 
         # Look on the file system.
-        a = completion.ExternalCommandAction(ex.mem)
+        a = completion.ExternalCommandAction(cmd_ev.mem)
 
       elif name == 'directory':
         a = completion.FileSystemAction(dirs_only=True)
@@ -171,7 +171,7 @@ class SpecBuilder(object):
         a = completion.FileSystemAction()
 
       elif name == 'function':
-        a = _FixedWordsAction(ex.procs)
+        a = _FixedWordsAction(cmd_ev.procs)
 
       elif name == 'job':
         a = _FixedWordsAction(['jobs-not-implemented'])
@@ -180,7 +180,7 @@ class SpecBuilder(object):
         a = completion.UsersAction()
 
       elif name == 'variable':
-        a = completion.VariablesAction(ex.mem)
+        a = completion.VariablesAction(cmd_ev.mem)
 
       elif name == 'helptopic':
         # Note: it would be nice to have 'helpgroup' for help -i too
@@ -265,8 +265,8 @@ COMPLETE_SPEC.ShortFlag('-D',
 class Complete(object):
   """complete builtin - register a completion function.
 
-  NOTE: It's has an Executor because it creates a ShellFuncAction, which
-  needs an Executor.
+  NOTE: It's has an CommandEvaluator because it creates a ShellFuncAction, which
+  needs an CommandEvaluator.
   """
   def __init__(self, spec_builder, comp_lookup):
     # type: (SpecBuilder, Lookup) -> None

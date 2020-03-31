@@ -27,7 +27,7 @@ import posix_ as posix
 from typing import Any, Dict, List, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
   from frontend.parse_lib import ParseContext
-  from osh.cmd_exec import Executor
+  from osh.cmd_exec import CommandEvaluator
   from core.state import Mem
   from osh.word_eval import AbstractWordEvaluator
 
@@ -242,11 +242,11 @@ class UserPlugin(object):
 
   Similar to core/dev.py:Tracer, which caches $PS4.
   """
-  def __init__(self, mem, parse_ctx, ex):
-    # type: (Mem, ParseContext, Executor) -> None
+  def __init__(self, mem, parse_ctx, cmd_ev):
+    # type: (Mem, ParseContext, CommandEvaluator) -> None
     self.mem = mem
     self.parse_ctx = parse_ctx
-    self.ex = ex
+    self.cmd_ev = cmd_ev
 
     self.arena = parse_ctx.arena
     self.parse_cache = {}  # type: Dict[str, command_t]
@@ -266,7 +266,7 @@ class UserPlugin(object):
       line_reader = reader.StringLineReader(prompt_cmd, self.arena)
       c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
-      # NOTE: This is similar to Executor.ParseTrapCode().
+      # NOTE: This is similar to CommandEvaluator.ParseTrapCode().
       # TODO: Add spid
       self.arena.PushSource(source.PromptCommand(runtime.NO_SPID))
       try:
@@ -284,6 +284,6 @@ class UserPlugin(object):
     self.mem.PushStatusFrame()
     try:
       # Catches fatal execution error
-      self.ex.ExecuteAndCatch(node)
+      self.cmd_ev.ExecuteAndCatch(node)
     finally:
       self.mem.PopStatusFrame()

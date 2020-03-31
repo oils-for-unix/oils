@@ -35,9 +35,9 @@ class ExpansionTest(unittest.TestCase):
     node = c_parser._ParseCommandLine()
     print(node)
 
-    ex = test_lib.InitExecutor(arena=arena)
-    #print(ex.Execute(node))
-    #print(ex._ExpandWords(node.words))
+    cmd_ev = test_lib.InitCommandEvaluator(arena=arena)
+    #print(cmd_ev.Execute(node))
+    #print(cmd_ev._ExpandWords(node.words))
 
 
 class VarOpTest(unittest.TestCase):

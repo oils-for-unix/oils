@@ -6,7 +6,7 @@ Two variants:
 main_loop.Interactive()
 main_loop.Batch()
 
-They call CommandParser.ParseLogicalLine() and Executor.ExecuteAndCatch().
+They call CommandParser.ParseLogicalLine() and CommandEvaluator.ExecuteAndCatch().
 
 Get rid of:
 
@@ -29,14 +29,14 @@ if TYPE_CHECKING:
   from core.comp_ui import _IDisplay
   from core.ui import ErrorFormatter
   from osh.cmd_parse import CommandParser
-  from osh.cmd_exec import Executor
+  from osh.cmd_exec import CommandEvaluator
   from osh.prompt import UserPlugin
 
 _ = log
 
 
-def Interactive(opts, ex, c_parser, display, prompt_plugin, errfmt):
-  # type: (Any, Executor, CommandParser, _IDisplay, UserPlugin, ErrorFormatter) -> int
+def Interactive(opts, cmd_ev, c_parser, display, prompt_plugin, errfmt):
+  # type: (Any, CommandEvaluator, CommandParser, _IDisplay, UserPlugin, ErrorFormatter) -> int
 
   # TODO: Any could be _Attributes from frontend/args.py
 
@@ -85,19 +85,19 @@ def Interactive(opts, ex, c_parser, display, prompt_plugin, errfmt):
         display.EraseLines()
         # http://www.tldp.org/LDP/abs/html/exitcodes.html
         # bash gives 130, dash gives 0, zsh gives 1.
-        # Unless we SET ex.last_status, scripts see it, so don't bother now.
+        # Unless we SET cmd_ev.last_status, scripts see it, so don't bother now.
         break
 
       display.EraseLines()  # Clear candidates right before executing
 
       # to debug the slightly different interactive prasing
-      if ex.exec_opts.noexec():
+      if cmd_ev.exec_opts.noexec():
         ui.PrintAst([node], opts)
         break
 
-      is_return, _ = ex.ExecuteAndCatch(node)
+      is_return, _ = cmd_ev.ExecuteAndCatch(node)
 
-      status = ex.LastStatus()
+      status = cmd_ev.LastStatus()
       if is_return:
         done = True
         break
@@ -121,7 +121,7 @@ def Interactive(opts, ex, c_parser, display, prompt_plugin, errfmt):
   return status
 
 
-def Batch(ex, c_parser, arena, nodes_out=None, is_main=False):
+def Batch(cmd_ev, c_parser, arena, nodes_out=None, is_main=False):
   # type: (Any, CommandParser, Arena, Optional[List[command_t]], bool) -> int
   """Loop for batch execution.
 
@@ -168,8 +168,8 @@ def Batch(ex, c_parser, arena, nodes_out=None, is_main=False):
     optimize = is_main and c_parser.line_reader.LastLineHint()
 
     # can't optimize this because we haven't seen the end yet
-    is_return, is_fatal = ex.ExecuteAndCatch(node, optimize=optimize)
-    status = ex.LastStatus()
+    is_return, is_fatal = cmd_ev.ExecuteAndCatch(node, optimize=optimize)
+    status = cmd_ev.LastStatus()
     # e.g. 'return' in middle of script, or divide by zero
     if is_return or is_fatal:
       break

@@ -198,10 +198,10 @@ class CompletionTest(unittest.TestCase):
     func_node = c_parser.ParseLogicalLine()
     print(func_node)
 
-    ex = test_lib.InitExecutor(arena=arena)
+    cmd_ev = test_lib.InitCommandEvaluator(arena=arena)
 
     comp_lookup = completion.Lookup()
-    a = completion.ShellFuncAction(ex, func_node, comp_lookup)
+    a = completion.ShellFuncAction(cmd_ev, func_node, comp_lookup)
     comp = self._CompApi(['f'], 0, 'f')
     matches = list(a.Matches(comp))
     self.assertEqual(['f1', 'f2'], matches)
@@ -428,7 +428,7 @@ class RootCompleterTest(unittest.TestCase):
     parse_ctx.Init_Trail(parse_lib.Trail())
 
     comp_lookup = completion.Lookup()
-    ex = test_lib.EvalCode(code_str, parse_ctx, comp_lookup=comp_lookup)
+    cmd_ev = test_lib.EvalCode(code_str, parse_ctx, comp_lookup=comp_lookup)
 
     r = _MakeRootCompleter(comp_lookup=comp_lookup)
 
@@ -489,7 +489,7 @@ class RootCompleterTest(unittest.TestCase):
     parse_ctx.Init_Trail(parse_lib.Trail())
     comp_lookup = completion.Lookup()
 
-    ex = test_lib.EvalCode(code_str, parse_ctx, comp_lookup=comp_lookup,
+    cmd_ev = test_lib.EvalCode(code_str, parse_ctx, comp_lookup=comp_lookup,
                            aliases=aliases)
 
     r = _MakeRootCompleter(parse_ctx=parse_ctx, comp_lookup=comp_lookup)
@@ -524,7 +524,7 @@ class RootCompleterTest(unittest.TestCase):
     parse_ctx.Init_Trail(parse_lib.Trail())
 
     comp_lookup = completion.Lookup()
-    ex = test_lib.EvalCode(code_str, parse_ctx, comp_lookup=comp_lookup)
+    cmd_ev = test_lib.EvalCode(code_str, parse_ctx, comp_lookup=comp_lookup)
 
     r = _MakeRootCompleter(parse_ctx=parse_ctx, comp_lookup=comp_lookup)
 
@@ -744,7 +744,7 @@ class InitCompletionTest(unittest.TestCase):
       state.SetGlobalString(mem, 'ORACLE_split', oracle_split)
 
       comp_lookup = completion.Lookup()
-      ex = test_lib.EvalCode(init_code, parse_ctx, comp_lookup=comp_lookup,
+      cmd_ev = test_lib.EvalCode(init_code, parse_ctx, comp_lookup=comp_lookup,
                              mem=mem)
 
       r = _MakeRootCompleter(comp_lookup=comp_lookup)

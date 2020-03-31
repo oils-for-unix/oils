@@ -371,13 +371,13 @@ class FileSystemAction(CompletionAction):
 class ShellFuncAction(CompletionAction):
   """Call a user-defined function using bash's completion protocol."""
 
-  def __init__(self, ex, func, comp_lookup):
+  def __init__(self, cmd_ev, func, comp_lookup):
     """
     Args:
       comp_lookup: For the 124 protocol: test if the user-defined function
       registered a new UserSpec.
     """
-    self.ex = ex
+    self.cmd_ev = cmd_ev
     self.func = func
     self.comp_lookup = comp_lookup
 
@@ -386,14 +386,14 @@ class ShellFuncAction(CompletionAction):
     return '<ShellFuncAction %s>' % (self.func.name,)
 
   def log(self, *args):
-    self.ex.debug_f.log(*args)
+    self.cmd_ev.debug_f.log(*args)
 
   def Matches(self, comp):
     # Have to clear the response every time.  TODO: Reuse the object?
-    state.SetGlobalArray(self.ex.mem, 'COMPREPLY', [])
+    state.SetGlobalArray(self.cmd_ev.mem, 'COMPREPLY', [])
 
     # New completions should use COMP_ARGV, a construct specific to OSH>
-    state.SetGlobalArray(self.ex.mem, 'COMP_ARGV', comp.partial_argv)
+    state.SetGlobalArray(self.cmd_ev.mem, 'COMP_ARGV', comp.partial_argv)
 
     # Old completions may use COMP_WORDS.  It is split by : and = to emulate
     # bash's behavior. 
@@ -407,17 +407,17 @@ class ShellFuncAction(CompletionAction):
     else:
       comp_cword = len(comp_words) - 1  # weird invariant
 
-    state.SetGlobalArray(self.ex.mem, 'COMP_WORDS', comp_words)
-    state.SetGlobalString(self.ex.mem, 'COMP_CWORD', str(comp_cword))
-    state.SetGlobalString(self.ex.mem, 'COMP_LINE', comp.line)
-    state.SetGlobalString(self.ex.mem, 'COMP_POINT', str(comp.end))
+    state.SetGlobalArray(self.cmd_ev.mem, 'COMP_WORDS', comp_words)
+    state.SetGlobalString(self.cmd_ev.mem, 'COMP_CWORD', str(comp_cword))
+    state.SetGlobalString(self.cmd_ev.mem, 'COMP_LINE', comp.line)
+    state.SetGlobalString(self.cmd_ev.mem, 'COMP_POINT', str(comp.end))
 
     argv = [comp.first, comp.to_complete, comp.prev]
     self.log('Running completion function %r with arguments %s',
              self.func.name, argv)
 
     self.comp_lookup.ClearCommandsChanged()
-    status = self.ex.RunFuncForCompletion(self.func, argv)
+    status = self.cmd_ev.RunFuncForCompletion(self.func, argv)
     commands_changed = self.comp_lookup.GetCommandsChanged()
 
     self.log('comp.first %s, commands_changed: %s', comp.first,
@@ -439,7 +439,7 @@ class ShellFuncAction(CompletionAction):
 
     # Read the response.
     # NOTE: 'COMP_REPLY' would follow the naming convention!
-    val = state.GetGlobal(self.ex.mem, 'COMPREPLY')
+    val = state.GetGlobal(self.cmd_ev.mem, 'COMPREPLY')
     if val.tag == value_e.Undef:
       # We set it above, so this error would only happen if the user unset it.
       # Not changing it means there were no completions.

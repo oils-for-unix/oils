@@ -1659,7 +1659,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             class_name == 'ArithEvaluator' and func_name == '_ValToIntOrError' or
             class_name is None and func_name == '_StringToInteger' or
             class_name == 'BoolEvaluator' and func_name in ('_EvalCompoundWord', '_StringToIntegerOrError') or
-            class_name == 'Executor' and func_name == '_Execute' or
+            class_name == 'CommandEvaluator' and func_name == '_Execute' or
             class_name is None and func_name == '_PackFlags' or
             class_name == 'Mem' and func_name in ('GetVar', 'SetVar') or
             class_name == 'SearchPath' and func_name == 'Lookup' or

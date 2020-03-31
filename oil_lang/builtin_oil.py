@@ -27,7 +27,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from core.state import Mem
-  from osh.cmd_exec import Executor
+  from osh.cmd_exec import CommandEvaluator
 
 
 class _Builtin(object):
@@ -215,10 +215,10 @@ class Json(object):
       json echo &myobj 
   Well that will get confused with a redirect.
   """
-  def __init__(self, mem, ex, errfmt):
-    # type: (Mem, Executor, ErrorFormatter) -> None
+  def __init__(self, mem, cmd_ev, errfmt):
+    # type: (Mem, CommandEvaluator, ErrorFormatter) -> None
     self.mem = mem
-    self.ex = ex
+    self.cmd_ev = cmd_ev
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
@@ -271,7 +271,7 @@ class Json(object):
       # TODO: Accept a block.  They aren't hooked up yet.
       if cmd_val.block:
         # TODO: flatten value.{Str,Obj} into a flat dict?
-        namespace = self.ex.EvalBlock(cmd_val.block)
+        namespace = self.cmd_ev.EvalBlock(cmd_val.block)
 
         print(yajl.dump(namespace))
 

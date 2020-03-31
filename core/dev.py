@@ -25,7 +25,7 @@ if TYPE_CHECKING:
   from frontend.parse_lib import ParseContext
   from core.state import MutableOpts, Mem
   from osh.word_eval import NormalWordEvaluator
-  #from osh.cmd_exec import Executor
+  #from osh.cmd_exec import CommandEvaluator
 
 
 class CrashDumper(object):
@@ -43,7 +43,7 @@ class CrashDumper(object):
   }
 
   Things to dump:
-  Executor
+  CommandEvaluator
     functions, aliases, traps, completion hooks, fd_state, dir_stack
   
   debug info for the source?  Or does that come elsewhere?
@@ -69,18 +69,18 @@ class CrashDumper(object):
     self.debug_stack = None
     self.error = None  # type: Dict[str, Any]
 
-  def MaybeCollect(self, ex, err):
+  def MaybeCollect(self, cmd_ev, err):
     # type: (Any, _ErrorWithLocation) -> None
-    # TODO: Any -> Executor
+    # TODO: Any -> CommandEvaluator
     """
     Args:
-      ex: Executor instance
+      cmd_ev: CommandEvaluator instance
       error: _ErrorWithLocation (ParseError or FatalRuntimeError)
     """
     if not self.do_collect:  # Either we already did it, or there is no file
       return
 
-    self.var_stack, self.argv_stack, self.debug_stack = ex.mem.Dump()
+    self.var_stack, self.argv_stack, self.debug_stack = cmd_ev.mem.Dump()
     span_id = word_.SpanIdFromError(err)
 
     self.error = {
@@ -89,14 +89,14 @@ class CrashDumper(object):
     }
 
     if span_id != runtime.NO_SPID:
-      span = ex.arena.GetLineSpan(span_id)
+      span = cmd_ev.arena.GetLineSpan(span_id)
       line_id = span.line_id
 
       # Could also do msg % args separately, but JavaScript won't be able to
       # render that.
-      self.error['source'] = ex.arena.GetLineSourceString(line_id)
-      self.error['line_num'] = ex.arena.GetLineNumber(line_id)
-      self.error['line'] = ex.arena.GetLine(line_id)
+      self.error['source'] = cmd_ev.arena.GetLineSourceString(line_id)
+      self.error['line_num'] = cmd_ev.arena.GetLineNumber(line_id)
+      self.error['line'] = cmd_ev.arena.GetLine(line_id)
 
     # TODO: Collect functions, aliases, etc.
 

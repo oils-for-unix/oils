@@ -116,7 +116,7 @@ class ProcessTest(unittest.TestCase):
 
   def testPipeline(self):
     node = _CommandNode('uniq -c', _ARENA)
-    ex = test_lib.InitExecutor(arena=_ARENA, ext_prog=_EXT_PROG)
+    cmd_ev = test_lib.InitCommandEvaluator(arena=_ARENA, ext_prog=_EXT_PROG)
     print('BEFORE', os.listdir('/dev/fd'))
 
     p = process.Pipeline()
@@ -124,7 +124,7 @@ class ProcessTest(unittest.TestCase):
     p.Add(_ExtProc(['cut', '-d', '.', '-f', '2']))
     p.Add(_ExtProc(['sort']))
 
-    p.AddLast((ex, node))
+    p.AddLast((cmd_ev, node))
 
     pipe_status = p.Run(_WAITER, _FD_STATE)
     log('pipe_status: %s', pipe_status)
@@ -132,7 +132,7 @@ class ProcessTest(unittest.TestCase):
     print('AFTER', os.listdir('/dev/fd'))
 
   def testPipeline2(self):
-    ex = test_lib.InitExecutor(arena=_ARENA, ext_prog=_EXT_PROG)
+    cmd_ev = test_lib.InitCommandEvaluator(arena=_ARENA, ext_prog=_EXT_PROG)
 
     Banner('ls | cut -d . -f 1 | head')
     p = process.Pipeline()
@@ -140,7 +140,7 @@ class ProcessTest(unittest.TestCase):
     p.Add(_ExtProc(['cut', '-d', '.', '-f', '1']))
 
     node = _CommandNode('head', _ARENA)
-    p.AddLast((ex, node))
+    p.AddLast((cmd_ev, node))
 
     fd_state = process.FdState(_ERRFMT, _JOB_STATE)
     print(p.Run(_WAITER, _FD_STATE))
@@ -151,11 +151,11 @@ class ProcessTest(unittest.TestCase):
     node3 = _CommandNode('sort --reverse', _ARENA)
 
     p = process.Pipeline()
-    p.Add(Process(process.SubProgramThunk(ex, node1), _JOB_STATE))
-    p.Add(Process(process.SubProgramThunk(ex, node2), _JOB_STATE))
-    p.Add(Process(process.SubProgramThunk(ex, node3), _JOB_STATE))
+    p.Add(Process(process.SubProgramThunk(cmd_ev, node1), _JOB_STATE))
+    p.Add(Process(process.SubProgramThunk(cmd_ev, node2), _JOB_STATE))
+    p.Add(Process(process.SubProgramThunk(cmd_ev, node3), _JOB_STATE))
 
-    last_thunk = (ex, _CommandNode('cat', _ARENA))
+    last_thunk = (cmd_ev, _CommandNode('cat', _ARENA))
     p.AddLast(last_thunk)
 
     print(p.Run(_WAITER, _FD_STATE))

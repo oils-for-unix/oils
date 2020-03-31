@@ -232,7 +232,7 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
   # type: (sh_lhs_expr_t, ArithEvaluator, Mem, optview.Exec, scope_t) -> Tuple[value_t, lvalue_t]
   """Evaluate the operand for i++, a[0]++, i+=2, a[0]+=2 as an R-value.
 
-  Also used by the Executor for s+='x' and a[42]+='x'.
+  Also used by the CommandEvaluator for s+='x' and a[42]+='x'.
 
   Args:
     node: syntax_asdl.sh_lhs_expr
