@@ -470,3 +470,82 @@ len=1
 unset len=0
 ## END
 
+#### unset -v and assoc array
+show-len() {
+  echo len=${#A[@]}
+}
+
+declare -A A=(['K']=val)
+show-len
+
+unset -v 'A["K"]'
+show-len
+
+declare -A A=(['K']=val)
+show-len
+key=K
+unset -v 'A[$key]'
+show-len
+
+## STDOUT:
+len=1
+len=0
+len=1
+len=0
+## END
+
+#### nameref and assoc array
+show-values() {
+  echo values: ${A[@]}
+}
+
+declare -A A=(['K']=val)
+show-values
+
+declare -n ref='A["K"]'
+echo before $ref
+ref='val2'
+echo after $ref
+show-values
+
+echo ---
+
+key=K
+declare -n ref='A[$key]'
+echo before $ref
+ref='val3'
+echo after $ref
+show-values
+
+## STDOUT:
+values: val
+before val
+after val2
+values: val2
+---
+before val2
+after val3
+values: val3
+## END
+
+#### ${!ref} and assoc array
+show-values() {
+  echo values: ${A[@]}
+}
+
+declare -A A=(['K']=val)
+show-values
+
+declare ref='A["K"]'
+echo ref ${!ref}
+
+key=K
+declare ref='A[$key]'
+echo ref ${!ref}
+
+## STDOUT:
+values: val
+ref val
+ref val
+## END
+
