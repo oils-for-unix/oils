@@ -99,6 +99,7 @@ if mylib.PYTHON:
                   self.token or self.part or self.word)
 
     def ExitStatus(self):
+      # type: () -> int
       return self.exit_status
 
     def __repr__(self):
