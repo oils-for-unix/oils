@@ -899,13 +899,12 @@ class CommandEvaluator(object):
         tok = node.token
 
         if node.arg_word:  # Evaluate the argument
-          val = self.word_ev.EvalWordToString(node.arg_word)
-          assert val.tag_() == value_e.Str
+          str_val = self.word_ev.EvalWordToString(node.arg_word)
           try:
-            arg = int(val.s)  # They all take integers
+            arg = int(str_val.s)  # They all take integers
           except ValueError:
             e_die('%r expected a number, got %r',
-                node.token.val, val.s, word=node.arg_word)
+                node.token.val, str_val.s, word=node.arg_word)
         else:
           if tok.id in (Id.ControlFlow_Exit, Id.ControlFlow_Return):
             arg = self.mem.LastStatus()
@@ -1212,8 +1211,8 @@ class CommandEvaluator(object):
 
       elif case(command_e.Case):
         node = cast(command__Case, UP_node)
-        val = self.word_ev.EvalWordToString(node.to_match)
-        to_match = val.s
+        str_val = self.word_ev.EvalWordToString(node.to_match)
+        to_match = str_val.s
 
         status = 0  # If there are no arms, it should be zero?
         done = False
@@ -1459,7 +1458,7 @@ class CommandEvaluator(object):
 
       ui.PrettyPrintError(e, self.arena, prefix='fatal: ')
       is_fatal = True
-      status = e.exit_status if e.exit_status is not None else 1
+      status = e.ExitStatus()
 
     self.dumper.MaybeDump(status)
     self.mem.SetLastStatus(status)
@@ -1687,7 +1686,7 @@ class CommandEvaluator(object):
     foo = {a:1}
 
     """
-    status = None  # type: int
+    status = 0
     namespace_ = None  # type: Dict[str, cell]
     self.mem.PushTemp()  # So variables don't conflict
     try:
@@ -1718,7 +1717,7 @@ class CommandEvaluator(object):
       status = self.RunProc(func_node, argv)
     except error.FatalRuntime as e:
       ui.PrettyPrintError(e, self.arena)
-      status = e.exit_status if e.exit_status is not None else 1
+      status = e.ExitStatus()
     except _ControlFlow as e:
       # shouldn't be able to exit the shell from a completion hook!
       # TODO: Avoid overwriting the prompt!

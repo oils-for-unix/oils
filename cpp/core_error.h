@@ -54,6 +54,10 @@ class _ErrorWithLocation {
     assert(0);
   }
 
+  int ExitStatus() {
+    assert(0);
+  }
+
   Str* user_str_;
   int span_id;
   syntax_asdl::Token* token;

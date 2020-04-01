@@ -86,7 +86,10 @@ if mylib.PYTHON:
       self.token = kwargs.pop('token', None)  # type: Token
       self.part = kwargs.pop('part', None)  # type: word_part_t
       self.word = kwargs.pop('word', None)  # type: word_t
-      self.exit_status = kwargs.pop('status', None)  # type: int
+
+      # Runtime errors have a default status of 1.  Parse errors return 2
+      # explicitly.
+      self.exit_status = kwargs.pop('status', 1)  # type: int
       if kwargs:
         raise AssertionError('Invalid keyword args %s' % kwargs)
 
@@ -94,6 +97,9 @@ if mylib.PYTHON:
       # type: () -> bool
       return bool(self.span_id != NO_SPID or
                   self.token or self.part or self.word)
+
+    def ExitStatus(self):
+      return self.exit_status
 
     def __repr__(self):
       # type: () -> str
@@ -113,17 +119,7 @@ if mylib.PYTHON:
 # Need a better constructor
 if mylib.PYTHON:
   class Parse(_ErrorWithLocation):
-    """Used in the parsers.
-
-    TODO:
-    - This could just be FatalError?
-    - You might want to catch this and add multiple locations?
-      try:
-        foo
-      except ParseError as e:
-        e.AddErrorInfo('hi', token=t)
-        raise
-    """
+    """Used in the parsers."""
 
   class RedirectEval(_ErrorWithLocation):
     """Used in the CommandEvaluator.
