@@ -95,7 +95,6 @@ if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import (
       redir, expr__Lambda, env_pair, proc_sig__Closed,
   )
-  from core.ui import ErrorFormatter
   from core.alloc import Arena
   from core import dev
   from core.executor import ShellExecutor
