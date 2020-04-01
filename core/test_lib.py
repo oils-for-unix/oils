@@ -175,7 +175,16 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   comp_lookup = comp_lookup or completion.Lookup()
 
   readline = None  # simulate not having it
+
   new_var = builtin_assign.NewVar(mem, procs, errfmt)
+  assign_builtins = {
+      builtin_i.declare: new_var,
+      builtin_i.typeset: new_var,
+      builtin_i.local: new_var,
+
+      builtin_i.export_: builtin_assign.Export(mem, errfmt),
+      builtin_i.readonly: builtin_assign.Readonly(mem, errfmt),
+  }
   builtins = {  # Lookup
       builtin_i.echo: builtin_pure.Echo(exec_opts),
       builtin_i.shift: builtin_assign.Shift(mem),
@@ -187,13 +196,6 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
 
       builtin_i.alias: builtin_pure.Alias(aliases, errfmt),
       builtin_i.unalias: builtin_pure.UnAlias(aliases, errfmt),
-
-      builtin_i.declare: new_var,
-      builtin_i.typeset: new_var,
-      builtin_i.local: new_var,
-
-      builtin_i.export_: builtin_assign.Export(mem, errfmt),
-      builtin_i.readonly: builtin_assign.Readonly(mem, errfmt),
   }
 
   debug_f = util.DebugFile(sys.stderr)
@@ -216,8 +218,8 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, errfmt)
   expr_ev = expr_eval.OilEvaluator(mem, procs, errfmt)
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
-  cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs, builtins,
-                                     arena, cmd_deps)
+  cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
+                                     assign_builtins, arena, cmd_deps)
 
   shell_ex = executor.ShellExecutor(
       mem, exec_opts, mutable_opts, procs, builtins, search_path,

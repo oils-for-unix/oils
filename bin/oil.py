@@ -483,8 +483,19 @@ def ShellMain(lang, argv0, argv, login_shell):
   dir_stack = state.DirStack()
 
   new_var = builtin_assign.NewVar(mem, procs, errfmt)
+  assign_builtins = {
+      # ShAssignment (which are pure)
+      builtin_i.declare: new_var,
+      builtin_i.typeset: new_var,
+      builtin_i.local: new_var,
 
-  builtins = {  # Lookup
+      builtin_i.export_: builtin_assign.Export(mem, errfmt),
+      builtin_i.readonly: builtin_assign.Readonly(mem, errfmt),
+  }
+
+  true_ = builtin_pure.Boolean(0)
+
+  builtins = {
       builtin_i.echo: builtin_pure.Echo(exec_opts),
       builtin_i.printf: builtin_printf.Printf(mem, parse_ctx, errfmt),
 
@@ -509,14 +520,6 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_i.test: builtin_bracket.Test(False, exec_opts, mem, errfmt),
       builtin_i.bracket: builtin_bracket.Test(True, exec_opts, mem, errfmt),
 
-      # ShAssignment (which are pure)
-      builtin_i.declare: new_var,
-      builtin_i.typeset: new_var,
-      builtin_i.local: new_var,
-
-      builtin_i.export_: builtin_assign.Export(mem, errfmt),
-      builtin_i.readonly: builtin_assign.Readonly(mem, errfmt),
-
       builtin_i.unset: builtin_assign.Unset(mem, procs, errfmt),
       builtin_i.shift: builtin_assign.Shift(mem),
 
@@ -531,8 +534,8 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_i.hash: builtin_pure.Hash(search_path),
       builtin_i.getopts: builtin_pure.GetOpts(mem, errfmt),
 
-      builtin_i.colon: builtin_pure.Boolean(0),  # a "special" builtin 
-      builtin_i.true_: builtin_pure.Boolean(0),
+      builtin_i.colon: true_,  # a "special" builtin 
+      builtin_i.true_: true_,
       builtin_i.false_: builtin_pure.Boolean(1),
 
       # Process
@@ -562,8 +565,8 @@ def ShellMain(lang, argv0, argv, login_shell):
   bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, errfmt)
   expr_ev = expr_eval.OilEvaluator(mem, procs, errfmt)
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
-  cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs, builtins,
-                                     arena, cmd_deps)
+  cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
+                                     assign_builtins, arena, cmd_deps)
 
   shell_ex = executor.ShellExecutor(
       mem, exec_opts, mutable_opts, procs, builtins, search_path,
@@ -577,9 +580,6 @@ def ShellMain(lang, argv0, argv, login_shell):
   vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
                       prompt_ev, tracer)
 
-  spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev, splitter,
-                                          comp_lookup)
-
   # Add some builtins that depend on the executor!
   builtins[builtin_i.eval] = builtin_meta.Eval(parse_ctx, exec_opts, cmd_ev)
 
@@ -592,9 +592,13 @@ def ShellMain(lang, argv0, argv, login_shell):
   builtins[builtin_i.command] = builtin_meta.Command(shell_ex, procs, aliases,
                                                       search_path)
 
+  spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev, splitter,
+                                          comp_lookup)
   complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
   builtins[builtin_i.complete] = complete_builtin
   builtins[builtin_i.compgen] = builtin_comp.CompGen(spec_builder)
+
+  # These builtins take blocks, and thus need cmd_ev.
   builtins[builtin_i.cd] = builtin_misc.Cd(mem, dir_stack, cmd_ev, errfmt)
   builtins[builtin_i.json] = builtin_oil.Json(mem, cmd_ev, errfmt)
 

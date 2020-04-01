@@ -193,13 +193,13 @@ class CommandEvaluator(object):
   Compound/WordPart.
   """
   def __init__(self,
-               mem,          # type: state.Mem
-               exec_opts,    # type: optview.Exec
-               errfmt,       # type: ui.ErrorFormatter
-               procs,        # type: Dict[str, command__ShFunction]
-               builtins,     # type: Dict[builtin_t, _Builtin]
-               arena,        # type: Arena
-               cmd_deps,    # type: Deps
+               mem,              # type: state.Mem
+               exec_opts,        # type: optview.Exec
+               errfmt,           # type: ui.ErrorFormatter
+               procs,            # type: Dict[str, command__ShFunction]
+               assign_builtins,  # type: Dict[builtin_t, _Builtin]
+               arena,            # type: Arena
+               cmd_deps,         # type: Deps
   ):
     # type: (...) -> None
     """
@@ -222,7 +222,7 @@ class CommandEvaluator(object):
     self.exec_opts = exec_opts
     self.errfmt = errfmt
     self.procs = procs
-    self.builtins = builtins
+    self.assign_builtins = assign_builtins
     self.arena = arena
 
     self.mutable_opts = cmd_deps.mutable_opts
@@ -246,7 +246,13 @@ class CommandEvaluator(object):
     # type: (cmd_value__Assign) -> int
     """Run an assignment builtin.  Except blocks copied from RunBuiltin above."""
     self.errfmt.PushLocation(cmd_val.arg_spids[0])  # default
-    builtin_func = self.builtins[cmd_val.builtin_id]  # must be there
+
+    builtin_func = self.assign_builtins.get(cmd_val.builtin_id)
+    if builtin_func is None:
+      self.errfmt.Print("Assignment builtin %r not configured",
+                        cmd_val.argv[0], span_id=cmd_val.arg_spids[0])
+      return 127
+
     try:
       status = builtin_func.Run(cmd_val)
     except args.UsageError as e:  # Copied from RunBuiltin
