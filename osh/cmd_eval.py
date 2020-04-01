@@ -318,7 +318,7 @@ class CommandEvaluator(object):
           span_id = runtime.NO_SPID
 
       raise error.ErrExit(
-          'Exiting with status %d (%sPID %d)', status, reason, posix.getpid(),
+          'Exiting with status %d (%sPID %d)' % (status, reason, posix.getpid()),
           span_id=span_id, status=status)
 
   def _EvalRedirect(self, r):
@@ -369,8 +369,8 @@ class CommandEvaluator(object):
               result.arg = redirect_arg.CopyFd(int(t))
           except ValueError:
             raise error.RedirectEval(
-                "Redirect descriptor should look like an integer, '-', or an integer + '-', got %s", val,
-                word=arg_word)
+                'Invalid descriptor %r.  Expected D, -, or D- where D is an '
+                'integer' % t, word=arg_word)
             return None
 
           return result
@@ -410,7 +410,7 @@ class CommandEvaluator(object):
     Redirect() abstraction in process.py is useful.  It has a lot of methods.
 
     Raises:
-      RedirectEvalError
+      error.RedirectEval
     """
     # This is kind of lame because we have two switches over command_e: one for
     # redirects, and to evaluate the node.  But it's what you would do in C++ I

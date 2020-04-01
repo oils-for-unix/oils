@@ -125,13 +125,12 @@ if mylib.PYTHON:
         raise
     """
 
+  class RedirectEval(_ErrorWithLocation):
+    """Used in the CommandEvaluator.
 
-class RedirectEval(_ErrorWithLocation):
-  """Used in the CommandEvaluator.
-
-  A bad redirect causes the SimpleCommand to return with status 1.  To make it
-  fatal, use set -o errexit.
-  """
+    A bad redirect causes the SimpleCommand to return with status 1.  To make it
+    fatal, use set -o errexit.
+    """
 
 
 class FatalRuntime(_ErrorWithLocation):
@@ -161,8 +160,9 @@ class Strict(FatalRuntime):
   """
 
 
-class ErrExit(FatalRuntime):
-  """For set -e.
+if mylib.PYTHON:
+  class ErrExit(FatalRuntime):
+    """For set -e.
 
-  Travels between WordEvaluator and CommandEvaluator.
-  """
+    Travels between WordEvaluator and CommandEvaluator.
+    """

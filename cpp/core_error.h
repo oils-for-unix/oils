@@ -50,6 +50,10 @@ class _ErrorWithLocation {
     return user_str_;
   }
 
+  bool HasLocation() {
+    assert(0);
+  }
+
   Str* user_str_;
   int span_id;
   syntax_asdl::Token* token;
@@ -68,6 +72,26 @@ class Parse : public _ErrorWithLocation {
   Parse(Str* user_str, word_t* word) : _ErrorWithLocation(user_str, word) {
   }
 };
+
+class RedirectEval : public _ErrorWithLocation {
+ public:
+  RedirectEval(Str* user_str, int span_id) : _ErrorWithLocation(user_str, span_id) {
+  }
+  RedirectEval(Str* user_str, Token* token) : _ErrorWithLocation(user_str, token) {
+  }
+  RedirectEval(Str* user_str, word_part_t* part) : _ErrorWithLocation(user_str, part) {
+  }
+  RedirectEval(Str* user_str, word_t* word) : _ErrorWithLocation(user_str, word) {
+  }
+};
+
+// Stub
+class ErrExit : public _ErrorWithLocation {
+ public:
+  ErrExit(Str* user_str, int span_id, int status) : _ErrorWithLocation(user_str, span_id) {
+  }
+};
+
 
 }  // namespace error
 

@@ -42,6 +42,11 @@ namespace util {
   inline Str* BackslashEscape(Str* a, Str* b) {
     assert(0);
   }
+  class UserExit {
+   public:
+     UserExit(int arg) {
+     }
+  };
 }
 
 // TODO: Should these have their own file?
