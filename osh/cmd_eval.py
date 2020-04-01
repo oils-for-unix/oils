@@ -149,7 +149,6 @@ class Deps(object):
     # type: () -> None
     self.mutable_opts = None  # type: state.MutableOpts
     self.dumper = None      # type: dev.CrashDumper
-    self.errfmt = None      # type: ErrorFormatter
     self.debug_f = None     # type: util.DebugFile
 
     # signal/hook name -> handler
@@ -196,12 +195,12 @@ class CommandEvaluator(object):
   """
   def __init__(self,
                mem,          # type: state.Mem
-               shell_ex,     # type: ShellExecutor
+               exec_opts,    # type: optview.Exec
+               errfmt,       # type: ui.ErrorFormatter
                procs,        # type: Dict[str, command__ShFunction]
                builtins,     # type: Dict[builtin_t, _Builtin]
-               exec_opts,    # type: optview.Exec
                arena,        # type: Arena
-               exec_deps,    # type: Deps
+               cmd_deps,    # type: Deps
   ):
     # type: (...) -> None
     """
@@ -210,8 +209,9 @@ class CommandEvaluator(object):
       procs: dict of SHELL functions or 'procs'
       builtins: dict of builtin callables
                 TODO: This should only be for assignment builtins?
-      exec_deps: A bundle of stateless code
+      cmd_deps: A bundle of stateless code
     """
+    self.shell_ex = None  # type: ShellExecutor
     self.arith_ev = None  # type: sh_expr_eval.ArithEvaluator
     self.bool_ev = None  # type: sh_expr_eval.BoolEvaluator
     self.expr_ev = None  # type: expr_eval.OilEvaluator
@@ -219,21 +219,19 @@ class CommandEvaluator(object):
     self.tracer = None  # type: dev.Tracer
 
     self.mem = mem
-    self.shell_ex = shell_ex
-    self.procs = procs
-    self.builtins = builtins
-
     # This is for shopt and set -o.  They are initialized by flags.
     self.exec_opts = exec_opts
+    self.errfmt = errfmt
+    self.procs = procs
+    self.builtins = builtins
     self.arena = arena
 
-    self.mutable_opts = exec_deps.mutable_opts
-    self.dumper = exec_deps.dumper
-    self.errfmt = exec_deps.errfmt
-    self.debug_f = exec_deps.debug_f  # Used by ShellFuncAction too
+    self.mutable_opts = cmd_deps.mutable_opts
+    self.dumper = cmd_deps.dumper
+    self.debug_f = cmd_deps.debug_f  # Used by ShellFuncAction too
 
-    self.traps = exec_deps.traps
-    self.trap_nodes = exec_deps.trap_nodes
+    self.traps = cmd_deps.traps
+    self.trap_nodes = cmd_deps.trap_nodes
 
     self.loop_level = 0  # for detecting bad top-level break/continue
     self.check_command_sub_status = False  # a hack.  Modified by ShellExecutor

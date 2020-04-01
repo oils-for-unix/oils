@@ -29,6 +29,7 @@ def InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex, prom
   word_ev.prompt_ev = prompt_ev
   word_ev.shell_ex = shell_ex
 
+  cmd_ev.shell_ex = shell_ex
   cmd_ev.arith_ev = arith_ev
   cmd_ev.bool_ev = bool_ev
   cmd_ev.expr_ev = expr_ev

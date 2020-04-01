@@ -477,7 +477,7 @@ glob() {
 }
 
 arith() {
-  sh-spec spec/arith.test.sh --osh-failures-allowed 7 \
+  sh-spec spec/arith.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
@@ -924,7 +924,7 @@ oil-interactive() {
 }
 
 ble-idioms() {
-  sh-spec spec/ble-idioms.test.sh --osh-failures-allowed 7 \
+  sh-spec spec/ble-idioms.test.sh --osh-failures-allowed 10 \
           $BASH $ZSH $MKSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 

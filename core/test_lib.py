@@ -139,8 +139,8 @@ def InitWordEvaluator():
   exec_opts = optview.Exec(opt_array, errexit)
   mem.exec_opts = exec_opts  # circular dep
 
-  exec_deps = cmd_eval.Deps()
-  exec_deps.trap_nodes = []
+  cmd_deps = cmd_eval.Deps()
+  cmd_deps.trap_nodes = []
 
   splitter = split.SplitContext(mem)
   errfmt = ui.ErrorFormatter(arena)
@@ -197,18 +197,18 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   }
 
   debug_f = util.DebugFile(sys.stderr)
-  exec_deps = cmd_eval.Deps()
-  exec_deps.mutable_opts = mutable_opts
+  cmd_deps = cmd_eval.Deps()
+  cmd_deps.mutable_opts = mutable_opts
+  cmd_deps.trap_nodes = []
+
   search_path = state.SearchPath(mem)
-  exec_deps.errfmt = errfmt
-  exec_deps.trap_nodes = []
   waiter = process.Waiter(job_state, exec_opts)
 
   ext_prog = \
       ext_prog or process.ExternalProgram('', fd_state, errfmt, debug_f)
 
-  exec_deps.dumper = dev.CrashDumper('')
-  exec_deps.debug_f = debug_f
+  cmd_deps.dumper = dev.CrashDumper('')
+  cmd_deps.debug_f = debug_f
 
   splitter = split.SplitContext(mem)
 
@@ -216,13 +216,13 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
   bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, errfmt)
   expr_ev = expr_eval.OilEvaluator(mem, procs, errfmt)
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
+  cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs, builtins,
+                                     arena, cmd_deps)
 
   shell_ex = executor.ShellExecutor(
       mem, exec_opts, mutable_opts, procs, builtins, search_path,
       ext_prog, waiter, job_state, fd_state, errfmt)
 
-  cmd_ev = cmd_eval.CommandEvaluator(mem, shell_ex, procs, builtins, exec_opts,
-                                     arena, exec_deps)
   assert cmd_ev.mutable_opts is not None, cmd_ev
   prompt_ev = prompt.Evaluator('osh', parse_ctx, mem)
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, word_ev,

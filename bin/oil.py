@@ -403,17 +403,16 @@ def ShellMain(lang, argv0, argv, login_shell):
   # - arith_ev and word_ev -- for $(( ${a} )) and $x$(( 1 )) 
   # - cmd_ev and builtins (which execute code, like eval)
   # - prompt_ev needs word_ev for $PS1, which needs prompt_ev for @P
-  exec_deps = cmd_eval.Deps()
-  exec_deps.mutable_opts = mutable_opts
+  cmd_deps = cmd_eval.Deps()
+  cmd_deps.mutable_opts = mutable_opts
 
-  # TODO: In general, exec_deps are shared between the mutually recursive
+  # TODO: In general, cmd_deps are shared between the mutually recursive
   # evaluators.  Some of the four below are only shared between a builtin and
   # the CommandEvaluator, so we could put them somewhere else.
-  exec_deps.traps = {}
-  exec_deps.trap_nodes = []  # TODO: Clear on fork() to avoid duplicates
+  cmd_deps.traps = {}
+  cmd_deps.trap_nodes = []  # TODO: Clear on fork() to avoid duplicates
 
   waiter = process.Waiter(job_state, exec_opts)
-  exec_deps.errfmt = errfmt
 
   my_pid = posix.getpid()
 
@@ -436,7 +435,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   else:
     debug_f = util.NullDebugFile()
 
-  exec_deps.debug_f = debug_f
+  cmd_deps.debug_f = debug_f
 
   # Not using datetime for dependency reasons.  TODO: maybe show the date at
   # the beginning of the log, and then only show time afterward?  To save
@@ -467,7 +466,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   # This could just be OSH_DEBUG_STREAMS='debug crash' ?  That might be
   # stuffing too much into one, since a .json crash dump isn't a stream.
   crash_dump_dir = posix.environ.get('OSH_CRASH_DUMP_DIR', '')
-  exec_deps.dumper = dev.CrashDumper(crash_dump_dir)
+  cmd_deps.dumper = dev.CrashDumper(crash_dump_dir)
 
   if opts.xtrace_to_debug_file:
     trace_f = debug_f
@@ -563,13 +562,13 @@ def ShellMain(lang, argv0, argv, login_shell):
   bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, errfmt)
   expr_ev = expr_eval.OilEvaluator(mem, procs, errfmt)
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
+  cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs, builtins,
+                                     arena, cmd_deps)
 
   shell_ex = executor.ShellExecutor(
       mem, exec_opts, mutable_opts, procs, builtins, search_path,
       ext_prog, waiter, job_state, fd_state, errfmt)
 
-  cmd_ev = cmd_eval.CommandEvaluator(mem, shell_ex, procs, builtins, exec_opts,
-                                     arena, exec_deps)
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
   prompt_ev = prompt.Evaluator(lang, parse_ctx, mem)
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, word_ev, trace_f)
@@ -602,8 +601,8 @@ def ShellMain(lang, argv0, argv, login_shell):
   sig_state = process.SignalState()
   sig_state.InitShell()
 
-  builtins[builtin_i.trap] = builtin_process.Trap(sig_state, exec_deps.traps,
-                                                  exec_deps.trap_nodes,
+  builtins[builtin_i.trap] = builtin_process.Trap(sig_state, cmd_deps.traps,
+                                                  cmd_deps.trap_nodes,
                                                   parse_ctx, errfmt)
 
   # History evaluation is a no-op if line_input is None.
