@@ -353,6 +353,14 @@ divzero() {
   _error-case 'set -e; (( a = 1 % 0 ));'
 }
 
+unsafe_arith_eval() {
+  shopt -s unsafe_arith_eval
+
+  local e1='1+'
+  local e2='e1 + 5'
+  echo $(( e2 ))
+}
+
 # Only dash flags this as an error.
 string_to_int_arith() {
   local x='ZZZ'

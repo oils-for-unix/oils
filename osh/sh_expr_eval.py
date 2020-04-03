@@ -349,6 +349,9 @@ class ArithEvaluator(object):
         arena.PushSource(source.Variable(span_id))
         try:
           node2 = a_parser.Parse()  # may raise error.Parse
+        except error.Parse as e:
+          ui.PrettyPrintError(e, arena)
+          e_die('Parse error in recursive arithmetic', span_id=e.span_id)
         finally:
           arena.PopSource()
 

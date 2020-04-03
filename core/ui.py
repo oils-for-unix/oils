@@ -157,6 +157,10 @@ def _PrintWithSpanId(prefix, msg, span_id, arena, f):
       # TODO: Look at word_spid
       source_str = '[ trap ]'
 
+    elif case(source_e.Variable):
+      # TODO: print the variable name, and look at the span ID>
+      source_str = '[ variable ]'
+
     else:
       # TODO: shouldn't really get here
       source_str = repr(src)
