@@ -520,7 +520,6 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_i.test: builtin_bracket.Test(False, exec_opts, mem, errfmt),
       builtin_i.bracket: builtin_bracket.Test(True, exec_opts, mem, errfmt),
 
-      builtin_i.unset: builtin_assign.Unset(mem, procs, errfmt),
       builtin_i.shift: builtin_assign.Shift(mem),
 
       # Pure
@@ -580,7 +579,12 @@ def ShellMain(lang, argv0, argv, login_shell):
   vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
                       prompt_ev, tracer)
 
-  # Add some builtins that depend on the executor!
+  #
+  # Add builtins that depend on various evaluators
+  #
+
+  builtins[builtin_i.unset] = builtin_assign.Unset(mem, exec_opts, procs,
+                                                   parse_ctx, arith_ev, errfmt)
   builtins[builtin_i.eval] = builtin_meta.Eval(parse_ctx, exec_opts, cmd_ev)
 
   source_builtin = builtin_meta.Source(

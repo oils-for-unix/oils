@@ -6,24 +6,30 @@ from __future__ import print_function
 
 from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import (
-    value, value_e, value_t, value__Str, value__MaybeStrArray, value__AssocArray,
-    lvalue, scope_e,
-    cmd_value__Argv, cmd_value__Assign,
+    value, value_e, value_t, value__Str, value__MaybeStrArray,
+    value__AssocArray,
+    lvalue_e, scope_e, cmd_value__Argv, cmd_value__Assign,
 )
-#from core.util import log
+from _devbuild.gen.syntax_asdl import source
+from frontend import arg_def
 from frontend import args
-from frontend import match
+from core import error
 from core import state
+from core import ui
+from core.util import log, e_die
 from mycpp import mylib
+from osh import sh_expr_eval
 from osh import string_ops
 
 from typing import cast, Dict, Tuple, Any, TYPE_CHECKING
 if TYPE_CHECKING:
+  from core import optview
   from core.state import Mem
   from core.ui import ErrorFormatter
+  from frontend.parse_lib import ParseContext
+  from osh.sh_expr_eval import ArithEvaluator
 
-if mylib.PYTHON:
-  from frontend import arg_def
+_ = log
 
 
 def _PrintVariables(mem, cmd_val, arg, print_flags, readonly=False, exported=False):
@@ -383,28 +389,68 @@ if mylib.PYTHON:
 
 
 # TODO:
-# - Parse lvalue expression: unset 'a[ i - 1 ]'.  Static or dynamic parsing?
 # - It would make more sense to treat no args as an error (bash doesn't.)
 #   - Should we have strict builtins?  Or just make it stricter?
 
 class Unset(object):
-  def __init__(self, mem, funcs, errfmt):
-    # type: (Mem, Dict[str, Any], ErrorFormatter) -> None
+  def __init__(self, mem, exec_opts, funcs, parse_ctx, arith_ev, errfmt):
+    # type: (Mem, optview.Exec, Dict[str, Any], ParseContext, ArithEvaluator, ErrorFormatter) -> None
     self.mem = mem
+    self.exec_opts = exec_opts
     self.funcs = funcs
+    self.parse_ctx = parse_ctx
+    self.arith_ev = arith_ev
     self.errfmt = errfmt
 
-  def _UnsetVar(self, name, spid):
+  def _UnsetVar(self, place, spid):
     # type: (str, int) -> Tuple[bool, bool]
-    if not match.IsValidVarName(name):
-      raise args.UsageError(
-          'got invalid variable name %r' % name, span_id=spid)
 
-    ok, found = self.mem.Unset(lvalue.Named(name), scope_e.Dynamic)
-    if not ok:
-      self.errfmt.Print("Can't unset readonly variable %r", name,
+    arena = self.parse_ctx.arena
+
+    # TODO: unsafe_arith_eval
+    # Because you can get a ''?
+    # Oil could provide 'del' or 'delete' instead?
+
+    a_parser = self.parse_ctx.MakeArithParser(place)
+    arena.PushSource(source.ArgvWord(spid))
+    try:
+      anode = a_parser.Parse()  # may raise error.Parse
+    except error.Parse as e:
+      ui.PrettyPrintError(e, arena)  # show parse error
+      # point to word
+      raise args.UsageError('Invalid unset expression', span_id=spid)
+    finally:
+      arena.PopSource()
+
+    #log('%s', anode)
+
+    # arith_expr_t -> lvalue_t
+    # crap I guess we need the evaluator?
+    # Or we can look for constants?
+    # a['$key'] has to be handled.
+    # So this needs arith_ev?
+    # self.arith_ev.ToLValue()
+
+    lval = sh_expr_eval.ToLValue(anode, self.arith_ev, self.mem, spid)
+
+    # Prevent attacks like these by default:
+    #
+    # unset -v 'A["$(echo K; rm *)"]'
+    if not self.exec_opts.unsafe_arith_eval() and lval.tag_() != lvalue_e.Named:
+      e_die('Expected a variable name.  Expressions are allowed with shopt -s unsafe_arith_eval', span_id=spid)
+
+    mutated, found = self.mem.Unset(lval, scope_e.Dynamic,
+                                    self.exec_opts.strict_unset())
+
+    if not mutated:
+      # note: in bash, myreadonly=X fails, but declare myreadonly=X doens't
+      # fail because it's a builtin.  So I guess the same is true of 'unset'.
+      self.errfmt.Print("Can't unset readonly variable %r", lval.name,
                         span_id=spid)
-    return ok, found
+    return mutated, found
+
+    # TODO: return lval.tag_() == lvalue_e.Named
+    # it might be a function
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
@@ -419,13 +465,13 @@ class Unset(object):
         if name in self.funcs:
           del self.funcs[name]
       elif arg.v:
-        ok, _ = self._UnsetVar(name, spid)
-        if not ok:
+        mutated, _ = self._UnsetVar(name, spid)
+        if not mutated:
           return 1
       else:
         # Try to delete var first, then func.
-        ok, found = self._UnsetVar(name, spid)
-        if not ok:
+        mutated, found = self._UnsetVar(name, spid)
+        if not mutated:
           return 1
 
         #log('%s: %s', name, found)

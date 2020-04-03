@@ -267,12 +267,12 @@ class MemTest(unittest.TestCase):
   def testUnset(self):
     mem = _InitMem()
     # unset a
-    mem.Unset(lvalue.Named('a'), scope_e.Dynamic)
+    mem.Unset(lvalue.Named('a'), scope_e.Dynamic, False)
 
     return  # not implemented yet
 
     # unset a[1]
-    mem.Unset(lvalue.Indexed('a', 1), scope_e.Dynamic)
+    mem.Unset(lvalue.Indexed('a', 1), scope_e.Dynamic, False)
 
   def testArgv(self):
     mem = _InitMem()

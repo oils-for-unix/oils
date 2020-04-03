@@ -375,6 +375,8 @@ status=127
 ## END
 
 #### Unset array member
+shopt -s unsafe_arith_eval
+
 a=(x y z)
 unset 'a[1]'
 echo status=$?
@@ -390,7 +392,32 @@ status=0
  y z len=3
 ## END
 
-#### unset -v (mentioned on issue #661)
+#### Unset errors
+shopt -s unsafe_arith_eval
+
+unset undef
+echo status=$?
+
+a=(x y z)
+unset 'a[99]'  # out of range
+echo status=$?
+
+unset 'not_array[99]'  # not an array
+echo status=$?
+
+## STDOUT:
+status=0
+status=0
+status=0
+## END
+## N-I dash status: 2
+## N-I dash STDOUT:
+status=0
+## END
+
+#### unset -v assoc (related to issue #661)
+shopt -s unsafe_arith_eval || true
+
 case $SH in (dash|mksh|zsh) return; esac
 
 declare -A dict=()
@@ -414,8 +441,24 @@ vals=
 ## END
 ## N-I dash/mksh/zsh stdout-json: ""
 
+#### unset assoc errors
+shopt -s unsafe_arith_eval || true
+
+case $SH in (dash|mksh) return; esac
+
+declare -A assoc=(['key']=value)
+unset 'assoc["nonexistent"]'
+echo status=$?
+
+## STDOUT:
+status=0
+## END
+## N-I dash/mksh stdout-json: ""
+
 
 #### Unset array member with dynamic parsing
+shopt -s unsafe_arith_eval
+
 i=1
 a=(w x y z)
 unset 'a[ i - 1 ]' a[i+1]  # note: can't have space between a and [
@@ -429,10 +472,6 @@ x z len=2
 ## N-I dash stdout-json: ""
 ## N-I zsh status: 1
 ## N-I zsh stdout-json: ""
-## N-I osh STDOUT:
-status=2
-w x y z len=4
-## END
 
 #### Use local twice
 f() {

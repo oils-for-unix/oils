@@ -471,6 +471,8 @@ unset len=0
 ## END
 
 #### unset -v and assoc array
+shopt -s unsafe_arith_eval || true
+
 show-len() {
   echo len=${#assoc[@]}
 }
@@ -487,6 +489,11 @@ key=K
 unset -v 'assoc[$key]'
 show-len
 
+declare -A assoc=(['K']=val)
+show-len
+unset -v 'assoc[$(echo K)]'
+show-len
+
 # ${prefix} doesn't work here, even though it does in arithmetic
 #declare -A assoc=(['K']=val)
 #show-len
@@ -495,6 +502,8 @@ show-len
 #show-len
 
 ## STDOUT:
+len=1
+len=0
 len=1
 len=0
 len=1

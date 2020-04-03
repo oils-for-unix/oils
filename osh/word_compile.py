@@ -5,15 +5,14 @@ word_compile.py
 This is called the "compile" stage because it happens after parsing, but it
 doesn't depend on any values at runtime.
 """
-
-from typing import Optional
-
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
-    class_literal_term, class_literal_term_t, Token
+    Token, class_literal_term, class_literal_term_t,
 )
 from core.pyutil import stderr_line
 from osh import string_ops
+
+from typing import Optional
 
 
 _ONE_CHAR = {

@@ -82,6 +82,48 @@ def _LookupVar(name, mem, exec_opts):
   return val
 
 
+def ToLValue(anode, arith_ev, mem, span_id):
+  # type: (arith_expr_t, ArithEvaluator, Mem, int) -> lvalue_t
+  """
+  For the "cell" or "place" sublanguage
+  TODO: Rename to ToPlace()
+
+  Similar to tdop.py :: ToLValue
+  """
+  UP_anode = anode
+  with tagswitch(anode) as case:
+    if case(arith_expr_e.VarRef):
+      anode = cast(arith_expr__VarRef, UP_anode)
+      lval1 = lvalue.Named(anode.token.val)
+      lval1.spids.append(anode.token.span_id)
+      lval = lval1  # type: lvalue_t
+      return lval
+
+    elif case(arith_expr_e.Binary):
+      anode = cast(arith_expr__Binary, UP_anode)
+
+      # Parser doesn't check this because there's no =
+      if (anode.op_id == Id.Arith_LBracket and
+          anode.left.tag_() == arith_expr_e.VarRef):
+
+        name_tok = cast(arith_expr__VarRef, anode.left).token
+        name = name_tok.val
+        if mem.IsAssocArray(name, scope_e.Dynamic):
+          key = arith_ev.EvalWordToString(anode.right)
+          lval2 = lvalue.Keyed(name, key)
+          lval2.spids.append(name_tok.span_id)
+          lval = lval2
+          return lval
+        else:
+          index = arith_ev.EvalToInt(anode.right)
+          lval3 = lvalue.Indexed(name, index)
+          lval3.spids.append(name_tok.span_id)
+          lval = lval3
+          return lval
+
+  e_die('Invalid place to modify', span_id=span_id)
+
+
 def EvalLhs(node, arith_ev, mem, spid, lookup_mode):
   # type: (sh_lhs_expr_t, ArithEvaluator, Mem, int, scope_t) -> lvalue_t
   """Evaluate a shell "place" expression.
@@ -106,13 +148,11 @@ def EvalLhs(node, arith_ev, mem, spid, lookup_mode):
 
       if mem.IsAssocArray(node.name, lookup_mode):
         key = arith_ev.EvalWordToString(node.index)
-        # copy left-mode spid
         lval2 = lvalue.Keyed(node.name, key)
         lval2.spids.append(node.spids[0])
         lval = lval2
       else:
         index = arith_ev.EvalToInt(node.index)
-        # copy left-mode spid
         lval3 = lvalue.Indexed(node.name, index)
         lval3.spids.append(node.spids[0])
         lval = lval3
@@ -128,6 +168,8 @@ def _EvalLhsArith(node, mem, arith_ev):
   """Evaluate an arithmetic "place" expression.
   
   Very similar to EvalLhs above, called in osh/cmd_eval.py.
+
+  TODO: Consolidate with ToLValue()?
   """
   assert isinstance(node, sh_lhs_expr_t), node
 

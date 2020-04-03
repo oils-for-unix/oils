@@ -1393,35 +1393,93 @@ class Mem(object):
     cell, _ = self._ResolveNameOnly(name, lookup_mode)
     return cell
 
-  def Unset(self, lval, lookup_mode):
-    # type: (lvalue__Named, scope_t) -> Tuple[bool, bool]
+  def Unset(self, lval, lookup_mode, strict):
+    # type: (lvalue_t, scope_t, bool) -> Tuple[bool, bool]
     """
     Returns:
-      ok bool, found bool.
+      mutated bool, found bool.
 
-      ok is false if the cell is read-only.
       found is false if the name is not there.
     """
-    if lval.tag == lvalue_e.Named:  # unset x
-      cell, name_map, cell_name = self._ResolveNameOrRef(lval.name, lookup_mode)
-      #log('cell %s', cell)
-      if cell:
-        found = True
-        if cell.readonly:
-          return False, found
-        name_map[cell_name].val = value.Undef()
-        cell.exported = False
-        # This should never happen because we do recursive lookups of namerefs.
-        assert not cell.nameref, cell
-        return True, found # found
-      else:
-        return True, False
+    # Refactorings
+    #   ok -- this is
+    #
+    # lvalue = (string var, int span_id, value_t? index)
+    # value_t is Int or Str then?  It can't be another one?
+    # or index_t = Int(i) | Str
+    #
+    # e_strict("Can't unset readonly")
+    # shopt -s strict_unset
+    #
+    # return might_be_function ?  Only if lvalue_e.Named
 
-    elif lval.tag == lvalue_e.Indexed:  # unset a[1]
-      raise NotImplementedError()
+    found = True
 
-    else:
-      raise AssertionError()
+    UP_lval = lval
+    with tagswitch(lval) as case:
+      if case(lvalue_e.Named):  # unset x
+        lval = cast(lvalue__Named, lval)
+        cell, name_map, cell_name = self._ResolveNameOrRef(lval.name, lookup_mode)
+        #log('cell %s', cell)
+        if cell:
+          if cell.readonly:
+            return False, found
+          name_map[cell_name].val = value.Undef()
+          cell.exported = False
+          # This should never happen because we do recursive lookups of namerefs.
+          assert not cell.nameref, cell
+          return True, found
+        else:
+          return True, False
+
+      elif case(lvalue_e.Indexed):  # unset a[1]
+        lval = cast(lvalue__Indexed, lval)
+        cell, _, _ = self._ResolveNameOrRef(lval.name, lookup_mode)
+        if cell:
+          if cell.readonly:
+            return False, found
+
+          val = cell.val
+          UP_val = val
+          if val.tag_() == value_e.MaybeStrArray:
+            val = cast(value__MaybeStrArray, UP_val)
+            try:
+              val.strs[lval.index] = None
+              return True, found
+            except IndexError:
+              # should really be not found?
+              return True, False
+          else:
+            return False, found  # Not an array
+
+        else:
+          return True, False
+
+      elif case(lvalue_e.Keyed):  # unset a[1]
+        lval = cast(lvalue__Keyed, lval)
+
+        cell, _, _ = self._ResolveNameOrRef(lval.name, lookup_mode)
+        if cell:
+          if cell.readonly:
+            return False, found
+
+          val = cell.val
+          UP_val = val
+          if val.tag_() == value_e.AssocArray:
+            val = cast(value__AssocArray, UP_val)
+            try:
+              del val.d[lval.key]
+              return True, found
+            except KeyError:
+              # should really be not found?
+              return True, False
+          else:
+            return False, found  # Not an assoc array
+
+        else:
+          return True, False
+
+    raise AssertionError(lval)
 
   def ClearFlag(self, name, flag, lookup_mode):
     # type: (str, int, scope_t) -> bool
