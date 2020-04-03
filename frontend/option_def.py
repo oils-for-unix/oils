@@ -226,9 +226,9 @@ def _Init(opt_def):
   # (bash uses $BASHOPTS rather than $SHELLOPTS)
   #
 
-  # shopt option that's not in any groups.  Note: not implemented.
-  for name in ['failglob']:
-    opt_def.Add(name)
+  # shopt options that aren't in any groups.
+  opt_def.Add('failglob')  # not implemented.
+  opt_def.Add('unsafe_arith_eval')  # dynamic parsing and evaluation (ble.sh)
 
   # Two strict options that from bash's shopt
   for name in ['nullglob', 'inherit_errexit']:

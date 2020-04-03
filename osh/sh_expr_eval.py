@@ -25,7 +25,7 @@ from _devbuild.gen.syntax_asdl import (
     bool_expr__LogicalAnd, bool_expr__LogicalOr, bool_expr__Unary,
     bool_expr__Binary,
     sh_lhs_expr_e, sh_lhs_expr_t, sh_lhs_expr__Name, sh_lhs_expr__IndexedName,
-    word_t,
+    source, word_t,
 )
 from _devbuild.gen.types_asdl import bool_arg_type_e
 from asdl import runtime
@@ -48,77 +48,10 @@ if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from core import optview
   from core.state import Mem
+  from frontend.parse_lib import ParseContext
   from osh import word_eval
 
 _ = log
-
-
-def _StringToInteger(s, span_id=runtime.NO_SPID):
-  # type: (str, int) -> int
-  """Use bash-like rules to coerce a string to an integer.
-
-  Runtime parsing enables silly stuff like $(( $(echo 1)$(echo 2) + 1 )) => 13
-
-  0xAB -- hex constant
-  042  -- octal constant
-  42   -- decimal constant
-  64#z -- arbitary base constant
-
-  bare word: variable
-  quoted word: string (not done?)
-  """
-  if s.startswith('0x'):
-    try:
-      integer = int(s, 16)
-    except ValueError:
-      e_strict('Invalid hex constant %r', s, span_id=span_id)
-    return integer
-
-  if s.startswith('0'):
-    try:
-      integer = int(s, 8)
-    except ValueError:
-      e_strict('Invalid octal constant %r', s, span_id=span_id)
-    return integer
-
-  if '#' in s:
-    parts = s.split('#', 1)  # mycpp rewrite: can't use dynamic unpacking of List
-    b = parts[0]
-    digits = parts[1]
-    try:
-      base = int(b)
-    except ValueError:
-      e_strict('Invalid base for numeric constant %r',  b, span_id=span_id)
-
-    integer = 0
-    n = 1
-    for ch in digits:
-      if 'a' <= ch and ch <= 'z':
-        digit = ord(ch) - ord('a') + 10
-      elif 'A' <= ch and ch <= 'Z':
-        digit = ord(ch) - ord('A') + 36
-      elif ch == '@':  # horrible syntax
-        digit = 62
-      elif ch == '_':
-        digit = 63
-      elif ch.isdigit():
-        digit = int(ch)
-      else:
-        e_strict('Invalid digits for numeric constant %r', digits, span_id=span_id)
-
-      if digit >= base:
-        e_strict('Digits %r out of range for base %d', digits, base, span_id=span_id)
-
-      integer += digit * n
-      n *= base
-    return integer
-
-  # Normal base 10 integer
-  try:
-    integer = int(s)
-  except ValueError:
-    e_strict("Invalid integer constant %r", s, span_id=span_id)
-  return integer
 
 
 #
@@ -319,7 +252,7 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
   return val, lval
 
 
-class _ExprEvaluator(object):
+class ArithEvaluator(object):
   """Shared between arith and bool evaluators.
 
   They both:
@@ -328,24 +261,102 @@ class _ExprEvaluator(object):
   2. Look up variables and evaluate words.
   """
 
-  def __init__(self, mem, exec_opts, errfmt):
-    # type: (Mem, optview.Exec, ErrorFormatter) -> None
+  def __init__(self, mem, exec_opts, parse_ctx, errfmt):
+    # type: (Mem, optview.Exec, Optional[ParseContext], ErrorFormatter) -> None
     self.word_ev = None  # type: word_eval.StringWordEvaluator
     self.mem = mem
     self.exec_opts = exec_opts
+    self.parse_ctx = parse_ctx
     self.errfmt = errfmt
 
   def CheckCircularDeps(self):
     # type: () -> None
     assert self.word_ev is not None
 
+  def _StringToInteger(self, s, span_id=runtime.NO_SPID):
+    # type: (str, int) -> int
+    """Use bash-like rules to coerce a string to an integer.
 
-class ArithEvaluator(_ExprEvaluator):
+    Runtime parsing enables silly stuff like $(( $(echo 1)$(echo 2) + 1 )) => 13
 
-  def __init__(self, mem, exec_opts, errfmt):
-    # type: (Mem, optview.Exec, ErrorFormatter) -> None
-    """Redundant constructor for mycpp."""
-    _ExprEvaluator.__init__(self, mem, exec_opts, errfmt)
+    0xAB -- hex constant
+    042  -- octal constant
+    42   -- decimal constant
+    64#z -- arbitary base constant
+
+    bare word: variable
+    quoted word: string (not done?)
+    """
+    if s.startswith('0x'):
+      try:
+        integer = int(s, 16)
+      except ValueError:
+        e_strict('Invalid hex constant %r', s, span_id=span_id)
+      return integer
+
+    if s.startswith('0'):
+      try:
+        integer = int(s, 8)
+      except ValueError:
+        e_strict('Invalid octal constant %r', s, span_id=span_id)
+      return integer
+
+    if '#' in s:
+      parts = s.split('#', 1)  # mycpp rewrite: can't use dynamic unpacking of List
+      b = parts[0]
+      digits = parts[1]
+      try:
+        base = int(b)
+      except ValueError:
+        e_strict('Invalid base for numeric constant %r',  b, span_id=span_id)
+
+      integer = 0
+      n = 1
+      for ch in digits:
+        if 'a' <= ch and ch <= 'z':
+          digit = ord(ch) - ord('a') + 10
+        elif 'A' <= ch and ch <= 'Z':
+          digit = ord(ch) - ord('A') + 36
+        elif ch == '@':  # horrible syntax
+          digit = 62
+        elif ch == '_':
+          digit = 63
+        elif ch.isdigit():
+          digit = int(ch)
+        else:
+          e_strict('Invalid digits for numeric constant %r', digits, span_id=span_id)
+
+        if digit >= base:
+          e_strict('Digits %r out of range for base %d', digits, base, span_id=span_id)
+
+        integer += digit * n
+        n *= base
+      return integer
+
+    try:
+      # Normal base 10 integer.  This includes negative numbers like '-42'.
+      integer = int(s)
+    except ValueError:
+      # doesn't look like an integer
+
+      # note: 'test' and '[' never evaluate recursively
+      if self.exec_opts.unsafe_arith_eval() and self.parse_ctx:
+        # For compatibility: Try to parse it as an expression and evaluate it.
+
+        arena = self.parse_ctx.arena
+
+        a_parser = self.parse_ctx.MakeArithParser(s)
+        arena.PushSource(source.Variable(span_id))
+        try:
+          node2 = a_parser.Parse()  # may raise error.Parse
+        finally:
+          arena.PopSource()
+
+        integer = self.EvalToInt(node2)
+      else:
+        e_strict("Invalid integer constant %r", s, span_id=span_id)
+
+    return integer
 
   def _ValToIntOrError(self, val, span_id=runtime.NO_SPID):
     # type: (value_t, int) -> int
@@ -363,7 +374,7 @@ class ArithEvaluator(_ExprEvaluator):
 
         elif case(value_e.Str):
           val = cast(value__Str, UP_val)
-          return _StringToInteger(val.s, span_id=span_id)  # calls e_strict
+          return self._StringToInteger(val.s, span_id=span_id)  # calls e_strict
 
         elif case(value_e.Obj):
           # Note: this handles var x = 42; echo $(( x > 2 )).
@@ -607,8 +618,9 @@ class ArithEvaluator(_ExprEvaluator):
           return val
 
         if op_id == Id.Arith_Comma:
-          self.Eval(node.left)  # throw away result
-          return self.Eval(node.right)
+          self.EvalToInt(node.left)  # throw away result
+          ret = self.EvalToInt(node.right)
+          return value.Int(ret)
 
         # Rest are integers
         lhs = self.EvalToInt(node.left)
@@ -716,11 +728,18 @@ class ArithEvaluator(_ExprEvaluator):
       e_die("Associative array keys must be strings: $x 'x' \"$x\" etc.")
 
 
-class BoolEvaluator(_ExprEvaluator):
+class BoolEvaluator(ArithEvaluator):
+  """
+  This is also an ArithEvaluator because it has to understand
 
-  def __init__(self, mem, exec_opts, errfmt):
-    # type: (Mem, optview.Exec, ErrorFormatter) -> None
-    _ExprEvaluator.__init__(self, mem, exec_opts, errfmt)
+  [[ x -eq 3 ]]
+
+  where x='1+2'
+  """
+
+  def __init__(self, mem, exec_opts, parse_ctx, errfmt):
+    # type: (Mem, optview.Exec, ParseContext, ErrorFormatter) -> None
+    ArithEvaluator.__init__(self, mem, exec_opts, parse_ctx, errfmt)
     self.always_strict = False
 
   def Init_AlwaysStrict(self):
@@ -737,7 +756,7 @@ class BoolEvaluator(_ExprEvaluator):
       span_id = runtime.NO_SPID
 
     try:
-      i = _StringToInteger(s, span_id=span_id)
+      i = self._StringToInteger(s, span_id=span_id)
     except error.Strict as e:
       if self.always_strict or self.exec_opts.strict_arith():
         raise
@@ -755,7 +774,7 @@ class BoolEvaluator(_ExprEvaluator):
     """For ~= to set the BASH_REMATCH array."""
     state.SetGlobalArray(self.mem, 'BASH_REMATCH', matches)
 
-  def Eval(self, node):
+  def EvalB(self, node):
     # type: (bool_expr_t) -> bool
 
     UP_node = node
@@ -767,23 +786,23 @@ class BoolEvaluator(_ExprEvaluator):
 
       elif case(bool_expr_e.LogicalNot):
         node = cast(bool_expr__LogicalNot, UP_node)
-        b = self.Eval(node.child)
+        b = self.EvalB(node.child)
         return not b
 
       elif case(bool_expr_e.LogicalAnd):
         node = cast(bool_expr__LogicalAnd, UP_node)
         # Short-circuit evaluation
-        if self.Eval(node.left):
-          return self.Eval(node.right)
+        if self.EvalB(node.left):
+          return self.EvalB(node.right)
         else:
           return False
 
       elif case(bool_expr_e.LogicalOr):
         node = cast(bool_expr__LogicalOr, UP_node)
-        if self.Eval(node.left):
+        if self.EvalB(node.left):
           return True
         else:
-          return self.Eval(node.right)
+          return self.EvalB(node.right)
 
       elif case(bool_expr_e.Unary):
         node = cast(bool_expr__Unary, UP_node)

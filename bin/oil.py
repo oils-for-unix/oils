@@ -561,8 +561,8 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_i.opts: builtin_oil.Opts(mem, errfmt),
   }
 
-  arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, errfmt)
-  bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, errfmt)
+  arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, parse_ctx, errfmt)
+  bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, parse_ctx, errfmt)
   expr_ev = expr_eval.OilEvaluator(mem, procs, errfmt)
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,

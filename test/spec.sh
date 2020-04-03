@@ -658,7 +658,7 @@ append() {
 
 # associative array -- mksh and zsh implement different associative arrays.
 assoc() {
-  sh-spec spec/assoc.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/assoc.test.sh --osh-failures-allowed 5 \
     $BASH $OSH_LIST "$@"
 }
 
@@ -924,7 +924,7 @@ oil-interactive() {
 }
 
 ble-idioms() {
-  sh-spec spec/ble-idioms.test.sh --osh-failures-allowed 10 \
+  sh-spec spec/ble-idioms.test.sh --osh-failures-allowed 3 \
           $BASH $ZSH $MKSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 

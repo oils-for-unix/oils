@@ -467,18 +467,22 @@ declared
 #### comma operator
 a=(4 5 6)
 
-# assignment is evaluated
+# zsh and osh can't evaluate the array like that
+# which is consistent with their behavior on $(( a ))
+
 echo $(( a, last = a[2], 42 ))
 echo last=$last
-## STDOUT:
+
+## status: 1
+## stdout-json: ""
+
+## N-I dash status: 2
+
+## OK bash/mksh status: 0
+## OK bash/mksh STDOUT:
 42
 last=6
 ## END
-# zsh doesn't want to evaluate the array
-## N-I dash status: 2
-## N-I dash stdout-json: ""
-## BUG zsh status: 1
-## BUG zsh stdout-json: ""
 
 #### assignment with dynamic var name
 foo=bar
@@ -531,3 +535,24 @@ xbar[5]=42
 ## END
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
+
+#### shopt -s unsafe_arith_eval
+shopt -s unsafe_arith_eval
+e=1+2
+echo $(( e + 3 ))
+[[ e -eq 3 ]] && echo true
+[ e -eq 3 ]
+echo status=$?
+## STDOUT:
+6
+true
+status=2
+## END
+## BUG mksh STDOUT:
+6
+true
+status=0
+## END
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+

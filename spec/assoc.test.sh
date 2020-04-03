@@ -472,20 +472,27 @@ unset len=0
 
 #### unset -v and assoc array
 show-len() {
-  echo len=${#A[@]}
+  echo len=${#assoc[@]}
 }
 
-declare -A A=(['K']=val)
+declare -A assoc=(['K']=val)
 show-len
 
-unset -v 'A["K"]'
+unset -v 'assoc["K"]'
 show-len
 
-declare -A A=(['K']=val)
+declare -A assoc=(['K']=val)
 show-len
 key=K
-unset -v 'A[$key]'
+unset -v 'assoc[$key]'
 show-len
+
+# ${prefix} doesn't work here, even though it does in arithmetic
+#declare -A assoc=(['K']=val)
+#show-len
+#prefix=as
+#unset -v '${prefix}soc[$key]'
+#show-len
 
 ## STDOUT:
 len=1
@@ -548,4 +555,31 @@ values: val
 ref val
 ref val
 ## END
+
+#### printf -v and assoc array
+show-values() {
+  echo values: ${assoc[@]}
+}
+
+declare -A assoc=(['K']=val)
+show-values
+
+printf -v 'assoc["K"]' '/%s/' val2
+show-values
+
+key=K
+printf -v 'assoc[$key]' '/%s/' val3
+show-values
+
+# Somehow bash doesn't allow this
+#prefix=as
+#printf -v '${prefix}soc[$key]' '/%s/' val4
+#show-values
+
+## STDOUT:
+values: val
+values: /val2/
+values: /val3/
+## END
+
 

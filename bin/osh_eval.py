@@ -213,7 +213,7 @@ def main(argv):
   errfmt = ui.ErrorFormatter(arena)
 
   splitter = split.SplitContext(mem)
-  arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, errfmt)
+  arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, parse_ctx, errfmt)
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
 
   arith_ev.word_ev = word_ev

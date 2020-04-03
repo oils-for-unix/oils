@@ -625,7 +625,7 @@ class CommandEvaluator(object):
         self.mem.SetCurrentSpanId(span_id)
 
         check_errexit = True
-        result = self.bool_ev.Eval(node.expr)
+        result = self.bool_ev.EvalB(node.expr)
         status = 0 if result else 1
 
       elif case(command_e.DParen):

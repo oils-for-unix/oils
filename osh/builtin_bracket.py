@@ -226,7 +226,7 @@ class Test(object):
 
     # mem: Don't need it for BASH_REMATCH?  Or I guess you could support it
     word_ev = _WordEvaluator()
-    bool_ev = sh_expr_eval.BoolEvaluator(self.mem, self.exec_opts, self.errfmt)
+    bool_ev = sh_expr_eval.BoolEvaluator(self.mem, self.exec_opts, None, self.errfmt)
 
     # We want [ a -eq a ] to always be an error, unlike [[ a -eq a ]].  This is a
     # weird case of [[ being less strict.
@@ -234,7 +234,7 @@ class Test(object):
     bool_ev.word_ev = word_ev
     bool_ev.CheckCircularDeps()
     try:
-      b = bool_ev.Eval(bool_node) # type = bool
+      b = bool_ev.EvalB(bool_node)
     except (error.FatalRuntime, error.Strict) as e:
       # TODO: use a different exception for FatalRuntime?  It's not really
       # fatal.
