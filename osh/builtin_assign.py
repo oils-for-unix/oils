@@ -21,7 +21,7 @@ from mycpp import mylib
 from osh import sh_expr_eval
 from osh import string_ops
 
-from typing import cast, Dict, Tuple, Any, TYPE_CHECKING
+from typing import cast, Dict, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from core import optview
   from core.state import Mem
@@ -423,7 +423,7 @@ class Unset(object):
     finally:
       arena.PopSource()
 
-    lval = sh_expr_eval.ToLValue(anode, self.arith_ev, self.mem, spid)
+    lval = sh_expr_eval.ArithToLValue(anode, self.arith_ev, self.mem, spid)
 
     # Prevent attacks like these by default:
     #

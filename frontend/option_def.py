@@ -228,7 +228,10 @@ def _Init(opt_def):
 
   # shopt options that aren't in any groups.
   opt_def.Add('failglob')  # not implemented.
-  opt_def.Add('unsafe_arith_eval')  # dynamic parsing and evaluation (ble.sh)
+
+  # TODO: Rename eval_unsafe_arith
+  opt_def.Add('unsafe_arith_eval')  # recursive parsing and evaluation (ble.sh)
+  opt_def.Add('parse_dynamic_arith')  # dyanmic LHS
 
   # Two strict options that from bash's shopt
   for name in ['nullglob', 'inherit_errexit']:
@@ -253,10 +256,6 @@ def _Init(opt_def):
   # By default we parse 'return 2>&1', even though it does nothing in Oil.
   opt_def.Add('parse_ignored', groups=['strict:all', 'oil:basic', 'oil:all'],
               default=True)
-
-  # Undocumented option to parse things that won't run.  For ble.sh's dynamic
-  # LHS arithmetic, but can be used for other things too.
-  opt_def.Add('parse_unimplemented', default=False)
 
   for name in _AGGRESSIVE_PARSE_OPTIONS:
     opt_def.Add(name, groups=['oil:all'])

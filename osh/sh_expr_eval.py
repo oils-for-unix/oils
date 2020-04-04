@@ -13,7 +13,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
     scope_e, scope_t,
     quote_e, quote_t,
-    lvalue, lvalue_t, 
+    lvalue, lvalue_e, lvalue_t, lvalue__Named, lvalue__Indexed, lvalue__Keyed,
     value, value_e, value_t, value__Str, value__Int, value__MaybeStrArray,
     value__AssocArray, value__Obj,
 )
@@ -82,13 +82,11 @@ def _LookupVar(name, mem, exec_opts):
   return val
 
 
-def ToLValue(anode, arith_ev, mem, span_id):
+def ArithToLValue(anode, arith_ev, mem, span_id):
   # type: (arith_expr_t, ArithEvaluator, Mem, int) -> lvalue_t
   """
   For the "cell" or "place" sublanguage
   TODO: Rename to ToPlace()
-
-  Similar to tdop.py :: ToLValue
   """
   UP_anode = anode
   with tagswitch(anode) as case:
@@ -99,30 +97,59 @@ def ToLValue(anode, arith_ev, mem, span_id):
       lval = lval1  # type: lvalue_t
       return lval
 
+    elif case(arith_expr_e.ArithWord):
+      anode = cast(arith_expr__ArithWord, UP_anode)
+      var_name = arith_ev.EvalWordToString(anode)
+      lval4 = lvalue.Named(var_name)
+      lval4.spids.append(word_.LeftMostSpanForWord(anode.w))
+      lval = lval4
+      return lval
+
     elif case(arith_expr_e.Binary):
       anode = cast(arith_expr__Binary, UP_anode)
 
       # Parser doesn't check this because there's no =
-      if (anode.op_id == Id.Arith_LBracket and
-          anode.left.tag_() == arith_expr_e.VarRef):
+      if anode.op_id == Id.Arith_LBracket:
+        if anode.left.tag_() == arith_expr_e.VarRef:
+          name_tok = cast(arith_expr__VarRef, anode.left).token
+          var_name = name_tok.val
+          if mem.IsAssocArray(var_name, scope_e.Dynamic):
+            key = arith_ev.EvalWordToString(anode.right)
+            lval2 = lvalue.Keyed(var_name, key)
+            lval2.spids.append(name_tok.span_id)
+            lval = lval2
+            return lval
+          else:
+            index = arith_ev.EvalToInt(anode.right)
+            lval3 = lvalue.Indexed(var_name, index)
+            lval3.spids.append(name_tok.span_id)
+            lval = lval3
+            return lval
 
-        name_tok = cast(arith_expr__VarRef, anode.left).token
-        name = name_tok.val
-        if mem.IsAssocArray(name, scope_e.Dynamic):
-          key = arith_ev.EvalWordToString(anode.right)
-          lval2 = lvalue.Keyed(name, key)
-          lval2.spids.append(name_tok.span_id)
-          lval = lval2
-          return lval
-        else:
-          index = arith_ev.EvalToInt(anode.right)
-          lval3 = lvalue.Indexed(name, index)
-          lval3.spids.append(name_tok.span_id)
-          lval = lval3
-          return lval
+        elif anode.left.tag_() == arith_expr_e.ArithWord:
+          var_word = cast(arith_expr__ArithWord, anode.left).w
+          var_name = arith_ev.EvalWordToString(anode.left)
+          span_id = word_.LeftMostSpanForWord(var_word)
+          if mem.IsAssocArray(var_name, scope_e.Dynamic):
+            key = arith_ev.EvalWordToString(anode.right)
+            lval5 = lvalue.Keyed(var_name, key)
+            lval5.spids.append(span_id)
+            lval = lval5
+            return lval
+          else:
+            index = arith_ev.EvalToInt(anode.right)
+            lval6 = lvalue.Indexed(var_name, index)
+            lval6.spids.append(span_id)
+            lval = lval6
+            return lval
 
-  e_die('Invalid place to modify', span_id=span_id)
+  # e.g. unset 'x-y'.  status 2 for runtime parse error
+  e_die('Invalid place to modify', span_id=span_id, status=2)
 
+
+# TODO: Rename LhsExprToLValue
+# or LhsExprToPlace
+#    ArithLhsToPlace
 
 def EvalLhs(node, arith_ev, mem, spid, lookup_mode):
   # type: (sh_lhs_expr_t, ArithEvaluator, Mem, int, scope_t) -> lvalue_t
@@ -163,13 +190,13 @@ def EvalLhs(node, arith_ev, mem, spid, lookup_mode):
   return lval
 
 
-def _EvalLhsArith(node, mem, arith_ev):
+def OBSOLETE_EvalLhsArith(node, mem, arith_ev):
   # type: (sh_lhs_expr_t, Mem, ArithEvaluator) -> lvalue_t
   """Evaluate an arithmetic "place" expression.
   
   Very similar to EvalLhs above, called in osh/cmd_eval.py.
 
-  TODO: Consolidate with ToLValue()?
+  TODO: Consolidate with ArithToLValue()?
   """
   assert isinstance(node, sh_lhs_expr_t), node
 
@@ -292,6 +319,97 @@ def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
       raise AssertionError(node.tag_())
 
   return val, lval
+
+
+def _OldValue(lval, mem, exec_opts):
+  # type: (lvalue_t, Mem, optview.Exec) -> value_t
+  """
+  TODO: We want two functions:
+
+  sh_lhs_expr -> lvalue_t
+  arith_expr -> lvalue_t (ArithToLValue)
+
+  Problem:
+
+  - why does lvalue have Indexed and Keyed, while sh_lhs_expr only has
+    IndexedName?
+    - should I have lvalue.Named and lvalue.Indexed only?
+    - and Indexed uses the index_t type?
+      - well that might be Str or Int
+
+  A[$x]+=5
+
+  """
+  assert isinstance(lval, lvalue_t), lval
+
+  # TODO: refactor lvalue_t to make this simpler
+  UP_lval = lval
+  with tagswitch(lval) as case:
+    if case(lvalue_e.Named):  # (( i++ ))
+      lval = cast(lvalue__Named, UP_lval)
+      var_name = lval.name
+    elif case(lvalue_e.Indexed):  # (( a[i]++ ))
+      lval = cast(lvalue__Indexed, UP_lval)
+      var_name = lval.name
+    elif case(lvalue_e.Keyed):  # (( A['K']++ )) ?  I think this works
+      lval = cast(lvalue__Keyed, UP_lval)
+      var_name = lval.name
+    else:
+      raise AssertionError()
+
+  val = _LookupVar(var_name, mem, exec_opts)
+
+  UP_val = val
+  with tagswitch(lval) as case:
+    if case(lvalue_e.Named):
+      return val
+
+    elif case(lvalue_e.Indexed):
+      lval = cast(lvalue__Indexed, UP_lval)
+
+      array_val = None  # type: value__MaybeStrArray
+      with tagswitch(val) as case:
+        if case(value_e.Undef):
+          array_val = value.MaybeStrArray([])
+        elif case(value_e.MaybeStrArray):
+          array_val = cast(value__MaybeStrArray, UP_val)
+        else:
+          raise AssertionError(val)
+
+      try:
+        s = array_val.strs[lval.index]
+      except IndexError:
+        s = None
+
+      if s is None:
+        val = value.Str('')  # NOTE: Other logic is value.Undef()?  0?
+      else:
+        assert isinstance(s, str), s
+        val = value.Str(s)
+
+    elif case(lvalue_e.Keyed):
+      lval = cast(lvalue__Keyed, UP_lval)
+
+      assoc_val = None  # type: value__AssocArray
+      with tagswitch(val) as case:
+        if case(value_e.Undef):
+          # TODO: This never happens?
+          assoc_val = value.AssocArray({})
+        elif case(value_e.AssocArray):
+          assoc_val = cast(value__AssocArray, UP_val)
+        else:
+          raise AssertionError(val)
+
+        s = assoc_val.d.get(lval.key)
+        if s is None:
+          val = value.Str('')
+        else:
+          val = value.Str(s)
+
+    else:
+      raise AssertionError()
+
+  return val
 
 
 class ArithEvaluator(object):
@@ -443,22 +561,17 @@ class ArithEvaluator(object):
           ui.ValType(val), span_id=span_id)
 
   def _EvalLhsAndLookupArith(self, node):
-    # type: (sh_lhs_expr_t) -> Tuple[int, lvalue_t]
-    """
-    Args:
-      node: sh_lhs_expr
+    # type: (arith_expr_t) -> Tuple[int, lvalue_t]
+    """ For x = y  and   x += y  and  ++x """
 
-    Returns:
-      (Python object, lvalue_t)
-    """
-    val, lval = EvalLhsAndLookup(node, self, self.mem, self.exec_opts)
+    #val, lval = EvalLhsAndLookup(node, self, self.mem, self.exec_opts)
+    lval = ArithToLValue(node, self, self.mem, runtime.NO_SPID)
+    val = _OldValue(lval, self.mem, self.exec_opts)
 
     if val.tag_() == value_e.MaybeStrArray:
       e_die("Can't use assignment like ++ or += on arrays")
 
-    # TODO: attribute a span ID here.  There are a few cases, like UnaryAssign
-    # and BinaryAssign.
-    span_id = word_.SpanForLhsExpr(node)
+    span_id = location.SpanForArithExpr(node)
     i = self._ValToIntOrError(val, span_id=span_id)
     return i, lval
 
@@ -544,7 +657,10 @@ class ArithEvaluator(object):
         op_id = node.op_id
 
         if op_id == Id.Arith_Equal:
-          lval = _EvalLhsArith(node.left, self.mem, self)
+          # Don't really need a span ID here, because tdop.CheckLhsExpr should
+          # have done all the validation.
+          lval = ArithToLValue(node.left, self, self.mem, runtime.NO_SPID)
+
           # Disallowing (( a = myarray ))
           # It has to be an integer
           rhs_int = self.EvalToInt(node.right)

@@ -27,19 +27,36 @@ if TYPE_CHECKING:  # break circular dep
   NullFunc = Callable[['TdopParser', word_t, int], arith_expr_t]
 
 
-def IsIndexable(node):
-  # type: (arith_expr_t) -> bool
+def IsIndexable(node, parse_dynamic_arith):
+  # type: (arith_expr_t, bool) -> bool
   """
   a[1] is allowed but a[1][1] isn't
 
   """
-  return node.tag_() == arith_expr_e.VarRef
-  # TODO: x$foo[1] is also allowed
-  #return node.tag_() in (arith_expr_e.VarRef, arith_expr_e.ArithWord)
+  tag = node.tag_()
+  if tag == arith_expr_e.VarRef:
+    return True
+  # x$foo[1] is also allowed with option
+  if parse_dynamic_arith and tag == arith_expr_e.ArithWord:
+    return True
+  return False
 
 
-def ToLValue(node, parse_unimplemented):
-  # type: (arith_expr_t, bool) -> sh_lhs_expr_t
+def _VarOrWord(node, dynamic_arith):
+  # type: (arith_expr_t, bool) -> bool
+  with tagswitch(node) as case:
+    if case(arith_expr_e.VarRef):
+      return True
+
+    elif case(arith_expr_e.ArithWord):
+      if dynamic_arith:
+        return True
+
+  return False
+
+
+def CheckLhsExpr(node, dynamic_arith, blame_word):
+  # type: (arith_expr_t, bool, word_t) -> None
   """Determine if a node is a valid L-value by whitelisting tags.
 
   Valid:
@@ -49,36 +66,16 @@ def ToLValue(node, parse_unimplemented):
     a[0][0] = y
   """
   UP_node = node
-  with tagswitch(node) as case:
-    if case(arith_expr_e.VarRef):
-      node = cast(arith_expr__VarRef, UP_node)
-      # For consistency with osh/cmd_parse.py, append a span_id.
-      # TODO: (( a[ x ] = 1 )) and a[x]=1 should use different LST nodes.
-      # sh_lhs_expr should be an "IR".
-      n = sh_lhs_expr.Name(node.token.val)
-      n.spids.append(node.token.span_id)
-      return n
+  if node.tag_() == arith_expr_e.Binary:
+    node = cast(arith_expr__Binary, UP_node)
+    if node.op_id == Id.Arith_LBracket and _VarOrWord(node.left, dynamic_arith):
+      return
+    # But a[0][0] = 1 is NOT valid.
 
-    elif case(arith_expr_e.ArithWord):
-      if parse_unimplemented:
-        node = cast(arith_expr__ArithWord, UP_node)
-        return sh_lhs_expr.Name('DUMMY_parse_unimplemented')
+  if _VarOrWord(node, dynamic_arith):
+    return
 
-    elif case(arith_expr_e.Binary):
-      node = cast(arith_expr__Binary, UP_node)
-      if node.op_id == Id.Arith_LBracket:
-        UP_left = node.left
-        if node.left.tag_() == arith_expr_e.VarRef:
-          left = cast(arith_expr__VarRef, UP_left)
-          return sh_lhs_expr.IndexedName(left.token.val, node.right)
-
-        if parse_unimplemented and node.left.tag_() == arith_expr_e.ArithWord:
-          return sh_lhs_expr.IndexedName(
-              'DUMMY_parse_unimplemented', node.right)
-
-      # But a[0][0] = 1 is NOT valid.
-
-  return None
+  p_die("Left-hand side of this assignment is invalid", word=blame_word)
 
 
 #
@@ -146,13 +143,15 @@ def LeftAssign(p, w, left, rbp):
   # type: (TdopParser, word_t, arith_expr_t, int) -> arith_expr_t
   """ Normal binary operator like 1+2 or 2*3, etc. """
   # x += 1, or a[i] += 1
-  lhs = ToLValue(left, p.parse_opts.parse_unimplemented())
-  if lhs is None:
-    # TODO: It would be nice to point at 'left', but osh/word.py doesn't
-    # support arbitrary arith_expr_t.
-    #p_die("Can't assign to this expression", word=w)
-    p_die("Left-hand side of this assignment is invalid", word=w)
-  return arith_expr.BinaryAssign(word_.ArithId(w), lhs, p.ParseUntil(rbp))
+
+  CheckLhsExpr(left, p.parse_opts.parse_dynamic_arith(), w)
+
+  #if lhs is None:
+  #  # TODO: It would be nice to point at 'left', but osh/word.py doesn't
+  #  # support arbitrary arith_expr_t.
+  #  #p_die("Can't assign to this expression", word=w)
+  #  p_die("Left-hand side of this assignment is invalid", word=w)
+  return arith_expr.BinaryAssign(word_.ArithId(w), left, p.ParseUntil(rbp))
 
 
 #

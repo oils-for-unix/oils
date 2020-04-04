@@ -485,6 +485,7 @@ last=6
 ## END
 
 #### assignment with dynamic var name
+shopt -s parse_dynamic_arith
 foo=bar
 echo $(( x$foo = 42 ))
 echo xbar=$xbar
@@ -494,6 +495,7 @@ xbar=42
 ## END
 
 #### array assignment with dynamic array name
+shopt -s parse_dynamic_arith
 foo=bar
 echo $(( x$foo[5] = 42 ))
 echo 'xbar[5]='${xbar[5]}
@@ -509,6 +511,7 @@ xbar[5]=
 ## N-I dash stdout-json: ""
 
 #### unary assignment with dynamic var name
+shopt -s parse_dynamic_arith
 foo=bar
 xbar=42
 echo $(( x$foo++ ))
@@ -521,6 +524,7 @@ xbar=43
 ## BUG dash stdout-json: ""
 
 #### unary array assignment with dynamic var name
+shopt -s parse_dynamic_arith
 foo=bar
 xbar[5]=42
 echo $(( x$foo[5]++ ))

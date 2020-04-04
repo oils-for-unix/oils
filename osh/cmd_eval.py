@@ -783,6 +783,10 @@ class CommandEvaluator(object):
           if pair.op == assign_op_e.PlusEqual:
             assert pair.rhs, pair.rhs  # I don't think a+= is valid?
             val = self.word_ev.EvalRhsWord(pair.rhs)
+
+            # TODO: use 
+            # lval = LhsToPlace(pair.lhs)
+            # old_val = sh_expr_eval.OldValue(lval)
             old_val, lval = sh_expr_eval.EvalLhsAndLookup(
                 pair.lhs, self.arith_ev, self.mem, self.exec_opts,
                 lookup_mode=lookup_mode)

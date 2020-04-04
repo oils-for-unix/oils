@@ -81,6 +81,8 @@ echo $((a=text[3]))
 ## N-I ash/dash/yash stdout-json: ""
 
 #### ble.sh (dynamic var name with prefix): assign
+shopt -s parse_dynamic_arith  # for LHS
+
 vec2_set () {
   local this=$1 x=$2 y=$3
   : $(( ${this}_x = $2 ))
@@ -96,6 +98,8 @@ b_x=5 b_y=12
 ## END
 
 #### ble.sh (dynamic var name with prefix): read
+shopt -s unsafe_arith_eval  # for RHS
+
 vec2_load() {
   local this=$1
   x=$(( ${this}_x ))
@@ -109,6 +113,9 @@ x=12 y=34
 ## END
 
 #### ble.sh (dynamic var name with prefix): copy/add
+shopt -s parse_dynamic_arith  # for LHS
+shopt -s unsafe_arith_eval  # for RHS
+
 vec2_copy () {
   local this=$1 rhs=$2
   : $(( ${this}_x = $(( ${rhs}_x )) ))

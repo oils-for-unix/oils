@@ -19,10 +19,8 @@ def NullIncDec(p, w, bp):
   # type: (TdopParser, word_t, int) -> arith_expr_t
   """ ++x or ++x[1] """
   right = p.ParseUntil(bp)
-  child = tdop.ToLValue(right, p.parse_opts.parse_unimplemented())
-  if child is None:
-    p_die("This value can't be assigned to", word=w)
-  return arith_expr.UnaryAssign(word_.ArithId(w), child)
+  tdop.CheckLhsExpr(right, p.parse_opts.parse_dynamic_arith(), w)
+  return arith_expr.UnaryAssign(word_.ArithId(w), right)
 
 
 def NullUnaryPlus(p, t, bp):
@@ -43,17 +41,18 @@ def LeftIncDec(p, w, left, rbp):
   # type: (TdopParser, word_t, arith_expr_t, int) -> arith_expr_t
   """ For i++ and i--
   """
-  if word_.ArithId(w) == Id.Arith_DPlus:
+  arith_id = word_.ArithId(w)
+  if arith_id == Id.Arith_DPlus:
     op_id = Id.Node_PostDPlus
-  elif word_.ArithId(w) == Id.Arith_DMinus:
+  elif arith_id == Id.Arith_DMinus:
     op_id = Id.Node_PostDMinus
   else:
     raise AssertionError()
 
-  child = tdop.ToLValue(left, p.parse_opts.parse_unimplemented())
-  if child is None:
-    p_die("This value can't be assigned to", word=w)
-  return arith_expr.UnaryAssign(op_id, child)
+  tdop.CheckLhsExpr(left, p.parse_opts.parse_dynamic_arith(), w)
+  #if child is None:
+  #  p_die("This value can't be assigned to", word=w)
+  return arith_expr.UnaryAssign(op_id, left)
 
 
 def LeftIndex(p, w, left, unused_bp):
@@ -76,7 +75,7 @@ def LeftIndex(p, w, left, unused_bp):
   2. function calls return COPIES.  They need a name, at least in osh.
   3. strings don't have mutable characters.
   """
-  if not tdop.IsIndexable(left):
+  if not tdop.IsIndexable(left, p.parse_opts.parse_dynamic_arith()):
     p_die("The [ operator doesn't apply to this expression", word=w)
   index = p.ParseUntil(0)
   p.Eat(Id.Arith_RBracket)
