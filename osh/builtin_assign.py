@@ -393,6 +393,7 @@ if mylib.PYTHON:
 #   - Should we have strict builtins?  Or just make it stricter?
 
 class Unset(object):
+
   def __init__(self, mem, exec_opts, funcs, parse_ctx, arith_ev, errfmt):
     # type: (Mem, optview.Exec, Dict[str, Any], ParseContext, ArithEvaluator, ErrorFormatter) -> None
     self.mem = mem
@@ -402,34 +403,25 @@ class Unset(object):
     self.arith_ev = arith_ev
     self.errfmt = errfmt
 
-  def _UnsetVar(self, place, spid):
-    # type: (str, int) -> Tuple[bool, bool]
-
+  def _UnsetVar(self, arg, spid, proc_fallback):
+    # type: (str, int, bool) -> bool
+    """
+    Returns:
+      bool: whether the 'unset' builtin should succeed with code 0.
+    """
     arena = self.parse_ctx.arena
 
-    # TODO: unsafe_arith_eval
-    # Because you can get a ''?
-    # Oil could provide 'del' or 'delete' instead?
-
-    a_parser = self.parse_ctx.MakeArithParser(place)
+    a_parser = self.parse_ctx.MakeArithParser(arg)
     arena.PushSource(source.ArgvWord(spid))
     try:
-      anode = a_parser.Parse()  # may raise error.Parse
+      anode = a_parser.Parse()
     except error.Parse as e:
-      ui.PrettyPrintError(e, arena)  # show parse error
+      # show parse error
+      ui.PrettyPrintError(e, arena)
       # point to word
       raise args.UsageError('Invalid unset expression', span_id=spid)
     finally:
       arena.PopSource()
-
-    #log('%s', anode)
-
-    # arith_expr_t -> lvalue_t
-    # crap I guess we need the evaluator?
-    # Or we can look for constants?
-    # a['$key'] has to be handled.
-    # So this needs arith_ev?
-    # self.arith_ev.ToLValue()
 
     lval = sh_expr_eval.ToLValue(anode, self.arith_ev, self.mem, spid)
 
@@ -439,18 +431,23 @@ class Unset(object):
     if not self.exec_opts.unsafe_arith_eval() and lval.tag_() != lvalue_e.Named:
       e_die('Expected a variable name.  Expressions are allowed with shopt -s unsafe_arith_eval', span_id=spid)
 
-    mutated, found = self.mem.Unset(lval, scope_e.Dynamic,
-                                    self.exec_opts.strict_unset())
-
-    if not mutated:
+    #log('lval %s', lval)
+    found = False
+    try:
+      # not strict
+      found = self.mem.Unset(lval, scope_e.Dynamic, False)
+    except error.Runtime as e:
       # note: in bash, myreadonly=X fails, but declare myreadonly=X doens't
       # fail because it's a builtin.  So I guess the same is true of 'unset'.
-      self.errfmt.Print("Can't unset readonly variable %r", lval.name,
-                        span_id=spid)
-    return mutated, found
+      e.span_id = spid
+      ui.PrettyPrintError(e, arena)
+      return False
 
-    # TODO: return lval.tag_() == lvalue_e.Named
-    # it might be a function
+    if proc_fallback and not found:
+      if arg in self.funcs:
+        del self.funcs[arg]
+
+    return True
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
@@ -464,20 +461,15 @@ class Unset(object):
       if arg.f:
         if name in self.funcs:
           del self.funcs[name]
+
       elif arg.v:
-        mutated, _ = self._UnsetVar(name, spid)
-        if not mutated:
-          return 1
-      else:
-        # Try to delete var first, then func.
-        mutated, found = self._UnsetVar(name, spid)
-        if not mutated:
+        if not self._UnsetVar(name, spid, False):
           return 1
 
-        #log('%s: %s', name, found)
-        if not found:
-          if name in self.funcs:
-            del self.funcs[name]
+      else:
+        # proc_fallback: Try to delete var first, then func.
+        if not self._UnsetVar(name, spid, True):
+          return 1
 
     return 0
 

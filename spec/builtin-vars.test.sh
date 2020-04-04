@@ -415,6 +415,61 @@ status=0
 status=0
 ## END
 
+#### Unset wrong type
+case $SH in (mksh) exit ;; esac
+
+shopt -s unsafe_arith_eval || true
+
+declare undef
+unset -v 'undef[1]'
+echo undef $?
+unset -v 'undef["key"]'
+echo undef $?
+
+declare a=(one two)
+unset -v 'a[1]'
+echo array $?
+
+#shopt -s strict_arith || true
+# In Oil, the string 'key' is converted to an integer, which is 0, unless
+# strict_arith is on, when it fails.
+unset -v 'a["key"]'
+echo array $?
+
+declare -A A=(['key']=val)
+unset -v 'A[1]'
+echo assoc $?
+unset -v 'A["key"]'
+echo assoc $?
+
+## STDOUT:
+undef 1
+undef 1
+array 0
+array 1
+assoc 0
+assoc 0
+## END
+## OK osh STDOUT:
+undef 1
+undef 1
+array 0
+array 0
+assoc 0
+assoc 0
+## END
+## BUG zsh STDOUT:
+undef 0
+undef 1
+array 0
+array 1
+assoc 0
+assoc 0
+## END
+## N-I dash/mksh stdout-json: ""
+## N-I dash status: 2
+
+
 #### unset -v assoc (related to issue #661)
 shopt -s unsafe_arith_eval || true
 

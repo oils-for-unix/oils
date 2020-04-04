@@ -20,6 +20,7 @@ from _devbuild.gen.runtime_asdl import (
 )
 from _devbuild.gen import runtime_asdl  # for cell
 from asdl import runtime
+from core import error
 from core import pyutil
 from core.pyutil import e_usage, stderr_line
 from core import ui
@@ -1394,92 +1395,79 @@ class Mem(object):
     return cell
 
   def Unset(self, lval, lookup_mode, strict):
-    # type: (lvalue_t, scope_t, bool) -> Tuple[bool, bool]
+    # type: (lvalue_t, scope_t, bool) -> bool
     """
     Returns:
-      mutated bool, found bool.
-
-      found is false if the name is not there.
+      Whether the cell was found.
     """
-    # Refactorings
-    #   ok -- this is
-    #
-    # lvalue = (string var, int span_id, value_t? index)
-    # value_t is Int or Str then?  It can't be another one?
-    # or index_t = Int(i) | Str
-    #
-    # e_strict("Can't unset readonly")
-    # shopt -s strict_unset
-    #
-    # return might_be_function ?  Only if lvalue_e.Named
-
-    found = True
-
+    # TODO: Refactor lvalue type to avoid this
     UP_lval = lval
+
     with tagswitch(lval) as case:
       if case(lvalue_e.Named):  # unset x
-        lval = cast(lvalue__Named, lval)
-        cell, name_map, cell_name = self._ResolveNameOrRef(lval.name, lookup_mode)
-        #log('cell %s', cell)
-        if cell:
-          if cell.readonly:
-            return False, found
-          name_map[cell_name].val = value.Undef()
-          cell.exported = False
-          # This should never happen because we do recursive lookups of namerefs.
-          assert not cell.nameref, cell
-          return True, found
-        else:
-          return True, False
+        lval = cast(lvalue__Named, UP_lval)
+        var_name = lval.name
+      elif case(lvalue_e.Indexed):  # unset 'a[1]'
+        lval = cast(lvalue__Indexed, UP_lval)
+        var_name = lval.name
+      elif case(lvalue_e.Keyed):  # unset 'A["K"]'
+        lval = cast(lvalue__Keyed, UP_lval)
+        var_name = lval.name
+      else:
+        raise AssertionError()
 
-      elif case(lvalue_e.Indexed):  # unset a[1]
-        lval = cast(lvalue__Indexed, lval)
-        cell, _, _ = self._ResolveNameOrRef(lval.name, lookup_mode)
-        if cell:
-          if cell.readonly:
-            return False, found
+    cell, name_map, cell_name = self._ResolveNameOrRef(var_name, lookup_mode)
+    if not cell:
+      return False  # 'unset' builtin falls back on functions
+    if cell.readonly:
+      raise error.Runtime("Can't unset readonly variable %r", var_name)
 
-          val = cell.val
-          UP_val = val
-          if val.tag_() == value_e.MaybeStrArray:
-            val = cast(value__MaybeStrArray, UP_val)
-            try:
-              val.strs[lval.index] = None
-              return True, found
-            except IndexError:
-              # should really be not found?
-              return True, False
-          else:
-            return False, found  # Not an array
+    with tagswitch(lval) as case:
+      if case(lvalue_e.Named):  # unset x
+        name_map[cell_name].val = value.Undef()
+        cell.exported = False
+        # This should never happen because we do recursive lookups of namerefs.
+        assert not cell.nameref, cell
 
-        else:
-          return True, False
+      elif case(lvalue_e.Indexed):  # unset 'a[1]'
+        lval = cast(lvalue__Indexed, UP_lval)
 
-      elif case(lvalue_e.Keyed):  # unset a[1]
-        lval = cast(lvalue__Keyed, lval)
+        val = cell.val
+        UP_val = val
+        if val.tag_() != value_e.MaybeStrArray:
+          raise error.Runtime("%r isn't an array" % var_name)
 
-        cell, _, _ = self._ResolveNameOrRef(lval.name, lookup_mode)
-        if cell:
-          if cell.readonly:
-            return False, found
+        val = cast(value__MaybeStrArray, UP_val)
+        # Note: Setting an entry to None and shifting entries are pretty
+        # much the same in shell.
+        try:
+          val.strs[lval.index] = None
+        except IndexError:
+          # note: we could have unset --strict for this case?
+          # Oil may make it strict
+          pass
 
-          val = cell.val
-          UP_val = val
-          if val.tag_() == value_e.AssocArray:
-            val = cast(value__AssocArray, UP_val)
-            try:
-              del val.d[lval.key]
-              return True, found
-            except KeyError:
-              # should really be not found?
-              return True, False
-          else:
-            return False, found  # Not an assoc array
+      elif case(lvalue_e.Keyed):  # unset 'A["K"]'
+        lval = cast(lvalue__Keyed, UP_lval)
 
-        else:
-          return True, False
+        val = cell.val
+        UP_val = val
 
-    raise AssertionError(lval)
+        # note: never happens because of mem.IsAssocArray test for lvalue.Keyed
+        #if val.tag_() != value_e.AssocArray:
+        #  raise error.Runtime("%r isn't an associative array" % lval.name)
+
+        val = cast(value__AssocArray, UP_val)
+        try:
+          del val.d[lval.key]
+        except KeyError:
+          # note: we could have unset --strict for this case?
+          pass
+
+      else:
+        raise AssertionError(lval)
+
+    return True
 
   def ClearFlag(self, name, flag, lookup_mode):
     # type: (str, int, scope_t) -> bool

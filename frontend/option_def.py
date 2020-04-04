@@ -99,7 +99,6 @@ _STRICT_OPTION_NAMES = [
     'strict_eval_builtin',  # eval takes exactly 1 argument
     'strict_nameref',       # trap invalid variable names
     'strict_word_eval',     # negative slices, unicode
-    'strict_unset',         # unset builtin with more errors
 
     # Not implemented
     'strict_backslash',  # BadBackslash for echo -e, printf, PS1, etc.
