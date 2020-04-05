@@ -567,3 +567,10 @@ N octal
 Y hex
 N hex
 ## END
+
+#### Invalid sh operation on eggex
+var pat = / d+ /
+#pat[invalid]=1
+pat[invalid]+=1
+## status: 1
+## stdout-json: ""

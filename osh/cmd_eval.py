@@ -721,8 +721,6 @@ class CommandEvaluator(object):
             py_vals = []
             if len(node.lhs) == 1:  # TODO: Optimize this common case (but measure)
               # See ShAssignment
-              # EvalLhs
-              # EvalLhsAndLookup for +=
               lval_ = self.expr_ev.EvalPlaceExpr(node.lhs[0]) # type: lvalue_t
 
               lvals_.append(lval_)
@@ -777,19 +775,17 @@ class CommandEvaluator(object):
 
         lookup_mode = scope_e.Dynamic
         for pair in node.pairs:
+          spid = pair.spids[0]  # Source location for tracing
           # Use the spid of each pair.
-          self.mem.SetCurrentSpanId(pair.spids[0])
+          self.mem.SetCurrentSpanId(spid)
 
           if pair.op == assign_op_e.PlusEqual:
             assert pair.rhs, pair.rhs  # I don't think a+= is valid?
             val = self.word_ev.EvalRhsWord(pair.rhs)
 
-            # TODO: use 
-            # lval = sh_expr_eval.LhsToPlace(pair.lhs)
-            # old_val = sh_expr_eval.OldValue(lval)
-            old_val, lval = sh_expr_eval.EvalLhsAndLookup(
-                pair.lhs, self.arith_ev, self.mem, self.exec_opts,
-                lookup_mode=lookup_mode)
+            lval = self.arith_ev.EvalShellLhs(pair.lhs, spid, lookup_mode)
+            old_val = sh_expr_eval.OldValue(lval, self.mem, self.exec_opts)
+
             UP_old_val = old_val
             UP_val = val
 
@@ -824,7 +820,6 @@ class CommandEvaluator(object):
               val = value.MaybeStrArray(strs)
 
           else:  # plain assignment
-            spid = pair.spids[0]  # Source location for tracing
             lval = self.arith_ev.EvalShellLhs(pair.lhs, spid, lookup_mode)
 
             # RHS can be a string or array.

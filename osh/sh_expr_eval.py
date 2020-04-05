@@ -82,105 +82,12 @@ def _LookupVar(name, mem, exec_opts):
   return val
 
 
-def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
-                     lookup_mode=scope_e.Dynamic):
-  # type: (sh_lhs_expr_t, ArithEvaluator, Mem, optview.Exec, scope_t) -> Tuple[value_t, lvalue_t]
-  """Evaluate the operand for i++, a[0]++, i+=2, a[0]+=2 as an R-value.
-
-  Also used by the CommandEvaluator for s+='x' and a[42]+='x'.
-
-  Args:
-    node: syntax_asdl.sh_lhs_expr
-
-  Returns:
-    value_t, lvalue_t
-  """
-  #log('sh_lhs_expr NODE %s', node)
-
-  assert isinstance(node, sh_lhs_expr_t), node
-
-  UP_node = node
-  with tagswitch(node) as case:
-    if case(sh_lhs_expr_e.Name):  # a = b
-      node = cast(sh_lhs_expr__Name, UP_node)
-      # Problem: It can't be an array?
-      # a=(1 2)
-      # (( a++ ))
-      lval = lvalue.Named(node.name)  # type: lvalue_t
-      val = _LookupVar(node.name, mem, exec_opts)
-
-    elif case(sh_lhs_expr_e.IndexedName):  # a[1] = b
-      node = cast(sh_lhs_expr__IndexedName, UP_node)
-      # See tdop.IsIndexable for valid values:
-      # - VarRef (not Name): a[1]
-      # - FuncCall: f(x), 1
-      # - Binary LBracket: f[1][1] -- no semantics for this?
-
-      val = mem.GetVar(node.name)
-
-      UP_val = val
-      with tagswitch(val) as case2:
-        if case2(value_e.Str):
-          e_die("Can't assign to characters of string %r", node.name)
-
-        elif case2(value_e.Undef):
-          # compatible behavior: Treat it like an array.
-          # TODO: Does this code ever get triggered?  It seems like the error is
-          # caught earlier.
-
-          index = arith_ev.EvalToInt(node.index)
-          lval = lvalue.Indexed(node.name, index)
-          if exec_opts.nounset():
-            e_die("Undefined variable can't be indexed")
-          else:
-            val = value.Str('')
-
-        elif case2(value_e.MaybeStrArray):
-          array_val = cast(value__MaybeStrArray, UP_val)
-
-          #log('ARRAY %s -> %s, index %d', node.name, array, index)
-          index = arith_ev.EvalToInt(node.index)
-          lval = lvalue.Indexed(node.name, index)
-          # NOTE: Similar logic in RHS Arith_LBracket
-          try:
-            s = array_val.strs[index]
-          except IndexError:
-            s = None
-
-          if s is None:
-            val = value.Str('')  # NOTE: Other logic is value.Undef()?  0?
-          else:
-            assert isinstance(s, str), s
-            val = value.Str(s)
-
-        elif case2(value_e.AssocArray):  # declare -A a; a['x']+=1
-          assoc_val = cast(value__AssocArray, UP_val)
-
-          key = arith_ev.EvalWordToString(node.index)
-          lval = lvalue.Keyed(node.name, key)
-
-          s = assoc_val.d.get(key)
-          if s is None:
-            val = value.Str('')
-          else:
-            val = value.Str(s)
-
-        else:
-          raise AssertionError(val.tag_())
-
-    else:
-      raise AssertionError(node.tag_())
-
-  return val, lval
-
-
-def _OldValue(lval, mem, exec_opts):
+def OldValue(lval, mem, exec_opts):
   # type: (lvalue_t, Mem, optview.Exec) -> value_t
   """
-  TODO: We want two functions:
+  Used by s+='x' and (( i += 1 ))
 
-  sh_lhs_expr -> lvalue_t
-  arith_expr -> lvalue_t (ArithToLValue)
+  TODO: We need a stricter and less ambiguous version for Oil.
 
   Problem:
 
@@ -189,9 +96,6 @@ def _OldValue(lval, mem, exec_opts):
     - should I have lvalue.Named and lvalue.Indexed only?
     - and Indexed uses the index_t type?
       - well that might be Str or Int
-
-  A[$x]+=5
-
   """
   assert isinstance(lval, lvalue_t), lval
 
@@ -227,7 +131,7 @@ def _OldValue(lval, mem, exec_opts):
         elif case(value_e.MaybeStrArray):
           array_val = cast(value__MaybeStrArray, UP_val)
         else:
-          raise AssertionError(val)
+          e_die("Can't use [] on value %s", val)
 
       try:
         s = array_val.strs[lval.index]
@@ -246,12 +150,12 @@ def _OldValue(lval, mem, exec_opts):
       assoc_val = None  # type: value__AssocArray
       with tagswitch(val) as case:
         if case(value_e.Undef):
-          # TODO: This never happens?
-          assoc_val = value.AssocArray({})
+          # This never happens, because undef[x]+= is assumed to
+          raise AssertionError()
         elif case(value_e.AssocArray):
           assoc_val = cast(value__AssocArray, UP_val)
         else:
-          raise AssertionError(val)
+          e_die("Can't use [] on value %s", val)
 
         s = assoc_val.d.get(lval.key)
         if s is None:
@@ -418,7 +322,7 @@ class ArithEvaluator(object):
     """ For x = y  and   x += y  and  ++x """
 
     lval = self.EvalArithLhs(node, runtime.NO_SPID)
-    val = _OldValue(lval, self.mem, self.exec_opts)
+    val = OldValue(lval, self.mem, self.exec_opts)
 
     # This error message could be better, but we already have one
     #if val.tag_() == value_e.MaybeStrArray:

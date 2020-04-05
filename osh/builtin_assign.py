@@ -18,7 +18,6 @@ from core import state
 from core import ui
 from core.util import log, e_die
 from mycpp import mylib
-from osh import sh_expr_eval
 from osh import string_ops
 
 from typing import cast, Dict, Any, TYPE_CHECKING
