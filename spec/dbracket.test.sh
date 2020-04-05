@@ -350,3 +350,13 @@ cat $TMP/x.txt
 --
 STDERR
 ## END
+
+#### special chars
+[[ ^ == ^ ]]
+echo caret $?
+[[ '!' == ! ]]
+echo bang $?
+## STDOUT:
+caret 0
+bang 0
+## END

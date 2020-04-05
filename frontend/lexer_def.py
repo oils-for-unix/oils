@@ -626,7 +626,7 @@ GLOB_DEF = [
   C('*', Id.Glob_Star),
   C('?', Id.Glob_QMark),
 
-  # For negation.
+  # For negation.  Treated as operators inside [], but literals outside.
   C('!', Id.Glob_Bang),
   C('^', Id.Glob_Caret),
 

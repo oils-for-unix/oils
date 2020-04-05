@@ -186,3 +186,31 @@ _μ_ and _μ_
 _μ_ and _μ_
 _μ_ and _μ_
 ## END
+
+#### ${x/^} regression
+x=abc
+echo ${x/^}
+echo ${x/!}
+
+y=^^^
+echo ${y/^}
+echo ${y/!}
+
+z=!!!
+echo ${z/^}
+echo ${z/!}
+
+s=a^b!c
+echo ${s/a^}
+echo ${s/b!}
+
+## STDOUT:
+abc
+abc
+^^
+^^^
+!!!
+!!
+b!c
+a^c
+## END

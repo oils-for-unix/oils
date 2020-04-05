@@ -268,10 +268,12 @@ def _GenerateERE(parts):
           out.append('\\')
         out.append(c)
 
-      elif part.id == Id.Glob_CleanLiterals:
+      # ! is only for char class
+      elif part.id in (Id.Glob_CleanLiterals, Id.Glob_Bang):
         out.append(part.s)  # e.g. 'py' doesn't need to be escaped
 
-      elif part.id == Id.Glob_OtherLiteral:
+      # ^ is only for char class
+      elif part.id in( Id.Glob_OtherLiteral, Id.Glob_Caret):
         assert len(part.s) == 1, part.s
         c = part.s
         if c in _REGEX_CHARS_TO_ESCAPE:
@@ -287,6 +289,9 @@ def _GenerateERE(parts):
 
       elif part.id == Id.Glob_BadBackslash:
         out.append('\\\\')
+
+      elif part.id == Id.Glob_Caret:
+        out.append('^')
 
       else:
         raise AssertionError(part.id)
