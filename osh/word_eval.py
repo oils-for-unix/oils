@@ -825,7 +825,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         names = self.mem.VarNamesStartingWith(part.token.val)
         names.sort()
-        val = value.MaybeStrArray(names)
+        val = value.MaybeStrArray(names)  # type: value_t
 
         suffix_op = cast(suffix_op__Nullary, part.suffix_op)
         # "${!prefix@}" is the only one that doesn't decay
