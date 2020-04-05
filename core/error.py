@@ -129,8 +129,8 @@ if mylib.PYTHON:
     fatal, use set -o errexit.
     """
 
-class Runtime(_ErrorWithLocation):
-  """A non-fatal runtime error, e.g. for builtins."""
+  class Runtime(_ErrorWithLocation):
+    """A non-fatal runtime error, e.g. for builtins."""
 
 
 class FatalRuntime(_ErrorWithLocation):

@@ -5,7 +5,6 @@
 ./bin/osh_eval.py
 ./core/alloc.py
 ./core/ansi.py
-./core/dev.py
 ./core/error.py
 ./core/meta.py
 ./core/optview.py
@@ -21,7 +20,6 @@
 ./_devbuild/gen/runtime_asdl.py
 ./_devbuild/gen/syntax_asdl.py
 ./_devbuild/gen/types_asdl.py
-./frontend/args.py
 ./frontend/builtin_def.py
 ./frontend/consts.py
 ./frontend/id_kind_def.py
@@ -34,13 +32,10 @@
 ./frontend/reader.py
 ./oil_lang/expr_parse.py
 ./oil_lang/expr_to_ast.py
-./oil_lang/objects.py
-./oil_lang/regex_translate.py
 ./osh/arith_parse.py
 ./osh/bool_parse.py
 ./osh/bool_stat.py
 ./osh/braces.py
-./osh/cmd_eval.py
 ./osh/cmd_parse.py
 ./osh/glob_.py
 ./osh/sh_expr_eval.py

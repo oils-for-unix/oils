@@ -68,7 +68,7 @@ inline Tuple2<int, int> pipe() {
   assert(0);
 }
 
-void close(int fd) {
+inline void close(int fd) {
   assert(0);
 }
 

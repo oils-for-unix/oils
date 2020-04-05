@@ -1249,7 +1249,7 @@ class Mem(object):
         # This could be an object, eggex object, etc.  It won't be
         # AssocArray shouldn because we query IsAssocArray before evaluating
         # sh_lhs_expr.  Could conslidate with s[i] case above
-        e_die("Object of type %s can't be indexed",
+        e_die("Value of type %s can't be indexed",
               ui.ValType(cell.val), span_id=left_spid)
 
       elif case(lvalue_e.Keyed):
@@ -1420,7 +1420,7 @@ class Mem(object):
     if not cell:
       return False  # 'unset' builtin falls back on functions
     if cell.readonly:
-      raise error.Runtime("Can't unset readonly variable %r", var_name)
+      raise error.Runtime("Can't unset readonly variable %r" % var_name)
 
     with tagswitch(lval) as case:
       if case(lvalue_e.Named):  # unset x

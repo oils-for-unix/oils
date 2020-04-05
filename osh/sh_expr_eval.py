@@ -125,13 +125,13 @@ def OldValue(lval, mem, exec_opts):
       lval = cast(lvalue__Indexed, UP_lval)
 
       array_val = None  # type: value__MaybeStrArray
-      with tagswitch(val) as case:
-        if case(value_e.Undef):
+      with tagswitch(val) as case2:
+        if case2(value_e.Undef):
           array_val = value.MaybeStrArray([])
-        elif case(value_e.MaybeStrArray):
+        elif case2(value_e.MaybeStrArray):
           array_val = cast(value__MaybeStrArray, UP_val)
         else:
-          e_die("Can't use [] on value %s", val)
+          e_die("Can't use [] on value of type %s", ui.ValType(val))
 
       try:
         s = array_val.strs[lval.index]
@@ -148,20 +148,20 @@ def OldValue(lval, mem, exec_opts):
       lval = cast(lvalue__Keyed, UP_lval)
 
       assoc_val = None  # type: value__AssocArray
-      with tagswitch(val) as case:
-        if case(value_e.Undef):
+      with tagswitch(val) as case2:
+        if case2(value_e.Undef):
           # This never happens, because undef[x]+= is assumed to
           raise AssertionError()
-        elif case(value_e.AssocArray):
+        elif case2(value_e.AssocArray):
           assoc_val = cast(value__AssocArray, UP_val)
         else:
-          e_die("Can't use [] on value %s", val)
+          e_die("Can't use [] on value of type %s", ui.ValType(val))
 
-        s = assoc_val.d.get(lval.key)
-        if s is None:
-          val = value.Str('')
-        else:
-          val = value.Str(s)
+      s = assoc_val.d.get(lval.key)
+      if s is None:
+        val = value.Str('')
+      else:
+        val = value.Str(s)
 
     else:
       raise AssertionError()
@@ -682,7 +682,7 @@ class ArithEvaluator(object):
     return lval
 
   def _VarRefOrWord(self, anode):
-    # type: (arith_expr_t) -> Optional[Tuple[str, int]]
+    # type: (arith_expr_t) -> Tuple[Optional[str], int]
     """
     Returns (var_name, span_id) if the arith node can be interpreted that way
     """
@@ -699,7 +699,8 @@ class ArithEvaluator(object):
         span_id = word_.LeftMostSpanForWord(anode.w)
         return (var_name, span_id)
 
-    return None
+    no_str = None  # type: str
+    return (no_str, runtime.NO_SPID)
 
   def EvalArithLhs(self, anode, span_id):
     # type: (arith_expr_t, int) -> lvalue_t
@@ -710,9 +711,8 @@ class ArithEvaluator(object):
     if anode.tag_() == arith_expr_e.Binary:
       anode = cast(arith_expr__Binary, UP_anode)
       if anode.op_id == Id.Arith_LBracket:
-        result = self._VarRefOrWord(anode.left)
-        if result:
-          var_name, span_id = result
+        var_name, span_id = self._VarRefOrWord(anode.left)
+        if var_name is not None:
           if self.mem.IsAssocArray(var_name, scope_e.Dynamic):
             key = self.EvalWordToString(anode.right)
             lval2 = lvalue.Keyed(var_name, key)
@@ -726,9 +726,8 @@ class ArithEvaluator(object):
             lval = lval3
             return lval
 
-    result = self._VarRefOrWord(anode)
-    if result:
-      var_name, span_id = result
+    var_name, span_id = self._VarRefOrWord(anode)
+    if var_name is not None:
       lval1 = lvalue.Named(var_name)
       lval1.spids.append(span_id)
       lval = lval1

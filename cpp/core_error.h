@@ -96,6 +96,13 @@ class ErrExit : public _ErrorWithLocation {
   }
 };
 
+// Stub
+class Runtime : public _ErrorWithLocation {
+ public:
+  Runtime(Str* user_str) : _ErrorWithLocation(user_str, -1) {
+  }
+};
+
 
 }  // namespace error
 
