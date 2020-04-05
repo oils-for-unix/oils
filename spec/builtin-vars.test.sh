@@ -375,7 +375,7 @@ status=127
 ## END
 
 #### Unset array member
-shopt -s unsafe_arith_eval
+shopt -s eval_unsafe_arith
 
 a=(x y z)
 unset 'a[1]'
@@ -393,7 +393,7 @@ status=0
 ## END
 
 #### Unset errors
-shopt -s unsafe_arith_eval
+shopt -s eval_unsafe_arith
 
 unset undef
 echo status=$?
@@ -418,7 +418,7 @@ status=0
 #### Unset wrong type
 case $SH in (mksh) exit ;; esac
 
-shopt -s unsafe_arith_eval || true
+shopt -s eval_unsafe_arith || true
 
 declare undef
 unset -v 'undef[1]'
@@ -471,7 +471,7 @@ assoc 0
 
 
 #### unset -v assoc (related to issue #661)
-shopt -s unsafe_arith_eval || true
+shopt -s eval_unsafe_arith || true
 
 case $SH in (dash|mksh|zsh) return; esac
 
@@ -497,7 +497,7 @@ vals=
 ## N-I dash/mksh/zsh stdout-json: ""
 
 #### unset assoc errors
-shopt -s unsafe_arith_eval || true
+shopt -s eval_unsafe_arith || true
 
 case $SH in (dash|mksh) return; esac
 
@@ -512,7 +512,7 @@ status=0
 
 
 #### Unset array member with dynamic parsing
-shopt -s unsafe_arith_eval
+shopt -s eval_unsafe_arith
 
 i=1
 a=(w x y z)

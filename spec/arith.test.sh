@@ -540,8 +540,8 @@ xbar[5]=42
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 
-#### shopt -s unsafe_arith_eval
-shopt -s unsafe_arith_eval
+#### shopt -s eval_unsafe_arith
+shopt -s eval_unsafe_arith
 e=1+2
 echo $(( e + 3 ))
 [[ e -eq 3 ]] && echo true

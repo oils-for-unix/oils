@@ -455,7 +455,7 @@ class ArithEvaluator(object):
       # doesn't look like an integer
 
       # note: 'test' and '[' never evaluate recursively
-      if self.exec_opts.unsafe_arith_eval() and self.parse_ctx:
+      if self.exec_opts.eval_unsafe_arith() and self.parse_ctx:
         # For compatibility: Try to parse it as an expression and evaluate it.
 
         arena = self.parse_ctx.arena

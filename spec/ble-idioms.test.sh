@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #### recursive arith: one level
-shopt -s unsafe_arith_eval
+shopt -s eval_unsafe_arith
 a='b=123'
 echo $((a))
 ## stdout: 123
@@ -10,7 +10,7 @@ echo $((a))
 ## N-I yash stdout: b=123
 
 #### recursive arith: two levels
-shopt -s unsafe_arith_eval
+shopt -s eval_unsafe_arith
 a='b=c' c='d=123'
 echo $((a))
 ## stdout: 123
@@ -23,7 +23,7 @@ echo $((a))
 #   "echo $((cond&&(a=1)))", it doesn't work with "x=a=1; echo
 #   $((cond&&x))", It is fixed in mksh R57.
 # Note: "busybox sh" doesn't support short circuit.
-shopt -s unsafe_arith_eval
+shopt -s eval_unsafe_arith
 a=b=123
 echo $((1||a)):$((b))
 echo $((0||a)):$((b))
@@ -38,7 +38,7 @@ echo $((1&&c)):$((d))
 
 #### recursive arith: short circuit ?:
 # Note: "busybox sh" behaves strangely.
-shopt -s unsafe_arith_eval
+shopt -s eval_unsafe_arith
 y=a=123 n=a=321
 echo $((1?(y):(n))):$((a))
 echo $((0?(y):(n))):$((a))
@@ -52,7 +52,7 @@ echo $((0?(y):(n))):$((a))
 # In Zsh and Busybox sh, the side effect of inner arithmetic
 # evaluations seems to take effect only after the whole expressions in
 # Zsh and busybox sh.
-shopt -s unsafe_arith_eval
+shopt -s eval_unsafe_arith
 a='b=c' c='d=123'
 echo $((a,d)):$((d))
 ## stdout: 123:123
@@ -61,7 +61,7 @@ echo $((a,d)):$((d))
 ## N-I dash/yash stdout-json: ""
 
 #### recursive arith: recursion
-shopt -s unsafe_arith_eval
+shopt -s eval_unsafe_arith
 loop='i<=100&&(s+=i,i++,loop)' s=0 i=0
 echo $((a=loop,s))
 ## stdout: 5050
@@ -71,7 +71,7 @@ echo $((a=loop,s))
 ## N-I ash/dash/yash stdout-json: ""
 
 #### recursive arith: array elements
-shopt -s unsafe_arith_eval
+shopt -s eval_unsafe_arith
 text[1]='d=123'
 text[2]='text[1]'
 text[3]='text[2]'
@@ -98,7 +98,7 @@ b_x=5 b_y=12
 ## END
 
 #### ble.sh (dynamic var name with prefix): read
-shopt -s unsafe_arith_eval  # for RHS
+shopt -s eval_unsafe_arith  # for RHS
 
 vec2_load() {
   local this=$1
@@ -114,7 +114,7 @@ x=12 y=34
 
 #### ble.sh (dynamic var name with prefix): copy/add
 shopt -s parse_dynamic_arith  # for LHS
-shopt -s unsafe_arith_eval  # for RHS
+shopt -s eval_unsafe_arith  # for RHS
 
 vec2_copy () {
   local this=$1 rhs=$2

@@ -428,8 +428,8 @@ class Unset(object):
     # Prevent attacks like these by default:
     #
     # unset -v 'A["$(echo K; rm *)"]'
-    if not self.exec_opts.unsafe_arith_eval() and lval.tag_() != lvalue_e.Named:
-      e_die('Expected a variable name.  Expressions are allowed with shopt -s unsafe_arith_eval', span_id=spid)
+    if not self.exec_opts.eval_unsafe_arith() and lval.tag_() != lvalue_e.Named:
+      e_die('Expected a variable name.  Expressions are allowed with shopt -s eval_unsafe_arith', span_id=spid)
 
     #log('lval %s', lval)
     found = False

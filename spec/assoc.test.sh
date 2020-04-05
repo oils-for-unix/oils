@@ -471,7 +471,7 @@ unset len=0
 ## END
 
 #### unset -v and assoc array
-shopt -s unsafe_arith_eval || true
+shopt -s eval_unsafe_arith || true
 
 show-len() {
   echo len=${#assoc[@]}

@@ -230,7 +230,7 @@ def _Init(opt_def):
   opt_def.Add('failglob')  # not implemented.
 
   # TODO: Rename eval_unsafe_arith
-  opt_def.Add('unsafe_arith_eval')  # recursive parsing and evaluation (ble.sh)
+  opt_def.Add('eval_unsafe_arith')  # recursive parsing and evaluation (ble.sh)
   opt_def.Add('parse_dynamic_arith')  # dyanmic LHS
 
   # Two strict options that from bash's shopt
