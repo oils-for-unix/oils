@@ -258,6 +258,10 @@ class ArithEvaluator(object):
 
       # note: 'test' and '[' never evaluate recursively
       if self.exec_opts.eval_unsafe_arith() and self.parse_ctx:
+        # Special case so we don't get EOF error
+        if len(s.strip()) == 0:
+          return 0
+
         # For compatibility: Try to parse it as an expression and evaluate it.
 
         arena = self.parse_ctx.arena

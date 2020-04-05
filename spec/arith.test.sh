@@ -560,3 +560,14 @@ status=0
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 
+#### eval_unsafe_arith on empty string
+shopt -s eval_unsafe_arith
+a=''
+echo $(( a ))
+
+a2=' '
+echo $(( a2 ))
+## STDOUT:
+0
+0
+## END
