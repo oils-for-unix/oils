@@ -936,7 +936,7 @@ oil-interactive() {
 
 ble-idioms() {
   sh-spec spec/ble-idioms.test.sh --osh-failures-allowed 0 \
-          $BASH $ZSH $MKSH $BUSYBOX_ASH $OSH_LIST "$@"
+          $BASH $ZSH $MKSH $BUSYBOX_ASH $DASH yash $OSH_LIST "$@"
 }
 
 "$@"
