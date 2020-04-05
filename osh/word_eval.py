@@ -812,14 +812,29 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     maybe_decay_array = False  # for $*, ${a[*]}, etc.
     bash_array_compat = False  # for ${BASH_SOURCE}
+    name_query = False
 
     var_name = None  # type: str  # For ${foo=default}
 
     # 1. Evaluate from (var_name, var_num, token Id) -> value
     if part.token.id == Id.VSub_Name:
-      var_name = part.token.val
-      # TODO: LINENO can use its own span_id!
-      val = self.mem.GetVar(var_name)
+      # Handle ${!prefix@} first, since that looks at names and not values
+      if (part.prefix_op and 
+          part.suffix_op and part.suffix_op.tag_() == suffix_op_e.Nullary):
+        var_name = None
+
+        names = self.mem.VarNamesStartingWith(part.token.val)
+        names.sort()
+        val = value.MaybeStrArray(names)
+
+        suffix_op = cast(suffix_op__Nullary, part.suffix_op)
+        # "${!prefix@}" is the only one that doesn't decay
+        maybe_decay_array = not (quoted and suffix_op.op_id == Id.VOp3_At)
+        name_query = True
+      else:
+        var_name = part.token.val
+        # TODO: LINENO can use its own span_id!
+        val = self.mem.GetVar(var_name)
     elif part.token.id == Id.VSub_Number:
       var_num = int(part.token.val)
       val = self._EvalVarNum(var_num)
@@ -925,33 +940,18 @@ class AbstractWordEvaluator(StringWordEvaluator):
           e_die("Array %r can't be referred to as a scalar (without @ or *)",
                 var_name, part=part)
 
-    suffix_processed = False
-    if part.prefix_op:
+    if part.prefix_op and not name_query:
       val = self._EmptyStrOrError(val)  # maybe error
+      # could be
+      # - ${!ref-default}
+      # - "${!assoc[@]}" vs. ${!assoc[*]} (TODO: maybe_decay_array for this
+      #   case)
+      val = self._ApplyPrefixOp(val, part.prefix_op, part.token)
 
-      # ${!prefix@} has both prefix and suffix ops
-      if part.suffix_op and part.suffix_op.tag_() == suffix_op_e.Nullary:
-        assert part.prefix_op.id == Id.VSub_Bang
-        names = self.mem.VarNamesStartingWith(part.token.val)
-        names.sort()
-        val = value.MaybeStrArray(names)
+      # NOTE: The length operator followed by a suffix operator is a SYNTAX
+      # error.
 
-        suffix_op = cast(suffix_op__Nullary, part.suffix_op)
-        # "${!prefix@}" is the only one that doesn't decay
-        maybe_decay_array = not (quoted and suffix_op.op_id == Id.VOp3_At)
-
-        suffix_processed = True
-      else:
-        # could be
-        # - ${!ref-default}
-        # - "${!assoc[@]}" vs. ${!assoc[*]} (TODO: maybe_decay_array for this
-        #   case)
-        val = self._ApplyPrefixOp(val, part.prefix_op, part.token)
-
-        # NOTE: The length operator followed by a suffix operator is a SYNTAX
-        # error.
-
-    if part.suffix_op and not suffix_processed:
+    if part.suffix_op and not name_query:
       op = part.suffix_op
       UP_op = op
       with tagswitch(op) as case:

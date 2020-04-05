@@ -80,3 +80,13 @@ for i in 1 2; do argv.py "${!Z@}"; done
 ['Z', 'ZIP', 'ZOO', 'ZOOM']
 ['Z', 'ZIP', 'ZOO', 'ZOOM']
 ## END
+
+#### ${!prefix@} matches var name (regression)
+hello1=1 hello2=2 hello3=3
+echo ${!hello@}
+hello=()
+echo ${!hello@}
+## STDOUT:
+hello1 hello2 hello3
+hello hello1 hello2 hello3
+## END
