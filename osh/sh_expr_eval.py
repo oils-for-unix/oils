@@ -55,18 +55,18 @@ _ = log
 
 
 #
-# Common logic for Arith and Command/Word variants of the same expression
+# Arith and Command/Word variants of assignment
 #
-# Calls EvalLhs()
+# Calls EvalShellLhs()
 #   a[$key]=$val             # osh/cmd_eval.py:814  (command_e.ShAssignment)
-# Calls _EvalLhsArith()
+# Calls EvalArithLhs()
 #   (( a[key] = val ))       # osh/sh_expr_eval.py:326 (_EvalLhsArith)
 #
-# Calls EvalLhsAndLookup():
+# Calls OldValue()
 #   a[$key]+=$val            # osh/cmd_eval.py:795     (assign_op_e.PlusEqual)
 #   (( a[key] += val ))      # osh/sh_expr_eval.py:308 (_EvalLhsAndLookupArith)
 #
-# Uses Python's [] operator
+# RHS Indexing
 #   val=${a[$key]}           # osh/word_eval.py:639 (bracket_op_e.ArrayIndex)
 #   (( val = a[key] ))       # osh/sh_expr_eval.py:509 (Id.Arith_LBracket)
 #
@@ -80,108 +80,6 @@ def _LookupVar(name, mem, exec_opts):
   if val.tag_() == value_e.Undef and exec_opts.nounset():
     e_die('Undefined variable %r', name)  # TODO: need token
   return val
-
-
-def _VarRefOrWord(anode, arith_ev):
-  # type: (arith_expr_t, ArithEvaluator) -> Optional[Tuple[str, int]]
-  """
-  Returns (var_name, span_id) if the arith node can be interpreted that way
-  """
-  UP_anode = anode
-  with tagswitch(anode) as case:
-    if case(arith_expr_e.VarRef):
-      anode = cast(arith_expr__VarRef, UP_anode)
-      tok = anode.token
-      return (tok.val, tok.span_id)
-
-    elif case(arith_expr_e.ArithWord):
-      anode = cast(arith_expr__ArithWord, UP_anode)
-      var_name = arith_ev.EvalWordToString(anode)
-      span_id = word_.LeftMostSpanForWord(anode.w)
-      return (var_name, span_id)
-
-  return None
-
-
-def ArithToLValue(anode, arith_ev, mem, span_id):
-  # type: (arith_expr_t, ArithEvaluator, Mem, int) -> lvalue_t
-  """
-  For the "cell" or "place" sublanguage
-  TODO: Rename to ToPlace()
-  """
-  UP_anode = anode
-  if anode.tag_() == arith_expr_e.Binary:
-    anode = cast(arith_expr__Binary, UP_anode)
-    if anode.op_id == Id.Arith_LBracket:
-      result = _VarRefOrWord(anode.left, arith_ev)
-      if result:
-        var_name, span_id = result
-        if mem.IsAssocArray(var_name, scope_e.Dynamic):
-          key = arith_ev.EvalWordToString(anode.right)
-          lval2 = lvalue.Keyed(var_name, key)
-          lval2.spids.append(span_id)
-          lval = lval2  # type: lvalue_t
-          return lval
-        else:
-          index = arith_ev.EvalToInt(anode.right)
-          lval3 = lvalue.Indexed(var_name, index)
-          lval3.spids.append(span_id)
-          lval = lval3
-          return lval
-
-  result = _VarRefOrWord(anode, arith_ev)
-  if result:
-    var_name, span_id = result
-    lval1 = lvalue.Named(var_name)
-    lval1.spids.append(span_id)
-    lval = lval1
-    return lval
-
-  # e.g. unset 'x-y'.  status 2 for runtime parse error
-  e_die('Invalid place to modify', span_id=span_id, status=2)
-
-
-# TODO: Rename LhsExprToLValue
-# or LhsExprToPlace
-#    ArithLhsToPlace
-
-def EvalLhs(node, arith_ev, mem, spid, lookup_mode):
-  # type: (sh_lhs_expr_t, ArithEvaluator, Mem, int, scope_t) -> lvalue_t
-  """Evaluate a shell "place" expression.
-
-  Used for a=b and a[x]=b
-  """
-  assert isinstance(node, sh_lhs_expr_t), node
-
-  UP_node = node
-  lval = None  # type: lvalue_t
-  with tagswitch(node) as case:
-    if case(sh_lhs_expr_e.Name):  # a=x
-      node = cast(sh_lhs_expr__Name, UP_node)
-
-      # Note: C++ constructor doesn't take spids directly.  Should we add that?
-      lval1 = lvalue.Named(node.name)
-      lval1.spids.append(spid)
-      lval = lval1
-
-    elif case(sh_lhs_expr_e.IndexedName):  # a[1+2]=x
-      node = cast(sh_lhs_expr__IndexedName, UP_node)
-
-      if mem.IsAssocArray(node.name, lookup_mode):
-        key = arith_ev.EvalWordToString(node.index)
-        lval2 = lvalue.Keyed(node.name, key)
-        lval2.spids.append(node.spids[0])
-        lval = lval2
-      else:
-        index = arith_ev.EvalToInt(node.index)
-        lval3 = lvalue.Indexed(node.name, index)
-        lval3.spids.append(node.spids[0])
-        lval = lval3
-
-    else:
-      raise AssertionError(node.tag_())
-
-  return lval
 
 
 def EvalLhsAndLookup(node, arith_ev, mem, exec_opts,
@@ -519,12 +417,12 @@ class ArithEvaluator(object):
     # type: (arith_expr_t) -> Tuple[int, lvalue_t]
     """ For x = y  and   x += y  and  ++x """
 
-    #val, lval = EvalLhsAndLookup(node, self, self.mem, self.exec_opts)
-    lval = ArithToLValue(node, self, self.mem, runtime.NO_SPID)
+    lval = self.EvalArithLhs(node, runtime.NO_SPID)
     val = _OldValue(lval, self.mem, self.exec_opts)
 
-    if val.tag_() == value_e.MaybeStrArray:
-      e_die("Can't use assignment like ++ or += on arrays")
+    # This error message could be better, but we already have one
+    #if val.tag_() == value_e.MaybeStrArray:
+    #  e_die("Can't use assignment like ++ or += on arrays")
 
     span_id = location.SpanForArithExpr(node)
     i = self._ValToIntOrError(val, span_id=span_id)
@@ -614,11 +512,9 @@ class ArithEvaluator(object):
         if op_id == Id.Arith_Equal:
           # Don't really need a span ID here, because tdop.CheckLhsExpr should
           # have done all the validation.
-          lval = ArithToLValue(node.left, self, self.mem, runtime.NO_SPID)
-
-          # Disallowing (( a = myarray ))
-          # It has to be an integer
+          lval = self.EvalArithLhs(node.left, runtime.NO_SPID)
           rhs_int = self.EvalToInt(node.right)
+
           self._Store(lval, rhs_int)
           return value.Int(rhs_int)
 
@@ -842,6 +738,100 @@ class ArithEvaluator(object):
     else:
       # TODO: location info for orginal
       e_die("Associative array keys must be strings: $x 'x' \"$x\" etc.")
+
+  def EvalShellLhs(self, node, spid, lookup_mode):
+    # type: (sh_lhs_expr_t, int, scope_t) -> lvalue_t
+    """Evaluate a shell LHS expression, i.e. place expression.
+
+    For  a=b  and  a[x]=b  etc.
+    """
+    assert isinstance(node, sh_lhs_expr_t), node
+
+    UP_node = node
+    lval = None  # type: lvalue_t
+    with tagswitch(node) as case:
+      if case(sh_lhs_expr_e.Name):  # a=x
+        node = cast(sh_lhs_expr__Name, UP_node)
+
+        # Note: C++ constructor doesn't take spids directly.  Should we add that?
+        lval1 = lvalue.Named(node.name)
+        lval1.spids.append(spid)
+        lval = lval1
+
+      elif case(sh_lhs_expr_e.IndexedName):  # a[1+2]=x
+        node = cast(sh_lhs_expr__IndexedName, UP_node)
+
+        if self.mem.IsAssocArray(node.name, lookup_mode):
+          key = self.EvalWordToString(node.index)
+          lval2 = lvalue.Keyed(node.name, key)
+          lval2.spids.append(node.spids[0])
+          lval = lval2
+        else:
+          index = self.EvalToInt(node.index)
+          lval3 = lvalue.Indexed(node.name, index)
+          lval3.spids.append(node.spids[0])
+          lval = lval3
+
+      else:
+        raise AssertionError(node.tag_())
+
+    return lval
+
+  def _VarRefOrWord(self, anode):
+    # type: (arith_expr_t) -> Optional[Tuple[str, int]]
+    """
+    Returns (var_name, span_id) if the arith node can be interpreted that way
+    """
+    UP_anode = anode
+    with tagswitch(anode) as case:
+      if case(arith_expr_e.VarRef):
+        anode = cast(arith_expr__VarRef, UP_anode)
+        tok = anode.token
+        return (tok.val, tok.span_id)
+
+      elif case(arith_expr_e.ArithWord):
+        anode = cast(arith_expr__ArithWord, UP_anode)
+        var_name = self.EvalWordToString(anode)
+        span_id = word_.LeftMostSpanForWord(anode.w)
+        return (var_name, span_id)
+
+    return None
+
+  def EvalArithLhs(self, anode, span_id):
+    # type: (arith_expr_t, int) -> lvalue_t
+    """
+    For (( a[x] = 1 )) etc.
+    """
+    UP_anode = anode
+    if anode.tag_() == arith_expr_e.Binary:
+      anode = cast(arith_expr__Binary, UP_anode)
+      if anode.op_id == Id.Arith_LBracket:
+        result = self._VarRefOrWord(anode.left)
+        if result:
+          var_name, span_id = result
+          if self.mem.IsAssocArray(var_name, scope_e.Dynamic):
+            key = self.EvalWordToString(anode.right)
+            lval2 = lvalue.Keyed(var_name, key)
+            lval2.spids.append(span_id)
+            lval = lval2  # type: lvalue_t
+            return lval
+          else:
+            index = self.EvalToInt(anode.right)
+            lval3 = lvalue.Indexed(var_name, index)
+            lval3.spids.append(span_id)
+            lval = lval3
+            return lval
+
+    result = self._VarRefOrWord(anode)
+    if result:
+      var_name, span_id = result
+      lval1 = lvalue.Named(var_name)
+      lval1.spids.append(span_id)
+      lval = lval1
+      return lval
+
+    # e.g. unset 'x-y'.  status 2 for runtime parse error
+    e_die('Invalid place to modify', span_id=span_id, status=2)
 
 
 class BoolEvaluator(ArithEvaluator):

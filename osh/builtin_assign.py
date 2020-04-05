@@ -423,7 +423,7 @@ class Unset(object):
     finally:
       arena.PopSource()
 
-    lval = sh_expr_eval.ArithToLValue(anode, self.arith_ev, self.mem, spid)
+    lval = self.arith_ev.EvalArithLhs(anode, spid)
 
     # Prevent attacks like these by default:
     #

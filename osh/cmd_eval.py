@@ -825,8 +825,7 @@ class CommandEvaluator(object):
 
           else:  # plain assignment
             spid = pair.spids[0]  # Source location for tracing
-            lval = sh_expr_eval.EvalLhs(pair.lhs, self.arith_ev, self.mem, spid,
-                                        lookup_mode)
+            lval = self.arith_ev.EvalShellLhs(pair.lhs, spid, lookup_mode)
 
             # RHS can be a string or array.
             if pair.rhs:
