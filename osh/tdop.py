@@ -4,10 +4,7 @@ tdop.py - Library for expression parsing.
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
-    arith_expr, arith_expr_e, arith_expr_t,
-    arith_expr__VarRef, arith_expr__Binary, arith_expr__ArithWord,
-    sh_lhs_expr, sh_lhs_expr_t,
-    word_t,
+    arith_expr, arith_expr_e, arith_expr_t, arith_expr__Binary, word_t,
 )
 from _devbuild.gen.types_asdl import lex_mode_e
 from core.util import p_die
@@ -42,7 +39,7 @@ def IsIndexable(node, parse_dynamic_arith):
   return False
 
 
-def _VarOrWord(node, dynamic_arith):
+def _VarRefOrWord(node, dynamic_arith):
   # type: (arith_expr_t, bool) -> bool
   with tagswitch(node) as case:
     if case(arith_expr_e.VarRef):
@@ -68,11 +65,11 @@ def CheckLhsExpr(node, dynamic_arith, blame_word):
   UP_node = node
   if node.tag_() == arith_expr_e.Binary:
     node = cast(arith_expr__Binary, UP_node)
-    if node.op_id == Id.Arith_LBracket and _VarOrWord(node.left, dynamic_arith):
+    if node.op_id == Id.Arith_LBracket and _VarRefOrWord(node.left, dynamic_arith):
       return
     # But a[0][0] = 1 is NOT valid.
 
-  if _VarOrWord(node, dynamic_arith):
+  if _VarRefOrWord(node, dynamic_arith):
     return
 
   p_die("Left-hand side of this assignment is invalid", word=blame_word)
@@ -145,12 +142,6 @@ def LeftAssign(p, w, left, rbp):
   # x += 1, or a[i] += 1
 
   CheckLhsExpr(left, p.parse_opts.parse_dynamic_arith(), w)
-
-  #if lhs is None:
-  #  # TODO: It would be nice to point at 'left', but osh/word.py doesn't
-  #  # support arbitrary arith_expr_t.
-  #  #p_die("Can't assign to this expression", word=w)
-  #  p_die("Left-hand side of this assignment is invalid", word=w)
   return arith_expr.BinaryAssign(word_.ArithId(w), left, p.ParseUntil(rbp))
 
 

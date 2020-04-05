@@ -82,6 +82,27 @@ def _LookupVar(name, mem, exec_opts):
   return val
 
 
+def _VarRefOrWord(anode, arith_ev):
+  # type: (arith_expr_t, ArithEvaluator) -> Optional[Tuple[str, int]]
+  """
+  Returns (var_name, span_id) if the arith node can be interpreted that way
+  """
+  UP_anode = anode
+  with tagswitch(anode) as case:
+    if case(arith_expr_e.VarRef):
+      anode = cast(arith_expr__VarRef, UP_anode)
+      tok = anode.token
+      return (tok.val, tok.span_id)
+
+    elif case(arith_expr_e.ArithWord):
+      anode = cast(arith_expr__ArithWord, UP_anode)
+      var_name = arith_ev.EvalWordToString(anode)
+      span_id = word_.LeftMostSpanForWord(anode.w)
+      return (var_name, span_id)
+
+  return None
+
+
 def ArithToLValue(anode, arith_ev, mem, span_id):
   # type: (arith_expr_t, ArithEvaluator, Mem, int) -> lvalue_t
   """
@@ -89,59 +110,32 @@ def ArithToLValue(anode, arith_ev, mem, span_id):
   TODO: Rename to ToPlace()
   """
   UP_anode = anode
-  with tagswitch(anode) as case:
-    if case(arith_expr_e.VarRef):
-      anode = cast(arith_expr__VarRef, UP_anode)
-      lval1 = lvalue.Named(anode.token.val)
-      lval1.spids.append(anode.token.span_id)
-      lval = lval1  # type: lvalue_t
-      return lval
+  if anode.tag_() == arith_expr_e.Binary:
+    anode = cast(arith_expr__Binary, UP_anode)
+    if anode.op_id == Id.Arith_LBracket:
+      result = _VarRefOrWord(anode.left, arith_ev)
+      if result:
+        var_name, span_id = result
+        if mem.IsAssocArray(var_name, scope_e.Dynamic):
+          key = arith_ev.EvalWordToString(anode.right)
+          lval2 = lvalue.Keyed(var_name, key)
+          lval2.spids.append(span_id)
+          lval = lval2  # type: lvalue_t
+          return lval
+        else:
+          index = arith_ev.EvalToInt(anode.right)
+          lval3 = lvalue.Indexed(var_name, index)
+          lval3.spids.append(span_id)
+          lval = lval3
+          return lval
 
-    elif case(arith_expr_e.ArithWord):
-      anode = cast(arith_expr__ArithWord, UP_anode)
-      var_name = arith_ev.EvalWordToString(anode)
-      lval4 = lvalue.Named(var_name)
-      lval4.spids.append(word_.LeftMostSpanForWord(anode.w))
-      lval = lval4
-      return lval
-
-    elif case(arith_expr_e.Binary):
-      anode = cast(arith_expr__Binary, UP_anode)
-
-      # Parser doesn't check this because there's no =
-      if anode.op_id == Id.Arith_LBracket:
-        if anode.left.tag_() == arith_expr_e.VarRef:
-          name_tok = cast(arith_expr__VarRef, anode.left).token
-          var_name = name_tok.val
-          if mem.IsAssocArray(var_name, scope_e.Dynamic):
-            key = arith_ev.EvalWordToString(anode.right)
-            lval2 = lvalue.Keyed(var_name, key)
-            lval2.spids.append(name_tok.span_id)
-            lval = lval2
-            return lval
-          else:
-            index = arith_ev.EvalToInt(anode.right)
-            lval3 = lvalue.Indexed(var_name, index)
-            lval3.spids.append(name_tok.span_id)
-            lval = lval3
-            return lval
-
-        elif anode.left.tag_() == arith_expr_e.ArithWord:
-          var_word = cast(arith_expr__ArithWord, anode.left).w
-          var_name = arith_ev.EvalWordToString(anode.left)
-          span_id = word_.LeftMostSpanForWord(var_word)
-          if mem.IsAssocArray(var_name, scope_e.Dynamic):
-            key = arith_ev.EvalWordToString(anode.right)
-            lval5 = lvalue.Keyed(var_name, key)
-            lval5.spids.append(span_id)
-            lval = lval5
-            return lval
-          else:
-            index = arith_ev.EvalToInt(anode.right)
-            lval6 = lvalue.Indexed(var_name, index)
-            lval6.spids.append(span_id)
-            lval = lval6
-            return lval
+  result = _VarRefOrWord(anode, arith_ev)
+  if result:
+    var_name, span_id = result
+    lval1 = lvalue.Named(var_name)
+    lval1.spids.append(span_id)
+    lval = lval1
+    return lval
 
   # e.g. unset 'x-y'.  status 2 for runtime parse error
   e_die('Invalid place to modify', span_id=span_id, status=2)
@@ -183,45 +177,6 @@ def EvalLhs(node, arith_ev, mem, spid, lookup_mode):
         lval3 = lvalue.Indexed(node.name, index)
         lval3.spids.append(node.spids[0])
         lval = lval3
-
-    else:
-      raise AssertionError(node.tag_())
-
-  return lval
-
-
-def OBSOLETE_EvalLhsArith(node, mem, arith_ev):
-  # type: (sh_lhs_expr_t, Mem, ArithEvaluator) -> lvalue_t
-  """Evaluate an arithmetic "place" expression.
-  
-  Very similar to EvalLhs above, called in osh/cmd_eval.py.
-
-  TODO: Consolidate with ArithToLValue()?
-  """
-  assert isinstance(node, sh_lhs_expr_t), node
-
-  UP_node = node
-  with tagswitch(node) as case:
-    if case(sh_lhs_expr_e.Name):  # (( i = 42 ))
-      node = cast(sh_lhs_expr__Name, UP_node)
-
-      lval = lvalue.Named(node.name)  # type: lvalue_t
-      # TODO: location info.  Use the = token?
-      #lval.spids.append(spid)
-
-    elif case(sh_lhs_expr_e.IndexedName):  # (( a[42] = 42 ))
-      node = cast(sh_lhs_expr__IndexedName, UP_node)
-
-      # The index of MaybeStrArray needs to be coerced to int, but not the
-      # index of an AssocArray.
-      if mem.IsAssocArray(node.name, scope_e.Dynamic):
-        key = arith_ev.EvalWordToString(node.index)
-        lval = lvalue.Keyed(node.name, key)
-      else:
-        index = arith_ev.EvalToInt(node.index)
-        lval = lvalue.Indexed(node.name, index)
-        # TODO: location info.  Use the = token?
-        #lval.spids.append(node.spids[0])
 
     else:
       raise AssertionError(node.tag_())

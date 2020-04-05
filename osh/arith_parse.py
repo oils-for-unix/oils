@@ -50,8 +50,6 @@ def LeftIncDec(p, w, left, rbp):
     raise AssertionError()
 
   tdop.CheckLhsExpr(left, p.parse_opts.parse_dynamic_arith(), w)
-  #if child is None:
-  #  p_die("This value can't be assigned to", word=w)
   return arith_expr.UnaryAssign(op_id, left)
 
 

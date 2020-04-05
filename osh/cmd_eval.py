@@ -785,7 +785,7 @@ class CommandEvaluator(object):
             val = self.word_ev.EvalRhsWord(pair.rhs)
 
             # TODO: use 
-            # lval = LhsToPlace(pair.lhs)
+            # lval = sh_expr_eval.LhsToPlace(pair.lhs)
             # old_val = sh_expr_eval.OldValue(lval)
             old_val, lval = sh_expr_eval.EvalLhsAndLookup(
                 pair.lhs, self.arith_ev, self.mem, self.exec_opts,
