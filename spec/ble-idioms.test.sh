@@ -136,3 +136,26 @@ echo c_x=$c_x c_y=$c_y
 c_x=3 c_y=4
 c_x=7 c_y=24
 ## END
+
+#### is-array with ${var@a}
+case $SH in (mksh|ash) exit 1 ;; esac
+
+function ble/is-array { [[ ${!1@a} == *a* ]]; }
+
+ble/is-array undef
+echo undef $?
+
+string=''
+ble/is-array string
+echo string $?
+
+array=(one two three)
+ble/is-array array
+echo array $?
+## STDOUT:
+undef 1
+string 1
+array 0
+## END
+## N-I zsh/mksh/ash status: 1
+## N-I zsh/mksh/ash stdout-json: ""

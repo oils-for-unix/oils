@@ -7,7 +7,7 @@ from _devbuild.gen.syntax_asdl import (
     braced_var_sub, Token,
     word, word_e, word_t, compound_word,
     bracket_op_e, bracket_op__ArrayIndex, bracket_op__WholeArray,
-    suffix_op_e, suffix_op__Nullary, suffix_op__PatSub, suffix_op__Slice,
+    suffix_op_e, suffix_op__PatSub, suffix_op__Slice,
     suffix_op__Unary,
     sh_array_literal, single_quoted, double_quoted, simple_var_sub,
     command_sub,
@@ -862,9 +862,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
         names.sort()
         val = value.MaybeStrArray(names)  # type: value_t
 
-        suffix_op = cast(suffix_op__Nullary, part.suffix_op)
+        suffix_op = cast(Token, part.suffix_op)
         # "${!prefix@}" is the only one that doesn't decay
-        maybe_decay_array = not (quoted and suffix_op.op_id == Id.VOp3_At)
+        maybe_decay_array = not (quoted and suffix_op.id == Id.VOp3_At)
         name_query = True
       else:
         var_name = part.token.val
@@ -995,18 +995,29 @@ class AbstractWordEvaluator(StringWordEvaluator):
       UP_op = op
       with tagswitch(op) as case:
         if case(suffix_op_e.Nullary):
-          op = cast(suffix_op__Nullary, UP_op)
-          if op.op_id == Id.VOp0_P:
+          op = cast(Token, UP_op)
+          op_id = op.id
+          if op_id == Id.VOp0_P:
             prompt = self.prompt_ev.EvalPrompt(val)
             # readline gets rid of these, so we should too.
             p = prompt.replace('\x01', '').replace('\x02', '')
             val = value.Str(p)
-          elif op.op_id == Id.VOp0_Q:
+          elif op_id == Id.VOp0_Q:
             assert val.tag_() == value_e.Str, val
             val = cast(value__Str, val)
             val = value.Str(string_ops.ShellQuote(val.s))
+          elif op_id == Id.VOp0_a:
+            # We're ONLY simluating -a and -A, not -r -x -n for now.  See
+            # spec/ble-idioms.test.sh.
+            s = ''
+            with tagswitch(val) as case:
+              if case(value_e.MaybeStrArray):
+                s += 'a'
+              elif case(value_e.AssocArray):
+                s += 'A'
+            val = value.Str(s)
           else:
-            raise NotImplementedError(op.op_id)
+            e_die('Var op %r not implemented', op.val, token=op)
 
         elif case(suffix_op_e.Unary):
           op = cast(suffix_op__Unary, UP_op)

@@ -334,8 +334,7 @@ class WordParser(WordEmitter):
       part.suffix_op = suffix_op.Unary(op_id, arg_word)
 
     elif op_kind == Kind.VOp0:
-      op_id = self.token_type
-      part.suffix_op = suffix_op.Nullary(op_id)
+      part.suffix_op = self.cur_token  # Nullary
       self._Next(lex_mode_e.VSub_2)  # Expecting }
       self._Peek()
 
@@ -373,8 +372,7 @@ class WordParser(WordEmitter):
 
     elif op_kind == Kind.VOp3:
       if allow_query:
-        op_id = self.token_type
-        part.suffix_op = suffix_op.Nullary(op_id)
+        part.suffix_op = self.cur_token  # Nullary
         self._Next(lex_mode_e.VSub_2)  # Expecting }
         self._Peek()
       else:
