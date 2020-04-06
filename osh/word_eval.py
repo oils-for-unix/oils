@@ -250,10 +250,13 @@ def _PerformSlice(val,  # type: value_t
       else:
         orig = val.strs
 
-      count = 0
-      i = begin
       n = len(orig)
+      if begin < 0:
+        i = n + begin  # ${@:-3} starts counts from the end
+      else:
+        i = begin
       strs = []  # type: List[str]
+      count = 0
       while i < n:
         s = orig[i]
         if s is not None:  # Unset elements don't count towards the length.
