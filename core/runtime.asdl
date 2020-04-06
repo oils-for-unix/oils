@@ -4,7 +4,7 @@ module runtime
 {
   -- Evaluating SimpleCommand results in either an argv array or an assignment.
   -- in 'local foo', rval is None
-  assign_arg = (lvalue lval, value? rval, int spid)
+  assign_arg = (string var_name, value? rval, int spid)
 
   -- ASDL issue: I need to import the 'command' type from frontend/syntax.asdl!
   -- and 'builtin' from synthetic option_asdl

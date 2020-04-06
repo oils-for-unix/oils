@@ -8,7 +8,7 @@ from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Str, value__MaybeStrArray,
     value__AssocArray,
-    lvalue_e, scope_e, cmd_value__Argv, cmd_value__Assign,
+    lvalue, lvalue_e, scope_e, cmd_value__Argv, cmd_value__Assign,
 )
 from _devbuild.gen.syntax_asdl import source
 from frontend import arg_def
@@ -57,7 +57,7 @@ def _PrintVariables(mem, cmd_val, arg, print_flags, readonly=False, exported=Fal
     names = []
     cells = {}
     for pair in cmd_val.pairs:
-      name = pair.lval.name
+      name = pair.var_name
       if pair.rval and pair.rval.tag_() == value_e.Str:
         name += "=" + cast(value__Str, pair.rval).s
         names.append(name)
@@ -188,11 +188,11 @@ class Export(object):
           raise args.UsageError("doesn't accept RHS with -n", span_id=pair.spid)
 
         # NOTE: we don't care if it wasn't found, like bash.
-        self.mem.ClearFlag(pair.lval.name, state.ClearExport, scope_e.Dynamic)
+        self.mem.ClearFlag(pair.var_name, state.ClearExport, scope_e.Dynamic)
     else:
       for pair in cmd_val.pairs:
         # NOTE: when rval is None, only flags are changed
-        self.mem.SetVar(pair.lval, pair.rval, scope_e.Dynamic,
+        self.mem.SetVar(lvalue.Named(pair.var_name), pair.rval, scope_e.Dynamic,
                         flags=state.SetExport)
 
     return 0
@@ -267,7 +267,7 @@ class Readonly(object):
       # NOTE:
       # - when rval is None, only flags are changed
       # - dynamic scope because flags on locals can be changed, etc.
-      self.mem.SetVar(pair.lval, rval, scope_e.Dynamic,
+      self.mem.SetVar(lvalue.Named(pair.var_name), rval, scope_e.Dynamic,
                       flags=state.SetReadOnly)
 
     return 0
@@ -303,6 +303,17 @@ class NewVar(object):
     self.funcs = funcs
     self.errfmt = errfmt
 
+  def _PrintFuncs(self, names):
+    status = 0
+    for name in names:
+      if name in self.funcs:
+        print(name)
+        # TODO: Could print LST for -f, or render LST.  Bash does this.  'trap'
+        # could use that too.
+      else:
+        status = 1
+    return status
+
   def Run(self, cmd_val):
     # type: (cmd_value__Assign) -> int
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
@@ -311,26 +322,23 @@ class NewVar(object):
 
     status = 0
 
-    # NOTE: in bash, -f shows the function body, while -F shows the name.  In
-    # osh, they're identical and behave like -F.
-    if arg.f or arg.F:  # Lookup and print functions.
+    if arg.f:
       names = arg_r.Rest()
       if names:
-        for name in names:
-          if name in self.funcs:
-            print(name)
-            # TODO: Could print LST, or render LST.  Bash does this.  'trap' too.
-            #print(funcs[name])
-          else:
-            status = 1
-
-      elif arg.F:  # print all
-        for func_name in sorted(self.funcs):
-          print('declare -f %s' % (func_name))
-
+        # NOTE: in bash, -f shows the function body, while -F shows the name.
+        # Right now we just show the name.
+        status = self._PrintFuncs(names)
       else:
         raise args.UsageError('passed -f without args')
+      return status
 
+    if arg.F:
+      names = arg_r.Rest()
+      if names:
+        status = self._PrintFuncs(names)
+      else:  # weird bash quirk: they're printed in a different format!
+        for func_name in sorted(self.funcs):
+          print('declare -f %s' % (func_name))
       return status
 
     if arg.p:  # Lookup and print variables.
@@ -379,7 +387,7 @@ class NewVar(object):
         rval = pair.rval
 
       rval = _ReconcileTypes(rval, arg, pair.spid)
-      self.mem.SetVar(pair.lval, rval, lookup_mode, flags=flags)
+      self.mem.SetVar(lvalue.Named(pair.var_name), rval, lookup_mode, flags=flags)
 
     return status
 

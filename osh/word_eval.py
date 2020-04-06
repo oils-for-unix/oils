@@ -21,7 +21,7 @@ from _devbuild.gen.runtime_asdl import (
     part_value__Array,
     value, value_e, value_t, value__Str, value__AssocArray,
     value__MaybeStrArray, value__Obj,
-    lvalue, assign_arg, 
+    assign_arg, 
     cmd_value_e, cmd_value_t, cmd_value, cmd_value__Assign, cmd_value__Argv,
     quote_e, quote_t,
 )
@@ -45,7 +45,7 @@ from typing import Optional, Tuple, List, Dict, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.id_kind_asdl import Id_t
   from _devbuild.gen.syntax_asdl import command_t, speck, word_part_t
-  from _devbuild.gen.runtime_asdl import effect_t, lvalue__Named
+  from _devbuild.gen.runtime_asdl import effect_t
   from _devbuild.gen.option_asdl import builtin_t
   from core import executor
   from core import optview
@@ -1627,7 +1627,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           if tok_val[-2] == '+':
             e_die('+= not allowed in assignment builtin', word=w)
 
-          left = lvalue.Named(tok_val[:-1])
+          var_name = tok_val[:-1]
           if part_offset == len(w.parts):
             rhs_word = word.Empty()  # type: word_t
           else:
@@ -1638,7 +1638,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
               rhs_word = tmp
 
           right = self.EvalRhsWord(rhs_word)
-          arg2 = assign_arg(left, right, word_spid)
+          arg2 = assign_arg(var_name, right, word_spid)
           assign_args.append(arg2)
 
         else:  # e.g. export $dynamic
@@ -1828,15 +1828,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
 
 def _SplitAssignArg(arg, w):
-  # type: (str, compound_word, bool) -> Tuple[lvalue__Named, Optional[value__Str]]
+  # type: (str, compound_word) -> Tuple[str, Optional[value__Str]]
   i = arg.find('=')
   prefix = arg[:i]
   if i != -1 and match.IsValidVarName(prefix):
-    return lvalue.Named(prefix), value.Str(arg[i+1:])
+    return prefix, value.Str(arg[i+1:])
   else:
     if match.IsValidVarName(arg):  # local foo   # foo becomes undefined
       no_str = None  # type: Optional[value__Str]
-      return lvalue.Named(arg), no_str
+      return arg, no_str
     else:
       e_die("Invalid variable name %r", arg, word=w)
 
