@@ -55,6 +55,10 @@ module runtime
     -- * or a user-defined type
   | Obj(any obj)
 
+  -- What is valid in arrays or assoc arrays a[i] or A[i] in shell.
+  -- Used for ${a[i]=x}.  TODO: also use for lvalue/place.
+  a_index = Str(string s) | Int(int i)
+
   -- A cell is a wrapper for a value.  16 bytes in C++.
   -- TODO: add spid for last-assigned location
 
@@ -101,11 +105,6 @@ module runtime
   -- whitespace; DE_Gray is for other IFS chars; Black is for significant
   -- characters.  Sentinel is the end of the string.
   char_kind = DE_White | DE_Gray | Black | Backslash | Sentinel
-
-  -- word_eval.py: SliceParts is for ${a-} and ${a+}, Error is for ${a?}, and
-  -- SliceAndAssign is for ${a=}.
-  -- TODO: Could be cleaner if Error and SpliceAndAssign have part_vals
-  effect = SpliceParts | Error | SpliceAndAssign | NoOp
 
   -- core/process.py
   -- A Job is a Process or Pipeline.

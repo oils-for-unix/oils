@@ -16,7 +16,6 @@ from _devbuild.gen.syntax_asdl import (
     word_part__FuncCall, word_part__Splice, word_part__TildeSub,
 )
 from _devbuild.gen.runtime_asdl import (
-    effect_e,
     part_value, part_value_e, part_value_t, part_value__String,
     part_value__Array,
     value, value_e, value_t, value__Str, value__AssocArray,
@@ -24,6 +23,7 @@ from _devbuild.gen.runtime_asdl import (
     assign_arg, 
     cmd_value_e, cmd_value_t, cmd_value, cmd_value__Assign, cmd_value__Argv,
     quote_e, quote_t,
+    a_index, a_index_t
 )
 from core import error
 from core import passwd
@@ -45,7 +45,6 @@ from typing import Optional, Tuple, List, Dict, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.id_kind_asdl import Id_t
   from _devbuild.gen.syntax_asdl import command_t, speck, word_part_t
-  from _devbuild.gen.runtime_asdl import effect_t
   from _devbuild.gen.option_asdl import builtin_t
   from core import executor
   from core import optview
@@ -419,11 +418,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
                    op,  # type: suffix_op__Unary
                    quoted,  # type: bool
                    part_vals,  # type: Optional[List[part_value_t]]
+                   var_name,  # type: str
+                   var_index,  # type: a_index_t
+                   blame_token,  # type: Token
                    ):
-    # type: (...) -> Tuple[List[part_value_t], effect_t]
+    # type: (...) -> bool
     """
     Returns:
-      effect_part_vals, effect_e
+      Whether part_vals was mutated
 
       ${a:-} returns part_value[]
       ${a:+} returns part_value[]
@@ -442,47 +444,45 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
       echo ${a:-x"$@"x}
     """
-    undefined = (val.tag_() == value_e.Undef)
-
-    no = None  # type: List[part_value_t]
+    # NOTE: Splicing part_values is necessary because of code like
+    # ${undef:-'a b' c 'd # e'}.  Each part_value can have a different
+    # do_glob/do_elide setting.
 
     # TODO: Change this to a bitwise test?
-    if op.op_id in (
-        Id.VTest_ColonHyphen, Id.VTest_ColonEquals, Id.VTest_ColonQMark,
-        Id.VTest_ColonPlus):
+    if op.op_id in (Id.VTest_ColonHyphen, Id.VTest_ColonEquals,
+                    Id.VTest_ColonQMark, Id.VTest_ColonPlus):
       UP_val = val
       with tagswitch(val) as case:
         if case(value_e.Undef):
           is_falsey = True
         elif case(value_e.Str):
           val = cast(value__Str, UP_val)
-          is_falsey = not val.s
+          is_falsey = len(val.s) == 0
         elif case(value_e.MaybeStrArray):
           val = cast(value__MaybeStrArray, UP_val)
-          is_falsey = not val.strs
+          is_falsey = len(val.strs) == 0
         else:
           raise NotImplementedError(val.tag_())
     else:
-      is_falsey = undefined
+      is_falsey = val.tag_() == value_e.Undef
 
     #print('!!',id, is_falsey)
     if op.op_id in (Id.VTest_ColonHyphen, Id.VTest_Hyphen):
       if is_falsey:
-        assert op.arg_word
         self._EvalWordToParts(op.arg_word, quoted, part_vals, is_subst=True)
-        return no, effect_e.SpliceParts
+        return True
       else:
-        return no, effect_e.NoOp
+        return False
 
+    # Inverse of the above.
     elif op.op_id in (Id.VTest_ColonPlus, Id.VTest_Plus):
-      # Inverse of the above.
       if is_falsey:
-        return no, effect_e.NoOp
+        return False
       else:
-        assert op.arg_word
         self._EvalWordToParts(op.arg_word, quoted, part_vals, is_subst=True)
-        return no, effect_e.SpliceParts
+        return True
 
+    # Splice and assign
     elif op.op_id in (Id.VTest_ColonEquals, Id.VTest_Equals):
       if is_falsey:
         # Collect new part vals.
@@ -492,9 +492,21 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         # Append them to out param AND return them.
         part_vals.extend(assign_part_vals)
-        return assign_part_vals, effect_e.SpliceAndAssign
+
+        if var_name is None:
+          # TODO: error context
+          e_die("Can't assign to special variable")
+        else:
+          # NOTE: This decays arrays too!  'set -o strict_array' could
+          # avoid it.
+          rhs_str = _DecayPartValuesToString(assign_part_vals,
+                                             self.splitter.GetJoinChar())
+          state.SetStringDynamic(self.mem, var_name, rhs_str)
+          # TODO: self.mem.SetVar(lval, ...)
+        return True
+
       else:
-        return no, effect_e.NoOp
+        return False
 
     elif op.op_id in (Id.VTest_ColonQMark, Id.VTest_QMark):
       if is_falsey:
@@ -502,9 +514,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
         error_part_vals = []  # type: List[part_value_t]
         self._EvalWordToParts(op.arg_word, quoted, error_part_vals,
                               is_subst=True)
-        return error_part_vals, effect_e.Error
+        error_str = _DecayPartValuesToString(error_part_vals,
+                                             self.splitter.GetJoinChar())
+        e_die("unset variable %r", error_str, token=blame_token)
+
       else:
-        return no, effect_e.NoOp
+        return False
 
     else:
       raise NotImplementedError(op.op_id)
@@ -847,6 +862,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
       # $* decays
       val, maybe_decay_array = self._EvalSpecialVar(part.token.id, quoted)
 
+    var_index = None  # type: a_index_t
+
     # 2. Bracket: value -> (value v, bool maybe_decay_array)
     # maybe_decay_array is for joining ${a[*]} and unquoted ${a[@]} AFTER
     # suffix ops are applied.  If we take the length with a prefix op, the
@@ -909,6 +926,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             elif case2(value_e.MaybeStrArray):
               array_val = cast(value__MaybeStrArray, UP_val)
               index = self.arith_ev.EvalToInt(anode)
+              var_index = a_index.Int(index)
               try:
                 # could be None because representation is sparse
                 s = array_val.strs[index]
@@ -923,6 +941,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             elif case2(value_e.AssocArray):
               assoc_val = cast(value__AssocArray, UP_val)
               key = self.arith_ev.EvalWordToString(anode)
+              var_index = a_index.Str(key)
               s = assoc_val.d.get(key)
 
               if s is None:
@@ -977,39 +996,16 @@ class AbstractWordEvaluator(StringWordEvaluator):
         elif case(suffix_op_e.Unary):
           op = cast(suffix_op__Unary, UP_op)
           if consts.GetKind(op.op_id) == Kind.VTest:
-            # TODO: Change style to:
-            # if self._ApplyTestOp(...)
-            #   return
-            # It should return whether anything was done.  If not, we continue to
-            # the end, where we might throw an error.
+            # TODO: Also we need bracket_op to form lvalue here?
+            # So pass 'part'?
+            # bracket_op_e.ArrayIndex
+            # you already evaluated 'key' and 'index' above, so I guess
+            # you need index_t?
 
-            effect_part_vals, effect = self._ApplyTestOp(val, op, quoted, part_vals)
-
-            # NOTE: Splicing part_values is necessary because of code like
-            # ${undef:-'a b' c 'd # e'}.  Each part_value can have a different
-            # do_glob/do_elide setting.
-            if effect == effect_e.SpliceParts:
-              return  # EARLY RETURN, part_vals mutated
-
-            elif effect == effect_e.SpliceAndAssign:
-              if var_name is None:
-                # TODO: error context
-                e_die("Can't assign to special variable")
-              else:
-                # NOTE: This decays arrays too!  'set -o strict_array' could
-                # avoid it.
-                rhs_str = _DecayPartValuesToString(effect_part_vals,
-                                                   self.splitter.GetJoinChar())
-                state.SetStringDynamic(self.mem, var_name, rhs_str)
-              return  # EARLY RETURN, part_vals mutated
-
-            elif effect == effect_e.Error:
-              error_str = _DecayPartValuesToString(effect_part_vals,
-                                                   self.splitter.GetJoinChar())
-              e_die("unset variable %r", error_str, token=part.token)
-
-            else:
-              pass  # do nothing, may still be undefined
+            if self._ApplyTestOp(val, op, quoted, part_vals, var_name, var_index, part.token):
+              # e.g. to evaluate ${undef:-'default'}, we already appended
+              # what we need
+              return
 
           else:
             val = self._EmptyStrOrError(val)  # maybe error
