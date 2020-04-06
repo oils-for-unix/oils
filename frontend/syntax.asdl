@@ -24,7 +24,6 @@
 -- Refactorings:
 --
 --   cmd_token = Word %compound_word | Token %Token
---   arith_expr = Word %compound_word | VarRef %Token
 --   bool_expr = WordTest %compound_word | ...
 --
 -- Many %Token references:
@@ -33,7 +32,6 @@
 --   printf_part ...
 --
 -- Size optimization:
---   'Token left' should really be 'speck left'.  Saves a lot of space.
 --   SimpleVarSub(Token token) could be optimized
 --   SimpleVarSub(id id, string val, int span_id) without useless token 'tag'
 --   Or VarSubSpecial(id id, int span_id)
@@ -211,9 +209,8 @@ module syntax
   attributes (int* spids)
 
   arith_expr =
-    VarRef(Token token)  -- variable without $
-    -- TODO: Word %compound_word
-  | ArithWord(word w)  -- a string that looks like an integer
+    VarRef %Token  -- variable without $
+  | Word %compound_word  -- a string that looks like an integer
 
   | UnaryAssign(id op_id, arith_expr child)
   | BinaryAssign(id op_id, arith_expr left, arith_expr right)

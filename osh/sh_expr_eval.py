@@ -18,12 +18,13 @@ from _devbuild.gen.runtime_asdl import (
     value__AssocArray, value__Obj,
 )
 from _devbuild.gen.syntax_asdl import (
-    arith_expr_e, arith_expr_t, arith_expr__VarRef, arith_expr__ArithWord,
+    arith_expr_e, arith_expr_t,
     arith_expr__Unary, arith_expr__Binary, arith_expr__UnaryAssign,
     arith_expr__BinaryAssign, arith_expr__TernaryOp,
     bool_expr_e, bool_expr_t, bool_expr__WordTest, bool_expr__LogicalNot,
     bool_expr__LogicalAnd, bool_expr__LogicalOr, bool_expr__Unary,
     bool_expr__Binary,
+    compound_word, Token,
     sh_lhs_expr_e, sh_lhs_expr_t, sh_lhs_expr__Name, sh_lhs_expr__IndexedName,
     source, word_t,
 )
@@ -376,13 +377,12 @@ class ArithEvaluator(object):
     UP_node = node
     with tagswitch(node) as case:
       if case(arith_expr_e.VarRef):  # $(( x ))  (can be array)
-        node = cast(arith_expr__VarRef, UP_node)
-        tok = node.token
+        tok = cast(Token, UP_node)
         return _LookupVar(tok.val, self.mem, self.exec_opts)
 
-      elif case(arith_expr_e.ArithWord):  # $(( $x )) $(( ${x}${y} )), etc.
-        node = cast(arith_expr__ArithWord, UP_node)
-        return self.word_ev.EvalWordToString(node.w)
+      elif case(arith_expr_e.Word):  # $(( $x )) $(( ${x}${y} )), etc.
+        w = cast(compound_word, UP_node)
+        return self.word_ev.EvalWordToString(w)
 
       elif case(arith_expr_e.UnaryAssign):  # a++
         node = cast(arith_expr__UnaryAssign, UP_node)
@@ -639,9 +639,9 @@ class ArithEvaluator(object):
     a[$x] a["$x"] a["x"] a['x']
     """
     UP_node = node
-    if node.tag_() == arith_expr_e.ArithWord:  # $(( $x )) $(( ${x}${y} )), etc.
-      node = cast(arith_expr__ArithWord, UP_node)
-      val = self.word_ev.EvalWordToString(node.w)
+    if node.tag_() == arith_expr_e.Word:  # $(( $x )) $(( ${x}${y} )), etc.
+      w = cast(compound_word, UP_node)
+      val = self.word_ev.EvalWordToString(w)
       return val.s
     else:
       # TODO: location info for orginal
@@ -693,14 +693,13 @@ class ArithEvaluator(object):
     UP_anode = anode
     with tagswitch(anode) as case:
       if case(arith_expr_e.VarRef):
-        anode = cast(arith_expr__VarRef, UP_anode)
-        tok = anode.token
+        tok = cast(Token, UP_anode)
         return (tok.val, tok.span_id)
 
-      elif case(arith_expr_e.ArithWord):
-        anode = cast(arith_expr__ArithWord, UP_anode)
-        var_name = self.EvalWordToString(anode)
-        span_id = word_.LeftMostSpanForWord(anode.w)
+      elif case(arith_expr_e.Word):
+        w = cast(compound_word, UP_anode)
+        var_name = self.EvalWordToString(w)
+        span_id = word_.LeftMostSpanForWord(w)
         return (var_name, span_id)
 
     no_str = None  # type: str

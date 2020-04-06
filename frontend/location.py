@@ -13,7 +13,7 @@ from _devbuild.gen.syntax_asdl import (
     command__DoGroup, command__BraceGroup, command__Subshell,
     command__WhileUntil, command__If, command__Case, command__TimeBlock,
 
-    arith_expr_e, arith_expr_t, arith_expr__ArithWord, arith_expr__VarRef
+    arith_expr_e, arith_expr_t, compound_word, Token,
 )
 from asdl import runtime
 from core.util import log
@@ -70,10 +70,10 @@ def SpanForArithExpr(node):
   UP_node = node
   with tagswitch(node) as case:
     if case(arith_expr_e.VarRef):
-      node = cast(arith_expr__VarRef, UP_node)
-      return node.token.span_id
-    elif case(arith_expr_e.ArithWord):
-      node = cast(arith_expr__ArithWord, UP_node)
-      return word_.LeftMostSpanForWord(node.w)
+      token = cast(Token, UP_node)
+      return token.span_id
+    elif case(arith_expr_e.Word):
+      w = cast(compound_word, UP_node)
+      return word_.LeftMostSpanForWord(w)
 
   return runtime.NO_SPID

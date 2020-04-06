@@ -823,8 +823,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # 1. Evaluate from (var_name, var_num, token Id) -> value
     if part.token.id == Id.VSub_Name:
       # Handle ${!prefix@} first, since that looks at names and not values
-      if (part.prefix_op and 
-          part.suffix_op and part.suffix_op.tag_() == suffix_op_e.Nullary):
+      if (part.prefix_op is not None and 
+          part.suffix_op is not None and
+          part.suffix_op.tag_() == suffix_op_e.Nullary):
         var_name = None
 
         names = self.mem.VarNamesStartingWith(part.token.val)

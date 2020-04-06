@@ -5,6 +5,7 @@ tdop.py - Library for expression parsing.
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
     arith_expr, arith_expr_e, arith_expr_t, arith_expr__Binary, word_t,
+    compound_word,
 )
 from _devbuild.gen.types_asdl import lex_mode_e
 from core.util import p_die
@@ -34,7 +35,7 @@ def IsIndexable(node, parse_dynamic_arith):
   if tag == arith_expr_e.VarRef:
     return True
   # x$foo[1] is also allowed with option
-  if parse_dynamic_arith and tag == arith_expr_e.ArithWord:
+  if parse_dynamic_arith and tag == arith_expr_e.Word:
     return True
   return False
 
@@ -45,7 +46,7 @@ def _VarRefOrWord(node, dynamic_arith):
     if case(arith_expr_e.VarRef):
       return True
 
-    elif case(arith_expr_e.ArithWord):
+    elif case(arith_expr_e.Word):
       if dynamic_arith:
         return True
 
@@ -91,9 +92,10 @@ def NullConstant(p, w, bp):
   # type: (TdopParser, word_t, int) -> arith_expr_t
   var_name_token = word_.LooksLikeArithVar(w)
   if var_name_token:
-    return arith_expr.VarRef(var_name_token)
+    return var_name_token
 
-  return arith_expr.ArithWord(w)
+  # Id.Word_Compound in the spec ensures this cast is valid
+  return cast(compound_word, w)
 
 
 def NullParen(p, t, bp):

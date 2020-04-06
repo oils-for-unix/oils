@@ -437,7 +437,6 @@ done
 ## END
 
 #### >$file touches a file
-cd $TMP
 rm -f myfile
 test -f myfile
 echo status=$?
@@ -452,18 +451,40 @@ status=0
 ## stderr-json: ""
 
 #### $(< $file) yields the contents of the file
-# note that it doesn't do this without a command sub!
-cd $TMP
+
 echo FOO > myfile
 foo=$(< myfile)
 echo $foo
+
+# note that it doesn't do this without a command sub!
+# It's apparently a special case in bash, mksh, and zsh?
+foo=$(echo begin; < myfile)
+echo $foo
+
+foo=$(< myfile; echo end)
+echo $foo
+
 ## STDOUT:
 FOO
+begin
+end
 ## END
-## N-I dash stdout:
+## N-I dash/ash/yash STDOUT:
+
+begin
+end
+## END
+
+# weird, zsh behaves differently
+## OK zsh STDOUT:
+FOO
+begin
+FOO
+FOO
+end
+## END
 
 #### 2>&1 with no command
-cd $TMP
 ( exit 42 )  # status is reset after this
 echo status=$?
 2>&1
@@ -475,7 +496,6 @@ status=0
 ## stderr-json: ""
 
 #### 2&>1 (is it a redirect or is it like a&>1)
-cd $TMP
 2&>1
 echo status=$?
 ## STDOUT:
