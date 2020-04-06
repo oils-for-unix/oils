@@ -44,3 +44,25 @@ warning: e2
 o2
 o1
 ## END
+
+#### $(<file) idiom with process sub
+echo FOO >foo
+
+# works in bash and zsh
+echo $(<foo)
+
+# this works in zsh, but not in bash
+tr A-Z a-z < <(<foo)
+
+cat < <(<foo; echo hi)
+
+## STDOUT:
+FOO
+hi
+## END
+## OK zsh STDOUT:
+FOO
+foo
+FOO
+hi
+## END

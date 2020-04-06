@@ -30,7 +30,6 @@ from _devbuild.gen.runtime_asdl import (
 from core import error
 from core import passwd
 from core import pyutil
-from core import state
 from core.util import log, e_die, e_strict
 from frontend import consts
 from frontend import match

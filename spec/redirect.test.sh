@@ -455,32 +455,57 @@ status=0
 echo FOO > myfile
 foo=$(< myfile)
 echo $foo
+## STDOUT:
+FOO
+## END
+## N-I dash/ash/yash stdout-json: "\n"
+
+#### $(< file) with more statements
 
 # note that it doesn't do this without a command sub!
 # It's apparently a special case in bash, mksh, and zsh?
 foo=$(echo begin; < myfile)
 echo $foo
+echo ---
 
 foo=$(< myfile; echo end)
 echo $foo
+echo ---
+
+foo=$(< myfile; <myfile)
+echo $foo
+echo ---
 
 ## STDOUT:
-FOO
 begin
+---
 end
-## END
-## N-I dash/ash/yash STDOUT:
+---
 
-begin
-end
+---
 ## END
-
 # weird, zsh behaves differently
 ## OK zsh STDOUT:
-FOO
 begin
 FOO
+---
 FOO
+end
+---
+FOO
+FOO
+---
+## END
+
+
+#### < file in pipeline and subshell doesn't work
+echo FOO > file2
+
+# This only happens in command subs, which is weird
+< file2 | tr A-Z a-z
+( < file2 )
+echo end
+## STDOUT:
 end
 ## END
 

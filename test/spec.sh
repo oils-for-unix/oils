@@ -692,7 +692,7 @@ regex() {
 
 process-sub() {
   # mksh and dash don't support it
-  sh-spec spec/process-sub.test.sh \
+  sh-spec spec/process-sub.test.sh --osh-failures-allowed 1 \
     $BASH $ZSH $OSH_LIST "$@"
 }
 
