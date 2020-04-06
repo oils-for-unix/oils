@@ -243,25 +243,26 @@ def _PerformSlice(val,  # type: value_t
         e_die("The length index of a array slice can't be negative: %d",
               length, part=part)
 
-      strs = []  # type: List[str]
-
       # Quirk: "begin" for positional arguments ($@ and $*) counts $0.
       if arg0_val is not None:
-        # Equivalent to:
-        # val.strs = [arg0_val.s] + val.strs
-        # but more efficient.
-        if begin == 0:
-          if not has_length or length > 0:
-            strs.append(arg0_val.s)
-        elif begin > 0:
-          begin -= 1
+        orig = [arg0_val.s]
+        orig.extend(val.strs)
+      else:
+        orig = val.strs
 
-      # NOTE: Unset elements don't count towards the length.
-      for s in val.strs[begin:]:
-        if s is not None:
+      count = 0
+      i = begin
+      n = len(orig)
+      strs = []  # type: List[str]
+      while i < n:
+        s = orig[i]
+        if s is not None:  # Unset elements don't count towards the length.
           strs.append(s)
-          if has_length and len(strs) == length:
+          count += 1
+          if has_length and count == length:
             break
+        i += 1
+       
       val = value.MaybeStrArray(strs)
 
     elif case(value_e.AssocArray):

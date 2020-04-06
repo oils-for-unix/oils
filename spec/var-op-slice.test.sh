@@ -300,3 +300,12 @@ fun "a 1" "b 2" "c 3"
 ## N-I mksh status: 1
 ## N-I mksh stdout-json: ""
 ## BUG zsh stdout-json: ""
+
+#### ${@:0:1}
+set a b c
+result=$(echo ${@:0:1})
+echo ${result//"$0"/'SHELL'}
+## STDOUT:
+SHELL
+## END
+## N-I mksh stdout-json: "\n"
