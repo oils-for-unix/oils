@@ -773,3 +773,22 @@ r=r1
 r=r1
 r=r1
 ## END
+
+
+#### function name with /
+ble/foo() { echo hi; }
+declare -F ble/foo
+echo status=$?
+## STDOUT:
+ble/foo
+status=0
+## END
+## N-I mksh stdout: status=127
+## N-I zsh stdout-json: ""
+## N-I zsh status: 1
+## N-I ash stdout-json: ""
+## N-I ash status: 2
+
+#### invalid var name
+typeset foo/bar
+## status: 1

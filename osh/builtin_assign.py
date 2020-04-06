@@ -314,7 +314,7 @@ class NewVar(object):
     # NOTE: in bash, -f shows the function body, while -F shows the name.  In
     # osh, they're identical and behave like -F.
     if arg.f or arg.F:  # Lookup and print functions.
-      names = [pair.lval.name for pair in cmd_val.pairs]
+      names = arg_r.Rest()
       if names:
         for name in names:
           if name in self.funcs:
@@ -323,11 +323,14 @@ class NewVar(object):
             #print(funcs[name])
           else:
             status = 1
-      elif arg.F:
+
+      elif arg.F:  # print all
         for func_name in sorted(self.funcs):
           print('declare -f %s' % (func_name))
+
       else:
-        raise args.UsageError('declare/typeset -f without args')
+        raise args.UsageError('passed -f without args')
+
       return status
 
     if arg.p:  # Lookup and print variables.

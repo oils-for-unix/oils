@@ -1602,9 +1602,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # There is also command -p, but we haven't implemented it.  Maybe just punt
     # on it.  Punted on 'builtin' and 'command' for now too.
 
+    eval_to_pairs = True  # except for -f and -F
     started_pairs = False
 
-    flags = [arg0]
+    flags = [arg0]  # initial flags like -p, and -f -F name1 name2
     flag_spids = [word_.LeftMostSpanForWord(words[0])]
     assign_args = []  # type: List[assign_arg]
 
@@ -1653,11 +1654,20 @@ class AbstractWordEvaluator(StringWordEvaluator):
           if arg.startswith('-') or arg.startswith('+'):  # e.g. declare -r +r
             flags.append(arg)
             flag_spids.append(word_spid)
+
+            # Shortcut that relies on -f and -F always meaning "function" for
+            # all assignment builtins
+            if 'f' in arg or 'F' in arg:
+              eval_to_pairs = False
+
           else:  # e.g. export $dynamic 
-            left, right = _SplitAssignArg(arg, w)
-            arg2 = assign_arg(left, right, word_spid)
-            assign_args.append(arg2)
-            started_pairs = True
+            if eval_to_pairs:
+              left, right = _SplitAssignArg(arg, w)
+              arg2 = assign_arg(left, right, word_spid)
+              assign_args.append(arg2)
+              started_pairs = True
+            else:
+              flags.append(arg)
 
     return cmd_value.Assign(builtin_id, flags, flag_spids, assign_args)
 
@@ -1818,7 +1828,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
 
 def _SplitAssignArg(arg, w):
-  # type: (str, compound_word) -> Tuple[lvalue__Named, Optional[value__Str]]
+  # type: (str, compound_word, bool) -> Tuple[lvalue__Named, Optional[value__Str]]
   i = arg.find('=')
   prefix = arg[:i]
   if i != -1 and match.IsValidVarName(prefix):
