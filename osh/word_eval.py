@@ -20,10 +20,12 @@ from _devbuild.gen.runtime_asdl import (
     part_value__Array,
     value, value_e, value_t, value__Str, value__AssocArray,
     value__MaybeStrArray, value__Obj,
+    lvalue, lvalue_t,
     assign_arg, 
     cmd_value_e, cmd_value_t, cmd_value, cmd_value__Assign, cmd_value__Argv,
     quote_e, quote_t,
-    a_index, a_index_t
+    a_index, a_index_e, a_index_t, a_index__Int, a_index__Str,
+    scope_e,
 )
 from core import error
 from core import passwd
@@ -501,8 +503,21 @@ class AbstractWordEvaluator(StringWordEvaluator):
           # avoid it.
           rhs_str = _DecayPartValuesToString(assign_part_vals,
                                              self.splitter.GetJoinChar())
-          state.SetStringDynamic(self.mem, var_name, rhs_str)
-          # TODO: self.mem.SetVar(lval, ...)
+          if var_index is None:  # using None when no index
+            lval = lvalue.Named(var_name)  # type: lvalue_t
+          else:
+            UP_var_index = var_index
+            with tagswitch(var_index) as case:
+              if case(a_index_e.Int):
+                var_index = cast(a_index__Int, UP_var_index)
+                lval = lvalue.Indexed(var_name, var_index.i)
+              elif case(a_index_e.Str):
+                var_index = cast(a_index__Str, UP_var_index)
+                lval = lvalue.Keyed(var_name, var_index.s)
+              else: 
+                raise AssertionError()
+
+          self.mem.SetVar(lval, value.Str(rhs_str), scope_e.Dynamic)
         return True
 
       else:
