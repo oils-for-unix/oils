@@ -664,3 +664,22 @@ class History(object):
       item = readline_mod.get_history_item(i)
       self.f.write('%5d  %s\n' % (i, item))
     return 0
+
+
+class Cat(object):
+  """Internal implementation detail for $(< file).
+  
+  Maybe expose this as 'builtin cat' ?
+  """
+
+  def __init__(self):
+    pass
+
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    while True:
+      chunk = posix.read(0, 4096)
+      if len(chunk) == 0:
+        break
+      sys.stdout.write(chunk)
+    return 0

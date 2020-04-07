@@ -518,7 +518,7 @@ here-doc() {
 }
 
 redirect() {
-  sh-spec spec/redirect.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/redirect.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -692,7 +692,7 @@ regex() {
 
 process-sub() {
   # mksh and dash don't support it
-  sh-spec spec/process-sub.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/process-sub.test.sh --osh-failures-allowed 0 \
     $BASH $ZSH $OSH_LIST "$@"
 }
 

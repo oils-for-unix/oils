@@ -267,6 +267,27 @@ EOF
 
 }
 
+# Quick hack: every shell uses 2 processes for this... doesn't illuminate much.
+weird-command-sub() {
+  shopt -s nullglob
+  rm -f -v $RAW_DIR/*
+
+  local tmp=_tmp/cs
+  echo FOO > $tmp
+  run-case 60 "echo $(< $tmp)"
+  run-case 61 "echo $(< $tmp; echo hi)"
+
+  local suite=weird-command-sub
+
+  cat >$BASE_DIR/${suite}-cases.txt <<EOF
+60 \$(< file)
+61 \$(< file; echo hi)
+EOF
+
+  count-lines $suite
+  summarize $suite 0 0
+}
+
 readonly MAX_CASES=100
 #readonly MAX_CASES=3
 

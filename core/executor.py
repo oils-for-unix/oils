@@ -10,8 +10,8 @@ import sys
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (value_e, value__Obj, redirect)
 from _devbuild.gen.syntax_asdl import (
-    command_e, command__Pipeline, command__ControlFlow,
-    command_str,
+    command_e, command__Simple, command__Pipeline, command__ControlFlow,
+    command_str, Token, compound_word,
 )
 from asdl import runtime
 from core import error
@@ -168,8 +168,7 @@ class ShellExecutor(object):
     # This happens when you write "$@" but have no arguments.
     if len(argv) == 0:
       if self.exec_opts.strict_argv():
-        e_die("Command evaluated to an empty argv array",
-              span_id=span_id)
+        e_die("Command evaluated to an empty argv array", span_id=span_id)
       else:
         return 0  # status 0, or skip it?
 
@@ -335,6 +334,21 @@ class ShellExecutor(object):
 
   def RunCommandSub(self, node):
     # type: (command_t) -> str
+
+    # Hack for weird $(<file) construct
+    if node.tag_() == command_e.Simple:
+      simple = cast(command__Simple, node)
+      # Detect '< file'
+      if (len(simple.words) == 0 and
+          len(simple.redirects) == 1 and
+          simple.redirects[0].op.id == Id.Redir_Less):
+        # change it to __cat < file
+        tok = Token(Id.Lit_Chars, runtime.NO_SPID, '__cat')
+        cat_word = compound_word([tok])
+        # MUTATE the command.Simple node.  This will only be done the first
+        # time in the parent process.
+        simple.words.append(cat_word)
+
     p = self._MakeProcess(node,
                           inherit_errexit=self.exec_opts.inherit_errexit())
 

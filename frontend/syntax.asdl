@@ -184,6 +184,7 @@ module syntax
     -- usages may be cosmetic, because e.g. compound_word will have zero parts
     -- in the assoc array literal A=([k]=)
     Empty
+    -- Returns from WordParser, but not generally stored in LST (TODO: cmd_token)
   | Token %Token
     -- A Compound word can contain any word_part except the Braced*Part.
     -- We could model this with another variant type but it incurs runtime
@@ -194,6 +195,7 @@ module syntax
     -- contains any type of word_part.
   | BracedTree(word_part* parts)
     -- For dynamic parsing of test/[ -- the string is already evaluated.
+    -- note: this could also be Token
   | String(id id, string s, int span_id)
 
   -- TODO: Need more tokens/spids to translate a[x++]=1

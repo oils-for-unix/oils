@@ -509,6 +509,8 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_i.help: builtin_misc.Help(loader, errfmt),
       builtin_i.history: builtin_misc.History(line_input),
 
+      builtin_i.cat: builtin_misc.Cat(),  # for $(<file)
+
       # Completion (more added below)
       builtin_i.compopt: builtin_comp.CompOpt(compopt_state, errfmt),
       builtin_i.compadjust: builtin_comp.CompAdjust(mem),

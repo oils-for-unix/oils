@@ -125,6 +125,9 @@ def _Init(b):
   for name in _NORMAL_BUILTINS:
     b.Add(name)
 
+  # Implementation detail of $(<file)
+  b.Add('__cat', enum_name='cat')
+
 
 _BUILTIN_DEF = _BuiltinDef()
 
