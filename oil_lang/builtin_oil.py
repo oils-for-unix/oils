@@ -18,7 +18,6 @@ from core.util import log
 from frontend import args
 from frontend import match
 from mycpp.mylib import tagswitch
-from osh import builtin_misc  # ReadLineFromStdin
 
 import yajl
 import posix_ as posix
@@ -355,6 +354,26 @@ class Write(_Builtin):
     return 0
 
 
+def _ReadLine():
+  # type: () -> str
+  """Read a line from stdin.
+
+  TODO: use a more efficient function in C
+  """
+  chars = []
+  while True:
+    c = posix.read(0, 1)
+    if not c:
+      break
+
+    chars.append(c)
+
+    if c == '\n':
+      break
+
+  return ''.join(chars)
+
+
 GETLINE_SPEC = args.OilFlags()
 GETLINE_SPEC.Flag('-cstr', args.Bool,
                     help='Decode the line in CSTR format')
@@ -387,9 +406,8 @@ class Getline(_Builtin):
     if next_arg is not None:
       raise args.UsageError('got extra argument', span_id=next_spid)
 
-    # TODO: use a more efficient function in C
-    line = builtin_misc.ReadLineFromStdin(None)
-    if not line:  # EOF
+    line = _ReadLine()
+    if len(line) == 0:  # EOF
       return 1
 
     if not arg.end:

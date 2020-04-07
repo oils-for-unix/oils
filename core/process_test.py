@@ -84,16 +84,16 @@ class ProcessTest(unittest.TestCase):
                  redirect_arg.Path(PATH))
 
     fd_state.Push([r], waiter)
-    line1 = builtin_misc.ReadLineFromStdin(None)
+    line1, _ = builtin_misc.ReadLineFromStdin('\n')
     fd_state.Pop()
 
     fd_state.Push([r], waiter)
-    line2 = builtin_misc.ReadLineFromStdin(None)
+    line2, _ = builtin_misc.ReadLineFromStdin('\n')
     fd_state.Pop()
 
     # sys.stdin.readline() would erroneously return 'two' because of buffering.
-    self.assertEqual('one\n', line1)
-    self.assertEqual('one\n', line2)
+    self.assertEqual('one', line1)
+    self.assertEqual('one', line2)
 
   def testProcess(self):
 

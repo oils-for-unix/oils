@@ -483,6 +483,35 @@ v1= v2=
 v1= v2= v3=
 ## END
 
+#### read -rd
+read -rd '' var <<EOF
+foo
+bar
+EOF
+echo "$var"
+## STDOUT:
+foo
+bar
+## END
+## N-I dash stdout-json: "\n"
+
+#### read -d when there's no delimiter
+{ read -d : part
+  echo $part $?
+  read -d : part
+  echo $part $?
+} <<EOF
+foo:bar
+EOF
+## STDOUT:
+foo 0
+bar 1
+## END
+## N-I dash STDOUT:
+2
+2
+## END
+
 #### mapfile
 type mapfile >/dev/null 2>&1 || exit 0
 printf '%s\n' {1..5..2} | {

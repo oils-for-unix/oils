@@ -35,7 +35,7 @@ if mylib.PYTHON:
   except ImportError:
     help_index = None
 
-from typing import Any, Optional, IO, TYPE_CHECKING
+from typing import Tuple, Any, Optional, IO, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import value__Str
   from core.pyutil import _FileResourceLoader
@@ -160,8 +160,13 @@ if mylib.PYTHON:
 # NOTE that dash, mksh, and zsh all read a single byte at a time.  It appears
 # to be required by POSIX?  Could try libc getline and make this an option.
 def ReadLineFromStdin(delim_char):
-  # type: (Optional[str]) -> str
-  """Read a line, or read up until delim_char if set."""
+  # type: (Optional[str]) -> Tuple[str, bool]
+  """Read a portion of stdin.
+  
+  If delim_char is set, read until that delimiter, but don't include it.
+  If not set, read a line, and include the newline.
+  """
+  found_delim = False
   chars = []
   while True:
     c = posix.read(0, 1)
@@ -169,13 +174,12 @@ def ReadLineFromStdin(delim_char):
       break
 
     if c == delim_char:
+      found_delim = True
       break
 
     chars.append(c)
 
-    if c == '\n':
-      break
-  return ''.join(chars)
+  return ''.join(chars), found_delim
 
 
 class Read(object):
@@ -239,24 +243,23 @@ class Read(object):
       else:
         delim_char = '\0'  # -d '' delimits by NUL
     else:
-      delim_char = None  # read a line
+      delim_char = '\n'  # read a line
 
     # We have to read more than one line if there is a line continuation (and
     # it's not -r).
     parts = []
     join_next = False
     while True:
-      line = ReadLineFromStdin(delim_char)
+      line, found_delim = ReadLineFromStdin(delim_char)
       #log('LINE %r', line)
-      if not line:  # EOF
+      if len(line) == 0:  # EOF
         status = 1
         break
 
-      if line.endswith('\n'):  # strip trailing newline
-        line = line[:-1]
-        status = 0
-      else:
-        # odd bash behavior: fail even if we can set variables.
+      status = 0
+      if not found_delim:
+        # odd bash behavior: fail if no newline, even though we're setting
+        # variables.
         status = 1
 
       spans = self.splitter.SplitForRead(line, not arg.r)
