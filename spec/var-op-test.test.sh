@@ -148,3 +148,36 @@ echo ${#arr[@]}
 ## N-I dash stdout-json: ""
 ## N-I mksh status: 1
 ## N-I mksh stdout-json: ""
+
+#### "\z" as arg
+echo "${undef-\$}"
+echo "${undef-\(}"
+echo "${undef-\z}"
+echo "${undef-\"}"
+echo "${undef-\`}"
+echo "${undef-\\}"
+## STDOUT:
+$
+\(
+\z
+"
+`
+\
+## END
+## BUG yash STDOUT:
+$
+(
+z
+"
+`
+\
+## END
+
+#### "\e" as arg
+echo "${undef-\e}"
+## STDOUT:
+\e
+## END
+## BUG zsh/mksh stdout-repr: '\x1b\n'
+## BUG yash stdout: e
+

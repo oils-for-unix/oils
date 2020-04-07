@@ -68,6 +68,12 @@ _BACKSLASH = [
   C('\\\n', Id.Ignored_LineCont),
 ]
 
+# Only 4 characters are backslash escaped inside "".
+# https://www.gnu.org/software/bash/manual/bash.html#Double-Quotes
+_DQ_BACKSLASH = [
+  R(r'\\[$`"\\]', Id.Lit_EscapedChar)
+]
+
 VAR_NAME_RE = r'[a-zA-Z_][a-zA-Z0-9_]*'
 
 # All Kind.VSub
@@ -398,10 +404,7 @@ LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   R(r'[^\0]', Id.Lit_Other),  # everything else is literal
 ]
 
-LEXER_DEF[lex_mode_e.DQ] = [
-  # Only 4 characters are backslash escaped inside "".
-  # https://www.gnu.org/software/bash/manual/bash.html#Double-Quotes
-  R(r'\\[$`"\\]', Id.Lit_EscapedChar),
+LEXER_DEF[lex_mode_e.DQ] = _DQ_BACKSLASH + [
   C('\\\n', Id.Ignored_LineCont),
 ] + _LEFT_SUBS + _VARS + [
   R(r'[^$`"\0\\]+', Id.Lit_Chars),  # matches a line at most
@@ -410,7 +413,7 @@ LEXER_DEF[lex_mode_e.DQ] = [
   R(r'[^\0]', Id.Lit_Other),  # e.g. "$"
 ]
 
-_VS_ARG_COMMON = _BACKSLASH + [
+_VS_ARG_COMMON = [
   C('/', Id.Lit_Slash),  # for patsub (not Id.VOp2_Slash)
   C('#', Id.Lit_Pound),  # for patsub prefix (not Id.VOp1_Pound)
   C('%', Id.Lit_Percent),  # for patsdub suffix (not Id.VOp1_Percent)
@@ -419,14 +422,16 @@ _VS_ARG_COMMON = _BACKSLASH + [
 
 # Kind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
 LEXER_DEF[lex_mode_e.VSub_ArgUnquoted] = \
-  _VS_ARG_COMMON + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
+  _BACKSLASH + _VS_ARG_COMMON + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   # NOTE: added < and > so it doesn't eat <()
   R(r'[^$`/}"\'\0\\#%<>]+', Id.Lit_Chars),
   R(r'[^\0]', Id.Lit_Other),  # e.g. "$", must be last
 ]
 
 # Kind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
-LEXER_DEF[lex_mode_e.VSub_ArgDQ] = _VS_ARG_COMMON + _LEFT_SUBS + _VARS + [
+LEXER_DEF[lex_mode_e.VSub_ArgDQ] = \
+  _DQ_BACKSLASH +  _VS_ARG_COMMON + _LEFT_SUBS + _VARS + [
+
   R(r'[^$`/}"\0\\#%]+', Id.Lit_Chars),  # matches a line at most
 
   # Weird wart: even in double quoted state, double quotes are allowed
