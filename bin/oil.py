@@ -227,8 +227,8 @@ def _InitReadline(readline_mod, history_filename, root_comp, display, debug_f):
   )
 
 
-def _ShowVersion():
-  pyutil.ShowAppVersion('Oil')
+def _ShowVersion(version_str):
+  pyutil.ShowAppVersion('Oil', version_str)
 
 
 def SourceStartupFile(rc_path, lang, parse_ctx, cmd_ev):
@@ -323,9 +323,10 @@ def ShellMain(lang, argv0, argv, login_shell):
   if opts.help:
     builtin_misc.Help(['%s-usage' % lang], loader)
     return 0
+  version_str = pyutil.GetVersion()
   if opts.version:
     # OSH version is the only binary in Oil right now, so it's all one version.
-    _ShowVersion()
+    _ShowVersion(version_str)
     return 0
 
   no_str = None  # type: str
@@ -348,7 +349,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   errfmt = ui.ErrorFormatter(arena)
 
   mem = state.Mem(dollar0, argv[arg_r.i + 1:], arena, debug_stack)
-  state.InitMem(mem, posix.environ)
+  state.InitMem(mem, posix.environ, version_str)
   builtin_funcs.Init(mem)
 
   procs = {}
@@ -898,7 +899,8 @@ def AppBundleMain(argv):
       sys.exit(0)
 
     if first_arg in ('-V', '--version'):
-      _ShowVersion()
+      version_str = pyutil.GetVersion()
+      _ShowVersion(version_str)
       sys.exit(0)
 
     main_name = first_arg

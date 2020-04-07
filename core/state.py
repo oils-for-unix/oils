@@ -641,12 +641,13 @@ def _InitVarsFromEnv(mem, environ):
       lvalue.Named('PWD'), None, scope_e.GlobalOnly, flags=SetExport)
 
 
-def InitMem(mem, environ):
-  # type: (Mem, Dict[str, str]) -> None
+def InitMem(mem, environ, version_str):
+  # type: (Mem, Dict[str, str], version_str) -> None
   """
   Initialize memory with shell defaults.  Other interpreters could have
   different builtin variables.
   """
+  SetGlobalString(mem, 'OIL_VERSION', version_str)
   _InitDefaults(mem)
   _InitVarsFromEnv(mem, environ)
   # MUTABLE GLOBAL that's SEPARATE from $PWD.  Used by the 'pwd' builtin, but
@@ -1569,6 +1570,7 @@ class Mem(object):
   def IsGlobalScope(self):
     # type: () -> bool
     return len(self.var_stack) == 1
+
 
 def SetLocalString(mem, name, s):
   # type: (Mem, str, str) -> None

@@ -63,7 +63,7 @@ def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
     debug_f = util.NullDebugFile()
 
   mem = state.Mem('', [], None, [])
-  state.InitMem(mem, {})
+  state.InitMem(mem, {}, '0.1')
 
   return completion.RootCompleter(ev, mem, comp_lookup, compopt_state,
                                   comp_ui_state, parse_ctx, debug_f)

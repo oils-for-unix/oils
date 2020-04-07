@@ -121,21 +121,25 @@ def GetResourceLoader():
   return _loader
 
 
-def ShowAppVersion(app_name):
-  # type: (str) -> None
-  """For Oil and OPy."""
+def GetVersion():
+  # type:() -> str
   loader = GetResourceLoader()
   f = loader.open('oil-version.txt')
-  version = f.readline().strip()
+  version_str = f.readline().strip()
   f.close()
+  return version_str
 
+
+def ShowAppVersion(app_name, version_str):
+  # type: (str, str) -> None
+  """For Oil and OPy."""
+  loader = GetResourceLoader()
   try:
     f = loader.open('release-date.txt')
   except IOError:
     release_date = '-'  # in dev tree
   else:
     release_date = f.readline().strip()
-  finally:
     f.close()
 
   try:
@@ -144,7 +148,6 @@ def ShowAppVersion(app_name):
     pyc_version = '-'  # in dev tree
   else:
     pyc_version = f.readline().strip()
-  finally:
     f.close()
 
   # node is like 'hostname'
@@ -167,7 +170,7 @@ def ShowAppVersion(app_name):
   py_impl = 'CPython' if hasattr(sys, 'executable') else 'OVM'
 
   # What C functions do these come from?
-  print('%s version %s' % (app_name, version))
+  print('%s version %s' % (app_name, version_str))
   print('Release Date: %s' % release_date)
   print('Arch: %s' % machine)
   print('OS: %s' % system)

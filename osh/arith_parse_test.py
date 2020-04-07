@@ -32,7 +32,7 @@ def ParseAndEval(code_str):
   print('node:', anode)
 
   mem = state.Mem('', [], arena, [])
-  state.InitMem(mem, {})
+  state.InitMem(mem, {}, '0.1')
   parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, None)
 
   splitter = split.SplitContext(mem)

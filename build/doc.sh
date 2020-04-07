@@ -93,6 +93,7 @@ readonly MARKDOWN_DOCS=(
   oil-proc-func-block
   eggex
   unicode
+  qstr
 
   # Internal stuff
   interpreter-state

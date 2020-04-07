@@ -131,7 +131,7 @@ def InitLexer(s, arena):
 def InitWordEvaluator():
   arena = MakeArena('<InitWordEvaluator>')
   mem = state.Mem('', [], arena, [])
-  state.InitMem(mem, {})
+  state.InitMem(mem, {}, '0.1')
 
   opt_array = [False] * option_i.ARRAY_SIZE
   errexit = state._ErrExit()
@@ -159,7 +159,7 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
     parse_ctx = InitParseContext()
 
   mem = mem or state.Mem('', [], arena, [])
-  state.InitMem(mem, {})
+  state.InitMem(mem, {}, '0.1')
   errexit = state._ErrExit()
   exec_opts = optview.Exec(opt_array, errexit)
   mutable_opts = state.MutableOpts(mem, opt_array, errexit, None)
@@ -251,7 +251,7 @@ def EvalCode(code_str, parse_ctx, comp_lookup=None, mem=None, aliases=None):
 
   comp_lookup = comp_lookup or completion.Lookup()
   mem = mem or state.Mem('', [], arena, [])
-  state.InitMem(mem, {})
+  state.InitMem(mem, {}, '0.1')
 
   line_reader, _ = InitLexer(code_str, arena)
   c_parser = parse_ctx.MakeOshParser(line_reader)
