@@ -602,7 +602,7 @@ sh-options() {
 }
 
 xtrace() {
-  sh-spec spec/xtrace.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/xtrace.test.sh --osh-failures-allowed 8 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 

@@ -23,18 +23,66 @@ echo $x
 echo $(echo $y)
 ## END
 
-#### xtrace with whitespace and quotes
+#### xtrace with unprintable chars
+case $SH in (dash) exit ;; esac
+
+s=$'a\x03b\004c\x00d'
 set -o xtrace
-echo '1 2' \' \"
+echo "$s"
+## stdout-repr: 'a\x03b\x04c\n'
+## stderr-repr: "+ echo $'a\\003b\\004c'\n"
+# nonsensical output?
+## BUG mksh stdout-repr: 'a;\x04c\r\n'
+## BUG mksh stderr-repr: "+ echo $'a;\\004c\\r'\n"
+## N-I dash stdout-json: ""
+## N-I dash stderr-json: ""
+
+#### xtrace with unicode chars
+case $SH in (dash) exit ;; esac
+
+mu1='[μ]'
+mu2=$'[\u03bc]'
+
+set -o xtrace
+echo "$mu1" "$mu2"
+
 ## STDOUT:
-1 2 ' "
+[μ] [μ]
+## END
 ## STDERR:
-+ echo '1 2' \' '"'
++ echo '[μ]' '[μ]'
+## END
+## N-I dash stdout-json: ""
+## N-I dash stderr-json: ""
+
+#### xtrace with tabs
+case $SH in (dash) exit ;; esac
+
+set -o xtrace
+echo $'[\t]'
+## stdout-json: "[\t]\n"
+## STDERR:
++ echo $'[\t]'
+## END
+# this is a bug because it's hard to see
+## BUG bash stderr-json: "+ echo '[\t]'\n"
+## N-I dash stdout-json: ""
+## N-I dash stderr-json: ""
+
+#### xtrace with whitespace, quotes, and backslash
+set -o xtrace
+echo '1 2' \' \" \\
+## STDOUT:
+1 2 ' " \
+## END
+## STDERR:
++ echo '1 2' \' '"' '\'
+## END
 ## BUG dash STDERR:
-+ echo 1 2 ' "
++ echo 1 2 ' " \
 ## END
 
-#### CASE: xtrace with newlines
+#### xtrace with newlines
 # bash and dash trace this badly.  They print literal newlines, which I don't
 # want.
 set -x
@@ -42,8 +90,14 @@ echo $'[\n]'
 ## STDOUT:
 [
 ]
-## stderr-json: "+ echo $'[\\n]'\n"
-## OK bash stderr-json: "+ echo '[\n]'\n"
+## STDERR: 
++ echo $'[\n]'
+## END
+# bash has ugly output that spans lines
+## OK bash STDERR:
++ echo '[
+]'
+## END
 ## N-I dash stdout-json: "$[\n]\n"
 ## N-I dash stderr-json: "+ echo $[\\n]\n"
 
