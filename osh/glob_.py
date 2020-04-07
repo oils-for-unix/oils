@@ -10,15 +10,17 @@ from _devbuild.gen.syntax_asdl import (
     glob_part_e, glob_part, glob_part_t,
     glob_part__Literal, glob_part__Operator, glob_part__CharClass,
 )
-from core import util
 from core.pyutil import stderr_line
-#from core.util import log
+from core import util
+from core.util import log
 from frontend import match
 
 from typing import List, Tuple, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from core import optview
   from frontend.match import SimpleLexer
+
+_ = log
 
 
 def LooksLikeGlob(s):
@@ -125,14 +127,19 @@ def GlobUnescape(s):  # used by cmd_eval
   n = len(s)
   while i < n:
     c = s[i]
-    if c == '\\':
-      assert i != n - 1, 'Trailing backslash: %r' % s
+    if c == '\\' and i != n - 1:
+      # Suppressed this to fix bug #698, #628 is still there.
+      #assert i != n - 1, 'Trailing backslash: %r' % s
       i += 1
       c2 = s[i]
       if c2 in GLOB_META_CHARS:
         unescaped.append(c2)
       else:
-        raise AssertionError("Unexpected escaped character %r" % c2)
+        #raise AssertionError("Unexpected escaped character %r" % c2)
+        # Hack to prevent crash for now.  Need to rewrite this.
+        # Fell out of the fix to issue #695 to use _DQ_BACKSLASH in VS_ArgDQ.
+        #unescaped.append(c)
+        unescaped.append(c2)
     else:
       unescaped.append(c)
     i += 1

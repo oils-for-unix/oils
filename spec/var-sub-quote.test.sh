@@ -161,7 +161,9 @@ argv.py ${foo%d\'}
 #### Strip a string with single quotes, double quoted
 foo="'a b c d'"
 argv.py "${foo%d\'}"
-## stdout: ["'a b c "]
+## STDOUT:
+["'a b c "]
+## END
 
 #### The string to strip is space sensitive
 foo='a b c d'
