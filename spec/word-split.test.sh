@@ -367,3 +367,11 @@ argv.py ${word}:
 ['a', ':b']
 ['a', ':']
 ## END
+
+#### Bug #698, similar crash
+var='\'
+set -f
+echo $var
+## STDOUT:
+\
+## END

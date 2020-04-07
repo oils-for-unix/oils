@@ -321,7 +321,7 @@ comments() {
 }
 
 word-split() {
-  sh-spec spec/word-split.test.sh --osh-failures-allowed 7 \
+  sh-spec spec/word-split.test.sh --osh-failures-allowed 8 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -528,7 +528,7 @@ posix() {
 }
 
 special-vars() {
-  sh-spec spec/special-vars.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/special-vars.test.sh --osh-failures-allowed 7 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
