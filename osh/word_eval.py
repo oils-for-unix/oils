@@ -855,7 +855,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
       if (part.prefix_op is not None and 
           part.suffix_op is not None and
           part.suffix_op.tag_() == suffix_op_e.Nullary):
-        var_name = None
 
         names = self.mem.VarNamesStartingWith(part.token.val)
         names.sort()
@@ -972,7 +971,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
     else:  # no bracket op
       # When the array is "$@", var_name is None
       if var_name and val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray):
-        if var_name in _STRING_AND_ARRAY:
+        suffix_op2 = part.suffix_op
+        if (suffix_op2 and suffix_op2.tag_() == suffix_op_e.Nullary and 
+            cast(Token, suffix_op2).id == Id.VOp0_a):
+          # ${array@a} is a string
+          # TODO: An IR for ${} might simplify these lengthy conditions
+          pass
+        elif var_name in _STRING_AND_ARRAY:
           bash_array_compat = True
         else:
           e_die("Array %r can't be referred to as a scalar (without @ or *)",
@@ -1001,20 +1006,33 @@ class AbstractWordEvaluator(StringWordEvaluator):
             # readline gets rid of these, so we should too.
             p = prompt.replace('\x01', '').replace('\x02', '')
             val = value.Str(p)
+
           elif op_id == Id.VOp0_Q:
             assert val.tag_() == value_e.Str, val
             val = cast(value__Str, val)
             val = value.Str(string_ops.ShellQuote(val.s))
+
           elif op_id == Id.VOp0_a:
             # We're ONLY simluating -a and -A, not -r -x -n for now.  See
             # spec/ble-idioms.test.sh.
-            s = ''
+            chars = []  # type: List[str]
             with tagswitch(val) as case:
               if case(value_e.MaybeStrArray):
-                s += 'a'
+                chars.append('a')
               elif case(value_e.AssocArray):
-                s += 'A'
-            val = value.Str(s)
+                chars.append('A')
+
+            if var_name is not None:  # e.g. ${?@a} is allowed
+              cell = self.mem.GetCell(var_name)
+              if cell.readonly:
+                chars.append('r')
+              if cell.exported:
+                chars.append('x')
+              if cell.nameref:
+                chars.append('n')
+
+            val = value.Str(''.join(chars))
+
           else:
             e_die('Var op %r not implemented', op.val, token=op)
 

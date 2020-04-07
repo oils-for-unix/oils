@@ -1661,7 +1661,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             class_name == 'BoolEvaluator' and func_name in ('_EvalCompoundWord', '_StringToIntegerOrError') or
             class_name == 'CommandEvaluator' and func_name == '_Execute' or
             class_name is None and func_name == '_PackFlags' or
-            class_name == 'Mem' and func_name in ('GetVar', 'SetVar') or
+            class_name == 'Mem' and func_name in ('GetVar', 'SetVar', 'GetCell') or
             class_name == 'SearchPath' and func_name == 'Lookup' or
             # osh/sh_expr_eval.py
             class_name is None and func_name == 'EvalLhsAndLookup' or
@@ -2022,6 +2022,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 'part_value_e', 'part_value',
                 'cmd_value_e', 'cmd_value',
                 'redirect_arg_e', 'redirect_arg',
+                'a_index_e', 'a_index',
                 ):
                 is_namespace = True
 
