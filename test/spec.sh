@@ -709,6 +709,11 @@ extglob-match() {
     $BASH $MKSH $OSH_LIST "$@"
 }
 
+nocasematch-match() {
+  sh-spec spec/nocasematch-match.test.sh \
+    $BASH $OSH_LIST "$@"
+}
+
 # ${!var} syntax -- oil should replace this with associative arrays.
 # mksh has completely different behavior for this syntax.  Not worth testing.
 var-ref() {
