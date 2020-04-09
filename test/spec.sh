@@ -710,7 +710,7 @@ extglob-match() {
 }
 
 nocasematch-match() {
-  sh-spec spec/nocasematch-match.test.sh \
+  sh-spec spec/nocasematch-match.test.sh --osh-failures-allowed 3 \
     $BASH $OSH_LIST "$@"
 }
 
