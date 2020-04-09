@@ -219,4 +219,12 @@ run-for-release() {
   write-report
 }
 
+qstr() {
+  unit core/qstr_test.py
+
+  # This doesn't work.  It's hard to port because Python 3 byte strings iterate
+  # over integers, not strings...
+  python3 core/qstr_test.py
+}
+
 "$@"

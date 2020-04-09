@@ -747,6 +747,12 @@ shell-grammar() {
   sh-spec spec/shell-grammar.test.sh $BASH $MKSH $ZSH "$@"
 }
 
+serialize() {
+  # dash doesn't have echo -e, $'', etc.
+  sh-spec spec/serialize.test.sh --osh-failures-allowed 6 \
+    $BASH $MKSH $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
+}
+
 #
 # Smoosh
 #

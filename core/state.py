@@ -642,7 +642,7 @@ def _InitVarsFromEnv(mem, environ):
 
 
 def InitMem(mem, environ, version_str):
-  # type: (Mem, Dict[str, str], version_str) -> None
+  # type: (Mem, Dict[str, str], str) -> None
   """
   Initialize memory with shell defaults.  Other interpreters could have
   different builtin variables.

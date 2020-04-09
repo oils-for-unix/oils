@@ -47,6 +47,12 @@ module runtime
     -- what about Proc or Module here?  are they first class?
     -- then you can reflect on them?  Get name and docstring?
 
+    -- Iterator type:
+    --   for (i in 1..=n) { echo $i }
+    --   for (k in keys(d)) { echo $k }
+    --   for (item in myarray) { echo $item }
+    -- What about pipelines?  make-pipeline, add-process, etc.
+
     -- A Python-style object.  'any' is not currently type checked.
     -- invariant for 'proc' stack:
     -- * s bool, int, float, (NOT str), or...
