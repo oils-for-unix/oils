@@ -82,7 +82,6 @@ You can interleave these two.
 from __future__ import print_function
 
 import re
-import sys
 
 
 def shellstr_encode(s, decode_utf8=False):
