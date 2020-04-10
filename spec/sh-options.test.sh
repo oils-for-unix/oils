@@ -335,12 +335,6 @@ g() {
 g
 ## status: 0
 ## STDOUT:
-__GLOBAL='mutated'
-__OTHERLOCAL='L'
-__mylocal='L'
-__var_in_parent_scope='D'
-## END
-## OK bash STDOUT:
 __GLOBAL=mutated
 __OTHERLOCAL=L
 __mylocal=L
@@ -351,6 +345,12 @@ __GLOBAL=mutated
 __var_in_parent_scope=D
 __OTHERLOCAL=L
 __mylocal=L
+## END
+## OK dash STDOUT:
+__GLOBAL='mutated'
+__OTHERLOCAL='L'
+__mylocal='L'
+__var_in_parent_scope='D'
 ## END
 
 #### 'set' and 'eval' round trip

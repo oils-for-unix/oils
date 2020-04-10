@@ -429,8 +429,6 @@ class GlobReplacer(object):
     return s[:start] + self.replace_str + s[end:]
 
 
-# TODO: Replace with ShellQuoteOneLine?  It may need more testing and
-# optimization.
 def ShellQuote(s):
   # type: (str) -> str
   """Quote 's' in a way that can be reused as shell input.
@@ -448,28 +446,6 @@ def ShellQuote(s):
   #
   # Example: FOO'BAR -> 'FOO'\''BAR'
   return "'" + s.replace("'", r"'\''") + "'"
-
-
-def ShellQuoteOneLine(s):
-  # type: (str) -> str
-
-  # TODO: Could use a regex to speed this up
-  needs_dollar = False
-  for c in s:
-    if c in "'\t\r\n":
-      needs_dollar = True
-      break
-
-  if needs_dollar:
-    escaped = (s
-        .replace('\\', '\\\\')
-        .replace("'", "\\'")
-        .replace('\t', '\\t')
-        .replace('\r', '\\r')
-        .replace('\n', '\\n'))
-    return "$'" + escaped + "'"
-  else:
-    return "'" + s + "'"
 
 
 def ShellQuoteB(s):

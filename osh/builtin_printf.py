@@ -17,6 +17,7 @@ import time
 
 from asdl import runtime
 from core import error
+from core import qsn
 from core import state
 from core.util import p_die, e_die
 from frontend import args
@@ -25,7 +26,6 @@ from frontend import consts
 from frontend import match
 from frontend import reader
 from mycpp import mylib
-from osh import string_ops
 from osh import word_compile
 
 import posix_ as posix
@@ -285,7 +285,7 @@ class Printf(object):
               s = s[:precision]  # truncate
 
           elif typ == 'q':
-            s = string_ops.ShellQuoteOneLine(s)
+            s = qsn.maybe_shell_encode(s)
 
           elif typ == 'b':
             # Process just like echo -e, except \c handling is simpler.

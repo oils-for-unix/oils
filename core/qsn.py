@@ -105,9 +105,7 @@ backslashes are doubled.
 """
 from __future__ import print_function
 
-import re
-
-from typing import List, TYPE_CHECKING
+from typing import List
 
 
 BIT8_RAW = 0  # pass through
@@ -262,14 +260,19 @@ def _encode_bytes(s, bit8_display, parts):
     parts.append(part)
 
 
-QSN_LEX = re.compile(r'''
-  ( \\ [nrt0'"\\]                  ) # " accepted here but not encoded
-| ( \\ [xX]    [0-9a-fA-F]{2}      )
-| ( \\ [uU] \{ [0-9a-fA-F]{1,6} \} ) # 21 bits fits in 6 hex digits
-| ( [^'\\]+                        ) # regular chars
-| ( '                              ) # closing quote
-| ( .                              ) # invalid escape \a, or trailing backslash
-''', re.VERBOSE)
+# TODO: Translate this to something that can be built into the OVM tarball.
+try:
+  import re
+  QSN_LEX = re.compile(r'''
+    ( \\ [nrt0'"\\]                  ) # " accepted here but not encoded
+  | ( \\ [xX]    [0-9a-fA-F]{2}      )
+  | ( \\ [uU] \{ [0-9a-fA-F]{1,6} \} ) # 21 bits fits in 6 hex digits
+  | ( [^'\\]+                        ) # regular chars
+  | ( '                              ) # closing quote
+  | ( .                              ) # invalid escape \a, or trailing backslash
+  ''', re.VERBOSE)
+except ImportError:
+  pass
 
 
 def decode(s):

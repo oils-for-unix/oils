@@ -132,7 +132,7 @@ mylocal=
 dollar=dollar
 --
 dollar='$'
-mylocal='mylocal'
+mylocal=mylocal
 --
 dollar='$'
 mylocal=

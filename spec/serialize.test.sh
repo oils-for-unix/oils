@@ -35,10 +35,10 @@ spaces='one two'
 printf '%q\n' "$spaces"
 
 ## STDOUT:
-one\ two
-## END
-## OK mksh STDOUT:
 'one two'
+## END
+## OK bash/zsh STDOUT:
+one\ two
 ## END
 ## N-I ash stdout-json: ""
 
@@ -56,6 +56,10 @@ test "$quotes" = "$restored" && echo roundtrip-ok
 \'\"
 roundtrip-ok
 ## END
+## OK osh STDOUT:
+$'\'"'
+roundtrip-ok
+## END
 ## BUG mksh STDOUT:
 ''\''"'
 roundtrip-ok
@@ -68,6 +72,7 @@ case $SH in (ash) return ;; esac  # yash and ash don't implement this
 unprintable=$'\xff'
 printf '%q\n' "$unprintable"
 
+# Oil issue: we are passing BIT8_RAW, so we get it literally.
 ## STDOUT:
 $'\377'
 ## END
@@ -82,6 +87,7 @@ case $SH in (ash) return ;; esac  # yash and ash don't implement this
 unicode=$'\u03bc'
 printf '%q\n' "$unicode"
 
+# Oil issue: we have quotes.  Isn't that OK?
 ## STDOUT:
 μ
 ## END

@@ -33,7 +33,6 @@ from frontend import match
 from frontend import option_def
 from mycpp import mylib
 from osh.builtin_misc import _Builtin
-from osh import string_ops
 from osh import word_compile
 
 from typing import List, Dict, Tuple, TYPE_CHECKING
@@ -187,7 +186,7 @@ class Set(object):
       mapping = self.mem.GetAllVars()
       for name in sorted(mapping):
         str_val = mapping[name]
-        code_str = '%s=%s' % (name, string_ops.ShellQuoteOneLine(str_val))
+        code_str = '%s=%s' % (name, qsn.maybe_shell_encode(str_val))
         print(code_str)
       return 0
 

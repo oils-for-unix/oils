@@ -136,7 +136,7 @@ class LibStrTest(unittest.TestCase):
         '"',
     ]
     for case in CASES:
-      print(string_ops.ShellQuoteOneLine(case))
+      print(string_ops.ShellQuote(case))
 
 
 if __name__ == '__main__':
