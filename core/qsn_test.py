@@ -33,7 +33,7 @@ class QStrTest(unittest.TestCase):
       sh = qsn.maybe_shell_encode(c)
       q1 = qsn.maybe_encode(c)
       q2 = qsn.encode(c)
-      q3 = qsn.encode(c, bit8_display='x')
+      q3 = qsn.encode(c, bit8_display=qsn.BIT8_X)
 
       print('       sh %s' % sh)
       print('qsn maybe %s' % q1)

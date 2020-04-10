@@ -109,6 +109,13 @@ c'\x01\n'  # explicit CSTR
 - `\r` `\n` `\t` `\0` (subset of C and shell; Rust has this)
 - Everything else is either `\xFF` or `\u03bc`
 
+## Extensions
+
+- QTSV for tables.  This is a priority for Oil.
+- JSON-like dicts and lists.  Someone else should run with this!
+  - warning: "\\x00\\'" will confuse people.  Programmers don't understand
+    backslashes, and language implementers often don't either.
+
 ## Links
 
 - <https://doc.rust-lang.org/reference/tokens.html#string-literals> - Rust is

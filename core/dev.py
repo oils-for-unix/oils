@@ -10,6 +10,7 @@ from asdl import runtime
 from asdl import pretty
 from core import error
 from core import optview
+from core import qsn
 from core.util import log
 from osh import word_
 from pylib import os_path
@@ -241,7 +242,7 @@ class Tracer(object):
       return
 
     first_char, prefix = self._EvalPS4()
-    tmp = [pretty.String(a) for a in argv]
+    tmp = [qsn.maybe_shell_encode(a) for a in argv]
     cmd = ' '.join(tmp)
     self.f.log('%s%s%s', first_char, prefix, cmd)
 

@@ -29,8 +29,13 @@ case $SH in (dash) exit ;; esac
 s=$'a\x03b\004c\x00d'
 set -o xtrace
 echo "$s"
-## stdout-repr: 'a\x03b\x04c\n'
-## stderr-repr: "+ echo $'a\\003b\\004c'\n"
+## stdout-repr: 'a\x03b\x04c\x00d\n'
+## STDERR:
++ echo $'a\x03b\x04c\0d'
+## END
+## OK bash stdout-repr: 'a\x03b\x04c\n'
+## OK bash stderr-repr: "+ echo $'a\\003b\\004c'\n"
+
 # nonsensical output?
 ## BUG mksh stdout-repr: 'a;\x04c\r\n'
 ## BUG mksh stderr-repr: "+ echo $'a;\\004c\\r'\n"
@@ -75,9 +80,16 @@ echo '1 2' \' \" \\
 ## STDOUT:
 1 2 ' " \
 ## END
+
+# Oil is different bceause backslashes require $'\\' and not '\', but that's OK
 ## STDERR:
++ echo '1 2' $'\'' '"' $'\\'
+## END
+
+## OK bash/mksh STDERR:
 + echo '1 2' \' '"' '\'
 ## END
+
 ## BUG dash STDERR:
 + echo 1 2 ' " \
 ## END

@@ -91,21 +91,35 @@ Oil User API:
 help-bash thread:
   Why not make ${var@Q} the same as 'printf %q' output?
   It was an accident.
+
+Embedding within JSON strings:
+
+  "'\\x00\\''"
+
+Can be shortened to:
+
+  "\\x00\\'"
+
+In other words, we don't need the leading and trailing quotes.  Note that
+backslashes are doubled.
 """
 from __future__ import print_function
 
 import re
 
+BIT8_RAW = 0  # pass through
+BIT8_X = 1  # escape everything as \xff
+BIT8_U = 2  # decode and escape as \u03bc.  Not implemented yet.
 
-def maybe_shell_encode(s, bit8_display='p'):
+
+def maybe_shell_encode(s, bit8_display=BIT8_RAW):
   """Encode simple strings to a "bare" word, and complex ones to a QSN literal.
 
   Shell strings sometimes need the $'' prefix, e.g. for $'\x00'.
 
   This technically isn't part of QSN, but shell can understand QSN, as long as
-  it doesn't have \u{}, e.g. bit8_display != 'u'.
+  it doesn't have \u{}, e.g. bit8_display != BIT8_U.
   """
-
   quote = 0  # no quotes
 
   if len(s) == 0:  # empty string DOES need quotes!
@@ -121,11 +135,14 @@ def maybe_shell_encode(s, bit8_display='p'):
 
       quote = 1
 
-      if (ch in '\\\'\r\n\t\0' or
-          ch < ' ' or
-          ch > '\x7F'):
+      if ch in '\\\'\r\n\t\0' or ch < ' ':
         # It needs quotes like $''
         quote = 2  # max quote, so don't look at the rest of the string
+        break
+
+      # Raw strings can use '', but \xff and \u{03bc} escapes require $''.
+      if ch > '\x7F' and bit8_display != BIT8_RAW:
+        quote = 2
         break
 
   # should we also figure out the length?
@@ -145,7 +162,7 @@ def maybe_shell_encode(s, bit8_display='p'):
   return ''.join(parts)
 
 
-def maybe_encode(s, bit8_display='p'):
+def maybe_encode(s, bit8_display=BIT8_RAW):
   """Encode simple strings to a "bare" word, and complex ones to a QSN literal.
   """
   quote = 0
@@ -163,19 +180,17 @@ def maybe_encode(s, bit8_display='p'):
 
       quote = 1
 
-  parts = []
-
-  if quote:
-    parts.append("'")
-    _encode_bytes(s, bit8_display, parts)
-    parts.append("'")
-  else:
+  if not quote:
     return s
 
+  parts = []
+  parts.append("'")
+  _encode_bytes(s, bit8_display, parts)
+  parts.append("'")
   return ''.join(parts)
 
 
-def encode(s, bit8_display='p'):
+def encode(s, bit8_display=BIT8_RAW):
   parts = []
   parts.append("'")
   _encode_bytes(s, bit8_display, parts)
@@ -207,7 +222,7 @@ def _encode_bytes(s, bit8_display, parts):
       part = '\\x%02x' % ord(ch)
 
     elif ch >= '\x7f':
-      if bit8_display == 'x':
+      if bit8_display == BIT8_X:
         # TODO: Print this LITERALLY if
         # unicode=DO_NOT_TOUCH
         # unicode=ESCAPE : gives you \x
@@ -218,7 +233,7 @@ def _encode_bytes(s, bit8_display, parts):
         # high_bit='u' high_bit='x'  high_bit=p : pass through
 
         part = '\\x%02x' % ord(ch)
-      elif bit8_display == 'u':
+      elif bit8_display == BIT8_U:
         # need utf-8 decoder
         raise NotImplementedError()
       else:
@@ -245,6 +260,9 @@ def decode(s):
 
   pos = 0
   n = len(s)
+
+  # TODO: This should be factored into maybe_decode
+  #assert s.startswith("'"), s
 
   need_quote = False
   if s.startswith("'"):
