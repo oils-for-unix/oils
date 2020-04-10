@@ -25,7 +25,7 @@ from _devbuild.gen.runtime_asdl import (
 from _devbuild.gen.syntax_asdl import (
     redir_loc, redir_loc_e, redir_loc_t, redir_loc__VarName, redir_loc__Fd,
 )
-from asdl import pretty
+from core import qsn
 from core import util
 from core import ui
 from core.util import log
@@ -667,7 +667,8 @@ class ExternalThunk(Thunk):
     # bash displays        sleep $n & (code)
     # but OSH displays     sleep 1 &  (argv array)
     # We could switch the former but I'm not sure it's necessary.
-    return '[process] %s' % ' '.join(pretty.String(a) for a in self.cmd_val.argv)
+    tmp = [qsn.maybe_shell_encode(a) for a in self.cmd_val.argv]
+    return '[process] %s' % ' '.join(tmp)
 
   def Run(self):
     # type: () -> None

@@ -20,8 +20,8 @@ from _devbuild.gen.hnode_asdl import (
     hnode_e, hnode_t, hnode__Record, hnode__Array, hnode__Leaf,
     hnode__External, color_e, color_t, color_str, hnode_str,
 )
-from asdl import pretty
 from core import ansi
+from core import qsn
 from pylib import cgi
 from mycpp import mylib
 
@@ -384,7 +384,7 @@ class _PrettyPrinter(object):
     if tag == hnode_e.Leaf:
       node = cast(hnode__Leaf, UP_node)
       f.PushColor(node.color)
-      f.write(pretty.String(node.s))
+      f.write(qsn.maybe_encode(node.s))
       f.PopColor()
 
     elif tag == hnode_e.External:
@@ -450,7 +450,7 @@ def _TrySingleLine(node, f, max_chars):
   if tag == hnode_e.Leaf:
     node = cast(hnode__Leaf, UP_node)
     f.PushColor(node.color)
-    f.write(pretty.String(node.s))
+    f.write(qsn.maybe_encode(node.s))
     f.PopColor()
 
   elif tag == hnode_e.External:

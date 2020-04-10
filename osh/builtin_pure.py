@@ -19,9 +19,9 @@ import sys  # for sys.sdtout
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import value_e
 
-from asdl import pretty
 from core.util import e_die
 from core import optview
+from core import qsn
 from core import state
 from core import ui
 from core.util import log
@@ -440,7 +440,8 @@ def _GetOpts(spec, argv, optind, errfmt):
       optarg = argv[optind-1]  # 1-based indexing
     except IndexError:
       errfmt.Print('getopts: option %r requires an argument.', current)
-      ui.Stderr('(getopts argv: %s)', ' '.join(pretty.String(a) for a in argv))
+      tmp = [qsn.maybe_shell_encode(a) for a in argv]
+      ui.Stderr('(getopts argv: %s)', ' '.join(tmp))
       # Hm doesn't cause status 1?
       return 0, '?', optarg, optind
 

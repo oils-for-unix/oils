@@ -7,7 +7,6 @@ from _devbuild.gen.runtime_asdl import value_e, value__Str
 from _devbuild.gen.syntax_asdl import assign_op_e
 
 from asdl import runtime
-from asdl import pretty
 from core import error
 from core import optview
 from core import qsn

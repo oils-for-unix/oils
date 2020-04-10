@@ -107,18 +107,29 @@ from __future__ import print_function
 
 import re
 
+from typing import List, TYPE_CHECKING
+
+
 BIT8_RAW = 0  # pass through
 BIT8_X = 1  # escape everything as \xff
 BIT8_U = 2  # decode and escape as \u03bc.  Not implemented yet.
 
 
 def maybe_shell_encode(s, bit8_display=BIT8_RAW):
+  # type: (str, int) -> str
   """Encode simple strings to a "bare" word, and complex ones to a QSN literal.
 
   Shell strings sometimes need the $'' prefix, e.g. for $'\x00'.
 
   This technically isn't part of QSN, but shell can understand QSN, as long as
   it doesn't have \u{}, e.g. bit8_display != BIT8_U.
+
+  Used for:
+  - xtrace showing argv
+  - error message showing getopts argv
+  - displaying argv array in 'jobs'
+
+  TODO: others
   """
   quote = 0  # no quotes
 
@@ -128,9 +139,9 @@ def maybe_shell_encode(s, bit8_display=BIT8_RAW):
     for ch in s:
       # [a-zA-Z0-9._-\_] are filename chars and don't need quotes
       if (ch in '.-_' or
-          'a' < ch and ch < 'z' or
-          'A' < ch and ch < 'Z' or
-          '0' < ch and ch < '9'):
+          'a' <= ch and ch <= 'z' or
+          'A' <= ch and ch <= 'Z' or
+          '0' <= ch and ch <= '9'):
         continue  # quote is still 0
 
       quote = 1
@@ -163,7 +174,11 @@ def maybe_shell_encode(s, bit8_display=BIT8_RAW):
 
 
 def maybe_encode(s, bit8_display=BIT8_RAW):
+  # type: (str, int) -> str
   """Encode simple strings to a "bare" word, and complex ones to a QSN literal.
+
+  Used for: ASDL pretty printing.  There, we don't care about the validity of
+  shell strings.
   """
   quote = 0
 
@@ -173,9 +188,9 @@ def maybe_encode(s, bit8_display=BIT8_RAW):
     for ch in s:
       # [a-zA-Z0-9._-\_] are filename chars and don't need quotes
       if (ch in '.-_' or
-          'a' < ch and ch < 'z' or
-          'A' < ch and ch < 'Z' or
-          '0' < ch and ch < '9'):
+          'a' <= ch and ch <= 'z' or
+          'A' <= ch and ch <= 'Z' or
+          '0' <= ch and ch <= '9'):
         continue  # quote is still 0
 
       quote = 1
@@ -191,6 +206,7 @@ def maybe_encode(s, bit8_display=BIT8_RAW):
 
 
 def encode(s, bit8_display=BIT8_RAW):
+  # type: (str, int) -> str
   parts = []
   parts.append("'")
   _encode_bytes(s, bit8_display, parts)
@@ -199,6 +215,7 @@ def encode(s, bit8_display=BIT8_RAW):
 
 
 def _encode_bytes(s, bit8_display, parts):
+  # type: (str, int, List[str]) -> None
   """The core encoding routine.
 
   Used by encode(), maybe_encode(), and maybe_shell_encode().
@@ -256,6 +273,7 @@ QSN_LEX = re.compile(r'''
 
 
 def decode(s):
+  # type: (str) -> str
   """Given a QSN literal in a string, return the corresponding byte string."""
 
   pos = 0
@@ -331,6 +349,7 @@ def decode(s):
 #
 
 def maybe_tsv_encode(s, bit8_display):
+  # type: (str, int) -> str
   """
   TSV2 needs different quoting rules?
 
@@ -347,8 +366,8 @@ def maybe_tsv_encode(s, bit8_display):
 
 
 def tsv_decode(s):
+  # type: (str) -> str
   """
-
   Logic:
 
   If we're looking at ', then call decode().
