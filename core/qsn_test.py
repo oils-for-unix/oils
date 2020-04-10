@@ -26,19 +26,29 @@ class QStrTest(unittest.TestCase):
         '\xbc\x00\x01'
         '\'',
         '\\',
+        u'[\u03bc]'.encode('utf-8'),
     ]
 
     for c in CASES:
-      sh = qsn.shellstr_encode(c)
-      q = qsn.qsn_encode(c)
-      print('  sh      %s' % sh)
-      print('qsn      %s' % q)
+      sh = qsn.maybe_shell_encode(c)
+      q1 = qsn.maybe_encode(c)
+      q2 = qsn.encode(c)
+      q3 = qsn.encode(c, bit8_display='x')
 
-      decoded = qsn.qsn_decode(q)
-      print('decoded = %r' % decoded)
+      print('       sh %s' % sh)
+      print('qsn maybe %s' % q1)
+      print('qsn       %s' % q2)
+      print('qsn x     %s' % q3)
+
+      decoded1 = qsn.decode(q1)
+      print('decoded = %r' % decoded1)
       print()
+      decoded2 = qsn.decode(q2)
+      decoded3 = qsn.decode(q3)
 
-      self.assertEqual(c, decoded)
+      self.assertEqual(c, decoded1)
+      self.assertEqual(c, decoded2)
+      self.assertEqual(c, decoded3)
 
     # character codes, e.g. U+03bc
     UNICODE_CASES = [
@@ -54,7 +64,7 @@ class QStrTest(unittest.TestCase):
 
       print('qsn      %s' % q)
 
-      decoded = qsn.qsn_decode(q)
+      decoded = qsn.decode(q)
       print('decoded = %r' % decoded)
       print()
 
@@ -71,7 +81,7 @@ class QStrTest(unittest.TestCase):
         "%%%", 
     ]
     for c in OTHER_CASES:
-      decoded = qsn.qsn_decode(c)
+      decoded = qsn.decode(c)
       print('qsn    = %s' % c)
       print('decoded = %r' % decoded)
       print()
@@ -86,7 +96,7 @@ class QStrTest(unittest.TestCase):
     ]
     for c in INVALID:
       try:
-        s = qsn.qsn_decode(c)
+        s = qsn.decode(c)
       except RuntimeError as e:
         print(e)
       else:

@@ -2,8 +2,27 @@
 in_progress: true
 ---
 
-QSTR Serialization Format
-=========================
+QSN: A Familiar String Interchange Format
+=========================================
+
+Taglines:
+
+- We already use it informally and sloppily, but let's name it and use it
+  precisely.  QSN "discovered" and "tightened up", rather than invented.
+- QSN Adapts Rust's String Literal Syntax to Express Byte Strings and Unicode
+  Better than JSON.
+  - Can represent any byte string
+  - No Surrogate Pairs for characters like ... (3 in Chinese)
+
+Rough Analogy:
+
+Javacript Literals : JSON  ::  Rust String Literals : QSN
+
+Examples:
+
+    'my favorite song.mp3'
+    'bob\t1.0\ncarol\t2.0\n'  # TODO syntax highlight this
+    'byte: \xff character: \u{03bc}'
 
 We want a single way to serialize and parse arbitrary byte strings (which may
 be encoded in UTF-8 or another encoding.)
@@ -16,6 +35,14 @@ TODO: copy content from this page:
 
 <div id="toc">
 </div>
+
+## Who Should Use QSN?
+
+- Any command line utility that needs to display filenames (which is most of
+  them, e.g. for "file not found")
+
+- A shell.
+
 
 ## Use Case: `set -x` format (`xtrace`)
 

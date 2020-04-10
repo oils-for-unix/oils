@@ -1,17 +1,10 @@
 #!/usr/bin/env python2
 """
-qsn.py
+qsn.py: Quoted String Notation.  See doc/qsn.md.
 
-Naming:
-  CSTR is misleading
-  QSTR is sort of taken by qt?  qsTr?
-  str75
-  rstr - Rust strings?
-
-Tagline:
-  QSTR Borrows From Rust to Express More Than JSON
-  Rust strings with '' instead of ""
-  Since \' and \" are allowed in Rust, this is OK
+- Slogan: "QSN Adapts Rust's String Literal Notation Express What JSON Can't."
+- Rust strings with '' instead of "". Since \' and \" are allowed in Rust, this
+  is OK
 
 Comments on filename characters:
 
@@ -23,16 +16,8 @@ Comments on filename characters:
   Filenames like '+', 'a+b', ',' and 'a,b' will be quoted, although a given
   implementation could relax this.
 
-  TSV2 needs different quoting rules?
-    Numbers like 0.3 and 0.3ef would be ambiguous otherwise
-    Or you could have a typed column?  No it's better to have redundancy.
-    But for 'ls' you don't care
-    $ ls
-    0.3
-    0.3af
-    That is acceptable.
-
 TODO:
+
   - Test suite.  Should it be bash, or Python 3?
   - Python 3 version
   - Pure C version using re2c
@@ -70,26 +55,60 @@ UTF-8 Comments:
 
   And print the rest of the string byte-by-byte in the \xff style.
 
-Other related code:
+Related code:
+  repr() in stringobject.c in Python.  Copied to repr() in mylib.cc.
+  You have to allocate 2 + 4*n bytes.  2 more bytes for the quotes.
 
-repr() in stringobject.c in Python.
-You have to allocate 2 + 4*n bytes.  2 more bytes for the quotes.
+Oil usgae:
 
-See repr() in mylib.cc.
+  maybe_shell_encode() can be used in 5 places:
+  Everywhere string_ops.ShellQuoteOneLin is used.
 
-You can interleave these two.
+  - argv[i] for xtrace:
+  - set
+  - declare -p
+  - printf %q
+  - ${var@Q}
+
+  Other:
+
+  - for QTSV:  maybe_tsv_encode()
+
+We still need:
+
+  ShellQuoteB - backslash shell quoting, e.g. for spaces.  Not technically
+  related to QSN.
+
+Oil User API:
+
+  pass s => to_qsn() => var q
+  pass q => from_qsn() => var s
+
+  to-qsn $s :q
+  from-qsn $q :orig
+  test $s = $orig; echo $?
+
+help-bash thread:
+  Why not make ${var@Q} the same as 'printf %q' output?
+  It was an accident.
 """
 from __future__ import print_function
 
 import re
 
 
-def shellstr_encode(s, decode_utf8=False):
-  # and empty string DOES need quotes!
+def maybe_shell_encode(s, bit8_display='p'):
+  """Encode simple strings to a "bare" word, and complex ones to a QSN literal.
+
+  Shell strings sometimes need the $'' prefix, e.g. for $'\x00'.
+
+  This technically isn't part of QSN, but shell can understand QSN, as long as
+  it doesn't have \u{}, e.g. bit8_display != 'u'.
+  """
 
   quote = 0  # no quotes
 
-  if len(s) == 0:
+  if len(s) == 0:  # empty string DOES need quotes!
     quote = 1
   else:
     for ch in s:
@@ -116,17 +135,19 @@ def shellstr_encode(s, decode_utf8=False):
     return s
   elif quote == 1:
     parts.append("'")
-    _encode(s, parts, decode_utf8)
+    _encode_bytes(s, bit8_display, parts)
     parts.append("'")
   else:  # 2
     parts.append("$'")
-    _encode(s, parts, decode_utf8)
+    _encode_bytes(s, bit8_display, parts)
     parts.append("'")
 
   return ''.join(parts)
 
 
-def qsn_encode(s, decode_utf8=False):
+def maybe_encode(s, bit8_display='p'):
+  """Encode simple strings to a "bare" word, and complex ones to a QSN literal.
+  """
   quote = 0
 
   if len(s) == 0:
@@ -146,7 +167,7 @@ def qsn_encode(s, decode_utf8=False):
 
   if quote:
     parts.append("'")
-    _encode(s, parts, decode_utf8)
+    _encode_bytes(s, bit8_display, parts)
     parts.append("'")
   else:
     return s
@@ -154,22 +175,19 @@ def qsn_encode(s, decode_utf8=False):
   return ''.join(parts)
 
 
-def _encode(s, parts, decode_utf8):
+def encode(s, bit8_display='p'):
+  parts = []
+  parts.append("'")
+  _encode_bytes(s, bit8_display, parts)
+  parts.append("'")
+  return ''.join(parts)
+
+
+def _encode_bytes(s, bit8_display, parts):
+  """The core encoding routine.
+
+  Used by encode(), maybe_encode(), and maybe_shell_encode().
   """
-  QSTR has 6 char tests, and 1 char range test
-
-  str61 then?
-  c6r1 ?
-
-  6c7f
-  32 - 127 is printable
-
-  str127
-  str6c
-
-  Magic numbers: 6, ' ' = 32, 0x7f = 127
-  """
-
   for ch in s:
     # append to buffer
     if ch == '\\':
@@ -189,40 +207,42 @@ def _encode(s, parts, decode_utf8):
       part = '\\x%02x' % ord(ch)
 
     elif ch >= '\x7f':
-      # TODO: Print this LITERALLY if
-      # unicode=DO_NOT_TOUCH
-      # unicode=ESCAPE : gives you \x
-      # unicode=DECODE : gives you \u
-      #
-      # unicode='x' unicode='u' unicode=''  default
-      # or maybe:
-      # high_bit='u' high_bit='x'  high_bit=p : pass through
+      if bit8_display == 'x':
+        # TODO: Print this LITERALLY if
+        # unicode=DO_NOT_TOUCH
+        # unicode=ESCAPE : gives you \x
+        # unicode=DECODE : gives you \u
+        #
+        # unicode='x' unicode='u' unicode=''  default
+        # or maybe:
+        # high_bit='u' high_bit='x'  high_bit=p : pass through
 
-      part = '\\x%02x' % ord(ch)
+        part = '\\x%02x' % ord(ch)
+      elif bit8_display == 'u':
+        # need utf-8 decoder
+        raise NotImplementedError()
+      else:
+        part = ch
 
     else:  # a literal  character
       part = ch
 
     parts.append(part)
 
-# 5 conditions
-# str75:
-#  7 conditions to encode (without utf-8)
-#  5 conditions to decode -- the first one has 6 parts
-#
-# q75 --  quoted string 75
-# qbs75
 
-Q = re.compile(r'''
-  ( \\ [nrt0'"\\] )  # note: " accepted here
-| ( \\ [xX] [0-9a-fA-F]{2} )
-| ( \\ [uU] \{ [0-9a-fA-F]{1,6} \} )
-| ( [^'\\]+ )
-| ( ' )  # closing quote
-| ( . )  # trailing backslash, or invalid backslash \a
+QSN_LEX = re.compile(r'''
+  ( \\ [nrt0'"\\]                  ) # " accepted here but not encoded
+| ( \\ [xX]    [0-9a-fA-F]{2}      )
+| ( \\ [uU] \{ [0-9a-fA-F]{1,6} \} ) # 21 bits fits in 6 hex digits
+| ( [^'\\]+                        ) # regular chars
+| ( '                              ) # closing quote
+| ( .                              ) # invalid escape \a, or trailing backslash
 ''', re.VERBOSE)
 
-def qsn_decode(s):
+
+def decode(s):
+  """Given a QSN literal in a string, return the corresponding byte string."""
+
   pos = 0
   n = len(s)
 
@@ -233,7 +253,7 @@ def qsn_decode(s):
 
   parts = []
   while pos < n:
-    m = Q.match(s, pos)
+    m = QSN_LEX.match(s, pos)
     assert m, s[pos:]
     #print(m.groups())
 
@@ -284,53 +304,40 @@ def qsn_decode(s):
   return ''.join(parts)
 
 
+#
+# QTSV -- A Safe, Unix-y Interchange Format For Tables
+#
+# - Why?  Because CSV and TSV records can span records.
+# - Because data frames need to be transported between Pandas and R without
+#   using types.
+#
 
-# Comments about Oil code structure
+def maybe_tsv_encode(s, bit8_display):
+  """
+  TSV2 needs different quoting rules?
 
-# Settings:
-#
-# argv[i] for xtrace:   Encode(s, prefix='$', must_quote=False)
-# for TSV2:             Encode(s, must_quote=False)  # maybe: decode_utf8=True
+    Numbers like 0.3 and 0.3ef would be ambiguous otherwise
+    Or you could have a typed column?  No it's better to have redundancy.
+    But for 'ls' you don't care
+    $ ls
+    0.3
+    0.3af
+    That is acceptable.
 
-# string_ops.ShellQuoteOneLine.
-#   Oh actually this outputs $.  But it's not exhaustive.
-#
-#   And 'set'    -- buggy
-#
-# ShellQuote:
-#   Used to print declare.  Consistent with set.
-#   @Q -- this could be one line?
-#
-#   Used for printf %q format -- well this needs to be compatible with other hsells.
-#
-# qsn_encode(s)
-# qsn_encode(s)
-
-# to_qsn(s)
-# from_qsn(s)
-#
-# pass s => to_qsn() => var q
-# pass q => from_qsn() => var s
-
-# Summary:
-#   builtin_pure Set and builtin_assign declare just need to eval, so use
-#    ShellQuoteOneLine
-#   %q and @Q use $'' already, so they can also use ShellQuoteOneLine
-#
-# But what about POSIX shell?  I guess that ship has sailed.  coreutils already
-# uses $''.
-#
-# For bernstein chaining on other servers, this sort of matters.
-#
-# You could have shopt -s posix_quote or something?
+  """
+  pass
 
 
-# help-bash:
-# Why not make ${var@Q} the same as `printf %q' output?
-#
-# The difference is backslashes.  That's what we use for completion.
-#
-# So then we only need two methods:
-#
-# ShellQuoteB -- backslashes
-# ShellQuoteOneLine
+def tsv_decode(s):
+  """
+
+  Logic:
+
+  If we're looking at ', then call decode().
+
+  Otherwise return until the next space/tab/newline or ' or \?
+  \ can only appear within quotes.
+
+  abc
+  """
+  pass
