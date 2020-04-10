@@ -85,6 +85,14 @@ $'\377'
 case $SH in (ash) return ;; esac  # yash and ash don't implement this
 
 unicode=$'\u03bc'
+unicode=$'\xce\xbc'  # does the same thing
+
+# Hm bash/mksh/zsh understand these.  They are doing decoding and error
+# recovery!  inspecting the bash source seems to confirm this.
+#unicode=$'\xce'
+#unicode=$'\xce\xce\xbc'
+#unicode=$'\xce\xbc\xce'
+
 printf '%q\n' "$unicode"
 
 # Oil issue: we have quotes.  Isn't that OK?

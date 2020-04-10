@@ -59,16 +59,21 @@ Related code:
   repr() in stringobject.c in Python.  Copied to repr() in mylib.cc.
   You have to allocate 2 + 4*n bytes.  2 more bytes for the quotes.
 
-Oil usgae:
+Oil usage:
 
   maybe_shell_encode() can be used in 5 places:
   Everywhere string_ops.ShellQuoteOneLin is used.
 
-  - argv[i] for xtrace:
-  - set
-  - declare -p
-  - printf %q
-  - ${var@Q}
+  - to display argv[i]
+    - set -x / xtrace
+    - 'jobs' list
+    - 'getopts' error message
+  - to display variable values
+    - 'set'
+    - declare -p
+  - user functions
+    - printf %q
+    - ${var@Q} (not done yet)
 
   Other:
 
@@ -105,12 +110,43 @@ backslashes are doubled.
 """
 from __future__ import print_function
 
+from mycpp import mylib
+
 from typing import List
 
 
-BIT8_RAW = 0  # pass through
+BIT8_RAW = 0  # Pass through.  The default now, but bash and other shells
+              # do better.  They know that '\xce\xce\xbc' is an invalid byte to
+              # be escaped, then UTF-8.
 BIT8_X = 1  # escape everything as \xff
 BIT8_U = 2  # decode and escape as \u03bc.  Not implemented yet.
+            # Note: should we do error recovery?  Other shells do.
+
+
+# Functions that aren't translated.  We don't define < and > on strings, and it
+# can be done more simply with character tests.
+
+if mylib.PYTHON:
+  def IsUnprintableLow(ch):
+    # type: (str) -> bool
+    return ch < ' '
+
+  def IsUnprintableHigh(ch):
+    # type: (str) -> bool
+    return ch >= '\x7f'  # 0x7f is DEL, 0x7E is ~
+
+  def IsPlainChar(ch):
+    # type: (str) -> bool
+    return (ch in '.-_' or
+        'a' <= ch and ch <= 'z' or
+        'A' <= ch and ch <= 'Z' or
+        '0' <= ch and ch <= '9')
+
+  # mycpp can't translate this format string
+  def XEscape(ch):
+    # type: (str) -> str
+    return '\\x%02x' % ord(ch)
+
 
 
 def maybe_shell_encode(s, bit8_display=BIT8_RAW):
@@ -136,26 +172,23 @@ def maybe_shell_encode(s, bit8_display=BIT8_RAW):
   else:
     for ch in s:
       # [a-zA-Z0-9._-\_] are filename chars and don't need quotes
-      if (ch in '.-_' or
-          'a' <= ch and ch <= 'z' or
-          'A' <= ch and ch <= 'Z' or
-          '0' <= ch and ch <= '9'):
+      if IsPlainChar(ch):
         continue  # quote is still 0
 
       quote = 1
 
-      if ch in '\\\'\r\n\t\0' or ch < ' ':
+      if ch in '\\\'\r\n\t\0' or IsUnprintableLow(ch):
         # It needs quotes like $''
         quote = 2  # max quote, so don't look at the rest of the string
         break
 
       # Raw strings can use '', but \xff and \u{03bc} escapes require $''.
-      if ch > '\x7F' and bit8_display != BIT8_RAW:
+      if IsUnprintableHigh(ch) and bit8_display != BIT8_RAW:
         quote = 2
         break
 
   # should we also figure out the length?
-  parts = []
+  parts = []  # type: List[str]
 
   if quote == 0:
     return s
@@ -185,10 +218,7 @@ def maybe_encode(s, bit8_display=BIT8_RAW):
   else:
     for ch in s:
       # [a-zA-Z0-9._-\_] are filename chars and don't need quotes
-      if (ch in '.-_' or
-          'a' <= ch and ch <= 'z' or
-          'A' <= ch and ch <= 'Z' or
-          '0' <= ch and ch <= '9'):
+      if IsPlainChar(ch):
         continue  # quote is still 0
 
       quote = 1
@@ -196,7 +226,7 @@ def maybe_encode(s, bit8_display=BIT8_RAW):
   if not quote:
     return s
 
-  parts = []
+  parts = []  # type: List[str]
   parts.append("'")
   _encode_bytes(s, bit8_display, parts)
   parts.append("'")
@@ -205,7 +235,7 @@ def maybe_encode(s, bit8_display=BIT8_RAW):
 
 def encode(s, bit8_display=BIT8_RAW):
   # type: (str, int) -> str
-  parts = []
+  parts = []  # type: List[str]
   parts.append("'")
   _encode_bytes(s, bit8_display, parts)
   parts.append("'")
@@ -233,21 +263,12 @@ def _encode_bytes(s, bit8_display, parts):
     elif ch == '\0':
       part = '\\0'
 
-    elif ch < ' ':
-      part = '\\x%02x' % ord(ch)
+    elif IsUnprintableLow(ch):
+      part = XEscape(ch)
 
-    elif ch >= '\x7f':
+    elif IsUnprintableHigh(ch):
       if bit8_display == BIT8_X:
-        # TODO: Print this LITERALLY if
-        # unicode=DO_NOT_TOUCH
-        # unicode=ESCAPE : gives you \x
-        # unicode=DECODE : gives you \u
-        #
-        # unicode='x' unicode='u' unicode=''  default
-        # or maybe:
-        # high_bit='u' high_bit='x'  high_bit=p : pass through
-
-        part = '\\x%02x' % ord(ch)
+        part = XEscape(ch)
       elif bit8_display == BIT8_U:
         # need utf-8 decoder
         raise NotImplementedError()
@@ -261,86 +282,88 @@ def _encode_bytes(s, bit8_display, parts):
 
 
 # TODO: Translate this to something that can be built into the OVM tarball.
-try:
-  import re
-  QSN_LEX = re.compile(r'''
-    ( \\ [nrt0'"\\]                  ) # " accepted here but not encoded
-  | ( \\ [xX]    [0-9a-fA-F]{2}      )
-  | ( \\ [uU] \{ [0-9a-fA-F]{1,6} \} ) # 21 bits fits in 6 hex digits
-  | ( [^'\\]+                        ) # regular chars
-  | ( '                              ) # closing quote
-  | ( .                              ) # invalid escape \a, or trailing backslash
-  ''', re.VERBOSE)
-except ImportError:
-  pass
 
+if mylib.PYTHON:  # So we don't translate it
+  # Hack so so 'import re' isn't executed, but unit tests still work
+  import sys
+  #print(sorted(sys.modules))
+  if 'unittest' in sys.modules:
+    import re
+    QSN_LEX = re.compile(r'''
+      ( \\ [nrt0'"\\]                  ) # " accepted here but not encoded
+    | ( \\ [xX]    [0-9a-fA-F]{2}      )
+    | ( \\ [uU] \{ [0-9a-fA-F]{1,6} \} ) # 21 bits fits in 6 hex digits
+    | ( [^'\\]+                        ) # regular chars
+    | ( '                              ) # closing quote
+    | ( .                              ) # invalid escape \a, or trailing backslash
+    ''', re.VERBOSE)
 
-def decode(s):
-  # type: (str) -> str
-  """Given a QSN literal in a string, return the corresponding byte string."""
+    def decode(s):
+      # type: (str) -> str
+      """Given a QSN literal in a string, return the corresponding byte string."""
 
-  pos = 0
-  n = len(s)
+      pos = 0
+      n = len(s)
 
-  # TODO: This should be factored into maybe_decode
-  #assert s.startswith("'"), s
+      # TODO: This should be factored into maybe_decode
+      #assert s.startswith("'"), s
 
-  need_quote = False
-  if s.startswith("'"):
-    need_quote = True
-    pos += 1
-
-  parts = []
-  while pos < n:
-    m = QSN_LEX.match(s, pos)
-    assert m, s[pos:]
-    #print(m.groups())
-
-    pos = m.end(0)
-
-    if m.group(1):
-      c = m.group(0)[1]
-      if c == 'n':
-        part = '\n'
-      elif c == 'r':
-        part = '\r'
-      elif c == 't':
-        part = '\t'
-      elif c == '0':
-        part = '\0'
-      elif c == "'":
-        part = "'"
-      elif c == '"':  # note: " not encoded, but decoded
-        part = '"'
-      elif c == '\\':
-        part = '\\'
-      else:
-        raise AssertionError(m.group(0))
-
-    elif m.group(2):
-      hex_str = m.group(2)[2:]
-      part = chr(int(hex_str, 16))
-
-    elif m.group(3):
-      hex_str = m.group(3)[3:-1]  # \u{ }
-      part = unichr(int(hex_str, 16)).encode('utf-8')
-
-    elif m.group(4):
-      part = m.group(4)
-
-    elif m.group(5):
       need_quote = False
-      continue  # no part to append
+      if s.startswith("'"):
+        need_quote = True
+        pos += 1
 
-    elif m.group(6):
-      raise RuntimeError('Invalid syntax %r' % m.group(6))
+      parts = []
+      while pos < n:
+        m = QSN_LEX.match(s, pos)
+        assert m, s[pos:]
+        #print(m.groups())
 
-    parts.append(part)
+        pos = m.end(0)
 
-  if need_quote:
-    raise RuntimeError('Missing closing quote')
+        if m.group(1):
+          c = m.group(0)[1]
+          if c == 'n':
+            part = '\n'
+          elif c == 'r':
+            part = '\r'
+          elif c == 't':
+            part = '\t'
+          elif c == '0':
+            part = '\0'
+          elif c == "'":
+            part = "'"
+          elif c == '"':  # note: " not encoded, but decoded
+            part = '"'
+          elif c == '\\':
+            part = '\\'
+          else:
+            raise AssertionError(m.group(0))
 
-  return ''.join(parts)
+        elif m.group(2):
+          hex_str = m.group(2)[2:]
+          part = chr(int(hex_str, 16))
+
+        elif m.group(3):
+          hex_str = m.group(3)[3:-1]  # \u{ }
+          part = unichr(int(hex_str, 16)).encode('utf-8')
+
+        elif m.group(4):
+          part = m.group(4)
+
+        elif m.group(5):
+          need_quote = False
+          continue  # no part to append
+
+        elif m.group(6):
+          raise RuntimeError('Invalid syntax %r' % m.group(6))
+
+        parts.append(part)
+
+      if need_quote:
+        raise RuntimeError('Missing closing quote')
+
+      return ''.join(parts)
 
 
 #

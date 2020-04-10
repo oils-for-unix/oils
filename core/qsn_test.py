@@ -8,6 +8,8 @@ import unittest
 
 import qsn  # module under test
 
+qsn.ENABLED = True  # Hack for decode()
+
 
 class QStrTest(unittest.TestCase):
 
@@ -16,6 +18,8 @@ class QStrTest(unittest.TestCase):
     CASES = [
         '',
         '"',
+        "'",
+        '\\',
         'hello',
         '_my-report.c',
         'a+b',
@@ -23,9 +27,7 @@ class QStrTest(unittest.TestCase):
         'one two',
         'one\ttwo\r\n',
         "'one\0two'",
-        '\xbc\x00\x01'
-        '\'',
-        '\\',
+        '\xbc\x00\x01',
         u'[\u03bc]'.encode('utf-8'),
     ]
 

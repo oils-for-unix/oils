@@ -1,5 +1,4 @@
 ./asdl/format.py
-./asdl/pretty.py
 ./asdl/pybase.py
 ./asdl/runtime.py
 ./bin/osh_eval.py
@@ -10,6 +9,7 @@
 ./core/optview.py
 ./core/passwd.py
 ./core/pyutil.py
+./core/qsn.py
 ./core/state.py
 ./core/ui.py
 ./core/util.py

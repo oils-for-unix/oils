@@ -84,11 +84,20 @@ typecheck-all() {
     flags=$MYPY_FLAGS
   fi
 
+  local log_path=_tmp/err.txt
   set +o errexit
-  cat $manifest | xargs -- $0 typecheck --follow-imports=silent $flags >_tmp/err.txt
-  #echo "status: $?"
-
-  assert-one-error _tmp/err.txt
+  cat $manifest | xargs -- $0 typecheck --follow-imports=silent $flags >$log_path
+  local status=$?
+  set -o errexit
+  if test $status -eq 0; then
+    echo 'OK'
+  else
+    echo
+    cat $log_path
+    echo
+    echo 'FAIL'
+    return 1
+  fi
 }
 
 # The manifest needs to be checked in because we don't have

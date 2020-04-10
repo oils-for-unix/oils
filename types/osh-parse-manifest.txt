@@ -1,5 +1,4 @@
 ./asdl/format.py
-./asdl/pretty.py
 ./asdl/pybase.py
 ./asdl/runtime.py
 ./bin/osh_parse.py
@@ -9,6 +8,7 @@
 ./core/meta.py
 ./core/optview.py
 ./core/pyutil.py
+./core/qsn.py
 ./core/ui.py
 ./core/util.py
 ./_devbuild/gen/grammar_nt.py

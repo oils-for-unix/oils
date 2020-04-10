@@ -1646,7 +1646,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         func_name = o.name()
         ret_type = o.type.ret_type
 
-        if (class_name in ('BoolParser', 'CommandParser') and func_name == '_Next' or
+        if (class_name in ('BoolParser', 'CommandParser') and
+              func_name == '_Next' or
             class_name == 'ParseContext' and func_name == 'MakeOshParser' or
             class_name == 'ErrorFormatter' and func_name == 'PrettyPrintError' or
             class_name is None and func_name == 'PrettyPrintError' or
@@ -1657,8 +1658,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # virtual method in several classes
             func_name == 'EvalWordToString' or
             class_name == 'ArithEvaluator' and func_name == '_ValToIntOrError' or
-            class_name is None and func_name == '_StringToInteger' or
-            class_name == 'BoolEvaluator' and func_name in ('_EvalCompoundWord', '_StringToIntegerOrError') or
+            class_name == 'BoolEvaluator' and
+              func_name in ('_EvalCompoundWord', '_StringToIntegerOrError') or
             class_name == 'CommandEvaluator' and func_name == '_Execute' or
             class_name is None and func_name == '_PackFlags' or
             class_name == 'Mem' and func_name in ('GetVar', 'SetVar', 'GetCell') or
@@ -1666,7 +1667,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # osh/sh_expr_eval.py
             class_name is None and func_name == 'EvalLhsAndLookup' or
             class_name == 'SplitContext' and
-              func_name in ('SplitForWordEval', '_GetSplitter')
+              func_name in ('SplitForWordEval', '_GetSplitter') or
+            class_name is None and 
+              func_name in ('maybe_encode', 'maybe_shell_encode')
           ):
 
           default_val = o.arguments[-1].initializer
