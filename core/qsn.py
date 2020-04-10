@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-qstr.py
+qsn.py
 
 Naming:
   CSTR is misleading
@@ -45,11 +45,11 @@ TODO:
 
 Code Structure:
 
-  native/qstr.c is a wrapper around
-  cpp/qstr.c, which can be used in the C++ version
+  native/qsn.c is a wrapper around
+  cpp/qsn.c, which can be used in the C++ version
   well you will really need 2 wrappers.
 
-  native/qstr.c and native/pyqstr?
+  native/qsn.c and native/pyqsn?
 
 UTF-8 Comments:
 
@@ -126,7 +126,7 @@ def shellstr_encode(s, decode_utf8=False):
   return ''.join(parts)
 
 
-def qstr_encode(s, decode_utf8=False):
+def qsn_encode(s, decode_utf8=False):
   quote = 0
 
   if len(s) == 0:
@@ -185,7 +185,19 @@ def _encode(s, parts, decode_utf8):
     elif ch == '\0':
       part = '\\0'
 
-    elif ch < ' ' or ch >= '\x7f':
+    elif ch < ' ':
+      part = '\\x%02x' % ord(ch)
+
+    elif ch >= '\x7f':
+      # TODO: Print this LITERALLY if
+      # unicode=DO_NOT_TOUCH
+      # unicode=ESCAPE : gives you \x
+      # unicode=DECODE : gives you \u
+      #
+      # unicode='x' unicode='u' unicode=''  default
+      # or maybe:
+      # high_bit='u' high_bit='x'  high_bit=p : pass through
+
       part = '\\x%02x' % ord(ch)
 
     else:  # a literal  character
@@ -210,7 +222,7 @@ Q = re.compile(r'''
 | ( . )  # trailing backslash, or invalid backslash \a
 ''', re.VERBOSE)
 
-def qstr_decode(s):
+def qsn_decode(s):
   pos = 0
   n = len(s)
 
@@ -291,14 +303,14 @@ def qstr_decode(s):
 #
 #   Used for printf %q format -- well this needs to be compatible with other hsells.
 #
-# qstr_encode(s)
-# qstr_encode(s)
+# qsn_encode(s)
+# qsn_encode(s)
 
-# to_qstr(s)
-# from_qstr(s)
+# to_qsn(s)
+# from_qsn(s)
 #
-# pass s => to_qstr() => var q
-# pass q => from_qstr() => var s
+# pass s => to_qsn() => var q
+# pass q => from_qsn() => var s
 
 # Summary:
 #   builtin_pure Set and builtin_assign declare just need to eval, so use

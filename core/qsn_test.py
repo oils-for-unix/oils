@@ -1,12 +1,12 @@
 #!/usr/bin/env python2
 """
-qstr_test.py: Tests for qstr.py
+qsn_test.py: Tests for qsn.py
 """
 from __future__ import print_function
 
 import unittest
 
-import qstr  # module under test
+import qsn  # module under test
 
 
 class QStrTest(unittest.TestCase):
@@ -29,12 +29,12 @@ class QStrTest(unittest.TestCase):
     ]
 
     for c in CASES:
-      sh = qstr.shellstr_encode(c)
-      q = qstr.qstr_encode(c)
+      sh = qsn.shellstr_encode(c)
+      q = qsn.qsn_encode(c)
       print('  sh      %s' % sh)
-      print('qstr      %s' % q)
+      print('qsn      %s' % q)
 
-      decoded = qstr.qstr_decode(q)
+      decoded = qsn.qsn_decode(q)
       print('decoded = %r' % decoded)
       print()
 
@@ -52,9 +52,9 @@ class QStrTest(unittest.TestCase):
 
       q = '\\u{%0x}' % c  # the QSTR encoding
 
-      print('qstr      %s' % q)
+      print('qsn      %s' % q)
 
-      decoded = qstr.qstr_decode(q)
+      decoded = qsn.qsn_decode(q)
       print('decoded = %r' % decoded)
       print()
 
@@ -71,8 +71,8 @@ class QStrTest(unittest.TestCase):
         "%%%", 
     ]
     for c in OTHER_CASES:
-      decoded = qstr.qstr_decode(c)
-      print('qstr    = %s' % c)
+      decoded = qsn.qsn_decode(c)
+      print('qsn    = %s' % c)
       print('decoded = %r' % decoded)
       print()
 
@@ -86,7 +86,7 @@ class QStrTest(unittest.TestCase):
     ]
     for c in INVALID:
       try:
-        s = qstr.qstr_decode(c)
+        s = qsn.qsn_decode(c)
       except RuntimeError as e:
         print(e)
       else:

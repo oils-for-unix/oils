@@ -75,6 +75,7 @@ readonly MARKDOWN_DOCS=(
   quirks
 
   doc-toolchain
+  eggex
 
   # needs polish
   # Note: docs about the Oil language are prefixed 'oil-'.
@@ -91,9 +92,8 @@ readonly MARKDOWN_DOCS=(
   oil-word-language
   oil-special-vars
   oil-proc-func-block
-  eggex
+  qsn
   unicode
-  qstr
 
   # Internal stuff
   interpreter-state
