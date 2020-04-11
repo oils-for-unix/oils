@@ -429,25 +429,6 @@ class GlobReplacer(object):
     return s[:start] + self.replace_str + s[end:]
 
 
-def ShellQuote(s):
-  # type: (str) -> str
-  """Quote 's' in a way that can be reused as shell input.
-
-  It doesn't necessarily match bash byte-for-byte.  IIRC bash isn't consistent
-  with it anyway.
-
-  Used for 'printf %q', ${x@Q}, 'set', and `declare -p`.
-  """
-  # Could be made slightly nicer by e.g. returning unmodified when
-  # there's nothing that needs to be quoted.  Bash's `printf %q`
-  # does that while producing uglier output in other ways, with
-  # lots of backslashes.  Hopefully we don't end up having to
-  # match its behavior byte-for-byte.
-  #
-  # Example: FOO'BAR -> 'FOO'\''BAR'
-  return "'" + s.replace("'", r"'\''") + "'"
-
-
 def ShellQuoteB(s):
   # type: (str) -> str
   """Quote by adding backslashes.

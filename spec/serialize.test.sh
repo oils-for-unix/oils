@@ -139,13 +139,40 @@ typeset zz=$'one\ntwo'
 #### ${var@Q}
 case $SH in (zsh|ash) exit ;; esac
 
-zz=$'one\ntwo'
+zz=$'one\ntwo \u03bc'
+
+# wierdly, quoted and unquoted aren't different
 echo ${zz@Q}
+echo "${zz@Q}"
 ## STDOUT:
-$'one\ntwo'
+$'one\ntwo μ'
+$'one\ntwo μ'
 ## END
 ## OK mksh STDOUT:
 $'one
-two'
+two μ'
+$'one
+two μ'
 ## END
 ## N-I ash/zsh stdout-json: ""
+
+#### xtrace
+zz=$'one\ntwo'
+set -x
+echo "$zz"
+## STDOUT:
+one
+two
+## END
+## STDERR:
++ echo $'one\ntwo'
+## END
+## OK bash/ash STDERR:
++ echo 'one
+two'
+## END
+## OK zsh STDERR:
++zsh:3> echo 'one
+two'
+## END
+

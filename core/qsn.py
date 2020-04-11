@@ -121,6 +121,7 @@ BIT8_RAW = 0  # Pass through.  The default now, but bash and other shells
 BIT8_X = 1  # escape everything as \xff
 BIT8_U = 2  # decode and escape as \u03bc.  Not implemented yet.
             # Note: should we do error recovery?  Other shells do.
+MUST_QUOTE = 4
 
 
 # Functions that aren't translated.  We don't define < and > on strings, and it
@@ -148,8 +149,7 @@ if mylib.PYTHON:
     return '\\x%02x' % ord(ch)
 
 
-
-def maybe_shell_encode(s, bit8_display=BIT8_RAW):
+def maybe_shell_encode(s, flags=0):
   # type: (str, int) -> str
   """Encode simple strings to a "bare" word, and complex ones to a QSN literal.
 
@@ -167,12 +167,17 @@ def maybe_shell_encode(s, bit8_display=BIT8_RAW):
   """
   quote = 0  # no quotes
 
+  must_quote = flags & 0b100
+
+  # last 2 bits
+  bit8_display = flags & 0b11
+
   if len(s) == 0:  # empty string DOES need quotes!
     quote = 1
   else:
     for ch in s:
-      # [a-zA-Z0-9._-\_] are filename chars and don't need quotes
-      if IsPlainChar(ch):
+      # [a-zA-Z0-9._\-] are filename chars and don't need quotes
+      if not must_quote and IsPlainChar(ch):
         continue  # quote is still 0
 
       quote = 1

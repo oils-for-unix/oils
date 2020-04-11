@@ -14,11 +14,11 @@ from _devbuild.gen.syntax_asdl import source
 from frontend import arg_def
 from frontend import args
 from core import error
+from core import qsn
 from core import state
 from core import ui
 from core.util import log, e_die
 from mycpp import mylib
-from osh import string_ops
 
 from typing import cast, Dict, Any, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -102,7 +102,7 @@ def _PrintVariables(mem, cmd_val, arg, print_flags, readonly=False, exported=Fal
 
     if val.tag_() == value_e.Str:
       str_val = cast(value__Str, val)
-      decl.extend(["=", string_ops.ShellQuote(str_val.s)])
+      decl.extend(["=", qsn.maybe_shell_encode(str_val.s)])
     elif val.tag_() == value_e.MaybeStrArray:
       array_val = cast(value__MaybeStrArray, val)
       if None in array_val.strs:
@@ -115,20 +115,21 @@ def _PrintVariables(mem, cmd_val, arg, print_flags, readonly=False, exported=Fal
             if first:
               decl.append(";")
               first = False
-            decl.extend([" ", name, "[", str(i), "]=", string_ops.ShellQuote(element)])
+            decl.extend([" ", name, "[", str(i), "]=",
+                         qsn.maybe_shell_encode(element)])
       else:
         body = []
         for element in array_val.strs:
           if len(body) > 0: body.append(" ")
-          body.append(string_ops.ShellQuote(element or ''))
+          body.append(qsn.maybe_shell_encode(element or ''))
         decl.extend(["=(", ''.join(body), ")"])
     elif val.tag_() == value_e.AssocArray:
       assoc_val = cast(value__AssocArray, val)
       body = []
       for key in sorted(assoc_val.d):
         if len(body) > 0: body.append(" ")
-        key_quoted = string_ops.ShellQuote(key)
-        value_quoted = string_ops.ShellQuote(assoc_val.d[key] or '')
+        key_quoted = qsn.maybe_shell_encode(key, flags=qsn.MUST_QUOTE)
+        value_quoted = qsn.maybe_shell_encode(assoc_val.d[key] or '')
         body.extend(["[", key_quoted, "]=", value_quoted])
       if len(body) > 0:
         decl.extend(["=(", ''.join(body), ")"])

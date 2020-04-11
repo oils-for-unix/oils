@@ -94,6 +94,9 @@ echo "$foo"
 ## STDOUT:
 '"quoted" with spaces and \'
 ## END
+## OK osh STDOUT:
+$'"quoted" with spaces and \\'
+## END
 ## N-I dash/ash stdout-json: ""
 ## N-I dash/ash status: 2
 ## N-I mksh stdout-json: "\n"

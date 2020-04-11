@@ -749,7 +749,7 @@ shell-grammar() {
 
 serialize() {
   # dash doesn't have echo -e, $'', etc.
-  sh-spec spec/serialize.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/serialize.test.sh --osh-failures-allowed 3 \
     $BASH $MKSH $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 

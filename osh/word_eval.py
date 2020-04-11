@@ -30,6 +30,7 @@ from _devbuild.gen.runtime_asdl import (
 from core import error
 from core import passwd
 from core import pyutil
+from core import qsn
 from core.util import log, e_die, e_strict
 from frontend import consts
 from frontend import match
@@ -1010,7 +1011,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
           elif op_id == Id.VOp0_Q:
             assert val.tag_() == value_e.Str, val
             val = cast(value__Str, val)
-            val = value.Str(string_ops.ShellQuote(val.s))
+            val = value.Str(qsn.maybe_shell_encode(val.s))
+            # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in bash
+            quoted = True
 
           elif op_id == Id.VOp0_a:
             # We're ONLY simluating -a and -A, not -r -x -n for now.  See

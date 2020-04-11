@@ -630,7 +630,7 @@ typeset foo=bar
 declare -- foo="bar"
 ## END
 ## OK osh STDERR:
-declare -- foo='bar'
+declare -- foo=bar
 ## END
 ## N-I dash status: 99
 ## N-I dash stderr-json: ""

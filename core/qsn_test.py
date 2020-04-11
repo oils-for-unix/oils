@@ -13,6 +13,10 @@ qsn.ENABLED = True  # Hack for decode()
 
 class QStrTest(unittest.TestCase):
 
+  def testFlags(self):
+    self.assertEqual("a", qsn.maybe_shell_encode('a'))
+    self.assertEqual("'a'", qsn.maybe_shell_encode('a', flags=qsn.MUST_QUOTE))
+
   def testEncodeDecode(self):
 
     CASES = [

@@ -120,17 +120,17 @@ f1() {
 f1
 ## STDOUT:
 [declare]
-test_var1='111'
-test_var2='222'
-test_var3='333'
-test_var4='test_var1'
-test_var5='555'
+test_var1=111
+test_var2=222
+test_var3=333
+test_var4=test_var1
+test_var5=555
 [readonly]
-declare -r test_var2='222'
+declare -r test_var2=222
 [export]
-declare -x test_var3='333'
+declare -x test_var3=333
 [local]
-test_var5='555'
+test_var5=555
 ## END
 ## OK bash STDOUT:
 [declare]
@@ -182,17 +182,17 @@ f1() {
 f1
 ## STDOUT:
 [declare]
-declare -- test_var1='111'
-declare -r test_var2='222'
-declare -x test_var3='333'
-declare -n test_var4='test_var1'
-declare -- test_var5='555'
+declare -- test_var1=111
+declare -r test_var2=222
+declare -x test_var3=333
+declare -n test_var4=test_var1
+declare -- test_var5=555
 [readonly]
-declare -r test_var2='222'
+declare -r test_var2=222
 [export]
-declare -x test_var3='333'
+declare -x test_var3=333
 [local]
-declare -- test_var5='555'
+declare -- test_var5=555
 ## END
 ## BUG bash STDOUT:
 [declare]
@@ -245,17 +245,17 @@ f1() {
 f1
 ## STDOUT:
 [declare]
-declare -- test_var1='111'
-declare -r test_var2='222'
-declare -x test_var3='333'
-declare -n test_var4='test_var1'
-declare -- test_var5='555'
+declare -- test_var1=111
+declare -r test_var2=222
+declare -x test_var3=333
+declare -n test_var4=test_var1
+declare -- test_var5=555
 [readonly]
-declare -r test_var2='222'
+declare -r test_var2=222
 [export]
-declare -x test_var3='333'
+declare -x test_var3=333
 [local]
-declare -- test_var5='555'
+declare -- test_var5=555
 ## END
 ## BUG bash STDOUT:
 [declare]
@@ -287,10 +287,10 @@ declare -p test_arr{1..7}
 declare -a test_arr1=()
 declare -a test_arr2=()
 declare -A test_arr3
-declare -a test_arr4=('1' '2' '3')
-declare -a test_arr5=('1' '2' '3')
-declare -A test_arr6=(['a']='1' ['b']='2' ['c']='3')
-declare -a test_arr7=(); test_arr7[3]='foo'
+declare -a test_arr4=(1 2 3)
+declare -a test_arr5=(1 2 3)
+declare -A test_arr6=(['a']=1 ['b']=2 ['c']=3)
+declare -a test_arr7=(); test_arr7[3]=foo
 ## END
 ## OK bash STDOUT:
 declare -a test_arr1=()
@@ -323,11 +323,11 @@ f1() {
 f1
 ## STDOUT:
 [declare -pn]
-declare -n test_var4='test_var1'
+declare -n test_var4=test_var1
 [declare -pr]
-declare -r test_var2='222'
+declare -r test_var2=222
 [declare -px]
-declare -x test_var3='333'
+declare -x test_var3=333
 ## END
 ## OK bash STDOUT:
 [declare -pn]
@@ -391,11 +391,11 @@ f1() {
 f1
 ## STDOUT:
 [declare -pn]
-declare -n test_var4='test_var1'
+declare -n test_var4=test_var1
 [declare -pr]
-declare -r test_var2='222'
+declare -r test_var2=222
 [declare -px]
-declare -x test_var3='333'
+declare -x test_var3=333
 ## END
 ## N-I bash STDOUT:
 [declare -pn]
@@ -433,7 +433,7 @@ f1() {
 }
 f1
 ## STDOUT:
-declare -- test_var1='global'
+declare -- test_var1=global
 ## END
 ## N-I bash STDOUT:
 declare -- test_var1="local"
@@ -451,7 +451,7 @@ f1() {
 }
 f1
 ## STDOUT:
-declare -- test_var1='global'
+declare -- test_var1=global
 ## END
 ## N-I bash STDOUT:
 declare -- test_var1="local"
