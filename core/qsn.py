@@ -110,10 +110,24 @@ backslashes are doubled.
 """
 from __future__ import print_function
 
+from core.util import log
+from qsn_ import utf8
 from mycpp import mylib
 
-from typing import List
+from typing import List, Optional
 
+_ = log
+
+
+# BIT8_UTF8     -- Show valid UTF-8 where possible, and \x escapes otherwise.
+#                  The entire QSN string is valid UTF-8, even if the input isn't.
+# BIT8_U_ESCAPE -- show \u escapes where possible, and \x escapes otherwise.
+#                  The QSN string is valid ASCII, even if the input isn't.
+#                  Note: \x escapes are also used for low bytes, e.g. \x01 rather
+#                  than \u{1}.
+# BIT8_X_ESCAPE -- Show \x escapes no matter.  The QSN string is valid ASCII
+#                  and NO DECODING is attempted.  You may want to use this if
+#                  LANG != 'utf-8'.
 
 BIT8_RAW = 0  # Pass through.  The default now, but bash and other shells
               # do better.  They know that '\xce\xce\xbc' is an invalid byte to
@@ -121,7 +135,7 @@ BIT8_RAW = 0  # Pass through.  The default now, but bash and other shells
 BIT8_X = 1  # escape everything as \xff
 BIT8_U = 2  # decode and escape as \u03bc.  Not implemented yet.
             # Note: should we do error recovery?  Other shells do.
-MUST_QUOTE = 4
+MUST_QUOTE = 4  # maybe_shell_encode() uses this, for assoc array keys
 
 
 # Functions that aren't translated.  We don't define < and > on strings, and it
@@ -156,14 +170,7 @@ def maybe_shell_encode(s, flags=0):
   Shell strings sometimes need the $'' prefix, e.g. for $'\x00'.
 
   This technically isn't part of QSN, but shell can understand QSN, as long as
-  it doesn't have \u{}, e.g. bit8_display != BIT8_U.
-
-  Used for:
-  - xtrace showing argv
-  - error message showing getopts argv
-  - displaying argv array in 'jobs'
-
-  TODO: others
+  it doesn't have \u{}, e.g. bit8_display != BIT8_U_ESCAPE.
   """
   quote = 0  # no quotes
 
@@ -183,36 +190,24 @@ def maybe_shell_encode(s, flags=0):
       quote = 1
 
       if ch in '\\\'\r\n\t\0' or IsUnprintableLow(ch):
-        # It needs quotes like $''
-        quote = 2  # max quote, so don't look at the rest of the string
+        # We know AHEAD of time it needs quotes like $''
+        quote = 2  # max quote, so don't look at the rest of the str
         break
 
-      # Raw strings can use '', but \xff and \u{03bc} escapes require $''.
-
-      # BUG HERE: You always have quotes?
-      # Because even if it's raw, you might have \xff as invalid there.
-      # Should you detect quotes AFTER then?  Might be more robust?
-      # Shifting isn't that hard or expensive?
-      if IsUnprintableHigh(ch) and bit8_display != BIT8_RAW:
-        quote = 2
-        break
+  if quote == 0:  # Short circuit
+    return s
 
   # should we also figure out the length?
   parts = []  # type: List[str]
 
-  if quote == 0:
-    return s
-  elif quote == 1:
-    parts.append("'")
-    _encode_bytes(s, bit8_display, parts)
-    parts.append("'")
-  else:  # 2
-    parts.append("$'")
-    _encode_bytes(s, bit8_display, parts)
-    parts.append("'")
+  valid_utf8 = _encode_bytes(s, bit8_display, parts)
+  if not valid_utf8 or quote == 2:
+    prefix = "$'"  # $'' for \xff \u{3bc}, etc.
+  else:
+    prefix = "'"
 
-  return ''.join(parts)
-
+  parts.append("'")  # closing quote
+  return prefix + ''.join(parts)
 
 def maybe_encode(s, bit8_display=BIT8_RAW):
   # type: (str, int) -> str
@@ -236,6 +231,9 @@ def maybe_encode(s, bit8_display=BIT8_RAW):
   if not quote:
     return s
 
+  # NOTE: We don't need backslash here?  We always quote it?
+  # What about 'ls' with utf-8 filenames?   We might want to detect it there.
+
   parts = []  # type: List[str]
   parts.append("'")
   _encode_bytes(s, bit8_display, parts)
@@ -253,42 +251,103 @@ def encode(s, bit8_display=BIT8_RAW):
 
 
 def _encode_bytes(s, bit8_display, parts):
-  # type: (str, int, List[str]) -> None
+  # type: (str, int, List[str]) -> bool
   """The core encoding routine.
 
   Used by encode(), maybe_encode(), and maybe_shell_encode().
   """
-  for ch in s:
+  valid_utf8 = True
+  decode_args = [0 , 0]  # state, codepoint
+  pending = []  # pending bytes
+
+  i = 0
+  n = len(s)
+  part = None  # type: Optional[str]
+  while i < n:
+    byte = s[i]
+
     # append to buffer
-    if ch == '\\':
+    if byte == '\\':
       part = r'\\'
-    elif ch == "'":
+    elif byte == "'":
       part = "\\'"
-    elif ch == '\n':
+    elif byte == '\n':
       part = '\\n'
-    elif ch == '\r':
+    elif byte == '\r':
       part = '\\r'
-    elif ch == '\t':
+    elif byte == '\t':
       part = '\\t'
-    elif ch == '\0':
+    elif byte == '\0':
       part = '\\0'
 
-    elif IsUnprintableLow(ch):
-      part = XEscape(ch)
-
-    elif IsUnprintableHigh(ch):
-      if bit8_display == BIT8_X:
-        part = XEscape(ch)
-      elif bit8_display == BIT8_U:
-        # need utf-8 decoder
-        raise NotImplementedError()
+    elif IsUnprintableLow(byte):
+      # Even in utf-8 mode, don't print control chars literally!
+      if bit8_display == BIT8_U:
+        part = r'\u{%x}' % ord(byte)
       else:
-        part = ch
+        # BIT8_UTF8 is used for shell, so print it with \x.
+        part = XEscape(byte)
+
+    elif IsUnprintableHigh(byte):
+      if bit8_display == BIT8_X:
+        part = XEscape(byte)  # no decoding necessary
+
+      else:
+        utf8.decode(decode_args, ord(byte))
+        state, codepoint = decode_args
+
+        #log('after byte %r, state = %d', byte, state)
+        if state == utf8.UTF8_ACCEPT:
+          if bit8_display == BIT8_U:
+            part = r'\u{%x}' % codepoint
+          else:
+            # Original valid text
+            pending.append(byte)
+            part = ''.join(pending)
+            #log('accepted %r', part)
+          del pending[:]
+
+        elif state == utf8.UTF8_REJECT:
+          # Error conditions:
+          # Invalid start byte
+          # Invalid continuation byte
+
+          # The byte is invalid.  Replace it with \xff and restart.
+          # note: it could be a continuation byte!
+          pending.append(byte)
+          part = ''
+          for byte2 in pending:
+            part += XEscape(byte2)
+          del pending[:]
+          valid_utf8 = False
+
+          # TODO: Try error recovery here.  UTF-8 is meant for that.
+          # Reset state to try again from current position?
+          # Or maybe it's simpler if the rest is invalid.
+          # note: if it starts with 0, 110, 1110, or 1110, we could recover
+          # here.
+          #decode_args[0] = 0
+          #utf8.decode(decode_args, ord(byte))
+
+        else:
+          # Don't output anything, but remember the byte
+          pending.append(byte)
+          part = None
 
     else:  # a literal  character
-      part = ch
+      part = byte
 
-    parts.append(part)
+    if part is not None:
+      parts.append(part)
+    #log('parts %r', parts)
+    i += 1
+
+  if pending:
+    for byte in pending:
+      parts.append(XEscape(byte))
+      valid_utf8 = False
+
+  return valid_utf8
 
 
 # TODO: Translate this to something that can be built into the OVM tarball.

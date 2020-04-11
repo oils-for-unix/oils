@@ -72,9 +72,12 @@ case $SH in (ash) return ;; esac  # yash and ash don't implement this
 unprintable=$'\xff'
 printf '%q\n' "$unprintable"
 
-# Oil issue: we are passing BIT8_RAW, so we get it literally.
+# bash and zsh agree
 ## STDOUT:
 $'\377'
+## END
+## OK osh STDOUT:
+$'\xff'
 ## END
 ## BUG mksh STDOUT:
 ''$'\377'
@@ -112,6 +115,11 @@ printf '%q\n' "$unicode"
 unicode=$'\xce\xbc\xce'
 printf '%q\n' "$unicode"
 ## STDOUT:
+$'\xce'
+$'\xce\xce\xbc'
+$'μ\xce'
+## END
+## OK bash STDOUT:
 $'\316'
 $'\316μ'
 $'μ\316'
@@ -149,9 +157,13 @@ zz=$'one\ntwo'
 typeset | grep zz
 typeset -p zz
 
-# bash uses a different format for 'declare' and 'declare -p'!
-
 ## STDOUT:
+zz=$'one\ntwo'
+declare -- zz=$'one\ntwo'
+## END
+
+# bash uses a different format for 'declare' and 'declare -p'!
+## OK bash STDOUT:
 zz=$'one\ntwo'
 declare -- zz="one
 two"

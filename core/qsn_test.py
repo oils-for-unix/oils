@@ -17,6 +17,13 @@ class QStrTest(unittest.TestCase):
     self.assertEqual("a", qsn.maybe_shell_encode('a'))
     self.assertEqual("'a'", qsn.maybe_shell_encode('a', flags=qsn.MUST_QUOTE))
 
+  def testShellEncode(self):
+    # We don't want \u{} in shell
+    self.assertEqual("$'\\x01'", qsn.maybe_shell_encode('\x01'))
+
+    # backslash handling
+    self.assertEqual(r"$'\\'", qsn.maybe_shell_encode('\\'))
+
   def testEncodeDecode(self):
 
     CASES = [
@@ -31,30 +38,46 @@ class QStrTest(unittest.TestCase):
         'one two',
         'one\ttwo\r\n',
         "'one\0two'",
+        '\x00\x01',
         '\xbc\x00\x01',
         u'[\u03bc]'.encode('utf-8'),
+
+        '\xce\xbc',
+        '\xce\xbc\xce',  # char then byte
+        '\xce\xce\xbc',  # byte then char
+
+        # two invalid bytes, then restart
+        '\xce\xce\xce\xbe',
     ]
 
     for c in CASES:
+      print('-----')
+      print('CASE %r' % c)
+      print()
+
       sh = qsn.maybe_shell_encode(c)
       q1 = qsn.maybe_encode(c)
       q2 = qsn.encode(c)
-      q3 = qsn.encode(c, bit8_display=qsn.BIT8_X)
+      qu = qsn.encode(c, bit8_display=qsn.BIT8_U)
+      qx = qsn.encode(c, bit8_display=qsn.BIT8_X)
 
       print('       sh %s' % sh)
       print('qsn maybe %s' % q1)
-      print('qsn       %s' % q2)
-      print('qsn x     %s' % q3)
+      print('qsn UTF-8 %s' % q2)
+      print('qsn U     %s' % qu)
+      print('qsn X     %s' % qx)
 
       decoded1 = qsn.decode(q1)
       print('decoded = %r' % decoded1)
       print()
       decoded2 = qsn.decode(q2)
-      decoded3 = qsn.decode(q3)
+      decoded_u = qsn.decode(qu)
+      decoded_x = qsn.decode(qx)
 
       self.assertEqual(c, decoded1)
       self.assertEqual(c, decoded2)
-      self.assertEqual(c, decoded3)
+      self.assertEqual(c, decoded_u)
+      self.assertEqual(c, decoded_x)
 
     # character codes, e.g. U+03bc
     UNICODE_CASES = [
