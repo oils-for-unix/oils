@@ -87,20 +87,46 @@ case $SH in (ash) return ;; esac  # yash and ash don't implement this
 unicode=$'\u03bc'
 unicode=$'\xce\xbc'  # does the same thing
 
-# Hm bash/mksh/zsh understand these.  They are doing decoding and error
-# recovery!  inspecting the bash source seems to confirm this.
-#unicode=$'\xce'
-#unicode=$'\xce\xce\xbc'
-#unicode=$'\xce\xbc\xce'
-
 printf '%q\n' "$unicode"
 
 # Oil issue: we have quotes.  Isn't that OK?
 ## STDOUT:
 μ
 ## END
+## OK osh STDOUT:
+'μ'
+## END
 ## N-I ash stdout-json: ""
 
+#### printf %q invalid unicode
+case $SH in (ash) return ;; esac
+
+# Hm bash/mksh/zsh understand these.  They are doing decoding and error
+# recovery!  inspecting the bash source seems to confirm this.
+unicode=$'\xce'
+printf '%q\n' "$unicode"
+
+unicode=$'\xce\xce\xbc'
+printf '%q\n' "$unicode"
+
+unicode=$'\xce\xbc\xce'
+printf '%q\n' "$unicode"
+## STDOUT:
+$'\316'
+$'\316μ'
+$'μ\316'
+## END
+## OK mksh STDOUT:
+''$'\316'
+''$'\316''μ'
+'μ'$'\316'
+## END
+## OK zsh STDOUT:
+$'\316'
+$'\316'μ
+μ$'\316'
+## END
+## N-I ash stdout-json: ""
 
 #### set
 case $SH in (zsh) return ;; esac  # zsh doesn't make much sense

@@ -188,6 +188,11 @@ def maybe_shell_encode(s, flags=0):
         break
 
       # Raw strings can use '', but \xff and \u{03bc} escapes require $''.
+
+      # BUG HERE: You always have quotes?
+      # Because even if it's raw, you might have \xff as invalid there.
+      # Should you detect quotes AFTER then?  Might be more robust?
+      # Shifting isn't that hard or expensive?
       if IsUnprintableHigh(ch) and bit8_display != BIT8_RAW:
         quote = 2
         break
