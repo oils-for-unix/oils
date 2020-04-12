@@ -21,7 +21,7 @@ from _devbuild.gen.runtime_asdl import value_e
 
 from core.util import e_die
 from core import optview
-from core import qsn
+from qsn_ import qsn
 from core import state
 from core import ui
 from core.util import log

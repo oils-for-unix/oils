@@ -25,7 +25,7 @@ from _devbuild.gen.runtime_asdl import (
 from _devbuild.gen.syntax_asdl import (
     redir_loc, redir_loc_e, redir_loc_t, redir_loc__VarName, redir_loc__Fd,
 )
-from core import qsn
+from qsn_ import qsn
 from core import util
 from core import ui
 from core.util import log

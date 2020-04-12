@@ -14,7 +14,7 @@ from _devbuild.gen.syntax_asdl import source
 from frontend import arg_def
 from frontend import args
 from core import error
-from core import qsn
+from qsn_ import qsn
 from core import state
 from core import ui
 from core.util import log, e_die

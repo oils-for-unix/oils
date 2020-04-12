@@ -9,7 +9,7 @@ from _devbuild.gen.syntax_asdl import assign_op_e
 from asdl import runtime
 from core import error
 from core import optview
-from core import qsn
+from qsn_ import qsn
 from core.util import log
 from osh import word_
 from pylib import os_path

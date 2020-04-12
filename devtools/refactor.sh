@@ -110,29 +110,13 @@ cmd-val() {
   sed -i 's/arg_vec/cmd_val/g' $file
 }
 
-opts-accessor() {
-  sed --regexp-extended -i 's/exec_opts[.][a-z_]+/\0\(\)/g' */*.py
-  sed --regexp-extended -i 's/parse_opts[.][a-z_]+/\0\(\)/g' */*.py
-}
-
-lexer-def() {
-  sed --regexp-extended -i 's/import lex$/import lexer_def/' */*.py
-  #sed --regexp-extended -i 's/\blex[.]/lexer_def./g' */*.py
-}
-
 id-kind() {
   sed --regexp-extended -i 's/import id_kind$/import id_kind_def/' */*.py
   sed --regexp-extended -i 's/id_kind[.]/id_kind_def./g' */*.py
 }
 
-state() {
-  sed --regexp-extended -i 's/from osh import state/from core import state/' */*.py
-  sed --regexp-extended -i 's/from osh.state/from core.state/' */*.py
-}
-
-builtin() {
-  sed --regexp-extended -i 's/from osh import builtin$/from osh import builtin_misc/' */*.py
-  #sed --regexp-extended -i 's/builtin[.]/builtin_misc./' */*.py
+import() {
+  sed --regexp-extended -i 's/from qsen_ import qsn/from qsn_ import qsn/' */*.py
 }
 
 "$@"

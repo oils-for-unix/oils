@@ -21,7 +21,7 @@ from _devbuild.gen.hnode_asdl import (
     hnode__External, color_e, color_t, color_str, hnode_str,
 )
 from core import ansi
-from core import qsn
+from qsn_ import qsn
 from pylib import cgi
 from mycpp import mylib
 

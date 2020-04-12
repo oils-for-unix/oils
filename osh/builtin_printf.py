@@ -17,7 +17,7 @@ import time
 
 from asdl import runtime
 from core import error
-from core import qsn
+from qsn_ import qsn
 from core import state
 from core.util import p_die, e_die
 from frontend import args
