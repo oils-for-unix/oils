@@ -1,7 +1,7 @@
-// core_qsn.h
+// qsn_qsn.h
 
-#ifndef CORE_QSN_H
-#define CORE_QSN_H
+#ifndef QSN_QSN_H
+#define QSN_QSN_H
 
 #include "mylib.h"
 
@@ -33,11 +33,19 @@ inline bool IsPlainChar(Str* ch) {
 
 inline Str* XEscape(Str* ch) {
   assert(ch->len_ == 1);
-  char* buf = static_cast<char*>(malloc(4));
+  char* buf = static_cast<char*>(malloc(4 + 1));
   sprintf(buf, "\\x%02x", ch->data_[0] & 0xff);
   return new Str(buf);
 }
+
+inline Str* UEscape(int codepoint) {
+  // maximum length: 3 + 6 + 1 + NUL == 11
+  char* buf = static_cast<char*>(malloc(10 + 1));
+  sprintf(buf, "\\u{%x}", codepoint);
+  return new Str(buf);
+}
+ 
  
 }  // namespace qsn
 
-#endif  // CORE_QSN_H
+#endif  // QSN_QSN_H

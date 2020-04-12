@@ -164,6 +164,10 @@ if mylib.PYTHON:
     # type: (str) -> str
     return '\\x%02x' % ord(ch)
 
+  def UEscape(ch):
+    # type: (int) -> str
+    return r'\u{%x}' % ord(byte)
+
 
 def maybe_shell_encode(s, flags=0):
   # type: (str, int) -> str
@@ -260,7 +264,7 @@ def _encode_bytes(s, bit8_display, parts):
   """
   valid_utf8 = True
   decode_args = [0 , 0]  # state, codepoint
-  pending = []  # pending bytes
+  pending = []  # type: List[str] # pending bytes
 
   i = 0
   n = len(s)
@@ -285,7 +289,7 @@ def _encode_bytes(s, bit8_display, parts):
     elif IsUnprintableLow(byte):
       # Even in utf-8 mode, don't print control chars literally!
       if bit8_display == BIT8_U:
-        part = r'\u{%x}' % ord(byte)
+        part = UEscape(ord(byte))
       else:
         # BIT8_UTF8 is used for shell, so print it with \x.
         part = XEscape(byte)
@@ -296,12 +300,15 @@ def _encode_bytes(s, bit8_display, parts):
 
       else:
         utf8.decode(decode_args, ord(byte))
-        state, codepoint = decode_args
+        #state, codepoint = decode_args
+        # mycpp rewrite:
+        state = decode_args[0]
+        codepoint = decode_args[1]
 
         #log('after byte %r, state = %d', byte, state)
         if state == utf8.UTF8_ACCEPT:
           if bit8_display == BIT8_U:
-            part = r'\u{%x}' % codepoint
+            part = UEscape(codepoint)
           else:
             # Original valid text
             pending.append(byte)
@@ -317,9 +324,8 @@ def _encode_bytes(s, bit8_display, parts):
           # The byte is invalid.  Replace it with \xff and restart.
           # note: it could be a continuation byte!
           pending.append(byte)
-          part = ''
-          for byte2 in pending:
-            part += XEscape(byte2)
+          tmp = [XEscape(byte2) for byte2 in pending]
+          part = ''.join(tmp)
           del pending[:]
           valid_utf8 = False
 
@@ -328,6 +334,7 @@ def _encode_bytes(s, bit8_display, parts):
           # Or maybe it's simpler if the rest is invalid.
           # note: if it starts with 0, 110, 1110, or 1110, we could recover
           # here.
+          # Doesn't work for mu case
           #decode_args[0] = 0
           #utf8.decode(decode_args, ord(byte))
 
@@ -344,7 +351,7 @@ def _encode_bytes(s, bit8_display, parts):
     #log('parts %r', parts)
     i += 1
 
-  if pending:
+  if len(pending):
     for byte in pending:
       parts.append(XEscape(byte))
       valid_utf8 = False

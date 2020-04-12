@@ -69,7 +69,10 @@ def decode(args, byte):
   # type: (List[int], int) -> None
   typ = utf8d[byte]
 
-  state, codepoint = args
+  #state, codepoint = args
+  # mycpp rewrite
+  state = args[0]
+  codepoint = args[1]
 
   # Set codepoint so it's visible to the caller
   args[1] = (

@@ -19,12 +19,12 @@ _publish_html: &publish_html
       script: services/travis.sh publish-html
       on:
         branch: master
-    # duplicate block for testing on dev/andy-21
+    # duplicate block for testing on dev branches
     - provider: script
       skip_cleanup: true
       script: services/travis.sh publish-html
       on:
-        branch: dev/andy-23
+        branch: dev/andy-24
 
 jobs:
   include:
