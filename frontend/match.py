@@ -123,6 +123,12 @@ def _MatchBraceRangeToken_Fast(line, start_pos):
   tok_type, end_pos = fastlex.MatchBraceRangeToken(line, start_pos)
   return tok_type, end_pos
 
+#def _MatchQsnToken_Fast(line, start_pos):
+#  # type: (str, int) -> Tuple[Id_t, int]
+#  """Returns (id, end_pos)."""
+#  tok_type, end_pos = fastlex.MatchQsnToken(line, start_pos)
+#  return tok_type, end_pos
+
 
 if fastlex:
   OneToken = _MatchOshToken_Fast
@@ -131,6 +137,7 @@ if fastlex:
   PS1_MATCHER = _MatchPS1Token_Fast
   HISTORY_MATCHER = _MatchHistoryToken_Fast
   BRACE_RANGE_MATCHER = _MatchBraceRangeToken_Fast
+  #QSN_MATCHER = _MatchQsnToken_Fast
   IsValidVarName = fastlex.IsValidVarName
   ShouldHijack = fastlex.ShouldHijack
   MatchOption = fastlex.MatchOption
@@ -141,6 +148,7 @@ else:
   PS1_MATCHER = _MatchTokenSlow(lexer_def.PS1_DEF)
   HISTORY_MATCHER = _MatchTokenSlow(lexer_def.HISTORY_DEF)
   BRACE_RANGE_MATCHER = _MatchTokenSlow(lexer_def.BRACE_RANGE_DEF)
+  #QSN_MATCHER = _MatchTokenSlow(lexer_def.QSN_DEF)
 
   # Used by osh/cmd_parse.py to validate for loop name.  Note it must be
   # anchored on the right.
@@ -200,6 +208,11 @@ def EchoLexer(s):
 def BraceRangeLexer(s):
   # type: (str) -> SimpleLexer
   return SimpleLexer(BRACE_RANGE_MATCHER, s)
+
+
+#def QsnLexer(s):
+#  # type: (str) -> SimpleLexer
+#  return SimpleLexer(QSN_MATCHER, s)
 
 
 def GlobLexer(s):

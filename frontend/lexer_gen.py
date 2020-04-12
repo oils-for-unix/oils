@@ -408,6 +408,7 @@ def main(argv):
     TranslateSimpleLexer('MatchPS1Token', lexer_def.PS1_DEF)
     TranslateSimpleLexer('MatchHistoryToken', lexer_def.HISTORY_DEF)
     TranslateSimpleLexer('MatchBraceRangeToken', lexer_def.BRACE_RANGE_DEF)
+    #TranslateSimpleLexer('MatchQsnToken', lexer_def.QSN_DEF)
 
     # e.g. "pipefail" -> option-I::pipefail
     pairs = [(opt.name, opt.index) for opt in option_def.All()]

@@ -43,7 +43,7 @@ banner() {
   echo -----
 }
 
-readonly -a UNIT_TESTS=( {asdl,build,core,doctools,frontend,lazylex,mycpp,native,oil_lang,osh,pylib,test,tools}/*_test.py )
+readonly -a UNIT_TESTS=( {asdl,build,core,doctools,frontend,lazylex,mycpp,native,oil_lang,osh,pylib,qsn_,test,tools}/*_test.py )
 
 tests-to-run() {
   local minimal=${1:-}

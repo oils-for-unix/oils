@@ -114,17 +114,28 @@ printf '%q\n' "$unicode"
 
 unicode=$'\xce\xbc\xce'
 printf '%q\n' "$unicode"
+
+case $SH in (mksh) return ;; esac  # it prints unprintable chars here!
+
+unicode=$'\xcea'
+printf '%q\n' "$unicode"
+unicode=$'a\xce'
+printf '%q\n' "$unicode"
 ## STDOUT:
 $'\xce'
-$'\xce\xce\xbc'
+$'\xceμ'
 $'μ\xce'
+$'\xcea'
+$'a\xce'
 ## END
 ## OK bash STDOUT:
 $'\316'
 $'\316μ'
 $'μ\316'
+$'\316a'
+$'a\316'
 ## END
-## OK mksh STDOUT:
+## BUG mksh STDOUT:
 ''$'\316'
 ''$'\316''μ'
 'μ'$'\316'
@@ -133,6 +144,8 @@ $'μ\316'
 $'\316'
 $'\316'μ
 μ$'\316'
+$'\316'a
+a$'\316'
 ## END
 ## N-I ash stdout-json: ""
 

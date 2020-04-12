@@ -41,4 +41,3 @@
 ./pylib/cgi.py
 ./pylib/os_path.py
 ./qsn_/qsn.py
-./qsn_/utf8.py

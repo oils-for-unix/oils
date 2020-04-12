@@ -495,6 +495,17 @@ def AddKinds(spec):
 
   spec.AddKind('Range', ['Int', 'Char', 'Dots', 'Other'])
 
+  # Note: not used now
+  spec.AddKind('QSN', [
+      # LiteralBytes is a string, optimized for the common case
+      'LiteralBytes',
+      # A byte that we'll look at individually, e.g. \r \n, or just a low
+      # control code like \x01
+      'SpecialByte',
+      # UTF-8 sequences:
+      'Begin2', 'Begin3', 'Begin4', 'Cont',
+  ])
+
 
 # Shared between [[ and test/[.
 _UNARY_STR_CHARS = 'zn'  # -z -n

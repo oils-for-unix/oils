@@ -113,10 +113,9 @@ from __future__ import print_function
 # Problem: ASDL depends on this module.  It breaks ASDL tests if we import
 # 'core'.
 #from core.util import log
-from qsn_ import utf8
 from mycpp import mylib
 
-from typing import List, Optional
+from typing import List
 
 #_ = log
 
@@ -131,11 +130,11 @@ from typing import List, Optional
 #                  and NO DECODING is attempted.  You may want to use this if
 #                  LANG != 'utf-8'.
 
-BIT8_RAW = 0  # Pass through.  The default now, but bash and other shells
+BIT8_UTF8 = 0  # Pass through.  The default now, but bash and other shells
               # do better.  They know that '\xce\xce\xbc' is an invalid byte to
               # be escaped, then UTF-8.
-BIT8_X = 1  # escape everything as \xff
-BIT8_U = 2  # decode and escape as \u03bc.  Not implemented yet.
+BIT8_X_ESCAPE = 1  # escape everything as \xff
+BIT8_U_ESCAPE = 2  # decode and escape as \u03bc.  Not implemented yet.
             # Note: should we do error recovery?  Other shells do.
 MUST_QUOTE = 4  # maybe_shell_encode() uses this, for assoc array keys
 
@@ -164,9 +163,21 @@ if mylib.PYTHON:
     # type: (str) -> str
     return '\\x%02x' % ord(ch)
 
-  def UEscape(ch):
+  def UEscape(rune):
     # type: (int) -> str
-    return r'\u{%x}' % ord(byte)
+    return r'\u{%x}' % rune
+
+
+def _encode(s, bit8_display, shell_compat, parts):
+  # type: (str, int, bool, List[str]) -> bool
+  """
+  Helper for maybe_shell_encode(), maybe_encode(), encode()
+  """
+  if bit8_display == BIT8_X_ESCAPE:
+    _encode_bytes_x(s, shell_compat, parts)  # shell_compat
+    return True
+  else:
+    return _encode_runes(s, bit8_display, shell_compat, parts)
 
 
 def maybe_shell_encode(s, flags=0):
@@ -175,8 +186,17 @@ def maybe_shell_encode(s, flags=0):
 
   Shell strings sometimes need the $'' prefix, e.g. for $'\x00'.
 
-  This technically isn't part of QSN, but shell can understand QSN, as long as
-  it doesn't have \u{}, e.g. bit8_display != BIT8_U_ESCAPE.
+  QSN constructs that shell doesn't understand:
+    \0 is ambiguous; needs to be \x00 (not \000)
+      TODO: Fix this
+
+    \u{3bc} is not understood.  bit8_display should be BIT8_UTF8, not
+    BIT8_U_ESCAPE_ESCAPE.  In that mode, low bytes are \x01 instead of \u{1},
+    and high bytes are *literal* UTF-8.
+
+  This can be decoded in shell like:
+  
+  echo -e "${q:1: -1}" | read -d ''
   """
   quote = 0  # no quotes
 
@@ -206,7 +226,7 @@ def maybe_shell_encode(s, flags=0):
   # should we also figure out the length?
   parts = []  # type: List[str]
 
-  valid_utf8 = _encode_bytes(s, bit8_display, parts)
+  valid_utf8 = _encode(s, bit8_display, True, parts)  # shell_compat
   if not valid_utf8 or quote == 2:
     prefix = "$'"  # $'' for \xff \u{3bc}, etc.
   else:
@@ -215,7 +235,8 @@ def maybe_shell_encode(s, flags=0):
   parts.append("'")  # closing quote
   return prefix + ''.join(parts)
 
-def maybe_encode(s, bit8_display=BIT8_RAW):
+
+def maybe_encode(s, bit8_display=BIT8_UTF8):
   # type: (str, int) -> str
   """Encode simple strings to a "bare" word, and complex ones to a QSN literal.
 
@@ -242,36 +263,33 @@ def maybe_encode(s, bit8_display=BIT8_RAW):
 
   parts = []  # type: List[str]
   parts.append("'")
-  _encode_bytes(s, bit8_display, parts)
+  _encode(s, bit8_display, False, parts)
   parts.append("'")
   return ''.join(parts)
 
 
-def encode(s, bit8_display=BIT8_RAW):
+def encode(s, bit8_display=BIT8_UTF8):
   # type: (str, int) -> str
   parts = []  # type: List[str]
   parts.append("'")
-  _encode_bytes(s, bit8_display, parts)
+  _encode(s, bit8_display, False, parts)
   parts.append("'")
   return ''.join(parts)
 
 
-def _encode_bytes(s, bit8_display, parts):
-  # type: (str, int, List[str]) -> bool
-  """The core encoding routine.
+#
+# The Real Work
+#
 
-  Used by encode(), maybe_encode(), and maybe_shell_encode().
+
+def _encode_bytes_x(s, shell_compat, parts):
+  # type: (str, bool, List[str]) -> None
+  """Simple encoder that doesn't do utf-8 decoding.
+
+  For BIT8_X_ESCAPE.
   """
-  valid_utf8 = True
-  decode_args = [0 , 0]  # state, codepoint
-  pending = []  # type: List[str] # pending bytes
-
-  i = 0
-  n = len(s)
-  part = None  # type: Optional[str]
-  while i < n:
-    byte = s[i]
-
+  for byte in s:
+    #log('byte %r', byte)
     # append to buffer
     if byte == '\\':
       part = r'\\'
@@ -284,91 +302,200 @@ def _encode_bytes(s, bit8_display, parts):
     elif byte == '\t':
       part = '\\t'
     elif byte == '\0':
-      part = '\\0'
+      part = '\\x00' if shell_compat else '\\0'
 
     elif IsUnprintableLow(byte):
-      # Even in utf-8 mode, don't print control chars literally!
-      if bit8_display == BIT8_U:
-        part = UEscape(ord(byte))
-      else:
-        # BIT8_UTF8 is used for shell, so print it with \x.
-        part = XEscape(byte)
+      # BIT8_UTF8 is used for shell, so print it with \x.
+      part = XEscape(byte)
 
     elif IsUnprintableHigh(byte):
-      if bit8_display == BIT8_X:
-        part = XEscape(byte)  # no decoding necessary
-
-      else:
-        utf8.decode(decode_args, ord(byte))
-        #state, codepoint = decode_args
-        # mycpp rewrite:
-        state = decode_args[0]
-        codepoint = decode_args[1]
-
-        #log('after byte %r, state = %d', byte, state)
-        if state == utf8.UTF8_ACCEPT:
-          if bit8_display == BIT8_U:
-            part = UEscape(codepoint)
-          else:
-            # Original valid text
-            pending.append(byte)
-            part = ''.join(pending)
-            #log('accepted %r', part)
-          del pending[:]
-
-        elif state == utf8.UTF8_REJECT:
-          # Error conditions:
-          # Invalid start byte
-          # Invalid continuation byte
-
-          # The byte is invalid.  Replace it with \xff and restart.
-          # note: it could be a continuation byte!
-
-          b = ord(byte)
-          is_start_byte = ((b >> 7) == 0b0 or
-                           (b >> 5) == 0b110 or
-                           (b >> 4) == 0b1110 or
-                           (b >> 3) == 0b11110)
-          # Hm this doesn't work somehow
-          is_start_byte = False
-
-          if is_start_byte:  # todo: error recovery
-            from core.util import log
-            log('RESETTING byte %r', byte)
-            log('pending %s', pending)
-
-            decode_args[0] = 0
-            utf8.decode(decode_args, b)
-            #log('state %d', decode_args[0])
-
-          else:
-            # continuation byte needs an \x too
-            pending.append(byte)
-
-          if pending:
-            tmp = [XEscape(byte2) for byte2 in pending]
-            part = ''.join(tmp)
-            del pending[:]
-
-          valid_utf8 = False
-
-        else:
-          # Don't output anything, but remember the byte
-          pending.append(byte)
-          part = None
-
+      part = XEscape(byte)  # no decoding necessary
     else:  # a literal  character
       part = byte
 
-    if part is not None:
-      parts.append(part)
-    #log('parts %r', parts)
-    i += 1
+    parts.append(part)
 
-  if len(pending):
-    for byte in pending:
+
+#
+# State Machine for QSN Encoding, which needs to decode UTF-8
+#
+
+# Input Symbol Types
+Ascii = 0    # ASCII byte.  May need escaping later.
+Begin2 = 1   # Begin a 2 byte UTF-8 sequence
+Begin3 = 2
+Begin4 = 3
+Cont = 4     # UTF-8 Continuation byte
+Invalid = 5  # Invalid UTF-8 byte like 0xff
+
+# States.  They're numbered so you can do > tests.
+Start = 0
+B2_1 = 1   # 1 byte pending (don't know if they're valid or invalid)
+B3_1 = 2   
+B4_1 = 3
+
+B3_2 = 4   # 2 bytes pending
+B4_2 = 5
+
+B4_3 = 6   # 3 bytes pending
+
+# Registers: r1, r2, r3
+
+
+def _encode_runes(s, bit8_display, shell_compat, parts):
+  # type: (str, int, bool, List[str]) -> bool
+  """Decode UTF-8 to Runes and Encode QSN."""
+
+  valid_utf8 = True
+  state = Start
+
+  # Registers to hold bytes not processed
+  r1 = ''
+  r2 = ''
+  r3 = ''
+
+  for byte in s:
+
+    b = ord(byte)
+
+    # Classify input
+    if b < 0x7f:
+      typ = Ascii
+    elif (b >> 6) == 0b10:
+      typ = Cont
+
+    elif (b >> 5) == 0b110:
+      typ = Begin2
+    elif (b >> 4) == 0b1110:
+      typ = Begin3
+    elif (b >> 3) == 0b11110:
+      typ = Begin4
+    else:
+      typ = Invalid
+
+    # If we're not on a continuation byte, then pending bytes are invalid.
+    if typ != Cont:
+      if state >= B2_1:  # at least invalid 1 byte
+        valid_utf8 = False
+        parts.append(XEscape(r1))
+      if state >= B3_2:  # at least 2 invalid bytes
+        parts.append(XEscape(r2))
+      if state >= B4_3:  # 3 invalid bytes
+        parts.append(XEscape(r3))
+
+    if typ == Ascii:
+      state = Start
+
+      # append to buffer
+      if byte == '\\':
+        out = r'\\'
+      elif byte == "'":
+        out = "\\'"
+      elif byte == '\n':
+        out = '\\n'
+      elif byte == '\r':
+        out = '\\r'
+      elif byte == '\t':
+        out = '\\t'
+      elif byte == '\0':
+        out = '\\x00' if shell_compat else '\\0'
+      elif IsUnprintableLow(byte):
+        # Even in utf-8 mode, don't print control chars literally!
+        # Also, somehow I think it's more readable to display \x01 than \u{1}.
+        # Although it breaks the property that hex escapes mean invalid utf-8.
+        if bit8_display == BIT8_U_ESCAPE:
+          out = UEscape(ord(byte))
+        else:
+          # BIT8_UTF8 is used for shell, so print it with \x.
+          out = XEscape(byte)
+      else:
+        out = byte
+
+      #log('byte %r out %r', byte, out)
+      parts.append(out)
+
+    elif typ == Begin2:
+      state = B2_1
+      r1 = byte
+    elif typ == Begin3:
+      state = B3_1
+      r1 = byte
+    elif typ == Begin4:
+      state = B4_1
+      r1 = byte
+
+    elif typ == Invalid:
+      state = Start
       parts.append(XEscape(byte))
       valid_utf8 = False
+
+    elif typ == Cont:  # No char started, so no continuation bytes
+      if state == Start:
+        parts.append(XEscape(byte))
+        valid_utf8 = False
+
+      elif state == B2_1:
+        if bit8_display == BIT8_UTF8:
+          out = r1 + byte  # concatenate
+        else:
+          rune = ord(byte) & 0b00111111  # continuation byte is low
+          rune |= (ord(r1) & 0b00011111) << 6  # high
+          out = UEscape(rune)
+        parts.append(out)
+
+        state = Start
+
+      elif state == B3_1:
+        r2 = byte
+        state = B3_2
+      elif state == B3_2:
+        if bit8_display == BIT8_UTF8:
+          out = r1 + r2 + byte  # concatenate
+        else:
+          rune = ord(byte) & 0b00111111  # continuation byte is low
+          rune |= (ord(r2) & 0b00111111) << 6
+          rune |= (ord(r1) & 0b00001111) << 12
+          out = UEscape(rune)
+        parts.append(out)
+
+        state = Start
+
+      elif state == B4_1:
+        r2 = byte
+        state = B4_2
+      elif state == B4_2:
+        r3 = byte
+        state = B4_3
+      elif state == B4_3:
+        if bit8_display == BIT8_UTF8:
+          out = r1 + r2 + r3 + byte  # concatenate
+        else:
+          rune = ord(byte) & 0b00111111  # continuation byte is low
+          rune |= (ord(r3) & 0b00111111) << 6
+          rune |= (ord(r2) & 0b00111111) << 12
+          rune |= (ord(r1) & 0b00000111) << 18
+          out = UEscape(rune)
+        parts.append(out)
+        state = Start
+
+      else:
+        raise AssertionError(state)
+    else:
+      raise AssertionError(typ)
+
+  #log('STATE %r p = %d', state, p)
+  # Trailing
+
+  # TODO: Do this by checking state numbers.  There are only 7 states.
+  # Get rid of p.
+
+  if state >= B2_1:  # at least invalid 1 byte
+    valid_utf8 = False
+    parts.append(XEscape(r1))
+  if state >= B3_2:  # at least 2 invalid bytes
+    parts.append(XEscape(r2))
+  if state >= B4_3:  # 3 invalid bytes
+    parts.append(XEscape(r3))
 
   return valid_utf8
 

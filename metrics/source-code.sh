@@ -22,7 +22,7 @@ osh-files() {
   # - code generators
   # - test library
 
-  ls bin/oil.py {osh,core,frontend}/*.py native/*.c "${ASDL_FILES[@]}" \
+  ls bin/oil.py {osh,core,frontend,qsn_}/*.py native/*.c "${ASDL_FILES[@]}" \
     | filter-py | grep -E -v 'posixmodule.c$|line_input.c$|_gen.py$|test_lib.py$'
 }
 
@@ -115,6 +115,10 @@ all() {
 
   echo 'PGEN2 (parser generator)'
   ls pgen2/*.py | filter-py | xargs wc -l | sort --numeric
+  echo
+
+  echo 'QSN'
+  ls qsn_/*.py | filter-py | xargs wc -l | sort --numeric
   echo
 
   echo 'DOC TOOLS'
