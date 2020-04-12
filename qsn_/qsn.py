@@ -323,20 +323,34 @@ def _encode_bytes(s, bit8_display, parts):
 
           # The byte is invalid.  Replace it with \xff and restart.
           # note: it could be a continuation byte!
-          pending.append(byte)
-          tmp = [XEscape(byte2) for byte2 in pending]
-          part = ''.join(tmp)
-          del pending[:]
-          valid_utf8 = False
 
-          # TODO: Try error recovery here.  UTF-8 is meant for that.
-          # Reset state to try again from current position?
-          # Or maybe it's simpler if the rest is invalid.
-          # note: if it starts with 0, 110, 1110, or 1110, we could recover
-          # here.
-          # Doesn't work for mu case
-          #decode_args[0] = 0
-          #utf8.decode(decode_args, ord(byte))
+          b = ord(byte)
+          is_start_byte = ((b >> 7) == 0b0 or
+                           (b >> 5) == 0b110 or
+                           (b >> 4) == 0b1110 or
+                           (b >> 3) == 0b11110)
+          # Hm this doesn't work somehow
+          is_start_byte = False
+
+          if is_start_byte:  # todo: error recovery
+            from core.util import log
+            log('RESETTING byte %r', byte)
+            log('pending %s', pending)
+
+            decode_args[0] = 0
+            utf8.decode(decode_args, b)
+            #log('state %d', decode_args[0])
+
+          else:
+            # continuation byte needs an \x too
+            pending.append(byte)
+
+          if pending:
+            tmp = [XEscape(byte2) for byte2 in pending]
+            part = ''.join(tmp)
+            del pending[:]
+
+          valid_utf8 = False
 
         else:
           # Don't output anything, but remember the byte
