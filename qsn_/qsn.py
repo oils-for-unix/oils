@@ -110,13 +110,15 @@ backslashes are doubled.
 """
 from __future__ import print_function
 
-from core.util import log
+# Problem: ASDL depends on this module.  It breaks ASDL tests if we import
+# 'core'.
+#from core.util import log
 from qsn_ import utf8
 from mycpp import mylib
 
 from typing import List, Optional
 
-_ = log
+#_ = log
 
 
 # BIT8_UTF8     -- Show valid UTF-8 where possible, and \x escapes otherwise.
