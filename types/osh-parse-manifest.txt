@@ -8,7 +8,6 @@
 ./core/meta.py
 ./core/optview.py
 ./core/pyutil.py
-./core/qsn.py
 ./core/ui.py
 ./core/util.py
 ./_devbuild/gen/grammar_nt.py
@@ -41,3 +40,5 @@
 ./pgen2/pnode.py
 ./pylib/cgi.py
 ./pylib/os_path.py
+./qsn_/qsn.py
+./qsn_/utf8.py

@@ -9,7 +9,6 @@
 ./core/optview.py
 ./core/passwd.py
 ./core/pyutil.py
-./core/qsn.py
 ./core/state.py
 ./core/ui.py
 ./core/util.py
@@ -52,3 +51,5 @@
 ./pylib/cgi.py
 ./pylib/os_path.py
 ./pylib/path_stat.py
+./qsn_/qsn.py
+./qsn_/utf8.py

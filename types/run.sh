@@ -39,7 +39,10 @@ pyann-patched() {
 # Oil to pass under --strict someday.
 typed-demo-asdl() {
   asdl/run.sh gen-typed-demo-asdl
-  typecheck --strict \
+
+  # TODO: Get rid of --follow-imports-silent.  Somehow ASDL got in here?
+  # Because of core/error.py?
+  typecheck --strict --follow-imports=silent \
     _devbuild/gen/typed_demo_asdl.py asdl/typed_demo.py
 
   PYTHONPATH=$PY_PATH asdl/typed_demo.py "$@"
