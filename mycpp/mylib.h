@@ -673,7 +673,9 @@ inline Str* chr(int i) {
 
 inline int ord(Str* s) {
   assert(s->len_ == 1);
-  return s->data_[0];
+  // signed to unsigned conversion, so we don't get values like -127
+  uint8_t c = static_cast<uint8_t>(s->data_[0]);
+  return c;
 }
 
 // https://stackoverflow.com/questions/3919995/determining-sprintf-buffer-size-whats-the-standard/11092994#11092994

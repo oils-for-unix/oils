@@ -6,6 +6,14 @@ qsn.py: Quoted String Notation.  See doc/qsn.md.
 - Rust strings with '' instead of "". Since \' and \" are allowed in Rust, this
   is OK
 
+The QSN encoder needs to decode utf-8 in an error-tolerant fashion, as bash,
+mksh, and zsh do for 'printf %q'.  GNU coreutils (ls, stat, cp) also does this
+kind of decoding.
+
+help-bash thread:
+  Q: Why not make ${var@Q} the same as 'printf %q' output?
+  A: It was an accident.
+
 Comments on filename characters:
 
   .  and  ..  don't have to be quoted
@@ -18,51 +26,29 @@ Comments on filename characters:
 
 TODO:
 
+  - Optimize common case encoding with native regex.  IsPlainWord()
+  - maybe_decode() in addition to decode()
+
+TODO for other implementations:
+
   - Test suite.  Should it be bash, or Python 3?
   - Python 3 version
-  - Pure C version using re2c
+  - Pure C version using re2c.  Can this work with NUL bytes in the string?
     - would be nice: if the test suite asserted that every code path is
       covered..
     - then we could use that same test suite on other implementations
-- Would like contributions:
-  - DFA-based "push" decoder
-  - fun: branchless, SIMD, etc.
+  - Would like contributions:
+    - DFA-based "push" decoder
+    - fun: branchless, SIMD, etc.
 
-Code Structure:
+  Related code:
 
-  native/qsn.c is a wrapper around
-  cpp/qsn.c, which can be used in the C++ version
-  well you will really need 2 wrappers.
-
-  native/qsn.c and native/pyqsn?
-
-UTF-8 Comments:
-
-  The shell quoter doesn't really need to decode utf-8.  No other shell does.
-  And filenames could be in some other encoding where \' for certain bytes
-  looks funny, etc.
-
-  It would be nice to have the option of UTF-8 decoding in QSTR encoder, so
-  that the absence of \\x means it's well-formed UTF-8.
-
-  We could use this code:
-
-  https://bjoern.hoehrmann.de/utf-8/decoder/dfa/
-
-  It returns 0, 1, or some other positive number if more bytes have to be read.
-
-  So if it returns REJECT, then back up to the previous valid position.
-
-  And print the rest of the string byte-by-byte in the \xff style.
-
-Related code:
   repr() in stringobject.c in Python.  Copied to repr() in mylib.cc.
   You have to allocate 2 + 4*n bytes.  2 more bytes for the quotes.
 
-Oil usage:
+Where does Oil Use QSN?
 
-  maybe_shell_encode() can be used in 5 places:
-  Everywhere string_ops.ShellQuoteOneLin is used.
+  maybe_shell_encode() is used in several places:
 
   - to display argv[i]
     - set -x / xtrace
@@ -71,18 +57,15 @@ Oil usage:
   - to display variable values
     - 'set'
     - declare -p
-  - user functions
+  - Exposed to the user:
     - printf %q
     - ${var@Q} (not done yet)
 
-  Other:
-
+  TODO:
   - for QTSV:  maybe_tsv_encode()
 
-We still need:
-
-  ShellQuoteB - backslash shell quoting, e.g. for spaces.  Not technically
-  related to QSN.
+  Note that oil still needs string_ops.ShellQuoteB() for backslash shell
+  quoting, e.g. for spaces.  Not technically related to QSN.
 
 Oil User API:
 
@@ -93,11 +76,7 @@ Oil User API:
   from-qsn $q :orig
   test $s = $orig; echo $?
 
-help-bash thread:
-  Why not make ${var@Q} the same as 'printf %q' output?
-  It was an accident.
-
-Embedding within JSON strings:
+Embedding within JSON strings (?)
 
   "'\\x00\\''"
 
@@ -182,7 +161,14 @@ def _encode(s, bit8_display, shell_compat, parts):
 
 def maybe_shell_encode(s, flags=0):
   # type: (str, int) -> str
-  """Encode simple strings to a "bare" word, and complex ones to a QSN literal.
+  """Encode strings to a shell-compatible QSN literal.
+
+  Simple strings stay "bare" words for readability, e.g.
+
+  + echo hi
+  not
+
+  + 'echo' 'hi'
 
   Shell strings sometimes need the $'' prefix, e.g. for $'\x00'.
 
@@ -194,16 +180,15 @@ def maybe_shell_encode(s, flags=0):
     BIT8_U_ESCAPE_ESCAPE.  In that mode, low bytes are \x01 instead of \u{1},
     and high bytes are *literal* UTF-8.
 
-  This can be decoded in shell like:
+  In shell, you can decode QSN with something like:
   
   echo -e "${q:1: -1}" | read -d ''
+  echo -e "${q:2: -1}" | read -d ''  # if it starts with $''
   """
   quote = 0  # no quotes
 
   must_quote = flags & 0b100
-
-  # last 2 bits
-  bit8_display = flags & 0b11
+  bit8_display = flags & 0b11  # last 2 bits
 
   if len(s) == 0:  # empty string DOES need quotes!
     quote = 1
@@ -257,9 +242,6 @@ def maybe_encode(s, bit8_display=BIT8_UTF8):
 
   if not quote:
     return s
-
-  # NOTE: We don't need backslash here?  We always quote it?
-  # What about 'ls' with utf-8 filenames?   We might want to detect it there.
 
   parts = []  # type: List[str]
   parts.append("'")
@@ -484,10 +466,6 @@ def _encode_runes(s, bit8_display, shell_compat, parts):
       raise AssertionError(typ)
 
   #log('STATE %r p = %d', state, p)
-  # Trailing
-
-  # TODO: Do this by checking state numbers.  There are only 7 states.
-  # Get rid of p.
 
   if state >= B2_1:  # at least invalid 1 byte
     valid_utf8 = False
