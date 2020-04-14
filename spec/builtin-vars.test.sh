@@ -324,6 +324,27 @@ foo=bar
 foo=
 ## END
 
+#### Unset and scope (bug #653)
+unlocal() { unset "$@"; }
+check4() {
+  hello=global
+
+  local hello=local
+  echo hello=$hello
+
+  unlocal hello
+  echo hello=$hello
+}
+check4
+## STDOUT:
+hello=local
+hello=global
+## END
+## OK dash/ash/zsh/osh STDOUT:
+hello=local
+hello=
+## END
+
 #### Unset invalid variable name
 unset %
 echo status=$?
