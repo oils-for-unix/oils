@@ -517,6 +517,21 @@ ls bar
     t = Tok(Id.Eof_Real, '')
     test_lib.AssertAsdlEqual(self, t, w)
 
+  def testUnicode(self):
+    words = u'\u007a \u03bb \u4e09 \U0001f618'.encode('utf-8')
+    w_parser = test_lib.InitWordParser(words)
+    w = w_parser.ReadWord(lex_mode_e.ShCommand)
+    self.assertEqual('z', w.parts[0].val)
+
+    w = w_parser.ReadWord(lex_mode_e.ShCommand)
+    self.assertEqual('\xce\xbb', w.parts[0].val)
+
+    w = w_parser.ReadWord(lex_mode_e.ShCommand)
+    self.assertEqual('\xe4\xb8\x89', w.parts[0].val)
+
+    w = w_parser.ReadWord(lex_mode_e.ShCommand)
+    self.assertEqual('\xf0\x9f\x98\x98', w.parts[0].val)
+
   def testParseErrorLocation(self):
     w = _assertSpanForWord(self, 'a=(1 2 3)')
 

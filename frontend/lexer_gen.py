@@ -65,33 +65,13 @@ def PrintRegex(pat):
   print('\t\t]')
 
 
-# - means range.  Note that re2c gives an error we uselessly escape \^.
-CHAR_CLASS_META = ['\\', '-', ']']
-CHAR_CLASS_META_CODES = [ord(c) for c in CHAR_CLASS_META]
-
 # re2c literals are inside double quotes, so we don't need to do anything with
 # ^ or whatever.
 LITERAL_META = ['\\', '"']
 LITERAL_META_CODES = [ord(c) for c in LITERAL_META]
 
 
-def _CharClassLiteral(arg):
-  if arg == 0:
-    s = r'\x00'           # "\x00"
-  elif arg == ord('\n'):
-    s = r'\n'
-  elif arg == ord('\r'):
-    s = r'\r'
-  elif arg == ord('\t'):
-    s = r'\t'
-  elif arg in CHAR_CLASS_META_CODES:
-    s = '\\' + chr(arg)
-  else:
-    s = chr(arg)
-  return s
-
-
-def _Literal(arg):
+def _Literal(arg, char_escapes=LITERAL_META_CODES):
   if arg == 0:
     s = r'\x00'           # "\000"
   elif arg == ord('\n'):
@@ -100,11 +80,22 @@ def _Literal(arg):
     s = r'\r'
   elif arg == ord('\t'):
     s = r'\t'
-  elif arg in LITERAL_META_CODES:
+  elif arg in char_escapes:
     s = '\\' + chr(arg)
+  elif arg >= 0x80:
+    s = '\\x%02x' % arg  # for \x80-\xff
   else:
     s = chr(arg)
   return s
+
+
+# - means range.  Note that re2c gives an error we uselessly escape \^.
+CHAR_CLASS_META = ['\\', '-', ']']
+CHAR_CLASS_META_CODES = [ord(c) for c in CHAR_CLASS_META]
+
+
+def _CharClassLiteral(arg):
+  return _Literal(arg, char_escapes=CHAR_CLASS_META_CODES)
 
 
 def TranslateConstant(pat):
@@ -164,7 +155,7 @@ def TranslateTree(re_tree, f, in_char_class=False):
 
     elif name == 'range':  # ascii range
       begin, end = arg
-      f.write('%s-%s' % (chr(begin), chr(end)))
+      f.write('%s-%s' % (_CharClassLiteral(begin), _CharClassLiteral(end)))
 
     elif name == 'any':  # This is the '.' character
       assert arg is None

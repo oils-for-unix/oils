@@ -136,7 +136,9 @@ LEXER_DEF[lex_mode_e.Comment] = [
 # syntax error.  It's defined negatively, but let's define positive runs here.
 # TODO: Add + and @ here they are never special?  It's different for Oil
 # though.
-_LITERAL_WHITELIST_REGEX = r'[a-zA-Z0-9_/.-]+'
+
+# The range \x80-\xff makes sure that UTF-8 sequences are a single token.
+_LITERAL_WHITELIST_REGEX = r'[\x80-\xffa-zA-Z0-9_/.\-]+'
 
 _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   # NOTE: We could add anything 128 and above to this character class?  So
