@@ -216,8 +216,31 @@ echo "[$x]"
 echo -n '' > $TMP/empty.txt
 read x < $TMP/empty.txt
 argv.py "status=$?" "$x"
-## stdout: ['status=1', '']
+
+# No variable name, behaves the same
+read < $TMP/empty.txt
+argv.py "status=$?" "$REPLY"
+
+## STDOUT:
+['status=1', '']
+['status=1', '']
+## END
+## OK dash STDOUT:
+['status=1', '']
+['status=2', '']
+## END
 ## status: 0
+
+
+#### read with zero args
+echo | read
+echo status=$?
+## STDOUT:
+status=0
+## END
+## BUG dash STDOUT:
+status=2
+## END
 
 #### Read builtin with no newline.
 # This is odd because the variable is populated successfully.  OSH/Oil might

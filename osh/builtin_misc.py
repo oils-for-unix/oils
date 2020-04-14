@@ -159,6 +159,7 @@ if mylib.PYTHON:
 # in C?  Less garbage probably.
 # NOTE that dash, mksh, and zsh all read a single byte at a time.  It appears
 # to be required by POSIX?  Could try libc getline and make this an option.
+
 def ReadLineFromStdin(delim_char):
   # type: (Optional[str]) -> Tuple[str, bool]
   """Read a portion of stdin.
@@ -166,20 +167,20 @@ def ReadLineFromStdin(delim_char):
   If delim_char is set, read until that delimiter, but don't include it.
   If not set, read a line, and include the newline.
   """
-  found_delim = False
+  eof = False
   chars = []
   while True:
     c = posix.read(0, 1)
     if not c:
+      eof = True
       break
 
     if c == delim_char:
-      found_delim = True
       break
 
     chars.append(c)
 
-  return ''.join(chars), found_delim
+  return ''.join(chars), eof
 
 
 class Read(object):
@@ -249,18 +250,18 @@ class Read(object):
     # it's not -r).
     parts = []
     join_next = False
+    status = 0
     while True:
-      line, found_delim = ReadLineFromStdin(delim_char)
-      #log('LINE %r', line)
-      if len(line) == 0:  # EOF
-        status = 1
-        break
+      line, eof = ReadLineFromStdin(delim_char)
 
-      status = 0
-      if not found_delim:
-        # odd bash behavior: fail if no newline, even though we're setting
-        # variables.
+      if eof:
+        # status 1 to terminate loop.  (This is true even though we set
+        # variables).
         status = 1
+
+      #log('LINE %r', line)
+      if len(line) == 0:
+        break
 
       spans = self.splitter.SplitForRead(line, not arg.r)
       done, join_next = _AppendParts(line, spans, max_results, join_next, parts)

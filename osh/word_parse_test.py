@@ -518,7 +518,8 @@ ls bar
     test_lib.AssertAsdlEqual(self, t, w)
 
   def testUnicode(self):
-    words = u'\u007a \u03bb \u4e09 \U0001f618'.encode('utf-8')
+    words = 'z \xce\xbb \xe4\xb8\x89 \xf0\x9f\x98\x98'
+
     w_parser = test_lib.InitWordParser(words)
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     self.assertEqual('z', w.parts[0].val)

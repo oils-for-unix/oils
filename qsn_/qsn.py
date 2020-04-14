@@ -25,8 +25,6 @@ Comments on filename characters:
   implementation could relax this.
 
 TODO:
-
-  - Optimize common case encoding with native regex.  IsPlainWord()
   - maybe_decode() in addition to decode()
 
 TODO for other implementations:
