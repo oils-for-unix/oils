@@ -236,7 +236,6 @@ compile-slice() {
   time compile _bin/$name$suffix _build/cpp/${name}.cc \
     mycpp/mylib.cc \
     cpp/frontend_match.cc \
-    cpp/asdl_pretty.cc \
     cpp/frontend_tdop.cc \
     cpp/osh_arith_parse.cc \
     cpp/pgen2_parse.cc \

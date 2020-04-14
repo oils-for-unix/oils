@@ -98,23 +98,36 @@ from typing import List
 
 #_ = log
 
+# Note: this used to be in asdl/pretty.py.  But I think it's better to use
+# byteiter() here.
+"""
+# Word characters, - and _, as well as path name characters . and /.
+PLAIN_WORD_RE = r'[a-zA-Z0-9\-_./]+'
+_PLAIN_WORD_RE = re.compile(PLAIN_WORD_RE + '$')
 
-# BIT8_UTF8     -- Show valid UTF-8 where possible, and \x escapes otherwise.
-#                  The entire QSN string is valid UTF-8, even if the input isn't.
-# BIT8_U_ESCAPE -- show \u escapes where possible, and \x escapes otherwise.
-#                  The QSN string is valid ASCII, even if the input isn't.
-#                  Note: \x escapes are also used for low bytes, e.g. \x01 rather
-#                  than \u{1}.
-# BIT8_X_ESCAPE -- Show \x escapes no matter.  The QSN string is valid ASCII
-#                  and NO DECODING is attempted.  You may want to use this if
-#                  LANG != 'utf-8'.
+def IsPlainWord(s):
+  # type: (str) -> bool
+  if '\n' in s:  # account for the fact that $ matches the newline
+    return False
+  return bool(_PLAIN_WORD_RE.match(s))
+"""
 
-BIT8_UTF8 = 0  # Pass through.  The default now, but bash and other shells
-              # do better.  They know that '\xce\xce\xbc' is an invalid byte to
-              # be escaped, then UTF-8.
-BIT8_X_ESCAPE = 1  # escape everything as \xff
-BIT8_U_ESCAPE = 2  # decode and escape as \u03bc.  Not implemented yet.
-            # Note: should we do error recovery?  Other shells do.
+
+# Show valid UTF-8 where possible, and \x escapes otherwise.  The entire QSN
+# string is valid UTF-8, even if the input isn't.  Like other shells, Oil knows
+# that '\xce\xce\xbc' is an invalid byte to be escaped, then a UTF-8-encoded
+# char.
+BIT8_UTF8 = 0
+
+# Show \u escapes where possible, and \x escapes otherwise.  The QSN string is
+# valid ASCII, even if the input isn't.  Note: \x escapes are also used for low
+# bytes, e.g. \x01 rather than \u{1}.
+BIT8_U_ESCAPE = 1
+
+# Show \x escapes no matter.  The QSN string is valid ASCII and NO DECODING is
+# attempted.  You may want to use this if LANG != 'utf-8'.
+BIT8_X_ESCAPE = 2 
+
 MUST_QUOTE = 4  # maybe_shell_encode() uses this, for assoc array keys
 
 

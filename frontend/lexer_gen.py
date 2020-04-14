@@ -12,7 +12,6 @@ import sys
 import sre_parse
 import sre_constants
 
-from asdl import pretty  # For PLAIN_WORD_RE
 from frontend import builtin_def
 from frontend import lexer_def
 from frontend import option_def
@@ -419,7 +418,6 @@ def main(argv):
     StringToInt('MatchBuiltin', pairs)
 
     TranslateRegexToPredicate(lexer_def.VAR_NAME_RE, 'IsValidVarName')
-    TranslateRegexToPredicate(pretty.PLAIN_WORD_RE, 'IsPlainWord')
     TranslateRegexToPredicate(lexer_def.SHOULD_HIJACK_RE, 'ShouldHijack')
 
   elif action == 'print-all':

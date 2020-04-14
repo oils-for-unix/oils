@@ -14,7 +14,6 @@ using id_kind_asdl::Kind_t;
 #include "consts.h"
 
 // oil/cpp
-#include "asdl_pretty.h"
 #include "core_error.h"
 #include "frontend_match.h"
 #include "frontend_tdop.h"

@@ -198,17 +198,6 @@ fastlex_IsValidVarName(PyObject *self, PyObject *args) {
 }
 
 static PyObject *
-fastlex_IsPlainWord(PyObject *self, PyObject *args) {
-  const char *name;
-  int len;
-
-  if (!PyArg_ParseTuple(args, "s#", &name, &len)) {
-    return NULL;
-  }
-  return PyBool_FromLong(IsPlainWord(name, len));
-}
-
-static PyObject *
 fastlex_ShouldHijack(PyObject *self, PyObject *args) {
   const char *name;
   int len;
@@ -239,8 +228,6 @@ static PyMethodDef methods[] = {
    "(line, start_pos) -> int."},
   {"IsValidVarName", fastlex_IsValidVarName, METH_VARARGS,
    "Is it a valid var name?"},
-  {"IsPlainWord", fastlex_IsPlainWord, METH_VARARGS,
-   "Can the string be pretty-printed without quotes?"},
   // Should we hijack this shebang line?
   {"ShouldHijack", fastlex_ShouldHijack, METH_VARARGS, ""},
   {NULL, NULL},
