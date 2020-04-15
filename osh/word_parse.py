@@ -207,22 +207,23 @@ class WordParser(WordEmitter):
 
     p_die("Expected : or } in slice", token=self.cur_token)
 
-  def _ReadPatSubVarOp(self, lex_mode):
-    # type: (lex_mode_t) -> suffix_op__PatSub
+  def _ReadPatSubVarOp(self):
+    # type: () -> suffix_op__PatSub
     """
     Match     = ('/' | '#' | '%') WORD
     VarSub    = ...
               | VarOf '/' Match '/' WORD
     """
+    # Exception: VSub_ArgUnquoted even if it's quoted
     # stop at eof_type=Lit_Slash, empty_ok=False
-    UP_pat = self._ReadVarOpArg3(lex_mode, Id.Lit_Slash, False)
+    UP_pat = self._ReadVarOpArg3(lex_mode_e.VSub_ArgUnquoted, Id.Lit_Slash, False)
     assert UP_pat.tag_() == word_e.Compound, UP_pat  # Because empty_ok=False
     pat = cast(compound_word, UP_pat)
 
     if len(pat.parts) == 1:
       ok, s, quoted = word_.StaticEval(pat)
       if ok and s == '/' and not quoted:  # Looks like ${a////c}, read again
-        self._Next(lex_mode)
+        self._Next(lex_mode_e.VSub_ArgUnquoted)
         self._Peek()
         pat.parts.append(self.cur_token)
 
@@ -247,7 +248,7 @@ class WordParser(WordEmitter):
       return suffix_op.PatSub(pat, None, replace_mode)
 
     if self.token_type == Id.Lit_Slash:
-      replace = self._ReadVarOpArg(lex_mode)  # do not stop at /
+      replace = self._ReadVarOpArg(lex_mode_e.VSub_ArgUnquoted)  # do not stop at /
 
       self._Peek()
       if self.token_type != Id.Right_DollarBrace:
@@ -338,18 +339,20 @@ class WordParser(WordEmitter):
       self._Next(lex_mode_e.VSub_2)  # Expecting }
       self._Peek()
 
-    elif op_kind == Kind.VOp1:
+    elif op_kind == Kind.VOp1:  # % %% # ## etc.
       op_id = self.token_type
-      arg_word = self._ReadVarOpArg(arg_lex_mode)
+      # Weird exception that all shells have: these operators take a glob
+      # pattern, so they're lexed as VSub_ArgUnquoted, not VSub_ArgDQ
+      arg_word = self._ReadVarOpArg(lex_mode_e.VSub_ArgUnquoted)
       if self.token_type != Id.Right_DollarBrace:
         p_die('Expected } to close ${', token=self.cur_token)
 
       part.suffix_op = suffix_op.Unary(op_id, arg_word)
 
-    elif op_kind == Kind.VOp2:
+    elif op_kind == Kind.VOp2:  # / : [ ]
       if self.token_type == Id.VOp2_Slash:
         op_spid = self.cur_token.span_id  # for attributing error to /
-        patsub_op = self._ReadPatSubVarOp(arg_lex_mode)
+        patsub_op = self._ReadPatSubVarOp()
         patsub_op.spids.append(op_spid)
 
         # awkwardness for mycpp; could fix
@@ -370,7 +373,7 @@ class WordParser(WordEmitter):
         # TODO: Does this ever happen?
         p_die('Unexpected token in ${} (%s)', 'VOp2', token=self.cur_token)
 
-    elif op_kind == Kind.VOp3:
+    elif op_kind == Kind.VOp3:  # ${prefix@} etc.
       if allow_query:
         part.suffix_op = self.cur_token  # Nullary
         self._Next(lex_mode_e.VSub_2)  # Expecting }

@@ -182,10 +182,37 @@ argv.py "${foo%d'}"
 ## status: 2
 ## OK mksh status: 1
 
-#### The string to strip can be single quoted, outer is double quoted
+#### "${undef-'c d'}" and "${foo%'c d'}" are parsed differently
+
+# quotes are LITERAL here
+argv.py "${undef-'c d'}" "${undef-'c  d'}"
+argv.py ${undef-'c d'} ${undef-'c  d'}
+
+echo ---
+
+# quotes are RESPECTED here
 foo='a b c d'
 argv.py "${foo%'c d'}" "${foo%'c  d'}"
-## stdout: ['a b ', 'a b c d']
+
+case $SH in (dash) exit ;; esac
+
+argv.py "${foo//'c d'/zzz}" "${foo//'c  d'/zzz}"
+argv.py "${foo//'c d'/'zzz'}" "${foo//'c  d'/'zzz'}"
+
+## STDOUT:
+["'c d'", "'c  d'"]
+['c d', 'c  d']
+---
+['a b ', 'a b c d']
+['a b zzz', 'a b c d']
+['a b zzz', 'a b c d']
+## END
+## OK dash STDOUT:
+["'c d'", "'c  d'"]
+['c d', 'c  d']
+---
+['a b ', 'a b c d']
+## END
 
 #### $'' allowed within VarSub arguments
 # Odd behavior of bash/mksh: $'' is recognized but NOT ''!
@@ -230,10 +257,6 @@ no plus or minus ''''
 no plus or minus ''''
 ## END
 ## status: 0
-## OK osh STDOUT:
-no plus or minus ''''
-## END
-## OK osh status: 1
 ## BUG ash STDOUT:
 no plus or minus ''''
 no plus or minus ++--++--
