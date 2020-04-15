@@ -124,6 +124,9 @@ echo $( child=$BASHPID
         echo 'command sub OK'
       )
 exit 3  # make sure we got here
+
+# mksh also implements BASHPID!
+
 ## status: 3
 ## STDOUT:
 subshell OK

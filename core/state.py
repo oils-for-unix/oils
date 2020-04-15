@@ -1382,6 +1382,9 @@ class Mem(object):
       self.line_num.s = str(self.arena.GetLineNumber(span.line_id))
       return self.line_num
 
+    if name == 'BASHPID':  # TODO: Oil name for it
+      return value.Str(str(posix.getpid()))
+
     cell, _, _ = self._ResolveNameOrRef(name, lookup_mode)
 
     if cell:
