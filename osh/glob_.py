@@ -129,17 +129,18 @@ def GlobUnescape(s):  # used by cmd_eval
     c = s[i]
     if c == '\\' and i != n - 1:
       # Suppressed this to fix bug #698, #628 is still there.
-      #assert i != n - 1, 'Trailing backslash: %r' % s
+      assert i != n - 1, 'Trailing backslash: %r' % s
       i += 1
       c2 = s[i]
       if c2 in GLOB_META_CHARS:
         unescaped.append(c2)
       else:
-        #raise AssertionError("Unexpected escaped character %r" % c2)
+        # 'test/spec.sh glob -r 25' triggers this
+        raise AssertionError("Unexpected escaped character %r" % c2)
         # Hack to prevent crash for now.  Need to rewrite this.
         # Fell out of the fix to issue #695 to use _DQ_BACKSLASH in VS_ArgDQ.
         #unescaped.append(c)
-        unescaped.append(c2)
+        #unescaped.append(c2)
     else:
       unescaped.append(c)
     i += 1

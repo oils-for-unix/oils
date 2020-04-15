@@ -1,6 +1,4 @@
-#!/bin/bash
-#
-# Cases relevant to Oil's:
+# Cases relevant to Oil:
 #
 # - shopt -s more_errexit
 # - and maybe inherit_errexit and strict_errexit (OSH)
@@ -50,6 +48,51 @@ zero
 one two
 parent status=0
 ## END
+
+#### strict_errexit with command sub stops program
+set -o errexit
+shopt -s inherit_errexit || true
+shopt -s strict_errexit || true
+if echo $( echo 1; false; echo 2); then
+  echo A
+fi
+echo done
+
+## status: 1
+## stdout-json: ""
+
+## N-I bash/ash status: 0
+## N-I bash/ash STDOUT:
+1 2
+A
+done
+## END
+
+## N-I dash/mksh status: 0
+## N-I dash/mksh STDOUT:
+1
+A
+done
+## END
+
+#### {inherit,strict}_errexit: command sub with a single command
+set -o errexit
+shopt -s inherit_errexit || true
+shopt -s strict_errexit || true
+if echo $(false); then
+  echo A
+fi
+echo done
+## status: 1
+## stdout-json: ""
+
+## N-I dash/bash/mksh/ash status: 0
+## N-I dash/bash/mksh/ash STDOUT:
+
+A
+done
+## END
+
 
 #### command sub with more_errexit only
 set -o errexit
@@ -402,3 +445,4 @@ done
 ## END
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
+

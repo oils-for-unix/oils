@@ -570,7 +570,7 @@ var-op-bash() {
 }
 
 var-op-strip() {
-  sh-spec spec/var-op-strip.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/var-op-strip.test.sh --osh-failures-allowed 0 \
     ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
@@ -622,7 +622,7 @@ errexit() {
 }
 
 errexit-oil() {
-  sh-spec spec/errexit-oil.test.sh --no-cd-tmp \
+  sh-spec spec/errexit-oil.test.sh --no-cd-tmp --osh-failures-allowed 2\
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 

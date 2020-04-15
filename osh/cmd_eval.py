@@ -125,7 +125,12 @@ _DISALLOWED = [
     command_e.BraceGroup, command_e.Subshell,
     command_e.WhileUntil, command_e.If, command_e.Case,
     command_e.TimeBlock,
-    command_e.CommandList,  # Happens in $(command sub)
+    # BUG: This happens in 'if echo $(echo hi; false)'
+    #           but not in 'if echo $(false)'
+    # Because the CommandSub has no CommandList!
+    # This also doesn't work bceause the CommandList is inside the
+    # SubProgramThunk, and doesn't abort the rest of the program!
+    command_e.CommandList,
 ]
 
 def _DisallowErrExit(node):
