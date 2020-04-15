@@ -326,23 +326,46 @@ foo=
 
 #### Unset and scope (bug #653)
 unlocal() { unset "$@"; }
-check4() {
-  hello=global
 
-  local hello=local
-  echo hello=$hello
+level2() {
+  local hello=yy
 
+  echo level2=$hello
   unlocal hello
-  echo hello=$hello
+  echo level2=$hello
 }
-check4
-## STDOUT:
-hello=local
+
+level1() {
+  local hello=xx
+
+  level2
+
+  echo level1=$hello
+  unlocal hello
+  echo level1=$hello
+
+  level2
+}
+
 hello=global
+level1
+
+# bash, mksh, yash agree here.
+## STDOUT:
+level2=yy
+level2=xx
+level1=xx
+level1=global
+level2=yy
+level2=global
 ## END
-## OK dash/ash/zsh/osh STDOUT:
-hello=local
-hello=
+## OK dash/ash/zsh STDOUT:
+level2=yy
+level2=
+level1=xx
+level1=
+level2=yy
+level2=
 ## END
 
 #### Unset invalid variable name
