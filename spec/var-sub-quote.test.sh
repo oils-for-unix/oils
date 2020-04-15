@@ -261,3 +261,30 @@ echo "${unset:-'a'}"
 a
 'a'
 ## END
+
+
+#### Right Brace as argument (similar to #702)
+
+echo "${var-}}"
+echo "${var-\}}"
+echo "${var-'}'}"
+echo "${var-"}"}"
+## STDOUT:
+}
+}
+''}
+}
+## END
+## BUG bash STDOUT:
+}
+}
+'}'
+}
+## END
+## BUG yash STDOUT:
+}
+}
+}
+}
+## END
+
