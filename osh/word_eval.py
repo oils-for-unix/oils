@@ -1580,16 +1580,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # Array of strings, some of which are BOTH IFS-escaped and GLOB escaped!
     frags = []  # type: List[str]
     for frag, quoted, do_split in frame:
-      if will_glob:
-        if quoted:
-          frag = glob_.GlobEscape(frag)
-        else:
-          # We're going to both split and glob, so backslash escape TWICE.
-
-          # If we have a literal \, then we turn it into \\\\.
-          # Splitting takes \\\\ -> \\
-          # Globbing takes \\ to \ if it doesn't match
-          frag = _BackslashEscape(frag)
+      if will_glob and quoted:
+        frag = glob_.GlobEscape(frag)
+      else:
+        # If we have a literal \, then we turn it into \\\\.
+        # Splitting takes \\\\ -> \\
+        # Globbing takes \\ to \ if it doesn't match
+        frag = _BackslashEscape(frag)
 
       if do_split:
         frag = _BackslashEscape(frag)

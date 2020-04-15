@@ -472,7 +472,7 @@ sh-func() {
 
 glob() {
   # Note: can't pass because it assumes 'bin' exists, etc.
-  sh-spec spec/glob.test.sh --no-cd-tmp --osh-failures-allowed 8 \
+  sh-spec spec/glob.test.sh --no-cd-tmp --osh-failures-allowed 7 \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
