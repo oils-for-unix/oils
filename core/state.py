@@ -1428,7 +1428,7 @@ class Mem(object):
 
     with tagswitch(lval) as case:
       if case(lvalue_e.Named):  # unset x
-        if 0:  # flip this
+        if 1:  # flip this to experiment
           # This behavior is good for test/spec.sh assign -r 24-27
           name_map[cell_name].val = value.Undef()
           cell.exported = False
