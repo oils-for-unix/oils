@@ -358,14 +358,25 @@ argv.py star ${myarray[*]}
 ## N-I dash/ash status: 2
 ## N-I dash/ash stdout-json: ""
 
-#### Bug #628 split on : with : in literal word (CRASH)
+#### Bug #628 split on : with : in literal word
 IFS=':'
 word='a:'
 argv.py ${word}:b
 argv.py ${word}:
+
+echo ---
+
+# Same thing happens for 'z'
+IFS='z'
+word='az'
+argv.py ${word}zb
+argv.py ${word}z
 ## STDOUT:
 ['a', ':b']
 ['a', ':']
+---
+['a', 'zb']
+['a', 'z']
 ## END
 
 #### Bug #698, similar crash
