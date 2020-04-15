@@ -151,6 +151,14 @@ set -o noglob
 echo _tmp/spec-tmp/*.zz
 ## stdout-json: "_tmp/spec-tmp/a.zz _tmp/spec-tmp/b.zz\n_tmp/spec-tmp/*.zz\n"
 
+#### set -o noglob (bug #698)
+var='\z'
+set -f
+echo $var
+## STDOUT:
+\z
+## END
+
 #### shopt -s nullglob
 argv.py _tmp/spec-tmp/*.nonexistent
 shopt -s nullglob

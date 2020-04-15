@@ -298,3 +298,30 @@ argv.py "${x%%}"
 ['\xce\xbcabc\xce\xbc']
 ['\xce\xbcabc\xce\xbc']
 ## END
+
+#### Strip Right Brace (#702)
+var='$foo'
+echo 1 "${var#$foo}"
+echo 2 "${var#\$foo}"
+
+var='}'
+echo 10 "${var#}}"
+echo 11 "${var#\}}"
+echo 12 "${var#'}'}"
+echo 13 "${var#"}"}"
+## STDOUT:
+1 $foo
+2 
+10 }}
+11 
+12 
+13 
+## END
+## BUG zsh STDOUT:
+1 $foo
+2 
+10 }}
+11 
+12 }'}
+13 
+## END

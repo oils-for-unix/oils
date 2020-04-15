@@ -472,7 +472,7 @@ sh-func() {
 
 glob() {
   # Note: can't pass because it assumes 'bin' exists, etc.
-  sh-spec spec/glob.test.sh --no-cd-tmp --osh-failures-allowed 7 \
+  sh-spec spec/glob.test.sh --no-cd-tmp --osh-failures-allowed 8 \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
@@ -570,7 +570,7 @@ var-op-bash() {
 }
 
 var-op-strip() {
-  sh-spec spec/var-op-strip.test.sh \
+  sh-spec spec/var-op-strip.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
