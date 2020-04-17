@@ -1,4 +1,4 @@
-0.8.pre3
+0.8.pre4
 
 # The first line of this file is the Oil version, and the rest is ignored.
 # It's used at build time for the release tarball, and at runtime for oil 
