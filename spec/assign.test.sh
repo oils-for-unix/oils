@@ -301,6 +301,13 @@ echo "x=$x"
 x=temp-binding
 x=mutated-temp
 x=local
+x=mutated-temp
+x=global
+## END
+## OK dash/zsh STDOUT:
+x=temp-binding
+x=mutated-temp
+x=local
 x=
 x=global
 ## END
@@ -343,7 +350,7 @@ x=global
 x=temp-binding f
 echo "x=$x"
 
-## STDOUT:
+## OK dash/zsh STDOUT:
 x=temp-binding
 x=mutated-temp
 x=
@@ -355,7 +362,7 @@ x=mutated-temp
 x=
 x=
 ## END
-## BUG bash STDOUT:
+## STDOUT:
 x=temp-binding
 x=mutated-temp
 x=global
@@ -373,13 +380,13 @@ f() {
 }
 x=global
 f
-## STDOUT:
+## OK dash/bash/zsh STDOUT:
 x=global
 x=local
 - operator = default
 :- operator = default
 ## END
-## BUG mksh STDOUT:
+## STDOUT:
 x=global
 x=local
 - operator = global
@@ -397,13 +404,13 @@ f() {
 }
 x=global
 x=temp-binding f
-## STDOUT:
+## OK dash/zsh STDOUT:
 x=temp-binding
 x=local
 - operator = default
 :- operator = default
 ## END
-## BUG mksh STDOUT:
+## STDOUT:
 x=temp-binding
 x=local
 - operator = temp-binding
