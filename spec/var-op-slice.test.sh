@@ -309,3 +309,22 @@ echo ${result//"$0"/'SHELL'}
 SHELL
 ## END
 ## N-I mksh stdout-json: "\n"
+
+#### ${array[@]::0}
+array=(1 2 3)
+argv.py ${array[@]::0}
+## STDOUT:
+[]
+## END
+## N-I mksh/zsh status: 1
+## N-I mksh/zsh stdout-json: ""
+
+#### ${array[@]::}
+array=(1 2 3)
+argv.py ${array[@]::}
+## STDOUT:
+[]
+## END
+## N-I mksh/zsh status: 1
+## N-I mksh/zsh status: 1
+## N-I mksh/zsh stdout-json: ""

@@ -560,7 +560,7 @@ var-op-patsub() {
 
 var-op-slice() {
   # dash doesn't support any of these operations
-  sh-spec spec/var-op-slice.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/var-op-slice.test.sh --osh-failures-allowed 1 \
     $BASH $MKSH $ZSH $OSH_LIST "$@"
 }
 
