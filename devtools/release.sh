@@ -19,6 +19,7 @@
 #
 # Shortcut for below: $0 auto-machine1
 #
+#   sudo true  # cache credentials?
 #   $0 build-and-test  # build FINAL tarball, run unit/osh2oil suites, etc.
 #     prereq: build/codegen.sh {download,install}-re2c
 #     test/gold.sh run-for-release (outside OSH_HIJACK_SHEBANG)

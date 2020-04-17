@@ -696,7 +696,7 @@ class OilPrinter(object):
       self.cursor.SkipUntil(left_spid + 1)
       self.f.write('shell {')
 
-      self.DoCommand(node.command_list, local_symbols)
+      self.DoCommand(node.child, local_symbols)
 
       #self._DebugSpid(right_spid)
       #self._DebugSpid(right_spid + 1)
@@ -1291,7 +1291,7 @@ class OilPrinter(object):
       self.f.write('$[')
       self.cursor.SkipUntil(left_spid + 1)
 
-      self.DoCommand(node.command_list, local_symbols)
+      self.DoCommand(node.child, local_symbols)
 
       self.f.write(']')
       self.cursor.SkipUntil(right_spid + 1)
