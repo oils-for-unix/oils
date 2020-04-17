@@ -368,6 +368,28 @@ level2=yy
 level2=
 ## END
 
+#### unset of local reveals variable in higher scope
+
+# Oil has a RARE behavior here (matching yash and mksh), but at least it's
+# consistent.
+
+x=global
+f() {
+  local x=foo
+  echo x=$x
+  unset x
+  echo x=$x
+}
+f
+## STDOUT:
+x=foo
+x=global
+## END
+## OK dash/bash/zsh/ash STDOUT:
+x=foo
+x=
+## END
+
 #### Unset invalid variable name
 unset %
 echo status=$?
