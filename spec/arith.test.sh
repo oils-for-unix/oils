@@ -571,3 +571,10 @@ echo $(( a2 ))
 0
 0
 ## END
+ 
+#### nested ternary (bug fix)
+echo $((1?2?3:4:5))
+## STDOUT:
+3
+## END
+

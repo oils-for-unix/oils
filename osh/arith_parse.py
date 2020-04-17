@@ -160,7 +160,7 @@ if mylib.PYTHON:
     spec.Left(9, tdop.LeftBinaryOp, [Id.Arith_DAmp])
     spec.Left(7, tdop.LeftBinaryOp, [Id.Arith_DPipe])
 
-    spec.Left(5, LeftTernary, [Id.Arith_QMark])
+    spec.LeftRightAssoc(5, LeftTernary, [Id.Arith_QMark])
 
     # Right associative: a = b = 2 is a = (b = 2)
     spec.LeftRightAssoc(3, tdop.LeftAssign, [
