@@ -14,7 +14,7 @@ set -o errexit
 source devtools/release-version.sh  # for escape-segements
 
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
-readonly PREV_VERSION='0.8.pre2'
+readonly PREV_VERSION='0.8.pre3'
 
 # adapted from release-version.sh
 _git-changelog-body() {
@@ -59,7 +59,7 @@ issues-table() {
 }
 
 write-template() {
-  local out=../oilshell.org/blog/2020/03/_release-$OIL_VERSION.md
+  local out=../oilshell.org/blog/2020/04/_release-$OIL_VERSION.md
   print-template > $out
   echo "Wrote $out"
 }

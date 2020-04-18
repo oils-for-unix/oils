@@ -6,24 +6,24 @@
 #
 # Note: assumes that $REPO_ROOT is $PWD.
 
-# test/spec-bin.sh builds binaries
-readonly SPEC_DIR="$PWD/_deps/spec-bin"
+# build/codegen.sh builds binaries
+readonly RE2C_DIR="$PWD/_deps/re2c-1.0.3"
 
 # FALLBACK without test/spec-bin: test/spec.sh link-busybox-ash
 readonly ASH_SYMLINK_DIR="$PWD/_tmp/shells"
 
-# build/codegen.sh builds binaries
-readonly RE2C_DIR="$PWD/_deps/re2c-1.0.3"
+# test/spec-bin.sh builds binaries
+readonly SPEC_DIR="$PWD/_deps/spec-bin"
 
-if test -d $SPEC_DIR; then
-  export PATH="$SPEC_DIR:$PATH"
+if test -d $RE2C_DIR; then
+  export PATH="$RE2C_DIR:$PATH"
 fi
 
 if test -d $ASH_SYMLINK_DIR; then
   export PATH="$ASH_SYMLINK_DIR:$PATH"
 fi
 
-if test -d $RE2C_DIR; then
-  export PATH="$RE2C_DIR:$PATH"
+# This should override $ASH_SYMLINK_DIR
+if test -d $SPEC_DIR; then
+  export PATH="$SPEC_DIR:$PATH"
 fi
-
