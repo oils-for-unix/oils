@@ -21,7 +21,7 @@ echo $((a))
 #### recursive arith: short circuit &&, ||
 # Note: mksh R52 has a bug. Even though it supports a short circuit like
 #   "echo $((cond&&(a=1)))", it doesn't work with "x=a=1; echo
-#   $((cond&&x))", It is fixed in mksh R57.
+#   $((cond&&x))". It is fixed at least in mksh R57.
 # Note: "busybox sh" doesn't support short circuit.
 shopt -s eval_unsafe_arith
 a=b=123
@@ -50,8 +50,7 @@ echo $((0?(y):(n))):$((a))
 
 #### recursive arith: side effects
 # In Zsh and Busybox sh, the side effect of inner arithmetic
-# evaluations seems to take effect only after the whole expressions in
-# Zsh and busybox sh.
+# evaluations seems to take effect only after the whole evaluation.
 shopt -s eval_unsafe_arith
 a='b=c' c='d=123'
 echo $((a,d)):$((d))
@@ -80,7 +79,7 @@ echo $((a=text[3]))
 ## N-I ash/dash/yash status: 2
 ## N-I ash/dash/yash stdout-json: ""
 
-#### ble.sh (dynamic var name with prefix): assign
+#### dynamic arith varname: assign
 shopt -s parse_dynamic_arith  # for LHS
 
 vec2_set () {
@@ -97,7 +96,7 @@ a_x=3 a_y=4
 b_x=5 b_y=12
 ## END
 
-#### ble.sh (dynamic var name with prefix): read
+#### dynamic arith varname: read
 shopt -s eval_unsafe_arith  # for RHS
 
 vec2_load() {
@@ -112,7 +111,7 @@ echo x=$x y=$y
 x=12 y=34
 ## END
 
-#### ble.sh (dynamic var name with prefix): copy/add
+#### dynamic arith varname: copy/add
 shopt -s parse_dynamic_arith  # for LHS
 shopt -s eval_unsafe_arith  # for RHS
 
@@ -138,7 +137,7 @@ c_x=7 c_y=24
 ## END
 
 #### is-array with ${var@a}
-case $SH in (mksh|ash) exit 1 ;; esac
+case $SH in (mksh|ash|dash|yash) exit 1 ;; esac
 
 function ble/is-array { [[ ${!1@a} == *a* ]]; }
 
@@ -157,5 +156,5 @@ undef 1
 string 1
 array 0
 ## END
-## N-I zsh/mksh/ash status: 1
-## N-I zsh/mksh/ash stdout-json: ""
+## N-I zsh/mksh/ash/dash/yash status: 1
+## N-I zsh/mksh/ash/dash/yash stdout-json: ""
