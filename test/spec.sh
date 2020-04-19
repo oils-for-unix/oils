@@ -940,7 +940,7 @@ ble-idioms() {
 }
 
 ble-features() {
-  sh-spec spec/ble-idioms.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/ble-features.test.sh --osh-failures-allowed 0 \
           $BASH $ZSH $MKSH $BUSYBOX_ASH $DASH yash $OSH_LIST "$@"
 }
 
