@@ -255,6 +255,19 @@ class ErrorFormatter(object):
         msg = msg % args
       _PrintWithOptionalSpanId(prefix, msg, span_id, self.arena)
 
+  def PrefixPrint(self, msg, prefix, span_id=runtime.NO_SPID):
+    # type: (str, str, int) -> None
+    """Print a hard-coded message with a prefix."""
+    _PrintWithOptionalSpanId(prefix, msg, span_id, self.arena)
+
+  def Print_(self, msg, span_id=runtime.NO_SPID):
+    # type: (str, int) -> None
+    """Print a hard-coded message.
+
+    TODO: Rename this to Print(), and other variants to Printf.
+    """
+    _PrintWithOptionalSpanId('', msg, span_id, self.arena)
+
   def PrettyPrintError(self, err, prefix=''):
     # type: (_ErrorWithLocation, str) -> None
     """Print an exception that was caught."""

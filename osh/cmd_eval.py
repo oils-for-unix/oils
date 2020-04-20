@@ -254,9 +254,9 @@ class CommandEvaluator(object):
 
     builtin_func = self.assign_builtins.get(cmd_val.builtin_id)
     if builtin_func is None:
-      self.errfmt.Print("Assignment builtin %r not configured",
-                        cmd_val.argv[0], span_id=cmd_val.arg_spids[0])
-      return 127
+      # This only happens with alternative Oil interpreters.
+      e_die("Assignment builtin %r not configured",
+            cmd_val.argv[0], span_id=cmd_val.arg_spids[0])
 
     try:
       status = builtin_func.Run(cmd_val)
@@ -264,7 +264,7 @@ class CommandEvaluator(object):
       arg0 = cmd_val.argv[0]
       if e.span_id == runtime.NO_SPID:  # fill in default location.
         e.span_id = self.errfmt.CurrentLocation()
-      self.errfmt.Print(e.msg, prefix='%r ' % arg0, span_id=e.span_id)
+      self.errfmt.PrefixPrint(e.msg, prefix='%r ' % arg0, span_id=e.span_id)
       status = 2  # consistent error code for usage error
     except KeyboardInterrupt:
       if self.exec_opts.interactive():
@@ -939,7 +939,7 @@ class CommandEvaluator(object):
           else:
             # Only print warnings, never fatal.
             # Bash oddly only exits 1 for 'return', but no other shell does.
-            self.errfmt.Print(msg, prefix='warning: ', span_id=tok.span_id)
+            self.errfmt.PrefixPrint(msg, prefix='warning: ', span_id=tok.span_id)
             status = 0
 
       # The only difference between these next two is that CommandList
@@ -1449,7 +1449,7 @@ class CommandEvaluator(object):
         status = e.StatusCode()
       else:
         # Invalid control flow
-        self.errfmt.Print(
+        self.errfmt.Print_(
             "Loop and control flow can't be in different processes",
             span_id=e.token.span_id)
         is_fatal = True
@@ -1735,8 +1735,8 @@ class CommandEvaluator(object):
     except _ControlFlow as e:
       # shouldn't be able to exit the shell from a completion hook!
       # TODO: Avoid overwriting the prompt!
-      self.errfmt.Print('Attempted to exit from completion hook.',
-                        span_id=e.token.span_id)
+      self.errfmt.Print_('Attempted to exit from completion hook.',
+                         span_id=e.token.span_id)
 
       status = 1
     # NOTE: (IOError, OSError) are caught in completion.py:ReadlineCallback
