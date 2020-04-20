@@ -20,7 +20,6 @@ from _devbuild.gen.syntax_asdl import (
 from asdl import runtime
 from core.util import log
 from frontend import consts
-from mycpp import mylib
 from mycpp.mylib import tagswitch
 
 from typing import Tuple, Optional, List, cast, TYPE_CHECKING

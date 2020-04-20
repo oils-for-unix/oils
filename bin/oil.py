@@ -352,7 +352,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   state.InitMem(mem, posix.environ, version_str)
   builtin_funcs.Init(mem)
 
-  procs = {}
+  procs = {}  # type: Dict[str, command__ShFunction]
 
   job_state = process.JobState()
   fd_state = process.FdState(errfmt, job_state, mem)

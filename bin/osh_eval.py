@@ -18,6 +18,7 @@ from core import error
 from core import meta
 from core import pyutil
 from core.util import log
+from core import util
 from core import state
 from core import ui
 from frontend import parse_lib
@@ -36,8 +37,11 @@ from osh import word_eval
 
 from typing import List, Dict, Tuple, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
+  from _devbuild.gen.syntax_asdl import command__ShFunction
+  from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from osh.cmd_parse import CommandParser
   from pgen2.grammar import Grammar
+  from osh.builtin_misc import _Builtin
 
 
 if mylib.PYTHON:
@@ -222,7 +226,44 @@ def main(argv):
   test_ev = TestEvaluator(arith_ev, word_ev)
   test_ev.Eval(node)
 
+  procs = {}  # type: Dict[str, command__ShFunction]
+
+  assign_builtins = {}  # type: Dict[int, _Builtin]
+
+  cmd_deps = cmd_eval.Deps()
+  cmd_deps.mutable_opts = mutable_opts
+  cmd_deps.traps = {}
+  cmd_deps.trap_nodes = []  # TODO: Clear on fork() to avoid duplicates
+
+  cmd_deps.dumper = dev.CrashDumper('')
+
+  ex = NullExecutor()
+
+  trace_f = util.DebugFile(mylib.Stderr())
+  tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, word_ev, trace_f)
+
+  cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
+                                     assign_builtins, arena, cmd_deps)
+
+  # vm.InitCircularDeps
+  cmd_ev.arith_ev = arith_ev
+  cmd_ev.word_ev = word_ev
+  cmd_ev.tracer = tracer
+  #cmd_ev.shell_ex = ex
+
+  if 0:
+    cmd_ev.ExecuteAndCatch(node)
+
   return 0
+
+
+class NullExecutor(object):
+
+  def RunSimpleCommand(self, cmd_val, do_fork, call_procs=True):
+    # type: (cmd_value__Argv, bool, bool) -> int
+    #log('RunSimpleCommand %s', cmd_val)
+    log('RunSimpleCommand')
+    return 0
 
 
 if __name__ == '__main__':

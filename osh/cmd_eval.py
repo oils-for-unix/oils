@@ -863,6 +863,13 @@ class CommandEvaluator(object):
 
       elif case(command_e.Return):
         node = cast(command__Return, UP_node)
+        # TODO: This should always return value_t, which is coerced to an
+        # integer?
+        # BUT: we don't have 'func' yet.  Alternative: in 'proc' mode,
+        # return remains a builtin.  This node should be called ReturnExpr.
+        # Can change ParseOilProc to make it inactive.  Might be a good
+        # idea.
+
         obj = self.expr_ev.EvalExpr(node.e)
 
         if 0:
@@ -884,7 +891,8 @@ class CommandEvaluator(object):
               e_die('Expected integer return value, got %r', val,
                     token=node.keyword)
 
-        raise _ControlFlow(node.keyword, obj)
+        if mylib.PYTHON:
+          raise _ControlFlow(node.keyword, obj)
 
       elif case(command_e.Expr):
         node = cast(command__Expr, UP_node)
@@ -1519,67 +1527,68 @@ class CommandEvaluator(object):
 
     return status
 
-  def RunOilProc(self, proc, argv):
-    # type: (objects.Proc, List[str]) -> int
-    """
-    Run an oil proc foo { } or proc foo(x, y, @names) { }
-    """
-    node = proc.node
-    sig = node.sig
-    if sig.tag_() == proc_sig_e.Closed:
-      # We're binding named params.  User should use @rest.  No 'shift'.
-      proc_argv = []  # type: List[str]
-    else:
-      proc_argv = argv
+  if mylib.PYTHON:
+    def RunOilProc(self, proc, argv):
+      # type: (objects.Proc, List[str]) -> int
+      """
+      Run an oil proc foo { } or proc foo(x, y, @names) { }
+      """
+      node = proc.node
+      sig = node.sig
+      if sig.tag_() == proc_sig_e.Closed:
+        # We're binding named params.  User should use @rest.  No 'shift'.
+        proc_argv = []  # type: List[str]
+      else:
+        proc_argv = argv
 
-    self.mem.PushCall(node.name.val, node.name.span_id, proc_argv)
+      self.mem.PushCall(node.name.val, node.name.span_id, proc_argv)
 
-    n_args = len(argv)
-    UP_sig = sig
+      n_args = len(argv)
+      UP_sig = sig
 
-    if UP_sig.tag_() == proc_sig_e.Closed:  # proc is-closed []
-      sig = cast(proc_sig__Closed, UP_sig)
-      for i, p in enumerate(sig.params):
-        if i < n_args:
-          val = value.Str(argv[i])
+      if UP_sig.tag_() == proc_sig_e.Closed:  # proc is-closed []
+        sig = cast(proc_sig__Closed, UP_sig)
+        for i, p in enumerate(sig.params):
+          if i < n_args:
+            val = value.Str(argv[i])
+          else:
+            val = proc.defaults[i]
+            if val is None:
+              e_die("No value provided for param %r", p.name.val)
+          self.mem.SetVar(lvalue.Named(p.name.val), val, scope_e.LocalOnly)
+
+        n_params = len(sig.params)
+        if sig.rest:
+          leftover = value.MaybeStrArray(argv[n_params:])
+          self.mem.SetVar(
+              lvalue.Named(sig.rest.val), leftover, scope_e.LocalOnly)
         else:
-          val = proc.defaults[i]
-          if val is None:
-            e_die("No value provided for param %r", p.name.val)
-        self.mem.SetVar(lvalue.Named(p.name.val), val, scope_e.LocalOnly)
+          if n_args > n_params:
+            raise TypeError(
+                "proc %r expected %d arguments, but got %d" %
+                (node.name.val, n_params, n_args))
 
-      n_params = len(sig.params)
-      if sig.rest:
-        leftover = value.MaybeStrArray(argv[n_params:])
-        self.mem.SetVar(
-            lvalue.Named(sig.rest.val), leftover, scope_e.LocalOnly)
-      else:
-        if n_args > n_params:
-          raise TypeError(
-              "proc %r expected %d arguments, but got %d" %
-              (node.name.val, n_params, n_args))
+      # TODO:
+      # - Handle &block param?  How to do that?  It's really the
+      #   syntax_asdl.command_t type?  Or objects.Block probably.
 
-    # TODO:
-    # - Handle &block param?  How to do that?  It's really the
-    #   syntax_asdl.command_t type?  Or objects.Block probably.
+      try:
+        status = self._Execute(node.body)
+      except _ControlFlow as e:
+        if e.IsReturn():
+          status = e.StatusCode()
+        else:
+          # break/continue used in the wrong place.
+          e_die('Unexpected %r (in function call)', e.token.val, token=e.token)
+      except error.FatalRuntime as e:
+        self.dumper.MaybeCollect(self, e)  # Do this before unwinding stack
+        raise
+      # Does this ever happen?  e.g. 'source' should catch its own errors.
+      #except error.Parse as e:
+      finally:
+        self.mem.PopCall()
 
-    try:
-      status = self._Execute(node.body)
-    except _ControlFlow as e:
-      if e.IsReturn():
-        status = e.StatusCode()
-      else:
-        # break/continue used in the wrong place.
-        e_die('Unexpected %r (in function call)', e.token.val, token=e.token)
-    except error.FatalRuntime as e:
-      self.dumper.MaybeCollect(self, e)  # Do this before unwinding stack
-      raise
-    # Does this ever happen?  e.g. 'source' should catch its own errors.
-    #except error.Parse as e:
-    finally:
-      self.mem.PopCall()
-
-    return status
+      return status
 
   if mylib.PYTHON:
     def RunOilFunc(self, func, args, kwargs):

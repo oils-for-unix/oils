@@ -95,7 +95,11 @@ namespace builtin_process {
 }
 
 namespace util {
-  class DebugFile;
+  class DebugFile {
+   public:
+    DebugFile(mylib::Writer* writer) {
+    }
+  };
 }
 
 namespace executor {
