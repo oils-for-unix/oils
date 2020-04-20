@@ -1508,9 +1508,12 @@ class CommandEvaluator(object):
       else:
         # break/continue used in the wrong place.
         e_die('Unexpected %r (in function call)', e.token.val, token=e.token)
-    except (error.FatalRuntime, error.Parse) as e:
-      self.dumper.MaybeCollect(self, e)  # Do this before unwinding stack
+    except error.FatalRuntime as e:
+      # Dump the stack before unwinding it
+      self.dumper.MaybeCollect(self, e)
       raise
+    # Does this ever happen?  e.g. 'source' should catch its own errors.
+    #except error.Parse as e:
     finally:
       self.mem.PopCall()
 
@@ -1568,9 +1571,11 @@ class CommandEvaluator(object):
       else:
         # break/continue used in the wrong place.
         e_die('Unexpected %r (in function call)', e.token.val, token=e.token)
-    except (error.FatalRuntime, error.Parse) as e:
+    except error.FatalRuntime as e:
       self.dumper.MaybeCollect(self, e)  # Do this before unwinding stack
       raise
+    # Does this ever happen?  e.g. 'source' should catch its own errors.
+    #except error.Parse as e:
     finally:
       self.mem.PopCall()
 

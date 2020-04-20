@@ -10,7 +10,13 @@
 #include "syntax_asdl.h"
 
 namespace expr_eval {
-  class OilEvaluator;
+  class OilEvaluator {
+   public:
+    // TODO: Should return value_t
+    void* EvalExpr(syntax_asdl::expr_t* node) {
+      assert(0);
+    }
+  };
 }
 
 // problem: incomplete type
@@ -37,6 +43,15 @@ namespace cmd_exec {
   };
 }
 #endif
+
+// stub for cmd_eval.py
+namespace args {
+  class UsageError {
+   public:
+    Str* msg;
+    int span_id;
+  };
+}
 
 namespace util {
   inline Str* BackslashEscape(Str* a, Str* b) {
@@ -73,7 +88,10 @@ namespace builtin_misc {
 }
 
 namespace builtin_process {
-  class _TrapHandler;
+  class _TrapHandler {
+   public:
+    syntax_asdl::command_t* node;
+  };
 }
 
 namespace util {

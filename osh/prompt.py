@@ -219,7 +219,8 @@ class Evaluator(object):
       try:
         ps1_word = w_parser.ReadForPlugin()
       except error.Parse as e:
-        ps1_word = word_.ErrorWord("<ERROR: Can't parse PS1: %s>", e)
+        ps1_word = word_.ErrorWord(
+            "<ERROR: Can't parse PS1: %s>" % e.UserErrorString())
       self.parse_cache[ps1_str] = ps1_word
 
     # Evaluate, e.g. "${debian_chroot}\u" -> '\u'

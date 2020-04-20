@@ -12,7 +12,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from asdl import format as fmt
 from core import alloc
-#from core import dev
+from core import dev
 from core import error
 #from core import main_loop
 from core import meta
@@ -30,7 +30,7 @@ from osh import split
 # Evaluators
 # This causes errors in oil_lang/{objects,regex_translate}, builtin_pure, etc.
 # builtin_pure.Command maybe shouldn't be hard-coded?
-#from osh import cmd_eval
+from osh import cmd_eval
 from osh import sh_expr_eval
 from osh import word_eval
 
@@ -42,8 +42,8 @@ if TYPE_CHECKING:
 
 if mylib.PYTHON:
   unused1 = log
-  #unused2 = cmd_eval  # lint ignore
-  #unused3 = dev
+  unused2 = cmd_eval  # lint ignore
+  unused3 = dev
 
 
 # TEMP: Copied from core/main_loop.py

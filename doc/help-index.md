@@ -243,6 +243,7 @@ X [Testing]       check
                   X no_old_syntax        [[   $(( ))  ${x%prefix}   $$
                                          $'\n'   @(*.sh|*.py)  `echo comsub`
                                          ${a[@]}
+  [Compatibility] eval_unsafe_arith   parse_dynamic_arith
 ```
 
 <h2 id="env">
@@ -264,7 +265,7 @@ X [Testing]       check
   [POSIX Special] $@  $*  $#     $?  $-     $$  $!   $0  $9
   [Other Special] BASH_REMATCH   @PIPESTATUS
   [Oil Special]   ARGV   STATUS   M
-X [Platform]      HOSTNAME   OSTYPE   BASH_VERSION   @BASH_VERSINFO
+  [Platform]      HOSTNAME   OSTYPE   OIL_VERSION
   [Call Stack]    @BASH_SOURCE   @FUNCNAME   @BASH_LINENO   
                   X @BASH_ARGV   X @BASH_ARGC
   [Tracing]       LINENO   SOURCE_NAME

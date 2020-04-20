@@ -721,13 +721,11 @@ def SpanIdFromError(error):
   return runtime.NO_SPID
 
 
-if mylib.PYTHON:
-  # Doesn't translate with mycpp because of dynamic %
-  def ErrorWord(fmt, err):
-    # type: (str, _ErrorWithLocation) -> compound_word
-    error_str = fmt % err.UserErrorString()
-    t = Token(Id.Lit_Chars, runtime.NO_SPID, error_str)
-    return compound_word([t])
+# Doesn't translate with mycpp because of dynamic %
+def ErrorWord(error_str):
+  # type: (str) -> compound_word
+  t = Token(Id.Lit_Chars, runtime.NO_SPID, error_str)
+  return compound_word([t])
 
 
 def Pretty(w):

@@ -213,7 +213,8 @@ class Tracer(object):
       try:
         ps4_word = w_parser.ReadForPlugin()
       except error.Parse as e:
-        ps4_word = word_.ErrorWord("<ERROR: Can't parse PS4: %s>", e)
+        ps4_word = word_.ErrorWord(
+            "<ERROR: Can't parse PS4: %s>" % e.UserErrorString())
       self.parse_cache[ps4] = ps4_word
 
     #print(ps4_word)
@@ -256,8 +257,9 @@ class Tracer(object):
     # Only two possibilities here
     op_str = '+=' if op == assign_op_e.PlusEqual else '='
 
-    # TODO: Need a way to print arbitrary 'val' here
-    self.f.log('%s%s%s %s %s', first_char, prefix, lval, op_str, val)
+    # TODO: Need a way to print arbitrary 'lval' and 'val' here
+    if mylib.PYTHON:
+      self.f.log('%s%s%s %s %s', first_char, prefix, lval, op_str, val)
 
   def Event(self):
     # type: () -> None

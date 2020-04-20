@@ -42,6 +42,15 @@ class RuntimeError {
 
 class ValueError {};
 
+// TODO: remove this.  cmd_eval.py RunOilProc uses it, which we probably
+// don't need
+class TypeError {
+ public:
+  TypeError(Str* arg) {
+    assert(0);
+  }
+};
+
 class KeyboardInterrupt {};
 
 class SystemExit {
