@@ -48,9 +48,9 @@ if TYPE_CHECKING:
   from _devbuild.gen.id_kind_asdl import Id_t
   from _devbuild.gen.syntax_asdl import command_t, speck, word_part_t
   from _devbuild.gen.option_asdl import builtin_t
-  from core import executor
   from core import optview
   from core.ui import ErrorFormatter
+  from core.vm import _Executor
   from osh.split import SplitContext
   from core.state import Mem
   from osh import prompt
@@ -1890,7 +1890,7 @@ class NormalWordEvaluator(AbstractWordEvaluator):
   def __init__(self, mem, exec_opts, splitter, errfmt):
     # type: (Mem, optview.Exec, SplitContext, ErrorFormatter) -> None
     AbstractWordEvaluator.__init__(self, mem, exec_opts, splitter, errfmt)
-    self.shell_ex = None  # type: executor.ShellExecutor
+    self.shell_ex = None  # type: _Executor
 
   def CheckCircularDeps(self):
     # type: () -> None

@@ -1670,7 +1670,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             class_name == 'SplitContext' and
               func_name in ('SplitForWordEval', '_GetSplitter') or
             class_name is None and 
-              func_name in ('maybe_encode', 'maybe_shell_encode')
+              func_name in ('maybe_encode', 'maybe_shell_encode') or
+            # virtual function
+            func_name == 'RunSimpleCommand'
           ):
 
           default_val = o.arguments[-1].initializer
@@ -1784,6 +1786,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # TODO: inherit from std::exception?
             if b.name != 'object' and b.name != 'Exception':
               base_class_name = b.name
+          elif isinstance(b, MemberExpr):
+            # TODO: handle vm::_Executor here?
+            pass
 
         # Forward declare types because they may be used in prototypes
         if self.forward_decl:
@@ -1810,7 +1815,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           # e.g. class TextOutput : public ColorOutput
           if base_class_name:
-            self.decl_write(' : public %s', base_class_name)
+            # Hack because usually we don't inherit across modules.  It's a bit complicated.
+            b = 'vm::_Executor' if base_class_name == '_Executor' else base_class_name
+            self.decl_write(' : public %s', b)
 
           self.decl_write(' {\n')
           self.decl_write_ind(' public:\n')

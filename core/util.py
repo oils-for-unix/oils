@@ -12,7 +12,10 @@ from __future__ import print_function
 
 import sys
 from core import error
-from typing import IO, NoReturn, Any
+from typing import NoReturn, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+  from mycpp import mylib
 
 
 class UserExit(Exception):
@@ -100,7 +103,7 @@ def ShowFdState():
 
 class DebugFile(object):
   def __init__(self, f):
-    # type: (IO[str]) -> None
+    # type: (mylib.Writer) -> None
     self.f = f
 
   def log(self, msg, *args):

@@ -17,6 +17,7 @@ from asdl import runtime
 from core import error
 from core import process
 from core.util import log, e_die
+from core.vm import _Executor
 from frontend import args
 from frontend import consts
 from oil_lang import objects
@@ -39,7 +40,7 @@ if TYPE_CHECKING:
   from osh import cmd_eval
 
 
-class ShellExecutor(object):
+class ShellExecutor(_Executor):
   """
   This CommandEvaluator is combined with the OSH language evaluators in osh/ to create
   a shell interpreter.
@@ -458,7 +459,6 @@ class ShellExecutor(object):
 
     else:
       raise AssertionError()
-
 
   def Time(self):
     # type: () -> None

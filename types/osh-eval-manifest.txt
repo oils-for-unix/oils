@@ -13,6 +13,7 @@
 ./core/state.py
 ./core/ui.py
 ./core/util.py
+./core/vm.py
 ./_devbuild/gen/grammar_nt.py
 ./_devbuild/gen/hnode_asdl.py
 ./_devbuild/gen/id_kind_asdl.py

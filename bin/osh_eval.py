@@ -21,6 +21,7 @@ from core.util import log
 from core import util
 from core import state
 from core import ui
+from core.vm import _Executor  # reordered by mycpp
 from frontend import parse_lib
 from frontend import reader
 from mycpp import mylib
@@ -39,9 +40,9 @@ from typing import List, Dict, Tuple, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command__ShFunction
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
+  from osh.builtin_misc import _Builtin
   from osh.cmd_parse import CommandParser
   from pgen2.grammar import Grammar
-  from osh.builtin_misc import _Builtin
 
 
 if mylib.PYTHON:
@@ -249,7 +250,7 @@ def main(argv):
   cmd_ev.arith_ev = arith_ev
   cmd_ev.word_ev = word_ev
   cmd_ev.tracer = tracer
-  #cmd_ev.shell_ex = ex
+  cmd_ev.shell_ex = ex
 
   if 0:
     cmd_ev.ExecuteAndCatch(node)
@@ -257,7 +258,7 @@ def main(argv):
   return 0
 
 
-class NullExecutor(object):
+class NullExecutor(_Executor):
 
   def RunSimpleCommand(self, cmd_val, do_fork, call_procs=True):
     # type: (cmd_value__Argv, bool, bool) -> int

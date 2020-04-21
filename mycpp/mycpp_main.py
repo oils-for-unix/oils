@@ -66,7 +66,7 @@ def ModulesToCompile(result, mod_names):
 
   # Somehow the MyPy builder reorders the modules.
   for name, module in result.files.items():
-    if name == 'asdl.runtime':
+    if name in ('asdl.runtime', 'core.vm'):
       yield name, module
 
   for name, module in result.files.items():
@@ -76,7 +76,7 @@ def ModulesToCompile(result, mod_names):
       continue
 
     # Don't do it a second time!
-    if name == 'asdl.runtime':
+    if name in ('asdl.runtime', 'core.vm'):
       continue
 
     yield name, module

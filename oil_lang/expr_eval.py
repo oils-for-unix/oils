@@ -30,7 +30,7 @@ if TYPE_CHECKING:
       lvalue_t, lvalue__Named, lvalue__ObjIndex, lvalue__ObjAttr,
   )
   from _devbuild.gen.syntax_asdl import arg_list
-  from core.executor import ShellExecutor
+  from core.vm import _Executor
   from core.ui import ErrorFormatter
   from core.state import Mem
   from osh.word_eval import StringWordEvaluator
@@ -53,7 +53,7 @@ class OilEvaluator(object):
                errfmt,  # type: ErrorFormatter
                ):
     # type: (...) -> None
-    self.shell_ex = None  # type: ShellExecutor
+    self.shell_ex = None  # type: _Executor
     self.word_ev = None  # type: StringWordEvaluator
 
     self.mem = mem

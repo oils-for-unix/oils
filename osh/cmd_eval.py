@@ -97,8 +97,8 @@ if TYPE_CHECKING:
   )
   from core.alloc import Arena
   from core import dev
-  from core.executor import ShellExecutor
   from core import optview
+  from core.vm import _Executor
   from oil_lang import expr_eval
   from osh import word_eval
   from osh import builtin_process
@@ -215,7 +215,7 @@ class CommandEvaluator(object):
                 TODO: This should only be for assignment builtins?
       cmd_deps: A bundle of stateless code
     """
-    self.shell_ex = None  # type: ShellExecutor
+    self.shell_ex = None  # type: _Executor
     self.arith_ev = None  # type: sh_expr_eval.ArithEvaluator
     self.bool_ev = None  # type: sh_expr_eval.BoolEvaluator
     self.expr_ev = None  # type: expr_eval.OilEvaluator

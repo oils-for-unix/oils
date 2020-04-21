@@ -827,6 +827,7 @@ inline LineReader* open(Str* path) {
 class Writer {
  public:
   virtual void write(Str* s) = 0;
+  virtual void flush() = 0;
   virtual bool isatty() = 0;
 };
 
@@ -834,8 +835,10 @@ class BufWriter : public Writer {
  public:
   BufWriter() : data_(nullptr), len_(0) {
   }
-  virtual void write(Str* s);
-  virtual bool isatty() {
+  virtual void write(Str* s) override;
+  virtual void flush() override {
+  }
+  virtual bool isatty() override {
     return false;
   }
   // For cStringIO API
@@ -884,8 +887,9 @@ class CFileWriter : public Writer {
  public:
   explicit CFileWriter(FILE* f) : f_(f) {
   }
-  virtual bool isatty();
-  virtual void write(Str* s);
+  virtual void write(Str* s) override;
+  virtual void flush() override;
+  virtual bool isatty() override;
 
  private:
   FILE* f_;

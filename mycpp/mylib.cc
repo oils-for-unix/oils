@@ -298,6 +298,10 @@ void CFileWriter::write(Str* s) {
   fwrite(s->data_, s->len_, 1, f_);
 }
 
+void CFileWriter::flush() {
+  ::fflush(f_);
+}
+
 bool CFileWriter::isatty() {
   return ::isatty(fileno(f_));
 }

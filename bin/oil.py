@@ -19,7 +19,10 @@ from __future__ import print_function
 import posix_ as posix
 import sys
 import time  # for perf measurement
-from typing import List, NoReturn
+from typing import List, Dict, NoReturn, TYPE_CHECKING
+
+if TYPE_CHECKING:
+  from _devbuild.gen.syntax_asdl import command__ShFunction
 
 _trace_path = posix.environ.get('_PY_TRACE')
 if _trace_path:
