@@ -13,6 +13,7 @@ from __future__ import print_function
 import sys
 
 from frontend import id_kind_def
+from frontend import builtin_def
 
 
 def _CreateModule(id_spec, ids):
@@ -31,6 +32,15 @@ def _CreateModule(id_spec, ids):
 
   schema_ast = asdl_.Module('id_kind', [], [id_, kind_])
   return schema_ast
+
+
+def GenBuiltinLookup(b, func_name, kind, f):
+      f.write("""\
+builtin_t %s(Str* s) {
+  assert(0);
+}
+
+""" % func_name) 
 
 
 def main(argv):
@@ -260,20 +270,13 @@ Kind GetKind(id_kind_asdl::Id_t id) {
   }
 }
 """)
+
+      b = builtin_def.BuiltinDict()
+      GenBuiltinLookup(b, 'LookupNormalBuiltin', 'normal', f)
+      GenBuiltinLookup(b, 'LookupAssignBuiltin', 'assign', f)
+      GenBuiltinLookup(b, 'LookupSpecialBuiltin', 'special', f)
+
       out("""\
-
-builtin_t LookupNormalBuiltin(Str* s) {
-  assert(0);
-}
-
-builtin_t LookupAssignBuiltin(Str* s) {
-  assert(0);
-}
-
-builtin_t LookupSpecialBuiltin(Str* s) {
-  assert(0);
-}
-
 Tuple2<runtime_asdl::state_t, runtime_asdl::emit_t> IfsEdge(runtime_asdl::state_t state, runtime_asdl::char_kind_t ch) {
   assert(0);
 }

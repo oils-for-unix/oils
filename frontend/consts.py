@@ -31,7 +31,7 @@ SHOPT_OPTION_NAMES = option_def.SHOPT_OPTION_NAMES
 VISIBLE_SHOPT_NAMES = option_def.VISIBLE_SHOPT_NAMES
 PARSE_OPTION_NAMES = option_def.PARSE_OPTION_NAMES
 
-BUILTIN_NAMES = builtin_def.BUILTIN_NAMES
+BUILTIN_NAMES = builtin_def.BUILTIN_NAMES  # Used by builtin_comp.py
 
 
 def GetKind(id_):

@@ -373,5 +373,36 @@ run-for-release() {
   echo 'OK'
 }
 
+#
+# Real World
+#
+# $ ls|grep dash|wc -l
+# 6098
+# $ ls|grep bash|wc -l
+# 6102
+# $ ls|grep osh|wc -l
+# 6098
+#
+# So Oil is already at dash level for CPython's configure, and bash isn't
+# far off.  So autoconf-generated scripts probably already use constructs
+# that are already "optimal" in most shells.
+
+readonly PY27_DIR=$PWD/Python-2.7.13
+
+cpython-configure() {
+  local raw_dir=$PWD/$RAW_DIR/real
+  mkdir -p $raw_dir
+
+  pushd $PY27_DIR
+  #for sh in "${SHELLS[@]}"; do
+  for sh in bash dash osh; do
+    local out_prefix=$raw_dir/cpython-$sh
+    echo "--- $sh"
+
+    # TODO: Use a different dir
+    count-procs $out_prefix $sh -c './configure'
+  done
+  popd
+}
 
 "$@"

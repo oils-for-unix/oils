@@ -252,8 +252,7 @@ def main(argv):
   cmd_ev.tracer = tracer
   cmd_ev.shell_ex = ex
 
-  if 0:
-    cmd_ev.ExecuteAndCatch(node)
+  cmd_ev.ExecuteAndCatch(node)
 
   return 0
 
