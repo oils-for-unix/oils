@@ -441,6 +441,7 @@ class FdState(object):
       try:
         self._ApplyRedirect(r, waiter)
       except (IOError, OSError) as e:
+        self.Pop()
         return False  # for bad descriptor, etc.
       finally:
         self.errfmt.PopLocation()
