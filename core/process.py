@@ -302,10 +302,11 @@ class FdState(object):
 
     elif loc.tag_() == redir_loc_e.Fd:
       fd = cast(redir_loc__Fd, UP_loc).fd
-      self._PushSave(fd)
 
     else:
       raise AssertionError()
+
+    self._PushSave(fd)
 
     return True
 
