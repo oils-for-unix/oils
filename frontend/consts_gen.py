@@ -10,8 +10,10 @@ consts_gen.py - Code generation for consts.py, id_kind_def.py, etc.
 """
 from __future__ import print_function
 
+import collections
 import sys
 
+from core.util import log
 from frontend import id_kind_def
 from frontend import builtin_def
 
@@ -34,13 +36,54 @@ def _CreateModule(id_spec, ids):
   return schema_ast
 
 
+_BUILTINS = builtin_def.All()
+
 def GenBuiltinLookup(b, func_name, kind, f):
-      f.write("""\
+  #log('%r %r', func_name, kind)
+
+  pairs = [(b.name, b.index) for b in _BUILTINS if b.kind == kind]
+  #log('%s', pairs)
+
+  groups = collections.defaultdict(list)
+  for name, index in pairs:
+    first_char = name[0]
+    groups[first_char].append((name, index))
+
+  if 0:
+    for first_char, pairs in groups.iteritems():
+      log('%s %d', first_char, len(pairs))
+      log('%s', pairs)
+
+  # Note: we could optimize the length check, e.g. have a second level
+  # switch.  But we would need to measure the difference.  Caching the id on
+  # AST nodes is probably a bigger win, e.g. for loops.
+  #
+  # Size optimization: don't repeat constants literally?
+
+  f.write("""\
 builtin_t %s(Str* s) {
-  assert(0);
+  if (len(s) == 0) return 0;  // consts.NO_INDEX
+
+  switch (s->data_[0]) {
+""" % func_name) 
+
+  for first_char in sorted(groups):
+    pairs = groups[first_char]
+    f.write("  case '%s':\n" % first_char)
+    for name, index in pairs:
+      # NOTE: we have to check the length because they're not NUL-terminated
+      f.write('''\
+    if (s->len_ == %d && memcmp("%s", s->data_, %d) == 0) return %d;
+''' % (len(name), name, len(name), index))
+    f.write('    break;\n')
+
+  f.write("""\
+  }
+
+  return 0;  // consts.NO_INDEX
 }
 
-""" % func_name) 
+""")
 
 
 def main(argv):

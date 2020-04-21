@@ -404,15 +404,6 @@ def main(argv):
     pairs = [(opt.name, opt.index) for opt in option_def.All()]
     StringToInt('MatchOption', pairs)
 
-    # TODO: Don't need this?
-    # I think consts::LookupAssignBuiltin should be moved to
-    # match::LookupAssignBuiltin
-    # And generated right here.
-
-    # e.g. "echo" -> builtin_i::echo
-    #pairs = [(b.name, b.index) for b in builtin_def.All()]
-    #StringToInt('MatchBuiltin', pairs)
-
     TranslateRegexToPredicate(lexer_def.VAR_NAME_RE, 'IsValidVarName')
     TranslateRegexToPredicate(lexer_def.SHOULD_HIJACK_RE, 'ShouldHijack')
 
