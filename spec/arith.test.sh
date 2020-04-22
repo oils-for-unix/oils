@@ -597,3 +597,104 @@ a=1
 ## END
 ## BUG zsh stdout-json: ""
 ## BUG zsh status: 1
+
+#### Empty expression: $(())
+case $SH in (dash) exit 1;; esac
+echo 1:$(())
+echo 2:$(( ))
+## STDOUT:
+1:0
+2:0
+## END
+## N-I dash stdout-json: ""
+## N-I dash status: 1
+
+#### Empty expression: $[]
+# dash/mksh doesn't support $[]
+# oil has different meaning for $[]
+case ${SH##*/} in (dash|mksh|osh) exit 1;; esac
+echo 3:$[]
+echo 4:$[ ]
+## STDOUT:
+3:0
+4:0
+## END
+## N-I dash/mksh/osh stdout-json: ""
+## N-I dash/mksh/osh status: 1
+
+#### Empty expression: (())
+case $SH in (dash) exit 1;; esac
+(()) && echo unexpected || echo OK
+(( )) && echo unexpected || echo OK
+! (()) && echo OK || echo unexpected
+! (( )) && echo OK || echo unexpected
+## STDOUT:
+OK
+OK
+OK
+OK
+## END
+## N-I dash status: 1
+## N-I dash stdout-json: ""
+
+#### Empty expression: array subscript
+case $SH in
+(dash)     exit 1;; # dash does not support arrays.
+(mksh|zsh) exit 1;; # mksh/zsh does not support.
+(bash)     exit 1;; # bash supports this from bash-5.0.
+esac
+
+arr=(foo bar)
+echo "${arr[ ]}"
+## STDOUT:
+foo
+## END
+## N-I dash/mksh/zsh/bash status: 1
+## N-I dash/mksh/zsh/bash stdout-json: ""
+
+#### Empty expression: ${var::}
+case $SH in
+(dash) exit 1;; # dash does not support arrays.
+(dash) exit 1;; # zsh does not support empty offset/length.
+esac
+var=abcd
+echo "1:[${var::1}]"
+echo "2:[${var: :1}]"
+echo "3:[${var::}]"
+echo "4:[${var:: }]"
+echo "5:[${var: :}]"
+echo "6:[${var: : }]"
+## STDOUT:
+1:[a]
+2:[a]
+3:[]
+4:[]
+5:[]
+6:[]
+## END
+## N-I dash/zsh status: 1
+## N-I dash/zsh stdout-json: ""
+
+#### Empty expression: ${array[@]::}
+case $SH in
+(dash) exit 1;; # dash does not support arrays.
+(mksh) exit 1;; # mksh does not support ${array[@]:offset:length}
+(zsh)  exit 1;; # zsh does not support empty offset/length
+esac
+array=(1 2 3)
+argv.py "${array[@]::1}"
+argv.py "${array[@]: :1}"
+argv.py "${array[@]::}"
+argv.py "${array[@]:: }"
+argv.py "${array[@]: :}"
+argv.py "${array[@]: : }"
+## STDOUT:
+['1']
+['1']
+[]
+[]
+[]
+[]
+## END
+## N-I dash/mksh/zsh status: 1
+## N-I dash/mksh/zsh stdout-json: ""

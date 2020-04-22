@@ -318,13 +318,3 @@ argv.py ${array[@]::0}
 ## END
 ## N-I mksh/zsh status: 1
 ## N-I mksh/zsh stdout-json: ""
-
-#### ${array[@]::}
-array=(1 2 3)
-argv.py ${array[@]::}
-## STDOUT:
-[]
-## END
-## N-I mksh/zsh status: 1
-## N-I mksh/zsh status: 1
-## N-I mksh/zsh stdout-json: ""
