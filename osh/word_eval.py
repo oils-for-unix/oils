@@ -795,11 +795,21 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return value.Str(sep.join(tmp))
 
   def _BashArrayCompat(self, val):
-    # type: (value__MaybeStrArray) -> value__Str
+    # type: (value_t) -> value__Str
     """Decay ${array} to ${array[0]}."""
-    assert val.tag == value_e.MaybeStrArray, val
-    s = val.strs[0] if val.strs else ''
-    return value.Str(s)
+    if val.tag_() == value_e.MaybeStrArray:
+      array_val = cast(value__MaybeStrArray, val)
+      s = array_val.strs[0] if array_val.strs else None
+    elif val.tag_() == value_e.AssocArray:
+      assoc_val = cast(value__AssocArray, val)
+      s = assoc_val.d['0'] if '0' in assoc_val.d else None
+    else:
+      raise AssertionError(val.tag_())
+
+    if s is None:
+      return value.Undef()
+    else:
+      return value.Str(s)
 
   def _EmptyStrOrError(self, val, token=None):
     # type: (value_t, Optional[Token]) -> value_t
@@ -845,7 +855,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # 3. Process maybe_decay_array here before returning.
 
     maybe_decay_array = False  # for $*, ${a[*]}, etc.
-    bash_array_compat = False  # for ${BASH_SOURCE}
     name_query = False
 
     var_name = None  # type: str  # For ${foo=default}
@@ -979,7 +988,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
           # TODO: An IR for ${} might simplify these lengthy conditions
           pass
         elif var_name in _STRING_AND_ARRAY:
-          bash_array_compat = True
+          # for ${BASH_SOURCE}, etc.
+          val = self._BashArrayCompat(val)
         else:
           e_die("Array %r can't be referred to as a scalar (without @ or *)",
                 var_name, part=part)
@@ -1147,8 +1157,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
       array_val = cast(value__MaybeStrArray, UP_val)
       if maybe_decay_array:
         val = self._DecayArray(array_val)
-      elif bash_array_compat:
-        val = self._BashArrayCompat(array_val)
       else:
         val = array_val
 
@@ -1200,7 +1208,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
   def _EvalSimpleVarSub(self, token, part_vals, quoted):
     # type: (Token, List[part_value_t], bool) -> None
     maybe_decay_array = False
-    bash_array_compat = False
 
     # 1. Evaluate from (var_name, var_num, Token) -> defined, value
     if token.id == Id.VSub_DollarName:
@@ -1210,7 +1217,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
       val = self.mem.GetVar(var_name)
       if val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray):
         if var_name in _STRING_AND_ARRAY:
-          bash_array_compat = True
+          # for $BASH_SOURCE, etc.
+          val = self._BashArrayCompat(val)
         else:
           e_die("Array %r can't be referred to as a scalar (without @ or *)",
                 var_name, token=token)
@@ -1228,8 +1236,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
       array_val = cast(value__MaybeStrArray, UP_val)
       if maybe_decay_array:
         val = self._DecayArray(array_val)
-      elif bash_array_compat:
-        val = self._BashArrayCompat(array_val)
       else:
         val = array_val
 
