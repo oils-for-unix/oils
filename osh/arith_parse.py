@@ -75,7 +75,7 @@ def LeftIndex(p, w, left, unused_bp):
   """
   if not tdop.IsIndexable(left, p.parse_opts.parse_dynamic_arith()):
     p_die("The [ operator doesn't apply to this expression", word=w)
-  index = p.ParseUntil(0)
+  index = p.ParseUntil(0)  # ] has bp = -1
   p.Eat(Id.Arith_RBracket)
 
   return arith_expr.Binary(word_.ArithId(w), left, index)
@@ -83,8 +83,8 @@ def LeftIndex(p, w, left, unused_bp):
 
 def LeftTernary(p, t, left, bp):
   # type: (TdopParser, word_t, arith_expr_t, int) -> arith_expr_t
-  """ Function call f(a, b). """
-  true_expr = p.ParseUntil(bp)
+  """ cond ? true_expr : false_expr """
+  true_expr = p.ParseUntil(0)  # : has bp = -1
   p.Eat(Id.Arith_Colon)
   false_expr = p.ParseUntil(bp)
   return arith_expr.TernaryOp(left, true_expr, false_expr)

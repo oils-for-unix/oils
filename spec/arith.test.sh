@@ -584,3 +584,16 @@ echo $((1?2?3:4:5))
 3
 ## END
 
+#### 1 ? a=1 : b=2 ( bug fix)
+echo $((1 ? a=1 : 42 ))
+echo a=$a
+
+# this does NOT work
+#echo $((1 ? a=1 : b=2 ))
+
+## STDOUT:
+1
+a=1
+## END
+## BUG zsh stdout-json: ""
+## BUG zsh status: 1
