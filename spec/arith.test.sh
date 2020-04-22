@@ -237,6 +237,12 @@ echo $((64#a))-$((64#z)), $((64#A))-$((64#Z)), $((64#@)), $(( 64#_ ))
 ## N-I mksh/zsh stdout-json: ""
 ## N-I mksh/zsh status: 1
 
+#### Multiple digit constants with base N
+echo $((10#0123)), $((16#1b))
+## stdout: 123, 27
+## N-I dash stdout-json: ""
+## N-I dash status: 2
+
 #### Dynamic base constants
 base=16
 echo $(( ${base}#a ))
