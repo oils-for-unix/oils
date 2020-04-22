@@ -553,7 +553,7 @@ hi
 ## END
 
 #### : >/dev/null 2> / (OSH regression: fail to pop fd frame)
-# oil 0.8.pre4 fails to restore fds after redirection failure In the
+# oil 0.8.pre4 fails to restore fds after redirection failure. In the
 # following case, the fd frame remains after the redirection failure
 # "2> /" so that the effect of redirection ">/dev/null" remains after
 # the completion of the command.
@@ -569,6 +569,27 @@ echo hello
 #### echo foo >&100 (OSH regression: does not fail with invalid fd 100)
 # oil 0.8.pre4 does not fail with non-existent fd 100.
 fd=100
+echo foo >&$fd
+## stdout-json: ""
+## status: 1
+## OK dash status: 2
+
+#### echo foo >&N where N is first unused fd
+# 1. prepare default fd for internal uses
+minfd=10
+case ${SH##*/} in
+(mksh) minfd=24 ;;
+(osh) minfd=100 ;;
+esac
+
+# 2. prepare first unused fd
+fd=$minfd
+is-fd-open() { : >&$1; }
+while is-fd-open "$fd"; do
+  : $((fd+=1))
+done
+
+# 3. test
 echo foo >&$fd
 ## stdout-json: ""
 ## status: 1
