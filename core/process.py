@@ -257,6 +257,13 @@ class FdState(object):
         # already returned 3, e.g. echo 3>out.txt
         return NO_FD
 
+      # Check the validity of fd1 before _PushSave(fd2)
+      try:
+        fcntl.fcntl(fd1, fcntl.F_GETFD)
+      except IOError as e:
+        self.errfmt.Print('%d: %s', fd1, posix.strerror(e.errno))
+        raise
+
       need_restore = self._PushSave(fd2)
 
       #log('==== dup2 %s %s\n' % (fd1, fd2))
@@ -295,10 +302,11 @@ class FdState(object):
 
     elif loc.tag_() == redir_loc_e.Fd:
       fd = cast(redir_loc__Fd, UP_loc).fd
-      self._PushSave(fd)
 
     else:
       raise AssertionError()
+
+    self._PushSave(fd)
 
     return True
 
@@ -441,6 +449,7 @@ class FdState(object):
       try:
         self._ApplyRedirect(r, waiter)
       except (IOError, OSError) as e:
+        self.Pop()
         return False  # for bad descriptor, etc.
       finally:
         self.errfmt.PopLocation()
