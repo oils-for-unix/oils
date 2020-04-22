@@ -331,7 +331,7 @@ class ArithEvaluator(object):
     # BASH_LINENO, etc.
     if val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray) and lval.tag_() == lvalue_e.Named:
       named_lval = cast(lvalue__Named, lval)
-      if word_eval.CheckCompatArray(named_lval.name):
+      if word_eval.CheckCompatArray(named_lval.name, self.exec_opts):
         val = word_eval.ResolveCompatArray(val)
 
     # This error message could be better, but we already have one
@@ -358,7 +358,7 @@ class ArithEvaluator(object):
     # BASH_LINENO, etc.
     if val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray) and node.tag_() == arith_expr_e.VarRef:
       tok = cast(Token, node)
-      if word_eval.CheckCompatArray(tok.val):
+      if word_eval.CheckCompatArray(tok.val, self.exec_opts):
         val = word_eval.ResolveCompatArray(val)
 
     # TODO: Can we avoid the runtime cost of adding location info?
