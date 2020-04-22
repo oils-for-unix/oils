@@ -244,6 +244,9 @@ void BufWriter::format_d(int i) {
 }
 
 // repr() calls this too
+//
+// TODO: This could be replaced with QSN?  The upper bound is greater there
+// because of \u{}.
 void BufWriter::format_r(Str* s) {
   // Worst case: \0 becomes 4 bytes as '\\x00', and then two quote bytes.
   int upper_bound = s->len_ * 4 + 2;

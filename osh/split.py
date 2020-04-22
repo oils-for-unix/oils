@@ -118,9 +118,8 @@ class SplitContext(object):
           # TODO: Raise proper error
           raise AssertionError("IFS shouldn't be an array")
 
-    try:
-      sp = self.splitters[ifs]
-    except KeyError:
+    sp = self.splitters.get(ifs)
+    if sp is None:
       # Figure out what kind of splitter we should instantiate.
 
       ifs_whitespace = mylib.BufWriter()

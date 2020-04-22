@@ -263,6 +263,16 @@ void test_dict() {
     log("k = %s", it.Key()->data_);
     log("v = %d", it.Value());
   }
+
+  Str* v1 = d->get(1);
+  log("v1 = %s", v1->data_);
+
+  Str* v2 = d->get(423);  // nonexistent
+  log("v2 = %p", v2);
+
+  // Why do we get nullptr here?
+  //Str* v3 = d->index(423);  // nonexistent
+  //log("v3 = %p", v3);
 }
 
 int main(int argc, char** argv) {

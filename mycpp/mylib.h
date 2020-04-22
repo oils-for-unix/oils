@@ -504,19 +504,21 @@ class Dict {
   }
 
   // d[key] in Python: raises KeyError if not found
-  // TODO: This shouldn't be used because it's slow?  But .get(k) can't be used
-  // for non-pointer types.
-  // May you need has() too.
   V index(K key) {
+    // Why does this return nullptr on not found?  I thought it would be a
+    // crash.
     return m_[key];
   }
 
-
-  // TODO: Can't use this for non-pointer types
-  // Returns nullptr if not found
+  // Get a key.
+  // Returns nullptr if not found (Can't use this for non-pointer types?)
   V get(K key) {
-    //assert(0);
-    return nullptr;  // stub for bin/osh_parse (_CommandParser.aliases)
+    auto it = m_.find(key);
+    if (it == m_.end()) {
+      return nullptr;
+    } else {
+      return it->second;
+    }
   }
 
   // STUB

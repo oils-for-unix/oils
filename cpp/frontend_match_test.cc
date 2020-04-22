@@ -1,4 +1,5 @@
 #include "frontend_match.h"
+#include "osh_eval_stubs.h"   // util::BackslashEscape
 #include "id.h"
 
 #include "runtime_asdl.h"  // for cell
@@ -22,11 +23,6 @@ int main(int argc, char** argv) {
   assert(match::MatchOption(new Str("pipefai")) == 0);
   assert(match::MatchOption(new Str("pipefail_")) == 0);
 
-  assert(match::MatchBuiltin(new Str("")) == 0);
-  assert(match::MatchBuiltin(new Str("echo")) > 0);
-  assert(match::MatchBuiltin(new Str("ech")) == 0);
-  assert(match::MatchBuiltin(new Str("echo_")) == 0);
-
   // Without sed hack, it's 24 bytes because we have tag (2), id (4), val,
   // span_id.
   // Now 16 bytes.
@@ -48,4 +44,12 @@ int main(int argc, char** argv) {
   // 24 bytes: std::vector
   log("sizeof(List<int>) = %d", sizeof(List<int>));
   log("sizeof(List<Str*>) = %d", sizeof(List<Str*>));
+
+
+  // OK this seems to work
+  Str* escaped = util::BackslashEscape(new Str("'foo bar'"), new Str(" '"));
+  log("x = %s %d", escaped->data_, escaped->len_);
+
+  Str* escaped2 = util::BackslashEscape(new Str(""), new Str(" '"));
+  log("x = %s %d", escaped2->data_, escaped2->len_);
 }

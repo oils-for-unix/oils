@@ -127,3 +127,11 @@ c'\x01\n'  # explicit CSTR
   - `\t` `\r` `\n`
   - `\\`
   - `\0`
+- <https://www.gnu.org/software/coreutils/quotes.html> As of 2016, coreutils
+  quotes funny filenames.
+  - As far as I can tell, they didn't specify the format so it can be
+    re-parsed losslessly.  The quoting only happens when `isatty()`, so it's
+    not really mean tto be parsed.
+  - But QSN is for when you want to read and parse arbitrary byte strings
+    back into memory.
+
