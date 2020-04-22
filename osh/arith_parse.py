@@ -190,6 +190,7 @@ class ArithParser(tdop.TdopParser):
   def Parse(self):
     # type: () -> arith_expr_t
     self.Next()  # may raise ParseError
-    if self.op_id in (Id.Arith_RParen, Id.Arith_RBrace, Id.Arith_RBracket, Id.Arith_Colon):
-      return arith_expr.Empty()
+    if self.parse_opts.parse_empty_arith():
+      if self.op_id in (Id.Arith_RParen, Id.Arith_RBrace, Id.Arith_RBracket, Id.Arith_Colon):
+        return arith_expr.Empty()
     return self.ParseUntil(0)

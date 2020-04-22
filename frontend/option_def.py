@@ -231,6 +231,7 @@ def _Init(opt_def):
 
   opt_def.Add('eval_unsafe_arith')  # recursive parsing and evaluation (ble.sh)
   opt_def.Add('parse_dynamic_arith')  # dynamic LHS
+  opt_def.Add('parse_empty_arith')  # empty arithmetic expressions
   opt_def.Add('compat_array')  # ${array} is ${array[0]}
 
   # Two strict options that from bash's shopt

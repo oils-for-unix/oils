@@ -600,6 +600,7 @@ a=1
 
 #### Empty expression: $(())
 case $SH in (dash) exit 1;; esac
+shopt -s parse_empty_arith 2>/dev/null
 echo 1:$(())
 echo 2:$(( ))
 ## STDOUT:
@@ -613,6 +614,7 @@ echo 2:$(( ))
 # dash/mksh doesn't support $[]
 # oil has different meaning for $[]
 case ${SH##*/} in (dash|mksh|osh) exit 1;; esac
+shopt -s parse_empty_arith 2>/dev/null
 echo 3:$[]
 echo 4:$[ ]
 ## STDOUT:
@@ -624,6 +626,7 @@ echo 4:$[ ]
 
 #### Empty expression: (())
 case $SH in (dash) exit 1;; esac
+shopt -s parse_empty_arith 2>/dev/null
 (()) && echo unexpected || echo OK
 (( )) && echo unexpected || echo OK
 ! (()) && echo OK || echo unexpected
@@ -643,6 +646,7 @@ case $SH in
 (mksh|zsh) exit 1;; # mksh/zsh does not support.
 (bash)     exit 1;; # bash supports this from bash-5.0.
 esac
+shopt -s parse_empty_arith 2>/dev/null
 
 arr=(foo bar)
 echo "${arr[ ]}"
@@ -655,8 +659,10 @@ foo
 #### Empty expression: ${var::}
 case $SH in
 (dash) exit 1;; # dash does not support arrays.
-(dash) exit 1;; # zsh does not support empty offset/length.
+(zsh)  exit 1;; # zsh does not support empty offset/length.
 esac
+shopt -s parse_empty_arith 2>/dev/null
+
 var=abcd
 echo "1:[${var::1}]"
 echo "2:[${var: :1}]"
@@ -681,6 +687,7 @@ case $SH in
 (mksh) exit 1;; # mksh does not support ${array[@]:offset:length}
 (zsh)  exit 1;; # zsh does not support empty offset/length
 esac
+shopt -s parse_empty_arith 2>/dev/null
 array=(1 2 3)
 argv.py "${array[@]::1}"
 argv.py "${array[@]: :1}"
