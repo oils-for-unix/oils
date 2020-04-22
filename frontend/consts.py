@@ -179,9 +179,9 @@ def LookupNormalBuiltin(argv0):
 
 # Shorter names for state machine enums
 from _devbuild.gen.runtime_asdl import state_t, emit_t, char_kind_t
-from _devbuild.gen.runtime_asdl import emit_e as EMIT
-from _devbuild.gen.runtime_asdl import char_kind_e as CH
-from _devbuild.gen.runtime_asdl import state_e as ST
+from _devbuild.gen.runtime_asdl import emit_i as EMIT
+from _devbuild.gen.runtime_asdl import char_kind_i as CH
+from _devbuild.gen.runtime_asdl import state_i as ST
 
 _IFS_EDGES = {
     # Whitespace should have been stripped

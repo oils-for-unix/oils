@@ -319,11 +319,50 @@ Kind GetKind(id_kind_asdl::Id_t id) {
       GenBuiltinLookup(b, 'LookupAssignBuiltin', 'assign', f)
       GenBuiltinLookup(b, 'LookupSpecialBuiltin', 'special', f)
 
-      out("""\
-Tuple2<runtime_asdl::state_t, runtime_asdl::emit_t> IfsEdge(runtime_asdl::state_t state, runtime_asdl::char_kind_t ch) {
-  assert(0);
-}
+      #
+      # Generate a tightly packed 2D array for C, from a Python dict.
+      #
 
+      edges = consts._IFS_EDGES
+      max_state = max(edge[0] for edge in edges) 
+      max_char_kind = max(edge[1] for edge in edges)
+
+      edge_array = []
+      for i in xrange(max_state+1):
+        # unused cells get -1
+        edge_array.append(['-1'] * (max_char_kind+1))
+
+      for i in xrange(max_state+1):
+        for j in xrange(max_char_kind+1):
+          entry = edges.get((i, j))
+          if entry is not None:
+            # pack (new_state, action) into 32 bits
+            edge_array[i][j] = '(%d<<16)|%d' % entry
+
+      parts = []
+      for i in xrange(max_state+1):
+        parts.append('  {')
+        parts.append(', '.join('%10s' % cell for cell in edge_array[i]))
+        parts.append(' },\n')
+
+      out("""\
+int _IFS_EDGE[%d][%d] = { 
+%s
+};
+""" % (max_state+1, max_char_kind+1, ''.join(parts)))
+
+      out("""\
+// Note: all of these are integers, e.g. state_i, emit_i, char_kind_i
+using runtime_asdl::state_t;
+using runtime_asdl::emit_t;
+using runtime_asdl::char_kind_t;
+
+Tuple2<state_t, emit_t> IfsEdge(state_t state, runtime_asdl::char_kind_t ch) {
+  int cell = _IFS_EDGE[state][ch];
+  state_t new_state = cell >> 16;
+  emit_t emit = cell & 0xFFFF;
+  return Tuple2<state_t, emit_t>(new_state, emit);
+}
 """)
 
       out("""\

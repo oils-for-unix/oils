@@ -15,7 +15,7 @@ from asdl import meta
 #from core.util import log
 
 # Special cases like Id
-_SIMPLE = []
+_SIMPLE = ['state', 'emit', 'char_kind']
 
 
 def main(argv):

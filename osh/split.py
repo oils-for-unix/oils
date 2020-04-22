@@ -29,9 +29,9 @@ with SPLIT_REGEX = / digit+ / {
 from _devbuild.gen.runtime_asdl import value_e, span_e, value__Str
 
 # Shorter names for state machine enums
-from _devbuild.gen.runtime_asdl import emit_e as EMIT
-from _devbuild.gen.runtime_asdl import char_kind_e as CH
-from _devbuild.gen.runtime_asdl import state_e as ST
+from _devbuild.gen.runtime_asdl import emit_i
+from _devbuild.gen.runtime_asdl import char_kind_i
+from _devbuild.gen.runtime_asdl import state_i
 
 from core import util
 from core.util import log
@@ -253,25 +253,25 @@ class IfsSplitter(_BaseSplitter):
     if i == n:
       return spans
 
-    state = ST.Start
-    while state != ST.Done:
+    state = state_i.Start
+    while state != state_i.Done:
       if i < n:
         c = s[i]
         if c in ws_chars:
-          ch = CH.DE_White
+          ch = char_kind_i.DE_White
         elif c in other_chars:
-          ch = CH.DE_Gray
+          ch = char_kind_i.DE_Gray
         elif allow_escape and c == '\\':
-          ch = CH.Backslash
+          ch = char_kind_i.Backslash
         else:
-          ch = CH.Black
+          ch = char_kind_i.Black
       elif i == n:
-        ch = CH.Sentinel  # one more iterations for the end of string
+        ch = char_kind_i.Sentinel  # one more iterations for the end of string
       else:
         raise AssertionError()  # shouldn't happen
 
       new_state, action = consts.IfsEdge(state, ch)
-      if new_state == ST.Invalid:
+      if new_state == state_i.Invalid:
         raise AssertionError(
             'Invalid transition from %r with %r' % (state, ch))
 
@@ -279,16 +279,16 @@ class IfsSplitter(_BaseSplitter):
         log('i %d c %r ch %s current: %s next: %s %s',
              i, c, ch, state, new_state, action)
 
-      if action == EMIT.Part:
+      if action == emit_i.Part:
         spans.append((span_e.Black, i))
-      elif action == EMIT.Delim:
+      elif action == emit_i.Delim:
         spans.append((span_e.Delim, i))  # ignored delimiter
-      elif action == EMIT.Empty:
+      elif action == emit_i.Empty:
         spans.append((span_e.Delim, i))  # ignored delimiter
         spans.append((span_e.Black, i))  # EMPTY part that is NOT ignored
-      elif action == EMIT.Escape:
+      elif action == emit_i.Escape:
         spans.append((span_e.Backslash, i))  # \
-      elif action == EMIT.Nothing:
+      elif action == emit_i.Nothing:
         pass
       else:
         raise AssertionError()

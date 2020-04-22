@@ -261,8 +261,18 @@ class NullExecutor(_Executor):
 
   def RunSimpleCommand(self, cmd_val, do_fork, call_procs=True):
     # type: (cmd_value__Argv, bool, bool) -> int
-    #log('RunSimpleCommand %s', cmd_val)
+
     log('RunSimpleCommand')
+
+    f = mylib.Stdout()
+    ast_f = fmt.DetectConsoleOutput(f)
+    tree = cmd_val.PrettyTree()
+
+    ast_f.FileHeader()
+    fmt.PrintTree(tree, ast_f)
+    ast_f.FileFooter()
+    ast_f.write('\n')
+
     return 0
 
 

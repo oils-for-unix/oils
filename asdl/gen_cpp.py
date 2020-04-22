@@ -496,8 +496,14 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       self.Emit('  return _AbbreviatedTree();')
     self.Emit('}')
 
-  def _EmitStrFunction(self, sum, sum_name, depth, strong=False):
-    enum_name = '%s_e' % sum_name if self.e_suffix else sum_name
+  def _EmitStrFunction(self, sum, sum_name, depth, strong=False, simple=False):
+    if self.e_suffix:  # note: can be i_suffix too
+      if simple:
+        enum_name = '%s_i' % sum_name
+      else:
+        enum_name = '%s_e' % sum_name
+    else:
+      enum_name = sum_name
 
     if strong:
       self.Emit('const char* %s_str(%s tag) {' % (sum_name, enum_name), depth)
@@ -520,7 +526,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
   def VisitSimpleSum(self, sum, name, depth):
     if name in self.simple_int_sums:
-      self._EmitStrFunction(sum, name, depth, strong=False)
+      self._EmitStrFunction(sum, name, depth, strong=False, simple=True)
     else:
       self._EmitStrFunction(sum, name, depth, strong=True)
 

@@ -140,15 +140,4 @@ ast-id-lex() {
   osh-lex-gen-native $tmp _devbuild/gen/osh-lex.h
 }
 
-# NOTES:
-# - frontend/consts_gen.py generates the mapping from Id to Kind.
-#   - It needs a mapping output by the Python superoptimizatio script.
-# - asdl/gen_cpp.py generates oheap code in main().
-#   - It should probably be factored into a library and main driver.
-#   - Also see asdl/run.sh.
-
-gen-cpp() {
-  asdl/gen_cpp.py cpp osh/osh.asdl
-}
-
 "$@"
