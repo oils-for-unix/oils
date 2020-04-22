@@ -229,7 +229,6 @@ class ArithEvaluator(object):
         e_strict('Invalid base for numeric constant %r',  b, span_id=span_id)
 
       integer = 0
-      n = 1
       for ch in digits:
         if 'a' <= ch and ch <= 'z':
           digit = ord(ch) - ord('a') + 10
@@ -247,8 +246,7 @@ class ArithEvaluator(object):
         if digit >= base:
           e_strict('Digits %r out of range for base %d', digits, base, span_id=span_id)
 
-        integer += digit * n
-        n *= base
+        integer = integer * base + digit
       return integer
 
     try:
