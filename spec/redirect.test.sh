@@ -551,3 +551,38 @@ hi
 hi
 hi
 ## END
+
+#### : >/dev/null 2> / (OSH regression: fail to pop fd frame)
+# oil 0.8.pre4 fails to restore fds after redirection failure In the
+# following case, the fd frame remains after the redirection failure
+# "2> /" so that the effect of redirection ">/dev/null" remains after
+# the completion of the command.
+: >/dev/null 2> /
+echo hello
+## stdout: hello
+## OK dash stdout-json: ""
+## OK dash status: 2
+## OK mksh stdout-json: ""
+## OK mksh status: 1
+# dash/mksh terminates the execution of script on the redirection.
+
+#### echo foo >&100 (OSH regression: does not fail with invalid fd 100)
+# oil 0.8.pre4 does not fail with non-existent fd 100.
+fd=100
+echo foo >&$fd
+## stdout-json: ""
+## status: 1
+## OK dash status: 2
+
+#### exec {fd}>&- (OSH regression: fails to close fd)
+# mksh, dash do not implement {fd} redirections.
+case $SH in (mksh|dash) exit 1 ;; esac
+# oil 0.8.pre4 fails to close fd by {fd}&-.
+exec {fd}>file1
+echo foo >&$fd
+exec {fd}>&-
+echo bar >&$fd
+cat file1
+## stdout: foo
+## N-I mksh/dash stdout-json: ""
+## N-I mksh/dash status: 1
