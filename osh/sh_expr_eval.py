@@ -630,6 +630,9 @@ class ArithEvaluator(object):
         else:
           return self.Eval(node.false_expr)
 
+      elif case(arith_expr_e.Empty):
+        return value.Int(0)
+
       else:
         raise AssertionError(node.tag_())
 

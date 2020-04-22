@@ -944,7 +944,7 @@ class WordParser(WordEmitter):
     See the assertion in ArithParser.Parse() -- unexpected extra input.
     """
     # calls self.ReadWord(lex_mode_e.Arith)
-    a_parser = tdop.TdopParser(arith_parse.Spec(), self, self.parse_opts)
+    a_parser = arith_parse.ArithParser(self, self.parse_opts)
     anode = a_parser.Parse()
     return anode
 

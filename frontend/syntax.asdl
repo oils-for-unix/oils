@@ -211,7 +211,8 @@ module syntax
   attributes (int* spids)
 
   arith_expr =
-    VarRef %Token  -- variable without $
+    Empty
+  | VarRef %Token  -- variable without $
   | Word %compound_word  -- a string that looks like an integer
 
   | UnaryAssign(id op_id, arith_expr child)

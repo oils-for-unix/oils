@@ -97,8 +97,8 @@ if mylib.PYTHON:
     Following this table:
     http://en.cppreference.com/w/c/language/operator_precedence
 
-    Bash has a table in expr.c, but it's not as cmoplete (missing grouping () and
-    array[1]).  Although it has the ** exponentation operator, not in C.
+    Bash has a table in expr.c, but it's not as complete (missing grouping () and
+    array[1]).  Although it has the ** exponentiation operator, not in C.
 
     - Extensions:
       - function calls f(a,b)
@@ -182,3 +182,14 @@ if mylib.PYTHON:
   def Spec():
     # type: () -> ParserSpec
     return _SPEC
+
+class ArithParser(tdop.TdopParser):
+  def __init__(self, w_parser, parse_opts):
+    super(ArithParser, self).__init__(Spec(), w_parser, parse_opts)
+
+  def Parse(self):
+    # type: () -> arith_expr_t
+    self.Next()  # may raise ParseError
+    if self.op_id in (Id.Arith_RParen, Id.Arith_RBrace, Id.Arith_RBracket, Id.Arith_Colon):
+      return arith_expr.Empty()
+    return self.ParseUntil(0)

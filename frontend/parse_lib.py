@@ -285,7 +285,7 @@ class ParseContext(object):
     lx = self._MakeLexer(line_reader)
     w_parser = word_parse.WordParser(self, lx, line_reader)
     w_parser.Init(lex_mode_e.Arith)  # Special initialization
-    a_parser = tdop.TdopParser(arith_parse.Spec(), w_parser, self.parse_opts)
+    a_parser = arith_parse.ArithParser(w_parser, self.parse_opts)
     return a_parser
 
   def MakeParserForCommandSub(self, line_reader, lexer, eof_id):
