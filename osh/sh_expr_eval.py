@@ -41,6 +41,7 @@ from mycpp import mylib
 from mycpp.mylib import tagswitch, switch
 from osh import bool_stat
 from osh import word_
+from osh import word_eval
 
 import libc  # for fnmatch
 
@@ -327,6 +328,12 @@ class ArithEvaluator(object):
     lval = self.EvalArithLhs(node, runtime.NO_SPID)
     val = OldValue(lval, self.mem, self.exec_opts)
 
+    # BASH_LINENO, etc.
+    if val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray) and lval.tag_() == lvalue_e.Named:
+      named_lval = cast(lvalue__Named, lval)
+      if word_eval.CheckCompatArray(named_lval.name):
+        val = word_eval.ResolveCompatArray(val)
+
     # This error message could be better, but we already have one
     #if val.tag_() == value_e.MaybeStrArray:
     #  e_die("Can't use assignment like ++ or += on arrays")
@@ -347,6 +354,13 @@ class ArithEvaluator(object):
     Also used internally.
     """
     val = self.Eval(node)
+
+    # BASH_LINENO, etc.
+    if val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray) and node.tag_() == arith_expr_e.VarRef:
+      tok = cast(Token, node)
+      if word_eval.CheckCompatArray(tok.val):
+        val = word_eval.ResolveCompatArray(val)
+
     # TODO: Can we avoid the runtime cost of adding location info?
     span_id = location.SpanForArithExpr(node)
     i = self._ValToIntOrError(val, span_id=span_id)

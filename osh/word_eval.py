@@ -61,6 +61,26 @@ if TYPE_CHECKING:
 # For compatibility, ${BASH_SOURCE} and ${BASH_SOURCE[@]} are both valid.
 # ${FUNCNAME} and ${BASH_LINENO} are also the same type of of special variables.
 _STRING_AND_ARRAY = ['BASH_SOURCE', 'FUNCNAME', 'BASH_LINENO']
+def CheckCompatArray(var_name):
+  # type: (str) -> bool
+  return var_name in _STRING_AND_ARRAY
+
+def ResolveCompatArray(val):
+  # type: (value_t) -> value_t
+  """Decay ${array} to ${array[0]}."""
+  if val.tag_() == value_e.MaybeStrArray:
+    array_val = cast(value__MaybeStrArray, val)
+    s = array_val.strs[0] if array_val.strs else None
+  elif val.tag_() == value_e.AssocArray:
+    assoc_val = cast(value__AssocArray, val)
+    s = assoc_val.d['0'] if '0' in assoc_val.d else None
+  else:
+    raise AssertionError(val.tag_())
+
+  if s is None:
+    return value.Undef()
+  else:
+    return value.Str(s)
 
 
 def EvalSingleQuoted(part):
@@ -794,23 +814,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
     tmp = [s for s in val.strs if s is not None]
     return value.Str(sep.join(tmp))
 
-  def _BashArrayCompat(self, val):
-    # type: (value_t) -> value_t
-    """Decay ${array} to ${array[0]}."""
-    if val.tag_() == value_e.MaybeStrArray:
-      array_val = cast(value__MaybeStrArray, val)
-      s = array_val.strs[0] if array_val.strs else None
-    elif val.tag_() == value_e.AssocArray:
-      assoc_val = cast(value__AssocArray, val)
-      s = assoc_val.d['0'] if '0' in assoc_val.d else None
-    else:
-      raise AssertionError(val.tag_())
-
-    if s is None:
-      return value.Undef()
-    else:
-      return value.Str(s)
-
   def _EmptyStrOrError(self, val, token=None):
     # type: (value_t, Optional[Token]) -> value_t
     if val.tag_() == value_e.Undef:
@@ -987,9 +990,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
           # ${array@a} is a string
           # TODO: An IR for ${} might simplify these lengthy conditions
           pass
-        elif var_name in _STRING_AND_ARRAY:
+        elif CheckCompatArray(var_name):
           # for ${BASH_SOURCE}, etc.
-          val = self._BashArrayCompat(val)
+          val = ResolveCompatArray(val)
         else:
           e_die("Array %r can't be referred to as a scalar (without @ or *)",
                 var_name, part=part)
@@ -1216,9 +1219,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
       # TODO: Special case for LINENO
       val = self.mem.GetVar(var_name)
       if val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray):
-        if var_name in _STRING_AND_ARRAY:
+        if CheckCompatArray(var_name):
           # for $BASH_SOURCE, etc.
-          val = self._BashArrayCompat(val)
+          val = ResolveCompatArray(val)
         else:
           e_die("Array %r can't be referred to as a scalar (without @ or *)",
                 var_name, token=token)
