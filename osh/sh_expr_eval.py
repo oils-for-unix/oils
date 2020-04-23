@@ -328,10 +328,14 @@ class ArithEvaluator(object):
     lval = self.EvalArithLhs(node, runtime.NO_SPID)
     val = OldValue(lval, self.mem, self.exec_opts)
 
-    # BASH_LINENO, etc.
+    # BASH_LINENO, arr (array name with shopt -s compat_array), etc.
     if val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray) and lval.tag_() == lvalue_e.Named:
       named_lval = cast(lvalue__Named, lval)
       if word_eval.CheckCompatArray(named_lval.name, self.exec_opts):
+        if val.tag_() == value_e.MaybeStrArray:
+          lval = lvalue.Indexed(named_lval.name, 0)
+        elif val.tag_() == value_e.AssocArray:
+          lval = lvalue.Keyed(named_lval.name, '0')
         val = word_eval.ResolveCompatArray(val)
 
     # This error message could be better, but we already have one
@@ -355,7 +359,7 @@ class ArithEvaluator(object):
     """
     val = self.Eval(node)
 
-    # BASH_LINENO, etc.
+    # BASH_LINENO, arr (array name with shopt -s compat_array), etc.
     if val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray) and node.tag_() == arith_expr_e.VarRef:
       tok = cast(Token, node)
       if word_eval.CheckCompatArray(tok.val, self.exec_opts):
