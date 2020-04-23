@@ -582,15 +582,15 @@ case ${SH##*/} in (dash|ash) exit 1;; esac # dash/ash does not have arrays
 case ${SH##*/} in (osh) shopt -s compat_array;; esac
 case ${SH##*/} in (zsh) setopt KSH_ARRAYS;; esac
 arr=(foo bar baz)
-echo "$arr"
-## stdout: foo
+argv.py "$arr" "${arr}"
+## stdout: ['foo', 'foo']
 
 ## N-I dash/ash status: 1
 ## N-I dash/ash stdout-json: ""
 
-## OK yash stdout: foo bar baz
+## OK yash stdout: ['foo', 'bar', 'baz', 'foo', 'bar', 'baz']
 
-#### [compat_array] scalar access to arrays
+#### [compat_array] scalar write to arrays
 case ${SH##*/} in
 (dash|ash) exit 1;; # dash/ash does not have arrays
 (osh) shopt -s compat_array;;
@@ -610,3 +610,23 @@ argv.py "${a[@]}"
 # with a scalar.
 ['1']
 ## END
+
+#### [compat_array] scalar write to associative arrays
+case ${SH##*/} in
+(dash|ash|yash|mksh) exit 1;; # dash/ash/yash/mksh does not have associative arrays
+(osh) shopt -s compat_array;;
+(zsh) setopt KSH_ARRAYS;;
+esac
+
+declare -A d=()
+d['0']=1
+d['foo']=hello
+d['bar']=world
+((d++))
+argv.py ${d['0']} ${d['foo']} ${d['bar']}
+## stdout: ['2', 'hello', 'world']
+
+## N-I dash/ash/yash/mksh status: 1
+## N-I dash/ash/yash/mksh stdout-json: ""
+
+## N-I zsh stdout: ['1', 'hello', 'world']
