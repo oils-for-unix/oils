@@ -139,6 +139,25 @@ ____
 ['11']
 ## END
 
+#### ${FUNCNAME} with prefix/suffix operators (OSH regression)
+check() {
+  argv.py "${#FUNCNAME}"
+  argv.py "${FUNCNAME::1}"
+  argv.py "${FUNCNAME:1}"
+}
+check
+## STDOUT:
+['5']
+['c']
+['heck']
+## END
+
+#### ${FUNCNAME} and "set -u" (OSH regression)
+set -u
+argv.py "$FUNCNAME"
+## status: 1
+## stdout-json: ""
+
 #### ${BASH_SOURCE[@]} with source and function name
 argv.py "${BASH_SOURCE[@]}"
 source spec/testdata/bash-source-simple.sh
