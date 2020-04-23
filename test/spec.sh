@@ -533,7 +533,7 @@ special-vars() {
 }
 
 introspect() {
-  sh-spec spec/introspect.test.sh --no-cd-tmp \
+  sh-spec spec/introspect.test.sh --no-cd-tmp --osh-failures-allowed 1 \
     $BASH $OSH_LIST "$@"
 }
 

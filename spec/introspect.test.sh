@@ -139,7 +139,10 @@ ____
 ['11']
 ## END
 
+
 #### ${FUNCNAME} with prefix/suffix operators (OSH regression)
+shopt -s compat_array
+
 check() {
   argv.py "${#FUNCNAME}"
   argv.py "${FUNCNAME::1}"
@@ -147,6 +150,26 @@ check() {
 }
 check
 ## STDOUT:
+['5']
+['c']
+['heck']
+## END
+
+#### operators on FUNCNAME not allowed by default
+check() {
+  argv.py "${FUNCNAME}"
+  argv.py "${#FUNCNAME}"
+  argv.py "${FUNCNAME::1}"
+  argv.py "${FUNCNAME:1}"
+}
+check
+## status: 1
+## STDOUT:
+['check']
+## END
+## OK bash status: 0
+## OK bash STDOUT:
+['check']
 ['5']
 ['c']
 ['heck']

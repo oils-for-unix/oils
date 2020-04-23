@@ -229,9 +229,9 @@ def _Init(opt_def):
   # shopt options that aren't in any groups.
   opt_def.Add('failglob')  # not implemented.
 
-  # TODO: Rename eval_unsafe_arith
   opt_def.Add('eval_unsafe_arith')  # recursive parsing and evaluation (ble.sh)
-  opt_def.Add('parse_dynamic_arith')  # dyanmic LHS
+  opt_def.Add('parse_dynamic_arith')  # dynamic LHS
+  opt_def.Add('compat_array')  # ${array} is ${array[0]}
 
   # Two strict options that from bash's shopt
   for name in ['nullglob', 'inherit_errexit']:
