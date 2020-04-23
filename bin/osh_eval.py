@@ -224,8 +224,8 @@ def main(argv):
   arith_ev.word_ev = word_ev
   word_ev.arith_ev = arith_ev
 
-  test_ev = TestEvaluator(arith_ev, word_ev)
-  test_ev.Eval(node)
+  #test_ev = TestEvaluator(arith_ev, word_ev)
+  #test_ev.Eval(node)
 
   procs = {}  # type: Dict[str, command__ShFunction]
 

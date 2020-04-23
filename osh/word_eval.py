@@ -795,7 +795,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return value.Str(sep.join(tmp))
 
   def _BashArrayCompat(self, val):
-    # type: (value_t) -> value__Str
+    # type: (value_t) -> value_t
     """Decay ${array} to ${array[0]}."""
     if val.tag_() == value_e.MaybeStrArray:
       array_val = cast(value__MaybeStrArray, val)
