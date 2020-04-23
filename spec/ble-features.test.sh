@@ -589,3 +589,24 @@ echo "$arr"
 ## N-I dash/ash stdout-json: ""
 
 ## OK yash stdout: foo bar baz
+
+#### [compat_array] scalar access to arrays
+case ${SH##*/} in
+(dash|ash) exit 1;; # dash/ash does not have arrays
+(osh) shopt -s compat_array;;
+(zsh) setopt KSH_ARRAYS;;
+esac
+
+a=(1 0 0)
+: $(( a++ ))
+argv.py "${a[@]}"
+## stdout: ['2', '0', '0']
+
+## N-I dash/ash status: 1
+## N-I dash/ash stdout-json: ""
+
+## OK yash STDOUT:
+# yash does not support scalar access. Instead, it replaces the array
+# with a scalar.
+['1']
+## END
