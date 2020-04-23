@@ -61,9 +61,9 @@ if TYPE_CHECKING:
 # For compatibility, ${BASH_SOURCE} and ${BASH_SOURCE[@]} are both valid.
 # ${FUNCNAME} and ${BASH_LINENO} are also the same type of of special variables.
 _STRING_AND_ARRAY = ['BASH_SOURCE', 'FUNCNAME', 'BASH_LINENO']
-def CheckCompatArray(var_name, opts):
-  # type: (str, optview.Exec) -> bool
-  return opts.compat_array() or var_name in _STRING_AND_ARRAY
+def CheckCompatArray(var_name, opts, compat_introspect=True):
+  # type: (str, optview.Exec, bool?) -> bool
+  return opts.compat_array() or (compat_introspect and var_name in _STRING_AND_ARRAY)
 
 def ResolveCompatArray(val):
   # type: (value_t) -> value_t
@@ -990,7 +990,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           # ${array@a} is a string
           # TODO: An IR for ${} might simplify these lengthy conditions
           pass
-        elif CheckCompatArray(var_name, self.exec_opts):
+        elif CheckCompatArray(var_name, self.exec_opts, not (part.prefix_op or part.suffix_op)):
           # for ${BASH_SOURCE}, etc.
           val = ResolveCompatArray(val)
         else:
