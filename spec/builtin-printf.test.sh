@@ -254,7 +254,7 @@ printf '[%o]\n' 42
 printf '[%x]\n' 42
 printf '[%X]\n' 42
 printf '[%X]\n' \'a  # if first character is a quote, use character code
-printf '[%X]\n' \'ab  # extra chars ignored
+printf '[%X]\n' \'ab # extra chars ignored
 ## STDOUT:
 [42]
 [52]
@@ -276,12 +276,12 @@ printf '%d\n' ''
 #### No char after ' (osh is more strict)
 
 # most shells use 0 here
-printf '%d\n' \' 
+printf '%d\n' \'
+printf '%d\n' \"
 
-## OK osh stdout-json: ""
-## OK osh status: 1
 ## OK mksh status: 1
 ## STDOUT:
+0
 0
 ## END
 
