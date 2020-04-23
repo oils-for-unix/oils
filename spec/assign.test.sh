@@ -643,3 +643,30 @@ declare -- foo=bar
 ## N-I dash stderr-json: ""
 ## stdout-json: ""
 
+#### declare -a arr does not remove existing arrays (OSH regression)
+case $SH in (dash) exit 99;; esac # dash does not support arrays
+
+declare -a arr
+arr=(foo bar baz)
+declare -a arr
+echo arr:${#arr[@]}
+## STDOUT:
+arr:3
+## END
+## N-I dash status: 99
+## N-I dash stdout-json: ""
+
+#### declare -A dict does not remove existing arrays (OSH regression)
+case $SH in (dash|mksh) exit 99;; esac # dash/mksh does not support associative arrays
+
+declare -A dict
+dict['foo']=hello
+dict['bar']=oil
+dict['baz']=world
+declare -A dict
+echo dict:${#dict[@]}
+## STDOUT:
+dict:3
+## END
+## N-I dash/mksh status: 99
+## N-I dash/mksh stdout-json: ""

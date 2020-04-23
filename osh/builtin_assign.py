@@ -377,15 +377,15 @@ class NewVar(object):
       flags |= state.ClearNameref
 
     for pair in cmd_val.pairs:
-      if pair.rval is None:
+      rval = pair.rval
+      if rval is None and (arg.a or arg.A):
+        old_val = self.mem.GetVar(pair.var_name)
         if arg.a:
-          rval = value.MaybeStrArray([])  # type: value_t
+          if old_val.tag_() != value_e.MaybeStrArray:
+            rval = value.MaybeStrArray([])
         elif arg.A:
-          rval = value.AssocArray({})
-        else:
-          rval = None
-      else:
-        rval = pair.rval
+          if old_val.tag_() != value_e.AssocArray:
+            rval = value.AssocArray({})
 
       rval = _ReconcileTypes(rval, arg, pair.spid)
       self.mem.SetVar(lvalue.Named(pair.var_name), rval, lookup_mode, flags=flags)
