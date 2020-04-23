@@ -140,7 +140,7 @@ ____
 ## END
 
 
-#### ${FUNCNAME} with prefix/suffix operators (OSH regression)
+#### ${FUNCNAME} with prefix/suffix operators
 shopt -s compat_array
 
 check() {
@@ -180,6 +180,13 @@ set -u
 argv.py "$FUNCNAME"
 ## status: 1
 ## stdout-json: ""
+
+#### $((BASH_LINENO)) (scalar form in arith)
+check() {
+  echo $((BASH_LINENO))
+}
+check
+## stdout: 4
 
 #### ${BASH_SOURCE[@]} with source and function name
 argv.py "${BASH_SOURCE[@]}"
