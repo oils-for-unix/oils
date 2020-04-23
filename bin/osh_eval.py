@@ -265,7 +265,9 @@ class NullExecutor(_Executor):
     log('RunSimpleCommand')
 
     f = mylib.Stdout()
-    ast_f = fmt.DetectConsoleOutput(f)
+    #ast_f = fmt.DetectConsoleOutput(f)
+    # Stupid Eclipse debugger doesn't display ANSI
+    ast_f = fmt.TextOutput(f)
     tree = cmd_val.PrettyTree()
 
     ast_f.FileHeader()

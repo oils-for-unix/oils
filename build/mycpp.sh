@@ -451,10 +451,16 @@ osh-eval() {
   compile-slice 'osh_eval' '.dbg'
 }
 
-run-osh-parse() {
-  ### Wrapper for ASAN env vars
+osh-parse-asan() {
+  ### Wrapper for ASAN env vars, to show stack strace
 
   _bin/osh_parse.asan "$@"
+}
+
+osh-eval-asan() {
+  ### Wrapper for ASAN env vars, to show stack strace
+
+  _bin/osh_eval.asan "$@"
 }
 
 size-profile() {

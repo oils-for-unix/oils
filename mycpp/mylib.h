@@ -315,9 +315,11 @@ class List {
     }
   }
 
-  // a[x] = 42 becomes a->set(x, 42);
-  // TODO: Handle L->set(-1, 3) -- pgen2 appears to do it
+  // a[-1] = 42 becomes a->set(-1, 42);
   void set(int index, T value) {
+    if (index < 0) {
+      index = v_.size() + index;
+    }
     v_[index] = value;
   }
 
