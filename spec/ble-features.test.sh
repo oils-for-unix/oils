@@ -576,3 +576,37 @@ v=tempenv1 f4_unset global,tempenv1
 [global,tempenv1,tempenv2,tempenv3] v: (unset) (unset 3)
 [global,tempenv1,tempenv2,tempenv3] v: (unset) (unset 4)
 ## END
+
+#### [compat_array] ${arr} is ${arr[0]}
+case ${SH##*/} in (dash|ash) exit 1;; esac # dash/ash does not have arrays
+case ${SH##*/} in (osh) shopt -s compat_array;; esac
+case ${SH##*/} in (zsh) setopt KSH_ARRAYS;; esac
+arr=(foo bar baz)
+echo "$arr"
+## stdout: foo
+
+## N-I dash/ash status: 1
+## N-I dash/ash stdout-json: ""
+
+## OK yash stdout: foo bar baz
+
+#### [compat_array] scalar access to arrays
+case ${SH##*/} in
+(dash|ash) exit 1;; # dash/ash does not have arrays
+(osh) shopt -s compat_array;;
+(zsh) setopt KSH_ARRAYS;;
+esac
+
+a=(1 0 0)
+: $(( a++ ))
+argv.py "${a[@]}"
+## stdout: ['2', '0', '0']
+
+## N-I dash/ash status: 1
+## N-I dash/ash stdout-json: ""
+
+## OK yash STDOUT:
+# yash does not support scalar access. Instead, it replaces the array
+# with a scalar.
+['1']
+## END
