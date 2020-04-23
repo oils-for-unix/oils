@@ -225,7 +225,7 @@ class Read(object):
           arg.n -= len(buf)
           s += buf
 
-      state.SetLocalString(self.mem, name, s)
+      state.SetStringDynamic(self.mem, name, s)
       # NOTE: Even if we don't get n bytes back, there is no error?
       return 0
 

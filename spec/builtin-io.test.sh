@@ -277,6 +277,13 @@ argv.py $x $REPLY
 ## stdout: ['1234', '12']
 ## N-I dash/zsh stdout: []
 
+#### IFS= read -n (OSH regression: value saved in tempenv)
+echo XYZ > "$TMP/readn.txt"
+IFS= TMOUT= read -n 1 char < "$TMP/readn.txt"
+argv.py "$char"
+## stdout: ['X']
+## N-I dash/zsh stdout: ['']
+
 #### Read uses $REPLY (without -n)
 echo 123 > $TMP/readreply.txt
 read < $TMP/readreply.txt
