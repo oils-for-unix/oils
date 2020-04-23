@@ -311,10 +311,11 @@ class Printf(object):
             try:
               d = int(s)
             except ValueError:
-              if len(s) >= 2 and s[0] in '\'"':
+              if len(s) >= 1 and s[0] in '\'"':
                 # TODO: utf-8 decode s[1:] to be more correct.  Probably
                 # depends on issue #366, a utf-8 library.
-                d = ord(s[1])
+                # Note: len(s) == 1 means there is a NUL (0) after the quote..
+                d = ord(s[1]) if len(s) >= 2 else 0
               elif part.type.id == Id.Format_Time and len(s) == 0 and word_spid == runtime.NO_SPID:
                 # Note: No argument means -1 for %(...)T as in Bash Reference
                 #   Manual 4.2 "If no argument is specified, conversion behaves
