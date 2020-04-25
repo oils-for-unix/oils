@@ -38,6 +38,10 @@ demo() {
   $osh_eval -c 'for x in 1 2 3; do echo $x; done'
 }
 
+osh-eval() {
+  PYTHONPATH=. bin/osh_eval.py "$@"
+}
+
 readonly OSH_PARSE_DEPS='_tmp/osh_parse-deps.txt'
 readonly OSH_EVAL_DEPS='_tmp/osh_eval-deps.txt'
 

@@ -129,6 +129,114 @@ debuglog [x y]
 2
 ## END
 
+#### trap DEBUG with compound commands
+case $SH in (dash|mksh) exit 1 ;; esac
+
+# I'm not sure if the observed behavior actually matches the bash documentation
+# ...
+#
+# https://www.gnu.org/software/bash/manual/html_node/Bourne-Shell-Builtins.html#Bourne-Shell-Builtins
+#
+# "If a sigspec is DEBUG, the command arg is executed before every simple 
+# command, for command, case command, select command, every arithmetic for
+# command, and before the first command executes in a shell function."
+
+debuglog() {
+  echo "  [$@]"
+}
+trap 'debuglog $LINENO' DEBUG
+
+f() {
+  local mylocal=1
+  for i in "$@"; do
+    export i=$i
+  done
+}
+
+echo '-- assign --'
+g=1   # executes ONCE here
+
+echo '-- function call --'
+f A B C  # executes ONCE here, but does NOT go into th efunction call
+
+
+echo '-- for --'
+# why does it execute twice here?  because of the for loop?  That's not a
+# simple command.
+for i in 1 2; do
+  echo for1 $i
+  echo for2 $i
+done
+
+echo '-- while --'
+i=0
+while (( i < 2 )); do
+  echo while1 
+  echo while2
+  (( i++ ))
+done
+
+echo '-- if --'
+if true; then
+  echo IF
+fi
+
+echo '-- case --'
+case x in
+  (x)
+    echo CASE
+esac
+
+## STDOUT:
+  [12]
+-- assign --
+  [13]
+  [14]
+-- function call --
+  [15]
+  [16]
+-- for --
+  [17]
+  [18]
+for1 1
+  [19]
+for2 1
+  [17]
+  [18]
+for1 2
+  [19]
+for2 2
+  [21]
+-- while --
+  [22]
+  [23]
+  [24]
+while1
+  [25]
+while2
+  [26]
+  [23]
+  [24]
+while1
+  [25]
+while2
+  [26]
+  [23]
+  [28]
+-- if --
+  [29]
+  [30]
+IF
+  [32]
+-- case --
+  [33]
+  [35]
+CASE
+## END
+## N-I dash/mksh status: 1
+## N-I dash/mksh stdout-json: ""
+
+
 #### trap RETURN
 profile() {
   echo "profile [$@]"
