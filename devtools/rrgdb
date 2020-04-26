@@ -1,0 +1,7 @@
+#!/bin/sh
+#
+# For running 'rr' under Eclipse.
+#
+# https://github.com/mozilla/rr/wiki/Using-rr-in-an-IDE
+
+exec rr replay -- "$@"
