@@ -129,6 +129,44 @@ debuglog [x y]
 2
 ## END
 
+#### trap DEBUG and pipeline
+case $SH in (dash|mksh) exit 1 ;; esac
+
+debuglog() {
+  echo "  [$@]"
+}
+trap 'debuglog $LINENO' DEBUG
+
+# gets run for each one of these
+{ echo a; echo b; }
+
+# only run for the last one
+{ echo x; echo y; } | wc -l
+
+# gets run for both of these
+date | wc -l
+
+date |
+  wc -l
+
+## STDOUT:
+  [6]
+a
+  [6]
+b
+  [7]
+2
+  [8]
+  [8]
+1
+  [9]
+  [10]
+1
+## END
+## N-I dash/mksh status: 1
+## N-I dash/mksh stdout-json: ""
+
+
 #### trap DEBUG with compound commands
 case $SH in (dash|mksh) exit 1 ;; esac
 
