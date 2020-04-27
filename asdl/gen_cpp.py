@@ -20,6 +20,7 @@ TODO:
 """
 from __future__ import print_function
 
+import cStringIO
 import sys
 
 from collections import defaultdict
@@ -100,14 +101,16 @@ def _GetInnerCppType(type_lookup, field):
 class ClassDefVisitor(visitor.AsdlVisitor):
   """Generate C++ declarations and type-safe enums."""
 
-  def __init__(self, f, type_lookup, e_suffix=True, pretty_print_methods=True,
-               simple_int_sums=None):
+  def __init__(self, f, type_lookup, e_suffix=True,
+               pretty_print_methods=True, simple_int_sums=None,
+               debug_info_f=None):
 
     visitor.AsdlVisitor.__init__(self, f)
     self.type_lookup = type_lookup
     self.e_suffix = e_suffix
     self.pretty_print_methods = pretty_print_methods
     self.simple_int_sums = simple_int_sums or []
+    self.debug_info_f = debug_info_f or cStringIO.StringIO()  # or /dev/null
 
     self._shared_type_tags = {}
     self._product_counter = 1000  # start it high

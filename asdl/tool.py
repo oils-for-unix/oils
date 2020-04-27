@@ -46,6 +46,13 @@ def main(argv):
     out_prefix = argv[3]
     pretty_print_methods = bool(os.getenv('PRETTY_PRINT_METHODS', 'yes'))
 
+    try:
+      debug_info_path = argv[4]
+    except IndexError:
+      debug_info_f = None
+    else:
+      debug_info_f = open(debug_info_path, 'w')
+
     with open(schema_path) as f:
       schema_ast, type_lookup = front_end.LoadSchema(f, app_types)
 
@@ -87,7 +94,8 @@ namespace %s {
 
       v2 = gen_cpp.ClassDefVisitor(f, type_lookup,
                                    pretty_print_methods=pretty_print_methods,
-                                   simple_int_sums=_SIMPLE)
+                                   simple_int_sums=_SIMPLE,
+                                   debug_info_f=debug_info_f)
       v2.VisitModule(schema_ast)
 
       f.write("""

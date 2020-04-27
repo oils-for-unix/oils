@@ -845,12 +845,18 @@ tarball-build-deps() {
     build/prepare.sh build-python
   fi
 
-  if test -d _deps; then
-    echo '_deps exists: skipping re2c and cmark'
+  local d1='_deps/re2c-1.0.3'
+  if test -d $d1; then
+    echo "$d1 exists: skipping re2c"
   else
     build/codegen.sh download-re2c
     build/codegen.sh install-re2c
+  fi
 
+  local d2='_deps/cmark-0.29.0'  # CMARK_VERSION
+  if test -d $d2; then
+    echo "$d2 exists: skipping cmark"
+  else
     doctools/cmark.sh download
     doctools/cmark.sh extract
     doctools/cmark.sh build

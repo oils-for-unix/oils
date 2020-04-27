@@ -61,15 +61,13 @@ class value__Printer:
         pass
 
 
-class part_value__Printer:
+class AsdlPrinter(object):
     """
-    _part_value_str = {
-      1: 'part_value.String',
-      2: 'part_value.Array',
-    }
+    Print any ASDL type.
     """
-    def __init__(self, val):
+    def __init__(self, val, variants):
         self.val = val
+        self.variants = variants
 
     def to_string(self):
         # Get address of value and look at first 16 bits
@@ -83,24 +81,52 @@ class part_value__Printer:
         tag = ord(tag_mem[0])
         #print('tag %r' % tag)
 
-        if tag == 1:
-          typ = gdb.lookup_type('runtime_asdl::part_value__String').pointer()
-        elif tag == 2:
-          typ = gdb.lookup_type('runtime_asdl::part_value__Array').pointer()
+        if tag in self.variants:
+          typ = gdb.lookup_type(self.variants[tag]).pointer()
         else:
-          raise AssertionError('Invalid tag %d', tag)
+          raise AssertionError('Invalid tag %d' % tag)
 
         v = self.val.cast(typ)
         return v.dereference()
 
 
-def lookup_type(val):
-    if str(val.type) == 'Str *':
-        return StrPrinter(val)
-    #if str(val.type) == 'runtime_asdl::value_t *':
-    #    return value__Printer(val)
-    if str(val.type) == 'runtime_asdl::part_value_t *':
-        return part_value__Printer(val)
+class TypeLookup(object):
+  """Return a custom pretty printer based on GDB type information.
+  """
+
+  def __init__(self, asdl_types):
+    self.asdl_types = asdl_types
+
+  def __call__(self, val):
+    #print('type %s' % val.type)
+    #print('type code %s' % val.type.code)
+    #print('type code PTR %s' % gdb.TYPE_CODE_PTR)
+
+    type_name = str(val.type)
+
+    # TODO: 
+    # - Tuple{2,3,4} (may be a value, not a pointer)
+    # - Dict*
+
+    typ = val.type
+    # Str*, etc.
+    if typ.code == gdb.TYPE_CODE_PTR:
+      target = typ.target()
+      #print('target %s' % target)
+      #print('target name %r' % target.name)
+      #print('target tag %r' % target.tag)
+
+      if target.name == 'Str':
+          return StrPrinter(val)
+
+      if target.name in self.asdl_types:
+          return AsdlPrinter(val, self.asdl_types[target.name])
+
     return None
 
-gdb.pretty_printers.append(lookup_type)
+# Ah OK this works.
+# This could be _devbuild/gen/oil_gdb_data.py
+# Or I guess one for each ASDL file?
+gdb.execute('source devtools/oil_gdb_data.py')
+
+gdb.pretty_printers.append(TypeLookup(asdl_types))

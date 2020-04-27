@@ -420,4 +420,13 @@ publish-html() {
   return $(cat _tmp/toil/exit-status.txt)
 }
 
+#
+# Maintenance
+#
+
+# Sometimes the cache gets stale and you have to delete it.  Weird.
+delete-caches() {
+  travis cache -d
+}
+
 "$@"
