@@ -1209,7 +1209,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.member_vars[lval.name] = lval_type
 
         elif isinstance(lval, IndexExpr):  # a[x] = 1
-          # TODO: a->set(x, 1) for both List and Dict
+          # d->set(x, 1) for both List and Dict
+          self.write_ind('')
           self.accept(lval.base)
           self.write('->set(')
           self.accept(lval.index)
@@ -1276,12 +1277,21 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write('; ++%s) ', index_name)
 
           elif num_args == 3:  # xrange(being, end, step)
+            # Special case to detect a constant -1.  This is a static
+            # heuristic, because it could be negative dynamically.  TODO:
+            # mylib.reverse_xrange() or something?
+            step = args[2]
+            if isinstance(step, UnaryExpr) and step.op == '-':
+              comparison_op = '>' 
+            else:
+              comparison_op = '<'
+
             self.write_ind('for (int %s = ', index_name)
             self.accept(args[0])
-            self.write('; %s < ', index_name)
+            self.write('; %s %s ', index_name, comparison_op)
             self.accept(args[1])
             self.write('; %s += ', index_name)
-            self.accept(args[2])
+            self.accept(step)
             self.write(') ')
 
           else:
@@ -1662,6 +1672,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               func_name in ('_EvalCompoundWord', '_StringToIntegerOrError') or
             class_name == 'CommandEvaluator' and
               func_name in ('_Execute', 'ExecuteAndCatch') or
+            # osh/word_eval.py
+            class_name is None and func_name == 'CheckCompatArray' or
+            # core/state.py
             class_name is None and func_name == '_PackFlags' or
             class_name == 'Mem' and func_name in ('GetVar', 'SetVar', 'GetCell') or
             class_name == 'SearchPath' and func_name == 'Lookup' or
@@ -1669,6 +1682,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             class_name is None and func_name == 'EvalLhsAndLookup' or
             class_name == 'SplitContext' and
               func_name in ('SplitForWordEval', '_GetSplitter') or
+            # qsn_/qsn.py
             class_name is None and 
               func_name in ('maybe_encode', 'maybe_shell_encode') or
             # virtual function

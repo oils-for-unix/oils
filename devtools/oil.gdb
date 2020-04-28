@@ -6,6 +6,9 @@
 #
 # Or 'source' it from ~/.gdbinit
 
+# for multiline structs
+set print pretty on
+# TODO: save history
 
 # Our Python commands
 source devtools/oil_gdb.py

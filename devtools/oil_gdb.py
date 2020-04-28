@@ -51,6 +51,50 @@ class AsdlPrinter(object):
     def __init__(self, val, variants):
         self.val = val
         self.variants = variants
+        self.asdl_tag = None
+
+    # This doesn't seem to make a difference
+    #def display_hint(self):
+    #    return 'map' 
+
+    def _GetTag(self):
+      if self.asdl_tag is None:
+        # TODO: Fill this in
+        pass
+
+      return self.asdl_tag
+
+    def children(self):
+
+        # Get address of value and look at first 16 bits
+        obj = self.val.dereference()  # location of part_value_t
+
+        # Read the uint16_t tag
+        tag_mem = gdb.selected_inferior().read_memory(obj.address, 2)
+
+        # Unpack 2 bytes into an integer
+        (tag,) = struct.unpack('H', tag_mem)
+
+        if tag in self.variants:
+          value_type = gdb.lookup_type(self.variants[tag])
+        else:
+          #pprint(self.variants)
+          raise AssertionError('Invalid tag %d' % tag)
+
+        sub_val = self.val.cast(value_type.pointer())
+
+        # TODO: I want to also print the tag here, e.g. part_value.String
+
+        #print('type %s' % value_type.name)
+        #print('fields %s' % value_type.fields())
+
+        for field in value_type.fields():
+          if not field.is_base_class:
+            #print('field %s' % field.name)
+
+            # TODO: special case for the 'tag' field
+            # e.g. turn 1005 -> word_part.SimpleVarSub, etc.
+            yield field.name, sub_val[field]
 
     def to_string(self):
         # Get address of value and look at first 16 bits
@@ -62,16 +106,10 @@ class AsdlPrinter(object):
         # Unpack 2 bytes into an integer
         (tag,) = struct.unpack('H', tag_mem)
 
-        if tag in self.variants:
-          typ = gdb.lookup_type(self.variants[tag]).pointer()
-        else:
-          #pprint(self.variants)
-          raise AssertionError('Invalid tag %d' % tag)
-
-        # TODO: I want to also print the tag here, e.g. part_value.String
-
-        v = self.val.cast(typ)
-        return v.dereference()
+        # Note: GDB 'print' displays this prefix, but it Eclipse doesn't appear
+        # to.
+        #return 'ZZ ' + self.variants.get(tag)
+        return self.variants.get(tag)
 
 
 class TypeLookup(object):

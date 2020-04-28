@@ -266,6 +266,8 @@ void test_dict() {
 
   Str* v1 = d->get(1);
   log("v1 = %s", v1->data_);
+  assert(dict_contains(d, 1));
+  assert(!dict_contains(d, 2));
 
   Str* v2 = d->get(423);  // nonexistent
   log("v2 = %p", v2);

@@ -73,7 +73,7 @@ translate-parse() {
   local snippet='
 
 #include "expr_asdl.h"
-#include "asdl_pretty.h"
+#include "qsn_qsn.h"
 
 Str* repr(void* obj) {
   return new Str("TODO: repr()");
@@ -84,6 +84,8 @@ Str* repr(void* obj) {
     $REPO_ROOT/pylib/cgi.py \
     $REPO_ROOT/asdl/runtime.py \
     $REPO_ROOT/asdl/format.py \
+    $REPO_ROOT/qsn_/qsn.py \
+    $REPO_ROOT/core/ansi.py \
     examples/parse.py 
 } 
 
@@ -93,7 +95,6 @@ compile-parse() {
   asdl-gen cpp examples/expr.asdl _gen/expr_asdl
 
   compile-with-asdl parse \
-    ../cpp/asdl_pretty.cc \
     _gen/expr_asdl.cc \
     ../_build/cpp/hnode_asdl.cc
 }
@@ -257,7 +258,6 @@ compile-pgen2_demo() {
 
   compile-with-asdl $name \
     ../cpp/frontend_match.cc \
-    ../cpp/asdl_pretty.cc \
     ../cpp/osh_arith_parse.cc \
     ../_devbuild/gen-cpp/syntax_asdl.cc \
     ../_devbuild/gen-cpp/hnode_asdl.cc \

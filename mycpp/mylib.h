@@ -764,7 +764,7 @@ inline bool list_contains(List<T>* haystack, T needle) {
 // STUB
 template <typename K, typename V>
 inline bool dict_contains(Dict<K, V>* haystack, K needle) {
-  return false;
+  return haystack->m_.find(needle) != haystack->m_.end();
 }
 
 //

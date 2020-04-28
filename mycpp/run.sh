@@ -32,6 +32,11 @@
 #   ./run.sh test-all       # check for correctness
 #   ./run.sh benchmark-all  # compare speed
 
+# To build and run one example:
+#
+#   ./run.sh example-both loops
+#   ./run.sh test-all loops  # test just this one
+
 set -o nounset
 set -o pipefail
 set -o errexit

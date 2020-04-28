@@ -97,6 +97,18 @@ def run_tests():
   for k in xrange(m+2, n+5):
     log("%d", k)
 
+  log('--- three arg xrange()')
+
+  # should iterate exactly once
+  for m in xrange(0, 5, 2):
+    log("%d", m)
+
+  log('--- three arg reverse xrange()')
+
+  # should iterate exactly once
+  for m in xrange(0, -1, -1):
+    log("reverse %d", m)
+
   log('--- enumerate()')
 
   for i, c in enumerate(CATS):
