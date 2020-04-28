@@ -20,7 +20,6 @@ TODO:
 """
 from __future__ import print_function
 
-import cStringIO
 import sys
 
 from collections import defaultdict
@@ -103,14 +102,18 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
   def __init__(self, f, type_lookup, e_suffix=True,
                pretty_print_methods=True, simple_int_sums=None,
-               debug_info_f=None):
-
+               debug_info=None):
+    """
+    Args:
+      f: file to write to
+      debug_info: dictionary fill in with info for GDB
+    """
     visitor.AsdlVisitor.__init__(self, f)
     self.type_lookup = type_lookup
     self.e_suffix = e_suffix
     self.pretty_print_methods = pretty_print_methods
     self.simple_int_sums = simple_int_sums or []
-    self.debug_info_f = debug_info_f or cStringIO.StringIO()  # or /dev/null
+    self.debug_info = debug_info if debug_info is not None else {}
 
     self._shared_type_tags = {}
     self._product_counter = 1000  # start it high
@@ -132,6 +135,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
   def _EmitEnum(self, sum, sum_name, depth, strong=False, is_simple=False):
     enum = []
+    int_to_type = {}
     for i, variant in enumerate(sum.types):
       if variant.shared_type:  # Copied from gen_python.py
         tag_num = self._shared_type_tags[variant.shared_type]
@@ -144,8 +148,11 @@ class ClassDefVisitor(visitor.AsdlVisitor):
               (sum_name, variant.shared_type))
         else:
           bases.append(base_class)
+        type_str = variant.shared_type
       else:
         tag_num = i + 1
+        type_str = '%s__%s' % (sum_name, variant.name)
+      int_to_type[tag_num] = type_str
       enum.append((variant.name, tag_num))  # zero is reserved
 
     if strong:
@@ -187,6 +194,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       self.Emit('const char* %s_str(int tag);' % sum_name, depth)
       self.Emit('', depth)
 
+    return int_to_type
+
   def VisitSimpleSum(self, sum, name, depth):
     if name in self.simple_int_sums:
       self._EmitEnum(sum, name, depth, strong=False, is_simple=True)
@@ -200,7 +209,10 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     def Emit(s, depth=depth):
       self.Emit(s % sys._getframe(1).f_locals, depth)
 
-    self._EmitEnum(sum, sum_name, depth)
+    int_to_type = self._EmitEnum(sum, sum_name, depth)
+
+    # Only add debug info for compound sums.
+    self.debug_info['%s_t' % sum_name] = int_to_type
 
     # TODO: DISALLOW_COPY_AND_ASSIGN on this class and others?
 

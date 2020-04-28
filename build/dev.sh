@@ -81,11 +81,12 @@ gen-asdl-cpp() {
   local name=$(basename $asdl_path .asdl)
 
   local out_prefix=_build/cpp/${name}_asdl
+  local debug_info=_devbuild/gen/${name}_asdl_debug.py
 
   # abbrev module is optional
-  asdl/tool.py cpp $asdl_path $out_prefix
+  asdl/tool.py cpp $asdl_path $out_prefix $debug_info
 
-  echo "Wrote $out_prefix"
+  echo "Wrote $out_prefix and $debug_info"
 }
 
 # TODO: syntax.asdl and runtime.asdl are mutually recursive.

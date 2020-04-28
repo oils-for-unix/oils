@@ -838,7 +838,8 @@ tarball-build-deps() {
 
   # On Travis, the _devbuild and _deps dirs should be cached.
 
-  if test -d _devbuild/cpython-full; then
+  #if test -d _devbuild/cpython-full; then
+  if false; then
     echo '_devbuild/cpython-full exists: skipping build/prepare.sh'
   else
     build/prepare.sh configure

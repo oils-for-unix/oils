@@ -46,13 +46,6 @@ def main(argv):
     out_prefix = argv[3]
     pretty_print_methods = bool(os.getenv('PRETTY_PRINT_METHODS', 'yes'))
 
-    try:
-      debug_info_path = argv[4]
-    except IndexError:
-      debug_info_f = None
-    else:
-      debug_info_f = open(debug_info_path, 'w')
-
     with open(schema_path) as f:
       schema_ast, type_lookup = front_end.LoadSchema(f, app_types)
 
@@ -92,10 +85,11 @@ namespace %s {
       v = gen_cpp.ForwardDeclareVisitor(f)
       v.VisitModule(schema_ast)
 
+      debug_info = {}
       v2 = gen_cpp.ClassDefVisitor(f, type_lookup,
                                    pretty_print_methods=pretty_print_methods,
                                    simple_int_sums=_SIMPLE,
-                                   debug_info_f=debug_info_f)
+                                   debug_info=debug_info)
       v2.VisitModule(schema_ast)
 
       f.write("""
@@ -103,6 +97,19 @@ namespace %s {
 
 #endif  // %s
 """ % (ns, guard))
+
+      try:
+        debug_info_path = argv[4]
+      except IndexError:
+        pass
+      else:
+        with open(debug_info_path, 'w') as f:
+          from pprint import pformat
+          f.write('''\
+cpp_namespace = %r
+tags_to_types = \\
+%s
+''' % (ns, pformat(debug_info)))
 
       with open(out_prefix + '.cc', 'w') as f:
         # HACK until we support 'use'
