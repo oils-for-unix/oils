@@ -608,12 +608,87 @@ osh-parse-smoke() {
   done
 }
 
-# TODO: We need a proper unit test framework
-frontend-match-test() {
-  local name='frontend_match_test'
-  compile _bin/$name cpp/frontend_match_test.cc cpp/frontend_match.cc mycpp/mylib.cc
+osh-eval-smoke() {
+  ### Run osh_eval.dbg over a bunch of shell scripts
+
+  # Problem: all while loops go infinitely now...
+
+  local parse_errors=''
+  local fail=''
+
+  for file in spec/[01a]*.sh; do
+    set +o errexit
+
+    echo "_____ $file"
+
+    local osh_eval=_bin/osh_eval.dbg
+    $osh_eval $file
+
+    case $? in
+      0)
+        ;;
+      2)
+        parse_errors+=" $file"
+        ;;
+      *)
+        fail+=" $file"
+        ;;
+    esac
+
+    set -o errexit
+  done
+
+  echo
+  echo "Can't parse:"
+  echo
+  for file in $parse_errors; do  # split words
+    echo $file
+  done
+
+  # A couple spec tests fail because they have what looks like Oil expressions
+  echo
+  echo 'FAILED:'
+  echo
+  for file in $fail; do  # split words
+    echo $file
+  done
+}
+
+cpp-unit-tests() {
+  ### Run unit tests in the cpp/ dir
+
+  local name='unit_tests'
+  mkdir -p _bin
+  compile _bin/$name cpp/unit_tests.cc cpp/frontend_match.cc mycpp/mylib.cc
 
   _bin/$name
+}
+
+mycpp-unit-tests() {
+  ### Run unit tests in the mycpp/ dir
+
+  cd mycpp
+  ./run.sh mylib-test
+}
+
+all-unit-tests() {
+  build/codegen.sh ast-id-lex  # id.h, osh-types.h, osh-lex.h
+  build/dev.sh oil-asdl-to-cpp  # unit tests depend on id_kind_asdl.h, etc.
+
+  cpp-unit-tests
+  mycpp-unit-tests
+}
+
+# Copied from devtools/release.sh tarball-build-deps
+# for the dev-minimal toil task to run C++ unit tests
+cpp-unit-deps() {
+  local d1='_deps/re2c-1.0.3'
+  if test -d $d1; then
+    echo "$d1 exists: skipping re2c"
+  else
+    build/codegen.sh download-re2c
+    build/codegen.sh install-re2c
+  fi
 }
 
 osh-eval-demo() {

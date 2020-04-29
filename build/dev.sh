@@ -117,8 +117,7 @@ arith-parse-cpp-gen() {
 }
 
 oil-asdl-to-cpp() {
-  local dir='_build/cpp'
-  mkdir -p $dir
+  mkdir -p _build/cpp _devbuild/tmp
 
   PRETTY_PRINT_METHODS='' gen-asdl-cpp 'asdl/hnode.asdl'
 

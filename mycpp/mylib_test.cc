@@ -2,9 +2,10 @@
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
 
+#include "greatest.h"
 #include "mylib.h"
 
-void test_str_to_int() {
+TEST test_str_to_int() {
   int i;
   bool ok;
 
@@ -44,9 +45,11 @@ void test_str_to_int() {
   // Trailing garbage
   ok = _str_to_int(new Str("42a"), &i);
   assert(!ok);
+
+  PASS();
 }
 
-void test_str_funcs() {
+TEST test_str_funcs() {
   assert(!(new Str(""))->isupper());
   assert(!(new Str("a"))->isupper());
   assert((new Str("A"))->isupper());
@@ -107,11 +110,13 @@ void test_str_funcs() {
   log("repr %s", repr(new Str("high \xFF \xFE high"))->data_);
 
   log("ord('A') = %d", ord(new Str("A")));
+
+  PASS();
 }
 
 using mylib::BufLineReader;
 
-void test_buf_line_reader() {
+TEST test_buf_line_reader() {
   Str* s = new Str("foo\nbar\nleftover");
   BufLineReader* reader = new BufLineReader(s);
   Str* line;
@@ -126,9 +131,11 @@ void test_buf_line_reader() {
   log("3: [%s]", line->data_);
   line = reader->readline();
   log("4: [%s]", line->data_);
+
+  PASS();
 }
 
-void test_formatter() {
+TEST test_formatter() {
   gBuf.reset();
   gBuf.write_const("[", 1);
   gBuf.format_s(new Str("bar"));
@@ -140,9 +147,11 @@ void test_formatter() {
   gBuf.format_d(42);
   gBuf.write_const(".", 1);
   log("value = %s", gBuf.getvalue()->data_);
+
+  PASS();
 }
 
-void test_list_funcs() {
+TEST test_list_funcs() {
   std::vector<int> v;
   v.push_back(0);
   log("v.size = %d", v.size());
@@ -176,9 +185,11 @@ void test_list_funcs() {
   log("list_repeat length = %d", len(L2));
   log("item 0 %d", L2->index(0));
   log("item 1 %d", L2->index(1));
+
+  PASS();
 }
 
-void test_list_iters() {
+TEST test_list_iters() {
   log("  forward iteration over list");
   auto ints = new List<int>({1, 2, 3});
   for (ListIter<int> it(ints); !it.Done(); it.Next()) {
@@ -191,9 +202,11 @@ void test_list_iters() {
     int x = it.Value();
     log("x = %d", x);
   }
+
+  PASS();
 }
 
-void test_contains() {
+TEST test_contains() {
   bool b;
 
   b = str_contains(new Str("foo"), new Str("oo"));
@@ -227,9 +240,11 @@ void test_contains() {
   log("b = %d", b);
   b = list_contains(floats, 42.0);
   log("b = %d", b);
+
+  PASS();
 }
 
-void test_files() {
+TEST test_files() {
   mylib::Writer* w = mylib::Stdout();
   bool b = w->isatty();
   log("b = %d", b);
@@ -241,9 +256,11 @@ void test_files() {
   log("test_files");
   println_stderr(s);
   log("test_files DONE");
+
+  PASS();
 }
 
-void test_dict() {
+TEST test_dict() {
   // TODO: How to initialize constants?
 
   // Dict d {{"key", 1}, {"val", 2}};
@@ -278,9 +295,11 @@ void test_dict() {
   log("a = %d", d3->index(new Str("a")));
   log("b = %d", d3->index(new Str("b")));
   log("c = %d", d3->index(new Str("c")));
+
+  PASS();
 }
 
-int main(int argc, char** argv) {
+TEST misc_test() {
   List<int>* L = new List<int>{1, 2, 3};
 
   log("size: %d", len(L));
@@ -311,27 +330,6 @@ int main(int argc, char** argv) {
   log("t4[2] = %s", t4->at2()->data_);
   log("t4[3] = %d", t4->at3());
 
-  test_str_to_int();
-  test_str_funcs();
-  test_list_funcs();
-  test_list_iters();
-
-  log("");
-  log("DICT");
-  test_dict();
-
-  log("");
-  test_buf_line_reader();
-
-  log("");
-  test_formatter();
-
-  log("");
-  test_contains();
-
-  log("");
-  test_files();
-
   // Str = 16 and List = 24.
   // Rejected ideas about slicing:
   //
@@ -345,4 +343,37 @@ int main(int argc, char** argv) {
   log("");
   log("sizeof(Str) = %zu", sizeof(Str));
   log("sizeof(List<int>) = %zu", sizeof(List<int>));
+
+  PASS();
+}
+
+GREATEST_MAIN_DEFS();
+
+int main(int argc, char **argv) {
+  GREATEST_MAIN_BEGIN();
+
+  RUN_TEST(misc_test);
+  RUN_TEST(test_str_to_int);
+  RUN_TEST(test_str_funcs);
+  RUN_TEST(test_list_funcs);
+  RUN_TEST(test_list_iters);
+
+  log("");
+  log("DICT");
+  RUN_TEST(test_dict);
+
+  log("");
+  RUN_TEST(test_buf_line_reader);
+
+  log("");
+  RUN_TEST(test_formatter);
+
+  log("");
+  RUN_TEST(test_contains);
+
+  log("");
+  RUN_TEST(test_files);
+
+  GREATEST_MAIN_END();        /* display results */
+  return 0;
 }

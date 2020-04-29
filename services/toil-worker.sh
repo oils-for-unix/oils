@@ -44,9 +44,14 @@ run-dummy() {
 dev-minimal-tasks() {
   ### Print tasks for the 'dev-minimal' build
 
+  # dependencies: cpp-unit requires build/codegen.sh ast-id-lex, which requires
+  # build-minimal
+
   # (task_name, script, action, result_html)
   cat <<EOF
 build-minimal   build/dev.sh minimal        -
+cpp-unit-deps   build/mycpp.sh cpp-unit-deps  -
+cpp-unit        build/mycpp.sh all-unit-tests -
 lint            test/lint.sh travis         -
 typecheck-slice types/oil-slice.sh travis   -
 typecheck-other types/run.sh travis         -

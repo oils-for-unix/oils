@@ -1,9 +1,10 @@
-#include "frontend_match.h"
-#include "osh_eval_stubs.h"   // util::BackslashEscape
-#include "id.h"
 #include "greatest.h"
 
-#include "runtime_asdl.h"  // for cell
+#include "frontend_match.h"
+#include "id.h"
+#include "libc.h"  // cell, etc
+#include "osh_eval_stubs.h"   // util::BackslashEscape
+#include "runtime_asdl.h"  // cell, etc
 
 TEST show_sizeof() {
   // Without sed hack, it's 24 bytes because we have tag (2), id (4), val,
@@ -55,7 +56,6 @@ TEST match_test() {
 }
 
 TEST util_test() {
-
   // OK this seems to work
   Str* escaped = util::BackslashEscape(new Str("'foo bar'"), new Str(" '"));
   ASSERT(str_equals(escaped, new Str("\\'foo\\ bar\\'")));
@@ -68,14 +68,21 @@ TEST util_test() {
   PASS();
 }
 
+TEST libc_test() {
+  ASSERT(libc::fnmatch(new Str("*.py"), new Str("foo.py")));
+  ASSERT(!libc::fnmatch(new Str("*.py"), new Str("foo.p")));
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
-int main(int argc, char **argv)
-{
-    GREATEST_MAIN_BEGIN();
-    RUN_TEST(show_sizeof);
-    RUN_TEST(match_test);
-    RUN_TEST(util_test);
-    GREATEST_MAIN_END();        /* display results */
-    return 0;
+int main(int argc, char **argv) {
+  GREATEST_MAIN_BEGIN();
+  RUN_TEST(show_sizeof);
+  RUN_TEST(match_test);
+  RUN_TEST(util_test);
+  RUN_TEST(libc_test);
+  GREATEST_MAIN_END();        /* display results */
+  return 0;
 }

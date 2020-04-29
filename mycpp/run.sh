@@ -51,9 +51,16 @@ source $REPO_ROOT/build/common.sh  # for $CLANG_DIR_RELATIVE, $PREPARE_DIR
 source examples.sh
 source harness.sh
 
-readonly CXX=$REPO_ROOT/$CLANG_DIR_RELATIVE/bin/clang++
-# system compiler
-#readonly CXX='c++'
+# -O3 is faster than -O2 for fib, but let's use -O2 since it's "standard"?
+CPPFLAGS='-Wall -O0 -g -std=c++11'
+
+if test -f $CLANGXX; then
+  # accepts -ferror-limit=1000, but C++ doesn't
+  CXX=$CLANGXX
+else
+  CXX='c++'
+fi
+
 
 time-tsv() {
   $REPO_ROOT/benchmarks/time_.py --tsv "$@"
@@ -172,10 +179,6 @@ compile-with-asdl() {
 # fib_recursive(35) takes 72 ms without optimization, 20 ms with optimization.
 # optimization doesn't do as much for cgi.  1M iterations goes from ~450ms to ~420ms.
 
-# -O3 is faster than -O2 for fib, but let's use -O2 since it's "standard"?
-
-CPPFLAGS='-Wall -O0 -g -std=c++11 -ferror-limit=1000'
-
 # NOTES on timings:
 
 ### fib_recursive
@@ -216,12 +219,19 @@ count() {
   wc -l *.cc *.h | sort -n
 }
 
-cpp-compile-run() {
+cpp-compile() {
   local name=$1
   shift
 
   mkdir -p _bin
   $CXX -o _bin/$name $CPPFLAGS -I . $name.cc "$@" -lstdc++
+}
+
+cpp-compile-run() {
+  local name=$1
+  shift
+
+  cpp-compile $name "$@"
   _bin/$name
 }
 
@@ -234,7 +244,9 @@ heap() {
 }
 
 mylib-test() {
-  cpp-compile-run mylib_test mylib.cc
+  ### Accepts greatest args like -t dict
+  cpp-compile mylib_test -I ../cpp mylib.cc
+  _bin/mylib_test "$@"
 }
 
 gen-ctags() {

@@ -73,8 +73,10 @@ jobs:
       dist: xenial
       language: minimal
       cache:
-      - apt
-      - pip
+        apt: true
+        pip: true
+        directories:
+          - _deps/                  # re2c doesn't change much
 
       # Enable this to quickly test the deploy step at the end
       env:
