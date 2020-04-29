@@ -68,27 +68,27 @@ class _Executor(object):
 
   def RunSimpleCommand(self, cmd_val, do_fork, call_procs=True):
     # type: (cmd_value__Argv, bool, bool) -> int
-    pass
+    return 0
 
   def RunBackgroundJob(self, node):
     # type: (command_t) -> int
-    pass
+    return 0
 
   def RunPipeline(self, node):
     # type: (command__Pipeline) -> int
-    pass
+    return 0
 
   def RunSubshell(self, node):
     # type: (command__Subshell) -> int
-    pass
+    return 0
 
   def RunCommandSub(self, node):
     # type: (command_t) -> str
-    pass
+    return ''
 
   def RunProcessSub(self, node, op_id):
     # type: (command_t, Id_t) -> str
-    pass
+    return ''
 
   def Time(self):
     # type: () -> None
@@ -96,10 +96,9 @@ class _Executor(object):
 
   def PushRedirects(self, redirects):
     # type: (List[redirect]) -> bool
-    pass
+    return True
 
   def PopRedirects(self):
     # type: () -> None
     pass
-
 

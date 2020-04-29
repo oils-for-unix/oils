@@ -1,28 +1,11 @@
 #include "frontend_match.h"
 #include "osh_eval_stubs.h"   // util::BackslashEscape
 #include "id.h"
+#include "greatest.h"
 
 #include "runtime_asdl.h"  // for cell
 
-int main(int argc, char** argv) {
-  match::SimpleLexer* lex = match::BraceRangeLexer(new Str("{-1..22}"));
-
-  while (true) {
-    auto t = lex->Next();
-    int id = t.at0();
-    if (id == id__Eol_Tok) {
-      break;
-    }
-    log("id = %d", id);
-    log("val = %s", t.at1()->data_);
-  }
-
-  // Similar to native/fastlex_test.py.  Just test that it matched
-  assert(match::MatchOption(new Str("")) == 0);
-  assert(match::MatchOption(new Str("pipefail")) > 0);
-  assert(match::MatchOption(new Str("pipefai")) == 0);
-  assert(match::MatchOption(new Str("pipefail_")) == 0);
-
+TEST show_sizeof() {
   // Without sed hack, it's 24 bytes because we have tag (2), id (4), val,
   // span_id.
   // Now 16 bytes.
@@ -45,11 +28,54 @@ int main(int argc, char** argv) {
   log("sizeof(List<int>) = %d", sizeof(List<int>));
   log("sizeof(List<Str*>) = %d", sizeof(List<Str*>));
 
+  PASS();
+}
+
+TEST match_test() {
+  match::SimpleLexer* lex = match::BraceRangeLexer(new Str("{-1..22}"));
+
+  while (true) {
+    auto t = lex->Next();
+    int id = t.at0();
+    if (id == id__Eol_Tok) {
+      break;
+    }
+    log("id = %d", id);
+    log("val = %s", t.at1()->data_);
+  }
+
+  // Similar to native/fastlex_test.py.  Just test that it matched
+  ASSERT_EQ(0, match::MatchOption(new Str("")));
+  ASSERT(match::MatchOption(new Str("pipefail")) > 0);
+
+  ASSERT_EQ(0, match::MatchOption(new Str("pipefai")));
+  ASSERT_EQ(0, match::MatchOption(new Str("pipefail_")));
+
+  PASS();
+}
+
+TEST util_test() {
 
   // OK this seems to work
   Str* escaped = util::BackslashEscape(new Str("'foo bar'"), new Str(" '"));
+  ASSERT(str_equals(escaped, new Str("\\'foo\\ bar\\'")));
+
   log("x = %s %d", escaped->data_, escaped->len_);
 
   Str* escaped2 = util::BackslashEscape(new Str(""), new Str(" '"));
-  log("x = %s %d", escaped2->data_, escaped2->len_);
+  ASSERT(str_equals(escaped2, new Str("")));
+
+  PASS();
+}
+
+GREATEST_MAIN_DEFS();
+
+int main(int argc, char **argv)
+{
+    GREATEST_MAIN_BEGIN();
+    RUN_TEST(show_sizeof);
+    RUN_TEST(match_test);
+    RUN_TEST(util_test);
+    GREATEST_MAIN_END();        /* display results */
+    return 0;
 }
