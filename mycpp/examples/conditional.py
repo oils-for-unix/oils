@@ -28,6 +28,9 @@ def run_tests():
   if 0:
     log('ZERO')
 
+  log('int = %d', int('123'))
+  log('bool = %d', bool(42))
+
 
 def run_benchmarks():
   # type: () -> None

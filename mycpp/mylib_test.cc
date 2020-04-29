@@ -260,8 +260,7 @@ void test_dict() {
 
   log("  iterating over Dict");
   for (DictIter<Str*, int> it(d2); !it.Done(); it.Next()) {
-    log("k = %s", it.Key()->data_);
-    log("v = %d", it.Value());
+    log("k = %s, v = %d", it.Key()->data_, it.Value());
   }
 
   Str* v1 = d->get(1);
@@ -272,9 +271,13 @@ void test_dict() {
   Str* v2 = d->get(423);  // nonexistent
   log("v2 = %p", v2);
 
-  // Why do we get nullptr here?
-  //Str* v3 = d->index(423);  // nonexistent
-  //log("v3 = %p", v3);
+  auto d3 = new Dict<Str*, int>();
+  d3->set(new Str("a"), 10);
+  d3->set(new Str("b"), 11);
+  d3->set(new Str("c"), 12);
+  log("a = %d", d3->index(new Str("a")));
+  log("b = %d", d3->index(new Str("b")));
+  log("c = %d", d3->index(new Str("c")));
 }
 
 int main(int argc, char** argv) {

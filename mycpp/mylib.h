@@ -479,65 +479,96 @@ class ReverseListIter {
 template <class K, class V>
 class DictIter {
  public:
-  explicit DictIter(Dict<K, V>* D) : it_(D->m_.begin()), end_(D->m_.end()) {
+  explicit DictIter(Dict<K, V>* D) : D_(D), i_(0) {
   }
   void Next() {
-    ++it_;
+    ++i_;
   }
   bool Done() {
-    return it_ == end_;
+    return i_ >= static_cast<int>(D_->items_.size());
   }
   K Key() {
-    return it_->first;
+    return D_->items_[i_].first;
   }
   V Value() {
-    return it_->second;
+    return D_->items_[i_].second;
   }
 
  private:
-  typename std::unordered_map<K, V>::iterator it_;
-  typename std::unordered_map<K, V>::iterator end_;
+  Dict<K, V>* D_;
+  int i_;
 };
 
+// Specialized functions
+template<class V> 
+int find_by_key(std::vector<std::pair<Str*, V>>& items, Str* key) {
+  for (int i = 0; i < items.size(); ++i) {
+    if (str_equals(items[i].first, key)) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+template<class V> 
+int find_by_key(std::vector<std::pair<int, V>>& items, int key) {
+  for (int i = 0; i < items.size(); ++i) {
+    if (items[i].first == key) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+// Dict currently implemented by VECTOR OF PAIRS.  TODO: Use a real hash table,
+// and measure performance.  The hash table has to beat this for small cases!
 template <class K, class V>
 class Dict {
  public:
-  Dict() : m_() {
+  Dict() : items_() {
   }
 
   // d[key] in Python: raises KeyError if not found
   V index(K key) {
-    // Why does this return nullptr on not found?  I thought it would be a
-    // crash.
-    return m_[key];
+    int pos = find(key);
+    if (pos == -1) {
+      assert(0);
+    } else {
+      return items_[pos].second;
+    }
   }
 
   // Get a key.
   // Returns nullptr if not found (Can't use this for non-pointer types?)
   V get(K key) {
-    auto it = m_.find(key);
-    if (it == m_.end()) {
+    int pos = find(key);
+    if (pos == -1) {
       return nullptr;
     } else {
-      return it->second;
+      return items_[pos].second;
     }
   }
 
-  // STUB
-  // expr_parse.py uses OTHER_BALANCE
+  // Get a key, but return a default if not found.
+  // expr_parse.py uses this with OTHER_BALANCE
   V get(K key, V default_val) {
-    assert(0);
+    int pos = find(key);
+    if (pos == -1) {
+      return default_val;
+    } else {
+      return items_[pos].second;
+    }
   }
 
   // d->set(key, val) is like (*d)[key] = val;
   void set(K key, V val) {
-    m_[key] = val;
+    int pos = find(key);
+    if (pos == -1) {
+      items_.push_back(std::make_pair(key, val));
+    } else {
+      items_[pos].second = val;
+    }
   }
-
-  // STUB
-  //V& operator[](K key) {
-  //  return values_[0];
-  //}
 
   void remove(K key) {
     assert(0);
@@ -556,8 +587,17 @@ class Dict {
     assert(0);
   }
 
-  std::unordered_map<K, V> m_;
+  //std::unordered_map<K, V> m_;
+  std::vector<std::pair<K, V>> items_;
+
+ private:
+  // returns the position in the array
+  int find(K key) {
+    return find_by_key(items_, key);
+  }
+
 };
+
 
 template <class A, class B>
 class Tuple2 {
@@ -714,6 +754,14 @@ inline int to_int(bool b) {
   return b;
 }
 
+inline bool to_bool(int i) {
+  return i != 0;
+}
+
+inline bool to_bool(Str* s) {
+  return s->len_ != 0;
+}
+
 // e.g. ('a' in 'abc')
 inline bool str_contains(Str* haystack, Str* needle) {
   // cstring-TODO: this not rely on NUL termination
@@ -764,7 +812,7 @@ inline bool list_contains(List<T>* haystack, T needle) {
 // STUB
 template <typename K, typename V>
 inline bool dict_contains(Dict<K, V>* haystack, K needle) {
-  return haystack->m_.find(needle) != haystack->m_.end();
+  return find_by_key(haystack->items_, needle) != -1;
 }
 
 //
