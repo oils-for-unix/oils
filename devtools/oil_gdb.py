@@ -10,6 +10,7 @@ import struct
 import gdb
 
 class SimpleCommand(gdb.Command):
+    """Test command."""
     def __init__(self):
         # This registers our class as "simple_command"
         super(SimpleCommand, self).__init__("simple_command", gdb.COMMAND_DATA)
@@ -27,6 +28,8 @@ SimpleCommand()
 # https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/developer_guide/debuggingprettyprinters
 
 class StrPrinter:
+    """Print the Str* type from mycpp/mylib."""
+
     def __init__(self, val):
         self.val = val
 
@@ -45,8 +48,10 @@ class StrPrinter:
 class AsdlPrinter(object):
     """Print the variants of a particular ASDL sum type.
 
-    Essentially, this looks at the tag in memory and casts the "super" sum type
-    to the variant type.
+    This looks at the tag in memory and casts the "super" sum type to the
+    variant type.
+
+    It uses the children() method to return a tree structure.
     """
     def __init__(self, val, variants):
         self.val = val
@@ -58,14 +63,11 @@ class AsdlPrinter(object):
     #    return 'map' 
 
     def _GetTag(self):
+      """Helper for .children() and .to_string().
+
+      We don't know the order in which they'll be called.
+      """
       if self.asdl_tag is None:
-        # TODO: Fill this in
-        pass
-
-      return self.asdl_tag
-
-    def children(self):
-
         # Get address of value and look at first 16 bits
         obj = self.val.dereference()  # location of part_value_t
 
@@ -73,7 +75,12 @@ class AsdlPrinter(object):
         tag_mem = gdb.selected_inferior().read_memory(obj.address, 2)
 
         # Unpack 2 bytes into an integer
-        (tag,) = struct.unpack('H', tag_mem)
+        (self.asdl_tag,) = struct.unpack('H', tag_mem)
+
+      return self.asdl_tag
+
+    def children(self):
+        tag = self._GetTag()
 
         if tag in self.variants:
           value_type = gdb.lookup_type(self.variants[tag])
@@ -97,18 +104,13 @@ class AsdlPrinter(object):
             yield field.name, sub_val[field]
 
     def to_string(self):
-        # Get address of value and look at first 16 bits
-        obj = self.val.dereference()  # location of part_value_t
+        tag = self._GetTag()
 
-        # Read the uint16_t tag
-        tag_mem = gdb.selected_inferior().read_memory(obj.address, 2)
+        #return 'ZZ ' + self.variants.get(tag)
 
-        # Unpack 2 bytes into an integer
-        (tag,) = struct.unpack('H', tag_mem)
-
+        # Show the variant type name, not the sum type name
         # Note: GDB 'print' displays this prefix, but it Eclipse doesn't appear
         # to.
-        #return 'ZZ ' + self.variants.get(tag)
         return self.variants.get(tag)
 
 

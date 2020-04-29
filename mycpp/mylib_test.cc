@@ -5,65 +5,78 @@
 #include "greatest.h"
 #include "mylib.h"
 
+// Test helper.  TODO: Could use ASSERT_EQ_T to customize equality and print
+// difference.
+//
+// Example:
+//
+// https://github.com/silentbicycle/greatest/blob/master/example.c#L71
+
+bool equals_c_string(const char* c_string, Str* s) {
+  return str_equals(new Str(c_string), s);
+}
+
 TEST test_str_to_int() {
   int i;
   bool ok;
 
   ok = _str_to_int(new Str("345"), &i);
-  assert(ok);
-  assert(i == 345);
+  ASSERT(ok);
+  ASSERT_EQ_FMT(i, 345, "%d");
 
   // TODO: Is there a way to check for overflow?
   // strtol returns 'long int'.
   ok = _str_to_int(new Str("1234567890"), &i);
-  assert(ok);
+  ASSERT(ok);
   log("i = %d", i);
-  assert(i == 1234567890);
+  ASSERT(i == 1234567890);
 
   // negative
   ok = _str_to_int(new Str("-123"), &i);
-  assert(ok);
-  assert(i == -123);
+  ASSERT(ok);
+  ASSERT(i == -123);
 
   // Leading space is OK!
   ok = _str_to_int(new Str(" -123"), &i);
-  assert(ok);
-  assert(i == -123);
+  ASSERT(ok);
+  ASSERT(i == -123);
 
   // Trailing space is OK!  NOTE: This fails!
   ok = _str_to_int(new Str(" -123  "), &i);
-  assert(ok);
-  assert(i == -123);
+  ASSERT(ok);
+  ASSERT(i == -123);
 
   // Empty string isn't an integer
   ok = _str_to_int(new Str(""), &i);
-  assert(!ok);
+  ASSERT(!ok);
 
   ok = _str_to_int(new Str("xx"), &i);
-  assert(!ok);
+  ASSERT(!ok);
 
   // Trailing garbage
   ok = _str_to_int(new Str("42a"), &i);
-  assert(!ok);
+  ASSERT(!ok);
 
   PASS();
 }
 
 TEST test_str_funcs() {
-  assert(!(new Str(""))->isupper());
-  assert(!(new Str("a"))->isupper());
-  assert((new Str("A"))->isupper());
-  assert((new Str("AB"))->isupper());
+  ASSERT(!(new Str(""))->isupper());
+  ASSERT(!(new Str("a"))->isupper());
+  ASSERT((new Str("A"))->isupper());
+  ASSERT((new Str("AB"))->isupper());
 
-  assert((new Str("abc"))->isalpha());
+  ASSERT((new Str("abc"))->isalpha());
 
   Str* s = new Str("abc");
   Str* r0 = str_repeat(s, 0);
+  ASSERT(equals_c_string("", r0));
+
   Str* r1 = str_repeat(s, 1);
+  ASSERT(equals_c_string("abc", r1));
+
   Str* r3 = str_repeat(s, 3);
-  log("r0 = %s", r0->data_);
-  log("r1 = %s", r1->data_);
-  log("r3 = %s", r3->data_);
+  ASSERT(equals_c_string("abcabcabc", r3));
 
   Str* int_str;
   int_str = str((1 << 31) - 1);
@@ -210,29 +223,29 @@ TEST test_contains() {
   bool b;
 
   b = str_contains(new Str("foo"), new Str("oo"));
-  assert(b == true);
+  ASSERT(b == true);
 
   b = str_contains(new Str("foo"), new Str("ood"));
-  assert(b == false);
+  ASSERT(b == false);
 
   log("  strs");
   auto strs = new List<Str*>();
   strs->append(new Str("bar"));
 
   b = list_contains(strs, new Str("foo"));
-  assert(b == false);
+  ASSERT(b == false);
 
   strs->append(new Str("foo"));
   b = list_contains(strs, new Str("foo"));
-  assert(b == true);
+  ASSERT(b == true);
 
   log("  ints");
   auto ints = new List<int>({1, 2, 3});
   b = list_contains(ints, 1);
-  assert(b == true);
+  ASSERT(b == true);
 
   b = list_contains(ints, 42);
-  assert(b == false);
+  ASSERT(b == false);
 
   log("  floats");
   auto floats = new List<double>({0.5, 0.25, 0.0});
@@ -282,8 +295,8 @@ TEST test_dict() {
 
   Str* v1 = d->get(1);
   log("v1 = %s", v1->data_);
-  assert(dict_contains(d, 1));
-  assert(!dict_contains(d, 2));
+  ASSERT(dict_contains(d, 1));
+  ASSERT(!dict_contains(d, 2));
 
   Str* v2 = d->get(423);  // nonexistent
   log("v2 = %p", v2);

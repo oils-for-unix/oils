@@ -180,11 +180,15 @@ cpp() {
   echo
 
   echo '[ C++ ] Hand-Written Code'
-  wc -l cpp/*.{cc,h} | sort --numeric
+  ls cpp/*.{cc,h} | egrep -v 'greatest.h|unit_tests.cc' | xargs wc -l | sort --numeric
   echo
 
   echo '[ C++ ] mycpp Runtime'
   wc -l mycpp/mylib.{cc,h} | sort --numeric
+  echo
+
+  echo '[ C++ ] Unit tests'
+  wc -l mycpp/mylib_test.cc cpp/unit_tests.cc | sort --numeric
   echo
 }
 
