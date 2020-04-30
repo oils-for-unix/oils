@@ -211,7 +211,7 @@ if mylib.PYTHON:
   SHOPT_SPEC = arg_def.Register('shopt')
   SHOPT_SPEC.ShortFlag('-s')  # set
   SHOPT_SPEC.ShortFlag('-u')  # unset
-  SHOPT_SPEC.ShortFlag('-o')  # use 'set -o' up names
+  SHOPT_SPEC.ShortFlag('-o')  # use 'set -o' names
   SHOPT_SPEC.ShortFlag('-p')  # print
   SHOPT_SPEC.ShortFlag('-q')  # query option settings
 

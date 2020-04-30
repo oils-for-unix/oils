@@ -9,7 +9,9 @@ from mycpp import mylib
 from typing import List, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.id_kind_asdl import Id_t
-  from _devbuild.gen.runtime_asdl import cmd_value__Argv, redirect
+  from _devbuild.gen.runtime_asdl import (
+      cmd_value__Argv, cmd_value__Assign, redirect
+  )
   from _devbuild.gen.syntax_asdl import (
       command_t, command__Pipeline, command__Subshell
   )
@@ -102,3 +104,13 @@ class _Executor(object):
     # type: () -> None
     pass
 
+
+class _AssignBuiltin(object):
+  """Interface for assignment builtins."""
+
+  def Run(self, cmd_val):
+    # type: (cmd_value__Assign) -> int
+    raise NotImplementedError()
+
+
+# TODO: Also move _Builtin here.

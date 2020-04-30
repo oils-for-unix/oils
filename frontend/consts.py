@@ -25,11 +25,12 @@ OIL_BASIC = option_def.OIL_BASIC
 OIL_ALL = option_def.OIL_ALL
 DEFAULT_TRUE = option_def.DEFAULT_TRUE
 
+SHOPT_OPTION_NUMS = option_def.SHOPT_OPTION_NUMS
+PARSE_OPTION_NUMS = option_def.PARSE_OPTION_NUMS
+
 # TODO: These could be changed to numbers
-SET_OPTION_NAMES = option_def.SET_OPTION_NAMES
-SHOPT_OPTION_NAMES = option_def.SHOPT_OPTION_NAMES
-VISIBLE_SHOPT_NAMES = option_def.VISIBLE_SHOPT_NAMES
-PARSE_OPTION_NAMES = option_def.PARSE_OPTION_NAMES
+SET_OPTION_NAMES = option_def.SET_OPTION_NAMES  # used to print
+VISIBLE_SHOPT_NAMES = option_def.VISIBLE_SHOPT_NAMES  # used to print
 
 BUILTIN_NAMES = builtin_def.BUILTIN_NAMES  # Used by builtin_comp.py
 

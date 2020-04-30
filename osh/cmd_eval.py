@@ -98,11 +98,10 @@ if TYPE_CHECKING:
   from core.alloc import Arena
   from core import dev
   from core import optview
-  from core.vm import _Executor
+  from core.vm import _Executor, _AssignBuiltin
   from oil_lang import expr_eval
   from osh import word_eval
   from osh import builtin_process
-  from osh.builtin_misc import _Builtin
 
 
 # Python type name -> Oil type name
@@ -202,7 +201,7 @@ class CommandEvaluator(object):
                exec_opts,        # type: optview.Exec
                errfmt,           # type: ui.ErrorFormatter
                procs,            # type: Dict[str, command__ShFunction]
-               assign_builtins,  # type: Dict[builtin_t, _Builtin]
+               assign_builtins,  # type: Dict[builtin_t, _AssignBuiltin]
                arena,            # type: Arena
                cmd_deps,         # type: Deps
   ):

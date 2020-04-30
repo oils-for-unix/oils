@@ -318,11 +318,11 @@ SET_OPTION_NAMES = sorted(
 )
 
 # Include the unimplemented ones
-SHOPT_OPTION_NAMES = sorted(
-    opt.name for opt in _OPTION_DEF.opts if opt.builtin == 'shopt'
+SHOPT_OPTION_NUMS = sorted(
+    opt.index for opt in _OPTION_DEF.opts if opt.builtin == 'shopt'
 )
 
-PARSE_OPTION_NAMES = ParseOptNames()
+PARSE_OPTION_NUMS = [opt.index for opt in _OPTION_DEF.opts if opt.is_parse]
 
 # Sorted because 'shopt -o -p' should be sorted, etc.
 VISIBLE_SHOPT_NAMES = sorted(

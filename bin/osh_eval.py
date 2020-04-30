@@ -42,7 +42,8 @@ from typing import List, Dict, Tuple, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command__ShFunction
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
-  from osh.builtin_misc import _Builtin
+  from core.state import MutableOpts
+  from core.vm import _AssignBuiltin
   from osh.cmd_parse import CommandParser
   from pgen2.grammar import Grammar
 
@@ -231,7 +232,7 @@ def main(argv):
 
   procs = {}  # type: Dict[str, command__ShFunction]
 
-  assign_builtins = {}  # type: Dict[int, _Builtin]
+  assign_builtins = {}  # type: Dict[int, _AssignBuiltin]
 
   cmd_deps = cmd_eval.Deps()
   cmd_deps.mutable_opts = mutable_opts
@@ -240,8 +241,10 @@ def main(argv):
 
   cmd_deps.dumper = dev.CrashDumper('')
 
-  builtins = {}  # type: Dict[int, Echo]
+  builtins = {}  # type: Dict[int, _Builtin]
   builtins[builtin_i.echo] = Echo()
+  builtins[builtin_i.shopt] = Shopt(mutable_opts)
+  builtins[builtin_i.set] = Set(mutable_opts)
   ex = NullExecutor(builtins)
 
   trace_f = util.DebugFile(mylib.Stderr())
@@ -261,7 +264,14 @@ def main(argv):
   return 0
 
 
-class Echo(object):
+class _Builtin(object):
+
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    raise NotImplementedError()
+
+
+class Echo(_Builtin):
   """Simple echo builtin.
   """
   def __init__(self):
@@ -280,9 +290,42 @@ class Echo(object):
     return 0
 
 
+class Set(_Builtin):
+  def __init__(self, mutable_opts):
+    # type: (MutableOpts) -> None
+    self.mutable_opts = mutable_opts
+
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    #log('set %s', cmd_val.argv)
+    log('set %d', len(cmd_val.argv))
+    return 0
+
+
+class Shopt(_Builtin):
+  def __init__(self, mutable_opts):
+    # type: (MutableOpts) -> None
+    self.mutable_opts = mutable_opts
+
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    argv = cmd_val.argv
+
+    if len(argv) != 3:
+      #log('shopt %s', argv)
+      log('shopt %d', len(argv))
+      return 1
+
+    b = (argv[1] == '-s')
+    for opt_name in cmd_val.argv[2:]:
+      #log('opt_name %s', opt_name)
+      self.mutable_opts.SetShoptOption(opt_name, b)
+    return 0
+
+
 class NullExecutor(_Executor):
   def __init__(self, builtins):
-    # type: (Dict[int, Echo]) -> None
+    # type: (Dict[int, _Builtin]) -> None
     self.builtins = builtins
 
   def RunBuiltin(self, builtin_id, cmd_val):

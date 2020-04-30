@@ -177,12 +177,12 @@ from asdl import pybase
     from _devbuild.gen.id_kind_asdl import Id_str, Kind_str
     from _devbuild.gen.types_asdl import redir_arg_type_str, bool_arg_type_str
 
-    LIST_INT = ['STRICT_ALL', 'OIL_BASIC', 'OIL_ALL', 'DEFAULT_TRUE']
+    LIST_INT = [
+        'STRICT_ALL', 'OIL_BASIC', 'OIL_ALL', 'DEFAULT_TRUE',
+        'PARSE_OPTION_NUMS', 'SHOPT_OPTION_NUMS',
+        ]
     # TODO: These could be changed to numbers
-    LIST_STR = [
-        'SET_OPTION_NAMES', 'SHOPT_OPTION_NAMES', 'VISIBLE_SHOPT_NAMES',
-        'PARSE_OPTION_NAMES'
-    ]
+    LIST_STR = ['SET_OPTION_NAMES', 'VISIBLE_SHOPT_NAMES']
 
     prefix = argv[2]
 

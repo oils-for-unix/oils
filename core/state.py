@@ -287,18 +287,14 @@ class MutableOpts(object):
     # type: (bool) -> None
     self.opt_array[option_i.xtrace] = b
 
-  def _SetArrayByName(self, opt_name, b):
-    # type: (str, bool) -> None
-    if (opt_name in consts.PARSE_OPTION_NAMES and
+  def _SetArrayByNum(self, opt_num, b):
+    # type: (int, bool) -> None
+    if (opt_num in consts.PARSE_OPTION_NUMS and
         not self.mem.InGlobalNamespace()):
       e_die('Syntax options must be set at the top level '
             '(outside any function)')
 
-    index = match.MatchOption(opt_name)
-    if index == 0:
-      # Could be an assert sometimes, but check anyway
-      e_usage('got invalid option %r' % opt_name)
-    self.opt_array[index] = b
+    self.opt_array[opt_num] = b
 
   def _SetOption(self, opt_name, b):
     # type: (str, bool) -> None
@@ -306,12 +302,15 @@ class MutableOpts(object):
     assert '_' not in opt_name
     assert opt_name in consts.SET_OPTION_NAMES
 
-    if opt_name == 'errexit':
+    opt_num = match.MatchOption(opt_name)
+    assert opt_num != 0, opt_name
+
+    if opt_num == option_i.errexit:
       self.errexit.Set(b)
     else:
-      if opt_name == 'verbose' and b:
+      if opt_num == option_i.verbose and b:
         stderr_line('Warning: set -o verbose not implemented')
-      self._SetArrayByName(opt_name, b)
+      self._SetArrayByNum(opt_num, b)
 
     # note: may FAIL before we get here.
 
@@ -374,10 +373,15 @@ class MutableOpts(object):
       self._SetGroup(consts.STRICT_ALL, b)
       return
 
-    if opt_name not in consts.SHOPT_OPTION_NAMES:
+    opt_num = match.MatchOption(opt_name)
+    if opt_num == 0:
       e_usage('got invalid option %r' % opt_name)
 
-    self._SetArrayByName(opt_name, b)
+    # TODO: relax this rule
+    if opt_num not in consts.SHOPT_OPTION_NUMS:
+      e_usage("doesn't own option %r (try 'set')" % opt_name)
+
+    self._SetArrayByNum(opt_num, b)
 
   def ShowOptions(self, opt_names):
     # type: (List[str]) -> None
