@@ -6,6 +6,7 @@ from __future__ import print_function
 
 import sys
 
+from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.syntax_asdl import (
     source, source_t, command, command_e, command_t, command_str,
     command__Simple, command__DParen,
@@ -22,6 +23,7 @@ from core import util
 from core import state
 from core import ui
 from core.vm import _Executor  # reordered by mycpp
+from frontend import consts
 from frontend import parse_lib
 from frontend import reader
 from mycpp import mylib
@@ -238,7 +240,9 @@ def main(argv):
 
   cmd_deps.dumper = dev.CrashDumper('')
 
-  ex = NullExecutor()
+  builtins = {}  # type: Dict[int, Echo]
+  builtins[builtin_i.echo] = Echo()
+  ex = NullExecutor(builtins)
 
   trace_f = util.DebugFile(mylib.Stderr())
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, word_ev, trace_f)
@@ -257,12 +261,51 @@ def main(argv):
   return 0
 
 
+class Echo(object):
+  """Simple echo builtin.
+  """
+  def __init__(self):
+    # type: () -> None
+    self.f = mylib.Stdout()
+
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+
+    for i, a in enumerate(cmd_val.argv[1:]):
+      if i != 0:
+        self.f.write(' ')  # arg separator
+      self.f.write(a)
+
+    self.f.write('\n')
+    return 0
+
+
 class NullExecutor(_Executor):
+  def __init__(self, builtins):
+    # type: (Dict[int, Echo]) -> None
+    self.builtins = builtins
+
+  def RunBuiltin(self, builtin_id, cmd_val):
+    # type: (int, cmd_value__Argv) -> int
+    """Run a builtin.  Also called by the 'builtin' builtin."""
+
+    builtin_func = self.builtins[builtin_id]
+
+    try:
+      status = builtin_func.Run(cmd_val)
+    finally:
+      pass
+    return status
 
   def RunSimpleCommand(self, cmd_val, do_fork, call_procs=True):
     # type: (cmd_value__Argv, bool, bool) -> int
 
-    log('RunSimpleCommand')
+    arg0 = cmd_val.argv[0]
+    builtin_id = consts.LookupNormalBuiltin(arg0)
+    if builtin_id != consts.NO_INDEX:
+      return self.RunBuiltin(builtin_id, cmd_val)
+
+    log('Unhandled SimpleCommand')
 
     f = mylib.Stdout()
     #ast_f = fmt.DetectConsoleOutput(f)
