@@ -289,12 +289,8 @@ if mylib.PYTHON:
 
   # Doesn't translate because of Any type
   # Options may need metaprogramming!
-  def PrintAst(nodes, opts):
-    # type: (List[command_t], Any) -> None
-    if len(nodes) == 1:
-      node = nodes[0]
-    else:
-      node = command.CommandList(nodes)
+  def PrintAst(node, opts):
+    # type: (command_t, Any) -> None
 
     if opts.ast_format == 'none':
       print('AST not printed.', file=sys.stderr)

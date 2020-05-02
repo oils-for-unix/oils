@@ -150,9 +150,6 @@ def main(argv):
   names = set(name for name, _ in to_compile)
   filtered = []
   for name, module in to_compile:
-    # HACK
-    if 'core.main_loop' in name:
-      continue
     if name.startswith('oil.') and name[4:] in names:
       continue
     filtered.append((name, module))

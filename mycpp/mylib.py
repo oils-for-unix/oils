@@ -6,7 +6,7 @@ from __future__ import print_function
 import sys
 import cStringIO
 
-from typing import Any
+from typing import Tuple, Any
 
 # For conditional translation
 CPP = False
@@ -96,3 +96,10 @@ class tagswitch(object):
 def iteritems(d):
   """Make translation a bit easier."""
   return d.iteritems()
+
+
+def split_once(s, delim):
+  # type: (str, str) -> Tuple[str, str]
+  """Easier to call than split(s, 1) because of tuple unpacking.
+  """
+  return s.split(delim, 1)

@@ -821,6 +821,8 @@ inline bool dict_contains(Dict<K, V>* haystack, K needle) {
 
 namespace mylib {  // MyPy artifact
 
+Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
+
 inline Str* NewStr(const char* s) {
   return new Str(s);
 }

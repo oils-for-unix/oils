@@ -725,34 +725,39 @@ def ShellMain(lang, argv0, argv, login_shell):
       status = e.status
     return status
 
-  nodes_out = [] if exec_opts.noexec() else None
+  if exec_opts.noexec():
+    status = 0
+    try:
+      node = main_loop.ParseWholeFile(c_parser)
+    except error.Parse as e:
+      ui.PrettyPrintError(e, arena)
+      status = 2
 
-  if nodes_out is None and opts.parser_mem_dump:
-    raise args.UsageError('--parser-mem-dump can only be used with -n')
+    if status == 0 :
+      if opts.parser_mem_dump:  # only valid in -n mode
+        # This might be superstition, but we want to let the value stabilize
+        # after parsing.  bash -c 'cat /proc/$$/status' gives different results
+        # with a sleep.
+        time.sleep(0.001)
+        input_path = '/proc/%d/status' % posix.getpid()
+        with open(input_path) as f, open(opts.parser_mem_dump, 'w') as f2:
+          contents = f.read()
+          f2.write(contents)
+          log('Wrote %s to %s (--parser-mem-dump)', input_path,
+              opts.parser_mem_dump)
 
-  _tlog('Execute(node)')
-  try:
-    status = main_loop.Batch(cmd_ev, c_parser, arena, nodes_out=nodes_out, is_main=True)
-    if cmd_ev.MaybeRunExitTrap():
-      status = cmd_ev.LastStatus()
-  except util.UserExit as e:
-    status = e.status
+      ui.PrintAst(node, opts)
+  else:
+    if opts.parser_mem_dump:
+      raise args.UsageError('--parser-mem-dump can only be used with -n')
 
-  # Only print nodes if the whole parse succeeded.
-  if nodes_out is not None and status == 0:
-    if opts.parser_mem_dump:  # only valid in -n mode
-      # This might be superstition, but we want to let the value stabilize
-      # after parsing.  bash -c 'cat /proc/$$/status' gives different results
-      # with a sleep.
-      time.sleep(0.001)
-      input_path = '/proc/%d/status' % posix.getpid()
-      with open(input_path) as f, open(opts.parser_mem_dump, 'w') as f2:
-        contents = f.read()
-        f2.write(contents)
-        log('Wrote %s to %s (--parser-mem-dump)', input_path,
-            opts.parser_mem_dump)
-
-    ui.PrintAst(nodes_out, opts)
+    _tlog('Execute(node)')
+    try:
+      status = main_loop.Batch(cmd_ev, c_parser, arena, is_main=True)
+      if cmd_ev.MaybeRunExitTrap():
+        status = cmd_ev.LastStatus()
+    except util.UserExit as e:
+      status = e.status
 
   # NOTE: 'exit 1' is ControlFlow and gets here, but subshell/commandsub
   # don't because they call sys.exit().

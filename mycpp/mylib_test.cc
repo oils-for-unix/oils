@@ -142,6 +142,23 @@ TEST test_str_funcs() {
 
   log("ord('A') = %d", ord(new Str("A")));
 
+  log("split_once()");
+  Tuple2<Str*, Str*> t = mylib::split_once(new Str("foo=bar"), new Str("="));
+  ASSERT(str_equals(t.at0(), new Str("foo")));
+  ASSERT(str_equals(t.at1(), new Str("bar")));
+
+  Tuple2<Str*, Str*> u = mylib::split_once(new Str("foo="), new Str("="));
+  ASSERT(str_equals(u.at0(), new Str("foo")));
+  ASSERT(str_equals(u.at1(), new Str("")));
+
+  Tuple2<Str*, Str*> v = mylib::split_once(new Str("foo="), new Str("Z"));
+  ASSERT(str_equals(v.at0(), new Str("foo=")));
+  ASSERT(str_equals(v.at1(), new Str("")));
+
+  Tuple2<Str*, Str*> w = mylib::split_once(new Str(""), new Str("Z"));
+  ASSERT(str_equals(w.at0(), new Str("")));
+  ASSERT(str_equals(w.at1(), new Str("")));
+
   PASS();
 }
 

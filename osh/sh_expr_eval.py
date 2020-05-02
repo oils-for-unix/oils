@@ -221,9 +221,7 @@ class ArithEvaluator(object):
       return integer
 
     if '#' in s:
-      parts = s.split('#', 1)  # mycpp rewrite: can't use dynamic unpacking of List
-      b = parts[0]
-      digits = parts[1]
+      b, digits = mylib.split_once(s, '#')
       try:
         base = int(b)
       except ValueError:

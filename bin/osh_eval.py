@@ -15,7 +15,7 @@ from asdl import format as fmt
 from core import alloc
 from core import dev
 from core import error
-#from core import main_loop
+from core import main_loop
 from core import meta
 from core import pyutil
 from core.util import log
@@ -52,6 +52,7 @@ if mylib.PYTHON:
   unused1 = log
   unused2 = cmd_eval  # lint ignore
   unused3 = dev
+  unused4 = main_loop
 
 
 # TEMP: Copied from core/main_loop.py

@@ -6,6 +6,7 @@
 ./core/ansi.py
 ./core/dev.py
 ./core/error.py
+./core/main_loop.py
 ./core/meta.py
 ./core/optview.py
 ./core/passwd.py

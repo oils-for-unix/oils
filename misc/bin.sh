@@ -25,20 +25,40 @@ make-osh-dbg() {
   chmod +x $out
 }
 
+make-osh-eval() {
+  local out=bin/osh_eval
+  { sh-prefix
+    echo 'PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor exec $REPO_ROOT/bin/osh_eval.py "$@"'
+  } > $out
+  chmod +x $out
+  echo "Wrote $out"
+}
+
+sh-prefix() {
+  cat << 'EOF'
+#!/bin/sh
+REPO_ROOT=$(cd $(dirname $(dirname $0)) && pwd)
+EOF
+}
+
+sh-snippet() {
+  local wrapped=$1  # e.g. oil.py
+  local action=$2  # e.g. osh
+
+  sh-prefix
+  echo 'PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor exec $REPO_ROOT/bin/'$wrapped' '$action' "$@"'
+}
+
 # A snippet that sets PYTHONPATH for bin/oil.py and runs it with the right
 # action.
 oil-dev-snippet() {
-  local name=$1
-  echo '#!/bin/sh'
-  echo 'REPO_ROOT=$(cd $(dirname $(dirname $0)) && pwd)'
-  echo 'PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor exec $REPO_ROOT/bin/oil.py '$name' "$@"'
+  local action=$1
+  sh-snippet oil.py $action
 }
 
 opy-dev-snippet() {
-  local name=$1
-  echo '#!/bin/sh'
-  echo 'REPO_ROOT=$(cd $(dirname $(dirname $0)) && pwd)'
-  echo 'PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor exec $REPO_ROOT/bin/opy_.py '$name' "$@"'
+  local action=$1
+  sh-snippet opy_.py $action
 }
 
 make-bin-links() {
@@ -66,6 +86,8 @@ make-bin-links() {
   done
 
   make-osh-dbg
+
+  make-osh-eval
 }
 
 "$@"

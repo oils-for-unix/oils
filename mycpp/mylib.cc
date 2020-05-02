@@ -140,6 +140,26 @@ Str* StrIter::Value() {
 
 namespace mylib {
 
+Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
+  assert(delim->len_ == 1);
+
+  const char* start = s->data_;
+  char c = delim->data_[0];
+  int len = s->len_;
+
+  const char* p = static_cast<const char*>(memchr(start, c, len));
+
+  if (p) {
+    // NOTE: Using SHARED SLICES, not memcpy() like some other functions.
+    int len1 = p-start;
+    Str* first = new Str(start, len1);
+    Str* second = new Str(p+1, len - len1 - 1);
+    return Tuple2<Str*, Str*>(first, second);
+  } else {
+    return Tuple2<Str*, Str*>(s, kEmptyString);
+  }
+}
+
 //
 // LineReader
 //

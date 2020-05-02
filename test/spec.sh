@@ -944,4 +944,16 @@ ble-features() {
           $BASH $ZSH $MKSH $BUSYBOX_ASH $DASH yash $OSH_LIST "$@"
 }
 
+#
+# For translation
+#
+
+arith-osh-eval-py() {
+  $0 arith $PWD/bin/osh_eval "$@"
+}
+
+arith-osh-eval-cpp() {
+  $0 arith $PWD/_bin/osh_eval.dbg "$@"
+}
+
 "$@"
