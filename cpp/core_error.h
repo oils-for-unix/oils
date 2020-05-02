@@ -15,7 +15,7 @@ using syntax_asdl::word_part_t;
 using syntax_asdl::word_t;
 
 // This definition is different in Python than C++.  Not worth auto-translating.
-class _ErrorWithLocation {
+class _ErrorWithLocation : public std::exception {
  public:
   _ErrorWithLocation(Str* user_str, int span_id)
       : user_str_(user_str),
@@ -86,6 +86,18 @@ class RedirectEval : public _ErrorWithLocation {
   RedirectEval(Str* user_str, word_part_t* part) : _ErrorWithLocation(user_str, part) {
   }
   RedirectEval(Str* user_str, word_t* word) : _ErrorWithLocation(user_str, word) {
+  }
+};
+
+class FatalRuntime: public _ErrorWithLocation {
+ public:
+  FatalRuntime(Str* user_str) : _ErrorWithLocation(user_str, -1) {
+  }
+};
+
+class Strict : public FatalRuntime {
+ public:
+  Strict(Str* user_str) : FatalRuntime(user_str) {
   }
 };
 

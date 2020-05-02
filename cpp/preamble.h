@@ -114,24 +114,24 @@ Str* repr(void* obj) {
 }
 
 [[noreturn]] void e_strict(Str* s, int span_id) {
-  assert(0);
+  throw error::Strict(s);
 }
 
 [[noreturn]] void e_strict(Str* s, syntax_asdl::Token* token) {
-  assert(0);
+  throw error::Strict(s);
 }
 
 [[noreturn]] void e_strict(Str* s, syntax_asdl::word_part_t* part) {
-  assert(0);
+  throw error::Strict(s);
 }
 
 [[noreturn]] void e_strict(Str* s, syntax_asdl::word_t* w) {
-  assert(0);
+  throw error::Strict(s);
 }
 
 // Used without args in osh/string_ops.py
 [[noreturn]] void e_strict(Str* s) {
-  assert(0);
+  throw error::Strict(s);
 }
 
 // e.g. used in core/state.py

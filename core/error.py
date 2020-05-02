@@ -133,31 +133,31 @@ if mylib.PYTHON:
     """A non-fatal runtime error, e.g. for builtins."""
 
 
-class FatalRuntime(_ErrorWithLocation):
-  """An exception that propagates to the top level.
+  class FatalRuntime(_ErrorWithLocation):
+    """An exception that propagates to the top level.
 
-  Used in the evaluators, and also also used in test builtin for invalid
-  argument.
-  """
+    Used in the evaluators, and also also used in test builtin for invalid
+    argument.
+    """
 
 
-class Strict(FatalRuntime):
-  """Depending on shell options, these errors may be caught and ignored.
+  class Strict(FatalRuntime):
+    """Depending on shell options, these errors may be caught and ignored.
 
-  For example, if options like these are ON:
+    For example, if options like these are ON:
 
-    set -o strict_arith
-    set -o strict_word_eval
+      set -o strict_arith
+      set -o strict_word_eval
 
-  then we re-raise the error so it's caught by the top level.  Otherwise
-  we catch it and return a dummy value like '' or -1 (i.e. what bash commonly
-  does.)
+    then we re-raise the error so it's caught by the top level.  Otherwise
+    we catch it and return a dummy value like '' or -1 (i.e. what bash commonly
+    does.)
 
-  TODO: Have levels, like:
+    TODO: Have levels, like:
 
-  OIL_STRICT_PRINT=2   # print warnings at level 2 and above
-  OIL_STRICT_DIE=1  # abort the program at level 1 and above
-  """
+    OIL_STRICT_PRINT=2   # print warnings at level 2 and above
+    OIL_STRICT_DIE=1  # abort the program at level 1 and above
+    """
 
 
 if mylib.PYTHON:

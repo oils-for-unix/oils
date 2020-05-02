@@ -4,6 +4,7 @@
 #include "id.h"
 #include "libc.h"  // cell, etc
 #include "osh_eval_stubs.h"   // util::BackslashEscape
+#include "preamble.h"
 #include "runtime_asdl.h"  // cell, etc
 
 TEST show_sizeof() {
@@ -75,6 +76,24 @@ TEST libc_test() {
   PASS();
 }
 
+// HACK!  asdl/runtime.py isn't translated, but core_error.h uses it...
+namespace runtime {
+  int NO_SPID = -1;
+};
+
+TEST exceptions() {
+  bool caught = false;
+  try {
+    e_strict(new Str("foo"));
+  } catch (error::Strict& e) {  // Catch by reference!
+    //log("%p ", e);
+    caught = true;
+  }
+  ASSERT(caught);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char **argv) {
@@ -83,6 +102,7 @@ int main(int argc, char **argv) {
   RUN_TEST(match_test);
   RUN_TEST(util_test);
   RUN_TEST(libc_test);
+  RUN_TEST(exceptions);
   GREATEST_MAIN_END();        /* display results */
   return 0;
 }
