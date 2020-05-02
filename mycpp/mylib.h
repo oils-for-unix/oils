@@ -745,7 +745,7 @@ Str* repr(Str* s);
 // inline int len(Dict* D) {
 // }
 
-bool _str_to_int(Str* s, int* result);  // for testing only
+bool _str_to_int(Str* s, int* result, int base);  // for testing only
 int to_int(Str* s);
 int to_int(Str* s, int base);
 

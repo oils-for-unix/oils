@@ -85,7 +85,7 @@ TEST exceptions() {
   bool caught = false;
   try {
     e_strict(new Str("foo"));
-  } catch (error::Strict& e) {  // Catch by reference!
+  } catch (error::Strict* e) {  // Catch by reference!
     //log("%p ", e);
     caught = true;
   }

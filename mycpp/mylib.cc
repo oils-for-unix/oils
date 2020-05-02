@@ -353,18 +353,24 @@ Str* str_repeat(Str* s, int times) {
 
 // Helper for str_to_int() that doesn't use exceptions.
 // Like atoi(), but with better error checking.
-bool _str_to_int(Str* s, int* result) {
+bool _str_to_int(Str* s, int* result, int base) {
   if (s->len_ == 0) {
     return false;  // special case for empty string
   }
 
   char* p;  // mutated by strtol
 
-  // cstring-TODO
-  *result = strtol(s->data_, &p, 10);  // base 10
+  //
+  // BUG: string might not be NUL terminated.  Copy it into NUL-terminated
+  // buffer or write our own.
+  //
+
+  *result = strtol(s->data_, &p, base);  // base 10
 
   // Return true if it consumed ALL characters.
   const char* end = s->data_ + s->len_;
+
+  //log("start %p   p %p   end %p", s->data_, p, end);
   if (p == end) {
     return true;
   }
@@ -382,7 +388,7 @@ bool _str_to_int(Str* s, int* result) {
 // Python-like wrapper
 int to_int(Str* s) {
   int i;
-  if (_str_to_int(s, &i)) {
+  if (_str_to_int(s, &i, 10)) {
     return i;
   } else {
     throw std::exception();  // TODO: should be ValueError
@@ -390,7 +396,12 @@ int to_int(Str* s) {
 }
 
 int to_int(Str* s, int base) {
-  assert(0);
+  int i;
+  if (_str_to_int(s, &i, base)) {
+    return i;
+  } else {
+    throw std::exception();  // TODO: should be ValueError
+  }
 }
 
 //

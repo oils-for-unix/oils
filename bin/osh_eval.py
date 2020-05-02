@@ -261,7 +261,7 @@ def main(argv):
 
   cmd_ev.ExecuteAndCatch(node)
 
-  return 0
+  return cmd_ev.LastStatus()
 
 
 class _Builtin(object):

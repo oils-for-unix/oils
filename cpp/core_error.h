@@ -51,10 +51,12 @@ class _ErrorWithLocation : public std::exception {
   }
 
   bool HasLocation() {
+    return false;  // TODO: fix this
     assert(0);
   }
 
   int ExitStatus() {
+    return 1;  // TODO: fix this
     assert(0);
   }
 

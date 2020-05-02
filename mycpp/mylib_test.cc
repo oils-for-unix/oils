@@ -20,42 +20,60 @@ TEST test_str_to_int() {
   int i;
   bool ok;
 
-  ok = _str_to_int(new Str("345"), &i);
+  ok = _str_to_int(new Str("345"), &i, 10);
   ASSERT(ok);
   ASSERT_EQ_FMT(i, 345, "%d");
 
   // TODO: Is there a way to check for overflow?
   // strtol returns 'long int'.
-  ok = _str_to_int(new Str("1234567890"), &i);
+  ok = _str_to_int(new Str("1234567890"), &i, 10);
   ASSERT(ok);
-  log("i = %d", i);
   ASSERT(i == 1234567890);
 
   // negative
-  ok = _str_to_int(new Str("-123"), &i);
+  ok = _str_to_int(new Str("-123"), &i, 10);
   ASSERT(ok);
   ASSERT(i == -123);
 
   // Leading space is OK!
-  ok = _str_to_int(new Str(" -123"), &i);
+  ok = _str_to_int(new Str(" -123"), &i, 10);
   ASSERT(ok);
   ASSERT(i == -123);
 
   // Trailing space is OK!  NOTE: This fails!
-  ok = _str_to_int(new Str(" -123  "), &i);
+  ok = _str_to_int(new Str(" -123  "), &i, 10);
   ASSERT(ok);
   ASSERT(i == -123);
 
   // Empty string isn't an integer
-  ok = _str_to_int(new Str(""), &i);
+  ok = _str_to_int(new Str(""), &i, 10);
   ASSERT(!ok);
 
-  ok = _str_to_int(new Str("xx"), &i);
+  ok = _str_to_int(new Str("xx"), &i, 10);
   ASSERT(!ok);
 
   // Trailing garbage
-  ok = _str_to_int(new Str("42a"), &i);
+  ok = _str_to_int(new Str("42a"), &i, 10);
   ASSERT(!ok);
+
+  i = to_int(new Str("ff"), 16);
+  ASSERT(i == 255);
+
+  // strtol allows 0x prefix
+  i = to_int(new Str("0xff"), 16);
+  ASSERT(i == 255);
+
+  // TODO: test ValueError here
+  //i = to_int(new Str("0xz"), 16);
+
+  i = to_int(new Str("0"), 16);
+  ASSERT(i == 0);
+
+  i = to_int(new Str("077"), 8);
+  ASSERT_EQ_FMT(63, i, "%d");
+
+  // TODO: test ValueError here
+  //i = to_int(new Str("078"), 8);
 
   PASS();
 }
