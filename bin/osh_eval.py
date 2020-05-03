@@ -55,27 +55,6 @@ if mylib.PYTHON:
   unused4 = main_loop
 
 
-# TEMP: Copied from core/main_loop.py
-def ParseWholeFile(c_parser):
-  # type: (CommandParser) -> command_t
-  """Parse an entire shell script.
-
-  This uses the same logic as Batch().
-  """
-  children = []  # type: List[command_t]
-  while True:
-    node = c_parser.ParseLogicalLine()  # can raise ParseError
-    if node is None:  # EOF
-      c_parser.CheckForPendingHereDocs()  # can raise ParseError
-      break
-    children.append(node)
-
-  if len(children) == 1:
-    return children[0]
-  else:
-    return command.CommandList(children)
-
-
 class TestEvaluator(object):
   def __init__(self, arith_ev, word_ev):
     # type: (sh_expr_eval.ArithEvaluator, word_eval.NormalWordEvaluator) -> None
@@ -164,6 +143,8 @@ def main(argv):
   aliases = {}  # type: Dict[str, str]
   # parse `` and a[x+1]=bar differently
 
+  state.SetGlobalString(mem, 'SHELLOPTS', '')
+
   oil_grammar = None  # type: Grammar
   if mylib.PYTHON:
     loader = pyutil.GetResourceLoader()
@@ -197,18 +178,17 @@ def main(argv):
   arena.PushSource(src)
   c_parser = parse_ctx.MakeOshParser(line_reader)
 
-  try:
-    #node = main_loop.ParseWholeFile(c_parser)
-    node = ParseWholeFile(c_parser)
-  except error.Parse as e:
-    ui.PrettyPrintError(e, arena)
-    return 2
-  assert node is not None
-
   # C++ doesn't have the abbreviations yet (though there are some differences
   # like omitting spids)
   #tree = node.AbbreviatedTree()
   if flag_n:
+    try:
+      node = main_loop.ParseWholeFile(c_parser)
+    except error.Parse as e:
+      ui.PrettyPrintError(e, arena)
+      return 2
+    assert node is not None
+
     if flag_a:
       tree = node.PrettyTree()
 
@@ -223,6 +203,7 @@ def main(argv):
 
   splitter = split.SplitContext(mem)
   arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, parse_ctx, errfmt)
+  bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, parse_ctx, errfmt)
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
 
   arith_ev.word_ev = word_ev
@@ -256,13 +237,15 @@ def main(argv):
 
   # vm.InitCircularDeps
   cmd_ev.arith_ev = arith_ev
+  cmd_ev.bool_ev = bool_ev
   cmd_ev.word_ev = word_ev
   cmd_ev.tracer = tracer
   cmd_ev.shell_ex = ex
 
-  cmd_ev.ExecuteAndCatch(node)
+  bool_ev.word_ev = word_ev
 
-  return cmd_ev.LastStatus()
+  status = main_loop.Batch(cmd_ev, c_parser, arena, is_main=True)
+  return status
 
 
 class _Builtin(object):
@@ -298,8 +281,17 @@ class Set(_Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    #log('set %s', cmd_val.argv)
-    log('set %d', len(cmd_val.argv))
+    argv = cmd_val.argv
+
+    if len(argv) != 3:
+      #log('shopt %s', argv)
+      log('set %d', len(argv))
+      return 1
+
+    b = (argv[1] == '-o')
+    opt_name = argv[2]
+    self.mutable_opts.SetOption(opt_name, b)
+
     return 0
 
 
@@ -345,6 +337,11 @@ class NullExecutor(_Executor):
     # type: (cmd_value__Argv, bool, bool) -> int
 
     arg0 = cmd_val.argv[0]
+
+    builtin_id = consts.LookupSpecialBuiltin(arg0)
+    if builtin_id != consts.NO_INDEX:
+      return self.RunBuiltin(builtin_id, cmd_val)
+
     builtin_id = consts.LookupNormalBuiltin(arg0)
     if builtin_id != consts.NO_INDEX:
       return self.RunBuiltin(builtin_id, cmd_val)
@@ -367,7 +364,8 @@ class NullExecutor(_Executor):
 
 if __name__ == '__main__':
   try:
-    main(sys.argv)
+    status = main(sys.argv)
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
-    sys.exit(1)
+    status = 1
+  sys.exit(status)
