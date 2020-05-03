@@ -1089,7 +1089,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           cast_kind = _GetCastKind(self.module_path, subtype_name)
 
-          # Distinguish between UP cast and DOWN cast.
+          # HACK: Distinguish between UP cast and DOWN cast.
           # osh/cmd_parse.py _MakeAssignPair does an UP cast within branches.
           # _t is the base type, so that means it's an upcast.
           if isinstance(type_expr, NameExpr) and type_expr.name.endswith('_t'):

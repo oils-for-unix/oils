@@ -582,6 +582,12 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
       stats.Inc('num_skipped')
       continue
 
+    if opts.do_print:
+      print('#### %s' % case['desc'])
+      print(case['code'])
+      print()
+      continue
+
     stats.Inc('num_cases_run')
 
     result_row = []
@@ -1107,6 +1113,9 @@ def Options():
       '--list', dest='do_list', action='store_true', default=None,
       help='Just list tests')
   p.add_option(
+      '-p', '--print', dest='do_print', action='store_true', default=None,
+      help="Print test code, but don't run it")
+  p.add_option(
       '--format', dest='format', choices=['ansi', 'html'], default='ansi',
       help="Output format (default 'ansi')")
   p.add_option(
@@ -1230,16 +1239,18 @@ def main(argv):
   else:
     case_predicate = lambda i, case: True
 
+  out_f = sys.stderr if opts.do_print else sys.stdout
+
   # Set up output style.  Also see asdl/format.py
   if opts.format == 'ansi':
-    out = AnsiOutput(sys.stdout, opts.verbose)
+    out = AnsiOutput(out_f, opts.verbose)
   elif opts.format == 'html':
     spec_name = os.path.basename(test_file)
     spec_name = spec_name.split('.')[0]
 
     sh_labels = [label for label, _ in shell_pairs]
 
-    out = HtmlOutput(sys.stdout, opts.verbose, spec_name, sh_labels, cases)
+    out = HtmlOutput(out_f, opts.verbose, spec_name, sh_labels, cases)
   else:
     raise AssertionError()
 

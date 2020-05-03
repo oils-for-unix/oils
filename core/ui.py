@@ -13,7 +13,7 @@ import sys
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
-    Token, command_t, command,
+    Token, command_t,
     source_e, source__Stdin, source__MainFile, source__SourcedFile,
     source__EvalArg, source__Alias, source__LValue,
 )

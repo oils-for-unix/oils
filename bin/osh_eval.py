@@ -8,8 +8,8 @@ import sys
 
 from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.syntax_asdl import (
-    source, source_t, command, command_e, command_t, command_str,
-    command__Simple, command__DParen,
+    source, source_t,
+    command_e, command_t, command_str, command__Simple, command__DParen,
 )
 from asdl import format as fmt
 from core import alloc
@@ -44,7 +44,6 @@ if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from core.state import MutableOpts
   from core.vm import _AssignBuiltin
-  from osh.cmd_parse import CommandParser
   from pgen2.grammar import Grammar
 
 

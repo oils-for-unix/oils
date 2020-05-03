@@ -24,7 +24,7 @@ from core import util
 from core.util import log
 from mycpp import mylib
 
-from typing import Any, Optional, List, TYPE_CHECKING
+from typing import Any, List, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
   from core.comp_ui import _IDisplay

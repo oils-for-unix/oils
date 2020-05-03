@@ -131,7 +131,9 @@ def OldValue(lval, mem, exec_opts):
         if case2(value_e.Undef):
           array_val = value.MaybeStrArray([])
         elif case2(value_e.MaybeStrArray):
-          array_val = cast(value__MaybeStrArray, UP_val)
+          tmp = cast(value__MaybeStrArray, UP_val)
+          # mycpp rewrite: add tmp.  cast() creates a new var in inner scope
+          array_val = tmp
         else:
           e_die("Can't use [] on value of type %s", ui.ValType(val))
 
