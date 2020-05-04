@@ -179,6 +179,17 @@ def OldValue(lval, mem, exec_opts):
   return val
 
 
+# TODO: Should refactor for int/char-based processing
+if mylib.PYTHON:
+  def IsLower(ch):
+    # type: (str) -> bool
+    return 'a' <= ch and ch <= 'z'
+
+  def IsUpper(ch):
+    # type: (str) -> bool
+    return 'A' <= ch and ch <= 'Z'
+
+
 class ArithEvaluator(object):
   """Shared between arith and bool evaluators.
 
@@ -237,9 +248,9 @@ class ArithEvaluator(object):
 
       integer = 0
       for ch in digits:
-        if 'a' <= ch and ch <= 'z':
+        if IsLower(ch):
           digit = ord(ch) - ord('a') + 10
-        elif 'A' <= ch and ch <= 'Z':
+        elif IsUpper(ch):
           digit = ord(ch) - ord('A') + 36
         elif ch == '@':  # horrible syntax
           digit = 62

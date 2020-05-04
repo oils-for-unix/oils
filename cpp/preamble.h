@@ -18,6 +18,7 @@ using id_kind_asdl::Kind_t;
 #include "frontend_match.h"
 #include "frontend_tdop.h"
 #include "osh_arith_parse.h"
+#include "osh_sh_expr_eval.h"
 #include "pgen2_parse.h"
 #include "qsn_qsn.h"
 // added for osh_eval

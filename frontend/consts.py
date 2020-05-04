@@ -13,7 +13,7 @@ from frontend import option_def
 
 from typing import Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.option_asdl import builtin_t
+  from _devbuild.gen.option_asdl import option_t, builtin_t
 
 
 NO_INDEX = 0  # for Resolve
@@ -28,8 +28,9 @@ DEFAULT_TRUE = option_def.DEFAULT_TRUE
 SHOPT_OPTION_NUMS = option_def.SHOPT_OPTION_NUMS
 PARSE_OPTION_NUMS = option_def.PARSE_OPTION_NUMS
 
-# TODO: These could be changed to numbers
-SET_OPTION_NAMES = option_def.SET_OPTION_NAMES  # used to print
+SET_OPTION_NUMS = option_def.SET_OPTION_NUMS
+SET_OPTION_NAMES = option_def.SET_OPTION_NAMES  # used for assertions only
+
 VISIBLE_SHOPT_NAMES = option_def.VISIBLE_SHOPT_NAMES  # used to print
 
 BUILTIN_NAMES = builtin_def.BUILTIN_NAMES  # Used by builtin_comp.py
@@ -141,6 +142,12 @@ def LookupNormalBuiltin(argv0):
     return b.index
   else:
     return NO_INDEX
+
+
+def OptionName(opt_num):
+  # type: (option_t) -> str
+  """Get the name from an index."""
+  return option_def.OPTION_NAMES[opt_num]
 
 
 #

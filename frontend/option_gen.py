@@ -41,10 +41,9 @@ def main(argv):
   except IndexError:
     raise RuntimeError('Action required')
 
-  # TODO:
   # generate builtin::echo, etc.
-  # 
-  # And in Python do the same.
+  # This relies on the assigned option numbers matching ASDL's numbering!
+  # TODO: Allow controlling the integer values in ASDL enums?
 
   option = _CreateSum(_OPT_ENUM, [opt.name for opt in option_def.All()])
   builtin = _CreateSum(_BUILTIN_ENUM, [b.enum_name for b in builtin_def.All()])
@@ -52,7 +51,6 @@ def main(argv):
   # [opt.name for opt in option_def.All() if opt.implemented])
 
   schema_ast = asdl_.Module('option', [], [option, builtin])
-
 
   if action == 'cpp':
     from asdl import gen_cpp

@@ -56,6 +56,7 @@ class _OptionDef(object):
     # type: () -> None
     self.array_size = self.index
 
+
 # Used by builtin
 _OTHER_SET_OPTIONS = [
     # NOTE: set -i and +i is explicitly disallowed.  Only osh -i or +i is valid
@@ -310,30 +311,34 @@ _OPTION_DEF = _OptionDef()
 
 _Init(_OPTION_DEF)
 
+# Sort by name because we print options.
+# TODO: for MEMBERSHIP queries, we could sort by the most common?  errexit
+# first?
+_SORTED = sorted(_OPTION_DEF.opts, key=lambda opt: opt.name)
+
 # Used by core/state.py.
 
-# TODO: Change all of these to numbers.
-SET_OPTION_NAMES = sorted(
-    opt.name for opt in _OPTION_DEF.opts if opt.builtin == 'set'
-)
+# Used only for Python assertions
+SET_OPTION_NAMES = [opt.name for opt in _SORTED if opt.builtin == 'set']
+SET_OPTION_NUMS = [opt.index for opt in _SORTED  if opt.builtin == 'set']
 
 # Include the unimplemented ones
-SHOPT_OPTION_NUMS = sorted(
-    opt.index for opt in _OPTION_DEF.opts if opt.builtin == 'shopt'
-)
+SHOPT_OPTION_NUMS = [opt.index for opt in _SORTED if opt.builtin == 'shopt']
 
-PARSE_OPTION_NUMS = [opt.index for opt in _OPTION_DEF.opts if opt.is_parse]
+PARSE_OPTION_NUMS = [opt.index for opt in _SORTED if opt.is_parse]
 
 # Sorted because 'shopt -o -p' should be sorted, etc.
-VISIBLE_SHOPT_NAMES = sorted(
-    opt.name for opt in _OPTION_DEF.opts
+VISIBLE_SHOPT_NAMES = [
+    opt.name for opt in _SORTED
     if opt.builtin == 'shopt' and opt.implemented
-)
+]
 
-OIL_BASIC = [opt.index for opt in _OPTION_DEF.opts if 'oil:basic' in opt.groups]
-OIL_ALL = [opt.index for opt in _OPTION_DEF.opts if 'oil:all' in opt.groups]
-STRICT_ALL = [opt.index for opt in _OPTION_DEF.opts if 'strict:all' in opt.groups]
-DEFAULT_TRUE = [opt.index for opt in _OPTION_DEF.opts if opt.default]
+OIL_BASIC = [opt.index for opt in _SORTED if 'oil:basic' in opt.groups]
+OIL_ALL = [opt.index for opt in _SORTED if 'oil:all' in opt.groups]
+STRICT_ALL = [opt.index for opt in _SORTED if 'strict:all' in opt.groups]
+DEFAULT_TRUE = [opt.index for opt in _SORTED if opt.default]
 
 META_OPTIONS = ['strict:all', 'oil:basic', 'oil:all']  # Passed to flag parser
 
+# For printing option names to stdout.  Wrapped by frontend/consts.
+OPTION_NAMES = dict((opt.index, opt.name) for opt in _SORTED)

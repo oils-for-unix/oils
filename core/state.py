@@ -40,6 +40,7 @@ import posix_ as posix
 from typing import Tuple, List, Dict, Optional, Any, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
+  from _devbuild.gen.option_asdl import option_t
   from _devbuild.gen.runtime_asdl import cell
   from core.alloc import Arena
 
@@ -246,6 +247,32 @@ def MakeOpts(mem, opt_hook):
   return parse_opts, exec_opts, mutable_opts
 
 
+def _ShoptOptionNum(opt_name):
+  # type: (str) -> option_t
+  opt_num = match.MatchOption(opt_name)
+  if opt_num == 0:
+    e_usage('got invalid option %r' % opt_name)
+
+  # TODO: relax this rule
+  if opt_num not in consts.SHOPT_OPTION_NUMS:
+    e_usage("doesn't own option %r (try 'set')" % opt_name)
+
+  return opt_num
+
+
+def _SetOptionNum(opt_name):
+  # type: (str) -> option_t
+  opt_num = match.MatchOption(opt_name)
+  if opt_num == 0:
+    e_usage('got invalid option %r' % opt_name)
+
+  # BUG: shopt -p -o simple_word_eval says 'shopt' doesn't own, try 'shopt'
+  if opt_num not in consts.SET_OPTION_NUMS:
+    e_usage("doesn't own option %r (try 'shopt')" % opt_name)
+
+  return opt_num
+
+
 class MutableOpts(object):
 
   def __init__(self, mem, opt_array, errexit, opt_hook):
@@ -271,7 +298,8 @@ class MutableOpts(object):
     # type: (str) -> None
     # e.g. errexit:nounset:pipefail
     lookup = shellopts.split(':')
-    for name in consts.SET_OPTION_NAMES:
+    for opt_num in consts.SET_OPTION_NUMS:
+      name = consts.OptionName(opt_num) 
       if name in lookup:
         self._SetOption(name, True)
 
@@ -319,8 +347,7 @@ class MutableOpts(object):
   def SetOption(self, opt_name, b):
     # type: (str, bool) -> None
     """ For set -o, set +o, or shopt -s/-u -o. """
-    if opt_name not in consts.SET_OPTION_NAMES:
-      e_usage('got invalid option %r' % opt_name)
+    _ = _SetOptionNum(opt_name)
     self._SetOption(opt_name, b)
 
     UP_val = self.mem.GetVar('SHELLOPTS')
@@ -373,13 +400,7 @@ class MutableOpts(object):
       self._SetGroup(consts.STRICT_ALL, b)
       return
 
-    opt_num = match.MatchOption(opt_name)
-    if opt_num == 0:
-      e_usage('got invalid option %r' % opt_name)
-
-    # TODO: relax this rule
-    if opt_num not in consts.SHOPT_OPTION_NUMS:
-      e_usage("doesn't own option %r (try 'set')" % opt_name)
+    opt_num = _ShoptOptionNum(opt_name)
 
     self._SetArrayByNum(opt_num, b)
 
@@ -389,18 +410,15 @@ class MutableOpts(object):
     # TODO: Maybe sort them differently?
 
     if len(opt_names) == 0:  # if none, supplied, show all
-      opt_names = consts.SET_OPTION_NAMES
+      opt_names = [consts.OptionName(i) for i in consts.SET_OPTION_NUMS]
 
     for opt_name in opt_names:
-      if opt_name not in consts.SET_OPTION_NAMES:
-        e_usage('got invalid option %r' % opt_name)
+      opt_num = _SetOptionNum(opt_name)
 
       if opt_name == 'errexit':
         b = self.errexit.value()
       else:
-        index = match.MatchOption(opt_name)
-        assert index != 0, opt_name
-        b = self.opt_array[index]
+        b = self.opt_array[opt_num]
       print('set %so %s' % ('-' if b else '+', opt_name))
 
   def ShowShoptOptions(self, opt_names):

@@ -179,10 +179,10 @@ from asdl import pybase
 
     LIST_INT = [
         'STRICT_ALL', 'OIL_BASIC', 'OIL_ALL', 'DEFAULT_TRUE',
-        'PARSE_OPTION_NUMS', 'SHOPT_OPTION_NUMS',
+        'PARSE_OPTION_NUMS', 'SHOPT_OPTION_NUMS', 'SET_OPTION_NUMS',
         ]
     # TODO: These could be changed to numbers
-    LIST_STR = ['SET_OPTION_NAMES', 'VISIBLE_SHOPT_NAMES']
+    LIST_STR = ['VISIBLE_SHOPT_NAMES']
 
     prefix = argv[2]
 
@@ -216,9 +216,13 @@ int RedirDefaultFd(id_kind_asdl::Id_t id);
 types_asdl::redir_arg_type_t RedirArgType(id_kind_asdl::Id_t id);
 types_asdl::bool_arg_type_t BoolArgType(id_kind_asdl::Id_t id);
 id_kind_asdl::Kind GetKind(id_kind_asdl::Id_t id);
+
 option_asdl::builtin_t LookupNormalBuiltin(Str* s);
 option_asdl::builtin_t LookupAssignBuiltin(Str* s);
 option_asdl::builtin_t LookupSpecialBuiltin(Str* s);
+
+Str* OptionName(option_asdl::option_t opt_num);
+
 Tuple2<runtime_asdl::state_t, runtime_asdl::emit_t> IfsEdge(runtime_asdl::state_t state, runtime_asdl::char_kind_t ch);
 
 }  // namespace consts
@@ -318,6 +322,12 @@ Kind GetKind(id_kind_asdl::Id_t id) {
       GenBuiltinLookup(b, 'LookupNormalBuiltin', 'normal', f)
       GenBuiltinLookup(b, 'LookupAssignBuiltin', 'assign', f)
       GenBuiltinLookup(b, 'LookupSpecialBuiltin', 'special', f)
+
+      out("""\
+Str* OptionName(option_asdl::option_t opt_num) {
+  assert(0);
+}
+""")
 
       #
       # Generate a tightly packed 2D array for C, from a Python dict.
