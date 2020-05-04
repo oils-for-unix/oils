@@ -70,7 +70,7 @@ TEST test_str_to_int() {
   ASSERT(i == 255);
 
   // TODO: test ValueError here
-  //i = to_int(new Str("0xz"), 16);
+  // i = to_int(new Str("0xz"), 16);
 
   i = to_int(new Str("0"), 16);
   ASSERT(i == 0);
@@ -418,7 +418,7 @@ TEST misc_test() {
 
 GREATEST_MAIN_DEFS();
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(misc_test);
@@ -434,6 +434,6 @@ int main(int argc, char **argv) {
   RUN_TEST(test_contains);
   RUN_TEST(test_files);
 
-  GREATEST_MAIN_END();        /* display results */
+  GREATEST_MAIN_END(); /* display results */
   return 0;
 }

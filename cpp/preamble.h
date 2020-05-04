@@ -9,9 +9,9 @@ using id_kind_asdl::Kind_t;
 #include "types_asdl.h"
 
 // _build/cpp
+#include "consts.h"
 #include "core_optview.h"
 #include "grammar_nt.h"
-#include "consts.h"
 
 // oil/cpp
 #include "core_error.h"
@@ -22,11 +22,11 @@ using id_kind_asdl::Kind_t;
 #include "qsn_qsn.h"
 // added for osh_eval
 #include "core_passwd.h"
+#include "libc.h"
 #include "osh_bool_stat.h"
+#include "posix.h"
 #include "pylib_os_path.h"
 #include "pylib_path_stat.h"
-#include "libc.h"
-#include "posix.h"
 
 #ifdef OSH_EVAL
 #include "osh_eval_stubs.h"
@@ -55,7 +55,7 @@ class SystemExit {
  public:
   SystemExit(int status) : status_(status) {
   }
- int status_;
+  int status_;
 };
 
 // Hack for now.  Every sum type should have repr()?

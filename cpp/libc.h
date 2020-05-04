@@ -42,7 +42,8 @@ inline List<Str*>* regex_match(Str* pattern, Str* str) {
   assert(0);
 }
 
-inline Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
+inline Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str,
+                                                 int pos) {
   assert(0);
 }
 

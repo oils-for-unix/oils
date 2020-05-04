@@ -21,13 +21,12 @@ inline bool IsPlainChar(Str* ch) {
   assert(ch->len_ == 1);
   uint8_t c = ch->data_[0];
   switch (c) {
-    case '.':
-    case '-':
-    case '_':
-      return true;
+  case '.':
+  case '-':
+  case '_':
+    return true;
   }
-  return ('a' <= c && c <= 'z') ||
-         ('A' <= c && c <= 'Z') ||
+  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') ||
          ('0' <= c && c <= '9');
 }
 
@@ -44,8 +43,7 @@ inline Str* UEscape(int codepoint) {
   sprintf(buf, "\\u{%x}", codepoint);
   return new Str(buf);
 }
- 
- 
+
 }  // namespace qsn
 
 #endif  // QSN_QSN_H

@@ -9,8 +9,7 @@ namespace os_path {
 Str* join(Str* s1, Str* s2) {
   assert(0);
 }
- 
+
 }  // namespace os_path
 
 #endif  // PYLIB_OS_PATH_H
-

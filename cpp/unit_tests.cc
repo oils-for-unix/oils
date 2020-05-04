@@ -2,8 +2,8 @@
 
 #include "frontend_match.h"
 #include "id.h"
-#include "libc.h"  // cell, etc
-#include "osh_eval_stubs.h"   // util::BackslashEscape
+#include "libc.h"            // cell, etc
+#include "osh_eval_stubs.h"  // util::BackslashEscape
 #include "preamble.h"
 #include "runtime_asdl.h"  // cell, etc
 
@@ -78,7 +78,7 @@ TEST libc_test() {
 
 // HACK!  asdl/runtime.py isn't translated, but core_error.h uses it...
 namespace runtime {
-  int NO_SPID = -1;
+int NO_SPID = -1;
 };
 
 TEST exceptions() {
@@ -86,7 +86,7 @@ TEST exceptions() {
   try {
     e_strict(new Str("foo"));
   } catch (error::Strict* e) {  // Catch by reference!
-    //log("%p ", e);
+    // log("%p ", e);
     caught = true;
   }
   ASSERT(caught);
@@ -96,13 +96,13 @@ TEST exceptions() {
 
 GREATEST_MAIN_DEFS();
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
   RUN_TEST(show_sizeof);
   RUN_TEST(match_test);
   RUN_TEST(util_test);
   RUN_TEST(libc_test);
   RUN_TEST(exceptions);
-  GREATEST_MAIN_END();        /* display results */
+  GREATEST_MAIN_END(); /* display results */
   return 0;
 }

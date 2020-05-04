@@ -81,17 +81,21 @@ class Parse : public _ErrorWithLocation {
 
 class RedirectEval : public _ErrorWithLocation {
  public:
-  RedirectEval(Str* user_str, int span_id) : _ErrorWithLocation(user_str, span_id) {
+  RedirectEval(Str* user_str, int span_id)
+      : _ErrorWithLocation(user_str, span_id) {
   }
-  RedirectEval(Str* user_str, Token* token) : _ErrorWithLocation(user_str, token) {
+  RedirectEval(Str* user_str, Token* token)
+      : _ErrorWithLocation(user_str, token) {
   }
-  RedirectEval(Str* user_str, word_part_t* part) : _ErrorWithLocation(user_str, part) {
+  RedirectEval(Str* user_str, word_part_t* part)
+      : _ErrorWithLocation(user_str, part) {
   }
-  RedirectEval(Str* user_str, word_t* word) : _ErrorWithLocation(user_str, word) {
+  RedirectEval(Str* user_str, word_t* word)
+      : _ErrorWithLocation(user_str, word) {
   }
 };
 
-class FatalRuntime: public _ErrorWithLocation {
+class FatalRuntime : public _ErrorWithLocation {
  public:
   FatalRuntime(Str* user_str) : _ErrorWithLocation(user_str, -1) {
   }
@@ -106,7 +110,8 @@ class Strict : public FatalRuntime {
 // Stub
 class ErrExit : public _ErrorWithLocation {
  public:
-  ErrExit(Str* user_str, int span_id, int status) : _ErrorWithLocation(user_str, span_id) {
+  ErrExit(Str* user_str, int span_id, int status)
+      : _ErrorWithLocation(user_str, span_id) {
   }
 };
 
@@ -116,7 +121,6 @@ class Runtime : public _ErrorWithLocation {
   Runtime(Str* user_str) : _ErrorWithLocation(user_str, -1) {
   }
 };
-
 
 }  // namespace error
 

@@ -9,8 +9,7 @@ namespace path_stat {
 bool exists(Str* path) {
   assert(0);
 }
- 
+
 }  // namespace path_stat
 
 #endif  // PYLIB_PATH_STAT_H
-

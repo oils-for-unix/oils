@@ -151,9 +151,9 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
 
   if (p) {
     // NOTE: Using SHARED SLICES, not memcpy() like some other functions.
-    int len1 = p-start;
+    int len1 = p - start;
     Str* first = new Str(start, len1);
-    Str* second = new Str(p+1, len - len1 - 1);
+    Str* second = new Str(p + 1, len - len1 - 1);
     return Tuple2<Str*, Str*>(first, second);
   } else {
     return Tuple2<Str*, Str*>(s, kEmptyString);
@@ -387,12 +387,12 @@ bool _str_to_int(Str* s, int* result, int base) {
 
   long v = strtol(s->data_, &p, base);  // base 10
   switch (v) {
-    case LONG_MIN:
-      //log("underflow");
-      return false;
-    case LONG_MAX:
-      //log("overflow");
-      return false;
+  case LONG_MIN:
+    // log("underflow");
+    return false;
+  case LONG_MAX:
+    // log("overflow");
+    return false;
   }
 
   *result = v;
@@ -400,7 +400,7 @@ bool _str_to_int(Str* s, int* result, int base) {
   // Return true if it consumed ALL characters.
   const char* end = s->data_ + s->len_;
 
-  //log("start %p   p %p   end %p", s->data_, p, end);
+  // log("start %p   p %p   end %p", s->data_, p, end);
   if (p == end) {
     return true;
   }

@@ -45,10 +45,16 @@ clang-format() {
   $CLANG_DIR/bin/clang-format -style="$style" "$@"
 }
 
+cpp-files() {
+  for file in cpp/*.{cc,h} mycpp/*.{cc,h}; do
+    echo $file
+  done
+}
+
 # Not ready to do this yet?
 # I don't like one liners like Constructor : v_() {}
 format-oil() {
-  clang-format -i cpp/*.{cc,h} mycpp/*.{cc,h}
+  cpp-files | grep -v greatest.h | xargs -- $0 clang-format -i 
   git diff
 }
 

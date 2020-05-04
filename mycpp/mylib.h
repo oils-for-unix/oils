@@ -12,8 +12,8 @@
 #include <cstdint>
 #include <cstdio>  // FILE*
 #include <initializer_list>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 #ifdef DUMB_ALLOC
 #include "dumb_alloc.h"
@@ -194,7 +194,7 @@ class Str {
     int left_pos = _strip_left_pos();
     int right_pos = _strip_right_pos();
 
-    if (left_pos == 0 && right_pos == len_ -1) {
+    if (left_pos == 0 && right_pos == len_ - 1) {
       return this;
     }
 
@@ -540,7 +540,7 @@ class DictIter {
 };
 
 // Specialized functions
-template<class V> 
+template <class V>
 int find_by_key(std::vector<std::pair<Str*, V>>& items, Str* key) {
   for (int i = 0; i < items.size(); ++i) {
     if (str_equals(items[i].first, key)) {
@@ -550,7 +550,7 @@ int find_by_key(std::vector<std::pair<Str*, V>>& items, Str* key) {
   return -1;
 }
 
-template<class V> 
+template <class V>
 int find_by_key(std::vector<std::pair<int, V>>& items, int key) {
   for (int i = 0; i < items.size(); ++i) {
     if (items[i].first == key) {
@@ -627,7 +627,7 @@ class Dict {
     assert(0);
   }
 
-  //std::unordered_map<K, V> m_;
+  // std::unordered_map<K, V> m_;
   std::vector<std::pair<K, V>> items_;
 
  private:
@@ -635,9 +635,7 @@ class Dict {
   int find(K key) {
     return find_by_key(items_, key);
   }
-
 };
-
 
 template <class A, class B>
 class Tuple2 {
