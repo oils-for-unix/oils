@@ -1255,15 +1255,21 @@ class Mem(object):
           elif case2(value_e.MaybeStrArray):
             cell_val = cast(value__MaybeStrArray, UP_cell_val)
             strs = cell_val.strs
-            try:
-              strs[lval.index] = rval.s
-            except IndexError:
+
+            n = len(strs)
+            index = lval.index
+            if index < 0:  # a[-1]++ computes this twice; could we avoid it?
+              index += n
+
+            if 0 <= index and index < n:
+              strs[index] = rval.s
+            else:
               # Fill it in with None.  It could look like this:
               # ['1', 2, 3, None, None, '4', None]
               # Then ${#a[@]} counts the entries that are not None.
               #
               # TODO: strict_array for Oil arrays won't auto-fill.
-              n = lval.index - len(strs) + 1
+              n = index - len(strs) + 1
               for i in xrange(n):
                 strs.append(None)
               strs[lval.index] = rval.s

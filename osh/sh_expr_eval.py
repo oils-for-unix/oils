@@ -137,8 +137,8 @@ def OldValue(lval, mem, exec_opts):
         else:
           e_die("Can't use [] on value of type %s", ui.ValType(val))
 
-      index = lval.index
       n = len(array_val.strs)
+      index = lval.index
       if index < 0:
         index += n
 
