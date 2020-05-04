@@ -99,6 +99,7 @@ run-cases() {
   # could be 'test/spec-alpine.sh run-test', which WILL BE SPLIT!
   local spec_runner=${SPEC_RUNNER:-test/spec.sh}
 
+  # TODO: Could --stats-{file,template} be a separate awk step on .tsv files?
   run-task-with-status \
     _tmp/spec/${spec_name}.task.txt \
     $spec_runner $spec_name \

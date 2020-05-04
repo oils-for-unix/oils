@@ -429,6 +429,8 @@ class Result(object):
   OK = 4
   PASS = 5
 
+  length = 6  # for loops
+
 
 class EqualAssertion(object):
   """Check that two values are equal."""
@@ -489,6 +491,8 @@ class Stats(object):
       self.by_shell[sh] = collections.defaultdict(int)
     self.nonzero_results = collections.defaultdict(int)
 
+    self.tsv_rows = []
+
   def Inc(self, counter_name):
     self.counters[counter_name] += 1
 
@@ -498,7 +502,9 @@ class Stats(object):
   def Set(self, counter_name, val):
     self.counters[counter_name] = val
 
-  def ReportCell(self, cell_result, sh_label):
+  def ReportCell(self, case_num, cell_result, sh_label):
+    self.tsv_rows.append((str(case_num), sh_label, TEXT_CELLS[cell_result]))
+
     self.by_shell[sh_label][cell_result] += 1
     self.nonzero_results[cell_result] += 1
 
@@ -525,6 +531,12 @@ class Stats(object):
         c['osh_num_passed'] += 1
     else:
       raise AssertionError()
+
+  def WriteTsv(self, f):
+    f.write('case\tshell\tresult\n')
+    for row in self.tsv_rows:
+      f.write('\t'.join(row))
+      f.write('\n')
 
 
 PIPE = subprocess.PIPE
@@ -682,7 +694,7 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
 
       result_row.append(cell_result)
 
-      stats.ReportCell(cell_result, sh_label)
+      stats.ReportCell(i, cell_result, sh_label)
 
       if sh_label in OTHER_OSH:
         # This is only an error if we tried to run ANY OSH.
@@ -745,22 +757,32 @@ _YELLOW = '\033[33m'
 _PURPLE = '\033[35m'
 
 
-COLOR_TIMEOUT = ''.join([_PURPLE, _BOLD, 'TIME', _RESET])
-COLOR_FAIL = ''.join([_RED, _BOLD, 'FAIL', _RESET])
-COLOR_BUG = ''.join([_YELLOW, _BOLD, 'BUG', _RESET])
-COLOR_NI = ''.join([_YELLOW, _BOLD, 'N-I', _RESET])
-COLOR_OK = ''.join([_YELLOW, _BOLD, 'ok', _RESET])
-COLOR_PASS = ''.join([_GREEN, _BOLD, 'pass', _RESET])
-
-
-ANSI_CELLS = {
-    Result.TIMEOUT: COLOR_TIMEOUT,
-    Result.FAIL: COLOR_FAIL,
-    Result.BUG: COLOR_BUG,
-    Result.NI: COLOR_NI,
-    Result.OK: COLOR_OK,
-    Result.PASS: COLOR_PASS,
+TEXT_CELLS = {
+    Result.TIMEOUT: 'TIME',
+    Result.FAIL: 'FAIL',
+    Result.BUG: 'BUG',
+    Result.NI: 'N-I',
+    Result.OK: 'ok',
+    Result.PASS: 'pass',
 }
+
+ANSI_COLORS = {
+    Result.TIMEOUT: _PURPLE,
+    Result.FAIL: _RED,
+    Result.BUG: _YELLOW,
+    Result.NI: _YELLOW,
+    Result.OK: _YELLOW,
+    Result.PASS: _GREEN,
+}
+
+def _AnsiCells():
+  lookup = {}
+  for i in xrange(Result.length):
+    lookup[i] = ''.join([ANSI_COLORS[i], _BOLD, TEXT_CELLS[i], _RESET])
+  return lookup
+
+ANSI_CELLS = _AnsiCells()
+
 
 HTML_CELLS = {
     Result.TIMEOUT: '<td class="timeout">TIME',
@@ -785,22 +807,109 @@ def _ValidUtf8String(s):
     return repr(s)  # ASCII representation
 
 
-class ColorOutput(object):
+class Output(object):
 
   def __init__(self, f, verbose):
     self.f = f
     self.verbose = verbose
     self.details = []
 
+  def BeginCases(self, test_file):
+    pass
+
+  def WriteHeader(self, sh_labels):
+    pass
+
+  def WriteRow(self, i, line_num, row, desc):
+    pass
+
+  def EndCases(self, sh_labels, stats):
+    pass
+
   def AddDetails(self, entry):
     self.details.append(entry)
+
+  # Helper function
+  def _WriteDetailsAsText(self, details):
+    for case_index, shell, stdout, stderr, messages in details:
+      print('case: %d' % case_index, file=self.f)
+      for m in messages:
+        print(m, file=self.f)
+
+      # Assume the terminal can show utf-8, but we don't want random binary.
+      print('%s stdout:' % shell, file=self.f)
+      print(_ValidUtf8String(stdout), file=self.f)
+
+      print('%s stderr:' % shell, file=self.f)
+      print(_ValidUtf8String(stderr), file=self.f)
+
+      print('', file=self.f)
+
+
+class TeeOutput(object):
+  """For multiple outputs in one run, e.g. HTML and TSV.
+
+  UNUSED
+  """
+
+  def __init__(self, outs):
+    self.outs = outs
+
+  def BeginCases(self, test_file):
+    for out in self.outs:
+      out.BeginCases(test_file)
+
+  def WriteHeader(self, sh_labels):
+    for out in self.outs:
+      out.WriteHeader(sh_labels)
+
+  def WriteRow(self, i, line_num, row, desc):
+    for out in self.outs:
+      out.WriteRow(i, line_num, row, desc)
+
+  def EndCases(self, sh_labels, stats):
+    for out in self.outs:
+      out.EndCases(sh_labels, stats)
+
+  def AddDetails(self, entry):
+    for out in self.outs:
+      out.AddDetails(entry)
+
+
+class TsvOutput(Output):
+  """Write a plain-text TSV file.
+
+  UNUSED since we are outputting LONG format with --tsv-output.
+  """
+
+  def WriteHeader(self, sh_labels):
+    self.f.write('case\tline\t')  # case number and line number
+    for sh_label in sh_labels:
+      self.f.write(sh_label)
+      self.f.write('\t')
+    self.f.write('\n')
+
+  def WriteRow(self, i, line_num, row, desc):
+    self.f.write('%3d\t%3d\t' % (i, line_num))
+
+    for result in row:
+      c = TEXT_CELLS[result]
+      self.f.write(c)
+      self.f.write('\t')
+
+    # note: 'desc' could use QSN, but just ignore it for now
+    #self.f.write(desc)
+    self.f.write('\n')
+
+
+class AnsiOutput(Output):
 
   def BeginCases(self, test_file):
     self.f.write('%s\n' % test_file)
 
   def WriteHeader(self, sh_labels):
     self.f.write(_BOLD)
-    self.f.write('case\tline\t')  # for line number and test number
+    self.f.write('case\tline\t')  # case number and line number
     for sh_label in sh_labels:
       self.f.write(sh_label)
       self.f.write('\t')
@@ -821,28 +930,6 @@ class ColorOutput(object):
     if self.verbose:
       self._WriteDetailsAsText(self.details)
       self.details = []
-
-  def _WriteDetailsAsText(self, details):
-    for case_index, shell, stdout, stderr, messages in details:
-      print('case: %d' % case_index, file=self.f)
-      for m in messages:
-        print(m, file=self.f)
-
-      # Assume the terminal can show utf-8, but we don't want random binary.
-      print('%s stdout:' % shell, file=self.f)
-      print(_ValidUtf8String(stdout), file=self.f)
-
-      print('%s stderr:' % shell, file=self.f)
-      print(_ValidUtf8String(stderr), file=self.f)
-
-      print('', file=self.f)
-
-  def _WriteStats(self, stats):
-    self.f.write(
-        '%(num_passed)d passed, %(num_ok)d OK, '
-        '%(num_ni)d not implemented, %(num_bug)d BUG, '
-        '%(num_failed)d failed, %(num_timeout)d timeouts, '
-        '%(num_skipped)d cases skipped\n' % stats.counters)
 
   def _WriteShellSummary(self, sh_labels, stats):
     if len(stats.nonzero_results) <= 1:  # Skip trivial summaries
@@ -877,14 +964,10 @@ class ColorOutput(object):
     self._WriteShellSummary(sh_labels, stats)
 
 
-class AnsiOutput(ColorOutput):
-  pass
-
-
-class HtmlOutput(ColorOutput):
+class HtmlOutput(Output):
 
   def __init__(self, f, verbose, spec_name, sh_labels, cases):
-    ColorOutput.__init__(self, f, verbose)
+    Output.__init__(self, f, verbose)
     self.spec_name = spec_name
     self.sh_labels = sh_labels  # saved from header
     self.cases = cases  # for linking to code
@@ -1012,6 +1095,13 @@ class HtmlOutput(ColorOutput):
 
     self.row_html.append(f.getvalue())  # buffer it
 
+  def _WriteStats(self, stats):
+    self.f.write(
+        '%(num_passed)d passed, %(num_ok)d OK, '
+        '%(num_ni)d not implemented, %(num_bug)d BUG, '
+        '%(num_failed)d failed, %(num_timeout)d timeouts, '
+        '%(num_skipped)d cases skipped\n' % stats.counters)
+
   def EndCases(self, sh_labels, stats):
     self._WriteShellSummary(sh_labels, stats)
 
@@ -1116,8 +1206,11 @@ def Options():
       '-p', '--print', dest='do_print', action='store_true', default=None,
       help="Print test code, but don't run it")
   p.add_option(
-      '--format', dest='format', choices=['ansi', 'html'], default='ansi',
-      help="Output format (default 'ansi')")
+      '--format', dest='format', choices=['ansi', 'html'],
+      default='ansi', help="Output format (default 'ansi')")
+  p.add_option(
+      '--tsv-output', dest='tsv_output', default=None,
+      help="Write a TSV log to this file.  Subsumes --stats-file.")
   p.add_option(
       '--stats-file', dest='stats_file', default=None,
       help="File to write stats to")
@@ -1174,6 +1267,41 @@ def Options():
   return p
 
 
+def _MakeShellPairs(shells):
+  shell_pairs = []
+  saw_osh = False
+  saw_oil = False
+  for path in shells:
+    if 'osh_eval' in path:
+      name = path
+    else:
+      name, _ = os.path.splitext(path)
+    label = os.path.basename(name)
+
+    if label == 'osh':
+      # change the second 'osh' to 'osh_ALT' so it's distinct
+      if saw_osh:
+        label = 'osh_ALT'
+      else:
+        saw_osh = True
+
+    elif label == 'oil':
+      if saw_oil:
+        label = 'oil_ALT'
+      else:
+        saw_oil = True
+
+    # Custom names for translation
+    elif label == 'osh_eval':
+      label = 'oe.py'
+
+    elif label == 'osh_eval.dbg':
+      label = 'oe.cpp'
+
+    shell_pairs.append((label, path))
+  return shell_pairs
+
+
 def main(argv):
   # First check if bash is polluting the environment.  Tests rely on the
   # environment.
@@ -1194,28 +1322,7 @@ def main(argv):
     return 1
 
   shells = argv[2:]
-
-  shell_pairs = []
-  saw_osh = False
-  saw_oil = False
-  for path in shells:
-    name, _ = os.path.splitext(path)
-    label = os.path.basename(name)
-
-    if label == 'osh':
-      # change the second 'osh' to 'osh_ALT' so it's distinct
-      if saw_osh:
-        label = 'osh_ALT'
-      else:
-        saw_osh = True
-
-    if label == 'oil':
-      if saw_oil:
-        label = 'oil_ALT'
-      else:
-        saw_oil = True
-
-    shell_pairs.append((label, path))
+  shell_pairs = _MakeShellPairs(shells)
 
   with open(test_file) as f:
     tokens = Tokenizer(f)
@@ -1244,6 +1351,7 @@ def main(argv):
   # Set up output style.  Also see asdl/format.py
   if opts.format == 'ansi':
     out = AnsiOutput(out_f, opts.verbose)
+
   elif opts.format == 'html':
     spec_name = os.path.basename(test_file)
     spec_name = spec_name.split('.')[0]
@@ -1251,6 +1359,7 @@ def main(argv):
     sh_labels = [label for label, _ in shell_pairs]
 
     out = HtmlOutput(out_f, opts.verbose, spec_name, sh_labels, cases)
+
   else:
     raise AssertionError()
 
@@ -1261,6 +1370,11 @@ def main(argv):
 
   out.EndCases([sh_label for sh_label, _ in shell_pairs], stats)
 
+  if opts.tsv_output:
+    with open(opts.tsv_output, 'w') as f:
+      stats.WriteTsv(f)
+
+  # TODO: Could --stats-{file,template} be a separate awk step on .tsv files?
   stats.Set('osh_failures_allowed', opts.osh_failures_allowed)
   if opts.stats_file:
     with open(opts.stats_file, 'w') as f:
