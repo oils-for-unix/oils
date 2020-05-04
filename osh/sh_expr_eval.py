@@ -137,9 +137,15 @@ def OldValue(lval, mem, exec_opts):
         else:
           e_die("Can't use [] on value of type %s", ui.ValType(val))
 
-      try:
-        s = array_val.strs[lval.index]
-      except IndexError:
+      index = lval.index
+      n = len(array_val.strs)
+      if index < 0:
+        index += n
+
+      if 0 <= index and index < n:
+        # TODO: ->index()  has a redunant check for (i < 0)
+        s = array_val.strs[index]
+      else:
         s = None
 
       if s is None:
@@ -530,10 +536,16 @@ class ArithEvaluator(object):
             if case(value_e.MaybeStrArray):
               left = cast(value__MaybeStrArray, UP_left)
               rhs_int = self.EvalToInt(node.right)
-              try:
-                # could be None because representation is sparse
+
+              n = len(left.strs)
+              if rhs_int < 0:
+                rhs_int += n
+
+              if 0 <= rhs_int and rhs_int < n:
+                # TODO: strs->index() has a redundant check for (i < 0)
                 s = left.strs[rhs_int]
-              except IndexError:
+                # note: s could be None because representation is sparse
+              else:
                 s = None
 
             elif case(value_e.AssocArray):

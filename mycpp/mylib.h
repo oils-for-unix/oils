@@ -51,7 +51,7 @@ class IOError {};
 class OSError {};
 
 class IndexError {};
-
+class ValueError {};
 class KeyError {};
 
 class EOFError {};
@@ -144,22 +144,31 @@ class Str {
     return new Str(buf, new_len);
   }
 
-  // TODO: implement these.  With switch statement.
-  Str* strip() {
-    assert(0);
-    return nullptr;
-  }
+  // Helper for lstrip() and strip()
+  int _strip_left_pos() {
+    assert(len_ > 0);
 
-  // Used for CommandSub in osh/cmd_exec.py
-  Str* rstrip(Str* chars) {
-    assert(0);
-  }
-
-  Str* rstrip() {
-    if (len_ == 0) {
-      return this;
+    int i = 0;
+    bool done = false;
+    while (i < len_ && !done) {
+      switch (data_[i]) {
+      case ' ':
+      case '\t':
+      case '\r':
+      case '\n':
+        i++;
+      default:
+        done = true;
+        break;
+      }
     }
-    // index of the last character that's not a space
+    return i;
+  }
+
+  // Helper for rstrip() and strip()
+  int _strip_right_pos() {
+    assert(len_ > 0);
+
     int last = len_ - 1;
     int i = last;
     bool done = false;
@@ -175,10 +184,40 @@ class Str {
         break;
       }
     }
-    if (i == last) {  // nothing stripped
+    return i;
+  }
+
+  Str* strip() {
+    if (len_ == 0) {
       return this;
     }
-    int new_len = i + 1;
+    int left_pos = _strip_left_pos();
+    int right_pos = _strip_right_pos();
+
+    if (left_pos == 0 && right_pos == len_ -1) {
+      return this;
+    }
+
+    // NOTE: This returns a SLICE, not a copy, unlike rstrip() !!!
+    // TODO: make them consistent.
+    int len = right_pos - left_pos + 1;
+    return new Str(data_ + left_pos, len);
+  }
+
+  // Used for CommandSub in osh/cmd_exec.py
+  Str* rstrip(Str* chars) {
+    assert(0);
+  }
+
+  Str* rstrip() {
+    if (len_ == 0) {
+      return this;
+    }
+    int right_pos = _strip_right_pos();
+    if (right_pos == len_ - 1) {  // nothing stripped
+      return this;
+    }
+    int new_len = right_pos + 1;
     char* buf = static_cast<char*>(malloc(new_len + 1));
     memcpy(buf, data_, new_len);
     buf[new_len] = '\0';
@@ -325,6 +364,7 @@ class List {
 
   T index(int i) {
     if (i < 0) {
+      // User code doesn't result in mylist[-1], but Oil's own code does
       int j = v_.size() + i;
       return v_.at(j);
     }

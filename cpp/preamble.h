@@ -40,8 +40,6 @@ class RuntimeError {
   Str* message;
 };
 
-class ValueError {};
-
 // TODO: remove this.  cmd_eval.py RunOilProc uses it, which we probably
 // don't need
 class TypeError {
@@ -136,5 +134,5 @@ Str* repr(void* obj) {
 
 // e.g. used in core/state.py
 [[noreturn]] void e_usage(Str* s) {
-  assert(0);
+  throw new args::UsageError();
 }

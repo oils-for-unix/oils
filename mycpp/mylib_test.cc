@@ -22,13 +22,19 @@ TEST test_str_to_int() {
 
   ok = _str_to_int(new Str("345"), &i, 10);
   ASSERT(ok);
-  ASSERT_EQ_FMT(i, 345, "%d");
+  ASSERT_EQ_FMT(345, i, "%d");
 
-  // TODO: Is there a way to check for overflow?
-  // strtol returns 'long int'.
   ok = _str_to_int(new Str("1234567890"), &i, 10);
   ASSERT(ok);
   ASSERT(i == 1234567890);
+
+  // overflow
+  ok = _str_to_int(new Str("12345678901234567890"), &i, 10);
+  ASSERT(!ok);
+
+  // underflow
+  ok = _str_to_int(new Str("-12345678901234567890"), &i, 10);
+  ASSERT(!ok);
 
   // negative
   ok = _str_to_int(new Str("-123"), &i, 10);
@@ -72,8 +78,13 @@ TEST test_str_to_int() {
   i = to_int(new Str("077"), 8);
   ASSERT_EQ_FMT(63, i, "%d");
 
-  // TODO: test ValueError here
-  //i = to_int(new Str("078"), 8);
+  bool caught = false;
+  try {
+    i = to_int(new Str("zzz"));
+  } catch (ValueError* e) {
+    caught = true;
+  }
+  ASSERT(caught);
 
   PASS();
 }
@@ -98,9 +109,9 @@ TEST test_str_funcs() {
 
   Str* int_str;
   int_str = str((1 << 31) - 1);
-  log("i = %s", int_str->data_);
+  ASSERT(str_equals(new Str("2147483647"), int_str));
 
-  // wraps with - sign
+  // wraps with - sign.
   int_str = str(1 << 31);
   log("i = %s", int_str->data_);
 
@@ -109,22 +120,32 @@ TEST test_str_funcs() {
   int_str = str(-(1 << 31));
   log("i = %s", int_str->data_);
 
-  log("--- rstrip()");
   Str* s2 = new Str(" abc ");
-  log("s2.rstrip()  = [%s]", s2->rstrip()->data_);
+  ASSERT(str_equals(new Str(" abc"), s2->rstrip()));
 
-  Str* s3 = new Str(" abc");
-  log("s3.rstrip()  = [%s]", s3->rstrip()->data_);
+  Str* s3 = new Str(" def");
+  ASSERT(str_equals(new Str(" def"), s3->rstrip()));
+
   Str* s4 = new Str("");
-  log("s4.rstrip()  = [%s]", s4->rstrip()->data_);
+  ASSERT(str_equals(new Str(""), s4->rstrip()));
 
-  log("s.startswith('') = %d", s->startswith(new Str("")));
-  log("s.startswith('ab') = %d", s->startswith(new Str("ab")));
-  log("s.startswith('bc') = %d", s->startswith(new Str("bc")));
+  Str* s5 = new Str("");
+  ASSERT(str_equals(new Str(""), s5->strip()));
 
-  log("s.endswith('') = %d", s->endswith(new Str("")));
-  log("s.endswith('ab') = %d", s->endswith(new Str("ab")));
-  log("s.endswith('bc') = %d", s->endswith(new Str("bc")));
+  Str* st1 = (new Str(" 123 "))->strip();
+  ASSERT(str_equals(new Str("123"), st1));
+  Str* st2 = (new Str(" 123"))->strip();
+  ASSERT(str_equals(new Str("123"), st2));
+  Str* st3 = (new Str("123 "))->strip();
+  ASSERT(str_equals(new Str("123"), st3));
+
+  ASSERT(s->startswith(new Str("")));
+  ASSERT(s->startswith(new Str("ab")));
+  ASSERT(!s->startswith(new Str("bc")));
+
+  ASSERT(s->endswith(new Str("")));
+  ASSERT(!s->endswith(new Str("ab")));
+  ASSERT(s->endswith(new Str("bc")));
 
   log("repr %s", repr(new Str(""))->data_);
   log("repr %s", repr(new Str("'"))->data_);
@@ -140,7 +161,7 @@ TEST test_str_funcs() {
   log("repr %s", repr(new Str("tab\tline\nline\r\n"))->data_);
   log("repr %s", repr(new Str("high \xFF \xFE high"))->data_);
 
-  log("ord('A') = %d", ord(new Str("A")));
+  ASSERT_EQ(65, ord(new Str("A")));
 
   log("split_once()");
   Tuple2<Str*, Str*> t = mylib::split_once(new Str("foo=bar"), new Str("="));
@@ -403,23 +424,14 @@ int main(int argc, char **argv) {
   RUN_TEST(misc_test);
   RUN_TEST(test_str_to_int);
   RUN_TEST(test_str_funcs);
+
   RUN_TEST(test_list_funcs);
   RUN_TEST(test_list_iters);
-
-  log("");
-  log("DICT");
   RUN_TEST(test_dict);
 
-  log("");
   RUN_TEST(test_buf_line_reader);
-
-  log("");
   RUN_TEST(test_formatter);
-
-  log("");
   RUN_TEST(test_contains);
-
-  log("");
   RUN_TEST(test_files);
 
   GREATEST_MAIN_END();        /* display results */
