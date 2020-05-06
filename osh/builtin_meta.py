@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 
 
 if mylib.PYTHON:
-  EVAL_SPEC = arg_def.Register('eval')
+  EVAL_SPEC = arg_def.FlagSpec('eval')
 
 
 class Eval(object):
@@ -136,7 +136,7 @@ class Source(object):
 
 
 if mylib.PYTHON:
-  COMMAND_SPEC = arg_def.Register('command')
+  COMMAND_SPEC = arg_def.FlagSpec('command')
   COMMAND_SPEC.ShortFlag('-v')
   # COMMAND_SPEC.ShortFlag('-V')  # Another verbose mode.
 

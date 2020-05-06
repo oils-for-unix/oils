@@ -75,6 +75,7 @@ from core.util import log
 from core import vm
 
 from frontend import args
+from frontend import arg_def
 from frontend import reader
 from frontend import py_reader
 from frontend import parse_lib
@@ -124,7 +125,7 @@ def DefineCommonFlags(spec):
   spec.LongFlag('--version')
 
 
-OSH_SPEC = args.FlagsAndOptions()
+OSH_SPEC = arg_def.FlagSpecAndMore('main')
 
 DefineCommonFlags(OSH_SPEC)
 

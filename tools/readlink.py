@@ -7,7 +7,7 @@ import libc
 from frontend import args
 from core import ui
 
-SPEC = args.BuiltinFlags()
+SPEC = args.FlagSpec()
 SPEC.ShortFlag('-f')
 
 

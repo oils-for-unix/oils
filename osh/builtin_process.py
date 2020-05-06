@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 
 
 if mylib.PYTHON:
-  EXEC_SPEC = arg_def.Register('exec')
+  EXEC_SPEC = arg_def.FlagSpec('exec')
 
 
 class Exec(object):
@@ -81,7 +81,7 @@ class Exec(object):
 
 
 if mylib.PYTHON:
-  WAIT_SPEC = arg_def.Register('wait')
+  WAIT_SPEC = arg_def.FlagSpec('wait')
   WAIT_SPEC.ShortFlag('-n')
 
 
@@ -336,7 +336,7 @@ _HOOK_NAMES = ('EXIT', 'ERR', 'RETURN', 'DEBUG')
 
 
 if mylib.PYTHON:
-  TRAP_SPEC = arg_def.Register('trap')
+  TRAP_SPEC = arg_def.FlagSpec('trap')
   TRAP_SPEC.ShortFlag('-p')
   TRAP_SPEC.ShortFlag('-l')
 

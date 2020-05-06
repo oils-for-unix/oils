@@ -40,7 +40,7 @@ if TYPE_CHECKING:
 
 
 if mylib.PYTHON:
-  PRINTF_SPEC = arg_def.Register('printf')  # TODO: Don't need this?
+  PRINTF_SPEC = arg_def.FlagSpec('printf')  # TODO: Don't need this?
   PRINTF_SPEC.ShortFlag('-v', args.Str)
 
 shell_start_time = time.time()

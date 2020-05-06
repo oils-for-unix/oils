@@ -47,6 +47,8 @@ def main(argv):
   #
   # exit status and examples.
   # I guess it's indented 4?
+  #
+  # _PrintVariables
 
   if action == 'cpp':
     pass

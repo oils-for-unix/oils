@@ -30,6 +30,10 @@ from mycpp import mylib
 from mycpp.mylib import tagswitch, NewStr
 from osh import braces
 from osh import split
+#from osh import builtin_assign
+#from osh import builtin_meta
+#from osh import builtin_pure
+# builtin_{printf,bracket,comp} might also be pure
 
 # Evaluators
 # This causes errors in oil_lang/{objects,regex_translate}, builtin_pure, etc.

@@ -7,6 +7,7 @@ from core import completion
 from core import error
 from core import ui
 #from core.util import log
+from frontend import arg_def
 from frontend import args
 from frontend import consts
 from frontend import lexer_def
@@ -249,17 +250,18 @@ class SpecBuilder(object):
                                prefix=arg.P or '', suffix=arg.S or '')
 
 
-# git-completion.sh uses complete -o and complete -F
-COMPLETE_SPEC = args.FlagsAndOptions()
+if mylib.PYTHON:
+  # git-completion.sh uses complete -o and complete -F
+  COMPLETE_SPEC = arg_def.FlagSpecAndMore('complete')
 
-_DefineFlags(COMPLETE_SPEC)
-_DefineOptions(COMPLETE_SPEC)
-_DefineActions(COMPLETE_SPEC)
+  _DefineFlags(COMPLETE_SPEC)
+  _DefineOptions(COMPLETE_SPEC)
+  _DefineActions(COMPLETE_SPEC)
 
-COMPLETE_SPEC.ShortFlag('-E',
-    help='Define the compspec for an empty line')
-COMPLETE_SPEC.ShortFlag('-D',
-    help='Define the compspec that applies when nothing else matches')
+  COMPLETE_SPEC.ShortFlag('-E',
+      help='Define the compspec for an empty line')
+  COMPLETE_SPEC.ShortFlag('-D',
+      help='Define the compspec that applies when nothing else matches')
 
 
 class Complete(object):
@@ -307,12 +309,13 @@ class Complete(object):
     return 0
 
 
-COMPGEN_SPEC = args.FlagsAndOptions()  # for -o and -A
+if mylib.PYTHON:
+  COMPGEN_SPEC = arg_def.FlagSpecAndMore('compgen')  # for -o and -A
 
-# TODO: Add -l for COMP_LINE.  -p for COMP_POINT ?
-_DefineFlags(COMPGEN_SPEC)
-_DefineOptions(COMPGEN_SPEC)
-_DefineActions(COMPGEN_SPEC)
+  # TODO: Add -l for COMP_LINE.  -p for COMP_POINT ?
+  _DefineFlags(COMPGEN_SPEC)
+  _DefineOptions(COMPGEN_SPEC)
+  _DefineActions(COMPGEN_SPEC)
 
 
 class CompGen(object):
@@ -369,8 +372,9 @@ class CompGen(object):
     return 0 if matched else 1
 
 
-COMPOPT_SPEC = args.FlagsAndOptions()  # for -o
-_DefineOptions(COMPOPT_SPEC)
+if mylib.PYTHON:
+  COMPOPT_SPEC = arg_def.FlagSpecAndMore('compopt')  # for -o
+  _DefineOptions(COMPOPT_SPEC)
 
 
 class CompOpt(object):
@@ -396,12 +400,13 @@ class CompOpt(object):
     return 0
 
 
-INIT_COMPLETION_SPEC = args.FlagsAndOptions()
+if mylib.PYTHON:
+  COMPADJUST_SPEC = arg_def.FlagSpecAndMore('compadjust')
 
-INIT_COMPLETION_SPEC.ShortFlag('-n', args.Str,
-    help='Do NOT split by these characters.  It omits them from COMP_WORDBREAKS.')
-INIT_COMPLETION_SPEC.ShortFlag('-s',
-    help='Treat --foo=bar and --foo bar the same way.')
+  COMPADJUST_SPEC.ShortFlag('-n', args.Str,
+      help='Do NOT split by these characters.  It omits them from COMP_WORDBREAKS.')
+  COMPADJUST_SPEC.ShortFlag('-s',
+      help='Treat --foo=bar and --foo bar the same way.')
 
 
 class CompAdjust(object):
@@ -420,7 +425,7 @@ class CompAdjust(object):
   def Run(self, cmd_val):
     argv = cmd_val.argv[1:]
     arg_r = args.Reader(argv)
-    arg = INIT_COMPLETION_SPEC.Parse(arg_r)
+    arg = COMPADJUST_SPEC.Parse(arg_r)
     var_names = arg_r.Rest()  # Output variables to set
     for name in var_names:
       # Ironically we could complete these

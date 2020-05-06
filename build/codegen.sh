@@ -112,6 +112,14 @@ option-cpp-gen() {
   log "Wrote $out_dir/core_optview.h"
 }
 
+arg-mypy-gen() {
+  frontend/arg_gen.py mypy
+}
+
+arg-cpp-gen() {
+  frontend/arg_gen.py cpp
+}
+
 lexer-gen() { frontend/lexer_gen.py "$@"; }
 
 print-regex() { lexer-gen print-regex; }

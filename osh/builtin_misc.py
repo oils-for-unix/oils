@@ -65,7 +65,7 @@ class _Builtin(object):
 
 
 if mylib.PYTHON:
-  TIMES_SPEC = arg_def.Register('times')
+  TIMES_SPEC = arg_def.FlagSpec('times')
 
 class Times(_Builtin):
   def Run(self, cmd_val):
@@ -148,7 +148,7 @@ def _AppendParts(s, spans, max_results, join_next, parts):
 
 
 if mylib.PYTHON:
-  READ_SPEC = arg_def.Register('read')
+  READ_SPEC = arg_def.FlagSpec('read')
   READ_SPEC.ShortFlag('-r')
   READ_SPEC.ShortFlag('-n', args.Int)
   READ_SPEC.ShortFlag('-a', args.Str)  # name of array to read into
@@ -285,7 +285,7 @@ class Read(object):
 
 
 if mylib.PYTHON:
-  CD_SPEC = arg_def.Register('cd')
+  CD_SPEC = arg_def.FlagSpec('cd')
   CD_SPEC.ShortFlag('-L')
   CD_SPEC.ShortFlag('-P')
 
@@ -466,7 +466,7 @@ class Popd(object):
 
 
 if mylib.PYTHON:
-  DIRS_SPEC = arg_def.Register('dirs')
+  DIRS_SPEC = arg_def.FlagSpec('dirs')
   DIRS_SPEC.ShortFlag('-c')
   DIRS_SPEC.ShortFlag('-l')
   DIRS_SPEC.ShortFlag('-p')
@@ -503,7 +503,7 @@ class Dirs(object):
 
 
 if mylib.PYTHON:
-  PWD_SPEC = arg_def.Register('pwd')
+  PWD_SPEC = arg_def.FlagSpec('pwd')
   PWD_SPEC.ShortFlag('-L')
   PWD_SPEC.ShortFlag('-P')
 
@@ -536,7 +536,7 @@ class Pwd(object):
 
 
 if mylib.PYTHON:
-  HELP_SPEC = arg_def.Register('help')
+  HELP_SPEC = arg_def.FlagSpec('help')
 
 # Use Oil flags?  -index?
   HELP_SPEC.ShortFlag('-i')  # show index
@@ -602,7 +602,7 @@ class Help(object):
 
 
 if mylib.PYTHON:
-  HISTORY_SPEC = arg_def.Register('history')
+  HISTORY_SPEC = arg_def.FlagSpec('history')
   HISTORY_SPEC.ShortFlag('-c')
   HISTORY_SPEC.ShortFlag('-d', args.Int)
 

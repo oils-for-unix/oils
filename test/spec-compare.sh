@@ -74,9 +74,9 @@ FNR != 1 {
 
   if (sh == "osh") {
     osh[result] += 1
-  } else if (sh == "oe.py") {
+  } else if (sh == "osh_.py") {
     oe_py[result] += 1
-  } else if (sh == "oe.cpp") {
+  } else if (sh == "osh_.cc") {
     oe_cpp[result] += 1
   }
 }

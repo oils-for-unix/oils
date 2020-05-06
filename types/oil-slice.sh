@@ -108,7 +108,7 @@ typecheck-all() {
 # _devbuild/cpython-full on Travis to crawl dependencies.
 travis-setup() {
   # TODO: add stat.py back.  Why does it cause errors?
-  local exclude='vendor|__future__|mylib.py|/stat.py'
+  local exclude='vendor|__future__|mylib.py|/stat.py|arg_def.py'
 
   osh-parse-deps
   egrep -v "$exclude" $OSH_PARSE_DEPS | tee $OSH_PARSE_MANIFEST

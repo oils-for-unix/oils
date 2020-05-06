@@ -1293,10 +1293,10 @@ def _MakeShellPairs(shells):
 
     # Custom names for translation
     elif label == 'osh_eval':
-      label = 'oe.py'
+      label = 'osh_.py'  # must start with 'osh' for qualifiers
 
     elif label == 'osh_eval.dbg':
-      label = 'oe.cpp'
+      label = 'osh_.cc'
 
     shell_pairs.append((label, path))
   return shell_pairs

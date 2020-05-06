@@ -18,8 +18,8 @@ def _MakeBuiltinArgv(argv):
 
 class ArgsTest(unittest.TestCase):
 
-  def testFlagsAndOptions(self):
-    s = args.FlagsAndOptions()
+  def testFlagSpecAndMore(self):
+    s = args.FlagSpecAndMore()
     s.ShortFlag('-c', args.Str)
     s.ShortFlag('-i', args.Str)
 
@@ -97,7 +97,7 @@ class ArgsTest(unittest.TestCase):
     # We're not going to replicate that silly behavior.
 
   def testChoices(self):
-    s = args.FlagsAndOptions()
+    s = args.FlagSpecAndMore()
     s.LongFlag('--ast-format', ['text', 'html'])
 
     arg_r = args.Reader(['--ast-format', 'text'])
@@ -107,8 +107,8 @@ class ArgsTest(unittest.TestCase):
     self.assertRaises(
         args.UsageError, s.Parse, args.Reader(['--ast-format', 'oops']))
 
-  def testBuiltinFlags(self):
-    s = args.BuiltinFlags()
+  def testFlagSpec(self):
+    s = args.FlagSpec()
     s.ShortFlag('-f')
     s.ShortFlag('-n')
     s.ShortFlag('-d', args.Str)  # delimiter
@@ -146,8 +146,8 @@ class ArgsTest(unittest.TestCase):
     self.assertEqual('+', arg.r)
     self.assertEqual('+', arg.x)
 
-  def testReadBuiltinFlags(self):
-    s = args.BuiltinFlags()
+  def testReadFlagSpec(self):
+    s = args.FlagSpec()
     s.ShortFlag('-r')  # no backslash escapes
     s.ShortFlag('-t', args.Float)  # timeout
     s.ShortFlag('-p', args.Str)  # prompt string
@@ -185,7 +185,7 @@ class ArgsTest(unittest.TestCase):
     self.assertRaises(args.UsageError, s.ParseCmdVal, _MakeBuiltinArgv(['-rz']))
 
   def testParseLikeEcho(self):
-    s = args.BuiltinFlags()
+    s = args.FlagSpec()
     s.ShortFlag('-e')  # no backslash escapes
     s.ShortFlag('-n')
 

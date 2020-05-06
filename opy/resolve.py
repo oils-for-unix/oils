@@ -261,7 +261,7 @@ def Walk(mod_dict):
   log('')
 
   # Audit what's at the top level.  int, dict, str, list are most common, then
-  # BuiltinFlags.
+  # FlagSpec.
   log('%d global vars', len(global_vars))
   log('%d user-defined classes, with %d total methods on them', len(classes),
       num_methods)

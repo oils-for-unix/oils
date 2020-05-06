@@ -57,7 +57,7 @@ class Boolean(_Builtin):
 
 
 if mylib.PYTHON:
-  ALIAS_SPEC = arg_def.Register('alias')
+  ALIAS_SPEC = arg_def.FlagSpec('alias')
 
 
 class Alias(object):
@@ -99,7 +99,7 @@ class Alias(object):
 
 
 if mylib.PYTHON:
-  UNALIAS_SPEC = arg_def.Register('unalias')
+  UNALIAS_SPEC = arg_def.FlagSpec('unalias')
 
 
 class UnAlias(object):
@@ -147,8 +147,9 @@ def AddOptionsToArgSpec(spec):
     spec.ShoptOption(name)
 
 
-SET_SPEC = args.FlagsAndOptions()
-AddOptionsToArgSpec(SET_SPEC)
+if mylib.PYTHON:
+  SET_SPEC = arg_def.FlagSpecAndMore('set')
+  AddOptionsToArgSpec(SET_SPEC)
 
 
 def SetShellOpts(exec_opts, opt_changes, shopt_changes):
@@ -208,7 +209,7 @@ class Set(object):
 
 
 if mylib.PYTHON:
-  SHOPT_SPEC = arg_def.Register('shopt')
+  SHOPT_SPEC = arg_def.FlagSpec('shopt')
   SHOPT_SPEC.ShortFlag('-s')  # set
   SHOPT_SPEC.ShortFlag('-u')  # unset
   SHOPT_SPEC.ShortFlag('-o')  # use 'set -o' names
@@ -297,7 +298,7 @@ def ResolveNames(names, funcs, aliases, search_path):
 
 
 if mylib.PYTHON:
-  TYPE_SPEC = arg_def.Register('type')
+  TYPE_SPEC = arg_def.FlagSpec('type')
   TYPE_SPEC.ShortFlag('-f')
   TYPE_SPEC.ShortFlag('-t')
   TYPE_SPEC.ShortFlag('-p')
@@ -355,7 +356,7 @@ class Type(object):
 
 
 if mylib.PYTHON:
-  HASH_SPEC = arg_def.Register('hash')
+  HASH_SPEC = arg_def.FlagSpec('hash')
   HASH_SPEC.ShortFlag('-r')
 
 
@@ -512,7 +513,7 @@ class GetOpts(object):
 
 
 if mylib.PYTHON:
-  ECHO_SPEC = arg_def.Register('echo')
+  ECHO_SPEC = arg_def.FlagSpec('echo')
   ECHO_SPEC.ShortFlag('-e')  # no backslash escapes
   ECHO_SPEC.ShortFlag('-n')
 

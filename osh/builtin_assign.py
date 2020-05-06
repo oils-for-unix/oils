@@ -20,8 +20,9 @@ from core import ui
 from core.util import log, e_die
 from mycpp import mylib
 
-from typing import cast, Dict, Any, TYPE_CHECKING
+from typing import cast, Dict, List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
+  from _devbuild.gen.syntax_asdl import command__ShFunction
   from core import optview
   from core.state import Mem
   from core.ui import ErrorFormatter
@@ -31,8 +32,18 @@ if TYPE_CHECKING:
 _ = log
 
 
-def _PrintVariables(mem, cmd_val, arg, print_flags, readonly=False, exported=False):
-  # type: (Mem, value_t, Any, bool, bool, bool) -> int
+_OTHER = 0
+_READONLY = 1
+_EXPORT = 2
+
+
+def _PrintVariables(mem, cmd_val, arg, print_flags, builtin=_OTHER):
+  # type: (Mem, cmd_value__Assign, Any, bool, int) -> int
+  """
+  Args:
+    print_flags: whether to print flags
+    builtin: is it the readonly or exported builtin?
+  """
   flag_g = getattr(arg, 'g', None)
   flag_n = getattr(arg, 'n', None)
   flag_r = getattr(arg, 'r', None)
@@ -73,8 +84,8 @@ def _PrintVariables(mem, cmd_val, arg, print_flags, readonly=False, exported=Fal
     val = cell.val
 
     if val.tag_() == value_e.Undef: continue
-    if readonly and not cell.readonly: continue
-    if exported and not cell.exported: continue
+    if builtin == _READONLY and not cell.readonly: continue
+    if builtin == _EXPORT and not cell.exported: continue
     if flag_n == '-' and not cell.nameref: continue
     if flag_n == '+' and cell.nameref: continue
     if flag_r == '-' and not cell.readonly: continue
@@ -118,7 +129,7 @@ def _PrintVariables(mem, cmd_val, arg, print_flags, readonly=False, exported=Fal
             decl.extend([" ", name, "[", str(i), "]=",
                          qsn.maybe_shell_encode(element)])
       else:
-        body = []
+        body = []  # type: List[str]
         for element in array_val.strs:
           if len(body) > 0: body.append(" ")
           body.append(qsn.maybe_shell_encode(element or ''))
@@ -144,7 +155,7 @@ def _PrintVariables(mem, cmd_val, arg, print_flags, readonly=False, exported=Fal
 
 
 if mylib.PYTHON:
-  EXPORT_SPEC = arg_def.Register('export')
+  EXPORT_SPEC = arg_def.FlagSpec('export')
   EXPORT_SPEC.ShortFlag('-n')
   EXPORT_SPEC.ShortFlag('-f')  # stubbed
   EXPORT_SPEC.ShortFlag('-p')
@@ -180,7 +191,7 @@ class Export(object):
           "doesn't accept -f because it's dangerous.  (The code can usually be restructured with 'source')")
 
     if arg.p or len(cmd_val.pairs) == 0:
-      return _PrintVariables(self.mem, cmd_val, arg, True, exported=True)
+      return _PrintVariables(self.mem, cmd_val, arg, True, builtin=_EXPORT)
 
     positional = cmd_val.argv[arg_index:]
     if arg.n:
@@ -229,7 +240,7 @@ def _ReconcileTypes(rval, arg, span_id):
 
 
 if mylib.PYTHON:
-  READONLY_SPEC = arg_def.Register('readonly')
+  READONLY_SPEC = arg_def.FlagSpec('readonly')
 
 # TODO: Check the consistency of -a and -A against values, here and below.
   READONLY_SPEC.ShortFlag('-a')
@@ -250,7 +261,7 @@ class Readonly(object):
     arg, arg_index = READONLY_SPEC.Parse(arg_r)
 
     if arg.p or len(cmd_val.pairs) == 0:
-      return _PrintVariables(self.mem, cmd_val, arg, True, readonly=True)
+      return _PrintVariables(self.mem, cmd_val, arg, True, builtin=_READONLY)
 
     for pair in cmd_val.pairs:
       if pair.rval is None:
@@ -275,7 +286,7 @@ class Readonly(object):
 
 
 if mylib.PYTHON:
-  NEW_VAR_SPEC = arg_def.Register('declare')
+  NEW_VAR_SPEC = arg_def.FlagSpec('declare')
 
   # print stuff
   NEW_VAR_SPEC.ShortFlag('-f')
@@ -299,12 +310,13 @@ class NewVar(object):
   """declare/typeset/local."""
 
   def __init__(self, mem, funcs, errfmt):
-    # type: (Mem, Dict[str, Any], ErrorFormatter) -> None
+    # type: (Mem, Dict[str, command__ShFunction], ErrorFormatter) -> None
     self.mem = mem
     self.funcs = funcs
     self.errfmt = errfmt
 
   def _PrintFuncs(self, names):
+    # type: (List[str]) -> int
     status = 0
     for name in names:
       if name in self.funcs:
@@ -394,7 +406,7 @@ class NewVar(object):
 
 
 if mylib.PYTHON:
-  UNSET_SPEC = arg_def.Register('unset')
+  UNSET_SPEC = arg_def.FlagSpec('unset')
   UNSET_SPEC.ShortFlag('-v')
   UNSET_SPEC.ShortFlag('-f')
 

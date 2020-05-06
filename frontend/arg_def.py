@@ -12,12 +12,22 @@ from frontend import args
 _ARG_DEF = {}
 
 
-def Register(builtin_name):
-  # type: (str) -> args.BuiltinFlags
+def FlagSpec(builtin_name):
+  # type: (str) -> args.FlagSpec
   """
   """
-  arg_spec = args.BuiltinFlags()
+  arg_spec = args.FlagSpec()
   _ARG_DEF[builtin_name] = arg_spec
+  return arg_spec
+
+
+def FlagSpecAndMore(name):
+  # type: (str) -> args.FlagSpecAndMore
+  """
+  For set, bin/oil.py ("main"), compgen -A, complete -A, etc.
+  """
+  arg_spec = args.FlagSpecAndMore()
+  _ARG_DEF[name] = arg_spec
   return arg_spec
 
 

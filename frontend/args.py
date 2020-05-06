@@ -5,8 +5,8 @@ All existing shells have their own flag parsing, rather than using libc.
 
 We have 3 types of flag parsing here:
 
-  FlagsAndOptions() -- e.g. for 'sh +u -o errexit' and 'set +u -o errexit'
-  BuiltinFlags() -- for echo -en, read -t1.0, etc.
+  FlagSpecAndMore() -- e.g. for 'sh +u -o errexit' and 'set +u -o errexit'
+  FlagSpec() -- for echo -en, read -t1.0, etc.
   OilFlags() -- for oshc/opyc/oilc, and probably Oil builtins.
 
 Examples:
@@ -34,7 +34,7 @@ NOTES about builtins:
 
 TODO:
   - add help text: spec.Flag(..., help='')
-  - add usage line: BuiltinFlags('echo [-en]')
+  - add usage line: FlagSpec('echo [-en]')
   - Do builtin flags need default values?  It doesn't look like it.
 
 GNU notes:
@@ -80,8 +80,10 @@ class UsageError(Exception):
 
 
 class _Attributes(object):
-  """Object to hold flags"""
+  """Object to hold flags.
 
+  TODO: Make this statically typed.
+  """
   def __init__(self, defaults):
     # type: (Dict[str, Any]) -> None
 
@@ -424,12 +426,11 @@ Float = 3  # e.g. for read -t timeout value
 Bool = 4  # OilFlags has explicit boolean type
 
 
-# TODO: Rename ShFlagsAndOptions
-class FlagsAndOptions(object):
+class FlagSpecAndMore(object):
   """Parser for 'set' and 'sh', which both need to process shell options.
 
   Usage:
-  spec = FlagsAndOptions()
+  spec = FlagSpecAndMore()
   spec.ShortFlag(...)
   spec.Option('u', 'nounset')
   spec.Parse(argv)
@@ -587,12 +588,12 @@ class FlagsAndOptions(object):
     return out
 
 
-# TODO: Rename OshBuiltinFlags
-class BuiltinFlags(object):
+# TODO: Rename OshFlagSpec
+class FlagSpec(object):
   """Parser for sh builtins, like 'read' or 'echo' (which has a special case).
 
   Usage:
-    spec = args.BuiltinFlags()
+    spec = args.FlagSpec()
     spec.ShortFlag('-a')
     opts, i = spec.Parse(argv)
   """
@@ -619,7 +620,7 @@ class BuiltinFlags(object):
   def ShortFlag(self, short_name, arg_type=None, help=None):
     # type: (str, Optional[int], Optional[Any]) -> None
     """
-    This is very similar to ShortFlag for FlagsAndOptions, except we have
+    This is very similar to ShortFlag for FlagSpecAndMore, except we have
     separate arity0 and arity1 dicts.
     """
     assert short_name.startswith('-'), short_name
