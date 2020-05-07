@@ -369,7 +369,7 @@ class Hash(object):
     # type: (cmd_value__Argv) -> int
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip 'hash'
-    arg, i = HASH_SPEC.Parse(arg_r)
+    arg = HASH_SPEC.Parse(arg_r)
 
     rest = arg_r.Rest()
     if arg.r:

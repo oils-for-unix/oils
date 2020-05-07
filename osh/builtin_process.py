@@ -388,7 +388,7 @@ class Trap(object):
 
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip 'trap'
-    arg, _ = TRAP_SPEC.Parse(arg_r)
+    arg = TRAP_SPEC.Parse(arg_r)
 
     if arg.p:  # Print registered handlers
       for name, value in self.traps.iteritems():

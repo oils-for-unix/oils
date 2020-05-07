@@ -484,7 +484,7 @@ class Dirs(object):
     # type: (cmd_value__Argv) -> int
     home_dir = self.mem.GetVar('HOME')
 
-    arg, i = DIRS_SPEC.ParseCmdVal(cmd_val)
+    arg, _ = DIRS_SPEC.ParseCmdVal(cmd_val)
     style = SINGLE_LINE
 
     # Following bash order of flag priority

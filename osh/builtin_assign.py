@@ -11,6 +11,11 @@ from _devbuild.gen.runtime_asdl import (
     lvalue, lvalue_e, scope_e, cmd_value__Argv, cmd_value__Assign,
 )
 from _devbuild.gen.syntax_asdl import source
+try:
+  from _devbuild.gen import arg_types
+except ImportError:
+  arg_types = None
+
 from frontend import arg_def
 from frontend import args
 from core import error
@@ -184,7 +189,8 @@ class Export(object):
     # type: (cmd_value__Assign) -> int
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
-    arg, arg_index = EXPORT_SPEC.Parse(arg_r)
+    arg = EXPORT_SPEC.Parse(arg_r)
+    # arg = arg_types.export(attrs)
 
     if arg.f:
       raise args.UsageError(
@@ -193,7 +199,6 @@ class Export(object):
     if arg.p or len(cmd_val.pairs) == 0:
       return _PrintVariables(self.mem, cmd_val, arg, True, builtin=_EXPORT)
 
-    positional = cmd_val.argv[arg_index:]
     if arg.n:
       for pair in cmd_val.pairs:
         if pair.rval is not None:
@@ -258,7 +263,7 @@ class Readonly(object):
     # type: (cmd_value__Assign) -> int
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
-    arg, arg_index = READONLY_SPEC.Parse(arg_r)
+    arg = READONLY_SPEC.Parse(arg_r)
 
     if arg.p or len(cmd_val.pairs) == 0:
       return _PrintVariables(self.mem, cmd_val, arg, True, builtin=_READONLY)
@@ -331,7 +336,7 @@ class NewVar(object):
     # type: (cmd_value__Assign) -> int
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
-    arg, arg_index = NEW_VAR_SPEC.Parse(arg_r)
+    arg = NEW_VAR_SPEC.Parse(arg_r)
 
     status = 0
 

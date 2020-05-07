@@ -23,6 +23,7 @@ from core import util
 from core import state
 from core import ui
 from core.vm import _Executor  # reordered by mycpp
+from frontend import args
 from frontend import consts
 from frontend import parse_lib
 from frontend import reader
@@ -53,9 +54,7 @@ if TYPE_CHECKING:
 
 if mylib.PYTHON:
   unused1 = log
-  unused2 = cmd_eval  # lint ignore
-  unused3 = dev
-  unused4 = main_loop
+  unused2 = args
 
 
 class TestEvaluator(object):

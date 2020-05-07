@@ -113,11 +113,16 @@ option-cpp-gen() {
 }
 
 arg-mypy-gen() {
-  frontend/arg_gen.py mypy
+  # TODO: figure out circular deps
+  return
+
+  local out=_devbuild/gen/arg_types.py
+  frontend/arg_gen.py mypy > $out
 }
 
 arg-cpp-gen() {
-  frontend/arg_gen.py cpp
+  local prefix=_build/cpp/arg_types
+  frontend/arg_gen.py cpp $prefix
 }
 
 lexer-gen() { frontend/lexer_gen.py "$@"; }

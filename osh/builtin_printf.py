@@ -163,7 +163,7 @@ class Printf(object):
     """
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip argv[0]
-    arg, _ = PRINTF_SPEC.Parse(arg_r)
+    arg = PRINTF_SPEC.Parse(arg_r)
 
     fmt, fmt_spid = arg_r.ReadRequired2('requires a format string')
     varargs, spids = arg_r.Rest2()

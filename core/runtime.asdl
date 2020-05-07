@@ -43,6 +43,9 @@ module runtime
     -- d will be a dict
   | AssocArray(assoc d)
     -- any should be re_t.  Need syntax.asdl here
+
+  | Bool(bool b)
+  | Float() -- For flags only now.  TODO: ASDL needs float type.
   | Eggex(any expr, string as_ere)
     -- what about Proc or Module here?  are they first class?
     -- then you can reflect on them?  Get name and docstring?

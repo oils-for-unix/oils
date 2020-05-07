@@ -59,10 +59,13 @@ from __future__ import print_function
 from asdl import runtime
 from core.util import log
 
-import libc  # for regex support
+try:
+  import libc  # OilFlags uses regexes right now.
+except ImportError:
+  libc = None
 
 from typing import Tuple, Optional, Dict, Union, List, Any, IO, TYPE_CHECKING
-from _devbuild.gen.runtime_asdl import cmd_value__Argv
+from _devbuild.gen.runtime_asdl import cmd_value__Argv, value, value_t
 
 if TYPE_CHECKING:
   OptChange = Tuple[str, bool]
@@ -79,6 +82,24 @@ class UsageError(Exception):
     self.span_id = span_id
 
 
+# Split into:
+#   Flags
+#   FlagsAndMore
+#
+# Hm don't need that yet.
+#
+# I think you can write _Attributes -> arg_types.EXPORT
+# And then change setattr() to a dictionary.
+#
+# arg_types.py
+#
+# class EXPORT_t(object):
+#   pass
+
+# class EXPORT(object):
+#   def Parse(self, arg_r):
+#     # type: (args.Reader) -> EXPORT_t
+
 class _Attributes(object):
   """Object to hold flags.
 
@@ -86,6 +107,9 @@ class _Attributes(object):
   """
   def __init__(self, defaults):
     # type: (Dict[str, Any]) -> None
+
+    # New style
+    self.attrs = {}  # type: Dict[str, value_t]
 
     self.opt_changes = []  # type: List[OptChange]  # -o errexit +o nounset
     self.shopt_changes = []  # type: List[OptChange]  # -O nullglob +O nullglob
@@ -95,10 +119,25 @@ class _Attributes(object):
     for name, v in defaults.iteritems():
       self.Set(name, v)
 
-  def Set(self, name, value):
+  def Set(self, name, py_val):
     # type: (str, Union[None, bool, str]) -> None
     # debug-completion -> debug_completion
-    setattr(self, name.replace('-', '_'), value)
+    setattr(self, name.replace('-', '_'), py_val)
+
+    if py_val is None:
+      val = value.Undef()  # type: value_t
+    elif isinstance(py_val, bool):
+      val = value.Bool(py_val)
+    elif isinstance(py_val, int):
+      val = value.Int(py_val)
+    elif isinstance(py_val, float):
+      val = value.Float()  # TODO: ASDL needs float primitive
+    elif isinstance(py_val, str):
+      val = value.Str(py_val)
+    else:
+      raise AssertionError(py_val)
+
+    self.attrs[name] = val
 
   def __repr__(self):
     # type: () -> str
@@ -430,17 +469,16 @@ class FlagSpecAndMore(object):
   """Parser for 'set' and 'sh', which both need to process shell options.
 
   Usage:
-  spec = FlagSpecAndMore()
-  spec.ShortFlag(...)
-  spec.Option('u', 'nounset')
-  spec.Parse(argv)
+    spec = FlagSpecAndMore()
+    spec.ShortFlag(...)
+    spec.Option('u', 'nounset')
+    spec.Parse(...)
   """
 
   def __init__(self):
     # type: () -> None
     self.actions_short = {}  # type: Dict[str, _Action]  # {'-c': _Action}
     self.actions_long = {}  # type: Dict[str, _Action]  # {'--rcfile': _Action}
-    self.attr_names = {}  # type: Dict[str, str]  # attributes that name flags
     self.defaults = {}  # type: Dict[str, Any]
 
     self.actions_short['o'] = SetNamedOption()  # -o and +o
@@ -465,7 +503,7 @@ class FlagSpecAndMore(object):
       self.actions_short[char] = SetToArg(char, arg_type,
                                           quit_parsing_flags=quit_parsing_flags)
 
-    self.attr_names[char] = default
+    self.defaults[char] = default
 
   def LongFlag(self,
                long_name,  # type: str
@@ -483,7 +521,7 @@ class FlagSpecAndMore(object):
     else:
       self.actions_long[long_name] = SetToArg(name, arg_type)
 
-    self.attr_names[name] = default
+    self.defaults[name] = default
 
   def Option(self, short_flag, name, help=None):
     # type: (Optional[str], str, Optional[Any]) -> None
@@ -544,7 +582,7 @@ class FlagSpecAndMore(object):
     set -oeu pipefail
     set -oo pipefail errexit
     """
-    out = _Attributes(self.attr_names)
+    out = _Attributes(self.defaults)
 
     quit = False
     while not arg_r.AtEnd():
@@ -588,7 +626,6 @@ class FlagSpecAndMore(object):
     return out
 
 
-# TODO: Rename OshFlagSpec
 class FlagSpec(object):
   """Parser for sh builtins, like 'read' or 'echo' (which has a special case).
 
@@ -603,7 +640,7 @@ class FlagSpec(object):
     self.arity1 = {}  # type: Dict[str, _Action]  # {'t': _Action} for read -t 1.0
     self.options = {}  # type: Dict[str, _Action]
 
-    self.attr_names = {}  # type: Dict[str, str]
+    self.defaults = {}  # type: Dict[str, str]
 
   def PrintHelp(self, f):
     # type: (IO[bytes]) -> None
@@ -632,13 +669,13 @@ class FlagSpec(object):
     else:
       self.arity1[char] = SetToArg(char, arg_type)
 
-    self.attr_names[char] = None
+    self.defaults[char] = None
 
   def ShortOption(self, char, help=None):
     # type: (str, Optional[Any]) -> None
     assert len(char) == 1  # 'r' for -r +r
     self.options[char] = SetShortOption(char)
-    self.attr_names[char] = None
+    self.defaults[char] = None
 
   def ParseLikeEcho(self, argv):
     # type: (List[str]) -> Tuple[_Attributes, int]
@@ -651,7 +688,7 @@ class FlagSpec(object):
     - doesn't fail when an invalid flag is passed
     """
     arg_r = Reader(argv)
-    out = _Attributes(self.attr_names)
+    out = _Attributes(self.defaults)
 
     while not arg_r.AtEnd():
       arg = arg_r.Peek()
@@ -675,12 +712,12 @@ class FlagSpec(object):
     return out, arg_r.i
 
   def Parse(self, arg_r):
-    # type: (Reader) -> Tuple[_Attributes, int]
+    # type: (Reader) -> _Attributes
     """For builtins to read args after we parse flags."""
     # NOTE about -:
     # 'set -' ignores it, vs set
     # 'unset -' or 'export -' seems to treat it as a variable name
-    out = _Attributes(self.attr_names)
+    out = _Attributes(self.defaults)
 
     while not arg_r.AtEnd():
       arg = arg_r.Peek()
@@ -733,20 +770,24 @@ class FlagSpec(object):
       else:  # a regular arg
         break
 
-    return out, arg_r.i
+    return out
 
   def ParseCmdVal(self, cmd_val):
     # type: (cmd_value__Argv) -> Tuple[_Attributes, int]
-    """Used by builtins that don't need to read more args from."""
+    """Used by builtins that don't need arg_r.
+
+    Note: It might be more flexible to return arg_r instead if i.  Then they
+    can call arg_r.Rest(), etc.
+    """
     arg_r = Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # move past the builtin name
-    return self.Parse(arg_r)
+    return self.Parse(arg_r), arg_r.i
 
   def ParseArgv(self, argv):
     # type: (List[str]) -> Tuple[_Attributes, int]
     """For tools/readlink.py -- no location info available."""
     arg_r = Reader(argv)
-    return self.Parse(arg_r)
+    return self.Parse(arg_r), arg_r.i
 
 
 # - A flag can start with one or two dashes, but not three
@@ -814,7 +855,7 @@ class OilFlags(object):
   def __init__(self):
     # type: () -> None
     self.arity1 = {}  # type: Dict[str, _Action]
-    self.attr_names = {}  # type: Dict[str, Any]  # attr name -> default value
+    self.defaults = {}  # type: Dict[str, Any]  # attr name -> default value
     # (flag name, string) tuples, in order
     self.help_strings = []  # type: List[Tuple[str, str]]
 
@@ -833,11 +874,11 @@ class OilFlags(object):
     else:
       self.arity1[attr_name] = SetToArg(attr_name, arg_type)
 
-    self.attr_names[attr_name] = default
+    self.defaults[attr_name] = default
 
   def Parse(self, arg_r):
     # type: (Reader) -> Tuple[_Attributes, int]
-    out = _Attributes(self.attr_names)
+    out = _Attributes(self.defaults)
 
     while not arg_r.AtEnd():
       arg = arg_r.Peek()
