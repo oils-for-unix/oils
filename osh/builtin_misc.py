@@ -20,6 +20,7 @@ from asdl import runtime
 from core import state
 from core import ui
 from core.util import log
+from core.vm import _Builtin
 from frontend import args
 from frontend import arg_def
 from mycpp import mylib
@@ -45,19 +46,6 @@ if TYPE_CHECKING:
   from osh.split import SplitContext
 
 _ = log
-
-#
-# Abstract base class
-#
-
-class _Builtin(object):
-  """All builtins except 'command' obey this interface.
-
-  Assignment builtins use cmd_value__Assign; others use cmd_value__Argv.
-  """
-  def Run(self, cmd_val):
-    # type: (cmd_value_t) -> int
-    raise NotImplementedError()
 
 #
 # Implementation of builtins.
@@ -194,6 +182,7 @@ class Read(object):
     arg, i = READ_SPEC.ParseCmdVal(cmd_val)
     names = cmd_val.argv[i:]
 
+    #if arg.n >= 0:  # read a certain number of bytes
     if arg.n is not None:  # read a certain number of bytes
       stdin = sys.stdin.fileno()
       try:
@@ -238,7 +227,7 @@ class Read(object):
     else:
       max_results = len(names)
 
-    if arg.d is not None:
+    if arg.d is not None:  # TODO: Should be attrs['d'] is not None?
       if len(arg.d):
         delim_char = arg.d[0]
       else:
@@ -632,7 +621,7 @@ class History(object):
       return 0
 
     # Delete history entry by id number
-    if arg.d:
+    if arg.d:  # >= 0:
       cmd_index = arg.d - 1
 
       try:

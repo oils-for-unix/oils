@@ -30,6 +30,11 @@ class IntType(_RuntimeType):
     return '<Int>'
 
 
+class FloatType(_RuntimeType):
+  def __repr__(self):
+    return '<Float>'
+
+
 class BoolType(_RuntimeType):
   def __repr__(self):
     return '<Bool>'
@@ -115,6 +120,7 @@ class CompoundType(_RuntimeType):
 BUILTIN_TYPES = {
     'string': StrType(),
     'int': IntType(),
+    'float': FloatType(),
     'bool': BoolType(),
 
     # 'any' is used:

@@ -56,17 +56,23 @@ However I don't see these used anywhere!  I only see ':' used.
 """
 from __future__ import print_function
 
+from _devbuild.gen.runtime_asdl import (
+    cmd_value__Argv, flag_type, flag_type_t,
+    value, value_e, value_t, value__Bool, value__Int, value__Float, value__Str
+)
+
 from asdl import runtime
 from core.util import log
+from mycpp.mylib import tagswitch
 
 try:
   import libc  # OilFlags uses regexes right now.
-except ImportError:
+except ImportError:  # circular dependecy with arg_gen
   libc = None
 
-from typing import Tuple, Optional, Dict, Union, List, Any, IO, TYPE_CHECKING
-from _devbuild.gen.runtime_asdl import cmd_value__Argv, value, value_t
-
+from typing import (
+    cast, Tuple, Optional, Dict, Union, List, Any, IO, TYPE_CHECKING
+)
 if TYPE_CHECKING:
   OptChange = Tuple[str, bool]
 
@@ -82,23 +88,11 @@ class UsageError(Exception):
     self.span_id = span_id
 
 
-# Split into:
+# Note: could split into
 #   Flags
 #   FlagsAndMore
 #
-# Hm don't need that yet.
-#
-# I think you can write _Attributes -> arg_types.EXPORT
-# And then change setattr() to a dictionary.
-#
-# arg_types.py
-#
-# class EXPORT_t(object):
-#   pass
-
-# class EXPORT(object):
-#   def Parse(self, arg_r):
-#     # type: (args.Reader) -> EXPORT_t
+# but we should make it statically typed first.
 
 class _Attributes(object):
   """Object to hold flags.
@@ -119,29 +113,51 @@ class _Attributes(object):
     for name, v in defaults.iteritems():
       self.Set(name, v)
 
-  def Set(self, name, py_val):
-    # type: (str, Union[None, bool, str]) -> None
-    # debug-completion -> debug_completion
-    setattr(self, name.replace('-', '_'), py_val)
-
-    if py_val is None:
-      val = value.Undef()  # type: value_t
-    elif isinstance(py_val, bool):
-      val = value.Bool(py_val)
-    elif isinstance(py_val, int):
-      val = value.Int(py_val)
-    elif isinstance(py_val, float):
-      val = value.Float()  # TODO: ASDL needs float primitive
-    elif isinstance(py_val, str):
-      val = value.Str(py_val)
-    else:
-      raise AssertionError(py_val)
+  def Set(self, name, val):
+    # type: (str, value_t) -> None
 
     self.attrs[name] = val
+
+    # Backward compatibility!
+    with tagswitch(val) as case:
+      if case(value_e.Undef):
+        py_val = None  # type: Any
+      elif case(value_e.Bool):
+        py_val = cast(value__Bool, val).b
+      elif case(value_e.Int):
+        py_val = cast(value__Int, val).i
+      elif case(value_e.Float):
+        py_val = cast(value__Float, val).f
+      elif case(value_e.Str):
+        py_val = cast(value__Str, val).s
+      else:
+        raise AssertionError(val)
+
+    # debug-completion -> debug_completion
+    setattr(self, name.replace('-', '_'), py_val)
 
   def __repr__(self):
     # type: () -> str
     return '<_Attributes %s>' % self.__dict__
+
+
+def PyToValue(py_val):
+  # type: (Any) -> value_t
+
+  if py_val is None:
+    val = value.Undef()  # type: value_t
+  elif isinstance(py_val, bool):
+    val = value.Bool(py_val)
+  elif isinstance(py_val, int):
+    val = value.Int(py_val)
+  elif isinstance(py_val, float):
+    val = value.Float()  # TODO: ASDL needs float primitive
+  elif isinstance(py_val, str):
+    val = value.Str(py_val)
+  else:
+    raise AssertionError(py_val)
+
+  return val
 
 
 class Reader(object):
@@ -289,25 +305,27 @@ class SetToArg(_Action):
             'expected argument to %r' % ('-' + self.name), span_id=arg_r.SpanId())
 
     typ = self.arg_type
+    # e.g. spec.LongFlag('--format', ['text', 'html'])
+    # Should change to arg.Enum([...])
     if isinstance(typ, list):
       if arg not in typ:
         raise UsageError(
             'got invalid argument %r to %r, expected one of: %s' %
             (arg, ('-' + self.name), ', '.join(typ)), span_id=arg_r.SpanId())
-      value = arg  # type: Any
+      val = value.Str(arg)  # type: value_t
     else:
       if typ == Str:
-        value = arg
+        val = value.Str(arg)
       elif typ == Int:
         try:
-          value = int(arg)
+          val = value.Int(int(arg))
         except ValueError:
           raise UsageError(
               'expected integer after %r, got %r' % ('-' + self.name, arg),
               span_id=arg_r.SpanId())
       elif typ == Float:
         try:
-          value = float(arg)
+          val = value.Float(float(arg))
         except ValueError:
           raise UsageError(
               'expected number after %r, got %r' % ('-' + self.name, arg),
@@ -315,7 +333,7 @@ class SetToArg(_Action):
       else:
         raise AssertionError()
 
-    out.Set(self.name, value)
+    out.Set(self.name, val)
     return self.quit_parsing_flags
 
 
@@ -332,16 +350,28 @@ class SetBoolToArg(_Action):
 
     if suffix:  # '0' in --verbose=0
       if suffix in ('0', 'F', 'false', 'False'):
-        value = False
+        b = False
       elif suffix in ('1', 'T', 'true', 'Talse'):
-        value = True
+        b = True
       else:
         raise UsageError(
             'got invalid argument to boolean flag: %r' % suffix)
     else:
-      value = True
+      b = True
 
-    out.Set(self.name, value)
+    out.Set(self.name, value.Bool(b))
+
+
+class SetToTrue(_Action):
+
+  def __init__(self, name):
+    # type: (str) -> None
+    self.name = name
+
+  def OnMatch(self, prefix, suffix, arg_r, out):
+    # type: (Optional[Any], Optional[Any], Reader, _Attributes) -> None
+    """Called when the flag matches."""
+    out.Set(self.name, value.Bool(True))
 
 
 class SetShortOption(_Action):
@@ -357,19 +387,7 @@ class SetShortOption(_Action):
     Args:
       suffix: - or + (not really a suffix)
     """
-    out.Set(self.name, suffix)
-
-
-class SetToTrue(_Action):
-
-  def __init__(self, name):
-    # type: (str) -> None
-    self.name = name
-
-  def OnMatch(self, prefix, suffix, arg_r, out):
-    # type: (Optional[Any], Optional[Any], Reader, _Attributes) -> None
-    """Called when the flag matches."""
-    out.Set(self.name, True)
+    out.Set(self.name, value.Str(suffix))
 
 
 class SetOption(_Action):
@@ -459,6 +477,8 @@ class SetNamedAction(_Action):
 
 
 # How to parse the value.  TODO: Use ASDL for this.
+# And I probably want arg.List(['text', 'html'])
+# Or maybe arg.List('text html') is fine
 Str = 1
 Int = 2
 Float = 3  # e.g. for read -t timeout value
@@ -479,7 +499,7 @@ class FlagSpecAndMore(object):
     # type: () -> None
     self.actions_short = {}  # type: Dict[str, _Action]  # {'-c': _Action}
     self.actions_long = {}  # type: Dict[str, _Action]  # {'--rcfile': _Action}
-    self.defaults = {}  # type: Dict[str, Any]
+    self.defaults = {}  # type: Dict[str, value_t]
 
     self.actions_short['o'] = SetNamedOption()  # -o and +o
     self.actions_short['O'] = SetNamedOption(shopt=True)  # -O and +O
@@ -503,7 +523,7 @@ class FlagSpecAndMore(object):
       self.actions_short[char] = SetToArg(char, arg_type,
                                           quit_parsing_flags=quit_parsing_flags)
 
-    self.defaults[char] = default
+    self.defaults[char] = PyToValue(default)
 
   def LongFlag(self,
                long_name,  # type: str
@@ -521,7 +541,7 @@ class FlagSpecAndMore(object):
     else:
       self.actions_long[long_name] = SetToArg(name, arg_type)
 
-    self.defaults[name] = default
+    self.defaults[name] = PyToValue(default)
 
   def Option(self, short_flag, name, help=None):
     # type: (Optional[str], str, Optional[Any]) -> None
@@ -638,9 +658,9 @@ class FlagSpec(object):
     # type: () -> None
     self.arity0 = {}  # type: Dict[str, _Action]  # {'r': _Action} for read -r
     self.arity1 = {}  # type: Dict[str, _Action]  # {'t': _Action} for read -t 1.0
-    self.options = {}  # type: Dict[str, _Action]
-
-    self.defaults = {}  # type: Dict[str, str]
+    self.options = {}  # type: Dict[str, _Action]  # e.g. for declare +r
+    self.defaults = {}  # type: Dict[str, value_t]
+    self.fields = {}  # type: Dict[str, flag_type_t]  # for arg_types to use
 
   def PrintHelp(self, f):
     # type: (IO[bytes]) -> None
@@ -669,13 +689,40 @@ class FlagSpec(object):
     else:
       self.arity1[char] = SetToArg(char, arg_type)
 
-    self.defaults[char] = None
+    # TODO: callers should pass flag_type
+    if arg_type is None:
+      typ = flag_type.Bool()  # type: flag_type_t
+      default = value.Bool(False)  # type: value_t
+    elif arg_type == Int:
+      typ = flag_type.Int()
+      default = value.Int(-1)
+    elif arg_type == Float:
+      typ = flag_type.Float()
+      default = value.Float(0.0)
+    elif arg_type == Str:
+      typ = flag_type.Str()
+      default = value.Str('')
+    elif isinstance(arg_type, list):
+      typ = flag_type.Enum(arg_type)
+      default = value.Str('')  # This isn't valid
+
+    # TODO: Use this typed default
+    #self.defaults[char] = default
+    self.defaults[char] = value.Undef()
+
+    self.fields[char] = typ
 
   def ShortOption(self, char, help=None):
     # type: (str, Optional[Any]) -> None
+    """Define an option that can be turned off with + and on with -."""
+
     assert len(char) == 1  # 'r' for -r +r
     self.options[char] = SetShortOption(char)
-    self.defaults[char] = None
+
+    # TODO: use typed default
+    #self.defaults[char] = value.Bool(False)
+    self.defaults[char] = value.Undef()
+    self.fields[char] = flag_type.Bool()
 
   def ParseLikeEcho(self, argv):
     # type: (List[str]) -> Tuple[_Attributes, int]
@@ -714,6 +761,7 @@ class FlagSpec(object):
   def Parse(self, arg_r):
     # type: (Reader) -> _Attributes
     """For builtins to read args after we parse flags."""
+
     # NOTE about -:
     # 'set -' ignores it, vs set
     # 'unset -' or 'export -' seems to treat it as a variable name
@@ -874,7 +922,7 @@ class OilFlags(object):
     else:
       self.arity1[attr_name] = SetToArg(attr_name, arg_type)
 
-    self.defaults[attr_name] = default
+    self.defaults[attr_name] = PyToValue(default)
 
   def Parse(self, arg_r):
     # type: (Reader) -> Tuple[_Attributes, int]

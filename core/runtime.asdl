@@ -14,6 +14,9 @@ module runtime
            string* argv, int* arg_spids,
            assign_arg* pairs)
 
+  -- Flag arguments can be any of these types.
+  flag_type = Bool | Int | Float | Str | Enum(string* alts)
+
   quote = Default | FnMatch | ERE
 
   -- A parse-time word_part from syntax.asdl is evaluated to a runtime
@@ -45,7 +48,7 @@ module runtime
     -- any should be re_t.  Need syntax.asdl here
 
   | Bool(bool b)
-  | Float() -- For flags only now.  TODO: ASDL needs float type.
+  | Float(float f) -- For flags only now.  TODO: ASDL needs float type.
   | Eggex(any expr, string as_ere)
     -- what about Proc or Module here?  are they first class?
     -- then you can reflect on them?  Get name and docstring?

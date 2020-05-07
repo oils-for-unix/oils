@@ -100,6 +100,9 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     elif isinstance(desc, meta.IntType):
       code_str = 'hnode.Leaf(str(%s), color_e.OtherConst)' % var_name
 
+    elif isinstance(desc, meta.FloatType):
+      code_str = 'hnode.Leaf(str(%s), color_e.OtherConst)' % var_name
+
     elif isinstance(desc, meta.StrType):
       code_str = 'NewLeaf(%s, color_e.StringConst)' % var_name
 

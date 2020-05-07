@@ -374,6 +374,9 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     elif isinstance(desc, meta.IntType):
       code_str = 'new hnode__Leaf(str(%s), color_e::OtherConst)' % var_name
 
+    elif isinstance(desc, meta.FloatType):
+      code_str = 'new hnode__Leaf(str(%s), color_e::OtherConst)' % var_name
+
     elif isinstance(desc, meta.StrType):
       code_str = 'runtime::NewLeaf(%s, color_e::StringConst)' % var_name
 

@@ -113,11 +113,10 @@ option-cpp-gen() {
 }
 
 arg-mypy-gen() {
-  # TODO: figure out circular deps
-  return
-
   local out=_devbuild/gen/arg_types.py
   frontend/arg_gen.py mypy > $out
+  cat $out
+  log "Wrote $out"
 }
 
 arg-cpp-gen() {

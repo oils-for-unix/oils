@@ -105,6 +105,11 @@ class _Executor(object):
     pass
 
 
+#
+# Abstract base classes
+#
+
+
 class _AssignBuiltin(object):
   """Interface for assignment builtins."""
 
@@ -113,4 +118,11 @@ class _AssignBuiltin(object):
     raise NotImplementedError()
 
 
-# TODO: Also move _Builtin here.
+class _Builtin(object):
+  """All builtins except 'command' obey this interface.
+
+  Assignment builtins use cmd_value__Assign; others use cmd_value__Argv.
+  """
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    raise NotImplementedError()

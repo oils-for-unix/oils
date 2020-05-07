@@ -11,19 +11,17 @@ from _devbuild.gen.runtime_asdl import (
     lvalue, lvalue_e, scope_e, cmd_value__Argv, cmd_value__Assign,
 )
 from _devbuild.gen.syntax_asdl import source
-try:
-  from _devbuild.gen import arg_types
-except ImportError:
-  arg_types = None
+from _devbuild.gen import arg_types
 
 from frontend import arg_def
+from frontend.arg_def import UNSET_SPEC
 from frontend import args
 from core import error
 from qsn_ import qsn
 from core import state
 from core import ui
+from core.vm import _AssignBuiltin, _Builtin
 from core.util import log, e_die
-from mycpp import mylib
 
 from typing import cast, Dict, List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -47,7 +45,7 @@ def _PrintVariables(mem, cmd_val, arg, print_flags, builtin=_OTHER):
   """
   Args:
     print_flags: whether to print flags
-    builtin: is it the readonly or exported builtin?
+    builtin: is it the readonly or export builtin?
   """
   flag_g = getattr(arg, 'g', None)
   flag_n = getattr(arg, 'n', None)
@@ -159,27 +157,7 @@ def _PrintVariables(mem, cmd_val, arg, print_flags, builtin=_OTHER):
     return 1
 
 
-if mylib.PYTHON:
-  EXPORT_SPEC = arg_def.FlagSpec('export')
-  EXPORT_SPEC.ShortFlag('-n')
-  EXPORT_SPEC.ShortFlag('-f')  # stubbed
-  EXPORT_SPEC.ShortFlag('-p')
-  # Instead of Reader?  Or just make everything take a reader/
-  # They should check for extra args?
-  #spec.AcceptsCmdVal()
-
-  # Later, use it like:
-  #
-  # from _devbuild.gen import arg_parse
-  #
-  # arg = arg_parse.export_cmdval(cmd_val)?
-  # arg = arg_parse.echo(arg_r)
-  # arg = arg_parse.bin_oil(arg_r)?
-  #
-  # So from arg_def you generate arg_parse.
-
-
-class Export(object):
+class Export(_AssignBuiltin):
   def __init__(self, mem, errfmt):
     # type: (Mem, ErrorFormatter) -> None
     self.mem = mem
@@ -189,12 +167,14 @@ class Export(object):
     # type: (cmd_value__Assign) -> int
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
-    arg = EXPORT_SPEC.Parse(arg_r)
-    # arg = arg_types.export(attrs)
+    attrs = arg_def.Parse('export', arg_r)
+    #arg = arg_types.export(attrs)
+    arg = attrs
 
     if arg.f:
       raise args.UsageError(
-          "doesn't accept -f because it's dangerous.  (The code can usually be restructured with 'source')")
+          "doesn't accept -f because it's dangerous.  "
+          "(The code can usually be restructured with 'source')")
 
     if arg.p or len(cmd_val.pairs) == 0:
       return _PrintVariables(self.mem, cmd_val, arg, True, builtin=_EXPORT)
@@ -244,16 +224,7 @@ def _ReconcileTypes(rval, arg, span_id):
   return rval
 
 
-if mylib.PYTHON:
-  READONLY_SPEC = arg_def.FlagSpec('readonly')
-
-# TODO: Check the consistency of -a and -A against values, here and below.
-  READONLY_SPEC.ShortFlag('-a')
-  READONLY_SPEC.ShortFlag('-A')
-  READONLY_SPEC.ShortFlag('-p')
-
-
-class Readonly(object):
+class Readonly(_AssignBuiltin):
   def __init__(self, mem, errfmt):
     # type: (Mem, ErrorFormatter) -> None
     self.mem = mem
@@ -263,7 +234,9 @@ class Readonly(object):
     # type: (cmd_value__Assign) -> int
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
-    arg = READONLY_SPEC.Parse(arg_r)
+    attrs = arg_def.Parse('readonly', arg_r)
+    #arg = arg_types.readonly(attrs)
+    arg = attrs
 
     if arg.p or len(cmd_val.pairs) == 0:
       return _PrintVariables(self.mem, cmd_val, arg, True, builtin=_READONLY)
@@ -290,28 +263,7 @@ class Readonly(object):
     return 0
 
 
-if mylib.PYTHON:
-  NEW_VAR_SPEC = arg_def.FlagSpec('declare')
-
-  # print stuff
-  NEW_VAR_SPEC.ShortFlag('-f')
-  NEW_VAR_SPEC.ShortFlag('-F')
-  NEW_VAR_SPEC.ShortFlag('-p')
-
-  NEW_VAR_SPEC.ShortFlag('-g')  # Look up in global scope
-
-  # Options +r +x +n
-  NEW_VAR_SPEC.ShortOption('x')  # export
-  NEW_VAR_SPEC.ShortOption('r')  # readonly
-  NEW_VAR_SPEC.ShortOption('n')  # named ref
-
-  # Common between readonly/declare
-  NEW_VAR_SPEC.ShortFlag('-a')
-  NEW_VAR_SPEC.ShortFlag('-A')
-
-
-
-class NewVar(object):
+class NewVar(_AssignBuiltin):
   """declare/typeset/local."""
 
   def __init__(self, mem, funcs, errfmt):
@@ -336,7 +288,9 @@ class NewVar(object):
     # type: (cmd_value__Assign) -> int
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
-    arg = NEW_VAR_SPEC.Parse(arg_r)
+    attrs = arg_def.Parse('new_var', arg_r)
+    #arg = arg_types.new_var(attrs)
+    arg = attrs
 
     status = 0
 
@@ -410,17 +364,11 @@ class NewVar(object):
     return status
 
 
-if mylib.PYTHON:
-  UNSET_SPEC = arg_def.FlagSpec('unset')
-  UNSET_SPEC.ShortFlag('-v')
-  UNSET_SPEC.ShortFlag('-f')
-
-
 # TODO:
 # - It would make more sense to treat no args as an error (bash doesn't.)
 #   - Should we have strict builtins?  Or just make it stricter?
 
-class Unset(object):
+class Unset(_Builtin):
 
   def __init__(self, mem, exec_opts, funcs, parse_ctx, arith_ev, errfmt):
     # type: (Mem, optview.Exec, Dict[str, Any], ParseContext, ArithEvaluator, ErrorFormatter) -> None
@@ -479,9 +427,12 @@ class Unset(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    arg, offset = UNSET_SPEC.ParseCmdVal(cmd_val)
+    attrs, offset = UNSET_SPEC.ParseCmdVal(cmd_val)
     n = len(cmd_val.argv)
+    #arg = arg_types.unset(attrs)
+    arg = attrs
 
+    # TODO: Could use arg_r.Rest()
     for i in xrange(offset, n):
       name = cmd_val.argv[i]
       spid = cmd_val.arg_spids[i]
@@ -502,7 +453,8 @@ class Unset(object):
     return 0
 
 
-class Shift(object):
+class Shift(_Builtin):
+
   def __init__(self, mem):
     # type: (Mem) -> None
     self.mem = mem

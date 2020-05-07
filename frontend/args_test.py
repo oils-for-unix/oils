@@ -120,6 +120,7 @@ class ArgsTest(unittest.TestCase):
     arg, i = s.ParseCmdVal(_MakeBuiltinArgv(['-f', 'foo', 'bar']))
     self.assertEqual(1, i-1)
     self.assertEqual(True, arg.f)
+    #self.assertEqual(False, arg.n)
     self.assertEqual(None, arg.n)
 
     self.assertRaises(
@@ -132,6 +133,7 @@ class ArgsTest(unittest.TestCase):
     arg, i = s.ParseCmdVal(_MakeBuiltinArgv(['-d,',  'foo']))
     self.assertEqual(1, i-1)
     self.assertEqual(',', arg.d)
+    #self.assertEqual(False, arg.r)
     self.assertEqual(None, arg.r)
 
     arg, i = s.ParseCmdVal(_MakeBuiltinArgv(['-d,', '-r', '-x']))
@@ -157,6 +159,7 @@ class ArgsTest(unittest.TestCase):
     self.assertEqual(1, i-1)
 
     arg, i = s.ParseCmdVal(_MakeBuiltinArgv(['-p', '>']))
+    #self.assertEqual(False, arg.r)
     self.assertEqual(None, arg.r)
     self.assertEqual('>', arg.p)
     self.assertEqual(2, i-1)
@@ -200,6 +203,8 @@ class ArgsTest(unittest.TestCase):
     self.assertEqual(1, i)
 
     arg, i = s.ParseLikeEcho(['-ez', 'foo'])
+    #self.assertEqual(False, arg.e)
+    #self.assertEqual(False, arg.n)
     self.assertEqual(None, arg.e)
     self.assertEqual(None, arg.n)
     self.assertEqual(0, i)
