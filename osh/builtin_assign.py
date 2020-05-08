@@ -235,8 +235,7 @@ class Readonly(_AssignBuiltin):
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
     attrs = arg_def.Parse('readonly', arg_r)
-    #arg = arg_types.readonly(attrs)
-    arg = attrs
+    arg = arg_types.readonly(attrs)
 
     if arg.p or len(cmd_val.pairs) == 0:
       return _PrintVariables(self.mem, cmd_val, arg, True, builtin=_READONLY)
@@ -289,8 +288,7 @@ class NewVar(_AssignBuiltin):
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
     attrs = arg_def.Parse('new_var', arg_r)
-    #arg = arg_types.new_var(attrs)
-    arg = attrs
+    arg = arg_types.new_var(attrs)
 
     status = 0
 
@@ -429,8 +427,7 @@ class Unset(_Builtin):
     # type: (cmd_value__Argv) -> int
     attrs, offset = UNSET_SPEC.ParseCmdVal(cmd_val)
     n = len(cmd_val.argv)
-    #arg = arg_types.unset(attrs)
-    arg = attrs
+    arg = arg_types.unset(attrs)
 
     # TODO: Could use arg_r.Rest()
     for i in xrange(offset, n):

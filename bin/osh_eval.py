@@ -31,7 +31,7 @@ from mycpp import mylib
 from mycpp.mylib import tagswitch, NewStr
 from osh import braces
 from osh import split
-#from osh import builtin_assign
+from osh import builtin_assign
 #from osh import builtin_meta
 #from osh import builtin_pure
 # builtin_{printf,bracket,comp} might also be pure
@@ -211,24 +211,20 @@ def main(argv):
   arith_ev.word_ev = word_ev
   word_ev.arith_ev = arith_ev
 
-  #test_ev = TestEvaluator(arith_ev, word_ev)
-  #test_ev.Eval(node)
-
   procs = {}  # type: Dict[str, command__ShFunction]
 
-  assign_builtins = {}  # type: Dict[int, _AssignBuiltin]
+  #assign_builtins = {}  # type: Dict[int, _AssignBuiltin]
 
-  # TODO: fix type here
-  #new_var = builtin_assign.NewVar(mem, procs, errfmt)
-  #assign_builtins = {
-  #    # ShAssignment (which are pure)
-  #    builtin_i.declare: new_var,
-  #    builtin_i.typeset: new_var,
-  #    builtin_i.local: new_var,
+  new_var = builtin_assign.NewVar(mem, procs, errfmt)
+  assign_builtins = {
+      # ShAssignment (which are pure)
+      builtin_i.declare: new_var,
+      builtin_i.typeset: new_var,
+      builtin_i.local: new_var,
 
-  #    builtin_i.export_: builtin_assign.Export(mem, errfmt),
-  #    builtin_i.readonly: builtin_assign.Readonly(mem, errfmt),
-  #}
+      builtin_i.export_: builtin_assign.Export(mem, errfmt),
+      builtin_i.readonly: builtin_assign.Readonly(mem, errfmt),
+  }
 
   cmd_deps = cmd_eval.Deps()
   cmd_deps.mutable_opts = mutable_opts
