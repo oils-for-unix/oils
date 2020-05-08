@@ -6,9 +6,12 @@ from __future__ import print_function
 
 import sys
 
+from _devbuild.gen.runtime_asdl import flag_type_e
 from core.util import log
 from frontend import arg_def
 from frontend import args
+from mycpp.mylib import tagswitch
+
 #from osh import builtin_assign
 #from osh import builtin_bracket
 #from osh import builtin_misc
@@ -55,9 +58,19 @@ class %s(object):
 
         i = 0
         for field_name in sorted(spec.fields):
-          subtype = 'Bool'
-          subtype_field = 'b'  # e.g. Bool(bool b)
-          mypy_type = 'bool'
+          typ = spec.fields[field_name]
+          with tagswitch(typ) as case:
+            if case(flag_type_e.Bool):
+              subtype = 'Bool'
+              subtype_field = 'b'  # e.g. Bool(bool b)
+              mypy_type = 'bool'
+            elif case(flag_type_e.Str):
+              subtype = 'Str'
+              subtype_field = 's'  # e.g. Bool(bool b)
+              mypy_type = 'str'
+            else:
+              raise AssertionError(typ)
+
           tmp = 'val%d' % i
           print('    %s = attrs.attrs[%r]' % (tmp, field_name))
           print('    self.%s = None if %s.tag_() == value_e.Undef else cast(value__%s, %s).%s  # type: %s' % (

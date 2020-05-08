@@ -7,10 +7,7 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.option_asdl import builtin_i
-from _devbuild.gen.syntax_asdl import (
-    source, source_t,
-    command_e, command_t, command_str, command__Simple, command__DParen,
-)
+from _devbuild.gen.syntax_asdl import (source, source_t)
 from asdl import format as fmt
 from core import alloc
 from core import dev
@@ -28,8 +25,6 @@ from frontend import consts
 from frontend import parse_lib
 from frontend import reader
 from mycpp import mylib
-from mycpp.mylib import tagswitch, NewStr
-from osh import braces
 from osh import split
 from osh import builtin_assign
 #from osh import builtin_meta
@@ -43,53 +38,17 @@ from osh import cmd_eval
 from osh import sh_expr_eval
 from osh import word_eval
 
-from typing import List, Dict, Tuple, Optional, cast, TYPE_CHECKING
+from typing import List, Dict, Tuple, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command__ShFunction
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from core.state import MutableOpts
-  from core.vm import _AssignBuiltin
   from pgen2.grammar import Grammar
 
 
 if mylib.PYTHON:
   unused1 = log
   unused2 = args
-
-
-class TestEvaluator(object):
-  def __init__(self, arith_ev, word_ev):
-    # type: (sh_expr_eval.ArithEvaluator, word_eval.NormalWordEvaluator) -> None
-    self.arith_ev = arith_ev
-    self.word_ev = word_ev
-
-  def Eval(self, node):
-    # type: (command_t) -> None
-
-    UP_node = node
-    with tagswitch(node) as case:
-      if case(command_e.Simple):
-        node = cast(command__Simple, UP_node)
-
-        # Need splitter for this.
-        if 0:
-          cmd_val = self.word_ev.EvalWordSequence2(node.words, allow_assign=True)
-          for arg in cmd_val.argv:
-            log('arg %s', arg)
-        words = braces.BraceExpandWords(node.words)
-        for w in words:
-          val = self.word_ev.EvalWordToString(w)
-          log('arg %r', val.s)
-
-      elif case(command_e.DParen):
-        node = cast(command__DParen, UP_node)
-
-        a = self.arith_ev.Eval(node.child)
-        # TODO: how to print repr() in C++?
-        log('arith val %d', a.tag_())
-
-      else:
-        log('Unhandled node %s', NewStr(command_str(node.tag_())))
 
 
 def Parse(argv):
@@ -212,8 +171,6 @@ def main(argv):
   word_ev.arith_ev = arith_ev
 
   procs = {}  # type: Dict[str, command__ShFunction]
-
-  #assign_builtins = {}  # type: Dict[int, _AssignBuiltin]
 
   new_var = builtin_assign.NewVar(mem, procs, errfmt)
   assign_builtins = {

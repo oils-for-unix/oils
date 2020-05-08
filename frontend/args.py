@@ -722,7 +722,8 @@ class FlagSpec(object):
     # TODO: use typed default
     #self.defaults[char] = value.Bool(False)
     self.defaults[char] = value.Undef()
-    self.fields[char] = flag_type.Bool()
+    # '+' or '-'.  TODO: Should we make it a bool?
+    self.fields[char] = flag_type.Str()
 
   def ParseLikeEcho(self, argv):
     # type: (List[str]) -> Tuple[_Attributes, int]
