@@ -54,6 +54,7 @@ from typing import cast
 class %s(object):
   def __init__(self, attrs):
     # type: (_Attributes) -> None
+    flag = attrs.attrs
 """ % spec_name)
 
         i = 0
@@ -64,18 +65,22 @@ class %s(object):
               subtype = 'Bool'
               subtype_field = 'b'  # e.g. Bool(bool b)
               mypy_type = 'bool'
+              print('    self.%s = cast(value__Bool, flag[%r]).b  # type: bool' % (
+                field_name, field_name))
             elif case(flag_type_e.Str):
               subtype = 'Str'
               subtype_field = 's'  # e.g. Bool(bool b)
               mypy_type = 'str'
+
+              tmp = 'val%d' % i
+              print('    %s = flag[%r]' % (tmp, field_name))
+              print('    self.%s = None if %s.tag_() == value_e.Undef else cast(value__%s, %s).%s  # type: %s' % (
+                field_name, tmp, subtype, tmp, subtype_field, mypy_type))
             else:
               raise AssertionError(typ)
 
-          tmp = 'val%d' % i
-          print('    %s = attrs.attrs[%r]' % (tmp, field_name))
-          print('    self.%s = None if %s.tag_() == value_e.Undef else cast(value__%s, %s).%s  # type: %s' % (
-            field_name, tmp, subtype, tmp, subtype_field, mypy_type))
           i += 1
+
         print()
 
     #

@@ -115,7 +115,7 @@ option-cpp-gen() {
 arg-mypy-gen() {
   local out=_devbuild/gen/arg_types.py
   frontend/arg_gen.py mypy > $out
-  cat $out
+  #cat $out
   log "Wrote $out"
 }
 
