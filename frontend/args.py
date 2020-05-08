@@ -100,7 +100,7 @@ class _Attributes(object):
   TODO: Make this statically typed.
   """
   def __init__(self, defaults):
-    # type: (Dict[str, Any]) -> None
+    # type: (Dict[str, value_t]) -> None
 
     # New style
     self.attrs = {}  # type: Dict[str, value_t]
@@ -345,7 +345,7 @@ class SetBoolToArg(_Action):
     self.name = name
 
   def OnMatch(self, prefix, suffix, arg_r, out):
-    # type: (Optional[Any], Optional[str], Reader, _Attributes) -> None
+    # type: (Optional[str], Optional[str], Reader, _Attributes) -> None
     """Called when the flag matches."""
 
     if suffix:  # '0' in --verbose=0
@@ -369,7 +369,7 @@ class SetToTrue(_Action):
     self.name = name
 
   def OnMatch(self, prefix, suffix, arg_r, out):
-    # type: (Optional[Any], Optional[Any], Reader, _Attributes) -> None
+    # type: (Optional[str], Optional[str], Reader, _Attributes) -> None
     """Called when the flag matches."""
     out.Set(self.name, value.Bool(True))
 
@@ -381,7 +381,7 @@ class SetShortOption(_Action):
     self.name = name
 
   def OnMatch(self, prefix, suffix, arg_r, out):
-    # type: (Optional[Any], str, Reader, _Attributes) -> None
+    # type: (Optional[str], Optional[str], Reader, _Attributes) -> None
     """Called when the flag matches.
 
     Args:
@@ -398,7 +398,7 @@ class SetOption(_Action):
     self.name = name
 
   def OnMatch(self, prefix, suffix, arg_r, out):
-    # type: (str, Optional[Any], Reader, _Attributes) -> None
+    # type: (str, Optional[str], Reader, _Attributes) -> None
     """Called when the flag matches."""
     b = (prefix == '-')
     out.opt_changes.append((self.name, b))
@@ -417,7 +417,7 @@ class SetNamedOption(_Action):
     self.names.append(name)
 
   def OnMatch(self, prefix, suffix, arg_r, out):
-    # type: (str, Optional[Any], Reader, _Attributes) -> bool
+    # type: (str, Optional[str], Reader, _Attributes) -> bool
     """Called when the flag matches."""
     b = (prefix == '-')
     #log('SetNamedOption %r %r %r', prefix, suffix, arg_r)
@@ -461,7 +461,7 @@ class SetNamedAction(_Action):
     self.names.append(name)
 
   def OnMatch(self, prefix, suffix, arg_r, out):
-    # type: (str, Optional[Any], Reader, _Attributes) -> None
+    # type: (str, Optional[str], Reader, _Attributes) -> None
     """Called when the flag matches."""
     #log('SetNamedOption %r %r %r', prefix, suffix, arg_r)
     arg_r.Next()  # always advance
@@ -510,7 +510,7 @@ class FlagSpecAndMore(object):
 
   def ShortFlag(self, short_name, arg_type=None, default=None,
                 quit_parsing_flags=False, help=None):
-    # type: (str, int, Optional[Any], bool, Optional[Any]) -> None
+    # type: (str, int, Optional[Any], bool, Optional[str]) -> None
     """ -c """
     assert short_name.startswith('-'), short_name
     assert len(short_name) == 2, short_name
@@ -529,7 +529,7 @@ class FlagSpecAndMore(object):
                long_name,  # type: str
                arg_type=None,  # type: Union[List[str], None, int]
                default=None,  # type: Optional[Any]
-               help=None,  # type: Optional[Any]
+               help=None,  # type: Optional[str]
                ):
     # type: (...) -> None
     """ --rcfile """
@@ -544,7 +544,7 @@ class FlagSpecAndMore(object):
     self.defaults[name] = PyToValue(default)
 
   def Option(self, short_flag, name, help=None):
-    # type: (Optional[str], str, Optional[Any]) -> None
+    # type: (Optional[str], str, Optional[str]) -> None
     """Register an option that can be -e or -o errexit.
 
     Args:
@@ -654,8 +654,12 @@ class FlagSpec(object):
     spec.ShortFlag('-a')
     opts, i = spec.Parse(argv)
   """
-  def __init__(self):
-    # type: () -> None
+  def __init__(self, typed=False):
+    # type: (bool) -> None
+
+    # New style: eventually everything should be typed
+    self.typed = typed
+
     self.arity0 = {}  # type: Dict[str, _Action]  # {'r': _Action} for read -r
     self.arity1 = {}  # type: Dict[str, _Action]  # {'t': _Action} for read -t 1.0
     self.options = {}  # type: Dict[str, _Action]  # e.g. for declare +r
@@ -675,7 +679,7 @@ class FlagSpec(object):
       print('    -%s' % ch)
 
   def ShortFlag(self, short_name, arg_type=None, help=None):
-    # type: (str, Optional[int], Optional[Any]) -> None
+    # type: (str, Optional[int], Optional[str]) -> None
     """
     This is very similar to ShortFlag for FlagSpecAndMore, except we have
     separate arity0 and arity1 dicts.
@@ -705,22 +709,24 @@ class FlagSpec(object):
     elif isinstance(arg_type, list):
       typ = flag_type.Enum(arg_type)
       default = value.Str('')  # This isn't valid
+    else:
+      raise AssertionError(arg_type)
 
-    # TODO: Use this typed default
-    #self.defaults[char] = default
-    self.defaults[char] = value.Undef()
+    if self.typed:
+      self.defaults[char] = default
+    else:
+      # TODO: remove when all builtins converted
+      self.defaults[char] = value.Undef()
 
     self.fields[char] = typ
 
   def ShortOption(self, char, help=None):
-    # type: (str, Optional[Any]) -> None
+    # type: (str, Optional[str]) -> None
     """Define an option that can be turned off with + and on with -."""
 
     assert len(char) == 1  # 'r' for -r +r
     self.options[char] = SetShortOption(char)
 
-    # TODO: use typed default
-    #self.defaults[char] = value.Bool(False)
     self.defaults[char] = value.Undef()
     # '+' or '-'.  TODO: Should we make it a bool?
     self.fields[char] = flag_type.Str()
@@ -904,12 +910,12 @@ class OilFlags(object):
   def __init__(self):
     # type: () -> None
     self.arity1 = {}  # type: Dict[str, _Action]
-    self.defaults = {}  # type: Dict[str, Any]  # attr name -> default value
+    self.defaults = {}  # type: Dict[str, value_t]  # attr name -> default value
     # (flag name, string) tuples, in order
     self.help_strings = []  # type: List[Tuple[str, str]]
 
   def Flag(self, name, arg_type, default=None, help=None):
-    # type: (str, int, Optional[bool], Optional[Any]) -> None
+    # type: (str, int, Optional[bool], Optional[str]) -> None
     """
     Args:
       name: e.g. '-no-docstring'

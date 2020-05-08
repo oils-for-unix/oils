@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import (
-    value, value_e, value_t, value__Str, value__MaybeStrArray,
+    value, value_e, value_t, value__Bool, value__Str, value__MaybeStrArray,
     value__AssocArray,
     lvalue, lvalue_e, scope_e, cmd_value__Argv, cmd_value__Assign,
 )
@@ -23,12 +23,13 @@ from core import ui
 from core.vm import _AssignBuiltin, _Builtin
 from core.util import log, e_die
 
-from typing import cast, Dict, List, Any, TYPE_CHECKING
+from typing import cast, Dict, List, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command__ShFunction
   from core import optview
   from core.state import Mem
   from core.ui import ErrorFormatter
+  from frontend.args import _Attributes
   from frontend.parse_lib import ParseContext
   from osh.sh_expr_eval import ArithEvaluator
 
@@ -40,19 +41,36 @@ _READONLY = 1
 _EXPORT = 2
 
 
-def _PrintVariables(mem, cmd_val, arg, print_flags, builtin=_OTHER):
-  # type: (Mem, cmd_value__Assign, Any, bool, int) -> int
+def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
+  # type: (Mem, cmd_value__Assign, _Attributes, bool, int) -> int
   """
   Args:
     print_flags: whether to print flags
     builtin: is it the readonly or export builtin?
   """
-  flag_g = getattr(arg, 'g', None)
-  flag_n = getattr(arg, 'n', None)
-  flag_r = getattr(arg, 'r', None)
-  flag_x = getattr(arg, 'x', None)
-  flag_a = getattr(arg, 'a', None)
-  flag_A = getattr(arg, 'A', None)
+  flag = attrs.attrs
+
+  # Turn dynamic vars to static.
+  tmp_g = flag.get('g')
+  tmp_a = flag.get('a')
+  tmp_A = flag.get('A')
+
+  flag_g = cast(value__Bool, tmp_g).b if tmp_g and tmp_g.tag_() == value_e.Bool else False
+  flag_a = cast(value__Bool, tmp_a).b if tmp_a and tmp_a.tag_() == value_e.Bool else False
+  flag_A = cast(value__Bool, tmp_A).b if tmp_A and tmp_A.tag_() == value_e.Bool else False
+
+  tmp_n = flag.get('n')
+  tmp_r = flag.get('r')
+  tmp_x = flag.get('x')
+
+  #log('FLAG %r', flag)
+
+  # SUBTLE: export -n vs. declare -n.  flag vs. OPTION.
+  # flags are value.Bool, while options are Undef or Str.
+  # '+', '-', or None
+  flag_n = cast(value__Str, tmp_n).s if tmp_n and tmp_n.tag_() == value_e.Str else None
+  flag_r = cast(value__Str, tmp_r).s if tmp_r and tmp_r.tag_() == value_e.Str else None
+  flag_x = cast(value__Str, tmp_x).s if tmp_x and tmp_x.tag_() == value_e.Str else None
 
   lookup_mode = scope_e.Dynamic
   if cmd_val.builtin_id == builtin_i.local:
@@ -85,16 +103,19 @@ def _PrintVariables(mem, cmd_val, arg, print_flags, builtin=_OTHER):
     cell = cells[name]
     if cell is None: continue
     val = cell.val
+    #log('name %r %s', name, val)
 
     if val.tag_() == value_e.Undef: continue
     if builtin == _READONLY and not cell.readonly: continue
     if builtin == _EXPORT and not cell.exported: continue
+
     if flag_n == '-' and not cell.nameref: continue
     if flag_n == '+' and cell.nameref: continue
     if flag_r == '-' and not cell.readonly: continue
     if flag_r == '+' and cell.readonly: continue
     if flag_x == '-' and not cell.exported: continue
     if flag_x == '+' and cell.exported: continue
+
     if flag_a and val.tag_() != value_e.MaybeStrArray: continue
     if flag_A and val.tag_() != value_e.AssocArray: continue
 
@@ -177,7 +198,8 @@ class Export(_AssignBuiltin):
           "(The code can usually be restructured with 'source')")
 
     if arg.p or len(cmd_val.pairs) == 0:
-      return _PrintVariables(self.mem, cmd_val, arg, True, builtin=_EXPORT)
+      return _PrintVariables(self.mem, cmd_val, attrs, True, builtin=_EXPORT)
+
 
     if arg.n:
       for pair in cmd_val.pairs:
@@ -195,8 +217,8 @@ class Export(_AssignBuiltin):
     return 0
 
 
-def _ReconcileTypes(rval, arg, span_id):
-  # type: (value_t, Any, int) -> value_t
+def _ReconcileTypes(rval, flag_a, flag_A, span_id):
+  # type: (value_t, bool, bool, int) -> value_t
   """Check that -a and -A flags are consistent with RHS.
 
   Special case: () is allowed to mean empty indexed array or empty assoc array
@@ -204,11 +226,11 @@ def _ReconcileTypes(rval, arg, span_id):
 
   Shared between NewVar and Readonly.
   """
-  if arg.a and rval and rval.tag_() != value_e.MaybeStrArray:
+  if flag_a and rval and rval.tag_() != value_e.MaybeStrArray:
     raise args.UsageError(
         "Got -a but RHS isn't an array", span_id=span_id)
 
-  if arg.A and rval:
+  if flag_A and rval:
     # Special case: declare -A A=() is OK.  The () is changed to mean an empty
     # associative array.
     if rval.tag_() == value_e.MaybeStrArray:
@@ -238,7 +260,7 @@ class Readonly(_AssignBuiltin):
     arg = arg_types.readonly(attrs)
 
     if arg.p or len(cmd_val.pairs) == 0:
-      return _PrintVariables(self.mem, cmd_val, arg, True, builtin=_READONLY)
+      return _PrintVariables(self.mem, cmd_val, attrs, True, builtin=_READONLY)
 
     for pair in cmd_val.pairs:
       if pair.rval is None:
@@ -251,7 +273,7 @@ class Readonly(_AssignBuiltin):
       else:
         rval = pair.rval
 
-      rval = _ReconcileTypes(rval, arg, pair.spid)
+      rval = _ReconcileTypes(rval, arg.a, arg.A, pair.spid)
 
       # NOTE:
       # - when rval is None, only flags are changed
@@ -312,9 +334,9 @@ class NewVar(_AssignBuiltin):
       return status
 
     if arg.p:  # Lookup and print variables.
-      return _PrintVariables(self.mem, cmd_val, arg, True)
+      return _PrintVariables(self.mem, cmd_val, attrs, True)
     elif len(cmd_val.pairs) == 0:
-      return _PrintVariables(self.mem, cmd_val, arg, False)
+      return _PrintVariables(self.mem, cmd_val, attrs, False)
 
     #
     # Set variables
@@ -356,7 +378,7 @@ class NewVar(_AssignBuiltin):
           if old_val.tag_() != value_e.AssocArray:
             rval = value.AssocArray({})
 
-      rval = _ReconcileTypes(rval, arg, pair.spid)
+      rval = _ReconcileTypes(rval, arg.a, arg.A, pair.spid)
       self.mem.SetVar(lvalue.Named(pair.var_name), rval, lookup_mode, flags=flags)
 
     return status
@@ -369,7 +391,7 @@ class NewVar(_AssignBuiltin):
 class Unset(_Builtin):
 
   def __init__(self, mem, exec_opts, funcs, parse_ctx, arith_ev, errfmt):
-    # type: (Mem, optview.Exec, Dict[str, Any], ParseContext, ArithEvaluator, ErrorFormatter) -> None
+    # type: (Mem, optview.Exec, Dict[str, command__ShFunction], ParseContext, ArithEvaluator, ErrorFormatter) -> None
     self.mem = mem
     self.exec_opts = exec_opts
     self.funcs = funcs

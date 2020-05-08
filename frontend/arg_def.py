@@ -12,11 +12,11 @@ from frontend import args
 _ARG_DEF = {}
 
 
-def FlagSpec(builtin_name):
-  # type: (str) -> args.FlagSpec
+def FlagSpec(builtin_name, typed=False):
+  # type: (str, bool) -> args.FlagSpec
   """
   """
-  arg_spec = args.FlagSpec()
+  arg_spec = args.FlagSpec(typed=typed)
   _ARG_DEF[builtin_name] = arg_spec
   return arg_spec
 
@@ -59,13 +59,13 @@ def All():
 
 # It will look up the spec dynamically and then call Parse() on it I think.
 
-EXPORT_SPEC = FlagSpec('export')
+EXPORT_SPEC = FlagSpec('export', typed=True)
 EXPORT_SPEC.ShortFlag('-n')
 EXPORT_SPEC.ShortFlag('-f')  # stubbed
 EXPORT_SPEC.ShortFlag('-p')
 
 
-READONLY_SPEC = FlagSpec('readonly')
+READONLY_SPEC = FlagSpec('readonly', typed=True)
 
 # TODO: Check the consistency of -a and -A against values, here and below.
 READONLY_SPEC.ShortFlag('-a')
@@ -73,7 +73,7 @@ READONLY_SPEC.ShortFlag('-A')
 READONLY_SPEC.ShortFlag('-p')
 
 
-NEW_VAR_SPEC = FlagSpec('new_var')
+NEW_VAR_SPEC = FlagSpec('new_var', typed=True)
 
 # print stuff
 NEW_VAR_SPEC.ShortFlag('-f')
@@ -92,6 +92,6 @@ NEW_VAR_SPEC.ShortFlag('-a')
 NEW_VAR_SPEC.ShortFlag('-A')
 
 
-UNSET_SPEC = FlagSpec('unset')
+UNSET_SPEC = FlagSpec('unset', typed=True)
 UNSET_SPEC.ShortFlag('-v')
 UNSET_SPEC.ShortFlag('-f')
