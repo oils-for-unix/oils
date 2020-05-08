@@ -14,7 +14,7 @@ import sys
 import termios  # for read -n
 
 from _devbuild.gen.runtime_asdl import (
-    value_e, scope_e, span_e, cmd_value_t, cmd_value__Argv
+    value_e, scope_e, span_e, cmd_value__Argv
 )
 from asdl import runtime
 from core import state

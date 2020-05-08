@@ -36,7 +36,7 @@ if TYPE_CHECKING:
   from core import optview
   from core import state
   from core import ui
-  from osh.builtin_misc import _Builtin
+  from core.vm import _Builtin
   from osh import cmd_eval
 
 

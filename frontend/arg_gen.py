@@ -32,7 +32,7 @@ def main(argv):
     print("""
 from frontend.args import _Attributes
 from _devbuild.gen.runtime_asdl import (
-   value__Bool, value__Int, value__Float, value__Str,
+   value_e, value__Bool, value__Int, value__Float, value__Str,
 )
 from typing import cast
 """)
@@ -53,12 +53,16 @@ class %s(object):
     # type: (_Attributes) -> None
 """ % spec_name)
 
+        i = 0
         for field_name in sorted(spec.fields):
           subtype = 'Bool'
           subtype_field = 'b'  # e.g. Bool(bool b)
           mypy_type = 'bool'
-          print('    self.%s = cast(value__%s, attrs.attrs[%r]).%s  # type: %s' % (
-            field_name, subtype, field_name, subtype_field, mypy_type))
+          tmp = 'val%d' % i
+          print('    %s = attrs.attrs[%r]' % (tmp, field_name))
+          print('    self.%s = None if %s.tag_() == value_e.Undef else cast(value__%s, %s).%s  # type: %s' % (
+            field_name, tmp, subtype, tmp, subtype_field, mypy_type))
+          i += 1
         print()
 
     #

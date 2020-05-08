@@ -168,8 +168,8 @@ class Export(_AssignBuiltin):
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
     attrs = arg_def.Parse('export', arg_r)
-    #arg = arg_types.export(attrs)
-    arg = attrs
+    arg = arg_types.export(attrs)
+    #arg = attrs
 
     if arg.f:
       raise args.UsageError(
