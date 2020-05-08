@@ -15,7 +15,6 @@
 ./core/ui.py
 ./core/util.py
 ./core/vm.py
-./_devbuild/gen/arg_types.py
 ./_devbuild/gen/grammar_nt.py
 ./_devbuild/gen/hnode_asdl.py
 ./_devbuild/gen/id_kind_asdl.py
@@ -42,7 +41,6 @@
 ./osh/bool_parse.py
 ./osh/bool_stat.py
 ./osh/braces.py
-./osh/builtin_assign.py
 ./osh/cmd_eval.py
 ./osh/cmd_parse.py
 ./osh/glob_.py

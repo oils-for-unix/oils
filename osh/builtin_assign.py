@@ -23,7 +23,7 @@ from core import ui
 from core.vm import _AssignBuiltin, _Builtin
 from core.util import log, e_die
 
-from typing import cast, Dict, List, TYPE_CHECKING
+from typing import cast, Optional, Dict, List, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command__ShFunction
   from core import optview
@@ -91,7 +91,10 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
     for pair in cmd_val.pairs:
       name = pair.var_name
       if pair.rval and pair.rval.tag_() == value_e.Str:
-        name += "=" + cast(value__Str, pair.rval).s
+        # TODO: This is for declare -p foo=bar?
+        # I think this is for functions and we don't need it?
+        s = cast(value__Str, pair.rval).s
+        name += "=%s" % s
         names.append(name)
         cells[name] = None
       else:
@@ -218,7 +221,7 @@ class Export(_AssignBuiltin):
 
 
 def _ReconcileTypes(rval, flag_a, flag_A, span_id):
-  # type: (value_t, bool, bool, int) -> value_t
+  # type: (Optional[value_t], bool, bool, int) -> value_t
   """Check that -a and -A flags are consistent with RHS.
 
   Special case: () is allowed to mean empty indexed array or empty assoc array
@@ -226,7 +229,7 @@ def _ReconcileTypes(rval, flag_a, flag_A, span_id):
 
   Shared between NewVar and Readonly.
   """
-  if flag_a and rval and rval.tag_() != value_e.MaybeStrArray:
+  if flag_a and rval is not None and rval.tag_() != value_e.MaybeStrArray:
     raise args.UsageError(
         "Got -a but RHS isn't an array", span_id=span_id)
 
@@ -316,7 +319,7 @@ class NewVar(_AssignBuiltin):
 
     if arg.f:
       names = arg_r.Rest()
-      if names:
+      if len(names):
         # NOTE: in bash, -f shows the function body, while -F shows the name.
         # Right now we just show the name.
         status = self._PrintFuncs(names)
@@ -326,7 +329,7 @@ class NewVar(_AssignBuiltin):
 
     if arg.F:
       names = arg_r.Rest()
-      if names:
+      if len(names):
         status = self._PrintFuncs(names)
       else:  # weird bash quirk: they're printed in a different format!
         for func_name in sorted(self.funcs):
@@ -369,6 +372,7 @@ class NewVar(_AssignBuiltin):
 
     for pair in cmd_val.pairs:
       rval = pair.rval
+      # declare -a foo=(a b); declare -a foo;  should not reset to empty array
       if rval is None and (arg.a or arg.A):
         old_val = self.mem.GetVar(pair.var_name)
         if arg.a:

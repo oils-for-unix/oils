@@ -45,6 +45,7 @@ class CEnumVisitor(visitor.AsdlVisitor):
 _BUILTINS = {
     'string': 'Str*',  # declared in mylib.h
     'int': 'int',
+    'float': 'double',
     'bool': 'bool',
     'any': 'void*',
     # TODO: frontend/syntax.asdl should properly import id enum instead of
@@ -266,6 +267,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         default = '-1'
       elif field.type == 'bool':
         default = 'false'
+      elif field.type == 'float':
+        default = '0.0'  # or should it be NaN?
       elif field.type == 'string':
         default = 'new Str("")'
       else:

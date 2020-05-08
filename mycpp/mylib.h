@@ -773,6 +773,10 @@ inline Str* str(int i) {
   return new Str(buf, len);
 }
 
+inline Str* str(double f) {  // TODO: should be double
+  assert(0);
+}
+
 // Display a quoted representation of a string.  word_.Pretty() uses it.
 Str* repr(Str* s);
 

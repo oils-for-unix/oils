@@ -26,7 +26,7 @@ from frontend import parse_lib
 from frontend import reader
 from mycpp import mylib
 from osh import split
-from osh import builtin_assign
+#from osh import builtin_assign
 #from osh import builtin_meta
 #from osh import builtin_pure
 # builtin_{printf,bracket,comp} might also be pure
@@ -43,6 +43,7 @@ if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command__ShFunction
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from core.state import MutableOpts
+  from core.vm import _AssignBuiltin
   from pgen2.grammar import Grammar
 
 
@@ -172,16 +173,22 @@ def main(argv):
 
   procs = {}  # type: Dict[str, command__ShFunction]
 
-  new_var = builtin_assign.NewVar(mem, procs, errfmt)
-  assign_builtins = {
-      # ShAssignment (which are pure)
-      builtin_i.declare: new_var,
-      builtin_i.typeset: new_var,
-      builtin_i.local: new_var,
+  assign_builtins = {}  # type: Dict[int, _AssignBuiltin]
 
-      builtin_i.export_: builtin_assign.Export(mem, errfmt),
-      builtin_i.readonly: builtin_assign.Readonly(mem, errfmt),
-  }
+  #new_var = builtin_assign.NewVar(mem, procs, errfmt)
+  #assign_builtins[builtin_i.declare] = new_var
+  #assign_builtins[builtin_i.typeset] = new_var
+  #assign_builtins[builtin_i.local] = new_var
+
+  #assign_builtins = {
+  #    # ShAssignment (which are pure)
+  #    builtin_i.declare: new_var,
+  #    builtin_i.typeset: new_var,
+  #    builtin_i.local: new_var,
+
+  #    builtin_i.export_: builtin_assign.Export(mem, errfmt),
+  #    builtin_i.readonly: builtin_assign.Readonly(mem, errfmt),
+  #}
 
   cmd_deps = cmd_eval.Deps()
   cmd_deps.mutable_opts = mutable_opts
