@@ -136,6 +136,9 @@ Str* repr(void* obj) {
 
 // e.g. used in core/state.py
 [[noreturn]] void e_usage(Str* s) {
-  assert(0);
-  //throw new args::UsageError();
+  throw new error::Usage(s, -1);  // NO_SPID
+}
+
+[[noreturn]] void e_usage(Str* s, int span_id) {
+  throw new error::Usage(s, span_id);
 }

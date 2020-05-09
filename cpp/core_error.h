@@ -14,6 +14,15 @@ using syntax_asdl::Token;
 using syntax_asdl::word_part_t;
 using syntax_asdl::word_t;
 
+class Usage : public std::exception {
+ public:
+  Usage(Str* msg, int span_id) : msg(msg), span_id(span_id) {
+  }
+
+  Str* msg;
+  int span_id;
+};
+
 // This definition is different in Python than C++.  Not worth auto-translating.
 class _ErrorWithLocation : public std::exception {
  public:
