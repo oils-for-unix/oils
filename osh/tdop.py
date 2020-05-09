@@ -149,6 +149,7 @@ def LeftAssign(p, w, left, rbp):
 
 #
 # Parser definition
+# TODO: To be consistent, move this to osh/tdop_def.py.
 #
 
 if mylib.PYTHON:

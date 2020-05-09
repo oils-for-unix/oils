@@ -66,11 +66,6 @@ from core.util import log
 from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems
 
-try:
-  import libc  # OilFlags uses regexes right now.
-except ImportError:  # circular dependecy with arg_gen
-  libc = None
-
 from typing import (
     cast, Tuple, Optional, Dict, List, Any, IO, TYPE_CHECKING
 )
@@ -217,7 +212,8 @@ class Reader(object):
     None is your SENTINEL for parsing.
     """
     if self.i >= self.n:
-      return None, -1
+      no_str = None  # type: str
+      return no_str, -1
     else:
       return self.argv[self.i], self.spids[self.i]
 
@@ -615,6 +611,11 @@ _FLAG_ERE = '^--?([a-zA-Z0-9][a-zA-Z0-9\-]*)(=.*)?$'
 
 
 if mylib.PYTHON:
+  try:
+    import libc  # OilFlags uses regexes right now.
+  except ImportError:  # circular dependecy with arg_gen
+    libc = None
+
   def ParseOil(spec, arg_r):
     # type: (arg_def._OilFlags, Reader) -> Tuple[_Attributes, int]
     out = _Attributes(spec.defaults)

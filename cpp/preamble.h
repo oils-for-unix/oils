@@ -15,6 +15,7 @@ using id_kind_asdl::Kind_t;
 
 // oil/cpp
 #include "core_error.h"
+#include "frontend_arg_def.h"
 #include "frontend_match.h"
 #include "frontend_tdop.h"
 #include "osh_arith_parse.h"
