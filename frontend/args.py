@@ -33,9 +33,9 @@ NOTES about builtins:
     declarative.
 
 TODO:
-  - add help text: spec.Flag(..., help='')
-  - add usage line: FlagSpec('echo [-en]')
-  - Do builtin flags need default values?  It doesn't look like it.
+  - Autogenerate help from help='' fields.  Usage line like FlagSpec('echo [-en]')
+  - FlagSpecAndMore can support --foo=bar (use what OilFlag does)
+  - Remove OilFlags in favor of adding --foo=bar support to FlagSpec/
 
 GNU notes:
 
@@ -121,6 +121,10 @@ class _Attributes(object):
     self.saw_double_dash = False  # for set --
     for name, v in iteritems(defaults):
       self.Set(name, v)
+
+  def SetTrue(self, name):
+    # type: (str) -> None
+    self.Set(name, value.Bool(True))
 
   def Set(self, name, val):
     # type: (str, value_t) -> None
@@ -385,7 +389,7 @@ class SetToTrue(_Action):
   def OnMatch(self, prefix, suffix, arg_r, out):
     # type: (Optional[str], Optional[str], Reader, _Attributes) -> bool
     """Called when the flag matches."""
-    out.Set(self.name, value.Bool(True))
+    out.SetTrue(self.name)
     return False
 
 
@@ -424,6 +428,7 @@ class SetNamedOption(_Action):
     arg_r.Next()  # always advance
     arg = arg_r.Peek()
     if arg is None:
+      # triggers on 'set -O' in addition to 'set -o' (meh OK)
       out.show_options = True
       return True  # quit parsing
 
@@ -503,8 +508,7 @@ def Parse(spec, arg_r):
           continue
 
         if ch in spec.arity0:  # e.g. read -r
-          action = spec.arity0[ch]
-          action.OnMatch(None, None, arg_r, out)
+          out.SetTrue(ch)
           continue
 
         if ch in spec.arity1:  # e.g. read -t1.0

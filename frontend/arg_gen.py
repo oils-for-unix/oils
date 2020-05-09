@@ -59,6 +59,7 @@ class %s(object):
       i = 0
       for field_name in sorted(spec.fields):
         typ = spec.fields[field_name]
+
         with tagswitch(typ) as case:
           if case(flag_type_e.Bool):
             subtype = 'Bool'
@@ -66,6 +67,7 @@ class %s(object):
             mypy_type = 'bool'
             print('    self.%s = cast(value__Bool, flag[%r]).b  # type: bool' % (
               field_name, field_name))
+
           elif case(flag_type_e.Str):
             subtype = 'Str'
             subtype_field = 's'  # e.g. Bool(bool b)
@@ -81,57 +83,6 @@ class %s(object):
         i += 1
 
       print()
-
-    #
-    # I think you can write _Attributes -> arg_types.EXPORT
-    # And then change setattr() to a dictionary.
-    #
-    # arg_types.py
-    #
-    # class EXPORT_t(object):
-    #   pass
-    
-    # class EXPORT(object):
-    #   def Parse(self, arg_r):
-    #     # type: (args.Reader) -> EXPORT_t
-
-    # Usage:
-    #   arg = EXPORT_SPEC.Parse(arg_r)
-    #     problem: can't translate arg_def.py because it has code at the top level?
-    #     or maybe you can.
-    #   Put it all in _Init like option_def and builtin_def.
-    # But those are all serialized.
-    # But you run that at every shell startup for now?  And then optimize it?
-
-    # arg = arg_types.export(attrs)
-
-    # Problem: _Action and value_t for default would have to be serializable?
-    # This is a use case for 'oheap'.  It's compile-time computation.  I sort of
-    # want that.
-    # Except _Action an object with polymorphism now.  I think I should change it
-    # to use a big switch statement.
-    #
-    # ASDL type:
-    #
-    # flag_arg_type = Bool | Int | Float | Str | Enum(string s)
-    #
-    # SetToArg(string name, flag_arg_type typ, bool quit_parsing)
-    #   should this be
-    #   Set{Int,Float,Str,Enum}ToArg
-    # SetBoolToArg(string name)  # for --verbose=T, OilFlags syntax
-    # SetShortOption(string name)
-    # SetToTrue(string name)
-    # SetOption(string name)
-    # SetNamedOption(bool shopt)
-    # SetAction(string name)
-    # SetNamedAction()
-
-  #def __init__(self):
-  #  # type: () -> None
-  #  self.arity0 = {}  # type: Dict[str, _Action]  # {'r': _Action} for read -r
-  #  self.arity1 = {}  # type: Dict[str, _Action]  # {'t': _Action} for read -t 1.0
-  #  self.options = {}  # type: Dict[str, _Action]  # e.g. for declare +r
-  #  self.defaults = {}  # type: Dict[str, Any]
 
   else:
     raise RuntimeError('Invalid action %r' % action)

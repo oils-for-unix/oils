@@ -94,10 +94,12 @@ class _FlagSpec(object):
     # New style: eventually everything should be typed
     self.typed = typed
 
-    self.arity0 = {}  # type: Dict[str, args._Action]  # {'r': _Action} for read -r
-    self.arity1 = {}  # type: Dict[str, args._Action]  # {'t': _Action} for read -t 1.0
+    self.arity0 = {}  # type: Dict[str, bool]  # {'r': _Action} for read -r
+    self.arity1 = {}  # type: Dict[str, args.SetToArg]  # {'t': _Action} for read -t 1.0
     self.options = {}  # type: Dict[str, bool]  # e.g. for declare +r
     self.defaults = {}  # type: Dict[str, value_t]
+
+    # For code generation.  Not used at runtime.
     self.fields = {}  # type: Dict[str, flag_type_t]  # for arg_types to use
 
   def PrintHelp(self, f):
@@ -123,7 +125,7 @@ class _FlagSpec(object):
 
     char = short_name[1]
     if arg_type is None:
-      self.arity0[char] = args.SetToTrue(char)
+      self.arity0[char] = True
     else:
       self.arity1[char] = args.SetToArg(char, _FlagType(arg_type))
 
@@ -184,13 +186,13 @@ class _FlagSpec(object):
       if arg.startswith('-') and chars:
         # Check if it looks like -en or not.
         # NOTE: Changed to list comprehension to avoid
-        # LOAD_CLOSURE/MAKE_CLOSURE.  TODO: Restore later?
+        # LOAD_CLOSURE/MAKE_CLOSURE.
         if not all([c in self.arity0 for c in arg[1:]]):
           break  # looks like args
 
-        for char in chars:
-          action = self.arity0[char]
-          action.OnMatch(None, None, arg_r, out)
+        for ch in chars:
+          assert ch in self.arity0
+          out.SetTrue(ch)
 
       else:
         break  # Looks like an arg
