@@ -7,6 +7,7 @@ import unittest
 
 from _devbuild.gen.runtime_asdl import cmd_value
 from asdl import runtime
+from frontend import arg_def
 from frontend import args  # module under test
 
 
@@ -19,7 +20,7 @@ def _MakeBuiltinArgv(argv):
 class ArgsTest(unittest.TestCase):
 
   def testFlagSpecAndMore(self):
-    s = args.FlagSpecAndMore()
+    s = arg_def._FlagSpecAndMore()
     s.ShortFlag('-c', args.Str)
     s.ShortFlag('-i', args.Str)
 
@@ -97,7 +98,7 @@ class ArgsTest(unittest.TestCase):
     # We're not going to replicate that silly behavior.
 
   def testChoices(self):
-    s = args.FlagSpecAndMore()
+    s = arg_def._FlagSpecAndMore()
     s.LongFlag('--ast-format', ['text', 'html'])
 
     arg_r = args.Reader(['--ast-format', 'text'])
@@ -108,7 +109,7 @@ class ArgsTest(unittest.TestCase):
         args.UsageError, s.Parse, args.Reader(['--ast-format', 'oops']))
 
   def testFlagSpec(self):
-    s = args.FlagSpec()
+    s = arg_def._FlagSpec()
     s.ShortFlag('-f')
     s.ShortFlag('-n')
     s.ShortFlag('-d', args.Str)  # delimiter
@@ -149,7 +150,7 @@ class ArgsTest(unittest.TestCase):
     self.assertEqual('+', arg.x)
 
   def testReadFlagSpec(self):
-    s = args.FlagSpec()
+    s = arg_def._FlagSpec()
     s.ShortFlag('-r')  # no backslash escapes
     s.ShortFlag('-t', args.Float)  # timeout
     s.ShortFlag('-p', args.Str)  # prompt string
@@ -188,7 +189,7 @@ class ArgsTest(unittest.TestCase):
     self.assertRaises(args.UsageError, s.ParseCmdVal, _MakeBuiltinArgv(['-rz']))
 
   def testParseLikeEcho(self):
-    s = args.FlagSpec()
+    s = arg_def._FlagSpec()
     s.ShortFlag('-e')  # no backslash escapes
     s.ShortFlag('-n')
 
@@ -210,7 +211,7 @@ class ArgsTest(unittest.TestCase):
     self.assertEqual(0, i)
 
   def testOilFlags(self):
-    s = args.OilFlags()
+    s = arg_def._OilFlags()
     s.Flag('-docstring', args.Bool, default=True)
     s.Flag('-out-file', args.Str)
     s.Flag('-retries', args.Int)

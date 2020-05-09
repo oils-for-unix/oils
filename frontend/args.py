@@ -57,13 +57,15 @@ However I don't see these used anywhere!  I only see ':' used.
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import (
-    cmd_value__Argv, flag_type, flag_type_t,
-    value, value_e, value_t, value__Bool, value__Int, value__Float, value__Str
+    cmd_value__Argv,
+    value, value_e, value_t, value__Bool, value__Int, value__Float, value__Str,
+    flag_type, flag_type_e, flag_type_t, flag_type__Enum
 )
 
 from asdl import runtime
 from core.util import log
-from mycpp.mylib import tagswitch
+from mycpp import mylib
+from mycpp.mylib import tagswitch, iteritems
 
 try:
   import libc  # OilFlags uses regexes right now.
@@ -71,10 +73,18 @@ except ImportError:  # circular dependecy with arg_gen
   libc = None
 
 from typing import (
-    cast, Tuple, Optional, Dict, Union, List, Any, IO, TYPE_CHECKING
+    cast, Tuple, Optional, Dict, List, Any, IO, TYPE_CHECKING
 )
 if TYPE_CHECKING:
+  from frontend import arg_def
   OptChange = Tuple[str, bool]
+
+
+# TODO: Move to arg_def?  We use flag_type_t
+Str = 1
+Int = 2
+Float = 3  # e.g. for read -t timeout value
+Bool = 4  # OilFlags has explicit boolean type
 
 
 class UsageError(Exception):
@@ -110,7 +120,7 @@ class _Attributes(object):
     self.show_options = False  # 'set -o' without an argument
     self.actions = []  # type: List[str]  # for compgen -A
     self.saw_double_dash = False  # for set --
-    for name, v in defaults.iteritems():
+    for name, v in iteritems(defaults):
       self.Set(name, v)
 
   def Set(self, name, val):
@@ -118,46 +128,48 @@ class _Attributes(object):
 
     self.attrs[name] = val
 
-    # Backward compatibility!
-    with tagswitch(val) as case:
-      if case(value_e.Undef):
-        py_val = None  # type: Any
-      elif case(value_e.Bool):
-        py_val = cast(value__Bool, val).b
-      elif case(value_e.Int):
-        py_val = cast(value__Int, val).i
-      elif case(value_e.Float):
-        py_val = cast(value__Float, val).f
-      elif case(value_e.Str):
-        py_val = cast(value__Str, val).s
-      else:
-        raise AssertionError(val)
+    if mylib.PYTHON:
+      # Backward compatibility!
+      with tagswitch(val) as case:
+        if case(value_e.Undef):
+          py_val = None  # type: Any
+        elif case(value_e.Bool):
+          py_val = cast(value__Bool, val).b
+        elif case(value_e.Int):
+          py_val = cast(value__Int, val).i
+        elif case(value_e.Float):
+          py_val = cast(value__Float, val).f
+        elif case(value_e.Str):
+          py_val = cast(value__Str, val).s
+        else:
+          raise AssertionError(val)
 
-    # debug-completion -> debug_completion
-    setattr(self, name.replace('-', '_'), py_val)
+      # debug-completion -> debug_completion
+      setattr(self, name.replace('-', '_'), py_val)
 
   def __repr__(self):
     # type: () -> str
     return '<_Attributes %s>' % self.__dict__
 
 
-def PyToValue(py_val):
-  # type: (Any) -> value_t
+if mylib.PYTHON:
+  def PyToValue(py_val):
+    # type: (Any) -> value_t
 
-  if py_val is None:
-    val = value.Undef()  # type: value_t
-  elif isinstance(py_val, bool):
-    val = value.Bool(py_val)
-  elif isinstance(py_val, int):
-    val = value.Int(py_val)
-  elif isinstance(py_val, float):
-    val = value.Float()  # TODO: ASDL needs float primitive
-  elif isinstance(py_val, str):
-    val = value.Str(py_val)
-  else:
-    raise AssertionError(py_val)
+    if py_val is None:
+      val = value.Undef()  # type: value_t
+    elif isinstance(py_val, bool):
+      val = value.Bool(py_val)
+    elif isinstance(py_val, int):
+      val = value.Int(py_val)
+    elif isinstance(py_val, float):
+      val = value.Float()  # TODO: ASDL needs float primitive
+    elif isinstance(py_val, str):
+      val = value.Str(py_val)
+    else:
+      raise AssertionError(py_val)
 
-  return val
+    return val
 
 
 class Reader(object):
@@ -279,16 +291,15 @@ class _Action(object):
 
 class SetToArg(_Action):
 
-  def __init__(self, name, arg_type, quit_parsing_flags=False):
-    # type: (str, Union[List[str], int], bool) -> None
+  def __init__(self, name, flag_type, quit_parsing_flags=False):
+    # type: (str, flag_type_t, bool) -> None
     """
     Args:
       quit_parsing_flags: Stop parsing args after this one.  for sh -c.
         python -c behaves the same way.
     """
     self.name = name
-    assert isinstance(arg_type, int) or isinstance(arg_type, list), arg_type
-    self.arg_type = arg_type
+    self.flag_type = flag_type
     self.quit_parsing_flags = quit_parsing_flags
 
   def OnMatch(self, prefix, suffix, arg_r, out):
@@ -304,26 +315,29 @@ class SetToArg(_Action):
         raise UsageError(
             'expected argument to %r' % ('-' + self.name), span_id=arg_r.SpanId())
 
-    typ = self.arg_type
     # e.g. spec.LongFlag('--format', ['text', 'html'])
     # Should change to arg.Enum([...])
-    if isinstance(typ, list):
-      if arg not in typ:
-        raise UsageError(
-            'got invalid argument %r to %r, expected one of: %s' %
-            (arg, ('-' + self.name), ', '.join(typ)), span_id=arg_r.SpanId())
-      val = value.Str(arg)  # type: value_t
-    else:
-      if typ == Str:
+    with tagswitch(self.flag_type) as case:
+      if case(flag_type_e.Enum):
+        alts = cast(flag_type__Enum, self.flag_type).alts
+        if arg not in alts:
+          raise UsageError(
+              'got invalid argument %r to %r, expected one of: %s' %
+              (arg, ('-' + self.name), ', '.join(alts)), span_id=arg_r.SpanId())
+        val = value.Str(arg)  # type: value_t
+
+      elif case(flag_type_e.Str):
         val = value.Str(arg)
-      elif typ == Int:
+
+      elif case(flag_type_e.Int):
         try:
           val = value.Int(int(arg))
         except ValueError:
           raise UsageError(
               'expected integer after %r, got %r' % ('-' + self.name, arg),
               span_id=arg_r.SpanId())
-      elif typ == Float:
+
+      elif case(flag_type_e.Float):
         try:
           val = value.Float(float(arg))
         except ValueError:
@@ -476,373 +490,127 @@ class SetNamedAction(_Action):
     out.actions.append(attr_name)
 
 
-# How to parse the value.  TODO: Use ASDL for this.
-# And I probably want arg.List(['text', 'html'])
-# Or maybe arg.List('text html') is fine
-Str = 1
-Int = 2
-Float = 3  # e.g. for read -t timeout value
-Bool = 4  # OilFlags has explicit boolean type
+def Parse(spec, arg_r):
+  # type: (arg_def._FlagSpec, Reader) -> _Attributes
 
+  # NOTE about -:
+  # 'set -' ignores it, vs set
+  # 'unset -' or 'export -' seems to treat it as a variable name
+  out = _Attributes(spec.defaults)
 
-class FlagSpecAndMore(object):
-  """Parser for 'set' and 'sh', which both need to process shell options.
+  while not arg_r.AtEnd():
+    arg = arg_r.Peek()
+    if arg == '--':
+      out.saw_double_dash = True
+      arg_r.Next()
+      break
 
-  Usage:
-    spec = FlagSpecAndMore()
-    spec.ShortFlag(...)
-    spec.Option('u', 'nounset')
-    spec.Parse(...)
-  """
+    if arg.startswith('-') and len(arg) > 1:
+      n = len(arg)
+      for i in xrange(1, n):  # parse flag combos like -rx
+        char = arg[i]
 
-  def __init__(self):
-    # type: () -> None
-    self.actions_short = {}  # type: Dict[str, _Action]  # {'-c': _Action}
-    self.actions_long = {}  # type: Dict[str, _Action]  # {'--rcfile': _Action}
-    self.defaults = {}  # type: Dict[str, value_t]
-
-    self.actions_short['o'] = SetNamedOption()  # -o and +o
-    self.actions_short['O'] = SetNamedOption(shopt=True)  # -O and +O
-
-  def InitActions(self):
-    # type: () -> None
-    self.actions_short['A'] = SetNamedAction()  # -A
-
-  def ShortFlag(self, short_name, arg_type=None, default=None,
-                quit_parsing_flags=False, help=None):
-    # type: (str, int, Optional[Any], bool, Optional[str]) -> None
-    """ -c """
-    assert short_name.startswith('-'), short_name
-    assert len(short_name) == 2, short_name
-
-    char = short_name[1]
-    if arg_type is None:
-      assert quit_parsing_flags == False
-      self.actions_short[char] = SetToTrue(char)
-    else:
-      self.actions_short[char] = SetToArg(char, arg_type,
-                                          quit_parsing_flags=quit_parsing_flags)
-
-    self.defaults[char] = PyToValue(default)
-
-  def LongFlag(self,
-               long_name,  # type: str
-               arg_type=None,  # type: Union[List[str], None, int]
-               default=None,  # type: Optional[Any]
-               help=None,  # type: Optional[str]
-               ):
-    # type: (...) -> None
-    """ --rcfile """
-    assert long_name.startswith('--'), long_name
-
-    name = long_name[2:]
-    if arg_type is None:
-      self.actions_long[long_name] = SetToTrue(name)
-    else:
-      self.actions_long[long_name] = SetToArg(name, arg_type)
-
-    self.defaults[name] = PyToValue(default)
-
-  def Option(self, short_flag, name, help=None):
-    # type: (Optional[str], str, Optional[str]) -> None
-    """Register an option that can be -e or -o errexit.
-
-    Args:
-      short_flag: 'e'
-      name: errexit
-    """
-    attr_name = name
-    if short_flag:
-      assert not short_flag.startswith('-'), short_flag
-      self.actions_short[short_flag] = SetOption(attr_name)
-
-    self.actions_short['o'].Add(attr_name)  # type: ignore
-
-  def ShoptOption(self, name, help=None):
-    # type: (str, Optional[str]) -> None
-    """Register an option like shopt -s nullglob
-
-    Args:
-      name: 'nullglob'
-    """
-    attr_name = name
-    self.actions_short['O'].Add(attr_name)  # type: ignore
-
-  def Action(self, short_flag, name):
-    # type: (str, str) -> None
-    """Register an action that can be -f or -A file.
-
-    For the compgen builtin.
-
-    Args:
-      short_flag: 'f'
-      name: 'file'
-    """
-    attr_name = name
-    if short_flag:
-      assert not short_flag.startswith('-'), short_flag
-      self.actions_short[short_flag] = SetAction(attr_name)
-
-    self.actions_short['A'].Add(attr_name)  # type: ignore
-
-  def Parse(self, arg_r):
-    # type: (Reader) -> _Attributes
-    """Return attributes and an index.
-
-    Respects +, like set +eu
-
-    We do NOT respect:
-    
-    WRONG: sh -cecho    OK: sh -c echo
-    WRONG: set -opipefail     OK: set -o pipefail
-    
-    But we do accept these
-    
-    set -euo pipefail
-    set -oeu pipefail
-    set -oo pipefail errexit
-    """
-    out = _Attributes(self.defaults)
-
-    quit = False
-    while not arg_r.AtEnd():
-      arg = arg_r.Peek()
-      if arg == '--':
-        out.saw_double_dash = True
-        arg_r.Next()
-        break
-
-      # NOTE: We don't yet support --rcfile=foo.  Only --rcfile foo.
-      if arg.startswith('--'):
-        try:
-          action = self.actions_long[arg]
-        except KeyError:
-          raise UsageError(
-              'got invalid flag %r' % arg, span_id=arg_r.SpanId())
-
-        # TODO: Suffix could be 'bar' for --foo=bar
-        action.OnMatch(None, None, arg_r, out)
-        arg_r.Next()
-        continue
-
-      if arg.startswith('-') or arg.startswith('+'):
-        char0 = arg[0]
-        for char in arg[1:]:
-          #log('char %r arg_r %s', char, arg_r)
-          try:
-            action = self.actions_short[char]
-          except KeyError:
-            raise UsageError(
-                'got invalid flag %r' % ('-' + char), span_id=arg_r.SpanId())
-          quit = action.OnMatch(char0, None, arg_r, out)
-        arg_r.Next() # process the next flag
-        if quit:
-          break
-        else:
+        if char in spec.options:
+          action = spec.options[char]
+          action.OnMatch(None, '-', arg_r, out)
           continue
 
-      break  # it's a regular arg
-
-    return out
-
-
-class FlagSpec(object):
-  """Parser for sh builtins, like 'read' or 'echo' (which has a special case).
-
-  Usage:
-    spec = args.FlagSpec()
-    spec.ShortFlag('-a')
-    opts, i = spec.Parse(argv)
-  """
-  def __init__(self, typed=False):
-    # type: (bool) -> None
-
-    # New style: eventually everything should be typed
-    self.typed = typed
-
-    self.arity0 = {}  # type: Dict[str, _Action]  # {'r': _Action} for read -r
-    self.arity1 = {}  # type: Dict[str, _Action]  # {'t': _Action} for read -t 1.0
-    self.options = {}  # type: Dict[str, _Action]  # e.g. for declare +r
-    self.defaults = {}  # type: Dict[str, value_t]
-    self.fields = {}  # type: Dict[str, flag_type_t]  # for arg_types to use
-
-  def PrintHelp(self, f):
-    # type: (IO[bytes]) -> None
-    if self.arity0:
-      print('  arity 0:')
-    for ch in self.arity0:
-      print('    -%s' % ch)
-
-    if self.arity1:
-      print('  arity 1:')
-    for ch in self.arity1:
-      print('    -%s' % ch)
-
-  def ShortFlag(self, short_name, arg_type=None, help=None):
-    # type: (str, Optional[int], Optional[str]) -> None
-    """
-    This is very similar to ShortFlag for FlagSpecAndMore, except we have
-    separate arity0 and arity1 dicts.
-    """
-    assert short_name.startswith('-'), short_name
-    assert len(short_name) == 2, short_name
-
-    char = short_name[1]
-    if arg_type is None:
-      self.arity0[char] = SetToTrue(char)
-    else:
-      self.arity1[char] = SetToArg(char, arg_type)
-
-    # TODO: callers should pass flag_type
-    if arg_type is None:
-      typ = flag_type.Bool()  # type: flag_type_t
-      default = value.Bool(False)  # type: value_t
-    elif arg_type == Int:
-      typ = flag_type.Int()
-      default = value.Int(-1)
-    elif arg_type == Float:
-      typ = flag_type.Float()
-      default = value.Float(0.0)
-    elif arg_type == Str:
-      typ = flag_type.Str()
-      default = value.Str('')
-    elif isinstance(arg_type, list):
-      typ = flag_type.Enum(arg_type)
-      default = value.Str('')  # This isn't valid
-    else:
-      raise AssertionError(arg_type)
-
-    if self.typed:
-      self.defaults[char] = default
-    else:
-      # TODO: remove when all builtins converted
-      self.defaults[char] = value.Undef()
-
-    self.fields[char] = typ
-
-  def ShortOption(self, char, help=None):
-    # type: (str, Optional[str]) -> None
-    """Define an option that can be turned off with + and on with -."""
-
-    assert len(char) == 1  # 'r' for -r +r
-    self.options[char] = SetShortOption(char)
-
-    self.defaults[char] = value.Undef()
-    # '+' or '-'.  TODO: Should we make it a bool?
-    self.fields[char] = flag_type.Str()
-
-  def ParseLikeEcho(self, argv):
-    # type: (List[str]) -> Tuple[_Attributes, int]
-    """
-    echo is a special case.  These work:
-      echo -n
-      echo -en
-   
-    - But don't respect --
-    - doesn't fail when an invalid flag is passed
-    """
-    arg_r = Reader(argv)
-    out = _Attributes(self.defaults)
-
-    while not arg_r.AtEnd():
-      arg = arg_r.Peek()
-      chars = arg[1:]
-      if arg.startswith('-') and chars:
-        # Check if it looks like -en or not.
-        # NOTE: Changed to list comprehension to avoid
-        # LOAD_CLOSURE/MAKE_CLOSURE.  TODO: Restore later?
-        if not all([c in self.arity0 for c in arg[1:]]):
-          break  # looks like args
-
-        for char in chars:
-          action = self.arity0[char]
+        if char in spec.arity0:  # e.g. read -r
+          action = spec.arity0[char]
           action.OnMatch(None, None, arg_r, out)
+          continue
 
-      else:
-        break  # Looks like an arg
+        if char in spec.arity1:  # e.g. read -t1.0
+          action = spec.arity1[char]
+          suffix = arg[i+1:]  # '1.0'
+          action.OnMatch(None, suffix, arg_r, out)
+          break
+
+        raise UsageError(
+            "doesn't accept flag %s" % ('-' + char), span_id=arg_r.SpanId())
 
       arg_r.Next()  # next arg
 
-    return out, arg_r.i
+    # Only accept + if there are ANY options defined, e.g. for declare +rx.
+    elif spec.options and arg.startswith('+') and len(arg) > 1:
+      n = len(arg)
+      for i in xrange(1, n):  # parse flag combos like -rx
+        char = arg[i]
+        if char in spec.options:
+          action = spec.options[char]
+          action.OnMatch(None, '+', arg_r, out)
+          continue
 
-  def Parse(self, arg_r):
-    # type: (Reader) -> _Attributes
-    """For builtins to read args after we parse flags."""
+        raise UsageError(
+            "doesn't accept option %s" % ('+' + char), span_id=arg_r.SpanId())
 
-    # NOTE about -:
-    # 'set -' ignores it, vs set
-    # 'unset -' or 'export -' seems to treat it as a variable name
-    out = _Attributes(self.defaults)
+      arg_r.Next()  # next arg
 
-    while not arg_r.AtEnd():
-      arg = arg_r.Peek()
-      if arg == '--':
-        out.saw_double_dash = True
-        arg_r.Next()
-        break
+    else:  # a regular arg
+      break
 
-      if arg.startswith('-') and len(arg) > 1:
-        n = len(arg)
-        for i in xrange(1, n):  # parse flag combos like -rx
-          char = arg[i]
+  return out
 
-          if char in self.options:
-            action = self.options[char]
-            action.OnMatch(None, '-', arg_r, out)
-            continue
 
-          if char in self.arity0:  # e.g. read -r
-            action = self.arity0[char]
-            action.OnMatch(None, None, arg_r, out)
-            continue
+def ParseMore(spec, arg_r):
+  # type: (arg_def._FlagSpecAndMore, Reader) -> _Attributes
+  """Return attributes and an index.
 
-          if char in self.arity1:  # e.g. read -t1.0
-            action = self.arity1[char]
-            suffix = arg[i+1:]  # '1.0'
-            action.OnMatch(None, suffix, arg_r, out)
-            break
+  Respects +, like set +eu
 
+  We do NOT respect:
+  
+  WRONG: sh -cecho    OK: sh -c echo
+  WRONG: set -opipefail     OK: set -o pipefail
+  
+  But we do accept these
+  
+  set -euo pipefail
+  set -oeu pipefail
+  set -oo pipefail errexit
+  """
+  out = _Attributes(spec.defaults)
+
+  quit = False
+  while not arg_r.AtEnd():
+    arg = arg_r.Peek()
+    if arg == '--':
+      out.saw_double_dash = True
+      arg_r.Next()
+      break
+
+    # NOTE: We don't yet support --rcfile=foo.  Only --rcfile foo.
+    if arg.startswith('--'):
+      try:
+        action = spec.actions_long[arg]
+      except KeyError:
+        raise UsageError(
+            'got invalid flag %r' % arg, span_id=arg_r.SpanId())
+
+      # TODO: Suffix could be 'bar' for --foo=bar
+      action.OnMatch(None, None, arg_r, out)
+      arg_r.Next()
+      continue
+
+    if arg.startswith('-') or arg.startswith('+'):
+      char0 = arg[0]
+      for char in arg[1:]:
+        #log('char %r arg_r %s', char, arg_r)
+        try:
+          action = spec.actions_short[char]
+        except KeyError:
           raise UsageError(
-              "doesn't accept flag %s" % ('-' + char), span_id=arg_r.SpanId())
-
-        arg_r.Next()  # next arg
-
-      # Only accept + if there are ANY options defined, e.g. for declare +rx.
-      elif self.options and arg.startswith('+') and len(arg) > 1:
-        n = len(arg)
-        for i in xrange(1, n):  # parse flag combos like -rx
-          char = arg[i]
-          if char in self.options:
-            action = self.options[char]
-            action.OnMatch(None, '+', arg_r, out)
-            continue
-
-          raise UsageError(
-              "doesn't accept option %s" % ('+' + char), span_id=arg_r.SpanId())
-
-        arg_r.Next()  # next arg
-
-      else:  # a regular arg
+              'got invalid flag %r' % ('-' + char), span_id=arg_r.SpanId())
+        quit = action.OnMatch(char0, None, arg_r, out)
+      arg_r.Next() # process the next flag
+      if quit:
         break
+      else:
+        continue
 
-    return out
+    break  # it's a regular arg
 
-  def ParseCmdVal(self, cmd_val):
-    # type: (cmd_value__Argv) -> Tuple[_Attributes, int]
-    """Used by builtins that don't need arg_r.
-
-    Note: It might be more flexible to return arg_r instead if i.  Then they
-    can call arg_r.Rest(), etc.
-    """
-    arg_r = Reader(cmd_val.argv, spids=cmd_val.arg_spids)
-    arg_r.Next()  # move past the builtin name
-    return self.Parse(arg_r), arg_r.i
-
-  def ParseArgv(self, argv):
-    # type: (List[str]) -> Tuple[_Attributes, int]
-    """For tools/readlink.py -- no location info available."""
-    arg_r = Reader(argv)
-    return self.Parse(arg_r), arg_r.i
+  return out
 
 
 # - A flag can start with one or two dashes, but not three
@@ -854,127 +622,45 @@ class FlagSpec(object):
 # Using POSIX ERE syntax, not Python.  The second group should start with '='.
 _FLAG_ERE = '^--?([a-zA-Z0-9][a-zA-Z0-9\-]*)(=.*)?$'
 
-class OilFlags(object):
-  """Parser for oil command line tools and builtins.
 
-  Tools:
-    oshc ACTION [OPTION]... ARGS...
-    oilc ACTION [OPTION]... ARG...
-    opyc ACTION [OPTION]... ARG...
+def ParseOil(spec, arg_r):
+  # type: (arg_def._OilFlags, Reader) -> Tuple[_Attributes, int]
+  out = _Attributes(spec.defaults)
 
-  Builtins:
-    test -file /
-    test -dir /
-    Optionally accept test --file.
+  while not arg_r.AtEnd():
+    arg = arg_r.Peek()
+    if arg == '--':
+      out.saw_double_dash = True
+      arg_r.Next()
+      break
 
-  Usage:
-    spec = args.OilFlags()
-    spec.Flag('-no-docstring')  # no short flag for simplicity?
-    opts, i = spec.Parse(argv)
+    if arg == '-':  # a valid argument
+      break
 
-  Another idea:
+    # TODO: Use FLAG_RE above
+    if arg.startswith('-'):
+      m = libc.regex_match(_FLAG_ERE, arg)
+      if m is None:
+        raise UsageError('Invalid flag syntax: %r' % arg)
+      _, flag, val = m  # group 0 is ignored; the whole match
 
-    input = ArgInput(argv)
-    action = input.ReadRequired(error='An action is required')
+      # TODO: we don't need arity 1 or 0?  Booleans are like --verbose=1,
+      # --verbose (equivalent to turning it on) or --verbose=0.
 
-  The rest should be similar to Go flags.
-  https://golang.org/pkg/flag/
-
-  -flag
-  -flag=x
-  -flag x (non-boolean only)
-
-  --flag
-  --flag=x
-  --flag x (non-boolean only)
-
-  --flag=false  --flag=FALSE  --flag=0  --flag=f  --flag=F  --flag=False
-
-  Disallow triple dashes though.
-
-  FlagSet ?  That is just spec.
-
-  spec.Arg('action') -- make it required!
-
-  spec.Action()  # make it required, and set to 'action' or 'subaction'?
-
-  if arg.action ==
-
-    prefix= suffix= should be kwargs I think
-    Or don't even share the actions?
-
-  What about global options?  --verbose?
-
-  You can just attach that to every spec, like DefineOshCommonOptions(spec).
-  """
-  def __init__(self):
-    # type: () -> None
-    self.arity1 = {}  # type: Dict[str, _Action]
-    self.defaults = {}  # type: Dict[str, value_t]  # attr name -> default value
-    # (flag name, string) tuples, in order
-    self.help_strings = []  # type: List[Tuple[str, str]]
-
-  def Flag(self, name, arg_type, default=None, help=None):
-    # type: (str, int, Optional[bool], Optional[str]) -> None
-    """
-    Args:
-      name: e.g. '-no-docstring'
-      arg_type: e.g. Str
-    """
-    assert name.startswith('-') and not name.startswith('--'), name
-
-    attr_name = name[1:].replace('-', '_')
-    if arg_type == Bool:
-      self.arity1[attr_name] = SetBoolToArg(attr_name)
-    else:
-      self.arity1[attr_name] = SetToArg(attr_name, arg_type)
-
-    self.defaults[attr_name] = PyToValue(default)
-
-  def Parse(self, arg_r):
-    # type: (Reader) -> Tuple[_Attributes, int]
-    out = _Attributes(self.defaults)
-
-    while not arg_r.AtEnd():
-      arg = arg_r.Peek()
-      if arg == '--':
-        out.saw_double_dash = True
-        arg_r.Next()
-        break
-
-      if arg == '-':  # a valid argument
-        break
-
-      # TODO: Use FLAG_RE above
-      if arg.startswith('-'):
-        m = libc.regex_match(_FLAG_ERE, arg)
-        if m is None:
-          raise UsageError('Invalid flag syntax: %r' % arg)
-        _, flag, val = m  # group 0 is ignored; the whole match
-
-        # TODO: we don't need arity 1 or 0?  Booleans are like --verbose=1,
-        # --verbose (equivalent to turning it on) or --verbose=0.
-
-        name = flag.replace('-', '_')
-        if name in self.arity1:  # e.g. read -t1.0
-          action = self.arity1[name]
-          if val.startswith('='):
-            suffix = val[1:]  # could be empty, but remove = if any
-          else:
-            suffix = None
-          action.OnMatch(None, suffix, arg_r, out)
+      name = flag.replace('-', '_')
+      if name in spec.arity1:  # e.g. read -t1.0
+        action = spec.arity1[name]
+        if val.startswith('='):
+          suffix = val[1:]  # could be empty, but remove = if any
         else:
-          raise UsageError('Unrecognized flag %r' % arg)
+          suffix = None
+        action.OnMatch(None, suffix, arg_r, out)
+      else:
+        raise UsageError('Unrecognized flag %r' % arg)
 
-        arg_r.Next()  # next arg
+      arg_r.Next()  # next arg
 
-      else:  # a regular arg
-        break
+    else:  # a regular arg
+      break
 
-    return out, arg_r.i
-
-  def ParseArgv(self, argv):
-    # type: (List[str]) -> Tuple[_Attributes, int]
-    """For tools/readlink.py -- no location info available."""
-    arg_r = Reader(argv)
-    return self.Parse(arg_r)
+  return out, arg_r.i

@@ -4,15 +4,16 @@ readlink.py - Minimal implementation of readlink -f, e.g. for OS X.
 """
 
 import libc
+from frontend import arg_def
 from frontend import args
 from core import ui
 
-SPEC = args.FlagSpec()
+SPEC = arg_def.FlagSpec('readlink')
 SPEC.ShortFlag('-f')
 
 
 def main(argv):
-  arg, i = SPEC.ParseArgv(argv)
+  arg, i = args.ParseArgv(SPEC, argv)
   if not arg.f:
     ui.Stderr("readlink: -f must be passed")
     return 1
