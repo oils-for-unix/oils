@@ -139,8 +139,8 @@ if mylib.PYTHON:
   READ_SPEC = arg_def.FlagSpec('read')
   READ_SPEC.ShortFlag('-r')
   READ_SPEC.ShortFlag('-n', args.Int)
-  READ_SPEC.ShortFlag('-a', args.Str)  # name of array to read into
-  READ_SPEC.ShortFlag('-d', args.Str)
+  READ_SPEC.ShortFlag('-a', args.String)  # name of array to read into
+  READ_SPEC.ShortFlag('-d', args.String)
 
 
 # sys.stdin.readline() in Python has buffering!  TODO: Rewrite this tight loop

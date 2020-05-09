@@ -9,7 +9,6 @@ import sys
 from _devbuild.gen.runtime_asdl import flag_type_e
 from core.util import log
 from frontend import arg_def
-from frontend import args
 from mycpp.mylib import tagswitch
 
 #from osh import builtin_assign
@@ -41,7 +40,7 @@ from typing import cast
 """)
     for spec_name in sorted(specs):
       spec = specs[spec_name]
-      if isinstance(spec, args.FlagSpec):
+      if isinstance(spec, arg_def._FlagSpec):
         log('%s', spec_name)
         #print(dir(spec))
         #print(spec.arity0)

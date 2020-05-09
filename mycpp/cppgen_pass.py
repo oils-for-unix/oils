@@ -590,7 +590,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           # str(i) doesn't need new.  For now it's a free function.
           # TODO: rename int_to_str?  or Str::from_int()?
-          if callee_name not in ('str', 'bool') and isinstance(ret_type, Instance):
+          if callee_name not in ('str', 'bool', 'float') and isinstance(ret_type, Instance):
             ret_type_name = ret_type.type.name()
             # HACK: Const is the callee; expr__Const is the return type
             if (callee_name == ret_type_name or
@@ -600,6 +600,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # Namespace.
         if callee_name == 'int':  # int('foo') in Python conflicts with keyword
           self.write('to_int')
+        elif callee_name == 'float':
+          self.write('to_float')
         elif callee_name == 'bool':
           self.write('to_bool')
         else:
@@ -2044,6 +2046,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 'sh_lhs_expr_e', 'sh_lhs_expr',
 
                 # runtime_asdl
+                'flag_type_e', 'flag_type',
                 'lvalue_e', 'lvalue',
                 'value_e', 'value',
                 'part_value_e', 'part_value',

@@ -68,7 +68,7 @@ def _FlagType(arg_type):
     typ = flag_type.Int()
   elif arg_type == args.Float:
     typ = flag_type.Float()
-  elif arg_type == args.Str:
+  elif arg_type == args.String:
     typ = flag_type.Str()
   elif isinstance(arg_type, list):
     typ = flag_type.Enum(arg_type)
@@ -135,7 +135,7 @@ class _FlagSpec(object):
     elif arg_type == args.Float:
       typ = flag_type.Float()
       default = value.Float(0.0)
-    elif arg_type == args.Str:
+    elif arg_type == args.String:
       typ = flag_type.Str()
       default = value.Str('')
     elif isinstance(arg_type, list):

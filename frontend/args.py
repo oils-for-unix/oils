@@ -57,7 +57,6 @@ However I don't see these used anywhere!  I only see ':' used.
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import (
-    cmd_value__Argv,
     value, value_e, value_t, value__Bool, value__Int, value__Float, value__Str,
     flag_type, flag_type_e, flag_type_t, flag_type__Enum
 )
@@ -81,7 +80,7 @@ if TYPE_CHECKING:
 
 
 # TODO: Move to arg_def?  We use flag_type_t
-Str = 1
+String = 1
 Int = 2
 Float = 3  # e.g. for read -t timeout value
 Bool = 4  # OilFlags has explicit boolean type
@@ -359,7 +358,7 @@ class SetBoolToArg(_Action):
     self.name = name
 
   def OnMatch(self, prefix, suffix, arg_r, out):
-    # type: (Optional[str], Optional[str], Reader, _Attributes) -> None
+    # type: (Optional[str], Optional[str], Reader, _Attributes) -> bool
     """Called when the flag matches."""
 
     if suffix:  # '0' in --verbose=0
@@ -374,6 +373,7 @@ class SetBoolToArg(_Action):
       b = True
 
     out.Set(self.name, value.Bool(b))
+    return False
 
 
 class SetToTrue(_Action):
@@ -383,25 +383,29 @@ class SetToTrue(_Action):
     self.name = name
 
   def OnMatch(self, prefix, suffix, arg_r, out):
-    # type: (Optional[str], Optional[str], Reader, _Attributes) -> None
+    # type: (Optional[str], Optional[str], Reader, _Attributes) -> bool
     """Called when the flag matches."""
     out.Set(self.name, value.Bool(True))
+    return False
 
 
 class SetShortOption(_Action):
+  """ for declare -x +x etc. """
 
   def __init__(self, name):
     # type: (str) -> None
     self.name = name
 
   def OnMatch(self, prefix, suffix, arg_r, out):
-    # type: (Optional[str], Optional[str], Reader, _Attributes) -> None
+    # type: (Optional[str], Optional[str], Reader, _Attributes) -> bool
     """Called when the flag matches.
 
     Args:
-      suffix: - or + (not really a suffix)
+      prefix: - or + (not really a suffix)
     """
-    out.Set(self.name, value.Str(suffix))
+    assert suffix is None, suffix
+    out.Set(self.name, value.Str(prefix))
+    return False
 
 
 class SetOption(_Action):
@@ -412,7 +416,7 @@ class SetOption(_Action):
     self.name = name
 
   def OnMatch(self, prefix, suffix, arg_r, out):
-    # type: (str, Optional[str], Reader, _Attributes) -> None
+    # type: (str, Optional[str], Reader, _Attributes) -> bool
     """Called when the flag matches."""
     b = (prefix == '-')
     out.opt_changes.append((self.name, b))
@@ -459,8 +463,9 @@ class SetAction(_Action):
     self.name = name
 
   def OnMatch(self, prefix, suffix, arg_r, out):
-    # type: (str, str, Reader, _Attributes) -> None
+    # type: (str, str, Reader, _Attributes) -> bool
     out.actions.append(self.name)
+    return False
 
 
 class SetNamedAction(_Action):
@@ -475,7 +480,7 @@ class SetNamedAction(_Action):
     self.names.append(name)
 
   def OnMatch(self, prefix, suffix, arg_r, out):
-    # type: (str, Optional[str], Reader, _Attributes) -> None
+    # type: (str, Optional[str], Reader, _Attributes) -> bool
     """Called when the flag matches."""
     #log('SetNamedOption %r %r %r', prefix, suffix, arg_r)
     arg_r.Next()  # always advance
@@ -488,6 +493,7 @@ class SetNamedAction(_Action):
     if attr_name not in self.names:
       raise UsageError('Invalid action name %r' % arg)
     out.actions.append(attr_name)
+    return False
 
 
 def Parse(spec, arg_r):
@@ -508,26 +514,26 @@ def Parse(spec, arg_r):
     if arg.startswith('-') and len(arg) > 1:
       n = len(arg)
       for i in xrange(1, n):  # parse flag combos like -rx
-        char = arg[i]
+        ch = arg[i]
 
-        if char in spec.options:
-          action = spec.options[char]
-          action.OnMatch(None, '-', arg_r, out)
+        if ch in spec.options:
+          action = spec.options[ch]
+          action.OnMatch('-', None, arg_r, out)
           continue
 
-        if char in spec.arity0:  # e.g. read -r
-          action = spec.arity0[char]
+        if ch in spec.arity0:  # e.g. read -r
+          action = spec.arity0[ch]
           action.OnMatch(None, None, arg_r, out)
           continue
 
-        if char in spec.arity1:  # e.g. read -t1.0
-          action = spec.arity1[char]
+        if ch in spec.arity1:  # e.g. read -t1.0
+          action = spec.arity1[ch]
           suffix = arg[i+1:]  # '1.0'
           action.OnMatch(None, suffix, arg_r, out)
           break
 
         raise UsageError(
-            "doesn't accept flag %s" % ('-' + char), span_id=arg_r.SpanId())
+            "doesn't accept flag %s" % ('-' + ch), span_id=arg_r.SpanId())
 
       arg_r.Next()  # next arg
 
@@ -535,14 +541,14 @@ def Parse(spec, arg_r):
     elif spec.options and arg.startswith('+') and len(arg) > 1:
       n = len(arg)
       for i in xrange(1, n):  # parse flag combos like -rx
-        char = arg[i]
-        if char in spec.options:
-          action = spec.options[char]
-          action.OnMatch(None, '+', arg_r, out)
+        ch = arg[i]
+        if ch in spec.options:
+          action = spec.options[ch]
+          action.OnMatch('+', None, arg_r, out)
           continue
 
         raise UsageError(
-            "doesn't accept option %s" % ('+' + char), span_id=arg_r.SpanId())
+            "doesn't accept option %s" % ('+' + ch), span_id=arg_r.SpanId())
 
       arg_r.Next()  # next arg
 
@@ -594,15 +600,16 @@ def ParseMore(spec, arg_r):
 
     if arg.startswith('-') or arg.startswith('+'):
       char0 = arg[0]
-      for char in arg[1:]:
-        #log('char %r arg_r %s', char, arg_r)
+      for ch in arg[1:]:
+        #log('ch %r arg_r %s', ch, arg_r)
         try:
-          action = spec.actions_short[char]
+          action = spec.actions_short[ch]
         except KeyError:
           raise UsageError(
-              'got invalid flag %r' % ('-' + char), span_id=arg_r.SpanId())
+              'got invalid flag %r' % ('-' + ch), span_id=arg_r.SpanId())
         quit = action.OnMatch(char0, None, arg_r, out)
       arg_r.Next() # process the next flag
+
       if quit:
         break
       else:
@@ -623,44 +630,45 @@ def ParseMore(spec, arg_r):
 _FLAG_ERE = '^--?([a-zA-Z0-9][a-zA-Z0-9\-]*)(=.*)?$'
 
 
-def ParseOil(spec, arg_r):
-  # type: (arg_def._OilFlags, Reader) -> Tuple[_Attributes, int]
-  out = _Attributes(spec.defaults)
+if mylib.PYTHON:
+  def ParseOil(spec, arg_r):
+    # type: (arg_def._OilFlags, Reader) -> Tuple[_Attributes, int]
+    out = _Attributes(spec.defaults)
 
-  while not arg_r.AtEnd():
-    arg = arg_r.Peek()
-    if arg == '--':
-      out.saw_double_dash = True
-      arg_r.Next()
-      break
+    while not arg_r.AtEnd():
+      arg = arg_r.Peek()
+      if arg == '--':
+        out.saw_double_dash = True
+        arg_r.Next()
+        break
 
-    if arg == '-':  # a valid argument
-      break
+      if arg == '-':  # a valid argument
+        break
 
-    # TODO: Use FLAG_RE above
-    if arg.startswith('-'):
-      m = libc.regex_match(_FLAG_ERE, arg)
-      if m is None:
-        raise UsageError('Invalid flag syntax: %r' % arg)
-      _, flag, val = m  # group 0 is ignored; the whole match
+      # TODO: Use FLAG_RE above
+      if arg.startswith('-'):
+        m = libc.regex_match(_FLAG_ERE, arg)
+        if m is None:
+          raise UsageError('Invalid flag syntax: %r' % arg)
+        _, flag, val = m  # group 0 is ignored; the whole match
 
-      # TODO: we don't need arity 1 or 0?  Booleans are like --verbose=1,
-      # --verbose (equivalent to turning it on) or --verbose=0.
+        # TODO: we don't need arity 1 or 0?  Booleans are like --verbose=1,
+        # --verbose (equivalent to turning it on) or --verbose=0.
 
-      name = flag.replace('-', '_')
-      if name in spec.arity1:  # e.g. read -t1.0
-        action = spec.arity1[name]
-        if val.startswith('='):
-          suffix = val[1:]  # could be empty, but remove = if any
+        name = flag.replace('-', '_')
+        if name in spec.arity1:  # e.g. read -t1.0
+          action = spec.arity1[name]
+          if val.startswith('='):
+            suffix = val[1:]  # could be empty, but remove = if any
+          else:
+            suffix = None
+          action.OnMatch(None, suffix, arg_r, out)
         else:
-          suffix = None
-        action.OnMatch(None, suffix, arg_r, out)
-      else:
-        raise UsageError('Unrecognized flag %r' % arg)
+          raise UsageError('Unrecognized flag %r' % arg)
 
-      arg_r.Next()  # next arg
+        arg_r.Next()  # next arg
 
-    else:  # a regular arg
-      break
+      else:  # a regular arg
+        break
 
-  return out, arg_r.i
+    return out, arg_r.i

@@ -315,9 +315,9 @@ class Json(object):
 
 
 WRITE_SPEC = arg_def.OilFlags('write')
-WRITE_SPEC.Flag('-sep', args.Str, default='\n',
+WRITE_SPEC.Flag('-sep', args.String, default='\n',
                     help='Characters to separate each argument')
-WRITE_SPEC.Flag('-end', args.Str, default='\n',
+WRITE_SPEC.Flag('-end', args.String, default='\n',
                     help='Characters to terminate the whole invocation')
 WRITE_SPEC.Flag('-n', args.Bool, default=False,
                     help="Omit newline (synonym for -end '')")

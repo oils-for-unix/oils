@@ -21,11 +21,11 @@ class ArgsTest(unittest.TestCase):
 
   def testFlagSpecAndMore(self):
     s = arg_def._FlagSpecAndMore()
-    s.ShortFlag('-c', args.Str)
-    s.ShortFlag('-i', args.Str)
+    s.ShortFlag('-c', args.String)
+    s.ShortFlag('-i', args.String)
 
     s.LongFlag('--help')
-    s.LongFlag('--rcfile', args.Str)
+    s.LongFlag('--rcfile', args.String)
 
     s.LongFlag('--ast-format', ['text', 'html'])
 
@@ -112,7 +112,7 @@ class ArgsTest(unittest.TestCase):
     s = arg_def._FlagSpec()
     s.ShortFlag('-f')
     s.ShortFlag('-n')
-    s.ShortFlag('-d', args.Str)  # delimiter
+    s.ShortFlag('-d', args.String)  # delimiter
 
     # like declare +rx
     s.ShortOption('r')
@@ -153,7 +153,7 @@ class ArgsTest(unittest.TestCase):
     s = arg_def._FlagSpec()
     s.ShortFlag('-r')  # no backslash escapes
     s.ShortFlag('-t', args.Float)  # timeout
-    s.ShortFlag('-p', args.Str)  # prompt string
+    s.ShortFlag('-p', args.String)  # prompt string
 
     arg, i = s.ParseCmdVal(_MakeBuiltinArgv(['-r', 'foo']))
     self.assertEqual(True, arg.r)
@@ -213,7 +213,7 @@ class ArgsTest(unittest.TestCase):
   def testOilFlags(self):
     s = arg_def._OilFlags()
     s.Flag('-docstring', args.Bool, default=True)
-    s.Flag('-out-file', args.Str)
+    s.Flag('-out-file', args.String)
     s.Flag('-retries', args.Int)
 
     arg, i = s.ParseArgv(['-docstring=0', 'x', 'y'])

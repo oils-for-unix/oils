@@ -45,6 +45,7 @@ namespace cmd_exec {
 #endif
 
 // stub for cmd_eval.py
+#if 0
 namespace args {
 class UsageError {
  public:
@@ -52,6 +53,7 @@ class UsageError {
   int span_id;
 };
 }  // namespace args
+#endif
 
 namespace util {
 

@@ -804,6 +804,10 @@ inline bool to_bool(Str* s) {
   return s->len_ != 0;
 }
 
+inline double to_float(Str* s) {
+  assert(0);
+}
+
 // e.g. ('a' in 'abc')
 inline bool str_contains(Str* haystack, Str* needle) {
   // cstring-TODO: this not rely on NUL termination
