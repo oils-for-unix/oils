@@ -235,12 +235,13 @@ cpp-compile-run() {
   _bin/$name
 }
 
-target-lang() {
-  cpp-compile-run target_lang ../cpp/dumb_alloc.cc -I ../cpp
-}
-
 heap() {
   cpp-compile-run heap
+}
+
+target-lang() {
+  cpp-compile target_lang ../cpp/dumb_alloc.cc -I ../cpp
+  _bin/target_lang "$@"
 }
 
 mylib-test() {

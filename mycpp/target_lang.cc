@@ -23,6 +23,7 @@
 
 #include <stdexcept>
 
+#include "greatest.h"
 #include "dumb_alloc.h"
 
 using std::unordered_map;
@@ -262,7 +263,7 @@ void map_demo() {
   log("retrieved = %d", m2[nullptr]);
 }
 
-int main(int argc, char** argv) {
+TEST sizeof_demo() {
   log("sizeof(int): %d", sizeof(int));
   log("sizeof(int*): %d", sizeof(int*));
   log("sizeof(Extent): %d", sizeof(Extent));
@@ -271,7 +272,9 @@ int main(int argc, char** argv) {
   // Good, this is 50.
   Extent ext_array[5];
   log("sizeof(ext_array): %d", sizeof(ext_array));
+}
 
+TEST test_misc() {
   List l{1, 2, 3};
 
   // TODO: How to do this?
@@ -299,4 +302,84 @@ int main(int argc, char** argv) {
   shared_ptr_demo();
 
   map_demo();
+}
+
+struct Point { int x; int y; };
+
+Point p = {3, 4};
+
+// members must be public to allow initializer list
+class PointC {
+ public:
+  // constructor is allowed
+  PointC(int x, int y) : x_(x), y_(y) {
+  }
+  // this is allowed too
+  int get_x() {
+    return x_;
+  }
+  // this is allowed too
+  virtual int mag() {
+    return x_ * x_ + y_ * y_;
+  }
+
+  int x_;
+  int y_;
+};
+
+PointC pc = {5, 6};
+
+class SubPointC : public PointC {
+ public:
+  SubPointC(int x, int y) : PointC(x, y) {
+  }
+  virtual int mag() {
+   return 0;
+  }
+};
+
+SubPointC sub = {7, 8};
+
+class Compound {
+ public:
+  PointC c1;
+  PointC c2;
+};
+
+// This works, but what about pointers?
+Compound c = {{0, 1}, {8, 9}};
+
+TEST static_literals() {
+  ASSERT_EQ(3, p.x);
+  ASSERT_EQ(4, p.y);
+
+  ASSERT_EQ(5, pc.x_);
+  ASSERT_EQ(6, pc.y_);
+
+  // I'm surprised virtual functions are allowed!  We're compiling with
+  // -std=c++11.
+  // But this is just curiosity.  We don't need this in ASDL.
+  ASSERT_EQ_FMT(61, pc.mag(), "%d");
+
+  ASSERT_EQ_FMT(0, sub.mag(), "%d");
+
+  ASSERT_EQ(0, c.c1.x_);
+  ASSERT_EQ(1, c.c1.y_);
+  ASSERT_EQ(8, c.c2.x_);
+  ASSERT_EQ(9, c.c2.y_);
+
+  PASS();
+}
+
+GREATEST_MAIN_DEFS(); 
+
+int main(int argc, char** argv) {
+  GREATEST_MAIN_BEGIN();
+
+  RUN_TEST(test_misc);
+  RUN_TEST(sizeof_demo);
+  RUN_TEST(static_literals);
+
+  GREATEST_MAIN_END(); /* display results */
+  return 0;
 }
