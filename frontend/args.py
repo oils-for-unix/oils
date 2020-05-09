@@ -389,25 +389,6 @@ class SetToTrue(_Action):
     return False
 
 
-class SetShortOption(_Action):
-  """ for declare -x +x etc. """
-
-  def __init__(self, name):
-    # type: (str) -> None
-    self.name = name
-
-  def OnMatch(self, prefix, suffix, arg_r, out):
-    # type: (Optional[str], Optional[str], Reader, _Attributes) -> bool
-    """Called when the flag matches.
-
-    Args:
-      prefix: - or + (not really a suffix)
-    """
-    assert suffix is None, suffix
-    out.Set(self.name, value.Str(prefix))
-    return False
-
-
 class SetOption(_Action):
   """ Set an option to a boolean, for 'set +e' """
 
@@ -420,6 +401,7 @@ class SetOption(_Action):
     """Called when the flag matches."""
     b = (prefix == '-')
     out.opt_changes.append((self.name, b))
+    return False
 
 
 class SetNamedOption(_Action):
@@ -517,8 +499,7 @@ def Parse(spec, arg_r):
         ch = arg[i]
 
         if ch in spec.options:
-          action = spec.options[ch]
-          action.OnMatch('-', None, arg_r, out)
+          out.Set(ch, value.Str('-'))
           continue
 
         if ch in spec.arity0:  # e.g. read -r
@@ -543,8 +524,7 @@ def Parse(spec, arg_r):
       for i in xrange(1, n):  # parse flag combos like -rx
         ch = arg[i]
         if ch in spec.options:
-          action = spec.options[ch]
-          action.OnMatch('+', None, arg_r, out)
+          out.Set(ch, value.Str('+'))
           continue
 
         raise UsageError(

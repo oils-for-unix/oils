@@ -15,7 +15,9 @@ from mycpp import mylib
 from typing import Union, List, Tuple, Dict, Any, Optional
 
 # Similar to frontend/{option,builtin}_def.py
-_ARG_DEF = {}
+FLAG_SPEC = {}
+FLAG_SPEC_AND_MORE = {}
+OIL_SPEC ={}
 
 
 def FlagSpec(builtin_name, typed=False):
@@ -23,7 +25,7 @@ def FlagSpec(builtin_name, typed=False):
   """
   """
   arg_spec = _FlagSpec(typed=typed)
-  _ARG_DEF[builtin_name] = arg_spec
+  FLAG_SPEC[builtin_name] = arg_spec
   return arg_spec
 
 
@@ -33,7 +35,7 @@ def FlagSpecAndMore(name):
   For set, bin/oil.py ("main"), compgen -A, complete -A, etc.
   """
   arg_spec = _FlagSpecAndMore()
-  _ARG_DEF[name] = arg_spec
+  FLAG_SPEC_AND_MORE[name] = arg_spec
   return arg_spec
 
 
@@ -43,20 +45,20 @@ def OilFlags(name):
   For set, bin/oil.py ("main"), compgen -A, complete -A, etc.
   """
   arg_spec = _OilFlags()
-  _ARG_DEF[name] = arg_spec
+  OIL_SPEC[name] = arg_spec
   return arg_spec
 
 
 def Parse(spec_name, arg_r):
   # type: (str, args.Reader) -> args._Attributes
   """Parse argv using a given FlagSpec / FlagSpecAndMore."""
-  spec = _ARG_DEF[spec_name]
+  spec = FLAG_SPEC[spec_name]
   return spec.Parse(arg_r)
 
 
 def All():
   # type: () -> Dict[str, Any]
-  return _ARG_DEF
+  return FLAG_SPEC
 
 
 def _FlagType(arg_type):
@@ -94,7 +96,7 @@ class _FlagSpec(object):
 
     self.arity0 = {}  # type: Dict[str, args._Action]  # {'r': _Action} for read -r
     self.arity1 = {}  # type: Dict[str, args._Action]  # {'t': _Action} for read -t 1.0
-    self.options = {}  # type: Dict[str, args._Action]  # e.g. for declare +r
+    self.options = {}  # type: Dict[str, bool]  # e.g. for declare +r
     self.defaults = {}  # type: Dict[str, value_t]
     self.fields = {}  # type: Dict[str, flag_type_t]  # for arg_types to use
 
@@ -157,7 +159,7 @@ class _FlagSpec(object):
     """Define an option that can be turned off with + and on with -."""
 
     assert len(char) == 1  # 'r' for -r +r
-    self.options[char] = args.SetShortOption(char)
+    self.options[char] = True
 
     self.defaults[char] = value.Undef()
     # '+' or '-'.  TODO: Should we make it a bool?

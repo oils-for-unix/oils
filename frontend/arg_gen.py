@@ -25,7 +25,7 @@ def main(argv):
   except IndexError:
     raise RuntimeError('Action required')
 
-  specs = arg_def.All()
+  specs = arg_def.FLAG_SPEC
 
   if action == 'cpp':
     pass
@@ -40,47 +40,47 @@ from typing import cast
 """)
     for spec_name in sorted(specs):
       spec = specs[spec_name]
-      if isinstance(spec, arg_def._FlagSpec):
-        log('%s', spec_name)
-        #print(dir(spec))
-        #print(spec.arity0)
-        #print(spec.arity1)
-        #print(spec.options)
-        # Every flag has a default
-        log('%s', spec.fields)
 
-        print("""
+      log('%s', spec_name)
+      #print(dir(spec))
+      #print(spec.arity0)
+      #print(spec.arity1)
+      #print(spec.options)
+      # Every flag has a default
+      log('%s', spec.fields)
+
+      print("""
 class %s(object):
-  def __init__(self, attrs):
-    # type: (_Attributes) -> None
-    flag = attrs.attrs
+def __init__(self, attrs):
+  # type: (_Attributes) -> None
+  flag = attrs.attrs
 """ % spec_name)
 
-        i = 0
-        for field_name in sorted(spec.fields):
-          typ = spec.fields[field_name]
-          with tagswitch(typ) as case:
-            if case(flag_type_e.Bool):
-              subtype = 'Bool'
-              subtype_field = 'b'  # e.g. Bool(bool b)
-              mypy_type = 'bool'
-              print('    self.%s = cast(value__Bool, flag[%r]).b  # type: bool' % (
-                field_name, field_name))
-            elif case(flag_type_e.Str):
-              subtype = 'Str'
-              subtype_field = 's'  # e.g. Bool(bool b)
-              mypy_type = 'str'
+      i = 0
+      for field_name in sorted(spec.fields):
+        typ = spec.fields[field_name]
+        with tagswitch(typ) as case:
+          if case(flag_type_e.Bool):
+            subtype = 'Bool'
+            subtype_field = 'b'  # e.g. Bool(bool b)
+            mypy_type = 'bool'
+            print('    self.%s = cast(value__Bool, flag[%r]).b  # type: bool' % (
+              field_name, field_name))
+          elif case(flag_type_e.Str):
+            subtype = 'Str'
+            subtype_field = 's'  # e.g. Bool(bool b)
+            mypy_type = 'str'
 
-              tmp = 'val%d' % i
-              print('    %s = flag[%r]' % (tmp, field_name))
-              print('    self.%s = None if %s.tag_() == value_e.Undef else cast(value__%s, %s).%s  # type: %s' % (
-                field_name, tmp, subtype, tmp, subtype_field, mypy_type))
-            else:
-              raise AssertionError(typ)
+            tmp = 'val%d' % i
+            print('    %s = flag[%r]' % (tmp, field_name))
+            print('    self.%s = None if %s.tag_() == value_e.Undef else cast(value__%s, %s).%s  # type: %s' % (
+              field_name, tmp, subtype, tmp, subtype_field, mypy_type))
+          else:
+            raise AssertionError(typ)
 
-          i += 1
+        i += 1
 
-        print()
+      print()
 
     #
     # I think you can write _Attributes -> arg_types.EXPORT
