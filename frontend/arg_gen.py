@@ -51,9 +51,9 @@ from typing import cast
 
       print("""
 class %s(object):
-def __init__(self, attrs):
-  # type: (_Attributes) -> None
-  flag = attrs.attrs
+  def __init__(self, attrs):
+    # type: (_Attributes) -> None
+    flag = attrs.attrs
 """ % spec_name)
 
       i = 0
