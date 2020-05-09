@@ -19,6 +19,7 @@ import sys  # for sys.sdtout
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import value_e
 
+from core import error
 from core.util import e_die
 from core import optview
 from qsn_ import qsn
@@ -112,7 +113,7 @@ class UnAlias(object):
     # type: (cmd_value__Argv) -> int
     argv = cmd_val.argv
     if len(argv) == 1:
-      raise args.UsageError('unalias NAME...')
+      raise error.Usage('unalias NAME...')
 
     status = 0
     for i in xrange(1, len(argv)):
@@ -374,7 +375,7 @@ class Hash(object):
     rest = arg_r.Rest()
     if arg.r:
       if rest:
-        raise args.UsageError('got extra arguments after -r')
+        raise error.Usage('got extra arguments after -r')
       self.search_path.ClearCache()
       return 0
 
@@ -507,7 +508,7 @@ class GetOpts(object):
     else:
       # NOTE: The builtin has PARTIALLY filed.  This happens in all shells
       # except mksh.
-      raise args.UsageError('got invalid variable name %r' % var_name,
+      raise error.Usage('got invalid variable name %r' % var_name,
                             span_id=var_spid)
     return status
 
@@ -582,7 +583,7 @@ class Echo(object):
         sys.stdout.write(argv[0])
       else:
         # TODO: span_id could be more accurate
-        raise args.UsageError(
+        raise error.Usage(
             "takes at most one arg when strict_echo is on (hint: add quotes)")
     else:
       #log('echo argv %s', argv)

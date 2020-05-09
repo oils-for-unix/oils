@@ -7,7 +7,7 @@ opy_.py
 import os
 import sys
 
-from frontend import args
+from core import error
 from core import pyutil
 from core.util import log
 
@@ -34,7 +34,7 @@ def AppBundleMain(argv):
     try:
       first_arg = argv[1]
     except IndexError:
-      raise args.UsageError('Missing required applet name.')
+      raise error.Usage('Missing required applet name.')
 
     # TODO: We don't have this
     if first_arg in ('-h', '--help'):
@@ -60,15 +60,15 @@ def AppBundleMain(argv):
     return opy_main.OpyCommandMain(main_argv)
 
   else:
-    raise args.UsageError('Invalid applet name %r.' % main_name)
+    raise error.Usage('Invalid applet name %r.' % main_name)
 
 
 def main(argv):
   try:
     sys.exit(AppBundleMain(argv))
-  except args.UsageError as e:
+  except error.Usage as e:
     #print(_OPY_USAGE, file=sys.stderr)
-    log('opy: %s', e)
+    log('opy: %s', e.msg)
     sys.exit(2)
   except RuntimeError as e:
     log('FATAL: %s', e)

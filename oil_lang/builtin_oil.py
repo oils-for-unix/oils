@@ -14,6 +14,7 @@ import sys
 
 from _devbuild.gen.runtime_asdl import value, value_e, scope_e
 from _devbuild.gen.syntax_asdl import sh_lhs_expr
+from core import error
 from core.util import log
 from frontend import arg_def
 from frontend import args
@@ -50,8 +51,8 @@ class Repr(_Builtin):
         name = name[1:]
 
       if not match.IsValidVarName(name):
-        raise args.UsageError('got invalid variable name %r' % name,
-                              span_id=cmd_val.arg_spids[i])
+        raise error.Usage('got invalid variable name %r' % name,
+                          span_id=cmd_val.arg_spids[i])
 
       cell = self.mem.GetCell(name)
       if cell is None:
@@ -88,7 +89,7 @@ class Push(_Builtin):
       var_name = var_name[1:]
 
     if not match.IsValidVarName(var_name):
-      raise args.UsageError('got invalid variable name %r' % var_name,
+      raise error.Usage('got invalid variable name %r' % var_name,
                             span_id=var_spid)
 
     val = self.mem.GetVar(var_name)
@@ -227,7 +228,7 @@ class Json(object):
 
     action, action_spid = arg_r.Peek2()
     if action is None:
-      raise args.UsageError(_JSON_ACTION_ERROR)
+      raise error.Usage(_JSON_ACTION_ERROR)
     arg_r.Next()
 
     if action == 'write':
@@ -285,7 +286,7 @@ class Json(object):
         var_name = var_name[1:]
 
       if not match.IsValidVarName(var_name):
-        raise args.UsageError('got invalid variable name %r' % var_name,
+        raise error.Usage('got invalid variable name %r' % var_name,
                               span_id=name_spid)
 
       try:
@@ -309,7 +310,7 @@ class Json(object):
           sh_lhs_expr.Name(var_name), value.Obj(obj), scope_e.LocalOnly)
 
     else:
-      raise args.UsageError(_JSON_ACTION_ERROR, span_id=action_spid)
+      raise error.Usage(_JSON_ACTION_ERROR, span_id=action_spid)
 
     return 0
 
@@ -405,7 +406,7 @@ class Getline(_Builtin):
 
     next_arg, next_spid = arg_r.Peek2()
     if next_arg is not None:
-      raise args.UsageError('got extra argument', span_id=next_spid)
+      raise error.Usage('got extra argument', span_id=next_spid)
 
     line = _ReadLine()
     if len(line) == 0:  # EOF

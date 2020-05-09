@@ -423,7 +423,7 @@ class Printf(object):
       # implemented it.
       # - TODO: get the span_id for arg.v!
       if not match.IsValidVarName(var_name):
-        raise args.UsageError('got invalid variable name %r' % var_name)
+        raise error.Usage('got invalid variable name %r' % var_name)
       state.SetStringDynamic(self.mem, var_name, result)
     else:
       sys.stdout.write(result)

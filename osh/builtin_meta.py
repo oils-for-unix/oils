@@ -6,6 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import source
+from core import error
 from core.error import _ControlFlow
 from core import main_loop
 from core import pyutil  # strerror_OS
@@ -54,7 +55,7 @@ class Eval(object):
     if self.exec_opts.strict_eval_builtin():
       code_str, eval_spid = arg_r.ReadRequired2('requires code string')
       if not arg_r.AtEnd():
-        raise args.UsageError('requires exactly 1 argument')
+        raise error.Usage('requires exactly 1 argument')
     else:
       code_str = ' '.join(cmd_val.argv[arg_r.i:])
       # code_str could be EMPTY, so just use the first one
@@ -94,7 +95,7 @@ class Source(object):
     try:
       path = argv[1]
     except IndexError:
-      raise args.UsageError('missing required argument')
+      raise error.Usage('missing required argument')
 
     resolved = self.search_path.Lookup(path, exec_required=False)
     if resolved is None:

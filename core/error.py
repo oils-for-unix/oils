@@ -15,6 +15,17 @@ if TYPE_CHECKING:  # avoid circular build deps
 NO_SPID = -1
 
 
+class Usage(Exception):
+  """Raised by builtins upon flag parsing error."""
+
+  # TODO: Should this be _ErrorWithLocation?  Probably, even though we only use
+  # 'span_id'.
+  def __init__(self, msg, span_id=NO_SPID):
+    # type: (str, int) -> None
+    self.msg = msg
+    self.span_id = span_id
+
+
 class _ControlFlow(Exception):
   """Internal execption for control flow.
 

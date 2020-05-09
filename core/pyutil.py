@@ -24,9 +24,8 @@ def e_usage(msg, *pos_args, **kwargs):
   Usually causes a builtin to fail with status 2, but the script can continue
   if 'set +o errexit'.  Main programs like bin/oil also use this.
   """
-  from frontend import args
-  # TODO: Should be error.Usage
-  raise args.UsageError(msg, *pos_args, **kwargs)
+  from core import error
+  raise error.Usage(msg, *pos_args, **kwargs)
 
 
 # TODO: Remove ui.Stderr in favor of this

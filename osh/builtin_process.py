@@ -169,7 +169,7 @@ class Wait(object):
       # The % syntax is sort of like ! history sub syntax, with various queries.
       # https://stackoverflow.com/questions/35026395/bash-what-is-a-jobspec
       if job_id.startswith('%'):
-        raise args.UsageError(
+        raise error.Usage(
             "doesn't support bash-style jobspecs (got %r)" % job_id,
             span_id=span_id)
 
@@ -177,7 +177,7 @@ class Wait(object):
       try:
         pid = int(job_id)
       except ValueError:
-        raise args.UsageError('expected PID or jobspec, got %r' % job_id,
+        raise error.Usage('expected PID or jobspec, got %r' % job_id,
                               span_id=span_id)
 
       job = self.job_state.JobFromPid(pid)
@@ -270,7 +270,7 @@ class Bg(object):
     # How does this differ from 'fg'?  It doesn't wait and it sets controlling
     # terminal?
 
-    raise args.UsageError("isn't implemented")
+    raise error.Usage("isn't implemented")
 
 
 class _TrapHandler(object):
@@ -512,4 +512,4 @@ class Umask(_Builtin):
         posix.umask(new_mask)
         return 0
 
-    raise args.UsageError('umask: unexpected arguments')
+    raise error.Usage('umask: unexpected arguments')

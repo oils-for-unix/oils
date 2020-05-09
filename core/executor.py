@@ -18,7 +18,6 @@ from core import error
 from core import process
 from core.util import log, e_die
 from core.vm import _Executor
-from frontend import args
 from frontend import consts
 from oil_lang import objects
 from mycpp import mylib
@@ -120,7 +119,7 @@ class ShellExecutor(_Executor):
     try:
       status = builtin_func.Run(cmd_val)
       assert isinstance(status, int)
-    except args.UsageError as e:
+    except error.Usage as e:
       arg0 = cmd_val.argv[0]
       # fill in default location.  e.g. osh/state.py raises UsageError without
       # span_id.

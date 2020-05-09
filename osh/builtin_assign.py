@@ -196,7 +196,7 @@ class Export(_AssignBuiltin):
     #arg = attrs
 
     if arg.f:
-      raise args.UsageError(
+      raise error.Usage(
           "doesn't accept -f because it's dangerous.  "
           "(The code can usually be restructured with 'source')")
 
@@ -207,7 +207,7 @@ class Export(_AssignBuiltin):
     if arg.n:
       for pair in cmd_val.pairs:
         if pair.rval is not None:
-          raise args.UsageError("doesn't accept RHS with -n", span_id=pair.spid)
+          raise error.Usage("doesn't accept RHS with -n", span_id=pair.spid)
 
         # NOTE: we don't care if it wasn't found, like bash.
         self.mem.ClearFlag(pair.var_name, state.ClearExport, scope_e.Dynamic)
@@ -230,7 +230,7 @@ def _ReconcileTypes(rval, flag_a, flag_A, span_id):
   Shared between NewVar and Readonly.
   """
   if flag_a and rval is not None and rval.tag_() != value_e.MaybeStrArray:
-    raise args.UsageError(
+    raise error.Usage(
         "Got -a but RHS isn't an array", span_id=span_id)
 
   if flag_A and rval:
@@ -243,7 +243,7 @@ def _ReconcileTypes(rval, flag_a, flag_A, span_id):
         #return value.MaybeStrArray([])
 
     if rval.tag_() != value_e.AssocArray:
-      raise args.UsageError(
+      raise error.Usage(
           "Got -A but RHS isn't an associative array", span_id=span_id)
 
   return rval
@@ -324,7 +324,7 @@ class NewVar(_AssignBuiltin):
         # Right now we just show the name.
         status = self._PrintFuncs(names)
       else:
-        raise args.UsageError('passed -f without args')
+        raise error.Usage('passed -f without args')
       return status
 
     if arg.F:
@@ -345,7 +345,7 @@ class NewVar(_AssignBuiltin):
     # Set variables
     #
 
-    #raise args.UsageError("doesn't understand %s" % cmd_val.argv[1:])
+    #raise error.Usage("doesn't understand %s" % cmd_val.argv[1:])
     if cmd_val.builtin_id == builtin_i.local:
       lookup_mode = scope_e.LocalOnly
     else:  # declare/typeset
@@ -419,7 +419,7 @@ class Unset(_Builtin):
       # show parse error
       ui.PrettyPrintError(e, arena)
       # point to word
-      raise args.UsageError('Invalid unset expression', span_id=spid)
+      raise error.Usage('Invalid unset expression', span_id=spid)
     finally:
       arena.PopSource()
 
@@ -492,8 +492,8 @@ class Shift(_Builtin):
       try:
         n = int(arg)
       except ValueError:
-        raise args.UsageError("Invalid shift argument %r" % arg)
+        raise error.Usage("Invalid shift argument %r" % arg)
     else:
-      raise args.UsageError('got too many arguments')
+      raise error.Usage('got too many arguments')
 
     return self.mem.Shift(n)

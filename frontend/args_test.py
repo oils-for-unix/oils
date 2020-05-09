@@ -7,6 +7,7 @@ import unittest
 
 from _devbuild.gen.runtime_asdl import cmd_value
 from asdl import runtime
+from core import error
 from frontend import arg_def
 from frontend import args  # module under test
 
@@ -56,7 +57,7 @@ class ArgsTest(unittest.TestCase):
         arg.opt_changes)
 
     self.assertRaises(
-        args.UsageError, s.Parse, args.Reader(['-o', 'pipefailX']))
+        error.Usage, s.Parse, args.Reader(['-o', 'pipefailX']))
 
     arg_r = args.Reader(['-c', 'echo hi', '--help', '--rcfile', 'bashrc'])
     arg = s.Parse(arg_r)
@@ -106,7 +107,7 @@ class ArgsTest(unittest.TestCase):
     self.assertEqual('text', arg.ast_format)
 
     self.assertRaises(
-        args.UsageError, s.Parse, args.Reader(['--ast-format', 'oops']))
+        error.Usage, s.Parse, args.Reader(['--ast-format', 'oops']))
 
   def testFlagSpec(self):
     s = arg_def._FlagSpec()
@@ -125,7 +126,7 @@ class ArgsTest(unittest.TestCase):
     self.assertEqual(None, arg.n)
 
     self.assertRaises(
-        args.UsageError, s.ParseCmdVal, _MakeBuiltinArgv(['-f', '-d']))
+        error.Usage, s.ParseCmdVal, _MakeBuiltinArgv(['-f', '-d']))
 
     arg, i = s.ParseCmdVal(_MakeBuiltinArgv(['-d', ' ', 'foo']))
     self.assertEqual(2, i-1)
@@ -186,7 +187,7 @@ class ArgsTest(unittest.TestCase):
     self.assertEqual(1, i-1)
 
     # Invalid flag 'z'
-    self.assertRaises(args.UsageError, s.ParseCmdVal, _MakeBuiltinArgv(['-rz']))
+    self.assertRaises(error.Usage, s.ParseCmdVal, _MakeBuiltinArgv(['-rz']))
 
   def testParseLikeEcho(self):
     s = arg_def._FlagSpec()
@@ -239,12 +240,12 @@ class ArgsTest(unittest.TestCase):
     self.assertEqual(3, arg.retries)
 
     # Like GNU: anything that starts with -- is parsed like an opt_num.
-    self.assertRaises(args.UsageError, s.ParseArgv, ['---'])
+    self.assertRaises(error.Usage, s.ParseArgv, ['---'])
 
-    self.assertRaises(args.UsageError, s.ParseArgv, ['-oops'])
+    self.assertRaises(error.Usage, s.ParseArgv, ['-oops'])
 
     # Invalid boolean arg
-    self.assertRaises(args.UsageError, s.ParseArgv, ['--docstring=YEAH'])
+    self.assertRaises(error.Usage, s.ParseArgv, ['--docstring=YEAH'])
 
     arg, i = s.ParseArgv(['--'])
     self.assertEqual(1, i)

@@ -30,6 +30,7 @@ from pgen2 import tokenize
 from frontend import arg_def
 from frontend import args
 from core.util import log
+from core import error
 from core import pyutil
 
 from typing import TYPE_CHECKING
@@ -271,7 +272,7 @@ def OpyCommandMain(argv):
   try:
     action = argv[0]
   except IndexError:
-    raise args.UsageError('opy: Missing required subcommand.')
+    raise error.Usage('opy: Missing required subcommand.')
 
   argv = argv[1:]  # TODO: Should I do input.ReadRequiredArg()?
                    # That will shift the input.
@@ -513,7 +514,7 @@ def OpyCommandMain(argv):
   elif action == 'dis-md5':
     pyc_paths = argv
     if not pyc_paths:
-      raise args.UsageError('dis-md5: At least one .pyc path is required.')
+      raise error.Usage('dis-md5: At least one .pyc path is required.')
 
     for path in pyc_paths:
       h = hashlib.md5()
@@ -552,7 +553,7 @@ def OpyCommandMain(argv):
       num_ticks = execfile.run_code_object(co, opy_argv)
 
     else:
-      raise args.UsageError('Invalid path %r' % py_path)
+      raise error.Usage('Invalid path %r' % py_path)
 
   elif action == 'run-ovm':  # Compile and run, without writing pyc file
     opt, i = compile_spec.ParseArgv(argv)
@@ -574,7 +575,7 @@ def OpyCommandMain(argv):
       num_ticks = ovm.run_code_object(co, opy_argv)
 
     else:
-      raise args.UsageError('Invalid path %r' % py_path)
+      raise error.Usage('Invalid path %r' % py_path)
 
   else:
-    raise args.UsageError('Invalid action %r' % action)
+    raise error.Usage('Invalid action %r' % action)

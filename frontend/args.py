@@ -62,6 +62,7 @@ from _devbuild.gen.runtime_asdl import (
 )
 
 from asdl import runtime
+from core import error
 from core.util import log
 from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems
@@ -79,17 +80,6 @@ String = 1
 Int = 2
 Float = 3  # e.g. for read -t timeout value
 Bool = 4  # OilFlags has explicit boolean type
-
-
-class UsageError(Exception):
-  """Raised by builtins upon flag parsing error."""
-
-  # TODO: Should this be _ErrorWithLocation?  Probably, even though we only use
-  # 'span_id'.
-  def __init__(self, msg, span_id=runtime.NO_SPID):
-    # type: (str, int) -> None
-    self.msg = msg
-    self.span_id = span_id
 
 
 # Note: could split into
@@ -222,7 +212,7 @@ class Reader(object):
     arg = self.Peek()
     if arg is None:
       # point at argv[0]
-      raise UsageError(error_msg, span_id=self._FirstSpanId())
+      raise error.Usage(error_msg, span_id=self._FirstSpanId())
     self.Next()
     return arg
 
@@ -231,7 +221,7 @@ class Reader(object):
     arg = self.Peek()
     if arg is None:
       # point at argv[0]
-      raise UsageError(error_msg, span_id=self._FirstSpanId())
+      raise error.Usage(error_msg, span_id=self._FirstSpanId())
     spid = self.spids[self.i]
     self.Next()
     return arg, spid
@@ -311,7 +301,7 @@ class SetToArg(_Action):
       arg_r.Next()
       arg = arg_r.Peek()
       if arg is None:
-        raise UsageError(
+        raise error.Usage(
             'expected argument to %r' % ('-' + self.name), span_id=arg_r.SpanId())
 
     # e.g. spec.LongFlag('--format', ['text', 'html'])
@@ -320,7 +310,7 @@ class SetToArg(_Action):
       if case(flag_type_e.Enum):
         alts = cast(flag_type__Enum, self.flag_type).alts
         if arg not in alts:
-          raise UsageError(
+          raise error.Usage(
               'got invalid argument %r to %r, expected one of: %s' %
               (arg, ('-' + self.name), ', '.join(alts)), span_id=arg_r.SpanId())
         val = value.Str(arg)  # type: value_t
@@ -332,7 +322,7 @@ class SetToArg(_Action):
         try:
           val = value.Int(int(arg))
         except ValueError:
-          raise UsageError(
+          raise error.Usage(
               'expected integer after %r, got %r' % ('-' + self.name, arg),
               span_id=arg_r.SpanId())
 
@@ -340,7 +330,7 @@ class SetToArg(_Action):
         try:
           val = value.Float(float(arg))
         except ValueError:
-          raise UsageError(
+          raise error.Usage(
               'expected number after %r, got %r' % ('-' + self.name, arg),
               span_id=arg_r.SpanId())
       else:
@@ -367,7 +357,7 @@ class SetBoolToArg(_Action):
       elif suffix in ('1', 'T', 'true', 'Talse'):
         b = True
       else:
-        raise UsageError(
+        raise error.Usage(
             'got invalid argument to boolean flag: %r' % suffix)
     else:
       b = True
@@ -431,7 +421,7 @@ class SetNamedOption(_Action):
     attr_name = arg
     # Validate the option name against a list of valid names.
     if attr_name not in self.names:
-      raise UsageError('got invalid option %r' % arg, span_id=arg_r.SpanId())
+      raise error.Usage('got invalid option %r' % arg, span_id=arg_r.SpanId())
 
     changes = out.shopt_changes if self.shopt else out.opt_changes
     changes.append((attr_name, b))
@@ -469,12 +459,12 @@ class SetNamedAction(_Action):
     arg_r.Next()  # always advance
     arg = arg_r.Peek()
     if arg is None:
-      raise UsageError('Expected argument for action')
+      raise error.Usage('Expected argument for action')
 
     attr_name = arg
     # Validate the option name against a list of valid names.
     if attr_name not in self.names:
-      raise UsageError('Invalid action name %r' % arg)
+      raise error.Usage('Invalid action name %r' % arg)
     out.actions.append(attr_name)
     return False
 
@@ -513,7 +503,7 @@ def Parse(spec, arg_r):
           action.OnMatch(None, suffix, arg_r, out)
           break
 
-        raise UsageError(
+        raise error.Usage(
             "doesn't accept flag %s" % ('-' + ch), span_id=arg_r.SpanId())
 
       arg_r.Next()  # next arg
@@ -527,7 +517,7 @@ def Parse(spec, arg_r):
           out.Set(ch, value.Str('+'))
           continue
 
-        raise UsageError(
+        raise error.Usage(
             "doesn't accept option %s" % ('+' + ch), span_id=arg_r.SpanId())
 
       arg_r.Next()  # next arg
@@ -570,7 +560,7 @@ def ParseMore(spec, arg_r):
       try:
         action = spec.actions_long[arg]
       except KeyError:
-        raise UsageError(
+        raise error.Usage(
             'got invalid flag %r' % arg, span_id=arg_r.SpanId())
 
       # TODO: Suffix could be 'bar' for --foo=bar
@@ -585,7 +575,7 @@ def ParseMore(spec, arg_r):
         try:
           action = spec.actions_short[ch]
         except KeyError:
-          raise UsageError(
+          raise error.Usage(
               'got invalid flag %r' % ('-' + ch), span_id=arg_r.SpanId())
         quit = action.OnMatch(char0, None, arg_r, out)
       arg_r.Next() # process the next flag
@@ -634,7 +624,7 @@ if mylib.PYTHON:
       if arg.startswith('-'):
         m = libc.regex_match(_FLAG_ERE, arg)
         if m is None:
-          raise UsageError('Invalid flag syntax: %r' % arg)
+          raise error.Usage('Invalid flag syntax: %r' % arg)
         _, flag, val = m  # group 0 is ignored; the whole match
 
         # TODO: we don't need arity 1 or 0?  Booleans are like --verbose=1,
@@ -649,7 +639,7 @@ if mylib.PYTHON:
             suffix = None
           action.OnMatch(None, suffix, arg_r, out)
         else:
-          raise UsageError('Unrecognized flag %r' % arg)
+          raise error.Usage('Unrecognized flag %r' % arg)
 
         arg_r.Next()  # next arg
 

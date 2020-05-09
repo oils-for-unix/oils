@@ -72,7 +72,6 @@ from core import state
 from core import ui
 from core import util
 from core.util import log, e_die
-from frontend import args
 from frontend import consts
 from oil_lang import objects
 from osh import braces
@@ -259,7 +258,7 @@ class CommandEvaluator(object):
 
     try:
       status = builtin_func.Run(cmd_val)
-    except args.UsageError as e:  # Copied from RunBuiltin
+    except error.Usage as e:  # Copied from RunBuiltin
       arg0 = cmd_val.argv[0]
       if e.span_id == runtime.NO_SPID:  # fill in default location.
         e.span_id = self.errfmt.CurrentLocation()

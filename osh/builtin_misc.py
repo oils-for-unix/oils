@@ -17,9 +17,10 @@ from _devbuild.gen.runtime_asdl import (
     value_e, scope_e, span_e, cmd_value__Argv
 )
 from asdl import runtime
+from core import error
 from core import state
 from core import ui
-from core.util import log
+from core.util import log, e_usage
 from core.vm import _Builtin
 from frontend import args
 from frontend import arg_def
@@ -397,7 +398,7 @@ class Pushd(object):
       self.errfmt.Print('pushd: no other directory')
       return 1
     elif num_args > 1:
-      raise args.UsageError('got too many arguments')
+      e_usage('got too many arguments')
 
     # TODO: 'cd' uses normpath?  Is that inconsistent?
     dest_dir = os_path.abspath(cmd_val.argv[1])
@@ -445,7 +446,7 @@ class Popd(object):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     if len(cmd_val.arg_spids) > 1:
-      raise args.UsageError('got extra argument', span_id=cmd_val.arg_spids[1])
+      raise error.Usage('got extra argument', span_id=cmd_val.arg_spids[1])
 
     if not _PopDirStack(self.mem, self.dir_stack, self.errfmt):
       return 1  # error
@@ -611,7 +612,7 @@ class History(object):
     # zsh -c 'history' produces an error.
     readline_mod = self.readline_mod
     if not readline_mod:
-      raise args.UsageError("OSH wasn't compiled with the readline module.")
+      raise error.Usage("OSH wasn't compiled with the readline module.")
 
     arg, arg_index = HISTORY_SPEC.ParseCmdVal(cmd_val)
 
@@ -627,7 +628,7 @@ class History(object):
       try:
         readline_mod.remove_history_item(cmd_index)
       except ValueError:
-        raise args.UsageError("couldn't find item %d" % arg.d)
+        raise error.Usage("couldn't find item %d" % arg.d)
 
       return 0
 
@@ -643,10 +644,10 @@ class History(object):
       try:
         num_to_show = int(arg0)
       except ValueError:
-        raise args.UsageError('Invalid argument %r' % arg0)
+        raise error.Usage('Invalid argument %r' % arg0)
       start_index = max(1, num_items + 1 - num_to_show)
     else:
-      raise args.UsageError('Too many arguments')
+      raise error.Usage('Too many arguments')
 
     # TODO:
     # - Exclude lines that don't parse from the history!  bash and zsh don't do

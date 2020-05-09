@@ -314,7 +314,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   arg_r = args.Reader(argv)
   try:
     opts = OSH_SPEC.Parse(arg_r)
-  except args.UsageError as e:
+  except error.Usage as e:
     ui.Stderr('osh usage error: %s', e.msg)
     return 2
 
@@ -380,7 +380,7 @@ def ShellMain(lang, argv0, argv, login_shell):
   oil_grammar = meta.LoadOilGrammar(loader)
 
   if opts.one_pass_parse and not exec_opts.noexec():
-    raise args.UsageError('--one-pass-parse requires noexec (-n)')
+    raise error.Usage('--one-pass-parse requires noexec (-n)')
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
   parse_ctx.Init_OnePassParse(opts.one_pass_parse)
 
@@ -750,7 +750,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       ui.PrintAst(node, opts)
   else:
     if opts.parser_mem_dump:
-      raise args.UsageError('--parser-mem-dump can only be used with -n')
+      raise error.Usage('--parser-mem-dump can only be used with -n')
 
     _tlog('Execute(node)')
     try:
@@ -801,10 +801,10 @@ def OshCommandMain(argv):
   try:
     action = argv[0]
   except IndexError:
-    raise args.UsageError('Missing required subcommand.')
+    raise error.Usage('Missing required subcommand.')
 
   if action not in SUBCOMMANDS:
-    raise args.UsageError('Invalid subcommand %r.' % action)
+    raise error.Usage('Invalid subcommand %r.' % action)
 
   arena = alloc.Arena()
   try:
@@ -901,7 +901,7 @@ def AppBundleMain(argv):
     try:
       first_arg = argv[1]
     except IndexError:
-      raise args.UsageError('Missing required applet name.')
+      raise error.Usage('Missing required applet name.')
 
     if first_arg in ('-h', '--help'):
       builtin_misc.Help(['bundle-usage'], pyutil.GetResourceLoader())
@@ -929,7 +929,7 @@ def AppBundleMain(argv):
   elif main_name == 'oshc':
     try:
       return OshCommandMain(main_argv)
-    except args.UsageError as e:
+    except error.Usage as e:
       ui.Stderr('oshc usage error: %s', e.msg)
       return 2
 
@@ -944,7 +944,7 @@ def AppBundleMain(argv):
   elif main_name == 'readlink':
     return readlink.main(main_argv)
   else:
-    raise args.UsageError('Invalid applet name %r.' % main_name)
+    raise error.Usage('Invalid applet name %r.' % main_name)
 
 
 def main(argv):
@@ -953,7 +953,7 @@ def main(argv):
     return AppBundleMain(argv)
   except NotImplementedError as e:
     raise
-  except args.UsageError as e:
+  except error.Usage as e:
     #builtin.Help(['oil-usage'], util.GetResourceLoader())
     log('oil: %s', e.msg)
     return 2
