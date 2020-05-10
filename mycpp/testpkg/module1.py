@@ -23,3 +23,9 @@ class Cat(object):
   def Speak(self):
     # type: () -> None
     log('cat')
+
+  def AbstractMethod(self):
+    # type: () -> None
+    raise NotImplementedError()
+
+

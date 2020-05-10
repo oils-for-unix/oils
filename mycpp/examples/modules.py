@@ -29,6 +29,8 @@ def run_tests():
   cat = cat2
   cat.Speak()
 
+  cat.AbstractMethod()
+
 
 def run_benchmarks():
   # type: () -> None
@@ -62,6 +64,10 @@ class Sphinx(module1.Cat):
   def Speak(self):
     # type: () -> None
     log('%s sphinx', self.color)
+
+  def AbstractMethod(self):
+    # type: () -> None
+    log('abstract')
 
 
 if __name__ == '__main__':

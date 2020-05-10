@@ -19,7 +19,7 @@ from core.util import log
 from core import util
 from core import state
 from core import ui
-from core.vm import _Executor  # reordered by mycpp
+from core import vm
 from frontend import args
 from frontend import consts
 from frontend import parse_lib
@@ -290,7 +290,7 @@ class Shopt(_Builtin):
     return 0
 
 
-class NullExecutor(_Executor):
+class NullExecutor(vm._Executor):
   def __init__(self, builtins):
     # type: (Dict[int, _Builtin]) -> None
     self.builtins = builtins

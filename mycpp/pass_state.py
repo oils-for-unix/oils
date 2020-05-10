@@ -7,6 +7,8 @@ import sys
 
 from collections import defaultdict
 
+from util import log
+
 
 class Virtual(object):
   """
@@ -20,9 +22,16 @@ class Virtual(object):
 
   # These are called on the Forward Declare pass
   def OnMethod(self, class_name, method_name):
+    #log('OnMethod %s %s', class_name, method_name)
     self.methods[class_name].append(method_name)
 
   def OnSubclass(self, base_class, subclass):
+    # hack for vm::_Executor, etc.  This would fail if we have two base classes
+    # in different namespaces with the same name.
+    if '::' in base_class:
+      base_class = base_class.split('::')[1]
+    #log('OnSubclass %s', base_class, subclass)
+
     self.subclasses[base_class].append(subclass)
     # If this happens
 

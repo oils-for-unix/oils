@@ -1835,7 +1835,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           # e.g. class TextOutput : public ColorOutput
           if base_class_name:
-            self.decl_write(' : public %s', b)
+            self.decl_write(' : public %s', base_class_name)
 
           self.decl_write(' {\n')
           self.decl_write_ind(' public:\n')
