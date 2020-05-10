@@ -19,10 +19,7 @@ def fortytwo():
 
 
 class Cat(object):
-  def __init__(self, color):
-    # type: (str) -> None
-    self.color = color
 
   def Speak(self):
     # type: () -> None
-    log('%s cat: meow', self.color)
+    log('cat')

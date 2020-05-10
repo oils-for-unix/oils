@@ -235,6 +235,7 @@ compile-slice() {
   # Note: can't use globs here because we have _test.cc
   time compile _bin/$name$suffix _build/cpp/${name}.cc \
     mycpp/mylib.cc \
+    cpp/frontend_arg_def.cc \
     cpp/frontend_match.cc \
     cpp/frontend_tdop.cc \
     cpp/osh_arith_parse.cc \

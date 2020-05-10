@@ -1806,10 +1806,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # TODO: inherit from std::exception?
             if b.name != 'object' and b.name != 'Exception':
               base_class_name = b.name
-          elif isinstance(b, MemberExpr):
-            # TODO: handle vm::_Executor here.
-            # Also vm::_AssignBuiltin
-            pass
+          elif isinstance(b, MemberExpr): # vm._Executor -> vm::_Executor
+            assert isinstance(b.expr, NameExpr), b
+            base_class_name = '%s::%s' % (b.expr.name, b.name)
 
         # Forward declare types because they may be used in prototypes
         if self.forward_decl:
@@ -1836,8 +1835,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           # e.g. class TextOutput : public ColorOutput
           if base_class_name:
-            # Hack because usually we don't inherit across modules.  It's a bit complicated.
-            b = 'vm::_Executor' if base_class_name == '_Executor' else base_class_name
             self.decl_write(' : public %s', b)
 
           self.decl_write(' {\n')

@@ -861,7 +861,6 @@ inline bool dict_contains(Dict<K, V>* haystack, K needle) {
   return find_by_key(haystack->items_, needle) != -1;
 }
 
-
 template <typename V>
 List<Str*>* sorted(Dict<Str*, V>* d) {
   assert(0);

@@ -23,8 +23,8 @@
 
 #include <stdexcept>
 
-#include "greatest.h"
 #include "dumb_alloc.h"
+#include "greatest.h"
 
 using std::unordered_map;
 
@@ -304,7 +304,10 @@ TEST test_misc() {
   map_demo();
 }
 
-struct Point { int x; int y; };
+struct Point {
+  int x;
+  int y;
+};
 
 Point p = {3, 4};
 
@@ -334,7 +337,7 @@ class SubPointC : public PointC {
   SubPointC(int x, int y) : PointC(x, y) {
   }
   virtual int mag() {
-   return 0;
+    return 0;
   }
 };
 
@@ -371,7 +374,7 @@ TEST static_literals() {
   PASS();
 }
 
-GREATEST_MAIN_DEFS(); 
+GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();

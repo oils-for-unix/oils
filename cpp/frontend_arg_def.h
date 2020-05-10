@@ -3,7 +3,9 @@
 #ifndef FRONTEND_ARG_DEF_H
 #define FRONTEND_ARG_DEF_H
 
+#include "id_kind_asdl.h"
 #include "mylib.h"
+#include "runtime_asdl.h"
 
 namespace args {
 class _Action;
@@ -11,7 +13,7 @@ class SetToArg;
 
 class _Attributes;
 class Reader;
-};
+};  // namespace args
 
 namespace arg_def {
 
@@ -28,15 +30,13 @@ class _FlagSpecAndMore {
   Dict<Str*, args::_Action*>* actions_long;
   Dict<Str*, args::_Action*>* actions_short;
   Dict<Str*, runtime_asdl::value_t*>* defaults;
-
 };
 
 args::_Attributes* Parse(Str* spec_name, args::Reader* arg_r);
 
 Tuple2<args::_Attributes*, int> ParseCmdVal(
     Str* spec_name, runtime_asdl::cmd_value__Argv* arg_r);
- 
+
 }  // namespace arg_def
 
 #endif  // FRONTEND_ARG_DEF_H
-

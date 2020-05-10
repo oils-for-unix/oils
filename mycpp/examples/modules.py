@@ -19,7 +19,14 @@ def run_tests():
   dog = Dog('white')
   dog.Speak()
 
-  cat = module1.Cat('black')
+  cat = module1.Cat()
+  cat.Speak()
+
+  cat2 = Sphinx('brown')
+  cat2.Speak()
+
+  # Test inheritance
+  cat = cat2
   cat.Speak()
 
 
@@ -43,6 +50,18 @@ class Dog(object):
   def Speak(self):
     # type: () -> None
     log('%s dog: meow', self.color)
+
+
+class Sphinx(module1.Cat):
+
+  def __init__(self, color):
+    # type: (str) -> None
+    #module1.Cat.__init__(self)
+    self.color = color
+
+  def Speak(self):
+    # type: () -> None
+    log('%s sphinx', self.color)
 
 
 if __name__ == '__main__':
