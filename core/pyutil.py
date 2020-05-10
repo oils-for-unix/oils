@@ -11,7 +11,7 @@ from pylib import os_path
 
 import posix_ as posix
 
-from typing import IO, NoReturn, Any
+from typing import IO, Any
 
 
 # TODO: Remove ui.Stderr in favor of this

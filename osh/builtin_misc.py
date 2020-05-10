@@ -20,7 +20,7 @@ from asdl import runtime
 from core import error
 from core import state
 from core import ui
-from core.pyutil import e_usage
+from core.pyerror import e_usage
 from core.util import log
 from core.vm import _Builtin
 from frontend import args
