@@ -8,6 +8,9 @@
 namespace args {
 class _Action;
 class SetToArg;
+
+class _Attributes;
+class Reader;
 };
 
 namespace arg_def {
@@ -27,6 +30,8 @@ class _FlagSpecAndMore {
   Dict<Str*, runtime_asdl::value_t*>* defaults;
 
 };
+
+args::_Attributes* Parse(Str* spec_name, args::Reader* arg_r);
  
 }  // namespace arg_def
 

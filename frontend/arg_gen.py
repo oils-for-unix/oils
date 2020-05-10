@@ -27,8 +27,57 @@ def main(argv):
 
   specs = arg_def.FLAG_SPEC
 
+  for spec_name in sorted(specs):
+    spec = specs[spec_name]
+
+    log('%s', spec_name)
+    #print(dir(spec))
+    #print(spec.arity0)
+    #print(spec.arity1)
+    #print(spec.options)
+    # Every flag has a default
+    log('%s', spec.fields)
+
   if action == 'cpp':
-    pass
+    print("""
+#ifndef ARG_TYPES_H
+#define ARG_TYPES_H
+
+namespace args {
+class _Attributes;
+}
+
+namespace arg_types {
+""")
+    for spec_name in sorted(specs):
+      spec = specs[spec_name]
+
+      print("""
+class %s {
+ public:
+  %s(args::_Attributes* attrs) {
+  }
+  """ % (spec_name, spec_name))
+      for field_name in sorted(spec.fields):
+        typ = spec.fields[field_name]
+
+        with tagswitch(typ) as case:
+          if case(flag_type_e.Bool):
+            print('  bool %s;' % field_name)
+
+          elif case(flag_type_e.Str):
+            print('  Str* %s;' % field_name)
+
+      print("""\
+};
+""")
+
+    print("""
+}  // namespace arg_types
+
+#endif  // ARG_TYPES_H
+
+""")
 
   elif action == 'mypy':
     print("""
@@ -40,14 +89,6 @@ from typing import cast
 """)
     for spec_name in sorted(specs):
       spec = specs[spec_name]
-
-      log('%s', spec_name)
-      #print(dir(spec))
-      #print(spec.arity0)
-      #print(spec.arity1)
-      #print(spec.options)
-      # Every flag has a default
-      log('%s', spec.fields)
 
       print("""
 class %s(object):

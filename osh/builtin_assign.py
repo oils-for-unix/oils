@@ -17,10 +17,11 @@ from frontend import arg_def
 from frontend.arg_def import UNSET_SPEC
 from frontend import args
 from core import error
+from core.pyerror import e_usage
 from qsn_ import qsn
 from core import state
 from core import ui
-from core.vm import _AssignBuiltin, _Builtin
+from core import vm
 from core.util import log, e_die
 
 from typing import cast, Optional, Dict, List, TYPE_CHECKING
@@ -83,7 +84,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
   if len(cmd_val.pairs) == 0:
     print_all = True
     cells = mem.GetAllCells(lookup_mode)
-    names = sorted(cells)
+    names = sorted(cells)  # type: List[str]
   else:
     print_all = False
     names = []
@@ -122,9 +123,9 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
     if flag_a and val.tag_() != value_e.MaybeStrArray: continue
     if flag_A and val.tag_() != value_e.AssocArray: continue
 
-    decl = []
+    decl = []  # type: List[str]
     if print_flags:
-      flags = []
+      flags = []  # type: List[str]
       if cell.nameref: flags.append('n')
       if cell.readonly: flags.append('r')
       if cell.exported: flags.append('x')
@@ -159,7 +160,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
         body = []  # type: List[str]
         for element in array_val.strs:
           if len(body) > 0: body.append(" ")
-          body.append(qsn.maybe_shell_encode(element or ''))
+          body.append(qsn.maybe_shell_encode(element))
         decl.extend(["=(", ''.join(body), ")"])
     elif val.tag_() == value_e.AssocArray:
       assoc_val = cast(value__AssocArray, val)
@@ -167,7 +168,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
       for key in sorted(assoc_val.d):
         if len(body) > 0: body.append(" ")
         key_quoted = qsn.maybe_shell_encode(key, flags=qsn.MUST_QUOTE)
-        value_quoted = qsn.maybe_shell_encode(assoc_val.d[key] or '')
+        value_quoted = qsn.maybe_shell_encode(assoc_val.d[key])
         body.extend(["[", key_quoted, "]=", value_quoted])
       if len(body) > 0:
         decl.extend(["=(", ''.join(body), ")"])
@@ -181,7 +182,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
     return 1
 
 
-class Export(_AssignBuiltin):
+class Export(vm._AssignBuiltin):
   def __init__(self, mem, errfmt):
     # type: (Mem, ErrorFormatter) -> None
     self.mem = mem
@@ -191,12 +192,12 @@ class Export(_AssignBuiltin):
     # type: (cmd_value__Assign) -> int
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
-    attrs = arg_def.Parse('export', arg_r)
-    arg = arg_types.export(attrs)
+    attrs = arg_def.Parse('export_', arg_r)
+    arg = arg_types.export_(attrs)
     #arg = attrs
 
     if arg.f:
-      raise error.Usage(
+      e_usage(
           "doesn't accept -f because it's dangerous.  "
           "(The code can usually be restructured with 'source')")
 
@@ -207,7 +208,7 @@ class Export(_AssignBuiltin):
     if arg.n:
       for pair in cmd_val.pairs:
         if pair.rval is not None:
-          raise error.Usage("doesn't accept RHS with -n", span_id=pair.spid)
+          e_usage("doesn't accept RHS with -n", span_id=pair.spid)
 
         # NOTE: we don't care if it wasn't found, like bash.
         self.mem.ClearFlag(pair.var_name, state.ClearExport, scope_e.Dynamic)
@@ -230,8 +231,7 @@ def _ReconcileTypes(rval, flag_a, flag_A, span_id):
   Shared between NewVar and Readonly.
   """
   if flag_a and rval is not None and rval.tag_() != value_e.MaybeStrArray:
-    raise error.Usage(
-        "Got -a but RHS isn't an array", span_id=span_id)
+    e_usage("Got -a but RHS isn't an array", span_id=span_id)
 
   if flag_A and rval:
     # Special case: declare -A A=() is OK.  The () is changed to mean an empty
@@ -243,13 +243,12 @@ def _ReconcileTypes(rval, flag_a, flag_A, span_id):
         #return value.MaybeStrArray([])
 
     if rval.tag_() != value_e.AssocArray:
-      raise error.Usage(
-          "Got -A but RHS isn't an associative array", span_id=span_id)
+      e_usage("Got -A but RHS isn't an associative array", span_id=span_id)
 
   return rval
 
 
-class Readonly(_AssignBuiltin):
+class Readonly(vm._AssignBuiltin):
   def __init__(self, mem, errfmt):
     # type: (Mem, ErrorFormatter) -> None
     self.mem = mem
@@ -287,7 +286,7 @@ class Readonly(_AssignBuiltin):
     return 0
 
 
-class NewVar(_AssignBuiltin):
+class NewVar(vm._AssignBuiltin):
   """declare/typeset/local."""
 
   def __init__(self, mem, funcs, errfmt):
@@ -324,7 +323,7 @@ class NewVar(_AssignBuiltin):
         # Right now we just show the name.
         status = self._PrintFuncs(names)
       else:
-        raise error.Usage('passed -f without args')
+        e_usage('passed -f without args')
       return status
 
     if arg.F:
@@ -392,7 +391,7 @@ class NewVar(_AssignBuiltin):
 # - It would make more sense to treat no args as an error (bash doesn't.)
 #   - Should we have strict builtins?  Or just make it stricter?
 
-class Unset(_Builtin):
+class Unset(vm._Builtin):
 
   def __init__(self, mem, exec_opts, funcs, parse_ctx, arith_ev, errfmt):
     # type: (Mem, optview.Exec, Dict[str, command__ShFunction], ParseContext, ArithEvaluator, ErrorFormatter) -> None
@@ -419,7 +418,7 @@ class Unset(_Builtin):
       # show parse error
       ui.PrettyPrintError(e, arena)
       # point to word
-      raise error.Usage('Invalid unset expression', span_id=spid)
+      e_usage('Invalid unset expression', span_id=spid)
     finally:
       arena.PopSource()
 
@@ -476,7 +475,7 @@ class Unset(_Builtin):
     return 0
 
 
-class Shift(_Builtin):
+class Shift(vm._Builtin):
 
   def __init__(self, mem):
     # type: (Mem) -> None
@@ -492,8 +491,8 @@ class Shift(_Builtin):
       try:
         n = int(arg)
       except ValueError:
-        raise error.Usage("Invalid shift argument %r" % arg)
+        e_usage("Invalid shift argument %r" % arg)
     else:
-      raise error.Usage('got too many arguments')
+      e_usage('got too many arguments')
 
     return self.mem.Shift(n)

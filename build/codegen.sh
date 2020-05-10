@@ -120,8 +120,10 @@ arg-mypy-gen() {
 }
 
 arg-cpp-gen() {
-  local prefix=_build/cpp/arg_types
-  frontend/arg_gen.py cpp $prefix
+  local out=_build/cpp/arg_types.h
+  frontend/arg_gen.py cpp > $out
+  cat $out
+  log "Wrote $out"
 }
 
 lexer-gen() { frontend/lexer_gen.py "$@"; }

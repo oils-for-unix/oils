@@ -9,6 +9,7 @@ using id_kind_asdl::Kind_t;
 #include "types_asdl.h"
 
 // _build/cpp
+#include "arg_types.h"
 #include "consts.h"
 #include "core_optview.h"
 #include "grammar_nt.h"

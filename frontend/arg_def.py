@@ -434,7 +434,7 @@ class _OilFlags(object):
 
 # It will look up the spec dynamically and then call Parse() on it I think.
 
-EXPORT_SPEC = FlagSpec('export', typed=True)
+EXPORT_SPEC = FlagSpec('export_', typed=True)
 EXPORT_SPEC.ShortFlag('-n')
 EXPORT_SPEC.ShortFlag('-f')  # stubbed
 EXPORT_SPEC.ShortFlag('-p')

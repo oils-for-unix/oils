@@ -26,7 +26,7 @@ from frontend import parse_lib
 from frontend import reader
 from mycpp import mylib
 from osh import split
-#from osh import builtin_assign
+from osh import builtin_assign
 #from osh import builtin_meta
 #from osh import builtin_pure
 # builtin_{printf,bracket,comp} might also be pure
@@ -175,10 +175,10 @@ def main(argv):
 
   assign_builtins = {}  # type: Dict[int, _AssignBuiltin]
 
-  #new_var = builtin_assign.NewVar(mem, procs, errfmt)
-  #assign_builtins[builtin_i.declare] = new_var
-  #assign_builtins[builtin_i.typeset] = new_var
-  #assign_builtins[builtin_i.local] = new_var
+  new_var = builtin_assign.NewVar(mem, procs, errfmt)
+  assign_builtins[builtin_i.declare] = new_var
+  assign_builtins[builtin_i.typeset] = new_var
+  assign_builtins[builtin_i.local] = new_var
 
   #assign_builtins = {
   #    # ShAssignment (which are pure)

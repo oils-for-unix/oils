@@ -1689,6 +1689,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # qsn_/qsn.py
             class_name is None and 
               func_name in ('maybe_encode', 'maybe_shell_encode') or
+            # osh/builtin_assign.py
+            class_name is None and func_name == '_PrintVariables' or
             # virtual function
             func_name == 'RunSimpleCommand'
           ):
@@ -1805,7 +1807,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if b.name != 'object' and b.name != 'Exception':
               base_class_name = b.name
           elif isinstance(b, MemberExpr):
-            # TODO: handle vm::_Executor here?
+            # TODO: handle vm::_Executor here.
+            # Also vm::_AssignBuiltin
             pass
 
         # Forward declare types because they may be used in prototypes
