@@ -14,20 +14,6 @@ import posix_ as posix
 from typing import IO, NoReturn, Any
 
 
-# TODO: Move log, p_die, and e_die here too.  They have different
-# implementations in C++.
-
-def e_usage(msg, *pos_args, **kwargs):
-  # type: (str, *Any, **Any) -> NoReturn
-  """Convenience wrapper for arg parsing / validation errors.
-
-  Usually causes a builtin to fail with status 2, but the script can continue
-  if 'set +o errexit'.  Main programs like bin/oil also use this.
-  """
-  from core import error
-  raise error.Usage(msg, *pos_args, **kwargs)
-
-
 # TODO: Remove ui.Stderr in favor of this
 def stderr_line(msg, *args):
   # type: (str, *Any) -> None

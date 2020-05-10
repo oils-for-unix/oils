@@ -22,7 +22,8 @@ from _devbuild.gen import runtime_asdl  # for cell
 from asdl import runtime
 from core import error
 from core import pyutil
-from core.pyutil import e_usage, stderr_line
+from core.pyerror import e_usage
+from core.pyutil import stderr_line
 from core import ui
 from core.util import log, e_die
 from core import optview
