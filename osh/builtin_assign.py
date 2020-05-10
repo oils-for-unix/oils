@@ -14,7 +14,6 @@ from _devbuild.gen.syntax_asdl import source
 from _devbuild.gen import arg_types
 
 from frontend import arg_def
-from frontend.arg_def import UNSET_SPEC
 from frontend import args
 from core import error
 from core.pyerror import e_usage
@@ -92,12 +91,12 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
     for pair in cmd_val.pairs:
       name = pair.var_name
       if pair.rval and pair.rval.tag_() == value_e.Str:
-        # TODO: This is for declare -p foo=bar?
-        # I think this is for functions and we don't need it?
+        # Invalid: declare -p foo=bar
+        # Add a sentinel so we skip it, but know to exit with status 1.
         s = cast(value__Str, pair.rval).s
-        name += "=%s" % s
-        names.append(name)
-        cells[name] = None
+        invalid = "%s=%s" % (name, s)
+        names.append(invalid)
+        cells[invalid] = None
       else:
         names.append(name)
         cells[name] = mem.GetCell(name, lookup_mode)
@@ -105,7 +104,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
   count = 0
   for name in names:
     cell = cells[name]
-    if cell is None: continue
+    if cell is None: continue  # Invalid
     val = cell.val
     #log('name %r %s', name, val)
 
@@ -450,7 +449,7 @@ class Unset(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, offset = UNSET_SPEC.ParseCmdVal(cmd_val)
+    attrs, offset = arg_def.ParseCmdVal('unset', cmd_val)
     n = len(cmd_val.argv)
     arg = arg_types.unset(attrs)
 

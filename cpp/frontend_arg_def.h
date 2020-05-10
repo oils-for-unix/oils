@@ -32,6 +32,9 @@ class _FlagSpecAndMore {
 };
 
 args::_Attributes* Parse(Str* spec_name, args::Reader* arg_r);
+
+Tuple2<args::_Attributes*, int> ParseCmdVal(
+    Str* spec_name, runtime_asdl::cmd_value__Argv* arg_r);
  
 }  // namespace arg_def
 

@@ -304,6 +304,23 @@ declare -a test_arr7=([3]="foo")
 ## N-I mksh stdout-json: ""
 ## N-I mksh status: 1
 
+#### declare -p foo=bar doesn't make sense
+case $SH in (mksh) exit 0; esac
+
+declare -p foo=bar
+echo status=$?
+
+a=b
+declare -p a foo=bar > tmp.txt
+echo status=$?
+sed 's/"//g' tmp.txt  # don't care about quotes
+## STDOUT:
+status=1
+status=1
+declare -- a=b
+## END
+## N-I mksh stdout-json: ""
+
 #### declare -pnrx
 test_var1=111
 readonly test_var2=222

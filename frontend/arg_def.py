@@ -56,6 +56,15 @@ def Parse(spec_name, arg_r):
   return spec.Parse(arg_r)
 
 
+def ParseCmdVal(spec_name, cmd_val):
+  # type: (str, cmd_value__Argv) -> Tuple[args._Attributes, int]
+  arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+  arg_r.Next()  # move past the builtin name
+
+  spec = FLAG_SPEC[spec_name]
+  return spec.Parse(arg_r), arg_r.i
+
+
 def All():
   # type: () -> Dict[str, Any]
   return FLAG_SPEC
@@ -212,6 +221,8 @@ class _FlagSpec(object):
 
     Note: It might be more flexible to return arg_r instead if i.  Then they
     can call arg_r.Rest(), etc.
+
+    TODO: Remove in favor of ParseCmdVal above
     """
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # move past the builtin name
