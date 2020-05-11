@@ -120,10 +120,12 @@ arg-mypy-gen() {
 }
 
 arg-cpp-gen() {
-  local out=_build/cpp/arg_types.h
-  frontend/arg_gen.py cpp > $out
-  cat $out
-  log "Wrote $out"
+  local prefix='_build/cpp/arg_types'
+
+  mkdir -p $(dirname $prefix)  # unit tests need this
+
+  frontend/arg_gen.py cpp $prefix
+  ls -l $prefix*
 }
 
 lexer-gen() { frontend/lexer_gen.py "$@"; }

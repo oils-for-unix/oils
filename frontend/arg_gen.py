@@ -11,12 +11,85 @@ from core.util import log
 from frontend import arg_def
 from mycpp.mylib import tagswitch
 
-#from osh import builtin_assign
-#from osh import builtin_bracket
-#from osh import builtin_misc
-#from osh import builtin_process
-#from osh import builtin_printf
-#from osh import builtin_pure
+
+def Cpp(specs, header_f, cc_f):
+  header_f.write("""
+#ifndef ARG_TYPES_H
+#define ARG_TYPES_H
+
+namespace args {
+class _Attributes;
+}
+
+namespace arg_def {
+class _FlagSpec;
+}
+
+class Str;  // mylib
+
+namespace arg_types {
+""")
+  for spec_name in sorted(specs):
+    spec = specs[spec_name]
+
+    header_f.write("""
+class %s {
+ public:
+  %s(args::_Attributes* attrs) {
+  }
+  """ % (spec_name, spec_name))
+
+    for field_name in sorted(spec.fields):
+      typ = spec.fields[field_name]
+
+      with tagswitch(typ) as case:
+        if case(flag_type_e.Bool):
+          header_f.write('  bool %s;' % field_name)
+
+        elif case(flag_type_e.Str):
+          header_f.write('  Str* %s;' % field_name)
+
+    header_f.write("""\
+};
+""")
+
+  header_f.write("""
+struct FlagSpecLookup {
+  const char* name;
+  arg_def::_FlagSpec* spec;
+};
+
+extern FlagSpecLookup kFlagSpecs[];
+extern int kNumFlagSpecs;
+
+}  // namespace arg_types
+
+#endif  // ARG_TYPES_H
+
+""")
+
+  cc_f.write("""
+#include "arg_types.h"
+
+namespace arg_types {
+
+FlagSpecLookup kFlagSpecs[] = {
+""")
+
+  # Now print a table
+  for spec_name in sorted(specs):
+    spec = specs[spec_name]
+    cc_f.write("""\
+  {"%s", nullptr},
+""" % spec_name)
+
+  cc_f.write("""
+};
+
+int kNumFlagSpecs = sizeof(kFlagSpecs) / sizeof(kFlagSpecs[0]);
+
+}  // namespace arg_types
+""")
 
 
 def main(argv):
@@ -39,45 +112,11 @@ def main(argv):
     log('%s', spec.fields)
 
   if action == 'cpp':
-    print("""
-#ifndef ARG_TYPES_H
-#define ARG_TYPES_H
+    prefix = argv[2]
 
-namespace args {
-class _Attributes;
-}
-
-namespace arg_types {
-""")
-    for spec_name in sorted(specs):
-      spec = specs[spec_name]
-
-      print("""
-class %s {
- public:
-  %s(args::_Attributes* attrs) {
-  }
-  """ % (spec_name, spec_name))
-      for field_name in sorted(spec.fields):
-        typ = spec.fields[field_name]
-
-        with tagswitch(typ) as case:
-          if case(flag_type_e.Bool):
-            print('  bool %s;' % field_name)
-
-          elif case(flag_type_e.Str):
-            print('  Str* %s;' % field_name)
-
-      print("""\
-};
-""")
-
-    print("""
-}  // namespace arg_types
-
-#endif  // ARG_TYPES_H
-
-""")
+    with open(prefix + '.h', 'w') as header_f:
+      with open(prefix + '.cc', 'w') as cc_f:
+        Cpp(specs, header_f, cc_f)
 
   elif action == 'mypy':
     print("""

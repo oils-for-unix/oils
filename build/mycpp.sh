@@ -246,6 +246,7 @@ compile-slice() {
     _build/cpp/id_kind_asdl.cc \
     _build/cpp/consts.cc \
     _build/cpp/arith_parse.cc \
+    _build/cpp/arg_types.cc \
     cpp/dumb_alloc.cc \
     cpp/posix.cc \
     cpp/libc.cc \
