@@ -52,7 +52,7 @@ source examples.sh
 source harness.sh
 
 # -O3 is faster than -O2 for fib, but let's use -O2 since it's "standard"?
-CPPFLAGS='-Wall -O0 -g -std=c++11'
+CPPFLAGS="$CXXFLAGS -O0 -g"
 
 if test -f $CLANGXX; then
   # accepts -ferror-limit=1000, but C++ doesn't

@@ -11,9 +11,9 @@ using arg_types::kNumFlagSpecs;
 _FlagSpec* LookupFlagSpec(Str* spec_name) {
   log("n = %d", kNumFlagSpecs);
   for (int i = 0; i < kNumFlagSpecs; ++i) {
-
     // TODO: Str* should be serialized with length?
-    int n = std::min(static_cast<size_t>(spec_name->len_), strlen(kFlagSpecs[i].name));
+    int n = std::min(static_cast<size_t>(spec_name->len_),
+                     strlen(kFlagSpecs[i].name));
     if (memcmp(kFlagSpecs[i].name, spec_name->data_, n) == 0) {
       log("%s found", spec_name->data_);
       return NULL;

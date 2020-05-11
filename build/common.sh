@@ -12,6 +12,10 @@ readonly CLANG_DIR=$PWD/$CLANG_DIR_RELATIVE
 readonly CLANG=$CLANG_DIR/bin/clang
 readonly CLANGXX=$CLANG_DIR/bin/clang++
 
+# Compiler flags we want everywhere.
+# note: -Weverything is more than -Wall, but too many errors now.
+CXXFLAGS='-std=c++11 -Wall'
+
 readonly CLANG_COV_FLAGS='-fprofile-instr-generate -fcoverage-mapping'
 readonly CLANG_LINK_FLAGS=''
 

@@ -46,7 +46,7 @@ clang-format() {
 }
 
 cpp-files() {
-  for file in cpp/*.{cc,h} mycpp/*.{cc,h}; do
+  for file in asdl/*.cc cpp/*.{cc,h} mycpp/*.{cc,h}; do
     echo $file
   done
 }

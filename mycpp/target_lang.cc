@@ -69,7 +69,9 @@ class Array {
   std::vector<T> v_;
 };
 
-class ParseError {
+class FatalError {};
+
+class ParseError : public FatalError {
  public:
   ParseError(const char* reason) : reason_(reason) {
   }
@@ -96,7 +98,24 @@ int parse(const char* text) {
   return 0;
 }
 
-void except_demo() {
+void throw_fatal() {
+  throw FatalError();
+}
+
+void except_subclass_demo() {
+  try {
+    throw_fatal();
+    // parse("f");
+  } catch (ParseError& e) {
+    // Doesn't get caught.  Does this rely on RTTI, or is it static?
+    // I think it's static but increases the size of the exception table.
+    log("Got ParseError: %s", e.reason());
+  }
+}
+
+TEST except_demo() {
+  int num_caught = 0;
+
   log("compare(3, 1): %d", compare(1, 3));
   log("compare(5, 4): %d", compare(5, 4));
 
@@ -104,6 +123,7 @@ void except_demo() {
     log("compare(-1, 3): %d", compare(-1, 3));
   } catch (const std::invalid_argument& e) {
     log("Got exception: %s", e.what());
+    num_caught++;
   }
 
   log("");
@@ -112,13 +132,26 @@ void except_demo() {
     log("parse('foo'): %d", parse("foo"));
   } catch (const ParseError& e) {
     log("Got exception: %s", e.reason());
+    num_caught++;
   }
 
   try {
     log("parse('bar'): %d", parse("bar"));
   } catch (const ParseError& e) {
     log("Got exception: %s", e.reason());
+    num_caught++;  // we don't get here
   }
+
+  try {
+    except_subclass_demo();
+  } catch (const FatalError& e) {
+    log("Got FatalError");
+    num_caught++;
+  }
+
+  ASSERT_EQ_FMT(3, num_caught, "%d");
+
+  PASS();
 }
 
 void template_demo() {
@@ -276,15 +309,11 @@ TEST sizeof_demo() {
 
 TEST test_misc() {
   List l{1, 2, 3};
-
-  // TODO: How to do this?
-
-  // Dict d {{"key", 1}, {"val", 2}};
-
   log("size: %d", l.v_.size());
   log("");
 
-  except_demo();
+  // Dict literal syntax?
+  // Dict d {{"key", 1}, {"val", 2}};
 
   log("");
   template_demo();
@@ -381,6 +410,7 @@ int main(int argc, char** argv) {
 
   RUN_TEST(test_misc);
   RUN_TEST(sizeof_demo);
+  RUN_TEST(except_demo);
   RUN_TEST(static_literals);
 
   GREATEST_MAIN_END(); /* display results */

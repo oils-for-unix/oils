@@ -50,8 +50,8 @@ dev-minimal-tasks() {
   # (task_name, script, action, result_html)
   cat <<EOF
 build-minimal   build/dev.sh minimal        -
-cpp-unit-deps   build/mycpp.sh cpp-unit-deps  -
-cpp-unit        build/mycpp.sh all-unit-tests -
+cpp-unit-deps   test/cpp-unit.sh deps       -
+cpp-unit-all    test/cpp-unit.sh all        -
 lint            test/lint.sh travis         -
 typecheck-slice types/oil-slice.sh travis   -
 typecheck-other types/run.sh travis         -

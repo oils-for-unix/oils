@@ -11,6 +11,18 @@ set -o errexit
 
 source build/common.sh  # for clang
 
+# User can set CXX=, like they can set CC= for oil.ovm
+if test -z "${CXX:-}"; then
+  if test -f $CLANGXX; then
+    # note: Clang doesn't inline MatchOshToken!
+    CXX=$CLANGXX
+  else
+    # equivalent of 'cc' for C++ langauge
+    # https://stackoverflow.com/questions/172587/what-is-the-difference-between-g-and-gcc
+    CXX='c++'
+  fi
+fi
+
 export PYTHONPATH='.:vendor/'
 
 gen-mypy-asdl() {
@@ -25,14 +37,6 @@ gen-typed-demo-asdl() { gen-mypy-asdl typed_demo; }
 gen-shared-variant-asdl() { gen-mypy-asdl shared_variant; }
 gen-typed-arith-asdl() {
   gen-mypy-asdl typed_arith 'asdl.typed_arith_abbrev'
-}
-
-unit() {
-  # This test is for the code dynamically generated with py_meta.py.
-  #test/unit.sh unit asdl/arith_ast_test.py
-
-  # This test is for the metadata
-  PYTHONPATH=. asdl/arith_generated_test.py "$@"
 }
 
 #
@@ -65,39 +69,13 @@ gdb-trace() {
   gdb -batch -ex "run" -ex "bt" -args "$@" 2>&1 
 }
 
-build-demo() {
-  local schema=$1
-
-  local name=$(basename $schema .asdl)
-
-  # Generate C++ code
-  asdl-cpp $schema _tmp/${name}.asdl.h
-
-  local bin=_tmp/${name}_demo 
-  cxx -I _tmp -o $bin asdl/${name}_demo.cc
-
-  chmod +x $bin
-}
-
-a2() {
-  local data=_tmp/a2.bin
-  asdl-arith-encode 'foo + 99 - f(1,2,3+4) * 123' $data
-  _tmp/arith_demo $data
-}
-
-a3() {
-  local data=_tmp/a3.bin
-  asdl-arith-encode 'g(x,2)' $data
-  gdb-trace _tmp/arith_demo $data
-}
-
 a4() {
   local data=_tmp/a4.bin
   asdl-arith-encode 'array[99]' $data
-  gdb-trace _tmp/arith_demo $data
+  gdb-trace _tmp/typed_arith_demo $data
 
   asdl-arith-encode 'array[5:10] * 5' $data
-  gdb-trace _tmp/arith_demo $data
+  gdb-trace _tmp/typed_arith_demo $data
 }
 
 # http://stackoverflow.com/questions/22769246/disassemble-one-function-using-objdump
@@ -105,33 +83,33 @@ a4() {
 
 disassemble() {
   local opt_flag=${1:-'-O0'}
-  local out=_tmp/arith_demo$opt_flag.S 
+  local out=_tmp/typed_arith_demo$opt_flag.S 
   $CLANGXX -std='c++11' $opt_flag -I _tmp -o $out -S \
-    -mllvm --x86-asm-syntax=intel asdl/arith_demo.cc
+    -mllvm --x86-asm-syntax=intel asdl/typed_arith_demo.cc
   #cat $out
 }
 
 llvm() {
   local opt_flag=${1:-'-O0'}
-  local out=_tmp/arith_demo$opt_flag.ll 
+  local out=_tmp/typed_arith_demo$opt_flag.ll 
   $CLANGXX -std='c++11' $opt_flag -I _tmp -o $out -S \
-    -emit-llvm asdl/arith_demo.cc
+    -emit-llvm asdl/typed_arith_demo.cc
   #cat $out
 }
 
 # With -O0, you can see all the functions.  With -O2, they ARE inlined.
 objdump-arith() {
   # NOTE: This doesn't take into account different optimization levels
-  objdump -d _tmp/arith_demo | grep '^0'
+  objdump -d _tmp/typed_arith_demo | grep '^0'
 }
 # https://sourceware.org/ml/binutils/2010-04/msg00447.html
 # http://stackoverflow.com/questions/4274804/query-on-ffunction-section-fdata-sections-options-of-gcc
-# Hm you can force a function.  Write it inline with arith_demo.cc then.
+# Hm you can force a function.  Write it inline with typed_arith_demo.cc then.
 
 # TODO: Is there a pattern we can grep for to test if ANY accessor was NOT
 # inlined?  Demangle names I guess.
 nm-arith() {
-  nm _tmp/arith_demo
+  nm _tmp/typed_arith_demo
 }
 
 opt-stats() {
@@ -172,19 +150,26 @@ line-length-hist() {
   done
 }
 
-gen-cpp-demo() {
-  local out=_tmp/typed_arith.asdl.h
-  asdl/tool.py cpp asdl/typed_arith.asdl > $out
+gen-cpp-test() {
+  local prefix=_tmp/typed_arith_asdl
+  asdl/tool.py cpp asdl/typed_arith.asdl $prefix
 
-  local out2=_tmp/typed_demo.asdl.h
-  asdl/tool.py cpp asdl/typed_demo.asdl > $out2
+  local prefix2=_tmp/typed_demo_asdl
+  asdl/tool.py cpp asdl/typed_demo.asdl $prefix2
 
-  wc -l $out $out2
+  wc -l $prefix* $prefix2*
 
-  local bin=_tmp/typed_arith_demo 
-  # uses typed_arith_asdl.h, runtime.h, hnode_asdl.h
-  $CLANGXX -Wall -std=c++11 -I _tmp -I mycpp -I _devbuild/gen-cpp \
-    -o $bin asdl/typed_arith_demo.cc
+  local bin=_tmp/gen_cpp_test
+
+  # BUG: This doesn't link without the translation of asdl/runtime.py.
+
+  # uses typed_arith_asdl.h, runtime.h, hnode_asdl.h, asdl_runtime.h
+  $CXX $CXXFLAGS \
+    -I _tmp -I mycpp -I _build/cpp -I cpp \
+    -o $bin \
+    asdl/gen_cpp_test.cc _tmp/typed_arith_asdl.cc _build/cpp/hnode_asdl.cc \
+    asdl/runtime.cc
+
   $bin
 }
 

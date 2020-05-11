@@ -26,6 +26,17 @@ _TOKENS = [
     ('LBrace', '{'),
     ('RBrace', '}'),
     ('Percent', '%'),
+
+    # Oil addition for parameterized types.
+    ('LBracket', '['),
+    ('RBracket', ']'),
+
+    # - Start with map[string, bool].  
+    # - array[string] is an alias for string*
+    #   - do we need set[string] instead of map[string]bool?
+    #
+    # statically typed: map and array
+    # dynamically typed: dict and list
 ]
 
 _TOKEN_STR = [name for name, _ in _TOKENS]  # integer -> string like LParen
@@ -180,6 +191,14 @@ class ASDLParser(object):
         return Product(self._parse_fields(), self._parse_optional_attributes())
 
     def _parse_fields(self):
+        """
+        '('
+                 Name Quantifier? Name
+           ( ',' Name Quantifier? Name )*
+        ')'
+
+        Name Quantifier?  should be changed to typename.
+        """
         fields = []
         self._match(TokenKind.LParen)
         while self.cur_token.kind == TokenKind.Name:

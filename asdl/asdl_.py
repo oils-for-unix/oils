@@ -101,8 +101,11 @@ class Type(AST):
 
 class Field(AST):
     def __init__(self, type, name=None, seq=False, opt=False):
-        self.type = type
         self.name = name
+
+        self.type = type
+        # TODO: I think this should be TypeExpr instead of string
+        # int, string? , string*, map[string, bool], list[bool]
         self.seq = seq
         self.opt = opt
 

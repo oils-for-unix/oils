@@ -80,7 +80,7 @@ def _GetInnerCppType(type_lookup, field):
       # e.g. Id_t*
       # TODO: Use Id.Unknown_Tok for id?
       # - use runtime.NO_STEP for int? step.  That could be ZERO?
-      # - although 5..6..0 is allowed.  Probabl -MAXINT
+      # - although 5..6..0 is allowed.  Probably -MAXINT
       # Need to make sure int parsing doesn't overflow.
       #raise AssertionError(field)
       print('field %s' % field, file=sys.stderr)
