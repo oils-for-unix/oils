@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from collections import defaultdict
 
-from asdl import meta
+from asdl import asdl_
 from asdl import visitor
 from core.util import log
 
@@ -94,55 +94,52 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
   def _CodeSnippet(self, abbrev, field, desc, var_name):
     none_guard = False
-    if isinstance(desc, meta.BoolType):
+    type_name = field.TypeName()
+
+    if type_name == 'bool':
       code_str = "hnode.Leaf('T' if %s else 'F', color_e.OtherConst)" % var_name
 
-    elif isinstance(desc, meta.IntType):
+    elif type_name == 'int':
       code_str = 'hnode.Leaf(str(%s), color_e.OtherConst)' % var_name
 
-    elif isinstance(desc, meta.FloatType):
+    elif type_name == 'float':
       code_str = 'hnode.Leaf(str(%s), color_e.OtherConst)' % var_name
 
-    elif isinstance(desc, meta.StrType):
+    elif type_name == 'string':
       code_str = 'NewLeaf(%s, color_e.StringConst)' % var_name
 
-    elif isinstance(desc, meta.AnyType):
+    elif type_name == 'any':  # TODO: remove this?
       # This is used for value.Obj().
       code_str = 'hnode.External(%s)' % var_name
 
-    elif isinstance(desc, meta.AssocType):
+    elif type_name == 'map':
       # Is this valid?
       code_str = 'hnode.External(%s)' % var_name
 
-    elif isinstance(desc, meta.UserType):  # e.g. Id
+    elif type_name == 'id':  # was meta.UserType
       # This assumes it's Id, which is a simple SumType.  TODO: Remove this.
       code_str = 'hnode.Leaf(Id_str(%s), color_e.UserType)' % var_name
       none_guard = True  # otherwise MyPy complains about foo.name
 
-    elif isinstance(desc, meta.SumType):
-      if desc.is_simple:
+    elif field.resolved_type:
+      if isinstance(field.resolved_type, asdl_.SimpleSum):
         code_str = 'hnode.Leaf(%s_str(%s), color_e.TypeName)' % (
             field.TypeName(), var_name)
-
         none_guard = True  # otherwise MyPy complains about foo.name
+
       else:
         code_str = '%s.%s()' % (var_name, abbrev)
         none_guard = True
 
-    elif isinstance(desc, meta.CompoundType):
-      code_str = '%s.%s()' % (var_name, abbrev)
-      none_guard = True
-
     else:
-      raise AssertionError(desc)
+      raise AssertionError(field)
 
     return code_str, none_guard
 
   def _EmitCodeForField(self, abbrev, field, counter):
     """Generate code that returns an hnode for a field."""
     out_val_name = 'x%d' % counter
-
-    desc = self.type_lookup[field.TypeName()]
+    desc = None
 
     if field.IsArray():
       iter_name = 'i%d' % counter
@@ -173,14 +170,14 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
       self.Emit('  L.append(field(%r, %s))' % (field.name, out_val_name), depth)
 
-  def _GenClass(self, desc, attributes, class_name, base_classes, depth,
+  def _GenClass(self, ast_node, attributes, class_name, base_classes, depth,
                 tag_num):
     """Used for Constructor and Product."""
     self.Emit('class %s(%s):' % (class_name, ', '.join(base_classes)))
     self.Emit('  tag = %d' % tag_num)
 
     # Add on attributes
-    all_fields = desc.fields + attributes
+    all_fields = ast_node.fields + attributes
 
     field_names = [f.name for f in all_fields]
 
@@ -203,24 +200,26 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     arg_types = []
     for f in all_fields:
       type_name = f.TypeName()
-      field_desc = self.type_lookup.get(type_name)
+
+      typ = f.resolved_type
 
       # op_id -> op_id_t, bool_expr -> bool_expr_t, etc.
       # NOTE: product type doesn't have _t suffix
-      if isinstance(field_desc, meta.SumType):
+      if isinstance(typ, asdl_.Sum):
         type_str = '%s_t' % type_name
 
-      elif isinstance(field_desc, meta.StrType):
+      elif type_name == 'string':
         type_str = 'str'
 
-      elif isinstance(field_desc, meta.AnyType):
+      elif type_name == 'any':
         type_str = 'Any'
 
-      elif isinstance(field_desc, meta.AssocType):
+      elif type_name == 'map':
+        # TODO: Handle parameters
         type_str = 'Dict[str, str]'
 
-      elif isinstance(field_desc, meta.UserType):
-        type_str = field_desc.type_name
+      elif type_name == 'id':
+        type_str = 'Id_t'
 
       else:
         type_str = type_name
@@ -304,7 +303,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     self.Emit('    L = out_node.fields')
 
     # NO attributes in abbreviated version
-    for local_id, field in enumerate(desc.fields):
+    for local_id, field in enumerate(ast_node.fields):
       self.Indent()
       self._EmitCodeForField('AbbreviatedTree', field, local_id)
       self.Dedent()
@@ -459,9 +458,9 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
   def EmitFooter(self):
     # Now generate all the product types we deferred.
     for args in self._products:
-      desc, attributes, name, depth, tag_num = args
+      ast_node, attributes, name, depth, tag_num = args
       # Figure out base classes AFTERWARD.
       bases = self._product_bases[name]
       if not bases:
         bases = ('pybase.CompoundObj',)
-      self._GenClass(desc, attributes, name, bases, depth, tag_num)
+      self._GenClass(ast_node, attributes, name, bases, depth, tag_num)

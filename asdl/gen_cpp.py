@@ -24,7 +24,7 @@ import sys
 
 from collections import defaultdict
 
-from asdl import meta
+from asdl import asdl_
 from asdl import visitor
 from core.util import log
 
@@ -51,7 +51,9 @@ _BUILTINS = {
     # TODO: frontend/syntax.asdl should properly import id enum instead of
     # hard-coding it here.
     'id': 'Id_t',
-    'assoc': 'Dict<Str*, Str*>*',
+
+    # Hack for now
+    'map': 'Dict<Str*, Str*>*',
 }
 
 
@@ -88,11 +90,11 @@ def _GetInnerCppType(type_lookup, field):
     return cpp_type
 
   typ = type_lookup[type_name]
-  if isinstance(typ, meta.SumType):
-    if typ.is_simple:
+  if field.resolved_type:
+    if isinstance(field.resolved_type, asdl_.SimpleSum):
       # Use the enum instead of the class.
       return "%s_e" % type_name
-    else:
+    if isinstance(field.resolved_type, asdl_.Sum):
       # Everything is a pointer for now.  No references.
       return "%s_t*" % type_name
 
@@ -273,17 +275,19 @@ class ClassDefVisitor(visitor.AsdlVisitor):
         default = '0.0'  # or should it be NaN?
       elif type_name == 'string':
         default = 'new Str("")'
+      elif type_name == 'map':
+        default = 'nullptr'
       else:
-        field_desc = self.type_lookup[type_name]
-        if isinstance(field_desc, meta.SumType) and field_desc.is_simple:
+        if field.resolved_type and isinstance(field.resolved_type, asdl_.SimpleSum):
+          sum_type = field.resolved_type
           # Just make it the first variant.  We could define "Undef" for
           # each enum, but it doesn't seem worth it.
-          default = '%s_e::%s' % (type_name, field_desc.simple_variants[0])
+          default = '%s_e::%s' % (type_name, sum_type.types[0].name)
         else:
           default = 'nullptr'
     return default
 
-  def _GenClass(self, desc, attributes, class_name, base_classes, depth, tag):
+  def _GenClass(self, ast_node, attributes, class_name, base_classes, depth, tag):
     """For Product and Constructor."""
     if base_classes:
       bases = ', '.join('public %s' % b for b in base_classes)
@@ -293,9 +297,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     self.Emit(" public:", depth)
 
     tag_init = 'tag(%s)' % tag
-    all_fields = desc.fields + attributes
+    all_fields = ast_node.fields + attributes
 
-    if desc.fields:  # Don't emit for constructors with no fields
+    if ast_node.fields:  # Don't emit for constructors with no fields
       default_inits = [tag_init]
       for field in all_fields:
         default = self._DefaultValue(field)
@@ -310,7 +314,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     # All product types and variants have a tag
     inits = [tag_init]
 
-    for f in desc.fields:
+    for f in ast_node.fields:
       params.append('%s %s' % (self._GetCppType(f), f.name))
       inits.append('%s(%s)' % (f.name, f.name))
     for f in attributes:  # spids are initialized separately
@@ -349,12 +353,12 @@ class ClassDefVisitor(visitor.AsdlVisitor):
   def EmitFooter(self):
     # Now generate all the product types we deferred.
     for args in self._products:
-      desc, attributes, name, depth, tag_num = args
+      ast_node, attributes, name, depth, tag_num = args
       # Figure out base classes AFTERWARD.
       bases = self._product_bases[name]
       if not bases:
         bases = ['Obj']
-      self._GenClass(desc, attributes, name, bases, depth, tag_num)
+      self._GenClass(ast_node, attributes, name, bases, depth, tag_num)
 
 
 class MethodDefVisitor(visitor.AsdlVisitor):
@@ -373,33 +377,35 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
   def _CodeSnippet(self, abbrev, field, desc, var_name):
     none_guard = False
-    if isinstance(desc, meta.BoolType):
+    type_name = field.TypeName()
+
+    if type_name == 'bool':
       code_str = "new hnode__Leaf(%s ? runtime::TRUE_STR : runtime::FALSE_STR, color_e::OtherConst)" % var_name
 
-    elif isinstance(desc, meta.IntType):
+    elif type_name == 'int':
       code_str = 'new hnode__Leaf(str(%s), color_e::OtherConst)' % var_name
 
-    elif isinstance(desc, meta.FloatType):
+    elif type_name == 'float':
       code_str = 'new hnode__Leaf(str(%s), color_e::OtherConst)' % var_name
 
-    elif isinstance(desc, meta.StrType):
+    elif type_name == 'string':
       code_str = 'runtime::NewLeaf(%s, color_e::StringConst)' % var_name
 
-    elif isinstance(desc, meta.AnyType):
+    elif type_name == 'any':
       # This is used for value.Obj().
       code_str = 'new hnode__External(%s)' % var_name
 
-    elif isinstance(desc, meta.AssocType):
+    elif type_name == 'map':
       # TODO: Is this valid?
       code_str = 'new hnode__External(%s)' % var_name
 
-    elif isinstance(desc, meta.UserType):
+    elif type_name == 'id':
       # TODO: Remove hard-coded Id?
       code_str = 'new hnode__Leaf(new Str(Id_str(%s)), color_e::UserType)' % var_name
       none_guard = True  # otherwise MyPy complains about foo.name
 
-    elif isinstance(desc, meta.SumType):
-      if desc.is_simple:
+    elif field.resolved_type:
+      if isinstance(field.resolved_type, asdl_.SimpleSum):
         code_str = 'new hnode__Leaf(new Str(%s_str(%s)), color_e::TypeName)' % (
             field.TypeName(), var_name)
         none_guard = True  # otherwise MyPy complains about foo.name
@@ -407,20 +413,15 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         code_str = '%s->%s()' % (var_name, abbrev)
         none_guard = True
 
-    elif isinstance(desc, meta.CompoundType):
-      code_str = '%s->%s()' % (var_name, abbrev)
-      none_guard = True
-
     else:
-      raise AssertionError(desc)
+      raise AssertionError(field)
 
     return code_str, none_guard
 
   def _EmitCodeForField(self, abbrev, field, counter):
     """Generate code that returns an hnode for a field."""
     out_val_name = 'x%d' % counter
-
-    desc = self.type_lookup[field.TypeName()]
+    desc = None
 
     if field.IsArray():
       iter_name = 'i%d' % counter
@@ -456,7 +457,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
       self.Emit('  L->append(new field(new Str("%s"), %s));' % (field.name, out_val_name), depth)
 
-  def _EmitPrettyPrintMethods(self, class_name, all_fields, desc):
+  def _EmitPrettyPrintMethods(self, class_name, all_fields, ast_node):
     if not self.pretty_print_methods:
       return
 
@@ -492,11 +493,11 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     self.Emit('')
     self.Emit('hnode_t* %s::_AbbreviatedTree() {' % class_name)
     self.Emit('  hnode__Record* out_node = runtime::NewRecord(new Str("%s"));' % pretty_cls_name)
-    if desc.fields:
+    if ast_node.fields:
       self.Emit('  List<field*>* L = out_node->fields;')
 
     # NO attributes in abbreviated version
-    for local_id, field in enumerate(desc.fields):
+    for local_id, field in enumerate(ast_node.fields):
       self.Indent()
       self._EmitCodeForField('AbbreviatedTree', field, local_id)
       self.Dedent()

@@ -64,8 +64,12 @@ class FrontEndTest(unittest.TestCase):
 module foo {
   point = (int? x, int* y)
   action = Foo | Bar(point z)
+
   foo = (array[int] span_ids)
   bar = (map[string, int] options)
+
+  -- this check happens later
+  does_not_resolve = (typo zz)
 }
 """)
 
@@ -93,6 +97,39 @@ module foo {
     self._assertParseError('module foo { t = (map[] a) }')
     self._assertParseError('module foo { t = (map[string] a) }')
     self._assertParseError('module foo { t = (map[string, ] a) }')
+
+  def _assertResolve(self, code_str):
+    f = cStringIO.StringIO(code_str)
+    schema_ast, type_lookup = front_end.LoadSchema(f, {})
+
+    print(schema_ast)
+    from pprint import pprint
+    pprint(type_lookup)
+
+  def testResolve(self):
+    self._assertResolve("""
+module foo {
+  point = (int x, int y)
+  place = None | Two(point a, point b)
+  options = (map[string, int] names)
+}
+""")
+
+  def _assertResolveError(self, code_str):
+    f = cStringIO.StringIO(code_str)
+    try:
+      schema_ast, type_lookup = front_end.LoadSchema(f, {})
+    except front_end.ASDLSyntaxError as e:
+      print(e)
+    else:
+      self.fail("Expected name resolution error: %r" % code_str)
+
+  def testResolveError(self):
+    self._assertResolveError("""
+module foo {
+  place = None | Two(typo b)
+}
+""")
 
   def testAstNodes(self):
     # maybe[string]

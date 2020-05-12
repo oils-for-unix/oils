@@ -143,6 +143,14 @@ class Field(AST):
         self.typ = typ  # type expression
         self.name = name  # variable name
 
+        # This field is initialized in the name resolution phase.  If the field
+        # is 'action x', then we want to know if 'action' is a sum type, simple
+        # type, or product type
+        self.resolved_type = None  # type: AST
+
+        # TODO: It would be nice to have a token for line numbers in name
+        # resolution errors
+
     def IsArray(self):
       return self.typ.name == 'array'
 
@@ -179,12 +187,6 @@ class Constructor(_CompoundAST):
         self.name = name
         self.shared_type = shared_type  # for DoubleQuoted %double_quoted
 
-        # Add fake spids field.
-        # TODO: Only do this if 'attributes' are set.
-        if self.fields:
-          #self.fields.append(Field('int', 'spids', seq=True))
-          pass
-
     def Print(self, f, indent):
         ind = indent * '  '
         f.write('%sConstructor %s' % (ind, self.name))
@@ -202,7 +204,7 @@ class Constructor(_CompoundAST):
 
 class Sum(AST):
     def __init__(self, types, attributes=None):
-        self.types = types  # List[Constructor]
+        self.types = types  # type: List[Constructor]
         self.attributes = attributes or []
 
     def Print(self, f, indent):
@@ -216,6 +218,10 @@ class Sum(AST):
           for a in self.attributes:
             a.Print(f, indent+1)
         f.write('%s}\n' % ind)
+
+
+class SimpleSum(Sum):
+    pass
 
 
 class Product(_CompoundAST):

@@ -3,12 +3,7 @@ meta.py
 """
 from __future__ import print_function
 
-# Type Descriptors
-#
-# These are more convenient than using the AST directly, since it still has
-# string type names?
-#
-# Although we share Product and Sum.
+# Type Descriptors.  This is like the AST with names resolved.
 
 class _RuntimeType(object):
   """A node hierarchy that exists at runtime."""
@@ -40,11 +35,6 @@ class BoolType(_RuntimeType):
     return '<Bool>'
 
 
-class AssocType(_RuntimeType):
-  def __repr__(self):
-    return '<Assoc>'
-
-
 class ArrayType(_RuntimeType):
   def __init__(self, desc):
     self.desc = desc
@@ -59,6 +49,15 @@ class MaybeType(_RuntimeType):
 
   def __repr__(self):
     return '<Maybe %s>' % self.desc
+
+
+class MapType(_RuntimeType):
+  def __init__(self, k_desc, v_desc):
+    self.k_desc = k_desc
+    self.v_desc = v_desc
+
+  def __repr__(self):
+    return '<Map %s %s>' % (self.k_desc, self.v_desc)
 
 
 class UserType(_RuntimeType):
@@ -78,7 +77,6 @@ class SumType(_RuntimeType):
   def __init__(self, is_simple, simple_variants):
     self.is_simple = is_simple  # for type checking
     self.simple_variants = simple_variants  # list of strings
-    self.cases = []  # TODO: This is obsolete?
 
   def __repr__(self):
     # We need an entry for this but we don't use it?
@@ -94,9 +92,17 @@ class SumType(_RuntimeType):
 class CompoundType(_RuntimeType):
   """A product or Constructor instance.  Both have fields."""
   def __init__(self, fields):
-    # List of (name, _RuntimeType) tuples.
-    # NOTE: This list may be mutated after initialization.
+
+    # NOTE: The list of fields is mutated after initialization.
     self.fields = fields
+
+    # TODO:
+    #
+    # I think we can get rid of the whole _RuntimeType rigamarole?
+    # As long as we check names, then we can just walk the AST in
+    # gen_{cpp,python}.
+
+    # We're already walking a MIX of the AST.
 
   def __repr__(self):
     return '<CompoundType %s>' % self.fields
@@ -117,7 +123,7 @@ class CompoundType(_RuntimeType):
     raise TypeError('Invalid field %r' % field_name)
 
 
-BUILTIN_TYPES = {
+PRIMITIVE_TYPES = {
     'string': StrType(),
     'int': IntType(),
     'float': FloatType(),
@@ -127,8 +133,4 @@ BUILTIN_TYPES = {
     # - for value.Obj in the the Oil expression evaluator.  We're not doing any
     #   dynamic or static checking now.
     'any': AnyType(),
-
-    # - for the dict in value.AssocArray.
-    'assoc': AssocType(),
 }
-

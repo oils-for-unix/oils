@@ -7,7 +7,6 @@ from __future__ import print_function
 import unittest
 
 from asdl import runtime
-from asdl import meta
 from asdl import pybase
 
 from _devbuild.gen import typed_demo_asdl as demo_asdl  # module under test
@@ -22,15 +21,6 @@ cflow_e = demo_asdl.cflow_e
 
 
 class ArithAstTest(unittest.TestCase):
-
-  def testReflection(self):
-    n = cflow.Return(3)
-    return
-    # Reflection on the type.  Is there a better way?
-    print(n.ASDL_TYPE)
-    print(list(n.ASDL_TYPE.GetFields()))
-    t = n.ASDL_TYPE.LookupFieldType('status')
-    self.assert_(isinstance(t, meta.IntType))
 
   def testFieldDefaults(self):
     s = arith_expr.Slice()
