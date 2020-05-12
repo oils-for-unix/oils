@@ -191,10 +191,35 @@ class ASDLParser(object):
 
     def _parse_type_expr(self):
         """
-        Name ( '?' | '*' )
+        We just need these expressions, not arbitrary ones:
+
+        one_param: ('array' | 'maybe') '[' type_expr ']'
+        two_params: 'map' '[' type_expr ',' type_expr ']'
+
+        type_expr:
+          Name ( '?' | '*' )
+        | one_param
+        | two_params
+
         """
-        type_name = self._advance()
+        type_name = self._match(TokenKind.Name)
         typ = TypeExpr(type_name)
+
+        if type_name in ('array', 'maybe'):
+          self._match(TokenKind.LBracket)
+          child = self._parse_type_expr()
+          typ = TypeExpr(type_name, [child])
+          self._match(TokenKind.RBracket)
+          return typ
+
+        if type_name == 'map':
+          self._match(TokenKind.LBracket)
+          k = self._parse_type_expr()
+          self._match(TokenKind.Comma)
+          v = self._parse_type_expr()
+          typ = TypeExpr(type_name, [k, v])
+          self._match(TokenKind.RBracket)
+          return typ
 
         if self.cur_token.kind == TokenKind.Asterisk:
             # string* is equivalent to array[string]
@@ -208,10 +233,11 @@ class ASDLParser(object):
 
     def _parse_fields(self):
         """
-        '('
-                 Name Quantifier? Name
-           ( ',' Name Quantifier? Name )*
-        ')'
+        fields:
+          '('
+                   type_expr Name
+             ( ',' type_expr Name )*
+          ')'
 
         Name Quantifier?  should be changed to typename.
         """
@@ -219,11 +245,7 @@ class ASDLParser(object):
         self._match(TokenKind.LParen)
         while self.cur_token.kind == TokenKind.Name:
             typ = self._parse_type_expr()
-
-            if self.cur_token.kind == TokenKind.Name:
-                field_name = self._advance()
-            else:
-                field_name = None
+            field_name = self._match(TokenKind.Name)
 
             fields.append(Field(typ, field_name))
 

@@ -129,7 +129,9 @@ class TypeExpr(AST):
         f.write('TypeExpr %s' % (self.name))  # printed after field
         if self.children:
           f.write(' [ ')
-          for child in self.children:
+          for i, child in enumerate(self.children):
+            if i != 0:
+              f.write(', ')
             child.Print(f, indent+1)
           f.write(' ]')
 

@@ -51,17 +51,48 @@ class FrontEndTest(unittest.TestCase):
     b = expr.Binary(d, d)
     b.PrettyPrint()
 
-  def testParse(self):
-    f = cStringIO.StringIO("""
-module foo {
-  point = (int? x, int* y)
-  action = Foo | Bar(point z)
-  -- foo = (map[string, int] options)
-}
-""")
+  def _assertParse(self, code_str):
+    f = cStringIO.StringIO(code_str)
     p = front_end.ASDLParser()
     schema_ast = p.parse(f)
     print(schema_ast)
+    # For now just test its type
+    self.assert_(isinstance(schema_ast, asdl_.Module))
+
+  def testParse(self):
+    self._assertParse("""
+module foo {
+  point = (int? x, int* y)
+  action = Foo | Bar(point z)
+  foo = (array[int] span_ids)
+  bar = (map[string, int] options)
+}
+""")
+
+  def _assertParseError(self, code_str):
+    f = cStringIO.StringIO(code_str)
+    p = front_end.ASDLParser()
+    try:
+      schema_ast = p.parse(f)
+    except front_end.ASDLSyntaxError as e:
+      print(e)
+    else:
+      self.fail("Expected parse failure: %r" % code_str)
+
+  def testParseErrors(self):
+    # Need field name
+    self._assertParseError('module foo { t = (int) }')
+
+    # Need []
+    self._assertParseError('module foo { t = (array foo) }')
+
+    # Shouldn't have []
+    self._assertParseError('module foo { t = (string[string] a) }')
+
+    # Not enough params
+    self._assertParseError('module foo { t = (map[] a) }')
+    self._assertParseError('module foo { t = (map[string] a) }')
+    self._assertParseError('module foo { t = (map[string, ] a) }')
 
   def testAstNodes(self):
     # maybe[string]
