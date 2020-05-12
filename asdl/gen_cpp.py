@@ -75,7 +75,8 @@ def _GetInnerCppType(type_lookup, field):
 
   cpp_type = _BUILTINS.get(type_name)
   if cpp_type is not None:
-    # We don't allow int? or Id? now.  Just reserve a Id.Unknown_Tok or -1.
+    # Annotations like int? or Id?  are NO-OPS now.
+    # The user should reserve a Id.Unknown_Tok or -1.
     if field.opt and not cpp_type.endswith('*'):
       # e.g. Id_t*
       # TODO: Use Id.Unknown_Tok for id?

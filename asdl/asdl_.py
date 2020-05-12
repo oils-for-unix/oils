@@ -87,10 +87,12 @@ class Module(AST):
         f.write('%s}\n' % ind)
 
 
-class Type(AST):
+class TypeDecl(AST):
+    """A binding of name to a Sum or Product type."""
+
     def __init__(self, name, value):
-        self.name = name
-        self.value = value
+        self.name = name  # type: str
+        self.value = value  # type: AST
 
     def Print(self, f, indent):
         ind = indent * '  '
@@ -99,7 +101,40 @@ class Type(AST):
         f.write('%s}\n' % ind)
 
 
+class TypeExpr(AST):
+    """A parameterized type expression, e.g. the type of a field.
+
+    e.g. map[string, int]   map[int, array[string]]
+
+    self.children is empty if it's a leaf.
+
+    Note:
+
+    string*  is  array[string]
+    mytype?  is  maybe[mytype]
+    """
+    def __init__(self, name, children=None, seq=False, opt=False):
+      self.name = name  # type: str
+      self.children = children or []  # type: List[TypeExpr]
+
+      # LEGACY:
+      self.seq = seq
+      self.opt = opt
+
+    def Print(self, f, indent):
+        ind = indent * '  '
+        f.write('%sTypeExpr %s' % (ind, self.name))
+        if self.children:
+          f.write(' {\n')
+          for child in self.children:
+            child.Print(f, indent+1)
+          f.write('%s}\n' % ind)
+        else:
+          f.write('\n')
+
+
 class Field(AST):
+
     def __init__(self, type, name=None, seq=False, opt=False):
         self.name = name
 
@@ -108,6 +143,8 @@ class Field(AST):
         # int, string? , string*, map[string, bool], list[bool]
         self.seq = seq
         self.opt = opt
+
+        # TODO: self.typ, self.name
 
     def Print(self, f, indent):
         extra = []

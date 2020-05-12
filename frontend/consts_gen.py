@@ -29,8 +29,8 @@ def _CreateModule(id_spec, ids):
   variants2 = [asdl_.Constructor(name) for name in id_spec.kind_name_list]
   kind_sum = asdl_.Sum(variants2)
 
-  id_ = asdl_.Type('Id', id_sum)
-  kind_ = asdl_.Type('Kind', kind_sum)
+  id_ = asdl_.TypeDecl('Id', id_sum)
+  kind_ = asdl_.TypeDecl('Kind', kind_sum)
 
   schema_ast = asdl_.Module('id_kind', [], [id_, kind_])
   return schema_ast

@@ -491,7 +491,7 @@ def Parse(spec, arg_r):
           out.Set(ch, value.Str('-'))
           continue
 
-        if ch in spec.arity0:  # e.g. read -r
+        if spec.arity0.get(ch):  # e.g. read -r
           out.SetTrue(ch)
           continue
 
@@ -507,7 +507,7 @@ def Parse(spec, arg_r):
       arg_r.Next()  # next arg
 
     # Only accept + if there are ANY options defined, e.g. for declare +rx.
-    elif spec.options and arg.startswith('+') and len(arg) > 1:
+    elif len(spec.options) and arg.startswith('+') and len(arg) > 1:
       n = len(arg)
       for i in xrange(1, n):  # parse flag combos like -rx
         ch = arg[i]

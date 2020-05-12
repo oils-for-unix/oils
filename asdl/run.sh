@@ -150,6 +150,20 @@ line-length-hist() {
   done
 }
 
+gen-cpp-errors() {
+
+  # This doesn't produce an error, even though 'int?' isn't representable in C++
+  cat >_tmp/bad.asdl <<EOF
+module bad {
+  foo = (int? x, int y)
+}
+EOF
+
+  asdl/tool.py cpp _tmp/bad.asdl _tmp/asdl_bad
+
+  ls -l _tmp/asdl_bad*
+}
+
 gen-cpp-test() {
   local prefix=_tmp/typed_arith_asdl
   asdl/tool.py cpp asdl/typed_arith.asdl $prefix

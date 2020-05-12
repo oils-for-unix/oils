@@ -7,7 +7,7 @@ import re
 
 from asdl import asdl_ as asdl
 from asdl import meta
-from asdl.asdl_ import Use, Module, Type, Constructor, Field, Sum, Product
+from asdl.asdl_ import Use, Module, TypeDecl, Constructor, Field, Sum, Product
 
 _KEYWORDS = ['use', 'module', 'attributes']
 
@@ -128,8 +128,8 @@ class ASDLParser(object):
         while self.cur_token.kind == TokenKind.Name:
             typename = self._advance()
             self._match(TokenKind.Equals)
-            type_ = self._parse_type()
-            defs.append(Type(typename, type_))
+            type_ = self._parse_type_decl()
+            defs.append(TypeDecl(typename, type_))
 
         self._match(TokenKind.RBrace)
         return Module(name, uses, defs)
@@ -154,7 +154,7 @@ class ASDLParser(object):
         self._match(TokenKind.RBrace)
         return Use(mod_name, type_names)
 
-    def _parse_type(self):
+    def _parse_type_decl(self):
         """
         constructor: Name fields?
         sum: constructor ('|' constructor)*
@@ -187,8 +187,19 @@ class ASDLParser(object):
                 self._advance()
             return Sum(sumlist, self._parse_optional_attributes())
 
-    def _parse_product(self):
-        return Product(self._parse_fields(), self._parse_optional_attributes())
+    def _parse_type_expr(self):
+        """
+        Name ( '?' | '*' )
+        """
+        type_name = self._advance()
+        is_seq, is_opt = False, False
+        if self.cur_token.kind == TokenKind.Asterisk:
+            is_seq = True
+            self._advance()
+        elif self.cur_token.kind == TokenKind.Question:
+            is_opt = True
+            self._advance()
+        return type_name, is_seq, is_opt
 
     def _parse_fields(self):
         """
@@ -202,13 +213,12 @@ class ASDLParser(object):
         fields = []
         self._match(TokenKind.LParen)
         while self.cur_token.kind == TokenKind.Name:
-            typename = self._advance()
-            is_seq, is_opt = self._parse_optional_field_quantifier()
+            type_name, is_seq, is_opt = self._parse_type_expr()
             if self.cur_token.kind == TokenKind.Name:
-                id_ = self._advance()
+                field_name = self._advance()
             else:
-                id_ = None
-            fields.append(Field(typename, id_, seq=is_seq, opt=is_opt))
+                field_name = None
+            fields.append(Field(type_name, field_name, seq=is_seq, opt=is_opt))
             if self.cur_token.kind == TokenKind.RParen:
                 break
             elif self.cur_token.kind == TokenKind.Comma:
@@ -223,15 +233,8 @@ class ASDLParser(object):
         else:
             return None
 
-    def _parse_optional_field_quantifier(self):
-        is_seq, is_opt = False, False
-        if self.cur_token.kind == TokenKind.Asterisk:
-            is_seq = True
-            self._advance()
-        elif self.cur_token.kind == TokenKind.Question:
-            is_opt = True
-            self._advance()
-        return is_seq, is_opt
+    def _parse_product(self):
+        return Product(self._parse_fields(), self._parse_optional_attributes())
 
     def _advance(self):
         """ Return the value of the current token and read the next one into

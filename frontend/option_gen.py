@@ -31,7 +31,7 @@ def _CreateSum(sum_name, variant_names):
   opt_num.nounset
   """
   sum_ = asdl_.Sum([asdl_.Constructor(name) for name in variant_names])
-  typ = asdl_.Type(sum_name, sum_)
+  typ = asdl_.TypeDecl(sum_name, sum_)
   return typ
 
 

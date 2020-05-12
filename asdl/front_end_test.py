@@ -8,6 +8,7 @@ import cStringIO
 import unittest
 
 from asdl import front_end  # module under test
+from asdl import asdl_
 
 
 class FrontEndTest(unittest.TestCase):
@@ -54,12 +55,25 @@ class FrontEndTest(unittest.TestCase):
     f = cStringIO.StringIO("""
 module foo {
   point = (int? x, int* y)
-  action = Foo | Bar(string z)
+  action = Foo | Bar(point z)
+  -- foo = (map[string, int] options)
 }
 """)
     p = front_end.ASDLParser()
     schema_ast = p.parse(f)
     print(schema_ast)
+
+  def testAstNodes(self):
+    # maybe[string]
+    n1 = asdl_.TypeExpr('string')
+    print(n1)
+
+    n2 = asdl_.TypeExpr('maybe', [n1])
+    print(n2)
+
+    n3 = asdl_.TypeExpr('map', [n1, asdl_.TypeExpr('int')])
+    print(n3)
+
 
 
 if __name__ == '__main__':
