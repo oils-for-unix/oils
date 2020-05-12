@@ -71,13 +71,13 @@ class ForwardDeclareVisitor(visitor.AsdlVisitor):
 
 
 def _GetInnerCppType(type_lookup, field):
-  type_name = field.type
+  type_name = field.TypeName()
 
   cpp_type = _BUILTINS.get(type_name)
   if cpp_type is not None:
     # Annotations like int? or Id?  are NO-OPS now.
     # The user should reserve a Id.Unknown_Tok or -1.
-    if field.opt and not cpp_type.endswith('*'):
+    if field.IsMaybe() and not cpp_type.endswith('*'):
       # e.g. Id_t*
       # TODO: Use Id.Unknown_Tok for id?
       # - use runtime.NO_STEP for int? step.  That could be ZERO?
@@ -130,7 +130,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     # Right now it's untyped in ASDL.
     # I guess is should be Dict[str, str] for the associative array contents?
     c_type = _GetInnerCppType(self.type_lookup, field)
-    if field.seq:
+    if field.IsArray():
       return 'List<%s>*' % c_type
     else:
       return c_type
@@ -259,25 +259,26 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     Emit('')
 
   def _DefaultValue(self, field):
-    if field.seq:  # Array
+    type_name = field.TypeName()
+    if field.IsArray():
       default = 'new List<%s>()' % _GetInnerCppType(self.type_lookup, field)
     else:
-      if field.type == 'int':
+      if type_name == 'int':
         default = '-1'
-      elif field.type == 'id':  # hard-coded HACK
+      elif type_name == 'id':  # hard-coded HACK
         default = '-1'
-      elif field.type == 'bool':
+      elif type_name == 'bool':
         default = 'false'
-      elif field.type == 'float':
+      elif type_name == 'float':
         default = '0.0'  # or should it be NaN?
-      elif field.type == 'string':
+      elif type_name == 'string':
         default = 'new Str("")'
       else:
-        field_desc = self.type_lookup[field.type]
+        field_desc = self.type_lookup[type_name]
         if isinstance(field_desc, meta.SumType) and field_desc.is_simple:
           # Just make it the first variant.  We could define "Undef" for
           # each enum, but it doesn't seem worth it.
-          default = '%s_e::%s' % (field.type, field_desc.simple_variants[0])
+          default = '%s_e::%s' % (type_name, field_desc.simple_variants[0])
         else:
           default = 'nullptr'
     return default
@@ -400,7 +401,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     elif isinstance(desc, meta.SumType):
       if desc.is_simple:
         code_str = 'new hnode__Leaf(new Str(%s_str(%s)), color_e::TypeName)' % (
-            field.type, var_name)
+            field.TypeName(), var_name)
         none_guard = True  # otherwise MyPy complains about foo.name
       else:
         code_str = '%s->%s()' % (var_name, abbrev)
@@ -419,9 +420,9 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     """Generate code that returns an hnode for a field."""
     out_val_name = 'x%d' % counter
 
-    desc = self.type_lookup[field.type]
+    desc = self.type_lookup[field.TypeName()]
 
-    if field.seq:
+    if field.IsArray():
       iter_name = 'i%d' % counter
 
       self.Emit('  if (this->%s && len(this->%s)) {  // ArrayType' % (field.name, field.name))
@@ -436,7 +437,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       self.Emit('    L->append(new field(new Str("%s"), %s));' % (field.name, out_val_name))
       self.Emit('  }')
 
-    elif field.opt:
+    elif field.IsMaybe():
       self.Emit('  if (this->%s) {  // MaybeType' % field.name)
       child_code_str, _ = self._CodeSnippet(abbrev, field, desc,
                                             'this->%s' % field.name)

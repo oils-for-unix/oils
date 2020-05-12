@@ -23,6 +23,8 @@ from __future__ import print_function
 
 import cStringIO
 
+from typing import List
+
 
 # TODO: There should be SimpleSumType(_SumType) and CompoundSumType(_SumType)
 # That can be determined at compile time with this function.  is_simple()
@@ -110,8 +112,8 @@ class TypeExpr(AST):
 
     Note:
 
-    string*  is  array[string]
-    mytype?  is  maybe[mytype]
+    string*  <=>  array[string]
+    mytype?  <=>  maybe[mytype]
     """
     def __init__(self, name, children=None, seq=False, opt=False):
       self.name = name  # type: str
@@ -122,45 +124,40 @@ class TypeExpr(AST):
       self.opt = opt
 
     def Print(self, f, indent):
+        """Printed on one line."""
         ind = indent * '  '
-        f.write('%sTypeExpr %s' % (ind, self.name))
+        f.write('TypeExpr %s' % (self.name))  # printed after field
         if self.children:
-          f.write(' {\n')
+          f.write(' [ ')
           for child in self.children:
             child.Print(f, indent+1)
-          f.write('%s}\n' % ind)
-        else:
-          f.write('\n')
+          f.write(' ]')
 
 
 class Field(AST):
 
-    def __init__(self, type, name=None, seq=False, opt=False):
-        self.name = name
+    def __init__(self, typ, name):
+        # type: (TypeExpr, str) -> None
+        self.typ = typ  # type expression
+        self.name = name  # variable name
 
-        self.type = type
-        # TODO: I think this should be TypeExpr instead of string
-        # int, string? , string*, map[string, bool], list[bool]
-        self.seq = seq
-        self.opt = opt
+    def IsArray(self):
+      return self.typ.name == 'array'
 
-        # TODO: self.typ, self.name
+    def IsMaybe(self):
+      return self.typ.name == 'maybe'
+
+    def TypeName(self):
+      # Compatibility for foo?   and   foo*
+      if self.typ.name in ('array', 'maybe'):
+        return self.typ.children[0].name
+      else:
+        return self.typ.name
 
     def Print(self, f, indent):
-        extra = []
-        if self.seq:
-            extra.append('seq=True')
-        elif self.opt:
-            extra.append('opt=True')
-        else:
-            extra = ""
-
         ind = indent * '  '
-        f.write('%sField %s %s' % (ind, self.name, self.type))
-        if extra:
-          f.write(' (')
-          f.write(', '.join(extra))
-          f.write(')')
+        f.write('%sField %r ' % (ind, self.name))
+        self.typ.Print(f, indent)
         f.write('\n')
 
 

@@ -7,7 +7,9 @@ import re
 
 from asdl import asdl_ as asdl
 from asdl import meta
-from asdl.asdl_ import Use, Module, TypeDecl, Constructor, Field, Sum, Product
+from asdl.asdl_ import (
+    Use, Module, TypeDecl, Constructor, Field, Sum, Product, TypeExpr
+)
 
 _KEYWORDS = ['use', 'module', 'attributes']
 
@@ -192,14 +194,17 @@ class ASDLParser(object):
         Name ( '?' | '*' )
         """
         type_name = self._advance()
-        is_seq, is_opt = False, False
+        typ = TypeExpr(type_name)
+
         if self.cur_token.kind == TokenKind.Asterisk:
-            is_seq = True
+            # string* is equivalent to array[string]
+            typ = TypeExpr('array', [typ])
             self._advance()
         elif self.cur_token.kind == TokenKind.Question:
-            is_opt = True
+            # string* is equivalent to maybe[string]
+            typ = TypeExpr('maybe', [typ])
             self._advance()
-        return type_name, is_seq, is_opt
+        return typ
 
     def _parse_fields(self):
         """
@@ -213,16 +218,20 @@ class ASDLParser(object):
         fields = []
         self._match(TokenKind.LParen)
         while self.cur_token.kind == TokenKind.Name:
-            type_name, is_seq, is_opt = self._parse_type_expr()
+            typ = self._parse_type_expr()
+
             if self.cur_token.kind == TokenKind.Name:
                 field_name = self._advance()
             else:
                 field_name = None
-            fields.append(Field(type_name, field_name, seq=is_seq, opt=is_opt))
+
+            fields.append(Field(typ, field_name))
+
             if self.cur_token.kind == TokenKind.RParen:
                 break
             elif self.cur_token.kind == TokenKind.Comma:
                 self._advance()
+
         self._match(TokenKind.RParen)
         return fields
 
@@ -341,13 +350,13 @@ class Check(_VisitorBase):
 def _AppendFields(field_ast_nodes, type_lookup, out):
   for field in field_ast_nodes:
     #print(field)
-    runtime_type = type_lookup[field.type]
+    runtime_type = type_lookup[field.TypeName()]
 
     # TODO: cache these under 'type*' and 'type?'.  Don't want duplicates!
-    if field.seq:
+    if field.IsArray():
       runtime_type = meta.ArrayType(runtime_type)
 
-    if field.opt:
+    if field.IsMaybe():
       runtime_type = meta.MaybeType(runtime_type)
 
     out.append((field.name, runtime_type))

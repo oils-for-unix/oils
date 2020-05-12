@@ -122,7 +122,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     elif isinstance(desc, meta.SumType):
       if desc.is_simple:
         code_str = 'hnode.Leaf(%s_str(%s), color_e.TypeName)' % (
-            field.type, var_name)
+            field.TypeName(), var_name)
 
         none_guard = True  # otherwise MyPy complains about foo.name
       else:
@@ -142,9 +142,9 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     """Generate code that returns an hnode for a field."""
     out_val_name = 'x%d' % counter
 
-    desc = self.type_lookup[field.type]
+    desc = self.type_lookup[field.TypeName()]
 
-    if field.seq:
+    if field.IsArray():
       iter_name = 'i%d' % counter
 
       self.Emit('  if self.%s:  # ArrayType' % field.name)
@@ -154,7 +154,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       self.Emit('      %s.children.append(%s)' % (out_val_name, child_code_str))
       self.Emit('    L.append(field(%r, %s))' % (field.name, out_val_name))
 
-    elif field.opt:
+    elif field.IsMaybe():
       self.Emit('  if self.%s is not None:  # MaybeType' % field.name)
       child_code_str, _ = self._CodeSnippet(abbrev, field, desc,
                                             'self.%s' % field.name)
@@ -202,12 +202,13 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     arg_types = []
     for f in all_fields:
-      field_desc = self.type_lookup.get(f.type)
+      type_name = f.TypeName()
+      field_desc = self.type_lookup.get(type_name)
 
       # op_id -> op_id_t, bool_expr -> bool_expr_t, etc.
       # NOTE: product type doesn't have _t suffix
       if isinstance(field_desc, meta.SumType):
-        type_str = '%s_t' % f.type
+        type_str = '%s_t' % type_name
 
       elif isinstance(field_desc, meta.StrType):
         type_str = 'str'
@@ -222,14 +223,14 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         type_str = field_desc.type_name
 
       else:
-        type_str = f.type
+        type_str = type_name
 
       # We allow partially initializing, so both of these are Optional.
       # TODO: Change this?  I think it would make sense.  We can always use
       # locals to initialize.
       # NOTE: It's complicated in the List[] case, because we don't want a
       # mutable default arg?  That is a Python pitfall
-      if f.seq:
+      if f.IsArray():
         t = 'List[%s]' % type_str
       else:
         t = type_str
@@ -247,15 +248,16 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     for f in all_fields:
       # This logic is like _MakeFieldDescriptors
       default = None
-      if f.opt:  # Maybe
-        if f.type == 'int':
+      if f.IsMaybe():  # Maybe
+        type_name = f.TypeName()
+        if type_name == 'int':
           default = 'runtime.NO_SPID'
-        elif f.type == 'string':
+        elif type_name == 'string':
           default = "''"
         else:
           default = 'None'
 
-      elif f.seq:  # Array
+      elif f.IsArray():  # Array
         default = '[]'
 
       # PROBLEM: Optional ints can't be zero!
