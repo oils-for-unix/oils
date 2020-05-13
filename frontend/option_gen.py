@@ -66,7 +66,7 @@ namespace option_asdl {
 """)
 
       # TODO: Could suppress option_str
-      v = gen_cpp.ClassDefVisitor(f, {}, simple_int_sums=_SIMPLE)
+      v = gen_cpp.ClassDefVisitor(f, simple_int_sums=_SIMPLE)
       v.VisitModule(schema_ast)
 
       f.write("""

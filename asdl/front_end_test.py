@@ -97,9 +97,7 @@ module foo {
   def _assertResolve(self, code_str):
     f = cStringIO.StringIO(code_str)
     schema_ast = front_end.LoadSchema(f, {})
-
     print(schema_ast)
-    from pprint import pprint
 
   def testResolve(self):
     self._assertResolve("""
