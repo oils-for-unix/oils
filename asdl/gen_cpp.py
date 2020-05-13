@@ -42,7 +42,7 @@ class CEnumVisitor(visitor.AsdlVisitor):
     self.Emit("", depth)
 
 
-_BUILTINS = {
+_PRIMITIVES = {
     'string': 'Str*',  # declared in mylib.h
     'int': 'int',
     'float': 'double',
@@ -51,9 +51,6 @@ _BUILTINS = {
     # TODO: frontend/syntax.asdl should properly import id enum instead of
     # hard-coding it here.
     'id': 'Id_t',
-
-    # Hack for now
-    'map': 'Dict<Str*, Str*>*',
 }
 
 
@@ -72,10 +69,26 @@ class ForwardDeclareVisitor(visitor.AsdlVisitor):
     self.Emit("", 0)  # blank line
 
 
+def _GetMapType(type_expr):
+  """TODO: Probably should be consolidated with _GetInnerCppType.
+
+  One is used for Array, and the other for Map.
+  """
+  assert len(type_expr.children) == 0, type_expr
+
+  # TODO: Need to use field.resolved_type
+  return _PRIMITIVES[type_expr.name]
+
+
 def _GetInnerCppType(field):
   type_name = field.TypeName()
 
-  cpp_type = _BUILTINS.get(type_name)
+  if type_name == 'map':
+    k_type = _GetMapType(field.typ.children[0])
+    v_type = _GetMapType(field.typ.children[1])
+    return 'Dict<%s, %s>*' % (k_type, v_type)
+
+  cpp_type = _PRIMITIVES.get(type_name)
   if cpp_type is not None:
     # Annotations like int? or Id?  are NO-OPS now.
     # The user should reserve a Id.Unknown_Tok or -1.

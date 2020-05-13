@@ -84,6 +84,18 @@ TEST misc_test() {
   hnode_t* t = c->AbbreviatedTree();
   ASSERT(strcmp("hnode.Record", hnode_str(t->tag_())) == 0);
 
+  typed_demo_asdl::maps m;
+  log("m.ss  = %p", m.ss);
+  log("m.ib = %p", m.ib);
+
+  m.ss = new Dict<Str*, Str*>();
+  m.ib = new Dict<int, bool>();
+
+  m.ss->set(new Str("foo"), new Str("bar"));
+
+  m.ib->set(42, true);
+  log("mm.ib[42] = %d", m.ib->get(3));
+
 #if 0
   if (t->tag_() == hnode_e::Leaf) {
     hnode__Leaf* t2 = static_cast<hnode__Leaf*>(t);

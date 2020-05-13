@@ -17,8 +17,11 @@ module hnode {
     -- null node_type means there's no prefix, e.g. for 'token' type
     Record(string? node_type, field* fields,
            bool abbrev, string left, string right, hnode* unnamed_fields)
+    -- TODO: for maps, children alternate k1 v1 k2 v2.  Use {}
   | Array(hnode* children)
   | Leaf(string s, color color)
+    -- TODO: get rid of since Id is now in ASDL
   | External(any obj)
+
 
 }

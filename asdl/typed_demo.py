@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-typed_demo.py
+typed_demo.py: Run by types/run.sh
 """
 from __future__ import print_function
 
@@ -78,6 +78,21 @@ def main(argv):
   b3 = bool_expr.LogicalBinary(op_id_e.Star, b1, b2)
   print(b3)
   #b4 = bool_expr.LogicalBinary(op_id_e.Star, b1, 'a')
+
+  # default should be empty dictionary?
+  m = typed_demo_asdl.maps()
+  print(m.ss)
+  print(m.ib)
+
+  m.ss = {}
+  m.ib = {}
+
+  m.ss['str'] = 'str'
+  m.ib[3] = True
+
+  # Type errors
+  #m.ss['str'] = 3
+  #m.ib[3] = 'str'
 
 
 if __name__ == '__main__':

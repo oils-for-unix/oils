@@ -13,6 +13,24 @@ from core.util import log
 _ = log  # shut up lint
 
 
+_PRIMITIVES = {
+    'string': 'str',
+    'int': 'int',
+    'float': 'float',
+    'bool': 'bool',
+    'any': 'Any',
+    # TODO: frontend/syntax.asdl should properly import id enum instead of
+    # hard-coding it here.
+    'id': 'Id_t',
+}
+
+
+
+def _GetInnerType(type_expr):
+  assert len(type_expr.children) == 0, type_expr
+  return _PRIMITIVES[type_expr.name]
+
+
 class GenMyPyVisitor(visitor.AsdlVisitor):
   """Generate Python code with MyPy type annotations."""
 
@@ -197,25 +215,18 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     for f in all_fields:
       type_name = f.TypeName()
 
-      typ = f.resolved_type
-
       # op_id -> op_id_t, bool_expr -> bool_expr_t, etc.
       # NOTE: product type doesn't have _t suffix
-      if isinstance(typ, asdl_.Sum):
+      if isinstance(f.resolved_type, asdl_.Sum):
         type_str = '%s_t' % type_name
 
-      elif type_name == 'string':
-        type_str = 'str'
-
-      elif type_name == 'any':
-        type_str = 'Any'
+      elif type_name in _PRIMITIVES:
+        type_str = _PRIMITIVES[type_name]
 
       elif type_name == 'map':
-        # TODO: Handle parameters
-        type_str = 'Dict[str, str]'
-
-      elif type_name == 'id':
-        type_str = 'Id_t'
+        k_type = _GetInnerType(f.typ.children[0])
+        v_type = _GetInnerType(f.typ.children[1])
+        type_str = 'Dict[%s, %s]' % (k_type, v_type)
 
       else:
         type_str = type_name

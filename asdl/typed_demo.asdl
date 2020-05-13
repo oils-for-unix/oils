@@ -34,4 +34,6 @@ module arith {
   cflow2 = Break | Continue | Return(int status)
 
   other = (Token t)
+
+  maps = (map[string, string] ss, map[int, bool] ib)
 }
