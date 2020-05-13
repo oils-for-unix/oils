@@ -6,7 +6,6 @@ from __future__ import print_function
 import re
 
 from asdl import asdl_ as asdl
-from asdl import meta
 from asdl.asdl_ import (
     Use, Module, TypeDecl, Constructor, Field, Sum, SimpleSum, Product, TypeExpr
 )
@@ -358,9 +357,6 @@ class Check(_VisitorBase):
 
     def visitSum(self, sum, name):
         for t in sum.types:
-            # Simple sum types can't conflict
-            if asdl.is_simple(sum):
-                continue
             self.visit(t, name)
 
     def visitConstructor(self, cons, name):
@@ -377,7 +373,20 @@ class Check(_VisitorBase):
             self.visit(f, name)
 
 
-def _ResolveFields(field_ast_nodes, type_lookup, out):
+_PRIMITIVE_TYPES = [
+    'string', 'int', 'float', 'bool',
+
+    # 'any' is used:
+    # - for value.Obj in the the Oil expression evaluator.  We're not doing any
+    #   dynamic or static checking now.
+    'any',
+
+    # no 'array' or 'maybe' because TypeName() doesn't return them
+    'map',
+]
+
+
+def _ResolveFields(field_ast_nodes, type_lookup):
   """
   Args:
     type_lookup: Populated by name resolution
@@ -386,49 +395,20 @@ def _ResolveFields(field_ast_nodes, type_lookup, out):
     #log('field %s', field)
     type_name = field.TypeName()
 
-    assert field.resolved_type is None, field
+    assert field.resolved_type is None, field  # it's not initialized yet
 
     # We only use the resolved type for determining if it's a simple sum?
-    if type_name != 'map':
+    if type_name not in _PRIMITIVE_TYPES:
       ast_node = type_lookup.get(type_name)
       if ast_node is None:
         raise ASDLSyntaxError("Couldn't find type %r" % type_name)
       field.resolved_type = ast_node
 
-    if type_name == 'map':
-      children = field.typ.children
-
-      # TODO: This should be recursive.  Handles map[string, usertype] but not
-      # map[string, array[int]]
-
-      #log('map %s %s', children[0].name, children[1].name)
-      k_desc = type_lookup.get(children[0].name)
-      v_desc = type_lookup.get(children[1].name)
-      runtime_type = meta.MapType(k_desc, v_desc)
-
-    else:
-      runtime_type = type_lookup.get(type_name)
-
-      # TODO: It would be nice to have the filename and line number here.
-      # I guess Field could retain a Token?
-      if runtime_type is None:
-        raise ASDLSyntaxError("Couldn't find type %r" % type_name)
-
-      # TODO: cache these under 'type*' and 'type?'.  Don't want duplicates!
-      if field.IsArray():
-        runtime_type = meta.ArrayType(runtime_type)
-
-      if field.IsMaybe():
-        runtime_type = meta.MaybeType(runtime_type)
-
-    #out.append((field.name, runtime_type))
-
 
 def _ResolveTypeNames(module, app_types):
   # Types that fields are declared with: int, id, word_part, etc.
   # Fields are NOT declared with Constructor names.
-  type_lookup = dict(meta.PRIMITIVE_TYPES)
-  type_lookup.update(app_types)
+  type_lookup = dict(app_types)
 
   # TODO: Need to resolve 'imports' to the right descriptor.  Code generation
   # relies on it:
@@ -444,84 +424,34 @@ def _ResolveTypeNames(module, app_types):
 
   # First pass: collect declared types and make entries for them.
   for d in module.dfns:
-    ast_node = d.value
-    type_lookup[d.name] = ast_node
-
-    #if isinstance(ast_node, asdl.SimpleSum):
-    #  ast_node.simple_variants = [cons.name for cons in ast_node.types]
-
-    if 0:
-      if isinstance(ast_node, asdl.Product):
-        type_lookup[d.name] = meta.CompoundType([])
-
-      elif isinstance(ast_node, asdl.Sum):
-        # TODO: don't need this
-        type_lookup[d.name] = meta.SumType(False, [])
-
-      elif isinstance(ast_node, asdl.SimpleSum):
-        simple_variants = [cons.name for cons in ast_node.types]
-
-        ast_node.simple_variants = simple_variants
-
-        # TODO: don't need this
-        type_lookup[d.name] = meta.SumType(True, simple_variants)
-
-      else:
-        raise AssertionError(ast_node)
+    type_lookup[d.name] = d.value
 
   # Second pass: resolve type declarations in Product and constructor.
+  #
+  # - check that the type of every field is valid 
+  #   - fields in products, constructors
+  #   - fields in attributes
+  #   - parameterized types like map[int, action]   -- TODO
+  # - mutations:
+  #   - constructors that refer to first-class variants?  For inheritance I
+  #     guess.
+
   for d in module.dfns:
     ast_node = d.value
     if isinstance(ast_node, asdl.Product):
-      runtime_type = type_lookup[d.name] 
       #log('fields %s', ast_node.fields)
-      _ResolveFields(ast_node.fields, type_lookup, runtime_type.fields)
+      _ResolveFields(ast_node.fields, type_lookup)
 
     elif isinstance(ast_node, asdl.Sum):
-      sum_type = type_lookup[d.name]  # the one we just created
-      # TODO: Remove this -- it used to be used for runtime type checking.
-      # Unused?
-      if 1:
-        for cons in ast_node.types:
-          fields_out = []
-          # fully-qualified name.  Use a _ so we can share strings with class
-          # name.
-          key = '%s__%s' % (d.name, cons.name)
-          cons_type = meta.CompoundType(fields_out)
-          type_lookup[key] = cons_type
-          _ResolveFields(cons.fields, type_lookup, fields_out)
+      for cons in ast_node.types:
+        _ResolveFields(cons.fields, type_lookup)
 
     else:
       raise AssertionError(ast_node)
 
-  # TODO: Don't need type_lookup at all
-  #
-  # Instead, this function should:
-  #   - first pass: make a dictionary of all declared types
-  #   - second pass:
-  #     - check that the type of every field is valid 
-  #       - fields in products, constructors
-  #       - fields in attributes
-  #       - parameterized types like map[int, action]
-  #     - mutations:
-  #       - constructors that refer to first-class variants?  For inheritance I
-  #       guess.
-  #
-  # Then gen_{cpp,python} should just walk the AST.  No more "descriptors"
-  return type_lookup
-
 
 def LoadSchema(f, app_types, verbose=False):
-  """Returns an AST for the schema and a type_lookup dictionary.
-  
-  Used for code gen and metaprogramming.
-
-  Note: I think app_types is only used for dynamic type checking in
-  asdl/py_meta.py.  I guess it could be used for pretty-printing, but that uses
-  the actual value and not the type.
-
-  TODO: We should change pretty-printing to also verify the types!
-  """
+  """Returns an AST for the schema."""
   p = ASDLParser()
   schema_ast = p.parse(f)
   if verbose:
@@ -535,5 +465,5 @@ def LoadSchema(f, app_types, verbose=False):
     raise AssertionError('ASDL file is invalid: %s' % v.errors)
 
   # Make sure all the names are valid
-  type_lookup = _ResolveTypeNames(schema_ast, app_types)
-  return schema_ast, type_lookup
+  _ResolveTypeNames(schema_ast, app_types)
+  return schema_ast

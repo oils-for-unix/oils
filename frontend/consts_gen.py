@@ -129,7 +129,7 @@ def main(argv):
 namespace id_kind_asdl {
 """)
 
-      v = gen_cpp.ClassDefVisitor(f, {}, e_suffix=False,
+      v = gen_cpp.ClassDefVisitor(f, e_suffix=False,
                                   simple_int_sums=['Id'])
       v.VisitModule(schema_ast)
 
@@ -148,7 +148,7 @@ namespace id_kind_asdl {
 
 """)
 
-      v = gen_cpp.MethodDefVisitor(f, {}, e_suffix=False,
+      v = gen_cpp.MethodDefVisitor(f, e_suffix=False,
                                    simple_int_sums=['Id'])
 
       v.VisitModule(schema_ast)
@@ -168,7 +168,7 @@ from asdl import pybase
 
 """)
     # Minor style issue: we want Id and Kind, not Id_e and Kind_e
-    v = gen_python.GenMyPyVisitor(f, None, e_suffix=False,
+    v = gen_python.GenMyPyVisitor(f, e_suffix=False,
                                   simple_int_sums=['Id'])
     v.VisitModule(schema_ast)
 

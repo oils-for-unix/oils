@@ -72,7 +72,7 @@ class ForwardDeclareVisitor(visitor.AsdlVisitor):
     self.Emit("", 0)  # blank line
 
 
-def _GetInnerCppType(type_lookup, field):
+def _GetInnerCppType(field):
   type_name = field.TypeName()
 
   cpp_type = _BUILTINS.get(type_name)
@@ -89,7 +89,6 @@ def _GetInnerCppType(type_lookup, field):
       print('field %s' % field, file=sys.stderr)
     return cpp_type
 
-  typ = type_lookup[type_name]
   if field.resolved_type:
     if isinstance(field.resolved_type, asdl_.SimpleSum):
       # Use the enum instead of the class.
@@ -104,7 +103,7 @@ def _GetInnerCppType(type_lookup, field):
 class ClassDefVisitor(visitor.AsdlVisitor):
   """Generate C++ declarations and type-safe enums."""
 
-  def __init__(self, f, type_lookup, e_suffix=True,
+  def __init__(self, f, e_suffix=True,
                pretty_print_methods=True, simple_int_sums=None,
                debug_info=None):
     """
@@ -113,7 +112,6 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       debug_info: dictionary fill in with info for GDB
     """
     visitor.AsdlVisitor.__init__(self, f)
-    self.type_lookup = type_lookup
     self.e_suffix = e_suffix
     self.pretty_print_methods = pretty_print_methods
     self.simple_int_sums = simple_int_sums or []
@@ -131,7 +129,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     # TODO: The once instance of 'dict' needs an overhaul!
     # Right now it's untyped in ASDL.
     # I guess is should be Dict[str, str] for the associative array contents?
-    c_type = _GetInnerCppType(self.type_lookup, field)
+    c_type = _GetInnerCppType(field)
     if field.IsArray():
       return 'List<%s>*' % c_type
     else:
@@ -263,7 +261,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
   def _DefaultValue(self, field):
     type_name = field.TypeName()
     if field.IsArray():
-      default = 'new List<%s>()' % _GetInnerCppType(self.type_lookup, field)
+      default = 'new List<%s>()' % _GetInnerCppType(field)
     else:
       if type_name == 'int':
         default = '-1'
@@ -367,15 +365,14 @@ class MethodDefVisitor(visitor.AsdlVisitor):
   We have to do this in another pass because types and schemas have circular
   dependencies.
   """
-  def __init__(self, f, type_lookup, e_suffix=True, pretty_print_methods=True,
+  def __init__(self, f, e_suffix=True, pretty_print_methods=True,
                simple_int_sums=None):
     visitor.AsdlVisitor.__init__(self, f)
-    self.type_lookup = type_lookup
     self.e_suffix = e_suffix
     self.pretty_print_methods = pretty_print_methods
     self.simple_int_sums = simple_int_sums or []
 
-  def _CodeSnippet(self, abbrev, field, desc, var_name):
+  def _CodeSnippet(self, abbrev, field, var_name):
     none_guard = False
     type_name = field.TypeName()
 
@@ -421,18 +418,17 @@ class MethodDefVisitor(visitor.AsdlVisitor):
   def _EmitCodeForField(self, abbrev, field, counter):
     """Generate code that returns an hnode for a field."""
     out_val_name = 'x%d' % counter
-    desc = None
 
     if field.IsArray():
       iter_name = 'i%d' % counter
 
       self.Emit('  if (this->%s && len(this->%s)) {  // ArrayType' % (field.name, field.name))
       self.Emit('    hnode__Array* %s = new hnode__Array(new List<hnode_t*>());' % out_val_name)
-      item_type = _GetInnerCppType(self.type_lookup, field)
+      item_type = _GetInnerCppType(field)
       self.Emit('    for (ListIter<%s>it(this->%s); !it.Done(); it.Next()) {'
                 % (item_type, field.name))
       self.Emit('      %s %s = it.Value();' % (item_type, iter_name))
-      child_code_str, _ = self._CodeSnippet(abbrev, field, desc, iter_name)
+      child_code_str, _ = self._CodeSnippet(abbrev, field, iter_name)
       self.Emit('      %s->children->append(%s);' % (out_val_name, child_code_str))
       self.Emit('    }')
       self.Emit('    L->append(new field(new Str("%s"), %s));' % (field.name, out_val_name))
@@ -440,15 +436,14 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
     elif field.IsMaybe():
       self.Emit('  if (this->%s) {  // MaybeType' % field.name)
-      child_code_str, _ = self._CodeSnippet(abbrev, field, desc,
-                                            'this->%s' % field.name)
+      child_code_str, _ = self._CodeSnippet(abbrev, field, 'this->%s' % field.name)
       self.Emit('    hnode_t* %s = %s;' % (out_val_name, child_code_str))
       self.Emit('    L->append(new field(new Str("%s"), %s));' % (field.name, out_val_name))
       self.Emit('  }')
 
     else:
       var_name = 'this->%s' % field.name
-      code_str, obj_none_guard = self._CodeSnippet(abbrev, field, desc, var_name)
+      code_str, obj_none_guard = self._CodeSnippet(abbrev, field, var_name)
 
       depth = self.current_depth
       if obj_none_guard:  # to satisfy MyPy type system

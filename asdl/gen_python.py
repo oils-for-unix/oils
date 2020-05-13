@@ -16,12 +16,11 @@ _ = log  # shut up lint
 class GenMyPyVisitor(visitor.AsdlVisitor):
   """Generate Python code with MyPy type annotations."""
 
-  def __init__(self, f, type_lookup, abbrev_mod_entries=None, e_suffix=True,
+  def __init__(self, f, abbrev_mod_entries=None, e_suffix=True,
                pretty_print_methods=True, optional_fields=True,
                simple_int_sums=None):
 
     visitor.AsdlVisitor.__init__(self, f)
-    self.type_lookup = type_lookup
     self.abbrev_mod_entries = abbrev_mod_entries or []
     self.e_suffix = e_suffix
     self.pretty_print_methods = pretty_print_methods
@@ -92,7 +91,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     self.Emit('  return _%s_str[val]' % name, depth)
     self.Emit('', depth)
 
-  def _CodeSnippet(self, abbrev, field, desc, var_name):
+  def _CodeSnippet(self, abbrev, field, var_name):
     none_guard = False
     type_name = field.TypeName()
 
@@ -139,7 +138,6 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
   def _EmitCodeForField(self, abbrev, field, counter):
     """Generate code that returns an hnode for a field."""
     out_val_name = 'x%d' % counter
-    desc = None
 
     if field.IsArray():
       iter_name = 'i%d' % counter
@@ -147,21 +145,19 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       self.Emit('  if self.%s:  # ArrayType' % field.name)
       self.Emit('    %s = hnode.Array([])' % out_val_name)
       self.Emit('    for %s in self.%s:' % (iter_name, field.name))
-      child_code_str, _ = self._CodeSnippet(abbrev, field, desc, iter_name)
+      child_code_str, _ = self._CodeSnippet(abbrev, field, iter_name)
       self.Emit('      %s.children.append(%s)' % (out_val_name, child_code_str))
       self.Emit('    L.append(field(%r, %s))' % (field.name, out_val_name))
 
     elif field.IsMaybe():
       self.Emit('  if self.%s is not None:  # MaybeType' % field.name)
-      child_code_str, _ = self._CodeSnippet(abbrev, field, desc,
-                                            'self.%s' % field.name)
+      child_code_str, _ = self._CodeSnippet(abbrev, field, 'self.%s' % field.name)
       self.Emit('    %s = %s' % (out_val_name, child_code_str))
       self.Emit('    L.append(field(%r, %s))' % (field.name, out_val_name))
 
     else:
       var_name = 'self.%s' % field.name
-      code_str, obj_none_guard = self._CodeSnippet(abbrev, field, desc,
-                                                   var_name)
+      code_str, obj_none_guard = self._CodeSnippet(abbrev, field, var_name)
 
       depth = self.current_depth
       if obj_none_guard:  # to satisfy MyPy type system

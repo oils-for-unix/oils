@@ -10,12 +10,23 @@ import sys
 from asdl import front_end
 from asdl import gen_cpp
 from asdl import gen_python
-from asdl import meta
 
 #from core.util import log
 
 # Special cases like Id
 _SIMPLE = ['state', 'emit', 'char_kind']
+
+
+class UserType(object):
+  """
+  TODO: Delete this class after we have modules with 'use'?
+  """
+  def __init__(self, mod_name, type_name):
+    self.mod_name = mod_name
+    self.type_name = type_name
+
+  def __repr__(self):
+    return '<UserType %s %s>' % (self.mod_name, self.type_name)
 
 
 def main(argv):
@@ -31,13 +42,13 @@ def main(argv):
 
   schema_filename = os.path.basename(schema_path) 
   if schema_filename in ('syntax.asdl', 'runtime.asdl'):
-    app_types = {'id': meta.UserType('id_kind_asdl', 'Id_t')}
+    app_types = {'id': UserType('id_kind_asdl', 'Id_t')}
   else:
     app_types = {}
 
   if action == 'c':  # Generate C code for the lexer
     with open(schema_path) as f:
-      schema_ast, _ = front_end.LoadSchema(f, app_types)
+      schema_ast = front_end.LoadSchema(f, app_types)
 
     v = gen_cpp.CEnumVisitor(sys.stdout)
     v.VisitModule(schema_ast)
@@ -47,7 +58,7 @@ def main(argv):
     pretty_print_methods = bool(os.getenv('PRETTY_PRINT_METHODS', 'yes'))
 
     with open(schema_path) as f:
-      schema_ast, type_lookup = front_end.LoadSchema(f, app_types)
+      schema_ast = front_end.LoadSchema(f, app_types)
 
     # asdl/typed_arith.asdl -> typed_arith_asdl
     ns = os.path.basename(schema_path).replace('.', '_')
@@ -86,8 +97,7 @@ namespace %s {
       v.VisitModule(schema_ast)
 
       debug_info = {}
-      v2 = gen_cpp.ClassDefVisitor(f, type_lookup,
-                                   pretty_print_methods=pretty_print_methods,
+      v2 = gen_cpp.ClassDefVisitor(f, pretty_print_methods=pretty_print_methods,
                                    simple_int_sums=_SIMPLE,
                                    debug_info=debug_info)
       v2.VisitModule(schema_ast)
@@ -141,7 +151,7 @@ namespace %s {
 
 """ % (ns, ns))
 
-        v3 = gen_cpp.MethodDefVisitor(f, type_lookup,
+        v3 = gen_cpp.MethodDefVisitor(f,
                                       pretty_print_methods=pretty_print_methods,
                                       simple_int_sums=_SIMPLE)
         v3.VisitModule(schema_ast)
@@ -152,7 +162,7 @@ namespace %s {
 
   elif action == 'mypy':  # Generated typed MyPy code
     with open(schema_path) as f:
-      schema_ast, type_lookup = front_end.LoadSchema(f, app_types)
+      schema_ast = front_end.LoadSchema(f, app_types)
 
     try:
       abbrev_module_name = argv[3]
@@ -165,7 +175,7 @@ namespace %s {
     f = sys.stdout
 
     for typ in app_types.itervalues():
-      if isinstance(typ, meta.UserType):
+      if isinstance(typ, UserType):
         f.write('from _devbuild.gen.%s import %s\n' % (
           typ.mod_name, typ.type_name))
         # HACK
@@ -190,7 +200,7 @@ from _devbuild.gen.hnode_asdl import color_e, hnode, hnode_e, hnode_t, field
 """)
 
     abbrev_mod_entries = dir(abbrev_mod) if abbrev_mod else []
-    v = gen_python.GenMyPyVisitor(f, type_lookup, abbrev_mod_entries,
+    v = gen_python.GenMyPyVisitor(f, abbrev_mod_entries,
                                   pretty_print_methods=pretty_print_methods,
                                   optional_fields=optional_fields,
                                   simple_int_sums=_SIMPLE)
