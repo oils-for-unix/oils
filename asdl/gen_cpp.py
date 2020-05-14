@@ -78,12 +78,12 @@ def _GetMapType(type_expr):
   """
   assert len(type_expr.children) == 0, type_expr
 
-  # This includes asdl_.SimpleSum
   if type_expr.resolved:
+    # This includes asdl_.SimpleSum
     if isinstance(type_expr.resolved, asdl_.Sum):
-      return '%s_t' % type_expr.name
+      return '%s_t*' % type_expr.name
     if isinstance(type_expr.resolved, asdl_.Product):
-      return type_expr.name
+      return '%s*' % type_expr.name
 
   # TODO: Need to use field.resolved_type
   return _PRIMITIVES[type_expr.name]
@@ -394,9 +394,10 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     self.pretty_print_methods = pretty_print_methods
     self.simple_int_sums = simple_int_sums or []
 
-  def _CodeSnippet(self, abbrev, field, var_name):
+  def _CodeSnippet(self, abbrev, typ, var_name):
+    # type: (str, asdl_.TypeExpr, str) -> str
     none_guard = False
-    type_name = field.TypeName()
+    type_name = typ.name
 
     if type_name == 'bool':
       code_str = "new hnode__Leaf(%s ? runtime::TRUE_STR : runtime::FALSE_STR, color_e::OtherConst)" % var_name
@@ -423,17 +424,17 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       code_str = 'new hnode__Leaf(new Str(Id_str(%s)), color_e::UserType)' % var_name
       none_guard = True  # otherwise MyPy complains about foo.name
 
-    elif field.resolved_type:
-      if isinstance(field.resolved_type, asdl_.SimpleSum):
+    elif typ.resolved:
+      if isinstance(typ.resolved, asdl_.SimpleSum):
         code_str = 'new hnode__Leaf(new Str(%s_str(%s)), color_e::TypeName)' % (
-            field.TypeName(), var_name)
+            typ.name, var_name)
         none_guard = True  # otherwise MyPy complains about foo.name
       else:
         code_str = '%s->%s()' % (var_name, abbrev)
         none_guard = True
 
     else:
-      raise AssertionError(field)
+      raise AssertionError('Unhandled type %s' % typ)
 
     return code_str, none_guard
 
@@ -443,29 +444,58 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
     if field.IsArray():
       iter_name = 'i%d' % counter
+      typ = field.typ.children[0]
 
       self.Emit('  if (this->%s && len(this->%s)) {  // ArrayType' % (field.name, field.name))
       self.Emit('    hnode__Array* %s = new hnode__Array(new List<hnode_t*>());' % out_val_name)
       item_type = _GetInnerCppType(field)
-      self.Emit('    for (ListIter<%s>it(this->%s); !it.Done(); it.Next()) {'
+      self.Emit('    for (ListIter<%s> it(this->%s); !it.Done(); it.Next()) {'
                 % (item_type, field.name))
       self.Emit('      %s %s = it.Value();' % (item_type, iter_name))
-      child_code_str, _ = self._CodeSnippet(abbrev, field, iter_name)
+      child_code_str, _ = self._CodeSnippet(abbrev, typ, iter_name)
       self.Emit('      %s->children->append(%s);' % (out_val_name, child_code_str))
       self.Emit('    }')
       self.Emit('    L->append(new field(new Str("%s"), %s));' % (field.name, out_val_name))
       self.Emit('  }')
 
     elif field.IsMaybe():
+      typ = field.typ.children[0]
+
       self.Emit('  if (this->%s) {  // MaybeType' % field.name)
-      child_code_str, _ = self._CodeSnippet(abbrev, field, 'this->%s' % field.name)
+      child_code_str, _ = self._CodeSnippet(abbrev, typ, 'this->%s' % field.name)
       self.Emit('    hnode_t* %s = %s;' % (out_val_name, child_code_str))
       self.Emit('    L->append(new field(new Str("%s"), %s));' % (field.name, out_val_name))
       self.Emit('  }')
 
+    elif field.IsMap():
+      k = 'k%d' % counter
+      v = 'v%d' % counter
+
+      k_typ = field.typ.children[0]
+      v_typ = field.typ.children[1]
+
+      k_c_type = _GetMapType(k_typ)
+      v_c_type = _GetMapType(v_typ)
+
+      k_code_str, _ = self._CodeSnippet(abbrev, k_typ, k)
+      v_code_str, _ = self._CodeSnippet(abbrev, v_typ, v)
+
+      self.Emit('  if (this->%s) {' % field.name)
+      self.Emit('    auto m = new hnode__Leaf(new Str("map"), color_e::OtherConst);')
+      self.Emit('    hnode__Array* %s = new hnode__Array(new List<hnode_t*>({m}));' % out_val_name)
+      self.Emit('    for (DictIter<%s, %s> it(this->%s); !it.Done(); it.Next()) {' % (
+                k_c_type, v_c_type, field.name))
+      self.Emit('      auto %s = it.Key();' % k)
+      self.Emit('      auto %s = it.Value();' % v)
+      self.Emit('      %s->children->append(%s);' % (out_val_name, k_code_str))
+      self.Emit('      %s->children->append(%s);' % (out_val_name, v_code_str))
+      self.Emit('    }')
+      self.Emit('    L->append(new field(new Str ("%s"), %s));' % (field.name, out_val_name))
+      self.Emit('  }');
+
     else:
       var_name = 'this->%s' % field.name
-      code_str, obj_none_guard = self._CodeSnippet(abbrev, field, var_name)
+      code_str, obj_none_guard = self._CodeSnippet(abbrev, field.typ, var_name)
 
       depth = self.current_depth
       if obj_none_guard:  # to satisfy MyPy type system

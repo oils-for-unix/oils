@@ -129,7 +129,16 @@ TEST maps_test() {
   m.ss->set(new Str("foo"), new Str("bar"));
 
   m.ib->set(42, true);
-  log("mm.ib[42] = %d", m.ib->get(3));
+  // note: Dict<int, bool>::get() doesn't compile because nullptr isn't valid
+  // to return.  But Dict<int, bool>::index() does compile.
+  log("mm.ib[42] = %d", m.ib->index(42));
+
+  hnode_t* t = m.PrettyTree();
+  auto f = mylib::Stdout();
+  auto ast_f = new format::TextOutput(f);
+  // fails with repr(void *)
+  // OK change the pretty printer!
+  format::PrintTree(t, ast_f);
 
   PASS();
 }

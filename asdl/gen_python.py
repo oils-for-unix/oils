@@ -123,7 +123,6 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
   def _CodeSnippet(self, abbrev, typ, var_name):
     # type: (str, asdl_.TypeExpr, str) -> str
     none_guard = False
-
     type_name = typ.name
 
     if type_name == 'bool':
@@ -157,7 +156,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         none_guard = True
 
     else:
-      raise AssertionError('field %s type_name %s' % (field, type_name))
+      raise AssertionError('Unhandled type %s' % typ)
 
     return code_str, none_guard
 
@@ -245,6 +244,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
       # op_id -> op_id_t, bool_expr -> bool_expr_t, etc.
       # NOTE: product type doesn't have _t suffix
+      # TODO: Use f.typ.resolved, but also respect List[], etc.
       if isinstance(f.resolved_type, asdl_.Sum):
         type_str = '%s_t' % type_name
 
