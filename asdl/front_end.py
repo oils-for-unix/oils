@@ -386,15 +386,34 @@ _PRIMITIVE_TYPES = [
 ]
 
 
+def _ResolveType(typ, type_lookup):
+  """
+  Recursively attach a 'resolved' field to TypeExpr nodes.
+  """
+  if typ.children:
+    assert typ.name in ('map', 'array', 'maybe'), typ
+    for t in typ.children:
+      _ResolveType(t, type_lookup)  # recurse
+  else:
+    if typ.name not in _PRIMITIVE_TYPES:
+      ast_node = type_lookup.get(typ.name)
+      if ast_node is None:
+        raise ASDLSyntaxError("Couldn't find type %r" % typ.name)
+      typ.resolved = ast_node
+      #log('resolved = %s', typ.resolved)
+
+
 def _ResolveFields(field_ast_nodes, type_lookup):
   """
   Args:
     type_lookup: Populated by name resolution
   """
   for field in field_ast_nodes:
-    #log('field %s', field)
-    type_name = field.TypeName()
+    _ResolveType(field.typ, type_lookup)
 
+    # TODO: Get rid of resolved_type everywhere
+
+    type_name = field.TypeName()
     assert field.resolved_type is None, field  # it's not initialized yet
 
     # We only use the resolved type for determining if it's a simple sum?
@@ -405,7 +424,7 @@ def _ResolveFields(field_ast_nodes, type_lookup):
       field.resolved_type = ast_node
 
 
-def _ResolveTypeNames(module, app_types):
+def _ResolveModule(module, app_types):
   # Types that fields are declared with: int, id, word_part, etc.
   # Fields are NOT declared with Constructor names.
   type_lookup = dict(app_types)
@@ -465,5 +484,5 @@ def LoadSchema(f, app_types, verbose=False):
     raise AssertionError('ASDL file is invalid: %s' % v.errors)
 
   # Make sure all the names are valid
-  _ResolveTypeNames(schema_ast, app_types)
+  _ResolveModule(schema_ast, app_types)
   return schema_ast

@@ -40,7 +40,7 @@ module arith {
     map[int, bool] ib,
 
     -- This has a user-defined type
-    -- map[string, Token] tokens,
+    map[string, Token] tokens,
   )
 
 }

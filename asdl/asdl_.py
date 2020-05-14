@@ -119,9 +119,8 @@ class TypeExpr(AST):
       self.name = name  # type: str
       self.children = children or []  # type: List[TypeExpr]
 
-      # LEGACY:
-      self.seq = seq
-      self.opt = opt
+      # mutated by name resolution stage.
+      self.resolved = None  # type: AST
 
     def Print(self, f, indent):
         """Printed on one line."""

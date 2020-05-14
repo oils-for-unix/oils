@@ -70,11 +70,20 @@ class ForwardDeclareVisitor(visitor.AsdlVisitor):
 
 
 def _GetMapType(type_expr):
-  """TODO: Probably should be consolidated with _GetInnerCppType.
+  """
+  TODO: Make this recursive.  Should be TypeExprToCpp
 
-  One is used for Array, and the other for Map.
+  And consolidate with _GetInnerCppType.  That is used for Array, and this for
+  Map.
   """
   assert len(type_expr.children) == 0, type_expr
+
+  # This includes asdl_.SimpleSum
+  if type_expr.resolved:
+    if isinstance(type_expr.resolved, asdl_.Sum):
+      return '%s_t' % type_expr.name
+    if isinstance(type_expr.resolved, asdl_.Product):
+      return type_expr.name
 
   # TODO: Need to use field.resolved_type
   return _PRIMITIVES[type_expr.name]

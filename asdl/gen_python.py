@@ -27,7 +27,18 @@ _PRIMITIVES = {
 
 
 def _GetInnerType(type_expr):
+  """
+  TODO: Make this recursive.  Should be TypeExprToMyPy
+  """
   assert len(type_expr.children) == 0, type_expr
+
+  # This includes asdl_.SimpleSum
+  if type_expr.resolved:
+    if isinstance(type_expr.resolved, asdl_.Sum):
+      return '%s_t' % type_expr.name
+    if isinstance(type_expr.resolved, asdl_.Product):
+      return type_expr.name
+
   return _PRIMITIVES[type_expr.name]
 
 
