@@ -410,12 +410,12 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     elif type_name == 'string':
       code_str = 'runtime::NewLeaf(%s, color_e::StringConst)' % var_name
 
-    elif type_name == 'any':
-      # This is used for value.Obj().
+    elif type_name == 'any':  # TODO: Remove this.  Used for value.Obj().
       code_str = 'new hnode__External(%s)' % var_name
 
     elif type_name == 'map':
-      # TODO: Is this valid?
+      # TODO: Create hnode__Array?
+      # External can't be used in C++
       code_str = 'new hnode__External(%s)' % var_name
 
     elif type_name == 'id':

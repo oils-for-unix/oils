@@ -156,6 +156,9 @@ class Field(AST):
     def IsMaybe(self):
       return self.typ.name == 'maybe'
 
+    def IsMap(self):
+      return self.typ.name == 'map'
+
     def TypeName(self):
       # Compatibility for foo?   and   foo*
       if self.typ.name in ('array', 'maybe'):

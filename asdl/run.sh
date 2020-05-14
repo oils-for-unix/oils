@@ -23,6 +23,8 @@ if test -z "${CXX:-}"; then
   fi
 fi
 
+CPPFLAGS="$CXXFLAGS -g"  # for debugging tests
+
 export PYTHONPATH='.:vendor/'
 
 gen-mypy-asdl() {
@@ -178,12 +180,17 @@ gen-cpp-test() {
   # BUG: This doesn't link without the translation of asdl/runtime.py.
 
   # uses typed_arith_asdl.h, runtime.h, hnode_asdl.h, asdl_runtime.h
-  $CXX $CXXFLAGS \
+  $CXX $CPPFLAGS \
     -I _tmp -I mycpp -I _build/cpp -I cpp \
     -o $bin \
-    asdl/gen_cpp_test.cc _tmp/typed_arith_asdl.cc _build/cpp/hnode_asdl.cc \
-    asdl/runtime.cc
+    asdl/gen_cpp_test.cc \
+    asdl/runtime.cc \
+    mycpp/mylib.cc \
+    _build/cpp/hnode_asdl.cc \
+    _tmp/typed_arith_asdl.cc \
+    _tmp/typed_demo_asdl.cc 
 
+  #gdb -batch -ex run -ex bt --args $bin
   $bin
 }
 

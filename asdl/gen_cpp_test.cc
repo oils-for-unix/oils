@@ -1,6 +1,7 @@
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>
 
+#include "asdl_runtime.h"
 #include "greatest.h"
 #include "mylib.h"
 #include "typed_arith_asdl.h"
@@ -16,21 +17,13 @@ using typed_arith_asdl::arith_expr__FuncCall;
 using typed_arith_asdl::arith_expr__Unary;
 using typed_arith_asdl::arith_expr__Var;
 
+using typed_demo_asdl::bool_expr__Binary;
 using typed_demo_asdl::bool_expr__LogicalBinary;
 using typed_demo_asdl::op_id_e;
 
 using hnode_asdl::hnode__Leaf;
 using hnode_asdl::hnode_str;
 namespace hnode_e = hnode_asdl::hnode_e;
-
-// Log messages to stdout.
-void log(const char* fmt, ...) {
-  va_list args;
-  va_start(args, fmt);
-  vfprintf(stderr, fmt, args);
-  va_end(args);
-  fprintf(stderr, "\n");
-}
 
 void PrintTag(arith_expr_t* a) {
   switch (a->tag_()) {
@@ -74,28 +67,6 @@ TEST misc_test() {
   auto p = new pipeline(true);
   log("p->negated = %d", p->negated);
 
-  // from typed_demo.asdl
-
-  auto o = op_id_e::Plus;
-  auto b = new bool_expr__LogicalBinary(o, nullptr, nullptr);
-  log("sizeof b = %d", sizeof b);
-  log("");
-
-  hnode_t* t = c->AbbreviatedTree();
-  ASSERT(strcmp("hnode.Record", hnode_str(t->tag_())) == 0);
-
-  typed_demo_asdl::maps m;
-  log("m.ss  = %p", m.ss);
-  log("m.ib = %p", m.ib);
-
-  m.ss = new Dict<Str*, Str*>();
-  m.ib = new Dict<int, bool>();
-
-  m.ss->set(new Str("foo"), new Str("bar"));
-
-  m.ib->set(42, true);
-  log("mm.ib[42] = %d", m.ib->get(3));
-
 #if 0
   if (t->tag_() == hnode_e::Leaf) {
     hnode__Leaf* t2 = static_cast<hnode__Leaf*>(t);
@@ -118,11 +89,60 @@ TEST misc_test() {
   PASS();
 }
 
+TEST pretty_print_test() {
+  // typed_demo.asdl
+
+  //auto o = op_id_e::Plus;
+  // Note: this is NOT prevented at compile time, even though it's illegal.
+  // left and right are not optional.
+  //auto b = new bool_expr__LogicalBinary(o, nullptr, nullptr);
+
+  auto w1 = new typed_demo_asdl::word(new Str("left"));
+  auto w2 = new typed_demo_asdl::word(new Str("right"));
+  auto b = new bool_expr__Binary(w1, w2);
+  //
+  log("sizeof b = %d", sizeof b);
+  log("");
+  hnode_t* t1 = b->AbbreviatedTree();
+  ASSERT(strcmp("hnode.Record", hnode_str(t1->tag_())) == 0);
+
+  auto f = mylib::Stdout();
+  auto ast_f = new format::TextOutput(f);
+  format::PrintTree(t1, ast_f);
+
+  // typed_arith.asdl
+  auto c = new arith_expr__Const(42);
+  hnode_t* t2 = c->AbbreviatedTree();
+  ASSERT(strcmp("hnode.Record", hnode_str(t2->tag_())) == 0);
+
+  PASS();
+}
+
+TEST maps_test() {
+  typed_demo_asdl::maps m;
+  log("m.ss  = %p", m.ss);
+  log("m.ib = %p", m.ib);
+
+  m.ss = new Dict<Str*, Str*>();
+  m.ib = new Dict<int, bool>();
+
+  m.ss->set(new Str("foo"), new Str("bar"));
+
+  m.ib->set(42, true);
+  log("mm.ib[42] = %d", m.ib->get(3));
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
+
   RUN_TEST(misc_test);
+  RUN_TEST(maps_test);
+  RUN_TEST(pretty_print_test);
+
   GREATEST_MAIN_END(); /* display results */
   return 0;
 }
