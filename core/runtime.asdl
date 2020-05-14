@@ -137,9 +137,9 @@ module runtime
 
   flag_spec = (
     string* arity0,  -- could rewrite as array[string] arity0
-    map[string, set_to_arg] arity1,
+    -- map[string, set_to_arg] arity1,
     string* options,
-    map[string, value] defaults
+    -- map[string, value] defaults
   )
 
   action = 

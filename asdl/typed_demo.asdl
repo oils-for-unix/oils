@@ -35,5 +35,12 @@ module arith {
 
   other = (Token t)
 
-  maps = (map[string, string] ss, map[int, bool] ib)
+  maps = (
+    map[string, string] ss,
+    map[int, bool] ib,
+
+    -- This has a user-defined type
+    -- map[string, Token] tokens,
+  )
+
 }
