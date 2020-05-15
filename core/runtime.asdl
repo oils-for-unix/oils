@@ -133,7 +133,7 @@ module runtime
   -- Flag arguments can be any of these types.
   flag_type = Bool | Int | Float | Str | Enum(string* alts)
 
-  set_to_arg = (string name, flag_type typ, bool quit_parsing_flags)
+  set_to_arg = (string name, flag_type flag_type, bool quit_parsing_flags)
 
   flag_spec = (
     string* arity0,  -- could rewrite as array[string] arity0

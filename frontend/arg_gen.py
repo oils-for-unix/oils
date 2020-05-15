@@ -102,6 +102,10 @@ def main(argv):
 
   for spec_name in sorted(specs):
     spec = specs[spec_name]
+    spec.spec.PrettyPrint(f=sys.stderr)
+    log('')
+    
+    log('spec.arity1 %s', spec.spec.arity1)
 
     log('%s', spec_name)
     #print(dir(spec))

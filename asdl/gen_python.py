@@ -291,6 +291,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
       elif f.IsArray():  # Array
         default = '[]'
+      elif f.IsMap():  # Array
+        default = '{}'
 
       # PROBLEM: Optional ints can't be zero!
       # self.span_id = span_id or runtime.NO_SPID

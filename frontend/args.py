@@ -58,7 +58,8 @@ from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Bool, value__Int, value__Float, value__Str,
-    flag_type, flag_type_e, flag_type_t, flag_type__Enum
+    flag_type, flag_type_e, flag_type_t, flag_type__Enum,
+    set_to_arg,
 )
 
 from asdl import runtime
@@ -288,55 +289,60 @@ class SetToArg(_Action):
       quit_parsing_flags: Stop parsing args after this one.  for sh -c.
         python -c behaves the same way.
     """
-    self.name = name
-    self.flag_type = flag_type
-    self.quit_parsing_flags = quit_parsing_flags
+    self.action = set_to_arg(name, flag_type, quit_parsing_flags)
 
   def OnMatch(self, prefix, suffix, arg_r, out):
     # type: (Optional[str], Optional[str], Reader, _Attributes) -> bool
     """Called when the flag matches."""
+    return _SetToArg(self.action, suffix, arg_r, out)
 
-    if suffix:  # for the ',' in -d,
-      arg = suffix
-    else:
-      arg_r.Next()
-      arg = arg_r.Peek()
-      if arg is None:
-        e_usage('expected argument to %r' % ('-' + self.name),
+
+def _SetToArg(action, suffix, arg_r, out):
+  # type: (set_to_arg, Optional[str], Reader, _Attributes) -> bool
+  """
+  Perform the action.
+  """
+  if suffix:  # for the ',' in -d,
+    arg = suffix
+  else:
+    arg_r.Next()
+    arg = arg_r.Peek()
+    if arg is None:
+      e_usage('expected argument to %r' % ('-' + action.name),
+              span_id=arg_r.SpanId())
+
+  # e.g. spec.LongFlag('--format', ['text', 'html'])
+  # Should change to arg.Enum([...])
+  with tagswitch(action.flag_type) as case:
+    if case(flag_type_e.Enum):
+      alts = cast(flag_type__Enum, action.flag_type).alts
+      if arg not in alts:
+        e_usage(
+            'got invalid argument %r to %r, expected one of: %s' %
+            (arg, ('-' + action.name), ', '.join(alts)), span_id=arg_r.SpanId())
+      val = value.Str(arg)  # type: value_t
+
+    elif case(flag_type_e.Str):
+      val = value.Str(arg)
+
+    elif case(flag_type_e.Int):
+      try:
+        val = value.Int(int(arg))
+      except ValueError:
+        e_usage('expected integer after %r, got %r' % ('-' + action.name, arg),
                 span_id=arg_r.SpanId())
 
-    # e.g. spec.LongFlag('--format', ['text', 'html'])
-    # Should change to arg.Enum([...])
-    with tagswitch(self.flag_type) as case:
-      if case(flag_type_e.Enum):
-        alts = cast(flag_type__Enum, self.flag_type).alts
-        if arg not in alts:
-          e_usage(
-              'got invalid argument %r to %r, expected one of: %s' %
-              (arg, ('-' + self.name), ', '.join(alts)), span_id=arg_r.SpanId())
-        val = value.Str(arg)  # type: value_t
+    elif case(flag_type_e.Float):
+      try:
+        val = value.Float(float(arg))
+      except ValueError:
+        e_usage('expected number after %r, got %r' % ('-' + action.name, arg),
+                span_id=arg_r.SpanId())
+    else:
+      raise AssertionError()
 
-      elif case(flag_type_e.Str):
-        val = value.Str(arg)
-
-      elif case(flag_type_e.Int):
-        try:
-          val = value.Int(int(arg))
-        except ValueError:
-          e_usage('expected integer after %r, got %r' % ('-' + self.name, arg),
-                  span_id=arg_r.SpanId())
-
-      elif case(flag_type_e.Float):
-        try:
-          val = value.Float(float(arg))
-        except ValueError:
-          e_usage('expected number after %r, got %r' % ('-' + self.name, arg),
-                  span_id=arg_r.SpanId())
-      else:
-        raise AssertionError()
-
-    out.Set(self.name, val)
-    return self.quit_parsing_flags
+  out.Set(action.name, val)
+  return action.quit_parsing_flags
 
 
 class SetBoolToArg(_Action):
@@ -491,14 +497,14 @@ def Parse(spec, arg_r):
           out.Set(ch, value.Str('-'))
           continue
 
-        if spec.arity0.get(ch):  # e.g. read -r
+        if ch in spec.arity0:  # e.g. read -r
           out.SetTrue(ch)
           continue
 
         if ch in spec.arity1:  # e.g. read -t1.0
           action = spec.arity1[ch]
           suffix = arg[i+1:]  # '1.0'
-          action.OnMatch(None, suffix, arg_r, out)
+          _SetToArg(action, suffix, arg_r, out)
           break
 
         e_usage(

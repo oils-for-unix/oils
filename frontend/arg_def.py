@@ -7,7 +7,8 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.runtime_asdl import (
-    cmd_value__Argv, flag_type, flag_type_t, value, value_t
+    cmd_value__Argv, flag_type, flag_type_t, value, value_t,
+    flag_spec, set_to_arg,
 )
 from frontend import args
 from mycpp import mylib
@@ -99,14 +100,17 @@ class _FlagSpec(object):
   """
   def __init__(self, typed=False):
     # type: (bool) -> None
-
     # New style: eventually everything should be typed
     self.typed = typed
 
-    self.arity0 = {}  # type: Dict[str, bool]  # {'r': _Action} for read -r
-    self.arity1 = {}  # type: Dict[str, args.SetToArg]  # {'t': _Action} for read -t 1.0
-    self.options = {}  # type: Dict[str, bool]  # e.g. for declare +r
-    self.defaults = {}  # type: Dict[str, value_t]
+    # ASDL definition.  To be serialized to C++.
+    self.spec = flag_spec()
+
+    # Convenience
+    self.arity0 = self.spec.arity0
+    self.arity1 = self.spec.arity1
+    self.options = self.spec.options
+    self.defaults = self.spec.defaults
 
     # For code generation.  Not used at runtime.
     self.fields = {}  # type: Dict[str, flag_type_t]  # for arg_types to use
@@ -134,9 +138,9 @@ class _FlagSpec(object):
 
     char = short_name[1]
     if arg_type is None:
-      self.arity0[char] = True
+      self.arity0.append(char)
     else:
-      self.arity1[char] = args.SetToArg(char, _FlagType(arg_type))
+      self.arity1[char] = set_to_arg(char, _FlagType(arg_type), False)
 
     # TODO: callers should pass flag_type
     if arg_type is None:
@@ -170,7 +174,7 @@ class _FlagSpec(object):
     """Define an option that can be turned off with + and on with -."""
 
     assert len(char) == 1  # 'r' for -r +r
-    self.options[char] = True
+    self.options.append(char)
 
     self.defaults[char] = value.Undef()
     # '+' or '-'.  TODO: Should we make it a bool?
@@ -481,3 +485,4 @@ NEW_VAR_SPEC.ShortFlag('-A')
 UNSET_SPEC = FlagSpec('unset', typed=True)
 UNSET_SPEC.ShortFlag('-v')
 UNSET_SPEC.ShortFlag('-f')
+#UNSET_SPEC.ShortFlag('-z', args.String)
