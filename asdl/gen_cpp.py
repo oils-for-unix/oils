@@ -138,6 +138,39 @@ def _DefaultValue(typ):
   return default
 
 
+def _HNodeExpr(abbrev, typ, var_name):
+  # type: (str, asdl_.TypeExpr, str) -> str
+  none_guard = False
+  type_name = typ.name
+
+  if type_name == 'bool':
+    code_str = "new hnode__Leaf(%s ? runtime::TRUE_STR : runtime::FALSE_STR, color_e::OtherConst)" % var_name
+
+  elif type_name == 'int':
+    code_str = 'new hnode__Leaf(str(%s), color_e::OtherConst)' % var_name
+
+  elif type_name == 'float':
+    code_str = 'new hnode__Leaf(str(%s), color_e::OtherConst)' % var_name
+
+  elif type_name == 'string':
+    code_str = 'runtime::NewLeaf(%s, color_e::StringConst)' % var_name
+
+  elif type_name == 'any':  # TODO: Remove this.  Used for value.Obj().
+    code_str = 'new hnode__External(%s)' % var_name
+
+  elif type_name == 'id':  # was meta.UserType
+    code_str = 'new hnode__Leaf(new Str(Id_str(%s)), color_e::UserType)' % var_name
+
+  elif typ.resolved and isinstance(typ.resolved, asdl_.SimpleSum):
+    code_str = 'new hnode__Leaf(new Str(%s_str(%s)), color_e::TypeName)' % (
+        typ.name, var_name)
+  else:
+    code_str = '%s->%s()' % (var_name, abbrev)
+    none_guard = True
+
+  return code_str, none_guard
+
+
 class ClassDefVisitor(visitor.AsdlVisitor):
   """Generate C++ declarations and type-safe enums."""
 
@@ -371,42 +404,6 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     self.pretty_print_methods = pretty_print_methods
     self.simple_int_sums = simple_int_sums or []
 
-  def _CodeSnippet(self, abbrev, typ, var_name):
-    # type: (str, asdl_.TypeExpr, str) -> str
-    none_guard = False
-    type_name = typ.name
-
-    if type_name == 'bool':
-      code_str = "new hnode__Leaf(%s ? runtime::TRUE_STR : runtime::FALSE_STR, color_e::OtherConst)" % var_name
-
-    elif type_name == 'int':
-      code_str = 'new hnode__Leaf(str(%s), color_e::OtherConst)' % var_name
-
-    elif type_name == 'float':
-      code_str = 'new hnode__Leaf(str(%s), color_e::OtherConst)' % var_name
-
-    elif type_name == 'string':
-      code_str = 'runtime::NewLeaf(%s, color_e::StringConst)' % var_name
-
-    elif type_name == 'any':  # TODO: Remove this.  Used for value.Obj().
-      code_str = 'new hnode__External(%s)' % var_name
-
-    elif type_name == 'id':  # was meta.UserType
-      code_str = 'new hnode__Leaf(new Str(Id_str(%s)), color_e::UserType)' % var_name
-
-    elif typ.resolved:
-      if isinstance(typ.resolved, asdl_.SimpleSum):
-        code_str = 'new hnode__Leaf(new Str(%s_str(%s)), color_e::TypeName)' % (
-            typ.name, var_name)
-      else:
-        code_str = '%s->%s()' % (var_name, abbrev)
-        none_guard = True
-
-    else:
-      raise AssertionError('Unhandled type %s' % typ)
-
-    return code_str, none_guard
-
   def _EmitCodeForField(self, abbrev, field, counter):
     """Generate code that returns an hnode for a field."""
     out_val_name = 'x%d' % counter
@@ -421,7 +418,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       self.Emit('    for (ListIter<%s> it(this->%s); !it.Done(); it.Next()) {'
                 % (item_type, field.name))
       self.Emit('      %s %s = it.Value();' % (item_type, iter_name))
-      child_code_str, _ = self._CodeSnippet(abbrev, typ, iter_name)
+      child_code_str, _ = _HNodeExpr(abbrev, typ, iter_name)
       self.Emit('      %s->children->append(%s);' % (out_val_name, child_code_str))
       self.Emit('    }')
       self.Emit('    L->append(new field(new Str("%s"), %s));' % (field.name, out_val_name))
@@ -431,7 +428,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       typ = field.typ.children[0]
 
       self.Emit('  if (this->%s) {  // MaybeType' % field.name)
-      child_code_str, _ = self._CodeSnippet(abbrev, typ, 'this->%s' % field.name)
+      child_code_str, _ = _HNodeExpr(abbrev, typ, 'this->%s' % field.name)
       self.Emit('    hnode_t* %s = %s;' % (out_val_name, child_code_str))
       self.Emit('    L->append(new field(new Str("%s"), %s));' % (field.name, out_val_name))
       self.Emit('  }')
@@ -446,8 +443,8 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       k_c_type = _GetCppType(k_typ)
       v_c_type = _GetCppType(v_typ)
 
-      k_code_str, _ = self._CodeSnippet(abbrev, k_typ, k)
-      v_code_str, _ = self._CodeSnippet(abbrev, v_typ, v)
+      k_code_str, _ = _HNodeExpr(abbrev, k_typ, k)
+      v_code_str, _ = _HNodeExpr(abbrev, v_typ, v)
 
       self.Emit('  if (this->%s) {' % field.name)
       # TODO: m can be a global constant!
@@ -465,7 +462,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
     else:
       var_name = 'this->%s' % field.name
-      code_str, obj_none_guard = self._CodeSnippet(abbrev, field.typ, var_name)
+      code_str, obj_none_guard = _HNodeExpr(abbrev, field.typ, var_name)
 
       depth = self.current_depth
       if obj_none_guard:  # to satisfy MyPy type system

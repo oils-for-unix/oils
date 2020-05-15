@@ -42,6 +42,94 @@ def _GetInnerType(type_expr):
   return _PRIMITIVES[type_expr.name]
 
 
+def _MyPyType(f):
+  type_name = f.TypeName()
+
+  # op_id -> op_id_t, bool_expr -> bool_expr_t, etc.
+  # NOTE: product type doesn't have _t suffix
+  # TODO: Use f.typ.resolved, but also respect List[], etc.
+  if isinstance(f.resolved_type, asdl_.Sum):
+    type_str = '%s_t' % type_name
+
+  elif type_name in _PRIMITIVES:
+    type_str = _PRIMITIVES[type_name]
+
+  elif type_name == 'map':
+    k_type = _GetInnerType(f.typ.children[0])
+    v_type = _GetInnerType(f.typ.children[1])
+    type_str = 'Dict[%s, %s]' % (k_type, v_type)
+
+  else:
+    type_str = type_name
+
+  # We allow partially initializing, so both of these are Optional.
+  # TODO: Change this?  I think it would make sense.  We can always use
+  # locals to initialize.
+  # NOTE: It's complicated in the List[] case, because we don't want a
+  # mutable default arg?  That is a Python pitfall
+  if f.IsArray():
+    t = 'List[%s]' % type_str
+  else:
+    t = type_str
+  return t
+
+
+def _DefaultValue(f):
+
+  default = None
+  if f.IsMaybe():  # Maybe
+    type_name = f.TypeName()
+    if type_name == 'int':
+      default = 'runtime.NO_SPID'
+    elif type_name == 'string':
+      default = "''"
+    else:
+      default = 'None'
+
+  elif f.IsArray():  # Array
+    default = '[]'
+  elif f.IsMap():  # Array
+    default = '{}'
+   
+  return default
+
+
+def _HNodeExpr(abbrev, typ, var_name):
+  # type: (str, asdl_.TypeExpr, str) -> str
+  none_guard = False
+  type_name = typ.name
+
+  if type_name == 'bool':
+    code_str = "hnode.Leaf('T' if %s else 'F', color_e.OtherConst)" % var_name
+
+  elif type_name == 'int':
+    code_str = 'hnode.Leaf(str(%s), color_e.OtherConst)' % var_name
+
+  elif type_name == 'float':
+    code_str = 'hnode.Leaf(str(%s), color_e.OtherConst)' % var_name
+
+  elif type_name == 'string':
+    code_str = 'NewLeaf(%s, color_e.StringConst)' % var_name
+
+  elif type_name == 'any':  # TODO: Remove this.  Used for value.Obj().
+    code_str = 'hnode.External(%s)' % var_name
+
+  elif type_name == 'id':  # was meta.UserType
+    # This assumes it's Id, which is a simple SumType.  TODO: Remove this.
+    code_str = 'hnode.Leaf(Id_str(%s), color_e.UserType)' % var_name
+
+  elif typ.resolved and isinstance(typ.resolved, asdl_.SimpleSum):
+    code_str = 'hnode.Leaf(%s_str(%s), color_e.TypeName)' % (
+        typ.name, var_name)
+
+  else:
+    code_str = '%s.%s()' % (var_name, abbrev)
+    none_guard = True
+
+  return code_str, none_guard
+
+
+
 class GenMyPyVisitor(visitor.AsdlVisitor):
   """Generate Python code with MyPy type annotations."""
 
@@ -120,44 +208,6 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     self.Emit('  return _%s_str[val]' % name, depth)
     self.Emit('', depth)
 
-  def _CodeSnippet(self, abbrev, typ, var_name):
-    # type: (str, asdl_.TypeExpr, str) -> str
-    none_guard = False
-    type_name = typ.name
-
-    if type_name == 'bool':
-      code_str = "hnode.Leaf('T' if %s else 'F', color_e.OtherConst)" % var_name
-
-    elif type_name == 'int':
-      code_str = 'hnode.Leaf(str(%s), color_e.OtherConst)' % var_name
-
-    elif type_name == 'float':
-      code_str = 'hnode.Leaf(str(%s), color_e.OtherConst)' % var_name
-
-    elif type_name == 'string':
-      code_str = 'NewLeaf(%s, color_e.StringConst)' % var_name
-
-    elif type_name == 'any':  # TODO: Remove this.  Used for value.Obj().
-      code_str = 'hnode.External(%s)' % var_name
-
-    elif type_name == 'id':  # was meta.UserType
-      # This assumes it's Id, which is a simple SumType.  TODO: Remove this.
-      code_str = 'hnode.Leaf(Id_str(%s), color_e.UserType)' % var_name
-
-    elif typ.resolved:
-      if isinstance(typ.resolved, asdl_.SimpleSum):
-        code_str = 'hnode.Leaf(%s_str(%s), color_e.TypeName)' % (
-            typ.name, var_name)
-
-      else:
-        code_str = '%s.%s()' % (var_name, abbrev)
-        none_guard = True
-
-    else:
-      raise AssertionError('Unhandled type %s' % typ)
-
-    return code_str, none_guard
-
   def _EmitCodeForField(self, abbrev, field, counter):
     """Generate code that returns an hnode for a field."""
     out_val_name = 'x%d' % counter
@@ -169,7 +219,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       self.Emit('  if self.%s:  # ArrayType' % field.name)
       self.Emit('    %s = hnode.Array([])' % out_val_name)
       self.Emit('    for %s in self.%s:' % (iter_name, field.name))
-      child_code_str, _ = self._CodeSnippet(abbrev, typ, iter_name)
+      child_code_str, _ = _HNodeExpr(abbrev, typ, iter_name)
       self.Emit('      %s.children.append(%s)' % (out_val_name, child_code_str))
       self.Emit('    L.append(field(%r, %s))' % (field.name, out_val_name))
 
@@ -177,7 +227,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       typ = field.typ.children[0]
 
       self.Emit('  if self.%s is not None:  # MaybeType' % field.name)
-      child_code_str, _ = self._CodeSnippet(abbrev, typ, 'self.%s' % field.name)
+      child_code_str, _ = _HNodeExpr(abbrev, typ, 'self.%s' % field.name)
       self.Emit('    %s = %s' % (out_val_name, child_code_str))
       self.Emit('    L.append(field(%r, %s))' % (field.name, out_val_name))
 
@@ -188,8 +238,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       k_typ = field.typ.children[0]
       v_typ = field.typ.children[1]
 
-      k_code_str, _ = self._CodeSnippet(abbrev, k_typ, k)
-      v_code_str, _ = self._CodeSnippet(abbrev, v_typ, v)
+      k_code_str, _ = _HNodeExpr(abbrev, k_typ, k)
+      v_code_str, _ = _HNodeExpr(abbrev, v_typ, v)
 
       self.Emit('  if self.%s:  # ArrayType' % field.name)
       self.Emit('    m = hnode.Leaf("map", color_e.OtherConst)')
@@ -201,7 +251,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     else:
       var_name = 'self.%s' % field.name
-      code_str, obj_none_guard = self._CodeSnippet(abbrev, field.typ, var_name)
+      code_str, obj_none_guard = _HNodeExpr(abbrev, field.typ, var_name)
       depth = self.current_depth
       if obj_none_guard:  # to satisfy MyPy type system
         self.Emit('  assert self.%s is not None' % field.name)
@@ -238,34 +288,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     arg_types = []
     for f in all_fields:
-      type_name = f.TypeName()
-
-      # op_id -> op_id_t, bool_expr -> bool_expr_t, etc.
-      # NOTE: product type doesn't have _t suffix
-      # TODO: Use f.typ.resolved, but also respect List[], etc.
-      if isinstance(f.resolved_type, asdl_.Sum):
-        type_str = '%s_t' % type_name
-
-      elif type_name in _PRIMITIVES:
-        type_str = _PRIMITIVES[type_name]
-
-      elif type_name == 'map':
-        k_type = _GetInnerType(f.typ.children[0])
-        v_type = _GetInnerType(f.typ.children[1])
-        type_str = 'Dict[%s, %s]' % (k_type, v_type)
-
-      else:
-        type_str = type_name
-
-      # We allow partially initializing, so both of these are Optional.
-      # TODO: Change this?  I think it would make sense.  We can always use
-      # locals to initialize.
-      # NOTE: It's complicated in the List[] case, because we don't want a
-      # mutable default arg?  That is a Python pitfall
-      if f.IsArray():
-        t = 'List[%s]' % type_str
-      else:
-        t = type_str
+      t = _MyPyType(f)
 
       if self.optional_fields:
         t = 'Optional[%s]' % t
@@ -278,21 +301,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     # TODO: Use the field_desc rather than the parse tree, for consistency.
     for f in all_fields:
-      # This logic is like _MakeFieldDescriptors
-      default = None
-      if f.IsMaybe():  # Maybe
-        type_name = f.TypeName()
-        if type_name == 'int':
-          default = 'runtime.NO_SPID'
-        elif type_name == 'string':
-          default = "''"
-        else:
-          default = 'None'
-
-      elif f.IsArray():  # Array
-        default = '[]'
-      elif f.IsMap():  # Array
-        default = '{}'
+      default = _DefaultValue(f)
 
       # PROBLEM: Optional ints can't be zero!
       # self.span_id = span_id or runtime.NO_SPID
