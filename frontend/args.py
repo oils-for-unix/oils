@@ -59,7 +59,7 @@ from __future__ import print_function
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Bool, value__Int, value__Float, value__Str,
     flag_type, flag_type_e, flag_type_t, flag_type__Enum,
-    set_to_arg,
+    flag_spec, set_to_arg,
 )
 
 from asdl import runtime
@@ -474,7 +474,7 @@ class SetNamedAction(_Action):
 
 
 def Parse(spec, arg_r):
-  # type: (arg_def._FlagSpec, Reader) -> _Attributes
+  # type: (flag_spec, Reader) -> _Attributes
 
   # NOTE about -:
   # 'set -' ignores it, vs set

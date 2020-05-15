@@ -217,7 +217,7 @@ class _FlagSpec(object):
   def Parse(self, arg_r):
     # type: (args.Reader) -> args._Attributes
     """For builtins to read args after we parse flags."""
-    return args.Parse(self, arg_r)
+    return args.Parse(self.spec, arg_r)
 
   def ParseCmdVal(self, cmd_val):
     # type: (cmd_value__Argv) -> Tuple[args._Attributes, int]

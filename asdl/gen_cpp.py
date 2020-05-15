@@ -69,57 +69,73 @@ class ForwardDeclareVisitor(visitor.AsdlVisitor):
     self.Emit("", 0)  # blank line
 
 
-def _GetMapType(type_expr):
-  """
-  TODO: Make this recursive.  Should be TypeExprToCpp
-
-  And consolidate with _GetInnerCppType.  That is used for Array, and this for
-  Map.
-  """
-  assert len(type_expr.children) == 0, type_expr
-
-  if type_expr.resolved:
-    # This includes asdl_.SimpleSum
-    if isinstance(type_expr.resolved, asdl_.Sum):
-      return '%s_t*' % type_expr.name
-    if isinstance(type_expr.resolved, asdl_.Product):
-      return '%s*' % type_expr.name
-
-  # TODO: Need to use field.resolved_type
-  return _PRIMITIVES[type_expr.name]
-
-
-def _GetInnerCppType(field):
-  type_name = field.TypeName()
+def _GetCppType(typ):
+  type_name = typ.name
 
   if type_name == 'map':
-    k_type = _GetMapType(field.typ.children[0])
-    v_type = _GetMapType(field.typ.children[1])
+    k_type = _GetCppType(typ.children[0])
+    v_type = _GetCppType(typ.children[1])
     return 'Dict<%s, %s>*' % (k_type, v_type)
 
-  cpp_type = _PRIMITIVES.get(type_name)
-  if cpp_type is not None:
-    # Annotations like int? or Id?  are NO-OPS now.
-    # The user should reserve a Id.Unknown_Tok or -1.
-    if field.IsMaybe() and not cpp_type.endswith('*'):
-      # e.g. Id_t*
-      # TODO: Use Id.Unknown_Tok for id?
-      # - use runtime.NO_STEP for int? step.  That could be ZERO?
-      # - although 5..6..0 is allowed.  Probably -MAXINT
-      # Need to make sure int parsing doesn't overflow.
-      #raise AssertionError(field)
-      print('field %s' % field, file=sys.stderr)
-    return cpp_type
+  elif type_name == 'array':
+    c_type = _GetCppType(typ.children[0])
+    return 'List<%s>*' % (c_type)
 
-  if field.resolved_type:
-    if isinstance(field.resolved_type, asdl_.SimpleSum):
-      # Use the enum instead of the class.
-      return "%s_e" % type_name
-    if isinstance(field.resolved_type, asdl_.Sum):
-      # Everything is a pointer for now.  No references.
-      return "%s_t*" % type_name
+  elif type_name == 'maybe':
+    c_type = _GetCppType(typ.children[0])
+    # TODO: maybe[int] and maybe[simple_sum] are invalid
+    return c_type
 
-  return '%s*' % type_name
+  elif typ.resolved:
+    if isinstance(typ.resolved, asdl_.SimpleSum):
+      return '%s_t' % typ.name
+    if isinstance(typ.resolved, asdl_.Sum):
+      return '%s_t*' % typ.name
+    if isinstance(typ.resolved, asdl_.Product):
+      return '%s*' % typ.name
+
+  # 'id' falls through here
+  return _PRIMITIVES[typ.name]
+
+
+def _DefaultValue(typ):
+  type_name = typ.name
+
+  if type_name == 'map':
+    k_type = _GetCppType(typ.children[0])
+    v_type = _GetCppType(typ.children[1])
+    return 'new Dict<%s, %s>()' % (k_type, v_type)
+
+  elif type_name == 'array':
+    c_type = _GetCppType(typ.children[0])
+    return 'new List<%s>()' % (c_type)
+
+  elif type_name == 'maybe':
+    # TODO: maybe[int] and maybe[simple_sum] are invalid
+    return _DefaultValue(typ.children[0])
+
+  elif type_name == 'int':
+    default = '-1'
+  elif type_name == 'id':  # hard-coded HACK
+    default = '-1'
+  elif type_name == 'bool':
+    default = 'false'
+  elif type_name == 'float':
+    default = '0.0'  # or should it be NaN?
+
+  elif type_name == 'string':
+    default = 'new Str("")'
+
+  elif typ.resolved and isinstance(typ.resolved, asdl_.SimpleSum):
+    sum_type = typ.resolved
+    # Just make it the first variant.  We could define "Undef" for
+    # each enum, but it doesn't seem worth it.
+    default = '%s_e::%s' % (type_name, sum_type.types[0].name)
+
+  else:
+    default = 'nullptr'  # Sum or Product
+
+  return default
 
 
 class ClassDefVisitor(visitor.AsdlVisitor):
@@ -144,18 +160,6 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
     self._products = []
     self._product_bases = defaultdict(list)
-
-  def _GetCppType(self, field):
-    """Return a string for the C++ name of the type."""
-
-    # TODO: The once instance of 'dict' needs an overhaul!
-    # Right now it's untyped in ASDL.
-    # I guess is should be Dict[str, str] for the associative array contents?
-    c_type = _GetInnerCppType(field)
-    if field.IsArray():
-      return 'List<%s>*' % c_type
-    else:
-      return c_type
 
   def _EmitEnum(self, sum, sum_name, depth, strong=False, is_simple=False):
     enum = []
@@ -280,33 +284,6 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     Emit('}')
     Emit('')
 
-  def _DefaultValue(self, field):
-    type_name = field.TypeName()
-    if field.IsArray():
-      default = 'new List<%s>()' % _GetInnerCppType(field)
-    else:
-      if type_name == 'int':
-        default = '-1'
-      elif type_name == 'id':  # hard-coded HACK
-        default = '-1'
-      elif type_name == 'bool':
-        default = 'false'
-      elif type_name == 'float':
-        default = '0.0'  # or should it be NaN?
-      elif type_name == 'string':
-        default = 'new Str("")'
-      elif type_name == 'map':
-        default = 'nullptr'
-      else:
-        if field.resolved_type and isinstance(field.resolved_type, asdl_.SimpleSum):
-          sum_type = field.resolved_type
-          # Just make it the first variant.  We could define "Undef" for
-          # each enum, but it doesn't seem worth it.
-          default = '%s_e::%s' % (type_name, sum_type.types[0].name)
-        else:
-          default = 'nullptr'
-    return default
-
   def _GenClass(self, ast_node, attributes, class_name, base_classes, depth, tag):
     """For Product and Constructor."""
     if base_classes:
@@ -322,7 +299,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     if ast_node.fields:  # Don't emit for constructors with no fields
       default_inits = [tag_init]
       for field in all_fields:
-        default = self._DefaultValue(field)
+        default = _DefaultValue(field.typ)
         default_inits.append('%s(%s)' % (field.name, default))
 
       # Constructor with ZERO args
@@ -335,10 +312,10 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     inits = [tag_init]
 
     for f in ast_node.fields:
-      params.append('%s %s' % (self._GetCppType(f), f.name))
+      params.append('%s %s' % (_GetCppType(f.typ), f.name))
       inits.append('%s(%s)' % (f.name, f.name))
     for f in attributes:  # spids are initialized separately
-      inits.append('%s(%s)' % (f.name, self._DefaultValue(f)))
+      inits.append('%s(%s)' % (f.name, _DefaultValue(f.typ)))
 
     # Constructor with N args
     self.Emit("  %s(%s) : %s {" %
@@ -350,7 +327,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     #
     self.Emit('  uint16_t tag;')
     for field in all_fields:
-      self.Emit("  %s %s;" % (self._GetCppType(field), field.name))
+      self.Emit("  %s %s;" % (_GetCppType(field.typ), field.name))
 
     if self.pretty_print_methods:
       for abbrev in 'PrettyTree', '_AbbreviatedTree', 'AbbreviatedTree':
@@ -440,7 +417,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
       self.Emit('  if (this->%s && len(this->%s)) {  // ArrayType' % (field.name, field.name))
       self.Emit('    hnode__Array* %s = new hnode__Array(new List<hnode_t*>());' % out_val_name)
-      item_type = _GetInnerCppType(field)
+      item_type = _GetCppType(typ)
       self.Emit('    for (ListIter<%s> it(this->%s); !it.Done(); it.Next()) {'
                 % (item_type, field.name))
       self.Emit('      %s %s = it.Value();' % (item_type, iter_name))
@@ -466,8 +443,8 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       k_typ = field.typ.children[0]
       v_typ = field.typ.children[1]
 
-      k_c_type = _GetMapType(k_typ)
-      v_c_type = _GetMapType(v_typ)
+      k_c_type = _GetCppType(k_typ)
+      v_c_type = _GetCppType(v_typ)
 
       k_code_str, _ = self._CodeSnippet(abbrev, k_typ, k)
       v_code_str, _ = self._CodeSnippet(abbrev, v_typ, v)
