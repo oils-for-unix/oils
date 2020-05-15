@@ -25,72 +25,89 @@ _PRIMITIVES = {
 }
 
 
+def _MyPyType(typ):
+  type_name = typ.name
 
-def _GetInnerType(type_expr):
+  if type_name == 'map':
+    k_type = _MyPyType(typ.children[0])
+    v_type = _MyPyType(typ.children[1])
+    return 'Dict[%s, %s]' % (k_type, v_type)
+
+  if type_name == 'array':
+    return 'List[%s]' % _MyPyType(typ.children[0])
+
+  if type_name == 'maybe':
+    # TODO: maybe[int] and maybe[simple_sum] are invalid
+    return 'Optional[%s]' % _MyPyType(typ.children[0])
+
+  if typ.resolved:
+    if isinstance(typ.resolved, asdl_.Sum):  # includes SimpleSum
+      return '%s_t' % typ.name
+    if isinstance(typ.resolved, asdl_.Product):
+      return typ.name
+
+  # 'id' falls through here
+  return _PRIMITIVES[type_name]
+
+
+def _DefaultValue(typ):
   """
-  TODO: Make this recursive.  Should be TypeExprToMyPy
+  Given an ASDL type, return the default value in Python.
+
+  TODO: Reconcile this with C++.  Many of the commented out values below BREAK
+  UNIT AND SPEC TESTS.  The interpreter should be written so that isn't the
+  case.
   """
-  assert len(type_expr.children) == 0, type_expr
-
-  # This includes asdl_.SimpleSum
-  if type_expr.resolved:
-    if isinstance(type_expr.resolved, asdl_.Sum):
-      return '%s_t' % type_expr.name
-    if isinstance(type_expr.resolved, asdl_.Product):
-      return type_expr.name
-
-  return _PRIMITIVES[type_expr.name]
-
-
-def _MyPyType(f):
-  type_name = f.TypeName()
-
-  # op_id -> op_id_t, bool_expr -> bool_expr_t, etc.
-  # NOTE: product type doesn't have _t suffix
-  # TODO: Use f.typ.resolved, but also respect List[], etc.
-  if isinstance(f.resolved_type, asdl_.Sum):
-    type_str = '%s_t' % type_name
-
-  elif type_name in _PRIMITIVES:
-    type_str = _PRIMITIVES[type_name]
-
-  elif type_name == 'map':
-    k_type = _GetInnerType(f.typ.children[0])
-    v_type = _GetInnerType(f.typ.children[1])
-    type_str = 'Dict[%s, %s]' % (k_type, v_type)
-
-  else:
-    type_str = type_name
-
-  # We allow partially initializing, so both of these are Optional.
-  # TODO: Change this?  I think it would make sense.  We can always use
-  # locals to initialize.
-  # NOTE: It's complicated in the List[] case, because we don't want a
-  # mutable default arg?  That is a Python pitfall
-  if f.IsArray():
-    t = 'List[%s]' % type_str
-  else:
-    t = type_str
-  return t
-
-
-def _DefaultValue(f):
+  type_name = typ.name
 
   default = None
-  if f.IsMaybe():  # Maybe
-    type_name = f.TypeName()
-    if type_name == 'int':
-      default = 'runtime.NO_SPID'
-    elif type_name == 'string':
+
+  if type_name == 'map':
+    default = '{}'
+    #k_type = _GetCppType(typ.children[0])
+    #v_type = _GetCppType(typ.children[1])
+    #return 'new Dict<%s, %s>()' % (k_type, v_type)
+
+  elif type_name == 'array':
+    default = '[]'
+    #c_type = _GetCppType(typ.children[0])
+    #return 'new List<%s>()' % (c_type)
+
+  elif type_name == 'maybe':
+    child_typ = typ.children[0]
+    if child_typ.name == 'string':
       default = "''"
     else:
       default = 'None'
 
-  elif f.IsArray():  # Array
-    default = '[]'
-  elif f.IsMap():  # Array
-    default = '{}'
-   
+    # TODO: maybe[int] and maybe[simple_sum] are invalid
+    #default = _DefaultValue(typ.children[0])
+
+  elif type_name == 'int':
+    #default = '-1'
+    pass
+
+  elif type_name == 'id':  # hard-coded HACK
+    #default = '-1'
+    pass
+
+  elif type_name == 'bool':
+    #default = 'False'
+    pass
+  elif type_name == 'float':
+    #default = '0.0'  # or should it be NaN?
+    pass
+
+  elif type_name == 'string':
+    #default = "''"
+    pass
+
+  elif typ.resolved and isinstance(typ.resolved, asdl_.SimpleSum):
+    sum_type = typ.resolved
+    # Just make it the first variant.  We could define "Undef" for
+    # each enum, but it doesn't seem worth it.
+    default = '%s_e.%s' % (type_name, sum_type.types[0].name)
+
   return default
 
 
@@ -288,7 +305,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     arg_types = []
     for f in all_fields:
-      t = _MyPyType(f)
+      t = _MyPyType(f.typ)
 
       if self.optional_fields:
         t = 'Optional[%s]' % t
@@ -301,7 +318,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     # TODO: Use the field_desc rather than the parse tree, for consistency.
     for f in all_fields:
-      default = _DefaultValue(f)
+      default = _DefaultValue(f.typ)
 
       # PROBLEM: Optional ints can't be zero!
       # self.span_id = span_id or runtime.NO_SPID
