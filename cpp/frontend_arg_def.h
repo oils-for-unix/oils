@@ -26,8 +26,6 @@ class ConstantDict {
   }
 };
 
-
-
 namespace args {
 class _Action;
 class SetToArg;
@@ -40,7 +38,7 @@ namespace arg_def {
 
 class _FlagSpec {
  public:
-  //Dict<Str*, bool>* arity0;
+  // Dict<Str*, bool>* arity0;
   ConstantDict<Str*, bool>* arity0;
   Dict<Str*, args::SetToArg*>* arity1;
   Dict<Str*, bool>* options;

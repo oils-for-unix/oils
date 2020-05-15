@@ -414,21 +414,13 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     elif type_name == 'any':  # TODO: Remove this.  Used for value.Obj().
       code_str = 'new hnode__External(%s)' % var_name
 
-    elif type_name == 'map':
-      # TODO: Create hnode__Array?
-      # External can't be used in C++
-      code_str = 'new hnode__External(%s)' % var_name
-
-    elif type_name == 'id':
-      # TODO: Remove hard-coded Id?
+    elif type_name == 'id':  # was meta.UserType
       code_str = 'new hnode__Leaf(new Str(Id_str(%s)), color_e::UserType)' % var_name
-      none_guard = True  # otherwise MyPy complains about foo.name
 
     elif typ.resolved:
       if isinstance(typ.resolved, asdl_.SimpleSum):
         code_str = 'new hnode__Leaf(new Str(%s_str(%s)), color_e::TypeName)' % (
             typ.name, var_name)
-        none_guard = True  # otherwise MyPy complains about foo.name
       else:
         code_str = '%s->%s()' % (var_name, abbrev)
         none_guard = True
@@ -481,6 +473,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
       v_code_str, _ = self._CodeSnippet(abbrev, v_typ, v)
 
       self.Emit('  if (this->%s) {' % field.name)
+      # TODO: m can be a global constant!
       self.Emit('    auto m = new hnode__Leaf(new Str("map"), color_e::OtherConst);')
       self.Emit('    hnode__Array* %s = new hnode__Array(new List<hnode_t*>({m}));' % out_val_name)
       self.Emit('    for (DictIter<%s, %s> it(this->%s); !it.Done(); it.Next()) {' % (

@@ -1,6 +1,7 @@
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>
 
+#include "asdl_format.h"
 #include "asdl_runtime.h"
 #include "greatest.h"
 #include "mylib.h"
@@ -92,10 +93,10 @@ TEST misc_test() {
 TEST pretty_print_test() {
   // typed_demo.asdl
 
-  //auto o = op_id_e::Plus;
+  // auto o = op_id_e::Plus;
   // Note: this is NOT prevented at compile time, even though it's illegal.
   // left and right are not optional.
-  //auto b = new bool_expr__LogicalBinary(o, nullptr, nullptr);
+  // auto b = new bool_expr__LogicalBinary(o, nullptr, nullptr);
 
   auto w1 = new typed_demo_asdl::word(new Str("left"));
   auto w2 = new typed_demo_asdl::word(new Str("right"));

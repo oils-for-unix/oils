@@ -143,13 +143,11 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     elif type_name == 'id':  # was meta.UserType
       # This assumes it's Id, which is a simple SumType.  TODO: Remove this.
       code_str = 'hnode.Leaf(Id_str(%s), color_e.UserType)' % var_name
-      none_guard = True  # otherwise MyPy complains about foo.name
 
     elif typ.resolved:
       if isinstance(typ.resolved, asdl_.SimpleSum):
         code_str = 'hnode.Leaf(%s_str(%s), color_e.TypeName)' % (
             typ.name, var_name)
-        none_guard = True  # otherwise MyPy complains about foo.name
 
       else:
         code_str = '%s.%s()' % (var_name, abbrev)

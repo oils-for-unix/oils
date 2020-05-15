@@ -54,7 +54,7 @@ cpp-files() {
 # Not ready to do this yet?
 # I don't like one liners like Constructor : v_() {}
 format-oil() {
-  cpp-files | grep -v greatest.h | xargs -- $0 clang-format -i 
+  cpp-files | egrep -v 'asdl/runtime.cc|greatest.h' | xargs -- $0 clang-format -i 
   git diff
 }
 
