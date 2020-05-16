@@ -90,7 +90,7 @@ class AssertionError {
 class Obj {
  public:
   // default constructor for multiple inheritance
-  Obj() : tag(0) {
+  constexpr Obj() : tag(0) {
   }
   explicit Obj(uint16_t tag) : tag(tag) {
   }
@@ -339,7 +339,9 @@ class StrIter {
 template <class T>
 class List {
  public:
-  List() : v_() {
+  // Note: constexpr doesn't work because the std::vector destructor is
+  // nontrivial
+  constexpr List() : v_() {
     // Note: this seems to INCREASE the number of 'new' calls.  I guess because
     // many 'spids' lists aren't used?
     // v_.reserve(64);
@@ -363,7 +365,7 @@ class List {
     v_[index] = value;
   }
 
-  T index(int i) {
+  T index(int i) const {
     if (i < 0) {
       // User code doesn't result in mylist[-1], but Oil's own code does
       int j = v_.size() + i;
@@ -705,17 +707,17 @@ class Tuple4 {
 // Overloaded free function len()
 //
 
-inline int len(Str* s) {
+inline int len(const Str* s) {
   return s->len_;
 }
 
 template <typename T>
-int len(List<T>* L) {
+int len(const List<T>* L) {
   return L->v_.size();
 }
 
 template <typename K, typename V>
-int len(Dict<K, V>* d) {
+int len(const Dict<K, V>* d) {
   assert(0);
 }
 

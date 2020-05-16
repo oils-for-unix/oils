@@ -37,6 +37,7 @@ mycpp-unit-tests() {
 
   pushd mycpp
   ./run.sh mylib-test
+  ./run.sh target-lang
   popd
 }
 

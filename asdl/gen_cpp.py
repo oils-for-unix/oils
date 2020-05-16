@@ -284,9 +284,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     Emit(' protected:')
     Emit('  %s_t() {}' % sum_name)
     Emit(' public:')
-    Emit('  int tag_() {')
+    Emit('  int tag_() const {')
     # There's no inheritance relationship, so we have to reinterpret_cast.
-    Emit('    return reinterpret_cast<Obj*>(this)->tag;')
+    Emit('    return reinterpret_cast<const Obj*>(this)->tag;')
     Emit('  }')
 
     if self.pretty_print_methods:

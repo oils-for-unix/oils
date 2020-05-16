@@ -149,7 +149,7 @@ constexpr Str g_str1 = {"foo", 3};
 
 // Hm we should never mutate Str*, so ASDL should generate fields that are all
 // const Str* ?
-Str* p_str1 = const_cast<Str*>(&g_str1);
+constexpr Str* p_str1 = const_cast<Str*>(&g_str1);
 
 using typed_demo_asdl::SetToArg_;
 namespace flag_type = typed_demo_asdl::flag_type;
@@ -157,18 +157,18 @@ namespace flag_type = typed_demo_asdl::flag_type;
 // TODO: We should always use these, rather than 'new flag_type::Bool()'
 flag_type::Bool g_ft = {};
 
-SetToArg_ g_st = {p_str1, &g_ft, false};
-SetToArg_* p_st = &g_st;
+// only works because of a hack
+constexpr SetToArg_ g_st = {p_str1, &g_ft, false};
+constexpr SetToArg_* p_st = const_cast<SetToArg_*>(&g_st);
 
-// Use __ style 
+// Use __ style
 using typed_demo_asdl::cflow__Return;
-cflow__Return g_ret = { 5 };
+cflow__Return g_ret = {5};
 
 int i0 = 7;  // This runs before main()?  How to tell?
 List<int> g_list = {i0, 8, 9};
 
-//Dict<Str*, int> g_dict = {4, 5, 6};
-
+// Dict<Str*, int> g_dict = {4, 5, 6};
 
 TEST literal_test() {
   ASSERT(str_equals(p_str1, new Str("foo")));

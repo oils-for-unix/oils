@@ -338,20 +338,22 @@ struct Point {
   int y;
 };
 
-Point p = {3, 4};
+// structs don't have any constructors, so don't need any constexpr stuff
+constexpr Point p = {3, 4};
 
 // members must be public to allow initializer list
 class PointC {
  public:
   // constructor is allowed
-  PointC(int x, int y) : x_(x), y_(y) {
+  // needs to be constexpr
+  constexpr PointC(int x, int y) : x_(x), y_(y) {
   }
   // this is allowed too
   int get_x() {
     return x_;
   }
   // this is allowed too
-  virtual int mag() {
+  virtual int mag() const {
     return x_ * x_ + y_ * y_;
   }
 
@@ -359,18 +361,18 @@ class PointC {
   int y_;
 };
 
-PointC pc = {5, 6};
+constexpr PointC pc = {5, 6};
 
 class SubPointC : public PointC {
  public:
-  SubPointC(int x, int y) : PointC(x, y) {
+  constexpr SubPointC(int x, int y) : PointC(x, y) {
   }
-  virtual int mag() {
+  virtual int mag() const {
     return 0;
   }
 };
 
-SubPointC sub = {7, 8};
+constexpr SubPointC sub = {7, 8};
 
 class Compound {
  public:
@@ -379,7 +381,7 @@ class Compound {
 };
 
 // This works, but what about pointers?
-Compound c = {{0, 1}, {8, 9}};
+constexpr Compound c = {{0, 1}, {8, 9}};
 
 TEST static_literals() {
   ASSERT_EQ(3, p.x);
@@ -403,6 +405,22 @@ TEST static_literals() {
   PASS();
 }
 
+enum class Color_e { red, blue };
+
+TEST enum_demo() {
+  Color_e c1 = Color_e::red;
+  Color_e c2 = Color_e::blue;
+  int array[2] = {3, 4};
+
+  // You can cast these strong enums to an integer.  We don't do that in the
+  // MyPy source, but maybe we could?  It's kind of a pain though.
+
+  log("c1 %d", static_cast<int>(c1));
+  log("c2 %d", static_cast<int>(c2));
+
+  log("array[c1] %d", array[static_cast<int>(c1)]);
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -412,6 +430,7 @@ int main(int argc, char** argv) {
   RUN_TEST(sizeof_demo);
   RUN_TEST(except_demo);
   RUN_TEST(static_literals);
+  RUN_TEST(enum_demo);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;
