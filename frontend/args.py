@@ -59,7 +59,7 @@ from __future__ import print_function
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Bool, value__Int, value__Float, value__Str,
     flag_type, flag_type_e, flag_type_t, flag_type__Enum,
-    flag_spec, set_to_arg,
+    FlagSpec_, SetToArg_,
 )
 
 from asdl import runtime
@@ -280,7 +280,7 @@ class _Action(object):
     raise NotImplementedError()
 
 
-class SetToArg(_Action):
+class SetToArgAction(_Action):
 
   def __init__(self, name, flag_type, quit_parsing_flags=False):
     # type: (str, flag_type_t, bool) -> None
@@ -289,7 +289,7 @@ class SetToArg(_Action):
       quit_parsing_flags: Stop parsing args after this one.  for sh -c.
         python -c behaves the same way.
     """
-    self.action = set_to_arg(name, flag_type, quit_parsing_flags)
+    self.action = SetToArg_(name, flag_type, quit_parsing_flags)
 
   def OnMatch(self, prefix, suffix, arg_r, out):
     # type: (Optional[str], Optional[str], Reader, _Attributes) -> bool
@@ -298,7 +298,7 @@ class SetToArg(_Action):
 
 
 def _SetToArg(action, suffix, arg_r, out):
-  # type: (set_to_arg, Optional[str], Reader, _Attributes) -> bool
+  # type: (SetToArg_, Optional[str], Reader, _Attributes) -> bool
   """
   Perform the action.
   """
@@ -474,7 +474,7 @@ class SetNamedAction(_Action):
 
 
 def Parse(spec, arg_r):
-  # type: (flag_spec, Reader) -> _Attributes
+  # type: (FlagSpec_, Reader) -> _Attributes
 
   # NOTE about -:
   # 'set -' ignores it, vs set

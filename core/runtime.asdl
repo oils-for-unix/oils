@@ -133,17 +133,17 @@ module runtime
   -- Flag arguments can be any of these types.
   flag_type = Bool | Int | Float | Str | Enum(string* alts)
 
-  set_to_arg = (string name, flag_type flag_type, bool quit_parsing_flags)
+  SetToArg_ = (string name, flag_type flag_type, bool quit_parsing_flags)
 
-  flag_spec = (
+  FlagSpec_ = (
     string* arity0,  -- could rewrite as array[string] arity0
-    map[string, set_to_arg] arity1,
+    map[string, SetToArg_] arity1,
     string* options,
     map[string, value] defaults
   )
 
   action = 
-    SetToArg %set_to_arg
+    SetToArg %SetToArg_
   | SetBoolToArg(string name)
 
     -- TODO: more actions

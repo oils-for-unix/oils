@@ -8,7 +8,7 @@ import sys
 
 from _devbuild.gen.runtime_asdl import (
     cmd_value__Argv, flag_type, flag_type_t, value, value_t,
-    flag_spec, set_to_arg,
+    FlagSpec_, SetToArg_,
 )
 from frontend import args
 from mycpp import mylib
@@ -104,7 +104,7 @@ class _FlagSpec(object):
     self.typed = typed
 
     # ASDL definition.  To be serialized to C++.
-    self.spec = flag_spec()
+    self.spec = FlagSpec_()
 
     # Convenience
     self.arity0 = self.spec.arity0
@@ -140,7 +140,7 @@ class _FlagSpec(object):
     if arg_type is None:
       self.arity0.append(char)
     else:
-      self.arity1[char] = set_to_arg(char, _FlagType(arg_type), False)
+      self.arity1[char] = SetToArg_(char, _FlagType(arg_type), False)
 
     # TODO: callers should pass flag_type
     if arg_type is None:
@@ -274,7 +274,7 @@ class _FlagSpecAndMore(object):
       assert quit_parsing_flags == False
       self.actions_short[char] = args.SetToTrue(char)
     else:
-      self.actions_short[char] = args.SetToArg(
+      self.actions_short[char] = args.SetToArgAction(
           char, _FlagType(arg_type), quit_parsing_flags=quit_parsing_flags)
 
     self.defaults[char] = args.PyToValue(default)
@@ -293,7 +293,7 @@ class _FlagSpecAndMore(object):
     if arg_type is None:
       self.actions_long[long_name] = args.SetToTrue(name)
     else:
-      self.actions_long[long_name] = args.SetToArg(name, _FlagType(arg_type))
+      self.actions_long[long_name] = args.SetToArgAction(name, _FlagType(arg_type))
 
     self.defaults[name] = args.PyToValue(default)
 
@@ -417,7 +417,7 @@ class _OilFlags(object):
     if arg_type == args.Bool:
       self.arity1[attr_name] = args.SetBoolToArg(attr_name)
     else:
-      self.arity1[attr_name] = args.SetToArg(attr_name, _FlagType(arg_type))
+      self.arity1[attr_name] = args.SetToArgAction(attr_name, _FlagType(arg_type))
 
     self.defaults[attr_name] = args.PyToValue(default)
 
@@ -432,22 +432,9 @@ class _OilFlags(object):
     return self.Parse(arg_r)
 
 
-# TODO:
-# spec = FlagSpec(builtin_i.export)
 #
-# And then later:
-# 
-# attrs = args.Parse(builtin_i.export, arg_r)
-# arg = arg_types.export(attrs)
+# Definitions
 #
-# Does this mean that builtins should take:
-# Run(attrs, arg_r) ?
-# I think that makes more sense...
-# Yeah _Builtin should define Run(cmd_val) to parse it and call
-# _Run(attrs, arg_reader)
-#   
-
-# It will look up the spec dynamically and then call Parse() on it I think.
 
 EXPORT_SPEC = FlagSpec('export_', typed=True)
 EXPORT_SPEC.ShortFlag('-n')

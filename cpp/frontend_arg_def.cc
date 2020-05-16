@@ -28,7 +28,10 @@ args::_Attributes* Parse(Str* spec_name, args::Reader* arg_r) {
   // Parse(Spec)
   // TODO:
   // lookup spec_name in a table of constants
+  //
+  // frontend/arg_gen.py should generate constants
   assert(0);
+
 }
 
 Tuple2<args::_Attributes*, int> ParseCmdVal(
