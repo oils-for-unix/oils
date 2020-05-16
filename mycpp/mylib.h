@@ -105,7 +105,8 @@ class Str {
     len_ = strlen(data);
   }
 
-  Str(const char* data, int len) : data_(data), len_(len) {
+  // constexpr so we can statically initialize Str s = {"foo", 3}
+  constexpr Str(const char* data, int len) : data_(data), len_(len) {
   }
 
   // Get a string with one character

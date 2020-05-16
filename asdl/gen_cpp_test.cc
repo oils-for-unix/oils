@@ -144,14 +144,69 @@ TEST maps_test() {
   PASS();
 }
 
+// We can declare global ASDL literals like this.  Interesting.
+constexpr Str g_str1 = {"foo", 3};
+
+// Hm we should never mutate Str*, so ASDL should generate fields that are all
+// const Str* ?
+Str* p_str1 = const_cast<Str*>(&g_str1);
+
+using typed_demo_asdl::SetToArg_;
+namespace flag_type = typed_demo_asdl::flag_type;
+
+// TODO: We should always use these, rather than 'new flag_type::Bool()'
+flag_type::Bool g_ft = {};
+
+SetToArg_ g_st = {p_str1, &g_ft, false};
+SetToArg_* p_st = &g_st;
+
+// Use __ style 
+using typed_demo_asdl::cflow__Return;
+cflow__Return g_ret = { 5 };
+
+int i0 = 7;  // This runs before main()?  How to tell?
+List<int> g_list = {i0, 8, 9};
+
+//Dict<Str*, int> g_dict = {4, 5, 6};
+
+
+TEST literal_test() {
+  ASSERT(str_equals(p_str1, new Str("foo")));
+
+  ASSERT(str_equals(p_st->name, new Str("foo")));
+  ASSERT_EQ(false, p_st->quit_parsing_flags);
+
+  // Interesting, initializer list part of the constructor "runs".  Otherwise
+  // this doesn't work.
+  log("g_ft.tag_() = %d", g_ft.tag_());
+  auto ft = new flag_type::Bool();
+  ASSERT_EQ(g_ft.tag_(), ft->tag_());
+
+  log("g_ret.tag_() = %d", g_ret.tag_());
+  log("g_ret.status = %d", g_ret.status);
+  auto ret = new cflow__Return(5);
+  ASSERT_EQ(g_ret.tag_(), ret->tag_());
+  ASSERT_EQ(g_ret.status, ret->status);
+
+  // Wow this works too?  Is it the the constexpr interpreter, or is this code
+  // inserted before main()?
+  ASSERT_EQ(3, len(&g_list));
+  ASSERT_EQ_FMT(7, g_list.index(0), "%d");
+  ASSERT_EQ_FMT(8, g_list.index(1), "%d");
+  ASSERT_EQ_FMT(9, g_list.index(2), "%d");
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(misc_test);
-  RUN_TEST(maps_test);
   RUN_TEST(pretty_print_test);
+  RUN_TEST(maps_test);
+  RUN_TEST(literal_test);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

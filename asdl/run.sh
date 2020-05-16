@@ -190,8 +190,8 @@ gen-cpp-test() {
     _tmp/typed_arith_asdl.cc \
     _tmp/typed_demo_asdl.cc 
 
-  #gdb -batch -ex run -ex bt --args $bin
-  $bin
+  #gdb -batch -ex run -ex bt --args $bin "$@"
+  $bin "$@"
 }
 
 "$@"

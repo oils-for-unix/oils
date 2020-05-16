@@ -43,4 +43,8 @@ module arith {
     map[string, Token] tokens,
   )
 
+  flag_type = Bool | Int | Float | Str | Enum(string* alts)
+
+  SetToArg_ = (string name, flag_type flag_type, bool quit_parsing_flags)
+
 }
