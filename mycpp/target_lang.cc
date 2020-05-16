@@ -69,7 +69,8 @@ class Array {
   std::vector<T> v_;
 };
 
-class FatalError {};
+class FatalError {
+};
 
 class ParseError : public FatalError {
  public:
@@ -105,7 +106,7 @@ void throw_fatal() {
 void except_subclass_demo() {
   try {
     throw_fatal();
-    // parse("f");
+    //parse("f");
   } catch (ParseError& e) {
     // Doesn't get caught.  Does this rely on RTTI, or is it static?
     // I think it's static but increases the size of the exception table.
@@ -154,7 +155,7 @@ TEST except_demo() {
   PASS();
 }
 
-void template_demo() {
+TEST template_demo() {
   Array<int> a;
   a.append(1);
   a.append(2);
@@ -165,6 +166,8 @@ void template_demo() {
   a2.append(new List{1, 2, 3});
   a2.append(new List{4, 5, 6});
   log("a2.size() = %d", a2.size());
+
+  PASS();
 }
 
 void f(int a, int b = -1, const char* s = nullptr) {
@@ -174,10 +177,12 @@ void f(int a, int b = -1, const char* s = nullptr) {
   log("s = %p", s);
 }
 
-void default_args_demo() {
+TEST default_args_demo() {
   f(42, 43, "foo");
   f(42, 43);
   f(42);
+
+  PASS();
 }
 
 namespace core {
@@ -209,7 +214,7 @@ namespace util = core::util;
 // This lets us use "Parser""
 using tdop::Parser;
 
-void namespace_demo() {
+TEST namespace_demo() {
   log("");
   log("namespace_demo()");
   f(42);
@@ -217,6 +222,8 @@ void namespace_demo() {
   auto p2 = new Parser(43);
 
   util::p_die("ns");
+
+  PASS();
 }
 }  // namespace typed_arith_parse
 
@@ -252,7 +259,7 @@ shared_ptr<expr__Const> f(shared_ptr<expr__Const> arg) {
   return shared_ptr<expr__Const>(new expr__Const(arg->i_ + 10));
 }
 
-void shared_ptr_demo() {
+TEST shared_ptr_demo() {
   std::shared_ptr<expr__Const> e = std::make_shared<expr__Const>(5);
   log("e->i_ = %d", e->i_);
   // 16, not 24?
@@ -267,9 +274,11 @@ void shared_ptr_demo() {
 
   log("e3->i_ = %d", e3->i_);
   log("sizeof(e3) = %zu", sizeof(e3));
+
+  PASS();
 }
 
-void map_demo() {
+TEST map_demo() {
   unordered_map<int, int> m;
   log("m.size = %d", m.size());
 
@@ -294,6 +303,8 @@ void map_demo() {
   log("m2.size = %d", m2.size());
 
   log("retrieved = %d", m2[nullptr]);
+
+  PASS();
 }
 
 TEST sizeof_demo() {
@@ -316,21 +327,12 @@ TEST test_misc() {
   // Dict d {{"key", 1}, {"val", 2}};
 
   log("");
-  template_demo();
-
-  log("");
-  default_args_demo();
-  typed_arith_parse::namespace_demo();
-
-  log("");
   expr::Const c(42);
   log("expr::Const = %d", c.i_);
 
   dumb_alloc::Summarize();
 
-  shared_ptr_demo();
-
-  map_demo();
+  PASS();
 }
 
 struct Point {
@@ -426,7 +428,13 @@ GREATEST_MAIN_DEFS();
 int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
+  RUN_TEST(typed_arith_parse::namespace_demo);
+
   RUN_TEST(test_misc);
+  RUN_TEST(map_demo);
+  RUN_TEST(shared_ptr_demo);
+  RUN_TEST(template_demo);
+  RUN_TEST(default_args_demo);
   RUN_TEST(sizeof_demo);
   RUN_TEST(except_demo);
   RUN_TEST(static_literals);
