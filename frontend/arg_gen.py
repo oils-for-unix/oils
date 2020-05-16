@@ -37,17 +37,17 @@ class %s {
  public:
   %s(args::_Attributes* attrs) {
   }
-  """ % (spec_name, spec_name))
+""" % (spec_name, spec_name))
 
     for field_name in sorted(spec.fields):
       typ = spec.fields[field_name]
 
       with tagswitch(typ) as case:
         if case(flag_type_e.Bool):
-          header_f.write('  bool %s;' % field_name)
+          header_f.write('  bool %s;\n' % field_name)
 
         elif case(flag_type_e.Str):
-          header_f.write('  Str* %s;' % field_name)
+          header_f.write('  Str* %s;\n' % field_name)
 
     header_f.write("""\
 };
