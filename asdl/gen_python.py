@@ -325,11 +325,11 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
       # I don't want to add if statements checking against None?
       # For now don't use optional ints.  We don't need it.
 
-      default_str = (' or %s' % default) if default else ''
+      default_str = (' if %s is not None else %s' % (f.name, default)) if default else ''
       self.Emit('    self.%s = %s%s' % (f.name, f.name, default_str))
 
+    self.Emit('')
     if not self.pretty_print_methods:
-      self.Emit('')
       return
 
     pretty_cls_name = class_name.replace('__', '.')  # used below

@@ -146,7 +146,7 @@ var b = a[:]
 (List)   [1, 2, 3]
 ## END
 
-#### Slices with Multilple Dimensions (with Table/data frame)
+#### Slices with Multiple Dimensions (with Table/data frame)
 
 # This parses, but it isn't hashable.  We need a type with operator overloading
 # to handle this, which we don't have.
