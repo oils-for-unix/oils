@@ -100,8 +100,8 @@ function print_hist(sh, hist) {
 
 END { 
   print_hist("osh", osh)
-  print_hist("oe.py", oe_py)
-  print_hist("oe.cpp", oe_cpp)
+  print_hist("osh_.py", oe_py)
+  print_hist("osh_.cc", oe_cpp)
 }
   ' "$@"
 }

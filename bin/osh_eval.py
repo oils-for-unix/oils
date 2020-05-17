@@ -179,6 +179,8 @@ def main(argv):
   assign_builtins[builtin_i.declare] = new_var
   assign_builtins[builtin_i.typeset] = new_var
   assign_builtins[builtin_i.local] = new_var
+  assign_builtins[builtin_i.export_] = builtin_assign.Export(mem, errfmt)
+  assign_builtins[builtin_i.readonly] = builtin_assign.Readonly(mem, errfmt)
 
   #assign_builtins = {
   #    # ShAssignment (which are pure)

@@ -32,7 +32,6 @@ _FlagSpec* LookupFlagSpec(Str* spec_name) {
 static void FillSpec(void* const_spec, runtime_asdl::FlagSpec_* out) {
 }
 
-
 args::_Attributes* Parse(Str* spec_name, args::Reader* arg_r) {
   void* const_spec = LookupFlagSpec(spec_name);
   // compile time data
@@ -47,7 +46,12 @@ args::_Attributes* Parse(Str* spec_name, args::Reader* arg_r) {
   runtime_asdl::FlagSpec_ spec;
   FillSpec(const_spec, &spec);
 
+#ifdef CPP_UNIT_TEST
+  // hack because we don't want to depend on a translation of args.py
+  return nullptr;
+#else
   return args::Parse(&spec, arg_r);
+#endif
 }
 
 Tuple2<args::_Attributes*, int> ParseCmdVal(

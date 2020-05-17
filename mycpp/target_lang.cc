@@ -69,8 +69,7 @@ class Array {
   std::vector<T> v_;
 };
 
-class FatalError {
-};
+class FatalError {};
 
 class ParseError : public FatalError {
  public:
@@ -106,7 +105,7 @@ void throw_fatal() {
 void except_subclass_demo() {
   try {
     throw_fatal();
-    //parse("f");
+    // parse("f");
   } catch (ParseError& e) {
     // Doesn't get caught.  Does this rely on RTTI, or is it static?
     // I think it's static but increases the size of the exception table.
@@ -407,101 +406,6 @@ TEST static_literals() {
   PASS();
 }
 
-//
-// Types for compile-time FlagSpec
-//
-
-struct SetToArg_ {
-  const char* name;  // note: this field is redundant
-  int flag_type;
-  bool quit_parsing;
-};
-
-struct ConstPair {
-  const char* key;
-  SetToArg_ value;  // SetToArg_
-};
-
-enum class default_e {
-  Undef,  // default for strings
-  False,
-  True,
-};
-
-struct DefaultPair {
-  const char* key;
-  default_e default_val;
-};
-
-struct ConstFlagSpec {
-  const char** arity0;  // NULL terminated array
-  ConstPair* arity1;  // NULL terminated array
-  const char** options;  // NULL terminated array
-  DefaultPair* defaults;
-};
-
-//
-// Literals
-//
-
-// must be NUL terminated
-//
-// I tried to make this constexpr, but ran into errors.  Here is some
-// std::array crap, but let's keep it simple.
-//
-// https://groups.google.com/a/isocpp.org/forum/#!topic/std-proposals/EcWhnxFdFwE
-
-const char* arity0_1[] = { "foo", "bar", nullptr };
-
-ConstPair arity1_1[] = {  // key Str, value SetToArg_
-  { "a1", { "z",  0, false } },
-  { "b1", { "zz", 1, false } },
-  { nullptr },  // sentinel
-};
-
-const char* options_1[] = { "o", "p", nullptr };
-
-DefaultPair defaults_1[] = {
-  { "x", default_e::False },
-  { "y", default_e::Undef },
-  { nullptr },
-};
-
-ConstFlagSpec spec1 = {
-  arity0_1,
-  arity1_1,
-  options_1,
-  defaults_1,
-};
-
-ConstFlagSpec spec2 = {
-  arity0_1,
-  arity1_1,
-  options_1,
-  defaults_1,
-};
-
-TEST compound_static_literals() {
-  log("spec1.arity0 %s", spec1.arity0[0]);
-  log("spec1.arity0 %s", spec1.arity0[1]);
-
-  log("spec1.arity1 %s", spec1.arity1[0].key);
-  log("spec1.arity1 %s", spec1.arity1[1].key);
-
-  log("spec1.arity1 %s", spec1.arity1[0].value.name);
-  log("spec1.arity1 %s", spec1.arity1[1].value.name);
-
-  log("spec1.options %s", spec1.options[0]);
-  log("spec1.options %s", spec1.options[1]);
-
-  log("spec1.defaults %s", spec1.defaults[0].key);
-  log("spec1.defaults %s", spec1.defaults[1].key);
-
-  log("sizeof %d", sizeof(spec1.arity0));  // 8
-  log("sizeof %d", sizeof(arity0_1) / sizeof(arity0_1[0]));
-  PASS();
-}
-
 enum class Color_e { red, blue };
 
 TEST enum_demo() {
@@ -533,7 +437,6 @@ int main(int argc, char** argv) {
   RUN_TEST(sizeof_demo);
   RUN_TEST(except_demo);
   RUN_TEST(static_literals);
-  RUN_TEST(compound_static_literals);
   RUN_TEST(enum_demo);
 
   GREATEST_MAIN_END(); /* display results */

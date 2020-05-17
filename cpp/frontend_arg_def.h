@@ -7,25 +7,7 @@
 #include "mylib.h"
 #include "runtime_asdl.h"
 
-// TODO: Move to mylib.h?
-//
-// Add List too.
-
-template <class K, class V>
-class ConstantDict {
- public:
-  // So you can specialize this to take a pointer to some kind of literal?
-  // Or use initializer_list in C++?
-  ConstantDict() {
-  }
-
-  // Get a key.
-  // Returns nullptr if not found (Can't use this for non-pointer types?)
-  V get(K key) {
-    return false;
-  }
-};
-
+// Forward declarations
 namespace args {
 class _Action;
 class SetToArg;
@@ -34,17 +16,42 @@ class _Attributes;
 class Reader;
 };  // namespace args
 
-namespace arg_def {
+//
+// Types for compile-time FlagSpec
+//
 
-class _FlagSpec {
- public:
-  // Dict<Str*, bool>* arity0;
-  ConstantDict<Str*, bool>* arity0;
-  Dict<Str*, args::SetToArg*>* arity1;
-  Dict<Str*, bool>* options;
-  Dict<Str*, runtime_asdl::value_t*>* defaults;
+struct SetToArg_c {
+  const char* name;  // note: this field is redundant
+  int flag_type;
+  bool quit_parsing;
 };
 
+struct Arity1Pair_c {
+  const char* key;
+  SetToArg_c value;  // SetToArg_c
+};
+
+enum class Default_c {
+  Undef,  // default for strings
+  False,
+  True,
+};
+
+struct DefaultPair_c {
+  const char* key;
+  Default_c default_val;
+};
+
+struct FlagSpec_c {
+  const char** arity0;   // NULL terminated array
+  Arity1Pair_c* arity1;  // NULL terminated array
+  const char** options;  // NULL terminated array
+  DefaultPair_c* defaults;
+};
+
+namespace arg_def {
+
+// TODO: Should be replaced with an ASDL type.
 class _FlagSpecAndMore {
  public:
   Dict<Str*, args::_Action*>* actions_long;

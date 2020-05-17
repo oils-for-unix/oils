@@ -26,10 +26,14 @@ cpp-unit-tests() {
 
   local name='unit_tests'
   mkdir -p _bin
-  compile _bin/$name cpp/unit_tests.cc \
-    cpp/frontend_match.cc mycpp/mylib.cc
+  compile _bin/$name -D CPP_UNIT_TEST \
+    cpp/unit_tests.cc \
+    _build/cpp/arg_types.cc \
+    cpp/frontend_arg_def.cc \
+    cpp/frontend_match.cc \
+    mycpp/mylib.cc
 
-  _bin/$name
+  _bin/$name "$@"
 }
 
 mycpp-unit-tests() {

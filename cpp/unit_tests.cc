@@ -1,5 +1,6 @@
 #include "greatest.h"
 
+#include "frontend_arg_def.h"
 #include "frontend_match.h"
 #include "id.h"
 #include "libc.h"            // cell, etc
@@ -94,6 +95,60 @@ TEST exceptions() {
   PASS();
 }
 
+//
+// FlagSpec Literals
+//
+
+// must be NUL terminated
+//
+// I tried to make this constexpr, but ran into errors.  Here is some
+// std::array crap, but let's keep it simple.
+//
+// https://groups.google.com/a/isocpp.org/forum/#!topic/std-proposals/EcWhnxFdFwE
+
+const char* arity0_1[] = {"foo", "bar", nullptr};
+
+Arity1Pair_c arity1_1[] = {
+    // key Str, value SetToArg_c
+    {"a1", {"z", 0, false}},
+    {"b1", {"zz", 1, false}},
+    {nullptr},  // sentinel
+};
+
+const char* options_1[] = {"o", "p", nullptr};
+
+DefaultPair_c defaults_1[] = {
+    {"x", Default_c::False},
+    {"y", Default_c::Undef},
+    {nullptr},
+};
+
+FlagSpec_c spec1 = {arity0_1, arity1_1, options_1, defaults_1};
+// a copy for demonstrations
+FlagSpec_c spec2 = {arity0_1, arity1_1, options_1, defaults_1};
+
+TEST arg_def_test() {
+  log("spec1.arity0 %s", spec1.arity0[0]);
+  log("spec1.arity0 %s", spec1.arity0[1]);
+
+  log("spec1.arity1 %s", spec1.arity1[0].key);
+  log("spec1.arity1 %s", spec1.arity1[1].key);
+
+  log("spec1.arity1 %s", spec1.arity1[0].value.name);
+  log("spec1.arity1 %s", spec1.arity1[1].value.name);
+
+  log("spec1.options %s", spec1.options[0]);
+  log("spec1.options %s", spec1.options[1]);
+
+  log("spec1.defaults %s", spec1.defaults[0].key);
+  log("spec1.defaults %s", spec1.defaults[1].key);
+
+  log("sizeof %d", sizeof(spec1.arity0));  // 8
+  log("sizeof %d", sizeof(arity0_1) / sizeof(arity0_1[0]));
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -103,6 +158,7 @@ int main(int argc, char** argv) {
   RUN_TEST(util_test);
   RUN_TEST(libc_test);
   RUN_TEST(exceptions);
+  RUN_TEST(arg_def_test);
   GREATEST_MAIN_END(); /* display results */
   return 0;
 }
