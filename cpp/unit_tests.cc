@@ -108,11 +108,10 @@ TEST exceptions() {
 
 const char* arity0_1[] = {"foo", "bar", nullptr};
 
-Arity1Pair_c arity1_1[] = {
-    // key Str, value SetToArg_c
-    {"a1", {"z", 0, false}},
-    {"b1", {"zz", 1, false}},
-    {nullptr},  // sentinel
+SetToArg_c arity1_1[] = {
+    {"z", 0, false},
+    {"zz", 1, false},
+    {},  // sentinel
 };
 
 const char* options_1[] = {"o", "p", nullptr};
@@ -120,22 +119,20 @@ const char* options_1[] = {"o", "p", nullptr};
 DefaultPair_c defaults_1[] = {
     {"x", Default_c::False},
     {"y", Default_c::Undef},
-    {nullptr},
+    {},
 };
 
-FlagSpec_c spec1 = {arity0_1, arity1_1, options_1, defaults_1};
+FlagSpec_c spec1 = {"export", arity0_1, arity1_1, options_1, defaults_1};
 // a copy for demonstrations
-FlagSpec_c spec2 = {arity0_1, arity1_1, options_1, defaults_1};
+FlagSpec_c spec2 = {"unset", arity0_1, arity1_1, options_1, defaults_1};
 
 TEST arg_def_test() {
+  // Test the declared constants
   log("spec1.arity0 %s", spec1.arity0[0]);
   log("spec1.arity0 %s", spec1.arity0[1]);
 
-  log("spec1.arity1 %s", spec1.arity1[0].key);
-  log("spec1.arity1 %s", spec1.arity1[1].key);
-
-  log("spec1.arity1 %s", spec1.arity1[0].value.name);
-  log("spec1.arity1 %s", spec1.arity1[1].value.name);
+  log("spec1.arity1 %s", spec1.arity1[0].name);
+  log("spec1.arity1 %s", spec1.arity1[1].name);
 
   log("spec1.options %s", spec1.options[0]);
   log("spec1.options %s", spec1.options[1]);
@@ -145,6 +142,9 @@ TEST arg_def_test() {
 
   log("sizeof %d", sizeof(spec1.arity0));  // 8
   log("sizeof %d", sizeof(arity0_1) / sizeof(arity0_1[0]));
+
+  arg_def::LookupFlagSpec(new Str("readonly"));
+  arg_def::LookupFlagSpec(new Str("zzz"));
 
   PASS();
 }

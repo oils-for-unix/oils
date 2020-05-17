@@ -12,21 +12,25 @@ args::_Attributes* Parse(runtime_asdl::FlagSpec_* spec, args::Reader* arg_r);
 namespace arg_def {
 
 using arg_types::kFlagSpecs;
-using arg_types::kNumFlagSpecs;
 
-_FlagSpec* LookupFlagSpec(Str* spec_name) {
-  log("n = %d", kNumFlagSpecs);
-  for (int i = 0; i < kNumFlagSpecs; ++i) {
-    // TODO: Str* should be serialized with length?
-    int n = std::min(static_cast<size_t>(spec_name->len_),
-                     strlen(kFlagSpecs[i].name));
-    if (memcmp(kFlagSpecs[i].name, spec_name->data_, n) == 0) {
-      log("%s found", spec_name->data_);
-      return NULL;
+void* LookupFlagSpec(Str* spec_name) {
+  int i = 0;
+  while (true) {
+    const char* name = kFlagSpecs[i].name;
+    if (name == nullptr) {
+      break;
     }
+    // TODO: Str* should be serialized with length?
+    int n = std::min(static_cast<size_t>(spec_name->len_), strlen(name));
+    if (memcmp(name, spec_name->data_, n) == 0) {
+      log("%s found", spec_name->data_);
+      return nullptr;
+    }
+
+    i++;
   }
   log("%s not found", spec_name->data_);
-  return NULL;
+  return nullptr;
 }
 
 static void FillSpec(void* const_spec, runtime_asdl::FlagSpec_* out) {

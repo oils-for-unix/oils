@@ -26,11 +26,6 @@ struct SetToArg_c {
   bool quit_parsing;
 };
 
-struct Arity1Pair_c {
-  const char* key;
-  SetToArg_c value;  // SetToArg_c
-};
-
 enum class Default_c {
   Undef,  // default for strings
   False,
@@ -43,8 +38,9 @@ struct DefaultPair_c {
 };
 
 struct FlagSpec_c {
+  const char* name;
   const char** arity0;   // NULL terminated array
-  Arity1Pair_c* arity1;  // NULL terminated array
+  SetToArg_c* arity1;  // NULL terminated array
   const char** options;  // NULL terminated array
   DefaultPair_c* defaults;
 };
@@ -58,6 +54,9 @@ class _FlagSpecAndMore {
   Dict<Str*, args::_Action*>* actions_short;
   Dict<Str*, runtime_asdl::value_t*>* defaults;
 };
+
+// for testing only
+void* LookupFlagSpec(Str* spec_name);
 
 args::_Attributes* Parse(Str* spec_name, args::Reader* arg_r);
 
