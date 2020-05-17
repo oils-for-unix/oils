@@ -199,10 +199,15 @@ def main(argv):
 
   cmd_deps.dumper = dev.CrashDumper('')
 
-  builtins = {}  # type: Dict[int, _Builtin]
+  builtins = {}  # type: Dict[int, vm._Builtin]
   builtins[builtin_i.echo] = Echo()
   builtins[builtin_i.shopt] = Shopt(mutable_opts)
   builtins[builtin_i.set] = Set(mutable_opts)
+
+  builtins[builtin_i.shift] = builtin_assign.Shift(mem)
+  builtins[builtin_i.unset] = builtin_assign.Unset(
+      mem, exec_opts, procs, parse_ctx, arith_ev, errfmt)
+
   ex = NullExecutor(builtins)
 
   trace_f = util.DebugFile(mylib.Stderr())
@@ -224,14 +229,7 @@ def main(argv):
   return status
 
 
-class _Builtin(object):
-
-  def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
-    raise NotImplementedError()
-
-
-class Echo(_Builtin):
+class Echo(vm._Builtin):
   """Simple echo builtin.
   """
   def __init__(self):
@@ -250,7 +248,7 @@ class Echo(_Builtin):
     return 0
 
 
-class Set(_Builtin):
+class Set(vm._Builtin):
   def __init__(self, mutable_opts):
     # type: (MutableOpts) -> None
     self.mutable_opts = mutable_opts
@@ -271,7 +269,7 @@ class Set(_Builtin):
     return 0
 
 
-class Shopt(_Builtin):
+class Shopt(vm._Builtin):
   def __init__(self, mutable_opts):
     # type: (MutableOpts) -> None
     self.mutable_opts = mutable_opts
@@ -294,7 +292,7 @@ class Shopt(_Builtin):
 
 class NullExecutor(vm._Executor):
   def __init__(self, builtins):
-    # type: (Dict[int, _Builtin]) -> None
+    # type: (Dict[int, vm._Builtin]) -> None
     self.builtins = builtins
 
   def RunBuiltin(self, builtin_id, cmd_val):

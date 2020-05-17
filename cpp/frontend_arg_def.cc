@@ -7,6 +7,28 @@
 // export headers!
 namespace args {
 args::_Attributes* Parse(runtime_asdl::FlagSpec_* spec, args::Reader* arg_r);
+
+// Copied from osh_eval.cc translation
+class Reader {
+ public:
+  Reader(List<Str*>* argv, List<int>* spids);
+  void Next();
+  Str* Peek();
+  Tuple2<Str*, int> Peek2();
+  Str* ReadRequired(Str* error_msg);
+  Tuple2<Str*, int> ReadRequired2(Str* error_msg);
+  List<Str*>* Rest();
+  Tuple2<List<Str*>*, List<int>*> Rest2();
+  bool AtEnd();
+  int _FirstSpanId();
+  int SpanId();
+
+  List<Str*>* argv;
+  int i;
+  int n;
+  List<int>* spids;
+};
+
 }
 
 namespace arg_def {
@@ -109,8 +131,18 @@ args::_Attributes* Parse(Str* spec_name, args::Reader* arg_r) {
 }
 
 Tuple2<args::_Attributes*, int> ParseCmdVal(
-    Str* spec_name, runtime_asdl::cmd_value__Argv* arg_r) {
-  assert(0);
+    Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val) {
+
+#ifdef CPP_UNIT_TEST
+  return Tuple2<args::_Attributes*, int>(nullptr, 0);
+#else
+  auto arg_r = new args::Reader(cmd_val->argv, cmd_val->arg_spids);
+  arg_r->Next();  // move past the builtin name
+
+  runtime_asdl::FlagSpec_* spec = LookupFlagSpec(spec_name);
+  assert(spec);  // should always be found
+  return Tuple2<args::_Attributes*, int>(args::Parse(spec, arg_r), arg_r->i);
+#endif
 }
 
 }  // namespace arg_def

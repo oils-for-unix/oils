@@ -192,7 +192,7 @@ class Export(vm._AssignBuiltin):
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
     attrs = arg_def.Parse('export_', arg_r)
-    arg = arg_types.export_(attrs)
+    arg = arg_types.export_(attrs.attrs)
     #arg = attrs
 
     if arg.f:
@@ -258,7 +258,7 @@ class Readonly(vm._AssignBuiltin):
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
     attrs = arg_def.Parse('readonly', arg_r)
-    arg = arg_types.readonly(attrs)
+    arg = arg_types.readonly(attrs.attrs)
 
     if arg.p or len(cmd_val.pairs) == 0:
       return _PrintVariables(self.mem, cmd_val, attrs, True, builtin=_READONLY)
@@ -311,7 +311,7 @@ class NewVar(vm._AssignBuiltin):
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
     attrs = arg_def.Parse('new_var', arg_r)
-    arg = arg_types.new_var(attrs)
+    arg = arg_types.new_var(attrs.attrs)
 
     status = 0
 
@@ -451,7 +451,7 @@ class Unset(vm._Builtin):
     # type: (cmd_value__Argv) -> int
     attrs, offset = arg_def.ParseCmdVal('unset', cmd_val)
     n = len(cmd_val.argv)
-    arg = arg_types.unset(attrs)
+    arg = arg_types.unset(attrs.attrs)
 
     # TODO: Could use arg_r.Rest()
     for i in xrange(offset, n):

@@ -28,12 +28,7 @@ def Cpp(specs, header_f, cc_f):
 #define ARG_TYPES_H
 
 #include "frontend_arg_def.h"  // for FlagSpec_c
-
-namespace args {
-class _Attributes;
-}
-
-class Str;  // mylib
+#include "mylib.h"
 
 namespace arg_types {
 """)
@@ -43,7 +38,7 @@ namespace arg_types {
     header_f.write("""
 class %s {
  public:
-  %s(args::_Attributes* attrs) {
+  %s(Dict<Str*, runtime_asdl::value_t*>* attrs) {
   }
 """ % (spec_name, spec_name))
 
@@ -178,9 +173,9 @@ def main(argv):
     print("""
 from frontend.args import _Attributes
 from _devbuild.gen.runtime_asdl import (
-   value_e, value__Bool, value__Int, value__Float, value__Str,
+   value_e, value_t, value__Bool, value__Int, value__Float, value__Str,
 )
-from typing import cast
+from typing import cast, Dict
 """)
     for spec_name in sorted(specs):
       spec = specs[spec_name]
@@ -188,8 +183,7 @@ from typing import cast
       print("""
 class %s(object):
   def __init__(self, attrs):
-    # type: (_Attributes) -> None
-    flag = attrs.attrs
+    # type: (Dict[str, value_t]) -> None
 """ % spec_name)
 
       i = 0
@@ -201,7 +195,7 @@ class %s(object):
             subtype = 'Bool'
             subtype_field = 'b'  # e.g. Bool(bool b)
             mypy_type = 'bool'
-            print('    self.%s = cast(value__Bool, flag[%r]).b  # type: bool' % (
+            print('    self.%s = cast(value__Bool, attrs[%r]).b  # type: bool' % (
               field_name, field_name))
 
           elif case(flag_type_e.Str):
@@ -210,7 +204,7 @@ class %s(object):
             mypy_type = 'str'
 
             tmp = 'val%d' % i
-            print('    %s = flag[%r]' % (tmp, field_name))
+            print('    %s = attrs[%r]' % (tmp, field_name))
             print('    self.%s = None if %s.tag_() == value_e.Undef else cast(value__%s, %s).%s  # type: %s' % (
               field_name, tmp, subtype, tmp, subtype_field, mypy_type))
           else:
