@@ -474,23 +474,25 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # ${undef:-'a b' c 'd # e'}.  Each part_value can have a different
     # do_glob/do_elide setting.
 
-    # TODO: Change this to a bitwise test?
-    if op.op_id in (Id.VTest_ColonHyphen, Id.VTest_ColonEquals,
-                    Id.VTest_ColonQMark, Id.VTest_ColonPlus):
-      UP_val = val
-      with tagswitch(val) as case:
-        if case(value_e.Undef):
-          is_falsey = True
-        elif case(value_e.Str):
-          val = cast(value__Str, UP_val)
+    UP_val = val
+    with tagswitch(val) as case:
+      if case(value_e.Undef):
+        is_falsey = True
+      elif case(value_e.Str):
+        val = cast(value__Str, UP_val)
+        if op.op_id in (Id.VTest_ColonHyphen, Id.VTest_ColonEquals,
+                        Id.VTest_ColonQMark, Id.VTest_ColonPlus):
           is_falsey = len(val.s) == 0
-        elif case(value_e.MaybeStrArray):
-          val = cast(value__MaybeStrArray, UP_val)
-          is_falsey = len(val.strs) == 0
         else:
-          raise NotImplementedError(val.tag_())
-    else:
-      is_falsey = val.tag_() == value_e.Undef
+          is_falsey = False
+      elif case(value_e.MaybeStrArray):
+        val = cast(value__MaybeStrArray, UP_val)
+        is_falsey = len(val.strs) == 0
+      elif case(value_e.AssocArray):
+        val = cast(value__AssocArray, UP_val)
+        is_falsey = len(val.d) == 0
+      else:
+        raise NotImplementedError(val.tag_())
 
     if op.op_id in (Id.VTest_ColonHyphen, Id.VTest_Hyphen):
       if is_falsey:
@@ -770,12 +772,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     return new_val
 
-  def _EvalDoubleQuoted(self,
-                        parts,  # type: List[word_part_t]
-                        part_vals,  # type: List[part_value_t]
-                        ):
-    # type: (...) -> None
-    """DoubleQuoted -> part_value
+  def _EvalDoubleQuoted(self, parts, part_vals):
+    # type: (List[word_part_t], List[part_value_t]) -> None
+    """Evaluate parts of a DoubleQuoted part.
 
     Args:
       part_vals: output param to append to.
@@ -863,8 +862,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # 3. Process maybe_decay_array here before returning.
 
     maybe_decay_array = False  # for $*, ${a[*]}, etc.
-    name_query = False
-
     var_name = None  # type: str  # For ${foo=default}
 
     # 1. Evaluate from (var_name, var_num, token Id) -> value
@@ -876,16 +873,19 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         names = self.mem.VarNamesStartingWith(part.token.val)
         names.sort()
-        val = value.MaybeStrArray(names)  # type: value_t
 
         suffix_op = cast(Token, part.suffix_op)
-        # "${!prefix@}" is the only one that doesn't decay
-        maybe_decay_array = not (quoted and suffix_op.id == Id.VOp3_At)
-        name_query = True
-      else:
-        var_name = part.token.val
-        # TODO: LINENO can use its own span_id!
-        val = self.mem.GetVar(var_name)
+        if quoted and suffix_op.id == Id.VOp3_At:
+          part_vals.append(part_value.Array(names))
+        else:
+          sep = self.splitter.GetJoinChar()
+          part_vals.append(part_value.String(sep.join(names), quoted, True))
+        return  # EARLY RETURN
+
+      var_name = part.token.val
+      # TODO: LINENO can use its own span_id!
+      val = self.mem.GetVar(var_name)
+
     elif part.token.id == Id.VSub_Number:
       var_num = int(part.token.val)
       val = self._EvalVarNum(var_num)
@@ -1002,7 +1002,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           e_die("Array %r can't be referred to as a scalar (without @ or *)",
                 var_name, part=part)
 
-    if part.prefix_op and not name_query:
+    if part.prefix_op:
       val = self._EmptyStrOrError(val, part.token)  # maybe error
       # could be
       # - ${!ref-default}
@@ -1013,7 +1013,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       # NOTE: The length operator followed by a suffix operator is a SYNTAX
       # error.
 
-    if part.suffix_op and not name_query:
+    if part.suffix_op:
       op = part.suffix_op
       UP_op = op
       with tagswitch(op) as case:

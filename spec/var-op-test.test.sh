@@ -168,14 +168,50 @@ a3=plus
 #### $@ and - and +
 echo argv=${@-minus}
 echo argv=${@+plus}
+echo argv=${@:-minus}
+echo argv=${@:+plus}
 ## STDOUT:
+argv=minus
+argv=
 argv=minus
 argv=
 ## END
 ## BUG dash STDOUT:
 argv=
 argv=plus
+argv=minus
+argv=
 ## END
+
+#### assoc array and - and +
+case $SH in (dash|mksh) exit ;; esac
+
+declare -A empty=()
+declare -A assoc=(['k']=v)
+
+echo empty=${empty[@]-minus}
+echo empty=${empty[@]+plus}
+echo assoc=${assoc[@]-minus}
+echo assoc=${assoc[@]+plus}
+
+echo ---
+echo empty=${empty[@]:-minus}
+echo empty=${empty[@]:+plus}
+echo assoc=${assoc[@]:-minus}
+echo assoc=${assoc[@]:+plus}
+## STDOUT:
+empty=minus
+empty=
+assoc=v
+assoc=plus
+---
+empty=minus
+empty=
+assoc=v
+assoc=plus
+## END
+## N-I dash/mksh stdout-json: ""
+
 
 #### Error when empty
 empty=''
