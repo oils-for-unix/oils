@@ -432,6 +432,29 @@ status=0
 status=1
 ## END
 
+#### -u for setuid, -g too
+
+# This test is not hermetic
+
+test -u /tmp
+echo status=$?
+
+test -u $(which sudo)
+echo status=$?
+
+test -g /tmp
+echo status=$?
+
+test -g $(which sudo)
+echo status=$?
+
+## STDOUT:
+status=1
+status=0
+status=1
+status=1
+## END
+
 #### -v to test variable
 test -v nonexistent
 echo global=$?

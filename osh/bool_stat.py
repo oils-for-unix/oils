@@ -86,6 +86,12 @@ def DoUnaryOp(op_id, s):
   if op_id == Id.BoolUnary_s:
     return st.st_size != 0
 
+  if op_id == Id.BoolUnary_u:
+    return bool(stat.S_IMODE(mode) & stat.S_ISUID)
+
+  if op_id == Id.BoolUnary_g:
+    return bool(stat.S_IMODE(mode) & stat.S_ISGID)
+
   if op_id == Id.BoolUnary_O:
     return st.st_uid == posix.geteuid()
 
