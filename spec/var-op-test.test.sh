@@ -76,16 +76,106 @@ ${unset=is unset}
 echo $unset
 ## stdout: is unset
 
-#### Alternative value when empty
+#### ${v:+foo} Alternative value when empty
 v=foo
 empty=''
 echo ${v:+v is not empty} ${empty:+is not empty}
 ## stdout: v is not empty
 
-#### Alternative value when unset
+#### ${v+foo} Alternative value when unset
 v=foo
 echo ${v+v is not unset} ${unset:+is not unset}
 ## stdout: v is not unset
+
+#### ${v+foo} and ${v:+foo} when set -u
+set -u
+v=v
+echo v=${v:+foo}
+echo v=${v+foo}
+unset v
+echo v=${v:+foo}
+echo v=${v+foo}
+## STDOUT:
+v=foo
+v=foo
+v=
+v=
+## END
+
+#### ${v-foo} and ${v:-foo} when set -u
+set -u
+v=v
+echo v=${v:-foo}
+echo v=${v-foo}
+unset v
+echo v=${v:-foo}
+echo v=${v-foo}
+## STDOUT:
+v=v
+v=v
+v=foo
+v=foo
+## END
+
+#### array and - and +
+case $SH in (dash) exit ;; esac
+
+shopt -s compat_array  # to refer to array as scalar
+
+empty=()
+a1=('')
+a2=('' x)
+a3=(3 4)
+echo empty=${empty[@]-minus}
+echo a1=${a1[@]-minus}
+echo a1[0]=${a1[0]-minus}
+echo a2=${a2[@]-minus}
+echo a3=${a3[@]-minus}
+echo ---
+
+echo empty=${empty[@]+plus}
+echo a1=${a1[@]+plus}
+echo a1[0]=${a1[0]+plus}
+echo a2=${a2[@]+plus}
+echo a3=${a3[@]+plus}
+echo ---
+
+echo empty=${empty+plus}
+echo a1=${a1+plus}
+echo a2=${a2+plus}
+echo a3=${a3+plus}
+
+## STDOUT:
+empty=minus
+a1=
+a1[0]=
+a2= x
+a3=3 4
+---
+empty=
+a1=plus
+a1[0]=plus
+a2=plus
+a3=plus
+---
+empty=
+a1=plus
+a2=plus
+a3=plus
+## END
+## N-I dash stdout-json: ""
+
+#### $@ and - and +
+echo argv=${@-minus}
+echo argv=${@+plus}
+## STDOUT:
+argv=minus
+argv=
+## END
+## BUG dash STDOUT:
+argv=
+argv=plus
+## END
 
 #### Error when empty
 empty=''

@@ -492,7 +492,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
     else:
       is_falsey = val.tag_() == value_e.Undef
 
-    #print('!!',id, is_falsey)
     if op.op_id in (Id.VTest_ColonHyphen, Id.VTest_Hyphen):
       if is_falsey:
         self._EvalWordToParts(op.arg_word, quoted, part_vals, is_subst=True)
@@ -503,7 +502,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # Inverse of the above.
     elif op.op_id in (Id.VTest_ColonPlus, Id.VTest_Plus):
       if is_falsey:
+        # TODO: fix this
         return False
+        #return True
       else:
         self._EvalWordToParts(op.arg_word, quoted, part_vals, is_subst=True)
         return True
@@ -818,8 +819,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
     tmp = [s for s in val.strs if s is not None]
     return value.Str(sep.join(tmp))
 
-  def _EmptyStrOrError(self, val, token=None):
-    # type: (value_t, Optional[Token]) -> value_t
+  def _EmptyStrOrError(self, val, token):
+    # type: (value_t, Token) -> value_t
     if val.tag_() == value_e.Undef:
       if self.exec_opts.nounset():
         if token is None:
@@ -1002,7 +1003,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 var_name, part=part)
 
     if part.prefix_op and not name_query:
-      val = self._EmptyStrOrError(val)  # maybe error
+      val = self._EmptyStrOrError(val, part.token)  # maybe error
       # could be
       # - ${!ref-default}
       # - "${!assoc[@]}" vs. ${!assoc[*]} (TODO: maybe_decay_array for this
@@ -1071,13 +1072,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
               return
 
           else:
-            val = self._EmptyStrOrError(val)  # maybe error
+            val = self._EmptyStrOrError(val, part.token)  # maybe error
             # Other suffix: value -> value
             val = self._ApplyUnarySuffixOp(val, op)
 
         elif case(suffix_op_e.PatSub):  # PatSub, vectorized
           op = cast(suffix_op__PatSub, UP_op)
-          val = self._EmptyStrOrError(val)  # ${undef//x/y}
+          val = self._EmptyStrOrError(val, part.token)  # ${undef//x/y}
 
           # globs are supported in the pattern
           pat_val = self.EvalWordToString(op.pat, quote_kind=quote_e.FnMatch)
@@ -1125,7 +1126,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         elif case(suffix_op_e.Slice):
           op = cast(suffix_op__Slice, UP_op)
-          val = self._EmptyStrOrError(val)  # ${undef:3:1}
+          val = self._EmptyStrOrError(val, part.token)  # ${undef:3:1}
 
           if op.begin:
             begin = self.arith_ev.EvalToInt(op.begin)
@@ -1168,7 +1169,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         val = array_val
 
     # For the case where there are no prefix or suffix ops.
-    val = self._EmptyStrOrError(val)
+    val = self._EmptyStrOrError(val, part.token)
 
     # For example, ${a} evaluates to value.Str(), but we want a
     # part_value.String().
@@ -1237,7 +1238,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       val, maybe_decay_array = self._EvalSpecialVar(token.id, quoted)
 
     #log('SIMPLE %s', part)
-    val = self._EmptyStrOrError(val, token=token)
+    val = self._EmptyStrOrError(val, token)
     UP_val = val
     if val.tag_() == value_e.MaybeStrArray:
       array_val = cast(value__MaybeStrArray, UP_val)
