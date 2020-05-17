@@ -33,14 +33,14 @@ enum class Default_c {
 };
 
 struct DefaultPair_c {
-  const char* key;
+  const char* name;
   Default_c default_val;
 };
 
 struct FlagSpec_c {
   const char* name;
   const char** arity0;   // NULL terminated array
-  SetToArg_c* arity1;  // NULL terminated array
+  SetToArg_c* arity1;    // NULL terminated array
   const char** options;  // NULL terminated array
   DefaultPair_c* defaults;
 };
@@ -56,7 +56,7 @@ class _FlagSpecAndMore {
 };
 
 // for testing only
-void* LookupFlagSpec(Str* spec_name);
+runtime_asdl::FlagSpec_* LookupFlagSpec(Str* spec_name);
 
 args::_Attributes* Parse(Str* spec_name, args::Reader* arg_r);
 

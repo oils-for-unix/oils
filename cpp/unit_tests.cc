@@ -109,9 +109,7 @@ TEST exceptions() {
 const char* arity0_1[] = {"foo", "bar", nullptr};
 
 SetToArg_c arity1_1[] = {
-    {"z", 0, false},
-    {"zz", 1, false},
-    {},  // sentinel
+    {"z", 0, false}, {"zz", 1, false}, {},  // sentinel
 };
 
 const char* options_1[] = {"o", "p", nullptr};
@@ -137,12 +135,13 @@ TEST arg_def_test() {
   log("spec1.options %s", spec1.options[0]);
   log("spec1.options %s", spec1.options[1]);
 
-  log("spec1.defaults %s", spec1.defaults[0].key);
-  log("spec1.defaults %s", spec1.defaults[1].key);
+  log("spec1.defaults %s", spec1.defaults[0].name);
+  log("spec1.defaults %s", spec1.defaults[1].name);
 
   log("sizeof %d", sizeof(spec1.arity0));  // 8
   log("sizeof %d", sizeof(arity0_1) / sizeof(arity0_1[0]));
 
+  arg_def::LookupFlagSpec(new Str("new_var"));
   arg_def::LookupFlagSpec(new Str("readonly"));
   arg_def::LookupFlagSpec(new Str("zzz"));
 
