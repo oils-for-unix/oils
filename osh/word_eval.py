@@ -504,9 +504,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # Inverse of the above.
     elif op.op_id in (Id.VTest_ColonPlus, Id.VTest_Plus):
       if is_falsey:
-        # TODO: fix this
-        return False
-        #return True
+        # Returning True seems inconsistent, but we need to avoid the 'set -u'
+        # check.  Example: 'set -u; x=${undef+foo}' results in the empty
+        # string, not an error.
+        return True
       else:
         self._EvalWordToParts(op.arg_word, quoted, part_vals, is_subst=True)
         return True
@@ -874,8 +875,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
         names = self.mem.VarNamesStartingWith(part.token.val)
         names.sort()
 
-        suffix_op = cast(Token, part.suffix_op)
-        if quoted and suffix_op.id == Id.VOp3_At:
+        suffix_op_ = cast(Token, part.suffix_op)
+        if quoted and suffix_op_.id == Id.VOp3_At:
           part_vals.append(part_value.Array(names))
         else:
           sep = self.splitter.GetJoinChar()
@@ -1002,8 +1003,19 @@ class AbstractWordEvaluator(StringWordEvaluator):
           e_die("Array %r can't be referred to as a scalar (without @ or *)",
                 var_name, part=part)
 
-    if part.prefix_op:
+    # Do the _EmptyStrOrError up front here, EXCEPT in the case of Kind.VTest
+    undef_check = True
+    suffix_op = part.suffix_op
+    UP_op = suffix_op
+    if suffix_op is not None and suffix_op.tag_() == suffix_op_e.Unary:
+      suffix_op = cast(suffix_op__Unary, UP_op)
+      if consts.GetKind(suffix_op.op_id) == Kind.VTest:
+        undef_check = False
+
+    if undef_check:
       val = self._EmptyStrOrError(val, part.token)  # maybe error
+
+    if part.prefix_op:
       # could be
       # - ${!ref-default}
       # - "${!assoc[@]}" vs. ${!assoc[*]} (TODO: maybe_decay_array for this
@@ -1013,10 +1025,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
       # NOTE: The length operator followed by a suffix operator is a SYNTAX
       # error.
 
-    if part.suffix_op:
-      op = part.suffix_op
-      UP_op = op
-      with tagswitch(op) as case:
+    if suffix_op:
+      op = suffix_op  # could get rid of this alias
+      with tagswitch(suffix_op) as case:
         if case(suffix_op_e.Nullary):
           op = cast(Token, UP_op)
           op_id = op.id
@@ -1072,13 +1083,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
               return
 
           else:
-            val = self._EmptyStrOrError(val, part.token)  # maybe error
             # Other suffix: value -> value
             val = self._ApplyUnarySuffixOp(val, op)
 
         elif case(suffix_op_e.PatSub):  # PatSub, vectorized
           op = cast(suffix_op__PatSub, UP_op)
-          val = self._EmptyStrOrError(val, part.token)  # ${undef//x/y}
 
           # globs are supported in the pattern
           pat_val = self.EvalWordToString(op.pat, quote_kind=quote_e.FnMatch)
@@ -1126,7 +1135,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         elif case(suffix_op_e.Slice):
           op = cast(suffix_op__Slice, UP_op)
-          val = self._EmptyStrOrError(val, part.token)  # ${undef:3:1}
 
           if op.begin:
             begin = self.arith_ev.EvalToInt(op.begin)
@@ -1167,9 +1175,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
         val = self._DecayArray(array_val)
       else:
         val = array_val
-
-    # For the case where there are no prefix or suffix ops.
-    val = self._EmptyStrOrError(val, part.token)
 
     # For example, ${a} evaluates to value.Str(), but we want a
     # part_value.String().
