@@ -13,6 +13,8 @@ shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 source test/common.sh
 source test/spec-common.sh
 
+NUM_SPEC_TASKS=${NUM_SPEC_TASKS:-400}
+
 # Option to use our xargs implementation.
 #xargs() {
 #  echo "Using ~/git/oilshell/xargs.py/xargs.py"
@@ -112,9 +114,6 @@ run-cases() {
     > $base_dir/${spec_name}.html
 }
 
-#readonly NUM_TASKS=400
-readonly NUM_TASKS=4
-
 
 _html-summary() {
   ### Print an HTML summary to stdout and return whether all tests succeeded
@@ -157,7 +156,7 @@ EOF
 
   local base_dir=_tmp/spec/$SPEC_JOB
 
-  head -n $NUM_TASKS $manifest | awk -v totals=$totals -v base_dir=$base_dir '
+  head -n $NUM_SPEC_TASKS $manifest | awk -v totals=$totals -v base_dir=$base_dir '
   # Awk problem: getline errors are ignored by default!
   function error(path) {
     print "Error reading line from file: " path > "/dev/stderr"
@@ -320,7 +319,7 @@ _all-parallel() {
 
   # The exit codes are recorded in files for html-summary to aggregate.
   set +o errexit
-  head -n $NUM_TASKS $manifest | xargs -n 1 -P $MAX_PROCS -- $0 run-cases
+  head -n $NUM_SPEC_TASKS $manifest | xargs -n 1 -P $MAX_PROCS -- $0 run-cases
   set -o errexit
 
   #ls -l _tmp/spec
@@ -400,7 +399,7 @@ test-to-html() {
 
 all-tests-to-html() {
   local manifest=$1
-  head -n $NUM_TASKS $manifest \
+  head -n $NUM_SPEC_TASKS $manifest \
     | xargs -n 1 -P $MAX_PROCS -- $0 test-to-html
   log "done: all-tests-to-html"
 }
