@@ -11,6 +11,7 @@ set -o errexit
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
 source test/common.sh
+source test/spec-common.sh
 
 # Option to use our xargs implementation.
 #xargs() {
@@ -98,20 +99,21 @@ run-cases() {
 
   # could be 'test/spec-alpine.sh run-test', which WILL BE SPLIT!
   local spec_runner=${SPEC_RUNNER:-test/spec.sh}
+  local base_dir=_tmp/spec/$SPEC_JOB
 
   # TODO: Could --stats-{file,template} be a separate awk step on .tsv files?
   run-task-with-status \
-    _tmp/spec/${spec_name}.task.txt \
+    $base_dir/${spec_name}.task.txt \
     $spec_runner $spec_name \
       --format html \
-      --stats-file _tmp/spec/${spec_name}.stats.txt \
+      --stats-file $base_dir/${spec_name}.stats.txt \
       --stats-template \
       '%(num_cases)d %(osh_num_passed)d %(osh_num_failed)d %(osh_failures_allowed)d %(osh_ALT_delta)d' \
-    > _tmp/spec/${spec_name}.html
+    > $base_dir/${spec_name}.html
 }
 
-readonly NUM_TASKS=400
-#readonly NUM_TASKS=4
+#readonly NUM_TASKS=400
+readonly NUM_TASKS=4
 
 
 _html-summary() {
@@ -119,10 +121,10 @@ _html-summary() {
 
   local sh_label=$1  # osh or oil
   local totals=$2  # path to print HTML to
-  local manifest=${3:-_tmp/spec/MANIFEST.txt}
+  local manifest=${3:-_tmp/spec/$SPEC_JOB/MANIFEST.txt}
 
   html-head --title "Spec Test Summary" \
-    ../../web/base.css ../../web/spec-tests.css
+    ../../../web/base.css ../../../web/spec-tests.css
 
   cat <<EOF
   <body class="width50">
@@ -153,7 +155,9 @@ EOF
   # specify variable names.  You have to destructure it yourself.
   # - Lack of string interpolation is very annoying
 
-  head -n $NUM_TASKS $manifest | awk -v totals=$totals '
+  local base_dir=_tmp/spec/$SPEC_JOB
+
+  head -n $NUM_TASKS $manifest | awk -v totals=$totals -v base_dir=$base_dir '
   # Awk problem: getline errors are ignored by default!
   function error(path) {
     print "Error reading line from file: " path > "/dev/stderr"
@@ -164,7 +168,7 @@ EOF
     spec_name = $0
 
     # Read from the task files
-    path = ( "_tmp/spec/" spec_name ".task.txt" )
+    path = ( base_dir "/" spec_name ".task.txt" )
     n = getline < path
     if (n != 1) {
       error(path)
@@ -172,7 +176,7 @@ EOF
     status = $1
     wall_secs = $2
 
-    path = ( "_tmp/spec/" spec_name ".stats.txt" )
+    path = ( base_dir "/" spec_name ".stats.txt" )
     n = getline < path
     if (n != 1) {
       error(path)
@@ -269,12 +273,14 @@ html-summary() {
   local suite=$1
   local manifest="_tmp/spec/SUITE-$suite.txt"
 
-  local totals=_tmp/spec/totals-$suite.html
-  local tmp=_tmp/spec/tmp-$suite.html
+  local base_dir=_tmp/spec/$SPEC_JOB
 
-  local out=_tmp/spec/$suite.html
+  local totals=$base_dir/totals-$suite.html
+  local tmp=$base_dir/tmp-$suite.html
 
-  # TODO: Do we also need _tmp/spec/{osh,oil}-details-for-toil.json
+  local out=$base_dir/$suite.html
+
+  # TODO: Do we also need $base_dir/{osh,oil}-details-for-toil.json
   # osh failures, and all failures
   # When deploying, if they exist, them copy them outside?
   # I guess toil_web.py can use the zipfile module?
@@ -308,7 +314,7 @@ _all-parallel() {
   local suite=${1:-osh-oil}
   local manifest="_tmp/spec/SUITE-$suite.txt"
 
-  mkdir -p _tmp/spec
+  mkdir -p _tmp/spec/$SPEC_JOB
 
   manifest
 
@@ -351,7 +357,7 @@ _test-to-html() {
   #print "<td id=L" NR "><pre>" line "</pre></td>"
 
   html-head --title "$src code listing" \
-    ../../web/base.css ../../web/spec-code.css
+    ../../../web/base.css ../../../web/spec-code.css
 
   cat <<EOF
   <body class="width40">
@@ -389,7 +395,7 @@ EOF
 
 test-to-html() {
   local spec_name=$1
-  _test-to-html spec/${spec_name}.test.sh > _tmp/spec/${spec_name}.test.html
+  _test-to-html spec/${spec_name}.test.sh > _tmp/spec/$SPEC_JOB/${spec_name}.test.html
 }
 
 all-tests-to-html() {

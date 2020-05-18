@@ -1,6 +1,12 @@
 #!/bin/bash
 #
-# Library shared between test/{spec,spec-alpine}.sh.
+# Library shared between test/{spec,spec-alpine,spec-bin}.sh.
+
+SPEC_JOB=${SPEC_JOB:-survey}
+
+readonly BUSYBOX_NAME='busybox-1.31.1'
+readonly DASH_NAME='dash-0.5.10.2'
+readonly YASH_NAME='yash-2.49'
 
 sh-spec() {
   local test_file=$1

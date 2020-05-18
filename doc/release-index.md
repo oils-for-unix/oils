@@ -66,9 +66,12 @@ Oil has three major sources of docs:
 
 ### Main Test Suites
 
-- [Oil Spec Tests](test/spec.wwz/oil.html).  Test new Oil language features.
-- [OSH Spec Tests](test/spec.wwz/osh.html).  Test OSH with existing shells, and
-  compare their behavior.
+- Spec Tests
+  - [Oil Language Features](test/spec.wwz/oil-language/oil.html)
+  - [OSH Survey](test/spec.wwz/survey/osh.html).  Test OSH with existing
+    shells, and compare their behavior.
+  - [OSH in C++](test/spec.wwz/cpp/osh.html).  Metrics for translating Oil to
+    C++.
 - [Wild Tests](test/wild.wwz/).  Parse and translate thousands of shell scripts
   with OSH.
 - [Unit Tests](test/unit.wwz/).  Python unit test results.

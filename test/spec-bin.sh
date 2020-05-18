@@ -10,7 +10,7 @@
 #   test/spec-bin.sh download     # Get the right version of every tarball
 #   test/spec-bin.sh extract-all  # Extract source
 #   test/spec-bin.sh build-all    # Compile
-#   test/spec-bin.sh copy-all     # Put them in _tmp/spec-bin
+#   test/spec-bin.sh copy-all     # Put them in _deps/spec-bin
 #   test/spec-bin.sh test-all     # Run a small smoke test
 #
 # Once you've run all steps manually and understand how they work, run them
@@ -22,12 +22,10 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source test/spec-common.sh
+
 readonly THIS_DIR=$(cd $(dirname $0) && pwd)
 readonly DIR=$THIS_DIR/../_deps/spec-bin
-
-readonly BUSYBOX_NAME='busybox-1.31.1'
-readonly DASH_NAME='dash-0.5.10.2'
-readonly YASH_NAME='yash-2.49'
 
 # The authoritative versions!
 download() {
@@ -218,7 +216,7 @@ all-steps() {
     download     # Get the right version of every tarball
     extract-all  # Extract source
     build-all    # Compile
-    copy-all     # Put them in _tmp/spec-bin
+    copy-all     # Put them in _deps/spec-bin
     test-all     # Run a small smoke test
   fi
 }

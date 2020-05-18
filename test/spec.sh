@@ -171,7 +171,7 @@ osh-version-text() {
   echo
 
   echo ---
-  local my_busybox=_tmp/spec-bin/busybox-1.31.1/busybox
+  local my_busybox=_deps/spec-bin/$BUSYBOX_NAME/busybox
   if test -f $my_busybox; then
     { $my_busybox || true; } | head -n 1
     ls -l $my_busybox
@@ -219,6 +219,7 @@ osh-all() {
 }
 
 oil-all() {
+  export SPEC_JOB='oil-language'
   test/spec-runner.sh all-parallel oil "$@"
 }
 
@@ -804,10 +805,12 @@ _one-html() {
   local spec_name=$1
   shift
 
-  test/spec-runner.sh _test-to-html _tmp/${spec_name}.test.sh \
-    > _tmp/spec/${spec_name}.test.html
+  local base_dir=_tmp/spec/$SPEC_JOB
 
-  local out=_tmp/spec/${spec_name}.html
+  test/spec-runner.sh _test-to-html _tmp/${spec_name}.test.sh \
+    > $base_dir/${spec_name}.test.html
+
+  local out=$base_dir/${spec_name}.html
   set +o errexit
   time $spec_name --format html --trace "$@" > $out
   set -o errexit

@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 #
-# Collect and compare spec test results across different shells (and platforms
-# eventually).
+# Test the C++ translation of Oil.
 #
 # Usage:
-#   test/spec-compare.sh <function name>
+#   test/spec-cpp.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -43,9 +42,11 @@ run-with-osh-eval() {
   local test_name=$1
   shift
 
+  local base_dir=_tmp/spec/$SPEC_JOB
+
   # Run it with 3 versions of OSH.  And output TSV so we can compare the data.
   sh-spec spec/$test_name.test.sh \
-    --tsv-output _tmp/spec/${test_name}.tsv \
+    --tsv-output $base_dir/${test_name}.tsv \
     $REPO_ROOT/bin/osh \
     $REPO_ROOT/bin/osh_eval \
     $REPO_ROOT/_bin/osh_eval.dbg \
@@ -54,7 +55,8 @@ run-with-osh-eval() {
 
 all-osh-eval() {
   ### Run all tests with osh_eval and its translatino
-  export SPEC_RUNNER='test/spec-compare.sh run-with-osh-eval'
+  export SPEC_RUNNER='test/spec-cpp.sh run-with-osh-eval'
+  export SPEC_JOB='cpp'
 
   # this is like test/spec.sh {oil,osh}-all
   test/spec-runner.sh all-parallel osh "$@"

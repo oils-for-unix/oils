@@ -978,7 +978,7 @@ class HtmlOutput(Output):
         self.spec_name, line_num, cgi.escape(desc))
 
   def BeginCases(self, test_file):
-    css_urls = [ '../../web/base.css', '../../web/spec-tests.css' ]
+    css_urls = [ '../../../web/base.css', '../../../web/spec-tests.css' ]
     title = '%s: spec test case results' % self.spec_name
     html_head.Write(self.f, title, css_urls=css_urls)
 

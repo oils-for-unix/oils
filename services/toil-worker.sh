@@ -56,8 +56,8 @@ lint            test/lint.sh travis         -
 typecheck-slice types/oil-slice.sh travis   -
 typecheck-other types/run.sh travis         -
 unit            test/unit.sh travis         -
-oil-spec        test/spec.sh oil-all-serial _tmp/spec/oil.html
-osh-minimal     test/spec.sh osh-minimal    _tmp/spec/osh-minimal.html
+oil-spec        test/spec.sh oil-all-serial _tmp/spec/oil-language/oil.html
+osh-minimal     test/spec.sh osh-minimal    _tmp/spec/survey/osh-minimal.html
 EOF
 }
 
@@ -67,8 +67,8 @@ dev-all-nix-tasks() {
   # (task_name, script, action, result_html)
   cat <<EOF
 build-all       build/dev.sh all            -
-oil-spec        test/spec.sh oil-all-serial _tmp/spec/oil.html
-osh-spec        test/spec.sh osh-travis     _tmp/spec/osh.html
+oil-spec        test/spec.sh oil-all-serial _tmp/spec/oil-language/oil.html
+osh-spec        test/spec.sh osh-travis     _tmp/spec/survey/osh.html
 EOF
 }
 
@@ -88,7 +88,7 @@ dev-all           build/dev.sh all                       -
 yajl              build/dev.sh yajl-release              -
 syscall-by-code   test/syscall.sh by-code                _tmp/syscall/by-code.txt
 syscall-by-input  test/syscall.sh by-input               _tmp/syscall/by-input.txt
-osh-spec          test/spec.sh osh-travis                _tmp/spec/osh.html
+osh-spec          test/spec.sh osh-travis                _tmp/spec/survey/osh.html
 make-tarball      devtools/release.sh quick-oil-tarball  -
 build-tarball     build/test.sh oil-tar                  -
 EOF
