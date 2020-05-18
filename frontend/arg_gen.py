@@ -30,6 +30,10 @@ def Cpp(specs, header_f, cc_f):
 #include "frontend_arg_def.h"  // for FlagSpec_c
 #include "mylib.h"
 
+namespace value_e = runtime_asdl::value_e;
+using runtime_asdl::value__Bool;
+using runtime_asdl::value__Str;
+
 namespace arg_types {
 """)
   for spec_name in sorted(specs):
@@ -38,19 +42,41 @@ namespace arg_types {
     header_f.write("""
 class %s {
  public:
-  %s(Dict<Str*, runtime_asdl::value_t*>* attrs) {
-  }
+  %s(Dict<Str*, runtime_asdl::value_t*>* attrs) :
 """ % (spec_name, spec_name))
 
+    init_vals = []
+    field_decls = []
     for field_name in sorted(spec.fields):
       typ = spec.fields[field_name]
 
       with tagswitch(typ) as case:
         if case(flag_type_e.Bool):
-          header_f.write('  bool %s;\n' % field_name)
+          init_vals.append('static_cast<value__Bool*>(attrs->index(new Str("%s")))->b' % field_name)
+          field_decls.append('bool %s;' % field_name)
 
         elif case(flag_type_e.Str):
-          header_f.write('  Str* %s;\n' % field_name)
+          # TODO: This code is ugly and inefficient!  Generate something
+          # better.  At least get rid of 'new' everywhere?
+          init_vals.append('''\
+attrs->index(new Str("%s"))->tag_() == value_e::Undef
+      ? nullptr
+      : static_cast<value__Str*>(attrs->index(new Str("%s")))->s''' % (field_name, field_name))
+
+          field_decls.append('Str* %s;' % field_name)
+
+        else:
+          raise AssertionError(typ)
+
+    for i, field_name in enumerate(sorted(spec.fields)):
+      if i != 0:
+        header_f.write(',\n')
+      header_f.write('    %s(%s)' % (field_name, init_vals[i]))
+    header_f.write(' {\n')
+    header_f.write('  }\n')
+
+    for decl in field_decls:
+      header_f.write('  %s\n' % decl)
 
     header_f.write("""\
 };
@@ -85,7 +111,7 @@ namespace arg_types {
     if spec.arity0:
       arity0_name = 'arity0_%d' % i
       c_strs = ', '.join(CString(s) for s in sorted(spec.arity0))
-      cc_f.write('const char* %s[] = {%s};\n' % (arity0_name, c_strs))
+      cc_f.write('const char* %s[] = {%s, nullptr};\n' % (arity0_name, c_strs))
 
     if spec.arity1:
       arity1_name = 'arity1_%d' % i
@@ -94,7 +120,7 @@ namespace arg_types {
     if spec.options:
       options_name = 'options_%d' % i
       c_strs = ', '.join(CString(s) for s in sorted(spec.options))
-      cc_f.write('const char* %s[] = {%s};\n' % (options_name, c_strs))
+      cc_f.write('const char* %s[] = {%s, nullptr};\n' % (options_name, c_strs))
 
     if spec.defaults:
       defaults_name = 'defaults_%d' % i
@@ -175,7 +201,7 @@ from frontend.args import _Attributes
 from _devbuild.gen.runtime_asdl import (
    value_e, value_t, value__Bool, value__Int, value__Float, value__Str,
 )
-from typing import cast, Dict
+from typing import cast, Dict, Optional
 """)
     for spec_name in sorted(specs):
       spec = specs[spec_name]
@@ -192,21 +218,13 @@ class %s(object):
 
         with tagswitch(typ) as case:
           if case(flag_type_e.Bool):
-            subtype = 'Bool'
-            subtype_field = 'b'  # e.g. Bool(bool b)
-            mypy_type = 'bool'
             print('    self.%s = cast(value__Bool, attrs[%r]).b  # type: bool' % (
               field_name, field_name))
 
           elif case(flag_type_e.Str):
-            subtype = 'Str'
-            subtype_field = 's'  # e.g. Bool(bool b)
-            mypy_type = 'str'
-
             tmp = 'val%d' % i
             print('    %s = attrs[%r]' % (tmp, field_name))
-            print('    self.%s = None if %s.tag_() == value_e.Undef else cast(value__%s, %s).%s  # type: %s' % (
-              field_name, tmp, subtype, tmp, subtype_field, mypy_type))
+            print('    self.%s = None if %s.tag_() == value_e.Undef else cast(value__Str, %s).s  # type: Optional[str]' % (field_name, tmp, tmp))
           else:
             raise AssertionError(typ)
 

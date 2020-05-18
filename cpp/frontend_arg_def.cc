@@ -35,6 +35,7 @@ namespace arg_def {
 
 using arg_types::kFlagSpecs;
 using runtime_asdl::value__Undef;
+using runtime_asdl::value__Bool;
 using runtime_asdl::value_t;
 
 // "Inflate" the static C data into a heap-allocated ASDL data structure.
@@ -84,13 +85,26 @@ runtime_asdl::FlagSpec_* CreateSpec(FlagSpec_c* in) {
   if (in->defaults) {
     int i = 0;
     while (true) {
-      DefaultPair_c* d = &(in->defaults[i]);
-      if (!d->name) {
+      DefaultPair_c* pair = &(in->defaults[i]);
+      if (!pair->name) {
         break;
       }
       // log("default %s", d->name);
-      value_t* val = new value__Undef();
-      out->defaults->set(new Str(d->name), val);
+      value_t* val;
+      switch (pair->default_val) {
+        case Default_c::Undef:
+          val = new value__Undef();
+          break;
+        case Default_c::False:
+          val = new value__Bool(false);
+          break;
+        case Default_c::True:
+          val = new value__Bool(true);
+          break;
+        default:
+          assert(0);
+      }
+      out->defaults->set(new Str(pair->name), val);
       ++i;
     }
   }
