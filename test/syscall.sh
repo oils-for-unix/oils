@@ -198,8 +198,8 @@ by-input() {
 
   local suite='by-input'
 
-  shopt -s nullglob
-  rm -f -v $RAW_DIR/*
+  rm -r -f -v $RAW_DIR
+  mkdir -p $RAW_DIR
 
   # Wow this newline makes a difference in shells!
 
@@ -270,7 +270,7 @@ EOF
 # Quick hack: every shell uses 2 processes for this... doesn't illuminate much.
 weird-command-sub() {
   shopt -s nullglob
-  rm -f -v $RAW_DIR/*
+  rm -r -f -v $RAW_DIR/*
 
   local tmp=_tmp/cs
   echo FOO > $tmp
@@ -296,12 +296,10 @@ by-code() {
 
   local max_cases=${1:-$MAX_CASES}
 
+  rm -r -f -v $RAW_DIR
   mkdir -p $RAW_DIR $BASE_DIR
 
   write-sourced
-
-  shopt -s nullglob
-  rm -f -v $RAW_DIR/*
 
   local suite='by-code'
   local cases=$BASE_DIR/${suite}-cases.txt
