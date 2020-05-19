@@ -169,7 +169,17 @@ END {
   } else {
     href = sprintf("%s.html", spec_name)
   }
-  printf("%s,%s,%d,%d,%d,%d,%d\n",
+
+  if (num_osh == num_py) {
+    row_css_class = "py-good"  # yellow
+
+    if (num_py == num_cpp) {
+      row_css_class = "cpp-good"  # upgrade to green
+    }
+  }
+
+  printf("%s,%s,%s,%d,%d,%d,%d,%d\n",
+         row_css_class,
          spec_name, href,
          num_osh,
          num_py,
@@ -182,7 +192,7 @@ END {
 
 summary-csv() {
   cat <<EOF
-name,name_HREF,osh,osh_eval.py,delta py,osh_eval.cpp,delta cpp
+ROW_CSS_CLASS,name,name_HREF,osh,osh_eval.py,delta_py,osh_eval.cpp,delta_cpp
 EOF
 
   # total row rows goes at the TOP, so it's in <thead> and not sorted.
@@ -226,6 +236,16 @@ EOF
 
 readonly BASE_DIR=_tmp/spec/cpp
 
+here-schema() {
+  ### Read a legible text format on stdin, and write CSV on stdout
+
+  # This is a little like: https://wiki.xxiivv.com/site/tablatal.html
+  # TODO: generalize this in stdlib/here.sh
+  while read one two; do
+    echo "$one,$two"
+  done
+}
+
 html-summary() {
   local name=summary
 
@@ -236,20 +256,16 @@ html-summary() {
   # The underscores are stripped when we don't want them to be!
   # Note: we could also put "pretty_heading" in the schema
 
-  # problem: it would be nice to have a shell tool lets you write spaces.
-  # Could be an Oil builtin exported?
-  # like:
-  # https://wiki.xxiivv.com/site/tablatal.html
-
-  cat >$BASE_DIR/summary.schema.csv <<EOF
-column_name,type
-name,string
-name_HREF,string
-osh,integer
-osh_eval.py,integer
-delta py,integer
-osh_eval.cpp,integer
-delta cpp,integer
+  here-schema >$BASE_DIR/summary.schema.csv <<EOF
+column_name   type
+ROW_CSS_CLASS string
+name          string
+name_HREF     string
+osh           integer
+osh_eval.py   integer
+delta_py      integer
+osh_eval.cpp  integer
+delta_cpp     integer
 EOF
 
   { html-summary-header

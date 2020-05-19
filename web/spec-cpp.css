@@ -2,3 +2,13 @@ h1 {
   font-size: x-large;
 }
 
+/* same as .osh-pass in spec-tests.css */
+.cpp-good {
+  background-color: #e0ffe0;
+}
+
+/* same as .osh-allow-fail in spec-tests.css */
+.py-good {
+  background-color: #ffffe0;
+}
+

@@ -66,6 +66,9 @@ class NullSchema:
   def ColumnIndexHasHref(self, index):
     return False
 
+  def HasCssClassColumn(self):
+    return False
+
 
 INTEGER_TYPES = ('integer',)
 
@@ -142,15 +145,44 @@ class Schema:
     col_name = self.col_names[index]
     return self.precision_lookup.get(col_name, 1)  # default is arbitrary
 
+  def HasCssClassColumn(self):
+    # It has to be the first column
+    return self.col_names[0] == 'ROW_CSS_CLASS'
 
-def PrintRow(row, schema):
+
+def PrintRow(row, schema, css_class_pattern):
   """Print a CSV row as HTML, using the given formatting.
 
   Returns:
     An array of booleans indicating whether each cell is a number.
   """
+  # TODO: cache this computation
+  if css_class_pattern:
+    row_class_pat, r = css_class_pattern.split(None, 2)
+    cell_regex = re.compile(r)
+  else:
+    row_class_pat = None
+    cell_regex = None
+
   i = 0
   n = len(row)
+
+  row_classes = []
+
+  if schema.HasCssClassColumn():
+    i += 1  # Don't print this row
+    # It's a CSS class
+    row_classes.append(row[0])
+
+  if cell_regex:
+    for cell in row:
+      if cell_regex.search(cell):
+        row_classes.append(row_class_pat)
+        break
+
+  h = ' class="%s"' % ' '.join(row_classes) if row_classes else ''
+  print('    <tr%s>' % h)
+
   while True:
     if i == n:
       break
@@ -208,11 +240,15 @@ def PrintRow(row, schema):
 
     i += 1
 
+  print('    </tr>')
+
 
 def PrintColGroup(col_names, schema):
   """Print HTML colgroup element, used for JavaScript sorting."""
   print('  <colgroup>')
   for i, col in enumerate(col_names):
+    if i == 0 and schema.HasCssClassColumn():
+      continue
     if col.endswith('_HREF'):
       continue
 
@@ -228,19 +264,15 @@ def PrintColGroup(col_names, schema):
 
 
 def PrintTable(css_id, schema, col_names, rows, opts):
-  if opts.css_class_pattern:
-    css_class, r = opts.css_class_pattern.split(None, 2)
-    cell_regex = re.compile(r)
-  else:
-    css_class = None
-    cell_regex = None
-
   print('<table id="%s">' % css_id)
   print('  <thead>')
   print('    <tr>')
   for i, col in enumerate(col_names):
+    if i == 0 and schema.HasCssClassColumn():
+      continue
     if col.endswith('_HREF'):
       continue
+
     heading_str = cgi.escape(col.replace('_', ' '))
     if schema.ColumnIndexIsNumeric(i):
       print('    <td class="num">%s</td>' % heading_str)
@@ -249,29 +281,13 @@ def PrintTable(css_id, schema, col_names, rows, opts):
   print('    </tr>')
 
   for i in xrange(opts.thead_offset):
-    # note: not respecting css_class_pattern here.  Could do that
-    print('    <tr>')
-    PrintRow(rows[i], schema)
-    print('    </tr>')
+    PrintRow(rows[i], schema, opts.css_class_pattern)
 
   print('  </thead>')
 
   print('  <tbody>')
   for row in rows[opts.thead_offset:]:
-
-    # TODO: There should be a special column called CSS_CLASS.  Output that
-    # from R.
-    row_class = ''
-    if cell_regex:
-      for cell in row:
-        if cell_regex.search(cell):
-          row_class = 'class="%s"' % css_class
-          break
-
-    print('    <tr {}>'.format(row_class))
-
-    PrintRow(row, schema)
-    print('    </tr>')
+    PrintRow(row, schema, opts.css_class_pattern)
   print('  </tbody>')
 
   PrintColGroup(col_names, schema)

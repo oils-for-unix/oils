@@ -107,6 +107,45 @@ EOF
   write-html prec
 }
 
+test-row-css-class() {
+  cat >_tmp/css.csv <<EOF
+name,age
+andy,1.2345
+bob,2.3456789
+EOF
+
+  # NOTE: Columns are out of order, which is OK.
+
+  # type: could be html-anchor:shell-id, html-href:shell-id
+
+  cat >_tmp/css.schema.csv <<EOF
+column_name,type,precision
+name,string,1
+age,double,3
+EOF
+
+  write-html css --css-class-pattern 'myclass ^a'
+
+  cat >_tmp/css2.csv <<EOF
+ROW_CSS_CLASS,name,age
+pass,andy,1.2345
+fail,bob,2.3456789
+EOF
+
+  # NOTE: Columns are out of order, which is OK.
+
+  # type: could be html-anchor:shell-id, html-href:shell-id
+
+  cat >_tmp/css2.schema.csv <<EOF
+column_name,type,precision
+ROW_CSS_CLASS,string,0
+name,string,1
+age,double,3
+EOF
+
+  write-html css2
+
+}
 
 if test $# -eq 0; then
   link-static
@@ -116,6 +155,8 @@ if test $# -eq 0; then
   test-schema
   echo '--'
   test-precision
+  echo '--'
+  test-row-css-class
 else
   "$@"
 fi
