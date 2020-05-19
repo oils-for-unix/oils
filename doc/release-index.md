@@ -4,7 +4,7 @@ all_docs_url: -
 version_url: -
 ---
 
-Oil 0.8.pre4
+Oil 0.8.pre5
 ============
 
 <!-- NOTE: This file is published to /release/$VERSION/index.html -->
@@ -13,7 +13,7 @@ Oil 0.8.pre4
 <!-- REPLACE_WITH_DATE -->
 </span>
 
-This is the home page for version 0.8.pre4 of Oil, a Unix shell.  To use it,
+This is the home page for version 0.8.pre5 of Oil, a Unix shell.  To use it,
 
 1. Download a source tarball.
 2. Build and install it, as described in [INSTALL][].

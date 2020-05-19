@@ -299,6 +299,9 @@ spec-all() {
   export OSH_LIST="$REPO_ROOT/bin/osh $OSH_RELEASE_BINARY"
   export OIL_LIST="$REPO_ROOT/bin/oil $OIL_RELEASE_BINARY"
   test/spec.sh all-and-smoosh
+
+  # Collect and publish stats about the C++ translation.
+  test/spec-cpp.sh all
 }
 
 # For quickly debugging failures that don't happen in dev mode.
