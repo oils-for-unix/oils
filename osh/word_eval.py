@@ -121,7 +121,12 @@ def _ValueToPartValue(val, quoted):
   UP_val = val
 
   with tagswitch(val) as case:
-    if case(value_e.Str):
+    if case(value_e.Undef):
+      # This happens in the case of ${undef+foo}.  We skipped _EmptyStrOrError,
+      # but we have to append to the empty string.
+      return part_value.String('', quoted, not quoted)
+
+    elif case(value_e.Str):
       val = cast(value__Str, UP_val)
       return part_value.String(val.s, quoted, not quoted)
 
@@ -473,7 +478,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # NOTE: Splicing part_values is necessary because of code like
     # ${undef:-'a b' c 'd # e'}.  Each part_value can have a different
     # do_glob/do_elide setting.
-
     UP_val = val
     with tagswitch(val) as case:
       if case(value_e.Undef):
@@ -504,14 +508,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # Inverse of the above.
     elif op.op_id in (Id.VTest_ColonPlus, Id.VTest_Plus):
       if is_falsey:
-        # We return early and don't call _EmptyStrOrError, so we have to change
-        # Undef to the empty string here.
-        #
-        # Returning True is a little inconsistent, but we avoid the 'set -u'
-        # check.  Example: 'set -u; x=${undef+foo}' results in the empty
-        # string, not an error.
-        part_vals.append(part_value.String('', quoted, True))
-        return True
+        return False
       else:
         self._EvalWordToParts(op.arg_word, quoted, part_vals, is_subst=True)
         return True
@@ -825,17 +822,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
   def _EmptyStrOrError(self, val, token):
     # type: (value_t, Token) -> value_t
-    if val.tag_() == value_e.Undef:
-      if self.exec_opts.nounset():
-        if token is None:
-          e_die('Undefined variable')
-        else:
-          name = token.val[1:] if token.val.startswith('$') else token.val
-          e_die('Undefined variable %r', name, token=token)
-      else:
-        return value.Str('')
-    else:
+    if val.tag_() != value_e.Undef:
       return val
+
+    if not self.exec_opts.nounset():
+      return value.Str('')
+
+    name = token.val[1:] if token.val.startswith('$') else token.val
+    e_die('Undefined variable %r', name, token=token)
 
   def _EmptyMaybeStrArrayOrError(self, token):
     # type: (Token) -> value_t

@@ -154,16 +154,16 @@ echo a3=${a3+plus}
 echo ---
 
 # Test quoted arrays too
-argv.py "empty=${empty[@]-minus}"
-argv.py "empty=${empty[@]+plus}"
-argv.py "a1=${a1[@]-minus}"
-argv.py "a1=${a1[@]+plus}"
-argv.py "a1[0]=${a1[0]-minus}"
-argv.py "a1[0]=${a1[0]+plus}"
-argv.py "a2=${a2[@]-minus}"
-argv.py "a2=${a2[@]+plus}"
-argv.py "a3=${a3[@]-minus}"
-argv.py "a3=${a3[@]+plus}"
+argv.py "${empty[@]-minus}"
+argv.py "${empty[@]+plus}"
+argv.py "${a1[@]-minus}"
+argv.py "${a1[@]+plus}"
+argv.py "${a1[0]-minus}"
+argv.py "${a1[0]+plus}"
+argv.py "${a2[@]-minus}"
+argv.py "${a2[@]+plus}"
+argv.py "${a3[@]-minus}"
+argv.py "${a3[@]+plus}"
 
 ## STDOUT:
 empty=minus
@@ -183,16 +183,16 @@ a1=plus
 a2=plus
 a3=plus
 ---
-['empty=minus']
-['empty=']
-['a1=']
-['a1=plus']
-['a1[0]=']
-['a1[0]=plus']
-['a2=', 'x']
-['a2=plus']
-['a3=3', '4']
-['a3=plus']
+['minus']
+[]
+['']
+['plus']
+['']
+['plus']
+['', 'x']
+['plus']
+['3', '4']
+['plus']
 ## END
 ## N-I dash stdout-json: ""
 
