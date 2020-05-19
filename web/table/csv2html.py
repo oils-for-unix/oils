@@ -107,8 +107,9 @@ class Schema:
 
   def VerifyColumnNames(self, col_names):
     """Assert that the column names we got are all in the schema."""
-    for name in col_names:
-      log('%s : %s', name, self.type_lookup[name])
+    if 0:
+      for name in col_names:
+        log('%s : %s', name, self.type_lookup[name])
 
     n = len(col_names)
     self.col_has_href = [False] * n
@@ -117,7 +118,7 @@ class Schema:
       if this_name + '_HREF' == next_name:
         self.col_has_href[i] = True
 
-    log('href: %s', self.col_has_href)
+    #log('href: %s', self.col_has_href)
     self.col_names = col_names
 
   def IsNumeric(self, col_name):
@@ -194,13 +195,13 @@ def PrintRow(row, schema):
     else:
       print('      <td>', end=' ')
 
-    # Advance to next row if it's an _HREF.
+    s = cgi.escape(cell_str)
+    # If it's an _HREF, advance to the next column, and mutate 's'.
     if schema.ColumnIndexHasHref(i):
       i += 1
       href = row[i]
-      s = '<a href="%s">%s</a>' % (cgi.escape(href), cgi.escape(cell_str))
-    else:
-      s = cgi.escape(cell_str)
+      if href:
+        s = '<a href="%s">%s</a>' % (cgi.escape(href), cgi.escape(cell_str))
 
     print(s, end=' ')
     print('</td>')
@@ -226,9 +227,9 @@ def PrintColGroup(col_names, schema):
   print('  </colgroup>')
 
 
-def PrintTable(css_id, schema, col_names, rows, css_class_pattern):
-  if css_class_pattern:
-    css_class, r = css_class_pattern.split(None, 2)
+def PrintTable(css_id, schema, col_names, rows, opts):
+  if opts.css_class_pattern:
+    css_class, r = opts.css_class_pattern.split(None, 2)
     cell_regex = re.compile(r)
   else:
     css_class = None
@@ -246,10 +247,17 @@ def PrintTable(css_id, schema, col_names, rows, css_class_pattern):
     else:
       print('    <td>%s</td>' % heading_str)
   print('    </tr>')
+
+  for i in xrange(opts.thead_offset):
+    # note: not respecting css_class_pattern here.  Could do that
+    print('    <tr>')
+    PrintRow(rows[i], schema)
+    print('    </tr>')
+
   print('  </thead>')
 
   print('  <tbody>')
-  for row in rows:
+  for row in rows[opts.thead_offset:]:
 
     # TODO: There should be a special column called CSS_CLASS.  Output that
     # from R.
@@ -306,6 +314,10 @@ def CreateOptionsParser():
       help='A string of the form CSS_CLASS:PATTERN.  If the cell contents '
            'matches the pattern, then apply the given CSS class. '
            'Example: osh:^osh')
+  # TODO: Might want --tfoot-offset from the bottom too?  Default 0
+  p.add_option(
+      '--thead-offset', dest='thead_offset', default=0, type='int',
+      help='Put more rows in the data in the thead section')
   return p
 
 
@@ -331,7 +343,7 @@ def main(argv):
     else:
       raise AssertionError(csv_path)
 
-    log('schema path %s', schema_path)
+    #log('schema path %s', schema_path)
     try:
       schema_f = open(schema_path)
     except IOError:
@@ -349,7 +361,7 @@ def main(argv):
     schema = NullSchema()
     # Default string schema
 
-  log('schema %s', schema)
+  #log('schema %s', schema)
 
   with open(csv_path) as f:
     col_names, rows = ReadFile(f, opts.tsv)
@@ -358,7 +370,7 @@ def main(argv):
 
   filename = os.path.basename(csv_path)
   css_id, _ = os.path.splitext(filename)
-  PrintTable(css_id, schema, col_names, rows, opts.css_class_pattern)
+  PrintTable(css_id, schema, col_names, rows, opts)
 
 
 if __name__ == '__main__':

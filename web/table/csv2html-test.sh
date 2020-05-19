@@ -3,13 +3,14 @@
 # Usage:
 #   ./csv2html-test.sh <function name>
 
-source  ~/hg/taste/taste.sh
-
 set -o nounset
 set -o pipefail
 set -o errexit
 
 readonly REPO_ROOT=$(readlink -f $(dirname $0))/../..
+
+source $REPO_ROOT/web/table/html.sh
+
 
 readonly BASE_DIR=_tmp/www
 
@@ -30,48 +31,19 @@ html-head() {
 header() {
   html-head --title 'csv2html-test' \
     ajax.js table-sort.js table-sort.css
-  cat <<EOF
-<body onload="initPage(gUrlHash, gTableStates, kStatusElem);"
-      onhashchange="onHashChange(gUrlHash, gTableStates, kStatusElem);">
-  <p id="status"></p>
 
-EOF
-}
-
-footer() {
-  local name=$1
-
-  cat <<EOF
-
-    <!-- page globals -->
-    <script type="text/javascript">
-      var gUrlHash = new UrlHash(location.hash);
-      var gTableStates = {};
-      var kStatusElem = document.getElementById('status');
-
-      function initPage(urlHash, tableStates, statusElem) {
-        var elem = document.getElementById('$name');
-        makeTablesSortable(urlHash, [elem], tableStates);
-        updateTables(urlHash, tableStates, statusElem);
-      }
-
-      function onHashChange(urlHash, tableStates, statusElem) {
-        updateTables(urlHash, tableStates, statusElem);
-      }
-    </script>
-
-  </body>
-</html>
-EOF
+  table-sort-begin
 }
 
 write-html() {
   local name=$1
+  shift
+
   local out=$BASE_DIR/$name.html
 
   { header
-    ./csv2html.py _tmp/$name.csv 
-    footer $name
+    ./csv2html.py "$@" _tmp/$name.csv 
+    table-sort-end $name
   } > $out
   echo "Wrote $out"
 }
@@ -109,6 +81,10 @@ name_HREF,string
 EOF
 
   write-html bar
+
+  cp _tmp/bar.csv _tmp/bar2.csv
+  cp _tmp/bar.schema.csv _tmp/bar2.schema.csv
+  write-html bar2 --thead-offset 1
 }
 
 test-precision() {

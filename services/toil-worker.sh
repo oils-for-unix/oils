@@ -59,6 +59,9 @@ unit            test/unit.sh travis         -
 oil-spec        test/spec.sh oil-all-serial _tmp/spec/oil-language/oil.html
 osh-minimal     test/spec.sh osh-minimal    _tmp/spec/survey/osh-minimal.html
 EOF
+
+# TODO: Add more tests, like
+# - web/table/csv2html-test.sh (needs some assertions)
 }
 
 dev-all-nix-tasks() {
