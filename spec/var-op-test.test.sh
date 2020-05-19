@@ -87,6 +87,13 @@ v=foo
 echo ${v+v is not unset} ${unset:+is not unset}
 ## stdout: v is not unset
 
+#### "${x+foo}" quoted (regression)
+# Python's configure caught this
+argv.py "${with_icc+set}" = set
+## STDOUT:
+['', '=', 'set']
+## END
+     
 #### ${v+foo} and ${v:+foo} when set -u
 set -u
 v=v
@@ -144,6 +151,19 @@ echo empty=${empty+plus}
 echo a1=${a1+plus}
 echo a2=${a2+plus}
 echo a3=${a3+plus}
+echo ---
+
+# Test quoted arrays too
+argv.py "empty=${empty[@]-minus}"
+argv.py "empty=${empty[@]+plus}"
+argv.py "a1=${a1[@]-minus}"
+argv.py "a1=${a1[@]+plus}"
+argv.py "a1[0]=${a1[0]-minus}"
+argv.py "a1[0]=${a1[0]+plus}"
+argv.py "a2=${a2[@]-minus}"
+argv.py "a2=${a2[@]+plus}"
+argv.py "a3=${a3[@]-minus}"
+argv.py "a3=${a3[@]+plus}"
 
 ## STDOUT:
 empty=minus
@@ -162,6 +182,17 @@ empty=
 a1=plus
 a2=plus
 a3=plus
+---
+['empty=minus']
+['empty=']
+['a1=']
+['a1=plus']
+['a1[0]=']
+['a1[0]=plus']
+['a2=', 'x']
+['a2=plus']
+['a3=3', '4']
+['a3=plus']
 ## END
 ## N-I dash stdout-json: ""
 

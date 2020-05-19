@@ -504,9 +504,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # Inverse of the above.
     elif op.op_id in (Id.VTest_ColonPlus, Id.VTest_Plus):
       if is_falsey:
-        # Returning True seems inconsistent, but we need to avoid the 'set -u'
+        # We return early and don't call _EmptyStrOrError, so we have to change
+        # Undef to the empty string here.
+        #
+        # Returning True is a little inconsistent, but we avoid the 'set -u'
         # check.  Example: 'set -u; x=${undef+foo}' results in the empty
         # string, not an error.
+        part_vals.append(part_value.String('', quoted, True))
         return True
       else:
         self._EvalWordToParts(op.arg_word, quoted, part_vals, is_subst=True)
