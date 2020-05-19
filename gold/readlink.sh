@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Test case for OSH readlink.
 #
@@ -7,7 +7,7 @@
 # $ demo/readlink-demo.sh all
 #
 # Usage:
-#   ./readlink.sh <function name>
+#   gold/readlink.sh <function name>
 
 set -o nounset
 set -o pipefail

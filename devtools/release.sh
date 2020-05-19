@@ -219,8 +219,8 @@ Run them manually with:
   test/gold.sh run-for-release
 =====
 EOF
+          continue
         fi
-        continue
         ;;
       *)
         banner "Test suite: $name"
