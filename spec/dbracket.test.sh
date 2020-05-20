@@ -360,3 +360,46 @@ echo bang $?
 caret 0
 bang 0
 ## END
+
+
+#### \(\) in pattern (regression)
+if [[ 'foo()' == *\(\) ]]; then echo match1; fi
+if [[ 'foo()' == *'()' ]]; then echo match2; fi
+if [[ 'foo()' == '*()' ]]; then echo match3; fi
+
+shopt -s extglob  # does NOT affect it 
+
+if [[ 'foo()' == *\(\) ]]; then echo match1; fi
+if [[ 'foo()' == *'()' ]]; then echo match2; fi
+if [[ 'foo()' == '*()' ]]; then echo match3; fi
+
+## STDOUT:
+match1
+match2
+match1
+match2
+## END
+
+
+#### extglob quoted and unquoted
+
+pat='@(foo|bar)()' 
+if [[ 'foo()' == @(foo|bar)'()' ]]; then echo lit; fi
+if [[ 'foo()' == $pat ]]; then echo pat; fi
+
+# This only affects PARSING:
+shopt -s extglob
+pat=@(foo|bar)'()'
+
+if [[ 'foo()' == @(foo|bar)'()' ]]; then echo lit; fi
+if [[ 'foo()' == $pat ]]; then echo pat; fi
+## STDOUT:
+lit
+pat
+lit
+pat
+## END
+## BUG mksh STDOUT:
+lit
+lit
+## END

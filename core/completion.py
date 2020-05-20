@@ -198,7 +198,7 @@ class Lookup(object):
 
     for glob_pat, base_opts, user_spec in self.patterns:
       #log('Matching %r %r', key, glob_pat)
-      if libc.fnmatch(glob_pat, key):
+      if libc.fnmatch(glob_pat, key, True):  # support extglob
         return base_opts, user_spec
 
     return None, None
@@ -559,7 +559,7 @@ class GlobPredicate(object):
 
   def __call__(self, candidate):
     """Should we INCLUDE the candidate or not?"""
-    matched = libc.fnmatch(self.glob_pat, candidate)
+    matched = libc.fnmatch(self.glob_pat, candidate, True)
     # This is confusing because of bash's double-negative syntax
     if self.include:
       return not matched

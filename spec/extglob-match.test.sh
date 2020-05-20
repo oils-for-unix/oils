@@ -25,7 +25,7 @@ FALSE
 
 #### extglob in variable
 shopt -s extglob
-g=--@(help|verbose)
+g=--@(help|verbose)  # this syntax requires extglob in bash!!
 quoted='--@(help|verbose)'
 [[ --help == $g ]] && echo TRUE
 [[ --verbose == $g ]] && echo TRUE

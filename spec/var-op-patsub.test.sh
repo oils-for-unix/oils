@@ -214,3 +214,36 @@ abc
 b!c
 a^c
 ## END
+
+#### \(\) in pattern (regression)
+
+# Not extended globs
+
+x='foo()' 
+echo 1 ${x//*\(\)/z}
+echo 2 ${x//*\(\)/z}
+echo 3 ${x//\(\)/z}
+echo 4 ${x//*\(\)/z}
+
+# Yes extended globs!
+
+shopt -s extglob
+echo ext ${x//*(foo|bar)/z}
+echo ext "${x//*(foo|bar)/z}"
+## STDOUT:
+1 z
+2 z
+3 fooz
+4 z
+ext z()
+ext z()
+## END
+# I don't get what bash is doing here!!!
+## BUG bash STDOUT:
+1 z
+2 z
+3 fooz
+4 z
+ext zz(z)
+ext zz(z)
+## END

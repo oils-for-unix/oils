@@ -11,7 +11,7 @@ Instead of:
 from _devbuild.gen.id_kind_asdl import Id
 from core import ui
 from core import util
-from core.util import e_die, e_strict
+from core.util import e_die, e_strict, log
 from osh import glob_
 
 import libc
@@ -19,6 +19,8 @@ import libc
 from typing import List, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import suffix_op__Unary, suffix_op__PatSub
+
+_ = log
 
 
 def Utf8Encode(code):
@@ -304,7 +306,7 @@ def DoUnarySuffixOp(s, op, arg):
     while True:
       assert i <= n
       #log('Matching pattern %r with %r', arg, s[:i])
-      if libc.fnmatch(arg, s[:i]):
+      if libc.fnmatch(arg, s[:i], False):
         return s[i:]
       if i >= n:
         break
@@ -317,7 +319,7 @@ def DoUnarySuffixOp(s, op, arg):
     while True:
       assert i >= 0
       #log('Matching pattern %r with %r', arg, s[:i])
-      if libc.fnmatch(arg, s[:i]):
+      if libc.fnmatch(arg, s[:i], False):
         return s[i:]
       if i == 0:
         break
@@ -330,7 +332,7 @@ def DoUnarySuffixOp(s, op, arg):
     while True:
       assert i >= 0
       #log('Matching pattern %r with %r', arg, s[:i])
-      if libc.fnmatch(arg, s[i:]):
+      if libc.fnmatch(arg, s[i:], False):
         return s[:i]
       if i == 0:
         break
@@ -343,7 +345,7 @@ def DoUnarySuffixOp(s, op, arg):
     while True:
       assert i <= n
       #log('Matching pattern %r with %r', arg, s[:i])
-      if libc.fnmatch(arg, s[i:]):
+      if libc.fnmatch(arg, s[i:], False):
         return s[:i]
       if i >= n:
         break

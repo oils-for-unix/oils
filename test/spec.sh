@@ -376,7 +376,7 @@ loop() {
 }
 
 case_() {
-  sh-spec spec/case_.test.sh --osh-failures-allowed 3 \
+  sh-spec spec/case_.test.sh --osh-failures-allowed 4 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -555,7 +555,7 @@ var-op-len() {
 
 var-op-patsub() {
   # 1 unicode failure
-  sh-spec spec/var-op-patsub.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/var-op-patsub.test.sh --osh-failures-allowed 2 \
     $BASH $MKSH $ZSH $OSH_LIST "$@"
 }
 
@@ -571,7 +571,7 @@ var-op-bash() {
 }
 
 var-op-strip() {
-  sh-spec spec/var-op-strip.test.sh --osh-failures-allowed 0 \
+  sh-spec spec/var-op-strip.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
@@ -671,7 +671,7 @@ assoc-zsh() {
 # NOTE: zsh passes about half and fails about half.  It supports a subset of [[
 # I guess.
 dbracket() {
-  sh-spec spec/dbracket.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/dbracket.test.sh --osh-failures-allowed 2 \
     $BASH $MKSH $OSH_LIST "$@"
   #sh-spec spec/dbracket.test.sh $BASH $MKSH $OSH_LIST $ZSH "$@"
 }
@@ -945,6 +945,19 @@ ble-idioms() {
 ble-features() {
   sh-spec spec/ble-features.test.sh --osh-failures-allowed 0 \
           $BASH $ZSH $MKSH $BUSYBOX_ASH $DASH yash $OSH_LIST "$@"
+}
+
+#
+# Convenience for fixing specific bugs
+#
+
+one-off() {
+  set +o errexit
+
+  test/spec.sh var-op-strip -r 28
+  test/spec.sh dbracket -r 46
+  test/spec.sh case_ -r 10
+  test/spec.sh var-op-patsub -r 19
 }
 
 "$@"

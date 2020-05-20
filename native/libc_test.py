@@ -77,12 +77,11 @@ class LibcTest(unittest.TestCase):
     ]
 
     for pat, s, expected in filter(None, cases):
-      actual = libc.fnmatch(pat, s)
+      actual = libc.fnmatch(pat, s, False)
       self.assertEqual(
           expected, actual, '%r %r -> got %d' % (pat, s, actual))
 
   def testFnmatchExtglob(self):
-    return
 
     # With GNU extension.
     cases = [
@@ -105,7 +104,7 @@ class LibcTest(unittest.TestCase):
         ('--!(help|verbose)', '--verbose', 0),
     ]
     for pat, s, expected in cases:
-      actual = libc.fnmatch(pat, s)
+      actual = libc.fnmatch(pat, s, True)
       self.assertEqual(expected, actual,
           "Matching %s against %s: got %s but expected %s" %
           (pat, s, actual, expected))

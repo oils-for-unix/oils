@@ -325,3 +325,34 @@ echo 13 "${var#"}"}"
 12 }'}
 13 
 ## END
+
+#### \(\) in pattern (regression)
+x='foo()' 
+echo 1 ${x%*\(\)}
+echo 2 ${x%%*\(\)}
+echo 3 ${x#*\(\)}
+echo 4 ${x##*\(\)}
+## STDOUT:
+1 foo
+2
+3
+4
+## END
+
+#### extglob in pattern
+case $SH in (dash|zsh|ash) exit ;; esac
+
+shopt -s extglob
+
+x='foo()' 
+echo 1 ${x%*(foo|bar)'()'}
+echo 2 ${x%%*(foo|bar)'()'}
+echo 3 ${x#*(foo|bar)'()'}
+echo 4 ${x##*(foo|bar)'()'}
+## STDOUT:
+1 foo
+2
+3
+4
+## END
+## N-I dash/zsh/ash stdout-json: ""

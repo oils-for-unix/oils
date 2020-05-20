@@ -122,3 +122,25 @@ esac
 ## STDOUT:
 b
 ## END
+
+#### \(\) in pattern (regression)
+s='foo()'
+
+case $s in
+  *\(\)) echo 'match'
+esac
+
+case $SH in (dash) exit;; esac  # not implemented
+
+shopt -s extglob
+
+case $s in
+  *(foo|bar)'()') echo 'extglob'
+esac
+## STDOUT:
+match
+extglob
+## END
+## N-I dash STDOUT:
+match
+## END

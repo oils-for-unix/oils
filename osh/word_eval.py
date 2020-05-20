@@ -1443,6 +1443,27 @@ class AbstractWordEvaluator(StringWordEvaluator):
       else:
         raise AssertionError(w.tag_())
 
+  def EvalWordToPattern(self, UP_w):
+    # type: (word_t) -> value__Str
+    #
+    # TODO:
+    #
+    # This is like EvalWordToString
+    # They share a helper that takes part_vals
+    #
+    # except if you get ExtGlob, then you return
+    # Pat object?
+
+    # pattern = (pat_kind kind, string pat)
+    # pat_kind =
+
+    # pattern = 
+    #  FnMatch(string s)
+    #  ExtGlob(string s)
+    #
+    # And then add a parameter to libc.fnmatch().  That's not that hard.
+    pass
+
   def EvalWordToString(self, UP_w, quote_kind=quote_e.Default):
     # type: (word_t, quote_t) -> value__Str
     """Given a word, return a string.
