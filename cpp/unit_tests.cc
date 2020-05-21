@@ -71,8 +71,15 @@ TEST util_test() {
 }
 
 TEST libc_test() {
-  ASSERT(libc::fnmatch(new Str("*.py"), new Str("foo.py")));
-  ASSERT(!libc::fnmatch(new Str("*.py"), new Str("foo.p")));
+  ASSERT(libc::fnmatch(new Str("*.py"), new Str("foo.py"), false));
+  ASSERT(!libc::fnmatch(new Str("*.py"), new Str("foo.p"), false));
+
+  // extended glob
+  ASSERT(libc::fnmatch(new Str("*(foo|bar).py"), new Str("foo.py"), true));
+  ASSERT(!libc::fnmatch(new Str("*(foo|bar).py"), new Str("foo.p"), true));
+
+  // looks like extended glob, but didn't turn it on
+  ASSERT(!libc::fnmatch(new Str("*(foo|bar).py"), new Str("foo.py"), false));
 
   PASS();
 }

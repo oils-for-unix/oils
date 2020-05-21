@@ -22,11 +22,12 @@ inline char* copy0(Str* s) {
   return s0;
 }
 
-inline bool fnmatch(Str* pat, Str* str) {
+inline bool fnmatch(Str* pat, Str* str, bool extglob) {
   // copy into NUL-terminated buffers
   char* pat0 = copy0(pat);
   char* str0 = copy0(str);
-  bool result = ::fnmatch(pat0, str0, 0) == 0;
+  int flags = extglob ? FNM_EXTMATCH : 0;
+  bool result = ::fnmatch(pat0, str0, flags) == 0;
   free(pat0);
   free(str0);
   return result;
