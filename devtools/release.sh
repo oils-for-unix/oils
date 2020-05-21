@@ -92,7 +92,6 @@ auto-machine1() {
   $0 test-opy
   $0 spec-all
   $0 benchmark-run
-  #$0 benchmark-run-on-1-machine
 }
 
 # TODO:

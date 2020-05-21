@@ -17,6 +17,24 @@ set -o errexit
 readonly CMARK_VERSION=0.29.0
 readonly URL="https://github.com/commonmark/cmark/archive/$CMARK_VERSION.tar.gz"
 
+# 5/2020: non-hermetic dependency broke with Python 3 SyntaxError!  Gah!  TODO:
+# make this hermetic.
+#
+# https://pypi.org/project/Pygments/#history
+#
+# Installing through pip doesn't work.  Tarballs are better...  TODO: Put this
+# in 'toil'.
+
+# https://github.com/robotframework/RIDE/issues/2161
+install-pygments() {
+  #sudo -H pip install -U --force 'pygments==2.5.1'
+
+  # Why the heck does this install pygments 2.6.1 ?
+  # pip install 'pygments==2.5.1'
+
+  echo TODO
+}
+
 download() {
   mkdir -p _deps
   wget --no-clobber --directory _deps $URL

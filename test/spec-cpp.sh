@@ -58,7 +58,7 @@ all() {
   ### Run all tests with osh_eval and its translatino
   export SPEC_RUNNER='test/spec-cpp.sh run-with-osh-eval'
   export SPEC_JOB='cpp'
-  export NUM_SPEC_TASKS=4
+  #export NUM_SPEC_TASKS=4
 
   # this is like test/spec.sh {oil,osh}-all
   test/spec-runner.sh all-parallel osh "$@" || true  # OK if it fails
@@ -139,7 +139,7 @@ summary-csv-row() {
 
   if test $# -eq 1; then
     local tsv_path=$1
-    local spec_name=$(basename $tsv_path .tsv)
+    local spec_name=$(basename "$tsv_path" .tsv)
   else
     local spec_name='TOTAL'
   fi
