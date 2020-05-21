@@ -742,11 +742,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
       arg_val = self.EvalWordToString(op.arg_word, quote_kind=quote_e.FnMatch)
       assert arg_val.tag == value_e.Str
 
+      extglob = self.exec_opts.extglob()
+
       UP_val = val
       with tagswitch(val) as case:
         if case(value_e.Str):
           val = cast(value__Str, UP_val)
-          s = string_ops.DoUnarySuffixOp(val.s, op, arg_val.s)
+          s = string_ops.DoUnarySuffixOp(val.s, op, arg_val.s, extglob)
           #log('%r %r -> %r', val.s, arg_val.s, s)
           new_val = value.Str(s) # type: value_t
 
@@ -756,14 +758,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
           strs = []  # type: List[str]
           for s in val.strs:
             if s is not None:
-              strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s))
+              strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s, extglob))
           new_val = value.MaybeStrArray(strs)
 
         elif case(value_e.AssocArray):
           val = cast(value__AssocArray, UP_val)
           strs = []
           for s in val.d.values():
-            strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s))
+            strs.append(string_ops.DoUnarySuffixOp(s, op, arg_val.s, extglob))
           new_val = value.MaybeStrArray(strs)
 
         else:
@@ -1098,6 +1100,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           else:
             replace_str = ''
 
+          # note: doesn't support self.exec_opts.extglob()!
           regex, warnings = glob_.GlobToERE(pat_val.s)
           if len(warnings):
             # TODO:

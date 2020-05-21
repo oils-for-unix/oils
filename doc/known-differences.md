@@ -370,6 +370,14 @@ parsed:
 - Statically: to avoid splitting `declare x=$y` when `$y` contains spaces.
 - Dynamically: to handle expressions like `declare $1` where `$1` is `a=b`
 
+### `shopt -s extglob` is slightly different
+
+In bash, an unquoted extended glob is a syntax error unless `extglob` is on.
+In Oil, `extglob` doesn't affect parsing at all.
+
+Also, bash sometimes respects extended globs even when `extglob` is off.  In
+Oil, they're respected if and only if `extglob` is on.
+
 ### Completion
 
 The OSH completion API is mostly compatible with the bash completion API,

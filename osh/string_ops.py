@@ -229,8 +229,8 @@ def AdvanceUtf8Chars(s, num_chars, byte_offset):
 # - Add location info to errors.  Maybe pass spid pair all the way down.
 #   - Compile time errors for [[:space:]] ?
 
-def DoUnarySuffixOp(s, op, arg):
-  # type: (str, suffix_op__Unary, str) -> str
+def DoUnarySuffixOp(s, op, arg, extglob):
+  # type: (str, suffix_op__Unary, str, bool) -> str
   """Helper for ${x#prefix} and family."""
 
   # Fast path for constant strings.
@@ -306,7 +306,7 @@ def DoUnarySuffixOp(s, op, arg):
     while True:
       assert i <= n
       #log('Matching pattern %r with %r', arg, s[:i])
-      if libc.fnmatch(arg, s[:i], False):
+      if libc.fnmatch(arg, s[:i], extglob):
         return s[i:]
       if i >= n:
         break
@@ -319,7 +319,7 @@ def DoUnarySuffixOp(s, op, arg):
     while True:
       assert i >= 0
       #log('Matching pattern %r with %r', arg, s[:i])
-      if libc.fnmatch(arg, s[:i], False):
+      if libc.fnmatch(arg, s[:i], extglob):
         return s[i:]
       if i == 0:
         break
@@ -332,7 +332,7 @@ def DoUnarySuffixOp(s, op, arg):
     while True:
       assert i >= 0
       #log('Matching pattern %r with %r', arg, s[:i])
-      if libc.fnmatch(arg, s[i:], False):
+      if libc.fnmatch(arg, s[i:], extglob):
         return s[:i]
       if i == 0:
         break
@@ -345,7 +345,7 @@ def DoUnarySuffixOp(s, op, arg):
     while True:
       assert i <= n
       #log('Matching pattern %r with %r', arg, s[:i])
-      if libc.fnmatch(arg, s[i:], False):
+      if libc.fnmatch(arg, s[i:], extglob):
         return s[:i]
       if i >= n:
         break

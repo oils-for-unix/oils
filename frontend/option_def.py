@@ -129,7 +129,8 @@ _BASIC_RUNTIME_OPTIONS = [
 
 # No-ops for bash compatibility
 _NO_OPS = [
-    'expand_aliases', 'extglob', 'lastpipe',  # language features always on
+    'expand_aliases', 'lastpipe',  # language features always on
+                                   # TODO: turn OFF expand_aliases in Oil
 
     # Handled one by one
     'progcomp',
@@ -229,6 +230,7 @@ def _Init(opt_def):
 
   # shopt options that aren't in any groups.
   opt_def.Add('failglob')  # not implemented.
+  opt_def.Add('extglob')
 
   opt_def.Add('eval_unsafe_arith')  # recursive parsing and evaluation (ble.sh)
   opt_def.Add('parse_dynamic_arith')  # dynamic LHS

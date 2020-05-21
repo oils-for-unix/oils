@@ -367,7 +367,7 @@ if [[ 'foo()' == *\(\) ]]; then echo match1; fi
 if [[ 'foo()' == *'()' ]]; then echo match2; fi
 if [[ 'foo()' == '*()' ]]; then echo match3; fi
 
-shopt -s extglob  # does NOT affect it 
+shopt -s extglob  # does NOT affect it in bash, but does in Oil
 
 if [[ 'foo()' == *\(\) ]]; then echo match1; fi
 if [[ 'foo()' == *'()' ]]; then echo match2; fi
@@ -376,6 +376,10 @@ if [[ 'foo()' == '*()' ]]; then echo match3; fi
 ## STDOUT:
 match1
 match2
+match1
+match2
+## END
+## OK osh STDOUT:
 match1
 match2
 ## END
@@ -391,15 +395,20 @@ if [[ 'foo()' == $pat ]]; then echo pat; fi
 shopt -s extglob
 pat=@(foo|bar)'()'
 
-if [[ 'foo()' == @(foo|bar)'()' ]]; then echo lit; fi
-if [[ 'foo()' == $pat ]]; then echo pat; fi
+if [[ 'foo()' == @(foo|bar)'()' ]]; then echo lit2; fi
+if [[ 'foo()' == $pat ]]; then echo pat2; fi
 ## STDOUT:
 lit
 pat
-lit
-pat
+lit2
+pat2
 ## END
 ## BUG mksh STDOUT:
 lit
-lit
+lit2
 ## END
+## OK osh STDOUT:
+lit2
+pat2
+## END
+
