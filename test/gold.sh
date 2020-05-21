@@ -66,7 +66,9 @@ one-spec-test() {
 
 # Uses redirect of functions.
 html-summary() {
-  _compare test/spec-runner.sh html-summary
+  # BUG: in the devtools/release.sh process, there's nothing to summarize here
+  # because _tmp/spec is deleted.
+  _compare test/spec-runner.sh html-summary osh
 }
 
 gen-module-init() {

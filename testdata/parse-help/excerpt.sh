@@ -2,6 +2,8 @@
 #
 # A string processing test case copied from bash_completion.
 
+shopt -s extglob  # needed for Oil, but not bash
+
 # This function shell-quotes the argument
 quote()
 {
