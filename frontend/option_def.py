@@ -195,6 +195,7 @@ _BASIC_PARSE_OPTIONS = [
 _AGGRESSIVE_PARSE_OPTIONS = [
     'parse_set',  # set x = 'var'
     'parse_equals',  # x = 'var'
+    'parse_tea',   # func and more
 ]
 
 

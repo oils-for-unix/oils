@@ -1,6 +1,8 @@
 # Oil Functions
 
 #### Untyped func
+shopt -s oil:all  # parse_tea
+
 func add(x, y) Int {
   echo hi
   return x + y
@@ -13,6 +15,8 @@ hi
 ## END
 
 #### Typed func
+shopt -s oil:all
+
 func add(x Int, y Int) Int {
   echo hi
   return x+y
@@ -66,6 +70,8 @@ y=11
 ## END
 
 #### pass named arg to func
+shopt -s oil:all
+
 func f(; x=42) {
   echo $x
 }
@@ -144,6 +150,8 @@ pass printf('foo', 'a', 42, null)
 ## END
 
 #### return expression then return builtin
+shopt -s parse_tea
+
 func f(x) {
   return x + 2*3
 }

@@ -7,10 +7,10 @@ $SH -c 'echo $0 $1 ${2}' a b c d
 ## stdout: a b c
 
 #### In function
-myfunc() {
+func() {
   echo $1 ${2}
 }
-myfunc a b c d
+func a b c d
 ## stdout: a b
 
 #### $0 with -c
