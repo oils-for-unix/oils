@@ -14,7 +14,7 @@ set -o errexit
 source devtools/release-version.sh  # for escape-segements
 
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
-readonly PREV_VERSION='0.8.pre3'
+readonly PREV_VERSION='0.8.pre4'
 
 # adapted from release-version.sh
 _git-changelog-body() {
@@ -46,7 +46,7 @@ _git-changelog-body() {
 contrib-commit-table() {
   # show commits not made by me
   _git-changelog-body release/$PREV_VERSION release/$OIL_VERSION \
-    --author 'Andy Chu' --invert-grep
+    --author 'Andy Chu' --author 'andychu' --invert-grep
 }
 
 fetch-issues() {
@@ -59,7 +59,7 @@ issues-table() {
 }
 
 write-template() {
-  local out=../oilshell.org/blog/2020/04/_release-$OIL_VERSION.md
+  local out=../oilshell.org/blog/2020/05/_release-$OIL_VERSION.md
   print-template > $out
   echo "Wrote $out"
 }
@@ -85,18 +85,30 @@ published: no
   font-family: monospace;
   width: 3em;
 }
+.issue-title {
+  font-family: sans-serif;
+}
+.subject {
+  font-family: sans-serif;
+}
 </style>
 
-This is the latest version of Oil, a bash-compatible shell:
+This is the latest version of Oil, a Unix shell that's our upgrade path from
+[bash][]:
 
-- [Oil version $OIL_VERSION][release-index]
+[bash]: \$xref
 
-Please try it on your shell scripts and [report bugs][github-bugs]!  To build
-and run it, follow the instructions in [INSTALL.txt][].  The wiki has more tips
-on [How To Test OSH](\$wiki).
+<div class="attention">
+
+[Oil version $OIL_VERSION][release-index] - Source tarballs and documentation.
+
+</div>
+
+To build and run it, follow the instructions in [INSTALL.txt][].  The wiki has
+tips on [How To Test OSH](\$wiki).
 
 If you're new to the project, see [Why Create a New Shell?][why-oil] and the
-[2019 FAQ](../06/17.html).
+[2019 FAQ](../../2019/06/17.html).
 
 [INSTALL.txt]: /release/$OIL_VERSION/doc/INSTALL.html
 [github-bugs]: https://github.com/oilshell/oil/issues
