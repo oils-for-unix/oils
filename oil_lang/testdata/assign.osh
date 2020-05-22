@@ -13,24 +13,30 @@ echo hi
 
 setvar a = b; echo hi
 # not allowed -- has to be Semi or Newline.
-#setvar x = y && echo hi
-setvar x = y
+#setvar x = 4 && echo hi
+setvar x = 4
 
 setvar d = 1  # comment
 
-var x, y = a, b
+var y, z = a, b
 
 echo hi
 
-var myregex = $/ any [c h] /
+# Doesn't work yet
+#var myregex = $/ any [c h] /
+#var myarray = @[ foo bar *.[c h] ]
 
-var myarray = @[ foo bar *.[c h] ]
-var mycmd = $[echo cmd] + "$[echo cmd]"
+var mycmd = $(echo cmd) + "$(echo cmd)"
 var mybrace = ${b} + "${b}"
 
+# parenthesized
+var paren = ( 1 + 2) * 3
+
+# line continuation
 var line_cont = 1 + \
   2
 
+# another way of writing multiline expressions
 var multiline = ( 1 + 
   2)
 

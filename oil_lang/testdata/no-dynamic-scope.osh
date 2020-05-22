@@ -8,7 +8,8 @@ g() {
   var oil_var = global_var
   echo $oil_var
 
-  # should not work!
+  # should not work!  Oil expressions use local scope.
+  # TODO: maybe this should be based on 'proc' or 'func' too?  Or maybe both.
   var oil_var = f_var
   echo $oil_var
 }

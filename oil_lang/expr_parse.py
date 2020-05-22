@@ -45,9 +45,11 @@ class ParseTreePrinter(object):
     # - why isn't 'tok' None for PRODUCTIONS?  There is some redundancy to get
     #   rid of.
     if pnode.tok:
-      assert isinstance(pnode.tok, Token), pnode.tok
-      v = pnode.tok.val
-      #v = repr(pnode.tok)
+      if isinstance(pnode.tok, Token):
+        v = pnode.tok.val
+      else:
+        # e.g. command_sub for x = $(echo hi)
+        v = repr(pnode.tok)
     else:
       v = '-'
     self.f.write('%s%d %s %s\n' % (ind, i, self.names[pnode.typ], v))

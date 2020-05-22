@@ -14,11 +14,11 @@ simple-demo() {
   echo
 
   echo '+ Inline call that coerces to string:'
-  echo $len(myarray) $len("abc") ''
+  write -- $len(myarray) $len("abc") ''
   echo
 
   echo '+ Inline calls can be part of a word:'
-  echo -- --length=$len(myarray) $len("abc")$len("xyz")
+  write -- --length=$len(myarray) $len("abc")$len("xyz")
   echo
 
   echo "+ Caveat: can't double quote.  It would break programs."
@@ -26,11 +26,11 @@ simple-demo() {
   echo
 
   # NOTE: Oil's echo builtin takes --, and requires it here
-  echo -- "--length=$len(myarray)"
+  write -- "--length=$len(myarray)"
   echo
 
   echo '+ Just as you can splice @myarray'
-  echo @myarray
+  write -- @myarray
   echo
 
   echo '+ You can also splice the result of a function returning a sequence:'
@@ -38,7 +38,7 @@ simple-demo() {
   echo '  - the sorted() function is from Python.'
   echo '  - sorting utf-8 encoded strings as bytes is well-defined'
   echo
-  echo @sorted(myarray)
+  write -- @sorted(myarray)
   echo
 
   # But this is a syntax error
@@ -47,38 +47,43 @@ simple-demo() {
 
 split-join-demo() {
   var parts = @(aaa BB c)
-  echo 'Parts:' @parts
+  write -- 'Parts:' @parts
   echo
 
-  echo 'join(parts):' $join(parts)
+  write 'join(parts):' $join(parts)
   echo
 
   echo '+ Another way of doing it, without creating another variable:'
-  echo -sep '' @parts
+  write -sep '' -- @parts
   echo
 
   var j = join(parts, ":")
   #var a = split(j)
   #repr j a
 
-  echo -sep '' "j => " $j
-  echo -sep '' 'When IFS is the default, split(j) => '
-  echo @split(j)
+  write -sep '' "j => " $j
+  write -sep '' 'When IFS is the default, split(j) => '
+  write @split(j)
   echo
 
   setvar IFS = ":"
   echo 'When IFS is :, split(j) => '
-  echo @split(j)
+  write @split(j)
   echo
 
   unset IFS
 
   echo '+ Since there is no word splitting of unquoted $(ls), here is an idiom:'
-  echo @split( $(ls ~ | grep b) )
+  write @split( $(ls ~ | grep b) )
 }
 
 types-demo() {
   echo 'TODO: bool, int, etc.'
+}
+
+all() {
+  simple-demo
+  split-join-demo
 }
 
 "$@"

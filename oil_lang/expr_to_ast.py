@@ -250,9 +250,13 @@ class Transformer(object):
       raise AssertionError()
 
     if id0 == Id.Op_LParen:
+      if len(children) == 1:  # parenthesized expression like (x+1) or (x)
+        return self.Expr(children[0])
+
       # (1,)  (1, 2)  etc.
       if children[1].tok.id == Id.Arith_Comma:
         return self._Tuple(children)
+
       raise NotImplementedError('testlist_comp')
 
     if id0 == Id.Op_LBracket:
