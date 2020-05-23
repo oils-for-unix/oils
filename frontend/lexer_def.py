@@ -215,6 +215,8 @@ _KEYWORDS = [
   C('func',      Id.KW_Func),
   C('data',      Id.KW_Data),
   C('enum',      Id.KW_Enum),
+  C('class',     Id.KW_Class),
+  C('use',       Id.KW_Use),
 ]
 
 # These are treated like builtins in bash, but keywords in OSH.  However, we
@@ -249,9 +251,10 @@ EXPR_WORDS = [
   # for function literals
   C('func', Id.Expr_Func),
 
-  # TODO: as ?
-  # expr as List[Int] for casting?  Or just cast(List[Int]], expr)?
-  # What about specifying types without casting?  'of'?
+  C('virtual',   Id.Expr_Virtual),
+  C('override',  Id.Expr_Override),
+  C('abstract',  Id.Expr_Abstract),
+  C('as',        Id.Expr_As),  # use 'foo.sh' as bar
 ]
 
 

@@ -27,7 +27,7 @@ from typing import Any, List, Tuple, Dict, Optional, IO, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import (
       command__VarDecl, command__PlaceMutation, command__Proc, command__Func,
-      command__Data, command__Enum,
+      command__Data, command__Enum, command__Class, command__Use
   )
   from core.alloc import Arena
   from core.util import DebugFile
@@ -425,6 +425,28 @@ class ParseContext(object):
       self.p_printer.Print(pnode)
 
     self.tr.Enum(pnode, out)
+    return last_token
+
+  def ParseClass(self, lexer, out):
+    # type: (Lexer, command__Class) -> Token
+    """ class Lexer { var Token; func Next() { echo } } """
+    pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.oil_class)
+
+    if 0:
+      self.p_printer.Print(pnode)
+
+    self.tr.Class(pnode, out)
+    return last_token
+
+  def ParseUse(self, lexer, out):
+    # type: (Lexer, command__Use) -> Token
+    """ use 'foo/bar' as spam, Foo, Z as Y """
+    pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.oil_use)
+
+    if 1:
+      self.p_printer.Print(pnode)
+
+    self.tr.Use(pnode, out)
     return last_token
 
 # Another parser instantiation:

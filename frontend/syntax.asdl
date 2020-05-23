@@ -317,6 +317,8 @@ module syntax
          type_expr* return_types, command body)
   | Data(Token name, param* params)
   | Enum(Token name, variant* variants)
+  | Class(Token name, Token? extends, class_item* items)
+  | Use(single_quoted path, Token? alias, use_name* names)
 
   attributes (int* spids)
 
@@ -325,6 +327,10 @@ module syntax
   variant_type = Anon(param* params) | Ref(Token type_name)
   -- tags and types are separate in our model of algebraic data types
   variant = (Token tag_name, variant_type? typ)
+
+  class_item = Data(Token keyword, name_type* fields) | Method()
+
+  use_name = (Token name, Token? alias)
 
   -- 'open' is for proc p { }; closed is for proc p [] { }
   proc_sig =

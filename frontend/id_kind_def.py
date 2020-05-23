@@ -285,6 +285,9 @@ def AddKinds(spec):
     # List comprehensions
     'For', 'Is', 'In', 'If', 'Else',
     'Func',  # For function literals
+
+    'As',
+    'Virtual', 'Override', 'Abstract',
   ])
 
   # For C-escaped strings.
@@ -453,16 +456,14 @@ def AddKinds(spec):
       'Set',  'SetLocal',  'SetGlobal',  # Strict Oil style
       # later: Auto
       'Proc', 'Func', 'Data', 'Enum',
+      'Class', 'Use',
       'Pass',  # for printing
 
       # 'Match', 'With',  # matching
       # not sure: yield
       # mycpp
       # 'Switch', 
-      # module (class) 
       #   - 'init' (constructor) and maybe 'call'
-      # data (struct)
-      # enum
       # try except (no finally?)
 
       # builtins, NOT keywords: use, fork, wait, etc.

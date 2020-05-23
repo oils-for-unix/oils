@@ -1695,6 +1695,16 @@ class CommandParser(object):
         self.parse_ctx.ParseEnum(self.lexer, out2)
         self._Next()
         return out2
+      if self.c_id == Id.KW_Class:
+        out3 = command.Class()
+        self.parse_ctx.ParseClass(self.lexer, out3)
+        self._Next()
+        return out3
+      if self.c_id == Id.KW_Use:
+        out4 = command.Use()
+        self.parse_ctx.ParseUse(self.lexer, out4)
+        self._Next()
+        return out4
 
     if self.c_id in (
         Id.KW_DLeftBracket, Id.Op_DLeftParen, Id.Op_LParen, Id.Lit_LBrace,

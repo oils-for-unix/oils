@@ -24,3 +24,50 @@ enum suffix_op {
   Nullary %Token,  # note this is lexer as an Expr_Symbol
   Unary(op_id Id, arg_word Str)
 }
+
+data word(parts Array[WordPart])
+
+# TODO: omit trailing comma
+# Need to change dict syntax to @{ }
+enum value {
+  Str(s Str),
+  AssocArray(d Map[Str, Str])
+}
+
+#
+# Classes
+#
+
+class Lexer {
+  func Run() {
+    echo
+    # TODO: Fix separators
+    #echo
+  };
+
+  virtual Foo() {
+    echo
+  }
+}
+
+class FileReader : Reader {
+  var x;
+  var y;
+
+  # TODO: should this be super() ?
+  func init(super, x, y) {
+    echo
+  };
+
+  override Run() {
+    echo
+    # TODO: Fix separators
+    #echo
+  }
+
+}
+
+use 'frontend/syntax';  # TODO: get rid of ;
+use 'core/util' log, p_die, foo as bar
+
+echo hi

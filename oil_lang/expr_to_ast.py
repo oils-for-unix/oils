@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import (
       command__VarDecl, command__PlaceMutation, command__Func, command__Data,
-      command__Enum,
+      command__Enum, command__Class, command__Use,
   )
   from pgen2.grammar import Grammar
   from pgen2.pnode import PNode
@@ -1004,6 +1004,42 @@ class Transformer(object):
     for i in xrange(2, n-1, 2):  # skip commas
       p_node = children[i]
       out.variants.append(self._Variant(p_node))
+
+  def Class(self, pnode, out):
+    # type: (PNode, command__Class) -> None
+    """
+    oil_class: Expr_Name [':' Expr_Name ] '{' class_items '}'
+    """
+    assert pnode.typ == grammar_nt.oil_class
+    children = pnode.children
+
+    out.name = children[0].tok
+
+    #
+    #assert children[1].tok.id == Id.Op_LBrace  # enum op {
+
+    return
+    n = len(children)
+    for i in xrange(2, n-1, 2):  # skip commas
+      p_node = children[i]
+      out.variants.append(self._Variant(p_node))
+
+  def Use(self, pnode, out):
+    # type: (PNode, command__Use) -> None
+    """
+    oil_use: (
+      sq_string ['as' Expr_Name]
+      (use_name ',')* [ use_name [','] ]
+    )
+    """
+    assert pnode.typ == grammar_nt.oil_use
+    children = pnode.children
+
+    typ = children[0].typ
+    if ISNONTERMINAL(typ):
+      if typ == grammar_nt.sq_string:
+        sq_part = cast(single_quoted, children[0].children[1].tok)
+        out.path = sq_part
 
   #
   # Regex Language
