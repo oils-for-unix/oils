@@ -1686,9 +1686,15 @@ class CommandParser(object):
       if self.c_id == Id.KW_Func:
         return self.ParseOilFunc()
       if self.c_id == Id.KW_Data:
-        node = self.w_parser.ParseDataType()
+        out1 = command.Data()
+        self.parse_ctx.ParseDataType(self.lexer, out1)
         self._Next()
-        return node
+        return out1
+      if self.c_id == Id.KW_Enum:
+        out2 = command.Enum()
+        self.parse_ctx.ParseEnum(self.lexer, out2)
+        self._Next()
+        return out2
 
     if self.c_id in (
         Id.KW_DLeftBracket, Id.Op_DLeftParen, Id.Op_LParen, Id.Lit_LBrace,

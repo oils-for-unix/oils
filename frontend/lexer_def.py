@@ -214,6 +214,7 @@ _KEYWORDS = [
   # Tea-only
   C('func',      Id.KW_Func),
   C('data',      Id.KW_Data),
+  C('enum',      Id.KW_Enum),
 ]
 
 # These are treated like builtins in bash, but keywords in OSH.  However, we

@@ -6,8 +6,11 @@ echo $'one\ntwo'
 
 #setvar x += 1
 
-var a = 1 + 2*3
-var b Int = 5 / 6
+var a Int = 1 + 2*3
+echo a=$a
+
+var b Float = 5 / 6
+echo b=$b
 
 echo hi
 
@@ -27,23 +30,30 @@ echo hi
 #var myarray = @[ foo bar *.[c h] ]
 
 var mycmd = $(echo cmd) + "$(echo cmd)"
+echo mycmd=$mycmd
+
 var mybrace = ${b} + "${b}"
+echo mybrace=$mybrace
 
 # parenthesized
-var paren = ( 1 + 2) * 3
+var paren = (1 + 2) * 3
+echo paren=$paren
 
 # line continuation
-var line_cont = 1 + \
-  2
+var line_cont = 4 + \
+  5
+echo line_cont=$line_cont
 
 # another way of writing multiline expressions
-var multiline = ( 1 + 
-  2)
+var multiline = ( 6 + 
+  7)
+echo multiline=$multiline
 
 # Augmented assignment
-#var aug += 1
-setvar aug += 1
-setvar aug -= 2
+var aug = 8
+setvar aug += 9
+echo aug=$aug
+#setvar aug -= 2
 
 #var a[i] = c
 

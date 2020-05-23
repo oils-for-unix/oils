@@ -11,13 +11,18 @@ set -o errexit
 
 # This doesn't distinguish if they should parse with osh or Oil though!
 
-parse-all() {
+parse-all-osh() {
   find oil_lang/testdata -name '*.sh' -o -name '*.osh' \
     | xargs -n 1 -- bin/osh -n
 }
 
+parse-all-tea() {
+  find oil_lang/testdata -name '*.tea' \
+    | xargs -n 1 -- bin/oil -n
+}
+
 run-all() {
-  for prog in oil_lang/testdata/*; do
+  for prog in oil_lang/testdata/*.{sh,osh}; do
     echo $prog
 
     local skip=''

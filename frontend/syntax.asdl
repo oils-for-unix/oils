@@ -316,8 +316,15 @@ module syntax
          param* named_params, Token? named_splat,
          type_expr* return_types, command body)
   | Data(Token name, param* params)
+  | Enum(Token name, variant* variants)
 
   attributes (int* spids)
+
+  -- Binary(x expr, y expr) or Nullary %Token
+  -- In the first case we have a tag, and an anonymous type.
+  variant_type = Anon(param* params) | Ref(Token type_name)
+  -- tags and types are separate in our model of algebraic data types
+  variant = (Token tag_name, variant_type? typ)
 
   -- 'open' is for proc p { }; closed is for proc p [] { }
   proc_sig =

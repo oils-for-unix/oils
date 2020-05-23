@@ -322,6 +322,16 @@ data_params: (func_param ',')* [ func_param [','] ]
 oil_data: Expr_Name '(' [data_params] ')'
 
 
+# e.g. Nullary %Token or Nullary(x Int)
+variant_type: Expr_Symbol | '(' data_params ')' 
+variant: Expr_Name [ variant_type ]
+
+variant_end: ',' | Op_Newline
+
+# braces can't be empty like shell (but parens can)
+oil_enum: Expr_Name '{' (variant variant_end)* [ variant [variant_end] ] '}'
+
+
 #
 # Regex Sublanguage
 #

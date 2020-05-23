@@ -4,6 +4,7 @@ expr_to_ast.py
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
+from _devbuild.gen import syntax_asdl as syn
 from _devbuild.gen.syntax_asdl import (
     Token, speck, double_quoted, single_quoted, simple_var_sub, braced_var_sub,
     command_sub, sh_array_literal,
@@ -23,6 +24,7 @@ from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import (
       command__VarDecl, command__PlaceMutation, command__Func, command__Data,
+      command__Enum,
   )
   from pgen2.grammar import Grammar
   from pgen2.pnode import PNode
@@ -962,6 +964,46 @@ class Transformer(object):
     #print(pnode)
     if ISNONTERMINAL(children[2].typ):
       out.params = self._DataParams(children[2])
+
+  def _VariantType(self, pnode):
+    # type: (PNode) -> syn.variant_type_t
+    """
+    variant_type: Expr_Symbol | '(' data_params ')' 
+    """
+    n = len(pnode.children)
+    if n == 1:
+      return syn.variant_type.Ref(pnode.children[0].tok)
+    else:
+      assert n == 3, pnode
+      return syn.variant_type.Anon(self._DataParams(pnode.children[1]))
+
+  def _Variant(self, pnode):
+    # type: (PNode) -> syn.variant
+    """
+    variant: Expr_Name [ variant_type ]
+    """
+    assert pnode.typ == grammar_nt.variant, pnode
+    t = None  # type: syn.variant_type_t
+    if len(pnode.children) == 2:
+      t = self._VariantType(pnode.children[1])
+    return syn.variant(pnode.children[0].tok, t)
+
+  def Enum(self, pnode, out):
+    # type: (PNode, command__Enum) -> None
+    """
+    oil_enum: Expr_Name '{' (variant variant_end)* [ variant [variant_end] ] '}'
+    """
+    assert pnode.typ == grammar_nt.oil_enum
+    children = pnode.children
+
+    out.name = children[0].tok
+
+    assert children[1].tok.id == Id.Op_LBrace  # enum op {
+
+    n = len(children)
+    for i in xrange(2, n-1, 2):  # skip commas
+      p_node = children[i]
+      out.variants.append(self._Variant(p_node))
 
   #
   # Regex Language

@@ -27,7 +27,7 @@ from typing import Any, List, Tuple, Dict, Optional, IO, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import (
       command__VarDecl, command__PlaceMutation, command__Proc, command__Func,
-      command__Data
+      command__Data, command__Enum,
   )
   from core.alloc import Arena
   from core.util import DebugFile
@@ -414,6 +414,17 @@ class ParseContext(object):
       self.p_printer.Print(pnode)
 
     self.tr.Data(pnode, out)
+    return last_token
+
+  def ParseEnum(self, lexer, out):
+    # type: (Lexer, command__Enum) -> Token
+    """ enum cflow { Break, Continue, Return(status Int) } """
+    pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.oil_enum)
+
+    if 0:
+      self.p_printer.Print(pnode)
+
+    self.tr.Enum(pnode, out)
     return last_token
 
 # Another parser instantiation:

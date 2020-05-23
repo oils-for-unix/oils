@@ -1,0 +1,26 @@
+data Point(x Int, y Int)
+
+data Point3(x, y, z)  # optional types
+
+enum op { Plus, Minus }
+
+enum comma1 {  # no trailing comma
+  Times,
+  Divide 
+}
+
+enum trailing_comma {  
+  Times,
+  Divide,
+}
+
+enum cflow {  
+  Break, Continue, Return(status Int)
+}
+
+data Token(id Id, span_id Int, val Str)
+
+enum suffix_op {
+  Nullary %Token,  # note this is lexer as an Expr_Symbol
+  Unary(op_id Id, arg_word Str)
+}
