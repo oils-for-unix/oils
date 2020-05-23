@@ -1682,8 +1682,13 @@ class CommandParser(object):
       return self.ParseOilProc()
 
     # other top-level keywords to hide: data, enum, class, and maybe 'use'
-    if self.parse_opts.parse_tea() and self.c_id == Id.KW_Func:
-      return self.ParseOilFunc()
+    if self.parse_opts.parse_tea():
+      if self.c_id == Id.KW_Func:
+        return self.ParseOilFunc()
+      if self.c_id == Id.KW_Data:
+        node = self.w_parser.ParseDataType()
+        self._Next()
+        return node
 
     if self.c_id in (
         Id.KW_DLeftBracket, Id.Op_DLeftParen, Id.Op_LParen, Id.Lit_LBrace,

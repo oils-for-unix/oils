@@ -7,7 +7,7 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
     Token, speck, double_quoted, single_quoted, simple_var_sub, braced_var_sub,
     command_sub, sh_array_literal,
-    command, command__VarDecl, command__PlaceMutation, command__Func,
+    command,
     expr, expr_e, expr_t, expr__Var, expr__Dict, expr_context_e,
     re, re_t, re_repeat, re_repeat_t, class_literal_term, class_literal_term_t,
     posix_class, perl_class,
@@ -21,6 +21,9 @@ from core.util import log, p_die
 
 from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:
+  from _devbuild.gen.syntax_asdl import (
+      command__VarDecl, command__PlaceMutation, command__Func, command__Data,
+  )
   from pgen2.grammar import Grammar
   from pgen2.pnode import PNode
 
@@ -926,6 +929,39 @@ class Transformer(object):
     if ISNONTERMINAL(children[pos].typ):
       out.return_types = self._TypeExprList(children[pos])
       # otherwise it's Id.Op_LBrace like f() {
+
+  def _DataParams(self, p_node):
+    # type: (PNode) -> List[param]
+    """
+    data_params: (func_param ',')* [ func_param [','] ]
+    """
+    params = []  # type: List[param]
+
+    children = p_node.children
+    n = len(children)
+    i = 0
+    while i < n:
+      p = children[i]
+      if ISNONTERMINAL(p.typ):
+        params.append(self._FuncParam(p))
+      i += 1
+
+    return params
+
+  def Data(self, pnode, out):
+    # type: (PNode, command__Data) -> None
+    """
+    oil_data: Expr_Name '(' [data_params] ')'
+    """
+    assert pnode.typ == grammar_nt.oil_data
+    children = pnode.children
+
+    out.name = children[0].tok
+
+    assert children[1].tok.id == Id.Op_LParen  # data foo(
+    #print(pnode)
+    if ISNONTERMINAL(children[2].typ):
+      out.params = self._DataParams(children[2])
 
   #
   # Regex Language

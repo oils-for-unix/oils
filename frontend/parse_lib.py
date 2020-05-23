@@ -4,11 +4,7 @@ parse_lib.py - Consolidate various parser instantiations here.
 
 from _devbuild.gen.id_kind_asdl import Id_t
 from _devbuild.gen.syntax_asdl import (
-    Token, compound_word,
-    command_t, command__VarDecl, command__PlaceMutation, command__Proc,
-    command__Func,
-    expr_t, word_t, redir,
-    arg_list, name_type,
+    Token, compound_word, expr_t, word_t, redir, arg_list, name_type,
 )
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen import grammar_nt
@@ -29,6 +25,10 @@ from mycpp import mylib
 
 from typing import Any, List, Tuple, Dict, Optional, IO, TYPE_CHECKING
 if TYPE_CHECKING:
+  from _devbuild.gen.syntax_asdl import (
+      command__VarDecl, command__PlaceMutation, command__Proc, command__Func,
+      command__Data
+  )
   from core.alloc import Arena
   from core.util import DebugFile
   from core import optview
@@ -314,7 +314,7 @@ class ParseContext(object):
 
   def ParseVarDecl(self, kw_token, lexer):
     # type: (Token, Lexer) -> Tuple[command__VarDecl, Token]
-    """e.g. var mylist = [1, 2, 3]"""
+    """ var mylist = [1, 2, 3] """
 
     # TODO: We do need re-entrancy for var x = @[ (1+2) ] and such
     if self.parsing_expr:
@@ -335,6 +335,7 @@ class ParseContext(object):
 
   def ParsePlaceMutation(self, kw_token, lexer):
     # type: (Token, Lexer) -> Tuple[command__PlaceMutation, Token]
+    """ setvar d['a'] += 1 """
 
     # TODO: Create an ExprParser so it's re-entrant.
     pnode, last_token = self.e_parser.Parse(lexer,
@@ -347,6 +348,7 @@ class ParseContext(object):
 
   def ParseOilArgList(self, lexer, out):
     # type: (Lexer, arg_list) -> Token
+    """ $f(x, y) """
     if self.parsing_expr:
       # TODO: get rid of parsing_expr
       raise AssertionError()
@@ -361,7 +363,7 @@ class ParseContext(object):
 
   def ParseOilExpr(self, lexer, start_symbol):
     # type: (Lexer, int) -> Tuple[expr_t, Token]
-    """For Oil expressions that aren't assignments."""
+    """ if (x > 0) { ... }, while, etc. """
     pnode, last_token = self.e_parser.Parse(lexer, start_symbol)
 
     if 0:
@@ -401,6 +403,17 @@ class ParseContext(object):
       self.p_printer.Print(pnode)
 
     self.tr.Func(pnode, out)
+    return last_token
+
+  def ParseDataType(self, lexer, out):
+    # type: (Lexer, command__Data) -> Token
+    """ data Point(x Int, y Int) """
+    pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.oil_data)
+
+    if 0:
+      self.p_printer.Print(pnode)
+
+    self.tr.Data(pnode, out)
     return last_token
 
 # Another parser instantiation:

@@ -316,6 +316,11 @@ type_expr_list: type_expr (',' type_expr)*
 
 oil_func: Expr_Name '(' [func_params] [';' func_params] ')' [type_expr_list] '{'
 
+data_params: (func_param ',')* [ func_param [','] ]
+
+# zero params allowed for consistency with func and class?
+oil_data: Expr_Name '(' [data_params] ')'
+
 
 #
 # Regex Sublanguage

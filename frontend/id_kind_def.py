@@ -452,7 +452,7 @@ def AddKinds(spec):
       'Const', 'Var', 'SetVar', 'SetRef', # OSH style
       'Set',  'SetLocal',  'SetGlobal',  # Strict Oil style
       # later: Auto
-      'Proc', 'Func',
+      'Proc', 'Func', 'Data',
       'Pass',  # for printing
 
       # 'Match', 'With',  # matching

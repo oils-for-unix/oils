@@ -315,6 +315,7 @@ module syntax
          param* pos_params, Token? pos_splat,
          param* named_params, Token? named_splat,
          type_expr* return_types, command body)
+  | Data(Token name, param* params)
 
   attributes (int* spids)
 

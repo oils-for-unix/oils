@@ -210,7 +210,10 @@ _KEYWORDS = [
 
   # Not used, but reserved for now?
   C('pass',      Id.KW_Pass),
+
+  # Tea-only
   C('func',      Id.KW_Func),
+  C('data',      Id.KW_Data),
 ]
 
 # These are treated like builtins in bash, but keywords in OSH.  However, we
