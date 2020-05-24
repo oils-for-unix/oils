@@ -991,7 +991,7 @@ class Transformer(object):
   def Enum(self, pnode, out):
     # type: (PNode, command__Enum) -> None
     """
-    oil_enum: Expr_Name '{' (variant variant_end)* [ variant [variant_end] ] '}'
+    oil_enum: Expr_Name '{' [Op_Newline] (variant variant_end)* [ variant [variant_end] ] '}'
     """
     assert pnode.typ == grammar_nt.oil_enum
     children = pnode.children
@@ -1000,8 +1000,12 @@ class Transformer(object):
 
     assert children[1].tok.id == Id.Op_LBrace  # enum op {
 
+    start = 2
+    if children[start].tok.id == Id.Op_Newline:
+      start = 3
+
     n = len(children)
-    for i in xrange(2, n-1, 2):  # skip commas
+    for i in xrange(start, n-1, 2):  # skip commas
       p_node = children[i]
       out.variants.append(self._Variant(p_node))
 

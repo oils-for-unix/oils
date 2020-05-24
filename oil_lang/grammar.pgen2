@@ -326,12 +326,15 @@ oil_data: Expr_Name '(' [data_params] ')'
 variant_type: Expr_Symbol | '(' data_params ')' 
 variant: Expr_Name [ variant_type ]
 
-end_variant: ',' | Op_Newline
+end_variant: ',' Op_Newline* | Op_Newline+
 
 # braces can't be empty like shell (but parens can)
-oil_enum: Expr_Name '{' (variant end_variant)* [ variant [end_variant] ] '}'
+oil_enum: Expr_Name '{' [Op_Newline] (variant end_variant)* [ variant [end_variant] ] '}'
 
-end_item: ';' | Op_Newline
+end_item: ';' Op_Newline* | Op_Newline+
+# Somehow 'use' can't use 'end_item', because it doesn't end with '}' or ')'?
+# Ending with an interminate number of tokens is somehow bad.
+end_item2: ';' | Op_Newline
 
 # TODO: assignments, for/if/switch, with, break/continue/return, try/throw, 
 tea_stmt: Expr_Name
@@ -347,26 +350,24 @@ tea_stmts: (tea_stmt end_item)* [ tea_stmt [end_item] ]
 
 # TODO: make { symmetric?
 class_item: (
-  ('virtual' | 'override' | 'func' ) oil_func tea_stmts '}'
+  ('virtual' | 'override' | 'func' ) oil_func [Op_Newline] tea_stmts '}'
 | 'abstract' oil_func  # TODO: get rid of {
 | 'var' name_type_list
 )
 
+# Note: we could restrict separators to newlines.
+# But then you couldn't do class Foo { var a; var b }
 class_items: (class_item end_item)* [ class_item [end_item] ] 
 
-oil_class: Expr_Name [':' Expr_Name ] '{' class_items '}'
+oil_class: Expr_Name [':' Expr_Name ] '{' [Op_Newline] class_items '}'
 
 
 use_name: Expr_Name ['as' Expr_Name]
+use_names: (use_name ',')* [ use_name [','] ]
 # TODO:
 # - Should we have a simpler Oil string literal?
 # - Could we have optional () for multiline?
-oil_use: (
-  sq_string ['as' Expr_Name]
-  (use_name ',')* [ use_name [','] ]
-  end_item
-)
-
+oil_use: sq_string [ 'as' Expr_Name | use_names ] end_item2
 
 #
 # Regex Sublanguage

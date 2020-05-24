@@ -126,9 +126,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
     if consts.GetKind(tok.id) == Kind.Ignored:
       continue
 
-    # For var x = {
-    #   a: 1, b: 2
-    # }
+    # For multiline lists, maps, etc.
     if balance > 0 and tok.id == Id.Op_Newline:
       #log('*** SKIPPING NEWLINE')
       continue
@@ -312,7 +310,9 @@ class ExprParser(object):
       # ParseError has a "too much input" case but I haven't been able to
       # tickle it.  Mabye it's because of the Eof tokens?
 
-      #raise error.Parse('Syntax error in expression (%r)', e, token=e.tok)
-      raise error.Parse('Syntax error in expression', token=e.tok)
+      raise error.Parse(
+          'Syntax error in expression (near %s)', ui.PrettyId(e.tok.id),
+          token=e.tok)
+      #raise error.Parse('Syntax error in expression', token=e.tok)
 
     return self.push_parser.rootnode, last_token

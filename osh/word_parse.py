@@ -875,7 +875,7 @@ class WordParser(WordEmitter):
   def ParseBareDecl(self):
     # type: () -> expr_t
     """
-    Parse the RHS of x = {name: val}
+    Parse the RHS of x = @{name: val}
     """
     self._Next(lex_mode_e.Expr)
     self._Peek()
@@ -913,13 +913,18 @@ class WordParser(WordEmitter):
     if last_token.id == Id.Op_LBrace:  # Translate to what CommandParser wants
       last_token.id = Id.Lit_LBrace
     self.buffered_word = last_token
-    self._Next(lex_mode_e.ShCommand)  # required
+    self._Next(lex_mode_e.ShCommand)  # TODO: Do we need this?
 
   def ParseFunc(self, node):
     # type: (command__Func) -> None
     last_token = self.parse_ctx.ParseFunc(self.lexer, node)
     if last_token.id == Id.Op_LBrace:  # Translate to what CommandParser wants
       last_token.id = Id.Lit_LBrace
+    self.buffered_word = last_token
+
+  def ParseUse(self, node):
+    # type: (command__Use) -> None
+    last_token = self.parse_ctx.ParseUse(self.lexer, node)
     self.buffered_word = last_token
 
   def _ReadArithExpr(self):

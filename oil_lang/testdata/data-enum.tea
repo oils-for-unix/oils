@@ -2,6 +2,8 @@ data Point(x Int, y Int)
 
 data Point3(x, y, z)  # optional types
 
+data one(x); data two(y);
+
 enum op { Plus, Minus }
 
 enum comma1 {  # no trailing comma
@@ -12,6 +14,11 @@ enum comma1 {  # no trailing comma
 enum trailing_comma {  
   Times,
   Divide,
+}
+
+enum no_comma {  
+  Times
+  Divide
 }
 
 enum cflow {  
@@ -50,14 +57,18 @@ class Lexer {
   }
 }
 
+echo $'hi\n'
+
 class FileReader : Reader {
-  var x;
-  var y;
+  var x Int
+  var y
+
+  var a Float; var b;
 
   # TODO: should this be super() ?
   func init(super, x, y) {
     echo
-  };
+  }
 
   override Run() {
     echo
@@ -67,7 +78,22 @@ class FileReader : Reader {
 
 }
 
-use 'frontend/syntax';  # TODO: get rid of ;
+class OneVar { var a }
+
+# should we allow this?  C++ allows it.
+#class OneVar { }
+
+class OneLine { var a; var b }
+
+# wtf why can I use these terminators, but not Op_Newline?
+# oh maybe the word parser does something with it?
+
+use 'frontend/syntax'
 use 'core/util' log, p_die, foo as bar
 
-echo hi
+use 'one'; use 'two'
+
+use 'bar' as foo
+
+
+#echo hi

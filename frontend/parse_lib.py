@@ -443,7 +443,7 @@ class ParseContext(object):
     """ use 'foo/bar' as spam, Foo, Z as Y """
     pnode, last_token = self.e_parser.Parse(lexer, grammar_nt.oil_use)
 
-    if 1:
+    if 0:
       self.p_printer.Print(pnode)
 
     self.tr.Use(pnode, out)

@@ -1702,7 +1702,7 @@ class CommandParser(object):
         return out3
       if self.c_id == Id.KW_Use:
         out4 = command.Use()
-        self.parse_ctx.ParseUse(self.lexer, out4)
+        self.w_parser.ParseUse(out4)  # need last_token?
         self._Next()
         return out4
 
