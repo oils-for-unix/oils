@@ -22,6 +22,7 @@ enum no_comma {
 }
 
 enum cflow {  
+
   Break, Continue, Return(status Int)
 }
 
@@ -38,6 +39,7 @@ data word(parts Array[WordPart])
 # Need to change dict syntax to @{ }
 enum value {
   Str(s Str),
+
   AssocArray(d Map[Str, Str])
 }
 
@@ -60,6 +62,7 @@ class Lexer {
 echo $'hi\n'
 
 class FileReader : Reader {
+
   var x Int
   var y
 
@@ -72,8 +75,9 @@ class FileReader : Reader {
 
   override Run() {
     echo
-    # TODO: Fix separators
-    #echo
+
+    # Another statement
+    echo
   }
 
 }

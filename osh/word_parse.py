@@ -64,6 +64,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part__ArithSub, word_part__ExtGlob, word_part__ExprSub,
 
     command, command_t, command__ForExpr, command__Proc, command__Func,
+    command__Use,
 
     expr_t, source, arg_list,
 )

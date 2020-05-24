@@ -110,6 +110,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
   #log('tokens = %s', gr.tokens)
 
   last_token = None  # type: Optional[Token]
+  prev_was_newline = False
 
   balance = 0  # to ignore newlines
 
@@ -127,9 +128,17 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
       continue
 
     # For multiline lists, maps, etc.
-    if balance > 0 and tok.id == Id.Op_Newline:
-      #log('*** SKIPPING NEWLINE')
-      continue
+    if tok.id == Id.Op_Newline:
+      if balance > 0 :
+        #log('*** SKIPPING NEWLINE')
+        continue
+      # Eliminate duplicate newline tokens.  It makes the grammar simpler, and
+      # it's consistent with CPython's lexer and our own WordParser.
+      if prev_was_newline:
+        continue
+      prev_was_newline = True
+    else:
+      prev_was_newline = False
 
     balance += _OTHER_BALANCE.get(tok.id, 0)
     #log('BALANCE after seeing %s = %d', tok.id, balance)
