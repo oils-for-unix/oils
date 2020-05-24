@@ -460,11 +460,11 @@ no
 ## END
 
 #### dict with 'bare word' keys
-var d0 = {}
+var d0 = @{}
 echo len=$len(d0)
-var d1 = {name: "hello"}
+var d1 = @{name: "hello"}
 echo len=$len(d1)
-var d2 = {name: "hello", other: 2}
+var d2 = @{name: "hello", other: 2}
 echo len=$len(d2)
 ## STDOUT:
 len=0
@@ -473,13 +473,13 @@ len=2
 ## END
 
 #### dict with expression keys
-var d1 = {['name']: "hello"}
+var d1 = @{['name']: "hello"}
 echo len=$len(d1)
 var v = d1['name']
 echo $v
 
 var key='k'
-var d2 = {["$key"]: "bar"}
+var d2 = @{["$key"]: "bar"}
 echo len=$len(d2)
 var v2 = d2['k']
 echo $v2
@@ -494,12 +494,12 @@ bar
 
 #### dict literal with implicit value
 var name = 'foo'
-var d1 = {name}
+var d1 = @{name}
 echo len=$len(d1)
 var v1 = d1['name']
 echo $v1
 
-var d2 = {name, other: 'val'}
+var d2 = @{name, other: 'val'}
 echo len=$len(d2)
 var v2 = d2['name']
 echo $v2
@@ -512,12 +512,12 @@ foo
 ## END
 
 #### Dict literal with string keys
-var d = {'sq': 123}
+var d = @{'sq': 123}
 var v = d['sq']
 echo $v
 
 var x = "q"
-var d2 = {"d$x": 456}
+var d2 = @{"d$x": 456}
 var v2 = d2["dq"]
 echo $v2
 ## STDOUT:
@@ -607,7 +607,7 @@ echo $f
 41
 ## END
 
-#### multiline strings, dict, list, tuples, etc.
+#### multiline strings, list, tuples, etc.
 var dq = "
 dq
 2
@@ -627,12 +627,6 @@ var mylist = [
 ]
 echo mylist=$len(mylist)
 
-var mydict = { a:1,
-  b:
-  2,
-}
-echo mydict=$len(mydict)
-
 var mytuple = (1,
   2, 3)
 echo mytuple=$len(mytuple)
@@ -641,8 +635,17 @@ echo mytuple=$len(mytuple)
 dq=6
 sq=6
 mylist=3
-mydict=2
 mytuple=3
+## END
+
+#### multiline dict
+var mydict = @{ a:1,
+  b:
+  2,
+}
+echo mydict=$len(mydict)
+## STDOUT:
+mydict=2
 ## END
 
 #### multiline array and command sub (only here docs disallowed)
@@ -752,7 +755,7 @@ echo $method
 
 
 #### d->key
-var d = {name: 'andy'}
+var d = @{name: 'andy'}
 var x = d->name
 echo $x
 ## STDOUT:

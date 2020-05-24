@@ -89,11 +89,13 @@ _OTHER_BALANCE = {
     Id.Op_LParen:  1,
     Id.Op_RParen: -1,
 
+    # Array @[]
     Id.Left_AtBracket:  1,
     Id.Op_LBracket:  1,
     Id.Op_RBracket: -1,
 
-    Id.Op_LBrace:  1,
+    # Dict @{}
+    Id.Left_AtBrace:  1,
     Id.Op_RBrace: -1
 }
 

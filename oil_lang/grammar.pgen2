@@ -72,7 +72,7 @@ testlist_comp: (test|splat_expr) ( comp_for | (',' (test|splat_expr))* [','] )
 atom: (
     '(' [testlist_comp] ')' 
   | '[' [testlist_comp] ']' 
-  | '{' [dict] '}'
+  | '@{' [dict] '}'
     # TODO: translation preference
   | '/' regex [re_flags] '/'
     # NOTE: These atoms are are allowed in typed array literals

@@ -28,7 +28,7 @@ json write -indent 0 :a
 
 # TODO: ORDER of keys should be PRESERVED
 
-var mydict = {name: "bob", age: 30}
+var mydict = @{name: "bob", age: 30}
 
 json write -pretty=0 :mydict
 # ignored
@@ -40,7 +40,7 @@ json write -pretty=F -indent 4 :mydict
 
 #### json write in command sub
 shopt -s oil:all  # for echo
-var mydict = {name: "bob", age: 30}
+var mydict = @{name: "bob", age: 30}
 json write :mydict
 var x = $(json write :mydict)
 echo $x

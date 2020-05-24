@@ -340,7 +340,8 @@ def AddKinds(spec):
       'ProcSubIn',          # <( )
       'ProcSubOut',         # >( )
 
-      'AtBracket',          # @[ for Oil arrays
+      'AtBrace',            # @{ for map literals
+      'AtBracket',          # @[ for typed array literals
       'AtParen',            # @( for legacy shell arrays
   ])
 

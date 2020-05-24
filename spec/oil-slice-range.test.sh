@@ -119,7 +119,7 @@ write @x
 ## END
 
 #### Index with a Tuple
-var mydict = {[2,3]: 'foo'}
+var mydict = @{[2,3]: 'foo'}
 var val = mydict[(2, 3)]
 echo $val
 # TODO: This should work!
@@ -131,7 +131,7 @@ foo
 ## END
 
 #### Index with expression
-var mydict = {[5]: 3}
+var mydict = @{[5]: 3}
 var val = mydict[2+3]
 echo $val
 ## STDOUT:

@@ -772,8 +772,8 @@ OIL_LEFT_UNQUOTED = [
 
   # Not valid in DQ_Oil
   C('@(', Id.Left_AtParen),  # Legacy shell arrays.
-  C('@[', Id.Left_AtBracket),  # Oil arrays.  Not used yet.
-  C('@{', Id.Expr_Reserved),  # For table literals?  Not used yet.
+  C('@[', Id.Left_AtBracket),  # typed array literals.  Not used yet.
+  C('@{', Id.Left_AtBrace),  # map literals
 ]
 
 # Used by oil_lang/grammar_gen.py

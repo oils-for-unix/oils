@@ -205,7 +205,7 @@ x=9 y=1
 #### setvar d->key = 42 (setitem)
 shopt -s oil:all
 
-var d = {}
+var d = @{}
 setvar d['f2'] = 42
 setvar d->f3 = 43
 
@@ -323,7 +323,7 @@ x=YY
 ## END
 
 #### circular dict
-var d = {name: 'foo'}
+var d = @{name: 'foo'}
 = d
 setvar d['name'] = 123
 = d
