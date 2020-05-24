@@ -331,13 +331,22 @@ end_variant: ',' [Op_Newline] | Op_Newline
 # braces can't be empty like shell (but parens can)
 oil_enum: Expr_Name '{' [Op_Newline] (variant end_variant)* [ variant [end_variant] ] '}'
 
-# Somehow 'use' can't use 'end_tea_stmt', because it doesn't end with '}' or ')'?
-# Ending with an interminate number of tokens is somehow bad.
-end_tea_stmt: ';' [Op_Newline] | Op_Newline
+# Like end_stmt, but doesn't compose with CommandParser.
+end_inner: ';' [Op_Newline] | Op_Newline
+
+# Inside func/class and at top level: oil_func, oil_var_decl, oil_place_mutation
 
 # TODO: assignments, for/if/switch, with, break/continue/return, try/throw, 
-tea_stmt: Expr_Name
-tea_stmts: (tea_stmt end_tea_stmt)* [ tea_stmt [end_tea_stmt] ]
+inner_stmt: (
+  ('var' | 'const') name_type_list '=' testlist  # oil_var_decl
+| 'set' place_list (augassign | '=') testlist  # oil_place_mutation
+  # x  f(x)  etc.   And also x = 1?  Python uses the same "hack" to fit within
+  # pgen2.  It also supports a = b = 1, which we don't want.
+| testlist ['=' testlist]
+)
+
+# we want to avoid requiring newline or ; before }
+inner_stmts: (inner_stmt end_inner)* [ inner_stmt [end_inner] ]
 
 # TODO: Methods differ from functions:
 #  super() can be the first arg
@@ -349,19 +358,19 @@ tea_stmts: (tea_stmt end_tea_stmt)* [ tea_stmt [end_tea_stmt] ]
 
 # TODO: make { symmetric?
 class_item: (
-  ('virtual' | 'override' | 'func' ) oil_func [Op_Newline] tea_stmts '}'
+  ('virtual' | 'override' | 'func' ) oil_func [Op_Newline] inner_stmts '}'
 | 'abstract' oil_func  # TODO: get rid of {
 | 'var' name_type_list
 )
 
 # Note: we could restrict separators to newlines.
 # But then you couldn't do class Foo { var a; var b }
-class_items: (class_item end_tea_stmt)* [ class_item [end_tea_stmt] ] 
+class_items: (class_item end_inner)* [ class_item [end_inner] ] 
 
 oil_class: Expr_Name [':' Expr_Name ] '{' [Op_Newline] class_items '}'
 
-
-# can't have optional newline
+# 'use' can't use 'end_inner' because ending with an unknown number of
+# tokens doesn't compose with our CommandParser.
 end_use: ';' | Op_Newline
 
 use_name: Expr_Name ['as' Expr_Name]
@@ -370,6 +379,30 @@ use_names: (use_name ',')* [ use_name [','] ]
 # - Should we have a simpler Oil string literal?
 # - Could we have optional () for multiline?
 oil_use: sq_string [ 'as' Expr_Name | use_names ] end_use
+
+# Top level:
+# delarations of constants -- with const only?
+# maybe only const?
+# use, data, enum, class, func.  That's it?  OK.
+
+end_outer: ';' [Op_Newline] | Op_Newline | Eof_Real
+
+outer_stmt: (
+  # oil_var_decl, but no mutation
+  ('var' | 'const') name_type_list '=' testlist end_outer
+| 'use' oil_use  # TODO: needs Eof_Real
+| 'class' oil_class end_outer
+| 'data' oil_data end_outer
+| 'enum' oil_enum end_outer
+  # TODO: refactor
+| 'func' oil_func [Op_Newline] inner_stmts '}'
+
+  # Might need: typedef?  Or typealias?
+)
+
+# Eof_Real either after newline or before newline are both valid
+tea_module: outer_stmt* [Eof_Real]
+
 
 #
 # Regex Sublanguage

@@ -59,7 +59,7 @@ class Lexer {
   }
 }
 
-echo $'hi\n'
+#echo $'hi\n'
 
 class FileReader : Reader {
 
@@ -74,10 +74,24 @@ class FileReader : Reader {
   }
 
   override Run() {
-    echo
+    var x = f(x)
+
+    set x[1] = 2
 
     # Another statement
     echo
+
+    f(x)
+
+    1 + 2
+
+    obj.method(); obj.method2()
+    3,4
+    (5,6)
+
+    # Doesn't work because it's not testlist
+    # Python has expr_stmt
+    x = 1
   }
 
 }
@@ -89,6 +103,8 @@ class OneVar { var a }
 
 class OneLine { var a; var b }
 
+class OneLine2 { var a; var b; func f(x) { echo; echo } }
+
 # wtf why can I use these terminators, but not Op_Newline?
 # oh maybe the word parser does something with it?
 
@@ -98,6 +114,5 @@ use 'core/util' log, p_die, foo as bar
 use 'one'; use 'two'
 
 use 'bar' as foo
-
 
 #echo hi

@@ -449,6 +449,21 @@ class ParseContext(object):
     self.tr.Use(pnode, out)
     return last_token
 
+  def ParseTeaModule(self, line_reader):
+    # type: (_Reader) -> None
+    """ An entire .tea file """
+    line_lexer = lexer.LineLexer('', self.arena)
+    lx = lexer.Lexer(line_lexer, line_reader)
+
+    pnode, last_token = self.e_parser.Parse(lx, grammar_nt.tea_module)
+
+    if 1:
+      self.p_printer.Print(pnode)
+
+    #out = command.Use()  # TODO: make a node
+    #self.tr.TeaModule(pnode, out)
+    return None
+
 # Another parser instantiation:
 # - For Array Literal in word_parse.py WordParser:
 #   w_parser = WordParser(self.lexer, self.line_reader)

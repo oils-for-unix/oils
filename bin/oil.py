@@ -882,9 +882,49 @@ def OshCommandMain(argv):
   return 0
 
 
-# The valid applets right now.
-# TODO: Hook up to completion.
-APPLETS = ['osh', 'oshc']
+def TeaMain(argv0, argv):
+  # type: (str, List[str]) -> int
+  arena = alloc.Arena()
+  try:
+    script_name = argv[0]
+    arena.PushSource(source.MainFile(script_name))
+  except IndexError:
+    arena.PushSource(source.Stdin())
+    f = sys.stdin
+  else:
+    try:
+      f = open(script_name)
+    except IOError as e:
+      ui.Stderr("tea: Couldn't open %r: %s", script_name,
+                posix.strerror(e.errno))
+      return 2
+
+  aliases = {}  # Dummy value; not respecting aliases!
+
+  loader = pyutil.GetResourceLoader()
+  oil_grammar = meta.LoadOilGrammar(loader)
+
+  # Not used in tea, but OK...
+  opt_array = [False] * option_i.ARRAY_SIZE
+  parse_opts = optview.Parse(opt_array)
+
+  # parse `` and a[x+1]=bar differently
+  parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
+
+  line_reader = reader.FileLineReader(f, arena)
+
+  try:
+    parse_ctx.ParseTeaModule(line_reader)
+    status = 0
+  except error.Parse as e:
+    ui.PrettyPrintError(e, arena)
+    status = 2
+
+  return status
+
+
+# TODO: Hook up these applets and all valid applets to completion
+# APPLETS = ['osh', 'osh', 'oil', 'readlink']
 
 
 def AppBundleMain(argv):
@@ -935,6 +975,9 @@ def AppBundleMain(argv):
 
   elif main_name == 'oil':
     return ShellMain('oil', argv0, main_argv, login_shell)
+
+  elif main_name == 'tea':
+    return TeaMain(argv0, main_argv)
 
   # For testing latency
   elif main_name == 'true':
