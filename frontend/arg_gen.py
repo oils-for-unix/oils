@@ -39,6 +39,9 @@ namespace arg_types {
   for spec_name in sorted(specs):
     spec = specs[spec_name]
 
+    if not spec.fields:
+      continue  # skip empty 'eval' spec
+
     header_f.write("""
 class %s {
  public:
@@ -205,6 +208,9 @@ from typing import cast, Dict, Optional
 """)
     for spec_name in sorted(specs):
       spec = specs[spec_name]
+
+      if not spec.fields:
+        continue  # skip empty 'eval' spec
 
       print("""
 class %s(object):

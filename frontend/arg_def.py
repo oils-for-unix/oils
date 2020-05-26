@@ -433,7 +433,7 @@ class _OilFlags(object):
 
 
 #
-# Definitions
+# Definitions for builtin_assign
 #
 
 EXPORT_SPEC = FlagSpec('export_', typed=True)
@@ -473,3 +473,22 @@ UNSET_SPEC = FlagSpec('unset', typed=True)
 UNSET_SPEC.ShortFlag('-v')
 UNSET_SPEC.ShortFlag('-f')
 #UNSET_SPEC.ShortFlag('-z', args.String)
+
+#
+# Definitions for builtin_meta
+#
+
+# Unused because there are no flags!  Just --.
+EVAL_SPEC = FlagSpec('eval', typed=True)
+
+COMMAND_SPEC = FlagSpec('command', typed=True)
+COMMAND_SPEC.ShortFlag('-v')
+# COMMAND_SPEC.ShortFlag('-V')  # Another verbose mode.
+
+TYPE_SPEC = FlagSpec('type', typed=True)
+TYPE_SPEC.ShortFlag('-f')
+TYPE_SPEC.ShortFlag('-t')
+TYPE_SPEC.ShortFlag('-p')
+TYPE_SPEC.ShortFlag('-P')
+
+

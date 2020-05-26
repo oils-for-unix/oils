@@ -1019,14 +1019,12 @@ class Transformer(object):
 
     out.name = children[0].tok
 
-    #
     #assert children[1].tok.id == Id.Op_LBrace  # enum op {
-
     return
-    n = len(children)
-    for i in xrange(2, n-1, 2):  # skip commas
-      p_node = children[i]
-      out.variants.append(self._Variant(p_node))
+    #n = len(children)
+    #for i in xrange(2, n-1, 2):  # skip commas
+    #  p_node = children[i]
+    #  out.variants.append(self._Variant(p_node))
 
   def Use(self, pnode, out):
     # type: (PNode, command__Use) -> None

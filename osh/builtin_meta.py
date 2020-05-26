@@ -4,6 +4,7 @@ builtin_meta.py - Builtins that call back into the interpreter.
 """
 from __future__ import print_function
 
+from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import source
 from core import error
@@ -31,10 +32,6 @@ if TYPE_CHECKING:
   from osh.cmd_eval import CommandEvaluator
 
 
-if mylib.PYTHON:
-  EVAL_SPEC = arg_def.FlagSpec('eval')
-
-
 class Eval(_Builtin):
 
   def __init__(self, parse_ctx, exec_opts, cmd_ev):
@@ -50,7 +47,7 @@ class Eval(_Builtin):
     # There are no flags, but we need it to respect --
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip 'eval'
-    arg = EVAL_SPEC.Parse(arg_r)
+    _ = arg_def.Parse('eval', arg_r)
 
     if self.exec_opts.strict_eval_builtin():
       code_str, eval_spid = arg_r.ReadRequired2('requires code string')
@@ -136,11 +133,6 @@ class Source(_Builtin):
       f.close()
 
 
-if mylib.PYTHON:
-  COMMAND_SPEC = arg_def.FlagSpec('command')
-  COMMAND_SPEC.ShortFlag('-v')
-  # COMMAND_SPEC.ShortFlag('-V')  # Another verbose mode.
-
 
 class Command(_Builtin):
   """
@@ -156,8 +148,9 @@ class Command(_Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    arg, arg_index = COMMAND_SPEC.ParseCmdVal(cmd_val)
-    if arg.v:  # type: ignore
+    attrs, arg_index = arg_def.ParseCmdVal('command', cmd_val)
+    arg = arg_types.command(attrs.attrs)
+    if arg.v:
       status = 0
       names = cmd_val.argv[arg_index:]
       for kind, argument in ResolveNames(names, self.funcs, self.aliases,
@@ -245,14 +238,6 @@ def ResolveNames(names, funcs, aliases, search_path):
   return results
 
 
-if mylib.PYTHON:
-  TYPE_SPEC = arg_def.FlagSpec('type')
-  TYPE_SPEC.ShortFlag('-f')
-  TYPE_SPEC.ShortFlag('-t')
-  TYPE_SPEC.ShortFlag('-p')
-  TYPE_SPEC.ShortFlag('-P')
-
-
 class Type(object):
   def __init__(self, funcs, aliases, search_path):
     # type: (Dict[str, command__ShFunction], Dict[str, str], state.SearchPath) -> None
@@ -262,7 +247,8 @@ class Type(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    arg, i = TYPE_SPEC.ParseCmdVal(cmd_val)
+    attrs, i = arg_def.ParseCmdVal('type', cmd_val)
+    arg = arg_types.type(attrs.attrs)
 
     if arg.f:
       funcs = {}  # type: Dict[str, command__ShFunction]

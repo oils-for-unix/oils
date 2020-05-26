@@ -30,36 +30,37 @@ if TYPE_CHECKING:
   from pgen2.pnode import PNode
 
 
-class ParseTreePrinter(object):
-  """Prints a tree of PNode instances."""
-  def __init__(self, names):
-    # type: (Dict[int, str]) -> None
-    self.names = names
-    self.f = mylib.Stdout()
+if mylib.PYTHON:
+  class ParseTreePrinter(object):
+    """Prints a tree of PNode instances."""
+    def __init__(self, names):
+      # type: (Dict[int, str]) -> None
+      self.names = names
+      self.f = mylib.Stdout()
 
-  def _Print(self, pnode, indent, i):
-    # type: (PNode, int, int) -> None
+    def _Print(self, pnode, indent, i):
+      # type: (PNode, int, int) -> None
 
-    ind = '  ' * indent
-    # NOTE:
-    # - why isn't 'tok' None for PRODUCTIONS?  There is some redundancy to get
-    #   rid of.
-    if pnode.tok:
-      if isinstance(pnode.tok, Token):
-        v = pnode.tok.val
+      ind = '  ' * indent
+      # NOTE:
+      # - why isn't 'tok' None for PRODUCTIONS?  There is some redundancy to get
+      #   rid of.
+      if pnode.tok:
+        if isinstance(pnode.tok, Token):
+          v = pnode.tok.val
+        else:
+          # e.g. command_sub for x = $(echo hi)
+          v = repr(pnode.tok)
       else:
-        # e.g. command_sub for x = $(echo hi)
-        v = repr(pnode.tok)
-    else:
-      v = '-'
-    self.f.write('%s%d %s %s\n' % (ind, i, self.names[pnode.typ], v))
-    if pnode.children is not None:
-      for i, child in enumerate(pnode.children):
-        self._Print(child, indent+1, i)
+        v = '-'
+      self.f.write('%s%d %s %s\n' % (ind, i, self.names[pnode.typ], v))
+      if pnode.children is not None:
+        for i, child in enumerate(pnode.children):
+          self._Print(child, indent+1, i)
 
-  def Print(self, pnode):
-    # type: (PNode) -> None
-    self._Print(pnode, 0, 0)
+    def Print(self, pnode):
+      # type: (PNode) -> None
+      self._Print(pnode, 0, 0)
 
 
 def _Classify(gr, tok):
