@@ -27,7 +27,7 @@ from frontend import reader
 from mycpp import mylib
 from osh import split
 from osh import builtin_assign
-#from osh import builtin_meta
+from osh import builtin_meta
 #from osh import builtin_pure
 # builtin_{printf,bracket,comp} might also be pure
 
@@ -50,6 +50,7 @@ if TYPE_CHECKING:
 if mylib.PYTHON:
   unused1 = log
   unused2 = args
+  unused3 = builtin_meta
 
 
 def Parse(argv):

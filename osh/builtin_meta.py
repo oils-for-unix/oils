@@ -10,15 +10,15 @@ from core import error
 from core.error import _ControlFlow
 from core import main_loop
 from core import pyutil  # strerror_OS
+from core.vm import _Builtin
 from frontend import args
 from frontend import arg_def
 from frontend import consts
+from frontend import lexer_def
 from frontend import reader
-#from osh.builtin_misc import _Builtin
-from osh.builtin_pure import ResolveNames
 from mycpp import mylib
 
-from typing import Dict, TYPE_CHECKING
+from typing import Dict, List, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from _devbuild.gen.syntax_asdl import command__ShFunction
@@ -35,7 +35,7 @@ if mylib.PYTHON:
   EVAL_SPEC = arg_def.FlagSpec('eval')
 
 
-class Eval(object):
+class Eval(_Builtin):
 
   def __init__(self, parse_ctx, exec_opts, cmd_ev):
     # type: (ParseContext, optview.Exec, CommandEvaluator) -> None
@@ -72,7 +72,7 @@ class Eval(object):
       self.arena.PopSource()
 
 
-class Source(object):
+class Source(_Builtin):
 
   def __init__(self, parse_ctx, search_path, cmd_ev, fd_state, errfmt):
     # type: (ParseContext, state.SearchPath, CommandEvaluator, process.FdState, ui.ErrorFormatter) -> None
@@ -142,7 +142,7 @@ if mylib.PYTHON:
   # COMMAND_SPEC.ShortFlag('-V')  # Another verbose mode.
 
 
-class Command(object):
+class Command(_Builtin):
   """
   'command ls' suppresses function lookup.
   """
@@ -179,7 +179,7 @@ class Command(object):
     return self.shell_ex.RunSimpleCommand(cmd_val, True, call_procs=False)
 
 
-class Builtin(object):
+class Builtin(_Builtin):
 
   def __init__(self, shell_ex, errfmt):
     # type: (ShellExecutor, ui.ErrorFormatter) -> None
@@ -211,3 +211,93 @@ class Builtin(object):
     cmd_val2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:],
                               cmd_val.block)
     return self.shell_ex.RunBuiltin(to_run, cmd_val2)
+
+
+def ResolveNames(names, funcs, aliases, search_path):
+  # type: (List[str], Dict[str, command__ShFunction], Dict[str, str], state.SearchPath) -> List[Tuple[str, str]]
+  results = []
+  for name in names:
+    if name in funcs:
+      kind = ('function', name)
+    elif name in aliases:
+      kind = ('alias', name)
+
+    # TODO: Use match instead?
+    elif consts.LookupNormalBuiltin(name) != 0:
+      kind = ('builtin', name)
+    elif consts.LookupSpecialBuiltin(name) != 0:
+      kind = ('builtin', name)
+    elif consts.LookupAssignBuiltin(name) != 0:
+      kind = ('builtin', name)
+    elif lexer_def.IsControlFlow(name):  # continue, etc.
+      kind = ('keyword', name)
+
+    elif lexer_def.IsKeyword(name):
+      kind = ('keyword', name)
+    else:
+      resolved = search_path.Lookup(name)
+      if resolved is None:
+        kind = (None, None)
+      else:
+        kind = ('file', resolved) 
+    results.append(kind)
+
+  return results
+
+
+if mylib.PYTHON:
+  TYPE_SPEC = arg_def.FlagSpec('type')
+  TYPE_SPEC.ShortFlag('-f')
+  TYPE_SPEC.ShortFlag('-t')
+  TYPE_SPEC.ShortFlag('-p')
+  TYPE_SPEC.ShortFlag('-P')
+
+
+class Type(object):
+  def __init__(self, funcs, aliases, search_path):
+    # type: (Dict[str, command__ShFunction], Dict[str, str], state.SearchPath) -> None
+    self.funcs = funcs
+    self.aliases = aliases
+    self.search_path = search_path
+
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    arg, i = TYPE_SPEC.ParseCmdVal(cmd_val)
+
+    if arg.f:
+      funcs = {}  # type: Dict[str, command__ShFunction]
+    else:
+      funcs = self.funcs
+
+    status = 0
+    r = ResolveNames(cmd_val.argv[i:], funcs, self.aliases, self.search_path)
+    for kind, name in r:
+      if kind is None:
+        status = 1  # nothing printed, but we fail
+      else:
+        if arg.t:
+          print(kind)
+        elif arg.p:
+          if kind == 'file':
+            print(name)
+        elif arg.P:
+          if kind == 'file':
+            print(name)
+          else:
+            resolved = self.search_path.Lookup(name)
+            if resolved is None:
+              status = 1
+            else:
+              print(resolved)
+
+        else:
+          # Alpine's abuild relies on this text because busybox ash doesn't have
+          # -t!
+          # ash prints "is a shell function" instead of "is a function", but the
+          # regex accouts for that.
+          print('%s is a %s' % (name, kind))
+          if kind == 'function':
+            # bash prints the function body, busybox ash doesn't.
+            pass
+
+    return status

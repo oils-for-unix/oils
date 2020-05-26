@@ -527,7 +527,11 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_i.test: builtin_bracket.Test(False, exec_opts, mem, errfmt),
       builtin_i.bracket: builtin_bracket.Test(True, exec_opts, mem, errfmt),
 
+      # assign
       builtin_i.shift: builtin_assign.Shift(mem),
+
+      # meta
+      builtin_i.type: builtin_meta.Type(procs, aliases, search_path),
 
       # Pure
       builtin_i.set: builtin_pure.Set(mutable_opts, mem),
@@ -536,7 +540,6 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_i.alias: builtin_pure.Alias(aliases, errfmt),
       builtin_i.unalias: builtin_pure.UnAlias(aliases, errfmt),
 
-      builtin_i.type: builtin_pure.Type(procs, aliases, search_path),
       builtin_i.hash: builtin_pure.Hash(search_path),
       builtin_i.getopts: builtin_pure.GetOpts(mem, errfmt),
 

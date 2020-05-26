@@ -22,24 +22,21 @@ from _devbuild.gen.runtime_asdl import value_e
 from core import error
 from core.util import e_die
 from core import optview
+from core.vm import _Builtin
 from qsn_ import qsn
 from core import state
 from core import ui
 from core.util import log
 from frontend import args
 from frontend import arg_def
-from frontend import consts
-from frontend import lexer_def
 from frontend import match
 from frontend import option_def
 from mycpp import mylib
-from osh.builtin_misc import _Builtin
 from osh import word_compile
 
-from typing import List, Dict, Tuple, TYPE_CHECKING
+from typing import List, Dict, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
-  from _devbuild.gen.syntax_asdl import command__ShFunction
   from core.ui import ErrorFormatter
   from core.state import MutableOpts, Mem, SearchPath
 
@@ -264,96 +261,6 @@ class Shopt(object):
         self.exec_opts.SetShoptOption(name, b)
 
     return 0
-
-
-def ResolveNames(names, funcs, aliases, search_path):
-  # type: (List[str], Dict[str, command__ShFunction], Dict[str, str], SearchPath) -> Tuple[str, str]
-  results = []
-  for name in names:
-    if name in funcs:
-      kind = ('function', name)
-    elif name in aliases:
-      kind = ('alias', name)
-
-    # TODO: Use match instead?
-    elif consts.LookupNormalBuiltin(name) != 0:
-      kind = ('builtin', name)
-    elif consts.LookupSpecialBuiltin(name) != 0:
-      kind = ('builtin', name)
-    elif consts.LookupAssignBuiltin(name) != 0:
-      kind = ('builtin', name)
-    elif lexer_def.IsControlFlow(name):  # continue, etc.
-      kind = ('keyword', name)
-
-    elif lexer_def.IsKeyword(name):
-      kind = ('keyword', name)
-    else:
-      resolved = search_path.Lookup(name)
-      if resolved is None:
-        kind = (None, None)
-      else:
-        kind = ('file', resolved) 
-    results.append(kind)
-
-  return results
-
-
-if mylib.PYTHON:
-  TYPE_SPEC = arg_def.FlagSpec('type')
-  TYPE_SPEC.ShortFlag('-f')
-  TYPE_SPEC.ShortFlag('-t')
-  TYPE_SPEC.ShortFlag('-p')
-  TYPE_SPEC.ShortFlag('-P')
-
-
-class Type(object):
-  def __init__(self, funcs, aliases, search_path):
-    # type: (Dict, Dict, SearchPath) -> None
-    self.funcs = funcs
-    self.aliases = aliases
-    self.search_path = search_path
-
-  def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
-    arg, i = TYPE_SPEC.ParseCmdVal(cmd_val)
-
-    if arg.f:
-      funcs = []
-    else:
-      funcs = self.funcs
-
-    status = 0
-    r = ResolveNames(cmd_val.argv[i:], funcs, self.aliases, self.search_path)
-    for kind, name in r:
-      if kind is None:
-        status = 1  # nothing printed, but we fail
-      else:
-        if arg.t:
-          print(kind)
-        elif arg.p:
-          if kind == 'file':
-            print(name)
-        elif arg.P:
-          if kind == 'file':
-            print(name)
-          else:
-            resolved = self.search_path.Lookup(name)
-            if resolved is None:
-              status = 1
-            else:
-              print(resolved)
-
-        else:
-          # Alpine's abuild relies on this text because busybox ash doesn't have
-          # -t!
-          # ash prints "is a shell function" instead of "is a function", but the
-          # regex accouts for that.
-          print('%s is a %s' % (name, kind))
-          if kind == 'function':
-            # bash prints the function body, busybox ash doesn't.
-            pass
-
-    return status
 
 
 if mylib.PYTHON:
