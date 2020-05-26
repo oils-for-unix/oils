@@ -17,7 +17,7 @@ from __future__ import print_function
 import sys  # for sys.sdtout
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import value_e
+from _devbuild.gen.runtime_asdl import value_e, value__Str
 
 from core import error
 from core.util import e_die
@@ -34,7 +34,7 @@ from frontend import option_def
 from mycpp import mylib
 from osh import word_compile
 
-from typing import List, Dict, TYPE_CHECKING
+from typing import List, Dict, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from core.ui import ErrorFormatter
@@ -60,7 +60,7 @@ if mylib.PYTHON:
 
 class Alias(object):
   def __init__(self, aliases, errfmt):
-    # type: (Dict, ErrorFormatter) -> None
+    # type: (Dict[str, str], ErrorFormatter) -> None
     self.aliases = aliases
     self.errfmt = errfmt
 
@@ -102,7 +102,7 @@ if mylib.PYTHON:
 
 class UnAlias(object):
   def __init__(self, aliases, errfmt):
-    # type: (Dict, ErrorFormatter) -> None
+    # type: (Dict[str, str], ErrorFormatter) -> None
     self.aliases = aliases
     self.errfmt = errfmt
 
@@ -128,6 +128,7 @@ class UnAlias(object):
 #
 
 def AddOptionsToArgSpec(spec):
+  # type: (arg_def._FlagSpecAndMore) -> None
   """Shared between 'set' builtin and the shell's own arg parser."""
   for opt in option_def.All():
     if opt.builtin == 'set':
@@ -151,7 +152,7 @@ if mylib.PYTHON:
 
 
 def SetShellOpts(exec_opts, opt_changes, shopt_changes):
-  # type: (MutableOpts, List, List) -> None
+  # type: (MutableOpts, List[Tuple[str, bool]], List[Tuple[str, bool]]) -> None
   """Used by bin/oil.py too."""
 
   for opt_name, b in opt_changes:
@@ -324,6 +325,7 @@ def _ParseOptSpec(spec_str):
 
 
 def _GetOpts(spec, argv, optind, errfmt):
+  # type: (Dict[str, bool], List[str], int, ErrorFormatter) -> Tuple[int, str, str, int]
   optarg = ''  # not set by default
 
   try:
@@ -397,6 +399,7 @@ class GetOpts(object):
     v = self.mem.GetVar('OPTIND')
     if v.tag != value_e.Str:
       e_die('OPTIND should be a string, got %r', v)
+    assert isinstance(v, value__Str)  # for MyPy
     try:
       optind = int(v.s)
     except ValueError:

@@ -18,8 +18,10 @@
 ./core/vm.py
 ./_devbuild/gen/arg_types.py
 ./_devbuild/gen/grammar_nt.py
+./_devbuild/gen/help_index.py
 ./_devbuild/gen/hnode_asdl.py
 ./_devbuild/gen/id_kind_asdl.py
+./_devbuild/gen/id_kind.py
 ./_devbuild/gen/option_asdl.py
 ./_devbuild/gen/runtime_asdl.py
 ./_devbuild/gen/syntax_asdl.py
@@ -44,7 +46,10 @@
 ./osh/bool_stat.py
 ./osh/braces.py
 ./osh/builtin_assign.py
+./osh/builtin_bracket.py
 ./osh/builtin_meta.py
+./osh/builtin_misc.py
+./osh/builtin_pure.py
 ./osh/cmd_eval.py
 ./osh/cmd_parse.py
 ./osh/glob_.py

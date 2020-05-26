@@ -1,7 +1,6 @@
 ./osh/history.py
 ./core/comp_ui.py
 ./frontend/py_reader.py
-./osh/builtin_bracket.py
 ./oil_lang/objects.py
 ./core/process.py
 ./core/executor.py

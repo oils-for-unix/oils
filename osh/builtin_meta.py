@@ -17,7 +17,6 @@ from frontend import arg_def
 from frontend import consts
 from frontend import lexer_def
 from frontend import reader
-from mycpp import mylib
 
 from typing import Dict, List, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:

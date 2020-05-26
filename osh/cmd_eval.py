@@ -247,7 +247,7 @@ class CommandEvaluator(object):
 
   def _RunAssignBuiltin(self, cmd_val):
     # type: (cmd_value__Assign) -> int
-    """Run an assignment builtin.  Except blocks copied from RunBuiltin above."""
+    """Run an assignment builtin.  Except blocks copied from RunBuiltin."""
     self.errfmt.PushLocation(cmd_val.arg_spids[0])  # default
 
     builtin_func = self.assign_builtins.get(cmd_val.builtin_id)

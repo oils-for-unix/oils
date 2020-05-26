@@ -1677,3 +1677,23 @@ def GetGlobal(mem, name):
   # type: (Mem, str) -> value_t
   assert isinstance(name, str), name
   return mem.GetVar(name, scope_e.GlobalOnly)
+
+
+def GetString(mem, name):
+  # type: (Mem, str) -> str
+  """
+  Wrapper around GetVar().  Check that HOME, PWD, OLDPWD, etc. are strings.
+  bash doesn't have these errors because ${array} is ${array[0]}.
+
+  TODO: We could also check this when you're storing variables?
+  """
+  val = mem.GetVar(name, scope_e.Dynamic)
+  UP_val = val
+  with tagswitch(val) as case:
+    if case(value_e.Undef):
+      raise error.Runtime("$%s isn't defined" % name)
+    elif case(value_e.Str):
+      return cast(value__Str, UP_val).s
+    else:
+      # User would have to 'unset HOME' to get rid of exported flag
+      raise error.Runtime("$%s should be a string" % name)

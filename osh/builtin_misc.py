@@ -13,9 +13,7 @@ from __future__ import print_function
 import sys
 import termios  # for read -n
 
-from _devbuild.gen.runtime_asdl import (
-    value_e, scope_e, span_e, cmd_value__Argv
-)
+from _devbuild.gen.runtime_asdl import value__Str, span_e, cmd_value__Argv
 from asdl import runtime
 from core import error
 from core import state
@@ -38,9 +36,9 @@ if mylib.PYTHON:
   except ImportError:
     help_index = None
 
-from typing import Tuple, Any, Optional, IO, TYPE_CHECKING
+from typing import Tuple, List, Any, Optional, IO, TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime_asdl import value__Str
+  from _devbuild.gen.runtime_asdl import value__Str, span_t
   from core.pyutil import _FileResourceLoader
   from core.state import Mem, DirStack
   from core.ui import ErrorFormatter
@@ -85,7 +83,8 @@ class Times(_Builtin):
 #   the next character read and for line continuation.
 
 def _AppendParts(s, spans, max_results, join_next, parts):
-  """
+  # type: (str, List[Tuple[span_t, int]], int, bool, List[str]) -> Tuple[bool, bool]
+  """ 
   Args:
     s: The original string
     spans: List of (span, end_index)
@@ -173,7 +172,7 @@ def ReadLineFromStdin(delim_char):
   return ''.join(chars), eof
 
 
-class Read(object):
+class Read(_Builtin):
   def __init__(self, splitter, mem):
     # type: (SplitContext, Mem) -> None
     self.splitter = splitter
@@ -239,7 +238,7 @@ class Read(object):
 
     # We have to read more than one line if there is a line continuation (and
     # it's not -r).
-    parts = []
+    parts = []  # type: List[str]
     join_next = False
     status = 0
     while True:
@@ -281,7 +280,7 @@ if mylib.PYTHON:
   CD_SPEC.ShortFlag('-P')
 
 
-class Cd(object):
+class Cd(_Builtin):
   def __init__(self, mem, dir_stack, cmd_ev, errfmt):
     # type: (Mem, DirStack, CommandEvaluator, ErrorFormatter) -> None
     self.mem = mem
@@ -296,36 +295,31 @@ class Cd(object):
       dest_dir = cmd_val.argv[i]
     except IndexError:
       val = self.mem.GetVar('HOME')
-      if val.tag == value_e.Undef:
-        self.errfmt.Print("$HOME isn't defined")
-        return 1
-      elif val.tag == value_e.Str:
-        dest_dir = val.s
-      elif val.tag == value_e.MaybeStrArray:
-        # User would have to unset $HOME to get rid of exported flag
-        self.errfmt.Print("$HOME shouldn't be an array")
+      UP_val = val
+      try:
+        dest_dir = state.GetString(self.mem, 'HOME')
+      except error.Runtime as e:
+        self.errfmt.Print(e.UserErrorString())
         return 1
 
     if dest_dir == '-':
-      old = self.mem.GetVar('OLDPWD', scope_e.GlobalOnly)
-      if old.tag == value_e.Undef:
-        self.errfmt.Print('$OLDPWD not set')
-        return 1
-      elif old.tag == value_e.Str:
-        dest_dir = old.s
+      try:
+        dest_dir = state.GetString(self.mem, 'OLDPWD')
         print(dest_dir)  # Shells print the directory
-      elif old.tag == value_e.MaybeStrArray:
-        # TODO: Prevent the user from setting OLDPWD to array (or maybe they
-        # can't even set it at all.)
-        raise AssertionError('Invalid $OLDPWD')
+      except error.Runtime as e:
+        self.errfmt.Print(e.UserErrorString())
+        return 1
 
-    pwd = self.mem.GetVar('PWD')
-    assert pwd.tag == value_e.Str, pwd  # TODO: Need a general scheme to avoid
+    try:
+      pwd = state.GetString(self.mem, 'PWD')
+    except error.Runtime as e:
+      self.errfmt.Print(e.UserErrorString())
+      return 1
 
     # Calculate new directory, chdir() to it, then set PWD to it.  NOTE: We can't
     # call posix.getcwd() because it can raise OSError if the directory was
     # removed (ENOENT.)
-    abspath = os_path.join(pwd.s, dest_dir)  # make it absolute, for cd ..
+    abspath = os_path.join(pwd, dest_dir)  # make it absolute, for cd ..
     if arg.P:
       # -P means resolve symbolic links, then process '..'
       real_dest_dir = libc.realpath(abspath)
@@ -357,7 +351,7 @@ class Cd(object):
           return 1
 
     else:  # No block
-      state.ExportGlobalString(self.mem, 'OLDPWD', pwd.s)
+      state.ExportGlobalString(self.mem, 'OLDPWD', pwd)
       self.dir_stack.Reset()  # for pushd/popd/dirs
 
     return 0
@@ -384,7 +378,7 @@ def _PrintDirStack(dir_stack, style, home_dir):
     print(s)
 
 
-class Pushd(object):
+class Pushd(_Builtin):
   def __init__(self, mem, dir_stack, errfmt):
     # type: (Mem, DirStack, ErrorFormatter) -> None
     self.mem = mem
@@ -464,7 +458,7 @@ if mylib.PYTHON:
   DIRS_SPEC.ShortFlag('-v')
 
 
-class Dirs(object):
+class Dirs(_Builtin):
   def __init__(self, mem, dir_stack, errfmt):
     # type: (Mem, DirStack, ErrorFormatter) -> None
     self.mem = mem
@@ -499,7 +493,7 @@ if mylib.PYTHON:
   PWD_SPEC.ShortFlag('-P')
 
 
-class Pwd(object):
+class Pwd(_Builtin):
   """
   NOTE: pwd doesn't just call getcwd(), which returns a "physical" dir (not a
   symlink).
@@ -535,7 +529,7 @@ if mylib.PYTHON:
 
 # TODO: Need $VERSION inside all pages?
 
-class Help(object):
+class Help(_Builtin):
 
   def __init__(self, loader, errfmt):
     # type: (_FileResourceLoader, ErrorFormatter) -> None
@@ -598,7 +592,7 @@ if mylib.PYTHON:
   HISTORY_SPEC.ShortFlag('-d', args.Int)
 
 
-class History(object):
+class History(_Builtin):
   """Show interactive command history."""
 
   def __init__(self, readline_mod, f=sys.stdout):
@@ -661,15 +655,11 @@ class History(object):
     return 0
 
 
-class Cat(object):
+class Cat(_Builtin):
   """Internal implementation detail for $(< file).
   
   Maybe expose this as 'builtin cat' ?
   """
-
-  def __init__(self):
-    pass
-
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     while True:
