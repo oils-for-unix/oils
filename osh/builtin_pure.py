@@ -16,6 +16,7 @@ from __future__ import print_function
 
 import sys  # for sys.sdtout
 
+from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import value_e, value__Str
 
@@ -54,10 +55,6 @@ class Boolean(_Builtin):
     return self.status
 
 
-if mylib.PYTHON:
-  ALIAS_SPEC = arg_def.FlagSpec('alias')
-
-
 class Alias(object):
   def __init__(self, aliases, errfmt):
     # type: (Dict[str, str], ErrorFormatter) -> None
@@ -66,8 +63,11 @@ class Alias(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    argv = cmd_val.argv
-    if len(argv) == 1:
+    _, i = arg_def.ParseCmdVal('alias', cmd_val)
+    argv = cmd_val.argv[i:]
+    log('alias argv %s', argv)
+
+    if len(argv) == 0:
       for name in sorted(self.aliases):
         alias_exp = self.aliases[name]
         # This is somewhat like bash, except we use %r for ''.
@@ -75,8 +75,7 @@ class Alias(object):
       return 0
 
     status = 0
-    for i in xrange(1, len(argv)):
-      arg = argv[i]
+    for i, arg in enumerate(argv):
       parts = arg.split('=', 1)
       if len(parts) == 1:  # if we get a plain word without, print alias
         name = parts[0]
@@ -96,10 +95,6 @@ class Alias(object):
     return status
 
 
-if mylib.PYTHON:
-  UNALIAS_SPEC = arg_def.FlagSpec('unalias')
-
-
 class UnAlias(object):
   def __init__(self, aliases, errfmt):
     # type: (Dict[str, str], ErrorFormatter) -> None
@@ -108,13 +103,14 @@ class UnAlias(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    argv = cmd_val.argv
-    if len(argv) == 1:
+    _, i = arg_def.ParseCmdVal('unalias', cmd_val)
+    argv = cmd_val.argv[i:]
+
+    if len(argv) == 0:
       raise error.Usage('unalias NAME...')
 
     status = 0
-    for i in xrange(1, len(argv)):
-      name = argv[i]
+    for i, name in enumerate(argv):
       try:
         del self.aliases[name]
       except KeyError:
@@ -207,15 +203,6 @@ class Set(object):
     return 0
 
 
-if mylib.PYTHON:
-  SHOPT_SPEC = arg_def.FlagSpec('shopt')
-  SHOPT_SPEC.ShortFlag('-s')  # set
-  SHOPT_SPEC.ShortFlag('-u')  # unset
-  SHOPT_SPEC.ShortFlag('-o')  # use 'set -o' names
-  SHOPT_SPEC.ShortFlag('-p')  # print
-  SHOPT_SPEC.ShortFlag('-q')  # query option settings
-
-
 class Shopt(object):
   def __init__(self, exec_opts):
     # type: (MutableOpts) -> None
@@ -223,7 +210,9 @@ class Shopt(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    arg, i = SHOPT_SPEC.ParseCmdVal(cmd_val)
+    attrs, i = arg_def.ParseCmdVal('shopt', cmd_val)
+
+    arg = arg_types.shopt(attrs.attrs)
     opt_names = cmd_val.argv[i:]
 
     if arg.p:  # print values
@@ -264,11 +253,6 @@ class Shopt(object):
     return 0
 
 
-if mylib.PYTHON:
-  HASH_SPEC = arg_def.FlagSpec('hash')
-  HASH_SPEC.ShortFlag('-r')
-
-
 class Hash(object):
   def __init__(self, search_path):
     # type: (SearchPath) -> None
@@ -278,7 +262,8 @@ class Hash(object):
     # type: (cmd_value__Argv) -> int
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip 'hash'
-    arg = HASH_SPEC.Parse(arg_r)
+    attrs = arg_def.Parse('hash', arg_r)
+    arg = arg_types.hash(attrs.attrs)
 
     rest = arg_r.Rest()
     if arg.r:
@@ -423,12 +408,6 @@ class GetOpts(object):
     return status
 
 
-if mylib.PYTHON:
-  ECHO_SPEC = arg_def.FlagSpec('echo')
-  ECHO_SPEC.ShortFlag('-e')  # no backslash escapes
-  ECHO_SPEC.ShortFlag('-n')
-
-
 class Echo(object):
   """echo builtin.
 
@@ -454,7 +433,9 @@ class Echo(object):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     argv = cmd_val.argv[1:]
-    arg, arg_index = ECHO_SPEC.ParseLikeEcho(argv)
+    attrs, arg_index = arg_def.ParseLikeEcho('echo', argv)
+
+    arg = arg_types.echo(attrs.attrs)
     argv = argv[arg_index:]
 
     backslash_c = False  # \c terminates input

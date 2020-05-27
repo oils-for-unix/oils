@@ -66,6 +66,12 @@ def ParseCmdVal(spec_name, cmd_val):
   return spec.Parse(arg_r), arg_r.i
 
 
+def ParseLikeEcho(spec_name, argv):
+  # type: (str, List[str]) -> Tuple[args._Attributes, int]
+  spec = FLAG_SPEC[spec_name]
+  return spec.ParseLikeEcho(argv)
+
+
 def All():
   # type: () -> Dict[str, Any]
   return FLAG_SPEC
@@ -492,3 +498,25 @@ TYPE_SPEC.ShortFlag('-p')
 TYPE_SPEC.ShortFlag('-P')
 
 
+#
+# Definitions for builtin_pure
+#
+
+ALIAS_SPEC = FlagSpec('alias', typed=True)  # no flags yet
+UNALIAS_SPEC = FlagSpec('unalias', typed=True)  # no flags yet
+
+SHOPT_SPEC = FlagSpec('shopt', typed=True)
+SHOPT_SPEC.ShortFlag('-s')  # set
+SHOPT_SPEC.ShortFlag('-u')  # unset
+SHOPT_SPEC.ShortFlag('-o')  # use 'set -o' names
+SHOPT_SPEC.ShortFlag('-p')  # print
+SHOPT_SPEC.ShortFlag('-q')  # query option settings
+
+
+HASH_SPEC = FlagSpec('hash', typed=True)
+HASH_SPEC.ShortFlag('-r')
+
+
+ECHO_SPEC = FlagSpec('echo', typed=True)
+ECHO_SPEC.ShortFlag('-e')  # no backslash escapes
+ECHO_SPEC.ShortFlag('-n')

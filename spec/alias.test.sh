@@ -6,6 +6,24 @@
 #
 # Bash is the only one that doesn't support aliases by default!
 
+#### Usage of builtins
+shopt -s expand_aliases || true
+alias -- foo=echo
+echo status=$?
+foo x
+unalias -- foo
+foo x
+## status: 127
+## STDOUT:
+status=0
+x
+## END
+# dash doesn't accept --
+## BUG dash STDOUT:
+status=1
+x
+## END
+
 #### Basic alias
 shopt -s expand_aliases  # bash requires this
 alias hi='echo hello world'

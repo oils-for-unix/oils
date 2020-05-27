@@ -39,7 +39,7 @@ from osh import builtin_bracket
 
 # History has readline_mod argument, needs conversion to flags
 # termios issue
-from osh import builtin_misc
+#from osh import builtin_misc
 
 # Evaluators
 # This causes errors in oil_lang/{objects,regex_translate}, builtin_pure, etc.
@@ -63,7 +63,7 @@ if mylib.PYTHON:
   unused3 = builtin_meta
   unused4 = builtin_pure
   unused5 = builtin_bracket
-  unused6 = builtin_misc
+  #unused6 = builtin_misc
 
 
 def Parse(argv):
