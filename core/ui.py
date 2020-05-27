@@ -17,14 +17,14 @@ from _devbuild.gen.syntax_asdl import (
     source_e, source__Stdin, source__MainFile, source__SourcedFile,
     source__EvalArg, source__Alias, source__LValue,
 )
-from _devbuild.gen.runtime_asdl import value_str, value_e, value_t, value__Str
+from _devbuild.gen.runtime_asdl import value_str, value_t
 from asdl import runtime
 from asdl import format as fmt
 from osh import word_
 from mycpp import mylib
 from mycpp.mylib import tagswitch, NewStr
 
-from typing import List, cast, Any, TYPE_CHECKING
+from typing import List, Optional, cast, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.alloc import Arena
   from core.error import _ErrorWithLocation
@@ -61,14 +61,13 @@ def PrettyToken(tok, arena):
   return repr(val)
 
 
-def PrettyDir(dir_name, UP_home_dir):
-  # type: (str, value_t) -> str
+def PrettyDir(dir_name, home_dir):
+  # type: (str, Optional[str]) -> str
   """Maybe replace the home dir with ~.
 
   Used by the 'dirs' builtin and the prompt evaluator.
   """
-  if UP_home_dir and UP_home_dir.tag_() == value_e.Str:
-    home_dir = cast(value__Str, UP_home_dir).s
+  if home_dir is not None:
     if dir_name == home_dir or dir_name.startswith(home_dir + '/'):
       return '~' + dir_name[len(home_dir):]
 

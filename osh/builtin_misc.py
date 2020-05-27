@@ -13,7 +13,7 @@ from __future__ import print_function
 import sys
 import termios  # for read -n
 
-from _devbuild.gen.runtime_asdl import value__Str, span_e, cmd_value__Argv
+from _devbuild.gen.runtime_asdl import span_e, cmd_value__Argv
 from asdl import runtime
 from core import error
 from core import state
@@ -38,7 +38,7 @@ if mylib.PYTHON:
 
 from typing import Tuple, List, Any, Optional, IO, TYPE_CHECKING
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime_asdl import value__Str, span_t
+  from _devbuild.gen.runtime_asdl import span_t
   from core.pyutil import _FileResourceLoader
   from core.state import Mem, DirStack
   from core.ui import ErrorFormatter
@@ -362,7 +362,7 @@ WITHOUT_LINE_NUMBERS = 2
 SINGLE_LINE = 3
 
 def _PrintDirStack(dir_stack, style, home_dir):
-  # type: (DirStack, int, value__Str) -> None
+  # type: (DirStack, int, Optional[str]) -> None
   """Helper for 'dirs'."""
 
   if style == WITH_LINE_NUMBERS:
@@ -405,7 +405,7 @@ class Pushd(_Builtin):
       return 1
 
     self.dir_stack.Push(dest_dir)
-    _PrintDirStack(self.dir_stack, SINGLE_LINE, self.mem.GetVar('HOME'))
+    _PrintDirStack(self.dir_stack, SINGLE_LINE, state.MaybeString(self.mem, 'HOME'))
     state.ExportGlobalString(self.mem, 'PWD', dest_dir)
     self.mem.SetPwd(dest_dir)
     return 0
@@ -446,7 +446,7 @@ class Popd(object):
     if not _PopDirStack(self.mem, self.dir_stack, self.errfmt):
       return 1  # error
 
-    _PrintDirStack(self.dir_stack, SINGLE_LINE, self.mem.GetVar('HOME'))
+    _PrintDirStack(self.dir_stack, SINGLE_LINE, state.MaybeString(self.mem, ('HOME')))
     return 0
 
 
@@ -467,7 +467,7 @@ class Dirs(_Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    home_dir = self.mem.GetVar('HOME')
+    home_dir = state.MaybeString(self.mem, 'HOME')
 
     arg, _ = DIRS_SPEC.ParseCmdVal(cmd_val)
     style = SINGLE_LINE

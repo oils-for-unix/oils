@@ -15,6 +15,7 @@ from _devbuild.gen.syntax_asdl import (
 from asdl import runtime
 from core import main_loop
 from core import error
+from core import state
 from core import ui
 from frontend import match
 from frontend import reader
@@ -161,12 +162,13 @@ class Evaluator(object):
           r = self.cache.Get('hostname')
 
         elif char == 'w':
-          val = self.mem.GetVar('PWD')
-          if val.tag == value_e.Str:
+          try:
+            pwd = state.GetString(self.mem, 'PWD')
+            home = state.GetString(self.mem, 'HOME')
             # Shorten to ~/mydir
-            r = ui.PrettyDir(val.s, self.mem.GetVar('HOME'))
-          else:
-            r = '<Error: PWD is not a string> '
+            r = ui.PrettyDir(pwd, home)
+          except error.Runtime as e:
+            r = '<Error: %s>' % e.UserErrorString()
 
         elif char == 'W':
           val = self.mem.GetVar('PWD')

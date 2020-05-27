@@ -18,7 +18,6 @@
 ./core/vm.py
 ./_devbuild/gen/arg_types.py
 ./_devbuild/gen/grammar_nt.py
-./_devbuild/gen/help_index.py
 ./_devbuild/gen/hnode_asdl.py
 ./_devbuild/gen/id_kind_asdl.py
 ./_devbuild/gen/id_kind.py
@@ -26,6 +25,7 @@
 ./_devbuild/gen/runtime_asdl.py
 ./_devbuild/gen/syntax_asdl.py
 ./_devbuild/gen/types_asdl.py
+./frontend/arg_def.py
 ./frontend/args.py
 ./frontend/builtin_def.py
 ./frontend/consts.py

@@ -1697,3 +1697,14 @@ def GetString(mem, name):
     else:
       # User would have to 'unset HOME' to get rid of exported flag
       raise error.Runtime("$%s should be a string" % name)
+
+
+def MaybeString(mem, name):
+  # type: (Mem, str) -> Optional[str]
+  """
+  Like GetString(), but doesn't throw an exception.
+  """
+  try:
+    return GetString(mem, name)
+  except error.Runtime:
+    return None
