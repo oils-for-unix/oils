@@ -156,7 +156,7 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
     Str* second = new Str(p + 1, len - len1 - 1);
     return Tuple2<Str*, Str*>(first, second);
   } else {
-    return Tuple2<Str*, Str*>(s, kEmptyString);
+    return Tuple2<Str*, Str*>(s, nullptr);
   }
 }
 

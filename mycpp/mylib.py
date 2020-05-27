@@ -99,7 +99,12 @@ def iteritems(d):
 
 
 def split_once(s, delim):
-  # type: (str, str) -> Tuple[str, str]
+  # type: (str, str) -> Tuple[str, Optional[str]]
   """Easier to call than split(s, 1) because of tuple unpacking.
   """
-  return s.split(delim, 1)
+  parts = s.split(delim, 1)
+  if len(parts) == 1:
+    no_str = None  # type: Optional[str]
+    return s, no_str
+  else:
+    return parts[0], parts[1]

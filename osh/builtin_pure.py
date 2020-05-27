@@ -76,9 +76,8 @@ class Alias(object):
 
     status = 0
     for i, arg in enumerate(argv):
-      parts = arg.split('=', 1)
-      if len(parts) == 1:  # if we get a plain word without, print alias
-        name = parts[0]
+      name, alias_exp = mylib.split_once(arg, '=')
+      if alias_exp is None:  # if we get a plain word without, print alias
         alias_exp = self.aliases.get(name)
         if alias_exp is None:
           self.errfmt.Print('No alias named %r', name,
@@ -87,7 +86,6 @@ class Alias(object):
         else:
           print('alias %s=%r' % (name, alias_exp))
       else:
-        name, alias_exp = parts
         self.aliases[name] = alias_exp
 
     #print(argv)
@@ -267,13 +265,13 @@ class Hash(object):
 
     rest = arg_r.Rest()
     if arg.r:
-      if rest:
+      if len(rest):
         raise error.Usage('got extra arguments after -r')
       self.search_path.ClearCache()
       return 0
 
     status = 0
-    if rest:
+    if len(rest):
       for cmd in rest:  # enter in cache
         full_path = self.search_path.CachedLookup(cmd)
         if full_path is None:
