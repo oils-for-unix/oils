@@ -44,16 +44,14 @@ class Eval(_Builtin):
     # type: (cmd_value__Argv) -> int
 
     # There are no flags, but we need it to respect --
-    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
-    arg_r.Next()  # skip 'eval'
-    _ = arg_def.Parse('eval', arg_r)
+    _, arg_r = arg_def.ParseCmdVal2('eval', cmd_val)
 
     if self.exec_opts.strict_eval_builtin():
       code_str, eval_spid = arg_r.ReadRequired2('requires code string')
       if not arg_r.AtEnd():
         raise error.Usage('requires exactly 1 argument')
     else:
-      code_str = ' '.join(cmd_val.argv[arg_r.i:])
+      code_str = ' '.join(arg_r.Rest())
       # code_str could be EMPTY, so just use the first one
       eval_spid = cmd_val.arg_spids[0]
 
@@ -147,11 +145,11 @@ class Command(_Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_index = arg_def.ParseCmdVal('command', cmd_val)
+    attrs, arg_r = arg_def.ParseCmdVal2('command', cmd_val)
     arg = arg_types.command(attrs.attrs)
     if arg.v:
       status = 0
-      names = cmd_val.argv[arg_index:]
+      names = arg_r.Rest()
       for kind, argument in ResolveNames(names, self.funcs, self.aliases,
                                          self.search_path):
         if kind is None:
@@ -246,7 +244,7 @@ class Type(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, i = arg_def.ParseCmdVal('type', cmd_val)
+    attrs, arg_r = arg_def.ParseCmdVal2('type', cmd_val)
     arg = arg_types.type(attrs.attrs)
 
     if arg.f:
@@ -255,7 +253,7 @@ class Type(object):
       funcs = self.funcs
 
     status = 0
-    r = ResolveNames(cmd_val.argv[i:], funcs, self.aliases, self.search_path)
+    r = ResolveNames(arg_r.Rest(), funcs, self.aliases, self.search_path)
     for kind, name in r:
       if kind is None:
         status = 1  # nothing printed, but we fail

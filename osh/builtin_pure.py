@@ -63,8 +63,8 @@ class Alias(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    _, i = arg_def.ParseCmdVal('alias', cmd_val)
-    argv = cmd_val.argv[i:]
+    _, arg_r = arg_def.ParseCmdVal2('alias', cmd_val)
+    argv = arg_r.Rest()
     log('alias argv %s', argv)
 
     if len(argv) == 0:
@@ -101,8 +101,8 @@ class UnAlias(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    _, i = arg_def.ParseCmdVal('unalias', cmd_val)
-    argv = cmd_val.argv[i:]
+    _, arg_r = arg_def.ParseCmdVal2('unalias', cmd_val)
+    argv = arg_r.Rest()
 
     if len(argv) == 0:
       raise error.Usage('unalias NAME...')
@@ -208,10 +208,10 @@ class Shopt(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, i = arg_def.ParseCmdVal('shopt', cmd_val)
+    attrs, arg_r = arg_def.ParseCmdVal2('shopt', cmd_val)
 
     arg = arg_types.shopt(attrs.attrs)
-    opt_names = cmd_val.argv[i:]
+    opt_names = arg_r.Rest()
 
     if arg.p:  # print values
       if arg.o:  # use set -o names

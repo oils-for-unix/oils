@@ -449,14 +449,12 @@ class Unset(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, offset = arg_def.ParseCmdVal('unset', cmd_val)
-    n = len(cmd_val.argv)
+    attrs, arg_r = arg_def.ParseCmdVal2('unset', cmd_val)
     arg = arg_types.unset(attrs.attrs)
 
-    # TODO: Could use arg_r.Rest()
-    for i in xrange(offset, n):
-      name = cmd_val.argv[i]
-      spid = cmd_val.arg_spids[i]
+    argv, arg_spids = arg_r.Rest2()
+    for i, name in enumerate(argv):
+      spid = arg_spids[i]
 
       if arg.f:
         if name in self.funcs:

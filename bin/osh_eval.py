@@ -29,21 +29,19 @@ from osh import split
 from osh import builtin_assign
 from osh import builtin_meta
 
-# needs conversion to flags
+# translation: has 'set' builtin
 from osh import builtin_pure
-# needs annotations
 from osh import builtin_printf
 from osh import builtin_bracket
 # depends on core/completion.py
 #from osh import builtin_comp
 
-# History has readline_mod argument, needs conversion to flags
-# termios issue
+# - needs conversion to flags
+# - History has readline_mod argument
+# - termios issue
 #from osh import builtin_misc
 
 # Evaluators
-# This causes errors in oil_lang/{objects,regex_translate}, builtin_pure, etc.
-# builtin_pure.Command maybe shouldn't be hard-coded?
 from osh import cmd_eval
 from osh import sh_expr_eval
 from osh import word_eval
