@@ -59,11 +59,21 @@ def Parse(spec_name, arg_r):
 
 def ParseCmdVal(spec_name, cmd_val):
   # type: (str, cmd_value__Argv) -> Tuple[args._Attributes, int]
+  """
+  TODO: Remove this function; use ParseCmdVal2 everywhere.  Maybe rename
+  arg_r.pos too.
+  """
+  attrs, arg_r = ParseCmdVal2(spec_name, cmd_val)
+  return attrs, arg_r.i
+
+
+def ParseCmdVal2(spec_name, cmd_val):
+  # type: (str, cmd_value__Argv) -> Tuple[args._Attributes, args.Reader]
   arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
   arg_r.Next()  # move past the builtin name
 
   spec = FLAG_SPEC[spec_name]
-  return spec.Parse(arg_r), arg_r.i
+  return spec.Parse(arg_r), arg_r
 
 
 def ParseLikeEcho(spec_name, argv):
@@ -520,3 +530,11 @@ HASH_SPEC.ShortFlag('-r')
 ECHO_SPEC = FlagSpec('echo', typed=True)
 ECHO_SPEC.ShortFlag('-e')  # no backslash escapes
 ECHO_SPEC.ShortFlag('-n')
+
+#
+# osh/builtin_printf.py
+#
+
+
+PRINTF_SPEC = FlagSpec('printf')
+PRINTF_SPEC.ShortFlag('-v', args.String)

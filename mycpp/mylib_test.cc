@@ -174,11 +174,11 @@ TEST test_str_funcs() {
 
   Tuple2<Str*, Str*> v = mylib::split_once(new Str("foo="), new Str("Z"));
   ASSERT(str_equals(v.at0(), new Str("foo=")));
-  ASSERT(str_equals(v.at1(), new Str("")));
+  ASSERT(v.at1() == nullptr);
 
   Tuple2<Str*, Str*> w = mylib::split_once(new Str(""), new Str("Z"));
   ASSERT(str_equals(w.at0(), new Str("")));
-  ASSERT(str_equals(w.at1(), new Str("")));
+  ASSERT(w.at1() == nullptr);
 
   PASS();
 }

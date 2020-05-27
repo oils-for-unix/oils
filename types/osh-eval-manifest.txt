@@ -48,6 +48,7 @@
 ./osh/builtin_assign.py
 ./osh/builtin_bracket.py
 ./osh/builtin_meta.py
+./osh/builtin_printf.py
 ./osh/builtin_pure.py
 ./osh/cmd_eval.py
 ./osh/cmd_parse.py

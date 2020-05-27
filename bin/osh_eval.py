@@ -32,7 +32,7 @@ from osh import builtin_meta
 # needs conversion to flags
 from osh import builtin_pure
 # needs annotations
-#from osh import builtin_printf
+from osh import builtin_printf
 from osh import builtin_bracket
 # depends on core/completion.py
 #from osh import builtin_comp

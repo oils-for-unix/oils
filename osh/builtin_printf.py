@@ -4,11 +4,12 @@ builtin_printf
 """
 from __future__ import print_function
 
+from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.runtime_asdl import cmd_value__Argv, value_e, value__Str
 from _devbuild.gen.syntax_asdl import (
-    printf_part, printf_part_t,
-    source,
+    printf_part, printf_part_e, printf_part_t, printf_part__Literal,
+    printf_part__Percent, source,
 )
 from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
 
@@ -38,10 +39,6 @@ if TYPE_CHECKING:
   from core.state import Mem
   from core.ui import ErrorFormatter
 
-
-if mylib.PYTHON:
-  PRINTF_SPEC = arg_def.FlagSpec('printf')  # TODO: Don't need this?
-  PRINTF_SPEC.ShortFlag('-v', args.String)
 
 shell_start_time = time.time()
 
@@ -161,9 +158,8 @@ class Printf(object):
     """
     printf: printf [-v var] format [argument ...]
     """
-    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
-    arg_r.Next()  # skip argv[0]
-    arg = PRINTF_SPEC.Parse(arg_r)
+    attrs, arg_r = arg_def.ParseCmdVal2('printf', cmd_val)
+    arg = arg_types.printf(attrs.attrs)
 
     fmt, fmt_spid = arg_r.ReadRequired2('requires a format string')
     varargs, spids = arg_r.Rest2()
@@ -178,10 +174,10 @@ class Printf(object):
       line_reader = reader.StringLineReader(fmt, arena)
       # TODO: Make public
       lexer = self.parse_ctx._MakeLexer(line_reader)
-      p = _FormatStringParser(lexer)
+      parser = _FormatStringParser(lexer)
       arena.PushSource(source.ArgvWord(fmt_spid))
       try:
-        parts = p.Parse()
+        parts = parser.Parse()
       except error.Parse as e:
         self.errfmt.PrettyPrintError(e)
         return 2  # parse error
@@ -203,7 +199,9 @@ class Printf(object):
 
     while True:
       for part in parts:
-        if isinstance(part, printf_part.Literal):
+        UP_part = part
+        if part.tag_() == printf_part_e.Literal:
+          part = cast(printf_part__Literal, UP_part)
           token = part.token
           if token.id == Id.Format_EscapedPercent:
             s = '%'
@@ -211,7 +209,8 @@ class Printf(object):
             s = word_compile.EvalCStringToken(token.id, token.val)
           out.append(s)
 
-        elif isinstance(part, printf_part.Percent):
+        elif part.tag_() == printf_part_e.Percent:
+          part = cast(printf_part__Percent, UP_part)
           flags = None
           if len(part.flags) > 0:
             flags = ''
@@ -221,21 +220,21 @@ class Printf(object):
           width = None
           if part.width:
             if part.width.id in (Id.Format_Num, Id.Format_Zero):
-              width = part.width.val
+              width_str = part.width.val
               width_spid = part.width.span_id
             elif part.width.id == Id.Format_Star:
               if arg_index < num_args:
-                width = varargs[arg_index]
+                width_str = varargs[arg_index]
                 width_spid = spids[arg_index]
                 arg_index += 1
               else:
-                width = ''
+                width_str = ''
                 width_spid = runtime.NO_SPID
             else:
               raise AssertionError()
 
             try:
-              width = int(width)
+              width = int(width_str)
             except ValueError:
               if width_spid == runtime.NO_SPID:
                 width_spid = part.width.span_id
@@ -246,24 +245,24 @@ class Printf(object):
           precision = None
           if part.precision:
             if part.precision.id == Id.Format_Dot:
-              precision = '0'
+              precision_str = '0'
               precision_spid = part.precision.span_id
             elif part.precision.id in (Id.Format_Num, Id.Format_Zero):
-              precision = part.precision.val
+              precision_str = part.precision.val
               precision_spid = part.precision.span_id
             elif part.precision.id == Id.Format_Star:
               if arg_index < num_args:
-                precision = varargs[arg_index]
+                precision_str = varargs[arg_index]
                 precision_spid = spids[arg_index]
                 arg_index += 1
               else:
-                precision = ''
+                precision_str = ''
                 precision_spid = runtime.NO_SPID
             else:
               raise AssertionError()
 
             try:
-              precision = int(precision)
+              precision = int(precision_str)
             except ValueError:
               if precision_spid == runtime.NO_SPID:
                 precision_spid = part.precision.span_id
@@ -290,7 +289,7 @@ class Printf(object):
           elif typ == 'b':
             # Process just like echo -e, except \c handling is simpler.
 
-            parts = []  # type: List[str]
+            c_parts = []  # type: List[str]
             lex = match.EchoLexer(s)
             while True:
               id_, value = lex.Next()
@@ -304,8 +303,8 @@ class Printf(object):
                 backslash_c = True
                 break
 
-              parts.append(p)
-            s = ''.join(parts)
+              c_parts.append(p)
+            s = ''.join(c_parts)
 
           elif typ in 'diouxX' or part.type.id == Id.Format_Time:
             try:
@@ -376,11 +375,13 @@ class Printf(object):
               #   time the shell was invoked." from
               #   https://www.gnu.org/software/bash/manual/html_node/Bash-Builtins.html#index-printf
               if d == -1: # the current time
-                d = time.time()
+                ts = time.time()
               elif d == -2: # the shell start time
-                d = shell_start_time
+                ts = shell_start_time
+              else:
+                ts = d
 
-              s = time.strftime(typ[1:-2], time.localtime(d))
+              s = time.strftime(typ[1:-2], time.localtime(ts))
               if precision is not None:
                 s = s[:precision]  # truncate
 
@@ -391,7 +392,7 @@ class Printf(object):
             raise AssertionError()
 
           if width is not None:
-            if flags:
+            if len(flags):
               if '-' in flags:
                 s = s.ljust(width, ' ')
               elif '0' in flags:
