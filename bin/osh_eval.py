@@ -38,6 +38,7 @@ from osh import builtin_bracket
 #from osh import builtin_comp
 
 # History has readline_mod argument, needs conversion to flags
+# termios issue
 from osh import builtin_misc
 
 # Evaluators
