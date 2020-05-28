@@ -257,9 +257,7 @@ class Hash(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
-    arg_r.Next()  # skip 'hash'
-    attrs = arg_def.Parse('hash', arg_r)
+    attrs, arg_r = arg_def.ParseCmdVal2('hash', cmd_val)
     arg = arg_types.hash(attrs.attrs)
 
     rest = arg_r.Rest()

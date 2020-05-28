@@ -327,10 +327,16 @@ def _SetToArg(action, suffix, arg_r, out):
 
     elif case(flag_type_e.Int):
       try:
-        val = value.Int(int(arg))
+        i = int(arg)
       except ValueError:
-        e_usage('expected integer after %r, got %r' % ('-' + action.name, arg),
+        e_usage('expected integer after %s, got %r' % ('-' + action.name, arg),
                 span_id=arg_r.SpanId())
+
+      # So far all our int values are > 0, so use -1 as the 'unset' value
+      if i < 0:
+        e_usage('got invalid integer for %s: %s' % ('-' + action.name, arg),
+                span_id=arg_r.SpanId())
+      val = value.Int(i)
 
     elif case(flag_type_e.Float):
       try:

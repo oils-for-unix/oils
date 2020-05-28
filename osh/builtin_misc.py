@@ -585,8 +585,7 @@ class History(_Builtin):
       return 0
 
     # Delete history entry by id number
-    # This check is long the Int default of -1 could be entered by user.
-    if attrs.attrs['d'].tag_() != value_e.Undef:
+    if arg.d >= 0:
       cmd_index = arg.d - 1
 
       try:

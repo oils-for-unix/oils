@@ -542,6 +542,18 @@ bar 1
 2
 ## END
 
+#### read usage
+read -n -1
+echo status=$?
+## STDOUT:
+status=2
+## END
+## OK bash stdout: status=1
+## BUG mksh stdout-json: ""
+# zsh gives a fatal error?  seems inconsistent
+## BUG zsh stdout-json: ""
+## BUG zsh status: 1
+
 #### mapfile
 type mapfile >/dev/null 2>&1 || exit 0
 printf '%s\n' {1..5..2} | {

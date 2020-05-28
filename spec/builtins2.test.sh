@@ -177,6 +177,7 @@ history -d -1
 echo status=$?
 history -d -2
 echo status=$?
+
 ## STDOUT:
 status=0
 status=1
