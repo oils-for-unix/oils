@@ -241,7 +241,7 @@ class Read(_Builtin):
       if done:
         break
 
-    if len(arg.a):
+    if arg.a is not None:
       state.SetArrayDynamic(self.mem, arg.a, parts)
     else:
       for i in xrange(max_results):
