@@ -13,6 +13,7 @@ from __future__ import print_function
 import sys
 import termios  # for read -n
 
+from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import span_e, cmd_value__Argv
 from asdl import runtime
 from core import error
@@ -136,14 +137,6 @@ def _AppendParts(s, spans, max_results, join_next, parts):
   return done, join_next
 
 
-if mylib.PYTHON:
-  READ_SPEC = arg_def.FlagSpec('read')
-  READ_SPEC.ShortFlag('-r')
-  READ_SPEC.ShortFlag('-n', args.Int)
-  READ_SPEC.ShortFlag('-a', args.String)  # name of array to read into
-  READ_SPEC.ShortFlag('-d', args.String)
-
-
 # sys.stdin.readline() in Python has buffering!  TODO: Rewrite this tight loop
 # in C?  Less garbage probably.
 # NOTE that dash, mksh, and zsh all read a single byte at a time.  It appears
@@ -180,11 +173,11 @@ class Read(_Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    arg, i = READ_SPEC.ParseCmdVal(cmd_val)
-    names = cmd_val.argv[i:]
+    attrs, arg_r = arg_def.ParseCmdVal2('read', cmd_val)
+    arg = arg_types.read(attrs.attrs)
+    names = arg_r.Rest()
 
-    #if arg.n >= 0:  # read a certain number of bytes
-    if arg.n is not None:  # read a certain number of bytes
+    if arg.n >= 0 :  # read a certain number of bytes (-1 means unset)
       stdin = sys.stdin.fileno()
       try:
         name = names[0]
@@ -200,19 +193,21 @@ class Read(_Builtin):
         try:
           termios.tcsetattr(stdin, termios.TCSANOW, attrs)
           # posix.read always returns a single character in unbuffered mode
-          while arg.n > 0:
+          n = arg.n
+          while n > 0:
             s += posix.read(stdin, 1)
-            arg.n -= 1
+            n -= 1
         finally:
           termios.tcsetattr(stdin, termios.TCSANOW, orig_attrs)
       else:
         s_len = 0
-        while arg.n > 0:
-          buf = posix.read(stdin, arg.n)
+        n = arg.n
+        while n > 0:
+          buf = posix.read(stdin, n)
           # EOF
           if buf == '':
             break
-          arg.n -= len(buf)
+          n -= len(buf)
           s += buf
 
       state.SetStringDynamic(self.mem, name, s)
@@ -223,12 +218,12 @@ class Read(_Builtin):
       names.append('REPLY')
 
     # leftover words assigned to the last name
-    if arg.a:
+    if arg.a is not None:
       max_results = 0  # no max
     else:
       max_results = len(names)
 
-    if arg.d is not None:  # TODO: Should be attrs['d'] is not None?
+    if arg.d is not None:
       if len(arg.d):
         delim_char = arg.d[0]
       else:

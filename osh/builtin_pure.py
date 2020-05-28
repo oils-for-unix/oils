@@ -65,7 +65,6 @@ class Alias(object):
     # type: (cmd_value__Argv) -> int
     _, arg_r = arg_def.ParseCmdVal2('alias', cmd_val)
     argv = arg_r.Rest()
-    log('alias argv %s', argv)
 
     if len(argv) == 0:
       for name in sorted(self.aliases):

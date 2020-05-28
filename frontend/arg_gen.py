@@ -32,6 +32,7 @@ def Cpp(specs, header_f, cc_f):
 
 namespace value_e = runtime_asdl::value_e;
 using runtime_asdl::value__Bool;
+using runtime_asdl::value__Int;
 using runtime_asdl::value__Str;
 
 namespace arg_types {
@@ -67,6 +68,10 @@ attrs->index(new Str("%s"))->tag_() == value_e::Undef
       : static_cast<value__Str*>(attrs->index(new Str("%s")))->s''' % (field_name, field_name))
 
           field_decls.append('Str* %s;' % field_name)
+
+        elif case(flag_type_e.Int):
+          init_vals.append('static_cast<value__Int*>(attrs->index(new Str("%s")))->i' % field_name)
+          field_decls.append('int %s;' % field_name)
 
         else:
           raise AssertionError(typ)
@@ -145,6 +150,8 @@ namespace arg_types {
         val = spec.defaults[name]
         if val.tag_() == value_e.Bool:
           d = 'True' if val.b else 'False'
+        elif val.tag_() == value_e.Int:
+          d = 'Undef'  # TODO: fix this.  Should be -1
         elif val.tag_() == value_e.Undef:
           d = 'Undef'
         else:
@@ -244,6 +251,11 @@ class %s(object):
             tmp = 'val%d' % i
             print('    %s = attrs[%r]' % (tmp, field_name))
             print('    self.%s = None if %s.tag_() == value_e.Undef else cast(value__Str, %s).s  # type: Optional[str]' % (field_name, tmp, tmp))
+
+          elif case(flag_type_e.Int):
+            print('    self.%s = cast(value__Int, attrs[%r]).i  # type: int' % (
+              field_name, field_name))
+
           else:
             raise AssertionError(typ)
 

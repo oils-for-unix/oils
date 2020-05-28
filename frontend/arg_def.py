@@ -170,7 +170,8 @@ class _FlagSpec(object):
       default = value.Float(0.0)
     elif arg_type == args.String:
       typ = flag_type.Str()
-      default = value.Str('')
+      #default = value.Str('')
+      default = value.Undef()  # e.g. read -d '' is NOT the default
     elif isinstance(arg_type, list):
       typ = flag_type.Enum(arg_type)
       default = value.Str('')  # This isn't valid
@@ -536,5 +537,15 @@ ECHO_SPEC.ShortFlag('-n')
 #
 
 
-PRINTF_SPEC = FlagSpec('printf')
+PRINTF_SPEC = FlagSpec('printf', typed=True)
 PRINTF_SPEC.ShortFlag('-v', args.String)
+
+#
+# osh/builtin_misc.py
+#
+
+READ_SPEC = FlagSpec('read', typed=True)
+READ_SPEC.ShortFlag('-r')
+READ_SPEC.ShortFlag('-n', args.Int)
+READ_SPEC.ShortFlag('-a', args.String)  # name of array to read into
+READ_SPEC.ShortFlag('-d', args.String)
