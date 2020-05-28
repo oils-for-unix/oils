@@ -577,3 +577,16 @@ HELP_SPEC = FlagSpec('help', typed=True)
 HISTORY_SPEC = FlagSpec('history', typed=True)
 HISTORY_SPEC.ShortFlag('-c')
 HISTORY_SPEC.ShortFlag('-d', args.Int)
+
+#
+# osh/builtin_process.py
+#
+
+WAIT_SPEC = FlagSpec('wait', typed=True)
+WAIT_SPEC.ShortFlag('-n')
+
+
+TRAP_SPEC = FlagSpec('trap', typed=True)
+TRAP_SPEC.ShortFlag('-p')
+TRAP_SPEC.ShortFlag('-l')
+

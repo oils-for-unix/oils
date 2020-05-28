@@ -33,12 +33,13 @@ from osh import builtin_meta
 from osh import builtin_pure
 from osh import builtin_printf
 from osh import builtin_bracket
-# depends on core/completion.py
+
+from osh import builtin_process
+
+# Nothing is typed here, needs many annotations.  Depends on core/completion.py
 #from osh import builtin_comp
 
-# - needs conversion to flags
-# - History has readline_mod argument
-# - termios issue
+# - note: history has readline_mod argument
 from osh import builtin_misc
 
 # Evaluators
@@ -63,6 +64,7 @@ if mylib.PYTHON:
   unused5 = builtin_bracket
   unused6 = builtin_misc
   unused7 = builtin_printf
+  unused8 = builtin_process
 
 
 def Parse(argv):
