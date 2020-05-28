@@ -21,12 +21,10 @@ from core import error
 from qsn_ import qsn
 from core import state
 from core.util import p_die, e_die
-from frontend import args
 from frontend import arg_def
 from frontend import consts
 from frontend import match
 from frontend import reader
-from mycpp import mylib
 from osh import word_compile
 
 import posix_ as posix
@@ -211,9 +209,8 @@ class Printf(object):
 
         elif part.tag_() == printf_part_e.Percent:
           part = cast(printf_part__Percent, UP_part)
-          flags = None
+          flags = ''
           if len(part.flags) > 0:
-            flags = ''
             for flag_token in part.flags:
               flags += flag_token.val
 

@@ -12,7 +12,6 @@ from core.error import _ControlFlow
 from core import main_loop
 from core import pyutil  # strerror_OS
 from core.vm import _Builtin
-from frontend import args
 from frontend import arg_def
 from frontend import consts
 from frontend import lexer_def

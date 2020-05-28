@@ -62,6 +62,7 @@ if mylib.PYTHON:
   unused4 = builtin_pure
   unused5 = builtin_bracket
   #unused6 = builtin_misc
+  unused7 = builtin_printf
 
 
 def Parse(argv):

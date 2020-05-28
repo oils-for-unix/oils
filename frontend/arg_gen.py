@@ -118,7 +118,20 @@ namespace arg_types {
 
     if spec.arity1:
       arity1_name = 'arity1_%d' % i
-      cc_f.write('const char* %s[] = {};\n' % arity1_name)
+      cc_f.write('SetToArg_c %s[] = {\n' % arity1_name)
+      for name in sorted(spec.arity1):
+        set_to_arg = spec.arity1[name]
+
+        # Using an itnger here
+        # TODO: doesn't work for enum flag_type::Enum(...)
+        f2 = set_to_arg.flag_type.tag_()
+
+        cc_f.write('    {"%s", %s, %s},' % (name, f2, 'true' if set_to_arg.quit_parsing_flags else 'false'))
+      #cc_f.write('SetToArg_c %s[] = {\n' % arity1_name)
+      cc_f.write('''\
+    {},
+};
+''')
 
     if spec.options:
       options_name = 'options_%d' % i
