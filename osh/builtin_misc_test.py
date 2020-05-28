@@ -10,6 +10,7 @@ import unittest
 # unit testing
 import readline
 
+from _devbuild.gen import help_index
 from core import pyutil
 from core import test_lib
 from osh import split
@@ -44,7 +45,7 @@ class BuiltinTest(unittest.TestCase):
     # generated?  Because I don't want to deal with a C toolchain for it.
 
     loader = pyutil.GetResourceLoader()
-    builtin_misc.Help([], loader)
+    builtin_misc.Help([], help_index, loader)
 
   def testHistoryBuiltin(self):
      test_path = '_tmp/builtin_test_history.txt'
