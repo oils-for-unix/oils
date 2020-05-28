@@ -549,3 +549,31 @@ READ_SPEC.ShortFlag('-r')
 READ_SPEC.ShortFlag('-n', args.Int)
 READ_SPEC.ShortFlag('-a', args.String)  # name of array to read into
 READ_SPEC.ShortFlag('-d', args.String)
+
+
+CD_SPEC = FlagSpec('cd', typed=True)
+CD_SPEC.ShortFlag('-L')
+CD_SPEC.ShortFlag('-P')
+
+
+DIRS_SPEC = FlagSpec('dirs', typed=True)
+DIRS_SPEC.ShortFlag('-c')
+DIRS_SPEC.ShortFlag('-l')
+DIRS_SPEC.ShortFlag('-p')
+DIRS_SPEC.ShortFlag('-v')
+
+
+PWD_SPEC = FlagSpec('pwd', typed=True)
+PWD_SPEC.ShortFlag('-L')
+PWD_SPEC.ShortFlag('-P')
+
+
+HELP_SPEC = FlagSpec('help', typed=True)
+# Use Oil flags?  -index?
+#HELP_SPEC.ShortFlag('-i')  # show index
+# Note: bash has help -d -m -s, which change the formatting
+
+
+HISTORY_SPEC = FlagSpec('history', typed=True)
+HISTORY_SPEC.ShortFlag('-c')
+HISTORY_SPEC.ShortFlag('-d', args.Int)

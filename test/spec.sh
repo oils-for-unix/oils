@@ -407,7 +407,8 @@ builtin-printf() {
 }
 
 builtins2() {
-  sh-spec spec/builtins2.test.sh ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  sh-spec spec/builtins2.test.sh --osh-failures-allowed 1 \
+    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 # dash and mksh don't implement 'dirs'

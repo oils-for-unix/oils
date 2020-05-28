@@ -163,6 +163,27 @@ status=127
 status=127
 ## END
 
+#### history -d to delete history item
+
+# TODO: Respect HISTFILE and fix this test
+
+case $SH in (dash|mksh|zsh) exit ;; esac
+
+history -d 1
+echo status=$?
+
+# problem: default for integers is -1
+history -d -1
+echo status=$?
+history -d -2
+echo status=$?
+## STDOUT:
+status=0
+status=1
+status=1
+## END
+## N-I dash/mksh/zsh stdout-json: ""
+
 #### $(command type ls)
 type() { echo FUNCTION; }
 type

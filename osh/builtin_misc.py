@@ -14,7 +14,7 @@ import sys
 import termios  # for read -n
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import span_e, cmd_value__Argv
+from _devbuild.gen.runtime_asdl import span_e, cmd_value__Argv, value_e
 from asdl import runtime
 from core import error
 from core import state
@@ -22,7 +22,6 @@ from core import ui
 from core.pyerror import e_usage
 from core.util import log
 from core.vm import _Builtin
-from frontend import args
 from frontend import arg_def
 from mycpp import mylib
 from pylib import os_path
@@ -126,7 +125,7 @@ def _AppendParts(s, spans, max_results, join_next, parts):
     start_index = end_index
 
   done = True
-  if spans:
+  if len(spans):
     #log('%s %s', s, spans)
     #log('%s', spans[-1])
     last_span_type, _ = spans[-1]
@@ -153,7 +152,7 @@ def ReadLineFromStdin(delim_char):
   chars = []
   while True:
     c = posix.read(0, 1)
-    if not c:
+    if len(c) == 0:
       eof = True
       break
 
@@ -186,12 +185,12 @@ class Read(_Builtin):
       s = ""
       if sys.stdin.isatty():  # set stdin to read in unbuffered mode
         orig_attrs = termios.tcgetattr(stdin)
-        attrs = termios.tcgetattr(stdin)
+        term_attrs = termios.tcgetattr(stdin)
         # disable canonical (buffered) mode
         # see `man termios` for an extended discussion
-        attrs[3] &= ~termios.ICANON
+        term_attrs[3] &= ~termios.ICANON
         try:
-          termios.tcsetattr(stdin, termios.TCSANOW, attrs)
+          termios.tcsetattr(stdin, termios.TCSANOW, term_attrs)
           # posix.read always returns a single character in unbuffered mode
           n = arg.n
           while n > 0:
@@ -214,7 +213,7 @@ class Read(_Builtin):
       # NOTE: Even if we don't get n bytes back, there is no error?
       return 0
 
-    if not names:
+    if len(names) == 0:
       names.append('REPLY')
 
     # leftover words assigned to the last name
@@ -269,12 +268,6 @@ class Read(_Builtin):
     return status
 
 
-if mylib.PYTHON:
-  CD_SPEC = arg_def.FlagSpec('cd')
-  CD_SPEC.ShortFlag('-L')
-  CD_SPEC.ShortFlag('-P')
-
-
 class Cd(_Builtin):
   def __init__(self, mem, dir_stack, cmd_ev, errfmt):
     # type: (Mem, DirStack, CommandEvaluator, ErrorFormatter) -> None
@@ -285,12 +278,12 @@ class Cd(_Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    arg, i = CD_SPEC.ParseCmdVal(cmd_val)
-    try:
-      dest_dir = cmd_val.argv[i]
-    except IndexError:
+    attrs, arg_r = arg_def.ParseCmdVal2('cd', cmd_val)
+    arg = arg_types.cd(attrs.attrs)
+
+    dest_dir, arg_spid = arg_r.Peek2()
+    if dest_dir is None:
       val = self.mem.GetVar('HOME')
-      UP_val = val
       try:
         dest_dir = state.GetString(self.mem, 'HOME')
       except error.Runtime as e:
@@ -327,7 +320,7 @@ class Cd(_Builtin):
       posix.chdir(real_dest_dir)
     except OSError as e:
       self.errfmt.Print("cd %r: %s", real_dest_dir, posix.strerror(e.errno),
-                        span_id=cmd_val.arg_spids[i])
+                        span_id=arg_spid)
       return 1
 
     state.ExportGlobalString(self.mem, 'PWD', real_dest_dir)
@@ -445,14 +438,6 @@ class Popd(object):
     return 0
 
 
-if mylib.PYTHON:
-  DIRS_SPEC = arg_def.FlagSpec('dirs')
-  DIRS_SPEC.ShortFlag('-c')
-  DIRS_SPEC.ShortFlag('-l')
-  DIRS_SPEC.ShortFlag('-p')
-  DIRS_SPEC.ShortFlag('-v')
-
-
 class Dirs(_Builtin):
   def __init__(self, mem, dir_stack, errfmt):
     # type: (Mem, DirStack, ErrorFormatter) -> None
@@ -462,9 +447,10 @@ class Dirs(_Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    home_dir = state.MaybeString(self.mem, 'HOME')
+    attrs, arg_r = arg_def.ParseCmdVal2('dirs', cmd_val)
+    arg = arg_types.dirs(attrs.attrs)
 
-    arg, _ = DIRS_SPEC.ParseCmdVal(cmd_val)
+    home_dir = state.MaybeString(self.mem, 'HOME')
     style = SINGLE_LINE
 
     # Following bash order of flag priority
@@ -482,12 +468,6 @@ class Dirs(_Builtin):
     return 0
 
 
-if mylib.PYTHON:
-  PWD_SPEC = arg_def.FlagSpec('pwd')
-  PWD_SPEC.ShortFlag('-L')
-  PWD_SPEC.ShortFlag('-P')
-
-
 class Pwd(_Builtin):
   """
   NOTE: pwd doesn't just call getcwd(), which returns a "physical" dir (not a
@@ -500,7 +480,8 @@ class Pwd(_Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    arg, _ = PWD_SPEC.ParseCmdVal(cmd_val)
+    attrs, arg_r = arg_def.ParseCmdVal2('pwd', cmd_val)
+    arg = arg_types.pwd(attrs.attrs)
 
     # NOTE: 'pwd' will succeed even if the directory has disappeared.  Other
     # shells behave that way too.
@@ -515,13 +496,6 @@ class Pwd(_Builtin):
     return 0
 
 
-if mylib.PYTHON:
-  HELP_SPEC = arg_def.FlagSpec('help')
-
-# Use Oil flags?  -index?
-  HELP_SPEC.ShortFlag('-i')  # show index
-# Note: bash has help -d -m -s, which change the formatting
-
 # TODO: Need $VERSION inside all pages?
 
 class Help(_Builtin):
@@ -533,6 +507,10 @@ class Help(_Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
+
+    #attrs, arg_r = arg_def.ParseCmdVal2('help', cmd_val)
+    #arg = arg_types.help(attrs.attrs)
+
     try:
       topic = cmd_val.argv[1]
       blame_spid = cmd_val.arg_spids[1]
@@ -581,12 +559,6 @@ class Help(_Builtin):
     return 0
 
 
-if mylib.PYTHON:
-  HISTORY_SPEC = arg_def.FlagSpec('history')
-  HISTORY_SPEC.ShortFlag('-c')
-  HISTORY_SPEC.ShortFlag('-d', args.Int)
-
-
 class History(_Builtin):
   """Show interactive command history."""
 
@@ -604,7 +576,8 @@ class History(_Builtin):
     if not readline_mod:
       raise error.Usage("OSH wasn't compiled with the readline module.")
 
-    arg, arg_index = HISTORY_SPEC.ParseCmdVal(cmd_val)
+    attrs, arg_r = arg_def.ParseCmdVal2('history', cmd_val)
+    arg = arg_types.history(attrs.attrs)
 
     # Clear all history
     if arg.c:
@@ -612,7 +585,8 @@ class History(_Builtin):
       return 0
 
     # Delete history entry by id number
-    if arg.d:  # >= 0:
+    # This check is long the Int default of -1 could be entered by user.
+    if attrs.attrs['d'].tag_() != value_e.Undef:
       cmd_index = arg.d - 1
 
       try:
@@ -626,7 +600,7 @@ class History(_Builtin):
     num_items = readline_mod.get_current_history_length()
     #log('len = %d', num_items)
 
-    rest = cmd_val.argv[arg_index:]
+    rest = arg_r.Rest()
     if len(rest) == 0:
       start_index = 1
     elif len(rest) == 1:
