@@ -36,8 +36,9 @@ from __future__ import print_function
 import pwd
 import time
 
-from _devbuild.gen.syntax_asdl import word_part_e, redir_param_e, Id
-from _devbuild.gen.runtime_asdl import value_e
+from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.syntax_asdl import word_part_e, redir_param_e
+from _devbuild.gen.runtime_asdl import value_e, value__Str
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
 from core import error
@@ -54,6 +55,20 @@ from osh.string_ops import ShellQuoteB
 
 import libc
 import posix_ as posix
+from typing import (
+    Dict, Tuple, List, Optional, Iterator, Union, Callable, Any, TYPE_CHECKING
+)
+if TYPE_CHECKING:
+  from _devbuild.gen.syntax_asdl import Token, compound_word, command__ShFunction
+  from core.alloc import Arena
+  from core.comp_ui import State
+  from core.state import Mem
+  from core.util import NullDebugFile
+  from frontend.parse_lib import ParseContext
+  from osh.builtin_comp import _FixedWordsAction
+  from osh.cmd_eval import CommandEvaluator
+  from osh.split import SplitContext
+  from osh.word_eval import AbstractWordEvaluator
 
 
 # To quote completion candidates.
@@ -90,6 +105,7 @@ _TRANSITIONS = {
 }
 
 def AdjustArg(arg, break_chars, argv_out):
+  # type: (str, List[str], List[str]) -> None
   end_indices = []  # stores the end of each span
   state = ST_Begin
   for i, c in enumerate(arg):
@@ -110,6 +126,7 @@ def AdjustArg(arg, break_chars, argv_out):
 class NullCompleter(object):
 
   def Matches(self, comp):
+    # type: (Api) -> List
     return []
 
 
@@ -156,6 +173,7 @@ class Lookup(object):
     return '<completion.Lookup %s>' % self.lookup
 
   def PrintSpecs(self):
+    # type: () -> None
     """For 'complete' without args."""
     for name in sorted(self.lookup):
       base_opts, user_spec = self.lookup[name]
@@ -165,12 +183,15 @@ class Lookup(object):
       print('%s = %s' % (pat, spec))
 
   def ClearCommandsChanged(self):
+    # type: () -> None
     del self.commands_with_spec_changes[:]
 
   def GetCommandsChanged(self):
+    # type: () -> None
     return self.commands_with_spec_changes
 
   def RegisterName(self, name, base_opts, user_spec):
+    # type: (str, Dict, UserSpec) -> None
     """Register a completion action with a name.
     Used by the 'complete' builtin.
     """
@@ -180,9 +201,11 @@ class Lookup(object):
       self.commands_with_spec_changes.append(name)
 
   def RegisterGlob(self, glob_pat, base_opts, user_spec):
+    # type: (str, Any, UserSpec) -> None
     self.patterns.append((glob_pat, base_opts, user_spec))
 
   def GetSpecForName(self, argv0):
+    # type: (str) -> Tuple[None, None]
     """
     Args:
       argv0: A finished argv0 to lookup
@@ -204,15 +227,18 @@ class Lookup(object):
     return None, None
 
   def GetFirstSpec(self):
+    # type: () -> Tuple[Dict, UserSpec]
     return self.lookup['__first']
 
   def GetFallback(self):
+    # type: () -> Tuple[Dict, UserSpec]
     return self.lookup['__fallback']
 
 
 class Api(object):
 
   def __init__(self, line='', begin=0, end=0):
+    # type: (str, int, int) -> None
     """
     Args:
       index: if -1, then we're running through compgen
@@ -225,6 +251,7 @@ class Api(object):
   # NOTE: to_complete could be 'cur'
   def Update(self, first='', to_complete='', prev='', index=0,
              partial_argv=None):
+    # type: (str, str, str, int, List[str]) -> None
     """Added after we've done parsing."""
     self.first = first
     self.to_complete = to_complete
@@ -234,6 +261,7 @@ class Api(object):
     self.partial_argv = partial_argv or []
 
   def __repr__(self):
+    # type: () -> str
     """For testing"""
     return '<Api %r %d-%d>' % (self.line, self.begin, self.end)
 
@@ -249,12 +277,14 @@ class CompletionAction(object):
   Literal words
   """
   def __init__(self):
+    # type: () -> None
     pass
 
   def Matches(self, comp):
     pass
 
   def __repr__(self):
+    # type: () -> str
     return self.__class__.__name__
 
 
@@ -270,10 +300,12 @@ class UsersAction(CompletionAction):
 
 class TestAction(CompletionAction):
   def __init__(self, words, delay=None):
+    # type: (List[str], Optional[float]) -> None
     self.words = words
     self.delay = delay
 
   def Matches(self, comp):
+    # type: (Api) -> Iterator[Union[Iterator, Iterator[str]]]
     for w in self.words:
       if w.startswith(comp.to_complete):
         if self.delay:
@@ -284,13 +316,20 @@ class TestAction(CompletionAction):
 class DynamicWordsAction(CompletionAction):
   """ compgen -W '$(echo one two three)' """
 
-  def __init__(self, word_ev, splitter, arg_word, arena):
+  def __init__(self,
+               word_ev,  # type: AbstractWordEvaluator
+               splitter,  # type: SplitContext
+               arg_word,  # type: compound_word
+               arena,  # type: Arena
+               ):
+    # type: (...) -> None
     self.word_ev = word_ev
     self.splitter = splitter
     self.arg_word = arg_word
     self.arena = arena
 
   def Matches(self, comp):
+    # type: (Api) -> Iterator[Union[Iterator, Iterator[str]]]
     try:
       val = self.word_ev.EvalWordToString(self.arg_word)
     except error.FatalRuntime as e:
@@ -310,6 +349,7 @@ class FileSystemAction(CompletionAction):
   Directories will have a / suffix.
   """
   def __init__(self, dirs_only=False, exec_only=False, add_slash=False):
+    # type: (bool, bool, bool) -> None
     self.dirs_only = dirs_only
     self.exec_only = exec_only
 
@@ -318,6 +358,7 @@ class FileSystemAction(CompletionAction):
     self.add_slash = add_slash  # for directories
 
   def Matches(self, comp):
+    # type: (Api) -> Iterator[Union[Iterator, Iterator[str]]]
     to_complete = comp.to_complete
 
     # Problem: .. and ../.. don't complete /.
@@ -372,6 +413,7 @@ class ShellFuncAction(CompletionAction):
   """Call a user-defined function using bash's completion protocol."""
 
   def __init__(self, cmd_ev, func, comp_lookup):
+    # type: (CommandEvaluator, command__ShFunction, Lookup) -> None
     """
     Args:
       comp_lookup: For the 124 protocol: test if the user-defined function
@@ -386,9 +428,11 @@ class ShellFuncAction(CompletionAction):
     return '<ShellFuncAction %s>' % (self.func.name,)
 
   def log(self, *args):
+    # type: (*Any) -> None
     self.cmd_ev.debug_f.log(*args)
 
   def Matches(self, comp):
+    # type: (Api) -> List[str]
     # Have to clear the response every time.  TODO: Reuse the object?
     state.SetGlobalArray(self.cmd_ev.mem, 'COMPREPLY', [])
 
@@ -440,7 +484,7 @@ class ShellFuncAction(CompletionAction):
     # Read the response.
     # NOTE: 'COMP_REPLY' would follow the naming convention!
     val = state.GetGlobal(self.cmd_ev.mem, 'COMPREPLY')
-    if val.tag == value_e.Undef:
+    if val.tag_() == value_e.Undef:
       # We set it above, so this error would only happen if the user unset it.
       # Not changing it means there were no completions.
       # TODO: This writes over the command line; it would be better to use an
@@ -449,7 +493,7 @@ class ShellFuncAction(CompletionAction):
                 self.func.name)
       return []
 
-    if val.tag != value_e.MaybeStrArray:
+    if val.tag_() != value_e.MaybeStrArray:
       log('ERROR: COMPREPLY should be an array, got %s', val)
       return []
     self.log('COMPREPLY %s', val)
@@ -462,6 +506,7 @@ class ShellFuncAction(CompletionAction):
 class VariablesAction(CompletionAction):
   """compgen -A variable."""
   def __init__(self, mem):
+    # type: (Mem) -> None
     self.mem = mem
 
   def Matches(self, comp):
@@ -475,6 +520,7 @@ class ExternalCommandAction(CompletionAction):
   This is PART of compge -A command.
   """
   def __init__(self, mem):
+    # type: (Mem) -> None
     """
     Args:
       mem: for looking up Path
@@ -499,6 +545,7 @@ class ExternalCommandAction(CompletionAction):
     self.cache = {}
 
   def Matches(self, comp):
+    # type: (Api) -> Iterator[Union[Iterator, Iterator[str]]]
     """
     TODO: Cache is never cleared.
 
@@ -506,13 +553,15 @@ class ExternalCommandAction(CompletionAction):
     - When PATH is changed, we can remove old entries.
     """
     val = self.mem.GetVar('PATH')
-    if val.tag != value_e.Str:
+    if val.tag_() != value_e.Str:
       # No matches if not a string
       return
+    assert isinstance(val, value__Str)  # for MyPy
+
     path_dirs = val.s.split(':')
     #log('path: %s', path_dirs)
 
-    executables = []
+    executables = []  # type: List[str]
     for d in path_dirs:
       try:
         st = posix.stat(d)
@@ -554,10 +603,12 @@ class GlobPredicate(object):
   want to get rid of this feature.
   """
   def __init__(self, include, glob_pat):
+    # type: (bool, str) -> None
     self.include = include  # True for inclusion, False for exclusion
     self.glob_pat = glob_pat  # extended glob syntax supported
 
   def __call__(self, candidate):
+    # type: (str) -> int
     """Should we INCLUDE the candidate or not?"""
     matched = libc.fnmatch(self.glob_pat, candidate, True)
     # This is confusing because of bash's double-negative syntax
@@ -571,6 +622,7 @@ class GlobPredicate(object):
 
 
 def DefaultPredicate(candidate):
+  # type: (str) -> bool
   return True
 
 
@@ -580,8 +632,15 @@ class UserSpec(object):
   - The compgen builtin exposes this DIRECTLY.
   - Readline must call ReadlineCallback, which uses RootCompleter.
   """
-  def __init__(self, actions, extra_actions, else_actions, predicate,
-               prefix='', suffix=''):
+  def __init__(self,
+               actions,  # type: Union[List[FileSystemAction], List[TestAction], List[_FixedWordsAction]]
+               extra_actions,  # type: List
+               else_actions,  # type: List
+               predicate,  # type: Callable
+               prefix='',  # type: str
+               suffix='',  # type: str
+               ):
+    # type: (...) -> None
     self.actions = actions
     self.extra_actions = extra_actions
     self.else_actions = else_actions
@@ -590,6 +649,7 @@ class UserSpec(object):
     self.suffix = suffix
 
   def Matches(self, comp):
+    # type: (Api) -> Iterator[Union[Iterator, Iterator[Tuple[str, bool]]]]
     """Yield completion candidates."""
     num_matches = 0
 
@@ -632,6 +692,7 @@ class UserSpec(object):
     # It completes the word that
 
   def __str__(self):
+    # type: () -> str
     parts = ['(UserSpec']
     if self.actions:
       parts.append(str(self.actions))
@@ -652,17 +713,20 @@ class UserSpec(object):
 
 # NOTE: We could add Lit_Dollar, but it would affect many lexer modes.
 def IsDollar(t):
+  # type: (Token) -> bool
   return t.id == Id.Lit_Other and t.val == '$'
 
 
 def IsDummy(t):
+  # type: (Token) -> bool
   return t.id == Id.Lit_CompDummy
 
 
 def WordEndsWithCompDummy(w):
+  # type: (compound_word) -> bool
   last_part = w.parts[-1]
   return (
-      last_part.tag == word_part_e.Literal and
+      last_part.tag_() == word_part_e.Literal and
       last_part.id == Id.Lit_CompDummy
   )
 
@@ -673,8 +737,16 @@ class RootCompleter(object):
   - Complete the OSH language (variables, etc.), or
   - Statically evaluate argv and dispatch to a command completer.
   """
-  def __init__(self, word_ev, mem, comp_lookup, compopt_state, comp_ui_state,
-               parse_ctx, debug_f):
+  def __init__(self,
+               word_ev,  # type: AbstractWordEvaluator
+               mem,  # type: Mem
+               comp_lookup,  # type: Lookup
+               compopt_state,  # type: OptionState
+               comp_ui_state,  # type: State
+               parse_ctx,  # type: ParseContext
+               debug_f,  # type: NullDebugFile
+               ):
+    # type: (...) -> None
     self.word_ev = word_ev  # for static evaluation of words
     self.mem = mem  # to complete variable names
     self.comp_lookup = comp_lookup
@@ -685,6 +757,7 @@ class RootCompleter(object):
     self.debug_f = debug_f
 
   def Matches(self, comp):
+    # type: (Api) -> Iterator[Union[Iterator, Iterator[str]]]
     """
     Args:
       comp: Callback args from readline.  Readline uses set_completer_delims to
@@ -749,6 +822,7 @@ class RootCompleter(object):
     # only displays candidates and never redraws the input line.
 
     def _TokenStart(tok):
+      # type: (Token) -> int
       span = arena.GetLineSpan(tok.span_id)
       return span.col
 
@@ -809,8 +883,8 @@ class RootCompleter(object):
       # EXACTLY what we want.
       parts = trail.words[-1].parts
       if (len(parts) == 2 and
-          parts[0].tag == word_part_e.Literal and
-          parts[1].tag == word_part_e.Literal and
+          parts[0].tag_() == word_part_e.Literal and
+          parts[1].tag_() == word_part_e.Literal and
           parts[0].id == Id.Lit_TildeLike and
           parts[1].id == Id.Lit_CompDummy):
         t2 = parts[0]
@@ -842,7 +916,7 @@ class RootCompleter(object):
           except error.FatalRuntime as e:
             debug_f.log('Error evaluating redirect word: %s', e)
             return
-          if val.tag != value_e.Str:
+          if val.tag_() != value_e.Str:
             debug_f.log("Didn't get a string from redir arg")
             return
 
@@ -902,7 +976,7 @@ class RootCompleter(object):
           except error.FatalRuntime:
             # Why would it fail?
             continue
-          if val.tag == value_e.Str:
+          if val.tag_() == value_e.Str:
             partial_argv.append(val.s)
           else:
             pass
@@ -999,7 +1073,13 @@ class RootCompleter(object):
     finally:
       self.compopt_state.currently_completing = False
 
-  def _PostProcess(self, base_opts, dynamic_opts, user_spec, comp):
+  def _PostProcess(self,
+                   base_opts,  # type: Dict
+                   dynamic_opts,  # type: Dict
+                   user_spec,  # type: UserSpec
+                   comp,  # type: Api
+                   ):
+    # type: (...) -> Iterator[Union[Iterator, Iterator[str]]]
     """
     Add trailing spaces / slashes to completion candidates, and time them.
 
@@ -1082,6 +1162,7 @@ class ReadlineCallback(object):
   """A callable we pass to the readline module."""
 
   def __init__(self, readline_mod, root_comp, debug_f):
+    # type: (module, RootCompleter, NullDebugFile) -> None
     self.readline_mod = readline_mod
     self.root_comp = root_comp
     self.debug_f = debug_f
@@ -1089,6 +1170,7 @@ class ReadlineCallback(object):
     self.comp_iter = None  # current completion being processed
 
   def _GetNextCompletion(self, state):
+    # type: (int) -> Optional[str]
     if state == 0:
       # TODO: Tokenize it according to our language.  If this is $PS2, we also
       # need previous lines!  Could make a VirtualLineReader instead of
@@ -1115,6 +1197,7 @@ class ReadlineCallback(object):
     return next_completion
 
   def __call__(self, unused_word, state):
+    # type: (str, int) -> Optional[str]
     """Return a single match."""
     try:
       return self._GetNextCompletion(state)

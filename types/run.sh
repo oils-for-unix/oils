@@ -176,6 +176,10 @@ pyann-demo() {
   ls -l *.json
 }
 
+pyann-interactive() {
+  osh-pyann --rcfile /dev/null "$@"
+}
+
 pyann-spec-demo() {
   local dir=_tmp/pyann-spec
   mkdir -p $dir
@@ -192,7 +196,7 @@ peek-type-info() {
 apply-types() {
   local json=${1:-type_info.json}
   shift
-  local -a files=(osh/state.py)
+  local -a files=(osh/builtin_comp.py core/completion.py)
 
   #local -a files=( $(cat _tmp/osh-parse-src.txt | grep -v syntax_asdl.py ) )
 

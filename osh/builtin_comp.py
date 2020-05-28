@@ -14,10 +14,12 @@ from frontend import lexer_def
 from frontend import option_def
 from core import state
 
-from typing import TYPE_CHECKING
+from typing import Dict, List, Union, Iterator, TYPE_CHECKING
 if TYPE_CHECKING:
-  from core.completion import Lookup, OptionState
+  from _devbuild.gen.runtime_asdl import cmd_value__Argv
+  from core.completion import Lookup, OptionState, Api, UserSpec
   from core.ui import ErrorFormatter
+  from frontend.args import _Attributes
   from frontend.parse_lib import ParseContext
   from osh.cmd_eval import CommandEvaluator
   from osh.split import SplitContext
@@ -98,9 +100,11 @@ def _DefineActions(spec):
 
 class _FixedWordsAction(completion.CompletionAction):
   def __init__(self, d):
+    # type: (Union[Dict, List[str]]) -> None
     self.d = d
 
   def Matches(self, comp):
+    # type: (Api) -> Iterator[Union[Iterator, Iterator[str]]]
     for name in sorted(self.d):
       if name.startswith(comp.to_complete):
         yield name
@@ -128,6 +132,7 @@ class SpecBuilder(object):
     self.comp_lookup = comp_lookup
 
   def Build(self, argv, arg, base_opts):
+    # type: (List[str], _Attributes, Dict) -> UserSpec
     """Given flags to complete/compgen, return a UserSpec."""
     cmd_ev = self.cmd_ev
 
@@ -276,6 +281,7 @@ class Complete(object):
     self.comp_lookup = comp_lookup
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     argv = cmd_val.argv[1:]
     arg_r = args.Reader(argv)
     arg = COMPLETE_SPEC.Parse(arg_r)
@@ -423,6 +429,7 @@ class CompAdjust(object):
     self.mem = mem
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     argv = cmd_val.argv[1:]
     arg_r = args.Reader(argv)
     arg = COMPADJUST_SPEC.Parse(arg_r)

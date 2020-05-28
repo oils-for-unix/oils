@@ -13,8 +13,6 @@ from osh import arith_parse_test
 from osh import bool_parse_test
 from osh import cmd_parse_test
 from osh import word_parse_test
-from frontend import lex_test
-from frontend import lexer_test
 
 import glob
 

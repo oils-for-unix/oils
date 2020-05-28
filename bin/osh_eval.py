@@ -37,7 +37,7 @@ from osh import builtin_bracket
 from osh import builtin_process
 
 # Nothing is typed here, needs many annotations.  Depends on core/completion.py
-#from osh import builtin_comp
+from osh import builtin_comp
 
 # - note: history has readline_mod argument
 from osh import builtin_misc
