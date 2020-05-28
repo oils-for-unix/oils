@@ -39,7 +39,7 @@ from osh import builtin_bracket
 # - needs conversion to flags
 # - History has readline_mod argument
 # - termios issue
-#from osh import builtin_misc
+from osh import builtin_misc
 
 # Evaluators
 from osh import cmd_eval
@@ -61,7 +61,7 @@ if mylib.PYTHON:
   unused3 = builtin_meta
   unused4 = builtin_pure
   unused5 = builtin_bracket
-  #unused6 = builtin_misc
+  unused6 = builtin_misc
   unused7 = builtin_printf
 
 

@@ -70,7 +70,10 @@ attrs->index(new Str("%s"))->tag_() == value_e::Undef
           field_decls.append('Str* %s;' % field_name)
 
         elif case(flag_type_e.Int):
-          init_vals.append('static_cast<value__Int*>(attrs->index(new Str("%s")))->i' % field_name)
+          init_vals.append('''\
+attrs->index(new Str("%s"))->tag_() == value_e::Undef
+      ? -1
+      : static_cast<value__Int*>(attrs->index(new Str("%s")))->i''' % (field_name, field_name))
           field_decls.append('int %s;' % field_name)
 
         else:
@@ -253,8 +256,9 @@ class %s(object):
             print('    self.%s = None if %s.tag_() == value_e.Undef else cast(value__Str, %s).s  # type: Optional[str]' % (field_name, tmp, tmp))
 
           elif case(flag_type_e.Int):
-            print('    self.%s = cast(value__Int, attrs[%r]).i  # type: int' % (
-              field_name, field_name))
+            tmp = 'val%d' % i
+            print('    %s = attrs[%r]' % (tmp, field_name))
+            print('    self.%s = -1 if %s.tag_() == value_e.Undef else cast(value__Int, %s).i  # type: int' % (field_name, tmp, tmp))
 
           else:
             raise AssertionError(typ)

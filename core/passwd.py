@@ -21,11 +21,12 @@ from __future__ import print_function
 
 import pwd
 import resource
+import termios  # for read -n
 import time
 
 import posix_ as posix
 
-from typing import Optional, Tuple, TYPE_CHECKING
+from typing import Optional, Tuple, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import Token
 
@@ -70,3 +71,32 @@ def Time():
   t = time.time()  # calls gettimeofday() under the hood
   u = resource.getrusage(resource.RUSAGE_SELF)
   return t, u.ru_utime, u.ru_stime
+
+
+def ReadBytesFromTerminal(fd, n):
+  # type: (int, int) -> str
+
+  # silly way to make a copy
+  # https://docs.python.org/2/library/termios.html
+  orig_attrs = termios.tcgetattr(fd)
+  term_attrs = termios.tcgetattr(fd)
+
+  # cast for MyPy.  Each element in termios doesn't have a static type!
+  #reveal_type(term_attrs[3])
+
+  a3 = cast(int, term_attrs[3])
+  # Disable canonical (buffered) mode.  See `man termios` for an extended
+  # discussion.
+  term_attrs[3] = a3 & ~termios.ICANON
+
+  chunks = []
+  try:
+    termios.tcsetattr(fd, termios.TCSANOW, term_attrs)
+    # posix.read always returns a single character in unbuffered mode
+    while n > 0:
+      chunks.append(posix.read(fd, 1))
+      n -= 1
+  finally:
+    termios.tcsetattr(fd, termios.TCSANOW, orig_attrs)
+
+  return ''.join(chunks)

@@ -11,12 +11,12 @@ builtin_misc.py - Misc builtins.
 from __future__ import print_function
 
 import sys
-import termios  # for read -n
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import span_e, cmd_value__Argv, value_e
+from _devbuild.gen.runtime_asdl import span_e, cmd_value__Argv
 from asdl import runtime
 from core import error
+from core import passwd
 from core import state
 from core import ui
 from core.pyerror import e_usage
@@ -177,37 +177,24 @@ class Read(_Builtin):
     names = arg_r.Rest()
 
     if arg.n >= 0 :  # read a certain number of bytes (-1 means unset)
-      stdin = sys.stdin.fileno()
-      try:
+      if len(names):
         name = names[0]
-      except IndexError:
-        name = 'REPLY'  # default variable name
-      s = ""
-      if sys.stdin.isatty():  # set stdin to read in unbuffered mode
-        orig_attrs = termios.tcgetattr(stdin)
-        term_attrs = termios.tcgetattr(stdin)
-        # disable canonical (buffered) mode
-        # see `man termios` for an extended discussion
-        term_attrs[3] &= ~termios.ICANON
-        try:
-          termios.tcsetattr(stdin, termios.TCSANOW, term_attrs)
-          # posix.read always returns a single character in unbuffered mode
-          n = arg.n
-          while n > 0:
-            s += posix.read(stdin, 1)
-            n -= 1
-        finally:
-          termios.tcsetattr(stdin, termios.TCSANOW, orig_attrs)
       else:
-        s_len = 0
+        name = 'REPLY'  # default variable name
+
+      stdin = sys.stdin.fileno()
+      if sys.stdin.isatty():  # set stdin to read in unbuffered mode
+        s = passwd.ReadBytesFromTerminal(stdin, arg.n)
+      else:
+        chunks = []  # type: List[str]
         n = arg.n
         while n > 0:
-          buf = posix.read(stdin, n)
-          # EOF
-          if buf == '':
+          chunk = posix.read(stdin, n)  # read at up to N chars
+          if len(chunk) == 0:
             break
-          n -= len(buf)
-          s += buf
+          chunks.append(chunk)
+          n -= len(chunk)
+        s = ''.join(chunks)
 
       state.SetStringDynamic(self.mem, name, s)
       # NOTE: Even if we don't get n bytes back, there is no error?
@@ -254,7 +241,7 @@ class Read(_Builtin):
       if done:
         break
 
-    if arg.a:
+    if len(arg.a):
       state.SetArrayDynamic(self.mem, arg.a, parts)
     else:
       for i in xrange(max_results):
