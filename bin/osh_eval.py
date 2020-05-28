@@ -33,11 +33,11 @@ from osh import builtin_meta
 from osh import builtin_pure
 from osh import builtin_printf
 from osh import builtin_bracket
-
 from osh import builtin_process
 
-# Nothing is typed here, needs many annotations.  Depends on core/completion.py
-from osh import builtin_comp
+# Depends on core/completion.py
+# _FlagSpecAndMore needs translating
+#from osh import builtin_comp
 
 # - note: history has readline_mod argument
 from osh import builtin_misc

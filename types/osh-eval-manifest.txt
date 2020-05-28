@@ -4,7 +4,6 @@
 ./bin/osh_eval.py
 ./core/alloc.py
 ./core/ansi.py
-./core/completion.py
 ./core/dev.py
 ./core/error.py
 ./core/main_loop.py
@@ -19,7 +18,6 @@
 ./core/vm.py
 ./_devbuild/gen/arg_types.py
 ./_devbuild/gen/grammar_nt.py
-./_devbuild/gen/help_.py
 ./_devbuild/gen/hnode_asdl.py
 ./_devbuild/gen/id_kind_asdl.py
 ./_devbuild/gen/id_kind.py
@@ -49,7 +47,6 @@
 ./osh/braces.py
 ./osh/builtin_assign.py
 ./osh/builtin_bracket.py
-./osh/builtin_comp.py
 ./osh/builtin_meta.py
 ./osh/builtin_misc.py
 ./osh/builtin_printf.py

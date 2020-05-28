@@ -135,6 +135,12 @@ module runtime
 
   SetToArg_ = (string name, flag_type flag_type, bool quit_parsing_flags)
 
+  action = 
+    SetToArg %SetToArg_
+  | SetBoolToArg(string name)
+
+    -- TODO: more actions
+
   FlagSpec_ = (
     string* arity0,  -- could rewrite as array[string] arity0
     map[string, SetToArg_] arity1,
@@ -142,10 +148,8 @@ module runtime
     map[string, value] defaults
   )
 
-  action = 
-    SetToArg %SetToArg_
-  | SetBoolToArg(string name)
-
-    -- TODO: more actions
-
+  FlagSpecAndMore_ = (
+    map[string, action] actions_short,
+    map[string, action] actions_long,
+  )
 }

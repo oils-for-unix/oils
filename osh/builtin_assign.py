@@ -449,7 +449,7 @@ class Unset(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_r = arg_def.ParseCmdVal2('unset', cmd_val)
+    attrs, arg_r = arg_def.ParseCmdVal('unset', cmd_val)
     arg = arg_types.unset(attrs.attrs)
 
     argv, arg_spids = arg_r.Rest2()

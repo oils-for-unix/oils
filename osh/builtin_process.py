@@ -107,7 +107,7 @@ class Wait(_Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_r = arg_def.ParseCmdVal2('wait', cmd_val)
+    attrs, arg_r = arg_def.ParseCmdVal('wait', cmd_val)
     arg = arg_types.wait(attrs.attrs)
 
     job_ids, arg_spids = arg_r.Rest2()
@@ -375,7 +375,7 @@ class Trap(_Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_r = arg_def.ParseCmdVal2('trap', cmd_val)
+    attrs, arg_r = arg_def.ParseCmdVal('trap', cmd_val)
     arg = arg_types.trap(attrs.attrs)
 
     if arg.p:  # Print registered handlers

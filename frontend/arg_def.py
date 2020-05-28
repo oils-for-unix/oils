@@ -58,16 +58,6 @@ def Parse(spec_name, arg_r):
 
 
 def ParseCmdVal(spec_name, cmd_val):
-  # type: (str, cmd_value__Argv) -> Tuple[args._Attributes, int]
-  """
-  TODO: Remove this function; use ParseCmdVal2 everywhere.  Maybe rename
-  arg_r.pos too.
-  """
-  attrs, arg_r = ParseCmdVal2(spec_name, cmd_val)
-  return attrs, arg_r.i
-
-
-def ParseCmdVal2(spec_name, cmd_val):
   # type: (str, cmd_value__Argv) -> Tuple[args._Attributes, args.Reader]
   arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
   arg_r.Next()  # move past the builtin name
@@ -235,19 +225,6 @@ class _FlagSpec(object):
     # type: (args.Reader) -> args._Attributes
     """For builtins to read args after we parse flags."""
     return args.Parse(self.spec, arg_r)
-
-  def ParseCmdVal(self, cmd_val):
-    # type: (cmd_value__Argv) -> Tuple[args._Attributes, int]
-    """Used by builtins that don't need arg_r.
-
-    Note: It might be more flexible to return arg_r instead if i.  Then they
-    can call arg_r.Rest(), etc.
-
-    TODO: Remove in favor of ParseCmdVal above
-    """
-    arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
-    arg_r.Next()  # move past the builtin name
-    return self.Parse(arg_r), arg_r.i
 
   def ParseArgv(self, argv):
     # type: (List[str]) -> Tuple[args._Attributes, int]

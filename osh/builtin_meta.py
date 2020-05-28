@@ -43,7 +43,7 @@ class Eval(_Builtin):
     # type: (cmd_value__Argv) -> int
 
     # There are no flags, but we need it to respect --
-    _, arg_r = arg_def.ParseCmdVal2('eval', cmd_val)
+    _, arg_r = arg_def.ParseCmdVal('eval', cmd_val)
 
     if self.exec_opts.strict_eval_builtin():
       code_str, eval_spid = arg_r.ReadRequired2('requires code string')
@@ -144,7 +144,7 @@ class Command(_Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_r = arg_def.ParseCmdVal2('command', cmd_val)
+    attrs, arg_r = arg_def.ParseCmdVal('command', cmd_val)
     arg = arg_types.command(attrs.attrs)
     if arg.v:
       status = 0
@@ -243,7 +243,7 @@ class Type(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_r = arg_def.ParseCmdVal2('type', cmd_val)
+    attrs, arg_r = arg_def.ParseCmdVal('type', cmd_val)
     arg = arg_types.type(attrs.attrs)
 
     if arg.f:

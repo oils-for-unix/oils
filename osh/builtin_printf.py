@@ -156,7 +156,7 @@ class Printf(object):
     """
     printf: printf [-v var] format [argument ...]
     """
-    attrs, arg_r = arg_def.ParseCmdVal2('printf', cmd_val)
+    attrs, arg_r = arg_def.ParseCmdVal('printf', cmd_val)
     arg = arg_types.printf(attrs.attrs)
 
     fmt, fmt_spid = arg_r.ReadRequired2('requires a format string')

@@ -63,7 +63,7 @@ class Alias(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    _, arg_r = arg_def.ParseCmdVal2('alias', cmd_val)
+    _, arg_r = arg_def.ParseCmdVal('alias', cmd_val)
     argv = arg_r.Rest()
 
     if len(argv) == 0:
@@ -100,7 +100,7 @@ class UnAlias(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    _, arg_r = arg_def.ParseCmdVal2('unalias', cmd_val)
+    _, arg_r = arg_def.ParseCmdVal('unalias', cmd_val)
     argv = arg_r.Rest()
 
     if len(argv) == 0:
@@ -207,7 +207,7 @@ class Shopt(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_r = arg_def.ParseCmdVal2('shopt', cmd_val)
+    attrs, arg_r = arg_def.ParseCmdVal('shopt', cmd_val)
 
     arg = arg_types.shopt(attrs.attrs)
     opt_names = arg_r.Rest()
@@ -257,7 +257,7 @@ class Hash(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_r = arg_def.ParseCmdVal2('hash', cmd_val)
+    attrs, arg_r = arg_def.ParseCmdVal('hash', cmd_val)
     arg = arg_types.hash(attrs.attrs)
 
     rest = arg_r.Rest()
