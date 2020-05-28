@@ -13,6 +13,8 @@ module runtime
   | Assign(int builtin_id,
            string* argv, int* arg_spids,
            assign_arg* pairs)
+  -- refactoring: cmd_value = (string* argv, int* arg_spids, other? other)
+  --              other = AssignPairs(...) | Block(...)
 
   quote = Default | FnMatch | ERE
 

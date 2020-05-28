@@ -29,13 +29,6 @@ from pylib import os_path
 import libc
 import posix_ as posix
 
-if mylib.PYTHON:
-  # Hack because we don't want libcmark.so dependency for build/dev.sh minimal
-  try:
-    from _devbuild.gen import help_index  # generated file
-  except ImportError:
-    help_index = None
-
 from typing import Tuple, List, Any, Optional, IO, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import span_t
@@ -487,9 +480,10 @@ class Pwd(_Builtin):
 
 class Help(_Builtin):
 
-  def __init__(self, loader, errfmt):
-    # type: (_FileResourceLoader, ErrorFormatter) -> None
+  def __init__(self, loader, help_index, errfmt):
+    # type: (_FileResourceLoader, Any, ErrorFormatter) -> None
     self.loader = loader
+    self.help_index = help_index
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
@@ -510,7 +504,7 @@ class Help(_Builtin):
       groups = cmd_val.argv[2:]
       if len(groups) == 0:
         # Print the whole index
-        groups = help_index.GROUPS
+        groups = self.help_index.GROUPS
 
       for group in groups:
         try:

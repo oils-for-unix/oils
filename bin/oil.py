@@ -52,6 +52,11 @@ import errno
 from _devbuild.gen.option_asdl import option_i, builtin_i
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import source
+# Hack because we don't want libcmark.so dependency for build/dev.sh minimal
+try:
+  from _devbuild.gen import help_index  # generated file
+except ImportError:
+  help_index = None
 
 from asdl import runtime
 
@@ -323,9 +328,12 @@ def ShellMain(lang, argv0, argv, login_shell):
   # variable in core/util.py.  Rename to InitResourceLaoder().  It's now only
   # used for the 'help' builtin and --version.
   loader = pyutil.GetResourceLoader()
+  arena = alloc.Arena()
+  errfmt = ui.ErrorFormatter(arena)
 
+  help_builtin = builtin_misc.Help(loader, help_index, errfmt)
   if opts.help:
-    builtin_misc.Help(['%s-usage' % lang], loader)
+    help_builtin.Run(_MakeBuiltinArgv(['%s-usage' % lang]))
     return 0
   version_str = pyutil.GetVersion()
   if opts.version:
@@ -348,9 +356,6 @@ def ShellMain(lang, argv0, argv, login_shell):
   # Copy quirky bash behavior.
   frame1 = state.DebugFrame(no_str, no_str, no_str, runtime.NO_SPID, 0, 0)
   debug_stack.append(frame1)
-
-  arena = alloc.Arena()
-  errfmt = ui.ErrorFormatter(arena)
 
   mem = state.Mem(dollar0, argv[arg_r.i + 1:], arena, debug_stack)
   state.InitMem(mem, posix.environ, version_str)
@@ -511,7 +516,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
       builtin_i.times: builtin_misc.Times(),
       builtin_i.read: builtin_misc.Read(splitter, mem),
-      builtin_i.help: builtin_misc.Help(loader, errfmt),
+      builtin_i.help: help_builtin,
       builtin_i.history: builtin_misc.History(line_input),
 
       builtin_i.cat: builtin_misc.Cat(),  # for $(<file)
