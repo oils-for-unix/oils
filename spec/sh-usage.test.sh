@@ -20,6 +20,16 @@ echo -n '' | $SH
 ## stdout-json: ""
 ## status: 0
 
+#### shell obeys --help (regression for OSH)
+n=$($SH --help | wc -l)
+if test $n -gt 0; then
+  echo yes
+fi
+## STDOUT:
+yes
+## END
+## N-I dash/mksh stdout-json: ""
+
 #### args are passed
 $SH -c 'argv.py "$@"' dummy a b
 ## stdout: ['a', 'b']
@@ -43,3 +53,4 @@ exit 42
 false
 exit
 ## status: 1
+

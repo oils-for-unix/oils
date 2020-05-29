@@ -123,47 +123,6 @@ except ImportError:
 _tlog('after imports')
 
 
-def DefineCommonFlags(spec):
-  """Common flags between OSH and Oil."""
-  spec.ShortFlag('-c', args.String, quit_parsing_flags=True)  # command string
-  spec.LongFlag('--help')
-  spec.LongFlag('--version')
-
-
-OSH_SPEC = arg_def.FlagSpecAndMore('main')
-
-DefineCommonFlags(OSH_SPEC)
-
-OSH_SPEC.ShortFlag('-i')  # interactive
-
-# TODO: -h too
-# the output format when passing -n
-OSH_SPEC.LongFlag('--ast-format',
-    ['text', 'abbrev-text', 'html', 'abbrev-html', 'oheap', 'none'],
-    default='abbrev-text')
-
-# Defines completion style.
-OSH_SPEC.LongFlag('--completion-display', ['minimal', 'nice'], default='nice')
-# TODO: Add option for Oil prompt style?  RHS prompt?
-
-# Don't reparse a[x+1] and ``.  Only valid in -n mode.
-OSH_SPEC.LongFlag('--one-pass-parse')
-
-OSH_SPEC.LongFlag('--print-status')  # TODO: Replace with a shell hook
-OSH_SPEC.LongFlag('--debug-file', args.String)
-OSH_SPEC.LongFlag('--xtrace-to-debug-file')
-
-# For benchmarks/*.sh
-OSH_SPEC.LongFlag('--parser-mem-dump', args.String)
-OSH_SPEC.LongFlag('--runtime-mem-dump', args.String)
-
-# This flag has is named like bash's equivalent.  We got rid of --norc because
-# it can simply by --rcfile /dev/null.
-OSH_SPEC.LongFlag('--rcfile', args.String)
-
-builtin_pure.AddOptionsToArgSpec(OSH_SPEC)
-
-
 def _MakeBuiltinArgv(argv):
   argv = [''] + argv  # add dummy for argv[0]
   # no location info
@@ -318,7 +277,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   arg_r = args.Reader(argv)
   try:
-    opts = OSH_SPEC.Parse(arg_r)
+    opts = arg_def.ParseMore('osh', arg_r)
   except error.Usage as e:
     ui.Stderr('osh usage error: %s', e.msg)
     return 2

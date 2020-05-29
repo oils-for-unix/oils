@@ -84,16 +84,10 @@ Float = 3  # e.g. for read -t timeout value
 Bool = 4  # OilFlags has explicit boolean type
 
 
-# Note: could split into
-#   Flags
-#   FlagsAndMore
-#
-# but we should make it statically typed first.
-
 class _Attributes(object):
   """Object to hold flags.
 
-  TODO: Make this statically typed.
+  TODO: FlagSpec doesn't need this; only FlagSpecAndMore.
   """
   def __init__(self, defaults):
     # type: (Dict[str, value_t]) -> None

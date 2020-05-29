@@ -31,7 +31,6 @@ from core.util import log
 from frontend import args
 from frontend import arg_def
 from frontend import match
-from frontend import option_def
 from mycpp import mylib
 from osh import word_compile
 
@@ -116,34 +115,6 @@ class UnAlias(object):
         status = 1
     return status
 
-#
-# set and shopt
-#
-
-def AddOptionsToArgSpec(spec):
-  # type: (arg_def._FlagSpecAndMore) -> None
-  """Shared between 'set' builtin and the shell's own arg parser."""
-  for opt in option_def.All():
-    if opt.builtin == 'set':
-      spec.Option(opt.short_flag, opt.name)
-    elif opt.builtin == 'shopt':
-      # unimplemented options are accepted in bin/osh and in shopt -s foo
-      spec.ShoptOption(opt.name)
-    else:
-      # 'interactive' Has a cell for internal use, but isn't allowed to be
-      # modified.
-      pass
-
-  # Add strict:all, etc.
-  for name in option_def.META_OPTIONS:
-    spec.ShoptOption(name)
-
-
-if mylib.PYTHON:
-  SET_SPEC = arg_def.FlagSpecAndMore('set')
-  AddOptionsToArgSpec(SET_SPEC)
-
-
 def SetShellOpts(exec_opts, opt_changes, shopt_changes):
   # type: (MutableOpts, List[Tuple[str, bool]], List[Tuple[str, bool]]) -> None
   """Used by bin/oil.py too."""
@@ -185,7 +156,7 @@ class Set(object):
 
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip 'set'
-    arg = SET_SPEC.Parse(arg_r)
+    arg = arg_def.ParseMore('set', arg_r)
 
     # 'set -o' shows options.  This is actually used by autoconf-generated
     # scripts!

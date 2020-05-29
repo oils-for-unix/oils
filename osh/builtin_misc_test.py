@@ -10,7 +10,10 @@ import unittest
 # unit testing
 import readline
 
-from _devbuild.gen import help_index
+try:
+  from _devbuild.gen import help_index
+except ImportError:
+  help_index = None
 from core import pyutil
 from core import test_lib
 from osh import split

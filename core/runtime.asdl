@@ -119,7 +119,7 @@ module runtime
 
   -- core/process.py
   -- A Job is a Process or Pipeline.
-  -- * Proceses usually go from Running to Stopped, unless unless Ctrl-Z stops
+  -- * Processes usually go from Running to Stopped, unless unless Ctrl-Z stops
   --   them.
   -- * Pipelines go Running to Done.  They are never stopped; only the processes
   --   inside them are stopped.
@@ -138,8 +138,13 @@ module runtime
   SetToArg_ = (string name, flag_type flag_type, bool quit_parsing_flags)
 
   action = 
-    SetToArg %SetToArg_
-  | SetBoolToArg(string name)
+    SetToArg %SetToArg_        -- -n1  -n 1  --rcfile foo  --rcfile=foo
+  | SetBoolToArg(string name)  -- --verbose=T (Oil)
+  | SetToTrue(string name)     -- -c
+  | SetOption(string name)     -- set +e
+  | SetNamedOption()           -- set +o errexit
+  | SetAction(string name)     -- compgen -f
+  | SetNamedAction()           -- compgen A file
 
     -- TODO: more actions
 
@@ -153,5 +158,6 @@ module runtime
   FlagSpecAndMore_ = (
     map[string, action] actions_short,
     map[string, action] actions_long,
+    map[string, value] defaults
   )
 }

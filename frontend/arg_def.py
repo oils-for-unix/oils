@@ -11,6 +11,7 @@ from _devbuild.gen.runtime_asdl import (
     FlagSpec_, SetToArg_,
 )
 from frontend import args
+from frontend import option_def
 from mycpp import mylib
 
 from typing import Union, List, Tuple, Dict, Any, Optional
@@ -52,9 +53,9 @@ def OilFlags(name):
 
 def Parse(spec_name, arg_r):
   # type: (str, args.Reader) -> args._Attributes
-  """Parse argv using a given FlagSpec / FlagSpecAndMore."""
+  """Parse argv using a given FlagSpec."""
   spec = FLAG_SPEC[spec_name]
-  return spec.Parse(arg_r)
+  return args.Parse(spec, arg_r)
 
 
 def ParseCmdVal(spec_name, cmd_val):
@@ -63,13 +64,20 @@ def ParseCmdVal(spec_name, cmd_val):
   arg_r.Next()  # move past the builtin name
 
   spec = FLAG_SPEC[spec_name]
-  return spec.Parse(arg_r), arg_r
+  return args.Parse(spec, arg_r), arg_r
 
 
 def ParseLikeEcho(spec_name, argv):
   # type: (str, List[str]) -> Tuple[args._Attributes, int]
   spec = FLAG_SPEC[spec_name]
   return spec.ParseLikeEcho(argv)
+
+
+def ParseMore(spec_name, arg_r):
+  # type: (str, args.Reader) -> args._Attributes
+  """Parse argv using a given FlagSpecAndMore."""
+  spec = FLAG_SPEC_AND_MORE[spec_name]
+  return spec.Parse(arg_r)
 
 
 def All():
@@ -221,6 +229,7 @@ class _FlagSpec(object):
 
     return out, arg_r.i
 
+  # TODO: Remove this method -- args.Parse() instead
   def Parse(self, arg_r):
     # type: (args.Reader) -> args._Attributes
     """For builtins to read args after we parse flags."""
@@ -333,6 +342,7 @@ class _FlagSpecAndMore(object):
 
     self.actions_short['A'].Add(attr_name)  # type: ignore
 
+  # TODO: Remove this method -- args.ParseMore() instead
   def Parse(self, arg_r):
     # type: (args.Reader) -> args._Attributes
     return args.ParseMore(self, arg_r)
@@ -567,3 +577,76 @@ TRAP_SPEC = FlagSpec('trap', typed=True)
 TRAP_SPEC.ShortFlag('-p')
 TRAP_SPEC.ShortFlag('-l')
 
+#
+# FlagSpecAndMore
+#
+
+
+
+# TODO: Don't nee dthis anymore
+def DefineCommonFlags(spec):
+  """Common flags between OSH and Oil."""
+  spec.ShortFlag('-c', args.String, quit_parsing_flags=True)  # command string
+  spec.LongFlag('--help')
+  spec.LongFlag('--version')
+
+
+#
+# set and shopt
+#
+
+def AddOptionsToArgSpec(spec):
+  # type: (arg_def._FlagSpecAndMore) -> None
+  """Shared between 'set' builtin and the shell's own arg parser."""
+  for opt in option_def.All():
+    if opt.builtin == 'set':
+      spec.Option(opt.short_flag, opt.name)
+    elif opt.builtin == 'shopt':
+      # unimplemented options are accepted in bin/osh and in shopt -s foo
+      spec.ShoptOption(opt.name)
+    else:
+      # 'interactive' Has a cell for internal use, but isn't allowed to be
+      # modified.
+      pass
+
+  # Add strict:all, etc.
+  for name in option_def.META_OPTIONS:
+    spec.ShoptOption(name)
+
+
+OSH_SPEC = FlagSpecAndMore('osh')
+
+DefineCommonFlags(OSH_SPEC)
+
+OSH_SPEC.ShortFlag('-i')  # interactive
+
+# TODO: -h too
+# the output format when passing -n
+OSH_SPEC.LongFlag('--ast-format',
+    ['text', 'abbrev-text', 'html', 'abbrev-html', 'oheap', 'none'],
+    default='abbrev-text')
+
+# Defines completion style.
+OSH_SPEC.LongFlag('--completion-display', ['minimal', 'nice'], default='nice')
+# TODO: Add option for Oil prompt style?  RHS prompt?
+
+# Don't reparse a[x+1] and ``.  Only valid in -n mode.
+OSH_SPEC.LongFlag('--one-pass-parse')
+
+OSH_SPEC.LongFlag('--print-status')  # TODO: Replace with a shell hook
+OSH_SPEC.LongFlag('--debug-file', args.String)
+OSH_SPEC.LongFlag('--xtrace-to-debug-file')
+
+# For benchmarks/*.sh
+OSH_SPEC.LongFlag('--parser-mem-dump', args.String)
+OSH_SPEC.LongFlag('--runtime-mem-dump', args.String)
+
+# This flag has is named like bash's equivalent.  We got rid of --norc because
+# it can simply by --rcfile /dev/null.
+OSH_SPEC.LongFlag('--rcfile', args.String)
+
+AddOptionsToArgSpec(OSH_SPEC)
+
+
+SET_SPEC = FlagSpecAndMore('set')
+AddOptionsToArgSpec(SET_SPEC)
