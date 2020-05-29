@@ -8,6 +8,7 @@ import sys
 
 from _devbuild.gen.runtime_asdl import flag_type_e, value_e
 from core.util import log
+from frontend import flag_def  # side effect: flags are defined!
 from frontend import flag_spec
 from mycpp.mylib import tagswitch
 

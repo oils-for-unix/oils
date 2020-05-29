@@ -1,6 +1,6 @@
 // frontend_arg_def.cc
 
-#include "frontend_arg_def.h"
+#include "frontend_flag_spec.h"
 #include "arg_types.h"
 
 // "header" copied from _build/cpp/osh_eval.cc.  TODO: mycpp should be able to

@@ -114,7 +114,7 @@ option-cpp-gen() {
 
 arg-mypy-gen() {
   local out=_devbuild/gen/arg_types.py
-  frontend/arg_gen.py mypy > $out
+  frontend/flag_gen.py mypy > $out
   #cat $out
   log "Wrote $out"
 }
@@ -124,7 +124,7 @@ arg-cpp-gen() {
 
   mkdir -p $(dirname $prefix)  # unit tests need this
 
-  frontend/arg_gen.py cpp $prefix
+  frontend/flag_gen.py cpp $prefix
   ls -l $prefix*
 }
 

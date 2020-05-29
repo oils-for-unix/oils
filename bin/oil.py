@@ -80,6 +80,7 @@ from core.util import log
 from core import vm
 
 from frontend import args
+from frontend import flag_def  # side effect: flags are defined!
 from frontend import flag_spec
 from frontend import reader
 from frontend import py_reader

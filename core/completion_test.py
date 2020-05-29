@@ -22,6 +22,7 @@ from core import test_lib
 from core import util
 from core.util import log
 
+from frontend import flag_def  # side effect: flags are defined!
 from frontend import parse_lib
 from core import state
 from testdata.completion import bash_oracle

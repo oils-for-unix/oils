@@ -16,6 +16,7 @@ except ImportError:
   help_index = None
 from core import pyutil
 from core import test_lib
+from frontend import flag_def  # side effect: flags are defined!
 from osh import split
 from osh import builtin_misc  # module under test
 
