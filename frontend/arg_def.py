@@ -19,7 +19,7 @@ from typing import Union, List, Tuple, Dict, Any, Optional
 # Similar to frontend/{option,builtin}_def.py
 FLAG_SPEC = {}
 FLAG_SPEC_AND_MORE = {}
-OIL_SPEC ={}
+OIL_SPEC = {}
 
 
 def FlagSpec(builtin_name, typed=False):
@@ -55,7 +55,8 @@ def Parse(spec_name, arg_r):
   # type: (str, args.Reader) -> args._Attributes
   """Parse argv using a given FlagSpec."""
   spec = FLAG_SPEC[spec_name]
-  return args.Parse(spec, arg_r)
+  #return args.Parse(spec, arg_r)
+  return spec.Parse(arg_r)
 
 
 def ParseCmdVal(spec_name, cmd_val):
@@ -64,7 +65,9 @@ def ParseCmdVal(spec_name, cmd_val):
   arg_r.Next()  # move past the builtin name
 
   spec = FLAG_SPEC[spec_name]
-  return args.Parse(spec, arg_r), arg_r
+  # TODO:
+  #return args.Parse(spec, arg_r)
+  return spec.Parse(arg_r), arg_r
 
 
 def ParseLikeEcho(spec_name, argv):
@@ -581,22 +584,12 @@ TRAP_SPEC.ShortFlag('-l')
 # FlagSpecAndMore
 #
 
-
-
-# TODO: Don't nee dthis anymore
-def DefineCommonFlags(spec):
-  """Common flags between OSH and Oil."""
-  spec.ShortFlag('-c', args.String, quit_parsing_flags=True)  # command string
-  spec.LongFlag('--help')
-  spec.LongFlag('--version')
-
-
 #
 # set and shopt
 #
 
 def AddOptionsToArgSpec(spec):
-  # type: (arg_def._FlagSpecAndMore) -> None
+  # type: (_FlagSpecAndMore) -> None
   """Shared between 'set' builtin and the shell's own arg parser."""
   for opt in option_def.All():
     if opt.builtin == 'set':
@@ -616,7 +609,9 @@ def AddOptionsToArgSpec(spec):
 
 OSH_SPEC = FlagSpecAndMore('osh')
 
-DefineCommonFlags(OSH_SPEC)
+OSH_SPEC.ShortFlag('-c', args.String, quit_parsing_flags=True)  # command string
+OSH_SPEC.LongFlag('--help')
+OSH_SPEC.LongFlag('--version')
 
 OSH_SPEC.ShortFlag('-i')  # interactive
 
