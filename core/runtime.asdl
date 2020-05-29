@@ -146,8 +146,6 @@ module runtime
   | SetAction(string name)     -- compgen -f
   | SetNamedAction()           -- compgen A file
 
-    -- TODO: more actions
-
   FlagSpec_ = (
     string* arity0,  -- could rewrite as array[string] arity0
     map[string, SetToArg_] arity1,

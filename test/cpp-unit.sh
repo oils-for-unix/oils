@@ -47,7 +47,7 @@ mycpp-unit-tests() {
 
 all() {
   build/codegen.sh ast-id-lex  # id.h, osh-types.h, osh-lex.h
-  build/codegen.sh arg-cpp-gen  # _build/cpp/arg_types.h
+  build/codegen.sh flag-gen-cpp  # _build/cpp/arg_types.h
   build/dev.sh oil-asdl-to-cpp  # unit tests depend on id_kind_asdl.h, etc.
 
   cpp-unit-tests

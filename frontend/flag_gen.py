@@ -161,6 +161,8 @@ namespace arg_types {
           d = 'Undef'  # TODO: fix this.  Should be -1
         elif val.tag_() == value_e.Undef:
           d = 'Undef'
+
+        # NOTE: 'osh' FlagSpecAndMore_ has default='nice' and default='abbrev-text'
         else:
           raise AssertionError(val)
 

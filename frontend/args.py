@@ -357,7 +357,7 @@ class SetBoolToArg(_Action):
     """Called when the flag matches."""
 
     if suffix:  # '0' in --verbose=0
-      if suffix in ('0', 'F', 'false', 'False'):
+      if suffix in ('0', 'F', 'false', 'False'):  # TODO: incorrect translation
         b = False
       elif suffix in ('1', 'T', 'true', 'Talse'):
         b = True
