@@ -4,10 +4,10 @@ readlink.py - Minimal implementation of readlink -f, e.g. for OS X.
 """
 
 import libc
-from frontend import arg_def
+from frontend import flag_spec
 from core import ui
 
-SPEC = arg_def.FlagSpec('readlink')
+SPEC = flag_spec.FlagSpec('readlink')
 SPEC.ShortFlag('-f')
 
 

@@ -80,7 +80,7 @@ from core.util import log
 from core import vm
 
 from frontend import args
-from frontend import arg_def
+from frontend import flag_spec
 from frontend import reader
 from frontend import py_reader
 from frontend import parse_lib
@@ -277,7 +277,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
   arg_r = args.Reader(argv)
   try:
-    opts = arg_def.ParseMore('osh', arg_r)
+    opts = flag_spec.ParseMore('osh', arg_r)
   except error.Usage as e:
     ui.Stderr('osh usage error: %s', e.msg)
     return 2

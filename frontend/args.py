@@ -73,11 +73,11 @@ from typing import (
     cast, Tuple, Optional, Dict, List, Any, IO, TYPE_CHECKING
 )
 if TYPE_CHECKING:
-  from frontend import arg_def
+  from frontend import flag_spec
   OptChange = Tuple[str, bool]
 
 
-# TODO: Move to arg_def?  We use flag_type_t
+# TODO: Move to flag_spec?  We use flag_type_t
 String = 1
 Int = 2
 Float = 3  # e.g. for read -t timeout value
@@ -533,7 +533,7 @@ def Parse(spec, arg_r):
 
 
 def ParseMore(spec, arg_r):
-  # type: (arg_def._FlagSpecAndMore, Reader) -> _Attributes
+  # type: (flag_spec._FlagSpecAndMore, Reader) -> _Attributes
   """Return attributes and an index.
 
   Respects +, like set +eu
@@ -611,7 +611,7 @@ if mylib.PYTHON:
     libc = None
 
   def ParseOil(spec, arg_r):
-    # type: (arg_def._OilFlags, Reader) -> Tuple[_Attributes, int]
+    # type: (flag_spec._OilFlags, Reader) -> Tuple[_Attributes, int]
     out = _Attributes(spec.defaults)
 
     while not arg_r.AtEnd():

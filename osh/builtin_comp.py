@@ -7,7 +7,7 @@ from core import completion
 from core import error
 from core import ui
 #from core.util import log
-from frontend import arg_def
+from frontend import flag_spec
 from frontend import args
 from frontend import consts
 from frontend import lexer_def
@@ -257,7 +257,7 @@ class SpecBuilder(object):
 
 if mylib.PYTHON:
   # git-completion.sh uses complete -o and complete -F
-  COMPLETE_SPEC = arg_def.FlagSpecAndMore('complete')
+  COMPLETE_SPEC = flag_spec.FlagSpecAndMore('complete')
 
   _DefineFlags(COMPLETE_SPEC)
   _DefineOptions(COMPLETE_SPEC)
@@ -316,7 +316,7 @@ class Complete(object):
 
 
 if mylib.PYTHON:
-  COMPGEN_SPEC = arg_def.FlagSpecAndMore('compgen')  # for -o and -A
+  COMPGEN_SPEC = flag_spec.FlagSpecAndMore('compgen')  # for -o and -A
 
   # TODO: Add -l for COMP_LINE.  -p for COMP_POINT ?
   _DefineFlags(COMPGEN_SPEC)
@@ -379,7 +379,7 @@ class CompGen(object):
 
 
 if mylib.PYTHON:
-  COMPOPT_SPEC = arg_def.FlagSpecAndMore('compopt')  # for -o
+  COMPOPT_SPEC = flag_spec.FlagSpecAndMore('compopt')  # for -o
   _DefineOptions(COMPOPT_SPEC)
 
 
@@ -407,7 +407,7 @@ class CompOpt(object):
 
 
 if mylib.PYTHON:
-  COMPADJUST_SPEC = arg_def.FlagSpecAndMore('compadjust')
+  COMPADJUST_SPEC = flag_spec.FlagSpecAndMore('compadjust')
 
   COMPADJUST_SPEC.ShortFlag('-n', args.String,
       help='Do NOT split by these characters.  It omits them from COMP_WORDBREAKS.')

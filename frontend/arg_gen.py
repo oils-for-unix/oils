@@ -8,7 +8,7 @@ import sys
 
 from _devbuild.gen.runtime_asdl import flag_type_e, value_e
 from core.util import log
-from frontend import arg_def
+from frontend import flag_spec
 from mycpp.mylib import tagswitch
 
 
@@ -27,7 +27,7 @@ def Cpp(specs, header_f, cc_f):
 #ifndef ARG_TYPES_H
 #define ARG_TYPES_H
 
-#include "frontend_arg_def.h"  // for FlagSpec_c
+#include "frontend_flag_spec.h"  // for FlagSpec_c
 #include "mylib.h"
 
 namespace value_e = runtime_asdl::value_e;
@@ -197,7 +197,7 @@ def main(argv):
   except IndexError:
     raise RuntimeError('Action required')
 
-  specs = arg_def.FLAG_SPEC
+  specs = flag_spec.FLAG_SPEC
 
   for spec_name in sorted(specs):
     spec = specs[spec_name]

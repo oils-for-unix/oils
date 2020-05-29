@@ -16,7 +16,7 @@ from _devbuild.gen.runtime_asdl import value, value_e, scope_e
 from _devbuild.gen.syntax_asdl import sh_lhs_expr
 from core import error
 from core.util import log
-from frontend import arg_def
+from frontend import flag_spec
 from frontend import args
 from frontend import match
 from mycpp.mylib import tagswitch
@@ -179,13 +179,13 @@ class Opts(_Builtin):
     raise NotImplementedError()
 
 
-JSON_WRITE_SPEC = arg_def.OilFlags('json-write')
+JSON_WRITE_SPEC = flag_spec.OilFlags('json-write')
 JSON_WRITE_SPEC.Flag('-pretty', args.Bool, default=True,
                      help='Whitespace in output (default true)')
 JSON_WRITE_SPEC.Flag('-indent', args.Int, default=2,
                      help='Indent JSON by this amount')
 
-JSON_READ_SPEC = arg_def.OilFlags('json-read')
+JSON_READ_SPEC = flag_spec.OilFlags('json-read')
 # yajl has this option
 JSON_READ_SPEC.Flag('-validate', args.Bool, default=True,
                      help='Validate UTF-8')
@@ -315,7 +315,7 @@ class Json(object):
     return 0
 
 
-WRITE_SPEC = arg_def.OilFlags('write')
+WRITE_SPEC = flag_spec.OilFlags('write')
 WRITE_SPEC.Flag('-sep', args.String, default='\n',
                     help='Characters to separate each argument')
 WRITE_SPEC.Flag('-end', args.String, default='\n',
@@ -376,7 +376,7 @@ def _ReadLine():
   return ''.join(chars)
 
 
-GETLINE_SPEC = arg_def.OilFlags('getline')
+GETLINE_SPEC = flag_spec.OilFlags('getline')
 GETLINE_SPEC.Flag('-cstr', args.Bool,
                     help='Decode the line in CSTR format')
 GETLINE_SPEC.Flag('-end', args.Bool, default=False,

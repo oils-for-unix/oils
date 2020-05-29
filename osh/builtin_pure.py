@@ -29,7 +29,7 @@ from core import state
 from core import ui
 from core.util import log
 from frontend import args
-from frontend import arg_def
+from frontend import flag_spec
 from frontend import match
 from mycpp import mylib
 from osh import word_compile
@@ -62,7 +62,7 @@ class Alias(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    _, arg_r = arg_def.ParseCmdVal('alias', cmd_val)
+    _, arg_r = flag_spec.ParseCmdVal('alias', cmd_val)
     argv = arg_r.Rest()
 
     if len(argv) == 0:
@@ -99,7 +99,7 @@ class UnAlias(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    _, arg_r = arg_def.ParseCmdVal('unalias', cmd_val)
+    _, arg_r = flag_spec.ParseCmdVal('unalias', cmd_val)
     argv = arg_r.Rest()
 
     if len(argv) == 0:
@@ -156,7 +156,7 @@ class Set(object):
 
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()  # skip 'set'
-    arg = arg_def.ParseMore('set', arg_r)
+    arg = flag_spec.ParseMore('set', arg_r)
 
     # 'set -o' shows options.  This is actually used by autoconf-generated
     # scripts!
@@ -178,7 +178,7 @@ class Shopt(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_r = arg_def.ParseCmdVal('shopt', cmd_val)
+    attrs, arg_r = flag_spec.ParseCmdVal('shopt', cmd_val)
 
     arg = arg_types.shopt(attrs.attrs)
     opt_names = arg_r.Rest()
@@ -228,7 +228,7 @@ class Hash(object):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_r = arg_def.ParseCmdVal('hash', cmd_val)
+    attrs, arg_r = flag_spec.ParseCmdVal('hash', cmd_val)
     arg = arg_types.hash(attrs.attrs)
 
     rest = arg_r.Rest()
@@ -399,7 +399,7 @@ class Echo(object):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     argv = cmd_val.argv[1:]
-    attrs, arg_index = arg_def.ParseLikeEcho('echo', argv)
+    attrs, arg_index = flag_spec.ParseLikeEcho('echo', argv)
 
     arg = arg_types.echo(attrs.attrs)
     argv = argv[arg_index:]

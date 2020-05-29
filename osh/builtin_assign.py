@@ -13,7 +13,7 @@ from _devbuild.gen.runtime_asdl import (
 from _devbuild.gen.syntax_asdl import source
 from _devbuild.gen import arg_types
 
-from frontend import arg_def
+from frontend import flag_spec
 from frontend import args
 from core import error
 from core.pyerror import e_usage
@@ -191,7 +191,7 @@ class Export(vm._AssignBuiltin):
     # type: (cmd_value__Assign) -> int
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
-    attrs = arg_def.Parse('export_', arg_r)
+    attrs = flag_spec.Parse('export_', arg_r)
     arg = arg_types.export_(attrs.attrs)
     #arg = attrs
 
@@ -257,7 +257,7 @@ class Readonly(vm._AssignBuiltin):
     # type: (cmd_value__Assign) -> int
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
-    attrs = arg_def.Parse('readonly', arg_r)
+    attrs = flag_spec.Parse('readonly', arg_r)
     arg = arg_types.readonly(attrs.attrs)
 
     if arg.p or len(cmd_val.pairs) == 0:
@@ -310,7 +310,7 @@ class NewVar(vm._AssignBuiltin):
     # type: (cmd_value__Assign) -> int
     arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
     arg_r.Next()
-    attrs = arg_def.Parse('new_var', arg_r)
+    attrs = flag_spec.Parse('new_var', arg_r)
     arg = arg_types.new_var(attrs.attrs)
 
     status = 0
@@ -449,7 +449,7 @@ class Unset(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_r = arg_def.ParseCmdVal('unset', cmd_val)
+    attrs, arg_r = flag_spec.ParseCmdVal('unset', cmd_val)
     arg = arg_types.unset(attrs.attrs)
 
     argv, arg_spids = arg_r.Rest2()

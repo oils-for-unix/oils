@@ -22,7 +22,7 @@ from core import ui
 from core.pyerror import e_usage
 from core.util import log
 from core.vm import _Builtin
-from frontend import arg_def
+from frontend import flag_spec
 from mycpp import mylib
 from pylib import os_path
 
@@ -46,7 +46,7 @@ _ = log
 
 
 if mylib.PYTHON:
-  TIMES_SPEC = arg_def.FlagSpec('times')
+  TIMES_SPEC = flag_spec.FlagSpec('times')
 
 class Times(_Builtin):
   def Run(self, cmd_val):
@@ -165,7 +165,7 @@ class Read(_Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_r = arg_def.ParseCmdVal('read', cmd_val)
+    attrs, arg_r = flag_spec.ParseCmdVal('read', cmd_val)
     arg = arg_types.read(attrs.attrs)
     names = arg_r.Rest()
 
@@ -258,7 +258,7 @@ class Cd(_Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_r = arg_def.ParseCmdVal('cd', cmd_val)
+    attrs, arg_r = flag_spec.ParseCmdVal('cd', cmd_val)
     arg = arg_types.cd(attrs.attrs)
 
     dest_dir, arg_spid = arg_r.Peek2()
@@ -427,7 +427,7 @@ class Dirs(_Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_r = arg_def.ParseCmdVal('dirs', cmd_val)
+    attrs, arg_r = flag_spec.ParseCmdVal('dirs', cmd_val)
     arg = arg_types.dirs(attrs.attrs)
 
     home_dir = state.MaybeString(self.mem, 'HOME')
@@ -460,7 +460,7 @@ class Pwd(_Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_r = arg_def.ParseCmdVal('pwd', cmd_val)
+    attrs, arg_r = flag_spec.ParseCmdVal('pwd', cmd_val)
     arg = arg_types.pwd(attrs.attrs)
 
     # NOTE: 'pwd' will succeed even if the directory has disappeared.  Other
@@ -489,7 +489,7 @@ class Help(_Builtin):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
 
-    #attrs, arg_r = arg_def.ParseCmdVal('help', cmd_val)
+    #attrs, arg_r = flag_spec.ParseCmdVal('help', cmd_val)
     #arg = arg_types.help(attrs.attrs)
 
     try:
@@ -557,7 +557,7 @@ class History(_Builtin):
     if not readline_mod:
       raise error.Usage("OSH wasn't compiled with the readline module.")
 
-    attrs, arg_r = arg_def.ParseCmdVal('history', cmd_val)
+    attrs, arg_r = flag_spec.ParseCmdVal('history', cmd_val)
     arg = arg_types.history(attrs.attrs)
 
     # Clear all history

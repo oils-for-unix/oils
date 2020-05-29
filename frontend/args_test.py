@@ -8,7 +8,7 @@ import unittest
 from _devbuild.gen.runtime_asdl import cmd_value
 from asdl import runtime
 from core import error
-from frontend import arg_def
+from frontend import flag_spec
 from frontend import args  # module under test
 
 
@@ -30,7 +30,7 @@ def _ParseCmdVal(spec, cmd_val):
 class ArgsTest(unittest.TestCase):
 
   def testFlagSpecAndMore(self):
-    s = arg_def._FlagSpecAndMore()
+    s = flag_spec._FlagSpecAndMore()
     s.ShortFlag('-c', args.String)
     s.ShortFlag('-i', args.String)
 
@@ -108,7 +108,7 @@ class ArgsTest(unittest.TestCase):
     # We're not going to replicate that silly behavior.
 
   def testChoices(self):
-    s = arg_def._FlagSpecAndMore()
+    s = flag_spec._FlagSpecAndMore()
     s.LongFlag('--ast-format', ['text', 'html'])
 
     arg_r = args.Reader(['--ast-format', 'text'])
@@ -119,7 +119,7 @@ class ArgsTest(unittest.TestCase):
         error.Usage, s.Parse, args.Reader(['--ast-format', 'oops']))
 
   def testFlagSpec(self):
-    s = arg_def._FlagSpec()
+    s = flag_spec._FlagSpec()
     s.ShortFlag('-f')
     s.ShortFlag('-n')
     s.ShortFlag('-d', args.String)  # delimiter
@@ -160,7 +160,7 @@ class ArgsTest(unittest.TestCase):
     self.assertEqual('+', arg.x)
 
   def testReadFlagSpec(self):
-    s = arg_def._FlagSpec()
+    s = flag_spec._FlagSpec()
     s.ShortFlag('-r')  # no backslash escapes
     s.ShortFlag('-t', args.Float)  # timeout
     s.ShortFlag('-p', args.String)  # prompt string
@@ -199,7 +199,7 @@ class ArgsTest(unittest.TestCase):
     self.assertRaises(error.Usage, _ParseCmdVal, s, _MakeBuiltinArgv(['-rz']))
 
   def testParseLikeEcho(self):
-    s = arg_def._FlagSpec()
+    s = flag_spec._FlagSpec()
     s.ShortFlag('-e')  # no backslash escapes
     s.ShortFlag('-n')
 
@@ -221,7 +221,7 @@ class ArgsTest(unittest.TestCase):
     self.assertEqual(0, i)
 
   def testOilFlags(self):
-    s = arg_def._OilFlags()
+    s = flag_spec._OilFlags()
     s.Flag('-docstring', args.Bool, default=True)
     s.Flag('-out-file', args.String)
     s.Flag('-retries', args.Int)

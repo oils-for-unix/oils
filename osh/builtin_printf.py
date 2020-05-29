@@ -21,7 +21,7 @@ from core import error
 from qsn_ import qsn
 from core import state
 from core.util import p_die, e_die
-from frontend import arg_def
+from frontend import flag_spec
 from frontend import consts
 from frontend import match
 from frontend import reader
@@ -156,7 +156,7 @@ class Printf(object):
     """
     printf: printf [-v var] format [argument ...]
     """
-    attrs, arg_r = arg_def.ParseCmdVal('printf', cmd_val)
+    attrs, arg_r = flag_spec.ParseCmdVal('printf', cmd_val)
     arg = arg_types.printf(attrs.attrs)
 
     fmt, fmt_spid = arg_r.ReadRequired2('requires a format string')

@@ -27,7 +27,7 @@ from pgen2 import driver, parse, pgen, grammar
 from pgen2 import token
 from pgen2 import tokenize
 
-from frontend import arg_def
+from frontend import flag_spec
 from frontend import args
 from core.util import log
 from core import error
@@ -266,7 +266,7 @@ GRAMMAR_REL_PATH = '_build/opy/py27.grammar.marshal'
 def OpyCommandMain(argv):
   """Dispatch to the right action."""
 
-  # TODO: Use core/arg_def.
+  # TODO: Use core/flag_spec.
   #opts, argv = Options().parse_args(argv)
 
   try:
@@ -304,7 +304,7 @@ def OpyCommandMain(argv):
     compiler = None
 
   # TODO: Also have a run_spec for 'opyc run'.
-  compile_spec = arg_def.OilFlags('opy')
+  compile_spec = flag_spec.OilFlags('opy')
   compile_spec.Flag('-emit-docstring', args.Bool, default=True,
                     help='Whether to emit docstrings')
   compile_spec.Flag('-fast-ops', args.Bool, default=True,

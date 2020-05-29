@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-arg_def.py -- Flag and arg defs for builtins.
+flag_spec.py -- Flag and arg defs for builtins.
 """
 from __future__ import print_function
 
@@ -8,7 +8,7 @@ import sys
 
 from _devbuild.gen.runtime_asdl import (
     cmd_value__Argv, flag_type, flag_type_t, value, value_t,
-    FlagSpec_, SetToArg_,
+    FlagSpec_, FlagSpecAndMore_, SetToArg_,
 )
 from frontend import args
 from frontend import option_def
@@ -55,8 +55,7 @@ def Parse(spec_name, arg_r):
   # type: (str, args.Reader) -> args._Attributes
   """Parse argv using a given FlagSpec."""
   spec = FLAG_SPEC[spec_name]
-  #return args.Parse(spec, arg_r)
-  return spec.Parse(arg_r)
+  return args.Parse(spec.spec, arg_r)
 
 
 def ParseCmdVal(spec_name, cmd_val):
@@ -65,9 +64,7 @@ def ParseCmdVal(spec_name, cmd_val):
   arg_r.Next()  # move past the builtin name
 
   spec = FLAG_SPEC[spec_name]
-  # TODO:
-  #return args.Parse(spec, arg_r)
-  return spec.Parse(arg_r), arg_r
+  return args.Parse(spec.spec, arg_r), arg_r
 
 
 def ParseLikeEcho(spec_name, argv):
@@ -165,7 +162,7 @@ class _FlagSpec(object):
       default = value.Bool(False)  # type: value_t
     elif arg_type == args.Int:
       typ = flag_type.Int()
-      default = value.Int(-1)
+      default = value.Int(-1)  # positive values aren't allowed now
     elif arg_type == args.Float:
       typ = flag_type.Float()
       default = value.Float(0.0)
@@ -255,11 +252,15 @@ class _FlagSpecAndMore(object):
     spec.Parse(...)
   """
 
-  def __init__(self):
+  def __init__(self, typed=False):
     # type: () -> None
+    self.spec = FlagSpecAndMore_()
+    self.typed = typed
+
     self.actions_short = {}  # type: Dict[str, args._Action]  # {'-c': _Action}
     self.actions_long = {}  # type: Dict[str, args._Action]  # {'--rcfile': _Action}
-    self.defaults = {}  # type: Dict[str, value_t]
+
+    self.defaults = self.spec.defaults
 
     self.actions_short['o'] = args.SetNamedOption()  # -o and +o
     self.actions_short['O'] = args.SetNamedOption(shopt=True)  # -O and +O

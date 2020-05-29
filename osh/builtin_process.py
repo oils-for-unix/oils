@@ -21,7 +21,7 @@ from core import ui
 from core.vm import _Builtin
 from core.util import log
 from frontend import args
-from frontend import arg_def
+from frontend import flag_spec
 from frontend import reader
 from mycpp import mylib
 from mycpp.mylib import tagswitch
@@ -40,7 +40,7 @@ if TYPE_CHECKING:
 
 
 if mylib.PYTHON:
-  EXEC_SPEC = arg_def.FlagSpec('exec')
+  EXEC_SPEC = flag_spec.FlagSpec('exec')
 
 
 class Exec(_Builtin):
@@ -107,7 +107,7 @@ class Wait(_Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_r = arg_def.ParseCmdVal('wait', cmd_val)
+    attrs, arg_r = flag_spec.ParseCmdVal('wait', cmd_val)
     arg = arg_types.wait(attrs.attrs)
 
     job_ids, arg_spids = arg_r.Rest2()
@@ -375,7 +375,7 @@ class Trap(_Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    attrs, arg_r = arg_def.ParseCmdVal('trap', cmd_val)
+    attrs, arg_r = flag_spec.ParseCmdVal('trap', cmd_val)
     arg = arg_types.trap(attrs.attrs)
 
     if arg.p:  # Print registered handlers
