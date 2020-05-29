@@ -154,7 +154,7 @@ oil-asdl-to-cpp() {
 oil-cpp() {
   oil-asdl-to-cpp
   arith-parse-cpp-gen
-  build/codegen.sh arg-cpp-gen
+  build/codegen.sh flag-gen-cpp
   build/mycpp.sh osh-eval  # used to be osh-parse
 
   echo
@@ -266,7 +266,7 @@ _minimal() {
 
   oil-asdl-to-py  # depends on Id
 
-  build/codegen.sh arg-mypy-gen
+  build/codegen.sh flag-gen-mypy
 
   # Only for testing.
   asdl/run.sh gen-typed-demo-asdl

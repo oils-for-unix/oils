@@ -17,6 +17,7 @@ except ImportError:
 from core import pyutil
 from core import test_lib
 from frontend import flag_def  # side effect: flags are defined!
+_ = flag_def
 from osh import split
 from osh import builtin_misc  # module under test
 

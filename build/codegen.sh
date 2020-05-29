@@ -112,14 +112,14 @@ option-cpp-gen() {
   log "Wrote $out_dir/core_optview.h"
 }
 
-arg-mypy-gen() {
+flag-gen-mypy() {
   local out=_devbuild/gen/arg_types.py
   frontend/flag_gen.py mypy > $out
   #cat $out
   log "Wrote $out"
 }
 
-arg-cpp-gen() {
+flag-gen-cpp() {
   local prefix='_build/cpp/arg_types'
 
   mkdir -p $(dirname $prefix)  # unit tests need this

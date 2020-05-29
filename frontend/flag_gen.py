@@ -11,6 +11,9 @@ from core.util import log
 from frontend import flag_def  # side effect: flags are defined!
 from frontend import flag_spec
 from mycpp.mylib import tagswitch
+# This causes a circular build dependency!  That is annoying.
+# builtin_comp -> core/completion -> pylib/{os_path,path_stat,...} -> posix_
+#from osh import builtin_comp
 
 
 def CString(s):
@@ -198,22 +201,24 @@ def main(argv):
   except IndexError:
     raise RuntimeError('Action required')
 
+  for spec_name in sorted(flag_spec.FLAG_SPEC_AND_MORE):
+    log('%s', spec_name)
+
   specs = flag_spec.FLAG_SPEC
 
+  log('--')
   for spec_name in sorted(specs):
     spec = specs[spec_name]
-    spec.spec.PrettyPrint(f=sys.stderr)
-    log('')
-    
-    log('spec.arity1 %s', spec.spec.arity1)
-
+    #spec.spec.PrettyPrint(f=sys.stderr)
+    #log('spec.arity1 %s', spec.spec.arity1)
     log('%s', spec_name)
+
     #print(dir(spec))
     #print(spec.arity0)
     #print(spec.arity1)
     #print(spec.options)
     # Every flag has a default
-    log('%s', spec.fields)
+    #log('%s', spec.fields)
 
   if action == 'cpp':
     prefix = argv[2]
