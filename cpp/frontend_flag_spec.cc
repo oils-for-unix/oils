@@ -29,13 +29,13 @@ class Reader {
   List<int>* spids;
 };
 
-}
+}  // namespace args
 
 namespace flag_spec {
 
 using arg_types::kFlagSpecs;
-using runtime_asdl::value__Undef;
 using runtime_asdl::value__Bool;
+using runtime_asdl::value__Undef;
 using runtime_asdl::value_t;
 
 // "Inflate" the static C data into a heap-allocated ASDL data structure.
@@ -92,17 +92,17 @@ runtime_asdl::FlagSpec_* CreateSpec(FlagSpec_c* in) {
       // log("default %s", d->name);
       value_t* val;
       switch (pair->default_val) {
-        case Default_c::Undef:
-          val = new value__Undef();
-          break;
-        case Default_c::False:
-          val = new value__Bool(false);
-          break;
-        case Default_c::True:
-          val = new value__Bool(true);
-          break;
-        default:
-          assert(0);
+      case Default_c::Undef:
+        val = new value__Undef();
+        break;
+      case Default_c::False:
+        val = new value__Bool(false);
+        break;
+      case Default_c::True:
+        val = new value__Bool(true);
+        break;
+      default:
+        assert(0);
       }
       out->defaults->set(new Str(pair->name), val);
       ++i;
@@ -146,7 +146,6 @@ args::_Attributes* Parse(Str* spec_name, args::Reader* arg_r) {
 
 Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
     Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val) {
-
 #ifdef CPP_UNIT_TEST
   return Tuple2<args::_Attributes*, args::Reader>(nullptr, nullptr);
 #else
@@ -155,7 +154,8 @@ Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
 
   runtime_asdl::FlagSpec_* spec = LookupFlagSpec(spec_name);
   assert(spec);  // should always be found
-  return Tuple2<args::_Attributes*, args::Reader*>(args::Parse(spec, arg_r), arg_r);
+  return Tuple2<args::_Attributes*, args::Reader*>(args::Parse(spec, arg_r),
+                                                   arg_r);
 #endif
 }
 
