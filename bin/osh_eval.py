@@ -27,20 +27,20 @@ from frontend import reader
 from mycpp import mylib
 from osh import split
 from osh import builtin_assign
-from osh import builtin_meta
+#from osh import builtin_meta
 
 # translation: has 'set' builtin
-from osh import builtin_pure
-from osh import builtin_printf
-from osh import builtin_bracket
-from osh import builtin_process
+#from osh import builtin_pure
+#from osh import builtin_printf
+#from osh import builtin_bracket
+#from osh import builtin_process
 
 # Depends on core/completion.py
 # _FlagSpecAndMore needs translating
 #from osh import builtin_comp
 
 # - note: history has readline_mod argument
-from osh import builtin_misc
+#from osh import builtin_misc
 
 # Evaluators
 from osh import cmd_eval
@@ -59,12 +59,12 @@ if TYPE_CHECKING:
 if mylib.PYTHON:
   unused1 = log
   unused2 = args
-  unused3 = builtin_meta
-  unused4 = builtin_pure
-  unused5 = builtin_bracket
-  unused6 = builtin_misc
-  unused7 = builtin_printf
-  unused8 = builtin_process
+  #unused3 = builtin_meta
+  #unused4 = builtin_pure
+  #unused5 = builtin_bracket
+  #unused6 = builtin_misc
+  #unused7 = builtin_printf
+  #unused8 = builtin_process
 
 
 def Parse(argv):

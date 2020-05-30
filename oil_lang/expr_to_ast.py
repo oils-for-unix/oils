@@ -4,7 +4,6 @@ expr_to_ast.py
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
-from _devbuild.gen import syntax_asdl as syn
 from _devbuild.gen.syntax_asdl import (
     Token, speck, double_quoted, single_quoted, simple_var_sub, braced_var_sub,
     command_sub, sh_array_literal,
@@ -15,6 +14,7 @@ from _devbuild.gen.syntax_asdl import (
     name_type, place_expr, place_expr_e, place_expr_t, type_expr_t,
     comprehension, subscript, attribute, proc_sig, proc_sig_t, param,
     named_arg, arg_list,
+    variant, variant_type, variant_type_t,
 )
 from _devbuild.gen import grammar_nt
 
@@ -966,27 +966,27 @@ class Transformer(object):
       out.params = self._DataParams(children[2])
 
   def _VariantType(self, pnode):
-    # type: (PNode) -> syn.variant_type_t
+    # type: (PNode) -> variant_type_t
     """
     variant_type: Expr_Symbol | '(' data_params ')' 
     """
     n = len(pnode.children)
     if n == 1:
-      return syn.variant_type.Ref(pnode.children[0].tok)
+      return variant_type.Ref(pnode.children[0].tok)
     else:
       assert n == 3, pnode
-      return syn.variant_type.Anon(self._DataParams(pnode.children[1]))
+      return variant_type.Anon(self._DataParams(pnode.children[1]))
 
   def _Variant(self, pnode):
-    # type: (PNode) -> syn.variant
+    # type: (PNode) -> variant
     """
     variant: Expr_Name [ variant_type ]
     """
     assert pnode.typ == grammar_nt.variant, pnode
-    t = None  # type: syn.variant_type_t
+    t = None  # type: variant_type_t
     if len(pnode.children) == 2:
       t = self._VariantType(pnode.children[1])
-    return syn.variant(pnode.children[0].tok, t)
+    return variant(pnode.children[0].tok, t)
 
   def Enum(self, pnode, out):
     # type: (PNode, command__Enum) -> None

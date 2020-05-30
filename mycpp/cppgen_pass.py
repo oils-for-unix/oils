@@ -277,6 +277,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     # A little hack to reuse this pass for declarations too
     def decl_write(self, msg, *args):
+      # TODO:
+      # self.header_f ?
+      # Just one file for all exported?
+
       if args:
         msg = msg % args
       self.f.write(msg)
@@ -2044,6 +2048,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 're_repeat_e', 're_repeat',
                 'class_literal_term_e', 'class_literal_term',
                 'sh_lhs_expr_e', 'sh_lhs_expr',
+                'variant_type',
 
                 # runtime_asdl
                 'flag_type_e', 'flag_type',

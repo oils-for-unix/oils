@@ -45,7 +45,7 @@ struct FlagSpec_c {
   DefaultPair_c* defaults;
 };
 
-namespace arg_def {
+namespace flag_spec {
 
 // TODO: Should be replaced with an ASDL type.
 class _FlagSpecAndMore {
@@ -60,9 +60,9 @@ runtime_asdl::FlagSpec_* LookupFlagSpec(Str* spec_name);
 
 args::_Attributes* Parse(Str* spec_name, args::Reader* arg_r);
 
-Tuple2<args::_Attributes*, int> ParseCmdVal(
+Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
     Str* spec_name, runtime_asdl::cmd_value__Argv* arg_r);
 
-}  // namespace arg_def
+}  // namespace flag_spec
 
 #endif  // FRONTEND_ARG_DEF_H

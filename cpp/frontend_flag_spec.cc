@@ -31,7 +31,7 @@ class Reader {
 
 }
 
-namespace arg_def {
+namespace flag_spec {
 
 using arg_types::kFlagSpecs;
 using runtime_asdl::value__Undef;
@@ -144,19 +144,19 @@ args::_Attributes* Parse(Str* spec_name, args::Reader* arg_r) {
 #endif
 }
 
-Tuple2<args::_Attributes*, int> ParseCmdVal(
+Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
     Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val) {
 
 #ifdef CPP_UNIT_TEST
-  return Tuple2<args::_Attributes*, int>(nullptr, 0);
+  return Tuple2<args::_Attributes*, args::Reader>(nullptr, nullptr);
 #else
   auto arg_r = new args::Reader(cmd_val->argv, cmd_val->arg_spids);
   arg_r->Next();  // move past the builtin name
 
   runtime_asdl::FlagSpec_* spec = LookupFlagSpec(spec_name);
   assert(spec);  // should always be found
-  return Tuple2<args::_Attributes*, int>(args::Parse(spec, arg_r), arg_r->i);
+  return Tuple2<args::_Attributes*, args::Reader*>(args::Parse(spec, arg_r), arg_r);
 #endif
 }
 
-}  // namespace arg_def
+}  // namespace flag_spec

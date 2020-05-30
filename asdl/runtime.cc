@@ -4,7 +4,7 @@
 #include "hnode_asdl.h"
 #include "qsn_qsn.h"
 
-// For hnode::External in asdl/format.py
+// For hnode::External in asdl/format.py.  TODO: Remove this when that is removed.
 inline Str* repr(void* obj) {
   assert(0);
 }

@@ -4,6 +4,7 @@ mycpp_main.py - Translate a subset of Python to C++, using MyPy's typed AST.
 """
 from __future__ import print_function
 
+import optparse
 import os
 import sys
 
@@ -21,6 +22,22 @@ import debug_pass
 import pass_state
 
 from util import log
+
+
+def Options():
+  """Returns an option parser instance."""
+
+  p = optparse.OptionParser()
+  p.add_option(
+      '-v', '--verbose', dest='verbose', action='store_true', default=False,
+      help='Show details about')
+
+  # TODO:
+  # --header-out
+  #
+  # --classes ColorOutput args.Reader
+  # --files asdl/runtime?
+  return p
 
 
 # Copied from mypyc/build.py
@@ -90,6 +107,10 @@ def main(argv):
      '--follow-imports=silent',
      #'--verbose',
   ]
+
+  o = Options()
+  opts, argv = o.parse_args(argv)
+  #print(opts)
      
   paths = argv[1:]  # e.g. asdl/typed_arith_parse.py
 

@@ -320,9 +320,8 @@ class ExprParser(object):
       # ParseError has a "too much input" case but I haven't been able to
       # tickle it.  Mabye it's because of the Eof tokens?
 
-      raise error.Parse(
-          'Syntax error in expression (near %s)', ui.PrettyId(e.tok.id),
-          token=e.tok)
+      p_die('Syntax error in expression (near %s)', ui.PrettyId(e.tok.id),
+            token=e.tok)
       #raise error.Parse('Syntax error in expression', token=e.tok)
 
     return self.push_parser.rootnode, last_token
