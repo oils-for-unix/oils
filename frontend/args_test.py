@@ -18,6 +18,13 @@ def _MakeBuiltinArgv(argv):
   return cmd_value.Argv(argv, [runtime.NO_SPID] * len(argv))
 
 
+def _MakeReader(argv):
+  cmd_val = _MakeBuiltinArgv(argv)
+  arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+  arg_r.Next()
+  return arg_r
+
+
 def _ParseCmdVal(spec, cmd_val):
   # type: (cmd_value__Argv) -> Tuple[args._Attributes, int]
   """For testing only
@@ -203,22 +210,25 @@ class ArgsTest(unittest.TestCase):
     s.ShortFlag('-e')  # no backslash escapes
     s.ShortFlag('-n')
 
-    arg, i = s.ParseLikeEcho(['-e', '-n', 'foo'])
+    arg_r = _MakeReader(['-e', '-n', 'foo'])
+    arg = args.ParseLikeEcho(s, arg_r)
     self.assertEqual(True, arg.e)
     self.assertEqual(True, arg.n)
-    self.assertEqual(2, i)
+    self.assertEqual(3, arg_r.i)
 
-    arg, i = s.ParseLikeEcho(['-en', 'foo'])
+    arg_r = _MakeReader(['-en', 'foo'])
+    arg = args.ParseLikeEcho(s, arg_r)
     self.assertEqual(True, arg.e)
     self.assertEqual(True, arg.n)
-    self.assertEqual(1, i)
+    self.assertEqual(2, arg_r.i)
 
-    arg, i = s.ParseLikeEcho(['-ez', 'foo'])
+    arg_r = _MakeReader(['-ez', 'foo'])
+    arg = args.ParseLikeEcho(s, arg_r)
     #self.assertEqual(False, arg.e)
     #self.assertEqual(False, arg.n)
     self.assertEqual(None, arg.e)
     self.assertEqual(None, arg.n)
-    self.assertEqual(0, i)
+    self.assertEqual(1, arg_r.i)
 
   def testOilFlags(self):
     s = flag_spec._OilFlags()

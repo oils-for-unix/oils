@@ -164,7 +164,7 @@ Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
 Tuple2<args::_Attributes*, args::Reader*> ParseLikeEcho(
     Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val) {
 #ifdef CPP_UNIT_TEST
-  return Tuple2<args::_Attributes*, int>(nullptr, 0);
+  return Tuple2<args::_Attributes*, args::Reader*>(nullptr, nullptr);
 #else
   auto arg_r = new args::Reader(cmd_val->argv, cmd_val->arg_spids);
   arg_r->Next();  // move past the builtin name
