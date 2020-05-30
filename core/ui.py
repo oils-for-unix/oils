@@ -265,6 +265,8 @@ class ErrorFormatter(object):
 
     TODO: Rename this to Print(), and other variants to Printf.
     """
+    if span_id == runtime.NO_SPID:
+      span_id = self.CurrentLocation()
     _PrintWithOptionalSpanId('', msg, span_id, self.arena)
 
   def PrettyPrintError(self, err, prefix=''):

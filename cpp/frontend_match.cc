@@ -53,6 +53,10 @@ SimpleLexer* GlobLexer(Str* s) {
   return new SimpleLexer(&MatchGlobToken, s);
 }
 
+SimpleLexer* EchoLexer(Str* s) {
+  return new SimpleLexer(&MatchEchoToken, s);
+}
+
 bool IsValidVarName(Str* s) {
   // Call generated function.  Note: this relies on operator overloading.
   return ::IsValidVarName(reinterpret_cast<const unsigned char*>(s->data_),

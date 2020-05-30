@@ -42,6 +42,7 @@ class SimpleLexer {
 
 SimpleLexer* BraceRangeLexer(Str* s);
 SimpleLexer* GlobLexer(Str* s);
+SimpleLexer* EchoLexer(Str* s);
 
 //
 // Other Matching Functions

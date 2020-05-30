@@ -11,13 +11,13 @@ from core import error
 from core.error import _ControlFlow
 from core import main_loop
 from core import pyutil  # strerror_OS
-from core.vm import _Builtin
+from core import vm
 from frontend import flag_spec
 from frontend import consts
 from frontend import lexer_def
 from frontend import reader
 
-from typing import Dict, List, Tuple, TYPE_CHECKING
+from typing import Dict, List, Tuple, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from _devbuild.gen.syntax_asdl import command__ShFunction
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
   from osh.cmd_eval import CommandEvaluator
 
 
-class Eval(_Builtin):
+class Eval(vm._Builtin):
 
   def __init__(self, parse_ctx, exec_opts, cmd_ev):
     # type: (ParseContext, optview.Exec, CommandEvaluator) -> None
@@ -65,7 +65,7 @@ class Eval(_Builtin):
       self.arena.PopSource()
 
 
-class Source(_Builtin):
+class Source(vm._Builtin):
 
   def __init__(self, parse_ctx, search_path, cmd_ev, fd_state, errfmt):
     # type: (ParseContext, state.SearchPath, CommandEvaluator, process.FdState, ui.ErrorFormatter) -> None
@@ -129,8 +129,7 @@ class Source(_Builtin):
       f.close()
 
 
-
-class Command(_Builtin):
+class Command(vm._Builtin):
   """
   'command ls' suppresses function lookup.
   """
@@ -149,7 +148,7 @@ class Command(_Builtin):
     if arg.v:
       status = 0
       names = arg_r.Rest()
-      for kind, argument in ResolveNames(names, self.funcs, self.aliases,
+      for kind, argument in _ResolveNames(names, self.funcs, self.aliases,
                                          self.search_path):
         if kind is None:
           status = 1  # nothing printed, but we fail
@@ -159,7 +158,7 @@ class Command(_Builtin):
       return status
 
     # shift by one
-    cmd_val = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:])
+    cmd_val = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:], None)
 
     # If we respected do_fork here instead of passing True, the case
     # 'command date | wc -l' would take 2 processes instead of 3.  But no other
@@ -168,7 +167,7 @@ class Command(_Builtin):
     return self.shell_ex.RunSimpleCommand(cmd_val, True, call_procs=False)
 
 
-class Builtin(_Builtin):
+class Builtin(vm._Builtin):
 
   def __init__(self, shell_ex, errfmt):
     # type: (ShellExecutor, ui.ErrorFormatter) -> None
@@ -202,9 +201,9 @@ class Builtin(_Builtin):
     return self.shell_ex.RunBuiltin(to_run, cmd_val2)
 
 
-def ResolveNames(names, funcs, aliases, search_path):
+def _ResolveNames(names, funcs, aliases, search_path):
   # type: (List[str], Dict[str, command__ShFunction], Dict[str, str], state.SearchPath) -> List[Tuple[str, str]]
-  results = []
+  results = []  # type: List[Tuple[str, str]]
   for name in names:
     if name in funcs:
       kind = ('function', name)
@@ -226,7 +225,8 @@ def ResolveNames(names, funcs, aliases, search_path):
     else:
       resolved = search_path.Lookup(name)
       if resolved is None:
-        kind = (None, None)
+        no_str = None  # type: Optional[str]
+        kind = (no_str, no_str)
       else:
         kind = ('file', resolved) 
     results.append(kind)
@@ -234,7 +234,7 @@ def ResolveNames(names, funcs, aliases, search_path):
   return results
 
 
-class Type(object):
+class Type(vm._Builtin):
   def __init__(self, funcs, aliases, search_path):
     # type: (Dict[str, command__ShFunction], Dict[str, str], state.SearchPath) -> None
     self.funcs = funcs
@@ -252,7 +252,7 @@ class Type(object):
       funcs = self.funcs
 
     status = 0
-    r = ResolveNames(arg_r.Rest(), funcs, self.aliases, self.search_path)
+    r = _ResolveNames(arg_r.Rest(), funcs, self.aliases, self.search_path)
     for kind, name in r:
       if kind is None:
         status = 1  # nothing printed, but we fail

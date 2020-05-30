@@ -159,4 +159,13 @@ Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
 #endif
 }
 
+Tuple2<args::_Attributes*, int> ParseLikeEcho(Str* spec_name,
+                                              List<Str*>* argv) {
+  assert(0);
+}
+
+args::_Attributes* ParseMore(Str* spec_name, args::Reader* arg_r) {
+  assert(0);
+}
+
 }  // namespace flag_spec

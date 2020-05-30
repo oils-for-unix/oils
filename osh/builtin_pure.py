@@ -14,23 +14,22 @@ Others to move here: help
 """
 from __future__ import print_function
 
-import sys  # for sys.sdtout
-
 from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import value_e, value__Str
 
+from asdl import runtime
 from core import error
-from core.util import e_die
+from core.pyerror import e_usage
+from core.pyutil import stderr_line
 from core import optview
-from core.vm import _Builtin
-from qsn_ import qsn
 from core import state
-from core import ui
-from core.util import log
+from core.util import e_die, log
+from core import vm
 from frontend import args
 from frontend import flag_spec
 from frontend import match
+from qsn_ import qsn
 from mycpp import mylib
 from osh import word_compile
 
@@ -43,7 +42,7 @@ if TYPE_CHECKING:
 _ = log
 
 
-class Boolean(_Builtin):
+class Boolean(vm._Builtin):
   """For :, true, false."""
   def __init__(self, status):
     # type: (int) -> None
@@ -54,7 +53,7 @@ class Boolean(_Builtin):
     return self.status
 
 
-class Alias(object):
+class Alias(vm._Builtin):
   def __init__(self, aliases, errfmt):
     # type: (Dict[str, str], ErrorFormatter) -> None
     self.aliases = aliases
@@ -78,8 +77,8 @@ class Alias(object):
       if alias_exp is None:  # if we get a plain word without, print alias
         alias_exp = self.aliases.get(name)
         if alias_exp is None:
-          self.errfmt.Print('No alias named %r', name,
-                            span_id=cmd_val.arg_spids[i])
+          self.errfmt.Print_('No alias named %r' % name,
+                             span_id=cmd_val.arg_spids[i])
           status = 1
         else:
           print('alias %s=%r' % (name, alias_exp))
@@ -91,7 +90,7 @@ class Alias(object):
     return status
 
 
-class UnAlias(object):
+class UnAlias(vm._Builtin):
   def __init__(self, aliases, errfmt):
     # type: (Dict[str, str], ErrorFormatter) -> None
     self.aliases = aliases
@@ -103,17 +102,18 @@ class UnAlias(object):
     argv = arg_r.Rest()
 
     if len(argv) == 0:
-      raise error.Usage('unalias NAME...')
+      e_usage('requires an argument')
 
     status = 0
     for i, name in enumerate(argv):
       try:
         del self.aliases[name]
       except KeyError:
-        self.errfmt.Print('No alias named %r', name,
-                          span_id=cmd_val.arg_spids[i])
+        self.errfmt.Print_('No alias named %r' % name,
+                           span_id=cmd_val.arg_spids[i])
         status = 1
     return status
+
 
 def SetShellOpts(exec_opts, opt_changes, shopt_changes):
   # type: (MutableOpts, List[Tuple[str, bool]], List[Tuple[str, bool]]) -> None
@@ -126,7 +126,7 @@ def SetShellOpts(exec_opts, opt_changes, shopt_changes):
     exec_opts.SetShoptOption(opt_name, b)
 
 
-class Set(object):
+class Set(vm._Builtin):
   def __init__(self, exec_opts, mem):
     # type: (MutableOpts, Mem) -> None
     self.exec_opts = exec_opts
@@ -171,7 +171,7 @@ class Set(object):
     return 0
 
 
-class Shopt(object):
+class Shopt(vm._Builtin):
   def __init__(self, exec_opts):
     # type: (MutableOpts) -> None
     self.exec_opts = exec_opts
@@ -199,13 +199,11 @@ class Shopt(object):
           return 1  # at least one option is not true
       return 0  # all options are true
 
-    b = None
     if arg.s:
       b = True
     elif arg.u:
       b = False
-
-    if b is None:  # Print options
+    else:
       # bash prints uses a different format for 'shopt', but we use the
       # same format as 'shopt -p'.
       self.exec_opts.ShowShoptOptions(opt_names)
@@ -221,7 +219,7 @@ class Shopt(object):
     return 0
 
 
-class Hash(object):
+class Hash(vm._Builtin):
   def __init__(self, search_path):
     # type: (SearchPath) -> None
     self.search_path = search_path
@@ -234,7 +232,7 @@ class Hash(object):
     rest = arg_r.Rest()
     if arg.r:
       if len(rest):
-        raise error.Usage('got extra arguments after -r')
+        e_usage('got extra arguments after -r')
       self.search_path.ClearCache()
       return 0
 
@@ -243,7 +241,7 @@ class Hash(object):
       for cmd in rest:  # enter in cache
         full_path = self.search_path.CachedLookup(cmd)
         if full_path is None:
-          ui.Stderr('hash: %r not found', cmd)
+          stderr_line('hash: %r not found', cmd)
           status = 1
     else:  # print cache
       commands = self.search_path.CachedCommands()
@@ -256,7 +254,7 @@ class Hash(object):
 
 def _ParseOptSpec(spec_str):
   # type: (str) -> Dict[str, bool]
-  spec = {}
+  spec = {}  # type: Dict[str, bool]
   i = 0
   n = len(spec_str)
   while True:
@@ -300,9 +298,10 @@ def _GetOpts(spec, argv, optind, errfmt):
     try:
       optarg = argv[optind-1]  # 1-based indexing
     except IndexError:
-      errfmt.Print('getopts: option %r requires an argument.', current)
+      # TODO: Add location info
+      errfmt.Print_('getopts: option %r requires an argument.' % current)
       tmp = [qsn.maybe_shell_encode(a) for a in argv]
-      ui.Stderr('(getopts argv: %s)', ' '.join(tmp))
+      stderr_line('(getopts argv: %s)', ' '.join(tmp))
       # Hm doesn't cause status 1?
       return 0, '?', optarg, optind
 
@@ -311,7 +310,7 @@ def _GetOpts(spec, argv, optind, errfmt):
   return 0, opt_char, optarg, optind
 
 
-class GetOpts(object):
+class GetOpts(vm._Builtin):
   """
   Vars used:
     OPTERR: disable printing of error messages
@@ -345,18 +344,14 @@ class GetOpts(object):
       spec = _ParseOptSpec(spec_str)
       self.spec_cache[spec_str] = spec
 
-    # These errors are fatal errors, not like the builtin exiting with code 1.
-    # Because the invariants of the shell have been violated!
-    v = self.mem.GetVar('OPTIND')
-    if v.tag != value_e.Str:
-      e_die('OPTIND should be a string, got %r', v)
-    assert isinstance(v, value__Str)  # for MyPy
+    # TODO: OPTIND could be value.Int?
     try:
-      optind = int(v.s)
-    except ValueError:
-      e_die("OPTIND doesn't look like an integer, got %r", v.s)
+      optind = state.GetInteger(self.mem, 'OPTIND')
+    except error.Runtime as e:
+      self.errfmt.Print_(e.UserErrorString())
+      return 1
 
-    user_argv = arg_r.Rest() or self.mem.GetArgv()
+    user_argv = self.mem.GetArgv() if arg_r.AtEnd() else arg_r.Rest()
     #util.log('user_argv %s', user_argv)
     status, opt_char, optarg, optind = _GetOpts(spec, user_argv, optind,
                                                 self.errfmt)
@@ -370,11 +365,11 @@ class GetOpts(object):
       # NOTE: The builtin has PARTIALLY filed.  This happens in all shells
       # except mksh.
       raise error.Usage('got invalid variable name %r' % var_name,
-                            span_id=var_spid)
+                        span_id=var_spid)
     return status
 
 
-class Echo(object):
+class Echo(vm._Builtin):
   """echo builtin.
 
   shopt -s simple-echo:
@@ -395,6 +390,7 @@ class Echo(object):
   def __init__(self, exec_opts):
     # type: (optview.Exec) -> None
     self.exec_opts = exec_opts
+    self.f = mylib.Stdout()
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
@@ -407,7 +403,7 @@ class Echo(object):
     backslash_c = False  # \c terminates input
 
     if arg.e:
-      new_argv = []
+      new_argv = []  # type: List[str]
       for a in argv:
         parts = []  # type: List[str]
         lex = match.EchoLexer(a)
@@ -437,19 +433,19 @@ class Echo(object):
       if n == 0:
         pass
       elif n == 1:
-        sys.stdout.write(argv[0])
+        self.f.write(argv[0])
       else:
         # TODO: span_id could be more accurate
-        raise error.Usage(
+        e_usage(
             "takes at most one arg when strict_echo is on (hint: add quotes)")
     else:
       #log('echo argv %s', argv)
       for i, a in enumerate(argv):
         if i != 0:
-          sys.stdout.write(' ')  # arg separator
-        sys.stdout.write(a)
+          self.f.write(' ')  # arg separator
+        self.f.write(a)
 
     if not arg.n and not backslash_c:
-      sys.stdout.write('\n')
+      self.f.write('\n')
 
     return 0

@@ -1212,7 +1212,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
           # Collect statements that look like self.foo = 1
           if isinstance(lval.expr, NameExpr) and lval.expr.name == 'self':
-            log('    lval.name %s', lval.name)
+            #log('    lval.name %s', lval.name)
             lval_type = self.types[lval]
             self.member_vars[lval.name] = lval_type
 
@@ -1257,10 +1257,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           raise AssertionError(lval)
 
     def visit_for_stmt(self, o: 'mypy.nodes.ForStmt') -> T:
-        self.log('ForStmt')
-        self.log('  index_type %s', o.index_type)
-        self.log('  inferred_item_type %s', o.inferred_item_type)
-        self.log('  inferred_iterator_type %s', o.inferred_iterator_type)
+        if 0:
+          self.log('ForStmt')
+          self.log('  index_type %s', o.index_type)
+          self.log('  inferred_item_type %s', o.inferred_item_type)
+          self.log('  inferred_iterator_type %s', o.inferred_iterator_type)
 
         func_name = None  # does the loop look like 'for x in func():' ?
         if isinstance(o.expr, CallExpr) and isinstance(o.expr.callee, NameExpr):
@@ -1570,9 +1571,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             break;
         }
         """
-        log('WITH')
-        log('expr %s', o.expr)
-        log('target %s', o.target)
+        #log('WITH')
+        #log('expr %s', o.expr)
+        #log('target %s', o.target)
 
         assert len(o.expr) == 1, o.expr
         expr = o.expr[0]
@@ -1686,6 +1687,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             class_name is None and func_name == '_PackFlags' or
             class_name == 'Mem' and func_name in ('GetVar', 'SetVar', 'GetCell') or
             class_name == 'SearchPath' and func_name == 'Lookup' or
+            # core/ui.py
+            class_name == 'ErrorFormatter' and func_name == 'Print_' or
             # osh/sh_expr_eval.py
             class_name is None and func_name == 'EvalLhsAndLookup' or
             class_name == 'SplitContext' and
@@ -1696,7 +1699,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # osh/builtin_assign.py
             class_name is None and func_name == '_PrintVariables' or
             # virtual function
-            func_name == 'RunSimpleCommand'
+            func_name == 'RunSimpleCommand' or
+            # core/main_loop.py
+            func_name == 'Batch'
           ):
 
           default_val = o.arguments[-1].initializer

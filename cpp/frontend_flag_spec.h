@@ -61,7 +61,11 @@ runtime_asdl::FlagSpec_* LookupFlagSpec(Str* spec_name);
 args::_Attributes* Parse(Str* spec_name, args::Reader* arg_r);
 
 Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
-    Str* spec_name, runtime_asdl::cmd_value__Argv* arg_r);
+    Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val);
+
+Tuple2<args::_Attributes*, int> ParseLikeEcho(Str* spec_name, List<Str*>* argv);
+
+args::_Attributes* ParseMore(Str* spec_name, args::Reader* arg_r);
 
 }  // namespace flag_spec
 

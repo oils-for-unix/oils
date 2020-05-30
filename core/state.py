@@ -1708,3 +1708,20 @@ def MaybeString(mem, name):
     return GetString(mem, name)
   except error.Runtime:
     return None
+
+
+def GetInteger(mem, name):
+  # type: (Mem, str) -> int
+  """
+  For OPTIND variable used in getopts builtin.  TODO: it could be value.Int() ?
+  """
+  val = mem.GetVar(name, scope_e.Dynamic)
+  if val.tag_() != value_e.Str:
+    raise error.Runtime(
+        '$%s should be a string, got %s' % (name, ui.ValType(val)))
+  s = cast(value__Str, val).s
+  try:
+    i = int(s)
+  except ValueError:
+    raise error.Runtime("$%s doesn't look like an integer, got %r" % (name, s))
+  return i
