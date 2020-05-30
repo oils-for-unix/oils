@@ -22,6 +22,8 @@ from core import ui
 from core import vm
 from frontend import args
 from frontend import consts
+from frontend import flag_def  # side effect: flags are defined!
+_ = flag_def
 from frontend import parse_lib
 from frontend import reader
 from mycpp import mylib
@@ -214,14 +216,30 @@ def main(argv):
 
   cmd_deps.dumper = dev.CrashDumper('')
 
+  search_path = state.SearchPath(mem)
+
   builtins = {}  # type: Dict[int, vm._Builtin]
-  builtins[builtin_i.echo] = Echo()
-  builtins[builtin_i.shopt] = Shopt(mutable_opts)
-  builtins[builtin_i.set] = Set(mutable_opts)
+  builtins[builtin_i.echo] = builtin_pure.Echo(exec_opts)
+  #builtins[builtin_i.shopt] = Shopt(mutable_opts)
+  #builtins[builtin_i.set] = Set(mutable_opts)
+
+  builtins[builtin_i.set] = builtin_pure.Set(mutable_opts, mem)
+  builtins[builtin_i.shopt] = builtin_pure.Shopt(mutable_opts)
+
+  builtins[builtin_i.alias] = builtin_pure.Alias(aliases, errfmt)
+  builtins[builtin_i.unalias] = builtin_pure.UnAlias(aliases, errfmt)
+
+  builtins[builtin_i.hash] = builtin_pure.Hash(search_path)
+  builtins[builtin_i.getopts] = builtin_pure.GetOpts(mem, errfmt)
 
   builtins[builtin_i.shift] = builtin_assign.Shift(mem)
   builtins[builtin_i.unset] = builtin_assign.Unset(
       mem, exec_opts, procs, parse_ctx, arith_ev, errfmt)
+
+  true_ = builtin_pure.Boolean(0)
+  builtins[builtin_i.colon] = true_  # a "special" builtin 
+  builtins[builtin_i.true_] = true_
+  builtins[builtin_i.false_] = builtin_pure.Boolean(1)
 
   ex = NullExecutor(builtins)
 

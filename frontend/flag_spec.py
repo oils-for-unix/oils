@@ -66,10 +66,13 @@ def ParseCmdVal(spec_name, cmd_val):
   return args.Parse(spec.spec, arg_r), arg_r
 
 
-def ParseLikeEcho(spec_name, argv):
-  # type: (str, List[str]) -> Tuple[args._Attributes, int]
+def ParseLikeEcho(spec_name, cmd_val):
+  # type: (str, cmd_value__Argv) -> Tuple[args._Attributes, args.Reader]
+  arg_r = args.Reader(cmd_val.argv, spids=cmd_val.arg_spids)
+  arg_r.Next()  # move past the builtin name
+
   spec = FLAG_SPEC[spec_name]
-  return spec.ParseLikeEcho(argv)
+  return args.ParseLikeEcho(spec.spec, arg_r), arg_r
 
 
 def ParseMore(spec_name, arg_r):
@@ -193,40 +196,6 @@ class _FlagSpec(object):
     self.defaults[char] = value.Undef()
     # '+' or '-'.  TODO: Should we make it a bool?
     self.fields[char] = flag_type.Str()
-
-  def ParseLikeEcho(self, argv):
-    # type: (List[str]) -> Tuple[args._Attributes, int]
-    """
-    echo is a special case.  These work:
-      echo -n
-      echo -en
-   
-    - But don't respect --
-    - doesn't fail when an invalid flag is passed
-    """
-    arg_r = args.Reader(argv)
-    out = args._Attributes(self.defaults)
-
-    while not arg_r.AtEnd():
-      arg = arg_r.Peek()
-      chars = arg[1:]
-      if arg.startswith('-') and chars:
-        # Check if it looks like -en or not.
-        # NOTE: Changed to list comprehension to avoid
-        # LOAD_CLOSURE/MAKE_CLOSURE.
-        if not all([c in self.arity0 for c in arg[1:]]):
-          break  # looks like args
-
-        for ch in chars:
-          assert ch in self.arity0
-          out.SetTrue(ch)
-
-      else:
-        break  # Looks like an arg
-
-      arg_r.Next()  # next arg
-
-    return out, arg_r.i
 
   # TODO: Remove this method -- args.Parse() instead
   def Parse(self, arg_r):

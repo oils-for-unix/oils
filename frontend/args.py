@@ -532,6 +532,42 @@ def Parse(spec, arg_r):
   return out
 
 
+def ParseLikeEcho(spec, arg_r):
+  # type: (FlagSpec_, Reader) -> _Attributes
+  """
+  echo is a special case.  These work:
+    echo -n
+    echo -en
+ 
+  - But don't respect --
+  - doesn't fail when an invalid flag is passed
+  """
+  out = _Attributes(spec.defaults)
+
+  while not arg_r.AtEnd():
+    arg = arg_r.Peek()
+    chars = arg[1:]
+    if arg.startswith('-') and len(chars):
+      # Check if it looks like -en or not.  TODO: could optimize this.
+      done = False
+      for c in chars:
+        if c not in spec.arity0:
+          done = True
+          break
+      if done:
+        break
+
+      for ch in chars:
+        out.SetTrue(ch)
+
+    else:
+      break  # Looks like an arg
+
+    arg_r.Next()  # next arg
+
+  return out
+
+
 def ParseMore(spec, arg_r):
   # type: (flag_spec._FlagSpecAndMore, Reader) -> _Attributes
   """Return attributes and an index.

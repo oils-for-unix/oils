@@ -7,6 +7,8 @@
 // export headers!
 namespace args {
 args::_Attributes* Parse(runtime_asdl::FlagSpec_* spec, args::Reader* arg_r);
+args::_Attributes* ParseLikeEcho(runtime_asdl::FlagSpec_* spec,
+                                 args::Reader* arg_r);
 
 // Copied from osh_eval.cc translation
 class Reader {
@@ -147,7 +149,7 @@ args::_Attributes* Parse(Str* spec_name, args::Reader* arg_r) {
 Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
     Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val) {
 #ifdef CPP_UNIT_TEST
-  return Tuple2<args::_Attributes*, args::Reader>(nullptr, nullptr);
+  return Tuple2<args::_Attributes*, args::Reader*>(nullptr, nullptr);
 #else
   auto arg_r = new args::Reader(cmd_val->argv, cmd_val->arg_spids);
   arg_r->Next();  // move past the builtin name
@@ -159,9 +161,19 @@ Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
 #endif
 }
 
-Tuple2<args::_Attributes*, int> ParseLikeEcho(Str* spec_name,
-                                              List<Str*>* argv) {
-  assert(0);
+Tuple2<args::_Attributes*, args::Reader*> ParseLikeEcho(
+    Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val) {
+#ifdef CPP_UNIT_TEST
+  return Tuple2<args::_Attributes*, int>(nullptr, 0);
+#else
+  auto arg_r = new args::Reader(cmd_val->argv, cmd_val->arg_spids);
+  arg_r->Next();  // move past the builtin name
+
+  runtime_asdl::FlagSpec_* spec = LookupFlagSpec(spec_name);
+  assert(spec);  // should always be found
+  return Tuple2<args::_Attributes*, args::Reader*>(
+      args::ParseLikeEcho(spec, arg_r), arg_r);
+#endif
 }
 
 args::_Attributes* ParseMore(Str* spec_name, args::Reader* arg_r) {

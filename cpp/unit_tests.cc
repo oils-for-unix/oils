@@ -131,7 +131,7 @@ FlagSpec_c spec1 = {"export", arity0_1, arity1_1, options_1, defaults_1};
 // a copy for demonstrations
 FlagSpec_c spec2 = {"unset", arity0_1, arity1_1, options_1, defaults_1};
 
-TEST arg_def_test() {
+TEST flag_spec_test() {
   // Test the declared constants
   log("spec1.arity0 %s", spec1.arity0[0]);
   log("spec1.arity0 %s", spec1.arity0[1]);
@@ -148,9 +148,9 @@ TEST arg_def_test() {
   log("sizeof %d", sizeof(spec1.arity0));  // 8
   log("sizeof %d", sizeof(arity0_1) / sizeof(arity0_1[0]));
 
-  arg_def::LookupFlagSpec(new Str("new_var"));
-  arg_def::LookupFlagSpec(new Str("readonly"));
-  arg_def::LookupFlagSpec(new Str("zzz"));
+  flag_spec::LookupFlagSpec(new Str("new_var"));
+  flag_spec::LookupFlagSpec(new Str("readonly"));
+  flag_spec::LookupFlagSpec(new Str("zzz"));
 
   PASS();
 }
@@ -164,7 +164,7 @@ int main(int argc, char** argv) {
   RUN_TEST(util_test);
   RUN_TEST(libc_test);
   RUN_TEST(exceptions);
-  RUN_TEST(arg_def_test);
+  RUN_TEST(flag_spec_test);
   GREATEST_MAIN_END(); /* display results */
   return 0;
 }

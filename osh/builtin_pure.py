@@ -16,15 +16,13 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import value_e, value__Str
 
-from asdl import runtime
 from core import error
 from core.pyerror import e_usage
 from core.pyutil import stderr_line
 from core import optview
 from core import state
-from core.util import e_die, log
+from core.util import log
 from core import vm
 from frontend import args
 from frontend import flag_spec
@@ -395,10 +393,10 @@ class Echo(vm._Builtin):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     argv = cmd_val.argv[1:]
-    attrs, arg_index = flag_spec.ParseLikeEcho('echo', argv)
+    attrs, arg_r = flag_spec.ParseLikeEcho('echo', cmd_val)
 
     arg = arg_types.echo(attrs.attrs)
-    argv = argv[arg_index:]
+    argv = arg_r.Rest()
 
     backslash_c = False  # \c terminates input
 
