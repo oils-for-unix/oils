@@ -587,6 +587,11 @@ fd=$minfd
 is-fd-open() { : >&$1; }
 while is-fd-open "$fd"; do
   : $((fd+=1))
+
+  # prevent infinite loop for broken osh_eval
+  if test $fd -gt 1000; then
+    break
+  fi
 done
 
 # 3. test

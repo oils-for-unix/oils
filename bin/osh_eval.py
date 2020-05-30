@@ -220,11 +220,13 @@ def main(argv):
 
   builtins = {}  # type: Dict[int, vm._Builtin]
   builtins[builtin_i.echo] = builtin_pure.Echo(exec_opts)
-  #builtins[builtin_i.shopt] = Shopt(mutable_opts)
-  #builtins[builtin_i.set] = Set(mutable_opts)
 
-  builtins[builtin_i.set] = builtin_pure.Set(mutable_opts, mem)
-  builtins[builtin_i.shopt] = builtin_pure.Shopt(mutable_opts)
+  # DUMMY VERSIONS
+  builtins[builtin_i.shopt] = Shopt(mutable_opts)
+  builtins[builtin_i.set] = Set(mutable_opts)
+
+  #builtins[builtin_i.set] = builtin_pure.Set(mutable_opts, mem)
+  #builtins[builtin_i.shopt] = builtin_pure.Shopt(mutable_opts)
 
   builtins[builtin_i.alias] = builtin_pure.Alias(aliases, errfmt)
   builtins[builtin_i.unalias] = builtin_pure.UnAlias(aliases, errfmt)
@@ -260,25 +262,6 @@ def main(argv):
 
   status = main_loop.Batch(cmd_ev, c_parser, arena, is_main=True)
   return status
-
-
-class Echo(vm._Builtin):
-  """Simple echo builtin.
-  """
-  def __init__(self):
-    # type: () -> None
-    self.f = mylib.Stdout()
-
-  def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
-
-    for i, a in enumerate(cmd_val.argv[1:]):
-      if i != 0:
-        self.f.write(' ')  # arg separator
-      self.f.write(a)
-
-    self.f.write('\n')
-    return 0
 
 
 class Set(vm._Builtin):
