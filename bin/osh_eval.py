@@ -336,8 +336,13 @@ class NullExecutor(vm._Executor):
     if builtin_id != consts.NO_INDEX:
       return self.RunBuiltin(builtin_id, cmd_val)
 
-    log('Unhandled SimpleCommand')
+    # See how many tests will pass
+    if mylib.PYTHON:
+      import subprocess
+      status = subprocess.call(cmd_val.argv)
+      return status
 
+    log('Unhandled SimpleCommand')
     f = mylib.Stdout()
     #ast_f = fmt.DetectConsoleOutput(f)
     # Stupid Eclipse debugger doesn't display ANSI

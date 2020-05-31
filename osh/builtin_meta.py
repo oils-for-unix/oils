@@ -10,6 +10,7 @@ from _devbuild.gen.syntax_asdl import source
 from core import error
 from core.error import _ControlFlow
 from core import main_loop
+from core.pyerror import e_usage
 from core import pyutil  # strerror_OS
 from core import vm
 from frontend import flag_spec
@@ -48,7 +49,7 @@ class Eval(vm._Builtin):
     if self.exec_opts.strict_eval_builtin():
       code_str, eval_spid = arg_r.ReadRequired2('requires code string')
       if not arg_r.AtEnd():
-        raise error.Usage('requires exactly 1 argument')
+        e_usage('requires exactly 1 argument')
     else:
       code_str = ' '.join(arg_r.Rest())
       # code_str could be EMPTY, so just use the first one
@@ -82,13 +83,13 @@ class Source(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    argv = cmd_val.argv
     call_spid = cmd_val.arg_spids[0]
+    _, arg_r = flag_spec.ParseCmdVal('source', cmd_val)
 
-    try:
-      path = argv[1]
-    except IndexError:
-      raise error.Usage('missing required argument')
+    path = arg_r.Peek()
+    if path is None:
+      e_usage('missing required argument')
+    arg_r.Next()
 
     resolved = self.search_path.Lookup(path, exec_required=False)
     if resolved is None:
@@ -107,7 +108,7 @@ class Source(vm._Builtin):
       # A sourced module CAN have a new arguments array, but it always shares
       # the same variable scope as the caller.  The caller could be at either a
       # global or a local scope.
-      source_argv = argv[2:]
+      source_argv = arg_r.Rest()
       self.mem.PushSource(path, source_argv)
 
       src = source.SourcedFile(path, call_spid)

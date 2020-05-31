@@ -156,11 +156,11 @@ TEST test_str_funcs() {
 
   Str* re1 = s1->replace(new Str("ab"), new Str("--"));
   // cstring-BUG!
-  //ASSERT_EQ_FMT(7, len(re1), "%d");
-  //ASSERT(str_equals(new Str("--c\0bcd", 7), re1));
+  // ASSERT_EQ_FMT(7, len(re1), "%d");
+  // ASSERT(str_equals(new Str("--c\0bcd", 7), re1));
 
   Str* re2 = s1->replace(new Str("bc"), new Str("--"));
-  //ASSERT(str_equals(new Str("a--\0--d", 7), re1));
+  // ASSERT(str_equals(new Str("a--\0--d", 7), re1));
 
   Str* s2 = new Str(" abc ");
   ASSERT(str_equals(new Str(" abc"), s2->rstrip()));
@@ -329,7 +329,7 @@ TEST test_contains() {
 
   // cstring-BUG
   b = str_contains(new Str("foo\0a", 5), new Str("a"));
-  //ASSERT(b == true);
+  // ASSERT(b == true);
 
   // this ends with a NUL, but also has a NUL terinator.
   Str* s = new Str("foo\0", 4);
@@ -463,7 +463,6 @@ TEST test_list_tuple() {
 }
 
 TEST test_sizeof() {
-
   // Str = 16 and List = 24.
   // Rejected ideas about slicing:
   //
@@ -486,7 +485,6 @@ TEST test_sizeof() {
 }
 
 TEST test_print() {
-
   // should print "one"
   print(new Str("onez", 3));
 

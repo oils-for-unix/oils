@@ -28,6 +28,7 @@
 ./frontend/args.py
 ./frontend/builtin_def.py
 ./frontend/consts.py
+./frontend/flag_def.py
 ./frontend/flag_spec.py
 ./frontend/id_kind_def.py
 ./frontend/lexer_def.py

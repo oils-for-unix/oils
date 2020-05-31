@@ -14,10 +14,10 @@ List<Str*>* glob(Str* pat) {
   // get a segfault.
   int flags = 0;
   // int flags = GLOB_APPEND;
-  //flags |= GLOB_NOMAGIC;
+  // flags |= GLOB_NOMAGIC;
   int ret = glob(pat0.Get(), flags, NULL, &results);
 
-  const char *err_str = NULL;
+  const char* err_str = NULL;
   switch (ret) {
   case 0:  // no error
     break;
@@ -27,7 +27,7 @@ List<Str*>* glob(Str* pat) {
   case GLOB_NOMATCH:
     // No error, because not matching isn't necessarily a problem.
     // NOTE: This can be turned on to log overaggressive calls to glob().
-    //err_str = "nothing matched";
+    // err_str = "nothing matched";
     break;
   case GLOB_NOSPACE:
     err_str = "no dynamic memory";

@@ -4,6 +4,7 @@ builtin_assign.py
 """
 from __future__ import print_function
 
+from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Bool, value__Str, value__MaybeStrArray,
@@ -11,17 +12,16 @@ from _devbuild.gen.runtime_asdl import (
     lvalue, lvalue_e, scope_e, cmd_value__Argv, cmd_value__Assign,
 )
 from _devbuild.gen.syntax_asdl import source
-from _devbuild.gen import arg_types
 
-from frontend import flag_spec
-from frontend import args
 from core import error
 from core.pyerror import e_usage
-from qsn_ import qsn
 from core import state
 from core import ui
-from core import vm
 from core.util import log, e_die
+from core import vm
+from frontend import flag_spec
+from frontend import args
+from qsn_ import qsn
 
 from typing import cast, Optional, Dict, List, TYPE_CHECKING
 if TYPE_CHECKING:

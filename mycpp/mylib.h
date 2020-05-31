@@ -356,7 +356,6 @@ class StrIter {
   DISALLOW_COPY_AND_ASSIGN(StrIter)
 };
 
-
 // TODO: Rewrite without vector<>, so we don't depend on libstdc++.
 template <class T>
 class List {
@@ -927,10 +926,9 @@ class Str0 {
     }
   }
 
- Str* s_;
- char* nul_str_;
+  Str* s_;
+  char* nul_str_;
 };
-
 
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 

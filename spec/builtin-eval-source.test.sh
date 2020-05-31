@@ -42,6 +42,15 @@ echo 'LIBVAR=libvar' > $lib
 echo $LIBVAR
 ## stdout: libvar
 
+#### source accepts/ignores --
+echo 'echo foo' > $TMP/foo.sh
+source -- $TMP/foo.sh
+## STDOUT:
+foo
+## END
+## N-I dash stdout-json: ""
+## N-I dash status: 127
+
 #### Source nonexistent
 source /nonexistent/path
 echo status=$?
