@@ -37,11 +37,7 @@ inline List<Str*>* glob(Str* pat) {
   assert(0);
 }
 
-// Raises RuntimeError if the pattern is invalid.  TODO: Use a different
-// exception?
-inline List<Str*>* regex_match(Str* pattern, Str* str) {
-  assert(0);
-}
+List<Str*>* regex_match(Str* pattern, Str* str);
 
 inline Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str,
                                                  int pos) {

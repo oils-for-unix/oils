@@ -80,6 +80,15 @@ class AssertionError {
   }
 };
 
+// Python's RuntimeError looks like this.  . libc::regex_match and other
+// bindings raise it.
+class RuntimeError {
+ public:
+  RuntimeError(Str* message) : message(message) {
+  }
+  Str* message;
+};
+
 //
 // Data Types
 //

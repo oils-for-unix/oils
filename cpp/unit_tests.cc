@@ -81,6 +81,15 @@ TEST libc_test() {
   // looks like extended glob, but didn't turn it on
   ASSERT(!libc::fnmatch(new Str("*(foo|bar).py"), new Str("foo.py"), false));
 
+  List<Str*>* results = libc::regex_match(new Str("(a+).(a+)"), new Str("-abaacaaa"));
+  ASSERT_EQ_FMT(3, len(results), "%d");
+  ASSERT(str_equals(new Str("abaa"), results->index(0)));  // whole match
+  ASSERT(str_equals(new Str("a"), results->index(1)));
+  ASSERT(str_equals(new Str("aa"), results->index(2)));
+
+  results = libc::regex_match(new Str("z+"), new Str("abaacaaa"));
+  ASSERT_EQ(nullptr, results);
+
   PASS();
 }
 

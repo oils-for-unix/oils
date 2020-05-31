@@ -31,6 +31,7 @@ cpp-unit-tests() {
     _build/cpp/arg_types.cc \
     cpp/frontend_flag_spec.cc \
     cpp/frontend_match.cc \
+    cpp/libc.cc \
     mycpp/mylib.cc
 
   _bin/$name "$@"

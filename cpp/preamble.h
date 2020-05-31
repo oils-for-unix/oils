@@ -35,13 +35,7 @@ using id_kind_asdl::Kind_t;
 #include "osh_eval_stubs.h"
 #endif
 
-// Stubs for Python exceptions.  TODO: Move to mylib if they're used?
-
-// e.g. libc::regex_match raises it
-class RuntimeError {
- public:
-  Str* message;
-};
+// Stubs for Python exceptions.  TODO: Move more to mylib?
 
 // TODO: remove this.  cmd_eval.py RunOilProc uses it, which we probably
 // don't need
