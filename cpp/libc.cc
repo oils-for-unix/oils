@@ -1,9 +1,66 @@
 // libc.cc: Replacement for native/libcmodule.c
 
 #include "libc.h"
+#include <glob.h>
 #include <regex.h>
 
 namespace libc {
+
+List<Str*>* glob(Str* pat) {
+  mylib::Str0 pat0(pat);
+
+  glob_t results;
+  // Hm, it's weird that the first one can't be called with GLOB_APPEND.  You
+  // get a segfault.
+  int flags = 0;
+  // int flags = GLOB_APPEND;
+  //flags |= GLOB_NOMAGIC;
+  int ret = glob(pat0.Get(), flags, NULL, &results);
+
+  const char *err_str = NULL;
+  switch (ret) {
+  case 0:  // no error
+    break;
+  case GLOB_ABORTED:
+    err_str = "read error";
+    break;
+  case GLOB_NOMATCH:
+    // No error, because not matching isn't necessarily a problem.
+    // NOTE: This can be turned on to log overaggressive calls to glob().
+    //err_str = "nothing matched";
+    break;
+  case GLOB_NOSPACE:
+    err_str = "no dynamic memory";
+    break;
+  default:
+    err_str = "unknown problem";
+    break;
+  }
+  if (err_str) {
+    throw new RuntimeError(new Str(err_str));
+  }
+
+  // http://stackoverflow.com/questions/3512414/does-this-pylist-appendlist-py-buildvalue-leak
+  size_t n = results.gl_pathc;
+  auto matches = new List<Str*>();
+
+  // Print array of results
+  size_t i;
+  for (i = 0; i < n; i++) {
+    const char* m = results.gl_pathv[i];
+
+    // Make a copy so we own it.
+    size_t len = strlen(m);
+    char* buf = static_cast<char*>(malloc(len + 1));
+    memcpy(buf, m, len);
+    buf[len] = '\0';
+
+    matches->append(new Str(buf, len));
+  }
+  globfree(&results);
+
+  return matches;
+}
 
 // Raises RuntimeError if the pattern is invalid.  TODO: Use a different
 // exception?

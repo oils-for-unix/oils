@@ -103,6 +103,14 @@ TEST libc_test() {
   ASSERT_EQ_FMT(8, result->at0(), "%d");
   ASSERT_EQ_FMT(10, result->at1(), "%d");
 
+  // This depends on the file system
+  auto files = libc::glob(new Str("*.py"));
+  ASSERT_EQ_FMT(1, len(files), "%d");
+  print(files->index(0));  // should get __init__.py only
+
+  auto files2 = libc::glob(new Str("*.pyzzz"));
+  ASSERT_EQ_FMT(0, len(files), "%d");
+
   PASS();
 }
 

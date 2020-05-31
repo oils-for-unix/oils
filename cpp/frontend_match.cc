@@ -20,6 +20,8 @@ namespace match {
 Tuple2<Id_t, int> OneToken(lex_mode_t lex_mode, Str* line, int start_pos) {
   int id;
   int end_pos;
+  // cstring-TODO.  line->data_ isn't necessarily safe, e.g. for eval "$x"
+
   // TODO: get rid of these casts
   MatchOshToken(static_cast<int>(lex_mode),
                 reinterpret_cast<const unsigned char*>(line->data_), line->len_,
@@ -32,7 +34,7 @@ Tuple2<Id_t, Str*> SimpleLexer::Next() {
   int end_pos;
   match_func_(reinterpret_cast<const unsigned char*>(s_->data_), s_->len_, pos_,
               &id, &end_pos);
-  // TODO: Don't allocate?
+  // cstring-TODO: Don't allocate?
   // Str* val = new Str(s->data_ + pos_, end_pos - pos_);
 
   int len = end_pos - pos_;

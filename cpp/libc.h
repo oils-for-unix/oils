@@ -22,9 +22,7 @@ inline bool fnmatch(Str* pat, Str* str, bool extglob) {
   return result;
 }
 
-inline List<Str*>* glob(Str* pat) {
-  assert(0);
-}
+List<Str*>* glob(Str* pat);
 
 List<Str*>* regex_match(Str* pattern, Str* str);
 
