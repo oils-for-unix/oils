@@ -12,17 +12,6 @@
 
 Str* kEmptyString = new Str("", 0);
 
-void print(Str* s) {
-  // cstring-TODO: use fwrite() with len
-  printf("%s\n", s->data_);
-}
-
-void println_stderr(Str* s) {
-  // cstring-TODO: use fwrite() with len
-  fputs(s->data_, stderr);
-  fputs("\n", stderr);
-}
-
 // for hand-written code
 void log(const char* fmt, ...) {
   va_list args;
@@ -30,6 +19,20 @@ void log(const char* fmt, ...) {
   vfprintf(stderr, fmt, args);
   va_end(args);
   fprintf(stderr, "\n");
+}
+
+// Translation of Python's print().
+void print(Str* s) {
+  mylib::Str0 s0(s);
+  fputs(s0.Get(), stdout);
+  fputs("\n", stdout);
+}
+
+// Like print(..., file=sys.stderr), but Python code explicitly calls it.
+void println_stderr(Str* s) {
+  mylib::Str0 s0(s);
+  fputs(s0.Get(), stderr);
+  fputs("\n", stderr);
 }
 
 // NOTE:
@@ -380,12 +383,8 @@ bool _str_to_int(Str* s, int* result, int base) {
 
   char* p;  // mutated by strtol
 
-  //
-  // cstring-TODO: string might not be NUL terminated.  Copy it into
-  // NUL-terminated buffer or write our own.
-  //
-
-  long v = strtol(s->data_, &p, base);  // base 10
+  mylib::Str0 s0(s);
+  long v = strtol(s0.Get(), &p, base);  // base 10
   switch (v) {
   case LONG_MIN:
     // log("underflow");

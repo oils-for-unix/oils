@@ -50,6 +50,11 @@ TEST test_str_to_int() {
   ASSERT(ok);
   ASSERT_EQ_FMT(345, i, "%d");
 
+  // Hack to test slicing.  Truncated "345" at "34".
+  ok = _str_to_int(new Str("345", 2), &i, 10);
+  ASSERT(ok);
+  ASSERT_EQ_FMT(34, i, "%d");
+
   ok = _str_to_int(new Str("1234567890"), &i, 10);
   ASSERT(ok);
   ASSERT(i == 1234567890);
@@ -480,13 +485,21 @@ TEST test_sizeof() {
   PASS();
 }
 
+TEST test_print() {
+
+  // should print "one"
+  print(new Str("onez", 3));
+
+  println_stderr(new Str("onez", 3));
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
-  RUN_TEST(test_sizeof);
-  RUN_TEST(test_list_tuple);
   RUN_TEST(test_cstr);
   RUN_TEST(test_str_to_int);
   RUN_TEST(test_str_funcs);
@@ -499,6 +512,11 @@ int main(int argc, char** argv) {
   RUN_TEST(test_formatter);
   RUN_TEST(test_contains);
   RUN_TEST(test_files);
+
+  RUN_TEST(test_sizeof);
+  RUN_TEST(test_list_tuple);
+
+  RUN_TEST(test_print);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

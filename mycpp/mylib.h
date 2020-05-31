@@ -216,7 +216,7 @@ class Str {
     }
 
     // cstring-NOTE: This returns a SLICE, not a copy, unlike rstrip()
-    // !!!  TODO: make them consistent.
+    // TODO: make them consistent.
     int len = right_pos - left_pos + 1;
     return new Str(data_ + left_pos, len);
   }
