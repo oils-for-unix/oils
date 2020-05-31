@@ -39,10 +39,7 @@ inline List<Str*>* glob(Str* pat) {
 
 List<Str*>* regex_match(Str* pattern, Str* str);
 
-inline Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str,
-                                                 int pos) {
-  assert(0);
-}
+Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos);
 
 inline void print_time(double real, double user, double sys) {
   assert(0);

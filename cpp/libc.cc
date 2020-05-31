@@ -10,6 +10,7 @@ namespace libc {
 List<Str*>* regex_match(Str* pattern, Str* str) {
   List<Str*>* results = new List<Str*>();
 
+  // TODO: free these, or allocate them differently
   const char* c_pattern = copy0(pattern);
   const char* c_str = copy0(str);
 
@@ -22,7 +23,7 @@ List<Str*>* regex_match(Str* pattern, Str* str) {
   int outlen = pat.re_nsub + 1;
 
   int match;
-  regmatch_t *pmatch = (regmatch_t*) malloc(sizeof(regmatch_t) * outlen);
+  regmatch_t* pmatch = (regmatch_t*)malloc(sizeof(regmatch_t) * outlen);
   if (match = (regexec(&pat, c_str, outlen, pmatch, 0) == 0)) {
     int i;
     for (i = 0; i < outlen; i++) {
@@ -42,5 +43,50 @@ List<Str*>* regex_match(Str* pattern, Str* str) {
   return results;
 }
 
+// For ${//}, the number of groups is always 1, so we want 2 match position
+// results -- the whole regex (which we ignore), and then first group.
+//
+// For [[ =~ ]], do we need to count how many matches the user gave?
+
+const int NMATCH = 2;
+
+// Why is this a Tuple2* and not Tuple2?
+Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
+  // TODO: free these, or allocate them differently
+  const char* c_pattern = copy0(pattern);
+  const char* c_str = copy0(str);
+
+  regex_t pat;
+  regmatch_t m[NMATCH];
+
+  const char* old_locale = setlocale(LC_CTYPE, NULL);
+
+  if (setlocale(LC_CTYPE, "") == NULL) {
+    throw new RuntimeError(new Str("Invalid locale for LC_CTYPE"));
+  }
+
+  // Could have been checked by regex_parse for [[ =~ ]], but not for glob
+  // patterns like ${foo/x*/y}.
+
+  if (regcomp(&pat, c_pattern, REG_EXTENDED) != 0) {
+    throw new RuntimeError(
+        new Str("Invalid regex syntax (func_regex_first_group_match)"));
+  }
+
+  // Match at offset 'pos'
+  int result = regexec(&pat, c_str + pos, NMATCH, m, 0 /*flags*/);
+  regfree(&pat);
+
+  setlocale(LC_CTYPE, old_locale);
+
+  if (result != 0) {
+    return nullptr;
+  }
+
+  // Assume there is a match
+  regoff_t start = m[1].rm_so;
+  regoff_t end = m[1].rm_eo;
+  return new Tuple2<int, int>(pos + start, pos + end);
+}
 
 }  // namespace libc
