@@ -23,7 +23,8 @@ if test -z "${CXX:-}"; then
   fi
 fi
 
-CPPFLAGS="$CXXFLAGS -g"  # for debugging tests
+CPPFLAGS="$CXXFLAGS -g -fsanitize=address"  # for debugging tests
+export ASAN_OPTIONS='detect_leaks=0'  # like build/mycpp.sh
 
 export PYTHONPATH='.:vendor/'
 
@@ -173,6 +174,7 @@ gen-cpp-test() {
   local prefix2=_tmp/typed_demo_asdl
   asdl/tool.py cpp asdl/typed_demo.asdl $prefix2
 
+  # Hack the enables a literal in asdl/gen_cpp_test
   local orig=_tmp/typed_demo_asdl.h
   local tmp=_tmp/tt
   sed 's/SetToArg_(S/constexpr SetToArg_(S/g' $orig > $tmp

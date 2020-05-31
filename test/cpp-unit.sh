@@ -25,8 +25,10 @@ cpp-unit-tests() {
   ### Run unit tests in the cpp/ dir
 
   local name='unit_tests'
+  local bin=_bin/$name.asan  # important: ASAN flags
+
   mkdir -p _bin
-  compile _bin/$name -D CPP_UNIT_TEST \
+  compile $bin -D CPP_UNIT_TEST \
     cpp/unit_tests.cc \
     _build/cpp/arg_types.cc \
     cpp/frontend_flag_spec.cc \
@@ -34,7 +36,7 @@ cpp-unit-tests() {
     cpp/libc.cc \
     mycpp/mylib.cc
 
-  _bin/$name "$@"
+  $bin "$@"
 }
 
 mycpp-unit-tests() {

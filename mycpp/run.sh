@@ -52,7 +52,8 @@ source examples.sh
 source harness.sh
 
 # -O3 is faster than -O2 for fib, but let's use -O2 since it's "standard"?
-CPPFLAGS="$CXXFLAGS -O0 -g"
+CPPFLAGS="$CXXFLAGS -O0 -g -fsanitize=address"
+export ASAN_OPTIONS='detect_leaks=0'  # like build/mycpp.sh
 
 if test -f $CLANGXX; then
   # accepts -ferror-limit=1000, but C++ doesn't

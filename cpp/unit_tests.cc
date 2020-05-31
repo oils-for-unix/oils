@@ -62,8 +62,6 @@ TEST util_test() {
   Str* escaped = util::BackslashEscape(new Str("'foo bar'"), new Str(" '"));
   ASSERT(str_equals(escaped, new Str("\\'foo\\ bar\\'")));
 
-  log("x = %s %d", escaped->data_, escaped->len_);
-
   Str* escaped2 = util::BackslashEscape(new Str(""), new Str(" '"));
   ASSERT(str_equals(escaped2, new Str("")));
 
