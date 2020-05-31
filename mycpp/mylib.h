@@ -118,6 +118,13 @@ class Str {
   constexpr Str(const char* data, int len) : data_(data), len_(len) {
   }
 
+  // Important invariant: the buffer is of size len+1, so data[len] is OK to
+  // access!  Not just data[len-1].  We use that to test if it's a C string.
+  // note: "foo" and "foo\0" are both NUL-terminated.
+  bool IsNulTerminated() {
+    return data_[len_] == '\0';
+  }
+
   // Get a string with one character
   Str* index(int i) {
     if (i < 0) {
@@ -208,8 +215,8 @@ class Str {
       return this;
     }
 
-    // NOTE: This returns a SLICE, not a copy, unlike rstrip() !!!
-    // TODO: make them consistent.
+    // cstring-NOTE: This returns a SLICE, not a copy, unlike rstrip()
+    // !!!  TODO: make them consistent.
     int len = right_pos - left_pos + 1;
     return new Str(data_ + left_pos, len);
   }
@@ -343,6 +350,41 @@ class StrIter {
 
   DISALLOW_COPY_AND_ASSIGN(StrIter)
 };
+
+// A class for interfacing Str* slices with C functions that expect a NUL
+// terminated string.  It's meant to be used on the stack, like
+//
+// void f(Str* pat) {
+//   CStr c_pattern(pat);
+//   int n = strlen(c_pattern.Get());
+//
+//   // copy of Str* is destroyed
+// }
+class CStr {
+ public:
+  CStr(Str* s) : s_(s), nul_str_(nullptr) {
+  }
+  ~CStr() {
+    if (nul_str_) {
+      free(nul_str_);
+    }
+  }
+
+  const char* Get() {  // caller should not modify this string!
+    if (s_->IsNulTerminated()) {
+      return s_->data_;
+    } else {
+      nul_str_ = static_cast<char*>(malloc(s_->len_ + 1));
+      memcpy(nul_str_, s_->data_, s_->len_);
+      nul_str_[s_->len_] = '\0';
+      return nul_str_;
+    }
+  }
+
+ Str* s_;
+ char* nul_str_;
+};
+
 
 // TODO: Rewrite without vector<>, so we don't depend on libstdc++.
 template <class T>
@@ -824,7 +866,7 @@ inline double to_float(Str* s) {
 inline bool str_contains(Str* haystack, Str* needle) {
   // cstring-TODO: this not rely on NUL termination
   const char* p = strstr(haystack->data_, needle->data_);
-  return p != NULL;
+  return p != nullptr;
 }
 
 // e.g. 'a' in ['a', 'b', 'c']
@@ -931,8 +973,9 @@ inline LineReader* Stdin() {
 }
 
 inline LineReader* open(Str* path) {
-  // cstring-TODO: don't use data_ directly
-  FILE* f = fopen(path->data_, "r");
+  // cstring-TODO: don't use data_ directly.  Use CString.
+  CStr c_path(path);
+  FILE* f = fopen(c_path.Get(), "r");
 
   // TODO: Better error checking.  IOError?
   if (!f) {

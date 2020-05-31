@@ -16,6 +16,32 @@ bool equals_c_string(const char* c_string, Str* s) {
   return str_equals(new Str(c_string), s);
 }
 
+TEST test_cstr() {
+  Str* s = new Str("foo");
+  ASSERT_EQ(3, len(s));
+
+  // we can get the last one
+  ASSERT('\0' == s->data_[3]);
+
+  // ASAN ERROR!  Yes.
+  // ASSERT('\0' == s->data_[4]);
+
+  Str* space = new Str("foo ");
+  ASSERT_EQ(4, len(space));
+
+  ASSERT_EQ_FMT(3, len(space->strip()), "%d");
+
+  // WRONG WAY TO DO IT.  We get 4 instead of 3.
+  size_t bad_len = strlen(space->strip()->data_);
+
+  CStr c_space(space->strip());
+  size_t good_len = strlen(c_space.Get());
+
+  ASSERT_EQ_FMT(3, good_len, "%d");
+
+  PASS();
+}
+
 TEST test_str_to_int() {
   int i;
   bool ok;
@@ -119,6 +145,17 @@ TEST test_str_funcs() {
   log("i = %s", int_str->data_);
   int_str = str(-(1 << 31));
   log("i = %s", int_str->data_);
+
+  Str* s1 = new Str("abc\0bcd", 7);
+  ASSERT_EQ(7, len(s1));
+
+  Str* re1 = s1->replace(new Str("ab"), new Str("--"));
+  // cstring-BUG!
+  //ASSERT_EQ_FMT(7, len(re1), "%d");
+  //ASSERT(str_equals(new Str("--c\0bcd", 7), re1));
+
+  Str* re2 = s1->replace(new Str("bc"), new Str("--"));
+  //ASSERT(str_equals(new Str("a--\0--d", 7), re1));
 
   Str* s2 = new Str(" abc ");
   ASSERT(str_equals(new Str(" abc"), s2->rstrip()));
@@ -278,13 +315,23 @@ TEST test_list_iters() {
 TEST test_contains() {
   bool b;
 
+  log("  Str");
   b = str_contains(new Str("foo"), new Str("oo"));
   ASSERT(b == true);
 
   b = str_contains(new Str("foo"), new Str("ood"));
   ASSERT(b == false);
 
-  log("  strs");
+  // cstring-BUG
+  b = str_contains(new Str("foo\0a", 5), new Str("a"));
+  //ASSERT(b == true);
+
+  // this ends with a NUL, but also has a NUL terinator.
+  Str* s = new Str("foo\0", 4);
+  b = str_contains(s, new Str("\0", 1));
+  ASSERT(b == true);
+
+  log("  List<Str*>");
   auto strs = new List<Str*>();
   strs->append(new Str("bar"));
 
@@ -325,6 +372,14 @@ TEST test_files() {
   log("test_files");
   println_stderr(s);
   log("test_files DONE");
+
+  auto f2 = mylib::open(new Str("README.md"));
+  ASSERT(f2 != nullptr);
+
+  // See if we can strip a space and still open it.  Underlying fopen() call
+  // works.
+  auto f3 = mylib::open((new Str("README.md "))->strip());
+  ASSERT(f3 != nullptr);
 
   PASS();
 }
@@ -368,7 +423,7 @@ TEST test_dict() {
   PASS();
 }
 
-TEST misc_test() {
+TEST test_list_tuple() {
   List<int>* L = new List<int>{1, 2, 3};
 
   log("size: %d", len(L));
@@ -399,6 +454,11 @@ TEST misc_test() {
   log("t4[2] = %s", t4->at2()->data_);
   log("t4[3] = %d", t4->at3());
 
+  PASS();
+}
+
+TEST test_sizeof() {
+
   // Str = 16 and List = 24.
   // Rejected ideas about slicing:
   //
@@ -412,6 +472,10 @@ TEST misc_test() {
   log("");
   log("sizeof(Str) = %zu", sizeof(Str));
   log("sizeof(List<int>) = %zu", sizeof(List<int>));
+  log("sizeof(Dict<int, Str*>) = %zu", sizeof(Dict<int, Str*>));
+  log("sizeof(Tuple2<int, int>) = %zu", sizeof(Tuple2<int, int>));
+  log("sizeof(Tuple2<Str*, Str*>) = %zu", sizeof(Tuple2<Str*, Str*>));
+  log("sizeof(Tuple3<int, int, int>) = %zu", sizeof(Tuple3<int, int, int>));
 
   PASS();
 }
@@ -421,7 +485,9 @@ GREATEST_MAIN_DEFS();
 int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
-  RUN_TEST(misc_test);
+  RUN_TEST(test_sizeof);
+  RUN_TEST(test_list_tuple);
+  RUN_TEST(test_cstr);
   RUN_TEST(test_str_to_int);
   RUN_TEST(test_str_funcs);
 

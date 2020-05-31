@@ -51,7 +51,7 @@ Str* Str::replace(Str* old, Str* new_str) {
   while (p_this < last_possible) {
     // cstring-TODO: Don't use strstr()
     const char* next = strstr(p_this, old_data);
-    if (next == NULL) {
+    if (next == nullptr) {
       break;
     }
     replace_count++;
@@ -78,7 +78,7 @@ Str* Str::replace(Str* old, Str* new_str) {
 
   for (int i = 0; i < replace_count; ++i) {
     const char* next = strstr(p_this, old_data);
-    assert(p_this != NULL);
+    assert(p_this != nullptr);
     size_t n = next - p_this;
 
     memcpy(p_result, p_this, n);  // Copy from 'this'
@@ -381,8 +381,8 @@ bool _str_to_int(Str* s, int* result, int base) {
   char* p;  // mutated by strtol
 
   //
-  // BUG: string might not be NUL terminated.  Copy it into NUL-terminated
-  // buffer or write our own.
+  // cstring-TODO: string might not be NUL terminated.  Copy it into
+  // NUL-terminated buffer or write our own.
   //
 
   long v = strtol(s->data_, &p, base);  // base 10
