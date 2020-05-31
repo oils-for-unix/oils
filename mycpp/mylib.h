@@ -351,40 +351,6 @@ class StrIter {
   DISALLOW_COPY_AND_ASSIGN(StrIter)
 };
 
-// A class for interfacing Str* slices with C functions that expect a NUL
-// terminated string.  It's meant to be used on the stack, like
-//
-// void f(Str* pat) {
-//   CStr c_pattern(pat);
-//   int n = strlen(c_pattern.Get());
-//
-//   // copy of Str* is destroyed
-// }
-class CStr {
- public:
-  CStr(Str* s) : s_(s), nul_str_(nullptr) {
-  }
-  ~CStr() {
-    if (nul_str_) {
-      free(nul_str_);
-    }
-  }
-
-  const char* Get() {  // caller should not modify this string!
-    if (s_->IsNulTerminated()) {
-      return s_->data_;
-    } else {
-      nul_str_ = static_cast<char*>(malloc(s_->len_ + 1));
-      memcpy(nul_str_, s_->data_, s_->len_);
-      nul_str_[s_->len_] = '\0';
-      return nul_str_;
-    }
-  }
-
- Str* s_;
- char* nul_str_;
-};
-
 
 // TODO: Rewrite without vector<>, so we don't depend on libstdc++.
 template <class T>
@@ -926,6 +892,41 @@ List<Str*>* sorted(Dict<Str*, V>* d) {
 
 namespace mylib {  // MyPy artifact
 
+// A class for interfacing Str* slices with C functions that expect a NUL
+// terminated string.  It's meant to be used on the stack, like
+//
+// void f(Str* pat) {
+//   Str0 c_pattern(pat);
+//   int n = strlen(c_pattern.Get());
+//
+//   // copy of Str* is destroyed
+// }
+class Str0 {
+ public:
+  Str0(Str* s) : s_(s), nul_str_(nullptr) {
+  }
+  ~Str0() {
+    if (nul_str_) {
+      free(nul_str_);
+    }
+  }
+
+  const char* Get() {  // caller should not modify this string!
+    if (s_->IsNulTerminated()) {
+      return s_->data_;
+    } else {
+      nul_str_ = static_cast<char*>(malloc(s_->len_ + 1));
+      memcpy(nul_str_, s_->data_, s_->len_);
+      nul_str_[s_->len_] = '\0';
+      return nul_str_;
+    }
+  }
+
+ Str* s_;
+ char* nul_str_;
+};
+
+
 Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
 
 inline Str* NewStr(const char* s) {
@@ -974,8 +975,8 @@ inline LineReader* Stdin() {
 
 inline LineReader* open(Str* path) {
   // cstring-TODO: don't use data_ directly.  Use CString.
-  CStr c_path(path);
-  FILE* f = fopen(c_path.Get(), "r");
+  Str0 path0(path);
+  FILE* f = fopen(path0.Get(), "r");
 
   // TODO: Better error checking.  IOError?
   if (!f) {

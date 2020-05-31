@@ -34,8 +34,8 @@ TEST test_cstr() {
   // WRONG WAY TO DO IT.  We get 4 instead of 3.
   size_t bad_len = strlen(space->strip()->data_);
 
-  CStr c_space(space->strip());
-  size_t good_len = strlen(c_space.Get());
+  mylib::Str0 space0(space->strip());
+  size_t good_len = strlen(space0.Get());
 
   ASSERT_EQ_FMT(3, good_len, "%d");
 

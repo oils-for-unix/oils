@@ -13,23 +13,12 @@ inline Str* gethostname() {
   assert(0);
 }
 
-// Copy a Str* to a NUL-terminated C string.  TODO: Could we have two different
-// types and avoid these copies?
-inline char* copy0(Str* s) {
-  char* s0 = static_cast<char*>(malloc(s->len_ + 1));
-  memcpy(s0, s->data_, s->len_);
-  s0[s->len_] = '\0';
-  return s0;
-}
-
 inline bool fnmatch(Str* pat, Str* str, bool extglob) {
   // copy into NUL-terminated buffers
-  char* pat0 = copy0(pat);
-  char* str0 = copy0(str);
+  mylib::Str0 pat0(pat);
+  mylib::Str0 str0(str);
   int flags = extglob ? FNM_EXTMATCH : 0;
-  bool result = ::fnmatch(pat0, str0, flags) == 0;
-  free(pat0);
-  free(str0);
+  bool result = ::fnmatch(pat0.Get(), str0.Get(), flags) == 0;
   return result;
 }
 

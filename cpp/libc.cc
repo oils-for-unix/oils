@@ -10,25 +10,25 @@ namespace libc {
 List<Str*>* regex_match(Str* pattern, Str* str) {
   List<Str*>* results = new List<Str*>();
 
-  // TODO: free these, or allocate them differently
-  const char* c_pattern = copy0(pattern);
-  const char* c_str = copy0(str);
+  mylib::Str0 pattern0(pattern);
+  mylib::Str0 str0(str);
 
   regex_t pat;
-  if (regcomp(&pat, c_pattern, REG_EXTENDED) != 0) {
+  if (regcomp(&pat, pattern0.Get(), REG_EXTENDED) != 0) {
     // TODO: check error code, as in func_regex_parse()
     throw new RuntimeError(new Str("Invalid regex syntax (regex_match)"));
   }
 
-  int outlen = pat.re_nsub + 1;
+  int outlen = pat.re_nsub + 1;  // number of captures
 
   int match;
+  const char* s0 = str0.Get();
   regmatch_t* pmatch = (regmatch_t*)malloc(sizeof(regmatch_t) * outlen);
-  if (match = (regexec(&pat, c_str, outlen, pmatch, 0) == 0)) {
+  if (match = (regexec(&pat, s0, outlen, pmatch, 0) == 0)) {
     int i;
     for (i = 0; i < outlen; i++) {
       int len = pmatch[i].rm_eo - pmatch[i].rm_so;
-      Str* m = new Str(c_str + pmatch[i].rm_so, len);
+      Str* m = new Str(s0 + pmatch[i].rm_so, len);
       results->append(m);
     }
   }
@@ -52,9 +52,8 @@ const int NMATCH = 2;
 
 // Why is this a Tuple2* and not Tuple2?
 Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
-  // TODO: free these, or allocate them differently
-  const char* c_pattern = copy0(pattern);
-  const char* c_str = copy0(str);
+  mylib::Str0 pattern0(pattern);
+  mylib::Str0 str0(str);
 
   regex_t pat;
   regmatch_t m[NMATCH];
@@ -68,13 +67,13 @@ Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
   // Could have been checked by regex_parse for [[ =~ ]], but not for glob
   // patterns like ${foo/x*/y}.
 
-  if (regcomp(&pat, c_pattern, REG_EXTENDED) != 0) {
+  if (regcomp(&pat, pattern0.Get(), REG_EXTENDED) != 0) {
     throw new RuntimeError(
         new Str("Invalid regex syntax (func_regex_first_group_match)"));
   }
 
   // Match at offset 'pos'
-  int result = regexec(&pat, c_str + pos, NMATCH, m, 0 /*flags*/);
+  int result = regexec(&pat, str0.Get() + pos, NMATCH, m, 0 /*flags*/);
   regfree(&pat);
 
   setlocale(LC_CTYPE, old_locale);
