@@ -10,8 +10,6 @@ builtin_misc.py - Misc builtins.
 """
 from __future__ import print_function
 
-import sys
-
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import span_e, cmd_value__Argv
 from asdl import runtime
@@ -30,7 +28,7 @@ from pylib import os_path
 import libc
 import posix_ as posix
 
-from typing import Tuple, List, Any, Optional, IO, TYPE_CHECKING
+from typing import Tuple, List, Any, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import span_t
   from core.pyutil import _FileResourceLoader
@@ -534,70 +532,6 @@ class Help(vm._Builtin):
 
     print(f.read())
     f.close()
-    return 0
-
-
-class History(vm._Builtin):
-  """Show interactive command history."""
-
-  def __init__(self, readline_mod):
-    # type: (Any) -> None
-    self.readline_mod = readline_mod
-    self.f = mylib.Stdout()
-
-  def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
-    # NOTE: This builtin doesn't do anything in non-interactive mode in bash?
-    # It silently exits zero.
-    # zsh -c 'history' produces an error.
-    readline_mod = self.readline_mod
-    if not readline_mod:
-      e_usage("is disabled because Oil wasn't compiled with 'readline'")
-
-    attrs, arg_r = flag_spec.ParseCmdVal('history', cmd_val)
-    arg = arg_types.history(attrs.attrs)
-
-    # Clear all history
-    if arg.c:
-      readline_mod.clear_history()
-      return 0
-
-    # Delete history entry by id number
-    if arg.d >= 0:
-      cmd_index = arg.d - 1
-
-      try:
-        readline_mod.remove_history_item(cmd_index)
-      except ValueError:
-        e_usage("couldn't find item %d" % arg.d)
-
-      return 0
-
-    # Returns 0 items in non-interactive mode?
-    num_items = readline_mod.get_current_history_length()
-    #log('len = %d', num_items)
-
-    rest = arg_r.Rest()
-    if len(rest) == 0:
-      start_index = 1
-    elif len(rest) == 1:
-      arg0 = rest[0]
-      try:
-        num_to_show = int(arg0)
-      except ValueError:
-        e_usage('got invalid argument %r' % arg0)
-      start_index = max(1, num_items + 1 - num_to_show)
-    else:
-      e_usage('got many arguments')
-
-    # TODO:
-    # - Exclude lines that don't parse from the history!  bash and zsh don't do
-    # that.
-    # - Consolidate multiline commands.
-
-    for i in xrange(start_index, num_items+1):  # 1-based index
-      item = readline_mod.get_history_item(i)
-      self.f.write('%5d  %s\n' % (i, item))
     return 0
 
 

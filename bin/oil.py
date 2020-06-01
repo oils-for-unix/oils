@@ -108,6 +108,7 @@ from osh import sh_expr_eval
 from osh import split
 from osh import word_eval
 
+from mycpp import mylib
 from pylib import os_path
 
 from tools import deps
@@ -478,7 +479,6 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_i.times: builtin_misc.Times(),
       builtin_i.read: builtin_misc.Read(splitter, mem),
       builtin_i.help: help_builtin,
-      builtin_i.history: builtin_misc.History(line_input),
 
       builtin_i.cat: builtin_misc.Cat(),  # for $(<file)
 
@@ -488,6 +488,7 @@ def ShellMain(lang, argv0, argv, login_shell):
 
       # interactive
       builtin_i.bind: builtin_lib.Bind(line_input, errfmt),
+      builtin_i.history: builtin_lib.History(line_input, mylib.Stdout()),
 
       # test / [ differ by need_right_bracket
       builtin_i.test: builtin_bracket.Test(False, exec_opts, mem, errfmt),

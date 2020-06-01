@@ -34,7 +34,7 @@ from frontend import parse_lib
 from frontend import reader
 from osh import builtin_assign
 from osh import builtin_comp
-from osh import builtin_misc
+from osh import builtin_lib
 from osh import builtin_pure
 from osh import cmd_eval
 from osh import prompt
@@ -43,6 +43,7 @@ from osh import split
 from core import state
 from osh import word_eval
 from oil_lang import expr_eval
+from mycpp import mylib
 
 
 def MakeBuiltinArgv(argv):
@@ -189,7 +190,7 @@ def InitCommandEvaluator(parse_ctx=None, comp_lookup=None, arena=None, mem=None,
       builtin_i.echo: builtin_pure.Echo(exec_opts),
       builtin_i.shift: builtin_assign.Shift(mem),
 
-      builtin_i.history: builtin_misc.History(readline),
+      builtin_i.history: builtin_lib.History(readline, mylib.Stdout()),
 
       builtin_i.compopt: builtin_comp.CompOpt(compopt_state, errfmt),
       builtin_i.compadjust: builtin_comp.CompAdjust(mem),
