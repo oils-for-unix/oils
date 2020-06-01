@@ -263,3 +263,49 @@ echo four
 one
 [three]
 ## END
+
+#### compound command
+# case from
+# https://lists.gnu.org/archive/html/bug-bash/2020-05/msg00066.html
+
+set -o errexit
+
+{ cat ; } < not_exist.txt   
+
+echo status=$?
+echo 'should not get here'
+## status: 1
+## stdout-json: ""
+## BUG dash/bash/ash status: 0
+## BUG bash/ash STDOUT:
+status=1
+should not get here
+## END
+## BUG dash STDOUT:
+status=2
+should not get here
+## END
+
+#### while loop
+# case from
+# https://lists.gnu.org/archive/html/bug-bash/2020-05/msg00066.html
+
+set -o errexit
+
+while read line; do
+ echo $line
+done < not_exist.txt   
+
+echo status=$?
+echo 'should not get here'
+## status: 1
+## stdout-json: ""
+## BUG dash/bash/ash status: 0
+## BUG bash/ash STDOUT:
+status=1
+should not get here
+## END
+## BUG dash STDOUT:
+status=2
+should not get here
+## END
