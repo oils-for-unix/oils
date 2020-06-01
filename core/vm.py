@@ -68,6 +68,13 @@ class _Executor(object):
     # type: () -> None
     pass
 
+  def RunBuiltin(self, builtin_id, cmd_val):
+    # type: (int, cmd_value__Argv) -> int
+    """
+    The 'builtin' builtin in osh/builtin_meta.py needs this.
+    """
+    return 0
+
   def RunSimpleCommand(self, cmd_val, do_fork, call_procs=True):
     # type: (cmd_value__Argv, bool, bool) -> int
     return 0

@@ -7,7 +7,6 @@ from __future__ import print_function
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import source
-from core import error
 from core.error import _ControlFlow
 from core import main_loop
 from core.pyerror import e_usage
@@ -27,7 +26,6 @@ if TYPE_CHECKING:
   from core import process
   from core import state
   from core import ui
-  from core.executor import ShellExecutor
   from osh.cmd_eval import CommandEvaluator
 
 
@@ -97,7 +95,7 @@ class Source(vm._Builtin):
     try:
       f = self.fd_state.Open(resolved)  # Shell can't use descriptors 3-9
     except OSError as e:
-      self.errfmt.Print('source %r failed: %s', path, pyutil.strerror_OS(e),
+      self.errfmt.Print_('source %r failed: %s' % (path, pyutil.strerror_OS(e)),
                         span_id=cmd_val.arg_spids[1])
       return 1
 
@@ -136,7 +134,7 @@ class Command(vm._Builtin):
   """
 
   def __init__(self, shell_ex, funcs, aliases, search_path):
-    # type: (ShellExecutor, Dict[str, command__ShFunction], Dict[str, str], state.SearchPath) -> None
+    # type: (vm._Executor, Dict[str, command__ShFunction], Dict[str, str], state.SearchPath) -> None
     self.shell_ex = shell_ex
     self.funcs = funcs
     self.aliases = aliases
@@ -171,7 +169,7 @@ class Command(vm._Builtin):
 class Builtin(vm._Builtin):
 
   def __init__(self, shell_ex, errfmt):
-    # type: (ShellExecutor, ui.ErrorFormatter) -> None
+    # type: (vm._Executor, ui.ErrorFormatter) -> None
     self.shell_ex = shell_ex
     self.errfmt = errfmt
 
@@ -191,10 +189,10 @@ class Builtin(vm._Builtin):
       span_id = cmd_val.arg_spids[1]
       if consts.LookupAssignBuiltin(name) != consts.NO_INDEX:
         # NOTE: There's a similar restriction for 'command'
-        self.errfmt.Print("Can't run assignment builtin recursively",
+        self.errfmt.Print_("Can't run assignment builtin recursively",
                           span_id=span_id)
       else:
-        self.errfmt.Print("%r isn't a shell builtin", name, span_id=span_id)
+        self.errfmt.Print_("%r isn't a shell builtin" % name, span_id=span_id)
       return 1
 
     cmd_val2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_spids[1:],
@@ -218,10 +216,10 @@ def _ResolveNames(names, funcs, aliases, search_path):
       kind = ('builtin', name)
     elif consts.LookupAssignBuiltin(name) != 0:
       kind = ('builtin', name)
-    elif lexer_def.IsControlFlow(name):  # continue, etc.
+    elif consts.IsControlFlow(name):  # continue, etc.
       kind = ('keyword', name)
 
-    elif lexer_def.IsKeyword(name):
+    elif consts.IsKeyword(name):
       kind = ('keyword', name)
     else:
       resolved = search_path.Lookup(name)

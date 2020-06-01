@@ -263,16 +263,7 @@ OSH_KEYWORD_NAMES = [name for _, name, _ in _KEYWORDS]
 OSH_KEYWORD_NAMES.append('{')  # not in our lexer list
 
 
-_CF_NAMES = [name for _, name, _ in _CONTROL_FLOW]
-
-def IsControlFlow(name):
-  # type: (str) -> bool
-  return name in _CF_NAMES
-
-
-def IsKeyword(name):
-  # type: (str) -> bool
-  return name in OSH_KEYWORD_NAMES
+CONTROL_FLOW_NAMES = [name for _, name, _ in _CONTROL_FLOW]
 
 FD_VAR_NAME = r'\{' + VAR_NAME_RE + r'\}'
 

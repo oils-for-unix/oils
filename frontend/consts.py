@@ -9,6 +9,7 @@ from _devbuild.gen.types_asdl import (
 )
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind_t
 from frontend import builtin_def
+from frontend import lexer_def
 from frontend import option_def 
 
 from typing import Tuple, TYPE_CHECKING
@@ -148,6 +149,19 @@ def OptionName(opt_num):
   # type: (option_t) -> str
   """Get the name from an index."""
   return option_def.OPTION_NAMES[opt_num]
+
+#
+# osh/builtin_meta.py
+#
+
+def IsControlFlow(name):
+  # type: (str) -> bool
+  return name in lexer_def.CONTROL_FLOW_NAMES
+
+
+def IsKeyword(name):
+  # type: (str) -> bool
+  return name in lexer_def.OSH_KEYWORD_NAMES
 
 
 #

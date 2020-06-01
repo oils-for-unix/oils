@@ -220,6 +220,8 @@ id_kind_asdl::Kind GetKind(id_kind_asdl::Id_t id);
 option_asdl::builtin_t LookupNormalBuiltin(Str* s);
 option_asdl::builtin_t LookupAssignBuiltin(Str* s);
 option_asdl::builtin_t LookupSpecialBuiltin(Str* s);
+bool IsControlFlow(Str* s);
+bool IsKeyword(Str* s);
 
 Str* OptionName(option_asdl::option_t opt_num);
 
@@ -322,6 +324,16 @@ Kind GetKind(id_kind_asdl::Id_t id) {
       GenBuiltinLookup(b, 'LookupNormalBuiltin', 'normal', f)
       GenBuiltinLookup(b, 'LookupAssignBuiltin', 'assign', f)
       GenBuiltinLookup(b, 'LookupSpecialBuiltin', 'special', f)
+
+      # TODO: Fill these in
+      out("""\
+bool IsControlFlow(Str* s) {
+  assert(0);
+}
+bool IsKeyword(Str* s) {
+  assert(0);
+}
+""")
 
       out("""\
 Str* OptionName(option_asdl::option_t opt_num) {

@@ -16,6 +16,7 @@ using id_kind_asdl::Kind_t;
 
 // oil/cpp
 #include "core_error.h"
+#include "core_process.h"
 #include "frontend_flag_spec.h"
 #include "frontend_match.h"
 #include "frontend_tdop.h"

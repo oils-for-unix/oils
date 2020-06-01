@@ -5,7 +5,7 @@ flag_def.py
 from __future__ import print_function
 
 from frontend import args
-from frontend.flag_spec import FlagSpec, FlagSpecAndMore
+from frontend.flag_spec import FlagSpec, FlagSpecAndMore, _FlagSpecAndMore
 from frontend import option_def
 
 #
