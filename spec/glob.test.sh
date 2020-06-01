@@ -214,6 +214,8 @@ echo -* hello zzzz?
 ## status: 0
 
 #### Splitting/Globbing doesn't happen on local assignment
+cd $REPO_ROOT
+
 f() {
   # Dash splits words and globs before handing it to the 'local' builtin.  But
   # ash doesn't!

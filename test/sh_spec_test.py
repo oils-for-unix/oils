@@ -117,10 +117,10 @@ class ShSpecTest(unittest.TestCase):
 
   def testRunCases(self):
     o = Options()
-    opts, _ = o.parse_args(['--no-cd-tmp'])
+    opts, _ = o.parse_args([])
 
     shells = [('bash', '/bin/bash'), ('osh', 'bin/osh')]
-    env = {}
+    env = {'TMP': os.getcwd()}  # hack to cd $REPO_ROOT
     if 0:
       out_f = sys.stdout
     else:
