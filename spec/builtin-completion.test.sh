@@ -150,6 +150,7 @@ false___
 
 #### compgen -A directory
 # omit portable-files.mk
+cd $REPO_ROOT
 compgen -A directory p | sort
 ## STDOUT:
 pgen2
@@ -158,6 +159,7 @@ py-yajl
 ## END
 
 #### compgen -A file
+cd $REPO_ROOT
 compgen -A file b | sort
 ## STDOUT:
 benchmarks
@@ -225,6 +227,7 @@ build
 ## END
 
 #### -o plusdirs and -o dirnames with compgen
+cd $REPO_ROOT
 compgen -o plusdirs -W 'a b1 b2' b | sort
 echo ---
 compgen -o dirnames b | sort
@@ -241,6 +244,7 @@ build
 ## END
 
 #### compgen -o default completes files and dirs
+cd $REPO_ROOT
 compgen -o default spec/t | sort
 ## STDOUT:
 spec/testdata
@@ -314,6 +318,7 @@ foo'bar
 ## END
 
 #### compgen -W 'one two three'
+cd $REPO_ROOT
 compgen -W 'one two three'
 echo --
 compgen -W 'w1 w2 three' -A directory w

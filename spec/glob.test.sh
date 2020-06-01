@@ -15,6 +15,7 @@ echo \*.sh
 ## stdout: *.sh
 
 #### 1 char glob
+cd $REPO_ROOT
 echo [b]in
 ## stdout: bin
 
@@ -31,6 +32,7 @@ echo [!bin
 ## stdout: [!bin
 
 #### glob can expand to command and arg
+cd $REPO_ROOT
 spec/testdata/echo.s[hz]
 ## stdout: spec/testdata/echo.sz
 
@@ -145,6 +147,7 @@ echo -* hello zzzz?
 ## stdout-json: "hello zzzzz"
 
 #### set -o noglob
+cd $REPO_ROOT
 touch _tmp/spec-tmp/a.zz _tmp/spec-tmp/b.zz
 echo _tmp/spec-tmp/*.zz
 set -o noglob

@@ -14,7 +14,6 @@ from core import pyutil  # strerror_OS
 from core import vm
 from frontend import flag_spec
 from frontend import consts
-from frontend import lexer_def
 from frontend import reader
 
 from typing import Dict, List, Tuple, Optional, TYPE_CHECKING

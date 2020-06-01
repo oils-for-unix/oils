@@ -371,7 +371,7 @@ quote() {
 }
 
 loop() {
-  sh-spec spec/loop.test.sh --no-cd-tmp \
+  sh-spec spec/loop.test.sh \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
@@ -386,12 +386,12 @@ if_() {
 }
 
 builtins() {
-  sh-spec spec/builtins.test.sh --no-cd-tmp --osh-failures-allowed 1 \
+  sh-spec spec/builtins.test.sh --osh-failures-allowed 1 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 builtin-eval-source() {
-  sh-spec spec/builtin-eval-source.test.sh --no-cd-tmp \
+  sh-spec spec/builtin-eval-source.test.sh \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
@@ -428,12 +428,12 @@ builtin-getopts() {
 }
 
 builtin-bracket() {
-  sh-spec spec/builtin-bracket.test.sh --no-cd-tmp \
+  sh-spec spec/builtin-bracket.test.sh \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
 builtin-trap() {
-  sh-spec spec/builtin-trap.test.sh --no-cd-tmp --osh-failures-allowed 5 \
+  sh-spec spec/builtin-trap.test.sh --osh-failures-allowed 5 \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -445,8 +445,7 @@ builtin-bash() {
 
 # This is bash/OSH only
 builtin-completion() {
-  sh-spec spec/builtin-completion.test.sh \
-    --no-cd-tmp --osh-failures-allowed 1 \
+  sh-spec spec/builtin-completion.test.sh --osh-failures-allowed 1 \
     $BASH $OSH_LIST "$@"
 }
 
@@ -474,7 +473,7 @@ sh-func() {
 
 glob() {
   # Note: can't pass because it assumes 'bin' exists, etc.
-  sh-spec spec/glob.test.sh --no-cd-tmp --osh-failures-allowed 7 \
+  sh-spec spec/glob.test.sh --osh-failures-allowed 7 \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
@@ -535,7 +534,7 @@ special-vars() {
 }
 
 introspect() {
-  sh-spec spec/introspect.test.sh --no-cd-tmp --osh-failures-allowed 1 \
+  sh-spec spec/introspect.test.sh --osh-failures-allowed 1 \
     $BASH $OSH_LIST "$@"
 }
 
@@ -550,7 +549,7 @@ var-op-test() {
 }
 
 var-op-len() {
-  sh-spec spec/var-op-len.test.sh --no-cd-tmp \
+  sh-spec spec/var-op-len.test.sh \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
@@ -609,7 +608,7 @@ xtrace() {
 }
 
 strict-options() {
-  sh-spec spec/strict-options.test.sh --no-cd-tmp \
+  sh-spec spec/strict-options.test.sh \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -624,7 +623,7 @@ errexit() {
 }
 
 errexit-oil() {
-  sh-spec spec/errexit-oil.test.sh --no-cd-tmp --osh-failures-allowed 2\
+  sh-spec spec/errexit-oil.test.sh --osh-failures-allowed 2 \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 

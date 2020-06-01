@@ -65,7 +65,7 @@ echo status=$?
 ## N-I dash stdout: status=127
 
 #### Source with arguments
-. spec/testdata/show-argv.sh foo bar  # dash doesn't have source
+. $REPO_ROOT/spec/testdata/show-argv.sh foo bar  # dash doesn't have source
 ## STDOUT:
 show-argv: foo bar
 ## END
@@ -75,8 +75,8 @@ show-argv:
 
 #### Source from a function, mutating argv and defining a local var
 f() {
-  . spec/testdata/source-argv.sh              # no argv
-  . spec/testdata/source-argv.sh args to src  # new argv
+  . $REPO_ROOT/spec/testdata/source-argv.sh              # no argv
+  . $REPO_ROOT/spec/testdata/source-argv.sh args to src  # new argv
   echo $@
   echo foo=$foo  # defined in source-argv.sh
 }

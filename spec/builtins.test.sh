@@ -13,7 +13,7 @@ echo 'to stderr'
 #### exec builtin with here doc
 # This has in a separate file because both code and data can be read from
 # stdin.
-$SH spec/builtins-exec-here-doc-helper.sh
+$SH $REPO_ROOT/spec/builtins-exec-here-doc-helper.sh
 ## STDOUT:
 x=one
 y=two

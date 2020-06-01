@@ -16,7 +16,7 @@ echo ${#v}
 ## N-I mksh stdout: 4
 
 #### Unicode string length (spec/testdata/utf8-chars.txt)
-v=$(cat spec/testdata/utf8-chars.txt)
+v=$(cat $REPO_ROOT/spec/testdata/utf8-chars.txt)
 echo ${#v}
 ## stdout: 7
 ## N-I dash stdout: 13
@@ -24,7 +24,7 @@ echo ${#v}
 
 #### String length with incomplete utf-8
 for num_bytes in 0 1 2 3 4 5 6 7 8 9 10 11 12 13; do
-  s=$(head -c $num_bytes spec/testdata/utf8-chars.txt)
+  s=$(head -c $num_bytes $REPO_ROOT/spec/testdata/utf8-chars.txt)
   echo ${#s}
 done 2> $TMP/err.txt
 
@@ -91,7 +91,7 @@ true  # exit 0
 
 #### String length with invalid utf-8 continuation bytes
 for num_bytes in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14; do
-  s=$(head -c $num_bytes spec/testdata/utf8-chars.txt)$(echo -e "\xFF")
+  s=$(head -c $num_bytes $REPO_ROOT/spec/testdata/utf8-chars.txt)$(echo -e "\xFF")
   echo ${#s}
 done 2> $TMP/err.txt
 

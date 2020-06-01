@@ -415,12 +415,12 @@ status=1
 
 #### -G and -O for effective user ID and group ID
 
-test -O bin
+test -O $REPO_ROOT/bin
 echo status=$?
 test -O __nonexistent__
 echo status=$?
 
-test -G bin
+test -G $REPO_ROOT/bin
 echo status=$?
 test -G __nonexistent__
 echo status=$?

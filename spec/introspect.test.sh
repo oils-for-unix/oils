@@ -42,6 +42,7 @@ f
 ## END
 
 #### FUNCNAME with source (scalar or array)
+cd $REPO_ROOT
 
 # Comments on bash quirk:
 # https://github.com/oilshell/oil/pull/656#issuecomment-599162211
@@ -107,6 +108,7 @@ esac
 
 
 #### BASH_SOURCE and BASH_LINENO scalar or array (e.g. for virtualenv)
+cd $REPO_ROOT
 
 # https://github.com/pypa/virtualenv/blob/master/virtualenv_embedded/activate.sh
 # https://github.com/akinomyoga/ble.sh/blob/6f6c2e5/ble.pp#L374
@@ -130,8 +132,8 @@ source spec/testdata/bash-source-string.sh
 __
 ['spec/testdata/bash-source-string.sh']
 ['spec/testdata/bash-source-string.sh']
-['8']
-['8']
+['9']
+['9']
 ____
 ['spec/testdata/bash-source-string2.sh']
 ['spec/testdata/bash-source-string2.sh']
@@ -189,6 +191,8 @@ check
 ## stdout: 4
 
 #### ${BASH_SOURCE[@]} with source and function name
+cd $REPO_ROOT
+
 argv.py "${BASH_SOURCE[@]}"
 source spec/testdata/bash-source-simple.sh
 f
@@ -199,6 +203,8 @@ f
 ## END
 
 #### ${BASH_SOURCE[@]} with line numbers
+cd $REPO_ROOT
+
 $SH spec/testdata/bash-source.sh
 ## STDOUT: 
 ['begin F funcs', 'f', 'main']

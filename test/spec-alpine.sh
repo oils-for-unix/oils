@@ -18,52 +18,50 @@ readonly SH=osh  # just use the one in the $PATH
 builtin-bracket() {
   # some tests depend on 'bin' existing
   # Also running as root so you can read anything!  Doh!  Need a real user.
-  sh-spec spec/builtin-bracket.test.sh --no-cd-tmp --osh-failures-allowed 3 \
+  sh-spec spec/builtin-bracket.test.sh --osh-failures-allowed 3 \
     $SH "$@"
 }
 
 # This is bash/OSH only
 builtin-completion() {
   # 8 failures instead of 1
-  sh-spec spec/builtin-completion.test.sh \
-    --no-cd-tmp --osh-failures-allowed 8 \
+  sh-spec spec/builtin-completion.test.sh --osh-failures-allowed 8 \
     $SH "$@"
 }
 
 builtin-eval-source() {
-  sh-spec spec/builtin-eval-source.test.sh --no-cd-tmp $SH "$@"
+  sh-spec spec/builtin-eval-source.test.sh $SH "$@"
 }
 
 builtin-trap() {
-  sh-spec spec/builtin-trap.test.sh --no-cd-tmp --osh-failures-allowed 3 \
+  sh-spec spec/builtin-trap.test.sh --osh-failures-allowed 3 \
     $SH "$@"
 }
 
 builtins() {
   # 6 failures instead of 1
-  sh-spec spec/builtins.test.sh --no-cd-tmp --osh-failures-allowed 6 \
+  sh-spec spec/builtins.test.sh --osh-failures-allowed 6 \
     $SH "$@"
 }
 
 errexit-oil() {
-  sh-spec spec/errexit-oil.test.sh --no-cd-tmp $SH "$@"
+  sh-spec spec/errexit-oil.test.sh $SH "$@"
 }
 
 glob() {
   # 11 failures rather than 7 under Ubuntu.  Probably due to musl libc globbing
   # differences.
-  sh-spec spec/glob.test.sh --no-cd-tmp --osh-failures-allowed 11 \
+  sh-spec spec/glob.test.sh --osh-failures-allowed 11 \
     $SH "$@"
 }
 
 introspect() {
-  sh-spec spec/introspect.test.sh --no-cd-tmp \
-    $SH "$@"
+  sh-spec spec/introspect.test.sh $SH "$@"
 }
 
 loop() {
   # 1 failure instead of 0
-  sh-spec spec/loop.test.sh --no-cd-tmp --osh-failures-allowed 1 \
+  sh-spec spec/loop.test.sh --osh-failures-allowed 1 \
     $SH "$@"
 }
 
@@ -73,11 +71,11 @@ smoke() {
 }
 
 strict-options() {
-  sh-spec spec/strict-options.test.sh --no-cd-tmp $SH "$@"
+  sh-spec spec/strict-options.test.sh $SH "$@"
 }
 
 var-op-len() {
-  sh-spec spec/var-op-len.test.sh --no-cd-tmp $SH "$@"
+  sh-spec spec/var-op-len.test.sh $SH "$@"
 }
 
 run-test() {

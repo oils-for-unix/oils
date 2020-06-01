@@ -295,7 +295,7 @@ f() {
 # That's not what the manual syas.
 trap 'profile x y' RETURN
 f
-. spec/testdata/return-helper.sh
+. $REPO_ROOT/spec/testdata/return-helper.sh
 ## status: 42
 ## STDOUT:
 --
