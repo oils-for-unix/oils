@@ -72,6 +72,10 @@ inline void close(int fd) {
   assert(0);
 }
 
+inline void putenv(Str* name, Str* value) {
+  assert(0);
+}
+
 // Dummy exception posix::error
 class error {};
 

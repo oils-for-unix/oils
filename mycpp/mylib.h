@@ -330,6 +330,14 @@ class Str {
     assert(0);
   }
 
+  Str* ljust(int width, Str* fillchar) {
+    assert(0);
+  }
+
+  Str* rjust(int width, Str* fillchar) {
+    assert(0);
+  }
+
   const char* data_;
   int len_;
 

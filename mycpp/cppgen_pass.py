@@ -431,7 +431,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # imported names.  Might be a problem with names like 'word'?
           if (isinstance(o.expr, NameExpr) and (
               o.expr.name in self.imported_names or
-              o.expr.name in ('mylib', 'libc', 'posix') or
+              o.expr.name in ('mylib', 'libc', 'posix', 'time_') or
               o.name == '__init__'
               )):
             op = '::'
@@ -2063,6 +2063,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 'cmd_value_e', 'cmd_value',
                 'redirect_arg_e', 'redirect_arg',
                 'a_index_e', 'a_index',
+                'printf_part_e', 'printf_part',
                 ):
                 is_namespace = True
 

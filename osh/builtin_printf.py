@@ -4,6 +4,8 @@ builtin_printf
 """
 from __future__ import print_function
 
+import time as time_  # avoid name conflict
+
 from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.runtime_asdl import cmd_value__Argv, value_e, value__Str
@@ -13,19 +15,17 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
 
-import sys
-import time
-
 from asdl import runtime
 from core import error
-from qsn_ import qsn
 from core import state
 from core.util import p_die, e_die
 from frontend import flag_spec
 from frontend import consts
 from frontend import match
 from frontend import reader
+from mycpp import mylib
 from osh import word_compile
+from qsn_ import qsn
 
 import posix_ as posix
 
@@ -37,8 +37,6 @@ if TYPE_CHECKING:
   from core.state import Mem
   from core.ui import ErrorFormatter
 
-
-shell_start_time = time.time()
 
 class _FormatStringParser(object):
   """
@@ -151,6 +149,9 @@ class Printf(object):
     self.errfmt = errfmt
     self.parse_cache = {}  # type: Dict[str, List[printf_part_t]]
 
+    self.f = mylib.Stdout()
+    self.shell_start_time = time_.time()  # this object initialized in main()
+
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     """
@@ -190,7 +191,7 @@ class Printf(object):
         part.PrettyPrint()
         print()
 
-    out = []
+    out = []  # type: List[str]
     arg_index = 0
     num_args = len(varargs)
     backslash_c = False
@@ -363,7 +364,7 @@ class Printf(object):
                 tzval = cast(value__Str, tzcell.val)
                 posix.putenv('TZ', tzval.s)
 
-              time.tzset()
+              time_.tzset()
 
               # Handle special values:
               #   User can specify two special values -1 and -2 as in Bash
@@ -372,13 +373,13 @@ class Printf(object):
               #   time the shell was invoked." from
               #   https://www.gnu.org/software/bash/manual/html_node/Bash-Builtins.html#index-printf
               if d == -1: # the current time
-                ts = time.time()
+                ts = time_.time()
               elif d == -2: # the shell start time
-                ts = shell_start_time
+                ts = self.shell_start_time
               else:
                 ts = d
 
-              s = time.strftime(typ[1:-2], time.localtime(ts))
+              s = time_.strftime(typ[1:-2], time_.localtime(ts))
               if precision is not None:
                 s = s[:precision]  # truncate
 
@@ -424,5 +425,5 @@ class Printf(object):
         raise error.Usage('got invalid variable name %r' % var_name)
       state.SetStringDynamic(self.mem, var_name, result)
     else:
-      sys.stdout.write(result)
+      self.f.write(result)
     return 0
