@@ -68,11 +68,21 @@ inline Tuple2<int, int> pipe() {
   assert(0);
 }
 
-inline void close(int fd) {
+inline int close(int fd) {
   assert(0);
 }
 
-inline void putenv(Str* name, Str* value) {
+inline int putenv(Str* name, Str* value) {
+  assert(0);
+}
+
+// TODO: errors
+inline int chdir(Str* path) {
+  assert(0);
+}
+
+// TODO: errors
+inline Str* read(int fd, int num_bytes) {
   assert(0);
 }
 

@@ -146,13 +146,8 @@ def get_c_type(t):
         params.append(get_c_type(type_param))
       c_type = 'Dict<%s>*' % ', '.join(params)
 
-    # TODO: we might want Writer and LineReader base classes, and
-    # mylib::Writer
-    #   CFileWriter
-    #   BufWriter
-
     elif type_name == 'typing.IO':
-      c_type = 'mylib::File*'
+      c_type = 'void*'
 
     else:
       # fullname() => 'parse.Lexer'; name() => 'Lexer'

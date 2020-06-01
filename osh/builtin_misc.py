@@ -17,11 +17,12 @@ from _devbuild.gen.runtime_asdl import span_e, cmd_value__Argv
 from asdl import runtime
 from core import error
 from core import passwd
-from core import state
-from core import ui
 from core.pyerror import e_usage
+from core import pyutil  # strerror_OS
+from core import state
 from core.util import log
-from core.vm import _Builtin
+from core import ui
+from core import vm
 from frontend import flag_spec
 from mycpp import mylib
 from pylib import os_path
@@ -45,16 +46,10 @@ _ = log
 #
 
 
-if mylib.PYTHON:
-  TIMES_SPEC = flag_spec.FlagSpec('times')
-
-class Times(_Builtin):
+class Times(vm._Builtin):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    utime, stime, cutime, cstime, elapsed = posix.times()
-    print("%dm%1.3fs %dm%1.3fs" % (utime / 60, utime % 60, stime / 60, stime % 60))
-    print("%dm%1.3fs %dm%1.3fs" % (cutime / 60, cutime % 60, cstime / 60, cstime % 60))
-
+    passwd.PrintTimes()
     return 0
 
 
@@ -142,7 +137,7 @@ def ReadLineFromStdin(delim_char):
   If not set, read a line, and include the newline.
   """
   eof = False
-  chars = []
+  chars = []  # type: List[str]
   while True:
     c = posix.read(0, 1)
     if len(c) == 0:
@@ -157,11 +152,12 @@ def ReadLineFromStdin(delim_char):
   return ''.join(chars), eof
 
 
-class Read(_Builtin):
+class Read(vm._Builtin):
   def __init__(self, splitter, mem):
     # type: (SplitContext, Mem) -> None
     self.splitter = splitter
     self.mem = mem
+    self.stdin = mylib.Stdin()
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
@@ -175,14 +171,14 @@ class Read(_Builtin):
       else:
         name = 'REPLY'  # default variable name
 
-      stdin = sys.stdin.fileno()
-      if sys.stdin.isatty():  # set stdin to read in unbuffered mode
-        s = passwd.ReadBytesFromTerminal(stdin, arg.n)
+      stdin_fd = self.stdin.fileno()
+      if self.stdin.isatty():  # set stdin to read in unbuffered mode
+        s = passwd.ReadBytesFromTerminal(stdin_fd, arg.n)
       else:
         chunks = []  # type: List[str]
         n = arg.n
         while n > 0:
-          chunk = posix.read(stdin, n)  # read at up to N chars
+          chunk = posix.read(stdin_fd, n)  # read at up to N chars
           if len(chunk) == 0:
             break
           chunks.append(chunk)
@@ -248,7 +244,7 @@ class Read(_Builtin):
     return status
 
 
-class Cd(_Builtin):
+class Cd(vm._Builtin):
   def __init__(self, mem, dir_stack, cmd_ev, errfmt):
     # type: (Mem, DirStack, CommandEvaluator, ErrorFormatter) -> None
     self.mem = mem
@@ -267,7 +263,7 @@ class Cd(_Builtin):
       try:
         dest_dir = state.GetString(self.mem, 'HOME')
       except error.Runtime as e:
-        self.errfmt.Print(e.UserErrorString())
+        self.errfmt.Print_(e.UserErrorString())
         return 1
 
     if dest_dir == '-':
@@ -275,13 +271,13 @@ class Cd(_Builtin):
         dest_dir = state.GetString(self.mem, 'OLDPWD')
         print(dest_dir)  # Shells print the directory
       except error.Runtime as e:
-        self.errfmt.Print(e.UserErrorString())
+        self.errfmt.Print_(e.UserErrorString())
         return 1
 
     try:
       pwd = state.GetString(self.mem, 'PWD')
     except error.Runtime as e:
-      self.errfmt.Print(e.UserErrorString())
+      self.errfmt.Print_(e.UserErrorString())
       return 1
 
     # Calculate new directory, chdir() to it, then set PWD to it.  NOTE: We can't
@@ -299,8 +295,8 @@ class Cd(_Builtin):
     try:
       posix.chdir(real_dest_dir)
     except OSError as e:
-      self.errfmt.Print("cd %r: %s", real_dest_dir, posix.strerror(e.errno),
-                        span_id=arg_spid)
+      self.errfmt.Print_("cd %r: %s" % (real_dest_dir, pyutil.strerror_OS(e)),
+                         span_id=arg_spid)
       return 1
 
     state.ExportGlobalString(self.mem, 'PWD', real_dest_dir)
@@ -342,11 +338,12 @@ def _PrintDirStack(dir_stack, style, home_dir):
       print(ui.PrettyDir(entry, home_dir))
 
   elif style == SINGLE_LINE:
-    s = ' '.join(ui.PrettyDir(entry, home_dir) for entry in dir_stack.Iter())
+    parts = [ui.PrettyDir(entry, home_dir) for entry in dir_stack.Iter()]
+    s = ' '.join(parts)
     print(s)
 
 
-class Pushd(_Builtin):
+class Pushd(vm._Builtin):
   def __init__(self, mem, dir_stack, errfmt):
     # type: (Mem, DirStack, ErrorFormatter) -> None
     self.mem = mem
@@ -358,7 +355,7 @@ class Pushd(_Builtin):
     num_args = len(cmd_val.argv) - 1
     if num_args == 0:
       # TODO: It's suppose to try another dir before doing this?
-      self.errfmt.Print('pushd: no other directory')
+      self.errfmt.Print_('pushd: no other directory')
       return 1
     elif num_args > 1:
       e_usage('got too many arguments')
@@ -368,8 +365,8 @@ class Pushd(_Builtin):
     try:
       posix.chdir(dest_dir)
     except OSError as e:
-      self.errfmt.Print("pushd: %r: %s", dest_dir, posix.strerror(e.errno),
-                        span_id=cmd_val.arg_spids[1])
+      self.errfmt.Print_("pushd: %r: %s" % (dest_dir, pyutil.strerror_OS(e)),
+                         span_id=cmd_val.arg_spids[1])
       return 1
 
     self.dir_stack.Push(dest_dir)
@@ -384,14 +381,14 @@ def _PopDirStack(mem, dir_stack, errfmt):
   """Helper for popd and cd { ... }."""
   dest_dir = dir_stack.Pop()
   if dest_dir is None:
-    errfmt.Print('popd: directory stack is empty')
+    errfmt.Print_('popd: directory stack is empty')
     return False
 
   try:
     posix.chdir(dest_dir)
   except OSError as e:
     # Happens if a directory is deleted in pushing and popping
-    errfmt.Print("popd: %r: %s", dest_dir, posix.strerror(e.errno))
+    errfmt.Print_("popd: %r: %s" % (dest_dir, pyutil.strerror_OS(e)))
     return False
 
   state.SetGlobalString(mem, 'PWD', dest_dir)
@@ -399,7 +396,7 @@ def _PopDirStack(mem, dir_stack, errfmt):
   return True
 
 
-class Popd(object):
+class Popd(vm._Builtin):
   def __init__(self, mem, dir_stack, errfmt):
     # type: (Mem, DirStack, ErrorFormatter) -> None
     self.mem = mem
@@ -409,7 +406,7 @@ class Popd(object):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     if len(cmd_val.arg_spids) > 1:
-      raise error.Usage('got extra argument', span_id=cmd_val.arg_spids[1])
+      e_usage('got extra argument', span_id=cmd_val.arg_spids[1])
 
     if not _PopDirStack(self.mem, self.dir_stack, self.errfmt):
       return 1  # error
@@ -418,7 +415,7 @@ class Popd(object):
     return 0
 
 
-class Dirs(_Builtin):
+class Dirs(vm._Builtin):
   def __init__(self, mem, dir_stack, errfmt):
     # type: (Mem, DirStack, ErrorFormatter) -> None
     self.mem = mem
@@ -448,7 +445,7 @@ class Dirs(_Builtin):
     return 0
 
 
-class Pwd(_Builtin):
+class Pwd(vm._Builtin):
   """
   NOTE: pwd doesn't just call getcwd(), which returns a "physical" dir (not a
   symlink).
@@ -478,7 +475,7 @@ class Pwd(_Builtin):
 
 # TODO: Need $VERSION inside all pages?
 
-class Help(_Builtin):
+class Help(vm._Builtin):
 
   def __init__(self, loader, help_index, errfmt):
     # type: (_FileResourceLoader, Any, ErrorFormatter) -> None
@@ -510,7 +507,7 @@ class Help(_Builtin):
         try:
           f = self.loader.open('_devbuild/help/_%s' % group)
         except IOError:
-          self.errfmt.Print('Invalid help index group: %r', group)
+          self.errfmt.Print_('Invalid help index group: %r' % group)
           return 1
         print(f.read())
         f.close()
@@ -531,8 +528,8 @@ class Help(_Builtin):
 
       # 3. This is mostly an interactive command.  Is it obnoxious to
       # quote the line of code?
-      self.errfmt.Print('no help topics match %r', topic,
-                        span_id=blame_spid)
+      self.errfmt.Print_('no help topics match %r' % topic,
+                         span_id=blame_spid)
       return 1
 
     print(f.read())
@@ -540,13 +537,13 @@ class Help(_Builtin):
     return 0
 
 
-class History(_Builtin):
+class History(vm._Builtin):
   """Show interactive command history."""
 
-  def __init__(self, readline_mod, f=sys.stdout):
-    # type: (Any, IO[bytes]) -> None
+  def __init__(self, readline_mod):
+    # type: (Any) -> None
     self.readline_mod = readline_mod
-    self.f = f
+    self.f = mylib.Stdout()
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
@@ -555,7 +552,7 @@ class History(_Builtin):
     # zsh -c 'history' produces an error.
     readline_mod = self.readline_mod
     if not readline_mod:
-      raise error.Usage("OSH wasn't compiled with the readline module.")
+      e_usage("is disabled because Oil wasn't compiled with 'readline'")
 
     attrs, arg_r = flag_spec.ParseCmdVal('history', cmd_val)
     arg = arg_types.history(attrs.attrs)
@@ -572,7 +569,7 @@ class History(_Builtin):
       try:
         readline_mod.remove_history_item(cmd_index)
       except ValueError:
-        raise error.Usage("couldn't find item %d" % arg.d)
+        e_usage("couldn't find item %d" % arg.d)
 
       return 0
 
@@ -588,10 +585,10 @@ class History(_Builtin):
       try:
         num_to_show = int(arg0)
       except ValueError:
-        raise error.Usage('Invalid argument %r' % arg0)
+        e_usage('got invalid argument %r' % arg0)
       start_index = max(1, num_items + 1 - num_to_show)
     else:
-      raise error.Usage('Too many arguments')
+      e_usage('got many arguments')
 
     # TODO:
     # - Exclude lines that don't parse from the history!  bash and zsh don't do
@@ -604,7 +601,7 @@ class History(_Builtin):
     return 0
 
 
-class Cat(_Builtin):
+class Cat(vm._Builtin):
   """Internal implementation detail for $(< file).
   
   Maybe expose this as 'builtin cat' ?
@@ -615,5 +612,5 @@ class Cat(_Builtin):
       chunk = posix.read(0, 4096)
       if len(chunk) == 0:
         break
-      sys.stdout.write(chunk)
+      mylib.Stdout().write(chunk)
     return 0

@@ -366,9 +366,13 @@ TEST test_contains() {
 }
 
 TEST test_files() {
-  mylib::Writer* w = mylib::Stdout();
-  bool b = w->isatty();
-  log("b = %d", b);
+  mylib::Writer* stdout_ = mylib::Stdout();
+  log("stdout isatty() = %d", stdout_->isatty());
+
+  mylib::LineReader* stdin_ = mylib::Stdin();
+  log("stdin isatty() = %d", stdin_->isatty());
+
+  ASSERT_EQ(0, stdin_->fileno());
 
   FILE* f = fopen("README.md", "r");
   auto r = new mylib::CFileLineReader(f);

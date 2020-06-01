@@ -149,7 +149,6 @@ class Printf(object):
     self.errfmt = errfmt
     self.parse_cache = {}  # type: Dict[str, List[printf_part_t]]
 
-    self.f = mylib.Stdout()
     self.shell_start_time = time_.time()  # this object initialized in main()
 
   def Run(self, cmd_val):
@@ -425,5 +424,5 @@ class Printf(object):
         raise error.Usage('got invalid variable name %r' % var_name)
       state.SetStringDynamic(self.mem, var_name, result)
     else:
-      self.f.write(result)
+      mylib.Stdout().write(result)
     return 0

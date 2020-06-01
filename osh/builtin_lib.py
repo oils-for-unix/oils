@@ -4,7 +4,7 @@ builtin_lib.py - Builtins that are bindings to libraries.
 """
 from __future__ import print_function
 
-from osh.builtin_misc import _Builtin
+from core import vm
 
 from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
   from core.ui import ErrorFormatter
 
 
-class Bind(_Builtin):
+class Bind(vm._Builtin):
   """For :, true, false."""
   def __init__(self, readline_mod, errfmt):
     # type: (Any, ErrorFormatter) -> None

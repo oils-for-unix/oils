@@ -6,7 +6,15 @@
 namespace os_path {
 
 // This function takes varargs.  Add other varargs variants?
-Str* join(Str* s1, Str* s2) {
+inline Str* join(Str* s1, Str* s2) {
+  assert(0);
+}
+
+inline Str* abspath(Str* path) {
+  assert(0);
+}
+
+inline Str* normpath(Str* path) {
   assert(0);
 }
 

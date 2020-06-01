@@ -14,7 +14,16 @@ inline Str* GetMyHomeDir() {
 inline Str* GetHomeDir(syntax_asdl::Token* token) {
   assert(0);
 }
+
 inline Tuple3<double, double, double> Time() {
+  assert(0);
+}
+
+inline void PrintTimes() {
+  assert(0);
+}
+
+inline Str* ReadBytesFromTerminal(int fd, int n) {
   assert(0);
 }
 

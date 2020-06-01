@@ -32,6 +32,10 @@ inline void print_time(double real, double user, double sys) {
   assert(0);
 }
 
+inline Str* realpath(Str* path) {
+  assert(0);
+}
+
 }  // namespace libc
 
 #endif  // LIBC_H
