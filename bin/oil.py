@@ -497,7 +497,7 @@ def ShellMain(lang, argv0, argv, login_shell):
       builtin_i.shift: builtin_assign.Shift(mem),
 
       # meta
-      builtin_i.type: builtin_meta.Type(procs, aliases, search_path),
+      builtin_i.type: builtin_meta.Type(procs, aliases, search_path, errfmt),
 
       # Pure
       builtin_i.set: builtin_pure.Set(mutable_opts, mem),

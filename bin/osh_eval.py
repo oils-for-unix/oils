@@ -61,8 +61,6 @@ if TYPE_CHECKING:
 if mylib.PYTHON:
   unused1 = log
   unused2 = args
-  unused3 = builtin_meta
-  unused4 = builtin_pure
   unused5 = builtin_bracket
   unused6 = builtin_misc
   unused7 = builtin_printf
@@ -243,7 +241,10 @@ def main(argv):
   builtins[builtin_i.true_] = true_
   builtins[builtin_i.false_] = builtin_pure.Boolean(1)
 
-  ex = NullExecutor(builtins)
+  # builtin_meta
+  builtins[builtin_i.type] = builtin_meta.Type(procs, aliases, search_path, errfmt)
+
+  shell_ex = NullExecutor(builtins)
 
   trace_f = util.DebugFile(mylib.Stderr())
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, word_ev, trace_f)
@@ -251,12 +252,26 @@ def main(argv):
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
                                      assign_builtins, arena, cmd_deps)
 
+  # TODO: can't instantiate this yet
+  #fd_state = None
+
+  # needs cmd_ev
+  builtins[builtin_i.eval] = builtin_meta.Eval(parse_ctx, exec_opts, cmd_ev)
+  #source_builtin = builtin_meta.Source(
+  #    parse_ctx, search_path, cmd_ev, fd_state, errfmt)
+  #builtins[builtin_i.source] = source_builtin
+  #builtins[builtin_i.dot] = source_builtin
+
+  builtins[builtin_i.builtin] = builtin_meta.Builtin(shell_ex, errfmt)
+  builtins[builtin_i.command] = builtin_meta.Command(shell_ex, procs, aliases,
+                                                     search_path)
+
   # vm.InitCircularDeps
   cmd_ev.arith_ev = arith_ev
   cmd_ev.bool_ev = bool_ev
   cmd_ev.word_ev = word_ev
   cmd_ev.tracer = tracer
-  cmd_ev.shell_ex = ex
+  cmd_ev.shell_ex = shell_ex
 
   bool_ev.word_ev = word_ev
 

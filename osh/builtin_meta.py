@@ -148,7 +148,7 @@ class Command(vm._Builtin):
       status = 0
       names = arg_r.Rest()
       for kind, argument in _ResolveNames(names, self.funcs, self.aliases,
-                                         self.search_path):
+                                          self.search_path):
         if kind is None:
           status = 1  # nothing printed, but we fail
         else:
@@ -225,7 +225,7 @@ def _ResolveNames(names, funcs, aliases, search_path):
       resolved = search_path.Lookup(name)
       if resolved is None:
         no_str = None  # type: Optional[str]
-        kind = (no_str, no_str)
+        kind = (no_str, name)
       else:
         kind = ('file', resolved) 
     results.append(kind)
@@ -234,11 +234,12 @@ def _ResolveNames(names, funcs, aliases, search_path):
 
 
 class Type(vm._Builtin):
-  def __init__(self, funcs, aliases, search_path):
-    # type: (Dict[str, command__ShFunction], Dict[str, str], state.SearchPath) -> None
+  def __init__(self, funcs, aliases, search_path, errfmt):
+    # type: (Dict[str, command__ShFunction], Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
     self.funcs = funcs
     self.aliases = aliases
     self.search_path = search_path
+    self.errfmt = errfmt
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
@@ -254,6 +255,7 @@ class Type(vm._Builtin):
     r = _ResolveNames(arg_r.Rest(), funcs, self.aliases, self.search_path)
     for kind, name in r:
       if kind is None:
+        self.errfmt.StderrLine('type: %r not found' % name)
         status = 1  # nothing printed, but we fail
       else:
         if arg.t:

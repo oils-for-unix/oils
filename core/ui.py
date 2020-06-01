@@ -20,6 +20,7 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.runtime_asdl import value_str, value_t
 from asdl import runtime
 from asdl import format as fmt
+from core.pyutil import stderr_line
 from osh import word_
 from mycpp import mylib
 from mycpp.mylib import tagswitch, NewStr
@@ -268,6 +269,10 @@ class ErrorFormatter(object):
     if span_id == runtime.NO_SPID:
       span_id = self.CurrentLocation()
     _PrintWithOptionalSpanId('', msg, span_id, self.arena)
+
+  def StderrLine(self, msg):
+    # type: (str) -> None
+    stderr_line(msg)
 
   def PrettyPrintError(self, err, prefix=''):
     # type: (_ErrorWithLocation, str) -> None
