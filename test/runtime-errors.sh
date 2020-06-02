@@ -531,8 +531,16 @@ string_as_array() {
 #
 
 builtin_bracket() {
+  set +o errexit
+
   # xxx is not a valid file descriptor
   [ -t xxx ]
+  [ -t '' ]
+
+  [ zz -eq 0 ]
+
+  # This is from a different evaluator
+  #[ $((a/0)) -eq 0 ]
 }
 
 builtin_builtin() {

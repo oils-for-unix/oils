@@ -222,6 +222,9 @@ option_asdl::builtin_t LookupAssignBuiltin(Str* s);
 option_asdl::builtin_t LookupSpecialBuiltin(Str* s);
 bool IsControlFlow(Str* s);
 bool IsKeyword(Str* s);
+id_kind_asdl::Id_t TestUnaryLookup(Str* s);
+id_kind_asdl::Id_t TestBinaryLookup(Str* s);
+id_kind_asdl::Id_t TestOtherLookup(Str* s);
 
 Str* OptionName(option_asdl::option_t opt_num);
 
@@ -331,6 +334,16 @@ bool IsControlFlow(Str* s) {
   assert(0);
 }
 bool IsKeyword(Str* s) {
+  assert(0);
+}
+
+id_kind_asdl::Id_t TestUnaryLookup(Str* s) {
+  assert(0);
+}
+id_kind_asdl::Id_t TestBinaryLookup(Str* s) {
+  assert(0);
+}
+id_kind_asdl::Id_t TestOtherLookup(Str* s) {
   assert(0);
 }
 """)

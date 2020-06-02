@@ -879,7 +879,6 @@ class BoolEvaluator(ArithEvaluator):
             try:
               fd = int(s)
             except ValueError:
-              # TODO: Need location information of [
               e_die('Invalid file descriptor %r', s, word=node.child)
             return bool_stat.isatty(fd, s, node.child)
 

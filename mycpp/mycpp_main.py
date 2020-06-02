@@ -81,7 +81,7 @@ def ModulesToCompile(result, mod_names):
   # Another fix is to hoist those to the declaration phase?  Not sure if that
   # makes sense.
 
-  # Somehow the MyPy builder reorders the modules.
+  # FIRST files.  Somehow the MyPy builder reorders the modules.
   for name, module in result.files.items():
     if name in ('asdl.runtime', 'core.vm'):
       yield name, module
@@ -92,11 +92,20 @@ def ModulesToCompile(result, mod_names):
     if suffix not in mod_names:
       continue
 
-    # Don't do it a second time!
+    # FIRST files.  Don't do it a second time!
     if name in ('asdl.runtime', 'core.vm'):
       continue
 
+    # should be LAST because it uses 2 base classes
+    if name in ('osh.builtin_bracket',):
+      continue
+
     yield name, module
+
+  # LAST files
+  for name, module in result.files.items():
+    if name in ('osh.builtin_bracket',):
+      yield name, module
 
 
 def main(argv):

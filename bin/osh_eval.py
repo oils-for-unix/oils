@@ -268,6 +268,9 @@ def main(argv):
 
   builtins[builtin_i.printf] = builtin_printf.Printf(mem, parse_ctx, errfmt)
 
+  builtins[builtin_i.test] = builtin_bracket.Test(False, exec_opts, mem, errfmt)
+  builtins[builtin_i.bracket] = builtin_bracket.Test(True, exec_opts, mem, errfmt)
+
   # vm.InitCircularDeps
   cmd_ev.arith_ev = arith_ev
   cmd_ev.bool_ev = bool_ev

@@ -4,9 +4,6 @@ builtin_bracket.py
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.id_kind import (
-    TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP, TEST_OTHER_LOOKUP
-)
 from _devbuild.gen.runtime_asdl import value, quote_e, quote_t
 from _devbuild.gen.syntax_asdl import (
     word, word_e, word_t, word__String,
@@ -16,11 +13,15 @@ from _devbuild.gen.types_asdl import lex_mode_e
 
 from asdl import runtime
 from core import error
-from core.util import p_die
+from core.util import p_die, log
+from core import vm
+from frontend import consts
 from osh import sh_expr_eval
 from osh import bool_parse
 from osh import word_parse
 from osh import word_eval
+
+_ = log
 
 from typing import cast, TYPE_CHECKING
 
@@ -65,13 +66,13 @@ class _StringWordEmitter(word_parse.WordEmitter):
     self.i += 1
 
     # default is an operand word
-    id_int = (
-        TEST_UNARY_LOOKUP.get(s) or
-        TEST_BINARY_LOOKUP.get(s) or
-        TEST_OTHER_LOOKUP.get(s)
-    )
+    id_int = consts.TestUnaryLookup(s)
+    if id_int == -1:
+      id_int = consts.TestBinaryLookup(s)
+    if id_int == -1:
+      id_int = consts.TestOtherLookup(s)
 
-    id_ = Id.Word_Compound if id_int is None else id_int
+    id_ = Id.Word_Compound if id_int == -1 else id_int
 
     # NOTE: We only have the left spid now.  It might be useful to add the
     # right one.
@@ -114,8 +115,8 @@ def _TwoArgs(w_parser):
   w1 = w_parser.Read()
   if w0.s == '!':
     return bool_expr.LogicalNot(bool_expr.WordTest(w1))
-  unary_id = TEST_UNARY_LOOKUP.get(w0.s)
-  if unary_id is None:
+  unary_id = consts.TestUnaryLookup(w0.s)
+  if unary_id == -1:
     # TODO:
     # - separate lookup by unary
     p_die('Expected unary operator, got %r (2 args)', w0.s, word=w0)
@@ -131,8 +132,8 @@ def _ThreeArgs(w_parser):
 
   # NOTE: Order is important here.
 
-  binary_id = TEST_BINARY_LOOKUP.get(w1.s)
-  if binary_id is not None:
+  binary_id = consts.TestBinaryLookup(w1.s)
+  if binary_id != -1:
     return bool_expr.Binary(binary_id, w0, w2)
 
   if w1.s == '-a':
@@ -152,7 +153,7 @@ def _ThreeArgs(w_parser):
   p_die('Expected binary operator, got %r (3 args)', w1.s, word=w1)
 
 
-class Test(object):
+class Test(vm._Builtin):
   def __init__(self, need_right_bracket, exec_opts, mem, errfmt):
     # type: (bool, optview.Exec, state.Mem, ErrorFormatter) -> None
     self.need_right_bracket = need_right_bracket
@@ -169,7 +170,7 @@ class Test(object):
     if self.need_right_bracket:  # Preprocess right bracket
       strs = cmd_val.argv
       if not strs or strs[-1] != ']':
-        self.errfmt.Print('missing closing ]', span_id=cmd_val.arg_spids[0])
+        self.errfmt.Print_('missing closing ]', span_id=cmd_val.arg_spids[0])
         return 2
       # Remove the right bracket
       cmd_val.argv.pop()
@@ -235,14 +236,15 @@ class Test(object):
     bool_ev.CheckCircularDeps()
     try:
       b = bool_ev.EvalB(bool_node)
-    except (error.FatalRuntime, error.Strict) as e:
-      # TODO: use a different exception for FatalRuntime?  It's not really
-      # fatal.
+    except error._ErrorWithLocation as e:
+      # We want to catch e_die() and e_strict().  Those are both FatalRuntime
+      # errors now, but it might not make sense later.
 
-      # Hack: we don't get the (test) prefix but we get location info.  We
-      # don't have access to mem.CurrentSpanId() here.
-      if not e.HasLocation():
-        raise
+      # NOTE: This doesn't seem to happen.  We have location info for all
+      # errors that arise out of [.
+      #if not e.HasLocation():
+      #  raise
+
       self.errfmt.PrettyPrintError(e, prefix='(test) ')
       return 2  # 1 means 'false', and this usage error is like a parse error.
 
