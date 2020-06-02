@@ -115,6 +115,13 @@ TEST libc_test() {
   PASS();
 }
 
+TEST time_test() {
+  int ts = time_::time();
+  log("ts = %d", ts);
+  ASSERT(ts > 0);
+  PASS();
+}
+
 // HACK!  asdl/runtime.py isn't translated, but core_error.h uses it...
 namespace runtime {
 int NO_SPID = -1;
@@ -194,6 +201,7 @@ int main(int argc, char** argv) {
   RUN_TEST(match_test);
   RUN_TEST(util_test);
   RUN_TEST(libc_test);
+  RUN_TEST(time_test);
   RUN_TEST(exceptions);
   RUN_TEST(flag_spec_test);
   GREATEST_MAIN_END(); /* display results */

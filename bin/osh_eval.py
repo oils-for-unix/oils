@@ -266,6 +266,8 @@ def main(argv):
   builtins[builtin_i.command] = builtin_meta.Command(shell_ex, procs, aliases,
                                                      search_path)
 
+  builtins[builtin_i.printf] = builtin_printf.Printf(mem, parse_ctx, errfmt)
+
   # vm.InitCircularDeps
   cmd_ev.arith_ev = arith_ev
   cmd_ev.bool_ev = bool_ev

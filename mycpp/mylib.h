@@ -1005,7 +1005,7 @@ class CFileLineReader : public LineReader {
   }
   virtual Str* readline();
   virtual int fileno() {
-    ::fileno(f_);
+    return ::fileno(f_);
   }
 
  private:

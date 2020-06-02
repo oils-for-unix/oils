@@ -20,6 +20,7 @@ from core import error
 from core.pyerror import e_usage
 from core import state
 from core.util import p_die, e_die, log
+from core import vm
 from frontend import flag_spec
 from frontend import consts
 from frontend import match
@@ -143,7 +144,7 @@ class _FormatStringParser(object):
     return parts
 
 
-class Printf(object):
+class Printf(vm._Builtin):
 
   def __init__(self, mem, parse_ctx, errfmt):
     # type: (Mem, ParseContext, ErrorFormatter) -> None

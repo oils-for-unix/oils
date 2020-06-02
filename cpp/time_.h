@@ -3,6 +3,7 @@
 #ifndef TIME_H
 #define TIME_H
 
+#include <time.h>
 #include "mylib.h"
 
 namespace time_ {
@@ -12,7 +13,7 @@ void* tzset() {
 }
 
 int time() {
-  assert(0);
+  return ::time(nullptr);
 }
 
 // TODO: Should these be bigger integers?
