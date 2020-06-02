@@ -1126,6 +1126,18 @@ inline Writer* Stderr() {
   return gStderr;
 }
 
+inline Str* hex_lower(int i) {
+  assert(0);
+}
+
+inline Str* hex_upper(int i) {
+  assert(0);
+}
+
+inline Str* octal(int i) {
+  assert(0);
+}
+
 }  // namespace mylib
 
 //

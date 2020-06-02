@@ -624,6 +624,30 @@ builtin_printf() {
   # bad arg recycling.  This is really a runtime error.
   printf '%s %d\n' foo 3 bar
   echo status=$?
+
+  # invalid width
+  printf '%*d\n' foo foo
+  echo status=$?
+
+  # precision can't be specified
+  printf '%.*d\n' foo foo
+  echo status=$?
+
+  # precision can't be specified
+  printf '%.*s\n' foo foo
+  echo status=$?
+
+  # invalid time
+  printf '%(%Y)T\n' z
+  echo status=$?
+
+  # invalid time with no SPID
+  printf '%(%Y)T\n' 
+  echo status=$?
+
+  # invalid integer with no SPID
+  printf '%d %d %d\n' 1 2 
+  echo status=$?
 }
 
 

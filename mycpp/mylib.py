@@ -108,3 +108,18 @@ def split_once(s, delim):
     return s, no_str
   else:
     return parts[0], parts[1]
+
+
+def hex_lower(i):
+  # type: (int) -> str
+  return '%x' % i
+
+
+def hex_upper(i):
+  # type: (int) -> str
+  return '%X' % i
+
+
+def octal(i):
+  # type: (int) -> str
+  return '%o' % i

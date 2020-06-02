@@ -17,8 +17,9 @@ from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
 
 from asdl import runtime
 from core import error
+from core.pyerror import e_usage
 from core import state
-from core.util import p_die, e_die
+from core.util import p_die, e_die, log
 from frontend import flag_spec
 from frontend import consts
 from frontend import match
@@ -36,6 +37,8 @@ if TYPE_CHECKING:
   from frontend.parse_lib import ParseContext
   from core.state import Mem
   from core.ui import ErrorFormatter
+
+_ = log
 
 
 class _FormatStringParser(object):
@@ -108,7 +111,7 @@ class _FormatStringParser(object):
 
     # Do this check AFTER the floating point checks
     if part.precision and part.type.val[-1] not in 'fsT':
-      p_die("precision can't be specified when here",
+      p_die("printf precision can't be specified with type %r" % part.type.val,
             token=part.precision)
 
     return part
@@ -133,7 +136,7 @@ class _FormatStringParser(object):
         break
 
       else:
-        p_die('Invalid token %r', token=self.cur_token)
+        raise AssertionError()
 
       self._Next(lex_mode_e.PrintfOuter)
 
@@ -209,12 +212,12 @@ class Printf(object):
 
         elif part.tag_() == printf_part_e.Percent:
           part = cast(printf_part__Percent, UP_part)
-          flags = ''
+          flags = []  # type: List[str]
           if len(part.flags) > 0:
             for flag_token in part.flags:
-              flags += flag_token.val
+              flags.append(flag_token.val)
 
-          width = None
+          width = -1  # nonexistent
           if part.width:
             if part.width.id in (Id.Format_Num, Id.Format_Zero):
               width_str = part.width.val
@@ -225,7 +228,7 @@ class Printf(object):
                 width_spid = spids[arg_index]
                 arg_index += 1
               else:
-                width_str = ''
+                width_str = ''  # invalid
                 width_spid = runtime.NO_SPID
             else:
               raise AssertionError()
@@ -235,11 +238,11 @@ class Printf(object):
             except ValueError:
               if width_spid == runtime.NO_SPID:
                 width_spid = part.width.span_id
-              self.errfmt.Print("printf got invalid number %r for the width", s,
-                                span_id = width_spid)
+              self.errfmt.Print_("printf got invalid width %r" % width_str,
+                                 span_id=width_spid)
               return 1
 
-          precision = None
+          precision = -1  # nonexistent
           if part.precision:
             if part.precision.id == Id.Format_Dot:
               precision_str = '0'
@@ -263,10 +266,12 @@ class Printf(object):
             except ValueError:
               if precision_spid == runtime.NO_SPID:
                 precision_spid = part.precision.span_id
-              self.errfmt.Print("printf got invalid number %r for the precision", s,
-                                span_id = precision_spid)
+              self.errfmt.Print_(
+                  'printf got invalid precision %r' % precision_str,
+                  span_id=precision_spid)
               return 1
 
+          #log('index=%d n=%d', arg_index, num_args)
           if arg_index < num_args:
             s = varargs[arg_index]
             word_spid = spids[arg_index]
@@ -277,7 +282,7 @@ class Printf(object):
 
           typ = part.type.val
           if typ == 's':
-            if precision is not None:
+            if precision >= 0:
               s = s[:precision]  # truncate
 
           elif typ == 'q':
@@ -318,14 +323,13 @@ class Printf(object):
                 #   as if -1 had been given."
                 d = -1
               else:
-                # This works around the fact that in the arg recycling case, you have no spid.
                 if word_spid == runtime.NO_SPID:
-                  self.errfmt.Print("printf got invalid number %r for this substitution", s,
-                                    span_id=part.type.span_id)
+                  # Blame the format string
+                  blame_spid = part.type.span_id
                 else:
-                  self.errfmt.Print("printf got invalid number %r", s,
-                                    span_id=word_spid)
-
+                  blame_spid = word_spid
+                self.errfmt.Print_('printf expected an integer, got %r' % s,
+                                   span_id=blame_spid)
                 return 1
 
             if typ in 'di':
@@ -337,11 +341,12 @@ class Printf(object):
               if typ == 'u':
                 s = str(d)
               elif typ == 'o':
-                s = '%o' % d
+                s = mylib.octal(d)
               elif typ == 'x':
-                s = '%x' % d
+                s = mylib.hex_lower(d)
               elif typ == 'X':
-                s = '%X' % d
+                s = mylib.hex_upper(d)
+
             elif part.type.id == Id.Format_Time:
               # %(...)T
 
@@ -379,7 +384,7 @@ class Printf(object):
                 ts = d
 
               s = time_.strftime(typ[1:-2], time_.localtime(ts))
-              if precision is not None:
+              if precision >= 0:
                 s = s[:precision]  # truncate
 
             else:
@@ -388,7 +393,7 @@ class Printf(object):
           else:
             raise AssertionError()
 
-          if width is not None:
+          if width >= 0:
             if len(flags):
               if '-' in flags:
                 s = s.ljust(width, ' ')
@@ -421,7 +426,7 @@ class Printf(object):
       # implemented it.
       # - TODO: get the span_id for arg.v!
       if not match.IsValidVarName(var_name):
-        raise error.Usage('got invalid variable name %r' % var_name)
+        e_usage('got invalid variable name %r' % var_name)
       state.SetStringDynamic(self.mem, var_name, result)
     else:
       mylib.Stdout().write(result)
