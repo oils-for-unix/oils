@@ -35,7 +35,8 @@ class BuiltinTest(unittest.TestCase):
 
       parts = []
       builtin_misc._AppendParts(line, spans, max_results, False, parts)
-      self.assertEqual(expected_parts, parts)
+      strs = [buf.getvalue() for buf in parts]
+      self.assertEqual(expected_parts, strs)
 
       print('---')
 
