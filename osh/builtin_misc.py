@@ -69,8 +69,11 @@ class Times(vm._Builtin):
 #   the next character read and for line continuation.
 
 def _AppendParts(s, spans, max_results, join_next, parts):
-  # type: (str, List[Tuple[span_t, int]], int, bool, List[str]) -> Tuple[bool, bool]
-  """ 
+  # type: (str, List[Tuple[span_t, int]], int, bool, List[mylib.BufWriter]) -> Tuple[bool, bool]
+  """ Append to 'parts', for the 'read' builtin.
+  
+  Similar to _SpansToParts in osh/split.py
+
   Args:
     s: The original string
     spans: List of (span, end_index)
@@ -88,15 +91,17 @@ def _AppendParts(s, spans, max_results, join_next, parts):
   for span_type, end_index in spans:
     if span_type == span_e.Black:
       if join_next and parts:
-        parts[-1] += s[start_index:end_index]
+        parts[-1].write(s[start_index:end_index])
         join_next = False
       else:
-        parts.append(s[start_index:end_index])
+        buf = mylib.BufWriter()
+        buf.write(s[start_index:end_index])
+        parts.append(buf)
       last_span_was_black = True
 
     elif span_type == span_e.Delim:
       if join_next:
-        parts[-1] += s[start_index:end_index]
+        parts[-1].write(s[start_index:end_index])
         join_next = False
       last_span_was_black = False
 
@@ -206,7 +211,7 @@ class Read(vm._Builtin):
 
     # We have to read more than one line if there is a line continuation (and
     # it's not -r).
-    parts = []  # type: List[str]
+    parts = []  # type: List[mylib.BufWriter]
     join_next = False
     status = 0
     while True:
@@ -228,13 +233,15 @@ class Read(vm._Builtin):
       if done:
         break
 
+    entries = [buf.getvalue() for buf in parts]
+    num_parts = len(entries)
     if arg.a is not None:
-      state.SetArrayDynamic(self.mem, arg.a, parts)
+      state.SetArrayDynamic(self.mem, arg.a, entries)
     else:
       for i in xrange(max_results):
-        try:
-          s = parts[i]
-        except IndexError:
+        if i < num_parts:
+          s = entries[i]
+        else:
           s = ''  # if there are too many variables
         #log('read: %s = %s', names[i], s)
         state.SetStringDynamic(self.mem, names[i], s)

@@ -133,13 +133,18 @@ test-all() {
     pyrun-example ${name} > _tmp/$name.python.txt 2>&1
     _bin/$name > _tmp/$name.cpp.txt 2>&1
 
-    if diff -u _tmp/$name.{python,cpp}.txt > _tmp/$name.diff.txt; then
-      echo $'\t\t\tOK'
-    else
-      echo $'\t\tFAIL'
-      cat _tmp/$name.diff.txt
-    fi
+    diff-output $name
   done
+}
+
+diff-output() {
+  local name=$1
+  if diff -u _tmp/$name.{python,cpp}.txt > _tmp/$name.diff.txt; then
+    echo $'\t\t\tOK'
+  else
+    echo $'\t\tFAIL'
+    cat _tmp/$name.diff.txt
+  fi
 }
 
 benchmark-all() {
@@ -218,11 +223,13 @@ example-both() {
 
   echo
   echo $'\t[ C++ ]'
-  time _bin/$name
+  time _bin/$name > _tmp/$name.cpp.txt
 
   echo
   echo $'\t[ Python ]'
-  time pyrun-example $name
+  time pyrun-example $name > _tmp/$name.python.txt
+
+  diff-output $name
 }
 
 benchmark-both() {

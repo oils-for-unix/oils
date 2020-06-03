@@ -34,15 +34,21 @@ class LiteralPart:
 
 
 class SubstPart:
-  def __init__(self, char_code, arg_num):
+  def __init__(self, width, char_code, arg_num):
+    self.width = width
     self.char_code = char_code
     self.arg_num = arg_num
 
   def __repr__(self):
-    return '(Subst %s %d)' % (self.char_code, self.arg_num)
+    return '(Subst %r %s %d)' % (self.width, self.char_code, self.arg_num)
 
 
-PAT = re.compile('([^%]*)(%.)?')
+PAT = re.compile('''
+([^%]*)
+(?:
+  %([0-9]*)(.)   # optional number, and then character code
+)?
+''', re.VERBOSE)
 
 def Parse(fmt):
 
@@ -50,16 +56,16 @@ def Parse(fmt):
   parts = []
   for m in PAT.finditer(fmt):
     lit = m.group(1)
-    subst = m.group(2)
+    width = m.group(2)
+    char_code = m.group(3)
 
     if lit:
       parts.append(LiteralPart(lit))
-    if subst:
-      char_code = subst[1]
+    if char_code:
       if char_code == '%':
         part = LiteralPart('%')
       else:
-        part = SubstPart(char_code, arg_num)
+        part = SubstPart(width, char_code, arg_num)
         arg_num += 1
       parts.append(part)
 

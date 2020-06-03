@@ -658,6 +658,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.fmt_funcs.write(
               '  gBuf.write_const(%s, %d);\n' % (escaped, n))
         elif isinstance(part, format_strings.SubstPart):
+          # TODO: respect part.width as rjust()
           self.fmt_funcs.write(
               '  gBuf.format_%s(a%d);\n' %
               (part.char_code, part.arg_num))
