@@ -2,6 +2,9 @@
 
 module runtime
 {
+  -- import these types from syntax.asdl
+  use syntax { command re redir_loc }
+
   -- Evaluating SimpleCommand results in either an argv array or an assignment.
   -- in 'local foo', rval is None
   assign_arg = (string var_name, value? rval, int spid)
@@ -9,7 +12,7 @@ module runtime
   -- ASDL issue: I need to import the 'command' type from frontend/syntax.asdl!
   -- and 'builtin' from synthetic option_asdl
   cmd_value =
-    Argv(string* argv, int* arg_spids, any? block)
+    Argv(string* argv, int* arg_spids, command? block)
   | Assign(int builtin_id,
            string* argv, int* arg_spids,
            assign_arg* pairs)

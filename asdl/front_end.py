@@ -436,7 +436,7 @@ def _ResolveModule(module, app_types):
 
   for u in module.uses:
     for type_name in u.type_names:
-      type_lookup[type_name] = None  # Placeholder
+      type_lookup[type_name] = u  # type: asdl.Use()
 
   # NOTE: We need two passes because types can be mutually recursive, e.g.
   # asdl/arith.asdl.

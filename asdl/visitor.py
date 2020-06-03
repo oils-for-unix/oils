@@ -33,9 +33,14 @@ class AsdlVisitor:
       self.f.write(line)
 
   def VisitModule(self, mod):
+    for use in mod.uses:
+      self.VisitUse(use)
     for dfn in mod.dfns:
       self.VisitType(dfn)
     self.EmitFooter()
+
+  def VisitUse(self, use):
+    pass
 
   def VisitType(self, typ, depth=0):
     if isinstance(typ.value, asdl.Sum):

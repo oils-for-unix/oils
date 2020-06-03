@@ -45,6 +45,9 @@ def _MyPyType(typ):
       return '%s_t' % typ.name
     if isinstance(typ.resolved, asdl_.Product):
       return typ.name
+    if isinstance(typ.resolved, asdl_.Use):
+      # Assume sum type for now!  We haven't resolved the type.
+      return '%s_t' % type_name
 
   # 'id' falls through here
   return _PRIMITIVES[type_name]
@@ -168,6 +171,13 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
 
     self._products = []
     self._product_bases = defaultdict(list)
+
+  def VisitUse(self, use):
+    py_names = ['%s_t' % n for n in use.type_names]  # assume sum type for now!
+    self.Emit(
+        'from _devbuild.gen.%s_asdl import %s' % (
+        use.mod_name, ', '.join(py_names)))
+    self.Emit('')
 
   def _EmitDict(self, name, d, depth):
     self.Emit('_%s_str = {' % name, depth)
@@ -307,7 +317,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     for f in all_fields:
       t = _MyPyType(f.typ)
 
-      if self.optional_fields:
+      if self.optional_fields and f.typ.name != 'maybe':  # already Optional
         t = 'Optional[%s]' % t
       arg_types.append(t)
 
