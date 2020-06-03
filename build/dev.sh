@@ -101,7 +101,7 @@ oil-asdl-to-py() {
   OPTIONAL_FIELDS='' PRETTY_PRINT_METHODS='' gen-asdl-py 'asdl/hnode.asdl'
 
   gen-asdl-py frontend/types.asdl
-  gen-asdl-py core/runtime.asdl
+  gen-asdl-py core/runtime.asdl  # depends on syntax.asdl
   gen-asdl-py 'tools/find/find.asdl'
 
   build/codegen.sh const-mypy-gen  # dependency on bool_arg_type_e

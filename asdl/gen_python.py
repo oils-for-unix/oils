@@ -172,13 +172,6 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
     self._products = []
     self._product_bases = defaultdict(list)
 
-  def VisitUse(self, use):
-    py_names = ['%s_t' % n for n in use.type_names]  # assume sum type for now!
-    self.Emit(
-        'from _devbuild.gen.%s_asdl import %s' % (
-        use.mod_name, ', '.join(py_names)))
-    self.Emit('')
-
   def _EmitDict(self, name, d, depth):
     self.Emit('_%s_str = {' % name, depth)
     for k in sorted(d):

@@ -195,6 +195,22 @@ namespace %s {
 
     f = sys.stdout
 
+    # TODO: Remove Any once we stop using it
+    f.write("""\
+from asdl import pybase
+from typing import Optional, List, Tuple, Dict, Any, cast, TYPE_CHECKING
+""")
+
+    if schema_ast.uses:
+      f.write('\n')
+      f.write('if TYPE_CHECKING:\n')
+    for use in schema_ast.uses:
+      py_names = ['%s_t' % n for n in use.type_names]  # assume sum type for now!
+      # indented
+      f.write('  from _devbuild.gen.%s_asdl import %s\n' % (
+        use.mod_name, ', '.join(py_names)))
+    f.write('\n')
+
     for typ in app_types.itervalues():
       if isinstance(typ, UserType):
         f.write('from _devbuild.gen.%s import %s\n' % (
@@ -202,12 +218,6 @@ namespace %s {
         # HACK
         f.write('from _devbuild.gen.%s import Id_str\n' % typ.mod_name)
         f.write('\n')
-
-    # NOTE: Dict, Any are for AssocArray with 'dict' type.
-    f.write("""\
-from asdl import pybase
-from typing import Optional, List, Tuple, Dict, Any, cast
-""")
 
     pretty_print_methods = bool(os.getenv('PRETTY_PRINT_METHODS', 'yes'))
     optional_fields = bool(os.getenv('OPTIONAL_FIELDS', 'yes'))
