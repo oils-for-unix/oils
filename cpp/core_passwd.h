@@ -14,6 +14,10 @@ inline Str* GetMyHomeDir() {
 inline Str* GetHomeDir(syntax_asdl::Token* token) {
   assert(0);
 }
+inline Str* OsType() {
+  // uname()[0].lower()
+  return new Str("TODO");
+}
 
 inline Tuple3<double, double, double> Time() {
   assert(0);

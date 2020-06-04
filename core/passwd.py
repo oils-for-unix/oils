@@ -107,3 +107,9 @@ def ReadBytesFromTerminal(fd, n):
     termios.tcsetattr(fd, termios.TCSANOW, orig_attrs)
 
   return ''.join(chunks)
+
+
+def OsType():
+  # type: () -> str
+  """ Compute $OSTYPE variable """
+  return posix.uname()[0].lower()

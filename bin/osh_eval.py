@@ -49,6 +49,8 @@ from osh import cmd_eval
 from osh import sh_expr_eval
 from osh import word_eval
 
+import posix_ as posix
+
 from typing import List, Dict, Tuple, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command__ShFunction
@@ -111,15 +113,18 @@ def main(argv):
   dollar0 = argv[0]
   debug_stack = []  # type: List[state.DebugFrame]
   mem = state.Mem(dollar0, argv, arena, debug_stack)
-  # TODO: state.InitMem()
+
+  # TODO: look at extern char** environ;
+
+  environ = {}  # type: Dict[str, str]
+  environ['PWD'] = posix.getcwd()
+  state.InitMem(mem, environ, 'VERSION')
 
   opt_hook = state.OptHook()
   parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, opt_hook)
   # Dummy value; not respecting aliases!
   aliases = {}  # type: Dict[str, str]
   # parse `` and a[x+1]=bar differently
-
-  state.SetGlobalString(mem, 'SHELLOPTS', '')
 
   oil_grammar = None  # type: Grammar
   if mylib.PYTHON:

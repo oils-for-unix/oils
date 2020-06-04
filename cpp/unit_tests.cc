@@ -112,6 +112,10 @@ TEST libc_test() {
   auto files2 = libc::glob(new Str("*.pyzzz"));
   ASSERT_EQ_FMT(0, len(files2), "%d");
 
+  Str* h = libc::gethostname();
+  log("gethostname() =");
+  print(h);
+
   PASS();
 }
 

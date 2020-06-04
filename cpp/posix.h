@@ -31,11 +31,11 @@ inline Str* getcwd() {
 }
 
 inline int getegid() {
-  assert(0);
+  return ::getegid();
 }
 
 inline int geteuid() {
-  assert(0);
+  return ::geteuid();
 }
 
 inline int getpid() {
@@ -43,15 +43,15 @@ inline int getpid() {
 }
 
 inline int getppid() {
-  assert(0);
+  return ::getppid();
 }
 
 inline int getuid() {
-  assert(0);
+  return ::getuid();
 }
 
 inline bool isatty(int fd) {
-  assert(0);
+  return ::isatty(fd);
 }
 
 inline Str* strerror(int errno) {
