@@ -61,10 +61,7 @@ if TYPE_CHECKING:
 if mylib.PYTHON:
   unused1 = log
   unused2 = args
-  unused5 = builtin_bracket
-  unused6 = builtin_misc
-  unused7 = builtin_printf
-  unused8 = builtin_process
+  unused3 = builtin_process
 
 
 def Parse(argv):
@@ -114,6 +111,8 @@ def main(argv):
   dollar0 = argv[0]
   debug_stack = []  # type: List[state.DebugFrame]
   mem = state.Mem(dollar0, argv, arena, debug_stack)
+  # TODO: state.InitMem()
+
   opt_hook = state.OptHook()
   parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, opt_hook)
   # Dummy value; not respecting aliases!
@@ -270,6 +269,18 @@ def main(argv):
 
   builtins[builtin_i.test] = builtin_bracket.Test(False, exec_opts, mem, errfmt)
   builtins[builtin_i.bracket] = builtin_bracket.Test(True, exec_opts, mem, errfmt)
+
+  dir_stack = state.DirStack()
+  builtins[builtin_i.pushd] = builtin_misc.Pushd(mem, dir_stack, errfmt)
+  builtins[builtin_i.popd] = builtin_misc.Popd(mem, dir_stack, errfmt)
+  builtins[builtin_i.dirs] = builtin_misc.Dirs(mem, dir_stack, errfmt)
+  builtins[builtin_i.pwd] = builtin_misc.Pwd(mem, errfmt)
+
+  builtins[builtin_i.times] = builtin_misc.Times()
+  builtins[builtin_i.read] = builtin_misc.Read(splitter, mem)
+
+  builtins[builtin_i.cat] = builtin_misc.Cat()  # for $(<file)
+  builtins[builtin_i.cd] = builtin_misc.Cd(mem, dir_stack, cmd_ev, errfmt)
 
   # vm.InitCircularDeps
   cmd_ev.arith_ev = arith_ev

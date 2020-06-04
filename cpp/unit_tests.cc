@@ -122,6 +122,14 @@ TEST time_test() {
   PASS();
 }
 
+TEST posix_test() {
+  Str* cwd = posix::getcwd();
+  log("getcwd() =");
+  print(cwd);
+
+  PASS();
+}
+
 // HACK!  asdl/runtime.py isn't translated, but core_error.h uses it...
 namespace runtime {
 int NO_SPID = -1;
@@ -202,6 +210,7 @@ int main(int argc, char** argv) {
   RUN_TEST(util_test);
   RUN_TEST(libc_test);
   RUN_TEST(time_test);
+  RUN_TEST(posix_test);
   RUN_TEST(exceptions);
   RUN_TEST(flag_spec_test);
   GREATEST_MAIN_END(); /* display results */

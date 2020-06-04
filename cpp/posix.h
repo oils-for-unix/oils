@@ -19,7 +19,15 @@ inline int access(Str* pathname, int mode) {
 }
 
 inline Str* getcwd() {
-  assert(0);
+  char* buf = static_cast<char*>(malloc(PATH_MAX + 1));
+
+  char* result = ::getcwd(buf, PATH_MAX + 1);
+  if (result == nullptr) {
+    // TODO: print errno, e.g. ENAMETOOLONG
+    throw new RuntimeError(new Str("Couldn't get working directory"));
+  }
+
+  return new Str(buf);
 }
 
 inline int getegid() {
