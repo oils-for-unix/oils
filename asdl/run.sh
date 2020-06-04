@@ -36,7 +36,10 @@ gen-mypy-asdl() {
   wc -l $out
 }
 
-gen-typed-demo-asdl() { gen-mypy-asdl typed_demo; }
+gen-typed-demo-asdl() {
+  gen-mypy-asdl demo_lib  # dependency
+  gen-mypy-asdl typed_demo
+}
 gen-shared-variant-asdl() { gen-mypy-asdl shared_variant; }
 gen-typed-arith-asdl() {
   gen-mypy-asdl typed_arith 'asdl.typed_arith_abbrev'
@@ -171,8 +174,11 @@ gen-cpp-test() {
   local prefix=_tmp/typed_arith_asdl
   asdl/tool.py cpp asdl/typed_arith.asdl $prefix
 
-  local prefix2=_tmp/typed_demo_asdl
-  asdl/tool.py cpp asdl/typed_demo.asdl $prefix2
+  local prefix2=_tmp/demo_lib_asdl
+  asdl/tool.py cpp asdl/demo_lib.asdl $prefix2
+
+  local prefix3=_tmp/typed_demo_asdl
+  asdl/tool.py cpp asdl/typed_demo.asdl $prefix3
 
   # Hack the enables a literal in asdl/gen_cpp_test
   local orig=_tmp/typed_demo_asdl.h

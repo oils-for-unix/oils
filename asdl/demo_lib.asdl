@@ -1,5 +1,5 @@
 module lib {
-  value = Str | Array
+  value = Str | Array(int a)
   t2 = (int a, int b)
   t3 = (int a, int b)
   t4 = (int a, int b)
