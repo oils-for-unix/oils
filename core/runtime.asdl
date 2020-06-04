@@ -47,11 +47,10 @@ module runtime
   | MaybeStrArray(string* strs)
     -- d will be a dict
   | AssocArray(map[string, string] d)
-    -- any should be re_t.  Need syntax.asdl here
 
   | Bool(bool b)
   | Float(float f) -- For flags only now.  TODO: ASDL needs float type.
-  | Eggex(any expr, string as_ere)
+  | Eggex(re expr, string as_ere)
     -- what about Proc or Module here?  are they first class?
     -- then you can reflect on them?  Get name and docstring?
 
@@ -103,8 +102,7 @@ module runtime
   | HereDoc(string body)  -- call this String and combine with Path?
 
   -- evaluated version of syntax.redir
-  -- TODO: loc should be redir_loc
-  redirect = (id op_id, int op_spid, any loc, redirect_arg arg)
+  redirect = (id op_id, int op_spid, redir_loc loc, redirect_arg arg)
 
   job_status =
     Proc(int code)
