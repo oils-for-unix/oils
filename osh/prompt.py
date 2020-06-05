@@ -18,17 +18,18 @@ from core import state
 from core import ui
 from frontend import match
 from frontend import reader
+from mycpp import mylib
 from osh import word_
 from pylib import os_path
 
 import libc  # gethostname()
 import posix_ as posix
 
-from typing import Any, Dict, List, Tuple, cast, TYPE_CHECKING
+from typing import Dict, List, Tuple, cast, TYPE_CHECKING
 if TYPE_CHECKING:
+  from core.state import Mem
   from frontend.parse_lib import ParseContext
   from osh.cmd_eval import CommandEvaluator
-  from core.state import Mem
   from osh.word_eval import AbstractWordEvaluator
 
 #
@@ -153,7 +154,9 @@ class Evaluator(object):
           r = self.cache.Get('user')
 
         elif ch == 'h':
-          r = self.cache.Get('hostname').split('.', 1)[0]
+          hostname = self.cache.Get('hostname')
+          # foo.com -> foo
+          r, _ = mylib.split_once(hostname, '.')
 
         elif ch == 'H':
           r = self.cache.Get('hostname')

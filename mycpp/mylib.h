@@ -294,19 +294,8 @@ class Str {
     return true;
   }
 
-  List<Str*>* split(Str* sep) {
-    assert(0);
-  }
-
-  List<Str*>* split(Str* sep, int max_split) {
-    assert(0);
-  }
-
-  List<Str*>* splitlines(bool keep) {
-    assert(keep == true);
-    return nullptr;
-  }
-
+  List<Str*>* split(Str* sep);
+  List<Str*>* splitlines(bool keep);
   Str* join(List<Str*>* items);
 
   Str* replace(Str* old, Str* new_str);

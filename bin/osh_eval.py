@@ -187,9 +187,13 @@ def main(argv):
   arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, parse_ctx, errfmt)
   bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, parse_ctx, errfmt)
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
+  prompt_ev = prompt.Evaluator('osh', parse_ctx, mem)
 
   arith_ev.word_ev = word_ev
   word_ev.arith_ev = arith_ev
+  word_ev.prompt_ev = prompt_ev
+
+  prompt_ev.word_ev = word_ev
 
   procs = {}  # type: Dict[str, command__ShFunction]
 

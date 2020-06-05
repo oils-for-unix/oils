@@ -351,6 +351,7 @@ id_kind_asdl::Id_t TestOtherLookup(Str* s) {
       out("""\
 Str* OptionName(option_asdl::option_t opt_num) {
   assert(0);
+  //return new Str("TODO");
 }
 """)
 

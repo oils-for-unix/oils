@@ -98,6 +98,16 @@ Str* Str::replace(Str* old, Str* new_str) {
   return new Str(result);
 }
 
+List<Str*>* Str::split(Str* sep) {
+  assert(0);
+  //return new List<Str*>({new Str("TODO")});
+}
+
+List<Str*>* Str::splitlines(bool keep) {
+  assert(keep == true);
+  return nullptr;
+}
+
 Str* Str::join(List<Str*>* items) {
   int len = 0;
   const std::vector<Str*>& v = items->v_;
