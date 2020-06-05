@@ -249,13 +249,14 @@ module syntax
 
   -- TODO: Make field names consistent: child vs expr, etc.
 
+  BraceGroup = (command* children, redir* redirects) attributes (int* spids)
+
   command = 
     NoOp
     -- notes:
-    -- * block is always a BraceGroup
     -- * do_fork is semantic, not syntactic
-  | Simple(word* words, redir* redirects, env_pair* more_env, command? block,
-           bool do_fork)
+  | Simple(word* words, redir* redirects, env_pair* more_env,
+           BraceGroup? block, bool do_fork)
     -- This doesn't technically belong in the LST, but it's convenient for
     -- execution
   | ExpandedAlias(command child, redir* redirects, env_pair* more_env)
@@ -270,7 +271,7 @@ module syntax
     -- Part of for, while, until (but not if, case, ShFunction).  No redirects.
   | DoGroup(command* children)
     -- A brace group is a compound command, with redirects.
-  | BraceGroup(command* children, redir* redirects)
+  | BraceGroup %BraceGroup
     -- Contains a single child, like CommandSub
   | Subshell(command child, redir* redirects)
   | DParen(arith_expr child, redir* redirects)

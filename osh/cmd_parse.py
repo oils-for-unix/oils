@@ -14,11 +14,11 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (
     command, command_t,
-    command__Simple, command__BraceGroup,
-    command__DoGroup, command__ForExpr, command__ForEach, command__WhileUntil,
-    command__Case, command__If, command__ShFunction, command__Subshell,
-    command__DBracket, command__DParen, command__CommandList,
-    command__Func, command__Proc,
+    command__Simple, command__DoGroup, command__ForExpr, command__ForEach,
+    command__WhileUntil, command__Case, command__If, command__ShFunction,
+    command__Subshell, command__DBracket, command__DParen,
+    command__CommandList, command__Func, command__Proc,
+    BraceGroup,
     case_arm,
 
     sh_lhs_expr, sh_lhs_expr_t,
@@ -309,7 +309,7 @@ def _SplitSimpleCommandPrefix(words):
 
 
 def _MakeSimpleCommand(preparsed_list, suffix_words, redirects, block):
-  # type: (PreParsedList, List[compound_word], List[redir], Optional[command_t]) -> command__Simple
+  # type: (PreParsedList, List[compound_word], List[redir], Optional[BraceGroup]) -> command__Simple
   """Create an command.Simple node."""
 
   # FOO=(1 2 3) ls is not allowed.
@@ -552,11 +552,11 @@ class CommandParser(object):
     return redirects
 
   def _ScanSimpleCommand(self):
-    # type: () -> Tuple[List[redir], List[compound_word], Optional[command__BraceGroup]]
+    # type: () -> Tuple[List[redir], List[compound_word], Optional[BraceGroup]]
     """First pass: Split into redirects and words."""
     redirects = []  # type: List[redir]
     words = []  # type: List[compound_word]
-    block = None  # type: Optional[command__BraceGroup]
+    block = None  # type: Optional[BraceGroup]
     while True:
       self._Peek()
       if self.c_kind == Kind.Redir:
@@ -903,7 +903,7 @@ class CommandParser(object):
     return node
 
   def ParseBraceGroup(self):
-    # type: () -> command__BraceGroup
+    # type: () -> BraceGroup
     """
     brace_group      : LBrace command_list RBrace ;
     """
@@ -916,7 +916,7 @@ class CommandParser(object):
     #right_spid = word_.LeftMostSpanForWord(self.cur_word)
     self._Eat(Id.Lit_RBrace)
 
-    node = command.BraceGroup(c_list.children, None)  # no redirects yet
+    node = BraceGroup(c_list.children, None)  # no redirects yet
     node.spids.append(left_spid)
     return node
 

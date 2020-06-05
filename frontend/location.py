@@ -10,8 +10,9 @@ from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (
     command_e, command_t, command__Pipeline, command__AndOr,
-    command__DoGroup, command__BraceGroup, command__Subshell,
-    command__WhileUntil, command__If, command__Case, command__TimeBlock,
+    command__DoGroup, command__Subshell, command__WhileUntil, command__If,
+    command__Case, command__TimeBlock,
+    BraceGroup,
 
     arith_expr_e, arith_expr_t, compound_word, Token,
 )
@@ -40,7 +41,7 @@ def SpanForCommand(node):
     node = cast(command__DoGroup, UP_node)
     return node.spids[0]  # do spid
   if tag == command_e.BraceGroup:
-    node = cast(command__BraceGroup, UP_node)
+    node = cast(BraceGroup, UP_node)
     return node.spids[0]  # { spid
   if tag == command_e.Subshell:
     node = cast(command__Subshell, UP_node)

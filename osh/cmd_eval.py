@@ -22,7 +22,6 @@ from _devbuild.gen.syntax_asdl import (
     compound_word,
     command_e, command_t, command_str,
     command__AndOr,
-    command__BraceGroup,
     command__Case,
     command__CommandList,
     command__ControlFlow,
@@ -50,6 +49,7 @@ from _devbuild.gen.syntax_asdl import (
     command__TimeBlock,
     command__VarDecl,
     command__WhileUntil,
+    BraceGroup,
     assign_op_e,
     place_expr__Var,
     proc_sig_e, proc_sig__Closed,
@@ -436,7 +436,7 @@ class CommandEvaluator(object):
         node = cast(command__ShAssignment, UP_node)
         redirects = node.redirects
       elif case(command_e.BraceGroup):
-        node = cast(command__BraceGroup, UP_node)
+        node = cast(BraceGroup, UP_node)
         redirects = node.redirects
       elif case(command_e.Subshell):
         node = cast(command__Subshell, UP_node)
@@ -545,10 +545,8 @@ class CommandEvaluator(object):
         else:
           argv = ['TODO: trace string for assignment']
           if node.block:
-            assert node.block.tag_() == command_e.BraceGroup, node
-            block = cast(command__BraceGroup, node.block)
             e_die("ShAssignment builtins don't accept blocks",
-                  span_id=block.spids[0])
+                  span_id=node.block.spids[0])
 
         # This comes before evaluating env, in case there are problems evaluating
         # it.  We could trace the env separately?  Also trace unevaluated code
@@ -957,7 +955,7 @@ class CommandEvaluator(object):
         check_errexit = False
 
       elif case(command_e.BraceGroup):
-        node = cast(command__BraceGroup, UP_node)
+        node = cast(BraceGroup, UP_node)
         status = self._ExecuteList(node.children)
         check_errexit = False
 
@@ -1395,7 +1393,7 @@ class CommandEvaluator(object):
 
       elif case(command_e.BraceGroup):
         # TODO: What about redirects?
-        node = cast(command__BraceGroup, UP_node)
+        node = cast(BraceGroup, UP_node)
         self._NoForkLast(node.children[-1])
 
   def _RemoveSubshells(self, node):
