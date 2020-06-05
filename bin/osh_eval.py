@@ -48,6 +48,7 @@ from osh import builtin_misc
 from osh import cmd_eval
 from osh import sh_expr_eval
 from osh import word_eval
+from osh import prompt
 
 import posix_ as posix
 

@@ -20,16 +20,6 @@ class OilEvaluator {
 }  // namespace expr_eval
 
 // problem: incomplete type
-namespace prompt {
-class Evaluator {
- public:
-  Str* EvalPrompt(runtime_asdl::value_t* val) {
-    assert(0);
-  }
-};
-}  // namespace prompt
-
-// problem: incomplete type
 #if 0
 namespace cmd_exec {
   class Executor {

@@ -11,9 +11,15 @@ namespace passwd {
 inline Str* GetMyHomeDir() {
   assert(0);
 }
+
 inline Str* GetHomeDir(syntax_asdl::Token* token) {
   assert(0);
 }
+
+inline Str* GetUserName(int uid) {
+  assert(0);
+}
+
 inline Str* OsType() {
   // uname()[0].lower()
   return new Str("TODO");

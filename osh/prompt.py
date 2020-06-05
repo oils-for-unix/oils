@@ -5,16 +5,15 @@ User interface details should go in core/ui.py.
 """
 from __future__ import print_function
 
-import pwd
-
-from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import value_e, value_t
+from _devbuild.gen.id_kind_asdl import Id, Id_t
+from _devbuild.gen.runtime_asdl import value_e, value_t, value__Str
 from _devbuild.gen.syntax_asdl import (
     command_t, source, compound_word
 )
 from asdl import runtime
 from core import main_loop
 from core import error
+from core import passwd
 from core import state
 from core import ui
 from frontend import match
@@ -25,7 +24,7 @@ from pylib import os_path
 import libc  # gethostname()
 import posix_ as posix
 
-from typing import Any, Dict, List, Tuple, TYPE_CHECKING
+from typing import Any, Dict, List, Tuple, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from frontend.parse_lib import ParseContext
   from osh.cmd_eval import CommandEvaluator
@@ -48,34 +47,32 @@ _ONE_CHAR = {
 }
 
 
-def _GetUserName(uid):
-  # type: (int) -> str
-  try:
-    e = pwd.getpwuid(uid)
-  except KeyError:
-    return "<ERROR: Couldn't determine user name for uid %d>" % uid
-  else:
-    return e.pw_name
-
-
 class _PromptEvaluatorCache(object):
   """Cache some values we don't expect to change for the life of a process."""
 
   def __init__(self):
     # type: () -> None
-    self.cache = {}  # type: Dict[str, Any]
+    self.cache = {}  # type: Dict[str, str]
+    self.euid = -1  # invalid value
+
+  def _GetEuid(self):
+    # type: () -> int
+    """Cached lookup."""
+    if self.euid == -1:
+      self.euid = posix.geteuid()
+    return self.euid
 
   def Get(self, name):
-    # type: (str) -> Any
+    # type: (str) -> str
     if name in self.cache:
       return self.cache[name]
 
-    if name == 'euid':  # for \$ and \u
-      value = posix.geteuid()
+    if name == '$':  # \$
+      value = '#' if self._GetEuid() == 0 else '$'
     elif name == 'hostname':  # for \h and \H
       value = libc.gethostname()
     elif name == 'user':  # for \u
-      value = _GetUserName(self.Get('euid'))  # recursive call for caching
+      value = passwd.GetUserName(self._GetEuid())  # recursive call for caching
     else:
       raise AssertionError(name)
 
@@ -115,7 +112,7 @@ class Evaluator(object):
 
     # These caches should reduce memory pressure a bit.  We don't want to
     # reparse the prompt twice every time you hit enter.
-    self.tokens_cache = {}  # type: Dict[str, List[Tuple[Id, str]]]
+    self.tokens_cache = {}  # type: Dict[str, List[Tuple[Id_t, str]]]
     self.parse_cache = {}  # type: Dict[str, compound_word]
  
   def CheckCircularDeps(self):
@@ -123,8 +120,8 @@ class Evaluator(object):
     assert self.word_ev is not None
 
   def _ReplaceBackslashCodes(self, tokens):
-    # type: (List[Tuple[Id, str]]) -> str
-    ret = []
+    # type: (List[Tuple[Id_t, str]]) -> str
+    ret = []  # type: List[str]
     non_printing = 0
     for id_, value in tokens:
       # BadBacklash means they should have escaped with \\.  TODO: Make it an error.
@@ -148,20 +145,20 @@ class Evaluator(object):
         ret.append('\x02')
 
       elif id_ == Id.PS_Subst:  # \u \h \w etc.
-        char = value[1:]
-        if char == '$':  # So the user can tell if they're root or not.
-          r = '#' if self.cache.Get('euid') == 0 else '$'
+        ch = value[1:]
+        if ch == '$':  # So the user can tell if they're root or not.
+          r = self.cache.Get('$')
 
-        elif char == 'u':
+        elif ch == 'u':
           r = self.cache.Get('user')
 
-        elif char == 'h':
+        elif ch == 'h':
           r = self.cache.Get('hostname').split('.', 1)[0]
 
-        elif char == 'H':
+        elif ch == 'H':
           r = self.cache.Get('hostname')
 
-        elif char == 'w':
+        elif ch == 'w':
           try:
             pwd = state.GetString(self.mem, 'PWD')
             home = state.MaybeString(self.mem, 'HOME')  # doesn't have to exist
@@ -170,18 +167,19 @@ class Evaluator(object):
           except error.Runtime as e:
             r = '<Error: %s>' % e.UserErrorString()
 
-        elif char == 'W':
+        elif ch == 'W':
           val = self.mem.GetVar('PWD')
-          if val.tag == value_e.Str:
-            r = os_path.basename(val.s)
+          if val.tag_() == value_e.Str:
+            str_val = cast(value__Str, val)
+            r = os_path.basename(str_val.s)
           else:
             r = '<Error: PWD is not a string> '
 
-        elif char in _ONE_CHAR:
-          r = _ONE_CHAR[char]
+        elif ch in _ONE_CHAR:
+          r = _ONE_CHAR[ch]
 
         else:
-          r = r'<Error: \%s not implemented in $PS1> ' % char
+          r = r'<Error: \%s not implemented in $PS1> ' % ch
 
         # See comment above on bash hack for $.
         ret.append(r.replace('$', '\\$'))
@@ -195,11 +193,13 @@ class Evaluator(object):
 
     return ''.join(ret)
 
-  def EvalPrompt(self, val):
+  def EvalPrompt(self, UP_val):
     # type: (value_t) -> str
     """Perform the two evaluations that bash does.  Used by $PS1 and ${x@P}."""
-    if val.tag != value_e.Str:
+    if UP_val.tag_() != value_e.Str:
       return self.default_prompt  # no evaluation necessary
+
+    val = cast(value__Str, UP_val)
 
     # Parse backslash escapes (cached)
     try:
@@ -257,12 +257,12 @@ class UserPlugin(object):
   def Run(self):
     # type: () -> None
     val = self.mem.GetVar('PROMPT_COMMAND')
-    if val.tag != value_e.Str:
+    if val.tag_() != value_e.Str:
       return
 
     # PROMPT_COMMAND almost never changes, so we try to cache its parsing.
     # This avoids memory allocations.
-    prompt_cmd = val.s
+    prompt_cmd = cast(value__Str, val).s
     try:
       node = self.parse_cache[prompt_cmd]
     except KeyError:

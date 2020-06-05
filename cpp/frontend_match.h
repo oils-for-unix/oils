@@ -44,6 +44,14 @@ SimpleLexer* BraceRangeLexer(Str* s);
 SimpleLexer* GlobLexer(Str* s);
 SimpleLexer* EchoLexer(Str* s);
 
+inline List<Tuple2<Id_t, Str*>*>* HistoryTokens(Str* s) {
+  assert(0);
+}
+
+inline List<Tuple2<Id_t, Str*>*>* Ps1Tokens(Str* s) {
+  assert(0);
+}
+
 //
 // Other Matching Functions
 //

@@ -18,6 +18,10 @@ inline Str* normpath(Str* path) {
   assert(0);
 }
 
+inline Str* basename(Str* path) {
+  assert(0);
+}
+
 }  // namespace os_path
 
 #endif  // PYLIB_OS_PATH_H

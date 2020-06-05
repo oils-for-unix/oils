@@ -66,6 +66,16 @@ def GetHomeDir(token):
   return result
 
 
+def GetUserName(uid):
+  # type: (int) -> str
+  try:
+    e = pwd.getpwuid(uid)
+  except KeyError:
+    return "<ERROR: Couldn't determine user name for uid %d>" % uid
+  else:
+    return e.pw_name
+
+
 def Time():
   # type: () -> Tuple[float, float, float]
   t = time.time()  # calls gettimeofday() under the hood
@@ -113,3 +123,5 @@ def OsType():
   # type: () -> str
   """ Compute $OSTYPE variable """
   return posix.uname()[0].lower()
+
+

@@ -192,7 +192,7 @@ module syntax
     -- contain a SingleQuoted, etc. either.
   | Compound %compound_word
     -- A BracedTree is a word because it can appear in a command.  It can
-    -- contains any type of word_part.
+    -- contain any type of word_part.
   | BracedTree(word_part* parts)
     -- For dynamic parsing of test/[ -- the string is already evaluated.
     -- note: this could also be Token
