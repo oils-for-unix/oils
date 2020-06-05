@@ -24,8 +24,7 @@ int localtime(int ts) {
 Str* strftime(Str* s, int ts) {
   assert(0);
 }
- 
-}  // namespace time
+
+}  // namespace time_
 
 #endif  // TIME_H
-

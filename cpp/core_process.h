@@ -13,8 +13,7 @@ class FdState {
     assert(0);
   }
 };
- 
+
 }  // namespace process
 
 #endif  // CORE_PROCESS_H
-

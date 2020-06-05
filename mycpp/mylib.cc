@@ -99,8 +99,44 @@ Str* Str::replace(Str* old, Str* new_str) {
 }
 
 List<Str*>* Str::split(Str* sep) {
-  assert(0);
-  //return new List<Str*>({new Str("TODO")});
+  assert(sep->len_ == 1);  // we can only split one char
+  char sep_char = sep->data_[0];
+
+  if (len_ == 0) {
+    // weird case consistent with Python: ''.split(':') == ['']
+    return new List<Str*>({kEmptyString});
+  }
+
+  // log("--- split()");
+  // log("data [%s]", data_);
+
+  auto result = new List<Str*>({});
+
+  int n = len_;
+  const char* pos = data_;
+  const char* end = data_ + len_;
+
+  // log("pos %p", pos);
+  while (true) {
+    // log("n %d, pos %p", n, pos);
+
+    const char* new_pos = static_cast<const char*>(memchr(pos, sep_char, n));
+    if (new_pos == nullptr) {
+      result->append(new Str(pos, end - pos));  // rest of the string
+      break;
+    }
+    int new_len = new_pos - pos;
+
+    result->append(new Str(pos, new_len));
+    n -= new_len + 1;
+    pos = new_pos + 1;
+    if (pos >= end) {  // separator was at end of string
+      result->append(kEmptyString);
+      break;
+    }
+  }
+
+  return result;
 }
 
 List<Str*>* Str::splitlines(bool keep) {

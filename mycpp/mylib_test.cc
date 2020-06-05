@@ -225,6 +225,51 @@ TEST test_str_funcs() {
   PASS();
 }
 
+void Print(List<Str*>* parts) {
+  log("---");
+  log("len = %d", len(parts));
+  for (int i = 0; i < len(parts); ++i) {
+    mylib::Str0 s0(parts->index(i));
+    printf("%d [", i);
+    fputs(s0.Get(), stdout);
+    fputs("]\n", stdout);
+  }
+}
+
+TEST test_split() {
+  Str* empty = new Str("");
+  auto sep = new Str(":");
+  auto parts = empty->split(sep);
+  ASSERT_EQ(1, len(parts));
+  Print(parts);
+
+  parts = (new Str(":"))->split(sep);
+  ASSERT_EQ(2, len(parts));
+  Print(parts);
+
+  parts = (new Str("::"))->split(sep);
+  ASSERT_EQ(3, len(parts));
+  Print(parts);
+
+  parts = (new Str("a:b"))->split(sep);
+  ASSERT_EQ(2, len(parts));
+  Print(parts);
+
+  parts = (new Str("abc:def:"))->split(sep);
+  ASSERT_EQ(3, len(parts));
+  Print(parts);
+
+  parts = (new Str(":abc:def:"))->split(sep);
+  ASSERT_EQ(4, len(parts));
+  Print(parts);
+
+  parts = (new Str("abc:def:ghi"))->split(sep);
+  ASSERT_EQ(3, len(parts));
+  Print(parts);
+
+  PASS();
+}
+
 using mylib::BufLineReader;
 
 TEST test_buf_line_reader() {
@@ -505,6 +550,7 @@ int main(int argc, char** argv) {
   RUN_TEST(test_cstr);
   RUN_TEST(test_str_to_int);
   RUN_TEST(test_str_funcs);
+  RUN_TEST(test_split);
 
   RUN_TEST(test_list_funcs);
   RUN_TEST(test_list_iters);
