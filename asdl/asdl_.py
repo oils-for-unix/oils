@@ -242,3 +242,12 @@ class Product(_CompoundAST):
           for a in self.attributes:
             a.Print(f, indent+1)
         f.write('%s}\n' % ind)
+
+
+def TypeNameHeuristic(t):
+  # type: (str) -> str
+  """
+  For 'use'.  We don't parse the imported file, so we have a heuristic based on
+  the name!  e.g. re_t or BraceGroup
+  """
+  return '%s_t' % t if t[0].islower() else t

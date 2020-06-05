@@ -94,8 +94,8 @@ def _GetCppType(typ):
     if isinstance(typ.resolved, asdl_.Product):
       return '%s*' % typ.name
     if isinstance(typ.resolved, asdl_.Use):
-      # Assume sum type for now!
-      return '%s_asdl::%s_t*' % (typ.resolved.mod_name, type_name)
+      return '%s_asdl::%s*' % (
+          typ.resolved.mod_name, asdl_.TypeNameHeuristic(type_name))
 
   # 'id' falls through here
   return _PRIMITIVES[typ.name]

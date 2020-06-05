@@ -46,8 +46,7 @@ def _MyPyType(typ):
     if isinstance(typ.resolved, asdl_.Product):
       return typ.name
     if isinstance(typ.resolved, asdl_.Use):
-      # Assume sum type for now!  We haven't resolved the type.
-      return '%s_t' % type_name
+      return asdl_.TypeNameHeuristic(type_name)
 
   # 'id' falls through here
   return _PRIMITIVES[type_name]
