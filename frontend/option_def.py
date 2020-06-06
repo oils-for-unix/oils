@@ -323,7 +323,7 @@ _SORTED = sorted(_OPTION_DEF.opts, key=lambda opt: opt.name)
 
 # Used only for Python assertions
 SET_OPTION_NAMES = [opt.name for opt in _SORTED if opt.builtin == 'set']
-SET_OPTION_NUMS = [opt.index for opt in _SORTED  if opt.builtin == 'set']
+SET_OPTION_NUMS = [opt.index for opt in _SORTED if opt.builtin == 'set']
 
 # Include the unimplemented ones
 SHOPT_OPTION_NUMS = [opt.index for opt in _SORTED if opt.builtin == 'shopt']

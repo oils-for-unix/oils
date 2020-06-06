@@ -16,6 +16,7 @@ import sys
 from core.util import log
 from frontend import id_kind_def
 from frontend import builtin_def
+from frontend import option_def
 
 
 def _CreateModule(id_spec, ids):
@@ -348,10 +349,29 @@ id_kind_asdl::Id_t TestOtherLookup(Str* s) {
 }
 """)
 
+      # OptionName() is a bit redundant with ADSL's option_str(), but we can
+      # remove that.
       out("""\
 Str* OptionName(option_asdl::option_t opt_num) {
-  assert(0);
-  //return new Str("TODO");
+  const char* s;
+  switch (opt_num) {
+""")
+      # These are the only ones we use
+      set_opts = [
+          (opt.index, opt.name) for opt in option_def.All()
+          if opt.builtin == 'set'
+      ]
+
+      for index, name in set_opts:
+        out('  case %s:' % index)
+        out('    s = "%s";' % name)
+        out('    break;')
+
+      out("""\
+  default:
+    assert(0);
+  }
+  return new Str(s);  // TODO-intern
 }
 """)
 
