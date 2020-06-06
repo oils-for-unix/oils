@@ -12,7 +12,7 @@ from frontend import builtin_def
 from frontend import lexer_def
 from frontend import option_def 
 
-from typing import Tuple, TYPE_CHECKING
+from typing import Tuple, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.option_asdl import option_t, builtin_t
 
@@ -185,6 +185,48 @@ def TestOtherLookup(s):
   # type: (str) -> Id_t
   from _devbuild.gen.id_kind import TEST_OTHER_LOOKUP
   return TEST_OTHER_LOOKUP.get(s, -1)
+
+#
+# osh/prompt.py and osh/word_compile.py
+#
+
+_ONE_CHAR_C = {
+    '0': '\0',
+    'a': '\a',
+    'b': '\b',
+    'e': '\x1b',
+    'E': '\x1b',
+    'f': '\f',
+    'n': '\n',
+    'r': '\r',
+    't': '\t',
+    'v': '\v',
+    '\\': '\\',
+    "'": "'",  # for $'' only, not echo -e
+    '"': '"',  # not sure why this is escaped within $''
+}
+
+def LookupCharC(c):
+  # type: (str) -> str
+  """Fatal if not present."""
+  return _ONE_CHAR_C[c]
+
+
+# NOTE: Prompts chars and printf are consistent, e.g. \E is \e in printf, but
+# not in PS1.
+_ONE_CHAR_PROMPT = {
+  'a' : '\a',
+  'e' : '\x1b',
+  'r': '\r',
+  'n': '\n',
+  '\\' : '\\',
+}
+
+
+def LookupCharPrompt(c):
+  # type: (str) -> Optional[str]
+  """Returns None if not present."""
+  return _ONE_CHAR_PROMPT.get(c)
 
 
 #

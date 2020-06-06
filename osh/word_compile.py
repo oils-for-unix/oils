@@ -10,26 +10,11 @@ from _devbuild.gen.syntax_asdl import (
     Token, class_literal_term, class_literal_term_t,
 )
 from core.pyutil import stderr_line
+from frontend import consts
 from osh import string_ops
 
 from typing import Optional
 
-
-_ONE_CHAR = {
-    '0': '\0',
-    'a': '\a',
-    'b': '\b',
-    'e': '\x1b',
-    'E': '\x1b',
-    'f': '\f',
-    'n': '\n',
-    'r': '\r',
-    't': '\t',
-    'v': '\v',
-    '\\': '\\',
-    "'": "'",  # for $'' only, not echo -e
-    '"': '"',  # not sure why this is escaped within $''
-}
 
 def EvalCharLiteralForRegex(tok):
   # type: (Token) -> Optional[class_literal_term_t]
@@ -42,7 +27,7 @@ def EvalCharLiteralForRegex(tok):
 
   if id_ == Id.Char_OneChar:
     c = value[1]
-    s = _ONE_CHAR[c]
+    s = consts.LookupCharC(c)
     return class_literal_term.ByteSet(s, tok.span_id)
 
   elif id_ == Id.Char_Hex:
@@ -89,7 +74,7 @@ def EvalCStringToken(id_, value):
 
   elif id_ == Id.Char_OneChar:
     c = value[1]
-    return _ONE_CHAR[c]
+    return consts.LookupCharC(c)
 
   elif id_ == Id.Char_Stop:  # \c returns a special sentinel
     return None

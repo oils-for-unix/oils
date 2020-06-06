@@ -16,6 +16,7 @@ from core import error
 from core import passwd
 from core import state
 from core import ui
+from frontend import consts
 from frontend import match
 from frontend import reader
 from mycpp import mylib
@@ -37,16 +38,6 @@ if TYPE_CHECKING:
 #
 
 PROMPT_ERROR = r'<Error: unbalanced \[ and \]> '
-
-# NOTE: word_compile._ONE_CHAR has some of the same stuff.
-_ONE_CHAR = {
-  'a' : '\a',
-  'e' : '\x1b',
-  'r': '\r',
-  'n': '\n',
-  '\\' : '\\',
-}
-
 
 class _PromptEvaluatorCache(object):
   """Cache some values we don't expect to change for the life of a process."""
@@ -178,11 +169,13 @@ class Evaluator(object):
           else:
             r = '<Error: PWD is not a string> '
 
-        elif ch in _ONE_CHAR:
-          r = _ONE_CHAR[ch]
-
         else:
-          r = r'<Error: \%s not implemented in $PS1> ' % ch
+          r = consts.LookupCharPrompt(ch)
+
+          # TODO: Handle more codes
+          # R(r'\\[adehHjlnrstT@AuvVwW!#$\\]', Id.PS_Subst),
+          if r is None:
+            r = r'<Error: \%s not implemented in $PS1> ' % ch
 
         # See comment above on bash hack for $.
         ret.append(r.replace('$', '\\$'))

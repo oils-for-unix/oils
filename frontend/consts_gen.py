@@ -87,6 +87,55 @@ builtin_t %s(Str* s) {
 """)
 
 
+C_CHAR = {
+    # '\'' is a single quote in C
+    "'": "\\'",
+    '"': '\\"',
+    '\\': "\\\\",
+
+    '\t': '\\t',
+    '\r': '\\r',
+    '\n': '\\n',
+    '\v': '\\v',
+    '\0': '\\0',
+    '\a': '\\a',
+    '\b': '\\b',
+    '\f': '\\f',
+    '\x1b': '\\x1b',
+}
+
+def CChar(c):
+  return C_CHAR.get(c, c)
+
+
+def GenCharLookup(func_name, lookup, f, required=False):
+  f.write("""\
+Str* %s(Str* c) {
+  assert(c->len_ == 1);
+
+  char ch = c->data_[0];
+
+  // TODO-intern: return value
+  switch (ch) {
+""" % func_name)
+
+  for char_code in sorted(lookup):
+    f.write("  case '%s':\n" % CChar(char_code))
+    f.write('    return new Str("%s");\n' % CChar(lookup[char_code]))
+    f.write("    break;\n");
+
+  f.write("  default:\n");
+  if required:
+    f.write("    assert(0);\n")
+  else:
+    f.write("    return nullptr;\n")
+
+  f.write("""
+  }
+}
+""")
+
+
 def main(argv):
   try:
     action = argv[1]
@@ -192,8 +241,8 @@ from asdl import pybase
         print(fmt % args, file=f)
 
       out("""\
-#ifndef LOOKUP_H
-#define LOOKUP_H
+#ifndef CONSTS_H
+#define CONSTS_H
 
 #include "mylib.h"
 #include "id_kind_asdl.h"
@@ -226,6 +275,8 @@ bool IsKeyword(Str* s);
 id_kind_asdl::Id_t TestUnaryLookup(Str* s);
 id_kind_asdl::Id_t TestBinaryLookup(Str* s);
 id_kind_asdl::Id_t TestOtherLookup(Str* s);
+Str* LookupCharC(Str* c);
+Str* LookupCharPrompt(Str* c);
 
 Str* OptionName(option_asdl::option_t opt_num);
 
@@ -233,7 +284,7 @@ Tuple2<runtime_asdl::state_t, runtime_asdl::emit_t> IfsEdge(runtime_asdl::state_
 
 }  // namespace consts
 
-#endif  // LOOKUP_H
+#endif  // CONSTS_H
 """)
 
     with open(prefix + '.cc', 'w') as f:
@@ -348,6 +399,9 @@ id_kind_asdl::Id_t TestOtherLookup(Str* s) {
   assert(0);
 }
 """)
+
+      GenCharLookup('LookupCharC', consts._ONE_CHAR_C, f, required=True)
+      GenCharLookup('LookupCharPrompt', consts._ONE_CHAR_PROMPT, f)
 
       # OptionName() is a bit redundant with ADSL's option_str(), but we can
       # remove that.
