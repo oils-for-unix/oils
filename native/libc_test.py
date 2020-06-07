@@ -72,6 +72,23 @@ class LibcTest(unittest.TestCase):
         # Hm [] is treated as a constant string, not an empty char class.
         # Should we change LooksLikeGlob?
         ('[]', '', 0),
+
+        ('[a-z]', 'a', 1),
+        ('[a-z]', '-', 0),
+
+        # THIS IS INCONSISTENT WITH REGEX!
+        # Somehow in regexes (at least ERE) GNU libc  treats [a\-z] as [a-z].
+        # See below.
+        ('[a\-z]', '-', 1),
+        ('[a\-z]', 'b', 0),
+
+        # Need double backslash in character class
+        ('[\\\\]', '\\', 1),
+
+        # Can you escape ] with \?  Yes in fnmatch
+        ('[\\]]', '\\', 0),
+        ('[\\]]', ']', 1),
+
         None if IS_DARWIN else ('[]', 'a', 0),
         None if IS_DARWIN else ('[]', '[]', 1),
     ]
@@ -172,7 +189,39 @@ class LibcTest(unittest.TestCase):
     # Helping to debug issue #291
     s = ''
     if 0:
+      # Invalid regex syntax
       libc.regex_first_group_match("(['+-'])", s, 6)
+
+  def testSpecialCharsInCharClass(self):
+    CASES = [
+      ("([a-z]+)", '123abc123', (3, 6)),
+
+      # Uh what the heck, \- means the same thing as -?  It's just ignored.  At
+      # least in GNU libc.
+
+      # https://stackoverflow.com/questions/28495913/how-do-you-escape-a-hyphen-as-character-range-in-a-posix-regex
+      # The <hyphen> character shall be treated as itself if it occurs first (after an initial '^', if any) or last in the list, or as an ending range point in a range expression
+
+      ("([a\-z]+)", '123abc123', (3, 6)),
+
+      # This is an inverted range.  TODO: Need to fix the error message.
+      #("([a\-.]+)", '123abc123', None),
+
+      ("([\\\\]+)", 'a\\b', (1, 2)),
+
+      # Can you escape ] with \?  Yes in fnmatch, but NO here!!!
+      ('([\\]])', '\\', None),
+      ('([\\]])', ']', None),
+
+      # Weird parsing!!!
+      ('([\\]])', '\\]', (0, 2)),
+
+    ]
+
+    for pat, s, expected in CASES:
+      result = libc.regex_first_group_match(pat, s, 0)
+      self.assertEqual(expected, result,
+          "FAILED: pat %r  s %r  result %s" % (pat, s, result))
 
   def testRealpathFailOnNonexistentDirectory(self):
     # This behaviour is actually inconsistent with GNU readlink,

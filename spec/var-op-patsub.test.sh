@@ -256,3 +256,43 @@ ext zz(z)
 ext foo()
 ext foo()
 ## END
+
+#### patsub with single quotes and hyphen in character class (regression)
+
+# from Crestwave's bf.bash
+
+program='^++--hello.,world<>[]'
+program=${program//[^'><+-.,[]']} 
+echo $program
+## STDOUT:
+++--.,<>[]
+## END
+## BUG mksh STDOUT:
+helloworld
+## END
+
+#### patsub with [^]]
+
+# This is a PARSING divergence.  In Oil we match [], rather than using POSIX
+# rules!
+
+pat='[^]]'
+s='ab^cd^'
+echo ${s//$pat/z}
+## STDOUT:
+ab^cd^
+## END
+
+#### patsub syntax error
+x=fooz
+pat='[z-a]'  # Invalid range.  Other shells don't catch it!
+#pat='[a-y]'
+echo ${x//$pat}
+echo status=$?
+## stdout-json: ""
+## status: 1
+## OK bash/mksh/zsh STDOUT:
+fooz
+status=0
+## END
+## OK bash/mksh/zsh status: 0

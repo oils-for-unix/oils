@@ -181,6 +181,8 @@ func_regex_parse(PyObject *self, PyObject *args) {
   regfree(&pat);
 
   // Copied from man page
+  // TODO: Use POSIX regerror() instead
+  // https://www.gnu.org/software/libc/manual/html_node/Regexp-Cleanup.html#Regexp-Cleanup
 
   const char *err_str = NULL;
   switch (ret) {
@@ -334,9 +336,11 @@ func_regex_first_group_match(PyObject *self, PyObject *args) {
   // Could have been checked by regex_parse for [[ =~ ]], but not for glob
   // patterns like ${foo/x*/y}.
 
-  if (regcomp(&pat, pattern, REG_EXTENDED) != 0) {
-    PyErr_SetString(PyExc_RuntimeError,
-                    "Invalid regex syntax (func_regex_first_group_match)");
+  int status = regcomp(&pat, pattern, REG_EXTENDED);
+  if (status != 0) {
+    char error_string[80];
+    regerror(status, &pat, &error_string, 80);
+    PyErr_SetString(PyExc_RuntimeError, error_string);
     return NULL;
   }
 

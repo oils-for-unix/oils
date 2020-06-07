@@ -322,8 +322,35 @@ def _GenerateERE(parts):
       # Important: the character class is LITERALLY preserved, because we
       # assume glob char classes are EXACTLY the same as regex char classes,
       # including the escaping rules.
+      #
+      # TWO WEIRD EXCEPTIONS:
+      # \- is moved to the end as '-'.
+      #   In GNU libc, [0\-9] ODDLY has a range starting with \ !  But we
+      #   want a literal, and the POSIX way to do that is to put it at the end.
+      # \] is moved to the FRONT as ]
+
+      good = []  # type: List[str]
+
+      literal_hyphen = False
+      literal_rbracket = False
+
       for s in part.strs:
-        out.append(s)
+        if s == '\-':
+          literal_hyphen = True
+          continue
+        if s == '\]':
+          literal_rbracket = True
+          continue
+        good.append(s)
+
+      if literal_rbracket:
+        out.append(']')
+
+      out.extend(good)
+
+      if literal_hyphen:
+        out.append('-')
+
       out.append(']')
 
   return ''.join(out)
@@ -344,11 +371,12 @@ def GlobToERE(pat):
       if p.tag in (glob_part_e.Operator, glob_part_e.CharClass):
         is_glob = True
   if 0:
-    print('---')
+    log('GlobToERE()')
     for p in parts:
-      print(p)
+      log('  %s', p)
 
   regex = _GenerateERE(parts)
+  #log('pat %s -> regex %s', pat, regex)
   return regex, warnings
 
 

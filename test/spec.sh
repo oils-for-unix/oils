@@ -554,8 +554,8 @@ var-op-len() {
 }
 
 var-op-patsub() {
-  # 1 unicode failure
-  sh-spec spec/var-op-patsub.test.sh --osh-failures-allowed 1 \
+  # 1 unicode failure, and [^]] which is a parsing divergence
+  sh-spec spec/var-op-patsub.test.sh --osh-failures-allowed 2 \
     $BASH $MKSH $ZSH $OSH_LIST "$@"
 }
 
