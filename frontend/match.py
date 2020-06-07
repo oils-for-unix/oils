@@ -232,3 +232,26 @@ def Ps1Tokens(s):
   # type: (str) -> List[Tuple[Id_t, str]]
   lex = SimpleLexer(PS1_MATCHER, s)
   return lex.Tokens()
+
+
+#
+# osh/builtin_bracket
+#
+
+def BracketUnary(s):
+  # type: (str) -> Id_t
+  from _devbuild.gen.id_kind import TEST_UNARY_LOOKUP  # break circular dep
+  return TEST_UNARY_LOOKUP.get(s, -1)
+
+
+def BracketBinary(s):
+  # type: (str) -> Id_t
+  from _devbuild.gen.id_kind import TEST_BINARY_LOOKUP
+  return TEST_BINARY_LOOKUP.get(s, -1)
+
+
+def BracketOther(s):
+  # type: (str) -> Id_t
+  from _devbuild.gen.id_kind import TEST_OTHER_LOOKUP
+  return TEST_OTHER_LOOKUP.get(s, -1)
+

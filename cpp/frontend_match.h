@@ -52,6 +52,10 @@ inline List<Tuple2<Id_t, Str*>*>* Ps1Tokens(Str* s) {
   assert(0);
 }
 
+Id_t BracketUnary(Str* s);
+Id_t BracketBinary(Str* s);
+Id_t BracketOther(Str* s);
+
 //
 // Other Matching Functions
 //

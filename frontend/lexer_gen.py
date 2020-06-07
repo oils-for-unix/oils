@@ -4,6 +4,9 @@ lex_gen.py
 """
 from __future__ import print_function
 
+from _devbuild.gen.id_kind import (
+    TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP, TEST_OTHER_LOOKUP
+)
 from _devbuild.gen.id_kind_asdl import Id_str
 from _devbuild.gen.types_asdl import lex_mode_str
 
@@ -232,6 +235,38 @@ static inline void %s(const unsigned char* line, int line_len,
 """)
 
 
+def TranslateBracket(func_name, token_dict):
+  print(r"""
+static inline int %s(const unsigned char* s, int len) {
+  const unsigned char* p = s;  /* modified by re2c */
+  const unsigned char* end = s + len;
+
+  const unsigned char* YYMARKER;
+  int id;
+
+  for (;;) {
+    /*!re2c
+""" % func_name)
+
+  for pat in sorted(token_dict):
+    id_ = token_dict[pat]
+    re2c_pat = TranslateConstant(pat)
+    id_name = Id_str(id_).split('.')[-1]  # e.g. Undefined_Tok
+    print('      %-30s { id = id__%s; break; }' % (re2c_pat, id_name))
+
+  # EARLY RETURN: Do NOT advance past other chars, including the NUL
+  # terminator.
+  print('      %-30s { return id__Undefined_Tok; }' % '*')
+
+  print("""
+    */
+  }
+  // must be an exact match
+  return (p == end) ? id : id__Undefined_Tok;
+}
+""")
+
+
 def StringToInt(func_name, name_def):
   print(r"""
 static inline void %s(const unsigned char* s, int len, int* id) {
@@ -391,8 +426,10 @@ def main(argv):
 
   action = argv[1]
   if action == 'c':
-    # Print code to stdout.
+    # Code is printed to stdout
+
     TranslateOshLexer(lexer_def.LEXER_DEF)
+
     TranslateSimpleLexer('MatchEchoToken', lexer_def.ECHO_E_DEF)
     TranslateSimpleLexer('MatchGlobToken', lexer_def.GLOB_DEF)
     TranslateSimpleLexer('MatchPS1Token', lexer_def.PS1_DEF)
@@ -400,12 +437,17 @@ def main(argv):
     TranslateSimpleLexer('MatchBraceRangeToken', lexer_def.BRACE_RANGE_DEF)
     #TranslateSimpleLexer('MatchQsnToken', lexer_def.QSN_DEF)
 
+    # TODO: Move this to frontend/consts_gen.py, like LookupNormalBuiltin()
     # e.g. "pipefail" -> option-I::pipefail
     pairs = [(opt.name, opt.index) for opt in option_def.All()]
     StringToInt('MatchOption', pairs)
 
     TranslateRegexToPredicate(lexer_def.VAR_NAME_RE, 'IsValidVarName')
     TranslateRegexToPredicate(lexer_def.SHOULD_HIJACK_RE, 'ShouldHijack')
+
+    TranslateBracket('BracketUnary', TEST_UNARY_LOOKUP)
+    TranslateBracket('BracketBinary', TEST_BINARY_LOOKUP)
+    TranslateBracket('BracketOther', TEST_OTHER_LOOKUP)
 
   elif action == 'print-all':
     # Top level is a switch statement.

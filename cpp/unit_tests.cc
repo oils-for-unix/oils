@@ -8,6 +8,8 @@
 #include "preamble.h"
 #include "runtime_asdl.h"  // cell, etc
 
+namespace Id = id_kind_asdl::Id;
+
 TEST show_sizeof() {
   // Without sed hack, it's 24 bytes because we have tag (2), id (4), val,
   // span_id.
@@ -47,12 +49,43 @@ TEST match_test() {
     log("val = %s", t.at1()->data_);
   }
 
+  // BUG: cstring-TODO: Truncated string causes read past len_
+  // Need a length check!
+#if 0
+  match::SimpleLexer* lex2 = match::BraceRangeLexer(new Str("1234", 2));
+  while (true) {
+    auto t = lex2->Next();
+    int id = t.at0();
+    if (id == id__Eol_Tok) {
+      break;
+    }
+    log("id = %d", id);
+    log("val = %s", t.at1()->data_);
+  }
+#endif
+
   // Similar to native/fastlex_test.py.  Just test that it matched
   ASSERT_EQ(0, match::MatchOption(new Str("")));
   ASSERT(match::MatchOption(new Str("pipefail")) > 0);
 
   ASSERT_EQ(0, match::MatchOption(new Str("pipefai")));
   ASSERT_EQ(0, match::MatchOption(new Str("pipefail_")));
+
+  ASSERT_EQ(Id::BoolUnary_G, match::BracketUnary(new Str("-G")));
+  ASSERT_EQ(Id::Undefined_Tok, match::BracketUnary(new Str("-Gz")));
+  ASSERT_EQ(Id::Undefined_Tok, match::BracketUnary(new Str("")));
+
+  ASSERT_EQ(Id::BoolBinary_NEqual, match::BracketBinary(new Str("!=")));
+  ASSERT_EQ(Id::Undefined_Tok, match::BracketBinary(new Str("")));
+
+  // This still works, but can't it overflow a buffer?
+  Str* s = new Str("!= ");
+  Str* stripped = s->strip();
+
+  ASSERT_EQ(3, len(s));
+  ASSERT_EQ(2, len(stripped));
+
+  ASSERT_EQ(Id::BoolBinary_NEqual, match::BracketBinary(stripped));
 
   PASS();
 }

@@ -1013,7 +1013,6 @@ inline LineReader* Stdin() {
 }
 
 inline LineReader* open(Str* path) {
-  // cstring-TODO: don't use data_ directly.  Use CString.
   Str0 path0(path);
   FILE* f = fopen(path0.Get(), "r");
 

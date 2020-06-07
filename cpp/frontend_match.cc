@@ -20,7 +20,7 @@ namespace match {
 Tuple2<Id_t, int> OneToken(lex_mode_t lex_mode, Str* line, int start_pos) {
   int id;
   int end_pos;
-  // cstring-TODO.  line->data_ isn't necessarily safe, e.g. for eval "$x"
+  // cstring-TODO: input isn't NUL-terminated
 
   // TODO: get rid of these casts
   MatchOshToken(static_cast<int>(lex_mode),
@@ -32,6 +32,7 @@ Tuple2<Id_t, int> OneToken(lex_mode_t lex_mode, Str* line, int start_pos) {
 Tuple2<Id_t, Str*> SimpleLexer::Next() {
   int id;
   int end_pos;
+  // cstring-TODO: input isn't NUL-terminated
   match_func_(reinterpret_cast<const unsigned char*>(s_->data_), s_->len_, pos_,
               &id, &end_pos);
   // cstring-TODO: Don't allocate?
@@ -59,7 +60,25 @@ SimpleLexer* EchoLexer(Str* s) {
   return new SimpleLexer(&MatchEchoToken, s);
 }
 
+Id_t BracketUnary(Str* s) {
+  // cstring-TODO: input isn't NUL-terminated
+  return ::BracketUnary(reinterpret_cast<const unsigned char*>(s->data_),
+                        s->len_);
+}
+Id_t BracketBinary(Str* s) {
+  // cstring-TODO: input isn't NUL-terminated
+  return ::BracketBinary(reinterpret_cast<const unsigned char*>(s->data_),
+                         s->len_);
+}
+Id_t BracketOther(Str* s) {
+  // cstring-TODO: input isn't NUL-terminated
+  return ::BracketOther(reinterpret_cast<const unsigned char*>(s->data_),
+                        s->len_);
+}
+
 bool IsValidVarName(Str* s) {
+  // cstring-TODO: input isn't NUL-terminated
+
   // Call generated function.  Note: this relies on operator overloading.
   return ::IsValidVarName(reinterpret_cast<const unsigned char*>(s->data_),
                           s->len_);

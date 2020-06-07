@@ -15,7 +15,7 @@ from asdl import runtime
 from core import error
 from core.util import p_die, log
 from core import vm
-from frontend import consts
+from frontend import match
 from osh import sh_expr_eval
 from osh import bool_parse
 from osh import word_parse
@@ -66,11 +66,11 @@ class _StringWordEmitter(word_parse.WordEmitter):
     self.i += 1
 
     # default is an operand word
-    id_int = consts.TestUnaryLookup(s)
+    id_int = match.BracketUnary(s)
     if id_int == -1:
-      id_int = consts.TestBinaryLookup(s)
+      id_int = match.BracketBinary(s)
     if id_int == -1:
-      id_int = consts.TestOtherLookup(s)
+      id_int = match.BracketOther(s)
 
     id_ = Id.Word_Compound if id_int == -1 else id_int
 
@@ -115,7 +115,7 @@ def _TwoArgs(w_parser):
   w1 = w_parser.Read()
   if w0.s == '!':
     return bool_expr.LogicalNot(bool_expr.WordTest(w1))
-  unary_id = consts.TestUnaryLookup(w0.s)
+  unary_id = match.BracketUnary(w0.s)
   if unary_id == -1:
     # TODO:
     # - separate lookup by unary
@@ -132,7 +132,7 @@ def _ThreeArgs(w_parser):
 
   # NOTE: Order is important here.
 
-  binary_id = consts.TestBinaryLookup(w1.s)
+  binary_id = match.BracketBinary(w1.s)
   if binary_id != -1:
     return bool_expr.Binary(binary_id, w0, w2)
 

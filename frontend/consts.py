@@ -166,27 +166,6 @@ def IsKeyword(name):
 
 
 #
-# osh/builtin_bracket
-#
-
-def TestUnaryLookup(s):
-  # type: (str) -> Id_t
-  from _devbuild.gen.id_kind import TEST_UNARY_LOOKUP  # break circular dep
-  return TEST_UNARY_LOOKUP.get(s, -1)
-
-
-def TestBinaryLookup(s):
-  # type: (str) -> Id_t
-  from _devbuild.gen.id_kind import TEST_BINARY_LOOKUP
-  return TEST_BINARY_LOOKUP.get(s, -1)
-
-
-def TestOtherLookup(s):
-  # type: (str) -> Id_t
-  from _devbuild.gen.id_kind import TEST_OTHER_LOOKUP
-  return TEST_OTHER_LOOKUP.get(s, -1)
-
-#
 # osh/prompt.py and osh/word_compile.py
 #
 
