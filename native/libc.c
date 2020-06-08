@@ -177,90 +177,16 @@ func_regex_parse(PyObject *self, PyObject *args) {
   regex_t pat;
   // This is an extended regular expression rather than a basic one, i.e. we
   // use 'a*' instaed of 'a\*'.
-  int ret = regcomp(&pat, pattern, REG_EXTENDED);
+  int status = regcomp(&pat, pattern, REG_EXTENDED);
+  if (status != 0) {
+    char error_string[80];
+    regerror(status, &pat, &error_string, 80);
+    PyErr_SetString(PyExc_RuntimeError, error_string);
+    return NULL;
+  }
   regfree(&pat);
 
-  // Copied from man page
-  // TODO: Use POSIX regerror() instead
-  // https://www.gnu.org/software/libc/manual/html_node/Regexp-Cleanup.html#Regexp-Cleanup
-
-  const char *err_str = NULL;
-  switch (ret) {
-  case 0:  // success
-    break;
-
-  case REG_BADBR:
-    err_str = "Invalid use of back reference operator.";
-    break;
-
-  case REG_BADPAT:
-    err_str = "Invalid use of pattern operators such as group or list.";
-    break;
-
-  case REG_BADRPT:
-    err_str = "Invalid use of repetition operators such as using '*' as the first character.";
-    break;
-
-  case REG_EBRACE:
-    err_str = "Un-matched brace interval operators.";
-    break;
-
-  case REG_EBRACK:
-    err_str = "Un-matched bracket list operators.";
-    break;
-
-  case REG_ECOLLATE:
-    err_str = "Invalid collating element.";
-    break;
-
-  case REG_ECTYPE:
-    err_str = "Unknown character class name.";
-    break;
-
-  case REG_EESCAPE:
-    err_str = "Trailing backslash.";
-    break;
-
-  case REG_EPAREN:
-    err_str = "Un-matched parenthesis group operators.";
-    break;
-
-  case REG_ERANGE:
-    err_str = "Invalid use of the range operator, e.g., the ending point of the range occurs prior to the starting point.";
-    break;
-
-  case REG_ESPACE:
-    err_str = "The regex routines ran out of memory.";
-    break;
-
-  case REG_ESUBREG:
-    err_str = "Invalid back reference to a subexpression.";
-    break;
-
-    /* NOTE: These are not defined by musl libc on Alpine.
-     * TODO: If we can construct test cases for these, add them back.
-     * */
-#if 0
-  case REG_EEND:
-    err_str = "Nonspecific error.  This is not defined by POSIX.2.";
-    break;
-  case REG_ESIZE:
-    err_str = "Compiled regular expression requires a pattern buffer larger than 64Kb.  This is not defined by POSIX.2.";
-    break;
-#endif
-
-  default:
-    /* TODO: Add the integer to error message */
-    err_str = "Unknown error compiling regex";
-  }
-
-  if (err_str) {
-    // When the regex contains a variable, it can't be checked at compile-time.
-    PyErr_SetString(PyExc_RuntimeError, err_str);
-    return NULL;
-  } else {
-    Py_RETURN_TRUE;
-  }
+  Py_RETURN_TRUE;
 }
 
 static PyObject *
@@ -272,9 +198,11 @@ func_regex_match(PyObject *self, PyObject *args) {
   }
 
   regex_t pat;
-  if (regcomp(&pat, pattern, REG_EXTENDED) != 0) {
-    // When the regex contains a variable, it can't be checked at compile-time.
-    PyErr_SetString(PyExc_RuntimeError, "Invalid regex syntax (func_regex_match)");
+  int status = regcomp(&pat, pattern, REG_EXTENDED);
+  if (status != 0) {
+    char error_string[80];
+    regerror(status, &pat, &error_string, 80);
+    PyErr_SetString(PyExc_RuntimeError, error_string);
     return NULL;
   }
 

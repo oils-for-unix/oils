@@ -136,7 +136,7 @@ class GlobParserTest(unittest.TestCase):
         ('[!not]', '[^not]', False),
         ('[^also_not]', '[^also_not]', False),
         ('[!*?!\\[]', '[^*?!\\[]', False),
-        ('[!\]foo]', r'[^\]foo]', False),
+        ('[!\]foo]', r'[^]foo]', False),
 
         # invalid globs
         ('not_closed[a-z', 'not_closed\\[a-z', True),

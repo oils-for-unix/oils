@@ -113,6 +113,7 @@ true
 # Are they trying to PARSE the regex?  Do they feed the buffer directly to
 # regcomp()?
 [[ 'a b' =~ ^)a\ b($ ]] && echo true
+## stdout-json: ""
 ## status: 2
 ## OK zsh status: 1
 
