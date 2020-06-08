@@ -108,6 +108,44 @@ argv.py "${a[-1]}" "${a[-2]}" "${a[-5]}"  # last one out of bounds
 ## stdout: ['2 3', '1', '']
 ## N-I mksh stdout: ['', '', '']
 
+#### Negative index and sparse array
+shopt -s eval_unsafe_arith
+a=(0 1 2 3 4)
+unset a[1]
+unset a[4]
+echo "${a[@]}"
+echo -1 ${a[-1]}
+echo -2 ${a[-2]}
+echo -3 ${a[-3]}
+echo -4 ${a[-4]}
+echo -5 ${a[-5]}
+
+a[-1]+=0  # append 0 on the end
+echo ${a[@]}
+(( a[-1] += 42 ))
+echo ${a[@]}
+
+## STDOUT:
+0 2 3
+-1 3
+-2 2
+-3
+-4 0
+-5
+0 2 30
+0 2 72
+## END
+## BUG mksh STDOUT:
+0 2 3
+-1
+-2
+-3
+-4
+-5
+0 2 3 0
+0 2 3 42
+## END
+
 #### Retrieve index that is a variable
 a=(1 '2 3')
 i=1

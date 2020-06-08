@@ -954,10 +954,8 @@ ble-features() {
 one-off() {
   set +o errexit
 
-  test/spec.sh var-op-strip -r 28
-  test/spec.sh dbracket -r 46
-  test/spec.sh case_ -r 10
-  test/spec.sh var-op-patsub -r 19
+  test/spec.sh array -r 16
+  test/spec.sh builtin-vars -r 39-40
 }
 
 "$@"

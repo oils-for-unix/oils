@@ -51,7 +51,6 @@ if TYPE_CHECKING:
   from core import optview
   from core.state import Mem
   from frontend.parse_lib import ParseContext
-  from osh import word_eval
 
 _ = log
 
@@ -137,16 +136,7 @@ def OldValue(lval, mem, exec_opts):
         else:
           e_die("Can't use [] on value of type %s", ui.ValType(val))
 
-      n = len(array_val.strs)
-      index = lval.index
-      if index < 0:
-        index += n
-
-      if 0 <= index and index < n:
-        # TODO: ->index()  has a redunant check for (i < 0)
-        s = array_val.strs[index]
-      else:
-        s = None
+      s = word_eval.GetArrayItem(array_val, lval.index)
 
       if s is None:
         val = value.Str('')  # NOTE: Other logic is value.Undef()?  0?
@@ -545,19 +535,9 @@ class ArithEvaluator(object):
           UP_left = left
           with tagswitch(left) as case:
             if case(value_e.MaybeStrArray):
-              left = cast(value__MaybeStrArray, UP_left)
-              rhs_int = self.EvalToInt(node.right)
-
-              n = len(left.strs)
-              if rhs_int < 0:
-                rhs_int += n
-
-              if 0 <= rhs_int and rhs_int < n:
-                # TODO: strs->index() has a redundant check for (i < 0)
-                s = left.strs[rhs_int]
-                # note: s could be None because representation is sparse
-              else:
-                s = None
+              array_val = cast(value__MaybeStrArray, UP_left)
+              index = self.EvalToInt(node.right)
+              s = word_eval.GetArrayItem(array_val, index)
 
             elif case(value_e.AssocArray):
               left = cast(value__AssocArray, UP_left)

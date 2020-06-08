@@ -49,10 +49,10 @@ if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command_t, speck, word_part_t
   from _devbuild.gen.option_asdl import builtin_t
   from core import optview
+  from core.state import Mem
   from core.ui import ErrorFormatter
   from core.vm import _Executor
   from osh.split import SplitContext
-  from core.state import Mem
   from osh import prompt
   from osh import sh_expr_eval
   from oil_lang import expr_eval
@@ -85,6 +85,30 @@ def ResolveCompatArray(val):
     return value.Undef()
   else:
     return value.Str(s)
+
+
+def GetArrayItem(array_val, index):
+  # type: (value__MaybeStrArray, int) -> Optional[str]
+
+  n = len(array_val.strs)
+  if index < 0:
+    # VERY WEIRD BASH BEHAVIOR.  a[-1] counts from the last non-empty
+    # array.  Which is DIFFERENT than the length.
+    if n != 0:  # non-empty array
+      last_nonempty_index = n-1
+      for i in xrange(n-1, -1, -1):
+        if array_val.strs[i] is not None:
+          last_nonempty_index = i
+          break
+      index += last_nonempty_index + 1
+
+  if 0 <= index and index < n:
+    # TODO: strs->index() has a redundant check for (i < 0)
+    s = array_val.strs[index]
+    # note: s could be None because representation is sparse
+  else:
+    s = None
+  return s
 
 
 def EvalSingleQuoted(part):
@@ -959,11 +983,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
               array_val = cast(value__MaybeStrArray, UP_val)
               index = self.arith_ev.EvalToInt(anode)
               var_index = a_index.Int(index)
-              try:
-                # could be None because representation is sparse
-                s = array_val.strs[index]
-              except IndexError:
-                s = None
+
+              s = GetArrayItem(array_val, index)
 
               if s is None:
                 val = value.Undef()
@@ -1077,7 +1098,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
             # you already evaluated 'key' and 'index' above, so I guess
             # you need index_t?
 
-            if self._ApplyTestOp(val, op, quoted, part_vals, var_name, var_index, part.token):
+            if self._ApplyTestOp(val, op, quoted, part_vals,
+                                 var_name, var_index, part.token):
               # e.g. to evaluate ${undef:-'default'}, we already appended
               # what we need
               return

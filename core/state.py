@@ -1261,7 +1261,14 @@ class Mem(object):
             n = len(strs)
             index = lval.index
             if index < 0:  # a[-1]++ computes this twice; could we avoid it?
-              index += n
+              # VERY WEIRD BASH BEHAVIOR, just like word_eval.GetArrayItem().
+              if n != 0:  # non-empty array
+                last_nonempty_index = n-1
+                for i in xrange(n-1, -1, -1):
+                  if strs[i] is not None:
+                    last_nonempty_index = i
+                    break
+                index += last_nonempty_index + 1
 
             if 0 <= index and index < n:
               strs[index] = rval.s

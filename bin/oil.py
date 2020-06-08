@@ -750,7 +750,8 @@ def ShellMain(lang, argv0, argv, login_shell):
 
 # TODO: Hook up to completion.
 SUBCOMMANDS = [
-    'translate', 'arena', 'spans', 'format', 'deps', 'undefined-vars'
+    'translate', 'arena', 'spans', 'format', 'deps', 'undefined-vars',
+    'parse-glob', 'parse-printf',
 ]
 
 def OshCommandMain(argv):
@@ -775,6 +776,16 @@ def OshCommandMain(argv):
 
   if action not in SUBCOMMANDS:
     raise error.Usage('Invalid subcommand %r.' % action)
+
+  if action == 'parse-glob':
+    # Pretty-print the AST produced by osh/glob_.py
+    print('TODO:parse-glob')
+    return 0
+
+  if action == 'parse-printf':
+    # Pretty-print the AST produced by osh/builtin_printf.py
+    print('TODO:parse-printf')
+    return 0
 
   arena = alloc.Arena()
   try:

@@ -646,3 +646,65 @@ y=
 y=
 ## END
 
+#### unset a[-1] (bf.bash regression)
+case $SH in (dash|zsh) exit ;; esac
+
+shopt -s eval_unsafe_arith
+a=(1 2 3)
+unset a[-1]
+echo len=${#a[@]}
+
+echo last=${a[-1]}
+(( last = a[-1] ))
+echo last=$last
+
+(( a[-1] = 42 ))
+echo "${a[@]}"
+
+## STDOUT:
+len=2
+last=2
+last=2
+1 42
+## END
+## BUG mksh STDOUT:
+len=3
+last=
+last=0
+1 2 3 42
+## END
+## N-I dash/zsh stdout-json: ""
+
+
+#### unset a[-1] in sparse array (bf.bash regression)
+case $SH in (dash|zsh) exit ;; esac
+
+shopt -s eval_unsafe_arith
+a=(0 1 2 3 4)
+unset a[1]
+unset a[4]
+echo len=${#a[@]} a=${a[@]}
+echo last=${a[-1]} second=${a[-2]} third=${a[-3]}
+
+echo ---
+unset a[3]
+echo len=${#a[@]} a=${a[@]}
+echo last=${a[-1]} second=${a[-2]} third=${a[-3]}
+
+## STDOUT:
+len=3 a=0 2 3
+last=3 second=2 third=
+---
+len=2 a=0 2
+last=2 second= third=0
+## END
+
+## BUG mksh STDOUT:
+len=3 a=0 2 3
+last= second= third=
+---
+len=2 a=0 2
+last= second= third=
+## END
+
+## N-I dash/zsh stdout-json: ""
