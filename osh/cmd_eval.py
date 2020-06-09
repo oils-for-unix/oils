@@ -1446,6 +1446,10 @@ class CommandEvaluator(object):
 
     is_return = False
     is_fatal = False
+    is_errexit = False
+
+    err = None  # type: error._ErrorWithLocation
+
     try:
       status = self._Execute(node)
     except _ControlFlow as e:
@@ -1465,15 +1469,25 @@ class CommandEvaluator(object):
     except error.Parse as e:
       self.dumper.MaybeCollect(self, e)  # Do this before unwinding stack
       raise
+    except error.ErrExit as e:
+      err = e
+      is_errexit = True
     except error.FatalRuntime as e:
-      self.dumper.MaybeCollect(self, e)  # Do this before unwinding stack
+      err = e
 
-      if not e.HasLocation():  # Last resort!
-        e.span_id = self.mem.CurrentSpanId()
+    if err:
+      status = err.ExitStatus()
 
-      ui.PrettyPrintError(e, self.arena, prefix='fatal: ')
       is_fatal = True
-      status = e.ExitStatus()
+      self.dumper.MaybeCollect(self, err)  # Do this before unwinding stack
+
+      if not err.HasLocation():  # Last resort!
+        err.span_id = self.mem.CurrentSpanId()
+
+      if is_errexit and not self.exec_opts.verbose_errexit():
+        pass  # Supress error
+      else:
+        ui.PrettyPrintError(err, self.arena, prefix='fatal: ')
 
     self.dumper.MaybeDump(status)
     self.mem.SetLastStatus(status)

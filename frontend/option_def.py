@@ -237,6 +237,8 @@ def _Init(opt_def):
   opt_def.Add('parse_dynamic_arith')  # dynamic LHS
   opt_def.Add('compat_array')  # ${array} is ${array[0]}
 
+  opt_def.Add('verbose_errexit', default=True)
+
   # Two strict options that from bash's shopt
   for name in ['nullglob', 'inherit_errexit']:
     opt_def.Add(name, groups=['strict:all', 'oil:basic', 'oil:all'])

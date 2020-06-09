@@ -446,3 +446,9 @@ done
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 
+#### errexit is silent (verbose_errexit for Oil)
+shopt -u verbose_errexit 2>/dev/null || true
+set -e
+false
+## stderr-json: ""
+## status: 1

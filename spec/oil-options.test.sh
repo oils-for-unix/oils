@@ -164,6 +164,7 @@ shopt -s strict_eval_builtin
 shopt -s strict_glob
 shopt -s strict_nameref
 shopt -s strict_word_eval
+shopt -s verbose_errexit
 ## END
 
 #### shopt -s oil:basic
@@ -196,6 +197,7 @@ shopt -s strict_eval_builtin
 shopt -s strict_glob
 shopt -s strict_nameref
 shopt -s strict_word_eval
+shopt -s verbose_errexit
 ## END
 
 #### osh -O oil:basic 
