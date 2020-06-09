@@ -343,6 +343,7 @@ class ShellExecutor(_Executor):
           len(simple.redirects) == 1 and
           simple.redirects[0].op.id == Id.Redir_Less):
         # change it to __cat < file
+        # note: cmd_eval.py _Dispatch works around lack of spid
         tok = Token(Id.Lit_Chars, runtime.NO_SPID, '__cat')
         cat_word = compound_word([tok])
         # MUTATE the command.Simple node.  This will only be done the first

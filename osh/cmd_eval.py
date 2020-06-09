@@ -519,7 +519,9 @@ class CommandEvaluator(object):
         # TODO: Can we avoid setting this so many times?  See issue #567.
         if len(node.words):
           span_id = word_.LeftMostSpanForWord(node.words[0])
-          self.mem.SetCurrentSpanId(span_id)
+          # Special case for __cat < file: leave it at the redirect.
+          if span_id != runtime.NO_SPID:
+            self.mem.SetCurrentSpanId(span_id)
 
         # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
         # redirected here, which screws up logging.  For example, 'echo hi
