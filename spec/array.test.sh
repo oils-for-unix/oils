@@ -146,6 +146,22 @@ echo ${a[@]}
 0 2 3 42
 ## END
 
+#### Length after unset
+shopt -s eval_unsafe_arith
+a=(0 1 2 3)
+unset a[-1]
+echo len=${#a[@]}
+unset a[-1]
+echo len=${#a[@]}
+## STDOUT:
+len=3
+len=2
+## END
+## BUG mksh STDOUT:
+len=4
+len=4
+## END
+
 #### Retrieve index that is a variable
 a=(1 '2 3')
 i=1

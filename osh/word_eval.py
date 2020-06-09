@@ -30,6 +30,7 @@ from _devbuild.gen.runtime_asdl import (
 from core import error
 from core import passwd
 from core import pyutil
+from core import state
 from qsn_ import qsn
 from core.util import log, e_die, e_strict
 from frontend import consts
@@ -87,24 +88,16 @@ def ResolveCompatArray(val):
     return value.Str(s)
 
 
-def GetArrayItem(array_val, index):
-  # type: (value__MaybeStrArray, int) -> Optional[str]
+def GetArrayItem(strs, index):
+  # type: (List[str], int) -> Optional[str]
 
-  n = len(array_val.strs)
+  n = len(strs)
   if index < 0:
-    # VERY WEIRD BASH BEHAVIOR.  a[-1] counts from the last non-empty
-    # array.  Which is DIFFERENT than the length.
-    if n != 0:  # non-empty array
-      last_nonempty_index = n-1
-      for i in xrange(n-1, -1, -1):
-        if array_val.strs[i] is not None:
-          last_nonempty_index = i
-          break
-      index += last_nonempty_index + 1
+    index = state.NegateArrayIndex(strs, index)
 
   if 0 <= index and index < n:
     # TODO: strs->index() has a redundant check for (i < 0)
-    s = array_val.strs[index]
+    s = strs[index]
     # note: s could be None because representation is sparse
   else:
     s = None
@@ -984,7 +977,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
               index = self.arith_ev.EvalToInt(anode)
               var_index = a_index.Int(index)
 
-              s = GetArrayItem(array_val, index)
+              s = GetArrayItem(array_val.strs, index)
 
               if s is None:
                 val = value.Undef()

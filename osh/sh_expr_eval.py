@@ -136,7 +136,7 @@ def OldValue(lval, mem, exec_opts):
         else:
           e_die("Can't use [] on value of type %s", ui.ValType(val))
 
-      s = word_eval.GetArrayItem(array_val, lval.index)
+      s = word_eval.GetArrayItem(array_val.strs, lval.index)
 
       if s is None:
         val = value.Str('')  # NOTE: Other logic is value.Undef()?  0?
@@ -537,7 +537,7 @@ class ArithEvaluator(object):
             if case(value_e.MaybeStrArray):
               array_val = cast(value__MaybeStrArray, UP_left)
               index = self.EvalToInt(node.right)
-              s = word_eval.GetArrayItem(array_val, index)
+              s = word_eval.GetArrayItem(array_val.strs, index)
 
             elif case(value_e.AssocArray):
               left = cast(value__AssocArray, UP_left)

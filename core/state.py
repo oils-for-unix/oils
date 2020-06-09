@@ -683,6 +683,24 @@ def InitMem(mem, environ, version_str):
   mem.SetPwd(pwd)
 
 
+def NegateArrayIndex(strs, index):
+  # type: (List[str], int) -> int
+  assert index < 0
+  n = len(strs)
+
+  # VERY WEIRD BASH BEHAVIOR.  a[-1] counts from the last non-empty
+  # array.  Which is DIFFERENT than the length.
+
+  if n != 0:  # non-empty array
+    last_nonempty_index = n-1
+    for i in xrange(n-1, -1, -1):
+      if strs[i] is not None:
+        last_nonempty_index = i
+        break
+    index += last_nonempty_index + 1
+  return index
+
+
 class Mem(object):
   """For storing variables.
 
@@ -1261,14 +1279,7 @@ class Mem(object):
             n = len(strs)
             index = lval.index
             if index < 0:  # a[-1]++ computes this twice; could we avoid it?
-              # VERY WEIRD BASH BEHAVIOR, just like word_eval.GetArrayItem().
-              if n != 0:  # non-empty array
-                last_nonempty_index = n-1
-                for i in xrange(n-1, -1, -1):
-                  if strs[i] is not None:
-                    last_nonempty_index = i
-                    break
-                index += last_nonempty_index + 1
+              index = NegateArrayIndex(strs, index)
 
             if 0 <= index and index < n:
               strs[index] = rval.s
@@ -1478,6 +1489,8 @@ class Mem(object):
 
       elif case(lvalue_e.Indexed):  # unset 'a[1]'
         lval = cast(lvalue__Indexed, UP_lval)
+        # Note: Setting an entry to None and shifting entries are pretty
+        # much the same in shell.
 
         val = cell.val
         UP_val = val
@@ -1485,13 +1498,19 @@ class Mem(object):
           raise error.Runtime("%r isn't an array" % var_name)
 
         val = cast(value__MaybeStrArray, UP_val)
-        # Note: Setting an entry to None and shifting entries are pretty
-        # much the same in shell.
-        try:
-          val.strs[lval.index] = None
-        except IndexError:
+        strs = val.strs
+
+        n = len(strs)
+        index = lval.index
+        if index < 0:
+          index = NegateArrayIndex(strs, index)
+
+        if 0 <= index and index < n:
+          strs[index] = None
+        else:
           # note: we could have unset --strict for this case?
-          # Oil may make it strict
+          # Oil may make it strict.  Although Ousterhout specifically argues
+          # against this for Tcl!
           pass
 
       elif case(lvalue_e.Keyed):  # unset 'A["K"]'
