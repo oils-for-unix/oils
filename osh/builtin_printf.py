@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-builtin_printf
+builtin_printf.py
 """
 from __future__ import print_function
 

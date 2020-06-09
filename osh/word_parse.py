@@ -1334,7 +1334,9 @@ class WordParser(WordEmitter):
     self._Peek()
 
     if self.token_kind == Kind.Unknown:
-      p_die('Unexpected token in arithmetic context', token=self.cur_token)
+      # e.g. happened during dynamic parsing of unset 'a[$foo]' in gherkin
+      p_die('Unexpected token while parsing arithmetic: %r',
+            self.cur_token.val, token=self.cur_token)
 
     elif self.token_kind == Kind.Eof:
       # Just return EOF token
