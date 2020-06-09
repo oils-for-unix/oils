@@ -11,7 +11,7 @@ from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.runtime_asdl import cmd_value__Argv, value_e, value__Str
 from _devbuild.gen.syntax_asdl import (
     printf_part, printf_part_e, printf_part_t, printf_part__Literal,
-    printf_part__Percent, source,
+    printf_part__Percent, source, Token,
 )
 from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
 
@@ -208,7 +208,7 @@ class Printf(vm._Builtin):
           if token.id == Id.Format_EscapedPercent:
             s = '%'
           else:
-            s = word_compile.EvalCStringToken(token.id, token.val)
+            s = word_compile.EvalCStringToken(token)
           out.append(s)
 
         elif part.tag_() == printf_part_e.Percent:
@@ -299,7 +299,9 @@ class Printf(vm._Builtin):
               if id_ == Id.Eol_Tok:  # Note: This is really a NUL terminator
                 break
 
-              p = word_compile.EvalCStringToken(id_, value)
+              # TODO: add span_id from argv
+              tok = Token(id_, runtime.NO_SPID, value)
+              p = word_compile.EvalCStringToken(tok)
 
               # Unusual behavior: '\c' aborts processing!
               if p is None:

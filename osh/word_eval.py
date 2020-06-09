@@ -111,8 +111,7 @@ def EvalSingleQuoted(part):
     s = ''.join(tmp)
   elif part.left.id == Id.Left_SingleQuoteC:
     # NOTE: This could be done at compile time
-    # TODO: Add location info for invalid backslash
-    tmp = [word_compile.EvalCStringToken(t.id, t.val) for t in part.tokens]
+    tmp = [word_compile.EvalCStringToken(t) for t in part.tokens]
     s = ''.join(tmp)
   else:
     raise AssertionError(part.left.id)

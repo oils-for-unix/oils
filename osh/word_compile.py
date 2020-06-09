@@ -53,23 +53,29 @@ def EvalCharLiteralForRegex(tok):
 # \0777 is a syntax error -- we shouldn't do modulus
 # \d could be a syntax error -- it is better written as \\d
 
-def EvalCStringToken(id_, value):
-  # type: (Id_t, str) -> Optional[str]
+def EvalCStringToken(tok):
+  # type: (Token) -> Optional[str]
   """
   This function is shared between echo -e and $''.
 
   $'' could use it at compile time, much like brace expansion in braces.py.
   """
+  id_ = tok.id
+  value = tok.val
+
   if id_ == Id.Char_Literals:
     return value
 
   elif id_ == Id.Char_BadBackslash:
     if 1:
-      # TODO:
-      # - make this an error in strict mode
-      # - improve the error message.  We don't have a span_id!
       # Either \A or trailing \ (A is not a valid backslash escape)
-      stderr_line('warning: Invalid backslash escape in C-style string')
+      # TODO: add location info with tok.span_id (errfmt), and make it an rror
+      # when strict_backslash is on.  I USED this to fix a refactored regex!
+      # Extract from [[ ]] and fix backslashes.
+      stderr_line(
+          'warning: Invalid backslash escape in C-style string: %r' % value)
+      #from core.util import e_die
+      #e_die('Invalid backslash escape %r', value, span_id=tok.span_id)
     return value
 
   elif id_ == Id.Char_OneChar:

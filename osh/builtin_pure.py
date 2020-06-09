@@ -16,6 +16,7 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.syntax_asdl import Token
 
 from core import error
 from core.pyerror import e_usage
@@ -399,6 +400,7 @@ class Echo(vm._Builtin):
     argv = arg_r.Rest()
 
     backslash_c = False  # \c terminates input
+    arg0_spid = cmd_val.arg_spids[0]
 
     if arg.e:
       new_argv = []  # type: List[str]
@@ -410,7 +412,8 @@ class Echo(vm._Builtin):
           if id_ == Id.Eol_Tok:  # Note: This is really a NUL terminator
             break
 
-          p = word_compile.EvalCStringToken(id_, value)
+          tok = Token(id_, arg0_spid, value)
+          p = word_compile.EvalCStringToken(tok)
 
           # Unusual behavior: '\c' prints what is there and aborts processing!
           if p is None:
