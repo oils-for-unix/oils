@@ -5,7 +5,7 @@ word_compile.py
 This is called the "compile" stage because it happens after parsing, but it
 doesn't depend on any values at runtime.
 """
-from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
+from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.syntax_asdl import (
     Token, class_literal_term, class_literal_term_t,
 )

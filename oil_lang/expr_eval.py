@@ -605,7 +605,7 @@ class OilEvaluator(object):
       else:  # Must be Id.Char_{OneChar,Hex,Unicode4,Unicode8}
         kind = consts.GetKind(id_)
         assert kind == Kind.Char, id_
-        s = word_compile.EvalCStringToken(id_, val)
+        s = word_compile.EvalCStringToken(node)
         new_leaf = re.LiteralChars(s, node.span_id)
 
     elif node.tag == re_e.SingleQuoted:
