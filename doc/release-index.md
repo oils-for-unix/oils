@@ -95,8 +95,8 @@ of Oil's C++ translation.
   progress.
 - [opyc](test/other.wwz/opyc.txt).  Tests for the opyc tool.
 - [Smoosh][] test suite (from [mgree/smoosh][]):
-  - [smoosh](test/spec.wwz/smoosh.html)
-  - [smoosh-hang](test/spec.wwz/smoosh-hang.html)
+  - [smoosh](test/spec.wwz/survey/smoosh.html)
+  - [smoosh-hang](test/spec.wwz/survey/smoosh-hang.html)
 - How many processes does Oil start compared to other shells?
   - [syscall/by-code](test/other.wwz/syscall/by-code.txt)
   - [syscall/by-input](test/other.wwz/syscall/by-input.txt)

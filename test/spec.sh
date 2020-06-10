@@ -812,7 +812,7 @@ _one-html() {
 
   local out=$base_dir/${spec_name}.html
   set +o errexit
-  time $spec_name --format html --trace "$@" > $out
+  time $spec_name --format html "$@" > $out
   set -o errexit
 
   echo
