@@ -249,6 +249,36 @@ class Read(vm._Builtin):
     return status
 
 
+class MapFile(vm._Builtin):
+  """ mapfile / readarray """
+
+  def __init__(self, mem, errfmt):
+    # type: (Mem, ErrorFormatter) -> None
+    self.mem = mem
+    self.errfmt = errfmt
+    self.f = mylib.Stdin()
+
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
+    attrs, arg_r = flag_spec.ParseCmdVal('mapfile', cmd_val)
+    # TODO: Implement flags to mapfile
+    #arg = arg_types.mapfile(attrs.attrs)
+
+    var_name, _ = arg_r.Peek2()
+    if var_name is None:
+      var_name = 'MAPFILE'
+
+    lines = []
+    while True:
+      line = self.f.readline()
+      if len(line) == 0:
+        break
+      lines.append(line)
+
+    state.SetArrayDynamic(self.mem, var_name, lines)
+    return 0
+
+
 class Cd(vm._Builtin):
   def __init__(self, mem, dir_stack, cmd_ev, errfmt):
     # type: (Mem, DirStack, CommandEvaluator, ErrorFormatter) -> None

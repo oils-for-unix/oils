@@ -111,6 +111,9 @@ READ_SPEC.ShortFlag('-a', args.String)  # name of array to read into
 READ_SPEC.ShortFlag('-d', args.String)
 
 
+MAPFILE_SPEC = FlagSpec('mapfile', typed=True)
+
+
 CD_SPEC = FlagSpec('cd', typed=True)
 CD_SPEC.ShortFlag('-L')
 CD_SPEC.ShortFlag('-P')

@@ -466,10 +466,13 @@ def ShellMain(lang, argv0, argv, login_shell):
   }
 
   true_ = builtin_pure.Boolean(0)
+  mapfile = builtin_misc.MapFile(mem, errfmt)
 
   builtins = {
       builtin_i.echo: builtin_pure.Echo(exec_opts),
       builtin_i.printf: builtin_printf.Printf(mem, parse_ctx, errfmt),
+      builtin_i.mapfile: mapfile,
+      builtin_i.readarray: mapfile,
 
       builtin_i.pushd: builtin_misc.Pushd(mem, dir_stack, errfmt),
       builtin_i.popd: builtin_misc.Popd(mem, dir_stack, errfmt),

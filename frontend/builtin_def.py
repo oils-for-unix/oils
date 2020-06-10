@@ -27,7 +27,7 @@ from typing import Dict, List, Optional, Any
 # https://www.gnu.org/software/bash/manual/html_node/Special-Builtins.html
 
 _NORMAL_BUILTINS = [
-    'read', 'echo', 'printf',
+    'read', 'echo', 'printf', 'mapfile', 'readarray',
 
     'cd', 'pushd', 'popd', 'dirs', 'pwd',
 
@@ -42,10 +42,6 @@ _NORMAL_BUILTINS = [
 
     # introspection
     'command', 'type', 'hash', 'help', 'history',
-
-    # Why are these duplicated?
-    #'declare': builtin_e.DECLARE,
-    #'typeset': builtin_e.TYPESET,
 
     'alias', 'unalias',
     'bind',
