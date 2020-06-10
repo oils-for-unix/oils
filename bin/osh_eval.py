@@ -113,6 +113,11 @@ def main(argv):
 
   dollar0 = argv[0]
   debug_stack = []  # type: List[state.DebugFrame]
+
+  argv = argv[1:]  # remove binary name
+  i, flag_a, flag_c, flag_n = Parse(argv)
+  argv = argv[i:]  # truncate
+
   mem = state.Mem(dollar0, argv, arena, debug_stack)
 
   # TODO: look at extern char** environ;
@@ -133,11 +138,6 @@ def main(argv):
     oil_grammar = meta.LoadOilGrammar(loader)
 
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
-
-  argv = argv[1:]  # remove binary name
-  i, flag_a, flag_c, flag_n = Parse(argv)
-
-  argv = argv[i:]  # truncate
 
   if flag_c:
     # This path is easier to run through GDB

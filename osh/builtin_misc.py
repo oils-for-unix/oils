@@ -268,7 +268,7 @@ class MapFile(vm._Builtin):
     if var_name is None:
       var_name = 'MAPFILE'
 
-    lines = []
+    lines = []  # type: List[str]
     while True:
       line = self.f.readline()
       if len(line) == 0:
