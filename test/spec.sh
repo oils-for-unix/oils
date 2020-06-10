@@ -954,7 +954,7 @@ ble-features() {
 one-off() {
   set +o errexit
 
-  test/spec.sh array -r 16
+  test/spec.sh array -r 16-17
   test/spec.sh builtin-vars -r 39-40
 }
 

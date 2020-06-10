@@ -683,24 +683,6 @@ def InitMem(mem, environ, version_str):
   mem.SetPwd(pwd)
 
 
-def NegateArrayIndex(strs, index):
-  # type: (List[str], int) -> int
-  assert index < 0
-  n = len(strs)
-
-  # VERY WEIRD BASH BEHAVIOR.  a[-1] counts from the last non-empty
-  # array.  Which is DIFFERENT than the length.
-
-  if n != 0:  # non-empty array
-    last_nonempty_index = n-1
-    for i in xrange(n-1, -1, -1):
-      if strs[i] is not None:
-        last_nonempty_index = i
-        break
-    index += last_nonempty_index + 1
-  return index
-
-
 class Mem(object):
   """For storing variables.
 
@@ -1279,7 +1261,7 @@ class Mem(object):
             n = len(strs)
             index = lval.index
             if index < 0:  # a[-1]++ computes this twice; could we avoid it?
-              index = NegateArrayIndex(strs, index)
+              index += n
 
             if 0 <= index and index < n:
               strs[index] = rval.s
@@ -1501,11 +1483,16 @@ class Mem(object):
         strs = val.strs
 
         n = len(strs)
+        last_index = n - 1
         index = lval.index
         if index < 0:
-          index = NegateArrayIndex(strs, index)
+          index += n
 
-        if 0 <= index and index < n:
+        if index == last_index:
+          # Special case: The array SHORTENS if you unset from the end.  You
+          # can tell with a+=(3 4)
+          strs.pop()
+        elif 0 <= index and index < last_index:
           strs[index] = None
         else:
           # note: we could have unset --strict for this case?
