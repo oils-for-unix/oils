@@ -9,14 +9,17 @@ import sys
 from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.syntax_asdl import (source, source_t)
 from asdl import format as fmt
+from asdl import runtime
 from core import alloc
 from core import dev
 from core import error
 from core import main_loop
 from core import meta
+from core import optview
 from core import pyutil
 from core.util import log
 from core import util
+from core.util import e_die
 from core import state
 from core import ui
 from core import vm
@@ -232,8 +235,10 @@ def main(argv):
   builtins[builtin_i.shopt] = Shopt(mutable_opts)
   builtins[builtin_i.set] = Set(mutable_opts)
 
-  #builtins[builtin_i.set] = builtin_pure.Set(mutable_opts, mem)
-  #builtins[builtin_i.shopt] = builtin_pure.Shopt(mutable_opts)
+  # Use the real ones!
+  if mylib.PYTHON:
+    builtins[builtin_i.set] = builtin_pure.Set(mutable_opts, mem)
+    builtins[builtin_i.shopt] = builtin_pure.Shopt(mutable_opts)
 
   builtins[builtin_i.alias] = builtin_pure.Alias(aliases, errfmt)
   builtins[builtin_i.unalias] = builtin_pure.UnAlias(aliases, errfmt)
@@ -253,7 +258,7 @@ def main(argv):
   # builtin_meta
   builtins[builtin_i.type] = builtin_meta.Type(procs, aliases, search_path, errfmt)
 
-  shell_ex = NullExecutor(builtins)
+  shell_ex = NullExecutor(exec_opts, mutable_opts, procs, builtins)
 
   trace_f = util.DebugFile(mylib.Stderr())
   tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, word_ev, trace_f)
@@ -299,9 +304,16 @@ def main(argv):
   cmd_ev.tracer = tracer
   cmd_ev.shell_ex = shell_ex
 
+  shell_ex.cmd_ev = cmd_ev
+
   bool_ev.word_ev = word_ev
 
-  status = main_loop.Batch(cmd_ev, c_parser, arena, is_main=True)
+  try:
+    status = main_loop.Batch(cmd_ev, c_parser, arena, is_main=True)
+  except util.UserExit as e:
+    # TODO: fix this
+    #status = e.status
+    status = 1
   return status
 
 
@@ -348,9 +360,13 @@ class Shopt(vm._Builtin):
 
 
 class NullExecutor(vm._Executor):
-  def __init__(self, builtins):
-    # type: (Dict[int, vm._Builtin]) -> None
+  def __init__(self, exec_opts, mutable_opts, procs, builtins):
+    # type: (optview.Exec, state.MutableOpts, Dict[str, command__ShFunction], Dict[int, vm._Builtin]) -> None
+    self.exec_opts = exec_opts
+    self.mutable_opts = mutable_opts
+    self.procs = procs
     self.builtins = builtins
+    self.cmd_ev = None  # type: cmd_eval.CommandEvaluator
 
   def RunBuiltin(self, builtin_id, cmd_val):
     # type: (int, cmd_value__Argv) -> int
@@ -366,12 +382,28 @@ class NullExecutor(vm._Executor):
 
   def RunSimpleCommand(self, cmd_val, do_fork, call_procs=True):
     # type: (cmd_value__Argv, bool, bool) -> int
+    argv = cmd_val.argv
+    span_id = cmd_val.arg_spids[0] if cmd_val.arg_spids else runtime.NO_SPID
 
-    arg0 = cmd_val.argv[0]
+    arg0 = argv[0]
 
     builtin_id = consts.LookupSpecialBuiltin(arg0)
     if builtin_id != consts.NO_INDEX:
       return self.RunBuiltin(builtin_id, cmd_val)
+
+    func_node = self.procs.get(arg0)
+    if func_node is not None:
+      if (self.exec_opts.strict_errexit() and 
+          self.mutable_opts.errexit.SpidIfDisabled() != runtime.NO_SPID):
+        # NOTE: This would be checked below, but this gives a better error
+        # message.
+        e_die("can't disable errexit running a function. "
+              "Maybe wrap the function in a process with the at-splice "
+              "pattern.", span_id=span_id)
+
+      # NOTE: Functions could call 'exit 42' directly, etc.
+      status = self.cmd_ev.RunProc(func_node, argv[1:])
+      return status
 
     builtin_id = consts.LookupNormalBuiltin(arg0)
     if builtin_id != consts.NO_INDEX:
@@ -380,7 +412,11 @@ class NullExecutor(vm._Executor):
     # See how many tests will pass
     if mylib.PYTHON:
       import subprocess
-      status = subprocess.call(cmd_val.argv)
+      try:
+        status = subprocess.call(cmd_val.argv)
+      except OSError as e:
+        log('Error running %s: %s', cmd_val.argv, e)
+        return 1
       return status
 
     log('Unhandled SimpleCommand')

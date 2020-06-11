@@ -19,7 +19,7 @@ from __future__ import print_function
 import posix_ as posix
 import sys
 import time  # for perf measurement
-from typing import List, Dict, NoReturn, TYPE_CHECKING
+from typing import List, Dict, Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command__ShFunction
@@ -261,14 +261,20 @@ class ShellOptHook(state.OptHook):
     return True
 
 
-def ShellMain(lang, argv0, argv, login_shell):
-  # type: (str, str, List[str], bool) -> int
+def ShellMain(lang, argv0, argv, login_shell, line_input):
+  # type: (str, str, List[str], bool, Any) -> int
   """Used by bin/osh and bin/oil.
 
   Args:
     lang: 'osh' or 'oil'
     argv0, argv: So we can also invoke bin/osh as 'oil.ovm osh'.  Like busybox.
     login_shell: Was - on the front?
+
+  TODO: Dependencies for a pure interpreter:
+    loader: to get help, version, grammar, etc.
+    line_input: optional GNU readline
+    environ: environment
+  Modules not translated yet: completion, comp_ui, builtin_comp, process
   """
   # Differences between osh and oil:
   # - --help?  I guess Oil has a SUPERSET of OSH options.
@@ -947,7 +953,7 @@ def AppBundleMain(argv):
     main_argv = argv[1:]
 
   if main_name in ('osh', 'sh'):
-    status = ShellMain('osh', argv0, main_argv, login_shell)
+    status = ShellMain('osh', argv0, main_argv, login_shell, line_input)
     _tlog('done osh main')
     return status
   elif main_name == 'oshc':
@@ -958,7 +964,7 @@ def AppBundleMain(argv):
       return 2
 
   elif main_name == 'oil':
-    return ShellMain('oil', argv0, main_argv, login_shell)
+    return ShellMain('oil', argv0, main_argv, login_shell, line_input)
 
   elif main_name == 'tea':
     return TeaMain(argv0, main_argv)
@@ -975,7 +981,7 @@ def AppBundleMain(argv):
 
 
 def main(argv):
-  # type: (List[str]) -> NoReturn
+  # type: (List[str]) -> int
   try:
     return AppBundleMain(argv)
   except NotImplementedError as e:
