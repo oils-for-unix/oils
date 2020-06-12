@@ -44,42 +44,28 @@ _defg
 ## END
 ## BUG mksh stdout-json: "_defg\n0\n"
 
-#### String slice: negative begin
+#### Negative start index
 foo=abcdefg
 echo ${foo: -4:3}
-## OK osh stdout:
 ## stdout: def
 
-#### String slice: negative second arg is position, not length
+#### Negative start index respects unicode
+foo=abcd-μ-
+echo ${foo: -4:3}
+## stdout: d-μ
+## BUG mksh stdout: -μ
+
+#### Negative second arg is position, not length!
 foo=abcdefg
 echo ${foo:3:-1} ${foo: 3: -2} ${foo:3 :-3 }
-## OK osh stdout:
 ## stdout: def de d
 ## BUG mksh stdout: defg defg defg
 
-
-#### strict_word_eval with string slice
-s='abc'
-echo -${s: -1}-
-echo -${s: -2}-
-echo -${s: -3}-
-shopt -s strict_word_eval || true
-echo -${s: -2}-
-echo ----
-## STDOUT:
---
---
---
-## END
-## status: 1
-## N-I bash/mksh/zsh status: 0
-## N-I bash/mksh/zsh STDOUT:
--c-
--bc-
--abc-
--bc-
-----
-## END
+#### Negative start index respects unicode
+foo=abcd-μ-
+echo ${foo: -5: -3}
+## stdout: cd
+## BUG mksh stdout: d-μ-
 
 #### String slice with math
 # I think this is the $(()) language inside?

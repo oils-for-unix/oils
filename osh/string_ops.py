@@ -108,7 +108,7 @@ def _NextUtf8Char(s, i):
   return i
 
 
-def _PreviousUtf8Char(s, i):
+def PreviousUtf8Char(s, i):
   # type: (str, int) -> int
   """
   Given a string and a byte offset, returns the position of the
@@ -323,7 +323,7 @@ def DoUnarySuffixOp(s, op, arg, extglob):
         return s[i:]
       if i == 0:
         break
-      i = _PreviousUtf8Char(s, i)
+      i = PreviousUtf8Char(s, i)
     return s
 
   elif op.op_id == Id.VOp1_Percent:  # shortest suffix
@@ -336,7 +336,7 @@ def DoUnarySuffixOp(s, op, arg, extglob):
         return s[:i]
       if i == 0:
         break
-      i = _PreviousUtf8Char(s, i)
+      i = PreviousUtf8Char(s, i)
     return s
 
   elif op.op_id == Id.VOp1_DPercent:  # longest suffix

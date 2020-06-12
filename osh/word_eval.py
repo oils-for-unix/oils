@@ -252,28 +252,25 @@ def _PerformSlice(val,  # type: value_t
     if case(value_e.Str):  # Slice UTF-8 characters in a string.
       val = cast(value__Str, UP_val)
       s = val.s
+      n = len(s)
 
-      if begin < 0:
-        # It could be negative if we compute unicode length, but that's
-        # confusing.
-
-        # TODO: Instead of attributing it to the word part, it would be
-        # better if we attributed it to arith_expr begin.
-        e_strict(
-            "The start index of a string slice can't be negative: %d",
-            begin, part=part)
-
-      byte_begin = string_ops.AdvanceUtf8Chars(s, begin, 0)
+      if begin < 0:  # Compute offset with unicode
+        byte_begin = n
+        num_iters = -begin
+        for _ in xrange(num_iters):
+          byte_begin = string_ops.PreviousUtf8Char(s, byte_begin)
+      else:
+        byte_begin = string_ops.AdvanceUtf8Chars(s, begin, 0)
 
       if has_length:
-        if length < 0:
-          # TODO: Instead of attributing it to the word part, it would be
-          # better if we attributed it to arith_expr begin.
-          e_strict(
-              "The length of a string slice can't be negative: %d",
-              length, part=part)
-
-        byte_end = string_ops.AdvanceUtf8Chars(s, length, byte_begin)
+        if length < 0:  # Compute offset with unicode
+          # Confusing: this is a POSITION
+          byte_end = n
+          num_iters = -length
+          for _ in xrange(num_iters):
+            byte_end = string_ops.PreviousUtf8Char(s, byte_end)
+        else:
+          byte_end = string_ops.AdvanceUtf8Chars(s, length, byte_begin)
       else:
         byte_end = len(s)
 
