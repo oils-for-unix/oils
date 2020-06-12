@@ -20,6 +20,22 @@ echo $-
 ## N-I dash stdout-json: ""
 ## N-I dash status: 2
 
+#### $- and more options
+set -efuC
+o=$-
+[[ $o == *e* ]]; echo yes
+[[ $o == *f* ]]; echo yes
+[[ $o == *u* ]]; echo yes
+[[ $o == *C* ]]; echo yes
+## STDOUT:
+yes
+yes
+yes
+yes
+## END
+## N-I dash stdout-json: ""
+## N-I dash status: 127
+
 #### $- with interactive shell
 $SH -c 'echo $-' | grep i || echo FALSE
 $SH -i -c 'echo $-' | grep -q i && echo TRUE

@@ -338,13 +338,17 @@ def _GetDollarHyphen(exec_opts):
 
   if exec_opts.errexit():
     chars.append('e')
+  if exec_opts.noglob():
+    chars.append('f')
+  if exec_opts.noexec():
+    chars.append('n')
   if exec_opts.nounset():
     chars.append('u')
   # NO letter for pipefail?
   if exec_opts.xtrace():
     chars.append('x')
-  if exec_opts.noexec():
-    chars.append('n')
+  if exec_opts.noclobber():
+    chars.append('C')
 
   # bash has:
   # - c for sh -c, i for sh -i (mksh also has this)
