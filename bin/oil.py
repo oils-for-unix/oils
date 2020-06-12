@@ -49,6 +49,10 @@ _tlog('before imports')
 import atexit
 import errno
 
+# Needed for oil.ovm app bundle build, since there is an functino-local import
+# to break a circular build dep in frontend/consts.py.
+from _devbuild.gen import id_kind
+_ = id_kind
 from _devbuild.gen.option_asdl import option_i, builtin_i
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import source
