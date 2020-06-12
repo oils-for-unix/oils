@@ -34,18 +34,17 @@ from osh import split
 from osh import builtin_assign
 from osh import builtin_meta
 
-# translation: has 'set' builtin
 from osh import builtin_pure
 from osh import builtin_printf
 from osh import builtin_bracket
-from osh import builtin_process
+from osh import builtin_process  # not translated yet
+# - note: history has readline_mod argument
+from osh import builtin_misc
 
 # Depends on core/completion.py
 # _FlagSpecAndMore needs translating
 #from osh import builtin_comp
 
-# - note: history has readline_mod argument
-from osh import builtin_misc
 
 # Evaluators
 from osh import cmd_eval
@@ -231,15 +230,12 @@ def main(argv):
   builtins = {}  # type: Dict[int, vm._Builtin]
   builtins[builtin_i.echo] = builtin_pure.Echo(exec_opts)
 
-  # DUMMY VERSIONS
-  builtins[builtin_i.shopt] = Shopt(mutable_opts)
-  builtins[builtin_i.set] = Set(mutable_opts)
-
-  # Use the real ones!
+  builtins[builtin_i.set] = Set(mutable_opts)  # DUMMY until ParseMore()
   if mylib.PYTHON:
+    # Use the real one
     builtins[builtin_i.set] = builtin_pure.Set(mutable_opts, mem)
-    builtins[builtin_i.shopt] = builtin_pure.Shopt(mutable_opts)
 
+  builtins[builtin_i.shopt] = builtin_pure.Shopt(mutable_opts)
   builtins[builtin_i.alias] = builtin_pure.Alias(aliases, errfmt)
   builtins[builtin_i.unalias] = builtin_pure.UnAlias(aliases, errfmt)
 
@@ -338,27 +334,6 @@ class Set(vm._Builtin):
     return 0
 
 
-class Shopt(vm._Builtin):
-  def __init__(self, mutable_opts):
-    # type: (MutableOpts) -> None
-    self.mutable_opts = mutable_opts
-
-  def Run(self, cmd_val):
-    # type: (cmd_value__Argv) -> int
-    argv = cmd_val.argv
-
-    if len(argv) != 3:
-      #log('shopt %s', argv)
-      log('shopt %d', len(argv))
-      return 1
-
-    b = (argv[1] == '-s')
-    for opt_name in cmd_val.argv[2:]:
-      #log('opt_name %s', opt_name)
-      self.mutable_opts.SetShoptOption(opt_name, b)
-    return 0
-
-
 class NullExecutor(vm._Executor):
   def __init__(self, exec_opts, mutable_opts, procs, builtins):
     # type: (optview.Exec, state.MutableOpts, Dict[str, command__ShFunction], Dict[int, vm._Builtin]) -> None
@@ -376,6 +351,8 @@ class NullExecutor(vm._Executor):
 
     try:
       status = builtin_func.Run(cmd_val)
+    except error.Usage as e:
+      status = 2
     finally:
       pass
     return status
