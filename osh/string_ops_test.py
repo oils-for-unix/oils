@@ -62,12 +62,12 @@ class LibStrTest(unittest.TestCase):
     ]
     for expected_indexes, input_str in CASES:
       print()
-      print('_PreviousUtf8Char case %r %r' % (expected_indexes, input_str))
+      print('PreviousUtf8Char case %r %r' % (expected_indexes, input_str))
       i = len(input_str)
       actual_indexes = []
       while True:
         try:
-          i = string_ops._PreviousUtf8Char(input_str, i)
+          i = string_ops.PreviousUtf8Char(input_str, i)
           actual_indexes.append(i)
           if i == 0:
             break

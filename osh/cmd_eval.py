@@ -102,9 +102,12 @@ if TYPE_CHECKING:
   from osh import word_eval
   from osh import builtin_process
 
-# flags for main_loop.Batch, ExecuteAndCatch
-IsMainProgram = 1 << 0  # the main shell program, not eval/source
-Optimize = 1 << 1
+# flags for main_loop.Batch, ExecuteAndCatch.  TODO: Should probably in
+# ExecuteAndCatch, along with SetVar() flags.
+IsMainProgram = 1 << 0  # the main shell program, not eval/source/subshell
+IsEvalSource = 1 << 1  # eval/source builtins
+Optimize = 1 << 2
+
 
 
 # Python type name -> Oil type name
@@ -1457,24 +1460,27 @@ class CommandEvaluator(object):
     try:
       status = self._Execute(node)
     except _ControlFlow as e:
-      # Return at top level is OK, unlike in bash.
-      if e.IsReturn():
-        is_return = True
-        status = e.StatusCode()
+      if cmd_flags & IsEvalSource:
+        raise  # 'eval break' and 'source return.sh', etc.
       else:
-        #raise  # break and continue in eval
-        is_eval = False
-        # TODO: This error message is invalid.  Can also happen in eval.
-        # We need a flag.
+        # Return at top level is OK, unlike in bash.
+        if e.IsReturn():
+          is_return = True
+          status = e.StatusCode()
+        else:
+          #raise  # break and continue in eval
+          is_eval = False
+          # TODO: This error message is invalid.  Can also happen in eval.
+          # We need a flag.
 
-        # Invalid control flow
-        self.errfmt.Print_(
-            "Loop and control flow can't be in different processes",
-            span_id=e.token.span_id)
-        is_fatal = True
-        # All shells exit 0 here.  It could be hidden behind
-        # strict-control-flow if the incompatibility causes problems.
-        status = 1
+          # Invalid control flow
+          self.errfmt.Print_(
+              "Loop and control flow can't be in different processes",
+              span_id=e.token.span_id)
+          is_fatal = True
+          # All shells exit 0 here.  It could be hidden behind
+          # strict-control-flow if the incompatibility causes problems.
+          status = 1
     except error.Parse as e:
       self.dumper.MaybeCollect(self, e)  # Do this before unwinding stack
       raise

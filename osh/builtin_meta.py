@@ -15,6 +15,7 @@ from core import vm
 from frontend import flag_spec
 from frontend import consts
 from frontend import reader
+from osh import cmd_eval
 
 from typing import Dict, List, Tuple, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -58,7 +59,8 @@ class Eval(vm._Builtin):
     src = source.EvalArg(eval_spid)
     self.arena.PushSource(src)
     try:
-      return main_loop.Batch(self.cmd_ev, c_parser, self.arena)
+      return main_loop.Batch(self.cmd_ev, c_parser, self.arena,
+                             cmd_flags=cmd_eval.IsEvalSource)
     finally:
       self.arena.PopSource()
 
@@ -111,7 +113,8 @@ class Source(vm._Builtin):
       src = source.SourcedFile(path, call_spid)
       self.arena.PushSource(src)
       try:
-        status = main_loop.Batch(self.cmd_ev, c_parser, self.arena)
+        status = main_loop.Batch(self.cmd_ev, c_parser, self.arena,
+                                 cmd_flags=cmd_eval.IsEvalSource)
       finally:
         self.arena.PopSource()
         self.mem.PopSource(source_argv)
