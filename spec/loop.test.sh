@@ -306,3 +306,93 @@ i=3
 done
 ## END
 
+#### return within eval
+f() {
+  echo one
+  eval 'return'
+  echo two
+}
+f
+## STDOUT:
+one
+## END
+
+#### break/continue within eval
+# NOTE: This changes things
+# set -e
+f() {
+  for i in $(seq 5); do 
+    if test $i = 2; then
+      eval continue
+    fi
+    if test $i = 4; then
+      eval break
+    fi
+    echo $i
+  done
+
+  eval 'return'
+  echo 'done'
+}
+f
+## STDOUT:
+1
+3
+## END
+## BUG mksh STDOUT:
+1
+2
+3
+4
+5
+## END
+
+#### break/continue within source
+# NOTE: This changes things
+# set -e
+
+cd $REPO_ROOT
+f() {
+  for i in $(seq 5); do 
+    if test $i = 2; then
+      . spec/testdata/continue.sh
+    fi
+    if test $i = 4; then
+      . spec/testdata/break.sh
+    fi
+    echo $i
+  done
+
+  # Return is different!
+  . spec/testdata/return.sh
+  echo done
+}
+f
+## STDOUT:
+1
+3
+done
+## END
+## BUG zsh/mksh STDOUT:
+1
+2
+3
+4
+5
+done
+## END
+
+#### top-level break/continue/return (without strict_control_flow)
+$SH -c 'break; echo break=$?'
+$SH -c 'continue; echo continue=$?'
+$SH -c 'return; echo return=$?'
+## STDOUT:
+break=0
+continue=0
+## END
+## BUG zsh stdout-json: ""
+## BUG bash STDOUT:
+break=0
+continue=0
+return=1
+## END

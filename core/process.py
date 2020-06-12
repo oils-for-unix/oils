@@ -30,6 +30,7 @@ from core import util
 from core import ui
 from core.util import log
 from frontend import match
+from osh import cmd_eval
 from mycpp.mylib import tagswitch
 
 import posix_ as posix
@@ -712,7 +713,7 @@ class SubProgramThunk(Thunk):
 
     try:
       # optimize to eliminate redundant subshells like ( echo hi ) | wc -l etc.
-      self.cmd_ev.ExecuteAndCatch(self.node, optimize=True)
+      self.cmd_ev.ExecuteAndCatch(self.node, cmd_flags=cmd_eval.Optimize)
       status = self.cmd_ev.LastStatus()
       # NOTE: We ignore the is_fatal return value.  The user should set -o
       # errexit so failures in subprocesses cause failures in the parent.

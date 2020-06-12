@@ -733,7 +733,8 @@ def ShellMain(lang, argv0, argv, login_shell, line_input):
 
     _tlog('Execute(node)')
     try:
-      status = main_loop.Batch(cmd_ev, c_parser, arena, is_main=True)
+      status = main_loop.Batch(cmd_ev, c_parser, arena,
+                               cmd_flags=cmd_eval.IsMainProgram)
       if cmd_ev.MaybeRunExitTrap():
         status = cmd_ev.LastStatus()
     except util.UserExit as e:

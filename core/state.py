@@ -207,6 +207,10 @@ class _ErrExit(object):
     # type: () -> bool
     return self._value
 
+  def __str__(self):
+    # type: () -> str
+    return '<ErrExit %s %s>' % (self._value, self.stack)
+
 
 class _Getter(object):
 

@@ -305,7 +305,8 @@ def main(argv):
   bool_ev.word_ev = word_ev
 
   try:
-    status = main_loop.Batch(cmd_ev, c_parser, arena, is_main=True)
+    status = main_loop.Batch(cmd_ev, c_parser, arena,
+                             cmd_flags=cmd_eval.IsMainProgram)
   except util.UserExit as e:
     # TODO: fix this
     #status = e.status

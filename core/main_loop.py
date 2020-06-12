@@ -22,6 +22,7 @@ from core import error
 from core import ui
 from core import util
 from core.util import log
+from osh import cmd_eval
 from mycpp import mylib
 
 from typing import Any, List, TYPE_CHECKING
@@ -123,8 +124,8 @@ if mylib.PYTHON:
     return status
 
 
-def Batch(cmd_ev, c_parser, arena, is_main=False):
-  # type: (CommandEvaluator, CommandParser, Arena, bool) -> int
+def Batch(cmd_ev, c_parser, arena, cmd_flags=0):
+  # type: (CommandEvaluator, CommandParser, Arena, int) -> int
   """Loop for batch execution.
 
   Returns:
@@ -159,10 +160,12 @@ def Batch(cmd_ev, c_parser, arena, is_main=False):
       break
 
     # Only optimize if we're on the last line like -c "echo hi" etc.
-    optimize = is_main and c_parser.line_reader.LastLineHint()
+    if (cmd_flags & cmd_eval.IsMainProgram and
+        c_parser.line_reader.LastLineHint()):
+      cmd_flags |= cmd_eval.Optimize
 
     # can't optimize this because we haven't seen the end yet
-    is_return, is_fatal = cmd_ev.ExecuteAndCatch(node, optimize=optimize)
+    is_return, is_fatal = cmd_ev.ExecuteAndCatch(node, cmd_flags=cmd_flags)
     status = cmd_ev.LastStatus()
     # e.g. 'return' in middle of script, or divide by zero
     if is_return or is_fatal:

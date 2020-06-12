@@ -102,6 +102,10 @@ if TYPE_CHECKING:
   from osh import word_eval
   from osh import builtin_process
 
+# flags for main_loop.Batch, ExecuteAndCatch
+IsMainProgram = 1 << 0  # the main shell program, not eval/source
+Optimize = 1 << 1
+
 
 # Python type name -> Oil type name
 OIL_TYPE_NAMES = {
@@ -1416,8 +1420,8 @@ class CommandEvaluator(object):
           return self._RemoveSubshells(node.child)
     return node
 
-  def ExecuteAndCatch(self, node, optimize=False):
-    # type: (command_t, bool) -> Tuple[bool, bool]
+  def ExecuteAndCatch(self, node, cmd_flags=0):
+    # type: (command_t, int) -> Tuple[bool, bool]
     """Execute a subprogram, handling _ControlFlow and fatal exceptions.
 
     Args:
@@ -1435,7 +1439,7 @@ class CommandEvaluator(object):
     Note: To do what optimize does, dash has EV_EXIT flag and yash has a
     finally_exit boolean.  We use a different algorithm.
     """
-    if optimize:
+    if cmd_flags & Optimize:
       node = self._RemoveSubshells(node)
       self._NoForkLast(node)  # turn the last ones into exec
 
@@ -1458,6 +1462,11 @@ class CommandEvaluator(object):
         is_return = True
         status = e.StatusCode()
       else:
+        #raise  # break and continue in eval
+        is_eval = False
+        # TODO: This error message is invalid.  Can also happen in eval.
+        # We need a flag.
+
         # Invalid control flow
         self.errfmt.Print_(
             "Loop and control flow can't be in different processes",

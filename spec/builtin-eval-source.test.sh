@@ -240,3 +240,4 @@ echo 'exit 42' > lib.sh
 echo 'should not get here'
 ## stdout-json: ""
 ## status: 42
+
