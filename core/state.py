@@ -207,7 +207,7 @@ class _ErrExit(object):
     # type: () -> bool
     return self._value
 
-  def __str__(self):
+  def __repr__(self):  # not translated
     # type: () -> str
     return '<ErrExit %s %s>' % (self._value, self.stack)
 
