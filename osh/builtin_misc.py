@@ -174,6 +174,7 @@ class Read(vm._Builtin):
       else:
         name = 'REPLY'  # default variable name
 
+      status = 0
       stdin_fd = self.stdin.fileno()
       if self.stdin.isatty():  # set stdin to read in unbuffered mode
         s = passwd.ReadBytesFromTerminal(stdin_fd, arg.n)
@@ -188,9 +189,13 @@ class Read(vm._Builtin):
           n -= len(chunk)
         s = ''.join(chunks)
 
+      # DIdn't read all the bytes we wanted
+      if len(s) != n:
+        status = 1
+
       state.SetStringDynamic(self.mem, name, s)
       # NOTE: Even if we don't get n bytes back, there is no error?
-      return 0
+      return status
 
     if len(names) == 0:
       names.append('REPLY')

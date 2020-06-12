@@ -309,3 +309,17 @@ should not get here
 status=2
 should not get here
 ## END
+
+#### set -e enabled in function (regression)
+set +e
+foo() {
+  set -e
+  false
+  echo "should be executed"
+}
+foo && true
+echo "should be executed"
+## STDOUT:
+should be executed
+should be executed
+## END

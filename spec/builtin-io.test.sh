@@ -231,6 +231,14 @@ argv.py "status=$?" "$REPLY"
 ## END
 ## status: 0
 
+#### read /dev/null
+read -n 1 </dev/null
+echo $?
+## STDOUT:
+1
+## END
+## OK dash stdout: 2
+
 
 #### read with zero args
 echo | read
