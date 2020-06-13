@@ -356,6 +356,11 @@ git-changelog-0.8.pre5() {
     > _release/VERSION/changelog.html
 }
 
+git-changelog-0.8.pre6() {
+  _git-changelog origin/release/0.8.pre5 release/0.8.pre6 \
+    > _release/VERSION/changelog.html
+}
+
 
 
 # For announcement.html
@@ -559,10 +564,14 @@ announcement-0.8.pre3() {
 }
 
 announcement-0.8.pre4() {
-  write-no-announcement
+  html-redirect '/blog/2020/04/release-0.8.pre3.html' > $SITE_DEPLOY_DIR/release/0.8.pre4/announcement.html
 }
 
 announcement-0.8.pre5() {
+  html-redirect '/blog/2020/05/translation-progress.html' > $SITE_DEPLOY_DIR/release/0.8.pre5/announcement.html
+}
+
+announcement-0.8.pre6() {
   write-no-announcement
 }
 
