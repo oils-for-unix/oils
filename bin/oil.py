@@ -64,6 +64,7 @@ from core import optview
 from core import pyutil
 from core import ui
 from core.util import log
+from frontend import args
 from frontend import reader
 from frontend import parse_lib
 from osh import builtin_misc
@@ -247,14 +248,12 @@ def AppBundleMain(argv):
 
   b = os_path.basename(argv[0])
   main_name, ext = os_path.splitext(b)
-  if main_name.startswith('-'):
-    login_shell = True
-    main_name = main_name[1:]
 
+  arg_r = args.Reader(argv)
   if main_name == 'oil' and ext:  # oil.py or oil.ovm
-    try:
-      first_arg = argv[1]
-    except IndexError:
+    arg_r.Next()
+    first_arg = arg_r.Peek()
+    if first_arg is None:
       raise error.Usage('Missing required applet name.')
 
     if first_arg in ('-h', '--help'):
@@ -270,20 +269,31 @@ def AppBundleMain(argv):
       sys.exit(0)
 
     main_name = first_arg
-    if main_name.startswith('-'):  # TODO: Remove duplication above
-      login_shell = True
-      main_name = main_name[1:]
-    argv0 = argv[1]
-    main_argv = argv[2:]
-  else:
-    argv0 = argv[0]
-    main_argv = argv[1:]
+
+  argv0 = arg_r.Peek()
+  assert argv0 is not None
+  arg_r.Next()
+
+  if main_name.startswith('-'):
+    login_shell = True
+    main_name = main_name[1:]
 
   if main_name in ('osh', 'sh'):
-    status = main.ShellMain('osh', argv0, main_argv, login_shell, line_input)
+    # TODO:
+    # - Initialize a different shell if line_input isn't present
+    # - Also think about the pure interpreter.  osh-pure, oil-pure?
+    #   - osh-eval, oil-eval ?
+    #   - osh --pure -c 'echo hi' ?
+    # m = main.Flow(...)
+    # m.Run(argv0, ...)
+    if line_input:
+      pass
+    status = main.ShellMain('osh', argv0, arg_r, login_shell, line_input)
     _tlog('done osh main')
     return status
+
   elif main_name == 'oshc':
+    main_argv = arg_r.Rest()
     try:
       return OshCommandMain(main_argv)
     except error.Usage as e:
@@ -291,9 +301,10 @@ def AppBundleMain(argv):
       return 2
 
   elif main_name == 'oil':
-    return main.ShellMain('oil', argv0, main_argv, login_shell, line_input)
+    return main.ShellMain('oil', argv0, arg_r, login_shell, line_input)
 
   elif main_name == 'tea':
+    main_argv = arg_r.Rest()
     return TeaMain(argv0, main_argv)
 
   # For testing latency
@@ -302,6 +313,7 @@ def AppBundleMain(argv):
   elif main_name == 'false':
     return 1
   elif main_name == 'readlink':
+    main_argv = arg_r.Rest()
     return readlink.main(main_argv)
   else:
     raise error.Usage('Invalid applet name %r.' % main_name)

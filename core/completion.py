@@ -1162,7 +1162,7 @@ class ReadlineCallback(object):
   """A callable we pass to the readline module."""
 
   def __init__(self, readline_mod, root_comp, debug_f):
-    # type: (Any, RootCompleter, NullDebugFile) -> None
+    # type: (Any, RootCompleter, util.DebugFile) -> None
     self.readline_mod = readline_mod
     self.root_comp = root_comp
     self.debug_f = debug_f

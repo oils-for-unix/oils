@@ -13,6 +13,7 @@ import libc
 from typing import Any, List, Optional, Dict, IO, TYPE_CHECKING
 if TYPE_CHECKING:
   from core.util import DebugFile
+  from core import completion
 
 
 # ANSI escape codes affect the prompt!
@@ -534,6 +535,7 @@ class NiceDisplay(_IDisplay):
 
 
 def InitReadline(readline_mod, history_filename, root_comp, display, debug_f):
+  # type: (Any, str, completion.RootCompleter, _IDisplay, DebugFile) -> None
   assert readline_mod
 
   try:
@@ -542,6 +544,7 @@ def InitReadline(readline_mod, history_filename, root_comp, display, debug_f):
     pass
 
   def _MaybeWriteHistoryFile(history_filename):
+    # type: (str) -> None
     try:
       readline_mod.write_history_file(history_filename)
     except IOError:

@@ -5,7 +5,6 @@ core/main.py -- Entry point for the shell interpreter.
 from __future__ import print_function
 
 import errno
-import sys
 import time
 
 from _devbuild.gen.option_asdl import option_i, builtin_i
@@ -73,7 +72,7 @@ import libc
 
 import posix_ as posix
 
-from typing import List, Dict, Any, TYPE_CHECKING
+from typing import List, Dict, Optional, Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command__ShFunction
@@ -165,8 +164,8 @@ class ShellOptHook(state.OptHook):
     return True
 
 
-def ShellMain(lang, argv0, argv, login_shell, line_input):
-  # type: (str, str, List[str], bool, Any) -> int
+def ShellMain(lang, argv0, arg_r, login_shell, line_input):
+  # type: (str, str, args.Reader, bool, Any) -> int
   """Used by bin/osh and bin/oil.
 
   Args:
@@ -174,10 +173,14 @@ def ShellMain(lang, argv0, argv, login_shell, line_input):
     argv0, argv: So we can also invoke bin/osh as 'oil.ovm osh'.  Like busybox.
     login_shell: Was - on the front?
 
-  TODO: Dependencies for a pure interpreter:
+  Dependencies for a pure interpreter:
     loader: to get help, version, grammar, etc.
-    line_input: optional GNU readline
     environ: environment
+  Optional:
+    line_input: optional GNU readline
+    process.{ExternalProgram,Waiter,FdState,JobState,SignalState} -- we want
+      to evaluate config files without any of these
+
   Modules not translated yet: completion, comp_ui, builtin_comp, process
   """
   # Differences between osh and oil:
@@ -188,7 +191,6 @@ def ShellMain(lang, argv0, argv, login_shell, line_input):
 
   assert lang in ('osh', 'oil'), lang
 
-  arg_r = args.Reader(argv)
   try:
     opts = flag_spec.ParseMore('osh', arg_r)
   except error.Usage as e:
@@ -229,7 +231,9 @@ def ShellMain(lang, argv0, argv, login_shell, line_input):
   frame1 = state.DebugFrame(no_str, no_str, no_str, runtime.NO_SPID, 0, 0)
   debug_stack.append(frame1)
 
-  mem = state.Mem(dollar0, argv[arg_r.i + 1:], arena, debug_stack)
+  script_name = arg_r.Peek()  # type: Optional[str]
+  arg_r.Next()
+  mem = state.Mem(dollar0, arg_r.Rest(), arena, debug_stack)
   state.InitMem(mem, posix.environ, version_str)
   builtin_funcs.Init(mem)
 
@@ -324,7 +328,7 @@ def ShellMain(lang, argv0, argv, login_shell, line_input):
   # space, and make space for microseconds.  (datetime supports microseconds
   # but time.strftime doesn't).
   iso_stamp = time.strftime("%Y-%m-%d %H:%M:%S")
-  debug_f.log('%s [%d] OSH started with argv %s', iso_stamp, my_pid, argv)
+  debug_f.log('%s [%d] OSH started with argv %s', iso_stamp, my_pid, arg_r.argv)
   if debug_path:
     debug_f.log('Writing logs to %r', debug_path)
 
@@ -353,7 +357,7 @@ def ShellMain(lang, argv0, argv, login_shell, line_input):
   if opts.xtrace_to_debug_file:
     trace_f = debug_f
   else:
-    trace_f = util.DebugFile(sys.stderr)
+    trace_f = util.DebugFile(mylib.Stderr())
 
   comp_lookup = completion.Lookup()
 
@@ -519,16 +523,16 @@ def ShellMain(lang, argv0, argv, login_shell, line_input):
     mutable_opts.set_interactive()
 
   else:
-    script_name = arg_r.Peek()
     if script_name is None:
-      if sys.stdin.isatty():
+      stdin = mylib.Stdin()
+      if stdin.isatty():
         arena.PushSource(source.Interactive())
         line_reader = py_reader.InteractiveLineReader(
             arena, prompt_ev, hist_ev, line_input, prompt_state)
         mutable_opts.set_interactive()
       else:
         arena.PushSource(source.Stdin(''))
-        line_reader = reader.FileLineReader(sys.stdin, arena)
+        line_reader = reader.FileLineReader(stdin, arena)
     else:
       arena.PushSource(source.MainFile(script_name))
       try:
