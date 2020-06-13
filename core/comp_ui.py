@@ -3,9 +3,11 @@ ui.py
 """
 from __future__ import print_function
 
+import atexit
 import sys
 
 from core import ansi
+from core import completion
 import libc
 
 from typing import Any, List, Optional, Dict, IO, TYPE_CHECKING
@@ -530,3 +532,48 @@ class NiceDisplay(_IDisplay):
 
     #self.readline_mod.resize_terminal()
 
+
+def InitReadline(readline_mod, history_filename, root_comp, display, debug_f):
+  assert readline_mod
+
+  try:
+    readline_mod.read_history_file(history_filename)
+  except IOError:
+    pass
+
+  def _MaybeWriteHistoryFile(history_filename):
+    try:
+      readline_mod.write_history_file(history_filename)
+    except IOError:
+      pass
+
+  # The 'atexit' module is a small wrapper around sys.exitfunc.
+  atexit.register(_MaybeWriteHistoryFile, history_filename)
+  readline_mod.parse_and_bind("tab: complete")
+
+  # How does this map to C?
+  # https://cnswww.cns.cwru.edu/php/chet/readline/readline.html#SEC45
+
+  complete_cb = completion.ReadlineCallback(readline_mod, root_comp, debug_f)
+  readline_mod.set_completer(complete_cb)
+
+  # http://web.mit.edu/gnu/doc/html/rlman_2.html#SEC39
+  # "The basic list of characters that signal a break between words for the
+  # completer routine. The default value of this variable is the characters
+  # which break words for completion in Bash, i.e., " \t\n\"\\'`@$><=;|&{(""
+
+  # This determines the boundaries you get back from get_begidx() and
+  # get_endidx() at completion time!
+  # We could be more conservative and set it to ' ', but then cases like
+  # 'ls|w<TAB>' would try to complete the whole thing, intead of just 'w'.
+  #
+  # Note that this should not affect the OSH completion algorithm.  It only
+  # affects what we pass back to readline and what readline displays to the
+  # user!
+
+  # No delimiters because readline isn't smart enough to tokenize shell!
+  readline_mod.set_completer_delims('')
+
+  readline_mod.set_completion_display_matches_hook(
+      lambda *args: display.PrintCandidates(*args)
+  )

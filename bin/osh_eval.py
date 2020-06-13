@@ -13,6 +13,8 @@ from asdl import runtime
 from core import alloc
 from core import dev
 from core import error
+# Still has too many deps
+#from core import main
 from core import main_loop
 from core import meta
 from core import optview
