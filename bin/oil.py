@@ -939,7 +939,10 @@ def AppBundleMain(argv):
       raise error.Usage('Missing required applet name.')
 
     if first_arg in ('-h', '--help'):
-      builtin_misc.Help(['bundle-usage'], pyutil.GetResourceLoader())
+      errfmt = None  # not needed here
+      loader = pyutil.GetResourceLoader()
+      help_builtin = builtin_misc.Help(loader, help_index, errfmt)
+      help_builtin.Run(_MakeBuiltinArgv(['bundle-usage']))
       sys.exit(0)
 
     if first_arg in ('-V', '--version'):

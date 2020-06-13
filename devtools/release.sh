@@ -37,7 +37,10 @@
 #       - benchmarks/ovm-build.sh {download,extract-oil,extract-other}
 #       - build/codegen.sh {download,extract}-clang (for OVM build benchmarks)
 #     lisa: $0 benchmark-run
-#     Commit files to oilshell/benchmark-data repo and sync.
+#
+# Resume manual work
+#
+#   Commit files to oilshell/benchmark-data repo and sync.
 #   benchmarks/report.sh all
 #   $0 deploy-tar  # needed to checksum
 #   $0 build-tree
