@@ -106,19 +106,17 @@ def GetResourceLoader():
   return _loader
 
 
-def GetVersion():
-  # type:() -> str
-  loader = GetResourceLoader()
+def GetVersion(loader):
+  # type: (_ResourceLoader) -> str
   f = loader.open('oil-version.txt')
   version_str = f.readline().strip()
   f.close()
   return version_str
 
 
-def ShowAppVersion(app_name, version_str):
-  # type: (str, str) -> None
+def ShowAppVersion(app_name, loader):
+  # type: (str, _ResourceLoader) -> None
   """For Oil and OPy."""
-  loader = GetResourceLoader()
   try:
     f = loader.open('release-date.txt')
   except IOError:
@@ -153,6 +151,8 @@ def ShowAppVersion(app_name, version_str):
 
   # We removed sys.executable from sysmodule.c.
   py_impl = 'CPython' if hasattr(sys, 'executable') else 'OVM'
+
+  version_str = GetVersion(loader)
 
   # What C functions do these come from?
   print('%s version %s' % (app_name, version_str))

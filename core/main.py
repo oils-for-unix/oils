@@ -105,11 +105,6 @@ def _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup):
     comp_lookup.RegisterName('slowc', {}, C1)
 
 
-def ShowVersion(version_str):
-  # type: (str) -> None
-  pyutil.ShowAppVersion('Oil', version_str)
-
-
 def SourceStartupFile(rc_path, lang, parse_ctx, cmd_ev):
   # type: (str, str, parse_lib.ParseContext, cmd_eval.CommandEvaluator) -> None
 
@@ -173,8 +168,8 @@ class ShellOptHook(state.OptHook):
     return True
 
 
-def ShellMain(lang, argv0, arg_r, environ, login_shell, line_input):
-  # type: (str, str, args.Reader, Dict[str, str], bool, Any) -> int
+def ShellMain(lang, argv0, arg_r, environ, login_shell, loader, line_input):
+  # type: (str, str, args.Reader, Dict[str, str], bool, pyutil._ResourceLoader, Any) -> int
   """Used by bin/osh and bin/oil.
 
   Args:
@@ -212,11 +207,6 @@ def ShellMain(lang, argv0, arg_r, environ, login_shell, line_input):
     ui.Stderr('osh usage error: %s', e.msg)
     return 2
 
-  # NOTE: This has a side effect of deleting _OVM_* from the environment!
-  # TODO: Thread this throughout the program, and get rid of the global
-  # variable in core/util.py.  Rename to InitResourceLaoder().  It's now only
-  # used for the 'help' builtin and --version.
-  loader = pyutil.GetResourceLoader()
   arena = alloc.Arena()
   errfmt = ui.ErrorFormatter(arena)
 
@@ -224,10 +214,9 @@ def ShellMain(lang, argv0, arg_r, environ, login_shell, line_input):
   if flag.help:
     help_builtin.Run(MakeBuiltinArgv(['%s-usage' % lang]))
     return 0
-  version_str = pyutil.GetVersion()
   if flag.version:
     # OSH version is the only binary in Oil right now, so it's all one version.
-    ShowVersion(version_str)
+    pyutil.ShowAppVersion('Oil', loader)
     return 0
 
   no_str = None  # type: str
@@ -249,6 +238,8 @@ def ShellMain(lang, argv0, arg_r, environ, login_shell, line_input):
   script_name = arg_r.Peek()  # type: Optional[str]
   arg_r.Next()
   mem = state.Mem(dollar0, arg_r.Rest(), arena, debug_stack)
+
+  version_str = pyutil.GetVersion(loader)
   state.InitMem(mem, environ, version_str)
 
   builtin_funcs.Init(mem)

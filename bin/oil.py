@@ -245,6 +245,9 @@ def TeaMain(argv0, argv):
 def AppBundleMain(argv):
   # type: (List[str]) -> int
 
+  # NOTE: This has a side effect of deleting _OVM_* from the environment!
+  loader = pyutil.GetResourceLoader()
+
   b = os_path.basename(argv[0])
   main_name, ext = os_path.splitext(b)
 
@@ -257,14 +260,12 @@ def AppBundleMain(argv):
 
     if first_arg in ('-h', '--help'):
       errfmt = None  # not needed here
-      loader = pyutil.GetResourceLoader()
       help_builtin = builtin_misc.Help(loader, help_index, errfmt)
       help_builtin.Run(main.MakeBuiltinArgv(['bundle-usage']))
       sys.exit(0)
 
     if first_arg in ('-V', '--version'):
-      version_str = pyutil.GetVersion()
-      main.ShowVersion(version_str)
+      pyutil.ShowAppVersion('Oil', loader)
       sys.exit(0)
 
     main_name = first_arg
@@ -289,7 +290,7 @@ def AppBundleMain(argv):
     if line_input:
       pass
     status = main.ShellMain('osh', argv0, arg_r, posix.environ, login_shell,
-                            line_input)
+                            loader, line_input)
 
     _tlog('done osh main')
     return status
@@ -304,7 +305,7 @@ def AppBundleMain(argv):
 
   elif main_name == 'oil':
     return main.ShellMain('oil', argv0, arg_r, posix.environ, login_shell,
-                          line_input)
+                          loader, line_input)
 
   elif main_name == 'tea':
     main_argv = arg_r.Rest()
