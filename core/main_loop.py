@@ -38,7 +38,7 @@ _ = log
 
 
 if mylib.PYTHON:
-  def Interactive(opts, cmd_ev, c_parser, display, prompt_plugin, errfmt):
+  def Interactive(flag, cmd_ev, c_parser, display, prompt_plugin, errfmt):
     # type: (Any, CommandEvaluator, CommandParser, _IDisplay, UserPlugin, ErrorFormatter) -> int
 
     # TODO: Any could be _Attributes from frontend/args.py
@@ -95,7 +95,7 @@ if mylib.PYTHON:
 
         # to debug the slightly different interactive prasing
         if cmd_ev.exec_opts.noexec():
-          ui.PrintAst(node, opts)
+          ui.PrintAst(node, flag)
           break
 
         is_return, _ = cmd_ev.ExecuteAndCatch(node)
@@ -118,7 +118,7 @@ if mylib.PYTHON:
       # TODO: Replace this with a shell hook?  with 'trap', or it could be just
       # like command_not_found.  The hook can be 'echo $?' or something more
       # complicated, i.e. with timetamps.
-      if opts.print_status:
+      if flag.print_status:
         print('STATUS', repr(status))
 
     return status

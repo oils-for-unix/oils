@@ -244,7 +244,6 @@ def TeaMain(argv0, argv):
 
 def AppBundleMain(argv):
   # type: (List[str]) -> int
-  login_shell = False
 
   b = os_path.basename(argv[0])
   main_name, ext = os_path.splitext(b)
@@ -274,6 +273,7 @@ def AppBundleMain(argv):
   assert argv0 is not None
   arg_r.Next()
 
+  login_shell = False
   if main_name.startswith('-'):
     login_shell = True
     main_name = main_name[1:]
@@ -288,7 +288,9 @@ def AppBundleMain(argv):
     # m.Run(argv0, ...)
     if line_input:
       pass
-    status = main.ShellMain('osh', argv0, arg_r, login_shell, line_input)
+    status = main.ShellMain('osh', argv0, arg_r, posix.environ, login_shell,
+                            line_input)
+
     _tlog('done osh main')
     return status
 
@@ -301,7 +303,8 @@ def AppBundleMain(argv):
       return 2
 
   elif main_name == 'oil':
-    return main.ShellMain('oil', argv0, arg_r, login_shell, line_input)
+    return main.ShellMain('oil', argv0, arg_r, posix.environ, login_shell,
+                          line_input)
 
   elif main_name == 'tea':
     main_argv = arg_r.Rest()

@@ -75,16 +75,20 @@ import posix_ as posix
 from typing import List, Dict, Optional, Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
+  from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from _devbuild.gen.syntax_asdl import command__ShFunction
 
 
 def MakeBuiltinArgv(argv):
+  # type: (List[str]) -> cmd_value__Argv
   argv = [''] + argv  # add dummy for argv[0]
   # no location info
   return cmd_value.Argv(argv, [runtime.NO_SPID] * len(argv))
 
 
 def _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup):
+  # type: (cmd_eval.CommandEvaluator, builtin_comp.Complete, completion.Lookup) -> None
+
   # register builtins and words
   complete_builtin.Run(MakeBuiltinArgv(['-E', '-A', 'command']))
   # register path completion
@@ -102,10 +106,13 @@ def _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup):
 
 
 def ShowVersion(version_str):
+  # type: (str) -> None
   pyutil.ShowAppVersion('Oil', version_str)
 
 
 def SourceStartupFile(rc_path, lang, parse_ctx, cmd_ev):
+  # type: (str, str, parse_lib.ParseContext, cmd_eval.CommandEvaluator) -> None
+
   # Right now this is called when the shell is interactive.  (Maybe it should
   # be called on login_shel too.)
   #
@@ -137,7 +144,9 @@ def SourceStartupFile(rc_path, lang, parse_ctx, cmd_ev):
 
 
 class ShellOptHook(state.OptHook):
+
   def __init__(self, line_input):
+    # type: (Any) -> None
     self.line_input = line_input
 
   def OnChange(self, opt_array, opt_name, b):
@@ -164,8 +173,8 @@ class ShellOptHook(state.OptHook):
     return True
 
 
-def ShellMain(lang, argv0, arg_r, login_shell, line_input):
-  # type: (str, str, args.Reader, bool, Any) -> int
+def ShellMain(lang, argv0, arg_r, environ, login_shell, line_input):
+  # type: (str, str, args.Reader, Dict[str, str], bool, Any) -> int
   """Used by bin/osh and bin/oil.
 
   Args:
@@ -186,13 +195,19 @@ def ShellMain(lang, argv0, arg_r, login_shell, line_input):
   # Differences between osh and oil:
   # - --help?  I guess Oil has a SUPERSET of OSH options.
   # - oshrc vs oilrc
-  # - the parser and executor
+  # - shopt -s oil:all
   # - Change the prompt in the interactive shell?
+
+  # osh-pure:
+  # - no oil grammar
+  # - no expression evaluator
+  # - no interactive shell, or line_input
+  # - no process.*
 
   assert lang in ('osh', 'oil'), lang
 
   try:
-    opts = flag_spec.ParseMore('osh', arg_r)
+    flag = flag_spec.ParseMore('osh', arg_r)
   except error.Usage as e:
     ui.Stderr('osh usage error: %s', e.msg)
     return 2
@@ -206,11 +221,11 @@ def ShellMain(lang, argv0, arg_r, login_shell, line_input):
   errfmt = ui.ErrorFormatter(arena)
 
   help_builtin = builtin_misc.Help(loader, help_index, errfmt)
-  if opts.help:
+  if flag.help:
     help_builtin.Run(MakeBuiltinArgv(['%s-usage' % lang]))
     return 0
   version_str = pyutil.GetVersion()
-  if opts.version:
+  if flag.version:
     # OSH version is the only binary in Oil right now, so it's all one version.
     ShowVersion(version_str)
     return 0
@@ -234,7 +249,8 @@ def ShellMain(lang, argv0, arg_r, login_shell, line_input):
   script_name = arg_r.Peek()  # type: Optional[str]
   arg_r.Next()
   mem = state.Mem(dollar0, arg_r.Rest(), arena, debug_stack)
-  state.InitMem(mem, posix.environ, version_str)
+  state.InitMem(mem, environ, version_str)
+
   builtin_funcs.Init(mem)
 
   procs = {}  # type: Dict[str, command__ShFunction]
@@ -247,7 +263,7 @@ def ShellMain(lang, argv0, arg_r, login_shell, line_input):
   # TODO: only MutableOpts needs mem, so it's not a true circular dep.
   mem.exec_opts = exec_opts  # circular dep
 
-  if opts.show_options:  # special case: sh -o
+  if flag.show_options:  # special case: sh -o
     mutable_opts.ShowOptions([])
     return 0
 
@@ -255,15 +271,15 @@ def ShellMain(lang, argv0, arg_r, login_shell, line_input):
   if lang == 'oil':
     mutable_opts.SetShoptOption('oil:all', True)
 
-  builtin_pure.SetShellOpts(mutable_opts, opts.opt_changes, opts.shopt_changes)
+  builtin_pure.SetShellOpts(mutable_opts, flag.opt_changes, flag.shopt_changes)
   aliases = {}  # feedback between runtime and parser
 
   oil_grammar = meta.LoadOilGrammar(loader)
 
-  if opts.one_pass_parse and not exec_opts.noexec():
+  if flag.one_pass_parse and not exec_opts.noexec():
     raise error.Usage('--one-pass-parse requires noexec (-n)')
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
-  parse_ctx.Init_OnePassParse(opts.one_pass_parse)
+  parse_ctx.Init_OnePassParse(flag.one_pass_parse)
 
   # Three ParseContext instances SHARE aliases.
   comp_arena = alloc.Arena()
@@ -303,9 +319,9 @@ def ShellMain(lang, argv0, arg_r, login_shell, line_input):
   my_pid = posix.getpid()
 
   debug_path = ''
-  debug_dir = posix.environ.get('OSH_DEBUG_DIR')
-  if opts.debug_file:  # --debug-file takes precedence over OSH_DEBUG_DIR
-    debug_path = opts.debug_file
+  debug_dir = environ.get('OSH_DEBUG_DIR')
+  if flag.debug_file:  # --debug-file takes precedence over OSH_DEBUG_DIR
+    debug_path = flag.debug_file
   elif debug_dir:
     debug_path = os_path.join(debug_dir, '%d-osh.log' % my_pid)
 
@@ -332,7 +348,7 @@ def ShellMain(lang, argv0, arg_r, login_shell, line_input):
   if debug_path:
     debug_f.log('Writing logs to %r', debug_path)
 
-  interp = posix.environ.get('OSH_HIJACK_SHEBANG', '')
+  interp = environ.get('OSH_HIJACK_SHEBANG', '')
   search_path = state.SearchPath(mem)
   ext_prog = process.ExternalProgram(interp, fd_state, errfmt, debug_f)
 
@@ -351,10 +367,10 @@ def ShellMain(lang, argv0, arg_r, login_shell, line_input):
 
   # This could just be OSH_DEBUG_STREAMS='debug crash' ?  That might be
   # stuffing too much into one, since a .json crash dump isn't a stream.
-  crash_dump_dir = posix.environ.get('OSH_CRASH_DUMP_DIR', '')
+  crash_dump_dir = environ.get('OSH_CRASH_DUMP_DIR', '')
   cmd_deps.dumper = dev.CrashDumper(crash_dump_dir)
 
-  if opts.xtrace_to_debug_file:
+  if flag.xtrace_to_debug_file:
     trace_f = debug_f
   else:
     trace_f = util.DebugFile(mylib.Stderr())
@@ -510,13 +526,13 @@ def ShellMain(lang, argv0, arg_r, login_shell, line_input):
   # History evaluation is a no-op if line_input is None.
   hist_ev = history.Evaluator(line_input, hist_ctx, debug_f)
 
-  if opts.c is not None:
+  if flag.c is not None:
     arena.PushSource(source.CFlag())
-    line_reader = reader.StringLineReader(opts.c, arena)
-    if opts.i:  # -c and -i can be combined
+    line_reader = reader.StringLineReader(flag.c, arena)
+    if flag.i:  # -c and -i can be combined
       mutable_opts.set_interactive()
 
-  elif opts.i:  # force interactive
+  elif flag.i:  # force interactive
     arena.PushSource(source.Stdin(' -i'))
     line_reader = py_reader.InteractiveLineReader(
         arena, prompt_ev, hist_ev, line_input, prompt_state)
@@ -558,7 +574,7 @@ def ShellMain(lang, argv0, arg_r, login_shell, line_input):
     # https://unix.stackexchange.com/questions/24347/why-do-some-applications-use-config-appname-for-their-config-data-while-other
     home_dir = passwd.GetMyHomeDir()
     assert home_dir is not None
-    rc_path = opts.rcfile or os_path.join(home_dir, '.config/oil', lang + 'rc')
+    rc_path = flag.rcfile or os_path.join(home_dir, '.config/oil', lang + 'rc')
 
     history_filename = os_path.join(home_dir, '.config/oil', 'history_' + lang)
 
@@ -575,7 +591,7 @@ def ShellMain(lang, argv0, arg_r, login_shell, line_input):
                                            comp_ui_state, comp_ctx, debug_f)
 
       term_width = 0
-      if opts.completion_display == 'nice':
+      if flag.completion_display == 'nice':
         try:
           term_width = libc.get_terminal_width()
         except IOError:  # stdin not a terminal
@@ -606,7 +622,7 @@ def ShellMain(lang, argv0, arg_r, login_shell, line_input):
 
     prompt_plugin = prompt.UserPlugin(mem, parse_ctx, cmd_ev)
     try:
-      status = main_loop.Interactive(opts, cmd_ev, c_parser, display,
+      status = main_loop.Interactive(flag, cmd_ev, c_parser, display,
                                      prompt_plugin, errfmt)
       if cmd_ev.MaybeRunExitTrap():
         status = cmd_ev.LastStatus()
@@ -623,21 +639,21 @@ def ShellMain(lang, argv0, arg_r, login_shell, line_input):
       status = 2
 
     if status == 0 :
-      if opts.parser_mem_dump:  # only valid in -n mode
+      if flag.parser_mem_dump:  # only valid in -n mode
         # This might be superstition, but we want to let the value stabilize
         # after parsing.  bash -c 'cat /proc/$$/status' gives different results
         # with a sleep.
         time.sleep(0.001)
         input_path = '/proc/%d/status' % posix.getpid()
-        with open(input_path) as f, open(opts.parser_mem_dump, 'w') as f2:
+        with open(input_path) as f, open(flag.parser_mem_dump, 'w') as f2:
           contents = f.read()
           f2.write(contents)
           log('Wrote %s to %s (--parser-mem-dump)', input_path,
-              opts.parser_mem_dump)
+              flag.parser_mem_dump)
 
-      ui.PrintAst(node, opts)
+      ui.PrintAst(node, flag)
   else:
-    if opts.parser_mem_dump:
+    if flag.parser_mem_dump:
       raise error.Usage('--parser-mem-dump can only be used with -n')
 
     try:
@@ -650,17 +666,17 @@ def ShellMain(lang, argv0, arg_r, login_shell, line_input):
 
   # NOTE: 'exit 1' is ControlFlow and gets here, but subshell/commandsub
   # don't because they call sys.exit().
-  if opts.runtime_mem_dump:
+  if flag.runtime_mem_dump:
     # This might be superstition, but we want to let the value stabilize
     # after parsing.  bash -c 'cat /proc/$$/status' gives different results
     # with a sleep.
     time.sleep(0.001)
     input_path = '/proc/%d/status' % posix.getpid()
-    with open(input_path) as f, open(opts.runtime_mem_dump, 'w') as f2:
+    with open(input_path) as f, open(flag.runtime_mem_dump, 'w') as f2:
       contents = f.read()
       f2.write(contents)
       log('Wrote %s to %s (--runtime-mem-dump)', input_path,
-          opts.runtime_mem_dump)
+          flag.runtime_mem_dump)
 
   # NOTE: We haven't closed the file opened with fd_state.Open
   return status

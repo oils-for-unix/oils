@@ -295,10 +295,10 @@ if mylib.PYTHON:
 
   # Doesn't translate because of Any type
   # Options may need metaprogramming!
-  def PrintAst(node, opts):
+  def PrintAst(node, flag):
     # type: (command_t, Any) -> None
 
-    if opts.ast_format == 'none':
+    if flag.ast_format == 'none':
       print('AST not printed.', file=sys.stderr)
       if 0:
         from _devbuild.gen.id_kind_asdl import Id_str
@@ -312,14 +312,14 @@ if mylib.PYTHON:
     else:  # text output
       f = mylib.Stdout()
 
-      if opts.ast_format in ('text', 'abbrev-text'):
+      if flag.ast_format in ('text', 'abbrev-text'):
         ast_f = fmt.DetectConsoleOutput(f)
-      elif opts.ast_format in ('html', 'abbrev-html'):
+      elif flag.ast_format in ('html', 'abbrev-html'):
         ast_f = fmt.HtmlOutput(f)
       else:
         raise AssertionError()
 
-      if 'abbrev-' in opts.ast_format:
+      if 'abbrev-' in flag.ast_format:
         tree = node.AbbreviatedTree()
       else:
         tree = node.PrettyTree()
