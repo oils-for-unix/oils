@@ -1,14 +1,13 @@
 #!/usr/bin/env python2
 from __future__ import print_function
 """
-opy_.py
+opy_.py - TODO: This could just be opyc.
 """
 
 import os
 import sys
 
 from core import error
-from core import pyutil
 from core.util import log
 
 from opy import opy_main

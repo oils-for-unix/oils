@@ -63,13 +63,23 @@ class %s {
           init_vals.append('static_cast<value__Bool*>(attrs->index(new Str("%s")))->b' % field_name)
           field_decls.append('bool %s;' % field_name)
 
-        elif case(flag_type_e.Str):
+        elif case(flag_type_e.Str, flag_type_e.Enum):
+          default_val = spec.defaults[field_name]
+          with tagswitch(default_val) as case:
+            if case(value_e.Undef):
+              default_str = 'nullptr'
+            elif case(value_e.Str):
+              default_str = 'new Str("%s")' % default_val.s
+            else:
+              raise AssertionError()
+
           # TODO: This code is ugly and inefficient!  Generate something
           # better.  At least get rid of 'new' everywhere?
           init_vals.append('''\
 attrs->index(new Str("%s"))->tag_() == value_e::Undef
-      ? nullptr
-      : static_cast<value__Str*>(attrs->index(new Str("%s")))->s''' % (field_name, field_name))
+      ? %s
+      : static_cast<value__Str*>(attrs->index(new Str("%s")))->s''' % (
+              field_name, default_str, field_name))
 
           field_decls.append('Str* %s;' % field_name)
 
@@ -116,7 +126,7 @@ namespace arg_types {
 """)
 
   var_names = []
-  for i, spec_name in enumerate(sorted(specs)):
+  for i, spec_name in enumerate(sorted(flag_spec.FLAG_SPEC)):
     spec = specs[spec_name]
     arity0_name = None
     arity1_name = None
@@ -178,7 +188,7 @@ namespace arg_types {
   cc_f.write('FlagSpec_c kFlagSpecs[] = {\n')
 
   # Now print a table
-  for i, spec_name in enumerate(sorted(specs)):
+  for i, spec_name in enumerate(sorted(flag_spec.FLAG_SPEC)):
     spec = specs[spec_name]
     names = var_names[i]
     cc_f.write('    { "%s", %s, %s, %s, %s },\n' % (

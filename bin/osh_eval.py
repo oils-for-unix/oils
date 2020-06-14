@@ -14,7 +14,7 @@ from core import alloc
 from core import dev
 from core import error
 # Still has too many deps
-#from core import main
+#from core import main as main_
 from core import main_loop
 from core import meta
 from core import optview
@@ -111,7 +111,7 @@ def Parse(argv):
   return i, flag_a, flag_c, flag_n
 
 
-def main_(argv):
+def main(argv):
   # type: (List[str]) -> int
   arena = alloc.Arena()
 
@@ -416,7 +416,7 @@ class NullExecutor(vm._Executor):
 
 if __name__ == '__main__':
   try:
-    status = main_(sys.argv)
+    status = main(sys.argv)
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
     status = 1
