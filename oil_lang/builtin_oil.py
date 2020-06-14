@@ -16,6 +16,7 @@ from _devbuild.gen.runtime_asdl import value, value_e, scope_e
 from _devbuild.gen.syntax_asdl import sh_lhs_expr
 from core import error
 from core.util import log
+from core import vm
 from frontend import flag_spec
 from frontend import args
 from frontend import match
@@ -31,7 +32,7 @@ if TYPE_CHECKING:
   from osh.cmd_eval import CommandEvaluator
 
 
-class _Builtin(object):
+class _Builtin(vm._Builtin):
   def __init__(self, mem, errfmt):
     # type: (Mem, ErrorFormatter) -> None
     self.mem = mem
@@ -197,7 +198,7 @@ _JSON_ACTION_ERROR = "builtin expects 'read' or 'write'"
 _STDIN = posix.fdopen(0)
 
 
-class Json(object):
+class Json(vm._Builtin):
   """Json I/O.
 
   -indent pretty prints it.  Is the default indent 2?  -pretty=0 can turn it

@@ -18,7 +18,7 @@ from asdl import runtime
 from core import error
 from core import main_loop
 from core import ui
-from core.vm import _Builtin
+from core import vm
 from core.util import log
 from frontend import args
 from frontend import flag_spec
@@ -43,7 +43,7 @@ if mylib.PYTHON:
   EXEC_SPEC = flag_spec.FlagSpec('exec')
 
 
-class Exec(_Builtin):
+class Exec(vm._Builtin):
 
   def __init__(self, mem, ext_prog, fd_state, search_path, errfmt):
     # type: (Mem, ExternalProgram, FdState, SearchPath, ErrorFormatter) -> None
@@ -80,7 +80,7 @@ class Exec(_Builtin):
     assert False, "This line should never be reached" # makes mypy happy
 
 
-class Wait(_Builtin):
+class Wait(vm._Builtin):
   """
   wait: wait [-n] [id ...]
       Wait for job completion and return exit status.
@@ -200,7 +200,7 @@ class Wait(_Builtin):
     return status
 
 
-class Jobs(object):
+class Jobs(vm._Builtin):
   """List jobs."""
   def __init__(self, job_state):
     # type: (JobState) -> None
@@ -220,7 +220,7 @@ class Jobs(object):
     return 0
 
 
-class Fg(_Builtin):
+class Fg(vm._Builtin):
   """Put a job in the foreground"""
   def __init__(self, job_state, waiter):
     # type: (JobState, Waiter) -> None
@@ -253,7 +253,7 @@ class Fg(_Builtin):
     return status
 
 
-class Bg(_Builtin):
+class Bg(vm._Builtin):
   """Put a job in the background"""
   def __init__(self, job_state):
     # type: (JobState) -> None
@@ -340,7 +340,7 @@ _HOOK_NAMES = ('EXIT', 'ERR', 'RETURN', 'DEBUG')
 # CPython registers different default handlers.  The C++ rewrite should make
 # OVM match sh/bash more closely.
 
-class Trap(_Builtin):
+class Trap(vm._Builtin):
   def __init__(self, sig_state, traps, nodes_to_run, parse_ctx, errfmt):
     # type: (SignalState, Dict[str, _TrapHandler], List[command_t], ParseContext, ErrorFormatter) -> None
     self.sig_state = sig_state
@@ -472,7 +472,7 @@ class Trap(_Builtin):
   # Then hit Ctrl-C.
 
 
-class Umask(_Builtin):
+class Umask(vm._Builtin):
 
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int

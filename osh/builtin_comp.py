@@ -6,6 +6,7 @@ from _devbuild.gen.runtime_asdl import value_e
 from core import completion
 from core import error
 from core import ui
+from core import vm
 #from core.util import log
 from frontend import flag_spec
 from frontend import args
@@ -19,12 +20,12 @@ if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from core.completion import Lookup, OptionState, Api, UserSpec
   from core.ui import ErrorFormatter
+  from core.state import Mem
   from frontend.args import _Attributes
   from frontend.parse_lib import ParseContext
   from osh.cmd_eval import CommandEvaluator
   from osh.split import SplitContext
   from osh.word_eval import NormalWordEvaluator
-  from core.state import Mem
 
 from mycpp import mylib
 if mylib.PYTHON:
@@ -269,7 +270,7 @@ if mylib.PYTHON:
       help='Define the compspec that applies when nothing else matches')
 
 
-class Complete(object):
+class Complete(vm._Builtin):
   """complete builtin - register a completion function.
 
   NOTE: It's has an CommandEvaluator because it creates a ShellFuncAction, which
@@ -324,7 +325,7 @@ if mylib.PYTHON:
   _DefineActions(COMPGEN_SPEC)
 
 
-class CompGen(object):
+class CompGen(vm._Builtin):
   """Print completions on stdout."""
 
   def __init__(self, spec_builder):
@@ -383,7 +384,7 @@ if mylib.PYTHON:
   _DefineOptions(COMPOPT_SPEC)
 
 
-class CompOpt(object):
+class CompOpt(vm._Builtin):
   """Adjust options inside user-defined completion functions."""
 
   def __init__(self, comp_state, errfmt):
@@ -415,7 +416,7 @@ if mylib.PYTHON:
       help='Treat --foo=bar and --foo bar the same way.')
 
 
-class CompAdjust(object):
+class CompAdjust(vm._Builtin):
   """
   Uses COMP_ARGV and flags produce the 'words' array.  Also sets $cur, $prev,
   $cword, and $split.

@@ -452,6 +452,7 @@ def ShellMain(lang, argv0, arg_r, environ, login_shell, loader, line_input):
       builtin_i.bg: builtin_process.Bg(job_state),
       builtin_i.umask: builtin_process.Umask(),
 
+
       # Oil
       builtin_i.push: builtin_oil.Push(mem, errfmt),
       builtin_i.append: builtin_oil.Append(mem, errfmt),
@@ -639,9 +640,9 @@ def ShellMain(lang, argv0, arg_r, environ, login_shell, loader, line_input):
         # with a sleep.
         time.sleep(0.001)
         input_path = '/proc/%d/status' % posix.getpid()
-        with open(input_path) as f, open(flag.parser_mem_dump, 'w') as f2:
-          contents = f.read()
-          f2.write(contents)
+        with open(input_path) as f2, open(flag.parser_mem_dump, 'w') as f3:
+          contents = f2.read()
+          f3.write(contents)
           log('Wrote %s to %s (--parser-mem-dump)', input_path,
               flag.parser_mem_dump)
 
@@ -666,9 +667,9 @@ def ShellMain(lang, argv0, arg_r, environ, login_shell, loader, line_input):
     # with a sleep.
     time.sleep(0.001)
     input_path = '/proc/%d/status' % posix.getpid()
-    with open(input_path) as f, open(flag.runtime_mem_dump, 'w') as f2:
-      contents = f.read()
-      f2.write(contents)
+    with open(input_path) as f2, open(flag.runtime_mem_dump, 'w') as f3:
+      contents = f2.read()
+      f3.write(contents)
       log('Wrote %s to %s (--runtime-mem-dump)', input_path,
           flag.runtime_mem_dump)
 
