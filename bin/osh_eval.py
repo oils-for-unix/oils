@@ -111,7 +111,7 @@ def Parse(argv):
   return i, flag_a, flag_c, flag_n
 
 
-def main(argv):
+def main_(argv):
   # type: (List[str]) -> int
   arena = alloc.Arena()
 
@@ -416,7 +416,7 @@ class NullExecutor(vm._Executor):
 
 if __name__ == '__main__':
   try:
-    status = main(sys.argv)
+    status = main_(sys.argv)
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
     status = 1

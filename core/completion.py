@@ -63,7 +63,7 @@ if TYPE_CHECKING:
   from core.alloc import Arena
   from core.comp_ui import State
   from core.state import Mem
-  from core.util import NullDebugFile
+  from core.util import DebugFile
   from frontend.parse_lib import ParseContext
   from osh.builtin_comp import _FixedWordsAction
   from osh.cmd_eval import CommandEvaluator
@@ -744,7 +744,7 @@ class RootCompleter(object):
                compopt_state,  # type: OptionState
                comp_ui_state,  # type: State
                parse_ctx,  # type: ParseContext
-               debug_f,  # type: NullDebugFile
+               debug_f,  # type: DebugFile
                ):
     # type: (...) -> None
     self.word_ev = word_ev  # for static evaluation of words

@@ -110,6 +110,8 @@ class _Attributes(object):
   def Set(self, name, val):
     # type: (str, value_t) -> None
 
+    # debug-completion -> debug_completion
+    name = name.replace('-', '_')
     self.attrs[name] = val
 
     if mylib.PYTHON:
@@ -128,8 +130,7 @@ class _Attributes(object):
         else:
           raise AssertionError(val)
 
-      # debug-completion -> debug_completion
-      setattr(self, name.replace('-', '_'), py_val)
+      setattr(self, name, py_val)
 
   def __repr__(self):
     # type: () -> str

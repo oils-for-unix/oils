@@ -41,7 +41,7 @@ if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from _devbuild.gen.syntax_asdl import command_t
   from core.ui import ErrorFormatter
-  from core.util import NullDebugFile
+  from core.util import DebugFile
   from core.comp_ui import _IDisplay
   from core import optview
   from osh.cmd_eval import CommandEvaluator
@@ -554,7 +554,7 @@ class ExternalProgram(object):
                hijack_shebang,  # type: str
                fd_state,  # type: FdState
                errfmt,  # type: ErrorFormatter
-               debug_f,  # type: NullDebugFile
+               debug_f,  # type: DebugFile
                ):
     # type: (...) -> None
     """

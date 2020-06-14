@@ -203,10 +203,14 @@ def main(argv):
   except IndexError:
     raise RuntimeError('Action required')
 
-  for spec_name in sorted(flag_spec.FLAG_SPEC_AND_MORE):
-    log('%s', spec_name)
+  if 0:
+    for spec_name in sorted(flag_spec.FLAG_SPEC_AND_MORE):
+      log('%s', spec_name)
 
-  specs = flag_spec.FLAG_SPEC
+  # Both kinds of specs have 'fields' attributes
+  specs = {}
+  specs.update(flag_spec.FLAG_SPEC)
+  specs.update(flag_spec.FLAG_SPEC_AND_MORE)
 
   log('--')
   for spec_name in sorted(specs):
@@ -233,15 +237,16 @@ def main(argv):
     print("""
 from frontend.args import _Attributes
 from _devbuild.gen.runtime_asdl import (
-   value_e, value_t, value__Bool, value__Int, value__Float, value__Str,
+   value, value_e, value_t, value__Bool, value__Int, value__Float, value__Str,
 )
 from typing import cast, Dict, Optional
 """)
     for spec_name in sorted(specs):
       spec = specs[spec_name]
 
+      #log('%s spec.fields %s', spec_name, spec.fields)
       if not spec.fields:
-        continue  # skip empty 'eval' spec
+        continue  # skip empty specs, e.g. eval
 
       print("""
 class %s(object):
@@ -258,10 +263,19 @@ class %s(object):
             print('    self.%s = cast(value__Bool, attrs[%r]).b  # type: bool' % (
               field_name, field_name))
 
-          elif case(flag_type_e.Str):
+          # enums are strings for now
+          elif case(flag_type_e.Str, flag_type_e.Enum):
             tmp = 'val%d' % i
+            default_val = spec.defaults[field_name]
+            with tagswitch(default_val) as case:
+              if case(value_e.Undef):
+                default_str = 'None'
+              elif case(value_e.Str):
+                default_str = '%r' % default_val.s
+              else:
+                raise AssertionError()
             print('    %s = attrs[%r]' % (tmp, field_name))
-            print('    self.%s = None if %s.tag_() == value_e.Undef else cast(value__Str, %s).s  # type: Optional[str]' % (field_name, tmp, tmp))
+            print('    self.%s = %s if %s.tag_() == value_e.Undef else cast(value__Str, %s).s  # type: Optional[str]' % (field_name, default_str, tmp, tmp))
 
           elif case(flag_type_e.Int):
             tmp = 'val%d' % i

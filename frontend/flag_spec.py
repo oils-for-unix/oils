@@ -30,12 +30,12 @@ def FlagSpec(builtin_name, typed=False):
   return arg_spec
 
 
-def FlagSpecAndMore(name):
-  # type: (str) -> _FlagSpecAndMore
+def FlagSpecAndMore(name, typed=False):
+  # type: (str, bool) -> _FlagSpecAndMore
   """
   For set, bin/oil.py ("main"), compgen -A, complete -A, etc.
   """
-  arg_spec = _FlagSpecAndMore()
+  arg_spec = _FlagSpecAndMore(typed=typed)
   FLAG_SPEC_AND_MORE[name] = arg_spec
   return arg_spec
 
@@ -106,6 +106,29 @@ def _FlagType(arg_type):
   return typ
 
 
+def _Default(arg_type, arg_default=None):
+  # type: (Union[None, int, List[str]], Optional[str]) -> value_t
+
+  # for enum or string
+  # note: not using this for integers yet
+  if arg_default is not None:
+    return value.Str(arg_default)  # early return
+
+  if arg_type is None:
+    default = value.Bool(False)  # type: value_t
+  elif arg_type == args.Int:
+    default = value.Int(-1)  # positive values aren't allowed now
+  elif arg_type == args.Float:
+    default = value.Float(0.0)
+  elif arg_type == args.String:
+    default = value.Undef()  # e.g. read -d '' is NOT the default
+  elif isinstance(arg_type, list):
+    default = value.Str('')  # This isn't valid
+  else:
+    raise AssertionError(arg_type)
+  return default
+
+
 class _FlagSpec(object):
   """Parser for sh builtins, like 'read' or 'echo' (which has a special case).
 
@@ -158,28 +181,11 @@ class _FlagSpec(object):
     else:
       self.arity1[char] = SetToArg_(char, _FlagType(arg_type), False)
 
-    # TODO: callers should pass flag_type
-    if arg_type is None:
-      typ = flag_type.Bool()  # type: flag_type_t
-      default = value.Bool(False)  # type: value_t
-    elif arg_type == args.Int:
-      typ = flag_type.Int()
-      default = value.Int(-1)  # positive values aren't allowed now
-    elif arg_type == args.Float:
-      typ = flag_type.Float()
-      default = value.Float(0.0)
-    elif arg_type == args.String:
-      typ = flag_type.Str()
-      #default = value.Str('')
-      default = value.Undef()  # e.g. read -d '' is NOT the default
-    elif isinstance(arg_type, list):
-      typ = flag_type.Enum(arg_type)
-      default = value.Str('')  # This isn't valid
-    else:
-      raise AssertionError(arg_type)
+    typ = _FlagType(arg_type)
+    default_val = _Default(arg_type)
 
     if self.typed:
-      self.defaults[char] = default
+      self.defaults[char] = default_val
     else:
       # TODO: remove when all builtins converted
       self.defaults[char] = value.Undef()
@@ -226,11 +232,13 @@ class _FlagSpecAndMore(object):
 
     self.actions_short = {}  # type: Dict[str, args._Action]  # {'-c': _Action}
     self.actions_long = {}  # type: Dict[str, args._Action]  # {'--rcfile': _Action}
-
     self.defaults = self.spec.defaults
 
     self.actions_short['o'] = args.SetNamedOption()  # -o and +o
     self.actions_short['O'] = args.SetNamedOption(shopt=True)  # -O and +O
+
+    # For code generation.  Not used at runtime.
+    self.fields = {}  # type: Dict[str, flag_type_t]
 
   def InitActions(self):
     # type: () -> None
@@ -246,12 +254,18 @@ class _FlagSpecAndMore(object):
     char = short_name[1]
     if arg_type is None:
       assert quit_parsing_flags == False
+      typ = flag_type.Bool()  # type: flag_type_t
       self.actions_short[char] = args.SetToTrue(char)
     else:
+      typ = _FlagType(arg_type)
       self.actions_short[char] = args.SetToArgAction(
-          char, _FlagType(arg_type), quit_parsing_flags=quit_parsing_flags)
+          char, typ, quit_parsing_flags=quit_parsing_flags)
 
-    self.defaults[char] = args.PyToValue(default)
+    if self.typed:
+      self.defaults[char] = _Default(arg_type, arg_default=default)
+    else:
+      self.defaults[char] = args.PyToValue(default)
+    self.fields[char] = typ
 
   def LongFlag(self,
                long_name,  # type: str
@@ -265,11 +279,20 @@ class _FlagSpecAndMore(object):
 
     name = long_name[2:]
     if arg_type is None:
+      typ = flag_type.Bool()  # type: flag_type_t
       self.actions_long[long_name] = args.SetToTrue(name)
     else:
-      self.actions_long[long_name] = args.SetToArgAction(name, _FlagType(arg_type))
+      typ = _FlagType(arg_type)
+      self.actions_long[long_name] = args.SetToArgAction(name, typ)
 
-    self.defaults[name] = args.PyToValue(default)
+    attr_name = name.replace('-', '_')
+    if self.typed:
+      self.defaults[attr_name] = _Default(arg_type, arg_default=default)
+      #from core.util import log
+      #log('%s DEFAULT %s', attr_name, self.defaults[attr_name])
+    else:
+      self.defaults[attr_name] = args.PyToValue(default)
+    self.fields[attr_name] = typ
 
   def Option(self, short_flag, name, help=None):
     # type: (Optional[str], str, Optional[str]) -> None

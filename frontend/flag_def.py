@@ -180,7 +180,7 @@ def _AddShellOptions(spec):
     spec.ShoptOption(name)
 
 
-OSH_SPEC = FlagSpecAndMore('osh')
+OSH_SPEC = FlagSpecAndMore('main', typed=True)
 
 OSH_SPEC.ShortFlag('-c', args.String, quit_parsing_flags=True)  # command string
 OSH_SPEC.LongFlag('--help')

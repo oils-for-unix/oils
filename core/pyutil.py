@@ -116,7 +116,7 @@ def GetVersion(loader):
 
 def ShowAppVersion(app_name, loader):
   # type: (str, _ResourceLoader) -> None
-  """For Oil and OPy."""
+  """Show version and platform information."""
   try:
     f = loader.open('release-date.txt')
   except IOError:

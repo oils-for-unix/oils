@@ -31,7 +31,7 @@ import posix_ as posix
 from typing import Tuple, List, Any, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import span_t
-  from core.pyutil import _FileResourceLoader
+  from core.pyutil import _ResourceLoader
   from core.state import Mem, DirStack
   from core.ui import ErrorFormatter
   from osh.cmd_eval import CommandEvaluator
@@ -516,11 +516,11 @@ class Pwd(vm._Builtin):
 # TODO: Need $VERSION inside all pages?
 
 if mylib.PYTHON:
-  # Needs a different _FileResourceLoader to translate
+  # Needs a different _ResourceLoader to translate
   class Help(vm._Builtin):
 
     def __init__(self, loader, help_index, errfmt):
-      # type: (_FileResourceLoader, Any, ErrorFormatter) -> None
+      # type: (_ResourceLoader, Any, ErrorFormatter) -> None
       self.loader = loader
       self.help_index = help_index
       self.errfmt = errfmt

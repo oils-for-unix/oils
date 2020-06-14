@@ -7,6 +7,7 @@ from __future__ import print_function
 import errno
 import time
 
+from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i, builtin_i
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import source
@@ -202,10 +203,11 @@ def ShellMain(lang, argv0, arg_r, environ, login_shell, loader, line_input):
   assert lang in ('osh', 'oil'), lang
 
   try:
-    flag = flag_spec.ParseMore('osh', arg_r)
+    attrs = flag_spec.ParseMore('main', arg_r)
   except error.Usage as e:
     ui.Stderr('osh usage error: %s', e.msg)
     return 2
+  flag = arg_types.main(attrs.attrs)
 
   arena = alloc.Arena()
   errfmt = ui.ErrorFormatter(arena)
@@ -254,7 +256,7 @@ def ShellMain(lang, argv0, arg_r, environ, login_shell, loader, line_input):
   # TODO: only MutableOpts needs mem, so it's not a true circular dep.
   mem.exec_opts = exec_opts  # circular dep
 
-  if flag.show_options:  # special case: sh -o
+  if attrs.show_options:  # special case: sh -o
     mutable_opts.ShowOptions([])
     return 0
 
@@ -262,8 +264,9 @@ def ShellMain(lang, argv0, arg_r, environ, login_shell, loader, line_input):
   if lang == 'oil':
     mutable_opts.SetShoptOption('oil:all', True)
 
-  builtin_pure.SetShellOpts(mutable_opts, flag.opt_changes, flag.shopt_changes)
-  aliases = {}  # feedback between runtime and parser
+  builtin_pure.SetShellOpts(mutable_opts, attrs.opt_changes, attrs.shopt_changes)
+  # feedback between runtime and parser
+  aliases = {}  # type: Dict[str, str]
 
   oil_grammar = meta.LoadOilGrammar(loader)
 
@@ -519,7 +522,7 @@ def ShellMain(lang, argv0, arg_r, environ, login_shell, loader, line_input):
 
   if flag.c is not None:
     arena.PushSource(source.CFlag())
-    line_reader = reader.StringLineReader(flag.c, arena)
+    line_reader = reader.StringLineReader(flag.c, arena)  # type: reader._Reader
     if flag.i:  # -c and -i can be combined
       mutable_opts.set_interactive()
 
@@ -590,7 +593,7 @@ def ShellMain(lang, argv0, arg_r, environ, login_shell, loader, line_input):
 
       if term_width != 0:
         display = comp_ui.NiceDisplay(term_width, comp_ui_state, prompt_state,
-                                      debug_f, line_input)
+                                      debug_f, line_input)  # type: comp_ui._IDisplay
       else:
         display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
 

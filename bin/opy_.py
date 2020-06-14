@@ -17,15 +17,6 @@ from opy import opy_main
 _OPY_USAGE = 'Usage: opy_ MAIN [OPTION]... [ARG]...'
 
 
-def _ShowVersion():
-  pyutil.ShowAppVersion('OPy')
-
-
-# Run the bytecode too.  Should this have an option to use byterun?
-def OpyMain(argv0, main_argv):
-  raise NotImplementedError("Can't run bytecode yet")
-
-
 def AppBundleMain(argv):
   b = os.path.basename(argv[0])
   main_name, ext = os.path.splitext(b)
@@ -36,16 +27,6 @@ def AppBundleMain(argv):
     except IndexError:
       raise error.Usage('Missing required applet name.')
 
-    # TODO: We don't have this
-    if first_arg in ('-h', '--help'):
-      #builtin.Help(['bundle-usage'], util.GetResourceLoader())
-      raise NotImplementedError('OPy help not implemented')
-      sys.exit(0)
-
-    if first_arg in ('-V', '--version'):
-      _ShowVersion()
-      sys.exit(0)
-
     main_name = first_arg
     argv0 = argv[1]
     main_argv = argv[2:]
@@ -53,10 +34,7 @@ def AppBundleMain(argv):
     argv0 = argv[0]
     main_argv = argv[1:]
 
-  if main_name == 'opy':
-    status = OpyMain(argv0, main_argv)
-    return status
-  elif main_name == 'opyc':
+  if main_name == 'opyc':
     return opy_main.OpyCommandMain(main_argv)
 
   else:
