@@ -74,6 +74,7 @@ from typing import List, Dict, Optional, Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from _devbuild.gen.syntax_asdl import command__ShFunction
+  from core import optview
 
 
 def MakeBuiltinArgv(argv):
@@ -168,6 +169,85 @@ class ShellOptHook(state.OptHook):
         opt_array[option_i.vi] = not b
 
     return True
+
+
+def AddPure(b, mem, procs, mutable_opts, aliases, search_path, errfmt):
+  # type: (Dict[int, vm._Builtin], state.Mem, Dict[str, command__ShFunction], state.MutableOpts, Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
+  b[builtin_i.set] = builtin_pure.Set(mutable_opts, mem)
+  b[builtin_i.shopt] = builtin_pure.Shopt(mutable_opts)
+
+  b[builtin_i.alias] = builtin_pure.Alias(aliases, errfmt)
+  b[builtin_i.unalias] = builtin_pure.UnAlias(aliases, errfmt)
+
+  b[builtin_i.hash] = builtin_pure.Hash(search_path)
+  b[builtin_i.getopts] = builtin_pure.GetOpts(mem, errfmt)
+
+  true_ = builtin_pure.Boolean(0)
+  b[builtin_i.colon] = true_  # a "special" builtin 
+  b[builtin_i.true_] = true_
+  b[builtin_i.false_] = builtin_pure.Boolean(1)
+
+  b[builtin_i.shift] = builtin_assign.Shift(mem)
+
+  b[builtin_i.type] = builtin_meta.Type(procs, aliases, search_path, errfmt)
+
+
+def AddIO(b, mem, dir_stack, exec_opts, splitter, errfmt):
+  # type: (Dict[int, vm._Builtin], state.Mem, state.DirStack, optview.Exec, split.SplitContext, ui.ErrorFormatter) -> None
+  mapfile = builtin_misc.MapFile(mem, errfmt)
+
+  b[builtin_i.echo] = builtin_pure.Echo(exec_opts)
+  b[builtin_i.mapfile] = mapfile
+  b[builtin_i.readarray] = mapfile
+
+  b[builtin_i.read] = builtin_misc.Read(splitter, mem)
+  b[builtin_i.cat] = builtin_misc.Cat()  # for $(<file)
+
+  # test / [ differ by need_right_bracket
+  b[builtin_i.test] = builtin_bracket.Test(False, exec_opts, mem, errfmt)
+  b[builtin_i.bracket] = builtin_bracket.Test(True, exec_opts, mem, errfmt)
+
+  b[builtin_i.pushd] = builtin_misc.Pushd(mem, dir_stack, errfmt)
+  b[builtin_i.popd] = builtin_misc.Popd(mem, dir_stack, errfmt)
+  b[builtin_i.dirs] = builtin_misc.Dirs(mem, dir_stack, errfmt)
+  b[builtin_i.pwd] = builtin_misc.Pwd(mem, errfmt)
+
+  b[builtin_i.times] = builtin_misc.Times()
+
+
+def AddProcess(
+    b,  # type: Dict[int, vm._Builtin]
+    mem,  # type: state.Mem
+    ext_prog,  # type: process.ExternalProgram
+    fd_state,  # type: process.FdState
+    job_state,  # type: process.JobState
+    waiter,  # type: process.Waiter
+    search_path,  # type: state.SearchPath
+    errfmt  # type: ui.ErrorFormatter
+    ):
+    # type: (...) -> None
+
+  # Process
+  b[builtin_i.exec_] = builtin_process.Exec(mem, ext_prog, fd_state,
+                                            search_path, errfmt)
+  b[builtin_i.wait] = builtin_process.Wait(waiter, job_state, mem, errfmt)
+  b[builtin_i.jobs] = builtin_process.Jobs(job_state)
+  b[builtin_i.fg] = builtin_process.Fg(job_state, waiter)
+  b[builtin_i.bg] = builtin_process.Bg(job_state)
+  b[builtin_i.umask] = builtin_process.Umask()
+
+
+def AddOil(b, mem, errfmt):
+  # type: (Dict[int, vm._Builtin], state.Mem, ui.ErrorFormatter) -> None
+  b[builtin_i.push] = builtin_oil.Push(mem, errfmt)
+  b[builtin_i.append] = builtin_oil.Append(mem, errfmt)
+
+  b[builtin_i.write] = builtin_oil.Write(mem, errfmt)
+  b[builtin_i.getline] = builtin_oil.Getline(mem, errfmt)
+
+  b[builtin_i.repr] = builtin_oil.Repr(mem, errfmt)
+  b[builtin_i.use] = builtin_oil.Use(mem, errfmt)
+  b[builtin_i.opts] = builtin_oil.Opts(mem, errfmt)
 
 
 def Main(lang, arg_r, environ, login_shell, loader, line_input):
@@ -379,99 +459,48 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   dir_stack = state.DirStack()
 
+  #
+  # Initialize builtins that don't depend on evaluators
+  #
+
+  builtins = {}  # type: Dict[int, vm._Builtin]
+
+  AddPure(builtins, mem, procs, mutable_opts, aliases, search_path, errfmt)
+  AddIO(builtins, mem, dir_stack, exec_opts, splitter, errfmt)
+  AddProcess(builtins, mem, ext_prog, fd_state, job_state, waiter, search_path,
+             errfmt)
+  AddOil(builtins, mem, errfmt)
+
+  builtins[builtin_i.help] = help_builtin
+
+  # Interactive, depend on line_input
+  builtins[builtin_i.bind] = builtin_lib.Bind(line_input, errfmt)
+  builtins[builtin_i.history] = builtin_lib.History(line_input, mylib.Stdout())
+
+  #
+  # Assignment builtins
+  #
+
+  assign_b = {}  # type: Dict[int, vm._AssignBuiltin]
+
   new_var = builtin_assign.NewVar(mem, procs, errfmt)
-  assign_builtins = {
-      # ShAssignment (which are pure)
-      builtin_i.declare: new_var,
-      builtin_i.typeset: new_var,
-      builtin_i.local: new_var,
+  assign_b[builtin_i.declare] = new_var
+  assign_b[builtin_i.typeset] = new_var
+  assign_b[builtin_i.local] = new_var
 
-      builtin_i.export_: builtin_assign.Export(mem, errfmt),
-      builtin_i.readonly: builtin_assign.Readonly(mem, errfmt),
-  }
+  assign_b[builtin_i.export_] = builtin_assign.Export(mem, errfmt)
+  assign_b[builtin_i.readonly] = builtin_assign.Readonly(mem, errfmt)
 
-  true_ = builtin_pure.Boolean(0)
-  mapfile = builtin_misc.MapFile(mem, errfmt)
-
-  builtins = {
-      builtin_i.echo: builtin_pure.Echo(exec_opts),
-      builtin_i.printf: builtin_printf.Printf(mem, parse_ctx, errfmt),
-      builtin_i.mapfile: mapfile,
-      builtin_i.readarray: mapfile,
-
-      builtin_i.pushd: builtin_misc.Pushd(mem, dir_stack, errfmt),
-      builtin_i.popd: builtin_misc.Popd(mem, dir_stack, errfmt),
-      builtin_i.dirs: builtin_misc.Dirs(mem, dir_stack, errfmt),
-      builtin_i.pwd: builtin_misc.Pwd(mem, errfmt),
-
-      builtin_i.times: builtin_misc.Times(),
-      builtin_i.read: builtin_misc.Read(splitter, mem),
-      builtin_i.help: help_builtin,
-
-      builtin_i.cat: builtin_misc.Cat(),  # for $(<file)
-
-      # Completion (more added below)
-      builtin_i.compopt: builtin_comp.CompOpt(compopt_state, errfmt),
-      builtin_i.compadjust: builtin_comp.CompAdjust(mem),
-
-      # interactive
-      builtin_i.bind: builtin_lib.Bind(line_input, errfmt),
-      builtin_i.history: builtin_lib.History(line_input, mylib.Stdout()),
-
-      # test / [ differ by need_right_bracket
-      builtin_i.test: builtin_bracket.Test(False, exec_opts, mem, errfmt),
-      builtin_i.bracket: builtin_bracket.Test(True, exec_opts, mem, errfmt),
-
-      # assign
-      builtin_i.shift: builtin_assign.Shift(mem),
-
-      # meta
-      builtin_i.type: builtin_meta.Type(procs, aliases, search_path, errfmt),
-
-      # Pure
-      builtin_i.set: builtin_pure.Set(mutable_opts, mem),
-      builtin_i.shopt: builtin_pure.Shopt(mutable_opts),
-
-      builtin_i.alias: builtin_pure.Alias(aliases, errfmt),
-      builtin_i.unalias: builtin_pure.UnAlias(aliases, errfmt),
-
-      builtin_i.hash: builtin_pure.Hash(search_path),
-      builtin_i.getopts: builtin_pure.GetOpts(mem, errfmt),
-
-      builtin_i.colon: true_,  # a "special" builtin 
-      builtin_i.true_: true_,
-      builtin_i.false_: builtin_pure.Boolean(1),
-
-      # Process
-      builtin_i.exec_: builtin_process.Exec(mem, ext_prog,
-                                            fd_state, search_path,
-                                            errfmt),
-      builtin_i.wait: builtin_process.Wait(waiter,
-                                           job_state, mem, errfmt),
-      builtin_i.jobs: builtin_process.Jobs(job_state),
-      builtin_i.fg: builtin_process.Fg(job_state, waiter),
-      builtin_i.bg: builtin_process.Bg(job_state),
-      builtin_i.umask: builtin_process.Umask(),
-
-
-      # Oil
-      builtin_i.push: builtin_oil.Push(mem, errfmt),
-      builtin_i.append: builtin_oil.Append(mem, errfmt),
-
-      builtin_i.write: builtin_oil.Write(mem, errfmt),
-      builtin_i.getline: builtin_oil.Getline(mem, errfmt),
-
-      builtin_i.repr: builtin_oil.Repr(mem, errfmt),
-      builtin_i.use: builtin_oil.Use(mem, errfmt),
-      builtin_i.opts: builtin_oil.Opts(mem, errfmt),
-  }
+  #
+  # Initialize Evaluators
+  #
 
   arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, parse_ctx, errfmt)
   bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, parse_ctx, errfmt)
   expr_ev = expr_eval.OilEvaluator(mem, procs, errfmt)
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
-                                     assign_builtins, arena, cmd_deps)
+                                     assign_b, arena, cmd_deps)
 
   shell_ex = executor.ShellExecutor(
       mem, exec_opts, mutable_opts, procs, builtins, search_path,
@@ -486,27 +515,31 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
                       prompt_ev, tracer)
 
   #
-  # Add builtins that depend on various evaluators
+  # Initialize builtins that depend on evaluators
   #
 
+  # note: printf -v a[0] will give it same deps as 'unset'
+  builtins[builtin_i.printf] = builtin_printf.Printf(mem, parse_ctx, errfmt)
   builtins[builtin_i.unset] = builtin_assign.Unset(mem, exec_opts, procs,
                                                    parse_ctx, arith_ev, errfmt)
   builtins[builtin_i.eval] = builtin_meta.Eval(parse_ctx, exec_opts, cmd_ev)
 
-  source_builtin = builtin_meta.Source(
-      parse_ctx, search_path, cmd_ev, fd_state, errfmt)
+  source_builtin = builtin_meta.Source(parse_ctx, search_path, cmd_ev,
+                                       fd_state, errfmt)
   builtins[builtin_i.source] = source_builtin
   builtins[builtin_i.dot] = source_builtin
 
   builtins[builtin_i.builtin] = builtin_meta.Builtin(shell_ex, errfmt)
   builtins[builtin_i.command] = builtin_meta.Command(shell_ex, procs, aliases,
-                                                      search_path)
+                                                     search_path)
 
   spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev, splitter,
                                           comp_lookup)
   complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
   builtins[builtin_i.complete] = complete_builtin
   builtins[builtin_i.compgen] = builtin_comp.CompGen(spec_builder)
+  builtins[builtin_i.compopt] = builtin_comp.CompOpt(compopt_state, errfmt)
+  builtins[builtin_i.compadjust] = builtin_comp.CompAdjust(mem)
 
   # These builtins take blocks, and thus need cmd_ev.
   builtins[builtin_i.cd] = builtin_misc.Cd(mem, dir_stack, cmd_ev, errfmt)
