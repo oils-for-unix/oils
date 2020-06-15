@@ -49,11 +49,6 @@ from _devbuild.gen import id_kind
 _ = id_kind
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.syntax_asdl import source
-# Hack because we don't want libcmark.so dependency for build/dev.sh minimal
-try:
-  from _devbuild.gen import help_index  # generated file
-except ImportError:
-  help_index = None
 
 from core import alloc
 from core import error
@@ -260,7 +255,7 @@ def AppBundleMain(argv):
 
     if first_arg in ('-h', '--help'):
       errfmt = None  # not needed here
-      help_builtin = builtin_misc.Help(loader, help_index, errfmt)
+      help_builtin = builtin_misc.Help(loader, errfmt)
       help_builtin.Run(main.MakeBuiltinArgv(['bundle-usage']))
       sys.exit(0)
 

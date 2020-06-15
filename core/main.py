@@ -11,11 +11,6 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i, builtin_i
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import source
-# Hack because we don't want libcmark.so dependency for build/dev.sh minimal
-try:
-  from _devbuild.gen import help_index  # generated file
-except ImportError:
-  help_index = None
 
 from asdl import runtime
 
@@ -216,7 +211,7 @@ def ShellMain(lang, argv0, arg_r, environ, login_shell, loader, line_input):
   arena = alloc.Arena()
   errfmt = ui.ErrorFormatter(arena)
 
-  help_builtin = builtin_misc.Help(loader, help_index, errfmt)
+  help_builtin = builtin_misc.Help(loader, errfmt)
   if flag.help:
     help_builtin.Run(MakeBuiltinArgv(['%s-usage' % lang]))
     return 0

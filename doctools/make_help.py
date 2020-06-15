@@ -330,7 +330,6 @@ def main(argv):
     # Extract sections from help-index.html and make them into "cards".
 
     out_dir = argv[2]
-    py_out = argv[3]
 
     groups = []
 
@@ -348,10 +347,12 @@ def main(argv):
 
       groups.append(group_id)
 
-    with open(py_out, 'w') as f:
-      f.write('GROUPS = %s\n' % pprint.pformat(groups))
+    groups_out = os.path.join(out_dir, 'groups.txt')
+    with open(groups_out, 'w') as f:
+      for g in groups:
+        print(g, file=f)
     log('')
-    log('Wrote %s', py_out)
+    log('Wrote %s', groups_out)
 
   elif action == 'cards':
     # Split help into cards.

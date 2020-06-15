@@ -6,10 +6,6 @@ from __future__ import print_function
 
 import unittest
 
-try:
-  from _devbuild.gen import help_index
-except ImportError:
-  help_index = None
 from core import pyutil
 from frontend import flag_def  # side effect: flags are defined!
 _ = flag_def
@@ -46,7 +42,7 @@ class BuiltinTest(unittest.TestCase):
     # generated?  Because I don't want to deal with a C toolchain for it.
 
     loader = pyutil.GetResourceLoader()
-    builtin_misc.Help([], help_index, loader)
+    builtin_misc.Help([], loader)
 
 if __name__ == '__main__':
   unittest.main()

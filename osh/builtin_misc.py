@@ -519,11 +519,19 @@ if mylib.PYTHON:
   # Needs a different _ResourceLoader to translate
   class Help(vm._Builtin):
 
-    def __init__(self, loader, help_index, errfmt):
-      # type: (_ResourceLoader, Any, ErrorFormatter) -> None
+    def __init__(self, loader, errfmt):
+      # type: (_ResourceLoader, ErrorFormatter) -> None
       self.loader = loader
-      self.help_index = help_index
       self.errfmt = errfmt
+
+    def _Groups(self):
+      # type: () -> List[str]
+      # TODO: cache this?
+      f = self.loader.open('_devbuild/help/groups.txt')
+      lines = f.readlines()
+      f.close()
+      groups = [line.rstrip() for line in lines]
+      return groups
 
     def Run(self, cmd_val):
       # type: (cmd_value__Argv) -> int
@@ -543,7 +551,7 @@ if mylib.PYTHON:
         groups = cmd_val.argv[2:]
         if len(groups) == 0:
           # Print the whole index
-          groups = self.help_index.GROUPS
+          groups = self._Groups()
 
         for group in groups:
           try:

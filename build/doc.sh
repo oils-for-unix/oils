@@ -274,8 +274,7 @@ readonly CODE_DIR=_devbuild/gen
 
 # NOTE: Should eventually take .html instead of .md
 help-index-cards() {
-  local py_out=$CODE_DIR/help_index.py
-  _make-help cards-for-index $TEXT_DIR $py_out < $HTML_DIR/doc/help-index.html
+  _make-help cards-for-index $TEXT_DIR < $HTML_DIR/doc/help-index.html
 }
 
 help-cards() {
