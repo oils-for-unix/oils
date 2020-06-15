@@ -28,7 +28,7 @@ from pylib import os_path
 import libc
 import posix_ as posix
 
-from typing import Tuple, List, Any, Optional, TYPE_CHECKING
+from typing import Tuple, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import span_t
   from core.pyutil import _ResourceLoader

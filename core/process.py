@@ -31,6 +31,7 @@ from core import ui
 from core.util import log
 from frontend import match
 from osh import cmd_eval
+from mycpp import mylib
 from mycpp.mylib import tagswitch
 
 import posix_ as posix
@@ -46,7 +47,6 @@ if TYPE_CHECKING:
   from core import optview
   from osh.cmd_eval import CommandEvaluator
   from core.state import Mem
-  from mycpp import mylib
 
 
 NO_FD = -1
@@ -173,7 +173,7 @@ class FdState(object):
     f = self._Open(path, 'w', fd_mode)
     # Hack to change mylib.LineReader into mylib.Writer.  In reality the file
     # object supports both interfaces.
-    return cast(mylib.Writer, f)
+    return cast('mylib.Writer', f)
 
   def _Open(self, path, c_mode, fd_mode):
     # type: (str, str, int) -> mylib.LineReader
