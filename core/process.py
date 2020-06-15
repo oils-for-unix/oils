@@ -28,7 +28,6 @@ from _devbuild.gen.syntax_asdl import (
 from qsn_ import qsn
 from core.pyutil import stderr_line
 from core import util
-from core import ui
 from core.util import log
 from frontend import match
 from osh import cmd_eval

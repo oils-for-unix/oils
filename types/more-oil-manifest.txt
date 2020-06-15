@@ -4,4 +4,4 @@
 ./oil_lang/objects.py
 ./core/process.py
 ./core/executor.py
-./core/main.py
+./core/shell.py

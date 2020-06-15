@@ -9,8 +9,6 @@ ui.py - User interface constructs.
 """
 from __future__ import print_function
 
-import sys
-
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
     Token, command_t,
