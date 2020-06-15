@@ -49,8 +49,8 @@ TEST match_test() {
     log("val = %s", t.at1()->data_);
   }
 
-  // BUG: cstring-TODO: Truncated string causes read past len_
-  // Need a length check!
+    // BUG: cstring-TODO: Truncated string causes read past len_
+    // Need a length check!
 #if 0
   match::SimpleLexer* lex2 = match::BraceRangeLexer(new Str("1234", 2));
   while (true) {

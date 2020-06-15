@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import cStringIO
 import sys
+import time
 import zipimport  # NOT the zipfile module.
 
 from pylib import os_path
@@ -164,3 +165,16 @@ def ShowAppVersion(app_name, loader):
   print('Interpreter version: %s' % py_version)
   print('Bytecode: %s' % pyc_version)
 
+
+def CopyFile(in_path, out_path):
+  # type: (str, str) -> None
+
+  # This might be superstition, but we want to let the value stabilize
+  # after parsing.  bash -c 'cat /proc/$$/status' gives different results
+  # with a sleep.
+  time.sleep(0.001)
+
+  with open(in_path) as f2, open(out_path, 'w') as f3:
+    contents = f2.read()
+    f3.write(contents)
+    stderr_line('Wrote %s to %s', in_path, out_path)

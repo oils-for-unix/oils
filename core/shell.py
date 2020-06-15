@@ -565,8 +565,6 @@ def Main(lang, argv0, arg_r, environ, login_shell, loader, line_input):
     # https://unix.stackexchange.com/questions/24347/why-do-some-applications-use-config-appname-for-their-config-data-while-other
     home_dir = passwd.GetMyHomeDir()
     assert home_dir is not None
-    rc_path = flag.rcfile or os_path.join(home_dir, '.config/oil', lang + 'rc')
-
     history_filename = os_path.join(home_dir, '.config/oil', 'history_' + lang)
 
     if line_input:
@@ -603,8 +601,9 @@ def Main(lang, argv0, arg_r, environ, login_shell, loader, line_input):
 
     sig_state.InitInteractiveShell(display)
 
-    # NOTE: Call this AFTER _InitDefaultCompletions.
+    rc_path = flag.rcfile or os_path.join(home_dir, '.config/oil', lang + 'rc')
     try:
+      # NOTE: Should be called AFTER _InitDefaultCompletions.
       SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev)
     except util.UserExit as e:
       return e.status
@@ -631,16 +630,8 @@ def Main(lang, argv0, arg_r, environ, login_shell, loader, line_input):
 
     if status == 0 :
       if flag.parser_mem_dump:  # only valid in -n mode
-        # This might be superstition, but we want to let the value stabilize
-        # after parsing.  bash -c 'cat /proc/$$/status' gives different results
-        # with a sleep.
-        time.sleep(0.001)
         input_path = '/proc/%d/status' % posix.getpid()
-        with open(input_path) as f2, open(flag.parser_mem_dump, 'w') as f3:
-          contents = f2.read()
-          f3.write(contents)
-          log('Wrote %s to %s (--parser-mem-dump)', input_path,
-              flag.parser_mem_dump)
+        pyutil.CopyFile(input_path, flag.parser_mem_dump)
 
       ui.PrintAst(node, flag)
   else:
@@ -658,16 +649,8 @@ def Main(lang, argv0, arg_r, environ, login_shell, loader, line_input):
   # NOTE: 'exit 1' is ControlFlow and gets here, but subshell/commandsub
   # don't because they call sys.exit().
   if flag.runtime_mem_dump:
-    # This might be superstition, but we want to let the value stabilize
-    # after parsing.  bash -c 'cat /proc/$$/status' gives different results
-    # with a sleep.
-    time.sleep(0.001)
     input_path = '/proc/%d/status' % posix.getpid()
-    with open(input_path) as f2, open(flag.runtime_mem_dump, 'w') as f3:
-      contents = f2.read()
-      f3.write(contents)
-      log('Wrote %s to %s (--runtime-mem-dump)', input_path,
-          flag.runtime_mem_dump)
+    pyutil.CopyFile(input_path, flag.runtime_mem_dump)
 
   # NOTE: We haven't closed the file opened with fd_state.Open
   return status

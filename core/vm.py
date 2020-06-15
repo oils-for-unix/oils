@@ -24,38 +24,39 @@ if TYPE_CHECKING:
   from core import dev
 
 
-if mylib.PYTHON:
-  def InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex, prompt_ev, tracer):
-    # type: (ArithEvaluator, BoolEvaluator, OilEvaluator, NormalWordEvaluator, CommandEvaluator, _Executor, prompt.Evaluator, dev.Tracer) -> None
-    arith_ev.word_ev = word_ev
-    bool_ev.word_ev = word_ev
+def InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex, prompt_ev, tracer):
+  # type: (ArithEvaluator, BoolEvaluator, OilEvaluator, NormalWordEvaluator, CommandEvaluator, _Executor, prompt.Evaluator, dev.Tracer) -> None
+  arith_ev.word_ev = word_ev
+  bool_ev.word_ev = word_ev
 
+  if expr_ev:  # for pure OSH
     expr_ev.shell_ex = shell_ex
     expr_ev.word_ev = word_ev
 
-    word_ev.arith_ev = arith_ev
-    word_ev.expr_ev = expr_ev
-    word_ev.prompt_ev = prompt_ev
-    word_ev.shell_ex = shell_ex
+  word_ev.arith_ev = arith_ev
+  word_ev.expr_ev = expr_ev
+  word_ev.prompt_ev = prompt_ev
+  word_ev.shell_ex = shell_ex
 
-    cmd_ev.shell_ex = shell_ex
-    cmd_ev.arith_ev = arith_ev
-    cmd_ev.bool_ev = bool_ev
-    cmd_ev.expr_ev = expr_ev
-    cmd_ev.word_ev = word_ev
-    cmd_ev.tracer = tracer
+  cmd_ev.shell_ex = shell_ex
+  cmd_ev.arith_ev = arith_ev
+  cmd_ev.bool_ev = bool_ev
+  cmd_ev.expr_ev = expr_ev
+  cmd_ev.word_ev = word_ev
+  cmd_ev.tracer = tracer
 
-    shell_ex.cmd_ev = cmd_ev
+  shell_ex.cmd_ev = cmd_ev
 
-    prompt_ev.word_ev = word_ev
+  prompt_ev.word_ev = word_ev
 
-    arith_ev.CheckCircularDeps()
-    bool_ev.CheckCircularDeps()
+  arith_ev.CheckCircularDeps()
+  bool_ev.CheckCircularDeps()
+  if expr_ev:
     expr_ev.CheckCircularDeps()
-    word_ev.CheckCircularDeps()
-    cmd_ev.CheckCircularDeps()
-    shell_ex.CheckCircularDeps()
-    prompt_ev.CheckCircularDeps()
+  word_ev.CheckCircularDeps()
+  cmd_ev.CheckCircularDeps()
+  shell_ex.CheckCircularDeps()
+  prompt_ev.CheckCircularDeps()
 
 
 class _Executor(object):
