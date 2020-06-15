@@ -119,9 +119,10 @@ def SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev):
 
   try:
     f = fd_state.Open(rc_path)
-  except IOError as e:
+  except OSError as e:
+    # TODO: Could warn about nonexistent explicit --rcfile?
     if e.errno != errno.ENOENT:
-      raise  # TODO: handle this better
+      raise  # Goes to top level.  Handle this better?
     return
 
   arena = parse_ctx.arena

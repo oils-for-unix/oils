@@ -339,6 +339,10 @@ def main_(argv):
     print()
     return 130  # 128 + 2
   except (IOError, OSError) as e:
+    if 0:
+      import traceback
+      traceback.print_exc()
+
     # test this with prlimit --nproc=1 --pid=$$
     ui.Stderr('osh I/O error: %s', posix.strerror(e.errno))
     return 2  # dash gives status 2

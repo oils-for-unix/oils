@@ -149,10 +149,21 @@ exit-builtin-interactive() {
 }
 
 rc-file() {
+  set +o errexit
+
   local rc=_tmp/testrc
   echo 'PS1="TESTRC$ "' > $rc
+
   bin/osh -i --rcfile $rc < /dev/null
+  assert $? -eq 0
+
   bin/osh -i --rcfile /dev/null < /dev/null
+  assert $? -eq 0
+
+  # oshrc is optional
+  # TODO: Could warn about nonexistent explicit --rcfile?
+  bin/osh -i --rcfile nonexistent__ < /dev/null
+  assert $? -eq 0
 }
 
 noexec-fails-properly() {
