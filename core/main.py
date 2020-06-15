@@ -106,8 +106,8 @@ def _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup):
     comp_lookup.RegisterName('slowc', {}, C1)
 
 
-def SourceStartupFile(rc_path, lang, parse_ctx, cmd_ev):
-  # type: (str, str, parse_lib.ParseContext, cmd_eval.CommandEvaluator) -> None
+def SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev):
+  # type: (process.FdState, str, str, parse_lib.ParseContext, cmd_eval.CommandEvaluator) -> None
 
   # Right now this is called when the shell is interactive.  (Maybe it should
   # be called on login_shel too.)
@@ -123,20 +123,24 @@ def SourceStartupFile(rc_path, lang, parse_ctx, cmd_ev):
   # Bash also has --login.
 
   try:
-    arena = parse_ctx.arena
-    with open(rc_path) as f:
-      rc_line_reader = reader.FileLineReader(f, arena)
-      rc_c_parser = parse_ctx.MakeOshParser(rc_line_reader)
-
-      arena.PushSource(source.SourcedFile(rc_path))
-      try:
-        # TODO: don't ignore status, e.g. status == 2 when there's a parse error.
-        status = main_loop.Batch(cmd_ev, rc_c_parser, arena)
-      finally:
-        arena.PopSource()
+    f = fd_state.Open(rc_path)
   except IOError as e:
     if e.errno != errno.ENOENT:
-      raise
+      raise  # TODO: handle this better
+    return
+
+  arena = parse_ctx.arena
+  rc_line_reader = reader.FileLineReader(f, arena)
+  rc_c_parser = parse_ctx.MakeOshParser(rc_line_reader)
+
+  arena.PushSource(source.SourcedFile(rc_path))
+  try:
+    # TODO: handle status, e.g. 2 for ParseError
+    status = main_loop.Batch(cmd_ev, rc_c_parser, arena)
+  finally:
+    arena.PopSource()
+
+  f.close()
 
 
 class ShellOptHook(state.OptHook):
@@ -323,7 +327,7 @@ def ShellMain(lang, argv0, arg_r, environ, login_shell, loader, line_input):
     # This will be created as an empty file if it doesn't exist, or it could be
     # a pipe.
     try:
-      debug_f = util.DebugFile(fd_state.Open(debug_path, mode='w'))
+      debug_f = util.DebugFile(fd_state.OpenForWrite(debug_path))
     except OSError as e:
       ui.Stderr("osh: Couldn't open %r: %s", debug_path,
                 posix.strerror(e.errno))
@@ -609,7 +613,7 @@ def ShellMain(lang, argv0, arg_r, environ, login_shell, loader, line_input):
 
     # NOTE: Call this AFTER _InitDefaultCompletions.
     try:
-      SourceStartupFile(rc_path, lang, parse_ctx, cmd_ev)
+      SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev)
     except util.UserExit as e:
       return e.status
 

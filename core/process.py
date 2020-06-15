@@ -154,8 +154,8 @@ class FdState(object):
     self.stack = [self.cur_frame]
     self.mem = mem
 
-  def Open(self, path, mode='r'):
-    # type: (str, str) -> mylib.LineReader
+  def Open(self, path):
+    # type: (str) -> mylib.LineReader
     """Opens a path for read, but moves it out of the reserved 3-9 fd range.
 
     Returns:
@@ -164,13 +164,19 @@ class FdState(object):
     Raises:
       OSError if the path can't be found.
     """
-    if mode == 'r':
-      fd_mode = posix.O_RDONLY
-    elif mode == 'w':
-      fd_mode = posix.O_CREAT | posix.O_RDWR
-    else:
-      raise AssertionError(mode)
+    fd_mode = posix.O_RDONLY
+    return self._Open(path, 'r', fd_mode)
 
+  def OpenForWrite(self, path):
+    # type: (str) -> mylib.Writer
+    fd_mode = posix.O_CREAT | posix.O_RDWR
+    f = self._Open(path, 'w', fd_mode)
+    # Hack to change mylib.LineReader into mylib.Writer.  In reality the file
+    # object supports both interfaces.
+    return cast(mylib.Writer, f)
+
+  def _Open(self, path, c_mode, fd_mode):
+    # type: (str, str, int) -> mylib.LineReader
     fd = posix.open(path, fd_mode, 0o666)  # may raise OSError
 
     # Immediately move it to a new location
@@ -179,7 +185,7 @@ class FdState(object):
 
     # Return a Python file handle
     try:
-      f = posix.fdopen(new_fd, mode)  # Might raise IOError
+      f = posix.fdopen(new_fd, c_mode)  # Might raise IOError
     except IOError as e:
       raise OSError(*e.args)  # Consistently raise OSError
     return f
