@@ -193,7 +193,7 @@ def OshCommandMain(argv):
   return 0
 
 
-def TeaMain(argv0, argv):
+def TeaMain(argv):
   # type: (str, List[str]) -> int
   arena = alloc.Arena()
   try:
@@ -266,10 +266,6 @@ def AppBundleMain(argv):
 
     main_name = first_arg
 
-  argv0 = arg_r.Peek()
-  assert argv0 is not None
-  arg_r.Next()
-
   login_shell = False
   if main_name.startswith('-'):
     login_shell = True
@@ -278,18 +274,15 @@ def AppBundleMain(argv):
   if main_name in ('osh', 'sh'):
     # TODO:
     # - Initialize a different shell if line_input isn't present
-    # - Also think about the pure interpreter.  osh-pure, oil-pure?
-    #   - osh-eval, oil-eval ?
-    #   - osh --pure -c 'echo hi' ?
-    # m = main.Flow(...)
-    # m.Run(argv0, ...)
-    if line_input:
-      pass
-    status = shell.Main('osh', argv0, arg_r, posix.environ, login_shell,
+    status = shell.Main('osh', arg_r, posix.environ, login_shell,
                         loader, line_input)
 
     _tlog('done osh main')
     return status
+
+  elif main_name == 'osh-pure':
+    # TODO: pure.Main()
+    pass
 
   elif main_name == 'oshc':
     main_argv = arg_r.Rest()
@@ -300,12 +293,12 @@ def AppBundleMain(argv):
       return 2
 
   elif main_name == 'oil':
-    return shell.Main('oil', argv0, arg_r, posix.environ, login_shell,
+    return shell.Main('oil', arg_r, posix.environ, login_shell,
                       loader, line_input)
 
   elif main_name == 'tea':
     main_argv = arg_r.Rest()
-    return TeaMain(argv0, main_argv)
+    return TeaMain(main_argv)
 
   # For testing latency
   elif main_name == 'true':

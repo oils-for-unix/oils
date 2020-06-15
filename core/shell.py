@@ -30,6 +30,7 @@ from core import state
 from core import ui
 from core import util
 from core.util import log
+unused = log
 from core import vm
 
 from frontend import args
@@ -169,8 +170,8 @@ class ShellOptHook(state.OptHook):
     return True
 
 
-def Main(lang, argv0, arg_r, environ, login_shell, loader, line_input):
-  # type: (str, str, args.Reader, Dict[str, str], bool, pyutil._ResourceLoader, Any) -> int
+def Main(lang, arg_r, environ, login_shell, loader, line_input):
+  # type: (str, args.Reader, Dict[str, str], bool, pyutil._ResourceLoader, Any) -> int
   """The full shell lifecycle.  Used by bin/osh and bin/oil.
 
   Args:
@@ -195,6 +196,10 @@ def Main(lang, argv0, arg_r, environ, login_shell, loader, line_input):
   #   process.{ExternalProgram,Waiter,FdState,JobState,SignalState} -- we want
   #   to evaluate config files without any of these
   # Modules not translated yet: completion, comp_ui, builtin_comp, process
+
+  argv0 = arg_r.Peek()
+  assert argv0 is not None
+  arg_r.Next()
 
   assert lang in ('osh', 'oil'), lang
 
