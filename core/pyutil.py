@@ -14,7 +14,6 @@ import posix_ as posix
 from typing import IO, Any
 
 
-# TODO: Remove ui.Stderr in favor of this
 def stderr_line(msg, *args):
   # type: (str, *Any) -> None
   """Print a message to stderr for the user.

@@ -57,6 +57,7 @@ from core import meta
 from core import shell
 from core import optview
 from core import pyutil
+from core.pyutil import stderr_line
 from core import ui
 from core.util import log
 from frontend import args
@@ -127,8 +128,8 @@ def OshCommandMain(argv):
     try:
       f = open(script_name)
     except IOError as e:
-      ui.Stderr("oshc: Couldn't open %r: %s", script_name,
-                posix.strerror(e.errno))
+      stderr_line("oshc: Couldn't open %r: %s", script_name,
+                  posix.strerror(e.errno))
       return 2
 
   aliases = {}  # Dummy value; not respecting aliases!
@@ -205,8 +206,8 @@ def TeaMain(argv0, argv):
     try:
       f = open(script_name)
     except IOError as e:
-      ui.Stderr("tea: Couldn't open %r: %s", script_name,
-                posix.strerror(e.errno))
+      stderr_line("tea: Couldn't open %r: %s", script_name,
+                  posix.strerror(e.errno))
       return 2
 
   aliases = {}  # Dummy value; not respecting aliases!
@@ -295,7 +296,7 @@ def AppBundleMain(argv):
     try:
       return OshCommandMain(main_argv)
     except error.Usage as e:
-      ui.Stderr('oshc usage error: %s', e.msg)
+      stderr_line('oshc usage error: %s', e.msg)
       return 2
 
   elif main_name == 'oil':
@@ -344,7 +345,7 @@ def main(argv):
       traceback.print_exc()
 
     # test this with prlimit --nproc=1 --pid=$$
-    ui.Stderr('osh I/O error: %s', posix.strerror(e.errno))
+    stderr_line('osh I/O error: %s', posix.strerror(e.errno))
     return 2  # dash gives status 2
   finally:
     _tlog('Exiting main()')

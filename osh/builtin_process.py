@@ -17,6 +17,7 @@ from _devbuild.gen.syntax_asdl import source
 from asdl import runtime
 from core import error
 from core import main_loop
+from core.pyutil import stderr_line
 from core import ui
 from core import vm
 from core.util import log
@@ -446,8 +447,7 @@ class Trap(vm._Builtin):
     # Register a hook.
     if sig_key in _HOOK_NAMES:
       if sig_key in ('ERR', 'RETURN', 'DEBUG'):
-        ui.Stderr("osh warning: The %r hook isn't yet implemented ",
-                  sig_spec)
+        stderr_line("osh warning: The %r hook isn't implemented", sig_spec)
       self.traps[sig_key] = _TrapHandler(node, self.nodes_to_run)
       return 0
 
@@ -493,7 +493,7 @@ class Umask(vm._Builtin):
         new_mask = int(a, 8)
       except ValueError:
         # NOTE: This happens if we have '8' or '9' in the input too.
-        ui.Stderr("osh warning: umask with symbolic input isn't implemented")
+        stderr_line("osh warning: umask with symbolic input isn't implemented")
         return 1
       else:
         posix.umask(new_mask)

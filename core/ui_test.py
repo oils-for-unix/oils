@@ -12,9 +12,6 @@ from core import ui  # module under test
 
 class UiTest(unittest.TestCase):
 
-  def testStderr(self):
-    ui.Stderr('oops')
-
   def testErrorFormatter(self):
     arena = test_lib.MakeArena('')
     line_id = arena.AddLine('[line one]', 1)

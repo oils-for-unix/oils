@@ -42,6 +42,7 @@ from _devbuild.gen.runtime_asdl import value_e, value__Str
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
 from core import error
+from core.pyutil import stderr_line
 from core import ui
 from core import util
 from core.util import log
@@ -489,8 +490,8 @@ class ShellFuncAction(CompletionAction):
       # Not changing it means there were no completions.
       # TODO: This writes over the command line; it would be better to use an
       # error object.
-      ui.Stderr('osh: Ran function %r but COMPREPLY was unset',
-                self.func.name)
+      stderr_line('osh: Ran function %r but COMPREPLY was unset',
+                  self.func.name)
       return []
 
     if val.tag_() != value_e.MaybeStrArray:
@@ -1203,26 +1204,26 @@ class ReadlineCallback(object):
       return self._GetNextCompletion(state)
     except util.UserExit as e:
       # TODO: Could use errfmt to show this
-      ui.Stderr("osh: Ignoring 'exit' in completion plugin")
+      stderr_line("osh: Ignoring 'exit' in completion plugin")
     except error.FatalRuntime as e:
       # From -W.  TODO: -F is swallowed now.
       # We should have a nicer UI for displaying errors.  Maybe they shouldn't
       # print it to stderr.  That messes up the completion display.  We could
       # print what WOULD have been COMPREPLY here.
-      ui.Stderr('osh: Runtime error while completing: %s', e)
+      stderr_line('osh: Runtime error while completing: %s', e)
       self.debug_f.log('Runtime error while completing: %s', e)
     except (IOError, OSError) as e:
       # test this with prlimit --nproc=1 --pid=$$
-      ui.Stderr('osh: I/O error in completion: %s', posix.strerror(e.errno))
+      stderr_line('osh: I/O error in completion: %s', posix.strerror(e.errno))
     except KeyboardInterrupt:
       # It appears GNU readline handles Ctrl-C to cancel a long completion.
       # So this may never happen?
-      ui.Stderr('Ctrl-C in completion')
+      stderr_line('Ctrl-C in completion')
     except Exception as e:  # ESSENTIAL because readline swallows exceptions.
       if 0:
         import traceback
         traceback.print_exc()
-      ui.Stderr('osh: Unhandled exception while completing: %s', e)
+      stderr_line('osh: Unhandled exception while completing: %s', e)
       self.debug_f.log('Unhandled exception while completing: %s', e)
     except SystemExit as e:
       # Because readline ignores SystemExit!

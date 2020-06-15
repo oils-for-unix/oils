@@ -201,7 +201,7 @@ def Main(lang, argv0, arg_r, environ, login_shell, loader, line_input):
   try:
     attrs = flag_spec.ParseMore('main', arg_r)
   except error.Usage as e:
-    ui.Stderr('osh usage error: %s', e.msg)
+    stderr_line('osh usage error: %s', e.msg)
     return 2
   flag = arg_types.main(attrs.attrs)
 
@@ -321,8 +321,8 @@ def Main(lang, argv0, arg_r, environ, login_shell, loader, line_input):
     try:
       debug_f = util.DebugFile(fd_state.OpenForWrite(debug_path))
     except OSError as e:
-      ui.Stderr("osh: Couldn't open %r: %s", debug_path,
-                posix.strerror(e.errno))
+      stderr_line("osh: Couldn't open %r: %s", debug_path,
+                  posix.strerror(e.errno))
       return 2
   else:
     debug_f = util.NullDebugFile()
@@ -545,8 +545,8 @@ def Main(lang, argv0, arg_r, environ, login_shell, loader, line_input):
       try:
         f = fd_state.Open(script_name)
       except OSError as e:
-        ui.Stderr("osh: Couldn't open %r: %s", script_name,
-                  posix.strerror(e.errno))
+        stderr_line("osh: Couldn't open %r: %s", script_name,
+                    posix.strerror(e.errno))
         return 1
       line_reader = reader.FileLineReader(f, arena)
 

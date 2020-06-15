@@ -26,6 +26,7 @@ from _devbuild.gen.syntax_asdl import (
     redir_loc, redir_loc_e, redir_loc_t, redir_loc__VarName, redir_loc__Fd,
 )
 from qsn_ import qsn
+from core.pyutil import stderr_line
 from core import util
 from core import ui
 from core.util import log
@@ -732,7 +733,7 @@ class SubProgramThunk(Thunk):
       print()
       status = 130  # 128 + 2
     except (IOError, OSError) as e:
-      ui.Stderr('osh I/O error: %s', posix.strerror(e.errno))
+      stderr_line('osh I/O error: %s', posix.strerror(e.errno))
       status = 2
 
     # Raises SystemExit, so we still have time to write a crash dump.
@@ -1345,7 +1346,7 @@ class Waiter(object):
     # notification of its exit, even though we didn't start it.  We can't have
     # any knowledge of such processes, so print a warning.
     if pid not in self.job_state.child_procs:
-      ui.Stderr("osh: PID %d stopped, but osh didn't start it", pid)
+      stderr_line("osh: PID %d stopped, but osh didn't start it", pid)
       return True  # caller should keep waiting
 
     proc = self.job_state.child_procs[pid]

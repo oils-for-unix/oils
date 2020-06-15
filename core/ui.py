@@ -27,6 +27,7 @@ from mycpp.mylib import tagswitch, NewStr
 
 from typing import List, Optional, cast, Any, TYPE_CHECKING
 if TYPE_CHECKING:
+  from _devbuild.gen import arg_types
   from core.alloc import Arena
   from core.error import _ErrorWithLocation
   from mycpp.mylib import Writer
@@ -280,51 +281,36 @@ class ErrorFormatter(object):
     _pp(err, self.arena, prefix)
 
 
-if mylib.PYTHON:
-  def Stderr(msg, *args):
-    # type: (str, *Any) -> None
-    """Print a message to stderr for the user.
+def PrintAst(node, flag):
+  # type: (command_t, arg_types.main) -> None
 
-    This should be used sparingly, since it doesn't have any location info.
-    Right now we use it to print fatal I/O errors that were only caught at the
-    top level.
-    """
-    if args:
-      msg = msg % args
-    print(msg, file=sys.stderr)
+  if flag.ast_format == 'none':
+    stderr_line('AST not printed.')
+    if 0:
+      from _devbuild.gen.id_kind_asdl import Id_str
+      from frontend.lexer import ID_HIST
+      for id_, count in ID_HIST.most_common(10):
+        print('%8d %s' % (count, Id_str(id_)))
+      print()
+      total = sum(ID_HIST.values())
+      print('%8d total tokens returned' % total)
 
-  # Doesn't translate because of Any type
-  # Options may need metaprogramming!
-  def PrintAst(node, flag):
-    # type: (command_t, Any) -> None
+  else:  # text output
+    f = mylib.Stdout()
 
-    if flag.ast_format == 'none':
-      print('AST not printed.', file=sys.stderr)
-      if 0:
-        from _devbuild.gen.id_kind_asdl import Id_str
-        from frontend.lexer import ID_HIST
-        for id_, count in ID_HIST.most_common(10):
-          print('%8d %s' % (count, Id_str(id_)))
-        print()
-        total = sum(ID_HIST.values())
-        print('%8d total tokens returned' % total)
+    if flag.ast_format in ('text', 'abbrev-text'):
+      ast_f = fmt.DetectConsoleOutput(f)
+    elif flag.ast_format in ('html', 'abbrev-html'):
+      ast_f = fmt.HtmlOutput(f)
+    else:
+      raise AssertionError()
 
-    else:  # text output
-      f = mylib.Stdout()
+    if 'abbrev-' in flag.ast_format:
+      tree = node.AbbreviatedTree()
+    else:
+      tree = node.PrettyTree()
 
-      if flag.ast_format in ('text', 'abbrev-text'):
-        ast_f = fmt.DetectConsoleOutput(f)
-      elif flag.ast_format in ('html', 'abbrev-html'):
-        ast_f = fmt.HtmlOutput(f)
-      else:
-        raise AssertionError()
-
-      if 'abbrev-' in flag.ast_format:
-        tree = node.AbbreviatedTree()
-      else:
-        tree = node.PrettyTree()
-
-      ast_f.FileHeader()
-      fmt.PrintTree(tree, ast_f)
-      ast_f.FileFooter()
-      ast_f.write('\n')
+    ast_f.FileHeader()
+    fmt.PrintTree(tree, ast_f)
+    ast_f.FileFooter()
+    ast_f.write('\n')
