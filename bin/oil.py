@@ -52,9 +52,9 @@ from _devbuild.gen.syntax_asdl import source
 
 from core import alloc
 from core import error
-from core import main
 from core import main_loop
 from core import meta
+from core import shell
 from core import optview
 from core import pyutil
 from core import ui
@@ -256,7 +256,7 @@ def AppBundleMain(argv):
     if first_arg in ('-h', '--help'):
       errfmt = None  # not needed here
       help_builtin = builtin_misc.Help(loader, errfmt)
-      help_builtin.Run(main.MakeBuiltinArgv(['bundle-usage']))
+      help_builtin.Run(shell.MakeBuiltinArgv(['bundle-usage']))
       sys.exit(0)
 
     if first_arg in ('-V', '--version'):
@@ -284,8 +284,8 @@ def AppBundleMain(argv):
     # m.Run(argv0, ...)
     if line_input:
       pass
-    status = main.ShellMain('osh', argv0, arg_r, posix.environ, login_shell,
-                            loader, line_input)
+    status = shell.Main('osh', argv0, arg_r, posix.environ, login_shell,
+                        loader, line_input)
 
     _tlog('done osh main')
     return status
@@ -299,8 +299,8 @@ def AppBundleMain(argv):
       return 2
 
   elif main_name == 'oil':
-    return main.ShellMain('oil', argv0, arg_r, posix.environ, login_shell,
-                          loader, line_input)
+    return shell.Main('oil', argv0, arg_r, posix.environ, login_shell,
+                      loader, line_input)
 
   elif main_name == 'tea':
     main_argv = arg_r.Rest()
@@ -318,7 +318,7 @@ def AppBundleMain(argv):
     raise error.Usage('Invalid applet name %r.' % main_name)
 
 
-def main_(argv):
+def main(argv):
   # type: (List[str]) -> int
   try:
     return AppBundleMain(argv)
@@ -347,14 +347,14 @@ def main_(argv):
     ui.Stderr('osh I/O error: %s', posix.strerror(e.errno))
     return 2  # dash gives status 2
   finally:
-    _tlog('Exiting main_()')
+    _tlog('Exiting main()')
     if _trace_path:
       _tracer.Stop(_trace_path)
 
 
 # Called from Python-2.7.13/Modules/main.c.
 def _cpython_main_hook():
-  sys.exit(main_(sys.argv))
+  sys.exit(main(sys.argv))
 
 
 if __name__ == '__main__':
@@ -365,7 +365,7 @@ if __name__ == '__main__':
 
     collect_types.init_types_collection()
     with collect_types.collect():
-      status = main_(sys.argv)
+      status = main(sys.argv)
     collect_types.dump_stats(pyann_out)
     sys.exit(status)
 
@@ -379,4 +379,4 @@ if __name__ == '__main__':
     callgraph.Walk(main, sys.modules)
 
   else:
-    sys.exit(main_(sys.argv))
+    sys.exit(main(sys.argv))

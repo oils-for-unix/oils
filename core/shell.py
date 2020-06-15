@@ -169,24 +169,17 @@ class ShellOptHook(state.OptHook):
     return True
 
 
-def ShellMain(lang, argv0, arg_r, environ, login_shell, loader, line_input):
+def Main(lang, argv0, arg_r, environ, login_shell, loader, line_input):
   # type: (str, str, args.Reader, Dict[str, str], bool, pyutil._ResourceLoader, Any) -> int
-  """Used by bin/osh and bin/oil.
+  """The full shell lifecycle.  Used by bin/osh and bin/oil.
 
   Args:
     lang: 'osh' or 'oil'
-    argv0, argv: So we can also invoke bin/osh as 'oil.ovm osh'.  Like busybox.
-    login_shell: Was - on the front?
-
-  Dependencies for a pure interpreter:
-    loader: to get help, version, grammar, etc.
+    argv0, arg_r: command line arguments
     environ: environment
-  Optional:
+    login_shell: Was - on the front?
+    loader: to get help, version, grammar, etc.
     line_input: optional GNU readline
-    process.{ExternalProgram,Waiter,FdState,JobState,SignalState} -- we want
-      to evaluate config files without any of these
-
-  Modules not translated yet: completion, comp_ui, builtin_comp, process
   """
   # Differences between osh and oil:
   # - --help?  I guess Oil has a SUPERSET of OSH options.
@@ -199,6 +192,9 @@ def ShellMain(lang, argv0, arg_r, environ, login_shell, loader, line_input):
   # - no expression evaluator
   # - no interactive shell, or line_input
   # - no process.*
+  #   process.{ExternalProgram,Waiter,FdState,JobState,SignalState} -- we want
+  #   to evaluate config files without any of these
+  # Modules not translated yet: completion, comp_ui, builtin_comp, process
 
   assert lang in ('osh', 'oil'), lang
 
