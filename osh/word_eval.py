@@ -1950,7 +1950,8 @@ class NormalWordEvaluator(AbstractWordEvaluator):
   def CheckCircularDeps(self):
     # type: () -> None
     assert self.arith_ev is not None
-    assert self.expr_ev is not None
+    # Disabled for pure OSH
+    #assert self.expr_ev is not None
     assert self.shell_ex is not None
     assert self.prompt_ev is not None
 

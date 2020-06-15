@@ -316,8 +316,6 @@ def main(argv):
   # type: (List[str]) -> int
   try:
     return AppBundleMain(argv)
-  except NotImplementedError as e:
-    raise
   except error.Usage as e:
     #builtin.Help(['oil-usage'], util.GetResourceLoader())
     log('oil: %s', e.msg)

@@ -249,7 +249,8 @@ class CommandEvaluator(object):
     # type: () -> None
     assert self.arith_ev is not None
     assert self.bool_ev is not None
-    assert self.expr_ev is not None
+    # Disabled for push OSH
+    #assert self.expr_ev is not None
     assert self.word_ev is not None
 
   def _RunAssignBuiltin(self, cmd_val):

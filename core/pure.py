@@ -4,59 +4,45 @@ core/main.py -- Entry point for the shell interpreter.
 """
 from __future__ import print_function
 
-import errno
-import time
+import time as time_
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.option_asdl import option_i, builtin_i
+from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import source
 
+from asdl import format as fmt
 from asdl import runtime
 
 from core import alloc
-from core import comp_ui
 from core import dev
 from core import error
-from core import executor
-from core import completion
 from core import main_loop
-from core import meta
-from core import passwd
-from core import process
+from core.pyerror import e_usage
 from core import pyutil
 from core.pyutil import stderr_line
 from core import state
 from core import ui
 from core import util
-from core.util import log
-unused = log
+from core.util import log, e_die
+#unused = log
 from core import vm
 
 from frontend import args
+from frontend import consts
 from frontend import flag_def  # side effect: flags are defined!
 _ = flag_def
 from frontend import flag_spec
 from frontend import reader
-from frontend import py_reader
 from frontend import parse_lib
-
-from oil_lang import expr_eval
-from oil_lang import builtin_oil
-from oil_lang import builtin_funcs
 
 from osh import builtin_assign
 from osh import builtin_bracket
-from osh import builtin_comp
 from osh import builtin_meta
 from osh import builtin_misc
-from osh import builtin_lib
 from osh import builtin_printf
-from osh import builtin_process
 from osh import builtin_pure
 from osh import cmd_eval
-from osh import glob_
-from osh import history
 from osh import prompt
 from osh import sh_expr_eval
 from osh import split
@@ -64,8 +50,6 @@ from osh import word_eval
 
 from mycpp import mylib
 from pylib import os_path
-
-import libc
 
 import posix_ as posix
 
@@ -75,6 +59,8 @@ if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from _devbuild.gen.syntax_asdl import command__ShFunction
   from core import optview
+  from oil_lang import expr_eval
+  from pgen2 import grammar
 
 
 def MakeBuiltinArgv(argv):
@@ -82,93 +68,6 @@ def MakeBuiltinArgv(argv):
   argv = [''] + argv  # add dummy for argv[0]
   # no location info
   return cmd_value.Argv(argv, [runtime.NO_SPID] * len(argv))
-
-
-def _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup):
-  # type: (cmd_eval.CommandEvaluator, builtin_comp.Complete, completion.Lookup) -> None
-
-  # register builtins and words
-  complete_builtin.Run(MakeBuiltinArgv(['-E', '-A', 'command']))
-  # register path completion
-  # Add -o filenames?  Or should that be automatic?
-  complete_builtin.Run(MakeBuiltinArgv(['-D', '-A', 'file']))
-
-  # TODO: Move this into demo/slow-completion.sh
-  if 1:
-    # Something for fun, to show off.  Also: test that you don't repeatedly hit
-    # the file system / network / coprocess.
-    A1 = completion.TestAction(['foo.py', 'foo', 'bar.py'])
-    A2 = completion.TestAction(['m%d' % i for i in xrange(5)], delay=0.1)
-    C1 = completion.UserSpec([A1, A2], [], [], lambda candidate: True)
-    comp_lookup.RegisterName('slowc', {}, C1)
-
-
-def SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev):
-  # type: (process.FdState, str, str, parse_lib.ParseContext, cmd_eval.CommandEvaluator) -> None
-
-  # Right now this is called when the shell is interactive.  (Maybe it should
-  # be called on login_shel too.)
-  #
-  # Terms:
-  # - interactive shell: Roughly speaking, no args or -c, and isatty() is true
-  #   for stdin and stdout.
-  # - login shell: Started from the top level, e.g. from init or ssh.
-  #
-  # We're not going to copy everything bash does because it's too complex, but
-  # for reference:
-  # https://www.gnu.org/software/bash/manual/bash.html#Bash-Startup-Files
-  # Bash also has --login.
-
-  try:
-    f = fd_state.Open(rc_path)
-  except OSError as e:
-    # TODO: Could warn about nonexistent explicit --rcfile?
-    if e.errno != errno.ENOENT:
-      raise  # Goes to top level.  Handle this better?
-    return
-
-  arena = parse_ctx.arena
-  rc_line_reader = reader.FileLineReader(f, arena)
-  rc_c_parser = parse_ctx.MakeOshParser(rc_line_reader)
-
-  arena.PushSource(source.SourcedFile(rc_path))
-  try:
-    # TODO: handle status, e.g. 2 for ParseError
-    status = main_loop.Batch(cmd_ev, rc_c_parser, arena)
-  finally:
-    arena.PopSource()
-
-  f.close()
-
-
-class ShellOptHook(state.OptHook):
-
-  def __init__(self, line_input):
-    # type: (Any) -> None
-    self.line_input = line_input
-
-  def OnChange(self, opt_array, opt_name, b):
-    # type: (List[bool], str, bool) -> bool
-    """This method is called whenever an option is changed.
-
-    Returns success or failure.
-    """
-    if opt_name == 'vi' or opt_name == 'emacs':
-      # TODO: Replace with a hook?  Just like setting LANG= can have a hook.
-      if self.line_input:
-        self.line_input.parse_and_bind("set editing-mode " + opt_name);
-      else:
-        stderr_line(
-            "Warning: Can't set option %r because Oil wasn't built with line editing (e.g. GNU readline)", opt_name)
-        return False
-
-      # Invert: they are mutually exclusive!
-      if opt_name == 'vi':
-        opt_array[option_i.emacs] = not b
-      elif opt_name == 'emacs':
-        opt_array[option_i.vi] = not b
-
-    return True
 
 
 def AddPure(b, mem, procs, mutable_opts, aliases, search_path, errfmt):
@@ -213,41 +112,6 @@ def AddIO(b, mem, dir_stack, exec_opts, splitter, errfmt):
   b[builtin_i.pwd] = builtin_misc.Pwd(mem, errfmt)
 
   b[builtin_i.times] = builtin_misc.Times()
-
-
-def AddProcess(
-    b,  # type: Dict[int, vm._Builtin]
-    mem,  # type: state.Mem
-    ext_prog,  # type: process.ExternalProgram
-    fd_state,  # type: process.FdState
-    job_state,  # type: process.JobState
-    waiter,  # type: process.Waiter
-    search_path,  # type: state.SearchPath
-    errfmt  # type: ui.ErrorFormatter
-    ):
-    # type: (...) -> None
-
-  # Process
-  b[builtin_i.exec_] = builtin_process.Exec(mem, ext_prog, fd_state,
-                                            search_path, errfmt)
-  b[builtin_i.wait] = builtin_process.Wait(waiter, job_state, mem, errfmt)
-  b[builtin_i.jobs] = builtin_process.Jobs(job_state)
-  b[builtin_i.fg] = builtin_process.Fg(job_state, waiter)
-  b[builtin_i.bg] = builtin_process.Bg(job_state)
-  b[builtin_i.umask] = builtin_process.Umask()
-
-
-def AddOil(b, mem, errfmt):
-  # type: (Dict[int, vm._Builtin], state.Mem, ui.ErrorFormatter) -> None
-  b[builtin_i.push] = builtin_oil.Push(mem, errfmt)
-  b[builtin_i.append] = builtin_oil.Append(mem, errfmt)
-
-  b[builtin_i.write] = builtin_oil.Write(mem, errfmt)
-  b[builtin_i.getline] = builtin_oil.Getline(mem, errfmt)
-
-  b[builtin_i.repr] = builtin_oil.Repr(mem, errfmt)
-  b[builtin_i.use] = builtin_oil.Use(mem, errfmt)
-  b[builtin_i.opts] = builtin_oil.Opts(mem, errfmt)
 
 
 def Main(lang, arg_r, environ, login_shell, loader, line_input):
@@ -332,14 +196,12 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   version_str = pyutil.GetVersion(loader)
   state.InitMem(mem, environ, version_str)
 
-  builtin_funcs.Init(mem)
-
   procs = {}  # type: Dict[str, command__ShFunction]
 
-  job_state = process.JobState()
-  fd_state = process.FdState(errfmt, job_state, mem)
+  #job_state = process.JobState()
+  #fd_state = process.FdState(errfmt, job_state, mem)
 
-  opt_hook = ShellOptHook(line_input)
+  opt_hook = state.OptHook()
   parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, opt_hook)
   # TODO: only MutableOpts needs mem, so it's not a true circular dep.
   mem.exec_opts = exec_opts  # circular dep
@@ -356,10 +218,11 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   # feedback between runtime and parser
   aliases = {}  # type: Dict[str, str]
 
-  oil_grammar = meta.LoadOilGrammar(loader)
+  oil_grammar = None  # type: grammar.Grammar
+  #oil_grammar = meta.LoadOilGrammar(loader)
 
   if flag.one_pass_parse and not exec_opts.noexec():
-    raise error.Usage('--one-pass-parse requires noexec (-n)')
+    e_usage('--one-pass-parse requires noexec (-n)')
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
   parse_ctx.Init_OnePassParse(flag.one_pass_parse)
 
@@ -396,7 +259,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   cmd_deps.traps = {}
   cmd_deps.trap_nodes = []  # TODO: Clear on fork() to avoid duplicates
 
-  waiter = process.Waiter(job_state, exec_opts)
+  #waiter = process.Waiter(job_state, exec_opts)
 
   my_pid = posix.getpid()
 
@@ -408,16 +271,9 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     debug_path = os_path.join(debug_dir, '%d-osh.log' % my_pid)
 
   if len(debug_path):
-    # This will be created as an empty file if it doesn't exist, or it could be
-    # a pipe.
-    try:
-      debug_f = util.DebugFile(fd_state.OpenForWrite(debug_path))
-    except OSError as e:
-      stderr_line("osh: Couldn't open %r: %s", debug_path,
-                  posix.strerror(e.errno))
-      return 2
+    raise NotImplementedError()
   else:
-    debug_f = util.NullDebugFile()
+    debug_f = util.NullDebugFile()  # type: util.DebugFile
 
   cmd_deps.debug_f = debug_f
 
@@ -425,27 +281,16 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   # the beginning of the log, and then only show time afterward?  To save
   # space, and make space for microseconds.  (datetime supports microseconds
   # but time.strftime doesn't).
-  iso_stamp = time.strftime("%Y-%m-%d %H:%M:%S")
+  iso_stamp = time_.strftime("%Y-%m-%d %H:%M:%S")
   debug_f.log('%s [%d] OSH started with argv %s', iso_stamp, my_pid, arg_r.argv)
   if len(debug_path):
     debug_f.log('Writing logs to %r', debug_path)
 
   interp = environ.get('OSH_HIJACK_SHEBANG', '')
   search_path = state.SearchPath(mem)
-  ext_prog = process.ExternalProgram(interp, fd_state, errfmt, debug_f)
+  #ext_prog = process.ExternalProgram(interp, fd_state, errfmt, debug_f)
 
   splitter = split.SplitContext(mem)
-
-  # split() builtin
-  # TODO: Accept IFS as a named arg?  split('a b', IFS=' ')
-  builtin_funcs.SetGlobalFunc(
-      mem, 'split', lambda s, ifs=None: splitter.SplitForWordEval(s, ifs=ifs))
-
-  # glob() builtin
-  # TODO: This is instantiation is duplicated in osh/word_eval.py
-  globber = glob_.Globber(exec_opts)
-  builtin_funcs.SetGlobalFunc(
-      mem, 'glob', lambda s: globber.OilFuncCall(s))
 
   # This could just be OSH_DEBUG_STREAMS='debug crash' ?  That might be
   # stuffing too much into one, since a .json crash dump isn't a stream.
@@ -457,12 +302,12 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   else:
     trace_f = util.DebugFile(mylib.Stderr())
 
-  comp_lookup = completion.Lookup()
+  #comp_lookup = completion.Lookup()
 
   # Various Global State objects to work around readline interfaces
-  compopt_state = completion.OptionState()
-  comp_ui_state = comp_ui.State()
-  prompt_state = comp_ui.PromptState()
+  #compopt_state = completion.OptionState()
+  #comp_ui_state = comp_ui.State()
+  #prompt_state = comp_ui.PromptState()
 
   dir_stack = state.DirStack()
 
@@ -474,15 +319,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   AddPure(builtins, mem, procs, mutable_opts, aliases, search_path, errfmt)
   AddIO(builtins, mem, dir_stack, exec_opts, splitter, errfmt)
-  AddProcess(builtins, mem, ext_prog, fd_state, job_state, waiter, search_path,
-             errfmt)
-  AddOil(builtins, mem, errfmt)
 
   builtins[builtin_i.help] = help_builtin
-
-  # Interactive, depend on line_input
-  builtins[builtin_i.bind] = builtin_lib.Bind(line_input, errfmt)
-  builtins[builtin_i.history] = builtin_lib.History(line_input, mylib.Stdout())
 
   #
   # Assignment builtins
@@ -504,14 +342,15 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   arith_ev = sh_expr_eval.ArithEvaluator(mem, exec_opts, parse_ctx, errfmt)
   bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, parse_ctx, errfmt)
-  expr_ev = expr_eval.OilEvaluator(mem, procs, errfmt)
+  expr_ev = None  # type: expr_eval.OilEvaluator
   word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, splitter, errfmt)
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
                                      assign_b, arena, cmd_deps)
 
-  shell_ex = executor.ShellExecutor(
-      mem, exec_opts, mutable_opts, procs, builtins, search_path,
-      ext_prog, waiter, job_state, fd_state, errfmt)
+  #shell_ex = executor.ShellExecutor(
+  #    mem, exec_opts, mutable_opts, procs, builtins, search_path,
+  #    ext_prog, waiter, job_state, fd_state, errfmt)
+  shell_ex = NullExecutor(exec_opts, mutable_opts, procs, builtins)
 
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
   prompt_ev = prompt.Evaluator(lang, parse_ctx, mem)
@@ -531,36 +370,24 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
                                                    parse_ctx, arith_ev, errfmt)
   builtins[builtin_i.eval] = builtin_meta.Eval(parse_ctx, exec_opts, cmd_ev)
 
-  source_builtin = builtin_meta.Source(parse_ctx, search_path, cmd_ev,
-                                       fd_state, errfmt)
-  builtins[builtin_i.source] = source_builtin
-  builtins[builtin_i.dot] = source_builtin
+  #source_builtin = builtin_meta.Source(parse_ctx, search_path, cmd_ev,
+                                       #fd_state, errfmt)
+  #builtins[builtin_i.source] = source_builtin
+  #builtins[builtin_i.dot] = source_builtin
 
   builtins[builtin_i.builtin] = builtin_meta.Builtin(shell_ex, errfmt)
   builtins[builtin_i.command] = builtin_meta.Command(shell_ex, procs, aliases,
                                                      search_path)
 
-  spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev, splitter,
-                                          comp_lookup)
-  complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
-  builtins[builtin_i.complete] = complete_builtin
-  builtins[builtin_i.compgen] = builtin_comp.CompGen(spec_builder)
-  builtins[builtin_i.compopt] = builtin_comp.CompOpt(compopt_state, errfmt)
-  builtins[builtin_i.compadjust] = builtin_comp.CompAdjust(mem)
-
   # These builtins take blocks, and thus need cmd_ev.
   builtins[builtin_i.cd] = builtin_misc.Cd(mem, dir_stack, cmd_ev, errfmt)
-  builtins[builtin_i.json] = builtin_oil.Json(mem, cmd_ev, errfmt)
 
-  sig_state = process.SignalState()
-  sig_state.InitShell()
+  #sig_state = process.SignalState()
+  #sig_state.InitShell()
 
-  builtins[builtin_i.trap] = builtin_process.Trap(sig_state, cmd_deps.traps,
-                                                  cmd_deps.trap_nodes,
-                                                  parse_ctx, errfmt)
-
-  # History evaluation is a no-op if line_input is None.
-  hist_ev = history.Evaluator(line_input, hist_ctx, debug_f)
+  #builtins[builtin_i.trap] = builtin_process.Trap(sig_state, cmd_deps.traps,
+  #                                                cmd_deps.trap_nodes,
+  #                                                parse_ctx, errfmt)
 
   if flag.c is not None:
     arena.PushSource(source.CFlag())
@@ -569,29 +396,21 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
       mutable_opts.set_interactive()
 
   elif flag.i:  # force interactive
-    arena.PushSource(source.Stdin(' -i'))
-    line_reader = py_reader.InteractiveLineReader(
-        arena, prompt_ev, hist_ev, line_input, prompt_state)
-    mutable_opts.set_interactive()
+    raise NotImplementedError()
 
   else:
     if script_name is None:
       stdin = mylib.Stdin()
-      if stdin.isatty():
-        arena.PushSource(source.Interactive())
-        line_reader = py_reader.InteractiveLineReader(
-            arena, prompt_ev, hist_ev, line_input, prompt_state)
-        mutable_opts.set_interactive()
-      else:
-        arena.PushSource(source.Stdin(''))
-        line_reader = reader.FileLineReader(stdin, arena)
+      arena.PushSource(source.Stdin(''))
+      line_reader = reader.FileLineReader(stdin, arena)
     else:
       arena.PushSource(source.MainFile(script_name))
       try:
-        f = fd_state.Open(script_name)
+        #f = fd_state.Open(script_name)
+        f = mylib.open(script_name)
       except OSError as e:
         stderr_line("osh: Couldn't open %r: %s", script_name,
-                    posix.strerror(e.errno))
+                    pyutil.strerror_OS(e))
         return 1
       line_reader = reader.FileLineReader(f, arena)
 
@@ -600,70 +419,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   c_parser = parse_ctx.MakeOshParser(line_reader)
 
   if exec_opts.interactive():
-    # bash: 'set -o emacs' is the default only in the interactive shell
-    mutable_opts.set_emacs()
-
-    # Calculate ~/.config/oil/oshrc or oilrc
-    # Use ~/.config/oil to avoid cluttering the user's home directory.  Some
-    # users may want to ln -s ~/.config/oil/oshrc ~/oshrc or ~/.oshrc.
-
-    # https://unix.stackexchange.com/questions/24347/why-do-some-applications-use-config-appname-for-their-config-data-while-other
-    home_dir = passwd.GetMyHomeDir()
-    assert home_dir is not None
-    history_filename = os_path.join(home_dir, '.config/oil', 'history_' + lang)
-
-    if line_input:
-      # NOTE: We're using a different WordEvaluator here.
-      ev = word_eval.CompletionWordEvaluator(mem, exec_opts, splitter, errfmt)
-
-      ev.arith_ev = arith_ev
-      ev.expr_ev = expr_ev
-      ev.prompt_ev = prompt_ev
-      ev.CheckCircularDeps()
-
-      root_comp = completion.RootCompleter(ev, mem, comp_lookup, compopt_state,
-                                           comp_ui_state, comp_ctx, debug_f)
-
-      term_width = 0
-      if flag.completion_display == 'nice':
-        try:
-          term_width = libc.get_terminal_width()
-        except IOError:  # stdin not a terminal
-          pass
-
-      if term_width != 0:
-        display = comp_ui.NiceDisplay(term_width, comp_ui_state, prompt_state,
-                                      debug_f, line_input)  # type: comp_ui._IDisplay
-      else:
-        display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
-
-      comp_ui.InitReadline(line_input, history_filename, root_comp, display,
-                           debug_f)
-      _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup)
-
-    else:  # Without readline module
-      display = comp_ui.MinimalDisplay(comp_ui_state, prompt_state, debug_f)
-
-    sig_state.InitInteractiveShell(display)
-
-    rc_path = flag.rcfile or os_path.join(home_dir, '.config/oil', lang + 'rc')
-    try:
-      # NOTE: Should be called AFTER _InitDefaultCompletions.
-      SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev)
-    except util.UserExit as e:
-      return e.status
-
-    line_reader.Reset()  # After sourcing startup file, render $PS1
-
-    prompt_plugin = prompt.UserPlugin(mem, parse_ctx, cmd_ev)
-    try:
-      status = main_loop.Interactive(flag, cmd_ev, c_parser, display,
-                                     prompt_plugin, errfmt)
-      if cmd_ev.MaybeRunExitTrap():
-        status = cmd_ev.LastStatus()
-    except util.UserExit as e:
-      status = e.status
-    return status
+    raise NotImplementedError()
 
   if exec_opts.noexec():
     status = 0
@@ -681,7 +437,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
       ui.PrintAst(node, flag)
   else:
     if flag.parser_mem_dump:
-      raise error.Usage('--parser-mem-dump can only be used with -n')
+      e_usage('--parser-mem-dump can only be used with -n')
 
     try:
       status = main_loop.Batch(cmd_ev, c_parser, arena,
@@ -699,3 +455,82 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   # NOTE: We haven't closed the file opened with fd_state.Open
   return status
+
+
+class NullExecutor(vm._Executor):
+  def __init__(self, exec_opts, mutable_opts, procs, builtins):
+    # type: (optview.Exec, state.MutableOpts, Dict[str, command__ShFunction], Dict[int, vm._Builtin]) -> None
+    self.exec_opts = exec_opts
+    self.mutable_opts = mutable_opts
+    self.procs = procs
+    self.builtins = builtins
+    self.cmd_ev = None  # type: cmd_eval.CommandEvaluator
+
+  def RunBuiltin(self, builtin_id, cmd_val):
+    # type: (int, cmd_value__Argv) -> int
+    """Run a builtin.  Also called by the 'builtin' builtin."""
+
+    builtin_func = self.builtins[builtin_id]
+
+    try:
+      status = builtin_func.Run(cmd_val)
+    except error.Usage as e:
+      status = 2
+    finally:
+      pass
+    return status
+
+  def RunSimpleCommand(self, cmd_val, do_fork, call_procs=True):
+    # type: (cmd_value__Argv, bool, bool) -> int
+    argv = cmd_val.argv
+    span_id = cmd_val.arg_spids[0] if cmd_val.arg_spids else runtime.NO_SPID
+
+    arg0 = argv[0]
+
+    builtin_id = consts.LookupSpecialBuiltin(arg0)
+    if builtin_id != consts.NO_INDEX:
+      return self.RunBuiltin(builtin_id, cmd_val)
+
+    func_node = self.procs.get(arg0)
+    if func_node is not None:
+      if (self.exec_opts.strict_errexit() and 
+          self.mutable_opts.errexit.SpidIfDisabled() != runtime.NO_SPID):
+        # NOTE: This would be checked below, but this gives a better error
+        # message.
+        e_die("can't disable errexit running a function. "
+              "Maybe wrap the function in a process with the at-splice "
+              "pattern.", span_id=span_id)
+
+      # NOTE: Functions could call 'exit 42' directly, etc.
+      status = self.cmd_ev.RunProc(func_node, argv[1:])
+      return status
+
+    builtin_id = consts.LookupNormalBuiltin(arg0)
+    if builtin_id != consts.NO_INDEX:
+      return self.RunBuiltin(builtin_id, cmd_val)
+
+    # See how many tests will pass
+    if mylib.PYTHON:
+      import subprocess
+      try:
+        status = subprocess.call(cmd_val.argv)
+      except OSError as e:
+        log('Error running %s: %s', cmd_val.argv, e)
+        return 1
+      return status
+
+    log('Unhandled SimpleCommand')
+    f = mylib.Stdout()
+    #ast_f = fmt.DetectConsoleOutput(f)
+    # Stupid Eclipse debugger doesn't display ANSI
+    ast_f = fmt.TextOutput(f)
+    tree = cmd_val.PrettyTree()
+
+    ast_f.FileHeader()
+    fmt.PrintTree(tree, ast_f)
+    ast_f.FileFooter()
+    ast_f.write('\n')
+
+    return 0
+
+

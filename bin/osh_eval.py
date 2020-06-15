@@ -18,10 +18,11 @@ from core import error
 from core import main_loop
 from core import meta
 from core import optview
+from core import pure
 from core import pyutil
-from core.util import log
+from core.pyutil import stderr_line
 from core import util
-from core.util import e_die
+from core.util import log, e_die
 from core import state
 from core import ui
 from core import vm
@@ -414,7 +415,42 @@ class NullExecutor(vm._Executor):
     return 0
 
 
+def main2(argv):
+  # type: (List[str]) -> int
+  loader = pyutil.GetResourceLoader()
+  login_shell = False
+  environ = {}  # type: Dict[str, str]
+  environ['PWD'] = posix.getcwd()
+  try:
+    arg_r = args.Reader(argv)
+    status = pure.Main('osh', arg_r, environ, login_shell, loader, None)
+    return status
+  except error.Usage as e:
+    #builtin.Help(['oil-usage'], util.GetResourceLoader())
+    log('oil: %s', e.msg)
+    return 2
+  except RuntimeError as e:
+    if 0:
+      import traceback
+      traceback.print_exc()
+    # NOTE: The Python interpreter can cause this, e.g. on stack overflow.
+    log('FATAL: %r', e)
+    return 1
+  except KeyboardInterrupt:
+    print('')
+    return 130  # 128 + 2
+  except (IOError, OSError) as e:
+    if 0:
+      import traceback
+      traceback.print_exc()
+
+    # test this with prlimit --nproc=1 --pid=$$
+    stderr_line('osh I/O error: %s', pyutil.strerror_OS(e))
+    return 2  # dash gives status 2
+
+
 if __name__ == '__main__':
+  sys.exit(main2(sys.argv))
   try:
     status = main(sys.argv)
   except RuntimeError as e:

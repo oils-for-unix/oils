@@ -10,6 +10,7 @@
 ./core/meta.py
 ./core/optview.py
 ./core/passwd.py
+./core/pure.py
 ./core/pyerror.py
 ./core/pyutil.py
 ./core/state.py
