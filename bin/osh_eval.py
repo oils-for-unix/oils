@@ -16,7 +16,6 @@ from frontend import args
 from frontend import flag_def  # side effect: flags are defined!
 _ = flag_def
 
-
 import posix_ as posix
 
 from typing import List, Dict
@@ -48,9 +47,12 @@ def main(argv):
     msg = e.message  # type: str
     stderr_line('osh fatal error: %s', msg)
     return 1
+
+  # Note: This doesn't happen in C++.
   except KeyboardInterrupt:
     print('')
     return 130  # 128 + 2
+
   except OSError as e:
     if 0:
       import traceback

@@ -4,8 +4,12 @@
 
 namespace pyutil {
 
+Str* _ResourceLoader::Get(Str* path) {
+  return new Str("TODO");
+}
+
 _ResourceLoader* GetResourceLoader() {
-  assert(0);
+  return new _ResourceLoader();
 }
 
 void CopyFile(Str* in_path, Str* out_path) {

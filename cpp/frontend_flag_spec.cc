@@ -9,6 +9,8 @@ namespace args {
 args::_Attributes* Parse(runtime_asdl::FlagSpec_* spec, args::Reader* arg_r);
 args::_Attributes* ParseLikeEcho(runtime_asdl::FlagSpec_* spec,
                                  args::Reader* arg_r);
+args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec,
+                             args::Reader* arg_r);
 
 // Copied from osh_eval.cc translation
 class Reader {
@@ -177,7 +179,14 @@ Tuple2<args::_Attributes*, args::Reader*> ParseLikeEcho(
 }
 
 args::_Attributes* ParseMore(Str* spec_name, args::Reader* arg_r) {
-  assert(0);
+#ifdef CPP_UNIT_TEST
+  return nullptr;
+#else
+  // TODO: Fill this in from constant data!
+  flag_spec::_FlagSpecAndMore* spec = nullptr;
+  //assert(spec);  // should always be found
+  return args::ParseMore(spec, arg_r);
+#endif
 }
 
 }  // namespace flag_spec
