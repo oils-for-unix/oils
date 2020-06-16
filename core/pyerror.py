@@ -2,7 +2,8 @@
 """
 pyerror.py -- Wrappers for raising exceptions.
 
-These functions have different implementations in C++.
+Like pyutil.py, this code is only needed in Python.  In C++ they have different
+implementations.  This file has fewer deps than pyutil.py.
 """
 from __future__ import print_function
 

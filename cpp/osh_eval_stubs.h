@@ -75,11 +75,14 @@ inline Str* BackslashEscape(Str* s, Str* meta_chars) {
   return new Str(buf, len);
 }
 
+#if 0
 class UserExit {
  public:
   UserExit(int arg) {
   }
 };
+#endif
+
 }  // namespace util
 
 // TODO: Should these have their own file?
@@ -112,6 +115,7 @@ class _TrapHandler {
 };
 }  // namespace builtin_process
 
+#if 0
 namespace util {
 class DebugFile {
  public:
@@ -119,6 +123,7 @@ class DebugFile {
   }
 };
 }  // namespace util
+#endif
 
 namespace executor {
 class ShellExecutor {

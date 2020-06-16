@@ -232,6 +232,7 @@ compile-slice() {
   # Note: can't use globs here because we have _test.cc
   time compile _bin/$name$suffix _build/cpp/${name}.cc \
     mycpp/mylib.cc \
+    cpp/core_pyutil.cc \
     cpp/frontend_flag_spec.cc \
     cpp/frontend_match.cc \
     cpp/frontend_tdop.cc \
@@ -437,7 +438,7 @@ osh-eval() {
     # os_path.py: crashes on path += '/' + b
     # pgen2/parse.py: prefer hand-written C
 
-    local exclude='_devbuild/|pybase.py|optview.py|option_def.py|id_kind_def.py|match.py|lexer_def.py|/meta.py|pretty.py|process.py|pyerror.py|pyutil.py|util.py|os_path.py|path_stat.py|bool_stat.py|passwd.py|builtin_def.py|consts.py|pgen2/parse.py|oil_lang/objects.py|flag_spec.py|flag_def.py|builtin_process'
+    local exclude='_devbuild/|pybase.py|optview.py|option_def.py|id_kind_def.py|match.py|lexer_def.py|/meta.py|pretty.py|process.py|pyerror.py|pyutil.py|os_path.py|path_stat.py|bool_stat.py|passwd.py|builtin_def.py|consts.py|pgen2/parse.py|oil_lang/objects.py|flag_spec.py|flag_def.py|builtin_process'
 
     # TODO: Should we have a --header-file option?
     # And then list the classes and functions that have to be exported

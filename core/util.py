@@ -10,10 +10,8 @@ util.py - Common infrastructure.
 """
 from __future__ import print_function
 
-from typing import Any, TYPE_CHECKING
-
-if TYPE_CHECKING:
-  from mycpp import mylib
+from mycpp import mylib
+from typing import Any
 
 
 class UserExit(Exception):
@@ -23,62 +21,42 @@ class UserExit(Exception):
     self.status = status
 
 
-class HistoryError(Exception):
+if mylib.PYTHON:
+  class HistoryError(Exception):
 
-  def __init__(self, msg, *args):
-    # type: (str, *Any) -> None
-    Exception.__init__(self)
-    self.msg = msg
-    self.args = args
+    def __init__(self, msg, *args):
+      # type: (str, *Any) -> None
+      Exception.__init__(self)
+      self.msg = msg
+      self.args = args
 
-  def UserErrorString(self):
-    # type: () -> str
-    out = 'history: '
-    if self.args:
-      out += self.msg % self.args
-    else:
-      out += self.msg
-    return out
-
-
-def BackslashEscape(s, meta_chars):
-  # type: (str, str) -> str
-  """Escaped certain characters with backslashes.
-
-  Used for shell syntax (i.e. quoting completed filenames), globs, and EREs.
-  """
-  escaped = []
-  for c in s:
-    if c in meta_chars:
-      escaped.append('\\')
-    escaped.append(c)
-  return ''.join(escaped)
+    def UserErrorString(self):
+      # type: () -> str
+      out = 'history: '
+      if self.args:
+        out += self.msg % self.args
+      else:
+        out += self.msg
+      return out
 
 
-class DebugFile(object):
-  def __init__(self, f):
-    # type: (mylib.Writer) -> None
-    self.f = f
+if mylib.PYTHON:  # Has a faster C++ implementation
 
-  def log(self, msg, *args):
-    # type: (str, *Any) -> None
-    if args:
-      msg = msg % args
-    self.f.write(msg)
-    self.f.write('\n')
-    self.f.flush()  # need to see it interacitvely
+  def BackslashEscape(s, meta_chars):
+    # type: (str, str) -> str
+    """Escaped certain characters with backslashes.
 
-  # These two methods are for node.PrettyPrint()
-  def write(self, s):
-    # type: (str) -> None
-    self.f.write(s)
-
-  def isatty(self):
-    # type: () -> bool
-    return self.f.isatty()
+    Used for shell syntax (i.e. quoting completed filenames), globs, and EREs.
+    """
+    escaped = []
+    for c in s:
+      if c in meta_chars:
+        escaped.append('\\')
+      escaped.append(c)
+    return ''.join(escaped)
 
 
-class NullDebugFile(DebugFile):
+class _DebugFile(object):
 
   def __init__(self):
     # type: () -> None
@@ -95,3 +73,33 @@ class NullDebugFile(DebugFile):
   def isatty(self):
     # type: () -> bool
     return False
+
+
+class NullDebugFile(_DebugFile):
+  pass
+
+
+class DebugFile(_DebugFile):
+  def __init__(self, f):
+    # type: (mylib.Writer) -> None
+    self.f = f
+
+  def log(self, msg, *args):
+    # type: (str, *Any) -> None
+    if mylib.PYTHON:  # remove dynamic format
+      if args:
+        msg = msg % args
+    self.f.write(msg)
+    self.f.write('\n')
+    self.f.flush()  # need to see it interacitvely
+
+  # These two methods are for node.PrettyPrint()
+  def write(self, s):
+    # type: (str) -> None
+    self.f.write(s)
+
+  def isatty(self):
+    # type: () -> bool
+    return self.f.isatty()
+
+

@@ -158,7 +158,7 @@ class Deps(object):
     # type: () -> None
     self.mutable_opts = None  # type: state.MutableOpts
     self.dumper = None      # type: dev.CrashDumper
-    self.debug_f = None     # type: util.DebugFile
+    self.debug_f = None     # type: util._DebugFile
 
     # signal/hook name -> handler
     self.traps = None       # type: Dict[str, builtin_process._TrapHandler]

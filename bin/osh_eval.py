@@ -419,10 +419,13 @@ def main2(argv):
   # type: (List[str]) -> int
   loader = pyutil.GetResourceLoader()
   login_shell = False
+
   environ = {}  # type: Dict[str, str]
   environ['PWD'] = posix.getcwd()
+
+  arg_r = args.Reader(argv, spids=[runtime.NO_SPID] * len(argv))
+
   try:
-    arg_r = args.Reader(argv)
     status = pure.Main('osh', arg_r, environ, login_shell, loader, None)
     return status
   except error.Usage as e:

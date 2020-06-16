@@ -22,7 +22,7 @@ if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import assign_op_t, compound_word
   from _devbuild.gen.runtime_asdl import lvalue_t, value_t, scope_t
   from core.error import _ErrorWithLocation
-  from core.util import DebugFile
+  from core.util import _DebugFile
   from frontend.parse_lib import ParseContext
   from core.state import MutableOpts, Mem
   from osh.word_eval import NormalWordEvaluator
@@ -169,7 +169,7 @@ class Tracer(object):
                mutable_opts,  # type: MutableOpts
                mem,  # type: Mem
                word_ev,  # type: NormalWordEvaluator
-               f,  # type: DebugFile
+               f,  # type: _DebugFile
                ):
     # type: (...) -> None
     """

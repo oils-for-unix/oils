@@ -274,7 +274,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   if len(debug_path):
     raise NotImplementedError()
   else:
-    debug_f = util.NullDebugFile()  # type: util.DebugFile
+    debug_f = util.NullDebugFile()  # type: util._DebugFile
 
   cmd_deps.debug_f = debug_f
 
