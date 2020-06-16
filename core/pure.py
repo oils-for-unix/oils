@@ -534,5 +534,3 @@ class NullExecutor(vm._Executor):
     ast_f.write('\n')
 
     return 0
-
-
