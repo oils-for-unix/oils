@@ -425,8 +425,9 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   # the beginning of the log, and then only show time afterward?  To save
   # space, and make space for microseconds.  (datetime supports microseconds
   # but time.strftime doesn't).
-  iso_stamp = time.strftime("%Y-%m-%d %H:%M:%S")
-  debug_f.log('%s [%d] OSH started with argv %s', iso_stamp, my_pid, arg_r.argv)
+  if mylib.PYTHON:
+    iso_stamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    debug_f.log('%s [%d] OSH started with argv %s', iso_stamp, my_pid, arg_r.argv)
   if len(debug_path):
     debug_f.log('Writing logs to %r', debug_path)
 

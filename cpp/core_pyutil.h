@@ -8,6 +8,8 @@
 namespace pyutil {
 
 class _ResourceLoader {
+ public:
+  virtual Str* Get(Str* path);
 };
 
 _ResourceLoader* GetResourceLoader();

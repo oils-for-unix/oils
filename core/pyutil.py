@@ -3,16 +3,18 @@ pyutil.py: Code that's only needed in Python.  C++ will use other mechanisms.
 """
 from __future__ import print_function
 
-import cStringIO
 import sys
 import time
 import zipimport  # NOT the zipfile module.
 
+from mycpp import mylib
 from pylib import os_path
 
 import posix_ as posix
 
-from typing import IO, Any
+from typing import Any, TYPE_CHECKING
+if TYPE_CHECKING:
+  from mycpp import mylib
 
 
 def stderr_line(msg, *args):
@@ -43,8 +45,8 @@ def strerror_OS(e):
 
 class _ResourceLoader(object):
 
-  def open(self, rel_path):
-    # type: (str) -> IO[str]
+  def Get(self, rel_path):
+    # type: (str) -> str
     raise NotImplementedError()
 
 
@@ -55,9 +57,11 @@ class _FileResourceLoader(_ResourceLoader):
     # type: (str) -> None
     self.root_dir = root_dir
 
-  def open(self, rel_path):
-    # type: (str) -> IO[str]
-    return open(os_path.join(self.root_dir, rel_path))
+  def Get(self, rel_path):
+    # type: (str) -> str
+    with open(os_path.join(self.root_dir, rel_path)) as f:
+      contents = f.read()
+    return contents
 
 
 class _ZipResourceLoader(_ResourceLoader):
@@ -67,10 +71,9 @@ class _ZipResourceLoader(_ResourceLoader):
     # type: (str) -> None
     self.z = zipimport.zipimporter(argv0)
 
-  def open(self, rel_path):
-    # type: (str) -> IO[str]
-    contents = self.z.get_data(rel_path)
-    return cStringIO.StringIO(contents)
+  def Get(self, rel_path):
+    # type: (str) -> str
+    return self.z.get_data(rel_path)
 
 
 _loader = None  # type: _ResourceLoader
@@ -108,9 +111,8 @@ def GetResourceLoader():
 
 def GetVersion(loader):
   # type: (_ResourceLoader) -> str
-  f = loader.open('oil-version.txt')
-  version_str = f.readline().strip()
-  f.close()
+  contents = loader.Get('oil-version.txt')
+  version_str, _ = mylib.split_once(contents, '\n')
   return version_str
 
 
@@ -118,20 +120,16 @@ def ShowAppVersion(app_name, loader):
   # type: (str, _ResourceLoader) -> None
   """Show version and platform information."""
   try:
-    f = loader.open('release-date.txt')
+    contents = loader.Get('release-date.txt')
+    release_date, _ = mylib.split_once(contents, '\n')
   except IOError:
     release_date = '-'  # in dev tree
-  else:
-    release_date = f.readline().strip()
-    f.close()
 
   try:
-    f = loader.open('pyc-version.txt')
+    contents = loader.Get('pyc-version.txt')
+    pyc_version, _ = mylib.split_once(contents, '\n')
   except IOError:
     pyc_version = '-'  # in dev tree
-  else:
-    pyc_version = f.readline().strip()
-    f.close()
 
   # node is like 'hostname'
   # release is the kernel version

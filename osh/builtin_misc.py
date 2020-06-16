@@ -515,76 +515,71 @@ class Pwd(vm._Builtin):
 
 # TODO: Need $VERSION inside all pages?
 
-if mylib.PYTHON:
-  # Needs a different _ResourceLoader to translate
-  class Help(vm._Builtin):
+# Needs a different _ResourceLoader to translate
+class Help(vm._Builtin):
 
-    def __init__(self, loader, errfmt):
-      # type: (_ResourceLoader, ErrorFormatter) -> None
-      self.loader = loader
-      self.errfmt = errfmt
+  def __init__(self, loader, errfmt):
+    # type: (_ResourceLoader, ErrorFormatter) -> None
+    self.loader = loader
+    self.errfmt = errfmt
 
-    def _Groups(self):
-      # type: () -> List[str]
-      # TODO: cache this?
-      f = self.loader.open('_devbuild/help/groups.txt')
-      lines = f.readlines()
-      f.close()
-      groups = [line.rstrip() for line in lines]
-      return groups
+  def _Groups(self):
+    # type: () -> List[str]
+    # TODO: cache this?
+    contents = self.loader.Get('_devbuild/help/groups.txt')
+    groups = contents.splitlines(False)  # no newlines
+    return groups
 
-    def Run(self, cmd_val):
-      # type: (cmd_value__Argv) -> int
+  def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
 
-      #attrs, arg_r = flag_spec.ParseCmdVal('help', cmd_val)
-      #arg = arg_types.help(attrs.attrs)
+    #attrs, arg_r = flag_spec.ParseCmdVal('help', cmd_val)
+    #arg = arg_types.help(attrs.attrs)
 
-      try:
-        topic = cmd_val.argv[1]
-        blame_spid = cmd_val.arg_spids[1]
-      except IndexError:
-        topic = 'help'
-        blame_spid = runtime.NO_SPID
+    try:
+      topic = cmd_val.argv[1]
+      blame_spid = cmd_val.arg_spids[1]
+    except IndexError:
+      topic = 'help'
+      blame_spid = runtime.NO_SPID
 
-      # TODO: Should be -i for index?  Or -l?
-      if topic == 'index':
-        groups = cmd_val.argv[2:]
-        if len(groups) == 0:
-          # Print the whole index
-          groups = self._Groups()
+    # TODO: Should be -i for index?  Or -l?
+    if topic == 'index':
+      groups = cmd_val.argv[2:]
+      if len(groups) == 0:
+        # Print the whole index
+        groups = self._Groups()
 
-        for group in groups:
-          try:
-            f = self.loader.open('_devbuild/help/_%s' % group)
-          except IOError:
-            self.errfmt.Print_('Invalid help index group: %r' % group)
-            return 1
-          print(f.read())
-          f.close()
-        return 0
-
-      try:
-        f = self.loader.open('_devbuild/help/%s' % topic)
-      except IOError:
-        # Notes:
-        # 1. bash suggests:
-        # man -k zzz
-        # info zzz
-        # help help
-        # We should do something smarter.
-
-        # 2. This also happens on 'build/dev.sh minimal', which isn't quite
-        # accurate.  We don't have an exact list of help topics!
-
-        # 3. This is mostly an interactive command.  Is it obnoxious to
-        # quote the line of code?
-        self.errfmt.Print_('no help topics match %r' % topic,
-                           span_id=blame_spid)
-        return 1
-
-      print(f.read())
-      f.close()
+      for group in groups:
+        try:
+          contents = self.loader.Get('_devbuild/help/_%s' % group)
+        except IOError:
+          self.errfmt.Print_('Invalid help index group: %r' % group)
+          return 1
+        print(contents)
       return 0
+
+    try:
+      contents = self.loader.Get('_devbuild/help/%s' % topic)
+    except IOError:
+      # Notes:
+      # 1. bash suggests:
+      # man -k zzz
+      # info zzz
+      # help help
+      # We should do something smarter.
+
+      # 2. This also happens on 'build/dev.sh minimal', which isn't quite
+      # accurate.  We don't have an exact list of help topics!
+
+      # 3. This is mostly an interactive command.  Is it obnoxious to
+      # quote the line of code?
+      self.errfmt.Print_('no help topics match %r' % topic,
+                         span_id=blame_spid)
+      return 1
+
+    print(contents)
+    return 0
 
 
 class Cat(vm._Builtin):

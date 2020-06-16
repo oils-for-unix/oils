@@ -434,12 +434,14 @@ def main2(argv):
       import traceback
       traceback.print_exc()
     # NOTE: The Python interpreter can cause this, e.g. on stack overflow.
-    log('FATAL: %r', e)
+    # f() { f; }; f will cause this
+    msg = e.message  # type: str
+    stderr_line('osh fatal error: %s', msg)
     return 1
   except KeyboardInterrupt:
     print('')
     return 130  # 128 + 2
-  except (IOError, OSError) as e:
+  except OSError as e:
     if 0:
       import traceback
       traceback.print_exc()
@@ -447,6 +449,10 @@ def main2(argv):
     # test this with prlimit --nproc=1 --pid=$$
     stderr_line('osh I/O error: %s', pyutil.strerror_OS(e))
     return 2  # dash gives status 2
+
+  except IOError as e:  # duplicate of above because CPython is inconsistent
+    stderr_line('osh I/O error: %s', pyutil.strerror_IO(e))
+    return 2
 
 
 if __name__ == '__main__':
