@@ -403,7 +403,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     # This will be created as an empty file if it doesn't exist, or it could be
     # a pipe.
     try:
-      debug_f = util.DebugFile(fd_state.OpenForWrite(debug_path))
+      debug_f = util.DebugFile(fd_state.OpenForWrite(debug_path))  # type: util._DebugFile
     except OSError as e:
       stderr_line("osh: Couldn't open %r: %s", debug_path,
                   posix.strerror(e.errno))

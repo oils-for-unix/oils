@@ -31,32 +31,6 @@ class OilEvaluator {
 };
 }  // namespace expr_eval
 
-// problem: incomplete type
-#if 0
-namespace cmd_exec {
-  class Executor {
-   public:
-    Str* RunCommandSub(syntax_asdl::command_t* node) {
-      assert(0);
-    }
-    Str* RunProcessSub(syntax_asdl::command_t* node, Id_t id) {
-      assert(0);
-    }
-  };
-}
-#endif
-
-// stub for cmd_eval.py
-#if 0
-namespace args {
-class UsageError {
- public:
-  Str* msg;
-  int span_id;
-};
-}  // namespace args
-#endif
-
 namespace util {
 
 inline Str* BackslashEscape(Str* s, Str* meta_chars) {
@@ -74,14 +48,6 @@ inline Str* BackslashEscape(Str* s, Str* meta_chars) {
   int len = p - buf;
   return new Str(buf, len);
 }
-
-#if 0
-class UserExit {
- public:
-  UserExit(int arg) {
-  }
-};
-#endif
 
 }  // namespace util
 
@@ -114,16 +80,6 @@ class _TrapHandler {
   syntax_asdl::command_t* node;
 };
 }  // namespace builtin_process
-
-#if 0
-namespace util {
-class DebugFile {
- public:
-  DebugFile(mylib::Writer* writer) {
-  }
-};
-}  // namespace util
-#endif
 
 namespace executor {
 class ShellExecutor {

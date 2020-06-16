@@ -12,7 +12,7 @@ import libc
 
 from typing import Any, List, Optional, Dict, IO, TYPE_CHECKING
 if TYPE_CHECKING:
-  from core.util import DebugFile
+  from core.util import _DebugFile
   from core import completion
 
 
@@ -88,7 +88,7 @@ class _IDisplay(object):
   """Interface for completion displays."""
 
   def __init__(self, comp_state, prompt_state, num_lines_cap, f, debug_f):
-    # type: (State, PromptState, int, IO[bytes], DebugFile) -> None
+    # type: (State, PromptState, int, IO[bytes], _DebugFile) -> None
     self.comp_state = comp_state
     self.prompt_state = prompt_state
     self.num_lines_cap = num_lines_cap
@@ -148,7 +148,7 @@ class MinimalDisplay(_IDisplay):
   """
   def __init__(self, comp_state, prompt_state, debug_f, num_lines_cap=10,
                f=sys.stdout):
-    # type: (State, PromptState, DebugFile, int, IO[bytes]) -> None
+    # type: (State, PromptState, _DebugFile, int, IO[bytes]) -> None
     _IDisplay.__init__(self, comp_state, prompt_state, num_lines_cap, f,
                        debug_f)
 
@@ -309,7 +309,7 @@ class NiceDisplay(_IDisplay):
                term_width,  # type: int
                comp_state,  # type: State
                prompt_state,  # type: PromptState
-               debug_f,  # type: DebugFile
+               debug_f,  # type: _DebugFile
                readline_mod,  # type: Any
                f=sys.stdout,  # type: IO[bytes]
                num_lines_cap=10,  # type: int
@@ -535,7 +535,7 @@ class NiceDisplay(_IDisplay):
 
 
 def InitReadline(readline_mod, history_filename, root_comp, display, debug_f):
-  # type: (Any, str, completion.RootCompleter, _IDisplay, DebugFile) -> None
+  # type: (Any, str, completion.RootCompleter, _IDisplay, _DebugFile) -> None
   assert readline_mod
 
   try:

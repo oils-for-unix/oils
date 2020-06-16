@@ -64,7 +64,7 @@ if TYPE_CHECKING:
   from core.alloc import Arena
   from core.comp_ui import State
   from core.state import Mem
-  from core.util import DebugFile
+  from core.util import _DebugFile
   from frontend.parse_lib import ParseContext
   from osh.builtin_comp import _FixedWordsAction
   from osh.cmd_eval import CommandEvaluator
@@ -745,7 +745,7 @@ class RootCompleter(object):
                compopt_state,  # type: OptionState
                comp_ui_state,  # type: State
                parse_ctx,  # type: ParseContext
-               debug_f,  # type: DebugFile
+               debug_f,  # type: _DebugFile
                ):
     # type: (...) -> None
     self.word_ev = word_ev  # for static evaluation of words
@@ -1163,7 +1163,7 @@ class ReadlineCallback(object):
   """A callable we pass to the readline module."""
 
   def __init__(self, readline_mod, root_comp, debug_f):
-    # type: (Any, RootCompleter, util.DebugFile) -> None
+    # type: (Any, RootCompleter, util._DebugFile) -> None
     self.readline_mod = readline_mod
     self.root_comp = root_comp
     self.debug_f = debug_f

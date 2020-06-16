@@ -18,7 +18,7 @@ from osh import word_
 from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:
   from frontend.parse_lib import ParseContext
-  from core.util import DebugFile
+  from core.util import _DebugFile
 
 
 class Evaluator(object):
@@ -31,7 +31,7 @@ class Evaluator(object):
   """
 
   def __init__(self, readline_mod, parse_ctx, debug_f):
-    # type: (Any, ParseContext, DebugFile) -> None
+    # type: (Any, ParseContext, _DebugFile) -> None
     self.readline_mod = readline_mod
     self.parse_ctx = parse_ctx
     self.debug_f = debug_f

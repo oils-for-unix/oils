@@ -112,7 +112,7 @@ def Parse(argv):
   return i, flag_a, flag_c, flag_n
 
 
-def main(argv):
+def main3(argv):
   # type: (List[str]) -> int
   arena = alloc.Arena()
 
@@ -415,7 +415,7 @@ class NullExecutor(vm._Executor):
     return 0
 
 
-def main2(argv):
+def main(argv):
   # type: (List[str]) -> int
   loader = pyutil.GetResourceLoader()
   login_shell = False
@@ -459,10 +459,11 @@ def main2(argv):
 
 
 if __name__ == '__main__':
-  sys.exit(main2(sys.argv))
-  try:
-    status = main(sys.argv)
-  except RuntimeError as e:
-    print('FATAL: %s' % e, file=sys.stderr)
-    status = 1
-  sys.exit(status)
+  sys.exit(main(sys.argv))
+  if 0:
+    try:
+      status = main(sys.argv)
+    except RuntimeError as e:
+      print('FATAL: %s' % e, file=sys.stderr)
+      status = 1
+    sys.exit(status)
