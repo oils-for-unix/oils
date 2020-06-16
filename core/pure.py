@@ -63,11 +63,12 @@ if TYPE_CHECKING:
   from pgen2 import grammar
 
 
-def MakeBuiltinArgv(argv):
+def MakeBuiltinArgv(argv1):
   # type: (List[str]) -> cmd_value__Argv
-  argv = [''] + argv  # add dummy for argv[0]
+  argv = ['']  # dummy for argv[0]
+  argv.extend(argv1)
   # no location info
-  return cmd_value.Argv(argv, [runtime.NO_SPID] * len(argv))
+  return cmd_value.Argv(argv, [runtime.NO_SPID] * len(argv), None)
 
 
 def AddPure(b, mem, procs, mutable_opts, aliases, search_path, errfmt):

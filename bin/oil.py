@@ -56,6 +56,7 @@ from core import main_loop
 from core import meta
 from core import shell
 from core import optview
+from core import pure
 from core import pyutil
 from core.pyutil import stderr_line
 from core import ui
@@ -257,7 +258,7 @@ def AppBundleMain(argv):
     if first_arg in ('-h', '--help'):
       errfmt = None  # not needed here
       help_builtin = builtin_misc.Help(loader, errfmt)
-      help_builtin.Run(shell.MakeBuiltinArgv(['bundle-usage']))
+      help_builtin.Run(pure.MakeBuiltinArgv(['bundle-usage']))
       sys.exit(0)
 
     if first_arg in ('-V', '--version'):

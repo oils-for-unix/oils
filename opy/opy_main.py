@@ -281,9 +281,7 @@ def OpyCommandMain(argv):
       'parse', 'parse-with', 'compile', 'dis', 'ast', 'symbols', 'cfg',
       'compile-ovm', 'eval', 'repl', 'run', 'run-ovm'):
     loader = pyutil.GetResourceLoader()
-    f = loader.open(GRAMMAR_REL_PATH)
-    contents = f.read()
-    f.close()
+    contents = loader.Get(GRAMMAR_REL_PATH)
     gr = grammar.Grammar()
     gr.loads(contents)
 

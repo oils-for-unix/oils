@@ -24,6 +24,7 @@ from core import main_loop
 from core import meta
 from core import passwd
 from core import process
+from core import pure
 from core import pyutil
 from core.pyutil import stderr_line
 from core import state
@@ -77,21 +78,14 @@ if TYPE_CHECKING:
   from core import optview
 
 
-def MakeBuiltinArgv(argv):
-  # type: (List[str]) -> cmd_value__Argv
-  argv = [''] + argv  # add dummy for argv[0]
-  # no location info
-  return cmd_value.Argv(argv, [runtime.NO_SPID] * len(argv))
-
-
 def _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup):
   # type: (cmd_eval.CommandEvaluator, builtin_comp.Complete, completion.Lookup) -> None
 
   # register builtins and words
-  complete_builtin.Run(MakeBuiltinArgv(['-E', '-A', 'command']))
+  complete_builtin.Run(pure.MakeBuiltinArgv(['-E', '-A', 'command']))
   # register path completion
   # Add -o filenames?  Or should that be automatic?
-  complete_builtin.Run(MakeBuiltinArgv(['-D', '-A', 'file']))
+  complete_builtin.Run(pure.MakeBuiltinArgv(['-D', '-A', 'file']))
 
   # TODO: Move this into demo/slow-completion.sh
   if 1:
@@ -302,7 +296,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   help_builtin = builtin_misc.Help(loader, errfmt)
   if flag.help:
-    help_builtin.Run(MakeBuiltinArgv(['%s-usage' % lang]))
+    help_builtin.Run(pure.MakeBuiltinArgv(['%s-usage' % lang]))
     return 0
   if flag.version:
     # OSH version is the only binary in Oil right now, so it's all one version.
