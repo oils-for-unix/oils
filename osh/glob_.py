@@ -12,7 +12,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from core.pyutil import stderr_line
 from core import util
-from core.util import log
+from core.pyerror import log
 from frontend import match
 
 from typing import List, Tuple, cast, TYPE_CHECKING

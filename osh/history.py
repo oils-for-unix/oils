@@ -10,7 +10,7 @@ import sys
 from _devbuild.gen.id_kind_asdl import Id
 from core import error
 from core import util
-#from core.util import log
+#from core.pyerror import log
 from frontend import match
 from frontend import reader
 from osh import word_

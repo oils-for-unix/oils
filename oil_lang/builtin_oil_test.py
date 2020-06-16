@@ -6,7 +6,7 @@ from __future__ import print_function
 
 import unittest
 
-from core.util import log
+from core.pyerror import log
 #from oil_lang import builtin_oil  # module under test
 
 import yajl  # test this too

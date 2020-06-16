@@ -15,7 +15,7 @@ from _devbuild.gen.syntax_asdl import (
     line_span, source_t, source_e, source__MainFile, source__SourcedFile
 )
 from asdl import runtime
-from core.util import log
+from core.pyerror import log
 
 from typing import List, Dict, cast
 

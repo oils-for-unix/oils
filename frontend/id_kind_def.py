@@ -14,7 +14,7 @@ build/codegen.sh lexer.
 from __future__ import print_function
 
 from _devbuild.gen.types_asdl import (bool_arg_type_e, bool_arg_type_t)
-#from core.util import log
+#from core.pyerror import log
 
 from typing import List, Tuple, Dict, Optional, TYPE_CHECKING
 if TYPE_CHECKING:  # avoid circular build deps

@@ -27,7 +27,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.id_kind_asdl import Id
 
-from core.util import log, e_die
+from core.pyerror import log, e_die
 from osh import glob_  # for ExtendedRegexEscape
 
 from typing import List, TYPE_CHECKING, cast

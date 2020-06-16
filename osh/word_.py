@@ -18,7 +18,7 @@ from _devbuild.gen.syntax_asdl import (
     sh_lhs_expr_e, sh_lhs_expr_t, sh_lhs_expr__Name, sh_lhs_expr__IndexedName,
 )
 from asdl import runtime
-from core.util import log
+from core.pyerror import log
 from frontend import consts
 from mycpp.mylib import tagswitch
 

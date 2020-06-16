@@ -8,7 +8,7 @@ import collections
 import sys
 
 from osh import arith_parse
-from core.util import log
+from core.pyerror import log
 
 
 def main(argv):

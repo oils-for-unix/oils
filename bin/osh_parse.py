@@ -15,7 +15,7 @@ from core import optview
 #from core import main_loop
 from core import meta
 from core import pyutil
-from core.util import log
+from core.pyerror import log
 from core import ui
 from frontend import parse_lib
 from frontend import reader

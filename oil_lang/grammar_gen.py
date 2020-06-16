@@ -12,7 +12,7 @@ from _devbuild.gen.syntax_asdl import source
 
 from core import alloc
 from core import optview
-from core.util import log
+from core.pyerror import log
 from frontend import lexer
 from frontend import lexer_def
 from frontend import reader

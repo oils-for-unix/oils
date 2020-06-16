@@ -19,10 +19,10 @@ from core import main_loop
 from core import meta
 from core import optview
 from core import pure
+from core.pyerror import log, e_die
 from core import pyutil
 from core.pyutil import stderr_line
 from core import util
-from core.util import log, e_die
 from core import state
 from core import ui
 from core import vm

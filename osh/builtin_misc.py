@@ -18,7 +18,7 @@ from core import passwd
 from core.pyerror import e_usage
 from core import pyutil  # strerror_OS
 from core import state
-from core.util import log
+from core.pyerror import log
 from core import ui
 from core import vm
 from frontend import flag_spec

@@ -9,7 +9,6 @@ import time
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i, builtin_i
-from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import source
 
 from asdl import runtime
@@ -30,7 +29,7 @@ from core.pyutil import stderr_line
 from core import state
 from core import ui
 from core import util
-from core.util import log
+from core.pyerror import log
 unused = log
 from core import vm
 
@@ -73,7 +72,6 @@ import posix_ as posix
 from typing import List, Dict, Optional, Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
-  from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from _devbuild.gen.syntax_asdl import command__ShFunction
   from core import optview
 

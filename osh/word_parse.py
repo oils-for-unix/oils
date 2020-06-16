@@ -68,8 +68,8 @@ from _devbuild.gen.syntax_asdl import (
 
     expr_t, source, arg_list,
 )
-from core.util import p_die
-from core.util import log
+from core.pyerror import p_die
+from core.pyerror import log
 from core import ui
 from frontend import consts
 from frontend import reader

@@ -20,7 +20,7 @@ from core import completion  # module under test
 from core import comp_ui
 from core import test_lib
 from core import util
-from core.util import log
+from core.pyerror import log
 
 from frontend import flag_def  # side effect: flags are defined!
 _ = flag_def

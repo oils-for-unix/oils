@@ -7,7 +7,7 @@ from __future__ import print_function
 import unittest
 
 from _devbuild.gen.id_kind_asdl import Id, Id_str
-from core.util import log
+from core.pyerror import log
 from frontend  import match  # module under test
 
 

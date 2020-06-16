@@ -26,7 +26,7 @@ from collections import defaultdict
 
 from asdl import asdl_
 from asdl import visitor
-from core.util import log
+from core.pyerror import log
 
 _ = log
 

@@ -23,7 +23,7 @@ from core.pyerror import e_usage
 from core.pyutil import stderr_line
 from core import optview
 from core import state
-from core.util import log
+from core.pyerror import log
 from core import vm
 from frontend import args
 from frontend import flag_spec

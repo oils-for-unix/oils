@@ -13,7 +13,7 @@ from _devbuild.gen.types_asdl import lex_mode_e
 
 from asdl import runtime
 from core import error
-from core.util import p_die, log
+from core.pyerror import p_die, log
 from core import vm
 from frontend import match
 from osh import sh_expr_eval

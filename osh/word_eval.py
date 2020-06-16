@@ -31,7 +31,7 @@ from core import error
 from core import passwd
 from core import pyutil
 from qsn_ import qsn
-from core.util import log, e_die
+from core.pyerror import log, e_die
 from frontend import consts
 from frontend import match
 from mycpp.mylib import tagswitch

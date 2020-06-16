@@ -26,7 +26,7 @@ from core import pyutil
 from core.pyerror import e_usage
 from core.pyutil import stderr_line
 from core import ui
-from core.util import log, e_die
+from core.pyerror import log, e_die
 from core import optview
 from frontend import consts
 from frontend import match

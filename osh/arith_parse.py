@@ -5,7 +5,7 @@ arith_parse.py - Parse shell arithmetic, which is based on C.
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (arith_expr, arith_expr_t, word_t)
-from core.util import p_die
+from core.pyerror import p_die
 from osh import tdop
 from osh import word_
 from mycpp import mylib

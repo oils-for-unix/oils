@@ -8,7 +8,7 @@ import os
 import sys
 
 from core import error
-from core.util import log
+from core.pyerror import log
 
 from opy import opy_main
 

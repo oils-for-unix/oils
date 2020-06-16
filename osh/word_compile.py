@@ -74,7 +74,7 @@ def EvalCStringToken(tok):
       # Extract from [[ ]] and fix backslashes.
       stderr_line(
           'warning: Invalid backslash escape in C-style string: %r' % value)
-      #from core.util import e_die
+      #from core.pyerror import e_die
       #e_die('Invalid backslash escape %r', value, span_id=tok.span_id)
     return value
 

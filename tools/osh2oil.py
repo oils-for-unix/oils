@@ -11,12 +11,8 @@ from _devbuild.gen.syntax_asdl import (
     command_e, word_e, word_part_e, sh_lhs_expr_e
 )
 from asdl import runtime
-from core import util
-
+from core.pyerror import log, p_die
 from osh import word_
-
-log = util.log
-p_die = util.p_die
 
 
 class Cursor(object):

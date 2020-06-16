@@ -38,7 +38,7 @@ from _devbuild.gen import syntax_asdl  # token, etc.
 from asdl import runtime
 from core import error
 from core import ui
-from core.util import log, p_die
+from core.pyerror import log, p_die
 from frontend import consts
 from frontend import match
 from frontend import reader

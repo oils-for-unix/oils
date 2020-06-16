@@ -20,7 +20,7 @@ from core import main_loop
 from core.pyutil import stderr_line
 from core import ui
 from core import vm
-from core.util import log
+from core.pyerror import log
 from frontend import args
 from frontend import flag_spec
 from frontend import reader

@@ -21,7 +21,7 @@ from _devbuild.gen.syntax_asdl import (
 from core import error
 from core import ui
 from core import util
-from core.util import log
+from core.pyerror import log
 from osh import cmd_eval
 from mycpp import mylib
 

@@ -26,9 +26,10 @@ from _devbuild.gen.syntax_asdl import (
     redir_loc, redir_loc_e, redir_loc_t, redir_loc__VarName, redir_loc__Fd,
 )
 from qsn_ import qsn
+#from core import pyutil
 from core.pyutil import stderr_line
 from core import util
-from core.util import log
+from core.pyerror import log
 from frontend import match
 from osh import cmd_eval
 from mycpp import mylib
@@ -225,7 +226,7 @@ class FdState(object):
       posix.close(fd)
       fcntl.fcntl(new_fd, fcntl.F_SETFD, fcntl.FD_CLOEXEC)
 
-    #util.ShowFdState()
+    #pyutil.ShowFdState()
     if need_restore:
       self.cur_frame.saved.append((new_fd, fd, True))
     else:

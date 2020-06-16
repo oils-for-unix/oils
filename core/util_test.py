@@ -17,7 +17,7 @@ from core import util  # module under test
 class UtilTest(unittest.TestCase):
 
   def testLog(self):
-    util.log('hello %d', 42)
+    print(util.BackslashEscape('foo', 'o'))
 
 
 if __name__ == '__main__':

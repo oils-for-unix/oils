@@ -12,7 +12,7 @@ line_input_test.py: Tests for line_input
 
 import unittest
 
-#from core.util import log
+#from core.pyerror import log
 
 import line_input
 

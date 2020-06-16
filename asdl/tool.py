@@ -12,7 +12,7 @@ from asdl import front_end
 from asdl import gen_cpp
 from asdl import gen_python
 
-#from core.util import log
+#from core.pyerror import log
 
 # Special cases like Id
 _SIMPLE = ['state', 'emit', 'char_kind']

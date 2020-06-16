@@ -33,7 +33,7 @@ from asdl import runtime
 from core import error
 from core import state
 from core import ui
-from core.util import e_die, e_strict, log
+from core.pyerror import e_die, e_strict, log
 from frontend import location
 from frontend import consts
 from frontend import match

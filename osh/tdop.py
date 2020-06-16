@@ -8,7 +8,7 @@ from _devbuild.gen.syntax_asdl import (
     compound_word,
 )
 from _devbuild.gen.types_asdl import lex_mode_e
-from core.util import p_die
+from core.pyerror import p_die
 from core import ui
 from mycpp import mylib
 from mycpp.mylib import tagswitch

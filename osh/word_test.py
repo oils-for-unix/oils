@@ -9,7 +9,7 @@ import unittest
 from _devbuild.gen.id_kind_asdl import Id
 
 from core import test_lib
-from core.util import log
+from core.pyerror import log
 from osh import cmd_parse  # reparse input
 from osh import word_parse_test  # parse words
 

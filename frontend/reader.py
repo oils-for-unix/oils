@@ -10,7 +10,7 @@ reader.py - Read lines of input.
 
 from mycpp import mylib
 
-from core.util import p_die
+from core.pyerror import p_die
 
 from typing import Optional, Tuple, List, Union, IO, TYPE_CHECKING
 if TYPE_CHECKING:

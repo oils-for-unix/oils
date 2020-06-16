@@ -16,7 +16,7 @@ from _devbuild.gen.syntax_asdl import (
 from asdl import runtime
 from core import error
 from core import process
-from core.util import log, e_die
+from core.pyerror import log, e_die
 from core.vm import _Executor
 from frontend import consts
 from oil_lang import objects

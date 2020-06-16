@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import value, scope_e
 from _devbuild.gen.syntax_asdl import sh_lhs_expr
-from core.util import e_die
+from core.pyerror import e_die
 from oil_lang import objects
 
 from typing import Callable, Union, TYPE_CHECKING

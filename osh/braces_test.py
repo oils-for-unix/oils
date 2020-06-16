@@ -9,7 +9,7 @@ import unittest
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import word_part_e, compound_word
 from asdl import format as fmt
-from core.util import log
+from core.pyerror import log
 from core.test_lib import Tok
 from osh import braces  # module under test
 from osh import word_parse_test

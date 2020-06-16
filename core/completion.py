@@ -45,7 +45,7 @@ from core import error
 from core.pyutil import stderr_line
 from core import ui
 from core import util
-from core.util import log
+from core.pyerror import log
 from frontend import consts
 from frontend import reader
 from pylib import os_path

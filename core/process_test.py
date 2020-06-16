@@ -17,7 +17,7 @@ from core import process  # module under test
 from core import test_lib
 from core import ui
 from core import util
-from core.util import log
+from core.pyerror import log
 from core import state
 from osh import builtin_misc
 from asdl import runtime

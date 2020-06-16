@@ -33,7 +33,7 @@ import pickle
 import copy_reg  # dependency of pickle, exclude it
 import types
 
-from core.util import log
+from core.pyerror import log
 from pylib import unpickle
 
 import __builtin__  # this is not __builtins__

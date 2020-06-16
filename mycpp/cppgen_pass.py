@@ -1980,7 +1980,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         # A heuristic that works for the OSH import style.
         #
-        # from core.util import log => using core::util::log
+        # from core.pyerror import log => using core::util::log
         # from core import util => NOT translated
 
         for name, alias in o.names:

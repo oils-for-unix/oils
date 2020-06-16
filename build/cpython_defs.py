@@ -9,7 +9,7 @@ import os
 import re
 import sys
 
-from core.util import log
+from core.pyerror import log
 # TODO: Could move these to a place where they don't depend on Oil
 from frontend.lexer_def import C, R
 

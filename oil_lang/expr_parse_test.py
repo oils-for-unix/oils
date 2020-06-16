@@ -14,7 +14,7 @@ from core import error
 from core import meta
 from core import pyutil
 from core import test_lib
-from core.util import log
+from core.pyerror import log
 from frontend import reader
 
 

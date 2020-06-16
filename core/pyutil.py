@@ -176,3 +176,11 @@ def CopyFile(in_path, out_path):
     contents = f2.read()
     f3.write(contents)
     stderr_line('Wrote %s to %s', in_path, out_path)
+
+
+# This was useful for debugging.
+def ShowFdState():
+  # type: () -> None
+  import subprocess
+  import posix_ as posix
+  subprocess.call(['ls', '-l', '/proc/%d/fd' % posix.getpid()])

@@ -13,7 +13,7 @@ from __future__ import print_function
 import collections
 import sys
 
-from core.util import log
+from core.pyerror import log
 from frontend import id_kind_def
 from frontend import builtin_def
 from frontend import option_def

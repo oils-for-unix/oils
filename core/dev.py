@@ -10,7 +10,7 @@ from asdl import runtime
 from core import error
 from core import optview
 from qsn_ import qsn
-from core.util import log
+from core.pyerror import log
 from osh import word_
 from pylib import os_path
 from mycpp import mylib

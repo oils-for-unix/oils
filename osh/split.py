@@ -34,7 +34,7 @@ from _devbuild.gen.runtime_asdl import char_kind_i
 from _devbuild.gen.runtime_asdl import state_i
 
 from core import util
-from core.util import log
+from core.pyerror import log
 from frontend import consts
 from mycpp import mylib
 from mycpp.mylib import tagswitch

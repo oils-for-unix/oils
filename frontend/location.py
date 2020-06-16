@@ -17,7 +17,7 @@ from _devbuild.gen.syntax_asdl import (
     arith_expr_e, arith_expr_t, compound_word, Token,
 )
 from asdl import runtime
-from core.util import log
+from core.pyerror import log
 from mycpp.mylib import tagswitch
 from osh import word_
 

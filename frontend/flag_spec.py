@@ -288,7 +288,7 @@ class _FlagSpecAndMore(object):
     attr_name = name.replace('-', '_')
     if self.typed:
       self.defaults[attr_name] = _Default(arg_type, arg_default=default)
-      #from core.util import log
+      #from core.pyerror import log
       #log('%s DEFAULT %s', attr_name, self.defaults[attr_name])
     else:
       self.defaults[attr_name] = args.PyToValue(default)

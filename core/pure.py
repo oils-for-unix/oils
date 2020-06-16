@@ -24,7 +24,7 @@ from core.pyutil import stderr_line
 from core import state
 from core import ui
 from core import util
-from core.util import log, e_die
+from core.pyerror import log, e_die
 #unused = log
 from core import vm
 

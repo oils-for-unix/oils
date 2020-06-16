@@ -60,7 +60,7 @@ from core import pure
 from core import pyutil
 from core.pyutil import stderr_line
 from core import ui
-from core.util import log
+from core.pyerror import log
 from frontend import args
 from frontend import reader
 from frontend import parse_lib

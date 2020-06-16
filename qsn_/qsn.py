@@ -89,7 +89,7 @@ from __future__ import print_function
 
 # Problem: ASDL depends on this module.  It breaks ASDL tests if we import
 # 'core'.
-#from core.util import log
+#from core.pyerror import log
 from mycpp import mylib
 
 from typing import List

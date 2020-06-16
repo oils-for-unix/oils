@@ -17,7 +17,7 @@ from core import error
 from core.pyerror import e_usage
 from core import state
 from core import ui
-from core.util import log, e_die
+from core.pyerror import log, e_die
 from core import vm
 from frontend import flag_spec
 from frontend import args

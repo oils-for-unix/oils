@@ -12,8 +12,7 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.runtime_asdl import (
     lvalue, value, value_e, scope_e,
 )
-from core.util import e_die
-from core.util import log
+from core.pyerror import e_die, log
 from frontend import consts
 from oil_lang import objects
 from osh import braces

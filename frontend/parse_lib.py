@@ -10,7 +10,7 @@ from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen import grammar_nt
 
 from core import meta
-from core.util import p_die
+from core.pyerror import p_die
 from frontend import lexer
 from frontend import reader
 from frontend import match

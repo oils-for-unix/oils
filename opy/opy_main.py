@@ -29,7 +29,7 @@ from pgen2 import tokenize
 
 from frontend import flag_spec
 from frontend import args
-from core.util import log
+from core.pyerror import log
 from core import error
 from core import pyutil
 

@@ -10,7 +10,7 @@ from asdl.asdl_ import (
     Use, Module, TypeDecl, Constructor, Field, Sum, SimpleSum, Product, TypeExpr
 )
 
-from core.util import log
+from core.pyerror import log
 _ = log
 
 _KEYWORDS = ['use', 'module', 'attributes']

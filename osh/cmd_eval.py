@@ -71,7 +71,7 @@ from core import passwd  # Time().  TODO: rename
 from core import state
 from core import ui
 from core import util
-from core.util import log, e_die
+from core.pyerror import log, e_die
 from frontend import consts
 from oil_lang import objects
 from osh import braces

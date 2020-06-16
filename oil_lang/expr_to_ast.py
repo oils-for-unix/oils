@@ -18,7 +18,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen import grammar_nt
 
-from core.util import log, p_die
+from core.pyerror import log, p_die
 
 from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:

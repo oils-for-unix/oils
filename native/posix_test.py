@@ -33,7 +33,7 @@ import subprocess
 import unittest
 
 import posix_  # module under test
-from core.util import log
+from core.pyerror import log
 
 
 # Taken from build/oil-defs/.../posix_methods.def
