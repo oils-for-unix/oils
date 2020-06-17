@@ -572,7 +572,7 @@ announcement-0.8.pre5() {
 }
 
 announcement-0.8.pre6() {
-  write-no-announcement
+  html-redirect '/blog/2020/06/release-0.8.pre6.html' > $SITE_DEPLOY_DIR/release/0.8.pre6/announcement.html
 }
 
 blog-redirect() {

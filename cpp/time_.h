@@ -8,20 +8,20 @@
 
 namespace time_ {
 
-void* tzset() {
+inline void* tzset() {
   assert(0);
 }
 
-int time() {
+inline int time() {
   return ::time(nullptr);
 }
 
 // TODO: Should these be bigger integers?
-int localtime(int ts) {
+inline int localtime(int ts) {
   assert(0);
 }
 
-Str* strftime(Str* s, int ts) {
+inline Str* strftime(Str* s, int ts) {
   assert(0);
 }
 

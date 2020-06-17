@@ -6,7 +6,7 @@
 namespace path_stat {
 
 // This function takes varargs.  Add other varargs variants?
-bool exists(Str* path) {
+inline bool exists(Str* path) {
   assert(0);
 }
 

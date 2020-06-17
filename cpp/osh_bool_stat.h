@@ -10,15 +10,15 @@ namespace bool_stat {
 
 using syntax_asdl::word_t;
 
-bool isatty(int fd, Str* s, word_t* blame_word) {
+inline bool isatty(int fd, Str* s, word_t* blame_word) {
   assert(0);
 }
 
-bool DoUnaryOp(Id_t op_id, Str* s) {
+inline bool DoUnaryOp(Id_t op_id, Str* s) {
   assert(0);
 }
 
-bool DoBinaryOp(Id_t op_id, Str* s1, Str* s2) {
+inline bool DoBinaryOp(Id_t op_id, Str* s1, Str* s2) {
   assert(0);
 }
 
