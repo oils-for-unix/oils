@@ -1,5 +1,4 @@
 // Header for asdl/runtime, which is itself translated and used by ASDL code.
-// Most Oil code can go in a single
 
 #ifndef ASDL_RUNTIME_H
 #define ASDL_RUNTIME_H

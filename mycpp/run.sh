@@ -126,29 +126,6 @@ translate-ordered() {
   wc -l _gen/*
 }
 
-filter-cpp() {
-  local main_module=${1:-fib_iter}
-  shift
-
-  cat <<EOF
-#include "mylib.h"
-
-EOF
-
-  cat "$@"
-
-  cat <<EOF
-
-int main(int argc, char **argv) {
-  if (getenv("BENCHMARK")) {
-    $main_module::run_benchmarks();
-  } else {
-    $main_module::run_tests();
-  }
-}
-EOF
-}
-
 asdl-gen() {
   PYTHONPATH="$REPO_ROOT:$REPO_ROOT/vendor" $REPO_ROOT/asdl/tool.py "$@"
 }

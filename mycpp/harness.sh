@@ -3,6 +3,34 @@
 EXAMPLES=( $(cd examples && echo *.py) )
 EXAMPLES=( "${EXAMPLES[@]//.py/}" )
 
+gen-main() {
+  local main_module=${1:-fib_iter}
+  cat <<EOF
+
+int main(int argc, char **argv) {
+  if (getenv("BENCHMARK")) {
+    $main_module::run_benchmarks();
+  } else {
+    $main_module::run_tests();
+  }
+}
+EOF
+}
+
+filter-cpp() {
+  local main_module=${1:-fib_iter}
+  shift
+
+  cat <<EOF
+#include "mylib.h"
+
+EOF
+
+  cat "$@"
+
+  gen-main $main_module
+}
+
 typecheck-example() {
   local name=$1
   if test "$(type -t typecheck-$name)" = "function"; then
@@ -79,6 +107,36 @@ pyrun-example() {
     examples/${name}.py
   fi
 }
+
+mycpp-main() {
+  ( source _tmp/mycpp-venv/bin/activate
+    time PYTHONPATH=$MYPY_REPO MYPYPATH=$REPO_ROOT:$REPO_ROOT/native \
+      ./mycpp_main.py "$@"
+  )
+}
+
+cgi-header() {
+  local name=${1:-cgi}
+
+  if true; then
+    mycpp-main \
+      --header-out _gen/cgi.h \
+      --to-header examples/cgi.py \
+      examples/cgi.py > _gen/cgi_raw.cc
+  fi
+
+  wc -l _gen/cgi.*
+  ls -l _gen/cgi.*
+
+  # Add main() function
+  { cat _gen/cgi_raw.cc
+    gen-main cgi
+  } > _gen/cgi.cc
+
+  _compile-example cgi
+  ls -l _bin/cgi
+}
+
 
 #
 # All
