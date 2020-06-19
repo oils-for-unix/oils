@@ -56,13 +56,10 @@ asdl-demo() {
 mycpp() {
   ### Run mycpp (in a virtualenv because it depends on Python 3 / MyPy)
 
-  local out=$1
-  shift
-
   # created by mycpp/run.sh
   ( source mycpp/_tmp/mycpp-venv/bin/activate
     time PYTHONPATH=$MYPY_REPO MYPYPATH=$REPO_ROOT:$REPO_ROOT/native \
-      mycpp/mycpp_main.py "$@" > $out
+      mycpp/mycpp_main.py "$@"
   )
 }
 
@@ -201,7 +198,7 @@ mycpp-demo() {
   local name=${1:-conditional}
 
   local raw=_tmp/${name}_raw.cc 
-  mycpp $raw mycpp/examples/$name.py
+  mycpp mycpp/examples/$name.py > $raw
 
   local cc=_tmp/$name.cc
   example-skeleton $name $raw > $cc
@@ -305,6 +302,9 @@ osh-eval() {
 
   local raw=$tmp/${name}_raw.cc 
 
+  local cc=_build/cpp/$name.cc
+  local h=_build/cpp/$name.h
+
   #if false; then
   if true; then
     # relies on splitting
@@ -329,10 +329,13 @@ osh-eval() {
     # ColorOutput|_Action
     # Or the modules like asdl_runtime.h
 
-    mycpp $raw $(egrep -v "$exclude" types/osh-eval-manifest.txt)
+    mycpp \
+      --header-out $h \
+      --to-header frontend.args \
+      --to-header asdl.runtime \
+      --to-header asdl.format \
+      $(egrep -v "$exclude" types/osh-eval-manifest.txt) > $raw 
   fi
-
-  local cc=_build/cpp/$name.cc
 
   { preamble $name
     cpp-skeleton $name $raw 

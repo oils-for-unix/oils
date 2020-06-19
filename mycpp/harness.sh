@@ -121,7 +121,7 @@ cgi-header() {
   if true; then
     mycpp-main \
       --header-out _gen/cgi.h \
-      --to-header examples/cgi.py \
+      --to-header cgi \
       examples/cgi.py > _gen/cgi_raw.cc
   fi
 
