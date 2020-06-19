@@ -6,7 +6,6 @@ typecheck() {
 }
 
 readonly MYPY_FLAGS='--strict --no-implicit-optional --no-strict-optional'
-readonly OSH_PARSE_MANIFEST='types/osh-parse-manifest.txt'
 readonly OSH_EVAL_MANIFEST='types/osh-eval-manifest.txt'
 
 # Hack because there's an asdl/pretty.py error that's hard to get rid of.

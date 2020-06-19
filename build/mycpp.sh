@@ -295,124 +295,6 @@ all-variants() {
 
 readonly TMP=_tmp/mycpp
 
-# TODO: Consolidate this with types/osh-parse-manifest.txt?
-
-# must be generated
-  #$REPO_ROOT/core/optview.py 
-readonly OSH_PARSE_FILES=(
-  $REPO_ROOT/asdl/format.py 
-  $REPO_ROOT/asdl/runtime.py 
-
-  $REPO_ROOT/core/alloc.py 
-  $REPO_ROOT/frontend/reader.py 
-  $REPO_ROOT/frontend/lexer.py 
-  $REPO_ROOT/pgen2/grammar.py 
-  $REPO_ROOT/pgen2/parse.py 
-  $REPO_ROOT/oil_lang/expr_parse.py 
-  $REPO_ROOT/oil_lang/expr_to_ast.py 
-
-  $REPO_ROOT/pylib/cgi.py
-  # join(*p) is a problem
-  #$REPO_ROOT/pylib/os_path.py
-
-  $REPO_ROOT/osh/braces.py
-
-  # This has errfmt.Print() which uses *args and **kwargs
-  $REPO_ROOT/core/ui.py
-
-  $REPO_ROOT/core/error.py
-  $REPO_ROOT/core/main_loop.py
-
-  $REPO_ROOT/osh/word_.py 
-  $REPO_ROOT/osh/bool_parse.py 
-  $REPO_ROOT/osh/word_parse.py
-  $REPO_ROOT/osh/cmd_parse.py 
-  $REPO_ROOT/osh/arith_parse.py 
-  $REPO_ROOT/osh/tdop.py
-  $REPO_ROOT/frontend/parse_lib.py
-
-  # Note: optview depends on errexit.  But we only need optview::Parse, not
-  # optview::exec.
-  #$REPO_ROOT/core/state.py
-)
-
-readonly CAN_TRANSLATE=(
-  # These translate but don't compile
-  $REPO_ROOT/osh/glob_.py
-  $REPO_ROOT/osh/string_ops.py
-  $REPO_ROOT/osh/word_compile.py
-  $REPO_ROOT/osh/builtin_bracket.py
-  $REPO_ROOT/osh/split.py
-  $REPO_ROOT/oil_lang/regex_translate.py
-)
-
-
-readonly TRANSLATE=(
-  # Format strings not constant, in PrintRequired
-  #$REPO_ROOT/core/comp_ui.py
-  #$REPO_ROOT/osh/split.py
-
-  #$REPO_ROOT/osh/word_compile.py
-  #$REPO_ROOT/osh/glob_.py
-  #$REPO_ROOT/osh/string_ops.py
-
-  #$REPO_ROOT/osh/sh_expr_eval.py
-
-  #$REPO_ROOT/osh/word_eval.py
-  #$REPO_ROOT/core/state.py
-
-  #$REPO_ROOT/osh/cmd_exec.py
-)
-
-# From types/more-oil-manifest.txt
-readonly MORE_OIL=(
-  $REPO_ROOT/osh/glob_.py  # translates pretty well
-  $REPO_ROOT/osh/string_ops.py  # translation problems
-  $REPO_ROOT/frontend/location.py
-
-  # fails because of readline_mod return value
-  #$REPO_ROOT/osh/history.py
-
-  # fails because of multiple exceptions in libc.wcswidth
-  # maybe change both to RuntimeError?
-  # except (SystemError, UnicodeError):
-  #$REPO_ROOT/core/comp_ui.py
-
-  $REPO_ROOT/osh/word_compile.py  # translates well
-  $REPO_ROOT/osh/builtin_bracket.py
-
-  # core/main_loop.py causes a lot of problems
-
-  $REPO_ROOT/osh/split.py
-  $REPO_ROOT/oil_lang/regex_translate.py
-
-  # Fails because of Union[None, bool, str] -- dynamic typing
-  #$REPO_ROOT/frontend/args.py
-)
-
-osh-parse() {
-  local name=${1:-osh_parse}
-
-  local tmp=$TMP
-  mkdir -p $tmp
-
-  local raw=$tmp/${name}_raw.cc 
-
-  #if false; then
-  if true; then
-    mycpp $raw bin/$name.py "${OSH_PARSE_FILES[@]}" #"${TRANSLATE[@]}"
-      #"${MORE_OIL[@]}"
-  fi
-
-  local cc=_build/cpp/$name.cc
-
-  { preamble $name
-    cpp-skeleton $name $raw 
-  } > $cc
-
-  compile-slice $name '.dbg'
-}
-
 osh-eval() {
   ### Translate bin/osh_eval.py
 
@@ -607,8 +489,8 @@ osh-parse-smoke() {
     if test -n "$python"; then
       bin/osh -n $file | wc -l
     else
-      local osh_parse=_bin/osh_parse.asan 
-      $osh_parse $file | wc -l
+      local osh_parse=_bin/osh_eval.asan 
+      $osh_parse -n $file | wc -l
 
       # This also works
       #local osh_eval=_bin/osh_eval.asan 
