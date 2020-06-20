@@ -141,7 +141,7 @@ def main(argv):
     to_header = [os.path.basename(p) for p in to_header]
     to_header = [os.path.splitext(name)[0] for name in to_header]
 
-  #log('to_header %s', to_header)
+  log('to_header %s', to_header)
 
   sources, options = get_mypy_config(paths, mypy_options)
   for source in sources:
@@ -196,10 +196,15 @@ def main(argv):
   names = set(name for name, _ in to_compile)
 
   filtered = []
+  seen = set()
   for name, module in to_compile:
-    if name.startswith('oil.') and name[4:] in names:
-      continue
-    filtered.append((name, module))
+    if name.startswith('oil.'):
+      name = name[4:]
+
+    if name not in seen:  # remove dupe
+      filtered.append((name, module))
+      seen.add(name)
+
   to_compile = filtered
 
   import pickle
@@ -246,16 +251,22 @@ def main(argv):
 
   if opts.header_out:
     header_f = open(opts.header_out, 'w')  # Not closed
+    guard = 'RUNTIME_H'
     header_f.write("""\
 // %s: translated from Python by mycpp
 
+#ifndef %s
+#define %s
+
 #include "mylib.h"
-""" % os.path.basename(opts.header_out))
+""" % (os.path.basename(opts.header_out), guard, guard))
+
+  log('--- FORWARD DECL')
 
   # Forward declarations first.
   # class Foo; class Bar;
   for name, module in to_compile:
-    #log('name %s', name)
+    log('forward decl name %s', name)
     if name in to_header:
       out_f = header_f
     else:
@@ -276,9 +287,12 @@ def main(argv):
   # TODO: This could be a class with 2 members
   fmt_ids = {'_counter': 0}
 
+  log('--- DECL')
+
   # First generate ALL C++ declarations / "headers".
   # class Foo { void method(); }; class Bar { void method(); };
   for name, module in to_compile:
+    log('decl name %s', name)
     if name in to_header:
       out_f = header_f
     else:
@@ -288,6 +302,13 @@ def main(argv):
                               virtual=virtual, decl=True)
 
     p3.visit_mypy_file(module)
+
+  if opts.header_out:
+    header_f.write("""\
+#endif  // %s
+""" % guard)
+
+  log('--- DEFINITION')
 
   # Now the definitions / implementations.
   # void Foo:method() { ... }

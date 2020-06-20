@@ -5,8 +5,11 @@
 
 #include "mylib.h"
 
-#include "asdl_runtime.h"
 #include "syntax_asdl.h"
+
+namespace runtime {
+extern int NO_SPID;
+}
 
 namespace error {
 

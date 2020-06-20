@@ -349,7 +349,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if self.forward_decl:
           self.indent += 1
 
-        self.log('defs %s', o.defs)
+        #self.log('defs %s', o.defs)
         for node in o.defs:
           # skip module docstring
           if (isinstance(node, ExpressionStmt) and
@@ -630,7 +630,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
       self.fmt_ids['_counter'] += 1
 
       fmt_parts = format_strings.Parse(fmt)
-      self.fmt_funcs.write('Str* %s(' % temp_name)
+      self.fmt_funcs.write('inline Str* %s(' % temp_name)
 
       for i, typ in enumerate(fmt_types):
         if i != 0:
@@ -740,6 +740,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # Write a buffer with fmtX() functions.
           if self.decl:
             fmt = o.left.value
+
+            # TODO: I want to do this later
             temp_name = self._WriteFmtFunc(fmt, fmt_types)
             self.fmt_ids[o] = temp_name
 

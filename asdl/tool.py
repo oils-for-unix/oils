@@ -145,7 +145,7 @@ tags_to_types = \\
 
 #include "%s.h"
 #include <assert.h>
-#include "asdl_runtime.h"  // generated code uses wrappers here
+#include "asdl/runtime.h"  // generated code uses wrappers here
 
 """ % (out_prefix, ns))
 

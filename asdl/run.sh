@@ -195,7 +195,7 @@ gen-cpp-test() {
 
   # uses typed_arith_asdl.h, runtime.h, hnode_asdl.h, asdl_runtime.h
   $CXX $CPPFLAGS \
-    -I _tmp -I mycpp -I _build/cpp -I cpp \
+    -I . -I _tmp -I mycpp -I _build/cpp -I cpp \
     -o $bin \
     asdl/gen_cpp_test.cc \
     asdl/runtime.cc \

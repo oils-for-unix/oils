@@ -1,8 +1,7 @@
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>
 
-#include "asdl_format.h"
-#include "asdl_runtime.h"
+#include "runtime.h"
 #include "greatest.h"
 #include "mylib.h"
 #include "typed_arith_asdl.h"
