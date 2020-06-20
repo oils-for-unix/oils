@@ -2,38 +2,7 @@
 
 #include "frontend_flag_spec.h"
 #include "arg_types.h"
-
-// "header" copied from _build/cpp/osh_eval.cc.  TODO: mycpp should be able to
-// export headers!
-namespace args {
-args::_Attributes* Parse(runtime_asdl::FlagSpec_* spec, args::Reader* arg_r);
-args::_Attributes* ParseLikeEcho(runtime_asdl::FlagSpec_* spec,
-                                 args::Reader* arg_r);
-args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec,
-                             args::Reader* arg_r);
-
-// Copied from osh_eval.cc translation
-class Reader {
- public:
-  Reader(List<Str*>* argv, List<int>* spids);
-  void Next();
-  Str* Peek();
-  Tuple2<Str*, int> Peek2();
-  Str* ReadRequired(Str* error_msg);
-  Tuple2<Str*, int> ReadRequired2(Str* error_msg);
-  List<Str*>* Rest();
-  Tuple2<List<Str*>*, List<int>*> Rest2();
-  bool AtEnd();
-  int _FirstSpanId();
-  int SpanId();
-
-  List<Str*>* argv;
-  int i;
-  int n;
-  List<int>* spids;
-};
-
-}  // namespace args
+#include "osh_eval.h"  // args::Reader, etc.
 
 namespace flag_spec {
 

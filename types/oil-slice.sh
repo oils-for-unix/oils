@@ -42,7 +42,6 @@ osh-eval() {
   PYTHONPATH=. bin/osh_eval.py "$@"
 }
 
-readonly OSH_PARSE_DEPS='_tmp/osh_parse-deps.txt'
 readonly OSH_EVAL_DEPS='_tmp/osh_eval-deps.txt'
 
 deps() {
@@ -110,8 +109,6 @@ travis-setup() {
   # TODO: add stat.py back.  Why does it cause errors?
   local exclude='vendor|__future__|mylib.py|/stat.py'
 
-  osh-parse-deps
-  egrep -v "$exclude" $OSH_PARSE_DEPS | tee $OSH_PARSE_MANIFEST
   osh-eval-deps
   egrep -v "$exclude" $OSH_EVAL_DEPS | tee $OSH_EVAL_MANIFEST
 }
@@ -126,7 +123,6 @@ travis() {
     return
   fi
 
-  #typecheck-all $OSH_PARSE_MANIFEST
   typecheck-all $OSH_EVAL_MANIFEST
 }
 

@@ -5,3 +5,4 @@
 ./core/process.py
 ./core/executor.py
 ./core/shell.py
+./osh/builtin_process.py
