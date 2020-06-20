@@ -1,9 +1,9 @@
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>
 
-#include "runtime.h"
 #include "greatest.h"
 #include "mylib.h"
+#include "runtime.h"
 #include "typed_arith_asdl.h"
 #include "typed_demo_asdl.h"  // has simple Sum, etc
 

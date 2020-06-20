@@ -34,7 +34,11 @@ cpp-unit-tests() {
     cpp/frontend_flag_spec.cc \
     cpp/frontend_match.cc \
     cpp/libc.cc \
-    mycpp/mylib.cc
+    mycpp/mylib.cc \
+
+    # I wanted to put frontend/args.py in here.  But it depends on a lot of
+    # stuff like runtime_asdl.
+    #asdl/runtime.cc  # for args::ParseMore() 
 
   $bin "$@"
 }

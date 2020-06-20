@@ -20,6 +20,14 @@ Str* GetVersion(_ResourceLoader* loader);
 
 Str* ShowAppVersion(Str* app_name, _ResourceLoader* loader);
 
+inline Str* strerror_IO(IOError* e) {
+  assert(0);
+}
+
+inline Str* strerror_OS(OSError* e) {
+  assert(0);
+}
+
 }  // namespace pyutil
 
 #endif  // CORE_PYUTIL_H

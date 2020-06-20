@@ -156,7 +156,7 @@ args::_Attributes* ParseMore(Str* spec_name, args::Reader* arg_r) {
 #else
   // TODO: Fill this in from constant data!
   flag_spec::_FlagSpecAndMore* spec = nullptr;
-  //assert(spec);  // should always be found
+  // assert(spec);  // should always be found
   return args::ParseMore(spec, arg_r);
 #endif
 }

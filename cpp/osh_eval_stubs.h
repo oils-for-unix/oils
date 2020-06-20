@@ -51,29 +51,6 @@ inline Str* BackslashEscape(Str* s, Str* meta_chars) {
 
 }  // namespace util
 
-// TODO: Should these have their own file?
-namespace pyutil {
-inline Str* strerror_IO(IOError* e) {
-  assert(0);
-}
-inline Str* strerror_OS(OSError* e) {
-  assert(0);
-}
-}  // namespace pyutil
-
-//
-// Stubs added for osh/cmd_exec.py
-//
-
-namespace builtin_misc {
-class _Builtin {
- public:
-  int Run(runtime_asdl::cmd_value_t* cmd_val) {
-    assert(0);
-  }
-};
-}  // namespace builtin_misc
-
 namespace builtin_process {
 class _TrapHandler {
  public:

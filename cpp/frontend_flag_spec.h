@@ -7,7 +7,7 @@
 #include "mylib.h"
 #include "runtime_asdl.h"
 
-// Forward declarations
+// Forward declarations (can't include osh_eval.h)
 namespace args {
 class _Action;
 class SetToArg;
@@ -42,6 +42,36 @@ struct FlagSpec_c {
   const char** arity0;   // NULL terminated array
   SetToArg_c* arity1;    // NULL terminated array
   const char** options;  // NULL terminated array
+  DefaultPair_c* defaults;
+};
+
+//
+// For FlagSpecAndMore
+//
+
+enum class ActionType_c {
+  SetToArg,        // name, flag_type, quit_parsing_flags
+  SetBoolToArg,    // name
+  SetToTrue,       // name
+  SetOption,       // name
+  SetNamedOption,  // no args
+  SetAction,       // name
+  SetNamedAction,  // no args
+};
+
+struct Action_c {
+  ActionType_c type;
+  const char* name;
+  int flag_type;
+  bool quit_parsing_flags;
+};
+
+struct FlagSpecAndMore_c {
+  const char* name;
+  // These are Dict[str, _Action]
+  Action_c* actions_short;
+  Action_c* actions_long;
+  // TODO: need strings as defaults
   DefaultPair_c* defaults;
 };
 
