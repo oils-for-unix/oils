@@ -3,7 +3,7 @@
 #include "frontend_flag_spec.h"
 #include "frontend_match.h"
 #include "id.h"
-#include "libc.h"            // cell, etc
+#include "libc.h"
 #include "osh_eval_stubs.h"  // util::BackslashEscape
 #include "preamble.h"
 #include "runtime_asdl.h"  // cell, etc
