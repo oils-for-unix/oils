@@ -285,6 +285,21 @@ all-variants() {
 
 readonly TMP=_tmp/mycpp
 
+osh-eval-manifest() {
+  # _devbuild is ASDL stuff
+  # frontend metaprogramming: */*_def.py
+  # core/process.py - not ready
+  # pyutil.py -- Python only (Resource Loader, etc.)
+  # os_path.py: crashes on path += '/' + b
+  # pgen2/parse.py: prefer hand-written C
+
+  # TODO: could be pyoptview,pyconsts,pymatch,pyflag
+
+  local exclude='_devbuild/|.*_def\.py|core/py.*\.py|pybase.py|optview.py|match.py|process.py|os_path.py|path_stat.py|bool_stat.py|consts.py|pgen2/parse.py|oil_lang/objects.py|flag_spec.py|builtin_process.py'
+
+  egrep -v "$exclude" types/osh-eval-manifest.txt
+}
+
 osh-eval() {
   ### Translate bin/osh_eval.py
 
@@ -301,33 +316,12 @@ osh-eval() {
   #if false; then
   if true; then
     # relies on splitting
-    # _devbuild is ASDL stuff
-    # frontend metaprogramming:
-    #   lexer_def.py 
-    #   match.py is cpp/
-    #   id_kind_def.py
-    # core/meta.py
-    # core/process.py - not ready
-    # pyutil.py -- Python only (Resource Loader, etc.)
-    # core/util.py -- not ready
-    # os_path.py: crashes on path += '/' + b
-    # pgen2/parse.py: prefer hand-written C
-
-    local exclude='_devbuild/|pybase.py|optview.py|option_def.py|id_kind_def.py|match.py|lexer_def.py|/meta.py|pretty.py|process.py|pyerror.py|pyos.py|pyutil.py|os_path.py|path_stat.py|bool_stat.py|builtin_def.py|consts.py|pgen2/parse.py|oil_lang/objects.py|flag_spec.py|flag_def.py|builtin_process.py'
-
-    # TODO: Should we have a --header-file option?
-    # And then list the classes and functions that have to be exported
-    # or a regex
-    #
-    # ColorOutput|_Action
-    # Or the modules like asdl_runtime.h
-
     mycpp \
       --header-out $h \
       --to-header frontend.args \
       --to-header asdl.runtime \
       --to-header asdl.format \
-      $(egrep -v "$exclude" types/osh-eval-manifest.txt) > $raw 
+      $(osh-eval-manifest) > $raw 
   fi
 
   cpp-skeleton $name $raw > $cc

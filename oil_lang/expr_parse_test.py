@@ -11,7 +11,6 @@ from _devbuild.gen.syntax_asdl import source
 
 from core import alloc
 from core import error
-from core import meta
 from core import pyutil
 from core import test_lib
 from core.pyerror import log
@@ -26,7 +25,7 @@ class ExprParseTest(unittest.TestCase):
     self.arena.PushSource(source.Unused(''))
 
     loader = pyutil.GetResourceLoader()
-    oil_grammar = meta.LoadOilGrammar(loader)
+    oil_grammar = pyutil.LoadOilGrammar(loader)
 
     self.parse_ctx = test_lib.InitParseContext(arena=self.arena,
                                                oil_grammar=oil_grammar)

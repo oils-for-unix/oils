@@ -22,7 +22,6 @@ from core import completion
 from core import dev
 from core import executor
 from core import main_loop
-from core import meta
 from core import optview
 from core import process
 from core import pyutil
@@ -280,7 +279,7 @@ def InitWordParser(word_str, oil_at=False, arena=None):
   parse_opts = optview.Parse(opt_array)
   opt_array[option_i.parse_at] = oil_at
   loader = pyutil.GetResourceLoader()
-  oil_grammar = meta.LoadOilGrammar(loader)
+  oil_grammar = pyutil.LoadOilGrammar(loader)
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, {}, oil_grammar)
   line_reader, _ = InitLexer(word_str, arena)
   c_parser = parse_ctx.MakeOshParser(line_reader)

@@ -8,6 +8,7 @@ import time
 import zipimport  # NOT the zipfile module.
 
 from mycpp import mylib
+from pgen2 import grammar
 from pylib import os_path
 
 import posix_ as posix
@@ -55,6 +56,14 @@ def strerror_IO(e):
 def strerror_OS(e):
   # type: (OSError) -> str
   return posix.strerror(e.errno)
+
+
+def LoadOilGrammar(loader):
+  # type: (_ResourceLoader) -> grammar.Grammar
+  oil_grammar = grammar.Grammar()
+  contents = loader.Get('_devbuild/gen/grammar.marshal')
+  oil_grammar.loads(contents)
+  return oil_grammar
 
 
 class _ResourceLoader(object):

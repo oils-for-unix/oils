@@ -13,7 +13,6 @@ from core import alloc
 from core import error
 from core import optview
 #from core import main_loop
-from core import meta
 from core import pyutil
 from core.pyerror import log
 from core import ui
@@ -63,7 +62,7 @@ def main(argv):
   oil_grammar = None  # type: Grammar
   if mylib.PYTHON:
     loader = pyutil.GetResourceLoader()
-    oil_grammar = meta.LoadOilGrammar(loader)
+    oil_grammar = pyutil.LoadOilGrammar(loader)
 
   parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
 

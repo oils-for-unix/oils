@@ -220,7 +220,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   aliases = {}  # type: Dict[str, str]
 
   oil_grammar = None  # type: grammar.Grammar
-  #oil_grammar = meta.LoadOilGrammar(loader)
+  #oil_grammar = pyutil.LoadOilGrammar(loader)
 
   if flag.one_pass_parse and not exec_opts.noexec():
     e_usage('--one-pass-parse requires noexec (-n)')

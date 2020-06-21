@@ -53,7 +53,6 @@ from _devbuild.gen.syntax_asdl import source
 from core import alloc
 from core import error
 from core import main_loop
-from core import meta
 from core import shell
 from core import optview
 from core import pure
@@ -136,7 +135,7 @@ def OshCommandMain(argv):
   aliases = {}  # Dummy value; not respecting aliases!
 
   loader = pyutil.GetResourceLoader()
-  oil_grammar = meta.LoadOilGrammar(loader)
+  oil_grammar = pyutil.LoadOilGrammar(loader)
 
   opt_array = [False] * option_i.ARRAY_SIZE
   parse_opts = optview.Parse(opt_array)
@@ -214,7 +213,7 @@ def TeaMain(argv):
   aliases = {}  # Dummy value; not respecting aliases!
 
   loader = pyutil.GetResourceLoader()
-  oil_grammar = meta.LoadOilGrammar(loader)
+  oil_grammar = pyutil.LoadOilGrammar(loader)
 
   # Not used in tea, but OK...
   opt_array = [False] * option_i.ARRAY_SIZE

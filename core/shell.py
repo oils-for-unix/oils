@@ -20,7 +20,6 @@ from core import error
 from core import executor
 from core import completion
 from core import main_loop
-from core import meta
 from core import pyos
 from core import process
 from core import pure
@@ -348,7 +347,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   # feedback between runtime and parser
   aliases = {}  # type: Dict[str, str]
 
-  oil_grammar = meta.LoadOilGrammar(loader)
+  oil_grammar = pyutil.LoadOilGrammar(loader)
 
   if flag.one_pass_parse and not exec_opts.noexec():
     raise error.Usage('--one-pass-parse requires noexec (-n)')

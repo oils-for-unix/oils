@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-lookup.py
+consts.py
 """
 from __future__ import print_function
 
