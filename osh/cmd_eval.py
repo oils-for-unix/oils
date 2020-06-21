@@ -67,7 +67,7 @@ from _devbuild.gen.types_asdl import redir_arg_type_e
 from asdl import runtime
 from core import error
 from core.error import _ControlFlow
-from core import passwd  # Time().  TODO: rename
+from core import pyos  # Time().  TODO: rename
 from core import state
 from core import ui
 from core import util
@@ -1267,9 +1267,9 @@ class CommandEvaluator(object):
         # $'\nreal\t%3lR\nuser\t%3lU\nsys\t%3lS'
         # "A trailing newline is added when the format string is displayed."
 
-        s_real, s_user, s_sys = passwd.Time()
+        s_real, s_user, s_sys = pyos.Time()
         status = self._Execute(node.pipeline)
-        e_real, e_user, e_sys = passwd.Time()
+        e_real, e_user, e_sys = pyos.Time()
         # note: mycpp doesn't support %.3f
         libc.print_time(e_real - s_real, e_user - s_user, e_sys - s_sys)
 

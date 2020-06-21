@@ -9,9 +9,9 @@
 ./core/main_loop.py
 ./core/meta.py
 ./core/optview.py
-./core/passwd.py
 ./core/pure.py
 ./core/pyerror.py
+./core/pyos.py
 ./core/pyutil.py
 ./core/state.py
 ./core/ui.py

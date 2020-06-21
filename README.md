@@ -211,3 +211,14 @@ This is very different than the **developer build** of Oil.
 * Subscribe for updates:
   * [/r/oilshell on Reddit](https://www.reddit.com/r/oilshell/)
   * [@oilshellblog on Twitter](https://twitter.com/oilshellblog)
+
+
+## Python Files Not Translated to C++
+
+    mycpp/
+      mylib.py  # statically typed equivalents of Python's data structures
+    pylib/      # copied from Python stdlib
+    core/
+      py{error,os,util}.py  # too complicated to translate
+    */*_def.py  # abstract definitions
+    */*_gen.py  # code generators

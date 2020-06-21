@@ -1,12 +1,12 @@
-// core_passwd.h: Replacement for core/passwd.py
+// core_pyos.h: Replacement for core/pyos.py
 
-#ifndef CORE_PASSWD_H
-#define CORE_PASSWD_H
+#ifndef CORE_PYOS_H
+#define CORE_PYOS_H
 
 #include "mylib.h"
 #include "syntax_asdl.h"
 
-namespace passwd {
+namespace pyos {
 
 inline Str* GetMyHomeDir() {
   assert(0);
@@ -37,6 +37,6 @@ inline Str* ReadBytesFromTerminal(int fd, int n) {
   assert(0);
 }
 
-}  // namespace passwd
+}  // namespace pyos
 
-#endif  // CORE_PASSWD_H
+#endif  // CORE_PYOS_H

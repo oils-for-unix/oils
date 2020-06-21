@@ -28,7 +28,7 @@ from _devbuild.gen.runtime_asdl import (
     scope_e,
 )
 from core import error
-from core import passwd
+from core import pyos
 from core import pyutil
 from qsn_ import qsn
 from core.pyerror import log, e_die
@@ -420,9 +420,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
       if val.tag_() == value_e.Str:
         val = cast(value__Str, UP_val)
         return val.s
-      return passwd.GetMyHomeDir()
+      return pyos.GetMyHomeDir()
 
-    return passwd.GetHomeDir(token)
+    return pyos.GetHomeDir(token)
 
   def _EvalVarNum(self, var_num):
     # type: (int) -> value_t

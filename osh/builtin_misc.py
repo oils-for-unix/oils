@@ -14,7 +14,7 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import span_e, cmd_value__Argv
 from asdl import runtime
 from core import error
-from core import passwd
+from core import pyos
 from core.pyerror import e_usage
 from core import pyutil  # strerror_OS
 from core import state
@@ -47,7 +47,7 @@ _ = log
 class Times(vm._Builtin):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
-    passwd.PrintTimes()
+    pyos.PrintTimes()
     return 0
 
 
@@ -177,7 +177,7 @@ class Read(vm._Builtin):
       status = 0
       stdin_fd = self.stdin.fileno()
       if self.stdin.isatty():  # set stdin to read in unbuffered mode
-        s = passwd.ReadBytesFromTerminal(stdin_fd, arg.n)
+        s = pyos.ReadBytesFromTerminal(stdin_fd, arg.n)
       else:
         chunks = []  # type: List[str]
         n = arg.n

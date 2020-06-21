@@ -13,7 +13,7 @@ from _devbuild.gen.syntax_asdl import (
 from asdl import runtime
 from core import main_loop
 from core import error
-from core import passwd
+from core import pyos
 from core import state
 from core import ui
 from frontend import consts
@@ -64,7 +64,7 @@ class _PromptEvaluatorCache(object):
     elif name == 'hostname':  # for \h and \H
       value = libc.gethostname()
     elif name == 'user':  # for \u
-      value = passwd.GetUserName(self._GetEuid())  # recursive call for caching
+      value = pyos.GetUserName(self._GetEuid())  # recursive call for caching
     else:
       raise AssertionError(name)
 

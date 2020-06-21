@@ -1,21 +1,8 @@
 #!/usr/bin/env python2
 """
-passwd.py
+pyos.py -- Wrappers for the operating system.
 
-Wrapper around the 'pwd' module.  Its API uses large tuples e.g. Tuple7, which
-can't be translated directly by mycpp.
-
-TODO: Rename this to io.py?  sys_.py?
-
-Python files that won't be translated:
-
-  pylib/  # directly copied from stdlib
-  mycpp/
-    mylib.py  # data structures
-  core/
-    sys_.py
-  */*_def.py  # abstract definitions with their own code generators
-
+Like py{error,util}.py, it won't be translated to C++.
 """
 from __future__ import print_function
 
@@ -33,7 +20,7 @@ if TYPE_CHECKING:
 
 def GetMyHomeDir():
   # type: () -> Optional[str]
-  """Get the user's home directory from the /etc/passwd.
+  """Get the user's home directory from the /etc/pyos.
 
   Used by $HOME initialization in osh/state.py.  Tilde expansion and readline
   initialization use mem.GetVar('HOME').

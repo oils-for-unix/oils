@@ -21,7 +21,7 @@ from _devbuild.gen.runtime_asdl import (
 from _devbuild.gen import runtime_asdl  # for cell
 from asdl import runtime
 from core import error
-from core import passwd
+from core import pyos
 from core import pyutil
 from core.pyerror import e_usage
 from core.pyutil import stderr_line
@@ -618,7 +618,7 @@ def _InitDefaults(mem):
   # In bash, this looks like 'linux-gnu', 'linux-musl', etc.  Scripts test
   # for 'darwin' and 'freebsd' too.  They generally don't like at 'gnu' or
   # 'musl'.  We don't have that info, so just make it 'linux'.
-  SetGlobalString(mem, 'OSTYPE', passwd.OsType())
+  SetGlobalString(mem, 'OSTYPE', pyos.OsType())
 
   # For getopts builtin
   SetGlobalString(mem, 'OPTIND', '1')

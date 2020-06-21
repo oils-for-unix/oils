@@ -32,7 +32,7 @@ using id_kind_asdl::Kind_t;
 #include "pgen2_parse.h"
 #include "qsn_qsn.h"
 // added for osh_eval
-#include "core_passwd.h"
+#include "core_pyos.h"
 #include "libc.h"
 #include "osh_bool_stat.h"
 #include "posix.h"
