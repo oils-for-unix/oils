@@ -9,8 +9,8 @@ Instead of:
 """
 
 from _devbuild.gen.id_kind_asdl import Id
+from core import pyutil
 from core import ui
-from core import util
 from core.pyerror import e_die, e_strict, log
 from osh import glob_
 
@@ -450,5 +450,5 @@ def ShellQuoteB(s):
   # * [] ? for glob
   # {} for brace expansion
   # space because it separates words
-  return util.BackslashEscape(s, ' `~!$&*()[]{}\\|;\'"<>?')
+  return pyutil.BackslashEscape(s, ' `~!$&*()[]{}\\|;\'"<>?')
 

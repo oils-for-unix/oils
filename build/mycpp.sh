@@ -85,12 +85,12 @@ EOF
 }
 
 cpp-skeleton() {
-  local namespace=$1
+  local name=$1
   shift
 
   cat <<EOF
-#include "dumb_alloc.h"
-#include "mylib.h"
+// $name.cc: translated from Python by mycpp
+
 #include "preamble.h"  // hard-coded stuff
 
 EOF
@@ -113,11 +113,11 @@ int main(int argc, char **argv) {
     int n = to_int(r);
     log("Running %d times", n);
     for (int i = 0; i < n; ++i) { 
-      status = $namespace::main(args);
+      status = $name::main(args);
     }
     // TODO: clear memory?
   } else {
-    status = $namespace::main(args);
+    status = $name::main(args);
   }
 
   dumb_alloc::Summarize();
@@ -208,14 +208,6 @@ mycpp-demo() {
 
   # Run it
   _tmp/$name
-}
-
-preamble() {
-  local name=$1
-  cat <<EOF
-// $name.cc: translated from Python by mycpp
-
-EOF
 }
 
 compile-slice() {
@@ -338,9 +330,7 @@ osh-eval() {
       $(egrep -v "$exclude" types/osh-eval-manifest.txt) > $raw 
   fi
 
-  { preamble $name
-    cpp-skeleton $name $raw 
-  } > $cc
+  cpp-skeleton $name $raw > $cc
 
   compile-slice 'osh_eval' '.dbg'
 }

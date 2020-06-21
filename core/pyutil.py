@@ -17,6 +17,20 @@ if TYPE_CHECKING:
   from mycpp import mylib
 
 
+def BackslashEscape(s, meta_chars):
+  # type: (str, str) -> str
+  """Escaped certain characters with backslashes.
+
+  Used for shell syntax (i.e. quoting completed filenames), globs, and EREs.
+  """
+  escaped = []
+  for c in s:
+    if c in meta_chars:
+      escaped.append('\\')
+    escaped.append(c)
+  return ''.join(escaped)
+
+
 def stderr_line(msg, *args):
   # type: (str, *Any) -> None
   """Print a message to stderr for the user.

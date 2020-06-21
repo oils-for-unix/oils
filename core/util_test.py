@@ -16,8 +16,9 @@ from core import util  # module under test
 
 class UtilTest(unittest.TestCase):
 
-  def testLog(self):
-    print(util.BackslashEscape('foo', 'o'))
+  def testDebugFile(self):
+    n = util.NullDebugFile()
+    n.write('foo')
 
 
 if __name__ == '__main__':

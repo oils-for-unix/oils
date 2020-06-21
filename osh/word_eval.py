@@ -69,6 +69,7 @@ def CheckCompatArray(var_name, opts, is_plain_var_sub=True):
       is_plain_var_sub and var_name in _STRING_AND_ARRAY
   )
 
+
 def ResolveCompatArray(val):
   # type: (value_t) -> value_t
   """Decay ${array} to ${array[0]}."""

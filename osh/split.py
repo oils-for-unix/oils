@@ -33,8 +33,8 @@ from _devbuild.gen.runtime_asdl import emit_i
 from _devbuild.gen.runtime_asdl import char_kind_i
 from _devbuild.gen.runtime_asdl import state_i
 
-from core import util
 from core.pyerror import log
+from core import pyutil
 from frontend import consts
 from mycpp import mylib
 from mycpp.mylib import tagswitch
@@ -202,7 +202,7 @@ class _BaseSplitter(object):
     # type: (str) -> str
     # Note the characters here are DYNAMIC, unlike other usages of
     # BackslashEscape().
-    return util.BackslashEscape(s, self.escape_chars)
+    return pyutil.BackslashEscape(s, self.escape_chars)
 
 
 class IfsSplitter(_BaseSplitter):

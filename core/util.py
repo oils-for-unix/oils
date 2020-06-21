@@ -40,22 +40,6 @@ if mylib.PYTHON:
       return out
 
 
-if mylib.PYTHON:  # Has a faster C++ implementation
-
-  def BackslashEscape(s, meta_chars):
-    # type: (str, str) -> str
-    """Escaped certain characters with backslashes.
-
-    Used for shell syntax (i.e. quoting completed filenames), globs, and EREs.
-    """
-    escaped = []
-    for c in s:
-      if c in meta_chars:
-        escaped.append('\\')
-      escaped.append(c)
-    return ''.join(escaped)
-
-
 class _DebugFile(object):
 
   def __init__(self):

@@ -10,8 +10,8 @@ from _devbuild.gen.syntax_asdl import (
     glob_part_e, glob_part, glob_part_t,
     glob_part__Literal, glob_part__Operator, glob_part__CharClass,
 )
+from core import pyutil
 from core.pyutil import stderr_line
-from core import util
 from core.pyerror import log
 from frontend import match
 
@@ -83,7 +83,7 @@ def GlobEscape(s):
   """
   For SingleQuoted, DoubleQuoted, and EscapedLiteral
   """
-  return util.BackslashEscape(s, GLOB_META_CHARS)
+  return pyutil.BackslashEscape(s, GLOB_META_CHARS)
 
 
 def EreCharClassEscape(s):
@@ -95,7 +95,7 @@ def EreCharClassEscape(s):
   #
   # ] would close it -- but there is a weird posix rule where it has to be put
   # FIRST.  Like []abc].
-  return util.BackslashEscape(s, r'\^-')
+  return pyutil.BackslashEscape(s, r'\^-')
 
 
 ERE_META_CHARS = r'\?*+{}^$.()|'
@@ -108,7 +108,7 @@ def ExtendedRegexEscape(s):
 
   https://www.gnu.org/software/sed/manual/html_node/ERE-syntax.html
   """
-  return util.BackslashEscape(s, ERE_META_CHARS)
+  return pyutil.BackslashEscape(s, ERE_META_CHARS)
 
 
 def GlobUnescape(s):  # used by cmd_eval
@@ -231,7 +231,7 @@ class _GlobParser(object):
       id_ = self.token_type
       s = self.token_val
 
-      #util.log('%s %r', self.token_type, self.token_val)
+      #log('%s %r', self.token_type, self.token_val)
       if id_ == Id.Eol_Tok:
         break
 
