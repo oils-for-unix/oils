@@ -1,10 +1,10 @@
 #include "greatest.h"
 
+#include "core_pyutil.h"  // BackslashEscape
 #include "frontend_flag_spec.h"
 #include "frontend_match.h"
 #include "id.h"
 #include "libc.h"
-#include "osh_eval_stubs.h"  // util::BackslashEscape
 #include "preamble.h"
 #include "runtime_asdl.h"  // cell, etc
 
@@ -92,10 +92,10 @@ TEST match_test() {
 
 TEST util_test() {
   // OK this seems to work
-  Str* escaped = util::BackslashEscape(new Str("'foo bar'"), new Str(" '"));
+  Str* escaped = pyutil::BackslashEscape(new Str("'foo bar'"), new Str(" '"));
   ASSERT(str_equals(escaped, new Str("\\'foo\\ bar\\'")));
 
-  Str* escaped2 = util::BackslashEscape(new Str(""), new Str(" '"));
+  Str* escaped2 = pyutil::BackslashEscape(new Str(""), new Str(" '"));
   ASSERT(str_equals(escaped2, new Str("")));
 
   PASS();
