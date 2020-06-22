@@ -91,6 +91,7 @@ runtime_asdl::FlagSpec_* CreateSpec(FlagSpec_c* in) {
   return out;
 }
 
+#ifndef CPP_UNIT_TEST
 flag_spec::_FlagSpecAndMore* CreateSpec2(FlagSpecAndMore_c* in) {
   auto out = new flag_spec::_FlagSpecAndMore();
   out->actions_short = new Dict<Str*, args::_Action*>();
@@ -151,6 +152,7 @@ flag_spec::_FlagSpecAndMore* CreateSpec2(FlagSpecAndMore_c* in) {
   }
   return out;
 }
+#endif
 
 runtime_asdl::FlagSpec_* LookupFlagSpec(Str* spec_name) {
   int i = 0;
@@ -179,7 +181,11 @@ flag_spec::_FlagSpecAndMore* LookupFlagSpec2(Str* spec_name) {
     }
     if (str_equals0(name, spec_name)) {
       // log("%s found", spec_name->data_);
+#ifdef CPP_UNIT_TEST
+      return nullptr;
+#else
       return CreateSpec2(&kFlagSpecsAndMore[i]);
+#endif
     }
 
     i++;

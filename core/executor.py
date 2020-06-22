@@ -17,7 +17,7 @@ from asdl import runtime
 from core import error
 from core import process
 from core.pyerror import log, e_die
-from core.vm import _Executor
+from core import vm
 from frontend import consts
 from oil_lang import objects
 from mycpp import mylib
@@ -39,7 +39,7 @@ if TYPE_CHECKING:
   from osh import cmd_eval
 
 
-class ShellExecutor(_Executor):
+class ShellExecutor(vm._Executor):
   """
   This CommandEvaluator is combined with the OSH language evaluators in osh/ to create
   a shell interpreter.
@@ -58,8 +58,7 @@ class ShellExecutor(_Executor):
       errfmt  # type: ui.ErrorFormatter
     ):
     # type: (...) -> None
-    self.cmd_ev = None  # type: cmd_eval.CommandEvaluator
-
+    vm._Executor.__init__(self)
     self.mem = mem
     self.exec_opts = exec_opts
     # for errexit.SpidIfDisabled.  TODO: try removing it?

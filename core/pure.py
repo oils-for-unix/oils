@@ -462,11 +462,11 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 class NullExecutor(vm._Executor):
   def __init__(self, exec_opts, mutable_opts, procs, builtins):
     # type: (optview.Exec, state.MutableOpts, Dict[str, command__ShFunction], Dict[int, vm._Builtin]) -> None
+    vm._Executor.__init__(self)
     self.exec_opts = exec_opts
     self.mutable_opts = mutable_opts
     self.procs = procs
     self.builtins = builtins
-    self.cmd_ev = None  # type: cmd_eval.CommandEvaluator
 
   def RunBuiltin(self, builtin_id, cmd_val):
     # type: (int, cmd_value__Argv) -> int
