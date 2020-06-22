@@ -246,6 +246,30 @@ namespace arg_types {
         elif isinstance(action, args.SetToTrue):
           log('action %s %s', name, action.name)
 
+    if spec.defaults:
+      defaults_name = 'defaults_%d' % i
+      cc_f.write('DefaultPair_c %s[] = {\n' % defaults_name)
+      for name in sorted(spec.defaults):
+        val = spec.defaults[name]
+        if val.tag_() == value_e.Bool:
+          d = 'True' if val.b else 'False'
+        elif val.tag_() == value_e.Int:
+          d = 'Undef'  # TODO: fix this.  Should be -1
+        elif val.tag_() == value_e.Undef:
+          d = 'Undef'
+
+        # NOTE: 'osh' FlagSpecAndMore_ has default='nice' and default='abbrev-text'
+        else:
+          d = 'Undef'
+          #raise AssertionError(val)
+
+        cc_f.write('    {%s, Default_c::%s},\n' % (CString(name), d))
+
+      cc_f.write('''\
+    {},
+};
+''')
+
     var_names.append((actions_short_name, actions_long_name, defaults_name))
 
   cc_f.write('FlagSpecAndMore_c kFlagSpecsAndMore[] = {\n')

@@ -122,6 +122,33 @@ flag_spec::_FlagSpecAndMore* CreateSpec2(FlagSpecAndMore_c* in) {
       ++i;
     }
   }
+
+  if (in->defaults) {
+    int i = 0;
+    while (true) {
+      DefaultPair_c* pair = &(in->defaults[i]);
+      if (!pair->name) {
+        break;
+      }
+      // log("default %s", d->name);
+      value_t* val;
+      switch (pair->default_val) {
+      case Default_c::Undef:
+        val = new value__Undef();
+        break;
+      case Default_c::False:
+        val = new value__Bool(false);
+        break;
+      case Default_c::True:
+        val = new value__Bool(true);
+        break;
+      default:
+        assert(0);
+      }
+      out->defaults->set(new Str(pair->name), val);
+      ++i;
+    }
+  }
   return out;
 }
 
@@ -151,7 +178,7 @@ flag_spec::_FlagSpecAndMore* LookupFlagSpec2(Str* spec_name) {
       break;
     }
     if (str_equals0(name, spec_name)) {
-      log("%s found", spec_name->data_);
+      // log("%s found", spec_name->data_);
       return CreateSpec2(&kFlagSpecsAndMore[i]);
     }
 
