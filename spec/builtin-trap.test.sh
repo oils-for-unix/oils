@@ -111,6 +111,16 @@ for
 ## stdout: FAILED
 ## status: 0
 
+#### trap exit bug regression
+trap 'echo IN TRAP; echo $stdout' EXIT 
+stdout=FOO
+exit
+
+## STDOUT:
+IN TRAP
+FOO
+## END
+
 #### trap DEBUG
 debuglog() {
   echo "debuglog [$@]"

@@ -36,7 +36,6 @@ if TYPE_CHECKING:
   from core import state
   from core import ui
   from core.vm import _Builtin
-  from osh import cmd_eval
 
 
 class ShellExecutor(vm._Executor):
