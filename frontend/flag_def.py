@@ -36,9 +36,9 @@ NEW_VAR_SPEC.ShortFlag('-p')
 NEW_VAR_SPEC.ShortFlag('-g')  # Look up in global scope
 
 # Options +r +x +n
-NEW_VAR_SPEC.ShortOption('x')  # export
-NEW_VAR_SPEC.ShortOption('r')  # readonly
-NEW_VAR_SPEC.ShortOption('n')  # named ref
+NEW_VAR_SPEC.PlusFlag('x')  # export
+NEW_VAR_SPEC.PlusFlag('r')  # readonly
+NEW_VAR_SPEC.PlusFlag('n')  # named ref
 
 # Common between readonly/declare
 NEW_VAR_SPEC.ShortFlag('-a')

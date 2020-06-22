@@ -150,7 +150,7 @@ module runtime
   FlagSpec_ = (
     string* arity0,  -- could rewrite as array[string] arity0
     map[string, SetToArg_] arity1,
-    string* options,
+    string* plus_flags,
     map[string, value] defaults
   )
 

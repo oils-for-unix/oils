@@ -148,7 +148,7 @@ class _FlagSpec(object):
     # Convenience
     self.arity0 = self.spec.arity0
     self.arity1 = self.spec.arity1
-    self.options = self.spec.options
+    self.plus_flags = self.spec.plus_flags
     self.defaults = self.spec.defaults
 
     # For code generation.  Not used at runtime.
@@ -192,12 +192,14 @@ class _FlagSpec(object):
 
     self.fields[char] = typ
 
-  def ShortOption(self, char, help=None):
+  def PlusFlag(self, char, help=None):
     # type: (str, Optional[str]) -> None
-    """Define an option that can be turned off with + and on with -."""
+    """Define an option that can be turned off with + and on with -.
 
+    It's actually a ternary value: plus, minus, or unset.
+    """
     assert len(char) == 1  # 'r' for -r +r
-    self.options.append(char)
+    self.plus_flags.append(char)
 
     self.defaults[char] = value.Undef()
     # '+' or '-'.  TODO: Should we make it a bool?

@@ -132,8 +132,8 @@ class ArgsTest(unittest.TestCase):
     s.ShortFlag('-d', args.String)  # delimiter
 
     # like declare +rx
-    s.ShortOption('r')
-    s.ShortOption('x')
+    s.PlusFlag('r')
+    s.PlusFlag('x')
 
     arg, i = _ParseCmdVal(s, _MakeBuiltinArgv(['-f', 'foo', 'bar']))
     self.assertEqual(1, i-1)

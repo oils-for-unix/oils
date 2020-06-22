@@ -562,6 +562,15 @@ status=2
 ## BUG zsh stdout-json: ""
 ## BUG zsh status: 1
 
+#### read with smooshed args
+echo hi | { read -rn1 var; echo var=$var; }
+## STDOUT:
+var=h
+## END
+## N-I dash/zsh STDOUT:
+var=
+## END
+
 #### mapfile
 type mapfile >/dev/null 2>&1 || exit 0
 printf '%s\n' {1..5..2} | {

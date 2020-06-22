@@ -492,7 +492,7 @@ def Parse(spec, arg_r):
       for i in xrange(1, n):  # parse flag combos like -rx
         ch = arg[i]
 
-        if ch in spec.options:
+        if ch in spec.plus_flags:
           out.Set(ch, value.Str('-'))
           continue
 
@@ -512,11 +512,11 @@ def Parse(spec, arg_r):
       arg_r.Next()  # next arg
 
     # Only accept + if there are ANY options defined, e.g. for declare +rx.
-    elif len(spec.options) and arg.startswith('+') and len(arg) > 1:
+    elif len(spec.plus_flags) and arg.startswith('+') and len(arg) > 1:
       n = len(arg)
       for i in xrange(1, n):  # parse flag combos like -rx
         ch = arg[i]
-        if ch in spec.options:
+        if ch in spec.plus_flags:
           out.Set(ch, value.Str('+'))
           continue
 
@@ -608,6 +608,9 @@ def ParseMore(spec, arg_r):
       continue
 
     if arg.startswith('-') or arg.startswith('+'):
+      # note: we're not handling sh -cecho  (no space) as an argument
+      # It complains about a missing argument
+
       char0 = arg[0]
       for ch in arg[1:]:
         #log('ch %r arg_r %s', ch, arg_r)
