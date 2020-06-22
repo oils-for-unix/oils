@@ -10,6 +10,8 @@
 namespace flag_spec {
 
 using arg_types::kFlagSpecs;
+using arg_types::kFlagSpecsAndMore;
+using runtime_asdl::flag_type__Str;
 using runtime_asdl::value__Bool;
 using runtime_asdl::value__Undef;
 using runtime_asdl::value_t;
@@ -40,6 +42,7 @@ runtime_asdl::FlagSpec_* CreateSpec(FlagSpec_c* in) {
       if (!p->name) {
         break;
       }
+      // TODO: Instantiate action!
       // log("a1 %s", p->name);
       ++i;
     }
@@ -88,6 +91,40 @@ runtime_asdl::FlagSpec_* CreateSpec(FlagSpec_c* in) {
   return out;
 }
 
+flag_spec::_FlagSpecAndMore* CreateSpec2(FlagSpecAndMore_c* in) {
+  auto out = new flag_spec::_FlagSpecAndMore();
+  out->actions_short = new Dict<Str*, args::_Action*>();
+  out->actions_long = new Dict<Str*, args::_Action*>();
+  out->defaults = new Dict<Str*, runtime_asdl::value_t*>();
+
+  if (in->actions_short) {
+    int i = 0;
+    while (true) {
+      Action_c* p = &(in->actions_short[i]);
+      if (!p->name) {
+        break;
+      }
+      // log("a1 %s", p->name);
+      args::_Action* action = nullptr;
+      switch (p->type) {
+      case ActionType_c::SetToArg: {
+        auto flag_type = new flag_type__Str();
+        action = new args::SetToArgAction(new Str(p->name), flag_type,
+                                          p->quit_parsing_flags);
+        break;
+      }
+      case ActionType_c::SetToTrue:  // not generated yet
+        break;
+      }
+      if (action) {
+        out->actions_short->set(new Str(p->name), action);
+      }
+      ++i;
+    }
+  }
+  return out;
+}
+
 runtime_asdl::FlagSpec_* LookupFlagSpec(Str* spec_name) {
   int i = 0;
   while (true) {
@@ -98,6 +135,24 @@ runtime_asdl::FlagSpec_* LookupFlagSpec(Str* spec_name) {
     if (str_equals0(name, spec_name)) {
       // log("%s found", spec_name->data_);
       return CreateSpec(&kFlagSpecs[i]);
+    }
+
+    i++;
+  }
+  // log("%s not found", spec_name->data_);
+  return nullptr;
+}
+
+flag_spec::_FlagSpecAndMore* LookupFlagSpec2(Str* spec_name) {
+  int i = 0;
+  while (true) {
+    const char* name = kFlagSpecsAndMore[i].name;
+    if (name == nullptr) {
+      break;
+    }
+    if (str_equals0(name, spec_name)) {
+      log("%s found", spec_name->data_);
+      return CreateSpec2(&kFlagSpecsAndMore[i]);
     }
 
     i++;
@@ -153,7 +208,8 @@ args::_Attributes* ParseMore(Str* spec_name, args::Reader* arg_r) {
   return nullptr;
 #else
   // TODO: Fill this in from constant data!
-  flag_spec::_FlagSpecAndMore* spec = nullptr;
+  flag_spec::_FlagSpecAndMore* spec = LookupFlagSpec2(spec_name);
+  assert(spec);
   // assert(spec);  // should always be found
   return args::ParseMore(spec, arg_r);
 #endif
