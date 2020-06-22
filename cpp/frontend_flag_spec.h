@@ -41,7 +41,7 @@ struct FlagSpec_c {
   const char* name;
   const char** arity0;   // NULL terminated array
   SetToArg_c* arity1;    // NULL terminated array
-  const char** options;  // NULL terminated array
+  const char** plus_flags;  // NULL terminated array
   DefaultPair_c* defaults;
 };
 
@@ -83,6 +83,7 @@ class _FlagSpecAndMore {
   Dict<Str*, args::_Action*>* actions_long;
   Dict<Str*, args::_Action*>* actions_short;
   Dict<Str*, runtime_asdl::value_t*>* defaults;
+  List<Str*>* plus_flags;
 };
 
 // for testing only

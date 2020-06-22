@@ -234,10 +234,14 @@ class _FlagSpecAndMore(object):
 
     self.actions_short = {}  # type: Dict[str, args._Action]  # {'-c': _Action}
     self.actions_long = {}  # type: Dict[str, args._Action]  # {'--rcfile': _Action}
+    self.plus_flags = []  # type: List[str]
     self.defaults = self.spec.defaults
 
     self.actions_short['o'] = args.SetNamedOption()  # -o and +o
+    # TODO: compgen/compopt/etc. don't need -O
     self.actions_short['O'] = args.SetNamedOption(shopt=True)  # -O and +O
+    self.plus_flags.append('o')
+    self.plus_flags.append('O')
 
     # For code generation.  Not used at runtime.
     self.fields = {}  # type: Dict[str, flag_type_t]
@@ -308,6 +312,7 @@ class _FlagSpecAndMore(object):
     if short_flag:
       assert not short_flag.startswith('-'), short_flag
       self.actions_short[short_flag] = args.SetOption(attr_name)
+      self.plus_flags.append(short_flag)
 
     self.actions_short['o'].Add(attr_name)  # type: ignore
 

@@ -202,7 +202,7 @@ SetToArg_c arity1_1[] = {
     {"z", 0, false}, {"zz", 1, false}, {},  // sentinel
 };
 
-const char* options_1[] = {"o", "p", nullptr};
+const char* plus_1[] = {"o", "p", nullptr};
 
 DefaultPair_c defaults_1[] = {
     {"x", Default_c::False},
@@ -210,9 +210,9 @@ DefaultPair_c defaults_1[] = {
     {},
 };
 
-FlagSpec_c spec1 = {"export", arity0_1, arity1_1, options_1, defaults_1};
+FlagSpec_c spec1 = {"export", arity0_1, arity1_1, plus_1, defaults_1};
 // a copy for demonstrations
-FlagSpec_c spec2 = {"unset", arity0_1, arity1_1, options_1, defaults_1};
+FlagSpec_c spec2 = {"unset", arity0_1, arity1_1, plus_1, defaults_1};
 
 TEST flag_spec_test() {
   // Test the declared constants
@@ -222,8 +222,8 @@ TEST flag_spec_test() {
   log("spec1.arity1 %s", spec1.arity1[0].name);
   log("spec1.arity1 %s", spec1.arity1[1].name);
 
-  log("spec1.options %s", spec1.options[0]);
-  log("spec1.options %s", spec1.options[1]);
+  log("spec1.plus_flags %s", spec1.plus_flags[0]);
+  log("spec1.plus_flags %s", spec1.plus_flags[1]);
 
   log("spec1.defaults %s", spec1.defaults[0].name);
   log("spec1.defaults %s", spec1.defaults[1].name);

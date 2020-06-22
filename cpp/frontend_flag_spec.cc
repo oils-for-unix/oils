@@ -48,15 +48,15 @@ runtime_asdl::FlagSpec_* CreateSpec(FlagSpec_c* in) {
     }
   }
 
-  if (in->options) {
+  if (in->plus_flags) {
     int i = 0;
     while (true) {
-      const char* s = in->options[i];
+      const char* s = in->plus_flags[i];
       if (!s) {
         break;
       }
       // log("option %s", s);
-      out->options->append(new Str(s));
+      out->plus_flags->append(new Str(s));
       ++i;
     }
   }

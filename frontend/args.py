@@ -257,8 +257,8 @@ class Reader(object):
 class _Action(object):
   """What is done when a flag or option is detected."""
 
-  def OnMatch(self, prefix, suffix, arg_r, out):
-    # type: (str, str, Reader, _Attributes) -> bool
+  def OnMatch(self, attached_arg, arg_r, out):
+    # type: (Optional[str], Reader, _Attributes) -> bool
     """Called when the flag matches.
 
     Args:
@@ -284,10 +284,10 @@ class SetToArgAction(_Action):
     """
     self.action = SetToArg_(name, flag_type, quit_parsing_flags)
 
-  def OnMatch(self, prefix, suffix, arg_r, out):
-    # type: (Optional[str], Optional[str], Reader, _Attributes) -> bool
+  def OnMatch(self, attached_arg, arg_r, out):
+    # type: (Optional[str], Reader, _Attributes) -> bool
     """Called when the flag matches."""
-    return _SetToArg(self.action, suffix, arg_r, out)
+    return _SetToArg(self.action, attached_arg, arg_r, out)
 
 
 def _SetToArg(action, suffix, arg_r, out):
@@ -351,17 +351,17 @@ class SetBoolToArg(_Action):
     # type: (str) -> None
     self.name = name
 
-  def OnMatch(self, prefix, suffix, arg_r, out):
-    # type: (Optional[str], Optional[str], Reader, _Attributes) -> bool
+  def OnMatch(self, attached_arg, arg_r, out):
+    # type: (Optional[str], Reader, _Attributes) -> bool
     """Called when the flag matches."""
 
-    if suffix:  # '0' in --verbose=0
-      if suffix in ('0', 'F', 'false', 'False'):  # TODO: incorrect translation
+    if attached_arg:  # '0' in --verbose=0
+      if attached_arg in ('0', 'F', 'false', 'False'):  # TODO: incorrect translation
         b = False
-      elif suffix in ('1', 'T', 'true', 'Talse'):
+      elif attached_arg in ('1', 'T', 'true', 'Talse'):
         b = True
       else:
-        e_usage('got invalid argument to boolean flag: %r' % suffix)
+        e_usage('got invalid argument to boolean flag: %r' % attached_arg)
     else:
       b = True
 
@@ -375,8 +375,8 @@ class SetToTrue(_Action):
     # type: (str) -> None
     self.name = name
 
-  def OnMatch(self, prefix, suffix, arg_r, out):
-    # type: (Optional[str], Optional[str], Reader, _Attributes) -> bool
+  def OnMatch(self, attached_arg, arg_r, out):
+    # type: (Optional[str], Reader, _Attributes) -> bool
     """Called when the flag matches."""
     out.SetTrue(self.name)
     return False
@@ -389,10 +389,10 @@ class SetOption(_Action):
     # type: (str) -> None
     self.name = name
 
-  def OnMatch(self, prefix, suffix, arg_r, out):
-    # type: (str, Optional[str], Reader, _Attributes) -> bool
+  def OnMatch(self, attached_arg, arg_r, out):
+    # type: (Optional[str], Reader, _Attributes) -> bool
     """Called when the flag matches."""
-    b = (prefix == '-')
+    b = (attached_arg == '-')
     out.opt_changes.append((self.name, b))
     return False
 
@@ -409,10 +409,10 @@ class SetNamedOption(_Action):
     # type: (str) -> None
     self.names.append(name)
 
-  def OnMatch(self, prefix, suffix, arg_r, out):
-    # type: (str, Optional[str], Reader, _Attributes) -> bool
+  def OnMatch(self, attached_arg, arg_r, out):
+    # type: (Optional[str], Reader, _Attributes) -> bool
     """Called when the flag matches."""
-    b = (prefix == '-')
+    b = (attached_arg == '-')
     #log('SetNamedOption %r %r %r', prefix, suffix, arg_r)
     arg_r.Next()  # always advance
     arg = arg_r.Peek()
@@ -438,8 +438,8 @@ class SetAction(_Action):
     # type: (str) -> None
     self.name = name
 
-  def OnMatch(self, prefix, suffix, arg_r, out):
-    # type: (str, str, Reader, _Attributes) -> bool
+  def OnMatch(self, attached_arg, arg_r, out):
+    # type: (Optional[str], Reader, _Attributes) -> bool
     out.actions.append(self.name)
     return False
 
@@ -455,10 +455,9 @@ class SetNamedAction(_Action):
     # type: (str) -> None
     self.names.append(name)
 
-  def OnMatch(self, prefix, suffix, arg_r, out):
-    # type: (str, Optional[str], Reader, _Attributes) -> bool
+  def OnMatch(self, attached_arg, arg_r, out):
+    # type: (Optional[str], Reader, _Attributes) -> bool
     """Called when the flag matches."""
-    #log('SetNamedOption %r %r %r', prefix, suffix, arg_r)
     arg_r.Next()  # always advance
     arg = arg_r.Peek()
     if arg is None:
@@ -602,8 +601,8 @@ def ParseMore(spec, arg_r):
         e_usage(
             'got invalid flag %r' % arg, span_id=arg_r.SpanId())
 
-      # TODO: Suffix could be 'bar' for --foo=bar
-      action.OnMatch(None, None, arg_r, out)
+      # TODO: attached_arg could be 'bar' for --foo=bar
+      action.OnMatch(None, arg_r, out)
       arg_r.Next()
       continue
 
@@ -619,7 +618,9 @@ def ParseMore(spec, arg_r):
         except KeyError:
           e_usage(
               'got invalid flag %r' % ('-' + ch), span_id=arg_r.SpanId())
-        quit = action.OnMatch(char0, None, arg_r, out)
+
+        attached_arg = char0 if ch in spec.plus_flags else None
+        quit = action.OnMatch(attached_arg, arg_r, out)
       arg_r.Next() # process the next flag
 
       if quit:
@@ -679,7 +680,7 @@ if mylib.PYTHON:
             suffix = val[1:]  # could be empty, but remove = if any
           else:
             suffix = None
-          action.OnMatch(None, suffix, arg_r, out)
+          action.OnMatch(suffix, arg_r, out)
         else:
           e_usage('Unrecognized flag %r' % arg)
 

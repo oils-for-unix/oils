@@ -132,7 +132,7 @@ namespace arg_types {
     spec = specs[spec_name]
     arity0_name = None
     arity1_name = None
-    options_name = None
+    plus_name = None
     defaults_name = None
 
     if spec.arity0:
@@ -157,10 +157,10 @@ namespace arg_types {
 };
 ''')
 
-    if spec.options:
-      options_name = 'options_%d' % i
-      c_strs = ', '.join(CString(s) for s in sorted(spec.options))
-      cc_f.write('const char* %s[] = {%s, nullptr};\n' % (options_name, c_strs))
+    if spec.plus_flags:
+      plus_name = 'plus_%d' % i
+      c_strs = ', '.join(CString(s) for s in sorted(spec.plus_flags))
+      cc_f.write('const char* %s[] = {%s, nullptr};\n' % (plus_name, c_strs))
 
     if spec.defaults:
       defaults_name = 'defaults_%d' % i
@@ -184,7 +184,7 @@ namespace arg_types {
     {},
 };
 ''')
-    var_names.append((arity0_name, arity1_name, options_name, defaults_name))
+    var_names.append((arity0_name, arity1_name, plus_name, defaults_name))
     cc_f.write('\n')
 
   cc_f.write('FlagSpec_c kFlagSpecs[] = {\n')
