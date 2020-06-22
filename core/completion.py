@@ -40,18 +40,17 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import word_part_e, redir_param_e
 from _devbuild.gen.runtime_asdl import value_e, value__Str
 from _devbuild.gen.types_asdl import redir_arg_type_e
-
 from core import error
+from core.pyerror import log
 from core.pyutil import stderr_line
+from core import state
 from core import ui
 from core import util
-from core.pyerror import log
 from frontend import consts
 from frontend import reader
 from pylib import os_path
 from pylib import path_stat
 from osh import word_
-from core import state
 from osh.string_ops import ShellQuoteB
 
 import libc

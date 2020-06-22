@@ -95,9 +95,7 @@ runtime_asdl::FlagSpec_* LookupFlagSpec(Str* spec_name) {
     if (name == nullptr) {
       break;
     }
-    // TODO: Str* should be serialized with length?
-    int n = std::min(spec_name->len_, static_cast<int>(strlen(name)));
-    if (memcmp(name, spec_name->data_, n) == 0) {
+    if (str_equals0(name, spec_name)) {
       // log("%s found", spec_name->data_);
       return CreateSpec(&kFlagSpecs[i]);
     }

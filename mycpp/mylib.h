@@ -785,6 +785,15 @@ inline bool str_equals(Str* left, Str* right) {
   }
 }
 
+inline bool str_equals0(const char* c_string, Str* s) {
+  int n = strlen(c_string);
+  if (s->len_ == n) {
+    return memcmp(s->data_, c_string, n) == 0;
+  } else {
+    return false;
+  }
+}
+
 inline bool maybe_str_equals(Str* left, Str* right) {
   if (left && right) {
     return str_equals(left, right);

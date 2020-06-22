@@ -5,16 +5,11 @@
 #include "greatest.h"
 #include "mylib.h"
 
-// Test helper.  TODO: Could use ASSERT_EQ_T to customize equality and print
-// difference.
+// TODO: Could use ASSERT_EQ_T to customize equality and print difference.
 //
 // Example:
 //
 // https://github.com/silentbicycle/greatest/blob/master/example.c#L71
-
-bool equals_c_string(const char* c_string, Str* s) {
-  return str_equals(new Str(c_string), s);
-}
 
 TEST test_cstr() {
   Str* s = new Str("foo");
@@ -130,13 +125,13 @@ TEST test_str_funcs() {
 
   Str* s = new Str("abc");
   Str* r0 = str_repeat(s, 0);
-  ASSERT(equals_c_string("", r0));
+  ASSERT(str_equals0("", r0));
 
   Str* r1 = str_repeat(s, 1);
-  ASSERT(equals_c_string("abc", r1));
+  ASSERT(str_equals0("abc", r1));
 
   Str* r3 = str_repeat(s, 3);
-  ASSERT(equals_c_string("abcabcabc", r3));
+  ASSERT(str_equals0("abcabcabc", r3));
 
   Str* int_str;
   int_str = str((1 << 31) - 1);
