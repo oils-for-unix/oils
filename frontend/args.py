@@ -357,9 +357,11 @@ class SetToString(_ArgAction):
     return value.Str(arg)
 
 
+class SetAttachedBool(_Action):
+  """This is the Go-like syntax of --verbose=1, --verbose, or --verbose=0.
 
-class SetBoolToArg(_Action):
-  """This is the Go-like syntax of --verbose=1, --verbose, or --verbose=0."""
+  Used in OilFlags only now.
+  """
 
   def __init__(self, name):
     # type: (str) -> None

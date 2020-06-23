@@ -18,12 +18,7 @@ class Reader;
 // Types for compile-time FlagSpec
 //
 
-struct SetToArg_c {
-  const char* name;  // note: this field is redundant
-  int flag_type;
-  bool quit_parsing;
-};
-
+// TODO: We need union for Str* or something
 enum class Default_c {
   Undef,  // default for strings
   False,
@@ -35,26 +30,21 @@ struct DefaultPair_c {
   Default_c default_val;
 };
 
-struct FlagSpec_c {
-  const char* name;
-  const char** arity0;   // NULL terminated array
-  SetToArg_c* arity1;    // NULL terminated array
-  const char** plus_flags;  // NULL terminated array
-  DefaultPair_c* defaults;
-};
-
-//
-// For FlagSpecAndMore
-//
-
+// all concrete subtypes of args::_Action
 enum class ActionType_c {
-  SetToArg,        // name, flag_type, quit_parsing_flags
-  SetBoolToArg,    // name
-  SetToTrue,       // name
+  SetToString,    // name, valid
+  SetToString_q,  // hack for quit_parsing_flags
+
+  SetToInt,         // name
+  SetToFloat,       // name
+  SetToTrue,        // name
+  SetAttachedBool,  // name, for OilFlags
+
   SetOption,       // name
-  SetNamedOption,  // no args
+  SetNamedOption,  // no args, valid
+  SetNamedOption_shopt,  // no args, valid
   SetAction,       // name
-  SetNamedAction,  // no args
+  SetNamedAction,  // no args, valid
 };
 
 // TODO: Figure out the difference between name and key
@@ -66,23 +56,28 @@ enum class ActionType_c {
 struct Action_c {
   ActionType_c type;
   const char* name;
-
-  // TODO: fold this into ActionType_c
-  int flag_type;
-  // TODO: also get rid of it somehow
-  bool quit_parsing_flags;
-
-  // to replace flag_type.Enum
-  // for SetNamedAction() and SetNamedOption
+  // for --ast-format, SetNamedAction(), SetNamedOption()
   const char** valid;
 };
 
+struct FlagSpec_c {
+  const char* name;         // e.g. 'wait'
+  const char** arity0;      // NULL terminated array
+  Action_c* arity1;         // NULL terminated array
+  const char** plus_flags;  // NULL terminated array
+  DefaultPair_c* defaults;
+};
+
+//
+// For FlagSpecAndMore
+//
+
 struct FlagSpecAndMore_c {
-  const char* name;
+  const char* name;  // e.g. 'osh'
   // These are Dict[str, _Action]
   Action_c* actions_short;
   Action_c* actions_long;
-  // TODO: need strings as defaults
+  const char** plus_flags;  // NULL terminated array
   DefaultPair_c* defaults;
 };
 
@@ -92,16 +87,16 @@ class _FlagSpec {
  public:
   List<Str*>* arity0;
   Dict<Str*, args::_Action*>* arity1;
-  Dict<Str*, runtime_asdl::value_t*>* defaults;
   List<Str*>* plus_flags;
+  Dict<Str*, runtime_asdl::value_t*>* defaults;
 };
 
 class _FlagSpecAndMore {
  public:
   Dict<Str*, args::_Action*>* actions_long;
   Dict<Str*, args::_Action*>* actions_short;
-  Dict<Str*, runtime_asdl::value_t*>* defaults;
   List<Str*>* plus_flags;
+  Dict<Str*, runtime_asdl::value_t*>* defaults;
 };
 
 // for testing only

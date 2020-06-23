@@ -430,7 +430,7 @@ class _OilFlags(object):
 
     attr_name = name[1:].replace('-', '_')
     if arg_type == args.Bool:
-      self.arity1[attr_name] = args.SetBoolToArg(attr_name)
+      self.arity1[attr_name] = args.SetAttachedBool(attr_name)
     else:
       self.arity1[attr_name] = _MakeAction(arg_type, attr_name)
 

@@ -64,7 +64,7 @@ class %s {
           init_vals.append('static_cast<value__Bool*>(attrs->index(new Str("%s")))->b' % field_name)
           field_decls.append('bool %s;' % field_name)
 
-        elif case(flag_type_e.Str, flag_type_e.Enum):
+        elif case(flag_type_e.Str):
           default_val = spec.defaults[field_name]
           with tagswitch(default_val) as case:
             if case(value_e.Undef):
@@ -142,15 +142,10 @@ namespace arg_types {
 
     if spec.arity1:
       arity1_name = 'arity1_%d' % i
-      cc_f.write('SetToArg_c %s[] = {\n' % arity1_name)
+      cc_f.write('Action_c %s[] = {\n' % arity1_name)
       for name in sorted(spec.arity1):
-        set_to_arg = spec.arity1[name]
-
-        # Using an integer here
-        # TODO: doesn't work for enum flag_type::Enum(...)
-        f2 = spec.fields[name].tag_()
-
-        cc_f.write('    {"%s", %s, %s},\n' % (name, f2, 'true' if set_to_arg.quit_parsing_flags else 'false'))
+        action_type = 'ActionType_c::SetToString'
+        cc_f.write('    {%s, "%s"},\n' % (action_type, name))
       #cc_f.write('SetToArg_c %s[] = {\n' % arity1_name)
       cc_f.write('''\
     {},
@@ -212,6 +207,7 @@ namespace arg_types {
     spec = specs[spec_name]
     actions_short_name = None
     actions_long_name = None
+    plus_name = None
     defaults_name = None
 
     if spec.actions_short:
@@ -221,11 +217,11 @@ namespace arg_types {
         action = spec.actions_short[name]
         log('%s %s', name, action)
         if isinstance(action, args.SetToString):
-          set_to_arg = action
-          f2 = spec.fields[name].tag_()
-
-          action_type = 'ActionType_c::SetToArg'
-          cc_f.write('    {%s, "%s", %s, %s},\n' % (action_type, name, f2, 'true' if set_to_arg.quit_parsing_flags else 'false'))
+          if action.quit_parsing_flags:
+            action_type = 'ActionType_c::SetToString_q'
+          else:
+            action_type = 'ActionType_c::SetToString'
+          cc_f.write('    {%s, "%s"},\n' % (action_type, name))
         elif isinstance(action, args.SetToTrue):
           log('action %s', action.name)
       cc_f.write('''\
@@ -270,16 +266,17 @@ namespace arg_types {
 };
 ''')
 
-    var_names.append((actions_short_name, actions_long_name, defaults_name))
+    var_names.append((actions_short_name, actions_long_name, plus_name, defaults_name))
 
   cc_f.write('FlagSpecAndMore_c kFlagSpecsAndMore[] = {\n')
   for i, spec_name in enumerate(sorted(flag_spec.FLAG_SPEC_AND_MORE)):
     names = var_names[i]
-    cc_f.write('    { "%s", %s, %s, %s },\n' % (
+    cc_f.write('    { "%s", %s, %s, %s, %s },\n' % (
       spec_name,
       names[0] or 'nullptr', 
       names[1] or 'nullptr', 
       names[2] or 'nullptr', 
+      names[3] or 'nullptr', 
     ))
 
   cc_f.write("""\
@@ -358,8 +355,7 @@ class %s(object):
             print('    self.%s = cast(value__Bool, attrs[%r]).b  # type: bool' % (
               field_name, field_name))
 
-          # enums are strings for now
-          elif case(flag_type_e.Str, flag_type_e.Enum):
+          elif case(flag_type_e.Str):
             tmp = 'val%d' % i
             default_val = spec.defaults[field_name]
             with tagswitch(default_val) as case:

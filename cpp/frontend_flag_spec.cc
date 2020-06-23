@@ -42,7 +42,7 @@ flag_spec::_FlagSpec* CreateSpec(FlagSpec_c* in) {
   if (in->arity1) {
     int i = 0;
     while (true) {
-      SetToArg_c* p = &(in->arity1[i]);
+      Action_c* p = &(in->arity1[i]);
       if (!p->name) {
         break;
       }
@@ -113,11 +113,41 @@ flag_spec::_FlagSpecAndMore* CreateSpec2(FlagSpecAndMore_c* in) {
       // log("a1 %s", p->name);
       args::_Action* action = nullptr;
       switch (p->type) {
-      case ActionType_c::SetToArg: {
-        action = new args::SetToString(new Str(p->name), p->quit_parsing_flags, nullptr);
+      case ActionType_c::SetToString:
+        action = new args::SetToString(new Str(p->name), false, nullptr);
         break;
-      }
-      case ActionType_c::SetToTrue:  // not generated yet
+      case ActionType_c::SetToString_q:
+        action = new args::SetToString(new Str(p->name), true, nullptr);
+        break;
+      case ActionType_c::SetToInt:
+        action = new args::SetToInt(new Str(p->name));
+        break;
+      case ActionType_c::SetToFloat:
+        action = new args::SetToFloat(new Str(p->name));
+        break;
+      case ActionType_c::SetToTrue:
+        action = new args::SetToTrue(new Str(p->name));
+        break;
+      case ActionType_c::SetAttachedBool:
+        action = new args::SetAttachedBool(new Str(p->name));
+        break;
+      case ActionType_c::SetOption:
+        action = new args::SetOption(new Str(p->name));
+        break;
+      case ActionType_c::SetNamedOption:
+        action = new args::SetNamedOption(false);
+        // TODO: fill in valid
+        break;
+      case ActionType_c::SetNamedOption_shopt:
+        action = new args::SetNamedOption(false);
+        // TODO: fill in valid
+        break;
+      case ActionType_c::SetAction:
+        action = new args::SetAction(new Str(p->name));
+        break;
+      case ActionType_c::SetNamedAction:
+        action = new args::SetNamedAction();
+        // TODO: fill in valid
         break;
       }
       if (action) {
@@ -183,7 +213,7 @@ flag_spec::_FlagSpecAndMore* LookupFlagSpec2(Str* spec_name) {
       break;
     }
     if (str_equals0(name, spec_name)) {
-      // log("%s found", spec_name->data_);
+    // log("%s found", spec_name->data_);
 #ifdef CPP_UNIT_TEST
       return nullptr;
 #else
