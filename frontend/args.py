@@ -59,7 +59,6 @@ from __future__ import print_function
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Bool, value__Int, value__Float, value__Str,
     flag_type, flag_type_e, flag_type_t, flag_type__Enum,
-    FlagSpec_, SetToArg_,
 )
 
 from asdl import runtime
@@ -282,16 +281,18 @@ class SetToArgAction(_Action):
       quit_parsing_flags: Stop parsing args after this one.  for sh -c.
         python -c behaves the same way.
     """
-    self.action = SetToArg_(name, flag_type, quit_parsing_flags)
+    self.name = name
+    self.flag_type = flag_type
+    self.quit_parsing_flags = quit_parsing_flags
 
   def OnMatch(self, attached_arg, arg_r, out):
     # type: (Optional[str], Reader, _Attributes) -> bool
     """Called when the flag matches."""
-    return _SetToArg(self.action, attached_arg, arg_r, out)
+    return _SetToArg(self, attached_arg, arg_r, out)
 
 
 def _SetToArg(action, suffix, arg_r, out):
-  # type: (SetToArg_, Optional[str], Reader, _Attributes) -> bool
+  # type: (SetToArgAction, Optional[str], Reader, _Attributes) -> bool
   """
   Perform the action.
   """
@@ -472,7 +473,7 @@ class SetNamedAction(_Action):
 
 
 def Parse(spec, arg_r):
-  # type: (FlagSpec_, Reader) -> _Attributes
+  # type: (flag_spec._FlagSpec, Reader) -> _Attributes
 
   # NOTE about -:
   # 'set -' ignores it, vs set
@@ -501,8 +502,7 @@ def Parse(spec, arg_r):
 
         if ch in spec.arity1:  # e.g. read -t1.0
           action = spec.arity1[ch]
-          suffix = arg[i+1:]  # '1.0'
-          _SetToArg(action, suffix, arg_r, out)
+          action.OnMatch(arg[i+1:], arg_r, out)
           break
 
         e_usage(
@@ -531,7 +531,7 @@ def Parse(spec, arg_r):
 
 
 def ParseLikeEcho(spec, arg_r):
-  # type: (FlagSpec_, Reader) -> _Attributes
+  # type: (flag_spec._FlagSpec, Reader) -> _Attributes
   """
   echo is a special case.  These work:
     echo -n

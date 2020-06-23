@@ -221,7 +221,7 @@ namespace arg_types {
         action = spec.actions_short[name]
         log('%s %s', name, action)
         if isinstance(action, args.SetToArgAction):
-          set_to_arg = action.action
+          set_to_arg = action
           f2 = set_to_arg.flag_type.tag_()
 
           action_type = 'ActionType_c::SetToArg'

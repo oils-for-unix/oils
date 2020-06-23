@@ -135,28 +135,4 @@ module runtime
 
   -- Flag arguments can be any of these types.
   flag_type = Bool | Int | Float | Str | Enum(string* alts)
-
-  SetToArg_ = (string name, flag_type flag_type, bool quit_parsing_flags)
-
-  action = 
-    SetToArg %SetToArg_        -- -n1  -n 1  --rcfile foo  --rcfile=foo
-  | SetBoolToArg(string name)  -- --verbose=T (Oil)
-  | SetToTrue(string name)     -- -c
-  | SetOption(string name)     -- set +e
-  | SetNamedOption()           -- set +o errexit
-  | SetAction(string name)     -- compgen -f
-  | SetNamedAction()           -- compgen A file
-
-  FlagSpec_ = (
-    string* arity0,  -- could rewrite as array[string] arity0
-    map[string, SetToArg_] arity1,
-    string* plus_flags,
-    map[string, value] defaults
-  )
-
-  FlagSpecAndMore_ = (
-    map[string, action] actions_short,
-    map[string, action] actions_long,
-    map[string, value] defaults
-  )
 }

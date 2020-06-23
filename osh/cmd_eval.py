@@ -1521,6 +1521,9 @@ class CommandEvaluator(object):
 
     Note: if we could easily modulo -1 % 256 == 255 here, then we could get rid
     of this awkward interface.  But that's true in Python and not C!
+
+    Could use i & (n-1) == i & 255  because we have a power of 2.
+    https://stackoverflow.com/questions/14997165/fastest-way-to-get-a-positive-modulo-in-c-c
     """
     handler = self.traps.get('EXIT')
     if handler:

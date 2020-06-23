@@ -8,7 +8,6 @@ import sys
 
 from _devbuild.gen.runtime_asdl import (
     cmd_value__Argv, flag_type, flag_type_t, value, value_t,
-    FlagSpec_, FlagSpecAndMore_, SetToArg_,
 )
 from frontend import args
 from mycpp import mylib
@@ -53,7 +52,7 @@ def Parse(spec_name, arg_r):
   # type: (str, args.Reader) -> args._Attributes
   """Parse argv using a given FlagSpec."""
   spec = FLAG_SPEC[spec_name]
-  return args.Parse(spec.spec, arg_r)
+  return args.Parse(spec, arg_r)
 
 
 def ParseCmdVal(spec_name, cmd_val):
@@ -62,7 +61,7 @@ def ParseCmdVal(spec_name, cmd_val):
   arg_r.Next()  # move past the builtin name
 
   spec = FLAG_SPEC[spec_name]
-  return args.Parse(spec.spec, arg_r), arg_r
+  return args.Parse(spec, arg_r), arg_r
 
 
 def ParseLikeEcho(spec_name, cmd_val):
@@ -71,7 +70,7 @@ def ParseLikeEcho(spec_name, cmd_val):
   arg_r.Next()  # move past the builtin name
 
   spec = FLAG_SPEC[spec_name]
-  return args.ParseLikeEcho(spec.spec, arg_r), arg_r
+  return args.ParseLikeEcho(spec, arg_r), arg_r
 
 
 def ParseMore(spec_name, arg_r):
@@ -138,15 +137,10 @@ class _FlagSpec(object):
   """
   def __init__(self):
     # type: () -> None
-
-    # ASDL definition.  To be serialized to C++.
-    self.spec = FlagSpec_()
-
-    # Convenience
-    self.arity0 = self.spec.arity0
-    self.arity1 = self.spec.arity1
-    self.plus_flags = self.spec.plus_flags
-    self.defaults = self.spec.defaults
+    self.arity0 = []  # type: List[str]
+    self.arity1 = {}  # type: Dict[str, args.SetToArgAction]
+    self.plus_flags = []  # type: List[str]
+    self.defaults = {}  # type: Dict[str, value_t]
 
     # For code generation.  Not used at runtime.
     self.fields = {}  # type: Dict[str, flag_type_t]  # for arg_types to use
@@ -176,7 +170,7 @@ class _FlagSpec(object):
     if arg_type is None:
       self.arity0.append(char)
     else:
-      self.arity1[char] = SetToArg_(char, _FlagType(arg_type), False)
+      self.arity1[char] = args.SetToArgAction(char, _FlagType(arg_type), False)
 
     typ = _FlagType(arg_type)
     self.defaults[char] = _Default(arg_type)
@@ -199,7 +193,7 @@ class _FlagSpec(object):
   def Parse(self, arg_r):
     # type: (args.Reader) -> args._Attributes
     """For builtins to read args after we parse flags."""
-    return args.Parse(self.spec, arg_r)
+    return args.Parse(self, arg_r)
 
   def ParseArgv(self, argv):
     # type: (List[str]) -> Tuple[args._Attributes, int]
@@ -219,13 +213,13 @@ class _FlagSpecAndMore(object):
   """
   def __init__(self, typed=False):
     # type: (bool) -> None
-    self.spec = FlagSpecAndMore_()
+    #self.spec = FlagSpecAndMore_()
     self.typed = typed
 
     self.actions_short = {}  # type: Dict[str, args._Action]  # {'-c': _Action}
     self.actions_long = {}  # type: Dict[str, args._Action]  # {'--rcfile': _Action}
     self.plus_flags = []  # type: List[str]
-    self.defaults = self.spec.defaults
+    self.defaults = {}  # type: Dict[str, value_t]
 
     # For code generation.  Not used at runtime.
     self.fields = {}  # type: Dict[str, flag_type_t]
@@ -277,6 +271,7 @@ class _FlagSpecAndMore(object):
     """ --rcfile """
     assert long_name.startswith('--'), long_name
 
+    # TODO: Move this to runtime?  So you don't have duplicate flag and key
     name = long_name[2:]
     if arg_type is None:
       typ = flag_type.Bool()  # type: flag_type_t

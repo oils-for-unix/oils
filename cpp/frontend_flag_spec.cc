@@ -19,8 +19,12 @@ using runtime_asdl::value_t;
 // "Inflate" the static C data into a heap-allocated ASDL data structure.
 //
 // TODO: Make a GLOBAL CACHE?  It could be shared between subinterpreters even?
-runtime_asdl::FlagSpec_* CreateSpec(FlagSpec_c* in) {
-  auto out = new runtime_asdl::FlagSpec_();
+flag_spec::_FlagSpec* CreateSpec(FlagSpec_c* in) {
+  auto out = new flag_spec::_FlagSpec();
+  out->arity0 = new List<Str*>();
+  out->arity1 = new Dict<Str*, args::SetToArgAction*>();
+  out->plus_flags = new List<Str*>();
+  out->defaults = new Dict<Str*, runtime_asdl::value_t*>();
 
   if (in->arity0) {
     int i = 0;
@@ -96,6 +100,7 @@ flag_spec::_FlagSpecAndMore* CreateSpec2(FlagSpecAndMore_c* in) {
   auto out = new flag_spec::_FlagSpecAndMore();
   out->actions_short = new Dict<Str*, args::_Action*>();
   out->actions_long = new Dict<Str*, args::_Action*>();
+  out->plus_flags = new List<Str*>();
   out->defaults = new Dict<Str*, runtime_asdl::value_t*>();
 
   if (in->actions_short) {
@@ -154,7 +159,7 @@ flag_spec::_FlagSpecAndMore* CreateSpec2(FlagSpecAndMore_c* in) {
 }
 #endif
 
-runtime_asdl::FlagSpec_* LookupFlagSpec(Str* spec_name) {
+flag_spec::_FlagSpec* LookupFlagSpec(Str* spec_name) {
   int i = 0;
   while (true) {
     const char* name = kFlagSpecs[i].name;
@@ -195,7 +200,7 @@ flag_spec::_FlagSpecAndMore* LookupFlagSpec2(Str* spec_name) {
 }
 
 args::_Attributes* Parse(Str* spec_name, args::Reader* arg_r) {
-  runtime_asdl::FlagSpec_* spec = LookupFlagSpec(spec_name);
+  flag_spec::_FlagSpec* spec = LookupFlagSpec(spec_name);
   assert(spec);  // should always be found
 
 #ifdef CPP_UNIT_TEST
@@ -214,7 +219,7 @@ Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
   auto arg_r = new args::Reader(cmd_val->argv, cmd_val->arg_spids);
   arg_r->Next();  // move past the builtin name
 
-  runtime_asdl::FlagSpec_* spec = LookupFlagSpec(spec_name);
+  flag_spec::_FlagSpec* spec = LookupFlagSpec(spec_name);
   assert(spec);  // should always be found
   return Tuple2<args::_Attributes*, args::Reader*>(args::Parse(spec, arg_r),
                                                    arg_r);
@@ -229,7 +234,7 @@ Tuple2<args::_Attributes*, args::Reader*> ParseLikeEcho(
   auto arg_r = new args::Reader(cmd_val->argv, cmd_val->arg_spids);
   arg_r->Next();  // move past the builtin name
 
-  runtime_asdl::FlagSpec_* spec = LookupFlagSpec(spec_name);
+  flag_spec::_FlagSpec* spec = LookupFlagSpec(spec_name);
   assert(spec);  // should always be found
   return Tuple2<args::_Attributes*, args::Reader*>(
       args::ParseLikeEcho(spec, arg_r), arg_r);

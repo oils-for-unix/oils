@@ -10,7 +10,7 @@
 // Forward declarations (can't include osh_eval.h)
 namespace args {
 class _Action;
-class SetToArg;
+class SetToArgAction;
 
 class _Attributes;
 class Reader;
@@ -59,11 +59,24 @@ enum class ActionType_c {
   SetNamedAction,  // no args
 };
 
+// TODO: Figure out the difference between name and key
+// key = '--ast-format'
+// name = 'ast-format'
+// out.Set('ast-format', ...)
+// So I want to compress these two
+
 struct Action_c {
   ActionType_c type;
   const char* name;
+
+  // TODO: fold this into ActionType_c
   int flag_type;
+  // TODO: also get rid of it somehow
   bool quit_parsing_flags;
+
+  // to replace flag_type.Enum
+  // for SetNamedAction() and SetNamedOption
+  const char** valid;
 };
 
 struct FlagSpecAndMore_c {
@@ -77,7 +90,14 @@ struct FlagSpecAndMore_c {
 
 namespace flag_spec {
 
-// TODO: Should be replaced with an ASDL type.
+class _FlagSpec {
+ public:
+  List<Str*>* arity0;
+  Dict<Str*, args::SetToArgAction*>* arity1;
+  Dict<Str*, runtime_asdl::value_t*>* defaults;
+  List<Str*>* plus_flags;
+};
+
 class _FlagSpecAndMore {
  public:
   Dict<Str*, args::_Action*>* actions_long;
@@ -87,7 +107,7 @@ class _FlagSpecAndMore {
 };
 
 // for testing only
-runtime_asdl::FlagSpec_* LookupFlagSpec(Str* spec_name);
+flag_spec::_FlagSpec* LookupFlagSpec(Str* spec_name);
 
 args::_Attributes* Parse(Str* spec_name, args::Reader* arg_r);
 
