@@ -25,9 +25,17 @@ enum class Default_c {
   True,
 };
 
+union Val_c {
+  bool b;
+  int i;
+  float f;
+  char* s;
+};
+
 struct DefaultPair_c {
   const char* name;
-  Default_c default_val;
+  runtime_asdl::flag_type_t typ;
+  Val_c val;
 };
 
 // all concrete subtypes of args::_Action
@@ -40,11 +48,11 @@ enum class ActionType_c {
   SetToTrue,        // name
   SetAttachedBool,  // name, for OilFlags
 
-  SetOption,       // name
-  SetNamedOption,  // no args, valid
+  SetOption,             // name
+  SetNamedOption,        // no args, valid
   SetNamedOption_shopt,  // no args, valid
-  SetAction,       // name
-  SetNamedAction,  // no args, valid
+  SetAction,             // name
+  SetNamedAction,        // no args, valid
 };
 
 // TODO: Figure out the difference between name and key

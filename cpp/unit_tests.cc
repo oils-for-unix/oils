@@ -9,6 +9,7 @@
 #include "runtime_asdl.h"  // cell, etc
 
 namespace Id = id_kind_asdl::Id;
+using runtime_asdl::flag_type_e;
 
 TEST show_sizeof() {
   // Without sed hack, it's 24 bytes because we have tag (2), id (4), val,
@@ -211,8 +212,16 @@ Action_c arity1_1[] = {
 const char* plus_1[] = {"o", "p", nullptr};
 
 DefaultPair_c defaults_1[] = {
-    {"x", Default_c::False},
-    {"y", Default_c::Undef},
+    {"x", flag_type_e::Bool},
+    {"y", flag_type_e::Int},
+    {},
+};
+
+DefaultPair_c defaults_2[] = {
+    {"b", flag_type_e::Bool, {.b = true}},
+    {"i", flag_type_e::Int, {.i = 42}},
+    {"f", flag_type_e::Float, {.f = 3.14}},
+    {"s", flag_type_e::Str, {.s = "foo"}},
     {},
 };
 
@@ -240,6 +249,29 @@ TEST flag_spec_test() {
   flag_spec::LookupFlagSpec(new Str("new_var"));
   flag_spec::LookupFlagSpec(new Str("readonly"));
   flag_spec::LookupFlagSpec(new Str("zzz"));
+
+  int i = 0;
+  while (true) {
+    DefaultPair_c* d = &(defaults_2[i]);
+    if (!d->name) {
+      break;
+    }
+    switch (d->typ) {
+    case flag_type_e::Bool:
+      log("b = %d", d->val.b);
+      break;
+    case flag_type_e::Int:
+      log("i = %d", d->val.i);
+      break;
+    case flag_type_e::Float:
+      log("b = %f", d->val.f);
+      break;
+    case flag_type_e::Str:
+      log("b = %s", d->val.s);
+      break;
+    }
+    ++i;
+  }
 
   PASS();
 }

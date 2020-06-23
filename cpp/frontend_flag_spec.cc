@@ -11,7 +11,7 @@ namespace flag_spec {
 
 using arg_types::kFlagSpecs;
 using arg_types::kFlagSpecsAndMore;
-using runtime_asdl::flag_type__Str;
+using runtime_asdl::flag_type_e;
 using runtime_asdl::value__Bool;
 using runtime_asdl::value__Undef;
 using runtime_asdl::value_t;
@@ -74,15 +74,12 @@ flag_spec::_FlagSpec* CreateSpec(FlagSpec_c* in) {
       }
       // log("default %s", d->name);
       value_t* val;
-      switch (pair->default_val) {
-      case Default_c::Undef:
+      switch (pair->typ) {
+      case flag_type_e::Str:
         val = new value__Undef();
         break;
-      case Default_c::False:
-        val = new value__Bool(false);
-        break;
-      case Default_c::True:
-        val = new value__Bool(true);
+      case flag_type_e::Bool:
+        val = new value__Bool(pair->val.b);
         break;
       default:
         assert(0);

@@ -134,5 +134,5 @@ module runtime
   --
 
   -- Flag arguments can be any of these types.
-  flag_type = Bool | Int | Float | Str | Enum(string* alts)
+  flag_type = Bool | Int | Float | Str
 }

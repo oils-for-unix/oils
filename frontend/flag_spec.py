@@ -7,7 +7,7 @@ from __future__ import print_function
 import sys
 
 from _devbuild.gen.runtime_asdl import (
-    cmd_value__Argv, flag_type, flag_type_t, value, value_t,
+    cmd_value__Argv, flag_type_e, flag_type_t, value, value_t,
 )
 from frontend import args
 from mycpp import mylib
@@ -89,15 +89,15 @@ def _FlagType(arg_type):
   # type: (Union[None, int, List[str]]) -> flag_type_t
 
   if arg_type is None:
-    typ = flag_type.Bool()  # type: flag_type_t
+    typ = flag_type_e.Bool
   elif arg_type == args.Int:
-    typ = flag_type.Int()
+    typ = flag_type_e.Int
   elif arg_type == args.Float:
-    typ = flag_type.Float()
+    typ = flag_type_e.Float
   elif arg_type == args.String:
-    typ = flag_type.Str()
+    typ = flag_type_e.Str
   elif isinstance(arg_type, list):
-    typ = flag_type.Str()
+    typ = flag_type_e.Str
   else:
     raise AssertionError(arg_type)
 
@@ -210,7 +210,7 @@ class _FlagSpec(object):
 
     self.defaults[char] = value.Undef()
     # '+' or '-'.  TODO: Should we make it a bool?
-    self.fields[char] = flag_type.Str()
+    self.fields[char] = flag_type_e.Str
 
   # TODO: Remove this method -- args.Parse() instead
   def Parse(self, arg_r):
@@ -293,13 +293,12 @@ class _FlagSpecAndMore(object):
     """ --rcfile """
     assert long_name.startswith('--'), long_name
 
-    # TODO: Move this to runtime?  So you don't have duplicate flag and key
     name = long_name[2:]
     typ = _FlagType(arg_type)
     if arg_type is None:
-      self.actions_long[long_name] = args.SetToTrue(name)
+      self.actions_long[name] = args.SetToTrue(name)
     else:
-      self.actions_long[long_name] = _MakeAction(arg_type, name)
+      self.actions_long[name] = _MakeAction(arg_type, name)
 
     attr_name = name.replace('-', '_')
     if self.typed:

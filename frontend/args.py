@@ -611,7 +611,7 @@ def ParseMore(spec, arg_r):
     # NOTE: We don't yet support --rcfile=foo.  Only --rcfile foo.
     if arg.startswith('--'):
       try:
-        action = spec.actions_long[arg]
+        action = spec.actions_long[arg[2:]]
       except KeyError:
         e_usage(
             'got invalid flag %r' % arg, span_id=arg_r.SpanId())
