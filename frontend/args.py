@@ -607,7 +607,7 @@ def ParseMore(spec, arg_r):
       continue
 
     # corner case: sh +c is also accepted!
-    if arg.startswith('-') or arg.startswith('+'):
+    if (arg.startswith('-') or arg.startswith('+')) and len(arg) > 1:
       # note: we're not handling sh -cecho  (no space) as an argument
       # It complains about a missing argument
 

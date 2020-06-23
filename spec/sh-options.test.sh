@@ -338,6 +338,10 @@ set -- a b
 echo "$@"
 set - -
 echo "$@"
+set - +
+echo "$@"
+set + -
+echo "$@"
 set -- --
 echo "$@"
 
@@ -347,6 +351,35 @@ a b
 a b
 a b
 -
++
++
+--
+## END
+## OK osh/yash STDOUT:
+a b
+- a b
+a b
+- -
+- +
++ -
+--
+## END
+## BUG mksh STDOUT:
+a b
+a b
+a b
+-
++
+-
+--
+## END
+## BUG zsh STDOUT:
+a b
+a b
+a b
+
++
+
 --
 ## END
 
