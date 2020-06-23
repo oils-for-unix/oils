@@ -22,7 +22,7 @@ using runtime_asdl::value_t;
 flag_spec::_FlagSpec* CreateSpec(FlagSpec_c* in) {
   auto out = new flag_spec::_FlagSpec();
   out->arity0 = new List<Str*>();
-  out->arity1 = new Dict<Str*, args::SetToArgAction*>();
+  out->arity1 = new Dict<Str*, args::_Action*>();
   out->plus_flags = new List<Str*>();
   out->defaults = new Dict<Str*, runtime_asdl::value_t*>();
 
@@ -114,9 +114,7 @@ flag_spec::_FlagSpecAndMore* CreateSpec2(FlagSpecAndMore_c* in) {
       args::_Action* action = nullptr;
       switch (p->type) {
       case ActionType_c::SetToArg: {
-        auto flag_type = new flag_type__Str();
-        action = new args::SetToArgAction(new Str(p->name), flag_type,
-                                          p->quit_parsing_flags);
+        action = new args::SetToString(new Str(p->name), p->quit_parsing_flags, nullptr);
         break;
       }
       case ActionType_c::SetToTrue:  // not generated yet

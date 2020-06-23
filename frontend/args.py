@@ -58,7 +58,6 @@ from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import (
     value, value_e, value_t, value__Bool, value__Int, value__Float, value__Str,
-    flag_type, flag_type_e, flag_type_t, flag_type__Enum,
 )
 
 from asdl import runtime
@@ -272,77 +271,91 @@ class _Action(object):
     raise NotImplementedError()
 
 
-class SetToArgAction(_Action):
+class _ArgAction(_Action):
 
-  def __init__(self, name, flag_type, quit_parsing_flags=False):
-    # type: (str, flag_type_t, bool) -> None
+  def __init__(self, name, quit_parsing_flags=False, valid=None):
+    # type: (str, bool, Optional[List[str]]) -> None
     """
     Args:
       quit_parsing_flags: Stop parsing args after this one.  for sh -c.
         python -c behaves the same way.
     """
     self.name = name
-    self.flag_type = flag_type
     self.quit_parsing_flags = quit_parsing_flags
+    self.valid = valid
+
+  def _Value(self, arg, span_id):
+    # type: (str, int) -> value_t
+    raise NotImplementedError()
 
   def OnMatch(self, attached_arg, arg_r, out):
     # type: (Optional[str], Reader, _Attributes) -> bool
     """Called when the flag matches."""
-    return _SetToArg(self, attached_arg, arg_r, out)
-
-
-def _SetToArg(action, suffix, arg_r, out):
-  # type: (SetToArgAction, Optional[str], Reader, _Attributes) -> bool
-  """
-  Perform the action.
-  """
-  if suffix:  # for the ',' in -d,
-    arg = suffix
-  else:
-    arg_r.Next()
-    arg = arg_r.Peek()
-    if arg is None:
-      e_usage('expected argument to %r' % ('-' + action.name),
-              span_id=arg_r.SpanId())
-
-  # e.g. spec.LongFlag('--format', ['text', 'html'])
-  # Should change to arg.Enum([...])
-  with tagswitch(action.flag_type) as case:
-    if case(flag_type_e.Enum):
-      alts = cast(flag_type__Enum, action.flag_type).alts
-      if arg not in alts:
-        e_usage(
-            'got invalid argument %r to %r, expected one of: %s' %
-            (arg, ('-' + action.name), ', '.join(alts)), span_id=arg_r.SpanId())
-      val = value.Str(arg)  # type: value_t
-
-    elif case(flag_type_e.Str):
-      val = value.Str(arg)
-
-    elif case(flag_type_e.Int):
-      try:
-        i = int(arg)
-      except ValueError:
-        e_usage('expected integer after %s, got %r' % ('-' + action.name, arg),
-                span_id=arg_r.SpanId())
-
-      # So far all our int values are > 0, so use -1 as the 'unset' value
-      if i < 0:
-        e_usage('got invalid integer for %s: %s' % ('-' + action.name, arg),
-                span_id=arg_r.SpanId())
-      val = value.Int(i)
-
-    elif case(flag_type_e.Float):
-      try:
-        val = value.Float(float(arg))
-      except ValueError:
-        e_usage('expected number after %r, got %r' % ('-' + action.name, arg),
-                span_id=arg_r.SpanId())
+    if attached_arg:  # for the ',' in -d,
+      arg = attached_arg
     else:
-      raise AssertionError()
+      arg_r.Next()
+      arg = arg_r.Peek()
+      if arg is None:
+        e_usage('expected argument to %r' % ('-' + self.name),
+                span_id=arg_r.SpanId())
 
-  out.Set(action.name, val)
-  return action.quit_parsing_flags
+    val = self._Value(arg, arg_r.SpanId())
+    out.Set(self.name, val)
+    return self.quit_parsing_flags
+
+
+class SetToInt(_ArgAction):
+  def __init__(self, name):
+    # type: (str) -> None
+    # repeat defaults for C++ translation
+    _ArgAction.__init__(self, name, quit_parsing_flags=False, valid=None)
+
+  def _Value(self, arg, span_id):
+    # type: (str, int) -> value_t
+    try:
+      i = int(arg)
+    except ValueError:
+      e_usage('expected integer after %s, got %r' % ('-' + self.name, arg),
+              span_id=span_id)
+
+    # So far all our int values are > 0, so use -1 as the 'unset' value
+    if i < 0:
+      e_usage('got invalid integer for %s: %s' % ('-' + self.name, arg),
+              span_id=span_id)
+    return value.Int(i)
+
+
+class SetToFloat(_ArgAction):
+  def __init__(self, name):
+    # type: (str) -> None
+    # repeat defaults for C++ translation
+    _ArgAction.__init__(self, name, quit_parsing_flags=False, valid=None)
+
+  def _Value(self, arg, span_id):
+    # type: (str, int) -> value_t
+    try:
+      val = value.Float(float(arg))
+    except ValueError:
+      e_usage('expected number after %r, got %r' % ('-' + self.name, arg),
+              span_id=span_id)
+    return val
+
+
+class SetToString(_ArgAction):
+  def __init__(self, name, quit_parsing_flags=False, valid=None):
+    # type: (str, bool, Optional[List[str]]) -> None
+    _ArgAction.__init__(self, name, quit_parsing_flags=quit_parsing_flags,
+                        valid=valid)
+
+  def _Value(self, arg, span_id):
+    # type: (str, int) -> value_t
+    if self.valid is not None and arg not in self.valid:
+      e_usage(
+          'got invalid argument %r to %r, expected one of: %s' %
+          (arg, ('-' + self.name), '|'.join(self.valid)), span_id=span_id)
+    return value.Str(arg)
+
 
 
 class SetBoolToArg(_Action):

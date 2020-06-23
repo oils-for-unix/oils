@@ -148,7 +148,7 @@ namespace arg_types {
 
         # Using an integer here
         # TODO: doesn't work for enum flag_type::Enum(...)
-        f2 = set_to_arg.flag_type.tag_()
+        f2 = spec.fields[name].tag_()
 
         cc_f.write('    {"%s", %s, %s},\n' % (name, f2, 'true' if set_to_arg.quit_parsing_flags else 'false'))
       #cc_f.write('SetToArg_c %s[] = {\n' % arity1_name)
@@ -220,9 +220,9 @@ namespace arg_types {
       for name in sorted(spec.actions_short):
         action = spec.actions_short[name]
         log('%s %s', name, action)
-        if isinstance(action, args.SetToArgAction):
+        if isinstance(action, args.SetToString):
           set_to_arg = action
-          f2 = set_to_arg.flag_type.tag_()
+          f2 = spec.fields[name].tag_()
 
           action_type = 'ActionType_c::SetToArg'
           cc_f.write('    {%s, "%s", %s, %s},\n' % (action_type, name, f2, 'true' if set_to_arg.quit_parsing_flags else 'false'))

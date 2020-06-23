@@ -10,8 +10,6 @@
 // Forward declarations (can't include osh_eval.h)
 namespace args {
 class _Action;
-class SetToArgAction;
-
 class _Attributes;
 class Reader;
 };  // namespace args
@@ -93,7 +91,7 @@ namespace flag_spec {
 class _FlagSpec {
  public:
   List<Str*>* arity0;
-  Dict<Str*, args::SetToArgAction*>* arity1;
+  Dict<Str*, args::_Action*>* arity1;
   Dict<Str*, runtime_asdl::value_t*>* defaults;
   List<Str*>* plus_flags;
 };

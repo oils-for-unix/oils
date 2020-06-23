@@ -97,11 +97,34 @@ def _FlagType(arg_type):
   elif arg_type == args.String:
     typ = flag_type.Str()
   elif isinstance(arg_type, list):
-    typ = flag_type.Enum(arg_type)
+    typ = flag_type.Str()
   else:
     raise AssertionError(arg_type)
 
   return typ
+
+
+def _MakeAction(arg_type, name, quit_parsing_flags=False):
+  # type: (Union[None, int, List[str]], str, bool) -> args._Action
+  if arg_type == args.Int:
+    assert not quit_parsing_flags
+    action = args.SetToInt(name)  # type: args._Action
+
+  elif arg_type == args.Float:
+    assert not quit_parsing_flags
+    action = args.SetToFloat(name)
+
+  elif arg_type == args.String:
+    action = args.SetToString(name, quit_parsing_flags=quit_parsing_flags)
+
+  elif isinstance(arg_type, list):
+    action = args.SetToString(name, quit_parsing_flags=quit_parsing_flags,
+                              valid=arg_type)
+
+  else:
+    raise AssertionError(arg_type)
+
+  return action
 
 
 def _Default(arg_type, arg_default=None):
@@ -138,7 +161,7 @@ class _FlagSpec(object):
   def __init__(self):
     # type: () -> None
     self.arity0 = []  # type: List[str]
-    self.arity1 = {}  # type: Dict[str, args.SetToArgAction]
+    self.arity1 = {}  # type: Dict[str, args._Action]
     self.plus_flags = []  # type: List[str]
     self.defaults = {}  # type: Dict[str, value_t]
 
@@ -166,13 +189,13 @@ class _FlagSpec(object):
     assert short_name.startswith('-'), short_name
     assert len(short_name) == 2, short_name
 
+    typ = _FlagType(arg_type)
     char = short_name[1]
     if arg_type is None:
       self.arity0.append(char)
     else:
-      self.arity1[char] = args.SetToArgAction(char, _FlagType(arg_type), False)
+      self.arity1[char] = _MakeAction(arg_type, char)
 
-    typ = _FlagType(arg_type)
     self.defaults[char] = _Default(arg_type)
     self.fields[char] = typ
 
@@ -246,14 +269,13 @@ class _FlagSpecAndMore(object):
     assert len(short_name) == 2, short_name
 
     char = short_name[1]
+    typ = _FlagType(arg_type)
     if arg_type is None:
       assert quit_parsing_flags == False
-      typ = flag_type.Bool()  # type: flag_type_t
       self.actions_short[char] = args.SetToTrue(char)
     else:
-      typ = _FlagType(arg_type)
-      self.actions_short[char] = args.SetToArgAction(
-          char, typ, quit_parsing_flags=quit_parsing_flags)
+      self.actions_short[char] = _MakeAction(
+          arg_type, char, quit_parsing_flags=quit_parsing_flags)
 
     if self.typed:
       self.defaults[char] = _Default(arg_type, arg_default=default)
@@ -273,12 +295,11 @@ class _FlagSpecAndMore(object):
 
     # TODO: Move this to runtime?  So you don't have duplicate flag and key
     name = long_name[2:]
+    typ = _FlagType(arg_type)
     if arg_type is None:
-      typ = flag_type.Bool()  # type: flag_type_t
       self.actions_long[long_name] = args.SetToTrue(name)
     else:
-      typ = _FlagType(arg_type)
-      self.actions_long[long_name] = args.SetToArgAction(name, typ)
+      self.actions_long[long_name] = _MakeAction(arg_type, name)
 
     attr_name = name.replace('-', '_')
     if self.typed:
@@ -411,7 +432,7 @@ class _OilFlags(object):
     if arg_type == args.Bool:
       self.arity1[attr_name] = args.SetBoolToArg(attr_name)
     else:
-      self.arity1[attr_name] = args.SetToArgAction(attr_name, _FlagType(arg_type))
+      self.arity1[attr_name] = _MakeAction(arg_type, attr_name)
 
     self.defaults[attr_name] = args.PyToValue(default)
 
