@@ -606,11 +606,14 @@ def ParseMore(spec, arg_r):
       arg_r.Next()
       continue
 
+    # corner case: sh +c is also accepted!
     if arg.startswith('-') or arg.startswith('+'):
       # note: we're not handling sh -cecho  (no space) as an argument
       # It complains about a missing argument
 
       char0 = arg[0]
+
+      # TODO: set - - empty
       for ch in arg[1:]:
         #log('ch %r arg_r %s', ch, arg_r)
         try:

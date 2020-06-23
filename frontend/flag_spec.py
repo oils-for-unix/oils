@@ -237,18 +237,22 @@ class _FlagSpecAndMore(object):
     self.plus_flags = []  # type: List[str]
     self.defaults = self.spec.defaults
 
-    self.actions_short['o'] = args.SetNamedOption()  # -o and +o
-    # TODO: compgen/compopt/etc. don't need -O
-    self.actions_short['O'] = args.SetNamedOption(shopt=True)  # -O and +O
-    self.plus_flags.append('o')
-    self.plus_flags.append('O')
-
     # For code generation.  Not used at runtime.
     self.fields = {}  # type: Dict[str, flag_type_t]
 
   def InitActions(self):
     # type: () -> None
     self.actions_short['A'] = args.SetNamedAction()  # -A
+
+  def InitOptions(self):
+    # type: () -> None
+    self.actions_short['o'] = args.SetNamedOption()  # -o and +o
+    self.plus_flags.append('o')
+
+  def InitShopt(self):
+    # type: () -> None
+    self.actions_short['O'] = args.SetNamedOption(shopt=True)  # -O and +O
+    self.plus_flags.append('O')
 
   def ShortFlag(self, short_name, arg_type=None, default=None,
                 quit_parsing_flags=False, help=None):

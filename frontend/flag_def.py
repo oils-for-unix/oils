@@ -164,6 +164,9 @@ TRAP_SPEC.ShortFlag('-l')
 def _AddShellOptions(spec):
   # type: (_FlagSpecAndMore) -> None
   """Shared between 'set' builtin and the shell's own arg parser."""
+  spec.InitOptions()
+  spec.InitShopt()
+
   for opt in option_def.All():
     if opt.builtin == 'set':
       spec.Option(opt.short_flag, opt.name)

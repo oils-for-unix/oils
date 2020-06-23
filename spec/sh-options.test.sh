@@ -329,6 +329,27 @@ echo status=$?
 ## OK osh status: 1
 ## OK osh stdout-json: ""
 
+#### set - -
+set a b
+echo "$@"
+set - a b
+echo "$@"
+set -- a b
+echo "$@"
+set - -
+echo "$@"
+set -- --
+echo "$@"
+
+# note: zsh is diffferent, and yash is totally different
+## STDOUT:
+a b
+a b
+a b
+-
+--
+## END
+
 #### set -o lists options
 # NOTE: osh doesn't use the same format yet.
 set -o | grep -o noexec

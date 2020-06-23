@@ -14,6 +14,13 @@ $SH -c ''
 ## stdout-json: ""
 ## status: 0
 
+#### sh +c is accepted
+$SH +c 'echo hi'
+## stdout: hi
+## status: 0
+## N-I mksh/yash stdout-json: ""
+## N-I mksh/yash status: 127
+
 #### empty stdin
 # had a bug here
 echo -n '' | $SH

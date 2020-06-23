@@ -46,6 +46,7 @@ class ArgsTest(unittest.TestCase):
 
     s.LongFlag('--ast-format', ['text', 'html'])
 
+    s.InitOptions()
     s.Option('e', 'errexit')
     s.Option('u', 'nounset')
     s.Option(None, 'pipefail')

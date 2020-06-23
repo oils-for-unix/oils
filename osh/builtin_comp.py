@@ -59,6 +59,7 @@ filterpat is removed.
 
 def _DefineOptions(spec):
   """Common -o options for complete and compgen."""
+  spec.InitOptions()
 
   # bashdefault, default, filenames, nospace are used in git
   spec.Option(None, 'bashdefault',
