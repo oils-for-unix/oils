@@ -25,6 +25,11 @@ def CString(s):
   return '"%s"' % s
 
 
+def _WriteStrArray(f, var_name, a):
+  c_strs = ', '.join(CString(s) for s in sorted(a))
+  f.write('const char* %s[] = {%s, nullptr};\n' % (var_name, c_strs))
+
+
 def _WriteDefaults(cc_f, defaults_name, defaults):
   cc_f.write('DefaultPair_c %s[] = {\n' % defaults_name)
 
@@ -35,16 +40,15 @@ def _WriteDefaults(cc_f, defaults_name, defaults):
       v = '{.b = %s}' % ('true' if val.b else 'false')
     elif val.tag_() == value_e.Int:
       typ = 'Int'
-      v = '{}'  # TODO: fix this.  Should be -1
+      v = '{.i = -1}'
     elif val.tag_() == value_e.Undef:
       typ = 'Str'  # default for string
       v = '{}'
-
     elif val.tag_() == value_e.Str:
-      typ = 'Str'  # default for string
+      # NOTE: 'osh' FlagSpecAndMore_ has default='nice' and default='abbrev-text'
+      typ = 'Str'
       v = '{.s = "%s"}' % val.s
 
-    # NOTE: 'osh' FlagSpecAndMore_ has default='nice' and default='abbrev-text'
     else:
       raise AssertionError(val)
 
@@ -169,8 +173,7 @@ namespace arg_types {
 
     if spec.arity0:
       arity0_name = 'arity0_%d' % i
-      c_strs = ', '.join(CString(s) for s in sorted(spec.arity0))
-      cc_f.write('const char* %s[] = {%s, nullptr};\n' % (arity0_name, c_strs))
+      _WriteStrArray(cc_f, arity0_name, spec.arity0)
 
     if spec.arity1:
       arity1_name = 'arity1_%d' % i
@@ -186,8 +189,7 @@ namespace arg_types {
 
     if spec.plus_flags:
       plus_name = 'plus_%d' % i
-      c_strs = ', '.join(CString(s) for s in sorted(spec.plus_flags))
-      cc_f.write('const char* %s[] = {%s, nullptr};\n' % (plus_name, c_strs))
+      _WriteStrArray(cc_f, plus_name, spec.plus_flags)
 
     if spec.defaults:
       defaults_name = 'defaults_%d' % i

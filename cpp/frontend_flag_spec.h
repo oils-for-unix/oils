@@ -18,13 +18,6 @@ class Reader;
 // Types for compile-time FlagSpec
 //
 
-// TODO: We need union for Str* or something
-enum class Default_c {
-  Undef,  // default for strings
-  False,
-  True,
-};
-
 union Val_c {
   bool b;
   int i;

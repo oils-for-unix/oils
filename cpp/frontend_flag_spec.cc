@@ -16,6 +16,102 @@ using runtime_asdl::value__Bool;
 using runtime_asdl::value__Undef;
 using runtime_asdl::value_t;
 
+void _CreateStrList(const char** in, List<Str*>* out) {
+  int i = 0;
+  while (true) {
+    const char* s = in[i];
+    if (!s) {
+      break;
+    }
+    // log("a0 %s", s);
+    out->append(new Str(s));
+    ++i;
+  }
+}
+
+void _CreateDefaults(DefaultPair_c* in,
+                     Dict<Str*, runtime_asdl::value_t*>* out) {
+  int i = 0;
+  while (true) {
+    DefaultPair_c* pair = &(in[i]);
+    if (!pair->name) {
+      break;
+    }
+    // log("default %s", d->name);
+
+    // TODO: string defaults!
+    value_t* val;
+    switch (pair->typ) {
+    case flag_type_e::Str:
+      val = new value__Undef();
+      break;
+    case flag_type_e::Bool:
+      val = new value__Bool(pair->val.b);
+      break;
+    default:
+      assert(0);
+    }
+    out->set(new Str(pair->name), val);
+    ++i;
+  }
+}
+
+#ifndef CPP_UNIT_TEST
+void _CreateActions(Action_c* in, Dict<Str*, args::_Action*>* out) {
+  int i = 0;
+  while (true) {
+    Action_c* p = &(in[i]);
+    if (!p->name) {
+      break;
+    }
+    // log("a1 %s", p->name);
+    args::_Action* action = nullptr;
+    switch (p->type) {
+    case ActionType_c::SetToString:
+      action = new args::SetToString(new Str(p->name), false, nullptr);
+      break;
+    case ActionType_c::SetToString_q:
+      action = new args::SetToString(new Str(p->name), true, nullptr);
+      break;
+    case ActionType_c::SetToInt:
+      action = new args::SetToInt(new Str(p->name));
+      break;
+    case ActionType_c::SetToFloat:
+      action = new args::SetToFloat(new Str(p->name));
+      break;
+    case ActionType_c::SetToTrue:
+      action = new args::SetToTrue(new Str(p->name));
+      break;
+    case ActionType_c::SetAttachedBool:
+      action = new args::SetAttachedBool(new Str(p->name));
+      break;
+    case ActionType_c::SetOption:
+      action = new args::SetOption(new Str(p->name));
+      break;
+    case ActionType_c::SetNamedOption:
+      action = new args::SetNamedOption(false);
+      // TODO: fill in valid
+      break;
+    case ActionType_c::SetNamedOption_shopt:
+      action = new args::SetNamedOption(false);
+      // TODO: fill in valid
+      break;
+    case ActionType_c::SetAction:
+      action = new args::SetAction(new Str(p->name));
+      break;
+    case ActionType_c::SetNamedAction:
+      action = new args::SetNamedAction();
+      // TODO: fill in valid
+      break;
+    }
+    if (action) {
+      out->set(new Str(p->name), action);
+    }
+    ++i;
+  }
+}
+#endif
+
 // "Inflate" the static C data into a heap-allocated ASDL data structure.
 //
 // TODO: Make a GLOBAL CACHE?  It could be shared between subinterpreters even?
@@ -27,72 +123,22 @@ flag_spec::_FlagSpec* CreateSpec(FlagSpec_c* in) {
   out->defaults = new Dict<Str*, runtime_asdl::value_t*>();
 
   if (in->arity0) {
-    int i = 0;
-    while (true) {
-      const char* s = in->arity0[i];
-      if (!s) {
-        break;
-      }
-      // log("a0 %s", s);
-      out->arity0->append(new Str(s));
-      ++i;
-    }
+    _CreateStrList(in->arity0, out->arity0);
   }
-
+#ifndef CPP_UNIT_TEST
   if (in->arity1) {
-    int i = 0;
-    while (true) {
-      Action_c* p = &(in->arity1[i]);
-      if (!p->name) {
-        break;
-      }
-      // TODO: Instantiate action!
-      // log("a1 %s", p->name);
-      ++i;
-    }
+    _CreateActions(in->arity1, out->arity1);
   }
-
+#endif
   if (in->plus_flags) {
-    int i = 0;
-    while (true) {
-      const char* s = in->plus_flags[i];
-      if (!s) {
-        break;
-      }
-      // log("option %s", s);
-      out->plus_flags->append(new Str(s));
-      ++i;
-    }
+    _CreateStrList(in->plus_flags, out->plus_flags);
   }
-
   if (in->defaults) {
-    int i = 0;
-    while (true) {
-      DefaultPair_c* pair = &(in->defaults[i]);
-      if (!pair->name) {
-        break;
-      }
-      // log("default %s", d->name);
-      value_t* val;
-      switch (pair->typ) {
-      case flag_type_e::Str:
-        val = new value__Undef();
-        break;
-      case flag_type_e::Bool:
-        val = new value__Bool(pair->val.b);
-        break;
-      default:
-        assert(0);
-      }
-      out->defaults->set(new Str(pair->name), val);
-      ++i;
-    }
+    _CreateDefaults(in->defaults, out->defaults);
   }
-
   return out;
 }
 
-#ifndef CPP_UNIT_TEST
 flag_spec::_FlagSpecAndMore* CreateSpec2(FlagSpecAndMore_c* in) {
   auto out = new flag_spec::_FlagSpecAndMore();
   out->actions_short = new Dict<Str*, args::_Action*>();
@@ -100,89 +146,23 @@ flag_spec::_FlagSpecAndMore* CreateSpec2(FlagSpecAndMore_c* in) {
   out->plus_flags = new List<Str*>();
   out->defaults = new Dict<Str*, runtime_asdl::value_t*>();
 
+#ifndef CPP_UNIT_TEST
   if (in->actions_short) {
-    int i = 0;
-    while (true) {
-      Action_c* p = &(in->actions_short[i]);
-      if (!p->name) {
-        break;
-      }
-      // log("a1 %s", p->name);
-      args::_Action* action = nullptr;
-      switch (p->type) {
-      case ActionType_c::SetToString:
-        action = new args::SetToString(new Str(p->name), false, nullptr);
-        break;
-      case ActionType_c::SetToString_q:
-        action = new args::SetToString(new Str(p->name), true, nullptr);
-        break;
-      case ActionType_c::SetToInt:
-        action = new args::SetToInt(new Str(p->name));
-        break;
-      case ActionType_c::SetToFloat:
-        action = new args::SetToFloat(new Str(p->name));
-        break;
-      case ActionType_c::SetToTrue:
-        action = new args::SetToTrue(new Str(p->name));
-        break;
-      case ActionType_c::SetAttachedBool:
-        action = new args::SetAttachedBool(new Str(p->name));
-        break;
-      case ActionType_c::SetOption:
-        action = new args::SetOption(new Str(p->name));
-        break;
-      case ActionType_c::SetNamedOption:
-        action = new args::SetNamedOption(false);
-        // TODO: fill in valid
-        break;
-      case ActionType_c::SetNamedOption_shopt:
-        action = new args::SetNamedOption(false);
-        // TODO: fill in valid
-        break;
-      case ActionType_c::SetAction:
-        action = new args::SetAction(new Str(p->name));
-        break;
-      case ActionType_c::SetNamedAction:
-        action = new args::SetNamedAction();
-        // TODO: fill in valid
-        break;
-      }
-      if (action) {
-        out->actions_short->set(new Str(p->name), action);
-      }
-      ++i;
-    }
+    _CreateActions(in->actions_short, out->actions_short);
   }
 
+  if (in->actions_long) {
+    _CreateActions(in->actions_long, out->actions_long);
+  }
+#endif
+  if (in->plus_flags) {
+    _CreateStrList(in->plus_flags, out->plus_flags);
+  }
   if (in->defaults) {
-    int i = 0;
-    while (true) {
-      DefaultPair_c* pair = &(in->defaults[i]);
-      if (!pair->name) {
-        break;
-      }
-      // log("default %s", d->name);
-      value_t* val;
-      switch (pair->default_val) {
-      case Default_c::Undef:
-        val = new value__Undef();
-        break;
-      case Default_c::False:
-        val = new value__Bool(false);
-        break;
-      case Default_c::True:
-        val = new value__Bool(true);
-        break;
-      default:
-        assert(0);
-      }
-      out->defaults->set(new Str(pair->name), val);
-      ++i;
-    }
+    _CreateDefaults(in->defaults, out->defaults);
   }
   return out;
 }
-#endif
 
 flag_spec::_FlagSpec* LookupFlagSpec(Str* spec_name) {
   int i = 0;
@@ -210,12 +190,8 @@ flag_spec::_FlagSpecAndMore* LookupFlagSpec2(Str* spec_name) {
       break;
     }
     if (str_equals0(name, spec_name)) {
-    // log("%s found", spec_name->data_);
-#ifdef CPP_UNIT_TEST
-      return nullptr;
-#else
+      // log("%s found", spec_name->data_);
       return CreateSpec2(&kFlagSpecsAndMore[i]);
-#endif
     }
 
     i++;
