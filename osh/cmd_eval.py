@@ -924,7 +924,9 @@ class CommandEvaluator(object):
         if node.arg_word:  # Evaluate the argument
           str_val = self.word_ev.EvalWordToString(node.arg_word)
           try:
-            arg = int(str_val.s)  # They all take integers
+            # They all take integers.  NOTE: dash is the only shell that
+            # disallows -1!  Others wrap to 255.
+            arg = int(str_val.s)
           except ValueError:
             e_die('%r expected a number, got %r',
                 node.token.val, str_val.s, word=node.arg_word)
@@ -1509,22 +1511,26 @@ class CommandEvaluator(object):
     self.mem.SetLastStatus(status)
     return is_return, is_fatal
 
-  def MaybeRunExitTrap(self):
-    # type: () -> bool
+  def MaybeRunExitTrap(self, mut_status):
+    # type: (List[int]) -> None
     """If an EXIT trap exists, run it.
     
-    Returns:
-      Whether we should use the status of the handler.
+    Only mutates the status if 'return' or 'exit'.  This is odd behavior, but
+    all bash/dash/mksh seem to agree on it.  See cases 7-10 in
+    builtin-trap.test.sh.
 
-      This is odd behavior, but all bash/dash/mksh seem to agree on it.
-      See cases 7-10 in builtin-trap.test.sh.
+    Note: if we could easily modulo -1 % 256 == 255 here, then we could get rid
+    of this awkward interface.  But that's true in Python and not C!
     """
     handler = self.traps.get('EXIT')
     if handler:
-      is_return, is_fatal = self.ExecuteAndCatch(handler.node)
-      return is_return  # explicit 'return' in the trap handler!
-    else:
-      return False  # nothing run, don't use its status
+      try:
+        is_return, is_fatal = self.ExecuteAndCatch(handler.node)
+      except util.UserExit as e:  # explicit exit
+        mut_status[0] = e.status
+        return
+      if is_return:  # explicit 'return' in the trap handler!
+        mut_status[0] = self.LastStatus()
 
   def RunProc(self, func_node, argv):
     # type: (command__ShFunction, List[str]) -> int

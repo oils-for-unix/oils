@@ -137,7 +137,8 @@ class _FlagSpec(object):
     opts, i = spec.Parse(argv)
   """
   def __init__(self):
-    # type: (bool) -> None
+    # type: () -> None
+
     # ASDL definition.  To be serialized to C++.
     self.spec = FlagSpec_()
 

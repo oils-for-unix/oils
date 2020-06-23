@@ -444,10 +444,11 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     try:
       status = main_loop.Batch(cmd_ev, c_parser, arena,
                                cmd_flags=cmd_eval.IsMainProgram)
-      if cmd_ev.MaybeRunExitTrap():
-        status = cmd_ev.LastStatus()
     except util.UserExit as e:
       status = e.status
+    box = [status]
+    cmd_ev.MaybeRunExitTrap(box)
+    status = box[0]
 
   # NOTE: 'exit 1' is ControlFlow and gets here, but subshell/commandsub
   # don't because they call sys.exit().

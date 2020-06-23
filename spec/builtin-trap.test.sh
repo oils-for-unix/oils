@@ -111,11 +111,12 @@ for
 ## stdout: FAILED
 ## status: 0
 
-#### trap exit bug regression
+#### trap EXIT with explicit exit
 trap 'echo IN TRAP; echo $stdout' EXIT 
 stdout=FOO
-exit
+exit 42
 
+## status: 42
 ## STDOUT:
 IN TRAP
 FOO

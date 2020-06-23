@@ -33,6 +33,10 @@ TEST show_sizeof() {
   log("sizeof(List<int>) = %d", sizeof(List<int>));
   log("sizeof(List<Str*>) = %d", sizeof(List<Str*>));
 
+  // Unlike Python, this is -1, not 255!
+  int mod = -1 % 256;
+  log("mod = %d", mod);
+
   PASS();
 }
 
