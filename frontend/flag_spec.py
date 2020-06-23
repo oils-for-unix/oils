@@ -21,11 +21,10 @@ FLAG_SPEC_AND_MORE = {}
 OIL_SPEC = {}
 
 
-def FlagSpec(builtin_name, typed=False):
-  # type: (str, bool) -> _FlagSpec
-  """
-  """
-  arg_spec = _FlagSpec(typed=typed)
+def FlagSpec(builtin_name):
+  # type: (str) -> _FlagSpec
+  """Define a flag language."""
+  arg_spec = _FlagSpec()
   FLAG_SPEC[builtin_name] = arg_spec
   return arg_spec
 
@@ -137,11 +136,8 @@ class _FlagSpec(object):
     spec.ShortFlag('-a')
     opts, i = spec.Parse(argv)
   """
-  def __init__(self, typed=False):
+  def __init__(self):
     # type: (bool) -> None
-    # New style: eventually everything should be typed
-    self.typed = typed
-
     # ASDL definition.  To be serialized to C++.
     self.spec = FlagSpec_()
 
@@ -182,14 +178,7 @@ class _FlagSpec(object):
       self.arity1[char] = SetToArg_(char, _FlagType(arg_type), False)
 
     typ = _FlagType(arg_type)
-    default_val = _Default(arg_type)
-
-    if self.typed:
-      self.defaults[char] = default_val
-    else:
-      # TODO: remove when all builtins converted
-      self.defaults[char] = value.Undef()
-
+    self.defaults[char] = _Default(arg_type)
     self.fields[char] = typ
 
   def PlusFlag(self, char, help=None):

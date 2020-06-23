@@ -12,13 +12,13 @@ from frontend import option_def
 # Definitions for builtin_assign
 #
 
-EXPORT_SPEC = FlagSpec('export_', typed=True)
+EXPORT_SPEC = FlagSpec('export_')
 EXPORT_SPEC.ShortFlag('-n')
 EXPORT_SPEC.ShortFlag('-f')  # stubbed
 EXPORT_SPEC.ShortFlag('-p')
 
 
-READONLY_SPEC = FlagSpec('readonly', typed=True)
+READONLY_SPEC = FlagSpec('readonly')
 
 # TODO: Check the consistency of -a and -A against values, here and below.
 READONLY_SPEC.ShortFlag('-a')
@@ -26,7 +26,7 @@ READONLY_SPEC.ShortFlag('-A')
 READONLY_SPEC.ShortFlag('-p')
 
 
-NEW_VAR_SPEC = FlagSpec('new_var', typed=True)
+NEW_VAR_SPEC = FlagSpec('new_var')
 
 # print stuff
 NEW_VAR_SPEC.ShortFlag('-f')
@@ -45,7 +45,7 @@ NEW_VAR_SPEC.ShortFlag('-a')
 NEW_VAR_SPEC.ShortFlag('-A')
 
 
-UNSET_SPEC = FlagSpec('unset', typed=True)
+UNSET_SPEC = FlagSpec('unset')
 UNSET_SPEC.ShortFlag('-v')
 UNSET_SPEC.ShortFlag('-f')
 #UNSET_SPEC.ShortFlag('-z', args.String)
@@ -55,14 +55,14 @@ UNSET_SPEC.ShortFlag('-f')
 #
 
 # Unused because there are no flags!  Just --.
-EVAL_SPEC = FlagSpec('eval', typed=True)
-EVAL_SPEC = FlagSpec('source', typed=True)
+EVAL_SPEC = FlagSpec('eval')
+EVAL_SPEC = FlagSpec('source')
 
-COMMAND_SPEC = FlagSpec('command', typed=True)
+COMMAND_SPEC = FlagSpec('command')
 COMMAND_SPEC.ShortFlag('-v')
 # COMMAND_SPEC.ShortFlag('-V')  # Another verbose mode.
 
-TYPE_SPEC = FlagSpec('type', typed=True)
+TYPE_SPEC = FlagSpec('type')
 TYPE_SPEC.ShortFlag('-f')
 TYPE_SPEC.ShortFlag('-t')
 TYPE_SPEC.ShortFlag('-p')
@@ -73,10 +73,10 @@ TYPE_SPEC.ShortFlag('-P')
 # Definitions for builtin_pure
 #
 
-ALIAS_SPEC = FlagSpec('alias', typed=True)  # no flags yet
-UNALIAS_SPEC = FlagSpec('unalias', typed=True)  # no flags yet
+ALIAS_SPEC = FlagSpec('alias')  # no flags yet
+UNALIAS_SPEC = FlagSpec('unalias')  # no flags yet
 
-SHOPT_SPEC = FlagSpec('shopt', typed=True)
+SHOPT_SPEC = FlagSpec('shopt')
 SHOPT_SPEC.ShortFlag('-s')  # set
 SHOPT_SPEC.ShortFlag('-u')  # unset
 SHOPT_SPEC.ShortFlag('-o')  # use 'set -o' names
@@ -84,11 +84,11 @@ SHOPT_SPEC.ShortFlag('-p')  # print
 SHOPT_SPEC.ShortFlag('-q')  # query option settings
 
 
-HASH_SPEC = FlagSpec('hash', typed=True)
+HASH_SPEC = FlagSpec('hash')
 HASH_SPEC.ShortFlag('-r')
 
 
-ECHO_SPEC = FlagSpec('echo', typed=True)
+ECHO_SPEC = FlagSpec('echo')
 ECHO_SPEC.ShortFlag('-e')  # no backslash escapes
 ECHO_SPEC.ShortFlag('-n')
 
@@ -97,47 +97,47 @@ ECHO_SPEC.ShortFlag('-n')
 #
 
 
-PRINTF_SPEC = FlagSpec('printf', typed=True)
+PRINTF_SPEC = FlagSpec('printf')
 PRINTF_SPEC.ShortFlag('-v', args.String)
 
 #
 # osh/builtin_misc.py
 #
 
-READ_SPEC = FlagSpec('read', typed=True)
+READ_SPEC = FlagSpec('read')
 READ_SPEC.ShortFlag('-r')
 READ_SPEC.ShortFlag('-n', args.Int)
 READ_SPEC.ShortFlag('-a', args.String)  # name of array to read into
 READ_SPEC.ShortFlag('-d', args.String)
 
 
-MAPFILE_SPEC = FlagSpec('mapfile', typed=True)
+MAPFILE_SPEC = FlagSpec('mapfile')
 
 
-CD_SPEC = FlagSpec('cd', typed=True)
+CD_SPEC = FlagSpec('cd')
 CD_SPEC.ShortFlag('-L')
 CD_SPEC.ShortFlag('-P')
 
 
-DIRS_SPEC = FlagSpec('dirs', typed=True)
+DIRS_SPEC = FlagSpec('dirs')
 DIRS_SPEC.ShortFlag('-c')
 DIRS_SPEC.ShortFlag('-l')
 DIRS_SPEC.ShortFlag('-p')
 DIRS_SPEC.ShortFlag('-v')
 
 
-PWD_SPEC = FlagSpec('pwd', typed=True)
+PWD_SPEC = FlagSpec('pwd')
 PWD_SPEC.ShortFlag('-L')
 PWD_SPEC.ShortFlag('-P')
 
 
-HELP_SPEC = FlagSpec('help', typed=True)
+HELP_SPEC = FlagSpec('help')
 # Use Oil flags?  -index?
 #HELP_SPEC.ShortFlag('-i')  # show index
 # Note: bash has help -d -m -s, which change the formatting
 
 
-HISTORY_SPEC = FlagSpec('history', typed=True)
+HISTORY_SPEC = FlagSpec('history')
 HISTORY_SPEC.ShortFlag('-c')
 HISTORY_SPEC.ShortFlag('-d', args.Int)
 
@@ -145,11 +145,11 @@ HISTORY_SPEC.ShortFlag('-d', args.Int)
 # osh/builtin_process.py
 #
 
-WAIT_SPEC = FlagSpec('wait', typed=True)
+WAIT_SPEC = FlagSpec('wait')
 WAIT_SPEC.ShortFlag('-n')
 
 
-TRAP_SPEC = FlagSpec('trap', typed=True)
+TRAP_SPEC = FlagSpec('trap')
 TRAP_SPEC.ShortFlag('-p')
 TRAP_SPEC.ShortFlag('-l')
 
@@ -219,5 +219,5 @@ OSH_SPEC.LongFlag('--rcfile', args.String)
 _AddShellOptions(OSH_SPEC)
 
 
-SET_SPEC = FlagSpecAndMore('set')
+SET_SPEC = FlagSpecAndMore('set', typed=True)
 _AddShellOptions(SET_SPEC)

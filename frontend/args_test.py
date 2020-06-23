@@ -140,7 +140,7 @@ class ArgsTest(unittest.TestCase):
     self.assertEqual(1, i-1)
     self.assertEqual(True, arg.f)
     #self.assertEqual(False, arg.n)
-    self.assertEqual(None, arg.n)
+    self.assertEqual(False, arg.n)
 
     self.assertRaises(
         error.Usage, _ParseCmdVal, s, _MakeBuiltinArgv(['-f', '-d']))
@@ -178,8 +178,7 @@ class ArgsTest(unittest.TestCase):
     self.assertEqual(1, i-1)
 
     arg, i = _ParseCmdVal(s, _MakeBuiltinArgv(['-p', '>']))
-    #self.assertEqual(False, arg.r)
-    self.assertEqual(None, arg.r)
+    self.assertEqual(False, arg.r)
     self.assertEqual('>', arg.p)
     self.assertEqual(2, i-1)
 
@@ -227,8 +226,8 @@ class ArgsTest(unittest.TestCase):
     arg = args.ParseLikeEcho(s, arg_r)
     #self.assertEqual(False, arg.e)
     #self.assertEqual(False, arg.n)
-    self.assertEqual(None, arg.e)
-    self.assertEqual(None, arg.n)
+    self.assertEqual(False, arg.e)
+    self.assertEqual(False, arg.n)
     self.assertEqual(1, arg_r.i)
 
   def testOilFlags(self):
