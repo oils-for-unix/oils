@@ -347,24 +347,53 @@ HOME=''
 [[ ~ ]]
 echo status=$?
 [[ -n ~ ]]
-echo status=$?
+echo unary=$?
 
 [[ ~ == ~ ]]
 echo status=$?
 
 [[ $HOME == ~ ]]
-echo status=$?
+echo fnmatch=$?
 [[ ~ == $HOME ]]
-echo status=$?
+echo fnmatch=$?
 
 ## STDOUT:
 status=0
 status=1
-status=1
+unary=1
 status=0
-status=0
-status=0
+fnmatch=0
+fnmatch=0
 ## END
+
+#### tilde expansion with =~ (confusing)
+case $SH in (mksh) exit ;; esac
+
+HOME=foo
+[[ ~ =~ $HOME ]]
+echo regex=$?
+[[ $HOME =~ ~ ]]
+echo regex=$?
+
+HOME='^a$'  # looks like regex
+[[ ~ =~ $HOME ]]
+echo regex=$?
+[[ $HOME =~ ~ ]]
+echo regex=$?
+
+## STDOUT:
+regex=0
+regex=0
+regex=1
+regex=0
+## END
+## OK zsh STDOUT:
+regex=0
+regex=0
+regex=1
+regex=1
+## END
+## N-I mksh stdout-json: ""
 
 #### [[ ]] with redirect
 [[ $(stdout_stderr.py) == STDOUT ]] 2>$TMP/x.txt

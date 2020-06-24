@@ -151,6 +151,7 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   R(_LITERAL_WHITELIST_REGEX, Id.Lit_Chars),
 
   _TILDE_LIKE,
+  C(':', Id.Lit_Colon),  # for special PATH=a:~foo tilde detection
 
   C('#', Id.Lit_Pound),  # For comments
   _SIGNIFICANT_SPACE,
@@ -392,6 +393,7 @@ LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   # and [].  We will avoid that and ask the user to extract a variable?
 
   R(r'[a-zA-Z0-9_/-]+', Id.Lit_Chars),  # not including period
+  _TILDE_LIKE,  # bash weirdness: RHS of [[ x =~ ~ ]] is expanded
   _SIGNIFICANT_SPACE,
 
   # Normally, \x evalutes to x.  But quoted regex metacharacters like \* should

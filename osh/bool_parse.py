@@ -197,6 +197,11 @@ class BoolParser(object):
       if tag != word_e.Compound and tag != word_e.String:
         p_die('Invalid argument to unary operator', word=w)
       self._Next()
+
+      tilde = word_.TildeDetect(w)
+      if tilde:
+        w = tilde
+
       node = bool_expr.Unary(op, w)  # type: bool_expr_t
       return node
 
@@ -230,10 +235,21 @@ class BoolParser(object):
           pass
 
         self._Next()
+
+        tilde = word_.TildeDetect(left)
+        if tilde:
+          left = tilde
+        tilde = word_.TildeDetect(right)
+        if tilde:
+          right = tilde
+
         return bool_expr.Binary(op, left, right)
-      else:
-        # [[ foo ]]
+
+      else:  # [[ foo ]]
         w = self.cur_word
+        tilde = word_.TildeDetect(w)
+        if tilde:
+          w = tilde
         self._Next()
         return bool_expr.WordTest(w)
 

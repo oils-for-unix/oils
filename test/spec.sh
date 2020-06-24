@@ -671,7 +671,7 @@ assoc-zsh() {
 # NOTE: zsh passes about half and fails about half.  It supports a subset of [[
 # I guess.
 dbracket() {
-  sh-spec spec/dbracket.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/dbracket.test.sh --osh-failures-allowed 0 \
     $BASH $MKSH $OSH_LIST "$@"
   #sh-spec spec/dbracket.test.sh $BASH $MKSH $OSH_LIST $ZSH "$@"
 }

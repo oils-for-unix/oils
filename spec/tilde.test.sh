@@ -107,3 +107,21 @@ foo:/home/andy
 foo:~
 ## END
 
+#### assignment tilde with colon
+HOME=/home/bar
+
+x=~:${undef-~:~}
+echo $x
+
+# Most shells agree on a different behavior, but with the OSH parsing model,
+# it's easier to agree with bash.  yash disagrees in a different way
+
+## OK bash STDOUT:
+/home/bar:/home/bar:~
+## END
+## OK yash STDOUT:
+/home/bar:~:~
+## END
+## STDOUT:
+/home/bar:/home/bar:/home/bar
+## END
