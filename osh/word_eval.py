@@ -1731,8 +1731,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
           if part_offset == len(w.parts):
             rhs_word = word.Empty()  # type: word_t
           else:
-            rhs_word = compound_word(w.parts[part_offset:])
-            word_.TildeDetectAssign(rhs_word)
+            # tmp is for intersection of C++/MyPy type systems
+            tmp = compound_word(w.parts[part_offset:])
+            word_.TildeDetectAssign(tmp)
+            rhs_word = tmp
 
           right = self.EvalRhsWord(rhs_word)
           arg2 = assign_arg(var_name, right, word_spid)

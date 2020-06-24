@@ -152,24 +152,7 @@ class WordParser(WordEmitter):
 
   def _ReadVarOpArg(self, arg_lex_mode):
     # type: (lex_mode_t) -> word_t
-    return self._ReadVarOpArg3(arg_lex_mode, Id.Undefined_Tok, True)
-
-  def _ReadVarOpArg3(self, arg_lex_mode, eof_type, empty_ok):
-    # type: (lex_mode_t, Id_t, bool) -> word_t
-    """
-    Args:
-      empty_ok: Whether Empty can be returned
-    """
-    # NOTE: Operators like | and < are not treated as special, so ${a:- | >} is
-    # valid, even when unquoted.
-    self._Next(arg_lex_mode)
-    self._Peek()
-
-    w = self._ReadCompoundWord3(arg_lex_mode, eof_type, empty_ok)
-    #log('w %s', w)
-    tilde = word_.TildeDetect(w)
-    if tilde:
-      w = tilde
+    w = self._ReadVarOpArg2(arg_lex_mode, Id.Undefined_Tok, empty_ok=True)
 
     # If the Compound has no parts, and we're in a double-quoted VarSub
     # arg, and empty_ok, then return Empty.  This is so it can evaluate to
@@ -183,10 +166,27 @@ class WordParser(WordEmitter):
     # NOTE: empty_ok is False only for the PatSub pattern, which means we'll
     # return a Compound with no parts, which is explicitly checked with a
     # custom error message.
-    if (len(w.parts) == 0 and arg_lex_mode == lex_mode_e.VSub_ArgDQ
-        and empty_ok):
+    if len(w.parts) == 0 and arg_lex_mode == lex_mode_e.VSub_ArgDQ:
       return word.Empty()
 
+    return w
+
+  def _ReadVarOpArg2(self, arg_lex_mode, eof_type, empty_ok=False):
+    # type: (lex_mode_t, Id_t, bool) -> compound_word
+    """Return a compound_word.
+
+    Helper function for _ReadVarOpArg and used directly by _ReadPatSubVarOp.
+    """
+    # NOTE: Operators like | and < are not treated as special, so ${a:- | >} is
+    # valid, even when unquoted.
+    self._Next(arg_lex_mode)
+    self._Peek()
+
+    w = self._ReadCompoundWord3(arg_lex_mode, eof_type, empty_ok)
+    #log('w %s', w)
+    tilde = word_.TildeDetect(w)
+    if tilde:
+      w = tilde
     return w
 
   def _ReadSliceVarOp(self):
@@ -221,9 +221,7 @@ class WordParser(WordEmitter):
     """
     # Exception: VSub_ArgUnquoted even if it's quoted
     # stop at eof_type=Lit_Slash, empty_ok=False
-    UP_pat = self._ReadVarOpArg3(lex_mode_e.VSub_ArgUnquoted, Id.Lit_Slash, False)
-    assert UP_pat.tag_() == word_e.Compound, UP_pat  # Because empty_ok=False
-    pat = cast(compound_word, UP_pat)
+    pat = self._ReadVarOpArg2(lex_mode_e.VSub_ArgUnquoted, Id.Lit_Slash)
 
     # really subtle: ${x////c} is valid and equivalent to ${x//'/'/c} (in bash)
     if len(pat.parts) == 1 and word_.LiteralId(pat.parts[0]) == Id.Lit_Slash:

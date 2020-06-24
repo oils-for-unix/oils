@@ -121,15 +121,16 @@ foo:/home/bar
 ## N-I dash/zsh stdout-json: ""
 
 #### tilde expansion an assignment keyword
+HOME=/home/bar
 f() {
   local x=foo:~
   echo $x
 }
 f
 ## STDOUT:
-foo:/home/andy
+foo:/home/bar
 ## END
-## BUG dash/mksh STDOUT:
+## BUG dash STDOUT:
 foo:~
 ## END
 

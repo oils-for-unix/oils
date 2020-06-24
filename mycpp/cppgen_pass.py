@@ -1674,7 +1674,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             class_name == 'ParseContext' and func_name == 'MakeOshParser' or
             class_name == 'ErrorFormatter' and func_name == 'PrettyPrintError' or
             class_name is None and func_name == 'PrettyPrintError' or
-            class_name == 'WordParser' and func_name == '_ParseVarExpr' or
+            class_name == 'WordParser' and
+              func_name in ('_ParseVarExpr', '_ReadVarOpArg2') or
             class_name == 'AbstractWordEvaluator' and 
               func_name in ('EvalWordSequence2', '_EvalWordToParts',
                             '_EmptyStrOrError', '_EvalWordPart') or

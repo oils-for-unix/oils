@@ -246,8 +246,10 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
   if part_offset == n:
     rhs = word.Empty()  # type: word_t
   else:
-    rhs = compound_word(w.parts[part_offset:])
-    word_.TildeDetectAssign(rhs)
+    # tmp2 is for intersection of C++/MyPy type systems
+    tmp2 = compound_word(w.parts[part_offset:])
+    word_.TildeDetectAssign(tmp2)
+    rhs = tmp2
 
   pair = syntax_asdl.assign_pair(lhs, op, rhs, [left_token.span_id])
   return pair
