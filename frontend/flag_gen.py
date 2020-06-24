@@ -28,6 +28,57 @@ def CString(s):
 def _WriteStrArray(f, var_name, a):
   c_strs = ', '.join(CString(s) for s in sorted(a))
   f.write('const char* %s[] = {%s, nullptr};\n' % (var_name, c_strs))
+  f.write('\n')
+
+
+def _WriteActions(f, var_name, actions):
+  f.write('Action_c %s[] = {\n' % var_name)
+  for name in sorted(actions):
+    action = actions[name]
+    log('%s %s', name, action)
+    if isinstance(action, args.SetToString):
+      if action.quit_parsing_flags:
+        action_type = 'SetToString_q'
+      else:
+        action_type = 'SetToString'
+
+    elif isinstance(action, args.SetToInt):
+      action_type = 'SetToInt'
+
+    elif isinstance(action, args.SetToFloat):
+      action_type = 'SetToFloat'
+
+    elif isinstance(action, args.SetToTrue):
+      action_type = 'SetToTrue'
+
+    elif isinstance(action, args.SetAttachedBool):
+      action_type = 'SetAttachedBool'
+
+    elif isinstance(action, args.SetOption):
+      action_type = 'SetOption'
+
+    elif isinstance(action, args.SetNamedOption):
+      if action.shopt:
+        action_type = 'SetNamedOption_shopt'
+      else:
+        action_type = 'SetNamedOption'
+
+    elif isinstance(action, args.SetAction):
+      action_type = 'SetAction'
+
+    elif isinstance(action, args.SetNamedAction):
+      action_type = 'SetNamedAction'
+
+    else:
+      raise AssertionError(action)
+
+    f.write('    {ActionType_c::%s, "%s"},\n' % (action_type, name))
+  #cc_f.write('SetToArg_c %s[] = {\n' % arity1_name)
+  f.write('''\
+    {},
+};
+
+''')
 
 
 def _WriteDefaults(cc_f, defaults_name, defaults):
@@ -57,6 +108,7 @@ def _WriteDefaults(cc_f, defaults_name, defaults):
   cc_f.write('''\
     {},
 };
+
 ''')
 
 
@@ -177,15 +229,7 @@ namespace arg_types {
 
     if spec.arity1:
       arity1_name = 'arity1_%d' % i
-      cc_f.write('Action_c %s[] = {\n' % arity1_name)
-      for name in sorted(spec.arity1):
-        action_type = 'ActionType_c::SetToString'
-        cc_f.write('    {%s, "%s"},\n' % (action_type, name))
-      #cc_f.write('SetToArg_c %s[] = {\n' % arity1_name)
-      cc_f.write('''\
-    {},
-};
-''')
+      _WriteActions(cc_f, arity1_name, spec.arity1)
 
     if spec.plus_flags:
       plus_name = 'plus_%d' % i
@@ -228,35 +272,16 @@ namespace arg_types {
 
     if spec.actions_short:
       actions_short_name = 'short_%d' % i
-      cc_f.write('Action_c %s[] = {\n' % actions_short_name)
-      for name in sorted(spec.actions_short):
-        action = spec.actions_short[name]
-        log('%s %s', name, action)
-        if isinstance(action, args.SetToString):
-          if action.quit_parsing_flags:
-            action_type = 'ActionType_c::SetToString_q'
-          else:
-            action_type = 'ActionType_c::SetToString'
-          cc_f.write('    {%s, "%s"},\n' % (action_type, name))
-        elif isinstance(action, args.SetToTrue):
-          log('action %s', action.name)
-      cc_f.write('''\
-    {},
-};
-
-''')
+      _WriteActions(cc_f, actions_short_name, spec.actions_short)
 
     #if spec.actions_long:
-    if 0:
+    if spec.actions_long:
       actions_long_name = 'long_%d' % i
-      cc_f.write('Action_c %s[] = {\n' % actions_long_name)
-      for name in sorted(spec.actions_long):
-        action = spec.actions_long[name]
-        if isinstance(action, args.SetToArgAction):
-          a = action.action
-          log('action %s %s', name, a.name)
-        elif isinstance(action, args.SetToTrue):
-          log('action %s %s', name, action.name)
+      _WriteActions(cc_f, actions_long_name, spec.actions_long)
+
+    if spec.plus_flags:
+      plus_name = 'plus_%d' % i
+      _WriteStrArray(cc_f, plus_name, spec.plus_flags)
 
     if spec.defaults:
       defaults_name = 'defaults_%d' % i

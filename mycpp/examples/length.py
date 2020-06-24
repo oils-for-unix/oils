@@ -16,14 +16,17 @@ def TestMaybeStrEquals():
   a = 'foo'
   b = 'bar'
 
-  x = ''  # type: Optional[str]
-  # TODO: Conditionally assigning x = None doesn't work.
+  y = 'foo'  # type: Optional[str]
+  n = None  # type: Optional[str]
 
   log('a == b  ->  %d', a == b)
   log('a != b  ->  %d', a != b)
 
-  log('a == x  ->  %d', a == x)
-  log('a != x  ->  %d', a != x)
+  log('a == y  ->  %d', a == y)
+  log('a != y  ->  %d', a != y)
+
+  log('a == n  ->  %d', a == n)
+  log('a != n  ->  %d', a != n)
 
 
 def run_tests():

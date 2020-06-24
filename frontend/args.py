@@ -610,11 +610,9 @@ def ParseMore(spec, arg_r):
 
     # NOTE: We don't yet support --rcfile=foo.  Only --rcfile foo.
     if arg.startswith('--'):
-      try:
-        action = spec.actions_long[arg[2:]]
-      except KeyError:
-        e_usage(
-            'got invalid flag %r' % arg, span_id=arg_r.SpanId())
+      action = spec.actions_long.get(arg[2:])
+      if action is None:
+        e_usage('got invalid flag %r' % arg, span_id=arg_r.SpanId())
 
       # TODO: attached_arg could be 'bar' for --foo=bar
       action.OnMatch(None, arg_r, out)
@@ -631,11 +629,9 @@ def ParseMore(spec, arg_r):
       # TODO: set - - empty
       for ch in arg[1:]:
         #log('ch %r arg_r %s', ch, arg_r)
-        try:
-          action = spec.actions_short[ch]
-        except KeyError:
-          e_usage(
-              'got invalid flag %r' % ('-' + ch), span_id=arg_r.SpanId())
+        action = spec.actions_short.get(ch)
+        if action is None:
+          e_usage('got invalid flag %r' % ('-' + ch), span_id=arg_r.SpanId())
 
         attached_arg = char0 if ch in spec.plus_flags else None
         quit = action.OnMatch(attached_arg, arg_r, out)

@@ -788,22 +788,28 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         t0 = self.types[left]
         t1 = self.types[right]
 
+        def IsStr(t):
+          return isinstance(t, Instance) and t.type.fullname() == 'builtins.str'
+
         # 0: not a special case
         # 1: str
         # 2: Optional[str] which is Union[str, None]
         left_type = 0  # not a special case
         right_type = 0  # not a special case
-        if isinstance(t0, Instance) and t0.type.fullname() == 'builtins.str':
-          left_type = 1
-          if (isinstance(t0, UnionType) and len(t0.items) == 2 and
-              isinstance(t0.items[1], NoneTyp)):
-              left_type += 1
 
-        if isinstance(t1, Instance) and t1.type.fullname() == 'builtins.str':
+        if IsStr(t0):
+          left_type = 1
+        elif (isinstance(t0, UnionType) and len(t0.items) == 2 and
+              IsStr(t0.items[0]) and isinstance(t0.items[1], NoneTyp)):
+          left_type = 2
+
+        if IsStr(t1):
           right_type = 1
-          if (isinstance(t1, UnionType) and len(t1.items) == 2 and
-              isinstance(t1.items[1], NoneTyp)):
-              right_type += 1
+        elif (isinstance(t1, UnionType) and len(t1.items) == 2 and
+              IsStr(t1.items[0]) and isinstance(t1.items[1], NoneTyp)):
+          right_type = 2
+
+        #self.log('left_type %s right_type %s', left_type, right_type)
 
         if left_type > 0 and right_type > 0 and operator in ('==', '!='):
           if operator == '!=':
@@ -1149,7 +1155,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.write('new %s();\n' % c_type[:-1])
 
             over_type = self.types[seq]
-            self.log('  iterating over type %s', over_type)
+            #self.log('  iterating over type %s', over_type)
 
             if over_type.type.fullname() == 'builtins.list':
               c_type = get_c_type(over_type)
@@ -1354,8 +1360,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           iterated_over = o.expr
 
         over_type = self.types[iterated_over]
-        self.log('  iterating over type %s', over_type)
-        self.log('  iterating over type %s', over_type.type.fullname())
+        #self.log('  iterating over type %s', over_type)
+        #self.log('  iterating over type %s', over_type.type.fullname())
 
         over_dict = False
 

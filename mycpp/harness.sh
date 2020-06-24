@@ -59,10 +59,11 @@ _translate-example() {
   local main_module=$(basename $main .py)
   filter-cpp $main_module $raw > $out
 
-  wc -l _gen/*
+  #wc -l _gen/*
 
   echo
-  cat $out
+  #cat $out
+  echo "Wrote $out"
 }
 
 translate-example() {
@@ -279,13 +280,14 @@ example-both() {
   translate-example $name
   compile-example $name
 
+  # diff stderr too!
   echo
   echo $'\t[ C++ ]'
-  time _bin/$name > _tmp/$name.cpp.txt
+  time _bin/$name > _tmp/$name.cpp.txt 2>&1
 
   echo
   echo $'\t[ Python ]'
-  time pyrun-example $name > _tmp/$name.python.txt
+  time pyrun-example $name > _tmp/$name.python.txt 2>&1
 
   diff-output $name
 }
