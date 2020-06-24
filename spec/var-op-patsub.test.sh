@@ -84,6 +84,27 @@ echo status=$?
 status=0
 ## END
 
+#### Confusing unquoted slash matches bash (and ash)
+x='/_/'
+echo ${x////c}
+echo ${x//'/'/c}
+## STDOUT:
+c_c
+c_c
+## END
+## BUG mksh/yash STDOUT:
+/_/
+c_c
+## END
+## BUG zsh STDOUT:
+/c//c_/c/
+/_/
+## END
+## BUG ash STDOUT:
+c_c
+/_/
+## END
+
 #### ${v/a} is the same as ${v/a/}  -- no replacement string
 v='aabb'
 echo ${v/a}

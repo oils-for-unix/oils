@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 _ = log
 
 
-def _LiteralId(p):
+def LiteralId(p):
   # type: (word_part_t) -> Id_t
   """
   If the WordPart consists of a single literal token, return its Id.  Used for
@@ -360,7 +360,7 @@ def TildeDetect(UP_w):
     return None
 
   UP_part0 = w.parts[0]
-  if _LiteralId(UP_part0) != Id.Lit_TildeLike:
+  if LiteralId(UP_part0) != Id.Lit_TildeLike:
     return None
   tok0 = cast(Token, UP_part0)
 
@@ -370,7 +370,7 @@ def TildeDetect(UP_w):
 
   # Lit_Chars is for ~/foo, while Lit_Slash is for ${x-~/foo}
   UP_part1 = w.parts[1]
-  if _LiteralId(UP_part1) in (Id.Lit_Chars, Id.Lit_Slash):
+  if LiteralId(UP_part1) in (Id.Lit_Chars, Id.Lit_Slash):
     tok = cast(Token, UP_part1)
     if tok.val.startswith('/'):
       tilde_part_ = word_part.TildeSub(tok0)  # type: word_part_t
@@ -438,7 +438,7 @@ def LooksLikeArithVar(UP_w):
     return None
 
   UP_part0 = w.parts[0]
-  if _LiteralId(UP_part0) != Id.Lit_ArithVarLike:
+  if LiteralId(UP_part0) != Id.Lit_ArithVarLike:
     return None
 
   return cast(Token, UP_part0)
@@ -456,7 +456,7 @@ def IsVarLike(w):
   if len(w.parts) == 0:
     return False
 
-  return _LiteralId(w.parts[0]) == Id.Lit_VarLike
+  return LiteralId(w.parts[0]) == Id.Lit_VarLike
 
 
 def DetectShAssignment(w):
@@ -489,7 +489,7 @@ def DetectShAssignment(w):
     return no_token, no_token, 0
 
   UP_part0 = w.parts[0]
-  id0 = _LiteralId(UP_part0)
+  id0 = LiteralId(UP_part0)
   if id0 == Id.Lit_VarLike:
     tok = cast(Token, UP_part0)
     return tok, no_token, 1  # everything after first token is the value
@@ -501,7 +501,7 @@ def DetectShAssignment(w):
       return no_token, no_token, 0
     for i in xrange(1, n):
       UP_part = w.parts[i]
-      if _LiteralId(UP_part) == Id.Lit_ArrayLhsClose:
+      if LiteralId(UP_part) == Id.Lit_ArrayLhsClose:
         tok_close = cast(Token, UP_part)
         return tok0, tok_close, i+1
 
@@ -519,12 +519,12 @@ def DetectAssocPair(w):
   for associative array literals, as opposed to indexed array literals.
   """
   parts = w.parts
-  if _LiteralId(parts[0]) != Id.Lit_LBracket:
+  if LiteralId(parts[0]) != Id.Lit_LBracket:
     return None
 
   n = len(parts)
   for i in xrange(n):
-    id_ = _LiteralId(parts[i])
+    id_ = LiteralId(parts[i])
     if id_ == Id.Lit_ArrayLhsClose: # ]=
       # e.g. if we have [$x$y]=$a$b
       key = compound_word(parts[1:i])  # $x$y 
@@ -546,7 +546,7 @@ def KeywordToken(w):
     return Kind.Undefined, no_token
 
   UP_part0 = w.parts[0]
-  token_type = _LiteralId(UP_part0)
+  token_type = LiteralId(UP_part0)
   if token_type == Id.Undefined_Tok:
     return Kind.Undefined, no_token
 
@@ -608,7 +608,7 @@ def BoolId(w):
       if len(w.parts) != 1:
         return Id.Word_Compound
 
-      token_type = _LiteralId(w.parts[0])
+      token_type = LiteralId(w.parts[0])
       if token_type == Id.Undefined_Tok:
         return Id.Word_Compound  # It's a regular word
 
@@ -642,7 +642,7 @@ def CommandId(w):
       if len(w.parts) != 1:
         return Id.Word_Compound
 
-      token_type = _LiteralId(w.parts[0])
+      token_type = LiteralId(w.parts[0])
       if token_type == Id.Undefined_Tok:
         return Id.Word_Compound
 

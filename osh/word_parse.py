@@ -225,12 +225,11 @@ class WordParser(WordEmitter):
     assert UP_pat.tag_() == word_e.Compound, UP_pat  # Because empty_ok=False
     pat = cast(compound_word, UP_pat)
 
-    if len(pat.parts) == 1:
-      ok, s, quoted = word_.StaticEval(pat)
-      if ok and s == '/' and not quoted:  # Looks like ${a////c}, read again
-        self._Next(lex_mode_e.VSub_ArgUnquoted)
-        self._Peek()
-        pat.parts.append(self.cur_token)
+    # really subtle: ${x////c} is valid and equivalent to ${x//'/'/c} (in bash)
+    if len(pat.parts) == 1 and word_.LiteralId(pat.parts[0]) == Id.Lit_Slash:
+      self._Next(lex_mode_e.VSub_ArgUnquoted)
+      self._Peek()
+      pat.parts.append(self.cur_token)
 
     if len(pat.parts) == 0:
       p_die('Pattern in ${x/pat/replace} must not be empty',
