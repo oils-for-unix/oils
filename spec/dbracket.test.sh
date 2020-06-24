@@ -340,6 +340,32 @@ status=0
 status=1
 ## END
 
+#### more tilde expansion
+[[ ~ ]]
+echo status=$?
+HOME=''
+[[ ~ ]]
+echo status=$?
+[[ -n ~ ]]
+echo status=$?
+
+[[ ~ == ~ ]]
+echo status=$?
+
+[[ $HOME == ~ ]]
+echo status=$?
+[[ ~ == $HOME ]]
+echo status=$?
+
+## STDOUT:
+status=0
+status=1
+status=1
+status=0
+status=0
+status=0
+## END
+
 #### [[ ]] with redirect
 [[ $(stdout_stderr.py) == STDOUT ]] 2>$TMP/x.txt
 echo $?

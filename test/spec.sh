@@ -538,9 +538,9 @@ introspect() {
     $BASH $OSH_LIST "$@"
 }
 
-# DONE -- pysh is the most conformant!
 tilde() {
-  sh-spec spec/tilde.test.sh ${REF_SHELLS[@]} $OSH_LIST "$@"
+  sh-spec spec/tilde.test.sh --osh-failures-allowed 2 \
+    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 var-op-test() {
@@ -671,7 +671,7 @@ assoc-zsh() {
 # NOTE: zsh passes about half and fails about half.  It supports a subset of [[
 # I guess.
 dbracket() {
-  sh-spec spec/dbracket.test.sh --osh-failures-allowed 1 \
+  sh-spec spec/dbracket.test.sh --osh-failures-allowed 2 \
     $BASH $MKSH $OSH_LIST "$@"
   #sh-spec spec/dbracket.test.sh $BASH $MKSH $OSH_LIST $ZSH "$@"
 }

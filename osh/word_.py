@@ -356,7 +356,8 @@ def TildeDetect(UP_w):
     return None
 
   w = cast(compound_word, UP_w)
-  assert w.parts, w
+  if len(w.parts) == 0:  # ${a-} has no parts
+    return None
 
   UP_part0 = w.parts[0]
   if _LiteralId(UP_part0) != Id.Lit_TildeLike:
@@ -367,9 +368,9 @@ def TildeDetect(UP_w):
     tilde_part = word_part.TildeSub(tok0)
     return compound_word([tilde_part])
 
+  # Lit_Chars is for ~/foo, while Lit_Slash is for ${x-~/foo}
   UP_part1 = w.parts[1]
-  # NOTE: We could inspect the raw tokens.
-  if _LiteralId(UP_part1) == Id.Lit_Chars:
+  if _LiteralId(UP_part1) in (Id.Lit_Chars, Id.Lit_Slash):
     tok = cast(Token, UP_part1)
     if tok.val.startswith('/'):
       tilde_part_ = word_part.TildeSub(tok0)  # type: word_part_t

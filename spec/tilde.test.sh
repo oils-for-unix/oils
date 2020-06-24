@@ -41,3 +41,69 @@ cat $HOME/tilde1.txt | wc -c
 #### other user
 echo ~nonexistent
 ## stdout: ~nonexistent
+# zsh doesn't like nonexistent
+## OK zsh stdout-json: ""
+## OK zsh status: 1
+
+#### ${undef:-~}
+HOME=/home/bar
+echo ${undef:-~}
+echo ${HOME:+~/z}
+echo "${undef:-~}"
+echo ${undef:-"~"}
+## STDOUT:
+/home/bar
+/home/bar/z
+~
+~
+## END
+
+#### ${x//~/~root}
+HOME=/home/bar
+x=~
+echo ${x//~/~root}
+
+# gah there is some expansion, what the hell
+echo ${HOME//~/~root}
+
+x=[$HOME]
+echo ${x//~/~root}
+
+## STDOUT:
+/root
+/root
+[/root]
+## END
+## N-I dash status: 2
+## N-I dash stdout-json: ""
+
+#### tilde expansion in colon
+HOME=/home/bar
+x=foo:~
+echo $x
+echo "$x"  # quotes don't matter, the expansion happens on assignment?
+x='foo:~'
+echo $x
+
+# no tilde expansion here
+echo foo:~
+## STDOUT:
+foo:/home/bar
+foo:/home/bar
+foo:~
+foo:~
+## END
+
+#### tilde expansion an assignment keyword
+f() {
+  local x=foo:~
+  echo $x
+}
+f
+## STDOUT:
+foo:/home/andy
+## END
+## BUG dash/mksh STDOUT:
+foo:~
+## END
+

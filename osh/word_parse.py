@@ -166,6 +166,10 @@ class WordParser(WordEmitter):
     self._Peek()
 
     w = self._ReadCompoundWord3(arg_lex_mode, eof_type, empty_ok)
+    #log('w %s', w)
+    tilde = word_.TildeDetect(w)
+    if tilde:
+      w = tilde
 
     # If the Compound has no parts, and we're in a double-quoted VarSub
     # arg, and empty_ok, then return Empty.  This is so it can evaluate to
@@ -240,6 +244,10 @@ class WordParser(WordEmitter):
       if lit_id in (Id.Lit_Slash, Id.Lit_Pound, Id.Lit_Percent):
         pat.parts.pop(0)
         replace_mode = lit_id
+
+    tilde = word_.TildeDetect(pat)
+    if tilde:
+      pat = tilde
 
     # NOTE: If there is a modifier, the pattern can be empty, e.g.
     # ${s/#/foo} and ${a/%/foo}.

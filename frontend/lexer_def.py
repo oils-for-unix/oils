@@ -63,6 +63,11 @@ SHOULD_HIJACK_RE = r'#!.*sh[ \t\r\n][^\0]*'
 
 _SIGNIFICANT_SPACE = R(r'[ \t\r]+', Id.WS_Space)
 
+# For tilde expansion. The list of chars is Lit_Chars, but WITHOUT the /.  We
+# want the next token after the tilde TildeLike token start with a /.
+# NOTE: Happens in both ShCommand and DBracket modes.
+_TILDE_LIKE = R(r'~[a-zA-Z0-9_.-]*', Id.Lit_TildeLike)
+
 _BACKSLASH = [
   R(r'\\[^\n\0]', Id.Lit_EscapedChar),
   C('\\\n', Id.Ignored_LineCont),
@@ -145,10 +150,7 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
   # utf-8 characters don't get split?
   R(_LITERAL_WHITELIST_REGEX, Id.Lit_Chars),
 
-  # For tilde expansion. The list of chars is Lit_Chars, but WITHOUT the /.  We
-  # want the next token after the tilde TildeLike token start with a /.
-  # NOTE: Happens in both ShCommand and DBracket modes.
-  R(r'~[a-zA-Z0-9_.-]*', Id.Lit_TildeLike),
+  _TILDE_LIKE,
 
   C('#', Id.Lit_Pound),  # For comments
   _SIGNIFICANT_SPACE,
@@ -423,6 +425,7 @@ _VS_ARG_COMMON = [
 # Kind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
 LEXER_DEF[lex_mode_e.VSub_ArgUnquoted] = \
   _BACKSLASH + _VS_ARG_COMMON + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
+  _TILDE_LIKE,
   # NOTE: added < and > so it doesn't eat <()
   R(r'[^$`/}"\'\0\\#%<>]+', Id.Lit_Chars),
   R(r'[^\0]', Id.Lit_Other),  # e.g. "$", must be last
