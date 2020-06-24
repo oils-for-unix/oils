@@ -364,7 +364,7 @@ def TildeDetect(UP_w):
     return None
 
   tok0 = cast(Token, part0)
-  new_parts = [word_part.TildeSub(tok0)]
+  new_parts = [word_part.TildeSub(tok0)]  # type: List[word_part_t]
 
   if len(w.parts) == 1:  # can't be zero
     return compound_word(new_parts)
@@ -389,9 +389,33 @@ def TildeDetect(UP_w):
 def TildeDetectAssign(w):
   # type: (compound_word) -> None
   """MUTATES its argument."""
-  tilde = TildeDetect(w)
-  if tilde:
-    w.parts = tilde.parts
+  parts = w.parts
+  n = len(parts)
+
+  parts.append(None)  # sentinel
+  do_expand = True
+  for i in xrange(n):
+    cur = parts[i]
+
+    # Replace with tilde sub
+    if do_expand and LiteralId(cur) == Id.Lit_TildeLike:
+      next_part = parts[i+1]
+      if next_part:
+        is_tilde = (
+            LiteralId(next_part) == Id.Lit_Colon or
+            (LiteralId(next_part) == Id.Lit_Chars and 
+             cast(Token, next_part).val.startswith('/'))
+        )
+      else:
+        is_tilde = True  # you can expand :~
+
+      if is_tilde:
+        parts[i] = word_part.TildeSub(cast(Token, cur))
+
+    # For next iteration
+    do_expand = LiteralId(cur) == Id.Lit_Colon
+
+  parts.pop()  # remove sentinel
 
 
 def TildeDetectAll(words):

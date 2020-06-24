@@ -539,7 +539,7 @@ introspect() {
 }
 
 tilde() {
-  sh-spec spec/tilde.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/tilde.test.sh --osh-failures-allowed 0 \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 

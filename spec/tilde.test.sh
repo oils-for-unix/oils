@@ -85,12 +85,20 @@ echo "$x"  # quotes don't matter, the expansion happens on assignment?
 x='foo:~'
 echo $x
 
+x=foo:~,  # comma ruins it, must be /
+echo $x
+
+x=~:foo
+echo $x
+
 # no tilde expansion here
 echo foo:~
 ## STDOUT:
 foo:/home/bar
 foo:/home/bar
 foo:~
+foo:~,
+/home/bar:foo
 foo:~
 ## END
 
@@ -125,19 +133,19 @@ foo:/home/andy
 foo:~
 ## END
 
-#### assignment tilde with colon
+#### x=${undef-~:~}
 HOME=/home/bar
 
 x=~:${undef-~:~}
 echo $x
 
 # Most shells agree on a different behavior, but with the OSH parsing model,
-# it's easier to agree with bash.  yash disagrees in a different way
+# it's easier to agree with yash.  bash disagrees in a different way
 
 ## OK bash STDOUT:
 /home/bar:/home/bar:~
 ## END
-## OK yash STDOUT:
+## OK osh/yash STDOUT:
 /home/bar:~:~
 ## END
 ## STDOUT:
