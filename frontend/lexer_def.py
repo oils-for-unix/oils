@@ -63,9 +63,12 @@ SHOULD_HIJACK_RE = r'#!.*sh[ \t\r\n][^\0]*'
 
 _SIGNIFICANT_SPACE = R(r'[ \t\r]+', Id.WS_Space)
 
-# For tilde expansion. The list of chars is Lit_Chars, but WITHOUT the /.  We
-# want the next token after the tilde TildeLike token start with a /.
-# NOTE: Happens in both ShCommand and DBracket modes.
+# Tilde expansion chars are Lit_Chars, but WITHOUT the /.  The NEXT token (if
+# any) after this TildeLike token should start with a /.
+#
+# It would have been REALLY NICE to add an optional /? at the end of THIS
+# token, but we can't do that because of ${x//~/replace}.  The third / is not
+# part of the tilde sub!!!
 _TILDE_LIKE = R(r'~[a-zA-Z0-9_.-]*', Id.Lit_TildeLike)
 
 _BACKSLASH = [

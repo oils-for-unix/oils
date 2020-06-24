@@ -1732,10 +1732,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             rhs_word = word.Empty()  # type: word_t
           else:
             rhs_word = compound_word(w.parts[part_offset:])
-            # tilde detection only happens on static assignments!
-            tmp = word_.TildeDetect(rhs_word) 
-            if tmp:
-              rhs_word = tmp
+            word_.TildeDetectAssign(rhs_word)
 
           right = self.EvalRhsWord(rhs_word)
           arg2 = assign_arg(var_name, right, word_spid)

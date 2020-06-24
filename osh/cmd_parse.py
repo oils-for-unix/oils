@@ -244,14 +244,12 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
   # TODO: Should we also create a rhs_expr.ArrayLiteral here?
   n = len(w.parts)
   if part_offset == n:
-    val = word.Empty()  # type: word_t
+    rhs = word.Empty()  # type: word_t
   else:
-    val = compound_word(w.parts[part_offset:])
-    tilde = word_.TildeDetect(val)
-    if tilde:
-      val = tilde
+    rhs = compound_word(w.parts[part_offset:])
+    word_.TildeDetectAssign(rhs)
 
-  pair = syntax_asdl.assign_pair(lhs, op, val, [left_token.span_id])
+  pair = syntax_asdl.assign_pair(lhs, op, rhs, [left_token.span_id])
   return pair
 
 

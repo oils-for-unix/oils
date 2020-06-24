@@ -77,7 +77,7 @@ echo ${x//~/~root}
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 
-#### tilde expansion in colon
+#### x=foo:~ has tilde expansion
 HOME=/home/bar
 x=foo:~
 echo $x
@@ -93,6 +93,24 @@ foo:/home/bar
 foo:~
 foo:~
 ## END
+
+#### a[x]=foo:~ has tilde expansion
+case $SH in (dash|zsh) exit ;; esac
+
+HOME=/home/bar
+declare -a a
+a[0]=foo:~
+echo ${a[0]}
+
+declare -A A
+A['x']=foo:~
+echo ${A['x']}
+
+## STDOUT:
+foo:/home/bar
+foo:/home/bar
+## END
+## N-I dash/zsh stdout-json: ""
 
 #### tilde expansion an assignment keyword
 f() {

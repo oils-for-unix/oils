@@ -359,28 +359,39 @@ def TildeDetect(UP_w):
   if len(w.parts) == 0:  # ${a-} has no parts
     return None
 
-  UP_part0 = w.parts[0]
-  if LiteralId(UP_part0) != Id.Lit_TildeLike:
+  part0 = w.parts[0]
+  if LiteralId(part0) != Id.Lit_TildeLike:
     return None
-  tok0 = cast(Token, UP_part0)
+
+  tok0 = cast(Token, part0)
+  new_parts = [word_part.TildeSub(tok0)]
 
   if len(w.parts) == 1:  # can't be zero
-    tilde_part = word_part.TildeSub(tok0)
-    return compound_word([tilde_part])
+    return compound_word(new_parts)
 
-  # Lit_Chars is for ~/foo, while Lit_Slash is for ${x-~/foo}
-  UP_part1 = w.parts[1]
-  if LiteralId(UP_part1) in (Id.Lit_Chars, Id.Lit_Slash):
-    tok = cast(Token, UP_part1)
-    if tok.val.startswith('/'):
-      tilde_part_ = word_part.TildeSub(tok0)  # type: word_part_t
+  part1 = w.parts[1]
+  id_ = LiteralId(part1) 
 
-      parts = [tilde_part_]
-      parts.extend(w.parts[1:])
-      return compound_word(parts)
+  # Lit_Slash is for ${x-~/foo}
+  if id_ == Id.Lit_Slash:  # we handled ${x//~/} delimiter earlier,
+    new_parts.extend(w.parts[1:])
+    return compound_word(new_parts)
+
+  # Lit_Chars is for ~/foo, 
+  if id_ == Id.Lit_Chars and cast(Token, part1).val.startswith('/'):
+    new_parts.extend(w.parts[1:])
+    return compound_word(new_parts)
 
   # It could be something like '~foo:bar', which doesn't have a slash.
   return None
+
+
+def TildeDetectAssign(w):
+  # type: (compound_word) -> None
+  """MUTATES its argument."""
+  tilde = TildeDetect(w)
+  if tilde:
+    w.parts = tilde.parts
 
 
 def TildeDetectAll(words):
