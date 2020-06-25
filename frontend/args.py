@@ -291,7 +291,7 @@ class _ArgAction(_Action):
   def OnMatch(self, attached_arg, arg_r, out):
     # type: (Optional[str], Reader, _Attributes) -> bool
     """Called when the flag matches."""
-    if attached_arg:  # for the ',' in -d,
+    if attached_arg is not None:  # for the ',' in -d,
       arg = attached_arg
     else:
       arg_r.Next()
@@ -517,7 +517,9 @@ def Parse(spec, arg_r):
 
         if ch in spec.arity1:  # e.g. read -t1.0
           action = spec.arity1[ch]
-          action.OnMatch(arg[i+1:], arg_r, out)
+          # make sure we don't pass empty string for read -t
+          attached_arg = arg[i+1:] if i < n-1 else None
+          action.OnMatch(attached_arg, arg_r, out)
           break
 
         e_usage(

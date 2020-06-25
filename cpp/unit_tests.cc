@@ -204,8 +204,8 @@ TEST exceptions() {
 const char* arity0_1[] = {"foo", "bar", nullptr};
 
 Action_c arity1_1[] = {
-    {ActionType_c::SetToInt, "z"},
-    {ActionType_c::SetToString, "zz"},
+    {"z", ActionType_c::SetToInt, "z"},
+    {"zz", ActionType_c::SetToString, "zz"},
     {},  // sentinel
 };
 

@@ -513,7 +513,8 @@ class NullExecutor(vm._Executor):
       return self.RunBuiltin(builtin_id, cmd_val)
 
     # See how many tests will pass
-    if mylib.PYTHON:
+    #if mylib.PYTHON:
+    if 0:  # osh_eval.cc will pass 1078 rather than 872 by enabling
       import subprocess
       try:
         status = subprocess.call(cmd_val.argv)

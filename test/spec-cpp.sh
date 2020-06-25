@@ -59,6 +59,8 @@ all() {
   export SPEC_RUNNER='test/spec-cpp.sh run-with-osh-eval'
   export SPEC_JOB='cpp'
   #export NUM_SPEC_TASKS=4
+  # For debugging hangs
+  #export MAX_PROCS=1
 
   # this is like test/spec.sh {oil,osh}-all
   test/spec-runner.sh all-parallel osh "$@" || true  # OK if it fails
