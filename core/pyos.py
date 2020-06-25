@@ -13,9 +13,7 @@ import time
 
 import posix_ as posix
 
-from typing import Optional, Tuple, cast, TYPE_CHECKING
-if TYPE_CHECKING:
-  from _devbuild.gen.syntax_asdl import Token
+from typing import Optional, Tuple, cast
 
 
 def GetMyHomeDir():

@@ -378,7 +378,7 @@ class TildeEvaluator(object):
 
     if result is None:
       if self.exec_opts.strict_tilde():
-        e_die("Error expanding tilde (e.g. invalid user", token=token)
+        e_die("Error expanding tilde (e.g. invalid user)", token=token)
       else:
         return token.val  # Return ~ or ~user literally
 

@@ -163,6 +163,7 @@ shopt -s strict_errexit
 shopt -s strict_eval_builtin
 shopt -s strict_glob
 shopt -s strict_nameref
+shopt -s strict_tilde
 shopt -s strict_word_eval
 shopt -s verbose_errexit
 ## END
@@ -196,6 +197,7 @@ shopt -s strict_errexit
 shopt -s strict_eval_builtin
 shopt -s strict_glob
 shopt -s strict_nameref
+shopt -s strict_tilde
 shopt -s strict_word_eval
 shopt -s verbose_errexit
 ## END
