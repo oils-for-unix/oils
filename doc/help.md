@@ -697,7 +697,8 @@ called `-rf`.
 
 #### strict_tilde
 
-TODO: Failed tilde expansions don't evaluate to code.
+Failed tilde expansions cause hard errors (like zsh) rather than silently
+evaluating to `~` or `~bad`.
 
 #### strict_word_eval
 

@@ -355,6 +355,36 @@ def _GetDollarHyphen(exec_opts):
   return ''.join(chars)
 
 
+class TildeEvaluator(object):
+
+  def __init__(self, mem, exec_opts):
+    # type: (Mem, optview.Exec) -> None
+    self.mem = mem
+    self.exec_opts = exec_opts
+
+  def Eval(self, token):
+    # type: (Token) -> str
+    """Evaluates ~ and ~user, given a Lit_TildeLike token"""
+    if token.val == '~':
+      # First look up the HOME var, then ask the OS.  This is what bash does.
+      val = self.mem.GetVar('HOME')
+      UP_val = val
+      if val.tag_() == value_e.Str:
+        val = cast(value__Str, UP_val)
+        return val.s
+      result = pyos.GetMyHomeDir()
+    else:
+      result = pyos.GetHomeDir(token.val[1:])
+
+    if result is None:
+      if self.exec_opts.strict_tilde():
+        e_die("Error expanding tilde (e.g. invalid user", token=token)
+      else:
+        return token.val  # Return ~ or ~user literally
+
+    return result
+
+
 class AbstractWordEvaluator(StringWordEvaluator):
   """Abstract base class for word evaluators.
 
@@ -370,6 +400,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     self.arith_ev = None  # type: sh_expr_eval.ArithEvaluator
     self.expr_ev = None  # type: expr_eval.OilEvaluator
     self.prompt_ev = None  # type: prompt.Evaluator
+    self.tilde_ev = TildeEvaluator(mem, exec_opts)
 
     self.mem = mem  # for $HOME, $1, etc.
     self.exec_opts = exec_opts  # for nounset
@@ -405,24 +436,6 @@ class AbstractWordEvaluator(StringWordEvaluator):
        part_value
     """
     raise NotImplementedError()
-
-  def _EvalTildeSub(self, token):
-    # type: (Token) -> str
-    """Evaluates ~ and ~user.
-
-    Args:
-      prefix: The tilde prefix (possibly empty)
-    """
-    if token.val == '~':
-      # First look up the HOME var, then ask the OS.  This is what bash does.
-      val = self.mem.GetVar('HOME')
-      UP_val = val
-      if val.tag_() == value_e.Str:
-        val = cast(value__Str, UP_val)
-        return val.s
-      return pyos.GetMyHomeDir()
-
-    return pyos.GetHomeDir(token)
 
   def _EvalVarNum(self, var_num):
     # type: (int) -> value_t
@@ -1352,7 +1365,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         part = cast(word_part__TildeSub, UP_part)
         # We never parse a quoted string into a TildeSub.
         assert not quoted
-        s = self._EvalTildeSub(part.token)
+        s = self.tilde_ev.Eval(part.token)
         v = part_value.String(s, True, False)  # NOT split even when unquoted!
         part_vals.append(v)
 

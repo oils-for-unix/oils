@@ -215,7 +215,7 @@ X [Testing]       check
                   strict_eval_builtin    eval takes exactly 1 argument
                   strict_nameref         trap invalid variable names
                   strict_word_eval       Expose unicode and slicing errors
-                  X strict_tilde         Tilde subst can result in error
+                  strict_tilde           Tilde subst can result in error
                   X strict_backslash     Parse the sublanguage more strictly
                   X strict_glob          Parse the sublanguage more strictly
                   X strict_trap          Function name only
@@ -244,6 +244,7 @@ X [Testing]       check
                                          $'\n'   @(*.sh|*.py)  `echo comsub`
                                          ${a[@]}
   [Compatibility] eval_unsafe_arith   parse_dynamic_arith
+                  verbose_errexit
 ```
 
 <h2 id="env">

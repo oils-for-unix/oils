@@ -30,27 +30,22 @@ def GetMyHomeDir():
     e = pwd.getpwuid(uid)
   except KeyError:
     return None
-  else:
-    return e.pw_dir
+
+  return e.pw_dir
 
 
-def GetHomeDir(token):
-  # type: (Token) -> str
-
-  # For ~otheruser/src.  TODO: Should this be cached?
+def GetHomeDir(user_name):
+  # type: (str) -> Optional[str]
+  """
+  For ~otheruser/src.  TODO: Should this be cached?
+  """
   # http://linux.die.net/man/3/getpwnam
-  name = token.val[1:]
   try:
-    e = pwd.getpwnam(name)
+    e = pwd.getpwnam(user_name)
   except KeyError:
-    # If not found, it's ~nonexistent.  TODO: In strict mode, this should be
-    # an error, kind of like failglob and nounset.  Perhaps strict-tilde or
-    # even strict-word-eval.
-    result = token.val
-  else:
-    result = e.pw_dir
+    return None
 
-  return result
+  return e.pw_dir
 
 
 def GetUserName(uid):

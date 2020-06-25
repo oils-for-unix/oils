@@ -152,3 +152,22 @@ echo $x
 ## STDOUT:
 /home/bar:/home/bar:/home/bar
 ## END
+
+#### strict tilde
+echo ~nonexistent
+
+shopt -s strict_tilde
+echo ~nonexistent
+
+echo status=$?
+## status: 1
+## STDOUT:
+~nonexistent
+## END
+## N-I bash/dash/mksh status: 0
+## N-I bash/dash/mksh STDOUT:
+~nonexistent
+~nonexistent
+status=0
+## END
+## OK zsh stdout-json: ""
