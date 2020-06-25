@@ -55,6 +55,7 @@ enum class ActionType_c {
 // So I want to compress these two
 
 struct Action_c {
+  const char* key;
   ActionType_c type;
   const char* name;
   // for --ast-format, SetNamedAction(), SetNamedOption()

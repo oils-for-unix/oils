@@ -33,29 +33,36 @@ def _WriteStrArray(f, var_name, a):
 
 def _WriteActions(f, var_name, actions):
   f.write('Action_c %s[] = {\n' % var_name)
-  for name in sorted(actions):
-    action = actions[name]
-    log('%s %s', name, action)
+  for key in sorted(actions):
+    action = actions[key]
+    log('%s %s', key, action)
+    name = None
     if isinstance(action, args.SetToString):
       if action.quit_parsing_flags:
         action_type = 'SetToString_q'
       else:
         action_type = 'SetToString'
+      name = action.name
 
     elif isinstance(action, args.SetToInt):
       action_type = 'SetToInt'
+      name = action.name
 
     elif isinstance(action, args.SetToFloat):
       action_type = 'SetToFloat'
+      name = action.name
 
     elif isinstance(action, args.SetToTrue):
       action_type = 'SetToTrue'
+      name = action.name
 
     elif isinstance(action, args.SetAttachedBool):
       action_type = 'SetAttachedBool'
+      name = action.name
 
     elif isinstance(action, args.SetOption):
       action_type = 'SetOption'
+      name = action.name
 
     elif isinstance(action, args.SetNamedOption):
       if action.shopt:
@@ -65,6 +72,7 @@ def _WriteActions(f, var_name, actions):
 
     elif isinstance(action, args.SetAction):
       action_type = 'SetAction'
+      name = action.name
 
     elif isinstance(action, args.SetNamedAction):
       action_type = 'SetNamedAction'
@@ -72,7 +80,8 @@ def _WriteActions(f, var_name, actions):
     else:
       raise AssertionError(action)
 
-    f.write('    {ActionType_c::%s, "%s"},\n' % (action_type, name))
+    name_str = ('"%s"' % name) if name else 'nullptr'
+    f.write('    {"%s", ActionType_c::%s, %s},\n' % (key, action_type, name_str))
   #cc_f.write('SetToArg_c %s[] = {\n' % arity1_name)
   f.write('''\
     {},

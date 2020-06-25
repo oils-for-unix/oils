@@ -12,7 +12,7 @@ inline Str* GetMyHomeDir() {
   assert(0);
 }
 
-inline Str* GetHomeDir(syntax_asdl::Token* token) {
+inline Str* GetHomeDir(Str* user_name) {
   assert(0);
 }
 

@@ -61,7 +61,7 @@ void _CreateActions(Action_c* in, Dict<Str*, args::_Action*>* out) {
   int i = 0;
   while (true) {
     Action_c* p = &(in[i]);
-    if (!p->name) {
+    if (!p->key) {
       break;
     }
     // log("a1 %s", p->name);
@@ -105,7 +105,7 @@ void _CreateActions(Action_c* in, Dict<Str*, args::_Action*>* out) {
       break;
     }
     if (action) {
-      out->set(new Str(p->name), action);
+      out->set(new Str(p->key), action);
     }
     ++i;
   }
