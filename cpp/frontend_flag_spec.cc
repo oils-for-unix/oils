@@ -67,9 +67,15 @@ void _CreateActions(Action_c* in, Dict<Str*, args::_Action*>* out) {
     // log("a1 %s", p->name);
     args::_Action* action = nullptr;
     switch (p->type) {
-    case ActionType_c::SetToString:
-      action = new args::SetToString(new Str(p->name), false, nullptr);
-      break;
+    case ActionType_c::SetToString: {
+      List<Str*>* valid = nullptr;
+      if (p->strs) {
+        valid = new List<Str*>();
+        _CreateStrList(p->strs, valid);
+      }
+      auto a = new args::SetToString(new Str(p->name), false, valid);
+      action = a;
+    } break;
     case ActionType_c::SetToString_q:
       action = new args::SetToString(new Str(p->name), true, nullptr);
       break;
@@ -88,22 +94,32 @@ void _CreateActions(Action_c* in, Dict<Str*, args::_Action*>* out) {
     case ActionType_c::SetOption:
       action = new args::SetOption(new Str(p->name));
       break;
-    case ActionType_c::SetNamedOption:
-      action = new args::SetNamedOption(false);
-      // TODO: fill in valid
-      break;
-    case ActionType_c::SetNamedOption_shopt:
-      action = new args::SetNamedOption(false);
-      // TODO: fill in valid
-      break;
+    case ActionType_c::SetNamedOption: {
+      auto a = new args::SetNamedOption(false);
+      if (p->strs) {
+        _CreateStrList(p->strs, a->names);
+      }
+      action = a;
+    } break;
+    case ActionType_c::SetNamedOption_shopt: {
+      auto a = new args::SetNamedOption(true);
+      if (p->strs) {
+        _CreateStrList(p->strs, a->names);
+      }
+      action = a;
+    } break;
     case ActionType_c::SetAction:
       action = new args::SetAction(new Str(p->name));
       break;
-    case ActionType_c::SetNamedAction:
-      action = new args::SetNamedAction();
-      // TODO: fill in valid
-      break;
+    case ActionType_c::SetNamedAction: {
+      auto a = new args::SetNamedAction();
+      if (p->strs) {
+        _CreateStrList(p->strs, a->names);
+      }
+      action = a;
+    } break;
     }
+
     if (action) {
       out->set(new Str(p->key), action);
     }

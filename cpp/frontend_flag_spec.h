@@ -59,7 +59,7 @@ struct Action_c {
   ActionType_c type;
   const char* name;
   // for --ast-format, SetNamedAction(), SetNamedOption()
-  const char** valid;
+  const char** strs;
 };
 
 struct FlagSpec_c {
