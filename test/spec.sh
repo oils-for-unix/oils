@@ -947,6 +947,16 @@ ble-features() {
           $BASH $ZSH $MKSH $BUSYBOX_ASH $DASH yash $OSH_LIST "$@"
 }
 
+toysh() {
+  sh-spec spec/toysh.test.sh --osh-failures-allowed 2 \
+    $BASH $MKSH $OSH_LIST "$@"
+}
+
+toysh-posix() {
+  sh-spec spec/toysh-posix.test.sh --osh-failures-allowed 4 \
+    ${REF_SHELLS[@]} $ZSH yash $OSH_LIST "$@"
+}
+
 #
 # Convenience for fixing specific bugs
 #

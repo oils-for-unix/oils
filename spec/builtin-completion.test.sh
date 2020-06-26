@@ -249,6 +249,8 @@ compgen -o default spec/t | sort
 ## STDOUT:
 spec/testdata
 spec/tilde.test.sh
+spec/toysh-posix.test.sh
+spec/toysh.test.sh
 spec/type-compat.test.sh
 ## END
 
