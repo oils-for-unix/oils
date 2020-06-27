@@ -108,6 +108,7 @@ class WordParser(WordEmitter):
     self.line_reader = line_reader
 
     self.parse_opts = parse_ctx.parse_opts
+    self.a_parser = tdop.TdopParser(arith_parse.Spec(), self, self.parse_opts)
     self.Reset()
 
   def Init(self, lex_mode):
@@ -194,23 +195,27 @@ class WordParser(WordEmitter):
     """ VarOf ':' ArithExpr (':' ArithExpr )? """
     self._Next(lex_mode_e.Arith)
     self._Peek()
+
+    cur_id = Id.Undefined_Tok
     if self.token_type == Id.Arith_Colon:  # A pun for Id.VOp2_Colon
       # no beginning specified
       begin = None  # type: Optional[arith_expr_t]
     else:
-      begin = self._ReadArithExpr()
+      begin = self.a_parser.Parse()
+      cur_id = self.a_parser.CurrentId()
 
-    if self.token_type == Id.Arith_RBrace:
+    if cur_id == Id.Arith_RBrace:
       no_length = None  # type: Optional[arith_expr_t]  # No length specified
       return suffix_op.Slice(begin, no_length)
 
     # Id.Arith_Colon is a pun for Id.VOp2_Colon
-    if self.token_type == Id.Arith_Colon:
+    if cur_id == Id.Arith_Colon:
       self._Next(lex_mode_e.Arith)
-      length = self._ReadArithExpr()
+      length = self._ReadArithExpr(Id.Arith_RBrace)
       return suffix_op.Slice(begin, length)
 
     p_die("Expected : or } in slice", token=self.cur_token)
+    raise AssertionError()  # for MyPy
 
   def _ReadPatSubVarOp(self):
     # type: () -> suffix_op__PatSub
@@ -285,7 +290,7 @@ class WordParser(WordEmitter):
       self._Peek()
     else:
       self._Next(lex_mode_e.Arith)  # skip past [
-      anode = self._ReadArithExpr()
+      anode = self._ReadArithExpr(Id.Arith_RBracket)
       op = bracket_op.ArrayIndex(anode)
 
     if self.token_type != Id.Arith_RBracket:  # Should be looking at ]
@@ -933,8 +938,8 @@ class WordParser(WordEmitter):
     last_token = self.parse_ctx.ParseUse(self.lexer, node)
     self.buffered_word = last_token
 
-  def _ReadArithExpr(self):
-    # type: () -> arith_expr_t
+  def _ReadArithExpr(self, end_id):
+    # type: (Id_t) -> arith_expr_t
     """Read and parse an arithmetic expression in various contexts.
 
     $(( 1+2 ))
@@ -955,8 +960,12 @@ class WordParser(WordEmitter):
     See the assertion in ArithParser.Parse() -- unexpected extra input.
     """
     # calls self.ReadWord(lex_mode_e.Arith)
-    a_parser = tdop.TdopParser(arith_parse.Spec(), self, self.parse_opts)
-    anode = a_parser.Parse()
+    anode = self.a_parser.Parse()
+    cur_id = self.a_parser.CurrentId()
+    if end_id != Id.Undefined_Tok and cur_id != end_id:
+      p_die('Unexpected token after arithmetic expression (%s != %s)',
+            ui.PrettyId(cur_id), ui.PrettyId(end_id),
+            word=self.a_parser.cur_word)
     return anode
 
   def _ReadArithSub(self):
@@ -979,9 +988,7 @@ class WordParser(WordEmitter):
     # $((echo / foo))  # looks like division
 
     self._Next(lex_mode_e.Arith)
-    anode = self._ReadArithExpr()
-    if self.token_type != Id.Arith_RParen:
-      p_die('Expected first ) to end arith sub', token=self.cur_token)
+    anode = self._ReadArithExpr(Id.Arith_RParen)
 
     self._Next(lex_mode_e.ShCommand)  # TODO: This could be DQ or ARITH too
 
@@ -1011,10 +1018,8 @@ class WordParser(WordEmitter):
     self.lexer.PushHint(Id.Op_RParen, Id.Op_DRightParen)
 
     self._Next(lex_mode_e.Arith)
-    anode = self._ReadArithExpr()
+    anode = self._ReadArithExpr(Id.Arith_RParen)
 
-    if self.token_type != Id.Arith_RParen:
-      p_die('Expected first ) to end arith statement', token=self.cur_token)
     self._Next(lex_mode_e.ShCommand)
 
     # PROBLEM: $(echo $(( 1 + 2 )) )
@@ -1041,24 +1046,37 @@ class WordParser(WordEmitter):
     self._NextNonSpace()  # skip over ((
 
     self._Peek()
+    cur_id = self.token_type  # for end of arith expressions
+
     if self.token_type == Id.Arith_Semi:  # for (( ; i < 10; i++ ))
       init_node = None  # type: Optional[arith_expr_t]
     else:
-      init_node = self._ReadArithExpr()
+      init_node = self.a_parser.Parse()
+      cur_id = self.a_parser.CurrentId()
     self._NextNonSpace()
+
+    # It's odd to keep track of both cur_id and self.token_type in this
+    # function, but it works, and is tested in 'test/parse_error.sh
+    # arith-integration'
+    if cur_id != Id.Arith_Semi:  # for (( x=0 b; ... ))
+      p_die("Unexpected token", word=self.a_parser.cur_word)
 
     self._Peek()
     if self.token_type == Id.Arith_Semi:  # for (( ; ; i++ ))
       cond_node = None  # type: Optional[arith_expr_t]
     else:
-      cond_node = self._ReadArithExpr()
+      cond_node = self.a_parser.Parse()
+      cur_id = self.a_parser.CurrentId()
     self._NextNonSpace()
+
+    if cur_id != Id.Arith_Semi:  # for (( x=0; x<5 b ))
+      p_die("Unexpected token", word=self.a_parser.cur_word)
 
     self._Peek()
     if self.token_type == Id.Arith_RParen:  # for (( ; ; ))
       update_node = None  # type: Optional[arith_expr_t]
     else:
-      update_node = self._ReadArithExpr()
+      update_node = self._ReadArithExpr(Id.Arith_RParen)
     self._NextNonSpace()
 
     self._Peek()
@@ -1066,7 +1084,7 @@ class WordParser(WordEmitter):
       p_die('Expected ) to end for loop expression', token=self.cur_token)
     self._Next(lex_mode_e.ShCommand)
 
-    node = command.ForExpr()
+    node = command.ForExpr()  # no redirects yet
     node.init = init_node
     node.cond = cond_node
     node.update = update_node

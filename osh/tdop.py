@@ -259,17 +259,22 @@ if mylib.PYTHON:
 
 
 class TdopParser(object):
-  """
-  Parser state.  Current token and lookup stack.
-  """
+
   def __init__(self, spec, w_parser, parse_opts):
     # type: (ParserSpec, WordParser, optview.Parse) -> None
     self.spec = spec
     self.w_parser = w_parser
     self.parse_opts = parse_opts
 
+    # NOTE: Next() overwrites this state, so we don't need a Reset() method in
+    # between reuses of this TdopParser instance.
     self.cur_word = None  # type: word_t  # current token
     self.op_id = Id.Undefined_Tok
+
+  def CurrentId(self):
+    # type: () -> Id_t
+    """Glue used by the WordParser to check for extra tokens."""
+    return word_.CommandId(self.cur_word)
 
   def AtToken(self, token_type):
     # type: (Id_t) -> bool

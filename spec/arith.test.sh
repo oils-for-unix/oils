@@ -597,3 +597,10 @@ a=1
 ## END
 ## BUG zsh stdout-json: ""
 ## BUG zsh status: 1
+
+#### Invalid constant
+#echo $((a + 1x))
+echo $((a + 42x))
+## stdout-json: ""
+## status: 1
+## OK dash status: 2

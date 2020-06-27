@@ -17,6 +17,10 @@ xx() { echo "${@@Q}";}; xx a b c d
 'a' 'b' 'c' 'd'
 'a' 'b' 'c' 'd'
 ## END
+## OK osh STDOUT:
+a b c d
+a b c d
+## END
 ## N-I dash/mksh/zsh stdout-json: ""
 
 #### extglob 1 - OSH only supports extglob for fnmatch()?
@@ -100,13 +104,13 @@ echo {~,~root}/pwd
 echo \{~,~root}/pwd
 echo ""{~,~root}/pwd
 
-## OK bash STDOUT:
-/home/foo/pwd /root/pwd
+## STDOUT:
+~/pwd ~root/pwd
 {~,~root}/pwd
 ~/pwd ~root/pwd
 ## END
-## STDOUT:
-~/pwd ~root/pwd
+## OK bash STDOUT:
+/home/foo/pwd /root/pwd
 {~,~root}/pwd
 ~/pwd ~root/pwd
 ## END

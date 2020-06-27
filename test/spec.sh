@@ -948,12 +948,12 @@ ble-features() {
 }
 
 toysh() {
-  sh-spec spec/toysh.test.sh --osh-failures-allowed 2 \
+  sh-spec spec/toysh.test.sh --osh-failures-allowed 1 \
     $BASH $MKSH $OSH_LIST "$@"
 }
 
 toysh-posix() {
-  sh-spec spec/toysh-posix.test.sh --osh-failures-allowed 4 \
+  sh-spec spec/toysh-posix.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $ZSH yash $OSH_LIST "$@"
 }
 

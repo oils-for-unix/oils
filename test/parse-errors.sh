@@ -33,6 +33,17 @@ _error-case() {
   fi
 }
 
+_should-parse() {
+  banner "$@"
+  echo
+  $SH -n -c "$@"
+
+  local status=$?
+  if test $status != 0; then
+    die "Expected it to parse"
+  fi
+}
+
 _runtime-parse-error() {
   ### Assert that a parse error happens at runtime
 
@@ -194,6 +205,32 @@ arith-context() {
   # {.  May be changed later.
   _error-case '(( a + { ))'
   _error-case '(( a + } ))'
+
+}
+
+arith-integration() {
+  set +o errexit
+
+  # Regression: these were not parse errors, but should be!
+  _error-case 'echo $((a b))'
+  _error-case '((a b))'
+
+  # Empty arithmetic expressions
+  _should-parse 'for ((x=0; x<5; x++)); do echo $x; done'
+  _should-parse 'for ((; x<5; x++)); do echo $x; done'
+  _should-parse 'for ((; ; x++)); do echo $x; done'
+  _should-parse 'for ((; ;)); do echo $x; done'
+
+  # Extra tokens on the end of each expression
+  _error-case 'for ((x=0; x<5; x++ b)); do echo $x; done'
+
+  _error-case 'for ((x=0 b; x<5; x++)); do echo $x; done'
+  _error-case 'for ((x=0; x<5 b; x++)); do echo $x; done'
+
+  _error-case '${a:1+2 b}'
+  _error-case '${a:1+2:3+4 b}'
+
+  _error-case '${a[1+2 b]}'
 }
 
 arith-expr() {
@@ -630,6 +667,7 @@ cases-in-strings() {
 
   # Arith
   arith-context
+  arith-integration
   arith-expr
 
   bool-expr

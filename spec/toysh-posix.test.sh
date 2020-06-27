@@ -218,11 +218,11 @@ three
 cannot-parse
 ## END
 
-#### Parsing $(( )) (TODO: osh)
+#### Parsing $(( ))
 # http://landley.net/notes.html#15-03-2020
-echo $((echo hello))
-## status: 1
-## OK dash/yash status: 2
+$SH -c 'echo $((echo hello))'
+if test $? -ne 0; then echo fail; fi
+## stdout: fail
 
 #### IFS - http://landley.net/notes.html#15-02-2020 (TODO: osh)
 
