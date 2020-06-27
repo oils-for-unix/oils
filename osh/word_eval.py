@@ -806,6 +806,218 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     return new_val
 
+  def _PatSub(self, val, op):
+    # type: (value_t, suffix_op__PatSub) -> value_t
+
+    # globs are supported in the pattern
+    pat_val = self.EvalWordToString(op.pat, quote_kind=quote_e.FnMatch)
+    assert pat_val.tag == value_e.Str, pat_val
+
+    if op.replace:
+      replace_val = self.EvalWordToString(op.replace)
+      assert replace_val.tag == value_e.Str, replace_val
+      replace_str = replace_val.s
+    else:
+      replace_str = ''
+
+    # note: doesn't support self.exec_opts.extglob()!
+    regex, warnings = glob_.GlobToERE(pat_val.s)
+    if len(warnings):
+      # TODO:
+      # - Add 'set -o strict-glob' mode and expose warnings.
+      #   "Glob is not in CANONICAL FORM".
+      # - Propagate location info back to the 'op.pat' word.
+      pass
+    replacer = string_ops.GlobReplacer(regex, replace_str, op.spids[0])
+
+    with tagswitch(val) as case2:
+      if case2(value_e.Str):
+        str_val = cast(value__Str, val)
+        s = replacer.Replace(str_val.s, op)
+        val = value.Str(s)
+
+      elif case2(value_e.MaybeStrArray):
+        array_val = cast(value__MaybeStrArray, val)
+        strs = []  # type: List[str]
+        for s in array_val.strs:
+          if s is not None:
+            strs.append(replacer.Replace(s, op))
+        val = value.MaybeStrArray(strs)
+
+      elif case2(value_e.AssocArray):
+        assoc_val = cast(value__AssocArray, val)
+        strs = []
+        for s in assoc_val.d.values():
+          strs.append(replacer.Replace(s, op))
+        val = value.MaybeStrArray(strs)
+
+      else:
+        raise AssertionError(val.tag_())
+    return val
+
+  def _Slice(self, val, op, var_name, part):
+    # type: (value_t, suffix_op__Slice, Optional[str], braced_var_sub) -> value_t
+
+    if op.begin:
+      begin = self.arith_ev.EvalToInt(op.begin)
+    else:
+      begin = 0
+
+    # Note: bash allows lengths to be negative (with odd semantics), but
+    # we don't allow that right now.
+    has_length = False
+    length = -1
+    if op.length:
+      has_length = True
+      length = self.arith_ev.EvalToInt(op.length)
+
+    try:
+      arg0_val = None  # type: value__Str
+      if var_name is None: # $* or $@
+        arg0_val = self.mem.GetArg0()
+      val = _PerformSlice(val, begin, length, has_length, part, arg0_val)
+    except error.Strict as e:
+      if self.exec_opts.strict_word_eval():
+        raise
+      else:
+        self.errfmt.PrettyPrintError(e, prefix='warning: ')
+        with tagswitch(val) as case2:
+          if case2(value_e.Str):
+            val = value.Str('')
+          elif case2(value_e.MaybeStrArray):
+            val = value.MaybeStrArray([])
+          else:
+            raise NotImplementedError()
+    return val
+
+  def _Nullary(self, val, op, var_name):
+    # type: (value_t, Token, Optional[str]) -> Tuple[value_t, bool]
+
+    quoted2 = False
+    op_id = op.id
+    if op_id == Id.VOp0_P:
+      prompt = self.prompt_ev.EvalPrompt(val)
+      # readline gets rid of these, so we should too.
+      p = prompt.replace('\x01', '').replace('\x02', '')
+      val = value.Str(p)
+
+    elif op_id == Id.VOp0_Q:
+      assert val.tag_() == value_e.Str, val
+      val = cast(value__Str, val)
+      val = value.Str(qsn.maybe_shell_encode(val.s))
+      # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in bash
+      quoted2 = True
+
+    elif op_id == Id.VOp0_a:
+      # We're ONLY simluating -a and -A, not -r -x -n for now.  See
+      # spec/ble-idioms.test.sh.
+      chars = []  # type: List[str]
+      with tagswitch(val) as case:
+        if case(value_e.MaybeStrArray):
+          chars.append('a')
+        elif case(value_e.AssocArray):
+          chars.append('A')
+
+      if var_name is not None:  # e.g. ${?@a} is allowed
+        cell = self.mem.GetCell(var_name)
+        if cell.readonly:
+          chars.append('r')
+        if cell.exported:
+          chars.append('x')
+        if cell.nameref:
+          chars.append('n')
+
+      val = value.Str(''.join(chars))
+
+    else:
+      e_die('Var op %r not implemented', op.val, token=op)
+
+    return val, quoted2
+
+  def _WholeArray(self, val, part, quoted):
+    # type: (value_t, braced_var_sub, bool) -> Tuple[value_t, bool]
+    bracket_op = cast(bracket_op__WholeArray, part.bracket_op)
+    op_id = bracket_op.op_id
+
+    if op_id == Id.Lit_At:
+      maybe_decay_array = not quoted  # ${a[@]} decays but "${a[@]}" doesn't
+      UP_val = val
+      with tagswitch(val) as case2:
+        if case2(value_e.Undef):
+          val = self._EmptyMaybeStrArrayOrError(part.token)
+        elif case2(value_e.Str):
+          val = cast(value__Str, UP_val)
+          e_die("Can't index string with @", part=part)
+        elif case2(value_e.MaybeStrArray):
+          val = cast(value__MaybeStrArray, UP_val)
+          # TODO: Is this a no-op?  Just leave 'val' alone.
+          val = value.MaybeStrArray(val.strs)
+
+    elif op_id == Id.Arith_Star:
+      maybe_decay_array = True  # both ${a[*]} and "${a[*]}" decay
+      UP_val = val
+      with tagswitch(val) as case2:
+        if case2(value_e.Undef):
+          val = self._EmptyMaybeStrArrayOrError(part.token)
+        elif case2(value_e.Str):
+          val = cast(value__Str, UP_val)
+          e_die("Can't index string with *", part=part)
+        elif case2(value_e.MaybeStrArray):
+          val = cast(value__MaybeStrArray, UP_val)
+          # TODO: Is this a no-op?  Just leave 'val' alone.
+          # ${a[*]} or "${a[*]}" :  maybe_decay_array is always true
+          val = value.MaybeStrArray(val.strs)
+
+    else:
+      raise AssertionError(op_id)  # unknown
+
+    return val, maybe_decay_array
+
+  def _ArrayIndex(self, val, part):
+    # type: (value_t, braced_var_sub) -> Tuple[value_t, a_index_t]
+    var_index = None  # type: a_index_t
+    bracket_op = cast(bracket_op__ArrayIndex, part.bracket_op)
+    anode = bracket_op.expr
+
+    UP_val = val
+    with tagswitch(val) as case2:
+      if case2(value_e.Undef):
+        pass  # it will be checked later
+
+      elif case2(value_e.Str):
+        # Bash treats any string as an array, so we can't add our own
+        # behavior here without making valid OSH invalid bash.
+        e_die("Can't index string %r with integer", part.token.val,
+              token=part.token)
+
+      elif case2(value_e.MaybeStrArray):
+        array_val = cast(value__MaybeStrArray, UP_val)
+        index = self.arith_ev.EvalToInt(anode)
+        var_index = a_index.Int(index)
+
+        s = GetArrayItem(array_val.strs, index)
+
+        if s is None:
+          val = value.Undef()
+        else:
+          val = value.Str(s)
+
+      elif case2(value_e.AssocArray):
+        assoc_val = cast(value__AssocArray, UP_val)
+        key = self.arith_ev.EvalWordToString(anode)
+        var_index = a_index.Str(key)
+        s = assoc_val.d.get(key)
+
+        if s is None:
+          val = value.Undef()
+        else:
+          val = value.Str(s)
+
+      else:
+        raise AssertionError(val.tag_())
+
+    return val, var_index
+
   def _EvalDoubleQuoted(self, parts, part_vals):
     # type: (List[word_part_t], List[part_value_t]) -> None
     """Evaluate parts of a DoubleQuoted part.
@@ -935,100 +1147,33 @@ class AbstractWordEvaluator(StringWordEvaluator):
       UP_bracket_op = bracket_op
       with tagswitch(bracket_op) as case:
         if case(bracket_op_e.WholeArray):
-          bracket_op = cast(bracket_op__WholeArray, UP_bracket_op)
-          op_id = bracket_op.op_id
-
-          if op_id == Id.Lit_At:
-            maybe_decay_array = not quoted  # ${a[@]} decays but "${a[@]}" doesn't
-            UP_val = val
-            with tagswitch(val) as case2:
-              if case2(value_e.Undef):
-                val = self._EmptyMaybeStrArrayOrError(part.token)
-              elif case2(value_e.Str):
-                val = cast(value__Str, UP_val)
-                e_die("Can't index string with @", part=part)
-              elif case2(value_e.MaybeStrArray):
-                val = cast(value__MaybeStrArray, UP_val)
-                # TODO: Is this a no-op?  Just leave 'val' alone.
-                val = value.MaybeStrArray(val.strs)
-
-          elif op_id == Id.Arith_Star:
-            maybe_decay_array = True  # both ${a[*]} and "${a[*]}" decay
-            UP_val = val
-            with tagswitch(val) as case2:
-              if case2(value_e.Undef):
-                val = self._EmptyMaybeStrArrayOrError(part.token)
-              elif case2(value_e.Str):
-                val = cast(value__Str, UP_val)
-                e_die("Can't index string with *", part=part)
-              elif case2(value_e.MaybeStrArray):
-                val = cast(value__MaybeStrArray, UP_val)
-                # TODO: Is this a no-op?  Just leave 'val' alone.
-                # ${a[*]} or "${a[*]}" :  maybe_decay_array is always true
-                val = value.MaybeStrArray(val.strs)
-
-          else:
-            raise AssertionError(op_id)  # unknown
+          val, maybe_decay_array = self._WholeArray(val, part, quoted)
 
         elif case(bracket_op_e.ArrayIndex):
           bracket_op = cast(bracket_op__ArrayIndex, UP_bracket_op)
-          anode = bracket_op.expr
-
-          UP_val = val
-          with tagswitch(val) as case2:
-            if case2(value_e.Undef):
-              pass  # it will be checked later
-
-            elif case2(value_e.Str):
-              # Bash treats any string as an array, so we can't add our own
-              # behavior here without making valid OSH invalid bash.
-              e_die("Can't index string %r with integer", part.token.val,
-                    token=part.token)
-
-            elif case2(value_e.MaybeStrArray):
-              array_val = cast(value__MaybeStrArray, UP_val)
-              index = self.arith_ev.EvalToInt(anode)
-              var_index = a_index.Int(index)
-
-              s = GetArrayItem(array_val.strs, index)
-
-              if s is None:
-                val = value.Undef()
-              else:
-                val = value.Str(s)
-
-            elif case2(value_e.AssocArray):
-              assoc_val = cast(value__AssocArray, UP_val)
-              key = self.arith_ev.EvalWordToString(anode)
-              var_index = a_index.Str(key)
-              s = assoc_val.d.get(key)
-
-              if s is None:
-                val = value.Undef()
-              else:
-                val = value.Str(s)
-
-            else:
-              raise AssertionError(val.tag_())
+          val, var_index = self._ArrayIndex(val, part)
 
         else:
           raise AssertionError(bracket_op.tag_())
 
     else:  # no bracket op
-      # When the array is "$@", var_name is None
       if var_name and val.tag_() in (value_e.MaybeStrArray, value_e.AssocArray):
-        suffix_op2 = part.suffix_op
-        if (suffix_op2 and suffix_op2.tag_() == suffix_op_e.Nullary and 
-            cast(Token, suffix_op2).id == Id.VOp0_a):
-          # ${array@a} is a string
-          # TODO: An IR for ${} might simplify these lengthy conditions
-          pass
-        elif CheckCompatArray(var_name, self.exec_opts, not (part.prefix_op or part.suffix_op)):
+        if CheckCompatArray(var_name, self.exec_opts,
+                            not (part.prefix_op or part.suffix_op)):
           # for ${BASH_SOURCE}, etc.
           val = ResolveCompatArray(val)
         else:
-          e_die("Array %r can't be referred to as a scalar (without @ or *)",
-                var_name, part=part)
+          tmp = part.suffix_op
+          # TODO: An IR for ${} might simplify these lengthy conditions
+          if (tmp and tmp.tag_() == suffix_op_e.Nullary and 
+              cast(Token, tmp).id == Id.VOp0_a):
+            # ${array@a} is a string
+            pass
+            # TODO: ${array[@]@Q} is valid but ${array@Q} requires
+            # compat_array
+          else:
+            e_die("Array %r can't be referred to as a scalar (without @ or *)",
+                  var_name, part=part)
 
     # Do the _EmptyStrOrError up front here, EXCEPT in the case of Kind.VTest
     undef_check = True
@@ -1043,57 +1188,23 @@ class AbstractWordEvaluator(StringWordEvaluator):
       val = self._EmptyStrOrError(val, part.token)  # maybe error
 
     if part.prefix_op:
-      # could be
+      # Could be
       # - ${!ref-default}
       # - "${!assoc[@]}" vs. ${!assoc[*]} (TODO: maybe_decay_array for this
       #   case)
-      val = self._ApplyPrefixOp(val, part.prefix_op, part.token)
-
       # NOTE: The length operator followed by a suffix operator is a SYNTAX
       # error.
+      val = self._ApplyPrefixOp(val, part.prefix_op, part.token)
+
+    quoted2 = False  # another bit for @Q
 
     if suffix_op:
       op = suffix_op  # could get rid of this alias
+
       with tagswitch(suffix_op) as case:
         if case(suffix_op_e.Nullary):
           op = cast(Token, UP_op)
-          op_id = op.id
-          if op_id == Id.VOp0_P:
-            prompt = self.prompt_ev.EvalPrompt(val)
-            # readline gets rid of these, so we should too.
-            p = prompt.replace('\x01', '').replace('\x02', '')
-            val = value.Str(p)
-
-          elif op_id == Id.VOp0_Q:
-            assert val.tag_() == value_e.Str, val
-            val = cast(value__Str, val)
-            val = value.Str(qsn.maybe_shell_encode(val.s))
-            # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in bash
-            quoted = True
-
-          elif op_id == Id.VOp0_a:
-            # We're ONLY simluating -a and -A, not -r -x -n for now.  See
-            # spec/ble-idioms.test.sh.
-            chars = []  # type: List[str]
-            with tagswitch(val) as case:
-              if case(value_e.MaybeStrArray):
-                chars.append('a')
-              elif case(value_e.AssocArray):
-                chars.append('A')
-
-            if var_name is not None:  # e.g. ${?@a} is allowed
-              cell = self.mem.GetCell(var_name)
-              if cell.readonly:
-                chars.append('r')
-              if cell.exported:
-                chars.append('x')
-              if cell.nameref:
-                chars.append('n')
-
-            val = value.Str(''.join(chars))
-
-          else:
-            e_die('Var op %r not implemented', op.val, token=op)
+          val, quoted2 = self._Nullary(val, op, var_name)
 
         elif case(suffix_op_e.Unary):
           op = cast(suffix_op__Unary, UP_op)
@@ -1101,9 +1212,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
             # TODO: Also we need bracket_op to form lvalue here?
             # So pass 'part'?
             # bracket_op_e.ArrayIndex
-            # you already evaluated 'key' and 'index' above, so I guess
-            # you need index_t?
-
+            # you already evaluated 'key' and 'index' above, so I guess you
+            # need index_t?
             if self._ApplyTestOp(val, op, quoted, part_vals,
                                  var_name, var_index, part.token):
               # e.g. to evaluate ${undef:-'default'}, we already appended
@@ -1116,85 +1226,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         elif case(suffix_op_e.PatSub):  # PatSub, vectorized
           op = cast(suffix_op__PatSub, UP_op)
-
-          # globs are supported in the pattern
-          pat_val = self.EvalWordToString(op.pat, quote_kind=quote_e.FnMatch)
-          assert pat_val.tag == value_e.Str, pat_val
-
-          if op.replace:
-            replace_val = self.EvalWordToString(op.replace)
-            assert replace_val.tag == value_e.Str, replace_val
-            replace_str = replace_val.s
-          else:
-            replace_str = ''
-
-          # note: doesn't support self.exec_opts.extglob()!
-          regex, warnings = glob_.GlobToERE(pat_val.s)
-          if len(warnings):
-            # TODO:
-            # - Add 'set -o strict-glob' mode and expose warnings.
-            #   "Glob is not in CANONICAL FORM".
-            # - Propagate location info back to the 'op.pat' word.
-            pass
-          replacer = string_ops.GlobReplacer(regex, replace_str, op.spids[0])
-
-          with tagswitch(val) as case2:
-            if case2(value_e.Str):
-              str_val = cast(value__Str, val)
-              s = replacer.Replace(str_val.s, op)
-              val = value.Str(s)
-
-            elif case2(value_e.MaybeStrArray):
-              array_val = cast(value__MaybeStrArray, val)
-              strs = []  # type: List[str]
-              for s in array_val.strs:
-                if s is not None:
-                  strs.append(replacer.Replace(s, op))
-              val = value.MaybeStrArray(strs)
-
-            elif case2(value_e.AssocArray):
-              assoc_val = cast(value__AssocArray, val)
-              strs = []
-              for s in assoc_val.d.values():
-                strs.append(replacer.Replace(s, op))
-              val = value.MaybeStrArray(strs)
-
-            else:
-              raise AssertionError(val.tag_())
+          val = self._PatSub(val, op)
 
         elif case(suffix_op_e.Slice):
           op = cast(suffix_op__Slice, UP_op)
-
-          if op.begin:
-            begin = self.arith_ev.EvalToInt(op.begin)
-          else:
-            begin = 0
-
-          # Note: bash allows lengths to be negative (with odd semantics), but
-          # we don't allow that right now.
-          has_length = False
-          length = -1
-          if op.length:
-            has_length = True
-            length = self.arith_ev.EvalToInt(op.length)
-
-          try:
-            arg0_val = None  # type: value__Str
-            if var_name is None: # $* or $@
-              arg0_val = self.mem.GetArg0()
-            val = _PerformSlice(val, begin, length, has_length, part, arg0_val)
-          except error.Strict as e:
-            if self.exec_opts.strict_word_eval():
-              raise
-            else:
-              self.errfmt.PrettyPrintError(e, prefix='warning: ')
-              with tagswitch(val) as case2:
-                if case2(value_e.Str):
-                  val = value.Str('')
-                elif case2(value_e.MaybeStrArray):
-                  val = value.MaybeStrArray([])
-                else:
-                  raise NotImplementedError()
+          val = self._Slice(val, op, var_name, part)
 
     # After applying suffixes, process maybe_decay_array here.
     UP_val = val
@@ -1207,7 +1243,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     # For example, ${a} evaluates to value.Str(), but we want a
     # part_value.String().
-    part_val = _ValueToPartValue(val, quoted)
+    part_val = _ValueToPartValue(val, quoted or quoted2)
     part_vals.append(part_val)
 
   def _PartValsToString(self, part_vals, span_id):

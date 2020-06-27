@@ -50,6 +50,15 @@ test "$x" = "$new" && echo OK
 OK
 ## END
 
+#### ${array@Q}
+array=(x 'y\nz')
+echo ${array@Q}
+echo ${array[@]@Q}
+## STDOUT:
+'x'
+'x' 'y\nz'
+## END
+
 #### ${!prefix@} ${!prefix*} yields sorted array of var names
 ZOO=zoo
 ZIP=zip
@@ -112,4 +121,41 @@ rx
 echo [${?@a}]
 ## STDOUT:
 []
+## END
+
+#### argv array and @P @Q @a
+$SH -c 'echo ${@@P}' dummy a b c
+echo status=$?
+$SH -c 'echo ${@@Q}' dummy a 'b\nc'
+echo status=$?
+$SH -c 'echo ${@@a}' dummy a b c
+echo status=$?
+## STDOUT:
+a b c
+status=0
+'a' 'b\nc'
+status=0
+
+status=0
+## END
+
+#### assoc array and @P @Q @a
+
+# note: "y z" causes a bug!
+$SH -c 'declare -A A=(["x"]="y"); echo ${A@P} - ${A[@]@P} - ${!A[@]@P}'
+echo status=$?
+
+# note: "y z" causes a bug!
+$SH -c 'declare -A A=(["x"]="y"); echo ${A@P} - ${A[@]@Q} - ${!A[@]@Q}'
+echo status=$?
+
+$SH -c 'declare -A A=(["x"]=y); echo ${A@a} - ${A[@]@a} - ${!A[@]@a}'
+echo status=$?
+## STDOUT:
+- y -
+status=0
+- 'y' -
+status=0
+A - A -
+status=0
 ## END
