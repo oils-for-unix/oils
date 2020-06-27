@@ -30,6 +30,7 @@ from _devbuild.gen.runtime_asdl import (
 from core import error
 from core import pyos
 from core import pyutil
+from core import ui
 from qsn_ import qsn
 from core.pyerror import log, e_die
 from frontend import consts
@@ -893,20 +894,33 @@ class AbstractWordEvaluator(StringWordEvaluator):
   def _Nullary(self, val, op, var_name):
     # type: (value_t, Token, Optional[str]) -> Tuple[value_t, bool]
 
+    UP_val = val
     quoted2 = False
     op_id = op.id
     if op_id == Id.VOp0_P:
-      prompt = self.prompt_ev.EvalPrompt(val)
-      # readline gets rid of these, so we should too.
-      p = prompt.replace('\x01', '').replace('\x02', '')
-      val = value.Str(p)
+      with tagswitch(val) as case:
+        if case(value_e.Str):
+          val = cast(value__Str, UP_val)
+          prompt = self.prompt_ev.EvalPrompt(val)
+          # readline gets rid of these, so we should too.
+          p = prompt.replace('\x01', '').replace('\x02', '')
+          val = value.Str(p)
+        else:
+          e_die("Can't use @P on %s", ui.ValType(val))  # TODO: location
 
     elif op_id == Id.VOp0_Q:
-      assert val.tag_() == value_e.Str, val
-      val = cast(value__Str, val)
-      val = value.Str(qsn.maybe_shell_encode(val.s))
-      # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in bash
-      quoted2 = True
+      with tagswitch(val) as case:
+        if case(value_e.Str):
+          val = cast(value__Str, UP_val)
+          val = value.Str(qsn.maybe_shell_encode(val.s))
+          # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in bash
+          quoted2 = True
+        elif case(value_e.MaybeStrArray):
+          val = cast(value__MaybeStrArray, UP_val)
+          q = ' '.join(qsn.maybe_shell_encode(s) for s in val.strs)
+          val = value.Str(q)
+        else:
+          e_die("Can't use @Q on %s", ui.ValType(val))  # TODO: location
 
     elif op_id == Id.VOp0_a:
       # We're ONLY simluating -a and -A, not -r -x -n for now.  See
@@ -920,12 +934,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
       if var_name is not None:  # e.g. ${?@a} is allowed
         cell = self.mem.GetCell(var_name)
-        if cell.readonly:
-          chars.append('r')
-        if cell.exported:
-          chars.append('x')
-        if cell.nameref:
-          chars.append('n')
+        if cell:
+          if cell.readonly:
+            chars.append('r')
+          if cell.exported:
+            chars.append('x')
+          if cell.nameref:
+            chars.append('n')
 
       val = value.Str(''.join(chars))
 
@@ -1110,20 +1125,24 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # 1. Evaluate from (var_name, var_num, token Id) -> value
     if part.token.id == Id.VSub_Name:
       # Handle ${!prefix@} first, since that looks at names and not values
+      # Do NOT handle ${!A[@]@a} here!
       if (part.prefix_op is not None and 
+          part.bracket_op is None and
           part.suffix_op is not None and
           part.suffix_op.tag_() == suffix_op_e.Nullary):
-
-        names = self.mem.VarNamesStartingWith(part.token.val)
-        names.sort()
-
         suffix_op_ = cast(Token, part.suffix_op)
-        if quoted and suffix_op_.id == Id.VOp3_At:
-          part_vals.append(part_value.Array(names))
-        else:
-          sep = self.splitter.GetJoinChar()
-          part_vals.append(part_value.String(sep.join(names), quoted, True))
-        return  # EARLY RETURN
+        # ${!x@} but not ${!x@P}
+        if consts.GetKind(suffix_op_.id) == Kind.VOp3:
+          names = self.mem.VarNamesStartingWith(part.token.val)
+          names.sort()
+
+          suffix_op_ = cast(Token, part.suffix_op)
+          if quoted and suffix_op_.id == Id.VOp3_At:
+            part_vals.append(part_value.Array(names))
+          else:
+            sep = self.splitter.GetJoinChar()
+            part_vals.append(part_value.String(sep.join(names), quoted, True))
+          return  # EARLY RETURN
 
       var_name = part.token.val
       # TODO: LINENO can use its own span_id!
@@ -1166,11 +1185,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
           tmp = part.suffix_op
           # TODO: An IR for ${} might simplify these lengthy conditions
           if (tmp and tmp.tag_() == suffix_op_e.Nullary and 
-              cast(Token, tmp).id == Id.VOp0_a):
+              cast(Token, tmp).id in (Id.VOp0_a, Id.VOp0_Q)):
             # ${array@a} is a string
+            # TODO: ${array[@]@Q} is valid but ${array@Q} requires compat_array
             pass
-            # TODO: ${array[@]@Q} is valid but ${array@Q} requires
-            # compat_array
           else:
             e_die("Array %r can't be referred to as a scalar (without @ or *)",
                   var_name, part=part)
@@ -1195,9 +1213,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
       # NOTE: The length operator followed by a suffix operator is a SYNTAX
       # error.
       val = self._ApplyPrefixOp(val, part.prefix_op, part.token)
+      if suffix_op:
+        # TODO: why does it go to the wrong location?
+        # It would also be nice to point to both operators!
+        e_die("Can't combine prefix and suffix op",
+              span_id=part.prefix_op.span_id)
 
     quoted2 = False  # another bit for @Q
-
     if suffix_op:
       op = suffix_op  # could get rid of this alias
 

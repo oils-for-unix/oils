@@ -182,15 +182,15 @@ echo status=$?
 $SH -c 'a=(x y); echo ${a@P}' dummy a b c
 echo status=$?
 ## STDOUT:
-status=1
-status=1
-status=1
-## END
-## OK bash STDOUT:
 a b c
 status=0
 a b c
 status=0
 x
 status=0
+## END
+## OK osh STDOUT:
+status=1
+status=1
+status=1
 ## END
