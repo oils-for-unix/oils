@@ -1185,9 +1185,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
           tmp = part.suffix_op
           # TODO: An IR for ${} might simplify these lengthy conditions
           if (tmp and tmp.tag_() == suffix_op_e.Nullary and 
-              cast(Token, tmp).id in (Id.VOp0_a, Id.VOp0_Q)):
+              #cast(Token, tmp).id in (Id.VOp0_a, Id.VOp0_Q)):
+              cast(Token, tmp).id == Id.VOp0_a):
             # ${array@a} is a string
-            # TODO: ${array[@]@Q} is valid but ${array@Q} requires compat_array
             pass
           else:
             e_die("Array %r can't be referred to as a scalar (without @ or *)",
@@ -1213,11 +1213,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       # NOTE: The length operator followed by a suffix operator is a SYNTAX
       # error.
       val = self._ApplyPrefixOp(val, part.prefix_op, part.token)
-      if suffix_op:
-        # TODO: why does it go to the wrong location?
-        # It would also be nice to point to both operators!
-        e_die("Can't combine prefix and suffix op",
-              span_id=part.prefix_op.span_id)
+      # note: suffix_op allowed with prefix_op, e.g. ${!1@a}
 
     quoted2 = False  # another bit for @Q
     if suffix_op:

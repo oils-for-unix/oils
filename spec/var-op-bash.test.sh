@@ -52,11 +52,20 @@ OK
 
 #### ${array@Q} and ${array[@]@Q}
 array=(x 'y\nz')
-echo ${array@Q}
 echo ${array[@]@Q}
+shopt -s compat_array
+echo ${array@Q}
+shopt -u compat_array
+echo ${array@Q}
 ## STDOUT:
-'x'
 'x' 'y\nz'
+'x'
+'x'
+## END
+## OK osh status: 1
+## OK osh STDOUT:
+x $'y\\nz'
+x
 ## END
 
 #### ${!prefix@} ${!prefix*} yields sorted array of var names
@@ -198,21 +207,26 @@ A - A
 status=0
 ## END
 
-#### ${!var@X} is a runtime error
+#### ${!var[@]@X}
 # note: "y z" causes a bug!
-$SH -c 'declare -A A=(["x"]="y"); echo ${#A[@]@P}'
+$SH -c 'declare -A A=(["x"]="y"); echo ${!A[@]@P}'
 if test $? -ne 0; then echo fail; fi
 
 # note: "y z" causes a bug!
-$SH -c 'declare -A A=(["x"]="y"); ${#A[@]@Q}'
+$SH -c 'declare -A A=(["x y"]="y"); echo ${!A[@]@Q}'
 if test $? -ne 0; then echo fail; fi
 
-$SH -c 'declare -A A=(["x"]=y); ${#A[@]@a}'
+$SH -c 'declare -A A=(["x"]=y); echo ${!A[@]@a}'
 if test $? -ne 0; then echo fail; fi
-## STDOUT:
+# STDOUT:
+
+
+
+# END
+## OK osh STDOUT:
 fail
-fail
-fail
+'x y'
+a
 ## END
 
 #### ${#var@X} is a parse error
@@ -221,10 +235,10 @@ $SH -c 'declare -A A=(["x"]="y"); echo ${#A[@]@P}'
 if test $? -ne 0; then echo fail; fi
 
 # note: "y z" causes a bug!
-$SH -c 'declare -A A=(["x"]="y"); ${#A[@]@Q}'
+$SH -c 'declare -A A=(["x"]="y"); echo ${#A[@]@Q}'
 if test $? -ne 0; then echo fail; fi
 
-$SH -c 'declare -A A=(["x"]=y); ${#A[@]@a}'
+$SH -c 'declare -A A=(["x"]=y); echo ${#A[@]@a}'
 if test $? -ne 0; then echo fail; fi
 ## STDOUT:
 fail
@@ -232,9 +246,15 @@ fail
 fail
 ## END
 
-#### ${!A[@]@a} is weird
+#### ${!A@a} and ${!A[@]@a}
 declare -A A=(["x"]=y)
 echo x=${!A[@]@a}
+echo x=${!A@a}
+
+# OSH prints 'a' for indexed array because the AssocArray with ! turns into
+# it.  Disallowing it would be the other reasonable behavior.
+
 ## STDOUT:
+x=
 x=
 ## END
