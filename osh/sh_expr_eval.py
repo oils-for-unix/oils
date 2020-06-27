@@ -283,9 +283,19 @@ class ArithEvaluator(object):
         finally:
           arena.PopSource()
 
-        integer = self.EvalToInt(node2)
+        # Prevent infinite recursion of $(( 1x )) -- it's a word that evaluates
+        # to itself, and you don't want to reparse it as a word.
+        if node2.tag_() == arith_expr_e.Word:
+          e_die("Invalid integer constant %r", s, span_id=span_id)
+        else:
+          integer = self.EvalToInt(node2)
       else:
-        e_strict("Invalid integer constant %r", s, span_id=span_id)
+        if len(s.strip()) == 0 or match.IsValidVarName(s):
+          # x42 could evaluate to 0
+          e_strict("Invalid integer constant %r", s, span_id=span_id)
+        else:
+          # 42x is always fatal!
+          e_die("Invalid integer constant %r", s, span_id=span_id)
 
     return integer
 

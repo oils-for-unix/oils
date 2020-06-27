@@ -599,8 +599,34 @@ a=1
 ## BUG zsh status: 1
 
 #### Invalid constant
-#echo $((a + 1x))
+
+echo $((a + x42))
+echo status=$?
+
+# weird asymmetry -- the above is a syntax error, but this isn't
+$SH -c 'echo $((a + 42x))'
+echo status=$?
+
+# regression
+shopt -s eval_unsafe_arith
 echo $((a + 42x))
-## stdout-json: ""
+echo status=$?
 ## status: 1
+## STDOUT:
+0
+status=0
+status=1
+## END
 ## OK dash status: 2
+## OK dash STDOUT:
+0
+status=0
+status=2
+## END
+## BUG bash status: 0
+## BUG bash STDOUT:
+0
+status=0
+status=1
+status=1
+## END

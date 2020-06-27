@@ -1048,7 +1048,7 @@ class WordParser(WordEmitter):
     self._Peek()
     cur_id = self.token_type  # for end of arith expressions
 
-    if self.token_type == Id.Arith_Semi:  # for (( ; i < 10; i++ ))
+    if cur_id == Id.Arith_Semi:  # for (( ; i < 10; i++ ))
       init_node = None  # type: Optional[arith_expr_t]
     else:
       init_node = self.a_parser.Parse()
@@ -1059,10 +1059,12 @@ class WordParser(WordEmitter):
     # function, but it works, and is tested in 'test/parse_error.sh
     # arith-integration'
     if cur_id != Id.Arith_Semi:  # for (( x=0 b; ... ))
-      p_die("Unexpected token", word=self.a_parser.cur_word)
+      p_die("Expected ; here", word=self.a_parser.cur_word)
 
     self._Peek()
-    if self.token_type == Id.Arith_Semi:  # for (( ; ; i++ ))
+    cur_id = self.token_type
+
+    if cur_id == Id.Arith_Semi:  # for (( ; ; i++ ))
       cond_node = None  # type: Optional[arith_expr_t]
     else:
       cond_node = self.a_parser.Parse()
@@ -1070,10 +1072,12 @@ class WordParser(WordEmitter):
     self._NextNonSpace()
 
     if cur_id != Id.Arith_Semi:  # for (( x=0; x<5 b ))
-      p_die("Unexpected token", word=self.a_parser.cur_word)
+      p_die("Expected ; here", word=self.a_parser.cur_word)
 
     self._Peek()
-    if self.token_type == Id.Arith_RParen:  # for (( ; ; ))
+    cur_id = self.token_type
+
+    if cur_id == Id.Arith_RParen:  # for (( ; ; ))
       update_node = None  # type: Optional[arith_expr_t]
     else:
       update_node = self._ReadArithExpr(Id.Arith_RParen)
