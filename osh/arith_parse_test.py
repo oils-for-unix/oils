@@ -27,8 +27,11 @@ def ParseAndEval(code_str):
   arena = test_lib.MakeArena('<arith_parse_test.py>')
   parse_ctx = test_lib.InitParseContext(arena=arena)
   w_parser = test_lib.InitWordParser(code_str, arena=arena)
+
+  # This is weird but works
   w_parser._Next(lex_mode_e.Arith)  # Calling private method
-  anode = w_parser._ReadArithExpr()  # need the right lex state?
+  anode = w_parser.a_parser.Parse()
+
   print('node:', anode)
 
   mem = state.Mem('', [], arena, [])

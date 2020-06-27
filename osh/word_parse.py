@@ -200,6 +200,7 @@ class WordParser(WordEmitter):
     if self.token_type == Id.Arith_Colon:  # A pun for Id.VOp2_Colon
       # no beginning specified
       begin = None  # type: Optional[arith_expr_t]
+      cur_id = Id.Arith_Colon
     else:
       begin = self.a_parser.Parse()
       cur_id = self.a_parser.CurrentId()
@@ -214,7 +215,6 @@ class WordParser(WordEmitter):
       length = self._ReadArithExpr(Id.Arith_RBrace)
       return suffix_op.Slice(begin, length)
 
-    p_die("Expected : or } in slice", token=self.cur_token)
     raise AssertionError()  # for MyPy
 
   def _ReadPatSubVarOp(self):
