@@ -892,7 +892,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return val
 
   def _Nullary(self, val, op, var_name):
-    # type: (value_t, Token, Optional[str]) -> Tuple[value_t, bool]
+    # type: (value_t, Token, Optional[str]) -> Tuple[value__Str, bool]
 
     UP_val = val
     quoted2 = False
@@ -900,25 +900,25 @@ class AbstractWordEvaluator(StringWordEvaluator):
     if op_id == Id.VOp0_P:
       with tagswitch(val) as case:
         if case(value_e.Str):
-          val = cast(value__Str, UP_val)
-          prompt = self.prompt_ev.EvalPrompt(val)
+          str_val = cast(value__Str, UP_val)
+          prompt = self.prompt_ev.EvalPrompt(str_val)
           # readline gets rid of these, so we should too.
           p = prompt.replace('\x01', '').replace('\x02', '')
-          val = value.Str(p)
+          result = value.Str(p)
         else:
           e_die("Can't use @P on %s", ui.ValType(val))  # TODO: location
 
     elif op_id == Id.VOp0_Q:
       with tagswitch(val) as case:
         if case(value_e.Str):
-          val = cast(value__Str, UP_val)
-          val = value.Str(qsn.maybe_shell_encode(val.s))
+          str_val = cast(value__Str, UP_val)
+          result = value.Str(qsn.maybe_shell_encode(str_val.s))
           # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in bash
           quoted2 = True
         elif case(value_e.MaybeStrArray):
-          val = cast(value__MaybeStrArray, UP_val)
-          q = ' '.join(qsn.maybe_shell_encode(s) for s in val.strs)
-          val = value.Str(q)
+          array_val = cast(value__MaybeStrArray, UP_val)
+          tmp = [qsn.maybe_shell_encode(s) for s in array_val.strs]
+          result = value.Str(' '.join(tmp))
         else:
           e_die("Can't use @Q on %s", ui.ValType(val))  # TODO: location
 
@@ -942,12 +942,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
           if cell.nameref:
             chars.append('n')
 
-      val = value.Str(''.join(chars))
+      result = value.Str(''.join(chars))
 
     else:
       e_die('Var op %r not implemented', op.val, token=op)
 
-    return val, quoted2
+    return result, quoted2
 
   def _WholeArray(self, val, part, quoted):
     # type: (value_t, braced_var_sub, bool) -> Tuple[value_t, bool]
