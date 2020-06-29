@@ -70,6 +70,12 @@ def PrintTimes():
   print("%dm%1.3fs %dm%1.3fs" % (cutime / 60, cutime % 60, cstime / 60, cstime % 60))
 
 
+# So builtin_misc.py doesn't depend on termios, which makes C++ translation
+# easier
+TERM_ICANON = termios.ICANON
+TERM_ECHO = termios.ECHO
+
+
 class TermState(object):
   """
   TODO: Make this into a context manager which is a C++ destructor?

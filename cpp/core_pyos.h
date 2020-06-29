@@ -3,10 +3,14 @@
 #ifndef CORE_PYOS_H
 #define CORE_PYOS_H
 
+#include <termios.h>
 #include "mylib.h"
 #include "syntax_asdl.h"
 
 namespace pyos {
+
+const int TERM_ICANON = ICANON;
+const int TERM_ECHO = ECHO;
 
 inline Str* GetMyHomeDir() {
   assert(0);
@@ -33,9 +37,15 @@ inline void PrintTimes() {
   assert(0);
 }
 
-inline Str* ReadBytesFromTerminal(int fd, int n) {
-  assert(0);
-}
+class TermState {
+ public:
+  TermState(int fd, int mask) {
+    assert(0);
+  }
+  void Restore() {
+    assert(0);
+  }
+};
 
 }  // namespace pyos
 

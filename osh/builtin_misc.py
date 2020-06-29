@@ -10,8 +10,6 @@ builtin_misc.py - Misc builtins.
 """
 from __future__ import print_function
 
-import termios
-
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import span_e, cmd_value__Argv
 from asdl import runtime
@@ -172,7 +170,7 @@ class Read(vm._Builtin):
 
     if arg.s and self.stdin.isatty():
       # TODO: context manager
-      term = pyos.TermState(self.stdin.fileno(), ~termios.ECHO)
+      term = pyos.TermState(self.stdin.fileno(), ~pyos.TERM_ECHO)
       try:
         status = self._Read(arg, names)
       finally:
@@ -206,7 +204,7 @@ class Read(vm._Builtin):
       stdin_fd = self.stdin.fileno()
       if self.stdin.isatty():
         # set stdin to read in unbuffered mode
-        term = pyos.TermState(stdin_fd, ~termios.ICANON)
+        term = pyos.TermState(stdin_fd, ~pyos.TERM_ICANON)
         try:
           s = self._ReadN(stdin_fd, arg.n)
         finally:
