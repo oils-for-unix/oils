@@ -172,14 +172,27 @@ class Read(vm._Builtin):
 
     if arg.s and self.stdin.isatty():
       # TODO: context manager
-      state = pyos.TermState(self.stdin.fileno(), ~termios.ECHO)
+      term = pyos.TermState(self.stdin.fileno(), ~termios.ECHO)
       try:
         status = self._Read(arg, names)
       finally:
-        state.Restore()
+        term.Restore()
     else:
       status = self._Read(arg, names)
     return status
+
+  def _ReadN(self, stdin_fd, n):
+    # type: (int, int) -> str
+    chunks = []  # type: List[str]
+    bytes_left = n
+    while bytes_left > 0:
+      chunk = posix.read(stdin_fd, n)  # read at up to N chars
+      if len(chunk) == 0:
+        break
+      chunks.append(chunk)
+      bytes_left -= len(chunk)
+    s = ''.join(chunks)
+    return s
 
   def _Read(self, arg, names):
     # type: (arg_types.read, List[str]) -> int
@@ -190,28 +203,21 @@ class Read(vm._Builtin):
       else:
         name = 'REPLY'  # default variable name
 
-      status = 0
       stdin_fd = self.stdin.fileno()
-      if self.stdin.isatty():  # set stdin to read in unbuffered mode
-        s = pyos.ReadBytesFromTerminal(stdin_fd, arg.n)
+      if self.stdin.isatty():
+        # set stdin to read in unbuffered mode
+        term = pyos.TermState(stdin_fd, ~termios.ICANON)
+        try:
+          s = self._ReadN(stdin_fd, arg.n)
+        finally:
+          term.Restore()
       else:
-        chunks = []  # type: List[str]
-        n = arg.n
-        while n > 0:
-          chunk = posix.read(stdin_fd, n)  # read at up to N chars
-          if len(chunk) == 0:
-            break
-          chunks.append(chunk)
-          n -= len(chunk)
-        s = ''.join(chunks)
-
-      # Didn't read all the bytes we wanted
-      if len(s) != arg.n:
-        status = 1
+        s = self._ReadN(stdin_fd, arg.n)
 
       state.SetStringDynamic(self.mem, name, s)
-      # NOTE: Even if we don't get n bytes back, there is no error?
-      return status
+
+      # Did we read all the bytes we wanted?
+      return 0 if len(s) == arg.n else 1
 
     if len(names) == 0:
       names.append('REPLY')

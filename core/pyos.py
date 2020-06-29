@@ -70,35 +70,6 @@ def PrintTimes():
   print("%dm%1.3fs %dm%1.3fs" % (cutime / 60, cutime % 60, cstime / 60, cstime % 60))
 
 
-def ReadBytesFromTerminal(fd, n):
-  # type: (int, int) -> str
-
-  # silly way to make a copy
-  # https://docs.python.org/2/library/termios.html
-  orig_attrs = termios.tcgetattr(fd)
-  term_attrs = termios.tcgetattr(fd)
-
-  # cast for MyPy.  Each element in termios doesn't have a static type!
-  #reveal_type(term_attrs[3])
-
-  a3 = cast(int, term_attrs[3])
-  # Disable canonical (buffered) mode.  See `man termios` for an extended
-  # discussion.
-  term_attrs[3] = a3 & ~termios.ICANON
-
-  chunks = []
-  try:
-    termios.tcsetattr(fd, termios.TCSANOW, term_attrs)
-    # posix.read always returns a single character in unbuffered mode
-    while n > 0:
-      chunks.append(posix.read(fd, 1))
-      n -= 1
-  finally:
-    termios.tcsetattr(fd, termios.TCSANOW, orig_attrs)
-
-  return ''.join(chunks)
-
-
 class TermState(object):
   """
   TODO: Make this into a context manager which is a C++ destructor?
