@@ -99,9 +99,31 @@ def ReadBytesFromTerminal(fd, n):
   return ''.join(chunks)
 
 
+class TermState(object):
+  """
+  TODO: Make this into a context manager which is a C++ destructor?
+  """
+  def __init__(self, fd, mask):
+    # type: (int, int) -> None
+    self.fd = fd
+
+    # silly way to make a copy
+    # https://docs.python.org/2/library/termios.html
+    self.orig_attrs = termios.tcgetattr(fd)
+    term_attrs = termios.tcgetattr(fd)
+
+    a3 = cast(int, term_attrs[3])
+    # Disable canonical (buffered) mode.  See `man termios` for an extended
+    # discussion.
+    term_attrs[3] = a3 & mask
+    termios.tcsetattr(self.fd, termios.TCSANOW, term_attrs)
+
+  def Restore(self):
+    # type: () -> None
+    termios.tcsetattr(self.fd, termios.TCSANOW, self.orig_attrs)
+
+
 def OsType():
   # type: () -> str
   """ Compute $OSTYPE variable """
   return posix.uname()[0].lower()
-
-

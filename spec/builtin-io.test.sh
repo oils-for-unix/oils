@@ -345,6 +345,26 @@ argv.py "$escaped" "$raw"
 ## stdout: ['nline', '\\nline']
 ## BUG dash/mksh/zsh stdout: ['', '']
 
+#### read -s from pipe, not a terminal
+case $SH in (dash|zsh) exit ;; esac
+
+# It's hard to really test this because it requires a terminal.  We hit a
+# different code path when reading through a pipe.  There can be bugs there
+# too!
+
+echo foo | { read -s; echo $REPLY; }
+echo bar | { read -n 2 -s; echo $REPLY; }
+
+# Hm no exit 1 here?  Weird
+echo b | { read -n 2 -s; echo $?; echo $REPLY; }
+## STDOUT:
+foo
+ba
+0
+b
+## END
+## N-I dash/zsh stdout-json: ""
+
 #### Read with IFS=$'\n'
 # The leading spaces are stripped if they appear in IFS.
 IFS=$(echo -e '\n')
@@ -625,7 +645,7 @@ n=3
 ## END
 ## N-I dash/mksh/zsh/ash stdout-json: ""
 
-#### mapfile (delimeter): -d delim
+#### mapfile (delimiter): -d delim
 # Note: Bash-4.4+
 type mapfile >/dev/null 2>&1 || exit 0
 printf '%s:' {1..5..2} | {

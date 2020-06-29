@@ -10,6 +10,8 @@ builtin_misc.py - Misc builtins.
 """
 from __future__ import print_function
 
+import termios
+
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import span_e, cmd_value__Argv
 from asdl import runtime
@@ -168,6 +170,20 @@ class Read(vm._Builtin):
     arg = arg_types.read(attrs.attrs)
     names = arg_r.Rest()
 
+    if arg.s and self.stdin.isatty():
+      # TODO: context manager
+      state = pyos.TermState(self.stdin.fileno(), ~termios.ECHO)
+      try:
+        status = self._Read(arg, names)
+      finally:
+        state.Restore()
+    else:
+      status = self._Read(arg, names)
+    return status
+
+  def _Read(self, arg, names):
+    # type: (arg_types.read, List[str]) -> int
+
     if arg.n >= 0 :  # read a certain number of bytes (-1 means unset)
       if len(names):
         name = names[0]
@@ -189,8 +205,8 @@ class Read(vm._Builtin):
           n -= len(chunk)
         s = ''.join(chunks)
 
-      # DIdn't read all the bytes we wanted
-      if len(s) != n:
+      # Didn't read all the bytes we wanted
+      if len(s) != arg.n:
         status = 1
 
       state.SetStringDynamic(self.mem, name, s)

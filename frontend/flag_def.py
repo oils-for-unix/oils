@@ -106,6 +106,7 @@ PRINTF_SPEC.ShortFlag('-v', args.String)
 
 READ_SPEC = FlagSpec('read')
 READ_SPEC.ShortFlag('-r')
+READ_SPEC.ShortFlag('-s')  # silent
 READ_SPEC.ShortFlag('-n', args.Int)
 READ_SPEC.ShortFlag('-a', args.String)  # name of array to read into
 READ_SPEC.ShortFlag('-d', args.String)
