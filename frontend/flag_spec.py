@@ -140,7 +140,7 @@ def _Default(arg_type, arg_default=None):
   elif arg_type == args.Int:
     default = value.Int(-1)  # positive values aren't allowed now
   elif arg_type == args.Float:
-    default = value.Float(0.0)
+    default = value.Float(-1.0)  # ditto
   elif arg_type == args.String:
     default = value.Undef()  # e.g. read -d '' is NOT the default
   elif isinstance(arg_type, list):

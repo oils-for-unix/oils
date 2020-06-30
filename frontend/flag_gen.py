@@ -173,6 +173,7 @@ def Cpp(specs, header_f, cc_f):
 namespace value_e = runtime_asdl::value_e;
 using runtime_asdl::value__Bool;
 using runtime_asdl::value__Int;
+using runtime_asdl::value__Float;
 using runtime_asdl::value__Str;
 
 namespace arg_types {
@@ -442,6 +443,10 @@ class %s(object):
             print('    %s = attrs[%r]' % (tmp, field_name))
             print('    self.%s = -1 if %s.tag_() == value_e.Undef else cast(value__Int, %s).i  # type: int' % (field_name, tmp, tmp))
 
+          elif case(flag_type_e.Float):
+            tmp = 'val%d' % i
+            print('    %s = attrs[%r]' % (tmp, field_name))
+            print('    self.%s = -1.0 if %s.tag_() == value_e.Undef else cast(value__Float, %s).f  # type: float' % (field_name, tmp, tmp))
           else:
             raise AssertionError(typ)
 

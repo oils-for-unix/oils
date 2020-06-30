@@ -8,6 +8,7 @@ from __future__ import print_function
 
 import pwd
 import resource
+import select
 import termios  # for read -n
 import time
 
@@ -104,3 +105,11 @@ def OsType():
   # type: () -> str
   """ Compute $OSTYPE variable """
   return posix.uname()[0].lower()
+
+
+def InputAvailable(fd):
+  # type: (int) -> bool
+  # similar to lib/sh/input_avail.c in bash
+  # read, write, except
+  r, w, exc = select.select([fd], [], [fd], 0)
+  return len(r) != 0

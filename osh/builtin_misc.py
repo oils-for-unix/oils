@@ -15,7 +15,7 @@ from _devbuild.gen.runtime_asdl import span_e, cmd_value__Argv
 from asdl import runtime
 from core import error
 from core import pyos
-from core.pyerror import e_usage
+from core.pyerror import e_usage, e_die
 from core import pyutil  # strerror_OS
 from core import state
 from core.pyerror import log
@@ -168,9 +168,17 @@ class Read(vm._Builtin):
     arg = arg_types.read(attrs.attrs)
     names = arg_r.Rest()
 
+    fd = self.stdin.fileno()
+
+    if arg.t >= 0.0:
+      if arg.t != 0.0:
+        e_die("read -t isn't implemented (except t=0)")
+      else:
+        return 0 if pyos.InputAvailable(fd) else 1
+
     if arg.s and self.stdin.isatty():
       # TODO: context manager
-      term = pyos.TermState(self.stdin.fileno(), ~pyos.TERM_ECHO)
+      term = pyos.TermState(fd, ~pyos.TERM_ECHO)
       try:
         status = self._Read(arg, names)
       finally:

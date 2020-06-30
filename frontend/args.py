@@ -320,6 +320,7 @@ class SetToInt(_ArgAction):
               span_id=span_id)
 
     # So far all our int values are > 0, so use -1 as the 'unset' value
+    # corner case: this treats -0 as 0!
     if i < 0:
       e_usage('got invalid integer for %s: %s' % ('-' + self.name, arg),
               span_id=span_id)
@@ -335,11 +336,16 @@ class SetToFloat(_ArgAction):
   def _Value(self, arg, span_id):
     # type: (str, int) -> value_t
     try:
-      val = value.Float(float(arg))
+      f = float(arg)
     except ValueError:
       e_usage('expected number after %r, got %r' % ('-' + self.name, arg),
               span_id=span_id)
-    return val
+    # So far all our float values are > 0, so use -1.0 as the 'unset' value
+    # corner case: this treats -0.0 as 0.0!
+    if f < 0:
+      e_usage('got invalid float for %s: %s' % ('-' + self.name, arg),
+              span_id=span_id)
+    return value.Float(f)
 
 
 class SetToString(_ArgAction):

@@ -570,6 +570,97 @@ bar 1
 2
 ## END
 
+#### read -t 0 tests if input is available
+case $SH in (dash|zsh|mksh) exit ;; esac
+
+# is there input available?
+read -t 0 < /dev/null
+echo $?
+
+# floating point
+read -t 0.0 < /dev/null
+echo $?
+
+# floating point
+echo foo | { read -t 0; echo reply=$REPLY; }
+echo $?
+
+## STDOUT:
+0
+0
+reply=
+0
+## END
+## N-I dash/zsh/mksh stdout-json: ""
+
+#### read -t 0.5
+case $SH in (dash) exit ;; esac
+
+read -t 0.5 < /dev/null
+echo $?
+
+## STDOUT:
+1
+## END
+## BUG zsh/mksh STDOUT:
+1
+## END
+## N-I dash stdout-json: ""
+
+#### read -t -0.5 is invalid
+# bash appears to just take the absolute value?
+
+read -t -0.5 < /dev/null
+echo $?
+
+## STDOUT:
+2
+## END
+## BUG bash STDOUT:
+1
+## END
+## BUG zsh stdout-json: ""
+## BUG zsh status: 1
+
+#### read -u
+case $SH in (dash|mksh) exit ;; esac
+
+# file descriptor
+read -u 3 3<<EOF
+hi
+EOF
+echo reply=$REPLY
+## STDOUT:
+reply=hi
+## END
+## N-I dash/mksh stdout-json: ""
+
+#### read -u syntax error
+read -u -3
+echo status=$?
+## STDOUT:
+status=2
+## END
+## OK bash/zsh STDOUT:
+status=1
+## END
+
+#### read -N doesn't respect delimiter, while read -n does
+case $SH in (dash|zsh|ash) exit ;; esac
+
+echo foobar | { read -n 5 -d b; echo $REPLY; }
+echo foobar | { read -N 5 -d b; echo $REPLY; }
+## STDOUT:
+foo
+fooba
+## END
+## OK mksh STDOUT:
+fooba
+fooba
+## END
+## N-I dash/zsh/ash stdout-json: ""
+
+
 #### read usage
 read -n -1
 echo status=$?
