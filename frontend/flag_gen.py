@@ -138,6 +138,9 @@ def _WriteDefaults(cc_f, defaults_name, defaults):
     elif val.tag_() == value_e.Int:
       typ = 'Int'
       v = '{.i = -1}'
+    elif val.tag_() == value_e.Float:
+      typ = 'Float'
+      v = '{.f = -1.0}'
     elif val.tag_() == value_e.Undef:
       typ = 'Str'  # default for string
       v = '{}'
@@ -226,6 +229,13 @@ attrs->index(new Str("%s"))->tag_() == value_e::Undef
       ? -1
       : static_cast<value__Int*>(attrs->index(new Str("%s")))->i''' % (field_name, field_name))
           field_decls.append('int %s;' % field_name)
+
+        elif case(flag_type_e.Float):
+          init_vals.append('''\
+attrs->index(new Str("%s"))->tag_() == value_e::Undef
+      ? -1
+      : static_cast<value__Float*>(attrs->index(new Str("%s")))->f''' % (field_name, field_name))
+          field_decls.append('float %s;' % field_name)
 
         else:
           raise AssertionError(typ)

@@ -134,7 +134,7 @@ of Oil's C++ translation.
 - Lines of dependencies:
   - [pydeps](metrics.wwz/line-counts/pydeps.txt).  Oil code plus the Python
     standard library.
-  - [nativedeps](metrics.wwz/line-counts/nativedeps.txt).  Oil code plus A
+  - [nativedeps](metrics.wwz/line-counts/nativedeps.txt).  Oil code plus a
     slice of CPython.
 - Bytecode Metrics
   - [overview](metrics.wwz/bytecode/overview.txt) - Compare OPy vs. CPython.
