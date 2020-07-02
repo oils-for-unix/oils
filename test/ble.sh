@@ -31,15 +31,14 @@ build() {
 }
 
 run-tests() {
-  set -x
   cd $BASE_DIR
 
-  wc -l oshrc.test-util
-  wc -l out/ble.osh
-  wc -l lib/test-util.sh
+  #wc -l oshrc.test-util
+  #wc -l out/ble.osh
+  #wc -l lib/test-util.sh
 
-  ../../_bin/osh -x -c 'echo hi'
-  ../../_bin/osh -x --rcfile oshrc.test-util
+  # Force interactive shell on Travis.
+  ../../_bin/osh -i --rcfile oshrc.test-util
 
   echo DONE
 }

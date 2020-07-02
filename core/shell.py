@@ -659,6 +659,9 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
     return status
 
+  if flag.rcfile:  # bash doesn't have this warning, but it's useful
+    stderr_line('osh warning: --rcfile ignored in non-interactive shell')
+
   if exec_opts.noexec():
     status = 0
     try:
