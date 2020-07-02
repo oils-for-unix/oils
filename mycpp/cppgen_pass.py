@@ -388,7 +388,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         pass
 
     def visit_float_expr(self, o: 'mypy.nodes.FloatExpr') -> T:
-        pass
+        # e.g. for arg.t > 0.0
+        self.write(str(o.value))
 
     def visit_complex_expr(self, o: 'mypy.nodes.ComplexExpr') -> T:
         pass
@@ -426,7 +427,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # imported names.  Might be a problem with names like 'word'?
           if (isinstance(o.expr, NameExpr) and (
               o.expr.name in self.imported_names or
-              o.expr.name in ('mylib', 'libc', 'posix', 'time_') or
+              o.expr.name in ('mylib', 'libc', 'posix', 'time_', 'termios') or
               o.name == '__init__'
               )):
             op = '::'

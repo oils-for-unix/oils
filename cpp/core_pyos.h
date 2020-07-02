@@ -47,6 +47,10 @@ class TermState {
   }
 };
 
+inline bool InputAvailable(int fd) {
+  assert(0);
+}
+
 }  // namespace pyos
 
 #endif  // CORE_PYOS_H
