@@ -24,7 +24,7 @@ _publish_html: &publish_html
       skip_cleanup: true
       script: services/travis.sh publish-html
       on:
-        branch: dev/andy-25
+        branch: dev/andy-26
 
 jobs:
   include:
@@ -46,6 +46,26 @@ jobs:
           - _deps/                  # re2c doesn't change much
 
       script: services/toil-worker.sh run-ovm-tarball
+
+      # For building Python extensions like posix_.so and yajl.so.  We import
+      # them to build a tarball.
+      addons:
+        apt:
+          packages:
+            - python-dev
+
+      <<: *publish_html
+
+    # Run app unit tests against _bin/osh.  Similar to ovm-tarball.
+    - name: app-tests
+      # Travis's default is Ruby, but we don't need it.
+      language: minimal
+      cache:
+        directories:
+          - _devbuild/cpython-full  # Python-2.x/ in the repo doesn't change much
+          - _deps/                  # re2c doesn't change much
+
+      script: services/toil-worker.sh run-app-tests
 
       # For building Python extensions like posix_.so and yajl.so.  We import
       # them to build a tarball.

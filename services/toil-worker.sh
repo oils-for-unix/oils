@@ -101,6 +101,17 @@ build-tarball     build/test.sh oil-tar                  -
 EOF
 }
 
+app-tests-tasks() {
+  cat <<EOF
+tarball-deps      devtools/release.sh tarball-build-deps  -
+yajl              build/dev.sh yajl-release               -
+dev-all           build/dev.sh all                        -
+ble-clone         test/ble.sh clone                       -
+ble-build         test/ble.sh build                       -
+ble-test          test/ble.sh run-tests                   -
+EOF
+}
+
 run-tasks() {
   ### Run the tasks on stdin and write _tmp/toil/INDEX.tsv.
 
@@ -203,6 +214,10 @@ _run-dev-all-nix() {
 
 run-ovm-tarball() {
   ovm-tarball-tasks | run-tasks
+}
+
+run-app-tests() {
+  app-tests-tasks | run-tasks
 }
 
 run-dev-all-nix() {
