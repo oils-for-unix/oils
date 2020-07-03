@@ -296,14 +296,15 @@ def PrintAst(node, flag):
   else:  # text output
     f = mylib.Stdout()
 
-    if flag.ast_format in ('text', 'abbrev-text'):
+    afmt = flag.ast_format  # note: mycpp rewrite to avoid 'in'
+    if afmt == 'text' or afmt == 'abbrev-text':
       ast_f = fmt.DetectConsoleOutput(f)
-    elif flag.ast_format in ('html', 'abbrev-html'):
+    elif afmt == 'html' or afmt == 'abbrev-html':
       ast_f = fmt.HtmlOutput(f)
     else:
       raise AssertionError()
 
-    if 'abbrev-' in flag.ast_format:
+    if 'abbrev-' in afmt:
       tree = node.AbbreviatedTree()
     else:
       tree = node.PrettyTree()

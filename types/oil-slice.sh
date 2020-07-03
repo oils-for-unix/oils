@@ -13,7 +13,7 @@ shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 source types/common.sh
 
 demo() {
-  export PYTHONPATH=.
+  export PYTHONPATH='.:vendor/'
 
   echo 'echo hi' | bin/osh_parse.py
   bin/osh_parse.py -c 'ls -l'
