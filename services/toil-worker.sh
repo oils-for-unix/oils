@@ -77,14 +77,22 @@ cpp-tasks() {
   # consts_gen.py needs types_asdl.py
   cat <<EOF
 dump-versions   services/toil-worker.sh dump-versions -
-build-minimal   build/dev.sh minimal        -
-cpp-unit-deps   test/cpp-unit.sh deps       -
-cpp-unit-all    test/cpp-unit.sh all        -
-mycpp-clone     mycpp/setup.sh clone        -
-mycpp-deps      mycpp/setup.sh deps         -
-translate       mycpp/setup.sh build        -
+build-minimal   build/dev.sh minimal                  -
+cpp-unit-deps   test/cpp-unit.sh deps                 -
+cpp-unit-all    test/cpp-unit.sh all                  -
+mycpp-clone     mycpp/setup.sh clone                  -
+mycpp-deps      mycpp/setup.sh deps                   -
+translate       mycpp/setup.sh build                  -
+demo            build/mycpp.sh osh-eval-demo          -
 EOF
+# Why is this hanging?
+#spec-cpp        test/spec-cpp.sh travis      _tmp/spec/cpp/osh-summary.html
+
+  # TODO:
+  # - Run mycpp.sh build-all, test-all
+  # - Run build/mycpp.sh osh-eval-smoke
 }
+
 
 # TODO: Add more tests, like
 # - web/table/csv2html-test.sh (needs some assertions)

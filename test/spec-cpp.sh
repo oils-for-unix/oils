@@ -68,6 +68,15 @@ all() {
   html-summary
 }
 
+travis() {
+  # Run serially on Travis?  It hung once
+  export MAX_PROCS=1
+
+  # Do less work to start
+  export NUM_SPEC_TASKS=4
+  all
+}
+
 readonly TSV=(_tmp/spec/cpp/*.tsv)
 
 console-row() {
