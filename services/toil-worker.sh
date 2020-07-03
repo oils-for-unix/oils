@@ -83,7 +83,7 @@ cpp-unit-all    test/cpp-unit.sh all                  -
 mycpp-clone     mycpp/setup.sh clone                  -
 mycpp-deps      mycpp/setup.sh deps                   -
 translate       mycpp/setup.sh build                  -
-demo            build/mycpp.sh osh-eval-demo          -
+osh-eval-demo   build/mycpp.sh osh-eval-demo          -
 EOF
 # Why is this hanging?
 #spec-cpp        test/spec-cpp.sh travis      _tmp/spec/cpp/osh-summary.html

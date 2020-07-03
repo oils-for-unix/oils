@@ -25,7 +25,7 @@ demo() {
   $osh_eval -n -c 'ls -l'
   echo ---
   # ast format is none
-  $osh_eval -a none -n -c 'ls -l'
+  $osh_eval --ast-format none -n -c 'ls -l'
 
   echo '-----'
 
