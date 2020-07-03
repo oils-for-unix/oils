@@ -30,6 +30,11 @@ build() {
   make
 }
 
+# https://superuser.com/questions/380772/removing-ansi-color-codes-from-text-stream
+filter-ansi() {
+  sed 's/\x1b\[[0-9;]*m//g'
+}
+
 run-tests() {
   cd $BASE_DIR
 
@@ -37,8 +42,8 @@ run-tests() {
   #wc -l out/ble.osh
   #wc -l lib/test-util.sh
 
-  # Force interactive shell on Travis.
-  ../../_bin/osh -i --rcfile oshrc.test-util
+  # Force interactive shell on Travis, but remove color.
+  ../../_bin/osh -i --rcfile oshrc.test-util | filter-ansi
 
   echo DONE
 }

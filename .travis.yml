@@ -133,3 +133,27 @@ jobs:
         on_failure: change  # `always` will be the setting once code changes slow down
 
       <<: *publish_html
+
+    - name: cpp
+      dist: bionic
+      cache:
+        apt: true
+        pip: true
+        directories:
+          - _deps/                  # re2c doesn't change much
+
+      # Enable this to quickly test the deploy step at the end
+      env:
+        - TRAVIS_SKIP=
+
+      addons:
+        apt:
+          packages:
+            - python3-pip
+              # for MyPy virtualenv
+            - python3-venv
+
+      script:
+        - services/toil-worker.sh run-cpp
+
+      <<: *publish_html

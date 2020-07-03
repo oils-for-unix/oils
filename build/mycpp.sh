@@ -11,7 +11,8 @@ source build/common.sh  # for $CLANG_DIR_RELATIVE, $PREPARE_DIR
 
 readonly REPO_ROOT=~/git/oilshell/oil
 
-readonly MYPY_REPO=~/git/languages/mypy
+# set by mycpp/setup.sh
+readonly MYPY_REPO=${MYPY_REPO:-~/git/languages/mypy}
 
 # for 'perf'.  Technically this may slow things down, but it was in the noise
 # on parsing configure-coreutils.
@@ -57,7 +58,14 @@ mycpp() {
   ### Run mycpp (in a virtualenv because it depends on Python 3 / MyPy)
 
   # created by mycpp/run.sh
-  ( source mycpp/_tmp/mycpp-venv/bin/activate
+
+  ( 
+    # for _OLD_VIRTUAL_PATH error on Travis?
+    set +o nounset
+    set +o pipefail
+    set +o errexit
+
+    source mycpp/_tmp/mycpp-venv/bin/activate
     time PYTHONPATH=$MYPY_REPO MYPYPATH=$REPO_ROOT:$REPO_ROOT/native \
       mycpp/mycpp_main.py "$@"
   )

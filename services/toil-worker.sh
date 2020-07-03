@@ -27,6 +27,17 @@ dump-timezone() {
   find /usr/share/zoneinfo -type f | xargs md5sum | grep $md5
 }
 
+dump-versions() {
+  set +o errexit
+
+  set -x
+  which python
+  python -V
+
+  which python3
+  python3 -V
+}
+
 dummy-tasks() {
   ### Print tasks that execute quickly
 
@@ -50,8 +61,6 @@ dev-minimal-tasks() {
   # (task_name, script, action, result_html)
   cat <<EOF
 build-minimal   build/dev.sh minimal        -
-cpp-unit-deps   test/cpp-unit.sh deps       -
-cpp-unit-all    test/cpp-unit.sh all        -
 lint            test/lint.sh travis         -
 typecheck-slice types/oil-slice.sh travis   -
 typecheck-other types/run.sh travis         -
@@ -60,6 +69,21 @@ oil-spec        test/spec.sh oil-all-serial _tmp/spec/oil-language/oil.html
 osh-minimal     test/spec.sh osh-minimal    _tmp/spec/survey/osh-minimal.html
 EOF
 
+}
+
+cpp-tasks() {
+  # (task_name, script, action, result_html)
+
+  # consts_gen.py needs types_asdl.py
+  cat <<EOF
+dump-versions   services/toil-worker.sh dump-versions -
+build-minimal   build/dev.sh minimal        -
+cpp-unit-deps   test/cpp-unit.sh deps       -
+cpp-unit-all    test/cpp-unit.sh all        -
+mycpp-clone     mycpp/setup.sh clone        -
+mycpp-deps      mycpp/setup.sh deps         -
+translate       mycpp/setup.sh build        -
+EOF
 }
 
 # TODO: Add more tests, like
@@ -212,13 +236,11 @@ _run-dev-all-nix() {
 
 }
 
-run-ovm-tarball() {
-  ovm-tarball-tasks | run-tasks
-}
+run-ovm-tarball() { ovm-tarball-tasks | run-tasks; }
 
-run-app-tests() {
-  app-tests-tasks | run-tasks
-}
+run-app-tests() { app-tests-tasks | run-tasks; }
+
+run-cpp() { cpp-tasks | run-tasks; }
 
 run-dev-all-nix() {
   ### Travis job dev-all-nix

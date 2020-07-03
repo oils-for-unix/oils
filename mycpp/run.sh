@@ -44,7 +44,7 @@ set -o errexit
 readonly THIS_DIR=$(cd $(dirname $0) && pwd)
 readonly REPO_ROOT=$(cd $THIS_DIR/.. && pwd)
 
-readonly MYPY_REPO=~/git/languages/mypy
+readonly MYPY_REPO=${MYPY_REPO:-~/git/languages/mypy}
 
 source $REPO_ROOT/test/common.sh  # for R_PATH
 source $REPO_ROOT/build/common.sh  # for $CLANG_DIR_RELATIVE, $PREPARE_DIR
@@ -69,7 +69,8 @@ time-tsv() {
 
 create-venv() {
   local dir=_tmp/mycpp-venv
-  /usr/local/bin/python3.6 -m venv $dir
+  #python3.6 -m venv $dir
+  python3 -m venv $dir
 
   ls -l $dir
   
