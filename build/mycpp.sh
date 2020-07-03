@@ -9,7 +9,8 @@ set -o errexit
 
 source build/common.sh  # for $CLANG_DIR_RELATIVE, $PREPARE_DIR
 
-readonly REPO_ROOT=~/git/oilshell/oil
+readonly THIS_DIR=$(dirname $(readlink -f $0))
+readonly REPO_ROOT=$THIS_DIR/..
 
 # set by mycpp/setup.sh
 readonly MYPY_REPO=${MYPY_REPO:-~/git/languages/mypy}
