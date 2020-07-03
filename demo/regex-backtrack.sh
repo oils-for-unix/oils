@@ -2,6 +2,13 @@
 #
 # Demo for EggEx.  Do any of these common engines backtrack?
 #
+# Related: https://research.swtch.com/glob
+#
+# "Perhaps the most interesting fact evident in the graph is that GNU glibc,
+# the C library used on Linux systems, has a linear-time glob implementation,
+# but BSD libc, the C library used on BSD and macOS systems, has an
+# exponential-time implementation."
+#
 # Usage:
 #   ./regex-backtrack.sh <function name>
 
