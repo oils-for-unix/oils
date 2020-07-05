@@ -176,7 +176,7 @@ fnmatch-compare() {
 # sed, python, perl, gawk have captures
 #
 
-egrep0() {
+egrep-match() {
   local text=$1
   local pat=$2
 
@@ -185,7 +185,7 @@ egrep0() {
   echo "$text" | egrep -o "$pat"
 }
 
-sed0() {
+sed-match() {
   local text=$1
   local pat=$2
 
@@ -202,7 +202,7 @@ sed0() {
   #echo "$text" | sed "/$pat/p"
 }
 
-libc-capture() {
+libc-match() {
   local text=$1
   local pat=$2
 
@@ -211,7 +211,7 @@ libc-capture() {
   echo ${BASH_REMATCH[0]}
 }
 
-gawk-capture() {
+gawk-match() {
   local text=$1
   local pat=$2
 
@@ -219,7 +219,7 @@ gawk-capture() {
   echo "$text" | gawk 'match($0, /'"$pat"'/, m) { print m[0] }'
 }
 
-python-capture() {
+python-match() {
   local text=$1
   local pattern=$2
 
@@ -236,7 +236,7 @@ print(re.match(pattern, text).group(0))
 ' "$pattern" "$text"
 }
 
-perl-capture() {
+perl-match() {
   local text=$1
   local pat=$2
 
@@ -254,20 +254,106 @@ greedy() {
     echo "=== matching against $pat"
     echo
 
-    time egrep0 "$text" "$pat"
+    time egrep-match "$text" "$pat"
 
     #local pat2='\<.*\>h'
-    time sed0 "$text" "$pat"
+    time sed-match "$text" "$pat"
 
-    time libc-capture "$text" "$pat"
-    time gawk-capture "$text" "$pat"
-    time python-capture  "$text" "$pat"
-    time perl-capture "$text" "$pat"
+    time libc-match "$text" "$pat"
+    time gawk-match "$text" "$pat"
+    time python-match "$text" "$pat"
+    time perl-match "$text" "$pat"
   done
+
+  echo
+  echo '== nongreedy'
+  echo
+
+  # Only backtracking engines support this non-greedy behavior
+  pat='<.*?>'
+  time python-match "$text" "$pat"
+  time perl-match "$text" "$pat"
 }
 
 #
 # Capture Semantics -- the "parse problem"
 #
+
+libc-submatch() {
+  local text=$1
+  local pat=$2
+
+  echo -n 'libc  '
+  [[ "$text" =~ $pat ]]
+  echo ${BASH_REMATCH[1]}
+}
+
+gawk-submatch() {
+  local text=$1
+  local pat=$2
+
+  echo -n 'gawk  '
+  echo "$text" | gawk 'match($0, /'"$pat"'/, m) { print m[1] }'
+}
+
+sed-submatch() {
+  local text=$1
+  local pat=$2
+
+  echo -n 'sed   '
+  echo "$text" | sed -r -n 's/'"$pat"'/\1/p'
+}
+
+python-submatch() {
+  local text=$1
+  local pattern=$2
+
+  echo -n 'py    '
+  python -c '
+import re, sys
+
+pattern, text = sys.argv[1:]
+#print(pattern)
+#print(text)
+
+# Assumed to match
+print(re.match(pattern, text).group(1))
+' "$pattern" "$text"
+}
+
+perl-submatch() {
+  local text=$1
+  local pat=$2
+
+  echo -n 'perl  '
+  echo "$text" | perl -n -e '$_ = /'"$pat"'/; print $1'
+  echo
+}
+
+# Digression: POSIX submatching
+# https://swtch.com/~rsc/regexp/regexp2.html
+
+submatch() {
+  local text='abcdefg'
+  local pat='(a|bcdef|g|ab|c|d|e|efg|fg)*'
+
+  # Simpler version
+  local text='abc'
+  local pat='(a|bc|ab|c)*'
+
+  # they all print 'g' ?
+  # So there's no difference?
+
+  # These are POSIX conformance bugs?
+  # 2010: http://hackage.haskell.org/package/regex-posix-unittest
+  # https://wiki.haskell.org/Regex_Posix
+
+  libc-submatch "$text" "$pat"
+  gawk-submatch "$text" "$pat"
+  sed-submatch "$text" "$pat"
+
+  python-submatch "$text" "$pat"
+  perl-submatch "$text" "$pat"
+}
 
 "$@"
