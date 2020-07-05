@@ -16,16 +16,11 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source demo/backtrack-lib.sh
+
+TIMEFORMAT='%U'  # CPU seconds spent in user mode
+
 # https://swtch.com/~rsc/regexp/regexp1.html
-
-repeat() {
-  local s=$1
-  local n=$2
-
-  for i in $(seq $n); do
-    echo -n "$s"
-  done
-}
 
 pattern() {
   local n=$1
@@ -104,7 +99,8 @@ pattern, text = sys.argv[1:]
 #print(text)
 
 # Assumed to match
-print(re.match(pattern, text).group(0))
+if re.match(pattern, text):
+  print(text)
 ' "$pattern" "$text"
 }
 
@@ -121,8 +117,6 @@ perl-task() {
 benchmark() {
   local max=${1:-22}
 
-  TIMEFORMAT='%U'  # CPU seconds spent in user mode
-
   for i in $(seq $max); do
     local pattern=$(pattern $i)
     local text=$(text $i)
@@ -137,5 +131,143 @@ benchmark() {
     echo
   done
 }
+
+#
+# glob
+#
+
+glob-setup() {
+  mkdir -p $GLOB_TMP
+  cd $GLOB_TMP
+  touch $(repeat a 100)
+  ls -l 
+}
+
+readonly -a SHELLS=(dash bash mksh _deps/spec-bin/ash bin/osh)
+
+glob-compare() {
+  # bash and mksh both backtrack
+  # dash and ash are OK.  osh is good too!  with GNU libc.
+
+  # - zsh doesn't source it?
+  # - yash doesn't like 'local'.
+
+  for sh in ${SHELLS[@]}; do
+    echo === $sh
+    $sh -c '. demo/backtrack-lib.sh; glob_bench'
+  done
+
+}
+
+fnmatch-compare() {
+  # Same for fnmatch(): bash and mksh backtrack
+  # osh doesn't
+  # but dash and ash somehow don't like 'time shellfunc'?
+
+  for sh in ${SHELLS[@]}; do
+    echo === $sh
+    $sh -c '. demo/backtrack-lib.sh; fnmatch_bench'
+  done
+}
+
+#
+# Greedy vs. non-greedy
+#
+# sed, python, perl, gawk have captures
+#
+
+egrep0() {
+  local text=$1
+  local pat=$2
+
+  echo -n 'egrep '
+  # -o for only matching portion
+  echo "$text" | egrep -o "$pat"
+}
+
+sed0() {
+  local text=$1
+  local pat=$2
+
+  echo -n 'sed   '
+  #echo "$text" | sed -r -n 's/'"$pat"'/&/p'
+
+  # you need these extra .* in sed.  Because of the way the 's' command works.
+  # But that breaks some stuff
+
+  # https://stackoverflow.com/questions/2777579/how-to-output-only-captured-groups-with-sed/43997253
+
+  echo "$text" | sed -r -n 's/.*('"$pat"').*/\1/p'
+
+  #echo "$text" | sed "/$pat/p"
+}
+
+libc-capture() {
+  local text=$1
+  local pat=$2
+
+  echo -n 'libc  '
+  [[ "$text" =~ $pat ]]
+  echo ${BASH_REMATCH[0]}
+}
+
+gawk-capture() {
+  local text=$1
+  local pat=$2
+
+  echo -n 'gawk  '
+  echo "$text" | gawk 'match($0, /'"$pat"'/, m) { print m[0] }'
+}
+
+python-capture() {
+  local text=$1
+  local pattern=$2
+
+  echo -n 'py    '
+  python -c '
+import re, sys
+
+pattern, text = sys.argv[1:]
+#print(pattern)
+#print(text)
+
+# Assumed to match
+print(re.match(pattern, text).group(0))
+' "$pattern" "$text"
+}
+
+perl-capture() {
+  local text=$1
+  local pat=$2
+
+  # I can't figure out how to do the equivalent of $0 in Perl?
+  echo -n 'perl  '
+  echo "$text" | perl -n -e '$_ = /('"$pat"')/; print $1'
+  echo
+}
+
+greedy() {
+  local text='<p>hello</p> foo'
+
+  for pat in '<.*>' '<.*>h'; do
+    echo
+    echo "=== matching against $pat"
+    echo
+
+    time egrep0 "$text" "$pat"
+
+    #local pat2='\<.*\>h'
+    time sed0 "$text" "$pat"
+
+    time libc-capture "$text" "$pat"
+    time gawk-capture "$text" "$pat"
+    time python-capture  "$text" "$pat"
+    time perl-capture "$text" "$pat"
+  done
+}
+
+#
+# Capture Semantics -- the "parse problem"
+#
 
 "$@"
