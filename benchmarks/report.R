@@ -85,13 +85,20 @@ ParserReport = function(in_dir, out_dir) {
   all_times %>% distinct(host_name, host_hash) -> distinct_hosts
   # Just use the name
   distinct_hosts$host_label = distinct_hosts$host_name
+
+  Log('')
+  Log('Distinct hosts')
   print(distinct_hosts)
 
   all_times %>% distinct(shell_name, shell_hash) -> distinct_shells
+
+  Log('')
+  Log('Distinct shells')
   print(distinct_shells)
 
   distinct_shells$shell_label = NA  # the column we fill in below
 
+  Log('')
   Log('Labeling shells')
 
   for (i in 1:nrow(distinct_shells)) {
