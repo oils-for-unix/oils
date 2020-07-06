@@ -81,7 +81,7 @@ parser-task() {
       ;;
 
     osh_eval.*)
-      extra_args='-a none'
+      extra_args='--ast-format none'
       ;;
   esac
 
