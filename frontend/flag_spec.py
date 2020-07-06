@@ -218,12 +218,6 @@ class _FlagSpec(object):
     """For builtins to read args after we parse flags."""
     return args.Parse(self, arg_r)
 
-  def ParseArgv(self, argv):
-    # type: (List[str]) -> Tuple[args._Attributes, int]
-    """For tools/readlink.py -- no location info available."""
-    arg_r = args.Reader(argv)
-    return self.Parse(arg_r), arg_r.i
-
 
 class _FlagSpecAndMore(object):
   """Parser for 'set' and 'sh', which both need to process shell options.
