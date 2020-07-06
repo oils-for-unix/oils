@@ -719,11 +719,14 @@ run-for-release() {
 
   run-other-suite-for-release parse-errors all
 
-  # Done in _oil-native-build
+  # Done in _oil-native-build on the benchmark-data version
   #build/mycpp.sh compile-oil-native-asan
 
+  readonly OIL_VERSION=$(head -n 1 oil-version.txt)
+  readonly src="../benchmark-data/src/oil-native-$OIL_VERSION"
+
   local out=_tmp/other/parse-errors-oil-native.txt
-  ASAN_OPTIONS=detect_leaks=0 SH=_bin/osh_eval.asan \
+  ASAN_OPTIONS=detect_leaks=0 SH=$src/_bin/osh_eval.asan \
     run-other-suite-for-release parse-errors all $out
 }
 
