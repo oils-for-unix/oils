@@ -285,6 +285,7 @@ def AppBundleMain(argv):
     pass
 
   elif main_name == 'oshc':
+    arg_r.Next()
     main_argv = arg_r.Rest()
     try:
       return OshCommandMain(main_argv)
