@@ -341,6 +341,10 @@ osh-eval() {
 asdl-runtime() {
   ### Translate ASDL deps for unit tests
 
+  # - MESSY: asdl/runtime.h contains the SAME DEFINITIONS as
+  #   _build/cpp/osh_eval.h.  But we use it to run ASDL unit tests without
+  #   depending on Oil.
+
   local name=asdl_runtime
   local raw=_tmp/mycpp/${name}_raw.cc 
 

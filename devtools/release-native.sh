@@ -29,10 +29,14 @@ make-tar() {
 
   # TODO:
   # - Provide a way to run C++ tests?  Unit tests and smoke tests alike.
+  # - MESSY: asdl/runtime.h contains the SAME DEFINITIONS as
+  #   _build/cpp/osh_eval.h.  But we use it to run ASDL unit tests without
+  #   depending on Oil.
 
   tar --create --transform "$sed_expr" --file $out \
     LICENSE.txt \
     README-native.txt \
+    asdl/runtime.h \
     build/common.sh \
     build/mycpp.sh \
     cpp/ \
