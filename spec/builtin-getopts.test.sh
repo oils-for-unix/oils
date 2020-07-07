@@ -1,8 +1,4 @@
-#!/bin/bash
-#
-# Bash implements type -t.
-# 
-# NOTE: Aliases don't work in batch mode!  Interactive only.
+# builtin-getopts.test.sh
 
 #### getopts empty
 set -- 
@@ -24,7 +20,11 @@ getopts 'hc:' opt
 echo status=$? opt=$opt
 getopts 'hc:' opt
 echo status=$? opt=$opt
-## stdout-json: "status=0 opt=h\nstatus=0 opt=c\nstatus=1 opt=?\n"
+## STDOUT:
+status=0 opt=h
+status=0 opt=c
+status=1 opt=?
+## END
 
 #### getopts resets OPTARG
 set -- -c foo -h
@@ -32,7 +32,10 @@ getopts 'hc:' opt
 echo status=$? opt=$opt OPTARG=$OPTARG
 getopts 'hc:' opt
 echo status=$? opt=$opt OPTARG=$OPTARG
-## stdout-json: "status=0 opt=c OPTARG=foo\nstatus=0 opt=h OPTARG=\n"
+## STDOUT:
+status=0 opt=c OPTARG=foo
+status=0 opt=h OPTARG=
+## END
 
 #### Basic getopts invocation
 set -- -h -c foo x y z
@@ -236,3 +239,18 @@ OPTIND=1 opt=a OPTARG=
 OPTIND=3 opt=b OPTARG=hi
 OPTIND=5 opt=c OPTARG=hello
 ## END
+
+#### OPTIND should be >= 1 (regression)
+OPTIND=-1
+getopts a: foo
+echo status=$?
+
+OPTIND=0
+getopts a: foo
+echo status=$?
+## STDOUT:
+status=1
+status=1
+## END
+## OK dash status: 2
+## OK dash stdout-json: ""

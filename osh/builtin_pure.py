@@ -32,7 +32,7 @@ from qsn_ import qsn
 from mycpp import mylib
 from osh import word_compile
 
-from typing import List, Dict, Tuple, TYPE_CHECKING
+from typing import List, Dict, Tuple, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from core.ui import ErrorFormatter
@@ -272,44 +272,97 @@ def _ParseOptSpec(spec_str):
   return spec
 
 
-def _GetOpts(spec, argv, optind, errfmt):
-  # type: (Dict[str, bool], List[str], int, ErrorFormatter) -> Tuple[int, str, str, int]
-  optarg = ''  # not set by default
+class GetOptsState(object):
+  """State persisted across invocations.
 
-  py_index = optind - 1  # 1-based indexing
-  n = len(argv)
+  TODO: Handle arg smooshing behavior here too.
+  """
+  def __init__(self, mem, errfmt):
+    # type: (Mem, ErrorFormatter) -> None
+    self.mem = mem
+    self.errfmt = errfmt
+    self.optind = -1
 
-  if py_index >= n:
-    return 1, '?', optarg, optind
+  def _OptInd(self):
+    # type: () -> int
+    """Returns OPTIND that's >= 1, or -1 if it's invalid."""
+    # Note: OPTIND could be value.Int?
+    try:
+      result = state.GetInteger(self.mem, 'OPTIND')
+    except error.Runtime as e:
+      self.errfmt.Print_(e.UserErrorString())
+      result = -1
+    return result
 
-  current = argv[py_index]
+  def GetFromArgv(self, argv):
+    # type: (List[str]) -> Optional[str]
+    """Get the value of argv at OPTIND.  Returns None if it's out of range."""
+    optind = self._OptInd()
+    if optind == -1:
+      return None
+    self.optind = optind  # save for later
+
+    i = optind - 1  # 1-based index
+    #log('argv %s i %d', argv, i)
+    if 0 <= i and i < len(argv):
+      return argv[i]
+    else:
+      return None
+
+  def Fail(self):
+    # type: () -> None
+    """On failure, reset OPTARG."""
+    state.SetStringDynamic(self.mem, 'OPTARG', '')
+
+  def IncIndex(self):
+    # type: () -> None
+    """Increment OPTIND."""
+    # Note: bash-completion uses a *local* OPTIND !  Not global.
+    assert self.optind != -1
+    state.SetStringDynamic(self.mem, 'OPTIND', str(self.optind + 1))
+
+  def SetArg(self, optarg):
+    # type: (str) -> None
+    """Set OPTARG."""
+    state.SetStringDynamic(self.mem, 'OPTARG', optarg)
+
+
+def _GetOpts(spec, argv, my_state, errfmt):
+  # type: (Dict[str, bool], List[str], GetOptsState, ErrorFormatter) -> Tuple[int, str]
+  current = my_state.GetFromArgv(argv)
+  if current is None:  # out of range, etc.
+    my_state.Fail()
+    return 1, '?'
 
   if not current.startswith('-'):  # The next arg doesn't look like a flag.
-    return 1, '?', optarg, optind
+    my_state.Fail()
+    return 1, '?'
 
-  # It looks like an argument.  Stop iteration by returning 1.
-  if current not in spec:  # Invalid flag
-    optind += 1
-    return 0, '?', optarg, optind
+  my_state.IncIndex()
 
-  optind += 1
-  py_index += 1  # TOOD: change to GetOptsState?
+  if current not in spec:  # Invalid flag, so stop iteration.
+    return 0, '?'
+
   opt_char = current[-1]
+  if spec[current]:  # does it need an argument?
+    optarg = my_state.GetFromArgv(argv)
 
-  needs_arg = spec[current]
-  if needs_arg:
-    if py_index >= n:
+    if optarg is None:
+      my_state.Fail()
       # TODO: Add location info
       errfmt.Print_('getopts: option %r requires an argument.' % current)
       tmp = [qsn.maybe_shell_encode(a) for a in argv]
       stderr_line('(getopts argv: %s)', ' '.join(tmp))
+
       # Hm doesn't cause status 1?
-      return 0, '?', optarg, optind
+      return 0, '?'
 
-    optarg = argv[py_index]
-    optind += 1
+    my_state.IncIndex()
+    my_state.SetArg(optarg)
+  else:
+    my_state.SetArg('')
 
-  return 0, opt_char, optarg, optind
+  return 0, opt_char
 
 
 class GetOpts(vm._Builtin):
@@ -321,11 +374,12 @@ class GetOpts(vm._Builtin):
     OPTIND - initialized to 1 at startup
     OPTARG - argument
   """
-
   def __init__(self, mem, errfmt):
     # type: (Mem, ErrorFormatter) -> None
     self.mem = mem
     self.errfmt = errfmt
+
+    self.my_state = GetOptsState(mem, errfmt)
     self.spec_cache = {}  # type: Dict[str, Dict[str, bool]]
 
   def Run(self, cmd_val):
@@ -345,25 +399,14 @@ class GetOpts(vm._Builtin):
       spec = _ParseOptSpec(spec_str)
       self.spec_cache[spec_str] = spec
 
-    # TODO: OPTIND could be value.Int?
-    try:
-      optind = state.GetInteger(self.mem, 'OPTIND')
-    except error.Runtime as e:
-      self.errfmt.Print_(e.UserErrorString())
-      return 1
-
     user_argv = self.mem.GetArgv() if arg_r.AtEnd() else arg_r.Rest()
     #util.log('user_argv %s', user_argv)
-    status, opt_char, optarg, optind = _GetOpts(spec, user_argv, optind,
-                                                self.errfmt)
+    status, opt_char = _GetOpts(spec, user_argv, self.my_state, self.errfmt)
 
-    # Bug fix: bash-completion uses a *local* OPTIND !  Not global.
-    state.SetStringDynamic(self.mem, 'OPTARG', optarg)
-    state.SetStringDynamic(self.mem, 'OPTIND', str(optind))
     if match.IsValidVarName(var_name):
       state.SetStringDynamic(self.mem, var_name, opt_char)
     else:
-      # NOTE: The builtin has PARTIALLY filed.  This happens in all shells
+      # NOTE: The builtin has PARTIALLY set state.  This happens in all shells
       # except mksh.
       raise error.Usage('got invalid variable name %r' % var_name,
                         span_id=var_spid)
