@@ -79,8 +79,6 @@ travis() {
   all
 }
 
-readonly TSV=(_tmp/spec/cpp/*.tsv)
-
 console-row() {
   ### Print out a histogram of results
 
@@ -129,6 +127,9 @@ END {
 
 console-summary() {
   ### Report on our progress translating
+
+  # Can't go at the top level because files won't exist!
+  readonly TSV=(_tmp/spec/cpp/*.tsv)
 
   wc -l "${TSV[@]}"
 
@@ -204,6 +205,9 @@ END {
 }
 
 summary-csv() {
+  # Can't go at the top level because files might not exist!
+  readonly TSV=(_tmp/spec/cpp/*.tsv)
+
   cat <<EOF
 ROW_CSS_CLASS,name,name_HREF,osh,osh_eval.py,delta_py,osh_eval.cpp,delta_cpp
 EOF
