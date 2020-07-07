@@ -72,6 +72,22 @@ echo status=$?
 ## stdout: ERROR 3
 ## status: 2
 
+#### getopts with with -
+set -- -h -
+echo "$@"
+while getopts "hc:" opt; do
+  case $opt in
+    h) FLAG_h=1 ;;
+    c) FLAG_c="$OPTARG" ;;
+    '?') echo ERROR $OPTIND; exit 2; ;;
+  esac
+done
+echo status=$?
+## STDOUT:
+-h -
+status=0
+## END
+
 #### getopts missing required argument
 set -- -h -c
 while getopts "hc:" opt; do
@@ -222,7 +238,35 @@ min() {
 min -s
 ## stdout: loop 2
 
-#### Flags can be smooshed together, e.g. -ab
+#### two flags: -ab
+getopts "ab" opt -ab
+echo OPTIND=$OPTIND opt=$opt OPTARG=$OPTARG
+getopts "ab" opt -ab
+echo OPTIND=$OPTIND opt=$opt OPTARG=$OPTARG
+## STDOUT:
+OPTIND=2 opt=a OPTARG=
+OPTIND=2 opt=b OPTARG=
+## END
+## BUG bash STDOUT:
+OPTIND=1 opt=a OPTARG=
+OPTIND=2 opt=b OPTARG=
+## END
+
+#### flag and arg: -c10
+getopts "c:" opt -c10
+echo OPTIND=$OPTIND opt=$opt OPTARG=$OPTARG
+getopts "c:" opt -c10
+echo OPTIND=$OPTIND opt=$opt OPTARG=$OPTARG
+## STDOUT:
+OPTIND=2 opt=c OPTARG=10
+OPTIND=2 opt=? OPTARG=
+## END
+## BUG dash STDOUT:
+OPTIND=2 opt=c OPTARG=10
+OPTIND=2 opt=? OPTARG=10
+## END
+
+#### More Smooshing 1
 getopts "ab:c:" opt -ab hi -c hello
 echo OPTIND=$OPTIND opt=$opt OPTARG=$OPTARG
 getopts "ab:c:" opt -ab hi -c hello
@@ -238,6 +282,24 @@ OPTIND=5 opt=c OPTARG=hello
 OPTIND=1 opt=a OPTARG=
 OPTIND=3 opt=b OPTARG=hi
 OPTIND=5 opt=c OPTARG=hello
+## END
+
+#### More Smooshing 2
+getopts "abc:" opt -abc10
+echo OPTIND=$OPTIND opt=$opt OPTARG=$OPTARG
+getopts "abc:" opt -abc10
+echo OPTIND=$OPTIND opt=$opt OPTARG=$OPTARG
+getopts "abc:" opt -abc10
+echo OPTIND=$OPTIND opt=$opt OPTARG=$OPTARG
+## STDOUT:
+OPTIND=2 opt=a OPTARG=
+OPTIND=2 opt=b OPTARG=
+OPTIND=2 opt=c OPTARG=10
+## END
+## BUG bash STDOUT:
+OPTIND=1 opt=a OPTARG=
+OPTIND=1 opt=b OPTARG=
+OPTIND=2 opt=c OPTARG=10
 ## END
 
 #### OPTIND should be >= 1 (regression)

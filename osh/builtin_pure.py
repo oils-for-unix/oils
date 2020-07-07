@@ -259,15 +259,14 @@ def _ParseOptSpec(spec_str):
   while True:
     if i >= n:
       break
-    c = spec_str[i]
-    key = '-' + c
-    spec[key] = False
+    ch = spec_str[i]
+    spec[ch] = False
     i += 1
     if i >= n:
       break
     # If the next character is :, change the value to True.
     if spec_str[i] == ':':
-      spec[key] = True
+      spec[ch] = True
       i += 1
   return spec
 
@@ -282,6 +281,7 @@ class GetOptsState(object):
     self.mem = mem
     self.errfmt = errfmt
     self.optind = -1
+    self.flag_pos = 1  # position within the arg
 
   def _OptInd(self):
     # type: () -> int
@@ -294,7 +294,7 @@ class GetOptsState(object):
       result = -1
     return result
 
-  def GetFromArgv(self, argv):
+  def GetArg(self, argv):
     # type: (List[str]) -> Optional[str]
     """Get the value of argv at OPTIND.  Returns None if it's out of range."""
     optind = self._OptInd()
@@ -309,43 +309,48 @@ class GetOptsState(object):
     else:
       return None
 
-  def Fail(self):
-    # type: () -> None
-    """On failure, reset OPTARG."""
-    state.SetStringDynamic(self.mem, 'OPTARG', '')
-
   def IncIndex(self):
     # type: () -> None
     """Increment OPTIND."""
     # Note: bash-completion uses a *local* OPTIND !  Not global.
     assert self.optind != -1
     state.SetStringDynamic(self.mem, 'OPTIND', str(self.optind + 1))
+    self.flag_pos = 1  # reset
 
   def SetArg(self, optarg):
     # type: (str) -> None
     """Set OPTARG."""
     state.SetStringDynamic(self.mem, 'OPTARG', optarg)
 
+  def Fail(self):
+    # type: () -> None
+    """On failure, reset OPTARG."""
+    state.SetStringDynamic(self.mem, 'OPTARG', '')
+
 
 def _GetOpts(spec, argv, my_state, errfmt):
   # type: (Dict[str, bool], List[str], GetOptsState, ErrorFormatter) -> Tuple[int, str]
-  current = my_state.GetFromArgv(argv)
+  current = my_state.GetArg(argv)
+  log('current %s', current)
   if current is None:  # out of range, etc.
     my_state.Fail()
     return 1, '?'
 
-  if not current.startswith('-'):  # The next arg doesn't look like a flag.
+  if not current.startswith('-') or current == '-':
     my_state.Fail()
     return 1, '?'
 
+  opt_char = current[1]
+  #opt_char = current[my_state.flag_pos]
+
   my_state.IncIndex()
 
-  if current not in spec:  # Invalid flag, so stop iteration.
+  if opt_char not in spec:  # Invalid flag
     return 0, '?'
 
-  opt_char = current[-1]
-  if spec[current]:  # does it need an argument?
-    optarg = my_state.GetFromArgv(argv)
+  #opt_char = current[-1]
+  if spec[opt_char]:  # does it need an argument?
+    optarg = my_state.GetArg(argv)
 
     if optarg is None:
       my_state.Fail()

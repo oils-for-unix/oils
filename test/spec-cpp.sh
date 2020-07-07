@@ -75,7 +75,7 @@ travis() {
   export MAX_PROCS=1
 
   # Do less work to start
-  export NUM_SPEC_TASKS=4
+  export NUM_SPEC_TASKS=8
   all
 }
 

@@ -84,9 +84,9 @@ mycpp-clone     mycpp/setup.sh clone                  -
 mycpp-deps      mycpp/setup.sh deps                   -
 translate       mycpp/setup.sh build                  -
 osh-eval-demo   build/mycpp.sh osh-eval-demo          -
-spec-cpp        test/spec-cpp.sh travis      _tmp/spec/cpp/osh-summary.html
 EOF
 # Why is this hanging?
+#spec-cpp        test/spec-cpp.sh travis      _tmp/spec/cpp/osh-summary.html
 
   # TODO:
   # - Run mycpp.sh build-all, test-all

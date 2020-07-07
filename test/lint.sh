@@ -237,5 +237,13 @@ inheritance() {
 base-classes() {
   inheritance | egrep -o '\(.*\)' | sort | uniq -c | sort -n
 }
+
+translation() {
+  local out=_tmp/ik.txt
+  build/mycpp.sh osh-eval-manifest \
+    | xargs egrep -n 'IndexError|KeyError' \
+    | tee $out
+  echo "Wrote $out"
+}
  
 "$@"
