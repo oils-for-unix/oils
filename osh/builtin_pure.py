@@ -105,9 +105,9 @@ class UnAlias(vm._Builtin):
 
     status = 0
     for i, name in enumerate(argv):
-      try:
+      if name in self.aliases:
         del self.aliases[name]
-      except KeyError:
+      else:
         self.errfmt.Print_('No alias named %r' % name,
                            span_id=cmd_val.arg_spids[i])
         status = 1
@@ -276,10 +276,13 @@ def _GetOpts(spec, argv, optind, errfmt):
   # type: (Dict[str, bool], List[str], int, ErrorFormatter) -> Tuple[int, str, str, int]
   optarg = ''  # not set by default
 
-  try:
-    current = argv[optind-1]  # 1-based indexing
-  except IndexError:
+  py_index = optind - 1  # 1-based indexing
+  n = len(argv)
+
+  if py_index >= n:
     return 1, '?', optarg, optind
+
+  current = argv[py_index]
 
   if not current.startswith('-'):  # The next arg doesn't look like a flag.
     return 1, '?', optarg, optind
@@ -290,13 +293,12 @@ def _GetOpts(spec, argv, optind, errfmt):
     return 0, '?', optarg, optind
 
   optind += 1
+  py_index += 1  # TOOD: change to GetOptsState?
   opt_char = current[-1]
 
   needs_arg = spec[current]
   if needs_arg:
-    try:
-      optarg = argv[optind-1]  # 1-based indexing
-    except IndexError:
+    if py_index >= n:
       # TODO: Add location info
       errfmt.Print_('getopts: option %r requires an argument.' % current)
       tmp = [qsn.maybe_shell_encode(a) for a in argv]
@@ -304,6 +306,7 @@ def _GetOpts(spec, argv, optind, errfmt):
       # Hm doesn't cause status 1?
       return 0, '?', optarg, optind
 
+    optarg = argv[py_index]
     optind += 1
 
   return 0, opt_char, optarg, optind
@@ -337,9 +340,8 @@ class GetOpts(vm._Builtin):
     var_name, var_spid = arg_r.ReadRequired2(
         'requires the name of a variable to set')
 
-    try:
-      spec = self.spec_cache[spec_str]
-    except KeyError:
+    spec = self.spec_cache.get(spec_str)
+    if spec is None:
       spec = _ParseOptSpec(spec_str)
       self.spec_cache[spec_str] = spec
 
