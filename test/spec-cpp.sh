@@ -13,6 +13,8 @@ source test/common.sh  # html-head
 source test/spec-common.sh
 source web/table/html.sh
 
+shopt -s failglob  # to debug TSV expansion failure below
+
 readonly REPO_ROOT=$(cd $(dirname $0)/..; pwd)
 
 #

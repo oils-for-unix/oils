@@ -361,6 +361,11 @@ git-changelog-0.8.pre6() {
     > _release/VERSION/changelog.html
 }
 
+git-changelog-0.8.pre7() {
+  _git-changelog origin/release/0.8.pre6 release/0.8.pre7 \
+    > _release/VERSION/changelog.html
+}
+
 
 
 # For announcement.html
@@ -573,6 +578,10 @@ announcement-0.8.pre5() {
 
 announcement-0.8.pre6() {
   html-redirect '/blog/2020/06/release-0.8.pre6.html' > $SITE_DEPLOY_DIR/release/0.8.pre6/announcement.html
+}
+
+announcement-0.8.pre7() {
+  write-no-announcement
 }
 
 blog-redirect() {

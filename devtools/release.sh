@@ -89,6 +89,8 @@ make-release-branch() {
 # For redoing a release.  This is everything until you have to 'git pull' the
 # benchmark-data repo to make reports.
 auto-machine1() {
+  sudo -k; sudo true  # clear and re-cache credentials
+
   $0 build-and-test
   $0 metrics  # this can catch bugs
   test/wild.sh all
