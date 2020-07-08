@@ -444,9 +444,14 @@ TEST test_dict() {
   auto d2 = new Dict<Str*, int>();
   Str* key = new Str("key");
   d2->set(key, 42);
+
   log("d2['key'] = %d", d2->index(key));
   d2->set(new Str("key2"), 2);
   d2->set(new Str("key3"), 3);
+
+  ASSERT_EQ_FMT(3, len(d2), "%d");
+  d2->clear();
+  ASSERT_EQ(0, len(d2));
 
   log("  iterating over Dict");
   for (DictIter<Str*, int> it(d2); !it.Done(); it.Next()) {
@@ -462,16 +467,38 @@ TEST test_dict() {
   log("v2 = %p", v2);
 
   auto d3 = new Dict<Str*, int>();
+  auto a = new Str("a");
+
   d3->set(new Str("a"), 10);
   d3->set(new Str("b"), 11);
   d3->set(new Str("c"), 12);
   log("a = %d", d3->index(new Str("a")));
   log("b = %d", d3->index(new Str("b")));
   log("c = %d", d3->index(new Str("c")));
+  ASSERT_EQ(3, len(d3));
 
-  ASSERT(dict_contains(d3, new Str("a")));
-  mylib::dict_remove(d3, new Str("a"));
-  ASSERT(!dict_contains(d3, new Str("a")));
+  auto keys3 = d3->keys();
+  ASSERT(list_contains(keys3, a));
+  ASSERT(!list_contains(keys3, new Str("zzz")));
+
+  ASSERT(dict_contains(d3, a));
+  mylib::dict_remove(d3, a);
+  ASSERT(!dict_contains(d3, a));
+  ASSERT_EQ(2, len(d3));
+
+  // Use the method version
+  d3->remove(new Str("b"));
+  ASSERT(!dict_contains(d3, new Str("b")));
+  ASSERT_EQ(1, len(d3));
+
+  // Test a different type of dict, to make sure partial template
+  // specialization works
+  auto ss = new Dict<Str*, Str*>();
+  ss->set(a, a);
+  ASSERT_EQ(1, len(ss));
+
+  ss->remove(a);
+  ASSERT_EQ(0, len(ss));
 
   PASS();
 }

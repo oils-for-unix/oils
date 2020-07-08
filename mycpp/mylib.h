@@ -28,12 +28,19 @@
   void operator=(TypeName) = delete;
 
 class Str;
+
 template <class T>
 class List;
+
 template <class K, class V>
 class Dict;
 
 bool str_equals(Str* left, Str* right);
+
+namespace mylib {
+template <typename V>
+void dict_remove(Dict<Str*, V>* haystack, Str* needle);
+};
 
 extern Str* kEmptyString;
 
@@ -587,9 +594,9 @@ int find_by_key(std::vector<std::pair<int, V>>& items, int key) {
 // Dict currently implemented by VECTOR OF PAIRS.  TODO: Use a real hash table,
 // and measure performance.  The hash table has to beat this for small cases!
 template <class K, class V>
-class Dict {
+class _Dict {
  public:
-  Dict() : items_() {
+  _Dict() : items_() {
   }
 
   // d[key] in Python: raises KeyError if not found
@@ -648,7 +655,7 @@ class Dict {
   }
 
   void clear() {
-    assert(0);
+    items_.clear();
   }
 
   // std::unordered_map<K, V> m_;
@@ -658,6 +665,34 @@ class Dict {
   // returns the position in the array
   int find(K key) {
     return find_by_key(items_, key);
+  }
+};
+
+// Following this pattern so we don't have to repeat some methods for the Str*
+// version.
+//
+// https://stackoverflow.com/questions/27453449/c-template-partial-specialization-with-inheritance
+
+template <typename K, typename V>
+class Dict : public _Dict<K, V> {};
+
+// Partial specialization for K == Str*
+template <typename V>
+class Dict<Str*, V> : public _Dict<Str*, V> {
+ public:
+  void remove(Str* key) {
+    mylib::dict_remove(this, key);
+  }
+
+  List<Str*>* keys() {
+    auto result = new List<Str*>();
+    for (int i = 0; i < this->items_.size(); ++i) {
+      Str* s = this->items_[i].first;  // nullptr for deleted entries
+      if (s) {
+        result->append(s);
+      }
+    }
+    return result;
   }
 };
 
@@ -763,13 +798,25 @@ inline int len(const Str* s) {
 }
 
 template <typename T>
-int len(const List<T>* L) {
+inline int len(const List<T>* L) {
   return L->v_.size();
 }
 
 template <typename K, typename V>
-int len(const Dict<K, V>* d) {
+inline int len(const Dict<K, V>* d) {
   assert(0);
+}
+
+template <typename V>
+inline int len(const Dict<Str*, V>* d) {
+  int len = 0;
+  for (int i = 0; i < d->items_.size(); ++i) {
+    Str* s = d->items_[i].first;  // nullptr for deleted entries
+    if (s) {
+      len++;
+    }
+  }
+  return len;
 }
 
 //
