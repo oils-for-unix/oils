@@ -204,9 +204,8 @@ class Tracer(object):
 
     # NOTE: This cache is slightly broken because aliases are mutable!  I think
     # that is more or less harmless though.
-    try:
-      ps4_word = self.parse_cache[ps4]
-    except KeyError:
+    ps4_word = self.parse_cache.get(ps4)
+    if ps4_word is None:
       # We have to parse this at runtime.  PS4 should usually remain constant.
       w_parser = self.parse_ctx.MakeWordParserForPlugin(ps4)
 

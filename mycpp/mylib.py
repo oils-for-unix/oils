@@ -123,3 +123,14 @@ def hex_upper(i):
 def octal(i):
   # type: (int) -> str
   return '%o' % i
+
+
+def dict_remove(d, key):
+  # type: (Dict[str, Any], str) -> None
+  """
+  Ensure that a key isn't in the dict.
+  """
+  try:
+    del d[key]
+  except KeyError:
+    pass

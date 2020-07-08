@@ -198,9 +198,8 @@ class Evaluator(object):
     val = cast(value__Str, UP_val)
 
     # Parse backslash escapes (cached)
-    try:
-      tokens = self.tokens_cache[val.s]
-    except KeyError:
+    tokens = self.tokens_cache.get(val.s)
+    if tokens is None:
       tokens = match.Ps1Tokens(val.s)
       self.tokens_cache[val.s] = tokens
 
@@ -210,9 +209,8 @@ class Evaluator(object):
     # Parse it like a double-quoted word (cached).  TODO: This could be done on
     # mem.SetVar(), so we get the error earlier.
     # NOTE: This is copied from the PS4 logic in Tracer.
-    try:
-      ps1_word = self.parse_cache[ps1_str]
-    except KeyError:
+    ps1_word = self.parse_cache.get(ps1_str)
+    if ps1_word is None:
       w_parser = self.parse_ctx.MakeWordParserForPlugin(ps1_str)
       try:
         ps1_word = w_parser.ReadForPlugin()
@@ -259,9 +257,8 @@ class UserPlugin(object):
     # PROMPT_COMMAND almost never changes, so we try to cache its parsing.
     # This avoids memory allocations.
     prompt_cmd = cast(value__Str, val).s
-    try:
-      node = self.parse_cache[prompt_cmd]
-    except KeyError:
+    node = self.parse_cache[prompt_cmd]
+    if node is None:
       line_reader = reader.StringLineReader(prompt_cmd, self.arena)
       c_parser = self.parse_ctx.MakeOshParser(line_reader)
 

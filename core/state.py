@@ -123,10 +123,7 @@ class SearchPath(object):
   def MaybeRemoveEntry(self, name):
     # type: (str) -> None
     """When the file system changes."""
-    try:
-      del self.cache[name]
-    except KeyError:
-      pass
+    mylib.dict_remove(self.cache, name)
 
   def ClearCache(self):
     # type: () -> None
@@ -1515,11 +1512,7 @@ class Mem(object):
         #  raise error.Runtime("%r isn't an associative array" % lval.name)
 
         val = cast(value__AssocArray, UP_val)
-        try:
-          del val.d[lval.key]
-        except KeyError:
-          # note: we could have unset --strict for this case?
-          pass
+        mylib.dict_remove(val.d, lval.key)
 
       else:
         raise AssertionError(lval)

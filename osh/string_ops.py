@@ -95,17 +95,16 @@ def _NextUtf8Char(s, i):
 
   Validates UTF-8.
   """
-  byte_as_int = ord(s[i])  # Should never raise IndexError
+  n = len(s)
+  assert i < n, i  # should always be in range
+  byte_as_int = ord(s[i])
+  length = _Utf8CharLen(byte_as_int)
+  for j in xrange(i + 1, i + length):
+    if j >= n:
+      e_strict(INCOMPLETE_CHAR)
+    _CheckContinuationByte(s[j])
 
-  try:
-    length = _Utf8CharLen(byte_as_int)
-    for j in xrange(i + 1, i + length):
-      _CheckContinuationByte(s[j])
-    i += length
-  except IndexError:
-    e_strict(INCOMPLETE_CHAR)
-
-  return i
+  return i + length
 
 
 def PreviousUtf8Char(s, i):

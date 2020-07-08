@@ -469,6 +469,10 @@ TEST test_dict() {
   log("b = %d", d3->index(new Str("b")));
   log("c = %d", d3->index(new Str("c")));
 
+  ASSERT(dict_contains(d3, new Str("a")));
+  mylib::dict_remove(d3, new Str("a"));
+  ASSERT(!dict_contains(d3, new Str("a")));
+
   PASS();
 }
 

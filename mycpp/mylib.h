@@ -932,6 +932,15 @@ List<Str*>* sorted(Dict<Str*, V>* d) {
 
 namespace mylib {  // MyPy artifact
 
+template <typename K, typename V>
+inline void dict_remove(Dict<K, V>* haystack, K needle) {
+  int pos = find_by_key(haystack->items_, needle);
+  if (pos != -1) {
+    return;
+  }
+  //assert(0);
+}
+
 // A class for interfacing Str* slices with C functions that expect a NUL
 // terminated string.  It's meant to be used on the stack, like
 //

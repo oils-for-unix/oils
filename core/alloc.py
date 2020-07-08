@@ -86,12 +86,11 @@ class Arena(object):
   def GetLineNumStr(self, line_id):
     # type: (int) -> str
     line_num = self.line_nums[line_id]
-    try:
-      return self.line_num_strs[line_num]
-    except KeyError:
+    s = self.line_num_strs.get(line_num)
+    if s is None:
       s = str(line_num)
       self.line_num_strs[line_num] = s
-      return s
+    return s
 
   def GetLineSource(self, line_id):
     # type: (int) -> source_t
@@ -126,12 +125,9 @@ class Arena(object):
   def GetLineSpan(self, span_id):
     # type: (int) -> line_span
     assert span_id != runtime.NO_SPID, span_id
-    try:
-      return self.spans[span_id]
-    except IndexError:
-      log('Span ID out of range: %d is greater than %d', span_id,
-          len(self.spans))
-      raise
+    assert span_id < len(self.spans), \
+      'Span ID out of range: %d is greater than %d' % (span_id, len(self.spans))
+    return self.spans[span_id]
 
   def LastSpanId(self):
     # type: () -> int

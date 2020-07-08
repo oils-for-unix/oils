@@ -630,18 +630,20 @@ class AbstractWordEvaluator(StringWordEvaluator):
           index_num = int(index)
         except ValueError:
           return None
-        try:
+
+        if index_num < len(val.strs):
           return value.Str(val.strs[index_num])
-        except IndexError:
+        else:
           return value.Undef()
 
       elif case(value_e.AssocArray):
         val = cast(value__AssocArray, UP_val)
         if index in ('@', '*'):
           raise NotImplementedError()
-        try:
-          return value.Str(val.d[index])
-        except KeyError:
+        s = val.d.get(index)
+        if s is not None:
+          return value.Str(s)
+        else:
           return value.Undef()
 
       else:

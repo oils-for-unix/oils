@@ -2,8 +2,16 @@
 
 #### help
 help
+echo status=$? >&2
 help help
-## status: 0
+echo status=$? >&2
+help -- help
+echo status=$? >&2
+## STDERR:
+status=0
+status=0
+status=0
+## END
 
 #### bad help topic
 help ZZZ 2>$TMP/err.txt

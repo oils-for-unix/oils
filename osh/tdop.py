@@ -246,15 +246,15 @@ if mylib.PYTHON:
 
     def LookupNud(self, token):
       # type: (Id_t) -> NullInfo
-      try:
-        nud = self.nud_lookup[token]
-      except KeyError:
-        raise AssertionError('No nud for token %r' % token)
-      return nud
+
+      # As long as the table is complete, this shouldn't fail
+      return self.nud_lookup[token]
 
     def LookupLed(self, token):
       # type: (Id_t) -> LeftInfo
       """Get a left_info for the token."""
+
+      # As long as the table is complete, this shouldn't fail
       return self.led_lookup[token]
 
 
@@ -313,10 +313,7 @@ class TdopParser(object):
 
     while True:
       t = self.cur_word
-      try:
-        left_info = self.spec.LookupLed(self.op_id)
-      except KeyError:
-        raise AssertionError('Invalid token %s' % t)
+      left_info = self.spec.LookupLed(self.op_id)
 
       # Examples:
       # If we see 1*2+  , rbp = 27 and lbp = 25, so stop.

@@ -561,19 +561,19 @@ class Help(vm._Builtin):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
 
-    #attrs, arg_r = flag_spec.ParseCmdVal('help', cmd_val)
+    attrs, arg_r = flag_spec.ParseCmdVal('help', cmd_val)
     #arg = arg_types.help(attrs.attrs)
 
-    try:
-      topic = cmd_val.argv[1]
-      blame_spid = cmd_val.arg_spids[1]
-    except IndexError:
+    topic, blame_spid = arg_r.Peek2()
+    if topic is None:
       topic = 'help'
       blame_spid = runtime.NO_SPID
+    else:
+      arg_r.Next()
 
     # TODO: Should be -i for index?  Or -l?
     if topic == 'index':
-      groups = cmd_val.argv[2:]
+      groups = arg_r.Rest()
       if len(groups) == 0:
         # Print the whole index
         groups = self._Groups()
