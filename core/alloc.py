@@ -19,6 +19,8 @@ from core.pyerror import log
 
 from typing import List, Dict, cast
 
+_ = log
+
 
 class Arena(object):
   """A collection line spans and associated debug info.

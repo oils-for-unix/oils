@@ -257,7 +257,7 @@ class UserPlugin(object):
     # PROMPT_COMMAND almost never changes, so we try to cache its parsing.
     # This avoids memory allocations.
     prompt_cmd = cast(value__Str, val).s
-    node = self.parse_cache[prompt_cmd]
+    node = self.parse_cache.get(prompt_cmd)
     if node is None:
       line_reader = reader.StringLineReader(prompt_cmd, self.arena)
       c_parser = self.parse_ctx.MakeOshParser(line_reader)
