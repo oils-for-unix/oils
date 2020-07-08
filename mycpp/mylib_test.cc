@@ -217,6 +217,19 @@ TEST test_str_funcs() {
   ASSERT(str_equals(w.at0(), new Str("")));
   ASSERT(w.at1() == nullptr);
 
+  log("rjust()");
+  auto space = new Str(" ");
+  auto s6 = new Str("13");
+  ASSERT(str_equals(new Str("  13"), s6->rjust(4, space)));
+  ASSERT(str_equals(new Str(" 13"), s6->rjust(3, space)));
+  ASSERT(str_equals(new Str("13"), s6->rjust(2, space)));
+  ASSERT(str_equals(new Str("13"), s6->rjust(1, space)));
+
+  ASSERT(str_equals(new Str("13  "), s6->ljust(4, space)));
+  ASSERT(str_equals(new Str("13 "), s6->ljust(3, space)));
+  ASSERT(str_equals(new Str("13"), s6->ljust(2, space)));
+  ASSERT(str_equals(new Str("13"), s6->ljust(1, space)));
+
   PASS();
 }
 
@@ -450,6 +463,9 @@ TEST test_dict() {
   d2->set(new Str("key3"), 3);
 
   ASSERT_EQ_FMT(3, len(d2), "%d");
+  ASSERT_EQ_FMT(3, len(d2->keys()), "%d");
+  ASSERT_EQ_FMT(3, len(d2->values()), "%d");
+
   d2->clear();
   ASSERT_EQ(0, len(d2));
 
@@ -496,6 +512,9 @@ TEST test_dict() {
   auto ss = new Dict<Str*, Str*>();
   ss->set(a, a);
   ASSERT_EQ(1, len(ss));
+
+  ASSERT_EQ(1, len(ss->keys()));
+  ASSERT_EQ(1, len(ss->values()));
 
   ss->remove(a);
   ASSERT_EQ(0, len(ss));

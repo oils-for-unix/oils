@@ -328,13 +328,8 @@ class Str {
     assert(0);
   }
 
-  Str* ljust(int width, Str* fillchar) {
-    assert(0);
-  }
-
-  Str* rjust(int width, Str* fillchar) {
-    assert(0);
-  }
+  Str* ljust(int width, Str* fillchar);
+  Str* rjust(int width, Str* fillchar);
 
   const char* data_;
   int len_;
@@ -690,6 +685,17 @@ class Dict<Str*, V> : public _Dict<Str*, V> {
       Str* s = this->items_[i].first;  // nullptr for deleted entries
       if (s) {
         result->append(s);
+      }
+    }
+    return result;
+  }
+
+  List<V>* values() {
+    auto result = new List<V>();
+    for (int i = 0; i < this->items_.size(); ++i) {
+      auto& pair = this->items_[i];
+      if (pair.first) {
+        result->append(pair.second);
       }
     }
     return result;
