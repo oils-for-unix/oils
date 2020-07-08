@@ -33,6 +33,8 @@ class List;
 template <class K, class V>
 class Dict;
 
+bool str_equals(Str* left, Str* right);
+
 extern Str* kEmptyString;
 
 // for hand-written code
@@ -564,7 +566,8 @@ class DictIter {
 template <class V>
 int find_by_key(std::vector<std::pair<Str*, V>>& items, Str* key) {
   for (int i = 0; i < items.size(); ++i) {
-    if (str_equals(items[i].first, key)) {
+    Str* s = items[i].first;  // nullptr for deleted entries
+    if (s && str_equals(s, key)) {
       return i;
     }
   }
@@ -915,7 +918,6 @@ inline bool list_contains(List<T>* haystack, T needle) {
   return false;
 }
 
-// STUB
 template <typename K, typename V>
 inline bool dict_contains(Dict<K, V>* haystack, K needle) {
   return find_by_key(haystack->items_, needle) != -1;
@@ -932,13 +934,14 @@ List<Str*>* sorted(Dict<Str*, V>* d) {
 
 namespace mylib {  // MyPy artifact
 
-template <typename K, typename V>
-inline void dict_remove(Dict<K, V>* haystack, K needle) {
+// TODO: how to do the int version of this?  Do you need an extra bit?
+template <typename V>
+inline void dict_remove(Dict<Str*, V>* haystack, Str* needle) {
   int pos = find_by_key(haystack->items_, needle);
-  if (pos != -1) {
+  if (pos == -1) {
     return;
   }
-  //assert(0);
+  haystack->items_[pos].first = nullptr;
 }
 
 // A class for interfacing Str* slices with C functions that expect a NUL
