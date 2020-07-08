@@ -280,8 +280,8 @@ class GetOptsState(object):
     # type: (Mem, ErrorFormatter) -> None
     self.mem = mem
     self.errfmt = errfmt
-    self.optind = -1
-    self.flag_pos = 1  # position within the arg
+    self._optind = -1
+    self.flag_pos = 1  # position within the arg, public var
 
   def _OptInd(self):
     # type: () -> int
@@ -300,7 +300,7 @@ class GetOptsState(object):
     optind = self._OptInd()
     if optind == -1:
       return None
-    self.optind = optind  # save for later
+    self._optind = optind  # save for later
 
     i = optind - 1  # 1-based index
     #log('argv %s i %d', argv, i)
@@ -313,9 +313,8 @@ class GetOptsState(object):
     # type: () -> None
     """Increment OPTIND."""
     # Note: bash-completion uses a *local* OPTIND !  Not global.
-    assert self.optind != -1
-    state.SetStringDynamic(self.mem, 'OPTIND', str(self.optind + 1))
-    self.flag_pos = 1  # reset
+    assert self._optind != -1
+    state.SetStringDynamic(self.mem, 'OPTIND', str(self._optind + 1))
 
   def SetArg(self, optarg):
     # type: (str) -> None
@@ -331,7 +330,8 @@ class GetOptsState(object):
 def _GetOpts(spec, argv, my_state, errfmt):
   # type: (Dict[str, bool], List[str], GetOptsState, ErrorFormatter) -> Tuple[int, str]
   current = my_state.GetArg(argv)
-  log('current %s', current)
+  #log('current %s', current)
+
   if current is None:  # out of range, etc.
     my_state.Fail()
     return 1, '?'
@@ -340,34 +340,39 @@ def _GetOpts(spec, argv, my_state, errfmt):
     my_state.Fail()
     return 1, '?'
 
-  opt_char = current[1]
-  #opt_char = current[my_state.flag_pos]
+  flag_char = current[my_state.flag_pos]
 
-  my_state.IncIndex()
+  if my_state.flag_pos < len(current) - 1:
+    my_state.flag_pos += 1  # don't move past this arg yet
+    more_chars = True
+  else:
+    my_state.IncIndex()
+    my_state.flag_pos = 1
+    more_chars = False
 
-  if opt_char not in spec:  # Invalid flag
+  if flag_char not in spec:  # Invalid flag
     return 0, '?'
 
-  #opt_char = current[-1]
-  if spec[opt_char]:  # does it need an argument?
-    optarg = my_state.GetArg(argv)
+  if spec[flag_char]:  # does it need an argument?
+    if more_chars:
+      optarg = current[my_state.flag_pos:]
+    else:
+      optarg = my_state.GetArg(argv)
+      if optarg is None:
+        my_state.Fail()
+        # TODO: Add location info
+        errfmt.Print_('getopts: option %r requires an argument.' % current)
+        tmp = [qsn.maybe_shell_encode(a) for a in argv]
+        stderr_line('(getopts argv: %s)', ' '.join(tmp))
 
-    if optarg is None:
-      my_state.Fail()
-      # TODO: Add location info
-      errfmt.Print_('getopts: option %r requires an argument.' % current)
-      tmp = [qsn.maybe_shell_encode(a) for a in argv]
-      stderr_line('(getopts argv: %s)', ' '.join(tmp))
-
-      # Hm doesn't cause status 1?
-      return 0, '?'
-
+        # Hm doesn't cause status 1?
+        return 0, '?'
     my_state.IncIndex()
     my_state.SetArg(optarg)
   else:
     my_state.SetArg('')
 
-  return 0, opt_char
+  return 0, flag_char
 
 
 class GetOpts(vm._Builtin):
@@ -406,10 +411,10 @@ class GetOpts(vm._Builtin):
 
     user_argv = self.mem.GetArgv() if arg_r.AtEnd() else arg_r.Rest()
     #util.log('user_argv %s', user_argv)
-    status, opt_char = _GetOpts(spec, user_argv, self.my_state, self.errfmt)
+    status, flag_char = _GetOpts(spec, user_argv, self.my_state, self.errfmt)
 
     if match.IsValidVarName(var_name):
-      state.SetStringDynamic(self.mem, var_name, opt_char)
+      state.SetStringDynamic(self.mem, var_name, flag_char)
     else:
       # NOTE: The builtin has PARTIALLY set state.  This happens in all shells
       # except mksh.

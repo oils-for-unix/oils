@@ -244,11 +244,11 @@ echo OPTIND=$OPTIND opt=$opt OPTARG=$OPTARG
 getopts "ab" opt -ab
 echo OPTIND=$OPTIND opt=$opt OPTARG=$OPTARG
 ## STDOUT:
-OPTIND=2 opt=a OPTARG=
+OPTIND=1 opt=a OPTARG=
 OPTIND=2 opt=b OPTARG=
 ## END
-## BUG bash STDOUT:
-OPTIND=1 opt=a OPTARG=
+## OK dash/mksh/ash STDOUT:
+OPTIND=2 opt=a OPTARG=
 OPTIND=2 opt=b OPTARG=
 ## END
 
@@ -274,12 +274,12 @@ echo OPTIND=$OPTIND opt=$opt OPTARG=$OPTARG
 getopts "ab:c:" opt -ab hi -c hello
 echo OPTIND=$OPTIND opt=$opt OPTARG=$OPTARG
 ## STDOUT:
-OPTIND=2 opt=a OPTARG=
+OPTIND=1 opt=a OPTARG=
 OPTIND=3 opt=b OPTARG=hi
 OPTIND=5 opt=c OPTARG=hello
 ## END
-## BUG bash STDOUT:
-OPTIND=1 opt=a OPTARG=
+## OK dash/mksh/ash STDOUT:
+OPTIND=2 opt=a OPTARG=
 OPTIND=3 opt=b OPTARG=hi
 OPTIND=5 opt=c OPTARG=hello
 ## END
@@ -292,13 +292,13 @@ echo OPTIND=$OPTIND opt=$opt OPTARG=$OPTARG
 getopts "abc:" opt -abc10
 echo OPTIND=$OPTIND opt=$opt OPTARG=$OPTARG
 ## STDOUT:
-OPTIND=2 opt=a OPTARG=
-OPTIND=2 opt=b OPTARG=
-OPTIND=2 opt=c OPTARG=10
-## END
-## BUG bash STDOUT:
 OPTIND=1 opt=a OPTARG=
 OPTIND=1 opt=b OPTARG=
+OPTIND=2 opt=c OPTARG=10
+## END
+## OK dash/mksh/ash STDOUT:
+OPTIND=2 opt=a OPTARG=
+OPTIND=2 opt=b OPTARG=
 OPTIND=2 opt=c OPTARG=10
 ## END
 
