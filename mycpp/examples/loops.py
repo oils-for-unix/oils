@@ -40,6 +40,10 @@ def TestListComp():
   for s2 in first:
     log('first = %s', s2)
 
+  parts = ['a', None, 'b']
+  tmp = [s for s in parts if s is not None]
+  print(''.join(tmp))
+
 
 def TestDict():
   # type: () -> None

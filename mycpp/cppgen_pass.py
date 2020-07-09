@@ -1198,9 +1198,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             else:
               raise AssertionError('Unexpected type %s' % item_type)
 
+            if cond:
+              self.indent += 1
+              self.write_ind('if (')
+              self.accept(cond[0])  # Just the first one
+              self.write(') {\n')
+
             self.write_ind('  %s->append(', lval.name)
             self.accept(left_expr)
             self.write(');\n')
+
+            if cond:
+              self.write_ind('}\n')
+              self.indent -= 1
 
             self.write_ind('}\n')
             return
