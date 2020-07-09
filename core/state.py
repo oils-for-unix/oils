@@ -1229,7 +1229,7 @@ class Mem(object):
 
         # TODO: All paths should have this?  We can get here by a[x]=1 or
         # (( a[ x ] = 1 )).  Maybe we should make them different?
-        left_spid = lval.spids[0] if lval.spids else runtime.NO_SPID
+        left_spid = lval.spids[0] if len(lval.spids) else runtime.NO_SPID
 
         # bash/mksh have annoying behavior of letting you do LHS assignment to
         # Undef, which then turns into an INDEXED array.  (Undef means that set
@@ -1291,7 +1291,7 @@ class Mem(object):
         assert val.tag_() == value_e.Str, val
         rval = cast(value__Str, val)
 
-        left_spid = lval.spids[0] if lval.spids else runtime.NO_SPID
+        left_spid = lval.spids[0] if len(lval.spids) else runtime.NO_SPID
 
         cell, name_map, _ = self._ResolveNameOrRef(lval.name, lookup_mode)
         self._CheckOilKeyword(keyword_id, lval.name, cell)

@@ -1017,6 +1017,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           raise AssertionError('Stride not supported')
 
     def visit_conditional_expr(self, o: 'mypy.nodes.ConditionalExpr') -> T:
+        cond_type = self.types[o.cond]
+
+        if not _CheckConditionType(cond_type):
+          raise AssertionError(
+              "Can't use str, list, or dict in boolean context")
+
         # 0 if b else 1 -> b ? 0 : 1
         self.accept(o.cond)
         self.write(' ? ')

@@ -161,7 +161,7 @@ class ShellExecutor(vm._Executor):
       procs: whether to look up procs.
     """
     argv = cmd_val.argv
-    span_id = cmd_val.arg_spids[0] if cmd_val.arg_spids else runtime.NO_SPID
+    span_id = cmd_val.arg_spids[0] if len(cmd_val.arg_spids) else runtime.NO_SPID
 
     # This happens when you write "$@" but have no arguments.
     if len(argv) == 0:

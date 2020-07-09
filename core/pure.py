@@ -486,7 +486,7 @@ class NullExecutor(vm._Executor):
   def RunSimpleCommand(self, cmd_val, do_fork, call_procs=True):
     # type: (cmd_value__Argv, bool, bool) -> int
     argv = cmd_val.argv
-    span_id = cmd_val.arg_spids[0] if cmd_val.arg_spids else runtime.NO_SPID
+    span_id = cmd_val.arg_spids[0] if len(cmd_val.arg_spids) else runtime.NO_SPID
 
     arg0 = argv[0]
 

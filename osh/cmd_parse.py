@@ -363,7 +363,7 @@ class CommandParser(object):
     self.line_reader = line_reader  # for here docs
     self.arena = parse_ctx.arena  # for adding here doc and alias spans
     self.eof_id = Id.Eof_Real
-    self.aliases_in_flight = None  # type: AliasesInFlight
+    self.aliases_in_flight = []  # type: AliasesInFlight
 
     # A hacky boolean to remove 'if cd / {' ambiguity.
     self.allow_block = True
@@ -634,7 +634,7 @@ class CommandParser(object):
     # Start a new list if there aren't any.  This will be passed recursively
     # through CommandParser instances.
     aliases_in_flight = (
-        self.aliases_in_flight if self.aliases_in_flight else []
+        self.aliases_in_flight if len(self.aliases_in_flight) else []
     )
 
     # for error message

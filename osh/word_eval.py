@@ -76,7 +76,7 @@ def ResolveCompatArray(val):
   """Decay ${array} to ${array[0]}."""
   if val.tag_() == value_e.MaybeStrArray:
     array_val = cast(value__MaybeStrArray, val)
-    s = array_val.strs[0] if array_val.strs else None
+    s = array_val.strs[0] if len(array_val.strs) else None
   elif val.tag_() == value_e.AssocArray:
     assoc_val = cast(value__AssocArray, val)
     s = assoc_val.d['0'] if '0' in assoc_val.d else None

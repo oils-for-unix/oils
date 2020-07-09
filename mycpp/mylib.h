@@ -765,36 +765,6 @@ class Tuple4 {
   D d_;
 };
 
-// for posix::times()
-template <class A, class B, class C, class D, class E>
-class Tuple5 {
- public:
-  Tuple5(A a, B b, C c, D d, E e) : a_(a), b_(b), c_(c), d_(d), e_(e) {
-  }
-  A at0() {
-    return a_;
-  }
-  B at1() {
-    return b_;
-  }
-  C at2() {
-    return c_;
-  }
-  D at3() {
-    return d_;
-  }
-  E at4() {
-    return e_;
-  }
-
- private:
-  A a_;
-  B b_;
-  C c_;
-  D d_;
-  E e_;
-};
-
 //
 // Overloaded free function len()
 //
