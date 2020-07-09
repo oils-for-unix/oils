@@ -1459,13 +1459,13 @@ class Mem(object):
 
     with tagswitch(lval) as case:
       if case(lvalue_e.Named):  # unset x
-        if 0:  # flip this to experiment
-          # This behavior is good for test/spec.sh assign -r 24-27
-          name_map[cell_name].val = value.Undef()
-          cell.exported = False
-        else:
-          # This behavior is good for test/spec.sh builtin-vars -r 24 (ble.sh)
-          del name_map[cell_name]
+        # Make variables in higher scopes visible.
+        # example: test/spec.sh builtin-vars -r 24 (ble.sh)
+        del name_map[cell_name]
+
+        # alternative that some shells use:
+        #   name_map[cell_name].val = value.Undef()
+        #   cell.exported = False
 
         # This should never happen because we do recursive lookups of namerefs.
         assert not cell.nameref, cell
