@@ -67,9 +67,9 @@ class _StringWordEmitter(word_parse.WordEmitter):
 
     # default is an operand word
     id_int = match.BracketUnary(s)
-    if id_int == -1:
+    if id_int == Id.Undefined_Tok:
       id_int = match.BracketBinary(s)
-    if id_int == -1:
+    if id_int == Id.Undefined_Tok:
       id_int = match.BracketOther(s)
 
     id_ = Id.Word_Compound if id_int == -1 else id_int
@@ -116,7 +116,7 @@ def _TwoArgs(w_parser):
   if w0.s == '!':
     return bool_expr.LogicalNot(bool_expr.WordTest(w1))
   unary_id = match.BracketUnary(w0.s)
-  if unary_id == -1:
+  if unary_id == Id.Undefined_Tok:
     # TODO:
     # - separate lookup by unary
     p_die('Expected unary operator, got %r (2 args)', w0.s, word=w0)
@@ -133,7 +133,7 @@ def _ThreeArgs(w_parser):
   # NOTE: Order is important here.
 
   binary_id = match.BracketBinary(w1.s)
-  if binary_id != -1:
+  if binary_id != Id.Undefined_Tok:
     return bool_expr.Binary(binary_id, w0, w2)
 
   if w1.s == '-a':

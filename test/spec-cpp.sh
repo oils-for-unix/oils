@@ -17,6 +17,9 @@ shopt -s failglob  # to debug TSV expansion failure below
 
 readonly REPO_ROOT=$(cd $(dirname $0)/..; pwd)
 
+# Applies everywhere
+export SPEC_JOB='cpp'
+
 #
 # For translation
 #
@@ -59,7 +62,6 @@ run-with-osh-eval() {
 all() {
   ### Run all tests with osh_eval and its translatino
   export SPEC_RUNNER='test/spec-cpp.sh run-with-osh-eval'
-  export SPEC_JOB='cpp'
   #export NUM_SPEC_TASKS=4
   # For debugging hangs
   #export MAX_PROCS=1

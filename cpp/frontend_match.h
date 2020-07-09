@@ -27,8 +27,8 @@ class SimpleLexer {
   SimpleLexer(MatchFunc match_func, Str* s)
       : match_func_(match_func), s_(s), pos_(0) {
   }
-  // TODO: Implement and be careful about ownership of the buffer
   Tuple2<Id_t, Str*> Next();
+  List<Tuple2<Id_t, Str*>*>* Tokens();
 
  private:
   MatchFunc match_func_;
@@ -44,13 +44,8 @@ SimpleLexer* BraceRangeLexer(Str* s);
 SimpleLexer* GlobLexer(Str* s);
 SimpleLexer* EchoLexer(Str* s);
 
-inline List<Tuple2<Id_t, Str*>*>* HistoryTokens(Str* s) {
-  assert(0);
-}
-
-inline List<Tuple2<Id_t, Str*>*>* Ps1Tokens(Str* s) {
-  assert(0);
-}
+List<Tuple2<Id_t, Str*>*>* HistoryTokens(Str* s);
+List<Tuple2<Id_t, Str*>*>* Ps1Tokens(Str* s);
 
 Id_t BracketUnary(Str* s);
 Id_t BracketBinary(Str* s);

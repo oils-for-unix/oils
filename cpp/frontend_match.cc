@@ -48,6 +48,21 @@ Tuple2<Id_t, Str*> SimpleLexer::Next() {
   return Tuple2<Id_t, Str*>(static_cast<Id_t>(id), val);
 }
 
+namespace Id = id_kind_asdl::Id;
+
+List<Tuple2<Id_t, Str*>*>* SimpleLexer::Tokens() {
+  auto tokens = new List<Tuple2<Id_t, Str*>*>();
+  while (true) {
+    auto tup2 = Next();
+    if (tup2.at0() == Id::Eol_Tok) {
+      break;
+    }
+    // it's annoying that we have to put it on the heap
+    tokens->append(new Tuple2<Id_t, Str*>(tup2.at0(), tup2.at1()));
+  }
+  return tokens;
+}
+
 SimpleLexer* BraceRangeLexer(Str* s) {
   return new SimpleLexer(&MatchBraceRangeToken, s);
 }
@@ -58,6 +73,16 @@ SimpleLexer* GlobLexer(Str* s) {
 
 SimpleLexer* EchoLexer(Str* s) {
   return new SimpleLexer(&MatchEchoToken, s);
+}
+
+List<Tuple2<Id_t, Str*>*>* HistoryTokens(Str* s) {
+  SimpleLexer lexer(&MatchHistoryToken, s);
+  return lexer.Tokens();
+}
+
+List<Tuple2<Id_t, Str*>*>* Ps1Tokens(Str* s) {
+  SimpleLexer lexer(&MatchPS1Token, s);
+  return lexer.Tokens();
 }
 
 Id_t BracketUnary(Str* s) {
