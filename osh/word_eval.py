@@ -277,7 +277,7 @@ def _PerformSlice(val,  # type: value_t
         byte_end = len(s)
 
       substr = s[byte_begin : byte_end]
-      val = value.Str(substr)
+      result = value.Str(substr)  # type: value_t
 
     elif case(value_e.MaybeStrArray):  # Slice array entries.
       val = cast(value__MaybeStrArray, UP_val)
@@ -310,7 +310,7 @@ def _PerformSlice(val,  # type: value_t
           count += 1
         i += 1
        
-      val = value.MaybeStrArray(strs)
+      result = value.MaybeStrArray(strs)
 
     elif case(value_e.AssocArray):
       e_die("Can't slice associative arrays", part=part)
@@ -318,7 +318,7 @@ def _PerformSlice(val,  # type: value_t
     else:
       raise NotImplementedError(val.tag_())
 
-  return val
+  return result
 
 
 class StringWordEvaluator(object):
