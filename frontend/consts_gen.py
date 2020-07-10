@@ -63,9 +63,11 @@ def GenBuiltinLookup(b, func_name, kind, f):
 
   f.write("""\
 builtin_t %s(Str* s) {
-  if (len(s) == 0) return 0;  // consts.NO_INDEX
+  int len = s->len_;
+  if (len == 0) return 0;  // consts.NO_INDEX
 
-  switch (s->data_[0]) {
+  const char* data = s->data_;
+  switch (data[0]) {
 """ % func_name) 
 
   for first_char in sorted(groups):
@@ -74,7 +76,7 @@ builtin_t %s(Str* s) {
     for name, index in pairs:
       # NOTE: we have to check the length because they're not NUL-terminated
       f.write('''\
-    if (s->len_ == %d && memcmp("%s", s->data_, %d) == 0) return %d;
+    if (len == %d && memcmp("%s", data, %d) == 0) return %d;
 ''' % (len(name), name, len(name), index))
     f.write('    break;\n')
 
@@ -95,9 +97,11 @@ def GenStringMembership(func_name, strs, f):
 
   f.write("""\
 bool %s(Str* s) {
-  if (len(s) == 0) return false;
+  int len = s->len_;
+  if (len == 0) return false;
 
-  switch (s->data_[0]) {
+  const char* data = s->data_;
+  switch (data[0]) {
 """ % func_name)
 
   for first_char in sorted(groups):
@@ -106,7 +110,7 @@ bool %s(Str* s) {
     for s in strs:
       # NOTE: we have to check the length because they're not NUL-terminated
       f.write('''\
-    if (s->len_ == %d && memcmp("%s", s->data_, %d) == 0) return true;
+    if (len == %d && memcmp("%s", data, %d) == 0) return true;
 ''' % (len(s), s, len(s)))
     f.write('    break;\n')
 
