@@ -42,11 +42,17 @@ void _CreateDefaults(DefaultPair_c* in,
     // TODO: string defaults!
     value_t* val;
     switch (pair->typ) {
-    case flag_type_e::Str:
-      val = new value__Undef();
-      break;
     case flag_type_e::Bool:
       val = new value__Bool(pair->val.b);
+      break;
+    case flag_type_e::Int:
+      val = new value__Int(pair->val.i);
+      break;
+    case flag_type_e::Float:
+      val = new value__Float(pair->val.f);
+      break;
+    case flag_type_e::Str:
+      val = new value__Undef();
       break;
     default:
       assert(0);
