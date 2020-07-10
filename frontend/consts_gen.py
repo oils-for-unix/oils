@@ -87,6 +87,38 @@ builtin_t %s(Str* s) {
 """)
 
 
+def GenStringMembership(func_name, strs, f):
+  groups = collections.defaultdict(list)
+  for s in strs:
+    first_char = s[0]
+    groups[first_char].append(s)
+
+  f.write("""\
+bool %s(Str* s) {
+  if (len(s) == 0) return false;
+
+  switch (s->data_[0]) {
+""" % func_name)
+
+  for first_char in sorted(groups):
+    strs = groups[first_char]
+    f.write("  case '%s':\n" % first_char)
+    for s in strs:
+      # NOTE: we have to check the length because they're not NUL-terminated
+      f.write('''\
+    if (s->len_ == %d && memcmp("%s", s->data_, %d) == 0) return true;
+''' % (len(s), s, len(s)))
+    f.write('    break;\n')
+
+  f.write("""\
+  }
+
+  return false;
+}
+
+""")
+
+
 C_CHAR = {
     # '\'' is a single quote in C
     "'": "\\'",
@@ -377,16 +409,9 @@ Kind GetKind(id_kind_asdl::Id_t id) {
       GenBuiltinLookup(b, 'LookupAssignBuiltin', 'assign', f)
       GenBuiltinLookup(b, 'LookupSpecialBuiltin', 'special', f)
 
-      # TODO: Fill these in
-      out("""\
-bool IsControlFlow(Str* s) {
-  assert(0);
-}
-bool IsKeyword(Str* s) {
-  assert(0);
-}
-
-""")
+      from frontend import lexer_def  # break circular dep
+      GenStringMembership('IsControlFlow', lexer_def.CONTROL_FLOW_NAMES, f)
+      GenStringMembership('IsKeyword', lexer_def.OSH_KEYWORD_NAMES, f)
 
       GenCharLookup('LookupCharC', consts._ONE_CHAR_C, f, required=True)
       GenCharLookup('LookupCharPrompt', consts._ONE_CHAR_PROMPT, f)
