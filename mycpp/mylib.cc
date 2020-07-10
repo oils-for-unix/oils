@@ -255,6 +255,7 @@ Str* CFileLineReader::readline() {
   char* line = nullptr;
   size_t allocated_size = 0;  // unused
 
+  errno = 0;  // must be reset because we check it below!
   ssize_t len = getline(&line, &allocated_size, f_);
   if (len < 0) {
   // log("getline() result: %d", len);
