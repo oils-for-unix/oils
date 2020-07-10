@@ -204,22 +204,13 @@ class %s {
           field_decls.append('bool %s;' % field_name)
 
         elif case(flag_type_e.Str):
-          default_val = spec.defaults[field_name]
-          with tagswitch(default_val) as case:
-            if case(value_e.Undef):
-              default_str = 'nullptr'
-            elif case(value_e.Str):
-              default_str = 'new Str("%s")' % default_val.s
-            else:
-              raise AssertionError()
-
           # TODO: This code is ugly and inefficient!  Generate something
           # better.  At least get rid of 'new' everywhere?
           init_vals.append('''\
 attrs->index(new Str("%s"))->tag_() == value_e::Undef
-      ? %s
+      ? nullptr
       : static_cast<value__Str*>(attrs->index(new Str("%s")))->s''' % (
-              field_name, default_str, field_name))
+              field_name, field_name))
 
           field_decls.append('Str* %s;' % field_name)
 
@@ -437,16 +428,8 @@ class %s(object):
 
           elif case(flag_type_e.Str):
             tmp = 'val%d' % i
-            default_val = spec.defaults[field_name]
-            with tagswitch(default_val) as case:
-              if case(value_e.Undef):
-                default_str = 'None'
-              elif case(value_e.Str):
-                default_str = '%r' % default_val.s
-              else:
-                raise AssertionError()
             print('    %s = attrs[%r]' % (tmp, field_name))
-            print('    self.%s = %s if %s.tag_() == value_e.Undef else cast(value__Str, %s).s  # type: Optional[str]' % (field_name, default_str, tmp, tmp))
+            print('    self.%s = None if %s.tag_() == value_e.Undef else cast(value__Str, %s).s  # type: Optional[str]' % (field_name, tmp, tmp))
 
           elif case(flag_type_e.Int):
             tmp = 'val%d' % i
