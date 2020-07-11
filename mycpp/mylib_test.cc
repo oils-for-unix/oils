@@ -135,7 +135,7 @@ TEST test_str_funcs() {
 
   Str* int_str;
   int_str = str((1 << 31) - 1);
-  ASSERT(str_equals(new Str("2147483647"), int_str));
+  ASSERT(str_equals0("2147483647", int_str));
 
   // wraps with - sign.
   int_str = str(1 << 31);
@@ -158,23 +158,23 @@ TEST test_str_funcs() {
   // ASSERT(str_equals(new Str("a--\0--d", 7), re1));
 
   Str* s2 = new Str(" abc ");
-  ASSERT(str_equals(new Str(" abc"), s2->rstrip()));
+  ASSERT(str_equals0(" abc", s2->rstrip()));
 
   Str* s3 = new Str(" def");
-  ASSERT(str_equals(new Str(" def"), s3->rstrip()));
+  ASSERT(str_equals0(" def", s3->rstrip()));
 
   Str* s4 = new Str("");
-  ASSERT(str_equals(new Str(""), s4->rstrip()));
+  ASSERT(str_equals0("", s4->rstrip()));
 
   Str* s5 = new Str("");
-  ASSERT(str_equals(new Str(""), s5->strip()));
+  ASSERT(str_equals0("", s5->strip()));
 
   Str* st1 = (new Str(" 123 "))->strip();
-  ASSERT(str_equals(new Str("123"), st1));
+  ASSERT(str_equals0("123", st1));
   Str* st2 = (new Str(" 123"))->strip();
-  ASSERT(str_equals(new Str("123"), st2));
+  ASSERT(str_equals0("123", st2));
   Str* st3 = (new Str("123 "))->strip();
-  ASSERT(str_equals(new Str("123"), st3));
+  ASSERT(str_equals0("123", st3));
 
   ASSERT(s->startswith(new Str("")));
   ASSERT(s->startswith(new Str("ab")));
@@ -220,15 +220,29 @@ TEST test_str_funcs() {
   log("rjust()");
   auto space = new Str(" ");
   auto s6 = new Str("13");
-  ASSERT(str_equals(new Str("  13"), s6->rjust(4, space)));
-  ASSERT(str_equals(new Str(" 13"), s6->rjust(3, space)));
-  ASSERT(str_equals(new Str("13"), s6->rjust(2, space)));
-  ASSERT(str_equals(new Str("13"), s6->rjust(1, space)));
+  ASSERT(str_equals0("  13", s6->rjust(4, space)));
+  ASSERT(str_equals0(" 13", s6->rjust(3, space)));
+  ASSERT(str_equals0("13", s6->rjust(2, space)));
+  ASSERT(str_equals0("13", s6->rjust(1, space)));
 
-  ASSERT(str_equals(new Str("13  "), s6->ljust(4, space)));
-  ASSERT(str_equals(new Str("13 "), s6->ljust(3, space)));
-  ASSERT(str_equals(new Str("13"), s6->ljust(2, space)));
-  ASSERT(str_equals(new Str("13"), s6->ljust(1, space)));
+  ASSERT(str_equals0("13  ", s6->ljust(4, space)));
+  ASSERT(str_equals0("13 ", s6->ljust(3, space)));
+  ASSERT(str_equals0("13", s6->ljust(2, space)));
+  ASSERT(str_equals0("13", s6->ljust(1, space)));
+
+  log("join()");
+  auto foo = new Str("foo");
+  auto bar = new Str("bar");
+  ASSERT(str_equals0("foobar", kEmptyString->join(new List<Str*>({foo, bar}))));
+  ASSERT(str_equals0("foo", kEmptyString->join(new List<Str*>({foo}))));
+
+  auto empty = kEmptyString->join(new List<Str*>({}));
+  ASSERT(str_equals0("", empty));
+  ASSERT_EQ(0, len(empty));
+
+  auto j1 = (new Str(" "))->join(new List<Str*>({}));
+  ASSERT(str_equals0("", j1));
+  ASSERT_EQ(0, len(j1));
 
   PASS();
 }

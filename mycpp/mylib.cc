@@ -184,11 +184,14 @@ Str* Str::join(List<Str*>* items) {
   int len = 0;
   const std::vector<Str*>& v = items->v_;
   int num_parts = v.size();
+  if (num_parts == 0) {  // " ".join([]) == ""
+    return kEmptyString;
+  }
   for (int i = 0; i < num_parts; ++i) {
     len += v[i]->len_;
   }
   // add length of all the separators
-  len += len_ * (v.size() - 1);
+  len += len_ * (num_parts - 1);
 
   // log("len: %d", len);
   // log("v.size(): %d", v.size());
@@ -448,10 +451,10 @@ Str* str_concat3(Str* a, Str* b, Str* c) {
   memcpy(pos, a->data_, a->len_);
   pos += a->len_;
 
-  memcpy(pos, b->data_, b->len_);
+  memcpy(buf, b->data_, b->len_);
   pos += b->len_;
 
-  memcpy(pos, c->data_, c->len_);
+  memcpy(buf, c->data_, c->len_);
 
   buf[new_len] = '\0';
 
