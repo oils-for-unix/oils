@@ -12,13 +12,8 @@ namespace pyos {
 const int TERM_ICANON = ICANON;
 const int TERM_ECHO = ECHO;
 
-inline Str* GetMyHomeDir() {
-  assert(0);
-}
-
-inline Str* GetHomeDir(Str* user_name) {
-  assert(0);
-}
+Str* GetMyHomeDir();
+Str* GetHomeDir(Str* user_name);
 
 inline Str* GetUserName(int uid) {
   assert(0);

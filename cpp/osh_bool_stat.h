@@ -27,7 +27,6 @@ inline bool DoUnaryOp(Id_t op_id, Str* s) {
   }
 
   switch (op_id) {
-
   // synonyms for existence
   case Id::BoolUnary_a:
   case Id::BoolUnary_e:
