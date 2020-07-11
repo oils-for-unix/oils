@@ -5,6 +5,7 @@
 #include "frontend_match.h"
 #include "id.h"
 #include "libc.h"
+#include "osh_bool_stat.h"
 #include "preamble.h"
 #include "runtime_asdl.h"  // cell, etc
 
@@ -276,6 +277,22 @@ TEST flag_spec_test() {
   PASS();
 }
 
+TEST bool_stat_test() {
+  int fail = 0;
+  try {
+    bool b1 = bool_stat::isatty(new Str("invalid"), nullptr);
+  } catch (error::FatalRuntime* e) {
+    fail++;
+  }
+  ASSERT_EQ(1, fail);
+
+  bool b2 = bool_stat::isatty(new Str("0"), nullptr);
+  // This will be true interactively
+  log("stdin isatty = %d", b2);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -288,6 +305,7 @@ int main(int argc, char** argv) {
   RUN_TEST(posix_test);
   RUN_TEST(exceptions);
   RUN_TEST(flag_spec_test);
+  RUN_TEST(bool_stat_test);
   GREATEST_MAIN_END(); /* display results */
   return 0;
 }

@@ -6,7 +6,7 @@
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
-expr_eval.py -- Currently used for boolean and arithmetic expressions.
+sh_expr_eval.py -- Shell boolean and arithmetic expressions.
 """
 
 from _devbuild.gen.id_kind_asdl import Id
@@ -868,11 +868,7 @@ class BoolEvaluator(ArithEvaluator):
 
         if arg_type == bool_arg_type_e.Other:
           if op_id == Id.BoolUnary_t:
-            try:
-              fd = int(s)
-            except ValueError:
-              e_die('Invalid file descriptor %r', s, word=node.child)
-            return bool_stat.isatty(fd, s, node.child)
+            return bool_stat.isatty(s, node.child)
 
           # See whether 'set -o' options have been set
           if op_id == Id.BoolUnary_o:

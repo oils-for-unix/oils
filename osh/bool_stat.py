@@ -15,13 +15,18 @@ from core.pyerror import e_die
 from core import ui
 
 
-def isatty(fd, s, blame_word):
-  # type: (int, str, word_t) -> bool
+def isatty(fd_str, blame_word):
+  # type: (str, word_t) -> bool
+  try:
+    fd = int(fd_str)
+  except ValueError:
+    e_die('Invalid file descriptor %r', fd_str, word=blame_word)
+
   try:
     return posix.isatty(fd)
   # fd is user input, and causes this exception in the binding.
   except OverflowError:
-    e_die('File descriptor %r is too big', s, word=blame_word)
+    e_die('File descriptor %r is too big', fd_str, word=blame_word)
 
 
 def DoUnaryOp(op_id, s):

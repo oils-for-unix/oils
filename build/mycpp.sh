@@ -237,6 +237,7 @@ compile-slice() {
     cpp/frontend_match.cc \
     cpp/frontend_tdop.cc \
     cpp/osh_arith_parse.cc \
+    cpp/osh_bool_stat.cc \
     cpp/pgen2_parse.cc \
     _build/cpp/runtime_asdl.cc \
     _build/cpp/syntax_asdl.cc \

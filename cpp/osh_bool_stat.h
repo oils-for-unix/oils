@@ -13,9 +13,7 @@ namespace bool_stat {
 namespace Id = id_kind_asdl::Id;
 using syntax_asdl::word_t;
 
-inline bool isatty(int fd, Str* s, word_t* blame_word) {
-  assert(0);
-}
+bool isatty(Str* fd_str, word_t* blame_word);
 
 inline bool DoUnaryOp(Id_t op_id, Str* s) {
   mylib::Str0 path(s);
