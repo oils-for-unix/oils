@@ -23,17 +23,43 @@ inline bool DoUnaryOp(Id_t op_id, Str* s) {
   if (stat(path.Get(), &st) < 0) {
     return false;
   }
+  auto mode = st.st_mode;
 
   switch (op_id) {
   // synonyms for existence
   case Id::BoolUnary_a:
   case Id::BoolUnary_e:
     return true;
+
+  case Id::BoolUnary_k:
+    return (mode & S_ISVTX) != 0;
   }
   assert(0);
 }
 
 inline bool DoBinaryOp(Id_t op_id, Str* s1, Str* s2) {
+  mylib::Str0 left0(s1);
+  mylib::Str0 right0(s2);
+
+  int m1 = 0;
+  struct stat st1;
+  if (stat(left0.Get(), &st1) == 0) {
+    m1 = st1.st_mtime;
+  }
+
+  int m2 = 0;
+  struct stat st2;
+  if (stat(right0.Get(), &st2) == 0) {
+    m2 = st2.st_mtime;
+  }
+
+  switch (op_id) {
+  case Id::BoolBinary_nt:
+    return m1 > m2;
+  case Id::BoolBinary_ot:
+    return m1 < m2;
+  }
+
   assert(0);
 }
 
