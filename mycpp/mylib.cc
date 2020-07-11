@@ -439,6 +439,25 @@ Str* str_concat(Str* a, Str* b) {
   return new Str(buf, new_len);
 }
 
+// for os_path.join()
+Str* str_concat3(Str* a, Str* b, Str* c) {
+  int new_len = a->len_ + b->len_ + c->len_;
+  char* buf = static_cast<char*>(malloc(new_len + 1));
+  char* pos = buf;
+
+  memcpy(pos, a->data_, a->len_);
+  pos += a->len_;
+
+  memcpy(pos, b->data_, b->len_);
+  pos += b->len_;
+
+  memcpy(pos, c->data_, c->len_);
+
+  buf[new_len] = '\0';
+
+  return new Str(buf, new_len);
+}
+
 Str* str_repeat(Str* s, int times) {
   // Python allows -1 too, and Oil used that
   if (times <= 0) {

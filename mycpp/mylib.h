@@ -799,7 +799,8 @@ inline int len(const Dict<Str*, V>* d) {
 // Free functions
 //
 
-Str* str_concat(Str* a, Str* b);  // a + b when a and b are strings
+Str* str_concat(Str* a, Str* b);           // a + b when a and b are strings
+Str* str_concat3(Str* a, Str* b, Str* c);  // for os_path::join()
 
 Str* str_repeat(Str* s, int times);  // e.g. ' ' * 3
 

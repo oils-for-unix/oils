@@ -2,9 +2,9 @@
 
 #include <unistd.h>
 
-#include "osh_bool_stat.h"
 #include "core_error.h"
 #include "core_pyerror.h"
+#include "osh_bool_stat.h"
 
 namespace bool_stat {
 
