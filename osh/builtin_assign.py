@@ -68,9 +68,9 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
   # SUBTLE: export -n vs. declare -n.  flag vs. OPTION.
   # flags are value.Bool, while options are Undef or Str.
   # '+', '-', or None
-  flag_n = cast(value__Str, tmp_n).s if tmp_n and tmp_n.tag_() == value_e.Str else None
-  flag_r = cast(value__Str, tmp_r).s if tmp_r and tmp_r.tag_() == value_e.Str else None
-  flag_x = cast(value__Str, tmp_x).s if tmp_x and tmp_x.tag_() == value_e.Str else None
+  flag_n = cast(value__Str, tmp_n).s if tmp_n and tmp_n.tag_() == value_e.Str else None  # type: Optional[str]
+  flag_r = cast(value__Str, tmp_r).s if tmp_r and tmp_r.tag_() == value_e.Str else None  # type: Optional[str]
+  flag_x = cast(value__Str, tmp_x).s if tmp_x and tmp_x.tag_() == value_e.Str else None  # type: Optional[str]
 
   lookup_mode = scope_e.Dynamic
   if cmd_val.builtin_id == builtin_i.local:

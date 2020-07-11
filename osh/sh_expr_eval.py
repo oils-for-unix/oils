@@ -153,9 +153,9 @@ def OldValue(lval, mem, exec_opts):
           # This never happens, because undef[x]+= is assumed to
           raise AssertionError()
         elif case2(value_e.AssocArray):
-          tmp = cast(value__AssocArray, UP_val)
+          tmp2 = cast(value__AssocArray, UP_val)
           # mycpp rewrite: add tmp.  cast() creates a new var in inner scope
-          assoc_val = tmp
+          assoc_val = tmp2
         else:
           e_die("Can't use [] on value of type %s", ui.ValType(val))
 
