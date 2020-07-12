@@ -86,6 +86,18 @@ class _ErrExit__Context(object):
 
 def DoWork(e, do_raise):
   # type: (_ErrExit, bool) -> None
+
+  # problem
+  # with self.mem.ctx_Call(...)
+  #  PushCall/PopCall
+  # with self.mem.ctx_Temp(...)
+  #  PushTemp/PopCall
+  # with self.mem.ctx_Source(...)
+  #  PushSource/PopSource
+  #
+  # Scope_Call
+  # Scope_Temp
+
   with e.Context() as _:
     log('  in context errexit %d', e.errexit)
     if do_raise:

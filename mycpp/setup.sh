@@ -42,5 +42,25 @@ build() {
   build/dev.sh oil-cpp
 }
 
+#
+# Hooks needs because mycpp/run.sh needs to be in the mycpp/ dir.
+#
+
+build-examples() {
+  ### Build all mycpp/examples
+
+  export MYPY_REPO
+
+  cd $THIS_DIR
+  ./run.sh build-all
+}
+
+test-examples() {
+  ### Test all mycpp/examples
+
+  cd $THIS_DIR
+  ./run.sh test-all
+}
+
 
 "$@"

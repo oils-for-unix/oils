@@ -327,23 +327,32 @@ tsv-demo() {
 one-off() {
   set +o errexit
 
+  run-with-osh-eval sh-func -r 0 -v
+  run-with-osh-eval sh-func -r 6 -v
+
+  run-with-osh-eval assoc -r 2 -v
+  run-with-osh-eval assoc -r 29 -v
+
+  # incrementing assoc array key
+  run-with-osh-eval dparen -r 13-14 -v
+
+  # make existing var readonly
   run-with-osh-eval builtin-vars -r 16 -v
+
+  # doesn't parse func args
+  run-with-osh-eval builtin-getopts -r 15 -v
+  return
 
   # unicode.  I think this is a libc glob setting
   run-with-osh-eval var-op-strip -r 10 -v
   run-with-osh-eval var-op-strip -r 24 -v
-  run-with-osh-eval var-op-strip -r 26 -v
-
-  run-with-osh-eval dparen -r 13-14 -v
 
   # redirects problem
   run-with-osh-eval for-expr -r 2 -v
 
-  run-with-osh-eval builtin-getopts -r 15 -v
-
   run-with-osh-eval builtin-io -r 9 -v  # \0
   #run-with-osh-eval builtin-io -r 26 -v  # posix::read
-  #run-with-osh-eval builtin-io -r 54 -v  # to_float(0
+  #run-with-osh-eval builtin-io -r 54 -v  # to_float()
 }
 
 "$@"

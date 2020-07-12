@@ -622,7 +622,6 @@ tarball-demo() {
   $bin -n -c 'echo "hello $name"'
 }
 
-
 if test $(basename $0) = 'mycpp.sh'; then
   "$@"
 fi

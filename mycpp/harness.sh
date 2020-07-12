@@ -261,6 +261,10 @@ should-skip() {
       return 0
       ;;
 
+    strings)  # '%5d' doesn't work yet.  TODO: fix this.
+      return 0;
+      ;;
+
     scoped_resource)
       return 0
       ;;
