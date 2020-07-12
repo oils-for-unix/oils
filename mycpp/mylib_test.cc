@@ -337,17 +337,31 @@ TEST test_list_funcs() {
   log("v.size = %d", v.size());
 
   log("  ints");
-  auto ints = new List<int>({1, 2, 3});
+  auto ints = new List<int>({4, 5, 6});
   log("-- before pop(0)");
   for (int i = 0; i < len(ints); ++i) {
     log("ints[%d] = %d", i, ints->index(i));
   }
-  ints->pop(0);
+  ASSERT_EQ(3, len(ints));  // [4, 5, 6]
+  ints->pop(0);             // [5, 6]
 
-  log("-- after pop(0)");
-  for (int i = 0; i < len(ints); ++i) {
-    log("ints[%d] = %d", i, ints->index(i));
-  }
+  ASSERT_EQ(2, len(ints));
+  ASSERT_EQ_FMT(5, ints->index(0), "%d");
+  ASSERT_EQ_FMT(6, ints->index(1), "%d");
+
+  ints->reverse();
+  ASSERT_EQ(2, len(ints));  // [6, 5]
+
+  ASSERT_EQ_FMT(6, ints->index(0), "%d");
+  ASSERT_EQ_FMT(5, ints->index(1), "%d");
+
+  ints->append(9);  // [6, 5, 9]
+  ASSERT_EQ(3, len(ints));
+
+  ints->reverse();  // [9, 5, 6]
+  ASSERT_EQ(9, ints->index(0));
+  ASSERT_EQ(5, ints->index(1));
+  ASSERT_EQ(6, ints->index(2));
 
   ints->set(0, 42);
   ints->set(1, 43);
@@ -363,6 +377,38 @@ TEST test_list_funcs() {
   log("list_repeat length = %d", len(L2));
   log("item 0 %d", L2->index(0));
   log("item 1 %d", L2->index(1));
+
+  auto strs = new List<Str*>();
+  strs->append(new Str("c"));
+  strs->append(new Str("a"));
+  strs->append(new Str("b"));
+  strs->append(kEmptyString);
+  ASSERT_EQ(4, len(strs));  // ['c', 'a', 'b', '']
+
+  auto a = new Str("a");
+  auto aa = new Str("aa");
+  auto b = new Str("b");
+
+  /*
+  ASSERT_EQ(0, int_cmp(0, 0));
+  ASSERT_EQ(-1, int_cmp(0, 5));
+  ASSERT_EQ(1, int_cmp(0, -5));
+
+  ASSERT_EQ(0, str_cmp(kEmptyString, kEmptyString));
+  ASSERT_EQ(-1, str_cmp(kEmptyString, a));
+  ASSERT_EQ(-1, str_cmp(a, aa));
+  ASSERT_EQ(-1, str_cmp(a, b));
+
+  ASSERT_EQ(1, str_cmp(b, a));
+  ASSERT_EQ(1, str_cmp(b, kEmptyString));
+  */
+
+  strs->sort();  // ['a', 'b', 'c']
+  ASSERT_EQ(4, len(strs));
+  ASSERT(str_equals(kEmptyString, strs->index(0)));
+  ASSERT(str_equals(new Str("a"), strs->index(1)));
+  ASSERT(str_equals(new Str("b"), strs->index(2)));
+  ASSERT(str_equals(new Str("c"), strs->index(3)));
 
   PASS();
 }
@@ -499,13 +545,19 @@ TEST test_dict() {
   auto d3 = new Dict<Str*, int>();
   auto a = new Str("a");
 
-  d3->set(new Str("a"), 10);
   d3->set(new Str("b"), 11);
   d3->set(new Str("c"), 12);
-  log("a = %d", d3->index(new Str("a")));
-  log("b = %d", d3->index(new Str("b")));
-  log("c = %d", d3->index(new Str("c")));
+  d3->set(new Str("a"), 10);
+  ASSERT_EQ(10, d3->index(new Str("a")));
+  ASSERT_EQ(11, d3->index(new Str("b")));
+  ASSERT_EQ(12, d3->index(new Str("c")));
   ASSERT_EQ(3, len(d3));
+
+  auto keys = sorted(d3);
+  ASSERT(str_equals0("a", keys->index(0)));
+  ASSERT(str_equals0("b", keys->index(1)));
+  ASSERT(str_equals0("c", keys->index(2)));
+  ASSERT_EQ(3, len(keys));
 
   auto keys3 = d3->keys();
   ASSERT(list_contains(keys3, a));

@@ -19,6 +19,7 @@ readonly REPO_ROOT=$(cd $(dirname $0)/..; pwd)
 
 # Applies everywhere
 export SPEC_JOB='cpp'
+export ASAN_OPTIONS=detect_leaks=0
 
 #
 # For translation
@@ -42,6 +43,11 @@ osh-eval-cpp() {
   test/spec.sh $suite $PWD/_bin/osh_eval.dbg "$@"
 }
 
+asan-smoke() {
+  _bin/osh_eval.asan -c 'echo hi'
+  echo 'echo hi' | _bin/osh_eval.asan
+}
+
 run-with-osh-eval() {
   ### Run a test with the given name.
 
@@ -50,12 +56,15 @@ run-with-osh-eval() {
 
   local base_dir=_tmp/spec/$SPEC_JOB
 
+  local osh=$REPO_ROOT/_bin/osh_eval.dbg
+  #local osh=$REPO_ROOT/_bin/osh_eval.asan
+
   # Run it with 3 versions of OSH.  And output TSV so we can compare the data.
   sh-spec spec/$test_name.test.sh \
     --tsv-output $base_dir/${test_name}.tsv \
     $REPO_ROOT/bin/osh \
     $REPO_ROOT/bin/osh_eval \
-    $REPO_ROOT/_bin/osh_eval.dbg \
+    $osh \
     "$@"
 }
 
@@ -314,5 +323,27 @@ tsv-demo() {
 # case osh eval.py eval.cpp
 # Result.PASS, Result.FAIL
 # Just sum the number of passes
+
+one-off() {
+  set +o errexit
+
+  run-with-osh-eval builtin-vars -r 16 -v
+
+  # unicode.  I think this is a libc glob setting
+  run-with-osh-eval var-op-strip -r 10 -v
+  run-with-osh-eval var-op-strip -r 24 -v
+  run-with-osh-eval var-op-strip -r 26 -v
+
+  run-with-osh-eval dparen -r 13-14 -v
+
+  # redirects problem
+  run-with-osh-eval for-expr -r 2 -v
+
+  run-with-osh-eval builtin-getopts -r 15 -v
+
+  run-with-osh-eval builtin-io -r 9 -v  # \0
+  #run-with-osh-eval builtin-io -r 26 -v  # posix::read
+  #run-with-osh-eval builtin-io -r 54 -v  # to_float(0
+}
 
 "$@"

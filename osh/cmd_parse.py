@@ -1082,6 +1082,7 @@ class CommandParser(object):
         # for (( i = 0; i < 10; i++)
         n1 = self._ParseForExprLoop()
         n1.redirects = self._ParseRedirectList()
+        log("n1.redirects %s", n1.redirects)
         return n1
       else:
         # for x in a b; do echo hi; done

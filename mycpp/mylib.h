@@ -4,9 +4,10 @@
 #define MYLIB_H
 
 #include <assert.h>
-#include <ctype.h>   // isalpha(), isdigit()
-#include <stdlib.h>  // malloc
-#include <string.h>  // strlen
+#include <ctype.h>    // isalpha(), isdigit()
+#include <stdlib.h>   // malloc
+#include <string.h>   // strlen
+#include <algorithm>  // sort()
 // https://stackoverflow.com/questions/3882346/forward-declare-file
 #include <climits>  // CHAR_BIT
 #include <cstdint>
@@ -487,12 +488,19 @@ class List {
   }
 
   void sort() {
-    assert(0);
+    mysort(&v_);
   }
 
   // in osh/string_ops.py
   void reverse() {
-    assert(0);
+    int n = v_.size();
+    for (int i = 0; i < n / 2; ++i) {
+      // log("swapping %d and %d", i, n-i);
+      T tmp = v_[i];
+      int j = n - 1 - i;
+      v_[i] = v_[j];
+      v_[j] = tmp;
+    }
   }
 
   // private:
@@ -949,7 +957,49 @@ inline bool dict_contains(Dict<K, V>* haystack, K needle) {
 
 template <typename V>
 List<Str*>* sorted(Dict<Str*, V>* d) {
-  assert(0);
+  auto keys = d->keys();
+  keys->sort();
+  return keys;
+}
+
+/*
+inline int int_cmp(int a, int b) {
+  if (a == b) {
+    return 0;
+  }
+  return a < b ? -1 : 1;
+}
+
+inline int str_cmp(Str* a, Str* b) {
+  int min = std::min(a->len_, b->len_);
+  if (min == 0) {
+    return int_cmp(a->len_, b->len_);
+  }
+  int comp = memcmp(a->data_, b->data_, min);
+  if (comp == 0) {
+    return int_cmp(a->len_, b->len_);  // tiebreaker
+  }
+  return comp;
+}
+*/
+
+inline bool str_compare2(Str* a, Str* b) {
+  int min = std::min(a->len_, b->len_);
+  if (min == 0) {
+    return a->len_ < b->len_;
+  }
+  int cmp = memcmp(a->data_, b->data_, min);
+  if (cmp == 0) {
+    return a->len_ < b->len_;
+  } else if (cmp < 0) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+inline void mysort(std::vector<Str*>* v) {
+  std::sort(v->begin(), v->end(), str_compare2);
 }
 
 //

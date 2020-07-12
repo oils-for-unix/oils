@@ -26,12 +26,14 @@ sh-spec() {
   # - Prepend spec/bin on the front of the $PATH.  We can't isolate $PATH
   #   because we might be running in Nix, etc.
   # - LOCALE_ARCHIVE is allowed to leak for Nix.
+  # - ASAN_OPTIONS leaks for memory
   # - REPO_ROOT is to find things in spec/testdata
 
   PYTHONPATH=. test/sh_spec.py \
       --tmp-env $tmp_env \
       --path-env "$this_dir/../spec/bin:$PATH" \
       --env-pair "LOCALE_ARCHIVE=${LOCALE_ARCHIVE:-}" \
+      --env-pair "ASAN_OPTIONS=${ASAN_OPTIONS:-}" \
       --env-pair "REPO_ROOT=$this_dir/.." \
       "$test_file" \
       "$@"
