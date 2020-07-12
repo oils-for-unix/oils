@@ -34,13 +34,14 @@ class _ErrExit(object):
     self.errexit = False  # the setting
     self.stack = []  # type: List[bool]
 
-  def Context(self):
-    # type: () -> _ErrExit__Context
-    return _ErrExit__Context(self)
+  def Context(self, *args):
+    # type: (*Any) -> _ErrExit__Context
+    return _ErrExit__Context(self, *args)
 
-  def Push(self):
-    # type: () -> None
+  def Push(self, dummy_arg):
+    # type: (str) -> None
     """Temporarily disable errexit."""
+    log('Push %r', dummy_arg)
     if self.errexit:
       self.errexit = False
       self.stack.append(True)  # value to restore
@@ -54,13 +55,14 @@ class _ErrExit(object):
 
 
 class _ErrExit__Context(object):
-  def __init__(self, state):
-    # type: (_ErrExit) -> None
+  def __init__(self, state, *args):
+    # type: (_ErrExit, *Any) -> None
     self.state = state  # underlying stack
+    self.args = args
 
   def __enter__(self):
     # type: () -> None
-    self.state.Push()
+    self.state.Push(*self.args)
 
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> bool
@@ -98,7 +100,9 @@ def DoWork(e, do_raise):
   # Scope_Call
   # Scope_Temp
 
-  with e.Context() as _:
+  # PROBLEM: WE LOST TYPE CHECKING!
+  #with e.Context('zz') as _:
+  with e.Context(42) as _:
     log('  in context errexit %d', e.errexit)
     if do_raise:
       Error(do_raise)

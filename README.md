@@ -88,22 +88,20 @@ Try this to show a summary of what's in the repo and their line counts:
 ### A Collection of Interpreters
 
 Oil is naturally structured as a set of mutually recursive parsers and
-evaluators.
+evaluators.  These interpreters are specified at a high-level: with regular
+languages, Zephyr ASDL, and aa statically-typed subset of Python.
 
     bin/              # Main entry points (bin/osh)
-    osh/              # OSH parser and evaluator
-    oil_lang/         # Oil parser and evaluator
     frontend/         # Lexing/Parsing code common to Oil and OSH
+    osh/              # OSH parsers and evaluators (cmd, word, sh_expr)
+    oil_lang/         # Oil parser and evaluator
     core/             # Other code shared between Oil and OSH
     pylib/            # Borrowed from the Python standard library.
-    native/           # Python extension modules, e.g. libc.c
-    cpp/              # C++ code which complements the mycpp translation
     tools/            # User-facing tools, e.g. the osh2oil translator
-    Python-2.7.13/    # CPython is the initial basis for the Oil VM
 
 ### DSLs / Code Generators
 
-Oil is implemented with DSLs and metaprogramming, for "leverage".
+Here are the tools that transform that high-level code to efficient code:
 
     asdl/             # ASDL implementation, derived from CPython
     pgen2/            # Parser Generator, borrowed from CPython
@@ -115,6 +113,15 @@ Oil is implemented with DSLs and metaprogramming, for "leverage".
       byterun/        # Metacircular bytecode VM in Python
       gold/           # tests
       byterun/        # Unused bytecode interpreter
+
+### Native Code
+
+We have native code to support both the dev build (running under CPython) and
+the oil-native build (pure C++):
+
+    Python-2.7.13/    # CPython is the initial basis for the Oil VM
+    native/           # Python extension modules, e.g. libc.c
+    cpp/              # C++ code which complements the mycpp translation
 
 ### Several Kinds of Tests
 
