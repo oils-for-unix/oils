@@ -36,6 +36,9 @@ class List;
 template <class K, class V>
 class Dict;
 
+template <class K, class V>
+class DictIter;
+
 bool str_equals(Str* left, Str* right);
 
 namespace mylib {
@@ -549,19 +552,45 @@ class ReverseListIter {
   int i_;
 };
 
+template <class V>
+void dict_next(DictIter<Str*, V>* it,
+               const std::vector<std::pair<Str*, V>>& items) {
+  while (true) {
+    ++it->i_;
+    if (items[it->i_].first) {  // not nullptr
+      break;
+    }
+    if (it->Done()) {
+      break;
+    }
+  }
+}
+
+template <class V>
+bool dict_done(DictIter<Str*, V>* it,
+               const std::vector<std::pair<Str*, V>>& items) {
+  int n = items.size();
+  if (it->i_ >= n) {
+    return true;
+  }
+  for (int j = it->i_; j < n; ++j) {
+    if (items[j].first) {  // there's still something left
+      return false;
+    }
+  }
+  return true;
+}
+
 template <class K, class V>
 class DictIter {
  public:
   explicit DictIter(Dict<K, V>* D) : D_(D), i_(0) {
   }
   void Next() {
-    // TODO: specialize for Str*
-    // skip nullptr.
-    // Problem: What to do about integers?
-    ++i_;
+    dict_next(this, D_->items_);
   }
   bool Done() {
-    return i_ >= static_cast<int>(D_->items_.size());
+    return dict_done(this, D_->items_);
   }
   K Key() {
     return D_->items_[i_].first;
@@ -570,7 +599,6 @@ class DictIter {
     return D_->items_[i_].second;
   }
 
- private:
   Dict<K, V>* D_;
   int i_;
 };
@@ -624,9 +652,9 @@ List<V>* dict_values(const std::vector<std::pair<Str*, V>>& items) {
 // Dict currently implemented by VECTOR OF PAIRS.  TODO: Use a real hash table,
 // and measure performance.  The hash table has to beat this for small cases!
 template <class K, class V>
-class _Dict {
+class Dict {
  public:
-  _Dict() : items_() {
+  Dict() : items_() {
   }
 
   // d[key] in Python: raises KeyError if not found
@@ -672,7 +700,7 @@ class _Dict {
   }
 
   void remove(K key) {
-    assert(0);
+    mylib::dict_remove(this, key);
   }
 
   List<K>* keys() {
@@ -695,23 +723,6 @@ class _Dict {
   // returns the position in the array
   int find(K key) {
     return find_by_key(items_, key);
-  }
-};
-
-// Following this pattern so we don't have to repeat some methods for the Str*
-// version.
-//
-// https://stackoverflow.com/questions/27453449/c-template-partial-specialization-with-inheritance
-
-template <typename K, typename V>
-class Dict : public _Dict<K, V> {};
-
-// Partial specialization for K == Str*
-template <typename V>
-class Dict<Str*, V> : public _Dict<Str*, V> {
- public:
-  void remove(Str* key) {
-    mylib::dict_remove(this, key);
   }
 };
 

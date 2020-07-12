@@ -568,6 +568,13 @@ TEST test_dict() {
   ASSERT(!dict_contains(d3, a));
   ASSERT_EQ(2, len(d3));
 
+  // Test removed item
+  for (DictIter<Str*, int> it(d3); !it.Done(); it.Next()) {
+    auto key = it.Key();
+    printf("d3 key = ");
+    print(key);
+  }
+
   // Use the method version
   d3->remove(new Str("b"));
   ASSERT(!dict_contains(d3, new Str("b")));
@@ -584,6 +591,13 @@ TEST test_dict() {
 
   ss->remove(a);
   ASSERT_EQ(0, len(ss));
+
+  // Test removed item
+  for (DictIter<Str*, Str*> it(ss); !it.Done(); it.Next()) {
+    auto key = it.Key();
+    log("ss key = ");
+    print(key);
+  }
 
   PASS();
 }
