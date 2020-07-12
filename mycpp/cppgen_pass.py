@@ -1277,6 +1277,16 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         else:
           raise AssertionError(lval)
 
+    def _write_body(self, body):
+        """Write a block without the { }."""
+        for stmt in body:
+            # Ignore things that look like docstrings
+            if isinstance(stmt, ExpressionStmt) and isinstance(stmt.expr, StrExpr):
+                continue
+
+            #log('-- %d', self.indent)
+            self.accept(stmt)
+
     def visit_for_stmt(self, o: 'mypy.nodes.ForStmt') -> T:
         if 0:
           self.log('ForStmt')
@@ -1477,13 +1487,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # Copy of visit_block, without opening {
         self.indent += 1
         block = o.body
-        for stmt in block.body:
-            # Ignore things that look like docstrings
-            if isinstance(stmt, ExpressionStmt) and isinstance(stmt.expr, StrExpr):
-                continue
-
-            #log('-- %d', self.indent)
-            self.accept(stmt)
+        self._write_body(block.body)
         self.indent -= 1
         self.write_ind('}\n')
 
@@ -1591,6 +1595,16 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             print('other')
             break;
         }
+
+        Or:
+
+        with ctx_Bar(bar, x, y):
+          x()
+
+        {
+          ctx_Bar(bar, x, y)
+          x();
+        }
         """
         #log('WITH')
         #log('expr %s', o.expr)
@@ -1605,7 +1619,24 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         elif expr.callee.name == 'tagswitch':
           self._write_typeswitch(expr, o)
         else:
-          raise AssertionError(expr.callee.name)
+          assert isinstance(expr, CallExpr), expr
+          self.write_ind('{  // with\n')
+          self.indent += 1
+
+          self.write_ind('')
+          self.accept(expr.callee)
+          self.write(' ctx(')
+          for i, arg in enumerate(expr.args):
+            if i != 0:
+              self.write(', ')
+            self.accept(arg)
+          self.write(');\n\n')
+
+          #self.write_ind('')
+          self._write_body(o.body.body)
+
+          self.indent -= 1
+          self.write_ind('}\n')
 
     def visit_del_stmt(self, o: 'mypy.nodes.DelStmt') -> T:
         # TODO:
@@ -1848,13 +1879,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.virtual.OnSubclass(base_class_name, o.name)
           # Visit class body so we get method declarations
           self.current_class_name = o.name
-          for stmt in o.defs.body:
-            # Ignore things that look like docstrings
-            if (isinstance(stmt, ExpressionStmt) and
-                isinstance(stmt.expr, StrExpr)):
-              continue
-
-            self.accept(stmt)
+          self._write_body(o.defs.body)
           self.current_class_name = None
           return
 
@@ -2137,13 +2162,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.write('\n')
           self.prepend_to_block = None
 
-        for stmt in block.body:
-            # Ignore things that look like docstrings
-            if isinstance(stmt, ExpressionStmt) and isinstance(stmt.expr, StrExpr):
-                continue
+        self._write_body(block.body)
 
-            #log('-- %d', self.indent)
-            self.accept(stmt)
         self.indent -= 1
         self.write_ind('}\n')
 

@@ -345,6 +345,8 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
           raise AssertionError("can't translate for-else")
 
     def visit_with_stmt(self, o: 'mypy.nodes.WithStmt') -> T:
+        assert len(o.expr) == 1, o.expr
+        self.accept(o.expr[0])
         self.accept(o.body)
 
     def visit_del_stmt(self, o: 'mypy.nodes.DelStmt') -> T:

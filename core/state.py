@@ -539,7 +539,7 @@ class DirStack(object):
     self.stack.append(entry)
 
   def Pop(self):
-    # type: () -> str
+    # type: () -> Optional[str]
     if len(self.stack) <= 1:
       return None
     self.stack.pop()  # remove last

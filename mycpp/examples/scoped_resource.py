@@ -8,66 +8,74 @@ import os
 import sys
 
 from mylib import log
-from typing import List, Any
+from typing import List, Optional, Any
+
+
+class MyError(Exception):
+  def __init__(self):
+    # type: () -> None
+    pass
 
 
 def Error(error):
   # type: (bool) -> None
   if error:
-    raise RuntimeError()
+    raise MyError()
 
 
-class _ErrExit(object):
-  """Manages the errexit setting.
+class ctx_DirStack(object):
 
-  - The user can change it with builtin 'set' at any point in the code.
-  - These constructs implicitly disable 'errexit':
-    - if / while / until conditions
-    - ! (part of pipeline)
-    - && ||
-
-  An _ErrExit object prevents these two mechanisms from clobbering each other.
-  """
-
-  def __init__(self):
-    # type: () -> None
-    self.errexit = False  # the setting
-    self.stack = []  # type: List[bool]
-
-  def Context(self, *args):
-    # type: (*Any) -> _ErrExit__Context
-    return _ErrExit__Context(self, *args)
-
-  def Push(self, dummy_arg):
-    # type: (str) -> None
-    """Temporarily disable errexit."""
-    log('Push %r', dummy_arg)
-    if self.errexit:
-      self.errexit = False
-      self.stack.append(True)  # value to restore
-    else:
-      self.stack.append(False)
-
-  def Pop(self):
-    # type: () -> None
-    """Restore the previous value."""
-    self.errexit = self.stack.pop()
-
-
-class _ErrExit__Context(object):
-  def __init__(self, state, *args):
-    # type: (_ErrExit, *Any) -> None
-    self.state = state  # underlying stack
-    self.args = args
+  def __init__(self, state, entry):
+    # type: (DirStack, str) -> None
+    self.state = state
+    state.Push(entry)
 
   def __enter__(self):
     # type: () -> None
-    self.state.Push(*self.args)
+    """no-op."""
+    pass
 
   def __exit__(self, type, value, traceback):
-    # type: (Any, Any, Any) -> bool
+    # type: (Any, Any, Any) -> None
     self.state.Pop()
-    return False  # Allows a traceback to occur
+
+
+class DirStack(object):
+  """For pushd/popd/dirs."""
+  def __init__(self):
+    # type: () -> None
+    self.stack = []  # type: List[str]
+    self.Reset()  # Invariant: it always has at least ONE entry.
+
+  def Reset(self):
+    # type: () -> None
+    del self.stack[:] 
+    self.stack.append('CWD')
+
+  def Push(self, entry):
+    # type: (str) -> None
+    self.stack.append(entry)
+
+  def Pop(self):
+    # type: () -> Optional[str]
+    if len(self.stack) <= 1:
+      return None
+    self.stack.pop()  # remove last
+    return self.stack[-1]  # return second to last
+
+  def Iter(self):
+    # type: () -> List[str]
+    """Iterate in reverse order."""
+    # mycpp REWRITE:
+    #return reversed(self.stack)
+    ret = []  # type: List[str]
+    ret.extend(self.stack)
+    ret.reverse()
+    return ret
+
+  def __repr__(self):
+    # type: () -> str
+    return repr(self.stack)
 
 
 # C++ translation
@@ -86,8 +94,8 @@ class _ErrExit__Context(object):
 # };
 
 
-def DoWork(e, do_raise):
-  # type: (_ErrExit, bool) -> None
+def DoWork(d, do_raise):
+  # type: (DirStack, bool) -> None
 
   # problem
   # with self.mem.ctx_Call(...)
@@ -102,8 +110,8 @@ def DoWork(e, do_raise):
 
   # PROBLEM: WE LOST TYPE CHECKING!
   #with e.Context('zz') as _:
-  with e.Context(42) as _:
-    log('  in context errexit %d', e.errexit)
+  with ctx_DirStack(d, 'foo') as _:
+    log('  in context stack %d', len(d.stack))
     if do_raise:
       Error(do_raise)
 
@@ -124,17 +132,16 @@ def run_tests():
   # PushErrExit, PopErrExit
   # loop_level in cmd_exec
 
-  e = _ErrExit()
-  e.errexit = True  # initially true
+  d = DirStack()
 
   for do_raise in [False, True]:
     log('')
-    log('-> errexit %d', e.errexit)
+    log('-> dir stack %d', len(d.stack))
     try:
-      DoWork(e, do_raise)
-    except RuntimeError:
+      DoWork(d, do_raise)
+    except MyError:
       log('exited with exception')
-    log('<- errexit %d', e.errexit)
+    log('<- dir stack %d', len(d.stack))
 
   # C++ translation
   #
