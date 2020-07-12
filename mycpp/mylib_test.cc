@@ -178,11 +178,13 @@ TEST test_str_funcs() {
 
   ASSERT(s->startswith(new Str("")));
   ASSERT(s->startswith(new Str("ab")));
+  ASSERT(s->startswith(s));
   ASSERT(!s->startswith(new Str("bc")));
 
   ASSERT(s->endswith(new Str("")));
   ASSERT(!s->endswith(new Str("ab")));
   ASSERT(s->endswith(new Str("bc")));
+  ASSERT(s->endswith(s));
 
   log("repr %s", repr(new Str(""))->data_);
   log("repr %s", repr(new Str("'"))->data_);
