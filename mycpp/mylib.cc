@@ -451,10 +451,10 @@ Str* str_concat3(Str* a, Str* b, Str* c) {
   memcpy(pos, a->data_, a->len_);
   pos += a->len_;
 
-  memcpy(buf, b->data_, b->len_);
+  memcpy(pos, b->data_, b->len_);
   pos += b->len_;
 
-  memcpy(buf, c->data_, c->len_);
+  memcpy(pos, c->data_, c->len_);
 
   buf[new_len] = '\0';
 
