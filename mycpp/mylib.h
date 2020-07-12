@@ -552,18 +552,31 @@ class ReverseListIter {
   int i_;
 };
 
+template <class K, class V>
+void dict_next(DictIter<K, V>* it,
+               const std::vector<std::pair<K, V>>& items) {
+  ++it->i_;
+}
+
 template <class V>
 void dict_next(DictIter<Str*, V>* it,
                const std::vector<std::pair<Str*, V>>& items) {
   while (true) {
     ++it->i_;
-    if (items[it->i_].first) {  // not nullptr
-      break;
-    }
     if (it->Done()) {
       break;
     }
+    if (items[it->i_].first) {  // not nullptr
+      break;
+    }
   }
+}
+
+template <class K, class V>
+bool dict_done(DictIter<K, V>* it,
+               const std::vector<std::pair<K, V>>& items) {
+  int n = items.size();
+  return it->i_ >= n;
 }
 
 template <class V>
