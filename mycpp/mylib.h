@@ -555,6 +555,9 @@ class DictIter {
   explicit DictIter(Dict<K, V>* D) : D_(D), i_(0) {
   }
   void Next() {
+    // TODO: specialize for Str*
+    // skip nullptr.
+    // Problem: What to do about integers?
     ++i_;
   }
   bool Done() {
@@ -574,7 +577,7 @@ class DictIter {
 
 // Specialized functions
 template <class V>
-int find_by_key(std::vector<std::pair<Str*, V>>& items, Str* key) {
+int find_by_key(const std::vector<std::pair<Str*, V>>& items, Str* key) {
   for (int i = 0; i < items.size(); ++i) {
     Str* s = items[i].first;  // nullptr for deleted entries
     if (s && str_equals(s, key)) {
@@ -585,13 +588,37 @@ int find_by_key(std::vector<std::pair<Str*, V>>& items, Str* key) {
 }
 
 template <class V>
-int find_by_key(std::vector<std::pair<int, V>>& items, int key) {
+int find_by_key(const std::vector<std::pair<int, V>>& items, int key) {
   for (int i = 0; i < items.size(); ++i) {
     if (items[i].first == key) {
       return i;
     }
   }
   return -1;
+}
+
+template <class V>
+List<Str*>* dict_keys(const std::vector<std::pair<Str*, V>>& items) {
+  auto result = new List<Str*>();
+  for (int i = 0; i < items.size(); ++i) {
+    Str* s = items[i].first;  // nullptr for deleted entries
+    if (s) {
+      result->append(s);
+    }
+  }
+  return result;
+}
+
+template <class V>
+List<V>* dict_values(const std::vector<std::pair<Str*, V>>& items) {
+  auto result = new List<V>();
+  for (int i = 0; i < items.size(); ++i) {
+    auto& pair = items[i];
+    if (pair.first) {
+      result->append(pair.second);
+    }
+  }
+  return result;
 }
 
 // Dict currently implemented by VECTOR OF PAIRS.  TODO: Use a real hash table,
@@ -649,12 +676,12 @@ class _Dict {
   }
 
   List<K>* keys() {
-    assert(0);
+    return dict_keys(items_);
   }
 
   // For AssocArray transformations
   List<V>* values() {
-    assert(0);
+    return dict_values(items_);
   }
 
   void clear() {
@@ -685,28 +712,6 @@ class Dict<Str*, V> : public _Dict<Str*, V> {
  public:
   void remove(Str* key) {
     mylib::dict_remove(this, key);
-  }
-
-  List<Str*>* keys() {
-    auto result = new List<Str*>();
-    for (int i = 0; i < this->items_.size(); ++i) {
-      Str* s = this->items_[i].first;  // nullptr for deleted entries
-      if (s) {
-        result->append(s);
-      }
-    }
-    return result;
-  }
-
-  List<V>* values() {
-    auto result = new List<V>();
-    for (int i = 0; i < this->items_.size(); ++i) {
-      auto& pair = this->items_[i];
-      if (pair.first) {
-        result->append(pair.second);
-      }
-    }
-    return result;
   }
 };
 
