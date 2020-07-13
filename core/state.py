@@ -684,6 +684,22 @@ def InitMem(mem, environ, version_str):
   mem.SetPwd(pwd)
 
 
+class ctx_Call(object):
+
+  def __init__(self, mem, func_name, def_spid, argv):
+    # type: (Mem, str, int, List[str]) -> None
+    mem.PushCall(func_name, def_spid, argv)
+    self.mem = mem
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    self.mem.PopCall()
+
+
 class Mem(object):
   """For storing variables.
 

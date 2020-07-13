@@ -1541,26 +1541,21 @@ class CommandEvaluator(object):
 
     For SimpleCommand and registered completion hooks.
     """
-    self.mem.PushCall(func_node.name, func_node.spids[0], argv)
-
-    # Redirects still valid for functions.
-    # Here doc causes a pipe and Process(SubProgramThunk).
-    try:
-      status = self._Execute(func_node.body)
-    except _ControlFlow as e:
-      if e.IsReturn():
-        status = e.StatusCode()
-      else:
-        # break/continue used in the wrong place.
-        e_die('Unexpected %r (in function call)', e.token.val, token=e.token)
-    except error.FatalRuntime as e:
-      # Dump the stack before unwinding it
-      self.dumper.MaybeCollect(self, e)
-      raise
-    # Does this ever happen?  e.g. 'source' should catch its own errors.
-    #except error.Parse as e:
-    finally:
-      self.mem.PopCall()
+    with state.ctx_Call(self.mem, func_node.name, func_node.spids[0], argv):
+      # Redirects still valid for functions.
+      # Here doc causes a pipe and Process(SubProgramThunk).
+      try:
+        status = self._Execute(func_node.body)
+      except _ControlFlow as e:
+        if e.IsReturn():
+          status = e.StatusCode()
+        else:
+          # break/continue used in the wrong place.
+          e_die('Unexpected %r (in function call)', e.token.val, token=e.token)
+      except error.FatalRuntime as e:
+        # Dump the stack before unwinding it
+        self.dumper.MaybeCollect(self, e)
+        raise
 
     return status
 
