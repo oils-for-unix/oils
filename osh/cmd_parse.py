@@ -36,6 +36,7 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen import syntax_asdl  # token, etc.
 
 from asdl import runtime
+from core import alloc
 from core import error
 from core import ui
 from core.pyerror import log, p_die
@@ -228,11 +229,11 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
     else:
       raise NotImplementedError('%d != %d' % (span1.line_id, span2.line_id))
     a_parser = parse_ctx.MakeArithParser(code_str)
-    arena.PushSource(source.LValue(left_token.span_id, close_token.span_id))
-    try:
+
+    src = source.LValue(left_token.span_id, close_token.span_id)
+    with alloc.ctx_Location(arena, src):
       index_node = a_parser.Parse()  # may raise error.Parse
-    finally:
-      arena.PopSource()
+
     tmp3 = sh_lhs_expr.IndexedName(var_name, index_node)
     tmp3.spids.append(left_token.span_id)
 
@@ -729,20 +730,20 @@ class CommandParser(object):
 
     # The interaction between COMPLETION and ALIASES requires special care.
     # See docstring of BeginAliasExpansion() in parse_lib.py.
-    self.arena.PushSource(source.Alias(first_word_str, argv0_spid))
-    trail = self.parse_ctx.trail
-    trail.BeginAliasExpansion()
-    try:
-      # _ParseCommandTerm() handles multiline commands, compound commands, etc.
-      # as opposed to ParseLogicalLine()
-      node = cp._ParseCommandTerm()
-    except error.Parse as e:
-      # Failure to parse alias expansion is a fatal error
-      # We don't need more handling here/
-      raise
-    finally:
-      trail.EndAliasExpansion()
-      self.arena.PopSource()
+    src = source.Alias(first_word_str, argv0_spid)
+    with alloc.ctx_Location(self.arena, src):
+      trail = self.parse_ctx.trail
+      trail.BeginAliasExpansion()
+      try:
+        # _ParseCommandTerm() handles multiline commands, compound commands, etc.
+        # as opposed to ParseLogicalLine()
+        node = cp._ParseCommandTerm()
+      except error.Parse as e:
+        # Failure to parse alias expansion is a fatal error
+        # We don't need more handling here/
+        raise
+      finally:
+        trail.EndAliasExpansion()
 
     if 0:
       log('AFTER expansion:')

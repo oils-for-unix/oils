@@ -7,6 +7,7 @@ from __future__ import print_function
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import source
+from core import alloc
 from core.error import _ControlFlow
 from core import main_loop
 from core.pyerror import e_usage
@@ -57,12 +58,9 @@ class Eval(vm._Builtin):
     c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
     src = source.EvalArg(eval_spid)
-    self.arena.PushSource(src)
-    try:
+    with alloc.ctx_Location(self.arena, src):
       return main_loop.Batch(self.cmd_ev, c_parser, self.arena,
                              cmd_flags=cmd_eval.IsEvalSource)
-    finally:
-      self.arena.PopSource()
 
 
 class Source(vm._Builtin):
@@ -111,12 +109,11 @@ class Source(vm._Builtin):
       self.mem.PushSource(path, source_argv)
 
       src = source.SourcedFile(path, call_spid)
-      self.arena.PushSource(src)
       try:
-        status = main_loop.Batch(self.cmd_ev, c_parser, self.arena,
-                                 cmd_flags=cmd_eval.IsEvalSource)
+        with alloc.ctx_Location(self.arena, src):
+          status = main_loop.Batch(self.cmd_ev, c_parser, self.arena,
+                                   cmd_flags=cmd_eval.IsEvalSource)
       finally:
-        self.arena.PopSource()
         self.mem.PopSource(source_argv)
 
       return status

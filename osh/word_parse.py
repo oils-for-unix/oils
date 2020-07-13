@@ -68,6 +68,7 @@ from _devbuild.gen.syntax_asdl import (
 
     expr_t, source, arg_list,
 )
+from core import alloc
 from core.pyerror import p_die
 from core.pyerror import log
 from core import ui
@@ -817,11 +818,8 @@ class WordParser(WordEmitter):
       arena = self.parse_ctx.arena
       line_reader = reader.StringLineReader(code_str, arena)
       c_parser = self.parse_ctx.MakeOshParser(line_reader)
-      arena.PushSource(source.Backticks(left_spid, right_spid))
-      try:
+      with alloc.ctx_Location(arena, source.Backticks(left_spid, right_spid)):
         node = c_parser.ParseCommandSub()
-      finally:
-        arena.PopSource()
 
     else:
       raise AssertionError(left_id)

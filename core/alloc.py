@@ -17,9 +17,25 @@ from _devbuild.gen.syntax_asdl import (
 from asdl import runtime
 from core.pyerror import log
 
-from typing import List, Dict, cast
+from typing import List, Dict, Any, cast
 
 _ = log
+
+
+class ctx_Location(object):
+
+  def __init__(self, arena, src):
+    # type: (Arena, source_t) -> None
+    arena.PushSource(src)
+    self.arena = arena
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    self.arena.PopSource()
 
 
 class Arena(object):

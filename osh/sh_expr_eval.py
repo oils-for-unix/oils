@@ -30,6 +30,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.types_asdl import bool_arg_type_e
 from asdl import runtime
+from core import alloc
 from core import error
 from core import state
 from core import ui
@@ -276,14 +277,12 @@ class ArithEvaluator(object):
         arena = self.parse_ctx.arena
 
         a_parser = self.parse_ctx.MakeArithParser(s)
-        arena.PushSource(source.Variable(span_id))
-        try:
-          node2 = a_parser.Parse()  # may raise error.Parse
-        except error.Parse as e:
-          ui.PrettyPrintError(e, arena)
-          e_die('Parse error in recursive arithmetic', span_id=e.span_id)
-        finally:
-          arena.PopSource()
+        with alloc.ctx_Location(arena, source.Variable(span_id)):
+          try:
+            node2 = a_parser.Parse()  # may raise error.Parse
+          except error.Parse as e:
+            ui.PrettyPrintError(e, arena)
+            e_die('Parse error in recursive arithmetic', span_id=e.span_id)
 
         # Prevent infinite recursion of $(( 1x )) -- it's a word that evaluates
         # to itself, and you don't want to reparse it as a word.

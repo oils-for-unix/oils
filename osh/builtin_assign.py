@@ -13,6 +13,7 @@ from _devbuild.gen.runtime_asdl import (
 )
 from _devbuild.gen.syntax_asdl import source
 
+from core import alloc
 from core import error
 from core.pyerror import e_usage
 from core import state
@@ -410,16 +411,14 @@ class Unset(vm._Builtin):
     arena = self.parse_ctx.arena
 
     a_parser = self.parse_ctx.MakeArithParser(arg)
-    arena.PushSource(source.ArgvWord(spid))
-    try:
-      anode = a_parser.Parse()
-    except error.Parse as e:
-      # show parse error
-      ui.PrettyPrintError(e, arena)
-      # point to word
-      e_usage('Invalid unset expression', span_id=spid)
-    finally:
-      arena.PopSource()
+    with alloc.ctx_Location(arena, source.ArgvWord(spid)):
+      try:
+        anode = a_parser.Parse()
+      except error.Parse as e:
+        # show parse error
+        ui.PrettyPrintError(e, arena)
+        # point to word
+        e_usage('Invalid unset expression', span_id=spid)
 
     lval = self.arith_ev.EvalArithLhs(anode, spid)
 

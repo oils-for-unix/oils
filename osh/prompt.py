@@ -11,6 +11,7 @@ from _devbuild.gen.syntax_asdl import (
     command_t, source, compound_word
 )
 from asdl import runtime
+from core import alloc
 from core import main_loop
 from core import error
 from core import pyos
@@ -264,15 +265,12 @@ class UserPlugin(object):
 
       # NOTE: This is similar to CommandEvaluator.ParseTrapCode().
       # TODO: Add spid
-      self.arena.PushSource(source.PromptCommand(runtime.NO_SPID))
-      try:
+      with alloc.ctx_Location(self.arena, source.PromptCommand(runtime.NO_SPID)):
         try:
           node = main_loop.ParseWholeFile(c_parser)
         except error.Parse as e:
           ui.PrettyPrintError(e, self.arena)
           return  # don't execute
-      finally:
-        self.arena.PopSource()
 
       self.parse_cache[prompt_cmd] = node
 

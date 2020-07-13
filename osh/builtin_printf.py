@@ -16,6 +16,7 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
 
 from asdl import runtime
+from core import alloc
 from core import error
 from core.pyerror import e_usage
 from core import state
@@ -177,14 +178,13 @@ class Printf(vm._Builtin):
       # TODO: Make public
       lexer = self.parse_ctx._MakeLexer(line_reader)
       parser = _FormatStringParser(lexer)
-      arena.PushSource(source.ArgvWord(fmt_spid))
-      try:
-        parts = parser.Parse()
-      except error.Parse as e:
-        self.errfmt.PrettyPrintError(e)
-        return 2  # parse error
-      finally:
-        arena.PopSource()
+
+      with alloc.ctx_Location(arena, source.ArgvWord(fmt_spid)):
+        try:
+          parts = parser.Parse()
+        except error.Parse as e:
+          self.errfmt.PrettyPrintError(e)
+          return 2  # parse error
 
       self.parse_cache[fmt] = parts
 

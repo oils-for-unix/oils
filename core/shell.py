@@ -122,12 +122,9 @@ def SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev):
   rc_line_reader = reader.FileLineReader(f, arena)
   rc_c_parser = parse_ctx.MakeOshParser(rc_line_reader)
 
-  arena.PushSource(source.SourcedFile(rc_path))
-  try:
+  with alloc.ctx_Location(arena, source.SourcedFile(rc_path)):
     # TODO: handle status, e.g. 2 for ParseError
     status = main_loop.Batch(cmd_ev, rc_c_parser, arena)
-  finally:
-    arena.PopSource()
 
   f.close()
 

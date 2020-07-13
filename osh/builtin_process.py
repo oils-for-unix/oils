@@ -15,6 +15,7 @@ from _devbuild.gen.runtime_asdl import (
 )
 from _devbuild.gen.syntax_asdl import source
 from asdl import runtime
+from core import alloc
 from core import error
 from core import main_loop
 from core.pyutil import stderr_line
@@ -360,17 +361,13 @@ class Trap(vm._Builtin):
     line_reader = reader.StringLineReader(code_str, self.arena)
     c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
-    # TODO: the SPID should be passed through argv
-    self.arena.PushSource(source.Trap(runtime.NO_SPID))
-    try:
+    # TODO: the SPID should be passed through argv.  Use ArgvWord?
+    with alloc.ctx_Location(self.arena, source.Trap(runtime.NO_SPID)):
       try:
         node = main_loop.ParseWholeFile(c_parser)
       except error.Parse as e:
         ui.PrettyPrintError(e, self.arena)
         return None
-
-    finally:
-      self.arena.PopSource()
 
     return node
 
