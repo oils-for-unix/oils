@@ -248,10 +248,6 @@ benchmark-all() {
 should-skip() {
   case $1 in
     # not passing yet!
-    #
-    # - later
-    #   - scoped_resource: Not translated at all.  No RuntimeError.
-
     # Other problematic constructs: **kwargs, named args
 
     # TODO:
@@ -265,9 +261,6 @@ should-skip() {
       return 0;
       ;;
 
-    scoped_resource)
-      return 0
-      ;;
     *)
       return 1
   esac

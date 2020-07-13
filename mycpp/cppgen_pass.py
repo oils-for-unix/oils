@@ -1910,14 +1910,23 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               continue
 
             # Constructor is named after class
-            if isinstance(stmt, FuncDef) and stmt.name() == '__init__':
-              self.decl_write_ind('%s(', o.name)
-              self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)
-              self.decl_write(');\n')
+            if isinstance(stmt, FuncDef):
+              if stmt.name() == '__init__':
+                self.decl_write_ind('%s(', o.name)
+                self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)
+                self.decl_write(');\n')
 
-              # Must visit these for member vars!
-              self.accept(stmt.body)
-              continue
+                # Must visit these for member vars!
+                self.accept(stmt.body)
+                continue
+
+              if stmt.name() == '__enter__':
+                continue
+
+              if stmt.name() == '__exit__':
+                # Turn it into a destructor with NO ARGS
+                self.decl_write_ind('~%s();\n', o.name)
+                continue
 
             self.accept(stmt)
 
@@ -1942,57 +1951,64 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         #
         block = o.defs
         for stmt in block.body:
-
-          # Collect __init__ calls within __init__, and turn them into
-          # initialize lists.
-          if isinstance(stmt, FuncDef) and stmt.name() == '__init__':
-            self.write('\n')
-            self.write_ind('%s::%s(', o.name, o.name)
-            self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)
-            self.write(') ')
-
-            # Taking into account the docstring, look at the first statement to
-            # see if it's a superclass __init__ call.  Then move that to the
-            # initializer list.
-
-            first_index = 0
-            maybe_skip_stmt = stmt.body.body[0]
-            if (isinstance(maybe_skip_stmt, ExpressionStmt) and
-                isinstance(maybe_skip_stmt.expr, StrExpr)):
-              first_index += 1
-
-            first_stmt = stmt.body.body[first_index]
-            if (isinstance(first_stmt, ExpressionStmt) and
-                isinstance(first_stmt.expr, CallExpr)):
-              expr = first_stmt.expr
-              #log('expr %s', expr)
-              callee = first_stmt.expr.callee
-              # TextOutput() : ColorOutput(f), ... {
-              if isinstance(callee, MemberExpr) and callee.name == '__init__':
-                base_constructor_args = expr.args
-                #log('ARGS %s', base_constructor_args)
-                self.write(': %s(', base_class_name)
-                for i, arg in enumerate(base_constructor_args):
-                  if i == 0:
-                    continue  # Skip 'this'
-                  if i != 1:
-                    self.write(', ')
-                  self.accept(arg)
-                self.write(') {\n')
-
-                self.indent += 1
-                for node in stmt.body.body[first_index+1:]:
-                  self.accept(node)
-                self.indent -= 1
-                self.write('}\n')
-                continue
-
-            # Normal function body
-            self.accept(stmt.body)
-            continue
-
-          # Write body
           if isinstance(stmt, FuncDef):
+            # Collect __init__ calls within __init__, and turn them into
+            # initializer lists.
+            if stmt.name() == '__init__':
+              self.write('\n')
+              self.write_ind('%s::%s(', o.name, o.name)
+              self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)
+              self.write(') ')
+
+              # Taking into account the docstring, look at the first statement to
+              # see if it's a superclass __init__ call.  Then move that to the
+              # initializer list.
+
+              first_index = 0
+              maybe_skip_stmt = stmt.body.body[0]
+              if (isinstance(maybe_skip_stmt, ExpressionStmt) and
+                  isinstance(maybe_skip_stmt.expr, StrExpr)):
+                first_index += 1
+
+              first_stmt = stmt.body.body[first_index]
+              if (isinstance(first_stmt, ExpressionStmt) and
+                  isinstance(first_stmt.expr, CallExpr)):
+                expr = first_stmt.expr
+                #log('expr %s', expr)
+                callee = first_stmt.expr.callee
+                # TextOutput() : ColorOutput(f), ... {
+                if isinstance(callee, MemberExpr) and callee.name == '__init__':
+                  base_constructor_args = expr.args
+                  #log('ARGS %s', base_constructor_args)
+                  self.write(': %s(', base_class_name)
+                  for i, arg in enumerate(base_constructor_args):
+                    if i == 0:
+                      continue  # Skip 'this'
+                    if i != 1:
+                      self.write(', ')
+                    self.accept(arg)
+                  self.write(') {\n')
+
+                  self.indent += 1
+                  for node in stmt.body.body[first_index+1:]:
+                    self.accept(node)
+                  self.indent -= 1
+                  self.write('}\n')
+                  continue
+
+              # Normal function body
+              self.accept(stmt.body)
+              continue
+
+            if stmt.name() == '__enter__':
+              continue
+
+            if stmt.name() == '__exit__':
+              self.decl_write('\n')
+              self.decl_write_ind('%s::~%s()', o.name, o.name)
+              self.accept(stmt.body)
+              continue
+
             self.accept(stmt)
 
         self.current_class_name = None   # Stop prefixing functions with class

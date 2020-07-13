@@ -32,7 +32,7 @@ class ctx_DirStack(object):
 
   def __enter__(self):
     # type: () -> None
-    """no-op."""
+    """no-op, but it has to exist to be used as context manager."""
     pass
 
   def __exit__(self, type, value, traceback):
