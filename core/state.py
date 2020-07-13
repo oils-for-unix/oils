@@ -135,6 +135,22 @@ class SearchPath(object):
     return self.cache.values()
 
 
+class ctx_ErrExit(object):
+
+  def __init__(self, mutable_opts, span_id):
+    # type: (MutableOpts, int) -> None
+    mutable_opts.errexit.Push(span_id)
+    self.mutable_opts = mutable_opts
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    self.mutable_opts.errexit.Pop()
+
+
 class _ErrExit(object):
   """Manages the errexit setting.
 
@@ -698,6 +714,22 @@ class ctx_Call(object):
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
     self.mem.PopCall()
+
+
+class ctx_Temp(object):
+
+  def __init__(self, mem):
+    # type: (Mem) -> None
+    mem.PushTemp()
+    self.mem = mem
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    self.mem.PopTemp()
 
 
 class Mem(object):

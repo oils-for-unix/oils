@@ -288,14 +288,6 @@ class CommandEvaluator(object):
 
     return status
 
-  def _PushErrExit(self, span_id):
-    # type: (int) -> None
-    self.mutable_opts.errexit.Push(span_id)
-
-  def _PopErrExit(self):
-    # type: () -> None
-    self.mutable_opts.errexit.Pop()
-
   # TODO: Also change to BareAssign (set global or mutate local) and
   # KeywordAssign.  The latter may have flags too.
   def _SpanIdForShAssignment(self, node):
@@ -571,12 +563,9 @@ class CommandEvaluator(object):
             self._EvalTempEnv(node.more_env, 0)
             status = self._RunSimpleCommand(cmd_val, node.do_fork)
           else:
-            self.mem.PushTemp()
-            try:
+            with state.ctx_Temp(self.mem):
               self._EvalTempEnv(node.more_env, state.SetExport)
               status = self._RunSimpleCommand(cmd_val, node.do_fork)
-            finally:
-              self.mem.PopTemp()
         else:
           status = self._RunSimpleCommand(cmd_val, node.do_fork)
 
@@ -589,12 +578,9 @@ class CommandEvaluator(object):
         # expansion, since aliases are discouarged.
 
         if len(node.more_env):
-          self.mem.PushTemp()
-          try:
+          with state.ctx_Temp(self.mem):
             self._EvalTempEnv(node.more_env, state.SetExport)
             status = self._Execute(node.child)
-          finally:
-            self.mem.PopTemp()
         else:
           status = self._Execute(node.child)
 
@@ -613,11 +599,8 @@ class CommandEvaluator(object):
           e_die("|& isn't supported", span_id=node.spids[0])
 
         if node.negated:
-          self._PushErrExit(node.spids[0])  # ! spid
-          try:
+          with state.ctx_ErrExit(self.mutable_opts, node.spids[0]):  # ! spid
             status2 = self.shell_ex.RunPipeline(node)
-          finally:
-            self._PopErrExit()
 
           # errexit is disabled for !.
           check_errexit = False
@@ -979,11 +962,8 @@ class CommandEvaluator(object):
         left = node.children[0]
 
         # Suppress failure for every child except the last one.
-        self._PushErrExit(node.spids[0])
-        try:
+        with state.ctx_ErrExit(self.mutable_opts, node.spids[0]):
           status = self._Execute(left)
-        finally:
-          self._PopErrExit()
 
         i = 1
         n = len(node.children)
@@ -1006,11 +986,9 @@ class CommandEvaluator(object):
             status = self._Execute(child)
             check_errexit = True
           else:
-            self._PushErrExit(node.spids[i])  # blame the right && or ||
-            try:
+            # blame the right && or ||
+            with state.ctx_ErrExit(self.mutable_opts, node.spids[i]):
               status = self._Execute(child)
-            finally:
-              self._PopErrExit()
 
           i += 1
 
@@ -1022,11 +1000,9 @@ class CommandEvaluator(object):
         try:
           while True:
             try:
-              self._PushErrExit(node.spids[0])  # while/until spid
-              try:
+              # while/until spid
+              with state.ctx_ErrExit(self.mutable_opts, node.spids[0]):
                 cond_status = self._ExecuteList(node.cond)
-              finally:
-                self._PopErrExit()
 
               if node.keyword.id == Id.KW_While:
                 if cond_status != 0:
@@ -1216,11 +1192,9 @@ class CommandEvaluator(object):
         node = cast(command__If, UP_node)
         done = False
         for if_arm in node.arms:
-          self._PushErrExit(if_arm.spids[0])  # if/elif spid
-          try:
+          # if/elif spid
+          with state.ctx_ErrExit(self.mutable_opts, if_arm.spids[0]):
             status = self._ExecuteList(if_arm.cond)
-          finally:
-            self._PopErrExit()
 
           if status == 0:
             status = self._ExecuteList(if_arm.action)
