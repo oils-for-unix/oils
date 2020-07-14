@@ -301,12 +301,11 @@ osh-eval-manifest() {
   # frontend metaprogramming: */*_def.py
   # core/process.py - not ready
   # pyutil.py -- Python only (Resource Loader, etc.)
-  # os_path.py: crashes on path += '/' + b
   # pgen2/parse.py: prefer hand-written C
 
   # TODO: could be pyoptview,pyconsts,pymatch,pyflag
 
-  local exclude='_devbuild/|.*_def\.py|core/py.*\.py|pybase.py|optview.py|match.py|process.py|os_path.py|path_stat.py|bool_stat.py|consts.py|pgen2/parse.py|oil_lang/objects.py|flag_spec.py|builtin_process.py'
+  local exclude='_devbuild/|.*_def\.py|core/py.*\.py|pybase.py|optview.py|match.py|process.py|path_stat.py|bool_stat.py|consts.py|pgen2/parse.py|oil_lang/objects.py|flag_spec.py|builtin_process.py'
 
   egrep -v "$exclude" types/osh-eval-manifest.txt
 }
@@ -378,6 +377,16 @@ EOF
   cat $raw > $cc
 
   #compile-slice $name '.dbg'
+}
+
+port-os-path() {
+
+  local name=os_path
+  local raw=_tmp/mycpp/${name}_raw.cc 
+
+  mycpp \
+    $REPO_ROOT/pylib/os_path.py \
+    > $raw 
 }
 
 osh-parse-asan() {

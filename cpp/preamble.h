@@ -36,7 +36,6 @@ using id_kind_asdl::Kind_t;
 #include "libc.h"
 #include "osh_bool_stat.h"
 #include "posix.h"
-#include "pylib_os_path.h"
 #include "pylib_path_stat.h"
 #include "time_.h"
 

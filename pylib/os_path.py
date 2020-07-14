@@ -4,34 +4,46 @@ os_path.py - Copy of code from Python's posixpath.py and genericpath.py.
 
 import posix_ as posix
 
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 extsep = '.'
 sep = '/'
-pathsep = ':'
-defpath = ':/bin:/usr/bin'
-altsep = None
 
 
 # Join pathnames.
 # Ignore the previous parts if a part is absolute.
 # Insert a '/' unless the first part is empty or already ends in '/'.
 
-def join(a, *p):
-    # type: (str, *str) -> str
-    """Join two or more pathname components, inserting '/' as needed.
-    If any component is an absolute path, all previous path components
-    will be discarded.  An empty last part will result in a path that
-    ends with a separator."""
-    path = a
-    for b in p:
-        if b.startswith('/'):
-            path = b
-        elif path == '' or path.endswith('/'):
-            path +=  b
-        else:
-            path += '/' + b
-    return path
+if 0:
+    def join_OLD(a, *p):
+        # type: (str, *str) -> str
+        """Join two or more pathname components, inserting '/' as needed.
+        If any component is an absolute path, all previous path components
+        will be discarded.  An empty last part will result in a path that
+        ends with a separator."""
+        path = a
+        for b in p:
+            if b.startswith('/'):
+                path = b
+            elif path == '' or path.endswith('/'):
+                path +=  b
+            else:
+                path += '/' + b
+        return path
+
+
+def join(s1, s2):
+  # type: (str, str) -> str
+  """Special case to avoid varargs."""
+
+  if s2.startswith('/') or len(s1) == 0:
+    # absolute path
+    return s2
+
+  if s1.endswith('/'):
+    return s1 + s2
+
+  return '%s/%s' % (s1, s2)
 
 
 # Split a path in head (everything up to the last '/') and tail (the
@@ -44,8 +56,9 @@ def split(p):
     """Split a pathname.  Returns tuple "(head, tail)" where "tail" is
     everything after the final slash.  Either part may be empty."""
     i = p.rfind('/') + 1
-    head, tail = p[:i], p[i:]
-    if head and head != '/'*len(head):
+    head = p[:i]
+    tail = p[i:]
+    if len(head) and head != '/'*len(head):
         head = head.rstrip('/')
     return head, tail
 
@@ -57,18 +70,14 @@ def split(p):
 
 # Generic implementation of splitext, to be parametrized with
 # the separators
-def _splitext(p, sep, altsep, extsep):
-    # type: (str, str, str, str) -> Tuple[str, str]
+def _splitext(p, sep, extsep):
+    # type: (str, str, str) -> Tuple[str, str]
     """Split the extension from a pathname.
 
     Extension is everything from the last dot to the end, ignoring
     leading dots.  Returns "(root, ext)"; ext may be empty."""
 
     sepIndex = p.rfind(sep)
-    if altsep:
-        altsepIndex = p.rfind(altsep)
-        sepIndex = max(sepIndex, altsepIndex)
-
     dotIndex = p.rfind(extsep)
     if dotIndex > sepIndex:
         # skip all leading dots
@@ -88,7 +97,7 @@ def _splitext(p, sep, altsep, extsep):
 
 def splitext(p):
     # type: (str) -> Tuple[str, str]
-    return _splitext(p, sep, altsep, extsep)
+    return _splitext(p, sep, extsep)
 
 
 # Return the tail (basename) part of a path, same as split(path)[1].
@@ -121,7 +130,8 @@ def normpath(path):
     """Normalize path, eliminating double slashes, etc."""
     # Preserve unicode (if path is unicode)
     #slash, dot = (u'/', u'.') if isinstance(path, _unicode) else ('/', '.')
-    slash, dot = ('/', '.')
+    slash = '/'
+    dot = '.'
     if path == '':
         return dot
     initial_slashes = path.startswith('/')  # type: int
@@ -135,16 +145,16 @@ def normpath(path):
     for comp in comps:
         if comp in ('', '.'):
             continue
-        if (comp != '..' or (not initial_slashes and not new_comps) or
-             (new_comps and new_comps[-1] == '..')):
+        if (comp != '..' or (not initial_slashes and len(new_comps) == 0) or
+             (len(new_comps) and new_comps[-1] == '..')):
             new_comps.append(comp)
-        elif new_comps:
+        elif len(new_comps):
             new_comps.pop()
     comps = new_comps
     path = slash.join(comps)
     if initial_slashes:
         path = slash*initial_slashes + path
-    return path or dot
+    return path if len(path) else dot
 
 
 # Return whether a path is absolute.

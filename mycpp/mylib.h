@@ -324,6 +324,17 @@ class Str {
     return -1;
   }
 
+  int rfind(Str* needle) {
+    assert(needle->len_ == 1);  // Oil's usage
+    char c = needle->data_[0];
+    for (int i = len_-1; i >= 0; --i) {
+      if (data_[i] == c) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
   Str* upper() {
     assert(0);
   }

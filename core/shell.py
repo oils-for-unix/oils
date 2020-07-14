@@ -599,7 +599,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     # https://unix.stackexchange.com/questions/24347/why-do-some-applications-use-config-appname-for-their-config-data-while-other
     home_dir = pyos.GetMyHomeDir()
     assert home_dir is not None
-    history_filename = os_path.join(home_dir, '.config/oil', 'history_' + lang)
+    history_filename = os_path.join(home_dir, '.config/oil/history_%s' % lang)
 
     if line_input:
       # NOTE: We're using a different WordEvaluator here.
@@ -635,7 +635,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
     sig_state.InitInteractiveShell(display)
 
-    rc_path = flag.rcfile or os_path.join(home_dir, '.config/oil', lang + 'rc')
+    rc_path = flag.rcfile or os_path.join(home_dir, '.config/oil/%src' % lang)
     try:
       # NOTE: Should be called AFTER _InitDefaultCompletions.
       SourceStartupFile(fd_state, rc_path, lang, parse_ctx, cmd_ev)
