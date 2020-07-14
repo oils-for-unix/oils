@@ -293,27 +293,6 @@ TEST bool_stat_test() {
   PASS();
 }
 
-TEST os_path_test() {
-  Str* abs = new Str("/abs");
-  Str* s = os_path::join(new Str("prefix"), abs);
-  ASSERT(str_equals(s, abs));
-
-  Str* s2 = os_path::join(new Str("prefix/"), new Str("foo"));
-  ASSERT(str_equals(s2, new Str("prefix/foo")));
-
-  // no trailing slash
-  Str* s3 = os_path::join(new Str("prefix"), new Str("foo"));
-  ASSERT(str_equals(s3, new Str("prefix/foo")));
-
-  if (0) {
-    Str* s4 = os_path::abspath(new Str("prefix"));
-    log("s4 = ");
-    print(s4);
-  }
-
-  PASS();
-}
-
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -327,7 +306,6 @@ int main(int argc, char** argv) {
   RUN_TEST(exceptions);
   RUN_TEST(flag_spec_test);
   RUN_TEST(bool_stat_test);
-  RUN_TEST(os_path_test);
   GREATEST_MAIN_END(); /* display results */
   return 0;
 }

@@ -10,32 +10,15 @@ extsep = '.'
 sep = '/'
 
 
-# Join pathnames.
-# Ignore the previous parts if a part is absolute.
-# Insert a '/' unless the first part is empty or already ends in '/'.
-
-if 0:
-    def join_OLD(a, *p):
-        # type: (str, *str) -> str
-        """Join two or more pathname components, inserting '/' as needed.
-        If any component is an absolute path, all previous path components
-        will be discarded.  An empty last part will result in a path that
-        ends with a separator."""
-        path = a
-        for b in p:
-            if b.startswith('/'):
-                path = b
-            elif path == '' or path.endswith('/'):
-                path +=  b
-            else:
-                path += '/' + b
-        return path
-
-
 def join(s1, s2):
   # type: (str, str) -> str
-  """Special case to avoid varargs."""
+  """Join pathnames.
 
+  Ignore the previous parts if a part is absolute.  Insert a '/' unless the
+  first part is empty or already ends in '/'.
+
+  Special case of os.path.join() which avoids varargs.
+  """
   if s2.startswith('/') or len(s1) == 0:
     # absolute path
     return s2
@@ -128,8 +111,7 @@ def dirname(p):
 def normpath(path):
     # type: (str) -> str
     """Normalize path, eliminating double slashes, etc."""
-    # Preserve unicode (if path is unicode)
-    #slash, dot = (u'/', u'.') if isinstance(path, _unicode) else ('/', '.')
+
     slash = '/'
     dot = '.'
     if path == '':
