@@ -143,17 +143,22 @@ TEST test_str_funcs() {
 
   int_str = str(-(1 << 31) + 1);
   log("i = %s", int_str->data_);
-  int_str = str(-(1 << 31));
+
+  int int_min = -(1 << 31);
+  int_str = str(int_min);
   log("i = %s", int_str->data_);
 
   int_str = mylib::hex_lower(15);
   ASSERT(str_equals0("f", int_str));
+  print(mylib::hex_lower(int_min));  // ASAN implicitly checks this
 
   int_str = mylib::hex_upper(15);
   ASSERT(str_equals0("F", int_str));
+  print(mylib::hex_upper(int_min));  // ASAN
 
   int_str = mylib::octal(15);
   ASSERT(str_equals0("17", int_str));
+  print(mylib::octal(int_min));  // ASAN
 
   Str* s1 = new Str("abc\0bcd", 7);
   ASSERT_EQ(7, len(s1));

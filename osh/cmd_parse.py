@@ -728,22 +728,22 @@ class CommandParser(object):
     cp = self.parse_ctx.MakeOshParser(line_reader)
     cp.Init_AliasesInFlight(aliases_in_flight)
 
+    # break circular dep
+    from frontend import parse_lib
+
     # The interaction between COMPLETION and ALIASES requires special care.
     # See docstring of BeginAliasExpansion() in parse_lib.py.
     src = source.Alias(first_word_str, argv0_spid)
     with alloc.ctx_Location(self.arena, src):
-      trail = self.parse_ctx.trail
-      trail.BeginAliasExpansion()
-      try:
-        # _ParseCommandTerm() handles multiline commands, compound commands, etc.
-        # as opposed to ParseLogicalLine()
-        node = cp._ParseCommandTerm()
-      except error.Parse as e:
-        # Failure to parse alias expansion is a fatal error
-        # We don't need more handling here/
-        raise
-      finally:
-        trail.EndAliasExpansion()
+      with parse_lib.ctx_Alias(self.parse_ctx.trail):
+        try:
+          # _ParseCommandTerm() handles multiline commands, compound commands, etc.
+          # as opposed to ParseLogicalLine()
+          node = cp._ParseCommandTerm()
+        except error.Parse as e:
+          # Failure to parse alias expansion is a fatal error
+          # We don't need more handling here/
+          raise
 
     if 0:
       log('AFTER expansion:')

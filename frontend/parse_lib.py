@@ -62,7 +62,7 @@ class _BaseTrail(object):
     self.tokens = []  # type: List[Token]
 
     self.alias_words = []  # type: List[compound_word]  # words INSIDE an alias expansion
-    self.expanding_alias = False
+    self._expanding_alias = False
 
   def Clear(self):
     # type: () -> None
@@ -120,6 +120,36 @@ class _NullTrail(_BaseTrail):
   pass
 
 
+class ctx_Alias(object):
+  """Used by CommandParser so we know to be ready for FIRST alias word.
+
+  For example, for
+
+  alias ll='ls -l'
+
+  Then we want to capture 'ls' as the first word.
+
+  We do NOT want SetLatestWords or AppendToken to be active, because we don't
+  need other tokens from 'ls -l'.
+  
+  It would also probably cause bugs in history expansion, e.g. echo !1 should
+  be the first word the user typed, not the first word after alias expansion.
+  """
+
+  def __init__(self, trail):
+    # type: (_BaseTrail) -> None
+    trail._expanding_alias = True
+    self.trail = trail
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    self.trail._expanding_alias = False
+
+
 class Trail(_BaseTrail):
   """Info left by the parser to help us complete shell syntax and commands.
 
@@ -135,7 +165,7 @@ class Trail(_BaseTrail):
 
   def SetLatestWords(self, words, redirects):
     # type: (List[compound_word], List[redir]) -> None
-    if self.expanding_alias:
+    if self._expanding_alias:
       self.alias_words = words  # Save these separately
       return
     self.words = words
@@ -143,32 +173,9 @@ class Trail(_BaseTrail):
 
   def AppendToken(self, token):
     # type: (Token) -> None
-    if self.expanding_alias:  # We don't want tokens inside aliases
+    if self._expanding_alias:  # We don't want tokens inside aliases
       return
     self.tokens.append(token)
-
-  def BeginAliasExpansion(self):
-    # type: () -> None
-    """Called by CommandParser so we know to be ready for FIRST alias word.
-
-    For example, for
-
-    alias ll='ls -l'
-
-    Then we want to capture 'ls' as the first word.
-
-    We do NOT want SetLatestWords or AppendToken to be active, because we don't
-    need other tokens from 'ls -l'.
-    
-    It would also probably cause bugs in history expansion, e.g. echo !1 should
-    be the first word the user typed, not the first word after alias expansion.
-    """
-    self.expanding_alias = True
-
-  def EndAliasExpansion(self):
-    # type: () -> None
-    """Go back to the normal trail collection mode."""
-    self.expanding_alias = False
 
 
 if TYPE_CHECKING:
