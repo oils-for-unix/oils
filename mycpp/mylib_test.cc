@@ -146,6 +146,15 @@ TEST test_str_funcs() {
   int_str = str(-(1 << 31));
   log("i = %s", int_str->data_);
 
+  int_str = mylib::hex_lower(15);
+  ASSERT(str_equals0("f", int_str));
+
+  int_str = mylib::hex_upper(15);
+  ASSERT(str_equals0("F", int_str));
+
+  int_str = mylib::octal(15);
+  ASSERT(str_equals0("17", int_str));
+
   Str* s1 = new Str("abc\0bcd", 7);
   ASSERT_EQ(7, len(s1));
 

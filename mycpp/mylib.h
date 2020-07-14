@@ -1248,15 +1248,21 @@ inline Writer* Stderr() {
 }
 
 inline Str* hex_lower(int i) {
-  assert(0);
+  char* buf = static_cast<char*>(malloc(kIntBufSize));
+  int len = snprintf(buf, kIntBufSize, "%x", i);
+  return new Str(buf, len);
 }
 
 inline Str* hex_upper(int i) {
-  assert(0);
+  char* buf = static_cast<char*>(malloc(kIntBufSize));
+  int len = snprintf(buf, kIntBufSize, "%X", i);
+  return new Str(buf, len);
 }
 
 inline Str* octal(int i) {
-  assert(0);
+  char* buf = static_cast<char*>(malloc(kIntBufSize));
+  int len = snprintf(buf, kIntBufSize, "%o", i);
+  return new Str(buf, len);
 }
 
 }  // namespace mylib
