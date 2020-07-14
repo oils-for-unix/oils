@@ -16,7 +16,6 @@ from asdl import runtime
 from core import error
 from core import pyos
 from core.pyerror import e_usage, e_die, log
-from core import pyutil  # strerror_OS
 from core import state
 from core import ui
 from core import vm
@@ -293,8 +292,7 @@ class MapFile(vm._Builtin):
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     attrs, arg_r = flag_spec.ParseCmdVal('mapfile', cmd_val)
-    # TODO: Implement flags to mapfile
-    #arg = arg_types.mapfile(attrs.attrs)
+    arg = arg_types.mapfile(attrs.attrs)
 
     var_name, _ = arg_r.Peek2()
     if var_name is None:
@@ -305,6 +303,8 @@ class MapFile(vm._Builtin):
       line = self.f.readline()
       if len(line) == 0:
         break
+      if arg.t and line.endswith('\n'):
+        line = line[:-1]
       lines.append(line)
 
     state.SetArrayDynamic(self.mem, var_name, lines)

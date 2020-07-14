@@ -783,6 +783,17 @@ n=3
 ## END
 ## N-I dash/mksh/zsh/ash stdout-json: ""
 
+#### mapfile -t doesn't remove \r
+type mapfile >/dev/null 2>&1 || exit 0
+printf '%s\r\n' {1..5..2} | {
+  mapfile -t arr
+  argv.py "${arr[@]}"
+}
+## STDOUT:
+['1\r', '3\r', '5\r']
+## END
+## N-I dash/mksh/zsh/ash stdout-json: ""
+
 #### mapfile (store position): -O start
 type mapfile >/dev/null 2>&1 || exit 0
 printf '%s\n' a{0..2} | {

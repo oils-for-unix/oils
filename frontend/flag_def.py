@@ -115,6 +115,7 @@ READ_SPEC.ShortFlag('-d', args.String)
 
 
 MAPFILE_SPEC = FlagSpec('mapfile')
+MAPFILE_SPEC.ShortFlag('-t')
 
 
 CD_SPEC = FlagSpec('cd')
