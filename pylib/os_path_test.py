@@ -23,6 +23,8 @@ class OsPathTest(unittest.TestCase):
         ('', 'bar'),
         ('foo', ''),
         ('', ''),
+        ('/', ''),
+        ('', '/'),
     ]
     for s1, s2 in CASES:
       # test against the Python stdlib version

@@ -327,7 +327,7 @@ class Str {
   int rfind(Str* needle) {
     assert(needle->len_ == 1);  // Oil's usage
     char c = needle->data_[0];
-    for (int i = len_-1; i >= 0; --i) {
+    for (int i = len_ - 1; i >= 0; --i) {
       if (data_[i] == c) {
         return i;
       }
@@ -564,8 +564,7 @@ class ReverseListIter {
 };
 
 template <class K, class V>
-void dict_next(DictIter<K, V>* it,
-               const std::vector<std::pair<K, V>>& items) {
+void dict_next(DictIter<K, V>* it, const std::vector<std::pair<K, V>>& items) {
   ++it->i_;
 }
 
@@ -584,8 +583,7 @@ void dict_next(DictIter<Str*, V>* it,
 }
 
 template <class K, class V>
-bool dict_done(DictIter<K, V>* it,
-               const std::vector<std::pair<K, V>>& items) {
+bool dict_done(DictIter<K, V>* it, const std::vector<std::pair<K, V>>& items) {
   int n = items.size();
   return it->i_ >= n;
 }

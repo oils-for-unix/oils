@@ -17,6 +17,16 @@ import posix_ as posix
 from typing import Optional, Tuple, cast
 
 
+def Chdir(dest_dir):
+  # type: (str) -> int
+  """Returns 0 for success and nonzero errno for error."""
+  try:
+    posix.chdir(dest_dir)
+  except OSError as e:
+    return e.errno
+  return 0
+
+
 def GetMyHomeDir():
   # type: () -> Optional[str]
   """Get the user's home directory from the /etc/pyos.

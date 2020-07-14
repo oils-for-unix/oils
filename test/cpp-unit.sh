@@ -31,6 +31,7 @@ cpp-unit-tests() {
   compile $bin -D CPP_UNIT_TEST \
     cpp/unit_tests.cc \
     _build/cpp/arg_types.cc \
+    cpp/core_pyos.cc \
     cpp/frontend_flag_spec.cc \
     cpp/frontend_match.cc \
     cpp/libc.cc \

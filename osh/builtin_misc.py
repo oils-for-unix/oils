@@ -15,10 +15,9 @@ from _devbuild.gen.runtime_asdl import span_e, cmd_value__Argv
 from asdl import runtime
 from core import error
 from core import pyos
-from core.pyerror import e_usage, e_die
+from core.pyerror import e_usage, e_die, log
 from core import pyutil  # strerror_OS
 from core import state
-from core.pyerror import log
 from core import ui
 from core import vm
 from frontend import flag_spec
@@ -360,10 +359,9 @@ class Cd(vm._Builtin):
       # realpath afterward isn't correct?)
       real_dest_dir = os_path.normpath(abspath)
 
-    try:
-      posix.chdir(real_dest_dir)
-    except OSError as e:
-      self.errfmt.Print_("cd %r: %s" % (real_dest_dir, pyutil.strerror_OS(e)),
+    err_num = pyos.Chdir(real_dest_dir)
+    if err_num != 0:
+      self.errfmt.Print_("cd %r: %s" % (real_dest_dir, posix.strerror(err_num)),
                          span_id=arg_spid)
       return 1
 
@@ -430,10 +428,9 @@ class Pushd(vm._Builtin):
 
     # TODO: 'cd' uses normpath?  Is that inconsistent?
     dest_dir = os_path.abspath(cmd_val.argv[1])
-    try:
-      posix.chdir(dest_dir)
-    except OSError as e:
-      self.errfmt.Print_("pushd: %r: %s" % (dest_dir, pyutil.strerror_OS(e)),
+    err_num = pyos.Chdir(dest_dir)
+    if err_num != 0:
+      self.errfmt.Print_("pushd: %r: %s" % (dest_dir, posix.strerror(err_num)),
                          span_id=cmd_val.arg_spids[1])
       return 1
 
@@ -452,11 +449,10 @@ def _PopDirStack(mem, dir_stack, errfmt):
     errfmt.Print_('popd: directory stack is empty')
     return False
 
-  try:
-    posix.chdir(dest_dir)
-  except OSError as e:
+  err_num = pyos.Chdir(dest_dir)
+  if err_num != 0:
     # Happens if a directory is deleted in pushing and popping
-    errfmt.Print_("popd: %r: %s" % (dest_dir, pyutil.strerror_OS(e)))
+    errfmt.Print_("popd: %r: %s" % (dest_dir, posix.strerror(err_num)))
     return False
 
   state.SetGlobalString(mem, 'PWD', dest_dir)

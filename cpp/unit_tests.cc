@@ -1,5 +1,6 @@
 #include "greatest.h"
 
+#include "core_pyos.h"    // Chdir
 #include "core_pyutil.h"  // BackslashEscape
 #include "frontend_flag_spec.h"
 #include "frontend_match.h"
@@ -293,6 +294,19 @@ TEST bool_stat_test() {
   PASS();
 }
 
+TEST pyos_test() {
+  // This test isn't hermetic but it should work in most places, including in a
+  // container
+
+  int err_num = pyos::Chdir(new Str("/"));
+  ASSERT(err_num == 0);
+
+  err_num = pyos::Chdir(new Str("/nonexistent__"));
+  ASSERT(err_num != 0);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -306,6 +320,7 @@ int main(int argc, char** argv) {
   RUN_TEST(exceptions);
   RUN_TEST(flag_spec_test);
   RUN_TEST(bool_stat_test);
+  RUN_TEST(pyos_test);
   GREATEST_MAIN_END(); /* display results */
   return 0;
 }

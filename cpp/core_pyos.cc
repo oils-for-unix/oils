@@ -14,6 +14,13 @@ static Str* CopyStr(const char* s) {
 
 namespace pyos {
 
+int Chdir(Str* dest_dir) {
+  errno = 0;
+  mylib::Str0 d(dest_dir);
+  chdir(d.Get());
+  return errno;
+}
+
 Str* GetMyHomeDir() {
   uid_t uid = getuid();  // always succeeds
 

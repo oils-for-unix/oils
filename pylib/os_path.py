@@ -125,10 +125,10 @@ def normpath(path):
     comps = path.split('/')
     new_comps = []  # type: List[str]
     for comp in comps:
-        if comp in ('', '.'):
+        if len(comp) == 0 or comp == '.':  # mycpp rewrite: comp in ('', '.')
             continue
-        if (comp != '..' or (not initial_slashes and len(new_comps) == 0) or
-             (len(new_comps) and new_comps[-1] == '..')):
+        if (comp != '..' or (initial_slashes == 0 and len(new_comps) == 0) or
+            (len(new_comps) and new_comps[-1] == '..')):
             new_comps.append(comp)
         elif len(new_comps):
             new_comps.pop()

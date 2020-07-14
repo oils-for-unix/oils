@@ -54,7 +54,7 @@ inline bool isatty(int fd) {
   return ::isatty(fd);
 }
 
-inline Str* strerror(int errno) {
+inline Str* strerror(int err_num) {
   assert(0);
 }
 
