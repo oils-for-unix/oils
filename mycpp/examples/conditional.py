@@ -46,6 +46,14 @@ def run_tests():
   log("x = %d", x)
 
 
+  # Expressions where parens are needed
+  a = False
+  if a and (False or True):
+    print('yes')
+  else:
+    print('no')
+
+
 def run_benchmarks():
   # type: () -> None
   pass

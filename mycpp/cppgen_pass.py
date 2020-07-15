@@ -759,9 +759,16 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.write(')')
           return
 
+        # These parens are sometimes extra, but sometimes required.  Example:
+        #
+        # if ((a and (false or true))) {  # right
+        # vs.
+        # if (a and false or true)) {  # wrong
+        self.write('(')
         self.accept(o.left)
         self.write(' %s ', c_op)
         self.accept(o.right)
+        self.write(')')
 
     def visit_comparison_expr(self, o: 'mypy.nodes.ComparisonExpr') -> T:
         # Make sure it's binary
