@@ -71,6 +71,7 @@ class _FormatStringParser(object):
 
   def _ParseFormatStr(self):
     # type: () -> printf_part_t
+    """ fmt production """
     self._Next(lex_mode_e.PrintfPercent)  # move past %
 
     part = printf_part.Percent()
@@ -104,12 +105,11 @@ class _FormatStringParser(object):
       if part.type.val == 'c':
         p_die("osh printf doesn't support single characters (bytes)", token=part.type)
 
+    elif self.token_type == Id.Unknown_Tok:
+      p_die('Invalid printf format character', token=self.cur_token)
+
     else:
-      if self.cur_token.val:
-        msg = 'Invalid printf format character'
-      else:  # for printf '%'
-        msg = 'Expected a printf format character'
-      p_die(msg, token=self.cur_token)
+      p_die('Expected a printf format character', token=self.cur_token)
 
     # Do this check AFTER the floating point checks
     if part.precision and part.type.val[-1] not in 'fsT':
@@ -421,7 +421,7 @@ class Printf(vm._Builtin):
       # implement the 'arg recycling' behavior.
 
     result = ''.join(out)
-    if arg.v:
+    if arg.v is not None:
       var_name = arg.v
 
       # Notes:

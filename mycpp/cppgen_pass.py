@@ -88,6 +88,11 @@ def _GetContainsFunc(t):
   return contains_func  # None checked later
 
 
+def IsStr(t):
+  """Helper to check if a type is a string."""
+  return isinstance(t, Instance) and t.type.fullname() == 'builtins.str'
+
+
 def _CheckConditionType(t):
   """
   strings, lists, and dicts shouldn't be used in boolean contexts, because that
@@ -103,6 +108,11 @@ def _CheckConditionType(t):
 
     elif type_name == 'builtins.dict':
       return False
+
+  elif isinstance(t, UnionType):
+    if (len(t.items) == 2 and
+        IsStr(t.items[0]) and isinstance(t.items[1], NoneTyp)):
+      return False  # Optional[str]
 
   return True
 
@@ -795,9 +805,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # TODO: Change Optional[T] to T for our purposes?
         t0 = self.types[left]
         t1 = self.types[right]
-
-        def IsStr(t):
-          return isinstance(t, Instance) and t.type.fullname() == 'builtins.str'
 
         # 0: not a special case
         # 1: str

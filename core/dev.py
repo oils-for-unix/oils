@@ -198,7 +198,7 @@ class Tracer(object):
     val = self.mem.GetVar('PS4')
     if val.tag_() == value_e.Str:
       s = cast(value__Str, val).s
-      if s:
+      if len(s):
         first_char = s[0]
         ps4 = s[1:]
 

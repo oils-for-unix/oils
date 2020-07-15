@@ -148,6 +148,9 @@ class Str {
     if (i < 0) {
       i = len_ + i;
     }
+    assert(i >= 0);
+    assert(i < len_);  // had a problem here!
+
     char* buf = static_cast<char*>(malloc(2));
     buf[0] = data_[i];
     buf[1] = '\0';

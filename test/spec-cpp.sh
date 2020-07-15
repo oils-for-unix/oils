@@ -331,22 +331,13 @@ tsv-demo() {
 one-off() {
   set +o errexit
 
-  # incrementing assoc array key
-  run-with-osh-eval dparen -r 13-14 -v
-
-  run-with-osh-eval var-op-test -r 15 -v
-  return
-
-  run-with-osh-eval assoc -r 2 -v  # status=0 problem
-  run-with-osh-eval assoc -r 29 -v  # brace expansion
-  return
-
   # pure problem, backslashes
 
   # this might be an IFS problem, because backslashes are missing from the
   # unquoted one
   run-with-osh-eval quote -r 11 -v
 
+  # not sure
   run-with-osh-eval prompt -r 3 -v
 
   return

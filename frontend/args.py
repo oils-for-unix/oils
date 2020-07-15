@@ -377,7 +377,7 @@ class SetAttachedBool(_Action):
     # type: (Optional[str], Reader, _Attributes) -> bool
     """Called when the flag matches."""
 
-    if attached_arg:  # '0' in --verbose=0
+    if attached_arg is not None:  # '0' in --verbose=0
       if attached_arg in ('0', 'F', 'false', 'False'):  # TODO: incorrect translation
         b = False
       elif attached_arg in ('1', 'T', 'true', 'Talse'):

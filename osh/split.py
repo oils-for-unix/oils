@@ -161,7 +161,7 @@ class SplitContext(object):
         return ' '
       elif case(value_e.Str):
         val = cast(value__Str, UP_val)
-        if val.s:
+        if len(val.s):
           return val.s[0]
         else:
           return ''

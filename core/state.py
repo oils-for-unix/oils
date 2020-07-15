@@ -1419,9 +1419,9 @@ class Mem(object):
       # not depending on deque().
       strs = []  # type: List[str]
       for frame in reversed(self.debug_stack):
-        if frame.func_name:
+        if frame.func_name is not None:
           strs.append(frame.func_name)
-        if frame.source_name:
+        if frame.source_name is not None:
           strs.append('source')  # bash doesn't tell you the filename.
         # Temp stacks are ignored
       return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
@@ -1431,7 +1431,7 @@ class Mem(object):
     if name == 'BASH_SOURCE':
       strs = []
       for frame in reversed(self.debug_stack):
-        if frame.bash_source:
+        if frame.bash_source is not None:
           strs.append(frame.bash_source)
       return value.MaybeStrArray(strs)  # TODO: Reuse this object too?
 

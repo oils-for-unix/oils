@@ -390,7 +390,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   debug_path = ''
   debug_dir = environ.get('OSH_DEBUG_DIR')
-  if flag.debug_file:  # --debug-file takes precedence over OSH_DEBUG_DIR
+  if flag.debug_file is not None:
+    # --debug-file takes precedence over OSH_DEBUG_DIR
     debug_path = flag.debug_file
   elif debug_dir is not None:
     debug_path = os_path.join(debug_dir, '%d-osh.log' % my_pid)
@@ -668,13 +669,13 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
       status = 2
 
     if status == 0 :
-      if flag.parser_mem_dump:  # only valid in -n mode
+      if flag.parser_mem_dump is not None:  # only valid in -n mode
         input_path = '/proc/%d/status' % posix.getpid()
         pyutil.CopyFile(input_path, flag.parser_mem_dump)
 
       ui.PrintAst(node, flag)
   else:
-    if flag.parser_mem_dump:
+    if flag.parser_mem_dump is not None:
       raise error.Usage('--parser-mem-dump can only be used with -n')
 
     try:
@@ -688,7 +689,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   # NOTE: 'exit 1' is ControlFlow and gets here, but subshell/commandsub
   # don't because they call sys.exit().
-  if flag.runtime_mem_dump:
+  if flag.runtime_mem_dump is not None:
     input_path = '/proc/%d/status' % posix.getpid()
     pyutil.CopyFile(input_path, flag.runtime_mem_dump)
 

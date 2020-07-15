@@ -352,7 +352,7 @@ class CommandEvaluator(object):
           # - set -o strict-array prevents joining by spaces
           val = self.word_ev.EvalWordToString(arg_word)
           filename = val.s
-          if not filename:
+          if len(filename) == 0:
             # Whether this is fatal depends on errexit.
             raise error.RedirectEval(
                 "Redirect filename can't be empty", word=arg_word)
@@ -363,7 +363,7 @@ class CommandEvaluator(object):
         elif redir_type == redir_arg_type_e.Desc:  # e.g. 1>&2, 1>&-, 1>&2-
           val = self.word_ev.EvalWordToString(arg_word)
           t = val.s
-          if not t:
+          if len(t) == 0:
             raise error.RedirectEval(
                 "Redirect descriptor can't be empty", word=arg_word)
             return None

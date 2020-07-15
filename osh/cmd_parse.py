@@ -101,13 +101,15 @@ def _ReadHereLines(line_reader,  # type: _Reader
   while True:
     line_id, line, unused_offset = line_reader.GetLine()
 
-    if not line:  # EOF
+    if line is None:  # EOF
       # An unterminated here doc is just a warning in bash.  We make it
       # fatal because we want to be strict, and because it causes problems
       # reporting other errors.
       # Attribute it to the << in <<EOF for now.
       p_die("Couldn't find terminator for here doc that starts here",
             token=h.op)
+
+    assert len(line) != 0  # None should be the empty line
 
     # If op is <<-, strip off ALL leading tabs -- not spaces, and not just
     # the first tab.
