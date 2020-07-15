@@ -335,7 +335,6 @@ one-off() {
   run-with-osh-eval dparen -r 13-14 -v
 
   run-with-osh-eval var-op-test -r 15 -v
-  run-with-osh-eval var-ref -r 1 -v
   return
 
   run-with-osh-eval assoc -r 2 -v  # status=0 problem

@@ -701,6 +701,7 @@ def InitMem(mem, environ, version_str):
 
 
 class ctx_Call(object):
+  """For function calls."""
 
   def __init__(self, mem, func_name, def_spid, argv):
     # type: (Mem, str, int, List[str]) -> None
@@ -717,6 +718,7 @@ class ctx_Call(object):
 
 
 class ctx_Temp(object):
+  """For FOO=bar myfunc, etc."""
 
   def __init__(self, mem):
     # type: (Mem) -> None
@@ -730,6 +732,25 @@ class ctx_Temp(object):
   def __exit__(self, type, value, traceback):
     # type: (Any, Any, Any) -> None
     self.mem.PopTemp()
+
+
+class ctx_Status(object):
+  """For $PS1 and $PS4."""
+
+  def __init__(self, mem):
+    # type: (Mem) -> None
+    mem.last_status.append(0)
+    mem.pipe_status.append([])
+    self.mem = mem
+
+  def __enter__(self):
+    # type: () -> None
+    pass
+
+  def __exit__(self, type, value, traceback):
+    # type: (Any, Any, Any) -> None
+    self.mem.last_status.pop()
+    self.mem.pipe_status.pop()
 
 
 class Mem(object):
@@ -853,16 +874,6 @@ class Mem(object):
   #
   # Status Variable Stack (for isolating $PS1 and $PS4)
   #
-
-  def PushStatusFrame(self):
-    # type: () -> None
-    self.last_status.append(0)
-    self.pipe_status.append([])
-
-  def PopStatusFrame(self):
-    # type: () -> None
-    self.last_status.pop()
-    self.pipe_status.pop()
 
   def LastStatus(self):
     # type: () -> int

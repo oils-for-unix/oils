@@ -30,6 +30,7 @@ from _devbuild.gen.runtime_asdl import (
 from core import error
 from core import pyos
 from core import pyutil
+from core import state
 from core import ui
 from qsn_ import qsn
 from core.pyerror import log, e_die
@@ -1613,23 +1614,22 @@ class AbstractWordEvaluator(StringWordEvaluator):
     Runtime errors like $(( 1 / 0 )) and mutating $? like $(exit 42) are
     handled here.
     """
-    self.mem.PushStatusFrame()  # to "sandbox" $? and $PIPESTATUS
-    try:
-      val = self.EvalWordToString(w)
-    except error.FatalRuntime as e:
-      val = value.Str('<Runtime error: %s>' % e.UserErrorString())
+    with state.ctx_Status(self.mem):  # to "sandbox" $? and $PIPESTATUS
+      try:
+        val = self.EvalWordToString(w)
+      except error.FatalRuntime as e:
+        val = value.Str('<Runtime error: %s>' % e.UserErrorString())
 
-    # C++ doesn't support catching multiple exceptions at once.  TODO: Patch
-    # CPython to use just one of (OSError, IOError)?
-    except OSError as e:
-      val = value.Str('<I/O error: %s>' % pyutil.strerror_OS(e))
-    except IOError as e:
-      val = value.Str('<I/O error: %s>' % pyutil.strerror_IO(e))
+      # C++ doesn't support catching multiple exceptions at once.  TODO: Patch
+      # CPython to use just one of (OSError, IOError)?
+      except OSError as e:
+        val = value.Str('<I/O error: %s>' % pyutil.strerror_OS(e))
+      except IOError as e:
+        val = value.Str('<I/O error: %s>' % pyutil.strerror_IO(e))
 
-    except KeyboardInterrupt:
-      val = value.Str('<Ctrl-C>')
-    finally:
-      self.mem.PopStatusFrame()
+      except KeyboardInterrupt:
+        val = value.Str('<Ctrl-C>')
+
     return val
 
   def EvalRhsWord(self, UP_w):
