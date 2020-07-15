@@ -297,9 +297,9 @@ def PrintAst(node, flag):
     f = mylib.Stdout()
 
     afmt = flag.ast_format  # note: mycpp rewrite to avoid 'in'
-    if afmt == 'text' or afmt == 'abbrev-text':
+    if afmt in ('text', 'abbrev-text'):
       ast_f = fmt.DetectConsoleOutput(f)
-    elif afmt == 'html' or afmt == 'abbrev-html':
+    elif afmt in ('html', 'abbrev-html'):
       ast_f = fmt.HtmlOutput(f)
     else:
       raise AssertionError()

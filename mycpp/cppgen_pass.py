@@ -838,15 +838,32 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         if operator == 'in':
           if isinstance(right, TupleExpr):
+            left_type = self.types[left]
+
+            equals_func = None
+            if IsStr(left_type):
+              equals_func = 'str_equals'
+            elif (isinstance(left_type, UnionType) and len(left_type.items) == 2 and
+                  IsStr(left_type.items[0]) and isinstance(left_type.items[1], NoneTyp)):
+              equals_func = 'maybe_str_equals'
+
             # x in (1, 2, 3) => (x == 1 || x == 2 || x == 3)
             self.write('(')
 
             for i, item in enumerate(right.items):
               if i != 0:
                 self.write(' || ')
-              self.accept(left)
-              self.write(' == ')
-              self.accept(item)
+
+              if equals_func:
+                self.write('%s(' % equals_func)
+                self.accept(left)
+                self.write(', ')
+                self.accept(item)
+                self.write(')')
+              else:
+                self.accept(left)
+                self.write(' == ')
+                self.accept(item)
 
             self.write(')')
             return

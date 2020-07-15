@@ -255,6 +255,10 @@ translation() {
   build/mycpp.sh osh-eval-manifest \
     | xargs egrep -n 'finally:'
     #| xargs egrep -n -A 1 'finally:'
+
+   echo
+  build/mycpp.sh osh-eval-manifest \
+    | xargs egrep -n "in \('"
 }
  
 "$@"

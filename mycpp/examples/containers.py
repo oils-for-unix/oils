@@ -90,6 +90,12 @@ def TupleDemo():
   else:
     print('no')
 
+  s = 'foo'
+  if s in ('foo', 'bar'):
+    print('yes')
+  else:
+    print('no')
+
 
 def DictDemo():
   # type: () -> None

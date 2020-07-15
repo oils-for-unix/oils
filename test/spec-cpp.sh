@@ -43,6 +43,10 @@ osh-eval-cpp() {
   test/spec.sh $suite $PWD/_bin/osh_eval.dbg "$@"
 }
 
+osh-eval-asan() {
+  _bin/osh_eval.asan "$@"
+}
+
 asan-smoke() {
   _bin/osh_eval.asan -c 'echo hi'
   echo 'echo hi' | _bin/osh_eval.asan
@@ -327,30 +331,42 @@ tsv-demo() {
 one-off() {
   set +o errexit
 
-  run-with-osh-eval sh-func -r 0 -v
-  run-with-osh-eval sh-func -r 6 -v
-
-  run-with-osh-eval assoc -r 2 -v
-  run-with-osh-eval assoc -r 29 -v
-
   # incrementing assoc array key
   run-with-osh-eval dparen -r 13-14 -v
 
-  # make existing var readonly
-  run-with-osh-eval builtin-vars -r 16 -v
-
-  # doesn't parse func args
-  run-with-osh-eval builtin-getopts -r 15 -v
+  run-with-osh-eval var-op-test -r 15 -v
+  run-with-osh-eval var-ref -r 1 -v
   return
+
+  run-with-osh-eval assoc -r 2 -v  # status=0 problem
+  run-with-osh-eval assoc -r 29 -v  # brace expansion
+  return
+
+  # pure problem, backslashes
+
+  # this might be an IFS problem, because backslashes are missing from the
+  # unquoted one
+  run-with-osh-eval quote -r 11 -v
+
+  run-with-osh-eval prompt -r 3 -v
+
+  return
+
+  # redirects is nullptr problem
+  run-with-osh-eval for-expr -r 2 -v
+
+  run-with-osh-eval builtin-io -r 9 -v  # \0
+  run-with-osh-eval assign-extended -r 9 -v  # declare -p, crash
+
+  # xtrace: unicode
+  return
+
+  # printf: putenv() and strftime, and %5d
 
   # unicode.  I think this is a libc glob setting
   run-with-osh-eval var-op-strip -r 10 -v
   run-with-osh-eval var-op-strip -r 24 -v
 
-  # redirects problem
-  run-with-osh-eval for-expr -r 2 -v
-
-  run-with-osh-eval builtin-io -r 9 -v  # \0
   #run-with-osh-eval builtin-io -r 26 -v  # posix::read
   #run-with-osh-eval builtin-io -r 54 -v  # to_float()
 }
