@@ -55,6 +55,7 @@ OK
 ## N-I dash status: 1
 
 #### printf -v a[1]
+shopt -s eval_unsafe_arith
 a=(a b c)
 printf -v 'a[1]' %s 'foo'
 echo status=$?
@@ -69,10 +70,15 @@ status=0
 ## END
 ## N-I dash/ash stdout-json: ""
 ## N-I dash/ash status: 2
-## N-I osh STDOUT:
+
+#### printf -v syntax error
+shopt -s eval_unsafe_arith
+printf -v 'a[' %s 'foo'
+echo status=$?
+## STDOUT:
 status=2
-['a', 'b', 'c']
 ## END
+## N-I ash/mksh/zsh stdout: -vstatus=0
 
 #### dynamic declare instead of %s
 var=foo

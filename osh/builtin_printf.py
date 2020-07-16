@@ -8,7 +8,9 @@ import time as time_  # avoid name conflict
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id, Kind
-from _devbuild.gen.runtime_asdl import cmd_value__Argv, value_e, value__Str
+from _devbuild.gen.runtime_asdl import (
+    cmd_value__Argv, value_e, value__Str, value, lvalue_e, scope_e
+)
 from _devbuild.gen.syntax_asdl import (
     printf_part, printf_part_e, printf_part_t, printf_part__Literal,
     printf_part__Percent, source, Token,
@@ -18,9 +20,9 @@ from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
 from asdl import runtime
 from core import alloc
 from core import error
-from core.pyerror import e_usage
+from core.pyerror import e_usage, e_die, p_die, log
 from core import state
-from core.pyerror import p_die, e_die, log
+from core import ui
 from core import vm
 from frontend import flag_spec
 from frontend import consts
@@ -35,10 +37,12 @@ import posix_ as posix
 from typing import Dict, List, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
-  from frontend.lexer import Lexer
-  from frontend.parse_lib import ParseContext
+  from core import optview
   from core.state import Mem
   from core.ui import ErrorFormatter
+  from frontend.lexer import Lexer
+  from frontend.parse_lib import ParseContext
+  from osh.sh_expr_eval import ArithEvaluator
 
 _ = log
 
@@ -147,10 +151,12 @@ class _FormatStringParser(object):
 
 class Printf(vm._Builtin):
 
-  def __init__(self, mem, parse_ctx, errfmt):
-    # type: (Mem, ParseContext, ErrorFormatter) -> None
+  def __init__(self, mem, exec_opts, parse_ctx, arith_ev, errfmt):
+    # type: (Mem, optview.Exec, ParseContext, ArithEvaluator, ErrorFormatter) -> None
     self.mem = mem
+    self.exec_opts = exec_opts
     self.parse_ctx = parse_ctx
+    self.arith_ev = arith_ev
     self.errfmt = errfmt
     self.parse_cache = {}  # type: Dict[str, List[printf_part_t]]
 
@@ -295,12 +301,12 @@ class Printf(vm._Builtin):
             c_parts = []  # type: List[str]
             lex = match.EchoLexer(s)
             while True:
-              id_, value = lex.Next()
+              id_, tok_val = lex.Next()
               if id_ == Id.Eol_Tok:  # Note: This is really a NUL terminator
                 break
 
               # TODO: add span_id from argv
-              tok = Token(id_, runtime.NO_SPID, value)
+              tok = Token(id_, runtime.NO_SPID, tok_val)
               p = word_compile.EvalCStringToken(tok)
 
               # Unusual behavior: '\c' aborts processing!
@@ -422,15 +428,25 @@ class Printf(vm._Builtin):
 
     result = ''.join(out)
     if arg.v is not None:
-      var_name = arg.v
+      # TODO: get the span_id for arg.v!
+      v_spid = runtime.NO_SPID
 
-      # Notes:
-      # - bash allows a[i] here (as in unset and ${!x}), but we haven't
-      # implemented it.
-      # - TODO: get the span_id for arg.v!
-      if not match.IsValidVarName(var_name):
-        e_usage('got invalid variable name %r' % var_name)
-      state.SetStringDynamic(self.mem, var_name, result)
+      arena = self.parse_ctx.arena
+      a_parser = self.parse_ctx.MakeArithParser(arg.v)
+
+      with alloc.ctx_Location(arena, source.ArgvWord(v_spid)):
+        try:
+          anode = a_parser.Parse()
+        except error.Parse as e:
+          ui.PrettyPrintError(e, arena)  # show parse error
+          e_usage('Invalid -v expression', span_id=v_spid)
+
+      lval = self.arith_ev.EvalArithLhs(anode, v_spid)
+
+      if not self.exec_opts.eval_unsafe_arith() and lval.tag_() != lvalue_e.Named:
+        e_usage('-v expected a variable name.  shopt -s eval_unsafe_arith allows expressions', span_id=v_spid)
+
+      self.mem.SetVar(lval, value.Str(result), scope_e.Dynamic)
     else:
       mylib.Stdout().write(result)
     return 0

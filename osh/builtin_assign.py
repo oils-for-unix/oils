@@ -409,15 +409,13 @@ class Unset(vm._Builtin):
       bool: whether the 'unset' builtin should succeed with code 0.
     """
     arena = self.parse_ctx.arena
-
     a_parser = self.parse_ctx.MakeArithParser(arg)
+
     with alloc.ctx_Location(arena, source.ArgvWord(spid)):
       try:
         anode = a_parser.Parse()
       except error.Parse as e:
-        # show parse error
-        ui.PrettyPrintError(e, arena)
-        # point to word
+        ui.PrettyPrintError(e, arena)  # show parse error
         e_usage('Invalid unset expression', span_id=spid)
 
     lval = self.arith_ev.EvalArithLhs(anode, spid)
@@ -426,7 +424,7 @@ class Unset(vm._Builtin):
     #
     # unset -v 'A["$(echo K; rm *)"]'
     if not self.exec_opts.eval_unsafe_arith() and lval.tag_() != lvalue_e.Named:
-      e_die('Expected a variable name.  Expressions are allowed with shopt -s eval_unsafe_arith', span_id=spid)
+      e_usage('expected a variable name.  shopt -s eval_unsafe_arith allows expressions', span_id=spid)
 
     #log('lval %s', lval)
     found = False
