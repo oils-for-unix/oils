@@ -21,14 +21,7 @@ deps() {
   fi
 }
 
-cpp-unit-tests() {
-  ### Run unit tests in the cpp/ dir
-
-  local name='unit_tests'
-  local bin=_bin/$name.asan  # important: ASAN flags
-
-  mkdir -p _bin
-  compile $bin -D CPP_UNIT_TEST \
+readonly UNIT_TESTS_SRC=(
     cpp/unit_tests.cc \
     _build/cpp/arg_types.cc \
     cpp/core_pyos.cc \
@@ -36,12 +29,31 @@ cpp-unit-tests() {
     cpp/frontend_match.cc \
     cpp/libc.cc \
     cpp/osh_bool_stat.cc \
-    mycpp/mylib.cc \
+    mycpp/mylib.cc
+)
 
-    # I wanted to put frontend/args.py in here.  But it depends on a lot of
-    # stuff like runtime_asdl.
-    #asdl/runtime.cc  # for args::ParseMore() 
+cpp-unit-tests-asan() {
+  ### Run unit tests in the cpp/ dir
 
+  local bin=_bin/unit_tests.asan
+  mkdir -p _bin
+  compile $bin -D CPP_UNIT_TEST "${UNIT_TESTS_SRC[@]}"
+
+  $bin "$@"
+}
+
+cpp-unit-tests() {
+  ### Run unit tests with dumb allocator
+  # Exposes allocator alignment issues
+
+  local bin=_bin/unit_tests.dbg  # can't be ASAN; it has its own allocator
+  mkdir -p _bin
+
+  compile $bin -D CPP_UNIT_TEST -D DUMB_ALLOC \
+    "${UNIT_TESTS_SRC[@]}" \
+    cpp/dumb_alloc.cc
+
+  #gdb --args $bin "$@"
   $bin "$@"
 }
 
@@ -60,6 +72,8 @@ all() {
   build/dev.sh oil-asdl-to-cpp  # unit tests depend on id_kind_asdl.h, etc.
 
   cpp-unit-tests
+  cpp-unit-tests-asan
+
   mycpp-unit-tests
 
   asdl/run.sh gen-cpp-test

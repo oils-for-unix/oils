@@ -18,6 +18,8 @@ TEST show_sizeof() {
   // span_id.
   // Now 16 bytes.
   log("sizeof(Token) = %d", sizeof(syntax_asdl::Token));
+  log("alignof(Token) = %d", alignof(syntax_asdl::Token));
+  log("alignof(Token*) = %d", alignof(syntax_asdl::Token*));
 
   // Without sed hack, it's 12 bytes for tag (2) id (4) and span_id (4).
   // Now 8 bytes.
@@ -29,9 +31,6 @@ TEST show_sizeof() {
   // Reordered to be 16 bytes
   log("sizeof(cell) = %d", sizeof(runtime_asdl::cell));
 
-  // 16 bytes: pointer and length
-  log("sizeof(Str) = %d", sizeof(Str));
-
   // 24 bytes: std::vector
   log("sizeof(List<int>) = %d", sizeof(List<int>));
   log("sizeof(List<Str*>) = %d", sizeof(List<Str*>));
@@ -39,6 +38,34 @@ TEST show_sizeof() {
   // Unlike Python, this is -1, not 255!
   int mod = -1 % 256;
   log("mod = %d", mod);
+
+  log("alignof(bool) = %d", alignof(bool));
+  log("alignof(int) = %d", alignof(int));
+  log("alignof(float) = %d", alignof(float));
+
+  log("sizeof(Str) = %d", sizeof(Str));
+  log("alignof(Str) = %d", alignof(Str));
+
+  log("sizeof(Str*) = %d", sizeof(Str*));
+  log("alignof(Str*) = %d", alignof(Str*));
+
+  log("sizeof(flag_spec::_FlagSpecAndMore) = %d", sizeof(flag_spec::_FlagSpecAndMore));
+  // alignment is 8, so why doesn't it work?
+  log("alignof(flag_spec::_FlagSpecAndMore) = %d", alignof(flag_spec::_FlagSpecAndMore));
+
+  // throw off the alignment
+  auto i = new bool[1];
+
+  auto out = new flag_spec::_FlagSpecAndMore();
+  log("sizeof(out) = %d", sizeof(out));
+
+  log("sizeof(flag_spec::_FlagSpec) = %d", sizeof(flag_spec::_FlagSpec));
+  // alignment is 8, so why doesn't it work?
+  log("alignof(flag_spec::_FlagSpec) = %d", alignof(flag_spec::_FlagSpec));
+  auto out2 = new flag_spec::_FlagSpec();
+  log("sizeof(out2) = %d", sizeof(out2));
+
+  log("alignof(max_align_t) = %d", alignof(max_align_t));
 
   PASS();
 }
