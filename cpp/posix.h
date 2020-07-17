@@ -89,9 +89,14 @@ inline int chdir(Str* path) {
   assert(0);
 }
 
-// TODO: errors
-inline Str* read(int fd, int num_bytes) {
-  assert(0);
+inline Str* read(int fd, int num_requested) {
+  char* buf = static_cast<char*>(malloc(num_requested + 1));
+  int num_read = ::read(fd, buf, num_requested);
+  buf[num_read] = '\0';
+  if (num_read < 0) {
+    throw new AssertionError();  // TODO: throw with errno
+  }
+  return new Str(buf, num_read);  // could be a short read
 }
 
 // Dummy exception posix::error
