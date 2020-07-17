@@ -14,8 +14,11 @@ int gNumDelete = 0;
 // Align returned pointers to the worst case of 8 bytes (64-bit pointers)
 inline size_t aligned(size_t n) {
   // https://stackoverflow.com/questions/2022179/c-quick-calculation-of-next-multiple-of-4
-  return (n + 7) & ~7;
-  // return (n + 15) & ~15;
+  //return (n + 7) & ~7;
+
+  // WTF?  Without 16 byte alignment we get a crash in cpp/frontend_flag_spec.cc?
+  // auto out = new flag_spec::_FlagSpecAndMore();
+  return (n + 15) & ~15;
 }
 
   // This global interface is silly ...

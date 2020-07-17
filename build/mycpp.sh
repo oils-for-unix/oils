@@ -148,6 +148,8 @@ compile() {
   case $out in
     *.opt)
       flags="$CPPFLAGS -O2 -g -D DUMB_ALLOC"
+      # To debug crash with 8 byte alignment
+      #flags="$CPPFLAGS -O0 -g -D DUMB_ALLOC -D SIZE_LOG"
       ;;
     *.uftrace)
       # -O0 creates a A LOT more data.  But sometimes we want to see the
