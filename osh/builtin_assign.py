@@ -141,9 +141,18 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
     if val.tag_() == value_e.Str:
       str_val = cast(value__Str, val)
       decl.extend(["=", qsn.maybe_shell_encode(str_val.s)])
+
     elif val.tag_() == value_e.MaybeStrArray:
       array_val = cast(value__MaybeStrArray, val)
-      if None in array_val.strs:
+
+      # mycpp rewrite: None in array_val.strs
+      has_holes = False
+      for s in array_val.strs:
+        if s is None:
+          has_holes = True
+          break
+
+      if has_holes:
         # Note: Arrays with unset elements are printed in the form:
         #   declare -p arr=(); arr[3]='' arr[4]='foo' ...
         decl.append("=()")
@@ -161,6 +170,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
           if len(body) > 0: body.append(" ")
           body.append(qsn.maybe_shell_encode(element))
         decl.extend(["=(", ''.join(body), ")"])
+
     elif val.tag_() == value_e.AssocArray:
       assoc_val = cast(value__AssocArray, val)
       body = []
@@ -171,6 +181,9 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
         body.extend(["[", key_quoted, "]=", value_quoted])
       if len(body) > 0:
         decl.extend(["=(", ''.join(body), ")"])
+
+    else:
+      raise AssertionError()  # TODO: other types
 
     print(''.join(decl))
     count += 1
