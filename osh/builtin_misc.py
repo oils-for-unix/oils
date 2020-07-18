@@ -174,15 +174,20 @@ class Read(vm._Builtin):
       else:
         return 0 if pyos.InputAvailable(fd) else 1
 
-    if arg.s and self.stdin.isatty():
-      # TODO: context manager
-      term = pyos.TermState(fd, ~pyos.TERM_ECHO)
+    bits = 0
+    if self.stdin.isatty():
+      bits |= pyos.TERM_ICANON
+      if arg.s:  # silent
+        bits |= pyos.TERM_ECHO
+
+    if bits == 0:
+      status = self._Read(arg, names)
+    else:
+      term = pyos.TermState(fd, ~bits)
       try:
         status = self._Read(arg, names)
       finally:
         term.Restore()
-    else:
-      status = self._Read(arg, names)
     return status
 
   def _ReadN(self, stdin_fd, n):
@@ -208,15 +213,7 @@ class Read(vm._Builtin):
         name = 'REPLY'  # default variable name
 
       stdin_fd = self.stdin.fileno()
-      if self.stdin.isatty():
-        # set stdin to read in unbuffered mode
-        term = pyos.TermState(stdin_fd, ~pyos.TERM_ICANON)
-        try:
-          s = self._ReadN(stdin_fd, arg.n)
-        finally:
-          term.Restore()
-      else:
-        s = self._ReadN(stdin_fd, arg.n)
+      s = self._ReadN(stdin_fd, arg.n)
 
       state.SetStringDynamic(self.mem, name, s)
 
