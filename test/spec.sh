@@ -219,8 +219,7 @@ osh-all() {
 }
 
 oil-all() {
-  export SPEC_JOB='oil-language'
-  test/spec-runner.sh all-parallel oil "$@"
+  SPEC_JOB='oil-language' test/spec-runner.sh all-parallel oil "$@"
 }
 
 osh-minimal() {
