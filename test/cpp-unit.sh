@@ -1,7 +1,9 @@
 #!/bin/bash
 #
+# Run C++ unit tests.
+#
 # Usage:
-#   ./cpp-unit.sh <function name>
+#   test/cpp-unit.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -78,6 +80,5 @@ all() {
 
   asdl/run.sh gen-cpp-test
 }
-
 
 "$@"

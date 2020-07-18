@@ -17,8 +17,7 @@ int gNumDelete = 0;
 // auto out = new flag_spec::_FlagSpecAndMore();
 //
 // https://stackoverflow.com/questions/52531695/int128-alignment-segment-fault-with-gcc-o-sse-optimize
-constexpr int kAlign = alignof(max_align_t);
-constexpr int kMask = kAlign -1;
+constexpr int kMask = alignof(max_align_t) - 1;  // e.g. 15 or 7
 
 // Align returned pointers to the worst case of 8 bytes (64-bit pointers)
 inline size_t aligned(size_t n) {
