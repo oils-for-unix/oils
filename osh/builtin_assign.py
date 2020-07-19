@@ -183,7 +183,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
         decl.extend(["=(", ''.join(body), ")"])
 
     else:
-      raise AssertionError()  # TODO: other types
+      pass  # note: other types silently ignored
 
     print(''.join(decl))
     count += 1
