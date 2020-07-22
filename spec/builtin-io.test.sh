@@ -660,6 +660,21 @@ fooba
 ## END
 ## N-I dash/zsh/ash stdout-json: ""
 
+#### read -p (not fully tested)
+
+# hm DISABLED if we're not going to the terminal
+# so we're only testing that it accepts the flag here
+
+case $SH in (dash|mksh|zsh) exit ;; esac
+
+echo hi | { read -p 'P'; echo $REPLY; }
+echo hi | { read -p 'P' -n 1; echo $REPLY; }
+## STDOUT:
+hi
+h
+## END
+## stderr-json: ""
+## N-I dash/mksh/zsh stdout-json: ""
 
 #### read usage
 read -n -1

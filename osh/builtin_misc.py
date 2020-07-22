@@ -180,6 +180,9 @@ class Read(vm._Builtin):
       if arg.s:  # silent
         bits |= pyos.TERM_ECHO
 
+      if arg.p is not None:  # only if tty
+        mylib.Stderr().write(arg.p)
+
     if bits == 0:
       status = self._Read(arg, names)
     else:

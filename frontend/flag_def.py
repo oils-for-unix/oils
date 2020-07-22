@@ -112,6 +112,7 @@ READ_SPEC.ShortFlag('-t', args.Float)  # timeout
 READ_SPEC.ShortFlag('-n', args.Int)
 READ_SPEC.ShortFlag('-a', args.String)  # name of array to read into
 READ_SPEC.ShortFlag('-d', args.String)
+READ_SPEC.ShortFlag('-p', args.String)  # prompt
 
 
 MAPFILE_SPEC = FlagSpec('mapfile')
