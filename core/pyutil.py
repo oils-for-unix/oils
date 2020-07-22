@@ -86,6 +86,9 @@ class _FileResourceLoader(_ResourceLoader):
       contents = f.read()
     return contents
 
+  def Exists(self, rel_path):
+    # type: (str) -> bool
+    return os_path.exists(os_path.join(self.root_dir, rel_path))
 
 class _ZipResourceLoader(_ResourceLoader):
   """Open resources INSIDE argv[0] as a zip file."""

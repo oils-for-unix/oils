@@ -593,13 +593,15 @@ class Help(vm._Builtin):
       # help help
       # We should do something smarter.
 
-      # 2. This also happens on 'build/dev.sh minimal', which isn't quite
-      # accurate.  We don't have an exact list of help topics!
-
-      # 3. This is mostly an interactive command.  Is it obnoxious to
-      # quote the line of code?
-      self.errfmt.Print_('no help topics match %r' % topic,
-                         span_id=blame_spid)
+      # On 'build/dev.sh minimal', we're missing help altogether.
+      # Give a more helpful error message.
+      if not self.loader.Exists('_devbuild/help'):
+        self.errfmt.Print_('help is not available in the `minimal` build of OSH\nhelp: try `build/dev.sh all` instead\nnote: see https://github.com/oilshell/oil/issues/623 for more information', span_id=blame_spid)
+      else:
+        # 3. This is mostly an interactive command.  Is it obnoxious to
+        # quote the line of code?
+        self.errfmt.Print_('no help topics match %r' % topic,
+                           span_id=blame_spid)
       return 1
 
     print(contents)
