@@ -74,7 +74,7 @@ gen-asdl-py() {
   # import an empty file!
   mv $tmp $out
 
-  echo "Wrote $out"
+  echo "$asdl_path -> $out"
 }
 
 gen-asdl-cpp() {
@@ -88,7 +88,7 @@ gen-asdl-cpp() {
   # abbrev module is optional
   asdl/tool.py cpp $asdl_path $out_prefix $debug_info
 
-  echo "Wrote $out_prefix and $debug_info"
+  echo "$asdl_path -> $out_prefix and $debug_info"
 }
 
 # TODO: syntax.asdl and runtime.asdl are mutually recursive.

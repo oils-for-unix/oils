@@ -25,32 +25,31 @@ class OilDoc(unittest.TestCase):
     NOTE: THIs could really be done with a ref like <a.*href="(.*)">
     But we're testing it
     """
-    print(oil_doc.ExpandLinks(TEST_HTML))
-
-  def testHighlightCode(self):
-    """
-    <pre><code language="sh">echo one
-    echo two
-    </code></pre>
-    """
-    print(oil_doc.HighlightCode(TEST_HTML))
+    h = oil_doc.ExpandLinks(TEST_HTML)
+    self.assert_('/blog/tags.html' in h, h)
 
   def testShPrompt(self):
     r = oil_doc._PROMPT_LINE_RE
     line = 'oil$ ls -l&lt;TAB&gt;  # comment'
     m = r.match(line)
-    print(m.groups())
-    print(m.group(2))
-    print(m.end(2))
+
+    if 0:
+      print(m.groups())
+      print(m.group(2))
+      print(m.end(2))
+
     plugin = oil_doc.ShPromptPlugin(line, 0, len(line))
     out = html.Output(line, sys.stdout)
     plugin.PrintHighlighted(out)
 
-  def testPygmentsPlugin(self):
-    # This test depends on pygments being installed, which isn't on Travis.
-    # TODO: Add it to Nix?
-    return
+  def testHighlightCode(self):
+    # lazylex/testdata.html has the language-sh-prompt
 
+    h = oil_doc.HighlightCode(TEST_HTML)
+    self.assert_('<span class="sh-prompt">' in h, h)
+    #print(h)
+
+  def testPygmentsPlugin(self):
     HTML = '''
 <pre><code class="language-sh">
   echo hi &gt; out.txt
@@ -60,7 +59,7 @@ class OilDoc(unittest.TestCase):
 
     # assert there's no double escaping
     self.assert_('hi &gt; out.txt' in h, h)
-    print(h)
+    #print(h)
 
 
 if __name__ == '__main__':
