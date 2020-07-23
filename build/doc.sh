@@ -292,7 +292,7 @@ help-cards() {
 }
 
 minimal-help() {
-  echo 'Skipping help'
+  echo 'minimal: Skipping help'
 }
 
 all-help() {

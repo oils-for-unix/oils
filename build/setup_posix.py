@@ -6,6 +6,9 @@ from distutils.core import setup, Extension
 
 module = Extension('posix_',
                     sources = ['native/posixmodule.c'],
+                    # we deleted some entries from the method table; I don't
+                    # want to see warnings about it
+                    extra_compile_args = ['-Wno-unused-function'],
                     )
 
 setup(name = 'posix_',

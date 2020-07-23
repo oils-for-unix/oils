@@ -33,7 +33,8 @@ gen-mypy-asdl() {
   shift
   local out=_devbuild/gen/${name}_asdl.py
   asdl/tool.py mypy asdl/${name}.asdl "$@" > $out
-  wc -l $out
+  log "Wrote $out"
+  #wc -l $out
 }
 
 gen-typed-demo-asdl() {

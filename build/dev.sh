@@ -70,7 +70,7 @@ gen-asdl-py() {
 
   # BUG: MUST BE DONE ATOMICALLY ATOMIC; otherwise the Python interpreter can
   # import an empty file!
-  mv -v $tmp $out
+  mv $tmp $out
 
   echo "Wrote $out"
 }
@@ -175,7 +175,8 @@ py-ext() {
   mkdir -p _devbuild/py-ext
   local arch=$(uname -m)
   $setup_script build_ext --inplace
-  file $name.so
+
+  #file $name.so
 }
 
 pylibc() {
@@ -209,15 +210,15 @@ posix_() {
 }
 
 yajl-unit() {
-  pushd py-yajl
-  python2 tests/unit.py
-  popd
+  pushd py-yajl >/dev/null
+  python2 tests/unit.py "$@" > /dev/null
+  popd >/dev/null
 }
 
 yajl-release() {
   ### Creates a py-yajl/yajl/yajl-2.1.1/ dir, used by build/compile.sh
 
-  pushd py-yajl/yajl
+  pushd py-yajl/yajl >/dev/null
   ./configure
   cmake .
   make
@@ -226,21 +227,21 @@ yajl-release() {
 
   # TODO: Run tests too?  There are run_tests.sh files, but not all of them
   # work.
-  popd
+  popd >/dev/null
 }
 
 yajl() {
   ### Build and test yajl binding (depends on submodule)
 
-  pushd py-yajl
+  pushd py-yajl >/dev/null
   python2 setup.py build_ext --inplace
 
   # Adapted from py-yajl/runtests.sh
   python2 tests/unit.py
 
   # Hm this test doesn't make any assertions.
-  zcat test_data/issue_11.gz | python2 tests/issue_11.py | wc -l
-  popd
+  zcat test_data/issue_11.gz | python2 tests/issue_11.py >/dev/null
+  popd >/dev/null
 
   # Link it in the repo root
   ln -s -f py-yajl/yajl.so .
@@ -256,7 +257,8 @@ _minimal() {
   mkdir -p _tmp _devbuild/gen
 
   # need -r because Python 3 puts a __pycache__ here
-  rm -v -r -f _devbuild/gen/*
+  log 'Removing _devbuild/gen/*'
+  rm -r -f _devbuild/gen/*
 
   # So modules are importable.
   touch _devbuild/__init__.py  _devbuild/gen/__init__.py

@@ -375,12 +375,11 @@ def main(argv):
   specs.update(flag_spec.FLAG_SPEC)
   specs.update(flag_spec.FLAG_SPEC_AND_MORE)
 
-  log('--')
   for spec_name in sorted(specs):
     spec = specs[spec_name]
     #spec.spec.PrettyPrint(f=sys.stderr)
     #log('spec.arity1 %s', spec.spec.arity1)
-    log('%s', spec_name)
+    #log('%s', spec_name)
 
     #print(dir(spec))
     #print(spec.arity0)
