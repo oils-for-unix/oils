@@ -74,7 +74,9 @@ link-busybox-ash() {
 
 # dash and bash should be there by default on Ubuntu.
 install-shells() {
-  sudo apt-get install busybox-static mksh zsh
+  set -x  # show what needs sudo
+  sudo apt install busybox-static mksh zsh
+  set +x
   link-busybox-ash
 }
 
