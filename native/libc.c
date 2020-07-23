@@ -180,7 +180,7 @@ func_regex_parse(PyObject *self, PyObject *args) {
   int status = regcomp(&pat, pattern, REG_EXTENDED);
   if (status != 0) {
     char error_string[80];
-    regerror(status, &pat, &error_string, 80);
+    regerror(status, &pat, error_string, 80);
     PyErr_SetString(PyExc_RuntimeError, error_string);
     return NULL;
   }
@@ -201,7 +201,7 @@ func_regex_match(PyObject *self, PyObject *args) {
   int status = regcomp(&pat, pattern, REG_EXTENDED);
   if (status != 0) {
     char error_string[80];
-    regerror(status, &pat, &error_string, 80);
+    regerror(status, &pat, error_string, 80);
     PyErr_SetString(PyExc_RuntimeError, error_string);
     return NULL;
   }
@@ -214,9 +214,9 @@ func_regex_match(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  int match;
   regmatch_t *pmatch = (regmatch_t*) malloc(sizeof(regmatch_t) * outlen);
-  if (match = (regexec(&pat, str, outlen, pmatch, 0) == 0)) {
+  int match = regexec(&pat, str, outlen, pmatch, 0);
+  if (match == 0) {
     int i;
     for (i = 0; i < outlen; i++) {
       int len = pmatch[i].rm_eo - pmatch[i].rm_so;
@@ -228,7 +228,7 @@ func_regex_match(PyObject *self, PyObject *args) {
   free(pmatch);
   regfree(&pat);
 
-  if (!match) {
+  if (match != 0) {
     Py_RETURN_NONE;
   }
 
@@ -267,7 +267,7 @@ func_regex_first_group_match(PyObject *self, PyObject *args) {
   int status = regcomp(&pat, pattern, REG_EXTENDED);
   if (status != 0) {
     char error_string[80];
-    regerror(status, &pat, &error_string, 80);
+    regerror(status, &pat, error_string, 80);
     PyErr_SetString(PyExc_RuntimeError, error_string);
     return NULL;
   }

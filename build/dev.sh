@@ -174,6 +174,10 @@ py-ext() {
   local name=$1
   local setup_script=$2
 
+  log ''
+  log $'\t'$name
+  log ''
+
   mkdir -p _devbuild/py-ext
   local arch=$(uname -m)
   $setup_script build_ext --inplace
@@ -182,6 +186,8 @@ py-ext() {
 }
 
 pylibc() {
+  rm -v -f libc.so
+
   py-ext libc build/setup.py
   native/libc_test.py "$@" > /dev/null
 }
@@ -190,7 +196,7 @@ fastlex() {
   build/codegen.sh ast-id-lex
 
   # Why do we need this?  It gets stale otherwise.
-  rm -v -f fastlex.so
+  rm -f fastlex.so
 
   py-ext fastlex build/setup_fastlex.py
   native/fastlex_test.py "$@" > /dev/null
@@ -238,8 +244,9 @@ yajl() {
   pushd py-yajl >/dev/null
   python2 setup.py build_ext --inplace
 
+  # DISABLED.  It causes a lot of spew.  And yajl will not make it into oil-native.
   # Adapted from py-yajl/runtests.sh
-  python2 tests/unit.py
+  # python2 tests/unit.py
 
   # Hm this test doesn't make any assertions.
   zcat test_data/issue_11.gz | python2 tests/issue_11.py >/dev/null
@@ -264,9 +271,6 @@ _minimal() {
 
   # So modules are importable.
   touch _devbuild/__init__.py  _devbuild/gen/__init__.py
-
-  # Generates _devbuild/help
-  build/doc.sh minimal-help
 
   oil-asdl-to-py  # depends on Id
 
@@ -324,8 +328,8 @@ all() {
   rm -f *.so  # 12/2019: to clear old symlinks, maybe get rid of
 
   _minimal
-  build/doc.sh all-help
   fastlex
+  build/doc.sh all-help
 }
 
 if [ $# -eq 0 ]; then

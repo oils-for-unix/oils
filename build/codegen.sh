@@ -72,11 +72,15 @@ extract-clang() {
 }
 
 types-gen() {
-  asdl/tool.py c frontend/types.asdl "$@" > _devbuild/gen/osh-types.h
+  local out=_devbuild/gen/osh-types.h
+  asdl/tool.py c frontend/types.asdl "$@" > $out
+  echo "Wrote $out"
 }
 
 id-c-gen() {
-  frontend/consts_gen.py c > _devbuild/gen/id.h
+  local out=_devbuild/gen/id.h
+  frontend/consts_gen.py c > $out
+  echo "Wrote $out"
 }
 
 const-mypy-gen() {
@@ -147,13 +151,15 @@ osh-lex-gen-native() {
 ast-id-lex() {
   mkdir -p _devbuild/{gen,tmp}
 
-  log "-- Generating AST, IDs, and lexer in _devbuild/gen"
+  #log "-- Generating AST, IDs, and lexer in _devbuild/gen"
   types-gen
   id-c-gen
 
   local tmp=_devbuild/tmp/osh-lex.re2c.h
+  local out=_devbuild/gen/osh-lex.h
   lexer-gen c > $tmp
-  osh-lex-gen-native $tmp _devbuild/gen/osh-lex.h
+  osh-lex-gen-native $tmp $out
+  echo "Wrote $out"
 }
 
 "$@"

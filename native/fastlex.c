@@ -188,7 +188,7 @@ fastlex_MatchOption(PyObject *self, PyObject *args) {
 
 static PyObject *
 fastlex_IsValidVarName(PyObject *self, PyObject *args) {
-  const char *name;
+  unsigned  char *name;
   int len;
 
   if (!PyArg_ParseTuple(args, "s#", &name, &len)) {
@@ -199,7 +199,7 @@ fastlex_IsValidVarName(PyObject *self, PyObject *args) {
 
 static PyObject *
 fastlex_ShouldHijack(PyObject *self, PyObject *args) {
-  const char *name;
+  unsigned char *name;
   int len;
 
   if (!PyArg_ParseTuple(args, "s#", &name, &len)) {

@@ -201,7 +201,8 @@ class Splitter(HTMLParser.HTMLParser):
 
   def log(self, msg, *args):
     ind = self.indent * ' '
-    log(ind + msg, *args)
+    if 0:
+      log(ind + msg, *args)
 
   def handle_starttag(self, tag, attrs):
     if tag in self.heading_tags:
@@ -268,11 +269,11 @@ def SplitIntoCards(heading_tags, contents):
 
     topic_id = id_value if id_value else heading.replace(' ', '-')
 
-    log('text = %r', text[:10])
+    #log('text = %r', text[:10])
 
     yield tag, topic_id, heading, text
 
-  log('Parsed %d parts', len(groups))
+  log('make_help.py: Parsed %d parts', len(groups))
 
 
 def HelpIndexCards(s):
@@ -334,8 +335,8 @@ def main(argv):
     groups = []
 
     for group_id, group_desc, text in HelpIndexCards(sys.stdin.read()):
-      log('group_id = %r', group_id)
-      log('group_desc = %r', group_desc)
+      #log('group_id = %r', group_id)
+      #log('group_desc = %r', group_desc)
       #log('text = %r', text)
 
       # indices start with _
@@ -372,8 +373,8 @@ def main(argv):
       if tag != 'h4':
         continue  # Skip h2 and h3 for now
 
-      log('topic_id = %r', topic_id)
-      log('heading = %r', heading)
+      #log('topic_id = %r', topic_id)
+      #log('heading = %r', heading)
 
       # indices start with _
       path = os.path.join(out_dir, topic_id)

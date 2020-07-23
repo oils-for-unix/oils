@@ -291,14 +291,11 @@ help-cards() {
     doc/help.md $HTML_DIR/doc/help-index.html $TEXT_DIR $py_out
 }
 
-minimal-help() {
-  echo 'minimal: Skipping help'
-}
-
 all-help() {
   ### Build HTML and text help, which depends on libcmark.so
 
-  rm -v -f $TEXT_DIR/*
+  log "Removing $TEXT_DIR/*"
+  rm -f $TEXT_DIR/*
   mkdir -p _tmp/doc $TEXT_DIR $HTML_DIR/doc
 
   split-and-render doc/help-index.md
@@ -308,7 +305,7 @@ all-help() {
   help-cards $HTML_DIR $TEXT_DIR
 
   # Better sorting
-  LANG=C ls -l $TEXT_DIR
+  #LANG=C ls -l $TEXT_DIR
 }
 
 run-for-release() {
