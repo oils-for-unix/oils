@@ -3,12 +3,13 @@
 # Run unit tests.  Sets PYTHONPATH.
 #
 # Usage:
-#   ./unit.sh <function name>
+#   test/unit.sh <function name>
 #
 # Examples:
 #
-#   ./unit.sh one core/lexer_test.py
-#   ./unit.sh all
+#   test/unit.sh unit frontend/lexer_test.py
+#   test/unit.sh all
+#   test/unit.sh minimal
 
 set -o nounset
 set -o pipefail
@@ -56,7 +57,8 @@ tests-to-run() {
       if test $t = 'native/fastlex_test.py' && ! test -e 'fastlex.so'; then
         continue
       fi
-      if test $t = 'doctools/cmark_test.py' && ! test -e '/usr/local/lib/cmark.so'; then
+      # doctools/cmark.sh makes that shared library
+      if test $t = 'doctools/cmark_test.py' && ! test -e '_deps/libcmark.so'; then
         continue
       fi
     fi
@@ -80,11 +82,19 @@ run-test-and-maybe-abort() {
 }
 
 all() {
-  # For testing
-  #export FASTLEX=0
+  ### Run unit tests after build/dev.sh all
+
   time tests-to-run "$@" | xargs -n 1 -- $0 run-test-and-maybe-abort
   echo
   echo "All unit tests passed."
+}
+
+minimal() {
+  ### Run unit tests after build/dev.sh minimal
+
+  time tests-to-run T | xargs -n 1 -- $0 run-test-and-maybe-abort
+  echo
+  echo "Minimal unit tests passed."
 }
 
 travis() {
@@ -93,7 +103,7 @@ travis() {
     return
   fi
 
-  all minimal
+  minimal
 }
 
 # Run all unit tests in one process.
