@@ -270,9 +270,13 @@ class PygmentsPlugin(_Plugin):
     self.lang = lang
 
   def PrintHighlighted(self, out):
-    from pygments import lexers
-    from pygments import formatters
-    from pygments import highlight
+    try:
+      from pygments import lexers
+      from pygments import formatters
+      from pygments import highlight
+    except ImportError:
+      log("Warning: Couldn't import pygments, so skipping syntax highlighting")
+      return
 
     # unescape before passing to pygments, which will escape
     code = html.ToText(self.s, self.start_pos, self.end_pos)
