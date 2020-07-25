@@ -244,7 +244,7 @@ yajl() {
   ### Build and test yajl binding (depends on submodule)
 
   pushd py-yajl >/dev/null
-  python2 setup.py build_ext --inplace
+  python2 setup.py --quiet build_ext --inplace
 
   # DISABLED.  It causes a lot of spew.  And yajl will not make it into oil-native.
   # Adapted from py-yajl/runtests.sh
