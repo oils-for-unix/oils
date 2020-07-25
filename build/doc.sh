@@ -131,7 +131,7 @@ split-and-render() {
   #return
 
   cmark ${prefix}_meta.json ${prefix}_content.md > $out
-  log "Wrote $out"
+  log "$prefix -> (doctools/cmark) -> $out"
 }
 
 # Special case for README

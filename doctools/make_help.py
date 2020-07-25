@@ -273,7 +273,7 @@ def SplitIntoCards(heading_tags, contents):
 
     yield tag, topic_id, heading, text
 
-  log('make_help.py: Parsed %d parts', len(groups))
+  #log('make_help.py: Parsed %d parts', len(groups))
 
 
 def HelpIndexCards(s):
@@ -344,16 +344,17 @@ def main(argv):
       with open(path, 'w') as f:
         f.write('%s %s %s\n\n' % (ansi.REVERSE, group_desc, ansi.RESET))
         f.write(text)
-      log('Wrote %s', path)
 
       groups.append(group_id)
+
+    log('  (doctools/make_help) -> %d groups in %s', len(groups), out_dir)
 
     groups_out = os.path.join(out_dir, 'groups.txt')
     with open(groups_out, 'w') as f:
       for g in groups:
         print(g, file=f)
-    log('')
-    log('Wrote %s', groups_out)
+
+    log('  (doctools/make_help) -> %s', groups_out)
 
   elif action == 'cards':
     # Split help into cards.
@@ -381,9 +382,10 @@ def main(argv):
       with open(path, 'w') as f:
         f.write('%s %s %s\n\n' % (ansi.REVERSE, heading, ansi.RESET))
         f.write(text)
-      log('Wrote %s', path)
 
       topics.append(topic_id)
+
+    log('%s -> (doctools/make_help) -> %d cards in %s', page_path, len(topics), out_dir)
 
     with open(py_out, 'w') as f:
       f.write('TOPICS = %s\n' % pprint.pformat(topics))
