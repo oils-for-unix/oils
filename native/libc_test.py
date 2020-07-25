@@ -6,6 +6,7 @@
 # You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
+from __future__ import print_function
 """
 libc_test.py: Tests for libc.py
 """
@@ -233,7 +234,9 @@ class LibcTest(unittest.TestCase):
     self.assertEqual(None, libc.realpath('_tmp/nonexistent/supernonexistent'))
 
   def testPrintTime(self):
+    print('', file=sys.stderr)
     libc.print_time(0.1, 0.2, 0.3)
+    print('', file=sys.stderr)
 
   def testGethostname(self):
     print(libc.gethostname())

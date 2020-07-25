@@ -855,13 +855,8 @@ posix_listdir(PyObject *self, PyObject *args)
     PyObject *d, *v;
     DIR *dirp;
     struct dirent *ep;
-    int arg_is_unicode = 1;
 
     errno = 0;
-    if (!PyArg_ParseTuple(args, "U:listdir", &v)) {
-        arg_is_unicode = 0;
-        PyErr_Clear();
-    }
     if (!PyArg_ParseTuple(args, "et:listdir", Py_FileSystemDefaultEncoding, &name))
         return NULL;
     Py_BEGIN_ALLOW_THREADS
@@ -903,24 +898,6 @@ posix_listdir(PyObject *self, PyObject *args)
             d = NULL;
             break;
         }
-#ifdef Py_USING_UNICODE
-        if (arg_is_unicode) {
-            PyObject *w;
-
-            w = PyUnicode_FromEncodedObject(v,
-                                            Py_FileSystemDefaultEncoding,
-                                            "strict");
-            if (w != NULL) {
-                Py_DECREF(v);
-                v = w;
-            }
-            else {
-                /* fall back to the original byte string, as
-                   discussed in patch #683592 */
-                PyErr_Clear();
-            }
-        }
-#endif
         if (PyList_Append(d, v) != 0) {
             Py_DECREF(v);
             Py_DECREF(d);

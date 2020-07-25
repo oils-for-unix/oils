@@ -16,7 +16,7 @@ source test/common.sh  # R_PATH
 export PYTHONPATH='.:vendor/'
 
 ubuntu-deps() {
-  # python-dev: for pylibc
+  # python-dev: for all the extension modules
   # gawk: used by spec-runner.sh for the special match() function.
   # time: used to collect the exit code and timing of a test
   # libreadline-dev: needed for the build/prepare.sh Python build.
@@ -175,18 +175,20 @@ py-ext() {
   local setup_script=$2
 
   log ''
-  log $'\t'$name
+  log "[$name]"
   log ''
 
   mkdir -p _devbuild/py-ext
   local arch=$(uname -m)
-  $setup_script build_ext --inplace
+
+  # global opts come first
+  $setup_script --quiet build_ext --inplace
 
   #file $name.so
 }
 
 pylibc() {
-  rm -v -f libc.so
+  rm -f libc.so
 
   py-ext libc build/setup.py
   native/libc_test.py "$@" > /dev/null
@@ -204,14 +206,14 @@ fastlex() {
 
 line-input() {
   # Why do we need this?  It gets stale otherwise.
-  rm -v -f line_input.so
+  rm -f line_input.so
 
   py-ext line_input build/setup_line_input.py
   native/line_input_test.py "$@" > /dev/null
 }
 
 posix_() {
-  rm -v -f posix_.so
+  rm -f posix_.so
 
   py-ext posix_ build/setup_posix.py
   native/posix_test.py "$@" > /dev/null
