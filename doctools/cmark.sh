@@ -52,7 +52,13 @@ build() {
   pushd $CMARK_DIR
   # GNU make calls cmake?
   make
-  make test
+
+  # This tests with Python 3, but we're using cmark via Python 2.
+  # It crashes on some systems due to the renaming of cgi.escape -> html.escape
+  # (issue 792)
+  # The 'demo-ours' test is good enough for us.
+  #make test
+
   popd
 
   # Binaries are in build/src
