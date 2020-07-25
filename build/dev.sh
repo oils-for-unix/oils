@@ -243,6 +243,9 @@ yajl-release() {
 yajl() {
   ### Build and test yajl binding (depends on submodule)
 
+  log ''
+  log "py-yajl/setup.py -> yajl.so"
+
   pushd py-yajl >/dev/null
   python2 setup.py --quiet build_ext --inplace
 

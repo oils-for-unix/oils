@@ -159,50 +159,6 @@ class ShellOptHook(state.OptHook):
     return True
 
 
-def AddPure(b, mem, procs, mutable_opts, aliases, search_path, errfmt):
-  # type: (Dict[int, vm._Builtin], state.Mem, Dict[str, command__ShFunction], state.MutableOpts, Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
-  b[builtin_i.set] = builtin_pure.Set(mutable_opts, mem)
-  b[builtin_i.shopt] = builtin_pure.Shopt(mutable_opts)
-
-  b[builtin_i.alias] = builtin_pure.Alias(aliases, errfmt)
-  b[builtin_i.unalias] = builtin_pure.UnAlias(aliases, errfmt)
-
-  b[builtin_i.hash] = builtin_pure.Hash(search_path)
-  b[builtin_i.getopts] = builtin_pure.GetOpts(mem, errfmt)
-
-  true_ = builtin_pure.Boolean(0)
-  b[builtin_i.colon] = true_  # a "special" builtin 
-  b[builtin_i.true_] = true_
-  b[builtin_i.false_] = builtin_pure.Boolean(1)
-
-  b[builtin_i.shift] = builtin_assign.Shift(mem)
-
-  b[builtin_i.type] = builtin_meta.Type(procs, aliases, search_path, errfmt)
-
-
-def AddIO(b, mem, dir_stack, exec_opts, splitter, errfmt):
-  # type: (Dict[int, vm._Builtin], state.Mem, state.DirStack, optview.Exec, split.SplitContext, ui.ErrorFormatter) -> None
-  mapfile = builtin_misc.MapFile(mem, errfmt)
-
-  b[builtin_i.echo] = builtin_pure.Echo(exec_opts)
-  b[builtin_i.mapfile] = mapfile
-  b[builtin_i.readarray] = mapfile
-
-  b[builtin_i.read] = builtin_misc.Read(splitter, mem)
-  b[builtin_i.cat] = builtin_misc.Cat()  # for $(<file)
-
-  # test / [ differ by need_right_bracket
-  b[builtin_i.test] = builtin_bracket.Test(False, exec_opts, mem, errfmt)
-  b[builtin_i.bracket] = builtin_bracket.Test(True, exec_opts, mem, errfmt)
-
-  b[builtin_i.pushd] = builtin_misc.Pushd(mem, dir_stack, errfmt)
-  b[builtin_i.popd] = builtin_misc.Popd(mem, dir_stack, errfmt)
-  b[builtin_i.dirs] = builtin_misc.Dirs(mem, dir_stack, errfmt)
-  b[builtin_i.pwd] = builtin_misc.Pwd(mem, errfmt)
-
-  b[builtin_i.times] = builtin_misc.Times()
-
-
 def AddProcess(
     b,  # type: Dict[int, vm._Builtin]
     mem,  # type: state.Mem
@@ -462,8 +418,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   builtins = {}  # type: Dict[int, vm._Builtin]
 
-  AddPure(builtins, mem, procs, mutable_opts, aliases, search_path, errfmt)
-  AddIO(builtins, mem, dir_stack, exec_opts, splitter, errfmt)
+  pure.AddPure(builtins, mem, procs, mutable_opts, aliases, search_path, errfmt)
+  pure.AddIO(builtins, mem, dir_stack, exec_opts, splitter, errfmt)
   AddProcess(builtins, mem, ext_prog, fd_state, job_state, waiter, search_path,
              errfmt)
   AddOil(builtins, mem, errfmt)
