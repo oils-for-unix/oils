@@ -74,7 +74,7 @@ gen-asdl-py() {
   # import an empty file!
   mv $tmp $out
 
-  echo "$asdl_path -> $out"
+  echo "$asdl_path -> (asdl/tool) -> $out"
 }
 
 gen-asdl-cpp() {
@@ -108,6 +108,7 @@ oil-asdl-to-py() {
 
   build/codegen.sh const-mypy-gen  # dependency on bool_arg_type_e
   build/codegen.sh option-mypy-gen
+  build/codegen.sh flag-gen-mypy
 
   # does __import__ of syntax_abbrev.py, which depends on Id.  We could use the
   # AST module later?
@@ -175,8 +176,7 @@ py-ext() {
   local setup_script=$2
 
   log ''
-  log "[$name]"
-  log ''
+  log "$setup_script -> $name.so"
 
   mkdir -p _devbuild/py-ext
   local arch=$(uname -m)
@@ -275,8 +275,6 @@ _minimal() {
   touch _devbuild/__init__.py  _devbuild/gen/__init__.py
 
   oil-asdl-to-py  # depends on Id
-
-  build/codegen.sh flag-gen-mypy
 
   # Only for testing.
   asdl/run.sh gen-typed-demo-asdl

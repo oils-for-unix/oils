@@ -74,23 +74,23 @@ extract-clang() {
 types-gen() {
   local out=_devbuild/gen/osh-types.h
   asdl/tool.py c frontend/types.asdl "$@" > $out
-  echo "Wrote $out"
+  echo "  (asdl/tool) -> $out"
 }
 
 id-c-gen() {
   local out=_devbuild/gen/id.h
   frontend/consts_gen.py c > $out
-  echo "Wrote $out"
+  echo "  (frontend/consts_gen) -> $out"
 }
 
 const-mypy-gen() {
   local out=_devbuild/gen/id_kind_asdl.py
   frontend/consts_gen.py mypy > $out
-  log "Wrote $out"
+  log "  (frontend/consts_gen) -> $out"
 
   out=_devbuild/gen/id_kind.py
   frontend/consts_gen.py py-consts > $out
-  log "Wrote $out"
+  log "  (frontend/consts_gen) -> $out"
 }
 
 const-cpp-gen() {
@@ -105,7 +105,7 @@ const-cpp-gen() {
 option-mypy-gen() {
   local out=_devbuild/gen/option_asdl.py
   frontend/option_gen.py mypy > $out
-  log "Wrote $out"
+  log "  (frontend/option_gen) -> $out"
 }
 
 option-cpp-gen() {
@@ -113,14 +113,14 @@ option-cpp-gen() {
   frontend/option_gen.py cpp $out_dir/option_asdl
 
   core/optview_gen.py > $out_dir/core_optview.h
-  log "Wrote $out_dir/core_optview.h"
+  log "  (core/optview_gen) -> $out_dir/core_optview.h"
 }
 
 flag-gen-mypy() {
   local out=_devbuild/gen/arg_types.py
   frontend/flag_gen.py mypy > $out
   #cat $out
-  log "Wrote $out"
+  log "  (frontend/flag_gen) -> $out"
 }
 
 flag-gen-cpp() {
@@ -158,8 +158,9 @@ ast-id-lex() {
   local tmp=_devbuild/tmp/osh-lex.re2c.h
   local out=_devbuild/gen/osh-lex.h
   lexer-gen c > $tmp
+  echo "  (lexer_gen) -> $tmp"
   osh-lex-gen-native $tmp $out
-  echo "Wrote $out"
+  echo "$tmp -> (re2c) -> $out"
 }
 
 "$@"

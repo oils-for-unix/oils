@@ -31,9 +31,12 @@ export PYTHONPATH='.:vendor/'
 gen-mypy-asdl() {
   local name=$1
   shift
+  local in=asdl/${name}.asdl 
   local out=_devbuild/gen/${name}_asdl.py
-  asdl/tool.py mypy asdl/${name}.asdl "$@" > $out
-  log "Wrote $out"
+
+  asdl/tool.py mypy $in "$@" > $out
+
+  log "$in -> (asdl/tool) -> $out"
   #wc -l $out
 }
 

@@ -137,19 +137,16 @@ def main(argv):
     with open(marshal_path, 'wb') as out_f:
       gr.dump(out_f)
 
-    log('%s -> %s', grammar_path, marshal_path)
-
-    nonterm_path = os.path.join(out_dir, basename + '_nt.py')
-    with open(nonterm_path, 'w') as out_f:
+    nonterm_py = os.path.join(out_dir, basename + '_nt.py')
+    with open(nonterm_py, 'w') as out_f:
       gr.dump_nonterminals_py(out_f)
 
-    log('%s -> %s', grammar_path, nonterm_path)
-
-    nonterm_path = os.path.join(out_dir, basename + '_nt.h')
-    with open(nonterm_path, 'w') as out_f:
+    nonterm_h = os.path.join(out_dir, basename + '_nt.h')
+    with open(nonterm_h, 'w') as out_f:
       gr.dump_nonterminals_cpp(out_f)
 
-    log('%s -> %s', grammar_path, nonterm_path)
+    log('%s -> (oil_lang/grammar_gen) -> %s/%s{.marshal,_nt.py,_nt.h}',
+        grammar_path, out_dir, basename)
 
     #gr.report()
 
