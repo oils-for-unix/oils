@@ -45,7 +45,6 @@ from oil_lang import builtin_oil
 from oil_lang import builtin_funcs
 
 from osh import builtin_assign
-from osh import builtin_bracket
 from osh import builtin_comp
 from osh import builtin_meta
 from osh import builtin_misc
@@ -72,7 +71,6 @@ from typing import List, Dict, Optional, Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command__ShFunction
-  from core import optview
 
 
 def _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup):
