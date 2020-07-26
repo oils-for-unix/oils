@@ -9,7 +9,7 @@ import zipimport  # NOT the zipfile module.
 
 from mycpp import mylib
 from pgen2 import grammar
-from pylib import os_path
+from pylib import os_path, path_stat
 
 import posix_ as posix
 
@@ -88,7 +88,7 @@ class _FileResourceLoader(_ResourceLoader):
 
   def Exists(self, rel_path):
     # type: (str) -> bool
-    return os_path.exists(os_path.join(self.root_dir, rel_path))
+    return path_stat.exists(os_path.join(self.root_dir, rel_path))
 
 class _ZipResourceLoader(_ResourceLoader):
   """Open resources INSIDE argv[0] as a zip file."""
