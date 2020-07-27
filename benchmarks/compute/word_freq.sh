@@ -21,17 +21,17 @@ main() {
 
   # do it a bunch of times
   for (( i = 0; i < iters; ++i )); do
-    for word in $text; do  # relies on word splitting
+
+    # Relies on unquoted IFS splitting.  Difference with Python: Python will
+    # give you \, but IFS splitting won't.
+    for word in $text; do
 
       # Hm this isn't correct in bash!
-      (( words["$word"] += 1 ))
+      old=${words["$word"]}
+      words["$word"]=$((old + 1))
 
-      # This seems to work?  wtf?
-      # This causes a parse error in OSH though... Do we need two benchmarks?
-
-      # Or maybe we need something to turn of static parsing?
-      # similar to git
-
+      # BUG in bash, see spec/assoc case #37
+      #(( words["$word"] += 1 ))
       #(( words[\$word] += 1 ))
     done
   done

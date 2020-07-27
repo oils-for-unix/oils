@@ -591,4 +591,27 @@ values: /val2/
 values: /val3/
 ## END
 
+#### bash bug: (( A["$key"] = 1 )) doesn't work
+key='\'
+declare -A A
+#A["$key"]=1
+
+# Works in both
+#A["$key"]=42
+
+# Works in bash only
+#(( A[\$key] = 42 ))
+
+(( A["$key"] = 42 ))
+
+argv.py "${!A[@]}"
+argv.py "${A[@]}"
+## STDOUT:
+['\\']
+['42']
+## END
+## BUG bash STDOUT:
+[]
+[]
+## END
 

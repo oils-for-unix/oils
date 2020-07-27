@@ -28,6 +28,8 @@ fib-demo() {
 }
 
 word-freq-demo() {
+  local iters=10
+
   #local in=README.md  # breaks on the * characters!
   local in=configure  # still doesn't work because of / and \ chars
 
@@ -35,14 +37,14 @@ word-freq-demo() {
   mkdir -p $out
 
   echo --- python
-  time benchmarks/compute/word_freq.py 100 < $in | sort -n > $out/py.txt
+  time benchmarks/compute/word_freq.py $iters < $in | sort -n > $out/py.txt
 
   # TODO: bash isn't correct!
-  for sh in $OSH_CC; do
-  #for sh in bash; do
+  #for sh in $OSH_CC; do
+  for sh in bash $OSH_CC; do
     # 2 seconds
     echo --- $sh
-    time $sh benchmarks/compute/word_freq.sh 100 < $in | sort -n > $out/$(basename $sh).txt
+    time $sh benchmarks/compute/word_freq.sh $iters < $in | sort -n > $out/$(basename $sh).txt
   done
 
   md5sum $out/*
