@@ -1,7 +1,18 @@
 #!/bin/bash
 
+set -o noglob  # for unquoted $text splitting
+
+tokenize() {
+  # read it once
+  read -d '' text
+
+  for word in $text; do  # relies on word splitting
+    echo "$word"
+  done
+}
+
 main() {
-  iters=${1:-1000}
+  iters=${1:-100}
 
   # read it once
   read -d '' text
@@ -13,7 +24,7 @@ main() {
     for word in $text; do  # relies on word splitting
 
       # Hm this isn't correct in bash!
-      #(( words["$word"] += 1 ))
+      (( words["$word"] += 1 ))
 
       # This seems to work?  wtf?
       # This causes a parse error in OSH though... Do we need two benchmarks?
@@ -21,7 +32,7 @@ main() {
       # Or maybe we need something to turn of static parsing?
       # similar to git
 
-      (( words[\$word] += 1 ))
+      #(( words[\$word] += 1 ))
     done
   done
 
@@ -33,3 +44,4 @@ main() {
 }
 
 main "$@"
+#tokenize "$@"
