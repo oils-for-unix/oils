@@ -146,6 +146,13 @@ ble-test          test/ble.sh run-tests                   -
 EOF
 }
 
+other-tests-tasks() {
+  cat <<EOF
+time-test         benchmarks/time-test.sh all-passing     -
+csv-concat-test   devtools/csv-concat-test.sh travis      -
+EOF
+}
+
 run-tasks() {
   ### Run the tasks on stdin and write _tmp/toil/INDEX.tsv.
 
@@ -251,6 +258,8 @@ run-ovm-tarball() { ovm-tarball-tasks | run-tasks; }
 run-app-tests() { app-tests-tasks | run-tasks; }
 
 run-cpp() { cpp-tasks | run-tasks; }
+
+run-other-tests() { other-tests-tasks | run-tasks; }
 
 run-dev-all-nix() {
   ### Travis job dev-all-nix

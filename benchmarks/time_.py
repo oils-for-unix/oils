@@ -49,6 +49,9 @@ def Options():
   p.add_option(
       '--time-fmt', dest='time_fmt', default='%.4f',
       help='sprintf format for elapsed seconds (float)')
+  p.add_option(
+      '--stdout', dest='stdout', default=None,
+      help='Save stdout to this file, and add a column for its md5 checksum')
   return p
 
 
@@ -61,14 +64,30 @@ def main(argv):
 
   start_time = time.time()
   try:
-    exit_code = subprocess.call(child_argv)
+    if opts.stdout:
+      with open(opts.stdout, 'w') as f:
+        exit_code = subprocess.call(child_argv, stdout=f)
+    else:
+      exit_code = subprocess.call(child_argv)
   except OSError as e:
     log('Error executing %s: %s', child_argv, e)
     return 1
 
   elapsed = time.time() - start_time
-  fields = tuple(opts.fields)
-  row = (exit_code, opts.time_fmt % elapsed) + fields
+  if opts.stdout:
+    import md5
+    m = md5.new()
+    with open(opts.stdout) as f:
+      while True:
+        chunk = f.read(4096)
+        if not chunk:
+          break
+        m.update(chunk)
+    maybe_stdout = (m.hexdigest(),)
+  else:
+    maybe_stdout = ()  # no field
+
+  row = (exit_code, opts.time_fmt % elapsed) + maybe_stdout + tuple(opts.fields)
 
   if opts.output:
     mode = 'a' if opts.append else 'w'

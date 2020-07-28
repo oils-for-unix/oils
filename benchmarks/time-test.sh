@@ -54,7 +54,7 @@ test-usage() {
   set -o errexit
 }
 
-test-cannot-serialize() {
+test-bad-tsv-chars() {
   local out=_tmp/time2.tsv
   rm -f $out
 
@@ -83,13 +83,26 @@ test-cannot-serialize() {
   set -o errexit
 
   cat $out
+
+  echo $'OK\ttest-bad-tsv-chars'
+}
+
+test-stdout() {
+  local out=_tmp/time-stdout.csv
+  time-tool -o $out --stdout _tmp/stdout.txt -- ls
+
+  # No assertions here yet
+  md5sum _tmp/stdout.txt
+  cat $out
 }
 
 all-passing() {
   test-usage
   test-tsv
   test-append
-  test-cannot-serialize
+  # Spews some errors
+  test-bad-tsv-chars
+  test-stdout
 
   echo
   echo "All tests in $0 passed."

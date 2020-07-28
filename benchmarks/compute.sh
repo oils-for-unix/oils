@@ -73,23 +73,32 @@ compute-task() {
   local out=_tmp/compute/$name
   mkdir -p $out
 
+  local -a TIME_PREFIX=(benchmarks/time_.py --tsv --append -o $out/times.tsv)
+
   case $runtime in 
     (py)
-      time benchmarks/compute/$name.py "$@" > $out/py.txt
+      "${TIME_PREFIX[@]}" --stdout $out/py.txt --field $runtime -- \
+        benchmarks/compute/$name.py "$@"
       ;;
     (*sh | *osh*)
       local file=$(basename $runtime)
-      time $runtime benchmarks/compute/$name.sh "$@" > $out/$file.txt
+      "${TIME_PREFIX[@]}" --stdout $out/$file.txt --field $runtime -- \
+        $runtime benchmarks/compute/$name.sh "$@" 
       ;;
   esac
 }
 
 fib-all() {
+  local times=_tmp/compute/fib/times.tsv
+  rm -f $times
+
   tasks | while read name runtime args; do
-    run-task $name $runtime $args  # relies on splitting
+    compute-task $name $runtime $args  # relies on splitting
   done
-  md5sum _tmp/compute/fib/*
+  #md5sum _tmp/compute/fib/*
+
   wc -l _tmp/compute/fib/*
+  cat $times
 }
 
 fib-demo() {

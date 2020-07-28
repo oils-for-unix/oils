@@ -25,6 +25,12 @@ _publish_html: &publish_html
       script: services/travis.sh publish-html
       on:
         branch: dev/andy-26
+    # duplicate block for testing on dev branches
+    - provider: script
+      skip_cleanup: true
+      script: services/travis.sh publish-html
+      on:
+        branch: dev/andy-vb1
 
 jobs:
   include:
@@ -155,5 +161,16 @@ jobs:
 
       script:
         - services/toil-worker.sh run-cpp
+
+      <<: *publish_html
+
+    - name: other-tests
+      dist: bionic
+      cache:
+        apt: true
+        pip: true
+
+      script:
+        - services/toil-worker.sh run-other-tests
 
       <<: *publish_html
