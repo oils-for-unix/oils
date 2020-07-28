@@ -50,5 +50,41 @@ word-freq-demo() {
   md5sum $out/*
 }
 
+bubble-sort-demo() {
+  if false; then
+			cat >in.txt <<EOF
+a
+b
+ A
+ Z
+EOF
+  fi
+
+	seq 200 | shuf > in.txt
+
+  local in=in.txt
+  #local in=INSTALL.txt
+  #local in=configure
+
+
+  local out=_tmp/compute/bubble-sort
+  mkdir -p $out
+
+  time benchmarks/compute/bubble_sort.py < $in > $out/py.txt
+
+  echo
+  echo ------------------
+  echo
+
+  for sh in bash $OSH_CC; do
+    # 2 seconds
+    echo --- $sh
+		time $sh benchmarks/compute/bubble_sort.sh < $in > $out/$(basename $sh).txt
+  done
+
+  md5sum $out/*
+  wc -l $out/*
+}
+
 
 "$@"
