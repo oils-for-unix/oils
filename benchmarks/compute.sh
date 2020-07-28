@@ -50,9 +50,12 @@ word-freq-demo() {
   md5sum $out/*
 }
 
+# TODO:
+# - do both integers and strings
+
 bubble-sort-demo() {
   if false; then
-			cat >in.txt <<EOF
+      cat >in.txt <<EOF
 a
 b
  A
@@ -60,7 +63,7 @@ b
 EOF
   fi
 
-	seq 200 | shuf > in.txt
+  seq 200 | shuf > in.txt
 
   local in=in.txt
   #local in=INSTALL.txt
@@ -79,12 +82,29 @@ EOF
   for sh in bash $OSH_CC; do
     # 2 seconds
     echo --- $sh
-		time $sh benchmarks/compute/bubble_sort.sh < $in > $out/$(basename $sh).txt
+    time $sh benchmarks/compute/bubble_sort.sh < $in > $out/$(basename $sh).txt
   done
 
   md5sum $out/*
   wc -l $out/*
 }
 
+# TODO:
+# - do both Unicode and LANG=C
+
+palindrome-demo() {
+
+  local out=_tmp/compute/palindrome
+  mkdir -p $out
+
+  local in=spec/unicode.sh
+  #local in=_tmp/u.txt
+
+  time benchmarks/compute/palindrome.py < $in > $out/py.txt
+  echo ---
+  time benchmarks/compute/palindrome.sh < $in > $out/bash.txt
+
+  diff -u $out/{py,bash}.txt
+}
 
 "$@"

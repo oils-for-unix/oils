@@ -9,8 +9,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-readonly DATA_DIR='testdata/parse-help'
-readonly EXCERPT=testdata/parse-help/excerpt.sh
+readonly DATA_DIR='benchmarks/parse-help'
+readonly EXCERPT=benchmarks/parse-help/excerpt.sh
 
 # TODO: Check these in to testdata/parse-help
 collect() {
@@ -25,6 +25,8 @@ collect() {
 shorten() {
   egrep '^[ ]+-' $DATA_DIR/ls.txt | head -n 2 | tee $DATA_DIR/ls-short.txt
 }
+
+TIMEFORMAT='%U'
 
 run-cmd() {
   local sh=$1
@@ -49,15 +51,23 @@ run-cmd() {
 all() {
   wc -l $DATA_DIR/*
 
+  local dir=_tmp/parse-help
+  mkdir -p $dir
+
   for sh in bash bin/osh; do
     echo
     echo "--- $sh --- "
     echo
 
     for cmd in ls-short ls mypy; do
-      run-cmd $sh $cmd >/dev/null
+      local out=$dir/${cmd}__$(basename $sh).txt
+
+      printf '%10s ' $cmd
+      run-cmd $sh $cmd >$out
     done
   done
+
+  md5sum $dir/*
 }
 
 one() {

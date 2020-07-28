@@ -4,7 +4,7 @@ set -o noglob  # for unquoted $text splitting
 
 tokenize() {
   # read it once
-  read -d '' text
+  read -r -d '' text
 
   for word in $text; do  # relies on word splitting
     echo "$word"
@@ -15,7 +15,7 @@ main() {
   iters=${1:-100}
 
   # read it once
-  read -d '' text
+  read -r -d '' text
 
   declare -A words
 
