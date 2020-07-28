@@ -32,8 +32,12 @@ run-cmd() {
   local sh=$1
   local cmd=$2
   # read from stdin
-  time cat $DATA_DIR/$cmd.txt \
-    | $sh $EXCERPT _parse_help -
+
+  local prog=$EXCERPT
+  # our pure fork
+  local prog=benchmarks/parse-help/pure-excerpt.sh
+
+  time cat $DATA_DIR/$cmd.txt | $sh $prog _parse_help -
 }
 
 # Geez:
@@ -54,7 +58,9 @@ all() {
   local dir=_tmp/parse-help
   mkdir -p $dir
 
-  for sh in bash bin/osh; do
+  # Woohoo oil-native is faster!
+  OSH_CC=_bin/osh_eval.opt.stripped
+  for sh in bash bin/osh $OSH_CC; do
     echo
     echo "--- $sh --- "
     echo

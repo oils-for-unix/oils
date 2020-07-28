@@ -107,4 +107,11 @@ palindrome-demo() {
   diff -u $out/{py,bash}.txt
 }
 
+#
+# Also see benchmarks/parse-help.sh all
+# Maybe fold that in here?
+#
+
+
+
 "$@"
