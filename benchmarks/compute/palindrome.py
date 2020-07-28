@@ -9,17 +9,28 @@ import sys
 
 
 def main(argv):
-  contents = sys.stdin.read()
-  code_points = contents.decode('utf-8')
+  for line in sys.stdin:
+    line = line.rstrip()  # remove newlines and spaces
 
-  pat = re.compile('[A-Z]')
+    if len(line) == 0:  # skip blank lines
+      continue
 
-  print('len=%d' % len(code_points))
+    code_points = line.decode('utf-8')
 
-  for i, c in enumerate(code_points):
-    #if pat.match(c):
-    if True:
-      print('%s %s' % (i, c.encode('utf-8')))
+    n = len(code_points)
+
+    h = n // 2  # floor division
+
+    #print('n = %d, h = %d' % (n, h))
+
+    palindrome = True
+    for i in xrange(h):
+      if code_points[i] != code_points[n-1-i]:
+        palindrome = False
+        break
+
+    if palindrome:
+      print(line)
 
 
 if __name__ == '__main__':

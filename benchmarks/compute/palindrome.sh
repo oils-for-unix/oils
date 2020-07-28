@@ -6,25 +6,24 @@
 #shopt -s globasciiranges
 
 main() {
-  # need RAW here!!!
-  read -r -d '' text
+  while read -r line; do
+    local n=${#line}
 
-  local len=${#text}
-  echo len=$len
+    if test $n -eq 0; then  # skip blank lines
+      continue
+    fi
 
-  local pat='[A-Z]'
-  # why doesn't this work???
-  #local pat='[#-~]'
+    h=$((n / 2))  # floor division
+    local palindrome=T
+    for (( i = 0; i < h; ++i )); do
+      #echo ${line:i:1} ${line:n-1-i:1}
+      if test ${line:i:1} != ${line:n-1-i:1}; then
+        palindrome=''
+      fi
+    done
 
-
-  for (( i = 0; i < len; ++i )); do
-    local ch="${text:i:1}"
-    #if [[ $ch =~ $pat ]]; then
-    if true; then
-      echo "$i $ch"
-    else
-      #echo "[$i $ch]"
-      true
+    if test -n "$palindrome"; then
+      printf '%s\n' "$line"
     fi
   done
 }

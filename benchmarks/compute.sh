@@ -3,15 +3,31 @@
 # Usage:
 #   benchmarks/compute.sh <function name>
 #
+# List of benchmarks:
+#
+# - fib: integer, loop, assignment (shells don't have real integers
+# - word_freq: hash table / assoc array (OSH uses a vector<pair<>> now!)
+#              also integer counter
+# - bubble sort: indexed array (bash uses a linked list?)
+#                todo: string and integer
+# - palindrome: string, slicing, unicode
+#
+# Also:
+# - benchmarks/parse-help: realistic string processing
+#
 # TODO:
-# - awk versions of fib, word_freq
+# - awk versions
 # - assert that stdout is identical
+# - create data frames and publish results
+#   - leave holes for Python, other shells, etc.
 
 set -o nounset
 set -o pipefail
 set -o errexit
 
 readonly OSH_CC=_bin/osh_eval.opt.stripped
+
+TIMEFORMAT='%U'
 
 fib-demo() {
   local iters=200
@@ -20,7 +36,6 @@ fib-demo() {
   time benchmarks/compute/fib.py $iters 44 | wc -l
 
   for sh in dash bash $OSH_CC; do
-
     echo --- $sh
     time $sh benchmarks/compute/fib.sh $iters 44 | wc -l
   done
@@ -73,11 +88,8 @@ EOF
   local out=_tmp/compute/bubble-sort
   mkdir -p $out
 
+  echo --- python
   time benchmarks/compute/bubble_sort.py < $in > $out/py.txt
-
-  echo
-  echo ------------------
-  echo
 
   for sh in bash $OSH_CC; do
     # 2 seconds
@@ -85,33 +97,60 @@ EOF
     time $sh benchmarks/compute/bubble_sort.sh < $in > $out/$(basename $sh).txt
   done
 
+  echo
   md5sum $out/*
   wc -l $out/*
 }
 
-# TODO:
-# - do both Unicode and LANG=C
+palindrome-testdata() {
+  for i in $(seq 1000); do
+    cat <<EOF
+foo
+a
+tat
+cat
+
+noon
+amanaplanacanalpanama
+
+μ
+-μ-
+EOF
+
+  done
+}
+
+# Hm osh is a little slower
 
 palindrome-demo() {
-
   local out=_tmp/compute/palindrome
   mkdir -p $out
 
-  local in=spec/unicode.sh
+  local in=$out/testdata.txt
+  palindrome-testdata > $in
+
   #local in=_tmp/u.txt
 
+  echo --- python
   time benchmarks/compute/palindrome.py < $in > $out/py.txt
-  echo ---
-  time benchmarks/compute/palindrome.sh < $in > $out/bash.txt
 
-  diff -u $out/{py,bash}.txt
+  # Hm how does OSH respect this ???   I don't get it yet.
+  #LANG=C
+
+  for sh in bash $OSH_CC; do
+    echo --- $sh
+    time benchmarks/compute/palindrome.sh < $in > $out/$(basename $sh).txt
+  done
+
+  echo
+  md5sum $out/*.txt
+  wc -l $out/*.txt
+  #cat $out/*.txt
 }
 
 #
 # Also see benchmarks/parse-help.sh all
 # Maybe fold that in here?
 #
-
-
 
 "$@"
