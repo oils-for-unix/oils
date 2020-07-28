@@ -42,12 +42,20 @@ readonly OSH_CC=_bin/osh_eval.opt.stripped
 TIMEFORMAT='%U'
 
 # task_name,iter,args
-tasks() {
+fib-tasks() {
   cat <<EOF
-fib py   200 44
-fib bash 200 44
-fib dash 200 44
-fib $OSH_CC 200 44
+fib python   200 44
+fib bash     200 44
+fib dash     200 44
+fib $OSH_CC  200 44
+EOF
+}
+
+word_freq-tasks() {
+  cat <<EOF
+word_freq python   10 configure
+word_freq bash     10 configure
+word_freq $OSH_CC  10 configure
 EOF
 }
 
@@ -59,7 +67,9 @@ EOF
 #   task, task args -- I guess these can be space separated
 #   stdout md5sum -- so it's correct!  Because I did catch some problems earlier.
 
-compute-task() {
+readonly -a TIME_PREFIX=(benchmarks/time_.py --tsv --append)
+
+fib-one() {
   # TODO: follow parser-task, and get all the args above.
   # And also need a shell functions to save the stdout md5sum?  Needs to be a
   # field too.  benchmarks/time.py gets a bunch of --field arguments.  Does it
@@ -70,71 +80,81 @@ compute-task() {
   local runtime=$2
   shift 2
 
+  local ext
+  case $runtime in 
+    (python)
+      ext='py'
+      ;;
+    (*sh | *osh*)
+      ext='sh'
+      ;;
+  esac
+
+  $runtime benchmarks/compute/$name.$ext "$@"
+}
+
+word_freq-one() {
+  local name=${1:-word_freq}
+  local runtime=$2
+
+  local iters=${3:-10}
+  local in=${4:-configure}  # input
+
+  local ext
+  case $runtime in 
+    (python)
+      ext='py'
+      ;;
+    (*sh | *osh*)
+      ext='sh'
+      ;;
+  esac
+
+  $runtime benchmarks/compute/word_freq.$ext $iters < $in | sort -n
+}
+
+#
+# Helpers
+#
+
+word-freq-all() { task-all word_freq; }
+fib-all() { task-all fib; }
+
+task-all() {
+  local name=$1
+
   local out=_tmp/compute/$name
   mkdir -p $out
 
-  local -a TIME_PREFIX=(benchmarks/time_.py --tsv --append -o $out/times.tsv)
-
-  case $runtime in 
-    (py)
-      "${TIME_PREFIX[@]}" --stdout $out/py.txt --field $runtime -- \
-        benchmarks/compute/$name.py "$@"
-      ;;
-    (*sh | *osh*)
-      local file=$(basename $runtime)
-      "${TIME_PREFIX[@]}" --stdout $out/$file.txt --field $runtime -- \
-        $runtime benchmarks/compute/$name.sh "$@" 
-      ;;
-  esac
-}
-
-fib-all() {
-  local times=_tmp/compute/fib/times.tsv
+  local times=$out/times.tsv
   rm -f $times
 
-  tasks | while read name runtime args; do
-    compute-task $name $runtime $args  # relies on splitting
-  done
-  #md5sum _tmp/compute/fib/*
+  # header
+  echo $'status\telapsed\tstdout_md5sum\truntime\ttask_name\ttask_args' > $times
 
-  wc -l _tmp/compute/fib/*
+  local name=${1:-'word-freq'}
+
+  ${name}-tasks | while read _ runtime args; do
+    local file
+    case $runtime in 
+      (python)
+        file='py'
+        ;;
+      (*sh | *osh*)
+        file=$(basename $runtime)
+        ;;
+    esac
+
+    # join args into a single field
+    "${TIME_PREFIX[@]}" \
+      --stdout $out/$file.txt -o $out/times.tsv \
+      --field $runtime --field "$name" --field "$args" -- \
+      $0 ${name}-one "$name" "$runtime" $args  # relies on splitting
+  done
+
+  #wc -l _tmp/compute/word_freq/*
+  tree $out
   cat $times
-}
-
-fib-demo() {
-  local iters=200
-
-  echo --- python
-  time benchmarks/compute/fib.py $iters 44 | wc -l
-
-  for sh in dash bash $OSH_CC; do
-    echo --- $sh
-    time $sh benchmarks/compute/fib.sh $iters 44 | wc -l
-  done
-
-}
-
-word-freq-demo() {
-  local iters=10
-
-  #local in=README.md  # breaks on the * characters!
-  local in=configure  # still doesn't work because of / and \ chars
-
-  local out=_tmp/compute
-  mkdir -p $out
-
-  echo --- python
-  time benchmarks/compute/word_freq.py $iters < $in | sort -n > $out/py.txt
-
-  # TODO: bash isn't correct!
-  #for sh in $OSH_CC; do
-  for sh in bash $OSH_CC; do
-    # 2 seconds
-    echo --- $sh
-    time $sh benchmarks/compute/word_freq.sh $iters < $in | sort -n > $out/$(basename $sh).txt
-  done
-
-  md5sum $out/*
 }
 
 # TODO: Fix the OSH comparison operator!  It gives the wrong answer and
