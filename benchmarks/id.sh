@@ -97,6 +97,11 @@ dump-shell-id() {
       # These don't have version strings!
       dpkg -s $name > $out_dir/dpkg-version.txt
       ;;
+
+    # not a shell, but useful for benchmarks/compute
+    python)
+      $sh -V 2> $out_dir/version.txt
+      ;;
     *)
       die "Invalid shell '$name'"
       ;;
@@ -108,6 +113,7 @@ _shell-id-hash() {
 
   local file
 
+  # for shells and Python
   file=$src/version.txt
   test -f $file && cat $file
 

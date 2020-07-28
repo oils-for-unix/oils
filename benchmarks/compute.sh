@@ -41,6 +41,57 @@ readonly OSH_CC=_bin/osh_eval.opt.stripped
 
 TIMEFORMAT='%U'
 
+# task_name,iter,args
+tasks() {
+  cat <<EOF
+fib py   200 44
+fib bash 200 44
+fib dash 200 44
+fib $OSH_CC 200 44
+EOF
+}
+
+# We also want:
+#   status, elapsed
+#   host_name, host_hash (we don't want to test only fast machines)
+#   shell_name, shell_hash (which records version.  Make sure osh --version works)
+#     or really runtime_name and runtime_hash
+#   task, task args -- I guess these can be space separated
+#   stdout md5sum -- so it's correct!  Because I did catch some problems earlier.
+
+compute-task() {
+  # TODO: follow parser-task, and get all the args above.
+  # And also need a shell functions to save the stdout md5sum?  Needs to be a
+  # field too.  benchmarks/time.py gets a bunch of --field arguments.  Does it
+  # need to be expanded for md5sum?
+  # osh-runtime uses ${TIME_PREFIX[@]} $sh_path > STDOUT.txt
+
+  local name=$1
+  local runtime=$2
+  shift 2
+
+  local out=_tmp/compute/$name
+  mkdir -p $out
+
+  case $runtime in 
+    (py)
+      time benchmarks/compute/$name.py "$@" > $out/py.txt
+      ;;
+    (*sh | *osh*)
+      local file=$(basename $runtime)
+      time $runtime benchmarks/compute/$name.sh "$@" > $out/$file.txt
+      ;;
+  esac
+}
+
+fib-all() {
+  tasks | while read name runtime args; do
+    run-task $name $runtime $args  # relies on splitting
+  done
+  md5sum _tmp/compute/fib/*
+  wc -l _tmp/compute/fib/*
+}
+
 fib-demo() {
   local iters=200
 

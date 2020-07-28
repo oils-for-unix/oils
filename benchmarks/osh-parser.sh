@@ -102,7 +102,7 @@ print-tasks() {
 
   # Add 1 field for each of 5 fields.
   cat $provenance | while read fields; do
-    cat $sorted | xargs -n 1 -- echo $fields
+    cat $SORTED | xargs -n 1 -- echo $fields
   done
 }
 
@@ -124,8 +124,8 @@ measure() {
 
   mkdir -p $BASE_DIR/{tmp,raw,stage1} $raw_dir
 
+  # Files that we should measure.  Exploded into tasks.
   write-sorted-manifest '' $lines_out
-  local sorted=$SORTED
 
   # Write Header of the CSV file that is appended to.
   echo $HEADER > $times_out
