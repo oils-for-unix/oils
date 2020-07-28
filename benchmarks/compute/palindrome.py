@@ -9,15 +9,23 @@ import sys
 
 
 def main(argv):
+  decode = False
+  if argv[1] == 'unicode':
+    print('palindrome.py: unicode', file=sys.stderr)
+    decode = True
+
   for line in sys.stdin:
     line = line.rstrip()  # remove newlines and spaces
 
     if len(line) == 0:  # skip blank lines
       continue
 
-    code_points = line.decode('utf-8')
+    if decode:
+      seq = line.decode('utf-8')
+    else:
+      seq = line
 
-    n = len(code_points)
+    n = len(seq)
 
     h = n // 2  # floor division
 
@@ -25,7 +33,7 @@ def main(argv):
 
     palindrome = True
     for i in xrange(h):
-      if code_points[i] != code_points[n-1-i]:
+      if seq[i] != seq[n-1-i]:
         palindrome = False
         break
 

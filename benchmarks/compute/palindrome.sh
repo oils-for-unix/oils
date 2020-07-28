@@ -6,6 +6,12 @@
 #shopt -s globasciiranges
 
 main() {
+  if test "$1" = "unicode"; then
+    echo "palindrome.sh: unicode" 1>&2
+  else
+    LANG=C
+  fi
+
   while read -r line; do
     local n=${#line}
 

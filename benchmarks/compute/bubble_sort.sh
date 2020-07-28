@@ -15,23 +15,37 @@ main() {
 
   #echo ${#seq[@]}
 
-  local changed=T
-  while test -n "$changed"; do
-    changed=''
-    for (( i = 0; i < ${#seq[@]} - 1; ++i )); do
-
-      # LANG=C required to make it behave like Python
-      #if [[ ${seq[i]} > ${seq[i+1]} ]]; then
-
-      if (( seq[i] > seq[i+1] )); then
-
-        tmp=${seq[i+1]}
-        seq[i+1]=${seq[i]}
-        seq[i]=$tmp
-        changed=T
-      fi
+  if test "$1" = 'int'; then
+    # Sort by integer value
+    local changed=T
+    while test -n "$changed"; do
+      changed=''
+      for (( i = 0; i < ${#seq[@]} - 1; ++i )); do
+        if (( seq[i] > seq[i+1] )); then
+          tmp=${seq[i+1]}
+          seq[i+1]=${seq[i]}
+          seq[i]=$tmp
+          changed=T
+        fi
+      done
     done
-  done
+
+  else
+    # Sort by bytes
+    local changed=T
+    while test -n "$changed"; do
+      changed=''
+      for (( i = 0; i < ${#seq[@]} - 1; ++i )); do
+        # LANG=C required here
+        if [[ ${seq[i]} > ${seq[i+1]} ]]; then
+          tmp=${seq[i+1]}
+          seq[i+1]=${seq[i]}
+          seq[i]=$tmp
+          changed=T
+        fi
+      done
+    done
+  fi
 
   for line in "${seq[@]}"; do
     echo -n "$line"
