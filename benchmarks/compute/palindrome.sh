@@ -23,7 +23,7 @@ main() {
     local palindrome=T
     for (( i = 0; i < h; ++i )); do
       #echo ${line:i:1} ${line:n-1-i:1}
-      if test ${line:i:1} != ${line:n-1-i:1}; then
+      if test "${line:i:1}" != "${line:n-1-i:1}"; then
         palindrome=''
       fi
     done

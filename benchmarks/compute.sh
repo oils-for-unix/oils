@@ -59,6 +59,28 @@ word_freq $OSH_CC  10 configure
 EOF
 }
 
+bubble_sort-tasks() {
+  cat <<EOF
+bubble_sort python   int
+bubble_sort python   bytes
+bubble_sort bash     int
+bubble_sort bash     bytes
+bubble_sort $OSH_CC  int
+bubble_sort $OSH_CC  bytes
+EOF
+}
+
+palindrome-tasks() {
+  cat <<EOF
+palindrome python   unicode
+palindrome python   bytes
+palindrome bash     unicode
+palindrome bash     bytes
+palindrome $OSH_CC  unicode
+palindrome $OSH_CC  bytes
+EOF
+}
+
 # We also want:
 #   status, elapsed
 #   host_name, host_hash (we don't want to test only fast machines)
@@ -69,56 +91,75 @@ EOF
 
 readonly -a TIME_PREFIX=(benchmarks/time_.py --tsv --append)
 
+ext() {
+  local ext
+  case $runtime in 
+    (python)
+      echo 'py'
+      ;;
+    (*sh | *osh*)
+      echo 'sh'
+      ;;
+  esac
+}
+
 fib-one() {
-  # TODO: follow parser-task, and get all the args above.
-  # And also need a shell functions to save the stdout md5sum?  Needs to be a
-  # field too.  benchmarks/time.py gets a bunch of --field arguments.  Does it
-  # need to be expanded for md5sum?
-  # osh-runtime uses ${TIME_PREFIX[@]} $sh_path > STDOUT.txt
+  ### Run one fibonacci task
 
   local name=$1
   local runtime=$2
   shift 2
 
-  local ext
-  case $runtime in 
-    (python)
-      ext='py'
-      ;;
-    (*sh | *osh*)
-      ext='sh'
-      ;;
-  esac
-
-  $runtime benchmarks/compute/$name.$ext "$@"
+  $runtime benchmarks/compute/$name.$(ext $runtime) "$@"
 }
 
 word_freq-one() {
+  ### Run one word_freq task (hash tables)
+
   local name=${1:-word_freq}
   local runtime=$2
 
   local iters=${3:-10}
   local in=${4:-configure}  # input
 
-  local ext
-  case $runtime in 
-    (python)
-      ext='py'
-      ;;
-    (*sh | *osh*)
-      ext='sh'
-      ;;
-  esac
+  $runtime benchmarks/compute/word_freq.$(ext $runtime) $iters < $in | sort -n
+}
 
-  $runtime benchmarks/compute/word_freq.$ext $iters < $in | sort -n
+bubble_sort-one() {
+  ### Run one bubble_sort task (arrays)
+
+  local name=${1:-bubble_sort}
+  local runtime=$2
+  local mode=${3:-int}
+
+  $runtime benchmarks/compute/bubble_sort.$(ext $runtime) $mode \
+     < _tmp/compute/$name/testdata.txt
+}
+
+palindrome-one() {
+  ### Run one palindrome task (strings)
+
+  local name=${1:-palindrome}
+  local runtime=$2
+  local mode=${3:-unicode}
+
+  $runtime benchmarks/compute/palindrome.$(ext $runtime) $mode \
+    < _tmp/compute/$name/testdata.txt
 }
 
 #
 # Helpers
 #
 
-word-freq-all() { task-all word_freq; }
 fib-all() { task-all fib; }
+word_freq-all() { task-all word_freq; }
+
+# TODO: Fix the OSH comparison operator!  It gives the wrong answer and
+# completes quickly.
+bubble_sort-all() { task-all bubble_sort; }
+
+# Hm osh is a little slower here
+palindrome-all() { task-all palindrome; }
 
 task-all() {
   local name=$1
@@ -134,6 +175,8 @@ task-all() {
 
   local name=${1:-'word-freq'}
 
+  local task_id=0
+
   ${name}-tasks | while read _ runtime args; do
     local file
     case $runtime in 
@@ -145,11 +188,15 @@ task-all() {
         ;;
     esac
 
+    #log "runtime=$runtime args=$args"
+
     # join args into a single field
     "${TIME_PREFIX[@]}" \
-      --stdout $out/$file.txt -o $out/times.tsv \
+      --stdout $out/$task_id.txt -o $out/times.tsv \
       --field $runtime --field "$name" --field "$args" -- \
       $0 ${name}-one "$name" "$runtime" $args  # relies on splitting
+
+    task_id=$((task_id + 1))
   done
 
   #wc -l _tmp/compute/word_freq/*
@@ -157,39 +204,24 @@ task-all() {
   cat $times
 }
 
-# TODO: Fix the OSH comparison operator!  It gives the wrong answer and
-# completes quickly.
+#
+# Testdata
+#
 
-bubble-sort-demo() {
-  seq 200 | shuf > in.txt
-
-  local in=in.txt
-  #local in=INSTALL.txt
-  #local in=configure
-
-  local out=_tmp/compute/bubble-sort
+bubble_sort-testdata() {
+  local out='_tmp/compute/bubble_sort'
   mkdir -p $out
-
-  for mode in int bytes; do
-    echo === $mode
-
-    echo --- python
-    time benchmarks/compute/bubble_sort.py $mode < $in > $out/py.txt
-
-    for sh in bash $OSH_CC; do
-      # 2 seconds
-      echo --- $sh
-      time $sh benchmarks/compute/bubble_sort.sh $mode < $in > $out/$(basename $sh).txt
-    done
-
-    echo
-    md5sum $out/*
-    wc -l $out/*
-  done
+  seq 200 | shuf > $out/testdata.txt
+  wc -l $out/testdata.txt
 }
 
 palindrome-testdata() {
-  for i in $(seq 1000); do
+  local out=_tmp/compute/palindrome
+  mkdir -p $out
+
+  # TODO: Use iters?
+
+  for i in $(seq 500); do
     cat <<EOF
 foo
 a
@@ -203,40 +235,9 @@ amanaplanacanalpanama
 -μ-
 EOF
 
-  done
-}
-
-# Hm osh is a little slower
-
-palindrome-demo() {
-  local out=_tmp/compute/palindrome
-  mkdir -p $out
-
-  local in=$out/testdata.txt
-  palindrome-testdata > $in
-
-  #local in=_tmp/u.txt
-
-  for mode in unicode bytes; do
-    echo === $mode
-
-    echo --- python
-    time benchmarks/compute/palindrome.py $mode < $in > $out/py.txt
-
-    # Hm how does OSH respect this ???   I don't get it yet.
-    #LANG=C
-
-    for sh in bash $OSH_CC; do
-      echo --- $sh
-      time benchmarks/compute/palindrome.sh $mode < $in > $out/$(basename $sh).txt
-    done
-
-    echo
-    md5sum $out/*.txt
-    wc -l $out/*.txt
-    #cat $out/*.txt
-
-  done
+  done > $out/testdata.txt
+  
+  wc -l $out/testdata.txt
 }
 
 "$@"
