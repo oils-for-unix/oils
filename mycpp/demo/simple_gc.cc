@@ -3,31 +3,29 @@
 // It's a semi-space collector.  (Later we could add a "large object space",
 // managed by mark-and-sweep after each copy step.)
 //
-// TODO:
+// Design:
 // - Immutable Slab, Sheet, and Str
 // - Mutable List, Dict that point to Slab/Sheet
 //
+// TODO:
 // - Prototype RootPtr<T> for stack roots
 //   - and I guess PtrScope() or something
 //
 // - List.append() can realloc
-// - Hook up alloactors.  new()?
-//   - but Slab and Sheet can't use that.
+// - Dict.set() can realloc
 //
 // - GLOBAL Str* instances should not be copied!
 //   - do they have a special Cell header?
 //     - special tag?
 //   - can they be constexpr?
 
-
 // APIs:
-// - new: for generated code like mycpp/ASDL to use.  Because of the typing
-//   issue?  Automatically deallocated.
-//
-// - malloc() -- for say yajl to use.  It frees its own memory
-//
-// - mylib::Alloc() -- for internal data structures and operator new() to use
-//                     Automatically deallocated
+// - gc_alloc<Foo>(x): an alternative to new Foo(x).  for generated code like
+//   mycpp/ASDL to use.  Automatically deallocated.
+// - mylib::Alloc() -- for Slab and Sheet, and for special types like
+//   Str.  Automatically deallocated.
+// - malloc() -- for say yajl to use.  Manually deallocated.
+// - new/delete -- for other C++ libs to use.  Manually deallocated.
 
 #include <cassert>  // assert()
 #include <cstdarg>  // va_list, etc.
@@ -36,6 +34,7 @@
 #include <cstring>  // memcpy
 #include <cstdlib>  // malloc
 #include <cstddef>  // max_align_t
+#include <utility>  // std::forward
 
 void log(const char* fmt, ...) {
   va_list args;
@@ -204,13 +203,15 @@ template <class T>
 class List : public Cell {
  public:
   void append(T item) {
-    // TODO: check the capacity
+    // TODO: check the Slab/Sheet capacity
     // If it's full, then Alloc() another slab, then memcpy()
     // The old one will be cleaned up by GC.
     assert(0);
   }
 
   int len_;  // container length
+
+  // This sequence may be resized, so it's not in-line.
   union {
     Slab* slab;  // List<int>
     Sheet* sheet;  // List<Str*>
@@ -220,7 +221,15 @@ class List : public Cell {
 template <class K, class V>
 class Dict : public Cell {
  public:
+  void set(K key, V value) {
+    // may resize the dictionary
+    assert(0);
+  }
+
   int len_;  // container length
+
+  // These 3 sequences may be resized "in parallel"
+
   Slab* indices;  // indexed by hash value
   union {
     Slab* keys_slab;  // Dict<int, V>
@@ -236,15 +245,13 @@ class Dict : public Cell {
 // "Constructors"
 //
 
-// TODO:
-// What about ASDL types?
-//
-// Token* tok = alloc<Token>(id, val);
-//
-// Does this cause code bloat?
+// Note: This is NewStr() because of the "flexible array" pattern.
+// I don't think "new Str()" can do that, and placement new would require mycpp
+// to generate 2 statements everywhere.
 
 Str* NewStr(const char* data, int len) {
-  void* p = Alloc(len);  // allocate exactly the right amount
+  // subtract opaque[1].  Alloc() does the alignment.
+  void* p = Alloc(sizeof(Str) - 1 + len);  // allocate exactly the right amount
 
   Str* s = static_cast<Str*>(p);
   s->SetCellLength(len);  // is this right?
@@ -256,6 +263,14 @@ Str* NewStr(const char* data, int len) {
 
 Str* NewStr(const char* data) {
   return NewStr(data, strlen(data));
+}
+
+// Variadic templates
+// https://eli.thegreenplace.net/2014/variadic-templates-in-c/
+template<typename T, typename... Args>
+T *gc_alloc(Args&&... args)
+{
+  return new T(std::forward<Args>(args)...);
 }
 
 //
@@ -293,22 +308,20 @@ int main(int argc, char** argv) {
   PrintSlice(slice1);
 
   auto str1 = NewStr("");
-
-  //auto str2 = new Str("buffer overflow?");
-  //auto str2 = new Str("food");
+  auto str2 = NewStr("one\0two", 7);
 
   log("");
   log("len(str1) = %d", len(str1));
-  //log("len(str2) = %d", len(str2));
+  log("len(str2) = %d", len(str2));
 
-  auto list1 = new List<int>();
-  auto list2 = new List<Str*>();
+  auto list1 = gc_alloc<List<int>>();
+  auto list2 = gc_alloc<List<Str*>>();
 
   log("len(list1) = %d", len(list1));
   log("len(list2) = %d", len(list2));
 
-  auto dict1 = new Dict<int, int>();
-  auto dict2 = new Dict<Str*, Str*>();
+  auto dict1 = gc_alloc<Dict<int, int>>();
+  auto dict2 = gc_alloc<Dict<Str*, Str*>>();
 
   log("len(dict1) = %d", len(dict1));
   log("len(dict2) = %d", len(dict2));
