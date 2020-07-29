@@ -34,7 +34,11 @@
 #include <cstring>  // memcpy
 #include <cstdlib>  // malloc
 #include <cstddef>  // max_align_t
+#include <initializer_list>
+#include <new>      // placement new
 #include <utility>  // std::forward
+
+#include "greatest.h"
 
 void log(const char* fmt, ...) {
   va_list args;
@@ -57,7 +61,7 @@ struct Heap {
   char* from_space_;
   char* to_space_;
 
-  char alloc_pos_;
+  int alloc_pos_;
 
   // how to represent this?
   // femtolisp uses a global pointer to dynamically-allocated growable array,
@@ -160,16 +164,18 @@ class Forwarded : public Cell {
 class Slab : public Cell {
  public:
   Slab() 
-      : opaque_("foobar") {
+      : opaque_("") {
   }
-  char opaque_[8];  // minimum string cell_len_
+  int capacity_;
+  char opaque_[1];  // minimum string cell_len_
 };
 
 // Building block for Dict and List.  Or is this List itself?
 // Note: it's not managed with 'new'?
 class Sheet : public Cell {
  public:
-  Cell* pointers_[4];  // minimum List<Str*> cell_len_
+  int capacity_;
+  Cell* pointers_[1];  // minimum List<Str*> cell_len_
 };
 
 // NOT USED.  This object is too big, and it complicates the GC.
@@ -202,6 +208,27 @@ void PrintSlice(Slice* s) {
 template <class T>
 class List : public Cell {
  public:
+  List() : len_(0) {
+    // TODO: initial slab?
+  }
+
+  List(std::initializer_list<T> init) {
+    // TODO: allocate a new slab with the right size?
+    // Rather than "aligning", it needs to be Sized()
+    // Rather than Alloc(), maybe it's ReAlloc() ?  That encapsulates our size
+    // policy.
+    //
+    // ReAlloc(int size)
+    // ReAlloc(Slab* slab)  // reads capacity from either
+    // ReAlloc(Sheet* slab)
+    //
+    // How do you specialize Sheet or Slab?
+
+    for (T item : init) {
+      //v_.push_back(item);
+    }
+  }
+
   void append(T item) {
     // TODO: check the Slab/Sheet capacity
     // If it's full, then Alloc() another slab, then memcpy()
@@ -270,7 +297,10 @@ Str* NewStr(const char* data) {
 template<typename T, typename... Args>
 T *gc_alloc(Args&&... args)
 {
-  return new T(std::forward<Args>(args)...);
+  void* place = Alloc(sizeof(T));
+
+  // placement new
+  return new (place) T(std::forward<Args>(args)...);
 }
 
 //
@@ -295,10 +325,10 @@ inline int len(const Dict<K, V>* d) {
 // main
 //
 
-int main(int argc, char** argv) {
-  // Should be done once per thread
-  InitHeap();
+// TODO:
+// - Test what happens when a new string goes over the max heap size
 
+TEST str_test() {
   // hm this shouldn't be allocated with 'new'
   // it needs a different interface
   auto slab1 = new Slab();
@@ -310,21 +340,58 @@ int main(int argc, char** argv) {
   auto str1 = NewStr("");
   auto str2 = NewStr("one\0two", 7);
 
-  log("");
-  log("len(str1) = %d", len(str1));
-  log("len(str2) = %d", len(str2));
+  // Make sure they're on the heap
+  int diff1 = reinterpret_cast<char*>(str1) - gHeap.from_space_;
+  int diff2 = reinterpret_cast<char*>(str2) - gHeap.from_space_;
+  ASSERT(diff1 < 1024);
+  ASSERT(diff2 < 1024);
 
+  ASSERT_EQ(0, len(str1));
+  ASSERT_EQ(7, len(str2));
+
+  PASS();
+}
+
+// TODO:
+//
+// - Test that it's on the gcHeap
+// - Test append() creating a new sheet/slab
+// - Test Sheet vs. slab: List<int> vs. List<Str*>
+// - Test what happens append() runs over the max heap size
+//   - how does it trigger a collection?
+
+TEST list_test() {
   auto list1 = gc_alloc<List<int>>();
   auto list2 = gc_alloc<List<Str*>>();
 
   log("len(list1) = %d", len(list1));
   log("len(list2) = %d", len(list2));
 
+  // Make sure they're on the heap
+  int diff1 = reinterpret_cast<char*>(list1) - gHeap.from_space_;
+  int diff2 = reinterpret_cast<char*>(list2) - gHeap.from_space_;
+  ASSERT(diff1 < 1024);
+  ASSERT(diff2 < 1024);
+
+  PASS();
+}
+
+// TODO:
+// - Test set() can resize the dict
+//   - I guess you have to do rehashing?
+
+TEST dict_test() {
   auto dict1 = gc_alloc<Dict<int, int>>();
   auto dict2 = gc_alloc<Dict<Str*, Str*>>();
 
   log("len(dict1) = %d", len(dict1));
   log("len(dict2) = %d", len(dict2));
+
+  // Make sure they're on the heap
+  int diff1 = reinterpret_cast<char*>(dict1) - gHeap.from_space_;
+  int diff2 = reinterpret_cast<char*>(dict2) - gHeap.from_space_;
+  ASSERT(diff1 < 1024);
+  ASSERT(diff2 < 1024);
 
   log("");
 
@@ -340,4 +407,33 @@ int main(int argc, char** argv) {
   char* q = static_cast<char*>(Alloc(9));
   log("p = %p", p);
   log("q = %p", q);
+
+  PASS();
+}
+
+
+TEST handle_test() {
+  // TODO:
+  // Hold on to a handle.  And then trigger GC.
+  // And then assert its integrity?
+
+  PASS();
+}
+
+
+GREATEST_MAIN_DEFS();
+
+int main(int argc, char** argv) {
+  // Should be done once per thread
+  InitHeap();
+
+  GREATEST_MAIN_BEGIN();
+
+  RUN_TEST(str_test);
+  RUN_TEST(list_test);
+  RUN_TEST(dict_test);
+  RUN_TEST(handle_test);
+
+  GREATEST_MAIN_END(); /* display results */
+  return 0;
 }
