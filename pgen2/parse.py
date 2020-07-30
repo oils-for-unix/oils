@@ -186,8 +186,7 @@ class Parser(object):
         """Shift a token.  (Internal)"""
         top = self.stack[-1]
         newnode = PNode(typ, opaque, None)
-        if newnode is not None:
-            top.node.children.append(newnode)
+        top.node.children.append(newnode)
         self.stack[-1].state = newstate
 
     def push(self, typ, opaque, newdfa, newstate):
@@ -203,9 +202,8 @@ class Parser(object):
         """Pop a nonterminal.  (Internal)"""
         top = self.stack.pop()
         newnode = top.node
-        if newnode is not None:
-            if len(self.stack):
-                top2 = self.stack[-1]
-                top2.node.children.append(newnode)
-            else:
-                self.rootnode = newnode
+        if len(self.stack):
+            top2 = self.stack[-1]
+            top2.node.children.append(newnode)
+        else:
+            self.rootnode = newnode
