@@ -107,6 +107,28 @@ void* Alloc(int size) {
   return p;
 }
 
+// Return the size of a resizeable allocation.  For now we just round up by
+// powers of 2. This could be optimized later.  CPython has an interesting
+// policy in listobject.c.
+//
+// https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2
+int NewBlockSize(int n) {
+  // minimum size
+  if (n < 4) {
+    return 4;
+  }
+
+  // TODO: what if int isn't 32 bits?
+  n--;
+  n |= n >> 1;
+  n |= n >> 2;
+  n |= n >> 4;
+  n |= n >> 8;
+  n |= n >> 16;
+  n++;
+  return n;
+}
+
 // TODO: Do copying collection.
 // What's the resizing policy?
 void CollectGarbage() {
@@ -236,6 +258,15 @@ class List : public Cell {
     assert(0);
   }
 
+  void extend(std::initializer_list<T> init) {
+    int n = init.size();
+    log("init.size() = %d", n);
+    for (T item : init) {
+      log("T");
+    }
+    len_ += n;
+  }
+
   int len_;  // container length
 
   // This sequence may be resized, so it's not in-line.
@@ -325,10 +356,7 @@ inline int len(const Dict<K, V>* d) {
 // main
 //
 
-// TODO:
-// - Test what happens when a new string goes over the max heap size
-
-TEST str_test() {
+TEST slice_test() {
   // hm this shouldn't be allocated with 'new'
   // it needs a different interface
   auto slab1 = new Slab();
@@ -337,6 +365,15 @@ TEST str_test() {
 
   PrintSlice(slice1);
 
+  PASS();
+}
+
+// TODO:
+// - Test what happens when a new string goes over the max heap size
+//   - We want to resize the to_space, trigger a GC, and then allocate?  Or is
+//     there something simpler?
+
+TEST str_test() {
   auto str1 = NewStr("");
   auto str2 = NewStr("one\0two", 7);
 
@@ -366,6 +403,21 @@ TEST list_test() {
 
   log("len(list1) = %d", len(list1));
   log("len(list2) = %d", len(list2));
+
+  list1->extend({1,2,3});
+  log("len(list1) = %d", len(list1));
+
+  auto str1 = NewStr("foo");
+  auto str2 = NewStr("bar");
+
+  // This combination is problematic.  Maybe avoid it and then just do
+  // .extend({1, 2, 3}) or something?
+  // https://stackoverflow.com/questions/21573808/using-initializer-lists-with-variadic-templates
+  //auto list3 = gc_alloc<List<int>>({1, 2, 3});
+  //auto list4 = gc_alloc<List<Str*>>({str1, str2});
+
+  //log("len(list3) = %d", len(list3));
+  //log("len(list4) = %d", len(list3));
 
   // Make sure they're on the heap
   int diff1 = reinterpret_cast<char*>(list1) - gHeap.from_space_;
@@ -411,6 +463,22 @@ TEST dict_test() {
   PASS();
 }
 
+class Point {
+ public:
+  Point(int x, int y) : x_(x), y_(y) {
+  }
+  int size() {
+    return x_ + y_;
+  }
+  int x_;
+  int y_;
+};
+
+TEST asdl_test() {
+  auto p = gc_alloc<Point>(3, 4);
+  log("point size = %d", p->size());
+  PASS();
+}
 
 TEST handle_test() {
   // TODO:
@@ -420,6 +488,18 @@ TEST handle_test() {
   PASS();
 }
 
+// TODO: the last one overflows
+int sizes[] = {0, 1, 2, 3, 4, 5, 8, 9, 12, 16, 256, 257, 1 << 30, (1 << 30)+1};
+int nsizes = sizeof(sizes) / sizeof(sizes[0]);
+
+TEST resize_test() {
+  for (int i = 0; i < nsizes; ++i) {
+    int n = sizes[i];
+    log("%d -> %d", n, NewBlockSize(n));
+  }
+
+  PASS();
+}
 
 GREATEST_MAIN_DEFS();
 
@@ -429,10 +509,15 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
+  // don't need this for now
+  RUN_TEST(slice_test);
+
   RUN_TEST(str_test);
   RUN_TEST(list_test);
   RUN_TEST(dict_test);
+  RUN_TEST(asdl_test);
   RUN_TEST(handle_test);
+  RUN_TEST(resize_test);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;
