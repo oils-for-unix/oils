@@ -45,19 +45,9 @@ Yes:
     var myflags = %( --all --long )
     ls @myflags @ARGV
 
-### Explicit Elision of Empty Elements
+### Explicitly Split, Glob, and Omit Empty Args
 
-No:
-
-    local maybe_empty=''
-    cp $maybe_empty other_file $dest  # omitted if empty
-
-Yes:
-
-    var e = ''
-    cp @maybe(e) other_file $dest
-
-### Explicit Splitting
+Oil doesn't split arguments after variable expansion.
 
 No:
 
@@ -73,6 +63,35 @@ Even better:
 
     var packages = %(python-dev gawk)  # array literal
     apt install @packages              # splice array
+
+---
+
+Oil doesn't glob after variable expansion.
+
+No:
+
+    local pat='*.py'
+    echo $pat
+
+
+Yes:
+
+    var pat = '*.py'
+    echo @glob(pat)   # explicit call
+
+---
+
+Oil doesn't omit unquoted words that evaluate to the empty string.
+
+No:
+
+    local e=''
+    cp $e other $dest            # cp gets 2 args, not 3, in sh
+
+Yes:
+
+    var e = ''
+    cp @maybe(e) other $dest     # explicit call
 
 ### Iterate a Number of Times (Split Command Sub)
 
@@ -91,20 +110,6 @@ Yes:
     }
 
 Note that `{1..3}` works in bash and Oil, but the numbers must be constant.
-
-
-### Explicit Dynamic Globbing
-
-No:
-
-    local pat='*.py'
-    echo $pat
-
-
-Yes:
-
-    var pat = '*.py'
-    echo @glob(pat)
 
 
 ## Avoid Ad Hoc Parsing and Splitting
@@ -186,7 +191,7 @@ Yes:
 
 ## Use Long Flags on the `read` builtin
 
-### Read A Line
+### Read a Line
 
 No:
 
@@ -212,7 +217,7 @@ Yes:
 
 TODO: implement this.
 
-## Use Blocks To Save and Restore Context
+## Use Blocks to Save and Restore Context
 
 ### Do Something In Another Directory
 
@@ -369,6 +374,8 @@ In Oil, you have to pass params explicitly:
       echo $foo_var  # error
     }
 
+TODO: Implement this.
+
 ### If and `errexit`
 
 Bug in POSIX shell:
@@ -459,25 +466,29 @@ Yes:
 
 ### Initialize and Assign Arrays
 
+Container literals in Oil look like `%(one two)` and `%{key: 'value'}`.
+
 No:
 
     local -a myarray=(one two three)
     myarray[3]='THREE'
-
-    local -A myassoc=(['key']=value ['k2']=v2)
-    myassoc['key']=V
 
 Yes:
 
     var myarray = %(one two three)
     setvar myarray[3] = 'THREE'
 
+No:
+
+    local -A myassoc=(['key']=value ['k2']=v2)
+    myassoc['key']=V
+
+
+Yes:
+
     # keys don't need to be quoted
     var myassoc = %{key: 'value', k2: 'v2'}
     setvar myassoc['key'] = 'V'
-
-Container literals start with the `%` sigil.  (TODO: Implement this.  It's `@`
-right now.)
 
 ### Expressions on Arrays
 
@@ -612,6 +623,39 @@ Style note: Prefer `test` to `[`, because idiomatic Oil code doesn't use
 "puns".
 
 TODO: implement this.
+
+### Don't use `&&`
+
+Because `errexit` is on in Oil, it's implicit.
+
+No:
+
+    mkdir /tmp/dest && cp foo /tmp/destj
+
+Yes:
+
+    mkdir /tmp/dest
+    cp foo /tmp/dest
+
+### Use `catch` to avoid Broken `errexit` When Using `||` and `!`
+
+No:
+
+    # Bad POSIX behavior results in ignored errors
+    set -o errexit
+
+    myfunc || die "failed"  # Oil's strict_errexit disallows this
+    ! myfunc                # and this
+
+Yes:
+
+    # Oil respects errors, but catches at top level
+    set -o errexit
+
+    catch myfunc || die "failed"
+    ! catch myfunc
+
+TODO: Implement this.
 
 ### Source Files and Namespaces
 
