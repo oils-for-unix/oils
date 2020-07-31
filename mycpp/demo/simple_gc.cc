@@ -4,17 +4,12 @@
 // managed by mark-and-sweep after each copy step.)
 //
 // Design:
-// - Immutable Slab, Sheet, and Str
-// - Mutable List, Dict that point to Slab/Sheet
+// - Immutable Slab and Str (difference: Str has a hash for quick lookup?)
+// - Mutable List, Dict that point to Slab
 //   - List::append() and extend() can realloc
 //   - Dict::set() can realloc and rehash
 //
 // TODO:
-// - Figure out Slab vs. Sheet.
-//   - Should it really be Slab<T> and then the constructor calls a specialized
-//     function if it's a pointer?  It sets the "Cell" header if so.
-//     - so then you don't have to do the opaque_ math
-//
 // - Prototype RootPtr<T> for stack roots
 //   - and I guess PtrScope() or something
 //
@@ -29,8 +24,7 @@
 //   An alternative to new Foo(x).  mycpp/ASDL should generate these calls.
 //   Automatically deallocated.
 // - mylib::Alloc() 
-//   For Slab and Sheet, and for special types like Str.  Automatically
-//   deallocated.
+//   For Slab, and for special types like Str.  Automatically deallocated.
 // - malloc() -- for say yajl to use.  Manually deallocated.
 // - new/delete -- for other C++ libs to use.  Manually deallocated.
 
@@ -190,7 +184,7 @@ class Cell {
   // How to trace fields in this object.
   union {
     // # bytes to copy, or # bytes to scan?
-    // for Sheet, which is used by List<Str*> and Dict<Str*, Str*>
+    // for Slab, which is used by List<Str*> and Dict<Str*, Str*>
     how_t cell_len_;
     how_t field_mask; // last 1 bit determines length
                       // so maximum 31 fields?
@@ -203,40 +197,45 @@ class Forwarded : public Cell {
 };
 
 // Opaque slab.  e.g. for String data
+template <typename T>
 class Slab : public Cell {
  public:
   Slab(int capacity) : capacity_(capacity) {
   }
   int capacity_;
-  char opaque_[1];  // minimum string cell_len_
+  T items_[1];  // minimum string cell_len_
 };
 
-// don't include opaque_[1]
+// don't include items_[1]
 const int kSlabHeaderSize = sizeof(Cell) + sizeof(int);
 
-// Building block for Dict and List.  Or is this List itself?
-// Note: it's not managed with 'new'?
-class Sheet : public Cell {
- public:
-  int capacity_;
-  Cell* pointers_[1];  // minimum List<Str*> cell_len_
-};
+template <typename T>
+Slab<T>* NewSlab(int capacity) {
+  int cell_len = kSlabHeaderSize + capacity;
+  void* place = Alloc(cell_len);
+  auto slab = new (place) Slab<T>(capacity);  // placement new
+  slab->SetCellLength(capacity);
+  return slab;
+}
 
 // NOT USED.  This object is too big, and it complicates the GC.
 class Slice : public Cell {
  public:
-  Slice(Slab* slab, int begin, int end)
+  Slice(Slab<int>* slab, int begin, int end)
       : begin_(begin), end_(end), slab_(slab) {
   }
   int begin_;
   int end_;
   int hash_;
   // Note: later this can be an atom_id
-  Slab* slab_;
+  Slab<int>* slab_;
 };
 
 class Str : public Cell {
  public:
+  // Note: shouldn't be called directly.  Call NewStr().
+  Str(int len) : len_(len) {
+  }
   int len_;
   int unique_id_;  // index into intern table
   char opaque_[1];  // flexible array
@@ -245,42 +244,29 @@ class Str : public Cell {
 const int kStrHeaderSize = sizeof(Cell) + sizeof(int) + sizeof(int);
 
 
+#if 0
 void PrintSlice(Slice* s) {
   char* data = s->slab_->opaque_;
   char* p = data + s->begin_;
   fwrite(p, 1, s->end_ - s->begin_, stdout);
   puts("");
 }
+#endif
 
 template <class T>
 class List : public Cell {
  public:
   List() : len_(0), slab_(nullptr) {
-    // TODO: initial slab?
   }
 
   List(std::initializer_list<T> init) {
-    // TODO: allocate a new slab with the right size?
-    // Rather than "aligning", it needs to be Sized()
-    // Rather than Alloc(), maybe it's ReAlloc() ?  That encapsulates our size
-    // policy.
-    //
-    // ReAlloc(int size)
-    // ReAlloc(Slab* slab)  // reads capacity from either
-    // ReAlloc(Sheet* slab)
-    //
-    // How do you specialize Sheet or Slab?
-
-    for (T item : init) {
-      //v_.push_back(item);
-    }
+    extend(init);
   }
 
   // Implements L[i]
   T index(int i) {
     if (i < len_) {
-      char* addr = slab_->opaque_ + i * sizeof(T);
-      return *reinterpret_cast<T*>(addr);
+      return slab_->items_[i];
     } else {
       assert(0);  // Out of bounds
     }
@@ -288,10 +274,7 @@ class List : public Cell {
 
   // Implements L[i] = item
   void set(int i, T item) {
-    char* addr = slab_->opaque_ + i * sizeof(T);
-    //log("setting address %p", addr);
-    auto p = reinterpret_cast<T*>(addr);
-    *p = item;
+    slab_->items_[i] = item;
   }
 
   // Ensure that there's space for a number of items
@@ -300,29 +283,28 @@ class List : public Cell {
     if (slab_ == nullptr) {
       int capacity = NewBlockSize(n * sizeof(T));
       void* place = Alloc(kSlabHeaderSize + capacity);
-      slab_ = new (place) Slab(capacity);  // placement new
+      slab_ = new (place) Slab<T>(capacity);  // placement new
 
     } else if (len_ + n >= slab_->capacity_) {
       int new_len = len_ + n;
       int new_cap = NewBlockSize(new_len * sizeof(T));
       void* place = Alloc(kSlabHeaderSize + new_cap);
-      auto new_slab = new (place) Slab(new_cap);
+      auto new_slab = new (place) Slab<T>(new_cap);
       //log("Copying %d bytes", len_ * sizeof(T));
-      //log("slab %d %d %d", slab_->opaque_[0], slab_->opaque_[4], slab_->opaque_[8]);
-      memcpy(new_slab->opaque_, slab_->opaque_, len_ * sizeof(T));
+      memcpy(new_slab->items_, slab_->items_, len_ * sizeof(T));
       slab_ = new_slab;
     }
     // Otherwise, there's enough capacity
   }
 
-  // append a single element at the end
+  // Append a single element to this list
   void append(T item) {
     reserve(len_ + 1);
     set(len_, item);
     ++len_;
   }
 
-  // extend with multiple elements.  TODO: overload to take a List<> ?
+  // Extend this list with multiple elements.  TODO: overload to take a List<> ?
   void extend(std::initializer_list<T> init) {
     int n = init.size();
 
@@ -334,22 +316,18 @@ class List : public Cell {
       ++i;
     }
 
-    //log("extend() slab %d %d %d", slab_->opaque_[0], slab_->opaque_[4], slab_->opaque_[8]);
     len_ += n;
   }
 
   int len_;  // container length
 
-  // This sequence may be resized, so it's not in-line.
-  union {
-    Slab* slab_;  // List<int>
-    Sheet* sheet_;  // List<Str*>
-  };
+  // The container may be resized, so this field isn't in-line.
+  Slab<T>* slab_;
 };
 
 
-template <class V>
-int find_by_key(Slab* keys_slab_, Slab* values_slab_, int len, int key) {
+template <typename K, typename V>
+int find_by_key(Slab<K>* keys_slab_, Slab<V>* values_slab_, int len, int key) {
   assert(0);
 
   // TODO: linear search for key up to "len" entries, then return i
@@ -376,11 +354,8 @@ class Dict : public Cell {
       int capacity = NewBlockSize(n);
       assert(values_slab_ == nullptr);
 
-      void* p1 = Alloc(kSlabHeaderSize + capacity);
-      keys_slab_ = new (p1) Slab(capacity);  // placement new
-
-      void* p2 = Alloc(kSlabHeaderSize + capacity);
-      values_slab_ = new (p2) Slab(capacity);  // placement new
+      keys_slab_ = NewSlab<K>(capacity);
+      values_slab_ = NewSlab<V>(capacity);
 
     } else if (keys_slab_->capacity_ < n) {
       // TODO: resize and REHASH every entry.
@@ -395,8 +370,7 @@ class Dict : public Cell {
     if (pos == -1) {
       assert(0);
     } else {
-      int offset = pos * sizeof(V);
-      return values_slab_->opaque_[offset];
+      return values_slab_->items_[pos];
     }
   }
 
@@ -414,15 +388,9 @@ class Dict : public Cell {
 
   // These 3 sequences may be resized "in parallel"
 
-  Slab* indices;  // indexed by hash value
-  union {
-    Slab* keys_slab_;  // Dict<int, V>
-    Sheet* keys_sheet_;  // Dict<Str*, V>
-  };
-  union {
-    Slab* values_slab_;  // Dict<K, int>
-    Sheet* values_sheet_;  // Dict<K, Str*>
-  };
+  Slab<int>* indices;  // indexed by hash value
+  Slab<K>* keys_slab_;  // Dict<int, V>
+  Slab<V>* values_slab_;  // Dict<K, int>
 
  private:
   // returns the position in the array
@@ -440,13 +408,11 @@ class Dict : public Cell {
 // to generate 2 statements everywhere.
 
 Str* NewStr(const char* data, int len) {
-  // subtract opaque[1].  Alloc() does the alignment.
-  void* p = Alloc(kStrHeaderSize + len);  // allocate exactly the right amount
-
-  Str* s = static_cast<Str*>(p);
-  s->SetCellLength(len);  // is this right?
-  s->len_ = len;
+  int cell_len = kStrHeaderSize + len;
+  void* place = Alloc(cell_len);  // immutable, so allocate exactly this amount
+  auto s = new (place) Str(len);
   memcpy(s->opaque_, data, len);
+  s->SetCellLength(cell_len);  // is this right?
 
   return s;
 }
@@ -512,8 +478,6 @@ TEST str_test() {
 
 // TODO:
 //
-// - Test append() creating a new sheet/slab
-// - Test Sheet vs. slab: List<int> vs. List<Str*>
 // - Test what happens append() runs over the max heap size
 //   - how does it trigger a collection?
 
