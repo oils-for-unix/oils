@@ -429,6 +429,10 @@ TEST test_list_funcs() {
   PASS();
 }
 
+void ListFunc(std::initializer_list<Str*> init) {
+  log("init.size() = %d", init.size());
+}
+
 TEST test_list_iters() {
   log("  forward iteration over list");
   auto ints = new List<int>({1, 2, 3});
@@ -442,6 +446,10 @@ TEST test_list_iters() {
     int x = it.Value();
     log("x = %d", x);
   }
+
+  // hm std::initializer_list is "first class"
+  auto strs = {new Str("foo"), new Str("bar")};
+  ListFunc(strs);
 
   PASS();
 }

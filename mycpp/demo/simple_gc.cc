@@ -107,6 +107,17 @@ void* Alloc(int size) {
   return p;
 }
 
+// Variadic templates
+// https://eli.thegreenplace.net/2014/variadic-templates-in-c/
+template<typename T, typename... Args>
+T *gc_alloc(Args&&... args)
+{
+  void* place = Alloc(sizeof(T));
+
+  // placement new
+  return new (place) T(std::forward<Args>(args)...);
+}
+
 // Return the size of a resizeable allocation.  For now we just round up by
 // powers of 2. This could be optimized later.  CPython has an interesting
 // policy in listobject.c.
@@ -185,12 +196,14 @@ class Forwarded : public Cell {
 // Opaque slab.  e.g. for String data
 class Slab : public Cell {
  public:
-  Slab() 
-      : opaque_("") {
+  Slab(int capacity) : capacity_(capacity) {
   }
   int capacity_;
   char opaque_[1];  // minimum string cell_len_
 };
+
+// don't include opaque_[1]
+const int kSlabHeaderSize = sizeof(int);
 
 // Building block for Dict and List.  Or is this List itself?
 // Note: it's not managed with 'new'?
@@ -230,7 +243,7 @@ void PrintSlice(Slice* s) {
 template <class T>
 class List : public Cell {
  public:
-  List() : len_(0) {
+  List() : len_(0), slab_(nullptr) {
     // TODO: initial slab?
   }
 
@@ -252,27 +265,74 @@ class List : public Cell {
   }
 
   void append(T item) {
-    // TODO: check the Slab/Sheet capacity
-    // If it's full, then Alloc() another slab, then memcpy()
-    // The old one will be cleaned up by GC.
+    // TODO:
+    //
+    // This can mutate the slab_ / mempcy()
+    // ensure(len_ + 1);
+
+    set(len_, item);
+    ++len_;
+
     assert(0);
   }
 
+  // TODO:
+  // should be reserve() and then append / extend()?
+  // or ensure(...)
+
   void extend(std::initializer_list<T> init) {
     int n = init.size();
-    log("init.size() = %d", n);
-    for (T item : init) {
-      log("T");
+    //log("");
+    //log("Extending by %d items", n);
+
+    if (slab_ == nullptr) {  // empty
+      int capacity = NewBlockSize(n * sizeof(T));
+      void* place = Alloc(kSlabHeaderSize + capacity);
+      slab_ = new (place) Slab(capacity);  // placement new
+
+    } else if (len_ + n >= slab_->capacity_) {
+      int new_len = len_ + n;
+      int new_cap = NewBlockSize(new_len * sizeof(T));
+      void* place = Alloc(kSlabHeaderSize + new_cap);
+      auto new_slab = new (place) Slab(new_cap);
+      //log("Copying %d bytes", len_ * sizeof(T));
+      //log("slab %d %d %d", slab_->opaque_[0], slab_->opaque_[4], slab_->opaque_[8]);
+      memcpy(new_slab->opaque_, slab_->opaque_, len_ * sizeof(T));
+      slab_ = new_slab;
     }
+
+    int i = len_;
+    for (auto item : init) {
+      set(i, item);
+      ++i;
+    }
+
+    //log("extend() slab %d %d %d", slab_->opaque_[0], slab_->opaque_[4], slab_->opaque_[8]);
     len_ += n;
+  }
+
+  void set(int i, T item) {
+    char* addr = slab_->opaque_ + i * sizeof(T);
+    //log("setting address %p", addr);
+    auto p = reinterpret_cast<T*>(addr);
+    *p = item;
+  }
+
+  T index(int i) {
+    if (i < len_) {
+      char* addr = slab_->opaque_ + i * sizeof(T);
+      return *reinterpret_cast<T*>(addr);
+    } else {
+      assert(0);  // Out of bounds
+    }
   }
 
   int len_;  // container length
 
   // This sequence may be resized, so it's not in-line.
   union {
-    Slab* slab;  // List<int>
-    Sheet* sheet;  // List<Str*>
+    Slab* slab_;  // List<int>
+    Sheet* sheet_;  // List<Str*>
   };
 };
 
@@ -290,12 +350,12 @@ class Dict : public Cell {
 
   Slab* indices;  // indexed by hash value
   union {
-    Slab* keys_slab;  // Dict<int, V>
-    Sheet* keys_sheet;  // Dict<Str*, V>
+    Slab* keys_slab_;  // Dict<int, V>
+    Sheet* keys_sheet_;  // Dict<Str*, V>
   };
   union {
-    Slab* values_slab;  // Dict<K, int>
-    Sheet* values_sheet;  // Dict<K, Str*>
+    Slab* values_slab_;  // Dict<K, int>
+    Sheet* values_sheet_;  // Dict<K, Str*>
   };
 };
 
@@ -323,17 +383,6 @@ Str* NewStr(const char* data) {
   return NewStr(data, strlen(data));
 }
 
-// Variadic templates
-// https://eli.thegreenplace.net/2014/variadic-templates-in-c/
-template<typename T, typename... Args>
-T *gc_alloc(Args&&... args)
-{
-  void* place = Alloc(sizeof(T));
-
-  // placement new
-  return new (place) T(std::forward<Args>(args)...);
-}
-
 //
 // Functions
 //
@@ -359,11 +408,11 @@ inline int len(const Dict<K, V>* d) {
 TEST slice_test() {
   // hm this shouldn't be allocated with 'new'
   // it needs a different interface
+#if 0
   auto slab1 = new Slab();
-
   auto slice1 = new Slice(slab1, 2, 5);
-
   PrintSlice(slice1);
+#endif
 
   PASS();
 }
@@ -391,7 +440,6 @@ TEST str_test() {
 
 // TODO:
 //
-// - Test that it's on the gcHeap
 // - Test append() creating a new sheet/slab
 // - Test Sheet vs. slab: List<int> vs. List<Str*>
 // - Test what happens append() runs over the max heap size
@@ -401,14 +449,43 @@ TEST list_test() {
   auto list1 = gc_alloc<List<int>>();
   auto list2 = gc_alloc<List<Str*>>();
 
-  log("len(list1) = %d", len(list1));
-  log("len(list2) = %d", len(list2));
+  ASSERT_EQ(0, len(list1));
+  ASSERT_EQ(0, len(list2));
 
-  list1->extend({1,2,3});
-  log("len(list1) = %d", len(list1));
+  // Make sure they're on the heap
+  int diff1 = reinterpret_cast<char*>(list1) - gHeap.from_space_;
+  int diff2 = reinterpret_cast<char*>(list2) - gHeap.from_space_;
+  ASSERT(diff1 < 1024);
+  ASSERT(diff2 < 1024);
+
+  list1->extend({11, 22, 33});
+  ASSERT_EQ_FMT(3, len(list1), "%d");
+
+  ASSERT_EQ_FMT(11, list1->index(0), "%d");
+  ASSERT_EQ_FMT(22, list1->index(1), "%d");
+  ASSERT_EQ_FMT(33, list1->index(2), "%d");
+
+  list1->extend({44, 55, 66, 77});
+  ASSERT_EQ_FMT(7, len(list1), "%d");
+
+  ASSERT_EQ_FMT(11, list1->index(0), "%d");
+  ASSERT_EQ_FMT(22, list1->index(1), "%d");
+  ASSERT_EQ_FMT(33, list1->index(2), "%d");
+  ASSERT_EQ_FMT(44, list1->index(3), "%d");
+  ASSERT_EQ_FMT(55, list1->index(4), "%d");
+  ASSERT_EQ_FMT(66, list1->index(5), "%d");
+  ASSERT_EQ_FMT(77, list1->index(6), "%d");
+
+  int d_slab = reinterpret_cast<char*>(list1->slab_) - gHeap.from_space_;
+  ASSERT(d_slab < 1024);
+
+  log("list1_ = %p", list1);
+  log("list1->slab_ = %p", list1->slab_);
 
   auto str1 = NewStr("foo");
+  log("str1 = %p", str1);
   auto str2 = NewStr("bar");
+  log("str2 = %p", str2);
 
   // This combination is problematic.  Maybe avoid it and then just do
   // .extend({1, 2, 3}) or something?
@@ -418,12 +495,6 @@ TEST list_test() {
 
   //log("len(list3) = %d", len(list3));
   //log("len(list4) = %d", len(list3));
-
-  // Make sure they're on the heap
-  int diff1 = reinterpret_cast<char*>(list1) - gHeap.from_space_;
-  int diff2 = reinterpret_cast<char*>(list2) - gHeap.from_space_;
-  ASSERT(diff1 < 1024);
-  ASSERT(diff2 < 1024);
 
   PASS();
 }
