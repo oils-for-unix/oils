@@ -148,6 +148,13 @@ void CollectGarbage() {
 
 namespace Tag {
   const int Forwarded = 1;
+
+  // Fixed size headers.  Which means they use bitmaps?
+  const int FixedSize = 2;
+
+  // Variable length.
+  const int OpaqueSlab = 4;  // copy but don't scan
+  const int ScannedSlab = 5;  // copy and scan
 }
 
 // This forces an 8-byte Cell header.  It's better not to have special cases
@@ -171,9 +178,11 @@ class Cell {
   }
   Cell(int tag) : tag(tag), cell_len_(0) {
   }
+  Cell(int tag, int cell_len) : tag(tag), cell_len_(cell_len) {
+  }
 
-  void SetCellLength(int len) {
-    this->cell_len_ = cell_len_;
+  void SetCellLength(int cell_len) {
+    this->cell_len_ = cell_len;
   }
 
   uint16_t tag;  // ASDL tags are 0 to 255
@@ -196,25 +205,36 @@ class Forwarded : public Cell {
   Cell* new_location;
 };
 
+template <typename T>
+void InitSlabCell(Cell* cell) {
+  //log("SCANNED");
+  cell->tag = Tag::ScannedSlab;
+}
+
+template <>
+void InitSlabCell<int>(Cell* cell) {
+  //log("OPAQUE");
+  cell->tag = Tag::OpaqueSlab;
+}
+
+// don't include items_[1]
+const int kSlabHeaderSize = sizeof(Cell);
+
 // Opaque slab.  e.g. for String data
 template <typename T>
 class Slab : public Cell {
  public:
-  Slab(int capacity) : capacity_(capacity) {
+  Slab(int cell_len) : Cell(0, cell_len) {
+    InitSlabCell<T>(this);
   }
-  int capacity_;
   T items_[1];  // minimum string cell_len_
 };
 
-// don't include items_[1]
-const int kSlabHeaderSize = sizeof(Cell) + sizeof(int);
-
 template <typename T>
-Slab<T>* NewSlab(int capacity) {
-  int cell_len = kSlabHeaderSize + capacity;
+Slab<T>* NewSlab(int len) {
+  int cell_len = NewBlockSize(kSlabHeaderSize + len * sizeof(T));
   void* place = Alloc(cell_len);
-  auto slab = new (place) Slab<T>(capacity);  // placement new
-  slab->SetCellLength(capacity);
+  auto slab = new (place) Slab<T>(cell_len);  // placement new
   return slab;
 }
 
@@ -253,13 +273,16 @@ void PrintSlice(Slice* s) {
 }
 #endif
 
-template <class T>
+template <typename T>
 class List : public Cell {
  public:
-  List() : len_(0), slab_(nullptr) {
+  // TODO: we need a bitmap
+  List() : Cell(Tag::FixedSize), len_(0), slab_(nullptr) {
+    SetCellLength(sizeof(List<T>));  // So we can copy it
   }
 
-  List(std::initializer_list<T> init) {
+  List(std::initializer_list<T> init) : Cell(Tag::FixedSize) {
+    SetCellLength(sizeof(List<T>));  // So we can copy it
     extend(init);
   }
 
@@ -279,18 +302,20 @@ class List : public Cell {
 
   // Ensure that there's space for a number of items
   void reserve(int n) {
+    if (slab_) {
+      log("reserve capacity = %d, n = %d", capacity_, n);
+    }
+
     // TODO: initialize in constructor?  But many lists are empty!
     if (slab_ == nullptr) {
-      int capacity = NewBlockSize(n * sizeof(T));
-      void* place = Alloc(kSlabHeaderSize + capacity);
-      slab_ = new (place) Slab<T>(capacity);  // placement new
+      slab_ = NewSlab<T>(n);
 
-    } else if (len_ + n >= slab_->capacity_) {
+    } else if (len_ + n >= capacity_) {
       int new_len = len_ + n;
-      int new_cap = NewBlockSize(new_len * sizeof(T));
-      void* place = Alloc(kSlabHeaderSize + new_cap);
-      auto new_slab = new (place) Slab<T>(new_cap);
-      //log("Copying %d bytes", len_ * sizeof(T));
+      auto new_slab = NewSlab<T>(new_len);
+
+      log("Copying %d bytes", len_ * sizeof(T));
+
       memcpy(new_slab->items_, slab_->items_, len_ * sizeof(T));
       slab_ = new_slab;
     }
@@ -319,7 +344,8 @@ class List : public Cell {
     len_ += n;
   }
 
-  int len_;  // container length
+  int len_;  // number of entries
+  int capacity_;  // max entries before resizing
 
   // The container may be resized, so this field isn't in-line.
   Slab<T>* slab_;
@@ -357,7 +383,7 @@ class Dict : public Cell {
       keys_slab_ = NewSlab<K>(capacity);
       values_slab_ = NewSlab<V>(capacity);
 
-    } else if (keys_slab_->capacity_ < n) {
+    } else if (capacity_ < n) {
       // TODO: resize and REHASH every entry.
       assert(0);
 
@@ -384,7 +410,8 @@ class Dict : public Cell {
     assert(0);
   }
 
-  int len_;  // container length
+  int len_;  // number of entries
+  int capacity_;  // max number before resizing
 
   // These 3 sequences may be resized "in parallel"
 
@@ -488,6 +515,12 @@ TEST list_test() {
   ASSERT_EQ(0, len(list1));
   ASSERT_EQ(0, len(list2));
 
+  ASSERT_EQ_FMT(Tag::FixedSize, list1->tag, "%d");
+  ASSERT_EQ_FMT(Tag::FixedSize, list2->tag, "%d");
+
+  ASSERT_EQ_FMT(24, list1->cell_len_, "%d");
+  ASSERT_EQ_FMT(24, list2->cell_len_, "%d");
+
   // Make sure they're on the heap
   int diff1 = reinterpret_cast<char*>(list1) - gHeap.from_space_;
   int diff2 = reinterpret_cast<char*>(list2) - gHeap.from_space_;
@@ -496,13 +529,21 @@ TEST list_test() {
 
   list1->extend({11, 22, 33});
   ASSERT_EQ_FMT(3, len(list1), "%d");
+  ASSERT_EQ_FMT(Tag::OpaqueSlab, list1->slab_->tag, "%d");
+
+  // 8 byte header + 3*4 == 8 + 12 == 20, rounded up to power of 2
+  ASSERT_EQ_FMT(32, list1->slab_->cell_len_, "%d");
 
   ASSERT_EQ_FMT(11, list1->index(0), "%d");
   ASSERT_EQ_FMT(22, list1->index(1), "%d");
   ASSERT_EQ_FMT(33, list1->index(2), "%d");
 
+  log("extending");
   list1->extend({44, 55, 66, 77});
   ASSERT_EQ_FMT(7, len(list1), "%d");
+
+  // 8 bytes header + 7*4 == 8 + 28 == 36, rounded up to power of 2
+  ASSERT_EQ_FMT(64, list1->slab_->cell_len_, "%d");
 
   ASSERT_EQ_FMT(11, list1->index(0), "%d");
   ASSERT_EQ_FMT(22, list1->index(1), "%d");
