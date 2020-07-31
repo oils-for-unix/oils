@@ -6,24 +6,31 @@
 // Design:
 // - Immutable Slab, Sheet, and Str
 // - Mutable List, Dict that point to Slab/Sheet
+//   - List::append() and extend() can realloc
+//   - Dict::set() can realloc and rehash
 //
 // TODO:
+// - Figure out Slab vs. Sheet.
+//   - Should it really be Slab<T> and then the constructor calls a specialized
+//     function if it's a pointer?  It sets the "Cell" header if so.
+//     - so then you don't have to do the opaque_ math
+//
 // - Prototype RootPtr<T> for stack roots
 //   - and I guess PtrScope() or something
-//
-// - List.append() can realloc
-// - Dict.set() can realloc
 //
 // - GLOBAL Str* instances should not be copied!
 //   - do they have a special Cell header?
 //     - special tag?
 //   - can they be constexpr?
 
-// APIs:
-// - gc_alloc<Foo>(x): an alternative to new Foo(x).  for generated code like
-//   mycpp/ASDL to use.  Automatically deallocated.
-// - mylib::Alloc() -- for Slab and Sheet, and for special types like
-//   Str.  Automatically deallocated.
+// Memory allocation APIs:
+//
+// - gc_alloc<Foo>(x)
+//   An alternative to new Foo(x).  mycpp/ASDL should generate these calls.
+//   Automatically deallocated.
+// - mylib::Alloc() 
+//   For Slab and Sheet, and for special types like Str.  Automatically
+//   deallocated.
 // - malloc() -- for say yajl to use.  Manually deallocated.
 // - new/delete -- for other C++ libs to use.  Manually deallocated.
 
@@ -182,7 +189,9 @@ class Cell {
 
   // How to trace fields in this object.
   union {
-    how_t cell_len_;  // # bytes to copy, or # bytes to scan?
+    // # bytes to copy, or # bytes to scan?
+    // for Sheet, which is used by List<Str*> and Dict<Str*, Str*>
+    how_t cell_len_;
     how_t field_mask; // last 1 bit determines length
                       // so maximum 31 fields?
   };
@@ -203,7 +212,7 @@ class Slab : public Cell {
 };
 
 // don't include opaque_[1]
-const int kSlabHeaderSize = sizeof(int);
+const int kSlabHeaderSize = sizeof(Cell) + sizeof(int);
 
 // Building block for Dict and List.  Or is this List itself?
 // Note: it's not managed with 'new'?
@@ -232,6 +241,9 @@ class Str : public Cell {
   int unique_id_;  // index into intern table
   char opaque_[1];  // flexible array
 };
+
+const int kStrHeaderSize = sizeof(Cell) + sizeof(int) + sizeof(int);
+
 
 void PrintSlice(Slice* s) {
   char* data = s->slab_->opaque_;
@@ -264,28 +276,28 @@ class List : public Cell {
     }
   }
 
-  void append(T item) {
-    // TODO:
-    //
-    // This can mutate the slab_ / mempcy()
-    // ensure(len_ + 1);
-
-    set(len_, item);
-    ++len_;
-
-    assert(0);
+  // Implements L[i]
+  T index(int i) {
+    if (i < len_) {
+      char* addr = slab_->opaque_ + i * sizeof(T);
+      return *reinterpret_cast<T*>(addr);
+    } else {
+      assert(0);  // Out of bounds
+    }
   }
 
-  // TODO:
-  // should be reserve() and then append / extend()?
-  // or ensure(...)
+  // Implements L[i] = item
+  void set(int i, T item) {
+    char* addr = slab_->opaque_ + i * sizeof(T);
+    //log("setting address %p", addr);
+    auto p = reinterpret_cast<T*>(addr);
+    *p = item;
+  }
 
-  void extend(std::initializer_list<T> init) {
-    int n = init.size();
-    //log("");
-    //log("Extending by %d items", n);
-
-    if (slab_ == nullptr) {  // empty
+  // Ensure that there's space for a number of items
+  void reserve(int n) {
+    // TODO: initialize in constructor?  But many lists are empty!
+    if (slab_ == nullptr) {
       int capacity = NewBlockSize(n * sizeof(T));
       void* place = Alloc(kSlabHeaderSize + capacity);
       slab_ = new (place) Slab(capacity);  // placement new
@@ -300,6 +312,21 @@ class List : public Cell {
       memcpy(new_slab->opaque_, slab_->opaque_, len_ * sizeof(T));
       slab_ = new_slab;
     }
+    // Otherwise, there's enough capacity
+  }
+
+  // append a single element at the end
+  void append(T item) {
+    reserve(len_ + 1);
+    set(len_, item);
+    ++len_;
+  }
+
+  // extend with multiple elements.  TODO: overload to take a List<> ?
+  void extend(std::initializer_list<T> init) {
+    int n = init.size();
+
+    reserve(len_ + n);
 
     int i = len_;
     for (auto item : init) {
@@ -311,22 +338,6 @@ class List : public Cell {
     len_ += n;
   }
 
-  void set(int i, T item) {
-    char* addr = slab_->opaque_ + i * sizeof(T);
-    //log("setting address %p", addr);
-    auto p = reinterpret_cast<T*>(addr);
-    *p = item;
-  }
-
-  T index(int i) {
-    if (i < len_) {
-      char* addr = slab_->opaque_ + i * sizeof(T);
-      return *reinterpret_cast<T*>(addr);
-    } else {
-      assert(0);  // Out of bounds
-    }
-  }
-
   int len_;  // container length
 
   // This sequence may be resized, so it's not in-line.
@@ -336,11 +347,66 @@ class List : public Cell {
   };
 };
 
+
+template <class V>
+int find_by_key(Slab* keys_slab_, Slab* values_slab_, int len, int key) {
+  assert(0);
+
+  // TODO: linear search for key up to "len" entries, then return i
+
+#if 0 
+  int n = items.size();
+  for (int i = 0; i < n; ++i) {
+    if (items[i].first == key) {
+      return i;
+    }
+  }
+  return -1;
+#endif
+}
+
 template <class K, class V>
 class Dict : public Cell {
  public:
+  Dict() : len_(0), keys_slab_(nullptr), values_slab_(nullptr) {
+  }
+
+  void reserve(int n) {
+    if (keys_slab_ == nullptr) {
+      int capacity = NewBlockSize(n);
+      assert(values_slab_ == nullptr);
+
+      void* p1 = Alloc(kSlabHeaderSize + capacity);
+      keys_slab_ = new (p1) Slab(capacity);  // placement new
+
+      void* p2 = Alloc(kSlabHeaderSize + capacity);
+      values_slab_ = new (p2) Slab(capacity);  // placement new
+
+    } else if (keys_slab_->capacity_ < n) {
+      // TODO: resize and REHASH every entry.
+      assert(0);
+
+    }
+  }
+
+  // d[key] in Python: raises KeyError if not found
+  V index(K key) {
+    int pos = find(key);
+    if (pos == -1) {
+      assert(0);
+    } else {
+      int offset = pos * sizeof(V);
+      return values_slab_->opaque_[offset];
+    }
+  }
+
+  // Implements d[k] = v.  May resize the dictionary.
   void set(K key, V value) {
-    // may resize the dictionary
+    reserve(len_ + 1);
+
+    int i = find_by_key(key);
+
+    // TODO: rehashing
     assert(0);
   }
 
@@ -357,6 +423,12 @@ class Dict : public Cell {
     Slab* values_slab_;  // Dict<K, int>
     Sheet* values_sheet_;  // Dict<K, Str*>
   };
+
+ private:
+  // returns the position in the array
+  int find(K key) {
+    return find_by_key(keys_slab_, values_slab_, len_, key);
+  }
 };
 
 //
@@ -369,7 +441,7 @@ class Dict : public Cell {
 
 Str* NewStr(const char* data, int len) {
   // subtract opaque[1].  Alloc() does the alignment.
-  void* p = Alloc(sizeof(Str) - 1 + len);  // allocate exactly the right amount
+  void* p = Alloc(kStrHeaderSize + len);  // allocate exactly the right amount
 
   Str* s = static_cast<Str*>(p);
   s->SetCellLength(len);  // is this right?
@@ -476,6 +548,10 @@ TEST list_test() {
   ASSERT_EQ_FMT(66, list1->index(5), "%d");
   ASSERT_EQ_FMT(77, list1->index(6), "%d");
 
+  list1->append(88);
+  ASSERT_EQ_FMT(88, list1->index(7), "%d");
+  ASSERT_EQ_FMT(8, len(list1), "%d");
+
   int d_slab = reinterpret_cast<char*>(list1->slab_) - gHeap.from_space_;
   ASSERT(d_slab < 1024);
 
@@ -486,6 +562,12 @@ TEST list_test() {
   log("str1 = %p", str1);
   auto str2 = NewStr("bar");
   log("str2 = %p", str2);
+
+  list2->append(str1);
+  list2->append(str2);
+  ASSERT_EQ(2, len(list2));
+  ASSERT_EQ(str1, list2->index(0));
+  ASSERT_EQ(str2, list2->index(1));
 
   // This combination is problematic.  Maybe avoid it and then just do
   // .extend({1, 2, 3}) or something?
