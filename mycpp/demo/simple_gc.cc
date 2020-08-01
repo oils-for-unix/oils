@@ -27,6 +27,30 @@
 //   For Slab, and for special types like Str.  Automatically deallocated.
 // - malloc() -- for say yajl to use.  Manually deallocated.
 // - new/delete -- for other C++ libs to use.  Manually deallocated.
+//
+// Slab Sizing with 8-byte slab header
+//
+//   16 - 8 =  8 = 1 eight-byte or  2 four-byte elements
+//   32 - 8 = 24 = 3 eight-byte or  6 four-byte elements
+//   64 - 8 = 56 = 7 eight-byte or 14 four-byte elements
+//
+// But dict will have DIFFERENT size keys and values!  Like Dict<int, Str*>
+//
+// Capacity check without division:
+//
+//   kSlabHeaderSize + n * sizeof(T) >= slab->cell_len_
+//   where n is the number of elements we want to store
+//   if it's equal then it's OK I guess
+//   For dict, use indices
+//
+// Small Size Optimization (later)
+//
+// - Str: 20 bytes, so we could have 12 bytes for free, if we have a flag to
+//   avoid the cell header
+//   - would we need a buf() and len() ?
+// - List: 24 bytes, so we could get 1 or 2 entries for free?  That might add
+//   up
+// - Dict: 40 bytes: I don't think it optimizes
 
 #include <cassert>  // assert()
 #include <cstdarg>  // va_list, etc.
@@ -149,29 +173,22 @@ void CollectGarbage() {
 namespace Tag {
   const int Forwarded = 1;
 
-  // Fixed size headers.  Which means they use bitmaps?
+  // Fixed size headers.  Which means we consult bitmaps.
   const int FixedSize = 2;
 
-  // Variable length.
-  const int OpaqueSlab = 4;  // copy but don't scan
-  const int ScannedSlab = 5;  // copy and scan
-}
+  // Variable length cells.
+  const int Opaque = 4;  // copy but don't scan.  List<int> and Str
 
-// This forces an 8-byte Cell header.  It's better not to have special cases
-// like the "how_index" at first.
-//
-// It may be possible to enforce a limit of 2^24 = 16 MiB on strings and
-// arrays.  But let's treat that as an optimization for later.
-//
-// We don't want to break code like x=$(cat big_file)
-typedef uint32_t how_t;
+  const int ScannedSlab = 5;  // Both scan and copy.  Scan after Cell header.
+}
 
 class Cell {
   // The unit of garbage collection.  It has a header describing how to find
   // the pointers within it.
   //
-  // (Note: sorting ASDL fields by (non-pointer, pointer) is a good idea, but
-  //  it breaks down because mycpp has inheritance.  Could do this later.)
+  // Notes:
+  // - Sorting ASDL fields by (non-pointer, pointer) is a good idea, but it
+  //   breaks down because mycpp has inheritance.  Could do this later.
 
  public:
   Cell() : tag(0), cell_len_(0) {
@@ -189,15 +206,14 @@ class Cell {
                  // Tag::Forwarded is 256?
                  // We could also reserve tags for Str, List, and Dict
                  // Then do we have 7 more bits for the GC strategy / length?
+  uint16_t field_mask;  // for fixed length records, so max 16 fields
 
-  // How to trace fields in this object.
-  union {
-    // # bytes to copy, or # bytes to scan?
-    // for Slab, which is used by List<Str*> and Dict<Str*, Str*>
-    how_t cell_len_;
-    how_t field_mask; // last 1 bit determines length
-                      // so maximum 31 fields?
-  };
+  // # bytes to copy, or # bytes to scan?
+  // for Slab, which is used by List<Str*> and Dict<Str*, Str*>
+  //
+  // Should this be specific to slab?  If tag == Tag::*Slab?
+  // TODO: if we limit it to 15 fields, we can encode length in field_mask.
+  uint32_t cell_len_;
 };
 
 class Forwarded : public Cell {
@@ -214,7 +230,7 @@ void InitSlabCell(Cell* cell) {
 template <>
 void InitSlabCell<int>(Cell* cell) {
   //log("OPAQUE");
-  cell->tag = Tag::OpaqueSlab;
+  cell->tag = Tag::Opaque;
 }
 
 // don't include items_[1]
@@ -254,7 +270,7 @@ class Slice : public Cell {
 class Str : public Cell {
  public:
   // Note: shouldn't be called directly.  Call NewStr().
-  Str(int len) : len_(len) {
+  Str(int len) : Cell(Tag::Opaque), len_(len) {
   }
   int len_;
   int unique_id_;  // index into intern table
@@ -262,7 +278,6 @@ class Str : public Cell {
 };
 
 const int kStrHeaderSize = sizeof(Cell) + sizeof(int) + sizeof(int);
-
 
 #if 0
 void PrintSlice(Slice* s) {
@@ -276,12 +291,14 @@ void PrintSlice(Slice* s) {
 template <typename T>
 class List : public Cell {
  public:
-  // TODO: we need a bitmap
-  List() : Cell(Tag::FixedSize), len_(0), slab_(nullptr) {
+  // TODO: FixedSize records all need a field mask
+  List() : Cell(Tag::FixedSize), len_(0), capacity_(0), slab_(nullptr) {
     SetCellLength(sizeof(List<T>));  // So we can copy it
   }
 
-  List(std::initializer_list<T> init) : Cell(Tag::FixedSize) {
+  // TODO: are we using this?
+  List(std::initializer_list<T> init)
+      : Cell(Tag::FixedSize), slab_(nullptr) {
     SetCellLength(sizeof(List<T>));  // So we can copy it
     extend(init);
   }
@@ -309,12 +326,15 @@ class List : public Cell {
     // TODO: initialize in constructor?  But many lists are empty!
     if (slab_ == nullptr) {
       slab_ = NewSlab<T>(n);
+      // TODO: remove division
+      capacity_ = (slab_->cell_len_ - kSlabHeaderSize) / sizeof(T);
 
     } else if (len_ + n >= capacity_) {
-      int new_len = len_ + n;
-      auto new_slab = NewSlab<T>(new_len);
+      auto new_slab = NewSlab<T>(n);
+      // TODO: remove division
+      capacity_ = (new_slab->cell_len_ - kSlabHeaderSize) / sizeof(T);
 
-      log("Copying %d bytes", len_ * sizeof(T));
+      // log("Copying %d bytes", len_ * sizeof(T));
 
       memcpy(new_slab->items_, slab_->items_, len_ * sizeof(T));
       slab_ = new_slab;
@@ -372,7 +392,9 @@ int find_by_key(Slab<K>* keys_slab_, Slab<V>* values_slab_, int len, int key) {
 template <class K, class V>
 class Dict : public Cell {
  public:
-  Dict() : len_(0), keys_slab_(nullptr), values_slab_(nullptr) {
+  Dict()
+      : Cell(Tag::FixedSize), len_(0), capacity_(0),
+        keys_slab_(nullptr), values_slab_(nullptr) {
   }
 
   void reserve(int n) {
@@ -500,6 +522,8 @@ TEST str_test() {
   ASSERT_EQ(0, len(str1));
   ASSERT_EQ(7, len(str2));
 
+  ASSERT_EQ_FMT(Tag::Opaque, str1->tag, "%d");
+
   PASS();
 }
 
@@ -515,9 +539,13 @@ TEST list_test() {
   ASSERT_EQ(0, len(list1));
   ASSERT_EQ(0, len(list2));
 
+  ASSERT_EQ_FMT(0, list1->capacity_, "%d");
+  ASSERT_EQ_FMT(0, list2->capacity_, "%d");
+
   ASSERT_EQ_FMT(Tag::FixedSize, list1->tag, "%d");
   ASSERT_EQ_FMT(Tag::FixedSize, list2->tag, "%d");
 
+  // 8 byte cell header + 2 integers + pointer
   ASSERT_EQ_FMT(24, list1->cell_len_, "%d");
   ASSERT_EQ_FMT(24, list2->cell_len_, "%d");
 
@@ -529,7 +557,10 @@ TEST list_test() {
 
   list1->extend({11, 22, 33});
   ASSERT_EQ_FMT(3, len(list1), "%d");
-  ASSERT_EQ_FMT(Tag::OpaqueSlab, list1->slab_->tag, "%d");
+
+  // 32 byte block - 8 byte header = 24 bytes, 6 elements
+  ASSERT_EQ_FMT(6, list1->capacity_, "%d");
+  ASSERT_EQ_FMT(Tag::Opaque, list1->slab_->tag, "%d");
 
   // 8 byte header + 3*4 == 8 + 12 == 20, rounded up to power of 2
   ASSERT_EQ_FMT(32, list1->slab_->cell_len_, "%d");
@@ -540,6 +571,9 @@ TEST list_test() {
 
   log("extending");
   list1->extend({44, 55, 66, 77});
+
+  // 64 byte block - 8 byte header = 56 bytes, 14 elements
+  ASSERT_EQ_FMT(14, list1->capacity_, "%d");
   ASSERT_EQ_FMT(7, len(list1), "%d");
 
   // 8 bytes header + 7*4 == 8 + 28 == 36, rounded up to power of 2
@@ -594,8 +628,11 @@ TEST dict_test() {
   auto dict1 = gc_alloc<Dict<int, int>>();
   auto dict2 = gc_alloc<Dict<Str*, Str*>>();
 
-  log("len(dict1) = %d", len(dict1));
-  log("len(dict2) = %d", len(dict2));
+  ASSERT_EQ(0, len(dict1));
+  ASSERT_EQ(0, len(dict2));
+
+  ASSERT_EQ_FMT(Tag::FixedSize, dict1->tag, "%d");
+  ASSERT_EQ_FMT(Tag::FixedSize, dict1->tag, "%d");
 
   // Make sure they're on the heap
   int diff1 = reinterpret_cast<char*>(dict1) - gHeap.from_space_;
