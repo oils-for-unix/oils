@@ -45,8 +45,7 @@
 //
 // Small Size Optimization (later)
 //
-// - Str: 20 bytes, so we could have 12 bytes for free, if we have a flag to
-//   avoid the cell header
+// - Str: doesn't apply, because it's immutable: 16 bytes + string length
 //   - would we need a buf() and len() ?
 // - List: 24 bytes, so we could get 1 or 2 entries for free?  That might add
 //   up
@@ -272,6 +271,9 @@ class Str : public Cell {
   // Note: shouldn't be called directly.  Call NewStr().
   Str(int len) : Cell(Tag::Opaque), len_(len) {
   }
+  // Note: OCaml unifies the cell length and string length with padding 00, 00
+  // 01, 00 00 02, 00 00 00 03.  Although I think they added special cases for
+  // 32-bit and 64-bit; we're using the portable max_align_t
   int len_;
   int unique_id_;  // index into intern table
   char opaque_[1];  // flexible array
@@ -372,21 +374,32 @@ class List : public Cell {
 };
 
 
-template <typename K, typename V>
-int find_by_key(Slab<K>* keys_slab_, Slab<V>* values_slab_, int len, int key) {
-  assert(0);
-
-  // TODO: linear search for key up to "len" entries, then return i
-
-#if 0 
-  int n = items.size();
-  for (int i = 0; i < n; ++i) {
-    if (items[i].first == key) {
+template <typename K>
+int find_by_key(Slab<K>* keys_slab_, int len, int key) {
+  for (int i = 0; i < len; ++i) {
+    if (keys_slab_->items_[i] == key) {
       return i;
     }
   }
   return -1;
-#endif
+}
+
+inline bool str_equals(Str* left, Str* right) {
+  if (left->len_ == right->len_) {
+    return memcmp(left->opaque_, right->opaque_, left->len_) == 0;
+  } else {
+    return false;
+  }
+}
+
+template <typename K>
+int find_by_key(Slab<K>* keys_slab_, int len, Str* key) {
+  for (int i = 0; i < len; ++i) {
+    if (str_equals(keys_slab_->items_[i], key)) {
+      return i;
+    }
+  }
+  return -1;
 }
 
 template <class K, class V>
@@ -423,13 +436,16 @@ class Dict : public Cell {
   }
 
   // Implements d[k] = v.  May resize the dictionary.
-  void set(K key, V value) {
-    reserve(len_ + 1);
-
-    int i = find_by_key(key);
-
-    // TODO: rehashing
-    assert(0);
+  void set(K key, V val) {
+    int pos = find(key);
+    if (pos == -1) {
+      reserve(len_ + 1);
+      keys_slab_->items_[len_] = key;
+      values_slab_->items_[len_] = val;
+      ++len_;
+    } else {
+      values_slab_->items_[pos] = val;
+    }
   }
 
   int len_;  // number of entries
@@ -444,7 +460,7 @@ class Dict : public Cell {
  private:
   // returns the position in the array
   int find(K key) {
-    return find_by_key(keys_slab_, values_slab_, len_, key);
+    return find_by_key(keys_slab_, len_, key);
   }
 };
 
@@ -640,6 +656,22 @@ TEST dict_test() {
   ASSERT(diff1 < 1024);
   ASSERT(diff2 < 1024);
 
+  dict1->set(42, 5);
+  ASSERT_EQ(1, len(dict1));
+  dict1->set(42, 99);
+  ASSERT_EQ(1, len(dict1));
+
+  // TODO: Implement this
+  //dict1->set(5, 6);
+  //ASSERT_EQ(2, len(dict1));
+
+  dict2->set(NewStr("foo"), NewStr("bar"));
+  ASSERT_EQ(1, len(dict2));
+
+  PASS();
+}
+
+TEST misc_test() {
   log("");
 
   // 24 = 4 + (4 + 4 + 4) + 8
@@ -710,6 +742,7 @@ int main(int argc, char** argv) {
   RUN_TEST(str_test);
   RUN_TEST(list_test);
   RUN_TEST(dict_test);
+  RUN_TEST(misc_test);
   RUN_TEST(asdl_test);
   RUN_TEST(handle_test);
   RUN_TEST(resize_test);
