@@ -89,9 +89,16 @@ int time_helper(Spec *spec, FILE *f) {
   struct timeval *user = &usage.ru_utime;
   struct timeval *sys = &usage.ru_stime;
 
+  // this is like the definition of $? that shell use
   int exit_status = -1;
   if (WIFEXITED(status)) {
     exit_status = WEXITSTATUS(status);
+  } else if (WIFSIGNALED(status)) {
+    exit_status = 128 + WTERMSIG(status);
+  } else {
+    // We didn't pass WUNTRACED, so normally we won't get this.  But ptrace()
+    // will get here.
+    ;
   }
 
   char d = spec->delimiter;

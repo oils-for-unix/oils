@@ -175,7 +175,11 @@ def main(argv):
   n.newline()
   n.rule('compare-logs',
          command='./build-steps.sh compare-logs $out $in',
-         description='compare-logs $in $out')
+         description='compare-logs $out $in')
+  n.newline()
+  n.rule('benchmark-table',
+         command='./build-steps.sh benchmark-table $out $in',
+         description='benchmark-table $out $in')
   n.newline()
 
   to_benchmark = ExamplesToBenchmark()
@@ -189,16 +193,15 @@ def main(argv):
       'unit': [],
       'typecheck': [],  # optional: for debugging only.  translation does it.
 
+      # Note: unused
       'test': [],  # test examples (across variants, including Python)
-      'benchmark': [],  # benchmark examples (ditto)
+
+      'benchmark-table': [],
 
       # Compare logs for tests AND benchmarks.
       # It's a separate task because we have multiple variants to compare, and
       # the timing of test/benchmark tasks should NOT include comparison.
       'compare-logs': [],
-
-      # TODO: For timing of benchmarks
-      'task-table': [],
 
       'strip': [],  # optional: strip binaries.  To see how big they are.
   }
@@ -236,6 +239,8 @@ def main(argv):
   #
 
   to_compare = []
+  benchmark_tasks = []
+
   for ex in examples:
     n.comment('---')
     n.comment(ex)
@@ -252,17 +257,17 @@ def main(argv):
 
     # Run Python.
     for mode in ['test', 'benchmark']:
-      if mode == 'benchmark' and ShouldSkipBenchmark(ex):
-        log('Skipping benchmark of %s', ex)
-        continue
+      if mode == 'benchmark':
+        if ShouldSkipBenchmark(ex):
+          log('Skipping benchmark of %s', ex)
+          continue
+        benchmark_tasks.append(task_out)
 
       prefix = '_ninja/tasks/%s/%s.py' % (mode, ex)
       task_out = '%s.task.txt' % prefix
       log_out = '%s.log.txt' % prefix
       n.build([task_out, log_out], 'task', 'examples/%s.py' % ex)
       n.newline()
-
-      phony[mode].append(task_out)
 
     # Translate to C++
     n.build('_ninja/gen/%s.cc' % ex, 'translate', 'examples/%s.py' % ex)
@@ -290,11 +295,14 @@ def main(argv):
 
     # Run the binary in two ways
     for mode, variant in MATRIX:
-      if mode == 'benchmark' and ShouldSkipBenchmark(ex):
-        log('Skipping benchmark of %s', ex)
-        continue
-
       task_out = '_ninja/tasks/%s/%s.%s.task.txt' % (mode, ex, variant)
+
+      if mode == 'benchmark':
+        if ShouldSkipBenchmark(ex):
+          log('Skipping benchmark of %s', ex)
+          continue
+        benchmark_tasks.append(task_out)
+
       log_out = '_ninja/tasks/%s/%s.%s.log.txt' % (mode, ex, variant)
       py_log_out = '_ninja/tasks/%s/%s.py.log.txt' % (mode, ex)
 
@@ -305,14 +313,19 @@ def main(argv):
               '_ninja/bin/examples/%s.%s' % (ex, variant))
       n.newline()
 
-      phony[mode].append(task_out)
-
   # Compare the log of all examples
   out = '_ninja/compare-logs.txt'
   n.build([out], 'compare-logs', to_compare)
   n.newline()
 
   phony['compare-logs'].append(out)
+
+  # Timing of benchmarks
+  out = '_ninja/benchmark-table.txt'
+  n.build([out], 'benchmark-table', benchmark_tasks)
+  n.newline()
+
+  phony['benchmark-table'].append(out)
 
   #
   # Write phony rules we accumulated
@@ -327,7 +340,7 @@ def main(argv):
 
       phony_real.append(name)
 
-  n.default(['unit', 'test', 'benchmark'])
+  n.default(['unit', 'compare-logs', 'benchmark-table'])
 
   # All groups
   n.build(['all'], 'phony', phony_real)

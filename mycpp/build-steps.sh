@@ -251,4 +251,11 @@ compare-logs() {
   } | tee $out
 }
 
+benchmark-table() {
+  local out=$1
+  shift
+
+  cat "$@" > $out
+}
+
 "$@"

@@ -23,7 +23,7 @@ ubuntu-deps() {
   # libreadline-dev: needed for the build/prepare.sh Python build.
   # cmake: for build/dev.sh yajl-release
   set -x  # show what needs sudo
-  sudo apt install python-dev gawk libreadline-dev cmake
+  sudo apt install python-dev gawk libreadline-dev ninja-build cmake
   set +x
 
   test/spec.sh install-shells
