@@ -9,25 +9,23 @@ examples/
   containers.py
 
 _ninja/
+  gen/    # source
+  bin/    # binaries
+    examples/  # many variants
+    examples-stripped/
+    unit/      # unit tests
   tasks/        # *.txt and *.task.txt for .wwz
     typecheck/  # optionally run
+    test/       # py, gc_debug, asan, opt
+    benchmark/
+    unit/
 
     # optionally logged?
     translate/
     compile/
 
-    test/       # py, gc_debug, asan, opt
-    benchmark/
-    unit/
-
-  gen/    # source
-
-  bin/    # binaries
-    examples/  # many variants
-    unit/      # unit tests
-
 Phony Targets
-  test, benchmark, etc. (See phony dict below)
+  typecheck, strip, bencmark-table, etc. (See phony dict below)
 
 Also:
 
@@ -45,14 +43,6 @@ Notes for Oil:
 
   - Spawn a process with environment variables.
   - use % for substitution instead
-
-TODO:
-- More actions:
-  - strip binaries
-  - benchmark table: *.task.txt
-    _tmp/mycpp-examples/raw/times.tsv
-    cat these together, with a header file?
-    you might need to split and parse the paths in R.
 """
 
 from __future__ import print_function
@@ -173,9 +163,9 @@ def main(argv):
          command='./build-steps.sh typecheck $in $out',
          description='typecheck $in $out')
   n.newline()
-  n.rule('compare-logs',
-         command='./build-steps.sh compare-logs $out $in',
-         description='compare-logs $out $in')
+  n.rule('logs-equal',
+         command='./build-steps.sh logs-equal $out $in',
+         description='logs-equal $out $in')
   n.newline()
   n.rule('benchmark-table',
          command='./build-steps.sh benchmark-table $out $in',
@@ -201,7 +191,7 @@ def main(argv):
       # Compare logs for tests AND benchmarks.
       # It's a separate task because we have multiple variants to compare, and
       # the timing of test/benchmark tasks should NOT include comparison.
-      'compare-logs': [],
+      'logs-equal': [],
 
       'strip': [],  # optional: strip binaries.  To see how big they are.
   }
@@ -257,14 +247,15 @@ def main(argv):
 
     # Run Python.
     for mode in ['test', 'benchmark']:
+      prefix = '_ninja/tasks/%s/%s.py' % (mode, ex)
+      task_out = '%s.task.txt' % prefix
+
       if mode == 'benchmark':
         if ShouldSkipBenchmark(ex):
           log('Skipping benchmark of %s', ex)
           continue
         benchmark_tasks.append(task_out)
 
-      prefix = '_ninja/tasks/%s/%s.py' % (mode, ex)
-      task_out = '%s.task.txt' % prefix
       log_out = '%s.log.txt' % prefix
       n.build([task_out, log_out], 'task', 'examples/%s.py' % ex)
       n.newline()
@@ -314,11 +305,11 @@ def main(argv):
       n.newline()
 
   # Compare the log of all examples
-  out = '_ninja/compare-logs.txt'
-  n.build([out], 'compare-logs', to_compare)
+  out = '_ninja/logs-equal.txt'
+  n.build([out], 'logs-equal', to_compare)
   n.newline()
 
-  phony['compare-logs'].append(out)
+  phony['logs-equal'].append(out)
 
   # Timing of benchmarks
   out = '_ninja/benchmark-table.txt'
@@ -340,7 +331,7 @@ def main(argv):
 
       phony_real.append(name)
 
-  n.default(['unit', 'compare-logs', 'benchmark-table'])
+  n.default(['unit', 'logs-equal', 'benchmark-table'])
 
   # All groups
   n.build(['all'], 'phony', phony_real)

@@ -71,17 +71,49 @@ def Options():
   p.add_option(
       '--stdout', dest='stdout', default=None,
       help='Save stdout to this file, and add a column for its md5 checksum')
+  p.add_option(
+      '--print-header', dest='print_header', default=False, action='store_true',
+      help='Print an XSV header, respecting --rusage, --stdout, --field, and --tsv')
   return p
+
+
+def MakeTableOutput(f, tsv):
+  if tsv:  # TSV output.
+    out = csv.writer(f, delimiter='\t', lineterminator='\n',
+                     doublequote=False,
+                     quoting=csv.QUOTE_NONE)
+  else:
+    out = csv.writer(f)
+  return out
 
 
 def main(argv):
   (opts, child_argv) = Options().parse_args(argv[1:])
 
+  # Used only for 'time' format string.  For --field, we use our own.
+  sep = '\t' if opts.tsv else ','
+
+  if opts.print_header:
+    if child_argv:
+      raise RuntimeError('No arguments allowed with --print-header')
+    names = ['status', 'elapsed_secs']
+    if opts.rusage:
+      names.extend(['user_secs', 'sys_secs', 'max_rss_KiB'])
+    if opts.stdout:
+      names.append('stdout_md5sum')
+    names.extend(opts.fields)
+
+    if opts.output:
+      f = open(opts.output, 'w')
+    else:
+      f = sys.stdout
+    table_out = MakeTableOutput(f, opts.tsv)
+    table_out.writerow(names)
+    return 0
+
   if not child_argv:
     raise RuntimeError('Expected a command')
 
-  # Used only for 'time' format string.  For --field, we use our own.
-  sep = '\t' if opts.tsv else ','
   # built by build/dev.sh all
   time_argv = [TIME_HELPER, '-d', sep]
 
@@ -138,14 +170,8 @@ def main(argv):
     with open(opts.output, 'a') as f:  # append
       if more_cells:
         f.write(sep)  # tab or comma for more cells
-        if opts.tsv:
-          # TSV output.
-          out = csv.writer(f, delimiter='\t', lineterminator='\n',
-                           doublequote=False,
-                           quoting=csv.QUOTE_NONE)
-        else:
-          out = csv.writer(f)
-        out.writerow(more_cells)
+        table_out = MakeTableOutput(f, opts.tsv)
+        table_out.writerow(more_cells)
       else:
         f.write('\n')   # end the row
   else:

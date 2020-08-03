@@ -194,6 +194,30 @@ test-maxrss() {
   cat _tmp/maxrss
 }
 
+test-print-header() {
+  set +o errexit
+
+  # no arguments allowed
+  time-tool --tsv --print-header foo bar
+  assert $? -eq 2
+
+  time-tool --tsv --print-header --field name
+  assert $? -eq 0
+
+  time-tool --tsv --print-header --rusage --field name
+  assert $? -eq 0
+
+  time-tool --print-header --rusage --field foo --field bar
+  assert $? -eq 0
+
+  time-tool -o _tmp/time-test-1 \
+    --print-header --rusage --stdout DUMMY --tsv --field a --field b
+  assert $? -eq 0
+
+  set -x
+  head _tmp/time-test-1
+}
+
 test-time-helper() {
   set +o errexit
 
@@ -240,6 +264,7 @@ all-passing() {
   test-stdout
   test-rusage
   test-maxrss
+  test-print-header
 
   test-time-helper
 

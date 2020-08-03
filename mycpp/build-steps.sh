@@ -158,6 +158,17 @@ task() {
     $bin >$log_out 2>&1
 }
 
+benchmark-table() {
+  local out=$1
+  shift
+
+  # TODO: Use QTT header?
+
+  { time-tsv --print-header --rusage --field bin --field task_out
+    cat "$@" 
+  } > $out
+}
+
 # This is the one installed from PIP
 #mypy() { ~/.local/bin/mypy "$@"; }
 
@@ -235,12 +246,12 @@ while i < n:
   i += 2
 
 if num_failures != 0:
-  print("compare-logs: %d failures" % num_failures)
+  print("logs-equal: %d failures" % num_failures)
   sys.exit(1)
 ' "$@"
 }
 
-compare-logs() {
+logs-equal() {
   local out=$1
   shift
 
@@ -249,13 +260,6 @@ compare-logs() {
     # echo
     # checksum "$@" 
   } | tee $out
-}
-
-benchmark-table() {
-  local out=$1
-  shift
-
-  cat "$@" > $out
 }
 
 "$@"
