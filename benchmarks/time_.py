@@ -20,6 +20,7 @@ from __future__ import print_function
 
 import csv
 import optparse
+import resource
 import sys
 import subprocess
 import time
@@ -37,6 +38,9 @@ def Options():
   p.add_option(
       '--tsv', dest='tsv', default=False, action='store_true',
       help='Write output in TSV format')
+  p.add_option(
+      '--rusage', dest='rusage', default=False, action='store_true',
+      help='Also show user time, system time, and max resident set size')
   p.add_option(
       '-o', '--output', dest='output', default=None,
       help='Name of output file to write to to')
@@ -73,6 +77,12 @@ def main(argv):
     log('Error executing %s: %s', child_argv, e)
     return 1
 
+  if opts.rusage:
+    r = resource.getrusage(resource.RUSAGE_CHILDREN)
+    rusage_fields = [r.ru_utime, r.ru_stime, r.ru_maxrss]
+  else:
+    rusage_fields = []
+
   elapsed = time.time() - start_time
   if opts.stdout:
     import md5
@@ -83,11 +93,14 @@ def main(argv):
         if not chunk:
           break
         m.update(chunk)
-    maybe_stdout = (m.hexdigest(),)
+    maybe_stdout = [m.hexdigest()]
   else:
-    maybe_stdout = ()  # no field
+    maybe_stdout = []  # no field
 
-  row = (exit_code, opts.time_fmt % elapsed) + maybe_stdout + tuple(opts.fields)
+  row = (
+      [exit_code, opts.time_fmt % elapsed] + rusage_fields + maybe_stdout +
+      opts.fields
+  )
 
   if opts.output:
     mode = 'a' if opts.append else 'w'

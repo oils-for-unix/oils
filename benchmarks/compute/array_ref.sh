@@ -1,9 +1,10 @@
 #!/bin/bash
 #
-# Shows some slight superlinear behavior in bash ararys?
+# Show superlinear behavior in bash arrays.  Need pretty high N to start seeing
+# it.
 #
 # Usage:
-#   ./reverse_sum.sh <function name>
+#   ./array_ref.sh MODE
 
 set -o nounset
 set -o pipefail
@@ -15,27 +16,24 @@ main() {
   mapfile -t array
 
   local n=${#array[@]}
-  local i=$((n-1))
   local sum=0
 
   case $mode in
     linear)
-      while test $i -ge 0; do
+      for (( i = 0; i < n; ++i )); do
         sum=$((sum + array[i]))
-        i=$((i - 1))
       done
       ;;
 
     random)
-      while test $i -ge 0; do
+      for (( i = 0; i < n; ++i )); do
         # Super linear
         sum=$((sum + array[array[i]]))
-        i=$((i - 1))
       done
       ;;
   esac
-  echo sum=$sum
 
+  echo sum=$sum
 
   # This doesn't seem to defeat LASTREF?
   #array+=('X')

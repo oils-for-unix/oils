@@ -96,6 +96,26 @@ test-stdout() {
   cat $out
 }
 
+test-rusage() {
+  # No assertions here yet
+
+  local out=_tmp/time-usage.csv
+  time-tool --tsv -o $out --rusage -- bash -c 'echo bash'
+  cat $out
+
+  #time-tool --tsv -o $out --rusage -- dash -c 'echo dash'
+  #cat $out
+
+  # Blow up memory size for testing
+  local py='a=[42]*500000; print "python"'
+
+  time-tool --tsv -o $out --rusage -- python -c "$py"
+  cat $out
+
+  time-tool --tsv -o $out --rusage -- bin/osh -c 'echo osh'
+  cat $out
+}
+
 all-passing() {
   test-usage
   test-tsv
@@ -103,6 +123,7 @@ all-passing() {
   # Spews some errors
   test-bad-tsv-chars
   test-stdout
+  test-rusage
 
   echo
   echo "All tests in $0 passed."

@@ -11,23 +11,15 @@
 # - fib: integer, loop, assignment (shells don't have real integers
 # - word_freq: hash table / assoc array (OSH uses a vector<pair<>> now!)
 #              also integer counter
-# - bubble sort: indexed array (bash uses a linked list?)
+# - bubble_sort: indexed array (bash uses a linked list?)
 # - palindrome: string, slicing, unicode
-#
-# Also:
-# - benchmarks/parse-help: realistic string processing.
-#   Fold that in here.
+# - parse-help: realistic shell-only string processing, which I didn't write.
 #
 # TODO:
-# - consistent task parameterization
-#   - iters is always the first argument
-#   - mode:
-#     - bubble_sort has int/bytes
-#     - palindrome has unicode/bytes
-#   - problem size, which is different than iters
-#     - bubble sort: array length, to test complexity of array indexing
-#     - palindrome: longer lines, to test complexity of unicode/byte slicing
-#     - word_freq: more unique words, to test complexity of assoc array
+# - vary problem size, which is different than iters
+#   - bubble sort: array length, to test complexity of array indexing
+#   - palindrome: longer lines, to test complexity of unicode/byte slicing
+#   - word_freq: more unique words, to test complexity of assoc array
 # - write awk versions of each benchmark (could be contributed)
 # - assert that stdout is identical
 # - create data frames and publish results
@@ -133,7 +125,7 @@ EOF
 #   task, task args -- I guess these can be space separated
 #   stdout md5sum -- so it's correct!  Because I did catch some problems earlier.
 
-readonly -a TIME_PREFIX=(benchmarks/time_.py --tsv --append)
+readonly -a TIME_PREFIX=(benchmarks/time_.py --tsv --append --rusage)
 
 ext() {
   local ext
@@ -244,7 +236,7 @@ task-all() {
   rm -f $times
 
   # header
-  echo $'status\telapsed\tstdout_md5sum\truntime\ttask_name\targ1\targ2' > $times
+  echo $'status\telapsed\tuser_time\tsys_time\tmax_rss\tstdout_md5sum\truntime\ttask_name\targ1\targ2' > $times
 
   local name=${1:-'word-freq'}
 
