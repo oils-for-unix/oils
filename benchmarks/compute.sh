@@ -78,16 +78,23 @@ EOF
 # See array_reference() in array.c in bash.  It searches both back and
 # forward.  Every cell has its index, a value, a forward pointer, and a back
 # pointer.
+#
+# You need pretty high N to see the quadratic behavior though!
+
+# NOTE: osh is also slower with linear access, but not superlinear!
 
 array_ref-tasks() {
-  cat <<EOF
-array_ref bash     seq    5000
-array_ref bash     seq    7000
-array_ref bash     seq    9000
-array_ref bash     random 5000
-array_ref bash     random 7000
-array_ref bash     random 9000
+  #for sh in bash "$OSH_CC"; do
+  for sh in bash; do
+    for mode in seq random; do
+      cat <<EOF
+array_ref $sh     $mode    10000
+array_ref $sh     $mode    20000
+array_ref $sh     $mode    30000
+array_ref $sh     $mode    40000
 EOF
+    done
+  done
 
 #array_ref $OSH_CC  seq    5000
 #array_ref $OSH_CC  seq    10000
@@ -98,23 +105,23 @@ EOF
 
 palindrome-tasks() {
   cat <<EOF
-palindrome python   unicode
-palindrome python   bytes
-palindrome bash     unicode
-palindrome bash     bytes
-palindrome $OSH_CC  unicode
-palindrome $OSH_CC  bytes
+palindrome python   unicode _
+palindrome python   bytes   _
+palindrome bash     unicode _
+palindrome bash     bytes   _
+palindrome $OSH_CC  unicode _
+palindrome $OSH_CC  bytes   _
 EOF
 }
 
 parse-help-tasks() {
   cat <<EOF
-parse-help bash     ls-short
-parse-help bash     ls
-parse-help bash     mypy
-parse-help $OSH_CC  ls-short
-parse-help $OSH_CC  ls
-parse-help $OSH_CC  mypy
+parse-help bash     ls-short _
+parse-help bash     ls       _
+parse-help bash     mypy     _
+parse-help $OSH_CC  ls-short _
+parse-help $OSH_CC  ls       _
+parse-help $OSH_CC  mypy     _
 EOF
 }
 
@@ -237,13 +244,13 @@ task-all() {
   rm -f $times
 
   # header
-  echo $'status\telapsed\tstdout_md5sum\truntime\ttask_name\ttask_args' > $times
+  echo $'status\telapsed\tstdout_md5sum\truntime\ttask_name\targ1\targ2' > $times
 
   local name=${1:-'word-freq'}
 
   local task_id=0
 
-  ${name}-tasks | while read _ runtime args; do
+  ${name}-tasks | while read _ runtime arg1 arg2; do
     local file
     case $runtime in 
       (python)
@@ -259,8 +266,8 @@ task-all() {
     # join args into a single field
     "${TIME_PREFIX[@]}" \
       --stdout $out/$task_id.txt -o $out/times.tsv \
-      --field $runtime --field "$name" --field "$args" -- \
-      $0 ${name}-one "$name" "$runtime" $args  # relies on splitting
+      --field $runtime --field "$name" --field "$arg1" --field "$arg2" -- \
+      $0 ${name}-one "$name" "$runtime" "$arg1" "$arg2"
 
     task_id=$((task_id + 1))
   done
