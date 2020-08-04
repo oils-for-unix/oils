@@ -60,14 +60,40 @@ EOF
 }
 
 bubble_sort-tasks() {
+  # Note: this is quadratic, but bubble sort itself is quadratic!
+
   cat <<EOF
-bubble_sort python   int
-bubble_sort python   bytes
-bubble_sort bash     int
-bubble_sort bash     bytes
-bubble_sort $OSH_CC  int
-bubble_sort $OSH_CC  bytes
+bubble_sort python   int   200
+bubble_sort python   bytes 200
+bubble_sort bash     int   200
+bubble_sort bash     bytes 200
+bubble_sort $OSH_CC  int   200
+bubble_sort $OSH_CC  bytes 200
 EOF
+}
+
+# Arrays are doubly linked lists in bash!  With a LASTREF hack to avoid being
+# quadratic.  
+#
+# See array_reference() in array.c in bash.  It searches both back and
+# forward.  Every cell has its index, a value, a forward pointer, and a back
+# pointer.
+
+array_ref-tasks() {
+  cat <<EOF
+array_ref bash     seq    5000
+array_ref bash     seq    7000
+array_ref bash     seq    9000
+array_ref bash     random 5000
+array_ref bash     random 7000
+array_ref bash     random 9000
+EOF
+
+#array_ref $OSH_CC  seq    5000
+#array_ref $OSH_CC  seq    10000
+#array_ref $OSH_CC  random 5000
+#array_ref $OSH_CC  random 10000
+#EOF
 }
 
 palindrome-tasks() {
@@ -78,6 +104,17 @@ palindrome bash     unicode
 palindrome bash     bytes
 palindrome $OSH_CC  unicode
 palindrome $OSH_CC  bytes
+EOF
+}
+
+parse-help-tasks() {
+  cat <<EOF
+parse-help bash     ls-short
+parse-help bash     ls
+parse-help bash     mypy
+parse-help $OSH_CC  ls-short
+parse-help $OSH_CC  ls
+parse-help $OSH_CC  mypy
 EOF
 }
 
@@ -131,9 +168,22 @@ bubble_sort-one() {
   local name=${1:-bubble_sort}
   local runtime=$2
   local mode=${3:-int}
+  local n=${4:-100}
 
   $runtime benchmarks/compute/bubble_sort.$(ext $runtime) $mode \
-     < _tmp/compute/$name/testdata.txt
+     < _tmp/compute/$name/testdata-$n.txt
+}
+
+# OSH is like 10x faster here!
+array_ref-one() {
+  ### Run one array_ref task (arrays)
+
+  local name=${1:-bubble_sort}
+  local runtime=$2
+  local mode=${3:-seq}
+  local n=${4:-100}
+
+  seq $n |shuf| $runtime benchmarks/compute/array_ref.$(ext $runtime) $mode
 }
 
 palindrome-one() {
@@ -147,6 +197,17 @@ palindrome-one() {
     < _tmp/compute/$name/testdata.txt
 }
 
+parse-help-one() {
+  ### Run one palindrome task (strings, real code)
+
+  local name=${1:-parse-help}
+  local runtime=$2
+  local workload=${3:-}
+
+  $runtime benchmarks/parse-help/pure-excerpt.sh _parse_help - \
+    < benchmarks/parse-help/$workload.txt
+}
+
 #
 # Helpers
 #
@@ -158,8 +219,13 @@ word_freq-all() { task-all word_freq; }
 # completes quickly.
 bubble_sort-all() { task-all bubble_sort; }
 
+# Array that is not quadratic
+array_ref-all() { task-all array_ref; }
+
 # Hm osh is a little slower here
 palindrome-all() { task-all palindrome; }
+
+parse-help-all() { task-all parse-help; }
 
 task-all() {
   local name=$1
@@ -211,8 +277,13 @@ task-all() {
 bubble_sort-testdata() {
   local out='_tmp/compute/bubble_sort'
   mkdir -p $out
-  seq 200 | shuf > $out/testdata.txt
-  wc -l $out/testdata.txt
+
+  # TODO: Make these deterministic for more stable benchmarks?
+  for n in 100 200 300 400; do
+    seq $n | shuf > $out/testdata-$n.txt
+  done
+
+  wc -l $out/testdata-*.txt
 }
 
 palindrome-testdata() {

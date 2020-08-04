@@ -2,8 +2,10 @@
 #
 # A pure string-processing benchmark extracted from bash-completion.
 #
+# Note: most stuff moved to benchmarks/compute.
+#
 # Usage:
-#   ./parse-help.sh <function name>
+#   benchmarks/parse-help.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -28,18 +30,6 @@ shorten() {
 
 TIMEFORMAT='%U'
 
-run-cmd() {
-  local sh=$1
-  local cmd=$2
-  # read from stdin
-
-  local prog=$EXCERPT
-  # our pure fork
-  local prog=benchmarks/parse-help/pure-excerpt.sh
-
-  time cat $DATA_DIR/$cmd.txt | $sh $prog _parse_help -
-}
-
 # Geez:
 #        ls     mypy
 # bash   25ms   25ms
@@ -51,30 +41,6 @@ run-cmd() {
 # TODO
 # - count the number of printf invocations.  But you have to do it recursively!
 # - Turn this into a proper benchmark with an HTML page.
-
-all() {
-  wc -l $DATA_DIR/*
-
-  local dir=_tmp/parse-help
-  mkdir -p $dir
-
-  # Woohoo oil-native is faster!
-  OSH_CC=_bin/osh_eval.opt.stripped
-  for sh in bash bin/osh $OSH_CC; do
-    echo
-    echo "--- $sh --- "
-    echo
-
-    for cmd in ls-short ls mypy; do
-      local out=$dir/${cmd}__$(basename $sh).txt
-
-      printf '%10s ' $cmd
-      run-cmd $sh $cmd >$out
-    done
-  done
-
-  md5sum $dir/*
-}
 
 one() {
   local sh='bin/osh'
