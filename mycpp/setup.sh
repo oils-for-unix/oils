@@ -94,10 +94,10 @@ run-for-release() {
   rm --verbose -r -f _ninja
   all-ninja
 
-  # TODO: harness.sh benchmark-all creates ../_tmp/mycpp-examples/raw/times.tsv
+  # Note: harness.sh benchmark-all creates ../_tmp/mycpp-examples/raw/times.tsv
   # It compares C++ and Python.
   #
-  # So we need to do the same with 'cat' and some magic.
+  # We have _ninja/benchmark-table.tsv instead
 }
 
 "$@"

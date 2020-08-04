@@ -3,19 +3,9 @@
 # Build steps invoked by Ninja.
 #
 # Usage:
-#   ./steps.sh <function name>
+#   ./build-steps.sh <function name>
 #
-# Naming Convention:
-#
-#   ./configure.py - generates build.ninja (TODO: build_graph.py?)
-#   steps.sh - invoked BY ninja.  (build-steps.sh?)
-#     problem: changing this file should invalidate certain steps!
-#   build.ninja
-#   ninja.sh - wrapper for 'clean' and 'all'.  Invokes Ninja.
-#     - Don't really need this
-#   _ninja/ - tree
-#
-# TODO: build/actions.sh should be renamed build/steps.sh?  "actions" implies a
+# TODO: build/actions.sh should be renamed build/build-steps.sh?  "actions" implies a
 # side effect, where as "steps" largely know their outputs an outputs largely
 
 set -o nounset

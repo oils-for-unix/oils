@@ -2,30 +2,37 @@
 """
 build_graph.py
 
-Generates a Ninja file which uses this layout.
+Code Layout:
 
-examples/
-  cgi.py
-  containers.py
+  build_graph.py  # this file
+  build-steps.sh
+  build.ninja  # generated
+  ninja.sh     # wrapper -- don't really need this?
 
-_ninja/
-  gen/    # source
-  bin/    # binaries
-    examples/  # many variants
-    examples-stripped/
-    unit/      # unit tests
-  tasks/        # *.txt and *.task.txt for .wwz
-    typecheck/  # optionally run
-    test/       # py, gc_debug, asan, opt
-    benchmark/
-    unit/
+Data Layout:
 
-    # optionally logged?
-    translate/
-    compile/
+  examples/
+    cgi.py
+    containers.py
 
-Phony Targets
-  typecheck, strip, bencmark-table, etc. (See phony dict below)
+  _ninja/
+    gen/    # source
+    bin/    # binaries
+      examples/  # many variants
+      examples-stripped/
+      unit/      # unit tests
+    tasks/        # *.txt and *.task.txt for .wwz
+      typecheck/  # optionally run
+      test/       # py, gc_debug, asan, opt
+      benchmark/
+      unit/
+
+      # optionally logged?
+      translate/
+      compile/
+
+  Phony Targets
+    typecheck, strip, bencmark-table, etc. (See phony dict below)
 
 Also:
 
@@ -43,6 +50,11 @@ Notes for Oil:
 
   - Spawn a process with environment variables.
   - use % for substitution instead
+
+TODO:
+
+  - Create (lang, example) Ninja vars and thread them through to
+    time-tsv --field and R.
 """
 
 from __future__ import print_function
@@ -312,7 +324,7 @@ def main(argv):
   phony['logs-equal'].append(out)
 
   # Timing of benchmarks
-  out = '_ninja/benchmark-table.txt'
+  out = '_ninja/benchmark-table.tsv'
   n.build([out], 'benchmark-table', benchmark_tasks)
   n.newline()
 
