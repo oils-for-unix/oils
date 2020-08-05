@@ -87,8 +87,7 @@ all() {
   osh-runtime
   vm-baseline
   ovm-build
-  # Commented out for the 0.6.pre2 release, where we removed bytearray.
-  #oheap
+  compute
 }
 
 # For view

@@ -481,7 +481,7 @@ OvmBuildReport = function(in_dir, out_dir) {
 unique_stdout_md5sum = function(t, num_expected) {
   u = n_distinct(t$stdout_md5sum)
   if (u != num_expected) {
-    t %>% select(c(task_name, stdout_md5sum)) %>% print()
+    t %>% select(c(task_name, arg1, arg2, runtime_name, stdout_md5sum)) %>% print()
     stop(sprintf('Expected %d unique md5sums, got %d', num_expected, u))
   }
 }
@@ -505,6 +505,14 @@ ComputeReport = function(in_dir, out_dir) {
   times %>% filter(task_name == 'word_freq') %>% unique_stdout_md5sum(1)
   # 3 different inputs
   times %>% filter(task_name == 'parse_help') %>% unique_stdout_md5sum(3)
+
+  # TODO: Fix arg2 == bytes, and make assertion here
+  times %>% filter(task_name == 'bubble_sort' & arg1 == 'int') %>% unique_stdout_md5sum(1)
+
+  # TODO: Why does osh_eval differ?
+  #times %>% filter(task_name == 'palindrome' & arg1 == 'unicode') %>% unique_stdout_md5sum(1)
+  # Ditto here
+  #times %>% filter(task_name == 'palindrome' & arg1 == 'bytes') %>% unique_stdout_md5sum(1)
 
   #
   # Find distinct shells and hosts, and label them for readability.
@@ -537,7 +545,23 @@ ComputeReport = function(in_dir, out_dir) {
     arrange(task_name, host_name, user_ms) ->
     details
 
-  writeTsv(details, file.path(out_dir, 'times'))
+  details %>% filter(task_name == 'fib') %>% select(-c(task_name)) -> fib
+  details %>% filter(task_name == 'word_freq') %>% select(-c(task_name)) -> word_freq
+  # There's no arg2
+  details %>% filter(task_name == 'parse_help') %>% select(-c(task_name, arg2)) -> parse_help
+
+  details %>% filter(task_name == 'bubble_sort' & arg1 == 'int') %>% select(-c(task_name)) -> bubble_sort
+  details %>% filter(task_name == 'palindrome' & arg1 == 'unicode') %>% select(-c(task_name)) -> palindrome
+
+  writeTsv(details, file.path(out_dir, 'details'))
+
+  writeTsv(fib, file.path(out_dir, 'fib'))
+  writeTsv(word_freq, file.path(out_dir, 'word_freq'))
+  writeTsv(parse_help, file.path(out_dir, 'parse_help'))
+
+  writeTsv(bubble_sort, file.path(out_dir, 'bubble_sort'))
+  writeTsv(palindrome, file.path(out_dir, 'palindrome'))
+
   WriteDetails(distinct_hosts, distinct_shells, out_dir, tsv = T)
 }
 

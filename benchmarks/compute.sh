@@ -52,6 +52,9 @@ word_freq-tasks() {
 
   cat $provenance | filter-provenance python bash $OSH_CC |
   while read fields; do
+    # Why does osh_eval differ?
+    #echo 'word_freq 2 benchmarks/testdata/abuild' | xargs -n 3 -- echo "$fields"
+    #echo 'word_freq 2 benchmarks/testdata/ltmain.sh' | xargs -n 3 -- echo "$fields"
     echo 'word_freq 10 configure' | xargs -n 3 -- echo "$fields"
   done
 }
@@ -327,6 +330,17 @@ measure() {
   word_freq-all $provenance
   parse_help-all $provenance
 
+  bubble_sort-testdata
+  palindrome-testdata
+
+  # INCORRECT, but still run them
+  bubble_sort-all $provenance
+  palindrome-all $provenance
+
+  # array_ref takes too long to show quadratic behavior, and that's only
+  # necessary on 1 machine.  I think I will make a separate blog post,
+  # if anything.
+
   tree $BASE_DIR
 }
 
@@ -338,7 +352,7 @@ stage1() {
 
   local -a raw=()
 
-  for metric in fib word_freq parse_help; do
+  for metric in fib word_freq parse_help bubble_sort palindrome; do
     local dir=$BASE_DIR/$metric
 
     # Globs are in lexicographical order, which works for our dates.
@@ -366,31 +380,85 @@ print-report() {
     <p id="home-link">
       <a href="/">oilshell.org</a>
     </p>
-    <h2>OSH Compute Performance</h2>
+EOF
+  cmark <<EOF
 
-    <p>Running time and memory usage of programs that test data structures (as opposed to I/O).</p>
+## OSH Compute Performance
 
-    <h3>Task Details</h3>
+Running time and memory usage of programs that test data structures (as opposed
+to I/O).
 
-    <p>Memory usage is measured in MB (powers of 10), not MiB (powers of
-    2).</p>
+Memory usage is measured in MB (powers of 10), not MiB (powers of 2).
+
 EOF
 
-  tsv2html $in_dir/times.tsv
+  cmark <<EOF
+### fibonacci (integers)
 
-  cat <<EOF
-
-    <h3>Shell and Host Details</h3>
+- arg1: number of repetitions
+- arg2: the N in fib(N)
 EOF
+
+  tsv2html $in_dir/fib.tsv
+
+  cmark <<EOF
+### word_freq (associative arrays / hash tables)
+
+- arg1: number of repetitions
+- arg2: the file (varies size of hash table)
+EOF
+
+  tsv2html $in_dir/word_freq.tsv
+
+  cmark <<EOF
+### parse_help (strings, real code)
+
+- arg1: file to parse
+EOF
+
+  tsv2html $in_dir/parse_help.tsv
+
+  cmark <<EOF
+### bubble_sort (array of integers, arrays of strings)
+
+- arg1: type of array
+- arg2: length of array
+EOF
+
+  tsv2html $in_dir/bubble_sort.tsv
+
+  # Comment out until checksum is fixed
+if false; then
+  cmark <<EOF
+### palindrome (byte strings, unicode strings)
+
+- arg1: type of string
+- arg2: TODO: length of string
+EOF
+
+  tsv2html $in_dir/palindrome.tsv
+
+fi
+
+  cmark <<EOF
+### Interpreter and Host Details
+EOF
+
   tsv2html $in_dir/shells.tsv
   tsv2html $in_dir/hosts.tsv
+
+  cmark <<EOF
+### Details
+EOF
+
+  tsv2html $in_dir/details.tsv
+
 
   cat <<EOF
   </body>
 </html>
 EOF
 }
-
 
 
 "$@"
