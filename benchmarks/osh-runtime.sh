@@ -184,8 +184,8 @@ print-tasks() {
   local provenance=$1
 
   # Add 1 field for each of 5 fields.
-  cat $provenance | while read \
-    job_id host_name host_hash sh_path shell_hash; do
+  cat $provenance | filter-provenance "${SHELLS[@]}" |
+  while read job_id host_name host_hash sh_path shell_hash; do
 
     case $sh_path in
       mksh|zsh|bin/osh)

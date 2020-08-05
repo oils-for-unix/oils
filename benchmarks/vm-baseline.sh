@@ -1,7 +1,11 @@
 #!/bin/bash
 #
+# Do a quick test of virtual memory.
+# TODO: We could use Max RSS instead?  Didn't know about that when I originally
+# wrote this.
+#
 # Usage:
-#   ./virtual-memory.sh <function name>
+#   benchmarks/vm-baseline.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -11,8 +15,6 @@ source test/common.sh  # log
 source benchmarks/common.sh
 
 readonly BASE_DIR=_tmp/vm-baseline
-
-# TODO: Call this from benchmarks/auto.sh.
 
 measure() {
   local provenance=$1
@@ -27,7 +29,9 @@ measure() {
   mkdir -p $out_dir
 
   # Fourth column is the shell.
-  cat $provenance | while read _ _ _ sh_path shell_hash; do
+  # TODO: when oil-native can start processes, hook it up!
+  cat $provenance | filter-provenance "${SHELLS[@]}" |
+  while read _ _ _ sh_path shell_hash; do
     local sh_name=$(basename $sh_path)
 
     # There is a race condition on the status but sleep helps.

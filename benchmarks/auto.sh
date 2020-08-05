@@ -34,36 +34,25 @@ prereq() {
   test/spec.sh all
 }
 
-readonly OIL_VERSION=$(head -n 1 oil-version.txt)
+make-prov() {
+  ### Make a list of all runtimes we want to test
 
-# Notes:
-# - $OSH_OVM is set by devtools/release.sh to the RELATIVE path of the
-#   tar-built one.  Instead of the default of $PWD/_bin/osh.
-# - These are NOT the versions of bash/dash/etc. in _tmp/spec-bin!  I
-#   guess we should test distro-provided binaries.
-
-readonly SHELLS=( bash dash mksh zsh bin/osh $OSH_OVM )
+  # Python is considered a shell for benchmarks/compute
+  benchmarks/id.sh shell-provenance "${SHELLS[@]}" $OSH_EVAL python
+}
 
 measure-shells() {
   local base_dir=${1:-../benchmark-data}
 
-  local provenance
   # capture the filename
-  provenance=$(benchmarks/id.sh shell-provenance "${SHELLS[@]}")
+  local provenance
+  provenance=$(make-prov)
 
   benchmarks/vm-baseline.sh measure $provenance $base_dir/vm-baseline
   benchmarks/osh-runtime.sh measure $provenance $base_dir/osh-runtime
-
-  # Note: we could also use _tmp/native-tar-test/*/_bin/osh_eval...
-  local root=$PWD/../benchmark-data/src/oil-native-$OIL_VERSION
-  local osh_eval=$root/_bin/osh_eval.opt.stripped
-
-  local prov2
-  prov2=$(benchmarks/id.sh shell-provenance "${SHELLS[@]}" $osh_eval)
-
   benchmarks/osh-parser.sh measure $prov2 $base_dir/osh-parser
 
-  benchmarks/compute.sh measure $prov2 $base_dir/compute
+  #benchmarks/compute.sh measure $prov2 $base_dir/compute
 }
 
 osh-parser-quick() {

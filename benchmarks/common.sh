@@ -14,6 +14,19 @@ readonly MACHINE2=lisa
 #readonly MACHINE1=broome
 #readonly MACHINE2=spring
 
+# Notes:
+# - $OSH_OVM is set by devtools/release.sh to the RELATIVE path of the
+#   tar-built one.  Instead of the default of $PWD/_bin/osh.
+# - These are NOT the versions of bash/dash/etc. in _tmp/spec-bin!  I
+#   guess we should test distro-provided binaries.
+
+readonly SHELLS=( bash dash mksh zsh bin/osh $OSH_OVM )
+
+readonly OIL_VERSION=$(head -n 1 oil-version.txt)
+readonly root=$PWD/../benchmark-data/src/oil-native-$OIL_VERSION
+readonly OSH_EVAL=$root/_bin/osh_eval.opt.stripped
+
+
 # NOTE: This is in {build,test}/common.sh too.
 die() {
   echo "FATAL: $@" 1>&2
@@ -59,4 +72,15 @@ benchmark-html-head() {
     "$base_url/table/table-sort.css" \
     "$base_url/base.css"\
     "$base_url/benchmarks.css"
+}
+
+filter-provenance() {
+  # bash|dash
+  local pat=$(echo "$@" | sed 's/ /|/g')
+
+  # This is more correct, but gets confused with 2 osh_eval.opt.stripped paths
+  #pat="^($pat)$"
+
+  # 4th column is the shell
+  awk -v pat="$pat" '$4 ~ pat { print }'
 }

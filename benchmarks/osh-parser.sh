@@ -102,7 +102,8 @@ print-tasks() {
   local provenance=$1
 
   # Add 1 field for each of 5 fields.
-  cat $provenance | while read fields; do
+  cat $provenance | filter-provenance "${SHELLS[@]}" $OSH_EVAL |
+  while read fields; do
     cat $SORTED | xargs -n 1 -- echo $fields
   done
 }
