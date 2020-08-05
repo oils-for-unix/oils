@@ -468,6 +468,12 @@ OvmBuildReport = function(in_dir, out_dir) {
   #writeCsv(sizes, file.path(out_dir, 'sizes'))
 }
 
+ComputeReport = function(in_dir, out_dir) {
+  # TSV file, not CSV
+  times = read.table(file.path(in_dir, 'times.tsv'), header=T)
+  print(times)
+}
+
 main = function(argv) {
   action = argv[[1]]
   in_dir = argv[[2]]
@@ -484,6 +490,9 @@ main = function(argv) {
 
   } else if (action == 'ovm-build') {
     OvmBuildReport(in_dir, out_dir)
+
+  } else if (action == 'compute') {
+    ComputeReport(in_dir, out_dir)
 
   } else if (action == 'oheap') {
     OheapReport(in_dir, out_dir)

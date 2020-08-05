@@ -50,9 +50,8 @@ measure-shells() {
 
   benchmarks/vm-baseline.sh measure $provenance $base_dir/vm-baseline
   benchmarks/osh-runtime.sh measure $provenance $base_dir/osh-runtime
-  benchmarks/osh-parser.sh measure $prov2 $base_dir/osh-parser
-
-  #benchmarks/compute.sh measure $prov2 $base_dir/compute
+  benchmarks/osh-parser.sh measure $provenance $base_dir/osh-parser
+  benchmarks/compute.sh measure $provenance $base_dir/compute
 }
 
 osh-parser-quick() {

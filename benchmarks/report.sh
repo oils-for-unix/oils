@@ -74,6 +74,14 @@ ovm-build() {
   stage3 $base_dir
 }
 
+compute() {
+  local base_dir=_tmp/compute
+
+  benchmarks/compute.sh stage1 ../benchmark-data/compute
+  stage2 $base_dir
+  stage3 $base_dir
+}
+
 all() {
   osh-parser
   osh-runtime

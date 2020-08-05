@@ -13,7 +13,7 @@
 #              also integer counter
 # - bubble_sort: indexed array (bash uses a linked list?)
 # - palindrome: string, slicing, unicode
-# - parse-help: realistic shell-only string processing, which I didn't write.
+# - parse_help: realistic shell-only string processing, which I didn't write.
 #
 # TODO:
 # - vary problem size, which is different than iters
@@ -29,6 +29,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source benchmarks/common.sh  # filter-provenance
+
 readonly BASE_DIR=_tmp/compute
 readonly OSH_CC=_bin/osh_eval.opt.stripped
 
@@ -36,33 +38,33 @@ TIMEFORMAT='%U'
 
 # task_name,iter,args
 fib-tasks() {
-  cat <<EOF
-fib python   200 44
-fib bash     200 44
-fib dash     200 44
-fib $OSH_CC  200 44
-EOF
+  local provenance=$1
+
+  # Add 1 field for each of 5 fields.
+  cat $provenance | filter-provenance python bash dash $OSH_CC |
+  while read fields; do
+    echo 'fib 200 44' | xargs -n 3 -- echo "$fields"
+  done
 }
 
 word_freq-tasks() {
-  cat <<EOF
-word_freq python   10 configure
-word_freq bash     10 configure
-word_freq $OSH_CC  10 configure
-EOF
+  local provenance=$1
+
+  cat $provenance | filter-provenance python bash $OSH_CC |
+  while read fields; do
+    echo 'word_freq 10 configure' | xargs -n 3 -- echo "$fields"
+  done
 }
 
 bubble_sort-tasks() {
   # Note: this is quadratic, but bubble sort itself is quadratic!
+  local provenance=$1
 
-  cat <<EOF
-bubble_sort python   int   200
-bubble_sort python   bytes 200
-bubble_sort bash     int   200
-bubble_sort bash     bytes 200
-bubble_sort $OSH_CC  int   200
-bubble_sort $OSH_CC  bytes 200
-EOF
+  cat $provenance | filter-provenance python bash $OSH_CC |
+  while read fields; do
+    echo 'bubble_sort int   200' | xargs -n 3 -- echo "$fields"
+    echo 'bubble_sort bytes 200' | xargs -n 3 -- echo "$fields"
+  done
 }
 
 # Arrays are doubly linked lists in bash!  With a LASTREF hack to avoid being
@@ -77,15 +79,14 @@ EOF
 # NOTE: osh is also slower with linear access, but not superlinear!
 
 array_ref-tasks() {
-  #for sh in bash "$OSH_CC"; do
-  for sh in bash; do
+  local provenance=$1
+
+  cat $provenance | filter-provenance bash |
+  while read fields; do
     for mode in seq random; do
-      cat <<EOF
-array_ref $sh     $mode    10000
-array_ref $sh     $mode    20000
-array_ref $sh     $mode    30000
-array_ref $sh     $mode    40000
-EOF
+      for n in 10000 20000 30000 40000; do
+        echo "array_ref $mode $n" | xargs -n 3 -- echo "$fields"
+      done
     done
   done
 
@@ -97,25 +98,24 @@ EOF
 }
 
 palindrome-tasks() {
-  cat <<EOF
-palindrome python   unicode _
-palindrome python   bytes   _
-palindrome bash     unicode _
-palindrome bash     bytes   _
-palindrome $OSH_CC  unicode _
-palindrome $OSH_CC  bytes   _
-EOF
+  local provenance=$1
+
+  cat $provenance | filter-provenance python bash $OSH_CC |
+  while read fields; do
+    echo 'palindrome unicode _' | xargs -n 3 -- echo "$fields"
+    echo 'palindrome bytes   _' | xargs -n 3 -- echo "$fields"
+  done
 }
 
-parse-help-tasks() {
-  cat <<EOF
-parse-help bash     ls-short _
-parse-help bash     ls       _
-parse-help bash     mypy     _
-parse-help $OSH_CC  ls-short _
-parse-help $OSH_CC  ls       _
-parse-help $OSH_CC  mypy     _
-EOF
+parse_help-tasks() {
+  local provenance=$1
+
+  cat $provenance | filter-provenance bash $OSH_CC |
+  while read fields; do
+    echo 'parse_help ls-short _' | xargs -n 3 -- echo "$fields"
+    echo 'parse_help ls       _' | xargs -n 3 -- echo "$fields"
+    echo 'parse_help mypy     _' | xargs -n 3 -- echo "$fields"
+  done
 }
 
 # We also want:
@@ -197,10 +197,10 @@ palindrome-one() {
     < $BASE_DIR/$name/testdata.txt
 }
 
-parse-help-one() {
+parse_help-one() {
   ### Run one palindrome task (strings, real code)
 
-  local name=${1:-parse-help}
+  local name=${1:-parse_help}
   local runtime=$2
   local workload=${3:-}
 
@@ -212,38 +212,45 @@ parse-help-one() {
 # Helpers
 #
 
-fib-all() { task-all fib; }
-word_freq-all() { task-all word_freq; }
+fib-all() { task-all fib "$@"; }
+word_freq-all() { task-all word_freq "$@"; }
 
 # TODO: Fix the OSH comparison operator!  It gives the wrong answer and
 # completes quickly.
-bubble_sort-all() { task-all bubble_sort; }
+bubble_sort-all() { task-all bubble_sort "$@"; }
 
 # Array that is not quadratic
-array_ref-all() { task-all array_ref; }
+array_ref-all() { task-all array_ref "$@"; }
 
 # Hm osh is a little slower here
-palindrome-all() { task-all palindrome; }
+palindrome-all() { task-all palindrome "$@"; }
 
-parse-help-all() { task-all parse-help; }
+parse_help-all() { task-all parse_help "$@"; }
 
 task-all() {
   local name=$1
+  local provenance=$2
 
   local out=$BASE_DIR/$name
   mkdir -p $out
 
-  local times=$out/times.tsv
-  rm -f $times
+  local name=$(basename $provenance)
+  local prefix=${name%.provenance.txt}  # strip suffix
+
+  local times_tsv=$out/$prefix.times.tsv
+  rm -f $times_tsv
 
   # header
-  echo $'status\telapsed\tuser_time\tsys_time\tmax_rss\tstdout_md5sum\truntime\ttask_name\targ1\targ2' > $times
+  echo $'status\telapsed\tuser_time\tsys_time\tmax_rss\tstdout_md5sum\thost\thost_hash\truntime\truntime_hash\ttask_name\targ1\targ2' > $times_tsv
 
   local name=${1:-'word-freq'}
 
   local task_id=0
 
-  ${name}-tasks | while read _ runtime arg1 arg2; do
+  ${name}-tasks $provenance > $out/tasks.txt
+
+  cat $out/tasks.txt |
+  while read _ host host_hash runtime runtime_hash _ arg1 arg2; do
     local file
     case $runtime in 
       (python)
@@ -258,8 +265,10 @@ task-all() {
 
     # join args into a single field
     "${TIME_PREFIX[@]}" \
-      --stdout $out/stdout-$task_id.txt -o $out/times.tsv \
-      --field $runtime --field "$name" --field "$arg1" --field "$arg2" -- \
+      --stdout $out/stdout-$task_id.txt -o $times_tsv \
+      --field "$host" --field "$host_hash" \
+      --field $runtime --field $runtime_hash \
+      --field "$name" --field "$arg1" --field "$arg2" -- \
       $0 ${name}-one "$name" "$runtime" "$arg1" "$arg2"
 
     task_id=$((task_id + 1))
@@ -267,7 +276,7 @@ task-all() {
 
   #wc -l _tmp/compute/word_freq/*
   tree $out
-  cat $times
+  cat $times_tsv
 }
 
 #
@@ -312,14 +321,35 @@ EOF
 }
 
 measure() {
-  #local provenance=$1
-  local raw_dir=${2:-$BASE_DIR/raw}
+  local provenance=$1
 
-  fib-all
-  word_freq-all
-  parse-help-all
+  fib-all $provenance
+  word_freq-all $provenance
+  parse_help-all $provenance
 
   tree $BASE_DIR
+}
+
+stage1() {
+  local out_dir=$BASE_DIR/stage1
+  mkdir -p $out_dir
+
+  local times_tsv=$out_dir/times.tsv
+
+  local -a raw=()
+
+  for metric in fib word_freq parse_help; do
+    local dir=$BASE_DIR/$metric
+
+    # Globs are in lexicographical order, which works for our dates.
+    local -a a=($dir/$MACHINE2.*.times.tsv)
+    local -a b=($dir/$MACHINE2.*.times.tsv)  # HACK for now
+
+    # take the latest file
+    raw+=(${a[-1]} ${b[-1]})
+  done
+  csv-concat ${raw[@]} > $times_tsv
+  wc -l $times_tsv
 }
 
 
