@@ -84,7 +84,7 @@ def ParseJobs(stdin):
     #print(meta)
 
     tsv_path = json_path[:-5] + '.tsv'
-    log('%s', tsv_path)
+    #log('%s', tsv_path)
 
     failed_tasks = []
     total_elapsed = 0.0
@@ -255,7 +255,8 @@ def main(argv):
 
     rows = list(ParseJobs(sys.stdin))
 
-    # sourcehut doesn't have this grouping.
+    # sourcehut doesn't have a build number.  So we use commit date.  BUG: This
+    # can be wrong on a VM!
     rows.sort(key=ByCommitDate, reverse=True)
     groups = itertools.groupby(rows, key=ByCommitDate)
 
@@ -271,7 +272,6 @@ def main(argv):
         print(JOB_ROW_TEMPLATE % job)
 
     print(INDEX_BOTTOM)
-    log('srht-index done')
 
   elif action == 'travis-index':
 

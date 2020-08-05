@@ -26,13 +26,11 @@ toil-web() {
   PYTHONPATH=$REPO_ROOT $REPO_ROOT/services/toil_web.py "$@"
 }
 
-cleanup() { toil-web cleanup "$@"; }
-
 rewrite-jobs-index() {
   ### Atomic update of travis-ci.oilshell.org/jobs/
   local prefix=$1
 
-  local dir=~/travis-ci.oilshell.org/${prefix}jobs/
+  local dir=~/travis-ci.oilshell.org/${prefix}jobs
 
   log "toil-web: Rewriting ${prefix}jobs/index.html"
 
@@ -52,15 +50,15 @@ cleanup-jobs-index() {
   local prefix=$1
   local dry_run=${2:-true}
 
-  local dir=~/travis-ci.oilshell.org/${prefix}jobs/
+  local dir=~/travis-ci.oilshell.org/${prefix}jobs
 
   # Pass it all JSON, and then it figures out what files to delete (TSV, etc.)
   case $dry_run in
     false)
-      ls $dir/*.json | cleanup | xargs --no-run-if-empty -- rm -v 
+      ls $dir/*.json | toil-web cleanup | xargs --no-run-if-empty -- rm -v 
       ;;
     true)
-      ls $dir/*.json | cleanup
+      ls $dir/*.json | toil-web cleanup
       ;;
     *)
       log 'Expected true or false for dry_run'
