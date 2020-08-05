@@ -62,10 +62,13 @@ measure-shells() {
   prov2=$(benchmarks/id.sh shell-provenance "${SHELLS[@]}" $osh_eval)
 
   benchmarks/osh-parser.sh measure $prov2 $base_dir/osh-parser
+
+  benchmarks/compute.sh measure $prov2 $base_dir/compute
 }
 
-# Quick evaluation of the parser
 osh-parser-quick() {
+  ### Quick evaluation of the parser
+
   local base_dir=${1:-../benchmark-data}
 
   # REPO VERSION
@@ -75,6 +78,22 @@ osh-parser-quick() {
   prov2=$(benchmarks/id.sh shell-provenance "${SHELLS[@]}" $osh_eval)
 
   benchmarks/osh-parser.sh measure $prov2 $base_dir/osh-parser
+}
+
+osh-parser-dup-testdata() {
+  ### Quickly duplicate lisa testdata to flanders, for quick testing
+
+  local raw_dir=../benchmark-data/osh-parser
+
+  local -a a=($raw_dir/lisa.*.times.csv)
+  local latest=${a[-1]}
+  latest=${latest//.times.csv/}
+
+  for name in $latest.*; do 
+    local dest=${name//lisa/flanders}
+    cp -r -v $name $dest
+    sed -i 's/lisa/flanders/g' $dest
+  done
 }
 
 measure-builds() {

@@ -90,6 +90,7 @@ parser-task() {
   benchmarks/time_.py \
     --append \
     --output $times_out \
+    --rusage \
     --field "$host" --field "$host_hash" \
     --field "$shell_name" --field "$shell_hash" \
     --field "$script_path" -- \
@@ -106,7 +107,7 @@ print-tasks() {
   done
 }
 
-readonly HEADER='status,elapsed_secs,host_name,host_hash,shell_name,shell_hash,path' 
+readonly HEADER='status,elapsed_secs,user_time,sys_time,max_rss,host_name,host_hash,shell_name,shell_hash,path' 
 readonly NUM_COLUMNS=6  # 5 from provenance, 1 for file
 
 # Figure out all tasks to run, and run them.  When called from auto.sh, $2
@@ -178,6 +179,7 @@ stage1() {
   # Globs are in lexicographical order, which works for our dates.
   local -a a=($raw_dir/$MACHINE1.*.times.csv)
   local -a b=($raw_dir/$MACHINE2.*.times.csv)
+
   csv-concat ${a[-1]} ${b[-1]} > $times_csv
 
   # Construct a one-column CSV file

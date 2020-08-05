@@ -29,6 +29,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+readonly BASE_DIR=_tmp/compute
 readonly OSH_CC=_bin/osh_eval.opt.stripped
 
 TIMEFORMAT='%U'
@@ -170,7 +171,7 @@ bubble_sort-one() {
   local n=${4:-100}
 
   $runtime benchmarks/compute/bubble_sort.$(ext $runtime) $mode \
-     < _tmp/compute/$name/testdata-$n.txt
+     < $BASE_DIR/$name/testdata-$n.txt
 }
 
 # OSH is like 10x faster here!
@@ -182,7 +183,7 @@ array_ref-one() {
   local mode=${3:-seq}
   local n=${4:-100}
 
-  seq $n |shuf| $runtime benchmarks/compute/array_ref.$(ext $runtime) $mode
+  seq $n | shuf | $runtime benchmarks/compute/array_ref.$(ext $runtime) $mode
 }
 
 palindrome-one() {
@@ -193,7 +194,7 @@ palindrome-one() {
   local mode=${3:-unicode}
 
   $runtime benchmarks/compute/palindrome.$(ext $runtime) $mode \
-    < _tmp/compute/$name/testdata.txt
+    < $BASE_DIR/$name/testdata.txt
 }
 
 parse-help-one() {
@@ -229,7 +230,7 @@ parse-help-all() { task-all parse-help; }
 task-all() {
   local name=$1
 
-  local out=_tmp/compute/$name
+  local out=$BASE_DIR/$name
   mkdir -p $out
 
   local times=$out/times.tsv
@@ -257,7 +258,7 @@ task-all() {
 
     # join args into a single field
     "${TIME_PREFIX[@]}" \
-      --stdout $out/$task_id.txt -o $out/times.tsv \
+      --stdout $out/stdout-$task_id.txt -o $out/times.tsv \
       --field $runtime --field "$name" --field "$arg1" --field "$arg2" -- \
       $0 ${name}-one "$name" "$runtime" "$arg1" "$arg2"
 
@@ -274,7 +275,7 @@ task-all() {
 #
 
 bubble_sort-testdata() {
-  local out='_tmp/compute/bubble_sort'
+  local out=$BASE_DIR/bubble_sort
   mkdir -p $out
 
   # TODO: Make these deterministic for more stable benchmarks?
@@ -286,7 +287,7 @@ bubble_sort-testdata() {
 }
 
 palindrome-testdata() {
-  local out=_tmp/compute/palindrome
+  local out=$BASE_DIR/palindrome
   mkdir -p $out
 
   # TODO: Use iters?
@@ -309,5 +310,17 @@ EOF
   
   wc -l $out/testdata.txt
 }
+
+measure() {
+  #local provenance=$1
+  local raw_dir=${2:-$BASE_DIR/raw}
+
+  fib-all
+  word_freq-all
+  parse-help-all
+
+  tree $BASE_DIR
+}
+
 
 "$@"
