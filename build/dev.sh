@@ -52,7 +52,10 @@ r-packages() {
   # Install to a directory that doesn't require root.  This requires setting
   # R_LIBS_USER.  Or library(dplyr, lib.loc = "~/R", but the former is preferable.
   mkdir -p ~/R
-  INSTALL_DEST=$R_PATH Rscript -e 'install.packages(c("dplyr", "tidyr", "stringr"), lib=Sys.getenv("INSTALL_DEST"), repos="http://cran.us.r-project.org")'
+
+  # TODO: All of these fail on Xenial, e.g. as of dplyr 1.0.3 in January 2021!
+  # Not hermetic!
+  INSTALL_DEST=$R_PATH Rscript -e 'install.packages(c("dplyr", "tidyr", "stringr"), lib=Sys.getenv("INSTALL_DEST"), repos="https://cloud.r-project.org")'
 }
 
 test-r-packages() {

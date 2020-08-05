@@ -271,6 +271,7 @@ def main(argv):
         print(JOB_ROW_TEMPLATE % job)
 
     print(INDEX_BOTTOM)
+    log('srht-index done')
 
   elif action == 'travis-index':
 

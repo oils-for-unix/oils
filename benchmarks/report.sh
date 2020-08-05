@@ -85,12 +85,19 @@ compute() {
 mycpp-examples() {
   # ./run.sh benchmark-all  in the mycpp/ dir produces this
   local base_dir=${1:-_tmp/mycpp-examples}
+  local in_tsv=_ninja/benchmark-table.tsv
+
+  pushd mycpp
+  ninja $in_tsv
+  popd 
+
   mkdir -p $base_dir
+  cp -v mycpp/$in_tsv $base_dir
 
   local dir2=$base_dir/stage2
   mkdir -p $dir2
 
-  R_LIBS_USER=$R_PATH benchmarks/report.R mycpp $base_dir/raw $dir2
+  R_LIBS_USER=$R_PATH benchmarks/report.R mycpp2 $base_dir/raw $dir2
 
   stage3 $base_dir mycpp
 }

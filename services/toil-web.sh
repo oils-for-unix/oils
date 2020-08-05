@@ -34,7 +34,7 @@ rewrite-jobs-index() {
 
   local dir=~/travis-ci.oilshell.org/${prefix}jobs/
 
-  log "toil-web: Rewriting jobs/index.html"
+  log "toil-web: Rewriting ${prefix}jobs/index.html"
 
   local tmp=/tmp/$$.index.html
 
