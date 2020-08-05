@@ -46,6 +46,38 @@ GetOshLabel = function(shell_hash) {
   return( label)
 }
 
+DistinctHosts = function(t) {
+  t %>% distinct(host_name, host_hash) -> distinct_hosts
+  # Just use the name
+  distinct_hosts$host_label = distinct_hosts$host_name
+  return(distinct_hosts)
+}
+
+DistinctShells = function(t) {
+  t %>% distinct(shell_name, shell_hash) -> distinct_shells
+
+  distinct_shells$shell_label = NA  # the column we fill in below
+
+  Log('')
+  Log('Labeling shells')
+
+  for (i in 1:nrow(distinct_shells)) {
+    row = distinct_shells[i, ]
+    if (row$shell_name == 'osh') {
+      label = GetOshLabel(row$shell_hash)
+    } else if (row$shell_name == 'osh_eval.opt.stripped') {
+      label = 'oil-native'
+
+    } else {  # same name for other shells
+      label = row$shell_name
+    }
+    distinct_shells[i, ]$shell_label = label
+  }               
+  print(distinct_shells)
+
+  return(distinct_shells)
+}
+
 ParserReport = function(in_dir, out_dir) {
   times = read.csv(file.path(in_dir, 'times.csv'))
   lines = read.csv(file.path(in_dir, 'lines.csv'))
@@ -82,41 +114,14 @@ ParserReport = function(in_dir, out_dir) {
   # Find distinct shells and hosts, and label them for readability.
   #
 
-  all_times %>% distinct(host_name, host_hash) -> distinct_hosts
-  # Just use the name
-  distinct_hosts$host_label = distinct_hosts$host_name
-
+  distinct_hosts = DistinctHosts(all_times)
   Log('')
   Log('Distinct hosts')
   print(distinct_hosts)
 
-  all_times %>% distinct(shell_name, shell_hash) -> distinct_shells
-
+  distinct_shells = DistinctShells(all_times)
   Log('')
   Log('Distinct shells')
-  print(distinct_shells)
-
-  distinct_shells$shell_label = NA  # the column we fill in below
-
-  Log('')
-  Log('Labeling shells')
-
-  for (i in 1:nrow(distinct_shells)) {
-    row = distinct_shells[i, ]
-    if (row$shell_name == 'osh') {
-      label = GetOshLabel(row$shell_hash)
-    } else if (row$shell_name == 'osh_eval.opt.stripped') {
-      label = 'oil-native'
-
-    # TODO: delete when migrated
-    } else if (row$shell_name == 'osh_parse.opt.stripped') {
-      label = 'oil-native'
-
-    } else {  # same name for other shells
-      label = row$shell_name
-    }
-    distinct_shells[i, ]$shell_label = label
-  }               
   print(distinct_shells)
 
   # Replace name/hash combinations with labels.
@@ -218,7 +223,7 @@ ParserReport = function(in_dir, out_dir) {
   Log('Wrote %s', out_dir)
 }
 
-WriteDetails = function(distinct_hosts, distinct_shells, out_dir) {
+WriteDetails = function(distinct_hosts, distinct_shells, out_dir, tsv = F) {
   # Should be:
   # host_id_url
   # And then csv_to_html will be smart enough?  It should take --url flag?
@@ -238,8 +243,13 @@ WriteDetails = function(distinct_hosts, distinct_shells, out_dir) {
   )
   print(shell_table)
 
-  writeCsv(host_table, file.path(out_dir, 'hosts'))
-  writeCsv(shell_table, file.path(out_dir, 'shells'))
+  if (tsv) {
+    writeTsv(host_table, file.path(out_dir, 'hosts'))
+    writeTsv(shell_table, file.path(out_dir, 'shells'))
+  } else {
+    writeCsv(host_table, file.path(out_dir, 'hosts'))
+    writeCsv(shell_table, file.path(out_dir, 'shells'))
+  }
 }
 
 RuntimeReport = function(in_dir, out_dir) {
@@ -468,10 +478,67 @@ OvmBuildReport = function(in_dir, out_dir) {
   #writeCsv(sizes, file.path(out_dir, 'sizes'))
 }
 
+unique_stdout_md5sum = function(t, num_expected) {
+  u = n_distinct(t$stdout_md5sum)
+  if (u != num_expected) {
+    t %>% select(c(task_name, stdout_md5sum)) %>% print()
+    stop(sprintf('Expected %d unique md5sums, got %d', num_expected, u))
+  }
+}
+
 ComputeReport = function(in_dir, out_dir) {
   # TSV file, not CSV
   times = read.table(file.path(in_dir, 'times.tsv'), header=T)
   print(times)
+
+  times %>% filter(status != 0) -> failed
+  if (nrow(failed) != 0) {
+    print(failed)
+    stop('Some compute tasks failed')
+  }
+
+  #
+  # Check correctness
+  #
+
+  times %>% filter(task_name == 'fib') %>% unique_stdout_md5sum(1)
+  times %>% filter(task_name == 'word_freq') %>% unique_stdout_md5sum(1)
+  # 3 different inputs
+  times %>% filter(task_name == 'parse_help') %>% unique_stdout_md5sum(3)
+
+  #
+  # Find distinct shells and hosts, and label them for readability.
+  #
+
+  # Runtimes are called shells, as a hack for code reuse
+  times %>%
+    mutate(shell_name = basename(runtime_name), shell_hash = runtime_hash) %>%
+    select(c(host_name, host_hash, shell_name, shell_hash)) ->
+    tmp
+
+  distinct_hosts = DistinctHosts(tmp)
+  Log('')
+  Log('Distinct hosts')
+  print(distinct_hosts)
+
+  distinct_shells = DistinctShells(tmp)
+  Log('')
+  Log('Distinct runtimes')
+  print(distinct_shells)
+
+  times %>%
+    select(-c(status, stdout_md5sum, host_hash, runtime_hash)) %>%
+    mutate(runtime = basename(runtime_name),
+           elapsed_ms = elapsed_secs * 1000,
+           user_ms = user_secs * 1000,
+           sys_ms = sys_secs * 1000,
+           max_rss_MB = max_rss_KiB * 1024 / 1e6) %>%
+    select(-c(runtime_name, elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>%
+    arrange(task_name, host_name, user_ms) ->
+    details
+
+  writeTsv(details, file.path(out_dir, 'times'))
+  WriteDetails(distinct_hosts, distinct_shells, out_dir, tsv = T)
 }
 
 main = function(argv) {

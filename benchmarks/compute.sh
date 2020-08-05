@@ -241,7 +241,7 @@ task-all() {
   rm -f $times_tsv
 
   # header
-  echo $'status\telapsed\tuser_time\tsys_time\tmax_rss\tstdout_md5sum\thost\thost_hash\truntime\truntime_hash\ttask_name\targ1\targ2' > $times_tsv
+  echo $'status\telapsed_secs\tuser_secs\tsys_secs\tmax_rss_KiB\tstdout_md5sum\thost_name\thost_hash\truntime_name\truntime_hash\ttask_name\targ1\targ2' > $times_tsv
 
   local name=${1:-'word-freq'}
 
@@ -351,6 +351,46 @@ stage1() {
   csv-concat ${raw[@]} > $times_tsv
   wc -l $times_tsv
 }
+
+tsv2html() {
+  csv2html --tsv "$@"
+}
+
+print-report() {
+  local in_dir=$1
+
+  benchmark-html-head 'OSH Compute Performance'
+
+  cat <<EOF
+  <body class="width60">
+    <p id="home-link">
+      <a href="/">oilshell.org</a>
+    </p>
+    <h2>OSH Compute Performance</h2>
+
+    <p>Running time and memory usage of programs that test data structures (as opposed to I/O).</p>
+
+    <h3>Task Details</h3>
+
+    <p>Memory usage is measured in MB (powers of 10), not MiB (powers of
+    2).</p>
+EOF
+
+  tsv2html $in_dir/times.tsv
+
+  cat <<EOF
+
+    <h3>Shell and Host Details</h3>
+EOF
+  tsv2html $in_dir/shells.tsv
+  tsv2html $in_dir/hosts.tsv
+
+  cat <<EOF
+  </body>
+</html>
+EOF
+}
+
 
 
 "$@"

@@ -62,7 +62,7 @@ writeCsv = function(table, prefix, precision_func = NULL, tsv = F) {
 
   types_list = lapply(names(table), getFieldType)
   precision_list = lapply(names(table), precision_func)
-  print(precision_list)
+  #print(precision_list)
 
   schema = data_frame(
     column_name = names(table),
