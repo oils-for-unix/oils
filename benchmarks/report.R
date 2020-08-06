@@ -32,6 +32,8 @@ benchmarkDataLink = function(subdir, name, suffix) {
 }
 
 GetOshLabel = function(shell_hash) {
+  ### Given a string, return another string.
+
   path = sprintf('../benchmark-data/shell-id/osh-%s/osh-version.txt',
                  shell_hash)
   Log('Reading %s', path)
@@ -43,7 +45,29 @@ GetOshLabel = function(shell_hash) {
   } else {
     stop("Couldn't find OVM or CPython in the version string")
   }
-  return( label)
+  return(label)
+}
+
+ShellLabels = function(shell_name, shell_hash) {
+  ### Given 2 vectors, return a vector of readable labels.
+
+  #Log('name %s', shell_name)
+  #Log('hash  %s', shell_hash)
+
+  labels = c()
+  for (i in 1:length(shell_name)) {
+    if (shell_name[i] == 'osh') {
+      label = GetOshLabel(shell_hash[i])
+    } else if (shell_name[i] == 'osh_eval.opt.stripped') {
+      label = 'oil-native'
+    } else {
+      label = shell_name[i]
+    }
+    Log('[%s] [%s]', shell_name[i], label)
+    labels = c(labels, label)
+  }
+
+  return(labels)
 }
 
 DistinctHosts = function(t) {
@@ -56,23 +80,11 @@ DistinctHosts = function(t) {
 DistinctShells = function(t) {
   t %>% distinct(shell_name, shell_hash) -> distinct_shells
 
-  distinct_shells$shell_label = NA  # the column we fill in below
-
   Log('')
   Log('Labeling shells')
 
-  for (i in 1:nrow(distinct_shells)) {
-    row = distinct_shells[i, ]
-    if (row$shell_name == 'osh') {
-      label = GetOshLabel(row$shell_hash)
-    } else if (row$shell_name == 'osh_eval.opt.stripped') {
-      label = 'oil-native'
-
-    } else {  # same name for other shells
-      label = row$shell_name
-    }
-    distinct_shells[i, ]$shell_label = label
-  }               
+  distinct_shells$shell_label = ShellLabels(distinct_shells$shell_name,
+                                            distinct_shells$shell_hash)
   print(distinct_shells)
 
   return(distinct_shells)
@@ -375,16 +387,15 @@ VmBaselineReport = function(in_dir, out_dir) {
   vm = read.csv(file.path(in_dir, 'vm-baseline.csv'))
   #print(vm)
 
-  # TODO: Should label osh-ovm and osh-cpython, like above.
-
   vm %>%
     rename(kib = metric_value) %>%
-    mutate(megabytes = kib * 1024 / 1e6) %>%
-    select(-c(kib)) %>%
+    mutate(shell_label = ShellLabels(shell_name, shell_hash),
+           megabytes = kib * 1024 / 1e6) %>%
+    select(-c(shell_name, kib)) %>%
     spread(key = c(metric_name), value = megabytes) %>%
     rename(VmPeak_MB = VmPeak, VmRSS_MB = VmRSS) %>%
-    select(c(shell_name, shell_hash, host, VmRSS_MB, VmPeak_MB)) %>%
-    arrange(shell_name, shell_hash, host, VmPeak_MB) ->
+    select(c(shell_label, shell_hash, host, VmRSS_MB, VmPeak_MB)) %>%
+    arrange(shell_label, shell_hash, host, VmPeak_MB) ->
     vm
 
   print(vm)

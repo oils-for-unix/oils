@@ -112,8 +112,8 @@ test-rusage() {
   time-tool --tsv -o $out --rusage -- python -c "$py"
   cat $out
 
-  time-tool --tsv -o $out --rusage -- bin/osh -c 'echo osh'
-  cat $out
+  #time-tool --tsv -o $out --rusage -- bin/osh -c 'echo osh'
+  #cat $out
 }
 
 all-passing() {
