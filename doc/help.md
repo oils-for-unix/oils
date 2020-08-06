@@ -580,6 +580,15 @@ PS1=$x.
 
 These builtins take input and output.  They're often used with redirects.
 
+<h4 id="echo">echo</h4>
+
+The echo builtin prints its arguments to stdout, separated by a space, and
+terminated by a newline.  TODO: Describe flags, etc.
+
+<h4 id="read">read</h4>
+
+Reads lines from stdin into a variable -- $REPLY by default.
+
 ### Run Code
 
 ### Set Options
