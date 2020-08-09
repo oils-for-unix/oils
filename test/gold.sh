@@ -129,7 +129,7 @@ errexit-confusion() {
 }
 
 parse-help() {
-  local dir=testdata/parse-help
+  local dir=benchmarks/parse-help
 
   # This is not hermetic since it calls 'ls'
   _compare $dir/excerpt.sh _parse_help ls
