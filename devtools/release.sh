@@ -141,10 +141,10 @@ auto-machine1() {
 #         python/  # python stdlib coverage  with pycoverage
 #         c/       # c coverage with gcc/clang
 #       benchmarks.wwz/
+#         compute
 #         osh-parser/
 #         osh-runtime/
 #         vm-baseline/
-#         oheap/
 #         ...
 #         startup/
 #   download/  # What about native binaries?
@@ -156,7 +156,7 @@ _clean-tmp-dirs() {
     _tmp/{spec,unit,gold,parse-errors,osh2oil,wild/www} \
     _tmp/{metrics,important-source-code} \
     _tmp/opy-test \
-    _tmp/{osh-parser,osh-runtime,vm-baseline,ovm-build,oheap,syscall} \
+    _tmp/{compute,osh-parser,osh-runtime,vm-baseline,ovm-build,oheap,syscall} \
     _tmp/oil-tar-test
 }
 
@@ -476,6 +476,7 @@ compress-benchmarks() {
 
   pushd _tmp
   find \
+    compute/{stage1,stage2,index.html} \
     osh-parser/{stage1,stage2,index.html} \
     osh-runtime/{stage1,stage2,index.html} \
     vm-baseline/{stage1,stage2,index.html} \
@@ -483,7 +484,6 @@ compress-benchmarks() {
     -type f \
     | xargs --verbose -- zip -q $out 
   popd
-    #oheap/{stage1,stage2,index.html} \
 }
 
 line-counts() {

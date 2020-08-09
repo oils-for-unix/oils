@@ -174,7 +174,7 @@ bubble_sort-one() {
   local n=${4:-100}
 
   $runtime benchmarks/compute/bubble_sort.$(ext $runtime) $mode \
-     < $BASE_DIR/$name/testdata-$n.txt
+     < $BASE_DIR/tmp/$name/testdata-$n.txt
 }
 
 # OSH is like 10x faster here!
@@ -197,7 +197,7 @@ palindrome-one() {
   local mode=${3:-unicode}
 
   $runtime benchmarks/compute/palindrome.$(ext $runtime) $mode \
-    < $BASE_DIR/$name/testdata.txt
+    < $BASE_DIR/tmp/$name/testdata.txt
 }
 
 parse_help-one() {
@@ -231,28 +231,28 @@ palindrome-all() { task-all palindrome "$@"; }
 parse_help-all() { task-all parse_help "$@"; }
 
 task-all() {
-  local name=$1
+  local task_name=$1
   local provenance=$2
+  local raw_dir=$3  # put files to save in benchmarks-data repo here
 
-  local out=$BASE_DIR/$name
-  mkdir -p $out
+  local tmp_dir=$BASE_DIR/tmp/$task_name
 
-  local name=$(basename $provenance)
-  local prefix=${name%.provenance.txt}  # strip suffix
+  local filename=$(basename $provenance)
+  local prefix=${filename%.provenance.txt}  # strip suffix
 
-  local times_tsv=$out/$prefix.times.tsv
+  local times_tsv=$raw_dir/$task_name/$prefix.times.tsv
   rm -f $times_tsv
+
+  mkdir -p $tmp_dir $raw_dir/$task_name
 
   # header
   echo $'status\telapsed_secs\tuser_secs\tsys_secs\tmax_rss_KiB\tstdout_md5sum\thost_name\thost_hash\truntime_name\truntime_hash\ttask_name\targ1\targ2' > $times_tsv
 
-  local name=${1:-'word-freq'}
-
   local task_id=0
 
-  ${name}-tasks $provenance > $out/tasks.txt
+  ${task_name}-tasks $provenance > $tmp_dir/tasks.txt
 
-  cat $out/tasks.txt |
+  cat $tmp_dir/tasks.txt |
   while read _ host host_hash runtime runtime_hash _ arg1 arg2; do
     local file
     case $runtime in 
@@ -268,17 +268,17 @@ task-all() {
 
     # join args into a single field
     "${TIME_PREFIX[@]}" \
-      --stdout $out/stdout-$file-$arg1-$arg2.txt -o $times_tsv \
+      --stdout $tmp_dir/stdout-$file-$arg1-$arg2.txt -o $times_tsv \
       --field "$host" --field "$host_hash" \
       --field $runtime --field $runtime_hash \
-      --field "$name" --field "$arg1" --field "$arg2" -- \
-      $0 ${name}-one "$name" "$runtime" "$arg1" "$arg2"
+      --field "$task_name" --field "$arg1" --field "$arg2" -- \
+      $0 ${task_name}-one "$task_name" "$runtime" "$arg1" "$arg2"
 
     task_id=$((task_id + 1))
   done
 
   #wc -l _tmp/compute/word_freq/*
-  tree $out
+  tree $tmp_dir
   cat $times_tsv
 }
 
@@ -287,7 +287,7 @@ task-all() {
 #
 
 bubble_sort-testdata() {
-  local out=$BASE_DIR/bubble_sort
+  local out=$BASE_DIR/tmp/bubble_sort
   mkdir -p $out
 
   # TODO: Make these deterministic for more stable benchmarks?
@@ -299,7 +299,7 @@ bubble_sort-testdata() {
 }
 
 palindrome-testdata() {
-  local out=$BASE_DIR/palindrome
+  local out=$BASE_DIR/tmp/palindrome
   mkdir -p $out
 
   # TODO: Use iters?
@@ -325,26 +325,31 @@ EOF
 
 measure() {
   local provenance=$1
+  local raw_dir=${2:-$BASE_DIR/raw}  # ../benchmark-data/compute
 
-  fib-all $provenance
-  word_freq-all $provenance
-  parse_help-all $provenance
+  mkdir -p $BASE_DIR/{tmp,raw,stage1} $raw_dir
+
+  fib-all $provenance $raw_dir
+  word_freq-all $provenance $raw_dir
+  parse_help-all $provenance $raw_dir
 
   bubble_sort-testdata
   palindrome-testdata
 
-  # INCORRECT, but still run them
-  bubble_sort-all $provenance
-  palindrome-all $provenance
+  bubble_sort-all $provenance $raw_dir
+
+  # INCORRECT, but still run it
+  palindrome-all $provenance $raw_dir
 
   # array_ref takes too long to show quadratic behavior, and that's only
   # necessary on 1 machine.  I think I will make a separate blog post,
   # if anything.
 
-  tree $BASE_DIR
+  tree $raw_dir
 }
 
 stage1() {
+  local raw_dir=${1:-$BASE_DIR/raw}
   local out_dir=$BASE_DIR/stage1
   mkdir -p $out_dir
 
@@ -353,7 +358,7 @@ stage1() {
   local -a raw=()
 
   for metric in fib word_freq parse_help bubble_sort palindrome; do
-    local dir=$BASE_DIR/$metric
+    local dir=$raw_dir/$metric
 
     # Globs are in lexicographical order, which works for our dates.
     local -a a=($dir/$MACHINE2.*.times.tsv)
