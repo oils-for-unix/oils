@@ -44,8 +44,6 @@ readonly TAR_DIR=$PWD/_deps/ovm-build # Make it absolute
 # Dependencies
 #
 
-readonly OIL_VERSION=$(head -n 1 oil-version.txt)
-
 # Leave out mksh for now, because it doesn't follow ./configure make.  It just
 # has Build.sh.
 readonly -a TAR_SUBDIRS=( bash-4.4 dash-0.5.9.1 )  # mksh )
