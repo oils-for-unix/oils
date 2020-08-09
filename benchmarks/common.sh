@@ -85,8 +85,9 @@ filter-provenance() {
   # bash|dash
   local pat=$(echo "$@" | sed 's/ /|/g')
 
-  # This is more correct, but gets confused with 2 osh_eval.opt.stripped paths
-  #pat="^($pat)$"
+  # Anchor it at the end only.  For _bin/osh_eval.opt.stripped and the
+  # ../benchmark-data one.
+  pat="($pat)$"
 
   # 4th column is the shell
   awk -v pat="$pat" '$4 ~ pat { print }'
