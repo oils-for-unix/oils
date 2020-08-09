@@ -371,6 +371,10 @@ git-changelog-0.8.pre8() {
     > _release/VERSION/changelog.html
 }
 
+git-changelog-0.8.pre9() {
+  _git-changelog origin/release/0.8.pre8 release/0.8.pre9 \
+    > _release/VERSION/changelog.html
+}
 
 
 # For announcement.html
@@ -590,6 +594,10 @@ announcement-0.8.pre7() {
 }
 
 announcement-0.8.pre8() {
+  write-no-announcement
+}
+
+announcement-0.8.pre9() {
   write-no-announcement
 }
 

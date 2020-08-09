@@ -113,8 +113,10 @@ of Oil's C++ translation.
 
 - [OSH Parser Performance](benchmarks.wwz/osh-parser/).  How fast does OSH
   parse compared to other shells?
-- [OSH Runtime](benchmarks.wwz/osh-runtime/).  How fast does OSH
-  run compared to other shells?
+- [OSH Runtime](benchmarks.wwz/osh-runtime/).  How fast does OSH run shell
+  scripts?
+- [OSH Compute Performance](benchmarks.wwz/compute/).  How fast does it run
+  small programs without I/O?
 - [Virtual Memory Baseline](benchmarks.wwz/vm-baseline/).  How much memory do
   shells use at startup?
 - [OVM Build](benchmarks.wwz/ovm-build/).  How long does it take for end users

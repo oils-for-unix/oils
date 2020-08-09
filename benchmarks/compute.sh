@@ -361,7 +361,7 @@ stage1() {
     local dir=$raw_dir/$metric
 
     # Globs are in lexicographical order, which works for our dates.
-    local -a a=($dir/$MACHINE2.*.times.tsv)
+    local -a a=($dir/$MACHINE1.*.times.tsv)
     local -a b=($dir/$MACHINE2.*.times.tsv)  # HACK for now
 
     # take the latest file

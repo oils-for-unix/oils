@@ -165,7 +165,7 @@ ParserReport = function(in_dir, out_dir) {
 
   # Elapsed seconds for each shell by platform and file
   all_times %>%
-    select(-c(lines_per_ms, user_time, sys_time, max_rss)) %>% 
+    select(-c(lines_per_ms, user_secs, sys_secs, max_rss_KiB)) %>% 
     spread(key = shell_label, value = elapsed_ms) %>%
     arrange(host_label, num_lines) %>%
     mutate(filename = basename(path), filename_HREF = sourceUrl(path),
@@ -181,7 +181,7 @@ ParserReport = function(in_dir, out_dir) {
 
   # Rates by file and shell
   all_times  %>%
-    select(-c(elapsed_ms, user_time, sys_time, max_rss)) %>% 
+    select(-c(elapsed_ms, user_secs, sys_secs, max_rss_KiB)) %>% 
     spread(key = shell_label, value = lines_per_ms) %>%
     arrange(host_label, num_lines) %>%
     mutate(filename = basename(path), filename_HREF = sourceUrl(path)) %>% 
