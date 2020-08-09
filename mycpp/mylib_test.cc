@@ -405,7 +405,6 @@ TEST test_list_funcs() {
   auto aa = new Str("aa");
   auto b = new Str("b");
 
-  /*
   ASSERT_EQ(0, int_cmp(0, 0));
   ASSERT_EQ(-1, int_cmp(0, 5));
   ASSERT_EQ(1, int_cmp(0, -5));
@@ -417,7 +416,6 @@ TEST test_list_funcs() {
 
   ASSERT_EQ(1, str_cmp(b, a));
   ASSERT_EQ(1, str_cmp(b, kEmptyString));
-  */
 
   strs->sort();  // ['a', 'b', 'c']
   ASSERT_EQ(4, len(strs));

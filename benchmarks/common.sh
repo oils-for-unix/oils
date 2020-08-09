@@ -26,10 +26,7 @@ readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 
 # Needed to run on flanders
 readonly root=$PWD/../benchmark-data/src/oil-native-$OIL_VERSION
-readonly OSH_EVAL=$root/_bin/osh_eval.opt.stripped
-
-# Test the one in the repo
-#readonly OSH_EVAL=_bin/osh_eval.opt.stripped
+readonly OSH_EVAL_BENCHMARK_DATA=$root/_bin/osh_eval.opt.stripped
 
 
 # NOTE: This is in {build,test}/common.sh too.

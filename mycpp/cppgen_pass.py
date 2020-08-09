@@ -2088,7 +2088,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           if name in ('log', 'p_die', 'e_die', 'e_strict', 'e_usage',
                       'stderr_line'):
             continue    # do nothing
-          if name in ('switch', 'tagswitch', 'iteritems'):  # mylib
+          if name in ('switch', 'tagswitch', 'iteritems', 'str_cmp'):  # mylib
             continue  # do nothing
 
           if '.' in o.id:

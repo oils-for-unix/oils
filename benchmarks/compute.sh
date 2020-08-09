@@ -268,7 +268,7 @@ task-all() {
 
     # join args into a single field
     "${TIME_PREFIX[@]}" \
-      --stdout $out/stdout-$task_id.txt -o $times_tsv \
+      --stdout $out/stdout-$file-$arg1-$arg2.txt -o $times_tsv \
       --field "$host" --field "$host_hash" \
       --field $runtime --field $runtime_hash \
       --field "$name" --field "$arg1" --field "$arg2" -- \

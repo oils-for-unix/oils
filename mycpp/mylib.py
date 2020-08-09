@@ -134,3 +134,15 @@ def dict_remove(d, key):
     del d[key]
   except KeyError:
     pass
+
+
+def str_cmp(s1, s2):
+  # type: (str, str) -> int
+  """
+  """
+  if s1 == s2:
+    return 0
+  if s1 < s2:
+    return -1
+  else:
+    return 1

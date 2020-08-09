@@ -37,8 +37,18 @@ prereq() {
 make-prov() {
   ### Make a list of all runtimes we want to test
 
+  local in_tree=${1:-}  # pass T to get the one in tree
+  local osh_eval
+
+  # Test the one in the repo
+  if test -n "$in_tree"; then
+    osh_eval=_bin/osh_eval.opt.stripped
+  else
+    osh_eval=$OSH_EVAL_BENCHMARK_DATA
+  fi
+
   # Python is considered a shell for benchmarks/compute
-  benchmarks/id.sh shell-provenance "${SHELLS[@]}" $OSH_EVAL python
+  benchmarks/id.sh shell-provenance "${SHELLS[@]}" $osh_eval python
 }
 
 measure-shells() {

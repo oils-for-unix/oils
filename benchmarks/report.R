@@ -518,7 +518,7 @@ ComputeReport = function(in_dir, out_dir) {
   times %>% filter(task_name == 'parse_help') %>% unique_stdout_md5sum(3)
 
   # TODO: Fix arg2 == bytes, and make assertion here
-  times %>% filter(task_name == 'bubble_sort' & arg1 == 'int') %>% unique_stdout_md5sum(1)
+  times %>% filter(task_name == 'bubble_sort') %>% unique_stdout_md5sum(2)
 
   # TODO: Why does osh_eval differ?
   #times %>% filter(task_name == 'palindrome' & arg1 == 'unicode') %>% unique_stdout_md5sum(1)
@@ -553,7 +553,7 @@ ComputeReport = function(in_dir, out_dir) {
            sys_ms = sys_secs * 1000,
            max_rss_MB = max_rss_KiB * 1024 / 1e6) %>%
     select(-c(runtime_name, elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>%
-    arrange(task_name, host_name, user_ms) ->
+    arrange(host_name, task_name, arg1, arg2, user_ms) ->
     details
 
   details %>% filter(task_name == 'fib') %>% select(-c(task_name)) -> fib
@@ -561,7 +561,7 @@ ComputeReport = function(in_dir, out_dir) {
   # There's no arg2
   details %>% filter(task_name == 'parse_help') %>% select(-c(task_name, arg2)) -> parse_help
 
-  details %>% filter(task_name == 'bubble_sort' & arg1 == 'int') %>% select(-c(task_name)) -> bubble_sort
+  details %>% filter(task_name == 'bubble_sort') %>% select(-c(task_name)) -> bubble_sort
   details %>% filter(task_name == 'palindrome' & arg1 == 'unicode') %>% select(-c(task_name)) -> palindrome
 
   writeTsv(details, file.path(out_dir, 'details'))

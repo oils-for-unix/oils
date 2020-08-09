@@ -39,7 +39,7 @@ from frontend import location
 from frontend import consts
 from frontend import match
 from mycpp import mylib
-from mycpp.mylib import tagswitch, switch
+from mycpp.mylib import tagswitch, switch, str_cmp
 from osh import bool_stat
 from osh import word_
 from osh import word_eval
@@ -963,10 +963,10 @@ class BoolEvaluator(ArithEvaluator):
             return True
 
           if op_id == Id.Op_Less:
-            return s1 < s2
+            return str_cmp(s1, s2) < 0
 
           if op_id == Id.Op_Great:
-            return s1 > s2
+            return str_cmp(s1, s2) > 0
 
           raise AssertionError(op_id)  # should never happen
 

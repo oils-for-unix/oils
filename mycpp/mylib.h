@@ -1003,7 +1003,6 @@ List<Str*>* sorted(Dict<Str*, V>* d) {
   return keys;
 }
 
-/*
 inline int int_cmp(int a, int b) {
   if (a == b) {
     return 0;
@@ -1011,6 +1010,7 @@ inline int int_cmp(int a, int b) {
   return a < b ? -1 : 1;
 }
 
+// Used by [[ a > b ]] and so forth
 inline int str_cmp(Str* a, Str* b) {
   int min = std::min(a->len_, b->len_);
   if (min == 0) {
@@ -1022,25 +1022,14 @@ inline int str_cmp(Str* a, Str* b) {
   }
   return comp;
 }
-*/
 
-inline bool str_compare2(Str* a, Str* b) {
-  int min = std::min(a->len_, b->len_);
-  if (min == 0) {
-    return a->len_ < b->len_;
-  }
-  int cmp = memcmp(a->data_, b->data_, min);
-  if (cmp == 0) {
-    return a->len_ < b->len_;
-  } else if (cmp < 0) {
-    return true;
-  } else {
-    return false;
-  }
+// Hm std::sort() just needs true/false, not 0, 1, 1.
+inline bool _cmp(Str* a, Str* b) {
+  return str_cmp(a, b) < 0;
 }
 
 inline void mysort(std::vector<Str*>* v) {
-  std::sort(v->begin(), v->end(), str_compare2);
+  std::sort(v->begin(), v->end(), _cmp);
 }
 
 //
