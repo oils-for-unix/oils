@@ -11,7 +11,7 @@ compatibility with other shells.
 
 TODO: Go through more of the [Pure Bash
 Bible](https://github.com/dylanaraps/pure-bash-bible).  Oil provides
-alternatives for this quirky syntax.
+alternatives for such quirky syntax.
 
 <!-- cmark.py expands this -->
 <div id="toc">
