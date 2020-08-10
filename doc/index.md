@@ -39,6 +39,7 @@ language.  It's **our upgrade path from bash**.
   Python.
 - [Procs, Funcs, and Blocks](oil-proc-func-block.html)
 - [Oil Builtins](oil-builtins.html) (Shell builtins aren't discussed.)
+  - [IO Builtins](io-builtins.html)
 - [Word Language](oil-word-language.html) - Oil extends the "word language".
   - [Special Variables](oil-special-vars.html)
   - [Simple Word Evaluation](simple-word-eval.html)

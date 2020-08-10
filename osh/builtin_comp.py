@@ -102,11 +102,11 @@ def _DefineActions(spec):
 
 class _FixedWordsAction(completion.CompletionAction):
   def __init__(self, d):
-    # type: (Union[Dict, List[str]]) -> None
+    # type: (List[str]) -> None
     self.d = d
 
   def Matches(self, comp):
-    # type: (Api) -> Iterator[Union[Iterator, Iterator[str]]]
+    # type: (Api) -> Iterator[str]
     for name in sorted(self.d):
       if name.startswith(comp.to_complete):
         yield name
@@ -134,11 +134,11 @@ class SpecBuilder(object):
     self.comp_lookup = comp_lookup
 
   def Build(self, argv, arg, base_opts):
-    # type: (List[str], _Attributes, Dict) -> UserSpec
+    # type: (List[str], _Attributes, Dict[str, bool]) -> UserSpec
     """Given flags to complete/compgen, return a UserSpec."""
     cmd_ev = self.cmd_ev
 
-    actions = []
+    actions = []  # type: List[completion.CompletionAction]
 
     # NOTE: bash doesn't actually check the name until completion time, but
     # obviously it's better to check here.
@@ -152,7 +152,7 @@ class SpecBuilder(object):
     # NOTE: We need completion for -A action itself!!!  bash seems to have it.
     for name in arg.actions:
       if name == 'alias':
-        a = _FixedWordsAction(self.parse_ctx.aliases)
+        a = _FixedWordsAction(list(self.parse_ctx.aliases))  # type: completion.CompletionAction
 
       elif name == 'binding':
         # TODO: Where do we get this from?
@@ -164,8 +164,8 @@ class SpecBuilder(object):
         # directory, and external commands in $PATH.
 
         actions.append(_FixedWordsAction(consts.BUILTIN_NAMES))
-        actions.append(_FixedWordsAction(self.parse_ctx.aliases))
-        actions.append(_FixedWordsAction(cmd_ev.procs))
+        actions.append(_FixedWordsAction(list(self.parse_ctx.aliases)))
+        actions.append(_FixedWordsAction(list(cmd_ev.procs)))
         actions.append(_FixedWordsAction(lexer_def.OSH_KEYWORD_NAMES))
         actions.append(completion.FileSystemAction(exec_only=True))
 
@@ -179,7 +179,7 @@ class SpecBuilder(object):
         a = completion.FileSystemAction()
 
       elif name == 'function':
-        a = _FixedWordsAction(cmd_ev.procs)
+        a = _FixedWordsAction(list(cmd_ev.procs))
 
       elif name == 'job':
         a = _FixedWordsAction(['jobs-not-implemented'])
@@ -246,7 +246,7 @@ class SpecBuilder(object):
     if not actions and not else_actions:
       raise error.Usage('No actions defined in completion: %s' % argv)
 
-    p = completion.DefaultPredicate
+    p = completion.DefaultPredicate()  # type: completion._Predicate
     if arg.X:
       filter_pat = arg.X
       if filter_pat.startswith('!'):
@@ -310,7 +310,8 @@ class Complete(vm._Builtin):
     for command in commands:
       self.comp_lookup.RegisterName(command, base_opts, user_spec)
 
-    patterns = []
+    # TODO: Hook this up
+    patterns = []  # type: List[str]
     for pat in patterns:
       self.comp_lookup.RegisterGlob(pat, base_opts, user_spec)
 
@@ -394,6 +395,7 @@ class CompOpt(vm._Builtin):
     self.errfmt = errfmt
 
   def Run(self, cmd_val):
+    # type: (cmd_value__Argv) -> int
     argv = cmd_val.argv[1:]
     arg_r = args.Reader(argv)
     arg = COMPOPT_SPEC.Parse(arg_r)
@@ -461,7 +463,7 @@ class CompAdjust(vm._Builtin):
         break_chars.remove(c)
 
     # argv adjusted according to 'break_chars'.
-    adjusted_argv = []
+    adjusted_argv = []  # type: List[str]
     for a in comp_argv:
       completion.AdjustArg(a, break_chars, adjusted_argv)
 

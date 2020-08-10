@@ -74,6 +74,11 @@ typed-arith-asdl() {
 
 readonly MORE_OIL_MANIFEST=types/more-oil-manifest.txt
 
+more-oil-manifest() {
+  # allow comments
+  egrep -v "$COMMENT_RE" $MORE_OIL_MANIFEST
+}
+
 checkable-files() {
   # syntax_abbrev.py is "included" in _devbuild/gen/syntax_asdl.py; it's not a standalone module
   metrics/source-code.sh osh-files | grep -v syntax_abbrev.py
@@ -89,7 +94,7 @@ need-typechecking() {
   # `types/osh_parse.sh travis`.
   comm -2 -3 \
     <(checkable-files | sort | grep '.py$' | sed 's@^@./@') \
-    <(cat $MORE_OIL_MANIFEST $OSH_EVAL_MANIFEST | sort) \
+    <({ more-oil-manifest; osh-eval-manifest; } | sort) \
     | xargs wc -l | sort -n
 }
 
@@ -135,7 +140,7 @@ typecheck-more-oil() {
   # errors from imports.  In the end, we may want to remove it, since
   # everything will be annotated anyway.  (that would require
   # re-adding assert-one-error and its associated cruft, though).
-  cat $MORE_OIL_MANIFEST | xargs -- $0 typecheck-files
+  more-oil-manifest | xargs -- $0 typecheck-files
 }
 
 travis() {

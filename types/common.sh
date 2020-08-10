@@ -7,6 +7,11 @@ typecheck() {
 
 readonly MYPY_FLAGS='--strict --no-implicit-optional --no-strict-optional'
 readonly OSH_EVAL_MANIFEST='types/osh-eval-manifest.txt'
+readonly COMMENT_RE='^[ ]*#'
+
+osh-eval-manifest() {
+  egrep -v "$COMMENT_RE" $OSH_EVAL_MANIFEST  # allow comments
+}
 
 # Hack because there's an asdl/pretty.py error that's hard to get rid of.
 assert-one-error() {

@@ -93,6 +93,7 @@ readonly MARKDOWN_DOCS=(
   oil-word-language
   oil-special-vars
   oil-proc-func-block
+  io-builtins
   qsn
   unicode
 

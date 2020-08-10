@@ -593,7 +593,20 @@ class ExternalCommandAction(CompletionAction):
         yield word
 
 
-class GlobPredicate(object):
+class _Predicate(object):
+  def __call__(self, candidate):
+    # type: (str) -> int
+    raise NotImplementedError()
+
+
+class DefaultPredicate(_Predicate):
+
+  def __call__(self, candidate):
+    # type: (str) -> int
+    return True
+
+
+class GlobPredicate(_Predicate):
   """Expand into files that match a pattern.  !*.py filters them.
 
   Weird syntax:
@@ -621,9 +634,6 @@ class GlobPredicate(object):
     return '<GlobPredicate %s %r>' % (self.include, self.glob_pat)
 
 
-def DefaultPredicate(candidate):
-  # type: (str) -> bool
-  return True
 
 
 class UserSpec(object):
@@ -633,7 +643,7 @@ class UserSpec(object):
   - Readline must call ReadlineCallback, which uses RootCompleter.
   """
   def __init__(self,
-               actions,  # type: Union[List[FileSystemAction], List[TestAction], List[_FixedWordsAction]]
+               actions,  # type: List[CompletionAction]
                extra_actions,  # type: List
                else_actions,  # type: List
                predicate,  # type: Callable
@@ -1219,7 +1229,7 @@ class ReadlineCallback(object):
       # So this may never happen?
       stderr_line('Ctrl-C in completion')
     except Exception as e:  # ESSENTIAL because readline swallows exceptions.
-      if 0:
+      if 1:
         import traceback
         traceback.print_exc()
       stderr_line('osh: Unhandled exception while completing: %s', e)
