@@ -53,6 +53,7 @@ Oil has three major sources of docs:
   - [Egg Expressions (Oil Regexes)](doc/eggex.html)
   - [JSON Support](doc/json.html)
   - [Simple Word Evaluation](doc/simple-word-eval.html)
+  - [Shell Language Deprecations](doc/deprecations.html)
   - [Quirks](doc/quirks.html)
   - [Notes on OSH Architecture](doc/architecture-notes.html)
 - [Online Help](doc/help-index.html) (incomplete).  This document underlies the

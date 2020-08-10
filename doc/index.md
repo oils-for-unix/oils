@@ -44,10 +44,18 @@ language.  It's **our upgrade path from bash**.
   - [Simple Word Evaluation](simple-word-eval.html)
 - [Egg Expressions](eggex.html).  Oil has a new regex syntax called "egg
   expressions", abbreviated *eggexes*.
+- [Deprecations](deprecations.html).  When you turn on Oil, there are some
+  shell constructs you can no longer use.  We try to minimize the length of
+  this list.
 
 Future:
 
 - Error Handling
+
+## Data Formats
+
+- [QSN](qsn.html)
+- TODO: QTSV
 
 ## More
 
