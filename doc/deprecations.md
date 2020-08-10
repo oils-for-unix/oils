@@ -17,7 +17,37 @@ POSIX- and bash-compatible mode.  Oil is compatible by default.
 
 ## Right Now (`shopt -s oil:basic`)
 
-This is what new Oil users should know about.  There's just one thing!
+This is what new Oil users should know about.  There are two things!
+
+### Use `forkwait` for subshells rather than `()` (`shopt -s parse_paren`)
+
+TODO: Implement `forkwait`.
+
+No:
+
+    ( not_mutated=foo )
+    echo $not_mutated
+
+Yes:
+
+    forkwait {
+      setvar not_mutated = 'foo'
+    }
+    echo $not_mutated
+
+You don't need to start a subshell for some idioms:
+
+No:
+
+    ( cd /tmp; echo $PWD )
+    echo $PWD  # not mutated
+
+Yes:
+
+    cd /tmp {
+      echo $PWD 
+    }
+    echo $PWD  # restored
 
 ### Some Extended Globs Can't Be Used (`shopt -s parse_at`)
 
@@ -94,6 +124,6 @@ this is valid Oil syntax:
 This is the list of major features that is broken.  There are other features
 that are **discouraged**, like `$(( x + 1 ))`, `(( i++ ))`, `[[ $s =~ $pat ]]`,
 and `${s%%prefix}`.  These have better alternatives in the Oil expression
-language, but they can still be used.
+language, but they can still be used.  See [Oil Language Idioms](idioms.html).
 
 

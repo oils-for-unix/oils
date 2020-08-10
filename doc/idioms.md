@@ -114,7 +114,7 @@ Yes:
 
 No:
 
-    pat='[[:digit:]]+'
+    local pat='[[:digit:]]+'
     if [[ $x =~ $pat ]]; then
       echo 'number'
     fi
@@ -127,7 +127,7 @@ Yes:
 
 Or extract the pattern:
 
-    const pat = / digit+ / 
+    var pat = / digit+ / 
     if (x ~ pat) {
       echo 'number'
     }
@@ -136,30 +136,69 @@ Or extract the pattern:
 
 TODO: `BASH_REMATCH` alternative.
 
+## Glob Matching
+
+No:
+
+    if [[ $x == *.py ]]; then   
+      echo Python
+    fi
+
+TODO: Implement the `~~` operator.
+
+Yes:
+
+    if (x ~~ '*.py') {
+      echo 'Python'
+    }
+
+
+No:
+
+    case $x in
+      *.py)
+        echo Python
+        ;;
+      *.sh)
+        echo Shell
+        ;;
+    esac
+
+Yes (purely a style preference):
+
+    case $x {
+      (*.py)
+        echo 'Python'
+        ;;
+      (*.sh)
+        echo 'Shell'
+        ;;
+    }
+
 ## Use Simple Word Evaluation
 
 ### Splicing Arrays
 
 No:
 
-    myflags=(--all --long)
+    local myflags=(--all --long)
     ls "${myflags[@]}" "$@" 
 
 Yes:
 
-    const myflags = %(--verbose -j)
+    var myflags = %(--verbose -j)
     ls @myflags @ARGV
 
 ### Elision of Empty Elements
 
 No:
 
-    maybe_empty=''
+    local maybe_empty=''
     cp $maybe_empty other_file $dest  # omitted if empty
 
 Yes:
 
-    const e = ''
+    var e = ''
     cp @maybe(e) other_file $dest
 
 ### @split() and @glob()
@@ -170,18 +209,87 @@ TODO.
 
 No:
 
-    for x in $(seq 3); do  # No implicit splitting of unquoted words in Oil
+    local n=3
+    for x in $(seq $n); do  # No implicit splitting of unquoted words in Oil
       echo $x
     done
 
 Yes:
 
-    const n = 3
+    var n = 3
     for x in @(seq $n) {   # Explicit splitting
       echo $x
     }
 
 Note that `{1..3}` works in bash and Oil, but the numbers must be constant.
+
+## Use Procs (Better Shell Functions)
+
+### Named Parameters
+
+No:
+
+    f() {   
+      local src=$1
+      local dest=${2:-/tmp}
+
+      cp "$src" "$dest"
+    }
+
+Yes:
+
+    proc f(src, dest='/tmp') {   # Python-like default values
+      cp $src $dest
+    }
+
+### Variable Number of Arguments
+
+TODO: Test this out.
+
+No:
+
+    f() {
+      local first=$1
+      shift
+
+      echo $first
+      echo "$@"
+    }
+
+Yes:
+
+    proc f(first, @rest) {  # @ means "the rest of the arguments"
+      write -- $first
+      write -- @rest        # @ means "splice this array"
+    }
+
+
+### "Out" Params as Return Values
+
+TODO: Test this out.
+
+No:
+
+    f() {    
+      local in=$1
+      local -n out=$2
+      
+      out=PREFIX-$in
+    }
+
+    myvar='zzz'
+    f zzz myvar  # assigns myvar to 'PREFIX-zzz'
+
+
+Yes:
+
+    proc f(in, :out) {  # : means accept a string "reference"
+      setref out = "PREFIX-$in"
+    }
+
+    var myvar = 'zzz'
+    f zzz :myvar        # : means pass a string "reference" (optional)
+
 
 ## Use the `write` builtin instead of `printf` and `echo`
 
@@ -262,7 +370,7 @@ Yes:
       echo $PWD
     }
 
-### Change Shell State
+### Temporarily Set Shell Options
 
 TODO: Implement this.
 
@@ -277,3 +385,40 @@ Yes:
     shopt --unset errexit {
       myfunc
     }
+
+### Use the `forkwait` builtin for Subshells, not `()`
+
+TODO: Implement this.
+
+No:
+
+    ( not_mutated=foo )
+    echo $not_mutated
+
+Yes:
+
+    forkwait {
+      setvar not_mutated = 'foo'
+    }
+    echo $not_mutated
+
+### Use the `fork` builtin for async, not `&`
+
+TODO: Implement this.
+
+No:
+
+    myproc &
+
+    { sleep 1; echo one; sleep 2; } &
+
+Yes:
+
+    fork myproc
+
+    fork { sleep 1; echo one; sleep 2 }
+
+
+## Related Documents
+
+- [Shell Language Deprecations](deprecations.html)
