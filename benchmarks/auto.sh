@@ -120,7 +120,7 @@ demo-tasks() {
   local provenance=$1
 
   # Strip everything after the first dot.
- su local name=$(basename $provenance)
+  local name=$(basename $provenance)
   local job_id=${name%.provenance.txt}
 
   echo "JOB ID: $job_id"

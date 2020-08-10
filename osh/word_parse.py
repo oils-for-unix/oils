@@ -1293,6 +1293,10 @@ class WordParser(WordEmitter):
         w.parts.append(part)
 
       elif self.token_kind == Kind.ExtGlob:
+        # TODO: if parse_at, we can take over @( to start @(seq 3)
+        # You could make a synonym to @(foo|bar) like ,(foo|bar)
+        # note: ^(foo|bar) looks too much like regex, %(foo|bar) looks too much
+        # like array
         part = self._ReadExtGlob()
         w.parts.append(part)
 

@@ -1435,6 +1435,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
       elif case(word_part_e.ExtGlob):
         part = cast(word_part__ExtGlob, UP_part)
         # Do NOT split these.
+        # TODO: ,(foo|bar) can be an alias for @(foo|bar)
         part_vals.append(part_value.String(part.op.val, False, False))
         for i, w in enumerate(part.arms):
           if i != 0:

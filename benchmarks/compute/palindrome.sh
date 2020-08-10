@@ -7,7 +7,9 @@
 
 main() {
   if test "$1" = "unicode"; then
-    echo "palindrome.sh: unicode" 1>&2
+    # Redirects don't work yet in Oil!
+    #echo "palindrome.sh: unicode" 1>&2
+    true
   else
     LANG=C
   fi

@@ -517,11 +517,10 @@ ComputeReport = function(in_dir, out_dir) {
   # 3 different inputs
   times %>% filter(task_name == 'parse_help') %>% unique_stdout_md5sum(3)
 
-  # TODO: Fix arg2 == bytes, and make assertion here
   times %>% filter(task_name == 'bubble_sort') %>% unique_stdout_md5sum(2)
 
   # TODO: Why does osh_eval differ?
-  #times %>% filter(task_name == 'palindrome' & arg1 == 'unicode') %>% unique_stdout_md5sum(1)
+  times %>% filter(task_name == 'palindrome' & arg1 == 'unicode') %>% unique_stdout_md5sum(1)
   # Ditto here
   #times %>% filter(task_name == 'palindrome' & arg1 == 'bytes') %>% unique_stdout_md5sum(1)
 
