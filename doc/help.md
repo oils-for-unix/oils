@@ -640,6 +640,32 @@ Backslash sequences recognized by -e:
   \UHHHHHHHH Unicode character specified as an hexadecimal value with 1 to
              8 hex digits
 
+<h4 id="readarray">readarray</h4>
+
+Alias for mapfile
+
+<h4 id="mapfile">mapfile</h4>
+
+The mapfile builtin reads lines from stdin into an array.
+
+mapfile FLAGS* ARRAY*
+
+ARRAY:
+  Where the read lines will be stored. If no variable is specified, MAPFILE
+  will be used.
+
+FLAGS:
+  -t       delete the delimiter from each line
+<!--
+  -d CHAR  use CHAR as delimiter, instead of the default newline
+  -n NUM   copy up to NUM lines
+  -O NUM   begins copying lines at the NUM element of the array
+  -s NUM   discard the first NUM lines
+  -u FD    read from FD file descriptor instead of the standard input
+  -C CMD   run CMD every NUM lines specified in -c
+  -c NUM   every NUM lines, the CMD command in C will be run
+-->
+
 ### Run Code
 
 ### Set Options
