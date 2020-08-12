@@ -79,6 +79,10 @@ word evaluation](simple-word-eval.html).
 
 TODO: Implement this.
 
+### Minor Breakages
+
+- `@foo` must be quoted `'@foo'` to preserve meaning (`shopt -s parse_at`)
+
 ## Later (`shopt -s oil:all`, under  `bin/oil`)
 
 This is for the "legacy-free" Oil language.  These options **break more code**.
@@ -141,5 +145,83 @@ There are other features that are **discouraged**, like `$(( x + 1 ))`, `((
 i++))`, `[[ $s =~ $pat ]]`, and `${s%%prefix}`.  These have better alternatives
 in the Oil expression language, but they can still be used.  See [Oil Language
 Idioms](idioms.html).
+
+## Distant Future
+
+These breakages may never happen, as they require a significant new lexer mode.
+If they do, you will want to avoid the following syntax:
+
+- `r'` and `c'` at the beginning of a word
+- the character sequences `$/`, `'''`, `"""` anywhere
+
+I expect that those sequences are rare, so this change would break few
+programs.
+
+### Raw and C String Literals in Word Mode
+
+We might want to make string literals in the command/word context match Oil's
+expressions.  This means we have to disallow implicit concatenation, or certain
+instances of it.
+
+No:
+
+    var x = foo'bar'   # Not a valid Oil expression
+    echo foo'bar'      # Valid in shell, but discouraged
+
+Yes:
+
+    var x = 'foobar'
+    echo 'foobar'
+
+We don't want to break these, so = could be special
+
+    ls --foo='with spaces'
+    ls --foo="with $var"
+
+New raw and C strings (which technically conflict with shell):
+
+    echo r'\'   # equivalent to '\'
+    echo c'\n'  # equivalent to $'\t'
+
+
+### Multiline Strings and Redirects
+
+Instead of here docs:
+
+    cat <<EOF
+    hello
+    there, $name
+    EOF
+
+    cat <<'EOF'
+    $5.99  # no interpolation
+    'EOF'
+
+We could have multiline strings:
+
+    cat << """
+    hello
+    there, $name
+    """
+
+    cat << '''
+    $5.99  # no interpolation
+    '''
+
+Minor breakage: the `'''` and `"""` tokens become significant.  It may also be
+nice to change the meaning of `<<` slightly.
+
+### Inline Eggex
+
+Instead of:
+
+    var pat = / digit+ /
+    egrep $pat *.txt
+
+You can imagine:
+
+    egrep $/ digit+ / *.txt
+
+Minor breakage: making `$/` significant.
 
 
