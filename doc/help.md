@@ -668,6 +668,20 @@ FLAGS:
 
 ### Run Code
 
+<h4 id="source">source</h4>
+
+The source builtin executes a script, which is run in the context of the
+running shell and can modify local variables (as opposed to running in a
+subshell, where it can't)
+
+source SCRIPT ARGS*
+
+SCRIPT:
+  Path to the script that you want to run.
+
+ARGS:
+  One or more arguments for the script.
+
 ### Set Options
 
 ### Working Dir
