@@ -682,6 +682,22 @@ SCRIPT:
 ARGS:
   One or more arguments for the script.
 
+<h4 id="eval">eval</h4>
+
+The eval builtin constructs a string from the arguments, then runs the string
+as a command. It is very powerful, but must be used with care, as it can
+introduce security problems (see https://mywiki.wooledge.org/BashFAQ/048)
+
+eval ARGS+
+
+ARGS:
+  One or more arguments that will be used to construct a command.
+
+EXAMPLES:
+  a='echo '; b='Hello, '; c='World!'
+  eval $a $b $c
+  This will create the string "echo Hello, World!" and run it.
+
 ### Set Options
 
 ### Working Dir
