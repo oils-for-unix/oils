@@ -261,15 +261,12 @@ Str* CFileLineReader::readline() {
   errno = 0;  // must be reset because we check it below!
   ssize_t len = getline(&line, &allocated_size, f_);
   if (len < 0) {
-  // log("getline() result: %d", len);
-  // Why does tcmalloc mess up errno ???
-#ifndef TCMALLOC
+    // log("getline() result: %d", len);
     if (errno != 0) {
       // Unexpected error
       log("getline() error: %s", strerror(errno));
       throw new AssertionError(errno);
     }
-#endif
     // Expected EOF
     return kEmptyString;
   }

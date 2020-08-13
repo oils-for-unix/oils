@@ -534,6 +534,7 @@ osh-parse-smoke() {
 
 osh-eval-smoke() {
   ### Run osh_eval.dbg over a bunch of shell scripts
+  local osh_eval=${1:-_bin/osh_eval.dbg}
 
   # Problem: all while loops go infinitely now...
 
@@ -545,7 +546,6 @@ osh-eval-smoke() {
 
     echo "_____ $file"
 
-    local osh_eval=_bin/osh_eval.dbg
     $osh_eval $file
 
     case $? in
@@ -579,7 +579,8 @@ osh-eval-smoke() {
 }
 
 osh-eval-demo() {
-  types/oil-slice.sh demo _bin/osh_eval.dbg
+  local osh_eval=${1:-_bin/osh_eval.dbg}
+  types/oil-slice.sh demo "$osh_eval"
 }
 
 #

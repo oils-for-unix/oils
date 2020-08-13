@@ -6,13 +6,18 @@
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
-oil.py - A busybox-like binary for oil.
+oil.py - A busybox-like binary for OSH and Oil.
 
 Based on argv[0], it acts like a few different programs.
+- true, false
+- readlink
 
 Note: could also expose some other binaries for a smaller POSIX system?
-- 'test' / '['
-- 'time'  -- has some differnt flags
+- test / '['
+- printf, echo
+- cat
+- seq
+- 'time' -- has some different flags
 """
 from __future__ import print_function
 

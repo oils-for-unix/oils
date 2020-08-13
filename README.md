@@ -91,7 +91,7 @@ Oil is naturally structured as a set of mutually recursive parsers and
 evaluators.  These interpreters are specified at a high-level: with regular
 languages, Zephyr ASDL, and aa statically-typed subset of Python.
 
-    bin/              # Main entry points (bin/osh)
+    bin/              # Main entry points like bin/osh (source in bin/oil.py)
     frontend/         # Lexing/Parsing code common to Oil and OSH
     osh/              # OSH parsers and evaluators (cmd, word, sh_expr)
     oil_lang/         # Oil parser and evaluator
