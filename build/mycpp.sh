@@ -19,22 +19,6 @@ readonly MYPY_REPO=${MYPY_REPO:-~/git/languages/mypy}
 # on parsing configure-coreutils.
 CPPFLAGS="$CXXFLAGS -fno-omit-frame-pointer"
 
-# User can set CXX=, like they can set CC= for oil.ovm
-# The ovm-build benchmark explicitly sets this to GCC or Clang.
-if test -z "${CXX:-}"; then
-  if test -f $CLANGXX; then
-    # note: Clang doesn't inline MatchOshToken!
-    CXX=$CLANGXX
-
-    # Show more errors -- this flag is Clang-only.
-    CPPFLAGS="$CPPFLAGS -ferror-limit=1000"
-  else
-    # equivalent of 'cc' for C++ langauge
-    # https://stackoverflow.com/questions/172587/what-is-the-difference-between-g-and-gcc
-    CXX='c++'
-  fi
-fi
-
 # Always build with Address Sanitizer
 readonly DBG_FLAGS="$CPPFLAGS -O0 -g"
 

@@ -15,7 +15,7 @@ from frontend import lexer_def
 from frontend import option_def
 from core import state
 
-from typing import Dict, List, Union, Iterator, TYPE_CHECKING
+from typing import Dict, List, Iterator, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from core.completion import Lookup, OptionState, Api, UserSpec

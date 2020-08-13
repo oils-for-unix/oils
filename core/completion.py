@@ -65,7 +65,6 @@ if TYPE_CHECKING:
   from core.state import Mem
   from core.util import _DebugFile
   from frontend.parse_lib import ParseContext
-  from osh.builtin_comp import _FixedWordsAction
   from osh.cmd_eval import CommandEvaluator
   from osh.split import SplitContext
   from osh.word_eval import AbstractWordEvaluator

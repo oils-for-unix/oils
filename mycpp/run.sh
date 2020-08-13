@@ -55,14 +55,6 @@ source harness.sh
 CPPFLAGS="$CXXFLAGS -O0 -g -fsanitize=address"
 export ASAN_OPTIONS='detect_leaks=0'  # like build/mycpp.sh
 
-if test -f $CLANGXX; then
-  # accepts -ferror-limit=1000, but C++ doesn't
-  CXX=$CLANGXX
-else
-  CXX='c++'
-fi
-
-
 time-tsv() {
   $REPO_ROOT/benchmarks/time_.py --tsv "$@"
 }

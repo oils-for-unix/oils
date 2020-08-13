@@ -9,19 +9,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source build/common.sh  # for clang
-
-# User can set CXX=, like they can set CC= for oil.ovm
-if test -z "${CXX:-}"; then
-  if test -f $CLANGXX; then
-    # note: Clang doesn't inline MatchOshToken!
-    CXX=$CLANGXX
-  else
-    # equivalent of 'cc' for C++ langauge
-    # https://stackoverflow.com/questions/172587/what-is-the-difference-between-g-and-gcc
-    CXX='c++'
-  fi
-fi
+source build/common.sh  # CXXFLAGS, etc.
 
 CPPFLAGS="$CXXFLAGS -g -fsanitize=address"  # for debugging tests
 export ASAN_OPTIONS='detect_leaks=0'  # like build/mycpp.sh
