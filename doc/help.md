@@ -698,6 +698,23 @@ EXAMPLES:
   eval $a $b $c
   This will create the string "echo Hello, World!" and run it.
 
+<h4 id="trap">trap</h4>
+
+The trap builtin runs commands after a signal is received.
+
+trap FLAGS* CMD SIGNALS
+
+FLAGS:
+  -l  Lists all signals and their signal number
+  -p  Prints a list of the installed signal handlers
+
+CMD:
+  Command to be run. If the command is the null string, the signal is ignored.
+
+SIGNALS:
+  List of signals to be caught.
+
+
 ### Set Options
 
 ### Working Dir
