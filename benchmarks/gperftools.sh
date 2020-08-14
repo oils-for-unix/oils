@@ -37,8 +37,10 @@ collect-big() {
 
   HEAPPROFILE=_tmp/big-parse.hprof $OSH_EVAL --ast-format none -n $path
 
-  # Run 100 iterations of fib(44).  Got about 18 MB of heap usage.
-  HEAPPROFILE=_tmp/big-eval.hprof $OSH_EVAL benchmarks/compute/fib.sh 100 44
+  # Run 200 iterations of fib(44).  Got about 18 MB of heap usage.
+  # (This matches the 200 iterations in benchmarks/compute.sh, which shows 60
+  # MB max RSS)
+  HEAPPROFILE=_tmp/big-eval.hprof $OSH_EVAL benchmarks/compute/fib.sh 200 44
 }
 
 # e.g. pass _tmp/osh_parse.hprof.0001.heap
