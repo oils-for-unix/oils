@@ -796,22 +796,25 @@ FLAGS:
 
 <h4 id="complete">complete</h4>
 
-Register completion policies for different commands.
+The complete builtin registers completion policies for different commands.
 
 <h4 id="compgen">compgen</h4>
 
-Generate completion candidates inside a user-defined completion function.
+The compgen builtin generates completion candidates inside a user-defined
+completion function.
 
 It can also be used in scripts, i.e. outside a completion function.
 
 <h4 id="compopt">compopt</h4>
 
-Change completion options inside a user-defined completion function.
+The compopt builtin changes completion options inside a user-defined completion
+function.
 
 <h4 id="compadjust">compadjust</h4>
 
-Adjust COMP_ARGV according to specified delimiters, and optionally set
-variables cur, prev, words (an array), and cword.  May also set 'split'.
+The compadjust builtin adjusts COMP_ARGV according to specified delimiters,
+and optionally set variables cur, prev, words (an array), and cword.  May also
+set 'split'.
 
 This is an OSH extension that makes it easier to run the bash-completion
 project.
