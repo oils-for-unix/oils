@@ -51,7 +51,7 @@ browse() {
 
 svg() {
   local in=$1
-  local out=${in%.hprof}.svg
+  local out=${in%.heap}.svg
   pprof --svg $OSH_EVAL "$@" > $out
 
   echo "Wrote $out"
