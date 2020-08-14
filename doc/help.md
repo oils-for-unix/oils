@@ -726,6 +726,33 @@ The shopt builtin configures the shell.
 
 ### Working Dir
 
+<h4 id="cd">cd</h4>
+
+The cd builtin changes the working directory.
+
+cd FLAGS* DIR
+
+DIR:
+  The path where you want to move. If not specified, variable HOME is used.
+  Path "~" is also an alias for the variable HOME. If the specified path is
+  "-", variable OLDPWD will be used, which is set by the shell to the
+  previous working directory.
+
+FLAGS:
+  -L  Follow symbolic links, working directory will be the one pointed by the
+      symbolic link (default behavior).
+  -P  Don't follow symbolic links, working directory will be the symbolic link.
+
+<h4 id="pwd">pwd</h4>
+
+The pwd builtin prints the current working directory.
+
+pwd FLAGS
+
+FLAGS:
+  -L  If present in the path, follow symbolic links (default behavior)
+  -P  Don't follow symbolic links, print the link instead of the reference.
+
 ### Completion
 
 <h4 id="complete">complete</h4>
