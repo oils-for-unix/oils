@@ -820,6 +820,15 @@ This is an OSH extension that makes it easier to run the bash-completion
 project.
 
 <h3>Shell Process</h3>
+
+<h4 id="exec">exec</h4>
+
+The exec builin replaces the running shell with the specified command.
+
+exec CMD ARGS*
+
+CMD ARGS:
+  The command to be run and its arguments.
                 
 ### Child Process
 
