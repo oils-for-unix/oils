@@ -24,26 +24,35 @@ download() {
 
 readonly OSH_EVAL='_bin/osh_eval.tcmalloc '
 
-run-small() {
-  HEAPPROFILE=_tmp/osh_parse.hprof $OSH_EVAL -c 'echo hi'
+collect-small() {
+  HEAPPROFILE=_tmp/small-parse.hprof $OSH_EVAL -c 'echo hi'
 
   echo 'echo hi' > _tmp/h.sh
-  HEAPPROFILE=_tmp/osh_parse.hprof $OSH_EVAL -n _tmp/h.sh
-
-  # Parse it.  Works fine.
-  #HEAPPROFILE=_tmp/osh_parse.hprof $OSH_EVAL -n -c 'echo hi'
+  HEAPPROFILE=_tmp/small-eval.hprof $OSH_EVAL -n _tmp/h.sh
 }
 
-parse-big() {
+collect-big() {
   #local path=benchmarks/testdata/configure
   local path=${1:-configure}
 
-  HEAPPROFILE=_tmp/osh_parse.hprof $OSH_EVAL --ast-format none -n $path
+  HEAPPROFILE=_tmp/big-parse.hprof $OSH_EVAL --ast-format none -n $path
+
+  # Run 100 iterations of fib(44).  Got about 18 MB of heap usage.
+  HEAPPROFILE=_tmp/big-eval.hprof $OSH_EVAL benchmarks/compute/fib.sh 100 44
 }
 
 # e.g. pass _tmp/osh_parse.hprof.0001.heap
-svg-report() {
+browse() {
+  ### Open it in a browser
   pprof --web $OSH_EVAL "$@"
+}
+
+svg() {
+  local in=$1
+  local out=${in%.hprof}.svg
+  pprof --svg $OSH_EVAL "$@" > $out
+
+  echo "Wrote $out"
 }
 
 "$@"
