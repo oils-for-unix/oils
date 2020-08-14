@@ -753,6 +753,25 @@ FLAGS:
   -L  If present in the path, follow symbolic links (default behavior)
   -P  Don't follow symbolic links, print the link instead of the reference.
 
+<h4 id="pushd">pushd</h4>
+
+The pushd builtin adds a directory to the directory stack, and changes the
+working directory to it. This is typically used along with popd and dirs.
+
+<!--pushd FLAGS DIR-->
+pushd DIR
+<!--pushd +/-NUM-->
+
+DIR:
+  File system directory where you want to move and which you want to stack.
+
+<!--FLAGS:
+  -n  Don't change the working directory, just manipulate the stack 
+NUM:
+  Rotates the stack the number of places specified. Eg, given the stack
+  '/foo /bar /baz', where '/foo' is the top of the stack, pushd +1 will move
+  it to the bottom, '/bar /baz /foo'-->
+
 ### Completion
 
 <h4 id="complete">complete</h4>
