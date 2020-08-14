@@ -714,8 +714,15 @@ CMD:
 SIGNALS:
   List of signals to be caught.
 
-
 ### Set Options
+
+<h4 id="set">set</h4>
+
+The set builtin modifies the shell's configuration and behavior.
+
+<h4 id="shopt">shopt</h4>
+
+The shopt builtin configures the shell.
 
 ### Working Dir
 
