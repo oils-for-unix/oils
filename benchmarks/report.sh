@@ -30,7 +30,7 @@ stage2() {
 
 stage3() {
   local base_dir=$1  # _tmp/{osh-parser,osh-runtime,...}
-  local name=$(basename $base_dir)
+  local name=${2:-$(basename $base_dir)}
   local script=benchmarks/$name.sh
 
   local out=$base_dir/index.html
@@ -80,6 +80,19 @@ compute() {
   benchmarks/compute.sh stage1 ../benchmark-data/compute
   stage2 $base_dir
   stage3 $base_dir
+}
+
+mycpp() {
+  # ./run.sh benchmark-all  in the mycpp/ dir produces this
+  local base_dir=${1:-_tmp/mycpp-benchmarks}
+  mkdir -p $base_dir
+
+  local dir2=$base_dir/stage2
+  mkdir -p $dir2
+
+  R_LIBS_USER=$R_PATH benchmarks/report.R mycpp $base_dir/raw $dir2
+
+  stage3 $base_dir mycpp
 }
 
 all() {

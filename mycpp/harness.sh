@@ -212,14 +212,18 @@ benchmark-all() {
 
   export BENCHMARK=1
 
-  local out=_tmp/mycpp-examples.tsv
+  local out_dir=../_tmp/mycpp-benchmarks/raw
+  mkdir -p $out_dir
+  local out=$out_dir/times.tsv
 
   # Create a new TSV file every time, and then append rows to it.
 
   # TODO:
   # - time.py should have a --header flag to make this more readable?
   # - More columns: -O1 -O2 -O3, machine, iterations of benchmark.
-  echo $'status\tseconds\texample_name\tlanguage' > $out
+  echo $'status\telapsed_secs\tuser_secs\tsys_secs\tmax_rss_KiB\texample_name\tlanguage' > $out
+
+  readonly -a time=(time-tsv --rusage --append -o $out)
 
   for name in "${EXAMPLES[@]}"; do
     if should-skip $name; then
@@ -231,11 +235,11 @@ benchmark-all() {
 
     echo
     echo $'\t[ C++ ]'
-    time-tsv --append -o $out --field $name --field 'C++' -- _bin/$name
+    "${time[@]}" --field $name --field 'C++' -- _bin/$name
 
     echo
     echo $'\t[ Python ]'
-    time-tsv --append -o $out --field $name --field 'Python' -- $0 pyrun-example $name
+    "${time[@]}" --field $name --field 'Python' -- $0 pyrun-example $name
   done
 
   cat $out

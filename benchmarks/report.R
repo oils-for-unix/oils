@@ -575,6 +575,18 @@ ComputeReport = function(in_dir, out_dir) {
   WriteDetails(distinct_hosts, distinct_shells, out_dir, tsv = T)
 }
 
+MyCppReport = function(in_dir, out_dir) {
+  # TSV file, not CSV
+  times = read.table(file.path(in_dir, 'times.tsv'), header=T)
+  print(times)
+
+  # TODO: one chart for
+  # - user_secs: Python, mycpp, mycpp refcounted
+  # - max_rss_KiB: Python, mycpp, mycpp refcounted
+
+  writeTsv(times, file.path(out_dir, 'details'))
+}
+
 main = function(argv) {
   action = argv[[1]]
   in_dir = argv[[2]]
@@ -594,6 +606,9 @@ main = function(argv) {
 
   } else if (action == 'compute') {
     ComputeReport(in_dir, out_dir)
+
+  } else if (action == 'mycpp') {
+    MyCppReport(in_dir, out_dir)
 
   } else if (action == 'oheap') {
     OheapReport(in_dir, out_dir)
