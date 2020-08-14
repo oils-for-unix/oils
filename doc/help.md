@@ -772,6 +772,26 @@ NUM:
   '/foo /bar /baz', where '/foo' is the top of the stack, pushd +1 will move
   it to the bottom, '/bar /baz /foo'-->
 
+<h4 id="popd">popd</h4>
+
+The popd builtin removes a directory from the directory stack, and changes the
+working directory to it. Typically used along with pushd and dirs.
+
+popd
+
+<h4 id="dirs">dirs</h4>
+
+The dirs builtin shows the contents of the directory stack. Typically used
+along with pushd and popd.
+
+dirs FLAGS*
+
+FLAGS:
+  -c  Removes all the directories from the stack.
+  -l  Show the directory stack, but with the real path instead of ~.
+  -p  Show the directory stack, but formatted as one line per entry.
+  -v  Like -p, but numbering each line.
+
 ### Completion
 
 <h4 id="complete">complete</h4>
