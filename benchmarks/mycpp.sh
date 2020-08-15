@@ -1,7 +1,9 @@
 #!/bin/bash
 #
+# Analyze how mycpp speeds up programs.
+#
 # Usage:
-#   ./mycpp.sh <function name>
+#   benchmarks/mycpp.sh <function name>
 
 set -o nounset
 set -o pipefail

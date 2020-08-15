@@ -9,6 +9,7 @@ gen-main() {
 
 int main(int argc, char **argv) {
   if (getenv("BENCHMARK")) {
+    fprintf(stderr, "Benchmarking...\n");
     $main_module::run_benchmarks();
   } else {
     $main_module::run_tests();

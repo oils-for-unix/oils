@@ -83,7 +83,9 @@ def run_tests():
 
 def run_benchmarks():
   # type: () -> None
-  n = 500000
+
+  # NOTE: Raising this exposes quadratic behavior
+  n = 50000
 
   x = 33
   result = -1

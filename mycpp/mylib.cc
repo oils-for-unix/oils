@@ -318,6 +318,9 @@ Writer* gStderr;
 void BufWriter::write(Str* s) {
   int orig_len = len_;
   len_ += s->len_;
+
+  // BUG: This is quadratic!
+
   // data_ is nullptr at first
   data_ = static_cast<char*>(realloc(data_, len_ + 1));
 
