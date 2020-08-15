@@ -829,6 +829,25 @@ exec CMD ARGS*
 
 CMD ARGS:
   The command to be run and its arguments.
+
+<h4 id="umask">umask</h4>
+
+The umask builtin sets the mask that determines the permissions for new files
+and directories. The mask is substracted from 666 for files and 777 for
+directories.
+
+umask MODE?
+
+MODE:
+  Mask to be used, in octal mode. If none is specified, the current mask will
+  be shown.
+
+<h4 id="times">times</h4>
+
+The times builtin shows the user and system time used by the shell and all its
+children processes.
+
+times
                 
 ### Child Process
 
