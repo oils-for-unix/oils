@@ -883,6 +883,26 @@ CMD &
 CMD:
   The command to be run.
 
+<h4 id="fg">fg</h4>
+
+The fg builtin returns a job running in the background to the foreground.
+
+fg JOB?
+
+JOB:
+  Job ID to be moved to the foreground. If none is specified, the latest job
+  is chosen.
+
+<!--<h4 id="bg">bg</h4>
+
+The bg builtin resumes suspend job, while keeping it in the background.
+
+bg JOB?
+
+JOB:
+  Job ID to be resumed in the background. If none is specified, the latest job
+  is chosen. -->
+
 ### External
 
 <h4 id="kill">kill</h4>
