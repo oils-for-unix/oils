@@ -163,9 +163,11 @@ all() {
   oil-lang-files | xargs wc -l | sort --numeric
   echo
 
+  return
+
+  # Doesn't work after build/dev.sh minimal
   cpp
 
-  return
   # TODO: Import docs
 
   echo 'DOCS'
