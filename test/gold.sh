@@ -15,6 +15,8 @@ shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
 source test/common.sh  # for $OSH
 
+readonly GOLD_DIR='test/gold'
+
 # Runs an command (argv) the normal way (with its shebang) and then with
 # OSH, and compares the stdout and exit code.
 #
@@ -90,42 +92,42 @@ startup-benchmark() {
 }
 
 configure() { _compare ./configure; }
-configure-bug() { _compare gold/configure-bug.sh; }
-nix() { _compare gold/nix.sh isElfSimpleWithStdin; }
-and-or() { _compare gold/and-or.sh test-simple; }
+configure-bug() { _compare $GOLD_DIR/configure-bug.sh; }
+nix() { _compare $GOLD_DIR/nix.sh isElfSimpleWithStdin; }
+and-or() { _compare $GOLD_DIR/and-or.sh test-simple; }
 
-comments() { _compare gold/comments.sh; }
-readonly_() { _compare gold/readonly.sh; }
-export-case() { _compare gold/export.sh; }
-glob() { _compare gold/glob.sh; }
+comments() { _compare $GOLD_DIR/comments.sh; }
+readonly_() { _compare $GOLD_DIR/readonly.sh; }
+export-case() { _compare $GOLD_DIR/export.sh; }
+glob() { _compare $GOLD_DIR/glob.sh; }
 no-op() { _compare metrics/source-code.sh; }
-complex-here-docs() { _compare gold/complex-here-docs.sh; }
+complex-here-docs() { _compare $GOLD_DIR/complex-here-docs.sh; }
 
-strip-op-char-class() { _compare gold/strip-op-char-class.sh; }
+strip-op-char-class() { _compare $GOLD_DIR/strip-op-char-class.sh; }
 
 # Similar tests for backslash escaping.
-echo-e() { _compare gold/echo-e.sh; }
-dollar-sq() { _compare gold/dollar-sq.sh; }
-word-eval() { _compare gold/word-eval.sh; }
+echo-e() { _compare $GOLD_DIR/echo-e.sh; }
+dollar-sq() { _compare $GOLD_DIR/dollar-sq.sh; }
+word-eval() { _compare $GOLD_DIR/word-eval.sh; }
 
 abuild() {
-  _compare gold/abuild.sh is_function is_function
+  _compare $GOLD_DIR/abuild.sh is_function is_function
 }
 
 # Needs declare -p
-declare() { _compare gold/declare.sh demo; }
+declare() { _compare $GOLD_DIR/declare.sh demo; }
 
 # Needs declare -p
-scope() { _compare gold/scope.sh; }
+scope() { _compare $GOLD_DIR/scope.sh; }
 
 readlink-case() {
-  gold/readlink.sh compare
+  $GOLD_DIR/readlink.sh compare
 }
 
 # Hm this isn't tickling the bug?
 errexit-confusion() {
-  _compare gold/errexit-confusion.sh run-for-release-OLD
-  _compare gold/errexit-confusion.sh run-for-release-FIXED
+  _compare $GOLD_DIR/errexit-confusion.sh run-for-release-OLD
+  _compare $GOLD_DIR/errexit-confusion.sh run-for-release-FIXED
 }
 
 parse-help() {

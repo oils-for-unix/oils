@@ -128,13 +128,13 @@ the oil-native build (pure C++):
 Unit tests are named `foo_test.py` and live next to `foo.py`.
 
     test/             # Test automation
-      unit.sh         ## Types of test runner: unit, spec, wild, smoke
-      spec.sh
-      wild.sh
-      smoke.sh
+      gold/           # Gold Test cases
+      gold.sh         
       sh_spec.py      # shell spec test framework
+      spec.sh         # Types of test runner: spec, unit, gold, wild
+      unit.sh         
+      wild.sh
     testdata/
-    gold/             # Gold Test cases
     spec/             # Spec test cases
       bin/            # tools used in many spec tests
       testdata/       # scripts for specific test cases

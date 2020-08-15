@@ -101,7 +101,7 @@ all() {
   echo
 
   echo 'GOLD TESTS'
-  wc -l gold/*.sh | sort --numeric
+  wc -l test/gold/*.sh | sort --numeric
   echo
 
   echo 'ASDL'
