@@ -851,6 +851,28 @@ times
                 
 ### Child Process
 
+<h4 id="jobs">jobs</h4>
+
+The jobs builtin shows all jobs running in the shell and its status.
+
+jobs
+
+<h4 id="wait">wait</h4>
+
+The wait builtin waits for the death of a job or a process and returns its exit
+status.
+
+wait FLAGS* PID|JOB*
+
+FLAGS:
+  -n  Wait for the next job termination.
+
+PID|JOB:
+  The PID of the process, or the job number, which you want to wait for, or a
+  job is specified as '%jobnumber'.
+  If none is specified, wait will wait for all the active child processes.
+
+
 ### External
 
 <h4 id="kill">kill</h4>
