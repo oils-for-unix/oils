@@ -309,14 +309,19 @@ example-both() {
   translate-example $name .shared_ptr
   compile-example $name .shared_ptr
 
+  # Not great because of stdout
+  #local -a time=(/usr/bin/time --format '%U %M' --)
+
   # diff stderr too!
   echo
   echo $'\t[ C++ ]'
+  #"${time[@]}" _bin/$name > _tmp/$name.cpp.txt 2>&1
   time _bin/$name > _tmp/$name.cpp.txt 2>&1
 
   echo
   echo $'\t[ Python ]'
-  time pyrun-example $name > _tmp/$name.python.txt 2>&1
+  #"${time[@]}" $0 pyrun-example $name > _tmp/$name.python.txt 2>&1
+  time $0 pyrun-example $name > _tmp/$name.python.txt 2>&1
 
   diff-output $name
 }

@@ -690,10 +690,11 @@ TEST test_shared_ptr() {
   auto mystr = make_shared<Str>("foo");
   log("len = %d", len(mystr));
 
+  // This doesn't compile because of some destructor problems
   //auto mylist = make_shared<List<shared_ptr<Str>>();
 
-  //auto mylist = new List<Str*>();
-  //log("len = %d", len(mylist));
+  auto mylist = new List<Str*>();
+  log("len = %d", len(mylist));
 }
 
 GREATEST_MAIN_DEFS();

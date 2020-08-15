@@ -64,7 +64,9 @@ mycpp-unit-tests() {
 
   pushd mycpp
   ./run.sh mylib-test
-  ./run.sh target-lang
+  ./demo.sh target-lang
+
+  # Note: we also have square_heap and gc_heap
   popd
 }
 

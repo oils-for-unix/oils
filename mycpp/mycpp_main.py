@@ -128,7 +128,7 @@ def main(argv):
   opts, argv = o.parse_args(argv)
 
   if opts.shared_ptr:
-    log('Compiling with std::shared_ptr<>')
+    log('*** Compiling with std::shared_ptr<> ***')
     cppgen_pass.SHARED_PTR = True  # global var hack for now
      
   paths = argv[1:]  # e.g. asdl/typed_arith_parse.py
@@ -149,18 +149,19 @@ def main(argv):
     to_header = [os.path.basename(p) for p in to_header]
     to_header = [os.path.splitext(name)[0] for name in to_header]
 
-  log('to_header %s', to_header)
+  #log('to_header %s', to_header)
 
   sources, options = get_mypy_config(paths, mypy_options)
-  for source in sources:
-    log('source %s', source)
+  if 0:
+    for source in sources:
+      log('source %s', source)
   #log('options %s', options)
 
   #result = emitmodule.parse_and_typecheck(sources, options)
   import time
   start_time = time.time()
   result = mypy_build(sources=sources, options=options)
-  log('elapsed 1: %f', time.time() - start_time)
+  #log('elapsed 1: %f', time.time() - start_time)
 
   if result.errors:
     log('')
@@ -269,7 +270,7 @@ def main(argv):
 #include "mylib.h"
 """ % (os.path.basename(opts.header_out), guard, guard))
 
-  log('--- FORWARD DECL')
+  log('\tFORWARD DECL')
 
   # Forward declarations first.
   # class Foo; class Bar;
@@ -295,7 +296,7 @@ def main(argv):
   # TODO: This could be a class with 2 members
   fmt_ids = {'_counter': 0}
 
-  log('--- DECL')
+  log('\tDECL')
 
   # First generate ALL C++ declarations / "headers".
   # class Foo { void method(); }; class Bar { void method(); };
@@ -316,7 +317,7 @@ def main(argv):
 #endif  // %s
 """ % guard)
 
-  log('--- DEFINITION')
+  log('\tDEFINITION')
 
   # Now the definitions / implementations.
   # void Foo:method() { ... }

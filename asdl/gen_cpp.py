@@ -192,7 +192,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     self.debug_info = debug_info if debug_info is not None else {}
 
     self._shared_type_tags = {}
-    self._product_counter = 1000  # start it high
+    self._product_counter = 200  # fits in uint8_t
 
     self._products = []
     self._product_bases = defaultdict(list)

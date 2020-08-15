@@ -37,6 +37,11 @@ def g():
   print(S)
 
 
+def strfunc(s):
+  # type: (str) -> str
+  return s + "."
+
+
 def run_tests():
   # type: () -> None
   f('foo')
@@ -45,7 +50,12 @@ def run_tests():
 
 def run_benchmarks():
   # type: () -> None
-  pass
+
+  # For testing shared_ptr optimization
+  s = 'foo'
+  for i in xrange(100000):
+    s = strfunc(s)
+  log("len = %d", len(s))
 
 
 if __name__ == '__main__':
