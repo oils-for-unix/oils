@@ -40,5 +40,11 @@ square-heap() {
   cpp-compile-run demo/square_heap.cc "$@"
 }
 
+target-lang() {
+  local bin=_bin/target_lang 
+  cpp-compile demo/target_lang.cc $bin ../cpp/dumb_alloc.cc -I ../cpp
+  $bin "$@"
+}
+
 
 "$@"

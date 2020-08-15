@@ -200,23 +200,6 @@ cpp-compile() {
   $CXX -o _bin/$name $CPPFLAGS -I . $name.cc "$@" -lstdc++
 }
 
-cpp-compile-run() {
-  local name=$1
-  shift
-
-  cpp-compile $name "$@"
-  _bin/$name
-}
-
-heap() {
-  cpp-compile-run heap
-}
-
-target-lang() {
-  cpp-compile target_lang ../cpp/dumb_alloc.cc -I ../cpp
-  _bin/target_lang "$@"
-}
-
 mylib-test() {
   ### Accepts greatest args like -t dict
   cpp-compile mylib_test -I ../cpp mylib.cc

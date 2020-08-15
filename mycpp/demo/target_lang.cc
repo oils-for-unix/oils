@@ -255,24 +255,32 @@ typedef expr__Const Const;
 using std::shared_ptr;
 
 shared_ptr<expr__Const> f(shared_ptr<expr__Const> arg) {
+  log("arg.use_count() = %d", arg.use_count());
   return shared_ptr<expr__Const>(new expr__Const(arg->i_ + 10));
 }
 
 TEST shared_ptr_demo() {
   std::shared_ptr<expr__Const> e = std::make_shared<expr__Const>(5);
   log("e->i_ = %d", e->i_);
+  log("e.use_count() = %d", e.use_count());
+
   // 16, not 24?
   // These are contiguous.
   log("sizeof(e) = %zu", sizeof(e));
+  log("");
 
   std::shared_ptr<expr__Const> e2(new expr__Const(7));
   log("e2->i_ = %d", e2->i_);
+  log("e2.use_count() = %d", e2.use_count());
   log("sizeof(e2) = %zu", sizeof(e2));
+  log("");
 
   std::shared_ptr<expr__Const> e3 = f(e2);
 
   log("e3->i_ = %d", e3->i_);
+  log("e3.use_count() = %d", e3.use_count());
   log("sizeof(e3) = %zu", sizeof(e3));
+  log("");
 
   PASS();
 }
