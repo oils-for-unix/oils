@@ -253,6 +253,7 @@ typedef expr__Const Const;
 }
 
 using std::shared_ptr;
+using std::make_shared;
 
 shared_ptr<expr__Const> f(shared_ptr<expr__Const> arg) {
   log("arg.use_count() = %d", arg.use_count());
@@ -260,7 +261,7 @@ shared_ptr<expr__Const> f(shared_ptr<expr__Const> arg) {
 }
 
 TEST shared_ptr_demo() {
-  std::shared_ptr<expr__Const> e = std::make_shared<expr__Const>(5);
+  std::shared_ptr<expr__Const> e = make_shared<expr__Const>(5);
   log("e->i_ = %d", e->i_);
   log("e.use_count() = %d", e.use_count());
 

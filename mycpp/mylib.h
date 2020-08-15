@@ -12,6 +12,7 @@
 #include <climits>  // CHAR_BIT
 #include <cstdint>
 #include <cstdio>  // FILE*
+#include <memory>  // shared_ptr
 #include <initializer_list>
 #include <unordered_map>
 #include <vector>
@@ -631,7 +632,8 @@ class DictIter {
 // Specialized functions
 template <class V>
 int find_by_key(const std::vector<std::pair<Str*, V>>& items, Str* key) {
-  for (int i = 0; i < items.size(); ++i) {
+  int n = items.size();
+  for (int i = 0; i < n; ++i) {
     Str* s = items[i].first;  // nullptr for deleted entries
     if (s && str_equals(s, key)) {
       return i;
@@ -642,7 +644,8 @@ int find_by_key(const std::vector<std::pair<Str*, V>>& items, Str* key) {
 
 template <class V>
 int find_by_key(const std::vector<std::pair<int, V>>& items, int key) {
-  for (int i = 0; i < items.size(); ++i) {
+  int n = items.size();
+  for (int i = 0; i < n; ++i) {
     if (items[i].first == key) {
       return i;
     }
@@ -653,7 +656,8 @@ int find_by_key(const std::vector<std::pair<int, V>>& items, int key) {
 template <class V>
 List<Str*>* dict_keys(const std::vector<std::pair<Str*, V>>& items) {
   auto result = new List<Str*>();
-  for (int i = 0; i < items.size(); ++i) {
+  int n = items.size();
+  for (int i = 0; i < n; ++i) {
     Str* s = items[i].first;  // nullptr for deleted entries
     if (s) {
       result->append(s);
@@ -665,7 +669,8 @@ List<Str*>* dict_keys(const std::vector<std::pair<Str*, V>>& items) {
 template <class V>
 List<V>* dict_values(const std::vector<std::pair<Str*, V>>& items) {
   auto result = new List<V>();
-  for (int i = 0; i < items.size(); ++i) {
+  int n = items.size();
+  for (int i = 0; i < n; ++i) {
     auto& pair = items[i];
     if (pair.first) {
       result->append(pair.second);
@@ -822,6 +827,10 @@ inline int len(const Str* s) {
   return s->len_;
 }
 
+inline int len(const std::shared_ptr<Str> s) {
+  return len(s.get());
+}
+
 template <typename T>
 inline int len(const List<T>* L) {
   return L->v_.size();
@@ -835,7 +844,8 @@ inline int len(const Dict<K, V>* d) {
 template <typename V>
 inline int len(const Dict<Str*, V>* d) {
   int len = 0;
-  for (int i = 0; i < d->items_.size(); ++i) {
+  int n = d->items_.size();
+  for (int i = 0; i < n; ++i) {
     Str* s = d->items_[i].first;  // nullptr for deleted entries
     if (s) {
       len++;

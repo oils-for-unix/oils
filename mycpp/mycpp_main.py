@@ -33,6 +33,10 @@ def Options():
       help='Show details about translation')
 
   p.add_option(
+      '--shared-ptr', dest='shared_ptr', action='store_true', default=False,
+      help='Emit code using std::shared_ptr instead of raw pointers')
+
+  p.add_option(
       '--to-header', dest='to_header', action='append', default=[],
       help='Export this module to a header, e.g. frontend.args')
 
@@ -122,6 +126,10 @@ def main(argv):
 
   o = Options()
   opts, argv = o.parse_args(argv)
+
+  if opts.shared_ptr:
+    log('Compiling with std::shared_ptr<>')
+    cppgen_pass.SHARED_PTR = True  # global var hack for now
      
   paths = argv[1:]  # e.g. asdl/typed_arith_parse.py
 

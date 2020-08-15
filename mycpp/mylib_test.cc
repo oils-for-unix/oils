@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <memory>  // shared_ptr
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
 
@@ -27,10 +28,11 @@ TEST test_cstr() {
   ASSERT_EQ_FMT(3, len(space->strip()), "%d");
 
   // WRONG WAY TO DO IT.  We get 4 instead of 3.
-  size_t bad_len = strlen(space->strip()->data_);
+  int bad_len = strlen(space->strip()->data_);
+  log("bad_len = %d", bad_len);
 
   mylib::Str0 space0(space->strip());
-  size_t good_len = strlen(space0.Get());
+  int good_len = strlen(space0.Get());
 
   ASSERT_EQ_FMT(3, good_len, "%d");
 
@@ -681,6 +683,19 @@ TEST test_print() {
   PASS();
 }
 
+using std::shared_ptr;
+using std::make_shared;
+
+TEST test_shared_ptr() {
+  auto mystr = make_shared<Str>("foo");
+  log("len = %d", len(mystr));
+
+  //auto mylist = make_shared<List<shared_ptr<Str>>();
+
+  //auto mylist = new List<Str*>();
+  //log("len = %d", len(mylist));
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -704,6 +719,7 @@ int main(int argc, char** argv) {
   RUN_TEST(test_list_tuple);
 
   RUN_TEST(test_print);
+  RUN_TEST(test_shared_ptr);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

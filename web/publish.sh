@@ -132,6 +132,10 @@ doc-preview() {
   scp $path $user@$host:$dest
 }
 
+mycpp-benchmarks() {
+  doc-preview $1 _tmp/mycpp-benchmarks/index.html oilshell.org/preview/benchmarks/mycpp
+}
+
 file-to-share() {
   local user=$1
   local host=$user.org

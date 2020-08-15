@@ -43,17 +43,27 @@ typecheck-example() {
 
 _translate-example() {
   local name=${1:-fib}
+  local variant=${2:-}
+
   local main="examples/$name.py"
 
   mkdir -p _gen
 
-  local raw=_gen/${name}_raw.cc
-  local out=_gen/${name}.cc
+  local raw=_gen/${name}_raw${variant}.cc
+  local out=_gen/${name}${variant}.cc
+
+  flags=''
+  case $variant in
+    (.shared_ptr)
+      flags='--shared-ptr'
+      ;;
+  esac
 
   # NOTE: mycpp has to be run in the virtualenv, as well as with a different
   # PYTHONPATH.
   ( source _tmp/mycpp-venv/bin/activate
-    time PYTHONPATH=$MYPY_REPO ./mycpp_main.py $main > $raw
+    # flags may be empty
+    time PYTHONPATH=$MYPY_REPO ./mycpp_main.py $flags $main > $raw
   )
   wc -l $raw
 
@@ -69,26 +79,30 @@ _translate-example() {
 
 translate-example() {
   local name=$1
-
   # e.g. translate-modules and compile-modules are DIFFERENT.
 
   if test "$(type -t translate-$name)" = "function"; then
     translate-$name
   else
-    _translate-example $name
+    _translate-example "$@"  # name and optional variant
   fi
 }
 
 _compile-example() { 
   local name=${1:-fib} #  name of output, and maybe input
-  local src=${2:-_gen/$name.cc}
+  local variant=${2:-}
 
-  # need -lstdc++ for operator new
+  local src=_gen/$name${variant}.cc
 
-  local more_flags='-O0 -g'  # to debug crashes
+  # for benchmarks, and to debug crashes
+  local more_flags='-O2 -g'
   #local more_flags=''
+
+  local out=_bin/${name}${variant}
   mkdir -p _bin
-  $CXX -o _bin/$name $CPPFLAGS $more_flags -I . \
+
+  # need -lstdc++ for 'operator new'
+  $CXX -o $out $CPPFLAGS $more_flags -I . \
     mylib.cc $src -lstdc++
 }
 
@@ -97,7 +111,7 @@ compile-example() {
   if test "$(type -t compile-$name)" = "function"; then
     compile-$name
   else
-    _compile-example $name
+    _compile-example "$@"  # name and optional variant
   fi
 }
 
@@ -288,8 +302,12 @@ example-both() {
   local name=$1
 
   typecheck-example $name
+
   translate-example $name
   compile-example $name
+
+  translate-example $name .shared_ptr
+  compile-example $name .shared_ptr
 
   # diff stderr too!
   echo

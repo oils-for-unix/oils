@@ -21,6 +21,9 @@ from crash import catch_errors
 from util import log
 
 
+SHARED_PTR = False  # global variable set by main()
+
+
 T = None
 
 class UnsupportedException(Exception):
@@ -160,20 +163,18 @@ def get_c_type(t):
       c_type = 'void*'
 
     else:
-      # fullname() => 'parse.Lexer'; name() => 'Lexer'
+      # note: fullname() => 'parse.Lexer'; name() => 'Lexer'
+      base_class_names = [b.type.fullname() for b in t.type.bases]
 
-      # NOTE: It would be nice to leave off the namespace if we're IN that
-      # namespace.  But that is cosmetic.
+      #log('** base_class_names %s', base_class_names)
 
-      # Check base class for runtime.SimpleObj so we can output
+      # Check base class for pybase.SimpleObj so we can output
       # expr_asdl::tok_t instead of expr_asdl::tok_t*.  That is a enum, while
       # expr_t is a "regular base class".
       # NOTE: Could we avoid the typedef?  If it's SimpleObj, just generate
       # tok_e instead?
 
-      base_class_names = [b.type.fullname() for b in t.type.bases]
-      #log('** base_class_names %s', base_class_names)
-      # not sure why this isn't runtime.SimpleObj
+      # TODO: respect shared_ptr<> here
       if 'asdl.pybase.SimpleObj' in base_class_names:
         is_pointer = ''
       else:
@@ -605,6 +606,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # HACK: Const is the callee; expr__Const is the return type
             if (callee_name == ret_type_name or
                 ret_type_name.endswith('__' + callee_name)):
+              # TODO: make_shared<>
               self.write('new ')
 
         # Namespace.
@@ -949,6 +951,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         assert c_type.endswith('*'), c_type
         c_type = c_type[:-1]  # HACK TO CLEAN UP
 
+        # TODO: make_shared<>
         if len(o.items) == 0:
             self.write('new %s()' % c_type)
         else:
@@ -968,6 +971,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         assert c_type.endswith('*'), c_type
         c_type = c_type[:-1]  # HACK TO CLEAN UP
 
+        # TODO: make_shared<>
         self.write('new %s(' % c_type)
         if o.items:
           self.write('{')
@@ -983,6 +987,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         assert c_type.endswith('*'), c_type
         c_type = c_type[:-1]  # HACK TO CLEAN UP
 
+        # TODO: make_shared<>
         maybe_new = '' if self.in_return_expr else 'new '
         if len(o.items) == 0:
             self.write('(%s%s())' % (maybe_new, c_type))
