@@ -580,11 +580,42 @@ MyCppReport = function(in_dir, out_dir) {
   times = read.table(file.path(in_dir, 'times.tsv'), header=T)
   print(times)
 
+  times %>% filter(status != 0) -> failed
+  if (nrow(failed) != 0) {
+    print(failed)
+    stop('Some mycpp tasks failed')
+  }
+
+  # Don't care about elapsed and system
+  times %>% select(-c(status, elapsed_secs, sys_secs)) %>%
+    mutate(user_ms = user_secs * 1000, 
+           max_rss_MB = max_rss_KiB * 1024 / 1e6) %>%
+    select(-c(user_secs, max_rss_KiB)) ->
+    details
+
+  details %>% select(-c(max_rss_MB)) %>%
+    spread(key = language, value = user_ms) %>%
+    mutate(`C++ : Python` = `C++` / Python) %>%
+    arrange(`C++ : Python`) ->
+    user_time
+
+  details %>% select(-c(user_ms)) %>%
+    spread(key = language, value = max_rss_MB) %>%
+    mutate(`C++ : Python` = `C++` / Python) %>%
+    arrange(`C++ : Python`) ->
+    max_rss
+
   # TODO: one chart for
   # - user_secs: Python, mycpp, mycpp refcounted
   # - max_rss_KiB: Python, mycpp, mycpp refcounted
 
-  writeTsv(times, file.path(out_dir, 'details'))
+
+  # Sometimes it speeds up by more than 10x
+  precision = ColumnPrecision(list(`C++ : Python` = 2))
+
+  writeTsv(user_time, file.path(out_dir, 'user_time'), precision)
+  writeTsv(max_rss, file.path(out_dir, 'max_rss'))
+  writeTsv(details, file.path(out_dir, 'details'))
 }
 
 main = function(argv) {

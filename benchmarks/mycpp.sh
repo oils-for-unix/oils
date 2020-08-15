@@ -28,15 +28,37 @@ EOF
 
 Measure the speedup from mycpp, and the resource usage.
 
+Source code: [oil/mycpp/examples](https://github.com/oilshell/oil/tree/master/mycpp/examples)
+
 EOF
 
   cmark <<EOF
-### TODO
+### User Time (milliseconds)
 
-- what does this test?
+Lower ratios are better.
+
+EOF
+
+  tsv2html $in_dir/user_time.tsv
+
+  cmark <<EOF
+  ### Max Resident Set Size (MB)
+
+Lower ratios are better.  We use MB (powers of 10), not MiB (powers of 2).
+
+EOF
+
+  tsv2html $in_dir/max_rss.tsv
+
+
+if false; then
+  cmark <<EOF
+### Details
+
 EOF
 
   tsv2html $in_dir/details.tsv
+fi
 
   cat <<EOF
   </body>

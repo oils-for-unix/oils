@@ -98,7 +98,7 @@ web-dir() {
 }
 
 web-dir-versioned() {
-  ### Publish static assets needed for the wild HTML pages.
+  ### Publish static assets needed for the wild HTML pages (versioned)
   local user=$1
   local host=$user.org
 
@@ -112,21 +112,22 @@ web-dir-preview() {
   local user=$1
   local host=$user.org
 
-  local dest='oilshell.org/preview/web'
-  ssh $user@$host mkdir --verbose -p $dest
-  local dest=$user@$host:$dest
+  local dir='oilshell.org/preview/web'
+
+  ssh $user@$host mkdir --verbose -p $dir
+
+  local dest=$user@$host:$dir
   web-dir $user $dest
 }
 
-preview() {
+doc-preview() {
   ### Publish a file (e.g. _release/VERSION/doc/json.html) to 
-  ### oilshell.org/git-branch/...
   local user=$1
   local host=$user.org
 
   local path=$2
+  local dest=${3:-'oilshell.org/preview/doc'}
 
-  local dest='oilshell.org/preview/doc'
   ssh $user@$host mkdir --verbose -p $dest
   scp $path $user@$host:$dest
 }
