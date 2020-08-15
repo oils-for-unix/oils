@@ -274,6 +274,13 @@ NotImplementedError() {
   grep NotImplementedError */*.py
 }
 
+travis() {
+  ### Make sure contributors can run 'all'
+
+  build/dev.sh minimal
+  all
+}
+
 if test $(basename $0) = 'source-code.sh'; then
   "$@"
 fi

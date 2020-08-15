@@ -155,7 +155,7 @@ shell, of course!
       release.sh      # The (large) release process.
     demo/             # Demonstrations of bash/shell features.  Could be
                       # moved to tests/ if automated.
-    misc/             # A junk drawer
+      old/            # A junk drawer.
     web/              # HTML/JS/CSS for tests and tools
     lazylex/          # An HTML lexer which doctools/ builds upon.
     services/         # Integration with cloud services (e.g. Travis CI)

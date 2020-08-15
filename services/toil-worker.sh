@@ -151,7 +151,7 @@ other-tests-tasks() {
   cat <<EOF
 time-test         benchmarks/time-test.sh all-passing     -
 csv-concat-test   devtools/csv-concat-test.sh travis      -
-repo-overview     metrics/source-code.sh all             -
+repo-overview     metrics/source-code.sh travis           -
 EOF
 }
 
