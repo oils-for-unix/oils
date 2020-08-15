@@ -872,6 +872,16 @@ PID|JOB:
   job is specified as '%jobnumber'.
   If none is specified, wait will wait for all the active child processes.
 
+<h4 id="ampersand">ampersand</h4>
+
+The '&' builtin runs a command in the background as a job, and immediately
+returns the control to the shell. The PID of the command is recorded in the
+$! variable.
+
+CMD &
+
+CMD:
+  The command to be run.
 
 ### External
 
