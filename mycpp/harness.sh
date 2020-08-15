@@ -227,7 +227,7 @@ benchmark-all() {
   readonly -a time=(time-tsv --rusage --append -o $out)
 
   for name in "${EXAMPLES[@]}"; do
-    if should-skip $name; then
+    if should-skip-benchmark $name; then
       echo "  (skipping $name)"
       continue
     fi
@@ -258,17 +258,26 @@ should-skip() {
     # TODO:
     # - alloc_main and lexer_main work!  They just need build scripts
     # - varargs calls p_die() which aborts
-    pgen2_demo|alloc_main|lexer_main|named_args|varargs)
+    (pgen2_demo|alloc_main|lexer_main|named_args|varargs)
       return 0
       ;;
 
-    strings)  # '%5d' doesn't work yet.  TODO: fix this.
+    (strings)  # '%5d' doesn't work yet.  TODO: fix this.
       return 0;
       ;;
-
-    *)
-      return 1
   esac
+
+  return 1
+}
+
+should-skip-benchmark() {
+  case $1 in
+    (hoist|conditional|switch_)
+      return 0  # nope, nothing interesting here
+      ;;
+  esac
+
+  should-skip $1  # return this
 }
 
 #

@@ -158,7 +158,14 @@ def run_tests():
 
 def run_benchmarks():
   # type: () -> None
-  log('TODO')
+  d = DirStack()
+  for i in xrange(1000000):
+    try:
+      with ctx_DirStack(d, 'foo') as _:
+        if i % 10000 == 0:
+          raise MyError()
+    except MyError:
+      log('exception')
 
 
 if __name__ == '__main__':

@@ -38,7 +38,11 @@ def run_tests():
 
 def run_benchmarks():
   # type: () -> None
-  pass
+
+  for i in xrange(1000000):
+    j, s = f(i)
+    if j == 100000:
+      print(str(i))
 
 
 if __name__ == '__main__':

@@ -56,7 +56,9 @@ def run_tests():
 
 def run_benchmarks():
   # type: () -> None
-  pass
+
+  # No meaningful benchmark here, skip it
+  log('NO BENCHMARK')
 
 
 if __name__ == '__main__':

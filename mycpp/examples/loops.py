@@ -146,7 +146,6 @@ def run_benchmarks():
 
   result = 0
 
-  """
   i = 0
   while i < n:
     for j in xrange(3, 10):
@@ -159,7 +158,6 @@ def run_benchmarks():
     i += 1
   log('result = %d', result)
   log('Ran %d iterations of xrange/enumerate', n)
-  """
 
 
 if __name__ == '__main__':
