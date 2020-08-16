@@ -53,9 +53,20 @@ word_freq-tasks() {
   cat $provenance | filter-provenance python bash $OSH_CC |
   while read fields; do
     # Why does osh_eval differ?
-    #echo 'word_freq 2 benchmarks/testdata/abuild' | xargs -n 3 -- echo "$fields"
+    echo 'word_freq 10 benchmarks/testdata/abuild' | xargs -n 3 -- echo "$fields"
     #echo 'word_freq 2 benchmarks/testdata/ltmain.sh' | xargs -n 3 -- echo "$fields"
     echo 'word_freq 10 configure' | xargs -n 3 -- echo "$fields"
+  done
+}
+
+assoc_array-tasks() {
+  local provenance=$1
+
+  cat $provenance | filter-provenance python bash $OSH_CC |
+  while read fields; do
+    for n in 1000 2000 3000; do
+      echo "word_freq 10 $n" | xargs -n 3 -- echo "$fields"
+    done
   done
 }
 
@@ -165,6 +176,20 @@ word_freq-one() {
   $runtime benchmarks/compute/word_freq.$(ext $runtime) $iters < $in | sort -n
 }
 
+assoc_array-one() {
+  ### Run word_freq with seq
+
+  local name=${1:-word_freq}
+  local runtime=$2
+
+  local iters=${3:-10}
+  local n=${4:-10} 
+
+  # shuf so we don't get the bash optimization
+  seq $n | shuf |
+  $runtime benchmarks/compute/word_freq.$(ext $runtime) $iters | sort -n
+}
+
 bubble_sort-one() {
   ### Run one bubble_sort task (arrays)
 
@@ -217,6 +242,7 @@ parse_help-one() {
 
 fib-all() { task-all fib "$@"; }
 word_freq-all() { task-all word_freq "$@"; }
+assoc_array-all() { task-all assoc_array "$@"; }
 
 # TODO: Fix the OSH comparison operator!  It gives the wrong answer and
 # completes quickly.
@@ -266,9 +292,11 @@ task-all() {
 
     #log "runtime=$runtime args=$args"
 
+    local stdout=stdout-$file-$arg1-$(basename $arg2).txt
+
     # join args into a single field
     "${TIME_PREFIX[@]}" \
-      --stdout $tmp_dir/stdout-$file-$arg1-$arg2.txt -o $times_tsv \
+      --stdout $tmp_dir/$stdout -o $times_tsv \
       --field "$host" --field "$host_hash" \
       --field $runtime --field $runtime_hash \
       --field "$task_name" --field "$arg1" --field "$arg2" -- \

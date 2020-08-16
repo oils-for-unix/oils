@@ -306,8 +306,11 @@ example-both() {
   translate-example $name
   compile-example $name
 
-  translate-example $name .shared_ptr
-  compile-example $name .shared_ptr
+  # Doesn't work
+  if false; then
+    translate-example $name .shared_ptr
+    compile-example $name .shared_ptr
+  fi
 
   # Not great because of stdout
   #local -a time=(/usr/bin/time --format '%U %M' --)
