@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-sizelog.py
+alloclog.py - Parse output of -D ALLOC_LOG build
 """
 from __future__ import print_function
 

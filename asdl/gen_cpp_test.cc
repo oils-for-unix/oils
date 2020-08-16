@@ -41,14 +41,14 @@ void PrintTag(arith_expr_t* a) {
 
 TEST misc_test() {
   auto c = new arith_expr__Const(42);
-  log("sizeof *c = %d", sizeof *c);  // hm only 8
+  log("sizeof *c = %d", sizeof *c);  // 16 bytes
 
   ASSERT_EQ_FMT(42, c->i, "%d");
   log("c->tag = %d", c->tag_());
   PrintTag(c);
 
   auto v = new arith_expr__Var(new Str("foo"));
-  log("sizeof *v = %d", sizeof *v);  // 16
+  log("sizeof *v = %d", sizeof *v);  // 24 bytes
 
   ASSERT(str_equals(new Str("foo"), v->name));
   log("v->tag = %d", v->tag_());

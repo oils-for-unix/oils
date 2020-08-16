@@ -122,12 +122,25 @@ class Obj {
   DISALLOW_COPY_AND_ASSIGN(Obj)
 };
 
+// Simulating 16 byte per-object overhead
+
+class Managed {
+#ifdef MARK_SWEEP
+ public:
+  constexpr Managed() : mark_(0), gc_policy_(0), next_(nullptr) {
+  }
+  int mark_;
+  int gc_policy_;
+  Managed* next_;
+#endif
+};
+
 // TODO: Consider a couple extra fields:
 // - lazy .str0() field on this immutable slice, rather than instantiating Str0
 //   in every binding.
 // - Cached hash code here.
 
-class Str {
+class Str : public Managed {
  public:
   explicit Str(const char* data) : data_(data) {
     len_ = strlen(data);
@@ -378,7 +391,7 @@ class StrIter {
 
 // TODO: Rewrite without vector<>, so we don't depend on libstdc++.
 template <class T>
-class List {
+class List : public Managed {
  public:
   // Note: constexpr doesn't work because the std::vector destructor is
   // nontrivial
@@ -682,7 +695,7 @@ List<V>* dict_values(const std::vector<std::pair<Str*, V>>& items) {
 // Dict currently implemented by VECTOR OF PAIRS.  TODO: Use a real hash table,
 // and measure performance.  The hash table has to beat this for small cases!
 template <class K, class V>
-class Dict {
+class Dict : public Managed {
  public:
   Dict() : items_() {
   }

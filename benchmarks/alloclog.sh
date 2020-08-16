@@ -19,14 +19,14 @@ source benchmarks/common.sh
 # ~42.8M for benchmarks/testdata/configure-coreutils
 alloc-hist() {
   local prog=${1:-configure}
-  _bin/osh_eval.sizelog -n $prog | egrep '^new|^malloc' | hist
+  _bin/osh_eval.alloclog -n $prog | egrep '^new|^malloc' | hist
   #_bin/osh_eval.sizelog -n $prog | egrep '^new|^malloc' | hist
 }
 
 list-lengths() {
   ### Show the address of each list, its length, and its maximum element
   local prog=${1:-configure}
-  _bin/osh_eval.sizelog -n $prog | egrep '^0x' | benchmarks/sizelog.py
+  _bin/osh_eval.alloclog -n $prog | egrep '^0x' | benchmarks/alloclog.py
 }
 
 # Hm this shows that almost all lists have 1-3 elements.
@@ -55,16 +55,26 @@ length-hist() {
 build-variants() {
   #build/mycpp.sh compile-slice-sizelog ''  # 
   build/mycpp.sh compile-slice-opt ''  # dumb_alloc
+
   build/mycpp.sh compile-slice-malloc ''  # GNU libc malloc
+  build/mycpp.sh compile-slice-marksweep ''  # GNU libc malloc with GC header
+
   build/mycpp.sh compile-slice-tcmalloc ''
 }
 
 time-mem() {
-  /usr/bin/time --format '%U %M' -- "$@"
+  local out=$1
+  local prefix=$2
+  shift 2
+  /usr/bin/time -o $out --append --format "$prefix\\t%U\\t%M" -- "$@" >/dev/null
 }
 
 measure() {
-  for variant in .opt .malloc .tcmalloc; do
+  local out=_tmp/alloclog.tsv
+
+  rm -f $out
+
+  for variant in .opt .malloc .marksweep .tcmalloc; do
     echo $variant
     #time-mem _bin/osh_eval$variant -c 'echo hi'
 
@@ -76,8 +86,12 @@ measure() {
     # Gah that is not good.  I want to get these numbers down.
     local file=benchmarks/testdata/configure-coreutils
 
-    time-mem _bin/osh_eval$variant --ast-format none -n $file
+    time-mem $out "$variant\\tparse" _bin/osh_eval$variant --ast-format none -n $file
+
+    time-mem $out "$variant\\trun" _bin/osh_eval$variant benchmarks/compute/fib.sh 1000 44
   done
+
+  cat $out
 }
 
 "$@"

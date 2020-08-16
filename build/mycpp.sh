@@ -149,9 +149,11 @@ compile() {
     *.malloc)
       flags="$CPPFLAGS -O2 -g"
       ;;
+    *.marksweep)
+      flags="$CPPFLAGS -O2 -g -D MARK_SWEEP"
+      ;;
     *.tcmalloc)
-      # when we use tcmalloc, we ave
-      flags="$CPPFLAGS -D TCMALLOC"
+      flags="$CPPFLAGS -O2 -g -D TCMALLOC"
       link_flags='-ltcmalloc'
       ;;
     *.asan)
@@ -266,6 +268,7 @@ compile-slice-asan() { compile-slice "${1:-}" '.asan'; }
 compile-slice-uftrace() { compile-slice "${1:-}" '.uftrace'; }
 compile-slice-tcmalloc() { compile-slice "${1:-}" '.tcmalloc'; }
 compile-slice-malloc() { compile-slice "${1:-}" '.malloc'; }
+compile-slice-marksweep() { compile-slice "${1:-}" '.marksweep'; }
 
 all-variants() {
   local name=${1:-osh_eval}
