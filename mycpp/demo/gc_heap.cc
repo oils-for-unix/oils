@@ -17,6 +17,10 @@
 //
 // 3 .. 200   : ASDL variants?
 // 200 .. 255 : shared variants?
+//
+// Note: I think copying a copying GC has better locality, but it
+// requires double indirection to do portably.  I don't think we need double
+// indirection here, just some kind of HandleScope
 
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
@@ -38,7 +42,7 @@ union Header {
   uint16_t tag;        // for ASDL sum types
                        // and other stuff too?
 
-  uint32_t gc_policy;  // how should we can this object?
+  uint32_t gc_policy;  // how should we scan this object?
                        // how long is it?
 };
 
@@ -47,7 +51,13 @@ class Managed {
   Managed* next;
 };
 
-class Str {
+// Hm 32 bytes if managed, 16 bytes otherwise!
+//class Str {
+class Str : public Managed {
+ public:
+  Str(const char* data) : data_(data) {
+  }
+
   const char* data_;
   int len_;
   int hash;
@@ -55,8 +65,14 @@ class Str {
 
 template <class T>
 class List : public Managed {
-  // private:
-  std::vector<T> v_;  // ''.join accesses this directly
+ public:
+  List(std::initializer_list<T> init) : v_() {
+    for (T item : init) {
+      v_.push_back(item);
+    }
+  }
+
+  std::vector<T> v_;
 };
 
 template <class K, class V>
@@ -78,8 +94,28 @@ class Dict : public Managed {
   std::vector<DictEntry<K, V>> entries_;
 };
 
+void f() {
+  Str* s = new Str("foo");
+  Str* s2 = new Str("bar");
+
+  log(s->data_);
+  log(s2->data_);
+
+  // How do we make these roots?
+  auto mylist = new List<Str*>({s, s2});
+}
 
 int main(int argc, char** argv) {
+  if (argc == 2) {
+    int num_objects = atoi(argv[1]);
+    log("num_objects = %d", num_objects);
+
+    int size = 1000000 / num_objects;
+    for (int i = 0; i < num_objects; ++i) {
+      void* p = malloc(size);
+    }
+    return 0;
+  }
   log("gc_heap.cc");
 
   log("sizeof(Header) = %d", sizeof(Header));
@@ -87,9 +123,17 @@ int main(int argc, char** argv) {
 
   log("sizeof(Str) = %d", sizeof(Str));
 
+  // 40 bytes:
+  // 16 byte managed + 24 byte vector = 40
   log("sizeof(List<int>) = %d", sizeof(List<int>));
   log("sizeof(List<Str*>) = %d", sizeof(List<Str*>));
 
+  // 64 bytes:
+  // 16 byte managed + 2 24 byte vectors
   log("sizeof(Dict<int, Str*>) = %d", sizeof(Dict<int, Str*>));
   log("sizeof(Dict<Str*, Str*>) = %d", sizeof(Dict<Str*, Str*>));
+
+  f();
 }
+
+

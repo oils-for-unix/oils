@@ -4,8 +4,8 @@
 
 #include <stdio.h>
 
-// 200 MiB of memory
-char kMem[200 << 20];
+// 400 MiB of memory
+char kMem[400 << 20];
 
 int gMemPos = 0;
 int gNumNew = 0;
@@ -32,7 +32,7 @@ inline size_t aligned(size_t n) {
 #ifdef DUMB_ALLOC
 void* operator new(size_t size) {
   char* p = &(kMem[gMemPos]);
-#ifdef SIZE_LOG
+#ifdef ALLOC_LOG
   printf("new %zu\n", size);
 #endif
   gMemPos += aligned(size);
@@ -47,7 +47,7 @@ void operator delete(void* p) noexcept {
 }
 #endif
 
-char kMem2[200 << 20];
+char kMem2[400 << 20];
 int gMemPos2 = 0;
 int gNumMalloc = 0;
 int gNumFree = 0;
@@ -55,7 +55,7 @@ int gNumFree = 0;
 #ifdef DUMB_ALLOC
 void* dumb_malloc(size_t size) noexcept {
   char* p = &(kMem2[gMemPos2]);
-#ifdef SIZE_LOG
+#ifdef ALLOC_LOG
   printf("malloc %zu\n", size);
 #endif
   gMemPos2 += aligned(size);

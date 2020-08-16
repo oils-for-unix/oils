@@ -133,7 +133,7 @@ compile() {
     *.opt)
       flags="$CPPFLAGS -O2 -g -D DUMB_ALLOC"
       # To debug crash with 8 byte alignment
-      #flags="$CPPFLAGS -O0 -g -D DUMB_ALLOC -D SIZE_LOG"
+      #flags="$CPPFLAGS -O0 -g -D DUMB_ALLOC -D ALLOC_LOG"
       ;;
     *.uftrace)
       # -O0 creates a A LOT more data.  But sometimes we want to see the
@@ -146,6 +146,9 @@ compile() {
       # Do we want DUMB_ALLOC here?
       flags="$CPPFLAGS $opt -g -pg"
       ;;
+    *.malloc)
+      flags="$CPPFLAGS -O2 -g"
+      ;;
     *.tcmalloc)
       # when we use tcmalloc, we ave
       flags="$CPPFLAGS -D TCMALLOC"
@@ -155,9 +158,9 @@ compile() {
       # Note: Clang's ASAN doesn't like DUMB_ALLOC, but GCC is fine with it
       flags="$CPPFLAGS -O0 -g -fsanitize=address"
       ;;
-    *.sizelog)
+    *.alloclog)
       # debug flags
-      flags="$CPPFLAGS -O0 -g -D DUMB_ALLOC -D SIZE_LOG"
+      flags="$CPPFLAGS -O0 -g -D DUMB_ALLOC -D ALLOC_LOG"
       ;;
     *.dbg)
       # debug flags
@@ -206,7 +209,7 @@ mycpp-demo() {
 }
 
 compile-slice() {
-  local name=${1:-osh_parse}
+  local name=${1:-osh_eval}
   # Add -opt to make it opt
   local suffix=${2:-.dbg}
 
@@ -241,7 +244,7 @@ compile-slice() {
 }
 
 compile-slice-opt() {
-  local name=${1:-osh_parse}
+  local name=${1:-osh_eval}
   compile-slice $name '.opt'
 
   local opt=_bin/$name.opt
@@ -258,18 +261,19 @@ compile-slice-opt() {
   fi
 }
 
-compile-slice-sizelog() { compile-slice "${1:-}" '.sizelog'; }
+compile-slice-alloclog() { compile-slice "${1:-}" '.alloclog'; }
 compile-slice-asan() { compile-slice "${1:-}" '.asan'; }
 compile-slice-uftrace() { compile-slice "${1:-}" '.uftrace'; }
 compile-slice-tcmalloc() { compile-slice "${1:-}" '.tcmalloc'; }
+compile-slice-malloc() { compile-slice "${1:-}" '.malloc'; }
 
 all-variants() {
-  local name=${1:-osh_parse}
+  local name=${1:-osh_eval}
 
   compile-slice $name ''  # .dbg version is default
   compile-slice-opt $name
 
-  compile-slice-sizelog $name
+  compile-slice-alloclog $name
   compile-slice-asan $name
   compile-slice-uftrace $name
   compile-slice-tcmalloc $name

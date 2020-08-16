@@ -44,6 +44,21 @@ gc-heap() {
   cpp-compile-run demo/gc_heap.cc "$@"
 }
 
+max-rss() {
+  /usr/bin/time --format '%M' -- "$@"
+}
+
+# TODO: A better test it to compare dumb_alloc vs. .tcmalloc vs. normal malloc
+overhead() {  
+  # allocate 1,000,000 bytes in different batches
+  max-rss _bin/gc_heap 10
+  max-rss _bin/gc_heap 100
+  max-rss _bin/gc_heap 1000
+  max-rss _bin/gc_heap 10000
+  max-rss _bin/gc_heap 100000
+  max-rss _bin/gc_heap 1000000
+}
+
 target-lang() {
   local bin=_bin/target_lang 
   cpp-compile demo/target_lang.cc $bin ../cpp/dumb_alloc.cc -I ../cpp
