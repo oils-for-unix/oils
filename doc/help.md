@@ -580,48 +580,328 @@ PS1=$x.
 
 These builtins take input and output.  They're often used with redirects.
 
+<h4 id="read">read</h4>
+
+The read builtin reads lines from stdin and stores them into a variable. Input
+is split according to the $IFS delimiter.
+
+read FLAGS* VAR*
+
+VAR:
+  Variable where the data will be stored. If none is specified, $REPLY will be
+  used by default. More than one variable can be specified, for cases when
+  input is split into several fields.
+
+FLAGS:
+  -a ARRAY  assign the splitted words to elements of an array
+  -d CHAR   use DELIM as delimiter, instead of newline
+<!--  -e        use readline to obtain the line
+      -i STR    use STR as the initial text for readline -->
+  -n NUM    read NUM characters, but return before if delimiters are found
+<!--  -N NUM    read up to NUM characters, ignoring delimiters -->
+  -p STR    print the string PROMPT before reading input
+  -r        raw mode: don't let backslashes escape characters
+  -s        silent: do not echo input coming from a terminal
+  -t NUM    time out and fail after TIME seconds
+  -u FD     read from file descriptor FD instead of the standard input
+
 <h4 id="echo">echo</h4>
 
 The echo builtin prints its arguments to stdout, separated by a space, and
-terminated by a newline.  TODO: Describe flags, etc.
+terminated by a newline.
 
-<h4 id="read">read</h4>
+echo FLAGS* STR*
 
-Reads lines from stdin into a variable -- $REPLY by default.
+STR:
+  String to print. If none is specified, a newline will be printed.
+
+FLAGS:
+  -e  enable interpretation of backslash escapes
+<!--  -E  -->
+  -n  omit the trailing newline
+
+Backslash sequences recognized by -e:
+  \\         backslash
+  \a         (unimplemented ?) alert (BEL)
+  \b         backspace
+  \c         stop processing remaining input
+  \e         escape next character
+  \f         form feed, equivalent to \n + 4 spaces
+  \n         new line
+  \r         carriage return, returns to the beggining of the line
+  \t         horizontal tab
+  \v         vertical tab
+  \0NNN      print character specified as an octal value with 1 to 3 octal
+             digits 
+  \xHH       print character specified as an hexadecimal value with 1 to 2
+             hex digits
+  \uHHHH     Unicode character specified as an hexadecimal value with 1 to
+             4 hex digits 
+  \UHHHHHHHH Unicode character specified as an hexadecimal value with 1 to
+             8 hex digits
+
+<h4 id="readarray">readarray</h4>
+
+Alias for mapfile
+
+<h4 id="mapfile">mapfile</h4>
+
+The mapfile builtin reads lines from stdin into an array.
+
+mapfile FLAGS* ARRAY*
+
+ARRAY:
+  Where the read lines will be stored. If no variable is specified, MAPFILE
+  will be used.
+
+FLAGS:
+  -t       delete the delimiter from each line
+<!--
+  -d CHAR  use CHAR as delimiter, instead of the default newline
+  -n NUM   copy up to NUM lines
+  -O NUM   begins copying lines at the NUM element of the array
+  -s NUM   discard the first NUM lines
+  -u FD    read from FD file descriptor instead of the standard input
+  -C CMD   run CMD every NUM lines specified in -c
+  -c NUM   every NUM lines, the CMD command in C will be run
+-->
 
 ### Run Code
 
+<h4 id="source">source</h4>
+
+The source builtin executes a script, which is run in the context of the
+running shell and can modify local variables (as opposed to running in a
+subshell, where it can't)
+
+source SCRIPT ARGS*
+
+SCRIPT:
+  Path to the script that you want to run.
+
+ARGS:
+  One or more arguments for the script.
+
+<h4 id="eval">eval</h4>
+
+The eval builtin constructs a string from the arguments, then runs the string
+as a command. It is very powerful, but must be used with care, as it can
+introduce security problems (see https://mywiki.wooledge.org/BashFAQ/048)
+
+eval ARGS+
+
+ARGS:
+  One or more arguments that will be used to construct a command.
+
+EXAMPLES:
+  a='echo '; b='Hello, '; c='World!'
+  eval $a $b $c
+  This will create the string "echo Hello, World!" and run it.
+
+<h4 id="trap">trap</h4>
+
+The trap builtin runs commands after a signal is received.
+
+trap FLAGS* CMD SIGNALS
+
+FLAGS:
+  -l  Lists all signals and their signal number
+  -p  Prints a list of the installed signal handlers
+
+CMD:
+  Command to be run. If the command is the null string, the signal is ignored.
+
+SIGNALS:
+  List of signals to be caught.
+
 ### Set Options
 
+<h4 id="set">set</h4>
+
+The set builtin modifies the shell's configuration and behavior.
+
+<h4 id="shopt">shopt</h4>
+
+The shopt builtin configures the shell.
+
 ### Working Dir
+
+<h4 id="cd">cd</h4>
+
+The cd builtin changes the working directory.
+
+cd FLAGS* DIR
+
+DIR:
+  The path where you want to move. If not specified, variable HOME is used.
+  Path "~" is also an alias for the variable HOME. If the specified path is
+  "-", variable OLDPWD will be used, which is set by the shell to the
+  previous working directory.
+
+FLAGS:
+  -L  Follow symbolic links, working directory will be the one pointed by the
+      symbolic link (default behavior).
+  -P  Don't follow symbolic links, working directory will be the symbolic link.
+
+<h4 id="pwd">pwd</h4>
+
+The pwd builtin prints the current working directory.
+
+pwd FLAGS
+
+FLAGS:
+  -L  If present in the path, follow symbolic links (default behavior)
+  -P  Don't follow symbolic links, print the link instead of the reference.
+
+<h4 id="pushd">pushd</h4>
+
+The pushd builtin adds a directory to the directory stack, and changes the
+working directory to it. This is typically used along with popd and dirs.
+
+<!--pushd FLAGS DIR-->
+pushd DIR
+<!--pushd +/-NUM-->
+
+DIR:
+  File system directory where you want to move and which you want to stack.
+
+<!--FLAGS:
+  -n  Don't change the working directory, just manipulate the stack 
+NUM:
+  Rotates the stack the number of places specified. Eg, given the stack
+  '/foo /bar /baz', where '/foo' is the top of the stack, pushd +1 will move
+  it to the bottom, '/bar /baz /foo'-->
+
+<h4 id="popd">popd</h4>
+
+The popd builtin removes a directory from the directory stack, and changes the
+working directory to it. Typically used along with pushd and dirs.
+
+popd
+
+<h4 id="dirs">dirs</h4>
+
+The dirs builtin shows the contents of the directory stack. Typically used
+along with pushd and popd.
+
+dirs FLAGS*
+
+FLAGS:
+  -c  Removes all the directories from the stack.
+  -l  Show the directory stack, but with the real path instead of ~.
+  -p  Show the directory stack, but formatted as one line per entry.
+  -v  Like -p, but numbering each line.
 
 ### Completion
 
 <h4 id="complete">complete</h4>
 
-Register completion policies for different commands.
+The complete builtin registers completion policies for different commands.
 
 <h4 id="compgen">compgen</h4>
 
-Generate completion candidates inside a user-defined completion function.
+The compgen builtin generates completion candidates inside a user-defined
+completion function.
 
 It can also be used in scripts, i.e. outside a completion function.
 
 <h4 id="compopt">compopt</h4>
 
-Change completion options inside a user-defined completion function.
+The compopt builtin changes completion options inside a user-defined completion
+function.
 
 <h4 id="compadjust">compadjust</h4>
 
-Adjust COMP_ARGV according to specified delimiters, and optionally set
-variables cur, prev, words (an array), and cword.  May also set 'split'.
+The compadjust builtin adjusts COMP_ARGV according to specified delimiters,
+and optionally set variables cur, prev, words (an array), and cword.  May also
+set 'split'.
 
 This is an OSH extension that makes it easier to run the bash-completion
 project.
 
 <h3>Shell Process</h3>
+
+<h4 id="exec">exec</h4>
+
+The exec builin replaces the running shell with the specified command.
+
+exec CMD ARGS*
+
+CMD ARGS:
+  The command to be run and its arguments.
+
+<h4 id="umask">umask</h4>
+
+The umask builtin sets the mask that determines the permissions for new files
+and directories. The mask is substracted from 666 for files and 777 for
+directories.
+
+umask MODE?
+
+MODE:
+  Mask to be used, in octal mode. If none is specified, the current mask will
+  be shown.
+
+<h4 id="times">times</h4>
+
+The times builtin shows the user and system time used by the shell and all its
+children processes.
+
+times
                 
 ### Child Process
+
+<h4 id="jobs">jobs</h4>
+
+The jobs builtin shows all jobs running in the shell and its status.
+
+jobs
+
+<h4 id="wait">wait</h4>
+
+The wait builtin waits for the death of a job or a process and returns its exit
+status.
+
+wait FLAGS* PID|JOB*
+
+FLAGS:
+  -n  Wait for the next job termination.
+
+PID|JOB:
+  The PID of the process, or the job number, which you want to wait for, or a
+  job is specified as '%jobnumber'.
+  If none is specified, wait will wait for all the active child processes.
+
+<h4 id="ampersand">ampersand</h4>
+
+The '&' builtin runs a command in the background as a job, and immediately
+returns the control to the shell. The PID of the command is recorded in the
+$! variable.
+
+CMD &
+
+CMD:
+  The command to be run.
+
+<h4 id="fg">fg</h4>
+
+The fg builtin returns a job running in the background to the foreground.
+
+fg JOB?
+
+JOB:
+  Job ID to be moved to the foreground. If none is specified, the latest job
+  is chosen.
+
+<!--<h4 id="bg">bg</h4>
+
+The bg builtin resumes suspend job, while keeping it in the background.
+
+bg JOB?
+
+JOB:
+  Job ID to be resumed in the background. If none is specified, the latest job
+  is chosen. -->
 
 ### External
 
