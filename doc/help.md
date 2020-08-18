@@ -582,7 +582,7 @@ These builtins take input and output.  They're often used with redirects.
 
 <h4 id="read">read</h4>
 
-    read FLAGS* VAR*
+    read FLAG* VAR*
 
 Read a line from stdin, split it into tokens with the `$IFS` algorithm,
 and assign the tokens to the given variables.  When no VARs are given,
@@ -606,7 +606,7 @@ Flags:
 
 <h4 id="echo">echo</h4>
 
-    echo FLAGS* ARG*
+    echo FLAG* ARG*
 
 Prints ARGs to stdout, separated by a space, and terminated by a newline.
 
@@ -639,20 +639,18 @@ Backslash sequences recognized by -e:
 
 <h4 id="readarray">readarray</h4>
 
-Alias for mapfile
+Alias for `mapfile`.
 
 <h4 id="mapfile">mapfile</h4>
 
-The mapfile builtin reads lines from stdin into an array.
+    mapfile FLAG* ARRAY?
 
-mapfile FLAGS* ARRAY*
+Reads lines from stdin into the variable named ARRAY (default
+`${MAPFILE[@]}`).
 
-ARRAY:
-  Where the read lines will be stored. If no variable is specified, MAPFILE
-  will be used.
+Flags:
 
-FLAGS:
-  -t       delete the delimiter from each line
+    -t       Remove the trailing newline from every line
 <!--
   -d CHAR  use CHAR as delimiter, instead of the default newline
   -n NUM   copy up to NUM lines
@@ -667,49 +665,48 @@ FLAGS:
 
 <h4 id="source">source</h4>
 
-The source builtin executes a script, which is run in the context of the
-running shell and can modify local variables (as opposed to running in a
-subshell, where it can't)
+    source SCRIPT ARG*
 
-source SCRIPT ARGS*
-
-SCRIPT:
-  Path to the script that you want to run.
-
-ARGS:
-  One or more arguments for the script.
+Executes SCRIPT with given ARGs in the context of the current shell.  It will
+modify existing variables.
 
 <h4 id="eval">eval</h4>
 
-The eval builtin constructs a string from the arguments, then runs the string
-as a command. It is very powerful, but must be used with care, as it can
-introduce security problems (see https://mywiki.wooledge.org/BashFAQ/048)
+    eval ARG+
 
-eval ARGS+
+Creates a string by joining ARGs with a space, then runs it as a shell command.
 
-ARGS:
-  One or more arguments that will be used to construct a command.
+Example:
 
-EXAMPLES:
-  a='echo '; b='Hello, '; c='World!'
-  eval $a $b $c
-  This will create the string "echo Hello, World!" and run it.
+     # Create the string echo "hello $name" and run it.
+     a='echo'
+     b='"hello $name"'
+     eval $a $b
+
+Tips:
+
+`eval` is usually unnecessary in Oil code.  Using it can confuse code and
+user-supplied data, leading to [security issues][].
+
+Prefer passing single string ARG to `eval`.
+
+[security issues]: https://mywiki.wooledge.org/BashFAQ/048
 
 <h4 id="trap">trap</h4>
 
-The trap builtin runs commands after a signal is received.
+    trap FLAG* CMD SIGNAL*
 
-trap FLAGS* CMD SIGNALS
+Registers the shell string CMD to be run after the SIGNALs are received.  If
+the CMD is empty, then the signal is ignored.
 
-FLAGS:
-  -l  Lists all signals and their signal number
-  -p  Prints a list of the installed signal handlers
+Flags:
 
-CMD:
-  Command to be run. If the command is the null string, the signal is ignored.
+    -l  Lists all signals and their signal number
+    -p  Prints a list of the installed signal handlers
 
-SIGNALS:
-  List of signals to be caught.
+Tip:
+
+Prefer passing the name of a shell function to `trap`.
 
 ### Set Options
 
@@ -725,42 +722,38 @@ The shopt builtin configures the shell.
 
 <h4 id="cd">cd</h4>
 
-The cd builtin changes the working directory.
+    cd FLAG* DIR
 
-cd FLAGS* DIR
+Changes the working directory of the current shell process to DIR.
 
-DIR:
-  The path where you want to move. If not specified, variable HOME is used.
-  Path "~" is also an alias for the variable HOME. If the specified path is
-  "-", variable OLDPWD will be used, which is set by the shell to the
-  previous working directory.
+If DIR isn't specified, change to `$HOME`.  If DIR is `-`, change to `$OLDPWD`
+(a variable that the sets to the previous working directory.)
 
-FLAGS:
-  -L  Follow symbolic links, working directory will be the one pointed by the
-      symbolic link (default behavior).
-  -P  Don't follow symbolic links, working directory will be the symbolic link.
+Flags:
+
+    -L  Follow symbolic links, i.e. change to the TARGET of the symlink.
+        (default).
+    -P  Don't follow symbolic links.
 
 <h4 id="pwd">pwd</h4>
 
-The pwd builtin prints the current working directory.
+    pwd FLAG*
 
-pwd FLAGS
+Prints the current working directory.
 
-FLAGS:
-  -L  If present in the path, follow symbolic links (default behavior)
-  -P  Don't follow symbolic links, print the link instead of the reference.
+Flags:
+
+    -L  Follow symbolic links if present (default)
+    -P  Don't follow symbolic links.  Print the link instead of the target.
 
 <h4 id="pushd">pushd</h4>
 
-The pushd builtin adds a directory to the directory stack, and changes the
-working directory to it. This is typically used along with popd and dirs.
-
 <!--pushd FLAGS DIR-->
-pushd DIR
+    pushd DIR
 <!--pushd +/-NUM-->
 
-DIR:
-  File system directory where you want to move and which you want to stack.
+Add DIR to the directory stack, then change the working directory to DIR.
+Typically used with `popd` and `dirs`.
 
 <!--FLAGS:
   -n  Don't change the working directory, just manipulate the stack 
@@ -771,23 +764,24 @@ NUM:
 
 <h4 id="popd">popd</h4>
 
-The popd builtin removes a directory from the directory stack, and changes the
-working directory to it. Typically used along with pushd and dirs.
+    popd
 
-popd
+Removes a directory from the directory stack, and changes the working directory
+to it.  Typically used with `pushd` and `dirs`.
 
 <h4 id="dirs">dirs</h4>
 
-The dirs builtin shows the contents of the directory stack. Typically used
-along with pushd and popd.
+    dirs FLAG*
 
-dirs FLAGS*
+Shows the contents of the directory stack.  Typically used with `pushd` and
+`popd`.
 
-FLAGS:
-  -c  Removes all the directories from the stack.
-  -l  Show the directory stack, but with the real path instead of ~.
-  -p  Show the directory stack, but formatted as one line per entry.
-  -v  Like -p, but numbering each line.
+Flags:
+
+    -c  Clear the dir stack.
+    -l  Show the dir stack, but with the real path instead of ~.
+    -p  Show the dir stack, but formatted as one line per entry.
+    -v  Like -p, but numbering each line.
 
 ### Completion
 
@@ -820,75 +814,68 @@ project.
 
 <h4 id="exec">exec</h4>
 
-The exec builin replaces the running shell with the specified command.
+    exec BIN_PATH ARG*
 
-exec CMD ARGS*
-
-CMD ARGS:
-  The command to be run and its arguments.
+Replaces the running shell with the binary specified, which is passed ARGs.
+BIN_PATH must exist on the file system; i.e. it can't be a shell builtin or
+function.
 
 <h4 id="umask">umask</h4>
 
-The umask builtin sets the mask that determines the permissions for new files
-and directories. The mask is substracted from 666 for files and 777 for
+    umask MODE?
+
+Sets the bit mask that determines the permissions for new files and
+directories.  The mask is subtracted from 666 for files and 777 for
 directories.
 
-umask MODE?
+Oil currently supports writing masks in octal.
 
-MODE:
-  Mask to be used, in octal mode. If none is specified, the current mask will
-  be shown.
+If no MODE, show the current mask.
 
 <h4 id="times">times</h4>
 
-The times builtin shows the user and system time used by the shell and all its
-children processes.
+    times
 
-times
+Shows the user and system time used by the shell and its child processes.
                 
 ### Child Process
 
 <h4 id="jobs">jobs</h4>
 
-The jobs builtin shows all jobs running in the shell and its status.
+    jobs
 
-jobs
+Shows all jobs running in the shell and their status.
 
 <h4 id="wait">wait</h4>
 
-The wait builtin waits for the death of a job or a process and returns its exit
-status.
+    wait FLAG* ARG
 
-wait FLAGS* PID|JOB*
+Waits for a a process to exit, and returns its status.
 
-FLAGS:
-  -n  Wait for the next job termination.
+The ARG can be a PID (tracked by the kernel), or a job number (tracked by the
+shell).  Specify jobs with the syntax `%jobnumber`.
 
-PID|JOB:
-  The PID of the process, or the job number, which you want to wait for, or a
-  job is specified as '%jobnumber'.
-  If none is specified, wait will wait for all the active child processes.
+If there's no ARG, wait for all child processes.
+
+Flags:
+
+    -n  Wait for the next process to exit, rather than a specific process.
 
 <h4 id="ampersand">ampersand</h4>
 
-The '&' builtin runs a command in the background as a job, and immediately
-returns the control to the shell. The PID of the command is recorded in the
-$! variable.
+    CMD &
 
-CMD &
+The `&` language construct runs CMD in the background as a job, immediately
+returning control to the shell.
 
-CMD:
-  The command to be run.
+The resulting PID is recorded in the `$!` variable.
 
 <h4 id="fg">fg</h4>
 
-The fg builtin returns a job running in the background to the foreground.
+    fg JOB?
 
-fg JOB?
-
-JOB:
-  Job ID to be moved to the foreground. If none is specified, the latest job
-  is chosen.
+Returns a job running in the background to the foreground.  If no JOB is
+specified, use the latest job.
 
 <!--<h4 id="bg">bg</h4>
 
@@ -1202,4 +1189,6 @@ Useful for logging callbacks.  NOTE: bash has this with the obscure printf
 '%(...)' syntax.
 
 ### Hashing
+
+TODO
 

@@ -165,7 +165,7 @@ an **unimplemented** feature.
 
 ```oil-help-index
   [I/O]           read   echo 
-                  X readarray   X mapfile
+                  readarray   mapfile
   [Run Code]      source .   eval   trap
   [Set Options]   set   shopt
   [Working Dir]   cd   pwd   pushd   popd   dirs

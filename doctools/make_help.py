@@ -251,7 +251,9 @@ class Splitter(HTMLParser.HTMLParser):
 
     # Maybe detect nesting?
     if self.indent != 0:
-      raise RuntimeError('Unbalanced HTML tags: %d' % self.indent)
+      raise RuntimeError(
+          'Unbalanced HTML tags: indent=%d, cur_group=%s' % (
+          self.indent, self.cur_group))
 
 
 def SplitIntoCards(heading_tags, contents):
