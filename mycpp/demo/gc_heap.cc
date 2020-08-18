@@ -47,8 +47,24 @@ union Header {
 };
 
 class Managed {
+#if 0  // mark and sweep
   Header header;
   Managed* next;
+#endif
+
+  uint16_t tag;
+};
+
+class Slice : public Managed {
+ public:
+  const char* data_;
+  int start_;
+  int len_;
+  int hash_;
+
+  // what about is_intern?  Are all strings interned?
+  // problem: keying by a Slice: that means the slice itself has a hash, not
+  // the underlying Slab.
 };
 
 // Hm 32 bytes if managed, 16 bytes otherwise!
@@ -122,6 +138,7 @@ int main(int argc, char** argv) {
   log("sizeof(Managed) = %d", sizeof(Managed));
 
   log("sizeof(Str) = %d", sizeof(Str));
+  log("sizeof(Slice) = %d", sizeof(Slice));
 
   // 40 bytes:
   // 16 byte managed + 24 byte vector = 40

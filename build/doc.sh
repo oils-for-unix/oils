@@ -77,6 +77,8 @@ readonly MARKDOWN_DOCS=(
   doc-toolchain
   eggex
   deprecations
+  idioms
+  qsn
 
   # needs polish
   # Note: docs about the Oil language are prefixed 'oil-'.
@@ -94,7 +96,6 @@ readonly MARKDOWN_DOCS=(
   oil-special-vars
   oil-proc-func-block
   io-builtins
-  qsn
   unicode
 
   # Internal stuff

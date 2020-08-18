@@ -1,9 +1,7 @@
----
-in_progress: true
----
-
 Oil Language Idioms
 ===================
+
+<!-- TODO: write a highlighter that just recognizes # comments -->
 
 This is an informal, lightly-organized list of recommended idioms for the [Oil
 language]($xref:oil-language).  Use these when you don't care about
@@ -109,46 +107,50 @@ Yes:
 
 ## Avoid Ad Hoc Parsing and Splitting
 
-In other words, avoid *groveling through backslashes and spaces* in shell, or
-limit it to "the edges" of your programs.
+In other words, avoid *groveling through backslashes and spaces* in shell.  
 
-Take advantage of the the invariants that the [IO builtins](io-builtins.html)
-respect.
+Instead, emit and consume the [QSN][] and QTSV interchange formats.
+
+- QSN is a JSON-like format for byte string literals
+- QTSV is a convention for embedding QSN in TSV files.
+
+Custom parsing and serializing should be limited to "the edges" of your Oil
+programs.
+
+### Use New I/O Builtins
+
+These are discussed in the next two sections, but here's a summary.
+
+    write --qsn        # also -q
+    read --qsn :mystr  # also -q
+
+    read --line --qsn :myline     # read a single line
+    read --lines --qsn :myarray   # read many lines
+
+That is, take advantage of the the invariants that the [IO
+builtins](io-builtins.html) respect.  (doc in progress)
 
 TODO: Implement and test these.
 
-    write --qsn  # also -q
-    read --qsn   # also -q
+### More Strategies For Structured Data
 
-    read --line --qsn :myline     # read a single line
-    read --lines --qsn :myarray   # read many liens
-    read --all :mystr  # slurp whole thing, not compatibl with qsn
-
-### Wrap and Adapt External Tools
-
-Parse their output and emit [QSN][] and QTSV.
-
-These can be one-off, "bespoke" wrappers in your program, or maintained
-programs.  Use the `proc` construct and `flagspec`!
-
-Example: [uxy](https://github.com/sustrik/uxy) wrappers.
-
-TODO: Examples written in Oil and in other languages.
-
-### Patch Existing Tools
-
-Enhance GNU grep, etc. to emit [QSN][] and QTSV.
+- **Wrap** and Adapt External Tools.  Parse their output, and emit [QSN][] and
+  QTSV.
+  - These can be one-off, "bespoke" wrappers in your program, or maintained
+    programs.  Use the `proc` construct and `flagspec`!
+  - Example: [uxy](https://github.com/sustrik/uxy) wrappers.
+  - TODO: Examples written in Oil and in other languages.
+- **Patch** Existing Tools.
+   - Enhance GNU grep, etc. to emit [QSN][] and QTSV.  Add a `--qsn` flag.
+- **Write Your Own** Structured Versions.
+  - For example, you can write a structured subset of `ls` in Python with
+    little effort.
 
 <!--
 
   ls -q and -Q already exist, but --qsn is probably fine
   or --qtsv
 -->
-
-### Or Write Your Own Structured Versions
-
-For example, you can write a structured subset of `ls` in Python with little
-effort.
 
 ## The `write` Builtin Is Simpler Than `printf` and `echo`
 
@@ -184,8 +186,6 @@ Yes:
 
 ### Read A Line
 
-TODO: implement this.
-
 No:
 
     read line     # Bad because it mangles your backslashes!
@@ -193,11 +193,11 @@ No:
 
 Yes:
 
-    read --line  # ???
+    read --line   # also faster because it's a buffered read
+
+TODO: implement this.
 
 ### Read a Whole File
-
-TODO: figure this out.
 
 No:
 
@@ -206,9 +206,9 @@ No:
 
 Yes:
 
-    read --all
-    slurp ?
+    read --all :mystr
 
+TODO: implement this.
 
 ## Use Blocks To Save and Restore Context
 
@@ -232,8 +232,6 @@ Yes:
 
 ### Temporarily Set Shell Options
 
-TODO: Implement this.
-
 No:
 
     set +o errexit
@@ -246,9 +244,9 @@ Yes:
       myfunc
     }
 
-### Use the `forkwait` builtin for Subshells, not `()`
-
 TODO: Implement this.
+
+### Use the `forkwait` builtin for Subshells, not `()`
 
 No:
 
@@ -262,9 +260,9 @@ Yes:
     }
     echo $not_mutated
 
-### Use the `fork` builtin for async, not `&`
-
 TODO: Implement this.
+
+### Use the `fork` builtin for async, not `&`
 
 No:
 
@@ -277,6 +275,8 @@ Yes:
     fork myproc
 
     fork { sleep 1; echo one; sleep 2 }
+
+TODO: Implement this.
 
 ## Use Procs (Better Shell Functions)
 
@@ -299,8 +299,6 @@ Yes:
 
 ### Variable Number of Arguments
 
-TODO: Test this out.
-
 No:
 
     f() {
@@ -318,9 +316,9 @@ Yes:
       write -- @rest        # @ means "splice this array"
     }
 
-### "Out" Params as Return Values
-
 TODO: Test this out.
+
+### "Out" Params as Return Values
 
 No:
 
@@ -344,39 +342,46 @@ Yes:
     var myvar = 'zzz'
     f zzz :myvar        # : means pass a string "reference" (optional)
 
+TODO: Test this out.
+
 ## Curly Braces Fix Semantic Problems
 
 ### Procs Don't Have Dynamic Scope
 
 Shell functions can access variables in their caller:
 
-    f() { echo $var_in_g; }
-    g() { var_in_g=foo; }
-    g
+    foo() {
+      foo_var=x;
+      bar
+    }
+
+    bar() {
+      echo $foo_var  # looks up the stack
+    }
+
+    foo
 
 In Oil, you have to pass params explicitly:
 
-    proc f { echo $var_in_g }  # error
+    proc bar {
+      echo $foo_var  # error
+    }
 
-### If and errexit
-
-TODO: Implement this.
-
+### If and `errexit`
 
 Bug in POSIX shell:
 
-    if myfunc; then
+    if myfunc; then  # oops, errors not checked in myfunc
       echo hi
     fi
 
-Workaround suggested for POSIX shell:
+Suggested workaround:
 
-    if $0 myfunc; then
+    if $0 myfunc; then  # invoke a new shell
       echo hi
     fi
 
     "$@"
-
 
 Oil extension, without an extra process:
 
@@ -390,8 +395,7 @@ Even better:
       echo hi
     }
 
-
-Note: `&&` and `||` and `!` still require explicit invoke.
+Note that `&&` and `||` and `!` require an explicit `invoke`:
 
 No:
 
@@ -407,9 +411,11 @@ Yes:
 
 
 This explicit syntax avoids breaking POSIX shell.  You have to opt in to the
-better behavior..
+better behavior.
 
-## Use Oil Expressions and Assignments
+TODO: Implement this.
+
+## Use Oil Expressions, Initializations, and Assignments (var, setvar)
 
 ### Initialize and Assign Strings and Integers
 
@@ -442,7 +448,7 @@ Yes:
 
 No:
 
-    (( i ++ ))  # interacts poorly with errexit
+    (( i++ ))  # interacts poorly with errexit
     i=$(( i+1 ))
 
 Yes:
@@ -464,7 +470,8 @@ Yes:
     var myarray = %(one two three)
     setvar myarray[3] = 'THREE'
 
-    var myassoc = %{key: 'value', k2: 'v2'}  # keys don't need to be quoted
+    # keys don't need to be quoted
+    var myassoc = %{key: 'value', k2: 'v2'}
     setvar myassoc['key'] = 'V'
 
 Container literals start with the `%` sigil.  (TODO: Implement this.  It's `@`
@@ -504,11 +511,11 @@ Yes:
 
 No:
 
-    echo result=$((1 + a[i] * 3))  # C-like arithmetic
+    echo flag=$((1 + a[i] * 3))  # C-like arithmetic
 
 Yes:
 
-    echo result=$[1 + a[i] * 3]    # Arbitrary Oil expressions
+    echo flag=$[1 + a[i] * 3]    # Arbitrary Oil expressions
 
     # Possible, but a local var might be more readable
     echo flag=$['1' if x else '0']
@@ -572,8 +579,8 @@ No:
 
 Yes (purely a style preference):
 
-    case $x {
-      (*.py)
+    case $x {          # curly braces
+      (*.py)           # balanced parens
         echo 'Python'
         ;;
       (*.sh)
@@ -584,8 +591,6 @@ Yes (purely a style preference):
 ## TODO
 
 ### Consider Using `--long-flags` for builtins
-
-TODO: implement this.
 
 Easier to write:
 
@@ -604,6 +609,7 @@ Easier to read:
 Style note: Prefer `test` to `[`, because idiomatic Oil code doesn't use
 "puns".
 
+TODO: implement this.
 
 ### Source Files and Namespaces
 
