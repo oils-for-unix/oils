@@ -62,17 +62,17 @@ Yes:
 No:
 
     local packages='python-dev gawk'
-    apt install $p
+    apt install $packages
 
 Yes:
 
     var packages = 'python-dev gawk'
-    apt install @split(x)
+    apt install @split(packages)
 
 Even better:
 
     var packages = %(python-dev gawk)  # array literal
-    apt install @x                     # splice array
+    apt install @packages              # splice array
 
 ### Iterate a Number of Times (Split Command Sub)
 
