@@ -38,7 +38,7 @@ Yes:
 No:
 
     local myflags=( --all --long )
-    ls "${myflags[@]}" "$@" 
+    ls "${myflags[@]}" "$@"
 
 Yes:
 
@@ -221,7 +221,7 @@ No:
 No:
 
     pushd /tmp
-    echo $PWD 
+    echo $PWD
     popd
 
 Yes:
@@ -284,7 +284,7 @@ Yes:
 
 No:
 
-    f() {   
+    f() {
       local src=$1
       local dest=${2:-/tmp}
 
@@ -324,10 +324,10 @@ TODO: Test this out.
 
 No:
 
-    f() {    
+    f() {
       local in=$1
       local -n out=$2
-      
+
       out=PREFIX-$in
     }
 
@@ -405,7 +405,7 @@ Yes:
     invoke myfunc && echo 'success'
     ! invoke myfunc
 
-   
+
 This explicit syntax avoids breaking POSIX shell.  You have to opt in to the
 better behavior..
 
@@ -533,7 +533,7 @@ Yes:
 
 Or extract the pattern:
 
-    var pat = / digit+ / 
+    var pat = / digit+ /
     if (x ~ pat) {
       echo 'number'
     }
@@ -546,7 +546,7 @@ TODO: `BASH_REMATCH` alternative.
 
 No:
 
-    if [[ $x == *.py ]]; then   
+    if [[ $x == *.py ]]; then
       echo Python
     fi
 
