@@ -582,63 +582,60 @@ These builtins take input and output.  They're often used with redirects.
 
 <h4 id="read">read</h4>
 
-The read builtin reads lines from stdin and stores them into a variable. Input
-is split according to the $IFS delimiter.
+    read FLAGS* VAR*
 
-read FLAGS* VAR*
+Read a line from stdin, split it into tokens with the `$IFS` algorithm,
+and assign the tokens to the given variables.  When no VARs are given,
+assign to `$REPLY`.
 
-VAR:
-  Variable where the data will be stored. If none is specified, $REPLY will be
-  used by default. More than one variable can be specified, for cases when
-  input is split into several fields.
+Flags:
 
-FLAGS:
-  -a ARRAY  assign the splitted words to elements of an array
-  -d CHAR   use DELIM as delimiter, instead of newline
-<!--  -e        use readline to obtain the line
-      -i STR    use STR as the initial text for readline -->
-  -n NUM    read NUM characters, but return before if delimiters are found
-<!--  -N NUM    read up to NUM characters, ignoring delimiters -->
-  -p STR    print the string PROMPT before reading input
-  -r        raw mode: don't let backslashes escape characters
-  -s        silent: do not echo input coming from a terminal
-  -t NUM    time out and fail after TIME seconds
-  -u FD     read from file descriptor FD instead of the standard input
+    -a ARRAY  assign the tokens to elements of this array
+    -d CHAR   use DELIM as delimiter, instead of newline
+    -n NUM    read up to NUM characters, respecting delimiters
+    -p STR    print the string PROMPT before reading input
+    -r        raw mode: don't let backslashes escape characters
+    -s        silent: do not echo input coming from a terminal
+    -t NUM    time out and fail after TIME seconds
+              -t 0 returns whether any input is available
+    -u FD     read from file descriptor FD instead of 0 (stdin)
+
+  <!--  -N NUM    read up to NUM characters, ignoring delimiters -->
+  <!--  -e        use readline to obtain the line
+        -i STR    use STR as the initial text for readline -->
 
 <h4 id="echo">echo</h4>
 
-The echo builtin prints its arguments to stdout, separated by a space, and
-terminated by a newline.
+    echo FLAGS* ARG*
 
-echo FLAGS* STR*
+Prints ARGs to stdout, separated by a space, and terminated by a newline.
 
-STR:
-  String to print. If none is specified, a newline will be printed.
+Flags:
 
-FLAGS:
-  -e  enable interpretation of backslash escapes
+    -e  enable interpretation of backslash escapes
+    -n  omit the trailing newline
 <!--  -E  -->
-  -n  omit the trailing newline
 
 Backslash sequences recognized by -e:
-  \\         backslash
-  \a         (unimplemented ?) alert (BEL)
-  \b         backspace
-  \c         stop processing remaining input
-  \e         escape next character
-  \f         form feed, equivalent to \n + 4 spaces
-  \n         new line
-  \r         carriage return, returns to the beggining of the line
-  \t         horizontal tab
-  \v         vertical tab
-  \0NNN      print character specified as an octal value with 1 to 3 octal
-             digits 
-  \xHH       print character specified as an hexadecimal value with 1 to 2
-             hex digits
-  \uHHHH     Unicode character specified as an hexadecimal value with 1 to
-             4 hex digits 
-  \UHHHHHHHH Unicode character specified as an hexadecimal value with 1 to
-             8 hex digits
+
+    \\         backslash
+    \a         (unimplemented ?) alert (BEL)
+    \b         backspace
+    \c         stop processing remaining input
+    \e         escape next character
+    \f         form feed, equivalent to \n + 4 spaces
+    \n         new line
+    \r         carriage return, returns to the beggining of the line
+    \t         horizontal tab
+    \v         vertical tab
+    \0NNN      print character specified as an octal value with 1 to 3 octal
+               digits 
+    \xHH       print character specified as an hexadecimal value with 1 to 2
+               hex digits
+    \uHHHH     Unicode character specified as an hexadecimal value with 1 to
+               4 hex digits 
+    \UHHHHHHHH Unicode character specified as an hexadecimal value with 1 to
+               8 hex digits
 
 <h4 id="readarray">readarray</h4>
 
