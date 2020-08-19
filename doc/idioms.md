@@ -4,12 +4,14 @@ Oil Language Idioms
 <!-- TODO: write a highlighter that just recognizes # comments -->
 
 This is an informal, lightly-organized list of recommended idioms for the [Oil
-language]($xref:oil-language).  Use these when you don't care about
-compatibility with other shells.
+language]($xref:oil-language).  Each section has snippets labeled *No* and
+*Yes*.
 
-TODO: Go through more of the [Pure Bash
-Bible](https://github.com/dylanaraps/pure-bash-bible).  Oil provides
-alternatives for such quirky syntax.
+- Use the *Yes* style when you want to write in Oil, and don't care about
+  compatibility with other shells.
+- The *No* style is discouarged in new code, but Oil will run it.  The [OSH
+  language]($xref:osh-language) is compatible with
+  [POSIX]($xref:posix-shell-spec) and [bash]($xref).
 
 [QSN]: qsn.html
 
@@ -632,3 +634,7 @@ Hypothetical example:
 ## Related Documents
 
 - [Shell Language Deprecations](deprecations.html)
+- TODO: Go through more of the [Pure Bash
+  Bible](https://github.com/dylanaraps/pure-bash-bible).  Oil provides
+  alternatives for such quirky syntax.
+

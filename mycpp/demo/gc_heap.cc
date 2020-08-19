@@ -24,6 +24,19 @@
 // - Also it's not fork() friendly because there is more mutation of object
 //   headers.  Merely referencing an object mutates it.
 //
+// Downsides to copying GC (most likely solution)
+// - In theory, it has double the space usage.  Counterarguments:
+//   - Objects headers should be smaller, and Oil has lots of tiny objects
+//   - Page sharing due to being fork() friendly
+//   - Copying collectors eliminate fragmentation
+//   - Later optimization: I think we can partition the heap into moving small
+//     objects and non-moving malloc'd "slabs".  Slabs are owned by small
+//     objects.  But we have to solve the "deallocators" problem, which seems
+//     doable.
+// - Breadth-first reduces locality of parents and children.  This seems like
+//   it will matter, but there are some approxiately depth-first algorithms 
+//   we could try out later.  It would be cool if GC can improve locality!
+//
 // Performance goal / benchmark:
 // - configure-coreutils can be parsed in ~250 ms on a slow machine, and ~90 ms
 //   on a fast machine.  Copy-collecting that heap should take less time,
@@ -36,7 +49,10 @@
 //   By Value: integer, Slice, Tuple (multiple return value)
 //   By Reference: Structs (data/enum), List, Dict, Str
 //
-// Note: pick one of Str and Slice?  mycpp could generate code for both.
+// Version 1, no deallocators:
+//   Use Str (first-class object) and Array (on-heap)
+// Version 2, with deallocators:
+//   Use Slice (a kind of "pointer") and Slab (off-heap)
 //
 // GC policy tag
 //
@@ -76,6 +92,7 @@
 // - Token size
 //
 
+#include <assert.h>
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
 #include <string.h>  // strcmp
@@ -196,21 +213,53 @@ Space* gFromSpace;
 Space* gToSpace;
 
 
-// TODO: Do we need an interned symbol?
-// Can Slice be modified to Symbol?  But would they be freed?
-
 // DEFERRED until version 2
 class Slice_2 {  // value type, not managed
  public:
   int slab_id_;  // index
-  int hash_;
+  int atom_id_;  // for fast equality testing
   int start_;
   int len_;
-
-  // what about is_intern?  Are all strings interned?
-  // problem: keying by a Slice: that means the slice itself has a hash, not
-  // the underlying Slab.
 };
+
+// Idea for FAST STRING KEY LOOKUP with Atom table:
+//
+// A Str or Slice_2 does NOT store a hash value.  And it doesn't store the
+// contents either.
+//
+// Instead the atom table is a HASH SET (a little like hash table)
+
+class AtomEntry {
+ public:
+  int hash;  // hash value for initial comparison, then linear probing
+  int len;
+  const char* data;  // We OWN a COPY of this data now, never freed!
+};
+
+class AtomTable {
+ public:
+  int Intern(Slice_2 slice) {
+    assert(0);
+  }
+
+  std::vector<int> indices;  // like a hash_set
+  std::vector<AtomEntry> entries;  // indexed by
+};
+
+// Interface:
+//
+// auto s = new Str(...)
+// auto s2 = s->slice(1);  // derive a string
+// auto s3 = s->slice(0, -2);  // derive another string
+//
+// int id2 = gAtoms.Intern(s2)
+// int id3 = gAtoms.Intern(s2)
+// 
+// Now id2 == id2 IF AND ONLY IF they are equal.  This is NOT true for a hash
+// value!
+//
+// Whenever a Str or Slice is used as a key, it gets its atom_id key filled in.
+
 
 // We're going to start out with this reference type.
 class Str : public Managed {
