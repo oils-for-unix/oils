@@ -9,29 +9,28 @@
 // - Arbitrarily sized heap.  The heap can't be an array.
 // - Reasonably fast.
 // - fork() friendly.  Mutation should be limited in order to facilitate page
-// sharing.
+//   sharing.
 //
 // Why not mark and sweep:
 // - The simplest design wants to use the system allocator.  Measured to be
-// slower.
+//   slower.
 // - Bitmap marking hard to do without "object tables".
 // - Object header is probably bigger (the heap turns into a linked list, if
-// you want it to be arbitrarily sized)
+//   you want it to be arbitrarily sized)
 //
 // Why not reference counting:
 // - The only idea I have is the shared_ptr one.  It makes the code less
-// readable for debuggers, and seems like a dead end in terms of performance.
+//   readable for debuggers, and seems like a dead end in terms of performance.
 // - Also it's not fork() friendly because there is more mutation of object
-// headers.  Merely referencing an object mutates it.
+//   headers.  Merely referencing an object mutates it.
 //
-// Issues:
-// - homogeneous GC graph overlaid on typed heterogeneous object graph
-//   - Object header
-// - size of various types
-// - hash value in Str
-// - is Str a value type?
-// - value.Str vs. Str
-// - Token size
+// Performance goal / benchmark:
+// - configure-coreutils can be parsed in ~250 ms on a slow machine, and ~90 ms
+//   on a fast machine.  Copy-collecting that heap should take less time,
+//   hopefully 2x or 5x less.
+// - Also, parsing will slow down because of the object header size increase.
+//   Goal: shouldn't be slower than bash.  (This depends how many collections
+//   we do though!)
 //
 // Object Model:
 //   By Value: integer, Slice, Tuple (multiple return value)
@@ -66,6 +65,16 @@
 // - figure out how to call the destructors -- DEFERRED
 // - figure out std::vector vs. another GC slab?  vector does not have Managed
 //   header -- DONE, using Array
+//
+// Issues:
+// - homogeneous GC graph overlaid on typed heterogeneous object graph
+//   - Object header
+// - size of various types
+// - hash value in Str
+// - is Str a value type?
+// - value.Str vs. Str
+// - Token size
+//
 
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
@@ -208,6 +217,9 @@ class Str : public Managed {
  public:
   Str(const char* data) : data_(data) {
   }
+
+  // TODO: This should change to a Array reference?
+  // It has to point to the header of the object!
 
   const char* data_;  // problem: how is this freed?
                       // two solutions:
