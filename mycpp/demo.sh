@@ -44,6 +44,12 @@ gc-heap() {
   cpp-compile-run demo/gc_heap.cc "$@"
 }
 
+allocator() {
+  local bin=_bin/gc_heap
+  cpp-compile demo/gc_heap.cc $bin
+  $bin allocator
+}
+
 max-rss() {
   /usr/bin/time --format '%M' -- "$@"
 }
