@@ -5,77 +5,38 @@ in_progress: yes
 Oil Builtins
 ============
 
+This is an **overview** of [shell builtins]($xref:shell-builtin) that are
+unique to Oil.  A full description of each builtin will be available in the
+[help pages](help-index.html).
+
+What are builtins?  They look like external commands, but are included with the
+shell itself.  They don't spawn an external process, and can modify the shell's
+memory.
+
 <div id="toc">
 </div>
 
-- use
-- push, repr
-- wait, fork
+## More Builtins
 
-## Enhanced with Block
+### [push]($help) appends strings to an array
 
-- cd
-
-(not done)
-
-- wait
-- env (not done)
-- shopt
-
-
-Shell-Like Builtins
-
-    Builtins Accept Long Options
-    Changed: echo
-    New: use, push, repr
-
-Builtins Can Take Ruby-Like Blocks (partially done)
-
-    cd, env, and shopt Have Their Own Stack
-    wait and fork builtins Replace () and & Syntax
-    each { } Runs Processes in Parallel and Replaces xargs
-
-
-### cd
-
-It now takes a block:
+Example:
 
 ```
-cd ~/src {
-  echo $PWD
-  ls -l
-}
-
-# current directory restored here
-
-echo $PWD
-ls -l
-```
-
-(This subsumes the functinoality of bash builtins `pushd` and `popd`.)
-
-When a block is passed:
-
-- `cd` doesn't set The `OLDPWD` variable (which is used to implement the `cd -`
-  shortcut.)
-- The directory stack for `pushd` and `popd` isn't cleared, as it is with a
-	normal `cd` command.
-
-### push
-
-Append one or more strings to an array.
-
-```
-var a = @(1 '2 two')
+var a = %(1 '2 two')
 push :a three four
-echo @a # prints 4 lines
+echo @a  # prints 4 lines
 ```
 
-`push` is a shortcut for:
+A more awkward way to write this:
 
 ```
-setvar a = @( @a three four )
+setvar a = %( @a three four )
 ```
+
+### [repr]($help) shows the value of a variable, for debugging
+
+This is implemented, but the output format may change.
 
 <!-- 
 
@@ -108,7 +69,76 @@ or
 
 -->
 
+
+## Shell Builtins Enhanced with Block
+
+Done:
+
+- [cd]($help)
+
+Not done:
+
+- [shopt]($help)
+
+Planned, but not implemented:
+
+- [fork]($help) for `&`
+- [forkwait]($help) for `()`
+- [env]($help) to replace `PYTHONPATH=. foo.py`
+- [each]($help) runs processes in parallel and replaces `xargs`
+
+Examples of what we have in mind:
+
+```
+# this replaces an awkward idiom with eval I've seen a lot
+shopt -u errexit {  # TODO: --unset
+   false
+   echo "temporary disable an option"
+} 
+
+# generalizes the 'NAME=value command' syntax and the 'env' prefix helps parsing
+env PYTHONPATH=. {
+  ./foo.py
+  ./bar.py
+}
+
+# replaces sleep 5 &
+fork { sleep 5 }
+
+# replaces () syntax so we can use it for something else.
+forkwait { echo subshell; sleep 5 }
+
+# Probably used for a "syntactic pun" of Python-like "import as" functionality
+
+use lib foo.sh {
+  myfunc
+  myalias otherfunc
+}
+```
+
+### cd
+
+It now takes a block:
+
+    cd /tmp {
+      echo $PWD  # prints /tmp
+    }
+    echo $PWD  # prints the original directory
+
+
+This subsumes the functionality of bash builtins [pushd]($help) and
+[popd]($help).
+
+When a block is passed:
+
+- `cd` doesn't set The `OLDPWD` variable (which is used to implement the `cd -`
+  shortcut.)
+- The directory stack for `pushd` and `popd` isn't cleared, as it is with a
+  normal `cd` command.
+
 ## Builtin Flag Syntax
+
+(TODO: Implement this)
 
 Oil's builtins accept long flags like `--verbose` and short flags like `-v`.
 
@@ -126,44 +156,16 @@ In addition, all of these are equivalent:
 - `--sep x`
 - `--sep=x`
 
-The first is preferred because it's the simplest and shortest.
-
 (Trivia: Oil's flag syntax avoids the issue where `set -oo errexit nounset` is
 a confusing equivalent to `set -o errexit -o nounset`.)
 
 ## I/O Builtins
 
-Oil uses `write` and `getline` along with the `CSTR` format.  `echo` looks more
-familiar and is OK in many cases, but isn't strictly necessary.
-
-Shell:
-
-- uses `echo` and `read`
-- `echo` isn't good because `echo $x` is a bug
-- `read` isn't good because `-r` isn't the default.  And the `\` format doesn't
-  occupy one line.
-
-Oil:
-
-- `write -- @items`
-  - `--sep $'\t'`, `--end $'\n'`  (do we need shorthand?)
-  - `-n` is a shortcut `--end ''`
-  - `write --cstr -- @items`
-- `getline`
-  - `--cstr`
-
-
-### echo
-
-- `-sep`: Characters to separate each argument.  (Default: newline)
-- `-end`: Characters to terminate the whole invocation.  (Default: newline)
-- `-n`: A synonym for `-end ''`.
-
+See [IO Builtins](io-builtins.html).
 
 ## More
 
-Future work, not implemented
+Not implemented:
 
-- fork, wait
 - log, die
-- write
+

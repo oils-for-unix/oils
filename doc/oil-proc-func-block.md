@@ -2,15 +2,75 @@
 in_progress: yes
 ---
 
-Procs, Funcs, and Blocks
+Procs, Blocks, and Funcs
 ========================
+
+Procs are shell like-functions, but they can have parameters, and lack dynamic
+scope.
+
+    proc foo(x) {
+      echo "[$x]"
+    }
+
+    foo bar  # prints [bar]
+
+Blocks are fragments of code within `{ }` that can be passed to builtins (and
+eventually procs):
+
+    cd /tmp {
+      echo $PWD  # prints /tmp
+    }
+    echo $PWD  # prints original dir
+
+- See [Oil Language Idioms](idioms.html) for examples of procs.
+- See [Oil Builtins](oil-builtins.html) for examples of blocks.
 
 <div id="toc">
 </div>
 
-## Builtins Can Accept Ruby-Style Blocks
+## Procs Can Be Open Or Closed (With a Signature)
 
-Example of syntax that works:
+Shell-like open procs that accept arbitrary numbers of arguments:
+
+    proc open {
+      write 'args are' @ARGV
+    }
+    # All valid:
+    open
+    open 1 
+    open 1 2
+
+Stricter closed procs:
+
+    proc closed(x) {
+      write 'arg is' $x
+    }
+    closed      # runtime error: missing argument
+    closed 1    # valid
+    closed 1 2  # runtime error: too many arguments
+
+### Proc Signatures
+
+TODO:
+
+* Default values for params.
+* All params are required.  Prefer `''` to `null` for string argument defaults.
+* `@` is "splice" at the call site. Or also "rest" parameters.
+* `:` for ref params
+* `&` for blocks?
+  * Procs May Accept Block Arguments
+
+<!--
+
+* Shell vs. Python composition.
+* prefix spread ... at call site. Or "rest" parameters.
+* Optional params?
+
+-->
+
+## Block Syntax
+
+These forms work:
 
 ```
 cd / {
@@ -20,7 +80,7 @@ cd / { echo $PWD }
 cd / { echo $PWD }; cd / { echo $PWD }
 ```
 
-Syntax errors:
+These are syntax errors:
 
 ```
 a=1 { echo bad };        # assignments can't take blocks
@@ -28,82 +88,130 @@ a=1 { echo bad };        # assignments can't take blocks
 break { echo bad };      # control flow can't take blocks
 ```
 
-Runtime errors
+Runtime error:
 
 ```
 local a=1 { echo bad };  # assignment builtins can't take blocks
 ```
 
-### Caveat: Blocks Are Space Sensitive
+Caveat: Blocks Are Space Sensitive
 
 ```
 cd {a,b}  # brace substitution
 cd { a,b }  # tries to run command 'a,b', which probably doesn't exist
 ```
 
-more:
+Quoting of `{ }` obeys the normal rules:
 
 ```
-echo these are literal braces not a block \{ \}
-echo these are literal braces not a block '{' '}'
-# etc.
+echo 'literal braces not a block' \{ \}
+echo 'literal braces not a block' '{' '}'
 ```
 
+## Block Semantics 
 
-### What's Allowed in Blocks?
+TODO: This section has to be implemented and tested.
 
-You can break out with `return`, and it accepts Oil**expressions** (not
-shell-like words) (note: not implemented yet).
+### User Execution (like Ruby's `yield` keyword?)
 
+    proc p(&block) {
+      echo '>'
+      $block    # call it?
+                # or maybe just 'block' -- it's a new word in the "proc" namespace?
+      echo '<'
+    }
+
+    # Invoke it
+    p {
+      echo 'hello'
+    }
+    # Output:
+    # >
+    # hello
+    # <
+
+### User Evaluation (e.g. for Config Files)
+
+How to get the value?
+
+    var namespace = evalblock('name', 1+2, up=1)
+
+    # _result is set if there was a return statement!
+
+    # namespace has all vars except those prefixed with _
+    var result = namespace->_result
+
+TODO: Subinterpreters?
+
+### Control Flow
+
+- You can break out with `return`?  What about break?
+- `return` accepts Oil **expressions** (not shell-like words) ?
+
+### Setting Variables in Enclosing Scope
+
+Can block can set vars in enclosing scope?
 
 ```
-cd {
-  # return is for FUNCTIONS.
-  return 1 + 2 * 3
-}
+setref('name', 1+2, up=1)
 ```
 
-The block can set vars in enclosing scope:
+## Funcs
+
+In addition to shell-like procs, Oil also has Python-like functions:
 
 ```
-setvar('name', 1+2, up=1)
+var x = len(ARGV) + 1
 ```
 
-They can also get the value:
+### User-Defined Functions are Deferred
 
-```
-var namespace = evalblock('name', 1+2, up=1)
+For now, we only have a few builtin functions like `len()`.
 
-# _result is set if there was a return statement!
+### Two Kinds of Composition
 
-# namespace has all vars except those prefixed with _
-var result = namespace->_result
-```
+There are two kinds of composition / code units in Oil:
+
+- funcs are like Python or JavaScript functions. They accept and return typed
+  data.
+- procs are like shell "functions".  They look like an external process, accepting an
+  `argv` array and returning exit code.  I think of `proc` as *procedure* or
+  *process*.
+
+procs are called with a "command line":
+
+    myproc arg1 arg2 arg3
+
+funcs are called with Python/JS-like Oil expressions:
+
+    var x = myfunc(42, 'foo')
+    do myfunc(42, 'foo')   # throw away the return value.
+
+This is NOT legal:
+
+    myfunc(42, 'foo')
+
+TODO: 
+
+Shell is really the "main", if that makes sense. procs can call funcs, but
+funcs won't be able to call procs (except for some limited cases like `log` and
+`die`).
 
 
-* Procs Have Open or Closed Signatures
-* Functions Look Like Julia, JavaScript, and Go
-* Procs May Accept Block Arguments
+<!--
 
+Deferred Functions Look Like Julia, JavaScript, and Go
 
-TODO:
+-->
 
-* Shell vs. Python composition.
-* 4 differences in signatures.
-* prefix spread ... at call site. Or "rest" parameters.
-* @ is "splice" at the call site. Or also "rest" parameters.
-* & block. TODO.
-* Optional types
+People may tend to prefer funcs because they're more familiar. But shell
+composition with proc is very powerful!
 
-Another issue is that I feel like people will tend to prefer funcs because
-they're more familiar. But shell composition with proc is very powerful!!!
+They have at least two kinds of composition that functions don't have.  See
+#[shell-the-good-parts]($blog-tag) on Bernstein chaining and "point-free"
+pipelines.
 
-They have at least two kinds of composition that functions don't have:
-
-http://www.oilshell.org/blog/tags.html?tag=shell-the-good-parts#shell-the-good-parts
-
-So that is another thing that I should write about.
-
+<!--
 
 In summary:
 
@@ -119,7 +227,7 @@ is wrong.
 One issue is that procs take block arguments but not funcs.  This is something
 of a syntactic issue.  But I don't think it's that high priority.
 
----
+-->
 
 Here are some complicated examples from the tests.  It's not representative of what real code looks like, but it shows all the features.
 
@@ -158,87 +266,4 @@ echo string $f(0, 1, ...a, c=2, d=3)
 echo ____
 echo array @f(5, 6, ...a, c=7, d=8; ...n)
 ```
-
-
-## Blocks
-
-## cd now takes a Ruby-like block
-
-This is enabled by `shopt -s parse_brace`, so the `{}` characters become
-special.  Example:
-
-```
-cd subdir { 
-  ls -l
-  echo $PWD
-}
-cd other/dir { pwd; find . -type f }  # compact one-line syntax
-```
-
-Hopefully you can guess what this does!  If not let me know :)
-
-Again, you can try this from HEAD with instructions in the [latest blog
-post](http://www.oilshell.org/blog/2019/08/22.html).
-
-This is the first example of many more to come.  I started to document some of the semantics here, but it's not done yet:
-
-https://github.com/oilshell/oil/blob/master/doc/oil-manual.md#builtins
-
-Other builtins that will take blocks:
-
-```
-# this replaces an awkward idiom with eval I've seen a lot
-shopt -u errexit {
-   false
-   echo "temporary disable an option"
-} 
-
-# generalizes the 'NAME=value command' syntax and the 'env' prefix helps parsing
-env PYTHONPATH=. {
-  ./foo.py
-  ./bar.py
-}
-
-# replaces sleep 5 &
-fork {  sleep 5 }
-
-# replaces () syntax so we can use it for something else.
-wait { echo subshell; sleep 5 }
-
-# probably used for a "syntactic pun" of Python-like "import as" functionality
-use lib foo.sh {
-  myfunc
-  myalias otherfunc
-}
-```
-
-
-Yes good question – this hasn’t been addressed by the docs yet, but it will be.
-
-There are two kinds of composition / code units in Oil: proc and func.
-
-- funcs are like Python or JavaScript functions. They accept and return typed data.
-- procs are like shell “functions”. They look like an external process, with
-argv and an exit code. I think of proc as “procedure” or “proecss”.
-
-- procs are called with a "command line":
-
-    myproc arg1 arg2 arg3
-
-funcs are called with Python/JS-like expressions:
-
-    var x = myfunc(42, 'foo')
-    do myfunc(42, 'foo')   # throw away the return value.
-
-This is NOT legal:
-
-    myfunc(42, 'foo')
-
-I will have a whole doc about this, along with some advice on where to use
-each. I do expect that it’s one of the more confusing things, but I think it’s
-justified because both mechanism are powerful and well-tested. I guess you
-kinda have to know shell AND Python to know when to use each.
-
-I use shell as my “main”, if that makes sense. So generally speaking, procs
-calls funcs, and funcs won’t call procs as much.
 

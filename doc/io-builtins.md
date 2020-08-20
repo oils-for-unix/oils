@@ -81,3 +81,32 @@ And:
 
     var lines = @(cat file.txt)
     cat file.txt | read --lines :lines
+
+
+## Old
+
+Oil uses `write` and `getline` along with the QSN format.  `echo` looks more
+familiar and is OK in many cases, but isn't strictly necessary.
+
+Shell:
+
+- uses `echo` and `read`
+- `echo` isn't good because `echo $x` is a bug
+- `read` isn't good because `-r` isn't the default.  And the `\` format doesn't
+  occupy one line.
+
+Oil:
+
+- `write -- @items`
+  - `--sep $'\t'`, `--end $'\n'`  (do we need shorthand?)
+  - `-n` is a shortcut `--end ''`
+  - `write --cstr -- @items`
+- `getline`
+  - `--cstr`
+
+
+### echo
+
+- `-sep`: Characters to separate each argument.  (Default: newline)
+- `-end`: Characters to terminate the whole invocation.  (Default: newline)
+- `-n`: A synonym for `-end ''`.

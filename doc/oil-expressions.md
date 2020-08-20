@@ -219,13 +219,15 @@ As part of these changes, I also implemented **generator expressions**.
 
 ```
 $ bin/oil
-oil$ pp  Array[Int](x + 5 for x in 1:10)
+oil$ = Array[Int](x + 5 for x in 1:10)
 IntArray        [6, 7, 8, 9, 10, 11, 12, 13, 14]
 ```
 
-Well, at least the syntax.  The semantics still need work, especially with regard to scope.
+Well, at least the syntax.  The semantics still need work, especially with
+regard to scope.
 
-Note that the `pp` **keyword** pretty-prints the result of an expression.  ([thread](https://oilshell.zulipchat.com/#narrow/stream/121540-oil-discuss/topic/pass.20and.20pp.20keywords.20implemented))
+Note that the `=` **keyword** pretty-prints the result of an expression.
+([thread](https://oilshell.zulipchat.com/#narrow/stream/121540-oil-discuss/topic/pass.20and.20pp.20keywords.20implemented))
 
 
 ### Shell Array Literals with @()

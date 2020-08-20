@@ -171,7 +171,7 @@ We've reserved syntactic space for PCRE and Python variants:
 
 ### Negation Consistently Uses ~
 
-You can negated named char classes:
+You can negate named char classes:
 
     / ~digit /
 
