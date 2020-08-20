@@ -13,6 +13,9 @@ QSN: A Familiar String Interchange Format
   color: darkred;
   font-family: monospace;
 }
+.an {
+  color: darkgreen;
+}
 </style>
 
 QSN ("quoted string notation") is an interchange format for **byte strings**.
@@ -27,21 +30,25 @@ Examples:
 'mu = &#x03bc;'                     <span class=comment># represented literally, not escaped</span>
 </pre>
 
+It's meant to be emitted and parsed by programs written in different languages,
+as UTF-8 or JSON are.  It's both human- and machine-readable.
+
+[Oil](/) understands QSN, and other Unix shells should too.
+
 <div id="toc">
 </div>
 
 ## Why?
 
 QSN has many uses, but one is that [Oil](//www.oilshell.org/) needs a way to
-**safely and readably** display filenames in a terminal.
+safely and readably **display filenames** in a terminal.
 
-A filename can be any `NUL`-terminated sequence of bytes, including one that
-will <span class=terminal>change your terminal color</span>, etc.  Most command
-line programs need something like QSN, or they'll have subtle bugs.
+Filenames may contain arbitrary bytes, including ones that will <span
+class=terminal>change your terminal color</span>, and more.  Most command line
+programs need something like QSN, or they'll have subtle bugs.
 
 For example, as of 2016, [coreutils quotes funny filenames][coreutils] to avoid
 the same problem.  However, they didn't specify the format so it can be parsed.
-
 In contrast, QSN can be parsed and printed like JSON.
 
 [in-band]: https://en.wikipedia.org/wiki/In-band_signaling
@@ -51,53 +58,47 @@ The quoting only happens when `isatty()`, so it's not really meant
 to be parsed.
 -->
 
-[coreutils]: https://www.gnu.org/software/coreutils/quotes.html
+### More Use Cases
 
-## Ways to Remember the Spec
-
-1. Start with [Rust String Literal Syntax](https://doc.rust-lang.org/reference/tokens.html#string-literals)
-2. Use **single quotes** instead of double quotes to surround the string (to
-   avoid confusion with JSON).
-
-An Analogy:
-
-    Javacript Literals : JSON  ::  Rust String Literals : QSN
-
-## Advantages over JSON Strings
-
-- It can represent any byte string, like `'\x00\xff\x00'`.  JSON can't
-  represent **binary data** directly.
-- It can represent any code point, like `'\u{01f600}'` for &#x01f600;.  JSON
-  needs awkward [surrogate pairs][] to represent this code point.
+- For `set -x` in shell.  Like filenames, Unix `argv` arrays may contain
+  arbitrary bytes.  See the example below.
+- To pack arbitrary bytes on a **single line**, e.g. for line-based tools like
+  [grep]($xref), [awk]($xref), and [xargs]($xref).  QSN strings never contain
+  literal newlines.
+- As a building block for larger specifications, like [QTSV](qtsv.html).
+- To transmit arbitrary bytes over channels that can only represent ASCII or
+  UTF-8 (e.g. e-mail, Twitter).
 
 [surrogate pairs]: https://en.wikipedia.org/wiki/UTF-16#Code_points_from_U+010000_to_U+10FFFF
 
-<!--
-## An Analogy
-
-QSN is a little like JSON: it's based on Rust's string literal syntax, just
-like JSON is based on JavaScript literal syntax.  Differences:
-
-- It expresses byte strings, which may be UTF-8 encoded text, not character
-  strings.  This fits the Unix file system (which has no encoding) and Unix
-  kernel APIs like `execve()`, which takes an `argv` array.
-- It uses **single quotes** rather than double to avoid confusiong with JSON.
 
 
-
-We want a single way to serialize and parse arbitrary byte strings (which may
-be encoded in UTF-8 or another encoding.)
-
-- It should be safe to print arbitrary strings to terminals.
-- Strings should fit on a line.
-
-TODO: copy content from this page:
-
-<https://github.com/oilshell/oil/wiki/CSTR-Proposal>
-
--->
+[coreutils]: https://www.gnu.org/software/coreutils/quotes.html
 
 ## Specification
+
+### A Short Description
+
+1. Start with [Rust String Literal Syntax](https://doc.rust-lang.org/reference/tokens.html#string-literals)
+2. Use **single quotes** instead of double quotes to surround the string.  This
+   is mainly to to avoid confusion with JSON.
+
+### An Analogy
+
+<pre>
+
+     <span class=an>JavaScript Object Literals</span>   are to    <span class=an>JSON</span>
+as   <span class=an>Rust String Literals</span>         are to    <span class=an>QSN</span>
+
+</pre>
+
+But QSN is **not** tied to either Rust or shell, just like JSON isn't tied to
+JavaScript.
+
+It's a **language-independent format** like UTF-8 or HTML.  We're only
+borrowing a design, so that it's well-specified and familiar.
+
+### Full Spec
 
 TODO: The short description above should be sufficient, but we might want to
 write it out.
@@ -110,31 +111,42 @@ write it out.
 - Byte escapes: `\x7F`
 - Character escapes: `\u{03bc}` or `\u{0003bc}`.  These are encoded as UTF-8.
 
+## Advantages over JSON Strings
+
+- QSN can represent any byte string, like `'\x00\xff\x00'`.  JSON can't
+  represent **binary data** directly.
+- QSN can represent any code point, like `'\u{01f600}'` for &#x01f600;.  JSON
+  needs awkward [surrogate pairs][] to represent this code point.
+
 ## Implementation Issues
-
-### Three options For Displaying Unicode
-
-QSN denotes byte strings, but byte strings are often encoded with some Unicode
-encoding.
-
-A QSN **encoder** has three options for dealing with Unicode.
-
-1. **Decode** UTF-8.  This is useful for showing if the string is valid UTF-8.
-   - You can show escaped code points like `'\u03bc'`.  This is ASCII-friendly,
-     and can be better for debugging.
-   - You can show them literally, like <code>'&#x03bc;'</code>.
-2.  Don't decode UTF-8.  Show bytes like `'\xce\xbc'`.
-
-TODO: Show the state machine for detecting and decoding UTF-8.
 
 ### Compatibility With Shell Strings
 
-In bash, C-escaped strings are displayed `$'like this\n'`.  A subset of QSN is
-compatible with this format.  Example:
+In bash, C-escaped strings are displayed `$'like this\n'`.  A **subset** of QSN is
+compatible with this syntax.  Examples:
 
 ```
-$'\x01\n'
+$'\x01\n'  # removing $ makes it valid QSN
+
+$'\0065'   # octal escape is invalid in QSN
 ```
+
+### Three Options For Displaying Unicode
+
+QSN denotes byte strings, but byte strings are often interpreted with a Unicode
+encoding.  A QSN **encoder** has three options for dealing with Unicode:
+
+1. **Don't decode** anything.  Show bytes like `'\xce\xbc'`.
+1. Speculatively **decode UTF-8**.  QSN encoding should never fail; it should
+   only fall back to byte escapes like `\xff`.  This is useful for showing if
+   the string is valid UTF-8.  After decoding a valid UTF-8 sequence, there are
+   two options:
+   - You can **show escaped code points** like `'\u03bc'`.  This is ASCII-friendly,
+     and can be better for debugging.
+   - You can **show them literally**, like <code>'&#x03bc;'</code>.
+
+TODO: Show the state machine for detecting and decoding UTF-8.
+
 
 <!--
 
@@ -152,16 +164,30 @@ $'\x01\n'
 -->
 
 
-## Notes
+## Design Notes
 
-- [In-band signaling][in-band]: The fundamental problem with filenames and
-  terminals.
-- Comparison with Python's `repr()`:
-  - A single quote in Python is `"'"`, whereas it's `'\''` in QSN
-  - Python has both `\uxxxx` and `\Uxxxxxxxx`, whereas QSN has the more natural
-    `\u{xxxxxx}`.
+The general idea: Rust string literals are like C and JavaScript string
+literals, without cruft like octal (`\755` or `\0755` &mdash; which is it?) and
+vertical tabs (`\v`).
 
-## Use Case: `set -x` format (`xtrace`)
+Comparison with shell strings:
+
+- `'Single quoted strings'` in shell can't represent arbitrary byte strings.
+- `$'C-style shell strings\n'` strings are similar to QSN, but have cruft like
+  octal and `\v`.
+- `"Double quoted strings"` have unneeded features like `$var` and `$(command
+  sub)`.
+
+Comparison with Python's `repr()`:
+
+- A single quote in Python is `"'"`, whereas it's `'\''` in QSN
+- Python has both `\uxxxx` and `\Uxxxxxxxx`, whereas QSN has the more natural
+  `\u{xxxxxx}`.
+
+[In-band signaling][in-band] is the fundamental problem with filenames and
+terminals.
+  
+## Example: `set -x` format (`xtrace`)
 
 When arguments don't have any spaces, there's no ambiguity:
 

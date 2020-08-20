@@ -9,7 +9,7 @@ language]($xref:oil-language).  Each section has snippets labeled *No* and
 
 - Use the *Yes* style when you want to write in Oil, and don't care about
   compatibility with other shells.
-- The *No* style is discouarged in new code, but Oil will run it.  The [OSH
+- The *No* style is discouraged in new code, but Oil will run it.  The [OSH
   language]($xref:osh-language) is compatible with
   [POSIX]($xref:posix-shell-spec) and [bash]($xref).
 

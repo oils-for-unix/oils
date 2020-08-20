@@ -79,6 +79,7 @@ readonly MARKDOWN_DOCS=(
   deprecations
   idioms
   qsn
+  qtsv
 
   # needs polish
   # Note: docs about the Oil language are prefixed 'oil-'.
