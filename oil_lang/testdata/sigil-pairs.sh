@@ -5,9 +5,9 @@
 #
 # Summary:
 #   $() command sub
-#   @() string array
+#   %() string array
 #   $[] expr sub
-#   @[] primitive typed array
+#   %[] primitive typed array
 #
 # Also used:
 #   ${} for ${x %.3f} and ${x|html}
@@ -28,19 +28,19 @@ proc show {
 }
 
 
-var strarray = @(
+var strarray = %(
     bare words *.sh {a,b}@example.com 'sq' "dq ${x:-default}"
 )
 
 show @strarray
 
-var typedarray = @[
+var typedarray = %[
    'quoted' 'words' '*.sh' '{a,b}@example.com' 'sq' "dq ${x:-default}" 
 ]
 
 show @typedarray
 
-var typedarray2 = @[1.0 2.3 3.4]
+var typedarray2 = %[1.0 2.3 3.4]
 
 show @typedarray2
 

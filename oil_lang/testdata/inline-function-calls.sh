@@ -6,7 +6,7 @@
 shopt -s oil:basic
 
 simple-demo() {
-  var myarray = @(spam eggs ham)
+  var myarray = %(spam eggs ham)
 
   echo '+ Call in expression context:'
   var length = len(myarray)
@@ -46,7 +46,7 @@ simple-demo() {
 }
 
 split-join-demo() {
-  var parts = @(aaa BB c)
+  var parts = %(aaa BB c)
   write -- 'Parts:' @parts
   echo
 

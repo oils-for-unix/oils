@@ -111,9 +111,9 @@ Sigil Pairs:
 - $(( )) for shell arithmetic is deprecated
 
 - $(bare words) for command sub
-- @(bare words) for shell arrays
-- @[1 2 3] for typed arrays
-- @{ } for table literals / embedded TSV
+- %(bare words) for shell arrays
+- %[1 2 3] for typed arrays
+- %{ } for table literals / embedded TSV
 
 - $// for regexes
 
@@ -125,12 +125,12 @@ Sigil Pairs:
 
 Table example:
 
-    var people = @{
+    var people = %{
       name      age:Int
       bob       10_000
       'andy c'  15_000
     }
-    var people = {name: @(bob 'andy c'), age: @[10_000 15_000]}
+    var people = {name: %(bob 'andy c'), age: %[10_000 15_000]}
 
 
 - maybe: #() for tuple?

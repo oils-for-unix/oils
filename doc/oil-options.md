@@ -114,7 +114,7 @@ if (x > 0) {
 while (x > 0) {
   echo hi
 }
-for (x in @(a b c)) {
+for (x in %(a b c)) {
   echo $x
 }
 ```

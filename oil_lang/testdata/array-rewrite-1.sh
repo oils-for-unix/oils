@@ -27,14 +27,14 @@ argv "${flags[@]}"
 # Things fixed:
 # - verbose "${a[@]}" becomes @a
 # - a=() is weird because it doesn't allow spaces around =
-#   - Oil uses var a = @()
+#   - Oil uses var a = %()
 # - builtin 'push' for appending
 #
 
 shopt -s simple_word_eval parse_at
 
-var regex2 = @(new1 new2)
-var flags2 = @()
+var regex2 = %(new1 new2)
+var flags2 = %()
 
 for r in @regex2; do
   push :flags2 "--regex=$r"

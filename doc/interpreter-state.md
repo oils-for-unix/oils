@@ -146,7 +146,7 @@ Example:
 ```
 declare -a myarray=("${other_array[@]}")   # shell
 
-var myarray = @( @other_array )            # Oil
+var myarray = %( @other_array )            # Oil
 ```
 
 Reason: There's no Garbage collection.

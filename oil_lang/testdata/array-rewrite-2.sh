@@ -42,7 +42,7 @@ shopt -s parse_at simple_word_eval
 
 setvar CONFIG_HAVE_FOO = "yes"  # TODO: change to single quotes
 setvar path = "/etc/path with spaces"
-setvar flags = @()
+setvar flags = %()
 
 if test -n $CONFIG_HAVE_FOO; then
   push :flags --foo=$path

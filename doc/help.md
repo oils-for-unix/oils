@@ -300,7 +300,7 @@ For loops iterate over words.
 Oil style:
 
     var mystr = 'one'
-    var myarray = @(two three)
+    var myarray = %(two three)
 
     for i in $mystr @myarray *.py; done
       echo $i
@@ -499,7 +499,7 @@ Like shell arays, Oil arrays accept anything that can appear in a command:
     ls $mystr @ARGV *.py
 
     # Put it in an array
-    var a = @(ls $mystr @ARGV *.py)
+    var a = %(ls $mystr @ARGV *.py)
 
 ### Regexes
 

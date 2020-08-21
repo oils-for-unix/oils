@@ -48,7 +48,7 @@ These are both Oil extensions.
 The array literal syntax also uses a `@`:
 
 ```
-var myarray = @(1 2 3)
+var myarray = %(1 2 3)
 ```
 
 
@@ -123,7 +123,7 @@ The three contexts where splitting and globbing apply are the ones where a
 
 1. [Command]($help:simple-command): `echo $x foo`
 2. [For loop]($help:for): `for i in $x foo; do ...`
-3. [Array Literals]($help:array): `a=($x foo)` and `var a = @($x foo)` ([oil-array]($help))
+3. [Array Literals]($help:array): `a=($x foo)` and `var a = %($x foo)` ([oil-array]($help))
 
 Shell also has contexts where it evaluates words to a **single string**, rather
 than a sequence, like:
@@ -225,6 +225,6 @@ Oil has a new array syntax, but it also supports the bash-compatible syntax:
 ```
 local myarray=(one two *.py)  # bash
 
-var myarray = @(one two *.py)  # Oil style
+var myarray = %(one two *.py)  # Oil style
 ```
 

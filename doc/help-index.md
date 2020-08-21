@@ -100,7 +100,7 @@ an **unimplemented** feature.
   [Functions]     proc-decl     proc p (x, y, @rest, &block) { echo hi }
                   func-call     f(x, y)
   [Literals]      oil-string    c'line\n'  r'[a-z]\n'
-                  oil-array     @(a b c)
+                  oil-array     %(a b c)
   [Regexes]       re-literal    /d+/
                   re-compound   ~   (group)   <capture>   sequence
                   re-primitive  %zero   Subpattern   @subpattern
@@ -118,7 +118,7 @@ an **unimplemented** feature.
 
 ```oil-help-index
   [Quotes]        quotes        'abc'  $'\n'  "$var"
-  [Substitutions] com-sub       $(command)   `command`
+  [Substitutions] com-sub       $(command)   `command`   @(split command)
                   var-sub       ${var}   $0   $9   
                   arith-sub     $((1 + 2))
                   tilde-sub     ~/src
@@ -241,7 +241,7 @@ X [Testing]       check
                                          ... source  unset  printf  [un]alias
                                          ... getopts
                   X no_old_syntax        [[   $(( ))  ${x%prefix}   $$
-                                         $'\n'   @(*.sh|*.py)  `echo comsub`
+                                         $'\n'   @(*.py|*.sh)  `echo comsub`
                                          ${a[@]}
   [Compatibility] eval_unsafe_arith   parse_dynamic_arith
                   verbose_errexit

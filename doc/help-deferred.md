@@ -21,7 +21,7 @@ X [Coil Keywords] const   try   catch   throw   switch   match
                   Bool          true false
                   Int           1_000_000  0b0100  0xFF  0o377  \n  \\  \u0100
                   Float         3.14   6.022e+23
-                  Array[]       @(ls -l)  @[T F F]  @[1 2 3]  @[1.5 2.5] 
+                  Array[]       %(ls -l)  %[T F F]  %[1 2 3]  %[1.5 2.5] 
                   Tuple[]       ()  tup(42)  (42, "foo")
                   List          [1, 'str', false]  (for JSON compatibility)
                   Dict[]        {name: 'oil'}  {['name']: 'oil'}  {name}

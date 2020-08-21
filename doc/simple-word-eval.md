@@ -168,7 +168,7 @@ In Oil, `shopt -s parse_at` enables these shortcuts for splicing:
 Example:
 
 ```sh-prompt
-oil$ var myarray = @('a b' c)  # array with 2 elements
+oil$ var myarray = %('a b' c)  # array with 2 elements
 oil$ set -- 'd e' f            # 2 arguments
 
 oil$ argv @myarray @ARGV *.py {ian,jack}@sh.com
@@ -229,7 +229,7 @@ in shell:
 
 1. [Command]($help:simple-command): `echo $x foo`
 2. [For loop]($help:for): `for i in $x foo; do ...`
-3. [Array Literals]($help:array): `a=($x foo)` and `var a = @($x foo)` ([oil-array]($help))
+3. [Array Literals]($help:array): `a=($x foo)` and `var a = %($x foo)` ([oil-array]($help))
 
 Shell has other word evaluation contexts like:
 
@@ -359,7 +359,7 @@ The `@maybe(s)` function is a shortcut for something like:
 
 ```
 var x = ''         # empty in this case
-var tmp = @()
+var tmp = %()
 if (x) {           # test if string is non-empty
   append :tmp $x   # appends 'x' to the array variable 'tmp'
 }

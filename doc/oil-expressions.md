@@ -172,7 +172,7 @@ I implemented the literal syntax for Bool, Int, Float, and Str arrays.  The sema
 Recall that Oil has **homogeneous string arrays**, borrowed from shell, instantiated using shell-like syntax
 
 ```
-var myarray = @(bare words 'sq' "dq $var" ${other})
+var myarray = %(bare words 'sq' "dq $var" ${other})
 ```
 
 It also has Python-like **heterogeneous lists**.
@@ -186,10 +186,10 @@ In addition to sequences of heterogeneous type, they're also probably useful for
 Now we have **homogeneous typed arrays**, i.e. for types other than string:
 
 ```
-var mybools = @[true false false]
-var myints = @[1 2 3]
-var myfloats = @[1.2 3.3]
-var mystrings = @['sq' "dq" (other.upper()) $x ${x}]
+var mybools = %[true false false]
+var myints = %[1 2 3]
+var myfloats = %[1.2 3.3]
+var mystrings = %['sq' "dq" (other.upper()) $x ${x}]
 ```
 
 Important notes:
@@ -210,8 +210,8 @@ https://github.com/oilshell/oil/blob/master/spec/oil-array.test.sh
 Note the important difference between these two expressions:
 
 ```
-var x = @(1.0 2.0)  # these are STRINGS as in shell, like doing echo 1.0 2.0
-var y = @[1.0 2.0]  # these are floating point numbers
+var x = %(1.0 2.0)  # these are STRINGS as in shell, like doing echo 1.0 2.0
+var y = %[1.0 2.0]  # these are floating point numbers
 ```
 
 
@@ -230,11 +230,11 @@ Note that the `=` **keyword** pretty-prints the result of an expression.
 ([thread](https://oilshell.zulipchat.com/#narrow/stream/121540-oil-discuss/topic/pass.20and.20pp.20keywords.20implemented))
 
 
-### Shell Array Literals with @()
+### Shell Array Literals with %()
 
 ```
-var x = @(a b c)
-var x = @(
+var x = %(a b c)
+var x = %(
   'single quoted'
   "double quoted"
   $'c string'
@@ -259,8 +259,8 @@ var x = "$(echo hi) there"
 ### Splice Arrays with @array
 
 ```
-var a1 = @(a b)
-var a2 = @(c d)
+var a1 = %(a b)
+var a2 = %(c d)
 echo / @a1 / @a2 /   # gives / a b / c d /
 ```
 
@@ -268,9 +268,9 @@ echo / @a1 / @a2 /   # gives / a b / c d /
 
 - "Legacy-free" command substitution with `$[echo hi]`
 - "Legacy-free" and typed literals like
-  - `@[a 'b c' "hi $name"]`
-  - `@[1 2 3]` 
-  - `@[3.14 1.50 2.33]`
+  - `%[a 'b c' "hi $name"]`
+  - `%[1 2 3]` 
+  - `%[3.14 1.50 2.33]`
 - For details, see the wiki page [Implementing the Oil Expression
   Language](https://github.com/oilshell/oil/wiki/Implementing-the-Oil-Expression-Language)
 

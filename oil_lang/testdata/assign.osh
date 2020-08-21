@@ -27,7 +27,7 @@ echo hi
 
 # Doesn't work yet
 #var myregex = $/ any [c h] /
-#var myarray = @[ foo bar *.[c h] ]
+#var myarray = %[ foo bar *.[c h] ]
 
 var mycmd = $(echo cmd) + "$(echo cmd)"
 echo mycmd=$mycmd

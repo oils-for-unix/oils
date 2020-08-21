@@ -92,7 +92,7 @@ a[0]=zz
 Oil:
 
 ```
-var a = @(one two three)
+var a = %(one two three)
 set a[0] = 'zz'
 
 setvar a[0] = 'zz'  # also acceptable
@@ -135,7 +135,7 @@ Useful interactively.
 $ = 'foo'
 (Str)   'foo'
 
-$ = @(one two)
+$ = %(one two)
 (StrArray)   ['one', 'two']
 ```
 

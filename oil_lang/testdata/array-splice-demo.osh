@@ -3,7 +3,7 @@ shopt -s oil-parse-at static-word-eval
 
 myglobal=global
 
-var myarray = @($myglobal $'line\n' ${z:-default})
+var myarray = %($myglobal $'line\n' ${z:-default})
 spec/bin/argv.py @myarray
 echo len=${#myarray[@]}
 echo
@@ -18,5 +18,5 @@ for item in "${myarray[@]}"; do
 done
 
 # NOTE: This doesn't work for arrays
-#setvar myarray += @(more stuff)
+#setvar myarray += %(more stuff)
 
