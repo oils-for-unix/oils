@@ -41,29 +41,27 @@ Note: `oil-native` is a **preview** release, not a working shell.
 
 ## Documentation
 
-Oil has three major sources of docs:
+The [Doc Overview](doc/) links to all docs.  It's work in progress, but these
+docs are ready:
 
-- The [Doc Overview](doc/) links to all other docs, including the Manual
-  and Oil Language Reference.  It's work in progress.  Up-to-date docs
-  include:
-  - [INSTALL][]
-  - [OSH User Manual](doc/osh-manual.html)
-  - [Known Differences Between OSH and Other
-    Shells](doc/known-differences.html)
-  - [Egg Expressions (Oil Regexes)](doc/eggex.html)
-  - [JSON Support](doc/json.html)
-  - [Simple Word Evaluation](doc/simple-word-eval.html)
-  - [Oil Language Idioms](doc/idoms.html)
-  - [Shell Language Deprecations](doc/deprecations.html)
-  - [QSN](doc/qsn.html)
-  - [Quirks](doc/quirks.html)
-  - [Notes on OSH Architecture](doc/architecture-notes.html)
-- [Online Help](doc/help-index.html) (incomplete).  This document underlies the
-  `help` builtin.  It links to sections in the [Help](doc/help.html) page.
-- [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
-  - The [Oil Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments)
-    wiki page has other ways of getting Oil.  These versions may not be
-    up-to-date.
+- [INSTALL][]
+- [OSH User Manual](doc/osh-manual.html)
+- [Known Differences Between OSH and Other
+  Shells](doc/known-differences.html)
+- [Egg Expressions (Oil Regexes)](doc/eggex.html)
+- [Simple Word Evaluation](doc/simple-word-eval.html)
+- [Oil Language Idioms](doc/idioms.html)
+- [Shell Language Deprecations](doc/deprecations.html)
+- [QSN](doc/qsn.html)
+- [Quirks](doc/quirks.html)
+- [Notes on Oil's Architecture](doc/architecture-notes.html).  For developers.
+
+[Online Help](doc/help-index.html) (incomplete).  This document underlies the
+`help` builtin.  It links to sections in the [Help](doc/help.html) page.
+
+[Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki).  The [Oil
+Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments) wiki page
+has other ways of getting Oil.  These versions may not be up-to-date.
 
 ## Tests
 
@@ -114,16 +112,16 @@ of Oil's C++ translation.
 
 ## Benchmarks
 
-- [OSH Parser Performance](benchmarks.wwz/osh-parser/).  How fast does OSH
+- [Parser](benchmarks.wwz/osh-parser/).  How fast does OSH
   parse compared to other shells?
-- [OSH Runtime](benchmarks.wwz/osh-runtime/).  How fast does OSH run shell
+- [Runtime](benchmarks.wwz/osh-runtime/).  How fast does OSH run shell
   scripts?
-- [OSH Compute Performance](benchmarks.wwz/compute/).  How fast does it run
-  small programs without I/O?
+- [Compute](benchmarks.wwz/compute/).  How fast does OSH run small programs
+  without I/O?
+- [Build](benchmarks.wwz/ovm-build/).  How long does it take for end users to
+  build Oil?  How big is the resulting binary?
 - [Virtual Memory Baseline](benchmarks.wwz/vm-baseline/).  How much memory do
   shells use at startup?
-- [OVM Build](benchmarks.wwz/ovm-build/).  How long does it take for end users
-  to build Oil?  How big is the resulting binary?
 
 ## Metrics
 

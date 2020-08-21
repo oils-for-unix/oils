@@ -15,6 +15,7 @@ language.  It's **our upgrade path from bash**.
 
 ## Preliminaries
 
+- [Why Use Oil?](/why.html)  This document is on the home page.
 - [What is Oil?](what-is-oil.html)  High-level descriptions of the project.
 - [The Oil Language From 10,000 Feet](oil-overview.html)  A tour of Oil.
 - [INSTALL](INSTALL.html). How do I install Oil?  This text file is also in the
@@ -27,52 +28,57 @@ language.  It's **our upgrade path from bash**.
 - [OSH User Manual](osh-manual.html). How do I use OSH as my shell?
 - [Known Differences](known-differences.html) is trivia for advanced users.
   It lists differences between OSH and other shells.
-- [Quirks](quirks.html)
+- [Quirks](quirks.html) for compatibility.
 - [errexit](errexit.html) (in progress)
 
 ## Oil is a New Shell Language
 
-- [Options](oil-options.html).  Parsing and runtime options turn OSH into Oil.
-- [Oil Keywords](oil-keywords.html). Oil introduces new keywords.  (Shell
-  keyword aren't discussed.)
-- [Oil Expressions](oil-expressions.html) The Expression Language is Mostly
-  Python.
-- [Procs, Funcs, and Blocks](oil-proc-func-block.html)
-- [Oil Builtins](oil-builtins.html) (Shell builtins aren't discussed.)
-  - [IO Builtins](io-builtins.html)
-- [Word Language](oil-word-language.html) - Oil extends the "word language".
-  - [Special Variables](oil-special-vars.html)
-  - [Simple Word Evaluation](simple-word-eval.html)
-- [Egg Expressions](eggex.html).  Oil has a new regex syntax called "egg
-  expressions", abbreviated *eggexes*.
 - [Oil Language Idioms](idioms.html).  A list of idioms you may want to use.
 - [Shell Language Deprecations](deprecations.html).  When you turn on Oil,
   there are some shell constructs you can no longer use.  We try to minimize
   the length of this list.
+- [Command vs. Expression Mode](command-vs-expression-mode.html).  AN important
+  syntactic concept.  See the [overview](oil-overview.html) for more syntactic
+  concepts.
 
-Future:
+The shell **command** language has been enhanced:
 
-- Error Handling
+- [Procs, Funcs, and Blocks](oil-proc-func-block.html)
+- [Oil Keywords](oil-keywords.html). New keywords for assignment, etc.
+- [Oil Builtins](oil-builtins.html) (Shell builtins aren't discussed.)
+  - [IO Builtins](io-builtins.html)
 
-## Data Formats
+Commands are made of **words**:
 
+- [Word Language](oil-word-language.html).  Oil extends the "word language".
+- [Special Variables](oil-special-vars.html)
+- [Simple Word Evaluation](simple-word-eval.html).  Written for shell experts.
+
+Oil has a new **expression** language:
+
+- [Oil Expressions](oil-expressions.html) are similar to Python and JavaScript.
+- [Egg Expressions](eggex.html).  A new regex syntax, abbreviated *eggex*.
+
+More:
+
+- [Options](oil-options.html).  Parsing and runtime options turn OSH into Oil.
+- Future: Error Handling
+
+## Interchange Formats
+
+- [JSON](json.html): Currently supported only in the Python prototype of Oil.
 - [QSN](qsn.html): Quoted String Notation.  A human- and machine-readable
   format for byte strings.
 - [QTSV](qtsv.html): An extension of TSV, built on top of QSN.
+- [Unicode](unicode.html).  Oil supports and prefers UTF-8.
 
-## More
+## Online Help
 
-These docs span both OSH and Oil.
+[Index of Help Topics](help-index.html) (incomplete).  This document underlies
+the `help` builtin, and gives examples of each Oil feature.  It links to
+sections in the [Help](help.html) page.
 
-- [Index of Help Topics](help-index.html) (incomplete).  This document
-  underlies the `help` builtin, and gives examples of each Oil feature.  It
-  links to sections in the [Help](help.html) page.
-- [Command vs. Expression Mode](command-vs-expression-mode.html) An important
-  syntactic concept.  See the [overview](oil-overview) for more syntactic
-  concepts.
-- [Unicode](unicode.html)
-
-Internal Details:
+## Internal Details
 
 - [Interpreter State](interpreter-state.html)
 - [Process Model](process-model.html).  Shell is a language that lets you use
