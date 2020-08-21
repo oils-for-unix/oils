@@ -225,48 +225,58 @@ print-report() {
     <p id="home-link">
       <a href="/">oilshell.org</a>
     </p>
-    <h2>OSH Parser Performance</h2>
+EOF
 
-    <p>We run <code>\$sh -n \$file</code> for various files under various
-    shells.  This means that shell startup time is included in the
-    elapsed time measurements, but long files are chosen to minimize its
-    effect.</p>
+  cmark <<'EOF'
+## OSH Parser Performance
 
-    <h3>Average Parsing Rate, Measured on Two Machines (lines/ms)</h3>
+We run `$sh -n $file` for various files under various shells.  This means that
+shell startup time is included in the elapsed time measurements, but long files
+are chosen to minimize its effect.
+
+### Average Parsing Rate, Measured on Two Machines (lines/ms)</h3>
 EOF
   csv2html $in_dir/summary.csv
 
-  cat <<EOF
-    <h3>Memory Used to Parse</h3>
+  cmark<<EOF
+### Parse Time Breakdown by File</h3>
 
-    <p>Running under <code>osh-ovm</code>.  Memory usage is measured in MB
-    (powers of 10), not MiB (powers of 2).</p>
+#### Elasped Time in milliseconds
+EOF
+  csv2html $in_dir/elapsed.csv
+
+  cmark <<EOF
+#### Parsing Rate in lines/millisecond
+EOF
+  csv2html $in_dir/rate.csv
+
+  cmark <<EOF
+### Memory Usage (Max Resident Set Size in MB)</h4>
+
+Note that Oil uses a **different algorithm** than POSIX shells.  It builds an
+AST in memory rather than just validating the code line-by-line.
+EOF
+  csv2html $in_dir/max_rss.csv
+
+  cmark <<'EOF'
+### Old Memory Usage Metric
+
+Running under `osh-ovm`.  Memory usage is measured in MB (powers of 10), not
+MiB (powers of 2).
 EOF
   csv2html $in_dir/virtual-memory.csv
 
-  cat <<EOF
-
-    <h3>Shell and Host Details</h3>
+  cmark <<EOF
+### Shell and Host Details
 EOF
   csv2html $in_dir/shells.csv
   csv2html $in_dir/hosts.csv
 
-cat <<EOF
-    <h3>Raw Data</h3>
+  cmark <<EOF
+### Raw Data
 EOF
   csv2html $in_dir/raw-data.csv
 
-cat <<EOF
-    <h3>Parse Time Breakdown by File</h3>
-
-    <h4>Elasped Time in milliseconds</h4>
-EOF
-  csv2html $in_dir/elapsed.csv
-  cat <<EOF
-
-    <h4>Parsing Rate in lines/millisecond</h4>
-EOF
-  csv2html $in_dir/rate.csv
   cat <<EOF
   </body>
 </html>

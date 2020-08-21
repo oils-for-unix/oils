@@ -24,6 +24,11 @@ sourceUrl2 = function(filename) {
       filename)
 }
 
+mycppUrl = function(path) {
+  sprintf('https://github.com/oilshell/oil/blob/master/mycpp/examples/%s.py', path)
+}
+
+
 # TODO: Set up cgit because Github links are slow.
 benchmarkDataLink = function(subdir, name, suffix) {
   #sprintf('../../../../benchmark-data/shell-id/%s', shell_id)
@@ -190,6 +195,19 @@ ParserReport = function(in_dir, out_dir) {
              num_lines, filename, filename_HREF)) ->
     rate
 
+  # Memory usage by file
+  all_times  %>%
+    select(-c(elapsed_ms, lines_per_ms, user_secs, sys_secs)) %>% 
+    mutate(max_rss_MB = max_rss_KiB * 1024 / 1e6) %>%
+    select(-c(max_rss_KiB)) %>%
+    spread(key = shell_label, value = max_rss_MB) %>%
+    arrange(host_label, num_lines) %>%
+    mutate(filename = basename(path), filename_HREF = sourceUrl(path)) %>% 
+    select(c(host_label, bash, dash, mksh, zsh,
+             `osh-ovm`, `osh-cpython`, `oil-native`,
+             num_lines, filename, filename_HREF)) ->
+    max_rss
+
   # Just show osh-ovm because we know from the 'baseline' benchmark that it
   # uses significantly less than osh-cpython.
   vm %>%
@@ -229,6 +247,7 @@ ParserReport = function(in_dir, out_dir) {
   precision = ColumnPrecision(list(osh_to_bash_ratio = 1), default = 0)
   writeCsv(elapsed, file.path(out_dir, 'elapsed'), precision)
   writeCsv(rate, file.path(out_dir, 'rate'))
+  writeCsv(max_rss, file.path(out_dir, 'max_rss'))
 
   writeCsv(vm_table, file.path(out_dir, 'virtual-memory'))
 
@@ -588,7 +607,8 @@ MyCppReport = function(in_dir, out_dir) {
 
   # Don't care about elapsed and system
   times %>% select(-c(status, elapsed_secs, sys_secs)) %>%
-    mutate(user_ms = user_secs * 1000, 
+    mutate(example_name_HREF = mycppUrl(example_name),
+           user_ms = user_secs * 1000, 
            max_rss_MB = max_rss_KiB * 1024 / 1e6) %>%
     select(-c(user_secs, max_rss_KiB)) ->
     details
