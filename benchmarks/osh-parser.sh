@@ -256,7 +256,7 @@ EOF
   csv2html $in_dir/rate.csv
 
   cmark <<EOF
-### Memory Usage (Max Resident Set Size in MB)</h4>
+### Memory Usage (Max Resident Set Size in MB)
 
 Note that Oil uses a **different algorithm** than POSIX shells.  It builds an
 AST in memory rather than just validating the code line-by-line.

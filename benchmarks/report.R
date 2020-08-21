@@ -308,23 +308,36 @@ RuntimeReport = function(in_dir, out_dir) {
     left_join(distinct_hosts, by = c('host_name', 'host_hash')) %>%
     left_join(distinct_shells, by = c('shell_name', 'shell_hash')) %>%
     select(-c(host_name, host_hash, shell_name, shell_hash)) ->
-    times
+    details
 
   print(times)
 
   # Sort by osh elapsed ms.
-  times %>%
+  details %>%
     mutate(elapsed_ms = elapsed_secs * 1000,
            task_arg = basename(task_arg)) %>%
-    select(-c(status, elapsed_secs)) %>%
+    select(-c(status, elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>%
     spread(key = shell_label, value = elapsed_ms) %>%
     mutate(osh_to_bash_ratio = osh / bash) %>%
     arrange(task_arg, host_label) %>%
     select(c(task_arg, host_label, bash, dash, osh, osh_to_bash_ratio)) ->
-    times
+    elapsed
 
-  print(summary(times))
-  print(head(times))
+  print(summary(elapsed))
+  print(head(elapsed))
+
+  details %>%
+    mutate(max_rss_MB = max_rss_KiB * 1024 / 1e6,
+           task_arg = basename(task_arg)) %>%
+    select(-c(status, elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>%
+    spread(key = shell_label, value = max_rss_MB) %>%
+    mutate(osh_to_bash_ratio = osh / bash) %>%
+    arrange(task_arg, host_label) %>%
+    select(c(task_arg, host_label, bash, dash, osh, osh_to_bash_ratio)) ->
+    max_rss
+
+  print(summary(elapsed))
+  print(head(elapsed))
 
   Log('VM:')
   print(vm)
@@ -350,7 +363,8 @@ RuntimeReport = function(in_dir, out_dir) {
   WriteDetails(distinct_hosts, distinct_shells, out_dir)
 
   precision = ColumnPrecision(list(bash = 0, dash = 0, osh = 0))
-  writeCsv(times, file.path(out_dir, 'times'), precision)
+  writeCsv(elapsed, file.path(out_dir, 'elapsed'), precision)
+  writeCsv(max_rss, file.path(out_dir, 'max_rss'))
   writeCsv(vm, file.path(out_dir, 'virtual-memory'))
 
   Log('Wrote %s', out_dir)
@@ -532,7 +546,7 @@ ComputeReport = function(in_dir, out_dir) {
   #
 
   times %>% filter(task_name == 'fib') %>% unique_stdout_md5sum(1)
-  times %>% filter(task_name == 'word_freq') %>% unique_stdout_md5sum(2)
+  times %>% filter(task_name == 'word_freq') %>% unique_stdout_md5sum(1)
   # 3 different inputs
   times %>% filter(task_name == 'parse_help') %>% unique_stdout_md5sum(3)
 

@@ -52,8 +52,9 @@ word_freq-tasks() {
 
   cat $provenance | filter-provenance python bash $OSH_CC |
   while read fields; do
-    # Why does osh_eval differ?
-    echo 'word_freq 10 benchmarks/testdata/abuild' | xargs -n 3 -- echo "$fields"
+    # BUG: osh_eval differs on these two.  Looks like it's related to
+    # backslashes!
+    #echo 'word_freq 10 benchmarks/testdata/abuild' | xargs -n 3 -- echo "$fields"
     #echo 'word_freq 2 benchmarks/testdata/ltmain.sh' | xargs -n 3 -- echo "$fields"
     echo 'word_freq 10 configure' | xargs -n 3 -- echo "$fields"
   done

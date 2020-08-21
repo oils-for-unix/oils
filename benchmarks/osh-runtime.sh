@@ -111,16 +111,21 @@ runtime-task() {
   echo
 
   case $task_type in
-    abuild)
-      # NOTE: $task_arg unused.
+    hello-world)  # NOTE: $task_arg unused.
+
+      "${TIME_PREFIX[@]}" -- \
+        "$sh_path" $extra_args testdata/osh-runtime/hello_world.sh
+        > $files_out_dir/STDOUT.txt
+      ;;
+
+    abuild)  # NOTE: $task_arg unused.
 
       "${TIME_PREFIX[@]}" -- \
         "$sh_path" $extra_args testdata/osh-runtime/abuild -h \
         > $files_out_dir/STDOUT.txt
       ;;
 
-    cpython)
-      # NOTE: $task_arg unused.
+    cpython)  # NOTE: $task_arg unused.
 
       # This configure script defeats --runtime-mem-dump, I think because of:
       # exec $CONFIG_SHELL $as_opts "$as_myself" ${1+"$@"}
@@ -207,6 +212,7 @@ print-tasks() {
     local prefix="$job_id $host_name $host_hash $sh_path $shell_hash"
 
     # NOTE: 'abuild-help' is a dummy label.
+    echo "$prefix" hello-world hello-world
     echo "$prefix" abuild abuild-help
     echo "$prefix" cpython cpython-configure
 
@@ -279,20 +285,29 @@ print-report() {
     <p id="home-link">
       <a href="/">oilshell.org</a>
     </p>
-    <h2>OSH Runtime Performance</h2>
-
-    <h3>Elapsed Time by Shell (milliseconds)</h3>
-
-    <p>Some benchmarks call many external tools, while some exercise the shell
-    interpreter itself.  Parse time is included.</p>
 EOF
-  csv2html $in_dir/times.csv
 
-  cat <<EOF
-    <h3>Memory Used to Run</h3>
+  cmark <<EOF
+## OSH Runtime Performance
 
-    <p>Running under <code>osh-ovm</code>.  Memory usage is measured in MB
-    (powers of 10), not MiB (powers of 2).</p>
+### Elapsed Time by Shell (milliseconds)
+
+Some benchmarks call many external tools, while some exercise the shell
+interpreter itself.  Parse time is included.
+
+Memory usage is measured in MB (powers of 10), not MiB (powers of 2).
+EOF
+  csv2html $in_dir/elapsed.csv
+
+  cmark <<EOF
+### Memory Usage (Max Resident Set Size in MB)
+EOF
+  csv2html $in_dir/max_rss.csv
+
+  cmark <<'EOF'
+### Old Memory Usage Metric
+
+Measuring `osh-ovm`.
 
 EOF
   csv2html $in_dir/virtual-memory.csv
