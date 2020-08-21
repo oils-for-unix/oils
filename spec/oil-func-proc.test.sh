@@ -60,7 +60,7 @@ func add(x, y, ...args) {
   write @args
   return x + y
 }
-var args = @[5 6 7 8]
+var args = %[5 6 7 8]
 var y = add(...args)
 echo y=$y
 ## STDOUT:
@@ -124,8 +124,8 @@ func add(x, y; verbose=true, ...named) {
   write @named | sort
   return x + y
 }
-var args = @{verbose: false, a: 1, b: 2}
-var args2 = @{f: 3}
+var args = %{verbose: false, a: 1, b: 2}
+var args2 = %{f: 3}
 var ret = add(2, 3; ...args, ...args2)
 echo ret=$ret
 ## STDOUT:
@@ -311,7 +311,7 @@ func f(a, b=0, ...args; c, d=0, ...named) {
   }
 }
 var a = [42, 43]
-var n = @{x: 99, y: 100}
+var n = %{x: 99, y: 100}
 
 echo ____
 write string $f(0, 1, ...a, c=2, d=3)
@@ -361,7 +361,7 @@ echo $f(42)
 
 # this should print an error message
 proc f {
-  var a = @(one two)
+  var a = %(one two)
   return a
 }
 f

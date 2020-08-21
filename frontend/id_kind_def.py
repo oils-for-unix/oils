@@ -341,9 +341,11 @@ def AddKinds(spec):
       'ProcSubIn',          # <( )
       'ProcSubOut',         # >( )
 
-      'AtBrace',            # @{ for map literals
-      'AtBracket',          # @[ for typed array literals
-      'AtParen',            # @( for legacy shell arrays
+      'AtParen',            # @( for split command sub
+
+      'PercentParen',       # %( for word arrays
+      'PercentBrace',       # %{ for map literals
+      'PercentBracket',     # %[ for typed array literals
   ])
 
   spec.AddKind('Right', [

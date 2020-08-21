@@ -21,15 +21,15 @@ parse-all-tea() {
     | xargs -n 1 -- bin/oil -n
 }
 
-run-all() {
+all-passing() {
   for prog in oil_lang/testdata/*.{sh,osh}; do
     echo $prog
 
     local skip=''
     case $prog in
-      (*/assign.osh) skip=1 ;;
-      (*/no-dynamic-scope.osh) skip=1 ;;
-      (*/inline-function-calls.sh) skip=1 ;;
+      (*/assign.osh) skip=T ;;
+      (*/no-dynamic-scope.osh) skip=T ;;
+      (*/inline-function-calls.sh) skip=T ;;
     esac
 
     if test -n "$skip"; then
@@ -43,6 +43,8 @@ run-all() {
 }
 
 demo() {
+  ### Run some of them selectively
+
   bin/osh oil_lang/testdata/array-rewrite-1.sh
 
   bin/osh oil_lang/testdata/array-rewrite-2.sh
@@ -54,11 +56,11 @@ demo() {
 
   bin/osh oil_lang/testdata/sigil-pairs.sh
 
+  set +o errexit
   # Fails correctly
   bin/osh oil_lang/testdata/no-dynamic-scope.osh
 
-  # TODO: Debug crash
-  #bin/osh oil_lang/testdata/assign.osh
+  bin/osh oil_lang/testdata/assign.osh
 }
 
 "$@"

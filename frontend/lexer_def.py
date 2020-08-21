@@ -747,18 +747,12 @@ OIL_LEFT_SUBS = [
   C('$(', Id.Left_DollarParen),
   C('${', Id.Left_DollarBrace),
   C('$[', Id.Left_DollarBracket),  # Unused now
-
-  # For lazily evaluated expressions
-  C('%(', Id.Expr_Reserved),
-  C('%{', Id.Expr_Reserved),
-  C('%[', Id.Expr_Reserved),
 ]
 
-# Valid in lex_mode_e.Expr
-# TODO:
-# - raw strings with r' r"
-# - multiline strings ''' """ r''' r"""
+# Valid in lex_mode_e.Expr, but not valid in DQ_Oil
 # Used by oil_lang/grammar_gen.py
+#
+# TODO: multiline strings ''' """ r''' r"""
 OIL_LEFT_UNQUOTED = [
   C('"', Id.Left_DoubleQuote),
 
@@ -769,10 +763,15 @@ OIL_LEFT_UNQUOTED = [
   C("c'", Id.Left_SingleQuoteC),
   C("$'", Id.Left_SingleQuoteC),
 
-  # Not valid in DQ_Oil
-  C('@(', Id.Left_AtParen),  # Legacy shell arrays.
-  C('@[', Id.Left_AtBracket),  # typed array literals.  Not used yet.
-  C('@{', Id.Left_AtBrace),  # map literals
+  C('@(', Id.Left_AtParen),         # Split Command Sub
+
+  C('%(', Id.Left_PercentParen),    # shell-like word arrays.
+  C('%[', Id.Left_PercentBracket),  # typed array literals.  Not used yet.
+  C('%{', Id.Left_PercentBrace),    # map literals
+
+  # Not sure if we'll use these
+  C('@{', Id.Expr_Reserved),
+  C('@[', Id.Expr_Reserved),
 ]
 
 # Used by oil_lang/grammar_gen.py

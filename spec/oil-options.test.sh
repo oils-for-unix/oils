@@ -203,7 +203,7 @@ shopt -s verbose_errexit
 ## END
 
 #### osh -O oil:basic 
-$SH -O oil:basic -c 'var x = @(one two three); write @x'
+$SH -O oil:basic -c 'var x = %(one two three); write @x'
 ## STDOUT:
 one
 two
@@ -370,7 +370,7 @@ four
 #### parse_brace case
 shopt -s oil:basic
 
-var files = @(foo.py 'foo test.sh')
+var files = %(foo.py 'foo test.sh')
 for name in "${files[@]}" ; do
   case $name in
     *.py)
@@ -477,7 +477,7 @@ two
 
 #### parse_paren: for loop
 shopt -s oil:basic
-var array = @(one two three)
+var array = %(one two three)
 for (item in array) {
   echo $item
 }
@@ -517,11 +517,11 @@ var=val
 ## status: 2
 ## stdout-json: ""
 
-#### parse_rawc: C strings in @() array literals
+#### parse_rawc: C strings in %() array literals
 shopt -s oil:basic
 
 # BUG: Surprising that this doesn't work because of command mode!
-var lines=@(c'aa\tbb' c'cc\tdd')
+var lines=%(c'aa\tbb' c'cc\tdd')
 echo @lines
 
 ## STDOUT:

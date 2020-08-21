@@ -3,8 +3,8 @@
 # TODO: Test that there are exceptions when there are too many args, etc.
 
 #### Bool()
-var a = Bool( @() )
-var b = Bool( @(foo) )
+var a = Bool( %() )
+var b = Bool( %(foo) )
 write $a $b
 ## STDOUT:
 False
@@ -66,7 +66,7 @@ write $len(a)
 ## END
 
 #### join()
-var x = @(a b 'c d')
+var x = %(a b 'c d')
 
 var y = join(x)
 argv.py $y
@@ -91,16 +91,16 @@ write $abs(-5) $abs(-0) $abs(5)
 ## END
 
 #### any() and all()
-var a1 = all( @(yes yes) )
-var a2 = all( @(yes '') )
-var a3 = all( @('' '') )
+var a1 = all( %(yes yes) )
+var a2 = all( %(yes '') )
+var a3 = all( %('' '') )
 # This should be true and false or what?
 write $a1 $a2 $a3
 write __
 
-var x1 = any( @(yes yes) )
-var x2 = any( @(yes '') )
-var x3 = any( @('' '') )
+var x1 = any( %(yes yes) )
+var x2 = any( %(yes '') )
+var x3 = any( %('' '') )
 write $x1 $x2 $x3
 
 ## STDOUT:
@@ -146,7 +146,7 @@ write @x
 #### enumerate()
 write $enumerate
 # TODO: need new for loop syntax
-for (i, a in enumerate( @(a b c) )) {
+for (i, a in enumerate( %(a b c) )) {
   write $i $a
 }
 ## STDOUT:
@@ -157,8 +157,8 @@ for (i, a in enumerate( @(a b c) )) {
 
 #### zip()
 write $zip
-var a = @(1 2 3)
-var b = @(a b c)
+var a = %(1 2 3)
+var b = %(a b c)
 for (item in zip(a, b)) {
   write $item
 }
@@ -192,7 +192,7 @@ argv.py a @maybe(n) b
 #### @maybe on invalid type is fatal error
 
 # not allowed
-setvar marray = @()
+setvar marray = %()
 argv.py a @maybe(marray) b
 echo done
 ## status: 1

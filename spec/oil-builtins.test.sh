@@ -30,9 +30,9 @@ argv.py @a
 ['1', '2', '3 4', '5']
 ## END
 
-#### push onto var a = @(1 2)
+#### push onto var a = %(1 2)
 shopt -s parse_at
-var a = @(1 2)
+var a = %(1 2)
 push a '3 4' '5'  # : is optional
 argv.py @a
 ## STDOUT:
@@ -52,7 +52,7 @@ echo status=$?
 
 #### write -sep, -end, -n, varying flag syntax
 shopt -s oil:all
-var a = @('a b' 'c d')
+var a = %('a b' 'c d')
 write @a
 write .
 write -- @a

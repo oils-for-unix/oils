@@ -9,10 +9,10 @@ echo x=${x:-default} y=${y:-default}
 x=hi y=default
 ## END
 
-#### shell array @(a 'b c')
+#### shell array %(a 'b c')
 shopt -s parse_at
-var x = @(a 'b c')
-var empty = @()
+var x = %(a 'b c')
+var empty = %()
 argv.py / @x @empty /
 
 ## STDOUT:
@@ -21,7 +21,7 @@ argv.py / @x @empty /
 
 #### empty array and simple_word_eval (regression test)
 shopt -s parse_at simple_word_eval
-var empty = @()
+var empty = %()
 echo len=${#empty[@]}
 argv.py / @empty /
 
@@ -45,7 +45,7 @@ touch {foo,bar}.py
 HOME=/home/bob
 no_dynamic_glob='*.py'
 
-var x = @(~/src *.py {andy,bob}@example.com $no_dynamic_glob)
+var x = %(~/src *.py {andy,bob}@example.com $no_dynamic_glob)
 argv.py @x
 ## STDOUT:
 ['/home/bob/src', 'bar.py', 'foo.py', 'andy@example.com', 'bob@example.com', '*.py']
@@ -53,10 +53,10 @@ argv.py @x
 
 #### augmented assignment doesn't work on shell arrays
 shopt -s parse_at simple_word_eval
-var x = @(a 'b c')
+var x = %(a 'b c')
 argv.py @x
 
-setvar x += @(d e)  # fatal error
+setvar x += %(d e)  # fatal error
 argv.py @x
 ## status: 1
 ## STDOUT:
@@ -65,7 +65,7 @@ argv.py @x
 
 #### Splice in array
 shopt -s oil:basic
-var a = @(one two three)
+var a = %(one two three)
 argv.py @a
 ## STDOUT:
 ['one', 'two', 'three']
@@ -242,7 +242,7 @@ echo $x
 
 #### double quoted respects strict_array
 shopt -s oil:basic
-var a = @(one two three)
+var a = %(one two three)
 var x = "-${a[@]}-"
 echo $x
 ## status: 1
@@ -460,11 +460,11 @@ no
 ## END
 
 #### dict with 'bare word' keys
-var d0 = @{}
+var d0 = %{}
 echo len=$len(d0)
-var d1 = @{name: "hello"}
+var d1 = %{name: "hello"}
 echo len=$len(d1)
-var d2 = @{name: "hello", other: 2}
+var d2 = %{name: "hello", other: 2}
 echo len=$len(d2)
 ## STDOUT:
 len=0
@@ -473,13 +473,13 @@ len=2
 ## END
 
 #### dict with expression keys
-var d1 = @{['name']: "hello"}
+var d1 = %{['name']: "hello"}
 echo len=$len(d1)
 var v = d1['name']
 echo $v
 
 var key='k'
-var d2 = @{["$key"]: "bar"}
+var d2 = %{["$key"]: "bar"}
 echo len=$len(d2)
 var v2 = d2['k']
 echo $v2
@@ -494,12 +494,12 @@ bar
 
 #### dict literal with implicit value
 var name = 'foo'
-var d1 = @{name}
+var d1 = %{name}
 echo len=$len(d1)
 var v1 = d1['name']
 echo $v1
 
-var d2 = @{name, other: 'val'}
+var d2 = %{name, other: 'val'}
 echo len=$len(d2)
 var v2 = d2['name']
 echo $v2
@@ -512,12 +512,12 @@ foo
 ## END
 
 #### Dict literal with string keys
-var d = @{'sq': 123}
+var d = %{'sq': 123}
 var v = d['sq']
 echo $v
 
 var x = "q"
-var d2 = @{"d$x": 456}
+var d2 = %{"d$x": 456}
 var v2 = d2["dq"]
 echo $v2
 ## STDOUT:
@@ -639,7 +639,7 @@ mytuple=3
 ## END
 
 #### multiline dict
-var mydict = @{ a:1,
+var mydict = %{ a:1,
   b:
   2,
 }
@@ -649,7 +649,7 @@ mydict=2
 ## END
 
 #### multiline array and command sub (only here docs disallowed)
-var array = @(
+var array = %(
   one
   two
   three
@@ -755,7 +755,7 @@ echo $method
 
 
 #### d->key
-var d = @{name: 'andy'}
+var d = %{name: 'andy'}
 var x = d->name
 echo $x
 ## STDOUT:

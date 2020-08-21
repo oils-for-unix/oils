@@ -1,7 +1,7 @@
 # Typed arrays
 
 #### integer array
-var x = @[1 2 3]
+var x = %[1 2 3]
 write len=$len(x)
 ## STDOUT:
 len=3
@@ -11,7 +11,7 @@ len=3
 shopt -s oil:all
 
 var x = 1
-var a = @[$x $(write hi) 'sq' "dq $x"]
+var a = %[$x $(write hi) 'sq' "dq $x"]
 write len=$len(a)
 write @a
 ## STDOUT:
@@ -29,7 +29,7 @@ shopt -s oil:all
 
 var x = 5
 var y = 6
-var a = @[(x) (x+1) (y*2)]
+var a = %[(x) (x+1) (y*2)]
 
 write len=$len(a)
 write @a
@@ -91,12 +91,12 @@ status=0
 ## END
 
 #### typeof should show the type
-var b = @[true]
+var b = %[true]
 # repr should show the type of the object?
 repr b
 #typeof b
 
-var empty = @[]
+var empty = %[]
 repr empty
 
 ## STDOUT:

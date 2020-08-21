@@ -298,7 +298,7 @@ class Transformer(object):
 
       return self._TestlistComp(children[1], id_)
 
-    if id_ == Id.Left_AtBrace:
+    if id_ == Id.Left_PercentBrace:
       return self._Dict(children[1])
 
     if id_ == Id.Arith_Slash:

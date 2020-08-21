@@ -25,7 +25,7 @@
 ## END
 
 #### subscript and range of array
-var myarray = @(1 2 3 4)
+var myarray = %(1 2 3 4)
 = myarray[1]
 = myarray[1:3]
 
@@ -63,7 +63,7 @@ implicit
 ## END
 
 #### expressions and negative indices
-var myarray = @(1 2 3 4 5)
+var myarray = %(1 2 3 4 5)
 = myarray[-1]
 = myarray[-4:-2]
 
@@ -119,7 +119,7 @@ write @x
 ## END
 
 #### Index with a Tuple
-var mydict = @{[2,3]: 'foo'}
+var mydict = %{[2,3]: 'foo'}
 var val = mydict[(2, 3)]
 echo $val
 # TODO: This should work!
@@ -131,7 +131,7 @@ foo
 ## END
 
 #### Index with expression
-var mydict = @{[5]: 3}
+var mydict = %{[5]: 3}
 var val = mydict[2+3]
 echo $val
 ## STDOUT:
@@ -155,7 +155,7 @@ var b = a[:]
 #
 # df[3:5, :]    rows 3 to 5, all cols
 #
-# df[3:5, @(name age)]    rows 3 to 5, two cols
+# df[3:5, %(name age)]    rows 3 to 5, two cols
 
 #var b = d[3,1:]
 

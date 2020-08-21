@@ -1,7 +1,7 @@
 # Smoke test for the bin/oil binary
 
 #### Array func
-func a(x) { return @(1 2 $x) }
+func a(x) { return %(1 2 $x) }
 write @a(42)
 ## STDOUT:
 1

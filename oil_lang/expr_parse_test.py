@@ -67,22 +67,22 @@ class ExprParseTest(unittest.TestCase):
     #node = self._ParseOilExpression('{foo: bar}')
 
   def testShellArrays(self):
-    node = self._ParseOsh('var x = @(a b);')
-    node = self._ParseOsh(r"var x = @('c' $'string\n');")
-    node = self._ParseOsh(r"var x = @($(echo command) $(echo sub));")
+    node = self._ParseOsh('var x = %(a b);')
+    node = self._ParseOsh(r"var x = %('c' $'string\n');")
+    node = self._ParseOsh(r"var x = %($(echo command) $(echo sub));")
 
     # Can parse multiple arrays (this is a runtime error)
-    node = self._ParseOsh(r"var x = @(a b) * @($c ${d});")
+    node = self._ParseOsh(r"var x = %(a b) * %($c ${d});")
 
     # Can parse over multiple lines
-    node = self._ParseOsh(r"""var x = @(
+    node = self._ParseOsh(r"""var x = %(
     a
     b
     c
     );""")
 
     # Test out the DisallowedLineReader
-    self.assertRaises(error.Parse, self._ParseOsh, r"""var x = @($(echo command <<EOF
+    self.assertRaises(error.Parse, self._ParseOsh, r"""var x = %($(echo command <<EOF
 EOF
 ))""")
 
@@ -104,20 +104,20 @@ EOF)
     node = self._ParseOsh('var x = $(echo $((1+2)));')
     node = self._ParseOsh('var x = $(for i in 1 2 3; do echo $i; done);')
 
-    node = self._ParseOsh('var x = @(a b)')
+    node = self._ParseOsh('var x = %(a b)')
 
     # TODO: Recursive 'var' shouldn't be allowed!
     return
-    node = self._ParseOsh('var x = $(var x = @(a b););')
-    node = self._ParseOsh('var x = $(var x = @(a b));')
+    node = self._ParseOsh('var x = $(var x = %(a b););')
+    node = self._ParseOsh('var x = $(var x = %(a b));')
 
   def testOtherExpr(self):
     """Some examples copied from pgen2/pgen2-test.sh mode-test."""
 
-    node = self._ParseOsh('@[1 2 3];')
+    node = self._ParseOsh('%[1 2 3];')
 
     CASES = [
-      '@[1 2 3]',
+      '%[1 2 3]',
       #'$/ x /',
       # TODO: Put this back after fixing double quoted strings in expression
       # mode.

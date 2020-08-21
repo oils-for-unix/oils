@@ -285,7 +285,7 @@ no
 shopt -s oil:all
 
 # BUG: need C strings in array literal
-var lines=@($'aa\tbb' $'cc\tdd')
+var lines=%($'aa\tbb' $'cc\tdd')
 
 var pat = / ('a' [\t] 'b') /
 write pat=$pat
@@ -357,7 +357,7 @@ echo $pat
 shopt -s oil:all
 
 # BUG: need C strings in array literal
-var lines=@($'aa\tbb' $'cc\tdd')
+var lines=%($'aa\tbb' $'cc\tdd')
 
 var pat = / ('a' [\t] 'b') /
 write pat=$pat
@@ -369,7 +369,7 @@ write @lines | egrep $pat
 shopt -s oil:all
 
 # BUG: need C strings in array literal
-var lines=@(
+var lines=%(
   'backslash \'
   'rbracket ]'
   'lbracket ['

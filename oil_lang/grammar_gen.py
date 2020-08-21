@@ -99,7 +99,9 @@ def main(argv):
   )
   more_ops = {}
   for _, token_str, id_ in triples:
-    assert token_str not in more_ops, token_str
+    if token_str in more_ops:
+      import pprint
+      raise AssertionError('%r %s' % (token_str, pprint.pformat(more_ops, indent=2)))
     more_ops[token_str] = id_
 
   # Tokens that look like 'for'

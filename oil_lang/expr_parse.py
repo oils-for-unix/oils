@@ -89,13 +89,13 @@ _OTHER_BALANCE = {
     Id.Op_LParen:  1,
     Id.Op_RParen: -1,
 
-    # Array @[]
-    Id.Left_AtBracket:  1,
+    # Array %[]
+    Id.Left_PercentBracket:  1,
     Id.Op_LBracket:  1,
     Id.Op_RBracket: -1,
 
-    # Dict @{}
-    Id.Left_AtBrace:  1,
+    # Dict %{}
+    Id.Left_PercentBrace:  1,
     Id.Op_RBrace: -1
 }
 
@@ -160,7 +160,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
     #
 
     if mylib.PYTHON:
-      if tok.id == Id.Left_AtParen:
+      if tok.id == Id.Left_PercentParen:  # %(
         left_tok = tok
         lex.PushHint(Id.Op_RParen, Id.Right_ShArrayLiteral)
 
@@ -205,7 +205,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
 
         continue
 
-      if tok.id == Id.Left_DollarParen:
+      if tok.id == Id.Left_DollarParen:  # $(
         left_token = tok
 
         lex.PushHint(Id.Op_RParen, Id.Eof_RParen)
@@ -231,6 +231,10 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
         assert not done  # can't end the expression
 
         continue
+
+      if tok.id == Id.Left_AtParen:  # @(
+        # TODO: Implement split command sub!
+        pass
 
       if tok.id == Id.Left_DoubleQuote:
         left_token = tok
