@@ -75,6 +75,9 @@ parser-task() {
       local vm_out_path
       script_name=$(basename $script_path)
       vm_out_path="${vm_out_dir}/${shell_name}-${shell_hash}__${script_name}.txt"
+      # TODO:
+      # - Add -O parse_dynamic_arith for one file?
+      # - Eventually get rid of --parser-mem-dump
       extra_args="--ast-format none --parser-mem-dump $vm_out_path"
 
       # Should we add a field here to say it has VM stats?

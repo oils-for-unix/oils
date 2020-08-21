@@ -131,38 +131,30 @@ $'\x01\n'  # removing $ makes it valid QSN
 $'\0065'   # octal escape is invalid in QSN
 ```
 
-### Three Options For Displaying Unicode
+### How does a QSN Encoder Deal with Unicode?
 
-QSN denotes byte strings, but byte strings are often interpreted with a Unicode
-encoding.  A QSN **encoder** has three options for dealing with Unicode:
+The input to a QSN encoder is a raw **byte string**.  However, the string may
+have additional structure, like being UTF-8 encoded.
 
-1. **Don't decode** anything.  Show bytes like `'\xce\xbc'`.
-1. Speculatively **decode UTF-8**.  QSN encoding should never fail; it should
-   only fall back to byte escapes like `\xff`.  This is useful for showing if
-   the string is valid UTF-8.  After decoding a valid UTF-8 sequence, there are
-   two options:
-   - You can **show escaped code points** like `'\u03bc'`.  This is ASCII-friendly,
-     and can be better for debugging.
-   - You can **show them literally**, like <code>'&#x03bc;'</code>.
+The encoder has three options to deal with this structure:
 
-TODO: Show the state machine for detecting and decoding UTF-8.
+1. **Don't decode** UTF-8.  Walk through bytes one-by-one, showing unprintable
+   ones with escapes like `\xce\xbc`.  Never emit escapes like `\u{3bc}` or
+   literals like <code>&#x03bc;</code>.  This option is OK for machines, but
+   isn't friendly to humans who can read Unicode characters.
 
+Or **speculatively decode** UTF-8.  After decoding a valid UTF-8 sequence,
+there are two options:
 
-<!--
+2. Show **escaped code points**, like `\u{3bc}`.  The encoded string is limited
+   to the ASCII subset, which is useful in some contexts.
 
-### Special Chars Emitted
+3. Show them **literally**, like <code>&#x03bc;</code>.
 
-- `\r` `\n` `\t` `\0` (subset of C and shell; Rust has this)
-- Everything else is either `\xFF` or `\u03bc`
+QSN encoding should never fail; it should only fall back to byte escapes like
+`\xff`.  TODO: Show the state machine for detecting and decoding UTF-8.
 
-## Extensions
-
-- QTSV for tables.  This is a priority for Oil.
-- JSON-like dicts and lists.  Someone else should run with this!
-  - warning: "\\x00\\'" will confuse people.  Programmers don't understand
-    backslashes, and language implementers often don't either.
--->
-
+Note: Strategies 2 and 3 indicate whether the string is valid UTF-8.
 
 ## Design Notes
 
