@@ -177,6 +177,7 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
 
 # In ShCommand and DBracket states.
 _EXTGLOB_BEGIN = [
+  C(',(', Id.ExtGlob_Comma),  # Oil synonym for @(...)
   C('@(', Id.ExtGlob_At),
   C('*(', Id.ExtGlob_Star),
   C('+(', Id.ExtGlob_Plus),

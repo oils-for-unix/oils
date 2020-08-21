@@ -224,4 +224,17 @@ You can imagine:
 
 Minor breakage: making `$/` significant.
 
+### Bare Function Call
 
+Instead of
+
+    call f()
+    call g(x, y)
+
+You could do:
+
+    f()   # calls a func, doesn't begin a shell function declaration
+    g(x, y)
+
+- This change probably doesn't involve a lexer mode.
+- It would be a big breakage!

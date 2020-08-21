@@ -400,7 +400,7 @@ TODO: Link to the history lexer.
 
 ## Links
 
-- [OSH Spec Tests](../test/spec.wwz/) run shell snippets with OSH and other
+- [OSH Spec Tests](../test/spec.wwz/survey/osh.html) run shell snippets with OSH and other
   shells to compare their behavior.
 
 External:

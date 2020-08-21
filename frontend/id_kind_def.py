@@ -366,7 +366,7 @@ def AddKinds(spec):
       'ExtGlob',            # )
   ])
 
-  spec.AddKind('ExtGlob', ['At', 'Star', 'Plus', 'QMark', 'Bang'])
+  spec.AddKind('ExtGlob', ['Comma', 'At', 'Star', 'Plus', 'QMark', 'Bang'])
 
   # First position of var sub ${
   # Id.VOp2_Pound -- however you can't tell the difference at first!  It could
