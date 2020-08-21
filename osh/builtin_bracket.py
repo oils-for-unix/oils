@@ -66,13 +66,13 @@ class _StringWordEmitter(word_parse.WordEmitter):
     self.i += 1
 
     # default is an operand word
-    id_int = match.BracketUnary(s)
-    if id_int == Id.Undefined_Tok:
-      id_int = match.BracketBinary(s)
-    if id_int == Id.Undefined_Tok:
-      id_int = match.BracketOther(s)
-
-    id_ = Id.Word_Compound if id_int == -1 else id_int
+    id_ = match.BracketUnary(s)
+    if id_ == Id.Undefined_Tok:
+      id_ = match.BracketBinary(s)
+    if id_ == Id.Undefined_Tok:
+      id_ = match.BracketOther(s)
+    if id_ == Id.Undefined_Tok:
+      id_ = Id.Word_Compound
 
     # NOTE: We only have the left spid now.  It might be useful to add the
     # right one.

@@ -552,3 +552,9 @@ status=2
 status=1
 ## END
 
+#### Bug regression
+test "$ipv6" = "yes" -a "$ipv6lib" != "none"
+echo status=$?
+## STDOUT:
+status=1
+## END

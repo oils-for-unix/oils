@@ -111,8 +111,10 @@ print-tasks() {
   done
 }
 
+readonly NUM_COLUMNS=6  # input columns: 5 from provenance, 1 for file
+
+# output columns
 readonly HEADER='status,elapsed_secs,user_secs,sys_secs,max_rss_KiB,host_name,host_hash,shell_name,shell_hash,path' 
-readonly NUM_COLUMNS=6  # 5 from provenance, 1 for file
 
 # Figure out all tasks to run, and run them.  When called from auto.sh, $2
 # should be the ../benchmarks-data repo.

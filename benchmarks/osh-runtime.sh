@@ -91,6 +91,7 @@ runtime-task() {
     $PWD/benchmarks/time_.py \
     --append \
     --output $times_out \
+    --rusage \
     --field "$host" --field "$host_hash" \
     --field "$shell_name" --field "$shell_hash" \
     --field "$task_type" --field "$task_arg"
@@ -215,8 +216,11 @@ print-tasks() {
   done
 }
 
-readonly HEADER='status,elapsed_secs,host_name,host_hash,shell_name,shell_hash,task_type,task_arg'
-readonly NUM_COLUMNS=7  # 5 from provenence, then task_type / task_arg
+# input columns: 5 from provenence, then task_type / task_arg
+readonly NUM_COLUMNS=7
+
+# output columns
+readonly HEADER='status,elapsed_secs,user_secs,sys_secs,max_rss_KiB,host_name,host_hash,shell_name,shell_hash,task_type,task_arg'
 
 measure() {
   local provenance=$1
