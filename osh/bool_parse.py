@@ -30,9 +30,10 @@ UNARY_OP: -z -n, etc.
 BINARY_OP: -gt, -ot, ==, etc.
 """
 
-from _devbuild.gen.id_kind_asdl import Id, Kind, Id_str
+from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import word_t, word_e, bool_expr, bool_expr_t
+from core import ui
 from core.pyerror import p_die, log
 from frontend import consts
 from osh import word_
@@ -265,4 +266,4 @@ class BoolParser(object):
       return node
 
     # It's not WORD, UNARY_OP, or '('
-    p_die('Unexpected token in boolean expression (%s)', Id_str(self.bool_id), word=self.cur_word)
+    p_die('Unexpected token in boolean expression (%s)', ui.PrettyId(self.bool_id), word=self.cur_word)
