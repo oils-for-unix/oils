@@ -228,12 +228,18 @@ class Slice_2 {  // value type, not managed
 // contents either.
 //
 // Instead the atom table is a HASH SET (a little like hash table)
+//
+// Another use case: Producing NUL terminated strings!
 
 class AtomEntry {
  public:
   int hash;  // hash value for initial comparison, then linear probing
   int len;
   const char* data;  // We OWN a COPY of this data now, never freed!
+
+  // Store the age here?  Then we prune entries from the table when it gets
+  // big.  (Or do it based on size?)  They can always be recreated from the Str
+  // or Slice object.
 };
 
 class AtomTable {
@@ -259,7 +265,11 @@ class AtomTable {
 // value!
 //
 // Whenever a Str or Slice is used as a key, it gets its atom_id key filled in.
-
+//
+// Str* s;  // may not be NUL termianted
+// getenv(gAtoms.Str0(s));  // cache it
+// 
+// Both Intern() and Str0() MUTATE the slice by adding the atom_id.
 
 // We're going to start out with this reference type.
 class Str : public Managed {
