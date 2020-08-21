@@ -511,7 +511,7 @@ OvmBuildReport = function(in_dir, out_dir) {
 unique_stdout_md5sum = function(t, num_expected) {
   u = n_distinct(t$stdout_md5sum)
   if (u != num_expected) {
-    t %>% select(c(task_name, arg1, arg2, runtime_name, stdout_md5sum)) %>% print()
+    t %>% select(c(host_name, task_name, arg1, arg2, runtime_name, stdout_md5sum)) %>% print()
     stop(sprintf('Expected %d unique md5sums, got %d', num_expected, u))
   }
 }
@@ -532,7 +532,7 @@ ComputeReport = function(in_dir, out_dir) {
   #
 
   times %>% filter(task_name == 'fib') %>% unique_stdout_md5sum(1)
-  times %>% filter(task_name == 'word_freq') %>% unique_stdout_md5sum(1)
+  times %>% filter(task_name == 'word_freq') %>% unique_stdout_md5sum(2)
   # 3 different inputs
   times %>% filter(task_name == 'parse_help') %>% unique_stdout_md5sum(3)
 
