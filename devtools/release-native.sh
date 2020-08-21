@@ -14,6 +14,21 @@ set -o errexit
 
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 
+manifest() {
+  # Skip _bin/heap, etc.
+  find \
+    LICENSE.txt \
+    README-native.txt \
+    asdl/runtime.h \
+    build/common.sh \
+    build/mycpp.sh \
+    cpp/ \
+    mycpp/mylib.{cc,h} \
+    _devbuild/gen/*.h \
+    _build/cpp/ \
+    -name _bin -a -prune -o -type f -a -print
+}
+
 make-tar() {
   local app_name='oil-native'
 
@@ -33,16 +48,7 @@ make-tar() {
   #   _build/cpp/osh_eval.h.  But we use it to run ASDL unit tests without
   #   depending on Oil.
 
-  tar --create --transform "$sed_expr" --file $out \
-    LICENSE.txt \
-    README-native.txt \
-    asdl/runtime.h \
-    build/common.sh \
-    build/mycpp.sh \
-    cpp/ \
-    mycpp/mylib.{cc,h} \
-    _devbuild/gen/*.h \
-    _build/cpp/
+  manifest | xargs -- tar --create --transform "$sed_expr" --file $out
 
   xz -c $out > $out.xz
 
