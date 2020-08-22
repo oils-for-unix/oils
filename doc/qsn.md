@@ -157,7 +157,26 @@ In theory, only escapes like `\'` `\n` `\\` are strictly necessary, and no
 bytes need to be hex-escaped.  But that strategy would defeat the purpose of
 QSN for many applications, like printing filenames in a terminal.
 
-## Design Notes
+## Reference Implementation in Oil
+
+You can see Oil's implementation in [qsn_/qsn.py]($oil-src).  It has an encoder
+with the various UTF-8 strategies.  As of August 2020, the decoder is
+incomplete.
+
+Note that we also have options to emit shell-compatible strings, which you
+probably **don't need**.
+
+That is, C-escaped strings in bash look `$'like this\n'`.  A **subset** of QSN
+is compatible with this syntax.  Example:
+
+    $'\x01\n'  # A valid bash string.  Removing $ makes it valid QSN.
+
+Something like `$'\0065'` is never emitted, because QSN doesn't contain octal
+escapes.  It can be encoded  with hex or character escapes.
+
+## Appendices
+
+### Design Notes
 
 The general idea: Rust string literals are like C and JavaScript string
 literals, without cruft like octal (`\755` or `\0755` &mdash; which is it?) and
@@ -177,27 +196,12 @@ Comparison with Python's `repr()`:
 - Python has both `\uxxxx` and `\Uxxxxxxxx`, whereas QSN has the more natural
   `\u{xxxxxx}`.
 
+### Related Links
+
 [In-band signaling][in-band] is the fundamental problem with filenames and
-terminals.
+terminals.  Code (control codes) and data are intermingled.
 
-## Reference Implementation in Oil
-
-You can see Oil's implementation in [qsn_/qsn.py]($oil-src).  It has an encoder
-with the various UTF-8 strategies.  As of August 2020, the decoder is
-incomplete.
-
-Note that we also have options to emit shell-compatible strings, which you
-probably **don't need**.
-
-That is, C-escaped strings in bash look `$'like this\n'`.  A **subset** of QSN
-is compatible with this syntax.
-
-Examples:
-
-    $'\x01\n'  # A valid bash string.  Removing $ makes it valid QSN.
-    $'\0065'   # Never emitted, because QSN doesn't contain octal escapes.
-
-## Appendix: `set -x` example
+### `set -x` example
 
 When arguments don't have any spaces, there's no ambiguity:
 
