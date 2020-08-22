@@ -8,6 +8,7 @@
 ./core/error.py
 ./core/main_loop.py
 ./core/optview.py
+./core/process.py
 ./core/pure.py
 ./core/pyerror.py
 ./core/pyos.py

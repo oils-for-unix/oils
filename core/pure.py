@@ -18,6 +18,7 @@ from core import alloc
 from core import dev
 from core import error
 from core import main_loop
+from core import process
 from core.pyerror import e_usage
 from core import pyutil
 from core.pyutil import stderr_line
@@ -199,8 +200,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   procs = {}  # type: Dict[str, command__ShFunction]
 
-  #job_state = process.JobState()
-  #fd_state = process.FdState(errfmt, job_state, mem)
+  job_state = process.JobState()
+  fd_state = process.FdState(errfmt, job_state, mem)
 
   opt_hook = state.OptHook()
   parse_opts, exec_opts, mutable_opts = state.MakeOpts(mem, opt_hook)

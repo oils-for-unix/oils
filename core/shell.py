@@ -497,7 +497,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   builtins[builtin_i.cd] = builtin_misc.Cd(mem, dir_stack, cmd_ev, errfmt)
   builtins[builtin_i.json] = builtin_oil.Json(mem, cmd_ev, errfmt)
 
-  sig_state = process.SignalState()
+  sig_state = pyos.SignalState()
   sig_state.InitShell()
 
   builtins[builtin_i.trap] = builtin_process.Trap(sig_state, cmd_deps.traps,

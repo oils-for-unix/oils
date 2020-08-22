@@ -33,11 +33,10 @@ import posix_ as posix
 from typing import List, Dict, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import command_t
-  from core.ui import ErrorFormatter
-  from core.process import (
-      ExternalProgram, FdState, JobState, SignalState, Waiter
-  )
+  from core.process import ExternalProgram, FdState, JobState, Waiter
+  from core.pyos import SignalState
   from core.state import Mem, SearchPath
+  from core.ui import ErrorFormatter
   from frontend.parse_lib import ParseContext
 
 

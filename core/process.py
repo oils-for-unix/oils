@@ -25,29 +25,29 @@ from _devbuild.gen.runtime_asdl import (
 from _devbuild.gen.syntax_asdl import (
     redir_loc, redir_loc_e, redir_loc_t, redir_loc__VarName, redir_loc__Fd,
 )
-from qsn_ import qsn
 #from core import pyutil
 from core.pyutil import stderr_line
+from core import pyos
 from core import util
 from core.pyerror import log
 from frontend import match
 from osh import cmd_eval
+from qsn_ import qsn
 from mycpp import mylib
-from mycpp.mylib import tagswitch
+from mycpp.mylib import tagswitch, iteritems
 
 import posix_ as posix
 
-from typing import List, Tuple, Dict, Any, cast, TYPE_CHECKING
+from typing import List, Tuple, Dict, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from _devbuild.gen.runtime_asdl import cmd_value__Argv
   from _devbuild.gen.syntax_asdl import command_t
+  from core import optview
+  from core.state import Mem
   from core.ui import ErrorFormatter
   from core.util import _DebugFile
-  from core.comp_ui import _IDisplay
-  from core import optview
   from osh.cmd_eval import CommandEvaluator
-  from core.state import Mem
 
 
 NO_FD = -1
@@ -59,61 +59,6 @@ NO_FD = -1
 # This is a compromise between bash (unlimited, but requires crazy
 # bookkeeping), and dash/zsh (10) and mksh (24)
 _SHELL_MIN_FD = 100
-
-
-def SignalState_AfterForkingChild():
-  # type: () -> None
-  """Not a member of SignalState since we didn't do dependency injection."""
-  # Respond to Ctrl-\ (core dump)
-  signal.signal(signal.SIGQUIT, signal.SIG_DFL)
-
-  # Python sets SIGPIPE handler to SIG_IGN by default.  Child processes
-  # shouldn't have this.
-  # https://docs.python.org/2/library/signal.html
-  # See Python/pythonrun.c.
-  signal.signal(signal.SIGPIPE, signal.SIG_DFL)
-
-  # Child processes should get Ctrl-Z.
-  signal.signal(signal.SIGTSTP, signal.SIG_DFL)
-
-
-class SignalState(object):
-  """All changes to global signal state go through this object."""
-
-  def __init__(self):
-    # type: () -> None
-    # Before doing anything else, save the original handler that raises
-    # KeyboardInterrupt.
-    self.orig_sigint_handler = signal.getsignal(signal.SIGINT)
-
-  def InitShell(self):
-    # type: () -> None
-    """Always called when initializing the shell process."""
-    pass
-
-  def InitInteractiveShell(self, display):
-    # type: (_IDisplay) -> None
-    """Called when initializing an interactive shell."""
-    # The shell itself should ignore Ctrl-\.
-    signal.signal(signal.SIGQUIT, signal.SIG_IGN)
-
-    # This prevents Ctrl-Z from suspending OSH in interactive mode.
-    signal.signal(signal.SIGTSTP, signal.SIG_IGN)
-
-    # Register a callback to receive terminal width changes.
-    # NOTE: In line_input.c, we turned off rl_catch_sigwinch.
-    signal.signal(signal.SIGWINCH, lambda x, y: display.OnWindowChange())
-
-  def AddUserTrap(self, sig_num, handler):
-    # type: (int, Any) -> None
-    """For user-defined handlers registered with the 'trap' builtin."""
-    signal.signal(sig_num, handler)
-
-  def RemoveUserTrap(self, sig_num):
-    # type: (int) -> None
-    """For user-defined handlers registered with the 'trap' builtin."""
-    # Restore default
-    signal.signal(sig_num, signal.SIG_DFL)
 
 
 class _FdFrame(object):
@@ -168,13 +113,15 @@ class FdState(object):
     fd_mode = posix.O_RDONLY
     return self._Open(path, 'r', fd_mode)
 
-  def OpenForWrite(self, path):
-    # type: (str) -> mylib.Writer
-    fd_mode = posix.O_CREAT | posix.O_RDWR
-    f = self._Open(path, 'w', fd_mode)
-    # Hack to change mylib.LineReader into mylib.Writer.  In reality the file
-    # object supports both interfaces.
-    return cast('mylib.Writer', f)
+  if mylib.PYTHON:
+    # used for util.DebugFile
+    def OpenForWrite(self, path):
+      # type: (str) -> mylib.Writer
+      fd_mode = posix.O_CREAT | posix.O_RDWR
+      f = self._Open(path, 'w', fd_mode)
+      # Hack to change mylib.LineReader into mylib.Writer.  In reality the file
+      # object supports both interfaces.
+      return cast('mylib.Writer', f)
 
   def _Open(self, path, c_mode, fd_mode):
     # type: (str, str, int) -> mylib.LineReader
@@ -588,7 +535,7 @@ class ExternalProgram(object):
 
   def _Exec(self, argv0_path, argv, argv0_spid, environ, should_retry):
     # type: (str, List[str], int, Dict[str, str], bool) -> None
-    if self.hijack_shebang:
+    if len(self.hijack_shebang):
       try:
         f = self.fd_state.Open(argv0_path)
       except OSError as e:
@@ -883,7 +830,7 @@ class Process(Job):
       raise RuntimeError('Fatal error in posix.fork()')
 
     elif pid == 0:  # child
-      SignalState_AfterForkingChild()
+      pyos.SignalState_AfterForkingChild()
 
       for st in self.state_changes:
         st.Apply()
@@ -1095,7 +1042,7 @@ class Pipeline(Job):
       posix.close(r)
 
     else:
-      if self.procs:
+      if len(self.procs):
         cmd_ev.ExecuteAndCatch(node)  # Background pipeline without last_pipe
       else:
         cmd_ev._Execute(node)  # singleton foreground pipeline, e.g. '! func'
@@ -1103,7 +1050,7 @@ class Pipeline(Job):
     self.pipe_status[-1] = cmd_ev.LastStatus()
     #log('pipestatus before all have finished = %s', self.pipe_status)
 
-    if self.procs:
+    if len(self.procs):
       return self.Wait(waiter)
     else:
       return self.pipe_status  # singleton foreground pipeline, e.g. '! func'
@@ -1236,13 +1183,13 @@ class JobState(object):
     # NOTE: Jobs don't need to show state?  Because pipelines are never stopped
     # -- only the jobs within them are.
     print('Jobs:')
-    for pid, job in self.jobs.iteritems():
+    for pid, job in iteritems(self.jobs):
       # Use the %1 syntax
       print('%%%d %s %s' % (pid, job.State(), job))
 
     print('')
     print('Processes:')
-    for pid, proc in self.child_procs.iteritems():
+    for pid, proc in iteritems(self.child_procs):
       print('%d %s %s' % (pid, proc.state, proc.thunk.DisplayLine()))
 
   def ListRecent(self):
@@ -1253,7 +1200,7 @@ class JobState(object):
   def NoneAreRunning(self):
     # type: () -> bool
     """Test if all jobs are done.  Used by 'wait' builtin."""
-    for job in self.jobs.itervalues():
+    for _, job in iteritems(self.jobs):  # mycpp rewite: from itervalues()
       if job.State() == job_state_e.Running:
         return False
     return True
@@ -1266,12 +1213,12 @@ class JobState(object):
     log('JobState MaybeRemove %d', pid)
 
     # TODO: Enabling this causes a failure in spec/background.
-    return
-    try:
-      del self.jobs[pid]
-    except KeyError:
-      # This should never happen?
-      log("AssertionError: PID %d should have never been in the job list", pid)
+    if 0:
+      try:
+        del self.jobs[pid]
+      except KeyError:
+        # This should never happen?
+        log("AssertionError: PID %d should have never been in the job list", pid)
 
 
 class Waiter(object):

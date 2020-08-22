@@ -89,8 +89,14 @@ trailer: (
     '(' [arglist] ')'
   | '[' subscriptlist ']'
 
-  # TODO: {} %{} %() %[] trailers for passing a single arg that's a collection.
-  #       Maybe %"" too.  And [[ ]] for lazy evaluation.
+  # TODO:
+  # - %{} %() %[] trailers for passing a single arg that's a collection.
+  # - and maybe [] {} %"" too
+  # Lazy evaluation:
+  # - f :(x, y)      could be equivalent to  f(:(x), :(y))
+  # - f :[x y]       could be equivalent to  f(%[x y])
+  # - f :{name: a+1} could be equilavent to  f({:(name): :(a+1)})
+  # - and :foo can be equivalent to :(foo) ?  or %foo?
 
   | '.' Expr_Name
   | '->' Expr_Name

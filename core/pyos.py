@@ -8,13 +8,17 @@ from __future__ import print_function
 
 import pwd
 import resource
+import signal
 import select
 import termios  # for read -n
 import time
 
 import posix_ as posix
 
-from typing import Optional, Tuple, cast
+from typing import Optional, Tuple, cast, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+  from core.comp_ui import _IDisplay
 
 
 def Chdir(dest_dir):
@@ -123,3 +127,58 @@ def InputAvailable(fd):
   # read, write, except
   r, w, exc = select.select([fd], [], [fd], 0)
   return len(r) != 0
+
+
+def SignalState_AfterForkingChild():
+  # type: () -> None
+  """Not a member of SignalState since we didn't do dependency injection."""
+  # Respond to Ctrl-\ (core dump)
+  signal.signal(signal.SIGQUIT, signal.SIG_DFL)
+
+  # Python sets SIGPIPE handler to SIG_IGN by default.  Child processes
+  # shouldn't have this.
+  # https://docs.python.org/2/library/signal.html
+  # See Python/pythonrun.c.
+  signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
+  # Child processes should get Ctrl-Z.
+  signal.signal(signal.SIGTSTP, signal.SIG_DFL)
+
+
+class SignalState(object):
+  """All changes to global signal state go through this object."""
+
+  def __init__(self):
+    # type: () -> None
+    # Before doing anything else, save the original handler that raises
+    # KeyboardInterrupt.
+    self.orig_sigint_handler = signal.getsignal(signal.SIGINT)
+
+  def InitShell(self):
+    # type: () -> None
+    """Always called when initializing the shell process."""
+    pass
+
+  def InitInteractiveShell(self, display):
+    # type: (_IDisplay) -> None
+    """Called when initializing an interactive shell."""
+    # The shell itself should ignore Ctrl-\.
+    signal.signal(signal.SIGQUIT, signal.SIG_IGN)
+
+    # This prevents Ctrl-Z from suspending OSH in interactive mode.
+    signal.signal(signal.SIGTSTP, signal.SIG_IGN)
+
+    # Register a callback to receive terminal width changes.
+    # NOTE: In line_input.c, we turned off rl_catch_sigwinch.
+    signal.signal(signal.SIGWINCH, lambda x, y: display.OnWindowChange())
+
+  def AddUserTrap(self, sig_num, handler):
+    # type: (int, Any) -> None
+    """For user-defined handlers registered with the 'trap' builtin."""
+    signal.signal(sig_num, handler)
+
+  def RemoveUserTrap(self, sig_num):
+    # type: (int) -> None
+    """For user-defined handlers registered with the 'trap' builtin."""
+    # Restore default
+    signal.signal(sig_num, signal.SIG_DFL)

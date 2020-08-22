@@ -298,7 +298,7 @@ osh-eval-manifest() {
 
   # TODO: could be pyoptview,pyconsts,pymatch,pyflag
 
-  local exclude='_devbuild/|.*_def\.py|core/py.*\.py|pybase.py|optview.py|match.py|process.py|path_stat.py|bool_stat.py|consts.py|pgen2/parse.py|oil_lang/objects.py|flag_spec.py|builtin_process.py'
+  local exclude='_devbuild/|.*_def\.py|core/py.*\.py|pybase.py|optview.py|match.py|path_stat.py|bool_stat.py|consts.py|pgen2/parse.py|oil_lang/objects.py|flag_spec.py|builtin_process.py'
 
   egrep -v "$exclude" types/osh-eval-manifest.txt
 }
