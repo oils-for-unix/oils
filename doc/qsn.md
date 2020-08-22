@@ -111,7 +111,7 @@ write it out.
 - Byte escapes: `\x7F`
 - Character escapes: `\u{03bc}` or `\u{0003bc}`.  These are encoded as UTF-8.
 
-## Advantages over JSON Strings
+## Advantages Over JSON Strings
 
 - QSN can represent any byte string, like `'\x00\xff\x00'`.  JSON can't
   represent **binary data** directly.
@@ -120,18 +120,7 @@ write it out.
 
 ## Implementation Issues
 
-### Compatibility With Shell Strings
-
-In bash, C-escaped strings are displayed `$'like this\n'`.  A **subset** of QSN is
-compatible with this syntax.  Examples:
-
-```
-$'\x01\n'  # removing $ makes it valid QSN
-
-$'\0065'   # octal escape is invalid in QSN
-```
-
-### How does a QSN Encoder Deal with Unicode?
+### How Does a QSN Encoder Deal with Unicode?
 
 The input to a QSN encoder is a raw **byte string**.  However, the string may
 have additional structure, like being UTF-8 encoded.
@@ -156,6 +145,18 @@ QSN encoding should never fail; it should only fall back to byte escapes like
 
 Note: Strategies 2 and 3 indicate whether the string is valid UTF-8.
 
+### Which Bytes Should Be Hex-Escaped?
+
+The reference implementation has two functions:
+
+- `IsUnprintableLow`: any byte below an ASCII space `' '` is escaped
+- `IsUnprintableHigh`: the byte `\x7f` and all bytes above are escaped, unless
+  they're part of a valid UTF-8 sequence.
+
+In theory, only escapes like `\'` `\n` `\\` are strictly necessary, and no
+bytes need to be hex-escaped.  But that strategy would defeat the purpose of
+QSN for many applications, like printing filenames in a terminal.
+
 ## Design Notes
 
 The general idea: Rust string literals are like C and JavaScript string
@@ -178,8 +179,25 @@ Comparison with Python's `repr()`:
 
 [In-band signaling][in-band] is the fundamental problem with filenames and
 terminals.
-  
-## Example: `set -x` format (`xtrace`)
+
+## Reference Implementation in Oil
+
+You can see Oil's implementation in [qsn_/qsn.py]($oil-src).  It has an encoder
+with the various UTF-8 strategies.  As of August 2020, the decoder is
+incomplete.
+
+Note that we also have options to emit shell-compatible strings, which you
+probably **don't need**.
+
+That is, C-escaped strings in bash look `$'like this\n'`.  A **subset** of QSN
+is compatible with this syntax.
+
+Examples:
+
+    $'\x01\n'  # A valid bash string.  Removing $ makes it valid QSN.
+    $'\0065'   # Never emitted, because QSN doesn't contain octal escapes.
+
+## Appendix: `set -x` example
 
 When arguments don't have any spaces, there's no ambiguity:
 
