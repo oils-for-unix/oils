@@ -33,6 +33,7 @@ if TYPE_CHECKING:
   from core.ui import ErrorFormatter
   from core.state import Mem
   from osh.word_eval import StringWordEvaluator
+  from osh import split
 
 _ = log
 
@@ -49,6 +50,7 @@ class OilEvaluator(object):
   def __init__(self,
                mem,  # type: Mem
                funcs,  # type: Dict
+               splitter,  # type: split.SplitContext
                errfmt,  # type: ErrorFormatter
                ):
     # type: (...) -> None
@@ -56,6 +58,7 @@ class OilEvaluator(object):
     self.word_ev = None  # type: StringWordEvaluator
 
     self.mem = mem
+    self.splitter = splitter
     self.funcs = funcs
     self.errfmt = errfmt
 
@@ -248,7 +251,12 @@ class OilEvaluator(object):
       return self.LookupVar(node.name.val)
 
     if node.tag == expr_e.CommandSub:
-      return self.shell_ex.RunCommandSub(node.child)
+      stdout = self.shell_ex.RunCommandSub(node.child)
+      if node.left_token.id == Id.Left_AtParen:
+        strs = self.splitter.SplitForWordEval(stdout)
+        return strs
+      else:
+        return stdout
 
     if node.tag == expr_e.ShArrayLiteral:
       words = braces.BraceExpandWords(node.words)

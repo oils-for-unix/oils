@@ -205,7 +205,7 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
 
         continue
 
-      if tok.id == Id.Left_DollarParen:  # $(
+      if tok.id in (Id.Left_DollarParen, Id.Left_AtParen):  # $(  @(
         left_token = tok
 
         lex.PushHint(Id.Op_RParen, Id.Eof_RParen)
@@ -231,10 +231,6 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
         assert not done  # can't end the expression
 
         continue
-
-      if tok.id == Id.Left_AtParen:  # @(
-        # TODO: Implement split command sub!
-        pass
 
       if tok.id == Id.Left_DoubleQuote:
         left_token = tok

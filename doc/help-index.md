@@ -153,7 +153,7 @@ an **unimplemented** feature.
                   bool-str      [[ -z '' ]]
                   bool-other    [[ -o errexit ]]
   [Patterns]      glob          *.py
-                  extglob       @(*.py|*.sh)
+                  extglob       ,(*.py|*.sh)
                   regex         [[ foo =~ [a-z]+ ]]
   [Brace Expand]  braces        {alice,bob}@example.com
   [History]       histsub       !$  !!  !n

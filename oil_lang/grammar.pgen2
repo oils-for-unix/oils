@@ -89,9 +89,8 @@ trailer: (
     '(' [arglist] ')'
   | '[' subscriptlist ']'
 
-  # TODO: {} @() @[] trailers for passing a single arg that's a collection.
-  #      %{} %() %"" too.
-  #       And [[ ]] for lazy evaluation.
+  # TODO: {} %{} %() %[] trailers for passing a single arg that's a collection.
+  #       Maybe %"" too.  And [[ ]] for lazy evaluation.
 
   | '.' Expr_Name
   | '->' Expr_Name
@@ -195,7 +194,7 @@ array_item: (
 array_literal: '%[' array_item* Op_RBracket
 
 sh_array_literal: '%(' Expr_CastedDummy Right_ShArrayLiteral
-sh_command_sub: '$(' Expr_CastedDummy Eof_RParen
+sh_command_sub: ( '$(' | '@(' ) Expr_CastedDummy Eof_RParen
 
 # Note: could add c"" too
 dq_string: '"' Expr_CastedDummy Right_DoubleQuote

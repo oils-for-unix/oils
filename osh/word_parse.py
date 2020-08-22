@@ -761,7 +761,9 @@ class WordParser(WordEmitter):
     left_spid = left_token.span_id
 
     # Set the lexer in a state so ) becomes the EOF token.
-    if left_id in (Id.Left_DollarParen, Id.Left_ProcSubIn, Id.Left_ProcSubOut):
+    if left_id in (
+        Id.Left_DollarParen, Id.Left_AtParen, Id.Left_ProcSubIn,
+        Id.Left_ProcSubOut):
       self._Next(lex_mode_e.ShCommand)  # advance past $( etc.
 
       right_id = Id.Eof_RParen
@@ -1293,11 +1295,16 @@ class WordParser(WordEmitter):
         w.parts.append(part)
 
       elif self.token_kind == Kind.ExtGlob:
-        # TODO: if parse_at, we can take over @( to start @(seq 3)
-        # You could make a synonym to @(foo|bar) like ,(foo|bar)
-        # note: ^(foo|bar) looks too much like regex, %(foo|bar) looks too much
-        # like array
-        part = self._ReadExtGlob()
+        # If parse_at, we can take over @( to start @(seq 3)
+        # Users can also use look at ,(*.py|*.sh)
+        if (self.parse_opts.parse_at() and self.token_type == Id.ExtGlob_At and
+            num_parts == 0):
+          part = self._ReadCommandSub(Id.Left_AtParen)
+
+          # RARE mutation of tok.id!
+          part.left_token.id = Id.Left_AtParen
+        else:
+          part = self._ReadExtGlob()
         w.parts.append(part)
 
       elif self.token_kind == Kind.Left:

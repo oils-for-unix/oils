@@ -415,8 +415,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
     # type: () -> None
     raise NotImplementedError()
 
-  def _EvalCommandSub(self, part, quoted):
-    # type: (command_t, bool) -> part_value_t
+  def _EvalCommandSub(self, node, id_, quoted):
+    # type: (command_t, Id_t, bool) -> part_value_t
     """Abstract since it has a side effect.
 
     Args:
@@ -1399,8 +1399,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
       elif case(word_part_e.CommandSub):
         part = cast(command_sub, UP_part)
         id_ = part.left_token.id
-        if id_ in (Id.Left_DollarParen, Id.Left_Backtick):
-          sv = self._EvalCommandSub(part.child, quoted) # type: part_value_t
+        if id_ in (Id.Left_DollarParen, Id.Left_AtParen, Id.Left_Backtick):
+          sv = self._EvalCommandSub(part.child, id_, quoted)  # type: part_value_t
 
         elif id_ in (Id.Left_ProcSubIn, Id.Left_ProcSubOut):
           sv = self._EvalProcessSub(part.child, id_)
@@ -2003,6 +2003,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     return cmd_val.argv
 
 
+
 def _SplitAssignArg(arg, w):
   # type: (str, compound_word) -> Tuple[str, Optional[value__Str]]
   i = arg.find('=')
@@ -2032,10 +2033,14 @@ class NormalWordEvaluator(AbstractWordEvaluator):
     assert self.shell_ex is not None
     assert self.prompt_ev is not None
 
-  def _EvalCommandSub(self, node, quoted):
-    # type: (command_t, bool) -> part_value__String
+  def _EvalCommandSub(self, node, id_, quoted):
+    # type: (command_t, Id_t, bool) -> part_value_t
     stdout = self.shell_ex.RunCommandSub(node)
-    return part_value.String(stdout, quoted, not quoted)
+    if id_ == Id.Left_AtParen:
+      strs = self.splitter.SplitForWordEval(stdout)
+      return part_value.Array(strs)
+    else:
+      return part_value.String(stdout, quoted, not quoted)
 
   def _EvalProcessSub(self, node, id_):
     # type: (command_t, Id_t) -> part_value__String
@@ -2043,6 +2048,8 @@ class NormalWordEvaluator(AbstractWordEvaluator):
     # pretend it's quoted; no split or glob
     return part_value.String(dev_path, True, False)
 
+
+_DUMMY = '__NO_COMMAND_SUB__'
 
 class CompletionWordEvaluator(AbstractWordEvaluator):
   """An evaluator that has no access to an executor.
@@ -2058,9 +2065,12 @@ class CompletionWordEvaluator(AbstractWordEvaluator):
     assert self.arith_ev is not None
     assert self.expr_ev is not None
 
-  def _EvalCommandSub(self, node, quoted):
-    # type: (command_t, bool) -> part_value__String
-    return part_value.String('__NO_COMMAND_SUB__', quoted, not quoted)
+  def _EvalCommandSub(self, node, id_, quoted):
+    # type: (command_t, Id_t, bool) -> part_value_t
+    if id_ == Id.Left_AtParen:
+      return part_value.Array([_DUMMY])
+    else:
+      return part_value.String(_DUMMY, quoted, not quoted)
 
   def _EvalProcessSub(self, node, id_):
     # type: (command_t, Id_t) -> part_value__String
