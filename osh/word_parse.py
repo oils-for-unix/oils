@@ -1299,10 +1299,10 @@ class WordParser(WordEmitter):
         # Users can also use look at ,(*.py|*.sh)
         if (self.parse_opts.parse_at() and self.token_type == Id.ExtGlob_At and
             num_parts == 0):
-          part = self._ReadCommandSub(Id.Left_AtParen)
-
+          cs_part = self._ReadCommandSub(Id.Left_AtParen)
           # RARE mutation of tok.id!
-          part.left_token.id = Id.Left_AtParen
+          cs_part.left_token.id = Id.Left_AtParen
+          part = cs_part  # for type safety
         else:
           part = self._ReadExtGlob()
         w.parts.append(part)
