@@ -19,6 +19,9 @@ readonly MYPY_REPO=${MYPY_REPO:-~/git/languages/mypy}
 # on parsing configure-coreutils.
 CPPFLAGS="$CXXFLAGS -fno-omit-frame-pointer"
 
+# only in Clang I think
+CPPFLAGS="$CPPFLAGS -ferror-limit=1000"
+
 # Always build with Address Sanitizer
 readonly DBG_FLAGS="$CPPFLAGS -O0 -g"
 

@@ -13,6 +13,12 @@ namespace posix {
 extern int X_OK_;
 extern int R_OK_;
 extern int W_OK_;
+extern int O_APPEND;
+extern int O_CREAT;
+extern int O_RDONLY;
+extern int O_RDWR;
+extern int O_WRONLY;
+extern int O_TRUNC;
 
 inline int access(Str* pathname, int mode) {
   assert(0);
@@ -86,6 +92,23 @@ inline int putenv(Str* name, Str* value) {
 
 // TODO: errors
 inline int chdir(Str* path) {
+  assert(0);
+}
+
+inline int fork() {
+  assert(0);
+}
+
+inline void write(int fd, Str* value) {
+  assert(0);
+}
+
+inline Tuple2<int, int> waitpid(int pid, int options) {
+  assert(0);
+}
+
+// Can we use fcntl instead?
+inline void dup2(int oldfd, int newfd) {
   assert(0);
 }
 

@@ -12,7 +12,7 @@ from __future__ import print_function
 import errno
 import fcntl
 import signal
-import sys
+from sys import exit  # mycpp translation directly calls exit(int status)!
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
@@ -197,7 +197,7 @@ class FdState(object):
         new_fd = fcntl.fcntl(fd1, fcntl.F_DUPFD, _SHELL_MIN_FD)  # type: int
       except IOError as e:
         if e.errno == errno.EBADF:
-          self.errfmt.Print('%d: %s', fd1, posix.strerror(e.errno))
+          self.errfmt.Print_('%d: %s' % (fd1, posix.strerror(e.errno)))
           return NO_FD
         else:
           raise  # this redirect failed
@@ -216,7 +216,7 @@ class FdState(object):
       try:
         fcntl.fcntl(fd1, fcntl.F_GETFD)
       except IOError as e:
-        self.errfmt.Print('%d: %s', fd1, posix.strerror(e.errno))
+        self.errfmt.Print_('%d: %s' % (fd1, posix.strerror(e.errno)))
         raise
 
       need_restore = self._PushSave(fd2)
@@ -226,7 +226,7 @@ class FdState(object):
         posix.dup2(fd1, fd2)
       except OSError as e:
         # bash/dash give this error too, e.g. for 'echo hi 1>&3'
-        self.errfmt.Print('%d: %s', fd1, posix.strerror(e.errno))
+        self.errfmt.Print_('%d: %s' % (fd1, posix.strerror(e.errno)))
 
         # Restore and return error
         if need_restore:
@@ -301,8 +301,8 @@ class FdState(object):
         try:
           open_fd = posix.open(arg.filename, mode, 0o666)
         except OSError as e:
-          self.errfmt.Print(
-              "Can't open %r: %s", arg.filename, posix.strerror(e.errno),
+          self.errfmt.Print_(
+              "Can't open %r: %s" % (arg.filename, posix.strerror(e.errno)),
               span_id=r.op_spid)
           raise  # redirect failed
 
@@ -571,8 +571,8 @@ class ExternalProgram(object):
       # Would be nice: when the path is relative and ENOENT: print PWD and do
       # spelling correction?
 
-      self.errfmt.Print(
-          "Can't execute %r: %s", argv0_path, posix.strerror(e.errno),
+      self.errfmt.Print_(
+          "Can't execute %r: %s" % (argv0_path, posix.strerror(e.errno)),
           span_id=argv0_spid)
 
       # POSIX mentions 126 and 127 for two specific errors.  The rest are
@@ -591,7 +591,7 @@ class ExternalProgram(object):
         # consistent with mksh and zsh.
         status = 127
 
-      sys.exit(status)  # raises SystemExit
+      exit(status)  # raises SystemExit
     # NO RETURN
 
 
@@ -677,14 +677,14 @@ class SubProgramThunk(Thunk):
     # Handle errors in a subshell.  These two cases are repeated from main()
     # and the core/completion.py hook.
     except KeyboardInterrupt:
-      print()
+      print('')
       status = 130  # 128 + 2
     except (IOError, OSError) as e:
       stderr_line('osh I/O error: %s', posix.strerror(e.errno))
       status = 2
 
     # Raises SystemExit, so we still have time to write a crash dump.
-    sys.exit(status)
+    exit(status)
 
 
 class _HereDocWriterThunk(Thunk):
@@ -716,7 +716,7 @@ class _HereDocWriterThunk(Thunk):
     posix.close(self.w)
     #log('Closed %d', self.w)
 
-    sys.exit(0)  # Could this fail?
+    exit(0)  # Could this fail?
 
 
 class Job(object):
@@ -1303,7 +1303,7 @@ class Waiter(object):
 
       # Print newline after Ctrl-C.
       if posix.WTERMSIG(status) == signal.SIGINT:
-        print()
+        print('')
 
       proc.WhenDone(pid, status)
 

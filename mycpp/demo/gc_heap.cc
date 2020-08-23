@@ -31,8 +31,9 @@
 //   - Copying collectors eliminate fragmentation
 //   - Later optimization: I think we can partition the heap into moving small
 //     objects and non-moving malloc'd "slabs".  Slabs are owned by small
-//     objects.  But we have to solve the "deallocators" problem, which seems
-//     doable.
+//     objects.  They are a "large object space".  (I think Slabs can be
+//     managed by mark and sweep?  They will have mark bits and a "next"
+//     pointer in their header.)
 // - Breadth-first reduces locality of parents and children.  This seems like
 //   it will matter, but there are some approxiately depth-first algorithms 
 //   we could try out later.  It would be cool if GC can improve locality!
@@ -44,6 +45,11 @@
 // - Also, parsing will slow down because of the object header size increase.
 //   Goal: shouldn't be slower than bash.  (This depends how many collections
 //   we do though!)
+//
+// Copying GC Parameters
+// - Initial size of from space and to space
+// - Growth policy: collect when it's 90% full?  or 100%?  Then increase space
+//   by 2x?
 //
 // Object Model:
 //   By Value: integer, Slice, Tuple (multiple return value)
