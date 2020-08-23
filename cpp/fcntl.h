@@ -13,6 +13,11 @@ extern int F_GETFD;
 inline int fcntl(int fd, int cmd, int arg) {
   assert(0);
 }
+
+// for F_GETFD
+inline int fcntl(int fd, int cmd) {
+  assert(0);
+}
  
 }  // namespace fcntl
 

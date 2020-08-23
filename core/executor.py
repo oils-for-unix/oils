@@ -103,7 +103,8 @@ class ShellExecutor(vm._Executor):
     # get this check for "free".
     thunk = process.SubProgramThunk(self.cmd_ev, node,
                                     inherit_errexit=inherit_errexit)
-    p = process.Process(thunk, self.job_state, parent_pipeline=parent_pipeline)
+    p = process.Process(thunk, self.job_state)
+    p.Init_ParentPipeline(parent_pipeline)
     return p
 
   def RunBuiltin(self, builtin_id, cmd_val):

@@ -3,8 +3,11 @@
 #include "posix.h"
 
 #include <unistd.h>
+#include <sys/wait.h>  // WUNTRACED
 
 namespace posix {
+
+int WUNTRACED = WUNTRACED;
 
 // Aliases in this namespace.  Avoid name conflicts with macros.
 int X_OK_ = X_OK;

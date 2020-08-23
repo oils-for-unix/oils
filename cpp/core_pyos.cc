@@ -1,6 +1,6 @@
 // core_pyos.cc
 
-#include "core_pyos.h"
+#include "core_pyos.h"  // undefined errno
 #include <pwd.h>
 #include <unistd.h>  // getuid()
 

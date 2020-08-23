@@ -9,7 +9,7 @@ process.py - Launch processes and manipulate file descriptors.
 """
 from __future__ import print_function
 
-import errno
+import errno as errno_  # avoid macro name conflict after translation
 import fcntl
 import signal
 from sys import exit  # mycpp translation directly calls exit(int status)!
@@ -25,7 +25,7 @@ from _devbuild.gen.runtime_asdl import (
 from _devbuild.gen.syntax_asdl import (
     redir_loc, redir_loc_e, redir_loc_t, redir_loc__VarName, redir_loc__Fd,
 )
-#from core import pyutil
+from core import pyutil
 from core.pyutil import stderr_line
 from core import pyos
 from core import util
@@ -159,12 +159,12 @@ class FdState(object):
     #log('---- _PushSave %s', fd)
     need_restore = True
     try:
-      new_fd = fcntl.fcntl(fd, fcntl.F_DUPFD, _SHELL_MIN_FD)
+      new_fd = fcntl.fcntl(fd, fcntl.F_DUPFD, _SHELL_MIN_FD)  # type: int
     except IOError as e:
       # Example program that causes this error: exec 4>&1.  Descriptor 4 isn't
       # open.
       # This seems to be ignored in dash too in savefd()?
-      if e.errno == errno.EBADF:
+      if e.errno == errno_.EBADF:
         #log('ERROR fd %d: %s', fd, e)
         need_restore = False
       else:
@@ -196,8 +196,8 @@ class FdState(object):
         # F_DUPFD: GREATER than range
         new_fd = fcntl.fcntl(fd1, fcntl.F_DUPFD, _SHELL_MIN_FD)  # type: int
       except IOError as e:
-        if e.errno == errno.EBADF:
-          self.errfmt.Print_('%d: %s' % (fd1, posix.strerror(e.errno)))
+        if e.errno == errno_.EBADF:
+          self.errfmt.Print_('%d: %s' % (fd1, pyutil.strerror_IO(e)))
           return NO_FD
         else:
           raise  # this redirect failed
@@ -216,7 +216,7 @@ class FdState(object):
       try:
         fcntl.fcntl(fd1, fcntl.F_GETFD)
       except IOError as e:
-        self.errfmt.Print_('%d: %s' % (fd1, posix.strerror(e.errno)))
+        self.errfmt.Print_('%d: %s' % (fd1, pyutil.strerror_IO(e)))
         raise
 
       need_restore = self._PushSave(fd2)
@@ -226,7 +226,7 @@ class FdState(object):
         posix.dup2(fd1, fd2)
       except OSError as e:
         # bash/dash give this error too, e.g. for 'echo hi 1>&3'
-        self.errfmt.Print_('%d: %s' % (fd1, posix.strerror(e.errno)))
+        self.errfmt.Print_('%d: %s' % (fd1, pyutil.strerror_OS(e)))
 
         # Restore and return error
         if need_restore:
@@ -302,7 +302,7 @@ class FdState(object):
           open_fd = posix.open(arg.filename, mode, 0o666)
         except OSError as e:
           self.errfmt.Print_(
-              "Can't open %r: %s" % (arg.filename, posix.strerror(e.errno)),
+              "Can't open %r: %s" % (arg.filename, pyutil.strerror_OS(e)),
               span_id=r.op_spid)
           raise  # redirect failed
 
@@ -562,7 +562,7 @@ class ExternalProgram(object):
       posix.execve(argv0_path, argv, environ)
     except OSError as e:
       # Run with /bin/sh when ENOEXEC error (no shebang).  All shells do this.
-      if e.errno == errno.ENOEXEC and should_retry:
+      if e.errno == errno_.ENOEXEC and should_retry:
         new_argv = ['/bin/sh', argv0_path]
         new_argv.extend(argv[1:])
         self._Exec('/bin/sh', new_argv, argv0_spid, environ, False)
@@ -572,16 +572,16 @@ class ExternalProgram(object):
       # spelling correction?
 
       self.errfmt.Print_(
-          "Can't execute %r: %s" % (argv0_path, posix.strerror(e.errno)),
+          "Can't execute %r: %s" % (argv0_path, pyutil.strerror_OS(e)),
           span_id=argv0_spid)
 
       # POSIX mentions 126 and 127 for two specific errors.  The rest are
       # unspecified.
       #
       # http://pubs.opengroup.org/onlinepubs/9699919799.2016edition/utilities/V3_chap02.html#tag_18_08_02
-      if e.errno == errno.EACCES:
+      if e.errno == errno_.EACCES:
         status = 126
-      elif e.errno == errno.ENOENT:
+      elif e.errno == errno_.ENOENT:
         # TODO: most shells print 'command not found', rather than strerror()
         # == "No such file or directory".  That's better because it's at the
         # end of the path search, and we're never searching for a directory.
@@ -679,8 +679,11 @@ class SubProgramThunk(Thunk):
     except KeyboardInterrupt:
       print('')
       status = 130  # 128 + 2
-    except (IOError, OSError) as e:
-      stderr_line('osh I/O error: %s', posix.strerror(e.errno))
+    except IOError as e:
+      stderr_line('osh I/O error: %s', pyutil.strerror_IO(e))
+      status = 2
+    except OSError as e:  # mycpp: duplicated for translation
+      stderr_line('osh I/O error: %s', pyutil.strerror_OS(e))
       status = 2
 
     # Raises SystemExit, so we still have time to write a crash dump.
@@ -766,8 +769,8 @@ class Process(Job):
 
   It provides an API to manipulate file descriptor state in parent and child.
   """
-  def __init__(self, thunk, job_state, parent_pipeline=None):
-    # type: (Thunk, JobState, Pipeline) -> None
+  def __init__(self, thunk, job_state):
+    # type: (Thunk, JobState) -> None
     """
     Args:
       thunk: Thunk instance
@@ -778,7 +781,7 @@ class Process(Job):
     assert isinstance(thunk, Thunk), thunk
     self.thunk = thunk
     self.job_state = job_state
-    self.parent_pipeline = parent_pipeline
+    self.parent_pipeline = None  # type: Pipeline
 
     # For pipelines
     self.state_changes = []  # type: List[ChildStateChange]
@@ -787,6 +790,10 @@ class Process(Job):
 
     self.pid = -1
     self.status = -1
+
+  def Init_ParentPipeline(self, pi):
+    # type: (Pipeline) -> None
+    self.parent_pipeline = pi
 
   def __repr__(self):
     # type: () -> str
@@ -1062,7 +1069,14 @@ class Pipeline(Job):
     i = self.pids.index(pid)
     assert i != -1, 'Unexpected PID %d' % pid
     self.pipe_status[i] = status
-    if all(status != -1 for status in self.pipe_status):
+
+    # mycpp rewrite: all(status != -1 for status in self.pipe_status)
+    all_done = True
+    for status in self.pipe_status:
+      if status == -1:
+        all_done = False
+
+    if all_done:
       # status of pipeline is status of last process
       self.status = self.pipe_status[-1]
       self.state = job_state_e.Done
@@ -1266,7 +1280,7 @@ class Waiter(object):
       pid, status = posix.waitpid(-1, posix.WUNTRACED)
     except OSError as e:
       #log('wait() error: %s', e)
-      if e.errno == errno.ECHILD:
+      if e.errno == errno_.ECHILD:
         return False  # nothing to wait for caller should stop
       else:
         # We should never get here.  EINTR was handled by the 'posix'

@@ -241,6 +241,7 @@ compile-slice() {
     _build/cpp/arith_parse.cc \
     _build/cpp/arg_types.cc \
     cpp/dumb_alloc.cc \
+    cpp/errno_.cc \
     cpp/posix.cc \
     cpp/libc.cc \
     "$@"

@@ -438,7 +438,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           # imported names.  Might be a problem with names like 'word'?
           if (isinstance(o.expr, NameExpr) and (
               o.expr.name in self.imported_names or
-              o.expr.name in ('mylib', 'libc', 'posix', 'fcntl', 'time_', 'termios') or
+              o.expr.name in ('mylib', 'libc', 'errno_', 'posix', 'fcntl',
+                              'time_', 'termios') or
               o.name == '__init__'
               )):
             op = '::'
