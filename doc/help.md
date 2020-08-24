@@ -891,100 +891,72 @@ JOB:
 
 <h4 id="test">test</h4>
 
-String tests:
+    test OP ARG
+    test ARG OP ARG
+    [ OP ARG ]      # [ is an alias for test that requires closing ]
+    [ ARG OP ARG ]
 
-    test STR
-    test OP STR
-    test STR OP STR
+Evaluates a conditional expression and returns 0 (true) or 1 (false).
 
-    [ STR ]
-    [ OP STR ]
-    [ STR OP STR ]
+Note that [ is the name of a builtin, not an operator in the language.  Use
+'test' to avoid this confusion.
 
+String expressions:
 
-File tests:
+    -n STR           True if STR is not empty.
+                     'test STR' is usually equivalent, but discouraged.
+    -z STR           True if STR is empty.
+    STR1 = STR2      True if the strings are equal.
+    STR1 != STR2     True if the strings are not equal.
+    STR1 < STR2      True if STR1 sorts before STR2 lexicographically.
+    STR1 > STR2      True if STR1 sorts after STR2 lexicographically.
+                     Note: < and > should be quoted like \< and \>
 
-    test TST FILE
-    test FILE1 OP FILE2
+File expressions:
 
-    [ TST FILE ]
-    [ FILE1 OP FILE2 ]
-
-
-Arithmetic tests:
-
-    INT1 OP INT2
-
-    [ INT1 OP INT2 ]
-
-
-Evaluates a conditional expression and returns 0 (true) or 1 (false) as result.
-The number of elements in the expression depends on the type of test.
-
-String tests:
-
-    -n STR              True if STR is not empty. This is the default operation
-                        if no test is specified.
-    -z STR              True if STR is empty.
-    STR1 = STR2         True if the strings are equal.
-    STR1 != STR2        True if the strings are not equal.
-    STR1 < STR2         True if STR1 sorts before STR2 lexicographically.
-    STR1 > STR2         True if STR1 sorts after STR2 lexicographically.
-                        Note: < and > should be escaped, eg: \< and \>
-
-File tests:
-
-    -a FILE  True if FILE exists (recommended to use -e instead).
-    -b FILE  True if FILE is a block special file.
-    -c FILE  True if FILE is a character special file.
-    -d FILE  True if FILE is a directory.
-    -e FILE  True if FILE exists.
-    -f FILE  True if FILE is a regular file.
-    -g FILE  True if FILE has the sgid bit set.
-    -G FILE  True if current user's group is also FILE's group.
-    -h FILE  True if FILE is a symbolic link.
-    -L FILE  True if FILE is a symbolic link.
-    -k FILE  True if FILE has the sticky bit set.
-    -O FILE  True if current user is the file owner.
-    -p FILE  True if FILE is a named pipe (FIFO).
-    -r FILE  True if FILE is readable.
-    -s FILE  True if FILE has size bigger than 0.
-    -S FILE  True if FILE is a socket file.
-    -t FD    True if file descriptor FD is open and refers to a terminal.
-    -u FILE  True if FILE has suid bit set.
-    -w FILE  True if FILE is writable.
-    -x FILE  True if FILE is executable.
+    -a FILE          Synonym for -e.
+    -b FILE          True if FILE is a block special file.
+    -c FILE          True if FILE is a character special file.
+    -d FILE          True if FILE is a directory.
+    -e FILE          True if FILE exists.
+    -f FILE          True if FILE is a regular file.
+    -g FILE          True if FILE has the sgid bit set.
+    -G FILE          True if current user's group is also FILE's group.
+    -h FILE          True if FILE is a symbolic link.
+    -L FILE          True if FILE is a symbolic link.
+    -k FILE          True if FILE has the sticky bit set.
+    -O FILE          True if current user is the file owner.
+    -p FILE          True if FILE is a named pipe (FIFO).
+    -r FILE          True if FILE is readable.
+    -s FILE          True if FILE has size bigger than 0.
+    -S FILE          True if FILE is a socket file.
+    -t FD            True if file descriptor FD is open and refers to a terminal.
+    -u FILE          True if FILE has suid bit set.
+    -w FILE          True if FILE is writable.
+    -x FILE          True if FILE is executable.
     FILE1 -nt FILE2  True if FILE1 is newer than FILE2 (mtime).
     FILE1 -ot FILE2  True if FILE1 is older than FILE2 (mtime).
-    FILE1 -ef FILE2  True if FILE1 and FILE2 are hard links.
+    FILE1 -ef FILE2  True if FILE1 is a hard link to FILE2.
 <!--    -N FILE  True if FILE was modified since last read (mtime newer than atime).-->
 
-Arithmetic tests:
+Arithmetic expressions coerce arguments to integers, then compare:
 
-    INT1 -eq INT2  True if the integers are equal.
-    INT1 -ne INT2  True if the integers are not equal.
-    INT1 -le INT2  True if INT1 is less or equal than INT2.
-    INT1 -ge INT2  True if INT1 is greater than INT2.
-    INT1 -lt INT2  True if INT1 is less than INT2.
-    INT1 -gt INT2  True if INT1 is greater than INT2.
+    INT1 -eq INT2    True if they're equal.
+    INT1 -ne INT2    True if they're not equal.
+    INT1 -lt INT2    True if INT1 is less than INT2.
+    INT1 -le INT2    True if INT1 is less or equal than INT2.
+    INT1 -gt INT2    True if INT1 is greater than INT2.
+    INT1 -ge INT2    True if INT1 is greater or equal than INT2.
 
-Other operators:
+Other expressions:
 
-    -o OPTION  True if the shell option OPTION is set.
-    -v VAR     True if the variable VAR has been set.
-    EXPR1 -a EXPR2  True if expressions EXPR1 and EXPR2 are both true.
-    EXPR1 -o EXPR2  True if either EXPR1 or EXPR2 are true.
-    ! TEST          True, if TEST is false.
-    ( TEST )        Group a test (for precedence). Note: parentheses should be
-                    escaped: \( and \)
+    -o OPTION        True if the shell option OPTION is set.
+    -v VAR           True if the variable VAR is set.
+
+The test builtin also supports POSIX conditionals like -a, -o, !, and ( ), but
+these are discouraged.
+
 <!--    -R VAR     True if the variable VAR has been set and is a nameref variable. -->
-
-Tips:
-
-When using the "[" operator, don't forget to leave a space between the brackets
-and the expression. "[" is a command, not syntax, so the shell will fail to
-find the command without the spaces.
-
 
 <h4 id="kill">kill</h4>
 
