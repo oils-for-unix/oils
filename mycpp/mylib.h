@@ -57,21 +57,6 @@ void print(Str* s);
 // log() generates code that writes this
 void println_stderr(Str* s);
 
-// needed for the field below to be valid
-// Hm this causes some problems
-// https://stackoverflow.com/questions/14261534/temporarily-overwrite-a-macro-in-c-preprocessor
-#undef errno
-
-class IOError {
- public:
-  int errno;
-};
-
-class OSError {
- public:
-  int errno;
-};
-
 class IndexError {};
 class ValueError {};
 class KeyError {};

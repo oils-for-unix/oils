@@ -4,6 +4,7 @@
 #define CORE_PYUTIL_H
 
 #include "mylib.h"
+#include "myerror.h"  // #undef errno
 
 namespace pyutil {
 
