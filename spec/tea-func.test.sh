@@ -262,3 +262,20 @@ echo $f(42)
 43
 ## END
 
+#### Nested functions ???  Bug from Till.
+shopt -s oil:all
+shopt -s parse_tea
+
+# I think we should disallow these.
+# The bug is related to return as a keyword!!!  Which we will get rid of in the
+# newer Tea parser.
+
+func returnsString() {
+  func unrelated() {return "hm?"}
+  return "test" # This fails
+}
+
+= returnsString()
+
+## STDOUT:
+## END

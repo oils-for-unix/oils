@@ -972,7 +972,7 @@ toysh-posix() {
 #
 
 tea-func() {
-  sh-spec spec/tea-func.test.sh --osh-failures-allowed 5 \
+  sh-spec spec/tea-func.test.sh --osh-failures-allowed 6 \
     $OSH_LIST "$@"
 }
 
