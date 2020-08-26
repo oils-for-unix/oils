@@ -123,6 +123,10 @@ oil-version-text() {
   maybe-show /etc/lsb-release
 }
 
+tea-version-text() {
+  oil-version-text
+}
+
 # This has to be in test/spec because it uses $OSH_LIST, etc.
 osh-version-text() {
   date-and-git-info
@@ -224,6 +228,10 @@ oil-all() {
   SPEC_JOB='oil-language' test/spec-runner.sh all-parallel oil "$@"
 }
 
+tea-all() {
+  SPEC_JOB='tea-language' test/spec-runner.sh all-parallel tea "$@"
+}
+
 osh-minimal() {
   check-shells-exist  # e.g. depends on link-busybox-ash
 
@@ -239,18 +247,15 @@ EOF
   MAX_PROCS=1 test/spec-runner.sh all-parallel osh-minimal "$@"
 }
 
-osh-all-serial() {
-  MAX_PROCS=1 $0 osh-all "$@"
-}
+osh-all-serial() { MAX_PROCS=1 $0 osh-all "$@"; }
+oil-all-serial() { MAX_PROCS=1 $0 oil-all "$@"; }
+tea-all-serial() { MAX_PROCS=1 $0 tea-all "$@"; }
 
 osh-travis() {
   check-shells-exist  # e.g. depends on link-busybox-ash
   osh-all-serial
 }
 
-oil-all-serial() {
-  MAX_PROCS=1 $0 oil-all "$@"
-}
 
 # Usage: test/spec.sh dbg smoke, dbg-all
 dbg() {
@@ -909,8 +914,8 @@ oil-regex() {
     $OSH_LIST "$@"
 }
 
-oil-func-proc() {
-  sh-spec spec/oil-func-proc.test.sh --osh-failures-allowed 7 \
+oil-proc() {
+  sh-spec spec/oil-proc.test.sh --osh-failures-allowed 3 \
     $OSH_LIST "$@"
 }
 
@@ -961,6 +966,16 @@ toysh-posix() {
   sh-spec spec/toysh-posix.test.sh --osh-failures-allowed 3 \
     ${REF_SHELLS[@]} $ZSH yash $OSH_LIST "$@"
 }
+
+#
+# Tea Language
+#
+
+tea-func() {
+  sh-spec spec/tea-func.test.sh --osh-failures-allowed 5 \
+    $OSH_LIST "$@"
+}
+
 
 #
 # Convenience for fixing specific bugs

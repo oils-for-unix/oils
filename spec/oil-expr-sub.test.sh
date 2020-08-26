@@ -1,12 +1,10 @@
 # Test Oil expressions within $[]
 
 #### $[f(x)]
-func f() {
-  return 42
-}
-echo $[f()]
+var a = %(a b c)
+echo $[len(a)]
 ## STDOUT:
-42
+3
 ## END
 
 #### $[obj.attr]
@@ -34,18 +32,18 @@ echo $[d->key]
 ## END
 
 #### In Double quotes
-func f() { return 42 }
+var a = %(a b c)
 var obj = /d+/
 set obj.x = 42
 var d = %{}
 set d['key'] = 42
-echo "func $[f()]"
+echo "func $[len(a)]"
 echo "attr $[obj.x]"
 echo "key $[d['key']]"
 echo "key $[d->key]"
 echo "dq $[d["key"]]"
 ## STDOUT:
-func 42
+func 3
 attr 42
 key 42
 key 42

@@ -75,14 +75,18 @@ manifest() {
         (oil-*)
           echo $t >& $oil
           ;;
+        (tea-*)
+          echo $t >& $tea
+          ;;
         (*)
           echo $t >& $osh
           ;;
       esac
 
     done 
-  } {oil}>_tmp/spec/SUITE-oil.txt \
-    {osh}>_tmp/spec/SUITE-osh.txt \
+  } {osh}>_tmp/spec/SUITE-osh.txt \
+    {oil}>_tmp/spec/SUITE-oil.txt \
+    {tea}>_tmp/spec/SUITE-tea.txt \
     {both}>_tmp/spec/SUITE-osh-oil.txt
 
   #ls -l /proc/$$/fd

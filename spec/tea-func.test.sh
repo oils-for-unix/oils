@@ -1,7 +1,24 @@
-# Oil Functions
+# tea functions
+
+#### setvar f()[2] = 42 (setitem)
+shopt -s oil:all
+shopt -s parse_tea
+
+var mylist = [1,2,3]
+func f() {
+  return mylist
+}
+setvar f()[2] = 42
+write @mylist
+## STDOUT:
+1
+2
+42
+## END
 
 #### Untyped func
-shopt -s oil:all  # parse_tea
+shopt -s oil:all
+shopt -s parse_tea
 
 func add(x, y) Int {
   echo hi
@@ -16,6 +33,7 @@ hi
 
 #### Typed func
 shopt -s oil:all
+shopt -s parse_tea
 
 func add(x Int, y Int) Int {
   echo hi
@@ -30,6 +48,8 @@ hi
 
 #### func: default values for positional params
 shopt -s oil:all
+shopt -s parse_tea
+
 func add(x Int, y=1, z=1+2*3) {
   return x + y + z
 }
@@ -42,6 +62,8 @@ echo $add(3,4)
 
 #### pass too many positional params to func (without spread)
 shopt -s oil:all
+shopt -s parse_tea
+
 func add(x, y) {
   return x + y
 }
@@ -56,6 +78,8 @@ f=3
 
 #### Positional Spread
 shopt -s oil:all
+shopt -s parse_tea
+
 func add(x, y, ...args) {
   write @args
   return x + y
@@ -71,6 +95,7 @@ y=11
 
 #### pass named arg to func
 shopt -s oil:all
+shopt -s parse_tea
 
 func f(; x=42) {
   echo $x
@@ -84,6 +109,8 @@ pass f(x=99)
 
 #### Func with missing named param with no default
 shopt -s oil:all
+shopt -s parse_tea
+
 func add(x Int, y Int ; verbose Bool) {
   if (verbose) {
     echo 'verbose'
@@ -104,6 +131,8 @@ verbose
 
 #### Func passed wrong named param
 shopt -s oil:all
+shopt -s parse_tea
+
 func add(x, y) {
   return x + y
 }
@@ -119,6 +148,8 @@ x=5
 
 #### Named Spread
 shopt -s oil:all
+shopt -s parse_tea
+
 func add(x, y; verbose=true, ...named) {
   if (verbose) { echo 'verbose' }
   write @named | sort
@@ -137,6 +168,8 @@ ret=5
 
 #### Func with varargs
 shopt -s oil:all
+shopt -s parse_tea
+
 func printf(fmt, ...args) {
   = fmt
   # Should be a LIST
@@ -167,134 +200,6 @@ echo status=$?
 ## STDOUT:
 x=42
 status=42
-## END
-
-#### Open proc (any number of args)
-proc f {
-  var x = 42
-  return x
-}
-# this gets called with 3 args then?
-f a b c
-echo status=$?
-## STDOUT:
-status=42
-## END
-
-#### Closed proc with no args, passed too many
-proc f() {
-  return 42
-}
-f
-echo status=$?
-
-# TODO: This should abort, or have status 1
-f a b
-echo status=$?
-
-## status: 1
-## STDOUT:
-status=42
-## END
-
-#### Open proc has "$@"
-shopt -s oil:all
-proc foo { 
-  write ARGV "$@"
-}
-builtin set -- a b c
-foo x y z
-## STDOUT:
-ARGV
-x
-y
-z
-## END
-
-#### Closed proc doesn't have "$@"
-shopt -s oil:all
-proc foo(d, e, f) { 
-  write params $d $e $f
-  write ARGV "$@"
-}
-builtin set -- a b c
-foo x y z
-## STDOUT:
-params
-x
-y
-z
-ARGV
-## END
-
-
-#### Proc with default args
-proc f(x='foo') {
-  echo x=$x
-}
-f
-## STDOUT:
-x=foo
-## END
-
-#### Proc with explicit args
-
-# doesn't require oil:all
-proc f(x, y, z) {
-  echo $x $y $z
-  var ret = 42
-  return ret  # expression mode
-}
-# this gets called with 3 args then?
-f a b c
-echo status=$?
-## STDOUT:
-a b c
-status=42
-## END
-
-#### Proc with varargs
-
-# TODO: opts goes with this
-# var opt = grep_opts.parse(ARGV)
-#
-# func(**opt)  # Assumes keyword args match?
-# parse :grep_opts :opt @ARGV
-
-shopt -s oil:all
-
-proc f(@names) {
-  write names: @names
-}
-# this gets called with 3 args then?
-f a b c
-echo status=$?
-## STDOUT:
-names:
-a
-b
-c
-status=0
-## END
-
-#### Proc name-with-hyphen
-proc name-with-hyphen {
-  echo "$@"
-}
-name-with-hyphen x y z
-## STDOUT:
-x y z
-## END
-
-#### Proc with block arg
-
-# TODO: Test more of this
-proc f(x, y, &block) {
-  echo hi
-}
-f a b
-## STDOUT:
-hi
 ## END
 
 #### inline function calls with spread, named args, etc.
@@ -357,24 +262,3 @@ echo $f(42)
 43
 ## END
 
-#### proc returning wrong type
-
-# this should print an error message
-proc f {
-  var a = %(one two)
-  return a
-}
-f
-## STDOUT:
-## END
-
-#### proc returning invalid string
-
-# this should print an error message
-proc f {
-  var s = 'not an integer status'
-  return s
-}
-f
-## STDOUT:
-## END

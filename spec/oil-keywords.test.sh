@@ -8,11 +8,9 @@
 
 #### pass
 pass 1 + 2 * 3
-func f(x) {
-  echo f
-  return x
-}
-pass f(1)
+var a = %(a b c)
+pass len(a)
+echo end
 ## STDOUT:
-f
+end
 ## END

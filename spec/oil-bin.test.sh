@@ -1,6 +1,7 @@
 # Smoke test for the bin/oil binary
 
 #### Array func
+shopt -s parse_tea
 func a(x) { return %(1 2 $x) }
 write @a(42)
 ## STDOUT:

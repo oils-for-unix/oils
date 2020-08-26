@@ -244,21 +244,6 @@ echo val=$val
 val=42
 ## END
 
-#### setvar f()[2] = 42 (setitem)
-shopt -s oil:all
-
-var mylist = [1,2,3]
-func f() {
-  return mylist
-}
-setvar f()[2] = 42
-write @mylist
-## STDOUT:
-1
-2
-42
-## END
-
 #### duplicate var def results in fatal error
 var x = "global"
 f() {

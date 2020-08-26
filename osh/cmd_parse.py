@@ -1684,7 +1684,8 @@ class CommandParser(object):
     if self.c_id == Id.KW_Proc:
       return self.ParseOilProc()
 
-    # other top-level keywords to hide: data, enum, class, and maybe 'use'
+    # Top-level keywords to hide: func, data, enum, class/mod.  Not sure about
+    # 'use'.
     if self.parse_opts.parse_tea():
       if self.c_id == Id.KW_Func:
         return self.ParseOilFunc()

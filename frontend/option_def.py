@@ -196,7 +196,6 @@ _BASIC_PARSE_OPTIONS = [
 _AGGRESSIVE_PARSE_OPTIONS = [
     'parse_set',  # set x = 'var'
     'parse_equals',  # x = 'var'
-    'parse_tea',   # func and more
 ]
 
 
@@ -266,6 +265,9 @@ def _Init(opt_def):
 
   for name in _AGGRESSIVE_PARSE_OPTIONS:
     opt_def.Add(name, groups=['oil:all'])
+
+  # Off by default.
+  opt_def.Add('parse_tea')
 
   opt_def.DoneWithImplementedOptions()
 
