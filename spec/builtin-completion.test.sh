@@ -247,6 +247,7 @@ build
 cd $REPO_ROOT
 compgen -o default spec/t | sort
 ## STDOUT:
+spec/tea-func.test.sh
 spec/testdata
 spec/tilde.test.sh
 spec/toysh-posix.test.sh

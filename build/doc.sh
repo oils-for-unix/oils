@@ -80,6 +80,7 @@ readonly MARKDOWN_DOCS=(
   idioms
   qsn
   qtsv
+  language-design
 
   # needs polish
   # Note: docs about the Oil language are prefixed 'oil-'.

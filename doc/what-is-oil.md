@@ -89,87 +89,6 @@ Shell Script
     proc main {
     }
 
-## High-Level Descriptions
-
-## Oil Mostly Borrows From Other Languages
-
-Trying to be conservative.  Not inventing anything new!!!
-
-- Shell for the command syntax.  Piplines, ;, and && ||.
-
-- Python for expression language:
-  - [x for x in range(3) if x]
-
-- JavaScript:
-  - dict literal -- also probably "object literal"
-  - control flow looks like C/JavaScript: if (x) { x } else { x }
-
-- Ruby
-  - blocks
-- Perl
-  - @ sigil, `push` builtin resemblance
-  - agglomeration of DSLS: awk/sed.
-    - Oil is more like sh/awk/make/regex.  regex is grep/sed.
-- Julia
-  - also has blocks
-  - simplified args and kwargs with `;`
-
-- autovivification from Perl/awk
-
-- Go:
-  - builtin flags syntax
-  - in-memory utf-8 representation of strings (also Rust and Perl)
-    - see FAQ
-  - maybe later: `func` type declaration syntax
-
-LATER:
-
-- R language (probably later, need help): data frames, lazy evaluation
-- Honorable mention: Lua: reentrant interpreter.  However the use of Unix
-  syscalls implies global process state.
-- Lisp: symbol types
-
-- Types:
-  - MyPy, with Go syntax
-  - func add(x Int, y Int) Int { }
-  - This probably won't happen for a very long time unless someone helps!
-    However I've reserved syntactic room for it.
-
-### Differences from Python
-
-- no operator overloading
-- no "accidentally quadratic
-
-### Paradigms and Style
-
-- shell is already mix of: 
-  - dataflow: concurrent processes and files, pipelines
-    - instead of Clojure's "functions and data", we have "processes and files".
-      Simple.  Functional.  Transforming file system trees is a big part of containers.
-
-  - imperative: the original Bourne shell added this.  
-    - "functions" are really procedures; return
-    - iteration constructs: while / for / break / continue
-    - conditional constructs: if / case
-
-Oil:
-
-  - getting rid of: ksh.  Bourne shell is good; ksh is bad because it adds bad
-    string operators.
-    - ${x%%a}  ${x//}  getting rid of all this crap.  Just use functions.
-    - korn shell arrays suck.  Replaced with python-like arrays
-    - historical note: usenix 93.   korn shell was  used for GUIs and such!
-
-- Add Python STRUCTURED DATA.
-  - the problem with PROCESSES AND FILES is that it forces serialization everywhere.
-  - Structured Data in Oil
-
--  Add **declarative** paradigm to shell.
-  - Package managers like Alpine Linux, Gentoo need declarative formats.  So do
-    tools like Docker and Chef.
-
-- Language-Oriented -- internal DSLs.
-
 ### What Should It Be Used For?
 
 - System Administration / Distributed Systems / Cloud / Containers
@@ -182,7 +101,6 @@ Oil:
 ## Oil Compared to Other Shells
 
 - link nushell comment from reddit
-
 
 ## Links To Older Descriptions
 
