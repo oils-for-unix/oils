@@ -5,15 +5,25 @@ in_progress: yes
 The Expression Language Is Mostly Python
 ========================================
 
+- Limitation:
+  - Start with Str, StrArray, and AssocArray data model
+  - Then add int, float, bool, null (for JSON)
+  - Then add fuly recursive data model (depends on FC)
+    - `value = ... | dict[str, value]`
+
 <div id="toc">
 </div>
 
 ## Literals for Primitives
 
-### String Literals
+### String Literals May Be r or c
 
 
-The last few commits implement **string literals** in expression mode.  They evaluate to Python-like byte strings (which may be utf-8 encoded) but have shell-like syntax: double-quoted strings allow `$subs` and single-quoted ones don't.
+
+The last few commits implement **string literals** in expression mode.  They
+evaluate to Python-like byte strings (which may be utf-8 encoded) but have
+shell-like syntax: double-quoted strings allow `$subs` and single-quoted ones
+don't.
 
 I had originally intended for something different for Oil, but I want command context and word context to be compatible.  You can just move words to the right of `=` and it still works.
 
@@ -125,7 +135,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Obje
 
 Questions/comments are welcome!
 
-### List Literals Are Like Python
+### defer: List Literals Are Like Python
 
 Lists are heterogeneous.  Syntax is unchanged.
 
@@ -136,7 +146,7 @@ Arrays and Tuples are preferred.
 
 Or maybe lists are for composite data types?  Arrays are for primitives.
 
-### Tuple Literals
+### defer: Tuple Literals
 
 I implemented tuple literals just like Python, since Oil is borrowing Python's
 grammar.
@@ -161,11 +171,11 @@ I guess there is no problem with `()` as an empty tuple?
 
 
 
-### Two Types of Array Literals
+## Two Types of Array Literals
 
-#### Word Syntax for String Arrays
+### Word Syntax for String Arrays
 
-#### Expression Syntax for Typed Arrays
+### Expression Syntax for Typed Arrays
 
 I implemented the literal syntax for Bool, Int, Float, and Str arrays.  The semantics still need to be polished, but the syntax is there.
 
@@ -243,28 +253,112 @@ var x = %(
 )
 ```
 
-### Shell Command Substitution with $()
+## Shared Between the Word and Expression Languages
+
+### Command Substitution: `$(hostname)` and `@(seq 3)`
 
 The `$(echo hi)` construct works in shell commands, and it also works in Oil
 expressions:
 
-```
-var x = $(echo hi)           # no quotes necessary
-var x = "$(echo hi) there"
-```
+    var x = $(echo hi)           # no quotes necessary
+    var x = "$(echo hi) there"
+
+### Variable Substitution: `$myvar` and `${myvar}`
+
+    echo $myvar
+    var x = $myvar
 
 ## Operators
 
+### Arithmetic Operators: + - * / div mod
 
-### Splice Arrays with @array
+### Bitwise ?
+
+### Ternary Operator
+
+    var mybool = true
+    var x = 'yes' if mybool else 'no'
+
+### Comparison Operators (Chained)
+
+https://github.com/oilshell/oil/blob/master/spec/oil-expr.test.sh#L550
 
 ```
-var a1 = %(a b)
-var a2 = %(c d)
-echo / @a1 / @a2 /   # gives / a b / c d /
+if (1 < 2 <= 2 <= 3 < 4) {
+  echo '123'
+}
 ```
 
-### Future
+This syntax is directly from Python.  That is,
+
+`x op y op  z`
+
+is a shortcut for
+
+`x op y and y op z`
+
+Comments welcome!
+
+### Slices and Ranges
+
+OK I solved this problem in pretty much the way I said I would.
+
+The thing that convinced me is that R only has `start:end`, it doesn't have `start:end:step`.  And Julia has `start:step:end`!
+
+I don't think the **step** is so useful that it has to be first class syntax.  In other words, Python's syntax is optimized for a rare case -- e.g. `a[::2]`.
+
+Summary:
+
+* Python doesn't have a special range syntax, i.e. you have to write `range(0, n)`.  In Oil you can write `0:n`.
+* So he syntax is `0:n` for both slices (indices of collections) and ranges (iterables over integers).  
+* But there's no literal syntax for the "step". If you want to use the step, you have to write it out like `range(1, 100, step=2)`.
+  * (TODO: consider making step a **named** argument.  That is, it always has to be passed with a name, unlike in Python)
+* A syntactic difference between slices and ranges: slice endpoints can be **implicit**, like `a[:n]` and `a[3:]`.
+* Ranges and slices aren't unified -- that's the one failing tests.  But I'm pretty sure they should be, and they're each implemented in only 300-400 lines of C.   If anyone wants to hack on CPython, let me know!
+  * https://github.com/oilshell/oil/blob/master/Python-2.7.13/Objects/sliceobject.c
+  * https://github.com/oilshell/oil/blob/master/Python-2.7.13/Objects/rangeobject.c
+* All these tests pass except one: https://github.com/oilshell/oil/blob/master/spec/oil-slice-range.test.sh
+
+This is all still up for discussion!  I'm going to write a blog post about it later, but I appreciate any early feedback.
+
+
+```
+for (i in 0:n) {
+  echo $i
+}
+```
+
+### d->key is a shortcut for d['key']
+
+> the distinction between attributes and dictionary members always seemed weird and unnecessary to me.
+
+I've been thinking about this for [the Oil language](http://www.oilshell.org/blog/2019/08/22.html), which is heavily influenced by Python.
+
+The problem is that dictionary attributes come from user data, i.e. from JSON, while methods like `.keys()` come from the interpreter, and Python allows you to provide user-defined methods like `mydict.mymethod()` too.
+
+Mixing all of those things in the same namespace seems like a bad idea.
+
+In Oil I might do introduce an `->` operator, so `d->mykey` is a shortcut for `d['mykey']`.
+
+```
+d.keys(), d.values(), d.items()  # methods
+d->mykey
+d['mykey']
+```
+
+Maybe you could disallow user-defined attributes on dictionaries, and make them free:
+
+```
+keys(d), values(d), items(d)
+d.mykey  # The whole namespace is available for users
+```
+
+However I don't like that this makes dictionaries a special case.  Thoughts?
+
+
+
+
+## Future
 
 - "Legacy-free" command substitution with `$[echo hi]`
 - "Legacy-free" and typed literals like
@@ -273,7 +367,6 @@ echo / @a1 / @a2 /   # gives / a b / c d /
   - `%[3.14 1.50 2.33]`
 - For details, see the wiki page [Implementing the Oil Expression
   Language](https://github.com/oilshell/oil/wiki/Implementing-the-Oil-Expression-Language)
-
 
 
 Most of the operator language is now implemented (in the metacircular style).
@@ -306,84 +399,13 @@ Comment about it here:
 
 https://lobste.rs/s/2cw6ov/say_something_you_dislike_about_language#c_c5mk2l
 
-### d->key is a shortcut for d['key']
 
-> the distinction between attributes and dictionary members always seemed weird and unnecessary to me.
+## Appendix
 
-I've been thinking about this for [the Oil language](http://www.oilshell.org/blog/2019/08/22.html), which is heavily influenced by Python.
-
-The problem is that dictionary attributes come from user data, i.e. from JSON, while methods like `.keys()` come from the interpreter, and Python allows you to provide user-defined methods like `mydict.mymethod()` too.
-
-Mixing all of those things in the same namespace seems like a bad idea.
-
-In Oil I might do introduce an `->` operator, so `d->mykey` is a shortcut for `d['mykey']`.
+Splice Arrays with @array
 
 ```
-d.keys(), d.values(), d.items()  # methods
-d->mykey
-d['mykey']
+var a1 = %(a b)
+var a2 = %(c d)
+echo / @a1 / @a2 /   # gives / a b / c d /
 ```
-
-Maybe you could disallow user-defined attributes on dictionaries, and make them free:
-
-```
-keys(d), values(d), items(d)
-d.mykey  # The whole namespace is available for users
-```
-
-However I don't like that this makes dictionaries a special case.  Thoughts?
-
-
-
-
-
-### Slices and Ranges
-
-
-OK I solved this problem in pretty much the way I said I would.
-
-The thing that convinced me is that R only has `start:end`, it doesn't have `start:end:step`.  And Julia has `start:step:end`!
-
-I don't think the **step** is so useful that it has to be first class syntax.  In other words, Python's syntax is optimized for a rare case -- e.g. `a[::2]`.
-
-Summary:
-
-* Python doesn't have a special range syntax, i.e. you have to write `range(0, n)`.  In Oil you can write `0:n`.
-* So he syntax is `0:n` for both slices (indices of collections) and ranges (iterables over integers).  
-* But there's no literal syntax for the "step". If you want to use the step, you have to write it out like `range(1, 100, step=2)`.
-  * (TODO: consider making step a **named** argument.  That is, it always has to be passed with a name, unlike in Python)
-* A syntactic difference between slices and ranges: slice endpoints can be **implicit**, like `a[:n]` and `a[3:]`.
-* Ranges and slices aren't unified -- that's the one failing tests.  But I'm pretty sure they should be, and they're each implemented in only 300-400 lines of C.   If anyone wants to hack on CPython, let me know!
-  * https://github.com/oilshell/oil/blob/master/Python-2.7.13/Objects/sliceobject.c
-  * https://github.com/oilshell/oil/blob/master/Python-2.7.13/Objects/rangeobject.c
-* All these tests pass except one: https://github.com/oilshell/oil/blob/master/spec/oil-slice-range.test.sh
-
-This is all still up for discussion!  I'm going to write a blog post about it later, but I appreciate any early feedback.
-
-
-```
-for (i in 0:n) {
-  echo $i
-}
-```
-
-### Chained Comparison
-
-https://github.com/oilshell/oil/blob/master/spec/oil-expr.test.sh#L550
-
-```
-if (1 < 2 <= 2 <= 3 < 4) {
-  echo '123'
-}
-```
-
-This syntax is directly from Python.  That is,
-
-`x op y op  z`
-
-is a shortcut for
-
-`x op y and y op z`
-
-Comments welcome!
-

@@ -16,7 +16,6 @@ language.  It's **our upgrade path from bash**.
 ## Preliminaries
 
 - [Why Use Oil?](/why.html)  This document is on the home page.
-- [The Oil Language From 10,000 Feet](oil-overview.html)  A tour of Oil.
 - [INSTALL](INSTALL.html). How do I install Oil?  This text file is also in the
   tarball.
 
@@ -32,13 +31,13 @@ language.  It's **our upgrade path from bash**.
 
 ## Oil is a New Shell Language
 
+- [The Oil Language From 10,000 Feet](oil-overview.html)  A tour of Oil.
 - [Oil Language Idioms](idioms.html).  A list of idioms you may want to use.
 - [Shell Language Deprecations](deprecations.html).  When you turn on Oil,
   there are some shell constructs you can no longer use.  We try to minimize
   the length of this list.
-- [Command vs. Expression Mode](command-vs-expression-mode.html).  AN important
-  syntactic concept.  See the [overview](oil-overview.html) for more syntactic
-  concepts.
+- [Syntactic Concepts](syntactic-concepts.html)
+  - [Command vs. Expression Mode](command-vs-expression-mode.html).
 
 The shell **command** language has been enhanced:
 

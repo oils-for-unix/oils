@@ -77,10 +77,12 @@ readonly MARKDOWN_DOCS=(
   doc-toolchain
   eggex
   deprecations
+  future
   idioms
   qsn
   qtsv
   language-design
+  syntactic-concepts
 
   # needs polish
   # Note: docs about the Oil language are prefixed 'oil-'.

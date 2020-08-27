@@ -156,6 +156,54 @@ Can block can set vars in enclosing scope?
 setref('name', 1+2, up=1)
 ```
 
+## Notes: Use Cases for Blocks
+
+### Configuration Files
+
+Evaluates to JSON (like YAML and TOML):
+
+    server foo {
+      port = 80
+    }
+
+And can also be serialized as command line flags.
+
+Replaces anti-patterns:
+
+- Docker has shell
+- Ruby DSLs like chef have shell
+- similar to HCL I think, and Jsonnet?  But it's IMPERATIVE.  Probably.  It
+  might be possible to do dataflow variables... not sure.  Maybe x = 1 is a
+  dataflow var?
+
+### Awk Dialect
+
+    BEGIN {
+      end
+    }
+
+    when x {
+    }
+
+### Make Dialect
+
+    rule foo.c : foo.bar {
+      cc -o out @srcs
+    }
+
+### Flag Parsing to replace getopts
+
+Probably use a block format.  Compare with Python's optparse.o
+
+See issue.
+
+### Unit Tests
+
+Haven't decided on this yet.
+
+    check {
+    }
+
 ## Funcs
 
 In addition to shell-like procs, Oil also has Python-like functions:
