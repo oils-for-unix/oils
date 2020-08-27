@@ -3,7 +3,7 @@ in_progress: yes
 css_files: ../web/base.css ../web/help-index.css ../web/toc.css
 ---
 
-Oil Help Topics
+OSH Help Topics
 ===============
 
 <!--
@@ -28,7 +28,7 @@ TODO: There should be a character for "no links past here?"
 - this should be turned GREEN?
 -->
 
-This is the online version of Oil's `help`.  The linked help topics below are
+This is the online help for the OSH language.  The help topic links below are
 divided into groups and sections.
 
 For example, typing `help if` in the shell shows you how to use the `if`
@@ -42,6 +42,8 @@ To view this index inside the shell, use:
 
 An <span style="color: darkred">X</span> next to a help topic means that it's
 an **unimplemented** feature.
+
+You may also want to browse [Oil Help Topics](oil-index.html).
 
 <div id="toc">
 </div>
@@ -75,7 +77,6 @@ an **unimplemented** feature.
                   redir-desc  >&  <&
                   here-doc    <<  <<-  <<<
   [Other Command] dparen ((   time   X coproc   X select
-  [Oil Keywords]  proc   return   equal =
 ```
 
 <h2 id="assign">
@@ -89,37 +90,6 @@ an **unimplemented** feature.
                   assoc         assoc=(['a']=1 ['b']=2)   assoc['x']=b
   [Builtins]      local   readonly   export   unset   shift
                   declare   typeset   X let
-  [Oil Keywords]  const   var   setvar   setref   setglobal   setlocal/set
-```
-
-<h2 id="expr">
-  Oil Expression Language (<a class="group-link" href="help.html#expr">expr</a>)
-</h2>
-
-```oil-help-index
-  [Functions]     proc-decl     proc p (x, y, @rest, &block) { echo hi }
-                  func-call     f(x, y)
-  [Literals]      oil-string    c'line\n'  r'[a-z]\n'
-                  oil-array     %(a b c)
-                  oil-dict      %{name: 'bob'}
-                  oil-numbers    42  3.14  1e100
-                  oil-bool      true  false
-  [Operators]     oil-compare   ==  <=  in
-                  oil-logical    not  and  or
-                  oil-arith     div  mod
-                  oil-bitwise    xor
-                  oil-ternary    x if len(s) else y
-                  oil-index     a[3]  s[3]
-                  oil-slice     a[1:-1]  s[1:-1]
-  [Regexes]       re-literal    /d+/
-                  re-compound   ~   (group)   <capture>   sequence
-                  re-primitive  %zero   Subpattern   @subpattern
-                                'sq'   "dq"   $x   ${x}
-                  named-classes dot  digit  space  word  d  s  w
-                  class-literal [c a-z 'abc' \\ \xFF \u0100]
-                  re-flags      ignorecase etc.
-                  re-multiline  ///
-                  re-glob-ops   ~~   !~~
 ```
 
 <h2 id="word">
@@ -190,20 +160,6 @@ an **unimplemented** feature.
   [Word Lookup]   command   builtin
   [Interactive]   alias   unalias   history   X fc   X bind
 X [Unsupported]   enable
-  [Oil Builtins]  cd   X shopt   X env   compatible, and takes a block
-                  X fork   X wait        replaces & and (), takes a block
-                  X fopen                Many open streams, takes a block
-                  X use                  source with namespace, file-relative 
-                  X opts                 getopts replacement
-                  push                   add elements to end of array
-                  repr                   Show debug representation of vars
-                  getline                Instead of read -raw :name
-                  write                  like echo, but with --, -sep, -end
-                  X log   X die          common functions (polyfill)
-  [Data Formats]  json   X tsv2   X html   X struct/binary
-X [External Lang] BEGIN   END   when (awk)
-                  rule (make)   each (xargs)   fs (find)
-X [Testing]       check
 ```
 
 <h2 id="option">
@@ -216,46 +172,6 @@ X [Testing]       check
   [Debugging]     xtrace   X verbose   X extdebug
   [Interactive]   emacs   vi
   [Other Option]  X noclobber
-  [strict:all]    * All options starting with 'strict_'
-                  strict_argv            No empty argv
-                  strict_arith           Fatal parse errors (on by default)
-                  strict_array           Arrays don't decay to strings
-                  strict_control_flow    trap misplaced break/continue
-                  strict_echo            echo takes 0 or 1 arguments
-                  strict_errexit         Disallow code that ignores failure
-                  strict_eval_builtin    eval takes exactly 1 argument
-                  strict_nameref         trap invalid variable names
-                  strict_word_eval       Expose unicode and slicing errors
-                  strict_tilde           Tilde subst can result in error
-                  X strict_backslash     Parse the sublanguage more strictly
-                  X strict_glob          Parse the sublanguage more strictly
-                  X strict_trap          Function name only
-                  parse_ignored          Parse and silently ignore?
-  [oil:basic]     * Enable Oil functionality
-                  parse_at               echo @array @arrayfunc(x, y)
-                  parse_brace            if true { ... }; cd ~/src { ... }
-                  parse_paren            if (x > 0) ...
-                  X parse_redir_expr     >> var x   << 'here string'
-                  X longopts             test -file, read -delim, etc.
-                  more_errexit           More errexit checks --  at command sub
-                  simple_word_eval       No splitting, static globbing
-                  dashglob               Disabled to avoid files like -rf
-  [oil:nice]      * The full Oil language
-                  parse_equals           x = 's' (for cleaner config blocks)
-                  parse_set              instead of setvar
-                  X parse_amp            echo hi &2 > /dev/null
-                  X parse_dollar_slash   egrep $/ d+ / *.txt
-                  X parse_dparen         remove ((
-                  X parse_rawc           r'\'   c'\n'   c"$x\n"
-                  X simple_test_builtin  Only file tests, remove [, status 2
-                  X no_old_builtins      local/declare/etc.  pushd/popd/dirs
-                                         ... source  unset  printf  [un]alias
-                                         ... getopts
-                  X no_old_syntax        [[   $(( ))  ${x%prefix}   $$
-                                         $'\n'   @(*.py|*.sh)  `echo comsub`
-                                         ${a[@]}
-  [Compatibility] eval_unsafe_arith   parse_dynamic_arith
-                  verbose_errexit
 ```
 
 <h2 id="env">
@@ -276,7 +192,6 @@ X [Testing]       check
 ```oil-help-index
   [POSIX Special] $@  $*  $#     $?  $-     $$  $!   $0  $9
   [Other Special] BASH_REMATCH   @PIPESTATUS
-  [Oil Special]   ARGV   STATUS   M
   [Platform]      HOSTNAME   OSTYPE   OIL_VERSION
   [Call Stack]    @BASH_SOURCE   @FUNCNAME   @BASH_LINENO   
                   X @BASH_ARGV   X @BASH_ARGC
@@ -303,25 +218,4 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
   [Words]         PS1   X PS2   X PS3   PS4
   [Completion]    complete
   [Other Plugin]  X command_not_found   PROMPT_COMMAND
-```
-
-<h2 id="lib">
-  Oil Libraries (<a class="group-link" href="help.html#lib">lib</a>)
-</h2>
-
-```oil-help-index
-  [Collections]   len()   copy()
-  [Pattern]       regmatch()   fnmatch()
-  [String]        find()   sub()   join() 
-                  split()             $IFS, awk algorithm, regex
-  [Word]          glob()   maybe()
-  [Better Syntax] shquote()
-                  lstrip()   rstrip()   lstripglob()   rstripglob()
-                  upper()   lower()
-                  strftime()
-  [Arrays]        index()
-  [Assoc Arrays]  @names()   @values()
-  [Block]         setvar()            for procs to set in outer scope
-                  evalblock()         procs evaluate block to namespace
-X [Hashing]       sha1   sha256 (etc.)
 ```

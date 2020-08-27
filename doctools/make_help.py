@@ -362,9 +362,8 @@ def main(argv):
     # Split help into cards.
 
     page_path = argv[2]
-    index_path = argv[3]  # TODO: Combine with the above
-    out_dir = argv[4]
-    py_out = argv[5]
+    out_dir = argv[3]
+    py_out = argv[4]
 
     with open(page_path) as f:
       contents = f.read()

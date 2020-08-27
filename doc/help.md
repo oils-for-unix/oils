@@ -972,13 +972,21 @@ Bash has this, but OSH won't implement it.
 
 <h4 id="help">help</h4>
 
-    help index           # list all help topics
-    help index GROUP...  # list help topics in the given groups
+    help oil             # list Oil language help topics
+    help osh             # list OSH language help topics
+
     help TOPIC           # show help on a given topic
     help osh-usage       # same as osh --help
     help oil-usage       # same as oil --help
 
-View on the web: http://www.oilshell.org/$VERSION/doc/osh-quick-ref.html
+View on the web:
+
+    https://www.oilshell.org/release/$VERSION/doc/
+
+Old:
+
+    help index           # list all help topics
+    help index GROUP...  # list help topics in the given groups
 
 <h3>Word Lookup</h3>
 

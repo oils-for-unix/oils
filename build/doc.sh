@@ -279,8 +279,10 @@ readonly TEXT_DIR=_devbuild/help
 readonly HTML_DIR=_release/VERSION
 readonly CODE_DIR=_devbuild/gen
 
-# NOTE: Should eventually take .html instead of .md
 help-index-cards() {
+
+  # TODO: change to doc/{osh,oil}-index.html
+
   _make-help cards-for-index $TEXT_DIR < $HTML_DIR/doc/help-index.html
 }
 
@@ -294,8 +296,7 @@ help-cards() {
   local py_out=$CODE_DIR/help_.py
 
   # For now, the pass help markdown
-  _make-help cards \
-    doc/help.md $HTML_DIR/doc/help-index.html $TEXT_DIR $py_out
+  _make-help cards doc/help.md $TEXT_DIR $py_out
 }
 
 all-help() {
@@ -305,6 +306,7 @@ all-help() {
   rm -f $TEXT_DIR/*
   mkdir -p _tmp/doc $TEXT_DIR $HTML_DIR/doc
 
+  split-and-render doc/oil-index.md
   split-and-render doc/help-index.md
   split-and-render doc/help.md
 
