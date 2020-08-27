@@ -89,7 +89,7 @@ an **unimplemented** feature.
                   assoc         assoc=(['a']=1 ['b']=2)   assoc['x']=b
   [Builtins]      local   readonly   export   unset   shift
                   declare   typeset   X let
-  [Oil Keywords]  const   var   setvar   set   setlocal   setglobal   setref
+  [Oil Keywords]  const   var   setvar   setref   setglobal   setlocal/set
 ```
 
 <h2 id="expr">
@@ -101,6 +101,16 @@ an **unimplemented** feature.
                   func-call     f(x, y)
   [Literals]      oil-string    c'line\n'  r'[a-z]\n'
                   oil-array     %(a b c)
+                  oil-dict      %{name: 'bob'}
+                  oil-numbers    42  3.14  1e100
+                  oil-bool      true  false
+  [Operators]     oil-compare   ==  <=  in
+                  oil-logical    not  and  or
+                  oil-arith     div  mod
+                  oil-bitwise    xor
+                  oil-ternary    x if len(s) else y
+                  oil-index     a[3]  s[3]
+                  oil-slice     a[1:-1]  s[1:-1]
   [Regexes]       re-literal    /d+/
                   re-compound   ~   (group)   <capture>   sequence
                   re-primitive  %zero   Subpattern   @subpattern
@@ -109,7 +119,7 @@ an **unimplemented** feature.
                   class-literal [c a-z 'abc' \\ \xFF \u0100]
                   re-flags      ignorecase etc.
                   re-multiline  ///
-                  re-glob-ops   ~   !~
+                  re-glob-ops   ~~   !~~
 ```
 
 <h2 id="word">
@@ -130,6 +140,7 @@ an **unimplemented** feature.
                   op-format     ${x@P}
   [Oil Word]      inline-call   $strfunc(x, y) @arrayfunc(z)
                   splice        @array @ARGV
+                  expr-sub      echo $[3 + a[i]]
                   X oil-printf  ${x %.3f}
                   X oil-format  ${x|html}
 ```

@@ -111,9 +111,16 @@ See [Oil Expressions](oil-expressions.html).
 
 Python and shell both borrow from C.  Oil borrows from Python and C.
 
-- len()
-- min, max
-- sorted() ?  Leave this out.
+- len(): str, array, dict
+- min, max: int, float
+- any, all: truthiness?  Are non-empty strings truthy though?
+  - that's a constraint of 'tea'
+- reversed()  --- this can be done with `tac` and QSN!
+- sorted() ?  -- Does QSN have a lexicographical mapping for this?
+  - or write `sort --qsn`? 
+- `sum()` 
+  - this can be written with a 'wok' filter that runs in process?
+- enumerate, zip: these return tuples.  Not sure I want to implement them.
 
 ## Runtime Semantics
 

@@ -1,5 +1,18 @@
 # Grammar for Oil.
 # Adapted from the Python 3.7 expression grammar, with several changes!
+# 
+# TODO: Move some constructs to Tea Language
+# - lambdas
+# - first class tuples and lists?  We only have arrays in Oil?
+# - function declarations, but not function calls
+# - cast expressions
+# - What about list comprehensions?
+#   - I think this could be replaced with implicit vectorization, like
+#     @len(x) or len.(x) ?  It's shorter, but it maps and doesn't filter.
+#     %[n[1:] for n in names]
+#   - Generator expressions?
+# Tweaks based on types:
+#   - ++ for str/array concatenation, to avoid confusion with + addition
 
 # Note: trailing commas are allowed:
 #   {k: mydict,}
@@ -123,10 +136,10 @@ testlist: test (',' test)* [',']
 # {age: 20} is like {'age': 20}
 # 
 # x = 'age'
-# d = {[x]: 20}  # Evaluate x as a variable
-# d = {["foo$x"]: 20}  # Another expression
-# d = {[x, y]: 20}  # Tuple key
-# d = {key1, key1: 123}
+# d = %{[x]: 20}  # Evaluate x as a variable
+# d = %{["foo$x"]: 20}  # Another expression
+# d = %{[x, y]: 20}  # Tuple key
+# d = %{key1, key1: 123}
 # Notes:
 # - Value is optional when the key is a name, because it can be taken from the
 # environment.

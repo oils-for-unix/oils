@@ -268,18 +268,26 @@ expressions:
     echo $myvar
     var x = $myvar
 
+### String Literals: `'foo'` or `"hello $name"`
+
+Same rules.
+
 ## Operators
 
-### Arithmetic Operators: + - * / div mod
+### String : `~` `!~` and `~~` `!~~`
 
-### Bitwise ?
+### Dict: `in` for membership
 
-### Ternary Operator
+- And `not in`
+- But strings and arrays use functions?
+  - .find() ?  It's more of an algorithm.
 
-    var mybool = true
-    var x = 'yes' if mybool else 'no'
+### Comparison (Chained) `==` `<=` etc.
 
-### Comparison Operators (Chained)
+- NOTE: 
+  - do we have `is` and `is not`?  Not sure I want identity in the language?
+  - is everything nullable too?
+
 
 https://github.com/oilshell/oil/blob/master/spec/oil-expr.test.sh#L550
 
@@ -299,34 +307,40 @@ is a shortcut for
 
 Comments welcome!
 
-### Slices and Ranges
+### Logical: `not` `and` `or`
 
-OK I solved this problem in pretty much the way I said I would.
+### Arithmetic : + - * / div mod
 
-The thing that convinced me is that R only has `start:end`, it doesn't have `start:end:step`.  And Julia has `start:step:end`!
+### Bitwise: ~ & | `xor`
 
-I don't think the **step** is so useful that it has to be first class syntax.  In other words, Python's syntax is optimized for a rare case -- e.g. `a[::2]`.
+### Ternary Operator
 
-Summary:
+    var mybool = true
+    var x = 'yes' if mybool else 'no'
 
-* Python doesn't have a special range syntax, i.e. you have to write `range(0, n)`.  In Oil you can write `0:n`.
-* So he syntax is `0:n` for both slices (indices of collections) and ranges (iterables over integers).  
-* But there's no literal syntax for the "step". If you want to use the step, you have to write it out like `range(1, 100, step=2)`.
-  * (TODO: consider making step a **named** argument.  That is, it always has to be passed with a name, unlike in Python)
-* A syntactic difference between slices and ranges: slice endpoints can be **implicit**, like `a[:n]` and `a[3:]`.
-* Ranges and slices aren't unified -- that's the one failing tests.  But I'm pretty sure they should be, and they're each implemented in only 300-400 lines of C.   If anyone wants to hack on CPython, let me know!
-  * https://github.com/oilshell/oil/blob/master/Python-2.7.13/Objects/sliceobject.c
-  * https://github.com/oilshell/oil/blob/master/Python-2.7.13/Objects/rangeobject.c
-* All these tests pass except one: https://github.com/oilshell/oil/blob/master/spec/oil-slice-range.test.sh
+### Index Strings and Arrays
 
-This is all still up for discussion!  I'm going to write a blog post about it later, but I appreciate any early feedback.
+    var s = 'foo'
+    var second = s[1]    # are these integers though?  maybe slicing gives you things of length 1
+    echo $second  # 'o'
 
+    var a = %(spam eggs ham)
+    var second = a[1]
+    echo $second  # 'eggs'
 
-```
-for (i in 0:n) {
-  echo $i
-}
-```
+Like Python semantics.  Out of bounds is an error.
+
+### Slice Strings and Arrays
+
+    var s = 'food'
+    var slice = s[1:3]
+    echo $second  # 'oo'
+
+    var a = %(spam eggs ham)
+    var slice = a[1:3]
+    write -- @slice  # eggs, ham
+
+Like Python semantics.  Out of bounds isn't an error.
 
 ### d->key is a shortcut for d['key']
 
@@ -355,8 +369,12 @@ d.mykey  # The whole namespace is available for users
 
 However I don't like that this makes dictionaries a special case.  Thoughts?
 
+### Function Calls Are Like Python
 
+    var result = add(x, y)
+    var result = foo(x, named='default')
 
+<!-- note: no reason to have ; right now? -->
 
 ## Future
 
@@ -399,13 +417,47 @@ Comment about it here:
 
 https://lobste.rs/s/2cw6ov/say_something_you_dislike_about_language#c_c5mk2l
 
+### Ranges (deferred)
 
-## Appendix
+This is just `@(seq $n)`  in Oil
 
-Splice Arrays with @array
+OK I solved this problem in pretty much the way I said I would.
+
+The thing that convinced me is that R only has `start:end`, it doesn't have `start:end:step`.  And Julia has `start:step:end`!
+
+I don't think the **step** is so useful that it has to be first class syntax.  In other words, Python's syntax is optimized for a rare case -- e.g. `a[::2]`.
+
+Summary:
+
+* Python doesn't have a special range syntax, i.e. you have to write `range(0, n)`.  In Oil you can write `0:n`.
+* So he syntax is `0:n` for both slices (indices of collections) and ranges (iterables over integers).  
+* But there's no literal syntax for the "step". If you want to use the step, you have to write it out like `range(1, 100, step=2)`.
+  * (TODO: consider making step a **named** argument.  That is, it always has to be passed with a name, unlike in Python)
+* A syntactic difference between slices and ranges: slice endpoints can be **implicit**, like `a[:n]` and `a[3:]`.
+* Ranges and slices aren't unified -- that's the one failing tests.  But I'm pretty sure they should be, and they're each implemented in only 300-400 lines of C.   If anyone wants to hack on CPython, let me know!
+  * https://github.com/oilshell/oil/blob/master/Python-2.7.13/Objects/sliceobject.c
+  * https://github.com/oilshell/oil/blob/master/Python-2.7.13/Objects/rangeobject.c
+* All these tests pass except one: https://github.com/oilshell/oil/blob/master/spec/oil-slice-range.test.sh
+
+This is all still up for discussion!  I'm going to write a blog post about it later, but I appreciate any early feedback.
+
 
 ```
-var a1 = %(a b)
-var a2 = %(c d)
-echo / @a1 / @a2 /   # gives / a b / c d /
+for (i in 0:n) {
+  echo $i
+}
 ```
+
+### Array/List Comprehensions (deferred)
+
+Until we have fully recursive data structures?
+
+### Oil vs. Tea
+
+- Tea: truthiness of `Str*` is a problem.  Nul, etc.
+  - `if (mystr)` vs `if (len(mystr))`
+  - though I think strings should be non-nullable value types?  They are
+    slices.
+  - they start off as the empty slice
+- Coercsions of strings to numbers
+  - `42` and `3.14` and `1e100`
