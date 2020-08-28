@@ -279,11 +279,15 @@ readonly TEXT_DIR=_devbuild/help
 readonly HTML_DIR=_release/VERSION
 readonly CODE_DIR=_devbuild/gen
 
+# TODO:
+# - make it work in the 'help' builtin
+# - change to sh- vs oil- prefix, e.g. for arith
+
 help-index-cards() {
 
   # TODO: change to doc/{osh,oil}-index.html
 
-  _make-help cards-for-index $TEXT_DIR < $HTML_DIR/doc/help-index.html
+  _make-help cards-for-index $TEXT_DIR < $HTML_DIR/doc/osh-help-topics.html
 }
 
 help-cards() {
@@ -296,7 +300,8 @@ help-cards() {
   local py_out=$CODE_DIR/help_.py
 
   # For now, the pass help markdown
-  _make-help cards doc/help.md $TEXT_DIR $py_out
+  _make-help cards doc/osh-help.md $TEXT_DIR $py_out
+  _make-help cards doc/oil-help.md $TEXT_DIR $py_out
 }
 
 all-help() {
@@ -306,9 +311,10 @@ all-help() {
   rm -f $TEXT_DIR/*
   mkdir -p _tmp/doc $TEXT_DIR $HTML_DIR/doc
 
-  split-and-render doc/oil-index.md
-  split-and-render doc/help-index.md
-  split-and-render doc/help.md
+  split-and-render doc/oil-help-topics.md
+  split-and-render doc/oil-help.md
+  split-and-render doc/osh-help-topics.md
+  split-and-render doc/osh-help.md
 
   help-index-cards
   help-cards $HTML_DIR $TEXT_DIR

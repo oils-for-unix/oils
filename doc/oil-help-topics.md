@@ -8,12 +8,20 @@ Oil Help Topics
 
 You may also want to browse [OSH Help Topics](help-index.html).
 
+<h2 id="overview">
+  Overview (<a class="group-link" href="help.html#overview">overview</a>)
+</h2>
+
+```oil-help-topics
+  [Usage]         bundle-usage   oil-usage
+  [Oil Lexing]    X single-command %%%   X docstring ###
+```
+
 <h2 id="command">
   Command Language (<a class="group-link" href="help.html#command">command</a>)
 </h2>
 
-```oil-help-index
-  [Oil Lexing]    X single-command %%%   X docstring ###
+```oil-help-topics
   [Oil Keywords]  proc   equal =
   [Oil Blocks]  block
 ```
@@ -22,15 +30,27 @@ You may also want to browse [OSH Help Topics](help-index.html).
   Variable Assignments (<a class="group-link" href="help.html#assign">assign</a>)
 </h2>
 
-```oil-help-index
+```oil-help-topics
   [Oil Keywords]  const   var   setvar   setref   setglobal   setlocal/set
+```
+
+<h2 id="word">
+  Word Language (<a class="group-link" href="help.html#word">word</a>)
+</h2>
+
+```oil-help-topics
+  [Oil Word]      inline-call   $strfunc(x, y) @arrayfunc(z)
+                  splice        @array @ARGV
+                  expr-sub      echo $[3 + a[i]]
+                  X oil-printf  ${x %.3f}
+                  X oil-format  ${x|html}
 ```
 
 <h2 id="expr">
   Oil Expression Language (<a class="group-link" href="help.html#expr">expr</a>)
 </h2>
 
-```oil-help-index
+```oil-help-topics
   [Functions]     proc-decl     proc p (x, y, @rest, &block) { echo hi }
                   func-call     f(x, y)
   [Literals]      oil-string    c'line\n'  r'[a-z]\n'
@@ -60,7 +80,7 @@ You may also want to browse [OSH Help Topics](help-index.html).
   Builtin Commands (<a class="group-link" href="help.html#builtin">builtin</a>)
 </h2>
 
-```oil-help-index
+```oil-help-topics
   [Oil Builtins]  cd   X shopt   X env   compatible, and takes a block
                   X fork   X wait        replaces & and (), takes a block
                   X fopen                Many open streams, takes a block
@@ -81,7 +101,7 @@ X [Testing]       check
   Shell Options (<a class="group-link" href="help.html#option">option</a>)
 </h2>
 
-```oil-help-index
+```oil-help-topics
   [strict:all]    * All options starting with 'strict_'
                   strict_argv            No empty argv
                   strict_arith           Fatal parse errors (on by default)
@@ -128,15 +148,16 @@ X [Testing]       check
   Special Variables (<a class="group-link" href="help.html#special">special</a>)
 </h2>
 
-```oil-help-index
+```oil-help-topics
   [Oil Special]   ARGV   STATUS   M
+  [Platform]      OIL_VERSION
 ```
 
 <h2 id="lib">
   Oil Libraries (<a class="group-link" href="help.html#lib">lib</a>)
 </h2>
 
-```oil-help-index
+```oil-help-topics
   [Collections]   len()   copy()
   [Pattern]       regmatch()   fnmatch()
   [String]        find()   sub()   join() 

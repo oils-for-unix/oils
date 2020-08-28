@@ -56,8 +56,8 @@ docs are ready:
 - [Quirks](doc/quirks.html)
 - [Notes on Oil's Architecture](doc/architecture-notes.html).  For developers.
 
-[Online Help](doc/help-index.html) (incomplete).  This document underlies the
-`help` builtin.  It links to sections in the [Help](doc/help.html) page.
+Help topics for [OSH](doc/osh-help-topics.html) and
+[Oil](doc/oil-help-topics.html).  These documents underlies the `help` builtin.
 
 [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki).  The [Oil
 Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments) wiki page

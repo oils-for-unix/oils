@@ -92,7 +92,7 @@ _NOT_A_TOPIC = ['compatible', 'egrep']
 
 X_LEFT_SPAN = '<span style="color: darkred">'
 
-def HighlightLine(line):
+def HighlightLine(lang, line):
   """Convert a line of text to HTML.
 
   Topics are highlighted and X made red.
@@ -124,7 +124,7 @@ def HighlightLine(line):
     href = _StringToHref(m.group(1))
 
     out.PrintUntil(m.start(1))
-    out.Print('<a href="help.html#%s" class="level2">' % href)
+    out.Print('<a href="%s-help.html#%s" class="level2">' % (lang, href))
     out.PrintUntil(m.end(1))  # anchor
     out.Print('</a>')
 
@@ -153,7 +153,7 @@ def HighlightLine(line):
     topic = m.group(2)
 
     out.PrintUntil(m.start(2))
-    out.Print('<a href="help.html#%s">' % topic)
+    out.Print('<a href="%s-help.html#%s">' % (lang, topic))
     out.PrintUntil(m.end(2))
     out.Print('</a>')
 
@@ -316,7 +316,8 @@ def HelpIndexCards(s):
         # Now find the <code></code> span
         _, code_start_right = html.ReadUntilStartTag(it, tag_lexer, 'code')
         css_class = tag_lexer.GetAttr('class') 
-        assert css_class == 'language-oil-help-index', tag_lexer.TagString()
+        assert css_class in ('language-oil-help-topics',
+                             'language-osh-help-topics'), tag_lexer.TagString()
 
         code_end_left, _ = html.ReadUntilEndTag(it, tag_lexer, 'code')
 

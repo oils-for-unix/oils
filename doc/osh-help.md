@@ -4,7 +4,7 @@ css_files: ../web/base.css ../web/manual.css ../web/help.css ../web/toc.css
 body_css_class: width40 help-body
 ---
 
-Oil Help
+OSH Help
 ========
 
 <!--
@@ -86,8 +86,6 @@ processing?
 
 ### Usage
 
-This section describes how to use the Oil binary.
-
 <h4 id="osh-usage"><code>bin/osh</code> Usage</h4>
 
     Usage: osh [OPTION]... SCRIPT [ARG]...
@@ -109,29 +107,6 @@ osh accepts POSIX sh flags, with these additions:
   -n             parse the program but don't execute it.  Print the AST.
   --ast-format   what format the AST should be in
 
-<h4 id="oil-usage"><code>bin/oil</code> Usage</h4>
-
-    Usage: oil  [OPTION]... SCRIPT [ARG]...
-           oil [OPTION]... -c COMMAND [ARG]...
-
-`bin/oil` is the same as `bin/osh` with a the `oil:all` option group set.  So
-`bin/oil` also accepts shell flags.
-
-    oil -c 'echo hi'
-    oil myscript.oil
-    echo 'echo hi' | oil
-
-<h4 id="bundle-usage">App Bundle Usage</h4>
-
-    Usage: oil.ovm MAIN_NAME [ARG]...
-           MAIN_NAME [ARG]...
-
-oil.ovm behaves like busybox.  If it's invoked through a symlink, e.g. 'osh',
-then it behaves like that binary.  Otherwise the binary name can be passed as
-the first argument, e.g.:
-
-    oil.ovm osh -c 'echo hi'
-
 <h4 id="config">Configuring the Shell</h4>
 
 If the --rcfile flag is specified, that file will be executed on startup.
@@ -145,7 +120,6 @@ Pass --rcfile /dev/null to disable this behavior.
 <h4 id="config">Startup Files</h4>
 
 History is read?
-
 
 <h3>Lexing</h3>
 

@@ -28,6 +28,8 @@ language.  It's **our upgrade path from bash**.
   It lists differences between OSH and other shells.
 - [Quirks](quirks.html) for compatibility.
 - [errexit](errexit.html) (in progress)
+- [OSH Help Topics](osh-help-topics.html) (incomplete).  This document
+  underlies the `help` builtin.
 
 ## Oil is a New Shell Language
 
@@ -38,6 +40,8 @@ language.  It's **our upgrade path from bash**.
   the length of this list.
 - [Syntactic Concepts](syntactic-concepts.html)
   - [Command vs. Expression Mode](command-vs-expression-mode.html).
+- [Oil Help Topics](oil-help-topics.html) (incomplete).  This document
+  underlies the `help` builtin.
 
 The shell **command** language has been enhanced:
 
@@ -70,12 +74,6 @@ More:
   format for byte strings.
 - [QTSV](qtsv.html): An extension of TSV, built on top of QSN.
 - [Unicode](unicode.html).  Oil supports and prefers UTF-8.
-
-## Online Help
-
-[Index of Help Topics](help-index.html) (incomplete).  This document underlies
-the `help` builtin, and gives examples of each Oil feature.  It links to
-sections in the [Help](help.html) page.
 
 ## Internal Details
 

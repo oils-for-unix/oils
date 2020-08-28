@@ -10,12 +10,12 @@ OSH Help Topics
 IMPORTANT: This doc is processed in TWO WAYS.  BE CAREFUL WHEN EDITING.
 
 - First by doctools/{split_doc,cmark}.py to create HTML.
-  - <pre><code class="language-oil-help-index"> highlighted using 
+  - <pre><code class="language-osh-help-topics"> highlighted using 
     make_help.HelpIndexPlugin
 
 - Then that HTML is split up into cards.
   - <h2 id="assign"> is a heading
-  - <pre><code class="language-oil-help-index"> is rendered back into literal
+  - <pre><code class="language-osh-help-topics"> is rendered back into literal
     text.  This makes the escaping of and & < > work.
 
 Special rules:
@@ -53,18 +53,16 @@ You may also want to browse [Oil Help Topics](oil-index.html).
   Overview (<a class="group-link" href="help.html#overview">overview</a>)
 </h2>
 
-```oil-help-index
-  [Usage]         bundle-usage   osh-usage   oil-usage   config   startup
-                  line-editing   prompt
+```osh-help-topics
+  [Usage]         osh-usage   config   startup   line-editing   prompt
   [Lexing]        comment #   line-continuation \
-  [Oil Lexing]    X single-command %%%   X docstring ###
 ```
 
 <h2 id="command">
   Command Language (<a class="group-link" href="help.html#command">command</a>)
 </h2>
 
-```oil-help-index
+```osh-help-topics
   [Commands]      simple-command   semicolon ;
   [Conditional]   case   if   true   false   colon :
                   bang !   and &&   or ||   dbracket [[
@@ -83,7 +81,7 @@ You may also want to browse [Oil Help Topics](oil-index.html).
   Variable Assignments (<a class="group-link" href="help.html#assign">assign</a>)
 </h2>
 
-```oil-help-index
+```osh-help-topics
   [Operators]     assign        str='xyz'
                   append        str+='abc'
   [Compound Data] array         array=(a b c)   array[1]=B   "${a[@]}"
@@ -96,7 +94,7 @@ You may also want to browse [Oil Help Topics](oil-index.html).
   Word Language (<a class="group-link" href="help.html#word">word</a>)
 </h2>
 
-```oil-help-index
+```osh-help-topics
   [Quotes]        quotes        'abc'  $'\n'  "$var"
   [Substitutions] com-sub       $(command)   `command`   @(split command)
                   var-sub       ${var}   $0   $9   
@@ -108,18 +106,13 @@ You may also want to browse [Oil Help Topics](oil-index.html).
                   op-str        ${x//y/z}
                   op-slice      ${a[@]:0:1}
                   op-format     ${x@P}
-  [Oil Word]      inline-call   $strfunc(x, y) @arrayfunc(z)
-                  splice        @array @ARGV
-                  expr-sub      echo $[3 + a[i]]
-                  X oil-printf  ${x %.3f}
-                  X oil-format  ${x|html}
 ```
 
 <h2 id="sublang">
   Other Shell Sublanguages (<a class="group-link" href="help.html#sublang">sublang</a>)
 </h2>
 
-```oil-help-index
+```osh-help-topics
   [Arithmetic]    arith-context Where legacy arithmetic is allowed
                   num-literals  0xFF  0755  etc.
                   math          1 + 2*3
@@ -144,7 +137,7 @@ You may also want to browse [Oil Help Topics](oil-index.html).
   Builtin Commands (<a class="group-link" href="help.html#builtin">builtin</a>)
 </h2>
 
-```oil-help-index
+```osh-help-topics
   [I/O]           read   echo 
                   readarray   mapfile
   [Run Code]      source .   eval   trap
@@ -166,7 +159,7 @@ X [Unsupported]   enable
   Shell Options (<a class="group-link" href="help.html#option">option</a>)
 </h2>
 
-```oil-help-index
+```osh-help-topics
   [Errors]        nounset   pipefail   errexit   inherit_errexit
   [Globbing]      noglob   nullglob   X failglob   dashglob
   [Debugging]     xtrace   X verbose   X extdebug
@@ -178,7 +171,7 @@ X [Unsupported]   enable
   Environment Variables (<a class="group-link" href="help.html#env">env</a>)
 </h2>
 
-```oil-help-index
+```osh-help-topics
   [Shell Options] SHELLOPTS   X BASHOPTS
   [Other Env]     HOME   PATH   IFS
   [Oil Paths]     ?builtins   ?completion_plugins   ?coprocesses
@@ -189,10 +182,10 @@ X [Unsupported]   enable
   Special Variables (<a class="group-link" href="help.html#special">special</a>)
 </h2>
 
-```oil-help-index
+```osh-help-topics
   [POSIX Special] $@  $*  $#     $?  $-     $$  $!   $0  $9
   [Other Special] BASH_REMATCH   @PIPESTATUS
-  [Platform]      HOSTNAME   OSTYPE   OIL_VERSION
+  [Platform]      HOSTNAME   OSTYPE
   [Call Stack]    @BASH_SOURCE   @FUNCNAME   @BASH_LINENO   
                   X @BASH_ARGV   X @BASH_ARGC
   [Tracing]       LINENO   SOURCE_NAME
@@ -212,7 +205,7 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
   Plugins and Hooks (<a class="group-link" href="help.html#plugin">plugin</a>)
 </h2>
 
-```oil-help-index
+```osh-help-topics
   [Signals]       SIGTERM   X SIGINT   X SIGABRT   SIG...
   [Traps]         EXIT   X ERR   X DEBUG   X RETURN
   [Words]         PS1   X PS2   X PS3   PS4

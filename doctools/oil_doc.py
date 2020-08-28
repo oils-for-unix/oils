@@ -5,7 +5,7 @@ oil_doc.py: HTML processing for Oil documentation.
 Plugins:
   ExpandLinks expands $xref, etc.
   PygmentsPlugin -- for ```python, ```sh, ```c, etc.
-  HelpIndexPlugin -- for help-index.html
+  HelpTopicsPlugin -- for help-index.html
 
   ShPromptPlugin -- understands $ echo hi, but doesn't run anything
   ShSession -- runs shell snippets and caches the output
@@ -240,10 +240,14 @@ class ShPromptPlugin(_Plugin):
       pos = line_end
 
 
-class HelpIndexPlugin(_Plugin):
+class HelpTopicsPlugin(_Plugin):
   """
   Highlight blocks of help-index.md.
   """
+  def __init__(self, s, start_pos, end_pos, lang):
+    _Plugin.__init__(self, s, start_pos, end_pos)
+    self.lang = lang
+
   def PrintHighlighted(self, out):
     from doctools import make_help
 
@@ -253,7 +257,7 @@ class HelpIndexPlugin(_Plugin):
       # add tags and leave everything alone.
       line = self.s[pos : line_end]
 
-      html_line = make_help.HighlightLine(line)
+      html_line = make_help.HighlightLine(self.lang, line)
 
       if html_line is not None:
         out.PrintUntil(pos)
@@ -347,11 +351,20 @@ def HighlightCode(s):
               # TODO: Write an Oil syntax highlighter.
               pass
 
-            elif css_class == 'language-oil-help-index':
+            elif css_class == 'language-osh-help-topics':
+              # TODO: Link to osh-help.html, instead of oil-help.html
+              out.PrintUntil(code_start_pos)
+
+              plugin = HelpTopicsPlugin(s, code_start_pos, slash_code_left, 'osh')
+              plugin.PrintHighlighted(out)
+
+              out.SkipTo(slash_code_left)
+
+            elif css_class == 'language-oil-help-topics':
 
               out.PrintUntil(code_start_pos)
 
-              plugin = HelpIndexPlugin(s, code_start_pos, slash_code_left)
+              plugin = HelpTopicsPlugin(s, code_start_pos, slash_code_left, 'oil')
               plugin.PrintHighlighted(out)
 
               out.SkipTo(slash_code_left)
