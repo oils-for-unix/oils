@@ -63,18 +63,17 @@ OK
 # NOTE: strict_arith has one case in arith.test.sh), strict_word-eval has a case in var-op-other.
 
 
-#### help index
-help index > $TMP/index.txt
-echo index $?
-
-help index command assign > $TMP/groups.txt
-echo index groups $?
+#### help osh and oil
+help osh > $TMP/osh.txt
+echo osh $?
+help oil > $TMP/oil.txt
+echo oil $?
 
 help index ZZZ > $TMP/index.txt
 echo index ZZZ $?
 ## STDOUT:
-index 0
-index groups 0
+osh 0
+oil 0
 index ZZZ 1
 ## END
 

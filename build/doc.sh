@@ -284,10 +284,13 @@ readonly CODE_DIR=_devbuild/gen
 # - change to sh- vs oil- prefix, e.g. for arith
 
 help-index-cards() {
-
-  # TODO: change to doc/{osh,oil}-index.html
-
   _make-help cards-for-index $TEXT_DIR < $HTML_DIR/doc/osh-help-topics.html
+  _make-help cards-for-index $TEXT_DIR < $HTML_DIR/doc/oil-help-topics.html
+}
+
+help-topics() {
+  _make-help topics > $TEXT_DIR/osh < $HTML_DIR/doc/osh-help-topics.html
+  _make-help topics > $TEXT_DIR/oil < $HTML_DIR/doc/oil-help-topics.html
 }
 
 help-cards() {
@@ -316,7 +319,8 @@ all-help() {
   split-and-render doc/osh-help-topics.md
   split-and-render doc/osh-help.md
 
-  help-index-cards
+  #help-index-cards
+  help-topics
   help-cards $HTML_DIR $TEXT_DIR
 
   # Better sorting

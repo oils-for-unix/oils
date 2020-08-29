@@ -567,22 +567,6 @@ class Help(vm._Builtin):
     else:
       arg_r.Next()
 
-    # TODO: Should be -i for index?  Or -l?
-    if topic == 'index':
-      groups = arg_r.Rest()
-      if len(groups) == 0:
-        # Print the whole index
-        groups = self._Groups()
-
-      for group in groups:
-        try:
-          contents = self.loader.Get('_devbuild/help/_%s' % group)
-        except IOError:
-          self.errfmt.Print_('Invalid help index group: %r' % group)
-          return 1
-        print(contents)
-      return 0
-
     try:
       contents = self.loader.Get('_devbuild/help/%s' % topic)
     except IOError:

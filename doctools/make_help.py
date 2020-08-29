@@ -331,6 +331,8 @@ def main(argv):
   action = argv[1]
 
   if action == 'cards-for-index':
+    # OBSOLETE
+     
     # Extract sections from help-index.html and make them into "cards".
 
     out_dir = argv[2]
@@ -358,6 +360,21 @@ def main(argv):
         print(g, file=f)
 
     log('  (doctools/make_help) -> %s', groups_out)
+
+  elif action == 'topics':
+    f = sys.stdout
+    groups = []
+    for group_id, group_desc, text in HelpIndexCards(sys.stdin.read()):
+      #log('group_id = %r', group_id)
+      #log('group_desc = %r', group_desc)
+      #log('text = %r', text)
+
+      f.write('%s %s %s\n\n' % (ansi.REVERSE, group_desc, ansi.RESET))
+      f.write(text)
+      f.write('\n')  # extra
+      groups.append(group_id)
+
+    log('  (doctools/make_help) -> %d groups', len(groups))
 
   elif action == 'cards':
     # Split help into cards.
