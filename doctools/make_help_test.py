@@ -25,7 +25,7 @@ class MakeHelpTest(unittest.TestCase):
 
     line = '  [Overview] hello   there   X not-impl'
 
-    print(make_help.HighlightLine(line))
+    print(make_help.HighlightLine('osh', line))
 
 
 if __name__ == '__main__':
