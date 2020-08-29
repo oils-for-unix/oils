@@ -887,6 +887,51 @@ these are discouraged.
 
 <!--    -R VAR     True if the variable VAR has been set and is a nameref variable. -->
 
+#### printf
+
+    printf FLAG* FMT ARGS*
+
+Displays text according to a format string.
+
+Flags:
+    -v VAR  Write output in variable VAR instead of standard output.
+
+FMT:
+    String that can contain three types of objects: characters that will be
+    printed; escape sequences that are interpreted and printed (see `escapes`);
+    and format specifiers that print the strings passed to printf as ARGS after
+    being formatted (if not enough ARGS are passed, zero or a nul string will
+    be used).
+
+Format specifiers:
+
+    %%  Prints a single "%".
+    %b  Interprets backslash escapes while printing.
+    %q  Prints the argument escaping the characters needed to make it reusable
+        as shell input.
+    %d  Print as signed decimal number.
+    %i  Same as %d.
+    %o  Print as unsigned octal number.
+    %u  Print as unsigned decimal number.
+    %x  Print as unsigned hexadecimal numbe with lower-case hex-digits (a-f).
+    %X  Same as %x, but with upper-case hex-digits (A-F).
+    %f  Print as floating point number.
+    %e  Print as a double number, in "±e" format (lower-case e).
+    %E  Same as %e, but with an upper-case E.
+    %g  Interprets the argument as double, but prints it like %f or %e.
+    %G  Same as %g, but print it like %E.
+    %c  Print as a single char, onlye the first character is printed.
+    %s  Print as string
+    %n  The number of characters printed so far is stored in the variable named
+        in the argument.
+    %a  Interprets the argument as double, and prints it like a C99 hexadecimal
+        floating-point literal.
+    %A  Same as %a, but print it like %E.
+    %(FORMAT)T  Prints date and time, according to FORMAT as a format string
+                for strftime(3). The argument is the number of seconds since
+                epoch. It can also be -1 (current time, also the default value
+                if there is no argument) or -2 (shell startup time).
+
 <h4 id="kill">kill</h4>
 
 TODO
