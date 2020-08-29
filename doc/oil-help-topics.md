@@ -9,7 +9,7 @@ Oil Help Topics
 You may also want to browse [OSH Help Topics](help-index.html).
 
 <h2 id="overview">
-  Overview (<a class="group-link" href="help.html#overview">overview</a>)
+  Overview (<a class="group-link" href="oil-help.html#overview">overview</a>)
 </h2>
 
 ```oil-help-topics
@@ -18,16 +18,17 @@ You may also want to browse [OSH Help Topics](help-index.html).
 ```
 
 <h2 id="command">
-  Command Language (<a class="group-link" href="help.html#command">command</a>)
+  Command Language (<a class="group-link" href="oil-help.html#command">command</a>)
 </h2>
 
 ```oil-help-topics
-  [Oil Keywords]  proc   equal =
-  [Oil Blocks]  block
+  [Oil Keywords]  proc       proc p (x, y, @rest, &block) { echo hi }
+                  equal =    = 1 + 2*3
+  [Oil Blocks]    blocks     cd /tmp { echo $PWD }
 ```
 
 <h2 id="assign">
-  Variable Assignments (<a class="group-link" href="help.html#assign">assign</a>)
+  Assigning Variables (<a class="group-link" href="oil-help.html#assign">assign</a>)
 </h2>
 
 ```oil-help-topics
@@ -35,41 +36,40 @@ You may also want to browse [OSH Help Topics](help-index.html).
 ```
 
 <h2 id="word">
-  Word Language (<a class="group-link" href="help.html#word">word</a>)
+  Word Language (<a class="group-link" href="oil-help.html#word">word</a>)
 </h2>
 
 ```oil-help-topics
   [Oil Word]      inline-call   $strfunc(x, y) @arrayfunc(z)
-                  splice        @array @ARGV
+                  splice        @myarray @ARGV
                   expr-sub      echo $[3 + a[i]]
                   X oil-printf  ${x %.3f}
                   X oil-format  ${x|html}
 ```
 
 <h2 id="expr">
-  Oil Expression Language (<a class="group-link" href="help.html#expr">expr</a>)
+  Oil Expression Language (<a class="group-link" href="oil-help.html#expr">expr</a>)
 </h2>
 
 ```oil-help-topics
-  [Functions]     proc-decl     proc p (x, y, @rest, &block) { echo hi }
-                  func-call     f(x, y)
   [Literals]      oil-string    c'line\n'  r'[a-z]\n'
                   oil-array     %(a b c)
                   oil-dict      %{name: 'bob'}
                   oil-numbers    42  3.14  1e100
-                  oil-bool      true  false
+                  oil-bool      True T   False F   null
   [Operators]     oil-compare   ==  <=  in
                   oil-logical    not  and  or
                   oil-arith     div  mod
-                  oil-bitwise    xor
+                  oil-bitwise   ~ & | xor
                   oil-ternary    x if len(s) else y
                   oil-index     a[3]  s[3]
                   oil-slice     a[1:-1]  s[1:-1]
-  [Regexes]       re-literal    /d+/
+                  func-call     f(x, y)
+  [Eggex]         re-literal    /d+/
                   re-compound   ~   (group)   <capture>   sequence
                   re-primitive  %zero   Subpattern   @subpattern
                                 'sq'   "dq"   $x   ${x}
-                  named-classes dot  digit  space  word  d  s  w
+                  named-class    dot  digit  space  word  d  s  w
                   class-literal [c a-z 'abc' \\ \xFF \u0100]
                   re-flags      ignorecase etc.
                   re-multiline  ///
@@ -77,12 +77,12 @@ You may also want to browse [OSH Help Topics](help-index.html).
 ```
 
 <h2 id="builtin">
-  Builtin Commands (<a class="group-link" href="help.html#builtin">builtin</a>)
+  Builtin Commands (<a class="group-link" href="oil-help.html#builtin">builtin</a>)
 </h2>
 
 ```oil-help-topics
   [Oil Builtins]  cd   X shopt   X env   compatible, and takes a block
-                  X fork   X wait        replaces & and (), takes a block
+                  X fork   X forkwait    replaces & and (), takes a block
                   X fopen                Many open streams, takes a block
                   X use                  source with namespace, file-relative 
                   X opts                 getopts replacement
@@ -91,14 +91,14 @@ You may also want to browse [OSH Help Topics](help-index.html).
                   getline                Instead of read -raw :name
                   write                  like echo, but with --, -sep, -end
                   X log   X die          common functions (polyfill)
-  [Data Formats]  json   X qtsv   X html   X struct/binary
+  [Data Formats]  json   X qtsv
 X [External Lang] BEGIN   END   when (awk)
                   rule (make)   each (xargs)   fs (find)
 X [Testing]       check
 ```
 
 <h2 id="option">
-  Shell Options (<a class="group-link" href="help.html#option">option</a>)
+  Shell Options (<a class="group-link" href="oil-help.html#option">option</a>)
 </h2>
 
 ```oil-help-topics
@@ -145,7 +145,7 @@ X [Testing]       check
 ```
 
 <h2 id="special">
-  Special Variables (<a class="group-link" href="help.html#special">special</a>)
+  Special Variables (<a class="group-link" href="oil-help.html#special">special</a>)
 </h2>
 
 ```oil-help-topics
@@ -154,7 +154,7 @@ X [Testing]       check
 ```
 
 <h2 id="lib">
-  Oil Libraries (<a class="group-link" href="help.html#lib">lib</a>)
+  Oil Libraries (<a class="group-link" href="oil-help.html#lib">lib</a>)
 </h2>
 
 ```oil-help-topics
@@ -163,13 +163,13 @@ X [Testing]       check
   [String]        find()   sub()   join() 
                   split()             $IFS, awk algorithm, regex
   [Word]          glob()   maybe()
+  [Arrays]        index()
+  [Assoc Arrays]  @keys()   @values()
+  [Block]         setvar()            for procs to set in outer scope
+                  evalblock()         procs evaluate block to namespace
   [Better Syntax] shquote()
                   lstrip()   rstrip()   lstripglob()   rstripglob()
                   upper()   lower()
                   strftime()
-  [Arrays]        index()
-  [Assoc Arrays]  @names()   @values()
-  [Block]         setvar()            for procs to set in outer scope
-                  evalblock()         procs evaluate block to namespace
 X [Hashing]       sha1   sha256 (etc.)
 ```

@@ -50,7 +50,7 @@ You may also want to browse [Oil Help Topics](oil-index.html).
 
 
 <h2 id="overview">
-  Overview (<a class="group-link" href="help.html#overview">overview</a>)
+  Overview (<a class="group-link" href="osh-help.html#overview">overview</a>)
 </h2>
 
 ```osh-help-topics
@@ -59,7 +59,7 @@ You may also want to browse [Oil Help Topics](oil-index.html).
 ```
 
 <h2 id="command">
-  Command Language (<a class="group-link" href="help.html#command">command</a>)
+  Command Language (<a class="group-link" href="osh-help.html#command">command</a>)
 </h2>
 
 ```osh-help-topics
@@ -78,7 +78,7 @@ You may also want to browse [Oil Help Topics](oil-index.html).
 ```
 
 <h2 id="assign">
-  Variable Assignments (<a class="group-link" href="help.html#assign">assign</a>)
+  Assigning Variables (<a class="group-link" href="osh-help.html#assign">assign</a>)
 </h2>
 
 ```osh-help-topics
@@ -91,7 +91,7 @@ You may also want to browse [Oil Help Topics](oil-index.html).
 ```
 
 <h2 id="word">
-  Word Language (<a class="group-link" href="help.html#word">word</a>)
+  Word Language (<a class="group-link" href="osh-help.html#word">word</a>)
 </h2>
 
 ```osh-help-topics
@@ -109,7 +109,7 @@ You may also want to browse [Oil Help Topics](oil-index.html).
 ```
 
 <h2 id="sublang">
-  Other Shell Sublanguages (<a class="group-link" href="help.html#sublang">sublang</a>)
+  Other Shell Sublanguages (<a class="group-link" href="osh-help.html#sublang">sublang</a>)
 </h2>
 
 ```osh-help-topics
@@ -134,7 +134,7 @@ You may also want to browse [Oil Help Topics](oil-index.html).
 ```
 
 <h2 id="builtin">
-  Builtin Commands (<a class="group-link" href="help.html#builtin">builtin</a>)
+  Builtin Commands (<a class="group-link" href="osh-help.html#builtin">builtin</a>)
 </h2>
 
 ```osh-help-topics
@@ -156,7 +156,7 @@ X [Unsupported]   enable
 ```
 
 <h2 id="option">
-  Shell Options (<a class="group-link" href="help.html#option">option</a>)
+  Shell Options (<a class="group-link" href="osh-help.html#option">option</a>)
 </h2>
 
 ```osh-help-topics
@@ -168,7 +168,7 @@ X [Unsupported]   enable
 ```
 
 <h2 id="env">
-  Environment Variables (<a class="group-link" href="help.html#env">env</a>)
+  Environment Variables (<a class="group-link" href="osh-help.html#env">env</a>)
 </h2>
 
 ```osh-help-topics
@@ -179,7 +179,7 @@ X [Unsupported]   enable
 
 
 <h2 id="special">
-  Special Variables (<a class="group-link" href="help.html#special">special</a>)
+  Special Variables (<a class="group-link" href="osh-help.html#special">special</a>)
 </h2>
 
 ```osh-help-topics
@@ -202,7 +202,7 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
 ```
 
 <h2 id="plugin">
-  Plugins and Hooks (<a class="group-link" href="help.html#plugin">plugin</a>)
+  Plugins and Hooks (<a class="group-link" href="osh-help.html#plugin">plugin</a>)
 </h2>
 
 ```osh-help-topics
