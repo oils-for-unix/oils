@@ -7,6 +7,8 @@ body_css_class: width40 help-body
 Oil Help
 ========
 
+Navigate this doc with the [index of help topics](oil-help-topics.html).
+
 <div id="toc">
 </div>
 
@@ -73,9 +75,34 @@ TODO
 
 <h2 id="command">Command Language</h2>
 
-<h2 id="assign">Assigning Variables</h2>
+#### proc
 
-### Oil Keywords
+Procs are shell-like functions, but with named parameters, and without dynamic
+scope (TODO):
+
+    proc copy(src, dest) {
+      cp --verbose --verbose $src $dest
+    }
+
+#### equal
+
+The `=` keyword shows the expression to its right:
+
+    oil$ = 1 + 2*3
+    (Int)   7
+
+### Oil Blocks
+
+#### blocks
+
+Blocks can be passed to builtins (and procs eventually):
+
+    cd /tmp {
+      echo $PWD  # prints /tmp
+    }
+    echo $PWD
+
+<h2 id="assign">Assigning Variables</h2>
 
 #### const 
 
@@ -107,17 +134,6 @@ It's meant for interactive use and to easily convert existing shell scripts.
 New Oil programs should use `set`, `setglobal`, or `setref` instead of
 `setvar`.
 
-#### set 
-
-A shorter name for `setlocal` in the Oil language.  Requires `shopt -s
-parse_set`, because otherwise it would conflict with the `set` builtin.  Use
-`builtin set -- 1 2 3` to get the builtin, or `shopt -o` to change options.
-
-#### setlocal
-
-Mutates an existing variable in the current scope.  If it doesn't exist, the
-shell exits with a fatal error.
-
 #### setglobal
 
 Mutates a global variable.  If it doesn't exist, the shell exits with a fatal
@@ -127,16 +143,25 @@ error.
 
 Mutates a variable through a named reference.  TODO: Show example.
 
+#### setlocal
+
+Mutates an existing variable in the current scope.  If it doesn't exist, the
+shell exits with a fatal error.
+
+`set` is an alias for `setlocal` in the Oil language.  Requires `shopt -s
+parse_set`, because otherwise it would conflict with the `set` builtin.  Use
+`builtin set -- 1 2 3` to get the builtin, or `shopt -o` to change options.
+
 
 <h2 id="word">Word Language</h2>
 
+#### inline-call
+
+#### splice
+
+#### expr-sub
+
 <h2 id="expr">Oil Expression Language</h2>
-
-### Functions
-
-#### proc-decl
-
-#### func-call
 
 ### Literals
 
@@ -168,13 +193,113 @@ Like shell arays, Oil arrays accept anything that can appear in a command:
 
 #### oil-dict
 
+#### oil-numbers
+
+    myint = 42
+    myfloat = 3.14
+    float2 = 1e100
+
+#### oil-bool
+
+Capital letters to avoid confusions with the builtin **commands** `true` and
+`false`:
+
+    True T   False F
+
+And the value that's unequal to any other:
+
+    null
+
+It's preferable to use the empty string in many cases.  The `null` value can't
+be interpolated into words.
+
+### Operators
+
+#### oil-compare
+
+    ==  <=  in
+
+#### oil-logical
+
+    not  and  or
+
+#### oil-arith
+
+    +  -  *  /   div  mod
+
+`div` is for integer math, while `/` is for floating point math.
+
+#### oil-bitwise
+
+    ~  &  |  xor
+
+#### oil-ternary
+
+Like Python:
+
+    display = 'yes' if len(s) else 'empty'
+
+#### oil-index
+
+Like Python:
+
+    myarray[3]
+    mystr[3]
+
+TODO: Does string indexing give you an integer back?
+
+#### oil-slice
+
+Like Python:
+
+    myarray[1 : -1]
+    mystr[1 : -1]
+
+#### func-call
+
+Like Python:
+
+    f(x, y)
+
+
 ### Eggex
+
+#### re-literal
+
+#### re-compound
+
+#### re-primitive
+
+#### named-class
+
+#### class-literal
+
+#### re-flags
+
+#### re-multiline
+
+Not implemented.
+
+#### re-glob-ops
+
+Not implemented.
+
+    ~~  !~~
+
 
 <h2 id="builtin">Builtin Commands</h2>
 
+### Oil Builtins
+
+### Data Formats
+
+### External Lang
+
+### Testing
+
 <h2 id="option">Shell Options</h2>
 
-### strict:all
+<h3 id="strict:all">strict:all</h3>
 
 #### strict_tilde
 
@@ -207,7 +332,7 @@ For compatibility, Oil will parse some constructs it doesn't execute, like:
 
 When this option is disabled, that statement is a syntax error.
 
-### oil:basic
+<h3 id="oil:basic">oil:basic</h3>
 
 #### simple_word_eval
 
@@ -215,15 +340,40 @@ TODO:
 
 <!-- See doc/simple-word-eval.html -->
 
-### oil:all
+<h3 id="oil:all">oil:all</h3>
 
 <h2 id="special">Special Variables</h2>
+
+#### ARGV
+
+Replacement for `"$@"`
+
+#### STATUS
+
+TODO: Do we need this in expression mode?
+
+    if ($? == 0) {
+    }
+    if (STATUS == 0) {
+    }
+
+#### M
+
+TODO: The match
+
+### Platform
+
+#### OIL_VERSION
+
+The version of Oil that is being run, e.g. `0.9.0`.
+
+TODO: comparison algorithm.
 
 <h2 id="lib">Oil Libraries</h2>
 
 ### Collections
 
-`len()`
+#### len()
 
 - `len(mystr)` is its length in bytes
 - `len(myarray)` is the number of elements

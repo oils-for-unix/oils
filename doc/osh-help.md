@@ -36,7 +36,7 @@ keywords.
 
 The `help` builtin prints portions of it.
 
-You can also navigate this doc with the [help index](help-index.html).
+Navigate this doc with the [index of help topics](osh-help-topics.html).
 
 <!--
 TODO:
@@ -117,19 +117,19 @@ Otherwise:
 
 Pass --rcfile /dev/null to disable this behavior.
 
-<h4 id="config">Startup Files</h4>
+<h4 id="startup">Startup Files</h4>
 
 History is read?
 
-<h3>Lexing</h3>
+### Lexing
 
-<h4 id="comments">comments</h4>
+#### comment
 
 A comment starts with `#` and goes until the end of the line.
 
     echo hi  # print a greeting
 
-<h4 id="line-continuation">line-continuation</h4>
+#### line-continuation
 
 A backslash `\` at the end of a line continues the line without executing it:
 
@@ -141,7 +141,7 @@ A backslash `\` at the end of a line continues the line without executing it:
 
 ### Commands
 
-<h4 id="simple-command">simple-command</h4>
+#### simple-command
 
 Commands are composed of words.  The first word may by the name of a shell
 builtin, an Oil proc / shell "function", an external command, or an alias:
@@ -172,9 +172,9 @@ or this:
     echo one
     echo two
 
-<h3>Conditional</h3>
+### Conditional
 
-<h4 id="case">case</h4>
+#### case
 
 Match a string against a series of glob patterns.  Execute code in the section
 below the matching pattern.
@@ -189,7 +189,7 @@ below the matching pattern.
         ;;
     esac
 
-<h4 id="if">if</h4>
+#### if
 
 Test if a command exited with status zero (true).  If so, execute the
 corresponding block of code.
@@ -214,7 +214,7 @@ Oil:
       echo 'neither'
     }
 
-<h4 id="true">true</h4>
+#### true
 
 Do nothing and return status 0.
 
@@ -222,7 +222,7 @@ Do nothing and return status 0.
       echo hello
     fi
 
-<h4 id="false">false</h4>
+#### false
 
 Do nothing and return status 1.
 
@@ -232,7 +232,35 @@ Do nothing and return status 1.
       echo hello
     fi
 
+#### colon
+
+Like `true`: do nothing and return status 0.
+
+#### bang 
+
+Invert an exit code:
+
+    if ! test -d /tmp; then   
+      echo "No temp directory
+    fi
+
+#### and
+
+    mkdir -p /tmp && cp foo /tmp
+
+#### or
+
+    ls || die "failed"
+
 ### Iteration
+
+#### while
+
+POSIX
+
+#### until
+
+POSIX
 
 #### for
 
@@ -259,11 +287,73 @@ Shell style:
 
 Both fragments output 3 lines and then Python files on remaining lines.
 
+#### for-expr-sh
+
+A bash/ksh construct:
+
+    for (( i = 0; i < 5; ++i )); do
+      echo $i
+    done
+
 ### Control Flow
+
+These are keywords in Oil, not builtins!
+
+#### break
+
+Break out of a loop.  (Not used for case statements!)
+
+#### continue
+
+Continue to the next iteration of a loop.
+
+#### return
+
+Return from a function.
+
+#### exit
+
+Exit the shell process with the given status:
+
+    exit 2
 
 ### Grouping
 
+#### sh-func
+
+POSIX:
+
+    f() {
+      echo args "$@"
+    }
+    f 1 2 3
+
+#### sh-block
+
+POSIX:
+
+    { echo one; echo two; }
+
+Note the trailing `;` -- which isn't necessary in Oil.
+
+#### subshell
+
+    ( echo one; echo two )
+
+Use [forkwait]($help) in Oil instead.
+
 ### Concurrency
+
+#### pipe
+
+#### ampersand
+
+    CMD &
+
+The `&` language construct runs CMD in the background as a job, immediately
+returning control to the shell.
+
+The resulting PID is recorded in the `$!` variable.
 
 ### Redirects
 
@@ -331,9 +421,13 @@ Note that time is a KEYWORD, not a builtin!
 
 ### Operators
 
+#### sh-assign
+
+#### sh-append
+
 ### Compound Data
 
-#### array
+#### sh-array
 
 Array literals in shell accept any sequence of words, just like a command does:
 
@@ -344,12 +438,25 @@ Array literals in shell accept any sequence of words, just like a command does:
 
 In Oil, use [oil-array]($help).
 
+#### sh-assoc
+
+In Oil, use [oil-dict]($help).
+
 ### Builtins
 
-### Oil Keywords
+#### local
 
-<!-- CONFLICT: This duplicates the above -->
+#### export
 
+#### unset
+
+#### shift
+
+#### declare
+
+#### typeset
+
+Alias for `declare`.
 
 <h2 id="word">Word Language</h2>
 
@@ -401,25 +508,70 @@ Used as a shortcut for a user's home directory:
 
 <h3>Var Ops</h3>
 
-<h4 id="op-format">op-format</h4>
+#### op-test
+
+#### op-strip
+
+#### op-replace
+
+#### op-index
+
+    ${a[i+1]}
+
+#### op-slice
+
+#### op-format
 
 ${x@P} evaluates x as a prompt string, e.g. the string that would be printed if
 PS1=$x.
-
-
-<h3>Oil Word</h3>
 
 <h2 id="sublang">Other Shell Sublanguages</h2>
 
 ### Arithmetic
 
+#### arith-context
+
+#### sh-numbers
+
+#### sh-arith
+
+#### sh-logical
+
+#### sh-bitwise
+
 ### Boolean
+
+#### dbracket
+
+Compatible with bash.
+
+#### bool-expr
+
+#### bool-infix
+
+#### bool-path
+
+#### bool-str
+
+#### bool-other
 
 ### Patterns
 
+#### glob
+
+#### extglob
+
+#### regex
+
+Part of [dbracket]($help)
+
 ### Brace Expand
 
+#### braces
+
 ### History
+
+#### histsub
 
 <h2 id="builtin">Builtin Commands</h2>
 
@@ -707,15 +859,6 @@ If there's no ARG, wait for all child processes.
 Flags:
 
     -n  Wait for the next process to exit, rather than a specific process.
-
-<h4 id="ampersand">ampersand</h4>
-
-    CMD &
-
-The `&` language construct runs CMD in the background as a job, immediately
-returning control to the shell.
-
-The resulting PID is recorded in the `$!` variable.
 
 <h4 id="fg">fg</h4>
 

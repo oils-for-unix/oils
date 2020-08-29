@@ -170,24 +170,23 @@ def HighlightLine(lang, line):
 
 class Splitter(HTMLParser.HTMLParser):
   """Split an HTML stream starting at each of the heading tags.
+
+  For *-help.html.
   
-  - h2 for help-index
-  - h2, h3, h4 for help
+  TODO: Rewrite with this with lazylex!
 
-  Content before the first heading is omitted.
-
-  After feed(), self.out is populated with a list of groups, and each group is
-  (id_value Str, heading_text Str, parts List[Str]).
-
-  TODO: Turn this:
-
-  <h4>simple-command</h4>
-
-  into:
-
-  <h4 id="simple-command">simple-command</h4>
-
-  So that cards are extracted properly.
+  Algorithm:
+  - ExtractBody() first, then match balanced tags
+  - SPLIT by h2, h3, h4
+  - Match <pre><code> blocks and re-indent
+  - Later:
+    - links <a href="">
+    - `` is turned into inline <code></code>
+    - ** ** for bold
+    - * * for emphasis
+    - <p> needs word wrapping!  Oops.
+      - actually cmark seems to preserve this?  OK maybe not.
+      - we just need space between <p>
   """
   def __init__(self, heading_tags, out):
     HTMLParser.HTMLParser.__init__(self)
@@ -313,7 +312,7 @@ def SplitIntoCards(heading_tags, contents):
   #log('make_help.py: Parsed %d parts', len(groups))
 
 
-def HelpIndexCards(s):
+def HelpTopics(s):
   """
   Given an HTML page, yield groups (id, desc, block of text)
   """
@@ -368,7 +367,7 @@ def main(argv):
   if action == 'topics':
     f = sys.stdout
     groups = []
-    for group_id, group_desc, text in HelpIndexCards(sys.stdin.read()):
+    for group_id, group_desc, text in HelpTopics(sys.stdin.read()):
       #log('group_id = %r', group_id)
       #log('group_desc = %r', group_desc)
       #log('text = %r', text)
@@ -388,6 +387,7 @@ def main(argv):
     pages = argv[4:]
 
     topics = []
+    seen = set()
     for page_path in pages:
       with open(page_path) as f:
         contents = f.read()
@@ -408,6 +408,9 @@ def main(argv):
           f.write(text)
 
         topics.append(topic_id)
+        if topic_id in seen:
+          log('Warning: %r is duplicated', topic_id)
+        seen.add(topic_id)
 
     log('%s -> (doctools/make_help) -> %d cards in %s', ' '.join(pages), len(topics), out_dir)
 

@@ -43,7 +43,7 @@ To view this index inside the shell, use:
 An <span style="color: darkred">X</span> next to a help topic means that it's
 an **unimplemented** feature.
 
-You may also want to browse [Oil Help Topics](oil-index.html).
+You may also want to browse [Oil Help Topics](oil-help-topics.html).
 
 <div id="toc">
 </div>
@@ -68,7 +68,7 @@ You may also want to browse [Oil Help Topics](oil-index.html).
                   bang !   and &&   or ||   dbracket [[
   [Iteration]     while   until   for   for-expr-sh ((
   [Control Flow]  break   continue   return   exit
-  [Grouping]      function   block {   subshell (
+  [Grouping]      sh-func   sh-block {   subshell (
   [Concurrency]   pipe   |   X |&
                   ampersand &
   [Redirects]     redir-file  >  >>  >|  <  <>   X &>
@@ -82,10 +82,10 @@ You may also want to browse [Oil Help Topics](oil-index.html).
 </h2>
 
 ```osh-help-topics
-  [Operators]     assign        str='xyz'
-                  append        str+='abc'
-  [Compound Data] array         array=(a b c)   array[1]=B   "${a[@]}"
-                  assoc         assoc=(['a']=1 ['b']=2)   assoc['x']=b
+  [Operators]     sh-assign     str='xyz'
+                  sh-append     str+='abc'
+  [Compound Data] sh-array      array=(a b c)   array[1]=B   "${a[@]}"
+                  sh-assoc      assoc=(['a']=1 ['b']=2)   assoc['x']=b
   [Builtins]      local   readonly   export   unset   shift
                   declare   typeset   X let
 ```
@@ -102,8 +102,9 @@ You may also want to browse [Oil Help Topics](oil-index.html).
                   tilde-sub     ~/src
                   proc-sub      diff <(sort L.txt) <(sort R.txt)
   [Var Ops]       op-test       ${x:-default}  
-                  op-unary      ${x%%suffix}  etc.
-                  op-str        ${x//y/z}
+                  op-strip      ${x%%suffix}  etc.
+                  op-replace    ${x//y/z}
+                  op-index      ${a[i+1}
                   op-slice      ${a[@]:0:1}
                   op-format     ${x@P}
 ```
@@ -114,11 +115,10 @@ You may also want to browse [Oil Help Topics](oil-index.html).
 
 ```osh-help-topics
   [Arithmetic]    arith-context Where legacy arithmetic is allowed
-                  num-literals  0xFF  0755  etc.
-                  math          1 + 2*3
-                  arith-logical !a && b
-                  bitwise       ~a ^ b
-                  arith-assign  a *= 2
+                  sh-numbers    0xFF  0755  etc.
+                  sh-arith      1 + 2*3   a *= 2
+                  sh-logical    !a && b
+                  sh-bitwise    ~a ^ b
   [Boolean]       dbracket      [[ vs. the test builtin
                   bool-expr       [[ ! $x && $y || $z ]]
                                 test ! $x -a $y -o $z
@@ -174,7 +174,6 @@ X [Unsupported]   enable
 ```osh-help-topics
   [Shell Options] SHELLOPTS   X BASHOPTS
   [Other Env]     HOME   PATH   IFS
-  [Oil Paths]     ?builtins   ?completion_plugins   ?coprocesses
 ```
 
 

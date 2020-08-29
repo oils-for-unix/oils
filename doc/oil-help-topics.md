@@ -6,7 +6,10 @@ css_files: ../web/base.css ../web/help-index.css ../web/toc.css
 Oil Help Topics
 ===============
 
-You may also want to browse [OSH Help Topics](help-index.html).
+You may also want to browse [OSH Help Topics](osh-help-topics.html).
+
+<div id="toc">
+</div>
 
 <h2 id="overview">
   Overview (<a class="group-link" href="oil-help.html#overview">overview</a>)
@@ -22,9 +25,9 @@ You may also want to browse [OSH Help Topics](help-index.html).
 </h2>
 
 ```oil-help-topics
-  [Oil Keywords]  proc       proc p (x, y, @rest, &block) { echo hi }
+                  proc       proc p (x, y, @rest, &block) { echo hi }
                   equal =    = 1 + 2*3
-  [Oil Blocks]    blocks     cd /tmp { echo $PWD }
+                  oil-block  cd /tmp { echo $PWD }
 ```
 
 <h2 id="assign">
@@ -32,7 +35,7 @@ You may also want to browse [OSH Help Topics](help-index.html).
 </h2>
 
 ```oil-help-topics
-  [Oil Keywords]  const   var   setvar   setref   setglobal   setlocal/set
+                  const   var   setvar   setref   setglobal   setlocal/set
 ```
 
 <h2 id="word">
@@ -40,7 +43,7 @@ You may also want to browse [OSH Help Topics](help-index.html).
 </h2>
 
 ```oil-help-topics
-  [Oil Word]      inline-call   $strfunc(x, y) @arrayfunc(z)
+                  inline-call   $strfunc(x, y) @arrayfunc(z)
                   splice        @myarray @ARGV
                   expr-sub      echo $[3 + a[i]]
                   X oil-printf  ${x %.3f}
@@ -126,7 +129,7 @@ X [Testing]       check
                   more_errexit           More errexit checks --  at command sub
                   simple_word_eval       No splitting, static globbing
                   dashglob               Disabled to avoid files like -rf
-  [oil:nice]      * The full Oil language
+  [oil:all]       * The full Oil language
                   parse_equals           x = 's' (for cleaner config blocks)
                   parse_set              instead of setvar
                   X parse_amp            echo hi &2 > /dev/null
@@ -144,12 +147,20 @@ X [Testing]       check
                   verbose_errexit
 ```
 
+<h2 id="env">
+  Environment Variables (<a class="group-link" href="oil-help.html#env">env</a>)
+</h2>
+
+```oil-help-topics
+  [Oil Paths]     ?builtins   ?completion_plugins   ?coprocesses
+```
+
 <h2 id="special">
   Special Variables (<a class="group-link" href="oil-help.html#special">special</a>)
 </h2>
 
 ```oil-help-topics
-  [Oil Special]   ARGV   STATUS   M
+                  ARGV   STATUS   M
   [Platform]      OIL_VERSION
 ```
 
