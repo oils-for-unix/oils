@@ -300,8 +300,8 @@ help-cards() {
   local py_out=$CODE_DIR/help_.py
 
   # For now, the pass help markdown
-  _make-help cards doc/osh-help.md $TEXT_DIR $py_out
-  _make-help cards doc/oil-help.md $TEXT_DIR $py_out
+  _make-help cards $TEXT_DIR $py_out \
+    doc/osh-help.md doc/oil-help.md
 }
 
 all-help() {

@@ -362,30 +362,31 @@ def main(argv):
   elif action == 'cards':
     # Split help into cards.
 
-    page_path = argv[2]
-    out_dir = argv[3]
-    py_out = argv[4]
-
-    with open(page_path) as f:
-      contents = f.read()
-
-    cards = SplitIntoCards(['h2', 'h3', 'h4'], contents)
+    out_dir = argv[2]
+    py_out = argv[3]
+    pages = argv[4:]
 
     topics = []
-    for tag, topic_id, heading, text in cards:
-      if tag != 'h4':
-        continue  # Skip h2 and h3 for now
+    for page_path in pages:
+      with open(page_path) as f:
+        contents = f.read()
 
-      #log('topic_id = %r', topic_id)
-      #log('heading = %r', heading)
+      cards = SplitIntoCards(['h2', 'h3', 'h4'], contents)
 
-      # indices start with _
-      path = os.path.join(out_dir, topic_id)
-      with open(path, 'w') as f:
-        f.write('%s %s %s\n\n' % (ansi.REVERSE, heading, ansi.RESET))
-        f.write(text)
+      for tag, topic_id, heading, text in cards:
+        if tag != 'h4':
+          continue  # Skip h2 and h3 for now
 
-      topics.append(topic_id)
+        #log('topic_id = %r', topic_id)
+        #log('heading = %r', heading)
+
+        # indices start with _
+        path = os.path.join(out_dir, topic_id)
+        with open(path, 'w') as f:
+          f.write('%s %s %s\n\n' % (ansi.REVERSE, heading, ansi.RESET))
+          f.write(text)
+
+        topics.append(topic_id)
 
     log('%s -> (doctools/make_help) -> %d cards in %s', page_path, len(topics), out_dir)
 
