@@ -214,14 +214,14 @@ class Splitter(HTMLParser.HTMLParser):
       id_value = values[0] if len(values) == 1 else None
       self.cur_group = (tag, id_value, [], [])
 
-    self.log('[%d] start tag %s %s', self.indent, tag, attrs)
+    self.log('[%d] <> %s %s', self.indent, tag, attrs)
     self.indent += 1
 
   def handle_endtag(self, tag):
     if tag in self.heading_tags:
       self.in_heading = False
 
-    self.log('[%d] end tag %s', self.indent, tag)
+    self.log('[%d] </> %s', self.indent, tag)
     self.indent -= 1
 
   def handle_entityref(self, name):
@@ -256,7 +256,42 @@ class Splitter(HTMLParser.HTMLParser):
           self.indent, self.cur_group))
 
 
+def ExtractBody(s):
+  """Extract what's in between <body></body>
+
+  The splitter needs balanced tags, and what's in <head> isn't balanced.
+  """
+  f = cStringIO.StringIO()
+  out = html.Output(s, f)
+  tag_lexer = html.TagLexer(s)
+
+  pos = 0
+  it = html.ValidTokens(s)
+  while True:
+    try:
+      tok_id, end_pos = next(it)
+    except StopIteration:
+      break
+
+    if tok_id == html.StartTag:
+      tag_lexer.Reset(pos, end_pos)
+      if tag_lexer.TagName() == 'body':
+        body_start_right = end_pos  # right after <body>
+
+        out.SkipTo(body_start_right)
+        body_end_left, _ = html.ReadUntilEndTag(it, tag_lexer, 'body')
+
+        out.PrintUntil(body_end_left)
+        break
+
+    pos = end_pos
+
+  return f.getvalue()
+
+
 def SplitIntoCards(heading_tags, contents):
+  contents = ExtractBody(contents)
+
   groups = []
   sp = Splitter(heading_tags, groups)
   sp.feed(contents)
@@ -330,38 +365,7 @@ def HelpIndexCards(s):
 def main(argv):
   action = argv[1]
 
-  if action == 'cards-for-index':
-    # OBSOLETE
-     
-    # Extract sections from help-index.html and make them into "cards".
-
-    out_dir = argv[2]
-
-    groups = []
-
-    for group_id, group_desc, text in HelpIndexCards(sys.stdin.read()):
-      #log('group_id = %r', group_id)
-      #log('group_desc = %r', group_desc)
-      #log('text = %r', text)
-
-      # indices start with _
-      path = os.path.join(out_dir, '_' + group_id)
-      with open(path, 'w') as f:
-        f.write('%s %s %s\n\n' % (ansi.REVERSE, group_desc, ansi.RESET))
-        f.write(text)
-
-      groups.append(group_id)
-
-    log('  (doctools/make_help) -> %d groups in %s', len(groups), out_dir)
-
-    groups_out = os.path.join(out_dir, 'groups.txt')
-    with open(groups_out, 'w') as f:
-      for g in groups:
-        print(g, file=f)
-
-    log('  (doctools/make_help) -> %s', groups_out)
-
-  elif action == 'topics':
+  if action == 'topics':
     f = sys.stdout
     groups = []
     for group_id, group_desc, text in HelpIndexCards(sys.stdin.read()):
@@ -405,7 +409,7 @@ def main(argv):
 
         topics.append(topic_id)
 
-    log('%s -> (doctools/make_help) -> %d cards in %s', page_path, len(topics), out_dir)
+    log('%s -> (doctools/make_help) -> %d cards in %s', ' '.join(pages), len(topics), out_dir)
 
     with open(py_out, 'w') as f:
       f.write('TOPICS = %s\n' % pprint.pformat(topics))

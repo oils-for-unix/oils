@@ -27,6 +27,27 @@ class MakeHelpTest(unittest.TestCase):
 
     print(make_help.HighlightLine('osh', line))
 
+  def testSplitIntoCards(self):
+    contents = """
+<h2>Oil Expression Langauge</h2>
+
+expr
+
+<h3>Literals</h2>
+
+oil literals
+
+<h4>oil-numbers</h4>
+
+42 1e100
+
+<h4>oil-array</h4>
+
+%(a b)
+"""
+    cards = make_help.SplitIntoCards(['h2', 'h3', 'h4'], contents)
+    print(list(cards))
+
 
 if __name__ == '__main__':
   unittest.main()

@@ -280,13 +280,7 @@ readonly HTML_DIR=_release/VERSION
 readonly CODE_DIR=_devbuild/gen
 
 # TODO:
-# - make it work in the 'help' builtin
 # - change to sh- vs oil- prefix, e.g. for arith
-
-help-index-cards() {
-  _make-help cards-for-index $TEXT_DIR < $HTML_DIR/doc/osh-help-topics.html
-  _make-help cards-for-index $TEXT_DIR < $HTML_DIR/doc/oil-help-topics.html
-}
 
 help-topics() {
   _make-help topics > $TEXT_DIR/osh < $HTML_DIR/doc/osh-help-topics.html
@@ -296,15 +290,12 @@ help-topics() {
 help-cards() {
   ### Do all cards at once
 
-  # Pass the HTML.  This makes it easier to parse headings
-  #doctools/make_help.py cards \
-  #  $HTML_DIR/doc/help.html $HTML_DIR/doc/help-index.html $TEXT_DIR
-
   local py_out=$CODE_DIR/help_.py
 
-  # For now, the pass help markdown
+  # TODO: We need to re-indent <code> blocks here, etc.
+
   _make-help cards $TEXT_DIR $py_out \
-    doc/osh-help.md doc/oil-help.md
+    $HTML_DIR/doc/osh-help.html $HTML_DIR/doc/oil-help.html
 }
 
 all-help() {
@@ -321,7 +312,7 @@ all-help() {
 
   #help-index-cards
   help-topics
-  help-cards $HTML_DIR $TEXT_DIR
+  help-cards
 
   # Better sorting
   #LANG=C ls -l $TEXT_DIR
