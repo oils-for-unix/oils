@@ -55,8 +55,15 @@ class _Abbrev(object):
 _ABBREVIATIONS = {
   'xref':
       _Abbrev('/cross-ref.html?tag=%(value)s#%(value)s'),
+
+  # alias for osh-help, for backward compatibility
   'help':
-      _Abbrev('help.html?topic=%(value)s#%(value)s'),
+      _Abbrev('osh-help.html?topic=%(value)s#%(value)s'),
+  'osh-help':
+      _Abbrev('osh-help.html?topic=%(value)s#%(value)s'),
+  'oil-help':
+      _Abbrev('oil-help.html?topic=%(value)s#%(value)s'),
+
   'blog-tag':
       _Abbrev('/blog/tags.html?tag=%(value)s#%(value)s'),
   'oil-commit':

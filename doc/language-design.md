@@ -83,6 +83,10 @@ Differences:
 - No "accidentally quadratic"
   - Strings and `+=`
   - No `in` for array/list membership.  Only dict membership.
+- `s[i]` returns an integer "rune", not a string?
+- Syntax
+  - `div` and `mod`
+  - `xor`, because `^` is for exponentiation
 
 ### JavaScript
 

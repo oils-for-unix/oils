@@ -7,6 +7,12 @@ body_css_class: width40 help-body
 OSH Help
 ========
 
+This doc describes every aspect of OSH briefly.  It underlies the `help`
+builtin, and is indexed by keywords.
+
+Navigate it with the [index of OSH help topics](osh-help-topics.html).
+
+
 <!--
 IMPORTANT: This doc is processed in TWO WAYS.  Be careful when editing.
 
@@ -31,22 +37,8 @@ Note: <p> implies word wrapping!
 
 -->
 
-This doc describes every aspect of Oil and OSH briefly, and is indexed by
-keywords.
-
-The `help` builtin prints portions of it.
-
-Navigate this doc with the [index of help topics](osh-help-topics.html).
-
 <!--
 TODO:
-
-- <h4> also needs anchors generated
-  - but not in TOC
-
-- cross ref bash?  <a href="$:bash"></a>
-  - links appear below the card?
-
 - Check that the cards don't go over 80 chars
 
 - Have a way to mark cards as DEPRECATED
@@ -340,7 +332,7 @@ Note the trailing `;` -- which isn't necessary in Oil.
 
     ( echo one; echo two )
 
-Use [forkwait]($help) in Oil instead.
+Use [forkwait]($osh-help) in Oil instead.
 
 ### Concurrency
 
@@ -436,11 +428,11 @@ Array literals in shell accept any sequence of words, just like a command does:
     # Put it in an array
     a=(ls $mystr "$@" *.py)
 
-In Oil, use [oil-array]($help).
+In Oil, use [oil-array]($oil-help).
 
 #### sh-assoc
 
-In Oil, use [oil-dict]($help).
+In Oil, use [oil-dict]($oil-help).
 
 ### Builtins
 
@@ -456,7 +448,7 @@ In Oil, use [oil-dict]($help).
 
 #### typeset
 
-Alias for `declare`.
+Alias for [declare]($osh-help).
 
 <h2 id="word">Word Language</h2>
 
@@ -468,7 +460,7 @@ Alias for `declare`.
 - Double Quotes
 - C-style strings: `$'\n'`
 
-Also see [oil-string]($help).
+Also see [oil-string]($oil-help).
 
 ### Substitutions
 
@@ -563,7 +555,7 @@ Compatible with bash.
 
 #### regex
 
-Part of [dbracket]($help)
+Part of [dbracket]($osh-help)
 
 ### Brace Expand
 

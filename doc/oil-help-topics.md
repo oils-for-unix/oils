@@ -60,9 +60,10 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   oil-dict      %{name: 'bob'}
                   oil-numbers    42  3.14  1e100
                   oil-bool      True T   False F   null
-  [Operators]     oil-compare   ==  <=  in
+  [Operators]     concat        ++ on Str, Array, Dict?
+                  oil-compare   ==  <=  in
                   oil-logical    not  and  or
-                  oil-arith     div  mod
+                  oil-arith     +  -  *  /  div  mod  ^
                   oil-bitwise   ~ & | xor
                   oil-ternary    x if len(s) else y
                   oil-index     a[3]  s[3]
@@ -130,8 +131,8 @@ X [Testing]       check
                   simple_word_eval       No splitting, static globbing
                   dashglob               Disabled to avoid files like -rf
   [oil:all]       * The full Oil language
-                  parse_equals           x = 's' (for cleaner config blocks)
-                  parse_set              instead of setvar
+                  parse_equals           x = 'val' (for cleaner config blocks)
+                  parse_set              'set' instead of 'setlocal'
                   X parse_amp            echo hi &2 > /dev/null
                   X parse_dollar_slash   egrep $/ d+ / *.txt
                   X parse_dparen         remove ((

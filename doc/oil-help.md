@@ -7,7 +7,10 @@ body_css_class: width40 help-body
 Oil Help
 ========
 
-Navigate this doc with the [index of help topics](oil-help-topics.html).
+This doc describes every aspect of Oil briefly.  It underlies the `help`
+builtin, and is indexed by keywords.
+
+Navigate it with the [index of Oil help topics](oil-help-topics.html).
 
 <div id="toc">
 </div>
@@ -84,6 +87,8 @@ scope (TODO):
       cp --verbose --verbose $src $dest
     }
 
+Compare with [sh-func]($osh-help).
+
 #### equal
 
 The `=` keyword shows the expression to its right:
@@ -91,9 +96,7 @@ The `=` keyword shows the expression to its right:
     oil$ = 1 + 2*3
     (Int)   7
 
-### Oil Blocks
-
-#### blocks
+#### oil-block
 
 Blocks can be passed to builtins (and procs eventually):
 
@@ -101,6 +104,8 @@ Blocks can be passed to builtins (and procs eventually):
       echo $PWD  # prints /tmp
     }
     echo $PWD
+
+Compare with [sh-block]($osh-help).
 
 <h2 id="assign">Assigning Variables</h2>
 
@@ -214,6 +219,22 @@ It's preferable to use the empty string in many cases.  The `null` value can't
 be interpolated into words.
 
 ### Operators
+
+#### concat
+
+    mystr ++ otherstr
+    "$mystr$otherstr"  # equivalent
+
+    = mylist ++ otherlist
+
+    setvar mydict = %{a: 1, b: 2}
+    setvar otherdict = %{a: 10, c: 20}
+    = mydict ++ otherdict
+
+    setvar mystr ++= suffiX       # ???
+    setvar mylist ++= %[item]
+    setvar mydict ++= otherdict   # ???
+
 
 #### oil-compare
 
