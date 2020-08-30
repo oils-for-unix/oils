@@ -178,6 +178,10 @@ class ProcessTest(unittest.TestCase):
   def testOpen(self):
     fd_state = process.FdState(_ERRFMT, _JOB_STATE)
 
+    # Disabled because mycpp translation can't handle it.  We do this at a
+    # higher layer.
+    return
+
     # This function used to raise BOTH OSError and IOError because Python 2 is
     # inconsistent.
     # We follow Python 3 in preferring OSError.

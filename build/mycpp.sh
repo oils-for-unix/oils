@@ -242,7 +242,9 @@ compile-slice() {
     _build/cpp/arg_types.cc \
     cpp/dumb_alloc.cc \
     cpp/errno_.cc \
+    cpp/fcntl.cc \
     cpp/posix.cc \
+    cpp/signal.cc \
     cpp/libc.cc \
     "$@"
 

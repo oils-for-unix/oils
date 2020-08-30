@@ -22,7 +22,6 @@ from core import vm
 from frontend import consts
 from oil_lang import objects
 from mycpp import mylib
-from mycpp.mylib import NewStr
 
 import posix_ as posix
 
