@@ -240,7 +240,7 @@ class Fg(vm._Builtin):
     # - waitpid() under the hood
 
     pid = self.job_state.GetLastStopped()
-    if pid is None:
+    if pid == -1:
       log('No job to put in the foreground')
       return 1
 

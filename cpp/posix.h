@@ -152,6 +152,14 @@ inline Str* read(int fd, int num_requested) {
   return new Str(buf, num_read);  // could be a short read
 }
 
+inline int open(Str* filename, int mode, int perms) {
+  assert(0);
+}
+
+inline mylib::LineReader* fdopen(int fd, Str* c_mode) {
+  assert(0);
+}
+
 // Dummy exception posix::error
 class error {};
 

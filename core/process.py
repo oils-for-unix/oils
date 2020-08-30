@@ -129,14 +129,13 @@ class FdState(object):
     fd = posix.open(path, fd_mode, 0o666)  # may raise OSError
 
     # Immediately move it to a new location
-    new_fd = fcntl.fcntl(fd, fcntl.F_DUPFD, _SHELL_MIN_FD)
+    new_fd = fcntl.fcntl(fd, fcntl.F_DUPFD, _SHELL_MIN_FD)  # type: int
     posix.close(fd)
 
     # Return a Python file handle
-    try:
-      f = posix.fdopen(new_fd, c_mode)  # Might raise IOError
-    except IOError as e:
-      raise OSError(*e.args)  # Consistently raise OSError
+    # Might raise IOError.  Python-induced wart: we have to handle BOTH IOError
+    # and OSError at higher levels.
+    f = posix.fdopen(new_fd, c_mode)
     return f
 
   def _WriteFdToMem(self, fd_name, fd):
@@ -1096,7 +1095,7 @@ class JobState(object):
     # pid -> Process.  This is for STOP notification.
     self.child_procs = {}  # type: Dict[int, Process]
 
-    self.last_stopped_pid = None  # type: int  # for basic 'fg' implementation
+    self.last_stopped_pid = -1  # type: int  # for basic 'fg' implementation
     self.job_id = 1  # Strictly increasing
 
   # TODO: This isn't a PID.  This is a process group ID?

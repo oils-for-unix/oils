@@ -37,6 +37,7 @@ using id_kind_asdl::Kind_t;
 #include "pgen2_parse.h"
 #include "posix.h"
 #include "pylib_path_stat.h"
+#include "signal.h"
 #include "qsn_qsn.h"
 #include "time_.h"
 
