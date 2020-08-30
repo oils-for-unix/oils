@@ -78,7 +78,7 @@ from osh import braces
 from osh import sh_expr_eval
 from osh import word_
 from mycpp import mylib
-from mycpp.mylib import switch, tagswitch, NewStr
+from mycpp.mylib import switch, tagswitch
 
 import posix_ as posix
 import libc  # for fnmatch
