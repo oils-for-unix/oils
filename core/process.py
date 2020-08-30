@@ -62,18 +62,26 @@ NO_FD = -1
 _SHELL_MIN_FD = 100
 
 
+class _RedirFrame(object):
+  def __init__(self, saved_fd, orig_fd, forget):
+    # type: (int, int, bool) -> None
+    self.saved_fd = saved_fd
+    self.orig_fd = orig_fd
+    self.forget = forget
+
+
 class _FdFrame(object):
   def __init__(self):
     # type: () -> None
-    self.saved = []  # type: List[Tuple[int, int, bool]]
+    self.saved = []  # type: List[_RedirFrame]
     self.need_wait = []  # type: List[Tuple[Process, Waiter]]
 
   def Forget(self):
     # type: () -> None
     """For exec 1>&2."""
-    for saved, orig, forget in reversed(self.saved):
-      if saved != NO_FD and forget:
-        posix.close(saved)
+    for rf in reversed(self.saved):
+      if rf.saved_fd != NO_FD and rf.forget:
+        posix.close(rf.saved_fd)
 
     del self.saved[:]  # like list.clear() in Python 3.3
     del self.need_wait[:]
@@ -175,7 +183,7 @@ class FdState(object):
 
     #pyutil.ShowFdState()
     if need_restore:
-      self.cur_frame.saved.append((new_fd, fd, True))
+      self.cur_frame.saved.append(_RedirFrame(new_fd, fd, True))
     else:
       # if we got EBADF, we still need to close the original on Pop()
       self._PushClose(fd)
@@ -230,9 +238,9 @@ class FdState(object):
 
         # Restore and return error
         if need_restore:
-          new_fd, fd2, _ = self.cur_frame.saved.pop()
-          posix.dup2(new_fd, fd2)
-          posix.close(new_fd)
+          rf = self.cur_frame.saved.pop()
+          posix.dup2(rf.saved_fd, rf.orig_fd)
+          posix.close(rf.saved_fd)
 
         raise  # this redirect failed
 
@@ -267,7 +275,7 @@ class FdState(object):
 
   def _PushClose(self, fd):
     # type: (int) -> None
-    self.cur_frame.saved.append((NO_FD, fd, False))
+    self.cur_frame.saved.append(_RedirFrame(NO_FD, fd, False))
 
   def _PushWait(self, proc, waiter):
     # type: (Process, Waiter) -> None
@@ -349,7 +357,7 @@ class FdState(object):
           else:
             fd = NO_FD
 
-          self.cur_frame.saved.append((new_fd, fd, False))
+          self.cur_frame.saved.append(_RedirFrame(new_fd, fd, False))
 
       elif case(redirect_arg_e.CloseFd):  # e.g. echo hi 5>&-
         self._PushCloseFd(r.loc)
@@ -430,23 +438,23 @@ class FdState(object):
     # type: () -> None
     frame = self.stack.pop()
     #log('< Pop %s', frame)
-    for saved, orig, _ in reversed(frame.saved):
-      if saved == NO_FD:
+    for rf in reversed(frame.saved):
+      if rf.saved_fd == NO_FD:
         #log('Close %d', orig)
         try:
-          posix.close(orig)
+          posix.close(rf.orig_fd)
         except OSError as e:
-          log('Error closing descriptor %d: %s', orig, pyutil.strerror(e))
+          log('Error closing descriptor %d: %s', rf.orig_fd, pyutil.strerror(e))
           raise
       else:
         try:
-          posix.dup2(saved, orig)
+          posix.dup2(rf.saved_fd, rf.orig_fd)
         except OSError as e:
-          log('dup2(%d, %d) error: %s', saved, orig, pyutil.strerror(e))
+          log('dup2(%d, %d) error: %s', rf.saved_fd, rf.orig_fd, pyutil.strerror(e))
           #log('fd state:')
           #posix.system('ls -l /proc/%s/fd' % posix.getpid())
           raise
-        posix.close(saved)
+        posix.close(rf.saved_fd)
         #log('dup2 %s %s', saved, orig)
 
     # Wait for here doc processes to finish.
