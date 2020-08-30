@@ -932,6 +932,54 @@ Format specifiers:
                 epoch. It can also be -1 (current time, also the default value
                 if there is no argument) or -2 (shell startup time).
 
+#### getopts
+
+    getopts SPEC VAR ARG*
+
+Parses the options passed to the script. The character corresponding to the
+detected option is stored in VAR. By default, it parses the options passed
+to the shell ($1, $2...) unless an alternative options string ARG is passed.
+
+Spec:
+
+    SPEC contains the characters to be parsed as options. Eg, the string "abc"
+    will parse the options -a, -b and -c. If the options needs an additional
+    argument, a colon must be added after the character. Eg, the string "ab:c"
+    will parse arguments for -a, -b arg, and -c.
+
+    Arguments must be separated from options with spaces. ":" and "?" can't be
+    used as options.
+
+How to use:
+
+    getopts returns success if an option is found, and fails if the end of
+    options or an error is found. Every time it is run, it stores the character
+    corresponding to the detected option in VAR, and also places the index of
+    the next option in the variable `$OPTIND` (which is initialized to 1 every
+    time a shell starts). If an option requires an argument, the argument is
+    placed in the variable `$OPTARG`. This design is expected to be used in a
+    loop with a case statement, like this:
+
+    while getopts "ab:c" options; do
+        case $options in
+            a)
+                echo "-a option passed"
+                ;;
+            b)
+                echo "-b option passed with $OPTARG argument"
+                ;;
+            c)
+                echo "-c option passed"
+                ;;
+            *)
+                echo "Option $OPTARG: Unknown or argument missing"
+                ;;
+        esac
+    done
+
+    When an invalid option is found or a required argument is not found, VAR
+    is set to '?' and `$OPTARG` is unset.
+
 <h4 id="kill">kill</h4>
 
 TODO
