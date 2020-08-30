@@ -416,7 +416,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
         f = mylib.open(script_name)
       except OSError as e:
         stderr_line("osh: Couldn't open %r: %s", script_name,
-                    pyutil.strerror_OS(e))
+                    pyutil.strerror(e))
         return 1
       line_reader = reader.FileLineReader(f, arena)
 

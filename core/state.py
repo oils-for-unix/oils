@@ -593,7 +593,7 @@ def _GetWorkingDir():
   try:
     return posix.getcwd()
   except OSError as e:
-    e_die("Can't determine working directory: %s", pyutil.strerror_OS(e))
+    e_die("Can't determine working directory: %s", pyutil.strerror(e))
 
 
 class DebugFrame(object):

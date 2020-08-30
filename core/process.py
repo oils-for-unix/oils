@@ -197,7 +197,7 @@ class FdState(object):
         new_fd = fcntl.fcntl(fd1, fcntl.F_DUPFD, _SHELL_MIN_FD)  # type: int
       except IOError as e:
         if e.errno == errno_.EBADF:
-          self.errfmt.Print_('%d: %s' % (fd1, pyutil.strerror_IO(e)))
+          self.errfmt.Print_('%d: %s' % (fd1, pyutil.strerror(e)))
           return NO_FD
         else:
           raise  # this redirect failed
@@ -216,7 +216,7 @@ class FdState(object):
       try:
         fcntl.fcntl(fd1, fcntl.F_GETFD)
       except IOError as e:
-        self.errfmt.Print_('%d: %s' % (fd1, pyutil.strerror_IO(e)))
+        self.errfmt.Print_('%d: %s' % (fd1, pyutil.strerror(e)))
         raise
 
       need_restore = self._PushSave(fd2)
@@ -226,7 +226,7 @@ class FdState(object):
         posix.dup2(fd1, fd2)
       except OSError as e:
         # bash/dash give this error too, e.g. for 'echo hi 1>&3'
-        self.errfmt.Print_('%d: %s' % (fd1, pyutil.strerror_OS(e)))
+        self.errfmt.Print_('%d: %s' % (fd1, pyutil.strerror(e)))
 
         # Restore and return error
         if need_restore:
@@ -302,7 +302,7 @@ class FdState(object):
           open_fd = posix.open(arg.filename, mode, 0o666)
         except OSError as e:
           self.errfmt.Print_(
-              "Can't open %r: %s" % (arg.filename, pyutil.strerror_OS(e)),
+              "Can't open %r: %s" % (arg.filename, pyutil.strerror(e)),
               span_id=r.op_spid)
           raise  # redirect failed
 
@@ -436,13 +436,13 @@ class FdState(object):
         try:
           posix.close(orig)
         except OSError as e:
-          log('Error closing descriptor %d: %s', orig, pyutil.strerror_OS(e))
+          log('Error closing descriptor %d: %s', orig, pyutil.strerror(e))
           raise
       else:
         try:
           posix.dup2(saved, orig)
         except OSError as e:
-          log('dup2(%d, %d) error: %s', saved, orig, pyutil.strerror_OS(e))
+          log('dup2(%d, %d) error: %s', saved, orig, pyutil.strerror(e))
           #log('fd state:')
           #posix.system('ls -l /proc/%s/fd' % posix.getpid())
           raise
@@ -572,7 +572,7 @@ class ExternalProgram(object):
       # spelling correction?
 
       self.errfmt.Print_(
-          "Can't execute %r: %s" % (argv0_path, pyutil.strerror_OS(e)),
+          "Can't execute %r: %s" % (argv0_path, pyutil.strerror(e)),
           span_id=argv0_spid)
 
       # POSIX mentions 126 and 127 for two specific errors.  The rest are
@@ -679,11 +679,8 @@ class SubProgramThunk(Thunk):
     except KeyboardInterrupt:
       print('')
       status = 130  # 128 + 2
-    except IOError as e:
-      stderr_line('osh I/O error: %s', pyutil.strerror_IO(e))
-      status = 2
-    except OSError as e:  # mycpp: duplicated for translation
-      stderr_line('osh I/O error: %s', pyutil.strerror_OS(e))
+    except (IOError, OSError) as e:
+      stderr_line('osh I/O error: %s', pyutil.strerror(e))
       status = 2
 
     # Raises SystemExit, so we still have time to write a crash dump.

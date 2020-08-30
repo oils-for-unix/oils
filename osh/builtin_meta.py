@@ -11,7 +11,7 @@ from core import alloc
 from core.error import _ControlFlow
 from core import main_loop
 from core.pyerror import e_usage
-from core import pyutil  # strerror_OS
+from core import pyutil  # strerror
 from core import vm
 from frontend import flag_spec
 from frontend import consts
@@ -94,7 +94,7 @@ class Source(vm._Builtin):
     try:
       f = self.fd_state.Open(resolved)  # Shell can't use descriptors 3-9
     except OSError as e:
-      self.errfmt.Print_('source %r failed: %s' % (path, pyutil.strerror_OS(e)),
+      self.errfmt.Print_('source %r failed: %s' % (path, pyutil.strerror(e)),
                         span_id=cmd_val.arg_spids[1])
       return 1
 
