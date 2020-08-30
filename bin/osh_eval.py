@@ -53,18 +53,14 @@ def main(argv):
     print('')
     return 130  # 128 + 2
 
-  except OSError as e:
+  except (IOError, OSError) as e:
     if 0:
       import traceback
       traceback.print_exc()
 
     # test this with prlimit --nproc=1 --pid=$$
-    stderr_line('osh I/O error: %s', pyutil.strerror_OS(e))
+    stderr_line('osh I/O error: %s', pyutil.strerror(e))
     return 2  # dash gives status 2
-
-  except IOError as e:  # duplicate of above because CPython is inconsistent
-    stderr_line('osh I/O error: %s', pyutil.strerror_IO(e))
-    return 2
 
 
 if __name__ == '__main__':

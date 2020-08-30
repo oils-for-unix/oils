@@ -2343,7 +2343,18 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           if isinstance(t, MemberExpr):
             c_type = '%s::%s*' % (t.expr.name, t.name)
           elif isinstance(t, TupleExpr):
-            c_type = 'MultipleExceptions'  # TODO: implement this
+            c_type = None
+            if len(t.items) == 2:
+              e1 = t.items[0]
+              e2 = t.items[1]
+              if isinstance(e1, NameExpr) and isinstance(e2, NameExpr):
+                names = [e1.name, e2.name]
+                names.sort()
+                if names == ['IOError', 'OSError']:
+                  c_type = '_OSError*'  # Base class in mylib
+
+            if c_type is None:
+              c_type = 'MultipleExceptions'  # Causes compile error
           else:
             c_type = '%s*' % t.name
 

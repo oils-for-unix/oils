@@ -160,6 +160,10 @@ inline mylib::LineReader* fdopen(int fd, Str* c_mode) {
   assert(0);
 }
 
+inline void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
+  assert(0);
+}
+
 // Dummy exception posix::error
 class error {};
 

@@ -13,7 +13,7 @@ from pylib import os_path
 
 import posix_ as posix
 
-from typing import Any, TYPE_CHECKING
+from typing import Any, Union, TYPE_CHECKING
 if TYPE_CHECKING:
   from mycpp import mylib
 
@@ -55,6 +55,10 @@ def strerror_IO(e):
 
 def strerror_OS(e):
   # type: (OSError) -> str
+  return posix.strerror(e.errno)
+
+def strerror(e):
+  # type: (Union[IOError, OSError]) -> str
   return posix.strerror(e.errno)
 
 

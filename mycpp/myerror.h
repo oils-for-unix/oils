@@ -11,14 +11,16 @@
 
 #undef errno
 
-class IOError {
+// Base class that mycpp generates.
+class _OSError {
  public:
   int errno;
 };
 
-class OSError {
- public:
-  int errno;
+class IOError : public _OSError {
+};
+
+class OSError : public _OSError {
 };
 
 #endif  // MYERROR_H

@@ -29,6 +29,10 @@ inline Str* strerror_OS(OSError* e) {
   assert(0);
 }
 
+inline Str* strerror(_OSError* e) {
+  assert(0);
+}
+
 inline Str* BackslashEscape(Str* s, Str* meta_chars) {
   int upper_bound = s->len_ * 2;
   char* buf = static_cast<char*>(malloc(upper_bound));

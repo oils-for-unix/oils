@@ -1628,12 +1628,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
       except error.FatalRuntime as e:
         val = value.Str('<Runtime error: %s>' % e.UserErrorString())
 
-      # C++ doesn't support catching multiple exceptions at once.  TODO: Patch
-      # CPython to use just one of (OSError, IOError)?
-      except OSError as e:
-        val = value.Str('<I/O error: %s>' % pyutil.strerror_OS(e))
-      except IOError as e:
-        val = value.Str('<I/O error: %s>' % pyutil.strerror_IO(e))
+      except (IOError, OSError) as e:
+        val = value.Str('<I/O error: %s>' % pyutil.strerror(e))
 
       except KeyboardInterrupt:
         val = value.Str('<Ctrl-C>')
