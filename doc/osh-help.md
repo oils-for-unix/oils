@@ -1006,6 +1006,28 @@ View on the web:
 
     https://www.oilshell.org/release/$VERSION/doc/
 
+#### hash
+
+    hash FLAG* NAME*
+
+Avoids searching for the location of commands by keeping a hash cache
+containing the path of previously executed commands.
+
+Name:
+
+    Name of the command whose path should be remembered, so they need not to be
+    searched for subsequent invocations. `$PATH` is used for the search, and
+    previously remembered paths are discarded. If no NAME and FLAG is supplied,
+    it prints the current hash cache.
+
+Flag:
+
+    -r       Discard all remembered locations.
+<!--    -d       Discard the remembered location of each NAME.
+    -l       Display output in a format reusable as input.
+    -p PATH  Inhibit path search, PATH is used as location for NAME.
+    -t       Print the full path of one or more NAME.-->
+
 <h3>Word Lookup</h3>
 
 ### Interactive
