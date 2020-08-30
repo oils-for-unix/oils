@@ -20,7 +20,7 @@ import sys
 from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.syntax_asdl import (
     compound_word,
-    command_e, command_t, command_str,
+    command_e, command_t,
     command__AndOr,
     command__Case,
     command__CommandList,
@@ -1277,7 +1277,7 @@ class CommandEvaluator(object):
 
       span_id = self.mutable_opts.errexit.SpidIfDisabled()
       if span_id != runtime.NO_SPID:
-        node_str = NewStr(command_str(node.tag_()))  # e.g. command.BraceGroup
+        node_str = ui.CommandType(node)  # e.g. command.BraceGroup
         e_die("errexit is disabled here, but strict_errexit disallows it "
               "with a compound command (%s)", node_str, span_id=span_id)
 

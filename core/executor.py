@@ -11,12 +11,13 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (value_e, value__Obj, redirect)
 from _devbuild.gen.syntax_asdl import (
     command_e, command__Simple, command__Pipeline, command__ControlFlow,
-    command_str, Token, compound_word,
+    Token, compound_word,
 )
 from asdl import runtime
 from core import error
 from core import process
 from core.pyerror import log, e_die
+from core import ui
 from core import vm
 from frontend import consts
 from oil_lang import objects
@@ -34,7 +35,6 @@ if TYPE_CHECKING:
   )
   from core import optview
   from core import state
-  from core import ui
   from core.vm import _Builtin
 
 
@@ -373,8 +373,8 @@ class ShellExecutor(vm._Executor):
     if self.exec_opts.more_errexit():
       if self.exec_opts.errexit() and status != 0:
         raise error.ErrExit(
-            'Command sub exited with status %d (%r)', status,
-            NewStr(command_str(node.tag_())))
+            'Command sub exited with status %d (%s)', status,
+            ui.CommandType(node))
     else:
       # Set a flag so we check errexit at the same time as bash.  Example:
       #

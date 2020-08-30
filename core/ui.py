@@ -11,7 +11,7 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
-    Token, command_t,
+    Token, command_t, command_str,
     source_e, source__Stdin, source__MainFile, source__SourcedFile,
     source__EvalArg, source__Alias, source__LValue,
 )
@@ -38,6 +38,14 @@ def ValType(val):
 
   # Displays 'value.MaybeStrArray' for now, maybe change it.
   return NewStr(value_str(val.tag_()))
+
+
+def CommandType(cmd):
+  # type: (command_t) -> str
+  """For displaying commands in the UI."""
+
+  # Displays 'value.MaybeStrArray' for now, maybe change it.
+  return NewStr(command_str(cmd.tag_()))
 
 
 def PrettyId(id_):

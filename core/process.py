@@ -28,6 +28,7 @@ from _devbuild.gen.syntax_asdl import (
 from core import pyutil
 from core.pyutil import stderr_line
 from core import pyos
+from core import ui
 from core import util
 from core.pyerror import log
 from frontend import match
@@ -436,13 +437,13 @@ class FdState(object):
         try:
           posix.close(orig)
         except OSError as e:
-          log('Error closing descriptor %d: %s', orig, e)
+          log('Error closing descriptor %d: %s', orig, pyutil.strerror_OS(e))
           raise
       else:
         try:
           posix.dup2(saved, orig)
         except OSError as e:
-          log('dup2(%d, %d) error: %s', saved, orig, e)
+          log('dup2(%d, %d) error: %s', saved, orig, pyutil.strerror_OS(e))
           #log('fd state:')
           #posix.system('ls -l /proc/%s/fd' % posix.getpid())
           raise
@@ -656,7 +657,7 @@ class SubProgramThunk(Thunk):
 
     # NOTE: These can be pieces of a pipeline, so they're arbitrary nodes.
     # TODO: We should extract the SPIDS from each node!
-    return '[subprog] %s' % self.node.__class__.__name__
+    return '[subprog] %s' % ui.CommandType(self.node)
 
   def Run(self):
     # type: () -> None
@@ -1196,15 +1197,19 @@ class JobState(object):
 
     # NOTE: Jobs don't need to show state?  Because pipelines are never stopped
     # -- only the jobs within them are.
-    print('Jobs:')
-    for pid, job in iteritems(self.jobs):
-      # Use the %1 syntax
-      print('%%%d %s %s' % (pid, job.State(), job))
 
-    print('')
-    print('Processes:')
-    for pid, proc in iteritems(self.child_procs):
-      print('%d %s %s' % (pid, proc.state, proc.thunk.DisplayLine()))
+    if mylib.PYTHON:
+      # TODO: don't use __repr__ and so forth
+
+      print('Jobs:')
+      for pid, job in iteritems(self.jobs):
+        # Use the %1 syntax
+        print('%%%d %s %s' % (pid, job.State(), job))
+
+      print('')
+      print('Processes:')
+      for pid, proc in iteritems(self.child_procs):
+        print('%d %s %s' % (pid, proc.state, proc.thunk.DisplayLine()))
 
   def ListRecent(self):
     # type: () -> None
@@ -1301,7 +1306,7 @@ class Waiter(object):
 
     #log('WAIT got %s %s', pid, status)
 
-    # All child processes are suppoed to be in this doc.  But this may
+    # All child processes are supposed to be in this dict.  But this may
     # legitimately happen if a grandchild outlives the child (its parent).
     # Then it is reparented under this process, so we might receive
     # notification of its exit, even though we didn't start it.  We can't have
@@ -1313,10 +1318,11 @@ class Waiter(object):
     proc = self.job_state.child_procs[pid]
 
     if posix.WIFSIGNALED(status):
-      status = 128 + posix.WTERMSIG(status)
+      term_sig = posix.WTERMSIG(status)
+      status = 128 + term_sig
 
       # Print newline after Ctrl-C.
-      if posix.WTERMSIG(status) == signal.SIGINT:
+      if term_sig == signal.SIGINT:
         print('')
 
       proc.WhenDone(pid, status)
