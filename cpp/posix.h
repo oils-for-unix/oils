@@ -134,7 +134,8 @@ inline Tuple2<int, int> pipe() {
 }
 
 inline int close(int fd) {
-  assert(0);
+  // TODO: handle errno.  Although I'm not sure if it happens!
+  return ::close(fd);
 }
 
 inline int putenv(Str* name, Str* value) {
@@ -176,7 +177,13 @@ inline Str* read(int fd, int num_requested) {
 int open(Str* path, int mode, int perms);
 
 inline mylib::LineReader* fdopen(int fd, Str* c_mode) {
-  assert(0);
+  mylib::Str0 c_mode0(c_mode);
+  FILE* f = ::fdopen(fd, c_mode0.Get());
+
+  // TODO: raise exception
+  assert(f);
+
+  return new mylib::CFileLineReader(f);
 }
 
 inline void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {

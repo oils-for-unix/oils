@@ -4,6 +4,7 @@
 #define FCNTL_H
 
 #include <assert.h>
+#include <fcntl.h>
 
 #undef F_DUPFD
 #undef F_GETFD
@@ -14,12 +15,14 @@ extern const int F_DUPFD;
 extern const int F_GETFD;
 
 inline int fcntl(int fd, int cmd, int arg) {
-  assert(0);
+  // TODO: handle errno
+  return ::fcntl(fd, cmd, arg);
 }
 
 // for F_GETFD
 inline int fcntl(int fd, int cmd) {
-  assert(0);
+  // TODO: handle errno
+  return ::fcntl(fd, cmd);
 }
  
 }  // namespace fcntl
