@@ -550,30 +550,9 @@ Prints ARGs to stdout, separated by a space, and terminated by a newline.
 
 Flags:
 
-    -e  enable interpretation of backslash escapes
+    -e  enable interpretation of backslash escapes (see `escapes`)
     -n  omit the trailing newline
 <!--  -E  -->
-
-Backslash sequences recognized by -e:
-
-    \\         backslash
-    \a         (unimplemented ?) alert (BEL)
-    \b         backspace
-    \c         stop processing remaining input
-    \e         escape next character
-    \f         form feed, equivalent to \n + 4 spaces
-    \n         new line
-    \r         carriage return, returns to the beggining of the line
-    \t         horizontal tab
-    \v         vertical tab
-    \0NNN      print character specified as an octal value with 1 to 3 octal
-               digits 
-    \xHH       print character specified as an hexadecimal value with 1 to 2
-               hex digits
-    \uHHHH     Unicode character specified as an hexadecimal value with 1 to
-               4 hex digits 
-    \UHHHHHHHH Unicode character specified as an hexadecimal value with 1 to
-               8 hex digits
 
 <h4 id="readarray">readarray</h4>
 
@@ -1044,6 +1023,34 @@ Flags:
 <!--    -a  Print all executables that can run CMD, including files, aliases,
         builtins and functions. If used with -p, only the executable file will
         be printed.-->
+
+#### escapes
+
+Escape sequences (used in `echo` and `printf`)
+
+    \"         Double quote.
+    \\         Backslash.
+    \a         Alert (BEL).
+    \b         Backspace.
+    \c         Stop processing remaining input.
+    \e         Escape next character.
+    \f         Form feed, equivalent to \n + 4 spaces
+    \n         New line.
+    \r         Carriage return, returns to the beggining of the line
+    \t         Horizontal tab.
+    \v         Vertical tab.
+    \0NNN      (Only in `echo`) Print character specified as an octal value
+               with 1 to 3 octal digits.
+    \NNN       (Only in `printf`) Print character specified as an octal value
+               with 1 to 3 octal digits.
+    \xHH       Print character specified as an hexadecimal value with 1 to 2
+               hex digits.
+    \uHHHH     Unicode character specified as an hexadecimal value with 1 to
+               4 hex digits.
+    \UHHHHHHHH Unicode character specified as an hexadecimal value with 1 to
+               8 hex digits.
+
+
  
 <h3>Word Lookup</h3>
 
