@@ -1047,6 +1047,30 @@ Flags:
  
 <h3>Word Lookup</h3>
 
+#### command
+
+    command FLAG* CMD ARG*
+
+Executes CMD from builtin commands or executable files, ignoring shell
+functions with the same name. ARG is passed as arguments to CMD. It also
+displays information about CMD.
+
+Flags:
+
+    -v  Print a description of CMD, similar to `type`.
+<!--    -p  Use a default value for PATH that is guaranteed to find all of the
+        standard utilities.
+    -V  Print a more verbose description of CMD.-->
+
+#### builtin
+
+    builtin CMD ARG*
+
+Executes the shell builtin CMD, with arguments ARG, ignoring the existence of
+shell functions with the same name. Typically used when a shell builtin is
+reimplemented as a shell function, but the shell function needs to execute the
+builtin.
+
 ### Interactive
 
 ### Oil Builtins
