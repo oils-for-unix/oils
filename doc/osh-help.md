@@ -1111,6 +1111,25 @@ Removes the alias NAME.
 
     -a  Removes all existing aliases.-->
 
+#### history
+
+    history NUM
+    history FLAG ARGS
+
+Displays and manipulate the shell's history entries. If provided, it will only
+show the last NUM entries.
+
+Flag:
+
+    -c      Clears the history.
+    -d POS  Deletes the history entry at position POS.
+<!--    -a
+    -n
+    -r
+    -w
+    -p
+    -s -->
+
 ### Oil Builtins
 
 #### repr
