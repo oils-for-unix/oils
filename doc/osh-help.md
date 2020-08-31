@@ -1073,6 +1073,44 @@ builtin.
 
 ### Interactive
 
+#### alias
+
+    alias NAME=CODE
+
+Defines a string CODE that will be used instead of NAME when you run it. If
+CODE is not provided, the current alias for NAME will be shown. If run without
+parameters, it will show a list of defined alias. To remove an existing alias,
+use `unalias`.
+
+Tips:
+
+Aliases are used to create new compounded commands, or to add default options
+to existing commands. For example, alias ls='ls --color' will make ls always
+display colors.
+
+Use of aliases is discouraged due to possible parsing issues. It's recommended
+to use functions whenever possible. Eg, for the previous example:
+
+ls() {
+  ls --color "$@"
+}
+
+Use of aliases by the shell can be disabled by prepending the character '\' to
+the command (eg, \ls), or quoting the command with single or double quotes (eg,
+"ls" or 'ls').
+
+Aliases are not used by the shell when the shell is not interactive.
+
+#### unalias
+
+    unalias NAME
+
+Removes the alias NAME.
+
+<!--Flag:
+
+    -a  Removes all existing aliases.-->
+
 ### Oil Builtins
 
 #### repr
