@@ -1028,6 +1028,23 @@ Flag:
     -p PATH  Inhibit path search, PATH is used as location for NAME.
     -t       Print the full path of one or more NAME.-->
 
+#### type
+
+    type FLAG* CMD
+
+Prints information about the type of command that will be run as CMD:
+an executable file, aliase, shell builtin, or function.
+
+Flags:
+
+    -f  Don't search for CMD in functions.
+    -P  Force searching for CMD only in file executables.
+    -t  Only print the type of command of CMD: 'alias', 'keyword', 'function',
+        'builtin' or 'file'.
+<!--    -a  Print all executables that can run CMD, including files, aliases,
+        builtins and functions. If used with -p, only the executable file will
+        be printed.-->
+ 
 <h3>Word Lookup</h3>
 
 ### Interactive
