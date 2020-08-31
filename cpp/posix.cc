@@ -7,6 +7,9 @@
 #include <sys/wait.h>  // WUNTRACED
 
 // Why do I need these again here?  They are undefined in the header.
+#undef X_OK
+#undef R_OK
+#undef W_OK
 #undef O_APPEND
 #undef O_CREAT
 #undef O_RDONLY
@@ -19,9 +22,9 @@ namespace posix {
 int WUNTRACED = WUNTRACED;
 
 // Aliases in this namespace.  Avoid name conflicts with macros.
-int X_OK_ = X_OK;
-int R_OK_ = R_OK;
-int W_OK_ = W_OK;
+int X_OK = X_OK;
+int R_OK = R_OK;
+int W_OK = W_OK;
 int O_APPEND = O_APPEND_;
 int O_CREAT = O_CREAT_;
 int O_RDONLY = O_RDONLY_;

@@ -16,6 +16,9 @@
 #undef WUNTRACED
 
 // Save as a different name
+#define X_OK_ X_OK
+#define R_OK_ R_OK
+#define W_OK_ W_OK
 #define O_APPEND_ O_APPEND
 #define O_CREAT_ O_CREAT
 #define O_RDONLY_ O_RDONLY
@@ -23,6 +26,9 @@
 #define O_WRONLY_ O_WRONLY
 #define O_TRUNC_ O_TRUNC
 
+#undef X_OK
+#undef R_OK
+#undef W_OK
 #undef O_APPEND
 #undef O_CREAT
 #undef O_RDONLY
@@ -55,9 +61,9 @@ inline int WTERMSIG(int status) {
 extern int WUNTRACED;
 
 // aliases in this namespace
-extern int X_OK_;
-extern int R_OK_;
-extern int W_OK_;
+extern int X_OK;
+extern int R_OK;
+extern int W_OK;
 extern int O_APPEND;
 extern int O_CREAT;
 extern int O_RDONLY;

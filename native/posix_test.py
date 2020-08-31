@@ -71,9 +71,9 @@ FUNCS = [
     "WTERMSIG",
 
     # Additional names found by grepping
-    'X_OK_',
-    'R_OK_',
-    'W_OK_',
+    'X_OK',
+    'R_OK',
+    'W_OK',
 
     'O_APPEND',
     'O_CREAT',
