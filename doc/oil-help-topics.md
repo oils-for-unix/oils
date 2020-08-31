@@ -59,19 +59,19 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   oil-logical    not  and  or
                   oil-arith     +  -  *  /  div  mod  ^
                   oil-bitwise   ~ & | xor
-                  oil-ternary    x if len(s) else y
+                  oil-ternary   '+' if x >= 0 else '-'
                   oil-index     a[3]  s[3]
                   oil-slice     a[1:-1]  s[1:-1]
                   func-call     f(x, y)
-  [Eggex]         re-literal    /d+/
+  [Eggex]         re-literal    / d+ /
                   re-compound   ~   (group)   <capture>   sequence
                   re-primitive  %zero   Subpattern   @subpattern
                                 'sq'   "dq"   $x   ${x}
                   named-class    dot  digit  space  word  d  s  w
                   class-literal [c a-z 'abc' \\ \xFF \u0100]
-                  re-flags      ignorecase etc.
-                  re-multiline  ///
-                  re-glob-ops   ~~   !~~
+                  X re-flags    ignorecase etc.
+                  X re-multiline  ///
+                  X re-glob-ops   ~~   !~~
 ```
 
 <h2 id="word">
@@ -177,15 +177,15 @@ X [Testing]       check
 
 ```oil-help-topics
   [Collections]   len()   copy()
-  [Pattern]       regmatch()   fnmatch()
-  [String]        find()   sub()   join() 
+X [Pattern]       regmatch()   fnmatch()
+X [String]        find()   sub()   join() 
                   split()             $IFS, awk algorithm, regex
   [Word]          glob()   maybe()
-  [Arrays]        index()
+X [Arrays]        index()
   [Assoc Arrays]  @keys()   @values()
-  [Block]         setvar()            for procs to set in outer scope
+X [Block]         setvar()            for procs to set in outer scope
                   evalblock()         procs evaluate block to namespace
-  [Better Syntax] shquote()
+X [Better Syntax] shquote()
                   lstrip()   rstrip()   lstripglob()   rstripglob()
                   upper()   lower()
                   strftime()

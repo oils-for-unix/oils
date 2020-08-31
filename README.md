@@ -15,8 +15,9 @@ Its [source code lives in git][git-repo].
 [why]: https://www.oilshell.org/blog/2018/01/28.html
 [faq]: https://www.oilshell.org/blog/2019/06/17.html
 
-It's written in Python, but we deploy a native executable by reusing portions
-of the [CPython](https://en.wikipedia.org/wiki/CPython) interpreter.
+It's written in Python, so the code is short and easy to change.  But we
+automatically translate it to C++ with custom tools, to make it fast and small.
+The deployed executable doesn't depend on Python.
 
 <div id="toc">
 </div>
