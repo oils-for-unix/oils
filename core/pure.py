@@ -412,8 +412,8 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
     else:
       arena.PushSource(source.MainFile(script_name))
       try:
-        #f = fd_state.Open(script_name)
-        f = mylib.open(script_name)
+        f = fd_state.Open(script_name)
+        #f = mylib.open(script_name)
       except OSError as e:
         stderr_line("osh: Couldn't open %r: %s", script_name,
                     pyutil.strerror(e))

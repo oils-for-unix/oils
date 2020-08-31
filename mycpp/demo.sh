@@ -71,5 +71,13 @@ target-lang() {
   $bin "$@"
 }
 
+open() {
+  local bin=_bin/open
+
+  cpp-compile demo/open.cc $bin ../cpp/dumb_alloc.cc -I ../cpp
+
+  ls -l $bin
+  $bin util.py
+}
 
 "$@"

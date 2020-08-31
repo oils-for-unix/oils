@@ -5,10 +5,13 @@
 
 #include <assert.h>
 
-namespace fcntl {
+#undef F_DUPFD
+#undef F_GETFD
 
-extern int F_DUPFD;
-extern int F_GETFD;
+namespace fcntl_ {
+
+extern const int F_DUPFD;
+extern const int F_GETFD;
 
 inline int fcntl(int fd, int cmd, int arg) {
   assert(0);

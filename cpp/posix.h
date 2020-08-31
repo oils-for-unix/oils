@@ -15,6 +15,21 @@
 #undef WTERMSIG
 #undef WUNTRACED
 
+// Save as a different name
+#define O_APPEND_ O_APPEND
+#define O_CREAT_ O_CREAT
+#define O_RDONLY_ O_RDONLY
+#define O_RDWR_ O_RDWR
+#define O_WRONLY_ O_WRONLY
+#define O_TRUNC_ O_TRUNC
+
+#undef O_APPEND
+#undef O_CREAT
+#undef O_RDONLY
+#undef O_RDWR
+#undef O_WRONLY
+#undef O_TRUNC
+
 namespace posix {
 
 inline bool WIFEXITED(int status) {
@@ -152,9 +167,7 @@ inline Str* read(int fd, int num_requested) {
   return new Str(buf, num_read);  // could be a short read
 }
 
-inline int open(Str* filename, int mode, int perms) {
-  assert(0);
-}
+int open(Str* path, int mode, int perms);
 
 inline mylib::LineReader* fdopen(int fd, Str* c_mode) {
   assert(0);

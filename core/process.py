@@ -10,7 +10,7 @@ process.py - Launch processes and manipulate file descriptors.
 from __future__ import print_function
 
 import errno as errno_  # avoid macro name conflict after translation
-import fcntl
+import fcntl as fcntl_
 import signal
 from sys import exit  # mycpp translation directly calls exit(int status)!
 
@@ -137,7 +137,7 @@ class FdState(object):
     fd = posix.open(path, fd_mode, 0o666)  # may raise OSError
 
     # Immediately move it to a new location
-    new_fd = fcntl.fcntl(fd, fcntl.F_DUPFD, _SHELL_MIN_FD)  # type: int
+    new_fd = fcntl_.fcntl(fd, fcntl_.F_DUPFD, _SHELL_MIN_FD)  # type: int
     posix.close(fd)
 
     # Return a Python file handle
@@ -167,7 +167,7 @@ class FdState(object):
     #log('---- _PushSave %s', fd)
     need_restore = True
     try:
-      new_fd = fcntl.fcntl(fd, fcntl.F_DUPFD, _SHELL_MIN_FD)  # type: int
+      new_fd = fcntl_.fcntl(fd, fcntl_.F_DUPFD, _SHELL_MIN_FD)  # type: int
     except IOError as e:
       # Example program that causes this error: exec 4>&1.  Descriptor 4 isn't
       # open.
@@ -179,7 +179,7 @@ class FdState(object):
         raise
     else:
       posix.close(fd)
-      fcntl.fcntl(new_fd, fcntl.F_SETFD, fcntl.FD_CLOEXEC)
+      fcntl_.fcntl(new_fd, fcntl_.F_SETFD, fcntl_.FD_CLOEXEC)
 
     #pyutil.ShowFdState()
     if need_restore:
@@ -202,7 +202,7 @@ class FdState(object):
       fd2_name = cast(redir_loc__VarName, UP_loc).name
       try:
         # F_DUPFD: GREATER than range
-        new_fd = fcntl.fcntl(fd1, fcntl.F_DUPFD, _SHELL_MIN_FD)  # type: int
+        new_fd = fcntl_.fcntl(fd1, fcntl_.F_DUPFD, _SHELL_MIN_FD)  # type: int
       except IOError as e:
         if e.errno == errno_.EBADF:
           self.errfmt.Print_('%d: %s' % (fd1, pyutil.strerror(e)))
@@ -222,7 +222,7 @@ class FdState(object):
 
       # Check the validity of fd1 before _PushSave(fd2)
       try:
-        fcntl.fcntl(fd1, fcntl.F_GETFD)
+        fcntl_.fcntl(fd1, fcntl_.F_GETFD)
       except IOError as e:
         self.errfmt.Print_('%d: %s' % (fd1, pyutil.strerror(e)))
         raise
