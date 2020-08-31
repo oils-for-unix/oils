@@ -176,7 +176,7 @@ class ShellExecutor(vm._Executor):
     if builtin_id != consts.NO_INDEX:
       # command readonly is disallowed, for technical reasons.  Could relax it
       # later.
-      self.errfmt.Print("Can't run assignment builtin recursively",
+      self.errfmt.Print_("Can't run assignment builtin recursively",
                         span_id=span_id)
       return 1
 
@@ -240,7 +240,7 @@ class ShellExecutor(vm._Executor):
     # Resolve argv[0] BEFORE forking.
     argv0_path = self.search_path.CachedLookup(arg0)
     if argv0_path is None:
-      self.errfmt.Print('%r not found', arg0, span_id=span_id)
+      self.errfmt.Print_('%r not found' % arg0, span_id=span_id)
       return 127
 
     # Normal case: ls /

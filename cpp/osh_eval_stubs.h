@@ -38,7 +38,11 @@ class _TrapHandler {
 };
 }  // namespace builtin_process
 
+#if 0
 namespace executor {
+
+// can't inherit from incomplete type
+// class ShellExecutor : public vm::_Executor {
 class ShellExecutor {
  public:
   // overload
@@ -72,5 +76,6 @@ class ShellExecutor {
   }
 };
 }  // namespace executor
+#endif
 
 #endif  // OSH_EVAL_STUBS_H

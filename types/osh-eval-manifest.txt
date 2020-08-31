@@ -6,6 +6,7 @@
 ./core/ansi.py
 ./core/dev.py
 ./core/error.py
+./core/executor.py
 ./core/main_loop.py
 ./core/optview.py
 ./core/process.py

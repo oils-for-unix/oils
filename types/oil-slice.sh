@@ -113,10 +113,6 @@ travis-setup() {
   egrep -v "$exclude" $OSH_EVAL_DEPS | tee $OSH_EVAL_MANIFEST
 }
 
-compare-parse-eval() {
-  diff -u types/osh-{parse,eval}-manifest.txt
-}
-
 travis() {
   if test -n "${TRAVIS_SKIP:-}"; then
     echo "TRAVIS_SKIP: Skipping $0"

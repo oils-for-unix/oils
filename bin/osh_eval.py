@@ -28,6 +28,9 @@ def main(argv):
 
   environ = {}  # type: Dict[str, str]
   environ['PWD'] = posix.getcwd()
+  # No getenv()!
+  #environ['PATH'] = posix.getenv('PATH')
+  #environ = posix.environ 
 
   arg_r = args.Reader(argv, spids=[runtime.NO_SPID] * len(argv))
 

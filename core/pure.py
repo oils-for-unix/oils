@@ -17,6 +17,7 @@ from asdl import runtime
 from core import alloc
 from core import dev
 from core import error
+from core import executor
 from core import main_loop
 from core import process
 from core.pyerror import e_usage
@@ -261,7 +262,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   cmd_deps.traps = {}
   cmd_deps.trap_nodes = []  # TODO: Clear on fork() to avoid duplicates
 
-  #waiter = process.Waiter(job_state, exec_opts)
+  waiter = process.Waiter(job_state, exec_opts)
 
   my_pid = posix.getpid()
 
@@ -292,7 +293,7 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
 
   interp = environ.get('OSH_HIJACK_SHEBANG', '')
   search_path = state.SearchPath(mem)
-  #ext_prog = process.ExternalProgram(interp, fd_state, errfmt, debug_f)
+  ext_prog = process.ExternalProgram(interp, fd_state, errfmt, debug_f)
 
   splitter = split.SplitContext(mem)
 
@@ -351,10 +352,10 @@ def Main(lang, arg_r, environ, login_shell, loader, line_input):
   cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
                                      assign_b, arena, cmd_deps)
 
-  #shell_ex = executor.ShellExecutor(
-  #    mem, exec_opts, mutable_opts, procs, builtins, search_path,
-  #    ext_prog, waiter, job_state, fd_state, errfmt)
-  shell_ex = NullExecutor(exec_opts, mutable_opts, procs, builtins)
+  shell_ex = executor.ShellExecutor(
+      mem, exec_opts, mutable_opts, procs, builtins, search_path,
+      ext_prog, waiter, job_state, fd_state, errfmt)
+  #shell_ex = NullExecutor(exec_opts, mutable_opts, procs, builtins)
 
   # PromptEvaluator rendering is needed in non-interactive shells for @P.
   prompt_ev = prompt.Evaluator(lang, parse_ctx, mem)
