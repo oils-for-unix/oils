@@ -80,6 +80,7 @@ Differences:
   functions.
 - No classes, or operator loading.
   - `a + b` (addition) vs. `a ++ b` (concatenation)
+  - `a < b` is only for integers.  `cmp()` could be for strings.
 - No "accidentally quadratic"
   - Strings and `+=`
   - No `in` for array/list membership.  Only dict membership.

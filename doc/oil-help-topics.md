@@ -6,6 +6,19 @@ css_files: ../web/base.css ../web/help-index.css ../web/toc.css
 Oil Help Topics
 ===============
 
+This is the online help for the Oil language.  It underlies the `help` builtin.
+
+For example, typing `help proc` in the shell shows you how to use the `proc`
+statement.  A link to this same text appears in the [`command`](#command)
+**group** below.
+
+To view this index inside the shell, use:
+
+    help oil
+
+An <span style="color: darkred">X</span> next to a help topic means that the
+feature is **unimplemented**.
+
 You may also want to browse [OSH Help Topics](osh-help-topics.html).
 
 <div id="toc">
@@ -31,30 +44,11 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
 ```
 
 <h2 id="assign">
-  Assigning Variables (<a class="group-link" href="oil-help.html#assign">assign</a>)
+  Assignments and Expression Language (<a class="group-link" href="oil-help.html#assign">assign</a>)
 </h2>
 
 ```oil-help-topics
-                  const   var   setvar   setref   setglobal   setlocal/set
-```
-
-<h2 id="word">
-  Word Language (<a class="group-link" href="oil-help.html#word">word</a>)
-</h2>
-
-```oil-help-topics
-                  inline-call   $strfunc(x, y) @arrayfunc(z)
-                  splice        @myarray @ARGV
-                  expr-sub      echo $[3 + a[i]]
-                  X oil-printf  ${x %.3f}
-                  X oil-format  ${x|html}
-```
-
-<h2 id="expr">
-  Oil Expression Language (<a class="group-link" href="oil-help.html#expr">expr</a>)
-</h2>
-
-```oil-help-topics
+  [Keywords]      const   var   setvar   setref   setglobal   setlocal/set
   [Literals]      oil-string    c'line\n'  r'[a-z]\n'
                   oil-array     %(a b c)
                   oil-dict      %{name: 'bob'}
@@ -78,6 +72,18 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   re-flags      ignorecase etc.
                   re-multiline  ///
                   re-glob-ops   ~~   !~~
+```
+
+<h2 id="word">
+  Word Language (<a class="group-link" href="oil-help.html#word">word</a>)
+</h2>
+
+```oil-help-topics
+                  inline-call   $strfunc(x, y) @arrayfunc(z)
+                  splice        @myarray @ARGV
+                  expr-sub      echo $[3 + a[i]]
+                  X oil-printf  ${x %.3f}
+                  X oil-format  ${x|html}
 ```
 
 <h2 id="builtin">
@@ -166,7 +172,7 @@ X [Testing]       check
 ```
 
 <h2 id="lib">
-  Oil Libraries (<a class="group-link" href="oil-help.html#lib">lib</a>)
+  Builtin Functions (<a class="group-link" href="oil-help.html#lib">lib</a>)
 </h2>
 
 ```oil-help-topics

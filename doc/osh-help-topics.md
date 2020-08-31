@@ -7,16 +7,7 @@ OSH Help Topics
 ===============
 
 <!--
-IMPORTANT: This doc is processed in TWO WAYS.  BE CAREFUL WHEN EDITING.
-
-- First by doctools/{split_doc,cmark}.py to create HTML.
-  - <pre><code class="language-osh-help-topics"> highlighted using 
-    make_help.HelpIndexPlugin
-
-- Then that HTML is split up into cards.
-  - <h2 id="assign"> is a heading
-  - <pre><code class="language-osh-help-topics"> is rendered back into literal
-    text.  This makes the escaping of and & < > work.
+IMPORTANT: This doc is processed in TWO WAYS.  Be careful when editing.
 
 Special rules:
 - [] at start of line is a section
@@ -28,8 +19,7 @@ TODO: There should be a character for "no links past here?"
 - this should be turned GREEN?
 -->
 
-This is the online help for the OSH language.  The help topic links below are
-divided into groups and sections.
+This is the online help for the OSH language.  It underlies the `help` builtin.
 
 For example, typing `help if` in the shell shows you how to use the `if`
 statement.  A link to this same text appears in the [`command`](#command)
@@ -37,11 +27,10 @@ statement.  A link to this same text appears in the [`command`](#command)
 
 To view this index inside the shell, use:
 
-    help index           # all 12 groups
-    help index GROUP+    # show one or more groups
+    help osh
 
-An <span style="color: darkred">X</span> next to a help topic means that it's
-an **unimplemented** feature.
+An <span style="color: darkred">X</span> next to a help topic means that the
+feature is **unimplemented**.
 
 You may also want to browse [Oil Help Topics](oil-help-topics.html).
 
@@ -78,14 +67,14 @@ You may also want to browse [Oil Help Topics](oil-help-topics.html).
 ```
 
 <h2 id="assign">
-  Assigning Variables (<a class="group-link" href="osh-help.html#assign">assign</a>)
+  Assignments and Expressions (<a class="group-link" href="osh-help.html#assign">assign</a>)
 </h2>
 
 ```osh-help-topics
+  [Literals]      sh-array      array=(a b c)   array[1]=B   "${a[@]}"
+                  sh-assoc      assoc=(['a']=1 ['b']=2)   assoc['x']=b
   [Operators]     sh-assign     str='xyz'
                   sh-append     str+='abc'
-  [Compound Data] sh-array      array=(a b c)   array[1]=B   "${a[@]}"
-                  sh-assoc      assoc=(['a']=1 ['b']=2)   assoc['x']=b
   [Builtins]      local   readonly   export   unset   shift
                   declare   typeset   X let
 ```

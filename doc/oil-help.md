@@ -12,6 +12,12 @@ builtin, and is indexed by keywords.
 
 Navigate it with the [index of Oil help topics](oil-help-topics.html).
 
+<!--
+IMPORTANT: This doc is processed in TWO WAYS.  Be careful when editing.
+
+It generates both HTML and text for the 'help' builtin.
+-->
+
 <div id="toc">
 </div>
 
