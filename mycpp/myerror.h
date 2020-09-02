@@ -17,10 +17,8 @@ class _OSError {
   int errno;
 };
 
-class IOError : public _OSError {
-};
+class IOError : public _OSError {};
 
-class OSError : public _OSError {
-};
+class OSError : public _OSError {};
 
 #endif  // MYERROR_H

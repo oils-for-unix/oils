@@ -1,7 +1,7 @@
 #include <assert.h>
-#include <memory>  // shared_ptr
 #include <stdarg.h>  // va_list, etc.
 #include <stdio.h>   // vprintf
+#include <memory>    // shared_ptr
 
 #include "greatest.h"
 #include "mylib.h"
@@ -683,15 +683,15 @@ TEST test_print() {
   PASS();
 }
 
-using std::shared_ptr;
 using std::make_shared;
+using std::shared_ptr;
 
 TEST test_shared_ptr() {
   auto mystr = make_shared<Str>("foo");
   log("len = %d", len(mystr));
 
   // This doesn't compile because of some destructor problems
-  //auto mylist = make_shared<List<shared_ptr<Str>>();
+  // auto mylist = make_shared<List<shared_ptr<Str>>();
 
   auto mylist = new List<Str*>();
   log("len = %d", len(mylist));

@@ -2,9 +2,9 @@
 
 #include "posix.h"
 
-#include <fcntl.h>  // open
-#include <unistd.h>
+#include <fcntl.h>     // open
 #include <sys/wait.h>  // WUNTRACED
+#include <unistd.h>
 
 // Why do I need these again here?  They are undefined in the header.
 #undef X_OK

@@ -9,4 +9,4 @@ namespace fcntl_ {
 const int F_DUPFD = F_DUPFD;
 const int F_GETFD = F_GETFD;
 
-}  // namespace fcntl
+}  // namespace fcntl_

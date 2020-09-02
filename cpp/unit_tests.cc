@@ -49,9 +49,11 @@ TEST show_sizeof() {
   log("sizeof(Str*) = %d", sizeof(Str*));
   log("alignof(Str*) = %d", alignof(Str*));
 
-  log("sizeof(flag_spec::_FlagSpecAndMore) = %d", sizeof(flag_spec::_FlagSpecAndMore));
+  log("sizeof(flag_spec::_FlagSpecAndMore) = %d",
+      sizeof(flag_spec::_FlagSpecAndMore));
   // alignment is 8, so why doesn't it work?
-  log("alignof(flag_spec::_FlagSpecAndMore) = %d", alignof(flag_spec::_FlagSpecAndMore));
+  log("alignof(flag_spec::_FlagSpecAndMore) = %d",
+      alignof(flag_spec::_FlagSpecAndMore));
 
   // throw off the alignment
   auto i = new bool[1];

@@ -439,7 +439,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           if (isinstance(o.expr, NameExpr) and (
               o.expr.name in self.imported_names or
               o.expr.name in ('mylib', 'libc', 'errno_', 'posix', 'fcntl_',
-                              'time_', 'termios', 'signal') or
+                              'time_', 'termios', 'signal_') or
               o.name == '__init__'
               )):
             op = '::'

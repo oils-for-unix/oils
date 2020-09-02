@@ -21,8 +21,7 @@ extern int ENOEXEC;
 extern int EACCES;
 extern int ENOENT;
 extern int ECHILD;
- 
+
 }  // namespace errno_
 
 #endif  // ERRNO__H
-

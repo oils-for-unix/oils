@@ -3,6 +3,7 @@
 #ifndef POSIX_H
 #define POSIX_H
 
+#include <sys/wait.h>  // waitpid
 #include <unistd.h>
 
 #include "mylib.h"
@@ -150,7 +151,7 @@ inline int chdir(Str* path) {
 }
 
 inline int fork() {
-  assert(0);
+  return ::fork();
 }
 
 inline void write(int fd, Str* value) {
@@ -158,7 +159,9 @@ inline void write(int fd, Str* value) {
 }
 
 inline Tuple2<int, int> waitpid(int pid, int options) {
-  assert(0);
+  int status;
+  int result_pid = ::waitpid(pid, &status, options);
+  return Tuple2<int, int>(result_pid, status);
 }
 
 // Can we use fcntl instead?

@@ -244,7 +244,7 @@ compile-slice() {
     cpp/errno_.cc \
     cpp/fcntl_.cc \
     cpp/posix.cc \
-    cpp/signal.cc \
+    cpp/signal_.cc \
     cpp/libc.cc \
     "$@"
 

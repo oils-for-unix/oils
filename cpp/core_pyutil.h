@@ -3,8 +3,8 @@
 #ifndef CORE_PYUTIL_H
 #define CORE_PYUTIL_H
 
-#include "mylib.h"
 #include "myerror.h"  // #undef errno
+#include "mylib.h"
 
 namespace pyutil {
 

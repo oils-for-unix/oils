@@ -11,7 +11,7 @@ from __future__ import print_function
 
 import errno as errno_  # avoid macro name conflict after translation
 import fcntl as fcntl_
-import signal
+import signal as signal_
 from sys import exit  # mycpp translation directly calls exit(int status)!
 
 from _devbuild.gen.id_kind_asdl import Id
@@ -1326,7 +1326,7 @@ class Waiter(object):
       status = 128 + term_sig
 
       # Print newline after Ctrl-C.
-      if term_sig == signal.SIGINT:
+      if term_sig == signal_.SIGINT:
         print('')
 
       proc.WhenDone(pid, status)

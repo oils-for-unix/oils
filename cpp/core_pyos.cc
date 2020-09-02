@@ -3,6 +3,7 @@
 #include "core_pyos.h"  // undefined errno
 #include <errno.h>
 #include <pwd.h>
+#include <signal.h>
 #include <unistd.h>  // getuid()
 
 static Str* CopyStr(const char* s) {
@@ -42,6 +43,12 @@ Str* GetHomeDir(Str* user_name) {
     return nullptr;
   }
   return CopyStr(entry->pw_dir);
+}
+
+void SignalState_AfterForkingChild() {
+  signal(SIGQUIT, SIG_DFL);
+  signal(SIGPIPE, SIG_DFL);
+  signal(SIGTSTP, SIG_DFL);
 }
 
 }  // namespace pyos

@@ -4,6 +4,7 @@
 #define CORE_PYOS_H
 
 #include <termios.h>
+
 #include "mylib.h"
 #include "syntax_asdl.h"
 
@@ -47,9 +48,7 @@ inline bool InputAvailable(int fd) {
   assert(0);
 }
 
-inline void SignalState_AfterForkingChild() {
-  assert(0);
-}
+void SignalState_AfterForkingChild();
 
 }  // namespace pyos
 

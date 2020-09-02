@@ -12,8 +12,8 @@
 #include <climits>  // CHAR_BIT
 #include <cstdint>
 #include <cstdio>  // FILE*
-#include <memory>  // shared_ptr
 #include <initializer_list>
+#include <memory>  // shared_ptr
 #include <unordered_map>
 #include <vector>
 

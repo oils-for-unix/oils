@@ -24,8 +24,7 @@ inline int fcntl(int fd, int cmd) {
   // TODO: handle errno
   return ::fcntl(fd, cmd);
 }
- 
-}  // namespace fcntl
+
+}  // namespace fcntl_
 
 #endif  // FCNTL_H
-
