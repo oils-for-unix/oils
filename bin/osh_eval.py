@@ -28,6 +28,7 @@ def main(argv):
 
   environ = {}  # type: Dict[str, str]
   environ['PWD'] = posix.getcwd()
+  environ['PATH'] = '/bin'  # stub
   # No getenv()!
   #environ['PATH'] = posix.getenv('PATH')
   #environ = posix.environ 

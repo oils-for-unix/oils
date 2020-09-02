@@ -72,7 +72,9 @@ extern int O_WRONLY;
 extern int O_TRUNC;
 
 inline int access(Str* pathname, int mode) {
-  assert(0);
+  // Are there any errno I care about?
+  mylib::Str0 pathname0(pathname);
+  return ::access(pathname0.Get(), mode) == 0;
 }
 
 inline Str* getcwd() {
@@ -187,7 +189,12 @@ inline mylib::LineReader* fdopen(int fd, Str* c_mode) {
 }
 
 inline void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
-  assert(0);
+  mylib::Str0 _argv0(argv0);
+
+  // TODO: fix this dummy
+  char* _argv[] = {"ls", "/", nullptr};
+
+  ::execve(_argv0.Get(), _argv, nullptr);
 }
 
 // Dummy exception posix::error
