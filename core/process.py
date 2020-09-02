@@ -38,6 +38,12 @@ from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems
 
 import posix_ as posix
+from posix_ import (
+    # translated by mycpp and directly called!  No wrapper!
+    WUNTRACED,
+    WIFSIGNALED, WIFEXITED, WIFSTOPPED,
+    WEXITSTATUS, WTERMSIG,
+)
 
 from typing import List, Tuple, Dict, cast, TYPE_CHECKING
 
@@ -1286,7 +1292,7 @@ class Waiter(object):
       # -1 makes it like wait(), which waits for any process.
       # NOTE: WUNTRACED is necessary to get stopped jobs.  What about
       # WCONTINUED?
-      pid, status = posix.waitpid(-1, posix.WUNTRACED)
+      pid, status = posix.waitpid(-1, WUNTRACED)
     except OSError as e:
       #log('wait() error: %s', e)
       if e.errno == errno_.ECHILD:
@@ -1321,8 +1327,8 @@ class Waiter(object):
 
     proc = self.job_state.child_procs[pid]
 
-    if posix.WIFSIGNALED(status):
-      term_sig = posix.WTERMSIG(status)
+    if WIFSIGNALED(status):
+      term_sig = WTERMSIG(status)
       status = 128 + term_sig
 
       # Print newline after Ctrl-C.
@@ -1331,12 +1337,12 @@ class Waiter(object):
 
       proc.WhenDone(pid, status)
 
-    elif posix.WIFEXITED(status):
-      status = posix.WEXITSTATUS(status)
+    elif WIFEXITED(status):
+      status = WEXITSTATUS(status)
       #log('exit status: %s', status)
       proc.WhenDone(pid, status)
 
-    elif posix.WIFSTOPPED(status):
+    elif WIFSTOPPED(status):
       #sig = posix.WSTOPSIG(status)
 
       # TODO: Do something nicer here.  Implement 'fg' command.

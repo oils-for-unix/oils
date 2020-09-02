@@ -8,14 +8,6 @@
 
 #include "mylib.h"
 
-#undef WIFEXITED
-#undef WIFSIGNALED
-#undef WIFSTOPPED
-
-#undef WEXITSTATUS
-#undef WTERMSIG
-#undef WUNTRACED
-
 // Save as a different name
 #define X_OK_ X_OK
 #define R_OK_ R_OK
@@ -38,28 +30,6 @@
 #undef O_TRUNC
 
 namespace posix {
-
-inline bool WIFEXITED(int status) {
-  assert(0);
-}
-
-inline bool WIFSIGNALED(int status) {
-  assert(0);
-}
-
-inline bool WIFSTOPPED(int status) {
-  assert(0);
-}
-
-inline int WEXITSTATUS(int status) {
-  assert(0);
-}
-
-inline int WTERMSIG(int status) {
-  assert(0);
-}
-
-extern int WUNTRACED;
 
 // aliases in this namespace
 extern int X_OK;

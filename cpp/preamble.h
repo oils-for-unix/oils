@@ -1,5 +1,6 @@
 // preamble.h: declarations to run osh_eval.cc
 
+#include <sys/wait.h>    // WIFSIGNALED, etc. called DIRECTLY
 #include "dumb_alloc.h"  // change the allocator
 #include "mylib.h"       // runtime library e.g. with Python data structures
 
