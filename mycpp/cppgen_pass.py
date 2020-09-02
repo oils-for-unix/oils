@@ -1771,6 +1771,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               func_name in ('_EvalCompoundWord', '_StringToIntegerOrError') or
             class_name == 'CommandEvaluator' and
               func_name in ('_Execute', 'ExecuteAndCatch') or
+            # core/executor.py
+            class_name == 'ShellExecutor' and func_name == '_MakeProcess' or
             # osh/word_eval.py
             class_name is None and func_name == 'CheckCompatArray' or
             # core/state.py

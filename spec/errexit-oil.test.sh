@@ -452,3 +452,20 @@ set -e
 false
 ## stderr-json: ""
 ## status: 1
+
+#### command sub errexit preserves exit code
+set -e
+shopt -s more_errexit || true
+
+echo before
+echo $(exit 42)
+echo after
+## STDOUT:
+before
+## END
+## status: 42
+## N-I dash/bash/mksh/ash STDOUT:
+before
+
+after
+## N-I dash/bash/mksh/ash status: 0

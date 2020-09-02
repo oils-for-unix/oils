@@ -75,8 +75,8 @@ class ShellExecutor(vm._Executor):
     # type: () -> None
     assert self.cmd_ev is not None
 
-  def _MakeProcess(self, node, parent_pipeline=None, inherit_errexit=True):
-    # type: (command_t, process.Pipeline, bool) -> process.Process
+  def _MakeProcess(self, node, inherit_errexit=True):
+    # type: (command_t, bool) -> process.Process
     """
     Assume we will run the node in another process.  Return a process.
     """
@@ -103,7 +103,6 @@ class ShellExecutor(vm._Executor):
     thunk = process.SubProgramThunk(self.cmd_ev, node,
                                     inherit_errexit=inherit_errexit)
     p = process.Process(thunk, self.job_state)
-    p.Init_ParentPipeline(parent_pipeline)
     return p
 
   def RunBuiltin(self, builtin_id, cmd_val):
@@ -124,7 +123,7 @@ class ShellExecutor(vm._Executor):
       if e.span_id == runtime.NO_SPID:
         e.span_id = self.errfmt.CurrentLocation()
       # e.g. 'type' doesn't accept flag '-x'
-      self.errfmt.Print(e.msg, prefix='%r ' % arg0, span_id=e.span_id)
+      self.errfmt.PrefixPrint(e.msg, prefix='%r ' % arg0, span_id=e.span_id)
       status = 2  # consistent error code for usage error
     except KeyboardInterrupt:
       if self.exec_opts.interactive():
@@ -274,7 +273,9 @@ class ShellExecutor(vm._Executor):
       node = cast(command__Pipeline, UP_node)
       pi = process.Pipeline()
       for child in node.children:
-        pi.Add(self._MakeProcess(child, parent_pipeline=pi))
+        p = self._MakeProcess(child)
+        p.Init_ParentPipeline(pi)
+        pi.Add(p)
 
       pi.Start(self.waiter)
       last_pid = pi.LastPid()
@@ -304,7 +305,8 @@ class ShellExecutor(vm._Executor):
     # First n-1 processes (which is empty when n == 1)
     n = len(node.children)
     for i in xrange(n - 1):
-      p = self._MakeProcess(node.children[i], parent_pipeline=pi)
+      p = self._MakeProcess(node.children[i])
+      p.Init_ParentPipeline(pi)
       pi.Add(p)
 
     # Last piece of code is in THIS PROCESS.  'echo foo | read line; echo $line'
@@ -371,9 +373,11 @@ class ShellExecutor(vm._Executor):
     # waiting until the command is over!
     if self.exec_opts.more_errexit():
       if self.exec_opts.errexit() and status != 0:
+        # TODO: Add spid of $(
         raise error.ErrExit(
-            'Command sub exited with status %d (%s)', status,
-            ui.CommandType(node))
+            'Command sub exited with status %d (%s)' %
+            (status, ui.CommandType(node)), span_id=runtime.NO_SPID, status=status)
+
     else:
       # Set a flag so we check errexit at the same time as bash.  Example:
       #
