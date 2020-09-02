@@ -164,8 +164,16 @@ inline mylib::LineReader* fdopen(int fd, Str* c_mode) {
 inline void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
   mylib::Str0 _argv0(argv0);
 
-  // TODO: fix this dummy
-  char* _argv[] = {"ls", "/", nullptr};
+  int n = len(argv);
+  // never deallocated
+  char** _argv = static_cast<char**>(malloc(n + 1));
+
+  // Annoying const_cast
+  // https://stackoverflow.com/questions/190184/execv-and-const-ness
+  for (int i = 0; i < n; ++i) {
+    _argv[i] = const_cast<char*>(argv->index(i)->data_);
+  }
+  _argv[n] = nullptr;
 
   ::execve(_argv0.Get(), _argv, nullptr);
 }
