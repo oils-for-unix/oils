@@ -24,6 +24,7 @@ manifest() {
     build/mycpp.sh \
     cpp/ \
     mycpp/mylib.{cc,h} \
+    mycpp/myerror.h \
     _devbuild/gen/*.h \
     _build/cpp/ \
     -name _bin -a -prune -o -type f -a -print
