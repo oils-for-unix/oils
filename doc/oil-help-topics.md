@@ -55,10 +55,11 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
                   oil-numbers    42  3.14  1e100
                   oil-bool      True T   False F   null
   [Operators]     concat        ++ on Str, Array, Dict?
-                  oil-compare   ==  <=  in
+                  oil-equals    ==  !=  ===  !==  in
+                  oil-compare   <  <=  >  >=  (numbers only)
                   oil-logical    not  and  or
                   oil-arith     +  -  *  /  div  mod  ^
-                  oil-bitwise   ~ & | xor
+                  oil-bitwise   ~  &  |  xor  <<  >>
                   oil-ternary   '+' if x >= 0 else '-'
                   oil-index     a[3]  s[3]
                   oil-slice     a[1:-1]  s[1:-1]

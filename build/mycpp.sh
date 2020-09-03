@@ -152,8 +152,9 @@ compile() {
     *.malloc)
       flags="$CPPFLAGS -O2 -g"
       ;;
-    *.marksweep)
-      flags="$CPPFLAGS -O2 -g -D MARK_SWEEP"
+    *.gc)
+      # simulating copying collector
+      flags="$CPPFLAGS -O2 -g -D COLLECT_GARBAGE -D DUMB_ALLOC"
       ;;
     *.tcmalloc)
       flags="$CPPFLAGS -O2 -g -D TCMALLOC"
@@ -274,7 +275,7 @@ compile-slice-asan() { compile-slice "${1:-}" '.asan'; }
 compile-slice-uftrace() { compile-slice "${1:-}" '.uftrace'; }
 compile-slice-tcmalloc() { compile-slice "${1:-}" '.tcmalloc'; }
 compile-slice-malloc() { compile-slice "${1:-}" '.malloc'; }
-compile-slice-marksweep() { compile-slice "${1:-}" '.marksweep'; }
+compile-slice-gc() { compile-slice "${1:-}" '.gc'; }
 
 all-variants() {
   local name=${1:-osh_eval}

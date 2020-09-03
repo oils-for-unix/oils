@@ -115,17 +115,47 @@ class Obj {
   DISALLOW_COPY_AND_ASSIGN(Obj)
 };
 
-// Simulating 16 byte per-object overhead
+namespace GcTag {  // overlaps with ASDL namespace
+  const int Forwarded = 0xffff;  // forwarding pointer comes next
+
+  // Opaque Str payload, List<int>, indices for Dict, keys for Dict<float, V>,
+  // values for Dict<K, float>, etc.
+  // how_to_trace: just a length (16 bit limitation)
+  const int Slab = 0xfffe;
+
+  // Variable-length list of things that need
+  // List<Str*>, Dict<Str*, Str*>, etc.
+  // how_to_trace:
+  //   a length
+  //   but also an offset to start scanning?  Depends if you have List<Str*> inline
+  //   I think we won't to start.
+
+  const int Sheet = 0xfffd;
+
+  // anything else: treat how_to_trace as a bitmap?  16 fields max.
+};
+
+// Simulating 4 byte per-object overhead
+//
+// Str: 16 -> 16
+// List and Dict: 24 -> 32, although this will change
+
+// #define COLLECT_GARBAGE 1
 
 class Managed {
-#ifdef MARK_SWEEP
+#ifdef COLLECT_GARBAGE
  public:
-  constexpr Managed() : mark_(0), gc_policy_(0), next_(nullptr) {
+  constexpr Managed() : tag(0), how_to_trace(0) {
   }
-  int mark_;
-  int gc_policy_;
-  Managed* next_;
+  uint16_t tag;
+  uint16_t how_to_trace;  // bitmap, length
 #endif
+};
+
+class Forwarded : public Managed {
+ public:
+  // When tag == GcTag::Forwarded, we can follow this
+  Managed* forwarded;
 };
 
 // TODO: Consider a couple extra fields:
@@ -140,7 +170,7 @@ class Str : public Managed {
   }
 
   // constexpr so we can statically initialize Str s = {"foo", 3}
-  constexpr Str(const char* data, int len) : data_(data), len_(len) {
+  constexpr Str(const char* data, int len) : len_(len), data_(data) {
   }
 
   // Important invariant: the buffer is of size len+1, so data[len] is OK to
@@ -356,8 +386,8 @@ class Str : public Managed {
   Str* ljust(int width, Str* fillchar);
   Str* rjust(int width, Str* fillchar);
 
+  int len_;  // reorder for alignment
   const char* data_;
-  int len_;
 
   DISALLOW_COPY_AND_ASSIGN(Str)
 };
