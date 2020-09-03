@@ -97,6 +97,8 @@ auto-machine1() {
   $0 test-opy
   $0 spec-all
   $0 benchmark-run
+
+  $0 mycpp-examples
 }
 
 # TODO:
@@ -474,6 +476,7 @@ compress-benchmarks() {
   # Technically we only need index.html.  But it's nice to have stage1 and
   # stage2 in case we need backup.
 
+  # note: mycpp-benchmarks only run on one machine
   pushd _tmp
   find \
     compute/{stage1,stage2,index.html} \
@@ -481,9 +484,17 @@ compress-benchmarks() {
     osh-runtime/{stage1,stage2,index.html} \
     vm-baseline/{stage1,stage2,index.html} \
     ovm-build/{stage1,stage2,index.html} \
+    mycpp-examples/{stage2,index.html} \
     -type f \
     | xargs --verbose -- zip -q $out 
   popd
+}
+
+mycpp-examples() {
+  ### Single machine benchmarks that show our GC progress
+  mycpp/setup.sh build-examples
+  mycpp/setup.sh test-examples
+  mycpp/setup.sh benchmark-examples
 }
 
 line-counts() {

@@ -92,10 +92,8 @@ module syntax
 
   -- After parsing, we often don't need the token 'string val', so use a
   -- 'speck'.  Notes:
-  -- * This structure could be packed into (2 + 2 + 4) = 8 bytes.
-  -- * If we had a step between parsing and execution (i.e. compilation), we could
-  --   just use specks as tokens.  We care about 'string val' when they're made
-  --   literal parts of words; variable, function, and parameter names; etc.
+  -- * It's 12 bytes with the GC header
+  -- * It's a "slab" to the GC (no pointers to follow)
   speck = (id id, int span_id)
 
   -- Note: like token -> speck, token -> strand is for when we don't need the id.
@@ -305,7 +303,7 @@ module syntax
   | VarDecl(Token? keyword, name_type* lhs, expr rhs)
     -- setvar/set, auto.  Note: op can be a speck
   | PlaceMutation(Token? keyword, place_expr* lhs, Token op, expr rhs)
-    -- do, pp, pass.  An expression for its side effects
+    -- = keyword
   | Expr(speck keyword, expr e)
     -- return an Obj, not an int-like string
   | Return(Token keyword, expr e)
@@ -404,7 +402,6 @@ module syntax
     Var(Token name)  -- a variable name to evaluate
     -- For null, Bool, Int, Float
     -- Python uses Num(object n), which doesn't respect our "LST" invariant.
-    -- speck?
   | Const(Token c)
     -- @(one 'two' "$three")
   | ShArrayLiteral %sh_array_literal

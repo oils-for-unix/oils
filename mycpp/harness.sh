@@ -227,7 +227,7 @@ benchmark-all() {
 
   export BENCHMARK=1
 
-  local out_dir=../_tmp/mycpp-benchmarks/raw
+  local out_dir=../_tmp/mycpp-examples/raw
   mkdir -p $out_dir
   local out=$out_dir/times.tsv
 

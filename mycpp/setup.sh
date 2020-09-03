@@ -62,5 +62,11 @@ test-examples() {
   ./run.sh test-all
 }
 
+benchmark-examples() {
+  ### Benchmark all mycpp/examples
+
+  cd $THIS_DIR
+  ./run.sh benchmark-all
+}
 
 "$@"

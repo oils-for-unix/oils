@@ -82,9 +82,9 @@ compute() {
   stage3 $base_dir
 }
 
-mycpp() {
+mycpp-examples() {
   # ./run.sh benchmark-all  in the mycpp/ dir produces this
-  local base_dir=${1:-_tmp/mycpp-benchmarks}
+  local base_dir=${1:-_tmp/mycpp-examples}
   mkdir -p $base_dir
 
   local dir2=$base_dir/stage2
@@ -101,6 +101,9 @@ all() {
   vm-baseline
   ovm-build
   compute
+
+  # Only run on one machine
+  mycpp-examples
 }
 
 # For view

@@ -122,6 +122,8 @@ of Oil's C++ translation.
   build Oil?  How big is the resulting binary?
 - [Virtual Memory Baseline](benchmarks.wwz/vm-baseline/).  How much memory do
   shells use at startup?
+- [mycpp](benchmarks.wwz/mycpp-examples/).  Compares Python and generated C++
+  on small examples.
 
 ## Metrics
 

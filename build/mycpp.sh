@@ -294,7 +294,7 @@ all-variants() {
   ls -l _bin/$name*
 }
 
-readonly TMP=_tmp/mycpp
+readonly TMP=_devbuild/tmp
 
 osh-eval-manifest() {
   # _devbuild is ASDL stuff
@@ -347,10 +347,10 @@ asdl-runtime() {
   #   depending on Oil.
 
   local name=asdl_runtime
-  local raw=_tmp/mycpp/${name}_raw.cc 
+  local raw=$TMP/${name}_raw.cc 
 
   mycpp \
-    --header-out _tmp/mycpp/runtime.h \
+    --header-out $TMP/runtime.h \
     --to-header asdl.runtime \
     --to-header asdl.format \
     $REPO_ROOT/{asdl/runtime,asdl/format,core/ansi,pylib/cgi,qsn_/qsn}.py \
@@ -371,7 +371,7 @@ inline Str* repr(void* obj) {
 }
 
 EOF
-    cat _tmp/mycpp/runtime.h
+    cat $TMP/runtime.h
   } > asdl/runtime.h
 
   cat $raw > $cc
@@ -382,7 +382,7 @@ EOF
 port-os-path() {
 
   local name=os_path
-  local raw=_tmp/mycpp/${name}_raw.cc 
+  local raw=$TMP/${name}_raw.cc 
 
   mycpp \
     $REPO_ROOT/pylib/os_path.py \

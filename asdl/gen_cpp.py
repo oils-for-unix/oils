@@ -362,6 +362,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     # Members
     #
     self.Emit('  uint16_t tag;')
+    self.Emit('  uint16_t how_to_trace;')  # for copying GC
     for field in all_fields:
       self.Emit("  %s %s;" % (_GetCppType(field.typ), field.name))
 

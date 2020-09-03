@@ -142,16 +142,6 @@ oil-asdl-to-cpp() {
   gen-asdl-cpp core/runtime.asdl
 
   gen-asdl-cpp frontend/syntax.asdl
-
-  # CRAZY SHARP HACK to make Token 16 bytes instead of 24!  (And speck is 8
-  # bytes rather than 12, although we might want to get rid of it.)
-  # Because of C's weak type system (typedef int Id_t), this is better than
-  # changing ASDL.
-  local orig=_build/cpp/syntax_asdl.h 
-  local tmp=_devbuild/tmp/syntax_asdl.h
-  sed 's/Id_t id;/uint16_t id;/g' $orig > $tmp
-  diff -u $orig $tmp || true
-  mv -v $tmp $orig
 }
 
 oil-cpp() {
