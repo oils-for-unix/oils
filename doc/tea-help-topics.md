@@ -49,19 +49,19 @@ language and eggex (for lexers).
 </h2>
 
 ```oil-help-topics
-  [Data Types]    Str           r'\'   c'\n'   "$var"   X multiline r""" c'''
+  [Literals]      Str           r'\'   c'\n'   "$var"   X multiline r""" c'''
                   X Symbol      %foo
                   Null          null
-                  Bool          true false
+                  Bool          true  false
                   Int           1_000_000  0b0100  0xFF  0o377  \n  \\  \u0100
                   Float         3.14   6.022e+23
                   Array[]       %(ls -l)  %[T F F]  %[1 2 3]  %[1.5 2.5] 
                   Tuple[]       ()  tup(42)  (42, "foo")
-                  List          [1, 'str', false]  (for JSON compatibility)
-                  Dict[]        %{name: 'oil'}  %{['name']: 'oil'}  %{name}
-                  Regex         /d+/
+                  Map[]         %{name: 'oil'}  %{['name']: 'oil'}  %{name}
+                  Regex         / d+ /
                   X Func        fn(x) x+1   func(x) { return x+1 }
                   X Buf         file-like, mutable string
+                  Type          Bool  Map[Str, Int]  Func[Int => Int]
   [Operators]     ternary       a if cond else b
                   subscript     a[b, c]   a[start:end]
                   X chain       pass a => f(y, z) => var new
@@ -77,12 +77,12 @@ language and eggex (for lexers).
 ```oil-help-topics
   [Objects]       mod           bundle state and behavior
                   extends       inheritance
+                  new           instantiate
                   this          pseudo-keyword
-                  X interface   only methods
+                  virtual   override   abstract
+                  export        All public by default, except for this "allowlist"
   [Names]         namespace
                   import        contrast with 'use' in Oil
-  [Secondary]     virtual   override   abstract
-                  export        All public by default, except for this "allowlist"
 ```
 
 Not needed for minimal Oil port:
@@ -90,3 +90,4 @@ Not needed for minimal Oil port:
 - const integers
 - const methods (nice C++ feature)
 - non-nullable types (that compile to C++ references)
+- namespace or import (just use implicit naming)

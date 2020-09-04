@@ -62,14 +62,25 @@
 //
 // GC policy tag
 //
-// gc_policy =
-//   Slab(int len),  # opaque, for string data, and also List<int>
+// how_to_trace =
+//   Slab(uint16_t len, uint16_t capacity),  -- opaque, for string data, and also List<int>
+//   Sheet(uint16_t len, uint16_t capacity),  -- for List<Str*>*
+// | Record(uint16_t bitmap)  -- for inheritance
+//                               for the fixed schema of Str, List, Dict
+//                            -- the last 1 encodes the length
+//                            -- isn't that an interview trick?
+//                            -- highest bit
+// | BigData(int external_strategy)  -- for large strings and arrays
+//
+//   -- later: if we want to sort fields.  It might make them pack better --
+//   sort 32-bit integers before 64-bit pointers?
 //   -- for ASDL types, for Str (1)
 //   -- also the vectors underlying List and Dict??  Unless we do destructors.
 // | PointerPrefix(int num_pointers, int len)
-// | List(int items_to_scan)  -- can be 0
-// | Dict(int keys_to_scan, values_to_scan)  -- can be 0
-// | Custom(int bitmap)  -- for inheritance
+//
+// Idea for capacity of Slab/Sheet
+//   - Starts at 4
+//   - Then it's the next power of 2 above len?  So 5 -> 8, 8 -> 16, 9 -> 16, etc.
 //
 // Tags:
 // 0 Str  -- don't collect?
@@ -83,7 +94,7 @@
 // TODO:
 // - test out new Str() vs. the vector constructor
 // - test out double indirection
-// - encode gc_policy in object header
+// - encode how_to_trace in object header
 // - figure out how to call the destructors -- DEFERRED
 // - figure out std::vector vs. another GC slab?  vector does not have Managed
 //   header -- DONE, using Array
@@ -154,7 +165,7 @@ union Header {
   uint16_t tag;        // for ASDL sum types
                        // and other stuff too?
 
-  uint32_t gc_policy;  // how should we scan this object?
+  uint32_t how_to_trace;  // how should we scan this object?
                        // how long is it?
 };
 #endif
@@ -168,7 +179,7 @@ class Managed {
   uint16_t tag;  // disjoint from ASDL tags
                  // is forward
 
-  int gc_policy;  // can be directly encoded, or it's an index into a table
+  int how_to_trace;  // can be directly encoded, or it's an index into a table
 };
 
 // only valid if tag == FORWARDED
@@ -210,6 +221,22 @@ struct Space {
   // TODO:
   // scan pointer
   // next pointer
+};
+
+
+// Problem: can you have a max array / string size of uint16_t?
+// I guess they can use a different tracing strategy in that case.  The
+// "Custom" one
+
+// Opaque slab.  e.g. for String data
+class Slab : public Managed {
+  char opaque[8];  // minimum string capacity
+};
+
+// Building block for Dict and List.  Or is this List itself?
+// Note: it's not managed with 'new'?
+class Sheet : public Managed {
+  Managed* pointers_[4];  // minimum List<Str*> capacity
 };
 
 // Indexed by slab ID.  free() these individually?
@@ -295,15 +322,6 @@ class Str : public Managed {
                       //     This works but causes more GC pressure
   int len_;
   int hash_;
-};
-
-
-// Building block for Dict and List.  Or is this List itself?
-// Note: it's not managed with 'new'?
-class Array : public Managed {
-  int capacity_;  // how many we can append without resizing
-  int len_;  // the actual length
-  char* data_;  // hanging off the end
 };
 
 template <class T>
@@ -396,7 +414,7 @@ int main(int argc, char** argv) {
   log("sizeof(Str) = %d", sizeof(Str));
   log("sizeof(Slice_2) = %d", sizeof(Slice_2));
 
-  log("sizeof(Array) = %d", sizeof(Array));
+  //log("sizeof(Array) = %d", sizeof(Array));
 
   // 40 bytes:
   // 16 byte managed + 24 byte vector = 40
