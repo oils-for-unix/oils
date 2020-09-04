@@ -7,17 +7,35 @@
 // - Immutable Slab, Sheet, and Str
 // - Mutable List, Dict that point to Slab/Sheet
 //
+// - Prototype RootPtr<T> for stack roots
+//   - and I guess PtrScope() or something
+//
 // - List.append() can realloc
 // - Hook up alloactors.  new()?
 //   - but Slab and Sheet can't use that.
 //
-// - How do you make it cooperate with ASAN?
-//   - zero length arrays?
+// - GLOBAL Str* instances should not be copied!
+//   - do they have a special Cell header?
+//     - special tag?
+//   - can they be constexpr?
 
+
+// APIs:
+// - new: for generated code like mycpp/ASDL to use.  Because of the typing
+//   issue?  Automatically deallocated.
+//
+// - malloc() -- for say yajl to use.  It frees its own memory
+//
+// - mylib::Alloc() -- for internal data structures and operator new() to use
+//                     Automatically deallocated
+
+#include <cassert>  // assert()
 #include <cstdarg>  // va_list, etc.
-#include <cstdint>  // max_align_t
 #include <cstdio>   // vprintf
+#include <cstdint>  // max_align_t
 #include <cstring>  // memcpy
+#include <cstdlib>  // malloc
+#include <cstddef>  // max_align_t
 
 void log(const char* fmt, ...) {
   va_list args;
@@ -27,8 +45,72 @@ void log(const char* fmt, ...) {
   puts("");
 }
 
+// handles get registered here, and they appear on the heap somehow
+class HandleScope {
+};
+
+// behaves like a pointer
+class Handle {
+};
+
+
+struct Heap {
+  char* from_space_;
+  char* to_space_;
+
+  char alloc_pos_;
+
+  // how to represent this?
+  // femtolisp uses a global pointer to dynamically-allocated growable array,
+  // with initial N_STACK = 262144!  Kind of arbitrary.
+  void* root_pointers[100];
+
+  // scan pointer, next pointer
+
+  // reallocation policy?
+};
+
+// TODO: Make this a thread local?
+Heap gHeap;
+
+// 1 MiB, and will double when necessary
+const int kInitialSize = 1 << 20;
+
+void InitHeap() {
+  gHeap.from_space_ = static_cast<char*>(malloc(kInitialSize));
+  gHeap.to_space_ = static_cast<char*>(malloc(kInitialSize));
+  gHeap.alloc_pos_ = 0;
+
+#if GC_DEBUG
+  // TODO: make it 0xdeadbeef
+  memset(gHeap.from_space_, 0xff, kInitialSize);
+  memset(gHeap.to_space_, 0xff, kInitialSize);
+#endif
+}
+
+constexpr int kMask = alignof(max_align_t) - 1;  // e.g. 15 or 7
+
+// Align returned pointers to the worst case of 8 bytes (64-bit pointers)
+inline size_t aligned(size_t n) {
+  // https://stackoverflow.com/questions/2022179/c-quick-calculation-of-next-multiple-of-4
+  // return (n + 7) & ~7;
+
+  return (n + kMask) & ~kMask;
+}
+
+void* Alloc(int size) {
+  char* p = gHeap.from_space_ + gHeap.alloc_pos_;
+  gHeap.alloc_pos_ += aligned(size);
+  return p;
+}
+
+// TODO: Do copying collection.
+// What's the resizing policy?
+void CollectGarbage() {
+}
+
 namespace Tag {
-const int Forwarded = 1;
+  const int Forwarded = 1;
 }
 
 // This forces an 8-byte Cell header.  It's better not to have special cases
@@ -64,9 +146,9 @@ class Cell {
 
   // How to trace fields in this object.
   union {
-    how_t cell_len_;   // # bytes to copy, or # bytes to scan?
-    how_t field_mask;  // last 1 bit determines length
-                       // so maximum 31 fields?
+    how_t cell_len_;  // # bytes to copy, or # bytes to scan?
+    how_t field_mask; // last 1 bit determines length
+                      // so maximum 31 fields?
   };
 };
 
@@ -78,7 +160,8 @@ class Forwarded : public Cell {
 // Opaque slab.  e.g. for String data
 class Slab : public Cell {
  public:
-  Slab() : opaque_("foobar") {
+  Slab() 
+      : opaque_("foobar") {
   }
   char opaque_[8];  // minimum string cell_len_
 };
@@ -103,22 +186,10 @@ class Slice : public Cell {
   Slab* slab_;
 };
 
-// TODO: I think constructors should be private.
-// Does "opaque" cause ASAN to complain?
 class Str : public Cell {
  public:
-  Str(const char* data) {
-    int len = strlen(data);
-    SetCellLength(len);
-    this->len_ = len;
-    memcpy(opaque_, data, len);
-  }
-  Str(const char* data, int len) {
-    SetCellLength(len);
-    memcpy(opaque_, data, len);
-  }
   int len_;
-  int unique_id_;   // index into intern table
+  int unique_id_;  // index into intern table
   char opaque_[1];  // flexible array
 };
 
@@ -132,9 +203,16 @@ void PrintSlice(Slice* s) {
 template <class T>
 class List : public Cell {
  public:
+  void append(T item) {
+    // TODO: check the capacity
+    // If it's full, then Alloc() another slab, then memcpy()
+    // The old one will be cleaned up by GC.
+    assert(0);
+  }
+
   int len_;  // container length
   union {
-    Slab* slab;    // List<int>
+    Slab* slab;  // List<int>
     Sheet* sheet;  // List<Str*>
   };
 };
@@ -142,17 +220,47 @@ class List : public Cell {
 template <class K, class V>
 class Dict : public Cell {
  public:
-  int len_;       // container length
+  int len_;  // container length
   Slab* indices;  // indexed by hash value
   union {
-    Slab* keys_slab;    // Dict<int, V>
+    Slab* keys_slab;  // Dict<int, V>
     Sheet* keys_sheet;  // Dict<Str*, V>
   };
   union {
-    Slab* values_slab;    // Dict<K, int>
+    Slab* values_slab;  // Dict<K, int>
     Sheet* values_sheet;  // Dict<K, Str*>
   };
 };
+
+//
+// "Constructors"
+//
+
+// TODO:
+// What about ASDL types?
+//
+// Token* tok = alloc<Token>(id, val);
+//
+// Does this cause code bloat?
+
+Str* NewStr(const char* data, int len) {
+  void* p = Alloc(len);  // allocate exactly the right amount
+
+  Str* s = static_cast<Str*>(p);
+  s->SetCellLength(len);  // is this right?
+  s->len_ = len;
+  memcpy(s->opaque_, data, len);
+
+  return s;
+}
+
+Str* NewStr(const char* data) {
+  return NewStr(data, strlen(data));
+}
+
+//
+// Functions
+//
 
 int len(const Str* s) {
   return s->len_;
@@ -168,8 +276,13 @@ inline int len(const Dict<K, V>* d) {
   return d->len_;
 }
 
+//
+// main
+//
+
 int main(int argc, char** argv) {
-  log("simple_gc");
+  // Should be done once per thread
+  InitHeap();
 
   // hm this shouldn't be allocated with 'new'
   // it needs a different interface
@@ -179,13 +292,14 @@ int main(int argc, char** argv) {
 
   PrintSlice(slice1);
 
-  auto str1 = new Str("");
-  // auto str2 = new Str("buffer overflow?");
-  // auto str2 = new Str("food");
+  auto str1 = NewStr("");
+
+  //auto str2 = new Str("buffer overflow?");
+  //auto str2 = new Str("food");
 
   log("");
   log("len(str1) = %d", len(str1));
-  // log("len(str2) = %d", len(str2));
+  //log("len(str2) = %d", len(str2));
 
   auto list1 = new List<int>();
   auto list2 = new List<Str*>();
@@ -208,4 +322,9 @@ int main(int argc, char** argv) {
   log("sizeof(List) = %d", sizeof(List<int>));
   // 32 = 4 + pad4 + 8 + 8 + 8
   log("sizeof(Dict) = %d", sizeof(Dict<int, int>));
+
+  char* p = static_cast<char*>(Alloc(17));
+  char* q = static_cast<char*>(Alloc(9));
+  log("p = %p", p);
+  log("q = %p", q);
 }
