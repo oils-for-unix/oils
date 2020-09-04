@@ -196,9 +196,6 @@
 /* Defined when any dynamic module loading is enabled. */
 #define HAVE_DYNAMIC_LOADING 1
 
-/* Define if you have the 'epoll' functions. */
-#define HAVE_EPOLL 1
-
 /* Define to 1 if you have the `erf' function. */
 #define HAVE_ERF 1
 
@@ -692,9 +689,6 @@
 /* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
    */
 /* #undef HAVE_SYS_DIR_H */
-
-/* Define to 1 if you have the <sys/epoll.h> header file. */
-#define HAVE_SYS_EPOLL_H 1
 
 /* Define to 1 if you have the <sys/event.h> header file. */
 /* #undef HAVE_SYS_EVENT_H */
