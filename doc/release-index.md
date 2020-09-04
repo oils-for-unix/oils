@@ -57,7 +57,7 @@ docs are ready:
 - [Notes on Oil's Architecture](doc/architecture-notes.html).  For developers.
 
 Help topics for [OSH](doc/osh-help-topics.html) and
-[Oil](doc/oil-help-topics.html).  These documents underlies the `help` builtin.
+[Oil](doc/oil-help-topics.html).  These documents underly the `help` builtin.
 
 [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki).  The [Oil
 Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments) wiki page
