@@ -252,8 +252,8 @@ namespace expr {
 typedef expr__Const Const;
 }
 
-using std::shared_ptr;
 using std::make_shared;
+using std::shared_ptr;
 
 shared_ptr<expr__Const> f(shared_ptr<expr__Const> arg) {
   log("arg.use_count() = %d", arg.use_count());

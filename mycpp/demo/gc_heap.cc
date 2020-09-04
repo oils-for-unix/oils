@@ -35,7 +35,7 @@
 //     managed by mark and sweep?  They will have mark bits and a "next"
 //     pointer in their header.)
 // - Breadth-first reduces locality of parents and children.  This seems like
-//   it will matter, but there are some approxiately depth-first algorithms 
+//   it will matter, but there are some approxiately depth-first algorithms
 //   we could try out later.  It would be cool if GC can improve locality!
 //
 // Performance goal / benchmark:
@@ -63,8 +63,8 @@
 // GC policy tag
 //
 // how_to_trace =
-//   Slab(uint16_t len, uint16_t capacity),  -- opaque, for string data, and also List<int>
-//   Sheet(uint16_t len, uint16_t capacity),  -- for List<Str*>*
+//   Slab(uint16_t len, uint16_t capacity),  -- opaque, for string data, and
+//   also List<int> Sheet(uint16_t len, uint16_t capacity),  -- for List<Str*>*
 // | Record(uint16_t bitmap)  -- for inheritance
 //                               for the fixed schema of Str, List, Dict
 //                            -- the last 1 encodes the length
@@ -80,7 +80,8 @@
 //
 // Idea for capacity of Slab/Sheet
 //   - Starts at 4
-//   - Then it's the next power of 2 above len?  So 5 -> 8, 8 -> 16, 9 -> 16, etc.
+//   - Then it's the next power of 2 above len?  So 5 -> 8, 8 -> 16, 9 -> 16,
+//   etc.
 //
 // Tags:
 // 0 Str  -- don't collect?
@@ -223,7 +224,6 @@ struct Space {
   // next pointer
 };
 
-
 // Problem: can you have a max array / string size of uint16_t?
 // I guess they can use a different tracing strategy in that case.  The
 // "Custom" one
@@ -244,7 +244,6 @@ std::vector<const char*> slabs;
 
 Space* gFromSpace;
 Space* gToSpace;
-
 
 // DEFERRED until version 2
 class Slice_2 {  // value type, not managed
@@ -281,7 +280,7 @@ class AtomTable {
     assert(0);
   }
 
-  std::vector<int> indices;  // like a hash_set
+  std::vector<int> indices;        // like a hash_set
   std::vector<AtomEntry> entries;  // indexed by
 };
 
@@ -293,7 +292,7 @@ class AtomTable {
 //
 // int id2 = gAtoms.Intern(s2)
 // int id3 = gAtoms.Intern(s2)
-// 
+//
 // Now id2 == id2 IF AND ONLY IF they are equal.  This is NOT true for a hash
 // value!
 //
@@ -301,7 +300,7 @@ class AtomTable {
 //
 // Str* s;  // may not be NUL termianted
 // getenv(gAtoms.Str0(s));  // cache it
-// 
+//
 // Both Intern() and Str0() MUTATE the slice by adding the atom_id.
 
 // We're going to start out with this reference type.
@@ -378,7 +377,6 @@ void f() {
 
 int main(int argc, char** argv) {
   if (argc == 2) {
-
     // how many allocations are there?  which allocators are used
     if (strcmp(argv[1], "allocator") == 0) {
       auto mylist = new List<int>();  //{1, 2, 3});
@@ -414,7 +412,7 @@ int main(int argc, char** argv) {
   log("sizeof(Str) = %d", sizeof(Str));
   log("sizeof(Slice_2) = %d", sizeof(Slice_2));
 
-  //log("sizeof(Array) = %d", sizeof(Array));
+  // log("sizeof(Array) = %d", sizeof(Array));
 
   // 40 bytes:
   // 16 byte managed + 24 byte vector = 40
@@ -436,6 +434,4 @@ int main(int argc, char** argv) {
   // That are registered with the heap space
   log("Manually calling destructor...");
   mylist.~List<int>();
-
 }
-
