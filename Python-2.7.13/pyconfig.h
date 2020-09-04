@@ -197,7 +197,9 @@
 #define HAVE_DYNAMIC_LOADING 1
 
 /* Define if you have the 'epoll' functions. */
+#ifdef __linux__
 #define HAVE_EPOLL 1
+#endif
 
 /* Define to 1 if you have the `erf' function. */
 #define HAVE_ERF 1
