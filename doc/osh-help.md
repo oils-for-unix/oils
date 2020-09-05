@@ -550,30 +550,9 @@ Prints ARGs to stdout, separated by a space, and terminated by a newline.
 
 Flags:
 
-    -e  enable interpretation of backslash escapes
+    -e  enable interpretation of backslash escapes (see `escapes`)
     -n  omit the trailing newline
 <!--  -E  -->
-
-Backslash sequences recognized by -e:
-
-    \\         backslash
-    \a         (unimplemented ?) alert (BEL)
-    \b         backspace
-    \c         stop processing remaining input
-    \e         escape next character
-    \f         form feed, equivalent to \n + 4 spaces
-    \n         new line
-    \r         carriage return, returns to the beggining of the line
-    \t         horizontal tab
-    \v         vertical tab
-    \0NNN      print character specified as an octal value with 1 to 3 octal
-               digits 
-    \xHH       print character specified as an hexadecimal value with 1 to 2
-               hex digits
-    \uHHHH     Unicode character specified as an hexadecimal value with 1 to
-               4 hex digits 
-    \UHHHHHHHH Unicode character specified as an hexadecimal value with 1 to
-               8 hex digits
 
 <h4 id="readarray">readarray</h4>
 
@@ -887,6 +866,99 @@ these are discouraged.
 
 <!--    -R VAR     True if the variable VAR has been set and is a nameref variable. -->
 
+#### printf
+
+    printf FLAG* FMT ARGS*
+
+Displays text according to a format string.
+
+Flags:
+    -v VAR  Write output in variable VAR instead of standard output.
+
+FMT:
+    String that can contain three types of objects: characters that will be
+    printed; escape sequences that are interpreted and printed (see `escapes`);
+    and format specifiers that print the strings passed to printf as ARGS after
+    being formatted (if not enough ARGS are passed, zero or a nul string will
+    be used).
+
+Format specifiers:
+
+    %%  Prints a single "%".
+    %b  Interprets backslash escapes while printing.
+    %q  Prints the argument escaping the characters needed to make it reusable
+        as shell input.
+    %d  Print as signed decimal number.
+    %i  Same as %d.
+    %o  Print as unsigned octal number.
+    %u  Print as unsigned decimal number.
+    %x  Print as unsigned hexadecimal numbe with lower-case hex-digits (a-f).
+    %X  Same as %x, but with upper-case hex-digits (A-F).
+    %f  Print as floating point number.
+    %e  Print as a double number, in "±e" format (lower-case e).
+    %E  Same as %e, but with an upper-case E.
+    %g  Interprets the argument as double, but prints it like %f or %e.
+    %G  Same as %g, but print it like %E.
+    %c  Print as a single char, onlye the first character is printed.
+    %s  Print as string
+    %n  The number of characters printed so far is stored in the variable named
+        in the argument.
+    %a  Interprets the argument as double, and prints it like a C99 hexadecimal
+        floating-point literal.
+    %A  Same as %a, but print it like %E.
+    %(FORMAT)T  Prints date and time, according to FORMAT as a format string
+                for strftime(3). The argument is the number of seconds since
+                epoch. It can also be -1 (current time, also the default value
+                if there is no argument) or -2 (shell startup time).
+
+#### getopts
+
+    getopts SPEC VAR ARG*
+
+Parses the options passed to the script. The character corresponding to the
+detected option is stored in VAR. By default, it parses the options passed
+to the shell ($1, $2...) unless an alternative options string ARG is passed.
+
+Spec:
+
+    SPEC contains the characters to be parsed as options. Eg, the string "abc"
+    will parse the options -a, -b and -c. If the options needs an additional
+    argument, a colon must be added after the character. Eg, the string "ab:c"
+    will parse arguments for -a, -b arg, and -c.
+
+    Arguments must be separated from options with spaces. ":" and "?" can't be
+    used as options.
+
+How to use:
+
+    getopts returns success if an option is found, and fails if the end of
+    options or an error is found. Every time it is run, it stores the character
+    corresponding to the detected option in VAR, and also places the index of
+    the next option in the variable `$OPTIND` (which is initialized to 1 every
+    time a shell starts). If an option requires an argument, the argument is
+    placed in the variable `$OPTARG`. This design is expected to be used in a
+    loop with a case statement, like this:
+
+    while getopts "ab:c" options; do
+        case $options in
+            a)
+                echo "-a option passed"
+                ;;
+            b)
+                echo "-b option passed with $OPTARG argument"
+                ;;
+            c)
+                echo "-c option passed"
+                ;;
+            *)
+                echo "Option $OPTARG: Unknown or argument missing"
+                ;;
+        esac
+    done
+
+    When an invalid option is found or a required argument is not found, VAR
+    is set to '?' and `$OPTARG` is unset.
+
 <h4 id="kill">kill</h4>
 
 TODO
@@ -913,9 +985,157 @@ View on the web:
 
     https://www.oilshell.org/release/$VERSION/doc/
 
+#### hash
+
+    hash FLAG* NAME*
+
+Avoids searching for the location of commands by keeping a hash cache
+containing the path of previously executed commands.
+
+Name:
+
+    Name of the command whose path should be remembered, so they need not to be
+    searched for subsequent invocations. `$PATH` is used for the search, and
+    previously remembered paths are discarded. If no NAME and FLAG is supplied,
+    it prints the current hash cache.
+
+Flag:
+
+    -r       Discard all remembered locations.
+<!--    -d       Discard the remembered location of each NAME.
+    -l       Display output in a format reusable as input.
+    -p PATH  Inhibit path search, PATH is used as location for NAME.
+    -t       Print the full path of one or more NAME.-->
+
+#### type
+
+    type FLAG* CMD
+
+Prints information about the type of command that will be run as CMD:
+an executable file, aliase, shell builtin, or function.
+
+Flags:
+
+    -f  Don't search for CMD in functions.
+    -P  Force searching for CMD only in file executables.
+    -t  Only print the type of command of CMD: 'alias', 'keyword', 'function',
+        'builtin' or 'file'.
+<!--    -a  Print all executables that can run CMD, including files, aliases,
+        builtins and functions. If used with -p, only the executable file will
+        be printed.-->
+
+#### escapes
+
+Escape sequences (used in `echo` and `printf`)
+
+    \"         Double quote.
+    \\         Backslash.
+    \a         Alert (BEL).
+    \b         Backspace.
+    \c         Stop processing remaining input.
+    \e         Escape next character.
+    \f         Form feed, equivalent to \n + 4 spaces
+    \n         New line.
+    \r         Carriage return, returns to the beggining of the line
+    \t         Horizontal tab.
+    \v         Vertical tab.
+    \0NNN      (Only in `echo`) Print character specified as an octal value
+               with 1 to 3 octal digits.
+    \NNN       (Only in `printf`) Print character specified as an octal value
+               with 1 to 3 octal digits.
+    \xHH       Print character specified as an hexadecimal value with 1 to 2
+               hex digits.
+    \uHHHH     Unicode character specified as an hexadecimal value with 1 to
+               4 hex digits.
+    \UHHHHHHHH Unicode character specified as an hexadecimal value with 1 to
+               8 hex digits.
+
+
+ 
 <h3>Word Lookup</h3>
 
+#### command
+
+    command FLAG* CMD ARG*
+
+Executes CMD from builtin commands or executable files, ignoring shell
+functions with the same name. ARG is passed as arguments to CMD. It also
+displays information about CMD.
+
+Flags:
+
+    -v  Print a description of CMD, similar to `type`.
+<!--    -p  Use a default value for PATH that is guaranteed to find all of the
+        standard utilities.
+    -V  Print a more verbose description of CMD.-->
+
+#### builtin
+
+    builtin CMD ARG*
+
+Executes the shell builtin CMD, with arguments ARG, ignoring the existence of
+shell functions with the same name. Typically used when a shell builtin is
+reimplemented as a shell function, but the shell function needs to execute the
+builtin.
+
 ### Interactive
+
+#### alias
+
+    alias NAME=CODE
+
+Defines a string CODE that will be used instead of NAME when you run it. If
+CODE is not provided, the current alias for NAME will be shown. If run without
+parameters, it will show a list of defined alias. To remove an existing alias,
+use `unalias`.
+
+Tips:
+
+Aliases are used to create new compounded commands, or to add default options
+to existing commands. For example, alias ls='ls --color' will make ls always
+display colors.
+
+Use of aliases is discouraged due to possible parsing issues. It's recommended
+to use functions whenever possible. Eg, for the previous example:
+
+ls() {
+  ls --color "$@"
+}
+
+Use of aliases by the shell can be disabled by prepending the character '\' to
+the command (eg, \ls), or quoting the command with single or double quotes (eg,
+"ls" or 'ls').
+
+Aliases are not used by the shell when the shell is not interactive.
+
+#### unalias
+
+    unalias NAME
+
+Removes the alias NAME.
+
+<!--Flag:
+
+    -a  Removes all existing aliases.-->
+
+#### history
+
+    history NUM
+    history FLAG ARGS
+
+Displays and manipulate the shell's history entries. If provided, it will only
+show the last NUM entries.
+
+Flag:
+
+    -c      Clears the history.
+    -d POS  Deletes the history entry at position POS.
+<!--    -a
+    -n
+    -r
+    -w
+    -p
+    -s -->
 
 ### Oil Builtins
 

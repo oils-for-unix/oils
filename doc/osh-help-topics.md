@@ -127,7 +127,7 @@ You may also want to browse [Oil Help Topics](oil-help-topics.html).
 </h2>
 
 ```osh-help-topics
-  [I/O]           read   echo 
+  [I/O]           read   echo   escapes
                   readarray   mapfile
   [Run Code]      source .   eval   trap
   [Set Options]   set   shopt
