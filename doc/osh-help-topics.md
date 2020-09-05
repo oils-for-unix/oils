@@ -47,8 +47,8 @@ You may also want to browse [Oil Help Topics](oil-help-topics.html).
   [Lexing]        comment #   line-continuation \
 ```
 
-<h2 id="command">
-  Command Language (<a class="group-link" href="osh-help.html#command">command</a>)
+<h2 id="command-lang">
+  Command Language (<a class="group-link" href="osh-help.html#command-lang">command-lang</a>)
 </h2>
 
 ```osh-help-topics
@@ -123,8 +123,8 @@ You may also want to browse [Oil Help Topics](oil-help-topics.html).
                   char-escapes  \t  \c  \x00  \u03bc
 ```
 
-<h2 id="builtin">
-  Builtin Commands (<a class="group-link" href="osh-help.html#builtin">builtin</a>)
+<h2 id="builtins">
+  Builtin Commands (<a class="group-link" href="osh-help.html#builtins">builtins</a>)
 </h2>
 
 ```osh-help-topics

@@ -76,7 +76,7 @@ A backslash `\` at the end of a line continues the line without executing it:
        /usr/lib \
        ~/src        # A single command split over three lines
 
-<h2 id="command">Command Language</h2>
+<h2 id="command-lang">Command Language</h2>
 
 ### Commands
 
@@ -345,9 +345,9 @@ TODO: unbalanced HTML if we use \<\<?
 
 <h4 id="dparen">dparen ((</h4>
 
-<h4>time</h4>
+#### h4
 
-`time [-p] pipeline`
+    time [-p] pipeline
 
 Measures the time taken by a command / pipeline.  It uses the `getrusage()`
 function from `libc`.
@@ -542,7 +542,7 @@ Inconsistent octal escapes:
 TODO: Verify other differences between `echo -e`, `printf`, and `$''`.  See
 `frontend/lexer_def.py`.
 
-<h2 id="builtin">Builtin Commands</h2>
+<h2 id="builtins">Builtin Commands</h2>
 
 ### I/O
 
@@ -780,23 +780,23 @@ Flags:
 
 ### Completion
 
-<h4 id="complete">complete</h4>
+#### complete
 
 The complete builtin registers completion policies for different commands.
 
-<h4 id="compgen">compgen</h4>
+#### compgen
 
 The compgen builtin generates completion candidates inside a user-defined
 completion function.
 
 It can also be used in scripts, i.e. outside a completion function.
 
-<h4 id="compopt">compopt</h4>
+#### compopt
 
 The compopt builtin changes completion options inside a user-defined completion
 function.
 
-<h4 id="compadjust">compadjust</h4>
+#### compadjust
 
 The compadjust builtin adjusts COMP_ARGV according to specified delimiters,
 and optionally set variables cur, prev, words (an array), and cword.  May also
@@ -807,7 +807,7 @@ project.
 
 <h3>Shell Process</h3>
 
-<h4 id="exec">exec</h4>
+#### exec
 
     exec BIN_PATH ARG*
 
@@ -815,7 +815,7 @@ Replaces the running shell with the binary specified, which is passed ARGs.
 BIN_PATH must exist on the file system; i.e. it can't be a shell builtin or
 function.
 
-<h4 id="umask">umask</h4>
+#### umask
 
     umask MODE?
 
@@ -827,7 +827,7 @@ Oil currently supports writing masks in octal.
 
 If no MODE, show the current mask.
 
-<h4 id="times">times</h4>
+#### times
 
     times
 
@@ -835,13 +835,13 @@ Shows the user and system time used by the shell and its child processes.
                 
 ### Child Process
 
-<h4 id="jobs">jobs</h4>
+#### jobs
 
     jobs
 
 Shows all jobs running in the shell and their status.
 
-<h4 id="wait">wait</h4>
+#### wait
 
     wait FLAG* ARG
 
@@ -856,7 +856,7 @@ Flags:
 
     -n  Wait for the next process to exit, rather than a specific process.
 
-<h4 id="fg">fg</h4>
+#### fg
 
     fg JOB?
 
@@ -875,7 +875,7 @@ JOB:
 
 ### External
 
-<h4 id="test">test</h4>
+#### test
 
     test OP ARG
     test ARG OP ARG
@@ -983,13 +983,13 @@ TODO
 
 <!-- bash accepts job control syntax -->
 
-<h4 id="enable">enable</h4>
+#### enable
 
 Bash has this, but OSH won't implement it.
 
 <h3>Introspection</h3>
 
-<h4 id="help">help</h4>
+#### help
 
     help oil             # list Oil language help topics
     help osh             # list OSH language help topics
@@ -1005,17 +1005,13 @@ View on the web:
 
 #### hash
 
-    hash FLAG* NAME*
+    hash
 
-Avoids searching for the location of commands by keeping a hash cache
-containing the path of previously executed commands.
+Display information about remembered commands.
 
-Name:
+    hash FLAG* CMD+
 
-    Name of the command whose path should be remembered, so they need not to be
-    searched for subsequent invocations. `$PATH` is used for the search, and
-    previously remembered paths are discarded. If no NAME and FLAG is supplied,
-    it prints the current hash cache.
+Determine the locations of commands using `$PATH`, and remember them.
 
 Flag:
 
@@ -1027,17 +1023,16 @@ Flag:
 
 #### type
 
-    type FLAG* CMD
+    type FLAG* NAME*
 
-Prints information about the type of command that will be run as CMD:
-an executable file, aliase, shell builtin, or function.
+Print the type of each NAME.  Is it a keyword, shell builtin, shell function,
+alias, or executable file?
 
 Flags:
 
-    -f  Don't search for CMD in functions.
-    -P  Force searching for CMD only in file executables.
-    -t  Only print the type of command of CMD: 'alias', 'keyword', 'function',
-        'builtin' or 'file'.
+    -f  Don't look for functions
+    -P  Only look for executable files in $PATH
+    -t  Print a single word: alias, builtin, file, function, or keyword
 <!--    -a  Print all executables that can run CMD, including files, aliases,
         builtins and functions. If used with -p, only the executable file will
         be printed.-->
@@ -1049,13 +1044,13 @@ Flags:
 
     command FLAG* CMD ARG*
 
-Executes CMD from builtin commands or executable files, ignoring shell
-functions with the same name. ARG is passed as arguments to CMD. It also
-displays information about CMD.
+Look up CMD as a shell builtin or executable file, and execute it with the
+given ARGs.  That is, the lookup ignores shell functions named CMD.
 
 Flags:
 
-    -v  Print a description of CMD, similar to `type`.
+    -v  Instead of executing CMD, print a description of it.
+        Similar to the 'type' builtin.
 <!--    -p  Use a default value for PATH that is guaranteed to find all of the
         standard utilities.
     -V  Print a more verbose description of CMD.-->
@@ -1064,10 +1059,8 @@ Flags:
 
     builtin CMD ARG*
 
-Executes the shell builtin CMD, with arguments ARG, ignoring the existence of
-shell functions with the same name. Typically used when a shell builtin is
-reimplemented as a shell function, but the shell function needs to execute the
-builtin.
+Look up CMD as a shell builtin, and execute it with the given ARGs.  That is,
+the lookup ignores shell functions and executables named CMD.
 
 ### Interactive
 
@@ -1075,35 +1068,40 @@ builtin.
 
     alias NAME=CODE
 
-Defines a string CODE that will be used instead of NAME when you run it. If
-CODE is not provided, the current alias for NAME will be shown. If run without
-parameters, it will show a list of defined alias. To remove an existing alias,
-use `unalias`.
+Make NAME a shortcut for executing CODE, e.g. `alias hi='echo hello'`.
+
+    alias NAME
+
+Show the value of this alias.
+
+    alias
+
+Show a list of all aliases.
 
 Tips:
 
-Aliases are used to create new compounded commands, or to add default options
-to existing commands. For example, alias ls='ls --color' will make ls always
-display colors.
+Prefer shell functions like:
 
-Use of aliases is discouraged due to possible parsing issues. It's recommended
-to use functions whenever possible. Eg, for the previous example:
+    ls() {
+      command ls --color "$@"
+    }
 
-ls() {
-  ls --color "$@"
-}
+to aliases like:
 
-Use of aliases by the shell can be disabled by prepending the character '\' to
-the command (eg, \ls), or quoting the command with single or double quotes (eg,
-"ls" or 'ls').
+    alias ls='ls --color'
+    
+Functions are less likely to cause parsing problems.
 
-Aliases are not used by the shell when the shell is not interactive.
+- Quoting like `\ls` or `'ls'` disables alias expansino
+- To remove an existing alias, use [unalias]($osh-help).
+
+TODO: Turn off aliases in Oil.
 
 #### unalias
 
     unalias NAME
 
-Removes the alias NAME.
+Remove the alias NAME.
 
 <!--Flag:
 
@@ -1111,13 +1109,15 @@ Removes the alias NAME.
 
 #### history
 
+    history FLAG*
+
+Display and manipulate the shell's history entries.
+
     history NUM
-    history FLAG ARGS
 
-Displays and manipulate the shell's history entries. If provided, it will only
-show the last NUM entries.
+Show the last NUM history entries.
 
-Flag:
+Flags:
 
     -c      Clears the history.
     -d POS  Deletes the history entry at position POS.
@@ -1128,12 +1128,6 @@ Flag:
     -p
     -s -->
 
-### Oil Builtins
-
-#### repr
-
-Displays the internal representation of a cell.  (Cells are locations for
-values like strings and arrays.)
 
 <h2 id="option">Shell Options</h2>
 

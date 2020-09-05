@@ -38,9 +38,10 @@ You may also want to browse [OSH Help Topics](osh-help-topics.html).
 </h2>
 
 ```oil-help-topics
-                  proc       proc p (x, y, @rest, &block) { echo hi }
-                  equal =    = 1 + 2*3
-                  oil-block  cd /tmp { echo $PWD }
+                  proc          proc p (x, y, @rest, &block) { echo hi }
+                  equal =       = 1 + 2*3
+                  underscore _  _ push(x, 3)
+                  oil-block     cd /tmp { echo $PWD }
 ```
 
 <h2 id="assign">

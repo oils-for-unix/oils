@@ -97,10 +97,24 @@ Compare with [sh-func]($osh-help).
 
 #### equal
 
-The `=` keyword shows the expression to its right:
+The `=` keyword evaluates an expression and shows the result:
 
     oil$ = 1 + 2*3
     (Int)   7
+
+It's meant to be used interactively.  Think of it like an assignment with no
+variable on the left.
+
+#### underscore
+
+The `_` keyword evaluates an expression and throws away the result:
+
+    var x = %(one two)
+    _ push(x, 'three')
+
+Think of it as a shortcut for `_ = expr` (throwaway assignment).
+
+TODO: implement this.
 
 #### oil-block
 
@@ -317,6 +331,14 @@ Not implemented.
 <h2 id="builtin">Builtin Commands</h2>
 
 ### Oil Builtins
+
+#### repr
+
+Displays the internal representation of a cell.  (Cells are locations for
+values like strings and arrays.)
+
+    var x = %(one two)
+    repr :x
 
 ### Data Formats
 
