@@ -504,13 +504,43 @@ Compatible with bash.
 
 Part of [dbracket]($osh-help)
 
-### Brace Expand
+### Other Sublang
 
 #### braces
 
-### History
-
 #### histsub
+
+#### char-escapes
+
+These backslash escape sequences are used in `echo -e`, [printf]($osh-help),
+and in C-style strings like `$'foo\n'`:
+
+    \\         backslash
+    \a         alert (BEL)
+    \b         backspace
+    \c         stop processing remaining input
+    \e         the escape character \x1b
+    \f         form feed
+    \n         newline
+    \r         carriage return
+    \t         tab
+    \v         vertical tab
+    \xHH       the byte with value HH, in hexadecimal
+    \uHHHH     the unicode char with value HHHH, in hexadecimal
+    \UHHHHHHHH the unicode char with value HHHHHHHH, in hexadecimal
+
+Also:
+
+    \"         Double quote.
+
+Inconsistent octal escapes:
+
+    \0NNN      echo -e '\0123'
+    \NNN       printf '\123'
+               echo $'\123'
+
+TODO: Verify other differences between `echo -e`, `printf`, and `$''`.  See
+`frontend/lexer_def.py`.
 
 <h2 id="builtin">Builtin Commands</h2>
 
@@ -518,7 +548,7 @@ Part of [dbracket]($osh-help)
 
 These builtins take input and output.  They're often used with redirects.
 
-<h4 id="read">read</h4>
+#### read
 
     read FLAG* VAR*
 
@@ -542,7 +572,7 @@ Flags:
   <!--  -e        use readline to obtain the line
         -i STR    use STR as the initial text for readline -->
 
-<h4 id="echo">echo</h4>
+#### echo
 
     echo FLAG* ARG*
 
@@ -550,15 +580,63 @@ Prints ARGs to stdout, separated by a space, and terminated by a newline.
 
 Flags:
 
-    -e  enable interpretation of backslash escapes (see `escapes`)
+    -e  enable interpretation of backslash escapes
     -n  omit the trailing newline
 <!--  -E  -->
 
-<h4 id="readarray">readarray</h4>
+See [char-escapes]($osh-help).
+
+#### printf
+
+    printf FLAG* FMT ARG*
+
+Formats values and prints them.  The FMT string contain three types of objects:
+
+1. Literal Characters
+2. Character escapes like `\t`.  See [char-escapes]($osh-help).
+3. Percent codes like `%s` that specify how to format each each ARG.
+
+If not enough ARGS are passed, the empty string is used.  If too many are
+passed, the FMT string will be "recycled".
+
+Flags:
+
+    -v VAR  Write output in variable VAR instead of standard output.
+
+Format specifiers:
+
+    %%  Prints a single "%".
+    %b  Interprets backslash escapes while printing.
+    %q  Prints the argument escaping the characters needed to make it reusable
+        as shell input.
+    %d  Print as signed decimal number.
+    %i  Same as %d.
+    %o  Print as unsigned octal number.
+    %u  Print as unsigned decimal number.
+    %x  Print as unsigned hexadecimal numbe with lower-case hex-digits (a-f).
+    %X  Same as %x, but with upper-case hex-digits (A-F).
+    %f  Print as floating point number.
+    %e  Print as a double number, in "±e" format (lower-case e).
+    %E  Same as %e, but with an upper-case E.
+    %g  Interprets the argument as double, but prints it like %f or %e.
+    %G  Same as %g, but print it like %E.
+    %c  Print as a single char, onlye the first character is printed.
+    %s  Print as string
+    %n  The number of characters printed so far is stored in the variable named
+        in the argument.
+    %a  Interprets the argument as double, and prints it like a C99 hexadecimal
+        floating-point literal.
+    %A  Same as %a, but print it like %E.
+    %(FORMAT)T  Prints date and time, according to FORMAT as a format string
+                for strftime(3). The argument is the number of seconds since
+                epoch. It can also be -1 (current time, also the default value
+                if there is no argument) or -2 (shell startup time).
+
+#### readarray
 
 Alias for `mapfile`.
 
-<h4 id="mapfile">mapfile</h4>
+#### mapfile
 
     mapfile FLAG* ARRAY?
 
@@ -580,14 +658,14 @@ Flags:
 
 ### Run Code
 
-<h4 id="source">source</h4>
+#### source
 
     source SCRIPT ARG*
 
 Executes SCRIPT with given ARGs in the context of the current shell.  It will
 modify existing variables.
 
-<h4 id="eval">eval</h4>
+#### eval
 
     eval ARG+
 
@@ -609,7 +687,7 @@ Prefer passing single string ARG to `eval`.
 
 [security issues]: https://mywiki.wooledge.org/BashFAQ/048
 
-<h4 id="trap">trap</h4>
+#### trap
 
     trap FLAG* CMD SIGNAL*
 
@@ -627,17 +705,17 @@ Prefer passing the name of a shell function to `trap`.
 
 ### Set Options
 
-<h4 id="set">set</h4>
+#### set
 
 The set builtin modifies the shell's configuration and behavior.
 
-<h4 id="shopt">shopt</h4>
+#### shopt
 
 The shopt builtin configures the shell.
 
 ### Working Dir
 
-<h4 id="cd">cd</h4>
+#### cd
 
     cd FLAG* DIR
 
@@ -652,7 +730,7 @@ Flags:
         (default).
     -P  Don't follow symbolic links.
 
-<h4 id="pwd">pwd</h4>
+#### pwd
 
     pwd FLAG*
 
@@ -663,7 +741,7 @@ Flags:
     -L  Follow symbolic links if present (default)
     -P  Don't follow symbolic links.  Print the link instead of the target.
 
-<h4 id="pushd">pushd</h4>
+#### pushd
 
 <!--pushd FLAGS DIR-->
     pushd DIR
@@ -679,14 +757,14 @@ NUM:
   '/foo /bar /baz', where '/foo' is the top of the stack, pushd +1 will move
   it to the bottom, '/bar /baz /foo'-->
 
-<h4 id="popd">popd</h4>
+#### popd
 
     popd
 
 Removes a directory from the directory stack, and changes the working directory
 to it.  Typically used with `pushd` and `dirs`.
 
-<h4 id="dirs">dirs</h4>
+#### dirs
 
     dirs FLAG*
 
@@ -866,100 +944,40 @@ these are discouraged.
 
 <!--    -R VAR     True if the variable VAR has been set and is a nameref variable. -->
 
-#### printf
-
-    printf FLAG* FMT ARGS*
-
-Displays text according to a format string.
-
-Flags:
-    -v VAR  Write output in variable VAR instead of standard output.
-
-FMT:
-    String that can contain three types of objects: characters that will be
-    printed; escape sequences that are interpreted and printed (see `escapes`);
-    and format specifiers that print the strings passed to printf as ARGS after
-    being formatted (if not enough ARGS are passed, zero or a nul string will
-    be used).
-
-Format specifiers:
-
-    %%  Prints a single "%".
-    %b  Interprets backslash escapes while printing.
-    %q  Prints the argument escaping the characters needed to make it reusable
-        as shell input.
-    %d  Print as signed decimal number.
-    %i  Same as %d.
-    %o  Print as unsigned octal number.
-    %u  Print as unsigned decimal number.
-    %x  Print as unsigned hexadecimal numbe with lower-case hex-digits (a-f).
-    %X  Same as %x, but with upper-case hex-digits (A-F).
-    %f  Print as floating point number.
-    %e  Print as a double number, in "±e" format (lower-case e).
-    %E  Same as %e, but with an upper-case E.
-    %g  Interprets the argument as double, but prints it like %f or %e.
-    %G  Same as %g, but print it like %E.
-    %c  Print as a single char, onlye the first character is printed.
-    %s  Print as string
-    %n  The number of characters printed so far is stored in the variable named
-        in the argument.
-    %a  Interprets the argument as double, and prints it like a C99 hexadecimal
-        floating-point literal.
-    %A  Same as %a, but print it like %E.
-    %(FORMAT)T  Prints date and time, according to FORMAT as a format string
-                for strftime(3). The argument is the number of seconds since
-                epoch. It can also be -1 (current time, also the default value
-                if there is no argument) or -2 (shell startup time).
-
 #### getopts
 
     getopts SPEC VAR ARG*
 
-Parses the options passed to the script. The character corresponding to the
-detected option is stored in VAR. By default, it parses the options passed
-to the shell ($1, $2...) unless an alternative options string ARG is passed.
+A single iteration of flag parsing.  The SPEC is a sequence of flag characters,
+with a trailing `:` to indicate that the flag takes an argument:
 
-Spec:
+    ab    # accept  -a and -b
+    xy:z  # accept -x, -y arg, and -z
 
-    SPEC contains the characters to be parsed as options. Eg, the string "abc"
-    will parse the options -a, -b and -c. If the options needs an additional
-    argument, a colon must be added after the character. Eg, the string "ab:c"
-    will parse arguments for -a, -b arg, and -c.
+The input is `"$@"` by default, unless ARGs are passed.
 
-    Arguments must be separated from options with spaces. ":" and "?" can't be
-    used as options.
+On each iteration, the flag character is stored in VAR.  If the flag has an
+argument, it's stored in `$OPTARG`.  When an error occurs, VAR is set to `?`
+and `$OPTARG` is unset.
 
-How to use:
+Returns 0 if a flag is parsed, or 1 on end of input or another error.
 
-    getopts returns success if an option is found, and fails if the end of
-    options or an error is found. Every time it is run, it stores the character
-    corresponding to the detected option in VAR, and also places the index of
-    the next option in the variable `$OPTIND` (which is initialized to 1 every
-    time a shell starts). If an option requires an argument, the argument is
-    placed in the variable `$OPTARG`. This design is expected to be used in a
-    loop with a case statement, like this:
+Example:
 
-    while getopts "ab:c" options; do
-        case $options in
-            a)
-                echo "-a option passed"
-                ;;
-            b)
-                echo "-b option passed with $OPTARG argument"
-                ;;
-            c)
-                echo "-c option passed"
-                ;;
-            *)
-                echo "Option $OPTARG: Unknown or argument missing"
-                ;;
+    while getopts "ab:" flag; do
+        case $flag in
+            a)   flag_a=1 ;;
+            b)   flag_b=$OPTARG" ;;
+            '?') echo 'Invalid Syntax'; break ;;
         esac
     done
 
-    When an invalid option is found or a required argument is not found, VAR
-    is set to '?' and `$OPTARG` is unset.
+Notes:
+- `$OPTIND` is initialized to 1 every time a shell starts, and is used to
+  maintain state between invocations of `getopts`.
+- The characters `:` and `?` can't be flags.
 
-<h4 id="kill">kill</h4>
+#### kill
 
 TODO
 
@@ -1023,33 +1041,6 @@ Flags:
 <!--    -a  Print all executables that can run CMD, including files, aliases,
         builtins and functions. If used with -p, only the executable file will
         be printed.-->
-
-#### escapes
-
-Escape sequences (used in `echo` and `printf`)
-
-    \"         Double quote.
-    \\         Backslash.
-    \a         Alert (BEL).
-    \b         Backspace.
-    \c         Stop processing remaining input.
-    \e         Escape next character.
-    \f         Form feed, equivalent to \n + 4 spaces
-    \n         New line.
-    \r         Carriage return, returns to the beggining of the line
-    \t         Horizontal tab.
-    \v         Vertical tab.
-    \0NNN      (Only in `echo`) Print character specified as an octal value
-               with 1 to 3 octal digits.
-    \NNN       (Only in `printf`) Print character specified as an octal value
-               with 1 to 3 octal digits.
-    \xHH       Print character specified as an hexadecimal value with 1 to 2
-               hex digits.
-    \uHHHH     Unicode character specified as an hexadecimal value with 1 to
-               4 hex digits.
-    \UHHHHHHHH Unicode character specified as an hexadecimal value with 1 to
-               8 hex digits.
-
 
  
 <h3>Word Lookup</h3>

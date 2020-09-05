@@ -118,8 +118,9 @@ You may also want to browse [Oil Help Topics](oil-help-topics.html).
   [Patterns]      glob          *.py
                   extglob       ,(*.py|*.sh)
                   regex         [[ foo =~ [a-z]+ ]]
-  [Brace Expand]  braces        {alice,bob}@example.com
-  [History]       histsub       !$  !!  !n
+  [Other Sublang] braces        {alice,bob}@example.com
+                  histsub       !$  !!  !n
+                  char-escapes  \t  \c  \x00  \u03bc
 ```
 
 <h2 id="builtin">
@@ -127,7 +128,7 @@ You may also want to browse [Oil Help Topics](oil-help-topics.html).
 </h2>
 
 ```osh-help-topics
-  [I/O]           read   echo   escapes
+  [I/O]           read   echo   printf
                   readarray   mapfile
   [Run Code]      source .   eval   trap
   [Set Options]   set   shopt
@@ -136,8 +137,8 @@ You may also want to browse [Oil Help Topics](oil-help-topics.html).
   [Shell Process] exec   X logout 
                   umask   X ulimit   X times
   [Child Process] jobs   wait   ampersand &
-                  fg   X bg   X disown 
-  [External]      test [   printf   getopts   X kill
+                  fg   X bg   X kill   X disown 
+  [External]      test [   getopts
   [Introspection] help   hash   type   X caller
   [Word Lookup]   command   builtin
   [Interactive]   alias   unalias   history   X fc   X bind
