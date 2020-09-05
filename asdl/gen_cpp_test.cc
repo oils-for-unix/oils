@@ -156,10 +156,6 @@ namespace flag_type = typed_demo_asdl::flag_type;
 // TODO: We should always use these, rather than 'new flag_type::Bool()'
 flag_type::Bool g_ft = {};
 
-// only works because of a hack
-constexpr SetToArg_ g_st = {p_str1, &g_ft, false};
-constexpr SetToArg_* p_st = const_cast<SetToArg_*>(&g_st);
-
 // Use __ style
 using typed_demo_asdl::cflow__Return;
 cflow__Return g_ret = {5};
@@ -171,9 +167,6 @@ List<int> g_list = {i0, 8, 9};
 
 TEST literal_test() {
   ASSERT(str_equals(p_str1, new Str("foo")));
-
-  ASSERT(str_equals(p_st->name, new Str("foo")));
-  ASSERT_EQ(false, p_st->quit_parsing_flags);
 
   // Interesting, initializer list part of the constructor "runs".  Otherwise
   // this doesn't work.

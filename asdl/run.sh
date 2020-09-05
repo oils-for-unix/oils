@@ -172,13 +172,6 @@ gen-cpp-test() {
   local prefix3=_tmp/typed_demo_asdl
   asdl/tool.py cpp asdl/typed_demo.asdl $prefix3
 
-  # Hack the enables a literal in asdl/gen_cpp_test
-  local orig=_tmp/typed_demo_asdl.h
-  local tmp=_tmp/tt
-  sed 's/SetToArg_(S/constexpr SetToArg_(S/g' $orig > $tmp
-  diff -u $orig $tmp || true
-  cp -v $tmp $orig
-
   wc -l $prefix* $prefix2*
 
   local bin=_tmp/gen_cpp_test
