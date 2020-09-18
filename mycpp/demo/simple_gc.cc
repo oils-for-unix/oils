@@ -58,6 +58,7 @@
 #include <cstring>  // memcpy
 #include <cstdlib>  // malloc
 #include <cstddef>  // max_align_t
+#include <algorithm>  // min()
 #include <initializer_list>
 #include <new>      // placement new
 #include <utility>  // std::forward
@@ -147,10 +148,10 @@ T *gc_alloc(Args&&... args)
 // policy in listobject.c.
 //
 // https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2
-int NewBlockSize(int n) {
+int RoundUp(int n) {
   // minimum size
-  if (n < 4) {
-    return 4;
+  if (n < 8) {
+    return 8;
   }
 
   // TODO: what if int isn't 32 bits?
@@ -247,7 +248,7 @@ class Slab : public Cell {
 
 template <typename T>
 Slab<T>* NewSlab(int len) {
-  int cell_len = NewBlockSize(kSlabHeaderSize + len * sizeof(T));
+  int cell_len = RoundUp(kSlabHeaderSize + len * sizeof(T));
   void* place = Alloc(cell_len);
   auto slab = new (place) Slab<T>(cell_len);  // placement new
   return slab;
@@ -319,22 +320,30 @@ class List : public Cell {
     slab_->items_[i] = item;
   }
 
+  // 8 / 4 = 2 items, or 8 / 8 = 1 item
+  static const int kCapacityAdjust = kSlabHeaderSize / sizeof(T);
+  static_assert(kSlabHeaderSize % sizeof(T) == 0,
+                "Slab header size should be multiple of item size");
+
   // Ensure that there's space for a number of items
   void reserve(int n) {
     if (slab_) {
       log("reserve capacity = %d, n = %d", capacity_, n);
     }
 
-    // TODO: initialize in constructor?  But many lists are empty!
+    // slab_ not initialized constructor because many lists are empty.
     if (slab_ == nullptr) {
-      slab_ = NewSlab<T>(n);
-      // TODO: remove division
-      capacity_ = (slab_->cell_len_ - kSlabHeaderSize) / sizeof(T);
+      // Example: The user asks for space for 7 integers.  Account for the
+      // header, and say we need 9 to determine the cell length.  9 is rounded
+      // up to 16, for a 64-byte cell.  Then we actually have space for 14
+      // items.
+      capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
+      slab_ = NewSlab<T>(capacity_);
 
-    } else if (len_ + n >= capacity_) {
-      auto new_slab = NewSlab<T>(n);
-      // TODO: remove division
-      capacity_ = (new_slab->cell_len_ - kSlabHeaderSize) / sizeof(T);
+    } else if (n >= capacity_) {
+      capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
+
+      auto new_slab = NewSlab<T>(capacity_);
 
       // log("Copying %d bytes", len_ * sizeof(T));
 
@@ -410,13 +419,26 @@ class Dict : public Cell {
         keys_slab_(nullptr), values_slab_(nullptr) {
   }
 
+  static const int kCapacityAdjust1 = kSlabHeaderSize / sizeof(K);
+  static_assert(kSlabHeaderSize % sizeof(K) == 0,
+                "Slab header size should be multiple of key size");
+  static const int kCapacityAdjust2 = kSlabHeaderSize / sizeof(V);
+  static_assert(kSlabHeaderSize % sizeof(V) == 0,
+                "Slab header size should be multiple of key size");
+
   void reserve(int n) {
     if (keys_slab_ == nullptr) {
-      int capacity = NewBlockSize(n);
       assert(values_slab_ == nullptr);
 
-      keys_slab_ = NewSlab<K>(capacity);
-      values_slab_ = NewSlab<V>(capacity);
+      // calculate the number of keys and values we should have
+      int k = RoundUp(n + kCapacityAdjust1) + kCapacityAdjust1;
+      int v = RoundUp(n + kCapacityAdjust2) + kCapacityAdjust2;
+
+      // take the minimum, which leaves some slack
+      capacity_ = std::min(k, v);
+
+      keys_slab_ = NewSlab<K>(capacity_);
+      values_slab_ = NewSlab<V>(capacity_);
 
     } else if (capacity_ < n) {
       // TODO: resize and REHASH every entry.
@@ -657,16 +679,21 @@ TEST dict_test() {
   ASSERT(diff2 < 1024);
 
   dict1->set(42, 5);
+  ASSERT_EQ(5, dict1->index(42));
   ASSERT_EQ(1, len(dict1));
+
   dict1->set(42, 99);
+  ASSERT_EQ(99, dict1->index(42));
   ASSERT_EQ(1, len(dict1));
 
   // TODO: Implement this
-  //dict1->set(5, 6);
-  //ASSERT_EQ(2, len(dict1));
+  dict1->set(5, 10);
+  ASSERT_EQ(10, dict1->index(5));
+  ASSERT_EQ(2, len(dict1));
 
   dict2->set(NewStr("foo"), NewStr("bar"));
   ASSERT_EQ(1, len(dict2));
+  ASSERT(str_equals(NewStr("bar"), dict2->index(NewStr("foo"))));
 
   PASS();
 }
@@ -722,7 +749,7 @@ int nsizes = sizeof(sizes) / sizeof(sizes[0]);
 TEST resize_test() {
   for (int i = 0; i < nsizes; ++i) {
     int n = sizes[i];
-    log("%d -> %d", n, NewBlockSize(n));
+    log("%d -> %d", n, RoundUp(n));
   }
 
   PASS();
