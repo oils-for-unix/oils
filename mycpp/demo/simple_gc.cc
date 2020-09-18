@@ -431,8 +431,8 @@ class Dict : public Cell {
       assert(values_slab_ == nullptr);
 
       // calculate the number of keys and values we should have
-      int k = RoundUp(n + kCapacityAdjust1) + kCapacityAdjust1;
-      int v = RoundUp(n + kCapacityAdjust2) + kCapacityAdjust2;
+      int k = RoundUp(n + kCapacityAdjust1) - kCapacityAdjust1;
+      int v = RoundUp(n + kCapacityAdjust2) - kCapacityAdjust2;
 
       // take the minimum, which leaves some slack
       capacity_ = std::min(k, v);
@@ -442,8 +442,17 @@ class Dict : public Cell {
 
     } else if (capacity_ < n) {
       // TODO: resize and REHASH every entry.
-      assert(0);
 
+
+      // calculate the number of keys and values we should have
+      int k = RoundUp(n + kCapacityAdjust1) - kCapacityAdjust1;
+      int v = RoundUp(n + kCapacityAdjust2) - kCapacityAdjust2;
+
+      // take the minimum, which leaves some slack
+      capacity_ = std::min(k, v);
+
+      keys_slab_ = NewSlab<K>(capacity_);
+      values_slab_ = NewSlab<V>(capacity_);
     }
   }
 
@@ -672,6 +681,9 @@ TEST dict_test() {
   ASSERT_EQ_FMT(Tag::FixedSize, dict1->tag, "%d");
   ASSERT_EQ_FMT(Tag::FixedSize, dict1->tag, "%d");
 
+  ASSERT_EQ_FMT(0, dict1->capacity_, "%d");
+  ASSERT_EQ_FMT(0, dict2->capacity_, "%d");
+
   // Make sure they're on the heap
   int diff1 = reinterpret_cast<char*>(dict1) - gHeap.from_space_;
   int diff2 = reinterpret_cast<char*>(dict2) - gHeap.from_space_;
@@ -681,15 +693,22 @@ TEST dict_test() {
   dict1->set(42, 5);
   ASSERT_EQ(5, dict1->index(42));
   ASSERT_EQ(1, len(dict1));
+  ASSERT_EQ_FMT(6, dict1->capacity_, "%d");
 
   dict1->set(42, 99);
   ASSERT_EQ(99, dict1->index(42));
   ASSERT_EQ(1, len(dict1));
+  ASSERT_EQ_FMT(6, dict1->capacity_, "%d");
 
-  // TODO: Implement this
-  dict1->set(5, 10);
-  ASSERT_EQ(10, dict1->index(5));
+  dict1->set(43, 10);
+  ASSERT_EQ(10, dict1->index(43));
   ASSERT_EQ(2, len(dict1));
+  ASSERT_EQ_FMT(6, dict1->capacity_, "%d");
+
+  for (int i = 0; i < 14; ++i) {
+    dict1->set(i, 999);
+    log("i = %d, capacity = %d", i, dict1->capacity_);
+  }
 
   dict2->set(NewStr("foo"), NewStr("bar"));
   ASSERT_EQ(1, len(dict2));
