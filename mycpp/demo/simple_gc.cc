@@ -10,13 +10,15 @@
 //   - Dict::set() can realloc and rehash
 //
 // TODO:
-// - Prototype RootPtr<T> for stack roots
-//   - and I guess PtrScope() or something
+// - Prototype Handle<T> and HandleScope for stack roots
+// - Copying GC algorithm over Cell*!
+//   - Write a simple benchmark that triggers GC over and over.  Maybe put it
+//     in a single function, and populate stack roots manually.
+// - Dicts should actually use hashing!  Test computational complexity.
 //
-// - GLOBAL Str* instances should not be copied!
-//   - do they have a special Cell header?
-//     - special tag?
-//   - can they be constexpr?
+// - Figure out what happens with GLOBAL Str* instances
+//   - should not be copied!  Do they have a special tag in the Cell header?
+//   - can they be constexpr in the generated source?  Would be nice I think.
 
 // Memory allocation APIs:
 //
@@ -43,13 +45,12 @@
 //   if it's equal then it's OK I guess
 //   For dict, use indices
 //
-// Small Size Optimization (later)
+// Small Size Optimization: omit separate slabs (later)
 //
-// - Str: doesn't apply, because it's immutable: 16 bytes + string length
-//   - would we need a buf() and len() ?
 // - List: 24 bytes, so we could get 1 or 2 entries for free?  That might add
 //   up
 // - Dict: 40 bytes: I don't think it optimizes
+// - Doesn't apply to Str because it's immutable: 16 bytes + string length.
 
 #include <cassert>  // assert()
 #include <cstdarg>  // va_list, etc.
@@ -72,30 +73,95 @@ void log(const char* fmt, ...) {
   puts("");
 }
 
-// handles get registered here, and they appear on the heap somehow
-class HandleScope {};
-
-// behaves like a pointer
-class Handle {};
-
 struct Heap {
   char* from_space_;
   char* to_space_;
 
   int alloc_pos_;
 
-  // how to represent this?
+  // Stack roots.  The obvious data structure is a linked list, but an array
+  // has better locality.
+  //
   // femtolisp uses a global pointer to dynamically-allocated growable array,
   // with initial N_STACK = 262144!  Kind of arbitrary.
-  void* root_pointers[100];
 
-  // scan pointer, next pointer
+  int roots_top;
+  // TODO: This should be Handle, because we need to call .update(new_loc) on
+  // it?
+  void* roots[1024];  // max
 
-  // reallocation policy?
+  // note: should we have a stack of handle scopes here?  To reduce redundancy
+  // in generated code?
+  //
+  // problem: what about f(NewStr("x")) or f(gc_alloc<List<int>>({42})) ?
+  // Then those pointers never gets wrapped in a handle.
+  //
+  // Example:
+  // f->WriteRaw((new Tuple2<Str*, int>(s, num_chars)));
+  //
+  // it could technically collect itself!
+  //
+  // this->mem->SetVar(new lvalue::Named(fd_name), new value::Str(str(fd)),
+  // scope_e::Dynamic);
+  //
+  // Do there have to be Handle<T> for all function arguments then?  They are
+  // immediately copied into andles I guess.
+  //
+
+  // TODO:
+  //   scan pointer, next pointer
+  //   reallocation policy?
 };
 
 // TODO: Make this a thread local?
 Heap gHeap;
+
+// handles get registered here, and they appear on the heap somehow
+class HandleScope {
+ public:
+  HandleScope(int num_locals) : num_locals_(num_locals) {
+  }
+  ~HandleScope() {
+    // prepare for the next function call
+    gHeap.roots_top -= num_locals_;
+  }
+  int num_locals_;
+};
+
+// TODO: how to implement this?
+// behaves like a pointer
+template <typename T>
+class Handle {
+ public:
+  Handle(T* raw_pointer) : raw_pointer_(raw_pointer) {
+    gHeap.roots[gHeap.roots_top++] = this;
+  }
+
+    // This would allow us to transparently pass Handle<Str> to a function
+    // expecting Str*, but it's dangerous
+    //
+    // https://www.informit.com/articles/article.aspx?p=31529&seqNum=7
+#if 0
+  operator T*() {
+    return raw_pointer_;
+  }
+#endif
+
+  // deference to get the real paper
+  T* operator*() {
+    return raw_pointer_;
+  }
+  // called by the garbage collector when moved to a new location!
+  void update(T* moved) {
+    raw_pointer_ = moved;
+  }
+
+  T* get() {
+    return raw_pointer_;
+  }
+
+  T* raw_pointer_;
+};
 
 // 1 MiB, and will double when necessary
 const int kInitialSize = 1 << 20;
@@ -509,6 +575,16 @@ int len(const Str* s) {
   return s->len_;
 }
 
+  // Hm only functions that don't allocate can take a raw pointer ...
+  // If they allocate, then that pointer can be moved out from under them!
+
+#if 0
+// Hm do all standard library functions have to take Handles now?
+int len(Handle<Str> s) {
+  return s.raw_pointer_->len_;
+}
+#endif
+
 template <typename T>
 int len(const List<T>* L) {
   return L->len_;
@@ -745,6 +821,8 @@ TEST misc_test() {
   // 32 = 4 + pad4 + 8 + 8 + 8
   log("sizeof(Dict) = %d", sizeof(Dict<int, int>));
 
+  log("sizeof(Heap) = %d", sizeof(Heap));
+
   char* p = static_cast<char*>(Alloc(17));
   char* q = static_cast<char*>(Alloc(9));
   log("p = %p", p);
@@ -770,10 +848,66 @@ TEST asdl_test() {
   PASS();
 }
 
+void ShowRoots(const Heap& heap) {
+  log("--");
+  for (int i = 0; i < heap.roots_top; ++i) {
+    log("%d. %p", i, heap.roots[i]);
+    // This is NOT on the heap; it's on the stack.
+    // int diff1 = reinterpret_cast<char*>(heap.roots[i]) - gHeap.from_space_;
+    // assert(diff1 < 1024);
+
+    auto h = static_cast<Handle<void>*>(heap.roots[i]);
+    auto raw = h->raw_pointer_;
+    log("   %p", raw);
+
+    // Raw pointer is on the heap.
+    int diff2 = reinterpret_cast<char*>(raw) - gHeap.from_space_;
+    assert(diff2 < 2048);
+
+    // This indeed mutates it and causes a crash
+    // h->update(nullptr);
+  }
+}
+
+Str* myfunc() {
+  HandleScope h(3);
+  Handle<Str> str1(NewStr("foo"));
+  Handle<Str> str2(NewStr("foo"));
+  Handle<Str> str3(NewStr("foo"));
+
+  log("myfunc roots_top = %d", gHeap.roots_top);
+  ShowRoots(gHeap);
+
+  return str1.raw_pointer_;
+}
+
+void otherfunc(Handle<Str> s) {
+  // Hm how do we generate the .get()?  Is it better just to accept Handle<Str>
+  // even if the function doesn't allocate?  Either way we are dereferencing.
+  log("len(s) = %d", len(s.get()));
+}
+
 TEST handle_test() {
   // TODO:
   // Hold on to a handle.  And then trigger GC.
   // And then assert its integrity?
+  {
+    HandleScope h(2);
+    ASSERT_EQ(gHeap.roots_top, 0);
+
+    Handle<Str> str1(NewStr("foo"));
+    ASSERT_EQ(gHeap.roots_top, 1);
+
+    Handle<Str> str2(NewStr("bar"));
+    ASSERT_EQ(gHeap.roots_top, 2);
+
+    myfunc();
+
+    otherfunc(str2);
+
+    ShowRoots(gHeap);
+  }
+  ASSERT_EQ_FMT(gHeap.roots_top, 0, "%d");
 
   PASS();
 }
