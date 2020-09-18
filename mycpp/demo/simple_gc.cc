@@ -51,14 +51,13 @@
 //   up
 // - Dict: 40 bytes: I don't think it optimizes
 
-#include <algorithm>  // min()
-#include <cassert>    // assert()
-#include <cstdarg>    // va_list, etc.
-#include <cstddef>    // max_align_t
-#include <cstdint>    // max_align_t
-#include <cstdio>     // vprintf
-#include <cstdlib>    // malloc
-#include <cstring>    // memcpy
+#include <cassert>  // assert()
+#include <cstdarg>  // va_list, etc.
+#include <cstddef>  // max_align_t
+#include <cstdint>  // max_align_t
+#include <cstdio>   // vprintf
+#include <cstdlib>  // malloc
+#include <cstring>  // memcpy
 #include <initializer_list>
 #include <new>      // placement new
 #include <utility>  // std::forward
@@ -374,9 +373,9 @@ class List : public Cell {
 };
 
 template <typename K>
-int find_by_key(Slab<K>* keys_slab_, int len, int key) {
+int find_by_key(Slab<K>* keys_, int len, int key) {
   for (int i = 0; i < len; ++i) {
-    if (keys_slab_->items_[i] == key) {
+    if (keys_->items_[i] == key) {
       return i;
     }
   }
@@ -392,9 +391,9 @@ inline bool str_equals(Str* left, Str* right) {
 }
 
 template <typename K>
-int find_by_key(Slab<K>* keys_slab_, int len, Str* key) {
+int find_by_key(Slab<K>* keys_, int len, Str* key) {
   for (int i = 0; i < len; ++i) {
-    if (str_equals(keys_slab_->items_[i], key)) {
+    if (str_equals(keys_->items_[i], key)) {
       return i;
     }
   }
@@ -408,37 +407,36 @@ class Dict : public Cell {
       : Cell(Tag::FixedSize),
         len_(0),
         capacity_(0),
-        keys_slab_(nullptr),
-        values_slab_(nullptr) {
+        indices_(nullptr),
+        keys_(nullptr),
+        values_(nullptr) {
   }
 
-  static const int kCapacityAdjust1 = kSlabHeaderSize / sizeof(K);
-  static_assert(kSlabHeaderSize % sizeof(K) == 0,
-                "Slab header size should be multiple of key size");
-  static const int kCapacityAdjust2 = kSlabHeaderSize / sizeof(V);
-  static_assert(kSlabHeaderSize % sizeof(V) == 0,
+  // This relies on the fact that containers of 4-byte ints are reduced by 2
+  // items, which is greater than (or equal to) the reduction of any other type
+  static const int kCapacityAdjust = kSlabHeaderSize / sizeof(int);
+  static_assert(kSlabHeaderSize % sizeof(int) == 0,
                 "Slab header size should be multiple of key size");
 
   void reserve(int n) {
     if (capacity_ < n) {
       // calculate the number of keys and values we should have
-      int k = RoundUp(n + kCapacityAdjust1) - kCapacityAdjust1;
-      int v = RoundUp(n + kCapacityAdjust2) - kCapacityAdjust2;
+      capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
 
-      // take the minimum, which leaves some slack
-      capacity_ = std::min(k, v);
-
+      auto new_i = NewSlab<int>(capacity_);
       auto new_k = NewSlab<K>(capacity_);
       auto new_v = NewSlab<V>(capacity_);
 
       if (capacity_ != 0) {
-        // log("Copying %d bytes", len_ * sizeof(T));
-        memcpy(new_k->items_, keys_slab_->items_, len_ * sizeof(K));
-        memcpy(new_v->items_, values_slab_->items_, len_ * sizeof(V));
+        // TODO: rehash here!  indices are re-ordered.
+        memcpy(new_i->items_, indices_->items_, len_ * sizeof(int));
+        memcpy(new_k->items_, keys_->items_, len_ * sizeof(K));
+        memcpy(new_v->items_, values_->items_, len_ * sizeof(V));
       }
 
-      keys_slab_ = new_k;
-      values_slab_ = new_v;
+      indices_ = new_i;
+      keys_ = new_k;
+      values_ = new_v;
     }
   }
 
@@ -448,7 +446,7 @@ class Dict : public Cell {
     if (pos == -1) {
       assert(0);
     } else {
-      return values_slab_->items_[pos];
+      return values_->items_[pos];
     }
   }
 
@@ -457,11 +455,11 @@ class Dict : public Cell {
     int pos = find(key);
     if (pos == -1) {
       reserve(len_ + 1);
-      keys_slab_->items_[len_] = key;
-      values_slab_->items_[len_] = val;
+      keys_->items_[len_] = key;
+      values_->items_[len_] = val;
       ++len_;
     } else {
-      values_slab_->items_[pos] = val;
+      values_->items_[pos] = val;
     }
   }
 
@@ -470,14 +468,14 @@ class Dict : public Cell {
 
   // These 3 sequences may be resized "in parallel"
 
-  Slab<int>* indices;     // indexed by hash value
-  Slab<K>* keys_slab_;    // Dict<int, V>
-  Slab<V>* values_slab_;  // Dict<K, int>
+  Slab<int>* indices_;  // indexed by hash value
+  Slab<K>* keys_;       // Dict<int, V>
+  Slab<V>* values_;     // Dict<K, int>
 
  private:
   // returns the position in the array
   int find(K key) {
-    return find_by_key(keys_slab_, len_, key);
+    return find_by_key(keys_, len_, key);
   }
 };
 
@@ -670,6 +668,10 @@ TEST dict_test() {
   ASSERT_EQ_FMT(0, dict1->capacity_, "%d");
   ASSERT_EQ_FMT(0, dict2->capacity_, "%d");
 
+  ASSERT_EQ(nullptr, dict1->indices_);
+  ASSERT_EQ(nullptr, dict1->keys_);
+  ASSERT_EQ(nullptr, dict1->values_);
+
   // Make sure they're on the heap
   int diff1 = reinterpret_cast<char*>(dict1) - gHeap.from_space_;
   int diff2 = reinterpret_cast<char*>(dict2) - gHeap.from_space_;
@@ -680,6 +682,10 @@ TEST dict_test() {
   ASSERT_EQ(5, dict1->index(42));
   ASSERT_EQ(1, len(dict1));
   ASSERT_EQ_FMT(6, dict1->capacity_, "%d");
+
+  ASSERT_EQ_FMT(32, dict1->indices_->cell_len_, "%d");
+  ASSERT_EQ_FMT(32, dict1->keys_->cell_len_, "%d");
+  ASSERT_EQ_FMT(32, dict1->values_->cell_len_, "%d");
 
   dict1->set(42, 99);
   ASSERT_EQ(99, dict1->index(42));
@@ -702,6 +708,28 @@ TEST dict_test() {
   dict2->set(NewStr("foo"), NewStr("bar"));
   ASSERT_EQ(1, len(dict2));
   ASSERT(str_equals(NewStr("bar"), dict2->index(NewStr("foo"))));
+
+  ASSERT_EQ_FMT(32, dict2->indices_->cell_len_, "%d");
+  ASSERT_EQ_FMT(64, dict2->keys_->cell_len_, "%d");
+  ASSERT_EQ_FMT(64, dict2->values_->cell_len_, "%d");
+
+  // Check other sizes
+
+  auto dict_si = gc_alloc<Dict<Str*, int>>();
+  dict_si->set(NewStr("foo"), 42);
+  ASSERT_EQ(1, len(dict_si));
+
+  ASSERT_EQ_FMT(32, dict_si->indices_->cell_len_, "%d");
+  ASSERT_EQ_FMT(64, dict_si->keys_->cell_len_, "%d");
+  ASSERT_EQ_FMT(32, dict_si->values_->cell_len_, "%d");
+
+  auto dict_is = gc_alloc<Dict<int, Str*>>();
+  dict_is->set(42, NewStr("foo"));
+  ASSERT_EQ(1, len(dict_is));
+
+  ASSERT_EQ_FMT(32, dict_is->indices_->cell_len_, "%d");
+  ASSERT_EQ_FMT(32, dict_is->keys_->cell_len_, "%d");
+  ASSERT_EQ_FMT(64, dict_is->values_->cell_len_, "%d");
 
   PASS();
 }
