@@ -46,6 +46,7 @@ clang-format() {
 }
 
 cpp-files() {
+  shopt -s nullglob
   for file in asdl/*.cc cpp/*.{cc,h} mycpp/*.{cc,h} mycpp/demo/*.{cc,h}; do
     echo $file
   done

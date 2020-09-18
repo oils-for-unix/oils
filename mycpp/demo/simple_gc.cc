@@ -23,7 +23,7 @@
 // - gc_alloc<Foo>(x)
 //   An alternative to new Foo(x).  mycpp/ASDL should generate these calls.
 //   Automatically deallocated.
-// - mylib::Alloc() 
+// - mylib::Alloc()
 //   For Slab, and for special types like Str.  Automatically deallocated.
 // - malloc() -- for say yajl to use.  Manually deallocated.
 // - new/delete -- for other C++ libs to use.  Manually deallocated.
@@ -51,14 +51,14 @@
 //   up
 // - Dict: 40 bytes: I don't think it optimizes
 
-#include <cassert>  // assert()
-#include <cstdarg>  // va_list, etc.
-#include <cstdio>   // vprintf
-#include <cstdint>  // max_align_t
-#include <cstring>  // memcpy
-#include <cstdlib>  // malloc
-#include <cstddef>  // max_align_t
 #include <algorithm>  // min()
+#include <cassert>    // assert()
+#include <cstdarg>    // va_list, etc.
+#include <cstddef>    // max_align_t
+#include <cstdint>    // max_align_t
+#include <cstdio>     // vprintf
+#include <cstdlib>    // malloc
+#include <cstring>    // memcpy
 #include <initializer_list>
 #include <new>      // placement new
 #include <utility>  // std::forward
@@ -74,13 +74,10 @@ void log(const char* fmt, ...) {
 }
 
 // handles get registered here, and they appear on the heap somehow
-class HandleScope {
-};
+class HandleScope {};
 
 // behaves like a pointer
-class Handle {
-};
-
+class Handle {};
 
 struct Heap {
   char* from_space_;
@@ -134,9 +131,8 @@ void* Alloc(int size) {
 
 // Variadic templates
 // https://eli.thegreenplace.net/2014/variadic-templates-in-c/
-template<typename T, typename... Args>
-T *gc_alloc(Args&&... args)
-{
+template <typename T, typename... Args>
+T* gc_alloc(Args&&... args) {
   void* place = Alloc(sizeof(T));
 
   // placement new
@@ -171,16 +167,16 @@ void CollectGarbage() {
 }
 
 namespace Tag {
-  const int Forwarded = 1;
+const int Forwarded = 1;
 
-  // Fixed size headers.  Which means we consult bitmaps.
-  const int FixedSize = 2;
+// Fixed size headers.  Which means we consult bitmaps.
+const int FixedSize = 2;
 
-  // Variable length cells.
-  const int Opaque = 4;  // copy but don't scan.  List<int> and Str
+// Variable length cells.
+const int Opaque = 4;  // copy but don't scan.  List<int> and Str
 
-  const int ScannedSlab = 5;  // Both scan and copy.  Scan after Cell header.
-}
+const int ScannedSlab = 5;  // Both scan and copy.  Scan after Cell header.
+}  // namespace Tag
 
 class Cell {
   // The unit of garbage collection.  It has a header describing how to find
@@ -223,13 +219,13 @@ class Forwarded : public Cell {
 
 template <typename T>
 void InitSlabCell(Cell* cell) {
-  //log("SCANNED");
+  // log("SCANNED");
   cell->tag = Tag::ScannedSlab;
 }
 
 template <>
 void InitSlabCell<int>(Cell* cell) {
-  //log("OPAQUE");
+  // log("OPAQUE");
   cell->tag = Tag::Opaque;
 }
 
@@ -276,7 +272,7 @@ class Str : public Cell {
   // 01, 00 00 02, 00 00 00 03.  Although I think they added special cases for
   // 32-bit and 64-bit; we're using the portable max_align_t
   int len_;
-  int unique_id_;  // index into intern table
+  int unique_id_;   // index into intern table
   char opaque_[1];  // flexible array
 };
 
@@ -300,8 +296,7 @@ class List : public Cell {
   }
 
   // TODO: are we using this?
-  List(std::initializer_list<T> init)
-      : Cell(Tag::FixedSize), slab_(nullptr) {
+  List(std::initializer_list<T> init) : Cell(Tag::FixedSize), slab_(nullptr) {
     SetCellLength(sizeof(List<T>));  // So we can copy it
     extend(init);
   }
@@ -331,23 +326,19 @@ class List : public Cell {
       log("reserve capacity = %d, n = %d", capacity_, n);
     }
 
-    // slab_ not initialized constructor because many lists are empty.
-    if (slab_ == nullptr) {
+    if (capacity_ < n) {
       // Example: The user asks for space for 7 integers.  Account for the
       // header, and say we need 9 to determine the cell length.  9 is rounded
       // up to 16, for a 64-byte cell.  Then we actually have space for 14
       // items.
       capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
-      slab_ = NewSlab<T>(capacity_);
-
-    } else if (n >= capacity_) {
-      capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
-
       auto new_slab = NewSlab<T>(capacity_);
 
-      // log("Copying %d bytes", len_ * sizeof(T));
-
-      memcpy(new_slab->items_, slab_->items_, len_ * sizeof(T));
+      // slab_ may not be initialized constructor because many lists are empty.
+      if (capacity_ != 0) {
+        // log("Copying %d bytes", len_ * sizeof(T));
+        memcpy(new_slab->items_, slab_->items_, len_ * sizeof(T));
+      }
       slab_ = new_slab;
     }
     // Otherwise, there's enough capacity
@@ -375,13 +366,12 @@ class List : public Cell {
     len_ += n;
   }
 
-  int len_;  // number of entries
+  int len_;       // number of entries
   int capacity_;  // max entries before resizing
 
   // The container may be resized, so this field isn't in-line.
   Slab<T>* slab_;
 };
-
 
 template <typename K>
 int find_by_key(Slab<K>* keys_slab_, int len, int key) {
@@ -415,8 +405,11 @@ template <class K, class V>
 class Dict : public Cell {
  public:
   Dict()
-      : Cell(Tag::FixedSize), len_(0), capacity_(0),
-        keys_slab_(nullptr), values_slab_(nullptr) {
+      : Cell(Tag::FixedSize),
+        len_(0),
+        capacity_(0),
+        keys_slab_(nullptr),
+        values_slab_(nullptr) {
   }
 
   static const int kCapacityAdjust1 = kSlabHeaderSize / sizeof(K);
@@ -427,9 +420,7 @@ class Dict : public Cell {
                 "Slab header size should be multiple of key size");
 
   void reserve(int n) {
-    if (keys_slab_ == nullptr) {
-      assert(values_slab_ == nullptr);
-
+    if (capacity_ < n) {
       // calculate the number of keys and values we should have
       int k = RoundUp(n + kCapacityAdjust1) - kCapacityAdjust1;
       int v = RoundUp(n + kCapacityAdjust2) - kCapacityAdjust2;
@@ -437,22 +428,17 @@ class Dict : public Cell {
       // take the minimum, which leaves some slack
       capacity_ = std::min(k, v);
 
-      keys_slab_ = NewSlab<K>(capacity_);
-      values_slab_ = NewSlab<V>(capacity_);
+      auto new_k = NewSlab<K>(capacity_);
+      auto new_v = NewSlab<V>(capacity_);
 
-    } else if (capacity_ < n) {
-      // TODO: resize and REHASH every entry.
+      if (capacity_ != 0) {
+        // log("Copying %d bytes", len_ * sizeof(T));
+        memcpy(new_k->items_, keys_slab_->items_, len_ * sizeof(K));
+        memcpy(new_v->items_, values_slab_->items_, len_ * sizeof(V));
+      }
 
-
-      // calculate the number of keys and values we should have
-      int k = RoundUp(n + kCapacityAdjust1) - kCapacityAdjust1;
-      int v = RoundUp(n + kCapacityAdjust2) - kCapacityAdjust2;
-
-      // take the minimum, which leaves some slack
-      capacity_ = std::min(k, v);
-
-      keys_slab_ = NewSlab<K>(capacity_);
-      values_slab_ = NewSlab<V>(capacity_);
+      keys_slab_ = new_k;
+      values_slab_ = new_v;
     }
   }
 
@@ -479,13 +465,13 @@ class Dict : public Cell {
     }
   }
 
-  int len_;  // number of entries
+  int len_;       // number of entries
   int capacity_;  // max number before resizing
 
   // These 3 sequences may be resized "in parallel"
 
-  Slab<int>* indices;  // indexed by hash value
-  Slab<K>* keys_slab_;  // Dict<int, V>
+  Slab<int>* indices;     // indexed by hash value
+  Slab<K>* keys_slab_;    // Dict<int, V>
   Slab<V>* values_slab_;  // Dict<K, int>
 
  private:
@@ -540,8 +526,8 @@ inline int len(const Dict<K, V>* d) {
 //
 
 TEST slice_test() {
-  // hm this shouldn't be allocated with 'new'
-  // it needs a different interface
+// hm this shouldn't be allocated with 'new'
+// it needs a different interface
 #if 0
   auto slab1 = new Slab();
   auto slice1 = new Slice(slab1, 2, 5);
@@ -658,11 +644,11 @@ TEST list_test() {
   // This combination is problematic.  Maybe avoid it and then just do
   // .extend({1, 2, 3}) or something?
   // https://stackoverflow.com/questions/21573808/using-initializer-lists-with-variadic-templates
-  //auto list3 = gc_alloc<List<int>>({1, 2, 3});
-  //auto list4 = gc_alloc<List<Str*>>({str1, str2});
+  // auto list3 = gc_alloc<List<int>>({1, 2, 3});
+  // auto list4 = gc_alloc<List<Str*>>({str1, str2});
 
-  //log("len(list3) = %d", len(list3));
-  //log("len(list4) = %d", len(list3));
+  // log("len(list3) = %d", len(list3));
+  // log("len(list4) = %d", len(list3));
 
   PASS();
 }
@@ -708,6 +694,9 @@ TEST dict_test() {
   for (int i = 0; i < 14; ++i) {
     dict1->set(i, 999);
     log("i = %d, capacity = %d", i, dict1->capacity_);
+
+    // make sure we didn't lose old entry after resize
+    ASSERT_EQ(10, dict1->index(43));
   }
 
   dict2->set(NewStr("foo"), NewStr("bar"));
@@ -762,7 +751,8 @@ TEST handle_test() {
 }
 
 // TODO: the last one overflows
-int sizes[] = {0, 1, 2, 3, 4, 5, 8, 9, 12, 16, 256, 257, 1 << 30, (1 << 30)+1};
+int sizes[] = {0, 1,  2,  3,   4,   5,       8,
+               9, 12, 16, 256, 257, 1 << 30, (1 << 30) + 1};
 int nsizes = sizeof(sizes) / sizeof(sizes[0]);
 
 TEST resize_test() {
