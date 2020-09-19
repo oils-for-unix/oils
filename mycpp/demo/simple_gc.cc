@@ -73,11 +73,35 @@ void log(const char* fmt, ...) {
   puts("");
 }
 
-struct Heap {
+class Heap {
+ public:
+  Heap() {  // default constructor does nothing -- relies on zero initialization
+  }
+
+  // real initialization
+  void Init(int num_bytes) {
+    from_space_ = static_cast<char*>(malloc(num_bytes));
+    to_space_ = static_cast<char*>(malloc(num_bytes));
+    alloc_pos_ = 0;
+
+#if GC_DEBUG
+    // TODO: make it 0xdeadbeef
+    memset(from_space_, 0xff, num_bytes);
+    memset(to_space_, 0xff, num_bytes);
+#endif
+  }
+
+  void Collect();
+
   char* from_space_;
   char* to_space_;
+  char* cur_space_;  // femtolisp has this?  Do we need it?
+  // femtolisp also has lim_?
 
-  int alloc_pos_;
+  int space_size_;  // current size
+  int alloc_pos_;  // where to allocate next
+
+  bool grew_;  // did we grow the last time?
 
   // Stack roots.  The obvious data structure is a linked list, but an array
   // has better locality.
@@ -90,8 +114,9 @@ struct Heap {
   // it?
   void* roots[1024];  // max
 
-  // note: should we have a stack of handle scopes here?  To reduce redundancy
-  // in generated code?
+
+  // Note: should we have a stack of handle scopes here?  So we don't have to
+  // declare HandleScope h(5) correctly.
   //
   // problem: what about f(NewStr("x")) or f(gc_alloc<List<int>>({42})) ?
   // Then those pointers never gets wrapped in a handle.
@@ -106,7 +131,6 @@ struct Heap {
   //
   // Do there have to be Handle<T> for all function arguments then?  They are
   // immediately copied into andles I guess.
-  //
 
   // TODO:
   //   scan pointer, next pointer
@@ -133,50 +157,60 @@ class HandleScope {
 template <typename T>
 class Handle {
  public:
-  Handle(T* raw_pointer) : raw_pointer_(raw_pointer) {
+  explicit Handle(T* raw_pointer) : raw_pointer_(raw_pointer) {
     gHeap.roots[gHeap.roots_top++] = this;
   }
 
     // This would allow us to transparently pass Handle<Str> to a function
-    // expecting Str*, but it's dangerous
+    // expecting Str*, but it's dangerous:
     //
     // https://www.informit.com/articles/article.aspx?p=31529&seqNum=7
+    //
+    // Although maybe it's not dangerous if we audit every single function in
+    // mylib?  Policy:
+    //
+    // - It either accept a Handle<>
+    // - Or it accepts a raw pointer and DOES NOT ALLOCATE anywhere
+    //
+    // The benefit to this is that you don't have to have TWO FUNCTIONS:
+    //
+    // len(node->left)  # raw pointer
+    // len(local_var)  # Handle
+    //
+    // However I think putting .get() at the call site in mycpp is more
+    // explicit. The readability of the generated code is important!
+
 #if 0
   operator T*() {
     return raw_pointer_;
   }
 #endif
 
-  // deference to get the real paper
-  T* operator*() {
+  // dereference to get the real value
+  // note: we could call this deref() or value() to avoid operator overloading.
+  T operator*() const {
+    log("operator*");
+    return *raw_pointer_;
+  }
+  T* operator->() const {
+    log("operator->");
     return raw_pointer_;
   }
+
+  T* get() const {
+    return raw_pointer_;
+  }
+
   // called by the garbage collector when moved to a new location!
   void update(T* moved) {
     raw_pointer_ = moved;
   }
 
-  T* get() {
-    return raw_pointer_;
-  }
-
   T* raw_pointer_;
 };
 
-// 1 MiB, and will double when necessary
+// 1 MiB, and will double when necessary.  Note: femtolisp uses 512 KiB.
 const int kInitialSize = 1 << 20;
-
-void InitHeap() {
-  gHeap.from_space_ = static_cast<char*>(malloc(kInitialSize));
-  gHeap.to_space_ = static_cast<char*>(malloc(kInitialSize));
-  gHeap.alloc_pos_ = 0;
-
-#if GC_DEBUG
-  // TODO: make it 0xdeadbeef
-  memset(gHeap.from_space_, 0xff, kInitialSize);
-  memset(gHeap.to_space_, 0xff, kInitialSize);
-#endif
-}
 
 constexpr int kMask = alignof(max_align_t) - 1;  // e.g. 15 or 7
 
@@ -194,11 +228,25 @@ void* Alloc(int size) {
   return p;
 }
 
-// Variadic templates
-// https://eli.thegreenplace.net/2014/variadic-templates-in-c/
+// Variadic templates: https://eli.thegreenplace.net/2014/variadic-templates-in-c/
 template <typename T, typename... Args>
 T* gc_alloc(Args&&... args) {
   void* place = Alloc(sizeof(T));
+
+  if (place == nullptr) {  // not enough space
+    // TODO: what happens after collection if there's still not enough space?
+    // I think we should grow it first.
+    //
+    // So Alloc() shouldn't return nullptr.  It should return if we're 90%
+    // full?
+    //
+    // femtolisp has gc(int mustgrow)
+    //
+    // And actually it does it in while loop!  You could have an allocation so
+    // big that you need to grow twice???  Passing the amount seems better?
+
+    gHeap.Collect();
+  }
 
   // placement new
   return new (place) T(std::forward<Args>(args)...);
@@ -281,6 +329,33 @@ class Forwarded : public Cell {
   // only valid if tag == Tag::Forwarded
   Cell* new_location;
 };
+
+class Cell;  // forward decl
+
+void Forward(Cell* cell) {
+  cell->tag = Tag::Forwarded;
+}
+
+// Move an object from one space to another.
+Cell* Relocate(Cell* cell) {
+  // note: femtolisp has ismanaged() in addition to isforwarded()
+  // ismanaged() could be for globals
+
+  // it handles TAG_CONS, TAG_VECTOR, TAG_CPRIM, TAG_CVALUE, (we might want
+  // this), TAG_FUNCTION, TAG_SYM
+  //
+  // We have fewer cases than that.  We just use a Cell.
+}
+
+void Heap::Collect() {
+
+// Copy policy from femtolisp for now:
+//
+// If we're using > 80% of the space, resize tospace so we have more space to
+// fill next time. if we grew tospace last time, grow the other half of the
+// heap this time to catch up.
+
+}
 
 template <typename T>
 void InitSlabCell(Cell* cell) {
@@ -571,17 +646,22 @@ Str* NewStr(const char* data) {
 // Functions
 //
 
+// Note: we need this duplicate for now... Otherwise the implicit construction for len(Handle<Str>)
+// leads to more stack roots than we think!  TODO: I think we need a better way
+// of balancing it.  We don't want HandleScope h(5).
+#if 1
 int len(const Str* s) {
   return s->len_;
 }
+#endif
 
   // Hm only functions that don't allocate can take a raw pointer ...
   // If they allocate, then that pointer can be moved out from under them!
 
-#if 0
+#if 1
 // Hm do all standard library functions have to take Handles now?
 int len(Handle<Str> s) {
-  return s.raw_pointer_->len_;
+  return s.get()->len_;
 }
 #endif
 
@@ -862,6 +942,7 @@ void ShowRoots(const Heap& heap) {
 
     // Raw pointer is on the heap.
     int diff2 = reinterpret_cast<char*>(raw) - gHeap.from_space_;
+    // log("diff2 = %d", diff2);
     assert(diff2 < 2048);
 
     // This indeed mutates it and causes a crash
@@ -884,22 +965,28 @@ Str* myfunc() {
 void otherfunc(Handle<Str> s) {
   // Hm how do we generate the .get()?  Is it better just to accept Handle<Str>
   // even if the function doesn't allocate?  Either way we are dereferencing.
-  log("len(s) = %d", len(s.get()));
+  log("len(s) = %d", len(s));
 }
 
 TEST handle_test() {
   // TODO:
   // Hold on to a handle.  And then trigger GC.
   // And then assert its integrity?
+
   {
     HandleScope h(2);
-    ASSERT_EQ(gHeap.roots_top, 0);
+    log("top = %d", gHeap.roots_top);
+    ASSERT_EQ(0, gHeap.roots_top);
 
-    Handle<Str> str1(NewStr("foo"));
-    ASSERT_EQ(gHeap.roots_top, 1);
+    auto point = gc_alloc<Point>(3, 4);
+    Handle<Point> p(point);
+    ASSERT_EQ(1, gHeap.roots_top);
+
+    log("point.x = %d", p->x_);    // invokes operator->
+    log("point.y = %d", (*p).y_);  // invokes operator* I think
 
     Handle<Str> str2(NewStr("bar"));
-    ASSERT_EQ(gHeap.roots_top, 2);
+    ASSERT_EQ(2, gHeap.roots_top);
 
     myfunc();
 
@@ -907,7 +994,7 @@ TEST handle_test() {
 
     ShowRoots(gHeap);
   }
-  ASSERT_EQ_FMT(gHeap.roots_top, 0, "%d");
+  ASSERT_EQ_FMT(0, gHeap.roots_top, "%d");
 
   PASS();
 }
@@ -930,7 +1017,7 @@ GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
   // Should be done once per thread
-  InitHeap();
+  gHeap.Init(kInitialSize);
 
   GREATEST_MAIN_BEGIN();
 
