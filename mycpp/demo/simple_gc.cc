@@ -73,7 +73,7 @@ void log(const char* fmt, ...) {
   puts("");
 }
 
-#define GC_DEBUG 1
+class Cell;
 
 class Heap {
  public:
@@ -84,19 +84,31 @@ class Heap {
   void Init(int num_bytes) {
     from_space_ = static_cast<char*>(malloc(num_bytes));
     to_space_ = static_cast<char*>(malloc(num_bytes));
-    alloc_pos_ = 0;
 
     // slab scanning relies on 0 bytes (nullptr)
     memset(from_space_, 0, num_bytes);
     memset(to_space_, 0, num_bytes);
+
+    space_size_ = num_bytes;
+    alloc_pos_ = 0;
+
+    roots_top_ = 0;
   }
 
+  void AddRoot(void* p) {
+    roots_[roots_top_++] = p;
+  }
+
+  Cell* Relocate(Cell* cell);
   void Collect();
 
   char* from_space_;
   char* to_space_;
   char* cur_space_;  // femtolisp has this?  Do we need it?
   // femtolisp also has lim_?
+
+  char* scan_;  // boundary between black and grey
+  char* free_;  // next place to
 
   int space_size_;  // current size
   int alloc_pos_;   // where to allocate next
@@ -109,10 +121,10 @@ class Heap {
   // femtolisp uses a global pointer to dynamically-allocated growable array,
   // with initial N_STACK = 262144!  Kind of arbitrary.
 
-  int roots_top;
+  int roots_top_;
   // TODO: This should be Handle, because we need to call .update(new_loc) on
   // it?
-  void* roots[1024];  // max
+  void* roots_[1024];  // max
 
   // Note: should we have a stack of handle scopes here?  So we don't have to
   // declare HandleScope h(5) correctly.
@@ -146,7 +158,7 @@ class HandleScope {
   }
   ~HandleScope() {
     // prepare for the next function call
-    gHeap.roots_top -= num_locals_;
+    gHeap.roots_top_ -= num_locals_;
   }
   int num_locals_;
 };
@@ -157,7 +169,7 @@ template <typename T>
 class Handle {
  public:
   explicit Handle(T* raw_pointer) : raw_pointer_(raw_pointer) {
-    gHeap.roots[gHeap.roots_top++] = this;
+    gHeap.AddRoot(this);
   }
 
     // This would allow us to transparently pass Handle<Str> to a function
@@ -274,30 +286,21 @@ int RoundUp(int n) {
   return n;
 }
 
-// TODO: Do copying collection.
-// What's the resizing policy?
-void CollectGarbage() {
-}
+const int kZeroMask = 0;
 
 namespace Tag {
 const int Forwarded = 1;
-
-// Fixed size headers.  Which means we consult bitmaps.
-const int FixedSize = 2;
-
-// Variable length cells.
-const int Opaque = 4;  // copy but don't scan.  List<int> and Str
-
-const int ScannedSlab = 5;  // Both scan and copy.  Scan after Cell header.
+const int Opaque = 2;     // Copy but don't scan.  List<int> and Str
+const int FixedSize = 3;  // Fixed size headers: consult field_mask_
+const int Scanned = 4;    // Copy AND scan for non-NULL pointers.
 }  // namespace Tag
 
 class Cell {
   // The unit of garbage collection.  It has a header describing how to find
   // the pointers within it.
   //
-  // Notes:
-  // - Sorting ASDL fields by (non-pointer, pointer) is a good idea, but it
-  //   breaks down because mycpp has inheritance.  Could do this later.
+  // Note: Sorting ASDL fields by (non-pointer, pointer) is a good idea, but it
+  // breaks down because mycpp has inheritance.  Could do this later.
 
  public:
   Cell() : tag(0), field_mask_(0), cell_len_(0) {
@@ -327,6 +330,7 @@ class Cell {
 };
 
 class Forwarded : public Cell {
+ public:
   // only valid if tag == Tag::Forwarded
   Cell* new_location;
 };
@@ -337,33 +341,10 @@ class FixedCell : public Cell {
   Cell* children_[16];  // only entries with field_mask will be valid
 };
 
-void Forward(Cell* cell) {
-  cell->tag = Tag::Forwarded;
-}
-
-// Move an object from one space to another.
-Cell* Relocate(Cell* cell) {
-  // note: femtolisp has ismanaged() in addition to isforwarded()
-  // ismanaged() could be for globals
-
-  // it handles TAG_CONS, TAG_VECTOR, TAG_CPRIM, TAG_CVALUE, (we might want
-  // this), TAG_FUNCTION, TAG_SYM
-  //
-  // We have fewer cases than that.  We just use a Cell.
-}
-
-void Heap::Collect() {
-  // Copy policy from femtolisp for now:
-  //
-  // If we're using > 80% of the space, resize tospace so we have more space to
-  // fill next time. if we grew tospace last time, grow the other half of the
-  // heap this time to catch up.
-}
-
 template <typename T>
 void InitSlabCell(Cell* cell) {
   // log("SCANNED");
-  cell->tag = Tag::ScannedSlab;
+  cell->tag = Tag::Scanned;
 }
 
 template <>
@@ -385,6 +366,7 @@ class Slab : public Cell {
   T items_[1];  // minimum string cell_len_
 };
 
+// Note: entries should be zero'd because Alloc() just bumps the heap
 template <typename T>
 Slab<T>* NewSlab(int len) {
   int cell_len = RoundUp(kSlabHeaderSize + len * sizeof(T));
@@ -393,18 +375,96 @@ Slab<T>* NewSlab(int len) {
   return slab;
 }
 
-// NOT USED.  This object is too big, and it complicates the GC.
-class Slice : public Cell {
- public:
-  Slice(Slab<int>* slab, int begin, int end)
-      : begin_(begin), end_(end), slab_(slab) {
+// Move an object from one space to another.
+Cell* Heap::Relocate(Cell* cell) {
+  // note: femtolisp has ismanaged() in addition to isforwarded()
+  // ismanaged() could be for globals
+
+  // it handles TAG_CONS, TAG_VECTOR, TAG_CPRIM, TAG_CVALUE, (we might want
+  // this), TAG_FUNCTION, TAG_SYM
+  //
+  // We have fewer cases than that.  We just use a Cell.
+
+  if (cell->tag == Tag::Forwarded) {
+    auto f = reinterpret_cast<Forwarded*>(cell);
+    return f->new_location;
+  } else {
+    auto new_location = reinterpret_cast<Cell*>(free_);
+    int n = cell->cell_len_;
+    memcpy(new_location, cell, n);
+    free_ += n;
+    auto f = reinterpret_cast<Forwarded*>(cell);
+    f->tag = Tag::Forwarded;
+    f->new_location = new_location;
+    return new_location;
   }
-  int begin_;
-  int end_;
-  int hash_;
-  // Note: later this can be an atom_id
-  Slab<int>* slab_;
-};
+}
+
+void Heap::Collect() {
+  log("--- COLLECT");
+
+  // Copy policy from femtolisp for now:
+  //
+  // If we're using > 80% of the space, resize tospace so we have more space to
+  // fill next time. if we grew tospace last time, grow the other half of the
+  // heap this time to catch up.
+
+  // char* tmp = from_space_;
+  // from_space_ = to_space_;
+  // to_space_ = tmp;
+
+  scan_ = to_space_;  // boundary between black and gray
+  free_ = to_space_;  // where to copy new entries
+
+  for (int i = 0; i < roots_top_; ++i) {
+    auto handle = static_cast<Handle<void>*>(roots_[i]);
+    auto root = reinterpret_cast<Cell*>(handle->get());
+
+    log("%d. handle %p", i, handle);
+    log("     root %p", root);
+
+    // This updates the underlying Str/List/Dict with a forwarding pointer,
+    // i.e. for other objects that are pointing to it
+    Cell* new_location = Relocate(root);
+
+    // This update is for the "double indirection", so future accesses to a
+    // local variable use the new location
+    handle->update(new_location);
+  }
+
+  while (scan_ < free_) {
+    auto cell = reinterpret_cast<Cell*>(scan_);
+    switch (cell->tag) {
+    case Tag::FixedSize: {
+      auto fixed = reinterpret_cast<FixedCell*>(cell);
+      int mask = fixed->field_mask_;
+      for (int i = 0; i < 16; ++i) {
+        if (mask & (1 << i)) {
+          Cell* child = fixed->children_[i];
+          // log("i = %d, p = %p, tag = %d", i, child, child->tag);
+          fixed->children_[i] = Relocate(child);
+        }
+      }
+      break;
+    }
+    case Tag::Scanned: {
+      auto slab = reinterpret_cast<Slab<void*>*>(cell);
+      int n = (slab->cell_len_ - kSlabHeaderSize) / sizeof(void*);
+      for (int i = 0; i < n; ++i) {
+        Cell* child = reinterpret_cast<Cell*>(slab->items_[i]);
+        if (child == nullptr) {
+          break;
+        }
+        slab->items_[i] = Relocate(child);
+      }
+      break;
+    }
+      // other tags like Tag::Opaque have no children
+      // TODO: I think we also want Tag::SparseScannedSlab for Dict
+    }
+    scan_ += cell->cell_len_;
+  }
+}
 
 class Str : public Cell {
  public:
@@ -415,20 +475,11 @@ class Str : public Cell {
   // 01, 00 00 02, 00 00 00 03.  Although I think they added special cases for
   // 32-bit and 64-bit; we're using the portable max_align_t
   int len_;
-  int unique_id_;   // index into intern table
+  int unique_id_;   // index into intern table ?
   char opaque_[1];  // flexible array
 };
 
 const int kStrHeaderSize = sizeof(Cell) + sizeof(int) + sizeof(int);
-
-#if 0
-void PrintSlice(Slice* s) {
-  char* data = s->slab_->opaque_;
-  char* p = data + s->begin_;
-  fwrite(p, 1, s->end_ - s->begin_, stdout);
-  puts("");
-}
-#endif
 
 // This is one slab in the second position.  TODO: This is different for 32
 // bit???  Is there a way to make it portable?
@@ -437,18 +488,16 @@ const int kListMask = 0x0002;  // in binary: 0b 0000 0000 0000 00010
 template <typename T>
 class List : public Cell {
  public:
-  // TODO: FixedSize records all need a field mask
   List()
-      : Cell(Tag::FixedSize, kListMask, 0),
+      : Cell(Tag::FixedSize, kListMask, sizeof(List<T>)),
         len_(0),
         capacity_(0),
         slab_(nullptr) {
-    SetCellLength(sizeof(List<T>));  // So we can copy it
   }
 
   // TODO: are we using this?
-  List(std::initializer_list<T> init) : Cell(Tag::FixedSize), slab_(nullptr) {
-    SetCellLength(sizeof(List<T>));  // So we can copy it
+  List(std::initializer_list<T> init)
+      : Cell(Tag::FixedSize, kListMask, sizeof(List<T>)), slab_(nullptr) {
     extend(init);
   }
 
@@ -542,6 +591,10 @@ inline bool str_equals(Str* left, Str* right) {
   }
 }
 
+// TODO: need sentinel for deletion.  The sentinel is in the *indices* array,
+// not in keys or values.  Those are copied verbatim, but may be sparse because
+// of deletions?
+
 template <typename K>
 int find_by_key(Slab<K>* keys_, int len, Str* key) {
   for (int i = 0; i < len; ++i) {
@@ -552,9 +605,8 @@ int find_by_key(Slab<K>* keys_, int len, Str* key) {
   return -1;
 }
 
-
 // This is three slab pointers after 2 integers.  TODO: portability?
-const int kDictMask = 0x000E; // in binary: 0b 0000 0000 0000 01110
+const int kDictMask = 0x000E;  // in binary: 0b 0000 0000 0000 01110
 
 template <class K, class V>
 class Dict : public Cell {
@@ -563,7 +615,7 @@ class Dict : public Cell {
       : Cell(Tag::FixedSize, kDictMask, 0),
         len_(0),
         capacity_(0),
-        indices_(nullptr),
+        index_(nullptr),
         keys_(nullptr),
         values_(nullptr) {
   }
@@ -575,22 +627,30 @@ class Dict : public Cell {
                 "Slab header size should be multiple of key size");
 
   void reserve(int n) {
+    // log("--- reserve %d", capacity_);
     if (capacity_ < n) {
       // calculate the number of keys and values we should have
       capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
 
-      auto new_i = NewSlab<int>(capacity_);
+      // TODO: This is SPARSE.  How to compute a size that ensures a decent
+      // load factor?
+      int index_len = capacity_;
+      auto new_i = NewSlab<int>(index_len);
+
+      // These are DENSE.
       auto new_k = NewSlab<K>(capacity_);
       auto new_v = NewSlab<V>(capacity_);
 
-      if (capacity_ != 0) {
-        // TODO: rehash here!  indices are re-ordered.
-        memcpy(new_i->items_, indices_->items_, len_ * sizeof(int));
+      if (keys_ != nullptr) {
+        // Copy the old index.  Note: remaining entries should be zero'd
+        // because of Alloc() behavior.
+        memcpy(new_i->items_, index_->items_, index_->cell_len_);
+
         memcpy(new_k->items_, keys_->items_, len_ * sizeof(K));
         memcpy(new_v->items_, values_->items_, len_ * sizeof(V));
       }
 
-      indices_ = new_i;
+      index_ = new_i;
       keys_ = new_k;
       values_ = new_v;
     }
@@ -619,14 +679,15 @@ class Dict : public Cell {
     }
   }
 
-  int len_;       // number of entries
-  int capacity_;  // max number before resizing
+  // int index_size_;  // size of index (sparse)
+  int len_;       // number of entries (keys and values, almost dense)
+  int capacity_;  // number of entries before resizing
 
-  // These 3 sequences may be resized "in parallel"
-
-  Slab<int>* indices_;  // indexed by hash value
-  Slab<K>* keys_;       // Dict<int, V>
-  Slab<V>* values_;     // Dict<K, int>
+  // These 3 slabs are resized at the same time.
+  Slab<int>* index_;  // dense indices which are themselves indexed by
+                      //  hash value % capacity_
+  Slab<K>* keys_;     // Dict<int, V>
+  Slab<V>* values_;   // Dict<K, int>
 
  private:
   // returns the position in the array
@@ -691,20 +752,8 @@ inline int len(const Dict<K, V>* d) {
 }
 
 //
-// main
+// Test Cases
 //
-
-TEST slice_test() {
-// hm this shouldn't be allocated with 'new'
-// it needs a different interface
-#if 0
-  auto slab1 = new Slab();
-  auto slice1 = new Slice(slab1, 2, 5);
-  PrintSlice(slice1);
-#endif
-
-  PASS();
-}
 
 // TODO:
 // - Test what happens when a new string goes over the max heap size
@@ -839,7 +888,7 @@ TEST dict_test() {
   ASSERT_EQ_FMT(0, dict1->capacity_, "%d");
   ASSERT_EQ_FMT(0, dict2->capacity_, "%d");
 
-  ASSERT_EQ(nullptr, dict1->indices_);
+  ASSERT_EQ(nullptr, dict1->index_);
   ASSERT_EQ(nullptr, dict1->keys_);
   ASSERT_EQ(nullptr, dict1->values_);
 
@@ -854,7 +903,7 @@ TEST dict_test() {
   ASSERT_EQ(1, len(dict1));
   ASSERT_EQ_FMT(6, dict1->capacity_, "%d");
 
-  ASSERT_EQ_FMT(32, dict1->indices_->cell_len_, "%d");
+  ASSERT_EQ_FMT(32, dict1->index_->cell_len_, "%d");
   ASSERT_EQ_FMT(32, dict1->keys_->cell_len_, "%d");
   ASSERT_EQ_FMT(32, dict1->values_->cell_len_, "%d");
 
@@ -880,7 +929,7 @@ TEST dict_test() {
   ASSERT_EQ(1, len(dict2));
   ASSERT(str_equals(NewStr("bar"), dict2->index(NewStr("foo"))));
 
-  ASSERT_EQ_FMT(32, dict2->indices_->cell_len_, "%d");
+  ASSERT_EQ_FMT(32, dict2->index_->cell_len_, "%d");
   ASSERT_EQ_FMT(64, dict2->keys_->cell_len_, "%d");
   ASSERT_EQ_FMT(64, dict2->values_->cell_len_, "%d");
 
@@ -890,7 +939,7 @@ TEST dict_test() {
   dict_si->set(NewStr("foo"), 42);
   ASSERT_EQ(1, len(dict_si));
 
-  ASSERT_EQ_FMT(32, dict_si->indices_->cell_len_, "%d");
+  ASSERT_EQ_FMT(32, dict_si->index_->cell_len_, "%d");
   ASSERT_EQ_FMT(64, dict_si->keys_->cell_len_, "%d");
   ASSERT_EQ_FMT(32, dict_si->values_->cell_len_, "%d");
 
@@ -898,7 +947,7 @@ TEST dict_test() {
   dict_is->set(42, NewStr("foo"));
   ASSERT_EQ(1, len(dict_is));
 
-  ASSERT_EQ_FMT(32, dict_is->indices_->cell_len_, "%d");
+  ASSERT_EQ_FMT(32, dict_is->index_->cell_len_, "%d");
   ASSERT_EQ_FMT(32, dict_is->keys_->cell_len_, "%d");
   ASSERT_EQ_FMT(64, dict_is->values_->cell_len_, "%d");
 
@@ -931,9 +980,10 @@ TEST sizeof_test() {
   PASS();
 }
 
-class Point {
+class Point : public Cell {
  public:
-  Point(int x, int y) : x_(x), y_(y) {
+  Point(int x, int y)
+      : Cell(Tag::Opaque, kZeroMask, sizeof(Point)), x_(x), y_(y) {
   }
   int size() {
     return x_ + y_;
@@ -942,21 +992,49 @@ class Point {
   int y_;
 };
 
+const int kLineMask = 0x3;  // 0b0011
+class Line : public Cell {
+ public:
+  Line()
+      : Cell(Tag::FixedSize, kLineMask, sizeof(Line)),
+        begin_(nullptr),
+        end_(nullptr) {
+  }
+  Point* begin_;
+  Point* end_;
+};
+
 TEST asdl_test() {
-  auto p = gc_alloc<Point>(3, 4);
+  auto p = Handle<Point>(gc_alloc<Point>(3, 4));
   log("point size = %d", p->size());
+
+  auto line = Handle<Line>(gc_alloc<Line>());
+  line->begin_ = p.get();  // hm .get() is annoying
+  line->end_ = gc_alloc<Point>(5, 6);
+
+  gHeap.Collect();
+
+  // remove last reference
+  line->end_ = nullptr;
+
+  gHeap.Collect();
+
+  // TODO: assert the heap size here!
+
+  gHeap.Init(kInitialSize);  // reset the whole thing
+
   PASS();
 }
 
 void ShowRoots(const Heap& heap) {
   log("--");
-  for (int i = 0; i < heap.roots_top; ++i) {
-    log("%d. %p", i, heap.roots[i]);
+  for (int i = 0; i < heap.roots_top_; ++i) {
+    log("%d. %p", i, heap.roots_[i]);
     // This is NOT on the heap; it's on the stack.
     // int diff1 = reinterpret_cast<char*>(heap.roots[i]) - gHeap.from_space_;
     // assert(diff1 < 1024);
 
-    auto h = static_cast<Handle<void>*>(heap.roots[i]);
+    auto h = static_cast<Handle<void>*>(heap.roots_[i]);
     auto raw = h->raw_pointer_;
     log("   %p", raw);
 
@@ -976,7 +1054,7 @@ Str* myfunc() {
   Handle<Str> str2(NewStr("foo"));
   Handle<Str> str3(NewStr("foo"));
 
-  log("myfunc roots_top = %d", gHeap.roots_top);
+  log("myfunc roots_top = %d", gHeap.roots_top_);
   ShowRoots(gHeap);
 
   return str1.raw_pointer_;
@@ -995,26 +1073,28 @@ TEST handle_test() {
 
   {
     HandleScope h(2);
-    log("top = %d", gHeap.roots_top);
-    ASSERT_EQ(0, gHeap.roots_top);
+    log("top = %d", gHeap.roots_top_);
+    ASSERT_EQ(0, gHeap.roots_top_);
 
     auto point = gc_alloc<Point>(3, 4);
     Handle<Point> p(point);
-    ASSERT_EQ(1, gHeap.roots_top);
+    ASSERT_EQ(1, gHeap.roots_top_);
 
     log("point.x = %d", p->x_);    // invokes operator->
     log("point.y = %d", (*p).y_);  // invokes operator* I think
 
     Handle<Str> str2(NewStr("bar"));
-    ASSERT_EQ(2, gHeap.roots_top);
+    ASSERT_EQ(2, gHeap.roots_top_);
 
     myfunc();
 
     otherfunc(str2);
 
     ShowRoots(gHeap);
+
+    gHeap.Collect();
   }
-  ASSERT_EQ_FMT(0, gHeap.roots_top, "%d");
+  ASSERT_EQ_FMT(0, gHeap.roots_top_, "%d");
 
   PASS();
 }
@@ -1045,14 +1125,14 @@ void ShowFixedChildren(FixedCell* fixed) {
   for (int i = 0; i < 16; ++i) {
     if (mask & (1 << i)) {
       Cell* child = fixed->children_[i];
-      // make sure we get Tag::Opaque, Tag::ScannedSlab, etc.
+      // make sure we get Tag::Opaque, Tag::Scanned, etc.
       log("i = %d, p = %p, tag = %d", i, child, child->tag);
     }
   }
 }
 
 void ShowSlab(Cell* cell) {
-  assert(cell->tag == Tag::ScannedSlab);
+  assert(cell->tag == Tag::Scanned);
   auto slab = reinterpret_cast<Slab<void*>*>(cell);
 
   // Scan until we hit nullptr.
@@ -1102,9 +1182,6 @@ int main(int argc, char** argv) {
   gHeap.Init(kInitialSize);
 
   GREATEST_MAIN_BEGIN();
-
-  // don't need this for now
-  RUN_TEST(slice_test);
 
   RUN_TEST(str_test);
   RUN_TEST(list_test);
