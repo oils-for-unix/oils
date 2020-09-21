@@ -73,6 +73,8 @@ void log(const char* fmt, ...) {
   puts("");
 }
 
+#define GC_DEBUG 1
+
 class Heap {
  public:
   Heap() {  // default constructor does nothing -- relies on zero initialization
@@ -84,11 +86,9 @@ class Heap {
     to_space_ = static_cast<char*>(malloc(num_bytes));
     alloc_pos_ = 0;
 
-#if GC_DEBUG
-    // TODO: make it 0xdeadbeef
-    memset(from_space_, 0xff, num_bytes);
-    memset(to_space_, 0xff, num_bytes);
-#endif
+    // slab scanning relies on 0 bytes (nullptr)
+    memset(from_space_, 0, num_bytes);
+    memset(to_space_, 0, num_bytes);
   }
 
   void Collect();
@@ -99,7 +99,7 @@ class Heap {
   // femtolisp also has lim_?
 
   int space_size_;  // current size
-  int alloc_pos_;  // where to allocate next
+  int alloc_pos_;   // where to allocate next
 
   bool grew_;  // did we grow the last time?
 
@@ -113,7 +113,6 @@ class Heap {
   // TODO: This should be Handle, because we need to call .update(new_loc) on
   // it?
   void* roots[1024];  // max
-
 
   // Note: should we have a stack of handle scopes here?  So we don't have to
   // declare HandleScope h(5) correctly.
@@ -228,7 +227,8 @@ void* Alloc(int size) {
   return p;
 }
 
-// Variadic templates: https://eli.thegreenplace.net/2014/variadic-templates-in-c/
+// Variadic templates:
+// https://eli.thegreenplace.net/2014/variadic-templates-in-c/
 template <typename T, typename... Args>
 T* gc_alloc(Args&&... args) {
   void* place = Alloc(sizeof(T));
@@ -300,11 +300,12 @@ class Cell {
   //   breaks down because mycpp has inheritance.  Could do this later.
 
  public:
-  Cell() : tag(0), cell_len_(0) {
+  Cell() : tag(0), field_mask_(0), cell_len_(0) {
   }
-  Cell(int tag) : tag(tag), cell_len_(0) {
+  Cell(uint16_t tag) : tag(tag), field_mask_(0), cell_len_(0) {
   }
-  Cell(int tag, int cell_len) : tag(tag), cell_len_(cell_len) {
+  Cell(uint16_t tag, uint16_t field_mask, int cell_len)
+      : tag(tag), field_mask_(field_mask), cell_len_(cell_len) {
   }
 
   void SetCellLength(int cell_len) {
@@ -315,7 +316,7 @@ class Cell {
                  // Tag::Forwarded is 256?
                  // We could also reserve tags for Str, List, and Dict
                  // Then do we have 7 more bits for the GC strategy / length?
-  uint16_t field_mask;  // for fixed length records, so max 16 fields
+  uint16_t field_mask_;  // for fixed length records, so max 16 fields
 
   // # bytes to copy, or # bytes to scan?
   // for Slab, which is used by List<Str*> and Dict<Str*, Str*>
@@ -330,7 +331,11 @@ class Forwarded : public Cell {
   Cell* new_location;
 };
 
-class Cell;  // forward decl
+// for Tag::FixedSize
+class FixedCell : public Cell {
+ public:
+  Cell* children_[16];  // only entries with field_mask will be valid
+};
 
 void Forward(Cell* cell) {
   cell->tag = Tag::Forwarded;
@@ -348,13 +353,11 @@ Cell* Relocate(Cell* cell) {
 }
 
 void Heap::Collect() {
-
-// Copy policy from femtolisp for now:
-//
-// If we're using > 80% of the space, resize tospace so we have more space to
-// fill next time. if we grew tospace last time, grow the other half of the
-// heap this time to catch up.
-
+  // Copy policy from femtolisp for now:
+  //
+  // If we're using > 80% of the space, resize tospace so we have more space to
+  // fill next time. if we grew tospace last time, grow the other half of the
+  // heap this time to catch up.
 }
 
 template <typename T>
@@ -376,7 +379,7 @@ const int kSlabHeaderSize = sizeof(Cell);
 template <typename T>
 class Slab : public Cell {
  public:
-  Slab(int cell_len) : Cell(0, cell_len) {
+  Slab(int cell_len) : Cell(0, 0, cell_len) {
     InitSlabCell<T>(this);
   }
   T items_[1];  // minimum string cell_len_
@@ -427,11 +430,19 @@ void PrintSlice(Slice* s) {
 }
 #endif
 
+// This is one slab in the second position.  TODO: This is different for 32
+// bit???  Is there a way to make it portable?
+const int kListMask = 0x0002;  // in binary: 0b 0000 0000 0000 00010
+
 template <typename T>
 class List : public Cell {
  public:
   // TODO: FixedSize records all need a field mask
-  List() : Cell(Tag::FixedSize), len_(0), capacity_(0), slab_(nullptr) {
+  List()
+      : Cell(Tag::FixedSize, kListMask, 0),
+        len_(0),
+        capacity_(0),
+        slab_(nullptr) {
     SetCellLength(sizeof(List<T>));  // So we can copy it
   }
 
@@ -541,11 +552,15 @@ int find_by_key(Slab<K>* keys_, int len, Str* key) {
   return -1;
 }
 
+
+// This is three slab pointers after 2 integers.  TODO: portability?
+const int kDictMask = 0x000E; // in binary: 0b 0000 0000 0000 01110
+
 template <class K, class V>
 class Dict : public Cell {
  public:
   Dict()
-      : Cell(Tag::FixedSize),
+      : Cell(Tag::FixedSize, kDictMask, 0),
         len_(0),
         capacity_(0),
         indices_(nullptr),
@@ -646,9 +661,9 @@ Str* NewStr(const char* data) {
 // Functions
 //
 
-// Note: we need this duplicate for now... Otherwise the implicit construction for len(Handle<Str>)
-// leads to more stack roots than we think!  TODO: I think we need a better way
-// of balancing it.  We don't want HandleScope h(5).
+// Note: we need this duplicate for now... Otherwise the implicit construction
+// for len(Handle<Str>) leads to more stack roots than we think!  TODO: I think
+// we need a better way of balancing it.  We don't want HandleScope h(5).
 #if 1
 int len(const Str* s) {
   return s->len_;
@@ -890,7 +905,7 @@ TEST dict_test() {
   PASS();
 }
 
-TEST misc_test() {
+TEST sizeof_test() {
   log("");
 
   // 24 = 4 + (4 + 4 + 4) + 8
@@ -900,6 +915,11 @@ TEST misc_test() {
   log("sizeof(List) = %d", sizeof(List<int>));
   // 32 = 4 + pad4 + 8 + 8 + 8
   log("sizeof(Dict) = %d", sizeof(Dict<int, int>));
+
+  // 8 byte sheader
+  log("sizeof(Cell) = %d", sizeof(Cell));
+  // 8 + 128 possible entries
+  log("sizeof(FixedCell) = %d", sizeof(FixedCell));
 
   log("sizeof(Heap) = %d", sizeof(Heap));
 
@@ -1013,6 +1033,68 @@ TEST resize_test() {
   PASS();
 }
 
+void ShowFixedChildren(FixedCell* fixed) {
+  log("MASK:");
+
+  // Note: can this be optimized with the equivalent x & (x-1) trick?
+  // We need the index
+  // There is a de Brjuin sequence solution?
+  // https://stackoverflow.com/questions/757059/position-of-least-significant-bit-that-is-set
+
+  int mask = fixed->field_mask_;
+  for (int i = 0; i < 16; ++i) {
+    if (mask & (1 << i)) {
+      Cell* child = fixed->children_[i];
+      // make sure we get Tag::Opaque, Tag::ScannedSlab, etc.
+      log("i = %d, p = %p, tag = %d", i, child, child->tag);
+    }
+  }
+}
+
+void ShowSlab(Cell* cell) {
+  assert(cell->tag == Tag::ScannedSlab);
+  auto slab = reinterpret_cast<Slab<void*>*>(cell);
+
+  // Scan until we hit nullptr.
+  // I think this should work for dictionaries too, because the entries should
+  // be dense?  What about deletions?
+  //
+  // Maybe we need Tag::DenseScannedSlab and Tag::SparseScannedSlab ?
+  // The difference should only be a factor of 2 though.
+
+  int n = (slab->cell_len_ - kSlabHeaderSize) / sizeof(void*);
+  log("slab len = %d, n = %d", slab->cell_len_, n);
+  for (int i = 0; i < n; ++i) {
+    void* p = slab->items_[i];
+    if (p == nullptr) {
+      break;
+    }
+    log("p = %p", p);
+  }
+}
+
+TEST field_mask_test() {
+  auto L = gc_alloc<List<int>>();
+  L->append(1);
+  log("List mask = %d", L->field_mask_);
+
+  auto d = gc_alloc<Dict<Str*, int>>();
+  d->set(NewStr("foo"), 3);
+  log("Dict mask = %d", d->field_mask_);
+
+  auto L_cell = reinterpret_cast<FixedCell*>(L);
+  ShowFixedChildren(L_cell);
+
+  auto d_cell = reinterpret_cast<FixedCell*>(d);
+  ShowFixedChildren(d_cell);
+
+  auto L2 = gc_alloc<List<Str*>>();
+  auto s = NewStr("foo");
+  L2->append(s);
+  L2->append(s);
+  ShowSlab(L2->slab_);
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -1027,10 +1109,11 @@ int main(int argc, char** argv) {
   RUN_TEST(str_test);
   RUN_TEST(list_test);
   RUN_TEST(dict_test);
-  RUN_TEST(misc_test);
+  RUN_TEST(sizeof_test);
   RUN_TEST(asdl_test);
   RUN_TEST(handle_test);
   RUN_TEST(resize_test);
+  RUN_TEST(field_mask_test);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;
