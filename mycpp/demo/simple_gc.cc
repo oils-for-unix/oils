@@ -10,10 +10,6 @@
 //   - Dict::set() can realloc and rehash
 //
 // TODO:
-// - Prototype Handle<T> and HandleScope for stack roots
-// - Copying GC algorithm over Cell*!
-//   - Write a simple benchmark that triggers GC over and over.  Maybe put it
-//     in a single function, and populate stack roots manually.
 // - Dicts should actually use hashing!  Test computational complexity.
 //
 // - Figure out what happens with GLOBAL Str* instances
@@ -73,7 +69,22 @@ void log(const char* fmt, ...) {
   puts("");
 }
 
+// 1 MiB, and will double when necessary.  Note: femtolisp uses 512 KiB.
+const int kInitialSize = 1 << 20;
+
+constexpr int kMask = alignof(max_align_t) - 1;  // e.g. 15 or 7
+
+// Align returned pointers to the worst case of 8 bytes (64-bit pointers)
+inline size_t aligned(size_t n) {
+  // https://stackoverflow.com/questions/2022179/c-quick-calculation-of-next-multiple-of-4
+  // return (n + 7) & ~7;
+
+  return (n + kMask) & ~kMask;
+}
+
 class Cell;
+
+const int kMaxRoots = 1024;
 
 class Heap {
  public:
@@ -95,8 +106,16 @@ class Heap {
     roots_top_ = 0;
   }
 
+  void* Alloc(int num_bytes) {
+    char* p = from_space_ + alloc_pos_;
+    alloc_pos_ += aligned(num_bytes);
+    return p;
+  }
+
   void AddRoot(void* p) {
     roots_[roots_top_++] = p;
+    // TODO: This should be like a malloc() failure?
+    assert(roots_top_ < kMaxRoots);
   }
 
   Cell* Relocate(Cell* cell);
@@ -122,12 +141,10 @@ class Heap {
   // with initial N_STACK = 262144!  Kind of arbitrary.
 
   int roots_top_;
-  // TODO: This should be Handle, because we need to call .update(new_loc) on
-  // it?
-  void* roots_[1024];  // max
+  void* roots_[kMaxRoots];  // TODO: Could be Handle<void*> ?
 
   // Note: should we have a stack of handle scopes here?  So we don't have to
-  // declare HandleScope h(5) correctly.
+  // declare LocalFrame h(5) correctly.
   //
   // problem: what about f(NewStr("x")) or f(gc_alloc<List<int>>({42})) ?
   // Then those pointers never gets wrapped in a handle.
@@ -148,63 +165,71 @@ class Heap {
   //   reallocation policy?
 };
 
-// TODO: Make this a thread local?
+// Notes:
+// - The default constructor does nothing, to avoid initialization order
+//   problems.
+// - For some applications, this can be thread_local rather than global.
 Heap gHeap;
 
 // handles get registered here, and they appear on the heap somehow
-class HandleScope {
+class LocalFrame {
  public:
-  HandleScope(int num_locals) : num_locals_(num_locals) {
+  LocalFrame(int num_locals) : num_locals_(num_locals) {
   }
-  ~HandleScope() {
+  ~LocalFrame() {
     // prepare for the next function call
     gHeap.roots_top_ -= num_locals_;
   }
   int num_locals_;
 };
 
-// TODO: how to implement this?
-// behaves like a pointer
+// We can garbage collect at any gc_alloc() invocation, so we need a level of
+// indirection for locals / pointers directly on the stack.  Pointers on the
+// heap are updated by the Cheney GC algorithm.
+
 template <typename T>
-class Handle {
+class Local {
  public:
-  explicit Handle(T* raw_pointer) : raw_pointer_(raw_pointer) {
+  explicit Local(T* raw_pointer) : raw_pointer_(raw_pointer) {
     gHeap.AddRoot(this);
   }
 
-    // This would allow us to transparently pass Handle<Str> to a function
-    // expecting Str*, but it's dangerous:
+    // This cast operator overload would allow us to transparently pass
+    // Local<Str> to a function expecting Str*, but it's dangerous:
     //
     // https://www.informit.com/articles/article.aspx?p=31529&seqNum=7
     //
     // Although maybe it's not dangerous if we audit every single function in
     // mylib?  Policy:
     //
-    // - It either accept a Handle<>
+    // - It either accept a Local<>
     // - Or it accepts a raw pointer and DOES NOT ALLOCATE anywhere
     //
     // The benefit to this is that you don't have to have TWO FUNCTIONS:
     //
     // len(node->left)  # raw pointer
-    // len(local_var)  # Handle
+    // len(local_var)  # Local
     //
     // However I think putting .get() at the call site in mycpp is more
     // explicit. The readability of the generated code is important!
-
 #if 0
   operator T*() {
     return raw_pointer_;
   }
 #endif
 
-  // dereference to get the real value
-  // note: we could call this deref() or value() to avoid operator overloading.
+    // Dereference to get the real value.  Doesn't seem like we need this, and
+    // we're avoiding copy constructors.
+    // note: we could call this deref() or value() to avoid operator
+    // overloading.
+#if 0
   T operator*() const {
-    log("operator*");
+    //log("operator*");
     return *raw_pointer_;
   }
+#endif
   T* operator->() const {
-    log("operator->");
+    // log("operator->");
     return raw_pointer_;
   }
 
@@ -220,30 +245,11 @@ class Handle {
   T* raw_pointer_;
 };
 
-// 1 MiB, and will double when necessary.  Note: femtolisp uses 512 KiB.
-const int kInitialSize = 1 << 20;
-
-constexpr int kMask = alignof(max_align_t) - 1;  // e.g. 15 or 7
-
-// Align returned pointers to the worst case of 8 bytes (64-bit pointers)
-inline size_t aligned(size_t n) {
-  // https://stackoverflow.com/questions/2022179/c-quick-calculation-of-next-multiple-of-4
-  // return (n + 7) & ~7;
-
-  return (n + kMask) & ~kMask;
-}
-
-void* Alloc(int size) {
-  char* p = gHeap.from_space_ + gHeap.alloc_pos_;
-  gHeap.alloc_pos_ += aligned(size);
-  return p;
-}
-
 // Variadic templates:
 // https://eli.thegreenplace.net/2014/variadic-templates-in-c/
 template <typename T, typename... Args>
 T* gc_alloc(Args&&... args) {
-  void* place = Alloc(sizeof(T));
+  void* place = gHeap.Alloc(sizeof(T));
 
   if (place == nullptr) {  // not enough space
     // TODO: what happens after collection if there's still not enough space?
@@ -286,7 +292,7 @@ int RoundUp(int n) {
   return n;
 }
 
-const int kZeroMask = 0;
+const int kZeroMask = 0;  // for types with no pointers
 
 namespace Tag {
 const int Forwarded = 1;
@@ -294,6 +300,10 @@ const int Opaque = 2;     // Copy but don't scan.  List<int> and Str
 const int FixedSize = 3;  // Fixed size headers: consult field_mask_
 const int Scanned = 4;    // Copy AND scan for non-NULL pointers.
 }  // namespace Tag
+
+#define DISALLOW_COPY_AND_ASSIGN(TypeName) \
+  TypeName(TypeName&) = delete;            \
+  void operator=(TypeName) = delete;
 
 class Cell {
   // The unit of garbage collection.  It has a header describing how to find
@@ -303,9 +313,12 @@ class Cell {
   // breaks down because mycpp has inheritance.  Could do this later.
 
  public:
-  Cell() : tag(0), field_mask_(0), cell_len_(0) {
+  /*
+  Cell() : tag(0), field_mask_(kZeroMask), cell_len_(0) {
   }
-  Cell(uint16_t tag) : tag(tag), field_mask_(0), cell_len_(0) {
+  */
+  // Used by Str
+  Cell(uint16_t tag) : tag(tag), field_mask_(kZeroMask), cell_len_(0) {
   }
   Cell(uint16_t tag, uint16_t field_mask, int cell_len)
       : tag(tag), field_mask_(field_mask), cell_len_(cell_len) {
@@ -327,18 +340,19 @@ class Cell {
   // Should this be specific to slab?  If tag == Tag::*Slab?
   // TODO: if we limit it to 15 fields, we can encode length in field_mask.
   uint32_t cell_len_;
+
+  DISALLOW_COPY_AND_ASSIGN(Cell)
 };
 
 class Forwarded : public Cell {
  public:
-  // only valid if tag == Tag::Forwarded
-  Cell* new_location;
+  Cell* new_location;  // valid if and only if tag == Tag::Forwarded
 };
 
 // for Tag::FixedSize
 class FixedCell : public Cell {
  public:
-  Cell* children_[16];  // only entries with field_mask will be valid
+  Cell* children_[16];  // only the entries denoted in field_mask will be valid
 };
 
 template <typename T>
@@ -370,7 +384,7 @@ class Slab : public Cell {
 template <typename T>
 Slab<T>* NewSlab(int len) {
   int cell_len = RoundUp(kSlabHeaderSize + len * sizeof(T));
-  void* place = Alloc(cell_len);
+  void* place = gHeap.Alloc(cell_len);
   auto slab = new (place) Slab<T>(cell_len);  // placement new
   return slab;
 }
@@ -417,7 +431,7 @@ void Heap::Collect() {
   free_ = to_space_;  // where to copy new entries
 
   for (int i = 0; i < roots_top_; ++i) {
-    auto handle = static_cast<Handle<void>*>(roots_[i]);
+    auto handle = static_cast<Local<void>*>(roots_[i]);
     auto root = reinterpret_cast<Cell*>(handle->get());
 
     log("%d. handle %p", i, handle);
@@ -452,10 +466,9 @@ void Heap::Collect() {
       int n = (slab->cell_len_ - kSlabHeaderSize) / sizeof(void*);
       for (int i = 0; i < n; ++i) {
         Cell* child = reinterpret_cast<Cell*>(slab->items_[i]);
-        if (child == nullptr) {
-          break;
+        if (child) {  // note: List<> may have nullptr; Dict is sparse
+          slab->items_[i] = Relocate(child);
         }
-        slab->items_[i] = Relocate(child);
       }
       break;
     }
@@ -469,7 +482,7 @@ void Heap::Collect() {
 class Str : public Cell {
  public:
   // Note: shouldn't be called directly.  Call NewStr().
-  Str(int len) : Cell(Tag::Opaque), len_(len) {
+  explicit Str(int len) : Cell(Tag::Opaque), len_(len) {
   }
   // Note: OCaml unifies the cell length and string length with padding 00, 00
   // 01, 00 00 02, 00 00 00 03.  Although I think they added special cases for
@@ -477,6 +490,8 @@ class Str : public Cell {
   int len_;
   int unique_id_;   // index into intern table ?
   char opaque_[1];  // flexible array
+
+  DISALLOW_COPY_AND_ASSIGN(Str)
 };
 
 const int kStrHeaderSize = sizeof(Cell) + sizeof(int) + sizeof(int);
@@ -522,9 +537,7 @@ class List : public Cell {
 
   // Ensure that there's space for a number of items
   void reserve(int n) {
-    if (slab_) {
-      log("reserve capacity = %d, n = %d", capacity_, n);
-    }
+    log("reserve capacity = %d, n = %d", capacity_, n);
 
     if (capacity_ < n) {
       // Example: The user asks for space for 7 integers.  Account for the
@@ -571,6 +584,8 @@ class List : public Cell {
 
   // The container may be resized, so this field isn't in-line.
   Slab<T>* slab_;
+
+  DISALLOW_COPY_AND_ASSIGN(List)
 };
 
 template <typename K>
@@ -694,6 +709,8 @@ class Dict : public Cell {
   int find(K key) {
     return find_by_key(keys_, len_, key);
   }
+
+  DISALLOW_COPY_AND_ASSIGN(Dict)
 };
 
 //
@@ -705,12 +722,14 @@ class Dict : public Cell {
 // to generate 2 statements everywhere.
 
 Str* NewStr(const char* data, int len) {
-  int cell_len = kStrHeaderSize + len;
-  void* place = Alloc(cell_len);  // immutable, so allocate exactly this amount
+  int cell_len = kStrHeaderSize + len + 1;  // NUL terminator
+  void* place = gHeap.Alloc(cell_len);      // immutable, so allocate exactly
   auto s = new (place) Str(len);
-  memcpy(s->opaque_, data, len);
-  s->SetCellLength(cell_len);  // is this right?
 
+  memcpy(s->opaque_, data, len);
+  s->opaque_[len] = '\0';  // So we can pass it directly to C functions
+
+  s->SetCellLength(cell_len);  // So the GC can copy it
   return s;
 }
 
@@ -723,8 +742,8 @@ Str* NewStr(const char* data) {
 //
 
 // Note: we need this duplicate for now... Otherwise the implicit construction
-// for len(Handle<Str>) leads to more stack roots than we think!  TODO: I think
-// we need a better way of balancing it.  We don't want HandleScope h(5).
+// for len(Local<Str>) leads to more stack roots than we think!  TODO: I think
+// we need a better way of balancing it.  We don't want LocalFrame h(5).
 #if 1
 int len(const Str* s) {
   return s->len_;
@@ -736,7 +755,7 @@ int len(const Str* s) {
 
 #if 1
 // Hm do all standard library functions have to take Handles now?
-int len(Handle<Str> s) {
+int len(Local<Str> s) {
   return s.get()->len_;
 }
 #endif
@@ -764,6 +783,10 @@ TEST str_test() {
   auto str1 = NewStr("");
   auto str2 = NewStr("one\0two", 7);
 
+  ASSERT_EQ_FMT(Tag::Opaque, str1->tag, "%d");
+  ASSERT_EQ_FMT(kStrHeaderSize + 1, str1->cell_len_, "%d");
+  ASSERT_EQ_FMT(kStrHeaderSize + 7 + 1, str2->cell_len_, "%d");
+
   // Make sure they're on the heap
   int diff1 = reinterpret_cast<char*>(str1) - gHeap.from_space_;
   int diff2 = reinterpret_cast<char*>(str2) - gHeap.from_space_;
@@ -772,8 +795,6 @@ TEST str_test() {
 
   ASSERT_EQ(0, len(str1));
   ASSERT_EQ(7, len(str2));
-
-  ASSERT_EQ_FMT(Tag::Opaque, str1->tag, "%d");
 
   PASS();
 }
@@ -972,8 +993,8 @@ TEST sizeof_test() {
 
   log("sizeof(Heap) = %d", sizeof(Heap));
 
-  char* p = static_cast<char*>(Alloc(17));
-  char* q = static_cast<char*>(Alloc(9));
+  char* p = static_cast<char*>(gHeap.Alloc(17));
+  char* q = static_cast<char*>(gHeap.Alloc(9));
   log("p = %p", p);
   log("q = %p", q);
 
@@ -1005,10 +1026,12 @@ class Line : public Cell {
 };
 
 TEST asdl_test() {
-  auto p = Handle<Point>(gc_alloc<Point>(3, 4));
+  gHeap.Init(kInitialSize);  // reset the whole thing
+
+  auto p = Local<Point>(gc_alloc<Point>(3, 4));
   log("point size = %d", p->size());
 
-  auto line = Handle<Line>(gc_alloc<Line>());
+  auto line = Local<Line>(gc_alloc<Line>());
   line->begin_ = p.get();  // hm .get() is annoying
   line->end_ = gc_alloc<Point>(5, 6);
 
@@ -1021,8 +1044,6 @@ TEST asdl_test() {
 
   // TODO: assert the heap size here!
 
-  gHeap.Init(kInitialSize);  // reset the whole thing
-
   PASS();
 }
 
@@ -1034,7 +1055,7 @@ void ShowRoots(const Heap& heap) {
     // int diff1 = reinterpret_cast<char*>(heap.roots[i]) - gHeap.from_space_;
     // assert(diff1 < 1024);
 
-    auto h = static_cast<Handle<void>*>(heap.roots_[i]);
+    auto h = static_cast<Local<void>*>(heap.roots_[i]);
     auto raw = h->raw_pointer_;
     log("   %p", raw);
 
@@ -1049,10 +1070,10 @@ void ShowRoots(const Heap& heap) {
 }
 
 Str* myfunc() {
-  HandleScope h(3);
-  Handle<Str> str1(NewStr("foo"));
-  Handle<Str> str2(NewStr("foo"));
-  Handle<Str> str3(NewStr("foo"));
+  LocalFrame h(3);
+  Local<Str> str1(NewStr("foo"));
+  Local<Str> str2(NewStr("foo"));
+  Local<Str> str3(NewStr("foo"));
 
   log("myfunc roots_top = %d", gHeap.roots_top_);
   ShowRoots(gHeap);
@@ -1060,30 +1081,30 @@ Str* myfunc() {
   return str1.raw_pointer_;
 }
 
-void otherfunc(Handle<Str> s) {
-  // Hm how do we generate the .get()?  Is it better just to accept Handle<Str>
+void otherfunc(Local<Str> s) {
+  // Hm how do we generate the .get()?  Is it better just to accept Local<Str>
   // even if the function doesn't allocate?  Either way we are dereferencing.
   log("len(s) = %d", len(s));
 }
 
 TEST handle_test() {
-  // TODO:
-  // Hold on to a handle.  And then trigger GC.
-  // And then assert its integrity?
+  gHeap.Init(kInitialSize);  // reset the whole thing
 
   {
-    HandleScope h(2);
+    LocalFrame h(2);
     log("top = %d", gHeap.roots_top_);
     ASSERT_EQ(0, gHeap.roots_top_);
 
     auto point = gc_alloc<Point>(3, 4);
-    Handle<Point> p(point);
+    Local<Point> p(point);
     ASSERT_EQ(1, gHeap.roots_top_);
 
-    log("point.x = %d", p->x_);    // invokes operator->
-    log("point.y = %d", (*p).y_);  // invokes operator* I think
+    log("point.x = %d", p->x_);  // invokes operator->
 
-    Handle<Str> str2(NewStr("bar"));
+    // invokes operator*, but I don't think we need it!
+    // log("point.y = %d", (*p).y_);
+
+    Local<Str> str2(NewStr("bar"));
     ASSERT_EQ(2, gHeap.roots_top_);
 
     myfunc();
@@ -1135,21 +1156,15 @@ void ShowSlab(Cell* cell) {
   assert(cell->tag == Tag::Scanned);
   auto slab = reinterpret_cast<Slab<void*>*>(cell);
 
-  // Scan until we hit nullptr.
-  // I think this should work for dictionaries too, because the entries should
-  // be dense?  What about deletions?
-  //
-  // Maybe we need Tag::DenseScannedSlab and Tag::SparseScannedSlab ?
-  // The difference should only be a factor of 2 though.
-
   int n = (slab->cell_len_ - kSlabHeaderSize) / sizeof(void*);
   log("slab len = %d, n = %d", slab->cell_len_, n);
   for (int i = 0; i < n; ++i) {
     void* p = slab->items_[i];
     if (p == nullptr) {
-      break;
+      log("p = nullptr");
+    } else {
+      log("p = %p", p);
     }
-    log("p = %p", p);
   }
 }
 
@@ -1173,6 +1188,8 @@ TEST field_mask_test() {
   L2->append(s);
   L2->append(s);
   ShowSlab(L2->slab_);
+
+  PASS();
 }
 
 GREATEST_MAIN_DEFS();
