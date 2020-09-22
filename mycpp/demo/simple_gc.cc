@@ -26,6 +26,25 @@
 // - malloc() -- for say yajl to use.  Manually deallocated.
 // - new/delete -- for other C++ libs to use.  Manually deallocated.
 //
+// Use of Local<T>:
+//
+//   Why do we need signatures like len(Local<Str> s) and len(Local<List<T>> L)
+//   ?  Consider a call like len(["foo"]).  If len() allocated, we could lose
+//   track of ["foo"], if it weren't registered with PushRoot().
+//
+//   Example:
+//
+//   Str* myfunc(Local<Str> s) {  /* takes Local, returns raw pointer */
+//     // allocation may trigger collection
+//     Local<Str> suffix = NewStr("foo");
+//     return str_concat(s, suffix);
+//   }
+//   // Pointer gets coerced to Local?  But not the reverse.
+//   Local<Str> result = myfunc(NewStr("bar"));
+//
+//   TODO: godbolt an example with Local<T>, to see how much it costs.  I hope
+//   it could be optimized away.
+//
 // Slab Sizing with 8-byte slab header
 //
 //   16 - 8 =  8 = 1 eight-byte or  2 four-byte elements
@@ -61,6 +80,10 @@
 
 #include "greatest.h"
 
+#define DISALLOW_COPY_AND_ASSIGN(TypeName) \
+  TypeName(TypeName&) = delete;            \
+  void operator=(TypeName) = delete;
+
 void log(const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
@@ -91,31 +114,46 @@ class Heap {
   Heap() {  // default constructor does nothing -- relies on zero initialization
   }
 
-  // real initialization
+  // Real initialization with the initial heap size.  The heap grows with
+  // allocations.
   void Init(int num_bytes) {
     from_space_ = static_cast<char*>(malloc(num_bytes));
     to_space_ = static_cast<char*>(malloc(num_bytes));
+
+    free_ = from_space_;  // where we allocate from
+    scan_ = nullptr;
 
     // slab scanning relies on 0 bytes (nullptr)
     memset(from_space_, 0, num_bytes);
     memset(to_space_, 0, num_bytes);
 
     space_size_ = num_bytes;
-    alloc_pos_ = 0;
 
     roots_top_ = 0;
   }
 
   void* Alloc(int num_bytes) {
-    char* p = from_space_ + alloc_pos_;
-    alloc_pos_ += aligned(num_bytes);
+    char* p = free_;
+    free_ += aligned(num_bytes);
+
+    // TODO: realloc it here
+    if (free_ >= from_space_ + space_size_) {
+      assert(0);
+    }
+
     return p;
   }
 
-  void AddRoot(void* p) {
+  void PushRoot(void* p) {
+    // log("PushRoot %d", roots_top_);
     roots_[roots_top_++] = p;
     // TODO: This should be like a malloc() failure?
     assert(roots_top_ < kMaxRoots);
+  }
+
+  void PopRoot() {
+    roots_top_--;
+    // log("PopRoot %d", roots_top_);
   }
 
   Cell* Relocate(Cell* cell);
@@ -123,14 +161,11 @@ class Heap {
 
   char* from_space_;
   char* to_space_;
-  char* cur_space_;  // femtolisp has this?  Do we need it?
-  // femtolisp also has lim_?
 
   char* scan_;  // boundary between black and grey
   char* free_;  // next place to
 
   int space_size_;  // current size
-  int alloc_pos_;   // where to allocate next
 
   bool grew_;  // did we grow the last time?
 
@@ -178,7 +213,7 @@ class LocalFrame {
   }
   ~LocalFrame() {
     // prepare for the next function call
-    gHeap.roots_top_ -= num_locals_;
+    // gHeap.roots_top_ -= num_locals_;
   }
   int num_locals_;
 };
@@ -190,8 +225,24 @@ class LocalFrame {
 template <typename T>
 class Local {
  public:
-  explicit Local(T* raw_pointer) : raw_pointer_(raw_pointer) {
-    gHeap.AddRoot(this);
+  // NOT explicit!
+  Local(T* raw_pointer) : raw_pointer_(raw_pointer) {
+    gHeap.PushRoot(this);
+  }
+
+  // Copy constructor
+  Local(const Local& other) : raw_pointer_(other.raw_pointer_) {
+    gHeap.PushRoot(this);
+  }
+
+  void operator=(const Local& other) {  // Assignment operator
+    raw_pointer_ = other.raw_pointer_;
+    gHeap.PushRoot(this);
+  }
+
+  // Is this sufficient?
+  ~Local() {
+    gHeap.PopRoot();
   }
 
     // This cast operator overload would allow us to transparently pass
@@ -232,17 +283,17 @@ class Local {
     // log("operator->");
     return raw_pointer_;
   }
-
   T* get() const {
     return raw_pointer_;
   }
-
   // called by the garbage collector when moved to a new location!
   void update(T* moved) {
     raw_pointer_ = moved;
   }
 
   T* raw_pointer_;
+
+  // DISALLOW_COPY_AND_ASSIGN(Local)
 };
 
 // Variadic templates:
@@ -250,22 +301,7 @@ class Local {
 template <typename T, typename... Args>
 T* gc_alloc(Args&&... args) {
   void* place = gHeap.Alloc(sizeof(T));
-
-  if (place == nullptr) {  // not enough space
-    // TODO: what happens after collection if there's still not enough space?
-    // I think we should grow it first.
-    //
-    // So Alloc() shouldn't return nullptr.  It should return if we're 90%
-    // full?
-    //
-    // femtolisp has gc(int mustgrow)
-    //
-    // And actually it does it in while loop!  You could have an allocation so
-    // big that you need to grow twice???  Passing the amount seems better?
-
-    gHeap.Collect();
-  }
-
+  assert(place != nullptr);
   // placement new
   return new (place) T(std::forward<Args>(args)...);
 }
@@ -300,10 +336,6 @@ const int Opaque = 2;     // Copy but don't scan.  List<int> and Str
 const int FixedSize = 3;  // Fixed size headers: consult field_mask_
 const int Scanned = 4;    // Copy AND scan for non-NULL pointers.
 }  // namespace Tag
-
-#define DISALLOW_COPY_AND_ASSIGN(TypeName) \
-  TypeName(TypeName&) = delete;            \
-  void operator=(TypeName) = delete;
 
 class Cell {
   // The unit of garbage collection.  It has a header describing how to find
@@ -415,17 +447,13 @@ Cell* Heap::Relocate(Cell* cell) {
 }
 
 void Heap::Collect() {
-  log("--- COLLECT");
+  log("--> COLLECT");
 
   // Copy policy from femtolisp for now:
   //
   // If we're using > 80% of the space, resize tospace so we have more space to
   // fill next time. if we grew tospace last time, grow the other half of the
   // heap this time to catch up.
-
-  // char* tmp = from_space_;
-  // from_space_ = to_space_;
-  // to_space_ = tmp;
 
   scan_ = to_space_;  // boundary between black and gray
   free_ = to_space_;  // where to copy new entries
@@ -456,7 +484,9 @@ void Heap::Collect() {
         if (mask & (1 << i)) {
           Cell* child = fixed->children_[i];
           // log("i = %d, p = %p, tag = %d", i, child, child->tag);
-          fixed->children_[i] = Relocate(child);
+          if (child) {
+            fixed->children_[i] = Relocate(child);
+          }
         }
       }
       break;
@@ -477,6 +507,13 @@ void Heap::Collect() {
     }
     scan_ += cell->cell_len_;
   }
+
+  log("<-- COLLECT");
+
+  // Swap spaces for next collection
+  char* tmp = from_space_;
+  from_space_ = to_space_;
+  to_space_ = tmp;
 }
 
 class Str : public Cell {
@@ -1082,6 +1119,8 @@ Str* myfunc() {
 }
 
 void otherfunc(Local<Str> s) {
+  log("otherfunc roots_top_ = %d", gHeap.roots_top_);
+
   // Hm how do we generate the .get()?  Is it better just to accept Local<Str>
   // even if the function doesn't allocate?  Either way we are dereferencing.
   log("len(s) = %d", len(s));
@@ -1110,10 +1149,16 @@ TEST handle_test() {
     myfunc();
 
     otherfunc(str2);
+    ASSERT_EQ_FMT(2, gHeap.roots_top_, "%d");
 
     ShowRoots(gHeap);
 
     gHeap.Collect();
+
+    // This uses implicit convertion from T* to Local<T>, which is OK!  Reverse
+    // is not OK.
+    Local<Point> p2 = point;
+    ASSERT_EQ_FMT(3, gHeap.roots_top_, "%d");
   }
   ASSERT_EQ_FMT(0, gHeap.roots_top_, "%d");
 
