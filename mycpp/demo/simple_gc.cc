@@ -45,6 +45,20 @@
 //   TODO: godbolt an example with Local<T>, to see how much it costs.  I hope
 //   it could be optimized away.
 //
+//   https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey/GC_Rooting_Guide
+//   Our Local<T> is like their Rooted<T>
+//
+//   "JS::Handle<T> exists because creating and destroying a JS::Rooted<T> is
+//   not free (though it only costs a few cycles). Thus, it makes more sense to
+//   only root the GC thing once and reuse it through an indirect reference.
+//   Like a reference, a JS::Handle is immutable: it can only ever refer to the
+//   JS::Rooted<T> that it was created for."
+//   "Return raw pointers from functions"
+//
+//   Hm I guess we could have two types.  But do the dumb thing for now.
+//
+//   They have MutableHandle<T> for out params, but we don't have out params!
+//
 // Slab Sizing with 8-byte slab header
 //
 //   16 - 8 =  8 = 1 eight-byte or  2 four-byte elements
@@ -178,25 +192,7 @@ class Heap {
   int roots_top_;
   void* roots_[kMaxRoots];  // TODO: Could be Handle<void*> ?
 
-  // Note: should we have a stack of handle scopes here?  So we don't have to
-  // declare LocalFrame h(5) correctly.
-  //
-  // problem: what about f(NewStr("x")) or f(gc_alloc<List<int>>({42})) ?
-  // Then those pointers never gets wrapped in a handle.
-  //
-  // Example:
-  // f->WriteRaw((new Tuple2<Str*, int>(s, num_chars)));
-  //
-  // it could technically collect itself!
-  //
-  // this->mem->SetVar(new lvalue::Named(fd_name), new value::Str(str(fd)),
-  // scope_e::Dynamic);
-  //
-  // Do there have to be Handle<T> for all function arguments then?  They are
-  // immediately copied into andles I guess.
-
   // TODO:
-  //   scan pointer, next pointer
   //   reallocation policy?
 };
 
@@ -206,18 +202,6 @@ class Heap {
 // - For some applications, this can be thread_local rather than global.
 Heap gHeap;
 
-// handles get registered here, and they appear on the heap somehow
-class LocalFrame {
- public:
-  LocalFrame(int num_locals) : num_locals_(num_locals) {
-  }
-  ~LocalFrame() {
-    // prepare for the next function call
-    // gHeap.roots_top_ -= num_locals_;
-  }
-  int num_locals_;
-};
-
 // We can garbage collect at any gc_alloc() invocation, so we need a level of
 // indirection for locals / pointers directly on the stack.  Pointers on the
 // heap are updated by the Cheney GC algorithm.
@@ -225,7 +209,10 @@ class LocalFrame {
 template <typename T>
 class Local {
  public:
-  // NOT explicit!
+  Local() : raw_pointer_(nullptr) {
+  }
+
+  // IMPLICIT conversion.  No 'explicit'.
   Local(T* raw_pointer) : raw_pointer_(raw_pointer) {
     gHeap.PushRoot(this);
   }
@@ -237,6 +224,19 @@ class Local {
 
   void operator=(const Local& other) {  // Assignment operator
     raw_pointer_ = other.raw_pointer_;
+
+    // Note: we don't need to PushRoot(), example:
+    //
+    // Local<Str> a = NewStr("foo");
+    // Local<Str> b;
+    // b = a;  // invokes operator=, it's already a root
+    //
+    // Local<Str> c = myfunc();  // T* constructor takes care of PushRoot()
+
+    // log("operator=");
+
+    // However the problem is that then we'll have an unbalanced PopRoot().
+    // So we keep it for now.
     gHeap.PushRoot(this);
   }
 
@@ -294,6 +294,15 @@ class Local {
   T* raw_pointer_;
 
   // DISALLOW_COPY_AND_ASSIGN(Local)
+};
+
+// This could be an optimization like SpiderMonkey's Handle<T> vs Rooted<T>.
+// We use the names Param<T> and Local<T>.
+template <typename T>
+class Param {
+  // Construct from T* -- PushRoot()
+  // Construct from Local<T> -- we don't need to PushRoot()
+  // operator= -- I don't think we need to PushRoot()
 };
 
 // Variadic templates:
@@ -780,7 +789,7 @@ Str* NewStr(const char* data) {
 
 // Note: we need this duplicate for now... Otherwise the implicit construction
 // for len(Local<Str>) leads to more stack roots than we think!  TODO: I think
-// we need a better way of balancing it.  We don't want LocalFrame h(5).
+// we need a better way of balancing it.
 #if 1
 int len(const Str* s) {
   return s->len_;
@@ -1107,7 +1116,6 @@ void ShowRoots(const Heap& heap) {
 }
 
 Str* myfunc() {
-  LocalFrame h(3);
   Local<Str> str1(NewStr("foo"));
   Local<Str> str2(NewStr("foo"));
   Local<Str> str3(NewStr("foo"));
@@ -1126,11 +1134,10 @@ void otherfunc(Local<Str> s) {
   log("len(s) = %d", len(s));
 }
 
-TEST handle_test() {
+TEST local_test() {
   gHeap.Init(kInitialSize);  // reset the whole thing
 
   {
-    LocalFrame h(2);
     log("top = %d", gHeap.roots_top_);
     ASSERT_EQ(0, gHeap.roots_top_);
 
@@ -1159,6 +1166,11 @@ TEST handle_test() {
     // is not OK.
     Local<Point> p2 = point;
     ASSERT_EQ_FMT(3, gHeap.roots_top_, "%d");
+
+    Local<Point> p3;
+    ASSERT_EQ_FMT(3, gHeap.roots_top_, "%d");
+    p3 = p2;
+    ASSERT_EQ_FMT(4, gHeap.roots_top_, "%d");
   }
   ASSERT_EQ_FMT(0, gHeap.roots_top_, "%d");
 
@@ -1250,7 +1262,7 @@ int main(int argc, char** argv) {
   RUN_TEST(dict_test);
   RUN_TEST(sizeof_test);
   RUN_TEST(asdl_test);
-  RUN_TEST(handle_test);
+  RUN_TEST(local_test);
   RUN_TEST(resize_test);
   RUN_TEST(field_mask_test);
 
