@@ -123,6 +123,8 @@ class Cell;
 
 const int kMaxRoots = 1024;
 
+#define GC_DEBUG 1
+
 class Heap {
  public:
   Heap() {  // default constructor does nothing -- relies on zero initialization
@@ -144,6 +146,10 @@ class Heap {
     space_size_ = num_bytes;
 
     roots_top_ = 0;
+
+#if GC_DEBUG
+    num_live_cells_ = 0;
+#endif
   }
 
   void* Alloc(int num_bytes) {
@@ -154,6 +160,10 @@ class Heap {
     if (free_ >= from_space_ + space_size_) {
       assert(0);
     }
+
+#if GC_DEBUG
+    num_live_cells_++;
+#endif
 
     return p;
   }
@@ -191,6 +201,10 @@ class Heap {
 
   int roots_top_;
   void* roots_[kMaxRoots];  // TODO: Could be Handle<void*> ?
+
+#if GC_DEBUG
+  int num_live_cells_;
+#endif
 
   // TODO:
   //   reallocation policy?
@@ -245,25 +259,26 @@ class Local {
     gHeap.PopRoot();
   }
 
-    // This cast operator overload would allow us to transparently pass
-    // Local<Str> to a function expecting Str*, but it's dangerous:
+    // This cast operator overload allows:
+    //
+    // Local<Str> s = NewStr("foo");
+    // node->mystr = s;  // convert from Local to raw
+    //
+    // As well as:
+    //
+    // Local<List<Str*>> strings = gc_alloc<List<Str*>>();
+    // strings->append(NewStr("foo"));  // convert from local to raw
+    //
+    // The heap should NOT have locals!  List<Str> and not List<Local<Str>>.
+    //
+    // Note: This could be considered dangerous if we don't maintain
+    // discipline.
     //
     // https://www.informit.com/articles/article.aspx?p=31529&seqNum=7
     //
-    // Although maybe it's not dangerous if we audit every single function in
-    // mylib?  Policy:
-    //
-    // - It either accept a Local<>
-    // - Or it accepts a raw pointer and DOES NOT ALLOCATE anywhere
-    //
-    // The benefit to this is that you don't have to have TWO FUNCTIONS:
-    //
-    // len(node->left)  # raw pointer
-    // len(local_var)  # Local
-    //
-    // However I think putting .get() at the call site in mycpp is more
-    // explicit. The readability of the generated code is important!
-#if 0
+    // Putting .get() at the call site in mycpp is more explicit. The
+    // readability of the generated code is important!
+#if 1
   operator T*() {
     return raw_pointer_;
   }
@@ -279,15 +294,17 @@ class Local {
     return *raw_pointer_;
   }
 #endif
+
+  // Allows ref->field and ref->method()
   T* operator->() const {
     // log("operator->");
     return raw_pointer_;
   }
-  T* get() const {
+  T* Get() const {
     return raw_pointer_;
   }
   // called by the garbage collector when moved to a new location!
-  void update(T* moved) {
+  void Update(T* moved) {
     raw_pointer_ = moved;
   }
 
@@ -448,6 +465,11 @@ Cell* Heap::Relocate(Cell* cell) {
     int n = cell->cell_len_;
     memcpy(new_location, cell, n);
     free_ += n;
+
+#if GC_DEBUG
+    num_live_cells_++;
+#endif
+
     auto f = reinterpret_cast<Forwarded*>(cell);
     f->tag = Tag::Forwarded;
     f->new_location = new_location;
@@ -467,9 +489,13 @@ void Heap::Collect() {
   scan_ = to_space_;  // boundary between black and gray
   free_ = to_space_;  // where to copy new entries
 
+#if GC_DEBUG
+  num_live_cells_ = 0;
+#endif
+
   for (int i = 0; i < roots_top_; ++i) {
     auto handle = static_cast<Local<void>*>(roots_[i]);
-    auto root = reinterpret_cast<Cell*>(handle->get());
+    auto root = reinterpret_cast<Cell*>(handle->Get());
 
     log("%d. handle %p", i, handle);
     log("     root %p", root);
@@ -480,7 +506,7 @@ void Heap::Collect() {
 
     // This update is for the "double indirection", so future accesses to a
     // local variable use the new location
-    handle->update(new_location);
+    handle->Update(new_location);
   }
 
   while (scan_ < free_) {
@@ -802,7 +828,7 @@ int len(const Str* s) {
 #if 1
 // Hm do all standard library functions have to take Handles now?
 int len(Local<Str> s) {
-  return s.get()->len_;
+  return s.Get()->len_;
 }
 #endif
 
@@ -819,6 +845,47 @@ inline int len(const Dict<K, V>* d) {
 //
 // Test Cases
 //
+
+// Doesn't really test anything
+TEST sizeof_test() {
+  log("");
+
+  // 24 = 4 + (4 + 4 + 4) + 8
+  // Feels like a small string optimization here would be nice.
+  log("sizeof(Str) = %d", sizeof(Str));
+  // 16 = 4 + pad4 + 8
+  log("sizeof(List) = %d", sizeof(List<int>));
+  // 32 = 4 + pad4 + 8 + 8 + 8
+  log("sizeof(Dict) = %d", sizeof(Dict<int, int>));
+
+  // 8 byte sheader
+  log("sizeof(Cell) = %d", sizeof(Cell));
+  // 8 + 128 possible entries
+  log("sizeof(FixedCell) = %d", sizeof(FixedCell));
+
+  log("sizeof(Heap) = %d", sizeof(Heap));
+
+  char* p = static_cast<char*>(gHeap.Alloc(17));
+  char* q = static_cast<char*>(gHeap.Alloc(9));
+  log("p = %p", p);
+  log("q = %p", q);
+
+  PASS();
+}
+
+// TODO: the last one overflows
+int sizes[] = {0, 1,  2,  3,   4,   5,       8,
+               9, 12, 16, 256, 257, 1 << 30, (1 << 30) + 1};
+int nsizes = sizeof(sizes) / sizeof(sizes[0]);
+
+TEST roundup_test() {
+  for (int i = 0; i < nsizes; ++i) {
+    int n = sizes[i];
+    log("%d -> %d", n, RoundUp(n));
+  }
+
+  PASS();
+}
 
 // TODO:
 // - Test what happens when a new string goes over the max heap size
@@ -1021,32 +1088,6 @@ TEST dict_test() {
   PASS();
 }
 
-TEST sizeof_test() {
-  log("");
-
-  // 24 = 4 + (4 + 4 + 4) + 8
-  // Feels like a small string optimization here would be nice.
-  log("sizeof(Str) = %d", sizeof(Str));
-  // 16 = 4 + pad4 + 8
-  log("sizeof(List) = %d", sizeof(List<int>));
-  // 32 = 4 + pad4 + 8 + 8 + 8
-  log("sizeof(Dict) = %d", sizeof(Dict<int, int>));
-
-  // 8 byte sheader
-  log("sizeof(Cell) = %d", sizeof(Cell));
-  // 8 + 128 possible entries
-  log("sizeof(FixedCell) = %d", sizeof(FixedCell));
-
-  log("sizeof(Heap) = %d", sizeof(Heap));
-
-  char* p = static_cast<char*>(gHeap.Alloc(17));
-  char* q = static_cast<char*>(gHeap.Alloc(9));
-  log("p = %p", p);
-  log("q = %p", q);
-
-  PASS();
-}
-
 class Point : public Cell {
  public:
   Point(int x, int y)
@@ -1071,24 +1112,66 @@ class Line : public Cell {
   Point* end_;
 };
 
-TEST asdl_test() {
+TEST fixed_trace_test() {
   gHeap.Init(kInitialSize);  // reset the whole thing
 
-  auto p = Local<Point>(gc_alloc<Point>(3, 4));
+  ASSERT_EQ_FMT(0, gHeap.num_live_cells_, "%d");
+
+  // auto p = Local<Point>(gc_alloc<Point>(3, 4));
+  Local<Point> p = gc_alloc<Point>(3, 4);
   log("point size = %d", p->size());
 
+  ASSERT_EQ_FMT(1, gHeap.num_live_cells_, "%d");
+
   auto line = Local<Line>(gc_alloc<Line>());
-  line->begin_ = p.get();  // hm .get() is annoying
+
+  line->begin_ = p;
   line->end_ = gc_alloc<Point>(5, 6);
 
+  ASSERT_EQ_FMT(3, gHeap.num_live_cells_, "%d");
+
   gHeap.Collect();
+  ASSERT_EQ_FMT(3, gHeap.num_live_cells_, "%d");
 
   // remove last reference
   line->end_ = nullptr;
 
   gHeap.Collect();
+  ASSERT_EQ_FMT(2, gHeap.num_live_cells_, "%d");
 
-  // TODO: assert the heap size here!
+  PASS();
+}
+
+TEST slab_trace_test() {
+  gHeap.Init(kInitialSize);  // reset the whole thing
+
+  ASSERT_EQ_FMT(0, gHeap.num_live_cells_, "%d");
+
+  {
+    Local<List<int>> ints = gc_alloc<List<int>>();
+    ASSERT_EQ_FMT(1, gHeap.num_live_cells_, "%d");
+
+    ints->append(3);
+    ASSERT_EQ_FMT(2, gHeap.num_live_cells_, "%d");
+  }
+  gHeap.Collect();
+  ASSERT_EQ_FMT(0, gHeap.num_live_cells_, "%d");
+
+  Local<List<Str*>> strings = gc_alloc<List<Str*>>();
+  ASSERT_EQ_FMT(1, gHeap.num_live_cells_, "%d");
+
+  Local<Str> s = NewStr("yo");
+  strings->append(s);
+  ASSERT_EQ_FMT(3, gHeap.num_live_cells_, "%d");
+
+  strings->append(NewStr("bar"));
+  ASSERT_EQ_FMT(4, gHeap.num_live_cells_, "%d");
+
+  // remove reference
+  strings->set(1, nullptr);
+
+  gHeap.Collect();
+  ASSERT_EQ_FMT(3, gHeap.num_live_cells_, "%d");
 
   PASS();
 }
@@ -1111,7 +1194,7 @@ void ShowRoots(const Heap& heap) {
     assert(diff2 < 2048);
 
     // This indeed mutates it and causes a crash
-    // h->update(nullptr);
+    // h->Update(nullptr);
   }
 }
 
@@ -1128,9 +1211,6 @@ Str* myfunc() {
 
 void otherfunc(Local<Str> s) {
   log("otherfunc roots_top_ = %d", gHeap.roots_top_);
-
-  // Hm how do we generate the .get()?  Is it better just to accept Local<Str>
-  // even if the function doesn't allocate?  Either way we are dereferencing.
   log("len(s) = %d", len(s));
 }
 
@@ -1174,19 +1254,8 @@ TEST local_test() {
   }
   ASSERT_EQ_FMT(0, gHeap.roots_top_, "%d");
 
-  PASS();
-}
-
-// TODO: the last one overflows
-int sizes[] = {0, 1,  2,  3,   4,   5,       8,
-               9, 12, 16, 256, 257, 1 << 30, (1 << 30) + 1};
-int nsizes = sizeof(sizes) / sizeof(sizes[0]);
-
-TEST resize_test() {
-  for (int i = 0; i < nsizes; ++i) {
-    int n = sizes[i];
-    log("%d -> %d", n, RoundUp(n));
-  }
+  // Hm this calls copy constructor!
+  Local<Point> p4 = nullptr;
 
   PASS();
 }
@@ -1225,6 +1294,7 @@ void ShowSlab(Cell* cell) {
   }
 }
 
+// Prints field masks for Dict and List
 TEST field_mask_test() {
   auto L = gc_alloc<List<int>>();
   L->append(1);
@@ -1257,13 +1327,14 @@ int main(int argc, char** argv) {
 
   GREATEST_MAIN_BEGIN();
 
+  RUN_TEST(sizeof_test);
+  RUN_TEST(roundup_test);
   RUN_TEST(str_test);
   RUN_TEST(list_test);
   RUN_TEST(dict_test);
-  RUN_TEST(sizeof_test);
-  RUN_TEST(asdl_test);
+  RUN_TEST(fixed_trace_test);
+  RUN_TEST(slab_trace_test);
   RUN_TEST(local_test);
-  RUN_TEST(resize_test);
   RUN_TEST(field_mask_test);
 
   GREATEST_MAIN_END(); /* display results */
