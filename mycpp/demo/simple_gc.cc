@@ -1,20 +1,22 @@
-// Simplest garbage collector that will work.
+// A garbage collected heap that looks like statically typed Python: Str, List,
+// Dict.
 //
-// It's a semi-space collector.  (Later we could add a "large object space",
-// managed by mark-and-sweep after each copy step.)
-//
+// We're starting off very simple: It's a semi-space collector using the Cheney
+// algorithm.  (Later we may add a "large object space", managed by
+// mark-and-sweep after each copy step.)
+
 // Design:
-// - Immutable Slab and Str (difference: Str has a hash for quick lookup?)
-// - Mutable List, Dict that point to Slab
+// - Immutable Slab<T> and Str (Str may have a hash value and other fields).
+// - Mutable List and Dict that point to Slab
 //   - List::append() and extend() can realloc
 //   - Dict::set() can realloc and rehash
-//
+
 // TODO:
+// - Resize the heap!
 // - Dicts should actually use hashing!  Test computational complexity.
-//
-// - Figure out what happens with GLOBAL Str* instances
-//   - should not be copied!  Do they have a special tag in the Cell header?
-//   - can they be constexpr in the generated source?  Would be nice I think.
+// - Don't collect or copy GLOBAL Str* instances
+//   - Do they have a special tag in the Cell header?
+//   - can they be constexpr in the generated source?  Would be nice.
 
 // Memory allocation APIs:
 //
@@ -25,8 +27,10 @@
 //   For Slab, and for special types like Str.  Automatically deallocated.
 // - malloc() -- for say yajl to use.  Manually deallocated.
 // - new/delete -- for other C++ libs to use.  Manually deallocated.
+
+// Must use Local<T> instead of raw pointers on the stack.
 //
-// Use of Local<T>:
+//   This implements "double indirection".
 //
 //   Why do we need signatures like len(Local<Str> s) and len(Local<List<T>> L)
 //   ?  Consider a call like len(["foo"]).  If len() allocated, we could lose
@@ -58,22 +62,16 @@
 //   Hm I guess we could have two types.  But do the dumb thing for now.
 //
 //   They have MutableHandle<T> for out params, but we don't have out params!
-//
+
 // Slab Sizing with 8-byte slab header
 //
 //   16 - 8 =  8 = 1 eight-byte or  2 four-byte elements
 //   32 - 8 = 24 = 3 eight-byte or  6 four-byte elements
 //   64 - 8 = 56 = 7 eight-byte or 14 four-byte elements
 //
-// But dict will have DIFFERENT size keys and values!  Like Dict<int, Str*>
-//
-// Capacity check without division:
-//
-//   kSlabHeaderSize + n * sizeof(T) >= slab->cell_len_
-//   where n is the number of elements we want to store
-//   if it's equal then it's OK I guess
-//   For dict, use indices
-//
+// Note: dict will have DIFFERENT size keys and values!  It has its own
+// calculation.
+
 // Small Size Optimization: omit separate slabs (later)
 //
 // - List: 24 bytes, so we could get 1 or 2 entries for free?  That might add
@@ -121,7 +119,7 @@ inline size_t aligned(size_t n) {
 
 class Cell;
 
-const int kMaxRoots = 1024;
+const int kMaxRoots = 1024;  // related to C stack size
 
 #define GC_DEBUG 1
 
@@ -210,18 +208,18 @@ class Heap {
   //   reallocation policy?
 };
 
-// Notes:
+// The heap is a (compound) global variable.  Notes:
 // - The default constructor does nothing, to avoid initialization order
 //   problems.
 // - For some applications, this can be thread_local rather than global.
 Heap gHeap;
 
-// We can garbage collect at any gc_alloc() invocation, so we need a level of
-// indirection for locals / pointers directly on the stack.  Pointers on the
-// heap are updated by the Cheney GC algorithm.
-
 template <typename T>
 class Local {
+  // We can garbage collect at any gc_alloc() invocation, so we need a level of
+  // indirection for locals / pointers directly on the stack.  Pointers on the
+  // heap are updated by the Cheney GC algorithm.
+
  public:
   Local() : raw_pointer_(nullptr) {
   }
@@ -231,7 +229,7 @@ class Local {
     gHeap.PushRoot(this);
   }
 
-  // Copy constructor
+  // Copy constructor, e.g. f(mylocal) where f(Local<T> param);
   Local(const Local& other) : raw_pointer_(other.raw_pointer_) {
     gHeap.PushRoot(this);
   }
@@ -239,7 +237,7 @@ class Local {
   void operator=(const Local& other) {  // Assignment operator
     raw_pointer_ = other.raw_pointer_;
 
-    // Note: we don't need to PushRoot(), example:
+    // Note: we could try to avoid PushRoot() as an optimization.  Example:
     //
     // Local<Str> a = NewStr("foo");
     // Local<Str> b;
@@ -284,17 +282,6 @@ class Local {
   }
 #endif
 
-    // Dereference to get the real value.  Doesn't seem like we need this, and
-    // we're avoiding copy constructors.
-    // note: we could call this deref() or value() to avoid operator
-    // overloading.
-#if 0
-  T operator*() const {
-    //log("operator*");
-    return *raw_pointer_;
-  }
-#endif
-
   // Allows ref->field and ref->method()
   T* operator->() const {
     // log("operator->");
@@ -308,15 +295,22 @@ class Local {
     raw_pointer_ = moved;
   }
 
-  T* raw_pointer_;
+    // Dereference to get the real value.  Doesn't seem like we need this.
+#if 0
+  T operator*() const {
+    //log("operator*");
+    return *raw_pointer_;
+  }
+#endif
 
-  // DISALLOW_COPY_AND_ASSIGN(Local)
+  T* raw_pointer_;
 };
 
-// This could be an optimization like SpiderMonkey's Handle<T> vs Rooted<T>.
-// We use the names Param<T> and Local<T>.
 template <typename T>
 class Param {
+  // This could be an optimization like SpiderMonkey's Handle<T> vs Rooted<T>.
+  // We use the names Param<T> and Local<T>.
+
   // Construct from T* -- PushRoot()
   // Construct from Local<T> -- we don't need to PushRoot()
   // operator= -- I don't think we need to PushRoot()
@@ -371,10 +365,6 @@ class Cell {
   // breaks down because mycpp has inheritance.  Could do this later.
 
  public:
-  /*
-  Cell() : tag(0), field_mask_(kZeroMask), cell_len_(0) {
-  }
-  */
   // Used by Str
   Cell(uint16_t tag) : tag(tag), field_mask_(kZeroMask), cell_len_(0) {
   }
@@ -402,13 +392,19 @@ class Cell {
   DISALLOW_COPY_AND_ASSIGN(Cell)
 };
 
-class Forwarded : public Cell {
+//
+// LayoutForwarded and LayoutFixed aren't real types.  You can cast arbitrary
+// cells to them to access a HOMOGENEOUS REPRESENTATION useful for garbage
+// collection.
+//
+
+class LayoutForwarded : public Cell {
  public:
   Cell* new_location;  // valid if and only if tag == Tag::Forwarded
 };
 
 // for Tag::FixedSize
-class FixedCell : public Cell {
+class LayoutFixed : public Cell {
  public:
   Cell* children_[16];  // only the entries denoted in field_mask will be valid
 };
@@ -438,7 +434,7 @@ class Slab : public Cell {
   T items_[1];  // minimum string cell_len_
 };
 
-// Note: entries should be zero'd because Alloc() just bumps the heap
+// Note: entries will be zero'd because the Heap is zero'd.
 template <typename T>
 Slab<T>* NewSlab(int len) {
   int cell_len = RoundUp(kSlabHeaderSize + len * sizeof(T));
@@ -458,7 +454,7 @@ Cell* Heap::Relocate(Cell* cell) {
   // We have fewer cases than that.  We just use a Cell.
 
   if (cell->tag == Tag::Forwarded) {
-    auto f = reinterpret_cast<Forwarded*>(cell);
+    auto f = reinterpret_cast<LayoutForwarded*>(cell);
     return f->new_location;
   } else {
     auto new_location = reinterpret_cast<Cell*>(free_);
@@ -470,7 +466,7 @@ Cell* Heap::Relocate(Cell* cell) {
     num_live_cells_++;
 #endif
 
-    auto f = reinterpret_cast<Forwarded*>(cell);
+    auto f = reinterpret_cast<LayoutForwarded*>(cell);
     f->tag = Tag::Forwarded;
     f->new_location = new_location;
     return new_location;
@@ -513,7 +509,7 @@ void Heap::Collect() {
     auto cell = reinterpret_cast<Cell*>(scan_);
     switch (cell->tag) {
     case Tag::FixedSize: {
-      auto fixed = reinterpret_cast<FixedCell*>(cell);
+      auto fixed = reinterpret_cast<LayoutFixed*>(cell);
       int mask = fixed->field_mask_;
       for (int i = 0; i < 16; ++i) {
         if (mask & (1 << i)) {
@@ -551,6 +547,10 @@ void Heap::Collect() {
   to_space_ = tmp;
 }
 
+//
+// Str
+//
+
 class Str : public Cell {
  public:
   // Note: shouldn't be called directly.  Call NewStr().
@@ -560,13 +560,39 @@ class Str : public Cell {
   // 01, 00 00 02, 00 00 00 03.  Although I think they added special cases for
   // 32-bit and 64-bit; we're using the portable max_align_t
   int len_;
-  int unique_id_;   // index into intern table ?
-  char opaque_[1];  // flexible array
+  int unique_id_;  // index into intern table ?
+  char data_[1];   // flexible array
 
   DISALLOW_COPY_AND_ASSIGN(Str)
 };
 
+//
+// String "Constructors".  We need these because of the "flexible array"
+// pattern.  I don't think "new Str()" can do that, and placement new would
+// require mycpp to generate 2 statements everywhere.
+//
+
 const int kStrHeaderSize = sizeof(Cell) + sizeof(int) + sizeof(int);
+
+Str* NewStr(const char* data, int len) {
+  int cell_len = kStrHeaderSize + len + 1;  // NUL terminator
+  void* place = gHeap.Alloc(cell_len);      // immutable, so allocate exactly
+  auto s = new (place) Str(len);
+
+  memcpy(s->data_, data, len);
+  s->data_[len] = '\0';  // So we can pass it directly to C functions
+
+  s->SetCellLength(cell_len);  // So the GC can copy it
+  return s;
+}
+
+Str* NewStr(const char* data) {
+  return NewStr(data, strlen(data));
+}
+
+//
+// List<T>
+//
 
 // This is one slab in the second position.  TODO: This is different for 32
 // bit???  Is there a way to make it portable?
@@ -582,11 +608,13 @@ class List : public Cell {
         slab_(nullptr) {
   }
 
-  // TODO: are we using this?
+    // TODO: are we using this?
+#if 0
   List(std::initializer_list<T> init)
       : Cell(Tag::FixedSize, kListMask, sizeof(List<T>)), slab_(nullptr) {
     extend(init);
   }
+#endif
 
   // Implements L[i]
   T index(int i) {
@@ -660,6 +688,10 @@ class List : public Cell {
   DISALLOW_COPY_AND_ASSIGN(List)
 };
 
+//
+// Dict<K, V>
+//
+
 template <typename K>
 int find_by_key(Slab<K>* keys_, int len, int key) {
   for (int i = 0; i < len; ++i) {
@@ -672,7 +704,7 @@ int find_by_key(Slab<K>* keys_, int len, int key) {
 
 inline bool str_equals(Str* left, Str* right) {
   if (left->len_ == right->len_) {
-    return memcmp(left->opaque_, right->opaque_, left->len_) == 0;
+    return memcmp(left->data_, right->data_, left->len_) == 0;
   } else {
     return false;
   }
@@ -786,30 +818,6 @@ class Dict : public Cell {
 };
 
 //
-// "Constructors"
-//
-
-// Note: This is NewStr() because of the "flexible array" pattern.
-// I don't think "new Str()" can do that, and placement new would require mycpp
-// to generate 2 statements everywhere.
-
-Str* NewStr(const char* data, int len) {
-  int cell_len = kStrHeaderSize + len + 1;  // NUL terminator
-  void* place = gHeap.Alloc(cell_len);      // immutable, so allocate exactly
-  auto s = new (place) Str(len);
-
-  memcpy(s->opaque_, data, len);
-  s->opaque_[len] = '\0';  // So we can pass it directly to C functions
-
-  s->SetCellLength(cell_len);  // So the GC can copy it
-  return s;
-}
-
-Str* NewStr(const char* data) {
-  return NewStr(data, strlen(data));
-}
-
-//
 // Functions
 //
 
@@ -861,7 +869,7 @@ TEST sizeof_test() {
   // 8 byte sheader
   log("sizeof(Cell) = %d", sizeof(Cell));
   // 8 + 128 possible entries
-  log("sizeof(FixedCell) = %d", sizeof(FixedCell));
+  log("sizeof(LayoutFixed) = %d", sizeof(LayoutFixed));
 
   log("sizeof(Heap) = %d", sizeof(Heap));
 
@@ -1260,7 +1268,7 @@ TEST local_test() {
   PASS();
 }
 
-void ShowFixedChildren(FixedCell* fixed) {
+void ShowFixedChildren(LayoutFixed* fixed) {
   log("MASK:");
 
   // Note: can this be optimized with the equivalent x & (x-1) trick?
@@ -1304,10 +1312,10 @@ TEST field_mask_test() {
   d->set(NewStr("foo"), 3);
   log("Dict mask = %d", d->field_mask_);
 
-  auto L_cell = reinterpret_cast<FixedCell*>(L);
+  auto L_cell = reinterpret_cast<LayoutFixed*>(L);
   ShowFixedChildren(L_cell);
 
-  auto d_cell = reinterpret_cast<FixedCell*>(d);
+  auto d_cell = reinterpret_cast<LayoutFixed*>(d);
   ShowFixedChildren(d_cell);
 
   auto L2 = gc_alloc<List<Str*>>();
