@@ -45,12 +45,6 @@ gc-heap() {
   cpp-compile-run demo/gc_heap.cc "$@"
 }
 
-simple-gc() {
-  local bin=_bin/simple_gc
-  cpp-compile demo/simple_gc.cc $bin -I ../cpp
-  $bin "$@"
-}
-
 allocator() {
   local bin=_bin/gc_heap
   cpp-compile demo/gc_heap.cc $bin

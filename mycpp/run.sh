@@ -206,6 +206,12 @@ mylib-test() {
   _bin/mylib_test "$@"
 }
 
+gc-heap-test() {
+  ### Accepts greatest args like -t dict
+  cpp-compile gc_heap_test -I ../cpp gc_heap.cc
+  _bin/gc_heap_test "$@"
+}
+
 gen-ctags() {
   ctags -R $MYPY_REPO
 }
