@@ -4,18 +4,26 @@
 
 using gc_heap::Cell;
 using gc_heap::Heap;
-using gc_heap::LayoutFixed;
-using gc_heap::LayoutForwarded;
 using gc_heap::Local;
-using gc_heap::gc_alloc;
-
-using gc_heap::Dict;
-using gc_heap::List;
-using gc_heap::Str;
 
 namespace gc_heap {
 
 Heap gHeap;
+
+// LayoutForwarded and LayoutFixed aren't real types.  You can cast arbitrary
+// cells to them to access a HOMOGENEOUS REPRESENTATION useful for garbage
+// collection.
+
+class LayoutForwarded : public Cell {
+ public:
+  Cell* new_location;  // valid if and only if heap_tag == Tag::Forwarded
+};
+
+// for Tag::FixedSize
+class LayoutFixed : public Cell {
+ public:
+  Cell* children_[16];  // only the entries denoted in field_mask will be valid
+};
 
 // Move an object from one space to another.
 Cell* Heap::Relocate(Cell* cell) {
@@ -27,11 +35,13 @@ Cell* Heap::Relocate(Cell* cell) {
   //
   // We have fewer cases than that.  We just use a Cell.
 
-  if (cell->tag == Tag::Forwarded) {
+  if (cell->heap_tag == Tag::Forwarded) {
     auto f = reinterpret_cast<LayoutForwarded*>(cell);
     return f->new_location;
   } else {
     auto new_location = reinterpret_cast<Cell*>(free_);
+    // Note: if we wanted to save space on ASDL records, we could calculate
+    // their length from the field_mask here.  How much would it slow down GC?
     int n = cell->cell_len_;
     memcpy(new_location, cell, n);
     free_ += n;
@@ -41,7 +51,7 @@ Cell* Heap::Relocate(Cell* cell) {
 #endif
 
     auto f = reinterpret_cast<LayoutForwarded*>(cell);
-    f->tag = Tag::Forwarded;
+    f->heap_tag = Tag::Forwarded;
     f->new_location = new_location;
     return new_location;
   }
@@ -81,14 +91,14 @@ void Heap::Collect() {
 
   while (scan_ < free_) {
     auto cell = reinterpret_cast<Cell*>(scan_);
-    switch (cell->tag) {
+    switch (cell->heap_tag) {
     case Tag::FixedSize: {
       auto fixed = reinterpret_cast<LayoutFixed*>(cell);
       int mask = fixed->field_mask_;
       for (int i = 0; i < 16; ++i) {
         if (mask & (1 << i)) {
           Cell* child = fixed->children_[i];
-          // log("i = %d, p = %p, tag = %d", i, child, child->tag);
+          // log("i = %d, p = %p, heap_tag = %d", i, child, child->heap_tag);
           if (child) {
             fixed->children_[i] = Relocate(child);
           }
@@ -107,8 +117,8 @@ void Heap::Collect() {
       }
       break;
     }
+
       // other tags like Tag::Opaque have no children
-      // TODO: I think we also want Tag::SparseScannedSlab for Dict
     }
     scan_ += cell->cell_len_;
   }
@@ -120,5 +130,27 @@ void Heap::Collect() {
   from_space_ = to_space_;
   to_space_ = tmp;
 }
+
+#if GC_DEBUG
+void ShowFixedChildren(Cell* cell) {
+  assert(cell->heap_tag == Tag::FixedSize);
+  auto fixed = reinterpret_cast<LayoutFixed*>(cell);
+  log("MASK:");
+
+  // Note: can this be optimized with the equivalent x & (x-1) trick?
+  // We need the index
+  // There is a de Brjuin sequence solution?
+  // https://stackoverflow.com/questions/757059/position-of-least-significant-bit-that-is-set
+
+  int mask = fixed->field_mask_;
+  for (int i = 0; i < 16; ++i) {
+    if (mask & (1 << i)) {
+      Cell* child = fixed->children_[i];
+      // make sure we get Tag::Opaque, Tag::Scanned, etc.
+      log("i = %d, p = %p, heap_tag = %d", i, child, child->heap_tag);
+    }
+  }
+}
+#endif
 
 }  // namespace gc_heap

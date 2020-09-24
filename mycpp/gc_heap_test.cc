@@ -1,27 +1,36 @@
 // Unit tests for gc_heap
 
+// More tests to do:
+//
+// - Integrate with ASDL and use the pretty printer.
+//
+// - Integrate with mycpp and run mycpp/examples/
+//   - Make sure the benchmarks show less heap usage.
+
 #include "gc_heap.h"
 #include "greatest.h"
 
+// Types
 using gc_heap::Cell;
 using gc_heap::Heap;
-using gc_heap::LayoutFixed;
-using gc_heap::LayoutForwarded;
 using gc_heap::Local;
-using gc_heap::gc_alloc;
-
-using gc_heap::kZeroMask;
 
 using gc_heap::Dict;
 using gc_heap::List;
 using gc_heap::NewStr;
 using gc_heap::Slab;
 using gc_heap::Str;
+
+// Constants
 using gc_heap::kSlabHeaderSize;
 using gc_heap::kStrHeaderSize;
+using gc_heap::kZeroMask;
 
+// Functions
+using gc_heap::Alloc;
 using gc_heap::RoundUp;
 
+// Variables
 using gc_heap::gHeap;
 
 // 1 MiB, and will double when necessary.  Note: femtolisp uses 512 KiB.
@@ -42,12 +51,12 @@ TEST sizeof_test() {
   // 8 byte sheader
   log("sizeof(Cell) = %d", sizeof(Cell));
   // 8 + 128 possible entries
-  log("sizeof(LayoutFixed) = %d", sizeof(LayoutFixed));
+  // log("sizeof(LayoutFixed) = %d", sizeof(LayoutFixed));
 
   log("sizeof(Heap) = %d", sizeof(Heap));
 
-  char* p = static_cast<char*>(gHeap.Alloc(17));
-  char* q = static_cast<char*>(gHeap.Alloc(9));
+  char* p = static_cast<char*>(gHeap.Allocate(17));
+  char* q = static_cast<char*>(gHeap.Allocate(9));
   log("p = %p", p);
   log("q = %p", q);
 
@@ -77,7 +86,7 @@ TEST str_test() {
   auto str1 = NewStr("");
   auto str2 = NewStr("one\0two", 7);
 
-  ASSERT_EQ_FMT(Tag::Opaque, str1->tag, "%d");
+  ASSERT_EQ_FMT(Tag::Opaque, str1->heap_tag, "%d");
   ASSERT_EQ_FMT(kStrHeaderSize + 1, str1->cell_len_, "%d");
   ASSERT_EQ_FMT(kStrHeaderSize + 7 + 1, str2->cell_len_, "%d");
 
@@ -99,8 +108,8 @@ TEST str_test() {
 //   - how does it trigger a collection?
 
 TEST list_test() {
-  auto list1 = gc_alloc<List<int>>();
-  auto list2 = gc_alloc<List<Str*>>();
+  auto list1 = Alloc<List<int>>();
+  auto list2 = Alloc<List<Str*>>();
 
   ASSERT_EQ(0, len(list1));
   ASSERT_EQ(0, len(list2));
@@ -108,8 +117,8 @@ TEST list_test() {
   ASSERT_EQ_FMT(0, list1->capacity_, "%d");
   ASSERT_EQ_FMT(0, list2->capacity_, "%d");
 
-  ASSERT_EQ_FMT(Tag::FixedSize, list1->tag, "%d");
-  ASSERT_EQ_FMT(Tag::FixedSize, list2->tag, "%d");
+  ASSERT_EQ_FMT(Tag::FixedSize, list1->heap_tag, "%d");
+  ASSERT_EQ_FMT(Tag::FixedSize, list2->heap_tag, "%d");
 
   // 8 byte cell header + 2 integers + pointer
   ASSERT_EQ_FMT(24, list1->cell_len_, "%d");
@@ -126,7 +135,7 @@ TEST list_test() {
 
   // 32 byte block - 8 byte header = 24 bytes, 6 elements
   ASSERT_EQ_FMT(6, list1->capacity_, "%d");
-  ASSERT_EQ_FMT(Tag::Opaque, list1->slab_->tag, "%d");
+  ASSERT_EQ_FMT(Tag::Opaque, list1->slab_->heap_tag, "%d");
 
   // 8 byte header + 3*4 == 8 + 12 == 20, rounded up to power of 2
   ASSERT_EQ_FMT(32, list1->slab_->cell_len_, "%d");
@@ -177,8 +186,8 @@ TEST list_test() {
   // This combination is problematic.  Maybe avoid it and then just do
   // .extend({1, 2, 3}) or something?
   // https://stackoverflow.com/questions/21573808/using-initializer-lists-with-variadic-templates
-  // auto list3 = gc_alloc<List<int>>({1, 2, 3});
-  // auto list4 = gc_alloc<List<Str*>>({str1, str2});
+  // auto list3 = Alloc<List<int>>({1, 2, 3});
+  // auto list4 = Alloc<List<Str*>>({str1, str2});
 
   // log("len(list3) = %d", len(list3));
   // log("len(list4) = %d", len(list3));
@@ -191,14 +200,14 @@ TEST list_test() {
 //   - I guess you have to do rehashing?
 
 TEST dict_test() {
-  auto dict1 = gc_alloc<Dict<int, int>>();
-  auto dict2 = gc_alloc<Dict<Str*, Str*>>();
+  auto dict1 = Alloc<Dict<int, int>>();
+  auto dict2 = Alloc<Dict<Str*, Str*>>();
 
   ASSERT_EQ(0, len(dict1));
   ASSERT_EQ(0, len(dict2));
 
-  ASSERT_EQ_FMT(Tag::FixedSize, dict1->tag, "%d");
-  ASSERT_EQ_FMT(Tag::FixedSize, dict1->tag, "%d");
+  ASSERT_EQ_FMT(Tag::FixedSize, dict1->heap_tag, "%d");
+  ASSERT_EQ_FMT(Tag::FixedSize, dict1->heap_tag, "%d");
 
   ASSERT_EQ_FMT(0, dict1->capacity_, "%d");
   ASSERT_EQ_FMT(0, dict2->capacity_, "%d");
@@ -250,7 +259,7 @@ TEST dict_test() {
 
   // Check other sizes
 
-  auto dict_si = gc_alloc<Dict<Str*, int>>();
+  auto dict_si = Alloc<Dict<Str*, int>>();
   dict_si->set(NewStr("foo"), 42);
   ASSERT_EQ(1, len(dict_si));
 
@@ -258,7 +267,7 @@ TEST dict_test() {
   ASSERT_EQ_FMT(64, dict_si->keys_->cell_len_, "%d");
   ASSERT_EQ_FMT(32, dict_si->values_->cell_len_, "%d");
 
-  auto dict_is = gc_alloc<Dict<int, Str*>>();
+  auto dict_is = Alloc<Dict<int, Str*>>();
   dict_is->set(42, NewStr("foo"));
   ASSERT_EQ(1, len(dict_is));
 
@@ -282,6 +291,7 @@ class Point : public Cell {
 };
 
 const int kLineMask = 0x3;  // 0b0011
+
 class Line : public Cell {
  public:
   Line()
@@ -298,16 +308,16 @@ TEST fixed_trace_test() {
 
   ASSERT_EQ_FMT(0, gHeap.num_live_cells_, "%d");
 
-  // auto p = Local<Point>(gc_alloc<Point>(3, 4));
-  Local<Point> p = gc_alloc<Point>(3, 4);
+  // auto p = Local<Point>(Alloc<Point>(3, 4));
+  Local<Point> p = Alloc<Point>(3, 4);
   log("point size = %d", p->size());
 
   ASSERT_EQ_FMT(1, gHeap.num_live_cells_, "%d");
 
-  auto line = Local<Line>(gc_alloc<Line>());
+  auto line = Local<Line>(Alloc<Line>());
 
   line->begin_ = p;
-  line->end_ = gc_alloc<Point>(5, 6);
+  line->end_ = Alloc<Point>(5, 6);
 
   ASSERT_EQ_FMT(3, gHeap.num_live_cells_, "%d");
 
@@ -329,7 +339,7 @@ TEST slab_trace_test() {
   ASSERT_EQ_FMT(0, gHeap.num_live_cells_, "%d");
 
   {
-    Local<List<int>> ints = gc_alloc<List<int>>();
+    Local<List<int>> ints = Alloc<List<int>>();
     ASSERT_EQ_FMT(1, gHeap.num_live_cells_, "%d");
 
     ints->append(3);
@@ -338,7 +348,7 @@ TEST slab_trace_test() {
   gHeap.Collect();
   ASSERT_EQ_FMT(0, gHeap.num_live_cells_, "%d");
 
-  Local<List<Str*>> strings = gc_alloc<List<Str*>>();
+  Local<List<Str*>> strings = Alloc<List<Str*>>();
   ASSERT_EQ_FMT(1, gHeap.num_live_cells_, "%d");
 
   Local<Str> s = NewStr("yo");
@@ -387,7 +397,7 @@ Str* myfunc() {
   log("myfunc roots_top = %d", gHeap.roots_top_);
   ShowRoots(gHeap);
 
-  return str1.raw_pointer_;
+  return str1;  // implicit conversion to raw pointer
 }
 
 void otherfunc(Local<Str> s) {
@@ -402,7 +412,7 @@ TEST local_test() {
     log("top = %d", gHeap.roots_top_);
     ASSERT_EQ(0, gHeap.roots_top_);
 
-    auto point = gc_alloc<Point>(3, 4);
+    auto point = Alloc<Point>(3, 4);
     Local<Point> p(point);
     ASSERT_EQ(1, gHeap.roots_top_);
 
@@ -441,26 +451,8 @@ TEST local_test() {
   PASS();
 }
 
-void ShowFixedChildren(LayoutFixed* fixed) {
-  log("MASK:");
-
-  // Note: can this be optimized with the equivalent x & (x-1) trick?
-  // We need the index
-  // There is a de Brjuin sequence solution?
-  // https://stackoverflow.com/questions/757059/position-of-least-significant-bit-that-is-set
-
-  int mask = fixed->field_mask_;
-  for (int i = 0; i < 16; ++i) {
-    if (mask & (1 << i)) {
-      Cell* child = fixed->children_[i];
-      // make sure we get Tag::Opaque, Tag::Scanned, etc.
-      log("i = %d, p = %p, tag = %d", i, child, child->tag);
-    }
-  }
-}
-
 void ShowSlab(Cell* cell) {
-  assert(cell->tag == Tag::Scanned);
+  assert(cell->heap_tag == Tag::Scanned);
   auto slab = reinterpret_cast<Slab<void*>*>(cell);
 
   int n = (slab->cell_len_ - kSlabHeaderSize) / sizeof(void*);
@@ -477,21 +469,18 @@ void ShowSlab(Cell* cell) {
 
 // Prints field masks for Dict and List
 TEST field_mask_test() {
-  auto L = gc_alloc<List<int>>();
+  auto L = Alloc<List<int>>();
   L->append(1);
   log("List mask = %d", L->field_mask_);
 
-  auto d = gc_alloc<Dict<Str*, int>>();
+  auto d = Alloc<Dict<Str*, int>>();
   d->set(NewStr("foo"), 3);
   log("Dict mask = %d", d->field_mask_);
 
-  auto L_cell = reinterpret_cast<LayoutFixed*>(L);
-  ShowFixedChildren(L_cell);
+  gc_heap::ShowFixedChildren(L);
+  gc_heap::ShowFixedChildren(d);
 
-  auto d_cell = reinterpret_cast<LayoutFixed*>(d);
-  ShowFixedChildren(d_cell);
-
-  auto L2 = gc_alloc<List<Str*>>();
+  auto L2 = gc_heap::Alloc<List<Str*>>();
   auto s = NewStr("foo");
   L2->append(s);
   L2->append(s);

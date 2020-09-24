@@ -115,26 +115,6 @@ class Obj {
   DISALLOW_COPY_AND_ASSIGN(Obj)
 };
 
-namespace GcTag {              // overlaps with ASDL namespace
-const int Forwarded = 0xffff;  // forwarding pointer comes next
-
-// Opaque Str payload, List<int>, indices for Dict, keys for Dict<float, V>,
-// values for Dict<K, float>, etc.
-// how_to_trace: just a length (16 bit limitation)
-const int Slab = 0xfffe;
-
-// Variable-length list of things that need
-// List<Str*>, Dict<Str*, Str*>, etc.
-// how_to_trace:
-//   a length
-//   but also an offset to start scanning?  Depends if you have List<Str*>
-//   inline I think we won't to start.
-
-const int Sheet = 0xfffd;
-
-// anything else: treat how_to_trace as a bitmap?  16 fields max.
-};  // namespace GcTag
-
 // Simulating 4 byte per-object overhead
 //
 // Str: 16 -> 16
@@ -145,17 +125,13 @@ const int Sheet = 0xfffd;
 class Managed {
 #ifdef COLLECT_GARBAGE
  public:
-  constexpr Managed() : tag(0), how_to_trace(0) {
+  constexpr Managed() : heap_tag(0), tag(0), field_mask(0), cell_len(0) {
   }
-  uint16_t tag;
-  uint16_t how_to_trace;  // bitmap, length
+  uint8_t heap_tag;
+  uint8_t tag;  // bitmap, length
+  uint16_t field_mask;
+  uint32_t cell_len;  // could be optimized away for Fixed
 #endif
-};
-
-class Forwarded : public Managed {
- public:
-  // When tag == GcTag::Forwarded, we can follow this
-  Managed* forwarded;
 };
 
 // TODO: Consider a couple extra fields:

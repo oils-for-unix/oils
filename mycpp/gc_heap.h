@@ -30,7 +30,12 @@
 //   - Dict::set() can realloc and rehash
 
 // TODO:
-// - Resize the heap!
+// - Allocate() should Collect() -- hook up that policy.
+// - Resize the heap!  This only happens when there's a really large
+//   allocation?  More than 20% of the heap.
+// - How can we make the field masks portable?
+//   - Do we need some kind of constexpr computation?  sizeof(int) vs
+//   sizeof(void*)
 // - Dicts should actually use hashing!  Test computational complexity.
 // - Don't collect or copy GLOBAL Str* instances
 //   - Do they have a special tag in the Cell header?
@@ -38,10 +43,10 @@
 
 // Memory allocation APIs:
 //
-// - gc_alloc<Foo>(x)
+// - gc_heap::Alloc<Foo>(x)
 //   An alternative to new Foo(x).  mycpp/ASDL should generate these calls.
 //   Automatically deallocated.
-// - mylib::Alloc()
+// - Heap::Allocate()
 //   For Slab, and for special types like Str.  Automatically deallocated.
 // - malloc() -- for say yajl to use.  Manually deallocated.
 // - new/delete -- for other C++ libs to use.  Manually deallocated.
@@ -109,8 +114,10 @@ inline void log(const char* fmt, ...) {
   puts("");
 }
 
+// TODO: Reconcile these with ASDL tags.  Those are all FixedSize, so I guess
+// that should be a high bit?  0xC000  3 && Tag::FixedSize
 namespace Tag {
-const int Forwarded = 1;
+const int Forwarded = 1;  // For the Cheney algorithm.
 const int Opaque = 2;     // Copy but don't scan.  List<int> and Str
 const int FixedSize = 3;  // Fixed size headers: consult field_mask_
 const int Scanned = 4;    // Copy AND scan for non-NULL pointers.
@@ -161,7 +168,7 @@ class Heap {
 #endif
   }
 
-  void* Alloc(int num_bytes) {
+  void* Allocate(int num_bytes) {
     char* p = free_;
     free_ += aligned(num_bytes);
 
@@ -227,7 +234,7 @@ extern Heap gHeap;
 
 template <typename T>
 class Local {
-  // We can garbage collect at any gc_alloc() invocation, so we need a level of
+  // We can garbage collect at any Alloc() invocation, so we need a level of
   // indirection for locals / pointers directly on the stack.  Pointers on the
   // heap are updated by the Cheney GC algorithm.
 
@@ -275,7 +282,7 @@ class Local {
     //
     // As well as:
     //
-    // Local<List<Str*>> strings = gc_alloc<List<Str*>>();
+    // Local<List<Str*>> strings = Alloc<List<Str*>>();
     // strings->append(NewStr("foo"));  // convert from local to raw
     //
     // The heap should NOT have locals!  List<Str> and not List<Local<Str>>.
@@ -330,8 +337,8 @@ class Param {
 // Variadic templates:
 // https://eli.thegreenplace.net/2014/variadic-templates-in-c/
 template <typename T, typename... Args>
-T* gc_alloc(Args&&... args) {
-  void* place = gHeap.Alloc(sizeof(T));
+T* Alloc(Args&&... args) {
+  void* place = gHeap.Allocate(sizeof(T));
   assert(place != nullptr);
   // placement new
   return new (place) T(std::forward<Args>(args)...);
@@ -370,59 +377,41 @@ class Cell {
 
  public:
   // Used by Str
-  Cell(uint16_t tag) : tag(tag), field_mask_(kZeroMask), cell_len_(0) {
+  Cell(uint16_t heap_tag)
+      : heap_tag(heap_tag), field_mask_(kZeroMask), cell_len_(0) {
   }
-  Cell(uint16_t tag, uint16_t field_mask, int cell_len)
-      : tag(tag), field_mask_(field_mask), cell_len_(cell_len) {
+  Cell(uint16_t heap_tag, uint16_t field_mask, int cell_len)
+      : heap_tag(heap_tag), field_mask_(field_mask), cell_len_(cell_len) {
   }
 
   void SetCellLength(int cell_len) {
     this->cell_len_ = cell_len;
   }
 
-  uint16_t tag;  // ASDL tags are 0 to 255
-                 // Tag::Forwarded is 256?
-                 // We could also reserve tags for Str, List, and Dict
-                 // Then do we have 7 more bits for the GC strategy / length?
+  uint8_t heap_tag;      // ASDL tags are 0 to 255
+  uint8_t _tag;          // reserved for ASDL tag
   uint16_t field_mask_;  // for fixed length records, so max 16 fields
 
   // # bytes to copy, or # bytes to scan?
   // for Slab, which is used by List<Str*> and Dict<Str*, Str*>
   //
-  // Should this be specific to slab?  If tag == Tag::*Slab?
+  // Should this be specific to slab?  If heap_tag == Tag::*Slab?
   // TODO: if we limit it to 15 fields, we can encode length in field_mask.
   uint32_t cell_len_;
 
   DISALLOW_COPY_AND_ASSIGN(Cell)
 };
 
-//
-// LayoutForwarded and LayoutFixed aren't real types.  You can cast arbitrary
-// cells to them to access a HOMOGENEOUS REPRESENTATION useful for garbage
-// collection.
-//
-
-class LayoutForwarded : public Cell {
- public:
-  Cell* new_location;  // valid if and only if tag == Tag::Forwarded
-};
-
-// for Tag::FixedSize
-class LayoutFixed : public Cell {
- public:
-  Cell* children_[16];  // only the entries denoted in field_mask will be valid
-};
-
 template <typename T>
 inline void InitSlabCell(Cell* cell) {
   // log("SCANNED");
-  cell->tag = Tag::Scanned;
+  cell->heap_tag = Tag::Scanned;
 }
 
 template <>
 inline void InitSlabCell<int>(Cell* cell) {
   // log("OPAQUE");
-  cell->tag = Tag::Opaque;
+  cell->heap_tag = Tag::Opaque;
 }
 
 // don't include items_[1]
@@ -442,7 +431,7 @@ class Slab : public Cell {
 template <typename T>
 inline Slab<T>* NewSlab(int len) {
   int cell_len = RoundUp(kSlabHeaderSize + len * sizeof(T));
-  void* place = gHeap.Alloc(cell_len);
+  void* place = gHeap.Allocate(cell_len);
   auto slab = new (place) Slab<T>(cell_len);  // placement new
   return slab;
 }
@@ -476,7 +465,7 @@ const int kStrHeaderSize = sizeof(Cell) + sizeof(int) + sizeof(int);
 
 inline Str* NewStr(const char* data, int len) {
   int cell_len = kStrHeaderSize + len + 1;  // NUL terminator
-  void* place = gHeap.Alloc(cell_len);      // immutable, so allocate exactly
+  void* place = gHeap.Allocate(cell_len);   // immutable, so allocate exactly
   auto s = new (place) Str(len);
 
   memcpy(s->data_, data, len);
@@ -662,7 +651,7 @@ class Dict : public gc_heap::Cell {
 
       if (keys_ != nullptr) {
         // Copy the old index.  Note: remaining entries should be zero'd
-        // because of Alloc() behavior.
+        // because of Allocate() behavior.
         memcpy(new_i->items_, index_->items_, index_->cell_len_);
 
         memcpy(new_k->items_, keys_->items_, len_ * sizeof(K));
@@ -716,6 +705,10 @@ class Dict : public gc_heap::Cell {
 
   DISALLOW_COPY_AND_ASSIGN(Dict)
 };
+
+#if GC_DEBUG
+void ShowFixedChildren(Cell* cell);
+#endif
 
 }  // namespace gc_heap
 
