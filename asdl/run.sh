@@ -197,7 +197,7 @@ gc-test() {
   build/dev.sh hnode-gc
 
   local prefix3=_tmp/typed_demo_asdl.gc
-  GC=1 asdl/tool.py cpp asdl/typed_demo.asdl $prefix3
+  PRETTY_PRINT_METHODS='' GC=1 asdl/tool.py cpp asdl/typed_demo.asdl $prefix3
 
   local bin=_tmp/gen_cpp_test
 
@@ -208,9 +208,9 @@ gc-test() {
     -I . -I _tmp -I mycpp -I _build/cpp -I cpp \
     -o $bin \
     asdl/gc_test.cc \
-    asdl/runtime.cc \
     mycpp/gc_heap.cc \
     _tmp/typed_demo_asdl.gc.cc 
+    #asdl/runtime.cc \
 
   #gdb -batch -ex run -ex bt --args $bin "$@"
   $bin "$@"

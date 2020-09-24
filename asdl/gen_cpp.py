@@ -508,6 +508,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
     self.Emit('  return out_node;')
     self.Emit('}')
 
+
     #
     # _AbbreviatedTree
     #

@@ -64,6 +64,7 @@ mycpp-unit-tests() {
 
   pushd mycpp
   ./run.sh mylib-test
+  ./run.sh gc-heap-test
   ./demo.sh target-lang
 
   # Note: we also have square_heap and gc_heap
@@ -81,6 +82,7 @@ all() {
   mycpp-unit-tests
 
   asdl/run.sh gen-cpp-test
+  asdl/run.sh gc-test  # integration between ASDL and the GC heap
 }
 
 "$@"
