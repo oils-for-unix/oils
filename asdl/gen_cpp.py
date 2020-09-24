@@ -20,6 +20,7 @@ TODO:
 """
 from __future__ import print_function
 
+import os
 import sys
 
 from collections import defaultdict
@@ -127,7 +128,10 @@ def _DefaultValue(typ):
     default = '0.0'  # or should it be NaN?
 
   elif type_name == 'string':
-    default = 'new Str("")'
+    if os.getenv('GC'):
+      default = 'NewStr("")'
+    else:
+      default = 'new Str("")'
 
   elif typ.resolved and isinstance(typ.resolved, asdl_.SimpleSum):
     sum_type = typ.resolved
@@ -390,8 +394,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       ast_node, attributes, name, depth, tag_num = args
       # Figure out base classes AFTERWARD.
       bases = self._product_bases[name]
-      if not bases:
-        bases = ['Obj']
+      #if not bases:
+      #  bases = ['Obj']
       self._GenClass(ast_node, attributes, name, bases, depth, tag_num)
 
 

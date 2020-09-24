@@ -57,7 +57,7 @@ def main(argv):
   elif action == 'cpp':  # Generate C++ code for ASDL schemas
     out_prefix = argv[3]
     pretty_print_methods = bool(os.getenv('PRETTY_PRINT_METHODS', 'yes'))
-    gc = bool(os.getenv('GC', 'yes'))
+    gc = bool(os.getenv('GC', ''))
 
     with open(schema_path) as f:
       schema_ast = front_end.LoadSchema(f, app_types)
@@ -79,14 +79,14 @@ def main(argv):
 #include <cstdint>
 #include "%s.h"  // for Str, List, etc.
 
-""" % 'gc_heap' if gc else 'mylib')
+""" % ('gc_heap' if gc else 'mylib'))
 
       if pretty_print_methods:
         f.write("""\
-#include "hnode_asdl.gc.h"
+#include "hnode_asdl%s.h"
 using hnode_asdl::hnode_t;
 
-""")
+""" % ('.gc' if gc else ''))
 
       if app_types:
         f.write("""\

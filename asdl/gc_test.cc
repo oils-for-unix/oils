@@ -9,7 +9,8 @@
 
 #include "typed_demo_asdl.gc.h"
 
-using gc_heap::Str;
+using gc_heap::NewStr;
+using hnode_asdl::hnode_str;
 
 TEST pretty_print_test() {
   // typed_demo.asdl
@@ -19,9 +20,9 @@ TEST pretty_print_test() {
   // left and right are not optional.
   // auto b = new bool_expr__LogicalBinary(o, nullptr, nullptr);
 
-  auto w1 = new typed_demo_asdl::word(new Str("left"));
-  auto w2 = new typed_demo_asdl::word(new Str("right"));
-  auto b = new bool_expr__Binary(w1, w2);
+  auto w1 = new typed_demo_asdl::word(NewStr("left"));
+  auto w2 = new typed_demo_asdl::word(NewStr("right"));
+  auto b = new typed_demo_asdl::bool_expr__Binary(w1, w2);
   //
   log("sizeof b = %d", sizeof b);
   log("");
@@ -31,11 +32,6 @@ TEST pretty_print_test() {
   auto f = mylib::Stdout();
   auto ast_f = new format::TextOutput(f);
   format::PrintTree(t1, ast_f);
-
-  // typed_arith.asdl
-  auto c = new arith_expr__Const(42);
-  hnode_t* t2 = c->AbbreviatedTree();
-  ASSERT(strcmp("hnode.Record", hnode_str(t2->tag_())) == 0);
 
   PASS();
 }
