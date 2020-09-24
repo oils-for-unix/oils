@@ -82,13 +82,17 @@ gen-asdl-cpp() {
 
   local name=$(basename $asdl_path .asdl)
 
-  local out_prefix=_build/cpp/${name}_asdl
+  local out_prefix=${2:-_build/cpp/${name}_asdl}
   local debug_info=_devbuild/gen/${name}_asdl_debug.py
 
   # abbrev module is optional
   asdl/tool.py cpp $asdl_path $out_prefix $debug_info
 
   echo "$asdl_path -> $out_prefix and $debug_info"
+}
+
+hnode-gc() {
+  GC=1 PRETTY_PRINT_METHODS='' gen-asdl-cpp asdl/hnode.asdl _build/cpp/hnode_asdl.gc
 }
 
 # TODO: syntax.asdl and runtime.asdl are mutually recursive.

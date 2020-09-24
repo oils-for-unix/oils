@@ -38,7 +38,7 @@
 //   sizeof(void*)
 // - Dicts should actually use hashing!  Test computational complexity.
 // - Don't collect or copy GLOBAL Str* instances
-//   - Do they have a special tag in the Cell header?
+//   - Do they have a special tag in the Obj header?
 //   - can they be constexpr in the generated source?  Would be nice.
 
 // Memory allocation APIs:
@@ -135,7 +135,7 @@ inline size_t aligned(size_t n) {
   return (n + kMask) & ~kMask;
 }
 
-class Cell;
+class Obj;
 
 const int kMaxRoots = 1024;  // related to C stack size
 
@@ -164,7 +164,7 @@ class Heap {
     roots_top_ = 0;
 
 #if GC_DEBUG
-    num_live_cells_ = 0;
+    num_live_objs_ = 0;
 #endif
   }
 
@@ -178,7 +178,7 @@ class Heap {
     }
 
 #if GC_DEBUG
-    num_live_cells_++;
+    num_live_objs_++;
 #endif
 
     return p;
@@ -196,7 +196,7 @@ class Heap {
     // log("PopRoot %d", roots_top_);
   }
 
-  Cell* Relocate(Cell* cell);
+  Obj* Relocate(Obj* obj);
   void Collect();
 
   char* from_space_;
@@ -219,7 +219,7 @@ class Heap {
   void* roots_[kMaxRoots];  // TODO: Could be Handle<void*> ?
 
 #if GC_DEBUG
-  int num_live_cells_;
+  int num_live_objs_;
 #endif
 
   // TODO:
@@ -368,7 +368,7 @@ inline int RoundUp(int n) {
 
 const int kZeroMask = 0;  // for types with no pointers
 
-class Cell {
+class Obj {
   // The unit of garbage collection.  It has a header describing how to find
   // the pointers within it.
   //
@@ -377,19 +377,19 @@ class Cell {
 
  public:
   // Used by Str
-  Cell(uint16_t heap_tag)
-      : heap_tag(heap_tag), field_mask_(kZeroMask), cell_len_(0) {
+  Obj(uint16_t heap_tag)
+      : heap_tag(heap_tag), field_mask_(kZeroMask), obj_len_(0) {
   }
-  Cell(uint16_t heap_tag, uint16_t field_mask, int cell_len)
-      : heap_tag(heap_tag), field_mask_(field_mask), cell_len_(cell_len) {
-  }
-
-  void SetCellLength(int cell_len) {
-    this->cell_len_ = cell_len;
+  Obj(uint16_t heap_tag, uint16_t field_mask, int obj_len)
+      : heap_tag(heap_tag), field_mask_(field_mask), obj_len_(obj_len) {
   }
 
-  uint8_t heap_tag;      // ASDL tags are 0 to 255
-  uint8_t _tag;          // reserved for ASDL tag
+  void SetCellLength(int obj_len) {
+    this->obj_len_ = obj_len;
+  }
+
+  uint8_t heap_tag;      // one of Tag::
+  uint8_t tag;           // reserved for ASDL tag
   uint16_t field_mask_;  // for fixed length records, so max 16 fields
 
   // # bytes to copy, or # bytes to scan?
@@ -397,42 +397,42 @@ class Cell {
   //
   // Should this be specific to slab?  If heap_tag == Tag::*Slab?
   // TODO: if we limit it to 15 fields, we can encode length in field_mask.
-  uint32_t cell_len_;
+  uint32_t obj_len_;
 
-  DISALLOW_COPY_AND_ASSIGN(Cell)
+  DISALLOW_COPY_AND_ASSIGN(Obj)
 };
 
 template <typename T>
-inline void InitSlabCell(Cell* cell) {
+inline void InitSlabCell(Obj* obj) {
   // log("SCANNED");
-  cell->heap_tag = Tag::Scanned;
+  obj->heap_tag = Tag::Scanned;
 }
 
 template <>
-inline void InitSlabCell<int>(Cell* cell) {
+inline void InitSlabCell<int>(Obj* obj) {
   // log("OPAQUE");
-  cell->heap_tag = Tag::Opaque;
+  obj->heap_tag = Tag::Opaque;
 }
 
 // don't include items_[1]
-const int kSlabHeaderSize = sizeof(Cell);
+const int kSlabHeaderSize = sizeof(Obj);
 
 // Opaque slab.  e.g. for String data
 template <typename T>
-class Slab : public Cell {
+class Slab : public Obj {
  public:
-  Slab(int cell_len) : Cell(0, 0, cell_len) {
+  Slab(int obj_len) : Obj(0, 0, obj_len) {
     InitSlabCell<T>(this);
   }
-  T items_[1];  // minimum string cell_len_
+  T items_[1];  // minimum string obj_len_
 };
 
 // Note: entries will be zero'd because the Heap is zero'd.
 template <typename T>
 inline Slab<T>* NewSlab(int len) {
-  int cell_len = RoundUp(kSlabHeaderSize + len * sizeof(T));
-  void* place = gHeap.Allocate(cell_len);
-  auto slab = new (place) Slab<T>(cell_len);  // placement new
+  int obj_len = RoundUp(kSlabHeaderSize + len * sizeof(T));
+  void* place = gHeap.Allocate(obj_len);
+  auto slab = new (place) Slab<T>(obj_len);  // placement new
   return slab;
 }
 
@@ -440,12 +440,12 @@ inline Slab<T>* NewSlab(int len) {
 // Str
 //
 
-class Str : public gc_heap::Cell {
+class Str : public gc_heap::Obj {
  public:
   // Note: shouldn't be called directly.  Call NewStr().
-  explicit Str(int len) : Cell(Tag::Opaque), len_(len) {
+  explicit Str(int len) : Obj(Tag::Opaque), len_(len) {
   }
-  // Note: OCaml unifies the cell length and string length with padding 00, 00
+  // Note: OCaml unifies the obj length and string length with padding 00, 00
   // 01, 00 00 02, 00 00 00 03.  Although I think they added special cases for
   // 32-bit and 64-bit; we're using the portable max_align_t
   int len_;
@@ -461,17 +461,17 @@ class Str : public gc_heap::Cell {
 // require mycpp to generate 2 statements everywhere.
 //
 
-const int kStrHeaderSize = sizeof(Cell) + sizeof(int) + sizeof(int);
+const int kStrHeaderSize = sizeof(Obj) + sizeof(int) + sizeof(int);
 
 inline Str* NewStr(const char* data, int len) {
-  int cell_len = kStrHeaderSize + len + 1;  // NUL terminator
-  void* place = gHeap.Allocate(cell_len);   // immutable, so allocate exactly
+  int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
+  void* place = gHeap.Allocate(obj_len);   // immutable, so allocate exactly
   auto s = new (place) Str(len);
 
   memcpy(s->data_, data, len);
   s->data_[len] = '\0';  // So we can pass it directly to C functions
 
-  s->SetCellLength(cell_len);  // So the GC can copy it
+  s->SetCellLength(obj_len);  // So the GC can copy it
   return s;
 }
 
@@ -488,10 +488,10 @@ inline Str* NewStr(const char* data) {
 const int kListMask = 0x0002;  // in binary: 0b 0000 0000 0000 00010
 
 template <typename T>
-class List : public gc_heap::Cell {
+class List : public gc_heap::Obj {
  public:
   List()
-      : gc_heap::Cell(Tag::FixedSize, kListMask, sizeof(List<T>)),
+      : gc_heap::Obj(Tag::FixedSize, kListMask, sizeof(List<T>)),
         len_(0),
         capacity_(0),
         slab_(nullptr) {
@@ -500,7 +500,7 @@ class List : public gc_heap::Cell {
     // TODO: are we using this?
 #if 0
   List(std::initializer_list<T> init)
-      : Cell(Tag::FixedSize, kListMask, sizeof(List<T>)), slab_(nullptr) {
+      : Obj(Tag::FixedSize, kListMask, sizeof(List<T>)), slab_(nullptr) {
     extend(init);
   }
 #endif
@@ -530,8 +530,8 @@ class List : public gc_heap::Cell {
 
     if (capacity_ < n) {
       // Example: The user asks for space for 7 integers.  Account for the
-      // header, and say we need 9 to determine the cell length.  9 is rounded
-      // up to 16, for a 64-byte cell.  Then we actually have space for 14
+      // header, and say we need 9 to determine the obj length.  9 is rounded
+      // up to 16, for a 64-byte obj.  Then we actually have space for 14
       // items.
       capacity_ = RoundUp(n + kCapacityAdjust) - kCapacityAdjust;
       auto new_slab = NewSlab<T>(capacity_);
@@ -617,10 +617,10 @@ int find_by_key(Slab<K>* keys_, int len, Str* key) {
 const int kDictMask = 0x000E;  // in binary: 0b 0000 0000 0000 01110
 
 template <class K, class V>
-class Dict : public gc_heap::Cell {
+class Dict : public gc_heap::Obj {
  public:
   Dict()
-      : gc_heap::Cell(Tag::FixedSize, kDictMask, 0),
+      : gc_heap::Obj(Tag::FixedSize, kDictMask, 0),
         len_(0),
         capacity_(0),
         index_(nullptr),
@@ -652,7 +652,7 @@ class Dict : public gc_heap::Cell {
       if (keys_ != nullptr) {
         // Copy the old index.  Note: remaining entries should be zero'd
         // because of Allocate() behavior.
-        memcpy(new_i->items_, index_->items_, index_->cell_len_);
+        memcpy(new_i->items_, index_->items_, index_->obj_len_);
 
         memcpy(new_k->items_, keys_->items_, len_ * sizeof(K));
         memcpy(new_v->items_, values_->items_, len_ * sizeof(V));
@@ -707,7 +707,7 @@ class Dict : public gc_heap::Cell {
 };
 
 #if GC_DEBUG
-void ShowFixedChildren(Cell* cell);
+void ShowFixedChildren(Obj* obj);
 #endif
 
 }  // namespace gc_heap

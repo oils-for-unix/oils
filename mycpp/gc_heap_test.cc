@@ -11,9 +11,9 @@
 #include "greatest.h"
 
 // Types
-using gc_heap::Cell;
 using gc_heap::Heap;
 using gc_heap::Local;
+using gc_heap::Obj;
 
 using gc_heap::Dict;
 using gc_heap::List;
@@ -49,7 +49,7 @@ TEST sizeof_test() {
   log("sizeof(Dict) = %d", sizeof(Dict<int, int>));
 
   // 8 byte sheader
-  log("sizeof(Cell) = %d", sizeof(Cell));
+  log("sizeof(Obj) = %d", sizeof(Obj));
   // 8 + 128 possible entries
   // log("sizeof(LayoutFixed) = %d", sizeof(LayoutFixed));
 
@@ -87,8 +87,8 @@ TEST str_test() {
   auto str2 = NewStr("one\0two", 7);
 
   ASSERT_EQ_FMT(Tag::Opaque, str1->heap_tag, "%d");
-  ASSERT_EQ_FMT(kStrHeaderSize + 1, str1->cell_len_, "%d");
-  ASSERT_EQ_FMT(kStrHeaderSize + 7 + 1, str2->cell_len_, "%d");
+  ASSERT_EQ_FMT(kStrHeaderSize + 1, str1->obj_len_, "%d");
+  ASSERT_EQ_FMT(kStrHeaderSize + 7 + 1, str2->obj_len_, "%d");
 
   // Make sure they're on the heap
   int diff1 = reinterpret_cast<char*>(str1) - gHeap.from_space_;
@@ -120,9 +120,9 @@ TEST list_test() {
   ASSERT_EQ_FMT(Tag::FixedSize, list1->heap_tag, "%d");
   ASSERT_EQ_FMT(Tag::FixedSize, list2->heap_tag, "%d");
 
-  // 8 byte cell header + 2 integers + pointer
-  ASSERT_EQ_FMT(24, list1->cell_len_, "%d");
-  ASSERT_EQ_FMT(24, list2->cell_len_, "%d");
+  // 8 byte obj header + 2 integers + pointer
+  ASSERT_EQ_FMT(24, list1->obj_len_, "%d");
+  ASSERT_EQ_FMT(24, list2->obj_len_, "%d");
 
   // Make sure they're on the heap
   int diff1 = reinterpret_cast<char*>(list1) - gHeap.from_space_;
@@ -138,7 +138,7 @@ TEST list_test() {
   ASSERT_EQ_FMT(Tag::Opaque, list1->slab_->heap_tag, "%d");
 
   // 8 byte header + 3*4 == 8 + 12 == 20, rounded up to power of 2
-  ASSERT_EQ_FMT(32, list1->slab_->cell_len_, "%d");
+  ASSERT_EQ_FMT(32, list1->slab_->obj_len_, "%d");
 
   ASSERT_EQ_FMT(11, list1->index(0), "%d");
   ASSERT_EQ_FMT(22, list1->index(1), "%d");
@@ -152,7 +152,7 @@ TEST list_test() {
   ASSERT_EQ_FMT(7, len(list1), "%d");
 
   // 8 bytes header + 7*4 == 8 + 28 == 36, rounded up to power of 2
-  ASSERT_EQ_FMT(64, list1->slab_->cell_len_, "%d");
+  ASSERT_EQ_FMT(64, list1->slab_->obj_len_, "%d");
 
   ASSERT_EQ_FMT(11, list1->index(0), "%d");
   ASSERT_EQ_FMT(22, list1->index(1), "%d");
@@ -227,9 +227,9 @@ TEST dict_test() {
   ASSERT_EQ(1, len(dict1));
   ASSERT_EQ_FMT(6, dict1->capacity_, "%d");
 
-  ASSERT_EQ_FMT(32, dict1->index_->cell_len_, "%d");
-  ASSERT_EQ_FMT(32, dict1->keys_->cell_len_, "%d");
-  ASSERT_EQ_FMT(32, dict1->values_->cell_len_, "%d");
+  ASSERT_EQ_FMT(32, dict1->index_->obj_len_, "%d");
+  ASSERT_EQ_FMT(32, dict1->keys_->obj_len_, "%d");
+  ASSERT_EQ_FMT(32, dict1->values_->obj_len_, "%d");
 
   dict1->set(42, 99);
   ASSERT_EQ(99, dict1->index(42));
@@ -253,9 +253,9 @@ TEST dict_test() {
   ASSERT_EQ(1, len(dict2));
   ASSERT(str_equals(NewStr("bar"), dict2->index(NewStr("foo"))));
 
-  ASSERT_EQ_FMT(32, dict2->index_->cell_len_, "%d");
-  ASSERT_EQ_FMT(64, dict2->keys_->cell_len_, "%d");
-  ASSERT_EQ_FMT(64, dict2->values_->cell_len_, "%d");
+  ASSERT_EQ_FMT(32, dict2->index_->obj_len_, "%d");
+  ASSERT_EQ_FMT(64, dict2->keys_->obj_len_, "%d");
+  ASSERT_EQ_FMT(64, dict2->values_->obj_len_, "%d");
 
   // Check other sizes
 
@@ -263,25 +263,25 @@ TEST dict_test() {
   dict_si->set(NewStr("foo"), 42);
   ASSERT_EQ(1, len(dict_si));
 
-  ASSERT_EQ_FMT(32, dict_si->index_->cell_len_, "%d");
-  ASSERT_EQ_FMT(64, dict_si->keys_->cell_len_, "%d");
-  ASSERT_EQ_FMT(32, dict_si->values_->cell_len_, "%d");
+  ASSERT_EQ_FMT(32, dict_si->index_->obj_len_, "%d");
+  ASSERT_EQ_FMT(64, dict_si->keys_->obj_len_, "%d");
+  ASSERT_EQ_FMT(32, dict_si->values_->obj_len_, "%d");
 
   auto dict_is = Alloc<Dict<int, Str*>>();
   dict_is->set(42, NewStr("foo"));
   ASSERT_EQ(1, len(dict_is));
 
-  ASSERT_EQ_FMT(32, dict_is->index_->cell_len_, "%d");
-  ASSERT_EQ_FMT(32, dict_is->keys_->cell_len_, "%d");
-  ASSERT_EQ_FMT(64, dict_is->values_->cell_len_, "%d");
+  ASSERT_EQ_FMT(32, dict_is->index_->obj_len_, "%d");
+  ASSERT_EQ_FMT(32, dict_is->keys_->obj_len_, "%d");
+  ASSERT_EQ_FMT(64, dict_is->values_->obj_len_, "%d");
 
   PASS();
 }
 
-class Point : public Cell {
+class Point : public Obj {
  public:
   Point(int x, int y)
-      : Cell(Tag::Opaque, kZeroMask, sizeof(Point)), x_(x), y_(y) {
+      : Obj(Tag::Opaque, kZeroMask, sizeof(Point)), x_(x), y_(y) {
   }
   int size() {
     return x_ + y_;
@@ -292,10 +292,10 @@ class Point : public Cell {
 
 const int kLineMask = 0x3;  // 0b0011
 
-class Line : public Cell {
+class Line : public Obj {
  public:
   Line()
-      : Cell(Tag::FixedSize, kLineMask, sizeof(Line)),
+      : Obj(Tag::FixedSize, kLineMask, sizeof(Line)),
         begin_(nullptr),
         end_(nullptr) {
   }
@@ -306,29 +306,29 @@ class Line : public Cell {
 TEST fixed_trace_test() {
   gHeap.Init(kInitialSize);  // reset the whole thing
 
-  ASSERT_EQ_FMT(0, gHeap.num_live_cells_, "%d");
+  ASSERT_EQ_FMT(0, gHeap.num_live_objs_, "%d");
 
   // auto p = Local<Point>(Alloc<Point>(3, 4));
   Local<Point> p = Alloc<Point>(3, 4);
   log("point size = %d", p->size());
 
-  ASSERT_EQ_FMT(1, gHeap.num_live_cells_, "%d");
+  ASSERT_EQ_FMT(1, gHeap.num_live_objs_, "%d");
 
   auto line = Local<Line>(Alloc<Line>());
 
   line->begin_ = p;
   line->end_ = Alloc<Point>(5, 6);
 
-  ASSERT_EQ_FMT(3, gHeap.num_live_cells_, "%d");
+  ASSERT_EQ_FMT(3, gHeap.num_live_objs_, "%d");
 
   gHeap.Collect();
-  ASSERT_EQ_FMT(3, gHeap.num_live_cells_, "%d");
+  ASSERT_EQ_FMT(3, gHeap.num_live_objs_, "%d");
 
   // remove last reference
   line->end_ = nullptr;
 
   gHeap.Collect();
-  ASSERT_EQ_FMT(2, gHeap.num_live_cells_, "%d");
+  ASSERT_EQ_FMT(2, gHeap.num_live_objs_, "%d");
 
   PASS();
 }
@@ -336,33 +336,33 @@ TEST fixed_trace_test() {
 TEST slab_trace_test() {
   gHeap.Init(kInitialSize);  // reset the whole thing
 
-  ASSERT_EQ_FMT(0, gHeap.num_live_cells_, "%d");
+  ASSERT_EQ_FMT(0, gHeap.num_live_objs_, "%d");
 
   {
     Local<List<int>> ints = Alloc<List<int>>();
-    ASSERT_EQ_FMT(1, gHeap.num_live_cells_, "%d");
+    ASSERT_EQ_FMT(1, gHeap.num_live_objs_, "%d");
 
     ints->append(3);
-    ASSERT_EQ_FMT(2, gHeap.num_live_cells_, "%d");
+    ASSERT_EQ_FMT(2, gHeap.num_live_objs_, "%d");
   }
   gHeap.Collect();
-  ASSERT_EQ_FMT(0, gHeap.num_live_cells_, "%d");
+  ASSERT_EQ_FMT(0, gHeap.num_live_objs_, "%d");
 
   Local<List<Str*>> strings = Alloc<List<Str*>>();
-  ASSERT_EQ_FMT(1, gHeap.num_live_cells_, "%d");
+  ASSERT_EQ_FMT(1, gHeap.num_live_objs_, "%d");
 
   Local<Str> s = NewStr("yo");
   strings->append(s);
-  ASSERT_EQ_FMT(3, gHeap.num_live_cells_, "%d");
+  ASSERT_EQ_FMT(3, gHeap.num_live_objs_, "%d");
 
   strings->append(NewStr("bar"));
-  ASSERT_EQ_FMT(4, gHeap.num_live_cells_, "%d");
+  ASSERT_EQ_FMT(4, gHeap.num_live_objs_, "%d");
 
   // remove reference
   strings->set(1, nullptr);
 
   gHeap.Collect();
-  ASSERT_EQ_FMT(3, gHeap.num_live_cells_, "%d");
+  ASSERT_EQ_FMT(3, gHeap.num_live_objs_, "%d");
 
   PASS();
 }
@@ -451,12 +451,12 @@ TEST local_test() {
   PASS();
 }
 
-void ShowSlab(Cell* cell) {
-  assert(cell->heap_tag == Tag::Scanned);
-  auto slab = reinterpret_cast<Slab<void*>*>(cell);
+void ShowSlab(Obj* obj) {
+  assert(obj->heap_tag == Tag::Scanned);
+  auto slab = reinterpret_cast<Slab<void*>*>(obj);
 
-  int n = (slab->cell_len_ - kSlabHeaderSize) / sizeof(void*);
-  log("slab len = %d, n = %d", slab->cell_len_, n);
+  int n = (slab->obj_len_ - kSlabHeaderSize) / sizeof(void*);
+  log("slab len = %d, n = %d", slab->obj_len_, n);
   for (int i = 0; i < n; ++i) {
     void* p = slab->items_[i];
     if (p == nullptr) {
