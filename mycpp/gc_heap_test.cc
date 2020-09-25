@@ -83,12 +83,12 @@ TEST roundup_test() {
 //   - We want to resize the to_space, trigger a GC, and then allocate?  Or is
 //     there something simpler?
 
-constexpr int n4 = 3;
-GlobalStr<n4 + 1> g4 = {
-    Tag::Opaque,      0,    kZeroMask, kStrHeaderSize + n4 + 1, n4,
-    .unique_id_ = -1, "egg"};
-
-Str* g5 = reinterpret_cast<Str*>(&g4);
+const int n4 = 4;  // len + 1
+// It would be nice to make these const, but our string functions don't accept
+// them
+GlobalStr<n4> s4 = {Tag::Global,      0,    kZeroMask, kStrHeaderSize + n4,
+                    .unique_id_ = -1, "egg"};
+Str* str4 = reinterpret_cast<Str*>(&s4);
 
 TEST str_test() {
   auto str1 = NewStr("");
@@ -107,16 +107,18 @@ TEST str_test() {
   ASSERT_EQ(0, len(str1));
   ASSERT_EQ(7, len(str2));
 
-  // Make sure it's directly contained
-  ASSERT_EQ('e', g4.data_[0]);
-  ASSERT_EQ('g', g4.data_[1]);
-  ASSERT_EQ('g', g4.data_[2]);
-  ASSERT_EQ('\0', g4.data_[3]);
+  // Global strings
 
-  ASSERT_EQ('e', g5->data_[0]);
-  ASSERT_EQ(Tag::Opaque, g5->heap_tag);
-  ASSERT_EQ(20, g5->obj_len_);
-  ASSERT_EQ(3, len(g5));
+  // Make sure it's directly contained
+  ASSERT_EQ('e', s4.data_[0]);
+  ASSERT_EQ('g', s4.data_[1]);
+  ASSERT_EQ('g', s4.data_[2]);
+  ASSERT_EQ('\0', s4.data_[3]);
+
+  ASSERT_EQ('e', str4->data_[0]);
+  ASSERT_EQ(Tag::Global, str4->heap_tag);
+  ASSERT_EQ(16, str4->obj_len_);
+  ASSERT_EQ(3, len(str4));
 
   PASS();
 }
@@ -367,21 +369,58 @@ TEST slab_trace_test() {
   gHeap.Collect();
   ASSERT_EQ_FMT(0, gHeap.num_live_objs_, "%d");
 
+  // List of strings
   Local<List<Str*>> strings = Alloc<List<Str*>>();
   ASSERT_EQ_FMT(1, gHeap.num_live_objs_, "%d");
 
-  Local<Str> s = NewStr("yo");
-  strings->append(s);
+  // +2: slab and string
+  strings->append(NewStr("yo"));
   ASSERT_EQ_FMT(3, gHeap.num_live_objs_, "%d");
 
+  // +1 string
   strings->append(NewStr("bar"));
   ASSERT_EQ_FMT(4, gHeap.num_live_objs_, "%d");
 
-  // remove reference
+  // -1: remove reference to "bar"
   strings->set(1, nullptr);
-
   gHeap.Collect();
   ASSERT_EQ_FMT(3, gHeap.num_live_objs_, "%d");
+
+  // -1: set to GLOBAL instance.  Remove reference to "yo".
+  strings->set(0, str4);
+  gHeap.Collect();
+  ASSERT_EQ_FMT(2, gHeap.num_live_objs_, "%d");
+
+  PASS();
+}
+
+TEST global_trace_test() {
+  gHeap.Init(kInitialSize);
+
+  // Local reference to global
+
+  Local<Str> l4 = str4;
+  ASSERT_EQ_FMT(0, gHeap.num_live_objs_, "%d");
+
+  gHeap.Collect();
+  ASSERT_EQ_FMT(0, gHeap.num_live_objs_, "%d");
+
+  // Heap reference to global
+
+  Local<List<Str*>> strings = Alloc<List<Str*>>();
+  ASSERT_EQ_FMT(1, gHeap.num_live_objs_, "%d");
+
+  // We now have the Slab too
+  strings->append(nullptr);
+  ASSERT_EQ_FMT(2, gHeap.num_live_objs_, "%d");
+
+  // Global pointer doesn't increase the count
+  strings->set(1, str4);
+  ASSERT_EQ_FMT(2, gHeap.num_live_objs_, "%d");
+
+  // Not after GC either
+  gHeap.Collect();
+  ASSERT_EQ_FMT(2, gHeap.num_live_objs_, "%d");
 
   PASS();
 }
@@ -523,6 +562,7 @@ int main(int argc, char** argv) {
   RUN_TEST(dict_test);
   RUN_TEST(fixed_trace_test);
   RUN_TEST(slab_trace_test);
+  RUN_TEST(global_trace_test);
   RUN_TEST(local_test);
   RUN_TEST(field_mask_test);
 

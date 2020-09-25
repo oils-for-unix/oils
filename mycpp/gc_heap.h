@@ -118,9 +118,10 @@ inline void log(const char* fmt, ...) {
 // that should be a high bit?  0xC000  3 && Tag::FixedSize
 namespace Tag {
 const int Forwarded = 1;  // For the Cheney algorithm.
-const int Opaque = 2;     // Copy but don't scan.  List<int> and Str
-const int FixedSize = 3;  // Fixed size headers: consult field_mask_
-const int Scanned = 4;    // Copy AND scan for non-NULL pointers.
+const int Global = 2;     // Neither copy nor scan.
+const int Opaque = 3;     // Copy but don't scan.  List<int> and Str
+const int FixedSize = 4;  // Fixed size headers: consult field_mask_
+const int Scanned = 5;    // Copy AND scan for non-NULL pointers.
 }  // namespace Tag
 
 namespace gc_heap {
@@ -270,7 +271,6 @@ class Local {
     gHeap.PushRoot(this);
   }
 
-  // Is this sufficient?
   ~Local() {
     gHeap.PopRoot();
   }
@@ -442,14 +442,10 @@ inline Slab<T>* NewSlab(int len) {
 
 class Str : public gc_heap::Obj {
  public:
-  // Note: shouldn't be called directly.  Call NewStr().
-  explicit Str(int len) : Obj(Tag::Opaque), len_(len) {
+  // Don't call this directly.  Call NewStr() instead, which calls this.
+  explicit Str() : Obj(Tag::Opaque, kZeroMask, 0) {
   }
 
-  // This could be len(s) { return s->obj_len_ - sizeof(kStrHeaderSize); }
-  // OCaml uses a related trick by aligning to 4 filling data_[n-1].  I don't
-  // think we need that here.
-  int len_;
   int unique_id_;  // index into intern table ?
   char data_[1];   // flexible array
 
@@ -466,12 +462,17 @@ class GlobalStr {
   uint16_t field_mask_;
   uint32_t obj_len_;
 
-  int len_;
   int unique_id_;
   char data_[N];
 
   DISALLOW_COPY_AND_ASSIGN(GlobalStr)
 };
+
+// Hm we're getting a warning because these aren't plain old data?
+// https://stackoverflow.com/questions/1129894/why-cant-you-use-offsetof-on-non-pod-structures-in-c
+
+// The structures must be layout compatible!  Protect against typos.
+static_assert(offsetof(Str, data_) == offsetof(GlobalStr<1>, data_), "oops");
 
 //
 // String "Constructors".  We need these because of the "flexible array"
@@ -479,12 +480,12 @@ class GlobalStr {
 // require mycpp to generate 2 statements everywhere.
 //
 
-const int kStrHeaderSize = sizeof(Obj) + sizeof(int) + sizeof(int);
+constexpr int kStrHeaderSize = offsetof(Str, data_);
 
 inline Str* NewStr(const char* data, int len) {
   int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
   void* place = gHeap.Allocate(obj_len);   // immutable, so allocate exactly
-  auto s = new (place) Str(len);
+  auto s = new (place) Str();
 
   memcpy(s->data_, data, len);
   s->data_[len] = '\0';  // So we can pass it directly to C functions
@@ -609,13 +610,7 @@ int find_by_key(Slab<K>* keys_, int len, int key) {
   return -1;
 }
 
-inline bool str_equals(Str* left, Str* right) {
-  if (left->len_ == right->len_) {
-    return memcmp(left->data_, right->data_, left->len_) == 0;
-  } else {
-    return false;
-  }
-}
+bool str_equals(Str* left, Str* right);
 
 // TODO: need sentinel for deletion.  The sentinel is in the *indices* array,
 // not in keys or values.  Those are copied verbatim, but may be sparse because
@@ -743,22 +738,21 @@ using gc_heap::Str;
 // Note: we need this duplicate for now... Otherwise the implicit construction
 // for len(Local<Str>) leads to more stack roots than we think!  TODO: I think
 // we need a better way of balancing it.
-#if 1
+#if 0
 inline int len(const Str* s) {
-  return s->len_;
+  return s->obj_len_ - gc_heap::kStrHeaderSize - 1;
 }
 #endif
 
   // Hm only functions that don't allocate can take a raw pointer ...
   // If they allocate, then that pointer can be moved out from under them!
 
-#if 1
 // Hm do all standard library functions have to take Handles now?
 inline int len(Local<Str> s) {
-  return s.Get()->len_;
+  return s.Get()->obj_len_ - gc_heap::kStrHeaderSize - 1;
 }
-#endif
 
+// TODO: Make this Local<List<T>> 
 template <typename T>
 int len(const List<T>* L) {
   return L->len_;

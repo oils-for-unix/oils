@@ -35,10 +35,18 @@ Obj* Heap::Relocate(Obj* obj) {
   //
   // We have fewer cases than that.  We just use a Obj.
 
-  if (obj->heap_tag == Tag::Forwarded) {
+  switch (obj->heap_tag) {
+  case Tag::Forwarded: {
     auto f = reinterpret_cast<LayoutForwarded*>(obj);
     return f->new_location;
-  } else {
+  }
+
+  case Tag::Global: {  // e.g. GlobalStr isn't copied or forwarded
+    // log("*** GLOBAL POINTER");
+    return obj;
+  }
+
+  default: {
     auto new_location = reinterpret_cast<Obj*>(free_);
     // Note: if we wanted to save space on ASDL records, we could calculate
     // their length from the field_mask here.  How much would it slow down GC?
@@ -55,6 +63,7 @@ Obj* Heap::Relocate(Obj* obj) {
     f->new_location = new_location;
     return new_location;
   }
+  }  // switch
 }
 
 void Heap::Collect() {
@@ -129,6 +138,15 @@ void Heap::Collect() {
   char* tmp = from_space_;
   from_space_ = to_space_;
   to_space_ = tmp;
+}
+
+bool str_equals(Str* left, Str* right) {
+  // obj_len_ equal implies string lengths are equal
+  if (left->obj_len_ == right->obj_len_) {
+    return memcmp(left->data_, right->data_, len(left)) == 0;
+  } else {
+    return false;
+  }
 }
 
 #if GC_DEBUG
