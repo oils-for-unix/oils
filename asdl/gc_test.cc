@@ -9,13 +9,13 @@
 
 #include "typed_demo_asdl.gc.h"
 
-using gc_heap::NewStr;
 using gc_heap::Alloc;
 using gc_heap::Local;
+using gc_heap::NewStr;
 // using hnode_asdl::hnode_str;
 
-using typed_demo_asdl::word;
 using typed_demo_asdl::bool_expr__Binary;
+using typed_demo_asdl::word;
 
 TEST pretty_print_test() {
   // typed_demo.asdl

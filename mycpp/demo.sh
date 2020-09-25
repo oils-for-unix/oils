@@ -16,6 +16,11 @@ source $REPO_ROOT/build/common.sh  # for $CLANG_DIR_RELATIVE, $PREPARE_DIR
 CPPFLAGS="$CXXFLAGS -O0 -g -fsanitize=address -Wpedantic"
 export ASAN_OPTIONS='detect_leaks=0'  # like build/mycpp.sh
 
+deps() {
+  # needed to compile with -m32
+  sudo apt install gcc-multilib g++-multilib
+}
+
 # Copied from mycpp/run.sh
 cpp-compile() {
   local main_cc=$1
@@ -68,8 +73,27 @@ overhead() {
 
 target-lang() {
   local bin=_bin/target_lang 
+  # -m32 complains about "shadow memory"
   cpp-compile demo/target_lang.cc $bin ../cpp/dumb_alloc.cc -I ../cpp
   $bin "$@"
+}
+
+# Compile as 32-bit.  Not compatible with ASAN.
+target-lang-m32() {
+  local bin=_bin/target_lang_32
+
+  # constexpr restrictions lifted
+  $CXX -o $bin $CXXFLAGS -m32 \
+    demo/target_lang.cc ../cpp/dumb_alloc.cc -I ../cpp
+  $bin "$@"
+}
+
+m32-demo() {
+  # mask is 1010
+  target-lang -t field_mask_demo
+
+  # mask is 10100 !
+  target-lang-m32 -t field_mask_demo
 }
 
 open() {

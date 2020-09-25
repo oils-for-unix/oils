@@ -429,6 +429,71 @@ TEST enum_demo() {
   log("c2 %d", static_cast<int>(c2));
 
   log("array[c1] %d", array[static_cast<int>(c1)]);
+
+  PASS();
+}
+
+class Node {
+ public:
+  int i;
+  int j;
+  Node* left;
+  int k;
+  // padding here on 64-bit, but not 32-bit
+  Node* right;
+};
+
+#if 0
+constexpr uint16_t Node_mask() {
+  uint16_t mask = 0;
+
+  constexpr int stride = sizeof(void*);
+
+  constexpr int o1 = offsetof(Node, left);
+  static_assert(o1 % stride == 0, "oops");
+
+  constexpr int o2 = offsetof(Node, right);
+  static_assert(o2 % stride == 0, "oops");
+
+  constexpr int b1 = o1 / stride;
+  constexpr int b2 = o2 / stride;
+
+  mask |= 1 << b1;
+  mask |= 1 << b2;
+
+  return mask;
+}
+
+#else
+
+// C++ 11 version has to be a single expression!
+
+constexpr uint16_t Node_mask() {
+  return (1 << (offsetof(Node, left) / sizeof(void*)) |
+          1 << (offsetof(Node, right) / sizeof(void*)));
+}
+
+#endif
+
+void print_bin(int n) {
+  for (int i = 15; i >= 0; --i) {
+    if (n & (1 << i))
+      putchar('1');
+    else
+      putchar('0');
+  }
+  putchar('\n');
+}
+
+TEST field_mask_demo() {
+  int c1 = offsetof(Node, left);
+  int c2 = offsetof(Node, right);
+  log("c1 = %d, c2 = %d, sizeof(void*) = %d", c1, c2, sizeof(void*));
+
+  log("Node_mask");
+  print_bin(Node_mask());
+
+  PASS();
 }
 
 GREATEST_MAIN_DEFS();
@@ -447,6 +512,7 @@ int main(int argc, char** argv) {
   RUN_TEST(except_demo);
   RUN_TEST(static_literals);
   RUN_TEST(enum_demo);
+  RUN_TEST(field_mask_demo);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;
