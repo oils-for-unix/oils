@@ -445,14 +445,32 @@ class Str : public gc_heap::Obj {
   // Note: shouldn't be called directly.  Call NewStr().
   explicit Str(int len) : Obj(Tag::Opaque), len_(len) {
   }
-  // Note: OCaml unifies the obj length and string length with padding 00, 00
-  // 01, 00 00 02, 00 00 00 03.  Although I think they added special cases for
-  // 32-bit and 64-bit; we're using the portable max_align_t
+
+  // This could be len(s) { return s->obj_len_ - sizeof(kStrHeaderSize); }
+  // OCaml uses a related trick by aligning to 4 filling data_[n-1].  I don't
+  // think we need that here.
   int len_;
   int unique_id_;  // index into intern table ?
   char data_[1];   // flexible array
 
   DISALLOW_COPY_AND_ASSIGN(Str)
+};
+
+template <int N>
+class GlobalStr {
+  // A template type with the same layout as Str with length N (which needs a
+  // buffer of size N+1).  For initializing global constant instances.
+ public:
+  uint8_t heap_tag;
+  uint8_t tag;
+  uint16_t field_mask_;
+  uint32_t obj_len_;
+
+  int len_;
+  int unique_id_;
+  char data_[N];
+
+  DISALLOW_COPY_AND_ASSIGN(GlobalStr)
 };
 
 //

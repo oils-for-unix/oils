@@ -16,6 +16,7 @@ using gc_heap::Local;
 using gc_heap::Obj;
 
 using gc_heap::Dict;
+using gc_heap::GlobalStr;
 using gc_heap::List;
 using gc_heap::NewStr;
 using gc_heap::Slab;
@@ -82,6 +83,13 @@ TEST roundup_test() {
 //   - We want to resize the to_space, trigger a GC, and then allocate?  Or is
 //     there something simpler?
 
+constexpr int n4 = 3;
+GlobalStr<n4 + 1> g4 = {
+    Tag::Opaque,      0,    kZeroMask, kStrHeaderSize + n4 + 1, n4,
+    .unique_id_ = -1, "egg"};
+
+Str* g5 = reinterpret_cast<Str*>(&g4);
+
 TEST str_test() {
   auto str1 = NewStr("");
   auto str2 = NewStr("one\0two", 7);
@@ -98,6 +106,17 @@ TEST str_test() {
 
   ASSERT_EQ(0, len(str1));
   ASSERT_EQ(7, len(str2));
+
+  // Make sure it's directly contained
+  ASSERT_EQ('e', g4.data_[0]);
+  ASSERT_EQ('g', g4.data_[1]);
+  ASSERT_EQ('g', g4.data_[2]);
+  ASSERT_EQ('\0', g4.data_[3]);
+
+  ASSERT_EQ('e', g5->data_[0]);
+  ASSERT_EQ(Tag::Opaque, g5->heap_tag);
+  ASSERT_EQ(20, g5->obj_len_);
+  ASSERT_EQ(3, len(g5));
 
   PASS();
 }
