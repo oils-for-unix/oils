@@ -216,4 +216,8 @@ gen-ctags() {
   ctags -R $MYPY_REPO
 }
 
+gc-fib() {
+  GC=1 example-both fib_iter
+}
+
 "$@"

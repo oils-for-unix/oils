@@ -5,6 +5,7 @@ Immutable string constants like 'new Str("foo")' are moved to the top level of
 the generated C++ program for efficiency.
 """
 import json
+import os
 
 from typing import overload, Union, Optional, Any, Dict, List
 
@@ -117,7 +118,9 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         id_ = 'str%d' % self.unique_id
         raw_string = format_strings.DecodeMyPyString(o.value)
 
-        self.out('Str* %s = new Str(%s);', id_, json.dumps(raw_string))
+        constructor = 'NewStr' if os.getenv('GC') else 'new Str'
+        self.out('Str* %s = %s(%s);', id_, constructor,
+                 json.dumps(raw_string))
         self.unique_id += 1
         self.const_lookup[o] = id_
 

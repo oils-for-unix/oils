@@ -232,13 +232,25 @@ def main(argv):
       builder.visit_mypy_file(module)
     return
 
-
   f = sys.stdout
+
+  gc = bool(os.getenv('GC'))
+  header_name = 'gc_heap' if gc else 'mylib'
 
   # TODO: Add --cc-out?  But there is a preamble and postamble.
   f.write("""\
 // BEGIN mycpp output
 
+#include "%s.h"
+
+""" % header_name)
+
+  if gc:
+    f.write("""\
+#include "my_runtime.h"
+
+using gc_heap::Alloc;
+using gc_heap::NewStr;
 """)
 
   if to_header:
@@ -267,8 +279,8 @@ def main(argv):
 #ifndef %s
 #define %s
 
-#include "mylib.h"
-""" % (os.path.basename(opts.header_out), guard, guard))
+#include "%s.h"
+""" % (os.path.basename(opts.header_out), guard, guard, header_name))
 
   log('\tFORWARD DECL')
 

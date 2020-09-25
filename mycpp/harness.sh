@@ -8,6 +8,8 @@ gen-main() {
   cat <<EOF
 
 int main(int argc, char **argv) {
+  // gc_heap::gHeap.Init(1 << 20);  // 1 MiB to start
+
   if (getenv("BENCHMARK")) {
     fprintf(stderr, "Benchmarking...\n");
     $main_module::run_benchmarks();
@@ -22,13 +24,10 @@ filter-cpp() {
   local main_module=${1:-fib_iter}
   shift
 
-  cat <<EOF
-#include "mylib.h"
-
-EOF
-
+  # the raw module
   cat "$@"
 
+  # main() function
   gen-main $main_module
 }
 
@@ -104,6 +103,7 @@ _compile-example() {
   # need -lstdc++ for 'operator new'
   $CXX -o $out $CPPFLAGS $more_flags -I . \
     mylib.cc $src -lstdc++
+    #my_runtime.cc gc_heap.cc $src -lstdc++
 }
 
 compile-example() {
