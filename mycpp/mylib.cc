@@ -2,24 +2,14 @@
 
 #include "mylib.h"
 
-#include <assert.h>
 #include <errno.h>
-#include <stdarg.h>  // va_list, etc.
-#include <stdio.h>
 #include <unistd.h>  // isatty
+#include <cassert>
+#include <cstdio>
 
 #include <exception>  // std::exception
 
 Str* kEmptyString = new Str("", 0);
-
-// for hand-written code
-void log(const char* fmt, ...) {
-  va_list args;
-  va_start(args, fmt);
-  vfprintf(stderr, fmt, args);
-  va_end(args);
-  fprintf(stderr, "\n");
-}
 
 // Translation of Python's print().
 void print(Str* s) {

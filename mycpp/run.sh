@@ -216,8 +216,18 @@ gen-ctags() {
   ctags -R $MYPY_REPO
 }
 
-gc-fib() {
-  GC=1 example-both fib_iter
+gc-examples() {
+  if false; then
+    # these work
+    GC=1 example-both fib_iter
+    GC=1 example-both fib_recursive
+  fi
+
+  # needs .replace()
+  #GC=1 example-both cgi
+
+  # print() and to_int()
+  GC=1 example-both conditional
 }
 
 "$@"

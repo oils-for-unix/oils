@@ -89,7 +89,7 @@ TEST str_test() {
   auto str1 = NewStr("");
   auto str2 = NewStr("one\0two", 7);
 
-  ASSERT_EQ_FMT(Tag::Opaque, str1->heap_tag, "%d");
+  ASSERT_EQ_FMT(Tag::Opaque, str1->heap_tag_, "%d");
   ASSERT_EQ_FMT(kStrHeaderSize + 1, str1->obj_len_, "%d");
   ASSERT_EQ_FMT(kStrHeaderSize + 7 + 1, str2->obj_len_, "%d");
 
@@ -108,7 +108,7 @@ TEST str_test() {
   ASSERT_EQ('g', str4->data_[1]);
   ASSERT_EQ('g', str4->data_[2]);
   ASSERT_EQ('\0', str4->data_[3]);
-  ASSERT_EQ(Tag::Global, str4->heap_tag);
+  ASSERT_EQ(Tag::Global, str4->heap_tag_);
   ASSERT_EQ(16, str4->obj_len_);
   ASSERT_EQ(3, len(str4));
 
@@ -130,8 +130,8 @@ TEST list_test() {
   ASSERT_EQ_FMT(0, list1->capacity_, "%d");
   ASSERT_EQ_FMT(0, list2->capacity_, "%d");
 
-  ASSERT_EQ_FMT(Tag::FixedSize, list1->heap_tag, "%d");
-  ASSERT_EQ_FMT(Tag::FixedSize, list2->heap_tag, "%d");
+  ASSERT_EQ_FMT(Tag::FixedSize, list1->heap_tag_, "%d");
+  ASSERT_EQ_FMT(Tag::FixedSize, list2->heap_tag_, "%d");
 
   // 8 byte obj header + 2 integers + pointer
   ASSERT_EQ_FMT(24, list1->obj_len_, "%d");
@@ -148,7 +148,7 @@ TEST list_test() {
 
   // 32 byte block - 8 byte header = 24 bytes, 6 elements
   ASSERT_EQ_FMT(6, list1->capacity_, "%d");
-  ASSERT_EQ_FMT(Tag::Opaque, list1->slab_->heap_tag, "%d");
+  ASSERT_EQ_FMT(Tag::Opaque, list1->slab_->heap_tag_, "%d");
 
   // 8 byte header + 3*4 == 8 + 12 == 20, rounded up to power of 2
   ASSERT_EQ_FMT(32, list1->slab_->obj_len_, "%d");
@@ -219,8 +219,8 @@ TEST dict_test() {
   ASSERT_EQ(0, len(dict1));
   ASSERT_EQ(0, len(dict2));
 
-  ASSERT_EQ_FMT(Tag::FixedSize, dict1->heap_tag, "%d");
-  ASSERT_EQ_FMT(Tag::FixedSize, dict1->heap_tag, "%d");
+  ASSERT_EQ_FMT(Tag::FixedSize, dict1->heap_tag_, "%d");
+  ASSERT_EQ_FMT(Tag::FixedSize, dict1->heap_tag_, "%d");
 
   ASSERT_EQ_FMT(0, dict1->capacity_, "%d");
   ASSERT_EQ_FMT(0, dict2->capacity_, "%d");
@@ -502,7 +502,7 @@ TEST local_test() {
 }
 
 void ShowSlab(Obj* obj) {
-  assert(obj->heap_tag == Tag::Scanned);
+  assert(obj->heap_tag_ == Tag::Scanned);
   auto slab = reinterpret_cast<Slab<void*>*>(obj);
 
   int n = (slab->obj_len_ - kSlabHeaderSize) / sizeof(void*);

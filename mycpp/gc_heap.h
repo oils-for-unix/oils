@@ -7,15 +7,15 @@
 #define GC_HEAP_H
 
 #include <cassert>  // assert()
-#include <cstdarg>  // va_list, etc.
 #include <cstddef>  // max_align_t
 #include <cstdint>  // max_align_t
-#include <cstdio>   // vprintf
 #include <cstdlib>  // malloc
 #include <cstring>  // memcpy
 #include <initializer_list>
 #include <new>      // placement new
 #include <utility>  // std::forward
+
+#include "common.h"
 
 // Design Notes:
 
@@ -44,10 +44,10 @@
 // Memory allocation APIs:
 //
 // - gc_heap::Alloc<Foo>(x)
-//   An alternative to new Foo(x).  mycpp/ASDL should generate these calls.
-//   Automatically deallocated.
+//   The typed public API.  An alternative to new Foo(x).  mycpp/ASDL should
+//   generate these calls.
 // - Heap::Allocate()
-//   For Slab, and for special types like Str.  Automatically deallocated.
+//   The untyped internal API.  For NewStr() and NewSlab().
 // - malloc() -- for say yajl to use.  Manually deallocated.
 // - new/delete -- for other C++ libs to use.  Manually deallocated.
 
@@ -101,18 +101,6 @@
 //   up
 // - Dict: 40 bytes: I don't think it optimizes
 // - Doesn't apply to Str because it's immutable: 16 bytes + string length.
-
-#define DISALLOW_COPY_AND_ASSIGN(TypeName) \
-  TypeName(TypeName&) = delete;            \
-  void operator=(TypeName) = delete;
-
-inline void log(const char* fmt, ...) {
-  va_list args;
-  va_start(args, fmt);
-  vprintf(fmt, args);
-  va_end(args);
-  puts("");
-}
 
 // TODO: Reconcile these with ASDL tags.  Those are all FixedSize, so I guess
 // that should be a high bit?  0xC000  3 && Tag::FixedSize
@@ -368,6 +356,27 @@ inline int RoundUp(int n) {
 
 const int kZeroMask = 0;  // for types with no pointers
 
+// Why do we need this macro instead of using inheritance?
+// - Because ASDL uses multiple inheritance for first class variants, but we
+//   don't want multiple IMPLEMENTATION inheritance.  Instead we just generate
+//   compatible layouts.
+// - Similarly, GlobalStr is layout-compatible with Str.  It can't inherit from
+//   Obj like Str, because of the constexpr issue with char[N].
+
+// heap_tag_: one of Tag::
+// tag_: ASDL tag (variant)
+// field_mask_: for fixed length records, so max 16 fields
+// obj_len_: number of bytes to copy
+//   TODO: with a limitation of ~15 fields, we can encode obj_len_ in
+//   field_mask_, and save space on many ASDL types.
+//   And we can sort integers BEFORE pointers.
+
+#define OBJ_HEADER()    \
+  uint8_t heap_tag_;    \
+  uint8_t tag;          \
+  uint16_t field_mask_; \
+  uint32_t obj_len_;
+
 class Obj {
   // The unit of garbage collection.  It has a header describing how to find
   // the pointers within it.
@@ -382,23 +391,17 @@ class Obj {
   }
 #endif
   constexpr Obj(uint8_t heap_tag, uint16_t field_mask, int obj_len)
-      : heap_tag(heap_tag), tag(0), field_mask_(field_mask), obj_len_(obj_len) {
+      : heap_tag_(heap_tag),
+        tag(0),
+        field_mask_(field_mask),
+        obj_len_(obj_len) {
   }
 
   void SetCellLength(int obj_len) {
     this->obj_len_ = obj_len;
   }
 
-  uint8_t heap_tag;      // one of Tag::
-  uint8_t tag;           // reserved for ASDL tag
-  uint16_t field_mask_;  // for fixed length records, so max 16 fields
-
-  // # bytes to copy, or # bytes to scan?
-  // for Slab, which is used by List<Str*> and Dict<Str*, Str*>
-  //
-  // Should this be specific to slab?  If heap_tag == Tag::*Slab?
-  // TODO: if we limit it to 15 fields, we can encode length in field_mask.
-  uint32_t obj_len_;
+  OBJ_HEADER()
 
   DISALLOW_COPY_AND_ASSIGN(Obj)
 };
@@ -406,13 +409,13 @@ class Obj {
 template <typename T>
 inline void InitSlabCell(Obj* obj) {
   // log("SCANNED");
-  obj->heap_tag = Tag::Scanned;
+  obj->heap_tag_ = Tag::Scanned;
 }
 
 template <>
 inline void InitSlabCell<int>(Obj* obj) {
   // log("OPAQUE");
-  obj->heap_tag = Tag::Opaque;
+  obj->heap_tag_ = Tag::Opaque;
 }
 
 // don't include items_[1]
@@ -459,19 +462,10 @@ template <int N>
 class GlobalStr {
   // A template type with the same layout as Str with length N-1 (which needs a
   // buffer of size N).  For initializing global constant instances.
-  //
-  // Somehow if we inherit from Obj we can't use the initialization list.
  public:
-  // TODO: Use a macro for this, and in ASDL too?
-#if 1
-  uint8_t heap_tag;
-  uint8_t tag;
-  uint16_t field_mask_;
-  uint32_t obj_len_;
-#endif
+  OBJ_HEADER()
 
   int unique_id_;
-
   const char data_[N];
 
   DISALLOW_COPY_AND_ASSIGN(GlobalStr)
@@ -485,9 +479,14 @@ class GlobalStr {
 // https://old.reddit.com/r/cpp_questions/comments/j0khh6/how_to_constexpr_initialize_class_member_thats/
 // https://stackoverflow.com/questions/10422487/how-can-i-initialize-char-arrays-in-a-constructor
 
-#define GLOBAL_STR(name, val)                                            \
-  gc_heap::GlobalStr<sizeof(val)> _##name = {                                       \
-      Tag::Global, 0, gc_heap::kZeroMask, gc_heap::kStrHeaderSize + sizeof(val), -1, val}; \
+#define GLOBAL_STR(name, val)                 \
+  gc_heap::GlobalStr<sizeof(val)> _##name = { \
+      Tag::Global,                            \
+      0,                                      \
+      gc_heap::kZeroMask,                     \
+      gc_heap::kStrHeaderSize + sizeof(val),  \
+      -1,                                     \
+      val};                                   \
   Str* name = reinterpret_cast<Str*>(&_##name);
 
 // Note: sizeof("foo") == 4, for the NUL terminator.

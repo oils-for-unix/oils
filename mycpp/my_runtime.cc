@@ -68,7 +68,7 @@ void BufWriter::format_r(Str* s) {
   data_ = static_cast<char*>(realloc(data_, len_ + upper_bound + 1));
 
   char quote = '\'';
-  if (memchr(s->data_, '\'', n) && !memchr(s->data_, '"',n)) {
+  if (memchr(s->data_, '\'', n) && !memchr(s->data_, '"', n)) {
     quote = '"';
   }
   char* p = data_ + len_;  // end of valid data

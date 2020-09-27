@@ -17,17 +17,13 @@
 #include <unordered_map>
 #include <vector>
 
+#include "common.h"
+
 #ifdef DUMB_ALLOC
 #include "dumb_alloc.h"
 #define malloc dumb_malloc
 #define free dumb_free
 #endif
-
-// To reduce code size
-
-#define DISALLOW_COPY_AND_ASSIGN(TypeName) \
-  TypeName(TypeName&) = delete;            \
-  void operator=(TypeName) = delete;
 
 class Str;
 
@@ -48,9 +44,6 @@ void dict_remove(Dict<Str*, V>* haystack, Str* needle);
 };
 
 extern Str* kEmptyString;
-
-// for hand-written code
-void log(const char* fmt, ...);
 
 void print(Str* s);
 

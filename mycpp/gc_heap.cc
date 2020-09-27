@@ -16,7 +16,7 @@ Heap gHeap;
 
 class LayoutForwarded : public Obj {
  public:
-  Obj* new_location;  // valid if and only if heap_tag == Tag::Forwarded
+  Obj* new_location;  // valid if and only if heap_tag_ == Tag::Forwarded
 };
 
 // for Tag::FixedSize
@@ -35,7 +35,7 @@ Obj* Heap::Relocate(Obj* obj) {
   //
   // We have fewer cases than that.  We just use a Obj.
 
-  switch (obj->heap_tag) {
+  switch (obj->heap_tag_) {
   case Tag::Forwarded: {
     auto f = reinterpret_cast<LayoutForwarded*>(obj);
     return f->new_location;
@@ -59,7 +59,7 @@ Obj* Heap::Relocate(Obj* obj) {
 #endif
 
     auto f = reinterpret_cast<LayoutForwarded*>(obj);
-    f->heap_tag = Tag::Forwarded;
+    f->heap_tag_ = Tag::Forwarded;
     f->new_location = new_location;
     return new_location;
   }
@@ -100,14 +100,14 @@ void Heap::Collect() {
 
   while (scan_ < free_) {
     auto obj = reinterpret_cast<Obj*>(scan_);
-    switch (obj->heap_tag) {
+    switch (obj->heap_tag_) {
     case Tag::FixedSize: {
       auto fixed = reinterpret_cast<LayoutFixed*>(obj);
       int mask = fixed->field_mask_;
       for (int i = 0; i < 16; ++i) {
         if (mask & (1 << i)) {
           Obj* child = fixed->children_[i];
-          // log("i = %d, p = %p, heap_tag = %d", i, child, child->heap_tag);
+          // log("i = %d, p = %p, heap_tag = %d", i, child, child->heap_tag_);
           if (child) {
             fixed->children_[i] = Relocate(child);
           }
@@ -151,7 +151,7 @@ bool str_equals(Str* left, Str* right) {
 
 #if GC_DEBUG
 void ShowFixedChildren(Obj* obj) {
-  assert(obj->heap_tag == Tag::FixedSize);
+  assert(obj->heap_tag_ == Tag::FixedSize);
   auto fixed = reinterpret_cast<LayoutFixed*>(obj);
   log("MASK:");
 
@@ -165,7 +165,7 @@ void ShowFixedChildren(Obj* obj) {
     if (mask & (1 << i)) {
       Obj* child = fixed->children_[i];
       // make sure we get Tag::Opaque, Tag::Scanned, etc.
-      log("i = %d, p = %p, heap_tag = %d", i, child, child->heap_tag);
+      log("i = %d, p = %p, heap_tag = %d", i, child, child->heap_tag_);
     }
   }
 }
