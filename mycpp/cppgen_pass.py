@@ -972,6 +972,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         assert c_type.endswith('*'), c_type
         c_type = c_type[:-1]  # HACK TO CLEAN UP
 
+        # TODO: Alloc<Dict<...>>
         self.write('new %s(' % c_type)
         if o.items:
           # TODO: use initializer_list<K> and initializer_list<V> perhaps?  Do
@@ -1932,8 +1933,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.decl_write_ind('class %s', o.name)  # block after this
 
           # e.g. class TextOutput : public ColorOutput
-          if base_class_name:
-            self.decl_write(' : public %s', base_class_name)
+          self.decl_write(' : public %s', base_class_name or 'gc_heap::Obj')
 
           self.decl_write(' {\n')
           self.decl_write_ind(' public:\n')

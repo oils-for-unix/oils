@@ -217,7 +217,7 @@ gen-ctags() {
 }
 
 gc-examples() {
-  if false; then
+  if true; then
     # these work
     GC=1 example-both fib_iter
     GC=1 example-both fib_recursive
@@ -227,7 +227,9 @@ gc-examples() {
   #GC=1 example-both cgi
 
   # print() and to_int()
-  GC=1 example-both conditional
+  #GC=1 example-both conditional
+
+  #GC=1 example-both classes
 }
 
 "$@"

@@ -57,7 +57,6 @@ build-variants() {
   build/mycpp.sh compile-slice-opt ''  # dumb_alloc
 
   build/mycpp.sh compile-slice-malloc ''  # GNU libc malloc
-  build/mycpp.sh compile-slice-gc ''  # GNU libc malloc with GC header
 
   build/mycpp.sh compile-slice-tcmalloc ''
 }
@@ -74,7 +73,7 @@ measure() {
 
   rm -f $out
 
-  for variant in .opt .malloc .gc .tcmalloc; do
+  for variant in .opt .malloc .tcmalloc; do
     echo $variant
     #time-mem _bin/osh_eval$variant -c 'echo hi'
 

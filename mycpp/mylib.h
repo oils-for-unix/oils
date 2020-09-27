@@ -95,18 +95,6 @@ class RuntimeError {
 // Data Types
 //
 
-// Simulating 4 byte per-object overhead
-//
-// Str: 16 -> 16
-// List and Dict: 24 -> 32, although this will change
-
-// #define COLLECT_GARBAGE 1
-
-// TODO: Consider a couple extra fields:
-// - lazy .str0() field on this immutable slice, rather than instantiating Str0
-//   in every binding.
-// - Cached hash code here.
-
 class Str : public gc_heap::Obj {
  public:
   explicit Str(const char* data) : data_(data) {
