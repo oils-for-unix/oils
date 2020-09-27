@@ -97,8 +97,12 @@ def TupleDemo():
     print('no')
 
 
+
 def DictDemo():
   # type: () -> None
+
+  # regression
+  nonempty = {'a': 'b'}  # type: Dict[str, str]
 
   d = {}  # type: Dict[str, int]
   d['foo'] = 42

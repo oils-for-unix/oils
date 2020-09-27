@@ -385,11 +385,18 @@ class Obj {
   // breaks down because mycpp has inheritance.  Could do this later.
 
  public:
-#if 0
-  Obj(uint16_t heap_tag)
-      : heap_tag(heap_tag), field_mask_(kZeroMask), obj_len_(0) {
+  // default constructor for multiple inheritance
+  constexpr Obj()
+      : heap_tag_(Tag::FixedSize), tag(0), field_mask_(kZeroMask), obj_len_(0) {
   }
-#endif
+  // constructor for ASDL
+  explicit Obj(uint16_t tag)
+      : heap_tag_(Tag::FixedSize),
+        tag(tag),
+        field_mask_(kZeroMask),
+        obj_len_(0) {
+  }
+
   constexpr Obj(uint8_t heap_tag, uint16_t field_mask, int obj_len)
       : heap_tag_(heap_tag),
         tag(0),
@@ -439,6 +446,8 @@ inline Slab<T>* NewSlab(int len) {
   auto slab = new (place) Slab<T>(obj_len);  // placement new
   return slab;
 }
+
+#ifndef MYLIB_LEGACY
 
 //
 // Str
@@ -744,11 +753,15 @@ class Dict : public gc_heap::Obj {
 void ShowFixedChildren(Obj* obj);
 #endif
 
+#endif  // MYLIB_LEGACY
+
 }  // namespace gc_heap
 
 //
 // Functions
 //
+
+#ifndef MYLIB_LEGACY
 
 // TODO: Move to mylib?
 using gc_heap::Dict;
@@ -783,5 +796,7 @@ template <typename K, typename V>
 inline int len(const Dict<K, V>* d) {
   return d->len_;
 }
+
+#endif  // MYLIB_LEGACY
 
 #endif  // GC_HEAP_H

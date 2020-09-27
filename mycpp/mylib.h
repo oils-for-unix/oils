@@ -18,6 +18,8 @@
 #include <vector>
 
 #include "common.h"
+#define MYLIB_LEGACY 1
+#include "gc_heap.h"  // for Obj
 
 #ifdef DUMB_ALLOC
 #include "dumb_alloc.h"
@@ -93,21 +95,6 @@ class RuntimeError {
 // Data Types
 //
 
-// every ASDL type inherits from this, and provides tag() to
-// static_cast<>(this->tag) to its own enum?
-
-class Obj {
- public:
-  // default constructor for multiple inheritance
-  constexpr Obj() : tag(0) {
-  }
-  explicit Obj(uint16_t tag) : tag(tag) {
-  }
-  uint16_t tag;
-
-  DISALLOW_COPY_AND_ASSIGN(Obj)
-};
-
 // Simulating 4 byte per-object overhead
 //
 // Str: 16 -> 16
@@ -115,24 +102,12 @@ class Obj {
 
 // #define COLLECT_GARBAGE 1
 
-class Managed {
-#ifdef COLLECT_GARBAGE
- public:
-  constexpr Managed() : heap_tag(0), tag(0), field_mask(0), cell_len(0) {
-  }
-  uint8_t heap_tag;
-  uint8_t tag;  // bitmap, length
-  uint16_t field_mask;
-  uint32_t cell_len;  // could be optimized away for Fixed
-#endif
-};
-
 // TODO: Consider a couple extra fields:
 // - lazy .str0() field on this immutable slice, rather than instantiating Str0
 //   in every binding.
 // - Cached hash code here.
 
-class Str : public Managed {
+class Str : public gc_heap::Obj {
  public:
   explicit Str(const char* data) : data_(data) {
     len_ = strlen(data);
@@ -383,7 +358,7 @@ class StrIter {
 
 // TODO: Rewrite without vector<>, so we don't depend on libstdc++.
 template <class T>
-class List : public Managed {
+class List : public gc_heap::Obj {
  public:
   // Note: constexpr doesn't work because the std::vector destructor is
   // nontrivial
@@ -687,7 +662,7 @@ List<V>* dict_values(const std::vector<std::pair<Str*, V>>& items) {
 // Dict currently implemented by VECTOR OF PAIRS.  TODO: Use a real hash table,
 // and measure performance.  The hash table has to beat this for small cases!
 template <class K, class V>
-class Dict : public Managed {
+class Dict : public gc_heap::Obj {
  public:
   Dict() : items_() {
   }

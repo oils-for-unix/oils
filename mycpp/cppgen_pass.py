@@ -972,14 +972,17 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         assert c_type.endswith('*'), c_type
         c_type = c_type[:-1]  # HACK TO CLEAN UP
 
-        # TODO: make_shared<>
         self.write('new %s(' % c_type)
         if o.items:
-          self.write('{')
-          for i, item in enumerate(o.items):
-            # TODO:  we can use an initializer list, I think.
-            pass
-          self.write('}')
+          # TODO: use initializer_list<K> and initializer_list<V> perhaps?  Do
+          # we want global data being initialized?  Not sure if we'll have
+          # initialization order problems.  Can't really make them constexpr
+          # because of the Str problem.
+          if 0:
+            self.write('{')
+            for i, item in enumerate(o.items):
+              pass
+            self.write('}')
         self.write(')')
 
     def visit_tuple_expr(self, o: 'mypy.nodes.TupleExpr') -> T:

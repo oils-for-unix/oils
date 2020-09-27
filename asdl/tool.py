@@ -75,11 +75,19 @@ def main(argv):
 
 """ % (out_prefix, guard, guard))
 
+
+#define MYLIB_LEGACY 1  // get rid conflicting types
       f.write("""\
 #include <cstdint>
-#include "%s.h"  // for Str, List, etc.
-
-""" % ('gc_heap' if gc else 'mylib'))
+""")
+      if gc:
+        f.write("""
+#include "gc_heap.h"  // for new object header
+""")
+      else:
+        f.write("""
+#include "mylib.h"  // for old Str, List, etc.
+""")
 
       if pretty_print_methods:
         f.write("""\

@@ -293,7 +293,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     Emit(' public:')
     Emit('  int tag_() const {')
     # There's no inheritance relationship, so we have to reinterpret_cast.
-    Emit('    return reinterpret_cast<const Obj*>(this)->tag;')
+    Emit('    return reinterpret_cast<const gc_heap::Obj*>(this)->tag;')
     Emit('  }')
 
     if self.pretty_print_methods:
@@ -365,8 +365,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     #
     # Members
     #
-    self.Emit('  uint16_t tag;')
-    self.Emit('  uint16_t how_to_trace;')  # for copying GC
+    self.Emit('  OBJ_HEADER();')
     for field in all_fields:
       self.Emit("  %s %s;" % (_GetCppType(field.typ), field.name))
 
