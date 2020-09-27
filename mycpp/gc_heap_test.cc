@@ -83,12 +83,7 @@ TEST roundup_test() {
 //   - We want to resize the to_space, trigger a GC, and then allocate?  Or is
 //     there something simpler?
 
-const int n4 = 4;  // len + 1
-// It would be nice to make these const, but our string functions don't accept
-// them
-GlobalStr<n4> s4 = {Tag::Global,      0,    kZeroMask, kStrHeaderSize + n4,
-                    .unique_id_ = -1, "egg"};
-Str* str4 = reinterpret_cast<Str*>(&s4);
+GLOBAL_STR(str4, "egg");
 
 TEST str_test() {
   auto str1 = NewStr("");
@@ -109,13 +104,10 @@ TEST str_test() {
 
   // Global strings
 
-  // Make sure it's directly contained
-  ASSERT_EQ('e', s4.data_[0]);
-  ASSERT_EQ('g', s4.data_[1]);
-  ASSERT_EQ('g', s4.data_[2]);
-  ASSERT_EQ('\0', s4.data_[3]);
-
   ASSERT_EQ('e', str4->data_[0]);
+  ASSERT_EQ('g', str4->data_[1]);
+  ASSERT_EQ('g', str4->data_[2]);
+  ASSERT_EQ('\0', str4->data_[3]);
   ASSERT_EQ(Tag::Global, str4->heap_tag);
   ASSERT_EQ(16, str4->obj_len_);
   ASSERT_EQ(3, len(str4));

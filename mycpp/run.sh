@@ -197,7 +197,7 @@ cpp-compile() {
   shift
 
   mkdir -p _bin
-  $CXX -o _bin/$name $CPPFLAGS -I . $name.cc "$@" -lstdc++
+  $CXX -o _bin/$name $CPPFLAGS -I . $name.cc "$@" -lstdc++ -std=c++14
 }
 
 mylib-test() {

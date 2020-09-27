@@ -376,12 +376,13 @@ class Obj {
   // breaks down because mycpp has inheritance.  Could do this later.
 
  public:
-  // Used by Str
+#if 0
   Obj(uint16_t heap_tag)
       : heap_tag(heap_tag), field_mask_(kZeroMask), obj_len_(0) {
   }
-  Obj(uint16_t heap_tag, uint16_t field_mask, int obj_len)
-      : heap_tag(heap_tag), field_mask_(field_mask), obj_len_(obj_len) {
+#endif
+  constexpr Obj(uint8_t heap_tag, uint16_t field_mask, int obj_len)
+      : heap_tag(heap_tag), tag(0), field_mask_(field_mask), obj_len_(obj_len) {
   }
 
   void SetCellLength(int obj_len) {
@@ -452,21 +453,44 @@ class Str : public gc_heap::Obj {
   DISALLOW_COPY_AND_ASSIGN(Str)
 };
 
+constexpr int kStrHeaderSize = offsetof(Str, data_);
+
 template <int N>
 class GlobalStr {
-  // A template type with the same layout as Str with length N (which needs a
-  // buffer of size N+1).  For initializing global constant instances.
+  // A template type with the same layout as Str with length N-1 (which needs a
+  // buffer of size N).  For initializing global constant instances.
+  //
+  // Somehow if we inherit from Obj we can't use the initialization list.
  public:
+  // TODO: Use a macro for this, and in ASDL too?
+#if 1
   uint8_t heap_tag;
   uint8_t tag;
   uint16_t field_mask_;
   uint32_t obj_len_;
+#endif
 
   int unique_id_;
-  char data_[N];
+
+  const char data_[N];
 
   DISALLOW_COPY_AND_ASSIGN(GlobalStr)
 };
+
+// This macro is a workaround for the fact that it's impossible to have a
+// a constexpr initializer for char[N].  The "String Literals as Non-Type
+// Template Parameters" feature of C++ 20 would have done it, but it's not
+// there.
+//
+// https://old.reddit.com/r/cpp_questions/comments/j0khh6/how_to_constexpr_initialize_class_member_thats/
+// https://stackoverflow.com/questions/10422487/how-can-i-initialize-char-arrays-in-a-constructor
+
+#define GLOBAL_STR(name, val)                                            \
+  GlobalStr<sizeof(val)> _name = {                                       \
+      Tag::Global, 0, kZeroMask, kStrHeaderSize + sizeof(val), -1, val}; \
+  Str* name = reinterpret_cast<Str*>(&_name);
+
+// Note: sizeof("foo") == 4, for the NUL terminator.
 
 // Hm we're getting a warning because these aren't plain old data?
 // https://stackoverflow.com/questions/1129894/why-cant-you-use-offsetof-on-non-pod-structures-in-c
@@ -479,8 +503,6 @@ static_assert(offsetof(Str, data_) == offsetof(GlobalStr<1>, data_), "oops");
 // pattern.  I don't think "new Str()" can do that, and placement new would
 // require mycpp to generate 2 statements everywhere.
 //
-
-constexpr int kStrHeaderSize = offsetof(Str, data_);
 
 inline Str* NewStr(const char* data, int len) {
   int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
@@ -744,15 +766,15 @@ inline int len(const Str* s) {
 }
 #endif
 
-  // Hm only functions that don't allocate can take a raw pointer ...
-  // If they allocate, then that pointer can be moved out from under them!
+// Hm only functions that don't allocate can take a raw pointer ...
+// If they allocate, then that pointer can be moved out from under them!
 
 // Hm do all standard library functions have to take Handles now?
 inline int len(Local<Str> s) {
   return s.Get()->obj_len_ - gc_heap::kStrHeaderSize - 1;
 }
 
-// TODO: Make this Local<List<T>> 
+// TODO: Make this Local<List<T>>
 template <typename T>
 int len(const List<T>* L) {
   return L->len_;
