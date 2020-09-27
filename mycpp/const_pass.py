@@ -116,12 +116,15 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         # - Need new Str() everywhere because "foo" doesn't match Str* :-(
 
         id_ = 'str%d' % self.unique_id
+        self.unique_id += 1
+
         raw_string = format_strings.DecodeMyPyString(o.value)
 
-        constructor = 'NewStr' if os.getenv('GC') else 'new Str'
-        self.out('Str* %s = %s(%s);', id_, constructor,
-                 json.dumps(raw_string))
-        self.unique_id += 1
+        if os.getenv('GC'):
+          self.out('GLOBAL_STR(%s, %s);', id_, json.dumps(raw_string))
+        else:
+          self.out('Str* %s = new Str(%s);', id_, json.dumps(raw_string))
+
         self.const_lookup[o] = id_
 
     def visit_bytes_expr(self, o: 'mypy.nodes.BytesExpr') -> T:

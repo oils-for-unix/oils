@@ -8,7 +8,7 @@ gen-main() {
   cat <<EOF
 
 int main(int argc, char **argv) {
-  // gc_heap::gHeap.Init(1 << 20);  // 1 MiB to start
+  ${GC+"gc_heap::gHeap.Init(1 << 20);  // 1 MiB to start"}
 
   if (getenv("BENCHMARK")) {
     fprintf(stderr, "Benchmarking...\n");
@@ -100,10 +100,16 @@ _compile-example() {
   local out=_bin/${name}${variant}
   mkdir -p _bin
 
+  local -a runtime
+  if test -n "${GC:-}"; then
+    runtime=(my_runtime.cc gc_heap.cc)
+  else
+    runtime=(mylib.cc )
+  fi
+
   # need -lstdc++ for 'operator new'
   $CXX -o $out $CPPFLAGS $more_flags -I . \
-    mylib.cc $src -lstdc++
-    #my_runtime.cc gc_heap.cc $src -lstdc++
+    "${runtime[@]}" $src -lstdc++
 }
 
 compile-example() {

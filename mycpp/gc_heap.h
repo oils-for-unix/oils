@@ -486,9 +486,9 @@ class GlobalStr {
 // https://stackoverflow.com/questions/10422487/how-can-i-initialize-char-arrays-in-a-constructor
 
 #define GLOBAL_STR(name, val)                                            \
-  GlobalStr<sizeof(val)> _name = {                                       \
-      Tag::Global, 0, kZeroMask, kStrHeaderSize + sizeof(val), -1, val}; \
-  Str* name = reinterpret_cast<Str*>(&_name);
+  gc_heap::GlobalStr<sizeof(val)> _##name = {                                       \
+      Tag::Global, 0, gc_heap::kZeroMask, gc_heap::kStrHeaderSize + sizeof(val), -1, val}; \
+  Str* name = reinterpret_cast<Str*>(&_##name);
 
 // Note: sizeof("foo") == 4, for the NUL terminator.
 
