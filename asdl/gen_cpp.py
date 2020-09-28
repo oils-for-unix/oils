@@ -293,7 +293,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
     Emit(' public:')
     Emit('  int tag_() const {')
     # There's no inheritance relationship, so we have to reinterpret_cast.
-    Emit('    return reinterpret_cast<const gc_heap::Obj*>(this)->tag;')
+    Emit('    return reinterpret_cast<const gc_heap::Obj*>(this)->type_tag_;')
     Emit('  }')
 
     if self.pretty_print_methods:
@@ -333,7 +333,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
       self.Emit("class %s {" % class_name, depth)
     self.Emit(" public:", depth)
 
-    tag_init = 'tag(%s)' % tag
+    tag_init = 'type_tag_(%s)' % tag
     all_fields = ast_node.fields + attributes
 
     if ast_node.fields:  # Don't emit for constructors with no fields

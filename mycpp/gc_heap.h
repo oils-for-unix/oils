@@ -373,7 +373,7 @@ const int kZeroMask = 0;  // for types with no pointers
 
 #define OBJ_HEADER()    \
   uint8_t heap_tag_;    \
-  uint8_t tag;          \
+  uint8_t type_tag_;    \
   uint16_t field_mask_; \
   uint32_t obj_len_;
 
@@ -387,19 +387,22 @@ class Obj {
  public:
   // default constructor for multiple inheritance
   constexpr Obj()
-      : heap_tag_(Tag::FixedSize), tag(0), field_mask_(kZeroMask), obj_len_(0) {
+      : heap_tag_(Tag::FixedSize),
+        type_tag_(0),
+        field_mask_(kZeroMask),
+        obj_len_(0) {
   }
   // constructor for ASDL
-  explicit Obj(uint16_t tag)
+  explicit Obj(uint16_t type_tag)
       : heap_tag_(Tag::FixedSize),
-        tag(tag),
+        type_tag_(type_tag),
         field_mask_(kZeroMask),
         obj_len_(0) {
   }
 
   constexpr Obj(uint8_t heap_tag, uint16_t field_mask, int obj_len)
       : heap_tag_(heap_tag),
-        tag(0),
+        type_tag_(0),
         field_mask_(field_mask),
         obj_len_(obj_len) {
   }
