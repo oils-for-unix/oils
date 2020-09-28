@@ -143,13 +143,6 @@ TEST maps_test() {
   PASS();
 }
 
-// We can declare global ASDL literals like this.  Interesting.
-constexpr Str g_str1 = {"foo", 3};
-
-// Hm we should never mutate Str*, so ASDL should generate fields that are all
-// const Str* ?
-constexpr Str* p_str1 = const_cast<Str*>(&g_str1);
-
 using typed_demo_asdl::SetToArg_;
 namespace flag_type = typed_demo_asdl::flag_type;
 
@@ -166,8 +159,6 @@ List<int> g_list = {i0, 8, 9};
 // Dict<Str*, int> g_dict = {4, 5, 6};
 
 TEST literal_test() {
-  ASSERT(str_equals(p_str1, new Str("foo")));
-
   // Interesting, initializer list part of the constructor "runs".  Otherwise
   // this doesn't work.
   log("g_ft.tag_() = %d", g_ft.tag_());

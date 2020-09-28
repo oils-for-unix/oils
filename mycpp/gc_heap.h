@@ -385,6 +385,7 @@ class Obj {
   // breaks down because mycpp has inheritance.  Could do this later.
 
  public:
+#if 0
   // default constructor for multiple inheritance
   constexpr Obj()
       : heap_tag_(Tag::FixedSize),
@@ -392,6 +393,7 @@ class Obj {
         field_mask_(kZeroMask),
         obj_len_(0) {
   }
+#endif
   // constructor for ASDL
   explicit Obj(uint16_t type_tag)
       : heap_tag_(Tag::FixedSize),

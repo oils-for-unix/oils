@@ -94,6 +94,11 @@ KINDS_THAT_END_WORDS = [Kind.Eof, Kind.WS, Kind.Op, Kind.Right]
 class WordEmitter(object):
   """Common interface for [ and [[ """
 
+  def __init__(self):
+    # type: () -> None
+    """Empty constructor for mycpp."""
+    pass
+
   def ReadWord(self, lex_mode):
     # type: (lex_mode_t) -> word_t
     raise NotImplementedError()

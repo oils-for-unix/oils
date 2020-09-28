@@ -97,12 +97,11 @@ class RuntimeError {
 
 class Str : public gc_heap::Obj {
  public:
-  explicit Str(const char* data) : data_(data) {
+  explicit Str(const char* data) : gc_heap::Obj(0), data_(data) {
     len_ = strlen(data);
   }
 
-  // constexpr so we can statically initialize Str s = {"foo", 3}
-  constexpr Str(const char* data, int len) : len_(len), data_(data) {
+  Str(const char* data, int len) : gc_heap::Obj(0), len_(len), data_(data) {
   }
 
   // Important invariant: the buffer is of size len+1, so data[len] is OK to
@@ -350,17 +349,17 @@ class List : public gc_heap::Obj {
  public:
   // Note: constexpr doesn't work because the std::vector destructor is
   // nontrivial
-  constexpr List() : v_() {
+  List() : gc_heap::Obj(0), v_() {
     // Note: this seems to INCREASE the number of 'new' calls.  I guess because
     // many 'spids' lists aren't used?
     // v_.reserve(64);
   }
 
   // Used by list_repeat
-  List(T item, int n) : v_(n, item) {
+  List(T item, int n) : gc_heap::Obj(0), v_(n, item) {
   }
 
-  List(std::initializer_list<T> init) : v_() {
+  List(std::initializer_list<T> init) : gc_heap::Obj(0), v_() {
     for (T item : init) {
       v_.push_back(item);
     }
@@ -652,7 +651,7 @@ List<V>* dict_values(const std::vector<std::pair<Str*, V>>& items) {
 template <class K, class V>
 class Dict : public gc_heap::Obj {
  public:
-  Dict() : items_() {
+  Dict() : gc_heap::Obj(0), items_() {
   }
 
   // d[key] in Python: raises KeyError if not found

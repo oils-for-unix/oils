@@ -74,7 +74,7 @@ overhead() {
 target-lang() {
   local bin=_bin/target_lang 
   # -m32 complains about "shadow memory"
-  cpp-compile demo/target_lang.cc $bin ../cpp/dumb_alloc.cc -I ../cpp
+  cpp-compile demo/target_lang.cc $bin ../cpp/dumb_alloc.cc gc_heap.cc -I ../cpp
   $bin "$@"
 }
 

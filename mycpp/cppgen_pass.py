@@ -2002,6 +2002,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)
               self.write(') ')
 
+              # Everything descents from Obj
+              if not base_class_name:
+                self.write(': gc_heap::Obj(0) ')
+
               # Taking into account the docstring, look at the first statement to
               # see if it's a superclass __init__ call.  Then move that to the
               # initializer list.
@@ -2018,6 +2022,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 expr = first_stmt.expr
                 #log('expr %s', expr)
                 callee = first_stmt.expr.callee
+
                 # TextOutput() : ColorOutput(f), ... {
                 if isinstance(callee, MemberExpr) and callee.name == '__init__':
                   base_constructor_args = expr.args

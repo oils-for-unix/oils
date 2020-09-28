@@ -119,6 +119,11 @@ class _Executor(object):
 class _AssignBuiltin(object):
   """Interface for assignment builtins."""
 
+  def __init__(self):
+    # type: () -> None
+    """Empty constructor for mycpp."""
+    pass
+
   def Run(self, cmd_val):
     # type: (cmd_value__Assign) -> int
     raise NotImplementedError()
@@ -129,6 +134,12 @@ class _Builtin(object):
 
   Assignment builtins use cmd_value__Assign; others use cmd_value__Argv.
   """
+
+  def __init__(self):
+    # type: () -> None
+    """Empty constructor for mycpp."""
+    pass
+
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     raise NotImplementedError()

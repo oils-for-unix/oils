@@ -241,6 +241,11 @@ class _Getter(object):
 class OptHook(object):
   """Interface for option hooks."""
 
+  def __init__(self):
+    # type: () -> None
+    """Empty constructor for mycpp."""
+    pass
+
   def OnChange(self, opt_array, opt_name, b):
     # type: (List[bool], str, bool) -> bool
     """This method is called whenever an option is changed.

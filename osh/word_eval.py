@@ -325,6 +325,11 @@ def _PerformSlice(val,  # type: value_t
 class StringWordEvaluator(object):
   """For use by the _ExprEvaluator."""
 
+  def __init__(self):
+    # type: () -> None
+    """Empty constructor for mycpp."""
+    pass
+
   def EvalWordToString(self, w, quote_kind=quote_e.Default):
     # type: (word_t, quote_t) -> value__Str
     raise NotImplementedError()

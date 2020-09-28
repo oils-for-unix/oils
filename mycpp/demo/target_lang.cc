@@ -13,9 +13,6 @@
 //     places, e.g. for the readline callbacks.
 //   - C++ 20 coroutines (but we're almost certainly not using this)
 
-#include <stdarg.h>  // va_list, etc.
-#include <stdio.h>   // vprintf
-
 #include <initializer_list>
 #include <memory>  // shared_ptr
 #include <unordered_map>
@@ -24,17 +21,11 @@
 #include <stdexcept>
 
 #include "dumb_alloc.h"
+#define MYLIB_LEGACY 1
+#include "gc_heap.h"
 #include "greatest.h"
 
 using std::unordered_map;
-
-void log(const char* fmt, ...) {
-  va_list args;
-  va_start(args, fmt);
-  vprintf(fmt, args);
-  va_end(args);
-  printf("\n");
-}
 
 class List {
  public:
@@ -496,9 +487,52 @@ TEST field_mask_demo() {
   PASS();
 }
 
+// https://stackoverflow.com/questions/7405740/how-can-i-initialize-base-class-member-variables-in-derived-class-constructor
+class Base : public gc_heap::Obj {
+ public:
+  Base(int i) : gc_heap::Obj(0), i(i) {
+    // annoying: should be in initializer list
+    // maybe only do this if there's inheritance!
+    field_mask_ = 0x9;
+  }
+  int i;
+  Node* left;
+  Node* right;
+};
+
+class Derived : public Base {
+ public:
+  Derived(int i, int j) : Base(i), j(j) {
+    // annoying: should be in initializer list
+    field_mask_ = 0x5;
+  }
+  int j;
+  Node* three;
+};
+
+using gc_heap::Alloc;
+using gc_heap::Local;
+
+TEST inheritance_demo() {
+  Local<Base> b = Alloc<Base>(2);
+  Local<Derived> d = Alloc<Derived>(4, 5);
+
+  ASSERT_EQ_FMT(2, b->i, "%d");
+
+  ASSERT_EQ_FMT(4, d->i, "%d");
+  ASSERT_EQ_FMT(5, d->j, "%d");
+
+  ASSERT_EQ_FMT(0x9, b->field_mask_, "%d");
+  ASSERT_EQ_FMT(0x5, d->field_mask_, "%d");
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
+  gc_heap::gHeap.Init(1 << 20);
+
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(typed_arith_parse::namespace_demo);
@@ -513,6 +547,7 @@ int main(int argc, char** argv) {
   RUN_TEST(static_literals);
   RUN_TEST(enum_demo);
   RUN_TEST(field_mask_demo);
+  RUN_TEST(inheritance_demo);
 
   GREATEST_MAIN_END(); /* display results */
   return 0;

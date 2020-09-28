@@ -255,6 +255,11 @@ class Reader(object):
 class _Action(object):
   """What is done when a flag or option is detected."""
 
+  def __init__(self):
+    # type: () -> None
+    """Empty constructor for mycpp."""
+    pass
+
   def OnMatch(self, attached_arg, arg_r, out):
     # type: (Optional[str], Reader, _Attributes) -> bool
     """Called when the flag matches.

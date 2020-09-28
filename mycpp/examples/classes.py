@@ -42,6 +42,12 @@ class TextOutput(ColorOutput):
 
 
 class Base(object):
+
+  # empty constructor required by mycpp
+  def __init__(self):
+    # type: () -> None
+    pass
+
   def method(self):
     # type: () -> str
     return "Base"
@@ -59,6 +65,9 @@ class Derived(Base):
   def y(self):
     # type: () -> int
     return 43
+
+
+# TODO: Test GC masks for fields.  Do subtypes re-initialize it?
 
 
 def f(obj):

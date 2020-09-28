@@ -474,6 +474,11 @@ class FdState(object):
 
 class ChildStateChange(object):
 
+  def __init__(self):
+    # type: () -> None
+    """Empty constructor for mycpp."""
+    pass
+
   def Apply(self):
     # type: () -> None
     raise NotImplementedError()
@@ -611,6 +616,11 @@ class ExternalProgram(object):
 
 class Thunk(object):
   """Abstract base class for things runnable in another process."""
+
+  def __init__(self):
+    # type: () -> None
+    """Empty constructor for mycpp."""
+    pass
 
   def Run(self):
     # type: () -> None
