@@ -1982,6 +1982,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             c_type = get_c_type(self.member_vars[name])
             self.decl_write_ind('%s %s;\n', c_type, name)
 
+          self.decl_write('\n')
+          self.decl_write_ind('DISALLOW_COPY_AND_ASSIGN(%s)\n', o.name)
           self.indent -= 1
           self.decl_write_ind('};\n')
 

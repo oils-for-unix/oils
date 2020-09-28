@@ -97,6 +97,10 @@ class _StringWordEmitter(word_parse.WordEmitter):
 
 class _WordEvaluator(word_eval.StringWordEvaluator):
 
+  def __init__(self):
+    # type: () -> None
+    word_eval.StringWordEvaluator.__init__(self)
+
   def EvalWordToString(self, w, quote_kind=quote_e.Default):
     # type: (word_t, quote_t) -> value__Str
     # do_fnmatch: for the [[ == ]] semantics which we don't have!

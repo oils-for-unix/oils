@@ -40,6 +40,7 @@ if TYPE_CHECKING:
   from pgen2.pnode import PNode
 
 class _BaseTrail(object):
+  """Base class has members, but no-ops for methods."""
 
   def __init__(self):
     # type: () -> None
@@ -115,11 +116,6 @@ class _BaseTrail(object):
         self.words, self.redirects, self.tokens, self.alias_words)
 
 
-class _NullTrail(_BaseTrail):
-  """Used when we're not completing."""
-  pass
-
-
 class ctx_Alias(object):
   """Used by CommandParser so we know to be ready for FIRST alias word.
 
@@ -155,6 +151,11 @@ class Trail(_BaseTrail):
 
   It's also used for history expansion.
   """
+  def __init__(self):
+    # type: () -> None
+    """Empty constructor for mycpp."""
+    _BaseTrail.__init__(self)
+
   def Clear(self):
     # type: () -> None
     del self.words[:]
@@ -244,7 +245,7 @@ class ParseContext(object):
     self.parsing_expr = False  # "single-threaded" state
 
     # Completion state lives here since it may span multiple parsers.
-    self.trail = _NullTrail()  # type: _BaseTrail
+    self.trail = _BaseTrail()  # no-op by default
     self.one_pass_parse = False
 
   def Init_Trail(self, trail):

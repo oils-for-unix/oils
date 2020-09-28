@@ -43,6 +43,12 @@ _ = log
 
 
 class Times(vm._Builtin):
+
+  def __init__(self):
+    # type: () -> None
+    """Empty constructor for mycpp."""
+    vm._Builtin.__init__(self)
+
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     pyos.PrintTimes()
@@ -595,6 +601,11 @@ class Cat(vm._Builtin):
   
   Maybe expose this as 'builtin cat' ?
   """
+  def __init__(self):
+    # type: () -> None
+    """Empty constructor for mycpp."""
+    vm._Builtin.__init__(self)
+
   def Run(self, cmd_val):
     # type: (cmd_value__Argv) -> int
     while True:

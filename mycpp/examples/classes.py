@@ -58,6 +58,11 @@ class Base(object):
 
 
 class Derived(Base):
+
+  def __init__(self):
+    # type: () -> None
+    Base.__init__(self)
+
   def method(self):
     # type: () -> str
     return "Derived"

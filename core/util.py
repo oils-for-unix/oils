@@ -60,12 +60,17 @@ class _DebugFile(object):
 
 
 class NullDebugFile(_DebugFile):
-  pass
+
+  def __init__(self):
+    # type: () -> None
+    """Empty constructor for mycpp."""
+    _DebugFile.__init__(self)
 
 
 class DebugFile(_DebugFile):
   def __init__(self, f):
     # type: (mylib.Writer) -> None
+    _DebugFile.__init__(self)
     self.f = f
 
   def log(self, msg, *args):
