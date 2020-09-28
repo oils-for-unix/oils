@@ -20,6 +20,11 @@ def fortytwo():
 
 class Cat(object):
 
+  def __init__(self):
+    # type: () -> None
+    """Empty constructor for mycpp."""
+    pass
+
   def Speak(self):
     # type: () -> None
     log('cat')

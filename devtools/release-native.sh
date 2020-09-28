@@ -16,6 +16,9 @@ readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 
 manifest() {
   # Skip _bin/heap, etc.
+
+  # TODO: Invoke the compiler to get all headers, like we do with CPython.
+
   find \
     LICENSE.txt \
     README-native.txt \
@@ -24,7 +27,10 @@ manifest() {
     build/mycpp.sh \
     cpp/ \
     mycpp/mylib.{cc,h} \
+    mycpp/gc_heap.{cc,h} \
+    mycpp/my_runtime.{cc,h} \
     mycpp/myerror.h \
+    mycpp/common.h \
     _devbuild/gen/*.h \
     _build/cpp/ \
     -name _bin -a -prune -o -type f -a -print

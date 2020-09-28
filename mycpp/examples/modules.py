@@ -58,7 +58,7 @@ class Sphinx(module1.Cat):
 
   def __init__(self, color):
     # type: (str) -> None
-    #module1.Cat.__init__(self)
+    module1.Cat.__init__(self)
     self.color = color
 
   def Speak(self):
