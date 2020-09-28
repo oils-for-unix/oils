@@ -18,19 +18,18 @@ from typing import Optional, List
 
 
 class arith_expr_t(object):
-  pass
+  def __init__(self):
+    # type: () -> None
+    """Empty constructor for ASDL."""
+    pass
 
 
 class arith_expr__Const(arith_expr_t):
 
   def __init__(self, i):
     # type: (int) -> None
+    arith_expr_t.__init__(self)
     self.i = i
-
-  #def __init__(self, i=None, spids=None):
-    ## type: (Optional[int], Optional[List[int]]) -> None
-    #self.i = i
-    #self.spids = spids or []
 
 
 # This causes problems
