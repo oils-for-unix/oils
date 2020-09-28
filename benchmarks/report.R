@@ -486,11 +486,17 @@ OvmBuildReport = function(in_dir, out_dir) {
     left_join(distinct_hosts, by = c('host_name', 'host_hash')) %>%
     left_join(distinct_compilers, by = c('compiler_path', 'compiler_hash')) %>%
     select(-c(host_name, host_hash, compiler_path, compiler_hash)) %>%
-    mutate(src_dir = basename(src_dir)) %>%
-    arrange(host_label, src_dir) %>%
-    select(host_label, compiler_label, src_dir, action, elapsed_secs) %>%
-    mutate(host_label = paste("host ", host_label)) %>%
-    spread(key = c(host_label), value = elapsed_secs) ->
+    mutate(src_dir = basename(src_dir),
+           host_label = paste("host ", host_label),
+           is_conf = str_detect(action, 'configure'),
+           is_ovm = str_detect(action, 'oil.ovm'),
+           is_dbg = str_detect(action, 'dbg'),
+           ) %>%
+    select(host_label, src_dir, compiler_label, action, is_conf, is_ovm, is_dbg,
+           elapsed_secs) %>%
+    spread(key = c(host_label), value = elapsed_secs) %>%
+    arrange(src_dir, compiler_label, desc(is_conf), is_ovm, desc(is_dbg)) %>%
+    select(-c(is_conf, is_ovm, is_dbg)) ->
     times
 
   #print(times)
@@ -507,9 +513,16 @@ OvmBuildReport = function(in_dir, out_dir) {
     mutate(native_code_size = num_bytes - bytecode_size) ->
     sizes
 
-    #mutate(path = basename(path)) %>%
+  # paths look like _tmp/ovm-build/bin/clang/osh_eval.dbg 
   native_sizes %>%
-    select(c(host_label, path, num_bytes)) ->
+    select(c(host_label, path, num_bytes)) %>%
+    mutate(host_label = paste("host ", host_label),
+           binary = basename(path),
+           compiler = basename(dirname(path)),
+           ) %>%
+    select(-c(path)) %>%
+    spread(key = c(host_label), value = num_bytes) %>%
+    arrange(compiler, binary) ->
     native_sizes
 
   # NOTE: These don't have the host and compiler.

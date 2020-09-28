@@ -425,10 +425,20 @@ print-report() {
     for comparison.
     </p>
 EOF
-  tsv2html --css-class-pattern 'special ^oil' $in_dir/times.tsv
+
+  # Highlighting clang makes this table easier to read.
+  tsv2html \
+    --css-class-pattern 'special ^gcc' \
+    $in_dir/times.tsv
 
   cat <<EOF
-    <h3>Binary Size</h3>
+    <h3>Native Binary Size</h3>
+
+EOF
+  tsv2html --css-class-pattern 'special ^gcc' $in_dir/native-sizes.tsv
+
+  cat <<EOF
+    <h3>OVM Binary Size</h3>
 
     <p>The oil binary has two portions:
       <ol>
@@ -442,13 +452,6 @@ EOF
 EOF
   # Highlight the "default" production build
   tsv2html --css-class-pattern 'special /gcc/oil.ovm$' $in_dir/sizes.tsv
-
-  cat <<EOF
-    <h3>Native Binary Size</h3>
-
-EOF
-  # Highlight the opt build
-  tsv2html --css-class-pattern 'special /gcc/osh_eval.opt.stripped$' $in_dir/native-sizes.tsv
 
   cat <<EOF
 
