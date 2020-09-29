@@ -589,8 +589,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
               self.log('item: %s', item)
 
         if isinstance(callee_type, CallableType):
-          # If the function name is the same as the return type, then add 'new'.
-          # f = Foo() => f = new Foo().
+          # If the function name is the same as the return type, then add
+          # 'Alloc<>'.  f = Foo() => f = Alloc<Foo>().
           ret_type = callee_type.ret_type
 
           if 0:
@@ -607,8 +607,15 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # HACK: Const is the callee; expr__Const is the return type
             if (callee_name == ret_type_name or
                 ret_type_name.endswith('__' + callee_name)):
-              # TODO: make_shared<>
-              self.write('new ')
+              self.write('Alloc<')
+              self.accept(o.callee)
+              self.write('>(')
+              for i, arg in enumerate(o.args):
+                if i != 0:
+                  self.write(', ')
+                self.accept(arg)
+              self.write(')')
+              return
 
         # Namespace.
         if callee_name == 'int':  # int('foo') in Python conflicts with keyword
@@ -952,12 +959,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         assert c_type.endswith('*'), c_type
         c_type = c_type[:-1]  # HACK TO CLEAN UP
 
-        # TODO: make_shared<>
         if len(o.items) == 0:
-            self.write('new %s()' % c_type)
+            self.write('Alloc<%s>()' % c_type)
         else:
             # Use initialize list.  Lists are MUTABLE so we can't pull them to
             # the top level.
+
+            # TODO(gc_heap): bad interaction with initializer list here!
             self.write('new %s({' % c_type)
             for i, item in enumerate(o.items):
                 if i != 0:
@@ -972,8 +980,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         assert c_type.endswith('*'), c_type
         c_type = c_type[:-1]  # HACK TO CLEAN UP
 
-        # TODO: Alloc<Dict<...>>
-        self.write('new %s(' % c_type)
+        self.write('Alloc<%s>(' % c_type)
         if o.items:
           # TODO: use initializer_list<K> and initializer_list<V> perhaps?  Do
           # we want global data being initialized?  Not sure if we'll have
@@ -992,14 +999,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         assert c_type.endswith('*'), c_type
         c_type = c_type[:-1]  # HACK TO CLEAN UP
 
-        # TODO: make_shared<>
-        maybe_new = '' if self.in_return_expr else 'new '
+        maybe_new = c_type if self.in_return_expr else 'Alloc<%s>' % c_type
         if len(o.items) == 0:
-            self.write('(%s%s())' % (maybe_new, c_type))
+            self.write('(%s())' % maybe_new)
         else:
             # Use initialize list.  Lists are MUTABLE so we can't pull them to
             # the top level.
-            self.write('(%s%s(' % (maybe_new, c_type))
+            self.write('(%s(' % maybe_new)
             for i, item in enumerate(o.items):
                 if i != 0:
                     self.write(', ')
@@ -1200,7 +1206,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             # Write empty container as initialization.
             assert c_type.endswith('*'), c_type  # Hack
-            self.write('new %s();\n' % c_type[:-1])
+            self.write('Alloc<%s>();\n' % c_type[:-1])
 
             over_type = self.types[seq]
             #self.log('  iterating over type %s', over_type)

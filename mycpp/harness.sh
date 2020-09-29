@@ -8,7 +8,7 @@ gen-main() {
   cat <<EOF
 
 int main(int argc, char **argv) {
-  ${GC+"gc_heap::gHeap.Init(1 << 20);  // 1 MiB to start"}
+  gc_heap::gHeap.Init(400 << 20);  // 400 MiB matches dumb_alloc
 
   if (getenv("BENCHMARK")) {
     fprintf(stderr, "Benchmarking...\n");
@@ -20,9 +20,14 @@ int main(int argc, char **argv) {
 EOF
 }
 
-filter-cpp() {
+cpp-skeleton() {
   local main_module=${1:-fib_iter}
   shift
+
+  cat <<EOF
+// examples/$main_module
+
+EOF
 
   # the raw module
   cat "$@"
@@ -67,7 +72,7 @@ _translate-example() {
   wc -l $raw
 
   local main_module=$(basename $main .py)
-  filter-cpp $main_module $raw > $out
+  cpp-skeleton $main_module $raw > $out
 
   #wc -l _gen/*
 
@@ -104,7 +109,7 @@ _compile-example() {
   if test -n "${GC:-}"; then
     runtime=(my_runtime.cc gc_heap.cc)
   else
-    runtime=(mylib.cc )
+    runtime=(mylib.cc gc_heap.cc)
   fi
 
   # need -lstdc++ for 'operator new'

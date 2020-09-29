@@ -243,13 +243,13 @@ def main(argv):
 
 #include "%s.h"
 
+using gc_heap::Alloc;
 """ % header_name)
 
   if gc:
     f.write("""\
 #include "my_runtime.h"
 
-using gc_heap::Alloc;
 using gc_heap::NewStr;
 """)
 
