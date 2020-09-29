@@ -456,6 +456,16 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_yield_expr(self, o: 'mypy.nodes.YieldExpr') -> T:
         pass
 
+    def _WriteArgList(self, o):
+      self.write('(')
+      # So we can get better AssertionError messages in Python
+      if o.callee.name != 'AssertionError':
+        for i, arg in enumerate(o.args):
+          if i != 0:
+            self.write(', ')
+          self.accept(arg)
+      self.write(')')
+
     def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> T:
         if o.callee.name == 'isinstance':
           assert len(o.args) == 2, args
@@ -609,12 +619,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 ret_type_name.endswith('__' + callee_name)):
               self.write('Alloc<')
               self.accept(o.callee)
-              self.write('>(')
-              for i, arg in enumerate(o.args):
-                if i != 0:
-                  self.write(', ')
-                self.accept(arg)
-              self.write(')')
+              self.write('>')
+              self._WriteArgList(o)
               return
 
         # Namespace.
@@ -627,15 +633,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         else:
           self.accept(o.callee)  # could be f() or obj.method()
 
-        self.write('(')
-
-        # Don't pass any args to AssertionError()
-        if callee_name != 'AssertionError':
-          for i, arg in enumerate(o.args):
-            if i != 0:
-              self.write(', ')
-            self.accept(arg)
-        self.write(')')
+        self._WriteArgList(o)
 
         # TODO: look at keyword arguments!
         #self.log('  arg_kinds %s', o.arg_kinds)
@@ -2012,7 +2010,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
               # Everything descents from Obj
               if not base_class_name:
-                self.write(': gc_heap::Obj(0) ')
+                # TODO: Generate the right mask!
+                self.write(
+                    ': gc_heap::Obj(Tag::FixedSize, kZeroMask, sizeof(%s)) ' % o.name)
 
               # Taking into account the docstring, look at the first statement to
               # see if it's a superclass __init__ call.  Then move that to the

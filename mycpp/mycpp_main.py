@@ -244,6 +244,7 @@ def main(argv):
 #include "%s.h"
 
 using gc_heap::Alloc;
+using gc_heap::kZeroMask;
 """ % header_name)
 
   if gc:

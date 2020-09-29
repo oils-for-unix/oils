@@ -883,7 +883,7 @@ class BoolEvaluator(ArithEvaluator):
 
           e_die("%s isn't implemented", ui.PrettyId(op_id))  # implicit location
 
-        raise AssertionError(arg_type)  # should never happen
+        raise AssertionError(arg_type)
 
       elif case(bool_expr_e.Binary):
         node = cast(bool_expr__Binary, UP_node)

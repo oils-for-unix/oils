@@ -221,6 +221,7 @@ compile-slice() {
 
   # Note: can't use globs here because we have _test.cc
   time compile _bin/$name$suffix _build/cpp/${name}.cc \
+    mycpp/gc_heap.cc \
     mycpp/mylib.cc \
     cpp/core_pyos.cc \
     cpp/core_pyutil.cc \
