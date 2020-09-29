@@ -132,7 +132,7 @@ translate-modules() {
     PYTHONPATH=$MYPY_REPO ./mycpp_main.py \
       testpkg/module1.py testpkg/module2.py examples/modules.py > $raw
   )
-  filter-cpp modules $raw > $out
+  cpp-skeleton modules $raw > $out
   wc -l $raw $out
 }
 

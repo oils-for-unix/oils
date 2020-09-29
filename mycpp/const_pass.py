@@ -120,11 +120,7 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
 
         raw_string = format_strings.DecodeMyPyString(o.value)
 
-        if os.getenv('GC'):
-          self.out('GLOBAL_STR(%s, %s);', id_, json.dumps(raw_string))
-        else:
-          self.out('Str* %s = new Str(%s);', id_, json.dumps(raw_string))
-
+        self.out('GLOBAL_STR(%s, %s);', id_, json.dumps(raw_string))
         self.const_lookup[o] = id_
 
     def visit_bytes_expr(self, o: 'mypy.nodes.BytesExpr') -> T:

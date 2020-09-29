@@ -452,6 +452,10 @@ inline Slab<T>* NewSlab(int len) {
   return slab;
 }
 
+#ifdef MYLIB_LEGACY
+#define GLOBAL_STR(name, val) Str* name = new Str(val);
+#endif
+
 #ifndef MYLIB_LEGACY
 
 //

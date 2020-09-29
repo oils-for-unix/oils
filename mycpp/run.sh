@@ -113,7 +113,7 @@ translate-ordered() {
 
   {
     echo "$snippet"
-    filter-cpp $name $raw 
+    cpp-skeleton $name $raw 
   } > $out
 
   wc -l _gen/*
@@ -146,7 +146,7 @@ compile-with-asdl() {
   # .. for asdl/runtime.h
   $CXX -o _bin/$name $CPPFLAGS $more_flags \
     -I . -I .. -I ../_devbuild/gen -I ../_build/cpp -I _gen -I ../cpp \
-    mylib.cc $src "$@" -lstdc++
+    mylib.cc gc_heap.cc $src "$@" -lstdc++
 }
 
 # fib_recursive(35) takes 72 ms without optimization, 20 ms with optimization.
