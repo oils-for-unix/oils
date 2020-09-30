@@ -52,11 +52,11 @@ replay() {
 }
 
 # creates uftrace.data dir
-osh-parse() {
+osh-eval() {
   local path=${1:-benchmarks/testdata/configure-coreutils}
-  local cmd=(_bin/osh_parse.uftrace -n $path)
+  local cmd=(_bin/osh_eval.uftrace -n $path)
 
-  #local cmd=(_bin/osh_parse.opt -c 'echo hi')
+  local cmd=(_bin/osh_eval.uftrace -c 'echo hi')
 
   uftrace record "${cmd[@]}"
 }
