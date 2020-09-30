@@ -954,17 +954,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         list_type = self.types[o]
         #self.log('**** list_type = %s', list_type)
         c_type = get_c_type(list_type)
+
+        item_type = list_type.args[0]  # int for List[int]
+        item_c_type = get_c_type(item_type)
+
         assert c_type.endswith('*'), c_type
         c_type = c_type[:-1]  # HACK TO CLEAN UP
 
         if len(o.items) == 0:
             self.write('Alloc<%s>()' % c_type)
         else:
-            # Use initialize list.  Lists are MUTABLE so we can't pull them to
-            # the top level.
-
-            # TODO(gc_heap): bad interaction with initializer list here!
-            self.write('new %s({' % c_type)
+            # Lists are MUTABLE so we can't pull them to the top level.
+            # C++ wart: Use initializer_list.  
+            self.write('Alloc<%s>(std::initializer_list<%s>{' % (c_type, item_c_type))
             for i, item in enumerate(o.items):
                 if i != 0:
                     self.write(', ')

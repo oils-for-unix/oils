@@ -96,16 +96,16 @@ EOF
   cat <<EOF
 int main(int argc, char **argv) {
   gc_heap::gHeap.Init(400 << 20);  // 400 MiB matches dumb_alloc.cc
-  auto* args = new List<Str*>();
+  auto* args = Alloc<List<Str*>>();
   for (int i = 0; i < argc; ++i) {
-    args->append(new Str(argv[i]));
+    args->append(Alloc<Str>(argv[i]));
   }
   int status;
 
   // For benchmarking
   char* repeat = getenv("REPEAT");
   if (repeat) {
-    Str* r = new Str(repeat);
+    Str* r = Alloc<Str>(repeat);
     int n = to_int(r);
     log("Running %d times", n);
     for (int i = 0; i < n; ++i) { 
