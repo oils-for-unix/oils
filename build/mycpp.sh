@@ -95,7 +95,7 @@ EOF
 
   cat <<EOF
 int main(int argc, char **argv) {
-  //log("%p", arith_parse::kNullLookup[1].nud);
+  gc_heap::gHeap.Init(400 << 20);  // 400 MiB matches dumb_alloc.cc
   auto* args = new List<Str*>();
   for (int i = 0; i < argc; ++i) {
     args->append(new Str(argv[i]));

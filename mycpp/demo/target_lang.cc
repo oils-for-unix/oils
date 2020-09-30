@@ -490,7 +490,7 @@ TEST field_mask_demo() {
 // https://stackoverflow.com/questions/7405740/how-can-i-initialize-base-class-member-variables-in-derived-class-constructor
 class Base : public gc_heap::Obj {
  public:
-  Base(int i) : gc_heap::Obj(0), i(i) {
+  Base(int i) : gc_heap::Obj(Tag::FixedSize, gc_heap::kZeroMask, 0), i(i) {
     // annoying: should be in initializer list
     // maybe only do this if there's inheritance!
     field_mask_ = 0x9;

@@ -163,6 +163,8 @@ class Heap {
 
     // TODO: realloc it here
     if (free_ >= from_space_ + space_size_) {
+      log("free_ %p  from_space_ %p  space_size_ %d", free_, from_space_,
+          space_size_);
       assert(0);
     }
 
