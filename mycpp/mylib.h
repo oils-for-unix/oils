@@ -658,6 +658,11 @@ class Dict : public gc_heap::Obj {
   Dict() : gc_heap::Obj(Tag::FixedSize, gc_heap::kZeroMask, 0), items_() {
   }
 
+  // Dummy
+  Dict(std::initializer_list<K> keys, std::initializer_list<V> values)
+      : gc_heap::Obj(Tag::FixedSize, gc_heap::kZeroMask, 0), items_() {
+  }
+
   // d[key] in Python: raises KeyError if not found
   V index(K key) {
     int pos = find(key);

@@ -979,25 +979,34 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self._WriteListElements(o)
             self.write(')')
 
-    def _WriteDictElements(self, o):
+    def _WriteDictElements(self, o, key_type, val_type):
         # TODO: use initializer_list<K> and initializer_list<V> perhaps?  Do
         # we want global data being initialized?  Not sure if we'll have
         # initialization order problems.  Can't really make them constexpr
         # because of the Str problem.
-        self.write('{')
+
+        # Hm there is some type inference problem with Alloc<Dict<K,V>({})
+        self.write('std::initializer_list<%s>{' % get_c_type(key_type))
         for i, item in enumerate(o.items):
           pass
+        self.write('}, ')
+
+        self.write('std::initializer_list<%s>{' % get_c_type(val_type))
+        # TODO: values
         self.write('}')
 
     def visit_dict_expr(self, o: 'mypy.nodes.DictExpr') -> T:
         dict_type = self.types[o]
+        key_type = dict_type.args[0]
+        val_type = dict_type.args[1]
+
         c_type = get_c_type(dict_type)
         assert c_type.endswith('*'), c_type
         c_type = c_type[:-1]  # HACK TO CLEAN UP
 
         self.write('Alloc<%s>(' % c_type)
         if o.items:
-          self._WriteDictElements(o)
+          self._WriteDictElements(o, key_type, val_type)
         self.write(')')
 
     def visit_tuple_expr(self, o: 'mypy.nodes.TupleExpr') -> T:
@@ -1187,16 +1196,18 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             return
 
           if isinstance(o.rvalue, DictExpr):
-            key_c_type = get_c_type(lval_type.args[0])
-            val_c_type = get_c_type(lval_type.args[1])
+            key_type, val_type = lval_type.args
+
+            key_c_type = get_c_type(key_type)
+            val_c_type = get_c_type(val_type)
 
             temp_name = 'gdict%d' % self.unique_id
             self.unique_id += 1
 
             # Value
-            self.write('Dict<%s, %s> %s = ', key_c_type, val_c_type, temp_name)
-            self._WriteDictElements(o.rvalue)
-            self.write(';\n')
+            self.write('Dict<%s, %s> %s(', key_c_type, val_c_type, temp_name)
+            self._WriteDictElements(o.rvalue, key_type, val_type)
+            self.write(');\n')
 
             # Then a pointer to it
             self.write('Dict<%s, %s>* %s = &%s;\n', key_c_type, val_c_type,
