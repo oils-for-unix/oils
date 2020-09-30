@@ -470,12 +470,13 @@ class _ArgFrame(object):
     # type: () -> str
     return '<_ArgFrame %s %d at %x>' % (self.argv, self.num_shifted, id(self))
 
-  def Dump(self):
-    # type: () -> Dict[str, Any]
-    return {
-        'argv': self.argv,
-        'num_shifted': self.num_shifted,
-    }
+  if mylib.PYTHON:  # mycpp has problem with dict literal
+    def Dump(self):
+      # type: () -> Dict[str, Any]
+      return {
+          'argv': self.argv,
+          'num_shifted': self.num_shifted,
+      }
 
   def GetArgNum(self, arg_num):
     # type: (int) -> value_t

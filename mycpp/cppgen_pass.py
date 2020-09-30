@@ -14,7 +14,8 @@ from mypy.types import (
 from mypy.nodes import (
     Expression, Statement, Block, NameExpr, IndexExpr, MemberExpr, TupleExpr,
     ExpressionStmt, AssignmentStmt, IfStmt, StrExpr, SliceExpr, FuncDef,
-    UnaryExpr, ComparisonExpr, CallExpr, IntExpr, ListComprehension)
+    UnaryExpr, ComparisonExpr, CallExpr, IntExpr, ListExpr, DictExpr,
+    ListComprehension)
 
 import format_strings
 from crash import catch_errors
@@ -950,6 +951,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.write(op_str)
         self.accept(o.expr)
 
+    def _WriteListElements(self, o):
+        self.write('{')
+        for i, item in enumerate(o.items):
+            if i != 0:
+                self.write(', ')
+            self.accept(item)
+        self.write('}')
+
     def visit_list_expr(self, o: 'mypy.nodes.ListExpr') -> T:
         list_type = self.types[o]
         #self.log('**** list_type = %s', list_type)
@@ -966,13 +975,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         else:
             # Lists are MUTABLE so we can't pull them to the top level.
             # C++ wart: Use initializer_list.  
-            self.write('Alloc<%s>(std::initializer_list<%s>{' % (c_type, item_c_type))
-            for i, item in enumerate(o.items):
-                if i != 0:
-                    self.write(', ')
-                self.accept(item)
-                # TODO: const_lookup
-            self.write('})')
+            self.write('Alloc<%s>(std::initializer_list<%s>' % (c_type, item_c_type))
+            self._WriteListElements(o)
+            self.write(')')
+
+    def _WriteDictElements(self, o):
+        # TODO: use initializer_list<K> and initializer_list<V> perhaps?  Do
+        # we want global data being initialized?  Not sure if we'll have
+        # initialization order problems.  Can't really make them constexpr
+        # because of the Str problem.
+        self.write('{')
+        for i, item in enumerate(o.items):
+          pass
+        self.write('}')
 
     def visit_dict_expr(self, o: 'mypy.nodes.DictExpr') -> T:
         dict_type = self.types[o]
@@ -982,15 +997,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.write('Alloc<%s>(' % c_type)
         if o.items:
-          # TODO: use initializer_list<K> and initializer_list<V> perhaps?  Do
-          # we want global data being initialized?  Not sure if we'll have
-          # initialization order problems.  Can't really make them constexpr
-          # because of the Str problem.
-          if 0:
-            self.write('{')
-            for i, item in enumerate(o.items):
-              pass
-            self.write('}')
+          self._WriteDictElements(o)
         self.write(')')
 
     def visit_tuple_expr(self, o: 'mypy.nodes.TupleExpr') -> T:
@@ -1142,6 +1149,60 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # use.
         assert len(o.lvalues) == 1, o.lvalues
         lval = o.lvalues[0]
+
+        # Special case for global constants.  L = [1, 2] or D = {}
+        #
+        # We avoid Alloc<T>, since that can't be done until main().
+        #
+        # It would be nice to make these completely constexpr, e.g.
+        # initializing Slab<T> with the right layout from initializer_list, but
+        # it isn't easy.  Would we need a constexpr hash?
+        #
+        # Limitation: This doesn't handle a = f([1, 2]), but we don't use that
+        # in Oil.
+
+        if self.indent == 0:
+          self.log('    GLOBAL List/Dict: %s', lval.name)
+
+          assert isinstance(lval, NameExpr), lval
+          lval_type = self.types[lval]
+
+          if isinstance(o.rvalue, ListExpr) :
+            item_type = lval_type.args[0]
+            item_c_type = get_c_type(item_type)
+
+            # Create a value first
+
+            temp_name = 'glist%d' % self.unique_id
+            self.unique_id += 1
+
+            self.write('List<%s> %s = ', item_c_type, temp_name)
+            self._WriteListElements(o.rvalue)
+            self.write(';\n')
+
+            # Then a pointer to it
+            self.write('List<%s>* %s = &%s;\n', item_c_type, lval.name,
+                temp_name)
+
+            return
+
+          if isinstance(o.rvalue, DictExpr):
+            key_c_type = get_c_type(lval_type.args[0])
+            val_c_type = get_c_type(lval_type.args[1])
+
+            temp_name = 'gdict%d' % self.unique_id
+            self.unique_id += 1
+
+            # Value
+            self.write('Dict<%s, %s> %s = ', key_c_type, val_c_type, temp_name)
+            self._WriteDictElements(o.rvalue)
+            self.write(';\n')
+
+            # Then a pointer to it
+            self.write('Dict<%s, %s>* %s = &%s;\n', key_c_type, val_c_type,
+                lval.name, temp_name)
+
+            return
 
         #    src = cast(source__SourcedFile, src)
         # -> source__SourcedFile* src = static_cast<source__SourcedFile>(src)
