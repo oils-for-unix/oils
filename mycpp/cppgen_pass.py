@@ -467,6 +467,35 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           self.accept(arg)
       self.write(')')
 
+    def _IsInstantiation(self, o):
+      callee_name = o.callee.name
+      callee_type = self.types[o.callee]
+
+      # e.g. int() takes str, float, etc.  It doesn't matter for translation.
+      if isinstance(callee_type, Overloaded):
+        if 0:
+          for item in callee_type.items():
+            self.log('item: %s', item)
+
+      if isinstance(callee_type, CallableType):
+        # If the function name is the same as the return type, then add
+        # 'Alloc<>'.  f = Foo() => f = Alloc<Foo>().
+        ret_type = callee_type.ret_type
+
+        # str(i) doesn't need new.  For now it's a free function.
+        # TODO: rename int_to_str?  or Str::from_int()?
+        if (callee_name not in ('str', 'bool', 'float') and
+            isinstance(ret_type, Instance)):
+
+          ret_type_name = ret_type.type.name()
+
+          # HACK: Const is the callee; expr__Const is the return type
+          if (ret_type_name == callee_name or
+              ret_type_name.endswith('__' + callee_name)):
+            return True
+
+      return False
+
     def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> T:
         if o.callee.name == 'isinstance':
           assert len(o.args) == 2, args
@@ -591,38 +620,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
           return
 
         callee_name = o.callee.name
-        callee_type = self.types[o.callee]
 
-        # e.g. int() takes str, float, etc.  It doesn't matter for translation.
-        if isinstance(callee_type, Overloaded):
-          if 0:
-            for item in callee_type.items():
-              self.log('item: %s', item)
-
-        if isinstance(callee_type, CallableType):
-          # If the function name is the same as the return type, then add
-          # 'Alloc<>'.  f = Foo() => f = Alloc<Foo>().
-          ret_type = callee_type.ret_type
-
-          if 0:
-            log('callee %s', o.callee)
-            log('callee name %s', callee_name)
-            if isinstance(ret_type, Instance):
-              log('ret_type name %s', ret_type.type.name())
-              log('---')
-
-          # str(i) doesn't need new.  For now it's a free function.
-          # TODO: rename int_to_str?  or Str::from_int()?
-          if callee_name not in ('str', 'bool', 'float') and isinstance(ret_type, Instance):
-            ret_type_name = ret_type.type.name()
-            # HACK: Const is the callee; expr__Const is the return type
-            if (callee_name == ret_type_name or
-                ret_type_name.endswith('__' + callee_name)):
-              self.write('Alloc<')
-              self.accept(o.callee)
-              self.write('>')
-              self._WriteArgList(o)
-              return
+        if self._IsInstantiation(o):
+          self.write('Alloc<')
+          self.accept(o.callee)
+          self.write('>')
+          self._WriteArgList(o)
+          return
 
         # Namespace.
         if callee_name == 'int':  # int('foo') in Python conflicts with keyword
@@ -1173,10 +1177,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if self.indent == 0:
           self.log('    GLOBAL List/Dict: %s', lval.name)
 
+          # TODO: Change this to
+          #
+          # - GLOBAL_LIST(name, int, {42, 0})
+          # - GLOBAL_DICT(name, int, {42, 0}, Str, {str1, str2})
+          #
+          # So that they can have Tag::Global
+          #
+          # Also GLOBAL_INSTANCE?
+
           assert isinstance(lval, NameExpr), lval
           lval_type = self.types[lval]
 
-          if isinstance(o.rvalue, ListExpr) :
+          if isinstance(o.rvalue, ListExpr):
             item_type = lval_type.args[0]
             item_c_type = get_c_type(item_type)
 
@@ -1214,6 +1227,25 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 lval.name, temp_name)
 
             return
+
+          # Global instances, e.g. EOL_TOK = Token(...)
+          # TODO: Needs Tag::Global
+          if isinstance(o.rvalue, CallExpr):
+            call_expr = o.rvalue
+            if self._IsInstantiation(call_expr):
+              temp_name = 'gobj%d' % self.unique_id
+              self.unique_id += 1
+
+              self.log('INSTANCE lval %s rval %s', lval, call_expr)
+
+              self.write('%s %s', call_expr.callee.name, temp_name)
+              # C c;, not C c(); which is most vexing parse
+              if call_expr.args:
+                self._WriteArgList(call_expr)
+              self.write(';\n')
+              self.write('%s %s = &%s;', get_c_type(lval_type), lval.name,
+                  temp_name)
+              return
 
         #    src = cast(source__SourcedFile, src)
         # -> source__SourcedFile* src = static_cast<source__SourcedFile>(src)

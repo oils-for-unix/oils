@@ -72,6 +72,8 @@ class Derived(Base):
     return 43
 
 
+GLOBAL = Derived()
+
 # TODO: Test GC masks for fields.  Do subtypes re-initialize it?
 
 
@@ -93,6 +95,8 @@ def run_tests():
   #log(b.method())
   print(d.method())
   print(f(d))
+
+  print(GLOBAL.method())
 
 
 def run_benchmarks():
